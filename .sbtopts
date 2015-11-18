@@ -1,0 +1,9 @@
+-verbose
+-J-Xmx4g
+-J-Xss4M
+-J-XX:ReservedCodeCacheSize=128m
+-J-XX:MetaspaceSize=512m
+-J-XX:MaxMetaspaceSize=1024m
+-J-XX:+CMSClassUnloadingEnabled
+-J-XX:+UseCodeCacheFlushing
+-J-Dscala.usejavacp=true
