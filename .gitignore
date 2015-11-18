@@ -14,6 +14,8 @@ lib_managed
 
 # VIM
 *.sw?
+.ensime*
+
 
 #pdf svg extractor
 svgdump
