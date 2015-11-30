@@ -1,5 +1,4 @@
-
-package edu.umass.cs.iesl.xml_annotator
+package edu.umass.cs.iesl.watr.watrmarks
 
 /** Constructors for labels
   *

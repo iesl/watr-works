@@ -58,7 +58,7 @@ lazy val works = (project in file("."))
     "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
   ))
   .settings(initialCommands := s""" ammonite.repl.Repl.run("${imports}") """)
-  .dependsOn(markup)
-  .aggregate(markup)
+  .dependsOn(watrmarks)
+  .aggregate(watrmarks)
 
-lazy val markup = (project in file("watr-markup"))
+lazy val watrmarks = (project in file("watr-marks"))

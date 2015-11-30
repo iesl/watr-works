@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.xml_annotator
+package edu.umass.cs.iesl.watr.watrmarks
 
 import java.io.File
 import java.io.FileOutputStream

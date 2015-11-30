@@ -1,4 +1,4 @@
-package edu.umass.cs.iesl.xml_annotator
+package edu.umass.cs.iesl.watr.watrmarks
 
 import org.scalatest._
 
@@ -18,8 +18,6 @@ import org.xml.sax.InputSource
 import org.xml.sax.XMLReader
 
 class AnnotatorSpec extends FlatSpec {
-
-
 
   val dom = new Document()
 
@@ -458,7 +456,7 @@ class AnnotatorSpec extends FlatSpec {
 
     val es = annotator.getElements()
 
-    es.toIndexedSeq.zipWithIndex.map {
+    es.toIndexedSeq.zipWithIndex.foreach {
       case (e, i) =>
         val annoBlock = annotator.annotationBlockSeq(i)
         val expected = e.getText().size
