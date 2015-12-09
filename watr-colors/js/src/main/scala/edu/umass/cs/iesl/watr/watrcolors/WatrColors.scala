@@ -1,4 +1,6 @@
-package example
+package edu.umass.cs.iesl.watr
+package watrcolors
+
 
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
@@ -10,9 +12,11 @@ case class Point(x: Int, y: Int){
   def /(d: Int) = Point(x / d, y / d)
 }
 
+// scrolling list of pdfs
+// select pdf, see svg version
 
 @JSExport
-object ScalaJSExample {
+object WatrColors {
   @JSExport
   def main(canvas: html.Canvas): Unit = {
     val ctx = canvas.getContext("2d")
