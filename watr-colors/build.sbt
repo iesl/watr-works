@@ -1,20 +1,16 @@
-import com.lihaoyi.workbench.Plugin._
+// import com.lihaoyi.workbench.Plugin._
 
-enablePlugins(ScalaJSPlugin)
+// enablePlugins(ScalaJSPlugin)
 
-workbenchSettings
+// workbenchSettings
 
-name := "Example"
+name := "watr-colors"
 
-version := "0.1-SNAPSHOT"
+// libraryDependencies ++= Seq(
+//   "org.scala-js" %%% "scalajs-dom" % "0.8.0",
+//   "com.lihaoyi" %%% "scalatags" % "0.5.2"
+// )
 
-scalaVersion := "2.11.7"
+// bootSnippet := "example.ScalaJSExample().main(document.getElementById('canvas'));"
 
-libraryDependencies ++= Seq(
-  "org.scala-js" %%% "scalajs-dom" % "0.8.0",
-  "com.lihaoyi" %%% "scalatags" % "0.5.2"
-)
-
-bootSnippet := "example.ScalaJSExample().main(document.getElementById('canvas'));"
-
-updateBrowsers <<= updateBrowsers.triggeredBy(fastOptJS in Compile)
+// updateBrowsers <<= updateBrowsers.triggeredBy(fastOptJS in Compile)

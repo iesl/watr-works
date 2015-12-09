@@ -10,6 +10,7 @@ case class Point(x: Int, y: Int){
   def /(d: Int) = Point(x / d, y / d)
 }
 
+
 @JSExport
 object ScalaJSExample {
   @JSExport
@@ -22,7 +23,7 @@ object ScalaJSExample {
     val corners = Seq(Point(255, 255), Point(0, 255), Point(128, 0))
 
     def clear() = {
-      ctx.fillStyle = "black"
+      ctx.fillStyle = "blue"
       ctx.fillRect(0, 0, 255, 255)
     }
 
@@ -40,6 +41,6 @@ object ScalaJSExample {
       ctx.fillRect(p.x, p.y, 1, 1)
     }
 
-    dom.setInterval(() => run, 50)
+    val _ = dom.setInterval(() => run, 150)
   }
 }

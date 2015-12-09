@@ -32,6 +32,7 @@ scalacOptions in ThisBuild ++= Seq(
 libraryDependencies in ThisBuild ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
+  "com.lihaoyi" %% "scalatags" % "0.5.3",
   "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
 )
 
@@ -55,7 +56,6 @@ lazy val works = (project in file("."))
     "pl.edu.icm.cermine" % "cermine-impl" % "1.8-SNAPSHOT",
     "com.lihaoyi" %% "ammonite-ops" % "0.5.0",
     "com.lihaoyi" % "ammonite-repl" % "0.5.0" cross CrossVersion.full,
-    "com.lihaoyi" %% "scalatags" % "0.5.3",
     "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
   ))
   .settings(initialCommands := s""" ammonite.repl.Repl.run("${imports}") """)
@@ -63,3 +63,14 @@ lazy val works = (project in file("."))
   .aggregate(watrmarks)
 
 lazy val watrmarks = (project in file("watr-marks"))
+
+import com.lihaoyi.workbench.Plugin._
+
+lazy val watrcolors = (project in file("watr-colors"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(workbenchSettings:_*)
+  .settings(libraryDependencies ++= Seq(
+    "org.scala-js" %%% "scalajs-dom" % "0.8.0"
+  ))
+  .settings(bootSnippet := "example.ScalaJSExample().main(document.getElementById('canvas'));")
+  .settings(updateBrowsers <<= updateBrowsers.triggeredBy(fastOptJS in Compile))
