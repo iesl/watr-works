@@ -30,6 +30,7 @@ scalacOptions in ThisBuild ++= Seq(
 )
 
 libraryDependencies in ThisBuild ++= Seq(
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
 )

@@ -3,8 +3,6 @@ package edu.umass.cs.iesl.watr.watrmarks
 import org.scalatest._
 
 import scala.collection.immutable.IntMap
-import scala.collection.immutable.Set
-import scala.collection.immutable.Map
 import scala.collection.immutable.ListMap
 
 import org.jdom2.filter.ElementFilter
@@ -135,7 +133,8 @@ class AnnotatorSpec extends FlatSpec {
   }
 
   "fontSize" should "raise an exception if the provided element has no attribute font-size" in {
-    intercept[NullPointerException] {
+    // val _ =... used to silence compiler warnings for discarding unused value
+    val _ = intercept[NullPointerException] {
       Attr.fontSize(e)
     }
   }
@@ -151,7 +150,7 @@ class AnnotatorSpec extends FlatSpec {
   }
 
   "y" should "raise an exception if the provided element has no attribute y" in {
-    intercept[NullPointerException] {
+    val _ = intercept[NullPointerException] {
       Attr.y(e_1_1)
     }
   }
@@ -168,7 +167,7 @@ class AnnotatorSpec extends FlatSpec {
   }
 
   "xs" should  "raise an exception if the provided element has no attribute x" in {
-    intercept[NullPointerException] {
+    val _ = intercept[NullPointerException] {
       Attr.y(e_1_1)
     }
   }
@@ -188,13 +187,13 @@ class AnnotatorSpec extends FlatSpec {
       DOMUtils.commonAncestor(null, e_1)
     }
 
-    intercept[IllegalArgumentException] {
+    val _ = intercept[IllegalArgumentException] {
       DOMUtils.commonAncestor(e_1, null)
     }
   }
 
   it should "raise an exception if arguments are in different trees" in {
-    intercept[IllegalArgumentException] {
+    val _ = intercept[IllegalArgumentException] {
       DOMUtils.commonAncestor(new Element("a"), new Element("b"))
     }
   }
@@ -217,13 +216,13 @@ class AnnotatorSpec extends FlatSpec {
   }
 
   "getTransformedCoords" should "raise an exception if the first argument is missing attributes y, endX, or x" in {
-    intercept[NullPointerException] {
+    val _ = intercept[NullPointerException] {
       Annotator.getTransformedCoords(e_1_1, e)
     }
   }
 
   it should "raise an exception if second argument is not an ancestor of the first" in {
-    intercept[IllegalArgumentException] {
+    val _ = intercept[IllegalArgumentException] {
       Annotator.getTransformedCoords(e_1_2_1, e_1_1)
     }
   }
@@ -443,7 +442,7 @@ class AnnotatorSpec extends FlatSpec {
         AnnotationBlock(27,33, emptyMap)
    )
 
-    (0 to 2).map(i => {
+    (0 to 2).foreach(i => {
       val expected = expectedResults(i)
       val actual =  annotator.annotationBlockSeq(i)
       assertResult(expected)(actual)
@@ -476,7 +475,7 @@ class AnnotatorSpec extends FlatSpec {
 
   "annotate" should "raise an exception if called with an annotation type that already exists" in {
     val table = annotator.getBIndexSet(Single(CharCon)).map(_ -> U('q')).toMap
-    intercept[AssertionError] {
+    val _ = intercept[AssertionError] {
       annotator4.annotate(List("quail" -> 'q'), Single(CharCon), table)
     }
   }
@@ -494,7 +493,7 @@ class AnnotatorSpec extends FlatSpec {
   it should "raise an exception if called with a constraint range where\n" +
   "the range's annotation type does not descend from the constraint" in {
     val table = annotator.getBIndexSet(Single(CharCon)).map(_ -> U('x')).toMap
-    intercept[IllegalArgumentException] {
+    val _ = intercept[IllegalArgumentException] {
       annotator4.annotate(List("xyz" -> 'x'), Range("falcon", SegmentCon("penguin")), table)
     }
   }
@@ -544,7 +543,7 @@ class AnnotatorSpec extends FlatSpec {
 
   it should "raise an exception if the range's annotation type does not descend from the constraint" in {
 
-    intercept[IllegalArgumentException] {
+    val _ = intercept[IllegalArgumentException] {
       annotator4.getBIndexSet(Range("falcon", SegmentCon("penguin")))
     }
   }
@@ -590,7 +589,7 @@ class AnnotatorSpec extends FlatSpec {
   }
 
   "getSegment" should "raise an exception if the specified annotation type does not exist" in {
-    intercept[NoSuchElementException] {
+    val _ = intercept[NoSuchElementException] {
       annotator4.getSegment("xyz")(0)
     }
   }
@@ -649,14 +648,14 @@ class AnnotatorSpec extends FlatSpec {
       annotator4.getElementsInRange(1, 5)
     }
 
-    intercept[IndexOutOfBoundsException] {
+    val _ = intercept[IndexOutOfBoundsException] {
       annotator4.getElementsInRange(-2, 1)
     }
 
   }
 
   it should "raise an exception if the second block index is less than the first" in {
-    intercept[IllegalArgumentException] {
+    val _ = intercept[IllegalArgumentException] {
       annotator4.getElementsInRange(2, 1).mapValues(_.getText())
     }
   }
@@ -768,7 +767,7 @@ class AnnotatorSpec extends FlatSpec {
 
   "getFilteredTextSeq" should "raise an exception if the first annotation type\n" +
   "does not descend from the second annotation type" in {
-    intercept[IllegalArgumentException] {
+    val _ = intercept[IllegalArgumentException] {
       annotator4.getFilteredTextSeq("penguin", "falcon").map(_._2)
     }
   }
