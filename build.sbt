@@ -40,8 +40,8 @@ import com.lihaoyi.workbench.Plugin._
 resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 lazy val root = (project in file("."))
-  .dependsOn(watrmarks, watrshed )
-  .aggregate(watrmarks, watrshed )
+  .dependsOn(watrmarks, watrshed, watrcolorsJVM)
+  .aggregate(watrmarks, watrshed, watrcolorsJVM)
 
 
 lazy val watrmarks = (project in file("watr-marks"))
@@ -68,18 +68,6 @@ lazy val watrshed = (project in file("watr-shed"))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
 
-
-// lazy val watrcolors = (project in file("watr-colors"))
-//   .enablePlugins(ScalaJSPlugin)
-//   .settings(workbenchSettings:_*)
-//   .settings(libraryDependencies ++= Seq(
-//     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
-//     "com.lihaoyi" %%% "upickle" % "0.3.6",
-//     "com.lihaoyi" %%% "autowire" % "0.2.4"
-//   ))
-//   .settings(bootSnippet := "edu.umass.cs.iesl.watr.example.ScalaJSExample().main(document.getElementById('canvas'));")
-//   .settings(updateBrowsers <<= updateBrowsers.triggeredBy(fastOptJS in Compile))
-//   .dependsOn(watrmarks, watrshed)
 
 import sbt.Keys._
 import com.lihaoyi.workbench.Plugin._
@@ -109,15 +97,17 @@ val watrcolors = (crossProject in file("watr-colors")).settings(
     "io.spray" %% "spray-can" % "1.3.1",
     "io.spray" %% "spray-routing" % "1.3.1",
     "com.typesafe.akka" %% "akka-actor" % "2.3.2",
-    "org.webjars" % "bootstrap" % "3.2.0"
+    "org.webjars" % "bootstrap" % "3.2.0",
+    "org.webjars" % "mousetrap" % "1.4.6"
   )
 )
 
+
 val watrcolorsJS = watrcolors.js
 
-val watrcolorsJVM = watrcolors.jvm.settings(
-  (resources in Compile) += {
-    (fastOptJS in (watrcolorsJS, Compile)).value
+val watrcolorsJVM = watrcolors.jvm
+  .settings((resources in Compile) += {
+    // (fastOptJS in (watrcolorsJS, Compile)).value
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value
-  }
-)
+  })
+  .dependsOn(watrmarks, watrshed)

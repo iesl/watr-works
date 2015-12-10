@@ -28,8 +28,19 @@ object Client extends autowire.Client[Js.Value, Reader, Writer]{
 
 @JSExport
 object ScalaJSExample {
+
+  def fileOpen(): Boolean = {
+    println("called File:Open")
+
+    true
+  }
+
+
   @JSExport
   def main(): Unit = {
+    println("entered main fn")
+
+    Mousetrap.bind("f o", (e: MousetrapEvent) => fileOpen)
 
     val inputBox = input.render
     val outputBox = div.render
@@ -53,7 +64,7 @@ object ScalaJSExample {
     dom.document.body.appendChild(
       div(
         cls:="container",
-        h1("File Browser XX"),
+        h1("File Browser"),
         p("Enter a file path to s"),
         inputBox,
         outputBox
