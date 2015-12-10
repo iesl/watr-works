@@ -25,9 +25,8 @@ object Client extends autowire.Client[Js.Value, Reader, Writer]{
   def write[Result: Writer](r: Result) = writeJs(r)
 }
 
-
 @JSExport
-object ScalaJSExample {
+object WatrColorClient {
 
   def fileOpen(): Boolean = {
     println("called File:Open")
@@ -46,7 +45,7 @@ object ScalaJSExample {
     val outputBox = div.render
 
     def updateOutput() = {
-      Client[Api].list(inputBox.value).call().foreach { paths =>
+      Client[WatrColorApi].list(inputBox.value).call().foreach { paths =>
         outputBox.innerHTML = ""
         outputBox.appendChild(
           ul(

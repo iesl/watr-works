@@ -1,3 +1,8 @@
+// import sbt.Keys._
+// import com.lihaoyi.workbench.Plugin._
+// import spray.revolver.AppProcess
+// import spray.revolver.RevolverPlugin.Revolver
+
 organization in ThisBuild := "edu.umass.cs.iesl"
 
 version in ThisBuild := "0.1-SNAPSHOT"
@@ -28,6 +33,8 @@ scalacOptions in ThisBuild ++= Seq(
 )
 
 libraryDependencies in ThisBuild ++= Seq(
+  "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
+  // "org.scala-lang" %% "scala-reflect" % "2.11.7",
   "org.scalaz" %% "scalaz-core" % "7.1.5",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
@@ -35,7 +42,6 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
 )
 
-import com.lihaoyi.workbench.Plugin._
 
 resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
@@ -69,12 +75,8 @@ lazy val watrshed = (project in file("watr-shed"))
   .aggregate(watrmarks)
 
 
-import sbt.Keys._
-import com.lihaoyi.workbench.Plugin._
-import spray.revolver.AppProcess
-import spray.revolver.RevolverPlugin.Revolver
 
-val watrcolors = (crossProject in file("watr-colors")).settings(
+lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
     "com.lihaoyi" %%% "upickle" % "0.3.6",
     "com.lihaoyi" %%% "autowire" % "0.2.4",
@@ -103,9 +105,10 @@ val watrcolors = (crossProject in file("watr-colors")).settings(
 )
 
 
-val watrcolorsJS = watrcolors.js
+lazy val watrcolorsJS = watrcolors.js
 
-val watrcolorsJVM = watrcolors.jvm
+
+lazy val watrcolorsJVM = watrcolors.jvm
   .settings((resources in Compile) += {
     // (fastOptJS in (watrcolorsJS, Compile)).value
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value

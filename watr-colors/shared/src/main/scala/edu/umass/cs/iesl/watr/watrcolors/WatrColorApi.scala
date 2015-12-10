@@ -2,6 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 
 
-trait Api{
+trait WatrColorApi {
   def list(path: String): Seq[String]
 }
