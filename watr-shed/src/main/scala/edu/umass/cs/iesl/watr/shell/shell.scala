@@ -110,7 +110,7 @@ object ops {
     svg: org.jdom2.Document
   ): Unit = {
     // println("words: " + bxDocument.asWords().mkString(", "))
-    val tspans = edu.umass.cs.iesl.watr.watrmarkup.DOMUtils.getTSpanElements(svg)
+    val tspans = edu.umass.cs.iesl.watr.watrmarks.DOMUtils.getTSpanElements(svg)
 
     import scala.collection.mutable
 

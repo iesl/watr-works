@@ -25,21 +25,76 @@ object Client extends autowire.Client[Js.Value, Reader, Writer]{
   def write[Result: Writer](r: Result) = writeJs(r)
 }
 
+case class Keybindings(
+  bindings: List[(String, (MousetrapEvent)=>Boolean)]
+)
+
 @JSExport
 object WatrColorClient {
 
+  val server = Client[WatrColorApi]
+
   def fileOpen(): Boolean = {
     println("called File:Open")
-
     true
   }
+
+  def navNext(): Boolean = {
+    server.navNext().call()
+    true
+  }
+
+  def navEnter(): Boolean = {
+    println("called File:Open")
+    true
+  }
+
+  def navPrev(): Boolean = {
+    println("called File:Open")
+    true
+  }
+
+
+  def keybindings() =  {
+    Mousetrap.bind("f o", (e: MousetrapEvent) => fileOpen)
+    Mousetrap.bind("j", (e: MousetrapEvent) => navNext )
+    Mousetrap.bind("k", (e: MousetrapEvent) => navPrev)
+    Mousetrap.bind("enter", (e: MousetrapEvent) => navEnter)
+  }
+
+
+  import scalaz._
+  import Scalaz._
+
+  case class WindowPane(
+    keys: Keybindings,
+    html: HtmlTag
+  )
+
+  val emptyPane = div(
+    p("<empty>")
+  )
+
+  val initKeys = Keybindings(List(
+    "f o"   -> ((e: MousetrapEvent) => fileOpen),
+    "j"     -> ((e: MousetrapEvent) => navNext),
+    "k"     -> ((e: MousetrapEvent) => navPrev),
+    "enter" -> ((e: MousetrapEvent) => navEnter)
+  ))
+
+  val windowPanes = List[WindowPane](WindowPane(initKeys, emptyPane))
+
+  // val lzip = asdf.toZipper
+  // val lzipr = lzip.get
+
+
 
 
   @JSExport
   def main(): Unit = {
     println("entered main fn")
 
-    Mousetrap.bind("f o", (e: MousetrapEvent) => fileOpen)
+    keybindings()
 
     val inputBox = input.render
     val outputBox = div.render

@@ -13,11 +13,11 @@ object Template{
           meta(httpEquiv:="Content-Type", content:="text/html; charset=UTF-8"),
           script(`type`:="text/javascript", src:="/watrcolors-client-fastopt.js"),
           script(`type`:="text/javascript", src:="//localhost:12345/workbench.js"),
-          script(`type`:="text/javascript", src:="/webjars/mousetrap/1.4.6/mousetrap.min.js"),
-          link(rel:="stylesheet", `type`:="text/css", href:="/webjars/bootstrap/3.2.0/css/bootstrap.min.css")
+          script(`type`:="text/javascript", src:="/webjars/mousetrap/1.5.3/mousetrap.min.js"),
+          link(rel:="stylesheet", `type`:="text/css", href:="/webjars/bootstrap/3.3.6/css/bootstrap.min.css")
         ),
         body(margin:=0)(
-          script("edu.umass.cs.iesl.watr.watrcolors.ScalaJSExample().main()")
+          script("edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main()")
         )
       )
 }

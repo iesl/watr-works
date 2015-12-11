@@ -33,9 +33,10 @@ scalacOptions in ThisBuild ++= Seq(
 )
 
 libraryDependencies in ThisBuild ++= Seq(
+  "com.github.pathikrit" %% "better-files" % "2.13.0",
   "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
   // "org.scala-lang" %% "scala-reflect" % "2.11.7",
-  "org.scalaz" %% "scalaz-core" % "7.1.5",
+  "org.scalaz" %% "scalaz-core" % "7.2.0",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.3",
@@ -79,7 +80,8 @@ lazy val watrshed = (project in file("watr-shed"))
 lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
     "com.lihaoyi" %%% "upickle" % "0.3.6",
-    "com.lihaoyi" %%% "autowire" % "0.2.4",
+    "com.lihaoyi" %%% "autowire" % "0.2.5",
+    "com.lihaoyi" %%% "scalarx" % "0.2.8",
     "com.lihaoyi" %%% "scalatags" % "0.5.3"
   )
 ).jsSettings(
@@ -89,21 +91,19 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.1"
   ),
-  // bootSnippet := "edu.umass.cs.iesl.watr.example.ScalaJSExample().main(document.getElementById('canvas'));"
-  bootSnippet := "edu.umass.cs.iesl.watr.watrcolors.ScalaJSExample().main();"
+  bootSnippet := "edu.umass.cs.iesl.watr.watrcolors.WatrColorServer().main();"
 ).jvmSettings(
   Revolver.settings:_*
 ).jvmSettings(
   name := "watrcolor-server",
   libraryDependencies ++= Seq(
-    "io.spray" %% "spray-can" % "1.3.1",
-    "io.spray" %% "spray-routing" % "1.3.1",
-    "com.typesafe.akka" %% "akka-actor" % "2.3.2",
-    "org.webjars" % "bootstrap" % "3.2.0",
-    "org.webjars" % "mousetrap" % "1.4.6"
+    "io.spray" %% "spray-can" % "1.3.3",
+    "io.spray" %% "spray-routing" % "1.3.3",
+    "com.typesafe.akka" %% "akka-actor" % "2.4.1",
+    "org.webjars" % "bootstrap" % "3.3.6",
+    "org.webjars" % "mousetrap" % "1.5.3"
   )
 )
-
 
 lazy val watrcolorsJS = watrcolors.js
 
@@ -113,4 +113,5 @@ lazy val watrcolorsJVM = watrcolors.jvm
     // (fastOptJS in (watrcolorsJS, Compile)).value
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value
   })
-  .dependsOn(watrmarks, watrshed)
+  .dependsOn(watrmarks, watrshed, watrcolorsJS)
+  .aggregate(watrmarks, watrshed, watrcolorsJS)
