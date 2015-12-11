@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 
 
+import scala.annotation.tailrec
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import scala.util.Random
@@ -40,31 +41,28 @@ object WatrColorClient {
   }
 
   def navNext(): Boolean = {
-    server.navNext().call()
+    server.navNext().call().foreach { updatemap =>
+      println(updatemap.toList.mkString(", "))
+    }
     true
   }
-
-  def navEnter(): Boolean = {
-    println("called File:Open")
-    true
-  }
-
   def navPrev(): Boolean = {
-    println("called File:Open")
+    server.navPrev().call().foreach { updatemap =>
+      println(updatemap.toList.mkString(", "))
+    }
+    true
+  }
+
+  def openCurrent(): Boolean = {
+    server.openCurrent().call().foreach { updatemap =>
+      println(updatemap.toList.mkString(", "))
+    }
     true
   }
 
 
-  def keybindings() =  {
-    Mousetrap.bind("f o", (e: MousetrapEvent) => fileOpen)
-    Mousetrap.bind("j", (e: MousetrapEvent) => navNext )
-    Mousetrap.bind("k", (e: MousetrapEvent) => navPrev)
-    Mousetrap.bind("enter", (e: MousetrapEvent) => navEnter)
-  }
 
 
-  import scalaz._
-  import Scalaz._
 
   case class WindowPane(
     keys: Keybindings,
@@ -79,50 +77,33 @@ object WatrColorClient {
     "f o"   -> ((e: MousetrapEvent) => fileOpen),
     "j"     -> ((e: MousetrapEvent) => navNext),
     "k"     -> ((e: MousetrapEvent) => navPrev),
-    "enter" -> ((e: MousetrapEvent) => navEnter)
+    "enter" -> ((e: MousetrapEvent) => openCurrent)
   ))
 
-  val windowPanes = List[WindowPane](WindowPane(initKeys, emptyPane))
+  def setKeybindings(kb: Keybindings) =  {
+    kb.bindings.foreach { case(str, fn) =>
+      Mousetrap.bind(str, fn)
+    }
+  }
 
-  // val lzip = asdf.toZipper
-  // val lzipr = lzip.get
-
-
+  // val windowPanes = List[WindowPane](WindowPane(initKeys, emptyPane))
 
 
   @JSExport
   def main(): Unit = {
-    println("entered main fn")
+    println("inside main")
 
-    keybindings()
+    setKeybindings(initKeys)
 
     val inputBox = input.render
     val outputBox = div.render
 
-    def updateOutput() = {
-      Client[WatrColorApi].list(inputBox.value).call().foreach { paths =>
-        outputBox.innerHTML = ""
-        outputBox.appendChild(
-          ul(
-            for(path <- paths) yield {
-              li(path)
-            }
-          ).render
-        )
-      }
-    }
-    inputBox.onkeyup = {(e: dom.Event) =>
-      updateOutput()
-    }
-    updateOutput()
-    dom.document.body.appendChild(
-      div(
-        cls:="container",
-        h1("File Browser"),
-        p("Enter a file path to s"),
-        inputBox,
-        outputBox
+
+    val _ = dom.document.body.appendChild(
+      div(cls:="container",
+        h1("<not just empty>")
       ).render
     )
   }
+
 }

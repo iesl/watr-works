@@ -16,7 +16,11 @@ object Template{
           script(`type`:="text/javascript", src:="/webjars/mousetrap/1.5.3/mousetrap.min.js"),
           link(rel:="stylesheet", `type`:="text/css", href:="/webjars/bootstrap/3.3.6/css/bootstrap.min.css")
         ),
+
+
         body(margin:=0)(
+          p(" what the hell .. the starting page"),
+
           script("edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main()")
         )
       )

@@ -1,7 +1,9 @@
-// import sbt.Keys._
-// import com.lihaoyi.workbench.Plugin._
-// import spray.revolver.AppProcess
-// import spray.revolver.RevolverPlugin.Revolver
+import sbt.Keys._
+import spray.revolver.AppProcess
+import com.lihaoyi.workbench.Plugin._
+import spray.revolver.RevolverPlugin.Revolver
+
+enablePlugins(ScalaJSPlugin)
 
 organization in ThisBuild := "edu.umass.cs.iesl"
 
@@ -91,6 +93,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.1"
   ),
+  refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),
   bootSnippet := "edu.umass.cs.iesl.watr.watrcolors.WatrColorServer().main();"
 ).jvmSettings(
   Revolver.settings:_*
@@ -107,11 +110,11 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
 
 lazy val watrcolorsJS = watrcolors.js
 
-
-lazy val watrcolorsJVM = watrcolors.jvm
-  .settings((resources in Compile) += {
-    // (fastOptJS in (watrcolorsJS, Compile)).value
+lazy val watrcolorsJVM = watrcolors.jvm.settings(
+  Revolver.reStart <<= Revolver.reStart dependsOn (fastOptJS in(watrcolorsJS, Compile)),
+  (resources in Compile) += ({
+    (fastOptJS in(watrcolorsJS, Compile)).value
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value
-  })
+  }))
   .dependsOn(watrmarks, watrshed, watrcolorsJS)
   .aggregate(watrmarks, watrshed, watrcolorsJS)
