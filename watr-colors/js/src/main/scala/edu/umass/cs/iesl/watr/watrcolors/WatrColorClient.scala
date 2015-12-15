@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
-
 import scala.annotation.tailrec
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
@@ -9,9 +8,12 @@ import scala.util.Random
 import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalatags.JsDom.all._
-import upickle.default._
 import upickle.Js
 import autowire._
+import org.scalajs.jquery.jQuery
+import upickle.default._
+
+import SplitPane._
 
 object Client extends autowire.Client[Js.Value, Reader, Writer]{
   override def doCall(req: Request): Future[Js.Value] = {
@@ -35,33 +37,33 @@ object WatrColorClient {
 
   val server = Client[WatrColorApi]
 
-  def fileOpen(): Boolean = {
-    println("called File:Open")
-    true
+
+  def applyHtmlUpdates(updates: Seq[HtmlUpdate]): Unit = {
+    updates.foreach { _ match {
+        case HtmlAppend(css, content)       => jQuery(css).append(content)
+        case HtmlPrepend(css, content)      => jQuery(css).prepend(content)
+        case HtmlReplace(css, content)      => jQuery(css).replaceWith(content)
+        case HtmlReplaceInner(css, content) => jQuery(css).html(content)
+        case HtmlRemove(css)                => jQuery(css).remove()
+      }
+    }
   }
 
   def navNext(): Boolean = {
-    server.navNext().call().foreach { updatemap =>
-      println(updatemap.toList.mkString(", "))
-    }
+    server.navNext().call().foreach(applyHtmlUpdates(_))
     true
   }
+
+
   def navPrev(): Boolean = {
-    server.navPrev().call().foreach { updatemap =>
-      println(updatemap.toList.mkString(", "))
-    }
+    server.navPrev().call() foreach (applyHtmlUpdates(_))
     true
   }
 
   def openCurrent(): Boolean = {
-    server.openCurrent().call().foreach { updatemap =>
-      println(updatemap.toList.mkString(", "))
-    }
+    server.openCurrent().call() foreach (applyHtmlUpdates(_))
     true
   }
-
-
-
 
 
   case class WindowPane(
@@ -74,7 +76,6 @@ object WatrColorClient {
   )
 
   val initKeys = Keybindings(List(
-    "f o"   -> ((e: MousetrapEvent) => fileOpen),
     "j"     -> ((e: MousetrapEvent) => navNext),
     "k"     -> ((e: MousetrapEvent) => navPrev),
     "enter" -> ((e: MousetrapEvent) => openCurrent)
@@ -86,24 +87,16 @@ object WatrColorClient {
     }
   }
 
-  // val windowPanes = List[WindowPane](WindowPane(initKeys, emptyPane))
-
 
   @JSExport
   def main(): Unit = {
-    println("inside main")
-
     setKeybindings(initKeys)
 
-    val inputBox = input.render
-    val outputBox = div.render
+    val _ = jQuery(dom.document).ready {() =>
+      jQuery(".split-pane").splitPane();
+      jQuery(".split-pane").trigger("resize");
+    }
 
-
-    val _ = dom.document.body.appendChild(
-      div(cls:="container",
-        h1("<not just empty>")
-      ).render
-    )
   }
 
 }

@@ -8,27 +8,28 @@ import upickle.Js
 
 trait WatrColorApiServer extends WatrColorApi with ServerState {
 
-  def navNext(): Map[String, String] = {
+  def navNext(): Seq[HtmlUpdate] = {
     val last = corpusCursor
     corpusCursor = last.next
 
-    Map(
-      "curr" -> s"${corpusCursor.curr}"
+    Seq(
+      HtmlReplaceInner(s"#currfile", s"${corpusCursor.curr}")
     )
   }
 
-  def navPrev(): Map[String, String] = {
+  def navPrev(): Seq[HtmlUpdate] = {
     val last = corpusCursor
     corpusCursor = last.prev
 
-    Map(
-      "curr" -> s"${corpusCursor.curr}"
+    Seq(
+      HtmlReplaceInner(s"#currfile", s"${corpusCursor.curr}")
     )
   }
 
-  def openCurrent(): Map[String, String] = {
-    Map(
-      "expand" -> s"${corpusCursor.curr}"
+  // the openCurrent specialized for file cursor
+  def openCurrent(): Seq[HtmlUpdate] = {
+    Seq(
+      HtmlPrepend(s"#winstack-top", s"${corpusCursor.curr}")
     )
   }
 
@@ -78,6 +79,20 @@ case class DirectoryCursor(
 }
 
 object DirectoryCursor {
+
+  // next prevs
+  object directoryNav {
+    def navNext(dcursor: DirectoryCursor): Seq[HtmlUpdate] = {
+      Seq(
+        HtmlReplaceInner(s"#currfile", s"${dcursor.curr}")
+      )
+    }
+    def navPrev(dcursor: DirectoryCursor): Seq[HtmlUpdate] = {
+      Seq(
+        HtmlReplaceInner(s"#currfile", s"${dcursor.curr}")
+      )
+    }
+  }
 
   def init(f: File): Option[DirectoryCursor] = {
 

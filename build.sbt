@@ -91,6 +91,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
 ).jsSettings(
   name := "watrcolors-client",
   libraryDependencies ++= Seq(
+    "be.doeraene" %%% "scalajs-jquery" % "0.8.1",
     "org.scala-js" %%% "scalajs-dom" % "0.8.1"
   ),
   refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),
@@ -103,7 +104,10 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
     "io.spray" %% "spray-can" % "1.3.3",
     "io.spray" %% "spray-routing" % "1.3.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.1",
+    // "org.webjars" % "jqueryui-layout" % "1.4.0",
+    // "org.webjars.bower" % "split-pane" % "0.5.1",
     "org.webjars" % "bootstrap" % "3.3.6",
+    "org.webjars" % "jquery" % "2.1.4",
     "org.webjars" % "mousetrap" % "1.5.3"
   )
 )
