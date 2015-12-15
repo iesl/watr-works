@@ -17,7 +17,6 @@ object Template{
   val ^ = scalatags.Text.attrs
 
 
-
   // import Sheet._
   // trait WatrStyles extends StyleSheet with StyleSheetTags {
 

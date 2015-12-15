@@ -35,7 +35,7 @@ scalacOptions in ThisBuild ++= Seq(
 )
 
 libraryDependencies in ThisBuild ++= Seq(
-  "com.github.pathikrit" %% "better-files" % "2.13.0",
+  "com.github.pathikrit" %% "better-files" % "2.14.0",
   "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
   // "org.scala-lang" %% "scala-reflect" % "2.11.7",
   "org.scalaz" %% "scalaz-core" % "7.2.0",
@@ -58,8 +58,8 @@ lazy val watrmarks = (project in file("watr-marks"))
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
     "pl.edu.icm.cermine" % "cermine-impl" % "1.8-SNAPSHOT",
-    "com.lihaoyi" %% "ammonite-ops" % "0.5.0",
-    "com.lihaoyi" % "ammonite-repl" % "0.5.0" cross CrossVersion.full
+    "com.lihaoyi" %% "ammonite-ops" % "0.5.1",
+    "com.lihaoyi" % "ammonite-repl" % "0.5.1" cross CrossVersion.full
   ))
   .settings(initialCommands := {
     val imports = """|import ammonite.ops._
@@ -92,7 +92,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   name := "watrcolors-client",
   libraryDependencies ++= Seq(
     "be.doeraene" %%% "scalajs-jquery" % "0.8.1",
-    "org.scala-js" %%% "scalajs-dom" % "0.8.1"
+    "org.scala-js" %%% "scalajs-dom" % "0.8.2"
   ),
   refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),
   bootSnippet := "edu.umass.cs.iesl.watr.watrcolors.WatrColorServer().main();"
