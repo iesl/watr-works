@@ -1,7 +1,8 @@
-package edu.umass.cs.iesl.watr.shell
+package edu.umass.cs.iesl.watr
+
+package ext
 
 
-// TODO move this file
 // import java.io.FileInputStream
 import java.io.InputStream
 import org.jdom2.input.SAXBuilder

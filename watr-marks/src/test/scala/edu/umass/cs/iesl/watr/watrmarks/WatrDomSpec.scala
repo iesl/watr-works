@@ -1,11 +1,11 @@
-package edu.umass.cs.iesl.watr.shell
-
-import org.scalatest._
+package edu.umass.cs.iesl.watr
+package watrmarks
 
 import java.io.StringReader
-import scala.collection.mutable
+import org.scalatest._
 
-class CursorSpec extends FlatSpec {
+class WatrDomSpec extends FlatSpec {
+
   val svgStrNS = """|<?xml version="1.0"?>
                     |<svg:svg
                     | xmlns:svg="http://www.w3.org/2000/svg"
@@ -38,48 +38,41 @@ class CursorSpec extends FlatSpec {
 
 
 
-
-  val expected = WDocument(List(
-    WSvg(List(
-      WGrp(List(
-        WText(List(
-          WTSpan(WChars("abcdefghijkl")))),
-        WText(List(
-          WTSpan(WChars("mnopqrstuvwxyz1")),
-          WTSpan(WChars("234567"))))))))))
-
-  val expected2 = WDocument(List(
-    WSvg(List(
-      WGrp(List(WDefs(List()),
-        WGrp(List(WText(List(WTSpan(WChars("Pergamon "))))))))))))
-
   behavior of "svg unserialization"
 
   it should  "understand xml with and without namespace prefixes" in {
 
-    val doc = wdocuments.readWDocument(
+    val doc = watrdom.read(
       new StringReader(svgStrNS)
     )
-    val doc2 = wdocuments.readWDocument(
-      new StringReader(svgStrNS.replaceAll("svg:", ""))
-    )
+    // val doc2 = watrdom.read(
+    //   new StringReader(svgStrNS.replaceAll("svg:", ""))
+    // )
 
-    assert(expected2 === doc)
-    assert(expected2 === doc2)
+    println(doc.prettyPrint)
+
+    // assert(svg2Dom === doc)
+    // assert(svg2Dom === doc2)
   }
 
   behavior of "svg dom cursor"
 
   it should "convert dom to/from cursor" in {
-    // val wcursor = wdoc.cursor ===...
-  }
-  it should "traverse elements via next" in {
-    // val wcursor =...
-    // wcursor.next
-    // wcursor.next[WGrp]
-    // wcursor.stream[WTspan]
+    val doc = watrdom.read(
+      new StringReader(svgStrNS)
+    )
+    val cursor = doc.toCursor
+
+    // assert(cursor.current === svg2Dom)
+
   }
 
-  // it should "" in {}
+  behavior of "watr dom tspan -> textspan translation"
+
+  it should "unserialize" in {
+
+
+  }
+
 
 }
