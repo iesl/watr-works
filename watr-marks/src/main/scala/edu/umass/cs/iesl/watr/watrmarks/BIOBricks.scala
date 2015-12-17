@@ -61,9 +61,9 @@ case class FontDictionary(
 )
 
 case class FontInfo(
-  fontName: String,
+  // fontName: String,
   fontFamily: String,
-  fontSize: Double
+  fontSize: String
 )
 
 case class TextBounds(
@@ -152,8 +152,6 @@ object biolu {
   }
 
 
-
-  // def parseBioBlock(blockString: String): List[(Map[Int, Label], List[(String, Char)], ConstraintRange)] = {
   def parseBioBlock(
     blockString: String,
     dict: BioLabelDictionary,

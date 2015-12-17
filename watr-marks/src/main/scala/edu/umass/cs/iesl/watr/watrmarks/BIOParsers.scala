@@ -2,12 +2,13 @@ package edu.umass.cs.iesl.watr
 package watrmarks
 
 import java.io.StringReader
+import scala.reflect.ClassTag
 import scala.util.parsing.combinator._
 
 trait ParserCommon extends Parsers {
   def read(s: String) = new StringReader(s)
 
-  def toEither[L, R](pr: ParseResult[R]) =
+  def toEither[R](pr: ParseResult[R]): Either[String, R] =
     pr.map(Right(_)).getOrElse(Left(pr.toString))
 
 }
@@ -39,9 +40,43 @@ case class BioBlock(
 
 
 object bioParsers extends JavaTokenParsers with ParserCommon {
+  import scalaz.std.list._
+  import scalaz.std.either._
+  import scalaz.syntax.traverse._
+
+  // def takeSubseqOf[T: ClassTag, S <: T](ts: List[S]): List[S]  = ts
+  //   .dropWhile(!_.isInstanceOf[T])
+  //   .takeWhile(_.isInstanceOf[T])
+  //   .map(_.asInstanceOf[S])
 
   def parseBioBlock(str: String): Either[String, BioBlock] = {
-    toEither(parseAll(block, str))
+
+    val nonEmptyLines = str.split("\n")
+      .map(_.trim)
+      .dropWhile(_.length==0)
+      .takeWhile(_.length>0)
+      .toList
+
+    val parsed = nonEmptyLines
+      .map{ line => toEither(parseAll(row, line)) }
+      .toList.sequenceU
+      .left.map(err => sys.error(s"""error parsing bio block: ${err};\nblock was\n${nonEmptyLines.mkString("\n")}"""))
+      .right.map({ rows =>
+        val pins = rows.takeWhile(_.isInstanceOf[PinRow]).map(_.asInstanceOf[PinRow])
+        val rules = rows.dropWhile(_.isInstanceOf[PinRow]).takeWhile(_.isInstanceOf[PinRow])
+        val text:Option[TextRow] =
+          if(rows.last.isInstanceOf[TextRow]){
+            Some(rows.last.asInstanceOf[TextRow])
+          } else None
+
+        BioBlock(
+          pins,
+          Ruler(),//  rules,
+          text
+        )
+      })
+
+    parsed
   }
 
   override val whiteSpace = "".r
@@ -72,13 +107,11 @@ object bioParsers extends JavaTokenParsers with ParserCommon {
         TextRow(cleaned)
     }
 
-  def emptyRow: Parser[Unit] =
-    "^[\\s]*$".r ^^ (_ => (():Unit))
+  // def emptyRow: Parser[Unit] =
+  //   "^[\\s]*$".r ^^ (_ => (():Unit))
 
   def row: Parser[RowType] =
-    repsep(emptyRow, "\n") ~> (
       pinrow | rulerRow | textRow
-    ) <~ repsep(emptyRow, "\n")
 
 
   def block: Parser[BioBlock] =
@@ -139,35 +172,67 @@ object biomapParsers extends JavaTokenParsers with ParserCommon {
 sealed trait Transform
 
 case class Scale(
-  m: Array[Double]
-) extends Transform
+  m0: Double, m1: Double
+) extends Transform {
+  override def toString = s"""scale[$m0,$m1]"""
+}
 
 case class Matrix(
-  m: Array[Double]
-) extends Transform
+  m0: Double, m1: Double, m2: Double,
+  m3: Double, m4: Double, m5: Double
+) extends Transform {
+  override def toString = s"""mat[$m0,$m1,$m2,$m3,$m4,$m5]"""
+
+  // override def equals(other: Any): Boolean = {
+  //   other match {
+  //     case Matrix(arr) =>
+  //       println("???here "+arr.toSeq)
+  //       println("???here "+m.toSeq)
+  //       arr == m
+  //     case _ => false
+  //   }
+  // }
+
+}
 
 case class Translate(
-  m: Array[Double]
-) extends Transform
+  m0: Double, m1: Double
+) extends Transform {
+  override def toString = s"""tr[$m0,$m1]"""
+}
 
 object transformParser extends JavaTokenParsers with ParserCommon {
+
+  def exactlyNDoubles(n: Int, arr:Seq[String]): Seq[Double] =  {
+    val arrd = arr.map(_.toDouble)
+    if(arrd.length!=n)
+      sys.error(s"incorrect # of doubles found in ${arr}; wanted ${n}")
+    else { arrd }
+  }
 
   def scale: Parser[Scale] =
     "scale" ~> "(" ~> rep1sep(floatingPointNumber, ',') <~ ")" ^^ {
       case ns =>
-        Scale(ns.toArray.map(_.toDouble))
+        val arrn = exactlyNDoubles(2, ns)
+        Scale(arrn(0), arrn(1))
     }
 
   def translate: Parser[Translate] =
     "matrix" ~> "(" ~> repN(2, floatingPointNumber) <~ ")" ^^ {
       case ns =>
-        Translate(ns.toArray.map(_.toDouble))
+        val arrn = exactlyNDoubles(2, ns)
+        Translate(arrn(0), arrn(1))
     }
 
   def matrix: Parser[Matrix] =
     "matrix" ~> "(" ~> repN(6, floatingPointNumber) <~ ")" ^^ {
       case ns =>
-        Matrix(ns.toArray.map(_.toDouble))
+        val arrn = exactlyNDoubles(6, ns)
+        Matrix(
+          arrn(0), arrn(1),
+          arrn(2), arrn(3),
+          arrn(4), arrn(5)
+        )
     }
 
   def transform: Parser[List[Transform]] =

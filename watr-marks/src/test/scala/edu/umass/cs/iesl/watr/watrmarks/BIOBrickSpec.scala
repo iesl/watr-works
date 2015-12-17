@@ -4,40 +4,11 @@ import java.io.StringReader
 import org.scalatest._
 
 
-object standardLabels {
-  val word = BioLabel("tok", "word")
-  val punct = BioLabel("tok", "punct")
-
-  val verb = BioLabel("pos", "verb", 'v', word)
-  val noun = BioLabel("pos", "noun", 'n', word)
-
-  val firstName = BioLabel("nameparts", "first", 'f', word)
-  val lastName = BioLabel("nameparts", "last", 'l', word)
-
-  val person = BioLabel("ner", "person", 'p', noun)
-  val place = BioLabel("ner", "place", 'g', noun)
-
-  val dict = BioDictionary(
-    Map(
-      "word" -> word,
-      "verb" -> verb,
-      "noun" -> noun,
-      "punct" -> punct
-    ),
-    Map(
-      'w' -> word,
-      'v' -> verb,
-      'n' -> noun,
-      'p' -> punct
-    )
-  )
-
-}
 
 class BIOBrickSpec extends FlatSpec {
   // perhaps add namespace as a valid constraint?
 
-  import standardLabels._
+  import DefaultLabels._
 
   behavior of "labels"
 
@@ -89,7 +60,7 @@ class BIOBrickSpec extends FlatSpec {
     ))
 
 
-    val lspan = biolu.parseBioBlock(runLolaFull, dict, None)
+    val lspan = biolu.parseBioBlock(runLolaFull, bioDict, None)
 
     assert(lspan === expectedSpan)
 
@@ -104,12 +75,12 @@ class BIOBrickSpec extends FlatSpec {
   it should "accept bounds and info" in {
 
     val bounds = Some(List.fill(4)(TextBounds(1, 2, 3, 4)))
-    val fonts = Some(List.fill(4)(FontInfo("f1", "f2", 0.0)))
+    val fonts = Some(List.fill(4)(FontInfo("f1", "1px")))
 
     def b(i: Int) = Option(bounds.get.apply(i))
     def f(i: Int) = Option(fonts.get.apply(i))
 
-    val lspan = biolu.parseBioBlock(runBrick, dict, None, bounds, fonts)
+    val lspan = biolu.parseBioBlock(runBrick, bioDict, None, bounds, fonts)
     val expectedSpan = LabeledSpan(List(
       LabeledColumn(Set(word.B, verb.U ), 'R', f(0), b(0)),
       LabeledColumn(Set(word.I         ), 'u', f(0), b(0)),

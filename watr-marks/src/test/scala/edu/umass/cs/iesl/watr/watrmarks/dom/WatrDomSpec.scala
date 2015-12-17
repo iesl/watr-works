@@ -7,6 +7,9 @@ import org.scalatest._
 
 class WatrDomSpec extends FlatSpec {
 
+
+  import DefaultLabels._
+
   val svgStrNS = """|<?xml version="1.0"?>
                     |<svg:svg
                     | xmlns:svg="http://www.w3.org/2000/svg"
@@ -43,36 +46,99 @@ class WatrDomSpec extends FlatSpec {
 
   it should  "understand xml with and without namespace prefixes" in {
 
-    val doc = readWatrDom(
-      new StringReader(svgStrNS)
-    )
-    // val doc2 = watrdom.read(
-    //   new StringReader(svgStrNS.replaceAll("svg:", ""))
-    // )
-
-    println(doc.prettyPrint)
-
+    val doc = readWatrDom(new StringReader(svgStrNS), bioDict)
+    // val doc2 = watrdom.read(new StringReader(svgStrNS.replaceAll("svg:", "")))
     // assert(svg2Dom === doc)
     // assert(svg2Dom === doc2)
   }
 
-  behavior of "svg dom cursor"
+  import scalaz.Tree
 
-  it should "convert dom to/from cursor" in {
-    val doc = readWatrDom(
-      new StringReader(svgStrNS)
+  it should "parse an svg" in {
+    val examples = List(
+      ("""<svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168"> </svg>""",
+        Svg()
+      ),
+      ("""<g transform="matrix(0 0 0 0 0 0)" ></g>""",
+        Grp(List(Matrix(0, 0, 0, 0, 0, 0)))
+      )
     )
-    val cursor = doc.toCursor
 
-    // assert(cursor.current === svg2Dom)
+    examples foreach { case(instr, expected)  =>
+      val actual = readWatrDom(new StringReader(instr), bioDict)
+
+      val elem = actual.toCursor.firstChild.get.getLabel
+
+      assert(expected === elem)
+    }
 
   }
 
-  behavior of "watr dom tspan -> textspan translation"
 
-  it should "read any embedded annotations" in {}
+  it should "unserialize any embedded annotations" in {
+    val svgstr = """|<tspan
+                    |  x="0 8.0"
+                    |  endX="10.0"
+                    |  y="0"
+                    |  font-size="20px"
+                    |  font-family="Times"
+                    |  bio="
+                    |    | |w$| {type: {word: w}, unit: char}"
+                    |      >ab</tspan>
+                    |""".stripMargin
+    val doc = readWatrDom(new StringReader(svgstr), bioDict)
+    // println(doc.prettyPrint)
 
-  it should "produce annotations" in {}
+    val otspan = doc.toCursor.firstChild
+    assert(otspan.isDefined)
+
+    val bioBrick = otspan.get.getLabel.asInstanceOf[TSpan].bioBrick
+
+    assert(bioBrick.columns.length===2)
+
+    val ls = List(Set(word.B), Set(word.L))
+    bioBrick.columns.map(_.labels).zip(ls).foreach { case (l, lexpect) =>
+      assert(l === lexpect)
+    }
+
+  }
+  it should "create default annotations on tspans if none exist" in {
+    val svgstr = """|<tspan
+                    |  x="0 8.0"
+                    |  endX="10.0"
+                    |  y="0"
+                    |  font-size="20px"
+                    |  font-family="Times"
+                    |  >ab</tspan>
+                    |""".stripMargin
+    val doc = readWatrDom(new StringReader(svgstr), bioDict)
+
+    val otspan = doc.toCursor.firstChild
+    assert(otspan.isDefined)
+
+    val bioBrick = otspan.get.getLabel.asInstanceOf[TSpan].bioBrick
+
+    assert(bioBrick.columns.length===2)
+
+    val allLabels = bioBrick.columns.map(_.labels).reduce{_ ++ _}
+    assert(allLabels.isEmpty)
+
+  }
+
+
+  // behavior of "svg dom cursor"
+
+  // it should "convert dom to/from cursor" in {
+  //   val doc = readWatrDom(
+  //     new StringReader(svgStrNS), bioDict
+  //   )
+  //   val cursor = doc.toCursor
+
+  //   // assert(cursor.current === svg2Dom)
+
+  // }
+
+  // behavior of "watr dom tspan -> textspan translation"
 
 
 }

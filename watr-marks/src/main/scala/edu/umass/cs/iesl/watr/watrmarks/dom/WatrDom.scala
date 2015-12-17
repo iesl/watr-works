@@ -3,7 +3,6 @@ package watrmarks
 package dom
 
 
-
 import scalaz.{Show, TreeLoc, Tree}
 
 
@@ -11,6 +10,7 @@ case class WatrDomCursor(
   loc: TreeLoc[WatrElement]
 ) {
 
+  def getLabel: WatrElement                   = loc.getLabel
   def root: WatrDomCursor                     = WatrDomCursor(loc.root)
   def parent: Option[WatrDomCursor]           = loc.parent map {p => WatrDomCursor(p) }
   def left: Option[WatrDomCursor]             = loc.left map {p => WatrDomCursor(p) }
@@ -34,10 +34,7 @@ case class WatrDomCursor(
 }
 
 
-sealed trait WatrElement {
-  // def transforms: List[Transform]
-}
-
+sealed trait WatrElement
 
 case class WatrDom(
   tree: Tree[WatrElement]
@@ -50,7 +47,7 @@ case class WatrDom(
 }
 
 case class Document (
-  transforms: List[Transform] = List()
+  labelDictionary: BioLabelDictionary
 ) extends WatrElement  {
   override def toString = s"""<doc:>"""
 }
@@ -69,7 +66,7 @@ case class Desc (
 case class Grp (
   transforms: List[Transform] = List()
 ) extends WatrElement {
-  override def toString = s"""<g:${transforms}>"""
+  override def toString = s"""<g:${transforms.mkString("{", ", ", "}")}>"""
 }
 
 case class Defs (
@@ -89,12 +86,6 @@ case class Path (
   override def toString = s"""<path:>"""
 }
 
-// case class Chars(
-//   chs: String
-// ) extends WatrElement {
-//   override def toString = s"""<ch:${chs}>"""
-// }
-
 case class TSpan (
   text: String,
   transforms: List[Transform],
@@ -102,9 +93,31 @@ case class TSpan (
   endX: Double,
   y: Double,
   fontSize: String,
-  fontFamily: String
+  fontFamily: String,
+  bioBlockStr: Option[String],
+  document: Document
 ) extends WatrElement  {
   override def toString = s"""<tspan:${text}>"""
-} 
 
+  def bounds: List[TextBounds] = xs.map{x =>
+    TextBounds(
+      left   = x ,
+      bottom = y,
+      width  = 1,
+      height = 1
+    )
+  }
+  lazy val fontInfo =  FontInfo(fontFamily, fontSize)
 
+  def fonts: List[FontInfo] = List.fill(text.length)(fontInfo)
+
+  def emptyBioBlock: LabeledSpan = LabeledSpan((text zip bounds).toList.map{ case (char, bnd) =>
+    LabeledColumn(Set(), char, Some(fontInfo), Some(bnd))
+  })
+
+  lazy val bioBrick: LabeledSpan = {
+    bioBlockStr.map{str =>
+      biolu.parseBioBlock(str, document.labelDictionary, Some(text), Some(bounds), Some(fonts))
+    } getOrElse emptyBioBlock
+  }
+}
