@@ -67,7 +67,7 @@ class WatrDomSpec extends FlatSpec {
     examples foreach { case(instr, expected)  =>
       val actual = readWatrDom(new StringReader(instr), bioDict)
 
-      val elem = actual.toCursor.firstChild.get.getLabel
+      val elem = actual.toDomCursor.firstChild.get.getLabel
 
       assert(expected === elem)
     }
@@ -89,7 +89,7 @@ class WatrDomSpec extends FlatSpec {
     val doc = readWatrDom(new StringReader(svgstr), bioDict)
     // println(doc.prettyPrint)
 
-    val otspan = doc.toCursor.firstChild
+    val otspan = doc.toDomCursor.firstChild
     assert(otspan.isDefined)
 
     val bioBrick = otspan.get.getLabel.asInstanceOf[TSpan].bioBrick
@@ -97,7 +97,7 @@ class WatrDomSpec extends FlatSpec {
     assert(bioBrick.columns.length===2)
 
     val ls = List(Set(word.B), Set(word.L))
-    bioBrick.columns.map(_.labels).zip(ls).foreach { case (l, lexpect) =>
+    bioBrick.columns.map(_.pins).zip(ls).foreach { case (l, lexpect) =>
       assert(l === lexpect)
     }
 
@@ -113,32 +113,28 @@ class WatrDomSpec extends FlatSpec {
                     |""".stripMargin
     val doc = readWatrDom(new StringReader(svgstr), bioDict)
 
-    val otspan = doc.toCursor.firstChild
+    val otspan = doc.toDomCursor.firstChild
     assert(otspan.isDefined)
 
     val bioBrick = otspan.get.getLabel.asInstanceOf[TSpan].bioBrick
 
     assert(bioBrick.columns.length===2)
 
-    val allLabels = bioBrick.columns.map(_.labels).reduce{_ ++ _}
+    val allLabels = bioBrick.columns.map(_.pins).reduce{_ ++ _}
     assert(allLabels.isEmpty)
 
   }
 
 
   // behavior of "svg dom cursor"
-
   // it should "convert dom to/from cursor" in {
   //   val doc = readWatrDom(
   //     new StringReader(svgStrNS), bioDict
   //   )
   //   val cursor = doc.toCursor
-
   //   // assert(cursor.current === svg2Dom)
-
   // }
 
-  // behavior of "watr dom tspan -> textspan translation"
 
 
 }

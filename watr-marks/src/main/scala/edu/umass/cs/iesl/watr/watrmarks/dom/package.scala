@@ -44,7 +44,7 @@ package object dom {
   def getEndX(e: StartElement): Double             = { attrValue(e, "endX").toDouble }
   def getFontSize(e: StartElement): String         = { attrValue(e, "font-size") }
   def getFontFamily(e: StartElement): String       = { attrValue(e, "font-family") }
-  def getBioBlock(e: StartElement): Option[String] = { maybeAttrValue(e, "bio") }
+  def getBioBrick(e: StartElement): Option[String] = { maybeAttrValue(e, "bio") }
 
   def readWatrDom(ins: Reader, bioDict: BioLabelDictionary): WatrDom = {
     val factory = XMLInputFactory.newInstance();
@@ -107,7 +107,7 @@ package object dom {
                 getY(elem),
                 getFontSize(elem),
                 getFontFamily(elem),
-                getBioBlock(elem),
+                getBioBrick(elem),
                 accum.root.getLabel.asInstanceOf[Document]
               )
               accum = accum.insertDownLast(Tree.Leaf(n))

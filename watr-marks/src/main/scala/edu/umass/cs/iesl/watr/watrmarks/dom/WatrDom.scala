@@ -5,8 +5,8 @@ package dom
 
 import scalaz.{Show, TreeLoc, Tree}
 
-case class Focus(
-  focii: Seq[(TreeLoc[TSpan], BrickCursor)]
+case class Cursor(
+  focii: Seq[(WatrDomCursor, BrickCursor)]
 ) {
 
 }
@@ -23,6 +23,7 @@ case class WatrDomCursor(
   def firstChild: Option[WatrDomCursor]       = loc.firstChild map {p => WatrDomCursor(p) }
   def lastChild: Option[WatrDomCursor]        = loc.lastChild map {p => WatrDomCursor(p) }
   def getChild(n: Int): Option[WatrDomCursor] = loc.getChild(n) map {p => WatrDomCursor(p) }
+
 
   // def map[V](f: WatrElement => V): TreeLoc[B] = WatrDomCursor(loc.map(f))
 
@@ -49,7 +50,37 @@ case class WatrDom(
 
   def prettyPrint: String = tree.drawTree
 
-  def toCursor = WatrDomCursor(tree.loc)
+  def toDomCursor = WatrDomCursor(tree.loc)
+
+  def toCursor(l: BioLabel) = {
+    val (nodesBeforeLabel, nodesStartingWithLabel) = tree.loc
+      .cojoin
+      .toTree.flatten
+      .filter(_.getLabel.isInstanceOf[TSpan])
+      .span({ domloc =>
+        val tspan = domloc.getLabel.asInstanceOf[TSpan]
+        tspan.bioBrick.toBrickCursor(l).isEmpty
+      })
+
+
+    val (nodesWithLabelMinusOne, nodesAfterLabelPlusOne) =
+      nodesStartingWithLabel
+        .span( { domloc =>
+          val tspan = domloc.getLabel.asInstanceOf[TSpan]
+          !tspan.bioBrick.toBrickCursor(l).get.coversEndOfLabel
+        })
+
+    val nodesWithLabel =  nodesWithLabelMinusOne ++ nodesAfterLabelPlusOne.take(1)
+    // val nodesAfterLabel = nodesAfterLabelPlusOne.drop(1)
+
+    val nodeBrickCursorPairs =
+      nodesWithLabel.map({nloc => (
+        WatrDomCursor(nloc),
+        nloc.getLabel.asInstanceOf[TSpan].bioBrick.toBrickCursor(l).get
+      )})
+
+    Cursor(nodeBrickCursorPairs)
+  }
 
 }
 
@@ -118,13 +149,13 @@ case class TSpan (
 
   def fonts: List[FontInfo] = List.fill(text.length)(fontInfo)
 
-  def emptyBioBlock: LabeledSpan = LabeledSpan((text zip bounds).toList.map{ case (char, bnd) =>
+  def emptyBioBrick: LabeledSpan = LabeledSpan((text zip bounds).toList.map{ case (char, bnd) =>
     LabeledColumn(Set(), char, Some(fontInfo), Some(bnd))
   })
 
   lazy val bioBrick: LabeledSpan = {
     bioBlockStr.map{str =>
-      biolu.parseBioBlock(str, document.labelDictionary, Some(text), Some(bounds), Some(fonts))
-    } getOrElse emptyBioBlock
+      biolu.parseBioBrick(str, document.labelDictionary, Some(text), Some(bounds), Some(fonts))
+    } getOrElse emptyBioBrick
   }
 }

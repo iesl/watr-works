@@ -224,14 +224,14 @@ object Annotator {
     }
   }
 
-  def parseBioBlock(blockString: String): List[(Map[Int, Label], List[(String, Char)], ConstraintRange)] = {
+  def parseBioBrick(brickString: String): List[(Map[Int, Label], List[(String, Char)], ConstraintRange)] = {
     val labelPattern = """\| \|([a-zA-Z~ \$]+)\| """
     val typePattern = """[a-z\-]+: [a-z]"""
     val constraintPattern = """[a-z\-]+"""
     val fullPattern = labelPattern + """\{type: \{(""" + typePattern + "(, " + typePattern + ")*" +
                       """)\}, unit: (""" + constraintPattern + """(\.""" + constraintPattern + ")*" +""")\}"""
 
-    fullPattern.r.findAllIn(blockString).toList.reverse.map(spanString => {
+    fullPattern.r.findAllIn(brickString).toList.reverse.map(spanString => {
       spanString match {
         case fullPattern.r(labelString, typeString, _, constraintString, _) =>
 
@@ -250,7 +250,7 @@ object Annotator {
         case null => List()
         case attr =>
           val bioString = attr.getValue()
-          parseBioBlock(bioString)
+          parseBioBrick(bioString)
       }
     })
   }

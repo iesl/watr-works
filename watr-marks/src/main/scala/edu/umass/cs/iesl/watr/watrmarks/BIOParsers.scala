@@ -32,7 +32,7 @@ case class TextRow(
   text: String
 ) extends RowType
 
-case class BioBlock(
+case class BioBrick(
   pinRows: List[PinRow],
   ruler: Ruler,
   text: Option[TextRow]
@@ -49,7 +49,7 @@ object bioParsers extends JavaTokenParsers with ParserCommon {
   //   .takeWhile(_.isInstanceOf[T])
   //   .map(_.asInstanceOf[S])
 
-  def parseBioBlock(str: String): Either[String, BioBlock] = {
+  def parseBioBrick(str: String): Either[String, BioBrick] = {
 
     val nonEmptyLines = str.split("\n")
       .map(_.trim)
@@ -60,7 +60,7 @@ object bioParsers extends JavaTokenParsers with ParserCommon {
     val parsed = nonEmptyLines
       .map{ line => toEither(parseAll(row, line)) }
       .toList.sequenceU
-      .left.map(err => sys.error(s"""error parsing bio block: ${err};\nblock was\n${nonEmptyLines.mkString("\n")}"""))
+      .left.map(err => sys.error(s"""error parsing bio brick: ${err};\nbrick was\n${nonEmptyLines.mkString("\n")}"""))
       .right.map({ rows =>
         val pins = rows.takeWhile(_.isInstanceOf[PinRow]).map(_.asInstanceOf[PinRow])
         val rules = rows.dropWhile(_.isInstanceOf[PinRow]).takeWhile(_.isInstanceOf[PinRow])
@@ -69,7 +69,7 @@ object bioParsers extends JavaTokenParsers with ParserCommon {
             Some(rows.last.asInstanceOf[TextRow])
           } else None
 
-        BioBlock(
+        BioBrick(
           pins,
           Ruler(),//  rules,
           text
@@ -114,7 +114,7 @@ object bioParsers extends JavaTokenParsers with ParserCommon {
       pinrow | rulerRow | textRow
 
 
-  def block: Parser[BioBlock] =
+  def brick: Parser[BioBrick] =
     rep1sep(row, "\n") ^^ {
       case rows =>
         val pins = rows.takeWhile(_.isInstanceOf[PinRow]).map(_.asInstanceOf[PinRow])
@@ -123,7 +123,7 @@ object bioParsers extends JavaTokenParsers with ParserCommon {
           Some(rows.last.asInstanceOf[TextRow])
         } else None
 
-        BioBlock(
+        BioBrick(
           pins,
           Ruler(),//  rules,
           text

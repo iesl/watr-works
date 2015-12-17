@@ -19,7 +19,7 @@ case class TextBounds(
 )
 
 case class LabeledColumn(
-  labels: Set[BioPin] = Set(),
+  pins: Set[BioPin] = Set(),
   char: Char,
   font: Option[FontInfo],
   bounds: Option[TextBounds]
@@ -27,7 +27,48 @@ case class LabeledColumn(
 
 case class LabeledSpan(
   columns: List[LabeledColumn] = List()
-)
+) {
+
+  def toBrickCursor(l: BioLabel): Option[BrickCursor] = {
+    l match {
+      case DefaultLabels.Character =>
+        if(columns.length>0) {
+          Some(BrickCursor(l,
+            columns.take(1),
+            List(),
+            columns.drop(1)
+          ))
+        } else
+          None
+      case _ =>
+        // this needs to check if each pin is part a label span
+
+        val (colsBeforeLabel, colsStartingWithLabel) =
+          columns.span({lcol =>
+            lcol.pins.exists{_.label != l}
+          })
+
+        val (colsWithLabelMinusOne, colsAfterLabelPlusOne) =
+          colsStartingWithLabel.span({lcol =>
+            lcol.pins.exists{ pin =>
+              pin != l.U && pin != l.L
+            }
+          })
+        val colsWithLabel =  colsWithLabelMinusOne ++ colsAfterLabelPlusOne.take(1)
+        val colsAfterLabel = colsAfterLabelPlusOne.drop(1)
+
+
+        if (colsWithLabel.length>0) {
+          Some(BrickCursor(l,
+            colsWithLabel,
+            colsBeforeLabel.reverse,
+            colsAfterLabel
+          ))
+        } else
+          None
+    }
+  }
+}
 
 
 case class BrickCursor(
@@ -47,6 +88,18 @@ case class BrickCursor(
   def toLabeledSpan = LabeledSpan(
     prevs.reverse ++ current ++ nexts
   )
+
+  lazy val hpins = current.head.pins
+  lazy val lpins = current.last.pins
+
+  def coversCompleteLabel: Boolean =
+    coversStartOfLabel && coversEndOfLabel
+
+  def coversStartOfLabel: Boolean =
+    hpins.contains(label.U) || hpins.contains(label.B)
+
+  def coversEndOfLabel: Boolean =
+    lpins.contains(label.U) || lpins.contains(label.L)
 
 }
 
@@ -98,19 +151,19 @@ object biolu {
   }
 
 
-  def parseBioBlock(
-    blockString: String,
+  def parseBioBrick(
+    brickString: String,
     dict: BioLabelDictionary,
     maybeText: Option[String],
     maybeBounds: Option[List[TextBounds]] = None,
     maybeFontInfo: Option[List[FontInfo]] = None
   ): LabeledSpan = {
 
-    val bioBlock = bioParsers.parseBioBlock(blockString)
-      .left.map(err => sys.error(s"error parsing ${blockString}: $err"))
+    val bioBrick = bioParsers.parseBioBrick(brickString)
+      .left.map(err => sys.error(s"error parsing ${brickString}: $err"))
       .right.get
 
-    val p = bioBlock.pinRows
+    val p = bioBrick.pinRows
       .map{ pinrow => parseBioLine(pinrow.biostr, None, dict) }
 
     val allpins = p.toList
@@ -119,8 +172,8 @@ object biolu {
       .map{ case (k, v) => k -> v.map(_._2).toSet }
       .toMap
 
-    val text = (bioBlock.text.map(_.text) orElse maybeText)
-      .getOrElse(sys.error("no text provided or found in bio block"))
+    val text = (bioBrick.text.map(_.text) orElse maybeText)
+      .getOrElse(sys.error("no text provided or found in bio brick"))
       .toCharArray
 
     val bounds  = maybeBounds
@@ -142,29 +195,7 @@ object biolu {
         )
     }
 
-
     LabeledSpan(cols.toList)
-
-    //   val labelMap = parseBioBricks(labelStr)
-    //   val typePairList = parseBioTypes(defDict)
-
-
-    // fullPattern.r.findAllIn(blockString).toList.reverse.map(spanString => {
-    //   println("here!")
-    //   spanString match {
-    //     case fullPattern.r(labelString, typeString, _, constraintString, _) =>
-    //       println("here(full)!")
-
-    //       val labelMap = parseBioBricks(labelString)
-    //       val typePairList = parseBioTypes(typeString)
-    //       val constraintRange = parseBioConstraints(constraintString)
-    //       (labelMap, typePairList, constraintRange)
-    //     case _ =>
-    //       println("here _!")
-    //       sys.error("")
-    //   }
-
-    // })
 
   }
 

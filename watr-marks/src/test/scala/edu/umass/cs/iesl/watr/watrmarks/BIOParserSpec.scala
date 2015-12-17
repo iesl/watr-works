@@ -57,7 +57,7 @@ class BIOParserSpec extends FlatSpec {
        `| |0123456789012|
        `""".stripMargin('`')
 
-  it should "parse bio-block syntax" in {
+  it should "parse bio-brick syntax" in {
     val examples = List(
       ("""|| |V   N    V   | {ns:pos, type: {verb: v, noun: n}, unit: word}
           || |w~$ w~~$ w~$P| {ns:tok, type: {word: w, punct: p}, unit: char}
@@ -69,7 +69,7 @@ class BIOParserSpec extends FlatSpec {
     )
 
     examples foreach { case(instr, expected)  =>
-      val actual = bioParsers.toEither(bioParsers.parse(bioParsers.block, instr))
+      val actual = bioParsers.toEither(bioParsers.parse(bioParsers.brick, instr))
 
       actual.right.foreach { bioline =>
         // println(bioline.pinRows.mkString("\n"))
@@ -96,7 +96,7 @@ class BIOParserSpec extends FlatSpec {
 
   it should "serialize" in {
     // println(s"parsing $bioLabels")
-    // val parsed = biolu.parseBioBlock(bioLabels)
+    // val parsed = biolu.parseBioBrick(bioLabels)
     // parsed.foreach { case (m, l, c) =>
     //   println(s"""m: ${m}, l: $l, c: $c""")
     // }

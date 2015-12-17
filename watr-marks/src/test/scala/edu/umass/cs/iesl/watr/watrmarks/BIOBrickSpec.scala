@@ -1,4 +1,5 @@
-package edu.umass.cs.iesl.watr.watrmarks
+package edu.umass.cs.iesl.watr
+package watrmarks
 
 import java.io.StringReader
 import org.scalatest._
@@ -60,7 +61,7 @@ class BIOBrickSpec extends FlatSpec {
     ))
 
 
-    val lspan = biolu.parseBioBlock(runLolaFull, bioDict, None)
+    val lspan = biolu.parseBioBrick(runLolaFull, bioDict, None)
 
     assert(lspan === expectedSpan)
 
@@ -80,7 +81,7 @@ class BIOBrickSpec extends FlatSpec {
     def b(i: Int) = Option(bounds.get.apply(i))
     def f(i: Int) = Option(fonts.get.apply(i))
 
-    val lspan = biolu.parseBioBlock(runBrick, bioDict, None, bounds, fonts)
+    val lspan = biolu.parseBioBrick(runBrick, bioDict, None, bounds, fonts)
     val expectedSpan = LabeledSpan(List(
       LabeledColumn(Set(word.B, verb.U ), 'R', f(0), b(0)),
       LabeledColumn(Set(word.I         ), 'u', f(0), b(0)),
@@ -90,22 +91,41 @@ class BIOBrickSpec extends FlatSpec {
 
   }
 
-  it should "allow labeled locations, applying labels" in {
-  }
+  it should "allow labeled locations, applying labels" in {}
 
   behavior of "bio brick cursors"
+  val svgBrick1 =
+    """| <svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168">
+       |   <g transform="matrix(1 0 0 -1 0 792)">
+       |     <text transform="translate(136.8 669.12) scale(1, -1)">
+       |       <tspan
+       |         x="0 11.51 20.15 25.91 33.59 43.19"
+       |         endX="112.43"
+       |         y="0"
+       |         font-size="17.2154px"
+       |         font-family="Times"
+       |         bio=""
+       || |V   | {ns:pos, type: {verb: v}, unit: word}
+       || |w~$P| {ns:tok, type: {word: w, punct: p}, unit: char}
+       |" >Run.</tspan>
+       |     </text>
+       |   </g>
+       | </svg>
+       |""".stripMargin
 
   // TextSpan functionality includes
   //  - chars (the actual text)
   //  - x,y position for each
   //  - font info: name/type/weight/height/etc
   //  - labels
-  //    - serialize to/from block format
+  //    - serialize to/from brick format
 
 
 
 
   it should "navigate chars" in {
+    val doc = dom.readWatrDom(new StringReader(svgBrick1), bioDict)
+    val charCursor = doc.toCursor(Character)
     // val tcursor = textSpan.cursor
     // tcursor.current.char === 'x'
     // tcursor.current.x === 30.33
