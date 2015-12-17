@@ -4,6 +4,8 @@ package watrmarks
 
 
 trait DefaultLabels {
+  // This label is handled specially, as characters are not explicitly labeled
+  val char = BioLabel("", "char")
 
   val word = BioLabel("tok", "word")
   val punct = BioLabel("tok", "punct")

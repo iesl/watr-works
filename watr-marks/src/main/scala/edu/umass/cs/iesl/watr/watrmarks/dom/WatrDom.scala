@@ -5,6 +5,11 @@ package dom
 
 import scalaz.{Show, TreeLoc, Tree}
 
+case class Focus(
+  focii: Seq[(TreeLoc[TSpan], BrickCursor)]
+) {
+
+}
 
 case class WatrDomCursor(
   loc: TreeLoc[WatrElement]
@@ -18,6 +23,8 @@ case class WatrDomCursor(
   def firstChild: Option[WatrDomCursor]       = loc.firstChild map {p => WatrDomCursor(p) }
   def lastChild: Option[WatrDomCursor]        = loc.lastChild map {p => WatrDomCursor(p) }
   def getChild(n: Int): Option[WatrDomCursor] = loc.getChild(n) map {p => WatrDomCursor(p) }
+
+  // def map[V](f: WatrElement => V): TreeLoc[B] = WatrDomCursor(loc.map(f))
 
   // def findChild(p: Tree[A] =
   // def split(acc: TreeForest[A], xs: TreeForest[A]): Option[(TreeForest[A], Tree[A], TreeForest[A])] =

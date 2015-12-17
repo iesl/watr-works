@@ -67,7 +67,6 @@ class BIOParserSpec extends FlatSpec {
         ()
       )
     )
-      // || |0123456789012|
 
     examples foreach { case(instr, expected)  =>
       val actual = bioParsers.toEither(bioParsers.parse(bioParsers.block, instr))
