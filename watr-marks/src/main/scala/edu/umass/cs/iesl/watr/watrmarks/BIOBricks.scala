@@ -3,13 +3,15 @@ package edu.umass.cs.iesl.watr.watrmarks
 
 sealed trait BioPin {
   def label: BioLabel
+  def pinChar: Char
+  override def toString = s"<${pinChar}::${label.namespace}/${label.name}>"
 }
 
-case class BPin(label: BioLabel) extends BioPin
-case class IPin(label: BioLabel) extends BioPin
-case class OPin(label: BioLabel) extends BioPin
-case class LPin(label: BioLabel) extends BioPin
-case class UPin(label: BioLabel) extends BioPin
+case class BPin(label: BioLabel, override val pinChar:Char='B') extends BioPin
+case class IPin(label: BioLabel, override val pinChar:Char='I') extends BioPin
+case class OPin(label: BioLabel, override val pinChar:Char='O') extends BioPin
+case class LPin(label: BioLabel, override val pinChar:Char='L') extends BioPin
+case class UPin(label: BioLabel, override val pinChar:Char='U') extends BioPin
 
 class BioLabel(val namespace: String, val name: String, val c: Char, val constraint: Constraint) {
   lazy val B = BPin(this)
@@ -22,7 +24,22 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
 
 trait BioLabelDictionary {
   def apply(c: Char): BioLabel
+  def get(s: Char): Option[BioLabel]
+
   def apply(s: String): BioLabel
+  def get(s: String): Option[BioLabel]
+}
+
+case class BioDictionary(
+  byName: Map[String, BioLabel],
+  byChar: Map[Char, BioLabel]
+) extends BioLabelDictionary {
+
+  def apply(s: String) = byName(s)
+  def get(s: String): Option[BioLabel] = byName.get(s)
+
+  def apply(s: Char) = byChar(s)
+  def get(s: Char): Option[BioLabel] = byChar.get(s)
 }
 
 
@@ -39,8 +56,28 @@ object BioLabel {
 
 }
 
+case class FontDictionary(
+  dict: Map[String, FontInfo] = Map()
+)
+
+case class FontInfo(
+  fontName: String,
+  fontFamily: String,
+  fontSize: Double
+)
+
+case class TextBounds(
+  left: Double,
+  bottom: Double,
+  width: Double,
+  height: Double
+)
+
 case class LabeledColumn(
-  labels: Set[BioPin] = Set()
+  labels: Set[BioPin] = Set(),
+  char: Char,
+  font: Option[FontInfo],
+  bounds: Option[TextBounds]
 )
 
 case class LabeledSpan(
@@ -70,33 +107,22 @@ case class LabeledLocation(
 
 object biolu {
 
-  def parseBioLine(bioLine: String, ochar: Option[Char], dict: BioLabelDictionary): Map[Int, BioPin] = {
-    var currChar = ochar.getOrElse(' ')
+  def parseBioLine(bioLine: String, continueChar: Option[Char], dict: BioLabelDictionary): Map[Int, BioPin] = {
+    var currChar = continueChar.getOrElse(' ')
+    def currLabel = dict(currChar.toLower)
 
     (bioLine
       .toIndexedSeq.zipWithIndex
       .filter(p => p._1 != ' ').map {
       case (c, i) =>
         i -> (c match {
-          case '-' => dict(currChar).O
-          case '~' => dict(currChar).I
-          case '$' => dict(currChar).L
-          case t if t.isLower => dict(currChar).B
-          case t if t.isUpper => dict(currChar).U
-        })
-    }).toMap
-  }
-  def parseBioBricks(labelString: String): Map[Int, Label] = {
-    (labelString
-      .toIndexedSeq.zipWithIndex
-      .filter(p => p._1 != ' ').map {
-      case (c, i) =>
-        i -> (c match {
-          case '-' => O
-          case '~' => I
-          case '$' => L
-          case t if t.isLower => B(t)
-          case t if t.isUpper => U(t.toLower)
+          case '-' => currLabel.O
+          case '~' => currLabel.I
+          case '$' => currLabel.L
+          case t if t.isLower => currChar = t; currLabel.B
+          case t if t.isUpper => currChar = t; currLabel.U
+          case x  => sys.error(s"no mapping for char '${x}'")
+
         })
     }).toMap
   }
@@ -128,16 +154,52 @@ object biolu {
 
 
   // def parseBioBlock(blockString: String): List[(Map[Int, Label], List[(String, Char)], ConstraintRange)] = {
-  def parseBioBlock(blockString: String): Unit = {
+  def parseBioBlock(
+    blockString: String,
+    dict: BioLabelDictionary,
+    maybeText: Option[String],
+    maybeBounds: Option[List[TextBounds]] = None,
+    maybeFontInfo: Option[List[FontInfo]] = None
+  ): LabeledSpan = {
 
-    val parsed = bioParsers.parseBioBlock(blockString)
+    val bioBlock = bioParsers.parseBioBlock(blockString)
       .left.map(err => sys.error(s"error parsing ${blockString}: $err"))
       .right.get
 
-    parsed.map{ case (c, biostr, bioObj) =>
-      val bioline = parseBioBricks(biostr)
+    val p = bioBlock.pinRows
+      .map{ pinrow => parseBioLine(pinrow.biostr, None, dict) }
 
+    val allpins = p.toList
+      .flatten
+      .groupBy(_._1)
+      .map{ case (k, v) => k -> v.map(_._2).toSet }
+      .toMap
+
+    val text = (bioBlock.text.map(_.text) orElse maybeText)
+      .getOrElse(sys.error("no text provided or found in bio block"))
+      .toCharArray
+
+    val bounds  = maybeBounds
+      .map(_.map(Some(_)))
+      .getOrElse { List.fill(text.length)(None:Option[TextBounds]) }
+
+    val fontInfos  = maybeFontInfo
+      .map(_.map(Some(_)))
+      .getOrElse { List.fill(text.length)(None:Option[FontInfo]) }
+
+    val cols = text
+      .zip(bounds)
+      .zip(fontInfos)
+      .zipWithIndex
+      .map{ case(((c, bound), fontInfo), i) =>
+        LabeledColumn(
+          allpins.getOrElse(i, Set()),
+          c, fontInfo, bound
+        )
     }
+
+
+    LabeledSpan(cols.toList)
 
     //   val labelMap = parseBioBricks(labelStr)
     //   val typePairList = parseBioTypes(defDict)
@@ -163,15 +225,6 @@ object biolu {
   }
 
 }
-
-
-
-
-
-
-
-
-
 
 
 

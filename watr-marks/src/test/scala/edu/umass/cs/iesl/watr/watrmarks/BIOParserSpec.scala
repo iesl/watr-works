@@ -44,7 +44,7 @@ class BIOParserSpec extends FlatSpec {
       )
     )
     examples foreach { case(instr, expected)  =>
-      val actual = bioParsers.toEither(bioParsers.parse(bioParsers.row, instr))
+      val actual = bioParsers.toEither(bioParsers.parse(bioParsers.pinrow, instr))
       assert(Right(expected) === actual)
     }
   }
@@ -72,9 +72,9 @@ class BIOParserSpec extends FlatSpec {
     examples foreach { case(instr, expected)  =>
       val actual = bioParsers.toEither(bioParsers.parse(bioParsers.block, instr))
 
-      // actual.right.foreach { bioline =>
-      //   println(bioline.mkString("\n"))
-      // }
+      actual.right.foreach { bioline =>
+        println(bioline.pinRows.mkString("\n"))
+      }
 
       assert(actual.isRight)
     }

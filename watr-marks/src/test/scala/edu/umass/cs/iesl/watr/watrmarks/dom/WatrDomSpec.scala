@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
+package dom
 
 import java.io.StringReader
 import org.scalatest._
@@ -42,7 +43,7 @@ class WatrDomSpec extends FlatSpec {
 
   it should  "understand xml with and without namespace prefixes" in {
 
-    val doc = watrdom.read(
+    val doc = readWatrDom(
       new StringReader(svgStrNS)
     )
     // val doc2 = watrdom.read(
@@ -58,7 +59,7 @@ class WatrDomSpec extends FlatSpec {
   behavior of "svg dom cursor"
 
   it should "convert dom to/from cursor" in {
-    val doc = watrdom.read(
+    val doc = readWatrDom(
       new StringReader(svgStrNS)
     )
     val cursor = doc.toCursor
@@ -69,10 +70,9 @@ class WatrDomSpec extends FlatSpec {
 
   behavior of "watr dom tspan -> textspan translation"
 
-  it should "unserialize" in {
+  it should "read any embedded annotations" in {}
 
-
-  }
+  it should "produce annotations" in {}
 
 
 }

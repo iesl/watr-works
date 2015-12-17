@@ -1,0 +1,149 @@
+package edu.umass.cs.iesl.watr
+package watrmarks
+
+import java.io.Reader
+import javax.xml.stream.XMLInputFactory
+import javax.xml.stream.events._;
+// import scala.collection.JavaConversions._
+
+package object dom {
+
+  import javax.xml.namespace.QName
+  import scalaz.{Show, TreeLoc, Tree}
+
+  implicit val showElementTree = Show.shows[WatrElement](_.toString())
+
+  def document(): WatrElement = new Document()
+  def svg(): WatrElement      = new Svg()
+  def desc(): WatrElement     = new Desc()
+  def grp(): WatrElement      = new Grp()
+  def defs(): WatrElement     = new Defs()
+  def text(): WatrElement     = new Text()
+  def path(): WatrElement     = new Path()
+  // def tspan(): WatrElement    = new TSpan()
+  // def chars(cs: String): WatrElement    = new Chars(cs)
+
+  def readWatrDom(ins: Reader): WatrDom = {
+    val factory = XMLInputFactory.newInstance();
+    val reader = factory.createXMLEventReader(ins);
+
+    var accum: TreeLoc[WatrElement] = null
+
+    while (reader.hasNext()) {
+      val event = reader.nextEvent();
+
+      event match {
+        case elem: Namespace =>
+          // println(s"Namespace: ${elem}")
+        case attribute: Attribute =>
+          println(s"Attribute: ${attribute}")
+          val name = attribute.getName();
+          val value = attribute.getValue();
+          // println("Attribute name/value: " + name + "/" + value);
+        case elem: StartDocument =>
+          accum = Tree.Leaf(document()).loc
+          println(s"StartDocument: ${elem}")
+
+        case elem: EndDocument =>
+          // println(s"EndDocument: ${elem}")
+
+        case elem: StartElement =>
+          // println(s"StartElement: ${elem}")
+          // println(s"Start Element: ${elem.getName}, prefix: ${elem.getName().getPrefix()}, local: ${elem.getName().getLocalPart()}")
+
+          elem.getName.getLocalPart match {
+            case "svg"   =>
+              val n = Svg(getTransforms(elem))
+
+              accum = accum.insertDownLast(Tree.Leaf(n))
+
+            case "g"     =>
+              val n = Grp(getTransforms(elem))
+              accum = accum.insertDownLast(Tree.Leaf(n))
+
+            case "defs"  =>
+              val n = defs()
+              accum = accum.insertDownLast(Tree.Leaf(n))
+
+            case "text"  =>
+              val n =  Text(getTransforms(elem))
+              accum = accum.insertDownLast(Tree.Leaf(n))
+
+            case "path"  =>
+              val n =  Path(getTransforms(elem))
+              accum = accum.insertDownLast(Tree.Leaf(n))
+
+            case "tspan" =>
+              val n = TSpan(
+                "",
+                getTransforms(elem),
+                getXs(elem),
+                getEndX(elem),
+                getY(elem),
+                getFontSize(elem),
+                getFontFamily(elem)
+              )
+              accum = accum.insertDownLast(Tree.Leaf(n))
+
+          }
+
+          def maybeAttrValue(e: StartElement, s:String): Option[String] = {
+            // println(s"maybe attrValue: $e: $s")
+            val maybeAttr = e.getAttributeByName(QName.valueOf(s))
+            if (maybeAttr!=null) Some(maybeAttr.getValue())
+            else None
+          }
+
+          def attrValue(e: StartElement, s:String): String = {
+            // println(s"attrValue: $e: $s")
+            e.getAttributeByName(QName.valueOf(s)).getValue()
+          }
+
+          def getTransforms(e: StartElement): List[Transform] = {
+            transformParser.parse(maybeAttrValue(e, "transform").getOrElse(""))
+              .left.map(err => sys.error(s"parsing transform='${attrValue(e, "transform")}': ${err}"))
+              .right.get
+          }
+
+          def getXs(e: StartElement): List[Double] = {
+            attrValue(e, "x").split(" ").map(_.toDouble).toList
+          }
+
+          def getY(e: StartElement): Double = {
+            attrValue(e, "y").toDouble
+          }
+          def getEndX(e: StartElement): Double = {
+            attrValue(e, "endX").toDouble
+          }
+          def getFontSize(e: StartElement): String = {
+            attrValue(e, "font-size")
+          }
+          def getFontFamily(e: StartElement): String = {
+            attrValue(e, "font-family")
+          }
+
+        case elem: EndElement =>
+          // println(s"EndElement: ${elem}")
+          accum = accum.parent.get
+        case elem: EntityReference =>
+        // println(s"EntityReference: ${elem}")
+        case elem: Characters =>
+          // println(s"Characters: '${elem.getData().trim()}'")
+
+          accum.getLabel match {
+            case t: TSpan =>
+              accum = accum.modifyLabel { _ =>
+                t.copy(text = elem.getData())
+              }
+            case _ =>
+              // sys.error(s"xml text found outside of tspan element: '${elem.getData()}'")
+          }
+      }
+
+      // println(s"""accu: ${if(accum!=null) accum.getLabel else "<null>"} """)
+    }
+
+    WatrDom(accum.toTree)
+  }
+
+}

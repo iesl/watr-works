@@ -5,10 +5,12 @@ import org.scalatest._
 import scala.collection.immutable.IntMap
 import scala.collection.immutable.ListMap
 
-import org.jdom2.filter.ElementFilter
-import org.jdom2.Element
-import org.jdom2.Document
-import org.jdom2.util.IteratorIterable
+import org.jdom2
+
+// import org.jdom2.filter.ElementFilter
+// import org.jdom2.Element
+// import org.jdom2.Document
+// import org.jdom2.util.IteratorIterable
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 
@@ -17,7 +19,7 @@ import org.xml.sax.XMLReader
 
 class AnnotatorSpec extends FlatSpec {
 
-  val dom = new Document()
+  val dom = new jdom2.Document()
 
   val e = {
     // <svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168">
@@ -31,7 +33,7 @@ class AnnotatorSpec extends FlatSpec {
     //     </text>
     //   </g>
     // </svg>
-    val _e = new Element("svg")
+    val _e = new jdom2.Element("svg")
       .setAttribute("version", "1.1")
       .setAttribute("width", "612px")
       .setAttribute("height", "3168px")
@@ -50,7 +52,7 @@ class AnnotatorSpec extends FlatSpec {
     //     <tspan x="137.16 146.75 154.43 164.03 171.71 186.11" endX="191.22" y="19.91" font-size="17.2154px">234567</tspan>
     //   </text>
     // </g>
-    val _e = new Element("g")
+    val _e = new jdom2.Element("g")
       .setAttribute("transform", "matrix(1 0 0 -1 0 792)")
     e.addContent(_e)
     _e
@@ -60,7 +62,7 @@ class AnnotatorSpec extends FlatSpec {
     // <text transform="matrix(0 1 -1 0 32 256) scale(1, -1)">
     //   <tspan x="0 8.88 15.54 29.98 35.54 45.54 51.1 61.1 71.1 81.1 91.1 96.1" endX="100.2" y="0" font-size="20px">abcdefghijkl</tspan>
     // </text>
-    val _e = new Element("text")
+    val _e = new jdom2.Element("text")
       .setAttribute("transform", "matrix(0 1 -1 0 32 256) scale(1, -1)")
     e_1.addContent(_e)
     _e
@@ -68,7 +70,7 @@ class AnnotatorSpec extends FlatSpec {
 
   val e_1_1_1 = {
     // <tspan x="0 8.88 15.54 29.98 35.54 45.54 51.1 61.1 71.1 81.1 91.1 96.1" endX="100.2" y="0" font-size="20px">abcdefghijkl</tspan>
-    val _e = new Element("tspan")
+    val _e = new jdom2.Element("tspan")
       .setAttribute("x", "0 8.88 15.54 29.98 35.54 45.54 51.1 61.1 71.1 81.1 91.1 96.1")
       .setAttribute("endX", "100.2")
       .setAttribute("y", "0")
@@ -83,7 +85,7 @@ class AnnotatorSpec extends FlatSpec {
     //   <tspan x="0 11.51 20.15 25.91 33.59 43.19 48.93 53.03 65.51 73.19 77.99 86.63 92.39 97.19 105.83" endX="112.43" y="0" font-size="17.2154px">mnopqrstuvwxyz1</tspan>
     //   <tspan x="137.16 146.75 154.43 164.03 171.71 186.11" endX="191.22" y="19.91" font-size="17.2154px">234567</tspan>
     // </text>
-    val _e = new Element("text")
+    val _e = new jdom2.Element("text")
       .setAttribute("transform", "translate(136.8 669.12) scale(1, -1)")
     e_1.addContent(_e)
     _e
@@ -91,7 +93,7 @@ class AnnotatorSpec extends FlatSpec {
 
   val e_1_2_1 = {
     // <tspan x="0 11.51 20.15 25.91 33.59 43.19 48.93 53.03 65.51 73.19 77.99 86.63 92.39 97.19 105.83" endX="112.43" y="0" font-size="17.2154px">mnopqrstuvwxyz1</tspan>
-    val _e = new Element("tspan")
+    val _e = new jdom2.Element("tspan")
       .setAttribute("x", "0 11.51 20.15 25.91 33.59 43.19 48.93 53.03 65.51 73.19 77.99 86.63 92.39 97.19 105.83")
       .setAttribute("endX", "112.43")
       .setAttribute("y", "0")
@@ -103,7 +105,7 @@ class AnnotatorSpec extends FlatSpec {
 
   val e_1_2_2 = {
     // <tspan x="137.16 146.75 154.43 164.03 171.71 186.11" endX="191.22" y="19.91" font-size="17.2154px">234567</tspan>
-    val _e = new Element("tspan")
+    val _e = new jdom2.Element("tspan")
       .setAttribute("x", "137.16 146.75 154.43 164.03 171.71 186.11")
       .setAttribute("endX", "191.22")
       .setAttribute("y", "19.91")
@@ -194,7 +196,7 @@ class AnnotatorSpec extends FlatSpec {
 
   it should "raise an exception if arguments are in different trees" in {
     val _ = intercept[IllegalArgumentException] {
-      DOMUtils.commonAncestor(new Element("a"), new Element("b"))
+      DOMUtils.commonAncestor(new jdom2.Element("a"), new jdom2.Element("b"))
     }
   }
 

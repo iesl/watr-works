@@ -5,12 +5,6 @@ import java.io.FileOutputStream
 import java.io.PrintWriter
 import java.io.Writer
 
-import org.jdom2.Content
-import org.jdom2.input.SAXBuilder
-import org.jdom2.filter.ElementFilter
-import org.jdom2.Element
-import org.jdom2.Document
-import org.jdom2.util.IteratorIterable
 
 import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.collection.immutable.IntMap
@@ -20,6 +14,7 @@ import scala.collection.immutable.HashSet
 import scala.collection.immutable.ListMap
 import scala.collection.immutable.SortedSet
 
+import org.jdom2
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
 import org.jdom2.output.LineSeparator
@@ -135,9 +130,9 @@ object Annotator {
   import SvgMatrix._
 
   /** Function to get source element's x and y positions in its ancestor's coordinate system **/
-  def getTransformedCoords(sourceE: Element, ancestorE: Element): PositionGroup = {
+  def getTransformedCoords(sourceE: jdom2.Element, ancestorE: jdom2.Element): PositionGroup = {
 
-    def matrixTotal(e: Element): SvgMatrix = {
+    def matrixTotal(e: jdom2.Element): SvgMatrix = {
       require(e != null)
       val m = svgMatrix(e)
       if (e == ancestorE) {
@@ -249,7 +244,7 @@ object Annotator {
 
   }
 
-  def parseBioDoc(es: List[Element]): List[List[(Map[Int, Label], List[(String, Char)], ConstraintRange)]] = {
+  def parseBioDoc(es: List[jdom2.Element]): List[List[(Map[Int, Label], List[(String, Char)], ConstraintRange)]] = {
     es.map(e => {
       e.getAttribute("bio") match {
         case null => List()
@@ -265,9 +260,9 @@ object Annotator {
     * It populates the annotation block sequence by creating
     * an annotation block for every non empty tspan it finds
     */
-  def apply(dom: Document, loadAnnotations: Boolean = false): Annotator = {
+  def apply(dom: jdom2.Document, loadAnnotations: Boolean = false): Annotator = {
     val cDom = dom.clone()
-    val annoLinksEs = cDom.getRootElement().getDescendants(new ElementFilter("annotation-links")).toIterable.toList
+    val annoLinksEs = cDom.getRootElement().getDescendants(new jdom2.filter.ElementFilter("annotation-links")).toIterable.toList
     annoLinksEs.foreach(_.detach())
     val anno = new Annotator(
       cDom,
@@ -362,7 +357,7 @@ import Annotator._
   */
 class Annotator private (
     /** Original mutable object containing svg data**/
-    private val dom: Document,
+    private val dom: jdom2.Document,
     /** Sequence of annotation blocks
       *
       * Each annotation block's position is a block index
@@ -383,8 +378,8 @@ class Annotator private (
   private val frozenElementSeq = DOMUtils.getTSpanElements(frozenDom).toIndexedSeq
 
   /** Clone of dom for passing outside **/
-  private var _dom: Document = frozenDom.clone()
-  private var _elementSeq: Seq[Element] = DOMUtils.getTSpanElements(_dom).toIndexedSeq
+  private var _dom: jdom2.Document = frozenDom.clone()
+  private var _elementSeq: Seq[jdom2.Element] = DOMUtils.getTSpanElements(_dom).toIndexedSeq
 
   /** Function to replace _dom with a certainly clean unmutated dom **/
   final def resetDom(): Unit = {
@@ -393,13 +388,13 @@ class Annotator private (
   }
 
   /** Function to get dom externally **/
-  final def getDom(): Document = _dom
+  final def getDom(): jdom2.Document = _dom
 
   /** Function to get all non empty tspan elements externally
     *
     * Each position is a block index
     */
-  final def getElements(): Seq[Element] = _elementSeq
+  final def getElements(): Seq[jdom2.Element] = _elementSeq
 
   final def mkIndexPair(totalIndex: Int): (Int, Int) = {
     val blockIndex = annotationBlockSeq.indexWhere(b => {
@@ -512,7 +507,7 @@ class Annotator private (
     *
     * the result's keys are block indexes
     */
-  final def getElementsInRange(blockIndex1: Int, blockIndex2: Int): IntMap[Element] = {
+  final def getElementsInRange(blockIndex1: Int, blockIndex2: Int): IntMap[jdom2.Element] = {
     require(blockIndex1 <= blockIndex2)
     IntMap((blockIndex1 to blockIndex2).map(blockIndex =>{
       blockIndex -> getElements().toIndexedSeq(blockIndex)
@@ -595,10 +590,10 @@ class Annotator private (
     * the returned elements correspond to annotations that are of the provided annotation type
     * and start on or after the provided indexes
     */
-  final def getElements(annotationTypeName: String)(index: Int): IntMap[Element] = {
+  final def getElements(annotationTypeName: String)(index: Int): IntMap[jdom2.Element] = {
     getRangeBySegment(annotationTypeName)(getSegment(annotationTypeName)(index)) match {
       case None =>
-        IntMap[Element]()
+        IntMap[jdom2.Element]()
       case Some((startIndex, endIndex)) =>
         val (blockBIndex, _) = mkIndexPair(startIndex)
         val (blockLIndex, _) = mkIndexPair(endIndex)
@@ -933,7 +928,7 @@ class Annotator private (
     }
   }
 
-  final def mkAnnotatedDom(): Document = {
+  final def mkAnnotatedDom(): jdom2.Document = {
     val writableDom = frozenDom.clone()
     DOMUtils.getTSpanElements(writableDom).zipWithIndex.foreach { case (e, i) => {
       val block = annotationBlockSeq(i)
@@ -941,9 +936,9 @@ class Annotator private (
     }}
 
     val root = writableDom.getRootElement()
-    val annotationLinksE = new Element("annotation-links")
+    val annotationLinksE = new jdom2.Element("annotation-links")
     annotationLinkSet.map(link => {
-      val e = new Element(link.name)
+      val e = new jdom2.Element(link.name)
 
       link.attrValueMap.foreach(pair => {
         val (attr, (typeString, totalIndex)) = pair

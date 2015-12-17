@@ -37,6 +37,7 @@ scalacOptions in ThisBuild ++= Seq(
 libraryDependencies in ThisBuild ++= Seq(
   "com.github.pathikrit" %% "better-files" % "2.14.0",
   "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
+  // "com.chuusai" %% "shapeless" % "2.2.5",
   // "org.scala-lang" %% "scala-reflect" % "2.11.7",
   "org.scalaz" %% "scalaz-core" % "7.2.0",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
@@ -76,7 +77,6 @@ lazy val watrshed = (project in file("watr-shed"))
   })
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
-
 
 
 lazy val watrcolors = (crossProject in file("watr-colors")).settings(
