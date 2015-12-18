@@ -9,13 +9,13 @@ import org.scalatest._
 class BIOBrickSpec extends FlatSpec {
   // perhaps add namespace as a valid constraint?
 
-  import DefaultLabels._
+  import StandardLabels._
 
   behavior of "labels"
 
   it should "allow construction of BIOLU pins from label definitions" in {
     // lazy val ld = LabelDictionary.create(word, verb)
-    assert(verb.B === BPin(verb))
+    assert(Verb.B === BPin(Verb))
   }
 
   it should "ensure label names are unique within a namespace" in {
@@ -45,19 +45,19 @@ class BIOBrickSpec extends FlatSpec {
     val textBounds: Option[TextBounds] = None
 
     val expectedSpan = LabeledSpan(List(
-      LabeledColumn(Set(word.B, verb.U ), 'R', fontInfo, textBounds),
-      LabeledColumn(Set(word.I         ), 'u', fontInfo, textBounds),
-      LabeledColumn(Set(word.L         ), 'n', fontInfo, textBounds),
+      LabeledColumn(Set(Word.B, Verb.U ), 'R', fontInfo, textBounds),
+      LabeledColumn(Set(Word.I         ), 'u', fontInfo, textBounds),
+      LabeledColumn(Set(Word.L         ), 'n', fontInfo, textBounds),
       LabeledColumn(Set(               ), ' ', fontInfo, textBounds),
-      LabeledColumn(Set(word.B, noun.U ), 'L', fontInfo, textBounds),
-      LabeledColumn(Set(word.I         ), 'o', fontInfo, textBounds),
-      LabeledColumn(Set(word.I         ), 'l', fontInfo, textBounds),
-      LabeledColumn(Set(word.L         ), 'a', fontInfo, textBounds),
+      LabeledColumn(Set(Word.B, Noun.U ), 'L', fontInfo, textBounds),
+      LabeledColumn(Set(Word.I         ), 'o', fontInfo, textBounds),
+      LabeledColumn(Set(Word.I         ), 'l', fontInfo, textBounds),
+      LabeledColumn(Set(Word.L         ), 'a', fontInfo, textBounds),
       LabeledColumn(Set(               ), ' ', fontInfo, textBounds),
-      LabeledColumn(Set(word.B, verb.U ), 'r', fontInfo, textBounds),
-      LabeledColumn(Set(word.I         ), 'u', fontInfo, textBounds),
-      LabeledColumn(Set(word.L         ), 'n', fontInfo, textBounds),
-      LabeledColumn(Set(punct.U        ), '.', fontInfo, textBounds)
+      LabeledColumn(Set(Word.B, Verb.U ), 'r', fontInfo, textBounds),
+      LabeledColumn(Set(Word.I         ), 'u', fontInfo, textBounds),
+      LabeledColumn(Set(Word.L         ), 'n', fontInfo, textBounds),
+      LabeledColumn(Set(Punct.U        ), '.', fontInfo, textBounds)
     ))
 
 
@@ -83,10 +83,10 @@ class BIOBrickSpec extends FlatSpec {
 
     val lspan = biolu.parseBioBrick(runBrick, bioDict, None, bounds, fonts)
     val expectedSpan = LabeledSpan(List(
-      LabeledColumn(Set(word.B, verb.U ), 'R', f(0), b(0)),
-      LabeledColumn(Set(word.I         ), 'u', f(0), b(0)),
-      LabeledColumn(Set(word.L         ), 'n', f(0), b(0)),
-      LabeledColumn(Set(punct.U        ), '.', f(0), b(0))
+      LabeledColumn(Set(Word.B, Verb.U ), 'R', f(0), b(0)),
+      LabeledColumn(Set(Word.I         ), 'u', f(0), b(0)),
+      LabeledColumn(Set(Word.L         ), 'n', f(0), b(0)),
+      LabeledColumn(Set(Punct.U        ), '.', f(0), b(0))
     ))
 
   }
@@ -123,7 +123,7 @@ class BIOBrickSpec extends FlatSpec {
 
   it should "navigate chars" in {
     val doc = dom.readWatrDom(new StringReader(svgBrick1), bioDict)
-    val charCursor = doc.toCursor(Character)
+    val charCursor = doc.toCursor(CharLabel)
     // println("char cursor: "+ charCursor)
 
     println("cc1: " + charCursor.getText)

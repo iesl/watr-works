@@ -43,6 +43,8 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.3",
+  "com.lihaoyi" %% "ammonite-ops" % "0.5.1",
+  "com.lihaoyi" % "ammonite-repl" % "0.5.1" cross CrossVersion.full,
   "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
 )
 
@@ -58,9 +60,7 @@ lazy val watrmarks = (project in file("watr-marks"))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
-    "pl.edu.icm.cermine" % "cermine-impl" % "1.8-SNAPSHOT",
-    "com.lihaoyi" %% "ammonite-ops" % "0.5.1",
-    "com.lihaoyi" % "ammonite-repl" % "0.5.1" cross CrossVersion.full
+    "pl.edu.icm.cermine" % "cermine-impl" % "1.8-SNAPSHOT"
   ))
   .settings(initialCommands := {
     val imports = """|import ammonite.ops._

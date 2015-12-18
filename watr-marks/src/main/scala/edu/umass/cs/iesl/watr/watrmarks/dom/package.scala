@@ -39,9 +39,9 @@ package object dom {
       .right.get
   }
 
-  def getXs(e: StartElement): List[Double]         = { attrValue(e, "x").split(" ").map(_.toDouble).toList }
+  def getXs(e: StartElement): Option[List[Double]]         = { maybeAttrValue(e, "x").map(_.split(" ").map(_.toDouble).toList) }
+  def getEndX(e: StartElement): Option[Double]            = { maybeAttrValue(e, "endX").map(_.toDouble) }
   def getY(e: StartElement): Double                = { attrValue(e, "y").toDouble }
-  def getEndX(e: StartElement): Double             = { attrValue(e, "endX").toDouble }
   def getFontSize(e: StartElement): String         = { attrValue(e, "font-size") }
   def getFontFamily(e: StartElement): String       = { attrValue(e, "font-family") }
   def getBioBrick(e: StartElement): Option[String] = { maybeAttrValue(e, "bio") }
@@ -99,24 +99,37 @@ package object dom {
               accum = accum.insertDownLast(Tree.Leaf(n))
 
             case "tspan" =>
+              import scalaz._, Scalaz._
+
+              val xs = getXs(elem)
+              val endx = getEndX(elem)
+              val y = getY(elem)
+
+              val offs = ^(xs, endx)(
+                (xs0, y0) => TextXYOffsets(y, xs0, y0)
+              )
+
               val n = TSpan(
                 "",
                 getTransforms(elem),
-                getXs(elem),
-                getEndX(elem),
-                getY(elem),
+                offs,
                 getFontSize(elem),
                 getFontFamily(elem),
                 getBioBrick(elem),
                 accum.root.getLabel.asInstanceOf[Document]
               )
               accum = accum.insertDownLast(Tree.Leaf(n))
+            case "style"
+               | "clippath" =>
+              accum = accum.insertDownLast(Tree.Leaf(NullElement))
+            case _ =>
+              sys.error(s"no case match for StartElement: ${elem}")
 
           }
 
 
         case elem: EndElement =>
-          // println(s"EndElement: ${elem}")
+          // println(s"EndElement: ${elem}, accum.parents=${accum.parents}")
           accum = accum.parent.get
         case elem: EntityReference =>
         // println(s"EntityReference: ${elem}")
@@ -126,7 +139,7 @@ package object dom {
           accum.getLabel match {
             case t: TSpan =>
               accum = accum.modifyLabel { _ =>
-                t.copy(text = elem.getData())
+                t.copy(text = t.text+elem.getData())
               }
             case _ =>
               // sys.error(s"xml text found outside of tspan element: '${elem.getData()}'")

@@ -8,7 +8,7 @@ import org.scalatest._
 class WatrDomSpec extends FlatSpec {
 
 
-  import DefaultLabels._
+  import StandardLabels._
 
   val svgStrNS = """|<?xml version="1.0"?>
                     |<svg:svg
@@ -96,7 +96,7 @@ class WatrDomSpec extends FlatSpec {
 
     assert(bioBrick.columns.length===2)
 
-    val ls = List(Set(word.B), Set(word.L))
+    val ls = List(Set(Word.B), Set(Word.L))
     bioBrick.columns.map(_.pins).zip(ls).foreach { case (l, lexpect) =>
       assert(l === lexpect)
     }

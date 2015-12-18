@@ -23,15 +23,23 @@ case class LabeledColumn(
   char: Char,
   font: Option[FontInfo],
   bounds: Option[TextBounds]
-)
+) {
+  // override def toString = s"""${char}; pins:${pins.mkString(",")}; fnt:${font}; b:${bounds}"""
+  override def toString = s"""${char}; pins:${pins.mkString(",")}"""
+
+}
 
 case class LabeledSpan(
   columns: List[LabeledColumn] = List()
 ) {
+  // override def toString = columns.mkString("lspan\n  ", "\n  ", "\n/lspan")
 
   def toBrickCursor(l: BioLabel): Option[BrickCursor] = {
+
+    // debug("lspan" -> this, "l" -> l)
+
     l match {
-      case DefaultLabels.Character =>
+      case CharLabel =>
         if(columns.length>0) {
           Some(BrickCursor(l,
             columns.take(1),
@@ -100,7 +108,13 @@ case class BrickCursor(
     hpins.contains(label.U) || hpins.contains(label.B)
 
   def coversEndOfLabel: Boolean =
-    lpins.contains(label.U) || lpins.contains(label.L)
+    lpins.contains(label.U) || lpins.contains(label.L) || label==CharLabel
+
+  override def toString = {
+    s"""|${label}:${current.mkString(" :: ")}
+        |""".stripMargin
+
+  }
 
 }
 
@@ -134,22 +148,22 @@ object biolu {
     }).toList
   }
 
-  def parseBioConstraints(constraintString: String): ConstraintRange = {
-    val typeList = constraintString.split('.')
-    val size = typeList.size
-    val lastType = typeList(size - 1)
-    val con = if (lastType == "char") {
-      CharCon
-    } else {
-      SegmentCon(lastType)
-    }
+  // def parseBioConstraints(constraintString: String): ConstraintRange = {
+  //   val typeList = constraintString.split('.')
+  //   val size = typeList.size
+  //   val lastType = typeList(size - 1)
+  //   val con = if (lastType == "char") {
+  //     CharCon
+  //   } else {
+  //     SegmentCon(lastType)
+  //   }
 
-    if (size == 1) {
-      Single(con)
-    } else {
-      Range(typeList(0), con)
-    }
-  }
+  //   if (size == 1) {
+  //     Single(con)
+  //   } else {
+  //     Range(typeList(0), con)
+  //   }
+  // }
 
 
   def parseBioBrick(
@@ -205,51 +219,40 @@ object biolu {
 
 
 
-/** Constructors for labels
-  * They are used by Annotator instances for annotating characters of text
-  */
-sealed trait Label
-case class B(c: Char) extends Label
-case object I extends Label
-case object O extends Label
-case object L extends Label
-case class U(c: Char) extends Label
+// sealed trait Constraint
+
+// // /** Constructor for char constraints
+// //   *
+// //   * It is used by Annotator instances to constrain labels of annotation types
+// //   * to the the primitive unit of characters
+// //   */
+// case object CharCon extends Constraint
+// case object CharConstraint extends Constraint
+
+// // /** Constructor for segment constraints
+// //   *
+// //   * It is used by Annotator instances to constrain labels of annotation types
+// //   * to the index pairs containing the B or U labels of other annotation types
+// //   */
+// case class SegmentCon(annotationTypeName: String) extends Constraint
+// case class BioConstraint(label: BioLabel) extends Constraint
 
 
-sealed trait Constraint
+// // @deprecated("","")
+// sealed trait ConstraintRange
 
-// /** Constructor for char constraints
+
+// /** Constructor to create a constraint range
 //   *
-//   * It is used by Annotator instances to constrain labels of annotation types
-//   * to the the primitive unit of characters
+//   * It is used by Annotator instances to hold an annotation type string
+//   * and a constraint such that the annotation type is constrained by the constraint
+//   * or is constrained by a SegmentCon whose annotation type has the qualities
+//   * of the previously mentioned annotation type string
 //   */
-case object CharCon extends Constraint
-case object CharConstraint extends Constraint
-
-// /** Constructor for segment constraints
-//   *
-//   * It is used by Annotator instances to constrain labels of annotation types
-//   * to the index pairs containing the B or U labels of other annotation types
-//   */
-case class SegmentCon(annotationTypeName: String) extends Constraint
-case class BioConstraint(label: BioLabel) extends Constraint
-
-
 // @deprecated("","")
-sealed trait ConstraintRange
+// case class Range(annoTypeName: String, con: Constraint) extends ConstraintRange
 
 
-/** Constructor to create a constraint range
-  *
-  * It is used by Annotator instances to hold an annotation type string
-  * and a constraint such that the annotation type is constrained by the constraint
-  * or is constrained by a SegmentCon whose annotation type has the qualities
-  * of the previously mentioned annotation type string
-  */
-@deprecated("","")
-case class Range(annoTypeName: String, con: Constraint) extends ConstraintRange
-
-
-/** Constructor to make a constraint range consisting of just a single constraint **/
-@deprecated("","")
-case class Single(constraint: Constraint) extends ConstraintRange
+// /** Constructor to make a constraint range consisting of just a single constraint **/
+// @deprecated("","")
+// case class Single(constraint: Constraint) extends ConstraintRange
