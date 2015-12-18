@@ -9,6 +9,25 @@ case class Cursor(
   focii: Seq[(WatrDomCursor, BrickCursor)]
 ) {
 
+  def getText: String =  {
+    focii.map({ case (dcur, bcur) =>
+      bcur.current.map(_.char).mkString
+    }).mkString
+  }
+
+  def next: Option[Cursor] = {
+    val (ldcur, lbcur) = focii.last
+
+    lbcur.next match {
+      case Some(ncur) =>
+
+      case None =>
+    }
+
+
+    None
+  }
+
 }
 
 case class WatrDomCursor(
@@ -139,7 +158,7 @@ case class TSpan (
 
   def bounds: List[TextBounds] = xs.map{x =>
     TextBounds(
-      left   = x ,
+      left   = x,
       bottom = y,
       width  = 1,
       height = 1

@@ -54,3 +54,7 @@ Font substitution, tested over ~800 documents:
     Substituting font Courier-Bold for LetterGothicMT-Bold.
     Substituting font Courier-BoldOblique for CourierNew,BoldItalic.
     Substituting font Times-Roman for Wingdings.
+
+
+
+

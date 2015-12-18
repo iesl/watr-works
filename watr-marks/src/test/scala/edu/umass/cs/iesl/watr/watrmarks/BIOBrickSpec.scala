@@ -104,10 +104,8 @@ class BIOBrickSpec extends FlatSpec {
        |         y="0"
        |         font-size="17.2154px"
        |         font-family="Times"
-       |         bio=""
-       || |V   | {ns:pos, type: {verb: v}, unit: word}
-       || |w~$P| {ns:tok, type: {word: w, punct: p}, unit: char}
-       |" >Run.</tspan>
+       |         bio="| |V   | {ns:pos, type: {verb: v}, unit: word} % | |w~$P| {ns:tok, type: {word: w, punct: p}, unit: char}"
+       |       >Run.</tspan>
        |     </text>
        |   </g>
        | </svg>
@@ -126,6 +124,13 @@ class BIOBrickSpec extends FlatSpec {
   it should "navigate chars" in {
     val doc = dom.readWatrDom(new StringReader(svgBrick1), bioDict)
     val charCursor = doc.toCursor(Character)
+    // println("char cursor: "+ charCursor)
+
+    println("cc1: " + charCursor.getText)
+    // charCursor.next
+
+    // println("cc1: " + charCursor.getText)
+
     // val tcursor = textSpan.cursor
     // tcursor.current.char === 'x'
     // tcursor.current.x === 30.33

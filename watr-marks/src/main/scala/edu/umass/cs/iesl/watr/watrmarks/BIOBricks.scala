@@ -77,8 +77,9 @@ case class BrickCursor(
   prevs: List[LabeledColumn] = List(),
   nexts: List[LabeledColumn] = List()
 ) {
-  def next(label: BioLabel): BrickCursor = {
-    BrickCursor(label, current, prevs, nexts)
+
+  def next: Option[BrickCursor] = {
+    Some(BrickCursor(label, current, prevs, nexts))
   }
 
   def addLabel(label: BioLabel): BrickCursor = {

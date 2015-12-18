@@ -52,6 +52,7 @@ object bioParsers extends JavaTokenParsers with ParserCommon {
   def parseBioBrick(str: String): Either[String, BioBrick] = {
 
     val nonEmptyLines = str.split("\n")
+      .flatMap(_.split("%"))
       .map(_.trim)
       .dropWhile(_.length==0)
       .takeWhile(_.length>0)
@@ -218,7 +219,7 @@ object transformParser extends JavaTokenParsers with ParserCommon {
     }
 
   def translate: Parser[Translate] =
-    "matrix" ~> "(" ~> repN(2, floatingPointNumber) <~ ")" ^^ {
+    "translate" ~> "(" ~> repN(2, floatingPointNumber) <~ ")" ^^ {
       case ns =>
         val arrn = exactlyNDoubles(2, ns)
         Translate(arrn(0), arrn(1))
