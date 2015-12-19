@@ -6,7 +6,7 @@ import org.scalatest._
 
 
 
-class BIOBrickSpec extends FlatSpec {
+class BioBrickSpec extends FlatSpec {
   // perhaps add namespace as a valid constraint?
 
   import StandardLabels._
@@ -120,33 +120,81 @@ class BIOBrickSpec extends FlatSpec {
 
 
 
+  val brickTemplate =
+    """| <svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168">
+       |   <g transform="matrix(1 0 0 -1 0 792)">
+       |     <text transform="translate(136.8 669.12) scale(1, -1)">
+       |       <tspan endX="112.43" font-size="17.2154px" font-family="Times" y="0"
+       |         x="XXX"
+       |bio="BIO"
+       |       >TEXT</tspan>
+       |     </text>
+       |   </g>
+       | </svg>
+       |""".stripMargin
 
   it should "navigate chars" in {
-    val doc = dom.readWatrDom(new StringReader(svgBrick1), bioDict)
-    val charCursor = doc.toCursor(CharLabel)
-    // println("char cursor: "+ charCursor)
 
-    println("cc1: " + charCursor.getText)
-    // charCursor.next
+    val bioSamples = List(
+      "    "
+    )
 
-    // println("cc1: " + charCursor.getText)
+    val bioline = """| |ZZZ| {ns:pos, type: {token: t}, unit: char}"""
 
-    // val tcursor = textSpan.cursor
-    // tcursor.current.char === 'x'
-    // tcursor.current.x === 30.33
-    // tcursor.current.y ===...
-    // tcursor.current.y ===...
+    val text = "abcde".toList.zipWithIndex
+
+    bioSamples  foreach { bio =>
+
+      val bl = "ZZZ".r.replaceAllIn(bioline, bio)
+      val xs = bio.zipWithIndex.map(_._2).mkString(" ")
+
+      val svg =
+        brickTemplate
+          .replaceAll("BIO", bl)
+          .replaceAll("XXX", xs)
+          .replaceAll("TEXT", text.take(bio.length).map(_._1).mkString)
+          .replaceAll("!", "\\$")
+
+      // println(svg)
+
+      val doc = dom.readWatrDom(new StringReader(svg), bioDict)
+      val charCursor = doc.toCursor(CharLabel)
+      charCursor.foreach{ cur =>
+        println("cc: " + cur.getText)
+      }
+    }
+
   }
 
-  it should "navigate labels" in {
-    // val ld = LabelDictionary(
-    //    "phrase", 'p', Constraints.Chars
-    // )
-    // val phrase = ld("phrase")
-    // val token = ld("token")
-    // val tcursor = textSpan.cursor
-    // tcursor.current.labels === Set(phrase.B, token.I)
-    // tcursor.next(phrase) ===
-  }
+  // it should "navigate labels" in {
+
+  //   val bioSamples = List(
+  //     "t!  "
+  //   )
+
+  //   val bioline = """| |ZZZ| {ns:pos, type: {token: t}, unit: char}"""
+
+  //   val text = "abcde".toList.zipWithIndex
+
+  //   bioSamples  foreach { bio =>
+
+  //     val bl = "ZZZ".r.replaceAllIn(bioline, bio)
+  //     val xs = bio.zipWithIndex.map(_._2).mkString(" ")
+
+  //     val svg =
+  //       brickTemplate
+  //         .replaceAll("BIO", bl)
+  //         .replaceAll("XXX", xs)
+  //         .replaceAll("TEXT", text.take(bio.length).map(_._1).mkString)
+  //         .replaceAll("!", "\\$")
+
+  //     // println(svg)
+
+  //     val doc = dom.readWatrDom(new StringReader(svg), bioDict)
+  //     val charCursor = doc.toCursor(CharLabel)
+  //     println("cc1: " + charCursor.getText)
+  //   }
+
+  // }
 
 }

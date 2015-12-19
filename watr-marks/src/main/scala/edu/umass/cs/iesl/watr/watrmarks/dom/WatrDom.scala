@@ -5,81 +5,6 @@ package dom
 
 import scalaz.{Show, TreeLoc, Tree}
 
-case class Cursor(
-  focii: Seq[(WatrDomCursor, BrickCursor)]
-) {
-
-  def getText: String =  {
-    focii.map({ case (dcur, bcur) =>
-      bcur.current.map(_.char).mkString
-    }).mkString
-  }
-
-  def next: Option[Cursor] = {
-    val (ldcur, lbcur) = focii.last
-
-    lbcur.next match {
-      case Some(ncur) =>
-      case None =>
-    }
-    None
-  }
-
-
-  def foreach(f: (Cursor) => Unit): Unit = {
-    println("running foreach ")
-
-    f(this)
-    next match {
-      case Some(ncur) => ncur.foreach(f)
-      case None =>
-    }
-  }
-
-  override def toString = {
-    val fs = focii.map{ case (dcur,bcur) =>
-
-      println(s"dcur: ${dcur}")
-      println(s"bcur: ${bcur}")
-
-      s""" ${dcur.toString}
-      ${bcur.toString}"""
-    }.mkString("\n")
-    s"cur<${fs}; nx=>"
-  }
-
-}
-
-case class WatrDomCursor(
-  loc: TreeLoc[WatrElement]
-) {
-
-  def getLabel: WatrElement                   = loc.getLabel
-  def root: WatrDomCursor                     = WatrDomCursor(loc.root)
-  def parent: Option[WatrDomCursor]           = loc.parent map {p => WatrDomCursor(p) }
-  def left: Option[WatrDomCursor]             = loc.left map {p => WatrDomCursor(p) }
-  def right: Option[WatrDomCursor]            = loc.right map {p => WatrDomCursor(p) }
-  def firstChild: Option[WatrDomCursor]       = loc.firstChild map {p => WatrDomCursor(p) }
-  def lastChild: Option[WatrDomCursor]        = loc.lastChild map {p => WatrDomCursor(p) }
-  def getChild(n: Int): Option[WatrDomCursor] = loc.getChild(n) map {p => WatrDomCursor(p) }
-
-
-  // def map[V](f: WatrElement => V): TreeLoc[B] = WatrDomCursor(loc.map(f))
-
-  // def findChild(p: Tree[A] =
-  // def split(acc: TreeForest[A], xs: TreeForest[A]): Option[(TreeForest[A], Tree[A], TreeForest[A])] =
-  // def find(p: WatrDomCursor =
-  // def toTree: Tree[A] =
-  // def toForest: TreeForest[A] =
-  // def isRoot: Boolean =
-  // def isFirst: Boolean =
-  // def isLast: Boolean =
-  // def isLeaf: Boolean =
-  // def isChild: Boolean =
-  // def hasChildren: Boolean =
-
-}
-
 
 sealed trait WatrElement
 
@@ -89,7 +14,7 @@ case class WatrDom(
 
   def prettyPrint: String = tree.drawTree
 
-  def toDomCursor = WatrDomCursor(tree.loc)
+  def toDomCursor = DomCursor(tree.loc)
 
   def toCursor(l: BioLabel) = {
     // val (nodesBeforeLabel, nodesStartingWithLabel) = tree.loc
@@ -141,11 +66,11 @@ case class WatrDom(
 
     val nodeBrickCursorPairs =
       nodesWithLabel.map({nloc => (
-        WatrDomCursor(nloc),
+        DomCursor(nloc),
         nloc.getLabel.asInstanceOf[TSpan].bioBrick.toBrickCursor(l).get
       )})
 
-    Cursor(nodeBrickCursorPairs)
+    BioCursor(nodeBrickCursorPairs)
   }
 
 }

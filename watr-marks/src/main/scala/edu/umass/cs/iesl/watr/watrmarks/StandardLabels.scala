@@ -4,12 +4,14 @@ package watrmarks
 
 trait TokenLabels {
 
+  val Token = BioLabel("tok", "token")
   val Word = BioLabel("tok", "word")
   val Punct = BioLabel("tok", "punct")
 
   val allTokenLabels = List(
     Word,
-    Punct
+    Punct,
+    Token
   )
 
 }
@@ -63,7 +65,7 @@ object StandardLabels
     with PersonalNameLabels {
 
 
-  val allStandardLabels = allPersonalNameLabels ++ allNERLabels ++ allPOSLabels
+  val allStandardLabels = allPersonalNameLabels ++ allNERLabels ++ allPOSLabels ++ allTokenLabels
 
   implicit val bioDict = BioDictionary(
     allStandardLabels.map(l => (l.namespace+l.name -> l) ).toMap,
