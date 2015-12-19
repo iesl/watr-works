@@ -126,15 +126,6 @@ class WatrDomSpec extends FlatSpec {
   }
 
 
-  // behavior of "svg dom cursor"
-  // it should "convert dom to/from cursor" in {
-  //   val doc = readWatrDom(
-  //     new StringReader(svgStrNS), bioDict
-  //   )
-  //   val cursor = doc.toCursor
-  //   // assert(cursor.current === svg2Dom)
-  // }
-
 
 
 }

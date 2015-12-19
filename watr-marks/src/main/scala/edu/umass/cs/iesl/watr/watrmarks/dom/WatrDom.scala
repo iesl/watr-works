@@ -5,7 +5,6 @@ package dom
 
 import scalaz.{Show, TreeLoc, Tree}
 
-
 sealed trait WatrElement
 
 case class WatrDom(
@@ -58,7 +57,7 @@ case class WatrDom(
 
     // import _root_.ammonite.repl.Main._
     // debug("self" -> this, "nodesStartingWithLabel" -> nodesStartingWithLabel, "nodesWithLabelMinusOne" -> nodesWithLabelMinusOne)
- 
+
 
     val nodesWithLabel =  nodesWithLabelMinusOne ++ nodesStartingWithLabel.drop(nodesWithLabelMinusOne.length).take(1)
 

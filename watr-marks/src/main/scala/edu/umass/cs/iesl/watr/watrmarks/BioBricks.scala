@@ -25,14 +25,14 @@ case class LabeledColumn(
   bounds: Option[TextBounds]
 ) {
   // override def toString = s"""${char}; pins:${pins.mkString(",")}; fnt:${font}; b:${bounds}"""
-  override def toString = s"""${char}; pins:${pins.mkString(",")}"""
+  override def toString = s"""'${char}' pins:${pins.mkString(",")}"""
 
 }
 
 case class LabeledSpan(
   columns: List[LabeledColumn] = List()
 ) {
-  // override def toString = columns.mkString("lspan\n  ", "\n  ", "\n/lspan")
+  override def toString = columns.mkString("lspan\n  ", "\n  ", "\n/lspan")
 
   def toBrickCursor(l: BioLabel): Option[BrickCursor] = {
 
