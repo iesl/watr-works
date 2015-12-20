@@ -3,7 +3,7 @@ package edu.umass.cs.iesl.watr.watrmarks
 sealed trait BioPin {
   def label: BioLabel
   def pinChar: Char
-  override def toString = s"<${pinChar}::{label}>"
+  override def toString = s"<${pinChar}::${label}>"
 }
 
 case class BPin(label: BioLabel, override val pinChar:Char='B') extends BioPin
@@ -14,7 +14,6 @@ case class UPin(label: BioLabel, override val pinChar:Char='U') extends BioPin
 
 // import StandardLabels._
 // case class Constraint()
-
 // class BioLabel(val namespace: String, val name: String, val c: Char, val constraint: Constraint) {
 
 import scala.language.dynamics

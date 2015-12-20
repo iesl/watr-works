@@ -91,7 +91,5 @@ class BioBrickSpec extends FlatSpec {
 
   }
 
-  it should "allow labeled locations, applying labels" in {}
-
 
 }

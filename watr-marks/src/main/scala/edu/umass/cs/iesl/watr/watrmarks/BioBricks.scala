@@ -26,8 +26,8 @@ case class LabeledColumn(
 ) {
   // override def toString = s"""${char}; pins:${pins.mkString(",")}; fnt:${font}; b:${bounds}"""
   override def toString = s"""'${char}' pins:${pins.mkString(",")}"""
-
 }
+
 
 case class LabeledSpan(
   columns: List[LabeledColumn] = List()
@@ -79,44 +79,6 @@ case class LabeledSpan(
 }
 
 
-case class BrickCursor(
-  label: BioLabel,
-  current: List[LabeledColumn],
-  prevs: List[LabeledColumn] = List(),
-  nexts: List[LabeledColumn] = List()
-) {
-
-  def next: Option[BrickCursor] = {
-    Some(BrickCursor(label, current, prevs, nexts))
-  }
-
-  def addLabel(label: BioLabel): BrickCursor = {
-    this
-  }
-
-  def toLabeledSpan = LabeledSpan(
-    prevs.reverse ++ current ++ nexts
-  )
-
-  lazy val hpins = current.head.pins
-  lazy val lpins = current.last.pins
-
-  def coversCompleteLabel: Boolean =
-    coversStartOfLabel && coversEndOfLabel
-
-  def coversStartOfLabel: Boolean =
-    hpins.contains(label.U) || hpins.contains(label.B)
-
-  def coversEndOfLabel: Boolean =
-    lpins.contains(label.U) || lpins.contains(label.L) || label==CharLabel
-
-  override def toString = {
-    s"""|${label}:${current.mkString(" :: ")}
-        |""".stripMargin
-
-  }
-
-}
 
 
 object biolu {
