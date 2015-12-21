@@ -91,7 +91,7 @@ class BioBrickSpec extends FlatSpec {
 
   }
 
-  behavior of "partial brick cursors over labels"
+  behavior of "parsing partial bricks over labels"
 
   val fullBrick =
     """|| |t~~~~~$ | {ns:pos, type: {token: t}, unit: char}
@@ -116,14 +116,6 @@ class BioBrickSpec extends FlatSpec {
 
 
     assert(full.columns === begin.columns ++ end.columns)
-    // println("full")
-    // println(full)
-
-    // println("begin")
-    // println(begin)
-
-    // println("end")
-    // println(end) 
   }
 
 }

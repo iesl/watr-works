@@ -39,11 +39,11 @@ package object dom {
       .right.get
   }
 
-  def getXs(e: StartElement): Option[List[Double]]         = { maybeAttrValue(e, "x").map(_.split(" ").map(_.toDouble).toList) }
-  def getEndX(e: StartElement): Option[Double]            = { maybeAttrValue(e, "endX").map(_.toDouble) }
+  def getXs(e: StartElement): Option[List[Double]] = { maybeAttrValue(e, "x").map(_.split(" ").map(_.toDouble).toList) }
+  def getEndX(e: StartElement): Option[Double]     = { maybeAttrValue(e, "endX").map(_.toDouble) }
   def getY(e: StartElement): Double                = { attrValue(e, "y").toDouble }
-  def getFontSize(e: StartElement): String         = { attrValue(e, "font-size") }
-  def getFontFamily(e: StartElement): String       = { attrValue(e, "font-family") }
+  def getFontSize(e: StartElement): String         = { maybeAttrValue(e, "font-size").getOrElse("0") }
+  def getFontFamily(e: StartElement): String       = { maybeAttrValue(e, "font-family").getOrElse("") }
   def getBioBrick(e: StartElement): Option[String] = { maybeAttrValue(e, "bio") }
 
   def readWatrDom(ins: Reader, bioDict: BioLabelDictionary): WatrDom = {

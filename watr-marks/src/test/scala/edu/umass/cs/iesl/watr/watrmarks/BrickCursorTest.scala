@@ -65,6 +65,50 @@ class BrickCursorSpec extends FlatSpec {
 
   }
 
+  behavior of "partial bricks cursors over labels"
+
+  val fullBrick =
+    """|| |t~~~~~$ | {ns:pos, type: {token: t}, unit: char}
+       |  >Running.<
+       |""".stripMargin
+
+  val partialBrickBegin =
+    """|| |t~~~| {ns:pos, type: {token: t}, unit: char}
+       |  >Runn<
+       |""".stripMargin
+
+  val partialBrickEnd =
+    """||t|~~$ | {ns:pos, type: {token: t}, unit: char}
+       |  >ing.<
+       |""".stripMargin
+
+
+  it should "parse half labels correctly" in {
+    val full = biolu.parseBioBrick(fullBrick, bioDict, None, None, None)
+    val begin = biolu.parseBioBrick(partialBrickBegin, bioDict, None, None, None)
+    val end = biolu.parseBioBrick(partialBrickEnd, bioDict, None, None, None)
+
+    val fullCur = full.initBrickCursor(Token).get
+    val beginCur = begin.initBrickCursor(Token).get
+    val endCur = end.initBrickCursor(Token).get
+
+    assert(fullCur.coversCompleteLabel)
+    assert(fullCur.coversStartOfLabel)
+    assert(fullCur.coversEndOfLabel)
+
+    assert(!beginCur.coversCompleteLabel)
+    assert(beginCur.coversStartOfLabel)
+    assert(!beginCur.coversEndOfLabel)
+
+    assert(!endCur.coversCompleteLabel)
+    assert(!endCur.coversStartOfLabel)
+    assert(endCur.coversEndOfLabel)
+
+    assert(fullCur.current == beginCur.current ++ endCur.current)
+    assert(fullCur.prevs == beginCur.prevs ++ endCur.prevs)
+    assert(fullCur.nexts == beginCur.nexts ++ endCur.nexts)
+
+  }
 
 
 }

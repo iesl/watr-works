@@ -13,10 +13,10 @@ case class BioCursor(
   }
 
   def next: Option[BioCursor] = {
-    val (ldcur, lbcur) = focii.last
+    val (dcur, bcur) = focii.last
 
-    lbcur.next match {
-      case Some(ncur) =>
+    bcur.next match {
+      case Some(nbcur) =>
       case None =>
     }
     None
