@@ -13,6 +13,15 @@ case class BioCursor(
   }
 
   def next: Option[BioCursor] = {
+    focii.reduce({(cur0,cur1) =>
+      val (dcur0, bcur0) = cur0
+      val (dcur1, bcur1) = cur1
+
+
+      (dcur0, bcur1)
+    })
+
+
     val (dcur, bcur) = focii.last
 
     bcur.next match {
@@ -42,7 +51,8 @@ case class BioCursor(
       s""" ${dcur.toString}
       ${bcur.toString}"""
     }.mkString("\n")
-    s"cur<${fs}; nx=>"
+
+    s"cur<${fs}>"
   }
 
 }

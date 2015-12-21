@@ -38,17 +38,17 @@ class DomCursorSpec extends FlatSpec {
 
     val otspan = Some(doc.toDomCursor)
 
-    // val elems = unfold[Option[DomCursor], WatrElement](
-    //   otspan
-    // )(_ match {
-    //   case Some(cur) => Some((cur.getLabel, cur.nextElem))
-    //   case None => None
-    // })
+    val elems = unfold[Option[DomCursor], WatrElement](
+      otspan
+    )(_ match {
+      case Some(cur) => Some((cur.getLabel, cur.nextElem))
+      case None => None
+    })
 
-    // assert (
-    //   elems.map(_.getClass.getSimpleName).mkString(",") ===
-    //     "Document,Svg,Grp,Text,TSpan,Text,TSpan,Grp,Text,TSpan,Text,TSpan"
-    // )
+    assert (
+      elems.map(_.getClass.getSimpleName).mkString(",") ===
+        "Document,Svg,Grp,Text,TSpan,Text,TSpan,Grp,Text,TSpan,Text,TSpan"
+    )
 
     val cursors = unfold[Option[DomCursor], DomCursor](
       otspan
@@ -64,10 +64,6 @@ class DomCursorSpec extends FlatSpec {
       case Some(cur) => Some((cur.getLabel, cur.prevElem))
       case None => None
     })
-
-    println("elems reversed")
-    println(elemsReversed.mkString(","))
-    println(elemsReversed.reverse.mkString(","))
 
     assert (
       elemsReversed.reverse.map(_.getClass.getSimpleName).mkString(",") ===

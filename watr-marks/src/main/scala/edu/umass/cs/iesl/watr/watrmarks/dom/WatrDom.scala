@@ -124,51 +124,26 @@ case class TextXYOffsets(
   xs: List[Double], endX: Double
 )
 
+
+// helper class for deserializing Dom - not to be used directly
+private case class TSpanInit (
+  text: String,
+  transforms: List[Transform],
+  textXYOffsets: Option[TextXYOffsets],
+  fontSize: String,
+  fontFamily: String,
+  bioBrickStr: Option[String]
+) extends WatrElement
+
 case class TSpan (
   text: String,
   transforms: List[Transform],
   textXYOffsets: Option[TextXYOffsets],
   fontSize: String,
   fontFamily: String,
-  bioBrickStr: Option[String],
+  bioBrick: BrickColumns,
   document: Document
 ) extends WatrElement  {
 
-  // println(s"text.len=${text.length()}, textxyoffsets = $textXYOffsets")
-  // assert(text.length==0 || textXYOffsets.exists(_.xs.length==text.length))
-
   override def toString = s"""<tspan:${text}>"""
-
-
-  def bounds: Option[List[TextBounds]] =
-    textXYOffsets.map {
-      xyoffs => xyoffs.xs.map{x => TextBounds(
-        left   = x,
-        bottom = xyoffs.y,
-        width  = 1,
-        height = 1
-      )
-    }
-  }
-
-
-  lazy val fontInfo =  FontInfo(fontFamily, fontSize)
-
-  def fonts: List[FontInfo] = List.fill(text.length)(fontInfo)
-
-  def emptyBioBrick: BrickColumns = BrickColumns((text zip bounds.getOrElse(List())).toList.map{ case (char, bnd) =>
-    BrickColumn(Set(), char, Some(fontInfo), Some(bnd))
-  })
-
-  lazy val bioBrick: BrickColumns = {
-    bioBrickStr.map{str =>
-      biolu.parseBioBrick(
-        str,
-        document.labelDictionary,
-        Some(text),
-        Some(bounds.getOrElse(List())),
-        Some(fonts)
-      )
-    } getOrElse emptyBioBrick
-  }
 }

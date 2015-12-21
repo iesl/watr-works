@@ -76,7 +76,7 @@ package object dom {
           // println(s"StartElement: ${elem}")
           // println(s"Start Element: ${elem.getName}, prefix: ${elem.getName().getPrefix()}, local: ${elem.getName().getLocalPart()}")
 
-          elem.getName.getLocalPart match {
+          elem.getName.getLocalPart.toLowerCase match {
             case "svg"   =>
               val n = Svg(getTransforms(elem))
 
@@ -109,16 +109,16 @@ package object dom {
                 (xs0, y0) => TextXYOffsets(y, xs0, y0)
               )
 
-              val n = TSpan(
+              val n = TSpanInit(
                 "",
                 getTransforms(elem),
                 offs,
                 getFontSize(elem),
                 getFontFamily(elem),
-                getBioBrick(elem),
-                accum.root.getLabel.asInstanceOf[Document]
+                getBioBrick(elem)
               )
               accum = accum.insertDownLast(Tree.Leaf(n))
+
             case "style"
                | "clippath" =>
               accum = accum.insertDownLast(Tree.Leaf(NullElement))
@@ -129,22 +129,71 @@ package object dom {
 
 
         case elem: EndElement =>
+          elem.getName.getLocalPart.toLowerCase match {
+            case "tspan"   =>
+              val init = accum.getLabel.asInstanceOf[TSpanInit]
+              val rootDocument =accum.root.getLabel.asInstanceOf[Document]
+
+              def bounds: Option[List[TextBounds]] =
+                init.textXYOffsets.map {
+                  xyoffs => xyoffs.xs.map{x => TextBounds(
+                    left   = x,
+                    bottom = xyoffs.y,
+                    width  = 1,
+                    height = 1
+                  )
+                  }
+                }
+
+              lazy val fontInfo =  FontInfo(init.fontFamily, init.fontSize)
+
+              def fonts: List[FontInfo] = List.fill(init.text.length)(fontInfo)
+
+              def emptyBioBrick: BrickColumns = BrickColumns((init.text zip bounds.getOrElse(List())).toList.map{ case (char, bnd) =>
+                BrickColumn(Set(), char, Some(fontInfo), Some(bnd))
+              })
+
+              val bioBrick: BrickColumns = init.bioBrickStr.map{str =>
+                biolu.parseBioBrick(
+                  str,
+                  rootDocument.labelDictionary,
+                  Some(init.text),
+                  Some(bounds.getOrElse(List())),
+                  Some(fonts)
+                )
+              } getOrElse emptyBioBrick
+
+
+              val tspan = TSpan(
+                init.text,
+                init.transforms,
+                init.textXYOffsets,
+                init.fontSize,
+                init.fontFamily,
+                bioBrick,
+                rootDocument
+              )
+              accum = accum.modifyLabel { _ => tspan }
+
+            case _   =>
+          }
           // println(s"EndElement: ${elem}, accum.parents=${accum.parents}")
           accum = accum.parent.get
+
         case elem: EntityReference =>
         // println(s"EntityReference: ${elem}")
         case elem: Characters =>
           // println(s"Characters: '${elem.getData().trim()}'")
 
-          accum.getLabel match {
-            case t: TSpan =>
-              accum = accum.modifyLabel { _ =>
-                t.copy(text = t.text+elem.getData())
+              accum.getLabel match {
+                case t: TSpanInit =>
+                  accum = accum.modifyLabel { _ =>
+                    t.copy(text = t.text+elem.getData())
+                  }
+                case _ =>
+                  // sys.error(s"xml text found outside of tspan element: '${elem.getData()}'")
               }
-            case _ =>
-              // sys.error(s"xml text found outside of tspan element: '${elem.getData()}'")
           }
-      }
 
       // println(s"""accu: ${if(accum!=null) accum.getLabel else "<null>"} """)
     }

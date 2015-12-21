@@ -5,7 +5,6 @@ package dom
 
 // import scala.annotation.tailrec
 import scalaz.{TreeLoc}
-import scalaz.std.stream._
 
 case class DomCursor(
   loc: TreeLoc[WatrElement]
@@ -21,6 +20,8 @@ case class DomCursor(
   def lastChild: Option[DomCursor]        = loc.lastChild map {p => DomCursor(p) }
   def getChild(n: Int): Option[DomCursor] = loc.getChild(n) map {p => DomCursor(p) }
 
+
+  def getLabelAsTSpan: TSpan = getLabel.asInstanceOf[TSpan]
 
   private def firstParentRight(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = {
     tl.parent match {
@@ -43,6 +44,7 @@ case class DomCursor(
   }
 
   private def downRightMost(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = {
+    import scalaz.std.stream._
     val rightmost = unfold[Option[TreeLoc[WatrElement]], TreeLoc[WatrElement]](
       Some(tl)
     )({case t0 => t0 match {
