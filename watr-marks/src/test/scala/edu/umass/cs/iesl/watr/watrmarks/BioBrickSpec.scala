@@ -91,5 +91,39 @@ class BioBrickSpec extends FlatSpec {
 
   }
 
+  behavior of "partial brick cursors over labels"
+
+  val fullBrick =
+    """|| |t~~~~~$ | {ns:pos, type: {token: t}, unit: char}
+       |  >Running.<
+       |""".stripMargin
+
+  val partialBrickBegin =
+    """|| |t~~~| {ns:pos, type: {token: t}, unit: char}
+       |  >Runn<
+       |""".stripMargin
+
+  val partialBrickEnd =
+    """||t|~~$ | {ns:pos, type: {token: t}, unit: char}
+       |  >ing.<
+       |""".stripMargin
+
+
+  it should "parse half labels correctly" in {
+    val full = biolu.parseBioBrick(fullBrick, bioDict, None, None, None)
+    val begin = biolu.parseBioBrick(partialBrickBegin, bioDict, None, None, None)
+    val end = biolu.parseBioBrick(partialBrickEnd, bioDict, None, None, None)
+
+
+    assert(full.columns === begin.columns ++ end.columns)
+    // println("full")
+    // println(full)
+
+    // println("begin")
+    // println(begin)
+
+    // println("end")
+    // println(end) 
+  }
 
 }

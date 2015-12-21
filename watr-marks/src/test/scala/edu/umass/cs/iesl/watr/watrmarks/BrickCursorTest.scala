@@ -9,7 +9,7 @@ class BrickCursorSpec extends FlatSpec {
 
   import StandardLabels._
 
-  behavior of "labels"
+  behavior of "brick cursors over chars"
 
   val runBrick =
     """|| |t~$T| {ns:pos, type: {token: t}, unit: char}
@@ -43,6 +43,8 @@ class BrickCursorSpec extends FlatSpec {
 
   }
 
+  behavior of "brick cursors over labels"
+
   it should "navigate labels" in {
     val lspan = biolu.parseBioBrick(runBrick, bioDict, None, None, None)
     val charCursor = lspan.initBrickCursor(Token)
@@ -62,5 +64,7 @@ class BrickCursorSpec extends FlatSpec {
     // println(s"${cc4}")
 
   }
+
+
 
 }

@@ -17,7 +17,7 @@ trait ParserCommon extends Parsers {
 sealed trait RowType
 
 case class PinRow(
-  c: Char,
+  continuationChar: Char,
   biostr: String,
   obj: BioObj
 ) extends RowType
@@ -44,10 +44,6 @@ object bioParsers extends JavaTokenParsers with ParserCommon {
   import scalaz.std.either._
   import scalaz.syntax.traverse._
 
-  // def takeSubseqOf[T: ClassTag, S <: T](ts: List[S]): List[S]  = ts
-  //   .dropWhile(!_.isInstanceOf[T])
-  //   .takeWhile(_.isInstanceOf[T])
-  //   .map(_.asInstanceOf[S])
 
   def parseBioBrick(str: String): Either[String, BioBrick] = {
 

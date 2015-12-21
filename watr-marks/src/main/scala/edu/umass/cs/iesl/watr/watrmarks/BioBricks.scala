@@ -41,17 +41,15 @@ case class BrickColumns(
 
 object BrickColumns {
 
-
-
   def initCursor(l: BioLabel, columns: List[BrickColumn], searchForward: Boolean = true): Option[BrickCursor] = {
 
     l match {
       case CharLabel =>
         if(columns.length>0) {
           Some(BrickCursor(l,
-            current=columns.take(1),
-            prevs = (if (searchForward) List() else columns.drop(1)),
-            nexts = (if (searchForward) columns.drop(1) else List())
+            current = columns.take(1),
+            prevs   = (if (searchForward) List() else columns.drop(1)),
+            nexts   = (if (searchForward) columns.drop(1) else List())
           ))
         } else
           None
@@ -84,41 +82,6 @@ object BrickColumns {
     }
   }
 
-  // def initCursor(l: BioLabel, columns: List[BrickColumn]): Option[BrickCursor] = {
-  //   l match {
-  //     case CharLabel =>
-  //       if(columns.length>0) {
-  //         Some(BrickCursor(l,
-  //           columns.take(1),
-  //           List(),
-  //           columns.drop(1)
-  //         ))
-  //       } else
-  //         None
-  //     case _ =>
-  //       val (colsBeforeLabel, colsStartingWithLabel) =
-  //         columns.span({lcol =>
-  //           lcol.pins.exists{_.label != l}
-  //         })
-  //       val (colsWithLabelMinusOne, colsAfterLabelPlusOne) =
-  //         colsStartingWithLabel.span({lcol =>
-  //           lcol.pins.exists{ pin =>
-  //             pin != l.U && pin != l.L
-  //           }
-  //         })
-  //       val colsWithLabel =  colsWithLabelMinusOne ++ colsAfterLabelPlusOne.take(1)
-  //       val colsAfterLabel = colsAfterLabelPlusOne.drop(1)
-
-  //       if (colsWithLabel.length>0) {
-  //         Some(BrickCursor(l,
-  //           colsWithLabel,
-  //           colsBeforeLabel.reverse,
-  //           colsAfterLabel
-  //         ))
-  //       } else None
-  //   }
-  // }
-
 }
 
 
@@ -127,8 +90,8 @@ object BrickColumns {
 
 object biolu {
 
-  def parseBioLine(bioLine: String, continueChar: Option[Char], dict: BioLabelDictionary): Map[Int, BioPin] = {
-    var currChar = continueChar.getOrElse(' ')
+  def parseBioLine(bioLine: String, continueChar: Char, dict: BioLabelDictionary): Map[Int, BioPin] = {
+    var currChar = continueChar
     def currLabel = dict(currChar.toLower)
 
     (bioLine
@@ -154,24 +117,6 @@ object biolu {
     }).toList
   }
 
-  // def parseBioConstraints(constraintString: String): ConstraintRange = {
-  //   val typeList = constraintString.split('.')
-  //   val size = typeList.size
-  //   val lastType = typeList(size - 1)
-  //   val con = if (lastType == "char") {
-  //     CharCon
-  //   } else {
-  //     SegmentCon(lastType)
-  //   }
-
-  //   if (size == 1) {
-  //     Single(con)
-  //   } else {
-  //     Range(typeList(0), con)
-  //   }
-  // }
-
-
   def parseBioBrick(
     brickString: String,
     dict: BioLabelDictionary,
@@ -180,12 +125,20 @@ object biolu {
     maybeFontInfo: Option[List[FontInfo]] = None
   ): BrickColumns = {
 
+
+
     val bioBrick = bioParsers.parseBioBrick(brickString)
       .left.map(err => sys.error(s"error parsing ${brickString}: $err"))
       .right.get
 
+
     val p = bioBrick.pinRows
-      .map{ pinrow => parseBioLine(pinrow.biostr, None, dict) }
+      .map({ pinrow =>
+        parseBioLine(
+          pinrow.biostr,
+          pinrow.continuationChar,
+          dict)
+      })
 
     val allpins = p.toList
       .flatten
