@@ -5,6 +5,7 @@ package dom
 
 // import scala.annotation.tailrec
 import scalaz.{TreeLoc}
+import scalaz.std.stream._
 
 case class DomCursor(
   loc: TreeLoc[WatrElement]
@@ -31,11 +32,43 @@ case class DomCursor(
     }
   }
 
+  private def firstLeftsDownmost(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = {
+    tl.left match {
+      case Some(l) => l.firstChild match {
+        case Some(ld) => downRightMost(l)
+        case None => None // firstLeftsDownmost(l)
+      }
+      case None => None
+    }
+  }
+
+  private def downRightMost(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = {
+    val rightmost = unfold[Option[TreeLoc[WatrElement]], TreeLoc[WatrElement]](
+      Some(tl)
+    )({case t0 => t0 match {
+      case Some(t) =>
+        Some(t -> t.lastChild)
+      case None => None
+    }})
+    rightmost.lastOption
+  }
+
   private def nextLocDepthFirst(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = (
     tl.firstChild orElse
       tl.right orElse
       firstParentRight(tl)
   )
+
+
+  private def prevLocDepthFirst(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = {
+    // tl.left.flatMap{firstLeftsDownmost(_)}) orElse
+    firstLeftsDownmost(tl) orElse
+    tl.left orElse
+    tl.parent
+  }
+
+  def prevElem: Option[DomCursor] =
+    prevLocDepthFirst(loc).map(DomCursor(_))
 
   def nextElem: Option[DomCursor] =
     nextLocDepthFirst(loc).map(DomCursor(_))
