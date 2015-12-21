@@ -23,13 +23,13 @@ case class WatrDom(
       .filter(_.getLabel.isInstanceOf[TSpan])
       .dropWhile({ domloc =>
         val tspan = domloc.getLabel.asInstanceOf[TSpan]
-        tspan.bioBrick.toBrickCursor(l).isEmpty
+        tspan.bioBrick.initBrickCursor(l).isEmpty
       })
 
       // .span({ maybeBcur =>
       //   val tspan = domloc.getLabel.asInstanceOf[TSpan]
       //   println("tspan: "+tspan)
-      //   tspan.bioBrick.toBrickCursor(l).isEmpty
+      //   tspan.bioBrick.initBrickCursor(l).isEmpty
       // })
 
 
@@ -37,19 +37,19 @@ case class WatrDom(
       nodesStartingWithLabel
         .takeWhile({ domloc =>
           val tspan = domloc.getLabel.asInstanceOf[TSpan]
-          // !tspan.bioBrick.toBrickCursor(l).get.coversEndOfLabel
+          // !tspan.bioBrick.initBrickCursor(l).get.coversEndOfLabel
           val bioBrick = tspan.bioBrick
           println(s"bioBrick: ${bioBrick}; \n\n")
-          bioBrick.toBrickCursor(l).exists {
+          bioBrick.initBrickCursor(l).exists {
             bcur => !bcur.coversEndOfLabel
           }
         })
         // .span( { domloc =>
         //   val tspan = domloc.getLabel.asInstanceOf[TSpan]
-        //   // !tspan.bioBrick.toBrickCursor(l).get.coversEndOfLabel
+        //   // !tspan.bioBrick.initBrickCursor(l).get.coversEndOfLabel
         //   val bioBrick = tspan.bioBrick
         //   println(s"bioBrick: ${bioBrick}; \n\n")
-        //   val obcur = bioBrick.toBrickCursor(l)
+        //   val obcur = bioBrick.initBrickCursor(l)
         //   val bcur = obcur.get
 
         //   !bcur.coversEndOfLabel
@@ -66,7 +66,7 @@ case class WatrDom(
     val nodeBrickCursorPairs =
       nodesWithLabel.map({nloc => (
         DomCursor(nloc),
-        nloc.getLabel.asInstanceOf[TSpan].bioBrick.toBrickCursor(l).get
+        nloc.getLabel.asInstanceOf[TSpan].bioBrick.initBrickCursor(l).get
       )})
 
     BioCursor(nodeBrickCursorPairs)
@@ -156,11 +156,11 @@ case class TSpan (
 
   def fonts: List[FontInfo] = List.fill(text.length)(fontInfo)
 
-  def emptyBioBrick: LabeledSpan = LabeledSpan((text zip bounds.getOrElse(List())).toList.map{ case (char, bnd) =>
-    LabeledColumn(Set(), char, Some(fontInfo), Some(bnd))
+  def emptyBioBrick: BrickColumns = BrickColumns((text zip bounds.getOrElse(List())).toList.map{ case (char, bnd) =>
+    BrickColumn(Set(), char, Some(fontInfo), Some(bnd))
   })
 
-  lazy val bioBrick: LabeledSpan = {
+  lazy val bioBrick: BrickColumns = {
     bioBrickStr.map{str =>
       biolu.parseBioBrick(
         str,

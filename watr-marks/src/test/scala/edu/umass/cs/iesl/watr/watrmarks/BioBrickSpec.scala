@@ -44,20 +44,20 @@ class BioBrickSpec extends FlatSpec {
     val fontInfo: Option[FontInfo] = None
     val textBounds: Option[TextBounds] = None
 
-    val expectedSpan = LabeledSpan(List(
-      LabeledColumn(Set(Word.B, Verb.U ), 'R', fontInfo, textBounds),
-      LabeledColumn(Set(Word.I         ), 'u', fontInfo, textBounds),
-      LabeledColumn(Set(Word.L         ), 'n', fontInfo, textBounds),
-      LabeledColumn(Set(               ), ' ', fontInfo, textBounds),
-      LabeledColumn(Set(Word.B, Noun.U ), 'L', fontInfo, textBounds),
-      LabeledColumn(Set(Word.I         ), 'o', fontInfo, textBounds),
-      LabeledColumn(Set(Word.I         ), 'l', fontInfo, textBounds),
-      LabeledColumn(Set(Word.L         ), 'a', fontInfo, textBounds),
-      LabeledColumn(Set(               ), ' ', fontInfo, textBounds),
-      LabeledColumn(Set(Word.B, Verb.U ), 'r', fontInfo, textBounds),
-      LabeledColumn(Set(Word.I         ), 'u', fontInfo, textBounds),
-      LabeledColumn(Set(Word.L         ), 'n', fontInfo, textBounds),
-      LabeledColumn(Set(Punct.U        ), '.', fontInfo, textBounds)
+    val expectedSpan = BrickColumns(List(
+      BrickColumn(Set(Word.B, Verb.U ), 'R', fontInfo, textBounds),
+      BrickColumn(Set(Word.I         ), 'u', fontInfo, textBounds),
+      BrickColumn(Set(Word.L         ), 'n', fontInfo, textBounds),
+      BrickColumn(Set(               ), ' ', fontInfo, textBounds),
+      BrickColumn(Set(Word.B, Noun.U ), 'L', fontInfo, textBounds),
+      BrickColumn(Set(Word.I         ), 'o', fontInfo, textBounds),
+      BrickColumn(Set(Word.I         ), 'l', fontInfo, textBounds),
+      BrickColumn(Set(Word.L         ), 'a', fontInfo, textBounds),
+      BrickColumn(Set(               ), ' ', fontInfo, textBounds),
+      BrickColumn(Set(Word.B, Verb.U ), 'r', fontInfo, textBounds),
+      BrickColumn(Set(Word.I         ), 'u', fontInfo, textBounds),
+      BrickColumn(Set(Word.L         ), 'n', fontInfo, textBounds),
+      BrickColumn(Set(Punct.U        ), '.', fontInfo, textBounds)
     ))
 
 
@@ -82,11 +82,11 @@ class BioBrickSpec extends FlatSpec {
     def f(i: Int) = Option(fonts.get.apply(i))
 
     val lspan = biolu.parseBioBrick(runBrick, bioDict, None, bounds, fonts)
-    val expectedSpan = LabeledSpan(List(
-      LabeledColumn(Set(Word.B, Verb.U ), 'R', f(0), b(0)),
-      LabeledColumn(Set(Word.I         ), 'u', f(0), b(0)),
-      LabeledColumn(Set(Word.L         ), 'n', f(0), b(0)),
-      LabeledColumn(Set(Punct.U        ), '.', f(0), b(0))
+    val expectedSpan = BrickColumns(List(
+      BrickColumn(Set(Word.B, Verb.U ), 'R', f(0), b(0)),
+      BrickColumn(Set(Word.I         ), 'u', f(0), b(0)),
+      BrickColumn(Set(Word.L         ), 'n', f(0), b(0)),
+      BrickColumn(Set(Punct.U        ), '.', f(0), b(0))
     ))
 
   }

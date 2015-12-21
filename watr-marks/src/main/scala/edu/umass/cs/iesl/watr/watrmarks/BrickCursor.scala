@@ -3,9 +3,9 @@ package watrmarks
 
 case class BrickCursor(
   label: BioLabel,
-  current: List[LabeledColumn],
-  prevs: List[LabeledColumn] = List(),
-  nexts: List[LabeledColumn] = List()
+  current: List[BrickColumn],
+  prevs: List[BrickColumn] = List(),
+  nexts: List[BrickColumn] = List()
 ) {
 
   def fold(f: (BrickCursor) => Unit): Unit  = {
@@ -18,21 +18,26 @@ case class BrickCursor(
   }
 
   def next: Option[BrickCursor] = {
-    nexts.headOption.map{n =>
-      BrickCursor(
-        label,
-        List(n),
-        current ++ prevs,
-        nexts.drop(1)
+    BrickColumns.initCursor(label, nexts)
+      .map{ nextc => nextc.copy(
+        prevs = nextc.prevs ++ (current.reverse ++ prevs)
       )
     }
   }
+  def prev: Option[BrickCursor] = {
+    BrickColumns.initCursor(label, prevs, searchForward=false)
+      .map{ prevc => prevc.copy(
+        nexts = prevc.nexts ++ current ++ nexts
+      )
+    }
+  }
+
 
   def addLabel(label: BioLabel): BrickCursor = {
     this
   }
 
-  def toLabeledSpan = LabeledSpan(
+  def toBrickColumns = BrickColumns(
     prevs.reverse ++ current ++ nexts
   )
 
@@ -49,7 +54,7 @@ case class BrickCursor(
     lpins.contains(label.U) || lpins.contains(label.L) || label==CharLabel
 
   override def toString = {
-    s"""< ${prevs.reverse.map(_.char).mkString(" <- ")} ..[${label}:${current.mkString(" :: ")}].. ${nexts.map(_.char).mkString(" -> ")}>""".stripMargin
+    s"""< ${prevs.reverse.map(c => s"'${c.char}").mkString(" ")} ..[${label}:${current.mkString(" :: ")}].. ${nexts.map(c => s"'${c.char}").mkString(" ")}>""".stripMargin
 
   }
 

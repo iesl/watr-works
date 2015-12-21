@@ -18,7 +18,7 @@ case class TextBounds(
   height: Double
 )
 
-case class LabeledColumn(
+case class BrickColumn(
   pins: Set[BioPin] = Set(),
   char: Char,
   font: Option[FontInfo],
@@ -29,28 +29,33 @@ case class LabeledColumn(
 }
 
 
-case class LabeledSpan(
-  columns: List[LabeledColumn] = List()
+case class BrickColumns(
+  columns: List[BrickColumn] = List()
 ) {
-  override def toString = columns.mkString("lspan\n  ", "\n  ", "\n/lspan")
+  override def toString = columns.mkString("bricks\n  ", "\n  ", "\n/bricks")
 
-  def toBrickCursor(l: BioLabel): Option[BrickCursor] = {
+  def initBrickCursor(l: BioLabel): Option[BrickCursor] =
+    BrickColumns.initCursor(l, columns)
 
-    // debug("lspan" -> this, "l" -> l)
+}
+
+object BrickColumns {
+
+
+
+  def initCursor(l: BioLabel, columns: List[BrickColumn], searchForward: Boolean = true): Option[BrickCursor] = {
 
     l match {
       case CharLabel =>
         if(columns.length>0) {
           Some(BrickCursor(l,
-            columns.take(1),
-            List(),
-            columns.drop(1)
+            current=columns.take(1),
+            prevs = (if (searchForward) List() else columns.drop(1)),
+            nexts = (if (searchForward) columns.drop(1) else List())
           ))
         } else
           None
       case _ =>
-        // this needs to check if each pin is part a label span
-
         val (colsBeforeLabel, colsStartingWithLabel) =
           columns.span({lcol =>
             lcol.pins.exists{_.label != l}
@@ -59,24 +64,63 @@ case class LabeledSpan(
         val (colsWithLabelMinusOne, colsAfterLabelPlusOne) =
           colsStartingWithLabel.span({lcol =>
             lcol.pins.exists{ pin =>
-              pin != l.U && pin != l.L
+              (pin != l.U
+                && (
+                  (searchForward && pin != l.L)
+                  || (!searchForward && pin != l.B)))
             }
           })
+
         val colsWithLabel =  colsWithLabelMinusOne ++ colsAfterLabelPlusOne.take(1)
         val colsAfterLabel = colsAfterLabelPlusOne.drop(1)
 
-
         if (colsWithLabel.length>0) {
           Some(BrickCursor(l,
-            colsWithLabel,
-            colsBeforeLabel.reverse,
-            colsAfterLabel
+            current = (if (searchForward) colsWithLabel else colsWithLabel.reverse),
+            prevs   = (if (searchForward) colsBeforeLabel.reverse else colsBeforeLabel),
+            nexts   = (if (searchForward) colsAfterLabel else colsAfterLabel.reverse)
           ))
-        } else
-          None
+        } else None
     }
   }
+
+  // def initCursor(l: BioLabel, columns: List[BrickColumn]): Option[BrickCursor] = {
+  //   l match {
+  //     case CharLabel =>
+  //       if(columns.length>0) {
+  //         Some(BrickCursor(l,
+  //           columns.take(1),
+  //           List(),
+  //           columns.drop(1)
+  //         ))
+  //       } else
+  //         None
+  //     case _ =>
+  //       val (colsBeforeLabel, colsStartingWithLabel) =
+  //         columns.span({lcol =>
+  //           lcol.pins.exists{_.label != l}
+  //         })
+  //       val (colsWithLabelMinusOne, colsAfterLabelPlusOne) =
+  //         colsStartingWithLabel.span({lcol =>
+  //           lcol.pins.exists{ pin =>
+  //             pin != l.U && pin != l.L
+  //           }
+  //         })
+  //       val colsWithLabel =  colsWithLabelMinusOne ++ colsAfterLabelPlusOne.take(1)
+  //       val colsAfterLabel = colsAfterLabelPlusOne.drop(1)
+
+  //       if (colsWithLabel.length>0) {
+  //         Some(BrickCursor(l,
+  //           colsWithLabel,
+  //           colsBeforeLabel.reverse,
+  //           colsAfterLabel
+  //         ))
+  //       } else None
+  //   }
+  // }
+
 }
+
 
 
 
@@ -134,7 +178,7 @@ object biolu {
     maybeText: Option[String],
     maybeBounds: Option[List[TextBounds]] = None,
     maybeFontInfo: Option[List[FontInfo]] = None
-  ): LabeledSpan = {
+  ): BrickColumns = {
 
     val bioBrick = bioParsers.parseBioBrick(brickString)
       .left.map(err => sys.error(s"error parsing ${brickString}: $err"))
@@ -166,13 +210,13 @@ object biolu {
       .zip(fontInfos)
       .zipWithIndex
       .map{ case(((c, bound), fontInfo), i) =>
-        LabeledColumn(
+        BrickColumn(
           allpins.getOrElse(i, Set()),
           c, fontInfo, bound
         )
     }
 
-    LabeledSpan(cols.toList)
+    BrickColumns(cols.toList)
 
   }
 
