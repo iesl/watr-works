@@ -41,23 +41,42 @@ case class BrickColumns(
 
 object BrickColumns {
 
-  def initCursor(l: BioLabel, columns: List[BrickColumn], searchForward: Boolean = true): Option[BrickCursor] = {
+  // def advanceCursor(
+  //   l: BioLabel,
+  //   startingFrom: BrickCursor,
+  //   searchForward: Boolean = true
+  // ): Option[BrickCursor] = {
 
+
+  // }
+
+  def initCursor(
+    l: BioLabel,
+    startingColumns: List[BrickColumn],
+    searchForward: Boolean = true
+  ): Option[BrickCursor] = {
+    debugReport("initCursor()", startingColumns)
     l match {
       case CharLabel =>
-        if(columns.length>0) {
+        if(startingColumns.length>0) {
           Some(BrickCursor(l,
-            current = columns.take(1),
-            prevs   = (if (searchForward) List() else columns.drop(1)),
-            nexts   = (if (searchForward) columns.drop(1) else List())
+            current = startingColumns.take(1),
+            prevs   = (if (searchForward) List() else startingColumns.drop(1)),
+            nexts   = (if (searchForward) startingColumns.drop(1) else List())
           ))
         } else
           None
       case _ =>
+        debugReport("matching label", l)
         val (colsBeforeLabel, colsStartingWithLabel) =
-          columns.span({lcol =>
-            lcol.pins.exists{_.label != l}
+          startingColumns.span({lcol =>
+            val hasPin = lcol.pins.exists{_.label == l}
+            debugReport("examining pin", l, lcol.pins, hasPin)
+            // lcol.pins.exists{_.label != l}
+              !hasPin
           })
+
+        debugReport(colsBeforeLabel, colsStartingWithLabel)
 
         val (colsWithLabelMinusOne, colsAfterLabelPlusOne) =
           colsStartingWithLabel.span({lcol =>
@@ -65,9 +84,11 @@ object BrickColumns {
               (pin != l.U
                 && (
                   (searchForward && pin != l.L)
-                  || (!searchForward && pin != l.B)))
+                    || (!searchForward && pin != l.B)))
             }
           })
+
+        debugReport(colsWithLabelMinusOne, colsAfterLabelPlusOne)
 
         val colsWithLabel =  colsWithLabelMinusOne ++ colsAfterLabelPlusOne.take(1)
         val colsAfterLabel = colsAfterLabelPlusOne.drop(1)
@@ -80,7 +101,52 @@ object BrickColumns {
           ))
         } else None
     }
+
+
+
   }
+
+  // def initCursor(l: BioLabel, columns: List[BrickColumn], searchForward: Boolean = true): Option[BrickCursor] = {
+
+  //   l match {
+  //     case CharLabel =>
+  //       if(columns.length>0) {
+  //         Some(BrickCursor(l,
+  //           current = columns.take(1),
+  //           prevs   = (if (searchForward) List() else columns.drop(1)),
+  //           nexts   = (if (searchForward) columns.drop(1) else List())
+  //         ))
+  //       } else
+  //         None
+  //     case _ =>
+  //       debugReport("matching label", l)
+  //       val (colsBeforeLabel, colsStartingWithLabel) =
+  //         columns.span({lcol =>
+  //           lcol.pins.exists{_.label != l}
+  //         })
+
+  //       val (colsWithLabelMinusOne, colsAfterLabelPlusOne) =
+  //         colsStartingWithLabel.span({lcol =>
+  //           lcol.pins.exists{ pin =>
+  //             (pin != l.U
+  //               && (
+  //                 (searchForward && pin != l.L)
+  //                 || (!searchForward && pin != l.B)))
+  //           }
+  //         })
+
+  //       val colsWithLabel =  colsWithLabelMinusOne ++ colsAfterLabelPlusOne.take(1)
+  //       val colsAfterLabel = colsAfterLabelPlusOne.drop(1)
+
+  //       if (colsWithLabel.length>0) {
+  //         Some(BrickCursor(l,
+  //           current = (if (searchForward) colsWithLabel else colsWithLabel.reverse),
+  //           prevs   = (if (searchForward) colsBeforeLabel.reverse else colsBeforeLabel),
+  //           nexts   = (if (searchForward) colsAfterLabel else colsAfterLabel.reverse)
+  //         ))
+  //       } else None
+  //   }
+  // }
 
 }
 

@@ -89,5 +89,58 @@ class DomCursorSpec extends FlatSpec {
     assert(t4.getLabel.asInstanceOf[TSpan].text === "456")
 
   }
+  val svgStr = """|<svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168">
+                  |    <g>
+                  |      <text>
+                  |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="| |T t| {ns:tok, type: {token: t}, unit: char}"
+                  |       >abc</tspan>
+                  |      </text>
+                  |      <text>
+                  |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="|t|~$t| {ns:tok, type: {token: t}, unit: char}"
+                  |       >def</tspan>
+                  |      </text>
+                  |    </g>
+                  |    <text>
+                  |      <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="|t|$T | {ns:tok, type: {token: t}, unit: char}"
+                  |       >123</tspan>
+                  |    </text>
+                  |    <g>
+                  |      <text>
+                  |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="| |TTT| {ns:tok, type: {token: t}, unit: char}"
+                  |       >ghi</tspan>
+                  |      </text>
+                  |      <text>
+                  |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="| | t$| {ns:tok, type: {token: t}, unit: char}"
+                  |       >jkl</tspan>
+                  |      </text>
+                  |    </g>
+                  |  </svg>
+                  |""".stripMargin
 
+  it should "navigate nexts properly" in {
+    val doc = dom.readWatrDom(new StringReader(svgStr), bioDict)
+    val dcur = doc.toDomCursor
+
+    val _ = for {
+      t1 <- dcur.nextTSpan
+      // _ = println("t1" + t1.getLabelAsTSpan)
+      _ = assert(t1.getLabelAsTSpan.text == "abc")
+      t2 <- t1.nextTSpan
+      _ = assert(t2.getLabelAsTSpan.text == "def")
+      t3 <- t2.nextTSpan
+      _ = assert(t3.getLabelAsTSpan.text == "123")
+      t4 <- t3.nextTSpan
+      _ = assert(t4.getLabelAsTSpan.text == "ghi")
+      t5 <- t4.nextTSpan
+      _ = assert(t5.getLabelAsTSpan.text == "jkl")
+    }{
+      // println("done")
+    }
+
+  }
 }

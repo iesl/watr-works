@@ -11,42 +11,56 @@ class BioCursorSpec extends FlatSpec {
   behavior of "bio cursors (brick+dom cursor)"
 
   val svgStr = """|<svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168">
-                   |    <g>
-                   |      <text>
-                   |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
-                   |bio="| |TTT| {ns:tok, type: {token: t}, unit: char}"
-                   |       >abc</tspan>
-                   |      </text>
-                   |      <text>
-                   |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
-                   |bio="| |TTT| {ns:tok, type: {token: t}, unit: char}"
-                   |       >def</tspan>
-                   |      </text>
-                   |    </g>
-                   |    <text>
-                   |      <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
-                   |bio="| |TTT| {ns:tok, type: {token: t}, unit: char}"
-                   |       >ghi</tspan>
-                   |    </text>
-                   |    <g>
-                   |      <text>
-                   |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
-                   |bio="| |TTT| {ns:tok, type: {token: t}, unit: char}"
-                   |       >ghi</tspan>
-                   |      </text>
-                   |      <text>
-                   |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
-                   |bio="| |TTT| {ns:tok, type: {token: t}, unit: char}"
-                   |       >jkl</tspan>
-                   |      </text>
-                   |    </g>
-                   |  </svg>
-                   |""".stripMargin
+                  |    <g>
+                  |      <text>
+                  |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="| |T t| {ns:tok, type: {token: t}, unit: char}"
+                  |       >abc</tspan>
+                  |      </text>
+                  |      <text>
+                  |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="|t|~$t| {ns:tok, type: {token: t}, unit: char}"
+                  |       >def</tspan>
+                  |      </text>
+                  |    </g>
+                  |    <text>
+                  |      <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="|t|$T | {ns:tok, type: {token: t}, unit: char}"
+                  |       >123</tspan>
+                  |    </text>
+                  |    <g>
+                  |      <text>
+                  |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="| |TTT| {ns:tok, type: {token: t}, unit: char}"
+                  |       >ghi</tspan>
+                  |      </text>
+                  |      <text>
+                  |        <tspan x="0 1 2" endX="100.2" y="0" font-size="20px"
+                  |bio="| | t$| {ns:tok, type: {token: t}, unit: char}"
+                  |       >jkl</tspan>
+                  |      </text>
+                  |    </g>
+                  |  </svg>
+                  |""".stripMargin
 
 
   it should "navigate chars across dom nodes" in {
-      val doc = dom.readWatrDom(new StringReader(svgStr), bioDict)
-      val charCursor = doc.toCursor(CharLabel)
+    val doc = dom.readWatrDom(new StringReader(svgStr), bioDict)
+
+    val _ = for {
+      t1 <- doc.toCursor(Token)
+      _ = println("t1: "+t1)
+      t2 <- t1.next
+      _ = println("t2: "+t2)
+      // t3 <- t2.next
+      // _ = println("t3: "+t3)
+    } yield {
+      println("done")
+    }
+
+
+
+
 
 
   }

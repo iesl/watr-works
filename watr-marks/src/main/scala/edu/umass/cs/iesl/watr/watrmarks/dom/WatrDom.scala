@@ -16,60 +16,7 @@ case class WatrDom(
   def toDomCursor = DomCursor(tree.loc)
 
   def toCursor(l: BioLabel) = {
-    // val (nodesBeforeLabel, nodesStartingWithLabel) = tree.loc
-    val nodesStartingWithLabel = tree.loc
-      .cojoin
-      .toTree.flatten
-      .filter(_.getLabel.isInstanceOf[TSpan])
-      .dropWhile({ domloc =>
-        val tspan = domloc.getLabel.asInstanceOf[TSpan]
-        tspan.bioBrick.initBrickCursor(l).isEmpty
-      })
-
-      // .span({ maybeBcur =>
-      //   val tspan = domloc.getLabel.asInstanceOf[TSpan]
-      //   println("tspan: "+tspan)
-      //   tspan.bioBrick.initBrickCursor(l).isEmpty
-      // })
-
-
-    val nodesWithLabelMinusOne =
-      nodesStartingWithLabel
-        .takeWhile({ domloc =>
-          val tspan = domloc.getLabel.asInstanceOf[TSpan]
-          // !tspan.bioBrick.initBrickCursor(l).get.coversEndOfLabel
-          val bioBrick = tspan.bioBrick
-          println(s"bioBrick: ${bioBrick}; \n\n")
-          bioBrick.initBrickCursor(l).exists {
-            bcur => !bcur.coversEndOfLabel
-          }
-        })
-        // .span( { domloc =>
-        //   val tspan = domloc.getLabel.asInstanceOf[TSpan]
-        //   // !tspan.bioBrick.initBrickCursor(l).get.coversEndOfLabel
-        //   val bioBrick = tspan.bioBrick
-        //   println(s"bioBrick: ${bioBrick}; \n\n")
-        //   val obcur = bioBrick.initBrickCursor(l)
-        //   val bcur = obcur.get
-
-        //   !bcur.coversEndOfLabel
-        // })
-
-    // import _root_.ammonite.repl.Main._
-    // debug("self" -> this, "nodesStartingWithLabel" -> nodesStartingWithLabel, "nodesWithLabelMinusOne" -> nodesWithLabelMinusOne)
-
-
-    val nodesWithLabel =  nodesWithLabelMinusOne ++ nodesStartingWithLabel.drop(nodesWithLabelMinusOne.length).take(1)
-
-    // val nodesAfterLabel = nodesAfterLabelPlusOne.drop(1)
-
-    val nodeBrickCursorPairs =
-      nodesWithLabel.map({nloc => (
-        DomCursor(nloc),
-        nloc.getLabel.asInstanceOf[TSpan].bioBrick.initBrickCursor(l).get
-      )})
-
-    BioCursor(nodeBrickCursorPairs)
+    BioCursor.initCursorFwd(l, toDomCursor)
   }
 
 }

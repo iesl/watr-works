@@ -4,14 +4,22 @@ package dom
 
 
 // import scala.annotation.tailrec
-import scalaz.{TreeLoc}
+import scalaz.{Tree, TreeLoc, Node}
 
 case class DomCursor(
   loc: TreeLoc[WatrElement]
 ) {
 
+  override def toString = {
+    val path = loc.path.reverse.mkString(" :: ")
+    path
+  }
 
   def getLabel: WatrElement               = loc.getLabel
+  def setLabel(a: WatrElement): DomCursor = modifyTree((t: Tree[WatrElement]) => Tree.Node(a, t.subForest))
+
+  def modifyLabel(f: WatrElement => WatrElement): DomCursor = setLabel(f(getLabel))
+
   def root: DomCursor                     = DomCursor(loc.root)
   def parent: Option[DomCursor]           = loc.parent map {p => DomCursor(p) }
   def left: Option[DomCursor]             = loc.left map {p => DomCursor(p) }
@@ -20,6 +28,10 @@ case class DomCursor(
   def lastChild: Option[DomCursor]        = loc.lastChild map {p => DomCursor(p) }
   def getChild(n: Int): Option[DomCursor] = loc.getChild(n) map {p => DomCursor(p) }
 
+  def setTree(t: Tree[WatrElement]): DomCursor = DomCursor(TreeLoc.loc(t, loc.lefts, loc.rights, loc.parents))
+  def modifyTree(f: Tree[WatrElement] => Tree[WatrElement]): DomCursor = setTree(f(loc.tree))
+
+  def map[V](f: WatrElement => WatrElement): DomCursor = DomCursor(loc.map(f))
 
   def getLabelAsTSpan: TSpan = getLabel.asInstanceOf[TSpan]
 
@@ -63,7 +75,6 @@ case class DomCursor(
 
 
   private def prevLocDepthFirst(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = {
-    // tl.left.flatMap{firstLeftsDownmost(_)}) orElse
     firstLeftsDownmost(tl) orElse
     tl.left orElse
     tl.parent
@@ -79,8 +90,10 @@ case class DomCursor(
 
     def _next(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = {
       tl.getLabel match {
-        case e: TSpan => Some(tl)
-        case _        => nextLocDepthFirst(tl).flatMap(_next(_))
+        case e: TSpan =>
+          Some(tl)
+        case _        =>
+          nextLocDepthFirst(tl).flatMap(_next(_))
       }
     }
 
@@ -90,7 +103,6 @@ case class DomCursor(
   }
 
 
-  // def map[V](f: WatrElement => V): TreeLoc[B] = DomCursor(loc.map(f))
 
   // def findChild(p: Tree[A] =
   // def split(acc: TreeForest[A], xs: TreeForest[A]): Option[(TreeForest[A], Tree[A], TreeForest[A])] =
