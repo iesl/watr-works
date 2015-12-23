@@ -4,7 +4,6 @@ package watrmarks
 import java.io.StringReader
 import org.scalatest._
 
-
 class BrickCursorSpec extends FlatSpec {
 
   import StandardLabels._
@@ -21,25 +20,27 @@ class BrickCursorSpec extends FlatSpec {
     val lspan = biolu.parseBioBrick(runBrick, bioDict, None, None, None)
     val charCursor = lspan.initBrickCursor(CharLabel)
 
-    val cc1 = charCursor.get
-    val cc2 = cc1.next.get
-    val cc3 = cc2.next.get
-    val cc4 = cc3.next.get
-    val cc5 = cc4.prev.get
-    val cc6 = cc5.prev.get
-    val cc7 = cc6.prev.get
 
-    assert(cc1 === cc7)
-    assert(cc1.prev === None)
-    assert(cc4.next === None)
 
-    // println(s"${cc1}")
-    // println(s"${cc2}")
-    // println(s"${cc3}")
-    // println(s"${cc4}")
-    // println(s"${cc5}")
-    // println(s"${cc6}")
-    // println(s"${cc7}")
+    for {
+      cc1 <- charCursor
+      asdf  = cc1.showBox
+      // _ = debug(cc1.showBox.padTop1)
+      cc2 <- cc1.next
+      // _ = debug(cc2.showBox.padTop1)
+      cc3 <- cc2.next
+      cc4 <- cc3.next
+      // _ = debug(cc4.showBox |> boxlf)
+      cc5 <- cc4.prev
+      cc6 <- cc5.prev
+      cc7 <- cc6.prev
+    } {
+      assert(cc1 === cc7)
+      assert(cc1.prev === None)
+      assert(cc4.next === None)
+    }
+
+
 
   }
 
@@ -49,20 +50,18 @@ class BrickCursorSpec extends FlatSpec {
     val lspan = biolu.parseBioBrick(runBrick, bioDict, None, None, None)
     val charCursor = lspan.initBrickCursor(Token)
 
-    val cc1 = charCursor.get
-    val cc2 = cc1.next.get
-    val cc3 = cc2.prev.get
-
-    assert(cc1 === cc3)
-    assert(cc3.prev === None)
-    assert(cc2.next === None)
-
-
-    // println(s"${cc1}")
-    // println(s"${cc2}")
-    // println(s"${cc3}")
-    // println(s"${cc4}")
-
+    for {
+      cc1 <- charCursor
+      // _ = debug(cc1.showBox.padTop1)
+      cc2 <- cc1.next
+      // _ = debug(cc2.showBox.padTop1)
+      cc3 <- cc2.prev
+      // _ = debug(cc3.showBox.padTop1)
+    } {
+      assert(cc1 === cc3)
+      assert(cc3.prev === None)
+      assert(cc2.next === None)
+    }
   }
 
   behavior of "partial bricks cursors over labels"
@@ -91,6 +90,10 @@ class BrickCursorSpec extends FlatSpec {
     val fullCur = full.initBrickCursor(Token).get
     val beginCur = begin.initBrickCursor(Token).get
     val endCur = end.initBrickCursor(Token).get
+
+    // debug(fullCur.showBox.padTop1)
+    // debug(beginCur.showBox.padTop1)
+    // debug(endCur.showBox.padTop1)
 
     assert(fullCur.coversCompleteLabel)
     assert(fullCur.coversStartOfLabel)

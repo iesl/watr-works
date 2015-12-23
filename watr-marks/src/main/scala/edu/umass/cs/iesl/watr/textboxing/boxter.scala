@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textboxing
 
-object Boxes {
+object TextBoxing {
   import scalaz._
   import Scalaz._
   import Lens._
@@ -65,6 +65,17 @@ object Boxes {
   implicit def stringToBox(s: String): Box = {
     linesToBox(scala.io.Source.fromString(s).getLines.toList)
   }
+
+
+  // implicit def ToBoxingConstructors(v: String): BoxingConstructors =
+  //   new BoxingConstructors(v)
+
+  implicit class BoxingConstructors(val value: String) extends AnyVal {
+    def box: Box = tbox(value)
+  }
+
+
+
 
   def mstringToList(s: String): List[String] =
     scala.io.Source.fromString(s).getLines.toList
@@ -545,29 +556,7 @@ object Boxes {
 
 
 object App extends App {
-  import Boxes._
-
-
-  def boxesTest1(): Unit = {
-
-    val iconicCreator = vcat(right)(List(tbox("creator"),  tbox("de1cecf8-88d3-4580-a15c-6f207627860c"), tbox("AdamIESL Sau{_id: ...}")))
-    val iconicTarget = vcat(right)(List(tbox("target"),  tbox("de1cecf8-88d3-4580-a15c-6f207627860c"), tbox("David S{_id: ...}"), tbox("href=...")))
-    val sample = hsep(3)(top)(List(iconicTarget, iconicCreator))
-
-    // val sample = text("forward") +| text("f1fb306c-0962-4ba9-acb1-a2dc761e04e9") +| text("creator: de1cecf8-88d3-4580-a15c-6f207627860c") atop text("AdamIESL Sau{_id: ...}")
-
-    println("========")
-    printBox(iconicCreator)
-    println("========")
-    printBox(iconicTarget)
-    println("========")
-    printBox(sample)
-    println("========")
-  }
-
-
-  /// val hline = (c:String) => (n:Int) => (hjoin()( (takePadAlign(left, text(c), n)(List())):_* ))
-  // val vline = (c:String) => (n:Int) => (vjoin()( (takePadAlign(center1, text(c), n)(List())):_* ))
+  import TextBoxing._
 
 
   def sampleText1 = vjoin(center2)(
@@ -603,34 +592,32 @@ object App extends App {
   def sampleBox2 = vjoin(center1)(hjoin(center1)(sampleText1, "  <-|||->  ", sampleText2), sampleText3)
 
 
-  override def main(args: Array[String]): Unit = {
 
-    val flowed = para(left)(20)(rawText)
-    println(borderInlineH(
-      "Inline-header label" atop flowed
-    ))
+  val flowed = para(left)(20)(rawText)
+  println(borderInlineH(
+    "Inline-header label" atop flowed
+  ))
 
-    println("\n\n")
+  println("\n\n")
 
-    println(borderInlineTop(
-      "Inline-header top header" atop sampleBox1
-    ))
+  println(borderInlineTop(
+    "Inline-header top header" atop sampleBox1
+  ))
 
-    println("\n\n")
+  println("\n\n")
 
-    println(border(
-      "simple border" atop sampleBox2
-    ))
+  println(border(
+    "simple border" atop sampleBox2
+  ))
 
 
-    println("\n\n")
+  println("\n\n")
 
-    println(borderLeftRight("--> ", " <--")(
-      "Left/right border" atop sampleBox3
-    ))
+  println(borderLeftRight("--> ", " <--")(
+    "Left/right border" atop sampleBox3
+  ))
 
-    println("\n\n")
+  println("\n\n")
 
-    //boxesTest1()
-  }
+  // boxesTest1()
 }

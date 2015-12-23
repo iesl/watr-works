@@ -16,6 +16,7 @@ class BioBrickSpec extends FlatSpec {
   it should "allow construction of BIOLU pins from label definitions" in {
     // lazy val ld = LabelDictionary.create(word, verb)
     assert(Verb.B === BPin(Verb))
+
   }
 
   it should "ensure label names are unique within a namespace" in {
@@ -64,6 +65,8 @@ class BioBrickSpec extends FlatSpec {
     val lspan = biolu.parseBioBrick(runLolaFull, bioDict, None)
 
     assert(lspan === expectedSpan)
+
+    // debugReport(expectedSpan.showBox)
 
   }
 

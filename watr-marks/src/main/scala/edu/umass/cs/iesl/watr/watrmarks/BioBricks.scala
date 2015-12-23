@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr.watrmarks
 
 
+
 case class FontDictionary(
   dict: Map[String, FontInfo] = Map()
 )
@@ -26,6 +27,15 @@ case class BrickColumn(
 ) {
   // override def toString = s"""${char}; pins:${pins.mkString(",")}; fnt:${font}; b:${bounds}"""
   override def toString = s"""'${char}' pins:${pins.mkString(",")}"""
+
+  def showBox: TB.Box = {
+    TB.hjoin(sep=",")(
+      s"'${char}",
+      TB.hjoin(sep=",")(
+        pins.map(_.showBox).toList:_*
+      )
+    )
+  }
 }
 
 
@@ -34,6 +44,12 @@ case class BrickColumns(
 ) {
   override def toString = columns.mkString("bricks\n  ", "\n  ", "\n/bricks")
 
+  def showBox: TB.Box = {
+    columns
+      .map(_.showBox)
+      .mkVBox("")
+  }
+
   def initBrickCursor(l: BioLabel): Option[BrickCursor] =
     BrickColumns.initCursor(l, columns)
 
@@ -41,21 +57,12 @@ case class BrickColumns(
 
 object BrickColumns {
 
-  // def advanceCursor(
-  //   l: BioLabel,
-  //   startingFrom: BrickCursor,
-  //   searchForward: Boolean = true
-  // ): Option[BrickCursor] = {
-
-
-  // }
-
   def initCursor(
     l: BioLabel,
     startingColumns: List[BrickColumn],
     searchForward: Boolean = true
   ): Option[BrickCursor] = {
-    debugReport("initCursor()", startingColumns)
+    // debugReport("initCursor()", startingColumns)
     l match {
       case CharLabel =>
         if(startingColumns.length>0) {
@@ -67,16 +74,16 @@ object BrickColumns {
         } else
           None
       case _ =>
-        debugReport("matching label", l)
+        // debugReport("matching label", l)
         val (colsBeforeLabel, colsStartingWithLabel) =
           startingColumns.span({lcol =>
             val hasPin = lcol.pins.exists{_.label == l}
-            debugReport("examining pin", l, lcol.pins, hasPin)
+            // debugReport("examining pin", l, lcol.pins, hasPin)
             // lcol.pins.exists{_.label != l}
               !hasPin
           })
 
-        debugReport(colsBeforeLabel, colsStartingWithLabel)
+        // debugReport(colsBeforeLabel, colsStartingWithLabel)
 
         val (colsWithLabelMinusOne, colsAfterLabelPlusOne) =
           colsStartingWithLabel.span({lcol =>
@@ -88,7 +95,7 @@ object BrickColumns {
             }
           })
 
-        debugReport(colsWithLabelMinusOne, colsAfterLabelPlusOne)
+        // debugReport(colsWithLabelMinusOne, colsAfterLabelPlusOne)
 
         val colsWithLabel =  colsWithLabelMinusOne ++ colsAfterLabelPlusOne.take(1)
         val colsAfterLabel = colsAfterLabelPlusOne.drop(1)
@@ -242,42 +249,3 @@ object biolu {
 }
 
 
-
-
-// sealed trait Constraint
-
-// // /** Constructor for char constraints
-// //   *
-// //   * It is used by Annotator instances to constrain labels of annotation types
-// //   * to the the primitive unit of characters
-// //   */
-// case object CharCon extends Constraint
-// case object CharConstraint extends Constraint
-
-// // /** Constructor for segment constraints
-// //   *
-// //   * It is used by Annotator instances to constrain labels of annotation types
-// //   * to the index pairs containing the B or U labels of other annotation types
-// //   */
-// case class SegmentCon(annotationTypeName: String) extends Constraint
-// case class BioConstraint(label: BioLabel) extends Constraint
-
-
-// // @deprecated("","")
-// sealed trait ConstraintRange
-
-
-// /** Constructor to create a constraint range
-//   *
-//   * It is used by Annotator instances to hold an annotation type string
-//   * and a constraint such that the annotation type is constrained by the constraint
-//   * or is constrained by a SegmentCon whose annotation type has the qualities
-//   * of the previously mentioned annotation type string
-//   */
-// @deprecated("","")
-// case class Range(annoTypeName: String, con: Constraint) extends ConstraintRange
-
-
-// /** Constructor to make a constraint range consisting of just a single constraint **/
-// @deprecated("","")
-// case class Single(constraint: Constraint) extends ConstraintRange

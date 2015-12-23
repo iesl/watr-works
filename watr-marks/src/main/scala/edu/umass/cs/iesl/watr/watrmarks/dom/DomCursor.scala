@@ -14,6 +14,9 @@ case class DomCursor(
     val path = loc.path.reverse.mkString(" :: ")
     path
   }
+  def showBox: TB.Box = {
+    loc.path.reverse.mkString("::")
+  }
 
   def getLabel: WatrElement               = loc.getLabel
   def setLabel(a: WatrElement): DomCursor = modifyTree((t: Tree[WatrElement]) => Tree.Node(a, t.subForest))
@@ -34,6 +37,20 @@ case class DomCursor(
   def map[V](f: WatrElement => WatrElement): DomCursor = DomCursor(loc.map(f))
 
   def getLabelAsTSpan: TSpan = getLabel.asInstanceOf[TSpan]
+  def isFocusedOnTSpan: Boolean = getLabel.isInstanceOf[TSpan]
+
+  def unfoldTSpansCursors: Stream[DomCursor] = {
+    import scalaz.std.stream._
+    val start = if (isFocusedOnTSpan){
+      Some(this)
+    } else nextTSpan
+    unfold[Option[DomCursor], DomCursor](
+      start
+    )(_ match {
+      case Some(dcur) => Some(dcur -> dcur.nextTSpan)
+      case _ => None
+    })
+  }
 
   private def firstParentRight(tl: TreeLoc[WatrElement]): Option[TreeLoc[WatrElement]] = {
     tl.parent match {

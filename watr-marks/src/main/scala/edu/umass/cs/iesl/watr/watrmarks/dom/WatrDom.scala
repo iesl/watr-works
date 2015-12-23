@@ -15,9 +15,10 @@ case class WatrDom(
 
   def toDomCursor = DomCursor(tree.loc)
 
-  def toCursor(l: BioLabel) = {
-    BioCursor.initCursorFwd(l, toDomCursor)
-  }
+  def toCursor(l: BioLabel):Option[BioCursor] = for {
+    tspanCursor <- toDomCursor.nextTSpan
+    bioCursor <- BioCursor.initCursorFwd(l, tspanCursor)
+  } yield bioCursor
 
 }
 

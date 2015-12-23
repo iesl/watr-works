@@ -8,7 +8,11 @@ import org.scalatest._
 class BioCursorSpec extends FlatSpec {
   import StandardLabels._
 
+
+
   behavior of "bio cursors (brick+dom cursor)"
+
+
 
   val svgStr = """|<svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168">
                   |    <g>
@@ -44,26 +48,61 @@ class BioCursorSpec extends FlatSpec {
                   |""".stripMargin
 
 
-  it should "navigate chars across dom nodes" in {
+
+  it should "properly combine lists of brick+dom cursors" in {
     val doc = dom.readWatrDom(new StringReader(svgStr), bioDict)
+    val FooLabel = BioLabel("foo", "foo")
 
-    val _ = for {
-      t1 <- doc.toCursor(Token)
-      _ = println("t1: "+t1)
-      t2 <- t1.next
-      _ = println("t2: "+t2)
-      // t3 <- t2.next
-      // _ = println("t3: "+t3)
-    } yield {
-      println("done")
-    }
+    val tspanCs = doc.toDomCursor
+      .unfoldTSpansCursors
+      .map({ tcur =>
+          val bcur = tcur.getLabelAsTSpan
+          .bioBrick
+          .initBrickCursor(CharLabel).get
+
+        // debug(bcur.showBox.padTop1)
+
+        val bcurLabeled = bcur.addLabel(FooLabel)
+
+        // debug(bcurLabeled.showBox.padTop1)
+
+        tcur -> bcurLabeled
+      })
 
 
+    val head = tspanCs.head
+    val tail = tspanCs.tail
 
 
+    val combined = BioCursor.combineCursors(head, tail)
 
+    combined.root
+      .unfoldTSpansCursors
+      .foreach ({ dcur =>
+        val combinedBioBrick = dcur.getLabelAsTSpan.bioBrick
+
+        debug(combinedBioBrick.showBox.padTop1)
+      })
 
   }
+
+  // it should "navigate chars across dom nodes" in {
+  //   val doc = dom.readWatrDom(new StringReader(svgStr), bioDict)
+
+  //   debugReport(this.testNames.head)
+
+  //   val _ = for {
+  //     t1 <- doc.toCursor(Token)
+  //     _ = debug(t1.showBox.padTop1)
+  //     t2 <- t1.next
+  //     _ = debug(t2.showBox.padTop1)
+  //     t3 <- t2.next
+  //     _ = debug(t3.showBox.padTop1)
+  //   } yield {
+  //     println("done")
+  //   }
+
+  // }
 
 
 }

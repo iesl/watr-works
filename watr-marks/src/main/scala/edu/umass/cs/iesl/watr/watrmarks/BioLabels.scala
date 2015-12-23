@@ -1,9 +1,16 @@
-package edu.umass.cs.iesl.watr.watrmarks
+package edu.umass.cs.iesl.watr
+package watrmarks
+
+import textboxing.TextBoxing
 
 sealed trait BioPin {
   def label: BioLabel
   def pinChar: Char
   override def toString = s"<${pinChar}::${label}>"
+
+  def showBox: TB.Box = {
+    s"${label.name.take(3).mkString}.${pinChar}"
+  }
 }
 
 case class BPin(label: BioLabel, override val pinChar:Char='B') extends BioPin
@@ -31,6 +38,11 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
     this
   }
   override def toString = s"${namespace}:${name}"
+
+  import TextBoxing._
+  def showBox: TextBoxing.Box = {
+    s"${namespace}:${name}".box
+  }
 
 }
 

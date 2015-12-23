@@ -1,8 +1,10 @@
-package edu.umass.cs.iesl.watr.watrmarks
+package edu.umass.cs.iesl.watr
+package watrmarks
+
+import textboxing.TextBoxing
 
 import dom._
 
-import com.softwaremill.debug.DebugConsole._
 
 case class BioCursor(
   head: (DomCursor, BrickCursor),
@@ -18,41 +20,25 @@ case class BioCursor(
   }
 
   def next: Option[BioCursor] = {
+    val (_, lastBrickCursor) = focii.last
 
-    println("next()")
+    val combined = BioCursor.combineCursors(head, tail)
 
-    val (hdcur, hbcur) = head
-
-    println(s"hdcur = ${hdcur}")
-    println(s"hbcur = ${hbcur}")
-
-    val updatedHead = hdcur.modifyLabel { t =>
-      t.asInstanceOf[TSpan].copy(
-        bioBrick = hbcur.toBrickColumns
-      )
+    lastBrickCursor.next.map({nextBrickCursor =>
+      BioCursor.initCursorFwd(
+        lastBrickCursor.label,
+        combined,
+        Some(nextBrickCursor))
+    }).getOrElse {
+      combined.nextTSpan.flatMap({nextTspan =>
+        BioCursor.initCursorFwd(
+          lastBrickCursor.label,
+          nextTspan,
+          None
+        )
+      })
     }
 
-    val foldedFocii = tail
-      .foldLeft(updatedHead)({ (accDCur,dbcurs) =>
-        val (dcur, bcur) = dbcurs
-
-        val nextTSpanOpt = accDCur.nextTSpan
-        assert(nextTSpanOpt.isDefined, "error advancing BioCursor")
-
-        val nextTSpan = nextTSpanOpt.get
-
-        assert(nextTSpan.getLabel == dcur.getLabel, "error advancing BioCursor")
-
-        nextTSpan.modifyLabel{ t =>
-          t.asInstanceOf[TSpan].copy(
-            bioBrick = hbcur.toBrickColumns
-          )
-        }
-      })
-
-    val (ldcur, lbcur) = focii.last
-
-    BioCursor.initCursorFwd(hbcur.label, foldedFocii, Some(lbcur))
   }
 
 
@@ -66,44 +52,115 @@ case class BioCursor(
     }
   }
 
-  override def toString = {
-    val fs = focii.map{ case (dcur,bcur) =>
+  // override def toString = {
+  //   "biocursor<>"
+  // }
 
-      // println(s"dcur: ${dcur}")
-      // println(s"bcur: ${bcur}")
-
-      s""" ${dcur.toString}
-      ${bcur.toString}"""
-    }.mkString("\n")
-
-    s"cur<${fs}>"
+  def showBox: TB.Box = {
+    focii.map{ case (dcur, bcur) =>
+      dcur.showBox atop bcur.showBox
+    }.mkVBox() |> TB.border
+  // }.mkVBox() |> TB.borderLeftRight("<", "")
   }
 
 }
 
 object BioCursor {
 
-  def searchForwardForLabelEnd(label: BioLabel, odcur: Option[DomCursor]): Seq[DomCursor] = {
+  def combineCursors(
+    head: (DomCursor, BrickCursor),
+    tail: Seq[(DomCursor, BrickCursor)]
+  ): DomCursor = {
+
+    val (hdcur, hbcur) = head
+    val focii = head+:tail
+
+    val updatedHead = hdcur.modifyLabel { t =>
+      t.asInstanceOf[TSpan].copy(
+        bioBrick = hbcur.toBrickColumns
+      )
+    }
+
+    // debugReport("updated head",
+    //   updatedHead.getLabelAsTSpan.bioBrick.showBox.padTop1
+    // )
+
+    val foldedFocii = tail
+      .foldLeft(updatedHead)({ (accDCur,dbcurs) =>
+        val (dcur, bcur) = dbcurs
+
+        val nextTSpanOpt = accDCur.nextTSpan
+        assert(nextTSpanOpt.isDefined, "error advancing BioCursor")
+
+        val nextTSpan = nextTSpanOpt.get
+
+        assert(nextTSpan.getLabel == dcur.getLabel, "error advancing BioCursor")
+
+        val modifiedTspan = nextTSpan.modifyLabel{ t =>
+          t.asInstanceOf[TSpan].copy(
+            bioBrick = bcur.toBrickColumns
+          )
+        }
+
+        // debugReport("next tspan",
+        //   nextTSpan.getLabelAsTSpan.bioBrick.showBox.padTop1
+        // )
+        // debugReport("incoming acc",
+        //   accDCur.getLabelAsTSpan.bioBrick.showBox.padTop1
+        // )
+        // debugReport("modified acc",
+        //   modifiedTspan.getLabelAsTSpan.bioBrick.showBox.padTop1
+        // )
+
+        modifiedTspan
+      })
+
+    val (ldcur, lbcur) = focii.last
+
+    foldedFocii
+  }
+
+  // def searchForwardForLabel(label: BioLabel, odcur: Option[DomCursor], searchForBegin:Boolean): Seq[DomCursor] = {
+  def searchForwardForLabel(label: BioLabel, odcur: Option[DomCursor], searchFor:BeginEnd): Seq[DomCursor] = {
     import scalaz.std.stream._
 
     val elems = unfold[Option[DomCursor], DomCursor](
       odcur
     )(_ match {
       case Some(dcur) =>
-        val maybeNextTSpanCur = dcur.nextTSpan
-
-        val maybeFoundEnd = maybeNextTSpanCur
-          .map({ _.getLabelAsTSpan
+        val thisDomCoversLabel =
+          dcur.getLabelAsTSpan
             .bioBrick
             .initBrickCursor(label)
-            .exists(_.coversEndOfLabel)
-          })
+            .exists({c =>
+              (searchFor==Begin && c.coversStartOfLabel) ||
+                (searchFor==End && c.coversEndOfLabel)
+            })
 
-        maybeFoundEnd.fold(
-          ifEmpty =Some((maybeNextTSpanCur.get, maybeNextTSpanCur))
-        )(f =>
-          Some((maybeNextTSpanCur.get, None))
-        )
+        if (thisDomCoversLabel)
+          Some((dcur, None))
+        else
+          Some((dcur, dcur.nextTSpan))
+
+
+
+        // val maybeNextTSpanCur = dcur.nextTSpan
+
+        // val maybeFoundEnd = maybeNextTSpanCur
+        //   .map({ _.getLabelAsTSpan
+        //     .bioBrick
+        //     .initBrickCursor(label)
+        //     .exists({c =>
+        //       (searchFor==Begin && c.coversStartOfLabel) ||
+        //       (searchFor==End && c.coversEndOfLabel)
+        //     })
+        //   })
+
+        // maybeFoundEnd.fold(
+        //   ifEmpty =Some((maybeNextTSpanCur.get, maybeNextTSpanCur))
+        // )(f =>
+        //   Some((maybeNextTSpanCur.get, None))
+        // )
 
       case None => None
     })
@@ -111,76 +168,70 @@ object BioCursor {
     elems
   }
 
+  // possibilities:
+  //    startingDomCursor should *always* be focused on a TSpan
+  //      startingBrickCursor can be Some or None
+
   def initCursorFwd(label: BioLabel, dcur: DomCursor, bcur: Option[BrickCursor] = None): Option[BioCursor] = {
-    println("initCursorFwd(): ")
-    println(s"init dcur = ${dcur}")
-    println(s"init bcur = ${bcur}")
+    assert(dcur.getLabel.isInstanceOf[TSpan])
 
-    val nextBioCursor = bcur match {
+    debugReport("init forward cursor",
+      dcur.showBox.padTop1,
+      dcur.getLabel,
+      bcur.map(_.showBox.padTop1)
+    )
+
+    bcur match {
       case Some(brickCursor) =>
-        assert(dcur.getLabelAsTSpan.bioBrick == brickCursor.toBrickColumns)
-        debugReport(brickCursor)
 
-        brickCursor.next match {
-          case Some(nextBrickCursor) =>
-            debugReport(nextBrickCursor)
-            if (nextBrickCursor.coversEndOfLabel) {
-              debugReport("nextBrickCursor.coversEndOfLabel")
-              Some(BioCursor((dcur, nextBrickCursor),Seq()))
-            } else {
-              debugReport("!nextBrickCursor.coversEndOfLabel")
-              val labelCover = searchForwardForLabelEnd(label, dcur.nextTSpan)
+        // val domStoredBrick = dcur.getLabelAsTSpan.bioBrick
+        // val providedBrick = brickCursor.toBrickColumns
 
-              Some(BioCursor(
-                (dcur, nextBrickCursor),
-                labelCover.map({dc =>
-                  (dc, dc.getLabelAsTSpan.bioBrick.initBrickCursor(label).get)
-                })
-              ))
-            }
+        // debugReport(domStoredBrick.showBox.padTop1)
+        // debugReport(providedBrick.showBox.padTop1)
 
-          case None =>
-            val labelCover = searchForwardForLabelEnd(label, dcur.nextTSpan)
+        // debugReport(brickCursor.showBox.padTop1)
+        // assert(dcur.getLabelAsTSpan.bioBrick == brickCursor.toBrickColumns)
+        // debugReport(brickCursor.showBox.padTop1)
 
-            Some(
+        if (brickCursor.coversEndOfLabel) {
+          // debugReport("brickCursor.coversEndOfLabel")
+          Some(BioCursor((dcur, brickCursor),Seq()))
+        } else {
+          // debugReport("!brickCursor.coversEndOfLabel")
+          // val labelCoverBox = labelCover.map(_.showBox).mkVBox().padTop1
+          // debugReport(labelCoverBox)
+          val labeledDCursors = searchForwardForLabel(label, Some(dcur), searchFor=End)
+
+          labeledDCursors.headOption.map({ hdcur =>
             BioCursor(
-              (labelCover.head, labelCover.head.getLabelAsTSpan.bioBrick.initBrickCursor(label).get),
-              labelCover.tail
-                .map({dc =>
-                  (dc, dc.getLabelAsTSpan.bioBrick.initBrickCursor(label).get)
-                })
-            ))
-        }
-
-
-      case None =>
-        // val startingTSpan = if (dcur.getLabel.isInstanceOf[TSpan]) {
-        //   Some(dcur)
-        // } else {
-        //   dcur.nextTSpan
-        // }
-
-        // startingTSpan
-
-
-
-        // val labelCover = searchForwardForLabelEnd(label, startingTSpan)
-        val labelCover = searchForwardForLabelEnd(label, Some(dcur))
-        println("labelCover: "+labelCover.mkString(","))
-        labelCover.headOption.map{ lchead =>
-          BioCursor(
-            (lchead, lchead.getLabelAsTSpan.bioBrick.initBrickCursor(label).get),
-            labelCover.tail
-              .map({dc =>
-                (dc, dc.getLabelAsTSpan.bioBrick.initBrickCursor(label).get)
+              (hdcur, brickCursor),
+              labeledDCursors.tail.map({dc =>
+                (dc, domBrickCursor(dc, label).get)
               })
-          )
-
+            )
+          })
         }
 
+
+      case None => // No starting brick cursor
+        for {
+          beginDCursor <- searchForwardForLabel(
+            label, Some(dcur), searchFor=Begin
+          ).lastOption
+
+          fullCursor <- initCursorFwd(
+            label, beginDCursor, domBrickCursor(beginDCursor, label)
+          )
+        } yield fullCursor
     }
-    nextBioCursor
+
   }
+  def domBrick(d: DomCursor) =
+    d.getLabelAsTSpan.bioBrick
+
+  def domBrickCursor(d: DomCursor, l: BioLabel) =
+    domBrick(d).initBrickCursor(l)
 }
 
 
@@ -228,4 +279,69 @@ object BioCursor {
 /*
 
 
-*/
+
+  def initCursorFwd(label: BioLabel, dcur: DomCursor, bcur: Option[BrickCursor] = None): Option[BioCursor] = {
+    assert(dcur.getLabel.isInstanceOf[TSpan])
+
+    debugReport("init forward cursor", dcur.showBox.padTop1)
+    debugReport("init forward cursor", dcur.getLabel)
+
+
+    val nextBioCursor = bcur match {
+      case Some(brickCursor) =>
+
+        val domStoredBrick = dcur.getLabelAsTSpan.bioBrick
+        val providedBrick = brickCursor.toBrickColumns
+
+        debugReport(domStoredBrick.showBox.padTop1)
+        debugReport(providedBrick.showBox.padTop1)
+
+        debugReport(brickCursor.showBox.padTop1)
+        assert(dcur.getLabelAsTSpan.bioBrick == brickCursor.toBrickColumns)
+
+        brickCursor.next match {
+          case Some(nextBrickCursor) =>
+            debugReport(nextBrickCursor.showBox.padTop1)
+            if (nextBrickCursor.coversEndOfLabel) {
+              debugReport("nextBrickCursor.coversEndOfLabel")
+              Some(BioCursor((dcur, nextBrickCursor),Seq()))
+            } else {
+              debugReport("!nextBrickCursor.coversEndOfLabel")
+              val labelCover = searchForwardForLabel(label, Some(dcur), searchForBegin=false)
+              // val labelCoverBox = labelCover.map(_.showBox).mkVBox().padTop1
+              // debugReport(labelCoverBox)
+
+              Some(BioCursor(
+                (dcur, nextBrickCursor),
+                labelCover.map({dc =>
+                  (dc, dc.getLabelAsTSpan.bioBrick.initBrickCursor(label).get)
+                })
+              ))
+            }
+
+          case None =>
+            val labelCover = searchForwardForLabelEnd(label, dcur.nextTSpan)
+
+            Some(
+            BioCursor(
+              (labelCover.head, labelCover.head.getLabelAsTSpan.bioBrick.initBrickCursor(label).get),
+              labelCover.tail
+                .map({dc =>
+                  (dc, dc.getLabelAsTSpan.bioBrick.initBrickCursor(label).get)
+                })
+            ))
+        }
+
+
+      case None => // No starting brick cursor
+        searchForwardForLabel(label, Some(dcur), searchForBegin=true)
+          .lastOption.map({ beginDCursor =>
+            initCursorFwd(label, beginDCursor,
+              domBrickCursor(beginDCursor, label)
+            )
+          })
+    }
+    nextBioCursor
+  }
+
+ */
