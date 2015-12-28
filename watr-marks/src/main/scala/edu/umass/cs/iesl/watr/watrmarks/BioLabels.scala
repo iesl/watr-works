@@ -43,11 +43,9 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
   def showBox: TextBoxing.Box = {
     s"${namespace}:${name}".box
   }
-
 }
 
-// This label is handled specially, as characters are not explicitly labeled
-object CharLabel extends BioLabel("char", "char", 'c', None)
+
 
 trait BioLabelDictionary {
   def apply(c: Char): BioLabel

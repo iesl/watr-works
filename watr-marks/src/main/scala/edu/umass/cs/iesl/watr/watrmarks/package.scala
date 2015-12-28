@@ -7,10 +7,13 @@ import scalaz.syntax.ToIdOps
 // import scalaz.syntax.std.ToListOps
 // import scalaz.syntax.FoldableSyntax
 // import scalaz.syntax.ToValidationOps
+// import scalaz.syntax.
+import scalaz.syntax.std.ToBooleanOps
 
 
 trait ScalaZCommonOps
     extends ToIdOps
+    with ToBooleanOps
     // with ToOptionIdOps
     // with ToOptionOps
 
@@ -18,9 +21,17 @@ sealed trait BeginEnd
 object Begin extends BeginEnd
 object End extends BeginEnd
 
-sealed trait Direction
-object Forward extends Direction
-object Backward extends Direction
+sealed trait Direction {
+  def isForward: Boolean
+  def isBackward: Boolean
+}
+
+object Forward extends Direction{
+  val (isForward, isBackward) = (true, false)
+}
+object Backward extends Direction{
+  val (isForward, isBackward) = (false, true)
+}
 
 package object watrmarks
     extends DebugConsole

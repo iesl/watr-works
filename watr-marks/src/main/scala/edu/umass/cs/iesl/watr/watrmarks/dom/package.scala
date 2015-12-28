@@ -73,8 +73,10 @@ package object dom {
           // println(s"EndDocument: ${elem}")
 
         case elem: StartElement =>
-          // println(s"StartElement: ${elem}")
-          // println(s"Start Element: ${elem.getName}, prefix: ${elem.getName().getPrefix()}, local: ${elem.getName().getLocalPart()}")
+          // if (accum.path.length == 2) {
+          //   println(s"StartElement: ${elem.getName()} stack size = ${accum.path.length}")
+          // }
+          // // println(s"Start Element: ${elem.getName}, prefix: ${elem.getName().getPrefix()}, local: ${elem.getName().getLocalPart()}")
 
           elem.getName.getLocalPart.toLowerCase match {
             case "svg"   =>
@@ -101,13 +103,16 @@ package object dom {
             case "tspan" =>
               import scalaz._, Scalaz._
 
-              val xs = getXs(elem)
-              val endx = getEndX(elem)
-              val y = getY(elem)
+              // val _xs = getXs(elem)
+              // val _endx = getEndX(elem)
+              val _y = getY(elem)
 
-              val offs = ^(xs, endx)(
-                (xs0, y0) => TextXYOffsets(y, xs0, y0)
-              )
+              val offs = ^(getXs(elem), getEndX(elem))(
+                (_xs, _endx) => TextXYOffsets(
+                  xs=_xs,
+                  endX=_endx,
+                  ys=List(_y)
+              ))
 
               val n = TSpanInit(
                 "",
@@ -132,17 +137,17 @@ package object dom {
           elem.getName.getLocalPart.toLowerCase match {
             case "tspan"   =>
               val init = accum.getLabel.asInstanceOf[TSpanInit]
-              val rootDocument =accum.root.getLabel.asInstanceOf[Document]
+              val rootDocument = accum.root.getLabel.asInstanceOf[Document]
+
 
               def bounds: Option[List[TextBounds]] =
                 init.textXYOffsets.map {
                   xyoffs => xyoffs.xs.map{x => TextBounds(
                     left   = x,
-                    bottom = xyoffs.y,
-                    width  = 1,
-                    height = 1
-                  )
-                  }
+                    bottom = xyoffs.ys.head,
+                    width  = 10, // TODO FIXME width/height
+                    height = 10
+                  )}
                 }
 
               lazy val fontInfo =  FontInfo(init.fontFamily, init.fontSize)

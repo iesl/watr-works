@@ -8,14 +8,14 @@ case class BrickCursor(
   nexts: List[BrickColumn] = List()
 ) {
 
-  def fold(f: (BrickCursor) => Unit): Unit  = {
+  // def fold(f: (BrickCursor) => Unit): Unit  = {
 
-    f(this)
-    next match {
-      case Some(n) => n.fold(f)
-      case None => ()
-    }
-  }
+  //   f(this)
+  //   next match {
+  //     case Some(n) => n.fold(f)
+  //     case None => ()
+  //   }
+  // }
 
   def next: Option[BrickCursor] = {
     BrickColumns.initCursor(label, nexts)
@@ -38,32 +38,32 @@ case class BrickCursor(
   //   )
   // }
 
-  def addLabel(label: BioLabel): BrickCursor = {
-    val newCurrent = if (current.length==1) {
-      current.map({ col=>
-        col.copy(pins = col.pins + label.U)
-      })
-    } else if (current.length > 1) {
-      val head = current.head.copy(
-        pins = current.head.pins + label.B
-      )
-      val last = current.last.copy(
-        pins = current.last.pins + label.L
-      )
-      val middle = current.drop(1).dropRight(1).map({ col=>
-        col.copy(pins = col.pins + label.U)
-      })
+  // def addLabel(label: BioLabel): BrickCursor = {
+  //   val newCurrent = if (current.length==1) {
+  //     current.map({ col=>
+  //       col.copy(pins = col.pins + label.U)
+  //     })
+  //   } else if (current.length > 1) {
+  //     val head = current.head.copy(
+  //       pins = current.head.pins + label.B
+  //     )
+  //     val last = current.last.copy(
+  //       pins = current.last.pins + label.L
+  //     )
+  //     val middle = current.drop(1).dropRight(1).map({ col=>
+  //       col.copy(pins = col.pins + label.U)
+  //     })
 
-      (head :: middle) :+ last
-    } else {
-      sys.error("zero-length focus in brick cursor")
-    }
+  //     (head :: middle) :+ last
+  //   } else {
+  //     sys.error("zero-length focus in brick cursor")
+  //   }
 
-    this.copy(
-      current = newCurrent
-    )
+  //   this.copy(
+  //     current = newCurrent
+  //   )
 
-  }
+  // }
 
   def toBrickColumns = BrickColumns(
     prevs.reverse ++ current ++ nexts

@@ -15,11 +15,15 @@ case class WatrDom(
 
   def toDomCursor = DomCursor(tree.loc)
 
-  def toCursor(l: BioLabel):Option[BioCursor] = for {
+  def toCursor(l: BioLabel):Option[LatticeCursor] = for {
     tspanCursor <- toDomCursor.nextTSpan
-    bioCursor <- BioCursor.initCursorFwd(l, tspanCursor)
+    bioCursor <- BioLattice.initFromDom(this).initLatticeCursor(l)
   } yield bioCursor
 
+}
+
+sealed trait Transformable {
+  def transforms: List[Transform]
 }
 
 case class Document (
@@ -30,7 +34,7 @@ case class Document (
 
 case class Svg (
   transforms: List[Transform] = List()
-) extends WatrElement  {
+) extends WatrElement with Transformable {
   override def toString = s"""<svg:${transforms}>"""
 }
 
@@ -41,7 +45,7 @@ case class Desc (
 
 case class Grp (
   transforms: List[Transform] = List()
-) extends WatrElement {
+) extends WatrElement with Transformable {
   override def toString = s"""<g:${transforms.mkString("{", ", ", "}")}>"""
 }
 
@@ -52,13 +56,13 @@ case class Defs (
 
 case class Text (
   transforms: List[Transform] = List()
-) extends WatrElement   {
+) extends WatrElement  with Transformable  {
   override def toString = s"""<text:${transforms}>"""
 }
 
 case class Path (
   transforms: List[Transform] = List()
-) extends WatrElement   {
+) extends WatrElement   with Transformable {
   override def toString = s"""<path:>"""
 }
 
@@ -68,8 +72,9 @@ object NullElement extends WatrElement   {
 
 
 case class TextXYOffsets(
-  y: Double,
-  xs: List[Double], endX: Double
+  // sourceY: Double,
+  xs: List[Double], endX: Double,
+  ys: List[Double]
 )
 
 

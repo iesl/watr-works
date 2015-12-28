@@ -1,5 +1,5 @@
-package edu.umass.cs.iesl.watr.watrmarks
-
+package edu.umass.cs.iesl.watr
+package watrmarks
 
 
 case class FontDictionary(
@@ -19,13 +19,14 @@ case class TextBounds(
   height: Double
 )
 
+
 case class BrickColumn(
   pins: Set[BioPin] = Set(),
   char: Char,
   font: Option[FontInfo],
   bounds: Option[TextBounds]
 ) {
-  // override def toString = s"""${char}; pins:${pins.mkString(",")}; fnt:${font}; b:${bounds}"""
+
   override def toString = s"""'${char}' pins:${pins.mkString(",")}"""
 
   def showBox: TB.Box = {
@@ -54,6 +55,7 @@ case class BrickColumns(
     BrickColumns.initCursor(l, columns)
 
 }
+
 
 object BrickColumns {
 

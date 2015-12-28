@@ -15,7 +15,26 @@ case class DomCursor(
     path
   }
   def showBox: TB.Box = {
-    loc.path.reverse.mkString("::")
+    val parentPath = loc
+      .parents
+      .reverse
+      .map({ case (ls, focus, rs) =>
+        val branchIndex = (
+          if (ls.length>0) s"[${ls.length}]"
+          else ""
+        )
+        focus.getClass.getSimpleName.toLowerCase+branchIndex
+      }).mkString("", "/", "/")
+
+    val index = (
+      if (loc.lefts.length>0) s"[${loc.lefts.length}]"
+      else ""
+    )
+
+    val selfNode = loc.getLabel.getClass.getSimpleName.toLowerCase+index
+
+    parentPath+selfNode
+
   }
 
   def getLabel: WatrElement               = loc.getLabel

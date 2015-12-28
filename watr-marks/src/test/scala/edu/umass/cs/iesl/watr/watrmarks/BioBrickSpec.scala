@@ -7,22 +7,16 @@ import org.scalatest._
 
 
 class BioBrickSpec extends FlatSpec {
-  // perhaps add namespace as a valid constraint?
 
   import StandardLabels._
 
   behavior of "labels"
 
   it should "allow construction of BIOLU pins from label definitions" in {
-    // lazy val ld = LabelDictionary.create(word, verb)
     assert(Verb.B === BPin(Verb))
-
   }
 
-  it should "ensure label names are unique within a namespace" in {
-
-
-  }
+  // it should "ensure label names are unique within a namespace" in {}
 
   val runLolaHeader =
     """|| |V   N    V   | {ns:pos, type: {verb: v, noun: n}, unit: word}

@@ -1,18 +1,13 @@
 package edu.umass.cs.iesl.watr
-
 package ext
 
 
-// import java.io.FileInputStream
 import java.io.InputStream
-import org.jdom2.input.SAXBuilder
 import org.jdom2.Element
-// import java.io.{File => JFile}
 
 
 import pl.edu.icm.cermine.structure.ITextCharacterExtractor
 import pl.edu.icm.cermine.structure.model.BxDocument
-import edu.umass.cs.iesl.watr.watrmarks.DOMUtils
 
 class CermineExtractor extends ITextCharacterExtractor {
 
@@ -78,15 +73,6 @@ class CermineExtractor extends ITextCharacterExtractor {
   override def extractCharacters(svgIS: InputStream):BxDocument = {
     val bxDocument = new BxDocument()
 
-    val jdomBuilder = new SAXBuilder();
-    val svgJDom = jdomBuilder.build(svgIS)
-
-    // val result = pl.edu.icm.cermine.ExtractionUtils.extractRawTextWithLabels(conf, in);
-
-    val tspans = DOMUtils.getTSpanElements(svgJDom)
-    tspans.foreach { elem =>
-
-    }
 
     bxDocument
   }

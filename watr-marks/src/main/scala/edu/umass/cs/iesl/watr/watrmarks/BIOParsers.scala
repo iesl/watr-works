@@ -166,36 +166,34 @@ object biomapParsers extends JavaTokenParsers with ParserCommon {
 
 }
 
-sealed trait Transform
+sealed trait Transform {
+  def toMatrix: Matrix
+}
 
 case class Scale(
   m0: Double, m1: Double
 ) extends Transform {
   override def toString = s"""scale[$m0,$m1]"""
+
+  override val toMatrix = Matrix(m0, 0.0, 0.0, m1, 0.0, 0.0)
 }
 
 case class Matrix(
   m0: Double, m1: Double, m2: Double,
   m3: Double, m4: Double, m5: Double
 ) extends Transform {
+
   override def toString = s"""mat[$m0,$m1,$m2,$m3,$m4,$m5]"""
 
-  // override def equals(other: Any): Boolean = {
-  //   other match {
-  //     case Matrix(arr) =>
-  //       println("???here "+arr.toSeq)
-  //       println("???here "+m.toSeq)
-  //       arr == m
-  //     case _ => false
-  //   }
-  // }
-
+  override val toMatrix = this
 }
 
 case class Translate(
   m0: Double, m1: Double
 ) extends Transform {
   override def toString = s"""tr[$m0,$m1]"""
+
+  override val toMatrix = Matrix(1.0, 0.0, 0.0, 1.0, m0, m1)
 }
 
 object transformParser extends JavaTokenParsers with ParserCommon {
