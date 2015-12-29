@@ -39,12 +39,27 @@ package object dom {
       .right.get
   }
 
+  def digits(s: String): Double = {
+    val ds = """(\d+)(px)?""".r
+    val ds(d, _) = s
+    d.toDouble
+  }
+
   def getXs(e: StartElement): Option[List[Double]] = { maybeAttrValue(e, "x").map(_.split(" ").map(_.toDouble).toList) }
   def getEndX(e: StartElement): Option[Double]     = { maybeAttrValue(e, "endX").map(_.toDouble) }
   def getY(e: StartElement): Double                = { attrValue(e, "y").toDouble }
   def getFontSize(e: StartElement): String         = { maybeAttrValue(e, "font-size").getOrElse("0") }
   def getFontFamily(e: StartElement): String       = { maybeAttrValue(e, "font-family").getOrElse("") }
   def getBioBrick(e: StartElement): Option[String] = { maybeAttrValue(e, "bio") }
+  def getWidth(e: StartElement): Double            = { digits(attrValue(e, "width")) }
+  def getHeight(e: StartElement): Double           = { digits(attrValue(e, "height")) }
+  def getViewBox(e: StartElement): ViewBox = {
+    val vs = attrValue(e, "viewBox")
+      .split(" ")
+      .map(digits(_))
+    ViewBox(vs(0), vs(1), vs(2), vs(3))
+  }
+
 
   def readWatrDom(ins: Reader, bioDict: BioLabelDictionary): WatrDom = {
     val factory = XMLInputFactory.newInstance();
@@ -80,7 +95,12 @@ package object dom {
 
           elem.getName.getLocalPart.toLowerCase match {
             case "svg"   =>
-              val n = Svg(getTransforms(elem))
+              val n = Svg(
+                width=getWidth(elem),
+                height=getHeight(elem),
+                viewBox=getViewBox(elem),
+                getTransforms(elem)
+              )
 
               accum = accum.insertDownLast(Tree.Leaf(n))
 

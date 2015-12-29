@@ -24,7 +24,7 @@ object WatrColorServer extends SimpleRoutingApp with WatrColorApiServer {
           complete{
             HttpEntity(
               MediaTypes.`text/html`,
-              html.Template.txt
+              html.Template.txt.toString()
             )
           }
         } ~

@@ -36,11 +36,25 @@ trait WatrColorApiServer extends WatrColorApi with ServerState {
 }
 
 trait ServerState {
+  import scalaz._
+  import Scalaz._
+
+
   // val initpath = file"../sample-pdf-to-svg/rpp-pdf-test-samples/samples-mit"
   val initpath = file"../../corpus~/samples-mit"
   // directory -> cursor over directory, focus on single file
   // loaded SVG -> display as svg, cursor
-  var corpusCursor = DirectoryCursor.init(initpath).get
+  // var corpusCursor = DirectoryCursor.init(initpath).get
+
+
+  val init = Stream[DirectoryCursor](
+    DirectoryCursor.init(initpath).get
+  )
+
+  var state: Zipper[DirectoryCursor] = init.toZipper.get
+
+
+
 
 }
 

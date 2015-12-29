@@ -57,7 +57,7 @@ class WatrDomSpec extends FlatSpec {
   it should "parse an svg" in {
     val examples = List(
       ("""<svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168"> </svg>""",
-        Svg()
+        Svg(612, 3168, ViewBox(0, 0, 612, 3168))
       ),
       ("""<g transform="matrix(0 0 0 0 0 0)" ></g>""",
         Grp(List(Matrix(0, 0, 0, 0, 0, 0)))
@@ -125,6 +125,15 @@ class WatrDomSpec extends FlatSpec {
 
   }
 
+  it should "serialize to well-formed svg" in {
+    val doc = readWatrDom(new StringReader(svgStrNS), bioDict)
+
+    val s = doc.toSvg()
+    println(s)
+
+
+
+  }
 
 
 

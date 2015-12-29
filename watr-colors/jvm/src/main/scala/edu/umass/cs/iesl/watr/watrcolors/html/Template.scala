@@ -8,17 +8,8 @@ import org.scalajs.jquery.jQuery
 // import scalatags.stylesheet.Sheet._
 import scalatags.stylesheet.{CascadingStyleSheet, StyleSheet, StyleSheetTags, Sheet, Selector}
 
-object Template{
+object Template {
   import scalatags.Text.all._
-
-  val < = scalatags.Text.tags
-  val << = scalatags.Text.tags2
-  val $ = scalatags.Text.styles
-  val ^ = scalatags.Text.attrs
-
-
-  // import Sheet._
-  // trait WatrStyles extends StyleSheet with StyleSheetTags {
 
   val WatrStyles = Sheet[WatrStyles]
 
@@ -124,10 +115,9 @@ object Template{
 
 
   val txt =
-    "<!DOCTYPE html)(" +
       <.html(^.lang:="en",
         <.head(
-          <<.title("WatrColors"),
+          <.title("WatrColors"),
           <.meta(content:="width=device-width, initial-scale=1", name:="viewport"),
           <.meta(httpEquiv:="Content-Type", content:="text/html; charset=UTF-8"),
           <.script(`type`:="text/javascript", src:="//localhost:12345/workbench.js"),
@@ -147,7 +137,7 @@ object Template{
           link(rel:="stylesheet", `type`:="text/css", href:="/webjars/bootstrap/3.3.6/css/bootstrap.min.css"),
             // script(`type`:="text/javascript", src:="/webjars/bootstrap/3.3.6/js/bootstrap.min.js")
 
-          <<.style(^.`type`:="text/css",
+          <.style(^.`type`:="text/css",
             WatrStyles.styleSheetText
           ),
           script("edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main()")
