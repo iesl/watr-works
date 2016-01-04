@@ -16,17 +16,24 @@ object AutowireServer extends autowire.Server[Js.Value, Reader, Writer]{
 
 
 object WatrColorServer extends SimpleRoutingApp with WatrColorApiServer {
+
+
+  def httpResponse(resp: html.TextTag) = {
+    val page= html.Frame(resp)
+    HttpEntity(
+      MediaTypes.`text/html`,
+      page.toString()
+    )
+  }
+
+
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem()
     val _ = startServer("0.0.0.0", port = 8080) {
       get{
         pathSingleSlash {
-          complete{
-            HttpEntity(
-              MediaTypes.`text/html`,
-              html.Template.txt.toString()
-            )
-          }
+          // complete{ httpResponse(html.Template.txt) }
+          complete{ httpResponse(html.IndexPane()) }
         } ~
         pathPrefix("webjars") {
           get {

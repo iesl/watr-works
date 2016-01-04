@@ -9,27 +9,30 @@ import upickle.Js
 trait WatrColorApiServer extends WatrColorApi with ServerState {
 
   def navNext(): Seq[HtmlUpdate] = {
-    val last = corpusCursor
-    corpusCursor = last.next
+    // val last = corpusCursor
+    // corpusCursor = last.next
+
+    // state.map({})
 
     Seq(
-      HtmlReplaceInner(s"#currfile", s"${corpusCursor.curr}")
+      // HtmlReplaceInner(s"#currfile", s"${corpusCursor.curr}")
     )
   }
 
   def navPrev(): Seq[HtmlUpdate] = {
-    val last = corpusCursor
-    corpusCursor = last.prev
+    // val last = corpusCursor
+    // corpusCursor = last.prev
 
-    Seq(
-      HtmlReplaceInner(s"#currfile", s"${corpusCursor.curr}")
-    )
+    // Seq(
+    //   HtmlReplaceInner(s"#currfile", s"${corpusCursor.curr}")
+    // )
+    Seq()
   }
 
   // the openCurrent specialized for file cursor
   def openCurrent(): Seq[HtmlUpdate] = {
     Seq(
-      HtmlPrepend(s"#winstack-top", s"${corpusCursor.curr}")
+      // HtmlPrepend(s"#winstack-top", s"${corpusCursor.curr}")
     )
   }
 
@@ -40,11 +43,7 @@ trait ServerState {
   import Scalaz._
 
 
-  // val initpath = file"../sample-pdf-to-svg/rpp-pdf-test-samples/samples-mit"
   val initpath = file"../../corpus~/samples-mit"
-  // directory -> cursor over directory, focus on single file
-  // loaded SVG -> display as svg, cursor
-  // var corpusCursor = DirectoryCursor.init(initpath).get
 
 
   val init = Stream[DirectoryCursor](
@@ -52,9 +51,6 @@ trait ServerState {
   )
 
   var state: Zipper[DirectoryCursor] = init.toZipper.get
-
-
-
 
 }
 

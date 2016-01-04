@@ -8,15 +8,20 @@ package html
 
 
 
-object SvgPane {
+object IndexPane {
 
 
-  // import scalatags.Text.all._
+  import scalatags.Text.all._
 
 
-  val htmlstr  = {
-
-    <.div()(
+  def apply()  = {
+    <.div(
+      <.div()("Query")(
+        <.input()
+      ),
+      <.div()("Explore")(
+        "directory cursor"
+      )
     )
 
   }
