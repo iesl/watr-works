@@ -77,6 +77,9 @@ class CermineExtractorSpec extends FlatSpec {
 
       val pageSize = pagec.focusedBounds() //.combine()
 
+
+      // debug(pageSize)
+
       var pageRect = new Rectangle(
         10f, // llx
         10f, // lly
@@ -100,21 +103,21 @@ class CermineExtractorSpec extends FlatSpec {
     val conf = new ComponentConfiguration()
 
 
-    println("segmenting pages")
-    var doc = ExtractionUtils.segmentPages(conf, document);
-    println("resolving reading order")
-    doc = ExtractionUtils.resolveReadingOrder(conf, doc);
-    println("classifyInitially")
-    doc =  ExtractionUtils.classifyInitially(conf, doc);
-    println("extracting text")
-    val contentStructure = extractText(conf, document)
+    // println("segmenting pages")
+    // var doc = ExtractionUtils.segmentPages(conf, document);
+    // println("resolving reading order")
+    // doc = ExtractionUtils.resolveReadingOrder(conf, doc);
+    // println("classifyInitially")
+    // doc =  ExtractionUtils.classifyInitially(conf, doc);
+    // println("extracting text")
+    // val contentStructure = extractText(conf, document)
 
-    import scala.collection.JavaConversions._
+    // import scala.collection.JavaConversions._
 
-    contentStructure.getSections().toList.foreach{ section =>
-      // section.getTitle()
+    // contentStructure.getSections().toList.foreach{ section =>
+    //   // section.getTitle()
 
-    }
+    // }
   }
 
   def extractText(conf: ComponentConfiguration , document: BxDocument): ContentStructure = {
