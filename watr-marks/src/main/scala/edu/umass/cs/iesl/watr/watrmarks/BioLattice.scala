@@ -11,6 +11,20 @@ case class BioColumn(
   bounds: Option[TextBounds]
 ) {
 
+  def labels: Set[BioPin] = {
+    domAndIndex match  {
+      case Some((dom,index)) =>
+        val ancestorLabels = dom.loc
+          .path
+          .collect{ case d => d.isInstanceOf[Grp] }
+          .map{ case d => d.asInstanceOf[Grp].labels.toSet }
+          .reduce(_ ++ _)
+
+        ancestorLabels
+      case None =>
+        Set()
+    }
+  }
 
   import TB._
 
@@ -71,7 +85,7 @@ object BioLattice {
   def initFromDom(dom: WatrDom): BioLattice = {
     var currentPageNum = 0
 
-    var currentPageLabel: BioPin = PageLabel.B
+    var currentPageLabel: BioPin = PageLabel.fencePost
 
     dom.toDomCursor.unfoldTSpansCursors.foldLeft(
       BioLattice()
@@ -80,13 +94,14 @@ object BioLattice {
 
       val (pageLefts, pageFocus, _)  = tspanCursor.loc
         .parents.reverse
-        .drop(1).head
+        .drop(2).head
 
-      if (pageLefts.length != currentPageNum) {
-        currentPageNum = pageLefts.length+1
-        currentPageLabel = PageLabel.B
-      } else {
-        currentPageLabel = PageLabel.I
+      debugReport("current page label", currentPageNum, currentPageLabel, pageFocus)
+      val pGrp = pageFocus.asInstanceOf[Grp]
+
+      if (!pGrp.labels.exists(_ == currentPageLabel)) {
+        currentPageLabel = pGrp.labels.head
+        currentPageNum += 1
       }
 
 
@@ -95,7 +110,7 @@ object BioLattice {
         .zipWithIndex
         .map ({ case (col, i) =>
           BioColumn(
-            col.pins + currentPageLabel,
+            col.pins,
             col.char,
             Some(tspanCursor -> i),
             col.font,
@@ -129,16 +144,34 @@ object BioLattice {
           )
         ) else None
 
-      // case PageLabel =>
+      case PageLabel =>
+        val (colsBeforeLabel, colsStartingWithLabel) =
+          startingColumns.span({lcol =>
+            val domPins = lcol.labels
 
-      //   startingColumns.map({ col =>
-      //     col.domAndIndex match {
-      //       case Some((domc, i)) =>
-      //         domc.loc.path.length
-      //       case None =>
-      //         sys.error("")
-      //     }
-      //   })
+            val hasPin = domPins.exists{_.label == PageLabel}
+
+            !hasPin
+          })
+
+        // val pageFencePost: Set[BioPin] = colsStartingWithLabel.head.labels
+        val pageFencePost: BioPin = colsStartingWithLabel.head.labels.head
+
+        val (colsWithLabelMinusOne, colsAfterLabelPlusOne) =
+          colsStartingWithLabel.span({lcol =>
+            lcol.labels.head == pageFencePost
+          })
+
+        val colsWithLabel =  colsWithLabelMinusOne ++ colsAfterLabelPlusOne.take(1)
+        val colsAfterLabel = colsAfterLabelPlusOne.drop(1)
+
+        if (colsWithLabel.length>0) {
+          Some(LatticeCursor(l,
+            current = direction.isForward? colsWithLabel | colsWithLabel.reverse,
+            prevs   = direction.isForward? colsBeforeLabel.reverse | colsBeforeLabel,
+            nexts   = direction.isForward? colsAfterLabel | colsAfterLabel.reverse
+          ))
+        } else None
 
       case _ =>
 

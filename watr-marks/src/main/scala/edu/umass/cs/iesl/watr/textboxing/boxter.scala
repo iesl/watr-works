@@ -7,6 +7,7 @@ object TextBoxing {
   import Lens._
 
 
+
   // The basic data type.  A box has a specified size and some sort of
   //   contents.
   case class Box(rows:Int, cols:Int, content: Content) {
@@ -73,8 +74,6 @@ object TextBoxing {
   implicit class BoxingConstructors(val value: String) extends AnyVal {
     def box: Box = tbox(value)
   }
-
-
 
 
   def mstringToList(s: String): List[String] =

@@ -67,6 +67,17 @@ package object dom {
 
     var accum: TreeLoc[WatrElement] = null
 
+    import scala.collection.mutable
+
+    var currentPageList = mutable.ListBuffer[TSpan]()
+    var currentPageNumber = 1
+
+    val pageSpans = mutable.ListMap[Int, mutable.ListBuffer[TSpan]](
+      currentPageNumber -> currentPageList
+    )
+
+
+
     while (reader.hasNext()) {
       val event = reader.nextEvent();
 
@@ -105,7 +116,23 @@ package object dom {
               accum = accum.insertDownLast(Tree.Leaf(n))
 
             case "g"     =>
-              val n = Grp(getTransforms(elem))
+              val labelAttr = elem.getAttributeByName(new QName("labels"))
+              // debug(labelAttr)
+
+              val labels:List[BioPin] = if (labelAttr != null) {
+                // debug(labelAttr)
+                val labels = labelAttr.getValue
+                // TODO un-hardcode this page label addition
+                List(PageLabel.fencePost)
+              } else {
+                List()
+              }
+
+              // firstPage.childNodes[0].setAttributeNS(null, 'labels', 'xy:page');
+              val n = Grp(
+                getTransforms(elem),
+                labels
+              )
               accum = accum.insertDownLast(Tree.Leaf(n))
 
             case "defs"  =>
@@ -174,9 +201,12 @@ package object dom {
 
               def fonts: List[FontInfo] = List.fill(init.text.length)(fontInfo)
 
-              def emptyBioBrick: BrickColumns = BrickColumns((init.text zip bounds.getOrElse(List())).toList.map{ case (char, bnd) =>
-                BrickColumn(Set(), char, Some(fontInfo), Some(bnd))
-              })
+              def emptyBioBrick: BrickColumns = BrickColumns(
+                (init.text zip bounds.getOrElse(List()))
+                  .toList
+                  .map({ case (char, bnd) =>
+                    BrickColumn(Set(), char, Some(fontInfo), Some(bnd))
+                  }))
 
               val bioBrick: BrickColumns = init.bioBrickStr.map{str =>
                 biolu.parseBioBrick(
@@ -198,7 +228,11 @@ package object dom {
                 bioBrick,
                 rootDocument
               )
+
+              currentPageList.append(tspan)
+
               accum = accum.modifyLabel { _ => tspan }
+
 
             case _   =>
           }
@@ -219,6 +253,16 @@ package object dom {
                   // sys.error(s"xml text found outside of tspan element: '${elem.getData()}'")
               }
           }
+
+      // rt(x: 0, y:20, w:20, h: 30):p {layout: {page: p}, unit: px}
+      // pt(x: 0, y:20)
+      // ln(pt(0, 20), point(30, 30))
+      // page: rt(0,20,20,30)
+      /*
+
+       labels=" page:rt(0,20,20,30) "
+
+       */
 
       // println(s"""accu: ${if(accum!=null) accum.getLabel else "<null>"} """)
     }

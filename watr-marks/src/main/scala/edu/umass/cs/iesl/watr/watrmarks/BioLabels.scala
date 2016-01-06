@@ -19,9 +19,13 @@ case class OPin(label: BioLabel, override val pinChar:Char='O') extends BioPin
 case class LPin(label: BioLabel, override val pinChar:Char='L') extends BioPin
 case class UPin(label: BioLabel, override val pinChar:Char='U') extends BioPin
 
+case class FencePost(label: BioLabel, override val pinChar:Char='F') extends BioPin
+// private val hash: java.util.UUID = java.util.UUID.randomUUID()
+
 // import StandardLabels._
 // case class Constraint()
 // class BioLabel(val namespace: String, val name: String, val c: Char, val constraint: Constraint) {
+
 
 import scala.language.dynamics
 
@@ -32,6 +36,9 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
   lazy val L = LPin(this)
   lazy val U = UPin(this)
 
+  def fencePost = FencePost(this)
+
+
   def selectDynamic(s: String) = {
   // def selectDynamic(s: String)(implicit bioDict: BioLabelDictionary) = {
     // val sdf  = bioDict.get(s)
@@ -40,6 +47,7 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
   override def toString = s"${namespace}:${name}"
 
   import TextBoxing._
+
   def showBox: TextBoxing.Box = {
     s"${namespace}:${name}".box
   }

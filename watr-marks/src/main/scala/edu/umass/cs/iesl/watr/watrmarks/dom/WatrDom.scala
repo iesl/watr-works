@@ -150,9 +150,11 @@ case class Desc (
 }
 
 case class Grp (
-  transforms: List[Transform] = List()
+  transforms: List[Transform] = List(),
+  labels: List[BioPin]
+  // labels: List[BioLabel]
 ) extends WatrElement with Transformable {
-  override def toString = s"""<g:${transforms.mkString("{", ", ", "}")}>"""
+  override def toString = s"""<g:${transforms.mkString("{", ", ", "}")}, ${labels.mkString(",")}>"""
 }
 
 case class Defs (

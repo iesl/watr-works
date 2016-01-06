@@ -1,5 +1,5 @@
-package edu.umass.cs.iesl.watr.watrmarks
-
+package edu.umass.cs.iesl.watr
+package watrmarks
 
 import java.io.StringReader
 import org.scalatest._
@@ -34,6 +34,7 @@ class BIOParserSpec extends FlatSpec {
 
   }
 
+
   it should "parse bio-row syntax" in {
     val examples = List(
       ("""| |a~$ b~$ X|{}""",
@@ -43,6 +44,8 @@ class BIOParserSpec extends FlatSpec {
         ('q', " ", BioObj())
       )
     )
+
+
     examples foreach { case(instr, expected)  =>
       val actual = bioParsers.toEither(bioParsers.parse(bioParsers.pinrow, instr))
       assert(Right(PinRow(expected._1, expected._2, expected._3)) === actual)
@@ -61,6 +64,8 @@ class BIOParserSpec extends FlatSpec {
     val examples = List(
       ("""|| |V   N    V   | {ns:pos, type: {verb: v, noun: n}, unit: word}
           || |w~$ w~~$ w~$P| {ns:tok, type: {word: w, punct: p}, unit: char}
+          // || |w~$ w~~$ w~$P| {tok: {word: w, punct: p}, unit: char}
+          // || |V   N    V   | {pos: {verb: v, noun: n}, unit: word}
           ||z|~~$          | {}
           || |0123456789012|
           |""".stripMargin,

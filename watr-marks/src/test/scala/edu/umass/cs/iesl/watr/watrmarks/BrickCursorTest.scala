@@ -6,6 +6,7 @@ import org.scalatest._
 
 class BrickCursorSpec extends FlatSpec {
 
+
   import StandardLabels._
 
   behavior of "brick cursors over chars"
@@ -39,7 +40,6 @@ class BrickCursorSpec extends FlatSpec {
       assert(cc1.prev === None)
       assert(cc4.next === None)
     }
-
 
 
   }
