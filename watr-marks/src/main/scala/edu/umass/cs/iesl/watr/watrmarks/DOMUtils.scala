@@ -1,4 +1,5 @@
-package edu.umass.cs.iesl.watr.watrmarks
+package edu.umass.cs.iesl.watr
+package watrmarks
 
 
 import org.jdom2.Element

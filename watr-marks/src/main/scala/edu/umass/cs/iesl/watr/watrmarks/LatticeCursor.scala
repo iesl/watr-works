@@ -8,6 +8,11 @@ case class LatticeCursor(
   nexts: List[BioColumn] = List()
 ) {
 
+
+  def toText: String = {
+    current.map(_.char).mkString
+  }
+
   def unfoldLabels: Stream[LatticeCursor] = {
     import scalaz.std.stream._
     unfold[Option[LatticeCursor], LatticeCursor](
@@ -42,6 +47,7 @@ case class LatticeCursor(
       )
     }
   }
+
   def prev: Option[LatticeCursor] = {
     BioLattice.initCursor(label, prevs, Forward)
       .map{ prevc => prevc.copy(

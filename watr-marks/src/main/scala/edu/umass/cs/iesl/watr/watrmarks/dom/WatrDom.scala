@@ -46,58 +46,61 @@ case class WatrDom(
         case e: WatrDom =>
           ""
         case e: Document  =>
-          s"""|<?xml version="1.0"?>
+          s"""|<?xml version="1.0" encoding="UTF-8"?>
               |${ch.getOrElse("")}
               |${rt.getOrElse("")}
               |""".stripMargin
 
         case e: Svg  =>
           val vb = s"${e.viewBox.x} ${e.viewBox.y} ${e.viewBox.width} ${e.viewBox.height}"
-          s"""|<svg
+          s"""|<svg:svg
+              |  xmlns:svg="http://www.w3.org/2000/svg"
+              |  xmlns:xlink="http://www.w3.org/1999/xlink"
+              |  version="1.1"
               |  width="${e.width}"
               |  height="${e.height}"
               |  viewBox="$vb"
               |  ${transformString(e)}
               |>
               |${ch.getOrElse("")}
-              |</svg>
+              |</svg:svg>
               |${rt.getOrElse("")}
               |""".stripMargin
 
         case e: Desc  =>
-          s"""|<desc>
+          s"""|<svg:desc>
               |${ch.getOrElse("")}
-              |</desc>
+              |</svg:desc>
               |${rt.getOrElse("")}
               |""".stripMargin
         case e: Grp  =>
-          s"""|<g
+          s"""|<svg:g
               |  ${transformString(e)}
               |>
               |${ch.getOrElse("")}
-              |</g>
+              |</svg:g>
               |${rt.getOrElse("")}
               |""".stripMargin
         case e: Defs  =>
-          s"""|<defs>
+          s"""|<svg:defs>
               |${ch.getOrElse("")}
-              |</defs>
+              |</svg:defs>
               |${rt.getOrElse("")}
               |""".stripMargin
         case e: Text  =>
-          s"""|<text
+          s"""|<svg:text
               |  ${transformString(e)}
               |>
               |  ${ch.getOrElse("")}
-              |</text>
+              |</svg:text>
               |${rt.getOrElse("")}
               |""".stripMargin
         case e: Path  =>
-          s"""|<path>
+          s"""|<svg:path>
               |  ${transformString(e)}
               |>
               |${ch.getOrElse("")}
-              |</path>
+              |</svg:path>
               |${rt.getOrElse("")}
               |""".stripMargin
         case e: TSpan  =>
@@ -105,13 +108,13 @@ case class WatrDom(
           val ystr = e.textXYOffsets.map(o => "y="+o.ys.mkString("\"", " ", "\"")).getOrElse("")
           val endxstr = e.textXYOffsets.map(o => s"""endX=\"${o.endX}\"""").getOrElse("")
 
-          s"""|<tspan
+          s"""|<svg:tspan
               |  $xstr
               |  $ystr
               |  $endxstr
               |  font-size="${e.fontSize}"
               |  font-family="${e.fontFamily}"
-              |>${e.text}</tspan>
+              |>${e.text}</svg:tspan>
               |${rt.getOrElse("")}
               |""".stripMargin
         case e  =>

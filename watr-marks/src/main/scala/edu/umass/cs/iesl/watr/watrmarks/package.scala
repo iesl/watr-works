@@ -1,21 +1,5 @@
 package edu.umass.cs.iesl.watr
 
-import com.softwaremill.debug.DebugConsole
-import scalaz.syntax.ToIdOps
-// import scalaz.syntax.std.ToOptionOps
-// import scalaz.syntax.std.ToOptionIdOps
-// import scalaz.syntax.std.ToListOps
-// import scalaz.syntax.FoldableSyntax
-// import scalaz.syntax.ToValidationOps
-// import scalaz.syntax.
-import scalaz.syntax.std.ToBooleanOps
-
-
-trait ScalaZCommonOps
-    extends ToIdOps
-    with ToBooleanOps
-    // with ToOptionIdOps
-    // with ToOptionOps
 
 sealed trait BeginEnd
 object Begin extends BeginEnd
@@ -33,9 +17,7 @@ object Backward extends Direction{
   val (isForward, isBackward) = (false, true)
 }
 
-package object watrmarks
-    extends DebugConsole
-    with ScalaZCommonOps {
+package object watrmarks {
 
   import textboxing.TextBoxing
   val TB = TextBoxing

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html class="ocks-org do-not-copy">
+<meta charset="utf-8">
+<title>Let’s Make a Block</title>
+<style>
+
+@import url(../style.css?aea6f0a);
+
+</style>
+
+<header>
+  <aside>March 7, 2014</aside>
+  <a href="../" rel="author">Mike Bostock</a>
+</header>
+
+<h1>Let’s Make a Block</h1>
+
+<p>This is a quick guide on how to post examples to <a href="http://bl.ocks.org/mbostock">bl.ocks.org</a>. This is not the <i>only</i> way to do it — you can use GitHub’s <a href="https://gist.github.com/">Gist editor</a>, for example. But I find this approach convenient because it allows you to preview locally and publish with Git, without leaving the terminal.
+
+<h2><a name="setup" href="#setup">#</a>Setup</h2>
+
+<p>Most of this guide takes place in the Mac OS X <a href="http://guides.macrumors.com/Terminal">Terminal</a>. If you don’t already have the Terminal in your dock, you can find it in the Applications > Utilities folder. If you’re already comfortable with local web development, go ahead and skip to the <a href="#develop">next section</a>.
+
+<aside>When you launch the Terminal, it will open a new window with a command prompt. By typing in commands and hitting return, you can tell the computer to do things; think of it as a <i>keyboard</i>-based, rather than <i>mouse</i>-based, interface to your computer.</aside>
+
+<p><img src="terminal.png" style="margin-left:-60px;margin-bottom:-20px;">
+
+<p>Do you have <a href="http://nodejs.org/">Node</a> installed already? You’ll use it to preview our code locally, and also to create the gist from the terminal. I recommend <a href="http://brew.sh/">Homebrew</a> for installing Node:
+
+<pre><code>brew install node</code></pre>
+
+<p>You’ll also need <a href="https://github.com/nodeapps/http-server">http-server</a>, a simple zero-configuration web server built on Node for serving content out of the local file system:
+
+<aside>While it’s possible to open files in your web browser out of the file system directly, this is likely to cause errors due to browser security restrictions.</aside>
+
+<pre><code>npm install -g http-server</code></pre>
+
+<p>If this is your first time using Node, you may also need to edit your <code>PATH</code> so that you can run programs installed by <a href="https://www.npmjs.org/">NPM</a>, Node’s package manager. I recommend editing <code>/etc/paths</code>. This file is normally hidden in the Finder, so you won’t be able to open it using File > Open; instead, open it from the terminal. For example, with <a href="http://www.sublimetext.com/">Sublime Text</a>:
+
+<pre><code>subl /etc/paths</code></pre>
+
+<p>If you don’t already have the <code>subl</code> alias for launching Sublime Text from the terminal, create one like so:
+
+<pre><code>ln -s '/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl' /usr/local/bin/subl</code></pre>
+
+<p>Now edit the contents of the file so they look like this:
+
+<aside>The order of lines is important: the earlier lines take priority. If you install something with NPM or Homebrew, you want it to take priority over something bundled with your OS. (The latter are often out-of-date.)</aside>
+
+<pre><code>/usr/local/share/npm/bin
+/usr/local/bin
+/usr/bin
+/bin
+/usr/sbin
+/sbin</code></pre>
+
+<p>Once you’ve made your changes and saved, close and reopen the terminal to pick up the new <code>PATH</code>.
+
+<h2><a name="develop" href="#develop">#</a>Develop</h2>
+
+<p>In the terminal, make a new folder for your example, and then <code>cd</code> into that folder.
+
+<pre>mkdir example
+cd example</pre>
+
+<p>Next make an empty file in this folder for your example code, and open the entire thing in Sublime:
+
+<pre>touch index.html
+subl .</pre>
+
+<p>In Sublime Text, you should now see an empty window:
+
+<aside>Sublime Text has a bug where if you open an empty folder, saving a new file won’t default to this folder. Opening a folder with at least one file, even if it’s empty, avoids this bug. Hence the <code>touch</code>.</aside>
+
+<p><img style="margin-left:-60px;margin-bottom:-20px;" src="blank-editor.png">
+
+<aside>If you want another file, say a README or <code><a href="../make/">Makefile</a></code>, use ⌘N to create it and ⌘S to save it; it will automatically default to the right folder.</aside>
+
+<p>Hit ⌘T (Go to File) and start typing "index.html". As soon as <code>index.html</code> highlighted, stop typing and hit return to open it. Paste in the following contents and save (⌘S):
+
+<pre><code class="html">&lt;!DOCTYPE html&gt;
+&lt;meta charset="utf-8"&gt;
+Hello, world!</code></pre>
+
+<p>Back in the terminal, fire up the web server so that you can preview your code in a web browser:
+
+<pre>http-server &</pre>
+
+<p>The ampersand (<code>&</code>) tells the terminal to run the web server in the background. This means you can continue to use the terminal to run other commands. When you’re all done, you can bring it back to the foreground by running <code>fg</code>, and then interrupt it with <code>^C</code> (control-C). Or, just close the terminal window.
+
+<p>With http-server running, visit <a href="http://localhost:8080">localhost:8080</a> in your browser and refresh whenever you make changes. Iterate as many times as you like to develop your example, bouncing between your text editor and web browser.
+
+<h2><a href="#publish" name="publish">#</a>Publish</h2>
+
+<p>Now you need <a href="https://github.com/mbostock/gistup">Gistup</a>, another Node program, to create the gist from the terminal. To install:
+
+<pre><code>npm install -g gistup</code></pre>
+
+<aside>You can give your gist a description using the <code>-m</code> option, such as <code>gistup -m 'Hello World'</code>. You can also edit the description later by visiting the gist in a web browser. Use <code>gistup -i</code> for interactive mode.</aside>
+
+<p>Next, to create the gist from the files in the current folder:
+
+<pre><code>gistup</code></pre>
+
+<p>When <code>gistup</code> completes successfully, it will open the new gist in your web browser. Running <code>gistup</code> for the first time requires creating a <a href="https://github.com/settings/applications">personal access token</a> so that you can post to the GitHub API from the terminal; it also requires setting up <a href="https://help.github.com/articles/generating-ssh-keys">SSH keys</a> so that you can <code>git push</code>. If you have problems with either of these steps, check the <a href="https://github.com/mbostock/gistup#troubleshooting">gistup troubleshooting guide</a>.
+
+<p>Now that you’ve made a gist, you can view it on bl.ocks.org! Simply copy the gist number and replace the URL. For example,
+
+<pre><a href="https://gist.github.com/mbostock/4060606">https://gist.github.com/mbostock/4060606</a></pre>
+
+<p>becomes
+
+<pre><a href="http://bl.ocks.org/mbostock/4060606">http://bl.ocks.org/mbostock/4060606</a></pre>
+
+<p>You can also install the <a href="https://github.com/mbostock/bl.ocks.org">bl.ocks.org browser extension</a>, which inserts a convenient button on the GitHub Gist page to take you to the corresponding block.
+
+<h2><a href="#update" name="update">#</a>Update</h2>
+
+<p>Want to make further changes after you published? As before, make your changes locally and preview them in your web browser using your localhost web server. Once your changes are ready, commit them using git and push them up to GitHub:
+
+<pre>git commit -am 'Made some changes.'
+git push</pre>
+
+<p>Because bl.ocks.org caches, you may need to wait up to five minutes to see your changes propagate. You can instead visit a specific revision immediately by appending it to the URL (<a href="http://bl.ocks.org/mbostock/4060606/ceddc55ab17689db7653196bc1591f3b56160f61">e.g.</a>).
+
+<h2><a href="#advanced" name="advanced">#</a>Advanced Usage</h2>
+
+<p>If you add a 230×120 <code>thumbnail.png</code> to your gist, bl.ocks.org will display it on your <a href="http://bl.ocks.org/mbostock">user page</a>. The only way to add images to your gist (because images are binary files) is using <code>git</code>.
+
+<p>You can hide certain files from the source view below your example by naming them <code>README.*</code>. (For example, <code>README.js</code>.) Binary files and files larger than 50 KB are also hidden.
+
+<p>If you make <i>lots</i> of examples, it helps to mirror the URL structure of bl.ocks.org on your local file system. This way you can reference files that are stored in other gists using relative links. Your local folder structure should look something like this:
+
+<pre>mbostock/
+  raw/
+    4060606/
+      index.html
+    4090846/
+      us.json</pre>
+
+<p>If you share common files across gists, you can update them in one place rather than duplicating them every time you make a new example. See this technique at work in the <a href="http://bl.ocks.org/mbostock/4060606">basic choropleth</a>.
+
+<footer>
+  <aside>March 7, 2014</aside>
+  <a href="../" rel="author">Mike Bostock</a>
+</footer>
+
+<script>
+
+GoogleAnalyticsObject = "ga", ga = function() { ga.q.push(arguments); }, ga.q = [], ga.l = +new Date;
+ga("create", "UA-48272912-3", "ocks.org");
+ga("send", "pageview");
+
+</script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script async src="../highlight.min.js"></script>
+<script async src="//www.google-analytics.com/analytics.js"></script>

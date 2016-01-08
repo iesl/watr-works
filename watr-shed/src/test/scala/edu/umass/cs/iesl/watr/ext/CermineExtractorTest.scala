@@ -16,15 +16,16 @@ import pl.edu.icm.cermine.structure.model.BxDocument
 import pl.edu.icm.cermine.structure.model.BxPage
 import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
 
+object papers {
+  def `6376.svg` = getClass().getResourceAsStream("/papers/6376.svg")
+  def `6376.pdf` = getClass().getResourceAsStream("/papers/6376.pdf")
+}
 
 class CermineExtractorSpec extends FlatSpec {
 
   import watrmarks._
   import StandardLabels._
 
-  object papers {
-    def `6376.svg` = getClass().getResourceAsStream("/papers/6376.svg")
-  }
 
   behavior of "svg -> cermine format"
 
@@ -100,24 +101,6 @@ class CermineExtractorSpec extends FlatSpec {
       }
 
     }
-    val conf = new ComponentConfiguration()
-
-
-    // println("segmenting pages")
-    // var doc = ExtractionUtils.segmentPages(conf, document);
-    // println("resolving reading order")
-    // doc = ExtractionUtils.resolveReadingOrder(conf, doc);
-    // println("classifyInitially")
-    // doc =  ExtractionUtils.classifyInitially(conf, doc);
-    // println("extracting text")
-    // val contentStructure = extractText(conf, document)
-
-    // import scala.collection.JavaConversions._
-
-    // contentStructure.getSections().toList.foreach{ section =>
-    //   // section.getTitle()
-
-    // }
   }
 
   def extractText(conf: ComponentConfiguration , document: BxDocument): ContentStructure = {

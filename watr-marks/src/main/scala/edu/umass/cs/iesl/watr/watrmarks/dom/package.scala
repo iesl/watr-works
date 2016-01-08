@@ -128,9 +128,11 @@ package object dom {
                 List()
               }
 
+              // transform="matrix(1 0 0 -1 -42 840)"
               // firstPage.childNodes[0].setAttributeNS(null, 'labels', 'xy:page');
+              val m = Matrix(1,0,0,-1,0,0)
               val n = Grp(
-                getTransforms(elem),
+                m :: getTransforms(elem),
                 labels
               )
               accum = accum.insertDownLast(Tree.Leaf(n))

@@ -35,16 +35,17 @@ scalacOptions in ThisBuild ++= Seq(
 )
 
 libraryDependencies in ThisBuild ++= Seq(
+  "org.apache.commons" % "commons-lang3" % "3.4",
   "com.github.pathikrit" %% "better-files" % "2.14.0",
   "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
   "org.scalaz" %% "scalaz-core" % "7.2.0",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.3",
-  "com.lihaoyi" %% "ammonite-ops" % "0.5.1",
-  "com.lihaoyi" % "ammonite-repl" % "0.5.1" cross CrossVersion.full,
+  "com.lihaoyi" %% "ammonite-ops" % "0.5.2",
+  "com.lihaoyi" % "ammonite-repl" % "0.5.2" cross CrossVersion.full,
   "com.softwaremill.scalamacrodebug" %% "macros"                   % "0.4",
-  "org.scalatest" % "scalatest_2.11" % "2.2.5" % "test"
+  "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test"
 )
 
 
