@@ -7,7 +7,7 @@ object SvgOverviewServer extends SvgOverviewApi  {
 
   def createView(): List[HtmlUpdate] = {
     List(
-      HtmlReplace("#explorer", html.CorpusExplorerPane.init().render)
+      HtmlReplace("#main", html.SvgOverviewPane.init().render)
     )
   }
 

@@ -18,36 +18,24 @@ object CorpusExplorerPane {
 
 }
 
-// from index.scala.html
-// @(docs: Seq[Document])
+object SvgOverviewPane {
 
-// @main("Welcome!") {
-//   <h2><img src="@routes.Assets.at("images/iesl-logo.png")"/> Welcome to the IESL SVG annotator tool</h2>
-//     <p>The repository has @docs.length SVG file(s):</p>
-//     <ul>
-//     @for(doc <- docs) {
-//       <li><a href="/docs/@doc.fileName">@{ doc.fileName}</a></li>     @* TODO cleaner way to get URI, e.g., http://stackoverflow.com/questions/11133059/play-2-x-how-to-make-an-ajax-request-with-a-common-button *@
-//     }
-//     </ul>
-// }
+  def init()  = {
+    <.div(^.id:="overlay-container")(
+      <.canvas(^.id:="fabric-canvas"),
+      <.script(^.`type`:="text/javascript")(raw("""
+          var documentIconURI = "images/pdf_50x50.png";
+          var fileRepositoryURI = "./svg-repo";
+          var fileName= '4789.pdf.svg';
+          """)),
+        <.script(^.`type`:="text/javascript", ^.src:="js/edit-document.js" )
+    )
 
-// From main.scala.html
-// @(title: String)(content: Html)
+        // <script src="@routes.Assets.at("javascripts/edit-document.js")" type="text/javascript"></script>
+  }
 
-// <!DOCTYPE html>
+}
 
-// <html>
-//   <head>
-//   <title>@title</title>
-//   <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-//   <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
-//   <script src="@routes.Assets.at("javascripts/jquery-2.1.4.min.js")" type="text/javascript"></script>
-//   <script src="@routes.Assets.at("javascripts/fabric.min.js")" type="text/javascript"></script>
-//   </head>
-//   <body>
-//   @content
-//   </body>
-//   </html>
 
 // // From edit.scala.html
 // @(doc : Document)

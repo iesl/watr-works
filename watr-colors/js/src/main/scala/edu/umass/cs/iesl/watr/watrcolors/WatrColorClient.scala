@@ -7,25 +7,12 @@ import org.scalajs.dom
 import scala.util.Random
 import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import scalatags.JsDom.all._
+// import scalatags.JsDom.all._
 import upickle.Js
 import org.scalajs.jquery.jQuery
-import upickle.default._
+// import upickle.default._
 
 
-
-// object Client extends autowire.Client[Js.Value, Reader, Writer] {
-//   override def doCall(req: Request): Future[Js.Value] = {
-//     dom.ext.Ajax.post(
-//       url = "/api/" + req.path.mkString("/"),
-//       data = upickle.json.write(Js.Obj(req.args.toSeq: _*))
-//     ).map(_.responseText)
-//       .map(upickle.json.read)
-//   }
-
-//   def read[Result: Reader](p: Js.Value) = readJs[Result](p)
-//   def write[Result: Writer](r: Result) = writeJs(r)
-// }
 
 case class Keybindings(
   bindings: List[(String, (MousetrapEvent) => Boolean)]
@@ -56,8 +43,6 @@ trait ClientView {
 
   def initKeys: Keybindings
 
-  setKeybindings(initKeys)
-
   def createView(): Unit
 
 }
@@ -71,7 +56,9 @@ object WatrColorClient {
   def switchViews(v: ClientView): Unit = {
     currentView = v
     currentView.createView()
+    currentView.setKeybindings(currentView.initKeys)
   }
+
 
   // TODO Can't figure out why this main() is getting called twice, so putting this guard here..
   var started = false

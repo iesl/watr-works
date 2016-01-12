@@ -32,9 +32,8 @@ object CorpusExplorerServer extends CorpusExplorerApi  {
     )
   }
 
-  def htmlId = "explorer"
 
-  def openCurrent(): List[HtmlUpdate] = {
+  def openFocus(): List[HtmlUpdate] = {
     // WatrColorServer
     // switch to svg-view
     List(

@@ -53,8 +53,7 @@ object Frame {
 
       body(margin := 0, WatrStyles.htmlBody)(
         <.div(^.`class` := "pretty-split-pane-frame")(
-          <.div(^.id := "#main")
-          // mainContent
+          <.div(^.id := "main")
         ),
         script("edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main()")
       )

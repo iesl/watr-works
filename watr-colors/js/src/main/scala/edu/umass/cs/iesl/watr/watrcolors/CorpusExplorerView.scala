@@ -22,7 +22,6 @@ case class HtmlRemove(css: String) extends HtmlUpdate
 @JSExport
 class CorpusExplorerView() extends ClientView {
 
-  // val server = Client[CorpusExplorerApi]
   val server = ServerWire("explorer")[CorpusExplorerApi]
 
   def createView(): Unit = {
@@ -44,32 +43,31 @@ class CorpusExplorerView() extends ClientView {
     true
   }
 
-  def openCurrent(): Boolean = {
+  def openFocus(): Boolean = {
     // close this view
     //
-    server.openCurrent().call() foreach (applyHtmlUpdates(_))
+    server.openFocus().call() foreach (applyHtmlUpdates(_))
     WatrColorClient.switchViews(new SvgOverview())
     true
   }
 
-  val initKeys = Keybindings(List(
+  override val initKeys = Keybindings(List(
     "j" -> ((e: MousetrapEvent) => navNext),
     "k" -> ((e: MousetrapEvent) => navPrev),
-    "enter" -> ((e: MousetrapEvent) => openCurrent)
+    "x" -> ((e: MousetrapEvent) => openFocus)
   ))
 
-  def init(): Unit = {
-    println("Corpus Explorer started")
-  }
+  // def init(): Unit = {
+  //   println("Corpus Explorer started")
+  // }
 
 }
 
 @JSExport
 class SvgOverview() extends ClientView {
-  // val server = Client[SvgOverviewApi]
   val server = ServerWire("svg")[SvgOverviewApi]
 
-  val initKeys = Keybindings(List())
+  override val initKeys = Keybindings(List())
 
   def createView(): Unit = {
     server.createView().call().foreach(applyHtmlUpdates(_))

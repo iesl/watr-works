@@ -6,7 +6,7 @@ package watrcolors
 trait CorpusExplorerApi {
   def navNext()     : List[HtmlUpdate]
   def navPrev()     : List[HtmlUpdate]
-  def openCurrent() : List[HtmlUpdate]
+  def openFocus() : List[HtmlUpdate]
   def createView()    : List[HtmlUpdate]
 
 }
