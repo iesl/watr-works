@@ -1,0 +1,15 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# pages
+GET        /                                  controllers.Application.showIndex()
+GET        /docs/:fileName                    controllers.Application.editDocument(fileName : String)
+
+# API
+PUT        /docs/:fileName                    controllers.Application.saveDocument(fileName : String)
+GET        /docs/:fileName/annotations        controllers.Application.getAnnotations(fileName : String)
+GET        /docs/:fileName/text               controllers.Application.getDocRectText(fileName : String, x: String, y: String, width: String, height: String)
+
+# Map static resources from the /public folder to the /assets URL path
+GET        /assets/*file                      controllers.Assets.at(path="/public", file)

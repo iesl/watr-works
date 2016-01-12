@@ -32,6 +32,9 @@ object Frame {
 
   def apply(mainContent: TextTag) = {
 
+    //   <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
+    //   <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
+    //   <script src="@routes.Assets.at("javascripts/fabric.min.js")" type="text/javascript"></script>
       <.html(^.lang:="en",
         <.head(
           <.title("WatrColors"),

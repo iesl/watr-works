@@ -1,0 +1,90 @@
+[
+  {
+    "label": "title",
+    "rects": [
+      {
+        "x": 40.0,
+        "y": 164.0,
+        "width": 524.0,
+        "height": 35.0
+      }
+    ]
+  },
+  {
+    "label": "abstract",
+    "rects": [
+      {
+        "x": 204.0,
+        "y": 266.0,
+        "width": 360.0,
+        "height": 116.0
+      }
+    ]
+  },
+  {
+    "label": "author",
+    "rects": [
+      {
+        "x": 40.0,
+        "y": 207.0,
+        "width": 44.0,
+        "height": 13.0
+      }
+    ]
+  },
+  {
+    "label": "author",
+    "rects": [
+      {
+        "x": 93.0,
+        "y": 208.0,
+        "width": 53.0,
+        "height": 13.0
+      }
+    ]
+  },
+  {
+    "label": "author",
+    "rects": [
+      {
+        "x": 155.0,
+        "y": 207.0,
+        "width": 59.0,
+        "height": 14.0
+      }
+    ]
+  },
+  {
+    "label": "author",
+    "rects": [
+      {
+        "x": 222.0,
+        "y": 207.0,
+        "width": 52.0,
+        "height": 14.0
+      }
+    ]
+  },
+  {
+    "label": "author",
+    "rects": [
+      {
+        "x": 283.0,
+        "y": 207.0,
+        "width": 59.0,
+        "height": 14.0
+      }
+    ]
+  },
+  {
+    "label": "author",
+    "rects": [
+      {
+        "x": 351.0,
+        "y": 207.0,
+        "width": 47.0,
+        "height": 14.0
+      }
+    ]
+  }
+]

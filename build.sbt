@@ -83,7 +83,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
     "com.lihaoyi" %%% "upickle" % "0.3.6",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
-    "com.lihaoyi" %%% "scalarx" % "0.2.8",
+    "com.lihaoyi" %%% "scalarx" % "0.2.9",
     "com.lihaoyi" %%% "scalatags" % "0.5.3"
   )
 ).jsSettings(
@@ -106,6 +106,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
     "com.typesafe.akka" %% "akka-actor" % "2.4.1",
     // "org.webjars" % "jqueryui-layout" % "1.4.0",
     // "org.webjars.bower" % "split-pane" % "0.5.1",
+    "org.webjars.bower" % "fabric" % "1.5.0",
     "org.webjars" % "bootstrap" % "3.3.6",
     "org.webjars" % "jquery" % "2.1.4",
     "org.webjars" % "mousetrap" % "1.5.3"
