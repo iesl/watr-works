@@ -1,10 +1,17 @@
-package edu.umass.cs.iesl.watr
+package edu.umass.cs.iesl
+package watr
 package textboxing
 
-object TextBoxing {
+import scalaz.syntax.ToIdOps
+import scalaz.syntax.std.ToListOps
+
+object TextBoxing extends ToListOps {
   import scalaz._
-  import Scalaz._
-  import Lens._
+  // import Scalaz._
+  import scalaz.Lens._
+  // import scalaz.std.list._
+
+  // import scalaz.std.syntax.id._                              // extends ToApplicativePlusOps
 
 
 
@@ -141,10 +148,10 @@ object TextBoxing {
   // Glue a list of boxes together horizontally, with the given alignment.
   def hcat: Alignment => List[Box] => Box =
     a => bs => {
-      def h = (0 :: (bs ∘ (_.rows))) max
-      def w = (bs ∘ (_.cols)) sum
+      def h = (0 :: (bs map (_.rows))) max
+      def w = (bs map (_.cols)) sum
       val aligned = alignVert(a)(h)
-      Box(h, w, Row(bs ∘ aligned))
+      Box(h, w, Row(bs map aligned))
     }
 
   // @hsep sep a bs@ lays out @bs@ horizontally with alignment @a@,
@@ -156,10 +163,10 @@ object TextBoxing {
   // Glue a list of boxes together vertically, with the given alignment.
   def vcat: Alignment => List[Box] => Box =
     a => bs => {
-      def h = (bs ∘ (_.rows)).sum
-      def w = (0 :: (bs ∘ (_.cols))) max
+      def h = (bs map (_.rows)).sum
+      def w = (0 :: (bs map (_.cols))) max
       val aligned = alignHoriz(a)(w)
-      Box(h, w, Col(bs ∘ aligned))
+      Box(h, w, Col(bs map aligned))
     }
 
 
@@ -281,12 +288,18 @@ object TextBoxing {
         case AlignCenter2  => i / 2
       }
 
-      def split: List[A] => (List[A], List[A]) =
-        as => ((_:List[A]) reverse).first apply as.splitAt(numRev(align, as.length))
+      def split(bs: List[A]): (List[A], List[A]) = {
+        // ((_:List[A]).reverse).first apply as.splitAt(numRev(align, as.length))
+        val (l1, l2) = bs.splitAt(numRev(align, bs.length))
+        (l1.reverse, l2)
+      }
 
-      def padding = (takePad(pad, numRev(align, n))  *** takePad(pad, numFwd(align,n)))
+      val padRev = takePad(pad, numRev(align, n))
+      val padFwd = takePad(pad, numFwd(align,n))
 
-      padding apply split(as) fold (_.reverse ++ _)
+      val (a0, a1) = split(as)
+      padRev(a0.reverse) ++ padFwd(a1)
+
     }
 
 
@@ -306,10 +319,10 @@ object TextBoxing {
   def renderBox(box: Box): List[String] = box match {
     case Box(r, c, Blank)             => resizeBox(r, c, List(""))
     case Box(r, c, Text(t))           => resizeBox(r, c, List(t))
-    case Box(r, c, Col(bs))           => (bs >>= renderBoxWithCols(c)) |> (resizeBox(r, c, _))
+    case Box(r, c, Col(bs))           => (bs flatMap renderBoxWithCols(c)) |> (resizeBox(r, c, _))
     case Box(r, c, SubBox(ha, va, b)) => resizeBoxAligned(r, c, ha, va)(renderBox(b))
     case Box(r, c, Row(bs))           => {
-      bs ∘ renderBoxWithRows(r) |> merge |> (resizeBox(r, c, _))
+      bs.map( renderBoxWithRows(r)) |> merge |> (resizeBox(r, c, _))
     }
     case Box(r, c, AnnotatedBox(props, b))  => {
       renderBox(b)
@@ -339,7 +352,7 @@ object TextBoxing {
   // Resize a rendered list of lines, using given alignments.
   def resizeBoxAligned(r: Int, c: Int, ha: Alignment, va : Alignment): List[String] => List[String] = {
     ss => takePadAlign(va, blanks(c), r){
-      (ss.map (_.toList)) ∘ (takePadAlign(ha, ' ', c)) ∘ (_.mkString(""))
+      (ss.map (_.toList)) map (takePadAlign(ha, ' ', c)) map (_.mkString(""))
     }
   }
 
@@ -445,7 +458,7 @@ object TextBoxing {
   //   at most @h@, containing text @t@ flowed into as many columns as
   //   necessary.
   def columns : (Alignment, Int, Int, String) => List[Box] =
-    (a, w, h, t) =>  flow(w)(t) ∘ (_.grouped(h).toList) ∘ (mkParaBox(a, h, _))
+    (a, w, h, t) =>  flow(w)(t) map (_.grouped(h).toList) map (mkParaBox(a, h, _))
 
 
 
@@ -471,8 +484,8 @@ object TextBoxing {
   // Flow the given text into the given width.
   def flow : Int => String => List[String] =
     n => t => {
-      val wrds = words(t) ∘ mkWord
-      val para = wrds.foldl (emptyPara(n)) { addWordP }
+      val wrds = words(t) map mkWord
+      val para = wrds.foldLeft (emptyPara(n)) { case(acc, e) => addWordP(acc)(e) }
       para |> getLines |> (_.map(_.take(n)))
     }
 
@@ -493,7 +506,7 @@ object TextBoxing {
 
   def getLines : Para => List[String] =
     p => {
-      def process =  (l:List[Line]) => l.reverse ∘ Line.getWords ∘ (_.map(Word.getWord)) ∘ (_.reverse) ∘ unwords
+      def process =  (l:List[Line]) => l.reverse map Line.getWords map (_.map(Word.getWord)) map (_.reverse) map unwords
 
       p match {
         case Para(_, (Block(ls, l))) =>
@@ -512,7 +525,7 @@ object TextBoxing {
 
   //
   def mkLine : List[Word] => Line =
-    ws => Line((ws ∘ Word.getLen).sum + ws.length - 1, ws)
+    ws => Line((ws map Word.getLen).sum + ws.length - 1, ws)
 
   def startLine : Word => Line =
     w => mkLine(w :: Nil)

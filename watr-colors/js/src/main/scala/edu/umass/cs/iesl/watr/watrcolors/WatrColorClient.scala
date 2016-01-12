@@ -9,94 +9,86 @@ import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scalatags.JsDom.all._
 import upickle.Js
-import autowire._
 import org.scalajs.jquery.jQuery
 import upickle.default._
 
-import SplitPane._
 
-object Client extends autowire.Client[Js.Value, Reader, Writer]{
-  override def doCall(req: Request): Future[Js.Value] = {
-    dom.ext.Ajax.post(
-      url = "/api/" + req.path.mkString("/"),
-      data = upickle.json.write(Js.Obj(req.args.toSeq:_*))
-    ).map(_.responseText)
-     .map(upickle.json.read)
-  }
 
-  def read[Result: Reader](p: Js.Value) = readJs[Result](p)
-  def write[Result: Writer](r: Result) = writeJs(r)
-}
+// object Client extends autowire.Client[Js.Value, Reader, Writer] {
+//   override def doCall(req: Request): Future[Js.Value] = {
+//     dom.ext.Ajax.post(
+//       url = "/api/" + req.path.mkString("/"),
+//       data = upickle.json.write(Js.Obj(req.args.toSeq: _*))
+//     ).map(_.responseText)
+//       .map(upickle.json.read)
+//   }
+
+//   def read[Result: Reader](p: Js.Value) = readJs[Result](p)
+//   def write[Result: Writer](r: Result) = writeJs(r)
+// }
 
 case class Keybindings(
-  bindings: List[(String, (MousetrapEvent)=>Boolean)]
+  bindings: List[(String, (MousetrapEvent) => Boolean)]
 )
 
-@JSExport
-object WatrColorClient {
 
-  val server = Client[WatrColorApi]
+trait ClientView {
 
+  def setKeybindings(kb: Keybindings) = {
+    Mousetrap.reset()
+    kb.bindings.foreach {
+      case (str, fn) =>
+        Mousetrap.bind(str, fn, "keypress")
+    }
+  }
 
-  def applyHtmlUpdates(updates: Seq[HtmlUpdate]): Unit = {
-    updates.foreach { _ match {
-        case HtmlAppend(css, content)       => jQuery(css).append(content)
-        case HtmlPrepend(css, content)      => jQuery(css).prepend(content)
-        case HtmlReplace(css, content)      => jQuery(css).replaceWith(content)
+  def applyHtmlUpdates(updates: List[HtmlUpdate]): Unit = {
+    updates.foreach {
+      _ match {
+        case HtmlAppend(css, content) => jQuery(css).append(content)
+        case HtmlPrepend(css, content) => jQuery(css).prepend(content)
+        case HtmlReplace(css, content) => jQuery(css).replaceWith(content)
         case HtmlReplaceInner(css, content) => jQuery(css).html(content)
-        case HtmlRemove(css)                => jQuery(css).remove()
+        case HtmlRemove(css) => jQuery(css).remove()
       }
     }
   }
 
-  def navNext(): Boolean = {
-    server.navNext().call().foreach(applyHtmlUpdates(_))
-    true
+  def initKeys: Keybindings
+
+  setKeybindings(initKeys)
+
+  def createView(): Unit
+
+}
+
+
+@JSExport
+object WatrColorClient {
+
+  var currentView: ClientView = null
+
+  def switchViews(v: ClientView): Unit = {
+    currentView = v
+    currentView.createView()
   }
 
-
-  def navPrev(): Boolean = {
-    server.navPrev().call() foreach (applyHtmlUpdates(_))
-    true
-  }
-
-  def openCurrent(): Boolean = {
-    server.openCurrent().call() foreach (applyHtmlUpdates(_))
-    true
-  }
-
-
-  case class WindowPane(
-    keys: Keybindings,
-    html: HtmlTag
-  )
-
-  val emptyPane = div(
-    p("<empty>")
-  )
-
-  val initKeys = Keybindings(List(
-    "j"     -> ((e: MousetrapEvent) => navNext),
-    "k"     -> ((e: MousetrapEvent) => navPrev),
-    "enter" -> ((e: MousetrapEvent) => openCurrent)
-  ))
-
-  def setKeybindings(kb: Keybindings) =  {
-    kb.bindings.foreach { case(str, fn) =>
-      Mousetrap.bind(str, fn)
-    }
-  }
-
+  // TODO Can't figure out why this main() is getting called twice, so putting this guard here..
+  var started = false
 
   @JSExport
   def main(): Unit = {
-    setKeybindings(initKeys)
+    if (!started) {
+      started = true
 
-    val _ = jQuery(dom.document).ready {() =>
-      jQuery(".split-pane").splitPane();
-      jQuery(".split-pane").trigger("resize");
+      println("WatrColors Client started")
+      switchViews(new CorpusExplorerView())
+
+      // val _ = jQuery(dom.document).ready {() =>
+      //   jQuery(".split-pane").splitPane();
+      //   jQuery(".split-pane").trigger("resize");
+      // }
     }
-
   }
 
 }

@@ -138,7 +138,7 @@ object Template {
             // script(`type`:="text/javascript", src:="/webjars/bootstrap/3.3.6/js/bootstrap.min.js")
 
           <.style(^.`type`:="text/css",
-            WatrStyles.styleSheetText
+                  WatrStyles.styleSheetText
           ),
           script("edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main()")
         ),

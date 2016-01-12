@@ -43,6 +43,7 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.3",
   "com.lihaoyi" %% "ammonite-ops" % "0.5.2",
+  "com.typesafe.play" %% "play-json" % "2.4.6",
   "com.lihaoyi" % "ammonite-repl" % "0.5.2" cross CrossVersion.full,
   "com.softwaremill.scalamacrodebug" %% "macros"                   % "0.4",
   "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test"
@@ -94,7 +95,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
     "be.doeraene" %%% "scalajs-jquery" % "0.8.1",
     "org.scala-js" %%% "scalajs-dom" % "0.8.2"
   ),
-  refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),
+  // refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),
   bootSnippet := "edu.umass.cs.iesl.watr.watrcolors.WatrColorServer().main();"
 ).jvmSettings(
   Revolver.settings:_*

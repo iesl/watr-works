@@ -4,26 +4,16 @@ package html
 
 // import org.scalajs.jquery.jQuery
 // import scalatags.stylesheet.{CascadingStyleSheet, StyleSheet, StyleSheetTags, Sheet, Selector}
+import scalatags.Text.all._
 
+object CorpusExplorerPane {
 
-
-
-object IndexPane {
-
-
-  import scalatags.Text.all._
-
-
-  def apply()  = {
+  def init()  = {
     <.div(
-      <.div()("Query")(
-        <.input()
-      ),
       <.div()("Explore")(
-        "directory cursor"
+        <.span(^.id:="currfile")
       )
     )
-
   }
 
 }
