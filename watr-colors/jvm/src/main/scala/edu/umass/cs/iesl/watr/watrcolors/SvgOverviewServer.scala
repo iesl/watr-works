@@ -5,9 +5,9 @@ package watrcolors
 
 object SvgOverviewServer extends SvgOverviewApi  {
 
-  def createView(): List[HtmlUpdate] = {
+  def createView(svgFilename: String): List[HtmlUpdate] = {
     List(
-      HtmlReplace("#main", html.SvgOverviewPane.init().render)
+      HtmlReplaceInner("#main", html.SvgOverviewPane.init(svgFilename).toString)
     )
   }
 

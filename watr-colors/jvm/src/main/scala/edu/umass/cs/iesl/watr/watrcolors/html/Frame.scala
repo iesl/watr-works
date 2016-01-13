@@ -25,7 +25,6 @@ object Frame {
 
   }
 
-  // def apply(mainContent: TextTag) = {
   def apply() = {
     <.html(
       ^.lang := "en",
@@ -52,7 +51,8 @@ object Frame {
       ),
 
       body(margin := 0, WatrStyles.htmlBody)(
-        <.div(^.`class` := "pretty-split-pane-frame")(
+        // <.div(^.`class` := "pretty-split-pane-frame")(
+        <.div(^.`class` := "")(
           <.div(^.id := "main")
         ),
         script("edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main()")

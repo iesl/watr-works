@@ -18,7 +18,6 @@ case class HtmlReplaceInner(css: String, content: String) extends HtmlUpdate
 case class HtmlRemove(css: String) extends HtmlUpdate
 
 
-
 @JSExport
 class CorpusExplorerView() extends ClientView {
 
@@ -46,8 +45,11 @@ class CorpusExplorerView() extends ClientView {
   def openFocus(): Boolean = {
     // close this view
     //
+    server.getFileInFocus().call().foreach { currfile =>
+      WatrColorClient.switchViews(new SvgOverview(currfile))
+    }
     server.openFocus().call() foreach (applyHtmlUpdates(_))
-    WatrColorClient.switchViews(new SvgOverview())
+
     true
   }
 
@@ -64,12 +66,14 @@ class CorpusExplorerView() extends ClientView {
 }
 
 @JSExport
-class SvgOverview() extends ClientView {
+class SvgOverview(
+  svgFilename: String
+) extends ClientView {
   val server = ServerWire("svg")[SvgOverviewApi]
 
   override val initKeys = Keybindings(List())
 
   def createView(): Unit = {
-    server.createView().call().foreach(applyHtmlUpdates(_))
+    server.createView(svgFilename).call().foreach(applyHtmlUpdates(_))
   }
 }

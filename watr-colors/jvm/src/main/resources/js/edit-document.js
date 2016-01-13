@@ -57,7 +57,7 @@ function loadSvg() {
         // add #svg-image to #overlay-container
         var svgDocEle = document.importNode(svgxml.documentElement, true);
         svgDocEle.setAttribute('id', 'svg-image');
-        $('#overlay-container').prepend(svgDocEle);
+        $('#svg-container').append(svgDocEle);
 
         // resize #fabric-canvas to overlay SVG
         var canvasEle = document.getElementById("fabric-canvas");
@@ -78,25 +78,29 @@ function loadSvg() {
 }
 
 function loadAnnotations() {
-    // AJAX call to GET annotation JSON
-    setLoadingHeader("Loading annotations &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote;...");
-    $.get('/docs/' + fileName + '/annotations',    // TODO cleaner way to get URI
+  // AJAX call to GET annotation JSON
+  setLoadingHeader("Loading annotations &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote;...");
+  $.get('/annotations/' + fileName,    // TODO cleaner way to get URI
         function(jsonAnnotListStr) {
-            var fabricCanvas = getFabricCanvas();
-            var jsonAnnotListStrRepl = jsonAnnotListStr.replace(/&quot;/g,'"');     // TODO HACK. Play/Jackson issue?
-            var annotList = JSON.parse(jsonAnnotListStrRepl);
-            fabricCanvas.clear();
-            for(var annotIdx = 0; annotIdx < annotList.length; annotIdx++) {
-                var annot = annotList[annotIdx];
-                var rects = annot.rects;
-                addAnnotationFabricObs(annot.label, rects);
-            }
-            updateButtonStates([]);
-            fabricCanvas.renderAll();
-            setLoadingHeader("Loaded &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote; with "
-                + annotList.length + " annotation(s)");
+          var fabricCanvas = getFabricCanvas();
+          console.log(jsonAnnotListStr);
+          // var jsonAnnotListStrRepl = jsonAnnotListStr.replace(/&quot;/g,'"');     // TODO HACK. Play/Jackson issue?
+          // var annotList = JSON.parse(jsonAnnotListStr);
+          var annotList = jsonAnnotListStr;
+          fabricCanvas.clear();
+          for(var annotIdx = 0; annotIdx < annotList.length; annotIdx++) {
+            console.log("adding annot");
+            var annot = annotList[annotIdx];
+            var rects = annot.rects;
+            addAnnotationFabricObs(annot.label, rects);
+          }
+          updateButtonStates([]);
+          fabricCanvas.renderAll();
+          console.log("rerendering annot");
+          setLoadingHeader("Loaded &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote; with "
+                           + annotList.length + " annotation(s)");
         }
-    );
+       );
 }
 
 /*
@@ -105,28 +109,28 @@ function loadAnnotations() {
  * just a single non-linked one.
  */
 function addAnnotationFabricObs(label, rects) {
-    // add Rects
-    var addedRects = [];
-    for(var rectIdx = 0; rectIdx < rects.length; rectIdx++) {
-        var rect = rects[rectIdx];
-        var addedRect = addAnnotationRect(label, rect.x, rect.y, rect.width, rect.height);
-        addedRects.push(addedRect);
-    }
+  // add Rects
+  var addedRects = [];
+  for(var rectIdx = 0; rectIdx < rects.length; rectIdx++) {
+    var rect = rects[rectIdx];
+    var addedRect = addAnnotationRect(label, rect.x, rect.y, rect.width, rect.height);
+    addedRects.push(addedRect);
+  }
 
-    // add Lines for each pair of linked Rects
-    if ((addedRects.length == 0) || (addedRects.length == 1)) {
-        return;
-    }
+  // add Lines for each pair of linked Rects
+  if ((addedRects.length == 0) || (addedRects.length == 1)) {
+    return;
+  }
 
-    for(var idx = 0; idx < addedRects.length - 1; idx++) {
-        var rect1 = addedRects[idx];
-        var rect2 = addedRects[idx + 1];
-        addAnnotationLine(rect1, rect2);
-    }
+  for(var idx = 0; idx < addedRects.length - 1; idx++) {
+    var rect1 = addedRects[idx];
+    var rect2 = addedRects[idx + 1];
+    addAnnotationLine(rect1, rect2);
+  }
 }
 
 function addAnnotationRect(label, x, y, width, height) {
-    var fabricCanvas = getFabricCanvas();
+  var fabricCanvas = getFabricCanvas();
     var rect = new fabric.Rect({
         left: x,
         top: y,

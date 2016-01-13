@@ -6,7 +6,9 @@ import better.files._
 
 object CorpusExplorerServer extends CorpusExplorerApi  {
 
-  val initpath = file"../../corpus-zero"
+  println(s"current dir = ${Cmds.cwd}")
+
+  val initpath = file"../svg-repo"
 
   val init = DirectoryCursor.init(initpath).get
 
@@ -20,6 +22,10 @@ object CorpusExplorerServer extends CorpusExplorerApi  {
     List(
       HtmlReplaceInner(s"#currfile", s"${state.curr.name}")
     )
+  }
+
+  def getFileInFocus() : String = {
+    state.curr.name
   }
 
   def navPrev(): List[HtmlUpdate] = {

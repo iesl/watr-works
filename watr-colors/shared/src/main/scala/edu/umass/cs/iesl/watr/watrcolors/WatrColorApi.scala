@@ -7,14 +7,11 @@ trait CorpusExplorerApi {
   def navNext()     : List[HtmlUpdate]
   def navPrev()     : List[HtmlUpdate]
   def openFocus() : List[HtmlUpdate]
+  def getFileInFocus() : String
   def createView()    : List[HtmlUpdate]
 
 }
 
 trait SvgOverviewApi {
-  def createView()    : List[HtmlUpdate]
+  def createView(svgFilename: String)  : List[HtmlUpdate]
 }
-
-
-
-
