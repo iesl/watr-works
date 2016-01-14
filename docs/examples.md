@@ -5,11 +5,11 @@
 ### examples
 
 + Chemicals:
-  preparation of _BaV13O18_ and
-  _SrO2_, _ReO3_ (99.9%)
+  preparation of __BaV13O18__ and
+  __SrO2__, __ReO3__ (99.9%)
 
 + Pronouns:
-  _The samples_ were prepared in an arc furnace under
+  __The samples__ were prepared in an arc furnace under
 
 
 
@@ -21,21 +21,21 @@
 ### Apparatus
 #### examples
 
-The _X-ray_ analysis of the samples showed...
+The __X-ray__ analysis of the samples showed...
 
 
 ### Action
 
-+ was prepared through a _wet process_
-+ and CaO by a _decomposition_ of CaCO3 (99.9%) at 1000C.
-+ were prepared in advance by _solid-state reactions_ in air between
++ was prepared through a __wet process__
++ and CaO by a __decomposition__ of CaCO3 (99.9%) at 1000C.
++ were prepared in advance by __solid-state reactions__ in air between
 
 
 
 ## Results/analysis
 
 ### examples
-+ that they form a _single phase_ with _orthorhombic structure_
++ that they form a __single phase__ with __orthorhombic structure__
 
 
 ## Quantities
