@@ -122,32 +122,32 @@ Under these conditions, the phase appears as practically pure from its powder XR
 Recipe-step annotation:
 
 
-==Step
-output    : __LiNi0.4Mn0.4Co0.2O2__ was 
-          : __synthesised__ using solid-state synthesis route at 
-condition : __high temperature__ by 
-action    : __mixing__ 
-input     : __metal acetate salts__ (
-          : __Aldrich__) as the starting 
-          : __materials__. 
-
-
-==Step
-input-quantity : __Stoichiometric__ amount of 
-               : __acetates__ of 
-input          : __lithium nickel__, 
-input          : __manganese__, and 
-input          : __cobalt__ were 
-action         : __mixed__ and 
-action         : __ground__ by using a 
-apparatus      : __pestle__ and 
-apparatus      : __mortar__. 
-
-==Step
-               : After that, the 
-input          : __samples__ were 
-action         : __heated__ at 
-condition      : __400 °C__ for 
-condition      : __12 h__ with a heating rate of 
-condition      : __2 °C/min__ to 
-               : __remove__ __acetates__. 
+=====Step
+    output    : __LiNi0.4Mn0.4Co0.2O2__ was 
+              : __synthesised__ using solid-state synthesis route at 
+    condition : __high temperature__ by 
+    action    : __mixing__ 
+    input     : __metal acetate salts__ (
+              : __Aldrich__) as the starting 
+              : __materials__. 
+    
+    
+=====Step
+    input-quantity : __Stoichiometric__ amount of 
+                   : __acetates__ of 
+    input          : __lithium nickel__, 
+    input          : __manganese__, and 
+    input          : __cobalt__ were 
+    action         : __mixed__ and 
+    action         : __ground__ by using a 
+    apparatus      : __pestle__ and 
+    apparatus      : __mortar__. 
+    
+=====Step
+                   : After that, the 
+    input          : __samples__ were 
+    action         : __heated__ at 
+    condition      : __400 °C__ for 
+    condition      : __12 h__ with a heating rate of 
+    condition      : __2 °C/min__ to 
+                   : __remove__ __acetates__. 
