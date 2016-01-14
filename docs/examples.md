@@ -2,7 +2,7 @@
 
 ## Sample method sections
 
-### Example 
+### Example
 
 > 2. Experimental
 
@@ -51,7 +51,7 @@
     condition      : __400 °C__ for
     condition      : __12 h__ with a heating rate of
     condition      : __2 °C/min__ to
-                   : __remove__                              (2) 
+                   : __remove__                              (2)
                    : __acetates__.                           (2)
 
 
@@ -62,21 +62,21 @@
 > The samples were analysed using a step size of 0.02° and dwell time of 0.2 s per step.
 
 ##### Step component labels
-    input     : Samples were 
-    action    : analysed using a 
-    apparatus : Bruker D2 Phaser benchtop 
-    apparatus : X-ray diffractometer equipped with 
-    apparatus : LYNXEYE 1D detector with 
-    condition : Cu–Kα radiation at 
+    input     : Samples were
+    action    : analysed using a
+    apparatus : Bruker D2 Phaser benchtop
+    apparatus : X-ray diffractometer equipped with
+    apparatus : LYNXEYE 1D detector with
+    condition : Cu–Kα radiation at
     condition : room temperature.
 
-              : The 
-    input     : samples were 
-    action    : analysed using a 
+              : The
+    input     : samples were
+    action    : analysed using a
     condition : step size of             (3)
-              : 0.02° and 
-    condition : dwell time of            (3) 
-              : 0.2 s per 
+              : 0.02° and
+    condition : dwell time of            (3)
+              : 0.2 s per
               : step.
 
 
@@ -105,9 +105,22 @@
 > Acetone, hydrochloric acid (HCl), sodium hydroxide (NaOH), cobalt nitrate hexahydrate (Co(NO3)26H2O), 2-methylimidazole, ethanol and all other reagents were purchased from Beijing Chemical Reagents Company (Beijing, China).
 > The __water__ used throughout the work was __purified__ by a __SZ-93 automatic double-distiller__ purchased from Yarong Biochemistry Instrumental Factory (Shanghai, China).
 > The __grape__ and bitter __gourd__ samples were bought from the local market (Baoding, China).
->
->
+
+
 > A mixture stock solution containing monuron, isoproturon, diuron and buturon each at 20.0 mg L1 was prepared in methanol.
+
+##### Step component labels
+                : A mixture stock
+    input       : solution containing
+                : monuron,
+                : isoproturon,
+                : diuron and
+                : buturon each at
+    in-quantity : 20.0 mg
+                : L1 was
+    action      : prepared in
+    condition   : methanol.            (4)
+
 > A series of standard solutions were prepared by mixing an appropriate amount of the stock solution with methanol in a 10-mL volumetric flask.
 > All the standard solutions were stored at 4 C and protected from light.
 
@@ -127,52 +140,46 @@
 >
 > Under these conditions, the phase appears as practically pure from its powder XRD pattern, which evidences only traces of BaCO,.
 
-# Annotation types
-
-## Entities
 
 
-+ Chemicals:
-  __preparation__ of
-  __BaV13O18__ and
-  __SrO2__,
-  __ReO3__ (99.9%)
+### Isolated examples for annotation types
 
-  exploration of the system
-  __Tl-Ba-Cl-O__ was performed,
-  starting from
-  __mixtures__ of
-  __TlCl__,
-  __Tl<sub>2</sub>O<sub>3</sub>__,
-  __BaO__, and
-  __BaO<sub>2</sub>__
-  __pressed__ into the form of
-  __bars__ and
-  __heated__ in evacuated
-  __silica tubes__ at temperatures ranging from
-  530°C to
-  660°C.
+#### Entities
+* preparation
+* BaV13O18
+* Tl-Ba-Cl-O
+* mixtures
+* TlCl
+* bars
+* samples
 
-  __The samples__
-  were prepared in an arc furnace under
+#### Operations
 
+##### Actions
+  * prepared
+  * pressed
+  * heated
+  * synthesised
+  * decomposition
+  * reactions
 
-
-
-## Coreference labeling (for both entities and operations)
-
+##### Conditions
+* 530°C
+* wet               'wet process'
+* solid-state
+* in air
+* in oxygen
 
 
-## Operations
-### Apparatus
-#### examples
+##### Apparatus
+* arc furnace
+* silica tubes
+* X-ray diffractometer
+* LYNXEYE 1D detector
 
-
-### Action
-
-+ was prepared through a __wet process__
-+ and CaO by a __decomposition__ of CaCO3 (99.9%) at 1000C.
-+ were prepared in advance by __solid-state reactions__ in air between
+##### Settings
++ step size
++ dwell time
 
 
 
@@ -186,24 +193,17 @@
     * duration
     * rate
     * temperature
-
-    ReO3 (__99.9%__)
-
+    * purity     e.g., ReO3 (99.9%)
 
 
-## Conditions (modifiers, ...)
 
-
-## Recipes
-### Step
-
-
-### Step Sequencing
-
-### Organizations??
+### Notes
++ labeling phrases like 'the sample' is tricky - it can refer to an ever-changing substance over the course of several steps
++ Organization show up frequently, perhaps should be labeled someday.
 
 
 ### Questions
-1. Aldritch? branded formulation of some sort? 
+1. Aldritch? branded formulation of some sort?
 2. The output is specified by the thing removed. We don't know how to describe that yet.
 3. Should this be labeled as "setting", applicable only to an apparatus?
+4. This appears to be a condition, not an entity.
