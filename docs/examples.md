@@ -9,6 +9,13 @@
 ##### Entity + operation + single-step
 > __LiNi0.4Mn0.4Co0.2O2__ was __synthesised__ using solid-state synthesis route at __high temperature__ by __mixing__ __metal acetate salts__ (__Aldrich__) as the starting __materials__.
 
+##### Coreference labels (includes lines from steps below)
+    e1     : __metal acetate salts__ (
+    e1     : __Aldrich__) as the starting      (1)
+    e1     : __materials__.
+    e1     : __acetates__ of
+    e1     : __samples__ were
+
 
 ##### Step component labels
     output    : __LiNi0.4Mn0.4Co0.2O2__ was
@@ -16,8 +23,8 @@
     condition : __high temperature__ by
     action    : __mixing__
     input     : __metal acetate salts__ (
-              : __Aldrich__) as the starting
-              : __materials__.
+    input     : __Aldrich__) as the starting      (1)
+    input     : __materials__.
 
 ##### Entity + operation + single-step
 > __Stoichiometric__ amount of __acetates__ of __lithium nickel__, __manganese__, and __cobalt__ were __mixed__ and __ground__ by using a __pestle__ and __mortar__.
@@ -44,7 +51,8 @@
     condition      : __400 °C__ for
     condition      : __12 h__ with a heating rate of
     condition      : __2 °C/min__ to
-                   : __remove__ __acetates__.
+                   : __remove__                              (2) 
+                   : __acetates__.                           (2)
 
 
 > Then, samples were further heated at temperatures between 800 and 950 °C for 12 h in oxygen and in air with intermittent grinding.
@@ -65,9 +73,9 @@
               : The 
     input     : samples were 
     action    : analysed using a 
-    condition : step size of 
+    condition : step size of             (3)
               : 0.02° and 
-    condition : dwell time of 
+    condition : dwell time of            (3) 
               : 0.2 s per 
               : step.
 
@@ -195,3 +203,7 @@
 ### Organizations??
 
 
+### Questions
+1. Aldritch? branded formulation of some sort? 
+2. The output is specified by the thing removed. We don't know how to describe that yet.
+3. Should this be labeled as "setting", applicable only to an apparatus?
