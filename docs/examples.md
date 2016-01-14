@@ -145,7 +145,7 @@ Recipe-step annotation:
 >    apparatus      : __mortar__.
 
 ####Step
-<div style="white-space: pre-wrap">
+<div style="white-space: pre-wrap;">
                    : After that, the
     input          : __samples__ were
     action         : __heated__ at
