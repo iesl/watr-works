@@ -10,55 +10,54 @@
 > __LiNi0.4Mn0.4Co0.2O2__ was __synthesised__ using solid-state synthesis route at __high temperature__ by __mixing__ __metal acetate salts__ (__Aldrich__) as the starting __materials__.
 
 ##### Coreference labels (includes lines from steps below)
-    e1     : __metal acetate salts__ (
-    e1     : __Aldrich__) as the starting      (1)
-    e1     : __materials__.
-    e1     : __acetates__ of
-    e1     : __samples__ were
+    e1     : metal acetate salts 
+    e1     : Aldrich
+    e1     : materials
+    e1     : acetates
+    e1     : samples
 
 
 ##### Step component labels
-    output    : __LiNi0.4Mn0.4Co0.2O2__ was
-              : __synthesised__ using solid-state synthesis route at
-    condition : __high temperature__ by
-    action    : __mixing__
-    input     : __metal acetate salts__ (
-    input     : __Aldrich__) as the starting      (1)
-    input     : __materials__.
+    output    : LiNi0.4Mn0.4Co0.2O2 
+              : synthesised 
+    condition : high temperature 
+    action    : mixing
+    input     : metal acetate salts 
+    input     : Aldrich 
+    input     : materials
 
 ##### Entity + operation + single-step
 > __Stoichiometric__ amount of __acetates__ of __lithium nickel__, __manganese__, and __cobalt__ were __mixed__ and __ground__ by using a __pestle__ and __mortar__.
 
 ##### Step component labels
-    input-quantity : __Stoichiometric__ amount of
-                   : __acetates__ of
-    input          : __lithium nickel__,
-    input          : __manganese__, and
-    input          : __cobalt__ were
-    action         : __mixed__ and
-    action         : __ground__ by using a
-    apparatus      : __pestle__ and
-    apparatus      : __mortar__.
+    input-quantity : Stoichiometric 
+                   : acetates 
+    input          : lithium nickel
+    input          : manganese, 
+    input          : cobalt 
+    action         : mixed 
+    action         : ground
+    apparatus      : pestle
+    apparatus      : mortar
 
 
 ##### Entity + operation + single-step
 > After that, the __samples__ were __heated__ at __400 °C__ for __12 h__ with a heating rate of __2 °C/min__ to __remove__ __acetates__.
 
 ##### Step component labels
-                   : After that, the
-    input          : __samples__ were
-    action         : __heated__ at
-    condition      : __400 °C__ for
-    condition      : __12 h__ with a heating rate of
-    condition      : __2 °C/min__ to
+    input          : __samples__ 
+    action         : __heated__ 
+    condition      : __400 °C__ 
+    condition      : __12 h__ 
+    condition      : __2 °C/min__ 
                    : __remove__                              (2)
                    : __acetates__.                           (2)
 
 
 > Then, samples were further heated at temperatures between 800 and 950 °C for 12 h in oxygen and in air with intermittent grinding.
-
-
+>
 > Samples were analysed using a Bruker D2 Phaser benchtop X-ray diffractometer equipped with LYNXEYE 1Ddetector with Cu–Kα radiation at room temperature.
+>
 > The samples were analysed using a step size of 0.02° and dwell time of 0.2 s per step.
 
 ##### Step component labels
@@ -229,11 +228,6 @@
 * Diamagnetic corrections
 
 
-#### Quantity types (inferred, not labeled)
-* duration
-* rate
-* temperature
-* purity  (e.g., ReO3 (99.9%))
 
 
 
@@ -250,18 +244,24 @@
 3. Should this be labeled as "setting", applicable only to an apparatus?
 4. This appears to be a condition, not an entity.
 5. If this is indeed something we need to capture.
-6. Oy.
 6. More specifically, should that be parsed into a pair of ratios/quantities + chemicals, or considered a single entity?
 
 
 #### Assorted sample sentences from which the lists of labeled phrases were drawn:
 
 > [1] All the chemicals used were of analytical grade and procured from Spectrochem Pvt. Ltd., Mumbai, India. 3-Formyl chromone was synthesized according to the literature [24].
+
+
 > [2] Molar conductance of the complexes was measured using a Digisun conductivity meter in DMF.
+
 > [3] The FTIR spectra of the complexes were recorded on Tensor 2 FTIR spectrophotometer in the region of 4000–400 cm−1 using KBr disc.
+
 > [4] Diamagnetic corrections were calculated from Pascal’s constants.
+
 > [5] All the Schiff base ligands HL1, HL2, HL3, and HL4 (Figure 1) were prepared according to the literature methods [21, 25, 26].
+
 > [6] Methanol was added to this mixture in order to remove any unreacted lithium
+
 > [7] The molar ratios of C3N3(OR)3/LiTFSI and P3N3(OR)6/LiTFSI are 1.0:3.0 and 1.0:6.0, respectively
 
 > [8] As shown in Scheme 1, diphosphite ligands 1c–1d and 2a–2d were synthesized stereospecifically in one step
