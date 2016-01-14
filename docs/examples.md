@@ -50,3 +50,16 @@ The __X-ray__ analysis of the samples showed...
 
 
 ### Step Sequencing
+
+
+## Sample paragraphs
+
+### Synthesis
+> CHEMICAL SYNTHESIS
+> The exploration of the system Tl-Ba-Cl-O was performed, starting from mixtures of TlCl,
+> Tl,O,, BaO, and BaO, pressed into the form of bars and heated in evacuated silica tubes at
+> temperatures ranging from 530°C to 660°C. The new phase Ba,Tl,O,Cl, was synthesized
+> for the nominal composition Ba,,,Tl,,20, &12, heated slowly up to 6OO”C, maintained at that
+> temperature for 6 hours, and then slowly cooled down to room temperature. Under these
+> conditions, the phase appears as practically pure from its powder XRD pattern, which
+> evidences only traces of BaCO,.

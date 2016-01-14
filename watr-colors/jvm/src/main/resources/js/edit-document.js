@@ -296,7 +296,7 @@ function saveAnnotations() {
 
     // finally, send it
     $.ajax({
-        url: '/docs/' + fileName,     // TODO cleaner way to get URI, e.g., http://stackoverflow.com/questions/11133059/play-2-x-how-to-make-an-ajax-request-with-a-common-button
+        url: '/annotations/' + fileName,     // TODO cleaner way to get URI, e.g., http://stackoverflow.com/questions/11133059/play-2-x-how-to-make-an-ajax-request-with-a-common-button
         type: 'PUT',
         contentType: 'application/json',
         data: JSON.stringify(annotObsToSerialize),

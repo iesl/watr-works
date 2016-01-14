@@ -121,7 +121,7 @@ object WatrColorServer extends SimpleRoutingApp {
           complete { httpResponse(html.Frame().toString()) }
         } ~ pathPrefix("annotations") {
           rewriteUnmatchedPath({ unmatched =>
-            println("rewriteing"+unmatched)
+            println("rewriting"+unmatched)
             appendToPath(unmatched, ".json")
           }) {
             path(Rest) { annot =>
@@ -135,14 +135,25 @@ object WatrColorServer extends SimpleRoutingApp {
           webjarResources ~
           rootResources ~
           svgRepo
-      } ~
-        post {
-          // TODO figure out how to abstract these (macro expansion makes it rough)
-          pathPrefix("api") {
-            path("explorer" / Segments) { s =>
+      } ~ post {
+        // TODO figure out how to abstract these (macro expansion makes it rough)
+        pathPrefix("api") {
+          path("explorer" / Segments) { s =>
+            extract(_.request.entity.asString) { e =>
+              complete {
+                AutowireServer.route[CorpusExplorerApi](CorpusExplorerServer)(
+                  autowire.Core.Request(
+                    s,
+                    upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
+                  )
+                ).map(upickle.json.write)
+              }
+            }
+          } ~
+            path("svg" / Segments) { s =>
               extract(_.request.entity.asString) { e =>
                 complete {
-                  AutowireServer.route[CorpusExplorerApi](CorpusExplorerServer)(
+                  AutowireServer.route[SvgOverviewApi](SvgOverviewServer)(
                     autowire.Core.Request(
                       s,
                       upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
@@ -150,23 +161,34 @@ object WatrColorServer extends SimpleRoutingApp {
                   ).map(upickle.json.write)
                 }
               }
-            } ~
-                path("svg" / Segments) { s =>
-                  extract(_.request.entity.asString) { e =>
-                    complete {
-                      AutowireServer.route[SvgOverviewApi](SvgOverviewServer)(
-                        autowire.Core.Request(
-                          s,
-                          upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
-                        )
-                      ).map(upickle.json.write)
-                    }
-                  }
+            }
+          // apiRoute[CorpusExplorerApi]("explorer", CorpusExplorerServer) ~
+          // apiRoute[SvgOverviewApi]("svg", SvgOverviewServer)
+        }
+      } ~  put {
+        pathPrefix("annotations") {
+          rewriteUnmatchedPath(appendToPath(_, ".json")) {
+            path(Rest) { annot =>
+              extract(_.request.entity.asString) { e =>
+                complete {
+                  println(s"writing annotation file ${annot}")
+
+                  // req.request.entity.data
+                  println(s"put request was ${e}")
+
+                  "ok"
+
+                  // getFromDirectory(annotPath.toString)
+                  // val annotPath = svgRepoPath /  annot
+                  // getFromFile(annotPath.toJava, MediaTypes.`application/json`)
                 }
-            // apiRoute[CorpusExplorerApi]("explorer", CorpusExplorerServer) ~
-            // apiRoute[SvgOverviewApi]("svg", SvgOverviewServer)
+              }
+
+            }
           }
         }
+
+      }
     }
   }
 
