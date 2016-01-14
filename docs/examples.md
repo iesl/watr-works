@@ -134,15 +134,15 @@ Recipe-step annotation:
 </pre>
 
 ####Step
-    input-quantity : __Stoichiometric__ amount of<br/>
-                   : __acetates__ of<br/>
-    input          : __lithium nickel__,<br/>
-    input          : __manganese__, and<br/>
-    input          : __cobalt__ were<br/>
-    action         : __mixed__ and<br/>
-    action         : __ground__ by using a<br/>
-    apparatus      : __pestle__ and<br/>
-    apparatus      : __mortar__.<br/>
+input-quantity : __Stoichiometric__ amount of<br/>
+               : __acetates__ of<br/>
+input          : __lithium nickel__,<br/>
+input          : __manganese__, and<br/>
+input          : __cobalt__ were<br/>
+action         : __mixed__ and<br/>
+action         : __ground__ by using a<br/>
+apparatus      : __pestle__ and<br/>
+apparatus      : __mortar__.<br/>
 
 ####Step
 ```
