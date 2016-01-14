@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1 Tiny//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11-tiny.dtd"> -->
+<!-- <!ENTITY ent0 "<use xlink:href="#e0" x="50" y="50" />"> -->
+<svg version="1.1"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+
+    <g id="e0">
+      <text transform="rotate(45)">
+        <tspan>entity</tspan>
+      </text>
+    </g>
+
+    <g id="e1" transform="rotate(45)">
+      <tspan>entity</tspan>
+    </g>
+
+  </defs>
+
+  <g id="test-body-content" font-family="Arial" font-size="8" transform="translate(10, 30) scale(4, 4)">
+    <text>Two</text> <text><use xlink:href="#e1"/></text><text> samples-one for X-ray diffraction </text>
+    <!-- <use xlink:href="#e0"  /> -->
+
+    <text>
+      <!-- <tspan x="0" y="20">This is my tspan</tspan> -->
+      <!-- <tspan x="0" y="40">Two samples-one for X-ray diffraction</tspan>  -->
+      <!-- <tspan x="0" y="50">Two samples-one for X-ray diffraction</tspan>  -->
+      <!-- <tspan x="0" y="60">Two samples-one for X-ray diffraction</tspan>  -->
+    </text>
+
+    <!-- |    e~$ -->
+    <!-- >and one containing the “B-isotope for the -->
+
+
+  </g>
+</svg>
