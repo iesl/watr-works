@@ -145,7 +145,7 @@ Recipe-step annotation:
 >    apparatus      : __mortar__.
 
 ####Step
-<div style="white-space: pre-wrap;">
+```
                    : After that, the
     input          : __samples__ were
     action         : __heated__ at
@@ -153,4 +153,4 @@ Recipe-step annotation:
     condition      : __12 h__ with a heating rate of
     condition      : __2 °C/min__ to
                    : __remove__ __acetates__.
-</div>
+```
