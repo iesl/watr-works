@@ -1,73 +1,14 @@
-# Annotation types
-
-## Entities
-
-### examples
-
-+ Chemicals:
-  preparation of __BaV13O18__ and
-  __SrO2__, __ReO3__ (99.9%)
-
-  exploration of the system __Tl-Ba-Cl-O__ was performed,
-  starting from __mixtures__ of __TlCl__, __Tl<sub>2</sub>O<sub>3</sub>__, __BaO__, and __BaO<sub>2</sub>__
-  __pressed__ into the form of __bars__ and __heated__ in evacuated __silica tubes__ at temperatures ranging from 530°C to 660°C.
-
-+ Pronouns:
-  __The samples__ were prepared in an arc furnace under
-
-
-
-## Coreferent mentions (for entities and operations)
-
-
-
-## Operations
-### Apparatus
-#### examples
-
-
-### Action
-
-+ was prepared through a __wet process__
-+ and CaO by a __decomposition__ of CaCO3 (99.9%) at 1000C.
-+ were prepared in advance by __solid-state reactions__ in air between
-
-
-
-## Results/analysis
-
-### examples
-+ that they form a __single phase__ with __orthorhombic structure__
-
-
-## Quantities
-    * duration
-    * rate
-    * temperature
-
-
-
-## Conditions (modifiers, ...)
-
-
-## Recipes
-### Step
-
-
-### Step Sequencing
-
-
-### Organizations??
-
+# Annotation examples
 
 ## Sample method sections
 
-### Example
+### Example 
 
-> 2. __Experimental
+> 2. Experimental
 
 ##### Entity + operation + single-step
 > __LiNi0.4Mn0.4Co0.2O2__ was __synthesised__ using solid-state synthesis route at __high temperature__ by __mixing__ __metal acetate salts__ (__Aldrich__) as the starting __materials__.
+
 
 ##### Step component labels
     output    : __LiNi0.4Mn0.4Co0.2O2__ was
@@ -107,8 +48,30 @@
 
 
 > Then, samples were further heated at temperatures between 800 and 950 °C for 12 h in oxygen and in air with intermittent grinding.
+
+
 > Samples were analysed using a Bruker D2 Phaser benchtop X-ray diffractometer equipped with LYNXEYE 1Ddetector with Cu–Kα radiation at room temperature.
 > The samples were analysed using a step size of 0.02° and dwell time of 0.2 s per step.
+
+##### Step component labels
+    input     : Samples were 
+    action    : analysed using a 
+    apparatus : Bruker D2 Phaser benchtop 
+    apparatus : X-ray diffractometer equipped with 
+    apparatus : LYNXEYE 1D detector with 
+    condition : Cu–Kα radiation at 
+    condition : room temperature.
+
+              : The 
+    input     : samples were 
+    action    : analysed using a 
+    condition : step size of 
+              : 0.02° and 
+    condition : dwell time of 
+              : 0.2 s per 
+              : step.
+
+
 > Rietveld refinements of XRD data were performed using GSAS/ EXPGUI [13,14] software to determine the structural parameters and the amount of cation disorder.
 > The refinement strategy that imposed to validate the refinement model was performed according to the literatures [15–17].
 >
@@ -155,3 +118,80 @@
 > heated slowly up to 6OO”C, maintained at that temperature for 6 hours, and then slowly cooled down to room temperature.
 >
 > Under these conditions, the phase appears as practically pure from its powder XRD pattern, which evidences only traces of BaCO,.
+
+# Annotation types
+
+## Entities
+
+
++ Chemicals:
+  __preparation__ of
+  __BaV13O18__ and
+  __SrO2__,
+  __ReO3__ (99.9%)
+
+  exploration of the system
+  __Tl-Ba-Cl-O__ was performed,
+  starting from
+  __mixtures__ of
+  __TlCl__,
+  __Tl<sub>2</sub>O<sub>3</sub>__,
+  __BaO__, and
+  __BaO<sub>2</sub>__
+  __pressed__ into the form of
+  __bars__ and
+  __heated__ in evacuated
+  __silica tubes__ at temperatures ranging from
+  530°C to
+  660°C.
+
+  __The samples__
+  were prepared in an arc furnace under
+
+
+
+
+## Coreference labeling (for both entities and operations)
+
+
+
+## Operations
+### Apparatus
+#### examples
+
+
+### Action
+
++ was prepared through a __wet process__
++ and CaO by a __decomposition__ of CaCO3 (99.9%) at 1000C.
++ were prepared in advance by __solid-state reactions__ in air between
+
+
+
+## Results/analysis
+
+### examples
++ that they form a __single phase__ with __orthorhombic structure__
+
+
+## Quantities
+    * duration
+    * rate
+    * temperature
+
+    ReO3 (__99.9%__)
+
+
+
+## Conditions (modifiers, ...)
+
+
+## Recipes
+### Step
+
+
+### Step Sequencing
+
+### Organizations??
+
+
