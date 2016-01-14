@@ -123,13 +123,15 @@ Recipe-step annotation:
 
 
 =====Step
->    output    : __LiNi0.4Mn0.4Co0.2O2__ was
->              : __synthesised__ using solid-state synthesis route at
->    condition : __high temperature__ by
->    action    : __mixing__
->    input     : __metal acetate salts__ (
->              : __Aldrich__) as the starting
->              : __materials__.
+<pre>
+    output    : __LiNi0.4Mn0.4Co0.2O2__ was
+              : __synthesised__ using solid-state synthesis route at
+    condition : __high temperature__ by
+    action    : __mixing__
+    input     : __metal acetate salts__ (
+              : __Aldrich__) as the starting
+              : __materials__.
+</pre>
 
 =====Step
 >    input-quantity : __Stoichiometric__ amount of
