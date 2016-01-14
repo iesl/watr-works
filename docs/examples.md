@@ -152,23 +152,36 @@
 * TlCl
 * bars
 * samples
+* complexes
+* Schiff base ligands
+* 1,2:5,6-di-O-cyclohexylidene-D-mannitol   (6)
+* silica sol
+
+
+#### Quantities
+* molar ratios (e.g., qualified by 1.0:3.0)
+* 20 ml 20 wt.%
+
 
 #### Operations
 
 ##### Actions
-  * prepared
-  * pressed
-  * heated
-  * synthesised
-  * decomposition
-  * reactions
+* prepared
+* pressed
+* heated
+* synthesised
+* decomposition
+* reactions
+* procured
+* added
+
 
 ##### Conditions
-* 530°C
-* wet               'wet process'
+* wet  (e.g., 'wet process')
 * solid-state
 * in air
 * in oxygen
+* literature (e.g., according to the literature methods)
 
 
 ##### Apparatus
@@ -180,26 +193,55 @@
 ##### Settings
 + step size
 + dwell time
++ DMF
+
+##### Sources: Organizations, Country
+* Spectrochem Pvt. Ltd.
+* Mumbai, India
+
+#### Recipe step
+##### Input/Output
+* Drawn from Entities
+##### Operation
+* Drawn from operations
+##### Input quantity
 
 
-
-## Results/analysis
-
-### examples
-+ that they form a __single phase__ with __orthorhombic structure__
+##### Result
+* If included, Drawn from results labeling (structure/property/etc)
 
 
-## Quantities
-    * duration
-    * rate
-    * temperature
-    * purity     e.g., ReO3 (99.9%)
+#### Result and/or analysis (5)
+##### Structure
+* single phase
+* orthorhombic structure
+
+##### Property
+* Molar conductance
+
+##### Purity
+* analytical grade
+
+##### Quantity
+* 4000–400 cm−1
+
+##### Other...
+* Diamagnetic corrections
+
+
+#### Quantity types (inferred, not labeled)
+* duration
+* rate
+* temperature
+* purity  (e.g., ReO3 (99.9%))
 
 
 
 ### Notes
 + labeling phrases like 'the sample' is tricky - it can refer to an ever-changing substance over the course of several steps
 + Organization show up frequently, perhaps should be labeled someday.
++ Re: sentence [6]: The roles of "add" and "remove" don't fit our schema yet: the action is "add", but the result is "removal"
++ Re: sentence [9]: **1c** etc are references to inset figures with drawings of compounds
 
 
 ### Questions
@@ -207,3 +249,25 @@
 2. The output is specified by the thing removed. We don't know how to describe that yet.
 3. Should this be labeled as "setting", applicable only to an apparatus?
 4. This appears to be a condition, not an entity.
+5. If this is indeed something we need to capture.
+6. Oy.
+6. More specifically, should that be parsed into a pair of ratios/quantities + chemicals, or considered a single entity?
+
+
+#### Assorted sample sentences from which the lists of labeled phrases were drawn:
+
+> [1] All the chemicals used were of analytical grade and procured from Spectrochem Pvt. Ltd., Mumbai, India. 3-Formyl chromone was synthesized according to the literature [24].
+> [2] Molar conductance of the complexes was measured using a Digisun conductivity meter in DMF.
+> [3] The FTIR spectra of the complexes were recorded on Tensor 2 FTIR spectrophotometer in the region of 4000–400 cm−1 using KBr disc.
+> [4] Diamagnetic corrections were calculated from Pascal’s constants.
+> [5] All the Schiff base ligands HL1, HL2, HL3, and HL4 (Figure 1) were prepared according to the literature methods [21, 25, 26].
+> [6] Methanol was added to this mixture in order to remove any unreacted lithium
+> [7] The molar ratios of C3N3(OR)3/LiTFSI and P3N3(OR)6/LiTFSI are 1.0:3.0 and 1.0:6.0, respectively
+
+> [8] As shown in Scheme 1, diphosphite ligands 1c–1d and 2a–2d were synthesized stereospecifically in one step
+>     from 1,2:5,6-di-O-cyclohexylidene-D-mannitol 1 or 1,2:5,6-di-O-isopropylidene-Dmannitol 2,
+
+> [9] 3 In contrast with ligands **1c**, **1d**, **2c**, and **2d**, ...
+
+> [10] The PCM was synthesized through a spray pyrolysis method with the aid of silica templates.
+>      In brief, 4.2 g sucrose and 20 ml 20 wt.%silica sol (40 nm, NissanChemical) (weight ratio of carbon: silica = 1:2) was first prepared.
