@@ -102,10 +102,47 @@ Under these conditions, the phase appears as practically pure from its powder XR
 ----------------------
 
 > 2. __Experimental
+
+#### Entity/operation
 > __LiNi0.4Mn0.4Co0.2O2__ was __synthesised__ using solid-state synthesis route at __high temperature__ by __mixing__ __metal acetate salts__ (__Aldrich__) as the starting __materials__.
+
+#### Step
+    output    : __LiNi0.4Mn0.4Co0.2O2__ was
+              : __synthesised__ using solid-state synthesis route at
+    condition : __high temperature__ by
+    action    : __mixing__
+    input     : __metal acetate salts__ (
+              : __Aldrich__) as the starting
+              : __materials__.
+
+#### Entity/operation
 > __Stoichiometric__ amount of __acetates__ of __lithium nickel__, __manganese__, and __cobalt__ were __mixed__ and __ground__ by using a __pestle__ and __mortar__.
+
+#### Step
+    input-quantity : __Stoichiometric__ amount of
+                   : __acetates__ of
+    input          : __lithium nickel__,
+    input          : __manganese__, and
+    input          : __cobalt__ were
+    action         : __mixed__ and
+    action         : __ground__ by using a
+    apparatus      : __pestle__ and
+    apparatus      : __mortar__.
+
+
+#### Entity/operation
 > After that, the __samples__ were __heated__ at __400 °C__ for __12 h__ with a heating rate of __2 °C/min__ to __remove__ __acetates__.
->
+
+#### Step
+                   : After that, the
+    input          : __samples__ were
+    action         : __heated__ at
+    condition      : __400 °C__ for
+    condition      : __12 h__ with a heating rate of
+    condition      : __2 °C/min__ to
+                   : __remove__ __acetates__.
+
+
 > Then, samples were further heated at temperatures between 800 and 950 °C for 12 h in oxygen and in air with intermittent grinding.
 > Samples were analysed using a Bruker D2 Phaser benchtop X-ray diffractometer equipped with LYNXEYE 1Ddetector with Cu–Kα radiation at room temperature.
 > The samples were analysed using a step size of 0.02° and dwell time of 0.2 s per step.
@@ -119,38 +156,7 @@ Under these conditions, the phase appears as practically pure from its powder XR
 > The cells were tested by charging and discharging in the voltage range of 2.5–4.5 V (vs. Li).
 > These tests were carried out at room temperature at a constant current density of 15 mA g−1.
 
-Recipe-step annotation:
 
 
-####Step
-<pre>
-    output    : __LiNi0.4Mn0.4Co0.2O2__ was
-              : __synthesised__ using solid-state synthesis route at
-    condition : __high temperature__ by
-    action    : __mixing__
-    input     : __metal acetate salts__ (
-              : __Aldrich__) as the starting
-              : __materials__.
-</pre>
 
-####Step
-    input-quantity : __Stoichiometric__ amount of
-                   : __acetates__ of
-    input          : __lithium nickel__,
-    input          : __manganese__, and
-    input          : __cobalt__ were
-    action         : __mixed__ and
-    action         : __ground__ by using a
-    apparatus      : __pestle__ and
-    apparatus      : __mortar__.
 
-####Step
-```
-                   : After that, the
-    input          : __samples__ were
-    action         : __heated__ at
-    condition      : __400 °C__ for
-    condition      : __12 h__ with a heating rate of
-    condition      : __2 °C/min__ to
-                   : __remove__ __acetates__.
-```
