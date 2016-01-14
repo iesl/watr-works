@@ -122,7 +122,7 @@ Under these conditions, the phase appears as practically pure from its powder XR
 Recipe-step annotation:
 
 
-=====Step
+####Step
 <pre>
     output    : __LiNi0.4Mn0.4Co0.2O2__ was
               : __synthesised__ using solid-state synthesis route at
@@ -133,7 +133,7 @@ Recipe-step annotation:
               : __materials__.
 </pre>
 
-=====Step
+####Step
 >    input-quantity : __Stoichiometric__ amount of
 >                   : __acetates__ of
 >    input          : __lithium nickel__,
@@ -144,11 +144,13 @@ Recipe-step annotation:
 >    apparatus      : __pestle__ and
 >    apparatus      : __mortar__.
 
-=====Step
->                   : After that, the
->    input          : __samples__ were
->    action         : __heated__ at
->    condition      : __400 °C__ for
->    condition      : __12 h__ with a heating rate of
->    condition      : __2 °C/min__ to
->                   : __remove__ __acetates__.
+####Step
+<div style="white-space: pre-wrap">
+                   : After that, the
+    input          : __samples__ were
+    action         : __heated__ at
+    condition      : __400 °C__ for
+    condition      : __12 h__ with a heating rate of
+    condition      : __2 °C/min__ to
+                   : __remove__ __acetates__.
+</div>
