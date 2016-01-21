@@ -90,37 +90,67 @@ object BioLattice {
     dom.toDomCursor.unfoldTSpansCursors.foldLeft(
       BioLattice()
     )({ case (accLattice, tspanCursor) =>
-      val bioBrick = tspanCursor.getLabelAsTSpan.bioBrick
+        val bioBrick = tspanCursor.getLabelAsTSpan.bioBrick
+        // get all transforms leading to this tspan
+        val transforms = tspanCursor.loc
+          .path.reverse.toList
+          .flatMap{ _ match {
+                     case t: Transformable => t.transforms
+                     case _  => List()
+                   }}
 
-      val (pageLefts, pageFocus, _)  = tspanCursor.loc
-        .parents.reverse
-        .drop(2).head
+        // debug(transforms)
 
-      debugReport("current page label", currentPageNum, currentPageLabel, pageFocus)
-      val pGrp = pageFocus.asInstanceOf[Grp]
+        def applyTransforms(b: TextBounds): TextBounds = {
 
-      if (!pGrp.labels.exists(_ == currentPageLabel)) {
-        currentPageLabel = pGrp.labels.head
-        currentPageNum += 1
-      }
+          val mFinal = transforms.foldLeft(Matrix())(
+            { case (acc, e) =>
+              acc.multiply(e.toMatrix)
+          })
+
+          val m = mFinal.toMatrix
+
+          val x = b.left
+          val y = b.bottom
+
+          // val xp = m.m0 * x + m.m2 * y + m.m4
+          // val yp = m.m1 * x + m.m3 * y + m.m5
+
+          val xp = m.i11 * x + m.i21 * y + m.i31
+          val yp = m.i12 * x + m.i22 * y + m.i32
+          // TextBounds(xp, yp, b.width, b.height)
+          b
+        }
+
+        val (pageLefts, pageFocus, _)  = tspanCursor.loc
+          .parents.reverse
+          .drop(2).head
+
+        // debugReport("current page label", currentPageNum, currentPageLabel, pageFocus)
+        val pGrp = pageFocus.asInstanceOf[Grp]
+
+        if (!pGrp.labels.exists(_ == currentPageLabel)) {
+          currentPageLabel = pGrp.labels.head
+          currentPageNum += 1
+        }
 
 
-      val cols = bioBrick
-        .columns
-        .zipWithIndex
-        .map ({ case (col, i) =>
-          BioColumn(
-            col.pins,
-            col.char,
-            Some(tspanCursor -> i),
-            col.font,
-            col.bounds
-          )
-        })
+        val cols = bioBrick
+          .columns
+          .zipWithIndex
+          .map ({ case (col, i) =>
+                  BioColumn(
+                    col.pins,
+                    col.char,
+                    Some(tspanCursor -> i),
+                    col.font,
+                    col.bounds.map(applyTransforms(_))
+                  )
+                })
 
-      BioLattice(accLattice.columns++cols)
+        BioLattice(accLattice.columns++cols)
 
-    })
+      })
 
   }
 
@@ -138,16 +168,16 @@ object BioLattice {
       case CharLabel =>
         if(startingColumns.length>0) Some(
           LatticeCursor(l,
-            current = startingColumns.take(1),
-            prevs   = (if (direction.isForward) List() else startingColumns.drop(1)),
-            nexts   = (if (direction.isForward) startingColumns.drop(1) else List())
+                        current = startingColumns.take(1),
+                        prevs   = (if (direction.isForward) List() else startingColumns.drop(1)),
+                        nexts   = (if (direction.isForward) startingColumns.drop(1) else List())
           )
         ) else None
 
       case PageLabel =>
         val (colsBeforeLabel, colsStartingWithLabel) =
           startingColumns.span({lcol =>
-            val domPins = lcol.labels
+                                 val domPins = lcol.labels
 
             val hasPin = domPins.exists{_.label == PageLabel}
 
@@ -203,16 +233,3 @@ object BioLattice {
   }
 
 }
-
-// debugReport(colsWithLabelMinusOne, colsAfterLabelPlusOne)
-// if (l.name=="foo") {
-//   import _root_.ammonite.repl.Main
-//   import Main._
-//   Main.debug("self" -> this,
-//     "l"->l,
-//     "startingColumns"->startingColumns,
-//     "direction" -> direction,
-//     "colsWithLabelMinusOne" -> colsWithLabelMinusOne,
-//     "colsAfterLabelPlusOne" -> colsAfterLabelPlusOne
-//   )
-// }

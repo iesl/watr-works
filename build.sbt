@@ -34,14 +34,18 @@ scalacOptions in ThisBuild ++= Seq(
   "-Ywarn-value-discard"
 )
 
+
 libraryDependencies in ThisBuild ++= Seq(
+  "edu.umass.cs.iesl" %% "spatialindexing" % "0.2",
+  "org.bytedeco" % "javacpp" % "1.1",
+  "com.itextpdf" % "itextpdf" % "5.5.8",
   "org.apache.commons" % "commons-lang3" % "3.4",
   "com.github.pathikrit" %% "better-files" % "2.14.0",
   "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
   "org.scalaz" %% "scalaz-core" % "7.2.0",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
-  "com.lihaoyi" %% "scalatags" % "0.5.3",
+  "com.lihaoyi" %% "scalatags" % "0.5.4",
   "com.lihaoyi" %% "ammonite-ops" % "0.5.2",
   "com.typesafe.play" %% "play-json" % "2.4.6",
   "com.lihaoyi" % "ammonite-repl" % "0.5.2" cross CrossVersion.full,
@@ -50,7 +54,11 @@ libraryDependencies in ThisBuild ++= Seq(
 )
 
 
-resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+resolvers in ThisBuild ++= List(
+  // "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
+  "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
+  "ICM repository" at "http://maven.icm.edu.pl/artifactory/repo"
+)
 
 lazy val root = (project in file("."))
   .dependsOn(watrmarks, watrshed, watrcolorsJVM)
@@ -61,7 +69,7 @@ lazy val watrmarks = (project in file("watr-marks"))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
-    "pl.edu.icm.cermine" % "cermine-impl" % "1.8-SNAPSHOT"
+    "pl.edu.icm.cermine" % "cermine-impl" % "1.8"
   ))
   .settings(initialCommands := {
     val imports = """|import ammonite.ops._
@@ -85,7 +93,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
     "com.lihaoyi" %%% "upickle" % "0.3.6",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     "com.lihaoyi" %%% "scalarx" % "0.2.9",
-    "com.lihaoyi" %%% "scalatags" % "0.5.3"
+    "com.lihaoyi" %%% "scalatags" % "0.5.4"
   )
 ).jsSettings(
   workbenchSettings:_*

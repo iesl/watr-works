@@ -28,7 +28,7 @@ case class WatrDom(
     def transformString(e: Transformable): String = {
       val tstr = e.transforms.map({
         t => t match {
-          case m:Matrix => List(m.m0, m.m1, m.m2, m.m3, m.m4, m.m5).mkString("matrix(", " ", ")")
+          case m:Matrix => List(m.i11, m.i12, m.i21, m.i22, m.i31, m.i32).mkString("matrix(", " ", ")")
           case m:Scale => List(m.m0, m.m1).mkString("scale(", " ", ")")
           case m:Translate => List(m.m0, m.m1).mkString("translate(", " ", ")")
         }

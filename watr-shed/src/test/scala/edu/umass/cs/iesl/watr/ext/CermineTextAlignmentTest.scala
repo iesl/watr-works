@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package ext
 
-import com.softwaremill.debug.DebugConsole._
 
 // import com.itextpdf.text.Rectangle
 // import java.io.InputStreamReader
@@ -21,6 +20,8 @@ import pl.edu.icm.cermine.structure.model.BxDocument
 import pl.edu.icm.cermine.structure.model.BxPage
 import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
 import scala.collection.JavaConversions._
+
+import spatialindex.SpatialIndex
 
 
 class CermineTextAlignmentTest extends FlatSpec {
@@ -139,13 +140,13 @@ class CermineTextAlignmentTest extends FlatSpec {
     def printZones(zone: BxZone): Unit = {
 
       zone.getLabel
-      childrenCount       () => Int
-      getChunks           () => List[BxChunk]
-      getFontNames        () => Set[String]
-      getLabel            () => BxZoneLabel
-      getMostPopularFontName  () => String
-      iterator            () => Iterator[BxLine]
-      toText              () => String
+      // childrenCount       () => Int
+      // getChunks           () => List[BxChunk]
+      // getFontNames        () => Set[String]
+      // getLabel            () => BxZoneLabel
+      // getMostPopularFontName  () => String
+      // iterator            () => Iterator[BxLine]
+      // toText              () => String
 
 
 

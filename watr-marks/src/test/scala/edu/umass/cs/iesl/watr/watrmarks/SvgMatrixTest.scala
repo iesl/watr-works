@@ -6,7 +6,7 @@ import org.scalatest._
 
 class SvgMatrixSpec extends FlatSpec {
 
-  import SvgMatrix._
+  // import SvgMatrix._
   import dom._
 
   import StandardLabels._
@@ -28,27 +28,27 @@ class SvgMatrixSpec extends FlatSpec {
 
   behavior of "matrix ops"
 
-  it should "transform tspan leaf coords into absolute page coors" in {
-    val doc = readWatrDom(new StringReader(svgstr), bioDict)
-    val _ = for {
-      tspan1 <- doc.toDomCursor.nextTSpan
-      t1trans = getTransformedCoords(tspan1)
-      _ = debug(t1trans)
-      //     PositionGroup(
-      //       List(32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
-      //       32.0,
-      //       List(536.0, 527.12, 520.46, 506.02, 500.46, 490.46, 484.9, 474.9, 464.9, 454.9, 444.9, 439.9)
-      tspan2 <- tspan1.nextTSpan
-      t2trans = getTransformedCoords(tspan2)
-      _ = debug(t2trans)
-      //       List(32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
-      //       32.0,
-      //       List(256.0, 264.88, 271.54, 285.98, 291.54, 301.54, 307.1, 317.1, 327.1, 337.1, 347.1, 352.1)
-      tspan3 <- tspan2.nextTSpan
-      t3trans = getTransformedCoords(tspan3)
-      _ = debug(t3trans)
-    } yield {}
-  }
+  // it should "transform tspan leaf coords into absolute page coors" in {
+  //   val doc = readWatrDom(new StringReader(svgstr), bioDict)
+  //   val _ = for {
+  //     tspan1 <- doc.toDomCursor.nextTSpan
+  //     t1trans = getTransformedCoords(tspan1)
+  //     _ = debug(t1trans)
+  //     //     PositionGroup(
+  //     //       List(32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+  //     //       32.0,
+  //     //       List(536.0, 527.12, 520.46, 506.02, 500.46, 490.46, 484.9, 474.9, 464.9, 454.9, 444.9, 439.9)
+  //     tspan2 <- tspan1.nextTSpan
+  //     t2trans = getTransformedCoords(tspan2)
+  //     _ = debug(t2trans)
+  //     //       List(32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
+  //     //       32.0,
+  //     //       List(256.0, 264.88, 271.54, 285.98, 291.54, 301.54, 307.1, 317.1, 327.1, 337.1, 347.1, 352.1)
+  //     tspan3 <- tspan2.nextTSpan
+  //     t3trans = getTransformedCoords(tspan3)
+  //     _ = debug(t3trans)
+  //   } yield {}
+  // }
 
   // "getTransformedCoords" should "raise an exception if the first argument is missing attributes y, endX, or x" in {}
 
@@ -109,6 +109,18 @@ class SvgMatrixSpec extends FlatSpec {
   //     getTransformedCoords(e_1_2_2, e_1)
   //   }
   // }
-
+  it should "rotate 90" in {
+    // val m    = Matrix(1, 2,
+    //                   3, 4)
+    // val r90  = Matrix(2, 4,
+    //                   1, 3)
+    // val r180 = Matrix(4, 3,
+    //                   2, 1)
+    // assert(rot90(m) === r90)
+    // assert(rot90(m, 2) === r180)
+    // assert(rot90(m, 4) === m)
+    // assert(rot90(m, -3) === r90)
+    // assert(rot90(m, -2) === r180)
+    }
 
 }
