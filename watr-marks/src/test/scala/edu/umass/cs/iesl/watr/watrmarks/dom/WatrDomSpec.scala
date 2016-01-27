@@ -41,7 +41,6 @@ class WatrDomSpec extends FlatSpec {
                    |""".stripMargin
 
 
-
   behavior of "svg unserialization"
 
   it should  "understand xml with and without namespace prefixes" in {

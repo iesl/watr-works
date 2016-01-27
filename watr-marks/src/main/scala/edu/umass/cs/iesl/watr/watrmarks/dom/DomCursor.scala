@@ -38,7 +38,7 @@ case class DomCursor(
   }
 
   def getLabel: WatrElement               = loc.getLabel
-  def setLabel(a: WatrElement): DomCursor = modifyTree((t: Tree[WatrElement]) => Tree.Node(a, t.subForest))
+  def setLabel(a: WatrElement): DomCursor = modifyTree((t: Tree[WatrElement]) => Tree.node(a, t.subForest))
 
   def modifyLabel(f: WatrElement => WatrElement): DomCursor = setLabel(f(getLabel))
 

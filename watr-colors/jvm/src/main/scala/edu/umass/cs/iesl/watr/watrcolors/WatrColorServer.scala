@@ -65,10 +65,26 @@ object WatrColorServer extends SimpleRoutingApp {
   }
 
   def apiRoute[T: ClassTag](prefix: String, t: T) = {
+
+
+
     path(prefix / Segments) { s =>
       println(s"s = $s")
       extract(_.request.entity.asString) { e =>
         println(s"extract = $e")
+
+
+
+        val asdf = AutowireServer.route[T](t)(
+          autowire.Core.Request(
+            s,
+            upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
+          )
+        )
+
+        val qwer = upickle.json.write _
+
+
         complete {
           println(s"complete =...")
           AutowireServer.route[T](t)(
@@ -76,7 +92,7 @@ object WatrColorServer extends SimpleRoutingApp {
               s,
               upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
             )
-          ).map(upickle.json.write)
+          ).map(upickle.json.write(_, 0))
         }
       }
     }
@@ -112,7 +128,6 @@ object WatrColorServer extends SimpleRoutingApp {
   }
 
 
-
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem()
     val _ = startServer("0.0.0.0", port = 8080) {
@@ -146,7 +161,7 @@ object WatrColorServer extends SimpleRoutingApp {
                     s,
                     upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
                   )
-                ).map(upickle.json.write)
+                ).map(upickle.json.write(_, 0))
               }
             }
           } ~
@@ -158,7 +173,7 @@ object WatrColorServer extends SimpleRoutingApp {
                       s,
                       upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
                     )
-                  ).map(upickle.json.write)
+                  ).map(upickle.json.write(_, 0))
                 }
               }
             }

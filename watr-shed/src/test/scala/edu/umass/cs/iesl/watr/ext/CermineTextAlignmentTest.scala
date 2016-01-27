@@ -16,12 +16,13 @@ import pl.edu.icm.cermine.structure.model.BxChunk
 import pl.edu.icm.cermine.structure.model.BxZone
 import pl.edu.icm.cermine.structure.model.BxLine
 import pl.edu.icm.cermine.structure.model.BxWord
-import pl.edu.icm.cermine.structure.model.BxDocument
-import pl.edu.icm.cermine.structure.model.BxPage
-import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
-import scala.collection.JavaConversions._
+// import pl.edu.icm.cermine.structure.model.BxDocument
+// import pl.edu.icm.cermine.structure.model.BxPage
+// import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
+// import scala.collection.JavaConversions._
 
-import spatialindex.SpatialIndex
+
+// import spatialindex.SpatialIndex
 
 
 class CermineTextAlignmentTest extends FlatSpec {

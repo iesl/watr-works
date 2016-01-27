@@ -31,28 +31,31 @@ scalacOptions in ThisBuild ++= Seq(
   "-language:implicitConversions",
   "-Yno-adapted-args",
   "-Ywarn-dead-code",
+  // "-Ylog-classpath",
   "-Ywarn-value-discard"
 )
 
+lazy val doobieVersion = "0.2.3"
+lazy val logbackVersion = "1.1.3"
 
 libraryDependencies in ThisBuild ++= Seq(
-  "edu.umass.cs.iesl" %% "spatialindexing" % "0.2",
-  "org.bytedeco" % "javacpp" % "1.1",
-  "com.itextpdf" % "itextpdf" % "5.5.8",
   "org.apache.commons" % "commons-lang3" % "3.4",
   "com.github.pathikrit" %% "better-files" % "2.14.0",
-  "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
-  "org.scalaz" %% "scalaz-core" % "7.2.0",
+  "org.scalaz" %% "scalaz-core" % "7.1.2",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.4",
-  "com.lihaoyi" %% "ammonite-ops" % "0.5.2",
   "com.typesafe.play" %% "play-json" % "2.4.6",
-  "com.lihaoyi" % "ammonite-repl" % "0.5.2" cross CrossVersion.full,
-  "com.softwaremill.scalamacrodebug" %% "macros"                   % "0.4",
-  "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test"
+  "com.lihaoyi" %% "sourcecode" % "0.1.0",
+  "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
+  "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test",
+  "org.slf4j" % "slf4j-api" % "1.7.14",
+  "ch.qos.logback" % "logback-core" % logbackVersion,
+  "ch.qos.logback" % "logback-classic" % logbackVersion
 )
-
+// "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
+// "com.lihaoyi" %% "ammonite-ops" % "0.5.2",
+// "com.lihaoyi" % "ammonite-repl" % "0.5.2" cross CrossVersion.full,
 
 resolvers in ThisBuild ++= List(
   // "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
@@ -69,30 +72,24 @@ lazy val watrmarks = (project in file("watr-marks"))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
+    "com.itextpdf" % "itextpdf" % "5.5.8",
+    "edu.umass.cs.iesl" %% "spatialindexing" % "latest.release",
+    "com.typesafe.slick" %% "slick" % "3.1.1",
+    "com.h2database" % "h2" % "1.4.191",
+    // "org.tpolecat"   %% "doobie-core"       % doobieVersion,
+    // "org.tpolecat"   %% "doobie-contrib-h2" % doobieVersion,
+    // "org.tpolecat"   %% "doobie-contrib-specs2"     % doobieVersion,
     "pl.edu.icm.cermine" % "cermine-impl" % "1.8"
   ))
-  .settings(initialCommands := {
-    val imports = """|import ammonite.ops._
-                     |pl.edu.icm.cermine
-                     |cermine.ExtractionUtils
-                     |cermine.{ComponentConfiguration => Conf}
-                     |ammonite.ops.ImplicitWd._
-                     |edu.umass.cs.iesl.watr
-                     |edu.umass.cs.iesl.watr._
-                     |edu.umass.cs.iesl.watr.shell._
-                     |edu.umass.cs.iesl.watr.shell.ops._""".stripMargin.split("\n").mkString(",")
-
-    s""" ammonite.repl.Repl.run("${imports}") """
-  })
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
 
 
 lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
-    "com.lihaoyi" %%% "upickle" % "0.3.6",
+    "com.lihaoyi" %%% "upickle" % "0.3.7",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
-    "com.lihaoyi" %%% "scalarx" % "0.2.9",
+    "com.lihaoyi" %%% "scalarx" % "0.3.0",
     "com.lihaoyi" %%% "scalatags" % "0.5.4"
   )
 ).jsSettings(

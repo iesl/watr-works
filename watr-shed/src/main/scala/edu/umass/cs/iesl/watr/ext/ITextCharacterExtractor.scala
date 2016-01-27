@@ -23,6 +23,7 @@ import com.itextpdf.text.pdf.parser.{Vector => PVector}
 
 import _root_.pl.edu.icm.cermine.structure.ITextCharacterExtractor
 
+
 import com.itextpdf.text.pdf.parser.RenderListener
 
 object util {
@@ -40,6 +41,9 @@ object util {
 import util._
 
 class MyBxDocumentCreator extends RenderListener {
+
+
+
 
   val document = new BxDocument();
   var actPage: BxPage = null
@@ -60,12 +64,14 @@ class MyBxDocumentCreator extends RenderListener {
   }
 
   override def beginTextBlock(): Unit = {
+    // println("\nblock\n")
   }
 
   override def renderText(tri: TextRenderInfo): Unit = {
     for (charTri <- tri.getCharacterRenderInfos()) {
       val text = charTri.getText();
-      println(s" tri = ${text}")
+      // print(s"${text}")
+
       val ch = charTri.getText().charAt(0);
       if (ch <= ' '
         || text.matches("^[\uD800-\uD8FF]$")
@@ -82,7 +88,6 @@ class MyBxDocumentCreator extends RenderListener {
         var charHeight = charTri.getAscentLine().getStartPoint().get(PVector.I2).toDouble - charTri.getDescentLine().getStartPoint().get(PVector.I2);
         var charWidth = charTri.getDescentLine().getLength().toDouble
 
-        // if (Float.isNaN(charHeight) || Float.isInfinite(charHeight)) {
         if (charHeight.nan || charHeight.inf) {
           charHeight = 0;
         }
@@ -95,18 +100,20 @@ class MyBxDocumentCreator extends RenderListener {
           || absoluteCharLeft + charWidth > pageRectangle.getRight()
           || absoluteCharBottom < pageRectangle.getBottom()
           || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
-          // continue
         } else {
 
-          val bounds = new BxBounds(charLeft, pageRectangle.getHeight() - charBottom - charHeight,
-            charWidth, charHeight);
+          val bounds = new BxBounds(
+            charLeft,
+            pageRectangle.getHeight() - charBottom - charHeight,
+            charWidth,
+            charHeight
+          );
 
           if (bounds.getX().nan || bounds.getX().inf
             || bounds.getY().nan || bounds.getY().inf
             || bounds.getHeight().nan || bounds.getHeight().inf
             || bounds.getWidth().nan || bounds.getWidth().inf) {
           } else {
-
             val chunk = new BxChunk(bounds, text);
             val fullFontName = tri.getFont().getFullFontName()(0)(3)
             chunk.setFontName(fullFontName);
@@ -123,9 +130,11 @@ class MyBxDocumentCreator extends RenderListener {
   }
 
   override def renderImage(iri: ImageRenderInfo): Unit = {
+    // val img = iri.getImage
   }
-
 }
+
+
 class XITextCharacterExtractor() extends ITextCharacterExtractor {
   val DEFAULT_FRONT_PAGES_LIMIT = 20;
   val DEFAULT_BACK_PAGES_LIMIT = 20;
@@ -248,6 +257,7 @@ class XITextCharacterExtractor() extends ITextCharacterExtractor {
                 if (chunk.toText().equals(ch.toText()) && chunk.getBounds().isSimilarTo(ch.getBounds(), 1)) {
                   duplicate = true;
                   // break duplicateSearch;
+                  println(s"duplicate: ${chunk.toText()}")
                   throw new Throwable()
                 }
               }

@@ -78,6 +78,8 @@ package object dom {
 
 
 
+
+
     while (reader.hasNext()) {
       val event = reader.nextEvent();
 
@@ -92,7 +94,8 @@ package object dom {
         case elem: StartDocument =>
           val n: WatrElement = Document(bioDict)
 
-          accum = Tree.Leaf(n).loc
+
+          accum = Tree.leaf(n).loc
           // println(s"StartDocument: ${elem}")
 
         case elem: EndDocument =>
@@ -113,7 +116,7 @@ package object dom {
                 getTransforms(elem)
               )
 
-              accum = accum.insertDownLast(Tree.Leaf(n))
+              accum = accum.insertDownLast(Tree.leaf(n))
 
             case "g"     =>
               val labelAttr = elem.getAttributeByName(new QName("labels"))
@@ -135,19 +138,19 @@ package object dom {
                 m :: getTransforms(elem),
                 labels
               )
-              accum = accum.insertDownLast(Tree.Leaf(n))
+              accum = accum.insertDownLast(Tree.leaf(n))
 
             case "defs"  =>
               val n = Defs()
-              accum = accum.insertDownLast(Tree.Leaf(n))
+              accum = accum.insertDownLast(Tree.leaf(n))
 
             case "text"  =>
               val n =  Text(getTransforms(elem))
-              accum = accum.insertDownLast(Tree.Leaf(n))
+              accum = accum.insertDownLast(Tree.leaf(n))
 
             case "path"  =>
               val n =  Path(getTransforms(elem))
-              accum = accum.insertDownLast(Tree.Leaf(n))
+              accum = accum.insertDownLast(Tree.leaf(n))
 
             case "tspan" =>
               import scalaz._, Scalaz._
@@ -171,11 +174,11 @@ package object dom {
                 getFontFamily(elem),
                 getBioBrick(elem)
               )
-              accum = accum.insertDownLast(Tree.Leaf(n))
+              accum = accum.insertDownLast(Tree.leaf(n))
 
             case "style"
                | "clippath" =>
-              accum = accum.insertDownLast(Tree.Leaf(NullElement))
+              accum = accum.insertDownLast(Tree.leaf(NullElement))
             case _ =>
               sys.error(s"no case match for StartElement: ${elem}")
 

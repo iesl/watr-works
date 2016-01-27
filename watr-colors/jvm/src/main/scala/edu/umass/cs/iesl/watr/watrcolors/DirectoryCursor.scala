@@ -4,7 +4,6 @@ package watrcolors
 import better.files._
 
 
-
 case class DirectoryCursor(
   curr:File,
   prevs: Seq[File]  = Seq(),

@@ -6,6 +6,7 @@ package html
 // import scalatags.stylesheet.{CascadingStyleSheet, StyleSheet, StyleSheetTags, Sheet, Selector}
 import scalatags.Text.all._
 
+
 object CorpusExplorerPane {
 
   def init()  = {

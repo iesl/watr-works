@@ -266,7 +266,7 @@ object cermineUtils {
 
 
     val root: WatrElement = Document(bioDict)
-    var accum: TreeLoc[WatrElement] = Tree.Leaf(root).loc
+    var accum: TreeLoc[WatrElement] = Tree.leaf(root).loc
     val pageBounds = mutable.ListBuffer[BxBounds]()
 
     def totalPageHeight: Double = pageBounds.map{
@@ -287,7 +287,7 @@ object cermineUtils {
 
       val bounds = docWithMetadata.getBounds
       // accum = accum.insertDownLast(
-      //   Tree.Leaf(
+      //   Tree.leaf(
       //     Svg(
       //       width   = bounds.getWidth,
       //       height  = bounds.getHeight,
@@ -301,7 +301,7 @@ object cermineUtils {
       //     )
       //   ))
       accum = accum.insertDownLast(
-        Tree.Leaf(
+        Tree.leaf(
           Svg(
             width   = 0,
             height  = 0,
@@ -321,7 +321,7 @@ object cermineUtils {
         val m = Matrix(1, 0, 0, 1, 0, totalPageHeight)
 
         accum = accum.insertDownLast(
-          Tree.Leaf(
+          Tree.leaf(
             Grp(
               List(m),
               List()
@@ -338,7 +338,7 @@ object cermineUtils {
             // zoneLabels = translateLabels(..)
 
             accum = accum.insertDownLast(
-              Tree.Leaf(
+              Tree.leaf(
                 Grp(
                   List(Matrix(1, 0, 0, 1, 0, 0)),
                   List()
@@ -357,7 +357,7 @@ object cermineUtils {
 
             // add "line" to active labels
             accum = accum.insertDownLast(
-              Tree.Leaf(
+              Tree.leaf(
                 Text(transforms = List())
               )
             )
@@ -369,7 +369,7 @@ object cermineUtils {
             )
 
             accum = accum.insertDownLast(
-              Tree.Leaf(
+              Tree.leaf(
                 TSpan(
                   text          = "",
                   transforms    = List(),
@@ -401,7 +401,7 @@ object cermineUtils {
 
                 if (currTspan.fontFamily != chunk.getFontName) {
                   accum = accum.insertRight(
-                    Tree.Leaf(
+                    Tree.leaf(
                       TSpan(
                         text          = escapeXml11(chunk.toText()),
                         transforms    = List(),
@@ -534,7 +534,7 @@ object cermineUtils {
 // 156     MET_TERMS           (BxZoneLabelCategory.CAT_METADATA);
 
                 // accum = accum.insertDownLast(
-                //   Tree.Leaf(
+                //   Tree.leaf(
                 //     TSpan(
                 //       text          = chunk.toText(),
                 //       transforms    = List(),

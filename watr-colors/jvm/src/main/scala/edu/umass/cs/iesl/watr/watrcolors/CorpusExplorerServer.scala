@@ -47,6 +47,7 @@ object CorpusExplorerServer extends CorpusExplorerApi  {
     )
   }
 
+
   def createView(): List[HtmlUpdate] = {
     List(
       HtmlReplaceInner("#main", html.CorpusExplorerPane.init().render)
