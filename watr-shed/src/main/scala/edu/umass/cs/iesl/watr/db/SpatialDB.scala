@@ -1,10 +1,5 @@
-// package edu.umass.cs.iesl.watr
-
-// import doobie.imports._
-// import scalaz._, Scalaz._, scalaz.concurrent.Task
-
-
-// import java.io.File
+package edu.umass.cs.iesl.watr
+package db
 
 // object SpatialDB {
 //   val createT0 : Update0 = sql"""

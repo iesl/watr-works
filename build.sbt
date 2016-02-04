@@ -75,10 +75,7 @@ lazy val watrshed = (project in file("watr-shed"))
     "com.itextpdf" % "itextpdf" % "5.5.8",
     "edu.umass.cs.iesl" %% "spatialindexing" % "latest.release",
     "com.typesafe.slick" %% "slick" % "3.1.1",
-    "com.h2database" % "h2" % "1.4.191",
-    // "org.tpolecat"   %% "doobie-core"       % doobieVersion,
-    // "org.tpolecat"   %% "doobie-contrib-h2" % doobieVersion,
-    // "org.tpolecat"   %% "doobie-contrib-specs2"     % doobieVersion,
+    "org.postgresql"   % "postgresql"    % "9.4-1203-jdbc42",
     "pl.edu.icm.cermine" % "cermine-impl" % "1.8"
   ))
   .dependsOn(watrmarks)

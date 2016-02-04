@@ -19,7 +19,7 @@ import pl.edu.icm.cermine.structure.model.BxWord
 // import pl.edu.icm.cermine.structure.model.BxDocument
 // import pl.edu.icm.cermine.structure.model.BxPage
 // import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
-// import scala.collection.JavaConversions._
+import scala.collection.JavaConversions._
 
 
 // import spatialindex.SpatialIndex
@@ -37,6 +37,7 @@ class CermineTextAlignmentTest extends FlatSpec {
 
 
     val conf = new ComponentConfiguration()
+
 
     val  structuredDoc = ExtractionUtils.extractStructure(conf, papers.`6376.pdf`)
 

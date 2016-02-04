@@ -4,6 +4,7 @@ package dom
 
 
 import scalaz.{Show, TreeLoc, Tree}
+import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 
 sealed trait WatrElement
 
@@ -103,9 +104,25 @@ case class WatrDom(
               |</svg:path>
               |${rt.getOrElse("")}
               |""".stripMargin
+        case e: TSpanAttribs  =>
+          val xstr = e.xs.mkString(" ")
+          val ystr = e.ys.mkString(" ")
+          // val endxstr = e.textXYOffsets.map(o => s"""endX=\"${o.endX}\"""").getOrElse("")
+          val text = e.chars.mkString
+          val esc = escapeXml11(text)
+
+          s"""|<svg:tspan
+              |  x="$xstr"
+              |  y="$ystr"
+              |  font-size="1px"
+              |  font-family="Helvetica"
+              |>${esc}</svg:tspan>
+              |${rt.getOrElse("")}
+              |""".stripMargin
+
         case e: TSpan  =>
-          val xstr = e.textXYOffsets.map(o => "x="+o.xs.mkString("\"", " ", "\"")).getOrElse("")
-          val ystr = e.textXYOffsets.map(o => "y="+o.ys.mkString("\"", " ", "\"")).getOrElse("")
+          val xstr = e.textXYOffsets.map(o => "x="+o.xs.mkString(" ")).getOrElse("")
+          val ystr = e.textXYOffsets.map(o => "y="+o.ys.mkString(" ")).getOrElse("")
           val endxstr = e.textXYOffsets.map(o => s"""endX=\"${o.endX}\"""").getOrElse("")
 
           s"""|<svg:tspan
@@ -135,7 +152,7 @@ sealed trait Transformable {
 case class Document (
   labelDictionary: BioLabelDictionary
 ) extends WatrElement  {
-  override def toString = s"""<doc:>"""
+  override def toString = """<doc:>"""
 }
 
 case class ViewBox(x: Double, y: Double, width: Double, height: Double)
@@ -154,8 +171,7 @@ case class Desc (
 
 case class Grp (
   transforms: List[Transform] = List(),
-  labels: List[BioPin]
-  // labels: List[BioLabel]
+  labels: List[BioPin] = List()
 ) extends WatrElement with Transformable {
   override def toString = s"""<g:${transforms.mkString("{", ", ", "}")}, ${labels.mkString(",")}>"""
 }
@@ -190,7 +206,7 @@ case class TextXYOffsets(
 
 
 // helper class for deserializing Dom - not to be used directly
-private case class TSpanInit (
+case class TSpanInit (
   text: String,
   transforms: List[Transform],
   textXYOffsets: Option[TextXYOffsets],
@@ -211,3 +227,19 @@ case class TSpan (
 
   override def toString = s"""<tspan:${text}>"""
 }
+
+
+case class TSpanAttribs(
+  chars: List[Char] = List(),
+  xs: List[Double] = List(),
+  ys: List[Double] = List(),
+  widths: List[Double] = List(),
+  heights: List[Double] = List(),
+  fonts: List[Long] = List()
+) extends WatrElement
+
+// case class TSpanAbbrev (
+//   chars: List[Char] = List(),
+//   attribs: TSpanAttribs,
+//   fontID: Long
+// ) extends WatrElement
