@@ -16,24 +16,58 @@ import watrmarks.dom._
 import watrmarks._
 import better.files._
 
-
 object ITextPdfToSvg extends App {
 
-  val f = File(args(0))
-
-  f.inputStream.map{ is =>
-    val wdom = itextUtil.itextPdfToSvg(is)
-
-    val output = File(args(1))
-
-    output < wdom.toSvg()
-
-
+  def argsToMap(args: Array[String]): Map[String, List[String]] = {
+    import scala.collection.mutable.ListMap
+    val argmap = ListMap[String, List[String]]()
+    args.foldLeft(argmap){ (m, k: String) =>
+        val ss: Seq[Char] = k
+        ss match {
+          case Seq('-', '-', opt @ _*) => m.put(opt.toString, List[String]())
+          case Seq('-', opt @ _*) => m.put(opt.toString, List[String]())
+          case opt @ _ => m.put(m.head._1, m.head._2 ++ List[String](opt.toString))
+        }
+        m
+    }
+    Map[String, List[String]](argmap.toList.reverse: _*)
   }
+
+  // val argMap = argsToMap(args)
+
+
+  val fin = File(args(0))
+  if (fin.isDirectory) {
+    println(s"processing dir $fin")
+    val m = fin.glob("*.pdf")
+
+    m.foreach { f =>
+      val output = s"${f.path}.svg".toFile
+      println(s"$f -> $output")
+
+
+      f.inputStream.map { is =>
+        val wdom = itextUtil.itextPdfToSvg(is)
+        output < wdom.toSvg()
+      }
+    }
+
+  } else if (fin.isReadable) {
+    val output = s"${fin.path}.svg".toFile
+
+    fin.inputStream.map { is =>
+      val wdom = itextUtil.itextPdfToSvg(is)
+      output < wdom.toSvg()
+    }
+
+  } else {
+    sys.error("please specify a file or directory")
+  }
+
 
 }
 
-object itextUtil  {
+object itextUtil {
   def bxBoundsToSpatialBounds(bounds: BxBounds): spatialindex.Bounds = {
     spatialindex.regions.bbox(
       bounds.getX,
@@ -107,7 +141,6 @@ object itextUtil  {
     // setKerning            (Int, Int, Int) => Boolean
     // setPostscriptFontName (String)        => Unit
 
-
     // com.itextpdf.text.pdf.BaseFont
     // ---------------------------
     // addSubsetRange        (Array[Int])    => Unit
@@ -141,7 +174,6 @@ object itextUtil  {
     // setForceWidthsOutput  (Boolean)       => Unit
     // setSubset             (Boolean)       => Unit
   }
-
 
   def formatLabel(l: BxZoneLabel): String = {
     val cat = l.getCategory
@@ -177,81 +209,80 @@ object itextUtil  {
 
     val pageSpatialInfo = charExtractor.spatialInfo
     val fontDict = charExtractor.fontDict
-    fontDict.foreach { case(key, font) =>
-      reportFontInfo(font)
+    fontDict.foreach {
+      case (key, font) =>
+        reportFontInfo(font)
     }
 
     // to svg...
     val pages = d4.asPages().toList
     var accum: TreeLoc[WatrElement] = null
 
-    val pageBounds =  mutable.ArrayBuffer[BxBounds]()
+    val pageBounds = mutable.ArrayBuffer[BxBounds]()
 
+    pages.zipWithIndex.foreach {
+      case (page, pagenum) =>
+        println(s"page...$pagenum")
+        val spatialInfo = pageSpatialInfo(pagenum)
 
+        pageBounds.append(page.getBounds)
 
-    pages.zipWithIndex.foreach{ case (page, pagenum) =>
-      println(s"page...$pagenum")
-      val spatialInfo = pageSpatialInfo(pagenum)
+        if (accum == null) {
+          accum = Tree.leaf(Grp(List(watrmarks.Matrix(1, 0, 0, -1, 0, 0))).asInstanceOf[WatrElement]).loc
+        } else {
+          accum = accum.insertRight(Tree.leaf(Grp(List(watrmarks.Matrix(1, 0, 0, -1, 0, 0)))))
+        }
 
-      pageBounds.append(page.getBounds)
+        page.iterator().foreach { zone =>
+          println(s"zone... ${formatLabel(zone.getLabel)}")
 
-      if (accum == null) {
-        accum = Tree.leaf(Grp(List(watrmarks.Matrix(1,0,0,-1,0,0))).asInstanceOf[WatrElement]).loc
-      } else {
-        accum = accum.insertRight(Tree.leaf(Grp(List(watrmarks.Matrix(1,0,0,-1,0,0)))))
-      }
+          val zoneBounds = zone.getBounds
 
-      page.iterator().foreach{ zone =>
-        println(s"zone... ${formatLabel(zone.getLabel)}")
+          val n = Grp(List())
+          accum = accum.insertDownLast(Tree.leaf(n))
 
-        val zoneBounds = zone.getBounds
+          spatialInfo.labelBbox(bxBoundsToSpatialBounds(zone.getBounds), modifyZoneLabelName(zone.getLabel.name))
+          zone.iterator().toList.foreach { line =>
+            spatialInfo.labelBbox(bxBoundsToSpatialBounds(line.getBounds), "layout:line")
 
-        val n = Grp(List())
-        accum = accum.insertDownLast(Tree.leaf(n))
+            accum = accum.insertDownLast(Tree.leaf(Text(List(watrmarks.Scale(1, -1)))))
 
-        spatialInfo.labelBbox(bxBoundsToSpatialBounds(zone.getBounds), modifyZoneLabelName(zone.getLabel.name))
-        zone.iterator().toList.foreach{ line =>
-          spatialInfo.labelBbox(bxBoundsToSpatialBounds(line.getBounds), "layout:line")
+            line.iterator().toList.foreach { word =>
 
-          accum = accum.insertDownLast(Tree.leaf(Text(List(watrmarks.Scale(1, -1)))))
-          // println(s"\nccccccccccccc\n${accum.toTree.drawTree}\n\n")
+              accum = accum.insertDownLast(Tree.leaf(TSpanAttribs()))
 
-          line.iterator().toList.foreach{ word =>
+              spatialInfo.labelBbox(bxBoundsToSpatialBounds(line.getBounds), "layout:word")
 
-            accum = accum.insertDownLast(Tree.leaf(TSpanAttribs()))
+              word.iterator.foreach { chunk =>
+                val c = chunk.toText().head
+                val x = chunk.getX
+                val y = chunk.getY
+                val w = chunk.getWidth
+                val h = chunk.getHeight
 
-            spatialInfo.labelBbox(bxBoundsToSpatialBounds(line.getBounds), "layout:word")
+                val currentTSpan = accum.getLabel.asInstanceOf[TSpanAttribs]
 
-            word.iterator.foreach{ chunk =>
-              val c = chunk.toText().head
-              val x = chunk.getX
-              val y = chunk.getY
-              val w = chunk.getWidth
-              val h = chunk.getHeight
+                accum = accum.modifyLabel { init =>
+                  val attribs = init.asInstanceOf[TSpanAttribs]
 
-              val currentTSpan = accum.getLabel.asInstanceOf[TSpanAttribs]
-
-              accum = accum.modifyLabel { init =>
-                val attribs = init.asInstanceOf[TSpanAttribs]
-
-                attribs.copy(
-                  chars   = c +: attribs.chars,
-                  xs      = x +: attribs.xs,
-                  ys      = y +: attribs.ys,
-                  widths  = w +: attribs.widths,
-                  heights = h +: attribs.heights
+                  attribs.copy(
+                    chars = c +: attribs.chars,
+                    xs = x +: attribs.xs,
+                    ys = y +: attribs.ys,
+                    widths = w +: attribs.widths,
+                    heights = h +: attribs.heights
                   // fonts  = w :: attribs.fonts
-                )
+                  )
+                }
+                // println(s"chunk: ${chunk.toText()} ")
+                // create tspan:
               }
-              // println(s"chunk: ${chunk.toText()} ")
-              // create tspan:
+              accum = accum.parent.get
             }
             accum = accum.parent.get
           }
           accum = accum.parent.get
         }
-        accum = accum.parent.get
-      }
     }
 
     // val (x, y, w, h) = pageBounds.foldLeft((0d, 0d,0d,0d)){
@@ -269,25 +300,23 @@ object itextUtil  {
     val widths = pageSpatialInfo.map(_.pageBounds.width)
     val hoffsets = heights.reverse.tails.map(_.sum).toList.reverse
 
-
     val docRoot = Document(StandardLabels.bioDict).asInstanceOf[WatrElement]
 
-
-    val shiftedPages = accum.toForest.zipWithIndex.map{ case (n, i) =>
-      n.rootLabel
-      n.loc.modifyLabel { root =>
-        val pageGroup = root.asInstanceOf[Grp]
-        pageGroup.copy(
-          transforms= pageGroup.transforms :+ watrmarks.Translate(1, -hoffsets(i))
-        )
-      }.toTree
+    val shiftedPages = accum.toForest.zipWithIndex.map {
+      case (n, i) =>
+        n.rootLabel
+        n.loc.modifyLabel { root =>
+          val pageGroup = root.asInstanceOf[Grp]
+          pageGroup.copy(
+            transforms = pageGroup.transforms :+ watrmarks.Translate(1, -hoffsets(i))
+          )
+        }.toTree
     }
 
-
     val svgWrap = Tree.node(Svg(
-      width=widths.max,
-      height=heights.sum,
-      viewBox=ViewBox(0, 0, widths.max, heights.sum),
+      width = widths.max,
+      height = heights.sum,
+      viewBox = ViewBox(0, 0, widths.max, heights.sum),
       List() // getTransforms(elem)
     ), shiftedPages)
 
@@ -295,18 +324,6 @@ object itextUtil  {
 
     wdom
 
-    // println(s"\ntree: \n${svgWrap.drawTree}")
-
-    // accum = Tree.node(docRoot, svgWrap #:: Stream.Empty).loc
-
-    // val finalDoc = accum.toTree
-
-    // println(finalDoc.drawTree)
-
-
   }
-
-
-
 
 }

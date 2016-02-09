@@ -123,9 +123,76 @@ class MyBxDocumentCreator(
     s"""(${fmt(x)}, ${fmt(y)}, w:${fmt(w)}, h:${fmt(h)})"""
   }
 
+  def outputCharInfo(tri: TextRenderInfo): Unit = {
+    val font = tri.getFont()
+    // val text2 = font.getUnicodeEquivalent(tri.getMcid)
+    val pdfstring = tri.getPdfString
+
+    val pdfstrInf = s"""|
+                        | getBytes         ${pdfstring.getBytes            } => Array[Byte]
+                        | getEncoding      ${pdfstring.getEncoding         } => String
+                        | getOriginalBytes ${pdfstring.getOriginalBytes    } => Array[Byte]
+                        | isHexWriting     ${pdfstring.isHexWriting        } => Boolean
+                        | toString         ${pdfstring.toString            } => String
+                        | toUnicodeString  ${pdfstring.toUnicodeString     } => String
+                        | canBeInObjStm    ${pdfstring.canBeInObjStm       } => Boolean
+                        | getIndRef        ${pdfstring.getIndRef           } => PRIndirectReference
+                        | isArray          ${pdfstring.isArray             } => Boolean
+                        | isBoolean        ${pdfstring.isBoolean           } => Boolean
+                        | isDictionary     ${pdfstring.isDictionary        } => Boolean
+                        | isIndirect       ${pdfstring.isIndirect          } => Boolean
+                        | isName           ${pdfstring.isName              } => Boolean
+                        | isNull           ${pdfstring.isNull              } => Boolean
+                        | isNumber         ${pdfstring.isNumber            } => Boolean
+                        | isStream         ${pdfstring.isStream            } => Boolean
+                        | isString         ${pdfstring.isString            } => Boolean
+                        | length           ${pdfstring.length              } => Int
+                        | type             ${pdfstring.`type`              } => Int
+                        |
+                        |""".stripMargin
+
+    val d0 = font.getDifferences
+    val d1 = font.getUnicodeDifferences
+
+    val dictKvs = font.getFontDictionary.getKeys.map{ key =>
+      key.toString() + ": " + font.getFontDictionary.get(key)
+    }.mkString("\n")
+
+
+
+    val asdf = tri.getAscentLine
+    val inf = s"""|
+                  | Text              ${tri.getText             }
+                  |
+                  | diffs             ${d0.length}
+                  | unidiffs          ${d1.length}
+                  |
+                  | Font              ${tri.getFont             }              => DocumentFont
+                  | Mcid              ${tri.getMcid             }              => Integer
+                  | PdfString         ${tri.getPdfString        }              => PdfString
+                  | Rise              ${tri.getRise             }              => Float
+                  | TextRenderMode    ${tri.getTextRenderMode   }              => Int
+                  |
+                  | ${pdfstrInf}
+                  |
+                  | ${dictKvs}
+                  |""".stripMargin
+    println(inf)
+
+      // | UnscaledBaseline  ${tri.getUnscaledBaseline }              => LineSegment
+      // | SingleSpaceWidth  ${tri.getSingleSpaceWidth }              => Float
+      // | StrokeColor       ${tri.getStrokeColor      }              => BaseColor
+      // | AscentLine        ${tri.getAscentLine       }              => LineSegment
+      // | Baseline          ${tri.getBaseline         }              => LineSegment
+      // | DescentLine       ${tri.getDescentLine      }              => LineSegment
+      // | FillColor         ${tri.getFillColor        }              => BaseColor
+  }
+
+
   override def renderText(tri: TextRenderInfo): Unit = {
     for (charTri <- tri.getCharacterRenderInfos()) {
       val text = charTri.getText()
+      outputCharInfo(charTri)
       // print(s"${text}")
 
 
@@ -175,7 +242,6 @@ class MyBxDocumentCreator(
           } else {
             val chunk = new BxChunk(bounds, text)
             val fullFontName = tri.getFont().getFullFontName()(0)(3)
-            // tri.getFont
             chunk.setFontName(fullFontName)
             actPage.addChunk(chunk)
             boundsBuilder.expand(bounds)
