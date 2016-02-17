@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
-
 trait CorpusExplorerApi {
   def navNext()     : List[HtmlUpdate]
   def navPrev()     : List[HtmlUpdate]

@@ -1,26 +1,31 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
+import java.nio.ByteBuffer
 import scala.annotation.tailrec
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
+import scala.scalajs.js.typedarray.{ ArrayBuffer, TypedArrayBuffer }
 import scala.util.Random
 import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalatags.JsDom.all._
-import upickle.Js
 import org.scalajs.jquery.jQuery
-import upickle.default._
 
-case class ServerWire(prefix: String) extends autowire.Client[Js.Value, Reader, Writer] {
-  override def doCall(req: Request): Future[Js.Value] = {
+
+import boopickle.Default._
+import Picklers._
+
+case class ServerWire(prefix: String) extends autowire.Client[ByteBuffer, Pickler, Pickler] {
+  override def doCall(req: Request): Future[ByteBuffer] = {
     dom.ext.Ajax.post(
       url = s"""/api/${prefix}/${req.path.mkString("/")}""",
-      data = upickle.json.write(Js.Obj(req.args.toSeq: _*))
-    ).map(_.responseText)
-      .map(upickle.json.read)
+      data = Pickle.intoBytes(req.args),
+      responseType = "arraybuffer",
+      headers = Map("Content-Type" -> "application/octet-stream")
+    ).map(r => TypedArrayBuffer.wrap(r.response.asInstanceOf[ArrayBuffer]))
   }
 
-  def read[Result: Reader](p: Js.Value) = readJs[Result](p)
-  def write[Result: Writer](r: Result) = writeJs(r)
+  override def read[Result: Pickler](p: ByteBuffer) = Unpickle[Result].fromBytes(p)
+  override def write[Result: Pickler](r: Result) = Pickle.intoBytes(r)
 }

@@ -1,12 +1,13 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
 package watrcolors
 
-import autowire._
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
-import upickle.default._
+
+import autowire._
+import boopickle.Default._
+import Picklers._
 
 @JSExport
 class CorpusExplorerView() extends ClientView {

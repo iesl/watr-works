@@ -7,7 +7,6 @@ import org.scalajs.dom
 import scala.util.Random
 import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.runNow
-import upickle.Js
 import org.scalajs.jquery.jQuery
 
 

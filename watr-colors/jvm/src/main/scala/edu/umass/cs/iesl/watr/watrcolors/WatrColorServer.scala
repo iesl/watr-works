@@ -1,20 +1,26 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
+import akka.util.ByteString
+import java.nio.ByteBuffer
 import scala.reflect.ClassTag
+import spray.http.HttpData
 import spray.http.Uri.Path
-import upickle.default._
-import upickle.Js
 import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.{MediaTypes, HttpEntity}
 import better.files._
 
-object AutowireServer extends autowire.Server[Js.Value, Reader, Writer] {
-  def read[Result: Reader](p: Js.Value) = upickle.default.readJs[Result](p)
-  def write[Result: Writer](r: Result) = upickle.default.writeJs(r)
+
+import boopickle.Default._
+
+object AutowireServer extends autowire.Server[ByteBuffer, Pickler, Pickler] {
+  override def read[R: Pickler](p: ByteBuffer) = Unpickle[R].fromBytes(p)
+  override def write[R: Pickler](r: R) = Pickle.intoBytes(r)
 }
+
+
 
 object WatrColorServer extends SimpleRoutingApp {
 
@@ -126,6 +132,8 @@ object WatrColorServer extends SimpleRoutingApp {
 
 
   def main(args: Array[String]): Unit = {
+
+
     implicit val system = ActorSystem()
     val _ = startServer("0.0.0.0", port = 8080) {
       get {
@@ -148,41 +156,33 @@ object WatrColorServer extends SimpleRoutingApp {
           rootResources ~
           svgRepo
       } ~ post {
-        // TODO figure out how to abstract these (macro expansion makes it rough)
+
+
+   // // call Autowire route
+   //    Router.route[Api](apiService)(
+   //      autowire.Core.Request(path.split("/"), Unpickle[Map[String, ByteBuffer]].fromBytes(ByteBuffer.wrap(b)))
+   //    ).map(buffer => {
+   //      val data = Array.ofDim[Byte](buffer.remaining())
+   //      buffer.get(data)
+   //      Ok(data)
+   //    })
+
+          // TODO figure out how to abstract these (macro expansion makes it rough)
         pathPrefix("api") {
           path("explorer" / Segments) { s =>
-            extract(_.request.entity.asString) { e =>
-              complete {
-                AutowireServer.route[CorpusExplorerApi](CorpusExplorerServer)({
+            extract(_.request.entity.data) { requestData => ctx =>
+                val unp = Unpickle[Map[String, ByteBuffer]].fromBytes(requestData.toByteString.asByteBuffer)
+                val res = AutowireServer.route[CorpusExplorerApi](CorpusExplorerServer)({
+                  autowire.Core.Request(s, unp)
+                }).map(
+                  responseData => ctx.complete(HttpEntity(HttpData(ByteString(responseData))))
+                )
 
-                                                                                println("e: " + e)
-
-                  val mm = upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
-
-                                                                                println("mm = "+mm)
-
-                  autowire.Core.Request(s, mm)
-
-                }).map(upickle.json.write(_, 0))
-              }
+                res
             }
-          } ~
-            path("svg" / Segments) { s =>
-              extract(_.request.entity.asString) { e =>
-                complete {
-                  AutowireServer.route[SvgOverviewApi](SvgOverviewServer)(
-                    autowire.Core.Request(
-                      s,
-                      upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
-                    )
-                  ).map(upickle.json.write(_, 0))
-                }
-              }
-            }
-          // apiRoute[CorpusExplorerApi]("explorer", CorpusExplorerServer) ~
-          // apiRoute[SvgOverviewApi]("svg", SvgOverviewServer)
+          }
         }
-      } ~  put {
+      } ~ put {
         pathPrefix("annotations") {
           rewriteUnmatchedPath(appendToPath(_, ".json")) {
             path(Rest) { annot =>
@@ -209,6 +209,27 @@ object WatrColorServer extends SimpleRoutingApp {
     }
   }
 
+  //   ~ post {
+  //   // TODO figure out how to abstract these (macro expansion makes it rough)
+  //   pathPrefix("api") {
+  //     // path("explorer" / Segments) { s =>
+  //     //   extract(_.request.entity.asString) { e =>
+  //     //     complete {
+  //     //       AutowireServer.route[CorpusExplorerApi](CorpusExplorerServer)({
+
+  //     //                                                                       println("e: " + e)
+
+  //     //         val mm = upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
+
+  //     //                                                                       println("mm = "+mm)
+
+  //     //         autowire.Core.Request(s, mm)
+
+  //     //       }).map(upickle.json.write(_, 0))
+  //     //     }
+  //     //   }
+  //     // }
+  // } }
 
   // path("explorer" / Segments) { s =>
   //   extract(_.request.entity.asString) { e =>

@@ -1,7 +1,7 @@
 import sbt.Keys._
 import spray.revolver.AppProcess
 import com.lihaoyi.workbench.Plugin._
-// import spray.revolver.RevolverPlugin.Revolver
+import spray.revolver.RevolverPlugin.Revolver
 
 enablePlugins(ScalaJSPlugin)
 
@@ -80,7 +80,8 @@ lazy val watrshed = (project in file("watr-shed"))
 
 lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
-    "com.lihaoyi" %%% "upickle" % "0.3.8",
+    "me.chrons" %%% "boopickle" % "1.1.2",
+    // "com.lihaoyi" %%% "upickle" % "0.3.8",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     // "com.lihaoyi" %%% "scalarx" % "0.3.0",
     "com.lihaoyi" %%% "scalatags" % "0.5.4"
@@ -88,7 +89,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
 ).jsSettings(
   workbenchSettings:_*
 ).jsSettings(
-  name := "Client",
+  name := "watrcolors-client",
   libraryDependencies ++= Seq(
     "be.doeraene" %%% "scalajs-jquery" % "0.9.0",
     "org.scala-js" %%% "scalajs-dom" % "0.9.0"
@@ -96,7 +97,9 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   // refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),
   bootSnippet := "edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main();"
 ).jvmSettings(
-  name := "Server",
+  Revolver.settings:_*
+).jvmSettings(
+  name := "watrcolors-server",
   libraryDependencies ++= Seq(
     "io.spray" %% "spray-can" % "1.3.3",
     "io.spray" %% "spray-routing" % "1.3.3",
@@ -107,9 +110,6 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
     "org.webjars" % "mousetrap" % "1.5.3"
   )
 )
-// ).jvmSettings(
-//     Revolver.settings:_*
-
 lazy val watrcolorsJS = watrcolors.js
 
 lazy val watrcolorsJVM = watrcolors.jvm.settings(
