@@ -7,11 +7,8 @@ import org.scalajs.dom
 import scala.util.Random
 import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.runNow
-// import scalatags.JsDom.all._
 import upickle.Js
 import org.scalajs.jquery.jQuery
-// import upickle.default._
-
 
 
 case class Keybindings(
@@ -71,10 +68,6 @@ object WatrColorClient {
       println("WatrColors Client started")
       switchViews(new CorpusExplorerView())
 
-      // val _ = jQuery(dom.document).ready {() =>
-      //   jQuery(".split-pane").splitPane();
-      //   jQuery(".split-pane").trigger("resize");
-      // }
     }
   }
 

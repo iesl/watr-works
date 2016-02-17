@@ -64,39 +64,36 @@ object WatrColorServer extends SimpleRoutingApp {
     getFromDirectory(svgRepoPath)
   }
 
-  def apiRoute[T: ClassTag](prefix: String, t: T) = {
+  // def apiRoute[T: ClassTag](prefix: String, t: T) = {
+  //   path(prefix / Segments) { s =>
+  //     println(s"s = $s")
+  //     extract(_.request.entity.asString) { e =>
+  //       println(s"extract = $e")
 
 
 
-    path(prefix / Segments) { s =>
-      println(s"s = $s")
-      extract(_.request.entity.asString) { e =>
-        println(s"extract = $e")
+  //       val asdf = AutowireServer.route[T](t)(
+  //         autowire.Core.Request(
+  //           s,
+  //           upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
+  //         )
+  //       )
+
+  //       val qwer = upickle.json.write _
 
 
-
-        val asdf = AutowireServer.route[T](t)(
-          autowire.Core.Request(
-            s,
-            upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
-          )
-        )
-
-        val qwer = upickle.json.write _
-
-
-        complete {
-          println(s"complete =...")
-          AutowireServer.route[T](t)(
-            autowire.Core.Request(
-              s,
-              upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
-            )
-          ).map(upickle.json.write(_, 0))
-        }
-      }
-    }
-  }
+  //       complete {
+  //         println(s"complete =...")
+  //         AutowireServer.route[T](t)(
+  //           autowire.Core.Request(
+  //             s,
+  //             upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
+  //           )
+  //         ).map(upickle.json.write(_, 0))
+  //       }
+  //     }
+  //   }
+  // }
 
   def appendToPathx(path: Path, ext: String) = path match {
     case s@Path.Segment(head, tail) if head.startsWith("456") =>
@@ -156,12 +153,17 @@ object WatrColorServer extends SimpleRoutingApp {
           path("explorer" / Segments) { s =>
             extract(_.request.entity.asString) { e =>
               complete {
-                AutowireServer.route[CorpusExplorerApi](CorpusExplorerServer)(
-                  autowire.Core.Request(
-                    s,
-                    upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
-                  )
-                ).map(upickle.json.write(_, 0))
+                AutowireServer.route[CorpusExplorerApi](CorpusExplorerServer)({
+
+                                                                                println("e: " + e)
+
+                  val mm = upickle.json.read(e).asInstanceOf[Js.Obj].value.toMap
+
+                                                                                println("mm = "+mm)
+
+                  autowire.Core.Request(s, mm)
+
+                }).map(upickle.json.write(_, 0))
               }
             }
           } ~

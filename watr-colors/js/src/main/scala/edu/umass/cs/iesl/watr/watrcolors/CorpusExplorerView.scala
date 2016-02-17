@@ -3,20 +3,10 @@ package watr
 package watrcolors
 
 import autowire._
-import org.scalajs.jquery.jQuery
 import scala.concurrent.Future
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
 import upickle.default._
-
-sealed trait HtmlUpdate
-
-case class HtmlPrepend(css: String, content: String) extends HtmlUpdate
-case class HtmlAppend(css: String, content: String) extends HtmlUpdate
-case class HtmlReplace(css: String, content: String) extends HtmlUpdate
-case class HtmlReplaceInner(css: String, content: String) extends HtmlUpdate
-case class HtmlRemove(css: String) extends HtmlUpdate
-
 
 @JSExport
 class CorpusExplorerView() extends ClientView {
@@ -24,7 +14,10 @@ class CorpusExplorerView() extends ClientView {
   val server = ServerWire("explorer")[CorpusExplorerApi]
 
   def createView(): Unit = {
-    server.createView().call().foreach(applyHtmlUpdates(_))
+    server.createView().call().foreach{ update =>
+      println("update = "+ update)
+      applyHtmlUpdates(update)
+    }
   }
 
   def navNext(e: MousetrapEvent): Boolean = {

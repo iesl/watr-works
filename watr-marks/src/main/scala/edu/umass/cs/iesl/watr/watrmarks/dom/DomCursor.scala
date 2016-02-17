@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrmarks
 package dom
 
-
 // import scala.annotation.tailrec
 import scalaz.{Tree, TreeLoc, Node}
 
@@ -14,6 +13,8 @@ case class DomCursor(
     val path = loc.path.reverse.mkString(" :: ")
     path
   }
+
+
   def showBox: TB.Box = {
     val parentPath = loc
       .parents
@@ -41,6 +42,7 @@ case class DomCursor(
   def setLabel(a: WatrElement): DomCursor = modifyTree((t: Tree[WatrElement]) => Tree.node(a, t.subForest))
 
   def modifyLabel(f: WatrElement => WatrElement): DomCursor = setLabel(f(getLabel))
+
 
   def root: DomCursor                     = DomCursor(loc.root)
   def parent: Option[DomCursor]           = loc.parent map {p => DomCursor(p) }

@@ -1,4 +1,20 @@
---- (archived) Notes for MIT gang...
+
+- [ ] Create a bbox visualizer for pdf.js SVG pages, at the char level
+  - [ ] output includes: bbox, text (char), font info/remappings, spelling/alternatives
+
+- [ ] Load Cermine-generated bboxes and overlay onto SVG pages
+
+- [ ] Serialize annotation bboxes into svg as svg-rects
+
+  
+- [ ] Create initial annotations on SVG, including:
+  - [ ] headers (title/abstract in particular)
+  - [ ] body + paragraph markers
+
+
+- [ ] augment pdf.js svg output to include full bbox info, font info
+
+
 + Character encoding
   + Problem: the value representing the character is not always printable (ASCII or Unicode)
     + In the case of unprintable characters, the font dictionary is supposed to supply a Unicode version, but
@@ -47,7 +63,3 @@ Font substitution, tested over ~800 documents:
     Substituting font Courier-Bold for LetterGothicMT-Bold.
     Substituting font Courier-BoldOblique for CourierNew,BoldItalic.
     Substituting font Times-Roman for Wingdings.
-
-
-
-

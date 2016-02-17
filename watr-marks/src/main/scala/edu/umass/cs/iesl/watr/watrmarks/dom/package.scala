@@ -135,8 +135,7 @@ package object dom {
               // firstPage.childNodes[0].setAttributeNS(null, 'labels', 'xy:page');
               val m = Matrix(1,0,0,-1,0,0)
               val n = Grp(
-                m :: getTransforms(elem),
-                labels
+                m :: getTransforms(elem)
               )
               accum = accum.insertDownLast(Tree.leaf(n))
 

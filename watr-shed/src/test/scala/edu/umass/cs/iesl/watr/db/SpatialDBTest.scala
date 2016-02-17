@@ -3,16 +3,29 @@ package db
 
 import org.scalatest._
 
+import watrmarks._
+
+import java.io.InputStreamReader
 
 class SpatialDBTest extends FlatSpec {
 
-//   behavior of "mixed spatial index/relational db"
+  it should "report all rects in svg" in { 
 
-//   it should "connect to db" in {
+    val doc = dom.readWatrDom(
+      new InputStreamReader(ext.papers.`6376.svg`),
+      StandardLabels.bioDict
+    )
 
-//     val xa = DriverManagerTransactor[Task](
-//       "org.h2.Driver", "jdbc:h2:world", "h2", ""
-//     )
-//   }
+    doc
+  }
+
+  //   behavior of "mixed spatial index/relational db"
+
+  //   it should "connect to db" in {
+
+  //     val xa = DriverManagerTransactor[Task](
+  //       "org.h2.Driver", "jdbc:h2:world", "h2", ""
+  //     )
+  //   }
 
 }

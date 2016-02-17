@@ -1,5 +1,4 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
 package watrcolors
 
 import scala.annotation.tailrec
@@ -7,7 +6,7 @@ import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import scala.util.Random
 import scala.concurrent.Future
-import scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalatags.JsDom.all._
 import upickle.Js
 import org.scalajs.jquery.jQuery

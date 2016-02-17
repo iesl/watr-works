@@ -322,10 +322,7 @@ object cermineUtils {
 
         accum = accum.insertDownLast(
           Tree.leaf(
-            Grp(
-              List(m),
-              List()
-            )
+            Grp(List(m))
           ))
 
         pageBounds.append(page.getBounds)
@@ -339,10 +336,7 @@ object cermineUtils {
 
             accum = accum.insertDownLast(
               Tree.leaf(
-                Grp(
-                  List(Matrix(1, 0, 0, 1, 0, 0)),
-                  List()
-                )
+                Grp(List(Matrix(1, 0, 0, 1, 0, 0)))
             ))
 
           // printLabel(zone.getLabel)

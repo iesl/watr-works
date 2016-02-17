@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 
 
+
 import better.files._
 
 object CorpusExplorerServer extends CorpusExplorerApi  {
@@ -40,7 +41,6 @@ object CorpusExplorerServer extends CorpusExplorerApi  {
 
 
   def openFocus(): List[HtmlUpdate] = {
-    // WatrColorServer
     // switch to svg-view
     List(
       // HtmlPrepend(s"#winstack-top", s"${corpusCursor.curr}")

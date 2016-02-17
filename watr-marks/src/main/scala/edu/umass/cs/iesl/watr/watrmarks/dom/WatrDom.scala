@@ -16,10 +16,10 @@ case class WatrDom(
 
   def toDomCursor = DomCursor(tree.loc)
 
-  def toCursor(l: BioLabel):Option[LatticeCursor] = for {
-    tspanCursor <- toDomCursor.nextTSpan
-    bioCursor <- BioLattice.initFromDom(this).initLatticeCursor(l)
-  } yield bioCursor
+  // def toCursor(l: BioLabel):Option[LatticeCursor] = for {
+  //   tspanCursor <- toDomCursor.nextTSpan
+  //   bioCursor <- BioLattice.initFromDom(this).initLatticeCursor(l)
+  // } yield bioCursor
 
 
   def toSvg(): String = {
@@ -170,10 +170,9 @@ case class Desc (
 }
 
 case class Grp (
-  transforms: List[Transform] = List(),
-  labels: List[BioPin] = List()
+  transforms: List[Transform] = List()
 ) extends WatrElement with Transformable {
-  override def toString = s"""<g:${transforms.mkString("{", ", ", "}")}, ${labels.mkString(",")}>"""
+  override def toString = s"""<g:${transforms.mkString("{", ", ", "}")}>"""
 }
 
 case class Defs (
