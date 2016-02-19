@@ -81,7 +81,6 @@ lazy val watrshed = (project in file("watr-shed"))
 lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
     "me.chrons" %%% "boopickle" % "1.1.2",
-    // "com.lihaoyi" %%% "upickle" % "0.3.8",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     // "com.lihaoyi" %%% "scalarx" % "0.3.0",
     "com.lihaoyi" %%% "scalatags" % "0.5.4"
@@ -113,7 +112,6 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
 lazy val watrcolorsJS = watrcolors.js
 
 lazy val watrcolorsJVM = watrcolors.jvm.settings(
-  // Revolver.reStart <<= Revolver.reStart dependsOn (fastOptJS in(watrcolorsJS, Compile)),
   (resources in Compile) += ({
     (fastOptJS in(watrcolorsJS, Compile)).value
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value

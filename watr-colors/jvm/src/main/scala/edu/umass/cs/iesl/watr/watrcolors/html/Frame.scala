@@ -34,7 +34,7 @@ object Frame {
         <.script(`type` := "text/javascript", src := "/watrcolors-client-fastopt.js"),
         <.script(`type` := "text/javascript", src := "/webjars/mousetrap/1.5.3/mousetrap.min.js"),
         <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.0/jquery.min.js"),
-        <.script(`type` := "text/javascript", src := "/webjars/fabric/1.5.0/dist/fabric.min.js"),
+        <.script(`type` := "text/javascript", src := "/webjars/fabric/1.5.0/dist/fabric.js"),
 
         // <.script(`type` := "text/javascript", src := "/js/split-pane/split-pane.js"),
         // <.link(rel := "stylesheet", `type` := "text/css", href := "/js/split-pane/split-pane.css"),
@@ -48,10 +48,7 @@ object Frame {
       ),
 
       body(margin := 0, WatrStyles.htmlBody)(
-        // <.div(^.`class` := "pretty-split-pane-frame")(
-        <.div(^.`class` := "")(
-          <.div(^.id := "main")
-        ),
+        <.div(^.id := "main")("Loading..."),
         script("edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main()")
       )
     )

@@ -32,3 +32,5 @@ object SplitPane {
   implicit def jq2splitpane(jq: JQuery): SplitPane =
     jq.asInstanceOf[SplitPane]
 }
+
+

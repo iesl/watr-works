@@ -26,8 +26,9 @@ trait ClientView {
   }
 
   def applyHtmlUpdates(updates: List[HtmlUpdate]): Unit = {
-    updates.foreach {
-      _ match {
+    updates.foreach { u =>
+      println(s"    $u")
+      u match {
         case HtmlAppend(css, content) => jQuery(css).append(content)
         case HtmlPrepend(css, content) => jQuery(css).prepend(content)
         case HtmlReplace(css, content) => jQuery(css).replaceWith(content)

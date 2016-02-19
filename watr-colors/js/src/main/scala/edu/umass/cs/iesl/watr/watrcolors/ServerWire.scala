@@ -13,8 +13,8 @@ import scalatags.JsDom.all._
 import org.scalajs.jquery.jQuery
 
 
-import boopickle.Default._
-import Picklers._
+import boopickle.DefaultBasic._
+// import Picklers._
 
 case class ServerWire(prefix: String) extends autowire.Client[ByteBuffer, Pickler, Pickler] {
   override def doCall(req: Request): Future[ByteBuffer] = {
