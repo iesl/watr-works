@@ -40,7 +40,7 @@ package object dom {
   }
 
   def digits(s: String): Double = {
-    val ds = """(\d+)(px)?""".r
+    val ds = """((?:\d+)(?:\.\d+)?)(px)?""".r
     val ds(d, _) = s
     d.toDouble
   }
@@ -75,8 +75,6 @@ package object dom {
     val pageSpans = mutable.ListMap[Int, mutable.ListBuffer[TSpan]](
       currentPageNumber -> currentPageList
     )
-
-
 
 
 
@@ -131,11 +129,8 @@ package object dom {
                 List()
               }
 
-              // transform="matrix(1 0 0 -1 -42 840)"
-              // firstPage.childNodes[0].setAttributeNS(null, 'labels', 'xy:page');
-              val m = Matrix(1,0,0,-1,0,0)
               val n = Grp(
-                m :: getTransforms(elem)
+                getTransforms(elem)
               )
               accum = accum.insertDownLast(Tree.leaf(n))
 
@@ -150,6 +145,17 @@ package object dom {
             case "path"  =>
               val n =  Path(getTransforms(elem))
               accum = accum.insertDownLast(Tree.leaf(n))
+
+            case "annotation-links"  =>
+              accum = accum.insertDownLast(Tree.leaf(NullElement))
+            case "citation-reference-link"  =>
+              accum = accum.insertDownLast(Tree.leaf(NullElement))
+            case "rect"  =>
+              accum = accum.insertDownLast(Tree.leaf(NullElement))
+            case "image"  =>
+              accum = accum.insertDownLast(Tree.leaf(NullElement))
+            case "mask"  =>
+              accum = accum.insertDownLast(Tree.leaf(NullElement))
 
             case "tspan" =>
               import scalaz._, Scalaz._
@@ -212,15 +218,17 @@ package object dom {
                     BrickColumn(Set(), char, Some(fontInfo), Some(bnd))
                   }))
 
-              val bioBrick: BrickColumns = init.bioBrickStr.map{str =>
-                biolu.parseBioBrick(
-                  str,
-                  rootDocument.labelDictionary,
-                  Some(init.text),
-                  Some(bounds.getOrElse(List())),
-                  Some(fonts)
-                )
-              } getOrElse emptyBioBrick
+              // val bioBrick: BrickColumns = init.bioBrickStr.map{str =>
+              //   biolu.parseBioBrick(
+              //     str,
+              //     rootDocument.labelDictionary,
+              //     Some(init.text),
+              //     Some(bounds.getOrElse(List())),
+              //     Some(fonts)
+              //   )
+              // } getOrElse emptyBioBrick
+
+              val bioBrick = emptyBioBrick
 
 
               val tspan = TSpan(

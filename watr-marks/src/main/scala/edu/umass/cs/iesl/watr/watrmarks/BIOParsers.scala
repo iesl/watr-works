@@ -175,6 +175,12 @@ object transformParser extends JavaTokenParsers with ParserCommon {
     else { arrd }
   }
 
+  def scale0: Parser[Scale] =
+    "scale" ~> "(" ~> repN(2, floatingPointNumber) <~ ")" ^^ {
+      case ns =>
+        val arrn = exactlyNDoubles(2, ns)
+        Scale(arrn(0), arrn(1))
+    }
   def scale: Parser[Scale] =
     "scale" ~> "(" ~> rep1sep(floatingPointNumber, ',') <~ ")" ^^ {
       case ns =>
@@ -201,7 +207,7 @@ object transformParser extends JavaTokenParsers with ParserCommon {
     }
 
   def transform: Parser[List[Transform]] =
-    rep(scale|translate|matrix) // ^^ { case ts => ts }
+    rep(scale|scale0|translate|matrix) // ^^ { case ts => ts }
 
   def parse(str: String): Either[String, List[Transform]] = {
     val result = parseAll(transform, new StringReader(str))

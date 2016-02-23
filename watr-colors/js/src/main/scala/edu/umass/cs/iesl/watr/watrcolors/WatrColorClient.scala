@@ -9,6 +9,7 @@ import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import org.scalajs.jquery.jQuery
 
+import js._
 
 case class Keybindings(
   bindings: List[(String, (MousetrapEvent) => Boolean)]

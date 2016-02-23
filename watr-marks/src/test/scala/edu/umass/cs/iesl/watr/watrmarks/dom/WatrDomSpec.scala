@@ -59,7 +59,7 @@ class WatrDomSpec extends FlatSpec {
         Svg(612, 3168, ViewBox(0, 0, 612, 3168))
       ),
       ("""<g transform="matrix(0 0 0 0 0 0)" ></g>""",
-        Grp(List(Matrix(0, 0, 0, 0, 0, 0)), List())
+        Grp(List(Matrix(0, 0, 0, 0, 0, 0)))
       )
     )
 

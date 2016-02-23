@@ -7,7 +7,12 @@ import scala.scalajs.js.annotation.JSExport
 
 import autowire._
 import boopickle.DefaultBasic._
+
 import Picklers._
+
+import org.scalajs.jquery.jQuery
+
+import js._
 
 @JSExport
 class SvgOverview(
@@ -15,12 +20,40 @@ class SvgOverview(
 ) extends ClientView {
   val server = ServerWire("svg")[SvgOverviewApi]
 
+  lazy val fabricCanvas: Canvas = {
+    jQuery("#fabric-canvas").prop("fabric").asInstanceOf[Canvas]
+  }
 
   // TODO create new bbox
   // On hover over bbox, display bbox info in sidebar
   override val initKeys = Keybindings(List(
-    "c" -> ((e: MousetrapEvent) => createCanvas)
+    // "c" -> ((e: MousetrapEvent) => createCanvas()),
+    "a" -> ((e: MousetrapEvent) => createCharLevelOverlay())
   ))
+
+  def addBBoxRect(bbox: BBox): Unit = {
+
+    val rect = Rect(
+      top         = bbox.y,
+      left        = bbox.x,
+      width       = bbox.width,
+      height      = bbox.height
+    )
+
+    fabricCanvas.add(rect)
+  }
+
+  def createCharLevelOverlay(): Boolean = {
+
+    server.getCharLevelOverlay(svgFilename).call().foreach{ overlays =>
+      overlays.foreach { bbox =>
+        addBBoxRect(bbox)
+      }
+    }
+
+    true
+
+  }
 
   def createCanvas(): Boolean = {
     val canvas = Canvas(
@@ -28,7 +61,6 @@ class SvgOverview(
        CanvasOpts()
     )
 
-    println("canvas: "+ canvas)
     val rect = Rect(
       top         = 3,
       left        = 3,
@@ -45,15 +77,5 @@ class SvgOverview(
 
   def createView(): Unit = {
     server.createView(svgFilename).call().foreach(applyHtmlUpdates(_))
-
-    println(s"""
-Fabric values:
-    ${fabric.DPI}
-    ${fabric.isLikelyNode}
-    ${fabric.isTouchSupported}
-
-""")
-    // ${fabric.devicePixelRatio}
-
   }
 }

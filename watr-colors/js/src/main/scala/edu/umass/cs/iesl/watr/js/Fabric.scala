@@ -1,9 +1,8 @@
 package edu.umass.cs.iesl.watr
-package watrcolors
+package js
 
 import scala.scalajs.js
 import js.annotation.JSName
-// import js.JSConverters._
 
 
 @js.native
@@ -13,7 +12,6 @@ object fabric extends js.Object {
   def isLikelyNode: Boolean = js.native
   def DPI: Int = js.native
   def devicePixelRatio: Float = js.native
-
 }
 
 @js.native
@@ -65,17 +63,11 @@ object RectOpts {
 }
 
 
-
-
-
-
 @js.native @JSName("fabric.Canvas")
 class CanvasNative(
   el: String,
   options: CanvasOpts
-) extends Canvas {
-  // def apply(el: String, options: CanvasOpts = null): Canvas = js.native
-}
+) extends Canvas
 
 @js.native
 trait Canvas extends js.Object {

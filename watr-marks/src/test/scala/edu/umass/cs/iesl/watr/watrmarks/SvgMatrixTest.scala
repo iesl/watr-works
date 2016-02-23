@@ -11,6 +11,7 @@ class SvgMatrixSpec extends FlatSpec {
 
   import StandardLabels._
 
+
   val svgstr =
     """|<?xml version="1.0"?>
        |<svg version="1.1" width="612px" height="3168px" viewBox="0 0 612 3168">
@@ -26,89 +27,59 @@ class SvgMatrixSpec extends FlatSpec {
        |</svg>
        |""".stripMargin
 
+  val svgstr2 =
+    """|<?xml version="1.0"?>
+       |<svg:svg xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svg="http://www.w3.org/2000/svg" version="1.1" width="595.276px" height="3968.505px" viewBox="0 0 595.276 3968.505">
+       |  <svg:g transform="matrix(1 0 0 -1 0 793.701)">
+       |    <svg:defs>
+       |    </svg:defs>
+       |    <svg:g transform="">
+       |      <svg:text transform="matrix(6.376 0 0 6.376 241.6818 750.8975) scale(1, -1)" xml:space="preserve">
+       |        <svg:tspan font-size="1px" y="0" endX="16.06149999999999" x="0 0.52 1.082 1.373 1.664 2.257 2.5875 3.1075 3.4715 3.9924 4.3564 4.8764 5.2106 5.5126 6.0746 6.6786 6.9696 7.4376 7.8746 8.2072 8.7792 9.3512 9.9232 10.2612 10.7082 11.2802 11.8522 12.4242 12.9962 13.4332 13.7735 14.3455 14.9175 15.4895">Solid State Ionics 181 (2010) 1415</svg:tspan>
+       |        <svg:tspan font-size="1px" y="0" endX="16.6392" x="16.0672" spelling="endash">&#x2013;</svg:tspan>
+       |        <svg:tspan font-size="1px" y="0" endX="18.9243" x="16.6363 17.2083 17.7803 18.3523">1419</svg:tspan>
+       |      </svg:text>
+       |    </svg:g>
+       |  </svg:g>
+       |</svg:svg>
+       |""".stripMargin
   behavior of "matrix ops"
 
-  // it should "transform tspan leaf coords into absolute page coors" in {
-  //   val doc = readWatrDom(new StringReader(svgstr), bioDict)
-  //   val _ = for {
-  //     tspan1 <- doc.toDomCursor.nextTSpan
-  //     t1trans = getTransformedCoords(tspan1)
-  //     _ = debug(t1trans)
-  //     //     PositionGroup(
-  //     //       List(32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
-  //     //       32.0,
-  //     //       List(536.0, 527.12, 520.46, 506.02, 500.46, 490.46, 484.9, 474.9, 464.9, 454.9, 444.9, 439.9)
-  //     tspan2 <- tspan1.nextTSpan
-  //     t2trans = getTransformedCoords(tspan2)
-  //     _ = debug(t2trans)
-  //     //       List(32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
-  //     //       32.0,
-  //     //       List(256.0, 264.88, 271.54, 285.98, 291.54, 301.54, 307.1, 317.1, 327.1, 337.1, 347.1, 352.1)
-  //     tspan3 <- tspan2.nextTSpan
-  //     t3trans = getTransformedCoords(tspan3)
-  //     _ = debug(t3trans)
-  //   } yield {}
-  // }
+  it should "transform tspan leaf coords into absolute page coors" in {
+    val doc = readWatrDom(new StringReader(svgstr2), bioDict)
+      doc.toDomCursor.unfoldTSpansCursors.take(1).foreach({ domCursor =>
+        domCursor.loc.path
+        // get all transforms leading to this tspan
+        val transforms = domCursor.loc
+          .path.reverse.toList
+          .flatMap{ _ match {
+            case t: Transformable => t.transforms
+            case _  => List()
+          }}
+        val tspan = domCursor.getLabel.asInstanceOf[dom.TSpan]
 
-  // "getTransformedCoords" should "raise an exception if the first argument is missing attributes y, endX, or x" in {}
+        println(s"""tspan: ${tspan.text}, trans = ${transforms.mkString("\n", "\n", "\n~")}""")
 
-  // it should "raise an exception if second argument is not an ancestor of the first" in {
-  //   intercept[IllegalArgumentException] {
-  //     getTransformedCoords(e_1_2_1, e_1_1)
-  //   }
-  // }
+        val mFinal = transforms.foldLeft(Matrix.idMatrix)({
+          case (acc, e) =>
+            acc.multiply(e.toMatrix)
+        })
 
-  // it should """return a PositionGroup if provided source element has attributes y, endX and x
-  //              and the second argument is an ancestor of the first""" in {
 
-  //   assertResult(
-  //     PositionGroup(
-  //       List(32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
-  //       32.0,
-  //       List(536.0, 527.12, 520.46, 506.02, 500.46, 490.46, 484.9, 474.9, 464.9, 454.9, 444.9, 439.9)
-  //     )
-  //   ) {
-  //     getTransformedCoords(e_1_1_1, e)
-  //   }
+        tspan.textXYOffsets.foreach { offsets =>
+          val y = offsets.ys(0)
+          val ff = tspan.fontFamily
+          offsets.xs.foreach { x =>
+            val tvec = mFinal.transform(watrmarks.Vector(x, y))
+            println(s"processing x,y=$x, $y ==> ${tvec.x}, ${tvec.y}")
+          }
+        }
+      })
+  }
 
-  //   assertResult(
-  //     PositionGroup(
-  //       List(32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0, 32.0),
-  //       32.0,
-  //       List(256.0, 264.88, 271.54, 285.98, 291.54, 301.54, 307.1, 317.1, 327.1, 337.1, 347.1, 352.1)
-  //     )
-  //   ) {
-  //     getTransformedCoords(e_1_1_1, e_1_1)
-  //   }
+  "getTransformedCoords" should "raise an exception if the first argument is missing attributes y, endX, or x" in {}
 
-  //   assertResult(
-  //     PositionGroup(
- //       List(137.16, 146.75, 154.43, 164.03, 171.71, 186.11),
-  //       191.22,
-  //       List(19.91, 19.91, 19.91, 19.91, 19.91, 19.91)
-  //     )
-  //   ) {
-  //     getTransformedCoords(e_1_2_2, e_1_2_2)
-  //   }
 
-  //   assertResult(
-  //     PositionGroup(
-  //       List(273.96000000000004, 283.55, 291.23, 300.83000000000004, 308.51, 322.91),
-  //       328.02,
-  //       List(142.79, 142.79, 142.79, 142.79, 142.79, 142.79)
-  //     )
-  //   ) {
-  //     getTransformedCoords(e_1_2_2, e)
-  //   }
-  // }
-
-  // it should "not make transformations for ancestral elements lacking transform attributes" in {
-  //   assertResult(
-  //     getTransformedCoords(e_1_2_2, e)
-  //   ) {
-  //     getTransformedCoords(e_1_2_2, e_1)
-  //   }
-  // }
   it should "rotate 90" in {
     // val m    = Matrix(1, 2,
     //                   3, 4)

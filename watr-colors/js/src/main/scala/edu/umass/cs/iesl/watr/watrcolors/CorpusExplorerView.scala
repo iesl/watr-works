@@ -10,6 +10,8 @@ import autowire._
 import boopickle.DefaultBasic._
 import Picklers._
 
+import js._
+
 @JSExport
 class CorpusExplorerView() extends ClientView {
 
@@ -52,4 +54,3 @@ class CorpusExplorerView() extends ClientView {
   ))
 
 }
-

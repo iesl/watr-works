@@ -116,6 +116,7 @@ lazy val watrcolorsJVM = watrcolors.jvm.settings(
     (fastOptJS in(watrcolorsJS, Compile)).value
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value
   }))
+  .dependsOn(watrmarks, watrshed)
 
-  // .dependsOn(watrmarks, watrshed, watrcolorsJS)
   // .aggregate(watrmarks, watrshed, watrcolorsJS)
+

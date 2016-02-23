@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package watrcolors
+package js
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSName
@@ -32,5 +32,3 @@ object SplitPane {
   implicit def jq2splitpane(jq: JQuery): SplitPane =
     jq.asInstanceOf[SplitPane]
 }
-
-
