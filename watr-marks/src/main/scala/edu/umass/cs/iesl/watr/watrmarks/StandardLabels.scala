@@ -61,11 +61,7 @@ trait PersonalNameLabels extends TokenLabels {
 // This label is handled specially, as characters are not explicitly labeled
 object CharLabel extends BioLabel("char", "char", 'c', None)
 
-object PageLabel extends BioLabel("page", "page", 'p', None)
-
-// case class PageLabel private (
-//   hash: java.util.UUID = java.util.UUID.randomUUID()
-// ) extends BioLabel("page", "page", 'p', None)
+// object PageLabel extends BioLabel("page", "page", 'p', None)
 
 object StandardLabels
     extends POSLabels

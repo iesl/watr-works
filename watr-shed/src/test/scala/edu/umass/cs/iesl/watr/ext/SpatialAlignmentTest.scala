@@ -66,22 +66,6 @@ class SpatialAlignmentTest extends FlatSpec {
       }
     }
 
-    val doc = readWatrDom(
-      new InputStreamReader(papers.`6376.svg`),
-      bioDict
-    )
-
-    var occursor = doc.toCursor(CharLabel)
-    // val charBuffer = mutable.ArrayBuffer[Either[(Char, Char), Char]]()
-
-    while (occursor.isDefined) {
-      val ccursor = occursor.get
-      val bounds = ccursor.focusedBounds()
-      val bbox = bounds.map(_.toString()).mkString("[",", ", "]")
-      println(s"${ccursor.toText}: ${bbox}")
-      occursor = ccursor.next
-    }
-
   }
 
 

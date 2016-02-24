@@ -68,7 +68,7 @@ object SvgOverviewPane {
         <.div(col(6))(
           <.canvas(^.id:="test-canvas", SvgStyles.testCanvas),
           <.div(^.id:="", SvgStyles.bboxInfo)(
-            <.div("some info...")
+            <.div("")
           )
         )
       )

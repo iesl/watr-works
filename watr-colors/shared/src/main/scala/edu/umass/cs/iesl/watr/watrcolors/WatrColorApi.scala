@@ -13,4 +13,5 @@ trait CorpusExplorerApi {
 trait SvgOverviewApi {
   def createView(svgFilename: String)  : List[HtmlUpdate]
   def getCharLevelOverlay(svgFilename: String): List[BBox]
+  def getCermineOverlay(svgFilename: String): List[BBox]
 }

@@ -89,7 +89,6 @@ object WatrColorServer extends SimpleRoutingApp {
   }
 
   def main(args: Array[String]): Unit = {
-
     implicit val system = ActorSystem()
     val _ = startServer("0.0.0.0", port = 8080) {
       get {

@@ -258,6 +258,7 @@ object cermineUtils {
   // }
 
 
+
   def pdfToWatrDomViaITextPdf(pdfFile: File, bioDict: BioLabelDictionary): WatrDom = {
     import scalaz.{Show, TreeLoc, Tree}
     import scala.collection.mutable
@@ -366,11 +367,9 @@ object cermineUtils {
               Tree.leaf(
                 TSpan(
                   text          = "",
-                  transforms    = List(),
                   textXYOffsets = Some(xyOffsets),
                   fontSize      = "",
                   fontFamily    = "",
-                  bioBrick      = null,
                   document      = root.asInstanceOf[Document]
                 )
               )
@@ -398,7 +397,6 @@ object cermineUtils {
                     Tree.leaf(
                       TSpan(
                         text          = escapeXml11(chunk.toText()),
-                        transforms    = List(),
                         textXYOffsets = Some(
                           TextXYOffsets(
                             xs = List(chunk.getX),
@@ -407,7 +405,6 @@ object cermineUtils {
                           )),
                         fontSize      = chunk.getHeight.toString(),
                         fontFamily    = chunk.getFontName,
-                        bioBrick      = null,
                         document      = root.asInstanceOf[Document]
                       )
                     )
@@ -535,7 +532,6 @@ object cermineUtils {
                 //       textXYOffsets = Some(xyOffsets),
                 //       fontSize      = "todo",
                 //       fontFamily    = chunk.getFontName,
-                //       bioBrick      = null,
                 //       document      = root.asInstanceOf[Document]
                 //     )
                 //   ))

@@ -60,8 +60,8 @@ resolvers in ThisBuild ++= List(
 )
 
 lazy val root = (project in file("."))
-  .dependsOn(watrmarks, watrshed, watrcolorsJVM)
-  .aggregate(watrmarks, watrshed, watrcolorsJVM)
+  .dependsOn(watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
+  .aggregate(watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
 
 
 lazy val watrmarks = (project in file("watr-marks"))

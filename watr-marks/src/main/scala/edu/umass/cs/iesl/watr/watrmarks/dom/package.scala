@@ -13,14 +13,6 @@ package object dom {
 
   implicit val showElementTree = Show.shows[WatrElement](_.toString())
 
-  // def document(): WatrElement = new Document()
-  // def svg(): WatrElement      = new Svg()
-  // def desc(): WatrElement     = new Desc()
-  // def grp(): WatrElement      = new Grp()
-  // def defs(): WatrElement     = new Defs()
-  // def text(): WatrElement     = new Text()
-  // def path(): WatrElement     = new Path()
-
   def maybeAttrValue(e: StartElement, s:String): Option[String] = {
     // println(s"maybe attrValue: $e: $s")
     val maybeAttr = e.getAttributeByName(QName.valueOf(s))
@@ -117,18 +109,6 @@ package object dom {
               accum = accum.insertDownLast(Tree.leaf(n))
 
             case "g"     =>
-              val labelAttr = elem.getAttributeByName(new QName("labels"))
-              // debug(labelAttr)
-
-              val labels:List[BioPin] = if (labelAttr != null) {
-                // debug(labelAttr)
-                val labels = labelAttr.getValue
-                // TODO un-hardcode this page label addition
-                List(PageLabel.fencePost)
-              } else {
-                List()
-              }
-
               val n = Grp(
                 getTransforms(elem)
               )
@@ -176,8 +156,7 @@ package object dom {
                 getTransforms(elem),
                 offs,
                 getFontSize(elem),
-                getFontFamily(elem),
-                getBioBrick(elem)
+                getFontFamily(elem)
               )
               accum = accum.insertDownLast(Tree.leaf(n))
 
@@ -211,33 +190,13 @@ package object dom {
 
               def fonts: List[FontInfo] = List.fill(init.text.length)(fontInfo)
 
-              def emptyBioBrick: BrickColumns = BrickColumns(
-                (init.text zip bounds.getOrElse(List()))
-                  .toList
-                  .map({ case (char, bnd) =>
-                    BrickColumn(Set(), char, Some(fontInfo), Some(bnd))
-                  }))
-
-              // val bioBrick: BrickColumns = init.bioBrickStr.map{str =>
-              //   biolu.parseBioBrick(
-              //     str,
-              //     rootDocument.labelDictionary,
-              //     Some(init.text),
-              //     Some(bounds.getOrElse(List())),
-              //     Some(fonts)
-              //   )
-              // } getOrElse emptyBioBrick
-
-              val bioBrick = emptyBioBrick
-
 
               val tspan = TSpan(
                 init.text,
-                init.transforms,
+                // init.transforms,
                 init.textXYOffsets,
                 init.fontSize,
                 init.fontFamily,
-                bioBrick,
                 rootDocument
               )
 
@@ -266,17 +225,7 @@ package object dom {
               }
           }
 
-      // rt(x: 0, y:20, w:20, h: 30):p {layout: {page: p}, unit: px}
-      // pt(x: 0, y:20)
-      // ln(pt(0, 20), point(30, 30))
-      // page: rt(0,20,20,30)
-      /*
 
-       labels=" page:rt(0,20,20,30) "
-
-       */
-
-      // println(s"""accu: ${if(accum!=null) accum.getLabel else "<null>"} """)
     }
 
     WatrDom(accum.toTree)

@@ -73,57 +73,6 @@ class WatrDomSpec extends FlatSpec {
 
   }
 
-
-  it should "unserialize any embedded annotations" in {
-    val svgstr = """|<tspan
-                    |  x="0 8.0"
-                    |  endX="10.0"
-                    |  y="0"
-                    |  font-size="20px"
-                    |  font-family="Times"
-                    |  bio="
-                    |    | |w$| {type: {word: w}, unit: char}"
-                    |      >ab</tspan>
-                    |""".stripMargin
-    val doc = readWatrDom(new StringReader(svgstr), bioDict)
-    // println(doc.prettyPrint)
-
-    val otspan = doc.toDomCursor.firstChild
-    assert(otspan.isDefined)
-
-    val bioBrick = otspan.get.getLabel.asInstanceOf[TSpan].bioBrick
-
-    assert(bioBrick.columns.length===2)
-
-    val ls = List(Set(Word.B), Set(Word.L))
-    bioBrick.columns.map(_.pins).zip(ls).foreach { case (l, lexpect) =>
-      assert(l === lexpect)
-    }
-
-  }
-  it should "create default annotations on tspans if none exist" in {
-    val svgstr = """|<tspan
-                    |  x="0 8.0"
-                    |  endX="10.0"
-                    |  y="0"
-                    |  font-size="20px"
-                    |  font-family="Times"
-                    |  >ab</tspan>
-                    |""".stripMargin
-    val doc = readWatrDom(new StringReader(svgstr), bioDict)
-
-    val otspan = doc.toDomCursor.firstChild
-    assert(otspan.isDefined)
-
-    val bioBrick = otspan.get.getLabel.asInstanceOf[TSpan].bioBrick
-
-    assert(bioBrick.columns.length===2)
-
-    val allLabels = bioBrick.columns.map(_.pins).reduce{_ ++ _}
-    assert(allLabels.isEmpty)
-
-  }
-
   it should "serialize to well-formed svg" in {
     val doc = readWatrDom(new StringReader(svgStrNS), bioDict)
 

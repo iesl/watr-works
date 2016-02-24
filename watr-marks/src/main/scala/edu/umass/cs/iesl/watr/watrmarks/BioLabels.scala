@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrmarks
 
 import textboxing.TextBoxing
+import scala.language.dynamics
 
 sealed trait BioPin {
   def label: BioLabel
@@ -19,15 +20,7 @@ case class OPin(label: BioLabel, override val pinChar:Char='O') extends BioPin
 case class LPin(label: BioLabel, override val pinChar:Char='L') extends BioPin
 case class UPin(label: BioLabel, override val pinChar:Char='U') extends BioPin
 
-case class FencePost(label: BioLabel, override val pinChar:Char='F') extends BioPin
-// private val hash: java.util.UUID = java.util.UUID.randomUUID()
 
-// import StandardLabels._
-// case class Constraint()
-// class BioLabel(val namespace: String, val name: String, val c: Char, val constraint: Constraint) {
-
-
-import scala.language.dynamics
 
 class BioLabel(val namespace: String, val name: String, val c: Char, val constraint: Option[BioLabel]) extends Dynamic {
   lazy val B = BPin(this)
@@ -36,7 +29,6 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
   lazy val L = LPin(this)
   lazy val U = UPin(this)
 
-  def fencePost = FencePost(this)
 
 
   def selectDynamic(s: String) = {
@@ -84,7 +76,7 @@ object BioLabel {
   def apply(ns: String, name: String) =
     new BioLabel(ns, name, name(0), Some(CharLabel))
 
-  def apply(name: String) =
-    new BioLabel(name, name, name(0), Some(CharLabel))
+  // def apply(name: String) =
+  //   new BioLabel(name, name, name(0), Some(CharLabel))
 
 }

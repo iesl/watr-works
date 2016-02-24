@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package ext
 
-
 // import com.itextpdf.text.Rectangle
 // import java.io.InputStreamReader
 // import java.io.FileInputStream

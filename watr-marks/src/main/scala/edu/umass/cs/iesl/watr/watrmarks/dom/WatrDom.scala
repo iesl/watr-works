@@ -104,21 +104,22 @@ case class WatrDom(
               |</svg:path>
               |${rt.getOrElse("")}
               |""".stripMargin
-        case e: TSpanAttribs  =>
-          val xstr = e.xs.mkString(" ")
-          val ystr = e.ys.mkString(" ")
-          // val endxstr = e.textXYOffsets.map(o => s"""endX=\"${o.endX}\"""").getOrElse("")
-          val text = e.chars.mkString
-          val esc = escapeXml11(text)
 
-          s"""|<svg:tspan
-              |  x="$xstr"
-              |  y="$ystr"
-              |  font-size="1px"
-              |  font-family="Helvetica"
-              |>${esc}</svg:tspan>
-              |${rt.getOrElse("")}
-              |""".stripMargin
+        // case e: TSpanAttribs  =>
+        //   val xstr = e.xs.mkString(" ")
+        //   val ystr = e.ys.mkString(" ")
+        //   // val endxstr = e.textXYOffsets.map(o => s"""endX=\"${o.endX}\"""").getOrElse("")
+        //   val text = e.chars.mkString
+        //   val esc = escapeXml11(text)
+
+          // s"""|<svg:tspan
+          //     |  x="$xstr"
+          //     |  y="$ystr"
+          //     |  font-size="1px"
+          //     |  font-family="Helvetica"
+          //     |>${esc}</svg:tspan>
+          //     |${rt.getOrElse("")}
+          //     |""".stripMargin
 
         case e: TSpan  =>
           val xstr = e.textXYOffsets.map(o => "x="+o.xs.mkString(" ")).getOrElse("")
@@ -198,7 +199,6 @@ object NullElement extends WatrElement   {
 
 
 case class TextXYOffsets(
-  // sourceY: Double,
   xs: List[Double], endX: Double,
   ys: List[Double]
 )
@@ -210,35 +210,17 @@ case class TSpanInit (
   transforms: List[Transform],
   textXYOffsets: Option[TextXYOffsets],
   fontSize: String,
-  fontFamily: String,
-  bioBrickStr: Option[String]
+  fontFamily: String
 ) extends WatrElement
 
 case class TSpan (
   text: String,
-  transforms: List[Transform],
   textXYOffsets: Option[TextXYOffsets],
   fontSize: String,
   fontFamily: String,
-  bioBrick: BrickColumns,
   document: Document
 ) extends WatrElement  {
 
   override def toString = s"""<tspan:${text}>"""
 }
 
-
-case class TSpanAttribs(
-  chars: List[Char] = List(),
-  xs: List[Double] = List(),
-  ys: List[Double] = List(),
-  widths: List[Double] = List(),
-  heights: List[Double] = List(),
-  fonts: List[Long] = List()
-) extends WatrElement
-
-// case class TSpanAbbrev (
-//   chars: List[Char] = List(),
-//   attribs: TSpanAttribs,
-//   fontID: Long
-// ) extends WatrElement
