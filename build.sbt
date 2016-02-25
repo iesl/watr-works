@@ -38,6 +38,8 @@ lazy val doobieVersion = "0.2.3"
 lazy val logbackVersion = "1.1.5"
 
 libraryDependencies in ThisBuild ++= Seq(
+
+  "com.iheart" %% "ficus" % "1.2.0",
   "org.apache.commons" % "commons-lang3" % "3.4",
   "com.github.pathikrit" %% "better-files" % "2.15.0",
   "org.scalaz" %% "scalaz-core" % "7.1.7",
@@ -45,7 +47,7 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.4",
   "com.typesafe.play" %% "play-json" % "2.4.6",
-  "com.lihaoyi" %% "sourcecode" % "0.1.0",
+  // "com.lihaoyi" %% "sourcecode" % "0.1.0",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
   "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test",
   "org.slf4j" % "slf4j-api" % "1.7.16",
@@ -56,7 +58,8 @@ libraryDependencies in ThisBuild ++= Seq(
 resolvers in ThisBuild ++= List(
   // "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
   "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
-  "ICM repository" at "http://maven.icm.edu.pl/artifactory/repo"
+  "ICM repository" at "http://maven.icm.edu.pl/artifactory/repo",
+  Resolver.jcenterRepo
 )
 
 lazy val root = (project in file("."))
@@ -68,7 +71,7 @@ lazy val watrmarks = (project in file("watr-marks"))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
-    "com.itextpdf" % "itextpdf" % "5.5.8",
+    // "com.itextpdf" % "itextpdf" % "5.5.8",
     "edu.umass.cs.iesl" %% "spatialindexing" % "latest.release",
     "com.typesafe.slick" %% "slick" % "3.1.1",
     "org.postgresql"   % "postgresql"    % "9.4-1203-jdbc42",
