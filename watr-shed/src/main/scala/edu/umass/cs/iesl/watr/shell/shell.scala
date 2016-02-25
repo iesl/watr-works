@@ -44,20 +44,29 @@ object Works extends App {
   // onCommand("init-corpus") {}
 
 
-  val fin = File(conf.rootDirectory)
-  if (fin.isDirectory) {
-    println(s"processing dir $fin")
-    val m = fin.glob("*.pdf")
+  val corpusRoot = File(conf.rootDirectory)
+  // ensure proper corpus directory structure
+
+
+
+  // run iesl pdf -> svg over corpus
+  if (corpusRoot.isDirectory) {
+    println(s"processing dir $corpusRoot")
+    val m = corpusRoot.glob("**/*.pdf")
 
     m.foreach { f =>
-      val output = s"${f.path}.svg".toFile
-      println(s"$f -> $output")
-
-
-      f.inputStream.map { is =>
-        // val wdom = itextUtil.itextPdfToSvg(is)
-        // output < wdom.toSvg()
+      val artifactPath = s"${f.path}.d".toFile
+      if (!artifactPath.isDirectory) {
+        artifactPath.createDirectory()
       }
+
+      val output = s"${artifactPath}/${f.name}.svg".toFile
+      if (!output.isReadable) {
+        ops.pdfToSVG(f, output)
+      } else {
+        println(s"skipping $f")
+      }
+
     }
   } else {
     sys.error("please specify a file or directory")
@@ -72,19 +81,14 @@ object ops {
   // val pdfToSVGExe = pdfToSVGPath/"bin"/"run.sh"
   val pdf2svg = "ext/iesl-pdf-to-text/bin/run.sh"
 
-  def pdfToSVG(pdf: JFile): Document = {
+  def pdfToSVG(pdfInput: File, outputPath: File): Unit = {
     println("running: " + pdf2svg)
 
     // "ls" #| "grep .scala" #&& Seq("sh", "-c", "scalac *.scala") #|| "echo nothing found" lines
-    val inputPath = pdf.toPath().toString()
-    val outputPath = inputPath+".svg"
-    println(s"running: ${pdf2svg} on ${inputPath} -> ${outputPath}")
+    println(s"running: ${pdf2svg} on ${pdfInput} -> ${outputPath}")
 
-    val result = List(pdf2svg, "-i", pdf.toPath().toString(), "-o", outputPath).!
+    val result = List(pdf2svg, "-i", pdfInput.toString, "-o", outputPath.toString()).!
 
-    val jdomBuilder = new SAXBuilder();
-    val svgJDom = jdomBuilder.build(new FileInputStream(outputPath))
-    svgJDom
   }
 
 
