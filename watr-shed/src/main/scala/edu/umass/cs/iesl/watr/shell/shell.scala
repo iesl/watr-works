@@ -39,15 +39,13 @@ object Works extends App {
 
   val argMap = argsToMap(args)
 
-  val conf = configuration.getPdfCorpusConfig
+  val conf = configuration.getPdfCorpusConfig("conf/application.conf")
 
   // onCommand("init-corpus") {}
 
 
   val corpusRoot = File(conf.rootDirectory)
   // ensure proper corpus directory structure
-
-
 
   // run iesl pdf -> svg over corpus
   if (corpusRoot.isDirectory) {

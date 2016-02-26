@@ -3,11 +3,14 @@ package watr
 package watrcolors
 
 
-object SvgOverviewServer extends SvgOverviewApi  {
+class SvgOverviewServer(
+  config: PdfCorpusConfig
+) extends SvgOverviewApi  {
+  val svgRepoPath = config.rootDirectory
 
   def createView(svgFilename: String): List[HtmlUpdate] = {
     List(
-      HtmlReplaceInner("#main", html.SvgOverviewPane.init(svgFilename).toString)
+      HtmlReplaceInner("#main", new html.SvgOverviewPane(config).init(svgFilename).toString)
     )
   }
 
@@ -21,9 +24,12 @@ object SvgOverviewServer extends SvgOverviewApi  {
     import scala.collection.JavaConversions._
 
     val conf = new ComponentConfiguration()
-    val pdfFilename = svgFilename.dropRight(4)
+    // svgFilename looks like: 101016jcarbon201407065.pdf.d/101016jcarbon201407065.pdf.svg
+    //   so the pdf filename would be: 101016jcarbon201407065.pdf
+    // val pdfFilename = svgFilename.dropRight(4)
+    val pdfFilename = svgFilename.split(".d/")(0)
 
-    val svg = File("../svg-repo", pdfFilename)
+    val svg = File(svgRepoPath, pdfFilename)
     println(s"server loading file ${svg.path}")
     val overlays = mutable.ArrayBuffer[BBox]()
     var currTop: Double = 0
@@ -82,7 +88,8 @@ object SvgOverviewServer extends SvgOverviewApi  {
     import java.io.InputStreamReader
     import watr.watrmarks.dom
 
-    val svg = File("../svg-repo", svgFilename)
+    val svg = File(svgRepoPath, svgFilename)
+
     println(s"server loading file ${svg.path}")
 
     val overlays = mutable.ArrayBuffer[BBox]()

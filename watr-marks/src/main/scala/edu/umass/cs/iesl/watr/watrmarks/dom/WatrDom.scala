@@ -9,7 +9,8 @@ import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 sealed trait WatrElement
 
 case class WatrDom(
-  tree: Tree[WatrElement]
+  tree: Tree[WatrElement],
+  annotations: Seq[Annotation] = List()
 ) {
 
   def prettyPrint: String = tree.drawTree
@@ -189,12 +190,27 @@ case class Text (
 
 case class Path (
   transforms: List[Transform] = List()
-) extends WatrElement   with Transformable {
+) extends WatrElement with Transformable {
   override def toString = s"""<path:>"""
+}
+
+case class Annotation(
+  id: String,
+  bboxes: Seq[Rect]
+)
+
+case class Rect(
+  x: Double, y: Double, width: Double, height: Double
+) extends WatrElement {
+  override def toString = s"""<rect:>"""
 }
 
 object NullElement extends WatrElement   {
   override def toString = s"""<null-elem>"""
+}
+
+object AnnotationMarker extends WatrElement   {
+  override def toString = s"""<annot-marker>"""
 }
 
 

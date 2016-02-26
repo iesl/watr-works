@@ -4,7 +4,7 @@ package watrmarks
 import java.io.Reader
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events._;
-// import scala.collection.JavaConversions._
+import scala.collection.JavaConversions._
 
 package object dom {
 
@@ -14,14 +14,12 @@ package object dom {
   implicit val showElementTree = Show.shows[WatrElement](_.toString())
 
   def maybeAttrValue(e: StartElement, s:String): Option[String] = {
-    // println(s"maybe attrValue: $e: $s")
     val maybeAttr = e.getAttributeByName(QName.valueOf(s))
     if (maybeAttr!=null) Some(maybeAttr.getValue())
     else None
   }
 
   def attrValue(e: StartElement, s:String): String = {
-    // println(s"attrValue: $e: $s")
     e.getAttributeByName(QName.valueOf(s)).getValue()
   }
 
@@ -52,6 +50,7 @@ package object dom {
     ViewBox(vs(0), vs(1), vs(2), vs(3))
   }
 
+  import scala.collection.mutable
 
   def readWatrDom(ins: Reader, bioDict: BioLabelDictionary): WatrDom = {
     val factory = XMLInputFactory.newInstance();
@@ -59,14 +58,15 @@ package object dom {
 
     var accum: TreeLoc[WatrElement] = null
 
-    import scala.collection.mutable
+    def accAppend(e: WatrElement): Unit = {
+      accum = accum.insertDownLast(Tree.leaf(e))
+    }
 
-    var currentPageList = mutable.ListBuffer[TSpan]()
-    var currentPageNumber = 1
+    def accPop(): Unit = {
+      accum = accum.parent.get
+    }
 
-    val pageSpans = mutable.ListMap[Int, mutable.ListBuffer[TSpan]](
-      currentPageNumber -> currentPageList
-    )
+    var annotations = mutable.ArrayBuffer[Annotation]()
 
 
 
@@ -75,27 +75,22 @@ package object dom {
 
       event match {
         case elem: Namespace =>
-        // println(s"Namespace: ${elem}")
         case attribute: Attribute =>
-          println(s"Attribute: ${attribute}")
           val name = attribute.getName();
           val value = attribute.getValue();
-          // println("Attribute name/value: " + name + "/" + value);
         case elem: StartDocument =>
           val n: WatrElement = Document(bioDict)
 
 
           accum = Tree.leaf(n).loc
-          // println(s"StartDocument: ${elem}")
 
         case elem: EndDocument =>
-          // println(s"EndDocument: ${elem}")
 
         case elem: StartElement =>
           // if (accum.path.length == 2) {
           //   println(s"StartElement: ${elem.getName()} stack size = ${accum.path.length}")
           // }
-          // // println(s"Start Element: ${elem.getName}, prefix: ${elem.getName().getPrefix()}, local: ${elem.getName().getLocalPart()}")
+          // println(s"Start Element: ${elem.getName}, prefix: ${elem.getName().getPrefix()}, local: ${elem.getName().getLocalPart()}")
 
           elem.getName.getLocalPart.toLowerCase match {
             case "svg"   =>
@@ -106,42 +101,67 @@ package object dom {
                 getTransforms(elem)
               )
 
-              accum = accum.insertDownLast(Tree.leaf(n))
+              accAppend(n)
 
             case "g"     =>
-              val n = Grp(
-                getTransforms(elem)
-              )
-              accum = accum.insertDownLast(Tree.leaf(n))
+              if (accum.getLabel == AnnotationMarker) {
+                annotations.add(Annotation(
+                  elem.getAttributeByName(new QName("id")).getValue,
+                  List()
+                ))
+
+                accAppend(NullElement)
+              } else {
+                val n = Grp(
+                  getTransforms(elem)
+                )
+                accAppend(n)
+              }
 
             case "defs"  =>
-              val n = Defs()
-              accum = accum.insertDownLast(Tree.leaf(n))
-
+              val annotationAttrib = new QName("annotation-boxes")
+              val attribs = elem.getAttributes.toList
+              if (attribs.contains(annotationAttrib)) {
+                accAppend(AnnotationMarker)
+              } else {
+                accAppend(Defs())
+              }
             case "text"  =>
               val n =  Text(getTransforms(elem))
-              accum = accum.insertDownLast(Tree.leaf(n))
+              accAppend(n)
 
             case "path"  =>
               val n =  Path(getTransforms(elem))
-              accum = accum.insertDownLast(Tree.leaf(n))
+              accAppend(n)
 
             case "annotation-links"  =>
-              accum = accum.insertDownLast(Tree.leaf(NullElement))
+              accAppend(NullElement)
             case "citation-reference-link"  =>
-              accum = accum.insertDownLast(Tree.leaf(NullElement))
+              accAppend(NullElement)
+            case "use"  =>
+              accAppend(NullElement)
             case "rect"  =>
-              accum = accum.insertDownLast(Tree.leaf(NullElement))
+              if (accum.getLabel == AnnotationMarker) {
+                val ann = annotations.remove(0)
+                ann.copy(
+                  bboxes = ann.bboxes :+ Rect(
+                    attrValue(elem, "x").toDouble,
+                    attrValue(elem, "y").toDouble,
+                    attrValue(elem, "width").toDouble,
+                    attrValue(elem, "height").toDouble
+                  )
+                )
+              }
+
+              accAppend(NullElement)
             case "image"  =>
-              accum = accum.insertDownLast(Tree.leaf(NullElement))
+              accAppend(NullElement)
             case "mask"  =>
-              accum = accum.insertDownLast(Tree.leaf(NullElement))
+              accAppend(NullElement)
 
             case "tspan" =>
               import scalaz._, Scalaz._
 
-              // val _xs = getXs(elem)
-              // val _endx = getEndX(elem)
               val _y = getY(elem)
 
               val offs = ^(getXs(elem), getEndX(elem))(
@@ -158,11 +178,11 @@ package object dom {
                 getFontSize(elem),
                 getFontFamily(elem)
               )
-              accum = accum.insertDownLast(Tree.leaf(n))
+              accAppend(n)
 
             case "style"
                | "clippath" =>
-              accum = accum.insertDownLast(Tree.leaf(NullElement))
+              accAppend(NullElement)
             case _ =>
               sys.error(s"no case match for StartElement: ${elem}")
 
@@ -193,27 +213,21 @@ package object dom {
 
               val tspan = TSpan(
                 init.text,
-                // init.transforms,
                 init.textXYOffsets,
                 init.fontSize,
                 init.fontFamily,
                 rootDocument
               )
 
-              currentPageList.append(tspan)
-
               accum = accum.modifyLabel { _ => tspan }
-
 
             case _   =>
           }
           // println(s"EndElement: ${elem}, accum.parents=${accum.parents}")
-          accum = accum.parent.get
+          accPop()
 
         case elem: EntityReference =>
-        // println(s"EntityReference: ${elem}")
         case elem: Characters =>
-          // println(s"Characters: '${elem.getData().trim()}'")
 
               accum.getLabel match {
                 case t: TSpanInit =>
@@ -228,7 +242,7 @@ package object dom {
 
     }
 
-    WatrDom(accum.toTree)
+    WatrDom(accum.toTree, annotations.toList)
   }
 
 }

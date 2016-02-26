@@ -14,12 +14,17 @@ case class PdfCorpusConfig(
 import better.files._, Cmds._
 object configuration {
 
-  def getPdfCorpusConfig(): PdfCorpusConfig = {
-    println(s"cwd = ${cwd}")
+  def getPdfCorpusConfig(appRoot: String): PdfCorpusConfig = {
+    println(s"config init cwd = ${cwd}")
 
-    val conf = ConfigFactory.parseFile(File("conf/application.conf").toJava)
+    val root = File(appRoot)
 
-    conf.as[PdfCorpusConfig]("pdfCorpus")
+    val conf = ConfigFactory.parseFile(File(appRoot, "conf/application.conf").toJava)
+
+    val config = conf.as[PdfCorpusConfig]("pdfCorpus")
+    config.copy(
+      rootDirectory = (root / config.rootDirectory).toString()
+    )
   }
 
 

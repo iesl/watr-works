@@ -5,7 +5,11 @@ package html
 import scalatags.stylesheet.{CascadingStyleSheet, StyleSheet, StyleSheetTags, Sheet, Selector}
 import scalatags.Text.all._
 
-object SvgOverviewPane {
+class SvgOverviewPane(
+  config: PdfCorpusConfig
+) {
+
+  val svgRepoPath = config.rootDirectory
 
   val SvgStyles = Sheet[SvgStyles]
 
@@ -57,10 +61,10 @@ object SvgOverviewPane {
             <.canvas(^.id:="fabric-canvas", SvgStyles.fabricCanvas),
             <.script(^.`type`:="text/javascript")(
               raw(s"""|var documentIconURI = "images/pdf_50x50.png";
-                      |var fileRepositoryURI = "./svg-repo";
+                      |var fileRepositoryURI = "${svgRepoPath}";
                       |var fileName = "$filename";
                       |""".stripMargin)),
-            <.script(^.`type`:="text/javascript", ^.src:="js/edit-document.js" )
+            <.script(^.`type`:="text/javascript", ^.src:="/assets/js/edit-document.js" )
           )
         ),
 
@@ -152,12 +156,6 @@ object SvgOverviewPane {
             //     </style>
 
             //     <!-- per http://stackoverflow.com/questions/6672794/playframework-elegant-way-to-pass-values-to-javascript -->
-//     <script type="text/javascript">
-//         var documentIconURI = "@routes.Assets.at("images/pdf_50x50.png")";
-//         var fileRepositoryURI = "@routes.Assets.at("svg-repo")";
-//         var fileName= '@doc.fileName';
-//     </script>
 
-//     <script src="@routes.Assets.at("javascripts/edit-document.js")" type="text/javascript"></script>
 
 // }

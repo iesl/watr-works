@@ -2,14 +2,12 @@
 'variables' passed into this file from edit.scala.html:
 
 o documentIconURI - icon to use at the top of the file
-o fileRepositoryURI - where "" is located
 o fileName - name of the svg file being edited
 
  */
 
 $(function() {
     // set up edit controls
-    $('#revert-button').click(loadAnnotations);
     $('#save-button').click(saveAnnotations);
 
     $('#add-rect-button').click(addAnnotation);
@@ -51,7 +49,7 @@ function setLoadingHeader(html) {
  * TODO: handle errors - no image or annotations file
  */
 function loadSvg() {
-    var uri = fileRepositoryURI + '/' + fileName;
+    var uri = 'repo' + '/' + fileName;
     setLoadingHeader("Getting document &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote;...");
     $.get(uri, function(svgxml) {
         // add #svg-image to #overlay-container
@@ -72,62 +70,11 @@ function loadSvg() {
         fabric.Object.prototype.transparentCorners = false;
 
         // finally, load the SVG file's annotations
-        loadAnnotations();
 
     }, "xml");
 }
 
-function loadAnnotations() {
-  // AJAX call to GET annotation JSON
-  setLoadingHeader("Loading annotations &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote;...");
-  $.get('/annotations/' + fileName,    // TODO cleaner way to get URI
-        function(jsonAnnotListStr) {
-          var fabricCanvas = getFabricCanvas();
-          console.log(jsonAnnotListStr);
-          // var jsonAnnotListStrRepl = jsonAnnotListStr.replace(/&quot;/g,'"');     // TODO HACK. Play/Jackson issue?
-          // var annotList = JSON.parse(jsonAnnotListStr);
-          var annotList = jsonAnnotListStr;
-          fabricCanvas.clear();
-          for(var annotIdx = 0; annotIdx < annotList.length; annotIdx++) {
-            console.log("adding annot");
-            var annot = annotList[annotIdx];
-            var rects = annot.rects;
-            addAnnotationFabricObs(annot.label, rects);
-          }
-          updateButtonStates([]);
-          fabricCanvas.renderAll();
-          console.log("rerendering annot");
-          setLoadingHeader("Loaded &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote; with "
-                           + annotList.length + " annotation(s)");
-        }
-       );
-}
 
-/*
- * Adds Fabric objects corresponding to a single annotation, which is one or more labeled Rects with Lines
- * between each if more than one, i.e., if there are linked rectangles making up the annotation rather than
- * just a single non-linked one.
- */
-function addAnnotationFabricObs(label, rects) {
-  // add Rects
-  var addedRects = [];
-  for(var rectIdx = 0; rectIdx < rects.length; rectIdx++) {
-    var rect = rects[rectIdx];
-    var addedRect = addAnnotationRect(label, rect.x, rect.y, rect.width, rect.height);
-    addedRects.push(addedRect);
-  }
-
-  // add Lines for each pair of linked Rects
-  if ((addedRects.length == 0) || (addedRects.length == 1)) {
-    return;
-  }
-
-  for(var idx = 0; idx < addedRects.length - 1; idx++) {
-    var rect1 = addedRects[idx];
-    var rect2 = addedRects[idx + 1];
-    addAnnotationLine(rect1, rect2);
-  }
-}
 
 function addAnnotationRect(label, x, y, width, height) {
   var fabricCanvas = getFabricCanvas();

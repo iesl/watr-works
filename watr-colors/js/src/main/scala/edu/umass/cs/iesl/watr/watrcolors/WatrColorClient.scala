@@ -45,7 +45,6 @@ trait ClientView {
 
 }
 
-
 @JSExport
 object WatrColorClient {
 
@@ -56,7 +55,6 @@ object WatrColorClient {
     currentView.createView()
     currentView.setKeybindings(currentView.initKeys)
   }
-
 
   // TODO Can't figure out why this main() is getting called twice, so putting this guard here..
   var started = false

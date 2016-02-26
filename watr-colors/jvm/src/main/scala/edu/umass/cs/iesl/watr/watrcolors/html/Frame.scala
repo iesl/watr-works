@@ -20,7 +20,6 @@ object Frame {
         padding := 0
       )
     )
-
   }
 
   def apply() = {
@@ -31,7 +30,7 @@ object Frame {
         <.meta(content := "width=device-width, initial-scale=1", name := "viewport"),
         <.meta(httpEquiv := "Content-Type", content := "text/html; charset=UTF-8"),
         <.script(`type` := "text/javascript", src := "//localhost:12345/workbench.js"),
-        <.script(`type` := "text/javascript", src := "/watrcolors-client-fastopt.js"),
+        <.script(`type` := "text/javascript", src := "/assets/watrcolors-client-fastopt.js"),
         <.script(`type` := "text/javascript", src := "/webjars/mousetrap/1.5.3/mousetrap.min.js"),
         <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.0/jquery.min.js"),
         <.script(`type` := "text/javascript", src := "/webjars/fabric/1.5.0/dist/fabric.js"),

@@ -5,19 +5,19 @@ package watrcolors
 
 import better.files._
 
-object CorpusExplorerServer extends CorpusExplorerApi  {
+class CorpusExplorerServer(
+  config: PdfCorpusConfig
+) extends CorpusExplorerApi  {
 
-  println(s"current dir = ${Cmds.cwd}")
+  println(s"CorpusExplorerServer current dir = ${Cmds.cwd}")
 
-  val initpath = file"../svg-repo"
+  val initpath = File(config.rootDirectory)
 
   val init = DirectoryCursor.init(initpath).get
 
   var state: DirectoryCursor = init
 
   def navNext(): List[HtmlUpdate] = {
-    val last = state
-
     state = state.next
 
     List(
@@ -26,12 +26,12 @@ object CorpusExplorerServer extends CorpusExplorerApi  {
   }
 
   def getFileInFocus() : String = {
-    state.curr.name
+    val corpusPath = initpath.relativize(state.curr.path)
+    println(s"getFileInFocus: ${corpusPath}")
+    corpusPath.toString()
   }
 
   def navPrev(): List[HtmlUpdate] = {
-    val last = state
-
     state = state.prev
 
     List(
