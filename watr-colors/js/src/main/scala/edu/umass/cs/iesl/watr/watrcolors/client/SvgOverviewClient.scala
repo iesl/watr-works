@@ -13,8 +13,10 @@ import boopickle.DefaultBasic._
 import Picklers._
 
 import org.scalajs.jquery.jQuery
-
+import scala.concurrent.Promise
 import js._
+import org.scalajs.dom
+import dom.html.Canvas
 
 @JSExport
 class SvgOverview(
@@ -30,7 +32,6 @@ class SvgOverview(
   // TODO create new bbox
   // On hover over bbox, display bbox info in sidebar
   override val initKeys = Keybindings(List(
-    // "c" -> ((e: MousetrapEvent) => createCanvas()),
     "a" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
     "b" -> ((e: MousetrapEvent) => createCermineOverlay())
   ))
@@ -52,22 +53,6 @@ class SvgOverview(
     fabricCanvas.add(rect)
   }
 
-  def timex[R](block: => R): (R, Double) = {
-    val t0 = System.nanoTime()
-    val result = block    // call-by-name
-    val t1 = System.nanoTime()
-    val ms = (t1 - t0)/1000000.0d
-    (result,  ms)
-  }
-
-  def time[R](prefix: String)(block: => R): R = {
-    val t0 = System.nanoTime()
-    val result = block    // call-by-name
-    val t1 = System.nanoTime()
-    println(s"${prefix}: " + (t1 - t0)/1000000.0d + "ms")
-    result
-  }
-
   def createCermineOverlay(): Boolean = {
     server.getCermineOverlay(svgFilename).call().foreach{ overlays =>
       overlays.foreach { bbox =>
@@ -78,68 +63,87 @@ class SvgOverview(
   }
 
   def createCharLevelOverlay(): Boolean = {
-    fabricCanvas.on("mouse:over", {(e:Event) =>
-      e.target.setStroke("red")
-      fabricCanvas.renderAll()
-      true
-    })
-
-
-    fabricCanvas.on("mouse:out", ({(e:Event) =>
-      e.target.setStroke("blue")
-      fabricCanvas.renderAll()
-      true
-    }))
-
-
     val bboxes = time("get bboxes from server") {
       server.getCharLevelOverlay(svgFilename).call()
     }
 
-    println(s" fabricCanvas.renderOnAddRemove = ${fabricCanvas.renderOnAddRemove} ")
-    var totalT:Double = 0
     fabricCanvas.renderOnAddRemove = false
-    println(s" (2) fabricCanvas.renderOnAddRemove = ${fabricCanvas.renderOnAddRemove} ")
-
 
     bboxes.foreach{ overlays =>
       overlays.foreach { bbox =>
-        val (_, t) = timex {
-          addBBoxRect(bbox, "blue")
-        }
-        totalT = totalT + t
+        addBBoxRect(bbox, "blue")
       }
-      println(s"avg bbox addition took ${totalT / overlays.length}")
       fabricCanvas.renderAll()
       fabricCanvas.renderOnAddRemove = true
-      println(s" (2) fabricCanvas.renderOnAddRemove = ${fabricCanvas.renderOnAddRemove} ")
     }
 
     true
   }
 
-  def createCanvas(): Boolean = {
-    val canvas = Canvas(
-      "test-canvas",
-      CanvasOpts()
-    )
+  import rx._
 
+  import scala.async.Async.{async, await}
 
-    val rect = Rect(
-      top         = 3,
-      left        = 3,
-      width       = 20,
-      height      = 30
-        // fill        = "red",
-        // stroke      = "black",
-        // strokeWidth = 2
-    )
+  def setupSVGPaneHandlers(): Unit = {
 
-    canvas.add(rect)
-    true
+    // val c = fabricCanvas.getElement()
+
+    val canvas: Canvas = null
+    val renderer = canvas.getContext("2d")
+                     .asInstanceOf[dom.CanvasRenderingContext2D]
+
+    def rect = canvas.getBoundingClientRect()
+
+    type ME = dom.MouseEvent
+
+    val mousemove = new Channel[ME](canvas.onmousemove = _)
+    val mouseup = new Channel[ME](canvas.onmouseup = _)
+    val mousedown = new Channel[ME](canvas.onmousedown = _)
+
+    val _ = async {
+
+      while(true){
+        val start = await(mousedown())
+        renderer.beginPath()
+        renderer.moveTo(
+          start.clientX - rect.left,
+          start.clientY - rect.top
+        )
+
+        var res = await(mousemove | mouseup)
+        while(res.`type` == "mousemove"){
+          renderer.lineTo(
+            res.clientX - rect.left,
+            res.clientY - rect.top
+          )
+          renderer.stroke()
+          res = await(mousemove | mouseup)
+        }
+
+        renderer.fill()
+        await(mouseup())
+        renderer.clearRect(0, 0, 1000, 1000)
+      }
+    }
+
   }
 
   def createView(): Unit = {
     server.createView(svgFilename).call().foreach(applyHtmlUpdates(_))
   }
 }
+
+
+
+// fabricCanvas.on("mouse:over", {(e:Event) =>
+//   e.target.setStroke("red")
+//   fabricCanvas.renderAll()
+//   true
+// })
+
+
+// fabricCanvas.on("mouse:out", ({(e:Event) =>
+//   e.target.setStroke("blue")
+//   fabricCanvas.renderAll()
+//   true
+// }))

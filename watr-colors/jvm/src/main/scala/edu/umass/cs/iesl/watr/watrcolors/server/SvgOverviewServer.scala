@@ -10,7 +10,7 @@ class SvgOverviewServer(
 
   def createView(svgFilename: String): List[HtmlUpdate] = {
     List(
-      HtmlReplaceInner("#main", new html.SvgOverviewPane(config).init(svgFilename).toString)
+      HtmlReplaceInner("#main", new html.SvgOverviewView(config).init(svgFilename).toString)
     )
   }
 

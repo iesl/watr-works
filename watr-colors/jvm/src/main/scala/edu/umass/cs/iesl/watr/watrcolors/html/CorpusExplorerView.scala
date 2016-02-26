@@ -5,7 +5,7 @@ package html
 import scalatags.Text.all._
 
 
-object CorpusExplorerPane {
+object CorpusExplorerView {
 
   def init()  = {
     <.div(

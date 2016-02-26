@@ -35,9 +35,6 @@ object Frame {
         <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.0/jquery.min.js"),
         <.script(`type` := "text/javascript", src := "/webjars/fabric/1.5.0/dist/fabric.js"),
 
-        // <.script(`type` := "text/javascript", src := "/js/split-pane/split-pane.js"),
-        // <.link(rel := "stylesheet", `type` := "text/css", href := "/js/split-pane/split-pane.css"),
-        // <.link(rel := "stylesheet", `type` := "text/css", href := "/js/split-pane/pretty-split-pane.css"),
         <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.6/css/bootstrap.min.css"),
 
         <.style(

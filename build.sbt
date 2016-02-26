@@ -39,10 +39,11 @@ lazy val logbackVersion = "1.1.5"
 
 libraryDependencies in ThisBuild ++= Seq(
 
-  "com.iheart" %% "ficus" % "1.2.0",
+  "com.iheart" %% "ficus" % "1.2.2",
   "org.apache.commons" % "commons-lang3" % "3.4",
   "com.github.pathikrit" %% "better-files" % "2.15.0",
   "org.scalaz" %% "scalaz-core" % "7.1.7",
+  "org.scala-lang.modules" %% "scala-async" % "latest.release",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.4",
@@ -85,7 +86,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
     "me.chrons" %%% "boopickle" % "1.1.2",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
-    // "com.lihaoyi" %%% "scalarx" % "0.3.0",
+    "com.lihaoyi" %%% "scalarx" % "0.3.1",
     "com.lihaoyi" %%% "scalatags" % "0.5.4"
   )
 ).jsSettings(
@@ -108,7 +109,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
     "com.typesafe.akka" %% "akka-actor" % "2.4.2",
     "org.webjars.bower" % "fabric" % "1.5.0",
     "org.webjars" % "bootstrap" % "3.3.6",
-    "org.webjars" % "jquery" % "2.2.0",
+    "org.webjars" % "jquery" % "2.2.1",
     "org.webjars" % "mousetrap" % "1.5.3"
   )
 )
@@ -120,6 +121,5 @@ lazy val watrcolorsJVM = watrcolors.jvm.settings(
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value
   }))
   .dependsOn(watrmarks, watrshed)
-
-  // .aggregate(watrmarks, watrshed, watrcolorsJS)
+  .aggregate(watrcolorsJS)
 

@@ -14,7 +14,7 @@ import Picklers._
 import js._
 
 @JSExport
-class CorpusExplorerView() extends ClientView {
+class CorpusExplorerClient() extends ClientView {
 
   val server = ServerWire("explorer")[CorpusExplorerApi]
 
