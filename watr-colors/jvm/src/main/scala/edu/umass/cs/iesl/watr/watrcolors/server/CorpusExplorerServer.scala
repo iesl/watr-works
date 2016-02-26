@@ -2,8 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-
-
 import better.files._
 
 class CorpusExplorerServer(
@@ -34,20 +32,14 @@ class CorpusExplorerServer(
 
   def navPrev(): List[HtmlUpdate] = {
     state = state.prev
-
     List(
       HtmlReplaceInner(s"#currfile", s"${state.curr.name}")
     )
   }
 
-
   def openFocus(): List[HtmlUpdate] = {
-    // switch to svg-view
-    List(
-      // HtmlPrepend(s"#winstack-top", s"${corpusCursor.curr}")
-    )
+    List()
   }
-
 
   def createView(): List[HtmlUpdate] = {
     List(

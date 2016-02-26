@@ -10,7 +10,8 @@ import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import org.scalajs.jquery.jQuery
 
-import js._
+import native.mousetrap._
+
 
 case class Keybindings(
   bindings: List[(String, (MousetrapEvent) => Boolean)]

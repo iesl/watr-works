@@ -109,7 +109,7 @@ lazy val watrcolors = (crossProject in file("watr-colors")).settings(
     "com.typesafe.akka" %% "akka-actor" % "2.4.2",
     "org.webjars.bower" % "fabric" % "1.5.0",
     "org.webjars" % "bootstrap" % "3.3.6",
-    "org.webjars" % "jquery" % "2.2.1",
+    "org.webjars" % "jquery" % "2.2.0",
     "org.webjars" % "mousetrap" % "1.5.3"
   )
 )

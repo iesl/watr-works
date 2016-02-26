@@ -11,7 +11,9 @@ import autowire._
 import boopickle.DefaultBasic._
 import Picklers._
 
-import js._
+import native.fabric
+import native.mousetrap._
+
 
 @JSExport
 class CorpusExplorerClient() extends ClientView {

@@ -14,9 +14,12 @@ import Picklers._
 
 import org.scalajs.jquery.jQuery
 import scala.concurrent.Promise
-import js._
+
 import org.scalajs.dom
-import dom.html.Canvas
+import dom.html.{Canvas => JsCanvas}
+
+import native.fabric
+import native.mousetrap._
 
 @JSExport
 class SvgOverview(
@@ -25,21 +28,27 @@ class SvgOverview(
 
   val server = ServerWire("svg")[SvgOverviewApi]
 
-  lazy val fabricCanvas: Canvas = {
-    jQuery("#fabric-canvas").prop("fabric").asInstanceOf[Canvas]
+  lazy val fabricCanvas: fabric.Canvas = {
+    jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
   }
 
-  // TODO create new bbox
-  // On hover over bbox, display bbox info in sidebar
+  lazy val upperCanvas: JsCanvas = {
+    jQuery("#fabric-canvas").prop("fabric").upperCanvasEl.asInstanceOf[JsCanvas]
+  }
+  lazy val jsCanvas: JsCanvas = {
+    jQuery("#fabric-canvas").asInstanceOf[JsCanvas]
+  }
+
   override val initKeys = Keybindings(List(
     "a" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
-    "b" -> ((e: MousetrapEvent) => createCermineOverlay())
+    "b" -> ((e: MousetrapEvent) => createCermineOverlay()),
+    "d" -> ((e: MousetrapEvent) => setupSVGPaneHandlers())
   ))
 
 
   def addBBoxRect(bbox: BBox, color: String): Unit = {
 
-    val rect = Rect(
+    val rect = fabric.Rect(
       top         = bbox.y,
       left        = bbox.x,
       width       = bbox.width,
@@ -84,15 +93,12 @@ class SvgOverview(
 
   import scala.async.Async.{async, await}
 
-  def setupSVGPaneHandlers(): Unit = {
+  def setupSVGPaneHandlers(): Boolean = {
 
-    // val c = fabricCanvas.getElement()
+    val canvas: JsCanvas = upperCanvas
+    // val renderer = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
 
-    val canvas: Canvas = null
-    val renderer = canvas.getContext("2d")
-                     .asInstanceOf[dom.CanvasRenderingContext2D]
-
-    def rect = canvas.getBoundingClientRect()
+    // def rect = canvas.getBoundingClientRect()
 
     type ME = dom.MouseEvent
 
@@ -100,32 +106,37 @@ class SvgOverview(
     val mouseup = new Channel[ME](canvas.onmouseup = _)
     val mousedown = new Channel[ME](canvas.onmousedown = _)
 
+    println("setting up async")
     val _ = async {
 
       while(true){
         val start = await(mousedown())
-        renderer.beginPath()
-        renderer.moveTo(
-          start.clientX - rect.left,
-          start.clientY - rect.top
-        )
+        println("async: mousedown")
+        // renderer.beginPath()
+        // renderer.moveTo(
+        //   start.clientX - rect.left,
+        //   start.clientY - rect.top
+        // )
 
         var res = await(mousemove | mouseup)
+        println("async: mousemove | up")
         while(res.`type` == "mousemove"){
-          renderer.lineTo(
-            res.clientX - rect.left,
-            res.clientY - rect.top
-          )
-          renderer.stroke()
+          // renderer.lineTo(
+          //   res.clientX - rect.left,
+          //   res.clientY - rect.top
+          // )
+          // renderer.stroke()
           res = await(mousemove | mouseup)
         }
 
-        renderer.fill()
+        // renderer.fill()
         await(mouseup())
-        renderer.clearRect(0, 0, 1000, 1000)
+        println("async: mouseup")
+        // renderer.clearRect(0, 0, 1000, 1000)
       }
     }
 
+    true
   }
 
   def createView(): Unit = {
