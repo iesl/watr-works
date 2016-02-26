@@ -48,7 +48,7 @@ object Frame {
 
       body(margin := 0, WatrStyles.htmlBody)(
         <.div(^.id := "main")("Loading..."),
-        script("edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main()")
+        script("edu.umass.cs.iesl.watr.watrcolors.client.WatrColorClient().main()")
       )
     )
   }

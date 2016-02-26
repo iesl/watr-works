@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
+package client
 
 import scala.annotation.tailrec
 import scala.scalajs.js.annotation.JSExport

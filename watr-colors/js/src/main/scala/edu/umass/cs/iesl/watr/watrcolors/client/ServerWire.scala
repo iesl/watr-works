@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
+package client
 
 import java.nio.ByteBuffer
 import scala.annotation.tailrec

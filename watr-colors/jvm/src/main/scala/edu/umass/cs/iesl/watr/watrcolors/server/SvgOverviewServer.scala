@@ -1,6 +1,6 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
 package watrcolors
+package server
 
 
 class SvgOverviewServer(
@@ -86,7 +86,8 @@ class SvgOverviewServer(
     import edu.umass.cs.iesl.watr.watrmarks.dom.Transformable
     import watrmarks.StandardLabels
     import java.io.InputStreamReader
-    import watr.watrmarks.dom
+    import watrmarks.dom
+
 
     val svg = File(svgRepoPath, svgFilename)
 
