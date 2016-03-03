@@ -30,6 +30,15 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
   lazy val U = UPin(this)
 
 
+  def fqn: String = {
+    if (namespace.length()>0) {
+      s"""${namespace}:${name}"""
+    } else {
+      name
+    }
+  }
+
+
 
   def selectDynamic(s: String) = {
   // def selectDynamic(s: String)(implicit bioDict: BioLabelDictionary) = {
@@ -74,7 +83,7 @@ object BioLabel {
     new BioLabel(ns, name, c, Some(constraint))
 
   def apply(ns: String, name: String) =
-    new BioLabel(ns, name, name(0), Some(CharLabel))
+    new BioLabel(ns, name, name(0), Some(StandardLabels.CharLabel))
 
   // def apply(name: String) =
   //   new BioLabel(name, name, name(0), Some(CharLabel))

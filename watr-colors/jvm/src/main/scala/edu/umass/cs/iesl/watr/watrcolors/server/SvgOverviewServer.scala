@@ -22,22 +22,45 @@ class SvgOverviewServer(
     import pl.edu.icm.cermine.ExtractionUtils
     import pl.edu.icm.cermine.structure.model.BxBounds
     import scala.collection.JavaConversions._
+    import watrmarks.dom
+    import edu.umass.cs.iesl.watr.watrmarks.Matrix
+    import edu.umass.cs.iesl.watr.watrmarks.dom.Transformable
+    import watrmarks.StandardLabels
+    import java.io.InputStreamReader
 
     val conf = new ComponentConfiguration()
     // svgFilename looks like: 101016jcarbon201407065.pdf.d/101016jcarbon201407065.pdf.svg
     //   so the pdf filename would be: 101016jcarbon201407065.pdf
-    // val pdfFilename = svgFilename.dropRight(4)
     val pdfFilename = svgFilename.split(".d/")(0)
 
-    val svg = File(svgRepoPath, pdfFilename)
-    println(s"server loading file ${svg.path}")
-    val overlays = mutable.ArrayBuffer[BBox]()
-    var currTop: Double = 0
-    var currBottom: Double = -1
+    val pdf = File(svgRepoPath, pdfFilename)
+    val svg = File(svgRepoPath, svgFilename)
 
-    svg.inputStream.map {is =>
+    println(s"server loading pdf: ${pdf.path}, svg: ${svg.path}")
+
+
+    val watrDom = svg.inputStream.map {is =>
+      dom.readWatrDom(
+        new InputStreamReader(is),
+        StandardLabels.bioDict
+      )
+    }.headOption.getOrElse(
+      sys.error(s"problem reading svg ${svg.path}")
+    )
+
+    val overlays = mutable.ArrayBuffer[BBox]()
+    // var currTop: Double = 0
+    // var currBottom: Double = -1
+
+    var currSvgBounds: dom.Rect = dom.Rect(0, 0, 0, 0)
+    var curBxBounds: BxBounds = new BxBounds(0, 0, 0, 0)
+
+
+    pdf.inputStream.map {is =>
+      println("starting cermine extractStructure")
 
       val  structuredDoc = ExtractionUtils.extractStructure(conf, is)
+      println("done with cermine extractStructure")
 
       def formatBounds(bounds: BxBounds): String = {
         val x = bounds.getX
@@ -48,20 +71,41 @@ class SvgOverviewServer(
       }
 
       def boundsToBBox(bounds: BxBounds): BBox = {
+        // fix the y-scale ratio
+        val bxYScale = curBxBounds.getHeight // + curBxBounds.getY
+        val svgy = currSvgBounds.y + (bounds.getY * currSvgBounds.height) / bxYScale
         val x = bounds.getX
-        val y = currTop + bounds.getY
+
         val w = bounds.getWidth
         val h = bounds.getHeight
-        BBox(x, y, w, h)
+        val bb = BBox(x, svgy, w, h)
+
+        println(s"  ${formatBounds(bounds)} -> ${bb}")
+
+        val sdf = (bounds.getY * currSvgBounds.height)
+        bb
       }
 
 
-      val pages = structuredDoc.asPages().toList
-      pages.foreach{ page =>
-        val pbounds = page.getBounds
-        currTop = if (currBottom >= 0) currBottom else 0
-        currBottom = currTop + pbounds.getHeight + pbounds.getY
-        println(s"page: ${formatBounds(page.getBounds)}")
+      val pageLabels = watrDom.annotations.filter { l =>
+        println(s"dom label: ${l}")
+        l.labelName == StandardLabels.PageLabel
+      }
+
+      println(s"""svg page labels: ${pageLabels.mkString(", ")}""")
+
+      // Need to align the bounding boxes per page
+      val pages = structuredDoc.asPages.toList.zip(pageLabels)
+
+      println(s"number of pages: ${pages.length}")
+
+      pages.foreach{ case (page, plabel) =>
+        currSvgBounds = plabel.bboxes.head
+        curBxBounds = page.getBounds
+
+        println(s"svg page box = ${currSvgBounds.x} ${currSvgBounds.y} ${currSvgBounds.width} ${currSvgBounds.height}")
+        println(s"bx page box  = ${formatBounds(curBxBounds)}")
+
         page.iterator().foreach{ zone =>
           overlays.append(boundsToBBox(zone.getBounds))
           zone.iterator().toList.foreach{ line =>

@@ -26,7 +26,11 @@ case class LabelInfo(
 case class BBox(
   x: Double, y: Double, width: Double, height: Double
   // info: Option[OverlayInfo] = None
-) extends Overlay
+) extends Overlay{
+  override def toString = {
+    s"""BBox(x:${x} y:${y} w:${width} h:${height})"""
+  }
+}
 
 object Picklers {
   implicit val pickler0 = compositePickler[HtmlUpdate]

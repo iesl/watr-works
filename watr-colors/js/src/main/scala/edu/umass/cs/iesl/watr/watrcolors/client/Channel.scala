@@ -30,3 +30,38 @@ class Channel[T](init: (T => Unit) => Unit){
     p.future
   }
 }
+
+import org.scalajs.dom
+import dom.html.{Canvas => JsCanvas}
+
+trait CanvasMouseChannels {
+  type ME = dom.MouseEvent
+
+  def canvas: JsCanvas
+
+  val mousemove = new Channel[ME](canvas.onmousemove = _)
+  val mouseup = new Channel[ME](canvas.onmouseup = _)
+  val mousedown = new Channel[ME](canvas.onmousedown = _)
+
+}
+object CanvasMouseChannels {
+  def apply(c: JsCanvas) = new CanvasMouseChannels {
+    override val canvas = c
+  }
+
+  // import scala.async.Async.{async, await}
+  // def handlerTemlate(): Unit = {
+  //   val _ = async {
+  //     val chan = CanvasMouseChannels(upperCanvas)
+
+  //     while(true){
+  //       val start = await(chan.mousedown())
+  //       var res = await(chan.mousemove | chan.mouseup)
+  //       while(res.`type` == "mousemove"){
+  //         res = await(chan.mousemove | chan.mouseup)
+  //       }
+  //       await(chan.mouseup())
+  //     }
+  //   }
+  // }
+}

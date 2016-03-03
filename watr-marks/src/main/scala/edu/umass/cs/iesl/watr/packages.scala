@@ -16,7 +16,6 @@ trait ScalaZCommonOps
 // with ToOptionIdOps
 // with ToOptionOps
 
-
 package object watr
     extends DebugConsole
     with ScalaZCommonOps {

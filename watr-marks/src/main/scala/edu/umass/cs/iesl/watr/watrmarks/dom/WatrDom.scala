@@ -196,6 +196,7 @@ case class Path (
 
 case class Annotation(
   id: String,
+  labelName: BioLabel,
   bboxes: Seq[Rect]
 )
 
@@ -208,11 +209,6 @@ case class Rect(
 object NullElement extends WatrElement   {
   override def toString = s"""<null-elem>"""
 }
-
-object AnnotationMarker extends WatrElement   {
-  override def toString = s"""<annot-marker>"""
-}
-
 
 case class TextXYOffsets(
   xs: List[Double], endX: Double,

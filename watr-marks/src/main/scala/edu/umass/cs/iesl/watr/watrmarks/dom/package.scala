@@ -67,7 +67,7 @@ package object dom {
     }
 
     var annotations = mutable.ArrayBuffer[Annotation]()
-
+    var collectingAnnotations = false
 
 
     while (reader.hasNext()) {
@@ -80,7 +80,6 @@ package object dom {
           val value = attribute.getValue();
         case elem: StartDocument =>
           val n: WatrElement = Document(bioDict)
-
 
           accum = Tree.leaf(n).loc
 
@@ -104,9 +103,15 @@ package object dom {
               accAppend(n)
 
             case "g"     =>
-              if (accum.getLabel == AnnotationMarker) {
-                annotations.add(Annotation(
+              if (collectingAnnotations) {
+                val labelName =  elem.getAttributeByName(new QName("label-name")).getValue
+                val labelValue =  elem.getAttributeByName(new QName("label-value")).getValue
+                val label = bioDict(labelName)
+                println(s"""adding annotation ${labelName} = ${labelValue}""")
+
+                annotations.append(Annotation(
                   elem.getAttributeByName(new QName("id")).getValue,
+                  label,
                   List()
                 ))
 
@@ -119,13 +124,15 @@ package object dom {
               }
 
             case "defs"  =>
-              val annotationAttrib = new QName("annotation-boxes")
-              val attribs = elem.getAttributes.toList
-              if (attribs.contains(annotationAttrib)) {
-                accAppend(AnnotationMarker)
+              val id = elem.getAttributeByName(new QName("id"))
+              if (id != null && id.getValue == "annotation-boxes") {
+                println("starting annots")
+                collectingAnnotations = true
+                accAppend(NullElement)
               } else {
                 accAppend(Defs())
               }
+
             case "text"  =>
               val n =  Text(getTransforms(elem))
               accAppend(n)
@@ -141,14 +148,17 @@ package object dom {
             case "use"  =>
               accAppend(NullElement)
             case "rect"  =>
-              if (accum.getLabel == AnnotationMarker) {
-                val ann = annotations.remove(0)
-                ann.copy(
-                  bboxes = ann.bboxes :+ Rect(
-                    attrValue(elem, "x").toDouble,
-                    attrValue(elem, "y").toDouble,
-                    attrValue(elem, "width").toDouble,
-                    attrValue(elem, "height").toDouble
+              println("maybe annotation?")
+              if (collectingAnnotations) {
+                println("... yes!")
+                val ann = annotations.remove(annotations.length-1)
+                annotations.append(ann.copy(
+                    bboxes = ann.bboxes :+ Rect(
+                      attrValue(elem, "x").toDouble,
+                      attrValue(elem, "y").toDouble,
+                      attrValue(elem, "width").toDouble,
+                      attrValue(elem, "height").toDouble
+                    )
                   )
                 )
               }
@@ -191,6 +201,9 @@ package object dom {
 
         case elem: EndElement =>
           elem.getName.getLocalPart.toLowerCase match {
+            case "defs" if collectingAnnotations  =>
+              collectingAnnotations = false
+
             case "tspan"   =>
               val init = accum.getLabel.asInstanceOf[TSpanInit]
               val rootDocument = accum.root.getLabel.asInstanceOf[Document]
@@ -241,6 +254,7 @@ package object dom {
 
 
     }
+    println(s"annotations: ${annotations.toList}")
 
     WatrDom(accum.toTree, annotations.toList)
   }

@@ -39,7 +39,7 @@ lazy val logbackVersion = "1.1.5"
 
 libraryDependencies in ThisBuild ++= Seq(
 
-  "com.iheart" %% "ficus" % "1.2.2",
+  "com.iheart" %% "ficus" % "1.2.3",
   "org.apache.commons" % "commons-lang3" % "3.4",
   "com.github.pathikrit" %% "better-files" % "2.15.0",
   "org.scalaz" %% "scalaz-core" % "7.1.7",
@@ -51,7 +51,7 @@ libraryDependencies in ThisBuild ++= Seq(
   // "com.lihaoyi" %% "sourcecode" % "0.1.0",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
   "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test",
-  "org.slf4j" % "slf4j-api" % "1.7.16",
+  "org.slf4j" % "slf4j-api" % "1.7.18",
   "ch.qos.logback" % "logback-core" % logbackVersion,
   "ch.qos.logback" % "logback-classic" % logbackVersion
 )
@@ -72,7 +72,8 @@ lazy val watrmarks = (project in file("watr-marks"))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
-    // "com.itextpdf" % "itextpdf" % "5.5.8",
+    "com.itextpdf" % "itextpdf" % "5.5.8",
+    "com.github.scopt" %% "scopt" % "3.4.0",
     "edu.umass.cs.iesl" %% "spatialindexing" % "latest.release",
     "com.typesafe.slick" %% "slick" % "3.1.1",
     "org.postgresql"   % "postgresql"    % "9.4-1203-jdbc42",

@@ -58,10 +58,6 @@ trait PersonalNameLabels extends TokenLabels {
   )
 }
 
-// This label is handled specially, as characters are not explicitly labeled
-object CharLabel extends BioLabel("char", "char", 'c', None)
-
-// object PageLabel extends BioLabel("page", "page", 'p', None)
 
 object StandardLabels
     extends POSLabels
@@ -69,11 +65,17 @@ object StandardLabels
     with PersonalNameLabels {
 
 
+  object CharLabel extends BioLabel("", "char", 'c', None)
+  object PageLabel extends BioLabel("", "page", 'p', None)
 
-  val allStandardLabels = allPersonalNameLabels ++ allNERLabels ++ allPOSLabels ++ allTokenLabels
+
+
+  val allStandardLabels = allPersonalNameLabels ++ allNERLabels ++ allPOSLabels ++ allTokenLabels ++ Seq(
+    CharLabel, PageLabel
+  )
 
   implicit val bioDict = BioDictionary(
-    allStandardLabels.map(l => (l.namespace+l.name -> l) ).toMap,
+    allStandardLabels.map(l => (l.fqn -> l) ).toMap,
     allStandardLabels.map(l => (l.c -> l) ).toMap
   )
 

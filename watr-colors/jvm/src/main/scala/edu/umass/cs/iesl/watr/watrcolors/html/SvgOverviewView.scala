@@ -5,31 +5,6 @@ package html
 import scalatags.stylesheet.{CascadingStyleSheet, StyleSheet, StyleSheetTags, Sheet, Selector}
 import scalatags.Text.all._
 
-object util {
-
-  // import org.scalajs.dom
-  // import scalajs.js
-  // import scalajs.js.annotation.JSExport
-  // import rx._
-  // import scalatags.JsDom.all._
-  // import dom.html
-
-  // // implicit def rxFrag[T <% Frag](r: Rx[T])(implicit ev: (T) => Fra): Frag = {
-
-  // implicit def rxFrag[T](r: Rx[T])(implicit ev: (T) => Frag): Frag = {
-  //   def rSafe: dom.Node = span(r()).render
-  //   var last = rSafe
-  //   r.triggerLater {
-  //     val newLast = rSafe
-  //     js.Dynamic.global.last = last
-  //     last.parentNode.replaceChild(newLast, last)
-  //     last = newLast
-  //   }
-
-  //   last
-  // }
-}
-
 
 
 class SvgOverviewView(
@@ -97,7 +72,7 @@ class SvgOverviewView(
 
         <.div(col(6))(
           // overall dimension, page dimensions:
-
+          <.span(^.id:="rxinfo")
         )
       )
     )

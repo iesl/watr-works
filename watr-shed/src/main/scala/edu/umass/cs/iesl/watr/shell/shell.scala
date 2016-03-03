@@ -20,32 +20,75 @@ import scala.sys.process._
 import better.files._
 
 
+
 object Works extends App {
 
-  def argsToMap(args: Array[String]): Map[String, List[String]] = {
-    import scala.collection.mutable.ListMap
-    val argmap = ListMap[String, List[String]]()
-    args.foldLeft(argmap){ (m, k: String) =>
-        val ss: Seq[Char] = k
-        ss match {
-          case Seq('-', '-', opt @ _*) => m.put(opt.toString, List[String]())
-          case Seq('-', opt @ _*) => m.put(opt.toString, List[String]())
-          case opt @ _ => m.put(m.head._1, m.head._2 ++ List[String](opt.toString))
-        }
-        m
-    }
-    Map[String, List[String]](argmap.toList.reverse: _*)
+
+  case class AppConfig(
+    // foo: Int = -1,
+    // out: File = new File("."),
+    force: Boolean = false
+  )
+
+  val parser = new scopt.OptionParser[AppConfig]("scopt") {
+    head("watr-works", "wip")
+
+    note("some notes.\n")
+
+    help("help") text("prints this usage text")
+
+    opt[Unit]('f', "force") action { (v, opts) =>
+      opts.copy(force = true) } text("force overwrite of existing files")
+
+    // opt[File]('o', "out") required() valueName("<file>") action { (x, c) =>
+    //   c.copy(out = x) } text("out is a required file property")
+    // opt[(String, Int)]("max") action { case ((k, v), c) =>
+    //   c.copy(libName = k, maxCount = v) } validate { x =>
+    //   if (x._2 > 0) success else failure("Value <max> must be >0")
+    // } keyValueName("<libname>", "<max>") text("maximum count for <libname>")
+    // opt[Seq[File]]('j', "jars") valueName("<jar1>,<jar2>...") action { (x,c) =>
+    //   c.copy(jars = x) } text("jars to include")
+    // opt[Map[String,String]]("kwargs") valueName("k1=v1,k2=v2...") action { (x, c) =>
+    //   c.copy(kwargs = x) } text("other arguments")
+    // opt[Unit]("verbose") action { (_, c) =>
+    //   c.copy(verbose = true) } text("verbose is a flag")
+    // opt[Unit]("debug") hidden() action { (_, c) =>
+    //   c.copy(debug = true) } text("this option is hidden in the usage text")
+    // note("some notes.\n")
+    // help("help") text("prints this usage text")
+    // arg[File]("<file>...") unbounded() optional() action { (x, c) =>
+    //   c.copy(files = c.files :+ x) } text("optional unbounded args")
+    // cmd("update") action { (_, c) =>
+    //   c.copy(mode = "update") } text("update is a command.") children(
+    //   opt[Unit]("not-keepalive") abbr("nk") action { (_, c) =>
+    //     c.copy(keepalive = false) } text("disable keepalive"),
+    //     opt[Boolean]("xyz") action { (x, c) =>
+    //       c.copy(xyz = x) } text("xyz is a boolean property"),
+    //     checkConfig { c =>
+    //       if (c.keepalive && c.xyz) failure("xyz cannot keep alive") else success }
+    // )
+
   }
 
-  val argMap = argsToMap(args)
+  // parser.parse returns Option[C]
+  val config = parser.parse(args, AppConfig()).getOrElse{
+    sys.error(parser.usage)
+  }
 
-  val conf = configuration.getPdfCorpusConfig("conf/application.conf")
 
-  // onCommand("init-corpus") {}
+  parser.parse(args, AppConfig()) match {
+    case Some(config) =>
+
+      // do stuff
+
+    case None =>
+      // arguments are bad, error message will have been displayed
+  }
+
+  val conf = configuration.getPdfCorpusConfig(".")
 
 
   val corpusRoot = File(conf.rootDirectory)
-  // ensure proper corpus directory structure
 
   // run iesl pdf -> svg over corpus
   if (corpusRoot.isDirectory) {
@@ -59,7 +102,7 @@ object Works extends App {
       }
 
       val output = s"${artifactPath}/${f.name}.svg".toFile
-      if (!output.isReadable) {
+      if (!output.isReadable || config.force) {
         ops.pdfToSVG(f, output)
       } else {
         println(s"skipping $f")

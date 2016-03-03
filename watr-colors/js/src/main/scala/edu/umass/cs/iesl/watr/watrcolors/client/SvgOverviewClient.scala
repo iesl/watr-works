@@ -2,24 +2,45 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
+
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.{js => sjs}
 
-import autowire._
-import boopickle.DefaultBasic._
-
-import Picklers._
-
-import org.scalajs.jquery.jQuery
-import scala.concurrent.Promise
-
 import org.scalajs.dom
 import dom.html.{Canvas => JsCanvas}
+import org.scalajs.jquery.jQuery
+
+import autowire._
+import boopickle.DefaultBasic._
+import Picklers._
 
 import native.fabric
 import native.mousetrap._
+
+import rx._
+
+import scala.async.Async.{async, await}
+
+import scalatags.JsDom.all._
+object util {
+
+
+  implicit def rxFrag[T](r: Rx[T])(implicit ev: (T) => Frag, ctx: Ctx.Data, d: Ctx.Owner): Frag = {
+    def rSafe: dom.Node = span(r()).render
+    var last = rSafe
+    r.triggerLater {
+      val newLast = rSafe
+      sjs.Dynamic.global.last = last
+      last.parentNode.replaceChild(newLast, last)
+      last = newLast
+    }
+
+    last
+  }
+}
+
 
 @JSExport
 class SvgOverview(
@@ -55,6 +76,7 @@ class SvgOverview(
       height      = bbox.height,
       stroke      = color
     )
+
     rect.hasControls = false
     rect.hasBorders = false
     rect.selectable = false
@@ -89,72 +111,74 @@ class SvgOverview(
     true
   }
 
-  import rx._
-
-  import scala.async.Async.{async, await}
+  val clientX = Var(0d)
+  val clientY = Var(0d)
+  val screenX = Var(0d)
+  val screenY = Var(0d)
+  val pageX = Var(0d)
+  val pageY = Var(0d)
 
   def setupSVGPaneHandlers(): Boolean = {
 
-    val canvas: JsCanvas = upperCanvas
-    // val renderer = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+    // // def rxpanel(x: Double, y: Double)(implicit ctx: Ctx.Owner) = Rx {
+    // //   div(
+    // //     span("mouse x: ", x),
+    // //     span("mouse y: ", y)
+    // //   )
+    // // }
+    // import util._
 
-    // def rect = canvas.getBoundingClientRect()
+    // val xx = Rx.unsafe {
 
-    type ME = dom.MouseEvent
+    //   println("rx here")
+    //   // val asdf = rxpanel(mouseX(), mouseY())(implicitly[Ctx.Owner])()
+    //   Rx {
+    //     val panel = div(
+    //       span("mouse x: ", clientX()),
+    //       span("mouse y: ", clientY()),
+    //       span("screen x: ", screenX()),
+    //       span("screen y: ", screenY()),
+    //       span("page x: ", pageX()),
+    //       span("page y: ", pageY())
+    //     )
+    //     jQuery("#rxinfo").replaceWith(panel.render)
+    //     panel
+    //   }
 
-    val mousemove = new Channel[ME](canvas.onmousemove = _)
-    val mouseup = new Channel[ME](canvas.onmouseup = _)
-    val mousedown = new Channel[ME](canvas.onmousedown = _)
+    //   println("rx there")
+    //   panel
+    // }
 
-    println("setting up async")
+    // println("rx outside")
+
+    // screenX() = 99d
+
+    infoHoverHandlers()
+    true
+  }
+
+
+  def infoHoverHandlers(): Unit = {
     val _ = async {
+      val chan = CanvasMouseChannels(upperCanvas)
 
       while(true){
-        val start = await(mousedown())
-        println("async: mousedown")
-        // renderer.beginPath()
-        // renderer.moveTo(
-        //   start.clientX - rect.left,
-        //   start.clientY - rect.top
-        // )
-
-        var res = await(mousemove | mouseup)
-        println("async: mousemove | up")
+        println("init mouse move")
+        var res = await(chan.mousemove())
         while(res.`type` == "mousemove"){
-          // renderer.lineTo(
-          //   res.clientX - rect.left,
-          //   res.clientY - rect.top
-          // )
-          // renderer.stroke()
-          res = await(mousemove | mouseup)
-        }
+          println("mouse move")
+          clientX() = res.clientX
+          clientY() = res.clientY
+          screenX() = res.screenX
+          pageX() = res.pageX
 
-        // renderer.fill()
-        await(mouseup())
-        println("async: mouseup")
-        // renderer.clearRect(0, 0, 1000, 1000)
+          res = await(chan.mousemove())
+        }
       }
     }
-
-    true
   }
 
   def createView(): Unit = {
     server.createView(svgFilename).call().foreach(applyHtmlUpdates(_))
   }
 }
-
-
-
-// fabricCanvas.on("mouse:over", {(e:Event) =>
-//   e.target.setStroke("red")
-//   fabricCanvas.renderAll()
-//   true
-// })
-
-
-// fabricCanvas.on("mouse:out", ({(e:Event) =>
-//   e.target.setStroke("blue")
-//   fabricCanvas.renderAll()
-//   true
-// }))
