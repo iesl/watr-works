@@ -5,10 +5,14 @@ package html
 import scalatags.Text.all._
 
 
+
 object CorpusExplorerView {
+
 
   def init()  = {
     <.div(
+      <.ul("corpus-list".id
+      ),
       <.div()("Explore")(
         <.span(^.id:="currfile")
       )

@@ -26,7 +26,6 @@ class CorpusExplorerServer(
 
   def getFileInFocus() : String = {
     val corpusPath = initpath.relativize(state.curr.path)
-    println(s"getFileInFocus: ${corpusPath}")
     corpusPath.toString()
   }
 

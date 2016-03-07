@@ -27,7 +27,7 @@ trait ScalatagsDefs {
     lazy val x = "x".attr
     lazy val y = "y".attr
     lazy val width = "width".attr
-    lazy val height = "width".attr
+    lazy val height = "height".attr
     lazy val labelName = "label-name".attr
     lazy val labelValue = "label-value".attr
 
@@ -37,6 +37,7 @@ trait ScalatagsDefs {
 
   import texttags._
 
+
   implicit class RichString(val s: String)  {
     def clazz = ^.`class` := s
     def id = ^.`id` := s
@@ -45,14 +46,13 @@ trait ScalatagsDefs {
     def attrTarget = "target".attr:=s
   }
 
-  implicit class RichDouble(val v: Double)  {
-    def attrX = ^.x:=v
-    def attrY = ^.y:=v
-    def attrWidth = ^.width:=v
-    def attrHeight = ^.height:=v
+  def fmt = (d: Double) => f"${d}%1.2f"
 
+  implicit class RichDouble(val v: Double)  {
+    def attrX      = ^.x      := fmt(v)
+    def attrY      = ^.y      := fmt(v)
+    def attrWidth  = ^.width  := fmt(v)
+    def attrHeight = ^.height := fmt(v)
   }
 
 }
-
-

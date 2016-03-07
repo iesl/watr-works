@@ -48,7 +48,8 @@ class SpatialAlignmentTest extends FlatSpec {
       val y = bounds.getY
       val w = bounds.getWidth
       val h = bounds.getHeight
-       s"""($x, $y, w:$w, h:$h)"""
+      def fmt = (d: Double) => f"${d}%1.2f"
+      s"""(x:${fmt(x)}, y:${fmt(y)}, w:${fmt(w)}, h:${fmt(h)})"""
     }
 
     val pages = structuredDoc.asPages().toList

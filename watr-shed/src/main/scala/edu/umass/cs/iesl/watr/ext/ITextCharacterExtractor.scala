@@ -1,18 +1,10 @@
 package edu.umass.cs.iesl.watr
 package ext
 
-// import com.google.common.collect.Lists
-import com.itextpdf.text.Rectangle
-import com.itextpdf.text.pdf.{ PdfIndirectObject, PdfIndirectReference, PdfObject, PdfStream }
-import com.itextpdf.text.pdf.parser.ImageRenderInfo
-import com.itextpdf.text.pdf.parser.TextRenderInfo
 import java.io.InputStream
+import com.itextpdf.text.Rectangle
 import com.itextpdf.text.exceptions.InvalidPdfException
-import com.itextpdf.text.pdf.PRIndirectReference
-import com.itextpdf.text.pdf.PdfDictionary
-import com.itextpdf.text.pdf.PdfName
-import com.itextpdf.text.pdf.PdfReader
-import com.itextpdf.text.pdf.DocumentFont
+import com.itextpdf.text.pdf._
 import com.itextpdf.text.pdf.parser._
 import java.io.IOException
 import java.io.InputStream
@@ -25,6 +17,9 @@ import scala.collection.JavaConversions._
 import com.itextpdf.text.pdf.parser.{Vector => PVector}
 
 import _root_.pl.edu.icm.cermine.structure.ITextCharacterExtractor
+import util._
+import watrmarks.SpatialPageInfo
+import scala.collection.mutable
 
 
 import com.itextpdf.text.pdf.parser.RenderListener
@@ -42,39 +37,9 @@ object util {
 
 }
 
-import util._
-import spatialindex.{SpatialIndex, regions}
-import scala.collection.mutable
-
-case class SpatialPageInfo(
-  sindex: SpatialIndex = SpatialIndex.create(),
-  charRegions: mutable.Map[Long, Char] = mutable.Map(),
-  pageBounds: watrmarks.TextBounds
-) {
-  var _nextId = 0L
-  def nextId = {
-    _nextId += 1
-    _nextId
-  }
-
-  val labels = mutable.Map[Long, String]()
-
-  def insert(ch: Char, x: Double, y: Double, w: Double, h: Double): Unit = {
-    val nid = nextId
-    sindex.insert(nid, regions.bbox(x=x , y=y, w=w, h=h))
-    charRegions(nid) = ch
-  }
-
-  def labelBbox(bbox: spatialindex.Bounds, label: String): Unit = {
-    val nid = nextId
-    val data = sindex.insert(nid, bbox)
-    val _ = labels.put(nid, label)
-  }
-
-}
 
 class MyBxDocumentCreator(
-  spatialPageInfo: mutable.ArrayBuffer[SpatialPageInfo],
+  spatialPageInfo: mutable.ArrayStack[SpatialPageInfo],
   fontDict: mutable.Map[String, DocumentFont],
   reader: PdfReader
 ) extends RenderListener {
@@ -97,8 +62,10 @@ class MyBxDocumentCreator(
     actPage = new BxPage()
     document.addPage(actPage)
 
+
     pageRectangle = _pageRectangle
-    spatialPageInfo.append(SpatialPageInfo(
+
+    spatialPageInfo.push(SpatialPageInfo(
       pageBounds = watrmarks.TextBounds(
         left = pageRectangle.getLeft.toDouble,
         bottom = pageRectangle.getBottom.toDouble,
@@ -298,15 +265,15 @@ class MyBxDocumentCreator(
     // println(bbinf)
 
 
-    if (chars.length > 20) {
-      output << chars.mkString
-      chars.clear()
-    }
+    // if (chars.length > 20) {
+    //   output << chars.mkString
+    //   chars.clear()
+    // }
 
-    chars.append(tri.getText)
+    // chars.append(tri.getText)
 
-    val _ = output << pdfstrInf
-    output << fontinf
+    // val _ = output << pdfstrInf
+    // output << fontinf
 
     // | SingleSpaceWidth  ${tri.getSingleSpaceWidth }                 => Float
     // | StrokeColor       ${tri.getStrokeColor      }              => BaseColor
@@ -378,9 +345,7 @@ class MyBxDocumentCreator(
 
             addFontInfo(tri.getFont)
 
-
             spatialPageInfo.last.insert(ch, x, y, charWidth, charHeight)
-            // println(s"adding chunk for ${text} ${formatBounds(bounds)}")
           }
 
         }
@@ -516,8 +481,9 @@ class XITextCharacterExtractor() extends CharacterExtractor {
   val frontPagesLimit = DEFAULT_FRONT_PAGES_LIMIT
   val backPagesLimit = DEFAULT_BACK_PAGES_LIMIT
 
-  val spatialInfo = mutable.ArrayBuffer[SpatialPageInfo]()
+  val spatialInfo = mutable.ArrayStack[SpatialPageInfo]()
   val fontDict = mutable.HashMap[String, DocumentFont]()
+
 
   override def extractCharacters(stream: InputStream): BxDocument = {
     try {
@@ -537,25 +503,12 @@ class XITextCharacterExtractor() extends CharacterExtractor {
         } else {
 
           val pageSize = reader.getPageSize(pageNumber)
-          println(s"""|page ${pageNumber}
-                      |  left: ${pageSize.getLeft},
-                      |  right:${pageSize.getRight}
-                      |  top:${pageSize.getTop},
-                      |  bottom:${pageSize.getBottom}
-                      |  width:${pageSize.getWidth},
-                      |  height:${pageSize.getHeight}
-                      |  border:${pageSize.getBorder}
-                      |""".stripMargin)
+
           documentCreator.processNewBxPage(reader.getPageSize(pageNumber))
 
           val pageResources = reader.getPageResources(pageNumber)
 
-
-
           val resources = reader.getPageN(pageNumber).getAsDict(PdfName.RESOURCES)
-
-          // reader.getPdfObject(50)
-
 
           processAlternativeFontNames(resources)
           processAlternativeColorSpace(resources)

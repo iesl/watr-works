@@ -3,7 +3,7 @@ package ext
 
 
 import com.itextpdf.text.pdf.parser.TextRenderInfo
-import edu.umass.cs.iesl.watr.watrmarks.BioLabel
+import edu.umass.cs.iesl.watr.watrmarks.{ BioLabel, TextBounds }
 import java.io.InputStream
 
 import pl.edu.icm.cermine.ComponentConfiguration
@@ -44,42 +44,42 @@ object ITextPdfToSvg extends App {
     sys.error(parser.usage)
   }
 
-
   val f = File(config.file.getPath)
-  val artifactPath = s"${f.path}.d".toFile
 
   if (f.isDirectory) {
     f.glob("**/*.pdf").foreach { pdf =>
-      val output = s"${artifactPath}/cermine-zone.svg".toFile
+      val artifactPath = s"${pdf.path}.d".toFile
+      val output = s"${artifactPath}/cermine-zones.svg".toFile
       val fileSha1 = DigestUtils.shaHex(pdf.byteArray)
 
       pdf.inputStream.map { is =>
-        val res = itextUtil.itextPdfToSvg(is)
-        output < res
+        if (!output.isReadable || config.force) {
+          println(s"processing ${pdf}, force=${config.force}")
+          output < itextUtil.itextPdfToSvg(fileSha1, is)
+        } else {
+          println(s"skipping $pdf")
+        }
       }
     }
   } else if (f.isReadable) {
 
+    val artifactPath = s"${f.path}.d".toFile
     val fileSha1 = DigestUtils.shaHex(f.byteArray)
 
     println("file sha1: "+fileSha1)
 
     f.inputStream.map { is =>
-      val res = itextUtil.itextPdfToSvg(is)
       val output = s"${artifactPath}/cermine-zones.svg".toFile
       if (!output.isReadable || config.force) {
-        output < res
+        println(s"processing ${f}, force=${config.force}")
+        output < itextUtil.itextPdfToSvg(fileSha1, is)
       } else {
         println(s"skipping $f")
       }
-
     }
-
   } else {
     sys.error("please specify a file or directory")
   }
-
-
 }
 
 object itextUtil {
@@ -210,7 +210,7 @@ object itextUtil {
     maybeFont._1
   }
 
-  def itextPdfToSvg(pdfis: InputStream): String = {
+  def itextPdfToSvg(fileSha1: String, pdfis: InputStream): String = {
 
     val conf = new ComponentConfiguration()
     val charExtractor = new XITextCharacterExtractor()
@@ -266,9 +266,9 @@ object itextUtil {
     //   </g>
     // </defs>
 
+    val spatialInfo = charExtractor.spatialInfo.toList
 
     object annotationTags extends ScalatagsDefs {
-      // import texttags._
 
       def zoneExtents(zone: BxZone) = Seq(
         zone.getBounds.getX.attrX,
@@ -276,39 +276,53 @@ object itextUtil {
         zone.getBounds.getWidth.attrWidth,
         zone.getBounds.getHeight.attrHeight)
 
+      def zoneExtents(tb: TextBounds) = Seq(
+        tb.left.attrX,
+        tb.bottom.attrY,
+        tb.width.attrWidth,
+        tb.height.attrHeight)
+
     }
 
 
     import annotationTags.texttags._
     import annotationTags._
 
-    // val annSt = mutable.ArrayStack[annotationTags.TextTag]()
-
-    // annSt.push(<.defs("annotation-boxes".clazz))
 
     var annotationSet = <.g("annotation-set".clazz,
-      "target-id".attrTarget
+      s"file:$fileSha1".attrTarget
     )
 
     val pages = d4.asPages().toList
 
-    pages.zipWithIndex.foreach {
-      case (page, pagenum) =>
+    pages.zip(spatialInfo).zipWithIndex.foreach {
+      case ((page, spatial), pagenum) =>
 
-        // annSt.push(<.g("annotation-set".clazz))
+        annotationSet = annotationSet(
+          <.rect(
+            "bounding-box".clazz,
+            s"page-${pagenum}".labelName,
+            s"page-${pagenum}".id,
+            zoneExtents(spatial.pageBounds)
+          ))
+
 
         page.iterator().foreach { zone =>
           val zlabel = modifyZoneLabelName(zone.getLabel.name)
 
           val z = <.g("annotation".clazz, <.rect(
-            zlabel.labelName, zoneExtents(zone)
+            zlabel.labelName,
+            s"page-${pagenum}".attrTarget,
+            zoneExtents(zone)
           ))
           annotationSet = annotationSet(z)
 
           zone.iterator().toList.foreach { line =>
 
             val z = <.g("annotation".clazz, <.rect(
-              "line".labelName, zoneExtents(zone)
+              "line".labelName,
+              s"page-${pagenum}".attrTarget,
+              zoneExtents(zone)
             ))
             annotationSet = annotationSet(z)
 
@@ -320,10 +334,7 @@ object itextUtil {
     val widths = pageSpatialInfo.map(_.pageBounds.width)
     val hoffsets = heights.reverse.tails.map(_.sum).toList.reverse
 
-    val s = annotationSet.toString()
-
-    s
-
+    annotationSet.toString()
   }
 
 }
