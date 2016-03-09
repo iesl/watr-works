@@ -58,7 +58,6 @@ class CorpusEntry(
 ) {
   val artifactsRoot = File(corpus.config.rootDirectory) / s"${entryDescriptor}.d/"
 
-
   // e.g., cermine-zones.xml
   def getArtifact(artifactDescriptor: String): CorpusArtifact = {
     new CorpusArtifact(artifactDescriptor, this)

@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-
 import org.jdom2.Element
 import org.jdom2.Document
 import org.jdom2.filter.ElementFilter
@@ -22,7 +21,8 @@ case class TextBounds(
   width: Double,
   height: Double
 )
-object DOMUtils {
+
+object JDOMUtils {
 
   /** Function to get all non-empty tspan elements **/
   def getTSpanElements(dom: Document): Iterable[Element] = {

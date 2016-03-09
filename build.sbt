@@ -9,7 +9,10 @@ organization in ThisBuild := "edu.umass.cs.iesl"
 
 version in ThisBuild := "0.1-SNAPSHOT"
 
-scalaVersion in ThisBuild := "2.11.7"
+scalaVersion in ThisBuild := "2.11.8"
+
+// required for javacpp
+classpathTypes in ThisBuild += "maven-plugin"
 
 shellPrompt in ThisBuild := { s: State =>
   val c = scala.Console
@@ -29,16 +32,15 @@ scalacOptions in ThisBuild ++= Seq(
   "-Xlint",
   "-language:postfixOps",
   "-language:implicitConversions",
-  "-Yno-adapted-args",
-  "-Ywarn-dead-code",
-  "-Ywarn-value-discard"
+  "-Yno-adapted-args"
+  // "-Ywarn-dead-code",
+  // "-Ywarn-value-discard"
 )
 
 lazy val doobieVersion = "0.2.3"
-lazy val logbackVersion = "1.1.5"
+lazy val logbackVersion = "1.1.6"
 
 libraryDependencies in ThisBuild ++= Seq(
-
   "com.iheart" %% "ficus" % "1.2.3",
   "org.apache.commons" % "commons-lang3" % "3.4",
   "com.github.pathikrit" %% "better-files" % "2.15.0",
@@ -47,8 +49,12 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.4",
-  "com.typesafe.play" %% "play-json" % "2.4.6",
+  "com.typesafe.play" %% "play-json" % "2.5.0",
+  "org.bytedeco" % "javacpp" % "1.1", // required by spatialindexing
+  "edu.umass.cs.iesl" %% "spatialindexing" % "latest.release",
   // "com.lihaoyi" %% "sourcecode" % "0.1.0",
+  "com.github.scopt" %% "scopt" % "3.4.0",
+  "com.itextpdf" % "itextpdf" % "5.5.8",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
   "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test",
   "org.slf4j" % "slf4j-api" % "1.7.18",
@@ -57,7 +63,6 @@ libraryDependencies in ThisBuild ++= Seq(
 )
 
 resolvers in ThisBuild ++= List(
-  // "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
   "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
   "ICM repository" at "http://maven.icm.edu.pl/artifactory/repo",
   Resolver.jcenterRepo
@@ -69,12 +74,11 @@ lazy val root = (project in file("."))
 
 
 lazy val watrmarks = (project in file("watr-marks"))
+  .settings(libraryDependencies ++= Seq(
+  ))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
-    "com.itextpdf" % "itextpdf" % "5.5.8",
-    "com.github.scopt" %% "scopt" % "3.4.0",
-    "edu.umass.cs.iesl" %% "spatialindexing" % "latest.release",
     "com.typesafe.slick" %% "slick" % "3.1.1",
     "org.postgresql"   % "postgresql"    % "9.4-1203-jdbc42",
     "pl.edu.icm.cermine" % "cermine-impl" % "1.8"
@@ -123,4 +127,3 @@ lazy val watrcolorsJVM = watrcolors.jvm.settings(
   }))
   .dependsOn(watrmarks, watrshed)
   .aggregate(watrcolorsJS)
-
