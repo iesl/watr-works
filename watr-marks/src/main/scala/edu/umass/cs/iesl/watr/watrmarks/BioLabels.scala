@@ -38,13 +38,10 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
     }
   }
 
-
-
   def selectDynamic(s: String) = {
-  // def selectDynamic(s: String)(implicit bioDict: BioLabelDictionary) = {
-    // val sdf  = bioDict.get(s)
     this
   }
+
   override def toString = s"${namespace}:${name}"
 
   import TextBoxing._

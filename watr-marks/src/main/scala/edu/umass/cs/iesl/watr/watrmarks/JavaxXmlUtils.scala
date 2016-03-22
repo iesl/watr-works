@@ -7,13 +7,21 @@ import javax.xml.stream.events._
 object JavaxXmlUtils {
   implicit class RicherString(val s: String) extends AnyVal {
     def qname: QName = new QName(s)
+
+
   }
+
+  implicit class RicherAttribute(val attr: Attribute) extends AnyVal {
+    def toDouble = attr.getValue.toDouble
+  }
+
 
   implicit class RicherStartElement(val elem: StartElement) extends AnyVal {
 
-    def getAttrValue(s: String): Attribute = {
-      elem.getAttributeByName("class".qname)
-    }
+    // def getAttrValue(s: String): Attribute = {
+    //   elem.getAttributeByName("class".qname)
+    // }
+
     def getAttr(s: String): Attribute = {
       elem.getAttributeByName("class".qname)
     }

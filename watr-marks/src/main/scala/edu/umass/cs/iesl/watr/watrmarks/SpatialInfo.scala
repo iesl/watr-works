@@ -1,66 +1,107 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-import spatialindex.{SpatialIndex, regions}
+import spatialindex.{SpatialIndex}
 import scala.collection.mutable
 
-// case class SpatialPageInfo(
-//   sindex: SpatialIndex = SpatialIndex.create(),
-//   charRegions: mutable.Map[Long, Char] = mutable.Map(),
-//   pageBounds: watrmarks.TextBounds
-// ) {
-//   var _nextId = 0L
-//   def nextId = {
-//     _nextId += 1
-//     _nextId
-//   }
 
-//   val labels = mutable.Map[Long, String]()
+case class Annotation(
+  id: String,
+  target: String,
+  // labelName: BioLabel,
+  bboxes: Seq[BoundingBox]
+)
 
-//   // def insert(ch: Char, x: Double, y: Double, w: Double, h: Double): Unit = {
-//   //   val nid = nextId
-//   //   sindex.insert(nid, regions.bbox(x=x , y=y, w=w, h=h))
-//   //   charRegions(nid) = ch
-//   // }
+case class BoundingBox(
+  id: String,
+  target: String,
+  x: Double, y: Double, width: Double, height: Double
+) {
+  def union(b: BoundingBox): BoundingBox = {
 
-//   // def labelBbox(bbox: spatialindex.Bounds, label: String): Unit = {
-//   //   val nid = nextId
-//   //   val data = sindex.insert(nid, bbox)
-//   //   val _ = labels.put(nid, label)
-//   // }
+    val minx = math.min(x, b.x)
+    val miny = math.min(y, b.y)
 
-// }
+    val maxx = math.max(x+width, b.x+b.width)
+    val maxy = math.max(y+height, b.y+b.height)
 
-trait PageSpatialInfo {
-  def sindex: spatialindex.SpatialIndex = SpatialIndex.create()
+    BoundingBox(id, target, minx, maxx-minx, miny, maxy-miny)
+
+  }
+
+}
+
+trait UniqIds {
+  def startingId = 0l
 
   var _nextId = 0L
   def nextId = {
     _nextId += 1
     _nextId
   }
+}
 
-  def addBoundingBox(bbox: spatialindex.Bounds, label: String): Unit = {
+
+
+trait PageSpatialInfo extends UniqIds {
+  import PageSpatialInfo._
+
+  def sindex: spatialindex.SpatialIndex = SpatialIndex.create()
+
+  val annotationsById = mutable.HashMap[Long, watrmarks.Annotation]()
+
+  def extents: BoundingBox
+
+
+  def addAnnotation(annot: Annotation): Unit = {
     val nid = nextId
-    // sindex.insert(nid, regions.bbox(x=x , y=y, w=w, h=h))
-    sindex.insert(nid, bbox)
-
-    ???
+    annotationsById.put(nid, annot)
+    annot.bboxes.foreach{bbox =>
+      sindex.insert(nid, bbox.toBounds)
+    }
   }
 
-  def getBoundingBoxes(): Seq[spatialindex.Bounds] = {
-
-    ???
+  def getAnnotations: Seq[Annotation] = {
+    annotationsById.map(_._2).toSeq
   }
-
 }
+
+
+
 object PageSpatialInfo {
-  def apply(): PageSpatialInfo = new PageSpatialInfo {
+  implicit class RicherBoundingBox(val bb: BoundingBox) extends AnyVal {
+    def toBounds: spatialindex.Bounds = {
+      spatialindex.regions.bbox(bb.x, bb.y, bb.width, bb.height)
+    }
+  }
 
 
+  def apply(ext: spatialindex.Bounds): PageSpatialInfo = new PageSpatialInfo {
+    override val extents = ext
+  }
+
+
+  def vconcat(psis: PageSpatialInfo*): PageSpatialInfo = {
+    psis.reduce { (p1, p2) =>
+
+      val p12extents = p1.extents.union(p2.extents)
+
+      val psi = PageSpatialInfo(
+        p12extents.toBounds
+      )
+
+      p1.getAnnotations.foreach { a =>
+        psi.addAnnotation(a)
+      }
+
+      psi
+    }
+
+    val totalExtents = psis.map(_.extents).reduce { (bb1, bb2) =>
+      bb1
+    }
+
+
+    ???
   }
 }
-
-
-
-

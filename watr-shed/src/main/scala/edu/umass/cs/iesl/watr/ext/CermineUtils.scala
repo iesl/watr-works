@@ -1,40 +1,26 @@
 package edu.umass.cs.iesl.watr
 package ext
 
-import pl.edu.icm.cermine.ComponentConfiguration
-import pl.edu.icm.cermine.ExtractionUtils
-// import pl.edu.icm.cermine.content.transformers.BxContentStructToDocContentStructConverter
-// import pl.edu.icm.cermine.exception.TransformationException
-// import pl.edu.icm.cermine.content.model._
-// import pl.edu.icm.cermine.structure.model._
-// import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
-// import scala.collection.JavaConversions._
-
 import scala.collection.mutable
-// import javax.xml.namespace._
 import javax.xml.stream.events._
 
 import watrmarks._
-// import watrmarks.dom._
 
 
 object CermineBoundingBoxes {
   import JavaxXmlUtils._
   import java.io.Reader
 
+
   def loadSpatialIndices(reader: Reader): Seq[PageSpatialInfo] = {
     import javax.xml.stream.XMLInputFactory
-    // import JavaxXmlUtils._
-    // import scala.collection.JavaConversions._
-    // val spi = SpatialPageInfo()
-
 
     val factory = XMLInputFactory.newInstance();
     val events = factory.createXMLEventReader(reader);
 
-    var currentTargetID = ""
+    val pageBoundsById = mutable.ArrayBuffer[(String, watrmarks.BoundingBox)]()
+    val annotationsByTarget = mutable.HashMap[String, mutable.Seq[watrmarks.Annotation]]().withDefaultValue(mutable.Seq())
 
-    val infos = mutable.HashMap[String, PageSpatialInfo]()
 
 
     while (events.hasNext()) {
@@ -46,14 +32,24 @@ object CermineBoundingBoxes {
 
           elem.getName.getLocalPart.toLowerCase match {
             case "g" if classAttr == "annotation" =>
+              val id = elem.getIdAttr
+              val target = elem.getTargetAttr
+
+              annotationsByTarget(target) :+ Annotation(id, target, Seq())
+
 
             case "g" if classAttr == "annotation-set" =>
-              currentTargetID = elem.getTargetAttr
 
             case "rect" if classAttr == "bounding-box" =>
               val id = elem.getIdAttr
-              // map file:sha/page# -> spatialInfo
-              // infos.getOrElseUpdate("", PageSpatialInfo())
+
+              pageBoundsById :+ BoundingBox(id,
+                elem.getTargetAttr,
+                elem.getAttr("x").toDouble,
+                elem.getAttr("y").toDouble,
+                elem.getAttr("width").toDouble,
+                elem.getAttr("height").toDouble
+              )
 
             case _ =>
           }
@@ -62,7 +58,28 @@ object CermineBoundingBoxes {
           //
       }
     }
-    ???
+
+    pageBoundsById.map { case (idstr, bb) =>
+      // allocate a new spatial index
+      val spInfo = PageSpatialInfo(
+        spatialindex.regions.bbox(bb.x, bb.y, bb.width, bb.height)
+      )
+      // spInfos :+ (idstr, spInfo)
+      val annotations = annotationsByTarget(idstr)
+
+      annotations.foreach { a =>
+        a.bboxes.foreach { bbox =>
+          val spBBox = spatialindex.regions.bbox(
+            bbox.x, bbox.y,
+            bbox.width, bbox.height
+          )
+
+          spInfo.addBoundingBox(spBBox, s"${a.id}:${a.target}")
+        }
+      }
+      spInfo
+    }
+
   }
 
 }
@@ -188,5 +205,3 @@ object CermineBoundingBoxes {
 // 150     MET_TITLE_AUTHOR    (BxZoneLabelCategory.CAT_METADATA),
 // 153     MET_CATEGORY        (BxZoneLabelCategory.CAT_METADATA),
 // 156     MET_TERMS           (BxZoneLabelCategory.CAT_METADATA);
-
-

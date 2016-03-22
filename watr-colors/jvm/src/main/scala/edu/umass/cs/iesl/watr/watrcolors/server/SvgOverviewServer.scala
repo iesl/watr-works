@@ -4,8 +4,6 @@ package server
 
 import better.files._
 
-import org.jdom2
-
 import scala.collection.mutable
 import ext.CermineBoundingBoxes
 import watrmarks._
@@ -13,7 +11,6 @@ import watrmarks._
 class SvgOverviewServer(
   config: PdfCorpusConfig
 ) extends SvgOverviewApi  {
-
 
   val svgRepoPath = config.rootDirectory
 
@@ -30,8 +27,7 @@ class SvgOverviewServer(
       .getArtifact("cermine-overlays.svg")
       .asReader
       .map({ r =>
-        val sindex = CermineBoundingBoxes.loadSpatialIndices(r)
-        sindex
+        CermineBoundingBoxes.loadSpatialIndices(r)
       })
 
     val overlays = maybeOverlays
@@ -82,7 +78,7 @@ class SvgOverviewServer(
       }
 
       tspans.foreach({ domCursor =>
-        // get all transforms leading to this tspan
+         // get all transforms leading to this tspan
 
         val transforms = time("get transforms"){domCursor.loc
           .path.reverse.toList

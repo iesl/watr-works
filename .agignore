@@ -4,5 +4,7 @@ docs
 ext
 target
 corpus-*
+*.pdf
+*.svg
 
 

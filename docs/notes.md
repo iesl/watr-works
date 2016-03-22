@@ -1,4 +1,14 @@
 
+*** Varieties of bounding boxes: (anything with some type of x,y,width,height)
+    - spatialindex.Bounds
+      - stores min/max pairs for x/y 
+      - can readily extend to higher dimensions
+    - watr.db.Rect
+      - slick marshalling case class
+    - watrmarks.dom.{Viewbox, Rect}
+      - SVG element reprs
+      
+
 - [ ] Create a bbox visualizer for pdf.js SVG pages, at the char level
   - [ ] output includes: bbox, text (char), font info/remappings, spelling/alternatives
 
