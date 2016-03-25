@@ -1,35 +1,41 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-import spatialindex.{SpatialIndex}
+import net.sf.jsi.Rectangle
 import scala.collection.mutable
 
+// import gnu.trove.procedure.TIntProcedure;
+
+import net.sf.jsi.SpatialIndex
+import net.sf.jsi.rtree.RTree
+import net.sf.jsi.Rectangle
 
 case class Annotation(
   id: String,
   target: String,
-  // labelName: BioLabel,
-  bboxes: Seq[BoundingBox]
+  bboxes: Seq[Rectangle]
 )
 
-case class BoundingBox(
-  id: String,
-  target: String,
-  x: Double, y: Double, width: Double, height: Double
-) {
-  def union(b: BoundingBox): BoundingBox = {
+// id: String,
+// target: String,
 
-    val minx = math.min(x, b.x)
-    val miny = math.min(y, b.y)
+// case class BoundingBox(
+//   x: Double, y: Double, width: Double, height: Double
+// ) {
 
-    val maxx = math.max(x+width, b.x+b.width)
-    val maxy = math.max(y+height, b.y+b.height)
+//   def union(b: BoundingBox): BoundingBox = {
+//     val minx = math.min(x, b.x)
+//     val miny = math.min(y, b.y)
 
-    BoundingBox(id, target, minx, maxx-minx, miny, maxy-miny)
+//     val maxx = math.max(x+width, b.x+b.width)
+//     val maxy = math.max(y+height, b.y+b.height)
 
-  }
+//     // BoundingBox(id, target, minx, maxx-minx, miny, maxy-miny)
+//     BoundingBox(minx, maxx-minx, miny, maxy-miny)
 
-}
+//   }
+
+// }
 
 trait UniqIds {
   def startingId = 0l
@@ -42,22 +48,21 @@ trait UniqIds {
 }
 
 
-
 trait PageSpatialInfo extends UniqIds {
-  import PageSpatialInfo._
+  // import PageSpatialInfo._
 
-  def sindex: spatialindex.SpatialIndex = SpatialIndex.create()
+  def sindex: SpatialIndex = new RTree()
 
   val annotationsById = mutable.HashMap[Long, watrmarks.Annotation]()
 
-  def extents: BoundingBox
+  def extents: Rectangle
 
 
   def addAnnotation(annot: Annotation): Unit = {
     val nid = nextId
     annotationsById.put(nid, annot)
     annot.bboxes.foreach{bbox =>
-      sindex.insert(nid, bbox.toBounds)
+      sindex.add(bbox, 0)// TODO add id#
     }
   }
 
@@ -69,14 +74,37 @@ trait PageSpatialInfo extends UniqIds {
 
 
 object PageSpatialInfo {
-  implicit class RicherBoundingBox(val bb: BoundingBox) extends AnyVal {
-    def toBounds: spatialindex.Bounds = {
-      spatialindex.regions.bbox(bb.x, bb.y, bb.width, bb.height)
-    }
+  def minMaxPairToPointWidth(minMax: (Double, Double)): (Double, Double) = {
+    (minMax._1, minMax._2-minMax._1)
   }
 
+  // public Rectangle(float x1, float y1, float x2, float y2) {
+  def rect(
+    x: Float, y: Float, width: Float, height: Float
+  ): Rectangle = new Rectangle(
+    x, y, x+width, y+height
+  )
+  // implicit class RicherBounds(val bb: Rectangle) extends AnyVal {
+  //   def mins = bb.minMaxPairs.map(_._1).toArray
+  //   def maxs = bb.minMaxPairs.map(_._2).toArray
 
-  def apply(ext: spatialindex.Bounds): PageSpatialInfo = new PageSpatialInfo {
+  //   def toBoundingBox: BoundingBox = {
+  //     val pws = bb.minMaxPairs.map(minMaxPairToPointWidth(_))
+  //     BoundingBox(
+  //       x=pws(0)._1, width=pws(0)._2,
+  //       y=pws(1)._1, height=pws(1)._2
+  //     )
+  //   }
+  // }
+
+  // implicit class RicherBoundingBox(val bb: BoundingBox) extends AnyVal {
+  //   def toBounds: spatialindex.Bounds = {
+  //     spatialindex.regions.bbox(bb.x, bb.y, bb.width, bb.height)
+  //   }
+  // }
+
+
+  def apply(ext: Rectangle): PageSpatialInfo = new PageSpatialInfo {
     override val extents = ext
   }
 
@@ -86,9 +114,7 @@ object PageSpatialInfo {
 
       val p12extents = p1.extents.union(p2.extents)
 
-      val psi = PageSpatialInfo(
-        p12extents.toBounds
-      )
+      val psi = PageSpatialInfo(p12extents)
 
       p1.getAnnotations.foreach { a =>
         psi.addAnnotation(a)

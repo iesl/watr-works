@@ -12,6 +12,7 @@ class SvgOverviewServer(
   config: PdfCorpusConfig
 ) extends SvgOverviewApi  {
 
+
   val svgRepoPath = config.rootDirectory
 
   def createView(svgFilename: String): List[HtmlUpdate] = {
@@ -35,14 +36,15 @@ class SvgOverviewServer(
 
     val combinedOverlay = concatVertical(overlays)
 
-    val asBBoxes = combinedOverlay.getBoundingBoxes.map({ bb =>
-      val (xmin, xmax) = bb.minMaxPairs(0)
-      val (ymin, ymax) = bb.minMaxPairs(1)
+    for {
+      ann <- combinedOverlay.getAnnotations.toList
+      bx <- ann.bboxes
+    } yield BBox(
+      x=bx.x, y=bx.y,
+      width=bx.width,
+      height=bx.height
+    )
 
-      BBox(xmin, ymin, xmax-xmin, ymax-ymin)
-    })
-
-    asBBoxes.toList
   }
 
 

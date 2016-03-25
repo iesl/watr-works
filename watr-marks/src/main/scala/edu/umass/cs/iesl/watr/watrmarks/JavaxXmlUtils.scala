@@ -13,6 +13,7 @@ object JavaxXmlUtils {
 
   implicit class RicherAttribute(val attr: Attribute) extends AnyVal {
     def toDouble = attr.getValue.toDouble
+    def toFloat = attr.getValue.toFloat
   }
 
 

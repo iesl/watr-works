@@ -1,9 +1,9 @@
 package edu.umass.cs.iesl.watr
 
-import java.io.{ InputStream, InputStreamReader, Reader }
+
+import java.io.{ InputStreamReader, Reader }
 import better.files._, Cmds._
 import scala.util.{Try, Failure, Success}
-// import org.jdom.output.Format
 import org.jdom2
 
 
@@ -13,11 +13,11 @@ case class PdfCorpusConfig(
 
 
 object configuration {
-  import com.typesafe.config.{Config, ConfigFactory}
+  import com.typesafe.config.ConfigFactory
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.Ficus.toFicusConfig
-  import net.ceedubs.ficus.readers.ValueReader
+  // import net.ceedubs.ficus.readers.ValueReader
 
   def getPdfCorpusConfig(appRoot: String): PdfCorpusConfig = {
     println(s"config init cwd = ${cwd}")

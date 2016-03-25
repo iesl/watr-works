@@ -2,12 +2,12 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import scala.annotation.tailrec
+// import scala.annotation.tailrec
 import scala.scalajs.js.annotation.JSExport
-import org.scalajs.dom
-import scala.util.Random
-import scala.concurrent.Future
-import scalajs.concurrent.JSExecutionContext.Implicits.runNow
+// import org.scalajs.dom
+// import scala.util.Random
+// import scala.concurrent.Future
+// import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import org.scalajs.jquery.jQuery
 
 import native.mousetrap._

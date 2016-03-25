@@ -8,16 +8,16 @@ import scalatags.Text.all._
 
 object CorpusExplorerView {
 
-
   def init()  = {
     <.div(
-      <.ul("corpus-list".id
+      <.ul("corpus-entries".id
       ),
       <.div()("Explore")(
         <.span(^.id:="currfile")
       )
     )
   }
+
 
 }
 

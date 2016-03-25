@@ -37,10 +37,10 @@ scalacOptions in ThisBuild ++= Seq(
   // "-Ywarn-value-discard"
 )
 
-lazy val doobieVersion = "0.2.3"
 lazy val logbackVersion = "1.1.6"
 
 libraryDependencies in ThisBuild ++= Seq(
+  "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
   "com.iheart" %% "ficus" % "1.2.3",
   "org.apache.commons" % "commons-lang3" % "3.4",
   "com.github.pathikrit" %% "better-files" % "2.15.0",
@@ -50,22 +50,18 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.4",
   "com.typesafe.play" %% "play-json" % "2.5.0",
-  "org.bytedeco" % "javacpp" % "1.1", // required by spatialindexing
-  "edu.umass.cs.iesl" %% "spatialindexing" % "latest.release",
-  // "com.lihaoyi" %% "sourcecode" % "0.1.0",
   "com.github.scopt" %% "scopt" % "3.4.0",
-  "com.itextpdf" % "itextpdf" % "5.5.8",
+  "com.itextpdf" % "itextpdf" % "5.5.9",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
   "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test",
-  "org.slf4j" % "slf4j-api" % "1.7.18",
+  "org.slf4j" % "slf4j-api" % "1.7.19",
   "ch.qos.logback" % "logback-core" % logbackVersion,
   "ch.qos.logback" % "logback-classic" % logbackVersion
 )
 
 resolvers in ThisBuild ++= List(
   "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
-  "ICM repository" at "http://maven.icm.edu.pl/artifactory/repo",
-  Resolver.jcenterRepo
+  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 )
 
 lazy val root = (project in file("."))
@@ -74,8 +70,6 @@ lazy val root = (project in file("."))
 
 
 lazy val watrmarks = (project in file("watr-marks"))
-  .settings(libraryDependencies ++= Seq(
-  ))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
@@ -89,7 +83,7 @@ lazy val watrshed = (project in file("watr-shed"))
 
 lazy val watrcolors = (crossProject in file("watr-colors")).settings(
   libraryDependencies ++= Seq(
-    "me.chrons" %%% "boopickle" % "1.1.2",
+    "me.chrons" %%% "boopickle" % "1.1.3",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     "com.lihaoyi" %%% "scalarx" % "0.3.1",
     "com.lihaoyi" %%% "scalatags" % "0.5.4"

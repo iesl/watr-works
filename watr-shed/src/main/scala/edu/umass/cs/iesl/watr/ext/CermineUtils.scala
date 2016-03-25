@@ -3,6 +3,7 @@ package ext
 
 import scala.collection.mutable
 import javax.xml.stream.events._
+import net.sf.jsi.Rectangle
 
 import watrmarks._
 
@@ -18,7 +19,7 @@ object CermineBoundingBoxes {
     val factory = XMLInputFactory.newInstance();
     val events = factory.createXMLEventReader(reader);
 
-    val pageBoundsById = mutable.ArrayBuffer[(String, watrmarks.BoundingBox)]()
+    val pageBoundsById = mutable.ArrayBuffer[(String, Rectangle)]()
     val annotationsByTarget = mutable.HashMap[String, mutable.Seq[watrmarks.Annotation]]().withDefaultValue(mutable.Seq())
 
 
@@ -41,14 +42,15 @@ object CermineBoundingBoxes {
             case "g" if classAttr == "annotation-set" =>
 
             case "rect" if classAttr == "bounding-box" =>
-              val id = elem.getIdAttr
+              // val id = elem.getIdAttr
 
-              pageBoundsById :+ BoundingBox(id,
-                elem.getTargetAttr,
-                elem.getAttr("x").toDouble,
-                elem.getAttr("y").toDouble,
-                elem.getAttr("width").toDouble,
-                elem.getAttr("height").toDouble
+              pageBoundsById :+ new Rectangle(
+                // id,
+                // elem.getTargetAttr,
+                elem.getAttr("x").toFloat,
+                elem.getAttr("y").toFloat,
+                elem.getAttr("width").toFloat,
+                elem.getAttr("height").toFloat
               )
 
             case _ =>
@@ -61,21 +63,13 @@ object CermineBoundingBoxes {
 
     pageBoundsById.map { case (idstr, bb) =>
       // allocate a new spatial index
-      val spInfo = PageSpatialInfo(
-        spatialindex.regions.bbox(bb.x, bb.y, bb.width, bb.height)
-      )
+      // spatialindex.regions.bbox(
+      val spInfo = PageSpatialInfo(bb)
       // spInfos :+ (idstr, spInfo)
       val annotations = annotationsByTarget(idstr)
 
       annotations.foreach { a =>
-        a.bboxes.foreach { bbox =>
-          val spBBox = spatialindex.regions.bbox(
-            bbox.x, bbox.y,
-            bbox.width, bbox.height
-          )
-
-          spInfo.addBoundingBox(spBBox, s"${a.id}:${a.target}")
-        }
+        spInfo.addAnnotation(a)
       }
       spInfo
     }

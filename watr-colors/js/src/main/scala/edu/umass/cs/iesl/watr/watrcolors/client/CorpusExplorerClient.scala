@@ -2,25 +2,40 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import scala.concurrent.Future
+
+// import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
-
 
 import autowire._
 import boopickle.DefaultBasic._
 import Picklers._
 
-import native.fabric
 import native.mousetrap._
 
 
 @JSExport
-class CorpusExplorerClient() extends ClientView {
+class CorpusExplorerClient(entryDescriptor: Option[String]) extends ClientView {
 
   val server = ServerWire("explorer")[CorpusExplorerApi]
+  import domtags._
+  import scala.collection.mutable
+
+  var entriesPrevs = mutable.ArrayBuffer[String]()
+  var entriesNexts = mutable.ArrayBuffer[String]()
+  var entriesCurr: Option[String] = entryDescriptor
+
 
   def createView(): Unit = {
+    entriesCurr.map{ curr =>
+      server.createView().call()
+    }
+
+    def init()  = {
+      <.div(
+        <.ul("corpus-entries".id)
+      )
+    }
     server.createView().call().foreach{ update =>
       applyHtmlUpdates(update)
     }
