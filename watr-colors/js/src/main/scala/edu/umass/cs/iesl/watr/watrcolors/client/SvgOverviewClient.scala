@@ -21,11 +21,12 @@ import native.mousetrap._
 
 import rx._
 
-import scala.async.Async.{async, await}
+// import scala.async.Async.{async, await}
 
 import scalatags.JsDom.all._
-object util {
 
+
+object util {
 
   implicit def rxFrag[T](r: Rx[T])(implicit ev: (T) => Frag, ctx: Ctx.Data, d: Ctx.Owner): Frag = {
     def rSafe: dom.Node = span(r()).render
@@ -63,8 +64,18 @@ class SvgOverview(
   override val initKeys = Keybindings(List(
     "a" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
     "b" -> ((e: MousetrapEvent) => createCermineOverlay()),
-    "d" -> ((e: MousetrapEvent) => setupSVGPaneHandlers())
+    "d" -> ((e: MousetrapEvent) => initFabricEventHandlers())
   ))
+
+  def initFabricEventHandlers(): Boolean = {
+    val onMove = (event: fabric.Event) => {
+      println("mouse is moving!")
+    }
+
+    fabricCanvas.on("mouse:move", onMove)
+
+    true
+  }
 
 
   def addBBoxRect(bbox: BBox, color: String): Unit = {
@@ -111,12 +122,12 @@ class SvgOverview(
     true
   }
 
-  val clientX = Var(0d)
-  val clientY = Var(0d)
-  val screenX = Var(0d)
-  val screenY = Var(0d)
-  val pageX = Var(0d)
-  val pageY = Var(0d)
+  // val clientX = Var(0d)
+  // val clientY = Var(0d)
+  // val screenX = Var(0d)
+  // val screenY = Var(0d)
+  // val pageX = Var(0d)
+  // val pageY = Var(0d)
 
   def setupSVGPaneHandlers(): Boolean = {
 
@@ -153,30 +164,31 @@ class SvgOverview(
 
     // screenX() = 99d
 
-    infoHoverHandlers()
+    // infoHoverHandlers()
     true
   }
 
 
-  def infoHoverHandlers(): Unit = {
-    val _ = async {
-      val chan = CanvasMouseChannels(upperCanvas)
+  // def infoHoverHandlers(): Unit = {
+  //   val _ = async {
+  //     val chan = CanvasMouseChannels(upperCanvas)
 
-      while(true){
-        println("init mouse move")
-        var res = await(chan.mousemove())
-        while(res.`type` == "mousemove"){
-          println("mouse move")
-          clientX() = res.clientX
-          clientY() = res.clientY
-          screenX() = res.screenX
-          pageX() = res.pageX
+  //     while(true){
+  //       println("init mouse move")
+  //       var res = await(chan.mousemove())
+  //       while(res.`type` == "mousemove"){
+  //         clientX() = res.clientX
+  //         clientY() = res.clientY
+  //         screenX() = res.screenX
+  //         pageX() = res.pageX
 
-          res = await(chan.mousemove())
-        }
-      }
-    }
-  }
+  //         println(s"mouse move x=${pageX()} sx=${screenX()} pgX=${pageX()} ")
+
+  //         res = await(chan.mousemove())
+  //       }
+  //     }
+  //   }
+  // }
 
   def createView(): Unit = {
     server.createView(svgFilename).call().foreach(applyHtmlUpdates(_))

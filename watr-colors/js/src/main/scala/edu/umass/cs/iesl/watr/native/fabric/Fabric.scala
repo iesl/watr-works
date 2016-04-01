@@ -110,15 +110,11 @@ trait Canvas extends js.Object {
   var renderOnAddRemove: Boolean = js.native
   def renderAll(allOnTop: Boolean=false): Canvas = js.native
   // def on(event: String, f:(Event) => Boolean): Event = js.native
-  def on(event: String, f:js.ThisFunction): Event = js.native
+  // def on(event: String, f:js.ThisFunction): Event = js.native
+  def on(event: String, f:js.Function): Event = js.native
 
 }
 
-// @js.native
-// trait Event extends js.Object {
-//   val target: 
-
-// }
 
 object Canvas {
   def apply(el: String, opts: CanvasOpts): Canvas = {
