@@ -18,10 +18,7 @@ class CorpusExplorerServer(
 
   def navNext(): List[HtmlUpdate] = {
     state = state.next
-
-    List(
-      HtmlReplaceInner(s"#currfile", s"${state.curr.name}")
-    )
+    createView()
   }
 
   def getFileInFocus() : String = {
@@ -31,9 +28,7 @@ class CorpusExplorerServer(
 
   def navPrev(): List[HtmlUpdate] = {
     state = state.prev
-    List(
-      HtmlReplaceInner(s"#currfile", s"${state.curr.name}")
-    )
+    createView()
   }
 
   def openFocus(): List[HtmlUpdate] = {
@@ -41,9 +36,9 @@ class CorpusExplorerServer(
   }
 
   def createView(): List[HtmlUpdate] = {
-    html.CorpusExplorerView.init(state)
+    val initHtml = html.CorpusExplorerView.init(state)
     List(
-      HtmlReplaceInner("#main", html.CorpusExplorerView.init().render)
+      HtmlReplaceInner("#main", initHtml.render)
     )
   }
 

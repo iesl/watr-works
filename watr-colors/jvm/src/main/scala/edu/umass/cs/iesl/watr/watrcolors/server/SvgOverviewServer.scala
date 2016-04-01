@@ -3,6 +3,7 @@ package watrcolors
 package server
 
 import better.files._
+import net.sf.jsi.Rectangle
 
 import scala.collection.mutable
 import ext.CermineBoundingBoxes
@@ -19,6 +20,14 @@ class SvgOverviewServer(
     List(
       HtmlReplaceInner("#main", new html.SvgOverviewView(config).init(svgFilename).toString)
     )
+  }
+
+  def jsiRectangleToBBox(r: Rectangle): BBox = {
+    val x = r.minX
+    val y = r.minY
+    val w = r.maxX - r.minX
+    val h = r.maxY - r.minY
+    BBox(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
   }
 
   def getCermineOverlay(corpusEntryId: String): List[BBox] = {
@@ -39,11 +48,7 @@ class SvgOverviewServer(
     for {
       ann <- combinedOverlay.getAnnotations.toList
       bx <- ann.bboxes
-    } yield BBox(
-      x=bx.x, y=bx.y,
-      width=bx.width,
-      height=bx.height
-    )
+    } yield jsiRectangleToBBox(bx)
 
   }
 

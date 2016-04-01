@@ -4,19 +4,18 @@ package db
 import org.scalatest._
 
 import watrmarks._
-
 import java.io.InputStreamReader
 
 class SpatialDBTest extends FlatSpec {
 
   it should "report all rects in svg" in { 
 
-    val doc = dom.readWatrDom(
-      new InputStreamReader(ext.papers.`6376.svg`),
-      StandardLabels.bioDict
-    )
+    // val doc = dom.readWatrDom(
+    //   new InputStreamReader(ext.papers.`6376.svg`),
+    //   StandardLabels.bioDict
+    // )
 
-    doc
+    // doc
   }
 
   //   behavior of "mixed spatial index/relational db"

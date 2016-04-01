@@ -14,10 +14,9 @@ trait ScalatagsDomDefs {
       with scalatags.DataConverters
 
 
-  type JsDomTag = JsDom.TypedTag[String]
-  type JsDomModifier = JsDom.Modifier
-
-  val JsDomTag = JsDom.TypedTag
+  // type JsDomTag = JsDom.TypedTag[scalatags.JsDom]
+  // type JsDomModifier = JsDom.Modifier
+  // val JsDomTag = JsDom.TypedTag
 
   object < extends JsDom.Cap with jsdom.Tags with jsdom.Tags2 with jsdom.SvgTags {
     import domtags._

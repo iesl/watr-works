@@ -61,6 +61,7 @@ object CermineBoundingBoxes {
       }
     }
 
+
     pageBoundsById.map { case (idstr, bb) =>
       // allocate a new spatial index
       // spatialindex.regions.bbox(

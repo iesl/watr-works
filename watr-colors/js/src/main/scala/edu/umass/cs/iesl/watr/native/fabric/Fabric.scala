@@ -67,7 +67,7 @@ object Rect {
 @js.native
 trait RectOpts extends js.Object {
   def top         : Double = js.native
-  def left       : Double = js.native
+  def left        : Double = js.native
   def width       : Double = js.native
   def height      : Double = js.native
   def fill        : String = js.native

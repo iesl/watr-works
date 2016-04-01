@@ -27,6 +27,7 @@
     </encoder>
   </appender>
 
+  <logger name="akka" level="OFF" />
 <!--
   <logger name="org.fusesource.scalate" level="DEBUG" />
 -->

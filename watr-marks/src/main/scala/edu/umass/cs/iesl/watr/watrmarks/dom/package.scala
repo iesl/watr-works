@@ -3,7 +3,7 @@ package watrmarks
 
 import java.io.Reader
 import javax.xml.stream.XMLInputFactory
-import javax.xml.stream.events._;
+import javax.xml.stream.events._
 import scala.collection.JavaConversions._
 
 package object dom {
