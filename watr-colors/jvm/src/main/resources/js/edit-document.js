@@ -2,7 +2,7 @@
 'variables' passed into this file from edit.scala.html:
 
 o documentIconURI - icon to use at the top of the file
-o fileName - name of the svg file being edited
+o corpusEntryId - corpus identifier of the svg file being edited
 
  */
 
@@ -49,8 +49,8 @@ function setLoadingHeader(html) {
  * TODO: handle errors - no image or annotations file
  */
 function loadSvg() {
-    var uri = 'repo' + '/' + fileName;
-    setLoadingHeader("Getting document &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote;...");
+    var uri = 'repo' + '/' + corpusEntryId;
+    setLoadingHeader("Getting document &OpenCurlyQuote;" + corpusEntryId + "&CloseCurlyQuote;...");
     $.get(uri, function(svgxml) {
         // add #svg-image to #overlay-container
         var svgDocEle = document.importNode(svgxml.documentElement, true);
@@ -243,12 +243,12 @@ function saveAnnotations() {
 
     // finally, send it
     $.ajax({
-        url: '/annotations/' + fileName,     // TODO cleaner way to get URI, e.g., http://stackoverflow.com/questions/11133059/play-2-x-how-to-make-an-ajax-request-with-a-common-button
+        url: '/annotations/' + corpusEntryId,     // TODO cleaner way to get URI, e.g., http://stackoverflow.com/questions/11133059/play-2-x-how-to-make-an-ajax-request-with-a-common-button
         type: 'PUT',
         contentType: 'application/json',
         data: JSON.stringify(annotObsToSerialize),
         success: function(data) {
-            setLoadingHeader("Loaded file &OpenCurlyQuote;" + fileName + "&CloseCurlyQuote; with "
+            setLoadingHeader("Loaded file &OpenCurlyQuote;" + corpusEntryId + "&CloseCurlyQuote; with "
                 + annotObsToSerialize.length + " annotation(s)");
         }
     });
@@ -552,7 +552,7 @@ function getTextForSelection() {
 
     var rectData =  {'label': activeObj.annotLabelType,
         'x': activeObj.left, 'y': activeObj.top, 'width': activeObj.width, 'height': activeObj.height};
-    $.get('/docs/' + fileName + '/text',       // TODO cleaner way to get URI
+    $.get('/docs/' + corpusEntryId+ '/text',       // TODO cleaner way to get URI
         rectData,
         function(data) {
             window.alert('text: ' + data);      // TODO show in reasonable way - overlay on current selection, sidebar, etc.

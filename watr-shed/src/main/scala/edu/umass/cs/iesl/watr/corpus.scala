@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 
 
-import java.io.{ InputStreamReader, Reader }
+import java.io.{ FileInputStream, InputStreamReader, Reader }
 import better.files._, Cmds._
 import scala.util.{Try, Failure, Success}
 import org.jdom2
@@ -56,11 +56,16 @@ class CorpusEntry(
   entryDescriptor: String,
   corpus: Corpus
 ) {
-  val artifactsRoot = File(corpus.config.rootDirectory) / s"${entryDescriptor}.d/"
+  val artifactsRoot = File(corpus.config.rootDirectory) / entryDescriptor
+  val entryDescriptorRoot = entryDescriptor.dropRight(2)
 
   // e.g., cermine-zones.xml
   def getArtifact(artifactDescriptor: String): CorpusArtifact = {
     new CorpusArtifact(artifactDescriptor, this)
+  }
+
+  def getSvgArtifact(): CorpusArtifact = {
+    new CorpusArtifact(s"${entryDescriptorRoot}.svg", this)
   }
 
 }
@@ -72,18 +77,14 @@ class CorpusArtifact(
 ) {
 
   def artifactPath = entry.artifactsRoot / descriptor
+
+  def asFile: Try[File] = Success(artifactPath)
+
   def asReader: Try[Reader] = {
-    val res: Option[Try[Reader]] = try {
-      artifactPath
-        .inputStream
-        .map{is => Success(new InputStreamReader(is))}
-        .headOption
-    } catch {
-      case t: Exception => Option(Failure[Reader](t))
-    }
+    val fis = new FileInputStream(artifactPath.toJava)
+    val fisr = new InputStreamReader(fis)
 
-    res.getOrElse(sys.error(s"error getting corpus artifact ${artifactPath}"))
-
+    Success(fisr)
   }
 
   def asXml: Try[jdom2.Document] = {

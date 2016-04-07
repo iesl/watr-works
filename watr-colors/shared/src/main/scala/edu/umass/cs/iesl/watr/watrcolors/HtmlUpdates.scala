@@ -24,8 +24,9 @@ case class LabelInfo(
 ) extends OverlayInfo
 
 case class BBox(
-  x: Double, y: Double, width: Double, height: Double
+  x: Double, y: Double, width: Double, height: Double,
   // info: Option[OverlayInfo] = None
+  info: String
 ) extends Overlay{
   override def toString = {
     s"""BBox(x:${x} y:${y} w:${width} h:${height})"""

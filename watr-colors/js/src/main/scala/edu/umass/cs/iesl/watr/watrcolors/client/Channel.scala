@@ -9,8 +9,8 @@ import scala.concurrent.Promise
 class Channel[T](init: (T => Unit) => Unit){
   init(update)
   private[this] var value: Promise[T] = null
-  def apply(): Future[T] = {
 
+  def apply(): Future[T] = {
     value = Promise[T]()
     value.future
   }

@@ -8,9 +8,10 @@ class CorpusExplorerServer(
   config: PdfCorpusConfig
 ) extends CorpusExplorerApi  {
 
-  println(s"CorpusExplorerServer current dir = ${Cmds.cwd}")
 
   val initpath = File(config.rootDirectory)
+  println(s"CorpusExplorerServer current dir = ${Cmds.cwd}")
+  println(s"  corpus root = ${initpath.pathAsString}")
 
   val init = DirectoryCursor.init(initpath).get
 
@@ -21,9 +22,9 @@ class CorpusExplorerServer(
     createView()
   }
 
-  def getFileInFocus() : String = {
+  def getCorpusEntryInFocus() : String = {
     val corpusPath = initpath.relativize(state.curr.path)
-    corpusPath.toString()
+    corpusPath.toString
   }
 
   def navPrev(): List[HtmlUpdate] = {

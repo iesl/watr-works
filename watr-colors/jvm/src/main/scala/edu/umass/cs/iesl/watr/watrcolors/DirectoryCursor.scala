@@ -34,7 +34,7 @@ object DirectoryCursor {
   def init(f: File): Option[DirectoryCursor] = {
 
     if (f.isDirectory) {
-      val m = f.glob("**/*.svg").toList
+      val m = f.glob("**/*.d").toList
 
       m.headOption.flatMap{ file1 =>
         Option(DirectoryCursor(curr = file1, nexts = m.drop(1).toSeq))

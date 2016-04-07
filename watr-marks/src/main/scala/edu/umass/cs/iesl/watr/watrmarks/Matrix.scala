@@ -1,13 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-import org.jdom2.Content
-import org.jdom2.input.SAXBuilder
-import org.jdom2.filter.ElementFilter
-import org.jdom2.Element
-import org.jdom2.Document
-import org.jdom2.util.IteratorIterable
-
 object SvgMatrix {
 
   import dom._
@@ -110,9 +103,10 @@ case class Matrix(
   }
 
   override def toString() = {
-    s"""||$i11  $i12  $i13|
-        ||$i21  $i22  $i23|
-        ||$i31  $i32  $i33|
-        |""".stripMargin
+    // s"""||$i11  $i12  $i13|
+    //     ||$i21  $i22  $i23|
+    //     ||$i31  $i32  $i33|
+    //     |""".stripMargin
+    s"""[[$i11  $i12  $i13] [$i21  $i22  $i23] [$i31  $i32  $i33]]"""
   }
 }

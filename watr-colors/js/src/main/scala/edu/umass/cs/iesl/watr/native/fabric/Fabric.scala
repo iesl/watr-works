@@ -13,29 +13,48 @@ object fabric extends js.Object {
   def isLikelyNode: Boolean = js.native
   def DPI: Int = js.native
   def devicePixelRatio: Float = js.native
+
+  // def loadSVGFromURL(url: String, cb: js.Function2[]): Unit = {
+  // }
+
+  // def on(event: String, f:js.Function): Event = js.native
 }
 
 @js.native @JSName("fabric.Object")
-trait FObject extends js.Object {
-  def setFill(color: String): FObject = js.native
-  def setStroke(color: String): FObject = js.native
+trait FabricObject extends js.Object {
+  var hasControls: Boolean = js.native
+  var hasBorders: Boolean = js.native
+  var selectable: Boolean = js.native
+  // var evented: Boolean = js.native
+  var transparentCorners: Boolean = js.native
+
+  def setFill(color: String): FabricObject = js.native
+  def setStroke(color: String): FabricObject = js.native
+
+  @JSName("type")
+  def otype: String = js.native
 }
 
 @js.native
 trait Event extends js.Object {
-  val target: FObject = js.native
+  def clientX: Int = js.native
+  def clientY: Int = js.native
+  def pageX: Int = js.native
+  def pageY: Int = js.native
 }
 
 
 @js.native
-trait Rect extends FObject {
-  var hasControls: Boolean = js.native
-  var hasBorders: Boolean = js.native
+trait Options extends js.Object {
+  val target: FabricObject = js.native
+  val e: Event = js.native
+}
+
+
+@js.native
+trait Rect extends FabricObject {
   // var hasRotatingPoint: Boolean = js.native
   // var visible: Boolean = js.native
-  var selectable: Boolean = js.native
-  // var evented: Boolean = js.native
-  var transparentCorners: Boolean = js.native
   // var centeredScaling: Boolean = js.native
   // var centeredRotation: Boolean = js.native
   // var padding
@@ -112,6 +131,12 @@ trait Canvas extends js.Object {
   // def on(event: String, f:(Event) => Boolean): Event = js.native
   // def on(event: String, f:js.ThisFunction): Event = js.native
   def on(event: String, f:js.Function): Event = js.native
+  def off(event: String, f:js.Function): Event = js.native
+
+  // def forEachObject: js.Function(callback, context)
+  def forEachObject(cb: js.Function): Unit = {
+
+  }
 
 }
 

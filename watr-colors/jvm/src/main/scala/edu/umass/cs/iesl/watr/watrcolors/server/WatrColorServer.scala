@@ -83,6 +83,7 @@ class WatrColorServer(
     val corpusExplorerServer = new CorpusExplorerServer(config)
     val svgOverviewServer = new SvgOverviewServer(config)
     implicit val system = ActorSystem()
+
     val _ = startServer("0.0.0.0", port = 8080) {
       get {
         webjarResources ~
@@ -93,11 +94,6 @@ class WatrColorServer(
             val uri = ctx.request.uri
             val q = uri.query
             val frag = uri.fragment
-            println(s"""
-query = $q
-frag = $frag
-path = ${uri.path}
-""")
             ctx.complete { httpResponse(html.Frame().toString()) }
           }
         }

@@ -57,10 +57,11 @@ class CorpusExplorerClient() extends ClientView {
   }
 
   def openFocus(): Boolean = {
-    server.getFileInFocus().call().foreach { currfile =>
-      WatrColorClient.switchViews(new SvgOverview(currfile))
+    server.getCorpusEntryInFocus().call().foreach { corpusEntry =>
+      WatrColorClient.switchViews(new SvgOverview(corpusEntry))
     }
-    server.openFocus().call() foreach (applyHtmlUpdates(_))
+
+    // server.openFocus().call() foreach (applyHtmlUpdates(_))
 
     true
   }

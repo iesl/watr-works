@@ -2,9 +2,80 @@ package edu.umass.cs.iesl.watr
 package watrmarks
 package dom
 
+object IO {
 
-import scalaz.{Show, TreeLoc, Tree}
-import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
+  import scala.collection.JavaConverters._
+  import java.io.Reader
+  import org.jdom2
+  import jdom2._
+  // import jdom2.filter._
+
+  def maybeAttrValue(e: Element, s:String): Option[String] = {
+    val maybeAttr = e.getAttribute(s)
+    if (maybeAttr!=null) Some(maybeAttr.getValue())
+    else None
+  }
+
+  def attrValue(e: Element, s:String): String = {
+    e.getAttribute(s).getValue()
+  }
+
+  def getTransforms(e: Element): List[Transform] = {
+    transformParser.parse(maybeAttrValue(e, "transform").getOrElse(""))
+      .left.map(err => sys.error(s"parsing transform='${attrValue(e, "transform")}': ${err}"))
+      .right.get
+  }
+  def getXs(e: Element): List[Double] = { maybeAttrValue(e, "x").map(_.split(" ").map(_.toDouble).toList).getOrElse(List()) }
+  def getEndX(e: Element): Option[Double]     = { maybeAttrValue(e, "endX").map(_.toDouble) }
+  def getY(e: Element): Double                = { attrValue(e, "y").toDouble }
+  def getFontSize(e: Element): String         = { maybeAttrValue(e, "font-size").getOrElse("0") }
+  def getFontFamily(e: Element): String       = { maybeAttrValue(e, "font-family").getOrElse("") }
+
+  def getSelfAndAncestorTransforms(elem: Element): List[Transform] = {
+    if (elem.isRootElement()) {
+      getTransforms(elem)
+    } else {
+      getSelfAndAncestorTransforms(elem.getParentElement) ++ getTransforms(elem)
+    }
+  }
+
+  def readTSpans(ins: Reader): Seq[TSpanX] = {
+    println("reading...")
+    val document = new jdom2.input.SAXBuilder().build(ins)
+
+    // val f = filter.Filters.element("tspan")
+    // val elements  = document.getDescendants(f).iterator.asScala
+    val elements  = document.getDescendants().iterator.asScala
+
+    val tspans = for {
+      e <- elements if e.isInstanceOf[jdom2.Element]
+      elem = e.asInstanceOf[jdom2.Element]
+      if elem.getName.toLowerCase == "tspan"
+    } yield {
+
+      val offs = TextXYOffsets(
+        xs=getXs(elem),
+        ys=List(getY(elem))
+      )
+      val ts = TSpanX(
+        elem.getText,
+        offs,
+        getSelfAndAncestorTransforms(elem),
+        getFontSize(elem),
+        getFontFamily(elem)
+      )
+
+      ts
+    }
+
+    tspans.toSeq
+  }
+
+}
+
+import scalaz.Tree
+import scalaz.TreeLoc
+// import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 
 sealed trait WatrElement
 
@@ -125,12 +196,13 @@ case class WatrDom(
         case e: TSpan  =>
           val xstr = e.textXYOffsets.map(o => "x="+o.xs.mkString(" ")).getOrElse("")
           val ystr = e.textXYOffsets.map(o => "y="+o.ys.mkString(" ")).getOrElse("")
-          val endxstr = e.textXYOffsets.map(o => s"""endX=\"${o.endX}\"""").getOrElse("")
+          // val endxstr = e.textXYOffsets.map(o => s"""endX=\"${o.endX}\"""").getOrElse("")
+
+          // |  $endxstr
 
           s"""|<svg:tspan
               |  $xstr
               |  $ystr
-              |  $endxstr
               |  font-size="${e.fontSize}"
               |  font-family="${e.fontFamily}"
               |>${e.text}</svg:tspan>
@@ -211,7 +283,7 @@ object NullElement extends WatrElement   {
 }
 
 case class TextXYOffsets(
-  xs: List[Double], endX: Double,
+  xs: List[Double], //endX: Double,
   ys: List[Double]
 )
 
@@ -236,3 +308,13 @@ case class TSpan (
   override def toString = s"""<tspan:${text}>"""
 }
 
+case class TSpanX (
+  text: String,
+  textXYOffsets: TextXYOffsets,
+  transforms: List[Transform],
+  fontSize: String,
+  fontFamily: String
+) extends WatrElement  {
+
+  override def toString = s"""<tspan:${text}>"""
+}

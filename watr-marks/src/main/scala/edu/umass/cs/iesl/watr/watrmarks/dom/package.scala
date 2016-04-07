@@ -1,10 +1,10 @@
 package edu.umass.cs.iesl.watr
+
 package watrmarks
 
 import java.io.Reader
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.events._
-import scala.collection.JavaConversions._
 
 package object dom {
 
@@ -63,6 +63,9 @@ package object dom {
     }
 
     def accPop(): Unit = {
+      // if (accum.getLabel == NullElement) {
+      //   accum
+      // }
       accum = accum.parent.get
     }
 
@@ -107,7 +110,7 @@ package object dom {
                 val labelName =  elem.getAttributeByName(new QName("label-name")).getValue
                 val labelValue =  elem.getAttributeByName(new QName("label-value")).getValue
                 val label = bioDict(labelName)
-                println(s"""adding annotation ${labelName} = ${labelValue}""")
+                // println(s"""adding annotation ${labelName} = ${labelValue}""")
 
                 annotations.append(Annotation(
                   elem.getAttributeByName(new QName("id")).getValue,
@@ -126,7 +129,7 @@ package object dom {
             case "defs"  =>
               val id = elem.getAttributeByName(new QName("id"))
               if (id != null && id.getValue == "annotation-boxes") {
-                println("starting annots")
+                // println("starting annots")
                 collectingAnnotations = true
                 accAppend(NullElement)
               } else {
@@ -148,9 +151,9 @@ package object dom {
             case "use"  =>
               accAppend(NullElement)
             case "rect"  =>
-              println("maybe annotation?")
+              // println("maybe annotation?")
               if (collectingAnnotations) {
-                println("... yes!")
+                // println("... yes!")
                 val ann = annotations.remove(annotations.length-1)
                 annotations.append(ann.copy(
                     bboxes = ann.bboxes :+ Rect(
@@ -170,21 +173,19 @@ package object dom {
               accAppend(NullElement)
 
             case "tspan" =>
-              import scalaz._, Scalaz._
 
               val _y = getY(elem)
 
-              val offs = ^(getXs(elem), getEndX(elem))(
-                (_xs, _endx) => TextXYOffsets(
-                  xs=_xs,
-                  endX=_endx,
-                  ys=List(_y)
-              ))
+              val offs = TextXYOffsets(
+                xs=getXs(elem).get,
+                // endX=_endx,
+                ys=List(_y)
+              )
 
               val n = TSpanInit(
                 "",
                 getTransforms(elem),
-                offs,
+                Some(offs),
                 getFontSize(elem),
                 getFontFamily(elem)
               )
@@ -209,15 +210,15 @@ package object dom {
               val rootDocument = accum.root.getLabel.asInstanceOf[Document]
 
 
-              def bounds: Option[List[TextBounds]] =
-                init.textXYOffsets.map {
-                  xyoffs => xyoffs.xs.map{x => TextBounds(
-                    left   = x,
-                    bottom = xyoffs.ys.head,
-                    width  = 10, // TODO FIXME width/height
-                    height = 10
-                  )}
-                }
+              // def bounds: Option[List[TextBounds]] =
+              //   init.textXYOffsets.map {
+              //     xyoffs => xyoffs.xs.map{x => TextBounds(
+              //       left   = x,
+              //       bottom = xyoffs.ys.head,
+              //       width  = 10, // TODO FIXME width/height
+              //       height = 10
+              //     )}
+              //   }
 
               lazy val fontInfo =  FontInfo(init.fontFamily, init.fontSize)
 
@@ -233,6 +234,9 @@ package object dom {
               )
 
               accum = accum.modifyLabel { _ => tspan }
+
+              println("tree to date")
+              println(accum.toTree.drawTree)
 
             case _   =>
           }
@@ -254,9 +258,13 @@ package object dom {
 
 
     }
-    println(s"annotations: ${annotations.toList}")
+
+    // println(s"annotations: ${annotations.toList}")
+    val tree = accum.toTree
 
     WatrDom(accum.toTree, annotations.toList)
   }
+
+
 
 }
