@@ -31,28 +31,36 @@ class Channel[T](init: (T => Unit) => Unit){
   }
 }
 
-import org.scalajs.dom
-import dom.html.{Canvas => JsCanvas}
+// import org.scalajs.dom
+import native.fabric
+// import dom.html.{Canvas => JsCanvas}
 
 trait CanvasMouseChannels {
-  type ME = dom.MouseEvent
+  // type ME = dom.MouseEvent
+  type ME = fabric.Options
 
-  def canvas: JsCanvas
+  def canvas: fabric.Canvas
 
-  val mousemove = new Channel[ME](canvas.onmousemove = _)
-  val mouseup = new Channel[ME](canvas.onmouseup = _)
-  val mousedown = new Channel[ME](canvas.onmousedown = _)
+  println(s"assembled canvas: ${canvas}")
+
+  val mousemove = new Channel[ME](canvas.on("mouse:move", _))
+  val mouseup = new Channel[ME](canvas.on("mouse:up", _))
+  val mousedown = new Channel[ME](canvas.on("mouse:down", _))
 
 }
+
+
 object CanvasMouseChannels {
-  def apply(c: JsCanvas) = new CanvasMouseChannels {
-    override val canvas = c
+  def apply(c: fabric.Canvas) = new CanvasMouseChannels {
+    override def canvas = c
+
   }
 
   // import scala.async.Async.{async, await}
-  // def handlerTemlate(): Unit = {
+
+  // def handlerTemlate(c: fabric.Canvas): Unit = {
   //   val _ = async {
-  //     val chan = CanvasMouseChannels(upperCanvas)
+  //     val chan = CanvasMouseChannels(c)
 
   //     while(true){
   //       val start = await(chan.mousedown())

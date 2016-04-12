@@ -2,15 +2,11 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-// import scala.annotation.tailrec
 import scala.scalajs.js.annotation.JSExport
-// import org.scalajs.dom
-// import scala.util.Random
-// import scala.concurrent.Future
-// import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import org.scalajs.jquery.jQuery
 
 import native.mousetrap._
+
 
 
 case class Keybindings(
@@ -30,7 +26,6 @@ trait ClientView {
 
   def applyHtmlUpdates(updates: List[HtmlUpdate]): Unit = {
     updates.foreach { u =>
-      println(s"    $u")
       u match {
         case HtmlAppend(css, content) => jQuery(css).append(content)
         case HtmlPrepend(css, content) => jQuery(css).prepend(content)

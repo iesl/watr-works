@@ -41,13 +41,14 @@ trait Event extends js.Object {
   def clientY: Int = js.native
   def pageX: Int = js.native
   def pageY: Int = js.native
+  def `type`: String = js.native
 }
 
 
 @js.native
 trait Options extends js.Object {
-  val target: FabricObject = js.native
-  val e: Event = js.native
+  def target: FabricObject = js.native
+  def e: Event = js.native
 }
 
 

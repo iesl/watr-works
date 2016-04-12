@@ -46,7 +46,7 @@ class SvgOverview(
 
   val server = ServerWire("svg")[SvgOverviewApi]
 
-  lazy val fabricCanvas: fabric.Canvas = {
+  def fabricCanvas: fabric.Canvas = {
     jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
   }
 
@@ -59,28 +59,32 @@ class SvgOverview(
 
   var eventHandler: EventHandler = _
 
+  import handlers._
   def initDeletion(): Boolean = {
-    eventHandler = new DeleteBBoxHandlers{
-      def fabricCanvas: fabric.Canvas = self.fabricCanvas
-      def server = self.server
-      def addBBoxRect(bbox: BBox, color: String): Unit = self.addBBoxRect(bbox, color)
-      def artifactId = self.artifactId
-      def clientView = self
+
+    for {
+      bbox <- getUserBBox(self.fabricCanvas)
+    } yield {
+      val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+      translateBBox(-offset.left, -offset.top, bbox)
     }
-    eventHandler.installHandlers()
+
     true
   }
+
   def initSelection(): Boolean = {
-    eventHandler = new DrawBBoxHandlers{
-      def fabricCanvas: fabric.Canvas = self.fabricCanvas
-      def server = self.server
-      def addBBoxRect(bbox: BBox, color: String): Unit = self.addBBoxRect(bbox, color)
-      def artifactId = self.artifactId
-      def clientView = self
+    for {
+      bbox <- getUserBBox(fabricCanvas)
+    } yield {
+      println(s"got user bbox: ${bbox}")
+      val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+      val bboxAbs = translateBBox(-offset.left, -offset.top, bbox)
+      server.onSelectBBox(artifactId, bboxAbs).call().foreach{ applyHtmlUpdates(_) }
+      addBBoxRect(bboxAbs, "black")
     }
-    eventHandler.installHandlers()
     true
   }
+
 
 
   def addBBoxRect(bbox: BBox, color: String): Unit = {

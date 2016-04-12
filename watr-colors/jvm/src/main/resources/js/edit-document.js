@@ -50,7 +50,6 @@ function setLoadingHeader(html) {
  */
 function loadSvg() {
     var uri = 'repo' + '/' + corpusEntryId;
-    setLoadingHeader("Getting document &OpenCurlyQuote;" + corpusEntryId + "&CloseCurlyQuote;...");
     $.get(uri, function(svgxml) {
         // add #svg-image to #overlay-container
         var svgDocEle = document.importNode(svgxml.documentElement, true);
