@@ -80,7 +80,6 @@ lazy val watrshed = (project in file("watr-shed"))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
 
-
 Revolver.settings
 
 lazy val watrcolors = (
@@ -120,8 +119,7 @@ lazy val watrcolors = (
 
 lazy val watrcolorsJS = watrcolors.js
 
-lazy val watrcolorsJVM = watrcolors.jvm
-.settings(
+lazy val watrcolorsJVM = watrcolors.jvm.settings(
   (resources in Compile) += ({
     (fastOptJS in(watrcolorsJS, Compile)).value
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value

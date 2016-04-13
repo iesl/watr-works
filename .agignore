@@ -1,7 +1,8 @@
 docs
 .ensime_cache
 *.sql
-ext
+iesl-pdf-to-text
+/ext
 target
 corpus-*
 *.pdf

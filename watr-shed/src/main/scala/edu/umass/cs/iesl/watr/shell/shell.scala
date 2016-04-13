@@ -4,8 +4,9 @@ package shell
 import java.io.FileInputStream
 import java.io.InputStream
 import java.io.{File => JFile}
-import pl.edu.icm.cermine.structure.model.BxChunk
-import pl.edu.icm.cermine.structure.model.BxWord
+// import pl.edu.icm.cermine.content.model.BxContentStructure
+// import pl.edu.icm.cermine.structure.model.BxChunk
+// import pl.edu.icm.cermine.structure.model.BxWord
 
 import org.jdom.output.Format
 import org.jdom2.Document
@@ -110,7 +111,7 @@ object ops {
     val in = new FileInputStream(pdf);
     val conf = new ComponentConfiguration()
     val doc = ExtractionUtils.extractStructure(conf, in);
-    val contentStructure = ExtractionUtils.extractText(conf, doc);
+    val contentStructure: ContentStructure = ExtractionUtils.extractText(conf, doc);
 
 
 

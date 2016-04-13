@@ -57,7 +57,6 @@ class SvgOverview(
     "d" -> ((e: MousetrapEvent) => initDeletion())
   ))
 
-  var eventHandler: EventHandler = _
 
   import handlers._
   def initDeletion(): Boolean = {
@@ -74,6 +73,7 @@ class SvgOverview(
 
   def initSelection(): Boolean = {
     for {
+      // TODO alter cursor to reflect selection mode
       bbox <- getUserBBox(fabricCanvas)
     } yield {
       println(s"got user bbox: ${bbox}")
