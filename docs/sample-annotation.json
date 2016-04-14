@@ -1,0 +1,43 @@
+{
+    id: "cermine-zones:uuidxyz",
+    target: "sha:ac40d",
+    extents: {
+        width: 595
+        height: 4764
+    },
+
+
+    "zones", {
+        "line": {
+            "bboxes": [
+                [0, [10, 30, 3, 4], [20, 30, 3, 4]],
+                [1, [10, 30, 3, 4]],
+            ]
+        },
+        "sentence": {
+            "bboxes": [
+                [0, [10, 30, 3, 4], [20, 30, 3, 4]],
+                [1, [10, 30, 3, 4]],
+                [2, [10, 30, 3, 4]],
+            ]
+        },
+        "pos:nnp": {
+
+        }
+    },
+
+    "labels": [
+        {
+            "label": "text-correction",
+            "target": "token[0]",
+            "value": "actual text"
+        }
+
+    ]
+
+}
+
+
+
+
+

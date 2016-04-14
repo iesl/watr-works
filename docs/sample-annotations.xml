@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<svg:svg
+    xmlns:svg="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    version="1.1"
+    width="595px" height="4764px" viewBox="0 0 595 4764">
+
+  <svg:defs>
+    <svg:g class="annotation-set"
+       id="cermine-zones:uuidxyz"
+       target="sha:ac40d">
+
+      <!-- line bounds are added by cermine -->
+      <svg:path label="line"
+                id="uuidabc"
+                d="M10.2,12 v7 h3.1 Z" />
+
+
+      <svg:path label="sentence"
+                id="uuidabc"
+                d="M10.2,12 v7 h3.1 z, M10.2,12 v7 h3.1 z, M10.2,12 v7 h3.1 Z" />
+
+
+      <svg:path label="token"
+                id="uuidabc"
+                d="M10.2,12 v7 h3.1 z, M10.2,12 v7 h3.1 z, M10.2,12 v7 h3.1 Z" />
+
+
+      <labels target="sentence:uuidabc[0]" 
+              ns="pos" labels="n,v,vt,nnp,,,"
+              id="uuidabc"
+              />
+
+    </svg:g>
+
+  </svg:defs>
+
+</svg:svg>

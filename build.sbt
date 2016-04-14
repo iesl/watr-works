@@ -37,7 +37,7 @@ scalacOptions in ThisBuild ++= Seq(
   // "-Ywarn-value-discard"
 )
 
-lazy val logbackVersion = "1.1.6"
+lazy val logbackVersion = "1.1.7"
 
 libraryDependencies in ThisBuild ++= Seq(
   "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
@@ -49,12 +49,12 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.4",
-  "com.typesafe.play" %% "play-json" % "2.5.0",
+  "com.typesafe.play" %% "play-json" % "2.5.1",
   "com.github.scopt" %% "scopt" % "3.4.0",
   "com.itextpdf" % "itextpdf" % "5.5.9",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
   "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test",
-  "org.slf4j" % "slf4j-api" % "1.7.19",
+  "org.slf4j" % "slf4j-api" % "1.7.21",
   "ch.qos.logback" % "logback-core" % logbackVersion,
   "ch.qos.logback" % "logback-classic" % logbackVersion
 )
@@ -108,10 +108,10 @@ lazy val watrcolors = (
   libraryDependencies ++= Seq(
     "io.spray" %% "spray-can" % "1.3.3",
     "io.spray" %% "spray-routing" % "1.3.3",
-    "com.typesafe.akka" %% "akka-actor" % "2.4.2",
+    "com.typesafe.akka" %% "akka-actor" % "2.4.4",
     "org.webjars.bower" % "fabric" % "1.5.0",
     "org.webjars" % "bootstrap" % "3.3.6",
-    "org.webjars" % "jquery" % "2.2.0",
+    "org.webjars" % "jquery" % "2.2.3",
     "org.webjars" % "mousetrap" % "1.5.3"
   )
 )

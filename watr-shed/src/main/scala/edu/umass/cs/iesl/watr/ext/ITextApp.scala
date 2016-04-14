@@ -250,33 +250,6 @@ object cermineZoneUtil {
       s"""(x:${fmt(x)}, y:${fmt(y)}, w:${fmt(w)}, h:${fmt(h)})"""
     }
 
-
-
-    // <defs class="annotation-boxes"
-    //   <g class="annotation-set"
-    //      target="sha:ac40d">
-    // <!-- paragraph annotation that spans column and page
-    //      <g class="annotation"
-    //         id="uuid:xx-xx-xx"
-    //         label-name="paragraph">
-    //         <rect target="p3" x="1.96" y="4.45" width="36.07" height="31.09" />
-    //         <rect target="p3" x="1.96" y="4.45" width="36.07" height="31.09" />
-    //         <rect target="p4" x="1.96" y="4.45" width="36.07" height="31.09" />
-    //      </g>
-    //
-    // <!-- sentence annotation targeted to paragraph listed above.
-    // <!--   sentence crosses all 3 rects
-    //      <g class="annotation"
-    //         id="uuid:xx-xx-xx"
-    //         label-name="pos:sentence">
-    //         <rect target="p3" x="1.96" y="4.45" width="36.07" height="31.09" />
-    //         <rect target="p3" x="1.96" y="4.45" width="36.07" height="31.09" />
-    //         <rect target="p4" x="1.96" y="4.45" width="36.07" height="31.09" />
-    //      </g>
-
-    //   </g>
-    // </defs>
-
     // val spatialInfo = charExtractor.spatialInfo.toList
 
     object annotationTags extends ScalatagsDefs {
