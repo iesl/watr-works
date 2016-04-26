@@ -1,33 +1,22 @@
 package edu.umass.cs.iesl.watr
 package ext
 
-import edu.umass.cs.iesl.watr.watrmarks.TextBounds
-import java.io.InputStream
+import java.io.{InputStream, IOException}
+
+import scala.collection.JavaConversions._
+import scala.collection.mutable
+
 import com.itextpdf.text.Rectangle
 import com.itextpdf.text.exceptions.InvalidPdfException
 import com.itextpdf.text.pdf._
-import com.itextpdf.text.pdf.parser._
-import java.io.IOException
-import java.io.InputStream
+import com.itextpdf.text.pdf.parser.{Vector => PVector, RenderListener, _}
 import pl.edu.icm.cermine.exception.AnalysisException
+import pl.edu.icm.cermine.structure.CharacterExtractor
 import pl.edu.icm.cermine.structure.model._
 import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
-import pl.edu.icm.cermine.structure.CharacterExtractor
-
-import scala.collection.JavaConversions._
-import com.itextpdf.text.pdf.parser.{Vector => PVector}
-
-// import _root_.pl.edu.icm.cermine.structure.ITextCharacterExtractor
 import util._
-// import watrmarks.SpatialPageInfo
-import scala.collection.mutable
+import watrmarks._
 
-
-import com.itextpdf.text.pdf.parser.RenderListener
-
-case class SpatialPageInfo(
-  pageBounds: TextBounds
-)
 
 object util {
 
@@ -40,54 +29,6 @@ object util {
     def inf = java.lang.Double.isInfinite(d)
   }
 
-}
-
-
-class MyBxDocumentCreator(
-  spatialPageInfo: mutable.ArrayStack[SpatialPageInfo],
-  fontDict: mutable.Map[String, DocumentFont],
-  reader: PdfReader
-) extends RenderListener {
-
-  // val spatialIndex = SpatialIndex.create()
-  // val charRegions = mutable.Map[Long, Char]()
-
-  val document = new BxDocument()
-  var actPage: BxPage = _
-
-  val boundsBuilder = new BxBoundsBuilder()
-
-  var pageRectangle: Rectangle = _
-
-  def processNewBxPage(_pageRectangle: Rectangle): Unit = {
-    if (actPage != null) {
-      actPage.setBounds(boundsBuilder.getBounds())
-      boundsBuilder.clear()
-    }
-    actPage = new BxPage()
-    document.addPage(actPage)
-
-
-    pageRectangle = _pageRectangle
-
-    spatialPageInfo.push(SpatialPageInfo(
-      pageBounds = watrmarks.TextBounds(
-        left = pageRectangle.getLeft.toDouble,
-        bottom = pageRectangle.getBottom.toDouble,
-        width = pageRectangle.getWidth.toDouble,
-        height = pageRectangle.getHeight.toDouble
-      )))
-
-  }
-
-  import better.files._
-  val output = "asdf".toFile
-  val chars = mutable.ArrayBuffer[String]()
-
-  override def beginTextBlock(): Unit = {
-    // println("\nblock\n")
-  }
-
   def formatBounds(bounds: BxBounds): String = {
     val x = bounds.getX
     val y = bounds.getY
@@ -96,6 +37,84 @@ class MyBxDocumentCreator(
     def fmt = (d: Double) => f"${d}%1.2f"
     s"""(x:${fmt(x)}, y:${fmt(y)}, w:${fmt(w)}, h:${fmt(h)})"""
   }
+
+  def listBounds(bounds: BxBounds): List[Double] = {
+    val x = bounds.getX
+    val y = bounds.getY
+    val w = bounds.getWidth
+    val h = bounds.getHeight
+    // List(fmt(x), fmt(y), fmt(w), fmt(h))
+    List(x, y, w, h)
+  }
+}
+
+
+
+class MyBxDocumentCreator(
+  fontDict: mutable.Map[String, DocumentFont],
+  reader: PdfReader
+) extends RenderListener {
+
+  // pageGeometries: mutable.ArrayStack[PageGeometry],
+
+  var zoneRecords: ZoneRecords = ZoneRecords(
+    id = "", target = "",
+    List[PageGeometry](),
+    List[Zone](),
+    List[ZoneAndLabel]()
+  )
+
+  def getZoneRecords() = zoneRecords
+
+  val document = new BxDocument()
+  var actPage: BxPage = _
+
+  val boundsBuilder = new BxBoundsBuilder()
+
+  var pageRectangle: Rectangle = _
+
+  var pageNumber = -1
+
+  def processNewBxPage(_pageRectangle: Rectangle): Unit = {
+    if (actPage != null) {
+      actPage.setBounds(boundsBuilder.getBounds())
+      boundsBuilder.clear()
+    }
+    actPage = new BxPage()
+    document.addPage(actPage)
+    pageNumber += 1
+
+
+    pageRectangle = _pageRectangle
+
+    val borders = if (pageRectangle.hasBorders) {
+      Some(watrmarks.Borders(
+        bleft = pageRectangle.getBorderWidthLeft.toDouble,
+        bbottom = pageRectangle.getBorderWidthBottom.toDouble,
+        btop = pageRectangle.getBorderWidthTop.toDouble,
+        bright = pageRectangle.getBorderWidthRight.toDouble
+      ))
+    } else None
+
+    val bounds = watrmarks.LBBounds(
+      left = pageRectangle.getLeft.toDouble,
+      bottom = pageRectangle.getBottom.toDouble,
+      width = pageRectangle.getWidth.toDouble,
+      height = pageRectangle.getHeight.toDouble
+    )
+
+    zoneRecords = zoneRecords.copy(
+      pageGeometries = zoneRecords.pageGeometries :+ PageGeometry(pageNumber, bounds, borders)
+    )
+
+  }
+
+  val chars = mutable.ArrayBuffer[String]()
+
+  override def beginTextBlock(): Unit = {
+    // println("\nblock\n")
+  }
+
 
   def outputCharInfo(tri: TextRenderInfo): Unit = {
     val font = tri.getFont()
@@ -286,18 +305,18 @@ class MyBxDocumentCreator(
   }
 
 
-  override def renderText(tri: TextRenderInfo): Unit = {
-    for (charTri <- tri.getCharacterRenderInfos()) {
+  override def renderText(trix: TextRenderInfo): Unit = {
+    for (charTri <- trix.getCharacterRenderInfos()) {
       val text = charTri.getText()
-      outputCharInfo(charTri)
-      // print(s"${text}")
-
 
       val ch = charTri.getText().charAt(0)
       if (ch <= ' '
         || text.matches("^[\uD800-\uD8FF]$")
         || text.matches("^[\uDC00-\uDFFF]$")
         || text.matches("^[\uFFF0-\uFFFF]$")) {
+        // no-op
+        val displayable = text.getBytes.map({b => b.toInt}).mkString(", ")
+        println(s"skipping character(s) w/bytes= [${displayable}]")
       } else {
 
         val ascentStart = charTri.getAscentLine().getStartPoint()
@@ -325,7 +344,8 @@ class MyBxDocumentCreator(
           || absoluteCharLeft + charWidth > pageRectangle.getRight()
           || absoluteCharBottom < pageRectangle.getBottom()
           || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
-          // skip...
+          // no-op
+          println(s"skipping text w/bbox out of page bounds: ${text}")
         } else {
 
           val x = charLeft
@@ -340,19 +360,17 @@ class MyBxDocumentCreator(
             || bounds.getY().nan || bounds.getY().inf
             || bounds.getHeight().nan || bounds.getHeight().inf
             || bounds.getWidth().nan || bounds.getWidth().inf) {
-            // continue...
+            // skip
+            println(s"skipping text w/bbox= nan|inf: ${text}")
           } else {
             val chunk = new BxChunk(bounds, text)
-            val fullFontName = tri.getFont().getFullFontName()(0)(3)
+            val fullFontName = charTri.getFont().getFullFontName()(0)(3)
             chunk.setFontName(fullFontName)
             actPage.addChunk(chunk)
             boundsBuilder.expand(bounds)
 
-            addFontInfo(tri.getFont)
-
-            // spatialPageInfo.last.insert(ch, x, y, charWidth, charHeight)
+            addFontInfo(charTri.getFont)
           }
-
         }
       }
     }
@@ -478,19 +496,23 @@ class XITextCharacterExtractor() extends CharacterExtractor {
   val frontPagesLimit = DEFAULT_FRONT_PAGES_LIMIT
   val backPagesLimit = DEFAULT_BACK_PAGES_LIMIT
 
-  val spatialInfo = mutable.ArrayStack[SpatialPageInfo]()
   val fontDict = mutable.HashMap[String, DocumentFont]()
 
+  var bxDocumentCreator:MyBxDocumentCreator = _
+
+
+  def getZoneRecords() = bxDocumentCreator.getZoneRecords
 
   override def extractCharacters(stream: InputStream): BxDocument = {
     try {
       val reader = new PdfReader(stream)
 
       val documentCreator = new MyBxDocumentCreator(
-        spatialInfo, fontDict, reader
+        fontDict, reader
       )
 
       val processor = new PdfContentStreamProcessor(documentCreator)
+
 
       for (pageNumber <- 1 to reader.getNumberOfPages) {
 
@@ -518,6 +540,8 @@ class XITextCharacterExtractor() extends CharacterExtractor {
       // TODO these steps (filter/remove dups) don't seem necessary yet, and if they are,
       //   can probably be better handled using spatial index
       // filterComponents(removeDuplicateChunks(documentCreator.document))
+      bxDocumentCreator = documentCreator
+
       documentCreator.document
 
     } catch {

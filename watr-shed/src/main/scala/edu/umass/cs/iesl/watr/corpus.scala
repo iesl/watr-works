@@ -1,8 +1,9 @@
 package edu.umass.cs.iesl.watr
 
 
-import java.io.{ FileInputStream, InputStreamReader, Reader }
+import java.io.{ FileInputStream, InputStream, InputStreamReader, Reader }
 import better.files._, Cmds._
+import play.api.libs.json
 import scala.util.{Try, Failure, Success}
 import org.jdom2
 
@@ -80,6 +81,11 @@ class CorpusArtifact(
 
   def asFile: Try[File] = Success(artifactPath)
 
+  def asInputStream: Try[InputStream] = {
+    val fis = new FileInputStream(artifactPath.toJava)
+    Success(fis)
+  }
+
   def asReader: Try[Reader] = {
     val fis = new FileInputStream(artifactPath.toJava)
     val fisr = new InputStreamReader(fis)
@@ -87,16 +93,24 @@ class CorpusArtifact(
     Success(fisr)
   }
 
-  def asXml: Try[jdom2.Document] = {
-    val res: Option[Try[jdom2.Document]] = try {
-       artifactPath
-        .inputStream
-        .map({is => Success(new jdom2.input.SAXBuilder().build(is))})
-        .headOption
+  def asJson: Try[json.JsValue] = {
+    val res: Try[json.JsValue] = try {
+      asInputStream
+        .map(json.Json.parse(_))
     } catch {
-      case t: Exception => Some(Failure(t))
+      case t: Exception => Failure(t)
+    }
+    res
+  }
+
+  def asXml: Try[jdom2.Document] = {
+    val res: Try[jdom2.Document] = try {
+      asInputStream
+        .map(is => new jdom2.input.SAXBuilder().build(is))
+    } catch {
+      case t: Exception => Failure(t)
     }
 
-    res.getOrElse(sys.error(s"error getting corpus artifact ${artifactPath}"))
+    res
   }
 }

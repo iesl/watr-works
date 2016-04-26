@@ -210,9 +210,9 @@ package object dom {
               val rootDocument = accum.root.getLabel.asInstanceOf[Document]
 
 
-              // def bounds: Option[List[TextBounds]] =
+              // def bounds: Option[List[LBBounds]] =
               //   init.textXYOffsets.map {
-              //     xyoffs => xyoffs.xs.map{x => TextBounds(
+              //     xyoffs => xyoffs.xs.map{x => LBBounds(
               //       left   = x,
               //       bottom = xyoffs.ys.head,
               //       width  = 10, // TODO FIXME width/height

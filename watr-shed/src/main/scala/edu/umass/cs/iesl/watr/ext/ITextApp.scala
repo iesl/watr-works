@@ -2,22 +2,19 @@ package edu.umass.cs.iesl.watr
 package ext
 
 
-// import com.itextpdf.text.pdf.parser.TextRenderInfo
-// import edu.umass.cs.iesl.watr.watrmarks.{ BioLabel, TextBounds }
-import edu.umass.cs.iesl.watr.watrmarks.TextBounds
+import edu.umass.cs.iesl.watr.watrmarks._
 import java.io.InputStream
 
 import pl.edu.icm.cermine.ComponentConfiguration
 import pl.edu.icm.cermine.ExtractionUtils
-// import pl.edu.icm.cermine.structure.model.{ BxBounds, BxZone }
 import pl.edu.icm.cermine.structure.model._
-// import pl.edu.icm.cermine.structure.model.BxZoneLabel
 import scala.collection.JavaConversions._
-// import scala.collection.mutable
 import com.itextpdf.text.pdf.DocumentFont
 
 import better.files._
-// import watrmarks.dom
+import play.api.libs.json._
+
+import scalaz.@@
 
 object ITextPdfToSvg extends App {
 
@@ -50,7 +47,11 @@ object ITextPdfToSvg extends App {
   if (f.isDirectory) {
     f.glob("**/*.pdf").foreach { pdf =>
       val artifactPath = s"${pdf.path}.d".toFile
-      val output = s"${artifactPath}/cermine-zones.svg".toFile
+      if (!artifactPath.exists) {
+        Cmds.mkdir(artifactPath)
+      }
+
+      val output = s"${artifactPath}/cermine-zones.json".toFile
       val fileSha1 = DigestUtils.shaHex(pdf.byteArray)
 
       pdf.inputStream.map { is =>
@@ -70,7 +71,7 @@ object ITextPdfToSvg extends App {
     println("file sha1: "+fileSha1)
 
     f.inputStream.map { is =>
-      val output = s"${artifactPath}/cermine-zones.svg".toFile
+      val output = s"${artifactPath}/cermine-zones.json".toFile
       if (!output.isReadable || config.force) {
         println(s"processing ${f}, force=${config.force}")
         output < cermineZoneUtil.cermineZonesToSVG(fileSha1, is)
@@ -83,7 +84,28 @@ object ITextPdfToSvg extends App {
   }
 }
 
-object cermineZoneUtil {
+object cermineZoneUtil extends SpatialJsonFormat {
+
+  implicit class RicherLTBounds(val bb: LTBounds) extends AnyVal {
+    def toBxBounds: BxBounds = {
+     new BxBounds(bb.left, bb.top, bb.width, bb.height)
+    }
+  }
+
+  import pl.edu.icm.cermine.structure.model.BxBounds
+  implicit class RicherBxBounds(val tb: BxBounds) extends AnyVal {
+    def toLTBounds: LTBounds = {
+      LTBounds(
+        left = tb.getX,
+        top =  tb.getY,
+        width = tb.getWidth,
+        height = tb.getHeight
+      )
+
+    }
+  }
+
+
   // def bxBoundsToSpatialBounds(bounds: BxBounds): spatialindex.Bounds = {
   //   spatialindex.regions.bbox(
   //     bounds.getX,
@@ -92,6 +114,7 @@ object cermineZoneUtil {
   //     bounds.getHeight
   //   )
   // }
+
   def reportFontInfo(font: DocumentFont): Unit = {
     val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")
     val allNameEntries = font.getAllNameEntries.map(_.mkString("[", ",", "]")).mkString(", ")
@@ -197,21 +220,19 @@ object cermineZoneUtil {
     s"""label=$l, category = $cat, general = $gen """
   }
 
-  def modifyZoneLabelName(name: String): String = {
+  def modifyZoneLabelName(name: String): Label = {
     val Array(pre, post0) = name.toLowerCase.split("_", 2)
     val post = post0.replace("_", "-")
 
-    s"${pre}:${post}"
+    Label("bx", s"${pre}:${post}")
   }
-
-  // import scalaz.{Show, TreeLoc, Tree}
 
   def getFontID(fullFontName: String, fontDict: Map[String, (Long, DocumentFont)]): Long = {
     val maybeFont = fontDict.getOrElse(fullFontName, sys.error(s"no font found with fullname =${fullFontName}"))
     maybeFont._1
   }
 
-  def extractCermineZones(fileSha1: String, pdfis: InputStream): (BxDocument, Seq[SpatialPageInfo]) = {
+  def extractCermineZones(fileSha1: String, pdfis: InputStream): (BxDocument, ZoneRecords) = {
     val conf = new ComponentConfiguration()
     val charExtractor = new XITextCharacterExtractor()
     conf.setCharacterExtractor(charExtractor)
@@ -223,14 +244,14 @@ object cermineZoneUtil {
     val d4 = ExtractionUtils.classifyMetadata(conf, d3);
 
 
-    val pageSpatialInfo = charExtractor.spatialInfo
+    // val pageSpatialInfo = charExtractor
     val fontDict = charExtractor.fontDict
-    (d4, pageSpatialInfo)
+    (d4, charExtractor.getZoneRecords)
   }
 
   def cermineZonesToSVG(fileSha1: String, pdfis: InputStream): String = {
 
-    val (bxDoc, spatialInfo) = extractCermineZones(fileSha1, pdfis)
+    val (bxDoc, zoneRecords) = extractCermineZones(fileSha1, pdfis)
 
 
     // val pageSpatialInfo = charExtractor.spatialInfo
@@ -250,7 +271,6 @@ object cermineZoneUtil {
       s"""(x:${fmt(x)}, y:${fmt(y)}, w:${fmt(w)}, h:${fmt(h)})"""
     }
 
-    // val spatialInfo = charExtractor.spatialInfo.toList
 
     object annotationTags extends ScalatagsDefs {
 
@@ -260,7 +280,7 @@ object cermineZoneUtil {
         zone.getBounds.getWidth.attrWidth,
         zone.getBounds.getHeight.attrHeight)
 
-      def zoneExtents(tb: TextBounds) = Seq(
+      def zoneExtents(tb: LBBounds) = Seq(
         tb.left.attrX,
         tb.bottom.attrY,
         tb.width.attrWidth,
@@ -269,73 +289,110 @@ object cermineZoneUtil {
     }
 
 
-    import annotationTags.texttags._
-    import annotationTags._
+    import scala.collection.mutable
+    val zoneIds = IdGenerator[ZoneID]
+    val labelIds = IdGenerator[LabelID]
 
 
-    var annotationSet = <.g("annotation-set".clazz,
-      s"file:$fileSha1".attrTarget
-    )
 
-    val pages = bxDoc.asPages().toList
 
-    pages.zip(spatialInfo).zipWithIndex.foreach {
-      case ((page, spatial), pagenum) =>
-        println(s"p: $pagenum")
+    val zones = mutable.HashMap[Int@@ZoneID, Zone]()
+    val zoneAndLabels = mutable.ArrayBuffer[ZoneAndLabel]()
 
-        annotationSet = annotationSet(
-          <.rect(
-            "bounding-box".clazz,
-            s"page-${pagenum}".labelName,
-            s"page-${pagenum}".id,
-            zoneExtents(spatial.pageBounds)
-          ))
+    def addZone(label: Label, target: Int, bboxes: LTBounds*): Zone = {
+      val zone = Zone(
+        zoneIds.nextId,
+        bboxes.toList.map(TargetedBounds(PageID(target), _))
+      )
 
+      zones.put(zone.id, zone)
+      zoneAndLabels.append(zone.withLabel(label))
+
+      zone
+    }
+
+
+    // Serialize zones to json
+    bxDoc.asPages.zip(zoneRecords.pageGeometries).zipWithIndex.foreach {
+      case ((page, pageGeometry), pageNum) =>
 
         page.iterator.foreach { zone =>
           val zlabel = modifyZoneLabelName(zone.getLabel.name)
 
-          val z = <.g("annotation".clazz, <.rect(
-            zlabel.labelName,
-            s"page-${pagenum}".attrTarget,
-            zoneExtents(zone)
-          ))
-          annotationSet = annotationSet(z)
+          addZone(zlabel, pageNum, zone.getBounds.toLTBounds)
 
           zone.iterator().toList.foreach { line =>
+            addZone(Label("bx", "line"), pageNum, line.getBounds.toLTBounds)
 
-            val z = <.g("annotation".clazz, <.rect(
-              "line".labelName,
-              s"page-${pagenum}".attrTarget,
-              zoneExtents(zone)
-            ))
-            annotationSet = annotationSet(z)
+            line.iterator().toList.foreach { token =>
+              addZone(Label("bx", "token"), pageNum, token.getBounds.toLTBounds)
 
+              token.iterator().toList.foreach { chunk =>
+                addZone(Label("bx", "char"), pageNum, chunk.getBounds.toLTBounds)
+              }
+            }
           }
         }
     }
 
-    val heights = spatialInfo.map(_.pageBounds.height)
-    val widths = spatialInfo.map(_.pageBounds.width)
-    val hoffsets = heights.reverse.tails.map(_.sum).toList.reverse
+    // zoneRecords.copy(zones = zones.toList)
 
-    annotationSet.toString()
+    // emit zone/label records
+    val zoneAndLabelJson = zoneAndLabels.map { case ZoneAndLabel(zoneID, label) =>
+      // val zoneId = ZoneID.unwrap(zoneID)
+      val zone = zones(zoneID)
+
+      val zoneBboxes = zone.bboxes.map({b =>
+        val pageTargetId = Json.toJson(PageID.unwrap(b.target))
+        val bboxList: JsArray = Json.toJson(util.listBounds(b.bbox.toBxBounds).map(JsNumber(_))).asInstanceOf[JsArray]
+        pageTargetId +: bboxList
+      })
+
+      val zoneJson = Json.obj(
+        "id" -> ZoneID.unwrap(zoneID),
+        "bboxes" -> zoneBboxes
+      )
+
+      val labelId = LabelID.unwrap(labelIds.nextId)
+
+      val labelJson = Json.toJson(label)
+
+      (zoneJson, labelJson)
+    }
+
+    val zonesJson = zoneAndLabelJson.map(_._1)
+    val labelsJson = zoneAndLabelJson.map(_._2)
+
+    val pageGeom = zoneRecords.pageGeometries.map{ geometry =>
+      Json.toJson(geometry)
+      // Json.obj(
+      //   "id" -> geometry.id,
+      //   "bounds" -> Json.obj(
+      //     "left"   -> geometry.bounds.left,
+      //     "bottom" -> geometry.bounds.bottom,
+      //     "width"  -> geometry.bounds.width,
+      //     "height" -> geometry.bounds.height
+      //   ),
+      //   "borders" -> geometry.borders.map{borders =>
+      //     Json.obj(
+      //       "left"   ->borders.bleft ,
+      //       "right"  ->borders.bright ,
+      //       "top"    ->borders.btop ,
+      //       "bottom" ->borders.bbottom
+      //     )
+      //   }
+      // )
+    }
+
+    val zoneObj = Json.obj(
+      // "id" -> "todo",
+      // "target" -> "todo",
+      "pageGeometries" -> pageGeom,
+      "zones" -> zonesJson,
+      "labels" -> labelsJson
+    )
+
+    Json.prettyPrint(zoneObj)
   }
 
 }
-
-
-// val spatialInfo = pageSpatialInfo(pagenum)
-// spatialInfo.labelBbox(bxBoundsToSpatialBounds(zone.getBounds), modifyZoneLabelName(zone.getLabel.name))
-// spatialInfo.labelBbox(bxBoundsToSpatialBounds(line.getBounds), "layout:line")
-// spatialInfo.labelBbox(bxBoundsToSpatialBounds(line.getBounds), "layout:word")
-
-// line.iterator().toList.foreach { word =>
-//   word.iterator.foreach { chunk =>
-//     val c = chunk.toText().head
-//     val x = chunk.getX
-//     val y = chunk.getY
-//     val w = chunk.getWidth
-//     val h = chunk.getHeight
-//   }
-// }

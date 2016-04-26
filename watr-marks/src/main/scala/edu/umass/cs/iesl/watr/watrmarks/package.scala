@@ -1,21 +1,7 @@
 package edu.umass.cs.iesl.watr
 
+import scalaz.Tag
 
-sealed trait BeginEnd
-object Begin extends BeginEnd
-object End extends BeginEnd
-
-sealed trait Direction {
-  def isForward: Boolean
-  def isBackward: Boolean
-}
-
-object Forward extends Direction{
-  val (isForward, isBackward) = (true, false)
-}
-object Backward extends Direction{
-  val (isForward, isBackward) = (false, true)
-}
 
 package object watrmarks {
 
@@ -38,6 +24,8 @@ package object watrmarks {
       TB.vjoin(sep=separator)(value:_*)
   }
 
-
+  val ZoneID = Tag.of[ZoneID]
+  val LabelID = Tag.of[LabelID]
+  val PageID = Tag.of[PageID]
 
 }

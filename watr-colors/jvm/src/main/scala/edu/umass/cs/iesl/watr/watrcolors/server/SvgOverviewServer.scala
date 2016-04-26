@@ -6,7 +6,7 @@ package server
 import net.sf.jsi.Rectangle
 
 import scala.collection.mutable
-import ext.CermineBoundingBoxes
+import ext.CermineLTBoundses
 import watrmarks._
 
 import better.files._
@@ -77,11 +77,11 @@ class SvgOverviewServer(
 
     val maybeOverlays = corpus
       .entry(corpusEntryId)
-      .getArtifact("cermine-zones.svg")
-      .asReader
-      .map({ r =>
-        println("zones??")
-        CermineBoundingBoxes.loadSpatialIndices(r)
+      .getArtifact("cermine-zones.json")
+      .asJson
+      .map({ jsvalue =>
+        ???
+        // CermineLTBoundses.loadSpatialIndices(jsvalue)
       })
 
     val overlays = maybeOverlays
@@ -97,7 +97,7 @@ class SvgOverviewServer(
   }
 
 
-  def concatVertical(pages: Seq[PageSpatialInfo]): PageSpatialInfo = {
+  def concatVertical(pages: Seq[ZoneIndexer]): ZoneIndexer = {
     pages.headOption.getOrElse(sys.error("concat vertical"))
   }
 

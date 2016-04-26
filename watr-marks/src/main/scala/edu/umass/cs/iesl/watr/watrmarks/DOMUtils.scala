@@ -8,19 +8,6 @@ import org.jdom2.util.IteratorIterable
 import scala.collection.JavaConversions.iterableAsScalaIterable
 
 
-// TODO move these classes
-case class FontInfo(
-  // fontName: String,
-  fontFamily: String,
-  fontSize: String
-)
-
-case class TextBounds(
-  left: Double,
-  bottom: Double,
-  width: Double,
-  height: Double
-)
 
 object JDOMUtils {
 
