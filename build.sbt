@@ -48,8 +48,8 @@ libraryDependencies in ThisBuild ++= Seq(
   "org.scala-lang.modules" %% "scala-async" % "latest.release",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
-  "com.lihaoyi" %% "scalatags" % "0.5.4",
-  "com.typesafe.play" %% "play-json" % "2.5.1",
+  "com.lihaoyi" %% "scalatags" % "0.5.5",
+  "com.typesafe.play" %% "play-json" % "2.5.3",
   "com.github.scopt" %% "scopt" % "3.4.0",
   "com.itextpdf" % "itextpdf" % "5.5.9",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
@@ -89,7 +89,7 @@ lazy val watrcolors = (
     "me.chrons" %%% "boopickle" % "1.1.3",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     "com.lihaoyi" %%% "scalarx" % "0.3.1",
-    "com.lihaoyi" %%% "scalatags" % "0.5.4"
+    "com.lihaoyi" %%% "scalatags" % "0.5.5"
   )
 ).jsSettings(
   workbenchSettings:_*

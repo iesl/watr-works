@@ -33,6 +33,11 @@ trait FabricObject extends js.Object {
 
   @JSName("type")
   def otype: String = js.native
+
+
+
+  // Use Dynamic trait for this...
+  var title: String = js.native
 }
 
 @js.native

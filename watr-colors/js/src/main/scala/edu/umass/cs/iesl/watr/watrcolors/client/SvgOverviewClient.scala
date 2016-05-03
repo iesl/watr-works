@@ -51,7 +51,7 @@ class SvgOverview(
   }
 
   override val initKeys = Keybindings(List(
-    "a" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
+    "c" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
     "b" -> ((e: MousetrapEvent) => createCermineOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
     "d" -> ((e: MousetrapEvent) => initDeletion())
@@ -65,7 +65,6 @@ class SvgOverview(
       bbox <- getUserBBox(self.fabricCanvas)
     } yield {
       val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
-      translateBBox(-offset.left, -offset.top, bbox)
     }
 
     true
@@ -87,7 +86,9 @@ class SvgOverview(
 
 
 
+
   def addBBoxRect(bbox: BBox, color: String): Unit = {
+    // bbox.info
 
     val rect = fabric.Rect(
       top         = bbox.y,
@@ -100,9 +101,12 @@ class SvgOverview(
     rect.hasControls = false
     rect.hasBorders = false
     rect.selectable = false
+    rect.title = bbox.info
 
     fabricCanvas.add(rect)
   }
+
+
 
   def createCermineOverlay(): Boolean = {
     server.getCermineOverlay(artifactId).call().foreach{ overlays =>
@@ -110,23 +114,45 @@ class SvgOverview(
         addBBoxRect(bbox, "green")
       }
     }
+
+    // var hoverTarget: fabric.FabricObject = _
+
+    fabricCanvas.on("mouse:over", ((options: fabric.Options) => {
+      val title = options.target.title
+      jQuery("#selection-info").html(s"title: ${title}")
+    }))
+
+    fabricCanvas.on("mouse:out", ((options: fabric.Options) => {
+      jQuery("#selection-info").html(s"title: ")
+    }))
     true
   }
 
+
+  def alignBboxToDiv(divID: String, bbox: BBox): BBox = {
+    val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]
+    translateBBox(-offset.left, -offset.top, bbox)
+  }
+
   def createCharLevelOverlay(): Boolean = {
-    val bboxes = time("get bboxes from server") {
-      server.getCharLevelOverlay(artifactId).call()
-    }
+    for {
+      bbox <- getUserBBox(self.fabricCanvas)
+    } yield {
+      val aligned = alignBboxToDiv("#overlay-container", bbox)
+      val bboxes = server.getCharLevelOverlay(artifactId, aligned).call()
 
-    fabricCanvas.renderOnAddRemove = false
+      fabricCanvas.renderOnAddRemove = false
 
-    bboxes.foreach{ overlays =>
-      overlays.foreach { bbox =>
-        addBBoxRect(bbox, "blue")
+      bboxes.foreach{ overlays =>
+        overlays.foreach { bbox =>
+          addBBoxRect(bbox, "blue")
+        }
+        fabricCanvas.renderAll()
+        fabricCanvas.renderOnAddRemove = true
       }
-      fabricCanvas.renderAll()
-      fabricCanvas.renderOnAddRemove = true
     }
+
+
 
     true
   }

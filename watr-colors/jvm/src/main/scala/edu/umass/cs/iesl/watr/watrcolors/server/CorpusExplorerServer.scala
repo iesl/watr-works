@@ -10,8 +10,7 @@ class CorpusExplorerServer(
 
 
   val initpath = File(config.rootDirectory)
-  println(s"CorpusExplorerServer current dir = ${Cmds.cwd}")
-  println(s"  corpus root = ${initpath.pathAsString}")
+  println(s"CorpusExplorerServer current dir=${Cmds.cwd}, corpus root=${initpath.pathAsString}")
 
   val init = DirectoryCursor.init(initpath).get
 

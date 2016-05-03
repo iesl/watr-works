@@ -6,6 +6,7 @@ import better.files._, Cmds._
 import play.api.libs.json
 import scala.util.{Try, Failure, Success}
 import org.jdom2
+// import scalaz.{Tag, @@}
 
 
 case class PdfCorpusConfig(
@@ -51,7 +52,21 @@ class Corpus(
     new CorpusEntry(entryDescriptor, this)
   }
 
+  def entries(): Seq[CorpusEntry] = {
+    val root = File(config.rootDirectory)
+    val es = root.glob("**/*.d").toList
+    val sorted = es.sortBy(_.name)
+
+    val artifacts = sorted.map{e =>
+      new CorpusEntry(e.name, this)
+    }
+
+    artifacts.filterNot(_.getArtifacts.isEmpty)
+  }
+
 }
+
+sealed trait ArtifactDescriptor
 
 class CorpusEntry(
   entryDescriptor: String,
@@ -59,6 +74,12 @@ class CorpusEntry(
 ) {
   val artifactsRoot = File(corpus.config.rootDirectory) / entryDescriptor
   val entryDescriptorRoot = entryDescriptor.dropRight(2)
+
+  def getArtifacts(): Seq[String] = {
+    val allFiles = artifactsRoot.glob("*").toSeq
+
+    allFiles.map(_.name)
+  }
 
   // e.g., cermine-zones.xml
   def getArtifact(artifactDescriptor: String): CorpusArtifact = {

@@ -17,7 +17,6 @@ import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
 import util._
 import watrmarks._
 
-
 object util {
 
   implicit class RicherFloat(val d: Float) extends AnyVal {
@@ -55,8 +54,6 @@ class MyBxDocumentCreator(
   reader: PdfReader
 ) extends RenderListener {
 
-  // pageGeometries: mutable.ArrayStack[PageGeometry],
-
   var zoneRecords: ZoneRecords = ZoneRecords(
     id = "", target = "",
     List[PageGeometry](),
@@ -75,7 +72,13 @@ class MyBxDocumentCreator(
 
   var pageNumber = -1
 
+  var page0Chars = 0
+
   def processNewBxPage(_pageRectangle: Rectangle): Unit = {
+    println(s"""page ${pageNumber} chars: ${page0Chars}""")
+
+    page0Chars = 0
+
     if (actPage != null) {
       actPage.setBounds(boundsBuilder.getBounds())
       boundsBuilder.clear()
@@ -96,15 +99,17 @@ class MyBxDocumentCreator(
       ))
     } else None
 
-    val bounds = watrmarks.LBBounds(
+
+    // PageRectangle coords have origin @ lower left (normal cartesian origin)
+    val bounds = watrmarks.LTBounds(
       left = pageRectangle.getLeft.toDouble,
-      bottom = pageRectangle.getBottom.toDouble,
+      top = pageRectangle.getBottom.toDouble, // ???
       width = pageRectangle.getWidth.toDouble,
       height = pageRectangle.getHeight.toDouble
     )
 
     zoneRecords = zoneRecords.copy(
-      pageGeometries = zoneRecords.pageGeometries :+ PageGeometry(pageNumber, bounds, borders)
+      pageGeometries = zoneRecords.pageGeometries :+ PageGeometry(PageID(pageNumber), bounds, borders)
     )
 
   }
@@ -113,195 +118,6 @@ class MyBxDocumentCreator(
 
   override def beginTextBlock(): Unit = {
     // println("\nblock\n")
-  }
-
-
-  def outputCharInfo(tri: TextRenderInfo): Unit = {
-    val font = tri.getFont()
-    // val text2 = font.getUnicodeEquivalent(tri.getMcid)
-    val pdfstring = tri.getPdfString
-    val ffs = font.getFullFontStream
-
-    // val dictKvs = "Type,Subtype,Name/BaseFont".split(",").map{key =>
-    //   font.getFontDictionary.get(new PdfName(s"/$key"))
-    // }.mkString("\n")
-
-    val asString = tri.getText.toCharArray().map{c =>
-      Char.char2int(c).toString
-    }.mkString
-
-    val bs = pdfstring.getBytes.map(Byte.byte2int(_)).mkString(",")
-    val obs = pdfstring.getOriginalBytes.map(Byte.byte2int(_)).mkString(",")
-
-    val pdfstrInf = s"""|${tri.getText}:  '${asString}'
-                        |    getBytes         ${bs} => Array[Byte]
-                        |    getEncoding      ${pdfstring.getEncoding} => String
-                        |    getOriginalBytes ${obs} => Array[Byte]
-                        |    isHexWriting     ${pdfstring.isHexWriting        } => Boolean
-                        |    toString         ${pdfstring.toString            } => String
-                        |    toUnicodeString  ${pdfstring.toUnicodeString     } => String
-                        |    canBeInObjStm    ${pdfstring.canBeInObjStm       } => Boolean
-                        |    getIndRef        ${pdfstring.getIndRef           } => PRIndirectReference
-                        |    isArray          ${pdfstring.isArray             } => Boolean
-                        |    isBoolean        ${pdfstring.isBoolean           } => Boolean
-                        |    isDictionary     ${pdfstring.isDictionary        } => Boolean
-                        |    isIndirect       ${pdfstring.isIndirect          } => Boolean
-                        |    isName           ${pdfstring.isName              } => Boolean
-                        |    isNull           ${pdfstring.isNull              } => Boolean
-                        |    isNumber         ${pdfstring.isNumber            } => Boolean
-                        |    isStream         ${pdfstring.isStream            } => Boolean
-                        |    isString         ${pdfstring.isString            } => Boolean
-                        |    length           ${pdfstring.length              } => Int
-                        |    type             ${pdfstring.`type`              } => Int
-                        |
-                        |""".stripMargin
-
-    val d0 = font.getDifferences
-    val d1 = font.getUnicodeDifferences
-    val dict  = font.getFontDictionary
-
-    val dictKvs = font.getFontDictionary.getKeys.map{ key =>
-      "    " +key.toString() + ": " + font.getFontDictionary.get(key)
-    }.mkString("\n")
-
-
-    val diffStr = d0.mkString(",")
-    val udiffStr = d1.mkString(",")
-
-    val unicodeEquiv = font.getUnicodeEquivalent(0)
-      // |    diffs             ${diffStr}
-      // |    unidiffs          ${udiffStr}
-
-    object formatting {
-      import watrmarks.TB._
-
-      def formatPdfObject(obj: PdfObject): String = {
-        renderBox(formatObject(obj)).mkString("\n")
-      }
-
-      def formatObject(obj: PdfObject): Box = {
-        if (obj.isName) {
-          s"name:$obj".box
-        } else if (obj.isIndirect()) {
-          val xo = obj.asInstanceOf[PdfIndirectReference]
-          val xo2 = obj.asInstanceOf[PdfIndirectObject]
-          val sub = reader.getPdfObject(xo.getNumber)
-          "indirect:" beside formatObject(sub)
-        } else if (obj.isStream()) {
-          val xo = obj.asInstanceOf[PdfStream]
-          // new java.io.OutputStreamWriter(new java.io.StringWriter())
-          val sw = new java.io.StringWriter()
-
-          val baos = new java.io.ByteArrayOutputStream()
-          xo.writeContent(baos)
-          val s = baos.toByteArray().mkString("[", ",", "]")
-          // val rlen = xo.getRawLength
-          // val bytes = if (rlen>0 && xo.getBytes != null) {
-          //   xo.getBytes.mkString("")
-          // } else "[]"
-
-          val other = vcat(center2)(List(
-            "bytes" besideS s
-          ))
-
-          "stream:" atop indent(3)(
-            other atop vcat(center1)(
-              xo.getKeys.toList.map{ key =>
-                val dval = xo.get(key)
-
-                val valBox = if (dval.isIndirect()) {
-                  val xo = dval.asInstanceOf[PdfIndirectReference]
-                  val sub = reader.getPdfObject(xo.getNumber)
-                  formatObject(sub)
-                } else if (dval.isStream()) {
-                  formatObject(dval)
-                } else {
-                  formatObject(dval)
-                }
-                s"${key}:".box beside valBox
-              }
-            ))
-        } else if (obj.isDictionary) {
-          val xo = obj.asInstanceOf[PdfDictionary]
-
-          "dict:" atop indent(3)(
-            vcat(center1)(
-              xo.getKeys.toList.map{ key =>
-                val dval = xo.get(key)
-
-                val valBox = if (dval.isIndirect()) {
-                  val xo = dval.asInstanceOf[PdfIndirectReference]
-                  val sub = reader.getPdfObject(xo.getNumber)
-                  formatObject(sub)
-                } else if (dval.isStream()) {
-                  formatObject(dval)
-                } else {
-                  formatObject(dval)
-                }
-                s"${key}:".box beside valBox
-              }
-            )
-          )
-        } else {
-          s"<${obj}>".box
-        }
-      }
-    }
-
-    val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")
-    val charProcs = dict.getAsDict(new PdfName("CharProcs"))
-    val charProcInf = if (charProcs != null) {
-      formatting.formatPdfObject(charProcs).toString()
-    } else "<no CharProcs>"
-
-
-    val fontinf = s"""|${tri.getText}
-                      |    Font              ${fontFullname}      => DocumentFont
-                      |       Unic.Equiv     ${unicodeEquiv}      => Int
-                      |    Mcid              ${tri.getMcid}              => Integer
-                      |    PdfString         ${tri.getPdfString}              => PdfString
-                      |    TextRenderMode    ${tri.getTextRenderMode}              => Int
-                      | ${dictKvs}
-                      | ${charProcInf}
-                      |""".stripMargin
-
-    def formatLineVector(ls: PVector): String = {
-      s"""[${ls.get(0)} ${ls.get(1)}, ${ls.get(2)}}}]"""
-    }
-
-    def formatLineSegment(ls: LineSegment): String = {
-      s""" ${formatLineVector(ls.getStartPoint)} -> ${formatLineVector(ls.getEndPoint)} ${ls.getLength}}"""
-
-    }
-
-
-
-    // val bbinf = s"""|${tri.getText}:  '${asString}'
-    //                 |    Rise              ${tri.getRise}                                => Float
-    //                 |    AscentLine        ${formatLineSegment(tri.getAscentLine)}       => LineSegment
-    //                 |    Baseline          ${formatLineSegment(tri.getBaseline)}         => LineSegment
-    //                 |    Baseline (uns)    ${formatLineSegment(tri.getUnscaledBaseline)} => LineSegment
-    //                 |    DescentLine       ${formatLineSegment(tri.getDescentLine)}      => LineSegment
-    //                 |    Mcid              ${tri.getMcid}              => Integer
-    //                 |    PdfString         ${tri.getPdfString}              => PdfString
-    //                 |""".stripMargin
-
-    // println(bbinf)
-
-
-    // if (chars.length > 20) {
-    //   output << chars.mkString
-    //   chars.clear()
-    // }
-
-    // chars.append(tri.getText)
-
-    // val _ = output << pdfstrInf
-    // output << fontinf
-
-    // | SingleSpaceWidth  ${tri.getSingleSpaceWidth }                 => Float
-    // | StrokeColor       ${tri.getStrokeColor      }              => BaseColor
-    // | FillColor         ${tri.getFillColor        }              => BaseColor
   }
 
 
@@ -316,7 +132,7 @@ class MyBxDocumentCreator(
         || text.matches("^[\uFFF0-\uFFFF]$")) {
         // no-op
         val displayable = text.getBytes.map({b => b.toInt}).mkString(", ")
-        println(s"skipping character(s) w/bytes= [${displayable}]")
+        // println(s"skipping character(s) w/bytes= [${displayable}]")
       } else {
 
         val ascentStart = charTri.getAscentLine().getStartPoint()
@@ -333,10 +149,12 @@ class MyBxDocumentCreator(
         var charWidth = charTri.getDescentLine().getLength().toDouble
 
         if (charHeight.nan || charHeight.inf) {
+          println(s"warning: char height is NaN or Inf")
           charHeight = 0
         }
 
         if (charWidth.nan || (charWidth.inf)) {
+          println(s"warning: char width is NaN or Inf")
           charWidth = 0
         }
 
@@ -347,6 +165,7 @@ class MyBxDocumentCreator(
           // no-op
           println(s"skipping text w/bbox out of page bounds: ${text}")
         } else {
+          page0Chars += 1
 
           val x = charLeft
           val y = pageRectangle.getHeight() - charBottom - charHeight

@@ -14,7 +14,8 @@ trait IdGenerator[T] {
 
   var _nextId = startingId
   def nextId: Int @@ T = {
+    val id = _nextId
     _nextId += 1
-    tagOf(_nextId)
+    tagOf(id)
   }
 }

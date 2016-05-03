@@ -18,24 +18,9 @@ import native.mousetrap._
 class CorpusExplorerClient() extends ClientView {
 
   val server = ServerWire("explorer")[CorpusExplorerApi]
-  // import domtags._
-  // import scala.collection.mutable
-
-  // var entriesPrevs = mutable.ArrayBuffer[String]()
-  // var entriesNexts = mutable.ArrayBuffer[String]()
-  // var entriesCurr: Option[String] = entryDescriptor
 
 
   def createView(): Unit = {
-    // entriesCurr.map{ curr =>
-    //   server.createView().call()
-    // }
-
-    // def init()  = {
-    //   <.div(
-    //     <.ul("corpus-entries".id)
-    //   )
-    // }
     server.createView().call().foreach{ update =>
       applyHtmlUpdates(update)
     }

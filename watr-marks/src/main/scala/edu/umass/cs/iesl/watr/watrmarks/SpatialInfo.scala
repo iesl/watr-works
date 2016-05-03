@@ -14,7 +14,6 @@ import json._
 import scalaz.{Tag, @@}
 
 
-
 case class FontInfo(
   // fontName: String,
   fontFamily: String,
@@ -101,6 +100,7 @@ case class Borders(
 )
 
 case class TargetedBounds(
+  id: Int@@RegionID,
   target: Int@@PageID,
   bbox: LTBounds
 )
@@ -108,6 +108,7 @@ case class TargetedBounds(
 
 sealed trait ZoneID
 sealed trait LabelID
+sealed trait RegionID
 
 case class Zone(
   id: Int@@ZoneID,
@@ -122,14 +123,17 @@ case class Label(
   ns: String,
   key: String,
   value: Option[String]  = None
-)
+) {
+  val vstr = value.map(v => s"=${v}").getOrElse("")
+  override def toString = s"#${ns}::${key}${vstr}"
+}
 
 
 sealed trait PageID
 
 case class PageGeometry(
-  id: Int,
-  bounds: LBBounds,
+  id: Int@@PageID,
+  bounds: LTBounds,
   borders:Option[Borders]
 )
 
@@ -148,40 +152,91 @@ case class ZoneRecords(
 
 class ZoneIndexer  {
 
-
-  def zoneIds = IdGenerator[ZoneID]
-  def sindex: SpatialIndex = new RTree()
+  val pageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex]()
 
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
-  val pageGeometries = mutable.Map[Int, PageGeometry]()
+  val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
+  val pageGeometries = mutable.Map[Int@@PageID, PageGeometry]()
   // val targetedZones = mutable.HashMap[String, Zone]()
-  val zoneLabelMap = mutable.HashMap[Int, mutable.ArrayBuffer[Label]]()
 
-  def addPage(p: PageGeometry): PageGeometry = {
+  val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
+
+
+  def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
+    zoneLabelMap.get(id).getOrElse(Seq())
+  }
+
+
+  def addPage(p: PageGeometry): Unit = {
+    println(s"adding ZoneIndexer page ${p}")
+
     if(pageGeometries.contains(p.id)) {
       sys.error("adding new page w/existing id")
     }
 
     pageGeometries.put(p.id, p)
-    p
+    val si: SpatialIndex = new RTree()
+    si.init(null)
+    pageRIndexes.put(p.id, si)
   }
 
-  def addZone(zone: Zone, labels: Label*): Int@@ZoneID = {
-    val zoneId = zoneIds.nextId
-    zoneMap.put(zoneId, zone)
+  // def createZone(zone: Zone): Unit = { todo
+
+  def addZone(zone: Zone): Unit = {
+    val zoneId = zone.id
+    zoneMap.put(zoneId, zone).map(existing => sys.error(s"zone already exists in zoneMap"))
     zone.bboxes.foreach{ targetedBounds  =>
-      sindex.add(
+      regionToZone.put(targetedBounds.id, zone)
+      val rindex = pageRIndexes(targetedBounds.target)
+      rindex.add(
         targetedBounds.bbox.toJsiRectangle,
-        ZoneID.unwrap(zoneId)
+        RegionID.unwrap(targetedBounds.id)
       )
     }
-
-    val lls = zoneLabelMap.getOrElseUpdate(ZoneID.unwrap(zoneId), mutable.ArrayBuffer[Label]())
-    labels.foreach { label =>
-      lls += label
-    }
-    zoneId
   }
+
+  def addLabels(zl: ZoneAndLabel): Unit = {
+    val lls = zoneLabelMap.getOrElseUpdate(zl.zoneId, mutable.ArrayBuffer[Label]())
+    lls.append(zl.label)
+  }
+
+  import gnu.trove.procedure.TIntProcedure
+
+  class CollectRegionIds extends TIntProcedure {
+    import scala.collection.mutable
+    val ids = mutable.ArrayBuffer[Int]()
+
+
+    override def execute(id: Int): Boolean = {
+      ids.append(id)
+      true
+    }
+
+
+    def getIDs: Seq[Int@@RegionID] = {
+      ids.map(RegionID(_))
+    }
+
+  }
+
+
+  def query(page: Int@@PageID, q: LTBounds): Seq[Zone] = {
+    println(s"ZoneIndex.query(${page}, $q)")
+    val rindex = pageRIndexes(page)
+
+    val collectRegions = new CollectRegionIds()
+    rindex.contains(q.toJsiRectangle, collectRegions)
+    // rindex.intersects(q.toJsiRectangle, collectRegions)
+    val regions = collectRegions.getIDs
+    val zones = collectRegions
+      .getIDs.map{ regionId => regionToZone(regionId) }
+
+    val zs = zones.toSet.toSeq
+    println(s"query found ${regions.length} regions, ${zs.length} zones")
+
+    zs
+  }
+
 }
 
 
@@ -198,17 +253,24 @@ object ZoneIndexer extends SpatialJsonFormat {
 
 
   def loadSpatialIndices(zoneRec: ZoneRecords): ZoneIndexer = {
-    println(zoneRec)
 
     val zindexer = new ZoneIndexer()
+
+    println("added zone indexer")
 
     zoneRec.pageGeometries.foreach { p =>
       zindexer.addPage(p)
     }
+    println("added zone pages")
 
     zoneRec.zones.foreach { z =>
       zindexer.addZone(z)
     }
+    println("added zones")
+    zoneRec.labels.foreach { zl =>
+      zindexer.addLabels(zl)
+    }
+    println("added zone labels")
 
     zindexer
   }
@@ -223,6 +285,10 @@ trait SpatialJsonFormat {
   val ReadZoneID: Reads[Int@@ZoneID]   = __.read[Int].map(i => Tag.of[ZoneID](i))
   val WriteZoneID: Writes[Int@@ZoneID] = Writes[Int@@ZoneID] { i => JsNumber(ZoneID.unwrap(i)) }
   implicit def FormatZoneID            = Format(ReadZoneID, WriteZoneID)
+
+  val ReadRegionID: Reads[Int@@RegionID]   = __.read[Int].map(i => Tag.of[RegionID](i))
+  val WriteRegionID: Writes[Int@@RegionID] = Writes[Int@@RegionID] { i => JsNumber(RegionID.unwrap(i)) }
+  implicit def FormatRegionID            = Format(ReadRegionID, WriteRegionID)
 
 
   implicit def residentFormat = Json.format[LBBounds]

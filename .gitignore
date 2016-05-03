@@ -12,9 +12,9 @@ lib_managed
 .idea_modules
 *.iml
 
-# VIM
 *.sw?
 .ensime*
+.ensime_cache
 
 
 #pdf svg extractor
