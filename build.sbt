@@ -43,12 +43,13 @@ libraryDependencies in ThisBuild ++= Seq(
   "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
   "com.iheart" %% "ficus" % "1.2.3",
   "org.apache.commons" % "commons-lang3" % "3.4",
-  "com.github.pathikrit" %% "better-files" % "2.15.0",
-  "org.scalaz" %% "scalaz-core" % "7.1.7",
+  // "com.github.pathikrit" %% "better-files" % "2.15.0",
+  "org.scalaz" %% "scalaz-core" % "7.1.8",
   "org.scala-lang.modules" %% "scala-async" % "latest.release",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.5",
+  "com.lihaoyi" %% "ammonite-ops" % "0.5.7",
   "com.typesafe.play" %% "play-json" % "2.5.3",
   "com.github.scopt" %% "scopt" % "3.4.0",
   "com.itextpdf" % "itextpdf" % "5.5.9",
@@ -73,8 +74,8 @@ lazy val watrmarks = (project in file("watr-marks"))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
-    "com.typesafe.slick" %% "slick" % "3.1.1",
-    "org.postgresql"   % "postgresql"    % "9.4-1203-jdbc42",
+    // "com.typesafe.slick" %% "slick" % "3.1.1",
+    // "org.postgresql"   % "postgresql"    % "9.4-1203-jdbc42",
     "pl.edu.icm.cermine" % "cermine-impl" % "1.8"
   ))
   .dependsOn(watrmarks)

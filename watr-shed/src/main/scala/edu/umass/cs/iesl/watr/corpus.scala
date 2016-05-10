@@ -1,51 +1,87 @@
 package edu.umass.cs.iesl.watr
 
-
-import java.io.{ FileInputStream, InputStream, InputStreamReader, Reader }
-import better.files._, Cmds._
+import java.io.{ InputStream }
+import java.io.InputStreamReader
+import java.io.Reader
+import java.nio.{file => nio}
 import play.api.libs.json
 import scala.util.{Try, Failure, Success}
 import org.jdom2
-// import scalaz.{Tag, @@}
+import scalaz.{Tag, @@}
+import ammonite.ops._
 
 
-case class PdfCorpusConfig(
-  rootDirectory: String
+sealed trait SHA1String
+case class HeaderInfo(
+  title: String,
+  authors: String
 )
 
+case class CorpusEntryMetadata(
+  pdfSha1: String@@SHA1String,
+  filenames: Seq[String],
+  urls: Seq[String],
+  headers: Option[HeaderInfo]
+)
 
-object configuration {
-  import com.typesafe.config.ConfigFactory
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  import net.ceedubs.ficus.Ficus.toFicusConfig
-  // import net.ceedubs.ficus.readers.ValueReader
+trait CorpusJsonFormats {
+  import play.api.libs.json
+  import json._
 
-  def getPdfCorpusConfig(appRoot: String): PdfCorpusConfig = {
-    println(s"config init cwd = ${cwd}")
+  implicit def FormatSHA1String  = Format(
+    __.read[String].map(i => Tag.of[SHA1String](i)),
+    Writes[String@@SHA1String](i => JsString(SHA1String.unwrap(i)))
+  )
 
-    val root = File(appRoot)
-
-    val conf = ConfigFactory.parseFile(File(appRoot, "conf/application.conf").toJava)
-
-    val config = conf.as[PdfCorpusConfig]("pdfCorpus")
-    config.copy(
-      rootDirectory = (root / config.rootDirectory).toString()
-    )
-  }
-
-
+  implicit def HeaderInfoFormat = Json.format[HeaderInfo]
+  implicit def CorpusEntryMetadataFormat = Json.format[CorpusEntryMetadata]
 }
+
+object corpusFormats extends CorpusJsonFormats
+
 
 object Corpus {
-  def apply(config: PdfCorpusConfig): Corpus = {
-    new Corpus(config)
+  // import com.typesafe.config.ConfigFactory
+  // import net.ceedubs.ficus.Ficus._
+  // import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  // import net.ceedubs.ficus.Ficus.toFicusConfig
+
+  // def apply(config: PdfCorpusConfig): Corpus = {
+  //   new Corpus(config)
+  // }
+
+  def apply(appRoot: nio.Path): Corpus = {
+    new Corpus(Path(appRoot))
   }
+
+  def apply(appRoot: Path): Corpus = {
+    new Corpus(appRoot)
+  }
+
+
+  // def getPdfCorpusConfig(appRoot: String): PdfCorpusConfig = {
+  //   println(s"config init cwd = ${cwd}")
+
+  //   val root = File(appRoot)
+
+  //   val conf = ConfigFactory.parseFile(File(appRoot, "conf/application.conf").toJava)
+
+  //   val config = conf.as[PdfCorpusConfig]("pdfCorpus")
+  //   config.copy(
+  //     rootDirectory = (root / config.rootDirectory).toString()
+  //   )
+  // }
+
 }
 
+
 class Corpus(
-  val config: PdfCorpusConfig
+  val corpusRoot: Path
 ) {
+
+  override val toString = {
+    s"corpus:${corpusRoot}"
+  }
 
   // e.g., 3245.pdf, or sha1:afe23s...
   def entry(entryDescriptor: String): CorpusEntry = {
@@ -53,13 +89,10 @@ class Corpus(
   }
 
   def entries(): Seq[CorpusEntry] = {
-    val root = File(config.rootDirectory)
-    val es = root.glob("**/*.d").toList
-    val sorted = es.sortBy(_.name)
-
-    val artifacts = sorted.map{e =>
-      new CorpusEntry(e.name, this)
-    }
+    val artifacts = ls.!(corpusRoot)
+      .map { _.name }
+      .sorted
+      .map{ new CorpusEntry(_, this) }
 
     artifacts.filterNot(_.getArtifacts.isEmpty)
   }
@@ -68,70 +101,105 @@ class Corpus(
 
 sealed trait ArtifactDescriptor
 
+// object CorpusEntry  {}
+
 class CorpusEntry(
-  entryDescriptor: String,
-  corpus: Corpus
-) {
-  val artifactsRoot = File(corpus.config.rootDirectory) / entryDescriptor
+  val entryDescriptor: String,
+  val corpus: Corpus
+) extends CorpusJsonFormats {
+
+  override val toString = {
+    s"${corpus}/${entryDescriptor}"
+  }
+
+  val artifactsRoot = corpus.corpusRoot / entryDescriptor
   val entryDescriptorRoot = entryDescriptor.dropRight(2)
 
   def getArtifacts(): Seq[String] = {
-    val allFiles = artifactsRoot.glob("*").toSeq
+    val allFiles = ls! artifactsRoot map{ pdf =>
+      pdf
+    }
 
     allFiles.map(_.name)
+  }
+
+  def putArtifact(artifactDescriptor: String, content: String): CorpusArtifact = {
+    val outputPath = artifactsRoot/artifactDescriptor
+    write(outputPath, content)
+    new CorpusArtifact(artifactDescriptor, this)
   }
 
   // e.g., cermine-zones.xml
   def getArtifact(artifactDescriptor: String): CorpusArtifact = {
     new CorpusArtifact(artifactDescriptor, this)
   }
+  def deleteArtifact(artifactDescriptor: String): Unit = {
+    new CorpusArtifact(artifactDescriptor, this).delete
+  }
+
+  def hasArtifact(artifactDescriptor: String): Boolean ={
+    getArtifact(artifactDescriptor).exists
+
+
+  }
+
+  def getPdfArtifact(): CorpusArtifact =
+    new CorpusArtifact(s"${entryDescriptorRoot}", this)
 
   def getSvgArtifact(): CorpusArtifact = {
     new CorpusArtifact(s"${entryDescriptorRoot}.svg", this)
+  }
+
+  def updateMetadata(m: Option[CorpusEntryMetadata] = None): CorpusEntryMetadata = {
+    new CorpusArtifact("metadata.inf", this).asJson.map {
+      _.validate[CorpusEntryMetadata]
+    }
+
+    ???
   }
 
 }
 
 
 class CorpusArtifact(
-  descriptor: String,
-  entry: CorpusEntry
+  val artifactDescriptor: String,
+  val entry: CorpusEntry
 ) {
+  override val toString = {
+    s"${entry}/${artifactDescriptor}"
+  }
 
-  def artifactPath = entry.artifactsRoot / descriptor
+  def exists: Boolean = {
+    ammonite.ops.exists! artifactPath
+  }
 
-  def asFile: Try[File] = Success(artifactPath)
+  def delete: Unit = {
+    ammonite.ops.rm! artifactPath
+  }
+
+  def artifactPath = entry.artifactsRoot / artifactDescriptor
+
+  def asPath: Try[Path] = Success(artifactPath)
 
   def asInputStream: Try[InputStream] = {
-    val fis = new FileInputStream(artifactPath.toJava)
+    val fis = nio.Files.newInputStream(artifactPath.toNIO)
     Success(fis)
   }
 
   def asReader: Try[Reader] = {
-    val fis = new FileInputStream(artifactPath.toJava)
-    val fisr = new InputStreamReader(fis)
-
-    Success(fisr)
+    asInputStream.map(new InputStreamReader(_))
   }
 
-  def asJson: Try[json.JsValue] = {
-    val res: Try[json.JsValue] = try {
-      asInputStream
-        .map(json.Json.parse(_))
-    } catch {
-      case t: Exception => Failure(t)
-    }
-    res
+  def asJson: Try[json.JsValue] = try {
+    asInputStream.map(json.Json.parse(_))
+  } catch {
+    case t: Exception => Failure(t)
   }
 
-  def asXml: Try[jdom2.Document] = {
-    val res: Try[jdom2.Document] = try {
-      asInputStream
-        .map(is => new jdom2.input.SAXBuilder().build(is))
-    } catch {
-      case t: Exception => Failure(t)
-    }
-
-    res
+  def asXml: Try[jdom2.Document] = try {
+    asInputStream.map(is => new jdom2.input.SAXBuilder().build(is))
+  } catch {
+    case t: Exception => Failure(t)
   }
+
 }
