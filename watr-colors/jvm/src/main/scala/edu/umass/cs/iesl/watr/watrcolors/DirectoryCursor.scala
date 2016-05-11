@@ -1,13 +1,12 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
-import better.files._
-
+import ammonite.ops._
 
 case class DirectoryCursor(
-  curr:File,
-  prevs: Seq[File]  = Seq(),
-  nexts: Seq[File] = Seq()
+  curr:Path,
+  prevs: Seq[Path]  = Seq(),
+  nexts: Seq[Path] = Seq()
 ) {
 
   def prev: DirectoryCursor= {
@@ -31,19 +30,17 @@ case class DirectoryCursor(
 
 object DirectoryCursor {
 
-  def init(f: File): Option[DirectoryCursor] = {
+  def init(f: Path): Option[DirectoryCursor] = {
+    val isDir = exists.!(f) && stat.!(f).isDir
 
-    if (f.isDirectory) {
-      val m = f.glob("**/*.d").toList
-
-      m.headOption.flatMap{ file1 =>
-        Option(DirectoryCursor(curr = file1, nexts = m.drop(1).toSeq))
+    if (isDir) {
+      val fs = ls.!(f)
+      fs.headOption.flatMap{ file1 =>
+        Option(DirectoryCursor(curr = file1, nexts = fs.drop(1).toSeq))
       }
-
-    } else {
-      None
-    }
+    } else None
   }
+
 
 
 }

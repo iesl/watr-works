@@ -31,11 +31,6 @@
         } ]
     }, {
         "id" : 20,
-        "label" : {
-            "ns" : "bx",
-            "key" : "token",
-            "value" : "The"
-        },
         "bboxes" : [ {
             "id" : 21,
             "target" : 1,

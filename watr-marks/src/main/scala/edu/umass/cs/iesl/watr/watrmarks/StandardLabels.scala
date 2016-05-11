@@ -4,9 +4,9 @@ package watrmarks
 
 trait TokenLabels {
 
-  val Token = BioLabel("tok", "token")
-  val Word = BioLabel("tok", "word")
-  val Punct = BioLabel("tok", "punct")
+  val Token = Label("tok", "token")
+  val Word = Label("tok", "word")
+  val Punct = Label("tok", "punct")
 
   val allTokenLabels = List(
     Word,
@@ -18,8 +18,8 @@ trait TokenLabels {
 
 trait POSLabels extends TokenLabels {
 
-  val Verb = BioLabel("pos", "verb", 'v', Word)
-  val Noun = BioLabel("pos", "noun", 'n', Word)
+  val Verb = Label("pos", "verb")
+  val Noun = Label("pos", "noun")
 
   val allPOSLabels = List(
     Verb,
@@ -31,8 +31,8 @@ trait POSLabels extends TokenLabels {
 }
 
 trait NERLabels extends POSLabels {
-  val Person = BioLabel("ner", "person", 'p', Noun)
-  val Place = BioLabel("ner", "place", 'g', Noun)
+  val Person = Label("ner", "person")
+  val Place = Label("ner", "place")
 
   val allNERLabels = List(
     Person,
@@ -44,12 +44,12 @@ trait NERLabels extends POSLabels {
 
 trait PersonalNameLabels extends TokenLabels {
 
-  val Name          = BioLabel("name", "name", 'n', Word)
-  val FirstName     = BioLabel("name", "first", 'f', Name.Word)
-  val MiddleInitial = BioLabel("name", "middle-i", 'i', Name.Word)
-  val Middle        = BioLabel("name", "middle", 'm', Name.Word)
-  val LastName      = BioLabel("name", "last", 'l', Name.Word)
-  val Letters       = BioLabel("name", "letters", 't', Name.Word)
+  val Name          = Label("name", "name")
+  val FirstName     = Label("name", "first")
+  val MiddleInitial = Label("name", "middle-i")
+  val Middle        = Label("name", "middle")
+  val LastName      = Label("name", "last")
+  val Letters       = Label("name", "letters")
 
   val allPersonalNameLabels = List(
     FirstName,
@@ -64,8 +64,8 @@ object StandardLabels
     with PersonalNameLabels {
 
 
-  object CharLabel extends BioLabel("", "char", 'c', None)
-  object PageLabel extends BioLabel("", "page", 'p', None)
+  object CharLabel extends Label("", "char")
+  object PageLabel extends Label("", "page")
 
 
 
@@ -75,7 +75,7 @@ object StandardLabels
 
   implicit val bioDict = BioDictionary(
     allStandardLabels.map(l => (l.fqn -> l) ).toMap,
-    allStandardLabels.map(l => (l.c -> l) ).toMap
+    allStandardLabels.map(l => (l.key(0) -> l) ).toMap
   )
 
 }

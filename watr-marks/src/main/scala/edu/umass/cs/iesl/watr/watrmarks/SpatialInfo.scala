@@ -137,14 +137,14 @@ case class Zone(
   )
 }
 
-case class Label(
-  ns: String,
-  key: String,
-  value: Option[String]  = None
-) {
-  val vstr = value.map(v => s"=${v}").getOrElse("")
-  override def toString = s"#${ns}::${key}${vstr}"
-}
+// case class Label(
+//   ns: String,
+//   key: String,
+//   value: Option[String]  = None
+// ) {
+//   val vstr = value.map(v => s"=${v}").getOrElse("")
+//   override def toString = s"#${ns}::${key}${vstr}"
+// }
 
 
 sealed trait PageID
@@ -171,13 +171,12 @@ case class ZoneRecords(
 class ZoneIndexer  {
 
   val pageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex]()
+  val pageGeometries = mutable.Map[Int@@PageID, PageGeometry]()
 
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
-  val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
-  val pageGeometries = mutable.Map[Int@@PageID, PageGeometry]()
-  // val targetedZones = mutable.HashMap[String, Zone]()
-
   val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
+
+  val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
 
 
   def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
@@ -314,6 +313,8 @@ trait SpatialJsonFormat {
   implicit def FormatZoneAndLabel = Json.format[ZoneAndLabel]
 
   implicit def FormatZoneRecords = Json.format[ZoneRecords]
+
+  implicit def FormatLable = Json.format[Label]
 
 
   // __.read(

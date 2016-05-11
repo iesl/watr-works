@@ -7,11 +7,7 @@ import scalatags.Text.all._
 
 
 
-class SvgOverviewView(
-  config: PdfCorpusConfig
-) {
-
-  val svgRepoPath = config.rootDirectory
+class SvgOverviewView() {
 
   val SvgStyles = Sheet[SvgStyles]
 

@@ -2,27 +2,25 @@ package edu.umass.cs.iesl.watr
 package watrmarks
 
 import textboxing.TextBoxing
-import scala.language.dynamics
+// import scala.language.dynamics
 
 sealed trait BioPin {
-  def label: BioLabel
+  def label: Label
   def pinChar: Char
   override def toString = s"<${pinChar}::${label}>"
 
   def showBox: TB.Box = {
-    s"${label.name.take(3).mkString}.${pinChar}"
+    s"${label.key.take(3).mkString}.${pinChar}"
   }
 }
 
-case class BPin(label: BioLabel, override val pinChar:Char='B') extends BioPin
-case class IPin(label: BioLabel, override val pinChar:Char='I') extends BioPin
-case class OPin(label: BioLabel, override val pinChar:Char='O') extends BioPin
-case class LPin(label: BioLabel, override val pinChar:Char='L') extends BioPin
-case class UPin(label: BioLabel, override val pinChar:Char='U') extends BioPin
+case class BPin(label: Label, override val pinChar:Char='B') extends BioPin
+case class IPin(label: Label, override val pinChar:Char='I') extends BioPin
+case class OPin(label: Label, override val pinChar:Char='O') extends BioPin
+case class LPin(label: Label, override val pinChar:Char='L') extends BioPin
+case class UPin(label: Label, override val pinChar:Char='U') extends BioPin
 
-
-
-class BioLabel(val namespace: String, val name: String, val c: Char, val constraint: Option[BioLabel]) extends Dynamic {
+case class Label(ns: String, key: String, value: Option[String]=None) {
   lazy val B = BPin(this)
   lazy val I = IPin(this)
   lazy val O = OPin(this)
@@ -31,55 +29,42 @@ class BioLabel(val namespace: String, val name: String, val c: Char, val constra
 
 
   def fqn: String = {
-    if (namespace.length()>0) {
-      s"""${namespace}:${name}"""
+    if (ns.length()>0) {
+      s"""${ns}:${key}"""
     } else {
-      name
+      key
     }
   }
 
-  def selectDynamic(s: String) = {
-    this
-  }
-
-  override def toString = s"${namespace}:${name}"
+  override def toString = s"${ns}:${key}"
 
   import TextBoxing._
 
   def showBox: TextBoxing.Box = {
-    s"${namespace}:${name}".box
+    s"${ns}:${key}".box
   }
+
+  def matches(l: Label) =
+    ns==l.ns && key==l.key
 }
 
 
+trait LabelDictionary {
+  def apply(c: Char): Label
+  def get(s: Char): Option[Label]
 
-trait BioLabelDictionary {
-  def apply(c: Char): BioLabel
-  def get(s: Char): Option[BioLabel]
-
-  def apply(s: String): BioLabel
-  def get(s: String): Option[BioLabel]
+  def apply(s: String): Label
+  def get(s: String): Option[Label]
 }
 
 case class BioDictionary(
-  byName: Map[String, BioLabel],
-  byChar: Map[Char, BioLabel]
-) extends BioLabelDictionary {
+  byName: Map[String, Label],
+  byChar: Map[Char, Label]
+) extends LabelDictionary {
 
   def apply(s: String) = byName(s)
-  def get(s: String): Option[BioLabel] = byName.get(s)
+  def get(s: String): Option[Label] = byName.get(s)
 
   def apply(s: Char) = byChar(s)
-  def get(s: Char): Option[BioLabel] = byChar.get(s)
-}
-
-
-object BioLabel {
-
-  def apply(ns: String, name: String, c: Char, constraint: BioLabel) =
-    new BioLabel(ns, name, c, Some(constraint))
-
-  def apply(ns: String, name: String) =
-    new BioLabel(ns, name, name(0), Some(StandardLabels.CharLabel))
-
+  def get(s: Char): Option[Label] = byChar.get(s)
 }

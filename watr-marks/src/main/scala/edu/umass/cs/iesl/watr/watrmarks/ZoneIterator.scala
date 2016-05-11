@@ -94,6 +94,8 @@ class ZoneIterator(
     zoneIndex.zoneMap(getFocus).bboxes
   }
 
+  import StandardLabels._
+
   def getTokens(): Seq[(Zone, Label)] = {
     val res = getBoundingBoxes.map{ bbox =>
       zoneIndex.query(bbox.target, bbox.bbox)
@@ -102,14 +104,16 @@ class ZoneIterator(
     val tokens = res.map{ zone =>
       val labels = zoneIndex.zoneLabelMap(zone.id)
       labels
-        .filter(_.key == "token")
+        .filter(_ matches Token)
         .map(l => (zone, l))
     }
     tokens.flatten
   }
 
   def getText(): String = {
-    val tokens = getTokens.map({case (z, l) => s"""${l.value.getOrElse("?")}"""})
+    val tokens = getTokens.map({case (z, l) =>
+      s"""${l.value.getOrElse("?")}"""
+    })
     tokens.mkString(" ")
   }
 

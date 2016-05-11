@@ -2,17 +2,17 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-import better.files._
+
+import ammonite.ops._
 
 class CorpusExplorerServer(
-  config: PdfCorpusConfig
+  rootDirectory: Path
 ) extends CorpusExplorerApi  {
 
+  // val initpath = rootDirectory
+  println(s"CorpusExplorerServer current dir=${cwd}, corpus root=${rootDirectory}")
 
-  val initpath = File(config.rootDirectory)
-  println(s"CorpusExplorerServer current dir=${Cmds.cwd}, corpus root=${initpath.pathAsString}")
-
-  val init = DirectoryCursor.init(initpath).get
+  val init = DirectoryCursor.init(rootDirectory).get
 
   var state: DirectoryCursor = init
 
@@ -22,7 +22,8 @@ class CorpusExplorerServer(
   }
 
   def getCorpusEntryInFocus() : String = {
-    val corpusPath = initpath.relativize(state.curr.path)
+    // val corpusPath = rootDirectory.relativize(state.curr.path)
+    val corpusPath = rootDirectory.relativeTo(state.curr)
     corpusPath.toString
   }
 

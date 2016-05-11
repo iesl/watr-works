@@ -3,14 +3,14 @@ package watrmarks
 
 object SvgMatrix {
 
-  import dom._
+  // import dom._
 
-  def getElemTransforms(e: WatrElement): List[Transform] = {
-    e match {
-      case t:Transformable => t.transforms
-      case _               => List()
-    }
-  }
+  // def getElemTransforms(e: WatrElement): List[Transform] = {
+  //   e match {
+  //     case t:Transformable => t.transforms
+  //     case _               => List()
+  //   }
+  // }
 }
 
 sealed trait Transform {

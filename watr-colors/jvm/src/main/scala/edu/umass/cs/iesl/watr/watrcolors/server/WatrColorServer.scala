@@ -4,18 +4,18 @@ package server
 
 import akka.util.ByteString
 import java.nio.ByteBuffer
-import scala.concurrent.Future
-import scala.reflect.ClassTag
+// import scala.concurrent.Future
+// import scala.reflect.ClassTag
 import spray.http.HttpData
-import spray.http.Uri.Path
+// import spray.http.Uri.Path
 import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.{MediaTypes, HttpEntity}
-import better.files._
 
 import boopickle.DefaultBasic._
 import Picklers._
+import ammonite.ops.{Path => FPath, _}
 
 object AutowireServer extends autowire.Server[ByteBuffer, Pickler, Pickler] {
   override def read[R: Pickler](p: ByteBuffer) = Unpickle[R].fromBytes(p)
@@ -24,19 +24,20 @@ object AutowireServer extends autowire.Server[ByteBuffer, Pickler, Pickler] {
 
 object WatrColorServer {
   def main(args: Array[String]): Unit = {
-    val conf = configuration.getPdfCorpusConfig(args(0))
-    println(s"WatrColorServer: config = ${conf}")
-    val server = new WatrColorServer(conf)
+    // val conf = configuration.getPdfCorpusConfig(args(0))
+    val corpusRoot = cwd/RelPath(args(0))
+    println(s"WatrColorServer: root = ${corpusRoot}")
+    val server = new WatrColorServer(corpusRoot)
     server.run()
   }
 }
 
 
 class WatrColorServer(
-  config: PdfCorpusConfig
+  rootDirectory: FPath
 ) extends SimpleRoutingApp {
 
-  val svgRepoPath = config.rootDirectory
+  val svgRepoPath = rootDirectory
 
   def svgResponse(resp: String) = {
     HttpEntity(MediaTypes.`image/svg+xml`, resp)
@@ -59,7 +60,7 @@ class WatrColorServer(
   }
 
   def svgRepo = pathPrefix("repo") {
-    getFromDirectory(svgRepoPath)
+    getFromDirectory(svgRepoPath.toIO.getPath)
   }
 
   // Helper function for constructing Autowire routes
@@ -80,8 +81,8 @@ class WatrColorServer(
   }
 
   def run(): Unit = {
-    val corpusExplorerServer = new CorpusExplorerServer(config)
-    val svgOverviewServer = new SvgOverviewServer(config)
+    val corpusExplorerServer = new CorpusExplorerServer(rootDirectory)
+    val svgOverviewServer = new SvgOverviewServer(rootDirectory)
     implicit val system = ActorSystem()
 
     val _ = startServer("0.0.0.0", port = 8080) {
