@@ -61,6 +61,14 @@ object Bounds {
         height = tb.height
       )
     }
+    def prettyPrint: String = {
+      val left = tb.left
+      val top=  tb.top
+      val width = tb.width
+      val height = tb.height
+      def fmt = (d: Double) => f"${d}%1.2f"
+      s"""(l:${fmt(left)}, t:${fmt(top)}, w:${fmt(width)}, h:${fmt(height)})"""
+    }
   }
 
   implicit class RicherLBBounds(val tb: LBBounds) extends AnyVal {
@@ -73,7 +81,17 @@ object Bounds {
       )
 
     }
+    def prettyPrint: String = {
+      val left = tb.left
+      val bottom=  tb.bottom
+      val width = tb.width
+      val height = tb.height
+      def fmt = (d: Double) => f"${d}%1.2f"
+      s"""(l:${fmt(left)}, b:${fmt(bottom)}, w:${fmt(width)}, h:${fmt(height)})"""
+    }
   }
+
+
 }
 
 sealed trait Bounds
@@ -168,7 +186,6 @@ class ZoneIndexer  {
 
 
   def addPage(p: PageGeometry): Unit = {
-    println(s"adding ZoneIndexer page ${p}")
 
     if(pageGeometries.contains(p.id)) {
       sys.error("adding new page w/existing id")
@@ -206,22 +223,21 @@ class ZoneIndexer  {
     import scala.collection.mutable
     val ids = mutable.ArrayBuffer[Int]()
 
-
     override def execute(id: Int): Boolean = {
       ids.append(id)
       true
     }
 
-
     def getIDs: Seq[Int@@RegionID] = {
       ids.map(RegionID(_))
     }
-
   }
+
+  // def getPageIterator(): Seq[PageItera]
 
 
   def query(page: Int@@PageID, q: LTBounds): Seq[Zone] = {
-    println(s"ZoneIndex.query(${page}, $q)")
+    println(s"ZoneIndex.query(${page}, ${q.prettyPrint})")
     val rindex = pageRIndexes(page)
 
     val collectRegions = new CollectRegionIds()
@@ -231,10 +247,7 @@ class ZoneIndexer  {
     val zones = collectRegions
       .getIDs.map{ regionId => regionToZone(regionId) }
 
-    val zs = zones.toSet.toSeq
-    println(s"query found ${regions.length} regions, ${zs.length} zones")
-
-    zs
+    zones.sortBy { z => z.bboxes.head.bbox.left }
   }
 
 }

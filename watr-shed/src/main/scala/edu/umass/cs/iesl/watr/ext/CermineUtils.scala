@@ -143,8 +143,10 @@ object CermineUtils extends SpatialJsonFormat {
               page0Lines += 1
             }
 
+            // println(s"line: '${line.toText()}'")
+
             line.iterator().toList.foreach { token =>
-              addZone(Label("bx", "token"), pageNum, token.getBounds.toLTBounds)
+              addZone(Label("bx", "token", Option(token.toText)), pageNum, token.getBounds.toLTBounds)
               if (pageNum==0) {
                 page0Tokens += 1
               }
@@ -160,7 +162,9 @@ object CermineUtils extends SpatialJsonFormat {
         }
     }
 
-    println(s"added to page 0: tokens=${page0Tokens}, chars=${page0Chars} lines=${page0Lines}")
+    // if (zpageNum >= 0) {
+    //   println(s"page ${zpageNum}: tokens=${page0Tokens}, chars=${page0Chars} lines=${page0Lines}")
+    // }
 
     val z0 = zoneRecords.copy(
       zones = zones.values.toList,

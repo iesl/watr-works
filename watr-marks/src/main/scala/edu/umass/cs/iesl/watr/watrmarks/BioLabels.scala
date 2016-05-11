@@ -82,7 +82,4 @@ object BioLabel {
   def apply(ns: String, name: String) =
     new BioLabel(ns, name, name(0), Some(StandardLabels.CharLabel))
 
-  // def apply(name: String) =
-  //   new BioLabel(name, name, name(0), Some(CharLabel))
-
 }

@@ -1,54 +1,98 @@
 {
-    "id" : "todo",
-    "target" : "todo",
-
+    "id" : "",
+    "target" : "",
     "pageGeometries" : [ {
+        "id" : 0,
         "bounds" : {
             "left" : 0,
-            "bottom" : 0,
-            "width" : 544,
-            "height" : 745
-        },
-        "borders" : null
+            "top" : 0,
+            "width" : 595.2760009765625,
+            "height" : 841.8900146484375
+        }
     }, {
+        "id" : 1,
         "bounds" : {
             "left" : 0,
-            "bottom" : 0,
-            "width" : 544,
-            "height" : 745
-        },
-        "borders" : null
-    } ],
+            "top" : 0,
+            "width" : 595.2760009765625,
+            "height" : 841.8900146484375
+        } } ],
     "zones" : [ {
-        "id" : 1,
-        "bboxes" : [ [ 0, 165.65660095214844, 122.2813720703125, 7.9351806640625, 8.96630859375 ] ]
+        "id" : 10,
+        "bboxes" : [ {
+            "id" : 11,
+            "target" : 0,
+            "bbox" : {
+                "left" : 494.2388000488281,
+                "top" : 752.8803634643555,
+                "width" : 21.176239013671875,
+                "height" : 10.019996643066406
+            }
+        } ]
     }, {
-        "id" : 2,
-        "bboxes" : [ [ 0, 165.65660095214844, 122.2813720703125, 7.9351806640625, 8.96630859375 ] ]
+        "id" : 20,
+        "label" : {
+            "ns" : "bx",
+            "key" : "token",
+            "value" : "The"
+        },
+        "bboxes" : [ {
+            "id" : 21,
+            "target" : 1,
+            "bbox" : {
+                "left" : 407.6588134765625,
+                "top" : 752.8803634643555,
+                "width" : 32.184478759765625,
+                "height" : 10.019996643066406
+            }
+        } ]
     }, {
-        "id" : 3,
-        "bboxes" : [ [ 0, 165.65660095214844, 122.2813720703125, 7.9351806640625, 8.96630859375 ] ]
-    }, {
-        "id" : 4,
-        "bboxes" : [ [ 0, 165.65660095214844, 122.2813720703125, 7.9351806640625, 8.96630859375 ] ]
-    } ],
+        "id" : 30,
+        "bboxes" : [ {
+            "id" : 31,
+            "target" : 0,
+            "bbox" : {
+                "left" : 407.6588134765625,
+                "top" : 752.8803634643555,
+                "width" : 107.7562255859375,
+                "height" : 10.019996643066406
+            }
+        } ] } ],
     "labels" : [ {
-        "id" : 1,
-        "zoneId" : 1,
-        "ns" : "bx",
-        "key" : "gen:other",
-        "value" : null
+        "zoneId" : 0,
+        "label" : {
+            "ns" : "bx",
+            "key" : "met:title"
+        }
     }, {
-        "id" : 2,
-        "zoneId" : 2,
-        "ns" : "bx",
-        "key" : "line",
-        "value" : null
+        "zoneId" : 10,
+        "label" : {
+            "ns" : "bx",
+            "key" : "line"
+        }
     }, {
-        "id" : 3,
-        "zoneId" : 3,
-        "ns" : "bx",
-        "key" : "token",
-        "value" : null
-    } ]
+        "zoneId" : 20,
+        "label" : {
+            "ns" : "bx",
+            "key" : "token",
+            "value" : "The"
+        }
+    }, {
+        "zoneId" : 30,
+        "label" : {
+            "ns" : "bx",
+            "key" : "token"
+        }
+    }, {
+        "zoneId" : 10,
+        "label" : {
+            "ns" : "bx",
+            "key" : "token"
+        }
+    }, {
+        "zoneId" : 20,
+        "label" : {
+            "ns" : "bx",
+            "key" : "token"
+        } } ]
 }

@@ -45,7 +45,6 @@ trait NERLabels extends POSLabels {
 trait PersonalNameLabels extends TokenLabels {
 
   val Name          = BioLabel("name", "name", 'n', Word)
-
   val FirstName     = BioLabel("name", "first", 'f', Name.Word)
   val MiddleInitial = BioLabel("name", "middle-i", 'i', Name.Word)
   val Middle        = BioLabel("name", "middle", 'm', Name.Word)
