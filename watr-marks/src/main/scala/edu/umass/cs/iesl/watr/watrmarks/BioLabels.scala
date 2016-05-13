@@ -27,6 +27,7 @@ case class Label(ns: String, key: String, value: Option[String]=None) {
   lazy val L = LPin(this)
   lazy val U = UPin(this)
 
+  def apply(value: String) = copy(value=Some(value))
 
   def fqn: String = {
     if (ns.length()>0) {

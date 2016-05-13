@@ -5,7 +5,7 @@ package server
 import net.sf.jsi.Rectangle
 
 // import scala.collection.mutable
-import ext.CermineUtils
+import ext.CermineExtractor
 import watrmarks._
 import ammonite.ops._
 
@@ -33,6 +33,7 @@ class SvgOverviewServer(
         )
       })
   }
+
 
   def jsiRectangleToBBox(r: Rectangle): BBox = {
     val x = r.minX
@@ -77,7 +78,7 @@ class SvgOverviewServer(
       .getArtifact("cermine-zones.json")
       .asJson
       .map({ jsvalue =>
-        CermineUtils.loadSpatialIndices(jsvalue)
+        CermineExtractor.loadSpatialIndices(jsvalue)
       })
 
     val overlays = maybeOverlays.recover({ case err =>

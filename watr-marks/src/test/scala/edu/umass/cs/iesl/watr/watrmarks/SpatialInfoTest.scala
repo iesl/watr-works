@@ -62,7 +62,6 @@ class SpatialInfoTest extends FlatSpec {
     val is = getClass().getResourceAsStream("/spatial/spinfo0.json")
     val jsvalue = json.Json.parse(is).as[ZoneRecords]
     val pspinfo = ZoneIndexer.loadSpatialIndices(jsvalue)
-
   }
 }
 

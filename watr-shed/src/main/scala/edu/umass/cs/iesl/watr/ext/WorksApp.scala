@@ -91,7 +91,7 @@ object Works extends App {
 
         entry.putArtifact("cermine-zones.json",
           pdfArtifact.asInputStream.map{is =>
-            CermineUtils.cermineZonesToJson(is)
+            CermineExtractor.cermineZonesToJson(is)
           }.getOrElse { sys.error(s"could not extract cermine data for ${pdfArtifact}") }
         )
       }
