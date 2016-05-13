@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package ext
 
-import com.itextpdf.text.pdf.DocumentFont
 import watrmarks._
 import play.api.libs.json._
 import scala.collection.JavaConversions._
@@ -17,7 +16,6 @@ import pl.edu.icm.cermine.structure.model.BxBounds
 import play.api.libs.json._
 
 import scalaz.@@
-import StandardLabels._
 
 object CermineExtractor extends SpatialJsonFormat {
   import cermineZoneUtil._
@@ -95,27 +93,29 @@ object CermineExtractor extends SpatialJsonFormat {
 
 
 
-    // Serialize zones to json
     bxDoc.asPages.zip(zoneRecords.pageGeometries).zipWithIndex.foreach {
       case ((page, pageGeometry), pageNum) =>
         zpageNum = pageNum
 
         page.iterator.foreach { zone =>
-          val zlabel = modifyZoneLabelName(zone.getLabel.name)
+
+          // Adding generic Zone label (output of Docstrum segmentation)
+          addZone(LB.Zone, pageNum, zone.getBounds.toLTBounds)
+          //  ... as well as adding Cermine's classification of the zone
+          addZone(modifyZoneLabelName(zone.getLabel.name), pageNum, zone.getBounds.toLTBounds)
+
           if (pageNum==0) {
             page0Zones += 1
           }
 
-          addZone(zlabel, pageNum, zone.getBounds.toLTBounds)
-
           zone.iterator().toList.foreach { line =>
-            addZone(Label("bx", "line"), pageNum, line.getBounds.toLTBounds)
+            addZone(LB.Line, pageNum, line.getBounds.toLTBounds)
             if (pageNum==0) {
               page0Lines += 1
             }
 
             line.iterator().toList.foreach { token =>
-              addZone(Token(token.toText), pageNum, token.getBounds.toLTBounds)
+              addZone(LB.Token(token.toText), pageNum, token.getBounds.toLTBounds)
               if (pageNum==0) {
                 page0Tokens += 1
               }

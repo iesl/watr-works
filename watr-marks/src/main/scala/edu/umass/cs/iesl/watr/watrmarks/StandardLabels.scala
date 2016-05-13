@@ -2,6 +2,14 @@ package edu.umass.cs.iesl.watr
 package watrmarks
 
 
+trait DocSegLabels {
+  val Zone = Label("ds", "zone")
+  val Image = Label("ds", "image")
+  val Table = Label("ds", "table")
+  val Line = Label("ds", "line")
+  val Char = Label("ds", "char")
+}
+
 trait TokenLabels {
 
   val Token = Label("tok", "token")
@@ -61,6 +69,7 @@ trait PersonalNameLabels extends TokenLabels {
 object StandardLabels
     extends POSLabels
     with NERLabels
+    with DocSegLabels
     with PersonalNameLabels {
 
 

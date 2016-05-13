@@ -570,11 +570,6 @@ object CermineFeatures {
 //         return (zone.toText().matches("^.*[=\\u2200-\\u22FF].*$")) ? 1 : 0;
 //     }
 
-
-
-
-
-
 // 	def pageNumberFeature(zone: BxZone, page: BxPage): Double = {
 // 		return (double)Integer.valueOf(context.getId());
 // 	}
