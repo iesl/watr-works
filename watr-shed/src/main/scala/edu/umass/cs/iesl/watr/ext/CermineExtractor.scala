@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package ext
 
+
 import watrmarks._
 import play.api.libs.json._
 import scala.collection.JavaConversions._
@@ -18,7 +19,7 @@ import play.api.libs.json._
 import scalaz.@@
 
 object CermineExtractor extends SpatialJsonFormat {
-  import cermineZoneUtil._
+  import CermineEnrichments._
 
 
   def extractCermineZones(pdfis: InputStream): (BxDocument, ZoneRecords) = {

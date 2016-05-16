@@ -94,7 +94,10 @@ class ZoneIterator(
     zoneIndex.zoneMap(getFocus).bboxes
   }
 
+  def currentZone: Zone = zoneIndex.zoneMap(getFocus)
+
   import StandardLabels._
+
 
   def getTokens(): Seq[(Zone, Label)] = {
     val res = getBoundingBoxes.map{ bbox =>

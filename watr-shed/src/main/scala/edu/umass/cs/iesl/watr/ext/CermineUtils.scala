@@ -6,7 +6,7 @@ import pl.edu.icm.cermine.structure.model._
 import pl.edu.icm.cermine.structure.model.BxBounds
 
 
-object cermineZoneUtil extends SpatialJsonFormat {
+object CermineEnrichments extends SpatialJsonFormat {
 
   implicit class RicherLTBounds(val bb: LTBounds) extends AnyVal {
     def toBxBounds: BxBounds = {

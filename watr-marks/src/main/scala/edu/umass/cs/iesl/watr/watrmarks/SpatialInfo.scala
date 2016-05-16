@@ -179,8 +179,13 @@ class ZoneIndexer  {
   val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
 
 
+
   def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
     zoneLabelMap.get(id).getOrElse(Seq())
+  }
+
+  def getPages(): List[Int@@PageID] = {
+    pageRIndexes.keys.toList.sortBy(PageID.unwrap(_))
   }
 
 
@@ -285,6 +290,23 @@ object ZoneIndexer extends SpatialJsonFormat {
     println("added zone labels")
 
     zindexer
+  }
+}
+
+object SpatialEnrichments {
+
+  implicit class RicherZone(val zone: Zone) extends AnyVal {
+
+    def area(): Double = {
+      zone.bboxes.foldLeft(0d){ case (acc, a) =>
+        a.bbox.area
+      }
+    }
+
+  }
+
+  implicit class RicherLTBounds(val bb: LTBounds) extends AnyVal {
+    def area: Double = bb.width*bb.height
   }
 }
 

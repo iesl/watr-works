@@ -1,41 +1,86 @@
 package edu.umass.cs.iesl.watr
 package ext
 
+import watrmarks._
 
 object CermineFeatures {
-
-  // import pl.edu.icm.cermine.structure.model._
-
-
-  // def areaFeatureAreaFeature(zone: BxZone, page: BxPage): Double = {
-  //       double charsArea = 0;
-  //       for (BxLine line : zone) {
-  //           for (BxWord word : line) {
-  //               for (BxChunk chunk : word) {
-  //                   charsArea += chunk.getArea();
-  //               }
-  //           }
-  //       }
-
-  //       return (zone.getArea() == 0) ? 0 : charsArea / zone.getArea();
-  //   }
+  import SpatialEnrichments._
 
 
+  def textDensity(zoneIter: ZoneIterator): Double = {
+
+    // add up area of each token (a bit rougher approx. than char level)
+    val tokenArea: Double = zoneIter.getTokens.map(_._1.area).sum
+    val zoneArea = zoneIter.currentZone.area
+
+    tokenArea / zoneArea
+  }
+
+
+  def charCountFeature(zoneIter: ZoneIterator): Double = {
+    val charCount = zoneIter
+      .getText.toCharArray
+      .foldLeft(0)({
+        case (acc, c) =>
+          if (c.isSpaceChar) acc else acc+1
+      })
+
+    charCount.toDouble
+  }
+
+  def lineHeightMaxMeanFeature(zoneIter: ZoneIterator): Double = {
+
+    // double zoneMean = 0;
+    // for (BxLine line : zone) {
+    //     zoneMean += line.getBounds().getHeight();
+    // }
+    // zoneMean /= (double) zone.childrenCount();
+    // for (BxZone z : page) {
+    //     if (z.equals(zone)) {
+    //         continue;
+    //     }
+    //     double pageMean = 0;
+    //     for (BxLine line : z) {
+    //         pageMean += line.getBounds().getHeight();
+    //     }
+    //     pageMean /= z.childrenCount();
+    //     if (pageMean > zoneMean + 1) {
+    //         return 0;
+    //     }
+    // }
+    // return 1;
+    ???
+  }
 
 
 
-//   def bibinfoFeature(zone: BxZone, page: BxPage): Double = {
-
-//         String[] keywords = {"cite", "pages", "article", "volume", "publishing", "journal", "doi", "cite this article",
-//                              "citation", "issue", "issn"};
-
-//         String[] otherKeywords = {"author details", "university", "department", "school", "institute", "affiliation",
-//                              "hospital", "laboratory", "faculty", "author", "abstract", "keywords", "key words",
-//                              "correspondence", "editor", "address", "email"};
 
 
-//         int count = 0;
-//         for (String keyword : keywords) {
+
+  //   def lineHeightMeanFeature(zone: BxZone, page: BxPage): Double = {
+  //         double mean = 0;
+  //         for (BxLine line : zone) {
+  //             mean += line.getHeight();
+  //         }
+  //         return mean / (double) zone.childrenCount();
+  //     }
+
+
+
+
+
+  //   def bibinfoFeature(zone: BxZone, page: BxPage): Double = {
+
+  //         String[] keywords = {"cite", "pages", "article", "volume", "publishing", "journal", "doi", "cite this article",
+  //                              "citation", "issue", "issn"};
+
+  //         String[] otherKeywords = {"author details", "university", "department", "school", "institute", "affiliation",
+  //                              "hospital", "laboratory", "faculty", "author", "abstract", "keywords", "key words",
+  //                              "correspondence", "editor", "address", "email"};
+
+
+  //         int count = 0;
+  //         for (String keyword : keywords) {
 //             if (zone.toText().toLowerCase().contains(keyword)) {
 //                 count += 2;
 //             }
@@ -48,27 +93,6 @@ object CermineFeatures {
 
 //         return (double)count / 2;
 //     }
-
-
-
-
-
-//   def charCountFeature(zone: BxZone, page: BxPage): Double = {
-//         int count = 0;
-//         for (BxLine line : zone) {
-//             for (BxWord word : line) {
-//                 for (BxChunk chunk : word) {
-//                     count += chunk.toText().length();
-//                 }
-//             }
-//         }
-
-//         return (double) count;
-//     }
-
-
-
-
 
 
 //   def charCountRelativeFeature(zone: BxZone, page: BxPage): Double = {
@@ -183,8 +207,7 @@ object CermineFeatures {
 
 
 //   def contributionFeature(zone: BxZone, page: BxPage): Double = {
-//         String[] keywords = {"contribution",
-//                              };
+//         String[] keywords = {"contribution"};
 
 //         for (String keyword : keywords) {
 //             if (zone.toText().toLowerCase().contains(keyword)) {
@@ -446,42 +469,6 @@ object CermineFeatures {
 
 
 
-
-
-//   def lineHeightMaxMeanFeature(zone: BxZone, page: BxPage): Double = {
-//         double zoneMean = 0;
-//         for (BxLine line : zone) {
-//             zoneMean += line.getBounds().getHeight();
-//         }
-//         zoneMean /= (double) zone.childrenCount();
-//         for (BxZone z : page) {
-//             if (z.equals(zone)) {
-//                 continue;
-//             }
-//             double pageMean = 0;
-//             for (BxLine line : z) {
-//                 pageMean += line.getBounds().getHeight();
-//             }
-//             pageMean /= z.childrenCount();
-//             if (pageMean > zoneMean + 1) {
-//                 return 0;
-//             }
-//         }
-//         return 1;
-//     }
-
-
-
-
-
-
-//   def lineHeightMeanFeature(zone: BxZone, page: BxPage): Double = {
-//         double mean = 0;
-//         for (BxLine line : zone) {
-//             mean += line.getHeight();
-//         }
-//         return mean / (double) zone.childrenCount();
-//     }
 
 
 
