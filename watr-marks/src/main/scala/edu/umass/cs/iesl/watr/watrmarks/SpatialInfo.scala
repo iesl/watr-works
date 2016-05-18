@@ -46,11 +46,52 @@ object jsiRectangle {
 
 
 object Bounds {
+  def fmt = (d: Double) => f"${d}%1.2f"
+
+  implicit class RicherPoint(val p0: Point) extends AnyVal {
+
+    def hdist(p1: Point): Double = math.abs(p0.x - p1.x)
+    def vdist(p1: Point): Double = math.abs(p0.y - p1.y)
+
+    def angleTo(p1: Point): Double = {
+      if (p0.x > p1.x) {
+        math.atan2(p0.y - p1.y, p0.x - p1.x);
+      } else {
+        math.atan2(p1.y - p0.y, p1.x - p0.x);
+      }
+    }
+    def prettyPrint: String = {
+      s"""[${fmt(p0.x)}, ${fmt(p0.y)}]"""
+    }
+
+  }
 
   implicit class RicherLTBounds(val tb: LTBounds) extends AnyVal {
+    def toCenterPoint: Point = Point(
+      (tb.left+tb.width/2),
+      (tb.top+tb.height/2)
+    )
+
+    def centerDistanceTo(other: LTBounds): Double = {
+      val cx = (tb.left+tb.width/2).toFloat
+      val cy = (tb.top+tb.height/2).toFloat
+      val cx2 = (other.left+other.width/2).toFloat
+      val cy2 = (other.top+other.height/2).toFloat
+
+      math.sqrt(
+        math.pow((cx-cx2).toDouble, 2) + math.pow((cy-cy2).toDouble, 2)
+      )
+    }
 
     def toJsiRectangle: jsi.Rectangle = {
        jsiRectangle(tb.left, tb.top, tb.width, tb.height)
+    }
+
+    def jsiCenterPoint: jsi.Point = {
+      new jsi.Point(
+        (tb.left+tb.width/2).toFloat,
+        (tb.top+tb.height/2).toFloat
+      )
     }
 
     def toLBBounds: LBBounds = {
@@ -66,7 +107,6 @@ object Bounds {
       val top=  tb.top
       val width = tb.width
       val height = tb.height
-      def fmt = (d: Double) => f"${d}%1.2f"
       s"""(l:${fmt(left)}, t:${fmt(top)}, w:${fmt(width)}, h:${fmt(height)})"""
     }
   }
@@ -86,7 +126,6 @@ object Bounds {
       val bottom=  tb.bottom
       val width = tb.width
       val height = tb.height
-      def fmt = (d: Double) => f"${d}%1.2f"
       s"""(l:${fmt(left)}, b:${fmt(bottom)}, w:${fmt(width)}, h:${fmt(height)})"""
     }
   }
@@ -116,6 +155,11 @@ case class Borders(
   bright: Double,
   bbottom: Double
 )
+
+case class Point(
+  x: Double, y: Double
+)
+
 
 case class TargetedBounds(
   id: Int@@RegionID,
@@ -148,6 +192,7 @@ case class Zone(
 
 
 sealed trait PageID
+sealed trait CharID
 
 case class PageGeometry(
   id: Int@@PageID,
@@ -155,6 +200,16 @@ case class PageGeometry(
   borders:Option[Borders]
 )
 
+case class PageChars(
+  id: Int@@PageID,
+  chars: List[CharBox]
+)
+
+case class CharBox(
+  id: Int@@CharID,
+  char: String,
+  bbox: LTBounds
+)
 
 case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)
 
@@ -163,7 +218,8 @@ case class ZoneRecords(
   target: String,
   pageGeometries: List[PageGeometry],
   zones: List[Zone],
-  labels: List[ZoneAndLabel]
+  labels: List[ZoneAndLabel],
+  chars: List[PageChars]
 )
 
 
@@ -172,6 +228,8 @@ class ZoneIndexer  {
 
   val pageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex]()
   val pageGeometries = mutable.Map[Int@@PageID, PageGeometry]()
+  val pageChars = mutable.HashMap[Int@@PageID, mutable.ArrayBuffer[CharBox]]()
+  val charBoxes = mutable.HashMap[Int@@CharID, CharBox]()
 
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
   val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
@@ -179,6 +237,13 @@ class ZoneIndexer  {
   val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
 
 
+  def getComponent(pageId: Int@@PageID, charId: Int@@CharID): CharBox = {
+    charBoxes(charId)
+  }
+
+  def getComponents(pageId: Int@@PageID): Seq[CharBox] = {
+    pageChars(pageId)
+  }
 
   def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
     zoneLabelMap.get(id).getOrElse(Seq())
@@ -199,9 +264,17 @@ class ZoneIndexer  {
     val si: SpatialIndex = new RTree()
     si.init(null)
     pageRIndexes.put(p.id, si)
+
+    pageChars.getOrElseUpdate(p.id, mutable.ArrayBuffer())
+
   }
 
-  // def createZone(zone: Zone): Unit = { todo
+  def addCharInfo(pageId: Int@@PageID, cb: CharBox): Unit = {
+    val rindex = pageRIndexes(pageId)
+    rindex.add(cb.bbox.toJsiRectangle, CharID.unwrap(cb.id))
+    pageChars(pageId).append(cb)
+    charBoxes.put(cb.id, cb)
+  }
 
   def addZone(zone: Zone): Unit = {
     val zoneId = zone.id
@@ -232,13 +305,33 @@ class ZoneIndexer  {
       true
     }
 
-    def getIDs: Seq[Int@@RegionID] = {
-      ids.map(RegionID(_))
+    def getIDs: Seq[Int] = {
+      ids
     }
   }
 
-  // def getPageIterator(): Seq[PageItera]
 
+  def nearestChars(page: Int@@PageID, q: LTBounds, radius: Float): Seq[Int@@CharID] = {
+    val rindex = pageRIndexes(page)
+
+    val collectRegions = new CollectRegionIds()
+    rindex.nearest(q.jsiCenterPoint, collectRegions, radius)
+    val neighbors = collectRegions.getIDs.filter{ id =>
+      charBoxes.contains(CharID(id))
+    }
+    neighbors.map(CharID(_))
+  }
+
+  def nearestNChars(page: Int@@PageID, q: LTBounds, n: Int, radius: Float): Seq[Int@@CharID] = {
+    val rindex = pageRIndexes(page)
+
+    val collectRegions = new CollectRegionIds()
+    rindex.nearestN(q.jsiCenterPoint, collectRegions, n, radius)
+    val neighbors = collectRegions.getIDs.filter{ id =>
+      charBoxes.contains(CharID(id))
+    }
+    neighbors.map(CharID(_))
+  }
 
   def query(page: Int@@PageID, q: LTBounds): Seq[Zone] = {
     println(s"ZoneIndex.query(${page}, ${q.prettyPrint})")
@@ -249,7 +342,7 @@ class ZoneIndexer  {
     // rindex.intersects(q.toJsiRectangle, collectRegions)
     val regions = collectRegions.getIDs
     val zones = collectRegions
-      .getIDs.map{ regionId => regionToZone(regionId) }
+      .getIDs.map{ regionId => regionToZone(RegionID(regionId)) }
 
     zones.sortBy { z => z.bboxes.head.bbox.left }
   }
@@ -263,11 +356,18 @@ object ZoneIndexer extends SpatialJsonFormat {
     (minMax._1, minMax._2-minMax._1)
   }
 
-  def vconcat(psis: ZoneIndexer*): ZoneIndexer = {
+  def loadSpatialIndices(charsAndGeometry: Seq[(PageChars, PageGeometry)]): ZoneIndexer = {
 
-    ???
+    val zindexer = new ZoneIndexer()
+    charsAndGeometry.foreach { case(chars, geom)  =>
+      zindexer.addPage(geom)
+
+      chars.chars.foreach { cb =>
+        zindexer.addCharInfo(geom.id, cb)
+      }
+    }
+    zindexer
   }
-
 
   def loadSpatialIndices(zoneRec: ZoneRecords): ZoneIndexer = {
 
@@ -324,6 +424,9 @@ trait SpatialJsonFormat {
   val WriteRegionID: Writes[Int@@RegionID] = Writes[Int@@RegionID] { i => JsNumber(RegionID.unwrap(i)) }
   implicit def FormatRegionID            = Format(ReadRegionID, WriteRegionID)
 
+  val ReadCharID: Reads[Int@@CharID]   = __.read[Int].map(i => Tag.of[CharID](i))
+  val WriteCharID: Writes[Int@@CharID] = Writes[Int@@CharID] { i => JsNumber(CharID.unwrap(i)) }
+  implicit def FormatCharID            = Format(ReadCharID, WriteCharID)
 
   implicit def residentFormat = Json.format[LBBounds]
   implicit def LTBoundsFormat = Json.format[LTBounds]
@@ -333,9 +436,9 @@ trait SpatialJsonFormat {
   implicit def FormatPageGeometry = Json.format[PageGeometry]
   implicit def FormatZone = Json.format[Zone]
   implicit def FormatZoneAndLabel = Json.format[ZoneAndLabel]
-
+  implicit def FormatCharBox = Json.format[CharBox]
+  implicit def FormatPageChars = Json.format[PageChars]
   implicit def FormatZoneRecords = Json.format[ZoneRecords]
-
   implicit def FormatLable = Json.format[Label]
 
 

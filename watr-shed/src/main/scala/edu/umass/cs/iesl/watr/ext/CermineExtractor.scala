@@ -1,4 +1,5 @@
-package edu.umass.cs.iesl.watr
+package edu.umass.cs.iesl
+package watr
 package ext
 
 
@@ -7,12 +8,14 @@ import play.api.libs.json._
 import scala.collection.JavaConversions._
 import java.io.InputStream
 
-import pl.edu.icm.cermine.ComponentConfiguration
-import pl.edu.icm.cermine.ExtractionUtils
-import pl.edu.icm.cermine.structure.model._
+
+import _root_.pl.edu.icm.cermine
+import cermine.ComponentConfiguration
+import cermine.ExtractionUtils
+import cermine.structure.model._
+import cermine.structure.model.BxBounds
 import scala.collection.JavaConversions._
 import com.itextpdf.text.pdf.DocumentFont
-import pl.edu.icm.cermine.structure.model.BxBounds
 
 import play.api.libs.json._
 
@@ -20,6 +23,32 @@ import scalaz.@@
 
 object CermineExtractor extends SpatialJsonFormat {
   import CermineEnrichments._
+
+
+  def extractChars(pdfis: InputStream): List[(PageChars, PageGeometry)] = {
+
+
+    val idgen = IdGenerator[CharID]
+
+
+    val conf = new ComponentConfiguration()
+    val charExtractor = new XITextCharacterExtractor()
+    conf.setCharacterExtractor(charExtractor)
+
+    ExtractionUtils
+      .extractCharacters(conf, pdfis)
+      .asPages.toList
+      .zipWithIndex
+      .zip(charExtractor.getZoneRecords.pageGeometries)
+      .map{ case ((page, pageNum), pageGeom) =>
+        println(s"page ${pageNum} has ${ page.getChunks.toList.length} chunks ")
+
+        val pageChars = page.getChunks.toList.map{ chunk =>
+          CharBox(idgen.nextId, chunk.toText(), chunk.getBounds.toLTBounds)
+        }
+        (PageChars(PageID(pageNum), pageChars) -> pageGeom)
+    }
+  }
 
 
   def extractCermineZones(pdfis: InputStream): (BxDocument, ZoneRecords) = {

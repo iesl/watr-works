@@ -60,9 +60,11 @@ libraryDependencies in ThisBuild ++= Seq(
   "ch.qos.logback" % "logback-classic" % logbackVersion
 )
 
+
 resolvers in ThisBuild ++= List(
   "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
-  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+  Resolver.jcenterRepo
 )
 
 lazy val root = (project in file("."))

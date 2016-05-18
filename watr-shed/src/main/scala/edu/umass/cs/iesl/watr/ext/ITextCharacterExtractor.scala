@@ -10,10 +10,13 @@ import com.itextpdf.text.Rectangle
 import com.itextpdf.text.exceptions.InvalidPdfException
 import com.itextpdf.text.pdf._
 import com.itextpdf.text.pdf.parser.{Vector => PVector, RenderListener, _}
-import pl.edu.icm.cermine.exception.AnalysisException
-import pl.edu.icm.cermine.structure.CharacterExtractor
-import pl.edu.icm.cermine.structure.model._
-import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
+import _root_.pl.edu.icm.cermine
+import cermine.structure.model._
+import cermine.structure.model.BxBounds
+import cermine.exception.AnalysisException
+import cermine.structure.CharacterExtractor
+import cermine.structure.model._
+import cermine.structure.tools.BxBoundsBuilder
 import util._
 import watrmarks._
 
@@ -58,7 +61,8 @@ class MyBxDocumentCreator(
     id = "", target = "",
     List[PageGeometry](),
     List[Zone](),
-    List[ZoneAndLabel]()
+    List[ZoneAndLabel](),
+    List[PageChars]()
   )
 
   def getZoneRecords() = zoneRecords
@@ -73,6 +77,8 @@ class MyBxDocumentCreator(
   var pageNumber = -1
 
   var page0Chars = 0
+
+  val pageChars = mutable.ArrayBuffer[PageChars]()
 
   def processNewBxPage(_pageRectangle: Rectangle): Unit = {
     println(s"""page ${pageNumber} chars: ${page0Chars}""")
@@ -111,10 +117,7 @@ class MyBxDocumentCreator(
     zoneRecords = zoneRecords.copy(
       pageGeometries = zoneRecords.pageGeometries :+ PageGeometry(PageID(pageNumber), bounds, borders)
     )
-
   }
-
-  val chars = mutable.ArrayBuffer[String]()
 
   override def beginTextBlock(): Unit = {
     // println("\nblock\n")

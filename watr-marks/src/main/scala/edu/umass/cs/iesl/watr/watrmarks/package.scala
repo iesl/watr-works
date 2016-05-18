@@ -27,6 +27,7 @@ package object watrmarks {
   val ZoneID = Tag.of[ZoneID]
   val RegionID = Tag.of[RegionID]
   val PageID = Tag.of[PageID]
+  val CharID = Tag.of[CharID]
 
   val LabelID = Tag.of[LabelID]
 
