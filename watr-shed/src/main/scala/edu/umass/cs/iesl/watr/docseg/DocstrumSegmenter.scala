@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package ext
+package docseg
 
 // import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
 import watrmarks._
@@ -23,11 +23,12 @@ class DocstrumSegmenter(
   pages: ZoneIndexer
 ) {
 
+  val LB = StandardLabels
 
-    val MAX_ZONES_PER_PAGE = 300;
-    val PAGE_MARGIN = 2;
-    val ORIENTATION_MARGIN = 0.2d;
-    val LINES_PER_PAGE_MARGIN = 100;
+  val MAX_ZONES_PER_PAGE = 300;
+  val PAGE_MARGIN = 2;
+  val ORIENTATION_MARGIN = 0.2d;
+  val LINES_PER_PAGE_MARGIN = 100;
 
   var docOrientation: Double = Double.NaN
 
@@ -44,6 +45,9 @@ class DocstrumSegmenter(
 
     for (pageId <- pages.getPages) {
       val segmentedPage = segmentPage(pageId);
+      segmentedPage.foreach { zonecc =>
+        println(s"zone: ${zonecc.toText}")
+      }
       // if (segmentedPage.getBounds() != null) {
       //   output.addPage(segmentedPage);
       // }
@@ -52,7 +56,7 @@ class DocstrumSegmenter(
   }
 
 
-  def segmentPage(pageId: Int@@PageID): Unit = {
+  def segmentPage(pageId: Int@@PageID): Seq[ConnectedComponents] = {
     println(s"segmenting page ${pageId}")
     // val components = componentMap(pageId);
     if (docOrientation.isNaN()) {
@@ -70,7 +74,7 @@ class DocstrumSegmenter(
 
     // TODO this tries to recompute lines in the face of wonky non-zero orientation
     // if (Math.abs(orientation) > ORIENTATION_MARGIN) {
-    //     List[ComponentLine] linesZero = determineLines(components, 0,
+    //     List[ConnectedComponents] linesZero = determineLines(components, 0,
     //         characterSpacing * componentDistanceCharacterMultiplier,
     //         lineSpacing * maxVerticalComponentDistanceMultiplier);
 
@@ -93,14 +97,14 @@ class DocstrumSegmenter(
       0.0, lineSpacing * maxVerticalMergeDistanceMultiplier
     );
 
-    println(s"Zones")
-    zones.foreach{ zone =>
-      println(s"  -------zone")
-      zone.foreach { line =>
-        val str = line.components.map(_.char).mkString
-        println(s"     ${str}")
-      }
-    }
+    // println(s"Zones")
+    // zones.foreach{ zone =>
+    //   println(s"  -------zone")
+    //   zone.foreach { line =>
+    //     val str = line.components.map(_.toText).mkString
+    //     println(s"     ${str}")
+    //   }
+    // }
 
     // zones = mergeZones(zones, characterSpacing * 0.5);
     // zones = mergeLines(
@@ -109,7 +113,7 @@ class DocstrumSegmenter(
     //   0.0, lineSpacing * maxVerticalMergeDistanceMultiplier
     // )
 
-    convertToBxModel(zones, wordDistanceMultiplier * characterSpacing);
+    pageZonesToSortedZones(zones)
   }
 
   /**
@@ -388,12 +392,12 @@ class DocstrumSegmenter(
      * @param maxVerticalDistance - maximum vertical distance between components
      * @return lines of components
      */
-    // private List[ComponentLine] determineLines(List[Component] components, double orientation, double maxHorizontalDistance, double maxVerticalDistance) {
+    // private List[ConnectedComponents] determineLines(List[Component] components, double orientation, double maxHorizontalDistance, double maxVerticalDistance) {
   def determineLines(
     pageId: Int@@PageID,
     maxHorizontalDistance: Double,
     maxVerticalDistance: Double
-  ): Seq[ComponentLine] = {
+  ): Seq[ConnectedComponents] = {
     println(s"""determineLines(maxHorizontalDistance:${maxHorizontalDistance}, maxVerticalDistance: ${maxVerticalDistance})""")
     // val sets = new DisjointSets[CharBox](components);
     val angleFilter = AngleFilter(docOrientation - angleTolerance, docOrientation + angleTolerance);
@@ -422,15 +426,13 @@ class DocstrumSegmenter(
     }
 
     sets.iterator().toSeq.map{ group =>
-      val gset = group.toSeq.sortBy({cb => cb.bbox.left})
-      // val str = gset.map(_.char).mkString
-      // println(s"line group = ${str}")
-      new ComponentLine(gset, docOrientation)
+      val gset = group.toSeq.sortBy(_.bbox.left).map(Component(_))
+      Component(gset, docOrientation)
     }
   }
 
-  // private double computeOrientation(List[ComponentLine] lines) {
-  def computeOrientation(lines: Seq[ComponentLine]): Double = {
+  // private double computeOrientation(List[ConnectedComponents] lines) {
+  def computeOrientation(lines: Seq[ConnectedComponents]): Double = {
     // Compute weighted mean of line angles
     var valueSum = 0.0;
     var weightSum = 0.0;
@@ -457,13 +459,13 @@ class DocstrumSegmenter(
        * @return
        */
   def determineZones(
-    lines: Seq[ComponentLine], orientation: Double,
+    lines: Seq[ConnectedComponents], orientation: Double,
     minHorizontalDistance: Double, maxHorizontalDistance: Double,
     minVerticalDistance: Double, maxVerticalDistance: Double,
     minHorizontalMergeDistance: Double, maxHorizontalMergeDistance: Double,
     minVerticalMergeDistance: Double, maxVerticalMergeDistance: Double
-  ): Seq[Seq[ComponentLine]] = {
-    val sets = new DisjointSets[ComponentLine](lines);
+  ): Seq[Seq[ConnectedComponents]] = {
+    val sets = new DisjointSets[ConnectedComponents](lines);
     // Mean height is computed so that all distances can be scaled
     // relative to the line height
     var meanHeight = 0.0
@@ -472,7 +474,7 @@ class DocstrumSegmenter(
 
     for (line <- lines) {
       var weight = line.getLength();
-      meanHeight += line.getHeight() * weight;
+      meanHeight += line.height * weight;
       weights += weight;
     }
     meanHeight /= weights;
@@ -482,7 +484,7 @@ class DocstrumSegmenter(
       li <- tail.headOption.toSeq
       lj <- tail.drop(1)
     } {
-      var scale = Math.min(li.getHeight(), lj.getHeight()) / meanHeight;
+      var scale = Math.min(li.height, lj.height) / meanHeight;
       scale = Math.max(minLineSizeScale, Math.min(scale, maxLineSizeScale));
       // "<=" is used instead of "<" for consistency and to allow setting minVertical(Merge)Distance
       // to 0.0 with meaning "no minimal distance required"
@@ -511,7 +513,7 @@ class DocstrumSegmenter(
 
   import scala.collection.mutable
 
-  // def mergeZones(zones: List[List[ComponentLine]], tolerance: Double): List[List[ComponentLine]] = {
+  // def mergeZones(zones: List[List[ConnectedComponents]], tolerance: Double): List[List[ConnectedComponents]] = {
   //   // val bounds = mutable.ArrayBuffer[BxBounds](zones.size());
   //   for (zone <- zones) {
   //     val builder = new BxBoundsBuilder();
@@ -524,8 +526,8 @@ class DocstrumSegmenter(
   //     bounds.add(builder.getBounds());
   //   }
 
-  //   // List[List[ComponentLine]] outputZones = new ArrayList[List[ComponentLine]]();
-  //   val outputZones = mutable.ArrayBuffer[Seq[ComponentLine]]()
+  //   // List[List[ConnectedComponents]] outputZones = new ArrayList[List[ConnectedComponents]]();
+  //   val outputZones = mutable.ArrayBuffer[Seq[ConnectedComponents]]()
 
   //   // mainFor:
   //   for (int i = 0; i < zones.size(); i++) {
@@ -544,11 +546,11 @@ class DocstrumSegmenter(
   //   return outputZones;
   // }
 
-  //     private List[List[ComponentLine]] mergeLines(List[List[ComponentLine]] zones, double orientation,
+  //     private List[List[ConnectedComponents]] mergeLines(List[List[ConnectedComponents]] zones, double orientation,
   //             double minHorizontalDistance, double maxHorizontalDistance,
   //             double minVerticalDistance, double maxVerticalDistance) {
-  //         List[List[ComponentLine]] outputZones = new ArrayList[List[ComponentLine]](zones.size());
-  //         for (List[ComponentLine] zone : zones) {
+  //         List[List[ConnectedComponents]] outputZones = new ArrayList[List[ConnectedComponents]](zones.size());
+  //         for (List[ConnectedComponents] zone : zones) {
   //             outputZones.add(mergeLinesInZone(zone, orientation,
   //                 minHorizontalDistance, maxHorizontalDistance,
   //                 minVerticalDistance, maxVerticalDistance));
@@ -556,14 +558,14 @@ class DocstrumSegmenter(
   //         return outputZones;
   //     }
 
-  //     private List[ComponentLine] mergeLinesInZone(List[ComponentLine] lines, double orientation,
+  //     private List[ConnectedComponents] mergeLinesInZone(List[ConnectedComponents] lines, double orientation,
   //             double minHorizontalDistance, double maxHorizontalDistance,
   //             double minVerticalDistance, double maxVerticalDistance) {
-  //         DisjointSets[ComponentLine] sets = new DisjointSets[ComponentLine](lines);
+  //         DisjointSets[ConnectedComponents] sets = new DisjointSets[ConnectedComponents](lines);
   //         for (int i = 0; i < lines.size(); i++) {
-  //             ComponentLine li = lines.get(i);
+  //             ConnectedComponents li = lines.get(i);
   //             for (int j = i + 1; j < lines.size(); j++) {
-  //                 ComponentLine lj = lines.get(j);
+  //                 ConnectedComponents lj = lines.get(j);
   //                 double hDist = li.horizontalDistance(lj, orientation);
   //                 double vDist = li.verticalDistance(lj, orientation);
   //                 if (minHorizontalDistance <= hDist && hDist <= maxHorizontalDistance
@@ -590,71 +592,98 @@ class DocstrumSegmenter(
   //                 }
   //             }
   //         }
-  //         List[ComponentLine] outputZone = new ArrayList[ComponentLine]();
-  //         for (Set[ComponentLine] group : sets) {
+  //         List[ConnectedComponents] outputZone = new ArrayList[ConnectedComponents]();
+  //         for (Set[ConnectedComponents] group : sets) {
   //             List[Component] components = new ArrayList[Component]();
-  //             for (ComponentLine line : group) {
+  //             for (ConnectedComponents line : group) {
   //                 components.addAll(line.getComponents());
   //             }
   //             Collections.sort(components, ComponentXComparator.getInstance());
-  //             outputZone.add(new ComponentLine(components, orientation));
+  //             outputZone.add(new ConnectedComponents(components, orientation));
   //         }
   //         return outputZone;
   //     }
 
-      /**
-       * Converts list of zones from internal format (using components and
-       * component lines) to BxModel.
-       *
-       * @param zones zones in internal format
-       * @param wordSpacing - maximum allowed distance between components that
-       * belong to one word
-       * @return BxModel page
-       */
-      def convertToBxModel(zones: Seq[Seq[ComponentLine]],  wordSpacing: Double): Unit = {
-          // BxPage page = new BxPage();
-          // List[BxPage] pages = Lists.newArrayList(origPage.getParent());
-          // int pageIndex = pages.indexOf(origPage);
-          // boolean groupped = false;
-          // if (zones.size() > MAX_ZONES_PER_PAGE && pageIndex >= PAGE_MARGIN
-          //         && pageIndex < pages.size() - PAGE_MARGIN) {
-          //     val oneZone:List[ComponentLine]  = List[ComponentLine]();
-          //     for (List[ComponentLine] zone : zones) {
-          //         oneZone.addAll(zone);
-          //     }
-          //     zones = new ArrayList[List[ComponentLine]]();
-          //     zones.add(oneZone);
-          //     groupped = true;
-          // }
-
-          for (lines <- zones) {
-              // BxZone zone = new BxZone();
-            val zone = mutable.ArrayBuffer[ComponentLine]()
-              // if (groupped) {
-              //     zone.setLabel(BxZoneLabel.GEN_OTHER);
-              // }
-              for (line <- lines) {
-                  // zone.addLine(line.convertToBxLine(wordSpacing));
-                zone.append(line.convertToBxLine(wordSpacing));
-              }
-              // List[BxLine] zLines = Lists.newArrayList(zone);
-
-              // Collections.sort(zLines, new Comparator[BxLine]() {
-              //     @Override
-              //     public int compare(BxLine o1, BxLine o2) {
-              //         return Double.compare(o1.getBounds().getY(), o2.getBounds().getY());
-              //     }
-              // });
-
-              // zone.setLines(zLines);
-              // BxBoundsBuilder.setBounds(zone);
-              // page.addZone(zone);
-          }
-          // BxModelUtils.sortZonesYX(page);
-          // BxBoundsBuilder.setBounds(page);
-          // return page;
+  /**
+    * Converts list of zones from internal format (using components and
+    * component lines) to BxModel.
+    *
+    * @param zones zones in internal format
+    * @param wordSpacing - maximum allowed distance between components that
+    * belong to one word
+    * @return BxModel page
+    */
+  def pageZonesToSortedZones(zones: Seq[Seq[ConnectedComponents]]): Seq[ConnectedComponents] = {
+    // BxPage page = new BxPage();
+    // List[BxPage] pages = Lists.newArrayList(origPage.getParent());
+    // int pageIndex = pages.indexOf(origPage);
+    // boolean groupped = false;
+    // if (zones.size() > MAX_ZONES_PER_PAGE && pageIndex >= PAGE_MARGIN
+    //         && pageIndex < pages.size() - PAGE_MARGIN) {
+    //     val oneZone:List[ConnectedComponents]  = List[ConnectedComponents]();
+    //     for (List[ConnectedComponents] zone : zones) {
+    //         oneZone.addAll(zone);
+    //     }
+    //     zones = new ArrayList[List[ConnectedComponents]]();
+    //     zones.add(oneZone);
+    //     groupped = true;
+    // }
+    val page = for (lines <- zones) yield {
+      val zLines = mutable.ArrayBuffer[ConnectedComponents]()
+      // if (groupped) {
+      //     zone.setLabel(BxZoneLabel.GEN_OTHER);
+      // }
+      for (line <- lines) {
+        zLines.append(line.convertToBxLine());
       }
 
+      val zSorted = zLines.sortWith({ case (cc1, cc2) =>
+        cc1.bounds.top < cc2.bounds.top
+      })
+
+
+      // zone.setLines(zLines);
+      // BxBoundsBuilder.setBounds(zone);
+      // page.addZone(zone);
+      zSorted.toSeq
+    }
+
+    val pccs = page.map({case ccs => new ConnectedComponents(ccs, 0d, Some(LB.Zone)) })
+
+    val sortedZones = sortZonesYX(pccs)
+    
+    sortedZones.foreach { cc => println(s"zone ${cc.toText}") }
+    sortedZones
+    // BxBoundsBuilder.setBounds(page);
+    // return page;
+  }
+
+  def compareDouble(d1: Double, d2: Double, precision: Double): Int = {
+    if (d1.isNaN() || d2.isNaN()) {
+      d1.compareTo(d2)
+    } else {
+      val p:Double = if (precision == 0) 0 else 1
+
+      val i1: Long = math.round(d1 / p);
+      val i2: Long = math.round(d2 / p);
+      i1.compareTo(i2)
+    }
+  }
+
+  def sortZonesYX(zones: Seq[ConnectedComponents]): Seq[ConnectedComponents]= {
+
+    zones.sortWith({case (cc1, cc2) =>
+      val ycmp = compareDouble(cc1.bounds.top, cc2.bounds.top, 0.01)
+
+      val cmp = if (ycmp == 0) {
+        compareDouble(cc1.bounds.left, cc2.bounds.left, 0.01)
+      } else {
+        ycmp
+      }
+
+      cmp < 0
+    })
+  }
 
   val DEFAULT_SPACE_HIST_RES: Double = 0.5
   val DISTANCE_STEP: Double = 16.0;

@@ -41,7 +41,7 @@ lazy val logbackVersion = "1.1.7"
 
 libraryDependencies in ThisBuild ++= Seq(
   "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
-  "com.iheart" %% "ficus" % "1.2.3",
+  "com.iheart" %% "ficus" % "1.2.5",
   "org.apache.commons" % "commons-lang3" % "3.4",
   // "com.github.pathikrit" %% "better-files" % "2.15.0",
   "org.scalaz" %% "scalaz-core" % "7.1.8",

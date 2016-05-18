@@ -1,10 +1,10 @@
-
 package edu.umass.cs.iesl.watr
-package ext
+package docseg
 
 import org.scalatest._
 
 import watrmarks._
+import ext._
 
 class DocstrumSegmenterTest extends FlatSpec {
   behavior of "docstrum segmenter"
@@ -38,7 +38,9 @@ class DocstrumSegmenterTest extends FlatSpec {
     val zoneIndex = ZoneIndexer.loadSpatialIndices(charsAndGeometry)
 
     val docstrum = new DocstrumSegmenter(zoneIndex)
-    docstrum.segmentPage(PageID(0))
+    zoneIndex.getPages.foreach { pageId =>
+      docstrum.segmentPage(pageId)
+    }
 
   }
 }

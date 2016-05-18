@@ -47,8 +47,12 @@ object jsiRectangle {
 
 object Bounds {
   def fmt = (d: Double) => f"${d}%1.2f"
+  implicit class RicherDouble(val d: Double) extends AnyVal {
+    def pp:String = fmt(d)
+  }
 
   implicit class RicherPoint(val p0: Point) extends AnyVal {
+
 
     def hdist(p1: Point): Double = math.abs(p0.x - p1.x)
     def vdist(p1: Point): Double = math.abs(p0.y - p1.y)
@@ -67,6 +71,21 @@ object Bounds {
   }
 
   implicit class RicherLTBounds(val tb: LTBounds) extends AnyVal {
+    def right = tb.left+tb.width
+    def bottom = tb.top+tb.height
+
+    def union(b: LTBounds): LTBounds = {
+      val left   = math.min(tb.left, b.left)
+      val top    = math.min(tb.top, b.top)
+      val right = math.max(tb.right, b.right)
+      val bottom = math.max(tb.bottom, b.bottom)
+      LTBounds(
+        left, top,
+        right-left,
+        bottom-top
+      )
+    }
+
     def toCenterPoint: Point = Point(
       (tb.left+tb.width/2),
       (tb.top+tb.height/2)

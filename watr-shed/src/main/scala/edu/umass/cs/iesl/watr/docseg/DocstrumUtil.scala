@@ -1,18 +1,63 @@
 package edu.umass.cs.iesl.watr
-package ext
+package docseg
 
-import watrmarks._
+/**
+  * Filter class for neighbor objects that checks if the angle of the
+  * neighbor is within specified range.
+  */
+object AngleFilter {
+  def apply(lowerAngle: Double, upperAngle: Double): AngleFilter = {
+    val low = if (lowerAngle < -Math.PI/2) {
+      lowerAngle + Math.PI;
+    } else lowerAngle
 
-// import com.itextpdf.text.Rectangle
-// import com.itextpdf.text.exceptions.InvalidPdfException
-// import com.itextpdf.text.pdf._
-// import com.itextpdf.text.pdf.parser.{Vector => PVector, RenderListener, _}
-//   // import pl.edu.icm.cermine.exception.AnalysisException
-//   // import pl.edu.icm.cermine.structure.CharacterExtractor
-// import _root_.pl.edu.icm.cermine.structure.model._
+    val hi = if (upperAngle >= Math.PI/2) {
+      upperAngle - Math.PI;
+    } else upperAngle
 
-// // import pl.edu.icm.cermine.structure.model.BxPage
-// // import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
+    if (low <= hi) {
+      new AndFilter(low, hi);
+    } else {
+      new OrFilter(low, hi);
+    }
+
+  }
+}
+
+
+
+trait AngleFilter {
+  def lowerAngle: Double
+  def upperAngle: Double
+
+  def matches(angle: Double): Boolean
+}
+
+class AndFilter(
+  override val lowerAngle: Double,
+  override val upperAngle: Double
+) extends AngleFilter {
+
+
+  def matches(angle: Double): Boolean = {
+    // val nangle = n.bbox.toCenterPoint.angleTo(origin.bbox.toCenterPoint)
+    lowerAngle <= angle && angle < upperAngle
+  }
+}
+
+class OrFilter(
+  override val lowerAngle: Double,
+  override val upperAngle: Double
+) extends AngleFilter {
+
+
+  def matches(angle: Double): Boolean = {
+    // val nangle = n.bbox.toCenterPoint.angleTo(origin.bbox.toCenterPoint)
+    lowerAngle <= angle || angle < upperAngle
+  }
+
+}
+
 
 //     /**
 //      * Internal representation of character.
@@ -205,61 +250,3 @@ import watrmarks._
 
 
 
-/**
-  * Filter class for neighbor objects that checks if the angle of the
-  * neighbor is within specified range.
-  */
-object AngleFilter {
-  def apply(lowerAngle: Double, upperAngle: Double): AngleFilter = {
-    val low = if (lowerAngle < -Math.PI/2) {
-      lowerAngle + Math.PI;
-    } else lowerAngle
-
-    val hi = if (upperAngle >= Math.PI/2) {
-      upperAngle - Math.PI;
-    } else upperAngle
-
-    if (low <= hi) {
-      new AndFilter(low, hi);
-    } else {
-      new OrFilter(low, hi);
-    }
-
-  }
-}
-
-
-// import Bounds._
-
-trait AngleFilter {
-  def lowerAngle: Double
-  def upperAngle: Double
-
-  def matches(angle: Double): Boolean
-}
-
-class AndFilter(
-  override val lowerAngle: Double,
-  override val upperAngle: Double
-) extends AngleFilter {
-
-
-  def matches(angle: Double): Boolean = {
-    // val nangle = n.bbox.toCenterPoint.angleTo(origin.bbox.toCenterPoint)
-    lowerAngle <= angle && angle < upperAngle
-  }
-
-}
-
-class OrFilter(
-  override val lowerAngle: Double,
-  override val upperAngle: Double
-) extends AngleFilter {
-
-
-  def matches(angle: Double): Boolean = {
-    // val nangle = n.bbox.toCenterPoint.angleTo(origin.bbox.toCenterPoint)
-    lowerAngle <= angle || angle < upperAngle
-  }
-
-}
