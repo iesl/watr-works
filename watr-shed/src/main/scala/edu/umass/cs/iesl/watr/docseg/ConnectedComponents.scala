@@ -139,9 +139,9 @@ case class ConnectedComponents(
     }
 
     val text  = if (labels.contains(LB.Line)) {
-      val headbbox = components.headOption.map({c => c.bounds.prettyPrint})
-      val lastbbox = components.lastOption.map({c => c.bounds.prettyPrint})
-      components.map(_.toText).mkString(" ") + s"  ${headbbox} - ${lastbbox}"
+      // val headbbox = components.headOption.map({c => c.bounds.prettyPrint})
+      // val lastbbox = components.lastOption.map({c => c.bounds.prettyPrint})
+      components.map(_.toText).mkString(" ") //  + s"  ${headbbox} - ${lastbbox}"
     } else if (labels.contains(LB.Word)) {
       components.map(_.toText).mkString
     } else if (labels.contains(LB.Zone)) {

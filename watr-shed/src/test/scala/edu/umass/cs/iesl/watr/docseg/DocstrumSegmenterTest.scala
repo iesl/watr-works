@@ -9,7 +9,7 @@ import watrmarks._
 import ext._
 
 
-class DocstrumSegmenterTest extends FlatSpec {
+class DocstrumSegmenterTest extends FlatSpec with Matchers {
   behavior of "docstrum segmenter"
 
   val LB = watrmarks.StandardLabels
@@ -44,13 +44,18 @@ class DocstrumSegmenterTest extends FlatSpec {
   val page0 = PageID(0)
 
   it should "handle super/subscripts" in {
-
     val examples = List(
       Example(
+        LTBounds(166.0d, 586.0, 350.0, 12.0),
+        """a Faculty of Engineering, Yamagata University, Yonezawa 992-8510, Japan""".replaceAll(" ", ""),
+        """^a^ Faculty of Engineering, Yamagata University, Yonezawa 992-8510, Japan"""
+      )
+      ,Example(
         LTBounds(166.0d, 549.0, 350.0, 15.0),
         """Y. Adachi a,∗, H. Morita a, T. Kanomata b, A. Sato b, H. Yoshida c,""".replaceAll(" ", ""),
         """Y. Adachi ^a,∗^, H. Morita ^a^, T. Kanomata ^b^, A. Sato ^b^, H. Yoshida ^c^,"""
-      ), Example(
+      )
+      ,Example(
         LTBounds(84.33d, 700.0, 403.2, 12.2),
         """to be 431 K and +2.6 × 10−2 GPa−1 for Rh2MnSn, and 471 K and +1.7 × 10−2 for GPa−1 Rh2MnGe, respectively.""".replaceAll(" ", ""),
         """to be 431 K and +2.6 × 10^−2^ GPa^−1^ for Rh_2_MnSn, and 471 K and +1.7 × 10^−2^ for GPa^−1^ Rh_2_MnGe, respectively."""
@@ -66,14 +71,18 @@ class DocstrumSegmenterTest extends FlatSpec {
       val chars = zoneIndex.queryChars(PageID(0), example.bbox)
       val lineChars = chars.sortBy(_.bbox.left)
       val ccs = Component(lineChars.map(Component(_)), 0d, LB.Line)
-      val found = chars.sortBy(_.bbox.left).map({ cbox => cbox.char }).toList.mkString
-      println(s"trying: $found")
-      println()
 
-      val docstrum = new DocstrumSegmenter(zoneIndex)
-      val orientation = docstrum.computeOrientation(Seq(ccs))
+      // val found = chars.sortBy(_.bbox.left).map({ cbox => cbox.char }).toList.mkString
+      // println(s"trying: $found")
+      // println()
+
+      // val docstrum = new DocstrumSegmenter(zoneIndex)
+      // val orientation = docstrum.computeOrientation(Seq(ccs))
       val tokenized = ccs.tokenizeLine()
-      println(s"   = ${tokenized.toText}")
+      // println(s"   = ${tokenized.toText}")
+
+
+      assertResult(example.expectedTranslation)(tokenized.toText)
 
     }
 
