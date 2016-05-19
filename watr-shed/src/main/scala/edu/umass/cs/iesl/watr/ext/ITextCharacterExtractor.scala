@@ -81,7 +81,7 @@ class MyBxDocumentCreator(
   val pageChars = mutable.ArrayBuffer[PageChars]()
 
   def processNewBxPage(_pageRectangle: Rectangle): Unit = {
-    println(s"""page ${pageNumber} chars: ${page0Chars}""")
+    // println(s"""page ${pageNumber} chars: ${page0Chars}""")
 
     page0Chars = 0
 

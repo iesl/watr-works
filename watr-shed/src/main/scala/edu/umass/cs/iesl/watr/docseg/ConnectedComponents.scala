@@ -315,9 +315,9 @@ case class ConnectedComponents(
     // val splitValue = charDists.take(2).sum / 2
     val splitValue = (modalBigGap+modalLittleGap)/2
 
-    println(s""" char dists = ${charDists.map(_.pp).mkString(", ")}, splitVal = ${splitValue}""")
+    // println(s""" char dists = ${charDists.map(_.pp).mkString(", ")}, splitVal = ${splitValue}""")
 
-    printCCStats((9, 12), centerY)
+    // printCCStats((9, 12), centerY)
     // printCCStats((20, 15), centerY)
 
     val wordBreaks = mutable.ArrayBuffer[Int]()
