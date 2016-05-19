@@ -15,6 +15,8 @@ trait TokenLabels {
   val Token = Label("tok", "token")
   val Word = Label("tok", "word")
   val Punct = Label("tok", "punct")
+  val Sup = Label("tok", "sup")
+  val Sub = Label("tok", "sub")
 
   val allTokenLabels = List(
     Word,

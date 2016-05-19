@@ -5,13 +5,10 @@ package textboxing
 import scalaz.syntax.ToIdOps
 import scalaz.syntax.std.ToListOps
 
-object TextBoxing extends ToListOps {
+object TextBoxing extends ToListOps with ToIdOps {
   import scalaz._
-  // import Scalaz._
   import scalaz.Lens._
-  // import scalaz.std.list._
 
-  // import scalaz.std.syntax.id._                              // extends ToApplicativePlusOps
 
 
 
@@ -85,6 +82,7 @@ object TextBoxing extends ToListOps {
 
   def mstringToList(s: String): List[String] =
     scala.io.Source.fromString(s).getLines.toList
+
 
 
   // Given a string, split it back into a box

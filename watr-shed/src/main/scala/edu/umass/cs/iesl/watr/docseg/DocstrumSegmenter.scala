@@ -19,9 +19,31 @@ import pl.edu.icm.cermine.tools.DisjointSets
 import Bounds._
 import scala.collection.JavaConversions._
 
+object DocstrumSegmenter {
+  def compareDouble(d1: Double, d2: Double, precision: Double): Int = {
+    if (d1.isNaN() || d2.isNaN()) {
+      d1.compareTo(d2)
+    } else {
+      val p:Double = if (precision == 0) 0 else 1
+
+      val i1: Long = math.round(d1 / p);
+      val i2: Long = math.round(d2 / p);
+      i1.compareTo(i2)
+    }
+  }
+
+  def compareDoubleWithTolerance(d1: Double, d2: Double, tolerance: Double): Int = {
+    if (math.abs(d1 - d2) < tolerance) 0
+    else if (d1 < d2) -1
+    else 1
+  }
+
+}
+
 class DocstrumSegmenter(
   pages: ZoneIndexer
 ) {
+  import DocstrumSegmenter._
 
   val LB = StandardLabels
 
@@ -116,104 +138,11 @@ class DocstrumSegmenter(
     pageZonesToSortedZones(zones)
   }
 
-  /**
-    * Constructs sorted by x coordinate array of components from page's chunks.
-    *
-    * @param page page containing chunks
-    * @return array of components
-    */
-  // protected List[Component] createComponents(BxPage page) throws AnalysisException {
-  def createComponents(pageId: Int@@PageID): Unit = {
-    // val chunks: List[Chunk] = List(page.getChunks())
-    // val components = Array[Component](chunks.size())
-    // for (int i = 0; i < components.length; i++) {
-    //   try {
-    //     components[i] = new Component(chunks.get(i));
-    //   } catch(IllegalArgumentException ex) {
-    //     throw new AnalysisException(ex);
-    //   }
-    // }
-
-    //   Arrays.sort(components, ComponentXComparator.getInstance());
-
-
-
-    // findNeighbors(pageId)
-  }
-
-  // private def findNeighbors(pageId: Int@@PageID, qbox: LTBounds): Seq[Int@@CharID] = {
   private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[Int@@CharID] = {
     val hits = pages.nearestNChars(pageId, qbox.bbox, 5, 16.0f)
     hits.filter(_ != qbox.id)
   }
 
-  /**
-    * Performs for each component search for nearest-neighbors and stores the
-    * result in component's neighbors attribute.
-    */
-  // private void findNeighbors(Component[] components) throws AnalysisException {
-  def findNeighbors(pageId: Int@@PageID): Unit =  {
-    //         if (components.length == 0) {
-    //             return;
-    //         }
-    //         if (components.length == 1) {
-    //             components[0].setNeighbors(new ArrayList[Neighbor]());
-    //             return;
-    //         }
-    //         int pageNeighborCount = neighborCount; // == DEFAULT_NEIGHBOR_COUNT = 5
-    //         if (components.length <= neighborCount) {
-    //             pageNeighborCount = components.length - 1;
-    //         }
-    //
-    //         List[Neighbor] candidates = new ArrayList[Neighbor]();
-    //         for (int i = 0; i < components.length; i++) {
-    //             int start = i, end = i + 1;
-    //             // Contains components from components array
-    //             // from ranges [start, i) and [i+1, end)
-    //             double dist = Double.POSITIVE_INFINITY;
-    //             for (double searchDist = 0; searchDist < dist; ) {
-    //                 searchDist += DISTANCE_STEP; ///  = 16.0;
-    //                 boolean newCandidatesFound = false;
-    //
-    //                 while (start > 0 && components[i].getX() - components[start - 1].getX() < searchDist) {
-    //                     start--;
-    //                     candidates.add(new Neighbor(components[start], components[i]));
-    //                     if (candidates.size() > pageNeighborCount) {
-    //                         Collections.sort(candidates, NeighborDistanceComparator.getInstance());
-    //                         candidates.subList(pageNeighborCount, candidates.size()).clear();
-    //                     }
-    //                     newCandidatesFound = true;
-    //                 }
-    //                 while (end < components.length && components[end].getX() - components[i].getX() < searchDist) {
-    //                     candidates.add(new Neighbor(components[end], components[i]));
-    //                     if (candidates.size() > pageNeighborCount) {
-    //                         Collections.sort(candidates, NeighborDistanceComparator.getInstance());
-    //                         candidates.subList(pageNeighborCount, candidates.size()).clear();
-    //                     }
-    //                     end++;
-    //                     newCandidatesFound = true;
-    //                 }
-
-    //                 if (newCandidatesFound && candidates.size() >= pageNeighborCount) {
-    //                     Collections.sort(candidates, NeighborDistanceComparator.getInstance());
-    //                     dist = candidates.get(pageNeighborCount - 1).getDistance();
-    //                 }
-    //             }
-    //             candidates.subList(pageNeighborCount, candidates.size()).clear();
-    //             components[i].setNeighbors(new ArrayList[Neighbor>(candidates));
-    //             candidates.clear();
-    //         }
-  }
-
-
-
-    //     /**
-    //      * Computes initial orientation estimation based on nearest-neighbors' angles.
-    //      *
-    //      * @param components
-    //      * @return initial orientation estimation
-    //      */
-    // private double computeInitialOrientation(List[Component] components) {
   def computeInitialOrientation(): Double = {
     println(s"computeInitialOrientation")
     val histPeaks = for {
@@ -232,8 +161,8 @@ class DocstrumSegmenter(
           .foreach({c =>
             val angle = c.bbox.toCenterPoint.angleTo(component.bbox.toCenterPoint)
             val dist = c.bbox.centerDistanceTo(component.bbox)
-            // println(s"    ${c.char}: ${c.bbox.prettyPrint} -> ${component.bbox.prettyPrint}")
-            // println(s"        angle=${angle} dist=${dist}")
+            println(s"    ${c.char}: ${c.bbox.prettyPrint} -> ${component.bbox.prettyPrint}")
+            println(s"        angle=${angle} dist=${dist}")
             histogram.add(angle)
           })
       }
@@ -648,27 +577,16 @@ class DocstrumSegmenter(
       zSorted.toSeq
     }
 
-    val pccs = page.map({case ccs => new ConnectedComponents(ccs, 0d, Some(LB.Zone)) })
+    val pccs = page.map({case ccs => Component(ccs, 0d, LB.Zone) })
 
     val sortedZones = sortZonesYX(pccs)
-    
+
     sortedZones.foreach { cc => println(s"zone ${cc.toText}") }
     sortedZones
     // BxBoundsBuilder.setBounds(page);
     // return page;
   }
 
-  def compareDouble(d1: Double, d2: Double, precision: Double): Int = {
-    if (d1.isNaN() || d2.isNaN()) {
-      d1.compareTo(d2)
-    } else {
-      val p:Double = if (precision == 0) 0 else 1
-
-      val i1: Long = math.round(d1 / p);
-      val i2: Long = math.round(d2 / p);
-      i1.compareTo(i2)
-    }
-  }
 
   def sortZonesYX(zones: Seq[ConnectedComponents]): Seq[ConnectedComponents]= {
 

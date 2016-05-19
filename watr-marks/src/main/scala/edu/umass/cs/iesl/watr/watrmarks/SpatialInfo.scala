@@ -49,6 +49,21 @@ object Bounds {
   def fmt = (d: Double) => f"${d}%1.2f"
   implicit class RicherDouble(val d: Double) extends AnyVal {
     def pp:String = fmt(d)
+
+    def ltFuzzy(tolerance: Double)(d2: Double): Boolean =
+      compareFuzzy(tolerance)(d2) < 0
+
+    def gtFuzzy(tolerance: Double)(d2: Double): Boolean =
+      compareFuzzy(tolerance)(d2) > 0
+
+    def eqFuzzy(tolerance: Double)(d2: Double): Boolean =
+      compareFuzzy(tolerance)(d2) == 0
+
+    def compareFuzzy(tolerance: Double)(d2: Double): Int = {
+      if (math.abs(d - d2) < tolerance) 0
+      else if (d < d2) -1
+      else 1
+    }
   }
 
   implicit class RicherPoint(val p0: Point) extends AnyVal {
@@ -179,6 +194,9 @@ case class Point(
   x: Double, y: Double
 )
 
+case class Line(
+  p1: Point, p2: Point
+)
 
 case class TargetedBounds(
   id: Int@@RegionID,
@@ -327,6 +345,17 @@ class ZoneIndexer  {
     def getIDs: Seq[Int] = {
       ids
     }
+  }
+
+  def queryChars(page: Int@@PageID, q: LTBounds): Seq[CharBox] = {
+    val rindex = pageRIndexes(page)
+
+    val collectRegions = new CollectRegionIds()
+    rindex.contains(q.toJsiRectangle, collectRegions)
+    val neighbors = collectRegions.getIDs.filter{ id =>
+      charBoxes.contains(CharID(id))
+    }
+    neighbors.map(cid => charBoxes(CharID(cid)))
   }
 
 

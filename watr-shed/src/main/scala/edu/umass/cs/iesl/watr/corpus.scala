@@ -1,4 +1,5 @@
-package edu.umass.cs.iesl.watr
+package edu.umass.cs.iesl
+package watr
 
 import java.io.{ InputStream }
 import java.io.InputStreamReader
