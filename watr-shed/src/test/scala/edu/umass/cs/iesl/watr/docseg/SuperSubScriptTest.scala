@@ -15,32 +15,12 @@ case class Example(
   desiredChars: String, // This is the character string we hope to extract with more work
   expectedTokenization: String, // This is the translation we see now
   desiredTokenization: String, // This is the desired translation
-  skip: Boolean = true
+  skip: Boolean = false
 )
 
-class DocstrumSegmenterTest extends FlatSpec with Matchers {
+class SuperSubScriptTest extends FlatSpec with Matchers {
   behavior of "docstrum segmenter"
 
-  val LB = watrmarks.StandardLabels
-
-  // it should "compute angles correctly" in {
-  //   import Bounds._
-
-  //   val points = List(
-  //     Point(1, 0) -> Point(1, 0),
-  //     Point(1, 0) -> Point(1, 1),
-  //     Point(1, 0) -> Point(0, 1),
-  //     Point(1, 0) -> Point(-1, -1)
-  //   )
-
-  //   points.foreach { case(p1, p2) =>
-  //     println(s"${p1.prettyPrint} -> ${p2.prettyPrint}: angle = ${p1.angleTo(p2)}")
-  //   }
-  // }
-
-  // alloys a: (l:234.43, t:519.98, w:7.52, h:15.24) -> (l:241.95, t:519.98, w:4.71, h:15.24)
-
-  val page = (0 to 10).map(PageID(_))
 
   it should "handle super/subscripts" in {
     val examples = List(
@@ -102,35 +82,37 @@ class DocstrumSegmenterTest extends FlatSpec with Matchers {
       )
     )
     examples.foreach { example =>
+      if (! example.skip) {
 
-      val charsAndGeometry = CermineExtractor.extractChars(example.pdf)
-      val zoneIndex = ZoneIndexer.loadSpatialIndices(charsAndGeometry)
+        val charsAndGeometry = CermineExtractor.extractChars(example.pdf)
+        val zoneIndex = ZoneIndexer.loadSpatialIndices(charsAndGeometry)
 
-      val chars = zoneIndex.queryChars(example.page, example.bbox)
+        val chars = zoneIndex.queryChars(example.page, example.bbox)
 
-      val found = chars.sortBy(_.bbox.left).map({ cbox => cbox.char }).toList.mkString
-      // println(s"trying: $found")
+        val found = chars.sortBy(_.bbox.left).map({ cbox => cbox.char }).toList.mkString
+        // println(s"trying: $found")
 
-      assertResult(example.expectedChars.replaceAll(" ",""))(found)
-      val exc = example.expectedChars.replaceAll(" ", "")
-      val des = example.desiredChars.replaceAll(" ", "")
-      if (!des.isEmpty && exc != des) {
-        println(s"""|warning: extracted characters need improvement... \n    ${found}
-                    | want: ${des}
-                    | have: ${exc}
-                    |""")
+        assertResult(example.expectedChars.replaceAll(" ",""))(found)
+        val exc = example.expectedChars.replaceAll(" ", "")
+        val des = example.desiredChars.replaceAll(" ", "")
+        if (!des.isEmpty && exc != des) {
+          println(s"""|warning: extracted characters need improvement... \n    ${found}
+                      | want: ${des}
+                      | have: ${exc}
+                      |""")
+        }
+
+
+        val lineChars = chars.sortBy(_.bbox.left)
+        val ccs = Component(lineChars.map(Component(_)), 0d, LB.Line)
+
+        // val docstrum = new DocstrumSegmenter(zoneIndex)
+        // val orientation = docstrum.computeOrientation(Seq(ccs))
+        val tokenized = ccs.tokenizeLine()
+
+
+        assertResult(example.expectedTokenization)(tokenized.toText)
       }
-
-
-      val lineChars = chars.sortBy(_.bbox.left)
-      val ccs = Component(lineChars.map(Component(_)), 0d, LB.Line)
-
-      // val docstrum = new DocstrumSegmenter(zoneIndex)
-      // val orientation = docstrum.computeOrientation(Seq(ccs))
-      val tokenized = ccs.tokenizeLine()
-
-
-      assertResult(example.expectedTokenization)(tokenized.toText)
 
     }
 
@@ -148,3 +130,4 @@ class DocstrumSegmenterTest extends FlatSpec with Matchers {
   //   // }
   // }
 }
+

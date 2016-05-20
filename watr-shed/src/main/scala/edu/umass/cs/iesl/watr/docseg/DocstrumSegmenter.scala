@@ -1,19 +1,9 @@
 package edu.umass.cs.iesl.watr
 package docseg
 
-// import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
 import watrmarks._
 
 import scalaz.@@
-// import com.itextpdf.text.Rectangle
-// import com.itextpdf.text.exceptions.InvalidPdfException
-// import com.itextpdf.text.pdf._
-// import com.itextpdf.text.pdf.parser.{Vector => PVector, RenderListener, _}
-// import pl.edu.icm.cermine.exception.AnalysisException
-// import pl.edu.icm.cermine.structure.CharacterExtractor
-// import _root_.pl.edu.icm.cermine.structure.model._
-// import pl.edu.icm.cermine.structure.model.BxPage
-// import pl.edu.icm.cermine.structure.tools.BxBoundsBuilder
 import pl.edu.icm.cermine.tools.Histogram
 import pl.edu.icm.cermine.tools.DisjointSets
 import Bounds._
@@ -80,7 +70,7 @@ class DocstrumSegmenter(
 
   def segmentPage(pageId: Int@@PageID): Seq[ConnectedComponents] = {
     println(s"segmenting page ${pageId}")
-    // val components = componentMap(pageId);
+
     if (docOrientation.isNaN()) {
       docOrientation = computeInitialOrientation();
     }
@@ -321,12 +311,27 @@ class DocstrumSegmenter(
      * @param maxVerticalDistance - maximum vertical distance between components
      * @return lines of components
      */
-    // private List[ConnectedComponents] determineLines(List[Component] components, double orientation, double maxHorizontalDistance, double maxVerticalDistance) {
   def determineLines(
     pageId: Int@@PageID,
     maxHorizontalDistance: Double,
     maxVerticalDistance: Double
   ): Seq[ConnectedComponents] = {
+
+    val lines = determineLines(pageId,
+      pages.getComponents(pageId),
+      maxHorizontalDistance,
+      maxVerticalDistance)
+
+    lines.map{ Component(_, docOrientation) }
+
+  }
+
+  def determineLines(
+    pageId: Int@@PageID,
+    components: Seq[CharBox],
+    maxHorizontalDistance: Double,
+    maxVerticalDistance: Double
+  ): Seq[Seq[CharComponent]] = {
     println(s"""determineLines(maxHorizontalDistance:${maxHorizontalDistance}, maxVerticalDistance: ${maxVerticalDistance})""")
     // val sets = new DisjointSets[CharBox](components);
     val angleFilter = AngleFilter(docOrientation - angleTolerance, docOrientation + angleTolerance);
@@ -335,7 +340,7 @@ class DocstrumSegmenter(
     println(s"""    determineLines(page ${pageId})""")
 
     for {
-      component <- pages.getComponents(pageId)
+      component <- components
     } {
       findNeighbors(pageId, component)
         .map(pages.getComponent(pageId, _))
@@ -354,9 +359,8 @@ class DocstrumSegmenter(
         })
     }
 
-    sets.iterator().toSeq.map{ group =>
-      val gset = group.toSeq.sortBy(_.bbox.left).map(Component(_))
-      Component(gset, docOrientation)
+    sets.iterator().toSeq.map{
+      _.toSeq.sortBy(_.bbox.left).map(new CharComponent(_, docOrientation))
     }
   }
 
