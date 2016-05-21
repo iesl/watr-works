@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
 package ext
 
+import com.softwaremill.debug.DebugConsole._
+
 object CermineFontInfo {
 
   import com.itextpdf.text.pdf.DocumentFont
@@ -17,43 +19,43 @@ object CermineFontInfo {
     val unicodeDiffs = font.getUnicodeDifferences.dropWhile(_ == "").mkString(",")
     val diffs = font.getDifferences.dropWhile(_ == null).mkString(",")
 
-    // debugReport(
-    //   allNameEntries,
-    //   // font.getCharBBox,
-    //   // font.getFontDictionary,
-    //   fontDictionaryKeys,
-    //   // font.getFontMatrix,
-    //   fontFullname,
-    //   font.getFullFontStream,
-    //   // font.getKerning,
-    //   font.getPostscriptFontName,
-    //   // font.getWidth,
-    //   // font.getWidth,
-    //   font.hasKernPairs,
-    //   font.isVertical,
-    //   // font.getAscent,
-    //   // font.getAscentPoint,
-    //   // font.getCidCode,
-    //   // font.getCodePagesSupported.mkString(", "),
-    //   // font.getCompressionLevel,
-    //   // font.getDescent,
-    //   // font.getDescentPoint,
-    //   font.getEncoding,
-    //   font.getFontType,
-    //   // font.getSubfamily,
-    //   unicodeDiffs,
-    //   diffs,
-    //   // font.getUnicodeEquivalent,
-    //   // font.getWidthPoint,
-    //   // font.getWidthPoint,
-    //   // font.getWidthPointKerned,
-    //   // font.getWidths.mkString(", "),
-    //   font.isDirectTextToByte,
-    //   font.isEmbedded,
-    //   font.isFontSpecific,
-    //   font.isForceWidthsOutput,
-    //   font.isSubset
-    // )
+    debugReport(
+      allNameEntries,
+      // font.getCharBBox,
+      // font.getFontDictionary,
+      fontDictionaryKeys,
+      // font.getFontMatrix,
+      fontFullname,
+      font.getFullFontStream,
+      // font.getKerning,
+      font.getPostscriptFontName,
+      // font.getWidth,
+      // font.getWidth,
+      font.hasKernPairs,
+      font.isVertical,
+      // font.getAscent,
+      // font.getAscentPoint,
+      // font.getCidCode,
+      // font.getCodePagesSupported.mkString(", "),
+      // font.getCompressionLevel,
+      // font.getDescent,
+      // font.getDescentPoint,
+      font.getEncoding,
+      font.getFontType,
+      // font.getSubfamily,
+      unicodeDiffs,
+      diffs,
+      // font.getUnicodeEquivalent,
+      // font.getWidthPoint,
+      // font.getWidthPoint,
+      // font.getWidthPointKerned,
+      // font.getWidths.take(3).mkString(", "),
+      font.isDirectTextToByte,
+      font.isEmbedded,
+      font.isFontSpecific,
+      font.isForceWidthsOutput,
+      font.isSubset
+    )
 
     // charExists            (Int)           => Boolean
     // convertToBytes        (String)        => Array[Byte]
@@ -131,28 +133,30 @@ object CermineFontInfo {
     val bs = pdfstring.getBytes.map(Byte.byte2int(_)).mkString(",")
     val obs = pdfstring.getOriginalBytes.map(Byte.byte2int(_)).mkString(",")
 
-    val pdfstrInf = s"""|${tri.getText}:  '${asString}'
-                        |    getBytes         ${bs} => Array[Byte]
-                        |    getEncoding      ${pdfstring.getEncoding} => String
-                        |    getOriginalBytes ${obs} => Array[Byte]
-                        |    isHexWriting     ${pdfstring.isHexWriting        } => Boolean
-                        |    toString         ${pdfstring.toString            } => String
-                        |    toUnicodeString  ${pdfstring.toUnicodeString     } => String
-                        |    canBeInObjStm    ${pdfstring.canBeInObjStm       } => Boolean
-                        |    getIndRef        ${pdfstring.getIndRef           } => PRIndirectReference
-                        |    isArray          ${pdfstring.isArray             } => Boolean
-                        |    isBoolean        ${pdfstring.isBoolean           } => Boolean
-                        |    isDictionary     ${pdfstring.isDictionary        } => Boolean
-                        |    isIndirect       ${pdfstring.isIndirect          } => Boolean
-                        |    isName           ${pdfstring.isName              } => Boolean
-                        |    isNull           ${pdfstring.isNull              } => Boolean
-                        |    isNumber         ${pdfstring.isNumber            } => Boolean
-                        |    isStream         ${pdfstring.isStream            } => Boolean
-                        |    isString         ${pdfstring.isString            } => Boolean
-                        |    length           ${pdfstring.length              } => Int
-                        |    type             ${pdfstring.`type`              } => Int
+    val pdfstrInf = s"""|    tri.text: ${tri.getText}:  As c->int: '${asString}'
+                        |        getBytes         ${bs} => Array[Byte]
+                        |        getEncoding      ${pdfstring.getEncoding} => String
+                        |        getOriginalBytes ${obs} => Array[Byte]
+                        |        isHexWriting     ${pdfstring.isHexWriting        } => Boolean
+                        |        toString         ${pdfstring.toString            } => String
+                        |        toUnicodeString  ${pdfstring.toUnicodeString     } => String
+                        |        canBeInObjStm    ${pdfstring.canBeInObjStm       } => Boolean
+                        |        getIndRef        ${pdfstring.getIndRef           } => PRIndirectReference
+                        |        isArray          ${pdfstring.isArray             } => Boolean
+                        |        isBoolean        ${pdfstring.isBoolean           } => Boolean
+                        |        isDictionary     ${pdfstring.isDictionary        } => Boolean
+                        |        isIndirect       ${pdfstring.isIndirect          } => Boolean
+                        |        isName           ${pdfstring.isName              } => Boolean
+                        |        isNull           ${pdfstring.isNull              } => Boolean
+                        |        isNumber         ${pdfstring.isNumber            } => Boolean
+                        |        isStream         ${pdfstring.isStream            } => Boolean
+                        |        isString         ${pdfstring.isString            } => Boolean
+                        |        length           ${pdfstring.length              } => Int
+                        |        type             ${pdfstring.`type`              } => Int
                         |
                         |""".stripMargin
+
+    println(pdfstrInf)
 
     val d0 = font.getDifferences
     val d1 = font.getUnicodeDifferences
@@ -253,16 +257,17 @@ object CermineFontInfo {
     } else "<no CharProcs>"
 
 
-    val fontinf = s"""|${tri.getText}
-                      |    Font              ${fontFullname}      => DocumentFont
-                      |       Unic.Equiv     ${unicodeEquiv}      => Int
-                      |    Mcid              ${tri.getMcid}              => Integer
-                      |    PdfString         ${tri.getPdfString}              => PdfString
-                      |    TextRenderMode    ${tri.getTextRenderMode}              => Int
-                      | ${dictKvs}
-                      | ${charProcInf}
+    val fontinf = s"""|    Font Info For  ${tri.getText}
+                      |        Font              ${fontFullname}      => DocumentFont
+                      |        Unic.Equiv        ${unicodeEquiv}      => Int
+                      |        Mcid              ${tri.getMcid}              => Integer
+                      |        PdfString         ${tri.getPdfString}              => PdfString
+                      |        TextRenderMode    ${tri.getTextRenderMode}              => Int
+                      |     ${dictKvs}
+                      |     ${charProcInf}
                       |""".stripMargin
 
+    println(fontinf)
     def formatLineVector(ls: PVector): String = {
       s"""[${ls.get(0)} ${ls.get(1)}, ${ls.get(2)}}}]"""
     }
@@ -273,14 +278,14 @@ object CermineFontInfo {
     }
 
 
-    val bbinf = s"""|${tri.getText}:  '${asString}'
-                    |    Rise              ${tri.getRise}                                => Float
-                    |    AscentLine        ${formatLineSegment(tri.getAscentLine)}       => LineSegment
-                    |    Baseline          ${formatLineSegment(tri.getBaseline)}         => LineSegment
-                    |    Baseline (uns)    ${formatLineSegment(tri.getUnscaledBaseline)} => LineSegment
-                    |    DescentLine       ${formatLineSegment(tri.getDescentLine)}      => LineSegment
-                    |    Mcid              ${tri.getMcid}              => Integer
-                    |    PdfString         ${tri.getPdfString}              => PdfString
+    val bbinf = s"""|    BBox info for ${tri.getText}:  '${asString}'
+                    |        Rise              ${tri.getRise}                                => Float
+                    |        AscentLine        ${formatLineSegment(tri.getAscentLine)}       => LineSegment
+                    |        Baseline          ${formatLineSegment(tri.getBaseline)}         => LineSegment
+                    |        Baseline (uns)    ${formatLineSegment(tri.getUnscaledBaseline)} => LineSegment
+                    |        DescentLine       ${formatLineSegment(tri.getDescentLine)}      => LineSegment
+                    |        Mcid              ${tri.getMcid}              => Integer
+                    |        PdfString         ${tri.getPdfString}              => PdfString
                     |""".stripMargin
 
     println(bbinf)

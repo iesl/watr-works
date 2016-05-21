@@ -107,6 +107,12 @@ object Bounds {
       )
     }
 
+    // Compass direction point (bbox -> left-center, right-center, top-corner, etc)
+    def toWesternPoint: Point = Point((tb.left), (tb.top+tb.height/2))
+    def toEasternPoint: Point = Point((tb.left+tb.width), (tb.top+tb.height/2))
+
+
+
     def toCenterPoint: Point = Point(
       (tb.left+tb.width/2),
       (tb.top+tb.height/2)

@@ -321,7 +321,6 @@ class DocstrumSegmenter(
     val sets = new DisjointSets[CharBox](components);
 
 
-
     for { component <- components.sortBy(_.bbox.left) } {
       val searchLog = mutable.ArrayBuffer[TB.Box]()
       findNeighbors(pageId, component)
@@ -333,25 +332,32 @@ class DocstrumSegmenter(
           val dy = neighbor.bbox.toCenterPoint.vdist(component.bbox.toCenterPoint)
           val dist = neighbor.bbox.toCenterPoint.dist(component.bbox.toCenterPoint)
 
-          if (withinAngle(angle) && dx < maxWidth*4.0) {
+          val eastWestDist = component.bbox.toEasternPoint.dist(
+            neighbor.bbox.toWesternPoint
+          )
+
+          var joinWith = false
+          if (withinAngle(angle) && eastWestDist < maxWidth*2) {
             sets.union(component, neighbor);
+            joinWith = true
           }
 
           { import TB._
             searchLog.append(
               s"   ${neighbor.char} #${neighbor.id} ${neighbor.bbox.prettyPrint}".box %
-              s"       angle:${angle.pp}" %
-              s"       dx: ${dx.pp} dy: ${dy.pp} dist: ${dist.pp}" %
+              s"       joinWith = ${joinWith}" %
+              s"       angle:${angle.pp} dx:${dx.pp} dy:${dy.pp}" %
+              s"       dist:${dist.pp} e/wi-dist:${eastWestDist.pp}" %
               s"       maxwidth= ${maxWidth} withinAngle=${withinAngle(angle)}"
             )
           }
         })
 
       { import TB._
-        println(
-          s"'${component.char} #${component.id} ${component.bbox.prettyPrint}".box %
-          vcat(top)(searchLog.toList)
-        )
+        // println(
+        //   s"'${component.char} #${component.id} ${component.bbox.prettyPrint}".box %
+        //   vcat(top)(searchLog.toList)
+        // )
       }
 
     }

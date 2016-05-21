@@ -23,45 +23,45 @@ class TextlineSegTest extends DocsegTestUtil  {
          |""".stripMargin,
       """|Abstract               (l:42.52, t:294.50, w:32.20, h:8.97)
          |""".stripMargin
+    ),
+
+    TextExample(
+      """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
+         |""".stripMargin,
+      """|safet y       (l:519.76, t:452.43, w:24.88, h:9.96)
+         |c om b i ne   (l:334.94, t:452.43, w:36.08, h:9.96)
+         |and           (l:498.16, t:452.43, w:15.98, h:9.96)
+         |at            (l:376.78, t:452.43, w:8.30, h:9.96)
+         |To            (l:317.14, t:452.43, w:12.13, h:9.96)
+         |b es t        (l:390.73, t:452.43, w:17.01, h:9.96)
+         |weld ing      (l:459.55, t:452.43, w:32.96, h:9.96)
+         |e co n o mi c (l:413.40, t:452.43, w:40.44, h:9.96)
+         |""".stripMargin,
+      """|To combine at best economic welding and safety
+         |""".stripMargin
+    ),
+
+    TextExample(
+      """| Page:1 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201501032.pdf.d/101016jactamat201501032.pdf
+         |""".stripMargin,
+      """|C.M. Cepeda-Jime´nez et al. / Acta Materialia 88 (2015) 232–244               (l:183.34, t:47.54, w:220.59, h:8.08)
+         |""".stripMargin,
+      """|C.M. Cepeda-Jime´nez et al. / Acta Materialia 88 (2015) 232–244               (l:183.34, t:47.54, w:220.59, h:8.08)
+         |""".stripMargin
+    ),
+
+    TextExample(
+      """|Page:1 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201501032.pdf.d/101016jactamat201501032.pdf
+         |""".stripMargin,
+      """| grain size of 1 lm in               (l:42.52, t:76.04, w:87.32, h:9.84)
+         | pure               (l:133.74, t:76.04, w:18.23, h:9.46)
+         | Mg samples fabricated               (l:155.91, t:76.04, w:94.32, h:9.46)
+         | by               (l:254.15, t:76.04, w:9.96, h:9.46)
+         | hot               (l:268.04, t:76.04, w:13.60, h:9.46)
+         |""".stripMargin,
+      """|grain size of 1 lm in pure Mg samples fabricated by hot
+         |""".stripMargin
     )
-
-    // TextExample(
-    //   """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
-    //      |""".stripMargin,
-    //   """|safet y       (l:519.76, t:452.43, w:24.88, h:9.96)
-    //      |c om b i ne   (l:334.94, t:452.43, w:36.08, h:9.96)
-    //      |and           (l:498.16, t:452.43, w:15.98, h:9.96)
-    //      |at            (l:376.78, t:452.43, w:8.30, h:9.96)
-    //      |To            (l:317.14, t:452.43, w:12.13, h:9.96)
-    //      |b es t        (l:390.73, t:452.43, w:17.01, h:9.96)
-    //      |weld ing      (l:459.55, t:452.43, w:32.96, h:9.96)
-    //      |e co n o mi c (l:413.40, t:452.43, w:40.44, h:9.96)
-    //      |""".stripMargin,
-    //   """|To combine at best economic welding and safety
-    //      |""".stripMargin
-    // ),
-
-    // TextExample(
-    //   """| Page:1 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201501032.pdf.d/101016jactamat201501032.pdf
-    //      |""".stripMargin,
-    //   """|C.M. Cepeda-Jime´nez et al. / Acta Materialia 88 (2015) 232–244               (l:183.34, t:47.54, w:220.59, h:8.08)
-    //      |""".stripMargin,
-    //   """|C.M. Cepeda-Jime´nez et al. / Acta Materialia 88 (2015) 232–244               (l:183.34, t:47.54, w:220.59, h:8.08)
-    //      |""".stripMargin
-    // ),
-
-    // TextExample(
-    //   """|Page:1 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201501032.pdf.d/101016jactamat201501032.pdf
-    //      |""".stripMargin,
-    //   """| grain size of 1 lm in               (l:42.52, t:76.04, w:87.32, h:9.84)
-    //      | pure               (l:133.74, t:76.04, w:18.23, h:9.46)
-    //      | Mg samples fabricated               (l:155.91, t:76.04, w:94.32, h:9.46)
-    //      | by               (l:254.15, t:76.04, w:9.96, h:9.46)
-    //      | hot               (l:268.04, t:76.04, w:13.60, h:9.46)
-    //      |""".stripMargin,
-    //   """|grain size of 1 lm in pure Mg samples fabricated by hot
-    //      |""".stripMargin
-    // )
 
   )
 
@@ -72,35 +72,10 @@ class TextlineSegTest extends DocsegTestUtil  {
       println(s"\n\ntesting ${example.source}")
       val pdfIns = papers.paper(example.source)
 
+      // CermineExtractor.extractChars(pdfIns, Set(375, 376))// add char ids to output pathological debug info
       val zoneIndex = ZoneIndexer.loadSpatialIndices(
         CermineExtractor.extractChars(pdfIns)
       )
-
-      // example.regions.foreach{ region =>
-      //   val (_, pageId, ltbounds) = region
-
-      //   println(s"querying examples in ${ltbounds}")
-
-      //   val chars = zoneIndex.queryCharsIntersects(pageId, ltbounds)
-      //   val cinfos = charInfosBox(approxSortYX(chars))
-      //   println(squishb(chars))
-
-      //   // find total bounds for fragments
-
-      //   val docstrum = new DocstrumSegmenter(zoneIndex)
-
-      //   // val lines = docstrum.determineLines_v2(
-      //   //   pageId,
-      //   //   zoneIndex.getComponents(example.region.page)
-      //   // )
-
-
-      // }
-
-      // val allChars = example.regions.map{ region =>
-      //   val (_, pageId, ltbounds) = region
-      //   (ltbounds, zoneIndex.queryCharsIntersects(pageId, ltbounds))
-      // }
 
       // Assume these example regions are all from one page
       val pageId = example.regions.map(_._2).head
@@ -128,6 +103,11 @@ class TextlineSegTest extends DocsegTestUtil  {
       val lines = docstrum.determineLines_v2(pageId, interestingChars)
 
       println(s"got ${lines.length} lines")
+      zoneIndex.pageGeometry(pageId).bounds.prettyPrint
+      println(s"page ${pageId} Bounds: ${zoneIndex.pageGeometry(page(0)).bounds.prettyPrint}")
+      println(s"      Borders: ${zoneIndex.pageGeometry(page(0)).borders}")
+
+      // println(zoneIndex.pageGeometry(page(0)).bounds.prettyPrint)
 
       lines.sortBy(_.findCenterY()).foreach{ l =>
         println(l.tokenizeLine().toText)

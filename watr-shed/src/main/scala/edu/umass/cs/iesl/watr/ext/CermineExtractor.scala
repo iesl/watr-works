@@ -25,13 +25,16 @@ object CermineExtractor extends SpatialJsonFormat {
   import CermineEnrichments._
 
 
-  def extractChars(pdfis: InputStream): List[(PageChars, PageGeometry)] = {
+  def extractChars(
+    pdfis: InputStream,
+    charsToDebug: Set[Int] = Set()
+  ): List[(PageChars, PageGeometry)] = {
 
     val idgen = IdGenerator[CharID]
 
 
     val conf = new ComponentConfiguration()
-    val charExtractor = new XITextCharacterExtractor()
+    val charExtractor = new XITextCharacterExtractor(charsToDebug)
     conf.setCharacterExtractor(charExtractor)
 
     ExtractionUtils

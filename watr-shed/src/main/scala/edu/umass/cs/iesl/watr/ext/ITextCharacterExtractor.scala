@@ -54,7 +54,8 @@ object util {
 
 class MyBxDocumentCreator(
   fontDict: mutable.Map[String, DocumentFont],
-  reader: PdfReader
+  reader: PdfReader,
+  charsToDebug: Set[Int] = Set()
 ) extends RenderListener {
 
   var zoneRecords: ZoneRecords = ZoneRecords(
@@ -105,6 +106,16 @@ class MyBxDocumentCreator(
       ))
     } else None
 
+    // println(s"""| Extracting page Bounds
+    //             |  Top       ${pageRectangle.getTop}
+    //             |  Bottom    ${pageRectangle.getBottom}
+    //             |  Left      ${pageRectangle.getLeft}
+    //             |  Right     ${pageRectangle.getRight}
+    //             |  Width     ${pageRectangle.getWidth}
+    //             |  Height    ${pageRectangle.getHeight}
+    //             |  Border    ${pageRectangle.getBorder}
+    //             |  Borders   ${pageRectangle.hasBorders}
+    //             |""".stripMargin)
 
     // PageRectangle coords have origin @ lower left (normal cartesian origin)
     val bounds = watrmarks.LTBounds(
@@ -123,28 +134,13 @@ class MyBxDocumentCreator(
     // println("\nblock\n")
   }
 
-  var count = 0
+  // var count = 0
+  var charIndex = -1
 
 
   override def renderText(trix: TextRenderInfo): Unit = {
     for (charTri <- trix.getCharacterRenderInfos()) {
       val text = charTri.getText()
-      if (count > 0) {
-        count = count - 1
-        println(
-          s"""|page rectangle
-              | top    ${pageRectangle.getTop}
-              | bottom ${pageRectangle.getBottom}
-              | left   ${pageRectangle.getLeft}
-              | right   ${pageRectangle.getRight}
-              | width  ${pageRectangle.getWidth}
-              | height ${pageRectangle.getHeight}
-              |""".stripMargin
-        )
-        CermineFontInfo.outputCharInfo(charTri, reader)
-      }
-
-
 
       val ch = charTri.getText().charAt(0)
       if (ch <= ' '
@@ -155,7 +151,6 @@ class MyBxDocumentCreator(
         val displayable = text.getBytes.map({b => b.toInt}).mkString(", ")
         // println(s"skipping character(s) w/bytes= [${displayable}]")
       } else {
-
         val ascentStart = charTri.getAscentLine().getStartPoint()
         val descentStart = charTri.getDescentLine().getStartPoint()
 
@@ -194,7 +189,8 @@ class MyBxDocumentCreator(
           val bounds = new BxBounds(
             x, y, charWidth, charHeight
           )
-          if (count > 0) {
+
+          if(charsToDebug contains charIndex) {
             println(
               s"""|Char bounds
                   | x      ${x}
@@ -212,6 +208,21 @@ class MyBxDocumentCreator(
             // skip
             println(s"skipping text w/bbox= nan|inf: ${text}")
           } else {
+            charIndex = charIndex+1
+
+            if (!charsToDebug.isEmpty) {
+              if(charsToDebug contains charIndex) {
+                println(s"Outputting char info #${charIndex}")
+                println(s"  text = ${text}")
+                CermineFontInfo.outputCharInfo(charTri, reader)
+                CermineFontInfo.reportFontInfo(charTri.getFont)
+                println(s"-------------------------------------\n\n")
+              } else {
+                if (charsToDebug.min - 10 < charIndex && charIndex < charsToDebug.max + 10) {
+                  println(s" renderText(${text} ${charIndex})")
+                }
+              }
+            }
             val chunk = new BxChunk(bounds, text)
             val fullFontName = charTri.getFont().getFullFontName()(0)(3)
             chunk.setFontName(fullFontName)
@@ -339,7 +350,9 @@ class MyBxDocumentCreator(
 }
 
 
-class XITextCharacterExtractor() extends CharacterExtractor {
+class XITextCharacterExtractor(
+  charsToDebug: Set[Int] = Set()
+) extends CharacterExtractor {
   val DEFAULT_FRONT_PAGES_LIMIT = 20
   val DEFAULT_BACK_PAGES_LIMIT = 20
   val frontPagesLimit = DEFAULT_FRONT_PAGES_LIMIT
@@ -357,7 +370,7 @@ class XITextCharacterExtractor() extends CharacterExtractor {
       val reader = new PdfReader(stream)
 
       val documentCreator = new MyBxDocumentCreator(
-        fontDict, reader
+        fontDict, reader, charsToDebug
       )
 
       val processor = new PdfContentStreamProcessor(documentCreator)

@@ -174,7 +174,6 @@ case class ConnectedComponents(
 
   def toText = {
 
-
     def wrap(s: String): String = {
       if (labels.contains(LB.Sup)) {
         s"^${s}^"
@@ -314,7 +313,7 @@ case class ConnectedComponents(
   }
 
   def tokenizeLine(): ConnectedComponents = {
-    // println(s"   splitval = ${splitValue}")
+    // println("tokenizeLine")
     val tops = findCommonToplines()
     val bottoms = findCommonBaselines()
     val modalTop = tops.head
@@ -323,8 +322,7 @@ case class ConnectedComponents(
     // find the center y-val (avg for all chars)
     val centerY = findCenterY()
 
-    // println(s"""tops: ${tops.map(_.pp).mkString(" ")}""")
-    // println(s"""bottoms: ${bottoms.map(_.pp).mkString(" ")}""")
+    val searchLog = mutable.ArrayBuffer[TB.Box]()
 
 
     // label super/sub if char.ctr fall above/below centerline
@@ -338,37 +336,81 @@ case class ConnectedComponents(
       }
     })
 
+    // def ctrToLeftDists(cs: Seq[Component]): Seq[Double] = {
+    //   val cpairs = cs.sliding(2).toList
 
+    //   val dists = cpairs.map({
+    //     case Seq(c1, c2)  => c1.bounds.toCenterPoint.dist(c2.bounds.toWesternPoint)
+    //     case _  => 0d
+    //   })
+
+    //   dists :+ 0d
+    // }
     val charDists = determineSpacings()
     val modalLittleGap = charDists.head
     val modalBigGap = charDists.drop(1).headOption.getOrElse(modalLittleGap)
-
-    // val splitValue = charDists.take(2).sum / 2
     val splitValue = (modalBigGap+modalLittleGap)/2
+    val splittable = charDists.length > 1
 
-    // println(s""" char dists = ${charDists.map(_.pp).mkString(", ")}, splitVal = ${splitValue}""")
+    println(s"""|    top char dists: ${charDists.map(_.pp).mkString(", ")}
+                |    modal little gap = ${modalLittleGap}
+                |    modal big gap = ${modalBigGap}
+                |    splitValue = ${splitValue}
+                |""".stripMargin)
 
-    // printCCStats((9, 12), centerY)
-    // printCCStats((20, 15), centerY)
+
+    // { import TB._
+    //   // println(s"""tops: ${tops.map(_.pp).mkString(" ")}""")
+    //   // println(s"""bottoms: ${bottoms.map(_.pp).mkString(" ")}""")
+    //   val stats = components.zip(pairwiseSpaceWidths(components))
+    //     .map({case (c, dist) =>
+    //       (tbox(c.toText) +| "->" +| (dist.pp)) %
+    //         c.bounds.top.pp %
+    //         (c.bounds.left.pp +| c.bounds.right.pp) %
+    //         (c.bounds.bottom.pp +| "(w:" + c.bounds.width.pp) + ")"
+    //     }).toList
+
+    //   searchLog.append(
+    //     vcat(left)(stats)
+    //   )
+    // }
 
     val wordBreaks = mutable.ArrayBuffer[Int]()
 
     supSubs
+      .zip(pairwiseSpaceWidths(supSubs))
       .sliding(2).toList
       .zipWithIndex
       .foreach({
-        case(Seq(c1, c2), i)  =>
-        val dist = c2.bounds.left - c1.bounds.right
+        case (Seq((c2, _)), i)  =>
+          // single component, no need to append any word breaks
 
-        if(dist > splitValue) {
-          wordBreaks.append(i)
-        }
+        case (Seq((c1, d1), (c2, _)), i)  =>
+          val dist = math.abs(c2.bounds.left - c1.bounds.right)
+
+          if(splittable && dist*1.1 > splitValue) {
+            wordBreaks.append(i)
+          }
+
+          { import TB._
+            val stats = s"${c1.toText}  -  ${c2.toText}" %
+            s"    ${c1.bounds.prettyPrint}  -  ${c2.bounds.prettyPrint}" %
+            s"    pairwisedist: ${d1}  dist: ${dist}"
+
+            searchLog.append(stats)
+          }
         case _  =>
-          // passk
+          sys.error("why are we here? wtf??")
       })
 
     val asTokens = splitAtBreaks(wordBreaks, supSubs)
       .map(Component(_, 0d, LB.Word))
+
+    // { import TB._
+    //   println(
+    //       vcat(top)(searchLog.toList)
+    //   )
+    // }
 
     Component(asTokens, 0d, LB.Line)
   }
