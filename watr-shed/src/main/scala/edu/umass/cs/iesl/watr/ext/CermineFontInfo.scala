@@ -273,18 +273,17 @@ object CermineFontInfo {
     }
 
 
+    val bbinf = s"""|${tri.getText}:  '${asString}'
+                    |    Rise              ${tri.getRise}                                => Float
+                    |    AscentLine        ${formatLineSegment(tri.getAscentLine)}       => LineSegment
+                    |    Baseline          ${formatLineSegment(tri.getBaseline)}         => LineSegment
+                    |    Baseline (uns)    ${formatLineSegment(tri.getUnscaledBaseline)} => LineSegment
+                    |    DescentLine       ${formatLineSegment(tri.getDescentLine)}      => LineSegment
+                    |    Mcid              ${tri.getMcid}              => Integer
+                    |    PdfString         ${tri.getPdfString}              => PdfString
+                    |""".stripMargin
 
-    // val bbinf = s"""|${tri.getText}:  '${asString}'
-    //                 |    Rise              ${tri.getRise}                                => Float
-    //                 |    AscentLine        ${formatLineSegment(tri.getAscentLine)}       => LineSegment
-    //                 |    Baseline          ${formatLineSegment(tri.getBaseline)}         => LineSegment
-    //                 |    Baseline (uns)    ${formatLineSegment(tri.getUnscaledBaseline)} => LineSegment
-    //                 |    DescentLine       ${formatLineSegment(tri.getDescentLine)}      => LineSegment
-    //                 |    Mcid              ${tri.getMcid}              => Integer
-    //                 |    PdfString         ${tri.getPdfString}              => PdfString
-    //                 |""".stripMargin
-
-    // println(bbinf)
+    println(bbinf)
 
 
     // if (chars.length > 20) {

@@ -27,7 +27,6 @@ object CermineExtractor extends SpatialJsonFormat {
 
   def extractChars(pdfis: InputStream): List[(PageChars, PageGeometry)] = {
 
-
     val idgen = IdGenerator[CharID]
 
 
@@ -41,7 +40,7 @@ object CermineExtractor extends SpatialJsonFormat {
       .zipWithIndex
       .zip(charExtractor.getZoneRecords.pageGeometries)
       .map{ case ((page, pageNum), pageGeom) =>
-        println(s"page ${pageNum} has ${ page.getChunks.toList.length} chunks ")
+        // println(s"page ${pageNum} has ${ page.getChunks.toList.length} chunks ")
 
         val pageChars = page.getChunks.toList.map{ chunk =>
           CharBox(idgen.nextId, chunk.toText(), chunk.getBounds.toLTBounds)

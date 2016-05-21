@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package ext
 
 import ammonite.ops._
+import edu.umass.cs.iesl.watr.watrmarks.ZoneIndexer
 
 import java.nio.{file => nio}
 
@@ -53,6 +54,12 @@ object Works extends App {
         extractCermineZones(ac)
       })
     } text ("run Cermine zone extractor") // children()
+
+    cmd("lseg") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        lineseg(ac)
+      })
+    } text ("run Cermine zone extractor") // children()
   }
 
 
@@ -77,6 +84,60 @@ object Works extends App {
       case None => corpus.entries()
     }
     toProcess
+  }
+
+  def lineseg(conf: AppConfig): Unit = {
+
+    val artifactOutputName = "lineseg.txt"
+    getProcessList(conf).foreach { entry =>
+      def process(): Unit = {
+        val pdfArtifact = entry.getPdfArtifact()
+
+
+        entry.putArtifact(artifactOutputName,
+          pdfArtifact.asInputStream.map{ pdf =>
+
+            // CermineExtractor.cermineZonesToJson(is)
+            val zoneIndex = ZoneIndexer.loadSpatialIndices(
+              CermineExtractor.extractChars(pdf)
+            )
+
+            zoneIndex.getPages.take(2).map { page =>
+
+              val docstrum = new docseg.DocstrumSegmenter(zoneIndex)
+
+              val lines = docstrum.determineLines_v2(
+                page,
+                zoneIndex.getComponents(page)
+              )
+
+              lines.sortBy(_.findCenterY()).map{ l =>
+
+                val lineBounds = l.bounds.prettyPrint
+                val tokenized = l.tokenizeLine().toText
+                s"${tokenized}               ${lineBounds}"
+              }.mkString(s"\nPage:${page} ${pdfArtifact.artifactPath}\n  ", "\n", "\n")
+
+            }.mkString(s"\nDocument:${pdfArtifact.artifactPath}\n", "\n", "\n")
+
+
+          }.getOrElse { sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}") }
+        )
+      }
+
+
+      println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
+      if (entry.hasArtifact(artifactOutputName)) {
+        if (conf.force){
+          entry.deleteArtifact(artifactOutputName)
+          process()
+        } else {
+          println(s"skipping existing ${entry}, use -x to force reprocessing")
+        }
+      } else {
+        process()
+      }
+    }
   }
 
   def extractCermineZones(conf: AppConfig): Unit = {
@@ -117,8 +178,11 @@ object Works extends App {
     ls! corpus.corpusRoot foreach { pdf =>
       val artifactPath = corpus.corpusRoot / s"${pdf.name}.d"
       if (pdf.isFile && !(exists! artifactPath)) {
-        println(s" processing ${pdf}")
+        println(s" creating artifact page for  ${pdf}")
         mkdir! artifactPath
+      }
+      if (pdf.isFile) {
+        println(s" stashing ${pdf}")
         mv.into(pdf, artifactPath)
       }
     }

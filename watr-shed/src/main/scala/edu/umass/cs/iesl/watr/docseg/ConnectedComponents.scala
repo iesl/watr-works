@@ -10,9 +10,13 @@ import scalaz._
 import Scalaz._
 
 
+import DocstrumSegmenter._
+
 object Component {
   def centerX(cb: CharBox) = cb.bbox.toCenterPoint.x
   def centerY(cb: CharBox) = cb.bbox.toCenterPoint.y
+
+  val LB = StandardLabels
 
   def apply(charBox: CharBox): ConnectedComponents = {
     apply(Seq(CharComponent(charBox, 0d)), 0d)
@@ -26,14 +30,54 @@ object Component {
     )
   }
 
+  def spaceWidths(cs: Seq[CharBox]): Seq[Double] = {
+    pairwiseSpaceWidths(cs.map(Component(_)))
+  }
+
+  def pairwiseSpaceWidths(cs: Seq[Component]): Seq[Double] = {
+    val cpairs = cs.sliding(2).toList
+
+    val dists = cpairs.map({
+      case Seq(c1, c2)  => c2.bounds.left - c1.bounds.right
+      case _  => 0d
+    })
+
+    dists :+ 0d
+  }
 
   def renderToString(cc: ConnectedComponents): String = {
     ???
   }
+
+  def charInfosBox(cbs: Seq[CharBox]): Seq[TB.Box] = {
+    import TB._
+
+    cbs.zip(spaceWidths(cbs))
+      .map{ case (c, dist) =>
+        (tbox(c.char) +| "->" +| (dist.pp)) %
+          c.bbox.top.pp %
+          (c.bbox.left.pp +| c.bbox.right.pp) %
+          (c.bbox.bottom.pp +| "(w:" + c.bbox.width.pp + ")")
+    }
+  }
+
+  def determineCharSpacings(chars: Seq[CharBox]): Seq[Double] = {
+    val dists = spaceWidths(chars)
+    val resolution = 0.5d
+
+    val hist = histogram(dists, resolution)
+
+    val spaceDists = hist.iterator.toList
+      .sortBy(_.getFrequency)
+      .dropWhile(_.getFrequency==0)
+      .map(_.getValue)
+      .reverse
+
+    spaceDists
+  }
 }
 
 import Component._
-// import DocstrumSegmenter._
 
 
 sealed trait Component {
@@ -130,6 +174,7 @@ case class ConnectedComponents(
 
   def toText = {
 
+
     def wrap(s: String): String = {
       if (labels.contains(LB.Sup)) {
         s"^${s}^"
@@ -195,26 +240,15 @@ case class ConnectedComponents(
 
   def height: Double  = bounds.height
 
+
   // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
-
-  def pairwiseSpaceWidths(): Seq[Double] = {
-    val cpairs = components.sliding(2).toList
-
-    val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.bounds.left - c1.bounds.right
-      case _  => 0d
-    })
-
-    dists :+ 0d
-  }
-
   def determineSpacings(): Seq[Double] = {
-    val dists = pairwiseSpaceWidths()
+    val dists = pairwiseSpaceWidths(components)
     val resolution = 0.5d
 
-    val histogram = Histogram.fromValues(dists.toList.map(new java.lang.Double(_)), resolution)
+    val hist = histogram(dists, resolution)
 
-    val spaceDists = histogram.iterator.toList
+    val spaceDists = hist.iterator.toList
       .sortBy(_.getFrequency)
       // .dropWhile(_.getFrequency==0)
       .map(_.getValue)
@@ -265,7 +299,7 @@ case class ConnectedComponents(
   def printCCStats(range: (Int, Int), centerY: Double): Unit = {
     import TB._
 
-    val stats = components.zip(pairwiseSpaceWidths())
+    val stats = components.zip(pairwiseSpaceWidths(components))
       .drop(range._1)
       .take(range._2).map({case (c, dist) =>
         (tbox(c.toText) +| "->" +| (dist.pp)) %
@@ -289,15 +323,12 @@ case class ConnectedComponents(
     // find the center y-val (avg for all chars)
     val centerY = findCenterY()
 
-    println(s"""tops: ${tops.map(_.pp).mkString(" ")}""")
-    println(s"""bottoms: ${bottoms.map(_.pp).mkString(" ")}""")
+    // println(s"""tops: ${tops.map(_.pp).mkString(" ")}""")
+    // println(s"""bottoms: ${bottoms.map(_.pp).mkString(" ")}""")
 
 
     // label super/sub if char.ctr fall above/below centerline
     val supSubs = components.map({c =>
-
-      // if (c.bounds.top.gtFuzzy(1.5)(modalTop) && c.bounds.bottom.gtFuzzy(0.4)(modalBottom)) {
-    // } else if (c.bounds.bottom.ltFuzzy(1.5)(modalBottom) && c.bounds.top.ltFuzzy(0.1)(modalTop)) {
       if (c.bounds.top.gtFuzzy(1.5)(modalTop)) {
         c.withLabel(LB.Sub)
       } else if (c.bounds.bottom.ltFuzzy(1.5)(modalBottom)) {
@@ -325,12 +356,15 @@ case class ConnectedComponents(
     supSubs
       .sliding(2).toList
       .zipWithIndex
-      .foreach({ case(Seq(c1, c2), i)  =>
+      .foreach({
+        case(Seq(c1, c2), i)  =>
         val dist = c2.bounds.left - c1.bounds.right
 
         if(dist > splitValue) {
           wordBreaks.append(i)
         }
+        case _  =>
+          // passk
       })
 
     val asTokens = splitAtBreaks(wordBreaks, supSubs)

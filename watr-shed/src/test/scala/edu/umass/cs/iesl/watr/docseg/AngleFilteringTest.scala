@@ -24,5 +24,16 @@ class AngleFilteringTest extends FlatSpec with Matchers {
     points.foreach { case(p1, p2) =>
       println(s"${p1.prettyPrint} -> ${p2.prettyPrint}: angle = ${p1.angleTo(p2)}")
     }
+
+  }
+
+  import DocstrumSegmenter._
+
+  it should "filter angles correctly" in {
+    assert{ filterAngle(0, math.Pi/2)(0) }
+    assert{ filterAngle(0, math.Pi/2)(math.Pi/4-0.001d) }
+    assert{ ! filterAngle(0, math.Pi/2)(math.Pi/4+0.001d) }
+    assert{ ! filterAngle(0, math.Pi/2)(math.Pi) }
+
   }
 }

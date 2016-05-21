@@ -8,8 +8,29 @@ import pl.edu.icm.cermine.tools.Histogram
 import pl.edu.icm.cermine.tools.DisjointSets
 import Bounds._
 import scala.collection.JavaConversions._
+import Component._
+import scala.collection.mutable
 
-object DocstrumSegmenter {
+trait DocstrumUtils {
+
+  def approxSortYX(charBoxes: Seq[CharBox]): Seq[CharBox] = {
+    charBoxes.sortBy({ c =>
+      (c.bbox.top, c.bbox.left)
+    })
+  }
+
+  def squishb(charBoxes: Seq[CharBox]): String = {
+    approxSortYX(charBoxes)
+      .map({ cbox => cbox.char })
+      .mkString
+  }
+
+  def squishc(charBoxes: Seq[CharComponent]): String = {
+    squishb(charBoxes.map(_.component))
+  }
+}
+
+object DocstrumSegmenter extends DocstrumUtils {
   def compareDouble(d1: Double, d2: Double, precision: Double): Int = {
     if (d1.isNaN() || d2.isNaN()) {
       d1.compareTo(d2)
@@ -28,6 +49,24 @@ object DocstrumSegmenter {
     else 1
   }
 
+  def filterAngle(direction: Double, tolerance: Double): (Double) => Boolean = {
+    val filter = angleFilter(direction: Double, tolerance: Double)
+      (angle: Double) => filter.matches(angle)
+  }
+
+  def angleFilter(direction: Double, tolerance: Double): AngleFilter = {
+    val t2 = tolerance / 2
+    AngleFilter(direction - t2, direction + t2)
+  }
+
+  def histogram(min: Double, max: Double, resolution: Double): Histogram = {
+    new Histogram(min, max, resolution)
+  }
+
+  def histogram(values: Seq[Double], resolution: Double): Histogram = {
+    Histogram.fromValues(values.toList.map(new java.lang.Double(_)), resolution)
+  }
+
 }
 
 class DocstrumSegmenter(
@@ -42,7 +81,7 @@ class DocstrumSegmenter(
   val ORIENTATION_MARGIN = 0.2d;
   val LINES_PER_PAGE_MARGIN = 100;
 
-  var docOrientation: Double = Double.NaN
+  var docOrientation: Double = 0d
 
   // import scala.collection.mutable
 
@@ -128,9 +167,10 @@ class DocstrumSegmenter(
     pageZonesToSortedZones(zones)
   }
 
-  private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[Int@@CharID] = {
-    val hits = pages.nearestNChars(pageId, qbox.bbox, 5, 16.0f)
-    hits.filter(_ != qbox.id)
+  private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[CharBox] = {
+    pages
+      .nearestNChars(pageId, qbox.bbox, 5, 30.0f)
+      .filter(_.id != qbox.id)
   }
 
   def computeInitialOrientation(): Double = {
@@ -147,7 +187,6 @@ class DocstrumSegmenter(
         // println(s"neighbors of ${component.char}")
         val neighbors = findNeighbors(pageId, component)
         neighbors
-          .map(pages.getComponent(pageId, _))
           .foreach({c =>
             val angle = c.bbox.toCenterPoint.angleTo(component.bbox.toCenterPoint)
             val dist = c.bbox.centerDistanceTo(component.bbox)
@@ -206,7 +245,7 @@ class DocstrumSegmenter(
     } yield {
       // println(s"computing spacing page ${pageId}, ${component.char}: ${component.bbox.prettyPrint}")
       val neighbors = findNeighbors(pageId, component)
-      neighbors.map(pages.getComponent(pageId, _)).foreach {n =>
+      neighbors.foreach {n =>
         val dist = n.bbox.centerDistanceTo(component.bbox)
         maxDistance = math.max(maxDistance, dist);
       }
@@ -235,7 +274,6 @@ class DocstrumSegmenter(
         val neighbors = findNeighbors(pageId, component)
 
         neighbors
-          .map(pages.getComponent(pageId, _))
           .filter({c =>
             val dist = c.bbox.centerDistanceTo(component.bbox)
             val angle = component.bbox.toCenterPoint.angleTo(c.bbox.toCenterPoint)
@@ -266,51 +304,159 @@ class DocstrumSegmenter(
 
   }
 
-// for (Component component : components) {
-//     for (Neighbor neighbor : component.getNeighbors()) {
-//         if (filter.matches(neighbor)) {
-//             histogram.add(neighbor.getDistance());
-//         }
-//     }
-// }
-// // Rectangular smoothing window has been replaced with gaussian smoothing window
-// histogram.gaussianSmooth(spacingHistogramSmoothingWindowLength,
-//         spacingHistogramSmoothingWindowStdDeviation);
-// return histogram.getPeakValue();
+
+  var count = 10
+
+  val withinAngle = filterAngle(docOrientation, math.Pi / 3)
+  /** Groups components into text lines. */
+  def determineLines_v2(
+    pageId: Int@@PageID,
+    components: Seq[CharBox]
+    // maxHorizontalDistance: Double,
+    // maxVerticalDistance: Double
+  ): Seq[ConnectedComponents] = {
+    val maxHorizontalDistance: Double = 2.5d
+    val maxVerticalDistance: Double = 12.0
+
+    val sets = new DisjointSets[CharBox](components);
 
 
-    // double maxDistance = Double.NEGATIVE_INFINITY;
-    // for (Component component : components) {
-    //     for (Neighbor neighbor : component.getNeighbors()) {
-    //         maxDistance = Math.max(maxDistance, neighbor.getDistance());
-    //     }
-    // }
-    // Histogram histogram = new Histogram(0, maxDistance, spacingHistogramResolution);
-    // AngleFilter filter = AngleFilter.newInstance(angle - angleTolerance, angle + angleTolerance);
-    // for (Component component : components) {
-    //     for (Neighbor neighbor : component.getNeighbors()) {
-    //         if (filter.matches(neighbor)) {
-    //             histogram.add(neighbor.getDistance());
-    //         }
-    //     }
-    // }
-    // // Rectangular smoothing window has been replaced with gaussian smoothing window
-    // histogram.gaussianSmooth(spacingHistogramSmoothingWindowLength,
-    //         spacingHistogramSmoothingWindowStdDeviation);
-    // return histogram.getPeakValue();
-    //   0d
-    // }
+
+    for { component <- components.sortBy(_.bbox.left) } {
+      val searchLog = mutable.ArrayBuffer[TB.Box]()
+      findNeighbors(pageId, component)
+        .foreach({neighbor =>
+          val angle = component.bbox.toCenterPoint.angleTo(neighbor.bbox.toCenterPoint)
+
+          val maxWidth = math.max(neighbor.bbox.width, component.bbox.width)
+          val dx = neighbor.bbox.toCenterPoint.hdist(component.bbox.toCenterPoint)
+          val dy = neighbor.bbox.toCenterPoint.vdist(component.bbox.toCenterPoint)
+          val dist = neighbor.bbox.toCenterPoint.dist(component.bbox.toCenterPoint)
+
+          if (withinAngle(angle) && dx < maxWidth*4.0) {
+            sets.union(component, neighbor);
+          }
+
+          { import TB._
+            searchLog.append(
+              s"   ${neighbor.char} #${neighbor.id} ${neighbor.bbox.prettyPrint}".box %
+              s"       angle:${angle.pp}" %
+              s"       dx: ${dx.pp} dy: ${dy.pp} dist: ${dist.pp}" %
+              s"       maxwidth= ${maxWidth} withinAngle=${withinAngle(angle)}"
+            )
+          }
+        })
+
+      { import TB._
+        println(
+          s"'${component.char} #${component.id} ${component.bbox.prettyPrint}".box %
+          vcat(top)(searchLog.toList)
+        )
+      }
+
+    }
 
 
-    /**
-     * Groups components into text lines.
-     *
-     * @param components
-     * @param orientation - estimated text orientation
-     * @param maxHorizontalDistance - maximum horizontal distance between components
-     * @param maxVerticalDistance - maximum vertical distance between components
-     * @return lines of components
-     */
+
+    val lines = sets.iterator().toSeq.map{
+      _.toSeq.sortBy(_.bbox.left).map(new CharComponent(_, docOrientation))
+    }
+
+
+    lines.map{ Component(_, docOrientation, LB.Line) }
+  }
+
+
+  def determineLinesNotVeryWell(
+    pageId: Int@@PageID
+  ): Seq[ConnectedComponents] = {
+
+    // find all unique baselines
+    val pageComponents = pages.getComponents(pageId)
+
+    val bottomHist = histogram(
+      pageComponents.map(_.bbox.bottom),
+      resolution = 0.1d
+    )
+
+    // order baselines desc
+    val baselines = bottomHist.iterator.toSeq
+      .sortBy(_.getFrequency)
+      .reverse
+      .takeWhile(_.getFrequency > 0)
+
+    // val bfmt = baselines.map(x => s"${x.getValue.pp} ${x.getFrequency.pp}")
+    // println(s"baselines: ")
+    // println(bfmt.mkString("\n  ", "  \n", "\n"))
+
+    val pageGeometry = pages.pageGeometry(pageId)
+
+    val lines = baselines.map{ baseline =>
+      val base = baseline.getValue
+      val queryHeight = 5.0d
+
+      val baselineQuery = LTBounds(
+        left   = 0,
+        width  = pageGeometry.bounds.width,
+        top    = base-queryHeight,
+        height = queryHeight
+      )
+      val qres = pages.queryCharsIntersects(pageId, baselineQuery)
+      println(s"line?: ${squishb(qres)}")
+
+      // qres.sortBy(_.bbox.left)
+      //   .foreach({ c =>
+      //     println(
+      //       s"${c.char} cbase=${c.bbox.bottom.pp} base=${baseline.getValue.pp} ${baseline.getFrequency.pp}"
+      //     )
+      //   })
+      {
+
+        val strictBaselineChars = qres
+          .sortBy(_.bbox.left)
+
+        val popularCharSpacings = determineCharSpacings(strictBaselineChars)
+        println(s"""   spaces = ${popularCharSpacings.mkString(", ")}""")
+        val uniqBaselines = strictBaselineChars.map(_.bbox.bottom.pp).toSet.toSeq
+        println(s"""   baselines =  ${uniqBaselines}""")
+      }
+
+
+      val strictBaselineChars = qres
+        .sortBy(_.bbox.left)
+        .filter(_.bbox.bottom.eqFuzzy(0.11d)(base))
+
+      // now re-query around strict-baseline chars (with some padding)
+      val fc = strictBaselineChars.head
+      val lc = strictBaselineChars.last
+      val maxHeight = strictBaselineChars.map(_.bbox.height).max
+
+      val reQuery = LTBounds(
+        left   = fc.bbox.left,
+        top    = base-maxHeight - 0.5d,
+        width  = pageGeometry.bounds.width,
+        height = maxHeight + 0.5d
+      )
+
+      val finalChars = pages.queryChars(pageId, reQuery)
+
+      (base, finalChars)
+
+    }
+
+    val sortedLines = lines
+      .sortBy(_._1)
+      .filterNot(_._2.isEmpty)
+
+    sortedLines.map{case (_, ccs) =>
+      new ConnectedComponents(
+        ccs.map(Component(_)),
+        0d
+      )
+    }
+  }
+
+  /** Groups components into text lines. */
   def determineLines(
     pageId: Int@@PageID,
     maxHorizontalDistance: Double,
@@ -323,38 +469,36 @@ class DocstrumSegmenter(
       maxVerticalDistance)
 
     lines.map{ Component(_, docOrientation) }
-
   }
 
+
+
+  /** Groups components into text lines. */
   def determineLines(
     pageId: Int@@PageID,
     components: Seq[CharBox],
     maxHorizontalDistance: Double,
     maxVerticalDistance: Double
   ): Seq[Seq[CharComponent]] = {
-    println(s"""determineLines(maxHorizontalDistance:${maxHorizontalDistance}, maxVerticalDistance: ${maxVerticalDistance})""")
-    // val sets = new DisjointSets[CharBox](components);
-    val angleFilter = AngleFilter(docOrientation - angleTolerance, docOrientation + angleTolerance);
+    println(s"""determineLines(p:${pageId}, orientation: ${docOrientation} maxHDist:${maxHorizontalDistance}, maxVDist: ${maxVerticalDistance})""")
 
-    val sets = new DisjointSets[CharBox](pages.getComponents(pageId));
-    println(s"""    determineLines(page ${pageId})""")
+    val withinAngle = filterAngle(docOrientation, math.Pi / 3)
+    val sets = new DisjointSets[CharBox](components);
 
-    for {
-      component <- components
-    } {
+    // printNeighborInfos(pageId, components, maxHorizontalDistance, maxVerticalDistance)
+
+    for { component <- components } {
       findNeighbors(pageId, component)
-        .map(pages.getComponent(pageId, _))
-        .foreach({neigh =>
-          val angle = component.bbox.toCenterPoint.angleTo(neigh.bbox.toCenterPoint)
+        .foreach({neighbor =>
+          val angle = component.bbox.toCenterPoint.angleTo(neighbor.bbox.toCenterPoint)
 
-          val dx = neigh.bbox.toCenterPoint.hdist(component.bbox.toCenterPoint) / maxHorizontalDistance
-          val dy = neigh.bbox.toCenterPoint.vdist(component.bbox.toCenterPoint) / maxVerticalDistance
-          val matches = angleFilter.matches(angle)
+          val cdx = neighbor.bbox.toCenterPoint.hdist(component.bbox.toCenterPoint)
+          val cdy = neighbor.bbox.toCenterPoint.vdist(component.bbox.toCenterPoint)
+          val dx = cdx / maxHorizontalDistance
+          val dy = cdy / maxVerticalDistance
 
-          // println(s"""    angle:${angle} dx:$dx dy:$dy  match:$matches""")
-
-          if (angleFilter.matches(angle) && dx*dx + dy*dy <= 1) {
-            sets.union(component, neigh);
+          if (withinAngle(angle) && dx*dx + dy*dy <= 1) {
+            sets.union(component, neighbor);
           }
         })
     }

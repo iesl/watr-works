@@ -72,6 +72,12 @@ object Bounds {
     def hdist(p1: Point): Double = math.abs(p0.x - p1.x)
     def vdist(p1: Point): Double = math.abs(p0.y - p1.y)
 
+    def dist(p1: Point): Double = {
+      val x = (p0 hdist p1)
+      val y = (p0 vdist p1)
+      math.sqrt(x*x + y*y)
+    }
+
     def angleTo(p1: Point): Double = {
       if (p0.x > p1.x) {
         math.atan2(p0.y - p1.y, p0.x - p1.x);
@@ -166,6 +172,8 @@ object Bounds {
 
 
 }
+
+import Bounds._
 
 sealed trait Bounds
 
@@ -273,6 +281,7 @@ class ZoneIndexer  {
 
   val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
 
+  def pageGeometry(p: Int@@PageID) = pageGeometries(p)
 
   def getComponent(pageId: Int@@PageID, charId: Int@@CharID): CharBox = {
     charBoxes(charId)
@@ -347,6 +356,18 @@ class ZoneIndexer  {
     }
   }
 
+  def queryCharsIntersects(page: Int@@PageID, q: LTBounds): Seq[CharBox] = {
+    val rindex = pageRIndexes(page)
+
+    val collectRegions = new CollectRegionIds()
+    // rindex.intersects(x$1: Rectangle, x$2: TIntProcedure)
+    rindex.intersects(q.toJsiRectangle, collectRegions)
+    val neighbors = collectRegions.getIDs.filter{ id =>
+      charBoxes.contains(CharID(id))
+    }
+    neighbors.map(cid => charBoxes(CharID(cid)))
+  }
+
   def queryChars(page: Int@@PageID, q: LTBounds): Seq[CharBox] = {
     val rindex = pageRIndexes(page)
 
@@ -359,26 +380,68 @@ class ZoneIndexer  {
   }
 
 
-  def nearestChars(page: Int@@PageID, q: LTBounds, radius: Float): Seq[Int@@CharID] = {
+  // def nearestChars(page: Int@@PageID, q: LTBounds, radius: Float): Seq[Int@@CharID] = {
+  //   val rindex = pageRIndexes(page)
+
+  //   val collectRegions = new CollectRegionIds()
+  //   rindex.nearest(q.jsiCenterPoint, collectRegions, radius)
+  //   val neighbors = collectRegions.getIDs.filter{ id =>
+  //     charBoxes.contains(CharID(id))
+  //   }
+  //   neighbors.map(CharID(_))
+  // }
+
+  def nearestNCharIDs(page: Int@@PageID, qbox: LTBounds, n: Int, radius: Float): Seq[Int@@CharID] = {
     val rindex = pageRIndexes(page)
+    val ctr = qbox.toCenterPoint
+    val searchRect = LTBounds(
+      left=ctr.x- (radius/2),
+      top=ctr.y- (radius/2),
+      width=radius.toDouble,
+      height=radius.toDouble
+    )
 
     val collectRegions = new CollectRegionIds()
-    rindex.nearest(q.jsiCenterPoint, collectRegions, radius)
-    val neighbors = collectRegions.getIDs.filter{ id =>
-      charBoxes.contains(CharID(id))
-    }
-    neighbors.map(CharID(_))
+    println(s" searching ${n} nearest from bbox${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
+
+    rindex.intersects(searchRect.toJsiRectangle, collectRegions)
+    println(s""" found ${collectRegions.getIDs.mkString(",")} """)
+    collectRegions
+      .getIDs
+      .map({ id =>
+        val cbox = charBoxes(CharID(id))
+        val dist = cbox.bbox.toCenterPoint.vdist(ctr)
+        (dist, cbox)
+      })
+      .sortBy(_._1)
+      .take(n)
+      .map(_._2.id)
   }
 
-  def nearestNChars(page: Int@@PageID, q: LTBounds, n: Int, radius: Float): Seq[Int@@CharID] = {
+
+  def nearestNChars(page: Int@@PageID, qbox: LTBounds, n: Int, radius: Float): Seq[CharBox] = {
     val rindex = pageRIndexes(page)
+    val ctr = qbox.toCenterPoint
+    val searchRect = LTBounds(
+      left=ctr.x- (radius/2),
+      top=ctr.y- (radius/2),
+      width=radius.toDouble,
+      height=radius.toDouble
+    )
 
     val collectRegions = new CollectRegionIds()
-    rindex.nearestN(q.jsiCenterPoint, collectRegions, n, radius)
-    val neighbors = collectRegions.getIDs.filter{ id =>
-      charBoxes.contains(CharID(id))
-    }
-    neighbors.map(CharID(_))
+    // println(s" searching ${n} nearest from bbox${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
+
+    rindex.intersects(searchRect.toJsiRectangle, collectRegions)
+    // println(s""" found ${collectRegions.getIDs.mkString(",")} """)
+    collectRegions.getIDs
+      .map({ id =>
+        val cbox = charBoxes(CharID(id))
+        (cbox.bbox.toCenterPoint.dist(ctr), cbox)
+      })
+      .sortBy(_._1)
+      .take(n)
+      .map(_._2)
   }
 
   def query(page: Int@@PageID, q: LTBounds): Seq[Zone] = {

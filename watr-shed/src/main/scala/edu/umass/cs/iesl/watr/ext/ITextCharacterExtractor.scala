@@ -123,10 +123,28 @@ class MyBxDocumentCreator(
     // println("\nblock\n")
   }
 
+  var count = 0
+
 
   override def renderText(trix: TextRenderInfo): Unit = {
     for (charTri <- trix.getCharacterRenderInfos()) {
       val text = charTri.getText()
+      if (count > 0) {
+        count = count - 1
+        println(
+          s"""|page rectangle
+              | top    ${pageRectangle.getTop}
+              | bottom ${pageRectangle.getBottom}
+              | left   ${pageRectangle.getLeft}
+              | right   ${pageRectangle.getRight}
+              | width  ${pageRectangle.getWidth}
+              | height ${pageRectangle.getHeight}
+              |""".stripMargin
+        )
+        CermineFontInfo.outputCharInfo(charTri, reader)
+      }
+
+
 
       val ch = charTri.getText().charAt(0)
       if (ch <= ' '
@@ -145,7 +163,7 @@ class MyBxDocumentCreator(
         val absoluteCharBottom: Double = descentStart.get(PVector.I2).toDouble
 
         val charLeft = absoluteCharLeft - pageRectangle.getLeft()
-        val charBottom = absoluteCharBottom - pageRectangle.getBottom()
+        val charBottom = absoluteCharBottom - pageRectangle.getBottom() // in math coords
 
 
         var charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
@@ -176,7 +194,16 @@ class MyBxDocumentCreator(
           val bounds = new BxBounds(
             x, y, charWidth, charHeight
           )
-
+          if (count > 0) {
+            println(
+              s"""|Char bounds
+                  | x      ${x}
+                  | y      ${y}
+                  | width  ${charWidth}
+                  | height ${charHeight}
+                  |""".stripMargin
+            )
+          }
 
           if (bounds.getX().nan || bounds.getX().inf
             || bounds.getY().nan || bounds.getY().inf
