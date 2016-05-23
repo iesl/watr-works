@@ -397,46 +397,47 @@ class ZoneIndexer  {
   //   neighbors.map(CharID(_))
   // }
 
-  def nearestNCharIDs(page: Int@@PageID, qbox: LTBounds, n: Int, radius: Float): Seq[Int@@CharID] = {
+  // def nearestNCharIDs(page: Int@@PageID, qbox: LTBounds, n: Int, radius: Float): Seq[Int@@CharID] = {
+  //   val rindex = pageRIndexes(page)
+  //   val ctr = qbox.toCenterPoint
+  //   val searchRect = LTBounds(
+  //     left=ctr.x- (radius/2),
+  //     top=ctr.y- (radius/2),
+  //     width=radius.toDouble,
+  //     height=radius.toDouble
+  //   )
+
+  //   val collectRegions = new CollectRegionIds()
+  //   println(s" searching ${n} nearest from bbox${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
+
+  //   rindex.intersects(searchRect.toJsiRectangle, collectRegions)
+  //   println(s""" found ${collectRegions.getIDs.mkString(",")} """)
+  //   collectRegions
+  //     .getIDs
+  //     .map({ id =>
+  //       val cbox = charBoxes(CharID(id))
+  //       val dist = cbox.bbox.toCenterPoint.vdist(ctr)
+  //       (dist, cbox)
+  //     })
+  //     .sortBy(_._1)
+  //     .take(n)
+  //     .map(_._2.id)
+  // }
+
+
+  // def nearestNChars(page: Int@@PageID, qbox: LTBounds, n: Int, radius: Float): Seq[CharBox] = {
+  def nearestNChars(page: Int@@PageID, fromChar: CharBox, n: Int, radius: Float): Seq[CharBox] = {
     val rindex = pageRIndexes(page)
-    val ctr = qbox.toCenterPoint
+    val ctr = fromChar.bbox.toCenterPoint
     val searchRect = LTBounds(
-      left=ctr.x- (radius/2),
-      top=ctr.y- (radius/2),
-      width=radius.toDouble,
-      height=radius.toDouble
+      left   =ctr.x - radius,
+      top    =ctr.y - radius,
+      width  =(radius*2.0).toDouble,
+      height =(radius*2.0).toDouble
     )
 
     val collectRegions = new CollectRegionIds()
-    println(s" searching ${n} nearest from bbox${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
-
-    rindex.intersects(searchRect.toJsiRectangle, collectRegions)
-    println(s""" found ${collectRegions.getIDs.mkString(",")} """)
-    collectRegions
-      .getIDs
-      .map({ id =>
-        val cbox = charBoxes(CharID(id))
-        val dist = cbox.bbox.toCenterPoint.vdist(ctr)
-        (dist, cbox)
-      })
-      .sortBy(_._1)
-      .take(n)
-      .map(_._2.id)
-  }
-
-
-  def nearestNChars(page: Int@@PageID, qbox: LTBounds, n: Int, radius: Float): Seq[CharBox] = {
-    val rindex = pageRIndexes(page)
-    val ctr = qbox.toCenterPoint
-    val searchRect = LTBounds(
-      left=ctr.x- (radius/2),
-      top=ctr.y- (radius/2),
-      width=radius.toDouble,
-      height=radius.toDouble
-    )
-
-    val collectRegions = new CollectRegionIds()
-    // println(s" searching ${n} nearest from bbox${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
+    // println(s" searching ${n} nearest from c=${fromChar.char} bbox ${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
 
     rindex.intersects(searchRect.toJsiRectangle, collectRegions)
     // println(s""" found ${collectRegions.getIDs.mkString(",")} """)
@@ -445,6 +446,7 @@ class ZoneIndexer  {
         val cbox = charBoxes(CharID(id))
         (cbox.bbox.toCenterPoint.dist(ctr), cbox)
       })
+      .filterNot(_._2.id == fromChar.id)
       .sortBy(_._1)
       .take(n)
       .map(_._2)

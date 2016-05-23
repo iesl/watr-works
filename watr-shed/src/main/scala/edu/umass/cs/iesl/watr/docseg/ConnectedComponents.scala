@@ -185,7 +185,7 @@ case class ConnectedComponents(
     val text  = if (labels.contains(LB.Line)) {
       // val headbbox = components.headOption.map({c => c.bounds.prettyPrint})
       // val lastbbox = components.lastOption.map({c => c.bounds.prettyPrint})
-      components.map(_.toText).mkString(" ") //  + s"  ${headbbox} - ${lastbbox}"
+      components.map(_.toText).mkString("") //  + s"  ${headbbox} - ${lastbbox}"
     } else if (labels.contains(LB.Word)) {
       components.map(_.toText).mkString
     } else if (labels.contains(LB.Zone)) {
@@ -352,12 +352,11 @@ case class ConnectedComponents(
     val splitValue = (modalBigGap+modalLittleGap)/2
     val splittable = charDists.length > 1
 
-    println(s"""|    top char dists: ${charDists.map(_.pp).mkString(", ")}
-                |    modal little gap = ${modalLittleGap}
-                |    modal big gap = ${modalBigGap}
-                |    splitValue = ${splitValue}
-                |""".stripMargin)
-
+    // println(s"""|    top char dists: ${charDists.map(_.pp).mkString(", ")}
+    //             |    modal little gap = ${modalLittleGap}
+    //             |    modal big gap = ${modalBigGap}
+    //             |    splitValue = ${splitValue}
+    //             |""".stripMargin)
 
     // { import TB._
     //   // println(s"""tops: ${tops.map(_.pp).mkString(" ")}""")

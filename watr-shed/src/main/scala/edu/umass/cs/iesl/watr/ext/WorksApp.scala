@@ -1,4 +1,5 @@
-package edu.umass.cs.iesl.watr
+package edu.umass.cs.iesl
+package watr
 package ext
 
 import ammonite.ops._
@@ -87,6 +88,7 @@ object Works extends App {
   }
 
   def lineseg(conf: AppConfig): Unit = {
+    import watrmarks.TB._
 
     val artifactOutputName = "lineseg.txt"
     getProcessList(conf).foreach { entry =>
@@ -97,7 +99,6 @@ object Works extends App {
         entry.putArtifact(artifactOutputName,
           pdfArtifact.asInputStream.map{ pdf =>
 
-            // CermineExtractor.cermineZonesToJson(is)
             val zoneIndex = ZoneIndexer.loadSpatialIndices(
               CermineExtractor.extractChars(pdf)
             )
@@ -111,14 +112,24 @@ object Works extends App {
                 zoneIndex.getComponents(page)
               )
 
-              lines.sortBy(_.findCenterY()).map{ l =>
+              val lineCols = lines
+                .sortBy(_.findCenterY())
+                .map({ l =>
+                  val lineBounds = l.bounds.prettyPrint
+                  val tokenized = l.tokenizeLine().toText
+                  // s"${tokenized}               ${lineBounds}"
+                  (tokenized.box, lineBounds.box)
+              })
 
-                val lineBounds = l.bounds.prettyPrint
-                val tokenized = l.tokenizeLine().toText
-                s"${tokenized}               ${lineBounds}"
-              }.mkString(s"\nPage:${page} ${pdfArtifact.artifactPath}\n  ", "\n", "\n")
+              val justified =
+                s"\nPage:${page} file://${pdfArtifact.artifactPath}" %|
+                  (vcat(left)(lineCols.map(_._1).toList) + "    " + vcat(right)(lineCols.map(_._2).toList))
 
-            }.mkString(s"\nDocument:${pdfArtifact.artifactPath}\n", "\n", "\n")
+              justified.toString()
+
+              // .mkString(s"\nPage:${page} file://${pdfArtifact.artifactPath}\n  ", "\n", "\n")
+
+            }.mkString(s"\nDocument: file://${pdfArtifact.artifactPath}\n", "\n", "\n")
 
 
           }.getOrElse { sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}") }

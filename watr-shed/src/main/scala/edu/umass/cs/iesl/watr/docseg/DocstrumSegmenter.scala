@@ -11,6 +11,13 @@ import scala.collection.JavaConversions._
 import Component._
 import scala.collection.mutable
 
+case class PageSegAccumulator(
+  pageLines: Seq[Seq[ConnectedComponents]],
+  mostCommonLineWidthHeight: Point
+  // commonLinegapUp: Double,
+  // commonLinegapDown: Double
+)
+
 trait DocstrumUtils {
 
   def approxSortYX(charBoxes: Seq[CharBox]): Seq[CharBox] = {
@@ -70,7 +77,7 @@ object DocstrumSegmenter extends DocstrumUtils {
 }
 
 class DocstrumSegmenter(
-  pages: ZoneIndexer
+  val pages: ZoneIndexer
 ) {
   import DocstrumSegmenter._
 
@@ -117,23 +124,11 @@ class DocstrumSegmenter(
     val characterSpacing = computeCharacterSpacing(docOrientation);
     val lineSpacing = computeLineSpacing(docOrientation);
 
-    val lines = determineLines(
+    val lines = determineLines_v2(
       pageId,
-      characterSpacing * componentDistanceCharacterMultiplier,
-      lineSpacing * maxVerticalComponentDistanceMultiplier
+      pages.getComponents(pageId)
     );
 
-    // TODO this tries to recompute lines in the face of wonky non-zero orientation
-    // if (Math.abs(orientation) > ORIENTATION_MARGIN) {
-    //     List[ConnectedComponents] linesZero = determineLines(components, 0,
-    //         characterSpacing * componentDistanceCharacterMultiplier,
-    //         lineSpacing * maxVerticalComponentDistanceMultiplier);
-
-    //     if (Math.abs(lines.size() - LINES_PER_PAGE_MARGIN) > Math.abs(linesZero.size() - LINES_PER_PAGE_MARGIN)) {
-    //         orientation = 0;
-    //         lines = linesZero;
-    //     }
-    // }
 
     val lineOrientation = computeOrientation(lines);
     println(s"lineOrientation= ${lineOrientation}")
@@ -168,13 +163,11 @@ class DocstrumSegmenter(
   }
 
   private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[CharBox] = {
-    pages
-      .nearestNChars(pageId, qbox.bbox, 5, 30.0f)
-      .filter(_.id != qbox.id)
+    pages.nearestNChars(pageId, qbox, 12, 15.0f)
   }
 
   def computeInitialOrientation(): Double = {
-    println(s"computeInitialOrientation")
+    // println(s"computeInitialOrientation")
     val histPeaks = for {
       pageId <- pages.getPages
     } yield {
@@ -312,8 +305,6 @@ class DocstrumSegmenter(
   def determineLines_v2(
     pageId: Int@@PageID,
     components: Seq[CharBox]
-    // maxHorizontalDistance: Double,
-    // maxVerticalDistance: Double
   ): Seq[ConnectedComponents] = {
     val maxHorizontalDistance: Double = 2.5d
     val maxVerticalDistance: Double = 12.0
@@ -337,7 +328,9 @@ class DocstrumSegmenter(
           )
 
           var joinWith = false
-          if (withinAngle(angle) && eastWestDist < maxWidth*2) {
+          val maxWidthMult = 2.7
+
+          if (withinAngle(angle) && eastWestDist < maxWidth*maxWidthMult) {
             sets.union(component, neighbor);
             joinWith = true
           }
@@ -353,12 +346,12 @@ class DocstrumSegmenter(
           }
         })
 
-      { import TB._
-        // println(
-        //   s"'${component.char} #${component.id} ${component.bbox.prettyPrint}".box %
-        //   vcat(top)(searchLog.toList)
-        // )
-      }
+      // { import TB._
+      //   println(
+      //     s"'${component.char} #${component.id} ${component.bbox.prettyPrint}".box %
+      //     vcat(top)(searchLog.toList)
+      //   )
+      // }
 
     }
 
@@ -526,33 +519,200 @@ class DocstrumSegmenter(
     return valueSum / weightSum;
   }
 
-      /**
-       * Groups text lines into zones.
-       *
-       * @param lines
-       * @param orientation
-       * @param minHorizontalDistance
-       * @param maxHorizontalDistance
-       * @param minVerticalDistance
-       * @param maxVerticalDistance
-       * @param minHorizontalMergeDistance
-       * @param maxHorizontalMergeDistance
-       * @param minVerticalMergeDistance
-       * @param maxVerticalMergeDistance
-       * @return
-       */
+  def charBasedPageBounds(
+    pageId: Int@@PageID
+  ): LTBounds = {
+    val allBboxes = pages.getComponents(pageId).map(_.bbox)
+
+    val minX = allBboxes.map(_.left).min
+    val minY = allBboxes.map(_.top).min
+    val maxX = allBboxes.map(_.right).max
+    val maxY = allBboxes.map(_.bottom).max
+
+    LTBounds(
+      minX, minY,
+      maxX-minX,
+      maxY-minY
+    )
+  }
+
+  def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
+    val hist = histogram(in, resolution)
+    hist.iterator.toSeq
+      .sortBy(_.getFrequency)
+      .reverse
+      .takeWhile(_.getFrequency > 0)
+      .map{b=>(b.getValue, b.getFrequency)}
+  }
+
+
+  def getDocumentWideStats(psegAccum: PageSegAccumulator): PageSegAccumulator = {
+
+    val widths = for {
+      p <- psegAccum.pageLines; l <- p
+    } yield l.bounds.width
+
+    val mfWidths = getMostFrequentValues(widths, 0.5d)
+    println(s"""common widths = ${mfWidths.take(5).mkString(", ")}""")
+    val mfWidth = mfWidths.head
+
+    val heights = for {
+      p <- psegAccum.pageLines;
+      l <- p if l.bounds.width.eqFuzzy(0.5d)(mfWidth._1)
+    } yield l.bounds.height
+
+    val mfHeights = getMostFrequentValues(heights, 0.1d)
+    println(s"""common heights = ${mfHeights.take(5).mkString(", ")}""")
+
+    val mfHeight = mfHeights.head
+
+
+    // determine # of x-vals on page (# of cols)
+
+    // val _ = for {
+    //   plines <- psegAccum.pageLines;
+    //   _ = plines.sortBy(_.bounds.top).groupBy()
+    //   line <- p
+    //   eqWidth = line.bounds.width.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.x)
+    //   eqHeight = line.bounds.height.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.y)
+    //   if  eqWidth && eqHeight
+    // } yield l.bounds.height
+
+    // val vspacings = for {
+    //   p <- psegAccum.pageLines;
+    //   line <- p
+    //   eqWidth = line.bounds.width.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.x)
+    //   eqHeight = line.bounds.height.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.y)
+    //   if  eqWidth && eqHeight
+    // } yield l.bounds.height
+
+    // lines.foreach{ line =>
+    //   val lineCenter = line.bounds.toCenterPoint
+    //   val cdist = lineCenter.hdist(pageCenter)
+    //   val eqWidth = line.bounds.width.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.x)
+    //   val eqHeight = line.bounds.height.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.y)
+
+
+    //   println(s"(body=ew:${eqWidth} eh:${eqHeight}) width:${line.bounds.width}, h:${line.bounds.height} ${lineCenter.prettyPrint} ${cdist}  ${line.tokenizeLine().toText}")
+
+    // }
+
+
+    psegAccum.copy(
+      mostCommonLineWidthHeight = Point(mfWidth._1, mfHeight._1)
+    )
+
+  }
+
+  def determineZones_v2(
+    pageId: Int@@PageID,
+    psegAccum: PageSegAccumulator
+  ): Seq[Seq[ConnectedComponents]] = {
+    val lines: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
+
+    println(s"accum = ${psegAccum.mostCommonLineWidthHeight}")
+
+    val pageBounds = charBasedPageBounds(pageId)
+    val pageCenter = pageBounds.toCenterPoint
+
+    println(s"page center ${pageCenter.prettyPrint}")
+
+    val pageCommonSizedLines = for {
+      line <- lines
+      eqWidth = line.bounds.width.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.x)
+      eqHeight = line.bounds.height.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.y)
+      if  eqWidth && eqHeight
+    } yield line
+
+
+
+    // divide common-sized lines into 1 or more colums
+    val colCenters = getMostFrequentValues(pageCommonSizedLines.map(_.bounds.toCenterPoint.x) , resolution=1.0d)
+
+    println(s"""col centers= ${colCenters.mkString(", ")}""")
+
+    val commonLinesInCols = for {
+      col <- colCenters
+    } yield for {
+      line <- pageCommonSizedLines
+      if line.bounds.toCenterPoint.x.eqFuzzy(0.5)(col._1)
+    } yield {
+      line
+    }
+
+    // sort cols by y
+    val sortedCommonLinesInCols = commonLinesInCols.map(_.sortBy(_.bounds.top))
+
+
+    println("Columns")
+    for {
+      col <- sortedCommonLinesInCols
+    } {
+      println("-------------Column\n")
+      val colText = col.map(_.tokenizeLine().toText).mkString("\n")
+      println(colText)
+    }
+
+
+
+
+
+    // Most common line-stats
+
+
+
+    // column detection
+    //   - search paper-wide for most common: line-width,
+    //     for most common line widths, find most common ctr-x, most common v-dist to next line
+    //   foreach page:
+    //     label centered text lines
+    //       look up/down foreach centered line to form centered block
+    //     foreach line that matches common-width w/common ctr,
+    //       look up/down and join w/ lines within reach
+    //     foreach un-labeled line on page
+    //        try l/r justified block detection (justified l/r)
+    //        try center-column detection (justified l/r)
+    //        try left-justified block detection
+
+
+
+    //     justified l/r cols
+    //       map lines => x.(left, ctr, right)
+    //         group into matching sets
+    //         foreach matching set, look up/down for straggling line
+
+
+
+    // lines.foreach{ line =>
+    //   val lineCenter = line.bounds.toCenterPoint
+    //   println(s"${lineCenter.prettyPrint} cb:${cdist2} pb:${cdist}  ${line.tokenizeLine().toText}")
+    // }
+    // println(
+    // lines.map{ line =>
+    //   line.bounds.toCenterPoint.x
+    // }.sorted.mkString("\n")
+    // )
+
+
+
+
+    ???
+  }
+
   def determineZones(
-    lines: Seq[ConnectedComponents], orientation: Double,
-    minHorizontalDistance: Double, maxHorizontalDistance: Double,
-    minVerticalDistance: Double, maxVerticalDistance: Double,
-    minHorizontalMergeDistance: Double, maxHorizontalMergeDistance: Double,
-    minVerticalMergeDistance: Double, maxVerticalMergeDistance: Double
+    lines: Seq[ConnectedComponents],
+    orientation: Double,
+    minHorizontalDistance: Double      , maxHorizontalDistance: Double,
+    minVerticalDistance: Double        , maxVerticalDistance: Double,
+    minHorizontalMergeDistance: Double , maxHorizontalMergeDistance: Double,
+    minVerticalMergeDistance: Double   , maxVerticalMergeDistance: Double
   ): Seq[Seq[ConnectedComponents]] = {
     val sets = new DisjointSets[ConnectedComponents](lines);
     // Mean height is computed so that all distances can be scaled
     // relative to the line height
     var meanHeight = 0.0
     var weights = 0.0;
+
 
 
     for (line <- lines) {

@@ -8,14 +8,40 @@ import watrmarks._
 import ext._
 
 
-
-
 class TextlineSegTest extends DocsegTestUtil  {
   behavior of "text line identification"
   import Component._
 
+  //Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401009.pdf.d/101016jactamat200401009.pdf
+  // orthorhombic, a _¼_ 0:76559, b _¼_ 0:64154, c _¼_ 0:42184     (l:313.63, t:272.94, w:239.10, h:9.96)
+  // (expecting) orthorhombic, a = 0.76559, b = 0.64154, c = 0.42184     (l:313.63, t:272.94, w:239.10, h:9.96)
+
+  // Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111015.pdf.d/101016jactamat201111015.pdf    (l:203.02, t:47.65, w:199.14, h:7.97)
+  // factor of                                                                                                                                                    (l:42.52, t:308.38, w:251.00, h:9.96)
+  // 3 (or more) lower than other nanocrystalline                                                                                                                 (l:311.53, t:308.38, w:251.01, h:10.12)
+  //  (should be one line, missing '~') "factor of ~3 (or more) lower than other nanocrystalline"
+
+
+  // Seems to be picking up letters from below (or above) the desired textline
+  // Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111015.pdf.d/101016jactamat201111015.pdf
+  // D e p a r t m _T_ e n _h_ t _e_ o _M_ f M _a_ _t_ _e_ a _r_ t _i_ e _a_ r _l_ i _s_ a l _R_ s _e_ S _s_ _e_ c _a_ i e _r_ n _c_ c _h_ e _I_ a _n_ n _s_ d _t_ _i_ _t_ E _u_ _t_ n _e_ g _,_ i n _T_ e _h_ e _e_ r i _P_ n g _e_ , _n_ _n_ T _s_ h _y_ e _l_ _v   (l:89.46, t:227.77, w:406.59, h:17.95)
 
   val testExamples = List(
+    TextExample(
+      """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201112024.pdf.d/101016jactamat201112024.pdf
+         |""".stripMargin,
+      """|the                                                         (l:520.27, t:465.98, w:13.17, h:9.96)
+         |Perhaps                                                     (l:477.92, t:465.98, w:34.10, h:9.96)
+         |variables.                                                  (l:429.05, t:465.98, w:40.61, h:9.96)
+         |and                                                         (l:374.11, t:465.98, w:15.98, h:9.96)
+         |ing),                                                       (l:311.53, t:465.98, w:19.18, h:9.96)
+         |other                                                       (l:398.32, t:465.98, w:22.51, h:9.96)
+         |strain,                                                     (l:338.97, t:465.98, w:26.85, h:9.96)
+         |most                                                        (l:541.64, t:465.98, w:20.84, h:9.96)
+         |""".stripMargin,
+      """|ing), strain, and other variables. Perhaps the most
+         |""".stripMargin
+    ),
     TextExample(
       """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
          |""".stripMargin,
