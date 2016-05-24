@@ -653,6 +653,22 @@ class DocstrumSegmenter(
       println(colText)
     }
 
+    val commonVDists = for {
+      col <- sortedCommonLinesInCols
+      if col.length > 1
+      linepair <- col.sliding(2)
+    } yield {
+      linepair match {
+        case Seq(l1, l2) =>
+          l1.bounds.toCenterPoint.vdist(l2.bounds.toCenterPoint)
+
+        case _ =>
+          sys.error("should not reach here")
+      }
+    }
+
+    val mostCommonVDist = commonVDists.max
+
 
 
 
