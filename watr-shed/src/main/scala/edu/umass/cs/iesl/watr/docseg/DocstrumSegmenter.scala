@@ -8,13 +8,13 @@ import pl.edu.icm.cermine.tools.Histogram
 import pl.edu.icm.cermine.tools.DisjointSets
 import Bounds._
 import scala.collection.JavaConversions._
-import Component._
 import scala.collection.mutable
 
 
 case class LineDimensionBins(
   page: Int@@PageID,
-  widthBin: Seq[(Double, Seq[ConnectedComponents])]
+  // Seq[(width, widthFrequency), Seq[lines w/width]]
+  widthBin: Seq[((Double, Double), Seq[ConnectedComponents])]
 )
 
 case class PageSegAccumulator(
@@ -89,6 +89,43 @@ object DocstrumSegmenter extends DocstrumUtils {
       .map{b=>(b.getValue, b.getFrequency)}
   }
 
+
+  def init(pagedefs: List[(PageChars, PageGeometry)]): (DocstrumSegmenter, PageSegAccumulator) = {
+    val zoneIndex = ZoneIndexer.loadSpatialIndices(pagedefs)
+
+    val docstrum = new DocstrumSegmenter(zoneIndex)
+
+    val allPageLines = for {
+      pageId <- docstrum.pages.getPages
+    } yield {
+      docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
+    }
+
+    val accum = PageSegAccumulator(allPageLines, Seq())
+    // get document-wide stats
+    val accum2 = docstrum.getDocumentWideStats(accum)
+    (docstrum, accum2)
+  }
+
+  def segmentPages(pagedefs: List[(PageChars, PageGeometry)]): String = { // Seq[ConnectedComponents]
+    val (docstrum, accum) = init(pagedefs)
+
+    val pageZones = for {
+      pageId <- docstrum.pages.getPages
+    } yield {
+      println(s"zoning page ${pageId}")
+      docstrum.determineZones(pageId, accum)
+    }
+
+    val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
+      zones.toList.map({ zone =>
+        zone.map(_.tokenizeLine().toText).toList.mkString(s"Column\n", "\n", "\n")
+      }).mkString(s"Page $pagenum\n", "\n", "\n\n")
+    }.mkString(s"Document \n", "\n", "\n\n")
+
+    output
+
+  }
 }
 
 class DocstrumSegmenter(
@@ -104,78 +141,6 @@ class DocstrumSegmenter(
   val LINES_PER_PAGE_MARGIN = 100;
 
   var docOrientation: Double = 0d
-
-  // import scala.collection.mutable
-
-  // val componentMap = mutable.HashMap[BxPage, List[Component]]();
-  // val componentMap = mutable.HashMap[Int@@PageID, List[Component]]();
-
-  // input pages should include all chars
-  def segmentDocument(): Unit = {
-    // computeDocumentOrientation();
-    // BxDocument output = new BxDocument();
-    docOrientation = computeInitialOrientation()
-
-    for (pageId <- pages.getPages) {
-      val segmentedPage = segmentPage(pageId);
-      segmentedPage.foreach { zonecc =>
-        println(s"zone: ${zonecc.toText}")
-      }
-      // if (segmentedPage.getBounds() != null) {
-      //   output.addPage(segmentedPage);
-      // }
-    }
-    // output;
-  }
-
-
-  def segmentPage(pageId: Int@@PageID): Seq[ConnectedComponents] = {
-    println(s"segmenting page ${pageId}")
-
-    if (docOrientation.isNaN()) {
-      docOrientation = computeInitialOrientation();
-    }
-
-    val characterSpacing = computeCharacterSpacing(docOrientation);
-    val lineSpacing = computeLineSpacing(docOrientation);
-
-    val lines = determineLines_v2(
-      pageId,
-      pages.getComponents(pageId)
-    );
-
-
-    val lineOrientation = computeOrientation(lines);
-    println(s"lineOrientation= ${lineOrientation}")
-    // if (!Double.isNaN(lineOrientation)) {
-    //     orientation = lineOrientation;
-    // }
-
-    var zones = determineZones(lines, docOrientation,
-      characterSpacing * minHorizontalDistanceMultiplier, Double.PositiveInfinity,
-      lineSpacing * minVerticalDistanceMultiplier, lineSpacing * maxVerticalDistanceMultiplier,
-      characterSpacing * minHorizontalMergeDistanceMultiplier, 0.0,
-      0.0, lineSpacing * maxVerticalMergeDistanceMultiplier
-    );
-
-    // println(s"Zones")
-    // zones.foreach{ zone =>
-    //   println(s"  -------zone")
-    //   zone.foreach { line =>
-    //     val str = line.components.map(_.toText).mkString
-    //     println(s"     ${str}")
-    //   }
-    // }
-
-    // zones = mergeZones(zones, characterSpacing * 0.5);
-    // zones = mergeLines(
-    //   zones, orientation,
-    //   Double.NEGATIVE_INFINITY, 0.0,
-    //   0.0, lineSpacing * maxVerticalMergeDistanceMultiplier
-    // )
-
-    pageZonesToSortedZones(zones)
-  }
 
   private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[CharBox] = {
     pages.nearestNChars(pageId, qbox, 12, 15.0f)
@@ -215,109 +180,11 @@ class DocstrumSegmenter(
   }
 
 
-  /**
-    * Computes within-line spacing based on nearest-neighbors distances.
-    */
-  // private double computeCharacterSpacing(List[Component] components, double orientation) {
-  def computeCharacterSpacing(orientation: Double): Double = {
-    computeSpacing(orientation)
-  }
-
-    /**
-     * Computes between-line spacing based on nearest-neighbors distances.
-     *
-      * @param components
-      * @param orientation estimated text orientation
-      * @return estimated between-line spacing
-      */
-    // private double computeLineSpacing(List[Component] components, double orientation) {
-  def computeLineSpacing(orientation: Double): Double = {
-    if (orientation >= 0) {
-      computeSpacing(orientation - Math.PI / 2);
-    } else {
-      computeSpacing(orientation + Math.PI / 2);
-    }
-  }
-
-
-
-
-
-  //     private double computeSpacing(List[Component] components, double angle) {
-  def computeSpacing(angle: Double): Double = {
-    // TODO: should filter based on angle when computing max distance
-    var maxDistance = Double.NegativeInfinity
-    for {
-      pageId <- pages.getPages
-      component <- pages.getComponents(pageId)
-    } yield {
-      // println(s"computing spacing page ${pageId}, ${component.char}: ${component.bbox.prettyPrint}")
-      val neighbors = findNeighbors(pageId, component)
-      neighbors.foreach {n =>
-        val dist = n.bbox.centerDistanceTo(component.bbox)
-        maxDistance = math.max(maxDistance, dist);
-      }
-
-      // val pp = neighbors.map(pages.getComponent(pageId, _)).map{c =>
-      //   val dist = c.bbox.centerDistanceTo(component.bbox)
-      //   s"${c.char}: ${c.bbox.prettyPrint} dist=${dist}"
-      // }.mkString("\n  ", "\n  ", "\n")
-
-      // println(s"neighbors of ${component.char}${pp}")
-    }
-
-
-
-    val histPeaks = for {
-      pageId <- pages.getPages
-    } yield {
-      val histogram = new Histogram(0, maxDistance, spacingHistogramResolution);
-      val angleFilter = AngleFilter(angle - angleTolerance, angle + angleTolerance);
-
-      for {
-        component <- pages.getComponents(pageId)
-      } yield {
-
-        // println(s"neighbors of ${component.char}")
-        val neighbors = findNeighbors(pageId, component)
-
-        neighbors
-          .filter({c =>
-            val dist = c.bbox.centerDistanceTo(component.bbox)
-            val angle = component.bbox.toCenterPoint.angleTo(c.bbox.toCenterPoint)
-            val ok = angleFilter.matches(angle)
-
-            // println(s"    ${c.char}: ${c.bbox.prettyPrint} <-> ${component.bbox.prettyPrint}")
-            // println(s"        allow($ok): angle=${angle}, dist=${dist}")
-            ok
-          })
-          .foreach({c =>
-            val dist = component.bbox.centerDistanceTo(c.bbox)
-            histogram.add(dist)
-          })
-      }
-
-      // Rectangular smoothing window has been replaced with gaussian smoothing window
-      histogram.gaussianSmooth(
-        spacingHistogramSmoothingWindowLength,
-        spacingHistogramSmoothingWindowStdDeviation);
-
-      histogram.getPeakValue()
-    }
-
-    println(s"computing spacing w/angle = ${angle}, max distance = ${maxDistance}")
-    println(s"     hist peaks = ${histPeaks.mkString(", ")}")
-
-    histPeaks.headOption.getOrElse(0.0d)
-
-  }
-
-
-  var count = 10
-
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
+
+
   /** Groups components into text lines. */
-  def determineLines_v2(
+  def determineLines(
     pageId: Int@@PageID,
     components: Seq[CharBox]
   ): Seq[ConnectedComponents] = {
@@ -377,8 +244,6 @@ class DocstrumSegmenter(
 
     }
 
-
-
     val lines = sets.iterator().toSeq.map{
       _.toSeq.sortBy(c => (c.bbox.left, c.bbox.top)).map(new CharComponent(_, docOrientation))
     }
@@ -388,148 +253,6 @@ class DocstrumSegmenter(
   }
 
 
-  def determineLinesNotVeryWell(
-    pageId: Int@@PageID
-  ): Seq[ConnectedComponents] = {
-
-    // find all unique baselines
-    val pageComponents = pages.getComponents(pageId)
-
-    val bottomHist = histogram(
-      pageComponents.map(_.bbox.bottom),
-      resolution = 0.1d
-    )
-
-    // order baselines desc
-    val baselines = bottomHist.iterator.toSeq
-      .sortBy(_.getFrequency)
-      .reverse
-      .takeWhile(_.getFrequency > 0)
-
-    // val bfmt = baselines.map(x => s"${x.getValue.pp} ${x.getFrequency.pp}")
-    // println(s"baselines: ")
-    // println(bfmt.mkString("\n  ", "  \n", "\n"))
-
-    val pageGeometry = pages.pageGeometry(pageId)
-
-    val lines = baselines.map{ baseline =>
-      val base = baseline.getValue
-      val queryHeight = 5.0d
-
-      val baselineQuery = LTBounds(
-        left   = 0,
-        width  = pageGeometry.bounds.width,
-        top    = base-queryHeight,
-        height = queryHeight
-      )
-      val qres = pages.queryCharsIntersects(pageId, baselineQuery)
-      println(s"line?: ${squishb(qres)}")
-
-      // qres.sortBy(_.bbox.left)
-      //   .foreach({ c =>
-      //     println(
-      //       s"${c.char} cbase=${c.bbox.bottom.pp} base=${baseline.getValue.pp} ${baseline.getFrequency.pp}"
-      //     )
-      //   })
-      {
-
-        val strictBaselineChars = qres
-          .sortBy(_.bbox.left)
-
-        val popularCharSpacings = determineCharSpacings(strictBaselineChars)
-        println(s"""   spaces = ${popularCharSpacings.mkString(", ")}""")
-        val uniqBaselines = strictBaselineChars.map(_.bbox.bottom.pp).toSet.toSeq
-        println(s"""   baselines =  ${uniqBaselines}""")
-      }
-
-
-      val strictBaselineChars = qres
-        .sortBy(_.bbox.left)
-        .filter(_.bbox.bottom.eqFuzzy(0.11d)(base))
-
-      // now re-query around strict-baseline chars (with some padding)
-      val fc = strictBaselineChars.head
-      val lc = strictBaselineChars.last
-      val maxHeight = strictBaselineChars.map(_.bbox.height).max
-
-      val reQuery = LTBounds(
-        left   = fc.bbox.left,
-        top    = base-maxHeight - 0.5d,
-        width  = pageGeometry.bounds.width,
-        height = maxHeight + 0.5d
-      )
-
-      val finalChars = pages.queryChars(pageId, reQuery)
-
-      (base, finalChars)
-
-    }
-
-    val sortedLines = lines
-      .sortBy(_._1)
-      .filterNot(_._2.isEmpty)
-
-    sortedLines.map{case (_, ccs) =>
-      new ConnectedComponents(
-        ccs.map(Component(_)),
-        0d
-      )
-    }
-  }
-
-  /** Groups components into text lines. */
-  def determineLines(
-    pageId: Int@@PageID,
-    maxHorizontalDistance: Double,
-    maxVerticalDistance: Double
-  ): Seq[ConnectedComponents] = {
-
-    val lines = determineLines(pageId,
-      pages.getComponents(pageId),
-      maxHorizontalDistance,
-      maxVerticalDistance)
-
-    lines.map{ Component(_, docOrientation) }
-  }
-
-
-
-  /** Groups components into text lines. */
-  def determineLines(
-    pageId: Int@@PageID,
-    components: Seq[CharBox],
-    maxHorizontalDistance: Double,
-    maxVerticalDistance: Double
-  ): Seq[Seq[CharComponent]] = {
-    println(s"""determineLines(p:${pageId}, orientation: ${docOrientation} maxHDist:${maxHorizontalDistance}, maxVDist: ${maxVerticalDistance})""")
-
-    val withinAngle = filterAngle(docOrientation, math.Pi / 3)
-    val sets = new DisjointSets[CharBox](components);
-
-    // printNeighborInfos(pageId, components, maxHorizontalDistance, maxVerticalDistance)
-
-    for { component <- components } {
-      findNeighbors(pageId, component)
-        .foreach({neighbor =>
-          val angle = component.bbox.toCenterPoint.angleTo(neighbor.bbox.toCenterPoint)
-
-          val cdx = neighbor.bbox.toCenterPoint.hdist(component.bbox.toCenterPoint)
-          val cdy = neighbor.bbox.toCenterPoint.vdist(component.bbox.toCenterPoint)
-          val dx = cdx / maxHorizontalDistance
-          val dy = cdy / maxVerticalDistance
-
-          if (withinAngle(angle) && dx*dx + dy*dy <= 1) {
-            sets.union(component, neighbor);
-          }
-        })
-    }
-
-    sets.iterator().toSeq.map{
-      _.toSeq.sortBy(_.bbox.left).map(new CharComponent(_, docOrientation))
-    }
-  }
-
-  // private double computeOrientation(List[ConnectedComponents] lines) {
   def computeOrientation(lines: Seq[ConnectedComponents]): Double = {
     // Compute weighted mean of line angles
     var valueSum = 0.0;
@@ -570,27 +293,20 @@ class DocstrumSegmenter(
     lineWidthMatches(line, hw.x) && lineHeightMatches(line, hw.y)
   }
 
+  def printPageLineBins(bin: LineDimensionBins, indent: Int=0): Unit = {
+    bin.widthBin.foreach{ case (width, lines) =>
+      println(" "*indent + s"Lines within width ${width}")
+      lines.sortBy(_.bounds.top).foreach{ line =>
+        println("  "*indent + s"w:${line.bounds.width.pp}, h:${line.bounds.height.pp} ${line.bounds.prettyPrint} > ${line.tokenizeLine().toText}")
+      }
+    }
+  }
 
   def printCommonLineBins(lineBins: Seq[LineDimensionBins]): Unit = {
     lineBins.zipWithIndex.toList.foreach{ case (bin, pnum) =>
       println(s"Page $pnum")
-      bin.widthBin.foreach{ case (width, lines) =>
-        println(s"    Lines within width ${width}")
-        lines.sortBy(_.bounds.top).foreach{ line =>
-          println(s"        w:${line.bounds.width.pp}, h:${line.bounds.height.pp} ${line.bounds.prettyPrint} > ${line.tokenizeLine().toText}")
-        }
-      }
+      printPageLineBins(bin, 2)
     }
-
-    // for {
-    //   (bin, pnum) <- lineBins.zipWithIndex.toList
-    //   _ = println(s"Page $pnum")
-    //   (width, lines) <- bin.widthBin
-    //   _ = println(s"    Lines within width ${width}")
-    //   line <- lines
-    // } {
-    //   println(s"        w:${line.bounds.width.pp}, h:${line.bounds.height.pp} ${line.bounds.prettyPrint} > ${line.tokenizeLine().toText}")
-    // }
   }
 
 
@@ -653,28 +369,11 @@ class DocstrumSegmenter(
           //     }
           //   })
 
-          (width, plines.filter(lineWidthMatches(_, width)))
+          ((width, wfreq), plines.filter(lineWidthMatches(_, width)))
         }
       )
     }
-
     // printCommonLineBins(commonLineBins)
-
-
-    // val heights = for {
-    //   p <- psegAccum.pageLines;
-    //   l <- p if l.bounds.width.eqFuzzy(0.5d)(mfWidth._1)
-    // } yield l.determineNormalTextBounds.height
-
-    // val heights = for {
-    //   p <- psegAccum.pageLines;
-    //   l <- p if l.bounds.width.eqFuzzy(0.5d)(mfWidth._1)
-    // } yield l.bounds.height
-
-    // val mfHeights = getMostFrequentValues(heights, 0.1d)
-    // println(s"""common heights = ${mfHeights.take(5).mkString(", ")}""")
-
-    // val mfHeight = mfHeights.head
 
     psegAccum.copy(
       lineDimensionBins = commonLineBins
@@ -683,42 +382,9 @@ class DocstrumSegmenter(
 
   def getDocumentWideStats(psegAccum: PageSegAccumulator): PageSegAccumulator = {
     findMostFrequentLineDimensions(psegAccum)
-
-
-
-    // determine # of x-vals on page (# of cols)
-
-    // val _ = for {
-    //   plines <- psegAccum.pageLines;
-    //   _ = plines.sortBy(_.bounds.top).groupBy()
-    //   line <- p
-    //   eqWidth = line.bounds.width.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.x)
-    //   eqHeight = line.bounds.height.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.y)
-    //   if  eqWidth && eqHeight
-    // } yield l.bounds.height
-
-    // val vspacings = for {
-    //   p <- psegAccum.pageLines;
-    //   line <- p
-    //   eqWidth = line.bounds.width.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.x)
-    //   eqHeight = line.bounds.height.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.y)
-    //   if  eqWidth && eqHeight
-    // } yield l.bounds.height
-
-    // lines.foreach{ line =>
-    //   val lineCenter = line.bounds.toCenterPoint
-    //   val cdist = lineCenter.hdist(pageCenter)
-    //   val eqWidth = line.bounds.width.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.x)
-    //   val eqHeight = line.bounds.height.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.y)
-
-
-    //   println(s"(body=ew:${eqWidth} eh:${eqHeight}) width:${line.bounds.width}, h:${line.bounds.height} ${lineCenter.prettyPrint} ${cdist}  ${line.tokenizeLine().toText}")
-
-    // }
-
   }
 
-  def determineZones_v2(
+  def determineZones(
     pageId: Int@@PageID,
     psegAccum: PageSegAccumulator
   ): Seq[Seq[ConnectedComponents]] = {
@@ -731,38 +397,22 @@ class DocstrumSegmenter(
 
     val lineBins = psegAccum.lineDimensionBins.find(_.page == pageId).get
 
-    val (topWidth, topLines) = lineBins.widthBin.head
-
+    val ((mostFrequentWidthDocwide, wfreq), linesWFreq)  = lineBins.widthBin.sortBy(_._1._2).reverse.head
 
     // divide page-specific most frequent lines into likely columns:
-    val colCenters = getMostFrequentValues(topLines.map(_.bounds.toCenterPoint.x) , resolution=1.0d)
+    val colCenters = getMostFrequentValues(linesWFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
 
     val commonLinesInCols = for {
       (col, cfreq) <- colCenters
     } yield {
-      (col,
-        topLines.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.5)(col) })
-      )
+      (col, linesWFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(col) }))
     }
 
-    val sortedCommonLines = commonLinesInCols.sortBy(_._1).map(_._2)
+    val sortedCommonLines = commonLinesInCols.sortBy(_._1).map(_._2.sortBy(_.bounds.top))
 
     /// return:
     sortedCommonLines
 
-    // println(s"common lines")
-    // // sort cols by y
-    // val sortedCommonLinesInCols = commonLinesInCols.map(
-    //   _.sortBy(_.bounds.top)
-    // ).sortBy(_.headOption.map(_.bounds.left).getOrElse(0.d))
-
-    // println(s"making text")
-
-    // val colText = for {
-    //   col <- sortedCommonLinesInCols
-    // } {
-    //   col.map(_.tokenizeLine().toText).mkString("\n")
-    // }
 
     // val commonVDists = for {
     //   col <- sortedCommonLinesInCols
@@ -779,16 +429,6 @@ class DocstrumSegmenter(
     // }
 
     // val mostCommonVDist = commonVDists.max
-
-
-
-    // return
-
-
-
-
-    // Most common line-stats
-
 
 
     // column detection
@@ -828,153 +468,6 @@ class DocstrumSegmenter(
 
   }
 
-  def determineZones(
-    lines: Seq[ConnectedComponents],
-    orientation: Double,
-    minHorizontalDistance: Double      , maxHorizontalDistance: Double,
-    minVerticalDistance: Double        , maxVerticalDistance: Double,
-    minHorizontalMergeDistance: Double , maxHorizontalMergeDistance: Double,
-    minVerticalMergeDistance: Double   , maxVerticalMergeDistance: Double
-  ): Seq[Seq[ConnectedComponents]] = {
-    val sets = new DisjointSets[ConnectedComponents](lines);
-    // Mean height is computed so that all distances can be scaled
-    // relative to the line height
-    var meanHeight = 0.0
-    var weights = 0.0;
-
-
-
-    for (line <- lines) {
-      var weight = line.getLength();
-      meanHeight += line.height * weight;
-      weights += weight;
-    }
-    meanHeight /= weights;
-
-    for {
-      tail <- lines.tails
-      li <- tail.headOption.toSeq
-      lj <- tail.drop(1)
-    } {
-      var scale = Math.min(li.height, lj.height) / meanHeight;
-      scale = Math.max(minLineSizeScale, Math.min(scale, maxLineSizeScale));
-      // "<=" is used instead of "<" for consistency and to allow setting minVertical(Merge)Distance
-      // to 0.0 with meaning "no minimal distance required"
-      if (!sets.areTogether(li, lj) && li.angularDifference(lj) <= angleTolerance) {
-        val hDist = li.horizontalDistance(lj, orientation) / scale;
-        val vDist = li.verticalDistance(lj, orientation) / scale;
-        // Line over or above
-        if (minHorizontalDistance <= hDist && hDist <= maxHorizontalDistance
-          && minVerticalDistance <= vDist && vDist <= maxVerticalDistance) {
-          sets.union(li, lj);
-        }
-        // Split line that needs later merging
-        else if (minHorizontalMergeDistance <= hDist && hDist <= maxHorizontalMergeDistance
-          && minVerticalMergeDistance <= vDist && vDist <= maxVerticalMergeDistance) {
-          sets.union(li, lj);
-        }
-      }
-
-    }
-
-    val zones = sets.iterator().toSeq.map{ group =>
-      group.toSeq.sortBy(_.y0)
-    }
-    zones
-  }
-
-  import scala.collection.mutable
-
-  // def mergeZones(zones: List[List[ConnectedComponents]], tolerance: Double): List[List[ConnectedComponents]] = {
-  //   // val bounds = mutable.ArrayBuffer[BxBounds](zones.size());
-  //   for (zone <- zones) {
-  //     val builder = new BxBoundsBuilder();
-  //     for (line <- zone) {
-  //       for (component <- line.components) {
-  //         // builder.expand(component.getChunk().getBounds());
-  //         builder.expand(component.bbox);
-  //       }
-  //     }
-  //     bounds.add(builder.getBounds());
-  //   }
-
-  //   // List[List[ConnectedComponents]] outputZones = new ArrayList[List[ConnectedComponents]]();
-  //   val outputZones = mutable.ArrayBuffer[Seq[ConnectedComponents]]()
-
-  //   // mainFor:
-  //   for (int i = 0; i < zones.size(); i++) {
-  //     for (int j = 0; j < zones.size(); j++) {
-  //       if (i == j || bounds.get(j) == null || bounds.get(i) == null) {
-  //         continue;
-  //       }
-  //       if (BxModelUtils.contains(bounds.get(j), bounds.get(i), tolerance)) {
-  //         zones.get(j).addAll(zones.get(i));
-  //         bounds.set(i, null);
-  //         continue mainFor;
-  //       }
-  //     }
-  //     outputZones.add(zones.get(i));
-  //   }
-  //   return outputZones;
-  // }
-
-  //     private List[List[ConnectedComponents]] mergeLines(List[List[ConnectedComponents]] zones, double orientation,
-  //             double minHorizontalDistance, double maxHorizontalDistance,
-  //             double minVerticalDistance, double maxVerticalDistance) {
-  //         List[List[ConnectedComponents]] outputZones = new ArrayList[List[ConnectedComponents]](zones.size());
-  //         for (List[ConnectedComponents] zone : zones) {
-  //             outputZones.add(mergeLinesInZone(zone, orientation,
-  //                 minHorizontalDistance, maxHorizontalDistance,
-  //                 minVerticalDistance, maxVerticalDistance));
-  //         }
-  //         return outputZones;
-  //     }
-
-  //     private List[ConnectedComponents] mergeLinesInZone(List[ConnectedComponents] lines, double orientation,
-  //             double minHorizontalDistance, double maxHorizontalDistance,
-  //             double minVerticalDistance, double maxVerticalDistance) {
-  //         DisjointSets[ConnectedComponents] sets = new DisjointSets[ConnectedComponents](lines);
-  //         for (int i = 0; i < lines.size(); i++) {
-  //             ConnectedComponents li = lines.get(i);
-  //             for (int j = i + 1; j < lines.size(); j++) {
-  //                 ConnectedComponents lj = lines.get(j);
-  //                 double hDist = li.horizontalDistance(lj, orientation);
-  //                 double vDist = li.verticalDistance(lj, orientation);
-  //                 if (minHorizontalDistance <= hDist && hDist <= maxHorizontalDistance
-  //                         && minVerticalDistance <= vDist && vDist <= maxVerticalDistance) {
-  //                     sets.union(li, lj);
-  //                 } else if (minVerticalDistance <= vDist && vDist <= maxVerticalDistance
-  //                         && Math.abs(hDist-Math.min(li.getLength(), lj.getLength())) < 0.1) {
-  //                     boolean componentOverlap = false;
-  //                     int overlappingCount = 0;
-  //                     for (Component ci : li.getComponents()) {
-  //                         for (Component cj : lj.getComponents()) {
-  //                             double dist = ci.overlappingDistance(cj, orientation);
-  //                             if (dist > 2) {
-  //                                 componentOverlap = true;
-  //                             }
-  //                             if (dist > 0) {
-  //                                 overlappingCount++;
-  //                             }
-  //                         }
-  //                     }
-  //                     if (!componentOverlap && overlappingCount <= 2) {
-  //                         sets.union(li, lj);
-  //                     }
-  //                 }
-  //             }
-  //         }
-  //         List[ConnectedComponents] outputZone = new ArrayList[ConnectedComponents]();
-  //         for (Set[ConnectedComponents] group : sets) {
-  //             List[Component] components = new ArrayList[Component]();
-  //             for (ConnectedComponents line : group) {
-  //                 components.addAll(line.getComponents());
-  //             }
-  //             Collections.sort(components, ComponentXComparator.getInstance());
-  //             outputZone.add(new ConnectedComponents(components, orientation));
-  //         }
-  //         return outputZone;
-  //     }
 
   /**
     * Converts list of zones from internal format (using components and

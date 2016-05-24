@@ -54,19 +54,25 @@ object Works extends App {
       setAction(conf, {(ac: AppConfig) =>
         extractCermineZones(ac)
       })
-    } text ("run Cermine zone extractor") // children()
+    } text ("run Cermine zone extractor")
 
     cmd("lseg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         lineseg(ac)
       })
-    } text ("run Cermine zone extractor") // children()
+    } text ("run line segmentation (for debugging)")
 
     cmd("cols") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         printColumns(ac)
       })
-    } text ("run Cermine zone extractor") // children()
+    } text ("run column detection (for debugging)")
+
+    cmd("paras") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        detectParagraphs(ac)
+      })
+    } text ("run paragraph detection")
   }
 
 
@@ -93,6 +99,61 @@ object Works extends App {
     toProcess
   }
 
+
+  def runProcessor(conf: AppConfig, artifactOutputName: String, process: (String) => Unit): Unit = {
+    getProcessList(conf).foreach { entry =>
+      println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
+      if (entry.hasArtifact(artifactOutputName)) {
+        if (conf.force){
+          entry.deleteArtifact(artifactOutputName)
+          process(artifactOutputName)
+        } else println(s"skipping existing ${entry}, use -x to force reprocessing")
+      } else process(artifactOutputName)
+    }
+  }
+
+
+  def detectParagraphs(conf: AppConfig): Unit = {
+    // import watrmarks.TB._
+    // import watrmarks._
+    import docseg._
+
+    val artifactOutputName = "paragraphs.txt"
+
+
+    getProcessList(conf).foreach { entry =>
+      println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
+      if (entry.hasArtifact(artifactOutputName)) {
+        if (conf.force){
+          entry.deleteArtifact(artifactOutputName)
+          process()
+        } else println(s"skipping existing ${entry}, use -x to force reprocessing")
+      } else process
+
+      def process(): Unit = {
+        val pdfArtifact = entry.getPdfArtifact()
+        entry.putArtifact(artifactOutputName,
+
+          pdfArtifact.asInputStream.map{ pdf =>
+
+            try {
+              DocstrumSegmenter.segmentPages(
+                CermineExtractor.extractChars(pdf)
+              )
+            } catch {
+              case t: Throwable =>
+                sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+            }
+          }. recover({
+            case t: Throwable =>
+              sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+          }).getOrElse { sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}") }
+        )
+      }
+
+
+    }
+  }
   def printColumns(conf: AppConfig): Unit = {
     // import watrmarks.TB._
     import watrmarks._
@@ -120,7 +181,7 @@ object Works extends App {
               val allPageLines = for {
                 pageId <- docstrum.pages.getPages
               } yield {
-                docstrum.determineLines_v2(pageId, docstrum.pages.getComponents(pageId))
+                docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
               }
 
               val accum = PageSegAccumulator(
@@ -133,7 +194,7 @@ object Works extends App {
                 pageId <- docstrum.pages.getPages
               } yield {
                 println(s"zoning page ${pageId}")
-                docstrum.determineZones_v2(pageId, accum2)
+                docstrum.determineZones(pageId, accum2)
               }
 
               val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
@@ -191,7 +252,7 @@ object Works extends App {
 
               val docstrum = new docseg.DocstrumSegmenter(zoneIndex)
 
-              val lines = docstrum.determineLines_v2(
+              val lines = docstrum.determineLines(
                 page,
                 zoneIndex.getComponents(page)
               )

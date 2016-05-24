@@ -34,7 +34,7 @@ class TextBlockTest extends DocsegTestUtil  {
       val allPageLines = for {
         pageId <- docstrum.pages.getPages
       } yield {
-        docstrum.determineLines_v2(pageId, docstrum.pages.getComponents(pageId))
+        docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
       }
 
       val accum = PageSegAccumulator(allPageLines, Seq())
@@ -42,7 +42,7 @@ class TextBlockTest extends DocsegTestUtil  {
       // get document-wide stats
       val accum2 = docstrum.getDocumentWideStats(accum)
 
-      val zones = docstrum.determineZones_v2(example.pageId, accum2)
+      val zones = docstrum.determineZones(example.pageId, accum2)
       val colText = for {
         col <- zones
       } {

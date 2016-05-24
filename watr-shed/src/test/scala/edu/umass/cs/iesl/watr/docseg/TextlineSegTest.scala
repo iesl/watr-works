@@ -133,7 +133,7 @@ class TextlineSegTest extends DocsegTestUtil  {
 
       val docstrum = new DocstrumSegmenter(zoneIndex)
 
-      val lines = docstrum.determineLines_v2(pageId, interestingChars)
+      val lines = docstrum.determineLines(pageId, interestingChars)
 
       println(s"got ${lines.length} lines")
       zoneIndex.pageGeometry(pageId).bounds.prettyPrint
