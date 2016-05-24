@@ -7,7 +7,6 @@ import scalaz.@@
 import watrmarks._
 import ext._
 
-
 case class TextblockExample(
   source: String,
   pageId: Int@@PageID
@@ -17,11 +16,12 @@ class TextBlockTest extends DocsegTestUtil  {
   // import Component._
   val testExamples = List(
     // TextblockExample("101016jactamat200401025.pdf", page(0)),
-    TextblockExample("101016jcarbon201301056.pdf", page(0))
+    // TextblockExample("101016jcarbon201301056.pdf", page(0)),
+      TextblockExample("101016japsusc201210126.pdf", page(0)) // page 0 col 1 is not detected
+                                                              //  ./corpus-test/101016jcarbpol201110004.pdf.d/ page 1 is totally wrong
   )
   it should "identify text blocks" in {
     testExamples.foreach{ example =>
-
       println(s"\n\ntesting ${example.source}")
       val pdfIns = papers.paper(example.source)
 
@@ -37,14 +37,18 @@ class TextBlockTest extends DocsegTestUtil  {
         docstrum.determineLines_v2(pageId, docstrum.pages.getComponents(pageId))
       }
 
-      val accum = PageSegAccumulator(
-        allPageLines,
-        Point(0, 0)
-      )
+      val accum = PageSegAccumulator(allPageLines, Seq())
+
       // get document-wide stats
       val accum2 = docstrum.getDocumentWideStats(accum)
 
-      docstrum.determineZones_v2(example.pageId, accum2)
+      val zones = docstrum.determineZones_v2(example.pageId, accum2)
+      val colText = for {
+        col <- zones
+      } {
+        println("Column")
+        println(col.map(_.tokenizeLine().toText).mkString("\n"))
+      }
 
     }
   }

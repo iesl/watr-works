@@ -7,10 +7,9 @@ package docseg
 import watrmarks._
 import ext._
 
-
 class TextlineSegTest extends DocsegTestUtil  {
   behavior of "text line identification"
-  import Component._
+  // import Component._
 
   //Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401009.pdf.d/101016jactamat200401009.pdf
   // orthorhombic, a _¼_ 0:76559, b _¼_ 0:64154, c _¼_ 0:42184     (l:313.63, t:272.94, w:239.10, h:9.96)
@@ -21,12 +20,20 @@ class TextlineSegTest extends DocsegTestUtil  {
   // 3 (or more) lower than other nanocrystalline                                                                                                                 (l:311.53, t:308.38, w:251.01, h:10.12)
   //  (should be one line, missing '~') "factor of ~3 (or more) lower than other nanocrystalline"
 
-
   // Seems to be picking up letters from below (or above) the desired textline
   // Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111015.pdf.d/101016jactamat201111015.pdf
   // D e p a r t m _T_ e n _h_ t _e_ o _M_ f M _a_ _t_ _e_ a _r_ t _i_ e _a_ r _l_ i _s_ a l _R_ s _e_ S _s_ _e_ c _a_ i e _r_ n _c_ c _h_ e _I_ a _n_ n _s_ d _t_ _i_ _t_ E _u_ _t_ n _e_ g _,_ i n _T_ e _h_ e _e_ r i _P_ n g _e_ , _n_ _n_ T _s_ h _y_ e _l_ _v   (l:89.46, t:227.77, w:406.59, h:17.95)
 
   val testExamples = List(
+    TextExample(
+      """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016japsusc201210126.pdf.d/101016japsusc201210126.pdf
+         |""".stripMargin,
+      """|be    (l:41.23, t:497.77, w:251.54, h:18.43)
+         |""".stripMargin,
+      """|Proton exchange membrane fuel cell (PEMFC) is considered to
+         |be the most attractive energy technology for the future due to
+         |""".stripMargin
+    ),
     TextExample(
       """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201112024.pdf.d/101016jactamat201112024.pdf
          |""".stripMargin,

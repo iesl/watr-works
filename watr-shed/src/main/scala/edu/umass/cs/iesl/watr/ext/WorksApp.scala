@@ -124,8 +124,7 @@ object Works extends App {
               }
 
               val accum = PageSegAccumulator(
-                allPageLines,
-                Point(0, 0)
+                allPageLines
               )
               // get document-wide stats
               val accum2 = docstrum.getDocumentWideStats(accum)

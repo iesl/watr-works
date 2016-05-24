@@ -238,12 +238,19 @@ case class ConnectedComponents(
 
   def determineNormalTextBounds: LTBounds = {
     val mfHeights = getMostFrequentValues(components.map(_.bounds.height), 0.1d)
+    val mfTops = getMostFrequentValues(components.map(_.bounds.top), 0.1d)
 
     val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
+    val mfTop = mfTops.headOption.map(_._1).getOrElse(0d)
 
     components
-      .filter(_.bounds.height.eqFuzzy(0.01d)(mfHeight))
-      .map(_.bounds)
+      .map({ c =>
+        val cb = c.bounds
+        LTBounds(
+          left=cb.left, top=mfTop,
+          width=cb.width, height=mfHeight
+        )
+      })
       .foldLeft(components.head.bounds)( { case (b1, b2) =>
         b1 union b2
       })
