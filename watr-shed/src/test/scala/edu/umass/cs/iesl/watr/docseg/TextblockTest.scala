@@ -12,15 +12,12 @@ case class TextblockExample(
   source: String,
   pageId: Int@@PageID
 )
-
 class TextBlockTest extends DocsegTestUtil  {
   behavior of "block identification and ordering"
   // import Component._
   val testExamples = List(
-    TextblockExample(
-      "101016jactamat200401025.pdf",
-      page(0)
-    )
+    // TextblockExample("101016jactamat200401025.pdf", page(0)),
+    TextblockExample("101016jcarbon201301056.pdf", page(0))
   )
   it should "identify text blocks" in {
     testExamples.foreach{ example =>
@@ -31,13 +28,6 @@ class TextBlockTest extends DocsegTestUtil  {
       val zoneIndex = ZoneIndexer.loadSpatialIndices(
         CermineExtractor.extractChars(pdfIns)
       )
-
-      // Assume these example regions are all from one page
-      // val pageId = example.pageId
-
-      // val pageGeometry = zoneIndex.pageGeometry(pageId)
-
-      // val interestingChars = zoneIndex.queryCharsIntersects(pageId, pageGeometry.bounds)
 
       val docstrum = new DocstrumSegmenter(zoneIndex)
 

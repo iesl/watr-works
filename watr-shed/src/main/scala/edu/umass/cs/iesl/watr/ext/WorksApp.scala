@@ -61,6 +61,12 @@ object Works extends App {
         lineseg(ac)
       })
     } text ("run Cermine zone extractor") // children()
+
+    cmd("cols") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        printColumns(ac)
+      })
+    } text ("run Cermine zone extractor") // children()
   }
 
 
@@ -86,6 +92,85 @@ object Works extends App {
     }
     toProcess
   }
+
+  def printColumns(conf: AppConfig): Unit = {
+    // import watrmarks.TB._
+    import watrmarks._
+    import docseg._
+
+    val artifactOutputName = "columns.txt"
+    getProcessList(conf).foreach { entry =>
+      def process(): Unit = {
+        val pdfArtifact = entry.getPdfArtifact()
+
+
+        entry.putArtifact(artifactOutputName,
+
+          pdfArtifact.asInputStream.map{ pdf =>
+
+            try {
+
+
+              val zoneIndex = ZoneIndexer.loadSpatialIndices(
+                CermineExtractor.extractChars(pdf)
+              )
+
+              val docstrum = new DocstrumSegmenter(zoneIndex)
+
+              val allPageLines = for {
+                pageId <- docstrum.pages.getPages
+              } yield {
+                docstrum.determineLines_v2(pageId, docstrum.pages.getComponents(pageId))
+              }
+
+              val accum = PageSegAccumulator(
+                allPageLines,
+                Point(0, 0)
+              )
+              // get document-wide stats
+              val accum2 = docstrum.getDocumentWideStats(accum)
+
+              val pageZones = for {
+                pageId <- docstrum.pages.getPages
+              } yield {
+                println(s"zoning page ${pageId}")
+                docstrum.determineZones_v2(pageId, accum2)
+              }
+
+              val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
+                zones.toList.map({ zone =>
+                  zone.map(_.tokenizeLine().toText).toList.mkString(s"Column\n", "\n", "\n")
+                }).mkString(s"Page $pagenum\n", "\n", "\n\n")
+              }.mkString(s"Document \n", "\n", "\n\n")
+
+              output
+            } catch {
+              case t: Throwable =>
+                sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+            }
+          }. recover({
+            case t: Throwable =>
+              sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+          }).getOrElse { sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}") }
+        )
+      }
+
+
+      println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
+      if (entry.hasArtifact(artifactOutputName)) {
+        if (conf.force){
+          entry.deleteArtifact(artifactOutputName)
+          process()
+        } else {
+          println(s"skipping existing ${entry}, use -x to force reprocessing")
+        }
+      } else {
+        process()
+      }
+    }
+  }
+
+
 
   def lineseg(conf: AppConfig): Unit = {
     import watrmarks.TB._

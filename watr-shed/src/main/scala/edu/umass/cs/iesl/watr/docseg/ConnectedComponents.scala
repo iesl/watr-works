@@ -45,10 +45,6 @@ object Component {
     dists :+ 0d
   }
 
-  def renderToString(cc: ConnectedComponents): String = {
-    ???
-  }
-
   def charInfosBox(cbs: Seq[CharBox]): Seq[TB.Box] = {
     import TB._
 
@@ -238,6 +234,21 @@ case class ConnectedComponents(
     })
 
   def height: Double  = bounds.height
+
+
+  def determineNormalTextBounds: LTBounds = {
+    val mfHeights = getMostFrequentValues(components.map(_.bounds.height), 0.1d)
+
+    val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
+
+    components
+      .filter(_.bounds.height.eqFuzzy(0.01d)(mfHeight))
+      .map(_.bounds)
+      .foldLeft(components.head.bounds)( { case (b1, b2) =>
+        b1 union b2
+      })
+  }
+
 
 
   // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)

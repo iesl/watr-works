@@ -20,6 +20,7 @@ case class PageSegAccumulator(
 
 trait DocstrumUtils {
 
+
   def approxSortYX(charBoxes: Seq[CharBox]): Seq[CharBox] = {
     charBoxes.sortBy({ c =>
       (c.bbox.top, c.bbox.left)
@@ -72,6 +73,15 @@ object DocstrumSegmenter extends DocstrumUtils {
 
   def histogram(values: Seq[Double], resolution: Double): Histogram = {
     Histogram.fromValues(values.toList.map(new java.lang.Double(_)), resolution)
+  }
+
+  def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
+    val hist = histogram(in, resolution)
+    hist.iterator.toSeq
+      .sortBy(_.getFrequency)
+      .reverse
+      .takeWhile(_.getFrequency > 0)
+      .map{b=>(b.getValue, b.getFrequency)}
   }
 
 }
@@ -536,20 +546,12 @@ class DocstrumSegmenter(
     )
   }
 
-  def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
-    val hist = histogram(in, resolution)
-    hist.iterator.toSeq
-      .sortBy(_.getFrequency)
-      .reverse
-      .takeWhile(_.getFrequency > 0)
-      .map{b=>(b.getValue, b.getFrequency)}
-  }
-
 
   def getDocumentWideStats(psegAccum: PageSegAccumulator): PageSegAccumulator = {
 
     val widths = for {
-      p <- psegAccum.pageLines; l <- p
+      p <- psegAccum.pageLines;
+      l <- p
     } yield l.bounds.width
 
     val mfWidths = getMostFrequentValues(widths, 0.5d)
@@ -559,7 +561,12 @@ class DocstrumSegmenter(
     val heights = for {
       p <- psegAccum.pageLines;
       l <- p if l.bounds.width.eqFuzzy(0.5d)(mfWidth._1)
-    } yield l.bounds.height
+    } yield l.determineNormalTextBounds.height
+
+    // val heights = for {
+    //   p <- psegAccum.pageLines;
+    //   l <- p if l.bounds.width.eqFuzzy(0.5d)(mfWidth._1)
+    // } yield l.bounds.height
 
     val mfHeights = getMostFrequentValues(heights, 0.1d)
     println(s"""common heights = ${mfHeights.take(5).mkString(", ")}""")
@@ -610,7 +617,7 @@ class DocstrumSegmenter(
   ): Seq[Seq[ConnectedComponents]] = {
     val lines: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
 
-    println(s"accum = ${psegAccum.mostCommonLineWidthHeight}")
+    println(s"accum = ${psegAccum.mostCommonLineWidthHeight.prettyPrint}")
 
     val pageBounds = charBasedPageBounds(pageId)
     val pageCenter = pageBounds.toCenterPoint
@@ -619,8 +626,19 @@ class DocstrumSegmenter(
 
     val pageCommonSizedLines = for {
       line <- lines
-      eqWidth = line.bounds.width.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.x)
-      eqHeight = line.bounds.height.eqFuzzy(0.1)(psegAccum.mostCommonLineWidthHeight.y)
+      eqWidth = line.bounds.width.eqFuzzy(0.5)(psegAccum.mostCommonLineWidthHeight.x)
+      eqHeight = line.determineNormalTextBounds.height.eqFuzzy(0.5)(psegAccum.mostCommonLineWidthHeight.y)
+      _ = println(s"    ew:${eqWidth} eh:${eqHeight} ${line.bounds.prettyPrint}/w ctr w:${line.bounds.width.pp} h:${line.bounds.height.pp}  > ${line.toText}")
+      _ = {
+        val ltext = line.toText
+        if (ltext.startsWith("adays.") || ltext.startsWith("Fe3O4") || ltext.startsWith("[5,6]")) {
+          val cstr = line.components.map{ c =>
+            s"${c.toText} h:${c.height}   ${c.bounds.prettyPrint}"
+          } mkString("\n  ", "\n  ", "\n")
+
+          println(cstr)
+        }
+      }
       if  eqWidth && eqHeight
     } yield line
 
@@ -632,43 +650,54 @@ class DocstrumSegmenter(
     println(s"""col centers= ${colCenters.mkString(", ")}""")
 
     val commonLinesInCols = for {
-      col <- colCenters
+      (col, cfreq) <- colCenters
+      _ = println(s"col @ x=${col.pp}")
     } yield for {
-      line <- pageCommonSizedLines
-      if line.bounds.toCenterPoint.x.eqFuzzy(0.5)(col._1)
+      line <- pageCommonSizedLines.sortBy(_.bounds.top)
+      _ = if (line.bounds.toCenterPoint.x.eqFuzzy(2.5)(col)) {
+        println(s"    line ${line.bounds.prettyPrint}/w ctr ${line.bounds.toCenterPoint.prettyPrint}  > ${line.toText}")
+      } else {
+        println(s"    ???  ${line.bounds.prettyPrint}/w ctr ${line.bounds.toCenterPoint.prettyPrint}  > ${line.toText}")
+      }
+      if line.bounds.toCenterPoint.x.eqFuzzy(0.5)(col)
     } yield {
       line
     }
 
+    println(s"common lines")
     // sort cols by y
-    val sortedCommonLinesInCols = commonLinesInCols.map(_.sortBy(_.bounds.top))
+    val sortedCommonLinesInCols = commonLinesInCols.map(
+      _.sortBy(_.bounds.top)
+    ).sortBy(_.headOption.map(_.bounds.left).getOrElse(0.d))
 
+    println(s"making text")
 
-    println("Columns")
-    for {
+    val colText = for {
       col <- sortedCommonLinesInCols
     } {
-      println("-------------Column\n")
-      val colText = col.map(_.tokenizeLine().toText).mkString("\n")
-      println(colText)
+      col.map(_.tokenizeLine().toText).mkString("\n")
     }
 
-    val commonVDists = for {
-      col <- sortedCommonLinesInCols
-      if col.length > 1
-      linepair <- col.sliding(2)
-    } yield {
-      linepair match {
-        case Seq(l1, l2) =>
-          l1.bounds.toCenterPoint.vdist(l2.bounds.toCenterPoint)
+    // val commonVDists = for {
+    //   col <- sortedCommonLinesInCols
+    //   if col.length > 1
+    //   linepair <- col.sliding(2)
+    // } yield {
+    //   linepair match {
+    //     case Seq(l1, l2) =>
+    //       l1.bounds.toCenterPoint.vdist(l2.bounds.toCenterPoint)
 
-        case _ =>
-          sys.error("should not reach here")
-      }
-    }
+    //     case _ =>
+    //       sys.error("should not reach here")
+    //   }
+    // }
 
-    val mostCommonVDist = commonVDists.max
+    // val mostCommonVDist = commonVDists.max
 
+
+
+    // return
+    sortedCommonLinesInCols
 
 
 
@@ -712,7 +741,6 @@ class DocstrumSegmenter(
 
 
 
-    ???
   }
 
   def determineZones(
