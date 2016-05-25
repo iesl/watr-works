@@ -3,90 +3,87 @@ package watrmarks
 
 
 trait DocSegLabels {
-  val Zone = Label("ds", "zone")
+  // val Zone = Label("ds", "zone")
+  val Page = Label("ds", "page")
+  val Column = Label("ds", "column")
+  val Block = Label("ds", "block")
+  val Para = Label("ds", "para")
   val Image = Label("ds", "image")
   val Table = Label("ds", "table")
   val Line = Label("ds", "line")
-  val Char = Label("ds", "char")
-}
-
-trait TokenLabels {
-
-  val Token = Label("tok", "token")
-  val Word = Label("tok", "word")
-  val Punct = Label("tok", "punct")
-  val Sup = Label("tok", "sup")
-  val Sub = Label("tok", "sub")
-
-  val allTokenLabels = List(
-    Word,
-    Punct,
-    Token
-  )
+  val TokenizedLine = Label("ds", "tline")
+  val Token = Label("ds", "token")
+  val Sup = Label("ds", "sup")
+  val Sub = Label("ds", "sub")
 }
 
 
-trait POSLabels extends TokenLabels {
 
-  val Verb = Label("pos", "verb")
-  val Noun = Label("pos", "noun")
+// trait POSLabels extends DocSegLabels {
 
-  val allPOSLabels = List(
-    Verb,
-    Noun,
-    Word,
-    Punct
-  )
+//   val Verb = Label("pos", "verb")
+//   val Noun = Label("pos", "noun")
 
-}
+//   val allPOSLabels = List(
+//     Verb,
+//     Noun,
+//     Word,
+//     Punct
+//   )
 
-trait NERLabels extends POSLabels {
-  val Person = Label("ner", "person")
-  val Place = Label("ner", "place")
+// }
 
-  val allNERLabels = List(
-    Person,
-    Place
-  )
+// trait NERLabels extends POSLabels {
+//   val Person = Label("ner", "person")
+//   val Place = Label("ner", "place")
 
-}
+//   val allNERLabels = List(
+//     Person,
+//     Place
+//   )
+
+// }
 
 
-trait PersonalNameLabels extends TokenLabels {
+// trait PersonalNameLabels extends TokenLabels {
 
-  val Name          = Label("name", "name")
-  val FirstName     = Label("name", "first")
-  val MiddleInitial = Label("name", "middle-i")
-  val Middle        = Label("name", "middle")
-  val LastName      = Label("name", "last")
-  val Letters       = Label("name", "letters")
+//   val Name          = Label("name", "name")
+//   val FirstName     = Label("name", "first")
+//   val MiddleInitial = Label("name", "middle-i")
+//   val Middle        = Label("name", "middle")
+//   val LastName      = Label("name", "last")
+//   val Letters       = Label("name", "letters")
 
-  val allPersonalNameLabels = List(
-    FirstName,
-    LastName
-  )
-}
+//   val allPersonalNameLabels = List(
+//     FirstName,
+//     LastName
+//   )
+// }
 
+
+// extends POSLabels
+// with NERLabels
+// with PersonalNameLabels {
 
 object StandardLabels
-    extends POSLabels
-    with NERLabels
-    with DocSegLabels
-    with PersonalNameLabels {
-
+    extends DocSegLabels {
 
   object CharLabel extends Label("", "char")
   object PageLabel extends Label("", "page")
 
 
 
-  val allStandardLabels = allPersonalNameLabels ++ allNERLabels ++ allPOSLabels ++ allTokenLabels ++ Seq(
-    CharLabel, PageLabel
-  )
+  // val allStandardLabels = allPersonalNameLabels ++ allNERLabels ++ allPOSLabels ++ allTokenLabels ++ Seq(
+  //   CharLabel, PageLabel
+  // )
+
+  // implicit val bioDict = BioDictionary(
+  //   allStandardLabels.map(l => (l.fqn -> l) ).toMap,
+  //   allStandardLabels.map(l => (l.key(0) -> l) ).toMap
+  // )
 
   implicit val bioDict = BioDictionary(
-    allStandardLabels.map(l => (l.fqn -> l) ).toMap,
-    allStandardLabels.map(l => (l.key(0) -> l) ).toMap
+    Map(), Map()
   )
 
 }

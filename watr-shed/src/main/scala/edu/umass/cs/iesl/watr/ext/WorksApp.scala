@@ -197,13 +197,14 @@ object Works extends App {
                 docstrum.determineZones(pageId, accum2)
               }
 
-              val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
-                zones.toList.map({ zone =>
-                  zone.map(_.tokenizeLine().toText).toList.mkString(s"Column\n", "\n", "\n")
-                }).mkString(s"Page $pagenum\n", "\n", "\n\n")
-              }.mkString(s"Document \n", "\n", "\n\n")
+              // val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
+              //   zones.toList.map({ zone =>
+              //     zone.map(_.tokenizeLine().toText).toList.mkString(s"Column\n", "\n", "\n")
+              //   }).mkString(s"Page $pagenum\n", "\n", "\n\n")
+              // }.mkString(s"Document \n", "\n", "\n\n")
 
-              output
+              // output
+              ""
             } catch {
               case t: Throwable =>
                 sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")

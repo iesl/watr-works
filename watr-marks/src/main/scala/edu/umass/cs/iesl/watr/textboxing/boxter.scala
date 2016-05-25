@@ -154,8 +154,15 @@ object TextBoxing extends ToListOps with ToIdOps {
 
   // @hsep sep a bs@ lays out @bs@ horizontally with alignment @a@,
   //   with @sep@ amount of space in between each.
-  def hsep: Int => Alignment => List[Box] => Box =
-    sep => a => bs => punctuateH(a)(emptyBox(0)(sep))(bs)
+  // def hsep: Int => Alignment => List[Box] => Box =
+  //   sep => a => bs => punctuateH(a)(emptyBox(0)(sep))(bs)
+  def hsep(bs: Seq[Box], sep: Int=1, align: Alignment=top): Box =
+    punctuateH(align)(emptyBox(0)(sep))(bs.toList)
+
+  def hsepb(bs: Seq[Box], sep: Box, align: Alignment=top): Box = {
+    punctuateH(align)(sep)(bs.toList)
+  }
+
 
 
   // Glue a list of boxes together vertically, with the given alignment.
@@ -167,16 +174,21 @@ object TextBoxing extends ToListOps with ToIdOps {
       Box(h, w, Col(bs map aligned))
     }
 
+  def vcat(bs: Seq[Box], align: Alignment=left): Box =
+    vcat(align)(bs.toList)
+
+  def hcat(bs: Seq[Box], align: Alignment = top): Box =
+    hcat(align)(bs.toList)
 
 
-  // @vsep sep a bs@ lays out @bs@ vertically with alignment @a@,
-  //   with @sep@ amount of space in between each.
-  def vsep: Int => Alignment => List[Box] => Box =
-    sep => a => bs => punctuateV(a)(emptyBox(sep)(0))(bs)
+  // vsep sep a bs lays out bs vertically with alignment a,
+  //   with sep amount of space in between each.
+  def vsep(bs: Seq[Box], sep: Int=1, align: Alignment=left): Box =
+     punctuateV(align)(emptyBox(sep)(0))(bs.toList)
 
 
-  // @punctuateH a p bs@ horizontally lays out the boxes @bs@ with a
-  //   copy of @p@ interspersed between each.
+  // punctuateH a p bs horizontally lays out the boxes bs with a
+  //   copy of p interspersed between each.
   def punctuateH: Alignment => Box => List[Box] => Box =
     a => p => bs => hcat(a)(bs intersperse p)
 
@@ -187,6 +199,13 @@ object TextBoxing extends ToListOps with ToIdOps {
 
   def vjoin(a:Alignment=left, sep:Box=nullBox)(bs:Box*): Box =
     vcat(a)(bs.toList intersperse sep)
+
+  def vjoinTrailSep(a:Alignment=left, sep:Box=nullBox)(bs:Box*): Box = {
+    val starts = bs.toList.slice(0, bs.length-1)
+    vcat(a)(
+      starts.map(_+sep) ++ bs.slice(bs.length-1, bs.length)
+    )
+  }
 
   def hjoin(a:Alignment=top, sep:Box=nullBox)(bs:Box*): Box =
     hcat(a)(bs.toList intersperse sep)
@@ -202,9 +221,9 @@ object TextBoxing extends ToListOps with ToIdOps {
   //  Alignment  -----------------------------------------------------------------
   //------------------------------------------------------------------------------
 
-  // @alignHoriz algn n bx@ creates a box of width @n@, with the
-  //   contents and height of @bx@, horizontally aligned according to
-  //   @algn@.
+  // alignHoriz algn n bx creates a box of width n, with the
+  //   contents and height of bx, horizontally aligned according to
+  //   algn.
   def alignHoriz: Alignment => Int => Box => Box =
     a => c => b => {
       Box(b.rows, c, SubBox(a, AlignFirst, b))
@@ -217,9 +236,9 @@ object TextBoxing extends ToListOps with ToIdOps {
       Box(r, (b.cols), SubBox(AlignFirst, a, b))
 
 
-  // @align ah av r c bx@ creates an @r@ x @c@ box with the contents
-  //   of @bx@, aligned horizontally according to @ah@ and vertically
-  //   according to @av@.
+  // align ah av r c bx creates an r x c box with the contents
+  //   of bx, aligned horizontally according to ah and vertically
+  //   according to av.
   def align : (Alignment, Alignment, Int, Int, Box) => Box =
     (ah, av, r, c, bx) => Box(r, c, SubBox(ah, av, bx))
 
@@ -428,32 +447,21 @@ object TextBoxing extends ToListOps with ToIdOps {
   }
 
 
-  //trait BoxChars {
-  //  def hline: Char
-  //  def vline: Char
-  //  def ulCorner: Char
-  //  def urCorner: Char
-  //  def llCorner: Char
-  //  def lrCorner: Char
-  //  def lbracket: Char
-  //  def rbracket: Char
-  //}
-
 
   //------------------------------------------------------------------------------
   //  Paragraph flowing  ---------------------------------------------------------
   //------------------------------------------------------------------------------
 
-  // @para algn w t@ is a box of width @w@, containing text @t@,
-  //   aligned according to @algn@, flowed to fit within the given
+  // para algn w t is a box of width w, containing text t,
+  //   aligned according to algn, flowed to fit within the given
   //   width.
   def para: Alignment => Int => String => Box =
     a => n => t =>
   flow(n)(t) |> (ss => mkParaBox(a, ss.length, ss))
 
 
-  // @columns w h t@ is a list of boxes, each of width @w@ and height
-  //   at most @h@, containing text @t@ flowed into as many columns as
+  // columns w h t is a list of boxes, each of width w and height
+  //   at most h, containing text t flowed into as many columns as
   //   necessary.
   def columns : (Alignment, Int, Int, String) => List[Box] =
     (a, w, h, t) =>  flow(w)(t) map (_.grouped(h).toList) map (mkParaBox(a, h, _))

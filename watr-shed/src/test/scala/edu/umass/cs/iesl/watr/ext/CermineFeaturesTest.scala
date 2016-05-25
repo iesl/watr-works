@@ -30,7 +30,7 @@ class CermineFeatureTest extends FlatSpec {
     })
 
     pageStream.foreach { pageIter =>
-      val zones = pageIter.getZones(LB.Zone)
+      val zones = pageIter.getZones(LB.Block)
       zones.foreach { zone =>
         val bboxes = zone.getBoundingBoxes.map(_.bbox.prettyPrint).mkString(", ")
         // println(s"zone = ${zone.getText}   bbox = ${bboxes}")

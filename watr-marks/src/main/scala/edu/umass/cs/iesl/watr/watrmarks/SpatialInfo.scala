@@ -155,6 +155,14 @@ object Bounds {
       val height = tb.height
       s"""(l:${fmt(left)}, t:${fmt(top)}, w:${fmt(width)}, h:${fmt(height)})"""
     }
+
+    def compactPrint: String = {
+      val left = tb.left
+      val top=  tb.top
+      val width = tb.width
+      val height = tb.height
+      s"""[${left.pp}, ${top.pp}, ${width.pp}, ${height.pp}]"""
+    }
   }
 
   implicit class RicherLBBounds(val tb: LBBounds) extends AnyVal {
@@ -222,6 +230,7 @@ case class TargetedBounds(
 sealed trait ZoneID
 sealed trait LabelID
 sealed trait RegionID
+sealed trait TokenID
 
 case class Zone(
   id: Int@@ZoneID,
@@ -542,6 +551,10 @@ trait SpatialJsonFormat {
   val ReadRegionID: Reads[Int@@RegionID]   = __.read[Int].map(i => Tag.of[RegionID](i))
   val WriteRegionID: Writes[Int@@RegionID] = Writes[Int@@RegionID] { i => JsNumber(RegionID.unwrap(i)) }
   implicit def FormatRegionID            = Format(ReadRegionID, WriteRegionID)
+
+  val ReadTokenID: Reads[Int@@TokenID]   = __.read[Int].map(i => Tag.of[TokenID](i))
+  val WriteTokenID: Writes[Int@@TokenID] = Writes[Int@@TokenID] { i => JsNumber(TokenID.unwrap(i)) }
+  implicit def FormatTokenID            = Format(ReadTokenID, WriteTokenID)
 
   val ReadCharID: Reads[Int@@CharID]   = __.read[Int].map(i => Tag.of[CharID](i))
   val WriteCharID: Writes[Int@@CharID] = Writes[Int@@CharID] { i => JsNumber(CharID.unwrap(i)) }

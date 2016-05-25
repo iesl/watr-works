@@ -9,8 +9,24 @@ import pl.edu.icm.cermine.tools.Histogram
 import scalaz._
 import Scalaz._
 
-
 import DocstrumSegmenter._
+
+
+case class CCRenderState(
+  numOfPages: Int,
+  startingPage: Int@@PageID = PageID(0),
+  idgen: IdGenerator[TokenID] = IdGenerator[TokenID],
+  tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@TokenID, LTBounds)] = mutable.ArrayBuffer()
+) {
+  private var currPage: Int@@PageID = startingPage
+
+  def currentPage: Int@@PageID = currPage
+
+  def advancePage(): Int@@PageID = {
+    currPage = PageID(PageID.unwrap(currPage)+1)
+    currentPage
+  }
+}
 
 object Component {
   def centerX(cb: CharBox) = cb.bbox.toCenterPoint.x
@@ -19,14 +35,19 @@ object Component {
   val LB = StandardLabels
 
   def apply(charBox: CharBox): ConnectedComponents = {
-    apply(Seq(CharComponent(charBox, 0d)), 0d)
+    new ConnectedComponents(
+      Seq(CharComponent(charBox, 0d)),
+      0.0d,
+      None
+    )
   }
 
-  def apply(components: Seq[Component], orientation: Double, labels: Label*): ConnectedComponents = {
+  // def apply(components: Seq[Component], orientation: Double, label: Label): ConnectedComponents = {
+  def apply(components: Seq[Component], label: Label): ConnectedComponents = {
     new ConnectedComponents(
       components,
-      orientation,
-      labels
+      0.0d,
+      Option(label)
     )
   }
 
@@ -71,13 +92,118 @@ object Component {
 
     spaceDists
   }
+
+
+
+
+  def renderConnectedComponents(_cc: Component)(implicit ostate: Option[CCRenderState]): Seq[TB.Box] = {
+    import TB._
+
+    // import LB._
+    _cc match {
+      case cc: ConnectedComponents =>
+        cc.blockRole.map{ _ match {
+          case LB.Line =>
+            renderConnectedComponents(cc.tokenizeLine())
+
+          case LB.Page =>
+            // should be a set of blocks
+            val vs = cc.components.flatMap({ c=>
+              renderConnectedComponents(c)
+            })
+            Seq(vcat(vs))
+
+          case LB.Column =>
+            Seq(
+              vcat(cc.components.flatMap({ c=>
+                renderConnectedComponents(c)
+              })))
+
+
+          case LB.TokenizedLine =>
+            // println(s"   ${cc.blockRole}")
+            ostate.map{ state =>
+              val currPage = state.currentPage
+
+              val vs = cc.components.map({ c=>
+                val tokenId = state.idgen.nextId
+                state.tokens.append((currPage, tokenId, c.bounds))
+                val trend = renderConnectedComponents(c)
+                val token = hcat(trend)
+                val quoted = "\"".box+token+"\""
+                (quoted,  tokenId.toString.box)
+              })
+
+              Seq(
+                "[[".box + hsepb(vs.map(_._1), ",") +"]" + ",     " + "[" + hsepb(vs.map(_._2), ",") +"]]"
+              )
+
+            } getOrElse {
+              val vs = cc.components.map({ c=>
+                val trend = renderConnectedComponents(c)
+                hcat(trend)
+              })
+
+              Seq(hsep(vs))
+            }
+
+
+          case LB.Token =>
+            // println(s"   ${cc.blockRole}")
+            val vs = cc.components.map({c =>
+              hcat(renderConnectedComponents(c))
+            })
+
+            vs
+
+          case LB.Sup   =>
+            // println(s"   ${cc.blockRole}")
+            val vs = cc.components.flatMap(c =>
+              renderConnectedComponents(c)
+            )
+
+            Seq("^{".box + hcat(vs) + "}")
+
+          case LB.Sub   =>
+            // println(s"   ${cc.blockRole}")
+            val vs = cc.components.flatMap(c =>
+              renderConnectedComponents(c)
+            )
+
+            Seq("_{".box + hcat(vs) + "}")
+
+          case LB.Block =>
+            // println(s"   ${cc.blockRole}")
+            val vs = cc.components.map(c =>
+              hcat(renderConnectedComponents(c))
+            )
+
+            Seq(vjoinTrailSep(left, ",")(vs:_*))
+
+          case LB.Para  => ???
+          case LB.Image => ???
+          case LB.Table => ???
+          case _ =>
+            // println(s"  ??? ${cc.blockRole}")
+            Seq()
+        }} getOrElse {
+          Seq()
+        }
+
+      case charcomp: CharComponent =>
+        Seq(charcomp.component.char)
+    }
+
+  }
 }
 
 import Component._
 
 
 sealed trait Component {
-  def toText: String
+  def chars: String
+
+  def toText(implicit idgen:Option[CCRenderState] = None): String
 
   def bounds: LTBounds
 
@@ -92,8 +218,8 @@ sealed trait Component {
     math.atan2(y1 - y0, x1 - x0);
   }
 
-   def getSlope(): Double = {
-     (y1 - y0) / (x1 - x0);
+  def getSlope(): Double = {
+    (y1 - y0) / (x1 - x0);
   }
 
   def getLength(): Double = {
@@ -152,46 +278,32 @@ case class CharComponent(
   val bounds = component.bbox
   def height: Double  = bounds.height
 
-  def toText: String = component.char
+  def toText(implicit idgen:Option[CCRenderState] = None): String = component.char
+  def chars: String = toText
   def withLabel(l: Label): Component = {
-    Component(Seq(this), orientation, l)
+    Component(Seq(this), l)
   }
 }
 
 case class ConnectedComponents(
-  val components: Seq[Component],
-  val orientation: Double,
-  val labels: Seq[Label] = Seq()
+  components: Seq[Component],
+  orientation: Double,
+  blockRole: Option[Label] = None
+  // label: Label = LB.Line
+  // labels: Seq[Label] = Seq()
 ) extends Component {
 
   def withLabel(l: Label): Component = {
-    this.copy(labels = labels :+ l)
+    this.copy(blockRole = Option(l))
   }
 
-  def toText = {
+  def chars:String = {
+    components.map(_.chars).mkString
+  }
 
-    def wrap(s: String): String = {
-      if (labels.contains(LB.Sup)) {
-        s"^${s}^"
-      } else if (labels.contains(LB.Sub)) {
-        s"_${s}_"
-      } else s
-    }
-
-    val text  = if (labels.contains(LB.Line)) {
-      // val headbbox = components.headOption.map({c => c.bounds.prettyPrint})
-      // val lastbbox = components.lastOption.map({c => c.bounds.prettyPrint})
-      components.map(_.toText).mkString("") //  + s"  ${headbbox} - ${lastbbox}"
-    } else if (labels.contains(LB.Word)) {
-      components.map(_.toText).mkString
-    } else if (labels.contains(LB.Zone)) {
-      components.map(_.toText).mkString("\n>","\n>", "\n")
-    } else {
-      components.map(_.toText).mkString("|")
-    }
-
-    wrap(text)
-
+  def toText(implicit idgen:Option[CCRenderState] = None): String ={
+    val ccs = renderConnectedComponents(this)
+    TB.hcat(ccs).toString()
   }
 
   override val (x0, y0, x1, y1) = if (components.length >= 2) {
@@ -326,7 +438,7 @@ case class ConnectedComponents(
       }).toList
 
     println(
-      hsep(1)(TB.top)(stats)
+      hsep(stats)
     )
   }
 
@@ -421,7 +533,7 @@ case class ConnectedComponents(
       })
 
     val asTokens = splitAtBreaks(wordBreaks, supSubs)
-      .map(Component(_, 0d, LB.Word))
+      .map(Component(_, LB.Token))
 
     // { import TB._
     //   println(
@@ -429,109 +541,109 @@ case class ConnectedComponents(
     //   )
     // }
 
-    Component(asTokens, 0d, LB.Line)
+    Component(asTokens,  LB.TokenizedLine)
   }
 
 
 
-  def convertToBxLine(): ConnectedComponents = {
+  // def convertToBxLine(): ConnectedComponents = {
 
-    val cpairs = components.sliding(2).toList
+  //   val cpairs = components.sliding(2).toList
 
-    val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.bounds.left - c1.bounds.right
-      case _  => 0d
-    })
+  //   val dists = cpairs.map({
+  //     case Seq(c1, c2)  => c2.bounds.left - c1.bounds.right
+  //     case _  => 0d
+  //   })
 
-    val resolution = 0.5d
+  //   val resolution = 0.5d
 
-    val histogram = Histogram.fromValues(dists.toList.map(new java.lang.Double(_)), resolution)
-
-
-    val top2Spacings = histogram.iterator.toList.sortBy(_.getFrequency).reverse.take(2)
-
-    val splitValue = top2Spacings match {
-      case sp1 :: sp2 :: Nil =>
-        // println(s"    top 2 = ${sp1.getValue}, ${sp2.getValue}")
-        (sp1.getValue+sp2.getValue) / 2
-      case sp1 :: Nil =>
-        // println(s"   top 1 = ${sp1.getValue}")
-        math.abs(sp1.getValue)+1.0d
-      case _ =>
-        // println(s"   top = ?")
-        0d
-    }
-    // println(s"   splitval = ${splitValue}")
-
-    // val histstr = histogram.iterator().map(x => s"""v=${x.getValue}, fr=${x.getFrequency}""").toList.mkString("\n  ","  \n  ", "\n")
-    // println(s"""|hist = ${histstr},
-    //             |  peak = ${histogram.getPeakValue}
-    //             |""".stripMargin)
+  //   val histogram = Histogram.fromValues(dists.toList.map(new java.lang.Double(_)), resolution)
 
 
-    val wordBreaks = mutable.ArrayBuffer[Int]()
+  //   val top2Spacings = histogram.iterator.toList.sortBy(_.getFrequency).reverse.take(2)
 
-    if(components.length < 2) {
-      Component(components, 0d)
-    } else {
-      cpairs.zipWithIndex
-        .foreach({ case(Seq(c1, c2), i)  =>
-          val dist = c2.bounds.left - c1.bounds.right
+  //   val splitValue = top2Spacings match {
+  //     case sp1 :: sp2 :: Nil =>
+  //       // println(s"    top 2 = ${sp1.getValue}, ${sp2.getValue}")
+  //       (sp1.getValue+sp2.getValue) / 2
+  //     case sp1 :: Nil =>
+  //       // println(s"   top 1 = ${sp1.getValue}")
+  //       math.abs(sp1.getValue)+1.0d
+  //     case _ =>
+  //       // println(s"   top = ?")
+  //       0d
+  //   }
+  //   // println(s"   splitval = ${splitValue}")
 
-          // println(s"""| ${c1.toText} - ${c2.toText}
-          //             |    ${c1.bounds.prettyPrint} - ${c2.bounds.prettyPrint}
-          //             |    c1-left: ${c1.bounds.left} c1-right: ${c1.bounds.right} c2-left: ${c2.bounds.left}
-          //             |    dist = ${c2.bounds.left} - ${c1.bounds.right} = ${c2.bounds.left - c1.bounds.right}
-          //             |    dist= ${dist.pp} wordSpace=${splitValue}""".stripMargin)
-          // println(s"""| ${c1.toText} - ${c2.toText}   ${c1.bounds.prettyPrint} - ${c2.bounds.prettyPrint}
-          //             |     dist=${dist.pp} ws=${splitValue}""".stripMargin)
-
-          if(dist > splitValue) {
-            wordBreaks.append(i)
-          }
-        })
+  //   // val histstr = histogram.iterator().map(x => s"""v=${x.getValue}, fr=${x.getFrequency}""").toList.mkString("\n  ","  \n  ", "\n")
+  //   // println(s"""|hist = ${histstr},
+  //   //             |  peak = ${histogram.getPeakValue}
+  //   //             |""".stripMargin)
 
 
+  //   val wordBreaks = mutable.ArrayBuffer[Int]()
 
-      val tokenized = splitAtBreaks(wordBreaks, components)
+  //   if(components.length < 2) {
+  //     Component(components)
+  //   } else {
+  //     cpairs.zipWithIndex
+  //       .foreach({ case(Seq(c1, c2), i)  =>
+  //         val dist = c2.bounds.left - c1.bounds.right
 
-      val tccs = tokenized.map({ ts =>
-        Component(ts, 0d, LB.Word)
-      })
+  //         // println(s"""| ${c1.toText} - ${c2.toText}
+  //         //             |    ${c1.bounds.prettyPrint} - ${c2.bounds.prettyPrint}
+  //         //             |    c1-left: ${c1.bounds.left} c1-right: ${c1.bounds.right} c2-left: ${c2.bounds.left}
+  //         //             |    dist = ${c2.bounds.left} - ${c1.bounds.right} = ${c2.bounds.left - c1.bounds.right}
+  //         //             |    dist= ${dist.pp} wordSpace=${splitValue}""".stripMargin)
+  //         // println(s"""| ${c1.toText} - ${c2.toText}   ${c1.bounds.prettyPrint} - ${c2.bounds.prettyPrint}
+  //         //             |     dist=${dist.pp} ws=${splitValue}""".stripMargin)
 
-      val lineComp = Component(tccs, 0d, LB.Line)
+  //         if(dist > splitValue) {
+  //           wordBreaks.append(i)
+  //         }
+  //       })
 
-      // val relWordbreaks = wordBreaks.sliding(2).map({
-      //   case Seq(i) => i
-      //   case Seq(i, j) => j-i
-      // })
 
-      // println(s"word breaks = ${wordBreaks.mkString(", ")}")
-      // println(s"relative word breaks = ${relWordbreaks.mkString(", ")}")
 
-      // val (ctail, words) = relWordbreaks
-      //   .foldLeft((components, List[ConnectedComponents]()))({
-      //     case ((remaining, words), breakIndex) =>
-      //       println(s"""|remaining: ${remaining.map(_.toText).mkString},
-      //                   |words: '${words.map(_.toText).mkString(" | ")}',
-      //                   |break: ${breakIndex}""".stripMargin)
+  //     val tokenized = splitAtBreaks(wordBreaks, components)
 
-      //       val (w0, r0) = remaining.splitAt(breakIndex+1)
-      //       val word = Component(w0, 0d)
+  //     val tccs = tokenized.map({ ts =>
+  //       Component(ts, 0d, LB.Word)
+  //     })
 
-      //       (r0, words :+ word)
-      //   })
+  //     val lineComp = Component(tccs, 0d, LB.Line)
 
-      // val lastWord = Component(ctail, 0d)
-      // val finalLine = words :+ lastWord
-      // val lineComp = Component(finalLine, 0d)
+  //     // val relWordbreaks = wordBreaks.sliding(2).map({
+  //     //   case Seq(i) => i
+  //     //   case Seq(i, j) => j-i
+  //     // })
 
-      // println(s"line = ${lineComp.toText}")
+  //     // println(s"word breaks = ${wordBreaks.mkString(", ")}")
+  //     // println(s"relative word breaks = ${relWordbreaks.mkString(", ")}")
 
-      lineComp
+  //     // val (ctail, words) = relWordbreaks
+  //     //   .foldLeft((components, List[ConnectedComponents]()))({
+  //     //     case ((remaining, words), breakIndex) =>
+  //     //       println(s"""|remaining: ${remaining.map(_.toText).mkString},
+  //     //                   |words: '${words.map(_.toText).mkString(" | ")}',
+  //     //                   |break: ${breakIndex}""".stripMargin)
 
-    }
-  }
+  //     //       val (w0, r0) = remaining.splitAt(breakIndex+1)
+  //     //       val word = Component(w0, 0d)
+
+  //     //       (r0, words :+ word)
+  //     //   })
+
+  //     // val lastWord = Component(ctail, 0d)
+  //     // val finalLine = words :+ lastWord
+  //     // val lineComp = Component(finalLine, 0d)
+
+  //     // println(s"line = ${lineComp.toText}")
+
+  //     lineComp
+
+  //   }
+  // }
 
 
 }

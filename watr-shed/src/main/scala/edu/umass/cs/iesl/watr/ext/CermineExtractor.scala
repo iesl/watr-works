@@ -132,7 +132,7 @@ object CermineExtractor extends SpatialJsonFormat {
         page.iterator.foreach { zone =>
 
           // Adding generic Zone label (output of Docstrum segmentation)
-          addZone(LB.Zone, pageNum, zone.getBounds.toLTBounds)
+          addZone(LB.Block, pageNum, zone.getBounds.toLTBounds)
           //  ... as well as adding Cermine's classification of the zone
           addZone(modifyZoneLabelName(zone.getLabel.name), pageNum, zone.getBounds.toLTBounds)
 

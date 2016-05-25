@@ -100,7 +100,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
 
 
         val lineChars = chars.sortBy(_.bbox.left)
-        val ccs = Component(lineChars.map(Component(_)), 0d, LB.Line)
+        val ccs = Component(lineChars.map(Component(_)), LB.Line)
 
         // val docstrum = new DocstrumSegmenter(zoneIndex)
         // val orientation = docstrum.computeOrientation(Seq(ccs))

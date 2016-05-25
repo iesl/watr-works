@@ -107,6 +107,7 @@ object DocstrumSegmenter extends DocstrumUtils {
     (docstrum, accum2)
   }
 
+  import TB._
   def segmentPages(pagedefs: List[(PageChars, PageGeometry)]): String = { // Seq[ConnectedComponents]
     val (docstrum, accum) = init(pagedefs)
 
@@ -117,14 +118,50 @@ object DocstrumSegmenter extends DocstrumUtils {
       docstrum.determineZones(pageId, accum)
     }
 
-    val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
-      zones.toList.map({ zone =>
-        zone.map(_.tokenizeLine().toText).toList.mkString(s"Column\n", "\n", "\n")
-      }).mkString(s"Page $pagenum\n", "\n", "\n\n")
-    }.mkString(s"Document \n", "\n", "\n\n")
+    implicit val initState = Option(CCRenderState(
+      numOfPages = pagedefs.length,
+      startingPage = PageID(0)
+    ))
 
-    output
+    val pageBoxes = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
+      val pageZones = zones.toList.map({ zone =>
+        vjoinTrailSep(sep=",")(Component.renderConnectedComponents(zone):_*)
+      })
 
+      initState.foreach(_.advancePage())
+
+      (s"""{"page": ${pagenum},""" %
+        """ "lines": [""" %
+        indent()(vsep(pageZones)) %
+        """]}""")
+    }
+
+    val tokenDict = initState.map { state =>
+      val tokLines = state.tokens
+        .map({case (pg, tok, bb) => s"[${tok},[${pg}, ${bb.compactPrint}]]".box })
+        .grouped(10)
+        .map(group => hjoin(sep=",")(group:_*))
+        .toList
+
+      indent()(vjoinTrailSep(left, ",")(tokLines:_*))
+    } getOrElse nullBox
+
+
+    val op = (
+        """{ "pages": [""" %
+                indent()(
+                  vjoinTrailSep(left, ",")(
+                    vjoinTrailSep(left, ",")(pageBoxes:_*)
+                  )) %
+             "], " %
+        """ "ids": [""" %
+                 indent()(tokenDict) %
+             "]" %
+        """}""" %|
+        ""
+    )
+
+    op.toString()
   }
 }
 
@@ -249,7 +286,7 @@ class DocstrumSegmenter(
     }
 
 
-    lines.map{ Component(_, docOrientation, LB.Line) }
+    lines.map{ Component(_, LB.Line) }
   }
 
 
@@ -387,7 +424,7 @@ class DocstrumSegmenter(
   def determineZones(
     pageId: Int@@PageID,
     psegAccum: PageSegAccumulator
-  ): Seq[Seq[ConnectedComponents]] = {
+  ): Seq[ConnectedComponents] = {
     val lines: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
 
     val pageBounds = charBasedPageBounds(pageId)
@@ -408,7 +445,13 @@ class DocstrumSegmenter(
       (col, linesWFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(col) }))
     }
 
-    val sortedCommonLines = commonLinesInCols.sortBy(_._1).map(_._2.sortBy(_.bounds.top))
+    val sortedCommonLines = commonLinesInCols.sortBy(_._1).map({
+      asdf =>
+
+      Component(
+        asdf._2.sortBy(_.bounds.top), LB.Block
+      )
+    })
 
     /// return:
     sortedCommonLines
@@ -469,59 +512,50 @@ class DocstrumSegmenter(
   }
 
 
-  /**
-    * Converts list of zones from internal format (using components and
-    * component lines) to BxModel.
-    *
-    * @param zones zones in internal format
-    * @param wordSpacing - maximum allowed distance between components that
-    * belong to one word
-    * @return BxModel page
-    */
-  def pageZonesToSortedZones(zones: Seq[Seq[ConnectedComponents]]): Seq[ConnectedComponents] = {
-    // BxPage page = new BxPage();
-    // List[BxPage] pages = Lists.newArrayList(origPage.getParent());
-    // int pageIndex = pages.indexOf(origPage);
-    // boolean groupped = false;
-    // if (zones.size() > MAX_ZONES_PER_PAGE && pageIndex >= PAGE_MARGIN
-    //         && pageIndex < pages.size() - PAGE_MARGIN) {
-    //     val oneZone:List[ConnectedComponents]  = List[ConnectedComponents]();
-    //     for (List[ConnectedComponents] zone : zones) {
-    //         oneZone.addAll(zone);
-    //     }
-    //     zones = new ArrayList[List[ConnectedComponents]]();
-    //     zones.add(oneZone);
-    //     groupped = true;
-    // }
-    val page = for (lines <- zones) yield {
-      val zLines = mutable.ArrayBuffer[ConnectedComponents]()
-      // if (groupped) {
-      //     zone.setLabel(BxZoneLabel.GEN_OTHER);
-      // }
-      for (line <- lines) {
-        zLines.append(line.convertToBxLine());
-      }
+  // def pageZonesToSortedZones(zones: Seq[Seq[ConnectedComponents]]): Seq[ConnectedComponents] = {
+  //   // BxPage page = new BxPage();
+  //   // List[BxPage] pages = Lists.newArrayList(origPage.getParent());
+  //   // int pageIndex = pages.indexOf(origPage);
+  //   // boolean groupped = false;
+  //   // if (zones.size() > MAX_ZONES_PER_PAGE && pageIndex >= PAGE_MARGIN
+  //   //         && pageIndex < pages.size() - PAGE_MARGIN) {
+  //   //     val oneZone:List[ConnectedComponents]  = List[ConnectedComponents]();
+  //   //     for (List[ConnectedComponents] zone : zones) {
+  //   //         oneZone.addAll(zone);
+  //   //     }
+  //   //     zones = new ArrayList[List[ConnectedComponents]]();
+  //   //     zones.add(oneZone);
+  //   //     groupped = true;
+  //   // }
+  //   val page = for (lines <- zones) yield {
+  //     val zLines = mutable.ArrayBuffer[ConnectedComponents]()
+  //     // if (groupped) {
+  //     //     zone.setLabel(BxZoneLabel.GEN_OTHER);
+  //     // }
+  //     for (line <- lines) {
+  //       zLines.append(line.convertToBxLine());
+  //     }
 
-      val zSorted = zLines.sortWith({ case (cc1, cc2) =>
-        cc1.bounds.top < cc2.bounds.top
-      })
+  //     val zSorted = zLines.sortWith({ case (cc1, cc2) =>
+  //       cc1.bounds.top < cc2.bounds.top
+  //     })
 
 
-      // zone.setLines(zLines);
-      // BxBoundsBuilder.setBounds(zone);
-      // page.addZone(zone);
-      zSorted.toSeq
-    }
+  //     // zone.setLines(zLines);
+  //     // BxBoundsBuilder.setBounds(zone);
+  //     // page.addZone(zone);
+  //     zSorted.toSeq
+  //   }
 
-    val pccs = page.map({case ccs => Component(ccs, 0d, LB.Zone) })
+  //   val pccs = page.map({case ccs => Component(ccs, 0d, LB.Zone) })
 
-    val sortedZones = sortZonesYX(pccs)
+  //   val sortedZones = sortZonesYX(pccs)
 
-    sortedZones.foreach { cc => println(s"zone ${cc.toText}") }
-    sortedZones
-    // BxBoundsBuilder.setBounds(page);
-    // return page;
-  }
+  //   sortedZones.foreach { cc => println(s"zone ${cc.toText}") }
+  //   sortedZones
+  //   // BxBoundsBuilder.setBounds(page);
+  //   // return page;
+  // }
 
 
   def sortZonesYX(zones: Seq[ConnectedComponents]): Seq[ConnectedComponents]= {

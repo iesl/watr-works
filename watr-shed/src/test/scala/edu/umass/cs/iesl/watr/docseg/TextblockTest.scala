@@ -42,12 +42,20 @@ class TextBlockTest extends DocsegTestUtil  {
       // get document-wide stats
       val accum2 = docstrum.getDocumentWideStats(accum)
 
+      implicit val initState = Option(CCRenderState(
+        docstrum.pages.getPages.length,
+        example.pageId
+      ))
+
+
       val zones = docstrum.determineZones(example.pageId, accum2)
       val colText = for {
         col <- zones
       } {
         println("Column")
-        println(col.map(_.tokenizeLine().toText).mkString("\n"))
+        println(
+          Component.renderConnectedComponents(col)
+        )
       }
 
     }
