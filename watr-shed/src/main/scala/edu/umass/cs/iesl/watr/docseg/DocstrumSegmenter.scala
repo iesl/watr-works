@@ -7,6 +7,7 @@ import scalaz.@@
 import pl.edu.icm.cermine.tools.Histogram
 import pl.edu.icm.cermine.tools.DisjointSets
 import Bounds._
+import Component._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
@@ -14,7 +15,8 @@ import scala.collection.mutable
 case class LineDimensionBins(
   page: Int@@PageID,
   // Seq[(width, widthFrequency), Seq[lines w/width]]
-  widthBin: Seq[((Double, Double), Seq[ConnectedComponents])]
+  widthBin: Seq[((Double, Double), Seq[ConnectedComponents])],
+  unBinned: Seq[ConnectedComponents]
 )
 
 case class PageSegAccumulator(
@@ -114,7 +116,7 @@ object DocstrumSegmenter extends DocstrumUtils {
     val pageZones = for {
       pageId <- docstrum.pages.getPages
     } yield {
-      println(s"zoning page ${pageId}")
+      println(s"segmenting page ${pageId}")
       docstrum.determineZones(pageId, accum)
     }
 
@@ -125,7 +127,7 @@ object DocstrumSegmenter extends DocstrumUtils {
 
     val pageBoxes = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
       val pageZones = zones.toList.map({ zone =>
-        vjoinTrailSep(sep=",")(Component.renderConnectedComponents(zone):_*)
+        vjoinTrailSep(sep=",")(renderConnectedComponents(zone):_*)
       })
 
       initState.foreach(_.advancePage())
@@ -330,6 +332,12 @@ class DocstrumSegmenter(
     lineWidthMatches(line, hw.x) && lineHeightMatches(line, hw.y)
   }
 
+  def debugFormatLine(cc: ConnectedComponents): String = {
+    import TB._
+    val line = renderConnectedComponents(cc.tokenizeLine())
+    s"${cc.bounds.prettyPrint}, r:${cc.bounds.right.pp} b:${cc.bounds.bottom} ${cc.bounds.prettyPrint} > ${hsep(line)}"
+  }
+
   def printPageLineBins(bin: LineDimensionBins, indent: Int=0): Unit = {
     bin.widthBin.foreach{ case (width, lines) =>
       println(" "*indent + s"Lines within width ${width}")
@@ -353,62 +361,31 @@ class DocstrumSegmenter(
       l <- p
     } yield l.bounds.width
 
-    val topNWidths = getMostFrequentValues(allDocumentWidths, 0.2d).toList.take(7)
+    val topWidths = getMostFrequentValues(allDocumentWidths, 0.2d).toList
+    val topNWidths = topWidths.take(7)
     // Common width meaning from largest->smallest:
     //    left/right justified line width
     //    paragraph-starting indented line width
     //    reference width(s), for hanging-indent first line, remaining lines
     //    other l/r justified blocks (abstract, e.g)
 
-    // limit common width to those > pageBounds/3 and freq>???
     println(s"""common widths = ${topNWidths.mkString(", ")}""")
-    // val mfWidth = topNWidths.head
-
 
     // bin each page by line widths
     val commonLineBins = for {
       (plines, pagenum) <- psegAccum.pageLines.zipWithIndex
     } yield {
-      LineDimensionBins(
-        PageID(pagenum),
-        topNWidths.map{ case (width, wfreq) =>
-          //
-          // plines.filterNot(lineWidthMatches(_, width))
-          //   .sortBy(_.bounds.top)
-          //   .foreach({ line =>
-          //     if (pagenum < 2) {
-          //       // line.determineNormalTextBounds.width.eqFuzzy(0.5d)(width)
-          //       val ntbs = line.determineNormalTextBounds
-          //       val nwidth = ntbs.width
-          //       val dist = math.abs(nwidth - width)
-          //       val withinRangs = dist < 0.5
-          //       println(s"""| ${pagenum} > ${line.tokenizeLine().toText}
-          //                   |     bounds: ${line.bounds.prettyPrint} normal-bounds: ${ntbs.prettyPrint}
-          //                   |     bin-width: ${width}  norm-width: ${ntbs.width} dist: ${dist}
-          //                   |""".stripMargin)
-          //       if (line.toText.startsWith("Proton")) {
-          //         line.components.foreach { c =>
-          //           println(s"        ${c.toText} ${c.bounds.prettyPrint}")
-          //         }
-          //         val mfHeights = getMostFrequentValues(line.components.map(_.bounds.height), 0.1d)
-          //         println(s"""        most-freq heights: ${mfHeights.mkString("\n          ")}""")
 
-          //         // val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
+      val remainingLines = mutable.ListBuffer[ConnectedComponents](plines:_*)
+      val widthBins = mutable.ArrayBuffer[((Double, Double), Seq[ConnectedComponents])]()
 
-          //         // components
-          //         //   .filter(_.bounds.height.eqFuzzy(0.01d)(mfHeight))
-          //         //   .map(_.bounds)
-          //         //   .foldLeft(components.head.bounds)( { case (b1, b2) =>
-          //         //     b1 union b2
-          //         //   })
+      topNWidths.foreach{ case (width, wfreq) =>
+        val mws = remainingLines.filter(lineWidthMatches(_, width))
+        widthBins.append(((width -> wfreq), mws))
+        remainingLines --= mws
+      }
 
-          //       }
-          //     }
-          //   })
-
-          ((width, wfreq), plines.filter(lineWidthMatches(_, width)))
-        }
-      )
+      LineDimensionBins(PageID(pagenum), widthBins, remainingLines)
     }
     // printCommonLineBins(commonLineBins)
 
@@ -425,12 +402,12 @@ class DocstrumSegmenter(
     pageId: Int@@PageID,
     psegAccum: PageSegAccumulator
   ): Seq[ConnectedComponents] = {
-    val lines: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
+    val pageLines: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
 
     val pageBounds = charBasedPageBounds(pageId)
     val pageCenter = pageBounds.toCenterPoint
 
-    println(s"page center ${pageCenter.prettyPrint}")
+    // println(s"page center ${pageCenter.prettyPrint}")
 
     val lineBins = psegAccum.lineDimensionBins.find(_.page == pageId).get
 
@@ -440,38 +417,116 @@ class DocstrumSegmenter(
     val colCenters = getMostFrequentValues(linesWFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
 
     val commonLinesInCols = for {
-      (col, cfreq) <- colCenters
+      (colX, cfreq) <- colCenters
     } yield {
-      (col, linesWFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(col) }))
+      (colX, linesWFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) }))
     }
 
-    val sortedCommonLines = commonLinesInCols.sortBy(_._1).map({
-      asdf =>
+    val sortedCommonLines = commonLinesInCols
+      .sortBy(_._1)
+      .map({ case (colX, colLines) =>
+        // look up/down within confines of this column:
 
-      Component(
-        asdf._2.sortBy(_.bounds.top), LB.Block
-      )
-    })
+        val ySortedLines = colLines.sortBy(_.bounds.top)
+        val topLine = ySortedLines.head
+        val bottomLine = ySortedLines.last
+
+        // val candidateLines = lineBins.unBinned.filter({cc =>
+        val possibleCand = pageLines.diff(ySortedLines)
+
+        val candidateLines = possibleCand.filter({cc =>
+          val tlx = topLine.bounds.xProjection
+          val ccx = cc.bounds.xProjection
+          val topLineOverlaps = tlx.p1.x-0.1 <= ccx.p1.x && ccx.p2.x <= tlx.p2.x+0.1
+
+          // val fmt=debugFormatLine(cc)
+          // println(s"""| checking for candidates
+          //             |  ${fmt}
+          //             |   top: ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
+          //             |   bottom: ${bottomLine.bounds.prettyPrint} / r: ${bottomLine.bounds.right}
+          //             |
+          //             |""".stripMargin)
+
+          // if (fmt.endsWith("electrode assembly.")) {
+          //   val tlfmt=debugFormatLine(topLine)
+          //   println(s"""| comparing candidates
+          //               |    top: ${tlfmt}
+          //               |        ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
+          //               |    ${fmt}
+          //               |       top: ${cc.bounds.prettyPrint} / r: ${cc.bounds.right}
+          //               |       bottom: ${cc.bounds.prettyPrint} / r: ${cc.bounds.right}
+          //               |""".stripMargin)
+
+          //   debugLineComponentStats(topLine)
+          //   println(s"candidate line ccs")
+          //   debugLineComponentStats(cc)
+          // }
+
+          topLineOverlaps
+        }).sortBy(_.bounds.top)
+
+
+        val candidateLinesAbove = candidateLines.filter({cc =>
+          cc.bounds.top < topLine.bounds.top
+        })
+
+        val candidateLinesBelow = candidateLines.filter({cc =>
+          cc.bounds.top > bottomLine.bounds.top
+        })
+
+        val candidateLinesWithin = candidateLines.filter({cc =>
+          // val fmt=debugFormatLine(cc)
+          // println(s"""| checking for within ${fmt}
+          //             | top: ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
+          //             | bottom: ${bottomLine.bounds.prettyPrint} / r: ${bottomLine.bounds.right}
+          //             |""".stripMargin)
+          topLine.bounds.top < cc.bounds.top && cc.bounds.top < bottomLine.bounds.top
+        })
+
+        val debugAboveLines = candidateLinesAbove.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+        val debugWithin = candidateLinesWithin.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+        val debugMiddle = ySortedLines.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+        val debugBelowLines = candidateLinesBelow.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+
+        println(s"Candidates Above\n${debugAboveLines}\n")
+        // println(s"Candidates Within\n${debugWithin}\n")
+        // println(s"\n\n${debugMiddle}\n\n")
+        // println(s"Candidates below\n${debugBelowLines}\n")
+
+
+        // find common v-dist within block, grab lines from above/below within that distance
+
+        val vDists = ySortedLines.sliding(2).map({
+          case Seq(c1, c2) => c1.bounds.toCenterPoint.vdist(c2.bounds.toCenterPoint)
+          case Seq(c1) => 0d
+        })
+
+        val topVDists = getMostFrequentValues(vDists.toList, 0.5d).toList
+        println(s"""top v-dists ${topVDists.mkString(", ")}""")
+
+        // pad out the distance slightly
+        val topVDist = topVDists.head._1 + 0.1d
+
+        val hitsAbove = candidateLinesAbove.filter({cabove =>
+          val vdist = topLine.bounds.toCenterPoint.vdist(cabove.bounds.toCenterPoint)
+          println(s"checking vdist=${vdist.pp} for ${cabove.toText}")
+          vdist <= topVDist
+        })
+
+        val hitsBelow = candidateLinesBelow.filter({cbelow =>
+          val vdist = bottomLine.bounds.toCenterPoint.vdist(cbelow.bounds.toCenterPoint)
+          vdist <= topVDist
+        })
+
+        val totalLine =  hitsAbove ++ ySortedLines ++ candidateLinesWithin ++ hitsBelow
+        val totalLineSorted = totalLine.sortBy(_.bounds.top)
+
+        Component(totalLineSorted, LB.Block)
+      })
 
     /// return:
     sortedCommonLines
 
-
-    // val commonVDists = for {
-    //   col <- sortedCommonLinesInCols
-    //   if col.length > 1
-    //   linepair <- col.sliding(2)
-    // } yield {
-    //   linepair match {
-    //     case Seq(l1, l2) =>
-    //       l1.bounds.toCenterPoint.vdist(l2.bounds.toCenterPoint)
-
-    //     case _ =>
-    //       sys.error("should not reach here")
-    //   }
-    // }
-
-    // val mostCommonVDist = commonVDists.max
 
 
     // column detection
@@ -772,3 +827,44 @@ class DocstrumSegmenter(
   // }
 
 }
+
+
+
+
+      // LineDimensionBins(
+      //   PageID(pagenum),
+      //   topNWidths.map{ case (width, wfreq) =>
+      //     //
+      //     // plines.filterNot(lineWidthMatches(_, width))
+      //     //   .sortBy(_.bounds.top)
+      //     //   .foreach({ line =>
+      //     //     if (pagenum < 2) {
+      //     //       // line.determineNormalTextBounds.width.eqFuzzy(0.5d)(width)
+      //     //       val ntbs = line.determineNormalTextBounds
+      //     //       val nwidth = ntbs.width
+      //     //       val dist = math.abs(nwidth - width)
+      //     //       val withinRangs = dist < 0.5
+      //     //       println(s"""| ${pagenum} > ${line.tokenizeLine().toText}
+      //     //                   |     bounds: ${line.bounds.prettyPrint} normal-bounds: ${ntbs.prettyPrint}
+      //     //                   |     bin-width: ${width}  norm-width: ${ntbs.width} dist: ${dist}
+      //     //                   |""".stripMargin)
+      //     //       if (line.toText.startsWith("Proton")) {
+      //     //         line.components.foreach { c =>
+      //     //           println(s"        ${c.toText} ${c.bounds.prettyPrint}")
+      //     //         }
+      //     //         val mfHeights = getMostFrequentValues(line.components.map(_.bounds.height), 0.1d)
+      //     //         println(s"""        most-freq heights: ${mfHeights.mkString("\n          ")}""")
+
+      //     //         // val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
+
+      //     //         // components
+      //     //         //   .filter(_.bounds.height.eqFuzzy(0.01d)(mfHeight))
+      //     //         //   .map(_.bounds)
+      //     //         //   .foldLeft(components.head.bounds)( { case (b1, b2) =>
+      //     //         //     b1 union b2
+      //     //         //   })
+
+      //     //       }
+      //     //     }
+      //     //   })
+      //     ((width, wfreq), plines.filter(lineWidthMatches(_, width)))

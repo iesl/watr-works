@@ -5,9 +5,10 @@ import watrmarks._
 import Bounds._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import pl.edu.icm.cermine.tools.Histogram
+// import pl.edu.icm.cermine.tools.Histogram
 import scalaz._
 import Scalaz._
+
 
 import DocstrumSegmenter._
 
@@ -39,6 +40,12 @@ object Component {
       Seq(CharComponent(charBox, 0d)),
       0.0d,
       None
+    )
+  }
+  def apply(components: Seq[Component]): ConnectedComponents = {
+    new ConnectedComponents(
+      components,
+      0.0d
     )
   }
 
@@ -96,10 +103,9 @@ object Component {
 
 
 
-  def renderConnectedComponents(_cc: Component)(implicit ostate: Option[CCRenderState]): Seq[TB.Box] = {
+  def renderConnectedComponents(_cc: Component)(implicit ostate: Option[CCRenderState] = None): Seq[TB.Box] = {
     import TB._
 
-    // import LB._
     _cc match {
       case cc: ConnectedComponents =>
         cc.blockRole.map{ _ match {
@@ -183,16 +189,48 @@ object Component {
           case LB.Para  => ???
           case LB.Image => ???
           case LB.Table => ???
-          case _ =>
-            // println(s"  ??? ${cc.blockRole}")
-            Seq()
+          case x =>
+            println(s"  ??? ${cc.blockRole}")
+            val vs = cc.components.flatMap(c =>
+              renderConnectedComponents(c)
+            )
+
+            Seq(hcat(vs))
         }} getOrElse {
-          Seq()
+          val vs = cc.components.flatMap(c =>
+            renderConnectedComponents(c)
+          )
+
+          Seq(hcat(vs))
         }
 
       case charcomp: CharComponent =>
-        Seq(charcomp.component.char)
+        Seq(charcomp.component.char.box)
     }
+
+  }
+
+  def debugLineComponentStats(linecc: ConnectedComponents): Unit = {
+    // linecc.components.foreach{_ match {
+    //   case cc: ConnectedComponents =>
+    //     println(s"""    cc: ${cc.toText} ${cc.bounds.prettyPrint} cc.right: ${cc.bounds.right}""")
+
+    //   case cc: CharComponent =>
+    //     println(s"""    c:  ${cc.toText} ${cc.bounds.prettyPrint} cc.right: ${cc.bounds.right}""")
+
+    // }}
+    val firstCC = linecc.components.head
+    linecc.components.sliding(2).foreach{_ match {
+      case Seq(c1, c2) =>
+        val totalBBox = firstCC.bounds.union(c2.bounds)
+        println(s"""| ${c1.toText} - ${c2.toText}
+                    |    ${c1.bounds.prettyPrint} - ${c2.bounds.prettyPrint}
+                    |    c1.left: ${c1.bounds.left} c1.right: ${c1.bounds.right} c2.left: ${c2.bounds.left}
+                    |    dist = ${c2.bounds.left} - ${c1.bounds.right} = ${c2.bounds.left - c1.bounds.right}
+                    |    totalBBox = ${totalBBox.prettyPrint}, bb.right:${totalBBox.right.pp}
+                    |""".stripMargin)
+      case Seq(c1) =>
+    }}
 
   }
 }
@@ -260,13 +298,16 @@ sealed trait Component {
 
 
   def withLabel(l: Label): Component
+  def removeLabel(): Component
+  def label: Option[Label]
 
 }
 
 
 case class CharComponent(
-  val component: CharBox,
-  val orientation: Double
+  component: CharBox,
+  orientation: Double,
+  blockRole: Option[Label] = None
 ) extends Component {
   val dx = component.bbox.width / 3
   val dy = dx * math.tan(orientation);
@@ -280,8 +321,13 @@ case class CharComponent(
 
   def toText(implicit idgen:Option[CCRenderState] = None): String = component.char
   def chars: String = toText
+
+  val label: Option[Label] = blockRole
   def withLabel(l: Label): Component = {
-    Component(Seq(this), l)
+    this.copy(blockRole = Option(l))
+  }
+  def removeLabel(): Component = {
+    this.copy(blockRole = None)
   }
 }
 
@@ -293,8 +339,12 @@ case class ConnectedComponents(
   // labels: Seq[Label] = Seq()
 ) extends Component {
 
+  val label: Option[Label] = blockRole
   def withLabel(l: Label): Component = {
     this.copy(blockRole = Option(l))
+  }
+  def removeLabel(): Component = {
+    this.copy(blockRole = None)
   }
 
   def chars:String = {
@@ -391,25 +441,17 @@ case class ConnectedComponents(
   }
 
   def findCommonToplines(): Seq[Double] = {
-    val baselines = components.map({c => c.bounds.top})
-    val histogram = Histogram.fromValues(baselines.toList.map(new java.lang.Double(_)), 0.2)
-
-    histogram.iterator.toList
-      .sortBy(_.getFrequency)
-      // .dropWhile(_.getFrequency==0)
-      .map(_.getValue)
-      .reverse
+    getMostFrequentValues(
+      components.map({c => c.bounds.top}),
+      0.001d
+    ).toList.map(_._1)
   }
 
   def findCommonBaselines(): Seq[Double] = {
-    val baselines = components.map({c => c.bounds.bottom})
-    val histogram = Histogram.fromValues(baselines.toList.map(new java.lang.Double(_)), 0.2)
-
-    histogram.iterator.toList
-      .sortBy(_.getFrequency)
-      // .dropWhile(_.getFrequency==0)
-      .map(_.getValue)
-      .reverse
+    getMostFrequentValues(
+      components.map({c => c.bounds.bottom}),
+      0.001d
+    ).toList.map(_._1)
   }
 
   def splitAtBreaks(bis: Seq[Int], cs: Seq[Component]): Seq[Seq[Component]] = {
@@ -442,40 +484,94 @@ case class ConnectedComponents(
     )
   }
 
+  def angleBasedSuperSubFinding(): Unit = {
+
+    // start w/first modal-top char, search forward, then back
+    // val supOrSubs = mutable.ArrayBuffer[Int]()
+    // components
+    //   .sliding(2).toList
+    //   .zipWithIndex
+    //   .foreach({
+    //     case (Seq(c1), i)  =>
+
+    //     case (Seq(c1, c2), i)  =>
+    //       val c1west = c1.bounds.toWesternPoint
+    //       val c2east = c2.bounds.toEasternPoint
+    //       val c1c2Angle = c1west.angleTo(c2east)
+    //       val c1IsAboveC2 = c1c2Angle > 0
+    //       if (c1.bounds.top.eqFuzzy(0.01)(modalTop)) {
+    //       }
+    //       if (c.bounds.top > modalTop) {
+    //         c.withLabel(LB.Sub)
+    //       } else if (c.bounds.bottom < modalBottom) {
+    //         c.withLabel(LB.Sup)
+    //       } else {
+    //         c
+    //       }
+    //   })
+
+  }
+
   def tokenizeLine(): ConnectedComponents = {
     // println("tokenizeLine")
     val tops = findCommonToplines()
     val bottoms = findCommonBaselines()
-    val modalTop = tops.head
-    val modalBottom = bottoms.head
+    val modalTop = tops.head // - 0.01d
+    val modalBottom = bottoms.head // + 0.01d
 
-    // find the center y-val (avg for all chars)
-    val centerY = findCenterY()
+    val modalCenterY = (modalBottom + modalTop)/2
+    val meanCenterY = findCenterY()
+
+    // try using angles for super/subs
 
     val searchLog = mutable.ArrayBuffer[TB.Box]()
 
-
     // label super/sub if char.ctr fall above/below centerline
     val supSubs = components.map({c =>
-      if (c.bounds.top.gtFuzzy(1.5)(modalTop)) {
-        c.withLabel(LB.Sub)
-      } else if (c.bounds.bottom.ltFuzzy(1.5)(modalBottom)) {
-        c.withLabel(LB.Sup)
-      } else {
+      val cctr = c.bounds.toCenterPoint
+      if (cctr.y.eqFuzzy(0.2)(modalCenterY)) {
         c
+      } else if (cctr.y > modalCenterY) {
+        c.withLabel(LB.Sub)
+      } else {
+        c.withLabel(LB.Sup)
       }
     })
 
-    // def ctrToLeftDists(cs: Seq[Component]): Seq[Double] = {
-    //   val cpairs = cs.sliding(2).toList
+    def slurpUnlabeled(cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
+      val unLabeled = cs.takeWhile({_.label.isEmpty })
+      (unLabeled, cs.drop(unLabeled.length))
+    }
+    def slurpLabels(l: Label, cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
+      val withLabel = cs.takeWhile({_.label.exists(_ == l) })
+      (withLabel, cs.drop(withLabel.length))
+    }
 
-    //   val dists = cpairs.map({
-    //     case Seq(c1, c2)  => c1.bounds.toCenterPoint.dist(c2.bounds.toWesternPoint)
-    //     case _  => 0d
-    //   })
+    val unconnected = mutable.ArrayBuffer[Component](supSubs:_*)
+    val connectedSupSubs = mutable.ArrayBuffer[Component]()
 
-    //   dists :+ 0d
-    // }
+    while (!unconnected.isEmpty) {
+      { val (withL, _) = slurpUnlabeled(unconnected)
+        if (!withL.isEmpty) {
+          connectedSupSubs ++= withL
+          unconnected.remove(0, withL.length)
+        } }
+
+      { val (withL, _) = slurpLabels(LB.Sub, unconnected)
+        if (!withL.isEmpty) {
+          connectedSupSubs += Component(withL.map(_.removeLabel), LB.Sub)
+          unconnected.remove(0, withL.length)
+        } }
+
+      { val (withL, _) = slurpLabels(LB.Sup, unconnected)
+        if (!withL.isEmpty) {
+          connectedSupSubs += Component(withL.map(_.removeLabel), LB.Sup)
+          unconnected.remove(0, withL.length)
+        } }
+    }
+
+
+
     val charDists = determineSpacings()
     val modalLittleGap = charDists.head
     val modalBigGap = charDists.drop(1).headOption.getOrElse(modalLittleGap)
@@ -483,8 +579,9 @@ case class ConnectedComponents(
     val splittable = charDists.length > 1
 
     // println(s"""|    top char dists: ${charDists.map(_.pp).mkString(", ")}
-    //             |    modal little gap = ${modalLittleGap}
-    //             |    modal big gap = ${modalBigGap}
+    //             |    modalTop = ${modalTop} modalBottom = ${modalBottom}
+    //             |    modalCenter: ${modalCenterY} meanCenter: ${meanCenterY}
+    //             |    modal little gap = ${modalLittleGap} modal big gap = ${modalBigGap}
     //             |    splitValue = ${splitValue}
     //             |""".stripMargin)
 
@@ -505,9 +602,13 @@ case class ConnectedComponents(
     // }
 
     val wordBreaks = mutable.ArrayBuffer[Int]()
+    // (suborsub, (start, end))
+    // val supSubRanges = mutable.ArrayBuffer[(Int, (Int, Int))]()
 
-    supSubs
-      .zip(pairwiseSpaceWidths(supSubs))
+    // supSubs
+    //   .zip(pairwiseSpaceWidths(supSubs))
+    connectedSupSubs
+      .zip(pairwiseSpaceWidths(connectedSupSubs))
       .sliding(2).toList
       .zipWithIndex
       .foreach({
@@ -517,22 +618,41 @@ case class ConnectedComponents(
         case (Seq((c1, d1), (c2, _)), i)  =>
           val dist = math.abs(c2.bounds.left - c1.bounds.right)
 
-          if(splittable && dist*1.1 > splitValue) {
+          if(splittable && d1*1.1 > splitValue) {
             wordBreaks.append(i)
           }
 
-          { import TB._
-            val stats = s"${c1.toText}  -  ${c2.toText}" %
-            s"    ${c1.bounds.prettyPrint}  -  ${c2.bounds.prettyPrint}" %
-            s"    pairwisedist: ${d1}  dist: ${dist}"
+          val angleC1C2 = c1.bounds.toCenterPoint.angleTo(
+            c2.bounds.toCenterPoint
+          )
 
-            searchLog.append(stats)
-          }
+          val c1ctr = c1.bounds.toCenterPoint
+          val c2ctr = c2.bounds.toCenterPoint
+
+          val c1west = c1.bounds.toWesternPoint
+          val c2east = c2.bounds.toEasternPoint
+          val c1c2Angle = c1west.angleTo(c2east)
+
+
+          val c12diff = c2ctr - c1ctr
+          val checkAngle = Point(0, 0).angleTo(c12diff)
+
+          // { import TB._
+          //   val stats = s"${c1.chars}  -  ${c2.chars}" %
+          //   s"    ${c1.bounds.prettyPrint}  -  ${c2.bounds.prettyPrint}" %
+          //   s"    pairwisedist: ${d1}  asbdist: ${dist}" %
+          //   s"    c1ctr: ${c1ctr.prettyPrint} c2ctr: ${c2ctr.prettyPrint} c12diff: ${c12diff} " %
+          //   s"    c1 dist to modal Y (c1ctr.y-modalCenterY):${math.abs(c1ctr.y-modalCenterY)}" %
+          //   s"    c1wst: ${c1west.prettyPrint} c2east: ${c2east.prettyPrint} angle: ${c1west.angleTo(c2east)} " %
+          //   s"    c1-c2 angle: ${angleC1C2}   checkAngle: ${checkAngle}"
+
+          //   searchLog.append(stats)
+          // }
         case _  =>
           sys.error("why are we here? wtf??")
       })
 
-    val asTokens = splitAtBreaks(wordBreaks, supSubs)
+    val asTokens = splitAtBreaks(wordBreaks, connectedSupSubs)
       .map(Component(_, LB.Token))
 
     // { import TB._
@@ -808,3 +928,24 @@ case class ConnectedComponents(
 //     ???
 //   }
 // }
+// r:0.00 (0.00)  = [1.00, 0.00], atan: 0.00 p1 angleto p2: 0.0
+// r:0.30 (0.10)  = [0.96, 0.30], atan: 0.30 p1 angleto p2: 0.29999999999999993
+// r:0.60 (0.19)  = [0.83, 0.56], atan: 0.60 p1 angleto p2: 0.6
+// r:0.90 (0.29)  = [0.62, 0.78], atan: 0.90 p1 angleto p2: 0.8999999999999999
+// r:1.20 (0.38)  = [0.36, 0.93], atan: 1.20 p1 angleto p2: 1.2
+// r:1.50 (0.48)  = [0.07, 1.00], atan: 1.50 p1 angleto p2: 1.5
+// r:1.80 (0.57)  = [-0.23, 0.97], atan: 1.80 p1 angleto p2: -1.3415926535897933
+// r:2.10 (0.67)  = [-0.50, 0.86], atan: 2.10 p1 angleto p2: -1.041592653589793
+// r:2.40 (0.76)  = [-0.74, 0.68], atan: 2.40 p1 angleto p2: -0.7415926535897933
+// r:2.70 (0.86)  = [-0.90, 0.43], atan: 2.70 p1 angleto p2: -0.4415926535897935
+// r:3.00 (0.95)  = [-0.99, 0.14], atan: 3.00 p1 angleto p2: -0.14159265358979367
+// r:3.30 (1.05)  = [-0.99, -0.16], atan: -2.98 p1 angleto p2: 0.15840734641020612
+// r:3.60 (1.15)  = [-0.90, -0.44], atan: -2.68 p1 angleto p2: 0.458407346410206
+// r:3.90 (1.24)  = [-0.73, -0.69], atan: -2.38 p1 angleto p2: 0.7584073464102058
+// r:4.20 (1.34)  = [-0.49, -0.87], atan: -2.08 p1 angleto p2: 1.058407346410206
+// r:4.50 (1.43)  = [-0.21, -0.98], atan: -1.78 p1 angleto p2: 1.3584073464102058
+// r:4.80 (1.53)  = [0.09, -1.00], atan: -1.48 p1 angleto p2: -1.4831853071795875
+// r:5.10 (1.62)  = [0.38, -0.93], atan: -1.18 p1 angleto p2: -1.1831853071795877
+// r:5.40 (1.72)  = [0.63, -0.77], atan: -0.88 p1 angleto p2: -0.8831853071795879
+// r:5.70 (1.81)  = [0.83, -0.55], atan: -0.58 p1 angleto p2: -0.5831853071795882
+// r:6.00 (1.91)  = [0.96, -0.28], atan: -0.28 p1 angleto p2: -0.28318530717958823

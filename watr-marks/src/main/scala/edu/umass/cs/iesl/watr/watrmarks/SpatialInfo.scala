@@ -50,14 +50,17 @@ object Bounds {
   implicit class RicherDouble(val d: Double) extends AnyVal {
     def pp:String = fmt(d)
 
-    def ltFuzzy(tolerance: Double)(d2: Double): Boolean =
-      compareFuzzy(tolerance)(d2) < 0
+    // def ltFuzzy(tolerance: Double)(d2: Double): Boolean = {
+    //   d > d2
+    //   d < (d2+tolerance)
+    // }
 
-    def gtFuzzy(tolerance: Double)(d2: Double): Boolean =
-      compareFuzzy(tolerance)(d2) > 0
+    // def gtFuzzy(tolerance: Double)(d2: Double): Boolean =
+    //   compareFuzzy(tolerance)(d2) > 0
 
     def eqFuzzy(tolerance: Double)(d2: Double): Boolean =
       compareFuzzy(tolerance)(d2) == 0
+
 
     def compareFuzzy(tolerance: Double)(d2: Double): Int = {
       if (math.abs(d - d2) < tolerance) 0
@@ -67,6 +70,10 @@ object Bounds {
   }
 
   implicit class RicherPoint(val p0: Point) extends AnyVal {
+
+    def -(p1:Point): Point = {
+      Point(p0.x-p1.x, p0.y-p1.y)
+    }
 
 
     def hdist(p1: Point): Double = math.abs(p0.x - p1.x)
@@ -91,6 +98,38 @@ object Bounds {
 
   }
 
+  implicit val ptOrd = Ordering.by{ p: Point =>
+    (p.x, p.y)
+  }
+
+  implicit val lineOrd = Ordering.by{ l:Line =>
+    (l.p1, l.p2)
+  }
+
+  implicit class RicherLine(val line: Line) extends AnyVal {
+
+    def ordered(l2: Line): (Line, Line) = {
+      if (lineOrd.compare(line, l2) <= 0) (line, l2)
+      else (l2, line)
+    }
+
+
+    // def inside(l2: Line): Boolean = {
+    //   val (lmin, lmax) = ordered(l2)
+
+    //   true
+    // }
+
+    // def overlaps(l2: Line): Boolean = {
+
+    //   true
+    // }
+    // def intersects(l2: Line): Boolean = {
+    //   true
+
+    // }
+  }
+
   implicit class RicherLTBounds(val tb: LTBounds) extends AnyVal {
     def right = tb.left+tb.width
     def bottom = tb.top+tb.height
@@ -110,6 +149,16 @@ object Bounds {
     // Compass direction point (bbox -> left-center, right-center, top-corner, etc)
     def toWesternPoint: Point = Point((tb.left), (tb.top+tb.height/2))
     def toEasternPoint: Point = Point((tb.left+tb.width), (tb.top+tb.height/2))
+
+    def xProjection(): Line = Line(
+      Point((tb.left), 0),
+      Point((tb.right), 0)
+    )
+
+    def yProjection(): Line = Line(
+      Point(0, (tb.top)),
+      Point(0, (tb.bottom))
+    )
 
 
 

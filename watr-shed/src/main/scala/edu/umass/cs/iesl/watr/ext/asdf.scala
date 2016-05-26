@@ -1,9 +1,9 @@
 package edu.umass.cs.iesl.watr
 package ext
 
-import watrmarks._
+// import watrmarks._
 
-import _root_.pl.edu.icm.cermine.structure.model._
+// import _root_.pl.edu.icm.cermine.structure.model._
 // import ComponentXComparator._
 // import NeighborDistanceComparator._
 // import AngleFilter._
@@ -11,91 +11,91 @@ import _root_.pl.edu.icm.cermine.structure.model._
 // //remove if not needed
 // import scala.collection.JavaConversions._
 
-case class Component(chunk: BxChunk) {
+// case class Component(chunk: BxChunk) {
 
-  val x = chunk.getBounds.getX + chunk.getBounds.getWidth / 2
+//   val x = chunk.getBounds.getX + chunk.getBounds.getWidth / 2
 
-  val y = chunk.getBounds.getY + chunk.getBounds.getHeight / 2
+//   val y = chunk.getBounds.getY + chunk.getBounds.getHeight / 2
 
-  var neighbors: List[Neighbor] = _
+//   var neighbors: List[Neighbor] = _
 
-  val bounds = chunk.getBounds
+//   val bounds = chunk.getBounds
 
-  if (bounds == null) {
-    throw new IllegalArgumentException("Bounds must not be null")
-  }
+//   if (bounds == null) {
+//     throw new IllegalArgumentException("Bounds must not be null")
+//   }
 
-  if (java.lang.Double.isNaN(bounds.getX) || java.lang.Double.isInfinite(bounds.getX)) {
-    throw new IllegalArgumentException("Bounds x coordinate must be finite")
-  }
+//   if (java.lang.Double.isNaN(bounds.getX) || java.lang.Double.isInfinite(bounds.getX)) {
+//     throw new IllegalArgumentException("Bounds x coordinate must be finite")
+//   }
 
-  if (java.lang.Double.isNaN(bounds.getY) || java.lang.Double.isInfinite(bounds.getY)) {
-    throw new IllegalArgumentException("Bounds y coordinate must be finite")
-  }
+//   if (java.lang.Double.isNaN(bounds.getY) || java.lang.Double.isInfinite(bounds.getY)) {
+//     throw new IllegalArgumentException("Bounds y coordinate must be finite")
+//   }
 
-  if (java.lang.Double.isNaN(bounds.getWidth) || java.lang.Double.isInfinite(bounds.getWidth)) {
-    throw new IllegalArgumentException("Bounds width must be finite")
-  }
+//   if (java.lang.Double.isNaN(bounds.getWidth) || java.lang.Double.isInfinite(bounds.getWidth)) {
+//     throw new IllegalArgumentException("Bounds width must be finite")
+//   }
 
-  if (java.lang.Double.isNaN(bounds.getHeight) || java.lang.Double.isInfinite(bounds.getHeight)) {
-    throw new IllegalArgumentException("Bounds height must be finite")
-  }
+//   if (java.lang.Double.isNaN(bounds.getHeight) || java.lang.Double.isInfinite(bounds.getHeight)) {
+//     throw new IllegalArgumentException("Bounds height must be finite")
+//   }
 
-  def getHeight(): Double = chunk.getBounds.getHeight
+//   def getHeight(): Double = chunk.getBounds.getHeight
 
-  def distance(c: Component): Double = {
-    val dx = x - c.x
-    val dy = y - c.y
-    Math.sqrt(dx * dx + dy * dy)
-  }
+//   def distance(c: Component): Double = {
+//     val dx = x - c.x
+//     val dy = y - c.y
+//     Math.sqrt(dx * dx + dy * dy)
+//   }
 
-  def horizontalDistance(c: Component, orientation: Double): Double = Math.abs(x - c.x)
+//   def horizontalDistance(c: Component, orientation: Double): Double = Math.abs(x - c.x)
 
-  def verticalDistance(c: Component, orientation: Double): Double = Math.abs(y - c.y)
+//   def verticalDistance(c: Component, orientation: Double): Double = Math.abs(y - c.y)
 
-  def horizontalBoundsDistance(c: Component, orientation: Double): Double = {
-    horizontalDistance(c, orientation) - chunk.getBounds.getWidth / 2 -
-      c.chunk.getBounds.getWidth / 2
-  }
+//   def horizontalBoundsDistance(c: Component, orientation: Double): Double = {
+//     horizontalDistance(c, orientation) - chunk.getBounds.getWidth / 2 -
+//       c.chunk.getBounds.getWidth / 2
+//   }
 
-  def angle(c: Component): Double = {
-    if (x > c.x) {
-      Math.atan2(y - c.y, x - c.x)
-    } else {
-      Math.atan2(c.y - y, c.x - x)
-    }
-  }
+//   def angle(c: Component): Double = {
+//     if (x > c.x) {
+//       Math.atan2(y - c.y, x - c.x)
+//     } else {
+//       Math.atan2(c.y - y, c.x - x)
+//     }
+//   }
 
-  def overlappingDistance(other: Component, orientation: Double): Double = {
-    val xs = Array.ofDim[Double](4)
-    val s = Math.sin(-orientation)
-    val c = Math.cos(-orientation)
-    xs(0) = c * x - s * y
-    xs(1) = c * (x + chunk.getWidth) - s * (y + chunk.getHeight)
-    xs(2) = c * other.x - s * other.y
-    xs(3) = c * (other.x + other.chunk.getWidth) - s * (other.y + other.chunk.getHeight)
-    val overlapping = xs(1) >= xs(2) && xs(3) >= xs(0)
-    val xsSort = xs.sorted
-    Math.abs(xsSort(2) - xsSort(1)) * (if (overlapping) 1 else -1)
-  }
-}
+//   def overlappingDistance(other: Component, orientation: Double): Double = {
+//     val xs = Array.ofDim[Double](4)
+//     val s = Math.sin(-orientation)
+//     val c = Math.cos(-orientation)
+//     xs(0) = c * x - s * y
+//     xs(1) = c * (x + chunk.getWidth) - s * (y + chunk.getHeight)
+//     xs(2) = c * other.x - s * other.y
+//     xs(3) = c * (other.x + other.chunk.getWidth) - s * (other.y + other.chunk.getHeight)
+//     val overlapping = xs(1) >= xs(2) && xs(3) >= xs(0)
+//     val xsSort = xs.sorted
+//     Math.abs(xsSort(2) - xsSort(1)) * (if (overlapping) 1 else -1)
+//   }
+// }
 
-case class Neighbor(neighbor: Component, origin: Component) {
+// case class Neighbor(neighbor: Component, origin: Component) {
 
-  val distance = neighbor.distance(origin)
+//   val distance = neighbor.distance(origin)
 
-  val angle = neighbor.angle(origin)
+//   val angle = neighbor.angle(origin)
 
-  val component = neighbor
+//   val component = neighbor
 
-  def getHorizontalDistance(orientation: Double): Double = {
-    component.horizontalDistance(origin, orientation)
-  }
+//   def getHorizontalDistance(orientation: Double): Double = {
+//     component.horizontalDistance(origin, orientation)
+//   }
 
-  def getVerticalDistance(orientation: Double): Double = {
-    component.verticalDistance(origin, orientation)
-  }
-}
+//   def getVerticalDistance(orientation: Double): Double = {
+//     component.verticalDistance(origin, orientation)
+//   }
+// }
 
 // object ComponentXComparator {
 
