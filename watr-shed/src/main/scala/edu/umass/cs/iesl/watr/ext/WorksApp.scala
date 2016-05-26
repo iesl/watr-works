@@ -68,7 +68,7 @@ object Works extends App {
       })
     } text ("run column detection (for debugging)")
 
-    cmd("paras") action { (v, conf) =>
+    cmd("docseg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         detectParagraphs(ac)
       })
@@ -118,7 +118,7 @@ object Works extends App {
     // import watrmarks._
     import docseg._
 
-    val artifactOutputName = "paragraphs.txt"
+    val artifactOutputName = "docseg.json"
 
 
     getProcessList(conf).foreach { entry =>

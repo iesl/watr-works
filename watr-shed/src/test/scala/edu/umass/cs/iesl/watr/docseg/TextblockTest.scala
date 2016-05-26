@@ -15,10 +15,14 @@ class TextBlockTest extends DocsegTestUtil  {
   behavior of "block identification and ordering"
   // import Component._
   val testExamples = List(
+    TextblockExample("2839.pdf", page(0)) // cols not detected
+
     // TextblockExample("101016jactamat200401025.pdf", page(0)),
     // TextblockExample("101016jcarbon201301056.pdf", page(0)),
-      TextblockExample("101016japsusc201210126.pdf", page(0)) // page 0 col 1 is not detected
-                                                              //  ./corpus-test/101016jcarbpol201110004.pdf.d/ page 1 is totally wrong
+      // TextblockExample("101016japsusc201210126.pdf", page(0)) // page 0 col 1 is not detected
+      //  ./corpus-test/101016jcarbpol201110004.pdf.d/ page 1 is totally wrong
+      // TextblockExample("0575.pdf", page(0)) // cols/headers not detected
+
   )
   it should "identify text blocks" in {
     testExamples.foreach{ example =>
