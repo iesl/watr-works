@@ -13,6 +13,8 @@ object Works extends App {
 
   case class AppConfig(
     entry: Option[JFile] = None,
+    // file: Option[JFile] = None,
+    singleFileMode: Boolean = false,
     corpusRoot: Option[JFile] = None,
     action: Option[String] = None,
     force: Boolean = false,
@@ -28,16 +30,23 @@ object Works extends App {
   }
 
   val parser = new scopt.OptionParser[AppConfig]("scopt") {
-    head("itext zone extractor", "0.1")
+    head("Works command line app", "0.1")
 
     note("Run svg text extraction and analysis")
+
 
     opt[Unit]('x', "overwrite") action { (v, conf) =>
       conf.copy(force = true) } text("force overwrite of existing files")
 
-    opt[JFile]('a', "artifact") action { (v, conf) =>
-      conf.copy(entry = Option(v))
-    } text("artifact id (same as *.d directory name)")
+    // opt[JFile]('a', "artifact") action { (v, conf) =>
+    //   conf.copy(entry = Option(v))
+    // } text("artifact id (same as *.d directory name)")
+
+    // opt[JFile]('f', "file") action { (v, conf) =>
+    //   conf.copy(
+    //     file = Option(v),
+    //     singleFileMode = true)
+    // } text("run on a single file")
 
 
     opt[JFile]('c', "corpus") action { (v, conf) =>
@@ -72,13 +81,16 @@ object Works extends App {
       setAction(conf, {(ac: AppConfig) =>
         detectParagraphs(ac)
       })
-    } text ("run paragraph detection")
+    } text ("run document segmentation")
   }
 
 
-  val config = parser.parse(args, AppConfig()).getOrElse{
-    sys.error(parser.usage)
-  }
+  // val config = parser.parse(args, AppConfig()).getOrElse{
+  //   sys.error(parser.usage)
+  // }
+
+  parser.parse(args, AppConfig()).foreach{ config =>
+
 
 
   val croot = config
@@ -87,16 +99,17 @@ object Works extends App {
     .getOrElse { sys.error(s"corpus root is not dir ('${config.corpusRoot}')") }
 
 
-  config.exec.foreach { _.apply(config) }
+    config.exec.foreach { _.apply(config) }
+  }
 
   def getProcessList(conf: AppConfig): Seq[CorpusEntry] = {
-    val corpus = Corpus(corpusRootOrDie(conf))
+      val corpus = Corpus(corpusRootOrDie(conf))
 
-    val toProcess = conf.entry match {
-      case Some(entry) => Seq(corpus.entry(entry.getName))
-      case None => corpus.entries()
-    }
-    toProcess
+      val toProcess = conf.entry match {
+        case Some(entry) => Seq(corpus.entry(entry.getName))
+        case None => corpus.entries()
+      }
+      toProcess
   }
 
 
