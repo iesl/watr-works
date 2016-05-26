@@ -289,7 +289,9 @@ class DocstrumSegmenter(
     }
 
 
-    lines.map{ Component(_, LB.Line) }
+    lines
+      .map{ Component(_, LB.Line) }
+      .sortBy(b => (b.bounds.top, b.bounds.left))
   }
 
 
@@ -370,7 +372,7 @@ class DocstrumSegmenter(
     //    reference width(s), for hanging-indent first line, remaining lines
     //    other l/r justified blocks (abstract, e.g)
 
-    println(s"""common widths = ${topNWidths.mkString(", ")}""")
+    // println(s"""common widths = ${topNWidths.mkString(", ")}""")
 
     // bin each page by line widths
     val commonLineBins = for {
@@ -399,11 +401,20 @@ class DocstrumSegmenter(
     findMostFrequentLineDimensions(psegAccum)
   }
 
+
+
   def determineZones(
     pageId: Int@@PageID,
     psegAccum: PageSegAccumulator
   ): Seq[ConnectedComponents] = {
-    val pageLines: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
+    val pageLinesx: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
+
+    // println("starting wiht lines: ")
+    // pageLinesx.foreach { line =>
+    //   val pstr = Component.renderConnectedComponents(line)
+    //   println(s"""  >> ${pstr}""")
+    // }
+    // println("--------------")
 
     val pageBounds = charBasedPageBounds(pageId)
     val pageCenter = pageBounds.toCenterPoint
@@ -412,270 +423,220 @@ class DocstrumSegmenter(
 
     val lineBins = psegAccum.lineDimensionBins.find(_.page == pageId).get
 
-    val ((mostFrequentWidthDocwide, wfreq), linesWFreq)  = lineBins.widthBin.sortBy(_._1._2).reverse.head
+    // println("binned lines for page")
+    // lineBins.widthBin.foreach { case ((width, wfreq), binnedLines) =>
+    //   println(s"   bin = ${width}, freq = ${wfreq}")
+    //   binnedLines.sortBy(_.bounds.top).foreach { bl =>
+    //     val pstr = Component.renderConnectedComponents(bl)
+    //     println(s"""    >> ${pstr}""")
+    //   }
+    //   println("--------------")
+    // }
 
-    // divide page-specific most frequent lines into likely columns:
-    val colCenters = getMostFrequentValues(linesWFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
+    // println("unbinned lines for page")
+    // lineBins.unBinned.sortBy(_.bounds.top).foreach { ubl =>
+    //   val pstr = Component.renderConnectedComponents(ubl)
+    //   println(s"""    >> ${pstr}""")
+    // }
 
-    val commonLinesInCols = for {
-      (colX, cfreq) <- colCenters
-    } yield {
-      (colX, linesWFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) }))
+    val unusedPageLines = mutable.ArrayBuffer[ConnectedComponents](pageLinesx:_*)
+    val usedPageLines = mutable.ArrayBuffer[ConnectedComponents]()
+
+    // starting w/most common width, down to least common..
+    val allBlocks = lineBins.widthBin.sortBy(_._1._2).reverse.map {
+      case ((mostFrequentWidthDocwide, wfreq), linesWithFreq)
+          if linesWithFreq.length > 0 && mostFrequentWidthDocwide > 10.0 =>
+
+        val remainingLinesWithFreq = linesWithFreq.diff(usedPageLines)
+
+        if (remainingLinesWithFreq.length > 0) {
+
+
+          // println(s" building cols out of lines of width: ${mostFrequentWidthDocwide} w/freq: ${wfreq}")
+
+          // val ((mostFrequentWidthDocwide, wfreq), linesWFreq)  = lineBins.widthBin.sortBy(_._1._2).reverse.head
+
+          // divide page-specific most frequent lines into likely columns:
+          val colCenters = getMostFrequentValues(remainingLinesWithFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
+
+          val commonLinesInCols = for {
+            (colX, cfreq) <- colCenters
+          } yield {
+            (colX, remainingLinesWithFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) }))
+          }
+
+          val sortedCommonLines = commonLinesInCols
+            .sortBy(_._1)
+            .map({ case (colX, colLines) =>
+
+              // println("examining lines: ")
+              // colLines.foreach { line =>
+              //   val pstr = Component.renderConnectedComponents(line)
+              //   // println(s"""  >> ${pstr}""")
+              //   println(s"""  >> ${line.chars}""")
+              // }
+              // println("--------------")
+
+              val ySortedLines = colLines.sortBy(_.bounds.top)
+              val topLine = ySortedLines.head
+              val bottomLine = ySortedLines.last
+
+
+              def candidateIsBelowBottom(cand: ConnectedComponents) = cand.bounds.top > bottomLine.bounds.top
+              def candidateIsBelowTop(cand: ConnectedComponents) = cand.bounds.top > topLine.bounds.top
+              def candidateIsAboveBottom(cand: ConnectedComponents) = cand.bounds.top < bottomLine.bounds.top
+              def candidateIsAboveTop(cand: ConnectedComponents) = cand.bounds.top < topLine.bounds.top
+
+              def candidateCrossesLineBounds(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+                val slopFactor = 0.31d
+
+                val linex0 = line.bounds.toWesternPoint.x-slopFactor
+                val linex1 = line.bounds.toEasternPoint.x+slopFactor
+                val candx0 = cand.bounds.toWesternPoint.x
+                val candx1 = cand.bounds.toEasternPoint.x
+                val candRightInside = linex0 <= candx1 && candx1 <= linex1
+                val candLeftOutside = candx0 < linex0
+                val candLeftInside = linex0 <= candx0 && candx0 <= linex1
+                val candRightOutside = linex1 < candx1
+
+                val crossesLeft = candRightInside && candLeftOutside
+                val crossesRight = candLeftInside && candRightOutside
+
+                val candb = debugFormatLine(cand)
+                val lineb = debugFormatLine(line)
+
+                // debugReport(
+                //   candb,
+                //   lineb,
+                //   linex0           , // = line.bounds.toWesternPoint.x
+                //   linex1           , // = line.bounds.toEasternPoint.x
+                //   candx0           , // = cand.bounds.toWesternPoint.x
+                //   candx1           , // = cand.bounds.toEasternPoint.x
+                //   candRightInside  , // = linex0 <= candx1 && candx1 <= linex1
+                //   candLeftOutside  , // = candx0 < linex0
+                //   candLeftInside   , // = linex0 <= candx0 && candx0 <= linex1
+                //   candRightOutside , // = linex1 > candx1
+                //   crossesLeft        , // = candRightInside && candLeftOutside
+                //   crossesRight,     // = candLeftInside && candRightOutside
+                //   crossesLeft || crossesRight
+                // )
+
+                crossesLeft || crossesRight
+              }
+
+              def candidateIsStrictlyLeftOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+                val linex0 = line.bounds.toWesternPoint.x
+                val candx1 = cand.bounds.toEasternPoint.x
+                candx1 < linex0
+              }
+
+              def candidateIsStrictlyRightOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+                val linex1 = line.bounds.toEasternPoint.x
+                val candx0 = cand.bounds.toWesternPoint.x
+                candx0 > linex1
+              }
+              def candidateIsOutsideLineBounds(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+                candidateIsStrictlyLeftOfLine(cand, line) ||
+                  candidateIsStrictlyRightOfLine(cand, line)
+              }
+
+
+              // println("now checking for lines above")
+
+              val possibleCand = unusedPageLines
+                .diff(ySortedLines)
+                .sortBy(_.bounds.top)
+
+              val candidateLinesAbove = possibleCand
+                .reverse
+                .filter(candidateIsAboveTop(_))
+                .filterNot(candidateIsOutsideLineBounds(_, topLine))
+                .takeWhile({cc =>
+                  val colBreak = candidateCrossesLineBounds(cc, topLine)
+
+                  // println(s"""| checking for above topline:
+                  //             | cand: ${debugFormatLine(cc)}
+                  //             | top : ${debugFormatLine(topLine)}
+                  //             | breaks col bounds ${colBreak}
+                  //             |""".stripMargin)
+                  !colBreak
+                })
+
+              // println(s"found ${candidateLinesAbove.length} lines above")
+
+
+
+              // println("now checking for lines below")
+
+              val candidateLinesBelow = possibleCand
+                .filter(candidateIsBelowBottom(_))
+                .filterNot(candidateIsOutsideLineBounds(_, topLine))
+                .takeWhile({cc =>
+                  val colBreak = candidateCrossesLineBounds(cc, topLine)
+                  // println(s"""| checking for below bottom line:
+                  //             | cand: ${debugFormatLine(cc)}
+                  //             | top : ${debugFormatLine(topLine)}
+                  //             | breaks col bounds ${colBreak}
+                  //             |""".stripMargin)
+                    !colBreak
+                })
+
+
+              // println(s"found ${candidateLinesBelow.length} lines below")
+
+              val candidateLinesWithin = possibleCand
+                .filter(c =>candidateIsAboveBottom(c) && candidateIsBelowTop(c))
+                .filterNot(candidateIsOutsideLineBounds(_, topLine))
+                .filterNot(candidateCrossesLineBounds(_, topLine))
+
+              // println(s"found ${candidateLinesWithin.length} lines within")
+
+              // val candidateLinesWithin = possibleCand.filter({cc =>
+              //   // val fmt=debugFormatLine(cc)
+              //   // println(s"""| checking for within ${fmt}
+              //   //             | top: ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
+              //   //             | bottom: ${bottomLine.bounds.prettyPrint} / r: ${bottomLine.bounds.right}
+              //   //             |""".stripMargin)
+              //   topLine.bounds.top < cc.bounds.top && cc.bounds.top < bottomLine.bounds.top
+              // })
+
+              val debugAboveLines = candidateLinesAbove.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+              val debugWithin = candidateLinesWithin.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+              val debugMiddle = ySortedLines.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+              val debugBelowLines = candidateLinesBelow.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+
+              // println(s"Candidates Above\n${debugAboveLines}\n")
+              // println(s"Candidates Within\n${debugWithin}\n")
+              // println(s"\n\n${debugMiddle}\n\n")
+              // println(s"Candidates below\n${debugBelowLines}\n")
+
+
+              val totalLines =  candidateLinesAbove ++ ySortedLines ++ candidateLinesWithin ++ candidateLinesBelow
+              val totalLineSorted = totalLines.sortBy(_.bounds.top)
+
+              unusedPageLines --= totalLineSorted
+              usedPageLines ++= totalLineSorted
+
+              Component(totalLineSorted, LB.Block)
+            })
+          sortedCommonLines
+        } else {
+          Seq()
+        }
+
+      case _ => Seq()
     }
 
-    val sortedCommonLines = commonLinesInCols
-      .sortBy(_._1)
-      .map({ case (colX, colLines) =>
-        // look up/down within confines of this column:
-
-        val ySortedLines = colLines.sortBy(_.bounds.top)
-        val topLine = ySortedLines.head
-        val bottomLine = ySortedLines.last
-
-        // // val candidateLines = lineBins.unBinned.filter({cc =>
-
-        // val candidateLines = possibleCand.filter({cc =>
-        //   val tlx = topLine.bounds.xProjection
-        //   val ccx = cc.bounds.xProjection
-        //   val topLineOverlaps = tlx.p1.x-0.1 <= ccx.p1.x && ccx.p2.x <= tlx.p2.x+0.1
-
-        //   // val fmt=debugFormatLine(cc)
-        //   // println(s"""| checking for candidates
-        //   //             |  ${fmt}
-        //   //             |   top: ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
-        //   //             |   bottom: ${bottomLine.bounds.prettyPrint} / r: ${bottomLine.bounds.right}
-        //   //             |
-        //   //             |""".stripMargin)
-
-        //   // if (fmt.endsWith("electrode assembly.")) {
-        //   //   val tlfmt=debugFormatLine(topLine)
-        //   //   println(s"""| comparing candidates
-        //   //               |    top: ${tlfmt}
-        //   //               |        ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
-        //   //               |    ${fmt}
-        //   //               |       top: ${cc.bounds.prettyPrint} / r: ${cc.bounds.right}
-        //   //               |       bottom: ${cc.bounds.prettyPrint} / r: ${cc.bounds.right}
-        //   //               |""".stripMargin)
-
-        //   //   debugLineComponentStats(topLine)
-        //   //   println(s"candidate line ccs")
-        //   //   debugLineComponentStats(cc)
-        //   // }
-
-        //   topLineOverlaps
-        // }).sortBy(_.bounds.top)
-
-
-        def candidateIsBelowBottom(cand: ConnectedComponents) = cand.bounds.top > bottomLine.bounds.top
-        def candidateIsBelowTop(cand: ConnectedComponents) = cand.bounds.top > topLine.bounds.top
-        def candidateIsAboveBottom(cand: ConnectedComponents) = cand.bounds.top < bottomLine.bounds.top
-        def candidateIsAboveTop(cand: ConnectedComponents) = cand.bounds.top < topLine.bounds.top
-
-        def candidateCrossesLineBounds(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
-          val slopFactor = 0.1d
-
-          val linex0 = line.bounds.toWesternPoint.x-slopFactor
-          val linex1 = line.bounds.toEasternPoint.x+slopFactor
-          val candx0 = cand.bounds.toWesternPoint.x
-          val candx1 = cand.bounds.toEasternPoint.x
-          val candRightInside = linex0 <= candx1 && candx1 <= linex1
-          val candLeftOutside = candx0 < linex0
-          val candLeftInside = linex0 <= candx0 && candx0 <= linex1
-          val candRightOutside = linex1 < candx1
-
-          val crossesLeft = candRightInside && candLeftOutside
-          val crossesRight = candLeftInside && candRightOutside
-
-          val candb = debugFormatLine(cand)
-          val lineb = debugFormatLine(line)
-
-          // debugReport(
-          //   candb,
-          //   lineb,
-          //   linex0           , // = line.bounds.toWesternPoint.x
-          //   linex1           , // = line.bounds.toEasternPoint.x
-          //   candx0           , // = cand.bounds.toWesternPoint.x
-          //   candx1           , // = cand.bounds.toEasternPoint.x
-          //   candRightInside  , // = linex0 <= candx1 && candx1 <= linex1
-          //   candLeftOutside  , // = candx0 < linex0
-          //   candLeftInside   , // = linex0 <= candx0 && candx0 <= linex1
-          //   candRightOutside , // = linex1 > candx1
-          //   crossesLeft        , // = candRightInside && candLeftOutside
-          //   crossesRight,     // = candLeftInside && candRightOutside
-          //   crossesLeft || crossesRight
-          // )
-
-          crossesLeft || crossesRight
-        }
-
-        def candidateIsStrictlyLeftOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
-          val linex0 = line.bounds.toWesternPoint.x
-          val candx1 = cand.bounds.toEasternPoint.x
-          candx1 < linex0
-        }
-
-        def candidateIsStrictlyRightOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
-          val linex1 = line.bounds.toEasternPoint.x
-          val candx0 = cand.bounds.toWesternPoint.x
-          candx0 > linex1
-        }
-        def candidateIsOutsideLineBounds(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
-          candidateIsStrictlyLeftOfLine(cand, line) ||
-            candidateIsStrictlyRightOfLine(cand, line)
-        }
-
-
-        // println("now checking for lines above")
-
-        val possibleCand = pageLines
-          .diff(ySortedLines)
-          .sortBy(_.bounds.top)
-
-        val candidateLinesAbove = possibleCand
-          .reverse
-          .filter(candidateIsAboveTop(_))
-          .filterNot(candidateIsOutsideLineBounds(_, topLine))
-          .takeWhile({cc =>
-            val colBreak = candidateCrossesLineBounds(cc, topLine)
-
-            // println(s"""| checking for above topline:
-            //             | cand: ${debugFormatLine(cc)}
-            //             | top : ${debugFormatLine(topLine)}
-            //             | breaks col bounds ${colBreak}
-            //             |""".stripMargin)
-            !colBreak
-          })
-
-        println(s"found ${candidateLinesAbove.length} lines above")
-
-
-
-        // println("now checking for lines below")
-
-        val candidateLinesBelow = possibleCand
-          .filter(candidateIsBelowBottom(_))
-          .filterNot(candidateIsOutsideLineBounds(_, topLine))
-          .takeWhile({cc =>
-            val colBreak = candidateCrossesLineBounds(cc, topLine)
-            // println(s"""| checking for below bottom line:
-            //             | cand: ${debugFormatLine(cc)}
-            //             | top : ${debugFormatLine(topLine)}
-            //             | breaks col bounds ${colBreak}
-            //             |""".stripMargin)
-            !colBreak
-          })
-
-
-        println(s"found ${candidateLinesBelow.length} lines below")
-
-        val candidateLinesWithin = possibleCand
-          .filter(c =>candidateIsAboveBottom(c) && candidateIsBelowTop(c))
-          .filterNot(candidateIsOutsideLineBounds(_, topLine))
-          .filterNot(candidateCrossesLineBounds(_, topLine))
-
-        println(s"found ${candidateLinesWithin.length} lines within")
-
-        // val candidateLinesWithin = possibleCand.filter({cc =>
-        //   // val fmt=debugFormatLine(cc)
-        //   // println(s"""| checking for within ${fmt}
-        //   //             | top: ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
-        //   //             | bottom: ${bottomLine.bounds.prettyPrint} / r: ${bottomLine.bounds.right}
-        //   //             |""".stripMargin)
-        //   topLine.bounds.top < cc.bounds.top && cc.bounds.top < bottomLine.bounds.top
-        // })
-
-        val debugAboveLines = candidateLinesAbove.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
-        val debugWithin = candidateLinesWithin.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
-        val debugMiddle = ySortedLines.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
-        val debugBelowLines = candidateLinesBelow.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
-
-        // println(s"Candidates Above\n${debugAboveLines}\n")
-        // println(s"Candidates Within\n${debugWithin}\n")
-        // println(s"\n\n${debugMiddle}\n\n")
-        // println(s"Candidates below\n${debugBelowLines}\n")
-
-
-        // find common v-dist within block, grab lines from above/below within that distance
-
-        // val vDists = ySortedLines.sliding(2).map({
-        //   case Seq(c1, c2) => c1.bounds.toCenterPoint.vdist(c2.bounds.toCenterPoint)
-        //   case Seq(c1) => 0d
-        // })
-
-        // val topVDists = getMostFrequentValues(vDists.toList, 0.5d).toList
-        // println(s"""top v-dists ${topVDists.mkString(", ")}""")
-
-        // // pad out the distance slightly
-        // val topVDist = topVDists.head._1 + 0.1d
-
-        // // val hitsAbove = candidateLinesAbove.filter({cabove =>
-        // //   val vdist = topLine.bounds.toCenterPoint.vdist(cabove.bounds.toCenterPoint)
-        // //   println(s"checking vdist=${vdist.pp} for ${cabove.toText}")
-        // //   vdist <= topVDist
-        // // })
-        // var currTopBounds = topLine.bounds
-        // val hitsAbove = candidateLinesAbove.reverse.takeWhile({cabove =>
-        //   val vdist = cabove.bounds.toCenterPoint.vdist(currTopBounds.toCenterPoint)
-        //   println(s"checking vdist=${vdist.pp} for ${cabove.toText}")
-        //   currTopBounds = cabove.bounds
-        //   vdist <= topVDist*3.0
-        // })
-
-        // var currBottomBounds = bottomLine.bounds
-        // val hitsBelow = candidateLinesBelow.takeWhile({cbelow =>
-        //   val vdist = cbelow.bounds.toCenterPoint.vdist(currBottomBounds.toCenterPoint)
-        //   currBottomBounds = cbelow.bounds
-        //   vdist <= topVDist*3.0
-        // })
-
-        // val totalLine =  hitsAbove ++ ySortedLines ++ candidateLinesWithin ++ hitsBelow
-        val totalLines =  candidateLinesAbove ++ ySortedLines ++ candidateLinesWithin ++ candidateLinesBelow
-        val totalLineSorted = totalLines.sortBy(_.bounds.top)
-
-        Component(totalLineSorted, LB.Block)
-      })
-
-    /// return:
-    sortedCommonLines
-
-
-
-    // column detection
-    //   - search paper-wide for most common: line-width,
-    //     for most common line widths, find most common ctr-x, most common v-dist to next line
-    //   foreach page:
-    //     label centered text lines
-    //       look up/down foreach centered line to form centered block
-    //     foreach line that matches common-width w/common ctr,
-    //       look up/down and join w/ lines within reach
-    //     foreach un-labeled line on page
-    //        try l/r justified block detection (justified l/r)
-    //        try center-column detection (justified l/r)
-    //        try left-justified block detection
-
-
-
-    //     justified l/r cols
-    //       map lines => x.(left, ctr, right)
-    //         group into matching sets
-    //         foreach matching set, look up/down for straggling line
-
-
-
-    // lines.foreach{ line =>
-    //   val lineCenter = line.bounds.toCenterPoint
-    //   println(s"${lineCenter.prettyPrint} cb:${cdist2} pb:${cdist}  ${line.tokenizeLine().toText}")
-    // }
-    // println(
-    // lines.map{ line =>
-    //   line.bounds.toCenterPoint.x
-    // }.sorted.mkString("\n")
-    // )
-
-
-
+    allBlocks.flatten
 
   }
+
+
+
+
+
+
+
 
 
   // def pageZonesToSortedZones(zones: Seq[Seq[ConnectedComponents]]): Seq[ConnectedComponents] = {
@@ -772,27 +733,27 @@ class DocstrumSegmenter(
   //      * Angle histogram smoothing window length in radians.
   //      * Length of angle histogram is equal to pi.
   //      */
-      val angleHistogramSmoothingWindowLength: Double = DEFAULT_ANGLE_HIST_SMOOTH_LEN;
+  val angleHistogramSmoothingWindowLength: Double = DEFAULT_ANGLE_HIST_SMOOTH_LEN;
 
   //     /**
   //      * Angle histogram gaussian smoothing window standard deviation in radians.
   //      */
-      val angleHistogramSmoothingWindowStdDeviation:Double = DEFAULT_ANGLE_HIST_SMOOTH_STDDEV;
+  val angleHistogramSmoothingWindowStdDeviation:Double = DEFAULT_ANGLE_HIST_SMOOTH_STDDEV;
 
   //     /**
   //      * Spacing histogram resolution per bin.
   //      */
-      val spacingHistogramResolution: Double = DEFAULT_SPACE_HIST_RES;
+  val spacingHistogramResolution: Double = DEFAULT_SPACE_HIST_RES;
 
   //     /**
   //      * Spacing histogram smoothing window length.
   //      */
-      val spacingHistogramSmoothingWindowLength:Double = DEFAULT_SPACE_HIST_SMOOTH_LEN;
+  val spacingHistogramSmoothingWindowLength:Double = DEFAULT_SPACE_HIST_SMOOTH_LEN;
 
   //     /**
   //      * Spacing histogram gaussian smoothing window standard deviation.
   //      */
-      val spacingHistogramSmoothingWindowStdDeviation:Double = DEFAULT_SPACE_HIST_SMOOTH_STDDEV;
+  val spacingHistogramSmoothingWindowStdDeviation:Double = DEFAULT_SPACE_HIST_SMOOTH_STDDEV;
 
   //     /**
   //      * Maximum vertical component distance multiplier used during line
@@ -936,6 +897,312 @@ class DocstrumSegmenter(
   //     }
 
   // }
+
+  def determineZonesOriginal(
+    pageId: Int@@PageID,
+    psegAccum: PageSegAccumulator
+  ): Seq[ConnectedComponents] = {
+    val pageLines: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
+    println("starting wiht lines: ")
+    pageLines.foreach { line =>
+      val pstr = Component.renderConnectedComponents(line)
+      println(s"""  >> ${pstr}""")
+    }
+    println("--------------")
+
+    val pageBounds = charBasedPageBounds(pageId)
+    val pageCenter = pageBounds.toCenterPoint
+
+    // println(s"page center ${pageCenter.prettyPrint}")
+
+    val lineBins = psegAccum.lineDimensionBins.find(_.page == pageId).get
+
+    println("binned lines for page")
+    lineBins.widthBin.foreach { case ((width, wfreq), binnedLines) =>
+      println(s"   bin = ${width}, freq = ${wfreq}")
+      binnedLines.sortBy(_.bounds.top).foreach { bl =>
+        val pstr = Component.renderConnectedComponents(bl)
+        println(s"""    >> ${pstr}""")
+      }
+      println("--------------")
+    }
+
+    println("unbinned lines for page")
+    lineBins.unBinned.sortBy(_.bounds.top).foreach { ubl =>
+      val pstr = Component.renderConnectedComponents(ubl)
+      println(s"""    >> ${pstr}""")
+    }
+
+    val ((mostFrequentWidthDocwide, wfreq), linesWFreq)  = lineBins.widthBin.sortBy(_._1._2).reverse.head
+
+    // divide page-specific most frequent lines into likely columns:
+    val colCenters = getMostFrequentValues(linesWFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
+
+    val commonLinesInCols = for {
+      (colX, cfreq) <- colCenters
+    } yield {
+      (colX, linesWFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) }))
+    }
+
+    val sortedCommonLines = commonLinesInCols
+      .sortBy(_._1)
+      .map({ case (colX, colLines) =>
+        println("examining lines: ")
+        colLines.foreach { line =>
+          val pstr = Component.renderConnectedComponents(line)
+          println(s"""  >> ${pstr}""")
+        }
+        println("--------------")
+
+        val ySortedLines = colLines.sortBy(_.bounds.top)
+        val topLine = ySortedLines.head
+        val bottomLine = ySortedLines.last
+
+        // // val candidateLines = lineBins.unBinned.filter({cc =>
+
+        // val candidateLines = possibleCand.filter({cc =>
+        //   val tlx = topLine.bounds.xProjection
+        //   val ccx = cc.bounds.xProjection
+        //   val topLineOverlaps = tlx.p1.x-0.1 <= ccx.p1.x && ccx.p2.x <= tlx.p2.x+0.1
+
+        //   // val fmt=debugFormatLine(cc)
+        //   // println(s"""| checking for candidates
+        //   //             |  ${fmt}
+        //   //             |   top: ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
+        //   //             |   bottom: ${bottomLine.bounds.prettyPrint} / r: ${bottomLine.bounds.right}
+        //   //             |
+        //   //             |""".stripMargin)
+
+        //   // if (fmt.endsWith("electrode assembly.")) {
+        //   //   val tlfmt=debugFormatLine(topLine)
+        //   //   println(s"""| comparing candidates
+        //   //               |    top: ${tlfmt}
+        //   //               |        ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
+        //   //               |    ${fmt}
+        //   //               |       top: ${cc.bounds.prettyPrint} / r: ${cc.bounds.right}
+        //   //               |       bottom: ${cc.bounds.prettyPrint} / r: ${cc.bounds.right}
+        //   //               |""".stripMargin)
+
+        //   //   debugLineComponentStats(topLine)
+        //   //   println(s"candidate line ccs")
+        //   //   debugLineComponentStats(cc)
+        //   // }
+
+        //   topLineOverlaps
+        // }).sortBy(_.bounds.top)
+
+
+        def candidateIsBelowBottom(cand: ConnectedComponents) = cand.bounds.top > bottomLine.bounds.top
+        def candidateIsBelowTop(cand: ConnectedComponents) = cand.bounds.top > topLine.bounds.top
+        def candidateIsAboveBottom(cand: ConnectedComponents) = cand.bounds.top < bottomLine.bounds.top
+        def candidateIsAboveTop(cand: ConnectedComponents) = cand.bounds.top < topLine.bounds.top
+
+        def candidateCrossesLineBounds(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+          val slopFactor = 0.1d
+
+          val linex0 = line.bounds.toWesternPoint.x-slopFactor
+          val linex1 = line.bounds.toEasternPoint.x+slopFactor
+          val candx0 = cand.bounds.toWesternPoint.x
+          val candx1 = cand.bounds.toEasternPoint.x
+          val candRightInside = linex0 <= candx1 && candx1 <= linex1
+          val candLeftOutside = candx0 < linex0
+          val candLeftInside = linex0 <= candx0 && candx0 <= linex1
+          val candRightOutside = linex1 < candx1
+
+          val crossesLeft = candRightInside && candLeftOutside
+          val crossesRight = candLeftInside && candRightOutside
+
+          val candb = debugFormatLine(cand)
+          val lineb = debugFormatLine(line)
+
+          // debugReport(
+          //   candb,
+          //   lineb,
+          //   linex0           , // = line.bounds.toWesternPoint.x
+          //   linex1           , // = line.bounds.toEasternPoint.x
+          //   candx0           , // = cand.bounds.toWesternPoint.x
+          //   candx1           , // = cand.bounds.toEasternPoint.x
+          //   candRightInside  , // = linex0 <= candx1 && candx1 <= linex1
+          //   candLeftOutside  , // = candx0 < linex0
+          //   candLeftInside   , // = linex0 <= candx0 && candx0 <= linex1
+          //   candRightOutside , // = linex1 > candx1
+          //   crossesLeft        , // = candRightInside && candLeftOutside
+          //   crossesRight,     // = candLeftInside && candRightOutside
+          //   crossesLeft || crossesRight
+          // )
+
+          crossesLeft || crossesRight
+        }
+
+        def candidateIsStrictlyLeftOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+          val linex0 = line.bounds.toWesternPoint.x
+          val candx1 = cand.bounds.toEasternPoint.x
+          candx1 < linex0
+        }
+
+        def candidateIsStrictlyRightOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+          val linex1 = line.bounds.toEasternPoint.x
+          val candx0 = cand.bounds.toWesternPoint.x
+          candx0 > linex1
+        }
+        def candidateIsOutsideLineBounds(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+          candidateIsStrictlyLeftOfLine(cand, line) ||
+            candidateIsStrictlyRightOfLine(cand, line)
+        }
+
+
+        // println("now checking for lines above")
+
+        val possibleCand = pageLines
+          .diff(ySortedLines)
+          .sortBy(_.bounds.top)
+
+        val candidateLinesAbove = possibleCand
+          .reverse
+          .filter(candidateIsAboveTop(_))
+          .filterNot(candidateIsOutsideLineBounds(_, topLine))
+          .takeWhile({cc =>
+            val colBreak = candidateCrossesLineBounds(cc, topLine)
+
+            // println(s"""| checking for above topline:
+            //             | cand: ${debugFormatLine(cc)}
+            //             | top : ${debugFormatLine(topLine)}
+            //             | breaks col bounds ${colBreak}
+            //             |""".stripMargin)
+            !colBreak
+          })
+
+        // println(s"found ${candidateLinesAbove.length} lines above")
+
+
+
+        // println("now checking for lines below")
+
+        val candidateLinesBelow = possibleCand
+          .filter(candidateIsBelowBottom(_))
+          .filterNot(candidateIsOutsideLineBounds(_, topLine))
+          .takeWhile({cc =>
+            val colBreak = candidateCrossesLineBounds(cc, topLine)
+            // println(s"""| checking for below bottom line:
+            //             | cand: ${debugFormatLine(cc)}
+            //             | top : ${debugFormatLine(topLine)}
+            //             | breaks col bounds ${colBreak}
+            //             |""".stripMargin)
+            !colBreak
+          })
+
+
+        // println(s"found ${candidateLinesBelow.length} lines below")
+
+        val candidateLinesWithin = possibleCand
+          .filter(c =>candidateIsAboveBottom(c) && candidateIsBelowTop(c))
+          .filterNot(candidateIsOutsideLineBounds(_, topLine))
+          .filterNot(candidateCrossesLineBounds(_, topLine))
+
+        // println(s"found ${candidateLinesWithin.length} lines within")
+
+        // val candidateLinesWithin = possibleCand.filter({cc =>
+        //   // val fmt=debugFormatLine(cc)
+        //   // println(s"""| checking for within ${fmt}
+        //   //             | top: ${topLine.bounds.prettyPrint} / r: ${topLine.bounds.right}
+        //   //             | bottom: ${bottomLine.bounds.prettyPrint} / r: ${bottomLine.bounds.right}
+        //   //             |""".stripMargin)
+        //   topLine.bounds.top < cc.bounds.top && cc.bounds.top < bottomLine.bounds.top
+        // })
+
+        val debugAboveLines = candidateLinesAbove.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+        val debugWithin = candidateLinesWithin.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+        val debugMiddle = ySortedLines.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+        val debugBelowLines = candidateLinesBelow.map({ cc=> renderConnectedComponents(cc) }).mkString("\n")
+
+        // println(s"Candidates Above\n${debugAboveLines}\n")
+        // println(s"Candidates Within\n${debugWithin}\n")
+        // println(s"\n\n${debugMiddle}\n\n")
+        // println(s"Candidates below\n${debugBelowLines}\n")
+
+
+        // find common v-dist within block, grab lines from above/below within that distance
+
+        // val vDists = ySortedLines.sliding(2).map({
+        //   case Seq(c1, c2) => c1.bounds.toCenterPoint.vdist(c2.bounds.toCenterPoint)
+        //   case Seq(c1) => 0d
+        // })
+
+        // val topVDists = getMostFrequentValues(vDists.toList, 0.5d).toList
+        // println(s"""top v-dists ${topVDists.mkString(", ")}""")
+
+        // // pad out the distance slightly
+        // val topVDist = topVDists.head._1 + 0.1d
+
+        // // val hitsAbove = candidateLinesAbove.filter({cabove =>
+        // //   val vdist = topLine.bounds.toCenterPoint.vdist(cabove.bounds.toCenterPoint)
+        // //   println(s"checking vdist=${vdist.pp} for ${cabove.toText}")
+        // //   vdist <= topVDist
+        // // })
+        // var currTopBounds = topLine.bounds
+        // val hitsAbove = candidateLinesAbove.reverse.takeWhile({cabove =>
+        //   val vdist = cabove.bounds.toCenterPoint.vdist(currTopBounds.toCenterPoint)
+        //   println(s"checking vdist=${vdist.pp} for ${cabove.toText}")
+        //   currTopBounds = cabove.bounds
+        //   vdist <= topVDist*3.0
+        // })
+
+        // var currBottomBounds = bottomLine.bounds
+        // val hitsBelow = candidateLinesBelow.takeWhile({cbelow =>
+        //   val vdist = cbelow.bounds.toCenterPoint.vdist(currBottomBounds.toCenterPoint)
+        //   currBottomBounds = cbelow.bounds
+        //   vdist <= topVDist*3.0
+        // })
+
+        // val totalLine =  hitsAbove ++ ySortedLines ++ candidateLinesWithin ++ hitsBelow
+        val totalLines =  candidateLinesAbove ++ ySortedLines ++ candidateLinesWithin ++ candidateLinesBelow
+        val totalLineSorted = totalLines.sortBy(_.bounds.top)
+
+        Component(totalLineSorted, LB.Block)
+      })
+
+    /// return:
+    sortedCommonLines
+
+
+
+    // column detection
+    //   - search paper-wide for most common: line-width,
+    //     for most common line widths, find most common ctr-x, most common v-dist to next line
+    //   foreach page:
+    //     label centered text lines
+    //       look up/down foreach centered line to form centered block
+    //     foreach line that matches common-width w/common ctr,
+    //       look up/down and join w/ lines within reach
+    //     foreach un-labeled line on page
+    //        try l/r justified block detection (justified l/r)
+    //        try center-column detection (justified l/r)
+    //        try left-justified block detection
+
+
+
+    //     justified l/r cols
+    //       map lines => x.(left, ctr, right)
+    //         group into matching sets
+    //         foreach matching set, look up/down for straggling line
+
+
+
+    // lines.foreach{ line =>
+    //   val lineCenter = line.bounds.toCenterPoint
+    //   println(s"${lineCenter.prettyPrint} cb:${cdist2} pb:${cdist}  ${line.tokenizeLine().toText}")
+    // }
+    // println(
+    // lines.map{ line =>
+    //   line.bounds.toCenterPoint.x
+    // }.sorted.mkString("\n")
+    // )
+
+
+
+
+  }
+
 
 }
 

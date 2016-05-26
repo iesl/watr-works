@@ -15,7 +15,8 @@ class TextBlockTest extends DocsegTestUtil  {
   behavior of "block identification and ordering"
   // import Component._
   val testExamples = List(
-    TextblockExample("2839.pdf", page(0)) // cols not detected
+    // TextblockExample("2839.pdf", page(0)) // cols not detected
+    TextblockExample("bongard2005.pdf", page(1)) // cols not detected
 
     // TextblockExample("101016jactamat200401025.pdf", page(0)),
     // TextblockExample("101016jcarbon201301056.pdf", page(0)),
@@ -41,6 +42,15 @@ class TextBlockTest extends DocsegTestUtil  {
         docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
       }
 
+      // allPageLines.drop(1).take(1).foreach { page =>
+      //   println("Page========")
+      //   page.foreach { block =>
+      //     println("Block========")
+      //     val pstr = Component.renderConnectedComponents(block)
+      //     println(pstr)
+      //   }
+      // }
+
       val accum = PageSegAccumulator(allPageLines, Seq())
 
       // get document-wide stats
@@ -57,9 +67,7 @@ class TextBlockTest extends DocsegTestUtil  {
         col <- zones
       } {
         println("Column")
-        println(
-          Component.renderConnectedComponents(col)
-        )
+        println(Component.renderConnectedComponents(col))
       }
 
     }

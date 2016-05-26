@@ -142,12 +142,16 @@ object Works extends App {
               )
             } catch {
               case t: Throwable =>
-                sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+                println(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+                s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
             }
           }. recover({
             case t: Throwable =>
-              sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
-          }).getOrElse { sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}") }
+              (s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+          }).getOrElse {
+            println(s"could not extract ${artifactOutputName}  for ${pdfArtifact}")
+            """{ "error" }"""
+          }
         )
       }
 
