@@ -1,0 +1,5 @@
+#!/bin/bash
+
+args=("$@")
+
+sbt -mem 3000 "project watrshed" "runMain edu.umass.cs.iesl.watr.ext.Works $*"
