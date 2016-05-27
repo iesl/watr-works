@@ -1,24 +1,11 @@
 package edu.umass.cs.iesl
-
-import com.softwaremill.debug.DebugConsole
-import scalaz.syntax.ToIdOps
-import scalaz.syntax.std.ToBooleanOps
-  // import scalaz.syntax.std.ToOptionOps
-  // import scalaz.syntax.std.ToOptionIdOps
-  // import scalaz.syntax.std.ToListOps
-  // import scalaz.syntax.FoldableSyntax
-  // import scalaz.syntax.ToValidationOps
+package watr
 
 
-trait ScalaZCommonOps
-    extends ToIdOps
-    with ToBooleanOps
-// with ToOptionIdOps
-// with ToOptionOps
+object `package` extends PackageDefs {
 
-package object watr
-    extends DebugConsole
-    with ScalaZCommonOps {
+
+// package object watr extends ScalaZCommonOps with DebugMacros {
 
   def time[R](prefix: String)(block: => R): R = {
     val t0 = System.nanoTime()

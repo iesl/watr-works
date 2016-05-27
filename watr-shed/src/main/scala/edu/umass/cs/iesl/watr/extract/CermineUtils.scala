@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package ext
+package extract
 
 import watrmarks._
 import pl.edu.icm.cermine.structure.model._

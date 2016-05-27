@@ -3,7 +3,7 @@ package watr
 package segment
 
 import watrmarks._
-import ext._
+import extract._
 
 class SuperSubScriptTest extends DocsegTestUtil {
   behavior of "docstrum segmenter"

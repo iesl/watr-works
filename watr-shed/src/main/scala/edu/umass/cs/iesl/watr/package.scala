@@ -1,8 +1,9 @@
 package edu.umass.cs.iesl
+package watr
 
 import scalaz.Tag
 
-package object watr {
+object `package` extends PackageDefs {
 
   val SHA1String = Tag.of[SHA1String]
 

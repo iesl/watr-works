@@ -5,7 +5,7 @@ package server
 import net.sf.jsi.Rectangle
 
 // import scala.collection.mutable
-import ext.CermineExtractor
+import extract.CermineExtractor
 import watrmarks._
 import ammonite.ops._
 

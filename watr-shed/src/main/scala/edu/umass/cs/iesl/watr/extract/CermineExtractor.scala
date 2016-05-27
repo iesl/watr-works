@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl
 package watr
-package ext
+package extract
 
 
 import watrmarks._

@@ -1,7 +1,9 @@
-package edu.umass.cs.iesl.watr
-package ext
+package edu.umass.cs.iesl
+package watr
+package extract
 
-import com.softwaremill.debug.DebugConsole._
+
+// import com.softwaremill.debug.DebugConsole._
 
 object CermineFontInfo {
 

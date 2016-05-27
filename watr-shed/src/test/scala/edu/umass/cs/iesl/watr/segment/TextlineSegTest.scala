@@ -5,7 +5,7 @@ package segment
 // import scalaz.@@
 
 import watrmarks._
-import ext._
+import extract._
 
 class TextlineSegTest extends DocsegTestUtil  {
   behavior of "text line identification"

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package ext
+package extract
 
 import java.security.MessageDigest
 import scalaz.@@

@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl
 package watr
-package ext
+package extract
 
 import ammonite.ops._
 import edu.umass.cs.iesl.watr.watrmarks.ZoneIndexer
