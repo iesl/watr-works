@@ -11,7 +11,7 @@ import Component._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 
-import com.softwaremill.debug.DebugConsole._
+// import com.softwaremill.debug.DebugConsole._
 
 case class LineDimensionBins(
   page: Int@@PageID,
@@ -128,15 +128,15 @@ object DocstrumSegmenter extends DocstrumUtils {
 
     val pageBoxes = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
       val pageZones = zones.toList.map({ zone =>
-        vjoinTrailSep(sep=",")(renderConnectedComponents(zone):_*)
+        vjoinTrailSep(left, ",")(renderConnectedComponents(zone):_*)
       })
 
       initState.foreach(_.advancePage())
 
-      (s"""{"page": ${pagenum},""" %
-        """ "lines": [""" %
-        indent()(vsep(pageZones)) %
-        """]}""")
+      (s"""|{"page": ${pagenum},
+           | "lines": [
+           |  ${ indent()(punctuateV(left, ",", pageZones)) }
+           | ]}""".stripMargin.box)
     }
 
     val tokenDict = initState.map { state =>
@@ -149,22 +149,18 @@ object DocstrumSegmenter extends DocstrumUtils {
       indent()(vjoinTrailSep(left, ",")(tokLines:_*))
     } getOrElse nullBox
 
+    val allPages = punctuateV(left, ",", pageBoxes)
 
-    val op = (
-        """{ "pages": [""" %
-                indent()(
-                  vjoinTrailSep(left, ",")(
-                    vjoinTrailSep(left, ",")(pageBoxes:_*)
-                  )) %
-             "], " %
-        """ "ids": [""" %
-                 indent()(tokenDict) %
-             "]" %
-        """}""" %|
-        ""
-    )
+    (s"""|
+         |{ "pages": [
+         |    ${indent(8)(allPages)}
+         |   ],
+         |   "ids": [
+         |     ${indent()(tokenDict)}
+         |   ]}
+         |""".stripMargin)
 
-    op.toString()
+
   }
 }
 

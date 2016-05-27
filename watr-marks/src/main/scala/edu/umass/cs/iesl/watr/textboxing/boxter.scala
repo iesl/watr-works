@@ -184,18 +184,21 @@ object TextBoxing extends ToListOps with ToIdOps {
   // vsep sep a bs lays out bs vertically with alignment a,
   //   with sep amount of space in between each.
   def vsep(bs: Seq[Box], sep: Int=1, align: Alignment=left): Box =
-     punctuateV(align)(emptyBox(sep)(0))(bs.toList)
+     punctuateV(align, emptyBox(sep)(0), bs.toList)
 
 
   // punctuateH a p bs horizontally lays out the boxes bs with a
   //   copy of p interspersed between each.
-  def punctuateH: Alignment => Box => List[Box] => Box =
-    a => p => bs => hcat(a)(bs intersperse p)
+  def punctuateH: Alignment => Box => Seq[Box] => Box =
+    a => p => bs => hcat(a)(bs.toList intersperse p)
 
 
   // A vertical version of 'punctuateH'.
-  def punctuateV: Alignment => Box => List[Box] => Box =
-    a => p => bs => vcat(a)(bs intersperse p)
+  // def punctuateV: Alignment => Box => List[Box] => Box =
+  //   a => p => bs => vcat(a)(bs intersperse p)
+
+  def punctuateV(a:Alignment, p:Box, bs:Seq[Box]):  Box =
+    vcat(a)(bs.toList intersperse p)
 
   def vjoin(a:Alignment=left, sep:Box=nullBox)(bs:Box*): Box =
     vcat(a)(bs.toList intersperse sep)
