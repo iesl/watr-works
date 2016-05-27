@@ -129,7 +129,7 @@ object Works extends App {
   def detectParagraphs(conf: AppConfig): Unit = {
     // import watrmarks.TB._
     // import watrmarks._
-    import docseg._
+    import segment._
 
     val artifactOutputName = "docseg.json"
 
@@ -182,7 +182,7 @@ object Works extends App {
   def printColumns(conf: AppConfig): Unit = {
     // import watrmarks.TB._
     import watrmarks._
-    import docseg._
+    import segment._
 
     val artifactOutputName = "columns.txt"
     getProcessList(conf).foreach { entry =>
@@ -276,7 +276,7 @@ object Works extends App {
 
             zoneIndex.getPages.take(2).map { page =>
 
-              val docstrum = new docseg.DocstrumSegmenter(zoneIndex)
+              val docstrum = new segment.DocstrumSegmenter(zoneIndex)
 
               val lines = docstrum.determineLines(
                 page,

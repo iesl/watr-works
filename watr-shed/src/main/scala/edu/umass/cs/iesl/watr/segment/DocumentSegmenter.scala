@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package docseg
+package segment
 
 import watrmarks._
 

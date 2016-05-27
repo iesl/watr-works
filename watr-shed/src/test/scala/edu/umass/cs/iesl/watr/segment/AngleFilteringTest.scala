@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl
 package watr
-package docseg
+package segment
 
 import org.scalatest._
 
