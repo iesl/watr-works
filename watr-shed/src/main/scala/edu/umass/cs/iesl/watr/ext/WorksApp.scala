@@ -150,9 +150,17 @@ object Works extends App {
           pdfArtifact.asInputStream.map{ pdf =>
 
             try {
-              DocstrumSegmenter.segmentPages(
+              val output = DocstrumSegmenter.segmentPages(
                 CermineExtractor.extractChars(pdf)
               )
+
+              val charsSeen = CharacterAccumulator.charSet.grouped(40).map(
+                _.mkString(", ")
+              ).mkString("Chars\n", "\n" , "\n\n")
+              println(charsSeen)
+              // CharacterAccumulator.charSet.clear()
+
+              output
             } catch {
               case t: Throwable =>
                 println(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")

@@ -12,6 +12,10 @@ import Scalaz._
 
 import DocstrumSegmenter._
 
+object CharacterAccumulator {
+  val charSet: mutable.Set[Char] = mutable.Set()
+}
+
 
 case class CCRenderState(
   numOfPages: Int,
@@ -229,11 +233,58 @@ object Component {
           Seq(hcat(vs))
         }
 
-      case charcomp: CharComponent =>
-        Seq(charcomp.component.char.box)
-    }
 
+
+      case charcomp: CharComponent =>
+        charcomp.chars.foreach { c =>
+          if (c.toInt > 127)
+          CharacterAccumulator.charSet.add(c)
+        }
+
+
+        /*
+         ı φ α · Δ ⋅
+         ψ  τ ˆ ß μ ⁄ Ω   ø ϕ π € Æ θ Ł   × δ º   ∆ ¼  ð  ˇ
+         Γ β ° ω ρ  ˚ σ Þ  → ˜ ν   ο η  ¨   γ ⇑   Ø ε  ½ µ þ ´
+
+         + large parenthesis chars
+         ⎛  ⎞
+         ⎜  ⎟
+         ⎝  ⎠
+
+         Å
+         ±
+         ‘
+         ’
+         “”
+         Ι
+
+         */
+
+
+        val nonAscii = charcomp.chars.exists(_.toInt > 127)
+
+        if (nonAscii) {
+          val withSubs:String = charcomp.chars match {
+            case "ﬅ"  => "ft"
+            case "ﬀ"  => "ff"
+            case "ﬁ"  => "fi"
+            case "ﬂ"  => "fl"
+            case "ﬃ" => "ffi"
+            case "ﬄ" => "ffl"
+            // case "–" => // en-dash
+            // case "—" => // em-dash
+            // case "−" => // minus symbol
+            case "æ" => "ae"
+            case _ => charcomp.chars
+          }
+          Seq(withSubs.box)
+        } else {
+          Seq(charcomp.component.char.box)
+        }
+    }
   }
+
 
   def debugLineComponentStats(linecc: ConnectedComponents): Unit = {
     // linecc.components.foreach{_ match {
@@ -980,24 +1031,3 @@ case class ConnectedComponents(
 //     ???
 //   }
 // }
-// r:0.00 (0.00)  = [1.00, 0.00], atan: 0.00 p1 angleto p2: 0.0
-// r:0.30 (0.10)  = [0.96, 0.30], atan: 0.30 p1 angleto p2: 0.29999999999999993
-// r:0.60 (0.19)  = [0.83, 0.56], atan: 0.60 p1 angleto p2: 0.6
-// r:0.90 (0.29)  = [0.62, 0.78], atan: 0.90 p1 angleto p2: 0.8999999999999999
-// r:1.20 (0.38)  = [0.36, 0.93], atan: 1.20 p1 angleto p2: 1.2
-// r:1.50 (0.48)  = [0.07, 1.00], atan: 1.50 p1 angleto p2: 1.5
-// r:1.80 (0.57)  = [-0.23, 0.97], atan: 1.80 p1 angleto p2: -1.3415926535897933
-// r:2.10 (0.67)  = [-0.50, 0.86], atan: 2.10 p1 angleto p2: -1.041592653589793
-// r:2.40 (0.76)  = [-0.74, 0.68], atan: 2.40 p1 angleto p2: -0.7415926535897933
-// r:2.70 (0.86)  = [-0.90, 0.43], atan: 2.70 p1 angleto p2: -0.4415926535897935
-// r:3.00 (0.95)  = [-0.99, 0.14], atan: 3.00 p1 angleto p2: -0.14159265358979367
-// r:3.30 (1.05)  = [-0.99, -0.16], atan: -2.98 p1 angleto p2: 0.15840734641020612
-// r:3.60 (1.15)  = [-0.90, -0.44], atan: -2.68 p1 angleto p2: 0.458407346410206
-// r:3.90 (1.24)  = [-0.73, -0.69], atan: -2.38 p1 angleto p2: 0.7584073464102058
-// r:4.20 (1.34)  = [-0.49, -0.87], atan: -2.08 p1 angleto p2: 1.058407346410206
-// r:4.50 (1.43)  = [-0.21, -0.98], atan: -1.78 p1 angleto p2: 1.3584073464102058
-// r:4.80 (1.53)  = [0.09, -1.00], atan: -1.48 p1 angleto p2: -1.4831853071795875
-// r:5.10 (1.62)  = [0.38, -0.93], atan: -1.18 p1 angleto p2: -1.1831853071795877
-// r:5.40 (1.72)  = [0.63, -0.77], atan: -0.88 p1 angleto p2: -0.8831853071795879
-// r:5.70 (1.81)  = [0.83, -0.55], atan: -0.58 p1 angleto p2: -0.5831853071795882
-// r:6.00 (1.91)  = [0.96, -0.28], atan: -0.28 p1 angleto p2: -0.28318530717958823
