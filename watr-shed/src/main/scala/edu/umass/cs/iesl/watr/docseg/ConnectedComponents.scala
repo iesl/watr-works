@@ -136,6 +136,7 @@ object Component {
                 state.tokens.append((currPage, tokenId, c.bounds))
                 val trend = renderConnectedComponents(c)
                 val token = hcat(trend)
+
                 val quoted = "\"".box+token+"\""
                 (quoted,  tokenId.toString.box)
               })
@@ -156,11 +157,32 @@ object Component {
 
           case LB.Token =>
             // println(s"   ${cc.blockRole}")
-            val vs = cc.components.map({c =>
-              hcat(renderConnectedComponents(c))
+            val clabels:Set[Label] = cc.components.map(_.containedLabels).reduce(_++_)
+            val texFmtLabels = (clabels intersect Set(LB.Sup, LB.Sub))
+
+            val subs = Seq(
+              ('"' -> "\\\""),
+              ('\\' -> "\\\\"),
+              ('{' -> "\\\\{"),
+              ('}' -> "\\\\}")
+            )
+
+            val mapped = cc.components.map({c =>
+              hcat(
+                renderConnectedComponents(
+                  c.mapChars(subs)))
             })
 
-            vs
+            // println(s"""| Rendering token: ${cc.chars}
+            //             |   ${texFmtLabels}
+            //             |   ${mapped.map(_.chars).mkString(" ")}
+            //             |""".stripMargin)
+
+            if (texFmtLabels.isEmpty) {
+              mapped
+            } else {
+              "{".box +: mapped :+ "}".box
+            }
 
           case LB.Sup   =>
             // println(s"   ${cc.blockRole}")
@@ -241,6 +263,9 @@ import Component._
 sealed trait Component {
   def chars: String
 
+  def mapChars(subs: Seq[(Char, String)]): Component
+
+
   def toText(implicit idgen:Option[CCRenderState] = None): String
 
   def bounds: LTBounds
@@ -300,6 +325,7 @@ sealed trait Component {
   def withLabel(l: Label): Component
   def removeLabel(): Component
   def label: Option[Label]
+  def containedLabels: Set[Label]
 
 }
 
@@ -309,6 +335,16 @@ case class CharComponent(
   orientation: Double,
   blockRole: Option[Label] = None
 ) extends Component {
+
+  def mapChars(subs: Seq[(Char, String)]): Component  = {
+    subs
+      .find(_._1.toString==component.char)
+      .map({case (_, sub) =>
+        this.copy(component=component.copy(char = sub))
+      })
+      .getOrElse(this)
+  }
+
   val dx = component.bbox.width / 3
   val dy = dx * math.tan(orientation);
 
@@ -321,6 +357,8 @@ case class CharComponent(
 
   def toText(implicit idgen:Option[CCRenderState] = None): String = component.char
   def chars: String = toText
+
+  val containedLabels: Set[Label] = blockRole.toSet
 
   val label: Option[Label] = blockRole
   def withLabel(l: Label): Component = {
@@ -338,6 +376,17 @@ case class ConnectedComponents(
   // label: Label = LB.Line
   // labels: Seq[Label] = Seq()
 ) extends Component {
+  def mapChars(subs: Seq[(Char, String)]): Component  = {
+    copy(
+      components = components.map(_.mapChars(subs))
+    )
+  }
+
+  def containedLabels: Set[Label] = {
+    blockRole.toSet ++ (components
+      .map(_.containedLabels)
+      .reduce(_++_))
+  }
 
   val label: Option[Label] = blockRole
   def withLabel(l: Label): Component = {
