@@ -235,6 +235,42 @@ object Bounds {
   }
 
 
+  implicit class RicherCharBox(val charBox: CharBox) extends AnyVal {
+    // case class CharBox(
+    //   id: Int@@CharID,
+    //   char: String,
+    //   bbox: LTBounds,
+    //   subs: String = "",
+    //   wonkyCharCode: Option[Int] = None
+    // )
+
+    def prettyPrint: String = {
+      charBox.wonkyCharCode
+        .map({ code =>
+          if (code==32) { "_"  }
+          else { s"#${code}?" }
+        })
+        .getOrElse({
+          if (!charBox.subs.isEmpty()) charBox.subs
+          else charBox.char
+        })
+    }
+
+    def bestGuessChar: String = {
+      charBox.wonkyCharCode
+        .map({ code =>
+          if (code==32) { s" "  }
+          else { s"#${code}?" }
+        })
+        .getOrElse({
+          if (!charBox.subs.isEmpty()) charBox.subs
+          else charBox.char
+        })
+    }
+
+    def isWonky: Boolean = charBox.wonkyCharCode.isDefined
+
+  }
 }
 
 import Bounds._

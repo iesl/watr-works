@@ -37,7 +37,7 @@ trait DocstrumUtils {
 
   def squishb(charBoxes: Seq[CharBox]): String = {
     approxSortYX(charBoxes)
-      .map({ cbox => cbox.char })
+      .map({ cbox => cbox.prettyPrint })
       .mkString
   }
 
@@ -180,6 +180,7 @@ class DocstrumSegmenter(
 
   private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[CharBox] = {
     pages.nearestNChars(pageId, qbox, 12, 15.0f)
+      .filterNot(_.isWonky)
   }
 
   def computeInitialOrientation(): Double = {
@@ -227,10 +228,11 @@ class DocstrumSegmenter(
     val maxHorizontalDistance: Double = 2.5d
     val maxVerticalDistance: Double = 12.0
 
-    val sets = new DisjointSets[CharBox](components);
+    val readableComponents = components.filterNot(_.isWonky)
+    val sets = new DisjointSets[CharBox](readableComponents)
 
 
-    for { component <- components.sortBy(_.bbox.left) } {
+    for { component <- readableComponents.sortBy(_.bbox.left) } {
       val searchLog = mutable.ArrayBuffer[TB.Box]()
       findNeighbors(pageId, component)
         .foreach({neighbor =>
@@ -262,7 +264,7 @@ class DocstrumSegmenter(
             val topsNotEq = component.bbox.top.pp != neighbor.bbox.top.pp
             val angleNotZero = angle.pp != "0.00"
             searchLog.append(
-              s"   ${neighbor.char} #${neighbor.id} ${neighbor.bbox.prettyPrint}".box %
+              s"   '${neighbor.char}' ${neighbor.wonkyCharCode} #${neighbor.id} ${neighbor.bbox.prettyPrint}".box %
               s"""       ${ if (joinWith && topsNotEq) "!join" else if (joinWith) "join" else "" }""" %
               s"       angle:${angle.pp} dx:${dx.pp} dy:${dy.pp}" %
               s"       dist:${dist.pp} e/wi-dist:${eastWestDist.pp}" %

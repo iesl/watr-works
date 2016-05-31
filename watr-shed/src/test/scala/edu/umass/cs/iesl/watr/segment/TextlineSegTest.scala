@@ -25,61 +25,61 @@ class TextlineSegTest extends DocsegTestUtil  {
   // D e p a r t m _T_ e n _h_ t _e_ o _M_ f M _a_ _t_ _e_ a _r_ t _i_ e _a_ r _l_ i _s_ a l _R_ s _e_ S _s_ _e_ c _a_ i e _r_ n _c_ c _h_ e _I_ a _n_ n _s_ d _t_ _i_ _t_ E _u_ _t_ n _e_ g _,_ i n _T_ e _h_ e _e_ r i _P_ n g _e_ , _n_ _n_ T _s_ h _y_ e _l_ _v   (l:89.46, t:227.77, w:406.59, h:17.95)
 
   val testExamples = List(
-    // TextExample(
-    //   """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016japsusc201210126.pdf.d/101016japsusc201210126.pdf
-    //      |""".stripMargin,
-    //   """|be    (l:41.23, t:497.77, w:251.54, h:18.43)
-    //      |""".stripMargin,
-    //   """|Proton exchange membrane fuel cell (PEMFC) is considered to
-    //      |be the most attractive energy technology for the future due to
-    //      |""".stripMargin
-    // ),
-    // TextExample(
-    //   """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201112024.pdf.d/101016jactamat201112024.pdf
-    //      |""".stripMargin,
-    //   """|the                                                         (l:520.27, t:465.98, w:13.17, h:9.96)
-    //      |Perhaps                                                     (l:477.92, t:465.98, w:34.10, h:9.96)
-    //      |variables.                                                  (l:429.05, t:465.98, w:40.61, h:9.96)
-    //      |and                                                         (l:374.11, t:465.98, w:15.98, h:9.96)
-    //      |ing),                                                       (l:311.53, t:465.98, w:19.18, h:9.96)
-    //      |other                                                       (l:398.32, t:465.98, w:22.51, h:9.96)
-    //      |strain,                                                     (l:338.97, t:465.98, w:26.85, h:9.96)
-    //      |most                                                        (l:541.64, t:465.98, w:20.84, h:9.96)
-    //      |""".stripMargin,
-    //   """|ing), strain, and other variables. Perhaps the most
-    //      |""".stripMargin
-    // ),
-    // TextExample(
-    //   """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
-    //      |""".stripMargin,
-    //   """|A bs t r a c t               (l:42.52, t:294.50, w:32.20, h:8.97)
-    //      |""".stripMargin,
-    //   """|Abstract               (l:42.52, t:294.50, w:32.20, h:8.97)
-    //      |""".stripMargin
-    // ),
+    TextExample(
+      """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016japsusc201210126.pdf.d/101016japsusc201210126.pdf
+         |""".stripMargin,
+      """|be    (l:41.23, t:497.77, w:251.54, h:18.43)
+         |""".stripMargin,
+      """|Proton exchange membrane fuel cell (PEMFC) is considered to
+         |be the most attractive energy technology for the future due to
+         |""".stripMargin
+    ),
+    TextExample(
+      """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201112024.pdf.d/101016jactamat201112024.pdf
+         |""".stripMargin,
+      """|the                                                         (l:520.27, t:465.98, w:13.17, h:9.96)
+         |Perhaps                                                     (l:477.92, t:465.98, w:34.10, h:9.96)
+         |variables.                                                  (l:429.05, t:465.98, w:40.61, h:9.96)
+         |and                                                         (l:374.11, t:465.98, w:15.98, h:9.96)
+         |ing),                                                       (l:311.53, t:465.98, w:19.18, h:9.96)
+         |other                                                       (l:398.32, t:465.98, w:22.51, h:9.96)
+         |strain,                                                     (l:338.97, t:465.98, w:26.85, h:9.96)
+         |most                                                        (l:541.64, t:465.98, w:20.84, h:9.96)
+         |""".stripMargin,
+      """|ing), strain, and other variables. Perhaps the most
+         |""".stripMargin
+    ),
+    TextExample(
+      """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
+         |""".stripMargin,
+      """|A bs t r a c t               (l:42.52, t:294.50, w:32.20, h:8.97)
+         |""".stripMargin,
+      """|Abstract
+         |""".stripMargin
+    ),
 
-    // TextExample(
-    //   """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
-    //      |""".stripMargin,
-    //   """|safet y       (l:519.76, t:452.43, w:24.88, h:9.96)
-    //      |c om b i ne   (l:334.94, t:452.43, w:36.08, h:9.96)
-    //      |and           (l:498.16, t:452.43, w:15.98, h:9.96)
-    //      |at            (l:376.78, t:452.43, w:8.30, h:9.96)
-    //      |To            (l:317.14, t:452.43, w:12.13, h:9.96)
-    //      |b es t        (l:390.73, t:452.43, w:17.01, h:9.96)
-    //      |weld ing      (l:459.55, t:452.43, w:32.96, h:9.96)
-    //      |e co n o mi c (l:413.40, t:452.43, w:40.44, h:9.96)
-    //      |""".stripMargin,
-    //   """|To combine at best economic welding and safety
-    //      |""".stripMargin
-    // ),
+    TextExample(
+      """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
+         |""".stripMargin,
+      """|safet y       (l:519.76, t:452.43, w:24.88, h:9.96)
+         |c om b i ne   (l:334.94, t:452.43, w:36.08, h:9.96)
+         |and           (l:498.16, t:452.43, w:15.98, h:9.96)
+         |at            (l:376.78, t:452.43, w:8.30, h:9.96)
+         |To            (l:317.14, t:452.43, w:12.13, h:9.96)
+         |b es t        (l:390.73, t:452.43, w:17.01, h:9.96)
+         |weld ing      (l:459.55, t:452.43, w:32.96, h:9.96)
+         |e co n o mi c (l:413.40, t:452.43, w:40.44, h:9.96)
+         |""".stripMargin,
+      """|To combine at best economic welding and safety
+         |""".stripMargin
+    ),
 
     TextExample(
       """| Page:1 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201501032.pdf.d/101016jactamat201501032.pdf
          |""".stripMargin,
       """|C.M. Cepeda-Jime´nez et al. / Acta Materialia 88 (2015) 232–244               (l:183.34, t:47.54, w:220.59, h:8.08)
          |""".stripMargin,
-      """|C.M. Cepeda-Jime´nez et al. / Acta Materialia 88 (2015) 232–244               (l:183.34, t:47.54, w:220.59, h:8.08)
+      """|C.M. Cepeda-Jime´nez et al. / Acta Materialia 88 (2015) 232–244
          |""".stripMargin
     )
 
@@ -128,25 +128,28 @@ class TextlineSegTest extends DocsegTestUtil  {
 
       val interestingChars = zoneIndex.queryCharsIntersects(pageId, totalBounds)
 
-      // val cinfos = charInfosBox(approxSortYX(interestingChars))
-      println(squishb(interestingChars))
+      println("["+squishb(interestingChars)+"]")
 
       val docstrum = new DocstrumSegmenter(zoneIndex)
 
       val lines = docstrum.determineLines(pageId, interestingChars)
 
-      println(s"got ${lines.length} lines")
-      zoneIndex.pageGeometry(pageId).bounds.prettyPrint
-      println(s"page ${pageId} Bounds: ${zoneIndex.pageGeometry(page(0)).bounds.prettyPrint}")
-      println(s"      Borders: ${zoneIndex.pageGeometry(page(0)).borders}")
 
-      // println(zoneIndex.pageGeometry(page(0)).bounds.prettyPrint)
+      val tokenized = lines
+        .sortBy(_.findCenterY())
+        .map{ l => l.tokenizeLine().toText }
 
-      lines.sortBy(_.findCenterY()).foreach{ l =>
-        println(l.tokenizeLine().toText)
-      }
+      assertResult(example.expectedOutput.length)(tokenized.length)
 
-      // assertResult(lines.length)(example.identifyingRegex.length)
+      example.expectedOutput.zip(tokenized).foreach({case (expect, actual) =>
+        assertResult(expect){
+          actual
+        }
+
+      })
+
+
+
 
     }
   }
@@ -219,4 +222,3 @@ class TextlineSegTest extends DocsegTestUtil  {
 // et               (l:239.47, t:86.64, w:7.29, h:9.46)
 // a l.               (l:251.94, t:86.64, w:9.84, h:9.46)
 // [21]               (l:267.02, t:86.64, w:14.58, h:9.46)
-

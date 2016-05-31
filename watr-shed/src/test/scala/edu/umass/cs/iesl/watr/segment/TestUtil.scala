@@ -41,7 +41,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocstrumUtils {
     ParsedExample(
       sourcePdfName,
       parsedFrags,
-      cAndp.expectedOutput
+      cAndp.expectedOutput.trim.split("\n").map(_.trim)
     )
   }
 
@@ -69,5 +69,5 @@ case class TextExample(
 case class ParsedExample(
   source: String,
   regions: Seq[(String, Int@@PageID, LTBounds)],
-  expectedOutput: String
+  expectedOutput: Seq[String]
 )

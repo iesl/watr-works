@@ -21,6 +21,8 @@ import cermine.structure.tools.BxBoundsBuilder
 import util._
 import watrmarks._
 
+import scalaz.{@@}
+
 object util {
 
   implicit class RicherFloat(val d: Float) extends AnyVal {
@@ -58,93 +60,25 @@ class MyBxDocumentCreator(
   fontDict: mutable.Map[String, DocumentFont],
   reader: PdfReader,
   charsToDebug: Set[Int] = Set(),
-  charIdGen: IdGenerator[CharID],
-  pageIdGen: IdGenerator[PageID]
+  charIdGen: IdGenerator[CharID]
+  // pageIdGen: IdGenerator[PageID]
 ) extends RenderListener {
 
-
   var currCharBuffer: mutable.ArrayBuffer[CharBox] = mutable.ArrayBuffer[CharBox]()
-  var currPageChars = PageChars(pageIdGen.nextId, currCharBuffer)
-
-  var zoneRecords: ZoneRecords = ZoneRecords(
-    id = "", target = "",
-    List[PageGeometry](),
-    List[Zone](),
-    List[ZoneAndLabel](),
-    List[PageChars]()
-  )
-
-
-  def getZoneRecords() = zoneRecords
-
-  val document = new BxDocument()
-  var actPage: BxPage = _
-
-  val boundsBuilder = new BxBoundsBuilder()
 
   var pageRectangle: Rectangle = _
 
-  var pageNumber = -1
-
-
 
   def processNewBxPage(_pageRectangle: Rectangle): Unit = {
-
-    if (actPage != null) {
-      actPage.setBounds(boundsBuilder.getBounds())
-      boundsBuilder.clear()
-    }
-    actPage = new BxPage()
-    document.addPage(actPage)
-    pageNumber += 1
-
-
     pageRectangle = _pageRectangle
-
-    val borders = if (pageRectangle.hasBorders) {
-      Some(watrmarks.Borders(
-        bleft = pageRectangle.getBorderWidthLeft.toDouble,
-        bbottom = pageRectangle.getBorderWidthBottom.toDouble,
-        btop = pageRectangle.getBorderWidthTop.toDouble,
-        bright = pageRectangle.getBorderWidthRight.toDouble
-      ))
-    } else None
-
-    // println(s"""| Extracting page Bounds
-    //             |  Top       ${pageRectangle.getTop}
-    //             |  Bottom    ${pageRectangle.getBottom}
-    //             |  Left      ${pageRectangle.getLeft}
-    //             |  Right     ${pageRectangle.getRight}
-    //             |  Width     ${pageRectangle.getWidth}
-    //             |  Height    ${pageRectangle.getHeight}
-    //             |  Border    ${pageRectangle.getBorder}
-    //             |  Borders   ${pageRectangle.hasBorders}
-    //             |""".stripMargin)
-
-    // PageRectangle coords have origin @ lower left (normal cartesian origin)
-    val bounds = watrmarks.LTBounds(
-      left = pageRectangle.getLeft.toDouble,
-      top = pageRectangle.getBottom.toDouble, // ???
-      width = pageRectangle.getWidth.toDouble,
-      height = pageRectangle.getHeight.toDouble
-    )
-
-    zoneRecords = zoneRecords.copy(
-      pageGeometries = zoneRecords.pageGeometries :+ PageGeometry(PageID(pageNumber), bounds, borders),
-      chars = zoneRecords.chars :+ currPageChars
-    )
-
-    currCharBuffer = mutable.ArrayBuffer[CharBox]()
-    currPageChars = PageChars(pageIdGen.nextId, currCharBuffer)
   }
 
   override def beginTextBlock(): Unit = {
     // println("\nblock\n")
   }
 
-  // var count = 0
 
-  def computeTextBounds(charTri: TextRenderInfo): Option[LBBounds] = {
+  def computeTextBounds(charTri: TextRenderInfo): Option[LTBounds] = {
     val ascentStart = charTri.getAscentLine().getStartPoint()
     val descentStart = charTri.getDescentLine().getStartPoint()
 
@@ -184,9 +118,9 @@ class MyBxDocumentCreator(
 
       val y = pageRectangle.getHeight() - charBottom - charHeight
 
-      Some(LBBounds(
+      Some(LTBounds(
         left=charLeft,
-        bottom=y,
+        top=y,
         width=charWidth,
         height=charHeight
       ))
@@ -194,8 +128,7 @@ class MyBxDocumentCreator(
   }
 
   def transformRawChar(ch: Char): String = {
-    if (ch == ' ') ""
-    else if (ch < ' ') ""
+    if (ch <= ' ') ""
     else ch.toString
   }
 
@@ -224,35 +157,38 @@ class MyBxDocumentCreator(
       rawChar = charTri.getText().charAt(0)
       subChars = maybeSubChar(rawChar)
       bakedChar = transformRawChar(rawChar)
-      charBounds <- computeTextBounds(charTri)
+      charBounds = computeTextBounds(charTri)
     } {
 
       val wonkyChar = if (rawChar.toString != bakedChar.toString) Some(rawChar.toInt) else None
 
+      val charBox = charBounds.map(bnds =>
+        CharBox(
+          charIdGen.nextId,
+          bakedChar,
+          bnds,
+          subChars.map(_.mkString).getOrElse(""),
+          wonkyCharCode = wonkyChar
+        )
+      ).getOrElse ({
+        val msg = s"ERROR bounds are invalid"
+        sys.error(msg)
 
-      val charBox = CharBox(
-        charIdGen.nextId,
-        bakedChar,
-        charBounds.toLTBounds,
-        subChars.map(_.mkString).getOrElse(""),
-        wonkyCharCode = wonkyChar
-      )
+      })
 
-      if (wonkyChar.isDefined || subChars.isDefined) {
-        println(s"char: ${charBox}")
-      }
+
+      // if (wonkyChar.isDefined || subChars.isDefined) {
+      //   println(s"char: ${charBox}")
+      // }
       // CermineFontInfo.outputCharInfo(charTri, reader)
       // CermineFontInfo.reportFontInfo(charTri.getFont)
+      // CermineFontInfo.addFontInfo(charTri.getFont
+      // val fullFontName = charTri.getFont().getFullFontName()(0)(3)
+      // chunk.setFontName(fullFontName)
+
 
       currCharBuffer.append(charBox)
 
-      // val chunk = new BxChunk(bounds, text)
-      // val fullFontName = charTri.getFont().getFullFontName()(0)(3)
-      // chunk.setFontName(fullFontName)
-      // actPage.addChunk(chunk)
-      // boundsBuilder.expand(bounds)
-
-      // CermineFontInfo.addFontInfo(charTri.getFont
     }
 
   }
@@ -273,8 +209,7 @@ class MyBxDocumentCreator(
 
 class XITextCharacterExtractor(
   charsToDebug: Set[Int] = Set(),
-  charIdGen: IdGenerator[CharID],
-  pageIdGen: IdGenerator[PageID]
+  charIdGen: IdGenerator[CharID]
 ) extends CharacterExtractor {
   val DEFAULT_FRONT_PAGES_LIMIT = 20
   val DEFAULT_BACK_PAGES_LIMIT = 20
@@ -285,8 +220,43 @@ class XITextCharacterExtractor(
 
   var bxDocumentCreator:MyBxDocumentCreator = _
 
+  // def getZoneRecords() = bxDocumentCreator.getZoneRecords
 
-  def getZoneRecords() = bxDocumentCreator.getZoneRecords
+  def getReportedPageGeometry(pageId: Int@@PageID, pageRectangle: Rectangle): PageGeometry = {
+    val borders = if (pageRectangle.hasBorders) {
+      Some(watrmarks.Borders(
+        bleft = pageRectangle.getBorderWidthLeft.toDouble,
+        bbottom = pageRectangle.getBorderWidthBottom.toDouble,
+        btop = pageRectangle.getBorderWidthTop.toDouble,
+        bright = pageRectangle.getBorderWidthRight.toDouble
+      ))
+    } else None
+
+    // println(s"""| Extracting page Bounds
+    //             |  Top       ${pageRectangle.getTop}
+    //             |  Bottom    ${pageRectangle.getBottom}
+    //             |  Left      ${pageRectangle.getLeft}
+    //             |  Right     ${pageRectangle.getRight}
+    //             |  Width     ${pageRectangle.getWidth}
+    //             |  Height    ${pageRectangle.getHeight}
+    //             |  Border    ${pageRectangle.getBorder}
+    //             |  Borders   ${pageRectangle.hasBorders}
+    //             |""".stripMargin)
+
+    // PageRectangle coords have origin @ lower left (normal cartesian origin)
+    val bounds = watrmarks.LTBounds(
+      left = pageRectangle.getLeft.toDouble,
+      top = pageRectangle.getBottom.toDouble, // ???
+      width = pageRectangle.getWidth.toDouble,
+      height = pageRectangle.getHeight.toDouble
+    )
+
+    PageGeometry(pageId, bounds, borders)
+
+  }
+
+
+  var pagesInfo: List[(PageChars, PageGeometry)] = List()
 
   override def extractCharacters(stream: InputStream): BxDocument = {
     try {
@@ -294,33 +264,43 @@ class XITextCharacterExtractor(
 
       val documentCreator = new MyBxDocumentCreator(
         fontDict, reader, charsToDebug,
-        charIdGen, pageIdGen
+        charIdGen
       )
 
       val processor = new PdfContentStreamProcessor(documentCreator)
 
-
       for (pageNumber <- 1 to reader.getNumberOfPages) {
 
-        if (frontPagesLimit > 0 && backPagesLimit > 0 && pageNumber > frontPagesLimit
-          && pageNumber < reader.getNumberOfPages() - 1 - backPagesLimit) {
-          // continue
-        } else {
+        val pageId = PageID(pageNumber-1)
 
-          val pageSize = reader.getPageSize(pageNumber)
+        val pageSize = reader.getPageSize(pageNumber)
 
-          documentCreator.processNewBxPage(reader.getPageSize(pageNumber))
+        documentCreator.processNewBxPage(pageSize)
 
-          val pageResources = reader.getPageResources(pageNumber)
 
-          val resources = reader.getPageN(pageNumber).getAsDict(PdfName.RESOURCES)
+        val pageResources = reader.getPageResources(pageNumber)
 
-          processAlternativeFontNames(resources)
-          processAlternativeColorSpace(resources)
+        val resources = reader.getPageN(pageNumber).getAsDict(PdfName.RESOURCES)
 
-          processor.reset()
-          processor.processContent(ContentByteUtils.getContentBytesForPage(reader, pageNumber), resources)
-        }
+        processAlternativeFontNames(resources)
+        processAlternativeColorSpace(resources)
+
+        processor.reset()
+        processor.processContent(ContentByteUtils.getContentBytesForPage(reader, pageNumber), resources)
+
+        val pageGeometry = getReportedPageGeometry(pageId, pageSize)
+
+        val pageCharBoxes = Seq[CharBox](documentCreator.currCharBuffer:_*)
+
+        val pageChars = PageChars(pageId, pageCharBoxes)
+
+        pagesInfo = pagesInfo :+ (
+          (pageChars, pageGeometry)
+        )
+
+        documentCreator.currCharBuffer.clear()
+
+
       }
 
       // TODO these steps (filter/remove dups) don't seem necessary yet, and if they are,
@@ -328,7 +308,9 @@ class XITextCharacterExtractor(
       // filterComponents(removeDuplicateChunks(documentCreator.document))
       bxDocumentCreator = documentCreator
 
-      documentCreator.document
+      // documentCreator.document
+      /// Dummy return value
+      new BxDocument()
 
     } catch {
       case ex: InvalidPdfException =>

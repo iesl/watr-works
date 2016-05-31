@@ -21,8 +21,11 @@ import play.api.libs.json._
 
 // import scalaz.@@
 
+import Bounds._
+
 object CermineExtractor extends SpatialJsonFormat {
   // import CermineEnrichments._
+
 
 
   def extractChars(
@@ -30,55 +33,40 @@ object CermineExtractor extends SpatialJsonFormat {
     charsToDebug: Set[Int] = Set()
   ): Seq[(PageChars, PageGeometry)] = {
 
-    // val idgen = IdGenerator[CharID]
-
-
     val conf = new ComponentConfiguration()
     val charExtractor = new XITextCharacterExtractor(
       charsToDebug,
-      IdGenerator[CharID], IdGenerator[PageID]
+      IdGenerator[CharID] //, IdGenerator[PageID]
     )
     conf.setCharacterExtractor(charExtractor)
 
     val _ = ExtractionUtils.extractCharacters(conf, pdfis)
 
-    val zoneRecs  = charExtractor.getZoneRecords
+    val pageInfos = charExtractor.pagesInfo
 
-    zoneRecs.chars.zip(zoneRecs.pageGeometries)
+    // Use computed page bounds (based on char bounds) rather than reported page bounds
+    pageInfos.map({ case (pchars, pgeom) =>
 
+      val mintop = pchars.chars.map(_.bbox.top).min
+      val maxbottom = pchars.chars.map(_.bbox.bottom).max
+      val minleft = pchars.chars.map(_.bbox.left).min
+      val maxright = pchars.chars.map(_.bbox.right).max
 
-    //   .asPages.toList
-    //   .zipWithIndex
-    //   .zip(charExtractor.getZoneRecords.pageGeometries)
-    //   .map{ case ((page, pageNum), pageGeom) =>
-    //     // println(s"page ${pageNum} has ${ page.getChunks.toList.length} chunks ")
+      val computedBounds = LTBounds(
+        minleft, mintop, maxright-minleft, maxbottom-mintop
+      )
+      (pchars,
+        pgeom.copy(bounds = computedBounds)
+      )
 
-    //     val pageChars = page.getChunks.toList.map{ chunk =>
-    //       CharBox(idgen.nextId, chunk.toText(), chunk.getBounds.toLTBounds)
-    //     }
-    //     (PageChars(PageID(pageNum), pageChars) -> pageGeom)
-    // }
+    })
+
+    // charExtractor.pagesInfo
+    // val zoneRecs = charExtractor.pagesInfo
+
+    // zoneRecs.chars.zip(zoneRecs.pageGeometries)
+
   }
-
-
-  // def extractCermineZones(pdfis: InputStream): (BxDocument, ZoneRecords) = {
-  //   val conf = new ComponentConfiguration()
-  //   val charExtractor = new XITextCharacterExtractor(
-  //     Set(),
-  //     IdGenerator[CharId], IdGenerator[PageId]
-  //   )
-  //   conf.setCharacterExtractor(charExtractor)
-
-  //   val d0 = ExtractionUtils.extractCharacters(conf, pdfis)
-  //   val d1 = ExtractionUtils.segmentPages(conf, d0)
-  //   val d2 = ExtractionUtils.resolveReadingOrder(conf, d1);
-  //   val d3 = ExtractionUtils.classifyInitially(conf, d2);
-  //   val d4 = ExtractionUtils.classifyMetadata(conf, d3);
-
-
-  //   val fontDict = charExtractor.fontDict
-  //   (d4, charExtractor.getZoneRecords)
-  // }
 
   def modifyZoneLabelName(name: String): Label = {
     val Array(pre, post0) = name.toLowerCase.split("_", 2)
