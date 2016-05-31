@@ -134,8 +134,8 @@ object DocstrumSegmenter extends DocstrumUtils {
       initState.foreach(_.advancePage())
 
       (s"""|{"page": ${pagenum},
-           | "lines": [
-           |  ${ indent()(punctuateV(left, ",", pageZones)) }
+           | "blocks": [
+           |  ${ indent(8)(punctuateV(left, ",", pageZones)) }
            | ]}""".stripMargin.box)
     }
 
@@ -153,7 +153,7 @@ object DocstrumSegmenter extends DocstrumUtils {
 
     (s"""|
          |{ "pages": [
-         |    ${indent(8)(allPages)}
+         |    ${indent(4)(allPages)}
          |   ],
          |   "ids": [
          |     ${indent()(tokenDict)}

@@ -214,7 +214,12 @@ object Component {
               hcat(renderConnectedComponents(c))
             )
 
-            Seq(vjoinTrailSep(left, ",")(vs:_*))
+
+            Seq(
+              s"""{"labels": ["body"], "lines": [""".box %
+                indent(4)(vjoinTrailSep(left, ",")(vs:_*)) %
+              "]}".box
+            )
 
           case LB.Para  => ???
           case LB.Image => ???
@@ -237,52 +242,7 @@ object Component {
 
 
       case charcomp: CharComponent =>
-        charcomp.chars.foreach { c =>
-          if (c.toInt > 127)
-          CharacterAccumulator.charSet.add(c)
-        }
-
-
-        /*
-         ı φ α · Δ ⋅
-         ψ  τ ˆ ß μ ⁄ Ω   ø ϕ π € Æ θ Ł   × δ º   ∆ ¼  ð  ˇ
-         Γ β ° ω ρ  ˚ σ Þ  → ˜ ν   ο η  ¨   γ ⇑   Ø ε  ½ µ þ ´
-
-         + large parenthesis chars
-         ⎛  ⎞
-         ⎜  ⎟
-         ⎝  ⎠
-
-         Å
-         ±
-         ‘
-         ’
-         “”
-         Ι
-
-         */
-
-
-        val nonAscii = charcomp.chars.exists(_.toInt > 127)
-
-        if (nonAscii) {
-          val withSubs:String = charcomp.chars match {
-            case "ﬅ"  => "ft"
-            case "ﬀ"  => "ff"
-            case "ﬁ"  => "fi"
-            case "ﬂ"  => "fl"
-            case "ﬃ" => "ffi"
-            case "ﬄ" => "ffl"
-            // case "–" => // en-dash
-            // case "—" => // em-dash
-            // case "−" => // minus symbol
-            case "æ" => "ae"
-            case _ => charcomp.chars
-          }
-          Seq(withSubs.box)
-        } else {
-          Seq(charcomp.component.char.toString.box)
-        }
+        Seq(charcomp.component.bestGuessChar.box)
     }
   }
 

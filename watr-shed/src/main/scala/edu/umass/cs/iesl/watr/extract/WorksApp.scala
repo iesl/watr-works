@@ -166,10 +166,10 @@ object Works extends App {
         CermineExtractor.extractChars(pdfins)
       )
 
-      val charsSeen = CharacterAccumulator.charSet.grouped(40).map(
-        _.mkString(", ")
-      ).mkString("Chars\n", "\n" , "\n\n")
-      println(charsSeen)
+      // val charsSeen = CharacterAccumulator.charSet.grouped(40).map(
+      //   _.mkString(", ")
+      // ).mkString("Chars\n", "\n" , "\n\n")
+      // println(charsSeen)
       // CharacterAccumulator.charSet.clear()
 
       output

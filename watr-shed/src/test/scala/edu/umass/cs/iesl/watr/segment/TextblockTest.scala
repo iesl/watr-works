@@ -9,14 +9,22 @@ import extract._
 
 case class TextblockExample(
   source: String,
-  pageId: Int@@PageID
+  pageId: Int@@PageID,
+  regionsWithLabels: Seq[(LTBounds, String)]
 )
+
+
 class TextBlockTest extends DocsegTestUtil  {
   behavior of "block identification and ordering"
   // import Component._
   val testExamples = List(
-    // TextblockExample("2839.pdf", page(0)) // cols not detected
-    TextblockExample("bongard2005.pdf", page(1)) // cols not detected
+    TextblockExample("2839.pdf", page(0),
+      Seq()
+    )
+
+
+
+    // TextblockExample("bongard2005.pdf", page(1)) // cols not detected
 
     // TextblockExample("101016jactamat200401025.pdf", page(0)),
     // TextblockExample("101016jcarbon201301056.pdf", page(0)),

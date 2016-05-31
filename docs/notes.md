@@ -116,3 +116,25 @@ phase transition in a ferromagnetic shape memory Ni–Co–Mn–In alloy
 Y.D. Wa _J_ n _.__N_ g _._ ^a^^,^_D_ ^b^^,^^*^ _e_ ,_n_E _g_.W _a__,_ . _H_ H _._ u _C_ a _h_ n _o_ g _o_^b^_b_ ,_,_Y _P_._.__K_ R _._en _L__i_^c^ _a_ ,_w_ Z. _b_ H _,_ _D_ . N _.__E_ ie _._ _B_ ^a^,_r__o_ G _w_ ._n_ W _d_a _,_ n _L_ g _._ ^a^ _Z_ ,_u_ Y _o_.D _a_ . Liu ^a^,          
 ^a^ Key Laboratory for Anisotropy and Texture of Materials (Ministry of Education), Northeastern University, Shenyang 110004, China                                                                                                                                                          
 ^b^ D e p a r t m e n t _c_ o _X_ f _-_ M _r_ _a_ a _y_ t e _S_ r i _c_ a _i_ _e_ l s _n_ _c_ S _e_ c i _D_ e n _i_ _v_ c _i_ e _s_ _i_ a _o_ n _n_ d _,_ _A_ E _r_ n _g_ g _o_ i _n_ n _n_ e e _e_ r i _N_ n g _a_ , _t_ _i_ T _o_ _n_ h _a_ e _l_ U _L_ n _a_ i _b_ v _o_ e _r_ r _a_ s i _
+
+
+
+
+        /*
+         ı φ α · Δ ⋅
+         ψ  τ ˆ ß μ ⁄ Ω   ø ϕ π € Æ θ Ł   × δ º   ∆ ¼  ð  ˇ
+         Γ β ° ω ρ  ˚ σ Þ  → ˜ ν   ο η  ¨   γ ⇑   Ø ε  ½ µ þ ´
+
+         + large parenthesis chars
+         ⎛  ⎞
+         ⎜  ⎟
+         ⎝  ⎠
+
+         Å
+         ±
+         ‘
+         ’
+         “”
+         Ι
+
+         */
