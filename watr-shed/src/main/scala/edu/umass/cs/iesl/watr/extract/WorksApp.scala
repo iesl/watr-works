@@ -5,7 +5,7 @@ package extract
 import ammonite.ops._
 import edu.umass.cs.iesl.watr.watrmarks.ZoneIndexer
 
-import java.nio.{file => nio}
+// import java.nio.{file => nio}
 
 object Works extends App {
 
@@ -59,11 +59,11 @@ object Works extends App {
       })
     } text ("init (or re-init) a corpus directory structure") // children()
 
-    cmd("cerm") action { (v, conf) =>
+    cmd("chars") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
-        extractCermineZones(ac)
+        extractCharacters(ac)
       })
-    } text ("run Cermine zone extractor")
+    } text ("char extraction (debugging)")
 
     cmd("lseg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -84,10 +84,6 @@ object Works extends App {
     } text ("run document segmentation")
   }
 
-
-  // val config = parser.parse(args, AppConfig()).getOrElse{
-  //   sys.error(parser.usage)
-  // }
 
   parser.parse(args, AppConfig()).foreach{ config =>
 
@@ -113,123 +109,125 @@ object Works extends App {
   }
 
 
-  def runProcessor(conf: AppConfig, artifactOutputName: String, process: (String) => Unit): Unit = {
+  def runProcessor(conf: AppConfig, artifactOutputName: String, process: (CorpusEntry, String) => Unit): Unit = {
     getProcessList(conf).foreach { entry =>
       println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
       if (entry.hasArtifact(artifactOutputName)) {
         if (conf.force){
           entry.deleteArtifact(artifactOutputName)
-          process(artifactOutputName)
+          process(entry, artifactOutputName)
         } else println(s"skipping existing ${entry}, use -x to force reprocessing")
-      } else process(artifactOutputName)
+      } else process(entry, artifactOutputName)
     }
   }
 
 
   def detectParagraphs(conf: AppConfig): Unit = {
-    // import watrmarks.TB._
-    // import watrmarks._
     import segment._
 
-    val artifactOutputName = "docseg.json"
+    val artifactOutputNames = "docseg.json"
 
+    runProcessor(conf, artifactOutputNames: String, process)
 
-    getProcessList(conf).foreach { entry =>
-      println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
-      if (entry.hasArtifact(artifactOutputName)) {
-        if (conf.force){
-          entry.deleteArtifact(artifactOutputName)
-          process()
-        } else println(s"skipping existing ${entry}, use -x to force reprocessing")
-      } else process
+    def process(entry: CorpusEntry, outputName: String): Unit = {
+      val pdfArtifact = entry.getPdfArtifact()
+      entry.putArtifact(outputName,
 
-      def process(): Unit = {
-        val pdfArtifact = entry.getPdfArtifact()
-        entry.putArtifact(artifactOutputName,
+        pdfArtifact.asInputStream.map{ pdf =>
 
-          pdfArtifact.asInputStream.map{ pdf =>
+          try {
+            val output = DocstrumSegmenter.segmentPages(
+              CermineExtractor.extractChars(pdf)
+            )
 
-            try {
-              val output = DocstrumSegmenter.segmentPages(
-                CermineExtractor.extractChars(pdf)
-              )
+            val charsSeen = CharacterAccumulator.charSet.grouped(40).map(
+              _.mkString(", ")
+            ).mkString("Chars\n", "\n" , "\n\n")
+            println(charsSeen)
+            // CharacterAccumulator.charSet.clear()
 
-              val charsSeen = CharacterAccumulator.charSet.grouped(40).map(
-                _.mkString(", ")
-              ).mkString("Chars\n", "\n" , "\n\n")
-              println(charsSeen)
-              // CharacterAccumulator.charSet.clear()
-
-              output
-            } catch {
-              case t: Throwable =>
-                println(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
-                s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
-            }
-          }. recover({
+            output
+          } catch {
             case t: Throwable =>
-              (s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
-          }).getOrElse {
-            println(s"could not extract ${artifactOutputName}  for ${pdfArtifact}")
-            """{ "error" }"""
+              println(s"could not extract ${outputName}  for ${pdfArtifact}: ${t.getMessage}")
+              s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
           }
+        }. recover({
+          case t: Throwable =>
+            (s"could not extract ${outputName}  for ${pdfArtifact}: ${t.getMessage}")
+        }).getOrElse {
+          println(s"could not extract ${outputName}  for ${pdfArtifact}")
+          """{ "error" }"""
+        }
         )
       }
-
-
-    }
   }
-  def printColumns(conf: AppConfig): Unit = {
-    // import watrmarks.TB._
+
+
+  def extractCharacters(conf: AppConfig): Unit = {
+    import watrmarks.TB._
+    import watrmarks.Bounds._
     import watrmarks._
-    import segment._
+    val artifactOutputName = "chars.txt"
 
-    val artifactOutputName = "columns.txt"
-    getProcessList(conf).foreach { entry =>
-      def process(): Unit = {
-        val pdfArtifact = entry.getPdfArtifact()
+    runProcessor(conf, artifactOutputName: String, process: (CorpusEntry, String) => Unit)
+
+    def process(entry: CorpusEntry, outputName: String): Unit = {
+      val pdfArtifact = entry.getPdfArtifact()
+
+      entry.putArtifact(artifactOutputName,
+        pdfArtifact.asInputStream.map{ pdf =>
+          try {
+            val pageChars = CermineExtractor
+              .extractChars(pdf)
+              .map({case(pageChars, pageGeom) =>
+                val sortedYPage = pageChars.chars
+                  .groupBy(_.bbox.top.pp)
+                  .toSeq
+                  .sortBy(_._1.toDouble)
+
+                val sortedXY = sortedYPage
+                  .map({case (topY, charBoxes) =>
 
 
-        entry.putArtifact(artifactOutputName,
+                    val sortedXLine = charBoxes
+                      .sortBy(_.bbox.left)
+                      .map({ charBox =>
+                        charBox.wonkyCharCode
+                          .map({ code =>
+                            if (code==32) { (s"${code}".box , "_") }
+                            else { (s"${code}".box, "?") }
+                          })
+                          .getOrElse({
+                            if (charBox.subs.isEmpty()) {
+                              (charBox.char.box, " ")
+                            } else {
+                              (charBox.subs.box, charBox.char)
+                            }
+                          })
+                      })
 
-          pdfArtifact.asInputStream.map{ pdf =>
+                    val cbs = charBoxes.sortBy(_.bbox.left)
+                    val top = cbs.map(_.bbox.top).min
+                    val bottom = cbs.map(_.bbox.bottom).max
+                    val l=cbs.head.bbox.left
+                    val r=cbs.last.bbox.right
 
-            try {
+                    val lineBounds = LTBounds(l, top, r-l, bottom-top).prettyPrint
 
+                    val lineChars = if(sortedXLine.exists(_._2!=" ")) {
+                      (">>".box % "?>") +| hcat(sortedXLine.map(x => x._1 % x._2))
+                    } else {
+                      ">>".box +| hcat(sortedXLine.map(x => x._1))
+                    }
 
-              val zoneIndex = ZoneIndexer.loadSpatialIndices(
-                CermineExtractor.extractChars(pdf)
-              )
+                    lineChars % lineBounds
+                    })
+                  vcat(sortedXY)
+                })
 
-              val docstrum = new DocstrumSegmenter(zoneIndex)
+              vsep(pageChars, 2, left).toString()
 
-              val allPageLines = for {
-                pageId <- docstrum.pages.getPages
-              } yield {
-                docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
-              }
-
-              val accum = PageSegAccumulator(
-                allPageLines
-              )
-              // get document-wide stats
-              val accum2 = docstrum.getDocumentWideStats(accum)
-
-              val pageZones = for {
-                pageId <- docstrum.pages.getPages
-              } yield {
-                println(s"zoning page ${pageId}")
-                docstrum.determineZones(pageId, accum2)
-              }
-
-              // val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
-              //   zones.toList.map({ zone =>
-              //     zone.map(_.tokenizeLine().toText).toList.mkString(s"Column\n", "\n", "\n")
-              //   }).mkString(s"Page $pagenum\n", "\n", "\n\n")
-              // }.mkString(s"Document \n", "\n", "\n\n")
-
-              // output
-              ""
             } catch {
               case t: Throwable =>
                 sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
@@ -241,20 +239,75 @@ object Works extends App {
         )
       }
 
-
-      println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
-      if (entry.hasArtifact(artifactOutputName)) {
-        if (conf.force){
-          entry.deleteArtifact(artifactOutputName)
-          process()
-        } else {
-          println(s"skipping existing ${entry}, use -x to force reprocessing")
-        }
-      } else {
-        process()
-      }
-    }
   }
+
+
+  def printColumns(conf: AppConfig): Unit = {
+    // import watrmarks.TB._
+    import watrmarks._
+    import segment._
+
+    val artifactOutputName = "columns.txt"
+    runProcessor(conf: AppConfig, artifactOutputName: String, process: (CorpusEntry, String) => Unit)
+
+    def process(entry: CorpusEntry, outputName: String): Unit = {
+      val pdfArtifact = entry.getPdfArtifact()
+
+
+      entry.putArtifact(artifactOutputName,
+
+        pdfArtifact.asInputStream.map{ pdf =>
+
+          try {
+
+
+            val zoneIndex = ZoneIndexer.loadSpatialIndices(
+              CermineExtractor.extractChars(pdf)
+            )
+
+            val docstrum = new DocstrumSegmenter(zoneIndex)
+
+            val allPageLines = for {
+              pageId <- docstrum.pages.getPages
+            } yield {
+              docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
+            }
+
+            val accum = PageSegAccumulator(
+              allPageLines
+            )
+            // get document-wide stats
+            val accum2 = docstrum.getDocumentWideStats(accum)
+
+            val pageZones = for {
+              pageId <- docstrum.pages.getPages
+            } yield {
+              println(s"zoning page ${pageId}")
+              docstrum.determineZones(pageId, accum2)
+            }
+
+            // val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
+            //   zones.toList.map({ zone =>
+            //     zone.map(_.tokenizeLine().toText).toList.mkString(s"Column\n", "\n", "\n")
+            //   }).mkString(s"Page $pagenum\n", "\n", "\n\n")
+            // }.mkString(s"Document \n", "\n", "\n\n")
+
+            // output
+            ""
+          } catch {
+            case t: Throwable =>
+              sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+          }
+        }. recover({
+          case t: Throwable =>
+            sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}: ${t.getMessage}")
+        }).getOrElse { sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}") }
+      )
+    }
+
+
+  }
+
 
 
 
@@ -262,96 +315,53 @@ object Works extends App {
     import watrmarks.TB._
 
     val artifactOutputName = "lineseg.txt"
-    getProcessList(conf).foreach { entry =>
-      def process(): Unit = {
-        val pdfArtifact = entry.getPdfArtifact()
+    runProcessor(conf: AppConfig, artifactOutputName: String, process: (CorpusEntry, String) => Unit)
+
+    def process(entry: CorpusEntry, outputName: String): Unit = {
+      val pdfArtifact = entry.getPdfArtifact()
 
 
-        entry.putArtifact(artifactOutputName,
-          pdfArtifact.asInputStream.map{ pdf =>
+      entry.putArtifact(artifactOutputName,
+        pdfArtifact.asInputStream.map{ pdf =>
 
-            val zoneIndex = ZoneIndexer.loadSpatialIndices(
-              CermineExtractor.extractChars(pdf)
+          val zoneIndex = ZoneIndexer.loadSpatialIndices(
+            CermineExtractor.extractChars(pdf)
+          )
+
+          zoneIndex.getPages.take(2).map { page =>
+
+            val docstrum = new segment.DocstrumSegmenter(zoneIndex)
+
+            val lines = docstrum.determineLines(
+              page,
+              zoneIndex.getComponents(page)
             )
 
-            zoneIndex.getPages.take(2).map { page =>
-
-              val docstrum = new segment.DocstrumSegmenter(zoneIndex)
-
-              val lines = docstrum.determineLines(
-                page,
-                zoneIndex.getComponents(page)
-              )
-
-              val lineCols = lines
-                .sortBy(_.findCenterY())
-                .map({ l =>
-                  val lineBounds = l.bounds.prettyPrint
-                  val tokenized = l.tokenizeLine().toText
-                  // s"${tokenized}               ${lineBounds}"
-                  (tokenized.box, lineBounds.box)
+            val lineCols = lines
+              .sortBy(_.findCenterY())
+              .map({ l =>
+                val lineBounds = l.bounds.prettyPrint
+                val tokenized = l.tokenizeLine().toText
+                // s"${tokenized}               ${lineBounds}"
+                (tokenized.box, lineBounds.box)
               })
 
-              val justified =
-                s"\nPage:${page} file://${pdfArtifact.artifactPath}" %|
-                  (vcat(left)(lineCols.map(_._1).toList) + "    " + vcat(right)(lineCols.map(_._2).toList))
+            val justified =
+              s"\nPage:${page} file://${pdfArtifact.artifactPath}" %|
+                (vcat(left)(lineCols.map(_._1).toList) + "    " + vcat(right)(lineCols.map(_._2).toList))
 
-              justified.toString()
+            justified.toString()
 
-              // .mkString(s"\nPage:${page} file://${pdfArtifact.artifactPath}\n  ", "\n", "\n")
+            // .mkString(s"\nPage:${page} file://${pdfArtifact.artifactPath}\n  ", "\n", "\n")
 
-            }.mkString(s"\nDocument: file://${pdfArtifact.artifactPath}\n", "\n", "\n")
-
-
-          }.getOrElse { sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}") }
-        )
-      }
+          }.mkString(s"\nDocument: file://${pdfArtifact.artifactPath}\n", "\n", "\n")
 
 
-      println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
-      if (entry.hasArtifact(artifactOutputName)) {
-        if (conf.force){
-          entry.deleteArtifact(artifactOutputName)
-          process()
-        } else {
-          println(s"skipping existing ${entry}, use -x to force reprocessing")
-        }
-      } else {
-        process()
-      }
+        }.getOrElse { sys.error(s"could not extract ${artifactOutputName}  for ${pdfArtifact}") }
+      )
     }
   }
 
-  def extractCermineZones(conf: AppConfig): Unit = {
-    getProcessList(conf).foreach { entry =>
-      def process(): Unit = {
-        val pdfArtifact = entry.getPdfArtifact()
-
-        val sha1 = pdfArtifact.asPath.map{p =>
-          val bytes = nio.Files.readAllBytes(p.toNIO)
-          DigestUtils.shaHex(bytes)
-        }.getOrElse { sys.error(s"could not read byte array for ${pdfArtifact}") }
-
-        entry.putArtifact("cermine-zones.json",
-          pdfArtifact.asInputStream.map{is =>
-            CermineExtractor.cermineZonesToJson(is)
-          }.getOrElse { sys.error(s"could not extract cermine data for ${pdfArtifact}") }
-        )
-      }
-
-      println(s"extractCermineZones(${entry.corpus}, ${entry}")
-      if (entry.hasArtifact("cermine-zones.json")) {
-        if (conf.force){
-          entry.deleteArtifact("cermine-zones.json")
-          process()
-        } else {
-          println(s"skipping existing ${entry}, use -x to force reprocessing")
-        }
-      } else {
-        process()
-      }
-    }
-  }
 
   def normalizeCorpusEntry(conf: AppConfig): Unit = {
     val corpus = Corpus(corpusRootOrDie(conf))

@@ -47,6 +47,7 @@ object jsiRectangle {
 
 object Bounds {
   def fmt = (d: Double) => f"${d}%1.2f"
+
   implicit class RicherDouble(val d: Double) extends AnyVal {
     def pp:String = fmt(d)
 
@@ -311,13 +312,15 @@ case class PageGeometry(
 
 case class PageChars(
   id: Int@@PageID,
-  chars: List[CharBox]
+  chars: Seq[CharBox]
 )
 
 case class CharBox(
   id: Int@@CharID,
   char: String,
-  bbox: LTBounds
+  bbox: LTBounds,
+  subs: String = "",
+  wonkyCharCode: Option[Int] = None
 )
 
 case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)
@@ -325,10 +328,10 @@ case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)
 case class ZoneRecords(
   id: String,
   target: String,
-  pageGeometries: List[PageGeometry],
-  zones: List[Zone],
-  labels: List[ZoneAndLabel],
-  chars: List[PageChars]
+  pageGeometries: Seq[PageGeometry],
+  zones: Seq[Zone],
+  labels: Seq[ZoneAndLabel],
+  chars: Seq[PageChars]
 )
 
 
@@ -609,6 +612,10 @@ trait SpatialJsonFormat {
   val WriteCharID: Writes[Int@@CharID] = Writes[Int@@CharID] { i => JsNumber(CharID.unwrap(i)) }
   implicit def FormatCharID            = Format(ReadCharID, WriteCharID)
 
+  val ReadChar: Reads[Char]   = __.read[String].map(c => c(0))
+  val WriteChar: Writes[Char] = Writes[Char] { c => JsString(c.toString()) }
+  implicit def FormatChar     = Format(ReadChar, WriteChar)
+
   implicit def residentFormat = Json.format[LBBounds]
   implicit def LTBoundsFormat = Json.format[LTBounds]
   implicit def FormatTargetedBounds = Json.format[TargetedBounds]
@@ -621,14 +628,6 @@ trait SpatialJsonFormat {
   implicit def FormatPageChars = Json.format[PageChars]
   implicit def FormatZoneRecords = Json.format[ZoneRecords]
   implicit def FormatLable = Json.format[Label]
-
-
-  // __.read(
-  //     (__ \ "id").read[Int@@ZoneID] and
-  //     (__ \ "label").read[String] and
-  //     (__ \ "bboxes").read[List[TargetedBounds]]
-  //     tupled
-  //   ).map{ rec => Zone(rec._1, rec._3) }
 
 
 }

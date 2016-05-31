@@ -93,7 +93,7 @@ object DocstrumSegmenter extends DocstrumUtils {
   }
 
 
-  def init(pagedefs: List[(PageChars, PageGeometry)]): (DocstrumSegmenter, PageSegAccumulator) = {
+  def init(pagedefs: Seq[(PageChars, PageGeometry)]): (DocstrumSegmenter, PageSegAccumulator) = {
     val zoneIndex = ZoneIndexer.loadSpatialIndices(pagedefs)
 
     val docstrum = new DocstrumSegmenter(zoneIndex)
@@ -111,7 +111,7 @@ object DocstrumSegmenter extends DocstrumUtils {
   }
 
   import TB._
-  def segmentPages(pagedefs: List[(PageChars, PageGeometry)]): String = { // Seq[ConnectedComponents]
+  def segmentPages(pagedefs: Seq[(PageChars, PageGeometry)]): String = { // Seq[ConnectedComponents]
     val (docstrum, accum) = init(pagedefs)
 
     val pageZones = for {

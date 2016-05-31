@@ -1,4 +1,5 @@
-package edu.umass.cs.iesl.watr
+package edu.umass.cs.iesl
+package watr
 package extract
 
 import java.io.{InputStream, IOException}
@@ -51,12 +52,19 @@ object util {
 }
 
 
+import UnicodeUtil._
 
 class MyBxDocumentCreator(
   fontDict: mutable.Map[String, DocumentFont],
   reader: PdfReader,
-  charsToDebug: Set[Int] = Set()
+  charsToDebug: Set[Int] = Set(),
+  charIdGen: IdGenerator[CharID],
+  pageIdGen: IdGenerator[PageID]
 ) extends RenderListener {
+
+
+  var currCharBuffer: mutable.ArrayBuffer[CharBox] = mutable.ArrayBuffer[CharBox]()
+  var currPageChars = PageChars(pageIdGen.nextId, currCharBuffer)
 
   var zoneRecords: ZoneRecords = ZoneRecords(
     id = "", target = "",
@@ -65,6 +73,7 @@ class MyBxDocumentCreator(
     List[ZoneAndLabel](),
     List[PageChars]()
   )
+
 
   def getZoneRecords() = zoneRecords
 
@@ -77,14 +86,9 @@ class MyBxDocumentCreator(
 
   var pageNumber = -1
 
-  var page0Chars = 0
 
-  val pageChars = mutable.ArrayBuffer[PageChars]()
 
   def processNewBxPage(_pageRectangle: Rectangle): Unit = {
-    // println(s"""page ${pageNumber} chars: ${page0Chars}""")
-
-    page0Chars = 0
 
     if (actPage != null) {
       actPage.setBounds(boundsBuilder.getBounds())
@@ -126,8 +130,12 @@ class MyBxDocumentCreator(
     )
 
     zoneRecords = zoneRecords.copy(
-      pageGeometries = zoneRecords.pageGeometries :+ PageGeometry(PageID(pageNumber), bounds, borders)
+      pageGeometries = zoneRecords.pageGeometries :+ PageGeometry(PageID(pageNumber), bounds, borders),
+      chars = zoneRecords.chars :+ currPageChars
     )
+
+    currCharBuffer = mutable.ArrayBuffer[CharBox]()
+    currPageChars = PageChars(pageIdGen.nextId, currCharBuffer)
   }
 
   override def beginTextBlock(): Unit = {
@@ -135,106 +143,120 @@ class MyBxDocumentCreator(
   }
 
   // var count = 0
-  var charIndex = -1
+
+  def computeTextBounds(charTri: TextRenderInfo): Option[LBBounds] = {
+    val ascentStart = charTri.getAscentLine().getStartPoint()
+    val descentStart = charTri.getDescentLine().getStartPoint()
+
+    val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
+    val absoluteCharBottom: Double = descentStart.get(PVector.I2).toDouble
+
+    val charLeft = absoluteCharLeft - pageRectangle.getLeft()
+    val charBottom = absoluteCharBottom - pageRectangle.getBottom() // in math coords
 
 
-  override def renderText(trix: TextRenderInfo): Unit = {
-    for (charTri <- trix.getCharacterRenderInfos()) {
-      val text = charTri.getText()
+    var charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
+    var charWidth = charTri.getDescentLine().getLength().toDouble
 
-      val ch = charTri.getText().charAt(0)
-      if (ch <= ' '
-        || text.matches("^[\uD800-\uD8FF]$")
-        || text.matches("^[\uDC00-\uDFFF]$")
-        || text.matches("^[\uFFF0-\uFFFF]$")) {
-        // no-op
-        val displayable = text.getBytes.map({b => b.toInt}).mkString(", ")
-        // println(s"skipping character(s) w/bytes= [${displayable}]")
-      } else {
-        val ascentStart = charTri.getAscentLine().getStartPoint()
-        val descentStart = charTri.getDescentLine().getStartPoint()
+    if (charHeight.nan || charHeight.inf) {
+      println(s"warning: char height is NaN or Inf")
+      charHeight = 0
+    }
 
-        val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
-        val absoluteCharBottom: Double = descentStart.get(PVector.I2).toDouble
+    if (charWidth.nan || (charWidth.inf)) {
+      println(s"warning: char width is NaN or Inf")
+      charWidth = 0
+    }
 
-        val charLeft = absoluteCharLeft - pageRectangle.getLeft()
-        val charBottom = absoluteCharBottom - pageRectangle.getBottom() // in math coords
+    if (absoluteCharLeft < pageRectangle.getLeft()
+      || absoluteCharLeft + charWidth > pageRectangle.getRight()
+      || absoluteCharBottom < pageRectangle.getBottom()
+      || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
+      None
+    } else {
+      // if (bounds.getX().nan || bounds.getX().inf
+      //   || bounds.getY().nan || bounds.getY().inf
+      //   || bounds.getHeight().nan || bounds.getHeight().inf
+      //   || bounds.getWidth().nan || bounds.getWidth().inf) {
+      //   // skip
+      //   println(s"skipping text w/bbox= nan|inf: ${text}")
+      // } else {
 
+      val y = pageRectangle.getHeight() - charBottom - charHeight
 
-        var charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
-        var charWidth = charTri.getDescentLine().getLength().toDouble
-
-        if (charHeight.nan || charHeight.inf) {
-          println(s"warning: char height is NaN or Inf")
-          charHeight = 0
-        }
-
-        if (charWidth.nan || (charWidth.inf)) {
-          println(s"warning: char width is NaN or Inf")
-          charWidth = 0
-        }
-
-        if (absoluteCharLeft < pageRectangle.getLeft()
-          || absoluteCharLeft + charWidth > pageRectangle.getRight()
-          || absoluteCharBottom < pageRectangle.getBottom()
-          || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
-          // no-op
-          println(s"skipping text w/bbox out of page bounds: ${text}")
-        } else {
-          page0Chars += 1
-
-          val x = charLeft
-          val y = pageRectangle.getHeight() - charBottom - charHeight
-
-          val bounds = new BxBounds(
-            x, y, charWidth, charHeight
-          )
-
-          if(charsToDebug contains charIndex) {
-            println(
-              s"""|Char bounds
-                  | x      ${x}
-                  | y      ${y}
-                  | width  ${charWidth}
-                  | height ${charHeight}
-                  |""".stripMargin
-            )
-          }
-
-          if (bounds.getX().nan || bounds.getX().inf
-            || bounds.getY().nan || bounds.getY().inf
-            || bounds.getHeight().nan || bounds.getHeight().inf
-            || bounds.getWidth().nan || bounds.getWidth().inf) {
-            // skip
-            println(s"skipping text w/bbox= nan|inf: ${text}")
-          } else {
-            charIndex = charIndex+1
-
-            if (!charsToDebug.isEmpty) {
-              if(charsToDebug contains charIndex) {
-                println(s"Outputting char info #${charIndex}")
-                println(s"  text = ${text}")
-                CermineFontInfo.outputCharInfo(charTri, reader)
-                CermineFontInfo.reportFontInfo(charTri.getFont)
-                println(s"-------------------------------------\n\n")
-              } else {
-                if (charsToDebug.min - 10 < charIndex && charIndex < charsToDebug.max + 10) {
-                  println(s" renderText(${text} ${charIndex})")
-                }
-              }
-            }
-            val chunk = new BxChunk(bounds, text)
-            val fullFontName = charTri.getFont().getFullFontName()(0)(3)
-            chunk.setFontName(fullFontName)
-            actPage.addChunk(chunk)
-            boundsBuilder.expand(bounds)
-
-            addFontInfo(charTri.getFont)
-          }
-        }
-      }
+      Some(LBBounds(
+        left=charLeft,
+        bottom=y,
+        width=charWidth,
+        height=charHeight
+      ))
     }
   }
+
+  def transformRawChar(ch: Char): String = {
+    if (ch == ' ') ""
+    else if (ch < ' ') ""
+    else ch.toString
+  }
+
+  def outputCharDebugInfo():Unit = {
+    // if(charsToDebug contains charIndex) {
+    //   println(s"""Char bounds ${charBounds.prettyPrint}""")
+    // }
+    // if (!charsToDebug.isEmpty) {
+    //   if(charsToDebug contains charIndex) {
+    //     println(s"Outputting char info #${charIndex}")
+    //     println(s"  text = ${text}")
+    //     CermineFontInfo.outputCharInfo(charTri, reader)
+    //     CermineFontInfo.reportFontInfo(charTri.getFont)
+    //     println(s"-------------------------------------\n\n")
+    //   } else {
+    //     if (charsToDebug.min - 10 < charIndex && charIndex < charsToDebug.max + 10) {
+    //       println(s" renderText(${text} ${charIndex})")
+    //     }
+    //   }
+    // }
+  }
+
+  override def renderText(trix: TextRenderInfo): Unit = {
+    for {
+      charTri <- trix.getCharacterRenderInfos()
+      rawChar = charTri.getText().charAt(0)
+      subChars = maybeSubChar(rawChar)
+      bakedChar = transformRawChar(rawChar)
+      charBounds <- computeTextBounds(charTri)
+    } {
+
+      val wonkyChar = if (rawChar.toString != bakedChar.toString) Some(rawChar.toInt) else None
+
+
+      val charBox = CharBox(
+        charIdGen.nextId,
+        bakedChar,
+        charBounds.toLTBounds,
+        subChars.map(_.mkString).getOrElse(""),
+        wonkyCharCode = wonkyChar
+      )
+
+      if (wonkyChar.isDefined || subChars.isDefined) {
+        println(s"char: ${charBox}")
+      }
+      // CermineFontInfo.outputCharInfo(charTri, reader)
+      // CermineFontInfo.reportFontInfo(charTri.getFont)
+
+      currCharBuffer.append(charBox)
+
+      // val chunk = new BxChunk(bounds, text)
+      // val fullFontName = charTri.getFont().getFullFontName()(0)(3)
+      // chunk.setFontName(fullFontName)
+      // actPage.addChunk(chunk)
+      // boundsBuilder.expand(bounds)
+
+      // CermineFontInfo.addFontInfo(charTri.getFont
+    }
+
+  }
+
 
   override def endTextBlock(): Unit = {
   }
@@ -246,112 +268,13 @@ class MyBxDocumentCreator(
 
 
 
-  def addFontInfo(font: DocumentFont): Unit = {
-    // val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")
-    // val allNameEntries = font.getAllNameEntries.map(_.mkString("[", ",", "]")).mkString(", ")
-    // val fontDictionary = font.getFontDictionary
-
-    // val fontDictionaryKeys = fontDictionary.getKeys.map(_.toString()).mkString(",")
-    val fontNameKey = font.getFullFontName.map(_.mkString("").trim).mkString("_").trim
-    val _ = fontDict.put(fontNameKey, font)
-
-
-    // debugReport(
-    //   allNameEntries,
-    //   // font.getCharBBox,
-    //   // font.getFontDictionary,
-    //   fontDictionaryKeys,
-    //   // font.getFontMatrix,
-    //   fontFullname,
-    //   font.getFullFontStream,
-    //   // font.getKerning,
-    //   font.getPostscriptFontName,
-    //   // font.getWidth,
-    //   // font.getWidth,
-    //   font.hasKernPairs,
-    //   font.isVertical,
-    //   // font.getAscent,
-    //   // font.getAscentPoint,
-    //   // font.getCidCode,
-    //   // font.getCodePagesSupported.mkString(", "),
-    //   // font.getCompressionLevel,
-    //   // font.getDescent,
-    //   // font.getDescentPoint,
-    //   // font.getDifferences.mkString(", "),
-    //   font.getEncoding,
-    //   font.getFontType,
-    //   font.getSubfamily,
-    //   // font.getUnicodeDifferences.mkString(", "),
-    //   // font.getUnicodeEquivalent,
-    //   // font.getWidthPoint,
-    //   // font.getWidthPoint,
-    //   // font.getWidthPointKerned,
-    //   // font.getWidths.mkString(", "),
-    //   font.isDirectTextToByte,
-    //   font.isEmbedded,
-    //   font.isFontSpecific,
-    //   font.isForceWidthsOutput,
-    //   font.isSubset
-    // )
-
-    // charExists            (Int)           => Boolean
-    // convertToBytes        (String)        => Array[Byte]
-    // getAllNameEntries     ()              => Array[Array[String]]
-    // getCharBBox           (Int)           => Array[Int]
-    // getFamilyFontName     ()              => Array[Array[String]]
-    // getFontDescriptor     (Int, Float)    => Float
-    // getFontDictionary     ()              => PdfDictionary
-    // getFontMatrix         ()              => Array[Double]
-    // getFullFontName       ()              => Array[Array[String]]
-    // getFullFontStream     ()              => PdfStream
-    // getKerning            (Int, Int)      => Int
-    // getPostscriptFontName ()              => String
-    // getWidth              (String)        => Int
-    // getWidth              (Int)           => Int
-    // hasKernPairs          ()              => Boolean
-    // isVertical            ()              => Boolean
-    // setKerning            (Int, Int, Int) => Boolean
-    // setPostscriptFontName (String)        => Unit
-
-
-    // com.itextpdf.text.pdf.BaseFont
-    // ---------------------------
-    // addSubsetRange        (Array[Int])    => Unit
-    // correctArabicAdvance  ()              => Unit
-    // getAscent             (String)        => Int
-    // getAscentPoint        (String, Float) => Float
-    // getCidCode            (Int)           => Int
-    // getCodePagesSupported ()              => Array[String]
-    // getCompressionLevel   ()              => Int
-    // getDescent            (String)        => Int
-    // getDescentPoint       (String, Float) => Float
-    // getDifferences        ()              => Array[String]
-    // getEncoding           ()              => String
-    // getFontType           ()              => Int
-    // getSubfamily          ()              => String
-    // getUnicodeDifferences ()              => Array[Char]
-    // getUnicodeEquivalent  (Int)           => Int
-    // getWidthPoint         (String, Float) => Float
-    // getWidthPoint         (Int, Float)    => Float
-    // getWidthPointKerned   (String, Float) => Float
-    // getWidths             ()              => Array[Int]
-    // isDirectTextToByte    ()              => Boolean
-    // isEmbedded            ()              => Boolean
-    // isFontSpecific        ()              => Boolean
-    // isForceWidthsOutput   ()              => Boolean
-    // isSubset              ()              => Boolean
-    // setCharAdvance        (Int, Int)      => Boolean
-    // setCompressionLevel   (Int)           => Unit
-    // setDirectTextToByte   (Boolean)       => Unit
-    // setFontDescriptor     (Int, Float)    => Unit
-    // setForceWidthsOutput  (Boolean)       => Unit
-    // setSubset             (Boolean)       => Unit
-  }
 }
 
 
 class XITextCharacterExtractor(
-  charsToDebug: Set[Int] = Set()
+  charsToDebug: Set[Int] = Set(),
+  charIdGen: IdGenerator[CharID],
+  pageIdGen: IdGenerator[PageID]
 ) extends CharacterExtractor {
   val DEFAULT_FRONT_PAGES_LIMIT = 20
   val DEFAULT_BACK_PAGES_LIMIT = 20
@@ -370,7 +293,8 @@ class XITextCharacterExtractor(
       val reader = new PdfReader(stream)
 
       val documentCreator = new MyBxDocumentCreator(
-        fontDict, reader, charsToDebug
+        fontDict, reader, charsToDebug,
+        charIdGen, pageIdGen
       )
 
       val processor = new PdfContentStreamProcessor(documentCreator)
@@ -568,3 +492,103 @@ class XITextCharacterExtractor(
   }
 
 }
+
+  // override def renderText(trix: TextRenderInfo): Unit = {
+  //   for (charTri <- trix.getCharacterRenderInfos()) {
+  //     val text = charTri.getText()
+
+  //     val ch = charTri.getText().charAt(0)
+  //     maybeSubChar(ch)
+
+  //     if (ch <= ' '
+  //       || text.matches("^[\uD800-\uD8FF]$")
+  //       || text.matches("^[\uDC00-\uDFFF]$")
+  //       || text.matches("^[\uFFF0-\uFFFF]$")) {
+  //       // no-op
+  //       val displayable = text.getBytes.map({b => b.toInt}).mkString(", ")
+  //       // println(s"skipping character(s) w/bytes= [${displayable}]")
+  //     } else {
+  //       val ascentStart = charTri.getAscentLine().getStartPoint()
+  //       val descentStart = charTri.getDescentLine().getStartPoint()
+
+  //       val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
+  //       val absoluteCharBottom: Double = descentStart.get(PVector.I2).toDouble
+
+  //       val charLeft = absoluteCharLeft - pageRectangle.getLeft()
+  //       val charBottom = absoluteCharBottom - pageRectangle.getBottom() // in math coords
+
+
+  //       var charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
+  //       var charWidth = charTri.getDescentLine().getLength().toDouble
+
+  //       if (charHeight.nan || charHeight.inf) {
+  //         println(s"warning: char height is NaN or Inf")
+  //         charHeight = 0
+  //       }
+
+  //       if (charWidth.nan || (charWidth.inf)) {
+  //         println(s"warning: char width is NaN or Inf")
+  //         charWidth = 0
+  //       }
+
+  //       if (absoluteCharLeft < pageRectangle.getLeft()
+  //         || absoluteCharLeft + charWidth > pageRectangle.getRight()
+  //         || absoluteCharBottom < pageRectangle.getBottom()
+  //         || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
+  //         // no-op
+  //         println(s"skipping text w/bbox out of page bounds: ${text}")
+  //       } else {
+  //         page0Chars += 1
+
+  //         val x = charLeft
+  //         val y = pageRectangle.getHeight() - charBottom - charHeight
+
+  //         val bounds = new BxBounds(
+  //           x, y, charWidth, charHeight
+  //         )
+
+  //         if(charsToDebug contains charIndex) {
+  //           println(
+  //             s"""|Char bounds
+  //                 | x      ${x}
+  //                 | y      ${y}
+  //                 | width  ${charWidth}
+  //                 | height ${charHeight}
+  //                 |""".stripMargin
+  //           )
+  //         }
+
+  //         if (bounds.getX().nan || bounds.getX().inf
+  //           || bounds.getY().nan || bounds.getY().inf
+  //           || bounds.getHeight().nan || bounds.getHeight().inf
+  //           || bounds.getWidth().nan || bounds.getWidth().inf) {
+  //           // skip
+  //           println(s"skipping text w/bbox= nan|inf: ${text}")
+  //         } else {
+  //           charIndex = charIndex+1
+
+  //           if (!charsToDebug.isEmpty) {
+  //             if(charsToDebug contains charIndex) {
+  //               println(s"Outputting char info #${charIndex}")
+  //               println(s"  text = ${text}")
+  //               CermineFontInfo.outputCharInfo(charTri, reader)
+  //               CermineFontInfo.reportFontInfo(charTri.getFont)
+  //               println(s"-------------------------------------\n\n")
+  //             } else {
+  //               if (charsToDebug.min - 10 < charIndex && charIndex < charsToDebug.max + 10) {
+  //                 println(s" renderText(${text} ${charIndex})")
+  //               }
+  //             }
+  //           }
+  //           val chunk = new BxChunk(bounds, text)
+  //           val fullFontName = charTri.getFont().getFullFontName()(0)(3)
+  //           chunk.setFontName(fullFontName)
+  //           actPage.addChunk(chunk)
+  //           boundsBuilder.expand(bounds)
+
+  //           addFontInfo(charTri.getFont)
+  //         }
+  //       }
+  //     }
+  //   }
+  // }

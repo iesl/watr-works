@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+
 import watrmarks._
 import Bounds._
 import scala.collection.JavaConversions._
@@ -82,7 +83,7 @@ object Component {
 
     cbs.zip(spaceWidths(cbs))
       .map{ case (c, dist) =>
-        (tbox(c.char) +| "->" +| (dist.pp)) %
+        (tbox(c.char.toString) +| "->" +| (dist.pp)) %
           c.bbox.top.pp %
           (c.bbox.left.pp +| c.bbox.right.pp) %
           (c.bbox.bottom.pp +| "(w:" + c.bbox.width.pp + ")")
@@ -280,7 +281,7 @@ object Component {
           }
           Seq(withSubs.box)
         } else {
-          Seq(charcomp.component.char.box)
+          Seq(charcomp.component.char.toString.box)
         }
     }
   }
@@ -394,7 +395,7 @@ case class CharComponent(
     subs
       .find(_._1.toString==component.char)
       .map({case (_, sub) =>
-        this.copy(component=component.copy(char = sub))
+        this.copy(component=component.copy(subs = sub))
       })
       .getOrElse(this)
   }
@@ -409,7 +410,7 @@ case class CharComponent(
   val bounds = component.bbox
   def height: Double  = bounds.height
 
-  def toText(implicit idgen:Option[CCRenderState] = None): String = component.char
+  def toText(implicit idgen:Option[CCRenderState] = None): String = component.char.toString
   def chars: String = toText
 
   val containedLabels: Set[Label] = blockRole.toSet

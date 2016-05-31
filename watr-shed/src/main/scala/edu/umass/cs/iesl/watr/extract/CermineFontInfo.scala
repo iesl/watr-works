@@ -12,6 +12,107 @@ object CermineFontInfo {
 
   import scala.collection.JavaConversions._
   import com.itextpdf.text.pdf.DocumentFont
+  def addFontInfo(font: DocumentFont): Unit = {
+    // val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")
+    // val allNameEntries = font.getAllNameEntries.map(_.mkString("[", ",", "]")).mkString(", ")
+    // val fontDictionary = font.getFontDictionary
+
+    // val fontDictionaryKeys = fontDictionary.getKeys.map(_.toString()).mkString(",")
+    val fontNameKey = font.getFullFontName.map(_.mkString("").trim).mkString("_").trim
+    // val _ = fontDict.put(fontNameKey, font)
+
+
+    // debugReport(
+    //   allNameEntries,
+    //   // font.getCharBBox,
+    //   // font.getFontDictionary,
+    //   fontDictionaryKeys,
+    //   // font.getFontMatrix,
+    //   fontFullname,
+    //   font.getFullFontStream,
+    //   // font.getKerning,
+    //   font.getPostscriptFontName,
+    //   // font.getWidth,
+    //   // font.getWidth,
+    //   font.hasKernPairs,
+    //   font.isVertical,
+    //   // font.getAscent,
+    //   // font.getAscentPoint,
+    //   // font.getCidCode,
+    //   // font.getCodePagesSupported.mkString(", "),
+    //   // font.getCompressionLevel,
+    //   // font.getDescent,
+    //   // font.getDescentPoint,
+    //   // font.getDifferences.mkString(", "),
+    //   font.getEncoding,
+    //   font.getFontType,
+    //   font.getSubfamily,
+    //   // font.getUnicodeDifferences.mkString(", "),
+    //   // font.getUnicodeEquivalent,
+    //   // font.getWidthPoint,
+    //   // font.getWidthPoint,
+    //   // font.getWidthPointKerned,
+    //   // font.getWidths.mkString(", "),
+    //   font.isDirectTextToByte,
+    //   font.isEmbedded,
+    //   font.isFontSpecific,
+    //   font.isForceWidthsOutput,
+    //   font.isSubset
+    // )
+
+    // charExists            (Int)           => Boolean
+    // convertToBytes        (String)        => Array[Byte]
+    // getAllNameEntries     ()              => Array[Array[String]]
+    // getCharBBox           (Int)           => Array[Int]
+    // getFamilyFontName     ()              => Array[Array[String]]
+    // getFontDescriptor     (Int, Float)    => Float
+    // getFontDictionary     ()              => PdfDictionary
+    // getFontMatrix         ()              => Array[Double]
+    // getFullFontName       ()              => Array[Array[String]]
+    // getFullFontStream     ()              => PdfStream
+    // getKerning            (Int, Int)      => Int
+    // getPostscriptFontName ()              => String
+    // getWidth              (String)        => Int
+    // getWidth              (Int)           => Int
+    // hasKernPairs          ()              => Boolean
+    // isVertical            ()              => Boolean
+    // setKerning            (Int, Int, Int) => Boolean
+    // setPostscriptFontName (String)        => Unit
+
+
+    // com.itextpdf.text.pdf.BaseFont
+    // ---------------------------
+    // addSubsetRange        (Array[Int])    => Unit
+    // correctArabicAdvance  ()              => Unit
+    // getAscent             (String)        => Int
+    // getAscentPoint        (String, Float) => Float
+    // getCidCode            (Int)           => Int
+    // getCodePagesSupported ()              => Array[String]
+    // getCompressionLevel   ()              => Int
+    // getDescent            (String)        => Int
+    // getDescentPoint       (String, Float) => Float
+    // getDifferences        ()              => Array[String]
+    // getEncoding           ()              => String
+    // getFontType           ()              => Int
+    // getSubfamily          ()              => String
+    // getUnicodeDifferences ()              => Array[Char]
+    // getUnicodeEquivalent  (Int)           => Int
+    // getWidthPoint         (String, Float) => Float
+    // getWidthPoint         (Int, Float)    => Float
+    // getWidthPointKerned   (String, Float) => Float
+    // getWidths             ()              => Array[Int]
+    // isDirectTextToByte    ()              => Boolean
+    // isEmbedded            ()              => Boolean
+    // isFontSpecific        ()              => Boolean
+    // isForceWidthsOutput   ()              => Boolean
+    // isSubset              ()              => Boolean
+    // setCharAdvance        (Int, Int)      => Boolean
+    // setCompressionLevel   (Int)           => Unit
+    // setDirectTextToByte   (Boolean)       => Unit
+    // setFontDescriptor     (Int, Float)    => Unit
+    // setForceWidthsOutput  (Boolean)       => Unit
+    // setSubset             (Boolean)       => Unit
+  }
 
   def reportFontInfo(font: DocumentFont): Unit = {
     val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")

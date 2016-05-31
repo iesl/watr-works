@@ -4,7 +4,7 @@ package watr
 
 // import scalaz.syntax.FoldableSyntax
 import scalaz.syntax.ToIdOps
-import scalaz.syntax.ToValidationOps
+// import scalaz.syntax.ToValidationOps
 import scalaz.syntax.std.ToBooleanOps
 // import scalaz.syntax.std.ToListOps
 import scalaz.syntax.std.ToOptionIdOps
@@ -18,7 +18,7 @@ trait ScalaZCommonOps
     with ToBooleanOps
     with ToOptionIdOps
     with ToOptionOps
-    with ToValidationOps
+    // with ToValidationOps
 
 trait PackageDefs
     extends ScalaZCommonOps

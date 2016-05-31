@@ -11,8 +11,8 @@ import org.jdom2
 import scalaz.{Tag, @@}
 import ammonite.ops._
 
-
 sealed trait SHA1String
+
 case class HeaderInfo(
   title: String,
   authors: String
