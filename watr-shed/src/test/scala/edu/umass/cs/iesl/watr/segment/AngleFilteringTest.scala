@@ -7,7 +7,7 @@ import org.scalatest._
 import watrmarks._
 
 class AngleFilteringTest extends FlatSpec with Matchers {
-  // import DocstrumSegmenter._
+  // import DocumentSegmenter._
   import Bounds._
 
   behavior of "docstrum segmenter"

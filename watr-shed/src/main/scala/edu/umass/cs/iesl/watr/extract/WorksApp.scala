@@ -11,6 +11,9 @@ import java.io.{ InputStream  }
 object Works extends App {
 
   import java.io.{File => JFile}
+  import segment.SpatialIndexOperations._
+  import segment.DocumentSegmenter._
+
 
   case class AppConfig(
     entry: Option[JFile] = None,
@@ -78,6 +81,12 @@ object Works extends App {
       })
     } text ("run column detection (for debugging)")
 
+    cmd("bbsvg") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        createBoundingBoxSvg(ac)
+      })
+    } text ("run column detection (for debugging)")
+
     cmd("docseg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         detectParagraphs(ac)
@@ -129,7 +138,10 @@ object Works extends App {
         processor(pdf, pdfArtifact.artifactPath.toString)
       } catch {
         case t: Throwable =>
-          println(s"could not extract ${outputName}  for ${pdfArtifact}: ${t.getMessage}")
+          val strace = t.fillInStackTrace()
+          val trace = strace.getStackTrace.map(_.toString()).mkString("\n")
+          println(s"could not extract ${outputName}  for ${pdfArtifact}: ${t.getMessage}\n")
+          t.getCause.printStackTrace()
           s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
       }})
       .map({ output =>
@@ -155,6 +167,9 @@ object Works extends App {
   }
 
 
+
+
+
   def detectParagraphs(conf: AppConfig): Unit = {
     import segment._
 
@@ -162,8 +177,9 @@ object Works extends App {
     processCorpus(conf, artifactOutputName, proc)
 
     def proc(pdfins: InputStream, outputPath: String): String = {
-      val output = DocstrumSegmenter.segmentPages(
-        CermineExtractor.extractChars(pdfins)
+      val chars = CermineExtractor.extractChars(pdfins)
+      val output = DocumentSegmenter.segmentPages(
+        chars
       )
 
       // val charsSeen = CharacterAccumulator.charSet.grouped(40).map(
@@ -177,6 +193,82 @@ object Works extends App {
 
   }
 
+
+  def createBoundingBoxSvg(conf: AppConfig): Unit = {
+    import watrmarks.TB._
+    import watrmarks.Bounds._
+    import watrmarks._
+    val artifactOutputName = "bbox.svg"
+    val linestyle = """style="stroke:blue;stroke-width:1;opacity:0.3" """
+    val pagestyle = """style="stroke:blue;stroke-width:1;opacity:0.3" """
+
+    processCorpus(conf, artifactOutputName: String, proc)
+
+
+    // .flatMap(chars => ZoneIndexer.loadSpatialIndices(chars))
+
+    def proc(pdf: InputStream, outputPath: String): String = {
+      val zoneIndex = ZoneIndexer.loadSpatialIndices(
+        CermineExtractor.extractChars(pdf)
+      )
+
+      val pages = zoneIndex.getPages.take(1).map({ pageId =>
+        val pageChars = zoneIndex.getComponents(pageId)
+        val pageGeom = zoneIndex.getPageGeometry(pageId)
+
+        val lineBins = approximateLineBins(pageChars)
+        val colBins = zoneIndex.approximateColumnBins(pageId, pageChars)
+
+        val colLines = colBins
+          .map({case (dir, line) =>
+            s""" <svg:line x1="${line.p1.x}" y1="${line.p1.y}" x2="${line.p2.x}" y2="${line.p2.y}" stroke-width="2" stroke="black"/> """.box
+          })
+
+        val sortedYLines = lineBins
+          .map({case (lineBounds, lineBoxes) =>
+            val lineCharStr = lineBoxes.map(_.prettyPrint)
+
+            s"""<svg:rect ${linestyle} x="${lineBounds.left.pp}" y="${lineBounds.top.pp}" width="${lineBounds.width.pp}"  height="${lineBounds.height.pp}" />""".box
+          })
+
+        val x = pageGeom.bounds.left
+        val y = pageGeom.bounds.top
+        val pwidth = pageGeom.bounds.width
+        val pheight = pageGeom.bounds.height
+
+        val pageRect = s"""<svg:rect ${pagestyle} x="${x}" y="${y}" width="${pwidth}"  height="${pheight}" />""".box
+
+        (pageGeom.bounds, pageRect % vcat(sortedYLines) % vcat(colLines))
+      })
+
+
+      // val totalBounds = pages.map(_._1).reduce(_ union _)
+      val (totalBounds, totalSvg) = pages
+        .foldLeft({
+          (LTBounds(0, 0, 0, 0), nullBox)
+        })({case ((totalBounds, totalSvg), (pageBounds, pageSvg)) =>
+          val translatedPageBounds = pageBounds.translate(0, totalBounds.bottom)
+          val newBounds = totalBounds union translatedPageBounds
+
+          (newBounds,
+            (
+              totalSvg %
+              s"""<svg:g transform="translate(0, ${totalBounds.bottom.pp})">""".box %
+              indent(4)(pageSvg) %
+              """</svg:g>"""))
+
+        })
+
+      val pwidth = totalBounds.width
+      val pheight = totalBounds.height
+
+      val svgHead = s"""<svg:svg version="1.1" width="${pwidth}px" height="${pheight}px" viewBox="0 0 ${pwidth} ${pheight}" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">"""
+
+      (svgHead % totalSvg % "</svg:svg>").toString
+
+    }
+
+  }
 
   def extractCharacters(conf: AppConfig): Unit = {
     import watrmarks.TB._
@@ -255,7 +347,7 @@ object Works extends App {
         CermineExtractor.extractChars(pdf)
       )
 
-      val docstrum = new DocstrumSegmenter(zoneIndex)
+      val docstrum = new DocumentSegmenter(zoneIndex)
 
       val allPageLines = for {
         pageId <- docstrum.pages.getPages
@@ -285,11 +377,7 @@ object Works extends App {
       // output
       ""
     }
-
-
   }
-
-
 
 
   def lineseg(conf: AppConfig): Unit = {
@@ -306,7 +394,7 @@ object Works extends App {
 
       zoneIndex.getPages.take(2).map { page =>
 
-        val docstrum = new segment.DocstrumSegmenter(zoneIndex)
+        val docstrum = new segment.DocumentSegmenter(zoneIndex)
 
         val lines = docstrum.determineLines(
           page,

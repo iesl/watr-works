@@ -1,4 +1,5 @@
-package edu.umass.cs.iesl.watr
+package edu.umass.cs.iesl
+package watr
 package watrmarks
 
 
@@ -46,6 +47,22 @@ object jsiRectangle {
 
 
 object Bounds {
+
+  def charBoxesBounds(charBoxes: Seq[CharBox]): LTBounds = {
+    if (charBoxes.isEmpty) {
+      LTBounds(0, 0, 0, 0)
+    } else {
+      val cbs = charBoxes.sortBy(_.bbox.left)
+      val top = cbs.map(_.bbox.top).min
+      val bottom = cbs.map(_.bbox.bottom).max
+      val l=cbs.head.bbox.left
+      val r=cbs.last.bbox.right
+
+      LTBounds(l, top, r-l, bottom-top)
+    }
+  }
+
+
   def fmt = (d: Double) => f"${d}%1.2f"
 
   implicit class RicherDouble(val d: Double) extends AnyVal {
@@ -135,6 +152,13 @@ object Bounds {
     def right = tb.left+tb.width
     def bottom = tb.top+tb.height
 
+    def translate(x: Double, y: Double): LTBounds = {
+      tb.copy(
+        left=tb.left+x,
+        top=tb.top+y
+      )
+    }
+
     def union(b: LTBounds): LTBounds = {
       val left   = math.min(tb.left, b.left)
       val top    = math.min(tb.top, b.top)
@@ -150,6 +174,35 @@ object Bounds {
     // Compass direction point (bbox -> left-center, right-center, top-corner, etc)
     def toWesternPoint: Point = Point((tb.left), (tb.top+tb.height/2))
     def toEasternPoint: Point = Point((tb.left+tb.width), (tb.top+tb.height/2))
+
+    import CompassDirection._
+
+    def toPoint(cd: CompassDirection): Point ={
+      def centerX = (tb.left+tb.width/2)
+      def centerY = (tb.top+tb.height/2)
+
+      cd match {
+        case N  => Point(centerX, tb.top)
+        case S  => Point(centerX, tb.bottom)
+        case E  => Point(tb.right, centerY)
+        case W  => Point(tb.left, centerY)
+        case NW => Point(tb.left, tb.top)
+        case SW => Point(tb.left, tb.bottom)
+        case NE => Point(tb.right, tb.top)
+        case SE => Point(tb.right, tb.bottom)
+      }
+    }
+
+    def toLine(cd: CompassDirection): Line = cd match {
+      case N  => Line(tb.toPoint(NW), tb.toPoint(NE))
+      case S  => Line(tb.toPoint(SW), tb.toPoint(SE))
+      case E  => Line(tb.toPoint(NE), tb.toPoint(SE))
+      case W  => Line(tb.toPoint(NW), tb.toPoint(SW))
+      case NW => ???
+      case SW => ???
+      case NE => ???
+      case SE => ???
+    }
 
     def xProjection(): Line = Line(
       Point((tb.left), 0),
@@ -327,16 +380,6 @@ case class Zone(
   )
 }
 
-// case class Label(
-//   ns: String,
-//   key: String,
-//   value: Option[String]  = None
-// ) {
-//   val vstr = value.map(v => s"=${v}").getOrElse("")
-//   override def toString = s"#${ns}::${key}${vstr}"
-// }
-
-
 sealed trait PageID
 sealed trait CharID
 
@@ -377,20 +420,28 @@ class ZoneIndexer  {
   val pageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex]()
   val pageGeometries = mutable.Map[Int@@PageID, PageGeometry]()
   val pageChars = mutable.HashMap[Int@@PageID, mutable.ArrayBuffer[CharBox]]()
-  val charBoxes = mutable.HashMap[Int@@CharID, CharBox]()
+  val charBoxes = mutable.ListMap[Int@@CharID, CharBox]()
 
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
   val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
 
   val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
 
-  def pageGeometry(p: Int@@PageID) = pageGeometries(p)
+  def getPageGeometry(p: Int@@PageID) = pageGeometries(p)
 
   def getComponent(pageId: Int@@PageID, charId: Int@@CharID): CharBox = {
     charBoxes(charId)
   }
 
+  // See getComponentsUnfiltered() for explanation of filterNot
   def getComponents(pageId: Int@@PageID): Seq[CharBox] = {
+    pageChars(pageId).filterNot(_.isWonky)
+  }
+
+
+  // Some chars from a pdf are unuseable, either unprintable or embedded space characters.
+  //   This will return all of them
+  def getComponentsUnfiltered(pageId: Int@@PageID): Seq[CharBox] = {
     pageChars(pageId)
   }
 

@@ -11,6 +11,7 @@ import org.jdom2
 import scalaz.{Tag, @@}
 import ammonite.ops._
 
+
 sealed trait SHA1String
 
 case class HeaderInfo(
@@ -31,7 +32,7 @@ trait CorpusJsonFormats {
 
   implicit def FormatSHA1String  = Format(
     __.read[String].map(i => Tag.of[SHA1String](i)),
-    Writes[String@@SHA1String](i => JsString(SHA1String.unwrap(i)))
+    Writes[String@@SHA1String](i => JsString(i.unwrap))
   )
 
   implicit def HeaderInfoFormat = Json.format[HeaderInfo]
@@ -170,11 +171,11 @@ class CorpusArtifact(
     s"${entry}/${artifactDescriptor}"
   }
 
-  def exists: Boolean = {
+  def exists(): Boolean = {
     ammonite.ops.exists! artifactPath
   }
 
-  def delete: Unit = {
+  def delete(): Unit = {
     ammonite.ops.rm! artifactPath
   }
 

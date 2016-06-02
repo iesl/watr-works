@@ -47,14 +47,8 @@ object CermineExtractor extends SpatialJsonFormat {
     // Use computed page bounds (based on char bounds) rather than reported page bounds
     pageInfos.map({ case (pchars, pgeom) =>
 
-      val mintop = pchars.chars.map(_.bbox.top).min
-      val maxbottom = pchars.chars.map(_.bbox.bottom).max
-      val minleft = pchars.chars.map(_.bbox.left).min
-      val maxright = pchars.chars.map(_.bbox.right).max
+      val computedBounds =  charBoxesBounds(pchars.chars)
 
-      val computedBounds = LTBounds(
-        minleft, mintop, maxright-minleft, maxbottom-mintop
-      )
       (pchars,
         pgeom.copy(bounds = computedBounds)
       )
@@ -130,7 +124,7 @@ object CermineExtractor extends SpatialJsonFormat {
 
   //       page.iterator.foreach { zone =>
 
-  //         // Adding generic Zone label (output of Docstrum segmentation)
+  //         // Adding generic Zone label (output of Document segmentation)
   //         addZone(LB.Block, pageNum, zone.getBounds.toLTBounds)
   //         //  ... as well as adding Cermine's classification of the zone
   //         addZone(modifyZoneLabelName(zone.getLabel.name), pageNum, zone.getBounds.toLTBounds)

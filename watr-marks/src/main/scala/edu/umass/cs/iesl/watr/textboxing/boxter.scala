@@ -219,7 +219,20 @@ object TextBoxing extends ToListOps with ToIdOps {
   def hjoinList(a:Alignment=top, sep:Box=nullBox)(bs:Seq[Box]): Box =
     hcat(a)(bs.toList intersperse sep)
 
+  def boxlf(b: Box): Box =
+    emptyBox(1)(0).atop(b)
 
+  implicit class BoxOps(val value: Box) extends AnyVal {
+    def padTop1 = boxlf(value)
+  }
+
+  implicit class BoxSeqOps(val value: Seq[Box]) extends AnyVal {
+    def mkHBox(separator: Box=nullBox) =
+      hjoin(sep=separator)(value:_*)
+
+    def mkVBox(separator: Box=nullBox) =
+      vjoin(sep=separator)(value:_*)
+  }
   //------------------------------------------------------------------------------
   //  Alignment  -----------------------------------------------------------------
   //------------------------------------------------------------------------------

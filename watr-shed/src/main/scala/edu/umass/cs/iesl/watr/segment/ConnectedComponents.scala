@@ -11,7 +11,7 @@ import scalaz._
 import Scalaz._
 
 
-import DocstrumSegmenter._
+import DocumentSegmenter._
 
 object CharacterAccumulator {
   val charSet: mutable.Set[Char] = mutable.Set()

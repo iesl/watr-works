@@ -7,7 +7,7 @@ import watrmarks._
 import java.io.InputStream
 import scalaz.@@
 
-trait DocsegTestUtil extends  FlatSpec with Matchers with DocstrumUtils {
+trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
 
   type @@[A, B] = scalaz.@@[A, B]
 

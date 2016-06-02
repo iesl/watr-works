@@ -130,7 +130,7 @@ class TextlineSegTest extends DocsegTestUtil  {
 
       println("["+squishb(interestingChars)+"]")
 
-      val docstrum = new DocstrumSegmenter(zoneIndex)
+      val docstrum = new DocumentSegmenter(zoneIndex)
 
       val lines = docstrum.determineLines(pageId, interestingChars)
 

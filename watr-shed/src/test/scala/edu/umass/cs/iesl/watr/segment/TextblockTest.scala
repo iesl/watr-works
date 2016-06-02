@@ -7,6 +7,11 @@ import scalaz.@@
 import watrmarks._
 import extract._
 
+// import segment.SpatialIndexOperations._
+import segment.DocumentSegmenter._
+import Bounds._
+import SpatialIndexOperations._
+
 case class TextblockExample(
   source: String,
   pageId: Int@@PageID,
@@ -16,23 +21,17 @@ case class TextblockExample(
 
 class TextBlockTest extends DocsegTestUtil  {
   behavior of "block identification and ordering"
+
   // import Component._
   val testExamples = List(
     TextblockExample("2839.pdf", page(0),
       Seq()
     )
-
-
-
-    // TextblockExample("bongard2005.pdf", page(1)) // cols not detected
-
-    // TextblockExample("101016jactamat200401025.pdf", page(0)),
-    // TextblockExample("101016jcarbon201301056.pdf", page(0)),
-      // TextblockExample("101016japsusc201210126.pdf", page(0)) // page 0 col 1 is not detected
-      //  ./corpus-test/101016jcarbpol201110004.pdf.d/ page 1 is totally wrong
-      // TextblockExample("0575.pdf", page(0)) // cols/headers not detected
-
   )
+
+
+
+
   it should "identify text blocks" in {
     testExamples.foreach{ example =>
       println(s"\n\ntesting ${example.source}")
@@ -41,42 +40,88 @@ class TextBlockTest extends DocsegTestUtil  {
       val zoneIndex = ZoneIndexer.loadSpatialIndices(
         CermineExtractor.extractChars(pdfIns)
       )
+      def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[CharBox]): Seq[CharBox] = {
+        if (charBoxes.isEmpty) Seq()
+        else {
+          val ids = charBoxes.map(_.id.unwrap)
+          val minId = ids.min
+          val maxId = ids.max
 
-      val docstrum = new DocstrumSegmenter(zoneIndex)
+          val missingIds = (ids.min to ids.max) diff ids
+          val missingChars = missingIds.map(id => zoneIndex.getComponent(pageId, CharID(id)))
 
-      val allPageLines = for {
-        pageId <- docstrum.pages.getPages
-      } yield {
-        docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
+          // TODO check missing chars for overlap w/lineChars
+          val completeLine = (charBoxes ++ missingChars).sortBy(_.bbox.left)
+
+          // check for split in line
+          println(s"""${charBoxes.map(_.bestGuessChar).mkString}""")
+          println(s"""  +: ${missingChars.map(_.bestGuessChar).mkString}""")
+          println(s"""  =: ${completeLine.map(_.bestGuessChar).mkString}""")
+          completeLine
+        }
       }
 
-      // allPageLines.drop(1).take(1).foreach { page =>
-      //   println("Page========")
-      //   page.foreach { block =>
-      //     println("Block========")
-      //     val pstr = Component.renderConnectedComponents(block)
-      //     println(pstr)
-      //   }
+      val pages = zoneIndex.getPages.take(1).map({ pageId =>
+        val pageChars = zoneIndex.getComponents(pageId)
+        val pageGeom = zoneIndex.getPageGeometry(pageId)
+
+        // line-bin coarse segmentation
+        val lineBins = approximateLineBins(pageChars)
+
+        // try to join each line bin with overlapping bins
+
+        /// break up bins based on charbox ids
+
+        val splitAndFilledLines = for {
+          (lineBounds, lineChars) <- lineBins
+          if !lineChars.isEmpty
+        } yield {
+
+          def spanloop(chars: Seq[CharBox]): Seq[Int] = {
+            if (chars.isEmpty) Seq()
+            else {
+              val (line1, line2) = chars
+                .sliding(2).span({
+                  case Seq(ch1, ch2) => ch2.id.unwrap - ch1.id.unwrap < 10
+                  case Seq(_)     => true
+                })
+              val len = line1.length
+              len +: spanloop(chars.drop(len+1))
+            }
+          }
+
+
+          var totalIndex: Int = 0
+
+          val splitLines = spanloop(lineChars)
+            .map({ index:Int =>
+              val m = fillInMissingChars(pageId, lineChars.drop(totalIndex).take(index+1))
+              totalIndex += index+1;
+              m
+            })
+
+          splitLines
+
+        }
+      })
+
+
+
+      // val pwidth = totalBounds.width
+      // val pheight = totalBounds.height
+
+      // val svgHead = s"""<svg:svg version="1.1" width="${pwidth}px" height="${pheight}px" viewBox="0 0 ${pwidth} ${pheight}" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">"""
+
+      // (svgHead % totalSvg % "</svg:svg>").toString
+
+
+      // val docstrum = new DocumentSegmenter(zoneIndex)
+
+      // val allPageLines = for {
+      //   pageId <- docstrum.pages.getPages
+      // } yield {
+      //   docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
       // }
-
-      val accum = PageSegAccumulator(allPageLines, Seq())
-
-      // get document-wide stats
-      val accum2 = docstrum.getDocumentWideStats(accum)
-
-      implicit val initState = Option(CCRenderState(
-        docstrum.pages.getPages.length,
-        example.pageId
-      ))
-
-
-      val zones = docstrum.determineZones(example.pageId, accum2)
-      val colText = for {
-        col <- zones
-      } {
-        println("Column")
-        println(Component.renderConnectedComponents(col))
-      }
 
     }
   }

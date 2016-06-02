@@ -26,7 +26,7 @@ case class PageSegAccumulator(
   lineDimensionBins: Seq[LineDimensionBins] = Seq()
 )
 
-trait DocstrumUtils {
+trait DocumentUtils {
 
 
   def approxSortYX(charBoxes: Seq[CharBox]): Seq[CharBox] = {
@@ -46,7 +46,34 @@ trait DocstrumUtils {
   }
 }
 
-object DocstrumSegmenter extends DocstrumUtils {
+object DocumentSegmenter extends DocumentUtils {
+
+  def pairwiseSpaces(cs: Seq[CharBox]): Seq[Double] = {
+    val cpairs = cs.sliding(2).toList
+
+    val dists = cpairs.map({
+      case Seq(c1, c2)  => c2.bbox.left - c1.bbox.right
+      case _  => 0d
+    })
+
+    dists :+ 0d
+  }
+
+  def approximateLineBins(charBoxes: Seq[CharBox]): Seq[(LTBounds, Seq[CharBox])] = {
+    val sortedYPage = charBoxes
+      .groupBy(_.bbox.bottom.pp)
+      .toSeq
+      .sortBy(_._1.toDouble)
+
+    val sortedXY = sortedYPage
+      .map({case (topY, charBoxes) =>
+        val sortedXLine = charBoxes
+          .sortBy(_.bbox.left)
+        (charBoxesBounds(sortedXLine), sortedXLine)
+      })
+    sortedXY
+  }
+
   def compareDouble(d1: Double, d2: Double, precision: Double): Int = {
     if (d1.isNaN() || d2.isNaN()) {
       d1.compareTo(d2)
@@ -83,6 +110,8 @@ object DocstrumSegmenter extends DocstrumUtils {
     Histogram.fromValues(values.toList.map(new java.lang.Double(_)), resolution)
   }
 
+  // sealed trait Frequency
+
   def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
     val hist = histogram(in, resolution)
     hist.iterator.toSeq
@@ -93,10 +122,10 @@ object DocstrumSegmenter extends DocstrumUtils {
   }
 
 
-  def init(pagedefs: Seq[(PageChars, PageGeometry)]): (DocstrumSegmenter, PageSegAccumulator) = {
+  def init(pagedefs: Seq[(PageChars, PageGeometry)]): (DocumentSegmenter, PageSegAccumulator) = {
     val zoneIndex = ZoneIndexer.loadSpatialIndices(pagedefs)
 
-    val docstrum = new DocstrumSegmenter(zoneIndex)
+    val docstrum = new DocumentSegmenter(zoneIndex)
 
     val allPageLines = for {
       pageId <- docstrum.pages.getPages
@@ -164,56 +193,18 @@ object DocstrumSegmenter extends DocstrumUtils {
   }
 }
 
-class DocstrumSegmenter(
+class DocumentSegmenter(
   val pages: ZoneIndexer
 ) {
-  import DocstrumSegmenter._
+  import DocumentSegmenter._
 
   val LB = StandardLabels
-
-  val MAX_ZONES_PER_PAGE = 300;
-  val PAGE_MARGIN = 2;
-  val ORIENTATION_MARGIN = 0.2d;
-  val LINES_PER_PAGE_MARGIN = 100;
 
   var docOrientation: Double = 0d
 
   private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[CharBox] = {
     pages.nearestNChars(pageId, qbox, 12, 15.0f)
       .filterNot(_.isWonky)
-  }
-
-  def computeInitialOrientation(): Double = {
-    // println(s"computeInitialOrientation")
-    val histPeaks = for {
-      pageId <- pages.getPages
-    } yield {
-      val histogram = new Histogram(-Math.PI/2, Math.PI/2, angleHistogramResolution);
-      println(s"hist range = ${-Math.PI/2} - ${Math.PI/2}")
-      for {
-        component <- pages.getComponents(pageId)
-      } yield {
-
-        // println(s"neighbors of ${component.char}")
-        val neighbors = findNeighbors(pageId, component)
-        neighbors
-          .foreach({c =>
-            val angle = c.bbox.toCenterPoint.angleTo(component.bbox.toCenterPoint)
-            val dist = c.bbox.centerDistanceTo(component.bbox)
-            println(s"    ${c.char}: ${c.bbox.prettyPrint} -> ${component.bbox.prettyPrint}")
-            println(s"        angle=${angle} dist=${dist}")
-            histogram.add(angle)
-          })
-      }
-      // Rectangular smoothing window has been replaced with gaussian smoothing window
-      histogram.circularGaussianSmooth(angleHistogramSmoothingWindowLength, angleHistogramSmoothingWindowStdDeviation)
-
-      histogram.getPeakValue()
-    }
-
-    println(s"""computeInitialOrientation: ${histPeaks.mkString(", ")}""")
-
-    histPeaks.headOption.getOrElse(0.0)
   }
 
 
@@ -225,8 +216,6 @@ class DocstrumSegmenter(
     pageId: Int@@PageID,
     components: Seq[CharBox]
   ): Seq[ConnectedComponents] = {
-    val maxHorizontalDistance: Double = 2.5d
-    val maxVerticalDistance: Double = 12.0
 
     val readableComponents = components.filterNot(_.isWonky)
     val sets = new DisjointSets[CharBox](readableComponents)
@@ -265,10 +254,10 @@ class DocstrumSegmenter(
             val angleNotZero = angle.pp != "0.00"
             searchLog.append(
               s"   '${neighbor.char}' ${neighbor.wonkyCharCode} #${neighbor.id} ${neighbor.bbox.prettyPrint}".box %
-              s"""       ${ if (joinWith && topsNotEq) "!join" else if (joinWith) "join" else "" }""" %
-              s"       angle:${angle.pp} dx:${dx.pp} dy:${dy.pp}" %
-              s"       dist:${dist.pp} e/wi-dist:${eastWestDist.pp}" %
-              s"       maxwidth= ${maxWidth} withinAngle=${withinAngle(angle)}"
+                s"""       ${ if (joinWith && topsNotEq) "!join" else if (joinWith) "join" else "" }""" %
+                s"       angle:${angle.pp} dx:${dx.pp} dy:${dy.pp}" %
+                s"       dist:${dist.pp} e/wi-dist:${eastWestDist.pp}" %
+                s"       maxwidth= ${maxWidth} withinAngle=${withinAngle(angle)}"
             )
           }
         })
@@ -630,59 +619,6 @@ class DocstrumSegmenter(
   }
 
 
-
-
-
-
-
-
-
-  // def pageZonesToSortedZones(zones: Seq[Seq[ConnectedComponents]]): Seq[ConnectedComponents] = {
-  //   // BxPage page = new BxPage();
-  //   // List[BxPage] pages = Lists.newArrayList(origPage.getParent());
-  //   // int pageIndex = pages.indexOf(origPage);
-  //   // boolean groupped = false;
-  //   // if (zones.size() > MAX_ZONES_PER_PAGE && pageIndex >= PAGE_MARGIN
-  //   //         && pageIndex < pages.size() - PAGE_MARGIN) {
-  //   //     val oneZone:List[ConnectedComponents]  = List[ConnectedComponents]();
-  //   //     for (List[ConnectedComponents] zone : zones) {
-  //   //         oneZone.addAll(zone);
-  //   //     }
-  //   //     zones = new ArrayList[List[ConnectedComponents]]();
-  //   //     zones.add(oneZone);
-  //   //     groupped = true;
-  //   // }
-  //   val page = for (lines <- zones) yield {
-  //     val zLines = mutable.ArrayBuffer[ConnectedComponents]()
-  //     // if (groupped) {
-  //     //     zone.setLabel(BxZoneLabel.GEN_OTHER);
-  //     // }
-  //     for (line <- lines) {
-  //       zLines.append(line.convertToBxLine());
-  //     }
-
-  //     val zSorted = zLines.sortWith({ case (cc1, cc2) =>
-  //       cc1.bounds.top < cc2.bounds.top
-  //     })
-
-
-  //     // zone.setLines(zLines);
-  //     // BxBoundsBuilder.setBounds(zone);
-  //     // page.addZone(zone);
-  //     zSorted.toSeq
-  //   }
-
-  //   val pccs = page.map({case ccs => Component(ccs, 0d, LB.Zone) })
-
-  //   val sortedZones = sortZonesYX(pccs)
-
-  //   sortedZones.foreach { cc => println(s"zone ${cc.toText}") }
-  //   sortedZones
-  //   // BxBoundsBuilder.setBounds(page);
-  //   // return page;
-  // }
-
-
   def sortZonesYX(zones: Seq[ConnectedComponents]): Seq[ConnectedComponents]= {
 
     zones.sortWith({case (cc1, cc2) =>
@@ -698,203 +634,12 @@ class DocstrumSegmenter(
     })
   }
 
-  val DEFAULT_SPACE_HIST_RES: Double = 0.5
-  val DISTANCE_STEP: Double = 16.0;
-
   val DEFAULT_ANGLE_HIST_RES : Double = Math.toRadians(0.5);
   val DEFAULT_ANGLE_HIST_SMOOTH_LEN : Double = 0.25 * Math.PI;
   val DEFAULT_ANGLE_HIST_SMOOTH_STDDEV : Double = 0.0625 * Math.PI;
-  val DEFAULT_SPACE_HIST_SMOOTH_LEN : Double = 2.5;
-  val DEFAULT_SPACE_HIST_SMOOTH_STDDEV : Double = 0.5;
-  val DEFAULT_MAX_VERT_COMP_DIST : Double = 0.67;
-  val DEFAULT_MIN_LINE_SIZE_SCALE : Double = 0.9;
-  val DEFAULT_MAX_LINE_SIZE_SCALE : Double = 2.5;
-  val DEFAULT_MIN_HORIZONTAL_DIST : Double = -0.5;
-  val DEFAULT_MIN_VERTICAL_DIST : Double = 0.0;
-  val DEFAULT_MAX_VERTICAL_DIST : Double = 1.2;
-  val DEFAULT_COMP_DIST_CHAR : Double = 3.5;
-  val DEFAULT_WORD_DIST : Double = 0.2;
-  val DEFAULT_MIN_HORIZONTAL_MERGE_DIST : Double = -3.0;
-  val DEFAULT_MAX_VERTICAL_MERGE_DIST : Double = 0.5;
-  val DEFAULT_NEIGHBOR_COUNT : Double = 5;
-
-  val DEFAULT_ANGLE_TOLERANCE: Double = Math.PI / 6;
-
-
-
-  //     /**
-  //      * Angle histogram resolution in radians per bin.
-  //      */
   val angleHistogramResolution = DEFAULT_ANGLE_HIST_RES
-
-  //     /**
-  //      * Angle histogram smoothing window length in radians.
-  //      * Length of angle histogram is equal to pi.
-  //      */
   val angleHistogramSmoothingWindowLength: Double = DEFAULT_ANGLE_HIST_SMOOTH_LEN;
-
-  //     /**
-  //      * Angle histogram gaussian smoothing window standard deviation in radians.
-  //      */
   val angleHistogramSmoothingWindowStdDeviation:Double = DEFAULT_ANGLE_HIST_SMOOTH_STDDEV;
-
-  //     /**
-  //      * Spacing histogram resolution per bin.
-  //      */
-  val spacingHistogramResolution: Double = DEFAULT_SPACE_HIST_RES;
-
-  //     /**
-  //      * Spacing histogram smoothing window length.
-  //      */
-  val spacingHistogramSmoothingWindowLength:Double = DEFAULT_SPACE_HIST_SMOOTH_LEN;
-
-  //     /**
-  //      * Spacing histogram gaussian smoothing window standard deviation.
-  //      */
-  val spacingHistogramSmoothingWindowStdDeviation:Double = DEFAULT_SPACE_HIST_SMOOTH_STDDEV;
-
-  //     /**
-  //      * Maximum vertical component distance multiplier used during line
-  //      * determination.
-  //      *
-  //      * Maximum vertical distance between components (characters) that belong
-  //      * to the same line is equal to the product of this value and estimated
-  //      * between-line spacing.
-  //      */
-      val maxVerticalComponentDistanceMultiplier:Double = DEFAULT_MAX_VERT_COMP_DIST;
-
-  //     /**
-  //      * Minimum line size scale value.
-  //      *
-  //      * During zone determination (merging lines into zones) line height is
-  //      * taken into account. To achieve this, line size scale is estimated and
-  //      * limited to range [minLineSizeScale, maxLineSizeScale].
-  //      */
-      val minLineSizeScale:Double = DEFAULT_MIN_LINE_SIZE_SCALE;
-
-  //     /**
-  //      * Maximum line size scale value.
-  //      *
-  //      * See minLineSizeScale for more information.
-  //      */
-      val maxLineSizeScale:Double = DEFAULT_MAX_LINE_SIZE_SCALE;
-
-  //     /**
-  //      * Minimum horizontal line distance multiplier.
-  //      *
-  //      * Minimum horizontal distance between lines that belong to the same zone
-  //      * is equal to the product of this value and estimated within-line spacing.
-  //      */
-      val minHorizontalDistanceMultiplier:Double = DEFAULT_MIN_HORIZONTAL_DIST;
-
-  //     /**
-  //      * Minimum vertical line distance multiplier.
-  //      *
-  //      * Minimum vertical distance between lines that belong to the same zone
-  //      * is equal to the product of this value and estimated between-line spacing.
-  //      */
-      val minVerticalDistanceMultiplier:Double = DEFAULT_MIN_VERTICAL_DIST;
-
-  //     /**
-  //      * Maximum vertical line distance multiplier.
-  //      *
-  //      * Maximum vertical distance between lines that belong to the same zone
-  //      * is equal to the product of this value and estimated between-line spacing.
-  //      */
-      val maxVerticalDistanceMultiplier:Double = DEFAULT_MAX_VERTICAL_DIST;
-
-  //     /**
-  //      * Component distance character spacing multiplier.
-  //      *
-  //      * Maximum distance between components that belong to the same line is
-  //      * equal to (lineSpacing * componentDistanceLineMultiplier +
-  //      * characterSpacing * componentDistanceCharacterMultiplier), where
-  //      * lineSpacing and characterSpacing are estimated between-line and
-  //      * within-line spacing, respectively.
-  //      */
-      val componentDistanceCharacterMultiplier:Double = DEFAULT_COMP_DIST_CHAR;
-
-  //     /**
-  //      * Word distance multiplier.
-  //      *
-  //      * Maximum distance between components that belong to the same word is
-  //      * equal to the product of this value and estimated within-line spacing.
-  //      */
-      val wordDistanceMultiplier:Double = DEFAULT_WORD_DIST;
-
-  //     /**
-  //      * Minimum horizontal line merge distance multiplier.
-  //      *
-  //      * Minimum horizontal distance between lines that should be merged is equal
-  //      * to the product of this value and estimated within-line spacing.
-  //      *
-  //      * Because split lines do not overlap this value should be negative.
-  //      */
-
-      val minHorizontalMergeDistanceMultiplier:Double = DEFAULT_MIN_HORIZONTAL_MERGE_DIST;
-
-  //     /**
-  //      * Maximum vertical line merge distance multiplier.
-  //      *
-  //      * Maximum vertical distance between lines that should be merged is equal
-  //      * to the product of this value and estimated between-line spacing.
-  //      */
-
-      val maxVerticalMergeDistanceMultiplier:Double = DEFAULT_MAX_VERTICAL_MERGE_DIST;
-
-  //     /**
-  //      * Angle tolerance for comparisons of angles between components and angles
-  //      * between lines.
-  //      */
-      val angleTolerance: Double = DEFAULT_ANGLE_TOLERANCE;
-
-  //     /**
-  //      * Number of nearest-neighbors found per component.
-  //      */
-  //     private int neighborCount = DEFAULT_NEIGHBOR_COUNT;
-
-
-  //     public void setSpacingHistogramResolution(double value) {
-  //         spacingHistogramResolution = value;
-  //     }
-
-  //     public void setSpacingHistogramSmoothingWindowLength(double value) {
-  //         spacingHistogramSmoothingWindowLength = value;
-  //     }
-
-  //     public void setSpacingHistogramSmoothingWindowStdDeviation(double value) {
-  //         spacingHistogramSmoothingWindowStdDeviation = value;
-  //     }
-
-  //     public void setMaxLineSizeScale(double value) {
-  //         maxLineSizeScale = value;
-  //     }
-
-  //     public void setMaxVerticalDistanceMultiplier(double value) {
-  //         maxVerticalDistanceMultiplier = value;
-  //     }
-
-  //     public void setMinHorizontalDistanceMultiplier(double value) {
-  //         minHorizontalDistanceMultiplier = value;
-  //     }
-
-  //     public void setComponentDistanceCharacterMultiplier(double value) {
-  //         componentDistanceCharacterMultiplier = value;
-  //     }
-
-  //     public void setWordDistanceMultiplier(double value) {
-  //         wordDistanceMultiplier = value;
-  //     }
-
-  //     public void setMaxVerticalMergeDistanceMultiplier(double value) {
-  //         maxVerticalMergeDistanceMultiplier = value;
-  //     }
-
-  //     public void setAngleTolerance(double value) {
-  //         angleTolerance = value;
-  //     }
-
-  // }
 
   def determineZonesOriginal(
     pageId: Int@@PageID,
@@ -1159,88 +904,9 @@ class DocstrumSegmenter(
         Component(totalLineSorted, LB.Block)
       })
 
-    /// return:
     sortedCommonLines
-
-
-
-    // column detection
-    //   - search paper-wide for most common: line-width,
-    //     for most common line widths, find most common ctr-x, most common v-dist to next line
-    //   foreach page:
-    //     label centered text lines
-    //       look up/down foreach centered line to form centered block
-    //     foreach line that matches common-width w/common ctr,
-    //       look up/down and join w/ lines within reach
-    //     foreach un-labeled line on page
-    //        try l/r justified block detection (justified l/r)
-    //        try center-column detection (justified l/r)
-    //        try left-justified block detection
-
-
-
-    //     justified l/r cols
-    //       map lines => x.(left, ctr, right)
-    //         group into matching sets
-    //         foreach matching set, look up/down for straggling line
-
-
-
-    // lines.foreach{ line =>
-    //   val lineCenter = line.bounds.toCenterPoint
-    //   println(s"${lineCenter.prettyPrint} cb:${cdist2} pb:${cdist}  ${line.tokenizeLine().toText}")
-    // }
-    // println(
-    // lines.map{ line =>
-    //   line.bounds.toCenterPoint.x
-    // }.sorted.mkString("\n")
-    // )
-
-
-
 
   }
 
 
 }
-
-
-
-
-      // LineDimensionBins(
-      //   PageID(pagenum),
-      //   topNWidths.map{ case (width, wfreq) =>
-      //     //
-      //     // plines.filterNot(lineWidthMatches(_, width))
-      //     //   .sortBy(_.bounds.top)
-      //     //   .foreach({ line =>
-      //     //     if (pagenum < 2) {
-      //     //       // line.determineNormalTextBounds.width.eqFuzzy(0.5d)(width)
-      //     //       val ntbs = line.determineNormalTextBounds
-      //     //       val nwidth = ntbs.width
-      //     //       val dist = math.abs(nwidth - width)
-      //     //       val withinRangs = dist < 0.5
-      //     //       println(s"""| ${pagenum} > ${line.tokenizeLine().toText}
-      //     //                   |     bounds: ${line.bounds.prettyPrint} normal-bounds: ${ntbs.prettyPrint}
-      //     //                   |     bin-width: ${width}  norm-width: ${ntbs.width} dist: ${dist}
-      //     //                   |""".stripMargin)
-      //     //       if (line.toText.startsWith("Proton")) {
-      //     //         line.components.foreach { c =>
-      //     //           println(s"        ${c.toText} ${c.bounds.prettyPrint}")
-      //     //         }
-      //     //         val mfHeights = getMostFrequentValues(line.components.map(_.bounds.height), 0.1d)
-      //     //         println(s"""        most-freq heights: ${mfHeights.mkString("\n          ")}""")
-
-      //     //         // val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
-
-      //     //         // components
-      //     //         //   .filter(_.bounds.height.eqFuzzy(0.01d)(mfHeight))
-      //     //         //   .map(_.bounds)
-      //     //         //   .foldLeft(components.head.bounds)( { case (b1, b2) =>
-      //     //         //     b1 union b2
-      //     //         //   })
-
-      //     //       }
-      //     //     }
-      //     //   })
-      //     ((width, wfreq), plines.filter(lineWidthMatches(_, width)))
