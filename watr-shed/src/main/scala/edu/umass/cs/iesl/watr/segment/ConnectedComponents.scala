@@ -21,7 +21,7 @@ object CharacterAccumulator {
 case class CCRenderState(
   numOfPages: Int,
   startingPage: Int@@PageID = PageID(0),
-  idgen: IdGenerator[TokenID] = IdGenerator[TokenID],
+  idgen: IdGenerator[TokenID] = IdGenerator[TokenID](),
   tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@TokenID, LTBounds)] = mutable.ArrayBuffer()
 ) {
   private var currPage: Int@@PageID = startingPage

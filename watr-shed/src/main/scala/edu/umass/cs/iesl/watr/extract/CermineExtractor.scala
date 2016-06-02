@@ -8,13 +8,6 @@ import play.api.libs.json._
 // import scala.collection.JavaConversions._
 import java.io.InputStream
 
-
-import _root_.pl.edu.icm.cermine
-import cermine.ComponentConfiguration
-import cermine.ExtractionUtils
-// import cermine.structure.model._
-// import cermine.structure.model.BxBounds
-// import scala.collection.JavaConversions._
 import com.itextpdf.text.pdf.DocumentFont
 
 import play.api.libs.json._
@@ -33,14 +26,15 @@ object CermineExtractor extends SpatialJsonFormat {
     charsToDebug: Set[Int] = Set()
   ): Seq[(PageChars, PageGeometry)] = {
 
-    val conf = new ComponentConfiguration()
+    // val conf = new ComponentConfiguration()
     val charExtractor = new XITextCharacterExtractor(
       charsToDebug,
-      IdGenerator[CharID] //, IdGenerator[PageID]
+      IdGenerator[CharID]() //, IdGenerator[PageID]
     )
-    conf.setCharacterExtractor(charExtractor)
+    // conf.setCharacterExtractor(charExtractor)
+    val _ = charExtractor.extractCharacters(pdfis)
 
-    val _ = ExtractionUtils.extractCharacters(conf, pdfis)
+    // val _ = ExtractionUtils.extractCharacters(conf, pdfis)
 
     val pageInfos = charExtractor.pagesInfo
 

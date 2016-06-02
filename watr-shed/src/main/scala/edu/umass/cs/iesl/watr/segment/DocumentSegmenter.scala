@@ -1,16 +1,18 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+
+import java.io.InputStream
 import watrmarks._
 
 import scalaz.@@
-import pl.edu.icm.cermine.tools.Histogram
-import pl.edu.icm.cermine.tools.DisjointSets
+// import pl.edu.icm.cermine.tools.Histogram
+// import pl.edu.icm.cermine.tools.DisjointSets
 import Bounds._
 import Component._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-
+import TagUtils._
 // import com.softwaremill.debug.DebugConsole._
 
 case class LineDimensionBins(
@@ -107,7 +109,7 @@ object DocumentSegmenter extends DocumentUtils {
   }
 
   def histogram(values: Seq[Double], resolution: Double): Histogram = {
-    Histogram.fromValues(values.toList.map(new java.lang.Double(_)), resolution)
+    Histogram.fromValues(values, resolution)
   }
 
   // sealed trait Frequency
@@ -120,6 +122,17 @@ object DocumentSegmenter extends DocumentUtils {
       .takeWhile(_.getFrequency > 0)
       .map{b=>(b.getValue, b.getFrequency)}
   }
+
+  def createSegmenter(pdfins: InputStream): DocumentSegmenter = {
+    val chars = extract.CermineExtractor.extractChars(pdfins)
+    val zoneIndex = ZoneIndexer.loadSpatialIndices(chars)
+    new DocumentSegmenter(zoneIndex)
+  }
+  def createSegmenter(pagedefs: Seq[(PageChars, PageGeometry)]): DocumentSegmenter = {
+    val zoneIndex = ZoneIndexer.loadSpatialIndices(pagedefs)
+    new DocumentSegmenter(zoneIndex)
+  }
+
 
 
   def init(pagedefs: Seq[(PageChars, PageGeometry)]): (DocumentSegmenter, PageSegAccumulator) = {
@@ -154,6 +167,7 @@ object DocumentSegmenter extends DocumentUtils {
       numOfPages = pagedefs.length,
       startingPage = PageID(0)
     ))
+
 
     val pageBoxes = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
       val pageZones = zones.toList.map({ zone =>
@@ -210,9 +224,85 @@ class DocumentSegmenter(
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
+  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[CharBox]): Seq[CharBox] = {
+    if (charBoxes.isEmpty) Seq()
+    else {
+      val ids = charBoxes.map(_.id.unwrap)
+      val minId = ids.min
+      val maxId = ids.max
+
+      val missingIds = (ids.min to ids.max) diff ids
+      val missingChars = missingIds.map(id => pages.getComponent(pageId, CharID(id)))
+
+      // TODO check missing chars for overlap w/lineChars
+      val completeLine = (charBoxes ++ missingChars).sortBy(_.bbox.left)
+
+      // // check for split in line
+      // println(s"""${charBoxes.map(_.bestGuessChar).mkString}""")
+      // println(s"""  +: ${missingChars.map(_.bestGuessChar).mkString}""")
+      // println(s"""  =: ${completeLine.map(_.bestGuessChar).mkString}""")
+      completeLine
+    }
+  }
+
+  def determineLines(
+    pageId: Int@@PageID,
+    components: Seq[CharBox]
+  ): Seq[ConnectedComponents] = {
+
+    val lineSets = new DisjointSets[CharBox](components)
+
+    // line-bin coarse segmentation
+    val lineBins = approximateLineBins(components)
+
+    /// Split run-on lines (crossing columns, e.g.,), by looking for jumps in the char.id
+    val splitAndFilledLines = for {
+      (lineBounds, lineChars) <- lineBins
+      if !lineChars.isEmpty
+    } {
+
+      def spanloop(chars: Seq[CharBox]): Seq[Int] = {
+        if (chars.isEmpty) Seq()
+        else {
+          val (line1, line2) = chars
+            .sliding(2).span({
+              case Seq(ch1, ch2) => ch2.id.unwrap - ch1.id.unwrap < 10
+              case Seq(_)     => true
+            })
+          val len = line1.length
+          len +: spanloop(chars.drop(len+1))
+        }
+      }
+
+      var totalIndex: Int = 0
+
+      val splitLines = spanloop(lineChars)
+        .foreach({ index =>
+          val m = fillInMissingChars(pageId, lineChars.drop(totalIndex).take(index+1))
+
+          m.tail.foreach({char =>
+            if (!char.isWonky) {
+              lineSets.union(char, m.head)
+            }
+          })
+          totalIndex += index+1;
+        })
+    }
+
+    val lines = lineSets.iterator().toSeq.map{
+      _.toSeq.sortBy(c => (c.bbox.left, c.bbox.top)).map(new CharComponent(_, docOrientation))
+    }
+
+    lines
+      .map{ Component(_, LB.Line) }
+      .sortBy(b => (b.bounds.top, b.bounds.left))
+  }
+
+
+
 
   /** Groups components into text lines. */
-  def determineLines(
+  def determineLinesNNSearchVersion(
     pageId: Int@@PageID,
     components: Seq[CharBox]
   ): Seq[ConnectedComponents] = {
@@ -282,32 +372,23 @@ class DocumentSegmenter(
   }
 
 
-  def computeOrientation(lines: Seq[ConnectedComponents]): Double = {
-    // Compute weighted mean of line angles
-    var valueSum = 0.0;
-    var weightSum = 0.0;
-    for (line <- lines) {
-      valueSum += line.getAngle() * line.getLength();
-      weightSum += line.getLength();
-    }
-    return valueSum / weightSum;
-  }
-
   def charBasedPageBounds(
     pageId: Int@@PageID
   ): LTBounds = {
     val allBboxes = pages.getComponents(pageId).map(_.bbox)
 
-    val minX = allBboxes.map(_.left).min
-    val minY = allBboxes.map(_.top).min
-    val maxX = allBboxes.map(_.right).max
-    val maxY = allBboxes.map(_.bottom).max
+    if (allBboxes.isEmpty) LTBounds(0, 0, 0, 0) else {
+      val minX = allBboxes.map(_.left).min
+      val minY = allBboxes.map(_.top).min
+      val maxX = allBboxes.map(_.right).max
+      val maxY = allBboxes.map(_.bottom).max
 
-    LTBounds(
-      minX, minY,
-      maxX-minX,
-      maxY-minY
-    )
+      LTBounds(
+        minX, minY,
+        maxX-minX,
+        maxY-minY
+      )
+    }
   }
 
 

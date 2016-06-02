@@ -11,13 +11,13 @@ import com.itextpdf.text.Rectangle
 import com.itextpdf.text.exceptions.InvalidPdfException
 import com.itextpdf.text.pdf._
 import com.itextpdf.text.pdf.parser.{Vector => PVector, RenderListener, _}
-import _root_.pl.edu.icm.cermine
-import cermine.structure.model._
-import cermine.structure.model.BxBounds
-import cermine.exception.AnalysisException
-import cermine.structure.CharacterExtractor
-import cermine.structure.model._
-import cermine.structure.tools.BxBoundsBuilder
+// import _root_.pl.edu.icm.cermine
+// import cermine.structure.model._
+// import cermine.structure.model.BxBounds
+// import cermine.exception.AnalysisException
+// import cermine.structure.CharacterExtractor
+// import cermine.structure.model._
+// import cermine.structure.tools.BxBoundsBuilder
 import util._
 import watrmarks._
 
@@ -34,23 +34,23 @@ object util {
     def inf = java.lang.Double.isInfinite(d)
   }
 
-  def formatBounds(bounds: BxBounds): String = {
-    val x = bounds.getX
-    val y = bounds.getY
-    val w = bounds.getWidth
-    val h = bounds.getHeight
-    def fmt = (d: Double) => f"${d}%1.2f"
-    s"""(x:${fmt(x)}, y:${fmt(y)}, w:${fmt(w)}, h:${fmt(h)})"""
-  }
+  // def formatBounds(bounds: BxBounds): String = {
+  //   val x = bounds.getX
+  //   val y = bounds.getY
+  //   val w = bounds.getWidth
+  //   val h = bounds.getHeight
+  //   def fmt = (d: Double) => f"${d}%1.2f"
+  //   s"""(x:${fmt(x)}, y:${fmt(y)}, w:${fmt(w)}, h:${fmt(h)})"""
+  // }
 
-  def listBounds(bounds: BxBounds): List[Double] = {
-    val x = bounds.getX
-    val y = bounds.getY
-    val w = bounds.getWidth
-    val h = bounds.getHeight
-    // List(fmt(x), fmt(y), fmt(w), fmt(h))
-    List(x, y, w, h)
-  }
+  // def listBounds(bounds: BxBounds): List[Double] = {
+  //   val x = bounds.getX
+  //   val y = bounds.getY
+  //   val w = bounds.getWidth
+  //   val h = bounds.getHeight
+  //   // List(fmt(x), fmt(y), fmt(w), fmt(h))
+  //   List(x, y, w, h)
+  // }
 }
 
 
@@ -210,7 +210,7 @@ class MyBxDocumentCreator(
 class XITextCharacterExtractor(
   charsToDebug: Set[Int] = Set(),
   charIdGen: IdGenerator[CharID]
-) extends CharacterExtractor {
+) {
   val DEFAULT_FRONT_PAGES_LIMIT = 20
   val DEFAULT_BACK_PAGES_LIMIT = 20
   val frontPagesLimit = DEFAULT_FRONT_PAGES_LIMIT
@@ -258,7 +258,7 @@ class XITextCharacterExtractor(
 
   var pagesInfo: List[(PageChars, PageGeometry)] = List()
 
-  override def extractCharacters(stream: InputStream): BxDocument = {
+  def extractCharacters(stream: InputStream): Unit = {
     try {
       val reader = new PdfReader(stream)
 
@@ -310,13 +310,12 @@ class XITextCharacterExtractor(
 
       // documentCreator.document
       /// Dummy return value
-      new BxDocument()
 
     } catch {
       case ex: InvalidPdfException =>
-        throw new AnalysisException("Invalid PDF file", ex)
+        throw new Exception("Invalid PDF file", ex)
       case ex: IOException =>
-        throw new AnalysisException("Cannot extract characters from PDF file", ex)
+        throw new Exception("Cannot extract characters from PDF file", ex)
     }
   }
 
@@ -372,106 +371,105 @@ class XITextCharacterExtractor(
     }
   }
 
-  import scala.collection.mutable
+  // import scala.collection.mutable
+  // def removeDuplicateChunks(document: BxDocument): BxDocument = {
+  //   for (page <- document) {
+  //     val chunks = mutable.ArrayBuffer[BxChunk]()
+  //     val filteredChunks = mutable.ArrayBuffer[BxChunk]()
 
-  def removeDuplicateChunks(document: BxDocument): BxDocument = {
-    for (page <- document) {
-      val chunks = mutable.ArrayBuffer[BxChunk]()
-      val filteredChunks = mutable.ArrayBuffer[BxChunk]()
+  //     def intToChunksMap = mutable.HashMap[Integer, mutable.Set[BxChunk]]()
+  //     def chunkSet = mutable.Set[BxChunk]()
 
-      def intToChunksMap = mutable.HashMap[Integer, mutable.Set[BxChunk]]()
-      def chunkSet = mutable.Set[BxChunk]()
+  //     val chunkMap = mutable.HashMap[Integer, mutable.HashMap[Integer, mutable.Set[BxChunk]]]()
 
-      val chunkMap = mutable.HashMap[Integer, mutable.HashMap[Integer, mutable.Set[BxChunk]]]()
+  //     for (chunk <- chunks) {
+  //       val x = chunk.getX().toInt
+  //       val y = chunk.getY().toInt
+  //       var duplicate = false
 
-      for (chunk <- chunks) {
-        val x = chunk.getX().toInt
-        val y = chunk.getY().toInt
-        var duplicate = false
+  //       // duplicateSearch:
+  //       try {
+  //         for (
+  //           i <- x - 1 to x + 1;
+  //           j <- y - 1 to y + 1
+  //         ) {
+  //           if (chunkMap.contains(i) && chunkMap(i).contains(j)) {
 
-        // duplicateSearch:
-        try {
-          for (
-            i <- x - 1 to x + 1;
-            j <- y - 1 to y + 1
-          ) {
-            if (chunkMap.contains(i) && chunkMap(i).contains(j)) {
+  //             for (ch <- chunkMap(i)(j)) {
+  //               if (chunk.toText().equals(ch.toText()) && chunk.getBounds().isSimilarTo(ch.getBounds(), 1)) {
+  //                 duplicate = true
+  //                 // break duplicateSearch
+  //                 println(s"duplicate: ${chunk.toText()}")
+  //                 throw new Throwable()
+  //               }
+  //             }
+  //           }
+  //         }
 
-              for (ch <- chunkMap(i)(j)) {
-                if (chunk.toText().equals(ch.toText()) && chunk.getBounds().isSimilarTo(ch.getBounds(), 1)) {
-                  duplicate = true
-                  // break duplicateSearch
-                  println(s"duplicate: ${chunk.toText()}")
-                  throw new Throwable()
-                }
-              }
-            }
-          }
+  //       } catch {
+  //         case break: Throwable =>
+  //       }
 
-        } catch {
-          case break: Throwable =>
-        }
+  //       if (!duplicate) {
+  //         filteredChunks.add(chunk)
+  //         val x = chunk.getX().toInt
+  //         val y = chunk.getY().toInt
 
-        if (!duplicate) {
-          filteredChunks.add(chunk)
-          val x = chunk.getX().toInt
-          val y = chunk.getY().toInt
+  //         if (!chunkMap.contains(x)) {
+  //           chunkMap.put(x, intToChunksMap)
+  //         }
+  //         if (!chunkMap(x).contains(y)) {
+  //           chunkMap(x).put(y, chunkSet)
+  //         }
+  //         chunkMap(x)(y).add(chunk)
+  //       }
+  //     }
+  //     page.setChunks(filteredChunks)
+  //   }
+  //   document
+  // }
 
-          if (!chunkMap.contains(x)) {
-            chunkMap.put(x, intToChunksMap)
-          }
-          if (!chunkMap(x).contains(y)) {
-            chunkMap(x).put(y, chunkSet)
-          }
-          chunkMap(x)(y).add(chunk)
-        }
-      }
-      page.setChunks(filteredChunks)
-    }
-    document
-  }
+  // val CHUNK_DENSITY_LIMIT = 15
+  // val PAGE_GRID_SIZE = 10
 
-  val CHUNK_DENSITY_LIMIT = 15
-  val PAGE_GRID_SIZE = 10
+  // def filterComponents(document: BxDocument): BxDocument = {
+  //   for (page <- document) {
+  //     val bounds = new BxBoundsBuilder()
+  //     // val chunks = Lists.newArrayList(page.getChunks())
+  //     // val chunks = page.getChunks
+  //     val chunks = mutable.ArrayBuffer(page.getChunks.toList: _*)
+  //     for (ch <- chunks) {
+  //       bounds.expand(ch.getBounds())
+  //     }
 
-  def filterComponents(document: BxDocument): BxDocument = {
-    for (page <- document) {
-      val bounds = new BxBoundsBuilder()
-      // val chunks = Lists.newArrayList(page.getChunks())
-      // val chunks = page.getChunks
-      val chunks = mutable.ArrayBuffer(page.getChunks.toList: _*)
-      for (ch <- chunks) {
-        bounds.expand(ch.getBounds())
-      }
+  //     val density = 100.0 * chunks.size / (bounds.getBounds().getWidth() * bounds.getBounds().getHeight())
+  //     if (density.nan || density < CHUNK_DENSITY_LIMIT) {
+  //       //continue
+  //     } else {
 
-      val density = 100.0 * chunks.size / (bounds.getBounds().getWidth() * bounds.getBounds().getHeight())
-      if (density.nan || density < CHUNK_DENSITY_LIMIT) {
-        //continue
-      } else {
+  //       val map = mutable.HashMap[String, mutable.ArrayBuffer[BxChunk]]()
+  //       for (ch <- chunks) {
+  //         val x = (ch.getX() / PAGE_GRID_SIZE).toInt
+  //         val y = (ch.getY() / PAGE_GRID_SIZE).toInt
+  //         val key = Integer.toString(x) + " " + Integer.toString(y)
+  //         if (map.contains(key) == null) {
+  //           map.put(key, mutable.ArrayBuffer[BxChunk]())
+  //         }
+  //         map(key).add(ch)
+  //       }
 
-        val map = mutable.HashMap[String, mutable.ArrayBuffer[BxChunk]]()
-        for (ch <- chunks) {
-          val x = (ch.getX() / PAGE_GRID_SIZE).toInt
-          val y = (ch.getY() / PAGE_GRID_SIZE).toInt
-          val key = Integer.toString(x) + " " + Integer.toString(y)
-          if (map.contains(key) == null) {
-            map.put(key, mutable.ArrayBuffer[BxChunk]())
-          }
-          map(key).add(ch)
-        }
-
-        for (list <- map.values()) {
-          if (list.size() > CHUNK_DENSITY_LIMIT) {
-            for (ch <- list) {
-              chunks.remove(ch)
-            }
-          }
-        }
-        page.setChunks(chunks)
-      }
-    }
-    document
-  }
+  //       for (list <- map.values()) {
+  //         if (list.size() > CHUNK_DENSITY_LIMIT) {
+  //           for (ch <- list) {
+  //             chunks.remove(ch)
+  //           }
+  //         }
+  //       }
+  //       page.setChunks(chunks)
+  //     }
+  //   }
+  //   document
+  // }
 
 }
 

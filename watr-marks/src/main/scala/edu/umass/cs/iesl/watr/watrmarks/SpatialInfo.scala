@@ -14,6 +14,8 @@ import play.api.libs.json
 import json._
 import scalaz.{Tag, @@}
 
+import TagUtils._
+
 
 case class FontInfo(
   // fontName: String,
@@ -414,13 +416,13 @@ case class ZoneRecords(
 )
 
 
-
 class ZoneIndexer  {
 
   val pageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex]()
   val pageGeometries = mutable.Map[Int@@PageID, PageGeometry]()
   val pageChars = mutable.HashMap[Int@@PageID, mutable.ArrayBuffer[CharBox]]()
-  val charBoxes = mutable.ListMap[Int@@CharID, CharBox]()
+  // val charBoxes = mutable.HashMap[Int@@CharID, CharBox]()
+  val charBoxes = mutable.LongMap[CharBox]()
 
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
   val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
@@ -430,7 +432,7 @@ class ZoneIndexer  {
   def getPageGeometry(p: Int@@PageID) = pageGeometries(p)
 
   def getComponent(pageId: Int@@PageID, charId: Int@@CharID): CharBox = {
-    charBoxes(charId)
+    charBoxes(charId.unwrap.toLong)
   }
 
   // See getComponentsUnfiltered() for explanation of filterNot
@@ -471,9 +473,9 @@ class ZoneIndexer  {
 
   def addCharInfo(pageId: Int@@PageID, cb: CharBox): Unit = {
     val rindex = pageRIndexes(pageId)
-    rindex.add(cb.bbox.toJsiRectangle, CharID.unwrap(cb.id))
+    rindex.add(cb.bbox.toJsiRectangle, cb.id.unwrap.toInt)
     pageChars(pageId).append(cb)
-    charBoxes.put(cb.id, cb)
+    charBoxes.put(cb.id.unwrap, cb)
   }
 
   def addZone(zone: Zone): Unit = {
@@ -510,6 +512,22 @@ class ZoneIndexer  {
     }
   }
 
+  def putCharBox(cb: CharBox): Unit = {
+    charBoxes.put(cb.id.unwrap, cb)
+  }
+
+  def getCharBox(id: Int): CharBox = {
+    charBoxes(id.toLong)
+  }
+
+  def getCharBox(id: Int@@CharID): CharBox = {
+    charBoxes(id.unwrap)
+  }
+
+  def getCharBox(id: Long): CharBox = {
+    charBoxes(id)
+  }
+
   def queryCharsIntersects(page: Int@@PageID, q: LTBounds): Seq[CharBox] = {
     val rindex = pageRIndexes(page)
 
@@ -517,9 +535,9 @@ class ZoneIndexer  {
     // rindex.intersects(x$1: Rectangle, x$2: TIntProcedure)
     rindex.intersects(q.toJsiRectangle, collectRegions)
     val neighbors = collectRegions.getIDs.filter{ id =>
-      charBoxes.contains(CharID(id))
+      charBoxes.contains(id.toLong)
     }
-    neighbors.map(cid => charBoxes(CharID(cid)))
+    neighbors.map(cid => charBoxes(cid.toLong))
   }
 
   def queryChars(page: Int@@PageID, q: LTBounds): Seq[CharBox] = {
@@ -528,9 +546,10 @@ class ZoneIndexer  {
     val collectRegions = new CollectRegionIds()
     rindex.contains(q.toJsiRectangle, collectRegions)
     val neighbors = collectRegions.getIDs.filter{ id =>
-      charBoxes.contains(CharID(id))
+      charBoxes.contains(id.toLong)
     }
-    neighbors.map(cid => charBoxes(CharID(cid)))
+
+    neighbors map getCharBox
   }
 
 
@@ -591,7 +610,7 @@ class ZoneIndexer  {
     // println(s""" found ${collectRegions.getIDs.mkString(",")} """)
     collectRegions.getIDs
       .map({ id =>
-        val cbox = charBoxes(CharID(id))
+        val cbox = getCharBox(id)
         (cbox.bbox.toCenterPoint.dist(ctr), cbox)
       })
       .filterNot(_._2.id == fromChar.id)

@@ -20,6 +20,9 @@ trait ScalaZCommonOps
     with ToOptionOps
     // with ToValidationOps
 
+
 trait PackageDefs
     extends ScalaZCommonOps
-    with DebugConsole
+    with DebugConsole {
+
+}

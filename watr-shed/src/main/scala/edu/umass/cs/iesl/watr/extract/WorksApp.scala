@@ -11,8 +11,8 @@ import java.io.{ InputStream  }
 object Works extends App {
 
   import java.io.{File => JFile}
-  import segment.SpatialIndexOperations._
-  import segment.DocumentSegmenter._
+  // import segment.SpatialIndexOperations._
+  // import segment.DocumentSegmenter._
 
 
   case class AppConfig(
@@ -138,9 +138,11 @@ object Works extends App {
         processor(pdf, pdfArtifact.artifactPath.toString)
       } catch {
         case t: Throwable =>
-          val strace = t.fillInStackTrace()
-          val trace = strace.getStackTrace.map(_.toString()).mkString("\n")
           println(s"could not extract ${outputName}  for ${pdfArtifact}: ${t.getMessage}\n")
+
+          println(t.toString())
+          t.printStackTrace()
+          println(t.getCause.toString())
           t.getCause.printStackTrace()
           s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
       }})
@@ -150,6 +152,10 @@ object Works extends App {
       .recover({ case t: Throwable =>
         val msg = (s"ERROR: could not extract ${outputName} for ${pdfArtifact}: ${t.getMessage}")
         println(msg)
+        println(t.toString())
+        t.printStackTrace()
+        println(t.getCause.toString())
+        t.getCause.printStackTrace()
       })
       .getOrElse({
         sys.error(s"ERROR: processing ${pdfArtifact} -> ${outputName}")
@@ -205,31 +211,24 @@ object Works extends App {
     processCorpus(conf, artifactOutputName: String, proc)
 
 
-    // .flatMap(chars => ZoneIndexer.loadSpatialIndices(chars))
-
     def proc(pdf: InputStream, outputPath: String): String = {
-      val zoneIndex = ZoneIndexer.loadSpatialIndices(
-        CermineExtractor.extractChars(pdf)
-      )
+      val segmenter = segment.DocumentSegmenter.createSegmenter(pdf)
 
-      val pages = zoneIndex.getPages.take(1).map({ pageId =>
-        val pageChars = zoneIndex.getComponents(pageId)
-        val pageGeom = zoneIndex.getPageGeometry(pageId)
+      val allPageLines = for {
+        pageId <- segmenter.pages.getPages
+      } yield {
+        val pageLines = segmenter.determineLines(pageId, segmenter.pages.getComponents(pageId))
+        val pageGeom = segmenter.pages.getPageGeometry(pageId)
 
-        val lineBins = approximateLineBins(pageChars)
-        val colBins = zoneIndex.approximateColumnBins(pageId, pageChars)
+        val sortedYLines = pageLines.map({ line =>
+          s"""<svg:rect ${linestyle} x="${line.bounds.left.pp}" y="${line.bounds.top.pp}" width="${line.bounds.width.pp}"  height="${line.bounds.height.pp}" />""".box
+        })
 
-        val colLines = colBins
-          .map({case (dir, line) =>
-            s""" <svg:line x1="${line.p1.x}" y1="${line.p1.y}" x2="${line.p2.x}" y2="${line.p2.y}" stroke-width="2" stroke="black"/> """.box
-          })
+        // val colLines = colBins
+        //   .map({case (dir, line) =>
+        //     s""" <svg:line x1="${line.p1.x}" y1="${line.p1.y}" x2="${line.p2.x}" y2="${line.p2.y}" stroke-width="2" stroke="black"/> """.box
+        //   })
 
-        val sortedYLines = lineBins
-          .map({case (lineBounds, lineBoxes) =>
-            val lineCharStr = lineBoxes.map(_.prettyPrint)
-
-            s"""<svg:rect ${linestyle} x="${lineBounds.left.pp}" y="${lineBounds.top.pp}" width="${lineBounds.width.pp}"  height="${lineBounds.height.pp}" />""".box
-          })
 
         val x = pageGeom.bounds.left
         val y = pageGeom.bounds.top
@@ -238,12 +237,11 @@ object Works extends App {
 
         val pageRect = s"""<svg:rect ${pagestyle} x="${x}" y="${y}" width="${pwidth}"  height="${pheight}" />""".box
 
-        (pageGeom.bounds, pageRect % vcat(sortedYLines) % vcat(colLines))
-      })
-
+        (pageGeom.bounds, pageRect % vcat(sortedYLines))
+      }
 
       // val totalBounds = pages.map(_._1).reduce(_ union _)
-      val (totalBounds, totalSvg) = pages
+      val (totalBounds, totalSvg) = allPageLines
         .foldLeft({
           (LTBounds(0, 0, 0, 0), nullBox)
         })({case ((totalBounds, totalSvg), (pageBounds, pageSvg)) =>
@@ -265,7 +263,6 @@ object Works extends App {
       val svgHead = s"""<svg:svg version="1.1" width="${pwidth}px" height="${pheight}px" viewBox="0 0 ${pwidth} ${pheight}" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">"""
 
       (svgHead % totalSvg % "</svg:svg>").toString
-
     }
 
   }

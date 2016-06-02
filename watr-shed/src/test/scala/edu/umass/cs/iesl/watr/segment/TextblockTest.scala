@@ -40,69 +40,10 @@ class TextBlockTest extends DocsegTestUtil  {
       val zoneIndex = ZoneIndexer.loadSpatialIndices(
         CermineExtractor.extractChars(pdfIns)
       )
-      def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[CharBox]): Seq[CharBox] = {
-        if (charBoxes.isEmpty) Seq()
-        else {
-          val ids = charBoxes.map(_.id.unwrap)
-          val minId = ids.min
-          val maxId = ids.max
-
-          val missingIds = (ids.min to ids.max) diff ids
-          val missingChars = missingIds.map(id => zoneIndex.getComponent(pageId, CharID(id)))
-
-          // TODO check missing chars for overlap w/lineChars
-          val completeLine = (charBoxes ++ missingChars).sortBy(_.bbox.left)
-
-          // check for split in line
-          println(s"""${charBoxes.map(_.bestGuessChar).mkString}""")
-          println(s"""  +: ${missingChars.map(_.bestGuessChar).mkString}""")
-          println(s"""  =: ${completeLine.map(_.bestGuessChar).mkString}""")
-          completeLine
-        }
-      }
-
       val pages = zoneIndex.getPages.take(1).map({ pageId =>
         val pageChars = zoneIndex.getComponents(pageId)
         val pageGeom = zoneIndex.getPageGeometry(pageId)
 
-        // line-bin coarse segmentation
-        val lineBins = approximateLineBins(pageChars)
-
-        // try to join each line bin with overlapping bins
-
-        /// break up bins based on charbox ids
-
-        val splitAndFilledLines = for {
-          (lineBounds, lineChars) <- lineBins
-          if !lineChars.isEmpty
-        } yield {
-
-          def spanloop(chars: Seq[CharBox]): Seq[Int] = {
-            if (chars.isEmpty) Seq()
-            else {
-              val (line1, line2) = chars
-                .sliding(2).span({
-                  case Seq(ch1, ch2) => ch2.id.unwrap - ch1.id.unwrap < 10
-                  case Seq(_)     => true
-                })
-              val len = line1.length
-              len +: spanloop(chars.drop(len+1))
-            }
-          }
-
-
-          var totalIndex: Int = 0
-
-          val splitLines = spanloop(lineChars)
-            .map({ index:Int =>
-              val m = fillInMissingChars(pageId, lineChars.drop(totalIndex).take(index+1))
-              totalIndex += index+1;
-              m
-            })
-
-          splitLines
-
-        }
       })
 
 

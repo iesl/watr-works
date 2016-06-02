@@ -25,7 +25,6 @@ object AngleFilter {
 }
 
 
-
 trait AngleFilter {
   def lowerAngle: Double
   def upperAngle: Double
