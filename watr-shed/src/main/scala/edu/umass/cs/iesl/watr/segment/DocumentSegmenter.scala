@@ -112,8 +112,6 @@ object DocumentSegmenter extends DocumentUtils {
     Histogram.fromValues(values, resolution)
   }
 
-  // sealed trait Frequency
-
   def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
     val hist = histogram(in, resolution)
     hist.iterator.toSeq
@@ -125,46 +123,57 @@ object DocumentSegmenter extends DocumentUtils {
 
   def createSegmenter(pdfins: InputStream): DocumentSegmenter = {
     val chars = extract.CermineExtractor.extractChars(pdfins)
-    val zoneIndex = ZoneIndexer.loadSpatialIndices(chars)
-    new DocumentSegmenter(zoneIndex)
+    createSegmenter(chars)
   }
+
   def createSegmenter(pagedefs: Seq[(PageChars, PageGeometry)]): DocumentSegmenter = {
     val zoneIndex = ZoneIndexer.loadSpatialIndices(pagedefs)
     new DocumentSegmenter(zoneIndex)
   }
+}
 
 
 
-  def init(pagedefs: Seq[(PageChars, PageGeometry)]): (DocumentSegmenter, PageSegAccumulator) = {
-    val zoneIndex = ZoneIndexer.loadSpatialIndices(pagedefs)
+class DocumentSegmenter(
+  val pages: ZoneIndexer
+) {
+  import DocumentSegmenter._
 
-    val docstrum = new DocumentSegmenter(zoneIndex)
+  val LB = StandardLabels
 
+  var docOrientation: Double = 0d
+
+  var pageSegAccum: PageSegAccumulator = PageSegAccumulator(Seq())
+
+
+  def runLineDetermination(): Unit = {
     val allPageLines = for {
-      pageId <- docstrum.pages.getPages
+      pageId <- pages.getPages
     } yield {
-      docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
+      determineLines(pageId, pages.getComponents(pageId))
     }
 
-    val accum = PageSegAccumulator(allPageLines, Seq())
-    // get document-wide stats
-    val accum2 = docstrum.getDocumentWideStats(accum)
-    (docstrum, accum2)
+    pageSegAccum = pageSegAccum.copy(
+      pageLines = allPageLines
+    )
   }
 
-  import TB._
-  def segmentPages(pagedefs: Seq[(PageChars, PageGeometry)]): String = { // Seq[ConnectedComponents]
-    val (docstrum, accum) = init(pagedefs)
+
+  def runPageSegmentation(): String = { // Seq[ConnectedComponents]
+    import TB._
+
+    runLineDetermination()
+    pageSegAccum = findMostFrequentLineDimensions(pageSegAccum)
 
     val pageZones = for {
-      pageId <- docstrum.pages.getPages
+      pageId <- pages.getPages
     } yield {
       println(s"segmenting page ${pageId}")
-      docstrum.determineZones(pageId, accum)
+      determineZones(pageId, pageSegAccum)
     }
 
     implicit val initState = Option(CCRenderState(
-      numOfPages = pagedefs.length,
+      numOfPages = pages.getPages.length,
       startingPage = PageID(0)
     ))
 
@@ -203,18 +212,15 @@ object DocumentSegmenter extends DocumentUtils {
          |   ]}
          |""".stripMargin)
 
-
   }
-}
 
-class DocumentSegmenter(
-  val pages: ZoneIndexer
-) {
-  import DocumentSegmenter._
 
-  val LB = StandardLabels
 
-  var docOrientation: Double = 0d
+
+
+
+
+
 
   private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[CharBox] = {
     pages.nearestNChars(pageId, qbox, 12, 15.0f)
@@ -465,9 +471,6 @@ class DocumentSegmenter(
     )
   }
 
-  def getDocumentWideStats(psegAccum: PageSegAccumulator): PageSegAccumulator = {
-    findMostFrequentLineDimensions(psegAccum)
-  }
 
 
 

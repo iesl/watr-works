@@ -171,8 +171,8 @@ object Component {
               ('{' -> "\\\\{"),
               ('}' -> "\\\\}")
             ) ++ (if (!texFmtLabels.isEmpty) Seq( // add extra escapes inside tex-formatted tokens
-              ('_' -> "\\_"),
-              ('^' -> "\\^")
+              ('_' -> "\\\\_"),
+              ('^' -> "\\\\^")
             ) else Seq())
 
             val mapped = cc.components.map({c =>

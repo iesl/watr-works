@@ -3,17 +3,12 @@ package watr
 package extract
 
 import ammonite.ops._
-import edu.umass.cs.iesl.watr.watrmarks.ZoneIndexer
 import java.io.{ InputStream  }
 
-// import java.nio.{file => nio}
 
 object Works extends App {
 
   import java.io.{File => JFile}
-  // import segment.SpatialIndexOperations._
-  // import segment.DocumentSegmenter._
-
 
   case class AppConfig(
     entry: Option[JFile] = None,
@@ -74,12 +69,6 @@ object Works extends App {
         lineseg(ac)
       })
     } text ("run line segmentation (for debugging)")
-
-    cmd("cols") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        printColumns(ac)
-      })
-    } text ("run column detection (for debugging)")
 
     cmd("bbsvg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -173,28 +162,14 @@ object Works extends App {
   }
 
 
-
-
-
   def detectParagraphs(conf: AppConfig): Unit = {
-    import segment._
 
     val artifactOutputName = "docseg.json"
     processCorpus(conf, artifactOutputName, proc)
 
     def proc(pdfins: InputStream, outputPath: String): String = {
-      val chars = CermineExtractor.extractChars(pdfins)
-      val output = DocumentSegmenter.segmentPages(
-        chars
-      )
-
-      // val charsSeen = CharacterAccumulator.charSet.grouped(40).map(
-      //   _.mkString(", ")
-      // ).mkString("Chars\n", "\n" , "\n\n")
-      // println(charsSeen)
-      // CharacterAccumulator.charSet.clear()
-
-      output
+      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
+      segmenter.runPageSegmentation()
     }
 
   }
@@ -330,92 +305,32 @@ object Works extends App {
   }
 
 
-  def printColumns(conf: AppConfig): Unit = {
-    import watrmarks._
-    import segment._
-
-    val artifactOutputName = "columns.txt"
-
-    processCorpus(conf, artifactOutputName, proc)
-
-    def proc(pdf: InputStream, outputPath: String): String = {
-
-      val zoneIndex = ZoneIndexer.loadSpatialIndices(
-        CermineExtractor.extractChars(pdf)
-      )
-
-      val docstrum = new DocumentSegmenter(zoneIndex)
-
-      val allPageLines = for {
-        pageId <- docstrum.pages.getPages
-      } yield {
-        docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
-      }
-
-      val accum = PageSegAccumulator(
-        allPageLines
-      )
-      // get document-wide stats
-      val accum2 = docstrum.getDocumentWideStats(accum)
-
-      val pageZones = for {
-        pageId <- docstrum.pages.getPages
-      } yield {
-        println(s"zoning page ${pageId}")
-        docstrum.determineZones(pageId, accum2)
-      }
-
-      // val output = pageZones.zipWithIndex.map{ case (zones, pagenum) =>
-      //   zones.toList.map({ zone =>
-      //     zone.map(_.tokenizeLine().toText).toList.mkString(s"Column\n", "\n", "\n")
-      //   }).mkString(s"Page $pagenum\n", "\n", "\n\n")
-      // }.mkString(s"Document \n", "\n", "\n\n")
-
-      // output
-      ""
-    }
-  }
-
-
   def lineseg(conf: AppConfig): Unit = {
-    import watrmarks.TB._
 
     val artifactOutputName = "lineseg.txt"
     processCorpus(conf, artifactOutputName, proc)
 
 
-    def proc(pdf: InputStream, outputPath: String): String = {
-      val zoneIndex = ZoneIndexer.loadSpatialIndices(
-        CermineExtractor.extractChars(pdf)
-      )
+    def proc(pdfins: InputStream, outputPath: String): String = {
+      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
+      segmenter.runPageSegmentation()
 
-      zoneIndex.getPages.take(2).map { page =>
+      // val lineCols = lines
+      //   .sortBy(_.findCenterY())
+      //   .map({ l =>
+      //     val lineBounds = l.bounds.prettyPrint
+      //     val tokenized = l.tokenizeLine().toText
+      //     // s"${tokenized}               ${lineBounds}"
+      //     (tokenized.box, lineBounds.box)
+      //   })
+      // val justified =
+      //   s"\nPage:${page} file://${outputPath}" %|
+      //     (vcat(left)(lineCols.map(_._1).toList) + "    " + vcat(right)(lineCols.map(_._2).toList))
+      // justified.toString()
+      // }.mkString(s"\nDocument: file://${outputPath}\n", "\n", "\n")
 
-        val docstrum = new segment.DocumentSegmenter(zoneIndex)
+      ""
 
-        val lines = docstrum.determineLines(
-          page,
-          zoneIndex.getComponents(page)
-        )
-
-        val lineCols = lines
-          .sortBy(_.findCenterY())
-          .map({ l =>
-            val lineBounds = l.bounds.prettyPrint
-            val tokenized = l.tokenizeLine().toText
-            // s"${tokenized}               ${lineBounds}"
-            (tokenized.box, lineBounds.box)
-          })
-
-        val justified =
-          s"\nPage:${page} file://${outputPath}" %|
-            (vcat(left)(lineCols.map(_._1).toList) + "    " + vcat(right)(lineCols.map(_._2).toList))
-
-        justified.toString()
-
-        // .mkString(s"\nPage:${page} file://${pdfArtifact.artifactPath}\n  ", "\n", "\n")
-
-      }.mkString(s"\nDocument: file://${outputPath}\n", "\n", "\n")
     }
   }
 
