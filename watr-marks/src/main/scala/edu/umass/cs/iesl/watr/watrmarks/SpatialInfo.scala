@@ -440,7 +440,7 @@ class ZoneIndexer  {
 
   // See getComponentsUnfiltered() for explanation of filterNot
   def getComponents(pageId: Int@@PageID): Seq[CharBox] = {
-    pageChars(pageId).filterNot(_.isWonky)
+    pageChars(pageId).filterNot(_.isSpace)
   }
 
 

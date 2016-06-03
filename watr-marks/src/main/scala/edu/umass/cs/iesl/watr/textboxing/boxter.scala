@@ -6,11 +6,6 @@ import scalaz.syntax.ToIdOps
 import scalaz.syntax.std.ToListOps
 
 object TextBoxing extends ToListOps with ToIdOps {
-  import scalaz._
-  import scalaz.Lens._
-
-
-
 
   // The basic data type.  A box has a specified size and some sort of
   //   contents.
@@ -55,12 +50,6 @@ object TextBoxing extends ToListOps with ToIdOps {
       linesToBox(this.lines.map(_.take(cols)))
   }
 
-
-  object Box {
-    val rows : Box @> Int = lensu((obj, v) => obj copy (rows = v), _.rows)
-    val cols : Lens[Box, Int] = lensu((obj, v) => obj copy (cols = v), _.cols)
-    val content : Lens[Box, Content] = lensu((obj, v) => obj copy (content = v), _.content)
-  }
 
   // pad box with an empty indentation box
   def indent(n:Int=4)(b:Box): Box = {
@@ -297,46 +286,7 @@ object TextBoxing extends ToListOps with ToIdOps {
     b => renderBox(b) |> (_.mkString("\n"))
 
 
-  /** take n copies from list, padding end with A if necessary */
-  def takePad[A](a:A, n:Int): List[A] => List[A] = { aas =>
-    val pad = if (n <= aas.length) 0 else n - aas.length
-    aas.take(n) ::: Stream.continually(a).take(pad).toList
-  }
 
-  // takePA  is like 'takeP', but with alignment.  That is, we
-  //   imagine a copy of `xs` extended infinitely on both sides with
-  //   copies of `a`, and a window of size `n` placed so that `xs` has
-  //   the specified alignment within the window; `takePA algn a n xs`
-  //   returns the contents of this window.
-  def takePadAlign[A](align:Alignment, pad:A, n:Int): List[A] => List[A] =
-    as => {
-      def numFwd(_a:Alignment, i:Int): Int = _a match {
-        case AlignFirst    => i
-        case AlignLast     => 0
-        case AlignCenter1  => i / 2
-        case AlignCenter2  => (i+1) / 2
-      }
-
-      def numRev(_a:Alignment, i:Int): Int = _a match {
-        case AlignFirst    => 0
-        case AlignLast     => i
-        case AlignCenter1  => (i+1) / 2
-        case AlignCenter2  => i / 2
-      }
-
-      def split(bs: List[A]): (List[A], List[A]) = {
-        // ((_:List[A]).reverse).first apply as.splitAt(numRev(align, as.length))
-        val (l1, l2) = bs.splitAt(numRev(align, bs.length))
-        (l1.reverse, l2)
-      }
-
-      val padRev = takePad(pad, numRev(align, n))
-      val padFwd = takePad(pad, numFwd(align,n))
-
-      val (a0, a1) = split(as)
-      padRev(a0.reverse) ++ padFwd(a1)
-
-    }
 
 
   // Generate a string of spaces.
@@ -371,25 +321,133 @@ object TextBoxing extends ToListOps with ToIdOps {
 
   // Render a box as a list of lines, using a given number of rows.
   def renderBoxWithRows : Int => Box => List[String] =
-    r => b => renderBox (Box.rows.set(b, r))
+    r => b => renderBox (b.copy(rows = r))
 
   // Render a box as a list of lines, using a given number of columns.
   def renderBoxWithCols : Int => Box => List[String] =
-    c => b => renderBox (Box.cols.set(b, c))
+    c => b => renderBox (b.copy(cols=c))
 
   // Resize a rendered list of lines.
-  def resizeBox : (Int, Int, List[String]) => List[String] =
-    (r, c, ss) => {
-      val taker = takePad(" "*c, r)
-      val takec = ss map (s => (takePad(' ', c)(s.toList)).mkString(""))
-      taker(takec)
-    }
+  //.toList,.mkString
+  def resizeBox(rows:Int, cols:Int, ss:List[String]): List[String] = {
+    val takec: List[String] = ss map ({ s =>
+      val slen = s.length
+
+      if (slen == cols) s
+      else if (slen > cols) s.substring(cols)
+      else s + (" "*(cols-slen))
+    })
+
+    if (takec.length == rows) takec
+    else if (takec.length > rows) takec.take(rows)
+    else takec ++ ((1 to rows-takec.length).toList.map(_ => " "*cols))
+  }
+
 
   // Resize a rendered list of lines, using given alignments.
+  // def resizeBoxAlignedXX(r: Int, c: Int, ha: Alignment, va : Alignment): List[String] => List[String] = {
+  //   ss => takePadAlign(va, blanks(c), r, {
+  //     val aaa:List[List[Char]] = (ss.map (_.toList))
+  //     val bbb:List[List[Char]] = aaa map (takePadAlign(ha, ' ', c, _))
+  //     val ccc:List[String] = bbb map (_.mkString(""))
+  //     // (ss.map (_.toList)) map (takePadAlign(ha, ' ', c, _)) map (_.mkString(""))
+  //     ccc
+  //   })
+  // }
+
   def resizeBoxAligned(r: Int, c: Int, ha: Alignment, va : Alignment): List[String] => List[String] = {
-    ss => takePadAlign(va, blanks(c), r){
-      (ss.map (_.toList)) map (takePadAlign(ha, ' ', c)) map (_.mkString(""))
-    }
+    ss => takePadAlignList(va, blanks(c), r, {
+      // val aaa:List[List[Char]] = (ss.map (_.toList))
+      // val bbb:List[List[Char]] = aaa map (takePadAlign(ha, ' ', c, _))
+      // val ccc:List[String] = bbb map (_.mkString(""))
+
+      // val aaa:List[List[Char]] = (ss.map (_.toList))
+      val bbb:List[String] = ss.map (takePadAlignStr(ha, " ", c, _))
+      // val ccc:List[String] = bbb map (_.mkString(""))
+      // (ss.map (_.toList)) map (takePadAlign(ha, ' ', c, _)) map (_.mkString(""))
+      bbb
+    })
+  }
+
+  // takePA  is like 'takeP', but with alignment.  That is, we
+  //   imagine a copy of `xs` extended infinitely on both sides with
+  //   copies of `a`, and a window of size `n` placed so that `xs` has
+  //   the specified alignment within the window; `takePA algn a n xs`
+  //   returns the contents of this window.
+  // def takePadAlign[A](align:Alignment, pad:A, n:Int, xs: List[A]): List[A] = {
+  def numFwd(_a:Alignment, i:Int): Int = _a match {
+    case AlignFirst    => i
+    case AlignLast     => 0
+    case AlignCenter1  => i / 2
+    case AlignCenter2  => (i+1) / 2
+  }
+
+  def numRev(_a:Alignment, i:Int): Int = _a match {
+    case AlignFirst    => 0
+    case AlignLast     => i
+    case AlignCenter1  => (i+1) / 2
+    case AlignCenter2  => i / 2
+  }
+
+  def takePadAlignList(align:Alignment, pad:String, n:Int, xs: List[String]): List[String] = {
+    // val padFwd = pad*numFwd(align, n)
+
+    val (a0, a1) = xs.splitAt(numRev(align, xs.length))
+
+    val padRev = (0 until numRev(align, n)-a0.length).map(_ => pad).toList
+    val padFwd = (0 until numFwd(align, n)-a1.length).map(_ => pad).toList
+
+    val joined = padRev ++ a0 ++ a1 ++ padFwd
+    // if (a0.length>0) {
+      // println(s"""|List align: ${align} width: ${n}
+      //             |  xs: ${xs.mkString(",")}
+      //             |     -${a0.mkString(",")}'
+      //             |     -${a1.mkString(",")}'
+      //             |  pad-rev: '${padRev.mkString(",")}'
+      //             |  pad-fwd: '${padFwd.mkString(",")}'
+      //             |  =${joined}'
+      //             |""".stripMargin)
+    // }
+    joined
+
+  }
+  def takePadAlignStr(align:Alignment, pad:String, n:Int, xs: String): String = {
+
+    // def split(bs: List[A]): (List[A], List[A]) = {
+    //   val (l1, l2) = bs.splitAt(numRev(align, bs.length))
+    //   (l1.reverse, l2)
+    // }
+
+    // val padRev = takePad(pad, numRev(align, n))
+    // val padFwd = takePad(pad, numFwd(align,n))
+
+    val (a0, a1) = xs.splitAt(numRev(align, xs.length))
+
+    val padRev = pad*(numRev(align, n) - a0.length)
+    val padFwd = pad*(numFwd(align, n) - a1.length)
+
+
+
+    val joined = padRev + a0 ++ a1 + padFwd
+
+    // println(s"""|String align: ${align}  width: ${n}
+    //             |  xs: ${xs.mkString}
+    //             |     -${a0.mkString}'
+    //             |     -${a1.mkString}'
+    //             |  pad-rev: '${padRev}'
+    //             |  pad-fwd: '${padFwd}'
+    //             |  =${joined}'
+    //             |""".stripMargin)
+    // }
+    joined
+
+  }
+
+  /** take n copies from list, padding end with A if necessary */
+  // def takePad[A](a:A, n:Int): List[A] => List[A] = { aas =>
+  def takePad[A](a:A, n:Int): List[A] => List[A] = { aas =>
+    val pad = if (n <= aas.length) 0 else n - aas.length
+    aas.take(n) ::: Stream.continually(a).take(pad).toList
   }
 
   // A convenience function for rendering a box to stdout.
@@ -519,19 +577,23 @@ object TextBoxing extends ToListOps with ToIdOps {
   case class Para(paraWidth : Int, paraContent : ParaContent)
 
 
-  val paraWidth: Lens[Para, Int] = lensu((obj, v) => obj copy (paraWidth = v), _.paraWidth)
-  val paraContent: Lens[Para, ParaContent] = lensu((obj, v) => obj copy (paraContent = v), _.paraContent)
+  // val paraWidth: Lens[Para, Int] = lensu((obj, v) => obj copy (paraWidth = v), _.paraWidth)
+  // val paraContent: Lens[Para, ParaContent] = lensu((obj, v) => obj copy (paraContent = v), _.paraContent)
 
   case class Block(fullLines : List[Line], lastLine  : Line) extends ParaContent
-  val fullLines: Lens[Block, List[Line]] = lensu((obj, v) => obj copy (fullLines = v), _.fullLines)
-  val lastLine: Lens[Block, Line] = lensu((obj, v) => obj copy (lastLine = v), _.lastLine)
+  // val fullLines: Lens[Block, List[Line]] = lensu((obj, v) => obj copy (fullLines = v), _.fullLines)
+  // val lastLine: Lens[Block, Line] = lensu((obj, v) => obj copy (lastLine = v), _.lastLine)
 
   def emptyPara(pw: Int) : Para =
     Para(pw, (Block(Nil, (Line(0, Nil)))))
 
   def getLines : Para => List[String] =
     p => {
-      def process =  (l:List[Line]) => l.reverse map Line.getWords map (_.map(Word.getWord)) map (_.reverse) map unwords
+      // def process =  (l:List[Line]) => l.reverse map Line.getWords map (_.map(Word.getWord)) map (_.reverse) map unwords
+      // def process =  (l:List[Line]) => l.reverse.map(_.words).map(_.map(_.word)) map (_.reverse) map unwords
+      def process(l:List[Line]): List[String] = {
+        l.reverse.map(_.words).map(_.map(_.word)) map (_.reverse) map unwords
+      }
 
       p match {
         case Para(_, (Block(ls, l))) =>
@@ -541,28 +603,28 @@ object TextBoxing extends ToListOps with ToIdOps {
     }
 
   case class Line(len: Int, words: List[Word])
-  object Line {
-    val lenL: Lens[Line, Int] = lensu((obj, v) => obj copy (len = v), _.len)
-    val wordsL: Lens[Line, List[Word]] = lensu((obj, v) => obj copy (words = v), _.words)
-    val getLen = lenL.get(_)
-    val getWords = wordsL.get(_)
-  }
+  // object Line {
+  //   val lenL: Lens[Line, Int] = lensu((obj, v) => obj copy (len = v), _.len)
+  //   val wordsL: Lens[Line, List[Word]] = lensu((obj, v) => obj copy (words = v), _.words)
+  //   val getLen = lenL.get(_)
+  //   val getWords = wordsL.get(_)
+  // }
 
   //
   def mkLine : List[Word] => Line =
-    ws => Line((ws map Word.getLen).sum + ws.length - 1, ws)
+    ws => Line((ws map (_.len)).sum + ws.length - 1, ws)
 
   def startLine : Word => Line =
     w => mkLine(w :: Nil)
 
 
   case class Word(len:Int, word:String)
-  object Word {
-    val lenL: Lens[Word, Int] = lensu((obj, v) => obj copy (len = v), _.len)
-    val wordL: Lens[Word, String] = lensu((obj, v) => obj copy (word = v), _.word)
-    val getLen = lenL.get(_)
-    val getWord = wordL.get(_)
-  }
+  // object Word {
+  //   val lenL: Lens[Word, Int] = lensu((obj, v) => obj copy (len = v), _.len)
+  //   val wordL: Lens[Word, String] = lensu((obj, v) => obj copy (word = v), _.word)
+  //   val getLen = lenL.get(_)
+  //   val getWord = wordL.get(_)
+  // }
 
   def mkWord : String => Word =
     w => Word(w.length, w)
@@ -619,7 +681,7 @@ object App extends App {
       "Inline-header top header" atop animationStyle
     ))
   }
-  multiLineStringToBox()
+  // multiLineStringToBox()
 
 
   def sampleText1 = vjoin(center2)(
@@ -628,6 +690,8 @@ object App extends App {
     tbox("incididunt ut labore et dolore magna "),
     tbox("aliqua. Ut enim ad minim veniam, ")
   )
+
+  println(sampleText1.toString())
   def sampleText2 = vjoin(center1)(
     tbox("Lorem ipsum dolor sit amet"),
     tbox("Anyconsectetur adipisicing elit, sed do eiusmod tempor"),
@@ -650,10 +714,9 @@ object App extends App {
 
   def sampleBox1 = hjoin(right)(sampleText1, "  <-|||->  ", sampleText2)
 
-  def sampleBox3 = vjoin(right)(sampleText1, "  <-|||-> ", sampleText2)
-
   def sampleBox2 = vjoin(center1)(hjoin(center1)(sampleText1, "  <-|||->  ", sampleText2), sampleText3)
 
+  def sampleBox3 = vjoin(right)(sampleText1, "  <-|||-> ", sampleText2)
 
 
   val flowed = para(left)(20)(rawText)
@@ -682,5 +745,4 @@ object App extends App {
 
   println("\n\n")
 
-  // boxesTest1()
 }

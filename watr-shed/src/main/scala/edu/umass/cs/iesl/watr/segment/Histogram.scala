@@ -1,13 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-// import java.util.Collection
-// import java.util.Iterator
-// import java.util.NoSuchElementException
 import Histogram._
-// import scala.reflect.{BeanProperty, BooleanBeanProperty}
-//remove if not needed
-// import scala.collection.JavaConversions._
 
 object Histogram {
 
@@ -32,9 +26,10 @@ object Histogram {
 class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
 
   class Bin (var index: Int) {
-    def getFrequency(): Double = frequencies(index)
-    def getValue(): Double = (index + 0.5) * resolution + min
+    val frequency: Double = frequencies(index)
+    val value: Double = (index + 0.5) * resolution + min
   }
+
 
   private val min: Double = minValue - EPSILON
 
@@ -165,23 +160,25 @@ class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
     (peakIndex.toDouble + peakEndIndex) / 2 * resolution + min
   }
 
-  def iterator(): Iterator[Bin] = {
-    new Iterator[Bin] {
+  def getFrequencies(): Seq[Bin] = (0 until frequencies.length).map{ new Bin(_) }
 
-      private var index: Int = 0
+  // def iterator(): Iterator[Bin] = {
+  //   new Iterator[Bin] {
 
-      override def hasNext: Boolean = index < frequencies.length
+  //     private var index: Int = 0
 
-      override def next(): Bin = {
-        if (index >= frequencies.length) {
-          throw new NoSuchElementException()
-        }
-        val b = new Bin(index)
-        index += 1
-        b
-      }
+  //     override def hasNext: Boolean = index < frequencies.length
 
-    }
-  }
+  //     override def next(): Bin = {
+  //       if (index >= frequencies.length) {
+  //         throw new NoSuchElementException()
+  //       }
+  //       val b = new Bin(index)
+  //       index += 1
+  //       b
+  //     }
+
+  //   }
+  // }
 
 }
