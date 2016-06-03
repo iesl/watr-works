@@ -22,6 +22,60 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
 
   def wsv(s: String) = s.split(" ").map(_.trim).toList
 
+
+  def svgCutAndPasteToTest(svgstr: String): ParsedExample = {
+    val lines = svgstr.split("\n").toList
+      .map(_.trim)
+
+    val (pageLines, nexts) = lines
+      .span(!_.startsWith("---"))
+
+    val (boundsLines, expectedOutputLines) = nexts.drop(1)
+      .span(!_.startsWith("===="))
+
+    val fileAndPageLine = pageLines
+      .filter(_.startsWith("page=")).head
+
+    val page = fileAndPageLine
+      .dropWhile(!_.isDigit).takeWhile(_.isDigit).mkString
+      .toInt
+
+    val file = fileAndPageLine
+      .split("/").last.dropRight(1)
+
+    def getAttrVal(attr: String, text:String): String = {
+      val index = text.indexOf(s""" ${attr}=""")
+      text.substring(index)
+        .dropWhile(_ != '"')
+        .drop(1)
+        .takeWhile(_ != '"')
+        .mkString
+    }
+
+    def attrsToBounds(text: String): LTBounds = {
+      LTBounds(
+        getAttrVal("x", text).toDouble,
+        getAttrVal("y", text).toDouble,
+        getAttrVal("width", text).toDouble,
+        getAttrVal("height", text).toDouble
+      )
+    }
+
+    val parsedFrags = boundsLines
+      .map({line =>
+        val lineBounds = attrsToBounds(line)
+        val foundText = line.split("-->").head.trim
+
+        (foundText, PageID(page), lineBounds)
+      })
+
+    ParsedExample(
+      file,
+      parsedFrags,
+      expectedOutputLines.drop(1)
+    )
+  }
+
   def cutAndPasteToTestExample(cAndp: TextExample): ParsedExample = {
     val sourcePdfName = cAndp.source.split("/").last.trim
     val pageNumber = cAndp.source.split(":")(1).takeWhile(_.isDigit).mkString.toInt

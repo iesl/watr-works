@@ -29,8 +29,9 @@ object TextBoxing extends ToListOps with ToIdOps {
     // Paste two boxes together vertically, using a default (left)
     //   alignment.
     def % : Box => Box = atop
-    def atop(b: Box): Box =
+    def atop(b: Box): Box = {
       vcat(left)(List(this,b))
+    }
 
 
     // Paste two boxes together vertically with a single intervening row
@@ -77,11 +78,13 @@ object TextBoxing extends ToListOps with ToIdOps {
 
   implicit class BoxingConstructors(val value: String) extends AnyVal {
     def box: Box = tbox(value)
+    def mbox: Box = unrenderString(value)
   }
 
 
   def mstringToList(s: String): List[String] =
     scala.io.Source.fromString(s).getLines.toList
+
 
 
 
@@ -591,6 +594,32 @@ object TextBoxing extends ToListOps with ToIdOps {
 
 object App extends App {
   import TextBoxing._
+
+  def multiLineStringToBox(): Unit = {
+
+    val animationStyle = {
+      """|<svg:style>
+         |  .path {
+         |    stroke-dasharray: 1000;
+         |    stroke-dashoffset: 1000;
+         |    animation: dash 5s linear forwards;
+         |  }
+         |
+         |  @keyframes dash {
+         |    to {
+         |      stroke-dashoffset: 0;
+         |    }
+         |  }
+         |</svg:style>
+         | """.stripMargin.mbox
+    }
+
+    println(animationStyle.toString())
+    println(borderInlineTop(
+      "Inline-header top header" atop animationStyle
+    ))
+  }
+  multiLineStringToBox()
 
 
   def sampleText1 = vjoin(center2)(

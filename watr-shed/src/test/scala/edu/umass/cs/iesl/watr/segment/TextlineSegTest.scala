@@ -5,7 +5,6 @@ package segment
 // import scalaz.@@
 
 import watrmarks._
-import extract._
 
 class TextlineSegTest extends DocsegTestUtil  {
   behavior of "text line identification"
@@ -23,6 +22,21 @@ class TextlineSegTest extends DocsegTestUtil  {
   // Seems to be picking up letters from below (or above) the desired textline
   // Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111015.pdf.d/101016jactamat201111015.pdf
   // D e p a r t m _T_ e n _h_ t _e_ o _M_ f M _a_ _t_ _e_ a _r_ t _i_ e _a_ r _l_ i _s_ a l _R_ s _e_ S _s_ _e_ c _a_ i e _r_ n _c_ c _h_ e _I_ a _n_ n _s_ d _t_ _i_ _t_ E _u_ _t_ n _e_ g _,_ i n _T_ e _h_ e _e_ r i _P_ n g _e_ , _n_ _n_ T _s_ h _y_ e _l_ _v   (l:89.46, t:227.77, w:406.59, h:17.95)
+
+
+
+  val testExamplesFromSVG = List(
+    """| page="6" file="file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/0575.pdf.d/0575.pdf"
+       | class="pagebox" x="51.84016418457031" y="54.6148681640625" width="400.3195037841797"  height="499.7032928466797" />
+       |------------------
+       |{^{L.E.}} TOTH, {^{F.}} BENESOVSKY, {^{H.}} NOWOTNY, AND --> <svg:rect class="linebox" x="272.16" y="137.14" width="176.51"  height="8.21" />
+       |E. RUDY, Monatsh. Chem. 92, 956 --> <svg:rect class="linebox" x="272.15" y="147.67" width="125.98"  height="7.33" />
+       |(1961). --> <svg:rect class="linebox" x="401.52" y="146.98" width="24.71"  height="8.21" />
+       |============
+       |L. E. TOTH, F. BENESOVSKY, H. NOWOTNY, AND
+       |E. RUDY, Monatsh. Chem. 92, 956 (1961).
+       |""".stripMargin
+  )
 
   val testExamples = List(
     TextExample(
@@ -99,61 +113,58 @@ class TextlineSegTest extends DocsegTestUtil  {
   )
 
 
+
   it should "identify text lines" in {
-    testExamples.map(cutAndPasteToTestExample(_)).foreach{ example =>
-
-      println(s"\n\ntesting ${example.source}")
-      val pdfIns = papers.paper(example.source)
-
-      // CermineExtractor.extractChars(pdfIns, Set(375, 376))// add char ids to output pathological debug info
-      val zoneIndex = ZoneIndexer.loadSpatialIndices(
-        CermineExtractor.extractChars(pdfIns)
-      )
-
-      // Assume these example regions are all from one page
-      val pageId = example.regions.map(_._2).head
-
-      val allBboxes = example.regions.map(_._3)
-
-      val minX = allBboxes.map(_.left).min
-      val minY = allBboxes.map(_.top).min
-      val maxX = allBboxes.map(_.right).max
-      val maxY = allBboxes.map(_.bottom).max
-
-      val totalBounds = LTBounds(
-        minX, minY,
-        maxX-minX,
-        maxY-minY
-      )
-
-      val interestingChars = zoneIndex.queryCharsIntersects(pageId, totalBounds)
-
-      println("["+squishb(interestingChars)+"]")
-
-      val docstrum = new DocumentSegmenter(zoneIndex)
-
-      val lines = docstrum.determineLines(pageId, interestingChars)
-
-
-      val tokenized = lines
-        .sortBy(_.findCenterY())
-        .map{ l => l.tokenizeLine().toText }
-
-      assertResult(example.expectedOutput.length)(tokenized.length)
-
-      example.expectedOutput.zip(tokenized).foreach({case (expect, actual) =>
-        assertResult(expect){
-          actual
-        }
-
-      })
-
-
-
-
+    testExamplesFromSVG.map(svgCutAndPasteToTest(_)).foreach{ example =>
+      testExample(example)
     }
+    // testExamples.map(cutAndPasteToTestExample(_)).foreach{ example =>
+    //   testExample(example)
+    // }
   }
 
+
+  def testExample(example: ParsedExample): Unit = {
+    println(s"\n\ntesting ${example.source}")
+
+    val pdfIns = papers.paper(example.source)
+
+    val segmenter = DocumentSegmenter.createSegmenter(pdfIns)
+
+    // Assume these example regions are all from one page
+    val pageId = example.regions.map(_._2).head
+
+    val allBboxes = example.regions.map(_._3)
+
+    val minX = allBboxes.map(_.left).min
+    val minY = allBboxes.map(_.top).min
+    val maxX = allBboxes.map(_.right).max
+    val maxY = allBboxes.map(_.bottom).max
+
+    val totalBounds = LTBounds(
+      minX, minY,
+      maxX-minX,
+      maxY-minY
+    )
+
+    val interestingChars = segmenter.pages.queryCharsIntersects(pageId, totalBounds)
+
+    println("["+squishb(interestingChars)+"]")
+
+    val lines = segmenter.determineLines(pageId, interestingChars)
+
+
+    val tokenized = lines
+      .map{ l => l.tokenizeLine().toText }
+
+    example.expectedOutput.zip(tokenized).foreach({case (expect, actual) =>
+      // println(s"want >$expect")
+      // println(s"got  >$actual")
+      assertResult(expect){ actual }
+    })
+
+    assertResult(example.expectedOutput.length)(tokenized.length)
+  }
 
 
 }

@@ -24,13 +24,16 @@ class TextBlockTest extends DocsegTestUtil  {
 
   // import Component._
   val testExamples = List(
-    TextblockExample("2839.pdf", page(0),
-      Seq()
-    )
+    // TextblockExample("2839.pdf", page(0),
+    TextblockExample("0575.pdf", page(1), Seq())
   )
 
-
-
+  // <!--
+  //   AND -->
+  //   <svg:rect class="linebox" x="100.56" y="220.66" width="16.19"  height="8.21" />
+  //   <!--
+  //   PETER FISCHER -->
+  //   <svg:rect class="linebox" x="123.60" y="219.29" width="80.01"  height="9.99" />
 
   it should "identify text blocks" in {
     testExamples.foreach{ example =>

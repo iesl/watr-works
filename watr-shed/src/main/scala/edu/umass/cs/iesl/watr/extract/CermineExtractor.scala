@@ -26,15 +26,11 @@ object CermineExtractor extends SpatialJsonFormat {
     charsToDebug: Set[Int] = Set()
   ): Seq[(PageChars, PageGeometry)] = {
 
-    // val conf = new ComponentConfiguration()
     val charExtractor = new XITextCharacterExtractor(
       charsToDebug,
       IdGenerator[CharID]() //, IdGenerator[PageID]
     )
-    // conf.setCharacterExtractor(charExtractor)
     val _ = charExtractor.extractCharacters(pdfis)
-
-    // val _ = ExtractionUtils.extractCharacters(conf, pdfis)
 
     val pageInfos = charExtractor.pagesInfo
 
@@ -48,11 +44,6 @@ object CermineExtractor extends SpatialJsonFormat {
       )
 
     })
-
-    // charExtractor.pagesInfo
-    // val zoneRecs = charExtractor.pagesInfo
-
-    // zoneRecs.chars.zip(zoneRecs.pageGeometries)
 
   }
 

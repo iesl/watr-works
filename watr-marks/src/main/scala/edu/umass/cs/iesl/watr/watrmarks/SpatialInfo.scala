@@ -299,6 +299,7 @@ object Bounds {
     //   wonkyCharCode: Option[Int] = None
     // )
 
+
     def prettyPrint: String = {
       charBox.wonkyCharCode
         .map({ code =>
@@ -315,7 +316,7 @@ object Bounds {
       charBox.wonkyCharCode
         .map({ code =>
           if (code==32) { s" "  }
-          else { s"#${code}?" }
+          else { s"#{${code}}" }
         })
         .getOrElse({
           if (!charBox.subs.isEmpty()) charBox.subs
@@ -324,6 +325,8 @@ object Bounds {
     }
 
     def isWonky: Boolean = charBox.wonkyCharCode.isDefined
+
+    def isSpace: Boolean = charBox.wonkyCharCode.exists(_==32)
 
   }
 }
@@ -649,7 +652,9 @@ object ZoneIndexer extends SpatialJsonFormat {
       zindexer.addPage(geom)
 
       chars.chars.foreach { cb =>
-        zindexer.addCharInfo(geom.id, cb)
+        if (!cb.isSpace) {
+          zindexer.addCharInfo(geom.id, cb)
+        }
       }
     }
     zindexer

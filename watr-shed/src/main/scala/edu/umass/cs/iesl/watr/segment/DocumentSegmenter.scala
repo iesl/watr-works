@@ -130,6 +130,68 @@ object DocumentSegmenter extends DocumentUtils {
     val zoneIndex = ZoneIndexer.loadSpatialIndices(pagedefs)
     new DocumentSegmenter(zoneIndex)
   }
+
+  def debugFormatLine(cc: Component): String = {
+    import TB._
+    val line = renderConnectedComponents(cc.tokenizeLine())
+    s"${cc.bounds.prettyPrint}, r:${cc.bounds.right.pp} b:${cc.bounds.bottom} ctr:${cc.bounds.toCenterPoint.prettyPrint} > ${hsep(line)}"
+  }
+
+
+  def candidateCrossesLineBounds(cand: Component, line: Component): Boolean = {
+    val slopFactor = 0.31d
+
+    val linex0 = line.bounds.toWesternPoint.x-slopFactor
+    val linex1 = line.bounds.toEasternPoint.x+slopFactor
+    val candx0 = cand.bounds.toWesternPoint.x
+    val candx1 = cand.bounds.toEasternPoint.x
+    val candRightInside = linex0 <= candx1 && candx1 <= linex1
+    val candLeftOutside = candx0 < linex0
+    val candLeftInside = linex0 <= candx0 && candx0 <= linex1
+    val candRightOutside = linex1 < candx1
+
+    val crossesLeft = candRightInside && candLeftOutside
+    val crossesRight = candLeftInside && candRightOutside
+
+    val candb = debugFormatLine(cand)
+    val lineb = debugFormatLine(line)
+
+    // debugReport(
+    //   candb,
+    //   lineb,
+    //   linex0           , // = line.bounds.toWesternPoint.x
+    //   linex1           , // = line.bounds.toEasternPoint.x
+    //   candx0           , // = cand.bounds.toWesternPoint.x
+    //   candx1           , // = cand.bounds.toEasternPoint.x
+    //   candRightInside  , // = linex0 <= candx1 && candx1 <= linex1
+    //   candLeftOutside  , // = candx0 < linex0
+    //   candLeftInside   , // = linex0 <= candx0 && candx0 <= linex1
+    //   candRightOutside , // = linex1 > candx1
+    //   crossesLeft        , // = candRightInside && candLeftOutside
+    //   crossesRight,     // = candLeftInside && candRightOutside
+    //   crossesLeft || crossesRight
+    // )
+
+    crossesLeft || crossesRight
+  }
+
+  def isStrictlyLeftToRight(cand: Component, line: Component): Boolean = {
+    val linex0 = line.bounds.toWesternPoint.x
+    val candx1 = cand.bounds.toEasternPoint.x
+    candx1 < linex0
+  }
+
+  def isStrictlyRightToLeft(cand: Component, line: Component): Boolean = {
+    val linex1 = line.bounds.toEasternPoint.x
+    val candx0 = cand.bounds.toWesternPoint.x
+    candx0 > linex1
+  }
+  def candidateIsOutsideLineBounds(cand: Component, line: Component): Boolean = {
+    isStrictlyLeftToRight(cand, line) ||
+      isStrictlyRightToLeft(cand, line)
+  }
+
+
 }
 
 
@@ -215,13 +277,6 @@ class DocumentSegmenter(
   }
 
 
-
-
-
-
-
-
-
   private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[CharBox] = {
     pages.nearestNChars(pageId, qbox, 12, 15.0f)
       .filterNot(_.isWonky)
@@ -272,7 +327,7 @@ class DocumentSegmenter(
         else {
           val (line1, line2) = chars
             .sliding(2).span({
-              case Seq(ch1, ch2) => ch2.id.unwrap - ch1.id.unwrap < 10
+              case Seq(ch1, ch2) => ch2.id.unwrap - ch1.id.unwrap < 20
               case Seq(_)     => true
             })
           val len = line1.length
@@ -287,21 +342,59 @@ class DocumentSegmenter(
           val m = fillInMissingChars(pageId, lineChars.drop(totalIndex).take(index+1))
 
           m.tail.foreach({char =>
-            if (!char.isWonky) {
-              lineSets.union(char, m.head)
-            }
+            lineSets.union(char, m.head)
+            // if (!char.isWonky) {
+            //   lineSets.union(char, m.head)
+            // }
           })
           totalIndex += index+1;
         })
     }
 
-    val lines = lineSets.iterator().toSeq.map{
+    // consider each line pair-wise and decide if they should be re-joined:
+    val prejoined = lineSets.iterator().toSeq.map(
       _.toSeq.sortBy(c => (c.bbox.left, c.bbox.top)).map(new CharComponent(_, docOrientation))
-    }
+    ).sortBy(_.map(_.component.id.unwrap).min)
 
-    lines
+    val first = prejoined.headOption.toSeq
+
+    val maybeJoined = prejoined.tail.toSeq
+      .foldLeft(first)({ case (acc, l2) =>
+        val l1 = acc.last
+        val idgap = l2.head.component.id.unwrap - l1.last.component.id.unwrap
+        val shouldJoin = isStrictlyLeftToRight(l1.last, l2.head) && idgap < 5
+
+        // def isStrictlyLeftToRight(cand: Component, line: Component): Boolean = {
+        // val acclast = l1.last.bounds.prettyPrint
+        // val next = l2.head.bounds.prettyPrint
+        // val l1EastX = l1.last.bounds.toEasternPoint.x
+        // val l2WestX = l2.head.bounds.toWesternPoint.x
+        // val totalAcc = l1.map(_.toText).mkString
+        // val considering = l2.map(_.toText).mkString
+        // println(s"${totalAcc}  ?:: ${considering}")
+        // println(s"  idgap = ${idgap}, shouldJoin = ${shouldJoin} l1-east=${l1EastX.pp}, l2-west=${l2WestX.pp}")
+        // println(s"  ${acclast}  -- ${next}")
+
+        if (shouldJoin) acc.dropRight(1) :+ (l1 ++ l2)
+        else acc :+ l2
+      })
+
+    // val maybeJoined = prejoined.sliding(2).toSeq.map({
+    //   case Seq(l1, l2) =>
+    //     val idgap = l2.head.component.id.unwrap - l1.last.component.id.unwrap
+    //     val shouldJoin = isStrictlyLeftToRight(l1.last, l2.head) && idgap < 5
+
+    //     if (shouldJoin) Seq(l1 ++ l2)
+    //     else Seq(l1, l2)
+
+
+    //   case Seq(x) => Seq(x)
+    //   case _ => Seq(Seq())
+    // })
+
+    maybeJoined
+      .sortBy(b => b.map(_.component.id.unwrap).min)
       .map{ Component(_, LB.Line) }
-      .sortBy(b => (b.bounds.top, b.bounds.left))
   }
 
 
@@ -409,11 +502,6 @@ class DocumentSegmenter(
     lineWidthMatches(line, hw.x) && lineHeightMatches(line, hw.y)
   }
 
-  def debugFormatLine(cc: ConnectedComponents): String = {
-    import TB._
-    val line = renderConnectedComponents(cc.tokenizeLine())
-    s"${cc.bounds.prettyPrint}, r:${cc.bounds.right.pp} b:${cc.bounds.bottom} ctr:${cc.bounds.toCenterPoint.prettyPrint} > ${hsep(line)}"
-  }
 
   def printPageLineBins(bin: LineDimensionBins, indent: Int=0): Unit = {
     bin.widthBin.foreach{ case (width, lines) =>
@@ -595,20 +683,20 @@ class DocumentSegmenter(
                 crossesLeft || crossesRight
               }
 
-              def candidateIsStrictlyLeftOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+              def isStrictlyLeftToRight(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
                 val linex0 = line.bounds.toWesternPoint.x
                 val candx1 = cand.bounds.toEasternPoint.x
                 candx1 < linex0
               }
 
-              def candidateIsStrictlyRightOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+              def isStrictlyRightToLeft(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
                 val linex1 = line.bounds.toEasternPoint.x
                 val candx0 = cand.bounds.toWesternPoint.x
                 candx0 > linex1
               }
               def candidateIsOutsideLineBounds(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
-                candidateIsStrictlyLeftOfLine(cand, line) ||
-                  candidateIsStrictlyRightOfLine(cand, line)
+                isStrictlyLeftToRight(cand, line) ||
+                  isStrictlyRightToLeft(cand, line)
               }
 
 
@@ -861,20 +949,20 @@ class DocumentSegmenter(
           crossesLeft || crossesRight
         }
 
-        def candidateIsStrictlyLeftOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+        def isStrictlyLeftToRight(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
           val linex0 = line.bounds.toWesternPoint.x
           val candx1 = cand.bounds.toEasternPoint.x
           candx1 < linex0
         }
 
-        def candidateIsStrictlyRightOfLine(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
+        def isStrictlyRightToLeft(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
           val linex1 = line.bounds.toEasternPoint.x
           val candx0 = cand.bounds.toWesternPoint.x
           candx0 > linex1
         }
+
         def candidateIsOutsideLineBounds(cand: ConnectedComponents, line: ConnectedComponents): Boolean = {
-          candidateIsStrictlyLeftOfLine(cand, line) ||
-            candidateIsStrictlyRightOfLine(cand, line)
+          isStrictlyLeftToRight(cand, line) || isStrictlyRightToLeft(cand, line)
         }
 
 

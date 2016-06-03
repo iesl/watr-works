@@ -161,36 +161,35 @@ class MyBxDocumentCreator(
     } {
 
       val wonkyChar = if (rawChar.toString != bakedChar.toString) Some(rawChar.toInt) else None
+      // skip spaces
+      if (!wonkyChar.exists(_ == 32)) {
 
-      val charBox = charBounds.map(bnds =>
-        CharBox(
-          charIdGen.nextId,
-          bakedChar,
-          bnds,
-          subChars.map(_.mkString).getOrElse(""),
-          wonkyCharCode = wonkyChar
-        )
-      ).getOrElse ({
-        val msg = s"ERROR bounds are invalid"
-        sys.error(msg)
-
-      })
-
-
-      // if (wonkyChar.isDefined || subChars.isDefined) {
-      //   println(s"char: ${charBox}")
-      // }
-      // CermineFontInfo.outputCharInfo(charTri, reader)
-      // CermineFontInfo.reportFontInfo(charTri.getFont)
-      // CermineFontInfo.addFontInfo(charTri.getFont
-      // val fullFontName = charTri.getFont().getFullFontName()(0)(3)
-      // chunk.setFontName(fullFontName)
+        val charBox = charBounds.map(bnds =>
+          CharBox(
+            charIdGen.nextId,
+            bakedChar,
+            bnds,
+            subChars.map(_.mkString).getOrElse(""),
+            wonkyCharCode = wonkyChar
+          )
+        ).getOrElse ({
+          val msg = s"ERROR bounds are invalid"
+          sys.error(msg)
+        })
 
 
-      currCharBuffer.append(charBox)
+        // if (wonkyChar.isDefined || subChars.isDefined) {
+        //   println(s"char: ${charBox}")
+        // }
+        // CermineFontInfo.outputCharInfo(charTri, reader)
+        // CermineFontInfo.reportFontInfo(charTri.getFont)
+        // CermineFontInfo.addFontInfo(charTri.getFont
+        // val fullFontName = charTri.getFont().getFullFontName()(0)(3)
+        // chunk.setFontName(fullFontName)
 
+        currCharBuffer.append(charBox)
+      }
     }
-
   }
 
 

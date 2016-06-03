@@ -4,7 +4,7 @@ package segment
 
 import watrmarks._
 import Bounds._
-import scala.collection.JavaConversions._
+// import scala.collection.JavaConversions._
 import scala.collection.mutable
 // import pl.edu.icm.cermine.tools.Histogram
 import scalaz._
@@ -272,7 +272,6 @@ object Component {
   }
 }
 
-import Component._
 
 
 sealed trait Component {
@@ -280,6 +279,7 @@ sealed trait Component {
 
   def mapChars(subs: Seq[(Char, String)]): Component
 
+  def tokenizeLine(): ConnectedComponents
 
   def toText(implicit idgen:Option[CCRenderState] = None): String
 
@@ -344,12 +344,16 @@ sealed trait Component {
 
 }
 
+import Component._
 
 case class CharComponent(
   component: CharBox,
   orientation: Double,
   blockRole: Option[Label] = None
 ) extends Component {
+  def tokenizeLine(): ConnectedComponents = {
+    Component(Seq(this))
+  }
 
   def mapChars(subs: Seq[(Char, String)]): Component  = {
     subs
@@ -593,7 +597,7 @@ case class ConnectedComponents(
     // label super/sub if char.ctr fall above/below centerline
     val supSubs = components.map({c =>
       val cctr = c.bounds.toCenterPoint
-      if (cctr.y.eqFuzzy(0.2)(modalCenterY)) {
+      if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
         c
       } else if (cctr.y > modalCenterY) {
         c.withLabel(LB.Sub)
@@ -666,11 +670,7 @@ case class ConnectedComponents(
     // }
 
     val wordBreaks = mutable.ArrayBuffer[Int]()
-    // (suborsub, (start, end))
-    // val supSubRanges = mutable.ArrayBuffer[(Int, (Int, Int))]()
 
-    // supSubs
-    //   .zip(pairwiseSpaceWidths(supSubs))
     connectedSupSubs
       .zip(pairwiseSpaceWidths(connectedSupSubs))
       .sliding(2).toList
