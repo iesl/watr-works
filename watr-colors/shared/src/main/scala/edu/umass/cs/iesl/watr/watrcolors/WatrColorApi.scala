@@ -15,4 +15,5 @@ trait SvgOverviewApi {
   def getCharLevelOverlay(artifactId: String, query: BBox): List[BBox]
   def getDocumentOverlay(artifactId: String): List[BBox]
   def onSelectBBox(artifactId: String, bbox: BBox): List[HtmlUpdate]
+  def onDrawPath(artifactId: String, path: Seq[Point]): List[HtmlUpdate]
 }

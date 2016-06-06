@@ -10,7 +10,34 @@ import native.fabric
 import scala.concurrent.Future
 import scala.async.Async.{async, await}
 
+import scala.collection.mutable
+
 object handlers {
+
+  def getUserPath(c: fabric.Canvas): Future[Seq[Point]] = {
+
+    val chan = CanvasMouseChannels(c)
+
+    val path = mutable.ArrayBuffer[(Int, Int)]()
+
+    async {
+      var res = await(chan.mousedown())
+
+      path.append((res.e.pageX, res.e.pageY))
+
+      res = await(chan.mousemove | chan.mouseup)
+      while(res.e.`type` == "mousemove"){
+        path.append((res.e.pageX, res.e.pageY))
+        res = await(chan.mousemove | chan.mouseup)
+      }
+
+      path.append((res.e.pageX, res.e.pageY))
+
+      path.map(xy => Point(xy._1.toDouble, xy._2.toDouble))
+    }
+  }
+
+
 
   def getUserBBox(c: fabric.Canvas): Future[BBox] = {
 
@@ -42,6 +69,10 @@ object handlers {
       x = bb.x + x0,
       y = bb.y + y0
     )
+  }
+
+  def translatePath(x0: Double, y0: Double, ps: Seq[Point]): Seq[Point] = {
+    ps.map(p => Point(p.x + x0, p.y + y0))
   }
 
 }

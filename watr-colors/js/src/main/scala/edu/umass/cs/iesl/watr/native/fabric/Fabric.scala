@@ -20,6 +20,7 @@ object fabric extends js.Object {
   // def on(event: String, f:js.Function): Event = js.native
 }
 
+
 @js.native @JSName("fabric.Object")
 trait FabricObject extends js.Object {
   var hasControls: Boolean = js.native
@@ -89,17 +90,24 @@ object Rect {
   }
 }
 
-@js.native
-trait RectOpts extends js.Object {
+trait ShapeOpts extends js.Object {
   def top         : Double = js.native
   def left        : Double = js.native
-  def width       : Double = js.native
-  def height      : Double = js.native
   def fill        : String = js.native
   def strokeWidth : Int = js.native
   def stroke      : String = js.native
-
 }
+
+@js.native
+trait RectOpts extends ShapeOpts {
+  def width       : Double = js.native
+  def height      : Double = js.native
+}
+
+@js.native
+trait PathOpts extends ShapeOpts {}
+
+
 
 object RectOpts {
   def apply(
@@ -121,6 +129,11 @@ object RectOpts {
       stroke = stroke
     ).asInstanceOf[RectOpts]
 }
+
+@js.native @JSName("fabric.Path")
+class PathNative(
+  opts: PathOpts
+) extends FabricObject
 
 
 @js.native @JSName("fabric.Canvas")

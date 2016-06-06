@@ -6,7 +6,7 @@ import net.sf.jsi.Rectangle
 
 // import scala.collection.mutable
 import extract.DocumentExtractor
-import watrmarks._
+import watrmarks.{ZoneIndexer, LTBounds, PageID}
 import ammonite.ops._
 
 
@@ -14,9 +14,6 @@ class SvgOverviewServer(
   rootDirectory: Path
 ) extends SvgOverviewApi  {
   lazy val corpus = Corpus(rootDirectory)
-
-
-  // look for pdf, bbox.svg
 
   def createView(corpusEntryId: String): List[HtmlUpdate] = {
     println(s"getting corpusEntry '${corpusEntryId}'")
@@ -56,9 +53,15 @@ class SvgOverviewServer(
       || pointInside(b1.x+b1.width, b1.y+b1.height, b2))
   }
 
+  def onDrawPath(artifactId: String, path: Seq[Point]): List[HtmlUpdate] = {
+    println(s"""draw-path:(${artifactId}, ${path.mkString(", ")} """)
+    List()
+  }
+
+
 
   def onSelectBBox(artifactId: String, bbox: BBox): List[HtmlUpdate] = {
-    println(s"onSelectBBox:begin(${artifactId}, bbox=${bbox})")
+    println(s"draw-bbox(${artifactId}, bbox=${bbox})")
     // val bboxes = getCharLevelOverlay(artifactId, bbox)
 
     // val overlapBboxes: List[BBox] = for (b <-bboxes if overlaps(b, bbox)) yield b

@@ -54,11 +54,29 @@ class SvgOverview(
     "c" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
     "b" -> ((e: MousetrapEvent) => createDocumentOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
+    "z" -> ((e: MousetrapEvent) => selectViaLine()),
     "d" -> ((e: MousetrapEvent) => initDeletion())
   ))
 
 
+
+  // choose an active label name
+  // allow labeling of existing bboxes by drawing line across them
+
   import handlers._
+  def selectViaLine(): Boolean = {
+    for {
+      userPath <- getUserPath(self.fabricCanvas)
+    } yield {
+      val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+      val pathAbs = translatePath(-offset.left, -offset.top, userPath)
+
+      server.onDrawPath(artifactId, pathAbs).call().foreach{ applyHtmlUpdates(_) }
+    }
+
+    true
+
+  }
   def initDeletion(): Boolean = {
 
     for {
@@ -84,8 +102,10 @@ class SvgOverview(
     true
   }
 
+// var path = new fabric.Path('M 0 0 L 200 100 L 170 200 z');
 
-
+  def addPath(path: Seq[Point], color: String): Unit = {
+  }
 
   def addBBoxRect(bbox: BBox, color: String): Unit = {
     // bbox.info
@@ -106,8 +126,6 @@ class SvgOverview(
     fabricCanvas.add(rect)
   }
 
-
-
   def createDocumentOverlay(): Boolean = {
     server.getDocumentOverlay(artifactId).call().foreach{ overlays =>
       overlays.foreach { bbox =>
@@ -115,7 +133,6 @@ class SvgOverview(
       }
     }
 
-    // var hoverTarget: fabric.FabricObject = _
 
     fabricCanvas.on("mouse:over", ((options: fabric.Options) => {
       val title = options.target.title

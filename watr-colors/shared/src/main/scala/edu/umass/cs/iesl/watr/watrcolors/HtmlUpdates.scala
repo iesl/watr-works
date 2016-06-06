@@ -23,6 +23,15 @@ case class LabelInfo(
   label: String
 ) extends OverlayInfo
 
+case class Point(
+  x: Double, y: Double
+) {
+  override def toString = {
+    s"""(${x}, ${y})"""
+  }
+}
+
+
 case class BBox(
   x: Double, y: Double, width: Double, height: Double,
   info: String
@@ -63,6 +72,7 @@ object Picklers {
 
   implicit val pOverlay = compositePickler[Overlay]
   implicit val pBBox = PicklerGenerator.generatePickler[BBox]
+  implicit val pPoint= PicklerGenerator.generatePickler[Point]
 
   pOverlay.addConcreteType[BBox]
 }
