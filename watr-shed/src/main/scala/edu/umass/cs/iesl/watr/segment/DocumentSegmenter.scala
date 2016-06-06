@@ -174,6 +174,21 @@ object DocumentSegmenter extends DocumentUtils {
     crossesLeft || crossesRight
   }
 
+  def isOverlappedHorizontally(line1: Component, line2: Component): Boolean = {
+    !(isStrictlyAbove(line1, line2) || isStrictlyBelow(line1, line2))
+  }
+
+  def isStrictlyAbove(line1: Component, line2: Component): Boolean = {
+    val y1 = line1.bounds.toPoint(CompassDirection.S).y
+    val y2 = line2.bounds.toPoint(CompassDirection.N).y
+    y1 < y2
+  }
+  def isStrictlyBelow(line1: Component, line2: Component): Boolean = {
+    val y1 = line1.bounds.toPoint(CompassDirection.N).y
+    val y2 = line2.bounds.toPoint(CompassDirection.S).y
+    y1 > y2
+  }
+
   def isStrictlyLeftToRight(cand: Component, line: Component): Boolean = {
     val linex0 = line.bounds.toWesternPoint.x
     val candx1 = cand.bounds.toEasternPoint.x
@@ -361,7 +376,11 @@ class DocumentSegmenter(
       .foldLeft(first)({ case (acc, l2) =>
         val l1 = acc.last
         val idgap = l2.head.component.id.unwrap - l1.last.component.id.unwrap
-        val shouldJoin = isStrictlyLeftToRight(l1.last, l2.head) && idgap < 5
+        val shouldJoin = (
+          isStrictlyLeftToRight(l1.last, l2.head)
+            && isOverlappedHorizontally(l1.last, l2.head)
+            && idgap < 5
+        )
 
         // def isStrictlyLeftToRight(cand: Component, line: Component): Boolean = {
         // val acclast = l1.last.bounds.prettyPrint

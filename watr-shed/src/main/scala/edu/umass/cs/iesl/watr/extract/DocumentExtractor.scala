@@ -5,19 +5,131 @@ package extract
 
 import watrmarks._
 import play.api.libs.json._
-// import scala.collection.JavaConversions._
 import java.io.InputStream
-
 import com.itextpdf.text.pdf.DocumentFont
-
 import play.api.libs.json._
-
-// import scalaz.@@
 
 import Bounds._
 
 object DocumentExtractor extends SpatialJsonFormat {
-  // import DocumentEnrichments._
+
+  def extractBBoxesAsSvg(pdfins: InputStream, artifactPath: Option[String]): String = {
+
+    import watrmarks.Bounds._
+    import watrmarks._
+
+    import watrmarks.TB._
+
+    def animationStyle = {
+      """|<svg:style>
+         |  .path {
+         |    opacity: 0.2;
+         |    stroke: cyan;
+         |    fill: none;
+         |    stroke-width: 1;
+         |    stroke-dasharray: 20;
+         |    stroke-dashoffset: 200;
+         |    animation: dash 5s linear forwards infinite;
+         |  }
+         |
+         |  // @keyframes dash {
+         |  //   to {
+         |  //     stroke-dashoffset: 0;
+         |  //   }
+         |  // }
+         |  .linebox {
+         |    opacity: 0.3;
+         |    stroke: blue;
+         |    stroke-width: 1;
+         |  }
+         |  .pagebox {
+         |    opacity: 0.3;
+         |    stroke: black;
+         |    stroke-width: 1;
+         |  }
+         |</svg:style>
+         |""".stripMargin.mbox
+    }
+
+
+    import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
+
+
+    val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
+    segmenter.runPageSegmentation()
+    val pageLines = segmenter.pageSegAccum.pageLines
+
+    val allPageLines = for {
+      (pageId, pageLines) <- segmenter.pages.getPages zip pageLines
+    } yield {
+      val pageGeom = segmenter.pages.getPageGeometry(pageId)
+
+      val sortedYLines = pageLines.map({ line =>
+        // val lineX = line.bounds.left
+        // val lineY = line.bounds.top
+
+        val xs = line.charComponents.map(_.component.bbox.left.pp).mkString(" ")
+        val ys = line.charComponents.map(_.component.bbox.bottom.pp).mkString(" ")
+        val escChars = escapeXml11(line.chars)
+
+
+        val linetext = line.tokenizeLine().toText.replaceAll("-", "–")
+        s"""|                <!--
+            |${linetext} --> <svg:rect class="linebox" x="${line.bounds.left.pp}" y="${line.bounds.top.pp}" width="${line.bounds.width.pp}"  height="${line.bounds.height.pp}" />
+            |                <svg:text font-size="1" height="${line.bounds.height}" width="${line.bounds.width}"><svg:tspan height="${line.bounds.height}" x="${xs}" y="${ys}">${escChars}</svg:tspan></svg:text>
+            |""".stripMargin.trim.mbox
+      })
+
+
+      val readingOrder = s"""M0,0""".box +| hsep(
+        pageLines.map({ line =>
+          val c = line.bounds.toCenterPoint
+          s"""L${c.x.pp},${c.y.pp}""".box
+        })
+      )
+
+      val readingOrderLine = s"""<svg:path class="path" d="${readingOrder}" />"""
+
+
+      val x = pageGeom.bounds.left
+      val y = pageGeom.bounds.top
+      val pwidth = pageGeom.bounds.width
+      val pheight = pageGeom.bounds.height
+
+
+      val pageRect = s"""|  <svg:rect
+                         |      page="${pageId}" file="file://${artifactPath.getOrElse("")}"
+                         |      class="pagebox" x="${x}" y="${y}" width="${pwidth}"  height="${pheight}" />
+                         |""".stripMargin.trim.mbox
+
+
+      (pageGeom.bounds, pageRect % vcat(sortedYLines) % readingOrderLine)
+    }
+
+    // val totalBounds = pages.map(_._1).reduce(_ union _)
+    val (totalBounds, totalSvg) = allPageLines
+      .foldLeft({
+        (LTBounds(0, 0, 0, 0), nullBox)
+      })({case ((totalBounds, totalSvg), (pageBounds, pageSvg)) =>
+        val translatedPageBounds = pageBounds.translate(0, totalBounds.bottom)
+        val newBounds = totalBounds union translatedPageBounds
+
+        (newBounds,
+          (
+            totalSvg %
+              s"""<svg:g transform="translate(0, ${totalBounds.bottom.pp})">""".box %
+              indent(4)(pageSvg) %
+              """</svg:g>"""))
+
+      })
+
+    val pwidth = totalBounds.width
+    val pheight = totalBounds.height
+
+    val svgHead = s"""<svg:svg version="1.1" width="${pwidth}px" height="${pheight}px" viewBox="0 0 ${pwidth} ${pheight}" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">"""
+
+    (svgHead % animationStyle % totalSvg % "</svg:svg>").toString
+  }
 
 
 

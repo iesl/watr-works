@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-
 import watrmarks._
 import Bounds._
 // import scala.collection.JavaConversions._
@@ -277,6 +276,8 @@ object Component {
 sealed trait Component {
   def chars: String
 
+  def charComponents: Seq[CharComponent]
+
   def mapChars(subs: Seq[(Char, String)]): Component
 
   def tokenizeLine(): ConnectedComponents
@@ -351,9 +352,13 @@ case class CharComponent(
   orientation: Double,
   blockRole: Option[Label] = None
 ) extends Component {
+
   def tokenizeLine(): ConnectedComponents = {
     Component(Seq(this))
   }
+
+  def charComponents: Seq[CharComponent] = Seq(this)
+
 
   def mapChars(subs: Seq[(Char, String)]): Component  = {
     subs
@@ -395,6 +400,8 @@ case class ConnectedComponents(
   // label: Label = LB.Line
   // labels: Seq[Label] = Seq()
 ) extends Component {
+
+
   def mapChars(subs: Seq[(Char, String)]): Component  = {
     copy(
       components = components.map(_.mapChars(subs))
@@ -418,6 +425,9 @@ case class ConnectedComponents(
   def chars:String = {
     components.map(_.chars).mkString
   }
+
+  def charComponents: Seq[CharComponent] =
+    components.flatMap(_.charComponents)
 
   def toText(implicit idgen:Option[CCRenderState] = None): String ={
     val ccs = renderConnectedComponents(this)
