@@ -3,7 +3,7 @@ package extract
 
 import watrmarks._
 
-object CermineFeatures {
+object DocumentFeatures {
   import SpatialEnrichments._
 
 

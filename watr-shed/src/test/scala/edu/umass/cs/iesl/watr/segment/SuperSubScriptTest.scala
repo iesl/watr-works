@@ -68,10 +68,10 @@ class SuperSubScriptTest extends DocsegTestUtil {
 
     examples.foreach { example =>
       if (! example.skip) {
-        // CermineExtractor.extractChars(pdfIns, Set(375, 376))// add char ids to output pathological debug info
+        // DocumentExtractor.extractChars(pdfIns, Set(375, 376))// add char ids to output pathological debug info
 
         val zoneIndex = ZoneIndexer.loadSpatialIndices(
-          CermineExtractor.extractChars(example.region.pdf)
+          DocumentExtractor.extractChars(example.region.pdf)
         )
 
         val chars = zoneIndex.queryChars(example.region.page, example.region.bbox)

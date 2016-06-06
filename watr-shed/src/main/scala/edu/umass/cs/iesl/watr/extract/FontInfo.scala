@@ -5,7 +5,7 @@ package extract
 
 // import com.softwaremill.debug.DebugConsole._
 
-object CermineFontInfo {
+object DocumentFontInfo {
 
   import com.itextpdf.text.pdf.DocumentFont
   import scala.collection.JavaConversions._

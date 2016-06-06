@@ -5,7 +5,7 @@ package server
 import net.sf.jsi.Rectangle
 
 // import scala.collection.mutable
-import extract.CermineExtractor
+import extract.DocumentExtractor
 import watrmarks._
 import ammonite.ops._
 
@@ -16,13 +16,16 @@ class SvgOverviewServer(
   lazy val corpus = Corpus(rootDirectory)
 
 
+  // look for pdf, bbox.svg
+
   def createView(corpusEntryId: String): List[HtmlUpdate] = {
+    println(s"getting corpusEntry '${corpusEntryId}'")
     corpus
       .entry(corpusEntryId)
-      .getSvgArtifact
+      .getArtifact("bbox.svg")
       .asPath
       .map({ f =>
-        val corpusPath = corpus.corpusRoot.relativeTo(f)
+        val corpusPath = f.relativeTo(corpus.corpusRoot)
         println(s"SvgOverviewServer: createView(${corpusEntryId}) path=(${corpusPath})")
         List(
           HtmlReplaceInner("#main", new html.SvgOverviewView().init(corpusPath.toString).toString)
@@ -56,33 +59,33 @@ class SvgOverviewServer(
 
   def onSelectBBox(artifactId: String, bbox: BBox): List[HtmlUpdate] = {
     println(s"onSelectBBox:begin(${artifactId}, bbox=${bbox})")
-    val bboxes = getCharLevelOverlay(artifactId, bbox)
+    // val bboxes = getCharLevelOverlay(artifactId, bbox)
 
-    val overlapBboxes: List[BBox] = for (b <-bboxes if overlaps(b, bbox)) yield b
+    // val overlapBboxes: List[BBox] = for (b <-bboxes if overlaps(b, bbox)) yield b
 
-    val bbStr = overlapBboxes.map{bb =>
-      s"${bb.info}"
-    } mkString("<pre>", "\n", "</pre>")
+    // val bbStr = overlapBboxes.map{bb =>
+    //   s"${bb.info}"
+    // } mkString("<pre>", "\n", "</pre>")
 
-    println(s"onSelectBBox:done, bbox count was ${bboxes.length}, overlap count is ${overlapBboxes.length} ")
+    // println(s"onSelectBBox:done, bbox count was ${bboxes.length}, overlap count is ${overlapBboxes.length} ")
     List(
-      HtmlReplaceInner("#selection-info", bbStr)
+      // HtmlReplaceInner("#selection-info", bbStr)
     )
   }
 
-  def getCermineOverlay(corpusEntryId: String): List[BBox] = {
-    println(s"getCermineOverlay:begin(${corpusEntryId})")
+  def getDocumentOverlay(corpusEntryId: String): List[BBox] = {
+    println(s"getDocumentOverlay:begin(${corpusEntryId})")
 
     val maybeOverlays = corpus
       .entry(corpusEntryId)
       .getArtifact("cermine-zones.json")
       .asJson
       .map({ jsvalue =>
-        CermineExtractor.loadSpatialIndices(jsvalue)
+        DocumentExtractor.loadSpatialIndices(jsvalue)
       })
 
     val overlays = maybeOverlays.recover({ case err =>
-      sys.error(s"getCermineOverlay: error loading spatialindex ${err}")
+      sys.error(s"getDocumentOverlay: error loading spatialindex ${err}")
     }).get
 
     // TODO take out hardcoded kludge

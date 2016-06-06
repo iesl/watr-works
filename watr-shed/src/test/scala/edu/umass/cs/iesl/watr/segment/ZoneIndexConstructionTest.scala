@@ -27,7 +27,7 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
   it should "identify text lines" in {
     examples.foreach { example =>
       if (!example.skip) {
-        val pages = CermineExtractor.extractChars(example.region.pdf)
+        val pages = DocumentExtractor.extractChars(example.region.pdf)
         pages.foreach { case(pageChars, geom) =>
           println(s"page bounds = ${geom.bounds.prettyPrint}")
           pageChars.chars.take(20).foreach { charbox =>

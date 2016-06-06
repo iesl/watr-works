@@ -7,7 +7,7 @@ import watrmarks._
 import scalaz._
 import Scalaz._
 
-class CermineFeatureTest extends FlatSpec {
+class DocumentFeatureTest extends FlatSpec {
 
   behavior of "zone iterator"
   val LB = StandardLabels
@@ -35,7 +35,7 @@ class CermineFeatureTest extends FlatSpec {
         val bboxes = zone.getBoundingBoxes.map(_.bbox.prettyPrint).mkString(", ")
         // println(s"zone = ${zone.getText}   bbox = ${bboxes}")
         println(s"zone = ${zone.getText} ")
-        val textDensity = CermineFeatures.textDensity(zone)
+        val textDensity = DocumentFeatures.textDensity(zone)
         println(s"    textDensity = ${textDensity}")
 
         // zone.getTokens.map {case (tokenZone, tokenLabel) =>

@@ -52,7 +52,7 @@ class SvgOverview(
 
   override val initKeys = Keybindings(List(
     "c" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
-    "b" -> ((e: MousetrapEvent) => createCermineOverlay()),
+    "b" -> ((e: MousetrapEvent) => createDocumentOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
     "d" -> ((e: MousetrapEvent) => initDeletion())
   ))
@@ -108,8 +108,8 @@ class SvgOverview(
 
 
 
-  def createCermineOverlay(): Boolean = {
-    server.getCermineOverlay(artifactId).call().foreach{ overlays =>
+  def createDocumentOverlay(): Boolean = {
+    server.getDocumentOverlay(artifactId).call().foreach{ overlays =>
       overlays.foreach { bbox =>
         addBBoxRect(bbox, "green")
       }

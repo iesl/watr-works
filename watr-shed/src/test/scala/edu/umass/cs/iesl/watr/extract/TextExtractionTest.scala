@@ -10,7 +10,7 @@ class TextExtractionTest extends FlatSpec {
 
   behavior of "itextpdf - generated text"
 
-  it should "..." in {
+  it should "properly extract the following characters" in {
     // Example(TestRegion(papers.`6376.pdf`, page(0), LTBounds(166.0d, 549.0, 350.0, 15.0)),
     //   expectedChars = """Y. Adachi a∗, H. Morita a, T. Kanomata b, A. Sato b, H. Yoshida c,""".replaceAll(" ", ""),
     //   desiredChars  = """Y. Adachi a,∗, H. Morita a, T. Kanomata b, A. Sato b, H. Yoshida c,""".replaceAll(" ", ""),
@@ -36,7 +36,7 @@ class TextExtractionTest extends FlatSpec {
     //     which also applied for the ThB*C phase, -->
     //     <svg:rect class="linebox" x="57.84" y="140.01" width="191.18"  height="9.99" />
 
-    val _ = CermineExtractor.extractChars(papers.`6376.pdf`)
+    val _ = DocumentExtractor.extractChars(papers.`6376.pdf`)
 
     // assertResult(example.expectedChars.replaceAll(" ",""))(found)
     // val exc = example.expectedChars.replaceAll(" ", "")

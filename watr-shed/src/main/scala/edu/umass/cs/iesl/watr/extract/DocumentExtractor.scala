@@ -16,8 +16,8 @@ import play.api.libs.json._
 
 import Bounds._
 
-object CermineExtractor extends SpatialJsonFormat {
-  // import CermineEnrichments._
+object DocumentExtractor extends SpatialJsonFormat {
+  // import DocumentEnrichments._
 
 
 
@@ -63,7 +63,7 @@ object CermineExtractor extends SpatialJsonFormat {
 
   // def cermineZonesToJson(pdfis: InputStream): String = {
 
-  //   val (bxDoc, zoneRecords) = extractCermineZones(pdfis)
+  //   val (bxDoc, zoneRecords) = extractDocumentZones(pdfis)
 
 
   //   def formatBounds(bounds: BxBounds): String = {
@@ -111,7 +111,7 @@ object CermineExtractor extends SpatialJsonFormat {
 
   //         // Adding generic Zone label (output of Document segmentation)
   //         addZone(LB.Block, pageNum, zone.getBounds.toLTBounds)
-  //         //  ... as well as adding Cermine's classification of the zone
+  //         //  ... as well as adding Document's classification of the zone
   //         addZone(modifyZoneLabelName(zone.getLabel.name), pageNum, zone.getBounds.toLTBounds)
 
   //         if (pageNum==0) {

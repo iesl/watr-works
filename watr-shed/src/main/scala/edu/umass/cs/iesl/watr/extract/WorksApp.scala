@@ -304,7 +304,7 @@ object Works extends App {
     processCorpus(conf, artifactOutputName: String, proc)
 
     def proc(pdf: InputStream, outputPath: String): String = {
-      val pageChars = CermineExtractor
+      val pageChars = DocumentExtractor
         .extractChars(pdf)
         .map({case(pageChars, pageGeom) =>
           val sortedYPage = pageChars.chars

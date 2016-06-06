@@ -140,8 +140,8 @@ class MyBxDocumentCreator(
     //   if(charsToDebug contains charIndex) {
     //     println(s"Outputting char info #${charIndex}")
     //     println(s"  text = ${text}")
-    //     CermineFontInfo.outputCharInfo(charTri, reader)
-    //     CermineFontInfo.reportFontInfo(charTri.getFont)
+    //     DocumentFontInfo.outputCharInfo(charTri, reader)
+    //     DocumentFontInfo.reportFontInfo(charTri.getFont)
     //     println(s"-------------------------------------\n\n")
     //   } else {
     //     if (charsToDebug.min - 10 < charIndex && charIndex < charsToDebug.max + 10) {
@@ -181,9 +181,9 @@ class MyBxDocumentCreator(
         // if (wonkyChar.isDefined || subChars.isDefined) {
         //   println(s"char: ${charBox}")
         // }
-        // CermineFontInfo.outputCharInfo(charTri, reader)
-        // CermineFontInfo.reportFontInfo(charTri.getFont)
-        // CermineFontInfo.addFontInfo(charTri.getFont
+        // DocumentFontInfo.outputCharInfo(charTri, reader)
+        // DocumentFontInfo.reportFontInfo(charTri.getFont)
+        // DocumentFontInfo.addFontInfo(charTri.getFont
         // val fullFontName = charTri.getFont().getFullFontName()(0)(3)
         // chunk.setFontName(fullFontName)
 
@@ -550,8 +550,8 @@ class XITextCharacterExtractor(
   //             if(charsToDebug contains charIndex) {
   //               println(s"Outputting char info #${charIndex}")
   //               println(s"  text = ${text}")
-  //               CermineFontInfo.outputCharInfo(charTri, reader)
-  //               CermineFontInfo.reportFontInfo(charTri.getFont)
+  //               DocumentFontInfo.outputCharInfo(charTri, reader)
+  //               DocumentFontInfo.reportFontInfo(charTri.getFont)
   //               println(s"-------------------------------------\n\n")
   //             } else {
   //               if (charsToDebug.min - 10 < charIndex && charIndex < charsToDebug.max + 10) {

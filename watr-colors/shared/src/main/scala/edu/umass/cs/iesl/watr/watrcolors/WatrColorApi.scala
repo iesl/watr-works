@@ -13,6 +13,6 @@ trait CorpusExplorerApi {
 trait SvgOverviewApi {
   def createView(artifactId: String): List[HtmlUpdate]
   def getCharLevelOverlay(artifactId: String, query: BBox): List[BBox]
-  def getCermineOverlay(artifactId: String): List[BBox]
+  def getDocumentOverlay(artifactId: String): List[BBox]
   def onSelectBBox(artifactId: String, bbox: BBox): List[HtmlUpdate]
 }

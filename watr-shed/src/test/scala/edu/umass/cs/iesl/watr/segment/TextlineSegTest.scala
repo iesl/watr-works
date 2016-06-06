@@ -24,6 +24,17 @@ class TextlineSegTest extends DocsegTestUtil  with DiagrammedAssertions {
   // Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111015.pdf.d/101016jactamat201111015.pdf
   // D e p a r t m _T_ e n _h_ t _e_ o _M_ f M _a_ _t_ _e_ a _r_ t _i_ e _a_ r _l_ i _s_ a l _R_ s _e_ S _s_ _e_ c _a_ i e _r_ n _c_ c _h_ e _I_ a _n_ n _s_ d _t_ _i_ _t_ E _u_ _t_ n _e_ g _,_ i n _T_ e _h_ e _e_ r i _P_ n g _e_ , _n_ _n_ T _s_ h _y_ e _l_ _v   (l:89.46, t:227.77, w:406.59, h:17.95)
 
+
+
+  // Textline seg problem, merged lines across cols:
+  // <svg:rect
+  //         page="0" file="file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016jcarbon201301056.pdf.d/101016jcarbon201301056.pdf"
+  //         class="pagebox" x="47.05509948730469" y="33.96612548828125" width="496.3145294189453"  height="719.0595779418945" />
+  // <!--
+  //   alternative anode materials has become an urgent task now– {^{adays.Amongthefeasibleanodematerials,Fe}} --> <svg:rect class="linebox" x="47.28" y="548.40" width="444.22"  height="145.22" />
+  //   <!--
+  //   {_{3}O_{4}} has been --> <svg:rect class="linebox" x="491.47" y="548.39" width="51.94"  height="8.64" />
+
   val testExamplesFromSVG = List(
     """| page="6" file="file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/0575.pdf.d/0575.pdf"
        | class="pagebox" x="51.84016418457031" y="54.6148681640625" width="400.3195037841797"  height="499.7032928466797" />

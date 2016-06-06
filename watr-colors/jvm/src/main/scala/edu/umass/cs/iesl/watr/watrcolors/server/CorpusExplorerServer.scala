@@ -23,8 +23,10 @@ class CorpusExplorerServer(
 
   def getCorpusEntryInFocus() : String = {
     // val corpusPath = rootDirectory.relativize(state.curr.path)
-    val corpusPath = rootDirectory.relativeTo(state.curr)
-    corpusPath.toString
+    // val corpusPath = rootDirectory.relativeTo(state.curr)
+    val entryPath = state.curr.relativeTo(rootDirectory)
+    println(s"CorpusExplorerServer:getCorpusEntryInFocus(${state.curr})= '${entryPath}' // corpus root=${rootDirectory}")
+    entryPath.toString
   }
 
   def navPrev(): List[HtmlUpdate] = {

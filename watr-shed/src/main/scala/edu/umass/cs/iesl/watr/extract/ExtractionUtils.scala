@@ -6,7 +6,7 @@ import watrmarks._
 // import pl.edu.icm.cermine.structure.model.BxBounds
 
 
-// object CermineEnrichments extends SpatialJsonFormat {
+// object DocumentEnrichments extends SpatialJsonFormat {
 
 //   // implicit class RicherLTBounds(val bb: LTBounds) extends AnyVal {
 //   //   def toBxBounds: BxBounds = {

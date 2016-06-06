@@ -122,7 +122,7 @@ object DocumentSegmenter extends DocumentUtils {
   }
 
   def createSegmenter(pdfins: InputStream): DocumentSegmenter = {
-    val chars = extract.CermineExtractor.extractChars(pdfins)
+    val chars = extract.DocumentExtractor.extractChars(pdfins)
     createSegmenter(chars)
   }
 
