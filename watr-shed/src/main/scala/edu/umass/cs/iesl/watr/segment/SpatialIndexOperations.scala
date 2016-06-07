@@ -1,11 +1,11 @@
 package edu.umass.cs.iesl.watr
-
 package segment
 
-import watrmarks._
-
 import scalaz.@@
+
+import spatial._
 import Bounds._
+import utils.CompassDirection
 
 object SpatialIndexOperations {
 

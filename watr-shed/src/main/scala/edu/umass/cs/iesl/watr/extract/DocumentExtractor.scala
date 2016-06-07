@@ -8,14 +8,16 @@ import com.itextpdf.text.pdf.DocumentFont
 import play.api.libs.json._
 import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 
+import spatial._
 import Bounds._
+import utils.IdGenerator
+import textboxing.{TextBoxing => TB}
 
 object DocumentExtractor extends SpatialJsonFormat {
 
   def extractBBoxesAsSvg(pdfins: InputStream, artifactPath: Option[String]): String = {
 
-
-    import watrmarks.TB._
+    import TB._
 
     def animationStyle = {
       """|<svg:style>

@@ -1,5 +1,4 @@
 package edu.umass.cs.iesl.watr
-
 package extract
 
 import java.io.{InputStream, IOException}
@@ -11,15 +10,11 @@ import com.itextpdf.text.Rectangle
 import com.itextpdf.text.exceptions.InvalidPdfException
 import com.itextpdf.text.pdf._
 import com.itextpdf.text.pdf.parser.{Vector => PVector, RenderListener, _}
-// import _root_.pl.edu.icm.cermine
-// import cermine.structure.model._
-// import cermine.structure.model.BxBounds
-// import cermine.exception.AnalysisException
-// import cermine.structure.CharacterExtractor
-// import cermine.structure.model._
-// import cermine.structure.tools.BxBoundsBuilder
 import util._
-import watrmarks._
+import utils._
+// import watrmarks._
+import spatial._
+import TypeTags._
 
 import scalaz.{@@}
 
@@ -220,7 +215,7 @@ class XITextCharacterExtractor(
 
   def getReportedPageGeometry(pageId: Int@@PageID, pageRectangle: Rectangle): PageGeometry = {
     val borders = if (pageRectangle.hasBorders) {
-      Some(watrmarks.Borders(
+      Some(Borders(
         bleft = pageRectangle.getBorderWidthLeft.toDouble,
         bbottom = pageRectangle.getBorderWidthBottom.toDouble,
         btop = pageRectangle.getBorderWidthTop.toDouble,
@@ -240,7 +235,7 @@ class XITextCharacterExtractor(
     //             |""".stripMargin)
 
     // PageRectangle coords have origin @ lower left (normal cartesian origin)
-    val bounds = watrmarks.LTBounds(
+    val bounds = LTBounds(
       left = pageRectangle.getLeft.toDouble,
       top = pageRectangle.getBottom.toDouble, // ???
       width = pageRectangle.getWidth.toDouble,

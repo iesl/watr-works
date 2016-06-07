@@ -4,11 +4,11 @@ package segment
 
 import org.scalatest._
 
-import watrmarks._
+import spatial._
+import Bounds._
 
 class AngleFilteringTest extends FlatSpec with Matchers {
   // import DocumentSegmenter._
-  import Bounds._
 
   behavior of "docstrum segmenter"
 

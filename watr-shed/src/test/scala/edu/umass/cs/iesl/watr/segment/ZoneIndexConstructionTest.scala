@@ -1,8 +1,7 @@
 package edu.umass.cs.iesl.watr
-
 package segment
 
-import watrmarks._
+import spatial._
 import extract._
 
 class ZoneIndexConstructionTest extends DocsegTestUtil  {

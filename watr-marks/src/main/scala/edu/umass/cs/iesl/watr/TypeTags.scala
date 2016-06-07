@@ -1,7 +1,5 @@
 package edu.umass.cs.iesl.watr
 
-
-
 import scalaz.@@
 import scalaz.Tag
 

@@ -11,7 +11,7 @@ import org.jdom2
 import scalaz.{Tag, @@}
 import ammonite.ops._
 
-import TagUtils._
+import TypeTags._
 
 
 case class HeaderInfo(

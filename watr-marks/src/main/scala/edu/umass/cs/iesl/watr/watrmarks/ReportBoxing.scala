@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrmarks
 
 import utils.RelativeDirection
+import textboxing.{TextBoxing => TB}
 
 trait ReportBoxing {
 

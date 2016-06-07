@@ -1,8 +1,8 @@
 package edu.umass.cs.iesl.watr
-
 package segment
 
-import watrmarks._
+import spatial._
+// import Bounds._
 import extract._
 
 class SuperSubScriptTest extends DocsegTestUtil {

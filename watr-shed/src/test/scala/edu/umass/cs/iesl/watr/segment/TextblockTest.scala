@@ -4,13 +4,13 @@ package segment
 
 import scalaz.@@
 
-import watrmarks._
+import spatial._
 import extract._
 
 // import segment.SpatialIndexOperations._
-import segment.DocumentSegmenter._
-import Bounds._
-import SpatialIndexOperations._
+// import segment.DocumentSegmenter._
+// import Bounds._
+// import SpatialIndexOperations._
 
 case class TextblockExample(
   source: String,

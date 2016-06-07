@@ -6,6 +6,7 @@ import org.scalatest._
 import watrmarks._
 import scalaz._
 import Scalaz._
+import spatial._
 
 class DocumentFeatureTest extends FlatSpec {
 

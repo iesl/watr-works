@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
-
 package extract
 
+import textboxing.{TextBoxing => TB}
 
 // import com.softwaremill.debug.DebugConsole._
 
@@ -278,7 +278,7 @@ object DocumentFontInfo {
     // |    unidiffs          ${udiffStr}
 
     object formatting {
-      import watrmarks.TB._
+      import TB._
 
       def formatPdfObject(obj: PdfObject): String = {
         renderBox(formatObject(obj)).mkString("\n")

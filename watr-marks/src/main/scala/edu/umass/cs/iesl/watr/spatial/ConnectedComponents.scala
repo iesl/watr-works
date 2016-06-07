@@ -7,9 +7,9 @@ import scalaz._
 import Scalaz._
 import utils._
 import watrmarks._
-// import textboxing.{T}
 
 import TypeTags._
+import textboxing.{TextBoxing => TB}
 
 
 case class CCRenderState(

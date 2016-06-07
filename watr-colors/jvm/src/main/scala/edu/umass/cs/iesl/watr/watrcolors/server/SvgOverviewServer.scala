@@ -6,7 +6,8 @@ import net.sf.jsi.Rectangle
 
 // import scala.collection.mutable
 import extract.DocumentExtractor
-import watrmarks.{ZoneIndexer, LTBounds, PageID}
+import spatial.{ZoneIndexer, LTBounds}
+import TypeTags._
 import ammonite.ops._
 
 

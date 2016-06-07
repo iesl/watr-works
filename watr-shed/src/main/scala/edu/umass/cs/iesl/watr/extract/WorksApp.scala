@@ -4,6 +4,9 @@ package extract
 
 import ammonite.ops._
 import java.io.{ InputStream  }
+import textboxing.{TextBoxing => TB}
+import spatial._
+import Bounds._
 
 
 object Works extends App {
@@ -221,9 +224,8 @@ object Works extends App {
   }
 
   def extractCharacters(conf: AppConfig): Unit = {
-    import watrmarks.TB._
-    import watrmarks.Bounds._
-    import watrmarks._
+    import TB._
+    // import watrmarks._
     val artifactOutputName = "chars.txt"
 
     processCorpus(conf, artifactOutputName: String, proc)

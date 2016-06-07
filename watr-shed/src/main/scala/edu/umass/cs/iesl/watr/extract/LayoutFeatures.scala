@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-import watrmarks._
+import spatial._
 
 object DocumentFeatures {
   import SpatialEnrichments._

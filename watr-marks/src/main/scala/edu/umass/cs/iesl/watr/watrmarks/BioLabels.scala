@@ -1,8 +1,7 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-import textboxing.TextBoxing
-// import scala.language.dynamics
+import textboxing.{TextBoxing => TB}
 
 sealed trait BioPin {
   def label: Label
@@ -39,9 +38,9 @@ case class Label(ns: String, key: String, value: Option[String]=None) {
 
   override def toString = s"${ns}:${key}"
 
-  import TextBoxing._
+  import TB._
 
-  def showBox: TextBoxing.Box = {
+  def showBox: Box = {
     s"${ns}:${key}".box
   }
 

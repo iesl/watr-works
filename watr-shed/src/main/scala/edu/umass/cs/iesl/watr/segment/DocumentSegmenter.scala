@@ -1,16 +1,20 @@
 package edu.umass.cs.iesl.watr
-
 package segment
 
 import java.io.InputStream
 import watrmarks._
+import spatial._
+import utils.CompassDirection
 
+import spatial._
 import scalaz.@@
 import Bounds._
 import Component._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import TagUtils._
+import utils._
+import TypeTags._
+import textboxing.{TextBoxing => TB}
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
