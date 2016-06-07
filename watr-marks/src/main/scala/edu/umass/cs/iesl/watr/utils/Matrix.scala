@@ -1,17 +1,5 @@
 package edu.umass.cs.iesl.watr
-package watrmarks
-
-object SvgMatrix {
-
-  // import dom._
-
-  // def getElemTransforms(e: WatrElement): List[Transform] = {
-  //   e match {
-  //     case t:Transformable => t.transforms
-  //     case _               => List()
-  //   }
-  // }
-}
+package utils
 
 sealed trait Transform {
   def toMatrix: Matrix

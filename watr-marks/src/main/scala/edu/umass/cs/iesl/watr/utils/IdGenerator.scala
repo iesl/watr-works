@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package watrmarks
+package utils 
 
 import scalaz.{Tag, @@}
 

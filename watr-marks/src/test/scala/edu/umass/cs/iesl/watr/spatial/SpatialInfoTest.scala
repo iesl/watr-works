@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package watrmarks
+package spatial
 
 import org.scalatest._
 
@@ -64,5 +64,3 @@ class SpatialInfoTest extends FlatSpec {
     val pspinfo = ZoneIndexer.loadSpatialIndices(jsvalue)
   }
 }
-
-

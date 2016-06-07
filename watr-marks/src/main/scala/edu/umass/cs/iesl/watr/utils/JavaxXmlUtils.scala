@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package watrmarks
+package utils 
 
 import javax.xml.namespace._
 import javax.xml.stream.events._

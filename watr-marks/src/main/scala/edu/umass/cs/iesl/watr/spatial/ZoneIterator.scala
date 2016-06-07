@@ -1,10 +1,12 @@
 package edu.umass.cs.iesl.watr
-package watrmarks
+package spatial 
 
 import java.io.InputStream
 import play.api.libs.json
 import scalaz._
 import Scalaz._
+import watrmarks._
+import TypeTags._
 
 object ZoneIterator extends SpatialJsonFormat{
 

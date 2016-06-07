@@ -1,5 +1,5 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
+
 package segment
 
 import org.scalatest._

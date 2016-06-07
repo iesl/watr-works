@@ -39,8 +39,6 @@ scalacOptions in ThisBuild ++= Seq(
 
 lazy val logbackVersion = "1.1.7"
 
-
-
 libraryDependencies in ThisBuild ++= Seq(
   "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
   "com.iheart" %% "ficus" % "1.2.6",
@@ -81,6 +79,7 @@ lazy val watrshed = (project in file("watr-shed"))
   ))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
+
 
 Revolver.settings
 

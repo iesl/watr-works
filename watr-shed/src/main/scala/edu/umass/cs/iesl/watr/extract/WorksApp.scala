@@ -1,5 +1,5 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
+
 package extract
 
 import ammonite.ops._

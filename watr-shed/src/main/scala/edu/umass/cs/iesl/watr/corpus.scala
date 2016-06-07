@@ -1,5 +1,5 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
+
 
 import java.io.{ InputStream }
 import java.io.InputStreamReader
@@ -13,7 +13,6 @@ import ammonite.ops._
 
 import TagUtils._
 
-sealed trait SHA1String
 
 case class HeaderInfo(
   title: String,

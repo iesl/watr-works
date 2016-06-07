@@ -1,19 +1,19 @@
 package edu.umass.cs.iesl.watr
-package segment
 
+package segment
 
 import java.io.InputStream
 import watrmarks._
 
 import scalaz.@@
-// import pl.edu.icm.cermine.tools.Histogram
-// import pl.edu.icm.cermine.tools.DisjointSets
 import Bounds._
 import Component._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import TagUtils._
-// import com.softwaremill.debug.DebugConsole._
+
+import utils.{Histogram, AngleFilter, DisjointSets}
+import Histogram._
 
 case class LineDimensionBins(
   page: Int@@PageID,
@@ -104,22 +104,6 @@ object DocumentSegmenter extends DocumentUtils {
     AngleFilter(direction - t2, direction + t2)
   }
 
-  def histogram(min: Double, max: Double, resolution: Double): Histogram = {
-    new Histogram(min, max, resolution)
-  }
-
-  def histogram(values: Seq[Double], resolution: Double): Histogram = {
-    Histogram.fromValues(values, resolution)
-  }
-
-  def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
-    val hist = histogram(in, resolution)
-    hist.getFrequencies
-      .sortBy(_.frequency)
-      .reverse
-      .takeWhile(_.frequency > 0)
-      .map{b=>(b.value, b.frequency)}
-  }
 
   def createSegmenter(pdfins: InputStream): DocumentSegmenter = {
     val chars = extract.DocumentExtractor.extractChars(pdfins)
@@ -683,6 +667,7 @@ class DocumentSegmenter(
     //   println(s"""    >> ${pstr}""")
     // }
 
+
     val unusedPageLines = mutable.ArrayBuffer[ConnectedComponents](pageLinesx:_*)
     val usedPageLines = mutable.ArrayBuffer[ConnectedComponents]()
 
@@ -838,4 +823,3 @@ class DocumentSegmenter(
   }
 
 }
-

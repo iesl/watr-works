@@ -1,11 +1,10 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
 
 
 object `package` extends PackageDefs {
 
-
-// package object watr extends ScalaZCommonOps with DebugMacros {
+  import textboxing.TextBoxing
+  val TB = TextBoxing
 
   def time[R](prefix: String)(block: => R): R = {
     val t0 = System.nanoTime()

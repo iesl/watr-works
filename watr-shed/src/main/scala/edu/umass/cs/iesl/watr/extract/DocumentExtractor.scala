@@ -1,13 +1,12 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
 package extract
-
 
 import watrmarks._
 import play.api.libs.json._
 import java.io.InputStream
 import com.itextpdf.text.pdf.DocumentFont
 import play.api.libs.json._
+import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 
 import Bounds._
 
@@ -15,8 +14,6 @@ object DocumentExtractor extends SpatialJsonFormat {
 
   def extractBBoxesAsSvg(pdfins: InputStream, artifactPath: Option[String]): String = {
 
-    import watrmarks.Bounds._
-    import watrmarks._
 
     import watrmarks.TB._
 
@@ -52,7 +49,6 @@ object DocumentExtractor extends SpatialJsonFormat {
     }
 
 
-    import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 
 
     val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)

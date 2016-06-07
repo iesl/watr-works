@@ -1,6 +1,5 @@
-package edu.umass.cs.iesl
-package watr
-package watrmarks
+package edu.umass.cs.iesl.watr
+package spatial
 
 
 import net.sf.jsi.Rectangle
@@ -14,7 +13,9 @@ import play.api.libs.json
 import json._
 import scalaz.{Tag, @@}
 
-import TagUtils._
+import utils.CompassDirection
+import watrmarks._
+import TypeTags._
 
 
 case class FontInfo(
@@ -370,12 +371,6 @@ case class TargetedBounds(
   bbox: LTBounds
 )
 
-
-sealed trait ZoneID
-sealed trait LabelID
-sealed trait RegionID
-sealed trait TokenID
-
 case class Zone(
   id: Int@@ZoneID,
   bboxes: List[TargetedBounds]
@@ -385,8 +380,6 @@ case class Zone(
   )
 }
 
-sealed trait PageID
-sealed trait CharID
 
 case class PageGeometry(
   id: Int@@PageID,

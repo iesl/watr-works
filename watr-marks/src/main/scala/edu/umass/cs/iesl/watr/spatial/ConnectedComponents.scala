@@ -1,20 +1,15 @@
 package edu.umass.cs.iesl.watr
-package watermarks 
+package spatial
 
-import watrmarks._
 import Bounds._
-// import scala.collection.JavaConversions._
 import scala.collection.mutable
-// import pl.edu.icm.cermine.tools.Histogram
 import scalaz._
 import Scalaz._
+import utils._
+import watrmarks._
+// import textboxing.{T}
 
-
-import DocumentSegmenter._
-
-object CharacterAccumulator {
-  val charSet: mutable.Set[Char] = mutable.Set()
-}
+import TypeTags._
 
 
 case class CCRenderState(
@@ -92,7 +87,7 @@ object Component {
     val dists = spaceWidths(chars)
     val resolution = 0.5d
 
-    val hist = histogram(dists, resolution)
+    val hist = Histogram.histogram(dists, resolution)
 
     val spaceDists = hist.getFrequencies
       .sortBy(_.frequency)
@@ -476,8 +471,9 @@ case class ConnectedComponents(
 
 
   def determineNormalTextBounds: LTBounds = {
-    val mfHeights = getMostFrequentValues(components.map(_.bounds.height), 0.1d)
-    val mfTops = getMostFrequentValues(components.map(_.bounds.top), 0.1d)
+    val mfHeights = Histogram.getMostFrequentValues(components.map(_.bounds.height), 0.1d)
+    val mfTops = Histogram.getMostFrequentValues(components.map(_.bounds.top), 0.1d)
+
 
     val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
     val mfTop = mfTops.headOption.map(_._1).getOrElse(0d)
@@ -502,7 +498,7 @@ case class ConnectedComponents(
     val dists = pairwiseSpaceWidths(components)
     val resolution = 0.5d
 
-    val hist = histogram(dists, resolution)
+    val hist = Histogram.histogram(dists, resolution)
 
     val spaceDists = hist.getFrequencies
       .sortBy(_.frequency)
@@ -518,14 +514,14 @@ case class ConnectedComponents(
   }
 
   def findCommonToplines(): Seq[Double] = {
-    getMostFrequentValues(
+    Histogram.getMostFrequentValues(
       components.map({c => c.bounds.top}),
       0.001d
     ).toList.map(_._1)
   }
 
   def findCommonBaselines(): Seq[Double] = {
-    getMostFrequentValues(
+    Histogram.getMostFrequentValues(
       components.map({c => c.bounds.bottom}),
       0.001d
     ).toList.map(_._1)

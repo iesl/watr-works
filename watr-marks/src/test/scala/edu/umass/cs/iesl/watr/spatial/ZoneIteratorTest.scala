@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package watrmarks
+package spatial
 
 import org.scalatest._
 
@@ -7,7 +7,7 @@ import org.scalatest._
 class ZoneIteratorTest extends FlatSpec {
 
   behavior of "zone iterator"
-  val LB = StandardLabels
+  val LB = watrmarks.StandardLabels
 
   def is = getClass().getResourceAsStream("/spatial/0575.pdf.cermine-zones.json")
   def loadPageIterator = ZoneIterator.load(is).get

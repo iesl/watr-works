@@ -1,5 +1,5 @@
-package edu.umass.cs.iesl
-package watr
+package edu.umass.cs.iesl.watr
+
 package extract
 
 import java.io.{InputStream, IOException}
@@ -199,9 +199,6 @@ class MyBxDocumentCreator(
   override def renderImage(iri: ImageRenderInfo): Unit = {
     // val img = iri.getImage
   }
-
-
-
 
 }
 

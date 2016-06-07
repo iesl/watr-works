@@ -1,6 +1,5 @@
-package edu.umass.cs.iesl
-package watr
-package watrmarks
+package edu.umass.cs.iesl.watr
+package utils
 
 
 

@@ -2,8 +2,8 @@ package edu.umass.cs.iesl.watr
 package watrmarks
 
 import java.io.StringReader
-import scala.reflect.ClassTag
 import scala.util.parsing.combinator._
+import utils._
 
 trait ParserCommon extends Parsers {
   def read(s: String) = new StringReader(s)

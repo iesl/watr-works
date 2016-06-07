@@ -21,6 +21,22 @@ object Histogram {
     histogram
   }
 
+  def histogram(min: Double, max: Double, resolution: Double): Histogram = {
+    new Histogram(min, max, resolution)
+  }
+
+  def histogram(values: Seq[Double], resolution: Double): Histogram = {
+    Histogram.fromValues(values, resolution)
+  }
+
+  def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
+    val hist = histogram(in, resolution)
+    hist.getFrequencies
+      .sortBy(_.frequency)
+      .reverse
+      .takeWhile(_.frequency > 0)
+      .map{b=>(b.value, b.frequency)}
+  }
 }
 
 class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
