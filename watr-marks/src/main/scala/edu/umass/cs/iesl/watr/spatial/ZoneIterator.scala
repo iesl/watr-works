@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spatial 
+package spatial
 
 import java.io.InputStream
 import play.api.libs.json
@@ -8,7 +8,7 @@ import Scalaz._
 import watrmarks._
 import TypeTags._
 
-object ZoneIterator extends SpatialJsonFormat{
+object ZoneIterator extends ComponentDataTypeFormats {
 
   def load(zoneJsonIS: InputStream): Option[PageIterator] = {
     load(json.Json.parse(zoneJsonIS))

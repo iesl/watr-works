@@ -584,8 +584,11 @@ class DocumentSegmenter(
   }
   import scala.math.Ordering.Implicits._
 
-  def buildExpandedTOC(
-  ): Unit = {
+  def buildExpandedTOC(): Unit = {
+    //
+
+
+
     val numberedSectionLines = for {
       pageId <- pages.getPages
       line <- pageSegAccum.pageLines(PageID.unwrap(pageId)).toList

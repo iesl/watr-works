@@ -1,16 +1,8 @@
 package edu.umass.cs.iesl.watr
 package spatial
 
-
-import net.sf.jsi.Rectangle
-import scala.collection.mutable
-
-import net.sf.jsi.SpatialIndex
-import net.sf.jsi.rtree.RTree
 import net.sf.jsi
 
-import play.api.libs.json
-import json._
 import scalaz.{Tag, @@}
 
 import utils.CompassDirection
@@ -27,13 +19,13 @@ case class FontInfo(
 object jsiRectangle {
   def apply(
     x: Double, y: Double, width: Double, height: Double
-  ): Rectangle = apply(
+  ): jsi.Rectangle = apply(
     x.toFloat, y.toFloat, width.toFloat, height.toFloat
   )
 
   def apply(
     x: Float, y: Float, width: Float, height: Float
-  ): Rectangle = new Rectangle(
+  ): jsi.Rectangle = new jsi.Rectangle(
     x, y, x+width, y+height
   )
 
@@ -332,7 +324,7 @@ object Bounds {
   }
 }
 
-import Bounds._
+// import Bounds._
 
 sealed trait Bounds
 
@@ -357,325 +349,7 @@ case class Borders(
   bbottom: Double
 )
 
-case class Point(
-  x: Double, y: Double
-)
 
-case class Line(
-  p1: Point, p2: Point
-)
-
-case class TargetedBounds(
-  id: Int@@RegionID,
-  target: Int@@PageID,
-  bbox: LTBounds
-)
-
-case class Zone(
-  id: Int@@ZoneID,
-  bboxes: List[TargetedBounds]
-) {
-  def withLabel(l: Label) = ZoneAndLabel(
-    this.id, l
-  )
-}
-
-
-case class PageGeometry(
-  id: Int@@PageID,
-  bounds: LTBounds,
-  borders:Option[Borders]
-)
-
-case class PageChars(
-  id: Int@@PageID,
-  chars: Seq[CharBox]
-)
-
-case class CharBox(
-  id: Int@@CharID,
-  char: String,
-  bbox: LTBounds,
-  subs: String = "",
-  wonkyCharCode: Option[Int] = None
-)
-
-case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)
-
-case class ZoneRecords(
-  id: String,
-  target: String,
-  pageGeometries: Seq[PageGeometry],
-  zones: Seq[Zone],
-  labels: Seq[ZoneAndLabel],
-  chars: Seq[PageChars]
-)
-
-
-class ZoneIndexer  {
-
-  val pageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex]()
-  val pageGeometries = mutable.Map[Int@@PageID, PageGeometry]()
-  val pageChars = mutable.HashMap[Int@@PageID, mutable.ArrayBuffer[CharBox]]()
-  // val charBoxes = mutable.HashMap[Int@@CharID, CharBox]()
-  val charBoxes = mutable.LongMap[CharBox]()
-
-  val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
-  val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
-
-  val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
-
-  def getPageGeometry(p: Int@@PageID) = pageGeometries(p)
-
-  def getComponent(pageId: Int@@PageID, charId: Int@@CharID): CharBox = {
-    charBoxes(charId.unwrap.toLong)
-  }
-
-  // See getComponentsUnfiltered() for explanation of filterNot
-  def getComponents(pageId: Int@@PageID): Seq[CharBox] = {
-    pageChars(pageId).filterNot(_.isSpace)
-  }
-
-
-  // Some chars from a pdf are unuseable, either unprintable or embedded space characters.
-  //   This will return all of them
-  def getComponentsUnfiltered(pageId: Int@@PageID): Seq[CharBox] = {
-    pageChars(pageId)
-  }
-
-  def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
-    zoneLabelMap.get(id).getOrElse(Seq())
-  }
-
-  def getPages(): List[Int@@PageID] = {
-    pageRIndexes.keys.toList.sortBy(PageID.unwrap(_))
-  }
-
-
-  def addPage(p: PageGeometry): Unit = {
-
-    if(pageGeometries.contains(p.id)) {
-      sys.error("adding new page w/existing id")
-    }
-
-    pageGeometries.put(p.id, p)
-    val si: SpatialIndex = new RTree()
-    si.init(null)
-    pageRIndexes.put(p.id, si)
-
-    pageChars.getOrElseUpdate(p.id, mutable.ArrayBuffer())
-
-  }
-
-  def addCharInfo(pageId: Int@@PageID, cb: CharBox): Unit = {
-    val rindex = pageRIndexes(pageId)
-    rindex.add(cb.bbox.toJsiRectangle, cb.id.unwrap.toInt)
-    pageChars(pageId).append(cb)
-    charBoxes.put(cb.id.unwrap, cb)
-  }
-
-  def addZone(zone: Zone): Unit = {
-    val zoneId = zone.id
-    zoneMap.put(zoneId, zone).map(existing => sys.error(s"zone already exists in zoneMap"))
-    zone.bboxes.foreach{ targetedBounds  =>
-      regionToZone.put(targetedBounds.id, zone)
-      val rindex = pageRIndexes(targetedBounds.target)
-      rindex.add(
-        targetedBounds.bbox.toJsiRectangle,
-        RegionID.unwrap(targetedBounds.id)
-      )
-    }
-  }
-
-  def addLabels(zl: ZoneAndLabel): Unit = {
-    val lls = zoneLabelMap.getOrElseUpdate(zl.zoneId, mutable.ArrayBuffer[Label]())
-    lls.append(zl.label)
-  }
-
-  import gnu.trove.procedure.TIntProcedure
-
-  class CollectRegionIds extends TIntProcedure {
-    import scala.collection.mutable
-    val ids = mutable.ArrayBuffer[Int]()
-
-    override def execute(id: Int): Boolean = {
-      ids.append(id)
-      true
-    }
-
-    def getIDs: Seq[Int] = {
-      ids
-    }
-  }
-
-  def putCharBox(cb: CharBox): Unit = {
-    charBoxes.put(cb.id.unwrap, cb)
-  }
-
-  def getCharBox(id: Int): CharBox = {
-    charBoxes(id.toLong)
-  }
-
-  def getCharBox(id: Int@@CharID): CharBox = {
-    charBoxes(id.unwrap)
-  }
-
-  def getCharBox(id: Long): CharBox = {
-    charBoxes(id)
-  }
-
-  def queryCharsIntersects(page: Int@@PageID, q: LTBounds): Seq[CharBox] = {
-    val rindex = pageRIndexes(page)
-
-    val collectRegions = new CollectRegionIds()
-    // rindex.intersects(x$1: Rectangle, x$2: TIntProcedure)
-    rindex.intersects(q.toJsiRectangle, collectRegions)
-    val neighbors = collectRegions.getIDs.filter{ id =>
-      charBoxes.contains(id.toLong)
-    }
-    neighbors.map(cid => charBoxes(cid.toLong))
-  }
-
-  def queryChars(page: Int@@PageID, q: LTBounds): Seq[CharBox] = {
-    val rindex = pageRIndexes(page)
-
-    val collectRegions = new CollectRegionIds()
-    rindex.contains(q.toJsiRectangle, collectRegions)
-    val neighbors = collectRegions.getIDs.filter{ id =>
-      charBoxes.contains(id.toLong)
-    }
-
-    neighbors map getCharBox
-  }
-
-
-  // def nearestChars(page: Int@@PageID, q: LTBounds, radius: Float): Seq[Int@@CharID] = {
-  //   val rindex = pageRIndexes(page)
-
-  //   val collectRegions = new CollectRegionIds()
-  //   rindex.nearest(q.jsiCenterPoint, collectRegions, radius)
-  //   val neighbors = collectRegions.getIDs.filter{ id =>
-  //     charBoxes.contains(CharID(id))
-  //   }
-  //   neighbors.map(CharID(_))
-  // }
-
-  // def nearestNCharIDs(page: Int@@PageID, qbox: LTBounds, n: Int, radius: Float): Seq[Int@@CharID] = {
-  //   val rindex = pageRIndexes(page)
-  //   val ctr = qbox.toCenterPoint
-  //   val searchRect = LTBounds(
-  //     left=ctr.x- (radius/2),
-  //     top=ctr.y- (radius/2),
-  //     width=radius.toDouble,
-  //     height=radius.toDouble
-  //   )
-
-  //   val collectRegions = new CollectRegionIds()
-  //   println(s" searching ${n} nearest from bbox${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
-
-  //   rindex.intersects(searchRect.toJsiRectangle, collectRegions)
-  //   println(s""" found ${collectRegions.getIDs.mkString(",")} """)
-  //   collectRegions
-  //     .getIDs
-  //     .map({ id =>
-  //       val cbox = charBoxes(CharID(id))
-  //       val dist = cbox.bbox.toCenterPoint.vdist(ctr)
-  //       (dist, cbox)
-  //     })
-  //     .sortBy(_._1)
-  //     .take(n)
-  //     .map(_._2.id)
-  // }
-
-
-  // def nearestNChars(page: Int@@PageID, qbox: LTBounds, n: Int, radius: Float): Seq[CharBox] = {
-  def nearestNChars(page: Int@@PageID, fromChar: CharBox, n: Int, radius: Float): Seq[CharBox] = {
-    val rindex = pageRIndexes(page)
-    val ctr = fromChar.bbox.toCenterPoint
-    val searchRect = LTBounds(
-      left   =ctr.x - radius,
-      top    =ctr.y - radius,
-      width  =(radius*2.0).toDouble,
-      height =(radius*2.0).toDouble
-    )
-
-    val collectRegions = new CollectRegionIds()
-    // println(s" searching ${n} nearest from c=${fromChar.char} bbox ${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
-
-    rindex.intersects(searchRect.toJsiRectangle, collectRegions)
-    // println(s""" found ${collectRegions.getIDs.mkString(",")} """)
-    collectRegions.getIDs
-      .map({ id =>
-        val cbox = getCharBox(id)
-        (cbox.bbox.toCenterPoint.dist(ctr), cbox)
-      })
-      .filterNot(_._2.id == fromChar.id)
-      .sortBy(_._1)
-      .take(n)
-      .map(_._2)
-  }
-
-  def query(page: Int@@PageID, q: LTBounds): Seq[Zone] = {
-    println(s"ZoneIndex.query(${page}, ${q.prettyPrint})")
-    val rindex = pageRIndexes(page)
-
-    val collectRegions = new CollectRegionIds()
-    rindex.contains(q.toJsiRectangle, collectRegions)
-    // rindex.intersects(q.toJsiRectangle, collectRegions)
-    val regions = collectRegions.getIDs
-    val zones = collectRegions
-      .getIDs.map{ regionId => regionToZone(RegionID(regionId)) }
-
-    zones.sortBy { z => z.bboxes.head.bbox.left }
-  }
-
-}
-
-
-
-object ZoneIndexer extends SpatialJsonFormat {
-  def minMaxPairToPointWidth(minMax: (Double, Double)): (Double, Double) = {
-    (minMax._1, minMax._2-minMax._1)
-  }
-
-  def loadSpatialIndices(charsAndGeometry: Seq[(PageChars, PageGeometry)]): ZoneIndexer = {
-
-    val zindexer = new ZoneIndexer()
-    charsAndGeometry.foreach { case(chars, geom)  =>
-      zindexer.addPage(geom)
-
-      chars.chars.foreach { cb =>
-        if (!cb.isSpace) {
-          zindexer.addCharInfo(geom.id, cb)
-        }
-      }
-    }
-    zindexer
-  }
-
-  def loadSpatialIndices(zoneRec: ZoneRecords): ZoneIndexer = {
-
-    val zindexer = new ZoneIndexer()
-
-    println("added zone indexer")
-
-    zoneRec.pageGeometries.foreach { p =>
-      zindexer.addPage(p)
-    }
-    println("added zone pages")
-
-    zoneRec.zones.foreach { z =>
-      zindexer.addZone(z)
-    }
-    println("added zones")
-    zoneRec.labels.foreach { zl =>
-      zindexer.addLabels(zl)
-    }
-    println("added zone labels")
-
-    zindexer
-  }
-}
 
 object SpatialEnrichments {
 
@@ -692,46 +366,4 @@ object SpatialEnrichments {
   implicit class RicherLTBounds(val bb: LTBounds) extends AnyVal {
     def area: Double = bb.width*bb.height
   }
-}
-
-trait SpatialJsonFormat {
-
-  val ReadPageID: Reads[Int@@PageID]   = __.read[Int].map(i => Tag.of[PageID](i))
-  val WritePageID: Writes[Int@@PageID] = Writes[Int@@PageID] { i => JsNumber(PageID.unwrap(i)) }
-  implicit def FormatPageID            = Format(ReadPageID, WritePageID)
-
-  val ReadZoneID: Reads[Int@@ZoneID]   = __.read[Int].map(i => Tag.of[ZoneID](i))
-  val WriteZoneID: Writes[Int@@ZoneID] = Writes[Int@@ZoneID] { i => JsNumber(ZoneID.unwrap(i)) }
-  implicit def FormatZoneID            = Format(ReadZoneID, WriteZoneID)
-
-  val ReadRegionID: Reads[Int@@RegionID]   = __.read[Int].map(i => Tag.of[RegionID](i))
-  val WriteRegionID: Writes[Int@@RegionID] = Writes[Int@@RegionID] { i => JsNumber(RegionID.unwrap(i)) }
-  implicit def FormatRegionID            = Format(ReadRegionID, WriteRegionID)
-
-  val ReadTokenID: Reads[Int@@TokenID]   = __.read[Int].map(i => Tag.of[TokenID](i))
-  val WriteTokenID: Writes[Int@@TokenID] = Writes[Int@@TokenID] { i => JsNumber(TokenID.unwrap(i)) }
-  implicit def FormatTokenID            = Format(ReadTokenID, WriteTokenID)
-
-  val ReadCharID: Reads[Int@@CharID]   = __.read[Int].map(i => Tag.of[CharID](i))
-  val WriteCharID: Writes[Int@@CharID] = Writes[Int@@CharID] { i => JsNumber(CharID.unwrap(i)) }
-  implicit def FormatCharID            = Format(ReadCharID, WriteCharID)
-
-  val ReadChar: Reads[Char]   = __.read[String].map(c => c(0))
-  val WriteChar: Writes[Char] = Writes[Char] { c => JsString(c.toString()) }
-  implicit def FormatChar     = Format(ReadChar, WriteChar)
-
-  implicit def residentFormat = Json.format[LBBounds]
-  implicit def LTBoundsFormat = Json.format[LTBounds]
-  implicit def FormatTargetedBounds = Json.format[TargetedBounds]
-  implicit def FormatBorders = Json.format[Borders]
-  implicit def FormatLabel = Json.format[Label]
-  implicit def FormatPageGeometry = Json.format[PageGeometry]
-  implicit def FormatZone = Json.format[Zone]
-  implicit def FormatZoneAndLabel = Json.format[ZoneAndLabel]
-  implicit def FormatCharBox = Json.format[CharBox]
-  implicit def FormatPageChars = Json.format[PageChars]
-  implicit def FormatZoneRecords = Json.format[ZoneRecords]
-  implicit def FormatLable = Json.format[Label]
-
-
 }
