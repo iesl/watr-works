@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package segment
+package utils
 
 /**
   * Filter class for neighbor objects that checks if the angle of the

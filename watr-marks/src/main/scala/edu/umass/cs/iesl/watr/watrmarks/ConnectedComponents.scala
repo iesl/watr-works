@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package segment
+package watermarks 
 
 import watrmarks._
 import Bounds._
