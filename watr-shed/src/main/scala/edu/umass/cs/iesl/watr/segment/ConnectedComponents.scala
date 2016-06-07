@@ -53,7 +53,6 @@ object Component {
     )
   }
 
-  // def apply(components: Seq[Component], orientation: Double, label: Label): ConnectedComponents = {
   def apply(components: Seq[Component], label: Label): ConnectedComponents = {
     new ConnectedComponents(
       components,

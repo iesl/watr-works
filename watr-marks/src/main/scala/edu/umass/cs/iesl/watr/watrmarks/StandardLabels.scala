@@ -6,6 +6,7 @@ trait DocSegLabels {
   // val Zone = Label("ds", "zone")
   val Page = Label("ds", "page")
   val Column = Label("ds", "column")
+  val Heading = Label("ds", "heading")
   val Block = Label("ds", "block")
   val Para = Label("ds", "para")
   val Image = Label("ds", "image")

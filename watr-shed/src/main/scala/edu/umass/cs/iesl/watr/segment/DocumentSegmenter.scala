@@ -239,13 +239,13 @@ class DocumentSegmenter(
     import TB._
 
     runLineDetermination()
-    pageSegAccum = findMostFrequentLineDimensions(pageSegAccum)
+    findMostFrequentLineDimensions()
 
     val pageZones = for {
       pageId <- pages.getPages
     } yield {
       println(s"segmenting page ${pageId}")
-      determineZones(pageId, pageSegAccum)
+      determineZones(pageId)
     }
 
     implicit val initState = Option(CCRenderState(
@@ -538,9 +538,9 @@ class DocumentSegmenter(
   }
 
 
-  def findMostFrequentLineDimensions(psegAccum: PageSegAccumulator):  PageSegAccumulator = {
+  def findMostFrequentLineDimensions():  Unit = {
     val allDocumentWidths = for {
-      p <- psegAccum.pageLines;
+      p <- pageSegAccum.pageLines;
       l <- p
     } yield l.bounds.width
 
@@ -556,7 +556,7 @@ class DocumentSegmenter(
 
     // bin each page by line widths
     val commonLineBins = for {
-      (plines, pagenum) <- psegAccum.pageLines.zipWithIndex
+      (plines, pagenum) <- pageSegAccum.pageLines.zipWithIndex
     } yield {
 
       val remainingLines = mutable.ListBuffer[ConnectedComponents](plines:_*)
@@ -571,20 +571,87 @@ class DocumentSegmenter(
       LineDimensionBins(PageID(pagenum), widthBins, remainingLines)
     }
     // printCommonLineBins(commonLineBins)
-
-    psegAccum.copy(
+    pageSegAccum = pageSegAccum.copy(
       lineDimensionBins = commonLineBins
     )
   }
 
 
+  def determineTextBlocks(
+    pageId: Int@@PageID
+  ): Seq[ConnectedComponents] = {
 
+    // look for rectangular blocks of text (plus leading/trailing lines)
+
+    // look for for left-aligned (column-wise) single or double numbered text lines w/
+    //   large gaps
+
+
+    // filter out figure/caption/footnotes based on embedded images and page locations
+
+
+
+
+    ???
+  }
+  import scala.math.Ordering.Implicits._
+
+  def buildExpandedTOC(
+  ): Unit = {
+    val numberedSectionLines = for {
+      pageId <- pages.getPages
+      line <- pageSegAccum.pageLines(PageID.unwrap(pageId)).toList
+      numbering = line.chars.takeWhile(c => c.isDigit || c=='.')
+      nexts = line.chars.drop(numbering.length) //.takeWhile(c => c.isLetter)
+      isTOCLine = """\.+""".r.findAllIn(nexts).toSeq.sortBy(_.length).lastOption.exists(_.length > 4)
+
+      if !numbering.isEmpty && !nexts.isEmpty()
+      // _ = println(s"""${line.chars}""")
+      if numbering.matches("^[1-9]+\\.([1-9]\\.)*")
+      if !isTOCLine
+      // _ = println(s"""    >${numbering}""")
+    } yield {
+      val ns = numbering.split("\\.").toList.map(_.toInt)
+      (line, ns)
+    }
+
+    val sortedSections =  numberedSectionLines.sortBy(_._2)
+    println("sorted sections ")
+    sortedSections.foreach { println }
+
+    // pages.addLabels(zl: ZoneAndLabel)
+    sortedSections.foreach({ case (linecc, ns) =>
+      val asdf =linecc.withLabel(LB.Heading)
+    })
+
+
+    // What are the predominant fonts per 'level'?
+
+
+
+    // Distinguish between TOC and in-situ section IDs
+
+
+
+
+    // println(s"""section: ${headerLines.map(_.toText).mkString(" ")}""")
+
+    // look for rectangular blocks of text (plus leading/trailing lines)
+
+    // look for for left-aligned (column-wise) single or double numbered text lines w/
+    //   large gaps
+
+
+    // filter out figure/caption/footnotes based on embedded images and page locations
+
+
+
+  }
 
   def determineZones(
-    pageId: Int@@PageID,
-    psegAccum: PageSegAccumulator
+    pageId: Int@@PageID
   ): Seq[ConnectedComponents] = {
-    val pageLinesx: Seq[ConnectedComponents] = psegAccum.pageLines(PageID.unwrap(pageId))
+    val pageLinesx: Seq[ConnectedComponents] = pageSegAccum.pageLines(PageID.unwrap(pageId))
 
     // println("starting wiht lines: ")
     // pageLinesx.foreach { line =>
@@ -598,7 +665,7 @@ class DocumentSegmenter(
 
     // println(s"page center ${pageCenter.prettyPrint}")
 
-    val lineBins = psegAccum.lineDimensionBins.find(_.page == pageId).get
+    val lineBins = pageSegAccum.lineDimensionBins.find(_.page == pageId).get
 
     // println("binned lines for page")
     // lineBins.widthBin.foreach { case ((width, wfreq), binnedLines) =>
@@ -771,3 +838,4 @@ class DocumentSegmenter(
   }
 
 }
+

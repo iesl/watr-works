@@ -24,6 +24,7 @@ object Works extends App {
    croot => cwd/RelPath(croot)
   ).getOrElse(sys.error("no corpus root specified"))
 
+
   def setAction(conf: AppConfig, action: (AppConfig) => Unit): AppConfig = {
     conf.copy(exec=Option(action))
   }
@@ -75,6 +76,12 @@ object Works extends App {
         createBoundingBoxSvg(ac)
       })
     } text ("run column detection (for debugging)")
+
+    cmd("sec") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        findSectionHeaders(ac)
+      })
+    } text ("section heading (debug)")
 
     cmd("docseg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -174,6 +181,35 @@ object Works extends App {
 
   }
 
+  def findSectionHeaders(conf: AppConfig): Unit = {
+
+    processCorpus(conf, "bbox.svg", (pdfins: InputStream, outputPath: String) => {
+      val dx = extract.DocumentExtractor
+      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
+      segmenter.runLineDetermination()
+      segmenter.findMostFrequentLineDimensions()
+      segmenter.buildExpandedTOC()
+      val pageZones = for {
+        pageId <- segmenter.pages.getPages
+      } yield {
+        println(s"segmenting page ${pageId}")
+      }
+
+      // dx.pages
+      segmenter.runLineDetermination()
+    //   pageSegAccum = findMostFrequentLineDimensions(pageSegAccum)
+
+    //   val pageZones = for {
+    //     pageId <- pages.getPages
+    //   } yield {
+    //     println(s"segmenting page ${pageId}")
+    //     buildTableOfSections(pageId, pageSegAccum)
+    //     determineZones(pageId, pageSegAccum)
+    //   }
+      ""
+    })
+
+  }
 
 
   def createBoundingBoxSvg(conf: AppConfig): Unit = {
