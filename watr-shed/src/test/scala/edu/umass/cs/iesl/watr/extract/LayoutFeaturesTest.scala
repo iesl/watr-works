@@ -16,7 +16,7 @@ class DocumentFeatureTest extends FlatSpec {
   def is = getClass().getResourceAsStream("/spatial/0575.pdf.cermine-zones.json")
   def loadPageIterator = ZoneIterator.load(is)
 
-  it should "load info from json" in new SpatialJsonFormat {
+  it should "load info from json" in new ComponentDataTypeFormats {
     ZoneIterator.load(is).isDefined
   }
 
@@ -30,20 +30,20 @@ class DocumentFeatureTest extends FlatSpec {
       case None => None
     })
 
-    pageStream.foreach { pageIter =>
-      val zones = pageIter.getZones(LB.Block)
-      zones.foreach { zone =>
-        val bboxes = zone.getBoundingBoxes.map(_.bbox.prettyPrint).mkString(", ")
-        // println(s"zone = ${zone.getText}   bbox = ${bboxes}")
-        println(s"zone = ${zone.getText} ")
-        val textDensity = DocumentFeatures.textDensity(zone)
-        println(s"    textDensity = ${textDensity}")
+    // pageStream.foreach { pageIter =>
+    //   val zones = pageIter.getZones(LB.Block)
+    //   zones.foreach { zone =>
+    //     val bboxes = zone.getBoundingBoxes.map(_.bbox.prettyPrint).mkString(", ")
+    //     // println(s"zone = ${zone.getText}   bbox = ${bboxes}")
+    //     println(s"zone = ${zone.getText} ")
+    //     val textDensity = DocumentFeatures.textDensity(zone)
+    //     println(s"    textDensity = ${textDensity}")
 
-        // zone.getTokens.map {case (tokenZone, tokenLabel) =>
-        //   println(s"${tokenLabel}:  ${tokenZone.bboxes.map(_.bbox.prettyPrint)}")
-        // }
-      }
+    //     // zone.getTokens.map {case (tokenZone, tokenLabel) =>
+    //     //   println(s"${tokenLabel}:  ${tokenZone.bboxes.map(_.bbox.prettyPrint)}")
+    //     // }
+    //   }
 
-    }
+    // }
   }
 }

@@ -1,8 +1,9 @@
 package edu.umass.cs.iesl.watr
-package spatial
+package spindex
 
 import org.scalatest._
 
+import IndexShapeEnrichments._
 
 class ZoneIteratorTest extends FlatSpec {
 

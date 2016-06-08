@@ -8,10 +8,10 @@ import java.nio.{file => nio}
 import play.api.libs.json
 import scala.util.{Try, Failure, Success}
 import org.jdom2
-import scalaz.{Tag, @@}
+import scalaz.@@
 import ammonite.ops._
 
-import TypeTags._
+// import TypeTags._
 
 
 case class HeaderInfo(
@@ -26,14 +26,10 @@ case class CorpusEntryMetadata(
   headers: Option[HeaderInfo]
 )
 
-trait CorpusJsonFormats {
+trait CorpusJsonFormats extends TypeTagFormats {
   import play.api.libs.json
   import json._
 
-  implicit def FormatSHA1String  = Format(
-    __.read[String].map(i => Tag.of[SHA1String](i)),
-    Writes[String@@SHA1String](i => JsString(i.unwrap))
-  )
 
   implicit def HeaderInfoFormat = Json.format[HeaderInfo]
   implicit def CorpusEntryMetadataFormat = Json.format[CorpusEntryMetadata]

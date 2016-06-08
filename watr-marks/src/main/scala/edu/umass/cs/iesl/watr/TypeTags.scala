@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 
 import scalaz.Tag
+import scalaz.@@
 
 sealed trait ZoneID
 sealed trait LabelID
@@ -9,6 +10,7 @@ sealed trait TokenID
 
 sealed trait PageID
 sealed trait CharID
+sealed trait ComponentID
 
 sealed trait SHA1String
 
@@ -21,11 +23,14 @@ object TypeTags {
   val TokenID = Tag.of[TokenID]
   val PageID = Tag.of[PageID]
   val CharID = Tag.of[CharID]
+  val ComponentID = Tag.of[ComponentID]
   val LabelID = Tag.of[LabelID]
 
   implicit class TagOps[A, T](val value: A@@T) extends AnyVal {
     def unwrap: A = Tag.of[T].unwrap(value)
   }
+
+  // type @@[A, B] = scalaz.@@[A, B]
 
 }
 
@@ -57,9 +62,17 @@ trait TypeTagFormats {
   val WriteCharID: Writes[Int@@CharID] = Writes[Int@@CharID] { i => JsNumber(i.unwrap) }
   implicit def FormatCharID            = Format(ReadCharID, WriteCharID)
 
+  val ReadComponentID: Reads[Int@@ComponentID]   = __.read[Int].map(i => Tag.of[ComponentID](i))
+  val WriteComponentID: Writes[Int@@ComponentID] = Writes[Int@@ComponentID] { i => JsNumber(i.unwrap) }
+  implicit def FormatComponentID            = Format(ReadComponentID, WriteComponentID)
+
   val ReadChar: Reads[Char]   = __.read[String].map(c => c(0))
   val WriteChar: Writes[Char] = Writes[Char] { c => JsString(c.toString()) }
   implicit def FormatChar     = Format(ReadChar, WriteChar)
 
 
+  implicit def FormatSHA1String  = Format(
+    __.read[String].map(i => Tag.of[SHA1String](i)),
+    Writes[String@@SHA1String](i => JsString(i.unwrap))
+  )
 }

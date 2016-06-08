@@ -13,7 +13,7 @@ import Bounds._
 import utils.IdGenerator
 import textboxing.{TextBoxing => TB}
 
-object DocumentExtractor extends SpatialJsonFormat {
+object DocumentExtractor extends ComponentDataTypeFormats {
 
   def extractBBoxesAsSvg(pdfins: InputStream, artifactPath: Option[String]): String = {
 

@@ -266,12 +266,17 @@ object Works extends App {
               val l=cbs.head.bbox.left
               val r=cbs.last.bbox.right
 
+
+              val cbspp = charBoxes.mkString(", ")
+
               val lineBounds = LTBounds(l, top, r-l, bottom-top).prettyPrint
 
               val lineChars = if(sortedXLine.exists(_._2!=" ")) {
-                (">>".box % "?>") +| hcat(sortedXLine.map(x => x._1 % x._2))
+                cbspp.box %
+                  ((">>".box % "?>") +| hcat(sortedXLine.map(x => x._1 % x._2)))
               } else {
-                ">>".box +| hcat(sortedXLine.map(x => x._1))
+                cbspp.box %
+                  (">>".box +| hcat(sortedXLine.map(x => x._1)))
               }
 
               lineChars % lineBounds

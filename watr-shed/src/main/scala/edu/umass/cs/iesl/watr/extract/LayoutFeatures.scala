@@ -4,29 +4,28 @@ package extract
 import spatial._
 
 object DocumentFeatures {
-  import SpatialEnrichments._
 
 
-  def textDensity(zoneIter: ZoneIterator): Double = {
+  // def textDensity(zoneIter: ZoneIterator): Double = {
 
-    // add up area of each token (a bit rougher approx. than char level)
-    val tokenArea: Double = zoneIter.getTokens.map(_._1.area).sum
-    val zoneArea = zoneIter.currentZone.area
+  //   // add up area of each token (a bit rougher approx. than char level)
+  //   val tokenArea: Double = zoneIter.getTokens.map(_._1.area).sum
+  //   val zoneArea = zoneIter.currentZone.area
 
-    tokenArea / zoneArea
-  }
+  //   tokenArea / zoneArea
+  // }
 
 
-  def charCountFeature(zoneIter: ZoneIterator): Double = {
-    val charCount = zoneIter
-      .getText.toCharArray
-      .foldLeft(0)({
-        case (acc, c) =>
-          if (c.isSpaceChar) acc else acc+1
-      })
+  // def charCountFeature(zoneIter: ZoneIterator): Double = {
+  //   val charCount = zoneIter
+  //     .getText.toCharArray
+  //     .foldLeft(0)({
+  //       case (acc, c) =>
+  //         if (c.isSpaceChar) acc else acc+1
+  //     })
 
-    charCount.toDouble
-  }
+  //   charCount.toDouble
+  // }
 
   def lineHeightMaxMeanFeature(zoneIter: ZoneIterator): Double = {
 

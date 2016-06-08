@@ -1,16 +1,10 @@
 package edu.umass.cs.iesl.watr
-package spatial
+package spindex
 
 import scalaz.@@
 import watrmarks._
 
-case class Point(
-  x: Double, y: Double
-)
-
-case class Line(
-  p1: Point, p2: Point
-)
+import IndexShapeEnrichments._
 
 case class TargetedBounds(
   id: Int@@RegionID,
@@ -58,6 +52,11 @@ case class ImgBox(
   bbox: LTBounds
 ) extends PageComponent
 
+case class FontInfo(
+  // fontName: String,
+  fontFamily: String,
+  fontSize: String
+)
 
 case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)
 
@@ -87,4 +86,58 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   implicit def FormatZoneRecords      = Json.format[ZoneRecords]
 
 
+}
+
+object ComponentTypeEnrichments {
+
+  implicit class RicherZone(val zone: Zone) extends AnyVal {
+
+    def area(): Double = {
+      zone.bboxes.foldLeft(0d){ case (acc, a) =>
+        a.bbox.area
+      }
+    }
+
+  }
+
+
+  implicit class RicherCharBox(val charBox: CharBox) extends AnyVal {
+    // case class CharBox(
+    //   id: Int@@CharID,
+    //   char: String,
+    //   bbox: LTBounds,
+    //   subs: String = "",
+    //   wonkyCharCode: Option[Int] = None
+    // )
+
+
+    def prettyPrint: String = {
+      charBox.wonkyCharCode
+        .map({ code =>
+          if (code==32) { "_"  }
+          else { s"#${code}?" }
+        })
+        .getOrElse({
+          if (!charBox.subs.isEmpty()) charBox.subs
+          else charBox.char
+        })
+    }
+
+    def bestGuessChar: String = {
+      charBox.wonkyCharCode
+        .map({ code =>
+          if (code==32) { s" "  }
+          else { s"#{${code}}" }
+        })
+        .getOrElse({
+          if (!charBox.subs.isEmpty()) charBox.subs
+          else charBox.char
+        })
+    }
+
+    def isWonky: Boolean = charBox.wonkyCharCode.isDefined
+
+    def isSpace: Boolean = charBox.wonkyCharCode.exists(_==32)
+
+  }
 }

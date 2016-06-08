@@ -10,9 +10,6 @@ import TypeTags._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
 
-  type @@[A, B] = scalaz.@@[A, B]
-
-  // val papers = papers
 
   val LB = watrmarks.StandardLabels
 

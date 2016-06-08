@@ -1,13 +1,38 @@
 package edu.umass.cs.iesl.watr
-package spatial
+package spindex
 
 import net.sf.jsi
 import utils.CompassDirection
 
-case class FontInfo(
-  // fontName: String,
-  fontFamily: String,
-  fontSize: String
+sealed trait Bounds
+
+case class LTBounds(
+  left: Double,
+  top: Double,
+  width: Double,
+  height: Double
+) extends Bounds
+
+case class LBBounds(
+  left: Double,
+  bottom: Double,
+  width: Double,
+  height: Double
+) extends Bounds
+
+case class Borders(
+  bleft: Double,
+  btop: Double,
+  bright: Double,
+  bbottom: Double
+)
+
+case class Point(
+  x: Double, y: Double
+)
+
+case class Line(
+  p1: Point, p2: Point
 )
 
 object jsiRectangle {
@@ -35,22 +60,7 @@ object jsiRectangle {
 
 
 
-object Bounds {
-
-  def charBoxesBounds(charBoxes: Seq[CharBox]): LTBounds = {
-    if (charBoxes.isEmpty) {
-      LTBounds(0, 0, 0, 0)
-    } else {
-      val cbs = charBoxes.sortBy(_.bbox.left)
-      val top = cbs.map(_.bbox.top).min
-      val bottom = cbs.map(_.bbox.bottom).max
-      val l=cbs.head.bbox.left
-      val r=cbs.last.bbox.right
-
-      LTBounds(l, top, r-l, bottom-top)
-    }
-  }
-
+object IndexShapeEnrichments {
 
   def fmt = (d: Double) => f"${d}%1.2f"
 
@@ -115,29 +125,33 @@ object Bounds {
 
   implicit class RicherLine(val line: Line) extends AnyVal {
 
+    def rise(): Double = line.p2.y - line.p1.y
+
+    def run(): Double =  line.p2.x - line.p1.x
+
+    def angle(): Double = math.atan2(line.rise, line.run)
+
+    def slope(): Double = (line.rise) / (line.run)
+
+    def length(): Double = {
+      math.sqrt(line.run*line.run + line.rise*line.rise)
+    }
+
     def ordered(l2: Line): (Line, Line) = {
       if (lineOrd.compare(line, l2) <= 0) (line, l2)
       else (l2, line)
     }
 
+    def centerPoint: Point = Point(
+      ((line.p1.x+line.p2.x) / 2),
+      ((line.p1.y+line.p2.y) / 2)
+    )
 
-    // def inside(l2: Line): Boolean = {
-    //   val (lmin, lmax) = ordered(l2)
-
-    //   true
-    // }
-
-    // def overlaps(l2: Line): Boolean = {
-
-    //   true
-    // }
-    // def intersects(l2: Line): Boolean = {
-    //   true
-
-    // }
   }
 
   implicit class RicherLTBounds(val tb: LTBounds) extends AnyVal {
+    def area: Double = tb.width*tb.height
+
     def right = tb.left+tb.width
     def bottom = tb.top+tb.height
 
@@ -276,88 +290,22 @@ object Bounds {
     }
   }
 
-
-  implicit class RicherCharBox(val charBox: CharBox) extends AnyVal {
-    // case class CharBox(
-    //   id: Int@@CharID,
-    //   char: String,
-    //   bbox: LTBounds,
-    //   subs: String = "",
-    //   wonkyCharCode: Option[Int] = None
-    // )
-
-
-    def prettyPrint: String = {
-      charBox.wonkyCharCode
-        .map({ code =>
-          if (code==32) { "_"  }
-          else { s"#${code}?" }
-        })
-        .getOrElse({
-          if (!charBox.subs.isEmpty()) charBox.subs
-          else charBox.char
-        })
-    }
-
-    def bestGuessChar: String = {
-      charBox.wonkyCharCode
-        .map({ code =>
-          if (code==32) { s" "  }
-          else { s"#{${code}}" }
-        })
-        .getOrElse({
-          if (!charBox.subs.isEmpty()) charBox.subs
-          else charBox.char
-        })
-    }
-
-    def isWonky: Boolean = charBox.wonkyCharCode.isDefined
-
-    def isSpace: Boolean = charBox.wonkyCharCode.exists(_==32)
-
-  }
 }
 
-// import Bounds._
+import IndexShapeEnrichments._
+object IndexShapeOperations {
+  def charBoxesBounds(charBoxes: Seq[CharBox]): LTBounds = {
+    if (charBoxes.isEmpty) {
+      LTBounds(0, 0, 0, 0)
+    } else {
+      val cbs = charBoxes.sortBy(_.bbox.left)
+      val top = cbs.map(_.bbox.top).min
+      val bottom = cbs.map(_.bbox.bottom).max
+      val l=cbs.head.bbox.left
+      val r=cbs.last.bbox.right
 
-sealed trait Bounds
-
-case class LTBounds(
-  left: Double,
-  top: Double,
-  width: Double,
-  height: Double
-) extends Bounds
-
-case class LBBounds(
-  left: Double,
-  bottom: Double,
-  width: Double,
-  height: Double
-) extends Bounds
-
-case class Borders(
-  bleft: Double,
-  btop: Double,
-  bright: Double,
-  bbottom: Double
-)
-
-
-
-object SpatialEnrichments {
-
-  implicit class RicherZone(val zone: Zone) extends AnyVal {
-
-    def area(): Double = {
-      zone.bboxes.foldLeft(0d){ case (acc, a) =>
-        a.bbox.area
-      }
+      LTBounds(l, top, r-l, bottom-top)
     }
-
   }
 
-  implicit class RicherLTBounds(val bb: LTBounds) extends AnyVal {
-    def area: Double = bb.width*bb.height
-  }
 }

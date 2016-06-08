@@ -4,65 +4,43 @@ package segment
 import spatial._
 import extract._
 
+// import watrmarks.{StandardLabels => LB}
+import TypeTags._
+
 class ZoneIndexConstructionTest extends DocsegTestUtil  {
 
-  behavior of "zone index for segmentation"
+  // TODO this test class belongs in watrmarks, but watrshed contains char extraction, so it is here for
+  //   convenience
 
-  case class Example(
-    region: TestRegion,
-    skip: Boolean = false
-  )
+  behavior of "zone indexing"
 
-  val examples = List(
-    Example(
-      TestRegion(papers.`6376.pdf`, page(0), LTBounds(0.0d, 740.0, 300.0, 15.0))
+  it should "allow labeling zones" in  {
+    val pg = PageID(0)
+    val bbox = LTBounds(166.0d, 549.0, 350.0, 15.0)
+    val text = """Y. Adachi {^{a∗},} H. Morita {^{a},} T. Kanomata {^{b},} A. Sato {^{b},} H. Yoshida {^{c},}"""
+
+    val paper = papers.`6376.pdf`
+    val zoneIndex = ZoneIndexer.loadSpatialIndices(
+      DocumentExtractor.extractChars(paper)
     )
-      // Example(
-      //   TestRegion(papers.`6376.pdf`, page(0), LTBounds(166.0d, 586.0, 350.0, 48.0)),
-      //   wsv("8510 8537 8577 2123")
-      // )
-  )
 
-  it should "identify text lines" in {
-    examples.foreach { example =>
-      if (!example.skip) {
-        val pages = DocumentExtractor.extractChars(example.region.pdf)
-        pages.foreach { case(pageChars, geom) =>
-          println(s"page bounds = ${geom.bounds.prettyPrint}")
-          pageChars.chars.take(20).foreach { charbox =>
-            println(s"${charbox.char} = ${charbox.bbox.prettyPrint}")
-          }
-        }
-        val zoneIndex = ZoneIndexer.loadSpatialIndices(pages)
-      }
+    // Old method:
+    val chars: Seq[CharBox] = zoneIndex.queryChars(pg, bbox)
+    val found = chars.sortBy(_.bbox.left).map({ cbox => cbox.char }).toList.mkString
+    val lineChars = chars.sortBy(_.bbox.left)
+    val ccs = Component(lineChars.map(Component(_)), LB.Line)
+    val tokenized = ccs.tokenizeLine().toText
+    println(s"found chars: ${found}")
+    println(s"tokenized  : ${tokenized}")
+    // Line labeling process
+    // val chars: Seq[PageComponent] = zoneIndex.queryChars(pg, bbox)
+    // zoneIndex.addComponent()
+    // zoneIndex.addLabels(ccs)
+    // val ccRet = zoneIndex.query(LB.Line)
+    // find chars with common baseline
+    // label as 'line'
 
-    }
+    // zoneIndex
   }
+
 }
-// J:  '74'
-//     Rise              0.0                                => Float
-//     AscentLine         [236.5003 738.5823, 1.0}}] -> [239.60068 738.5823, 1.0}}] 3.1003723}       => LineSegment
-//     Baseline           [236.5003 733.1387, 1.0}}] -> [239.60068 733.1387, 1.0}}] 3.1003723}         => LineSegment
-//     Baseline (uns)     [0.0 0.0, 1.0}}] -> [0.389 0.0, 1.0}}] 0.389} => LineSegment
-//     DescentLine        [236.5003 731.4092, 1.0}}] -> [239.60068 731.4092, 1.0}}] 3.1003723}      => LineSegment
-//     Mcid              null              => Integer
-//     PdfString         J              => PdfString
-
-// o:  '111'
-//     Rise              0.0                                => Float
-//     AscentLine         [239.60068 738.5823, 1.0}}] -> [243.58572 738.5823, 1.0}}] 3.9850464}       => LineSegment
-//     Baseline           [239.60068 733.1387, 1.0}}] -> [243.58572 733.1387, 1.0}}] 3.9850464}         => LineSegment
-//     Baseline (uns)     [0.0 0.0, 1.0}}] -> [0.5 0.0, 1.0}}] 0.5} => LineSegment
-//     DescentLine        [239.60068 731.4092, 1.0}}] -> [243.58572 731.4092, 1.0}}] 3.9850464}      => LineSegment
-//     Mcid              null              => Integer
-//     PdfString         o              => PdfString
-
-// u:  '117'
-//     Rise              0.0                                => Float
-//     AscentLine         [243.58572 738.5823, 1.0}}] -> [247.57077 738.5823, 1.0}}] 3.9850464}       => LineSegment
-//     Baseline           [243.58572 733.1387, 1.0}}] -> [247.57077 733.1387, 1.0}}] 3.9850464}         => LineSegment
-//     Baseline (uns)     [0.0 0.0, 1.0}}] -> [0.5 0.0, 1.0}}] 0.5} => LineSegment
-//     DescentLine        [243.58572 731.4092, 1.0}}] -> [247.57077 731.4092, 1.0}}] 3.9850464}      => LineSegment
-//     Mcid              null              => Integer
-//     PdfString         u              => PdfString
-

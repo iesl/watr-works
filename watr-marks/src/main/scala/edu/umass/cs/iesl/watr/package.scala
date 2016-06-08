@@ -4,7 +4,6 @@ package edu.umass.cs.iesl.watr
 
 object `package` extends PackageDefs {
 
-  type @@[A, B] = scalaz.@@[A, B]
 
   def time[R](prefix: String)(block: => R): R = {
     val t0 = System.nanoTime()

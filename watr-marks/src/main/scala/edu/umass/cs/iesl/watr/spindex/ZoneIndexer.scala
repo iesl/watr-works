@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spatial
+package spindex
 
 import scala.collection.mutable
 import scala.collection.mutable
@@ -10,8 +10,10 @@ import net.sf.jsi.rtree.RTree
 
 import watrmarks._
 import TypeTags._
-import Bounds._
 import scalaz.@@
+import ComponentOps._
+import IndexShapeEnrichments._
+import ComponentTypeEnrichments._
 
 class ZoneIndexer  {
 
