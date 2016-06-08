@@ -60,7 +60,7 @@ object jsiRectangle {
 
 
 
-object IndexShapeEnrichments {
+object IndexShapeOperations {
 
   def fmt = (d: Double) => f"${d}%1.2f"
 
@@ -290,22 +290,18 @@ object IndexShapeEnrichments {
     }
   }
 
-}
-
-import IndexShapeEnrichments._
-object IndexShapeOperations {
-  def charBoxesBounds(charBoxes: Seq[CharBox]): LTBounds = {
+  def charBoxesBounds(charBoxes: Seq[PageRegion]): LTBounds = {
     if (charBoxes.isEmpty) {
       LTBounds(0, 0, 0, 0)
     } else {
-      val cbs = charBoxes.sortBy(_.bbox.left)
-      val top = cbs.map(_.bbox.top).min
-      val bottom = cbs.map(_.bbox.bottom).max
-      val l=cbs.head.bbox.left
-      val r=cbs.last.bbox.right
+      val cbs = charBoxes.sortBy(_.region.bbox.left)
+      val top = cbs.map(_.region.bbox.top).min
+      val bottom = cbs.map(_.region.bbox.bottom).max
+      val l=cbs.head.region.bbox.left
+      val r=cbs.last.region.bbox.right
 
       LTBounds(l, top, r-l, bottom-top)
     }
   }
-
 }
+

@@ -6,7 +6,7 @@ import org.scalatest._
 import play.api.libs.json
 import json._
 
-class SpatialInfoTest extends FlatSpec {
+class ComponentSerializationTest extends FlatSpec {
 
   behavior of "spatial info"
 
@@ -24,7 +24,7 @@ class SpatialInfoTest extends FlatSpec {
          |""".stripMargin)
     val jsvalue = json.Json.parse(targetedBoundsJson)
 
-    val tb = jsvalue.as[TargetedBounds]
+    val tb = jsvalue.as[TargetRegion]
 
     val zoneExample =(
       s"""|{  "id" : 6130,

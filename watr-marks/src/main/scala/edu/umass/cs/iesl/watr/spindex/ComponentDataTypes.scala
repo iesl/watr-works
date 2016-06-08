@@ -4,9 +4,9 @@ package spindex
 import scalaz.@@
 import watrmarks._
 
-import IndexShapeEnrichments._
+import IndexShapeOperations._
 
-case class TargetedBounds(
+case class TargetRegion(
   id: Int@@RegionID,
   target: Int@@PageID,
   bbox: LTBounds
@@ -14,13 +14,12 @@ case class TargetedBounds(
 
 case class Zone(
   id: Int@@ZoneID,
-  bboxes: List[TargetedBounds]
+  regions: List[TargetRegion]
 ) {
   def withLabel(l: Label) = ZoneAndLabel(
     this.id, l
   )
 }
-
 
 case class PageGeometry(
   id: Int@@PageID,
@@ -28,29 +27,60 @@ case class PageGeometry(
   borders:Option[Borders]
 )
 
-case class PageChars(
+case class PageRegions(
   id: Int@@PageID,
-  chars: Seq[CharBox]
+  regions: Seq[PageRegion]
 )
 
+sealed trait PageRegion {
+  def region: TargetRegion
+}
+
+// object PageRegion {
+//   def apply(
+//     region: TargetRegion,
+//     char: String,
+//     subs: String = "",
+//     wonkyCharCode: Option[Int] = None
+//   ) = CharRegion(region, char, subs, wonkyCharCode)
+
+//   def apply(region: TargetRegion) = ImgRegion(region)
 
 
-sealed trait PageComponent
-// unify charId, componentid
-// TODO make CharBox/ImgBox use Targeted
 
-case class CharBox(
-  id: Int@@CharID,
-  char: String,
-  bbox: LTBounds,
-  subs: String = "",
-  wonkyCharCode: Option[Int] = None
-) extends PageComponent
+// }
 
-case class ImgBox(
-  id: Int@@ComponentID,
-  bbox: LTBounds
-) extends PageComponent
+
+class CharRegion(
+  val region: TargetRegion,
+  val char: String,
+  val subs: String = "",
+  val wonkyCharCode: Option[Int] = None
+) extends PageRegion
+
+object CharRegion {
+  def unapply(r: CharRegion): Option[(TargetRegion, String, String, Option[Int])] =
+    Some((r.region, r.char, r.subs, r.wonkyCharCode))
+
+  def apply(region: TargetRegion,
+     char: String,
+     subs: String = "",
+     wonkyCharCode: Option[Int] = None
+  ): CharRegion = new CharRegion(region, char, subs, wonkyCharCode)
+
+}
+
+
+class ImgRegion(
+  val region: TargetRegion
+) extends PageRegion
+
+object ImgRegion {
+  def unapply(rg: ImgRegion): Option[(TargetRegion)] = Some(rg.region)
+  def apply(region: TargetRegion): ImgRegion = new ImgRegion(region)
+
+}
+
 
 case class FontInfo(
   // fontName: String,
@@ -66,7 +96,7 @@ case class ZoneRecords(
   pageGeometries: Seq[PageGeometry],
   zones: Seq[Zone],
   labels: Seq[ZoneAndLabel],
-  chars: Seq[PageChars]
+  pageRegions: Seq[PageRegions]
 )
 
 trait ComponentDataTypeFormats extends TypeTagFormats {
@@ -75,15 +105,17 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
 
   implicit def FormatLBBounds         = Json.format[LBBounds]
   implicit def FormatLTBounds         = Json.format[LTBounds]
-  implicit def FormatTargetedBounds   = Json.format[TargetedBounds]
+  implicit def FormatTargetedBounds   = Json.format[TargetRegion]
   implicit def FormatBorders          = Json.format[Borders]
   implicit def FormatLabel            = Json.format[Label]
   implicit def FormatPageGeometry     = Json.format[PageGeometry]
   implicit def FormatZone             = Json.format[Zone]
   implicit def FormatZoneAndLabel     = Json.format[ZoneAndLabel]
-  implicit def FormatCharBox          = Json.format[CharBox]
-  implicit def FormatPageChars        = Json.format[PageChars]
-  implicit def FormatZoneRecords      = Json.format[ZoneRecords]
+  implicit def FormatCharRegion       = Json.format[CharRegion]
+  implicit def FormatImgRegion        = Json.format[ImgRegion]
+  implicit def FormatPageRegion:Format[PageRegion]       = ??? // Json.format[PageRegion]
+  implicit def FormatPageRegions:Format[PageRegions]      = ??? // Json.format[PageRegions]
+  implicit def FormatZoneRecords:Format[ZoneRecords]      = ??? // Json.format[ZoneRecords]
 
 
 }
@@ -93,51 +125,69 @@ object ComponentTypeEnrichments {
   implicit class RicherZone(val zone: Zone) extends AnyVal {
 
     def area(): Double = {
-      zone.bboxes.foldLeft(0d){ case (acc, a) =>
+      zone.regions.foldLeft(0d){ case (acc, a) =>
         a.bbox.area
       }
     }
 
   }
+  implicit class RicherPageRegion(val pageRegion: PageRegion) extends AnyVal {
+
+    def prettyPrint: String = pageRegion match {
+      case b: CharRegion => b.prettyPrint
+      case b: ImgRegion => "<img>"
+    }
+
+    def bestGuessChar: String = pageRegion match {
+      case b: CharRegion => b.bestGuessChar
+      case b: ImgRegion => ""
+    }
+
+    def isSpace: Boolean = pageRegion match {
+      case b: CharRegion => b.isSpace
+      case b: ImgRegion => false
+    }
+
+    def isChar: Boolean = pageRegion match {
+      case b: CharRegion => true
+      case b: ImgRegion => false
+    }
+    // def isWonky: Boolean = charRegion.wonkyCharCode.isDefined
 
 
-  implicit class RicherCharBox(val charBox: CharBox) extends AnyVal {
-    // case class CharBox(
-    //   id: Int@@CharID,
-    //   char: String,
-    //   bbox: LTBounds,
-    //   subs: String = "",
-    //   wonkyCharCode: Option[Int] = None
-    // )
+  }
+
+
+  implicit class RicherCharRegion(val charRegion: CharRegion) extends AnyVal {
 
 
     def prettyPrint: String = {
-      charBox.wonkyCharCode
+      charRegion.wonkyCharCode
         .map({ code =>
           if (code==32) { "_"  }
           else { s"#${code}?" }
         })
         .getOrElse({
-          if (!charBox.subs.isEmpty()) charBox.subs
-          else charBox.char
+          if (!charRegion.subs.isEmpty()) charRegion.subs
+          else charRegion.char
         })
     }
 
     def bestGuessChar: String = {
-      charBox.wonkyCharCode
+      charRegion.wonkyCharCode
         .map({ code =>
           if (code==32) { s" "  }
           else { s"#{${code}}" }
         })
         .getOrElse({
-          if (!charBox.subs.isEmpty()) charBox.subs
-          else charBox.char
+          if (!charRegion.subs.isEmpty()) charRegion.subs
+          else charRegion.char
         })
     }
 
-    def isWonky: Boolean = charBox.wonkyCharCode.isDefined
+    def isWonky: Boolean = charRegion.wonkyCharCode.isDefined
 
-    def isSpace: Boolean = charBox.wonkyCharCode.exists(_==32)
+    def isSpace: Boolean = charRegion.wonkyCharCode.exists(_==32)
 
   }
 }

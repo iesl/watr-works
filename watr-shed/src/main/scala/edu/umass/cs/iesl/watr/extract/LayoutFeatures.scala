@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-import spatial._
+import spindex._
 
 object DocumentFeatures {
 

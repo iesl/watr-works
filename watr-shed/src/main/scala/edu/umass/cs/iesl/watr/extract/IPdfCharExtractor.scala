@@ -13,7 +13,7 @@ import com.itextpdf.text.pdf.parser.{Vector => PVector, RenderListener, _}
 import util._
 import utils._
 // import watrmarks._
-import spatial._
+import spindex._
 import TypeTags._
 
 import scalaz.{@@}
@@ -55,11 +55,10 @@ class MyBxDocumentCreator(
   fontDict: mutable.Map[String, DocumentFont],
   reader: PdfReader,
   charsToDebug: Set[Int] = Set(),
-  charIdGen: IdGenerator[CharID]
-  // pageIdGen: IdGenerator[PageID]
+  componentIdGen: IdGenerator[RegionID]
 ) extends RenderListener {
 
-  var currCharBuffer: mutable.ArrayBuffer[CharBox] = mutable.ArrayBuffer[CharBox]()
+  var currCharBuffer: mutable.ArrayBuffer[PageRegion] = mutable.ArrayBuffer[PageRegion]()
 
   var pageRectangle: Rectangle = _
 
@@ -160,10 +159,13 @@ class MyBxDocumentCreator(
       if (!wonkyChar.exists(_ == 32)) {
 
         val charBox = charBounds.map(bnds =>
-          CharBox(
-            charIdGen.nextId,
+          CharRegion(
+            TargetRegion(
+              componentIdGen.nextId,
+              PageID(0),
+              bnds
+            ),
             bakedChar,
-            bnds,
             subChars.map(_.mkString).getOrElse(""),
             wonkyCharCode = wonkyChar
           )
@@ -192,7 +194,29 @@ class MyBxDocumentCreator(
   }
 
   override def renderImage(iri: ImageRenderInfo): Unit = {
-    // val img = iri.getImage
+    val img = iri.getImage
+    val bimg = img.getBufferedImage
+
+    val x = bimg.getMinX.toDouble
+    val y = bimg.getMinY.toDouble
+    val w = bimg.getWidth.toDouble
+    val h = bimg.getHeight.toDouble
+
+    val bounds = LTBounds(
+      x - pageRectangle.getLeft,
+      pageRectangle.getHeight - y - pageRectangle.getBottom - h,
+      w, h
+    )
+
+    val imgRegion = ImgRegion(
+        TargetRegion(
+          componentIdGen.nextId,
+          PageID(0),
+          bounds
+        )
+      )
+
+    currCharBuffer.append(imgRegion)
   }
 
 }
@@ -200,7 +224,7 @@ class MyBxDocumentCreator(
 
 class XITextCharacterExtractor(
   charsToDebug: Set[Int] = Set(),
-  charIdGen: IdGenerator[CharID]
+  componentIdGen: IdGenerator[RegionID]
 ) {
   val DEFAULT_FRONT_PAGES_LIMIT = 20
   val DEFAULT_BACK_PAGES_LIMIT = 20
@@ -247,7 +271,7 @@ class XITextCharacterExtractor(
   }
 
 
-  var pagesInfo: List[(PageChars, PageGeometry)] = List()
+  var pagesInfo: List[(PageRegions, PageGeometry)] = List()
 
   def extractCharacters(stream: InputStream): Unit = {
     try {
@@ -255,7 +279,7 @@ class XITextCharacterExtractor(
 
       val documentCreator = new MyBxDocumentCreator(
         fontDict, reader, charsToDebug,
-        charIdGen
+        componentIdGen
       )
 
       val processor = new PdfContentStreamProcessor(documentCreator)
@@ -281,9 +305,9 @@ class XITextCharacterExtractor(
 
         val pageGeometry = getReportedPageGeometry(pageId, pageSize)
 
-        val pageCharBoxes = Seq[CharBox](documentCreator.currCharBuffer:_*)
+        val pageCharRegions = Seq[PageRegion](documentCreator.currCharBuffer:_*)
 
-        val pageChars = PageChars(pageId, pageCharBoxes)
+        val pageChars = PageRegions(pageId, pageCharRegions)
 
         pagesInfo = pagesInfo :+ (
           (pageChars, pageGeometry)

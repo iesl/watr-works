@@ -5,8 +5,12 @@ package extract
 import ammonite.ops._
 import java.io.{ InputStream  }
 import textboxing.{TextBoxing => TB}
-import spatial._
-import Bounds._
+import spindex._
+import IndexShapeOperations._
+// import ComponentTypeEnrichments._
+  // import ComponentOperations._
+  // import ComponentRendering._
+
 
 
 object Works extends App {
@@ -233,9 +237,10 @@ object Works extends App {
     def proc(pdf: InputStream, outputPath: String): String = {
       val pageChars = DocumentExtractor
         .extractChars(pdf)
-        .map({case(pageChars, pageGeom) =>
-          val sortedYPage = pageChars.chars
-            .groupBy(_.bbox.top.pp)
+        .map({case(pageRegions, pageGeom) =>
+          val sortedYPage = pageRegions.regions
+            .collect({case c: CharRegion => c})
+            .groupBy(_.region.bbox.top.pp)
             .toSeq
             .sortBy(_._1.toDouble)
 
@@ -244,7 +249,7 @@ object Works extends App {
 
 
               val sortedXLine = charBoxes
-                .sortBy(_.bbox.left)
+                .sortBy(_.region.bbox.left)
                 .map({ charBox =>
                   charBox.wonkyCharCode
                     .map({ code =>
@@ -260,11 +265,11 @@ object Works extends App {
                     })
                 })
 
-              val cbs = charBoxes.sortBy(_.bbox.left)
-              val top = cbs.map(_.bbox.top).min
-              val bottom = cbs.map(_.bbox.bottom).max
-              val l=cbs.head.bbox.left
-              val r=cbs.last.bbox.right
+              val cbs = charBoxes.sortBy(_.region.bbox.left)
+              val top = cbs.map(_.region.bbox.top).min
+              val bottom = cbs.map(_.region.bbox.bottom).max
+              val l=cbs.head.region.bbox.left
+              val r=cbs.last.region.bbox.right
 
 
               val cbspp = charBoxes.mkString(", ")

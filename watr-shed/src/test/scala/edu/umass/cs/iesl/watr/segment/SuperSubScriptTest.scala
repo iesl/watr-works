@@ -1,25 +1,31 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import spatial._
+import spindex._
 // import Bounds._
 import extract._
+
+// import IndexShapeOperations._
+// import ComponentTypeEnrichments._
+// import ComponentRendering._
+import ComponentOperations._
+
 
 class SuperSubScriptTest extends DocsegTestUtil {
   behavior of "docstrum segmenter"
 
-// super/subscript
-//Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111030.pdf.d/101016jactamat201111030.pdf
-// respect to Pb(Zr_x_Ti_1_ _x_)O_3_ (PZT) solid solution thin ﬁlms                                                                                 (l:32.71, t:634.53, w:250.95, h:10.93)
-// Pb(Zr_x_Ti_1_ _x_)O_3_ is one of the most studied ferroelectric                                                                                  (l:313.63, t:658.46, w:239.03, h:10.93)
+  // super/subscript
+  //Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111030.pdf.d/101016jactamat201111030.pdf
+  // respect to Pb(Zr_x_Ti_1_ _x_)O_3_ (PZT) solid solution thin ﬁlms                                                                                 (l:32.71, t:634.53, w:250.95, h:10.93)
+  // Pb(Zr_x_Ti_1_ _x_)O_3_ is one of the most studied ferroelectric                                                                                  (l:313.63, t:658.46, w:239.03, h:10.93)
 
-// Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111030.pdf.d/101016jactamat201111030.pdf
-// Pb_1__.__2_Zr_0__.__5__3_Ti_0__.__4__7_O_3_ (PZT53) precursor solution. Reference    (l:311.53, t:117.10, w:250.97, h:10.83)
+  // Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111030.pdf.d/101016jactamat201111030.pdf
+  // Pb_1__.__2_Zr_0__.__5__3_Ti_0__.__4__7_O_3_ (PZT53) precursor solution. Reference    (l:311.53, t:117.10, w:250.97, h:10.83)
 
-//Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401009.pdf.d/101016jactamat200401009.pdf
-// Ti (under 38 lm) and ethylene glycol (5.0 10^3^ mm^3^ for                 (l:50.63, t:187.88, w:239.08, h:11.58)
+  //Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401009.pdf.d/101016jactamat200401009.pdf
+  // Ti (under 38 lm) and ethylene glycol (5.0 10^3^ mm^3^ for                 (l:50.63, t:187.88, w:239.08, h:11.58)
 
-// Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
+  // Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
 // ^a^, A.F. Gourgues ^b^^,^^*^, A. Pineau ^b^                                                                             (l:142.19, t:202.91, w:302.77, h:15.44)
 
   case class Example(
@@ -65,7 +71,6 @@ class SuperSubScriptTest extends DocsegTestUtil {
       )
     )
 
-
     examples.foreach { example =>
       if (! example.skip) {
         // DocumentExtractor.extractChars(pdfIns, Set(375, 376))// add char ids to output pathological debug info
@@ -76,9 +81,9 @@ class SuperSubScriptTest extends DocsegTestUtil {
 
         val chars = zoneIndex.queryChars(example.region.page, example.region.bbox)
 
-        val found = chars.sortBy(_.bbox.left).map({ cbox => cbox.char }).toList.mkString
+        val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
 
-        val lineChars = chars.sortBy(_.bbox.left)
+        val lineChars = chars.sortBy(_.region.bbox.left)
         val ccs = Component(lineChars.map(Component(_)), LB.Line)
 
         val tokenized = ccs.tokenizeLine().toText

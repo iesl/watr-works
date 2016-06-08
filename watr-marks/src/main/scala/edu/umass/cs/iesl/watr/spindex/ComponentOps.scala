@@ -2,17 +2,18 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 
-import IndexShapeEnrichments._
-import utils.Histogram._
 import watrmarks.{StandardLabels => LB, Label}
 import scala.collection.mutable
 import utils.Histogram
+import utils.Histogram._
 
-object ComponentOps {
-  def centerX(cb: CharBox) = cb.bbox.toCenterPoint.x
-  def centerY(cb: CharBox) = cb.bbox.toCenterPoint.y
+import IndexShapeOperations._
 
-  def spaceWidths(cs: Seq[CharBox]): Seq[Double] = {
+object ComponentOperations {
+  def centerX(cb: PageRegion) = cb.region.bbox.toCenterPoint.x
+  def centerY(cb: PageRegion) = cb.region.bbox.toCenterPoint.y
+
+  def spaceWidths(cs: Seq[CharRegion]): Seq[Double] = {
     pairwiseSpaceWidths(cs.map(Component(_)))
   }
 
@@ -27,7 +28,7 @@ object ComponentOps {
     dists :+ 0d
   }
 
-  def determineCharSpacings(chars: Seq[CharBox]): Seq[Double] = {
+  def determineCharSpacings(chars: Seq[CharRegion]): Seq[Double] = {
     val dists = spaceWidths(chars)
     val resolution = 0.5d
 

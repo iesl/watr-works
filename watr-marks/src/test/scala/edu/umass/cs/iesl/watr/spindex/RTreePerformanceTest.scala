@@ -3,7 +3,7 @@ package spindex
 
 import org.scalatest._
 
-class SpatialIndexTest extends FlatSpec {
+class RTreePerformanceTest extends FlatSpec {
 
   import gnu.trove.procedure.TIntProcedure
 

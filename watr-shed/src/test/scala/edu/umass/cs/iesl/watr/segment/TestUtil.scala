@@ -5,7 +5,7 @@ import org.scalatest._
 // import watrmarks._
 import java.io.InputStream
 import scalaz.@@
-import spatial._
+import spindex._
 import TypeTags._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {

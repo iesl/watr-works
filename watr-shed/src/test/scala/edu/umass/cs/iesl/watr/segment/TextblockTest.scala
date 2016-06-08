@@ -4,7 +4,7 @@ package segment
 
 import scalaz.@@
 
-import spatial._
+import spindex._
 import extract._
 
 // import segment.SpatialIndexOperations._

@@ -28,8 +28,8 @@ case class CCRenderState(
 }
 
 object ComponentRendering {
-  import ComponentOps._
-  import IndexShapeEnrichments._
+  import ComponentOperations._
+  import IndexShapeOperations._
   import ComponentTypeEnrichments._
 
 
@@ -165,22 +165,26 @@ object ComponentRendering {
         }
 
 
-      case charcomp: CharComponent =>
-        Seq(charcomp.component.bestGuessChar.box)
+      case comp: PageComponent => comp.component match {
+        case b: CharRegion =>
+          Seq(b.bestGuessChar.box)
+        case b: ImgRegion =>
+          Seq()
+      }
     }
   }
 
 
 
-  def charInfosBox(cbs: Seq[CharBox]): Seq[TB.Box] = {
+  def charInfosBox(cbs: Seq[CharRegion]): Seq[TB.Box] = {
     import TB._
 
     cbs.zip(spaceWidths(cbs))
       .map{ case (c, dist) =>
         (tbox(c.char.toString) +| "->" +| (dist.pp)) %
-          c.bbox.top.pp %
-          (c.bbox.left.pp +| c.bbox.right.pp) %
-          (c.bbox.bottom.pp +| "(w:" + c.bbox.width.pp + ")")
+          c.region.bbox.top.pp %
+          (c.region.bbox.left.pp +| c.region.bbox.right.pp) %
+          (c.region.bbox.bottom.pp +| "(w:" + c.region.bbox.width.pp + ")")
     }
   }
 
@@ -190,7 +194,7 @@ object ComponentRendering {
     //   case cc: ConnectedComponents =>
     //     println(s"""    cc: ${cc.toText} ${cc.bounds.prettyPrint} cc.right: ${cc.bounds.right}""")
 
-    //   case cc: CharComponent =>
+    //   case cc: PageComponent =>
     //     println(s"""    c:  ${cc.toText} ${cc.bounds.prettyPrint} cc.right: ${cc.bounds.right}""")
 
     // }}

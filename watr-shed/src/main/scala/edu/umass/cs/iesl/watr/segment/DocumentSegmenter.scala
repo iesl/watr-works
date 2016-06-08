@@ -3,18 +3,22 @@ package segment
 
 import java.io.InputStream
 import watrmarks._
-import spatial._
-import utils.CompassDirection
+import spindex._
+// import utils.CompassDirection
 
-import spatial._
+import spindex._
 import scalaz.@@
-import Bounds._
-import Component._
+// import Bounds._
+// import Component._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import utils._
 import TypeTags._
 import textboxing.{TextBoxing => TB}
+import IndexShapeOperations._
+import ComponentTypeEnrichments._
+import ComponentOperations._
+import ComponentRendering._
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
@@ -35,46 +39,46 @@ case class PageSegAccumulator(
 trait DocumentUtils {
 
 
-  def approxSortYX(charBoxes: Seq[CharBox]): Seq[CharBox] = {
+  def approxSortYX(charBoxes: Seq[PageRegion]): Seq[PageRegion] = {
     charBoxes.sortBy({ c =>
-      (c.bbox.top, c.bbox.left)
+      (c.region.bbox.top, c.region.bbox.left)
     })
   }
 
-  def squishb(charBoxes: Seq[CharBox]): String = {
+  def squishb(charBoxes: Seq[PageRegion]): String = {
     approxSortYX(charBoxes)
       .map({ cbox => cbox.prettyPrint })
       .mkString
   }
 
-  def squishc(charBoxes: Seq[CharComponent]): String = {
+  def squishc(charBoxes: Seq[PageComponent]): String = {
     squishb(charBoxes.map(_.component))
   }
 }
 
 object DocumentSegmenter extends DocumentUtils {
 
-  def pairwiseSpaces(cs: Seq[CharBox]): Seq[Double] = {
+  def pairwiseSpaces(cs: Seq[CharRegion]): Seq[Double] = {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.bbox.left - c1.bbox.right
+      case Seq(c1, c2)  => c2.region.bbox.left - c1.region.bbox.right
       case _  => 0d
     })
 
     dists :+ 0d
   }
 
-  def approximateLineBins(charBoxes: Seq[CharBox]): Seq[(LTBounds, Seq[CharBox])] = {
+  def approximateLineBins(charBoxes: Seq[CharRegion]): Seq[(LTBounds, Seq[CharRegion])] = {
     val sortedYPage = charBoxes
-      .groupBy(_.bbox.bottom.pp)
+      .groupBy(_.region.bbox.bottom.pp)
       .toSeq
       .sortBy(_._1.toDouble)
 
     val sortedXY = sortedYPage
       .map({case (topY, charBoxes) =>
         val sortedXLine = charBoxes
-          .sortBy(_.bbox.left)
+          .sortBy(_.region.bbox.left)
         (charBoxesBounds(sortedXLine), sortedXLine)
       })
     sortedXY
@@ -111,13 +115,14 @@ object DocumentSegmenter extends DocumentUtils {
 
   def createSegmenter(pdfins: InputStream): DocumentSegmenter = {
     val chars = extract.DocumentExtractor.extractChars(pdfins)
-    createSegmenter(chars)
+    createSegmenter(chars.map(c => (c._1.regions, c._2)))
   }
 
-  def createSegmenter(pagedefs: Seq[(PageChars, PageGeometry)]): DocumentSegmenter = {
-    val zoneIndex = ZoneIndexer.loadSpatialIndices(pagedefs)
+  def createSegmenter(pagedefs: Seq[(Seq[PageRegion], PageGeometry)]): DocumentSegmenter = {
+    val zoneIndex = ZoneIndexer.loadSpatialIndices2(pagedefs)
     new DocumentSegmenter(zoneIndex)
   }
+
 
   def debugFormatLine(cc: Component): String = {
     import TB._
@@ -279,7 +284,7 @@ class DocumentSegmenter(
   }
 
 
-  private def findNeighbors(pageId: Int@@PageID, qbox: CharBox): Seq[CharBox] = {
+  private def findNeighbors(pageId: Int@@PageID, qbox: CharRegion): Seq[CharRegion] = {
     pages.nearestNChars(pageId, qbox, 12, 15.0f)
       .filterNot(_.isWonky)
   }
@@ -287,18 +292,18 @@ class DocumentSegmenter(
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
-  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[CharBox]): Seq[CharBox] = {
+  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[CharRegion]): Seq[CharRegion] = {
     if (charBoxes.isEmpty) Seq()
     else {
-      val ids = charBoxes.map(_.id.unwrap)
+      val ids = charBoxes.map(_.region.id.unwrap)
       val minId = ids.min
       val maxId = ids.max
 
       val missingIds = (ids.min to ids.max) diff ids
-      val missingChars = missingIds.map(id => pages.getComponent(pageId, CharID(id)))
+      val missingChars = missingIds.map(id => pages.getComponent(pageId, RegionID(id)))
 
       // TODO check missing chars for overlap w/lineChars
-      val completeLine = (charBoxes ++ missingChars).sortBy(_.bbox.left)
+      val completeLine = (charBoxes ++ missingChars).sortBy(_.region.bbox.left)
 
       // // check for split in line
       // println(s"""${charBoxes.map(_.bestGuessChar).mkString}""")
@@ -310,10 +315,10 @@ class DocumentSegmenter(
 
   def determineLines(
     pageId: Int@@PageID,
-    components: Seq[CharBox]
+    components: Seq[CharRegion]
   ): Seq[ConnectedComponents] = {
 
-    val lineSets = new DisjointSets[CharBox](components)
+    val lineSets = new DisjointSets[CharRegion](components)
 
     // line-bin coarse segmentation
     val lineBins = approximateLineBins(components)
@@ -324,12 +329,12 @@ class DocumentSegmenter(
       if !lineChars.isEmpty
     } {
 
-      def spanloop(chars: Seq[CharBox]): Seq[Int] = {
+      def spanloop(chars: Seq[CharRegion]): Seq[Int] = {
         if (chars.isEmpty) Seq()
         else {
           val (line1, line2) = chars
             .sliding(2).span({
-              case Seq(ch1, ch2) => ch2.id.unwrap - ch1.id.unwrap < 20
+              case Seq(ch1, ch2) => ch2.region.id.unwrap - ch1.region.id.unwrap < 20
               case Seq(_)     => true
             })
           val len = line1.length
@@ -355,15 +360,15 @@ class DocumentSegmenter(
 
     // consider each line pair-wise and decide if they should be re-joined:
     val prejoined = lineSets.iterator().toSeq.map(
-      _.toSeq.sortBy(c => (c.bbox.left, c.bbox.top)).map(new CharComponent(_, docOrientation))
-    ).sortBy(_.map(_.component.id.unwrap).min)
+      _.toSeq.sortBy(c => (c.region.bbox.left, c.region.bbox.top)).map(new PageComponent(_, docOrientation))
+    ).sortBy(_.map(_.component.region.id.unwrap).min)
 
     val first = prejoined.headOption.toSeq
 
     val maybeJoined = prejoined.drop(1).toSeq
       .foldLeft(first)({ case (acc, l2) =>
         val l1 = acc.last
-        val idgap = l2.head.component.id.unwrap - l1.last.component.id.unwrap
+        val idgap = l2.head.component.region.id.unwrap - l1.last.component.region.id.unwrap
         val shouldJoin = (
           isStrictlyLeftToRight(l1.last, l2.head)
             && isOverlappedHorizontally(l1.last, l2.head)
@@ -399,7 +404,7 @@ class DocumentSegmenter(
     // })
 
     maybeJoined
-      .sortBy(b => b.map(_.component.id.unwrap).min)
+      .sortBy(b => b.map(_.component.region.id.unwrap).min)
       .map{ Component(_, LB.Line) }
   }
 
@@ -409,26 +414,26 @@ class DocumentSegmenter(
   /** Groups components into text lines. */
   def determineLinesNNSearchVersion(
     pageId: Int@@PageID,
-    components: Seq[CharBox]
+    components: Seq[CharRegion]
   ): Seq[ConnectedComponents] = {
 
     val readableComponents = components.filterNot(_.isWonky)
-    val sets = new DisjointSets[CharBox](readableComponents)
+    val sets = new DisjointSets[CharRegion](readableComponents)
 
 
-    for { component <- readableComponents.sortBy(_.bbox.left) } {
+    for { component <- readableComponents.sortBy(_.region.bbox.left) } {
       // val searchLog = mutable.ArrayBuffer[TB.Box]()
       findNeighbors(pageId, component)
         .foreach({neighbor =>
-          val angle = component.bbox.toCenterPoint.angleTo(neighbor.bbox.toCenterPoint)
+          val angle = component.region.bbox.toCenterPoint.angleTo(neighbor.region.bbox.toCenterPoint)
 
-          val maxWidth = math.max(neighbor.bbox.width, component.bbox.width)
-          val dx = neighbor.bbox.toCenterPoint.hdist(component.bbox.toCenterPoint)
-          val dy = neighbor.bbox.toCenterPoint.vdist(component.bbox.toCenterPoint)
-          val dist = neighbor.bbox.toCenterPoint.dist(component.bbox.toCenterPoint)
+          val maxWidth = math.max(neighbor.region.bbox.width, component.region.bbox.width)
+          val dx = neighbor.region.bbox.toCenterPoint.hdist(component.region.bbox.toCenterPoint)
+          val dy = neighbor.region.bbox.toCenterPoint.vdist(component.region.bbox.toCenterPoint)
+          val dist = neighbor.region.bbox.toCenterPoint.dist(component.region.bbox.toCenterPoint)
 
-          val eastWestDist = component.bbox.toEasternPoint.dist(
-            neighbor.bbox.toWesternPoint
+          val eastWestDist = component.region.bbox.toEasternPoint.dist(
+            neighbor.region.bbox.toWesternPoint
           )
 
           var joinWith = false
@@ -445,10 +450,10 @@ class DocumentSegmenter(
           }
 
           // { import TB._
-          //   val topsNotEq = component.bbox.top.pp != neighbor.bbox.top.pp
+          //   val topsNotEq = component.region.bbox.top.pp != neighbor.region.bbox.top.pp
           //   val angleNotZero = angle.pp != "0.00"
           //   searchLog.append(
-          //     s"   '${neighbor.char}' ${neighbor.wonkyCharCode} #${neighbor.id} ${neighbor.bbox.prettyPrint}".box %
+          //     s"   '${neighbor.char}' ${neighbor.wonkyCharCode} #${neighbor.id} ${neighbor.region.bbox.prettyPrint}".box %
           //       s"""       ${ if (joinWith && topsNotEq) "!join" else if (joinWith) "join" else "" }""" %
           //       s"       angle:${angle.pp} dx:${dx.pp} dy:${dy.pp}" %
           //       s"       dist:${dist.pp} e/wi-dist:${eastWestDist.pp}" %
@@ -459,7 +464,7 @@ class DocumentSegmenter(
 
       // { import TB._
       //   println(
-      //     s"'${component.char} #${component.id} ${component.bbox.prettyPrint}".box %
+      //     s"'${component.char} #${component.id} ${component.region.bbox.prettyPrint}".box %
       //     vcat(top)(searchLog.toList)
       //   )
       // }
@@ -467,7 +472,7 @@ class DocumentSegmenter(
     }
 
     val lines = sets.iterator().toSeq.map{
-      _.toSeq.sortBy(c => (c.bbox.left, c.bbox.top)).map(new CharComponent(_, docOrientation))
+      _.toSeq.sortBy(c => (c.region.bbox.left, c.region.bbox.top)).map(new PageComponent(_, docOrientation))
     }
 
 
@@ -480,7 +485,7 @@ class DocumentSegmenter(
   def charBasedPageBounds(
     pageId: Int@@PageID
   ): LTBounds = {
-    val allBboxes = pages.getComponents(pageId).map(_.bbox)
+    val allBboxes = pages.getComponents(pageId).map(_.region.bbox)
 
     if (allBboxes.isEmpty) LTBounds(0, 0, 0, 0) else {
       val minX = allBboxes.map(_.left).min

@@ -6,7 +6,7 @@ import net.sf.jsi.Rectangle
 
 // import scala.collection.mutable
 import extract.DocumentExtractor
-import spatial.{ZoneIndexer, LTBounds}
+import spindex.{ZoneIndexer, LTBounds}
 import TypeTags._
 import ammonite.ops._
 
@@ -102,7 +102,7 @@ class SvgOverviewServer(
 
     val bboxes = for {
       zone <- zones
-      region <- zone.bboxes
+      region <- zone.regions
     } yield {
       // region.bbox
       val zlabels = overlays.getZoneLabels(zone.id)

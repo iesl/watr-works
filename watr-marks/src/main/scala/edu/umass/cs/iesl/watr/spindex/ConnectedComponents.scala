@@ -1,25 +1,27 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import scala.collection.mutable
 import scalaz._
 import Scalaz._
 import utils._
 import watrmarks._
 
 import textboxing.{TextBoxing => TB}
-import ComponentRendering._
-import ComponentOps._
-import IndexShapeEnrichments._
 
-import watrmarks.{StandardLabels => LB}
+import ComponentRendering._
+import ComponentOperations._
+import IndexShapeOperations._
+import IndexShapeOperations._
+
+// import ComponentTypeEnrichments._
+// import watrmarks.{StandardLabels => LB}
 
 object Component {
 
 
-  def apply(charBox: CharBox): ConnectedComponents = {
+  def apply(charBox: CharRegion): ConnectedComponents = {
     new ConnectedComponents(
-      Seq(CharComponent(charBox, 0d)),
+      Seq(PageComponent(charBox, 0d)),
       0.0d,
       None
     )
@@ -48,11 +50,9 @@ sealed trait Component {
 
   def children(): Seq[Component]
 
-  def charComponents: Seq[CharComponent]
+  def charComponents: Seq[PageComponent]
 
   def mapChars(subs: Seq[(Char, String)]): Component
-
-  // def tokenizeLine(): ConnectedComponents
 
   def toText(implicit idgen:Option[CCRenderState] = None): String
 
@@ -67,8 +67,6 @@ sealed trait Component {
   def y1: Double = characteristicLine.p2.y
 
   def height: Double
-
-
 
   def angularDifference(j: Component): Double = {
     val diff = math.abs(characteristicLine.angle - j.characteristicLine.angle)
@@ -109,10 +107,10 @@ sealed trait Component {
 
 }
 
-import Component._
+// import Component._
 
-case class CharComponent(
-  component: CharBox,
+case class PageComponent(
+  component: PageRegion,
   orientation: Double,
   blockRole: Option[Label] = None
 ) extends Component {
@@ -123,20 +121,30 @@ case class CharComponent(
 
   def children(): Seq[Component] = Seq(this)
 
-  def charComponents: Seq[CharComponent] = Seq(this)
+  def charComponents: Seq[PageComponent] = Seq(this)
 
+  def char = component match {
+    case rg: CharRegion => rg.char.toString
+    case rg: ImgRegion => ""
+  }
 
   def mapChars(subs: Seq[(Char, String)]): Component  = {
     subs
-      .find(_._1.toString==component.char)
+      .find(_._1.toString==char)
       .map({case (_, sub) =>
-        this.copy(component=component.copy(subs = sub))
+        component match {
+          case rg: CharRegion => this.copy(
+            component= CharRegion.apply(rg.region, rg.char, sub, rg.wonkyCharCode))
+
+
+          case rg: ImgRegion  => this
+        }
       })
       .getOrElse(this)
   }
 
   override val characteristicLine: Line = {
-    val dx = component.bbox.width / 3
+    val dx = component.region.bbox.width / 3
     val dy = dx * math.tan(orientation);
 
     Line(Point(
@@ -148,10 +156,15 @@ case class CharComponent(
     ))
   }
 
-  val bounds = component.bbox
+  val bounds = component.region.bbox
   def height: Double  = bounds.height
 
-  def toText(implicit idgen:Option[CCRenderState] = None): String = component.char.toString
+  def toText(implicit idgen:Option[CCRenderState] = None): String = {
+    component match {
+      case rg: CharRegion => rg.char.toString
+      case rg: ImgRegion => ""
+    }
+  }
   def chars: String = toText
 
   val containedLabels: Set[Label] = blockRole.toSet
@@ -199,7 +212,7 @@ case class ConnectedComponents(
     components.map(_.chars).mkString
   }
 
-  def charComponents: Seq[CharComponent] =
+  def charComponents: Seq[PageComponent] =
     components.flatMap(_.charComponents)
 
   def toText(implicit idgen:Option[CCRenderState] = None): String ={

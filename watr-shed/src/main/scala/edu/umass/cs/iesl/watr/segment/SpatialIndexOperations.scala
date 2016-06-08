@@ -3,9 +3,12 @@ package segment
 
 import scalaz.@@
 
-import spatial._
-import Bounds._
+import spindex._
 import utils.CompassDirection
+import IndexShapeOperations._
+import ComponentTypeEnrichments._
+// import ComponentOperations._
+// import ComponentRendering._
 
 object SpatialIndexOperations {
 
@@ -14,16 +17,16 @@ object SpatialIndexOperations {
 
 
 
-    def approximateColumnBins(pageId: Int@@PageID, charBoxes: Seq[CharBox]): Seq[(CompassDirection, Line)] = {
+    def approximateColumnBins(pageId: Int@@PageID, charBoxes: Seq[CharRegion]): Seq[(CompassDirection, Line)] = {
       val leftBins = charBoxes
-        .groupBy(_.bbox.left.pp)
+        .groupBy(_.region.bbox.left.pp)
         .toSeq
         .filter(_._2.length > 1)
         .sortBy(_._1.toDouble)
 
 
       val leftEdges = leftBins.map({ case (leftXstr, bin) =>
-        val ysorted = bin.sortBy(_.bbox.bottom)
+        val ysorted = bin.sortBy(_.region.bbox.bottom)
         val colbounds = charBoxesBounds(ysorted)
         val leftEdge = colbounds.toLine(CompassDirection.W)
 
@@ -40,15 +43,15 @@ object SpatialIndexOperations {
 
 
         val (splits, leftovers) = charsToLeft
-          .sortBy(_.bbox.bottom)
-          .foldLeft((Seq[Seq[CharBox]](), ysorted)) ({case ((split, remaining), e) =>
-            val cbottom = e.bbox.bottom.pp
+          .sortBy(_.region.bbox.bottom)
+          .foldLeft((Seq[Seq[CharRegion]](), ysorted)) ({case ((split, remaining), e) =>
+            val cbottom = e.region.bbox.bottom.pp
 
             val cleanEdge = remaining
-              .takeWhile(ys => cbottom != ys.bbox.bottom.pp)
+              .takeWhile(ys => cbottom != ys.region.bbox.bottom.pp)
 
             val next = remaining.drop(cleanEdge.length)
-              .dropWhile(ys => cbottom == ys.bbox.bottom.pp)
+              .dropWhile(ys => cbottom == ys.region.bbox.bottom.pp)
 
             (split :+ cleanEdge, next)
           })

@@ -20,9 +20,7 @@ object ZoneIterator extends ComponentDataTypeFormats {
       .map { ZoneIndexer.loadSpatialIndices(_) }
       .getOrElse { sys.error("could not load zone records") }
 
-     zoneIndex
-      .pageGeometries.toList
-      .map(_._1)
+    zoneIndex.pageInfos.keys.toList
       .sortBy(PageID.unwrap(_))
       .toZipper
       .map(zipper => new PageIterator(zipper, zoneIndex))
@@ -46,7 +44,7 @@ class PageIterator(
   def getZones(label: Label): Stream[ZoneIterator] = {
     val maybeZones = zoneIndex.zoneLabelMap
       .filter({case (zoneId, labels) =>
-        (zoneIndex.zoneMap(zoneId).bboxes.exists(
+        (zoneIndex.zoneMap(zoneId).regions.exists(
           tbnds => tbnds.target==currPageID
         )) &&
         labels.contains(label)
@@ -92,8 +90,8 @@ class ZoneIterator(
     focii.next.map(new ZoneIterator(_, label, zoneIndex))
   }
 
-  def getBoundingBoxes(): Seq[TargetedBounds] = {
-    zoneIndex.zoneMap(getFocus).bboxes
+  def getBoundingBoxes(): Seq[TargetRegion] = {
+    zoneIndex.zoneMap(getFocus).regions
   }
 
   def currentZone: Zone = zoneIndex.zoneMap(getFocus)

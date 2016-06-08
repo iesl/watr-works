@@ -1,8 +1,14 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import spatial._
+import spindex._
 import extract._
+
+// import IndexShapeOperations._
+// import ComponentTypeEnrichments._
+// import ComponentRendering._
+
+import ComponentOperations._
 
 // import watrmarks.{StandardLabels => LB}
 import TypeTags._
@@ -25,9 +31,9 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
     )
 
     // Old method:
-    val chars: Seq[CharBox] = zoneIndex.queryChars(pg, bbox)
-    val found = chars.sortBy(_.bbox.left).map({ cbox => cbox.char }).toList.mkString
-    val lineChars = chars.sortBy(_.bbox.left)
+    val chars: Seq[CharRegion] = zoneIndex.queryChars(pg, bbox)
+    val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
+    val lineChars = chars.sortBy(_.region.bbox.left)
     val ccs = Component(lineChars.map(Component(_)), LB.Line)
     val tokenized = ccs.tokenizeLine().toText
     println(s"found chars: ${found}")

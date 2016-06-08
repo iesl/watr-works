@@ -5,7 +5,11 @@ package segment
 // import scalaz.@@
 import org.scalatest._
 
-import spatial._
+import spindex._
+import IndexShapeOperations._
+// import ComponentTypeEnrichments._
+// import ComponentRendering._
+import ComponentOperations._
 
 class TextlineSegTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"

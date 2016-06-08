@@ -4,8 +4,9 @@ package segment
 
 import org.scalatest._
 
-import spatial._
-import Bounds._
+import spindex._
+// import Bounds._
+import IndexShapeOperations._
 
 class AngleFilteringTest extends FlatSpec with Matchers {
   // import DocumentSegmenter._

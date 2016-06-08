@@ -3,7 +3,7 @@ package spindex
 
 import org.scalatest._
 
-import IndexShapeEnrichments._
+import IndexShapeOperations._
 
 class ZoneIteratorTest extends FlatSpec {
 
@@ -11,10 +11,10 @@ class ZoneIteratorTest extends FlatSpec {
   val LB = watrmarks.StandardLabels
 
   def is = getClass().getResourceAsStream("/spatial/0575.pdf.cermine-zones.json")
-  def loadPageIterator = ZoneIterator.load(is).get
+  def loadPageIterator: PageIterator = ???  // ZoneIterator.load(is).get
 
   it should "load info from json" in new ComponentDataTypeFormats {
-    ZoneIterator.load(is).isDefined
+    // ZoneIterator.load(is).isDefined
   }
 
 
@@ -27,7 +27,7 @@ class ZoneIteratorTest extends FlatSpec {
       println(s"zone = ${line.getText}   bbox = ${bboxes}")
 
       line.getTokens.map {case (tokenZone, tokenLabel) =>
-        println(s"${tokenLabel}:  ${tokenZone.bboxes.map(_.bbox.prettyPrint)}")
+        println(s"${tokenLabel}:  ${tokenZone.regions.map(_.bbox.prettyPrint)}")
       }
     }
 
