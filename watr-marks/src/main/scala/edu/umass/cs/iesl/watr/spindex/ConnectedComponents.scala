@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import scalaz._
-import Scalaz._
+// import Scalaz._
 import utils._
 import watrmarks._
 
@@ -11,41 +11,46 @@ import textboxing.{TextBoxing => TB}
 import ComponentRendering._
 import ComponentOperations._
 import IndexShapeOperations._
-import IndexShapeOperations._
 
 // import ComponentTypeEnrichments._
 // import watrmarks.{StandardLabels => LB}
 
 object Component {
 
+  // def apply(
+  //   charBox: CharRegion
+  // ): ConnectedComponents = {
+  //   new ConnectedComponents(
+  //     Seq(PageComponent(charBox, 0d)),
+  //     0.0d,
+  //     None
+  //   )
+  // }
+  // def apply(components: Seq[Component]): ConnectedComponents = {
+  //   new ConnectedComponents(
+  //     components,
+  //     0.0d
+  //   )
+  // }
 
-  def apply(charBox: CharRegion): ConnectedComponents = {
-    new ConnectedComponents(
-      Seq(PageComponent(charBox, 0d)),
-      0.0d,
-      None
-    )
-  }
-  def apply(components: Seq[Component]): ConnectedComponents = {
-    new ConnectedComponents(
-      components,
-      0.0d
-    )
-  }
-
-  def apply(components: Seq[Component], label: Label): ConnectedComponents = {
-    new ConnectedComponents(
-      components,
-      0.0d,
-      Option(label)
-    )
-  }
+  // def apply(components: Seq[Component], label: Label): ConnectedComponents = {
+  //   new ConnectedComponents(
+  //     components,
+  //     0.0d,
+  //     Option(label)
+  //   )
+  // }
 
 }
 
 
 
 sealed trait Component {
+  def id: Int@@ComponentID
+
+  def zoneIndex: ZoneIndexer
+
+
   def chars: String
 
   def children(): Seq[Component]
@@ -100,24 +105,37 @@ sealed trait Component {
   }
 
 
-  def withLabel(l: Label): Component
-  def removeLabel(): Component
-  def label: Option[Label]
-  def containedLabels: Set[Label]
+  def addLabel(l: Label): Component = {
+    // zoneIndex.addLabels( cl)
+    ???
+  }
+  def removeLabel(l: Label): Component = {
+
+
+    ???
+  }
+
+  def getLabels(): Set[Label] = {
+
+    ???
+  }
+
+  def containedLabels(): Set[Label] = {
+    getLabels() ++ (
+      children.map(_.containedLabels()).reduce(_ ++ _)
+    )
+  }
 
 }
 
 // import Component._
 
 case class PageComponent(
+  id: Int@@ComponentID,
   component: PageRegion,
-  orientation: Double,
-  blockRole: Option[Label] = None
+  orientation: Double
+  // blockRole: Option[Label] = None
 ) extends Component {
-
-  def tokenizeLine(): ConnectedComponents = {
-    Component(Seq(this))
-  }
 
   def children(): Seq[Component] = Seq(this)
 
@@ -167,21 +185,19 @@ case class PageComponent(
   }
   def chars: String = toText
 
-  val containedLabels: Set[Label] = blockRole.toSet
 
-  val label: Option[Label] = blockRole
-  def withLabel(l: Label): Component = {
-    this.copy(blockRole = Option(l))
-  }
-  def removeLabel(): Component = {
-    this.copy(blockRole = None)
-  }
+  def containedLabels(): Set[Label] = getLabels()
+  def addLabel(l: Label): Unit = {}
+  def removeLabel(l: Label): Unit = {}
+  def getLabels(): Set[Label]
+
 }
 
 case class ConnectedComponents(
+  id: Int@@ComponentID,
   components: Seq[Component],
-  orientation: Double,
-  blockRole: Option[Label] = None
+  orientation: Double
+  // blockRole: Option[Label] = None
   // label: Label = LB.Line
   // labels: Seq[Label] = Seq()
 ) extends Component {
@@ -195,18 +211,23 @@ case class ConnectedComponents(
   }
 
   def containedLabels: Set[Label] = {
-    blockRole.toSet ++ (components
+    getLabels() ++ (components
       .map(_.containedLabels)
       .reduce(_++_))
   }
 
-  val label: Option[Label] = blockRole
-  def withLabel(l: Label): Component = {
-    this.copy(blockRole = Option(l))
-  }
-  def removeLabel(): Component = {
-    this.copy(blockRole = None)
-  }
+  def addLabel(l: Label): Unit
+  def removeLabel(l: Label): Unit
+  def getLabels(): Set[Label]
+
+  // val label: Option[Label] = blockRole
+
+  // def withLabel(l: Label): Component = {
+  //   this.copy(blockRole = Option(l))
+  // }
+  // def removeLabel(): Component = {
+  //   this.copy(blockRole = None)
+  // }
 
   def chars:String = {
     components.map(_.chars).mkString

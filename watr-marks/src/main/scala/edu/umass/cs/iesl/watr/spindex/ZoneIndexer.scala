@@ -181,6 +181,12 @@ class ZoneIndexer  {
   }
 
 
+  def connectRegions(regions: Seq[PageRegion], label: Label): Component = {
+
+
+    ???
+  }
+
 
 // def queryComponents()
 

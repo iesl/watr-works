@@ -14,7 +14,15 @@ object ComponentOperations {
   def centerY(cb: PageRegion) = cb.region.bbox.toCenterPoint.y
 
   def spaceWidths(cs: Seq[CharRegion]): Seq[Double] = {
-    pairwiseSpaceWidths(cs.map(Component(_)))
+    // pairwiseSpaceWidths(cs.map(Component(_)))
+    val cpairs = cs.sliding(2).toList
+
+    val dists = cpairs.map({
+      case Seq(c1, c2)  => c2.region.bbox.left - c1.region.bbox.right
+      case _  => 0d
+    })
+
+    dists :+ 0d
   }
 
   def pairwiseSpaceWidths(cs: Seq[Component]): Seq[Double] = {
@@ -95,31 +103,30 @@ object ComponentOperations {
     val modalBottom = bottoms.head // + 0.01d
 
     val modalCenterY = (modalBottom + modalTop)/2
-    // val meanCenterY = component.findCenterY()
     val meanCenterY = component.characteristicLine.centerPoint.y
 
-    // try using angles for super/subs
 
     // val searchLog = mutable.ArrayBuffer[TB.Box]()
 
-    // label super/sub if char.ctr fall above/below centerline
+
+    // label individual chars as super/sub if char.ctr fall above/below centerline
     val supSubs = component.children.map({c =>
       val cctr = c.bounds.toCenterPoint
       if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
         c
       } else if (cctr.y > modalCenterY) {
-        c.withLabel(LB.Sub)
+        c.addLabel(LB.Sub)
       } else {
-        c.withLabel(LB.Sup)
+        c.addLabel(LB.Sup)
       }
     })
 
     def slurpUnlabeled(cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
-      val unLabeled = cs.takeWhile({_.label.isEmpty })
+      val unLabeled = cs.takeWhile({ _.getLabels.isEmpty })
       (unLabeled, cs.drop(unLabeled.length))
     }
     def slurpLabels(l: Label, cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
-      val withLabel = cs.takeWhile({_.label.exists(_ == l) })
+      val withLabel = cs.takeWhile(_.getLabels contains l)
       (withLabel, cs.drop(withLabel.length))
     }
 
@@ -135,7 +142,9 @@ object ComponentOperations {
 
       { val (withL, _) = slurpLabels(LB.Sub, unconnected)
         if (!withL.isEmpty) {
-          connectedSupSubs += Component(withL.map(_.removeLabel), LB.Sub)
+          component.zoneIndex.
+
+          // connectedSupSubs += Component(withL.map(_.removeLabel(LB.Sub)), LB.Sub)
           unconnected.remove(0, withL.length)
         } }
 
@@ -241,5 +250,3 @@ object ComponentOperations {
 
 
 }
-
-
