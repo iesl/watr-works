@@ -1,8 +1,7 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import scalaz._
-// import Scalaz._
+import scalaz.@@
 import utils._
 import watrmarks._
 
@@ -12,44 +11,12 @@ import ComponentRendering._
 import ComponentOperations._
 import IndexShapeOperations._
 
-// import ComponentTypeEnrichments._
-// import watrmarks.{StandardLabels => LB}
-
-object Component {
-
-  // def apply(
-  //   charBox: CharRegion
-  // ): ConnectedComponents = {
-  //   new ConnectedComponents(
-  //     Seq(PageComponent(charBox, 0d)),
-  //     0.0d,
-  //     None
-  //   )
-  // }
-  // def apply(components: Seq[Component]): ConnectedComponents = {
-  //   new ConnectedComponents(
-  //     components,
-  //     0.0d
-  //   )
-  // }
-
-  // def apply(components: Seq[Component], label: Label): ConnectedComponents = {
-  //   new ConnectedComponents(
-  //     components,
-  //     0.0d,
-  //     Option(label)
-  //   )
-  // }
-
-}
-
-
-
 sealed trait Component {
   def id: Int@@ComponentID
 
   def zoneIndex: ZoneIndexer
 
+  def targetRegions: Seq[TargetRegion]
 
   def chars: String
 
@@ -62,6 +29,8 @@ sealed trait Component {
   def toText(implicit idgen:Option[CCRenderState] = None): String
 
   def bounds: LTBounds
+
+  def orientation: Double = 0.0d // placeholder until this is implemented for real
 
   // Best-fit line through the center(s) of all contained connected components
   def characteristicLine: Line
@@ -104,20 +73,54 @@ sealed trait Component {
     return math.abs(a * (xn - xm) + ym - yn) / math.sqrt(a * a + 1);
   }
 
+  def determineNormalTextBounds: LTBounds = {
+    val mfHeights = Histogram.getMostFrequentValues(children.map(_.bounds.height), 0.1d)
+    val mfTops = Histogram.getMostFrequentValues(children.map(_.bounds.top), 0.1d)
+
+
+    val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
+    val mfTop = mfTops.headOption.map(_._1).getOrElse(0d)
+
+    children
+      .map({ c =>
+        val cb = c.bounds
+        LTBounds(
+          left=cb.left, top=mfTop,
+          width=cb.width, height=mfHeight
+        )
+      })
+      .foldLeft(children().head.bounds)( { case (b1, b2) =>
+        b1 union b2
+      })
+  }
+
+
+
+
+  def findCenterY(): Double = {
+    children().map({c => c.bounds.toCenterPoint.y}).sum / children().length
+  }
+
+
+
+  def append(other: Component): Component = {
+    zoneIndex.appendComponent(this, other)
+  }
+
+  def connectTo(other: Component): Component = {
+    zoneIndex.concatComponents(Seq(this, other))
+  }
 
   def addLabel(l: Label): Component = {
-    // zoneIndex.addLabels( cl)
-    ???
+    zoneIndex.addLabel(this, l)
   }
+
   def removeLabel(l: Label): Component = {
-
-
-    ???
+    zoneIndex.removeLabel(this, l)
   }
 
   def getLabels(): Set[Label] = {
-
-    ???
+    zoneIndex.getLabels(this)
   }
 
   def containedLabels(): Set[Label] = {
@@ -125,7 +128,6 @@ sealed trait Component {
       children.map(_.containedLabels()).reduce(_ ++ _)
     )
   }
-
 }
 
 // import Component._
@@ -133,9 +135,10 @@ sealed trait Component {
 case class PageComponent(
   id: Int@@ComponentID,
   component: PageRegion,
-  orientation: Double
-  // blockRole: Option[Label] = None
+  override val zoneIndex: ZoneIndexer
 ) extends Component {
+
+  def targetRegions: Seq[TargetRegion] = Seq(component.region)
 
   def children(): Seq[Component] = Seq(this)
 
@@ -183,24 +186,21 @@ case class PageComponent(
       case rg: ImgRegion => ""
     }
   }
+
   def chars: String = toText
-
-
-  def containedLabels(): Set[Label] = getLabels()
-  def addLabel(l: Label): Unit = {}
-  def removeLabel(l: Label): Unit = {}
-  def getLabels(): Set[Label]
 
 }
 
 case class ConnectedComponents(
   id: Int@@ComponentID,
   components: Seq[Component],
-  orientation: Double
+  override val zoneIndex: ZoneIndexer
   // blockRole: Option[Label] = None
   // label: Label = LB.Line
   // labels: Seq[Label] = Seq()
 ) extends Component {
+
+  def targetRegions: Seq[TargetRegion] = components.flatMap(_.targetRegions)
 
   def children(): Seq[Component] = components
 
@@ -209,25 +209,6 @@ case class ConnectedComponents(
       components = components.map(_.mapChars(subs))
     )
   }
-
-  def containedLabels: Set[Label] = {
-    getLabels() ++ (components
-      .map(_.containedLabels)
-      .reduce(_++_))
-  }
-
-  def addLabel(l: Label): Unit
-  def removeLabel(l: Label): Unit
-  def getLabels(): Set[Label]
-
-  // val label: Option[Label] = blockRole
-
-  // def withLabel(l: Label): Component = {
-  //   this.copy(blockRole = Option(l))
-  // }
-  // def removeLabel(): Component = {
-  //   this.copy(blockRole = None)
-  // }
 
   def chars:String = {
     components.map(_.chars).mkString
@@ -275,36 +256,6 @@ case class ConnectedComponents(
     })
 
   def height: Double  = bounds.height
-
-  def determineNormalTextBounds: LTBounds = {
-    val mfHeights = Histogram.getMostFrequentValues(components.map(_.bounds.height), 0.1d)
-    val mfTops = Histogram.getMostFrequentValues(components.map(_.bounds.top), 0.1d)
-
-
-    val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
-    val mfTop = mfTops.headOption.map(_._1).getOrElse(0d)
-
-    components
-      .map({ c =>
-        val cb = c.bounds
-        LTBounds(
-          left=cb.left, top=mfTop,
-          width=cb.width, height=mfHeight
-        )
-      })
-      .foldLeft(components.head.bounds)( { case (b1, b2) =>
-        b1 union b2
-      })
-  }
-
-
-
-
-  def findCenterY(): Double = {
-    components.map({c => c.bounds.toCenterPoint.y}).sum / components.length
-  }
-
-
 
 
 

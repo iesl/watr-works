@@ -30,14 +30,14 @@ object TypeTags {
     def unwrap: A = Tag.of[T].unwrap(value)
   }
 
-  // type @@[A, B] = scalaz.@@[A, B]
-
 }
 
-
 import TypeTags._
 
-import TypeTags._
+// trait TypeTagImplicits {
+//   // implicit def RegionIDOrdering: Ordering[Int@@RegionID] = Ordering.by(_.unwrap)
+// }
+
 trait TypeTagFormats {
   import play.api.libs.json
   import json._

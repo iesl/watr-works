@@ -30,7 +30,57 @@ class ZoneIndexer  {
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
   val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
 
+  val componentMap = mutable.HashMap[Int@@ComponentID, Component]()
+  val componentLabels = mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]]()
+
+  val componentIdGen = utils.IdGenerator[ComponentID]()
+
   val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
+
+
+  def concatComponents(components: Seq[Component]): Component = {
+    val c = ConnectedComponents(
+      componentIdGen.nextId, components, this
+    )
+    componentMap.put(c.id, c)
+    c
+  }
+
+  def toComponent(region: PageRegion): Component = {
+    val c = PageComponent(componentIdGen.nextId, region, this)
+    componentMap.put(c.id, c)
+    c
+  }
+
+  def concatRegions(regions: Seq[PageRegion]): Component = {
+    concatComponents(regions.map(toComponent(_)))
+  }
+
+  def appendComponent(component: Component, app: Component): Component = {
+    component match {
+      case c: PageComponent =>
+        concatComponents(Seq(component, app))
+      case c: ConnectedComponents =>
+        c.copy(components = c.components :+ app)
+    }
+  }
+  private def getComponentLabelBuffer(c: Component): mutable.ArrayBuffer[Label] = {
+    componentLabels.getOrElseUpdate(c.id, mutable.ArrayBuffer[Label]())
+  }
+  def addLabel(c: Component, l: Label): Component = {
+    getComponentLabelBuffer(c).append(l)
+    c
+  }
+
+  def getLabels(c: Component): Set[Label] = {
+    getComponentLabelBuffer(c).toSet
+  }
+
+  def removeLabel(c: Component, l: Label): Component = {
+    getComponentLabelBuffer(c) -= l
+    c
+  }
+
 
   def getPageGeometry(p: Int@@PageID) = pageInfos(p).geometry
 
@@ -48,6 +98,11 @@ class ZoneIndexer  {
   //   This will return all of them
   def getComponentsUnfiltered(pageId: Int@@PageID): Seq[CharRegion] = {
     pageInfos(pageId).pageChars.filterNot(_.isSpace)
+  }
+
+  def addLabels(zl: ZoneAndLabel): Unit = {
+    val lls = zoneLabelMap.getOrElseUpdate(zl.zoneId, mutable.ArrayBuffer[Label]())
+    lls.append(zl.label)
   }
 
   def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
@@ -89,11 +144,6 @@ class ZoneIndexer  {
         RegionID.unwrap(targetedBounds.id)
       )
     }
-  }
-
-  def addLabels(zl: ZoneAndLabel): Unit = {
-    val lls = zoneLabelMap.getOrElseUpdate(zl.zoneId, mutable.ArrayBuffer[Label]())
-    lls.append(zl.label)
   }
 
 
@@ -180,15 +230,6 @@ class ZoneIndexer  {
     zones.sortBy { z => z.regions.head.bbox.left }
   }
 
-
-  def connectRegions(regions: Seq[PageRegion], label: Label): Component = {
-
-
-    ???
-  }
-
-
-// def queryComponents()
 
 }
 

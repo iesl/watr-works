@@ -34,11 +34,9 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
     val chars: Seq[CharRegion] = zoneIndex.queryChars(pg, bbox)
     val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
     val lineChars = chars.sortBy(_.region.bbox.left)
-    val ccs = Component(lineChars.map(Component(_)), LB.Line)
+    val ccs = zoneIndex.concatRegions(lineChars).addLabel(LB.Line)
 
-    val connected = zoneIndex.connectRegions(lineChars, LB.Line)
-    val tokenized = connected.tokenizeLine()
-    // val tokenized = ccs.tokenizeLine().toText
+    val tokenized = ccs.tokenizeLine()
 
     println(s"found chars: ${found}")
     println(s"tokenized  : ${tokenized}")

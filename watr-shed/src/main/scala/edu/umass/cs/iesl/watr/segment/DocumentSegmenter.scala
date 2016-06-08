@@ -26,12 +26,12 @@ import Histogram._
 case class LineDimensionBins(
   page: Int@@PageID,
   // Seq[(width, widthFrequency), Seq[lines w/width]]
-  widthBin: Seq[((Double, Double), Seq[ConnectedComponents])],
-  unBinned: Seq[ConnectedComponents]
+  widthBin: Seq[((Double, Double), Seq[Component])],
+  unBinned: Seq[Component]
 )
 
 case class PageSegAccumulator(
-  pageLines: Seq[Seq[ConnectedComponents]],
+  pageLines: Seq[Seq[Component]],
   commonLineDimensions: Seq[Point] = Seq(),
   lineDimensionBins: Seq[LineDimensionBins] = Seq()
 )
@@ -206,6 +206,9 @@ object DocumentSegmenter extends DocumentUtils {
 class DocumentSegmenter(
   val pages: ZoneIndexer
 ) {
+  import scala.math.Ordering.Implicits._
+  implicit def RegionIDOrdering: Ordering[Int@@RegionID] = Ordering.by(_.unwrap)
+
   import DocumentSegmenter._
 
   val LB = StandardLabels
@@ -316,7 +319,7 @@ class DocumentSegmenter(
   def determineLines(
     pageId: Int@@PageID,
     components: Seq[CharRegion]
-  ): Seq[ConnectedComponents] = {
+  ): Seq[Component] = {
 
     val lineSets = new DisjointSets[CharRegion](components)
 
@@ -358,17 +361,39 @@ class DocumentSegmenter(
         })
     }
 
+    // def regionId(cc: Component): Int = cc.regions
+
+
+    def regionIds(cc: Component): Seq[Int@@RegionID] = {
+      cc.component.targetRegions.map(_.id)
+    }
+
+    def minRegionId(ccs: Seq[Component]): Int@@RegionID = {
+      ccs.flatMap(regionIds(_)).min
+    }
+
     // consider each line pair-wise and decide if they should be re-joined:
-    val prejoined = lineSets.iterator().toSeq.map(
-      _.toSeq.sortBy(c => (c.region.bbox.left, c.region.bbox.top)).map(new PageComponent(_, docOrientation))
-    ).sortBy(_.map(_.component.region.id.unwrap).min)
+    val prejoined = lineSets.iterator().toSeq
+      .map({ line =>
+        line.toSeq
+          .sortBy(c => (c.region.bbox.left, c.region.bbox.top))
+          .map(c => pages.toComponent(c))
+      })
+      .sortBy(line => minRegionId(line))
+
+
 
     val first = prejoined.headOption.toSeq
 
     val maybeJoined = prejoined.drop(1).toSeq
       .foldLeft(first)({ case (acc, l2) =>
         val l1 = acc.last
-        val idgap = l2.head.component.region.id.unwrap - l1.last.component.region.id.unwrap
+
+        val l1max = regionIds(l1.last).max.unwrap
+        val l2min = regionIds(l2.head).min.unwrap
+        val idgap = l2min - l1max
+
+        // val idgap = l2.head.component.region.id.unwrap - l1.last.component.region.id.unwrap
         val shouldJoin = (
           isStrictlyLeftToRight(l1.last, l2.head)
             && isOverlappedHorizontally(l1.last, l2.head)
@@ -404,82 +429,84 @@ class DocumentSegmenter(
     // })
 
     maybeJoined
-      .sortBy(b => b.map(_.component.region.id.unwrap).min)
-      .map{ Component(_, LB.Line) }
+      .sortBy(b => b.map(regionIds(_)).min)
+      // .sortBy(b => b.map(_.component.regions.min.unwrap).min)
+      .map({c => c.reduce(_ append _).addLabel(LB.Line)})
+      // .map{ Component(_, LB.Line) }
   }
 
 
 
 
-  /** Groups components into text lines. */
-  def determineLinesNNSearchVersion(
-    pageId: Int@@PageID,
-    components: Seq[CharRegion]
-  ): Seq[ConnectedComponents] = {
+  // /** Groups components into text lines. */
+  // def determineLinesNNSearchVersion(
+  //   pageId: Int@@PageID,
+  //   components: Seq[CharRegion]
+  // ): Seq[ConnectedComponents] = {
 
-    val readableComponents = components.filterNot(_.isWonky)
-    val sets = new DisjointSets[CharRegion](readableComponents)
-
-
-    for { component <- readableComponents.sortBy(_.region.bbox.left) } {
-      // val searchLog = mutable.ArrayBuffer[TB.Box]()
-      findNeighbors(pageId, component)
-        .foreach({neighbor =>
-          val angle = component.region.bbox.toCenterPoint.angleTo(neighbor.region.bbox.toCenterPoint)
-
-          val maxWidth = math.max(neighbor.region.bbox.width, component.region.bbox.width)
-          val dx = neighbor.region.bbox.toCenterPoint.hdist(component.region.bbox.toCenterPoint)
-          val dy = neighbor.region.bbox.toCenterPoint.vdist(component.region.bbox.toCenterPoint)
-          val dist = neighbor.region.bbox.toCenterPoint.dist(component.region.bbox.toCenterPoint)
-
-          val eastWestDist = component.region.bbox.toEasternPoint.dist(
-            neighbor.region.bbox.toWesternPoint
-          )
-
-          var joinWith = false
-          // val maxWidthMult = 2.7
-          val maxHWidthMult = 2.7
-          val maxAngleWidthMult = 1.0
-
-          if (angle.eqFuzzy(0.01)(0.0) && eastWestDist < maxWidth*maxHWidthMult) {
-            sets.union(component, neighbor);
-            joinWith = true
-          } else if (withinAngle(angle) && dist < maxWidth*maxAngleWidthMult) {
-            sets.union(component, neighbor);
-            joinWith = true
-          }
-
-          // { import TB._
-          //   val topsNotEq = component.region.bbox.top.pp != neighbor.region.bbox.top.pp
-          //   val angleNotZero = angle.pp != "0.00"
-          //   searchLog.append(
-          //     s"   '${neighbor.char}' ${neighbor.wonkyCharCode} #${neighbor.id} ${neighbor.region.bbox.prettyPrint}".box %
-          //       s"""       ${ if (joinWith && topsNotEq) "!join" else if (joinWith) "join" else "" }""" %
-          //       s"       angle:${angle.pp} dx:${dx.pp} dy:${dy.pp}" %
-          //       s"       dist:${dist.pp} e/wi-dist:${eastWestDist.pp}" %
-          //       s"       maxwidth= ${maxWidth} withinAngle=${withinAngle(angle)}"
-          //   )
-          // }
-        })
-
-      // { import TB._
-      //   println(
-      //     s"'${component.char} #${component.id} ${component.region.bbox.prettyPrint}".box %
-      //     vcat(top)(searchLog.toList)
-      //   )
-      // }
-
-    }
-
-    val lines = sets.iterator().toSeq.map{
-      _.toSeq.sortBy(c => (c.region.bbox.left, c.region.bbox.top)).map(new PageComponent(_, docOrientation))
-    }
+  //   val readableComponents = components.filterNot(_.isWonky)
+  //   val sets = new DisjointSets[CharRegion](readableComponents)
 
 
-    lines
-      .map{ Component(_, LB.Line) }
-      .sortBy(b => (b.bounds.top, b.bounds.left))
-  }
+  //   for { component <- readableComponents.sortBy(_.region.bbox.left) } {
+  //     // val searchLog = mutable.ArrayBuffer[TB.Box]()
+  //     findNeighbors(pageId, component)
+  //       .foreach({neighbor =>
+  //         val angle = component.region.bbox.toCenterPoint.angleTo(neighbor.region.bbox.toCenterPoint)
+
+  //         val maxWidth = math.max(neighbor.region.bbox.width, component.region.bbox.width)
+  //         val dx = neighbor.region.bbox.toCenterPoint.hdist(component.region.bbox.toCenterPoint)
+  //         val dy = neighbor.region.bbox.toCenterPoint.vdist(component.region.bbox.toCenterPoint)
+  //         val dist = neighbor.region.bbox.toCenterPoint.dist(component.region.bbox.toCenterPoint)
+
+  //         val eastWestDist = component.region.bbox.toEasternPoint.dist(
+  //           neighbor.region.bbox.toWesternPoint
+  //         )
+
+  //         var joinWith = false
+  //         // val maxWidthMult = 2.7
+  //         val maxHWidthMult = 2.7
+  //         val maxAngleWidthMult = 1.0
+
+  //         if (angle.eqFuzzy(0.01)(0.0) && eastWestDist < maxWidth*maxHWidthMult) {
+  //           sets.union(component, neighbor);
+  //           joinWith = true
+  //         } else if (withinAngle(angle) && dist < maxWidth*maxAngleWidthMult) {
+  //           sets.union(component, neighbor);
+  //           joinWith = true
+  //         }
+
+  //         // { import TB._
+  //         //   val topsNotEq = component.region.bbox.top.pp != neighbor.region.bbox.top.pp
+  //         //   val angleNotZero = angle.pp != "0.00"
+  //         //   searchLog.append(
+  //         //     s"   '${neighbor.char}' ${neighbor.wonkyCharCode} #${neighbor.id} ${neighbor.region.bbox.prettyPrint}".box %
+  //         //       s"""       ${ if (joinWith && topsNotEq) "!join" else if (joinWith) "join" else "" }""" %
+  //         //       s"       angle:${angle.pp} dx:${dx.pp} dy:${dy.pp}" %
+  //         //       s"       dist:${dist.pp} e/wi-dist:${eastWestDist.pp}" %
+  //         //       s"       maxwidth= ${maxWidth} withinAngle=${withinAngle(angle)}"
+  //         //   )
+  //         // }
+  //       })
+
+  //     // { import TB._
+  //     //   println(
+  //     //     s"'${component.char} #${component.id} ${component.region.bbox.prettyPrint}".box %
+  //     //     vcat(top)(searchLog.toList)
+  //     //   )
+  //     // }
+
+  //   }
+
+  //   val lines = sets.iterator().toSeq.map{
+  //     _.toSeq.sortBy(c => (c.region.bbox.left, c.region.bbox.top)).map(new PageComponent(_, docOrientation))
+  //   }
+
+
+  //   lines
+  //     .map{ Component(_, LB.Line) }
+  //     .sortBy(b => (b.bounds.top, b.bounds.left))
+  // }
 
 
   def charBasedPageBounds(
@@ -502,14 +529,14 @@ class DocumentSegmenter(
   }
 
 
-  def lineWidthMatches(line: ConnectedComponents, width: Double): Boolean  = {
+  def lineWidthMatches(line: Component, width: Double): Boolean  = {
     line.determineNormalTextBounds.width.eqFuzzy(0.5d)(width)
   }
-  def lineHeightMatches(line: ConnectedComponents, height: Double): Boolean  = {
+  def lineHeightMatches(line: Component, height: Double): Boolean  = {
     line.determineNormalTextBounds.height.eqFuzzy(0.5d)(height)
   }
 
-  def lineDimensionsMatch(line: ConnectedComponents, hw: Point): Boolean = {
+  def lineDimensionsMatch(line: Component, hw: Point): Boolean = {
     lineWidthMatches(line, hw.x) && lineHeightMatches(line, hw.y)
   }
 
@@ -552,8 +579,8 @@ class DocumentSegmenter(
       (plines, pagenum) <- pageSegAccum.pageLines.zipWithIndex
     } yield {
 
-      val remainingLines = mutable.ListBuffer[ConnectedComponents](plines:_*)
-      val widthBins = mutable.ArrayBuffer[((Double, Double), Seq[ConnectedComponents])]()
+      val remainingLines = mutable.ListBuffer[Component](plines:_*)
+      val widthBins = mutable.ArrayBuffer[((Double, Double), Seq[Component])]()
 
       topNWidths.foreach{ case (width, wfreq) =>
         val mws = remainingLines.filter(lineWidthMatches(_, width))
@@ -572,27 +599,20 @@ class DocumentSegmenter(
 
   def determineTextBlocks(
     pageId: Int@@PageID
-  ): Seq[ConnectedComponents] = {
-
+  ): Seq[Component] = {
     // look for rectangular blocks of text (plus leading/trailing lines)
 
     // look for for left-aligned (column-wise) single or double numbered text lines w/
     //   large gaps
 
-
     // filter out figure/caption/footnotes based on embedded images and page locations
-
-
-
-
     ???
   }
-  import scala.math.Ordering.Implicits._
+
+
 
   def buildExpandedTOC(): Unit = {
     //
-
-
 
     val numberedSectionLines = for {
       pageId <- pages.getPages
@@ -616,9 +636,9 @@ class DocumentSegmenter(
     sortedSections.foreach { println }
 
     // pages.addLabels(zl: ZoneAndLabel)
-    sortedSections.foreach({ case (linecc, ns) =>
-      val asdf =linecc.withLabel(LB.Heading)
-    })
+    // sortedSections.foreach({ case (linecc, ns) =>
+    //   val asdf =linecc.withLabel(LB.Heading)
+    // })
 
 
     // What are the predominant fonts per 'level'?
@@ -646,8 +666,8 @@ class DocumentSegmenter(
 
   def determineZones(
     pageId: Int@@PageID
-  ): Seq[ConnectedComponents] = {
-    val pageLinesx: Seq[ConnectedComponents] = pageSegAccum.pageLines(PageID.unwrap(pageId))
+  ): Seq[Component] = {
+    val pageLinesx: Seq[Component] = pageSegAccum.pageLines(PageID.unwrap(pageId))
 
     // println("starting wiht lines: ")
     // pageLinesx.foreach { line =>
@@ -680,8 +700,8 @@ class DocumentSegmenter(
     // }
 
 
-    val unusedPageLines = mutable.ArrayBuffer[ConnectedComponents](pageLinesx:_*)
-    val usedPageLines = mutable.ArrayBuffer[ConnectedComponents]()
+    val unusedPageLines = mutable.ArrayBuffer[Component](pageLinesx:_*)
+    val usedPageLines = mutable.ArrayBuffer[Component]()
 
     // starting w/most common width, down to least common..
     val allBlocks = lineBins.widthBin.sortBy(_._1._2).reverse.map {
@@ -723,10 +743,10 @@ class DocumentSegmenter(
               val bottomLine = ySortedLines.last
 
 
-              def candidateIsBelowBottom(cand: ConnectedComponents) = cand.bounds.top > bottomLine.bounds.top
-              def candidateIsBelowTop(cand: ConnectedComponents) = cand.bounds.top > topLine.bounds.top
-              def candidateIsAboveBottom(cand: ConnectedComponents) = cand.bounds.top < bottomLine.bounds.top
-              def candidateIsAboveTop(cand: ConnectedComponents) = cand.bounds.top < topLine.bounds.top
+              def candidateIsBelowBottom(cand: Component) = cand.bounds.top > bottomLine.bounds.top
+              def candidateIsBelowTop(cand: Component) = cand.bounds.top > topLine.bounds.top
+              def candidateIsAboveBottom(cand: Component) = cand.bounds.top < bottomLine.bounds.top
+              def candidateIsAboveTop(cand: Component) = cand.bounds.top < topLine.bounds.top
 
 
               // println("now checking for lines above")
@@ -804,7 +824,9 @@ class DocumentSegmenter(
               unusedPageLines --= totalLineSorted
               usedPageLines ++= totalLineSorted
 
-              Component(totalLineSorted, LB.Block)
+              totalLineSorted.reduce((c1, c2) =>  c1.connectTo(c2)).addLabel(LB.Block)
+
+              // Component(totalLineSorted, LB.Block)
             })
           sortedCommonLines
         } else {
@@ -819,7 +841,7 @@ class DocumentSegmenter(
   }
 
 
-  def sortZonesYX(zones: Seq[ConnectedComponents]): Seq[ConnectedComponents]= {
+  def sortZonesYX(zones: Seq[Component]): Seq[Component]= {
 
     zones.sortWith({case (cc1, cc2) =>
       val ycmp = compareDouble(cc1.bounds.top, cc2.bounds.top, 0.01)

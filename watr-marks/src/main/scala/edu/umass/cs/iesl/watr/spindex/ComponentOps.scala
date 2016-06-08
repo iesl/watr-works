@@ -95,79 +95,86 @@ object ComponentOperations {
       spaceDists
     }
 
-  def tokenizeLine(): ConnectedComponents = {
-    // println("tokenizeLine")
-    val tops = findCommonToplines()
-    val bottoms = findCommonBaselines()
-    val modalTop = tops.head // - 0.01d
-    val modalBottom = bottoms.head // + 0.01d
+    def tokenizeLine(): Component = {
+      // println("tokenizeLine")
+      val tops = findCommonToplines()
+      val bottoms = findCommonBaselines()
+      val modalTop = tops.head // - 0.01d
+      val modalBottom = bottoms.head // + 0.01d
 
-    val modalCenterY = (modalBottom + modalTop)/2
-    val meanCenterY = component.characteristicLine.centerPoint.y
-
-
-    // val searchLog = mutable.ArrayBuffer[TB.Box]()
+      val modalCenterY = (modalBottom + modalTop)/2
+      val meanCenterY = component.characteristicLine.centerPoint.y
 
 
-    // label individual chars as super/sub if char.ctr fall above/below centerline
-    val supSubs = component.children.map({c =>
-      val cctr = c.bounds.toCenterPoint
-      if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
-        c
-      } else if (cctr.y > modalCenterY) {
-        c.addLabel(LB.Sub)
-      } else {
-        c.addLabel(LB.Sup)
+      // val searchLog = mutable.ArrayBuffer[TB.Box]()
+
+
+      // label individual chars as super/sub if char.ctr fall above/below centerline
+      val supSubs = component.children.map({c =>
+        val cctr = c.bounds.toCenterPoint
+        if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
+          c
+        } else if (cctr.y > modalCenterY) {
+          c.addLabel(LB.Sub)
+        } else {
+          c.addLabel(LB.Sup)
+        }
+      })
+
+      def slurpUnlabeled(cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
+        val unLabeled = cs.takeWhile({ _.getLabels.isEmpty })
+        (unLabeled, cs.drop(unLabeled.length))
       }
-    })
+      def slurpLabels(l: Label, cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
+        val withLabel = cs.takeWhile(_.getLabels contains l)
+        (withLabel, cs.drop(withLabel.length))
+      }
 
-    def slurpUnlabeled(cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
-      val unLabeled = cs.takeWhile({ _.getLabels.isEmpty })
-      (unLabeled, cs.drop(unLabeled.length))
-    }
-    def slurpLabels(l: Label, cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
-      val withLabel = cs.takeWhile(_.getLabels contains l)
-      (withLabel, cs.drop(withLabel.length))
-    }
+      val unconnected = mutable.ArrayBuffer[Component](supSubs:_*)
+      val connectedSupSubs = mutable.ArrayBuffer[Component]()
 
-    val unconnected = mutable.ArrayBuffer[Component](supSubs:_*)
-    val connectedSupSubs = mutable.ArrayBuffer[Component]()
+      while (!unconnected.isEmpty) {
+        { val (withL, _) = slurpUnlabeled(unconnected)
+          if (!withL.isEmpty) {
+            connectedSupSubs ++= withL
+            unconnected.remove(0, withL.length)
+          } }
 
-    while (!unconnected.isEmpty) {
-      { val (withL, _) = slurpUnlabeled(unconnected)
-        if (!withL.isEmpty) {
-          connectedSupSubs ++= withL
-          unconnected.remove(0, withL.length)
-        } }
+        { val (withL, _) = slurpLabels(LB.Sub, unconnected)
+          if (!withL.isEmpty) {
+            val connected = withL
+              .map(_.removeLabel(LB.Sub))
+              .reduce(_ append _)
+              .addLabel(LB.Sub)
 
-      { val (withL, _) = slurpLabels(LB.Sub, unconnected)
-        if (!withL.isEmpty) {
-          component.zoneIndex.
+            connectedSupSubs += connected
+            unconnected.remove(0, withL.length)
+          } }
 
-          // connectedSupSubs += Component(withL.map(_.removeLabel(LB.Sub)), LB.Sub)
-          unconnected.remove(0, withL.length)
-        } }
-
-      { val (withL, _) = slurpLabels(LB.Sup, unconnected)
-        if (!withL.isEmpty) {
-          connectedSupSubs += Component(withL.map(_.removeLabel), LB.Sup)
-          unconnected.remove(0, withL.length)
-        } }
-    }
+        { val (withL, _) = slurpLabels(LB.Sup, unconnected)
+          if (!withL.isEmpty) {
+            val connected = withL
+              .map(_.removeLabel(LB.Sup))
+              .reduce(_ append _)
+              .addLabel(LB.Sup)
+            connectedSupSubs += connected
+            unconnected.remove(0, withL.length)
+          } }
+      }
 
 
 
-    val charDists = determineSpacings()
-    val modalLittleGap = charDists.head
-    val modalBigGap = charDists.drop(1).headOption.getOrElse(modalLittleGap)
-    val splitValue = (modalBigGap+modalLittleGap)/2
-    val splittable = charDists.length > 1
+      val charDists = determineSpacings()
+      val modalLittleGap = charDists.head
+      val modalBigGap = charDists.drop(1).headOption.getOrElse(modalLittleGap)
+      val splitValue = (modalBigGap+modalLittleGap)/2
+      val splittable = charDists.length > 1
 
-    // println(s"""|    top char dists: ${charDists.map(_.pp).mkString(", ")}
-    //             |    modalTop = ${modalTop} modalBottom = ${modalBottom}
-    //             |    modalCenter: ${modalCenterY} meanCenter: ${meanCenterY}
-    //             |    modal little gap = ${modalLittleGap} modal big gap = ${modalBigGap}
-    //             |    splitValue = ${splitValue}
+      // println(s"""|    top char dists: ${charDists.map(_.pp).mkString(", ")}
+      //             |    modalTop = ${modalTop} modalBottom = ${modalBottom}
+      //             |    modalCenter: ${modalCenterY} meanCenter: ${meanCenterY}
+      //             |    modal little gap = ${modalLittleGap} modal big gap = ${modalBigGap}
+      //             |    splitValue = ${splitValue}
     //             |""".stripMargin)
 
     // { import TB._
@@ -226,27 +233,30 @@ object ComponentOperations {
           //   s"    c1 dist to modal Y (c1ctr.y-modalCenterY):${math.abs(c1ctr.y-modalCenterY)}" %
           //   s"    c1wst: ${c1west.prettyPrint} c2east: ${c2east.prettyPrint} angle: ${c1west.angleTo(c2east)} " %
           //   s"    c1-c2 angle: ${angleC1C2}   checkAngle: ${checkAngle}"
-
           //   searchLog.append(stats)
           // }
+
+
         case _  =>
           sys.error("why are we here? wtf??")
       })
 
-    val asTokens = splitAtBreaks(wordBreaks, connectedSupSubs)
-      .map(Component(_, LB.Token))
+      val asTokens = splitAtBreaks(wordBreaks, connectedSupSubs)
+        .map({cs =>
+          cs.reduce(_ append _)
+            .addLabel(LB.Token)
+        })
 
-    // { import TB._
-    //   println(
-    //       vcat(top)(searchLog.toList)
-    //   )
-    // }
 
-    Component(asTokens,  LB.TokenizedLine)
+      // { import TB._
+      //   println(
+      //       vcat(top)(searchLog.toList)
+      //   )
+      // }
+
+      asTokens.reduce(_ connectTo _).addLabel(LB.TokenizedLine)
+    }
+
   }
-
-  }
-
-
 
 }

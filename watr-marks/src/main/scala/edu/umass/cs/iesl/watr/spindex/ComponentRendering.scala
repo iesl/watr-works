@@ -38,7 +38,8 @@ object ComponentRendering {
 
     _cc match {
       case cc: ConnectedComponents =>
-        cc.blockRole.map{ _ match {
+        val blockRole = cc.getLabels.filter(_.ns=="ds").headOption
+        blockRole.map{ _ match {
           case LB.Line =>
             renderConnectedComponents(cc.tokenizeLine())
 
@@ -150,7 +151,7 @@ object ComponentRendering {
           case LB.Image => ???
           case LB.Table => ???
           case x =>
-            println(s"  ??? ${cc.blockRole}")
+            // println(s"  ??? ${cc.blockRole}")
             val vs = cc.components.flatMap(c =>
               renderConnectedComponents(c)
             )
