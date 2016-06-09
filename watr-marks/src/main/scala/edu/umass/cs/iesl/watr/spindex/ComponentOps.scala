@@ -65,6 +65,7 @@ object ComponentOperations {
   }
 
   implicit class RicherComponent(val component: Component) extends AnyVal {
+    def zoneIndex = component.zoneIndex
 
     def findCommonToplines(): Seq[Double] = {
       Histogram.getMostFrequentValues(
@@ -125,6 +126,7 @@ object ComponentOperations {
         val unLabeled = cs.takeWhile({ _.getLabels.isEmpty })
         (unLabeled, cs.drop(unLabeled.length))
       }
+
       def slurpLabels(l: Label, cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
         val withLabel = cs.takeWhile(_.getLabels contains l)
         (withLabel, cs.drop(withLabel.length))
@@ -144,10 +146,10 @@ object ComponentOperations {
           if (!withL.isEmpty) {
             val connected = withL
               .map(_.removeLabel(LB.Sub))
-              .reduce(_ append _)
-              .addLabel(LB.Sub)
 
-            connectedSupSubs += connected
+            val c0 = zoneIndex.concatComponents(connected, LB.Sub)
+
+            connectedSupSubs += c0
             unconnected.remove(0, withL.length)
           } }
 
@@ -155,9 +157,8 @@ object ComponentOperations {
           if (!withL.isEmpty) {
             val connected = withL
               .map(_.removeLabel(LB.Sup))
-              .reduce(_ append _)
-              .addLabel(LB.Sup)
-            connectedSupSubs += connected
+            val c0 = zoneIndex.concatComponents(connected, LB.Sup)
+            connectedSupSubs += c0 
             unconnected.remove(0, withL.length)
           } }
       }
@@ -242,10 +243,7 @@ object ComponentOperations {
       })
 
       val asTokens = splitAtBreaks(wordBreaks, connectedSupSubs)
-        .map({cs =>
-          cs.reduce(_ append _)
-            .addLabel(LB.Token)
-        })
+        .map({cs => zoneIndex.concatComponents(cs, LB.Token) })
 
 
       // { import TB._
@@ -254,7 +252,7 @@ object ComponentOperations {
       //   )
       // }
 
-      asTokens.reduce(_ connectTo _).addLabel(LB.TokenizedLine)
+      zoneIndex.concatComponents(asTokens, LB.TokenizedLine)
     }
 
   }

@@ -35,13 +35,17 @@ class ZoneIndexer  {
 
   val componentIdGen = utils.IdGenerator[ComponentID]()
 
+  def empty(): Component = {
+    concatComponents(Seq())
+  }
+
+
   val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
 
 
-  def concatComponents(components: Seq[Component]): Component = {
-    val c = ConnectedComponents(
-      componentIdGen.nextId, components, this
-    )
+  def concatComponents(components: Seq[Component], l: Label*): Component = {
+    val c = ConnectedComponents(componentIdGen.nextId, components, this)
+    l.foreach(c.addLabel)
     componentMap.put(c.id, c)
     c
   }
@@ -52,7 +56,7 @@ class ZoneIndexer  {
     c
   }
 
-  def concatRegions(regions: Seq[PageRegion]): Component = {
+  def concatRegions(regions: Seq[PageRegion], l: Option[Label]=None): Component = {
     concatComponents(regions.map(toComponent(_)))
   }
 

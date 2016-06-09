@@ -102,15 +102,6 @@ sealed trait Component {
   }
 
 
-
-  def append(other: Component): Component = {
-    zoneIndex.appendComponent(this, other)
-  }
-
-  def connectTo(other: Component): Component = {
-    zoneIndex.concatComponents(Seq(this, other))
-  }
-
   def addLabel(l: Label): Component = {
     zoneIndex.addLabel(this, l)
   }
@@ -124,9 +115,9 @@ sealed trait Component {
   }
 
   def containedLabels(): Set[Label] = {
-    getLabels() ++ (
-      children.map(_.containedLabels()).reduce(_ ++ _)
-    )
+    val descLabels = children.map(_.containedLabels())
+    val descLabelSet = descLabels.foldLeft(Set[Label]())(_ ++ _)
+    getLabels() ++ descLabelSet 
   }
 }
 
@@ -140,7 +131,7 @@ case class PageComponent(
 
   def targetRegions: Seq[TargetRegion] = Seq(component.region)
 
-  def children(): Seq[Component] = Seq(this)
+  def children(): Seq[Component] = Seq()
 
   def charComponents: Seq[PageComponent] = Seq(this)
 
@@ -222,7 +213,7 @@ case class ConnectedComponents(
     TB.hcat(ccs).toString()
   }
 
-  override val characteristicLine: Line = {
+  override def characteristicLine: Line = {
     if (components.isEmpty) {
       sys.error("Component list must not be empty")
     } else if (components.length == 1) {

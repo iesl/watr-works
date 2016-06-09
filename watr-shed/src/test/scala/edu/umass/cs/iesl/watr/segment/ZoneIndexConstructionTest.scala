@@ -6,11 +6,12 @@ import extract._
 
 // import IndexShapeOperations._
 // import ComponentTypeEnrichments._
-// import ComponentRendering._
+import ComponentRendering._
 
 import ComponentOperations._
 
 // import watrmarks.{StandardLabels => LB}
+import textboxing.{TextBoxing => TB}
 import TypeTags._
 
 class ZoneIndexConstructionTest extends DocsegTestUtil  {
@@ -38,8 +39,13 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
 
     val tokenized = ccs.tokenizeLine()
 
+
+    val boxed = renderConnectedComponents(tokenized)
+    val rendered = TB.hcat(boxed)
+
+
     println(s"found chars: ${found}")
-    println(s"tokenized  : ${tokenized}")
+    println(s"tokenized  : ${rendered.toString}")
     // Line labeling process
     // val chars: Seq[PageComponent] = zoneIndex.queryChars(pg, bbox)
     // zoneIndex.addComponent()

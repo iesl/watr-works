@@ -87,7 +87,7 @@ object ComponentRendering {
 
 
           case LB.Token =>
-            // println(s"   ${cc.blockRole}")
+            val clabelsx = cc.containedLabels()
             val clabels:Set[Label] = cc.components.map(_.containedLabels).reduce(_++_)
             val texFmtLabels = (clabels intersect Set(LB.Sup, LB.Sub))
 

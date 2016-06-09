@@ -419,20 +419,15 @@ class DocumentSegmenter(
     //   case Seq(l1, l2) =>
     //     val idgap = l2.head.component.id.unwrap - l1.last.component.id.unwrap
     //     val shouldJoin = isStrictlyLeftToRight(l1.last, l2.head) && idgap < 5
-
     //     if (shouldJoin) Seq(l1 ++ l2)
     //     else Seq(l1, l2)
-
-
     //   case Seq(x) => Seq(x)
     //   case _ => Seq(Seq())
     // })
 
     maybeJoined
       .sortBy(b => b.map(regionIds(_)).min)
-      // .sortBy(b => b.map(_.component.regions.min.unwrap).min)
-      .map({c => c.reduce(_ append _).addLabel(LB.Line)})
-      // .map{ Component(_, LB.Line) }
+      .map(l => pages.concatComponents(l, LB.Line))
   }
 
 
@@ -824,9 +819,7 @@ class DocumentSegmenter(
               unusedPageLines --= totalLineSorted
               usedPageLines ++= totalLineSorted
 
-              totalLineSorted.reduce((c1, c2) =>  c1.connectTo(c2)).addLabel(LB.Block)
-
-              // Component(totalLineSorted, LB.Block)
+              pages.concatComponents(totalLineSorted, LB.Block)
             })
           sortedCommonLines
         } else {
