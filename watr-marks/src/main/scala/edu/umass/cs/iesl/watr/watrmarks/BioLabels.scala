@@ -11,13 +11,19 @@ sealed trait BioPin {
   def showBox: TB.Box = {
     s"${label.key.take(3).mkString}.${pinChar}"
   }
+
+  def isBegin: Boolean = false
+  def isInside: Boolean = false
+  def isOutSide: Boolean = false
+  def isLast: Boolean = false
+  def isUnit: Boolean = false
 }
 
-case class BPin(label: Label, override val pinChar:Char='B') extends BioPin
-case class IPin(label: Label, override val pinChar:Char='I') extends BioPin
-case class OPin(label: Label, override val pinChar:Char='O') extends BioPin
-case class LPin(label: Label, override val pinChar:Char='L') extends BioPin
-case class UPin(label: Label, override val pinChar:Char='U') extends BioPin
+case class BPin(label: Label, override val pinChar:Char='B', override val isBegin:Boolean=true) extends BioPin
+case class IPin(label: Label, override val pinChar:Char='I', override val isInside:Boolean=true) extends BioPin
+case class OPin(label: Label, override val pinChar:Char='O', override val isOutSide:Boolean=true) extends BioPin
+case class LPin(label: Label, override val pinChar:Char='L', override val isLast:Boolean=true) extends BioPin
+case class UPin(label: Label, override val pinChar:Char='U', override val isUnit:Boolean=true) extends BioPin
 
 case class Label(ns: String, key: String, value: Option[String]=None) {
   lazy val B = BPin(this)

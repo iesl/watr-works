@@ -64,7 +64,23 @@ object ComponentOperations {
     }
   }
 
+  import utils.{CompassDirection => CDir}
+  
   implicit class RicherComponent(val component: Component) extends AnyVal {
+
+    def isBelow(other: Component) = component.bounds.top > other.bounds.top
+    def isAbove(other: Component) = component.bounds.top < other.bounds.top
+
+    def hasSameVCenterPoint(tolerance: Double=0.1)(other: Component) =
+      component.bounds.toCenterPoint.x.eqFuzzy(tolerance)(other.bounds.toCenterPoint.x)
+
+    def hasSameLeftEdge(tolerance: Double=0.3)(other: Component) =
+      component.bounds.toPoint(CDir.W).x.eqFuzzy(tolerance)(other.bounds.toPoint(CDir.W).x)
+
+    def isEqualWidth(tolerance: Double=0.1)(other: Component) =
+      component.bounds.width.eqFuzzy(tolerance)(other.bounds.width)
+
+
     def zoneIndex = component.zoneIndex
 
     def findCommonToplines(): Seq[Double] = {
@@ -158,7 +174,7 @@ object ComponentOperations {
             val connected = withL
               .map(_.removeLabel(LB.Sup))
             val c0 = zoneIndex.concatComponents(connected, LB.Sup)
-            connectedSupSubs += c0 
+            connectedSupSubs += c0
             unconnected.remove(0, withL.length)
           } }
       }

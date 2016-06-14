@@ -58,7 +58,7 @@ object DocumentExtractor extends ComponentDataTypeFormats {
 
     val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
     segmenter.runPageSegmentation()
-    val pageLines = segmenter.pageSegAccum.pageLines
+    val pageLines = segmenter.visualLineOnPageComponents
 
     val allPageLines = for {
       (pageId, pageLines) <- segmenter.pages.getPages zip pageLines

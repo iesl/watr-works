@@ -35,7 +35,7 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
     val chars: Seq[CharRegion] = zoneIndex.queryChars(pg, bbox)
     val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
     val lineChars = chars.sortBy(_.region.bbox.left)
-    val ccs = zoneIndex.concatRegions(lineChars).addLabel(LB.Line)
+    val ccs = zoneIndex.concatRegions(lineChars).addLabel(LB.VisualLine)
 
     val tokenized = ccs.tokenizeLine()
 
@@ -50,7 +50,7 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
     // val chars: Seq[PageComponent] = zoneIndex.queryChars(pg, bbox)
     // zoneIndex.addComponent()
     // zoneIndex.addLabels(ccs)
-    // val ccRet = zoneIndex.query(LB.Line)
+    // val ccRet = zoneIndex.query(LB.VisualLine)
     // find chars with common baseline
     // label as 'line'
 

@@ -205,10 +205,10 @@ object TextBoxing extends ToListOps with ToIdOps {
   def hjoin(a:Alignment=top, sep:Box=nullBox)(bs:Box*): Box =
     hcat(a)(bs.toList intersperse sep)
 
-  def vjoinList(a:Alignment=left, sep:Box=nullBox)(bs:Seq[Box]): Box =
+  def vjoins(a:Alignment=left, sep:Box=nullBox)(bs:Seq[Box]): Box =
     vcat(a)(bs.toList intersperse sep)
 
-  def hjoinList(a:Alignment=top, sep:Box=nullBox)(bs:Seq[Box]): Box =
+  def hjoins(a:Alignment=top, sep:Box=nullBox)(bs:Seq[Box]): Box =
     hcat(a)(bs.toList intersperse sep)
 
   def boxlf(b: Box): Box =

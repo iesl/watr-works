@@ -194,29 +194,30 @@ class MyBxDocumentCreator(
   }
 
   override def renderImage(iri: ImageRenderInfo): Unit = {
-    val img = iri.getImage
-    val bimg = img.getBufferedImage
+    // TODO figure out why this isn't working (img type not supported...)
+    // val img = iri.getImage
+    // val bimg = img.getBufferedImage
 
-    val x = bimg.getMinX.toDouble
-    val y = bimg.getMinY.toDouble
-    val w = bimg.getWidth.toDouble
-    val h = bimg.getHeight.toDouble
+    // val x = bimg.getMinX.toDouble
+    // val y = bimg.getMinY.toDouble
+    // val w = bimg.getWidth.toDouble
+    // val h = bimg.getHeight.toDouble
 
-    val bounds = LTBounds(
-      x - pageRectangle.getLeft,
-      pageRectangle.getHeight - y - pageRectangle.getBottom - h,
-      w, h
-    )
+    // val bounds = LTBounds(
+    //   x - pageRectangle.getLeft,
+    //   pageRectangle.getHeight - y - pageRectangle.getBottom - h,
+    //   w, h
+    // )
 
-    val imgRegion = ImgRegion(
-        TargetRegion(
-          componentIdGen.nextId,
-          PageID(0),
-          bounds
-        )
-      )
+    // val imgRegion = ImgRegion(
+    //     TargetRegion(
+    //       componentIdGen.nextId,
+    //       PageID(0),
+    //       bounds
+    //     )
+    //   )
 
-    currCharBuffer.append(imgRegion)
+    // currCharBuffer.append(imgRegion)
   }
 
 }

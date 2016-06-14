@@ -13,16 +13,27 @@ import ComponentOperations._
 
 class TextlineSegTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"
-  // import Component._
+ // import Component._
+
+
+  // extracting corpus:/home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test: corpus:/home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016jcarbon201407065.pdf.d sec.txt
+  // Page 1
+  // w:239.07, h:7.97 (l:47.28, t:92.07, w:239.07, h:7.97) > a p p ro a ch e s a re b e i n g u s e d . Fo r a m o re c o m p re h e n s iv e ov e r-
+
+
 
   //Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401009.pdf.d/101016jactamat200401009.pdf
   // orthorhombic, a _¼_ 0:76559, b _¼_ 0:64154, c _¼_ 0:42184     (l:313.63, t:272.94, w:239.10, h:9.96)
   // (expecting) orthorhombic, a = 0.76559, b = 0.64154, c = 0.42184     (l:313.63, t:272.94, w:239.10, h:9.96)
 
+
+
   // Page:1 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111015.pdf.d/101016jactamat201111015.pdf    (l:203.02, t:47.65, w:199.14, h:7.97)
   // factor of                                                                                                                                                    (l:42.52, t:308.38, w:251.00, h:9.96)
   // 3 (or more) lower than other nanocrystalline                                                                                                                 (l:311.53, t:308.38, w:251.01, h:10.12)
   //  (should be one line, missing '~') "factor of ~3 (or more) lower than other nanocrystalline"
+
+
 
   // Seems to be picking up letters from below (or above) the desired textline
   // Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201111015.pdf.d/101016jactamat201111015.pdf
@@ -185,11 +196,14 @@ class TextlineSegTest extends DocsegTestUtil  with DiagrammedAssertions {
 
     println("["+squishb(interestingChars)+"]")
 
+
+
     val lines = segmenter.determineLines(pageId, interestingChars)
 
-
-    val tokenized = lines
-      .map{ l => l.tokenizeLine().toText }
+    val tokenized = for {
+      page <- segmenter.visualLineOnPageComponents
+      line <- page
+    } yield { line.tokenizeLine().toText }
 
     example.expectedOutput.zip(tokenized).foreach({case (expect, actual) =>
       if (expect != actual) {

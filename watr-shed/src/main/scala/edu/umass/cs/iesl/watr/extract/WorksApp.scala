@@ -24,6 +24,8 @@ object Works extends App {
     corpusRoot: Option[JFile] = None,
     action: Option[String] = None,
     force: Boolean = false,
+    numToRun: Int = 0,
+    numToSkip: Int = 0,
     exec: Option[(AppConfig) => Unit] = None
   )
 
@@ -41,6 +43,11 @@ object Works extends App {
 
     note("Run svg text extraction and analysis")
 
+    opt[Int]('n', "number") action { (v, conf) =>
+      conf.copy(numToRun = v) } text("process n corpus entries")
+
+    opt[Int]('k', "skip") action { (v, conf) =>
+      conf.copy(numToSkip = v) } text("skip first k entries")
 
     opt[Unit]('x', "overwrite") action { (v, conf) =>
       conf.copy(force = true) } text("force overwrite of existing files")
@@ -112,13 +119,17 @@ object Works extends App {
   }
 
   def getProcessList(conf: AppConfig): Seq[CorpusEntry] = {
-      val corpus = Corpus(corpusRootOrDie(conf))
+    val corpus = Corpus(corpusRootOrDie(conf))
 
-      val toProcess = conf.entry match {
-        case Some(entry) => Seq(corpus.entry(entry.getName))
-        case None => corpus.entries()
-      }
-      toProcess
+    val toProcess = conf.entry match {
+      case Some(entry) => Seq(corpus.entry(entry.getName))
+      case None => corpus.entries()
+    }
+
+    val skipped = if (conf.numToSkip > 0) toProcess.drop(conf.numToSkip) else toProcess
+    val taken = if (conf.numToRun > 0) skipped.take(conf.numToRun) else toProcess
+
+    taken
   }
 
 
@@ -189,31 +200,39 @@ object Works extends App {
   }
 
   def findSectionHeaders(conf: AppConfig): Unit = {
+    // import watrmarks.{StandardLabels => LB}
 
-    processCorpus(conf, "bbox.svg", (pdfins: InputStream, outputPath: String) => {
+    processCorpus(conf, "sec.txt", (pdfins: InputStream, outputPath: String) => {
       val dx = extract.DocumentExtractor
       val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
-      segmenter.runLineDetermination()
-      segmenter.findMostFrequentLineDimensions()
-      segmenter.buildExpandedTOC()
-      val pageZones = for {
-        pageId <- segmenter.pages.getPages
-      } yield {
-        println(s"segmenting page ${pageId}")
-      }
 
-      // dx.pages
-      segmenter.runLineDetermination()
-    //   pageSegAccum = findMostFrequentLineDimensions(pageSegAccum)
+      segmenter.runPageSegmentation()
 
-    //   val pageZones = for {
-    //     pageId <- pages.getPages
-    //   } yield {
-    //     println(s"segmenting page ${pageId}")
-    //     buildTableOfSections(pageId, pageSegAccum)
-    //     determineZones(pageId, pageSegAccum)
-    //   }
-      ""
+      // val vlines = segmenter.pages.bioSpine("VisualLines")
+      // vlines.foreach { linenode =>
+      //   linenode.pins.foreach{p =>
+      //     println(s"""pin: ${p} """)
+      //   }
+      //   ComponentRendering.serializeComponent(
+      //     linenode.component
+      //   )
+      // }
+
+      ComponentRendering.serializeDocument(segmenter.pages).toString()
+
+
+      // pageZones.foreach{ c =>
+      //   ComponentRendering.serializeComponent(c)
+      // }
+
+      // {"labels": [
+      //     ["section", [234, 235, 236, 256], 130],
+      //     ["para", [5,6,7,9], 141],
+      //     ["image", [6,9], 141],
+      //     ["caption", [3,9], 141],
+      //.......
+      // [[["1.","Introduction"],          [0,1]], 890]
+
     })
 
   }

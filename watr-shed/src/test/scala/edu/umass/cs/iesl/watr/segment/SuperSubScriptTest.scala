@@ -84,7 +84,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
         val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
 
         val lineChars = chars.sortBy(_.region.bbox.left)
-        val ccs = zoneIndex.concatRegions(lineChars).addLabel(LB.Line)
+        val ccs = zoneIndex.concatRegions(lineChars).addLabel(LB.VisualLine)
 
         val tokenized = ccs.tokenizeLine().toText
 

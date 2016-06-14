@@ -4,14 +4,23 @@ package watrmarks
 
 trait DocSegLabels {
   // val Zone = Label("ds", "zone")
+  val Pages = Label("ds", "pages")
   val Page = Label("ds", "page")
   val Column = Label("ds", "column")
-  val Heading = Label("ds", "heading")
+
+  val Section = Label("ds", "section")
+  val SectionHeadingLine = Label("ds", "section-heading-line")
+  val SectionNumber = Label("ds", "section-number")
+  val SectionTitle = Label("ds", "section-title")
+
+
   val Block = Label("ds", "block")
   val Para = Label("ds", "para")
   val Image = Label("ds", "image")
   val Table = Label("ds", "table")
-  val Line = Label("ds", "line")
+  // val Line = Label("ds", "line")
+  val VisualLine = Label("ds", "visual-line")
+  val TextLine = Label("ds", "text-line")
   val TokenizedLine = Label("ds", "tline")
   val Token = Label("ds", "token")
   val Sup = Label("ds", "sup")
@@ -69,8 +78,8 @@ trait DocSegLabels {
 object StandardLabels
     extends DocSegLabels {
 
-  object CharLabel extends Label("", "char")
-  object PageLabel extends Label("", "page")
+  // object CharLabel extends Label("", "char")
+  // object PageLabel extends Label("", "page")
 
 
 

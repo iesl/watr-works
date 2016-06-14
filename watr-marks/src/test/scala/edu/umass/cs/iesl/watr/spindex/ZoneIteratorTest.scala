@@ -20,7 +20,7 @@ class ZoneIteratorTest extends FlatSpec {
 
   it should "read in zone desc. from json"  in {
     val pageIter = loadPageIterator
-    val lines = pageIter.getZones(LB.Line)
+    val lines = pageIter.getZones(LB.VisualLine)
     // val lines = pageIter.getZones(LB.Zone)
     lines.foreach { line =>
       val bboxes = line.getBoundingBoxes.map(_.bbox.prettyPrint).mkString(", ")

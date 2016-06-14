@@ -23,12 +23,31 @@ case class PageInfo(
   charBoxes: mutable.LongMap[CharRegion]
 )
 
+case class BioPins(
+  id: Int,
+  pin: BioPin
+)
+
+case class BioNode(
+  component: Component,
+  pins: mutable.Set[BioPins] =  mutable.Set()
+)
+
 
 class ZoneIndexer  {
   val pageInfos = mutable.HashMap[Int@@PageID, PageInfo]()
 
+  // Zones are on the way out
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
   val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
+
+  type BioSpine = mutable.MutableList[BioNode]
+  val bioSpines = mutable.Map[String, BioSpine]()
+
+  def bioSpine(name: String): BioSpine = {
+    bioSpines.getOrElseUpdate(name, mutable.MutableList[BioNode]())
+  }
+
 
   val componentMap = mutable.HashMap[Int@@ComponentID, Component]()
   val componentLabels = mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]]()
@@ -71,6 +90,7 @@ class ZoneIndexer  {
   private def getComponentLabelBuffer(c: Component): mutable.ArrayBuffer[Label] = {
     componentLabels.getOrElseUpdate(c.id, mutable.ArrayBuffer[Label]())
   }
+
   def addLabel(c: Component, l: Label): Component = {
     getComponentLabelBuffer(c).append(l)
     c
@@ -79,6 +99,11 @@ class ZoneIndexer  {
   def getLabels(c: Component): Set[Label] = {
     getComponentLabelBuffer(c).toSet
   }
+
+  def getLabeledComponents(l: Label): Seq[Component] = for {
+    (k, v)  <- componentLabels.toSeq
+    if v.contains(l)
+  } yield componentMap(k)
 
   def removeLabel(c: Component, l: Label): Component = {
     getComponentLabelBuffer(c) -= l

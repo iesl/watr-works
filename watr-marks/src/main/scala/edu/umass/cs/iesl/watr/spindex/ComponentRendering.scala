@@ -27,20 +27,172 @@ case class CCRenderState(
   }
 }
 
+
+
 object ComponentRendering {
   import ComponentOperations._
   import IndexShapeOperations._
   import ComponentTypeEnrichments._
 
+  import TB._
+
+  def selectPinForLabel(lb: Label, n: BioNode): BioPins = {
+    n.pins
+      .filter(p => p.pin.label==lb)
+      .head
+  }
+  def isBegin(lb: Label, n: BioNode) = {
+    n.pins.exists(p => p.pin.label==lb && (p.pin.isBegin || p.pin.isUnit))
+  }
+
+  def hasID(lb: Label, id: Int, n: BioNode) = {
+    n.pins.exists(p => p.pin.label==lb && p.id == id)
+  }
+
+  def selectBioLabelings(l: Label, seq: Seq[BioNode]): Seq[Seq[BioNode]] = {
+
+
+    // if (ns.isEmpty) Seq.empty[Seq[BioNode]] else {
+
+    def loop(ns: Seq[BioNode]): Seq[Seq[BioNode]] = {
+      var currID: Int = 0
+      val atBegin = ns
+        .dropWhile({ node => !isBegin(l, node) })
+
+      atBegin.headOption
+        .map ({ node =>
+          node.pins
+            .filter(_.pin.label==l)
+            .foreach(p => currID = p.id)
+
+          val (yes, after) = atBegin
+            .span(node => hasID(l, currID, node))
+
+
+          yes +: loop(after)
+        })
+        .getOrElse({
+          Seq.empty[Seq[BioNode]]
+        })
+    }
+
+    loop(seq)
+  }
+
+  def serializeLabeling(label: Label, spine: Seq[BioNode]): Box = {
+    val labeledSpans = selectBioLabelings(label, spine)
+
+    // serialize a bio labeling
+
+    val spanBoxes = for {
+      span <- labeledSpans
+    } yield {
+
+      val bioSpan = span
+        .map(p => selectPinForLabel(label, p))
+
+      val spanId = bioSpan.head.id
+      val compIds = span.map(_.component.id)
+
+      val cids = compIds.mkString(",")
+
+      s"""["${label}", [${cids}], ${spanId}]""".box
+    }
+
+    vjoinTrailSep(sep=",")(spanBoxes:_*)
+  }
+
+  def serializeDocument(pages: ZoneIndexer): String = {
+
+    implicit val initState = Option(CCRenderState(
+      numOfPages = pages.getPages.length,
+      startingPage = PageID(0)
+    ))
+
+    val lineSpine = pages.bioSpine("VisualLines")
+
+    val serComponents = List(
+      LB.SectionHeadingLine
+    ).map(l =>
+      serializeLabeling(l, lineSpine)
+    )
+
+
+    val lines = for {
+      linec <- lineSpine
+      line = linec.component
+    } yield {
+      hjoin(center1, ", ")(renderConnectedComponents(line):_*)
+    }
+
+    val joinedLines =  vjoinTrailSep(left, ",")(lines:_*)
+    val joinedLabels =  vjoinTrailSep(left, ",")(serComponents:_*)
+
+
+    val tokenDict = initState.map { state =>
+      val tokLines = state.tokens
+        .map({case (pg, tok, bb) => s"[${tok},[${pg}, ${bb.compactPrint}]]".box })
+        .grouped(10)
+        .map(group => hjoin(sep=",")(group:_*))
+        .toList
+
+      indent()(vjoinTrailSep(left, ",")(tokLines:_*))
+    } getOrElse nullBox
+
+
+
+    (s"""|
+         |  "labels": [
+         |    ${indent(4)(joinedLabels)}
+         |  ],
+         |{ "lines": [
+         |    ${indent(4)(joinedLines)}
+         |  ],
+         |  "ids": [
+         |     ${indent()(tokenDict)}
+         |  ]}
+         |""".stripMargin)
+
+  }
+
+  def serializeComponent(currentComponent: Component)(implicit ostate: Option[CCRenderState] = None): Unit = {
+    import TB._
+
+    // dfs through components:
+    def loopDfs[A](_cc: Component, path: List[Component], prefn: (Component, List[Component]) => A): Unit = {
+      prefn(_cc, path)
+
+      _cc.children
+        .map(c => loopDfs(c, _cc :: path, prefn))
+    }
+
+
+    def fn0(c: Component, p: List[Component]): Unit = {
+      val indent = "   "*p.length
+      val lls = c.getLabels
+      if (!lls.isEmpty) {
+        if (lls.contains(LB.VisualLine)) {
+          val renderedLine = hsep(renderConnectedComponents(c)).toString
+          println(s"""$indent${renderedLine}      [${c.getLabels.mkString(", ")}] ${c.id}""")
+        } else {
+          println(s"""$indent[${c.getLabels.mkString(", ")}] ${c.id}""")
+        }
+      }
+    }
+
+    loopDfs(currentComponent, Nil, fn0)
+
+  }
 
   def renderConnectedComponents(_cc: Component)(implicit ostate: Option[CCRenderState] = None): Seq[TB.Box] = {
     import TB._
 
-    _cc match {
+
+    val subrender = _cc match {
       case cc: ConnectedComponents =>
         val blockRole = cc.getLabels.filter(_.ns=="ds").headOption
         blockRole.map{ _ match {
-          case LB.Line =>
+          case LB.VisualLine =>
             renderConnectedComponents(cc.tokenizeLine())
 
           case LB.Page =>
@@ -50,6 +202,8 @@ object ComponentRendering {
             })
             Seq(vcat(vs))
 
+          // case LB.SectionHeading =>
+          //   Seq()
           case LB.Column =>
             Seq(
               vcat(cc.components.flatMap({ c=>
@@ -73,7 +227,7 @@ object ComponentRendering {
               })
 
               Seq(
-                "[[".box + hsepb(vs.map(_._1), ",") +"]" + ",     " + "[" + hsepb(vs.map(_._2), ",") +"]]"
+                "[[".box + hsepb(vs.map(_._1), ",") +"]" + ",     " + "[" + hsepb(vs.map(_._2), ",") + s"], ${cc.id}]"
               )
 
             } getOrElse {
@@ -155,7 +309,6 @@ object ComponentRendering {
             val vs = cc.components.flatMap(c =>
               renderConnectedComponents(c)
             )
-
             Seq(hcat(vs))
         }} getOrElse {
           val vs = cc.components.flatMap(c =>
@@ -172,6 +325,17 @@ object ComponentRendering {
         case b: ImgRegion =>
           Seq()
       }
+    }
+
+    val blockLabels = _cc.getLabels.intersect(Set(LB.Para, LB.SectionHeadingLine))
+
+    if (blockLabels.isEmpty) {
+      subrender
+    } else {
+      val cclabels = hsep(_cc.getLabels.map(_.key.box).toSeq)
+
+      s"""{"labels": [${cclabels}], "lines": [""".box +: subrender :+ "]}".box
+
     }
   }
 

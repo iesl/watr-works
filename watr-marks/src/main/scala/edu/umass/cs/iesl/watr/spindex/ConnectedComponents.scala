@@ -24,6 +24,23 @@ sealed trait Component {
 
   def charComponents: Seq[PageComponent]
 
+  def descendants(): Seq[Component] = {
+    def _loop(c: Component): Seq[Component] = {
+      if (c.children().isEmpty) List.empty
+      else c.children.flatMap(cn => cn +: _loop(cn))
+    }
+
+    _loop(this)
+  }
+
+  def labeledChildren(l: Label): Seq[Component] = {
+    children.filter(_.getLabels.contains(l))
+  }
+
+  def labeledDescendants(l: Label): Seq[Component] = {
+    descendants.filter(_.getLabels.contains(l))
+  }
+
   def mapChars(subs: Seq[(Char, String)]): Component
 
   def toText(implicit idgen:Option[CCRenderState] = None): String
@@ -117,7 +134,7 @@ sealed trait Component {
   def containedLabels(): Set[Label] = {
     val descLabels = children.map(_.containedLabels())
     val descLabelSet = descLabels.foldLeft(Set[Label]())(_ ++ _)
-    getLabels() ++ descLabelSet 
+    getLabels() ++ descLabelSet
   }
 }
 
@@ -187,7 +204,7 @@ case class ConnectedComponents(
   components: Seq[Component],
   override val zoneIndex: ZoneIndexer
   // blockRole: Option[Label] = None
-  // label: Label = LB.Line
+  // label: Label = LB.VisualLine
   // labels: Seq[Label] = Seq()
 ) extends Component {
 
@@ -240,7 +257,7 @@ case class ConnectedComponents(
     }
   }
 
-  val bounds: LTBounds = components.tail
+  def bounds: LTBounds = components.tail
     .map(_.bounds)
     .foldLeft(components.head.bounds)( { case (b1, b2) =>
       b1 union b2

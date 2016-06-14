@@ -56,7 +56,11 @@ class CharRegion(
   val char: String,
   val subs: String = "",
   val wonkyCharCode: Option[Int] = None
-) extends PageRegion
+) extends PageRegion {
+  // override def toString = {
+  //   " "
+  // }
+}
 
 object CharRegion {
   def unapply(r: CharRegion): Option[(TargetRegion, String, String, Option[Int])] =
@@ -160,6 +164,20 @@ object ComponentTypeEnrichments {
 
   implicit class RicherCharRegion(val charRegion: CharRegion) extends AnyVal {
 
+    def debugPrint: String = {
+      val bbox = charRegion.region.bbox.prettyPrint
+
+      val wonk = charRegion.wonkyCharCode
+        .map({ code =>
+          if (code==32) { "<sp>"  }
+          else { s"?:#${code}?" }
+        }) getOrElse { "" }
+
+      val subs = if (!charRegion.subs.isEmpty()) s"@`charRegion.subs`" else ""
+
+
+      s"""${charRegion.char}${subs} ${wonk} ${bbox}"""
+    }
 
     def prettyPrint: String = {
       charRegion.wonkyCharCode
