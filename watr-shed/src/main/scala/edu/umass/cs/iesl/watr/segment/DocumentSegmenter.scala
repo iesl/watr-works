@@ -20,6 +20,7 @@ import ComponentTypeEnrichments._
 import ComponentOperations._
 import ComponentRendering._
 import SlicingAndDicing._
+import utils.{CompassDirection => CDir}
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
@@ -202,7 +203,6 @@ class DocumentSegmenter(
 
 
 
-
   def runLineDetermination(): Component = {
     val allPageLines = for {
       pageId <- pages.getPages
@@ -214,39 +214,138 @@ class DocumentSegmenter(
 
 
 
-
-
   def groupLeftAlignedBlocks(): Unit = {
     // lines ordered as per cc analysis
-    for { page <- visualLineOnPageComponents } {
+    val leftBinHistResolution = 1.0d
+    val alignedBlocksPerPage = for {
+      page <- visualLineOnPageComponents
+    } yield {
+      println("Processing page")
+
       val lefts = page.zipWithIndex
         .map({case (l, i) => (l.bounds.left, i)})
         .sortBy(_._1)
 
-      val clustered = lefts.clusterBy({case ((l1, i1), (l2, i2)) =>
-        math.abs(l1 - l2) < 2.0d
-      })
+      val freqLefts = getMostFrequentValues(lefts.map(_._1), leftBinHistResolution)
+      val hist = histogram(lefts.map(_._1), leftBinHistResolution)
+      hist.smooth(leftBinHistResolution)
+
+      hist
+        .getFrequencies
+        .sortBy(_.frequency)
+        .reverse
+        .takeWhile(_.frequency > 0)
+        .map{b=>(b.value, b.frequency)}
+
+      val fmt = freqLefts.map({case (v, f) => s"${v.pp} ($f)" }).mkString("freq\n   ", "\n   ", "\n/freq")
+      println(fmt)
+
+
+      def valueIsWithinHistBin(bin: Double, res: Double)(value: Double): Boolean = {
+        bin-res <= value && value <= bin+res
+      }
+
+      // val clusters = freqLefts.map({ case (leftBin, freq) =>
+      //   lefts.partition { case (leftX, i) =>
+      //     valueIsWithinHistBin(leftBin, 2.0)(leftX)
+      //   }
+      // })
+
+
+
+      // val clustered = lefts.clusterBy({case ((l1, i1), (l2, i2)) =>
+      //   math.abs(l1 - l2) < 2.0d
+      // })
 
 
       val groupedBlocks = page.zipWithIndex
         .splitOnPairs({ case ((l1, l1i), (l2, l2i)) =>
-          val linesAreClustered = clustered.exists({ grp =>
-            grp.exists(_._2==l1i) && grp.exists(_._2==l2i)
+          // val linesAreClustered = clustered.exists({ grp =>
+          //   grp.exists(_._2==l1i) && grp.exists(_._2==l2i)
+          // })
+
+          val linesAreClustered = freqLefts.exists({ case (leftBin, freq) =>
+            val l1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l1.bounds.left)
+            val l2InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l2.bounds.left)
+            l1InBin && l2InBin
           })
 
-          !linesAreClustered
+          val h1 = l1.determineNormalTextBounds.height
+          val h2 = l2.determineNormalTextBounds.height
+          val heightsDiffer = h1 != h2
+
+          heightsDiffer || (!linesAreClustered)
         })
 
-      groupedBlocks.foreach { block =>
-        println(s"grouped block")
-        block.foreach { case (line, i)  =>
-          println(s"   ${line.tokenizeLine().toText}")
-        }
-      }
-
+      groupedBlocks
     }
 
+    val allVDists = for {
+      groupedBlocks <- alignedBlocksPerPage
+      block <- groupedBlocks
+    } yield {
+      block
+        .sliding(2).toSeq
+        .map({
+          case Seq((a1, i1), (a2, i2)) =>
+            val a1Left = a1.bounds.toPoint(CDir.W).y
+            val a2Left = a2.bounds.toPoint(CDir.W).y
+            val vdist = math.abs(a1Left - a2Left)
 
+            math.abs(vdist)
+
+          case Seq((a1, i1)) => -1
+          case Seq() => -1
+        }).filter(_ > 0d)
+    }
+
+    val clusterVDists = allVDists.flatten.clusterBy { (d1, d2) =>
+      math.abs(d1-d2) < 0.18
+    }
+
+    // println(s"clusters")
+    // val asdf = clusterVDists.map { vclust =>
+    //   val clustpp = vclust.sorted.map(_.pp).toSet.toSeq.sorted.mkString(", ")
+    //   println(s"   ${vclust.length}:  ${clustpp}")
+    //   (vclust.length, vclust.max)
+    // }
+    // println(s"clusters")
+    val modalVDist = clusterVDists
+      .map { vclust => (vclust.length, vclust.max) }
+      .sortBy(_._1)
+      .reverse.headOption
+      .map(_._2)
+      .getOrElse(12.0d)
+
+
+    // One last pass through block to split over-large vertical line jumps
+    val finalSplit = for {
+      groupedBlocks <- alignedBlocksPerPage
+      block <- groupedBlocks
+    } yield {
+      block.splitOnPairs ({ case ((a1, i1), (a2, i2)) =>
+        val a1Left = a1.bounds.toPoint(CDir.W).y
+        val a2Left = a2.bounds.toPoint(CDir.W).y
+        val vdist = math.abs(a1Left - a2Left)
+        val maxVDist = modalVDist * 1.15d
+
+        if (vdist > maxVDist) {
+          println(s"splitting lines on vdist=${vdist}, maxd=${maxVDist}  modald=${modalVDist}")
+          println(s"   ${a1.tokenizeLine().toText}")
+          println(s"   ${a2.tokenizeLine().toText}")
+        }
+
+        vdist > maxVDist
+      })
+    }
+
+    val asdf = finalSplit.flatten
+    asdf.foreach { block =>
+      println(s"left-aligned group")
+      block.foreach{ case (line, i) =>
+        println(s"   ${line.tokenizeLine().toText}")
+      }
+    }
 
   }
 
@@ -274,7 +373,7 @@ class DocumentSegmenter(
     groupLeftAlignedBlocks()
 
     // document-wide stats on cc discovered lines
-    findMostFrequentLineDimensions()
+    // findMostFrequentLineDimensions()
 
     // findMostFrequentFocalJumps()
 

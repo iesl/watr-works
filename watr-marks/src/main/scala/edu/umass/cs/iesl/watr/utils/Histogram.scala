@@ -30,8 +30,8 @@ object Histogram {
   }
 
   def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
-    val hist = histogram(in, resolution)
-    hist.getFrequencies
+    histogram(in, resolution)
+      .getFrequencies
       .sortBy(_.frequency)
       .reverse
       .takeWhile(_.frequency > 0)
@@ -177,24 +177,5 @@ class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
   }
 
   def getFrequencies(): Seq[Bin] = (0 until frequencies.length).map{ new Bin(_) }
-
-  // def iterator(): Iterator[Bin] = {
-  //   new Iterator[Bin] {
-
-  //     private var index: Int = 0
-
-  //     override def hasNext: Boolean = index < frequencies.length
-
-  //     override def next(): Bin = {
-  //       if (index >= frequencies.length) {
-  //         throw new NoSuchElementException()
-  //       }
-  //       val b = new Bin(index)
-  //       index += 1
-  //       b
-  //     }
-
-  //   }
-  // }
 
 }

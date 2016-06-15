@@ -65,7 +65,7 @@ object ComponentOperations {
   }
 
   import utils.{CompassDirection => CDir}
-  
+
   implicit class RicherComponent(val component: Component) extends AnyVal {
 
     def isBelow(other: Component) = component.bounds.top > other.bounds.top
