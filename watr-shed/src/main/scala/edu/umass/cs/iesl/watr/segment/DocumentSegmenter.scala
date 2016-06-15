@@ -226,11 +226,11 @@ class DocumentSegmenter(
         .map({case (l, i) => (l.bounds.left, i)})
         .sortBy(_._1)
 
-      val freqLefts = getMostFrequentValues(lefts.map(_._1), leftBinHistResolution)
+      // val freqLefts = getMostFrequentValues(lefts.map(_._1), leftBinHistResolution)
       val hist = histogram(lefts.map(_._1), leftBinHistResolution)
       hist.smooth(leftBinHistResolution)
 
-      hist
+      val freqLefts = hist
         .getFrequencies
         .sortBy(_.frequency)
         .reverse
