@@ -51,11 +51,11 @@ object Sensible {
     ),
     javacOptions in doc ++= Seq("-source", "1.6"),
 
-    javaOptions := Seq("-Xss2m", "-XX:MaxPermSize=256m", "-Xms1g", "-Xmx1g"),
+    javaOptions := Seq("-Xss2m", "-Xms1g", "-Xmx1g"),
     javaOptions += "-Dfile.encoding=UTF8",
-    javaOptions ++= Seq("-XX:+UseConcMarkSweepGC", "-XX:+CMSIncrementalMode"),
+    // javaOptions ++= Seq("-XX:+UseConcMarkSweepGC"),
 
-    maxErrors := 1,
+    // maxErrors := 1,
     fork := true,
 
     // 4 x 1GB = 4GB

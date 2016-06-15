@@ -1,17 +1,15 @@
 package edu.umass.cs.iesl.watr
-
-package segment
+package utils
 
 import org.scalatest._
 
 import spindex._
-// import Bounds._
 import IndexShapeOperations._
 
 class AngleFilteringTest extends FlatSpec with Matchers {
   // import DocumentSegmenter._
 
-  behavior of "docstrum segmenter"
+  behavior of "angle filtering"
 
   it should "make sure I compute angles correctly" in {
     import math._

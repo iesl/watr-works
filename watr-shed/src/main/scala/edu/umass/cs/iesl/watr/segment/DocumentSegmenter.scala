@@ -19,6 +19,7 @@ import IndexShapeOperations._
 import ComponentTypeEnrichments._
 import ComponentOperations._
 import ComponentRendering._
+import SlicingAndDicing._
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
@@ -211,6 +212,44 @@ class DocumentSegmenter(
     pages.concatComponents(allPageLines, LB.Pages)
   }
 
+
+
+
+
+  def groupLeftAlignedBlocks(): Unit = {
+    // lines ordered as per cc analysis
+    for { page <- visualLineOnPageComponents } {
+      val lefts = page.zipWithIndex
+        .map({case (l, i) => (l.bounds.left, i)})
+        .sortBy(_._1)
+
+      val clustered = lefts.clusterBy({case ((l1, i1), (l2, i2)) =>
+        math.abs(l1 - l2) < 2.0d
+      })
+
+
+      val groupedBlocks = page.zipWithIndex
+        .splitOnPairs({ case ((l1, l1i), (l2, l2i)) =>
+          val linesAreClustered = clustered.exists({ grp =>
+            grp.exists(_._2==l1i) && grp.exists(_._2==l2i)
+          })
+
+          !linesAreClustered
+        })
+
+      groupedBlocks.foreach { block =>
+        println(s"grouped block")
+        block.foreach { case (line, i)  =>
+          println(s"   ${line.tokenizeLine().toText}")
+        }
+      }
+
+    }
+
+
+
+  }
+
   def labelPageLines(
   ): Unit = {
 
@@ -230,27 +269,28 @@ class DocumentSegmenter(
   def runPageSegmentation(): String = { // Seq[ConnectedComponents]
     // import TB._
 
-    // Bottom-up connected component line-finding
+    // Bottom-up connected-component line-finding
     runLineDetermination()
+    groupLeftAlignedBlocks()
 
-    // document-wide stats on discovered lines
+    // document-wide stats on cc discovered lines
     findMostFrequentLineDimensions()
 
-    findMostFrequentFocalJumps()
+    // findMostFrequentFocalJumps()
 
-    val orderedLinesPerPage = for {
-      pageId <- pages.getPages
-    } yield {
-      println(s"segmenting page ${pageId}")
-      groupPageTextBlocks(pageId)
-    }
-    labelPageLines()
+    // val orderedLinesPerPage = for {
+    //   pageId <- pages.getPages
+    // } yield {
+    //   println(s"segmenting page ${pageId}")
+    //   groupPageTextBlocks(pageId)
+    // }
+    // labelPageLines()
 
-    // label text lines (added label on page lines)
-    // label text blocks BIO labeling on text lines
-    // label figure/captions
+    // // label text lines (added label on page lines)
+    // // label text blocks BIO labeling on text lines
+    // // label figure/captions
 
-    labelSectionHeadings()
+    // labelSectionHeadings()
 
 
     ""
@@ -461,23 +501,6 @@ class DocumentSegmenter(
   } yield p.labeledChildren(LB.VisualLine)
 
 
-  def clusterBy[A] (as: Seq[A]) (f: (A, A)=>Boolean): Seq[Seq[A]] = {
-
-    def loop(ns: Seq[A]): Seq[Seq[A]] = {
-      ns.headOption.map ({ headA =>
-
-        val matches = ns.tail.filter(n => f(headA, n))
-
-        matches +: loop(ns.tail diff matches)
-
-      }).getOrElse({
-        Seq.empty[Seq[A]]
-      })
-
-    }
-
-    loop(as)
-  }
 
   def focalJump(c1: Component, c2: Component): Double = {
     val c1East = c1.bounds.toPoint(CompassDirection.E)
@@ -492,7 +515,7 @@ class DocumentSegmenter(
 
     } yield {
 
-      val sameCenterGroups = clusterBy(linesWithFreq)((a, b) => a.hasSameLeftEdge()(b))
+      val sameCenterGroups = linesWithFreq.clusterBy((a, b) => a.hasSameLeftEdge()(b))
       /// print out a list of components
       // val grouped = sameCenterGroups.map({ group =>
       //   group.map({comp =>
