@@ -217,6 +217,8 @@ class DocumentSegmenter(
   def groupLeftAlignedBlocks(): Unit = {
     // lines ordered as per cc analysis
     val leftBinHistResolution = 1.0d
+
+
     val alignedBlocksPerPage = for {
       page <- visualLineOnPageComponents
     } yield {
@@ -299,6 +301,7 @@ class DocumentSegmenter(
         }).filter(_ > 0d)
     }
 
+    // TODO use a histogram here for clustering
     val clusterVDists = allVDists.flatten.clusterBy { (d1, d2) =>
       math.abs(d1-d2) < 0.18
     }
@@ -329,28 +332,42 @@ class DocumentSegmenter(
         val vdist = math.abs(a1Left - a2Left)
         val maxVDist = modalVDist * 1.15d
 
-        if (vdist > maxVDist) {
-          println(s"splitting lines on vdist=${vdist}, maxd=${maxVDist}  modald=${modalVDist}")
-          println(s"   ${a1.tokenizeLine().toText}")
-          println(s"   ${a2.tokenizeLine().toText}")
-        }
+        // if (vdist > maxVDist) {
+        //   println(s"splitting lines on vdist=${vdist}, maxd=${maxVDist}  modald=${modalVDist}")
+        //   println(s"   ${a1.tokenizeLine().toText}")
+        //   println(s"   ${a2.tokenizeLine().toText}")
+        // }
 
         vdist > maxVDist
       })
     }
 
-    val asdf = finalSplit.flatten
-    asdf.foreach { block =>
-      println(s"left-aligned group")
-      block.foreach{ case (line, i) =>
-        println(s"   ${line.tokenizeLine().toText}")
-      }
-    }
+    // Now create a BIO labeling linking visual lines into blocks
+    val textBlockSpine = pages.bioSpine("TextBlockSpine")
+
+    val spine = finalSplit
+      .flatten
+      .map({ block =>
+        // pages.concatComponents(block.map(_._1), LB.TextBlock)
+        val unlabeled = block.map(_._1).map(BioNode(_))
+        unlabeled.map({node =>
+          node
+
+          node
+        })
+      })
+
+    // finalSplit.flatten
+    // .foreach { block =>
+    //   println(s"left-aligned group")
+    //   block.foreach{ case (line, i) =>
+    //     println(s"   ${line.tokenizeLine().toText}")
+    //   }
+    // }
 
   }
 
-  def labelPageLines(
-  ): Unit = {
+  def labelPageLines(): Unit = {
 
     val lineSpine = pages.bioSpine("VisualLines")
 
@@ -389,7 +406,7 @@ class DocumentSegmenter(
     // // label text blocks BIO labeling on text lines
     // // label figure/captions
 
-    // labelSectionHeadings()
+    labelSectionHeadings()
 
 
     ""
@@ -816,66 +833,66 @@ class DocumentSegmenter(
 
 
 
-  def groupPageTextBlocks(
-    pageId: Int@@PageID
-  ): Unit = {
+  // def groupPageTextBlocks(
+  //   pageId: Int@@PageID
+  // ): Unit = {
 
-    val pageLines: Seq[Component] = visualLineOnPageComponents(pageId.unwrap)
+  //   val pageLines: Seq[Component] = visualLineOnPageComponents(pageId.unwrap)
 
-    val pageBounds = charBasedPageBounds(pageId)
-    val pageCenter = pageBounds.toCenterPoint
+  //   val pageBounds = charBasedPageBounds(pageId)
+  //   val pageCenter = pageBounds.toCenterPoint
 
-    val lineBins = pageSegAccum.lineDimensionBins.find(_.page == pageId).get
+  //   val lineBins = pageSegAccum.lineDimensionBins.find(_.page == pageId).get
 
-    val unusedPageLines = mutable.ArrayBuffer[Component](pageLines:_*)
-    val usedPageLines = mutable.ArrayBuffer[Component]()
+  //   val unusedPageLines = mutable.ArrayBuffer[Component](pageLines:_*)
+  //   val usedPageLines = mutable.ArrayBuffer[Component]()
 
-    // starting w/most common width, down to least common..
-    val allBlocks = lineBins.widthBin.sortBy(_._1._2).reverse.map {
-      case ((mostFrequentWidthDocwide, wfreq), linesWithFreq) =>
+  //   // starting w/most common width, down to least common..
+  //   val allBlocks = lineBins.widthBin.sortBy(_._1._2).reverse.map {
+  //     case ((mostFrequentWidthDocwide, wfreq), linesWithFreq) =>
 
-        val remainingLinesWithFreq = linesWithFreq.diff(usedPageLines)
+  //       val remainingLinesWithFreq = linesWithFreq.diff(usedPageLines)
 
-        if (remainingLinesWithFreq.isEmpty) Seq() else {
+  //       if (remainingLinesWithFreq.isEmpty) Seq() else {
 
-          // divide page-specific most frequent lines into likely columns:
-          val colCenters = getMostFrequentValues(remainingLinesWithFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
+  //         // divide page-specific most frequent lines into likely columns:
+  //         val colCenters = getMostFrequentValues(remainingLinesWithFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
 
-          val commonLinesInCols = for {
-            (colX, cfreq) <- colCenters
-          } yield {
-            val candidateLines = remainingLinesWithFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) })
-            val visBlocks = groupVisualTextBlocks(colX, candidateLines, unusedPageLines)
-            visBlocks.foreach { vblock =>
-              pages.concatComponents(vblock, LB.Block)
-              unusedPageLines --= vblock
-            }
-          }
-        }
+  //         val commonLinesInCols = for {
+  //           (colX, cfreq) <- colCenters
+  //         } yield {
+  //           val candidateLines = remainingLinesWithFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) })
+  //           val visBlocks = groupVisualTextBlocks(colX, candidateLines, unusedPageLines)
+  //           visBlocks.foreach { vblock =>
+  //             pages.concatComponents(vblock, LB.TextBlock)
+  //             unusedPageLines --= vblock
+  //           }
+  //         }
+  //       }
 
-      case _ => Seq()
-    }
+  //     case _ => Seq()
+  //   }
 
-    if (unusedPageLines.length >0 ) {
-      println(s"""Error: Unused page lines in text line grouping""")
-    }
-  }
+  //   if (unusedPageLines.length >0 ) {
+  //     println(s"""Error: Unused page lines in text line grouping""")
+  //   }
+  // }
 
 
-  def sortZonesYX(zones: Seq[Component]): Seq[Component]= {
+  // def sortZonesYX(zones: Seq[Component]): Seq[Component]= {
 
-    zones.sortWith({case (cc1, cc2) =>
-      val ycmp = compareDouble(cc1.bounds.top, cc2.bounds.top, 0.01)
+  //   zones.sortWith({case (cc1, cc2) =>
+  //     val ycmp = compareDouble(cc1.bounds.top, cc2.bounds.top, 0.01)
 
-      val cmp = if (ycmp == 0) {
-        compareDouble(cc1.bounds.left, cc2.bounds.left, 0.01)
-      } else {
-        ycmp
-      }
+  //     val cmp = if (ycmp == 0) {
+  //       compareDouble(cc1.bounds.left, cc2.bounds.left, 0.01)
+  //     } else {
+  //       ycmp
+  //     }
 
-      cmp < 0
-    })
-  }
+  //     cmp < 0
+  //   })
+  // }
 
 }
 
