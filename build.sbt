@@ -11,52 +11,26 @@ version in ThisBuild := "0.1-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.11.8"
 
+// scapegoatVersion in ThisBuild:= "1.2.1"
+
 // required for javacpp
 classpathTypes in ThisBuild += "maven-plugin"
 
-shellPrompt in ThisBuild := { s: State =>
-  val c = scala.Console
-  val blue = c.RESET + c.BLUE + c.BOLD
-  val white = c.RESET + c.BOLD
-  val projectName = Project.extract(s).currentProject.id
 
-  "[" + blue + projectName + white + "]>> " + c.RESET
-}
-
-scalacOptions in ThisBuild ++= Seq(
-  "-target:jvm-1.7",
-  "-encoding", "UTF-8",
-  "-feature",
-  "-unchecked",
-  "-deprecation",
-  "-Xlint",
-  "-language:postfixOps",
-  "-language:implicitConversions",
-  "-Yno-adapted-args"
-  // "-Ywarn-dead-code",
-  // "-Ywarn-value-discard"
-)
-
-lazy val logbackVersion = "1.1.7"
-
-libraryDependencies in ThisBuild ++= Seq(
+val commonDeps = Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
   "com.iheart" %% "ficus" % "1.2.6",
   "org.apache.commons" % "commons-lang3" % "3.4",
-  "org.scalaz" %% "scalaz-core" % "7.2.3",
+  "org.scalaz" %% "scalaz-core" % "7.2.4",
   "org.scala-lang.modules" %% "scala-async" % "latest.release",
   "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.5",
-  "com.lihaoyi" %% "ammonite-ops" % "0.6.0",
-  "com.typesafe.play" %% "play-json" % "2.5.3",
-  "com.github.scopt" %% "scopt" % "3.4.0",
+  "com.lihaoyi" %% "ammonite-ops" % "0.6.2",
+  "com.typesafe.play" %% "play-json" % "2.5.4",
+  "com.github.scopt" %% "scopt" % "3.5.0",
   "com.itextpdf" % "itextpdf" % "5.5.9",
-  "com.softwaremill.scalamacrodebug" %% "macros" % "0.4",
-  "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test",
-  "org.slf4j" % "slf4j-api" % "1.7.21",
-  "ch.qos.logback" % "logback-core" % logbackVersion,
-  "ch.qos.logback" % "logback-classic" % logbackVersion
+  "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
 )
 
 
@@ -72,10 +46,15 @@ lazy val root = (project in file("."))
 
 
 lazy val watrmarks = (project in file("watr-marks"))
+  .settings(Sensible.settings)
+  .settings(libraryDependencies ++= commonDeps)
 
 lazy val watrshed = (project in file("watr-shed"))
+  .settings(Sensible.settings)
+  .settings(libraryDependencies ++= commonDeps)
   .settings(libraryDependencies ++= Seq(
-    "org.bouncycastle" % "bcprov-jdk15on" % "1.54"
+    "org.bouncycastle" % "bcprov-jdk15on" % "1.54",
+    "org.bouncycastle" % "bcpkix-jdk15on" % "1.54"
   ))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
@@ -83,10 +62,8 @@ lazy val watrshed = (project in file("watr-shed"))
 
 Revolver.settings
 
-lazy val watrcolors = (
-  crossProject in file("watr-colors")
-).settings(
-  libraryDependencies ++= Seq(
+lazy val watrcolors = (crossProject in file("watr-colors"))
+  .settings(libraryDependencies ++= Seq(
     "me.chrons" %%% "boopickle" % "1.1.3",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     "com.lihaoyi" %%% "scalarx" % "0.3.1",
@@ -103,7 +80,7 @@ lazy val watrcolors = (
   // refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),
   bootSnippet := "edu.umass.cs.iesl.watr.watrcolors.WatrColorClient().main();"
 ).jvmSettings(
-  // Revolver.settings:_*
+  Sensible.settings:_*
 ).jvmSettings(
   name := "watrcolors-server",
   libraryDependencies ++= Seq(
@@ -122,7 +99,7 @@ lazy val watrcolorsJS = watrcolors.js
 
 lazy val watrcolorsJVM = watrcolors.jvm.settings(
   (resources in Compile) += ({
-    (fastOptJS in(watrcolorsJS, Compile)).value
+    // (fastOptJS in(watrcolorsJS, Compile)).value
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value
   })
 ).dependsOn(watrshed)

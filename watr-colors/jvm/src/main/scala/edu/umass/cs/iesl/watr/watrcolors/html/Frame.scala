@@ -2,7 +2,8 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package html
 
-import scalatags.stylesheet.{CascadingStyleSheet, StyleSheet, StyleSheetTags, Sheet, Selector}
+// import scalatags.stylesheet.{CascadingStyleSheet, StyleSheet, StyleSheetTags, Sheet, Selector}
+import scalatags.stylesheet.{CascadingStyleSheet, Sheet}
 
 object Frame {
 
