@@ -74,17 +74,11 @@ class ZoneIterator(
   zoneIndex: ZoneIndexer
 ) {
 
-
   override def toString = {
     s"""${label}#${getFocus}"""
   }
 
   private def getFocus() = focii.focus
-  // zoneIndex.getPageIterator
-
-  def addLabel(label: Label) = ???
-
-  def getLabels(): Seq[Label] = ???
 
   def next: Option[ZoneIterator] = {
     focii.next.map(new ZoneIterator(_, label, zoneIndex))

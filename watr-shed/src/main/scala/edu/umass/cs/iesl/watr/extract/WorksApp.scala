@@ -18,10 +18,9 @@ object Works extends App {
   import java.io.{File => JFile}
 
   case class AppConfig(
-    entry: Option[JFile] = None,
-    // file: Option[JFile] = None,
-    singleFileMode: Boolean = false,
+    // entry: Option[JFile] = None,
     corpusRoot: Option[JFile] = None,
+    inputFileList: Option[JFile] = None,
     action: Option[String] = None,
     force: Boolean = false,
     numToRun: Int = 0,
@@ -52,6 +51,10 @@ object Works extends App {
     opt[Unit]('x', "overwrite") action { (v, conf) =>
       conf.copy(force = true) } text("force overwrite of existing files")
 
+    opt[JFile]('i', "input") action { (v, conf) =>
+      conf.copy(inputFileList = Option(v))
+    } text("process files listed in specified file, use -input=-- to read inputs from stdin")
+
     // opt[JFile]('a', "artifact") action { (v, conf) =>
     //   conf.copy(entry = Option(v))
     // } text("artifact id (same as *.d directory name)")
@@ -79,11 +82,6 @@ object Works extends App {
       })
     } text ("char extraction (debugging)")
 
-    cmd("lseg") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        lineseg(ac)
-      })
-    } text ("run line segmentation (for debugging)")
 
     cmd("bbsvg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -91,15 +89,10 @@ object Works extends App {
       })
     } text ("run column detection (for debugging)")
 
-    cmd("sec") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        findSectionHeaders(ac)
-      })
-    } text ("section heading (debug)")
 
     cmd("docseg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
-        detectParagraphs(ac)
+        segmentDocument(ac)
       })
     } text ("run document segmentation")
   }
@@ -119,17 +112,40 @@ object Works extends App {
   }
 
   def getProcessList(conf: AppConfig): Seq[CorpusEntry] = {
-    val corpus = Corpus(corpusRootOrDie(conf))
+    val corpus = Corpus(conf.corpusRoot
+        .map(croot => cwd/RelPath(croot))
+        .getOrElse(cwd))
 
-    val toProcess = conf.entry match {
-      case Some(entry) => Seq(corpus.entry(entry.getName))
-      case None => corpus.entries()
-    }
+
+
+    val toProcess = conf.inputFileList
+      .map({ inputs =>
+
+        val inputLines = if (inputs.toString == "--") {
+          io.Source.stdin.getLines.toList
+        } else {
+          val inputFiles =  RelPath(inputs)
+          val lines = read(cwd/inputFiles)
+          lines.split("\n").toList
+        }
+
+        val inputFiles =
+          inputLines
+            .map(_.trim).filterNot(_.isEmpty())
+            .map(corpus.entry(_))
+        inputFiles
+
+      }).getOrElse({
+        corpus.entries()
+      })
+
+
 
     val skipped = if (conf.numToSkip > 0) toProcess.drop(conf.numToSkip) else toProcess
     val taken = if (conf.numToRun > 0) skipped.take(conf.numToRun) else toProcess
 
     taken
+
   }
 
 
@@ -183,11 +199,28 @@ object Works extends App {
       val pdfArtifact = entry.getPdfArtifact()
       processCorpusArtifact(entry, outputName, processor)
     }
-
   }
 
 
-  def detectParagraphs(conf: AppConfig): Unit = {
+  def normalizeCorpusEntry(conf: AppConfig): Unit = {
+    val corpus = Corpus(corpusRootOrDie(conf))
+
+    println(s"normalizing corpus at ${corpus.corpusRoot}")
+    ls! corpus.corpusRoot foreach { pdf =>
+      val artifactPath = corpus.corpusRoot / s"${pdf.name}.d"
+      if (pdf.isFile && !(exists! artifactPath)) {
+        println(s" creating artifact page for  ${pdf}")
+        mkdir! artifactPath
+      }
+      if (pdf.isFile) {
+        println(s" stashing ${pdf}")
+        mv.into(pdf, artifactPath)
+      }
+    }
+  }
+
+
+  def segmentDocument(conf: AppConfig): Unit = {
 
     val artifactOutputName = "docseg.json"
     processCorpus(conf, artifactOutputName, proc)
@@ -195,45 +228,8 @@ object Works extends App {
     def proc(pdfins: InputStream, outputPath: String): String = {
       val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
       segmenter.runPageSegmentation()
-    }
-
-  }
-
-  def findSectionHeaders(conf: AppConfig): Unit = {
-    // import watrmarks.{StandardLabels => LB}
-
-    processCorpus(conf, "sec.txt", (pdfins: InputStream, outputPath: String) => {
-      val dx = extract.DocumentExtractor
-      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
-
-      segmenter.runPageSegmentation()
-
-      // val vlines = segmenter.pages.bioSpine("VisualLines")
-      // vlines.foreach { linenode =>
-      //   linenode.pins.foreach{p =>
-      //     println(s"""pin: ${p} """)
-      //   }
-      //   ComponentRendering.serializeComponent(
-      //     linenode.component
-      //   )
-      // }
-
       ComponentRendering.serializeDocument(segmenter.pages).toString()
-
-
-      // pageZones.foreach{ c =>
-      //   ComponentRendering.serializeComponent(c)
-      // }
-
-      // {"labels": [
-      //     ["section", [234, 235, 236, 256], 130],
-      //     ["para", [5,6,7,9], 141],
-      //     ["image", [6,9], 141],
-      //     ["caption", [3,9], 141],
-      //.......
-      // [[["1.","Introduction"],          [0,1]], 890]
-
-    })
+    }
 
   }
 
@@ -314,52 +310,7 @@ object Works extends App {
   }
 
 
-  def lineseg(conf: AppConfig): Unit = {
 
-    val artifactOutputName = "lineseg.txt"
-    processCorpus(conf, artifactOutputName, proc)
-
-
-    def proc(pdfins: InputStream, outputPath: String): String = {
-      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
-      segmenter.runPageSegmentation()
-
-      // val lineCols = lines
-      //   .sortBy(_.findCenterY())
-      //   .map({ l =>
-      //     val lineBounds = l.bounds.prettyPrint
-      //     val tokenized = l.tokenizeLine().toText
-      //     // s"${tokenized}               ${lineBounds}"
-      //     (tokenized.box, lineBounds.box)
-      //   })
-      // val justified =
-      //   s"\nPage:${page} file://${outputPath}" %|
-      //     (vcat(left)(lineCols.map(_._1).toList) + "    " + vcat(right)(lineCols.map(_._2).toList))
-      // justified.toString()
-      // }.mkString(s"\nDocument: file://${outputPath}\n", "\n", "\n")
-
-      ""
-
-    }
-  }
-
-
-  def normalizeCorpusEntry(conf: AppConfig): Unit = {
-    val corpus = Corpus(corpusRootOrDie(conf))
-
-    println(s"normalizing corpus at ${corpus.corpusRoot}")
-    ls! corpus.corpusRoot foreach { pdf =>
-      val artifactPath = corpus.corpusRoot / s"${pdf.name}.d"
-      if (pdf.isFile && !(exists! artifactPath)) {
-        println(s" creating artifact page for  ${pdf}")
-        mkdir! artifactPath
-      }
-      if (pdf.isFile) {
-        println(s" stashing ${pdf}")
-        mv.into(pdf, artifactPath)
-      }
-    }
-  }
 
 
 }

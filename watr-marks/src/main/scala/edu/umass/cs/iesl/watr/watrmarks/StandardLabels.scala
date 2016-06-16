@@ -3,7 +3,8 @@ package watrmarks
 
 
 trait DocSegLabels {
-  // val Zone = Label("ds", "zone")
+
+  //  Block-role labels
   val Pages = Label("ds", "pages")
   val Page = Label("ds", "page")
   val Column = Label("ds", "column")
@@ -15,7 +16,6 @@ trait DocSegLabels {
 
 
   val TextBlock = Label("ds", "text-block")
-  // val Block = Label("ds", "block")
   val Para = Label("ds", "para")
   val Image = Label("ds", "image")
   val Table = Label("ds", "table")

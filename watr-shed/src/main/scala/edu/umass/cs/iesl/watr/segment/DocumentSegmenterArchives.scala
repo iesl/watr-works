@@ -162,3 +162,122 @@
   //     .map{ Component(_, LB.VisualLine) }
   //     .sortBy(b => (b.bounds.top, b.bounds.left))
   // }
+
+  // def groupPageTextBlocks(
+  //   pageId: Int@@PageID
+  // ): Unit = {
+
+  //   val pageLines: Seq[Component] = visualLineOnPageComponents(pageId.unwrap)
+
+  //   val pageBounds = charBasedPageBounds(pageId)
+  //   val pageCenter = pageBounds.toCenterPoint
+
+  //   val lineBins = pageSegAccum.lineDimensionBins.find(_.page == pageId).get
+
+  //   val unusedPageLines = mutable.ArrayBuffer[Component](pageLines:_*)
+  //   val usedPageLines = mutable.ArrayBuffer[Component]()
+
+  //   // starting w/most common width, down to least common..
+  //   val allBlocks = lineBins.widthBin.sortBy(_._1._2).reverse.map {
+  //     case ((mostFrequentWidthDocwide, wfreq), linesWithFreq) =>
+
+  //       val remainingLinesWithFreq = linesWithFreq.diff(usedPageLines)
+
+  //       if (remainingLinesWithFreq.isEmpty) Seq() else {
+
+  //         // divide page-specific most frequent lines into likely columns:
+  //         val colCenters = getMostFrequentValues(remainingLinesWithFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
+
+  //         val commonLinesInCols = for {
+  //           (colX, cfreq) <- colCenters
+  //         } yield {
+  //           val candidateLines = remainingLinesWithFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) })
+  //           val visBlocks = groupVisualTextBlocks(colX, candidateLines, unusedPageLines)
+  //           visBlocks.foreach { vblock =>
+  //             pages.concatComponents(vblock, LB.TextBlock)
+  //             unusedPageLines --= vblock
+  //           }
+  //         }
+  //       }
+
+  //     case _ => Seq()
+  //   }
+
+  //   if (unusedPageLines.length >0 ) {
+  //     println(s"""Error: Unused page lines in text line grouping""")
+  //   }
+  // }
+
+
+  // def sortZonesYX(zones: Seq[Component]): Seq[Component]= {
+
+  //   zones.sortWith({case (cc1, cc2) =>
+  //     val ycmp = compareDouble(cc1.bounds.top, cc2.bounds.top, 0.01)
+
+  //     val cmp = if (ycmp == 0) {
+  //       compareDouble(cc1.bounds.left, cc2.bounds.left, 0.01)
+  //     } else {
+  //       ycmp
+  //     }
+
+  //     cmp < 0
+  //   })
+  // }
+
+
+
+
+
+  // def groupVisualTextRects(colX: Double, textRectCandidates: Seq[Component], remainingPageLines: Seq[Component]): Unit = {
+  //   val unusedLines = mutable.ArrayBuffer[Component](remainingPageLines:_*)
+  //   val usedLines = mutable.ArrayBuffer[Component]()
+
+  //   val ySortedLines = textRectCandidates.sortBy(_.bounds.top)
+  //   val topLine = ySortedLines.head
+  //   val bottomLine = ySortedLines.last
+
+
+  //   def candidateIsBelowBottom(cand: Component) = cand.bounds.top > bottomLine.bounds.top
+  //   def candidateIsBelowTop(cand: Component) = cand.bounds.top > topLine.bounds.top
+  //   def candidateIsAboveBottom(cand: Component) = cand.bounds.top < bottomLine.bounds.top
+  //   def candidateIsAboveTop(cand: Component) = cand.bounds.top < topLine.bounds.top
+
+
+  //   val possibleCand = unusedLines
+  //     .diff(ySortedLines)
+  //     .sortBy(_.bounds.top)
+
+  //   val candidateLinesAbove = possibleCand
+  //     .reverse
+  //     .filter(candidateIsAboveTop(_))
+  //     .filterNot(candidateIsOutsideLineBounds(_, topLine))
+  //     .takeWhile({cc =>
+  //       val colBreak = candidateCrossesLineBounds(cc, topLine)
+
+  //       !colBreak
+  //     })
+
+
+  //   val candidateLinesBelow = possibleCand
+  //     .filter(candidateIsBelowBottom(_))
+  //     .filterNot(candidateIsOutsideLineBounds(_, topLine))
+  //     .takeWhile({cc =>
+  //       val colBreak = candidateCrossesLineBounds(cc, topLine)
+  //         !colBreak
+  //     })
+
+
+  //   val candidateLinesWithin = possibleCand
+  //     .filter(c =>candidateIsAboveBottom(c) && candidateIsBelowTop(c))
+  //     .filterNot(candidateIsOutsideLineBounds(_, topLine))
+  //     .filterNot(candidateCrossesLineBounds(_, topLine))
+
+
+  //   val totalLines =  candidateLinesAbove ++ ySortedLines ++ candidateLinesWithin ++ candidateLinesBelow
+  //   val totalLineSorted = totalLines.sortBy(_.bounds.top)
+
+  //   unusedLines --= totalLineSorted
+  //   usedLines ++= totalLineSorted
+
+  //   pages.concatComponents(totalLineSorted, LB.Block)
+  // }

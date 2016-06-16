@@ -128,7 +128,7 @@ object DocumentSegmenter extends DocumentUtils {
 
   def debugFormatLine(cc: Component): String = {
     import TB._
-    val line = renderConnectedComponents(cc.tokenizeLine())
+    val line = renderConnectedComponents(cc)
     s"${cc.bounds.prettyPrint}, r:${cc.bounds.right.pp} b:${cc.bounds.bottom} ctr:${cc.bounds.toCenterPoint.prettyPrint} > ${hsep(line)}"
   }
 
@@ -190,6 +190,7 @@ object DocumentSegmenter extends DocumentUtils {
 class DocumentSegmenter(
   val pages: ZoneIndexer
 ) {
+
   import scala.math.Ordering.Implicits._
   implicit def RegionIDOrdering: Ordering[Int@@RegionID] = Ordering.by(_.unwrap)
 
@@ -343,19 +344,17 @@ class DocumentSegmenter(
     }
 
     // Now create a BIO labeling linking visual lines into blocks
-    val textBlockSpine = pages.bioSpine("TextBlockSpine")
 
     val spine = finalSplit
       .flatten
       .map({ block =>
-        // pages.concatComponents(block.map(_._1), LB.TextBlock)
-        val unlabeled = block.map(_._1).map(BioNode(_))
-        unlabeled.map({node =>
-          node
-
-          node
-        })
+        val bios = block.map(_._1).map(BioNode(_))
+        pages.addBioLabels(LB.TextBlock, bios)
+        bios
       })
+
+    val textBlockSpine = pages.bioSpine("TextBlockSpine")
+    textBlockSpine ++= spine.flatten
 
     // finalSplit.flatten
     // .foreach { block =>
@@ -367,20 +366,6 @@ class DocumentSegmenter(
 
   }
 
-  def labelPageLines(): Unit = {
-
-    val lineSpine = pages.bioSpine("VisualLines")
-
-    lineSpine ++= (for {
-      pagesComp <- pages.getLabeledComponents(LB.Pages)
-      pageComp <- pagesComp.labeledChildren(LB.Page)
-      line <- pageComp.labeledChildren(LB.VisualLine)
-    } yield {
-      BioNode(line)
-    })
-  }
-
-
 
   def runPageSegmentation(): String = { // Seq[ConnectedComponents]
     // import TB._
@@ -391,7 +376,6 @@ class DocumentSegmenter(
 
     // document-wide stats on cc discovered lines
     // findMostFrequentLineDimensions()
-
     // findMostFrequentFocalJumps()
 
     // val orderedLinesPerPage = for {
@@ -400,7 +384,6 @@ class DocumentSegmenter(
     //   println(s"segmenting page ${pageId}")
     //   groupPageTextBlocks(pageId)
     // }
-    // labelPageLines()
 
     // // label text lines (added label on page lines)
     // // label text blocks BIO labeling on text lines
@@ -599,7 +582,7 @@ class DocumentSegmenter(
       .foreach({ case (width, lines) =>
         println(" "*indent + s"Lines within width ${width}")
         lines.sortBy(_.bounds.top).foreach{ line =>
-          println("  "*indent + s"w:${line.bounds.width.pp}, h:${line.bounds.height.pp} ${line.bounds.prettyPrint} > ${line.tokenizeLine().toText}")
+          println("  "*indent + s"w:${line.bounds.width.pp}, h:${line.bounds.height.pp} ${line.bounds.prettyPrint} > ${line.toText}")
         }
     })
   }
@@ -719,34 +702,25 @@ class DocumentSegmenter(
 
   def labelSectionHeadings(): Unit = {
 
-    val vlines = pages.bioSpine("VisualLines")
+    val vlines = pages.bioSpine("TextBlockSpine")
     println(s"len lineSpine = ${vlines.length}")
     for {
-      linec <- vlines
-      line = linec.component
-      numbering = line.chars.takeWhile(c => c.isDigit || c=='.')
-      nexts = line.chars.drop(numbering.length) //.takeWhile(c => c.isLetter)
+      lineBioNode <- vlines
+      lineComp = lineBioNode.component
+      numbering = lineComp.chars.takeWhile(c => c.isDigit || c=='.')
+      nexts = lineComp.chars.drop(numbering.length) //.takeWhile(c => c.isLetter)
       isTOCLine = """\.+""".r.findAllIn(nexts).toSeq.sortBy(_.length).lastOption.exists(_.length > 4)
 
       if !numbering.isEmpty && !nexts.isEmpty()
-      // _ = println(s"""${line.chars}""")
+      // _ = println(s"""${lineComp.chars}""")
       if numbering.matches("^[1-9]+\\.([1-9]\\.)*")
       if !isTOCLine
       // _ = println(s"""    >${numbering}""")
     } {
       val ns = numbering.split("\\.").toList.map(_.toInt)
-      // line.addLabel(LB.SectionHeadingLine)
-      // TODO line.addLabel(LB.SectionHeading.withValue(...)) || line.addLabel(LB.SectionNumber.withValue(...))
-      val p = BioPins(
-        id = 0,
-        pin = LB.SectionHeadingLine.U
-      )
-      println(s"adding ${p}")
-      linec.pins.add(p)
+      pages.addBioLabels(LB.SectionHeadingLine, lineBioNode)
 
-      // linec.pins += p
-
-      (line, ns)
+      (lineComp, ns)
 
     }
 
@@ -782,178 +756,50 @@ class DocumentSegmenter(
 
 
 
-  ///
-  def groupVisualTextBlocks(
-    colX: Double, textRectCandidates: Seq[Component], remainingPageLines: Seq[Component]
-  ): Seq[Seq[Component]] = {
-    val unusedLines = mutable.ArrayBuffer[Component](remainingPageLines:_*)
-    val usedLines = mutable.ArrayBuffer[Component]()
-
-    val ySortedLines = textRectCandidates.sortBy(_.bounds.top)
-    val topLine = ySortedLines.head
-    // val bottomLine = ySortedLines.last
-
-
-    val possibleCand = remainingPageLines
-      .diff(ySortedLines)
-      .filterNot(candidateIsOutsideLineBounds(_, topLine))
-
-    val commonJumps = pageSegAccum.commonFocalJumps
-
-
-
-    val totalLinesSorted =  (possibleCand ++ ySortedLines).sortBy(_.bounds.top)
-
-    totalLinesSorted.
-      sliding(2).toSeq
-      .map({
-        case Seq(upper, lower) =>
-          val jump = focalJump(upper, lower)
-          val ujumps = commonJumps(upper.bounds.width.pp)
-          val ljumps = commonJumps(lower.bounds.width.pp)
-          val jumps = ujumps ++ ljumps
-
-          if (jumps contains jump.pp) {
-            println("common jump found")
-          }
-
-        case Seq(lone) => 0d
-        case Seq() => 0d
-      })
-
-    // Walk down column lines pair-wise, and take while diagonal distances match
-
-
-    // pages.concatComponents(totalLineSorted, LB.Block)
-    // totalLineSorted
-
-    ???
-  }
-
-
-
-
-  // def groupPageTextBlocks(
-  //   pageId: Int@@PageID
-  // ): Unit = {
-
-  //   val pageLines: Seq[Component] = visualLineOnPageComponents(pageId.unwrap)
-
-  //   val pageBounds = charBasedPageBounds(pageId)
-  //   val pageCenter = pageBounds.toCenterPoint
-
-  //   val lineBins = pageSegAccum.lineDimensionBins.find(_.page == pageId).get
-
-  //   val unusedPageLines = mutable.ArrayBuffer[Component](pageLines:_*)
-  //   val usedPageLines = mutable.ArrayBuffer[Component]()
-
-  //   // starting w/most common width, down to least common..
-  //   val allBlocks = lineBins.widthBin.sortBy(_._1._2).reverse.map {
-  //     case ((mostFrequentWidthDocwide, wfreq), linesWithFreq) =>
-
-  //       val remainingLinesWithFreq = linesWithFreq.diff(usedPageLines)
-
-  //       if (remainingLinesWithFreq.isEmpty) Seq() else {
-
-  //         // divide page-specific most frequent lines into likely columns:
-  //         val colCenters = getMostFrequentValues(remainingLinesWithFreq.map(_.bounds.toCenterPoint.x) , resolution=0.2d)
-
-  //         val commonLinesInCols = for {
-  //           (colX, cfreq) <- colCenters
-  //         } yield {
-  //           val candidateLines = remainingLinesWithFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) })
-  //           val visBlocks = groupVisualTextBlocks(colX, candidateLines, unusedPageLines)
-  //           visBlocks.foreach { vblock =>
-  //             pages.concatComponents(vblock, LB.TextBlock)
-  //             unusedPageLines --= vblock
-  //           }
-  //         }
-  //       }
-
-  //     case _ => Seq()
-  //   }
-
-  //   if (unusedPageLines.length >0 ) {
-  //     println(s"""Error: Unused page lines in text line grouping""")
-  //   }
-  // }
-
-
-  // def sortZonesYX(zones: Seq[Component]): Seq[Component]= {
-
-  //   zones.sortWith({case (cc1, cc2) =>
-  //     val ycmp = compareDouble(cc1.bounds.top, cc2.bounds.top, 0.01)
-
-  //     val cmp = if (ycmp == 0) {
-  //       compareDouble(cc1.bounds.left, cc2.bounds.left, 0.01)
-  //     } else {
-  //       ycmp
-  //     }
-
-  //     cmp < 0
-  //   })
-  // }
-
-}
-
-
-
-
-
-
-
-
-// FIXME: delete
-  // def groupVisualTextRects(colX: Double, textRectCandidates: Seq[Component], remainingPageLines: Seq[Component]): Unit = {
+  // def groupVisualTextBlocks(
+  //   colX: Double, textRectCandidates: Seq[Component], remainingPageLines: Seq[Component]
+  // ): Seq[Seq[Component]] = {
   //   val unusedLines = mutable.ArrayBuffer[Component](remainingPageLines:_*)
   //   val usedLines = mutable.ArrayBuffer[Component]()
 
   //   val ySortedLines = textRectCandidates.sortBy(_.bounds.top)
   //   val topLine = ySortedLines.head
-  //   val bottomLine = ySortedLines.last
+  //   // val bottomLine = ySortedLines.last
 
 
-  //   def candidateIsBelowBottom(cand: Component) = cand.bounds.top > bottomLine.bounds.top
-  //   def candidateIsBelowTop(cand: Component) = cand.bounds.top > topLine.bounds.top
-  //   def candidateIsAboveBottom(cand: Component) = cand.bounds.top < bottomLine.bounds.top
-  //   def candidateIsAboveTop(cand: Component) = cand.bounds.top < topLine.bounds.top
-
-
-  //   val possibleCand = unusedLines
+  //   val possibleCand = remainingPageLines
   //     .diff(ySortedLines)
-  //     .sortBy(_.bounds.top)
-
-  //   val candidateLinesAbove = possibleCand
-  //     .reverse
-  //     .filter(candidateIsAboveTop(_))
   //     .filterNot(candidateIsOutsideLineBounds(_, topLine))
-  //     .takeWhile({cc =>
-  //       val colBreak = candidateCrossesLineBounds(cc, topLine)
 
-  //       !colBreak
+  //   val commonJumps = pageSegAccum.commonFocalJumps
+
+
+  //   val totalLinesSorted =  (possibleCand ++ ySortedLines).sortBy(_.bounds.top)
+
+  //   totalLinesSorted.
+  //     sliding(2).toSeq
+  //     .map({
+  //       case Seq(upper, lower) =>
+  //         val jump = focalJump(upper, lower)
+  //         val ujumps = commonJumps(upper.bounds.width.pp)
+  //         val ljumps = commonJumps(lower.bounds.width.pp)
+  //         val jumps = ujumps ++ ljumps
+
+  //         if (jumps contains jump.pp) {
+  //           println("common jump found")
+  //         }
+
+  //       case Seq(lone) => 0d
+  //       case Seq() => 0d
   //     })
 
-
-  //   val candidateLinesBelow = possibleCand
-  //     .filter(candidateIsBelowBottom(_))
-  //     .filterNot(candidateIsOutsideLineBounds(_, topLine))
-  //     .takeWhile({cc =>
-  //       val colBreak = candidateCrossesLineBounds(cc, topLine)
-  //         !colBreak
-  //     })
+  //   // Walk down column lines pair-wise, and take while diagonal distances match
 
 
-  //   val candidateLinesWithin = possibleCand
-  //     .filter(c =>candidateIsAboveBottom(c) && candidateIsBelowTop(c))
-  //     .filterNot(candidateIsOutsideLineBounds(_, topLine))
-  //     .filterNot(candidateCrossesLineBounds(_, topLine))
+  //   // pages.concatComponents(totalLineSorted, LB.Block)
+  //   // totalLineSorted
 
-
-  //   val totalLines =  candidateLinesAbove ++ ySortedLines ++ candidateLinesWithin ++ candidateLinesBelow
-  //   val totalLineSorted = totalLines.sortBy(_.bounds.top)
-
-  //   unusedLines --= totalLineSorted
-  //   usedLines ++= totalLineSorted
-
-  //   pages.concatComponents(totalLineSorted, LB.Block)
+  //   ???
   // }
+
+}

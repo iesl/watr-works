@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import scala.collection.mutable
-import scala.collection.mutable
 
 import net.sf.jsi
 import net.sf.jsi.rtree.RTree
@@ -14,6 +13,7 @@ import scalaz.@@
 // import ComponentOperations._
 import IndexShapeOperations._
 import ComponentTypeEnrichments._
+import utils.IdGenerator
 
 case class PageInfo(
   pageId: Int@@PageID,
@@ -23,15 +23,13 @@ case class PageInfo(
   charBoxes: mutable.LongMap[CharRegion]
 )
 
-case class BioPins(
-  id: Int,
-  pin: BioPin
-)
 
-case class BioNode(
-  component: Component,
-  pins: mutable.Set[BioPins] =  mutable.Set()
-)
+object BioLabeling {
+
+
+}
+
+
 
 
 class ZoneIndexer  {
@@ -53,6 +51,7 @@ class ZoneIndexer  {
   val componentLabels = mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]]()
 
   val componentIdGen = utils.IdGenerator[ComponentID]()
+  val labelIdGen = IdGenerator[LabelID]()
 
   def empty(): Component = {
     concatComponents(Seq())
@@ -63,7 +62,7 @@ class ZoneIndexer  {
 
 
   def concatComponents(components: Seq[Component], l: Label*): Component = {
-    val c = ConnectedComponents(componentIdGen.nextId, components, this)
+    val c = ConnectedComponent(componentIdGen.nextId, components, this)
     l.foreach(c.addLabel)
     componentMap.put(c.id, c)
     c
@@ -259,6 +258,24 @@ class ZoneIndexer  {
     zones.sortBy { z => z.regions.head.bbox.left }
   }
 
+  def addBioLabels(label: Label, node: BioNode): Unit = {
+    addBioLabels(label, Seq(node))
+  }
+
+  def addBioLabels(label: Label, nodes: Seq[BioNode]): Unit = {
+    val labelId = labelIdGen.nextId
+
+    if (nodes.length==1) {
+      nodes.foreach(_.pins += label.U(labelId))
+    } else if (nodes.length > 1) {
+      nodes.head.pins += label.B(labelId)
+      nodes.last.pins += label.L(labelId)
+
+      nodes.drop(1).dropRight(1).foreach(
+        _.pins += label.I(labelId)
+      )
+    }
+  }
 
 }
 

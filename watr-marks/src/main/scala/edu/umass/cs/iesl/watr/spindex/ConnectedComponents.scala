@@ -22,6 +22,9 @@ sealed trait Component {
 
   def children(): Seq[Component]
 
+  // TODO this seems like an awful idea:
+  def replaceChildren(ch: Seq[Component]): Unit
+
   def charComponents: Seq[PageComponent]
 
   def descendants(): Seq[Component] = {
@@ -150,6 +153,8 @@ case class PageComponent(
 
   def children(): Seq[Component] = Seq()
 
+  def replaceChildren(ch: Seq[Component]): Unit = ()
+
   def charComponents: Seq[PageComponent] = Seq(this)
 
   def char = component match {
@@ -198,10 +203,22 @@ case class PageComponent(
   def chars: String = toText
 
 }
+import scala.collection.mutable
+
+object ConnectedComponent {
+  def apply(
+    id: Int@@ComponentID,
+    components: Seq[Component],
+    zoneIndex: ZoneIndexer
+  ): ConnectedComponents = ConnectedComponents(
+    id, mutable.MutableList(components:_*), zoneIndex
+  )
+}
+
 
 case class ConnectedComponents(
   id: Int@@ComponentID,
-  components: Seq[Component],
+  components: mutable.MutableList[Component],
   override val zoneIndex: ZoneIndexer
   // blockRole: Option[Label] = None
   // label: Label = LB.VisualLine
@@ -209,6 +226,11 @@ case class ConnectedComponents(
 ) extends Component {
 
   def targetRegions: Seq[TargetRegion] = components.flatMap(_.targetRegions)
+
+  def replaceChildren(ch: Seq[Component]): Unit = {
+    this.components.clear()
+    this.components ++= ch
+  }
 
   def children(): Seq[Component] = components
 

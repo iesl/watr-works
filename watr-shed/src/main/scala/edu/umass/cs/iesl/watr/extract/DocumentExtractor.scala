@@ -73,8 +73,9 @@ object DocumentExtractor extends ComponentDataTypeFormats {
         val ys = line.charComponents.map(_.component.region.bbox.bottom.pp).mkString(" ")
         val escChars = escapeXml11(line.chars)
 
+        line.tokenizeLine()
 
-        val linetext = line.tokenizeLine().toText.replaceAll("-", "–")
+        val linetext = line.toText.replaceAll("-", "–")
         s"""|                <!--
             |${linetext} --> <svg:rect class="linebox" x="${line.bounds.left.pp}" y="${line.bounds.top.pp}" width="${line.bounds.width.pp}"  height="${line.bounds.height.pp}" />
             |                <svg:text font-size="1" height="${line.bounds.height}" width="${line.bounds.width}"><svg:tspan height="${line.bounds.height}" x="${xs}" y="${ys}">${escChars}</svg:tspan></svg:text>

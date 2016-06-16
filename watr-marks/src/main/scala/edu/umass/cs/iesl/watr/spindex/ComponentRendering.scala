@@ -3,7 +3,7 @@ package spindex
 
 import scala.collection.mutable
 import scalaz._
-import utils._
+// import utils._
 import watrmarks._
 
 import TypeTags._
@@ -14,8 +14,9 @@ import watrmarks.{StandardLabels => LB}
 case class CCRenderState(
   numOfPages: Int,
   startingPage: Int@@PageID = PageID(0),
-  idgen: IdGenerator[TokenID] = IdGenerator[TokenID](),
-  tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@TokenID, LTBounds)] = mutable.ArrayBuffer()
+  // idgen: IdGenerator[TokenID] = IdGenerator[TokenID](),
+  tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@ComponentID, LTBounds)] = mutable.ArrayBuffer()
+  // tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@TokenID, LTBounds)] = mutable.ArrayBuffer()
 ) {
   private var currPage: Int@@PageID = startingPage
 
@@ -28,7 +29,6 @@ case class CCRenderState(
 }
 
 
-
 object ComponentRendering {
   import ComponentOperations._
   import IndexShapeOperations._
@@ -36,17 +36,17 @@ object ComponentRendering {
 
   import TB._
 
-  def selectPinForLabel(lb: Label, n: BioNode): BioPins = {
+  def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
     n.pins
-      .filter(p => p.pin.label==lb)
+      .filter(p => p.label==lb)
       .head
   }
   def isBegin(lb: Label, n: BioNode) = {
-    n.pins.exists(p => p.pin.label==lb && (p.pin.isBegin || p.pin.isUnit))
+    n.pins.exists(p => p.label==lb && (p.isBegin || p.isUnit))
   }
 
   def hasID(lb: Label, id: Int, n: BioNode) = {
-    n.pins.exists(p => p.pin.label==lb && p.id == id)
+    n.pins.exists(p => p.label==lb && p.id == id)
   }
 
   def selectBioLabelings(l: Label, seq: Seq[BioNode]): Seq[Seq[BioNode]] = {
@@ -62,8 +62,8 @@ object ComponentRendering {
       atBegin.headOption
         .map ({ node =>
           node.pins
-            .filter(_.pin.label==l)
-            .foreach(p => currID = p.id)
+            .filter(_.label==l)
+            .foreach(p => currID = p.id.unwrap)
 
           val (yes, after) = atBegin
             .span(node => hasID(l, currID, node))
@@ -109,7 +109,7 @@ object ComponentRendering {
       startingPage = PageID(0)
     ))
 
-    val lineSpine = pages.bioSpine("VisualLines")
+    val lineSpine = pages.bioSpine("TextBlockSpine")
 
     val serComponents = List(
       LB.SectionHeadingLine
@@ -187,136 +187,88 @@ object ComponentRendering {
   def renderConnectedComponents(_cc: Component)(implicit ostate: Option[CCRenderState] = None): Seq[TB.Box] = {
     import TB._
 
-
     val subrender = _cc match {
       case cc: ConnectedComponents =>
-        val blockRole = cc.getLabels.filter(_.ns=="ds").headOption
-        blockRole.map{ _ match {
-          case LB.VisualLine =>
-            renderConnectedComponents(cc.tokenizeLine())
+        val labels = cc.getLabels
+        if (labels.contains(LB.VisualLine)) {
+          cc.tokenizeLine()
 
-          case LB.Page =>
-            // should be a set of blocks
-            val vs = cc.components.flatMap({ c=>
-              renderConnectedComponents(c)
-            })
-            Seq(vcat(vs))
+          ostate.map{ state =>
+            val currPage = state.currentPage
 
-          // case LB.SectionHeading =>
-          //   Seq()
-          case LB.Column =>
-            Seq(
-              vcat(cc.components.flatMap({ c=>
-                renderConnectedComponents(c)
-              })))
+            val vs = cc.components.map({ c=>
+              val tokenId = c.id
+              state.tokens.append((currPage, tokenId, c.bounds))
+              val trend = renderConnectedComponents(c)
+              val token = hcat(trend)
 
-
-          case LB.TokenizedLine =>
-            // println(s"   ${cc.blockRole}")
-            ostate.map{ state =>
-              val currPage = state.currentPage
-
-              val vs = cc.components.map({ c=>
-                val tokenId = state.idgen.nextId
-                state.tokens.append((currPage, tokenId, c.bounds))
-                val trend = renderConnectedComponents(c)
-                val token = hcat(trend)
-
-                val quoted = "\"".box+token+"\""
-                (quoted,  tokenId.toString.box)
-              })
-
-              Seq(
-                "[[".box + hsepb(vs.map(_._1), ",") +"]" + ",     " + "[" + hsepb(vs.map(_._2), ",") + s"], ${cc.id}]"
-              )
-
-            } getOrElse {
-              val vs = cc.components.map({ c=>
-                val trend = renderConnectedComponents(c)
-                hcat(trend)
-              })
-
-              Seq(hsep(vs))
-            }
-
-
-          case LB.Token =>
-            val clabelsx = cc.containedLabels()
-            val clabels:Set[Label] = cc.components.map(_.containedLabels).reduce(_++_)
-            val texFmtLabels = (clabels intersect Set(LB.Sup, LB.Sub))
-
-            val subs = Seq(
-              ('"' -> "\\\""),
-              ('\\' -> "\\\\"),
-              ('{' -> "\\\\{"),
-              ('}' -> "\\\\}")
-            ) ++ (if (!texFmtLabels.isEmpty) Seq( // add extra escapes inside tex-formatted tokens
-              ('_' -> "\\\\_"),
-              ('^' -> "\\\\^")
-            ) else Seq())
-
-            val mapped = cc.components.map({c =>
-              hcat(
-                renderConnectedComponents(
-                  c.mapChars(subs)))
+              val quoted = "\"".box+token+"\""
+              (quoted,  tokenId.toString.box)
             })
 
-            // println(s"""| Rendering token: ${cc.chars}
-            //             |   ${texFmtLabels}
-            //             |   ${mapped.map(_.chars).mkString(" ")}
-            //             |""".stripMargin)
-
-            if (texFmtLabels.isEmpty) {
-              mapped
-            } else {
-              "{".box +: mapped :+ "}".box
-            }
-
-          case LB.Sup   =>
-            // println(s"   ${cc.blockRole}")
-            val vs = cc.components.flatMap(c =>
-              renderConnectedComponents(c)
-            )
-
-            Seq("^{".box + hcat(vs) + "}")
-
-          case LB.Sub   =>
-            // println(s"   ${cc.blockRole}")
-            val vs = cc.components.flatMap(c =>
-              renderConnectedComponents(c)
-            )
-
-            Seq("_{".box + hcat(vs) + "}")
-
-          case LB.Block =>
-            // println(s"   ${cc.blockRole}")
-            val vs = cc.components.map(c =>
-              hcat(renderConnectedComponents(c))
-            )
-
-
             Seq(
-              s"""{"labels": ["body"], "lines": [""".box %
-                indent(4)(vjoinTrailSep(left, ",")(vs:_*)) %
-              "]}".box
+              "[[".box + hsepb(vs.map(_._1), ",") +"]" + ",     " + "[" + hsepb(vs.map(_._2), ",") + s"], ${cc.id}]"
             )
 
-          case LB.Para  => ???
-          case LB.Image => ???
-          case LB.Table => ???
-          case x =>
-            // println(s"  ??? ${cc.blockRole}")
-            val vs = cc.components.flatMap(c =>
-              renderConnectedComponents(c)
-            )
-            Seq(hcat(vs))
-        }} getOrElse {
+          } getOrElse {
+            val vs = cc.components.map({ c=>
+              val trend = renderConnectedComponents(c)
+              hcat(trend)
+            })
+
+            Seq(hsep(vs))
+          }
+
+
+        } else if (labels.contains(LB.Token)) {
+          val clabelsx = cc.containedLabels()
+          val clabels:Set[Label] = cc.components.map(_.containedLabels).reduce(_++_)
+          val texFmtLabels = (clabels intersect Set(LB.Sup, LB.Sub))
+
+          val subs = Seq(
+            ('"' -> "\\\""),
+            ('\\' -> "\\\\"),
+            ('{' -> "\\\\{"),
+            ('}' -> "\\\\}")
+          ) ++ (if (!texFmtLabels.isEmpty) Seq( // add extra escapes inside tex-formatted tokens
+            ('_' -> "\\\\_"),
+            ('^' -> "\\\\^")
+          ) else Seq())
+
+          val mapped = cc.components.map({c =>
+            hcat(
+              renderConnectedComponents(
+                c.mapChars(subs)))
+          })
+
+          if (texFmtLabels.isEmpty) {
+            mapped
+          } else {
+            "{".box +: mapped :+ "}".box
+          }
+
+        } else if (labels.contains(LB.Sub)) {
+          // println(s"   ${cc.blockRole}")
           val vs = cc.components.flatMap(c =>
             renderConnectedComponents(c)
           )
 
+          Seq("^{".box + hcat(vs) + "}")
+
+        } else if (labels.contains(LB.Sup)) {
+          // println(s"   ${cc.blockRole}")
+          val vs = cc.components.flatMap(c =>
+            renderConnectedComponents(c)
+          )
+
+          Seq("_{".box + hcat(vs) + "}")
+        } else {
+          val vs = cc.components.flatMap(c =>
+            renderConnectedComponents(c)
+          )
           Seq(hcat(vs))
         }
+
 
 
       case comp: PageComponent => comp.component match {
