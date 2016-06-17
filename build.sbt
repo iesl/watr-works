@@ -1,6 +1,7 @@
 import sbt.Keys._
 import spray.revolver.AppProcess
 import com.lihaoyi.workbench.Plugin._
+
 // import spray.revolver.RevolverPlugin.Revolver
 
 enablePlugins(ScalaJSPlugin)
@@ -11,10 +12,11 @@ version in ThisBuild := "0.1-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.11.8"
 
-// scapegoatVersion in ThisBuild:= "1.2.1"
+shellPrompt in ThisBuild := Sensible.colorPrompt
 
+// scapegoatVersion in ThisBuild:= "1.2.1"
 // required for javacpp
-classpathTypes in ThisBuild += "maven-plugin"
+// classpathTypes in ThisBuild += "maven-plugin"
 
 
 val commonDeps = Sensible.testLibs() ++ Sensible.logback ++ Seq(

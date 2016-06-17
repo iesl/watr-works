@@ -7,9 +7,6 @@ import java.io.{ InputStream  }
 import textboxing.{TextBoxing => TB}
 import spindex._
 import IndexShapeOperations._
-// import ComponentTypeEnrichments._
-  // import ComponentOperations._
-  // import ComponentRendering._
 
 
 
@@ -18,7 +15,7 @@ object Works extends App {
   import java.io.{File => JFile}
 
   case class AppConfig(
-    // entry: Option[JFile] = None,
+    runRoot: Option[JFile] = None,
     corpusRoot: Option[JFile] = None,
     inputFileList: Option[JFile] = None,
     action: Option[String] = None,
@@ -28,9 +25,23 @@ object Works extends App {
     exec: Option[(AppConfig) => Unit] = None
   )
 
-  def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot.map(
-   croot => cwd/RelPath(croot)
-  ).getOrElse(sys.error("no corpus root specified"))
+  def corpusRootOrDie(ac: AppConfig): Path = ac
+    .corpusRoot
+    .map({croot =>
+      val fullPath = cwd/RelPath(croot)
+      val corpusSentinel =  fullPath / ".corpus-root"
+      val validPath = exists(fullPath)
+      val validSentinel = exists(fullPath/".corpus-root")
+
+      if (!validPath) {
+        sys.error(s"invalid corpus root specified ${fullPath}")
+      } else if (!validSentinel) {
+        sys.error(s"no .corpus-root sentinal file found in ${fullPath};\n run bin/works init (or create if manually you know what you're doing)")
+      } else {
+        fullPath
+      }
+
+    }).getOrElse(sys.error("no corpus root specified"))
 
 
   def setAction(conf: AppConfig, action: (AppConfig) => Unit): AppConfig = {
@@ -51,19 +62,9 @@ object Works extends App {
     opt[Unit]('x', "overwrite") action { (v, conf) =>
       conf.copy(force = true) } text("force overwrite of existing files")
 
-    opt[JFile]('i', "input") action { (v, conf) =>
+    opt[JFile]('i', "inputs") action { (v, conf) =>
       conf.copy(inputFileList = Option(v))
-    } text("process files listed in specified file, use -input=-- to read inputs from stdin")
-
-    // opt[JFile]('a', "artifact") action { (v, conf) =>
-    //   conf.copy(entry = Option(v))
-    // } text("artifact id (same as *.d directory name)")
-
-    // opt[JFile]('f', "file") action { (v, conf) =>
-    //   conf.copy(
-    //     file = Option(v),
-    //     singleFileMode = true)
-    // } text("run on a single file")
+    } text("process files listed in specified file")
 
 
     opt[JFile]('c', "corpus") action { (v, conf) =>
@@ -72,7 +73,7 @@ object Works extends App {
 
     cmd("init") action { (_, conf) =>
       setAction(conf, {(ac: AppConfig) =>
-        normalizeCorpusEntry(ac)
+        initCorpus(ac)
       })
     } text ("init (or re-init) a corpus directory structure") // children()
 
@@ -99,41 +100,39 @@ object Works extends App {
 
 
   parser.parse(args, AppConfig()).foreach{ config =>
-
-
-
-  val croot = config
-    .corpusRoot.map{ r => cwd/RelPath(r) }
-    .filter { _.isDir }
-    .getOrElse { sys.error(s"corpus root is not dir ('${config.corpusRoot}')") }
-
-
     config.exec.foreach { _.apply(config) }
   }
 
-  def getProcessList(conf: AppConfig): Seq[CorpusEntry] = {
-    val corpus = Corpus(conf.corpusRoot
-        .map(croot => cwd/RelPath(croot))
-        .getOrElse(cwd))
+  val autoInit = true
 
+  def getProcessList(conf: AppConfig): Seq[CorpusEntry] = {
+    val corpus = Corpus(corpusRootOrDie(conf))
+
+    println(s"starting Works in corpus ${corpus}")
 
 
     val toProcess = conf.inputFileList
       .map({ inputs =>
-
+        // User specifed input file on command line:
         val inputLines = if (inputs.toString == "--") {
           io.Source.stdin.getLines.toList
         } else {
+          // corpus.
           val inputFiles =  RelPath(inputs)
           val lines = read(cwd/inputFiles)
           lines.split("\n").toList
         }
 
-        val inputFiles =
-          inputLines
-            .map(_.trim).filterNot(_.isEmpty())
-            .map(corpus.entry(_))
-        inputFiles
+
+        inputLines
+          .map(_.trim).filterNot(_.isEmpty())
+          .filter({ inputLine =>
+            if (!corpus.hasEntry(inputLine)) {
+              println(s"warning: no corpus entry with id ${inputLine}, skipping")
+              false
+            } else true
+          })
+          .map(corpus.entry(_).get)
 
       }).getOrElse({
         corpus.entries()
@@ -151,7 +150,7 @@ object Works extends App {
 
   def runProcessor(conf: AppConfig, artifactOutputName: String, process: (CorpusEntry, String) => Unit): Unit = {
     getProcessList(conf).foreach { entry =>
-      println(s"extracting ${entry.corpus}: ${entry} ${artifactOutputName}")
+      println(s"extracting ${entry} ${artifactOutputName}")
       if (entry.hasArtifact(artifactOutputName)) {
         if (conf.force){
           entry.deleteArtifact(artifactOutputName)
@@ -201,21 +200,50 @@ object Works extends App {
     }
   }
 
+  def normalizeCorpusEntry(corpus: Corpus, pdf: Path): Unit = {
+    val artifactPath = corpus.corpusRoot / s"${pdf.name}.d"
+    if (pdf.isFile && !(exists! artifactPath)) {
+      println(s" creating artifact dir ${pdf}")
+      mkdir! artifactPath
+    }
+    if (pdf.isFile) {
+      val dest = artifactPath / pdf.name
 
-  def normalizeCorpusEntry(conf: AppConfig): Unit = {
-    val corpus = Corpus(corpusRootOrDie(conf))
-
-    println(s"normalizing corpus at ${corpus.corpusRoot}")
-    ls! corpus.corpusRoot foreach { pdf =>
-      val artifactPath = corpus.corpusRoot / s"${pdf.name}.d"
-      if (pdf.isFile && !(exists! artifactPath)) {
-        println(s" creating artifact page for  ${pdf}")
-        mkdir! artifactPath
-      }
-      if (pdf.isFile) {
+      if (exists(dest)) {
+        println(s"corpus already contains file ${dest}, skipping...")
+      } else {
         println(s" stashing ${pdf}")
         mv.into(pdf, artifactPath)
       }
+    }
+  }
+
+  def initCorpus(conf: AppConfig): Unit = {
+      conf.corpusRoot
+      .map({croot =>
+        val fullPath = cwd/RelPath(croot)
+        val validPath = exists(fullPath)
+
+        if (!validPath) {
+          sys.error(s"init: invalid corpus root specified ${fullPath}")
+        } else {
+          Corpus(fullPath).touchSentinel()
+        }
+      }).getOrElse(sys.error("no corpus root specified"))
+
+
+    normalizeCorpusEntries(conf)
+  }
+
+  def normalizeCorpusEntries(conf: AppConfig): Unit = {
+    val corpus = Corpus(corpusRootOrDie(conf))
+
+    println(s"normalizing corpus at ${corpus.corpusRoot}")
+
+    ls(corpus.corpusRoot)
+    .filter(p=> p.isFile && p.ext=="pdf")
+    .foreach { pdf =>
+      normalizeCorpusEntry(corpus, pdf)
     }
   }
 

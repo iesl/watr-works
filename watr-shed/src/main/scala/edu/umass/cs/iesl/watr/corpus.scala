@@ -39,14 +39,6 @@ object corpusFormats extends CorpusJsonFormats
 
 
 object Corpus {
-  // import com.typesafe.config.ConfigFactory
-  // import net.ceedubs.ficus.Ficus._
-  // import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-  // import net.ceedubs.ficus.Ficus.toFicusConfig
-
-  // def apply(config: PdfCorpusConfig): Corpus = {
-  //   new Corpus(config)
-  // }
 
   def apply(appRoot: nio.Path): Corpus = {
     new Corpus(Path(appRoot))
@@ -56,19 +48,6 @@ object Corpus {
     new Corpus(appRoot)
   }
 
-
-  // def getPdfCorpusConfig(appRoot: String): PdfCorpusConfig = {
-  //   println(s"config init cwd = ${cwd}")
-
-  //   val root = File(appRoot)
-
-  //   val conf = ConfigFactory.parseFile(File(appRoot, "conf/application.conf").toJava)
-
-  //   val config = conf.as[PdfCorpusConfig]("pdfCorpus")
-  //   config.copy(
-  //     rootDirectory = (root / config.rootDirectory).toString()
-  //   )
-  // }
 
 }
 
@@ -81,13 +60,32 @@ class Corpus(
     s"corpus:${corpusRoot}"
   }
 
+  lazy val corpusSentinel =  corpusRoot / ".corpus-root"
+
+  def touchSentinel(): Unit = {
+    if (!sentinelExists()) {
+      write(corpusSentinel, "")
+    }
+  }
+
+  def sentinelExists(): Boolean = {
+    exists(corpusSentinel)
+  }
+
+  def hasEntry(entryDescriptor: String): Boolean = {
+    (entryDescriptor.endsWith(".d") &&
+      exists(corpusRoot / entryDescriptor) &&
+      stat(corpusRoot / entryDescriptor).isDir)
+  }
+
   // e.g., 3245.pdf, or sha1:afe23s...
-  def entry(entryDescriptor: String): CorpusEntry = {
-    new CorpusEntry(entryDescriptor, this)
+  def entry(entryDescriptor: String): Option[CorpusEntry]= {
+    Option(new CorpusEntry(entryDescriptor, this))
   }
 
   def entries(): Seq[CorpusEntry] = {
-    val artifacts = ls.!(corpusRoot)
+    val artifacts = (ls! corpusRoot)
+      .filter(f => f.ext == "d" && f.isDir)
       .map { _.name }
       .sorted
       .map{ new CorpusEntry(_, this) }
@@ -99,24 +97,25 @@ class Corpus(
 
 sealed trait ArtifactDescriptor
 
-// object CorpusEntry  {}
-
 class CorpusEntry(
   val entryDescriptor: String,
   val corpus: Corpus
 ) extends CorpusJsonFormats {
 
   override val toString = {
-    s"${corpus}/${entryDescriptor}"
+    s"${corpus}/./${entryDescriptor}"
   }
 
-  val artifactsRoot = corpus.corpusRoot / entryDescriptor
-  val entryDescriptorRoot = entryDescriptor.dropRight(2)
+
+  val artifactsRoot = corpus.corpusRoot / RelPath(entryDescriptor)
+
+  val entryDescriptorRoot = {
+    // if (entryDescriptor)
+    entryDescriptor.dropRight(2)
+  }
 
   def getArtifacts(): Seq[String] = {
-    val allFiles = ls! artifactsRoot map{ pdf =>
-      pdf
-    }
+    val allFiles = ls! artifactsRoot //  map{ pdf => pdf }
 
     allFiles.map(_.name)
   }
@@ -127,7 +126,6 @@ class CorpusEntry(
     new CorpusArtifact(artifactDescriptor, this)
   }
 
-  // e.g., cermine-zones.xml
   def getArtifact(artifactDescriptor: String): CorpusArtifact = {
     new CorpusArtifact(artifactDescriptor, this)
   }
@@ -164,7 +162,7 @@ class CorpusArtifact(
   val entry: CorpusEntry
 ) {
   override val toString = {
-    s"${entry}/${artifactDescriptor}"
+    s"${entry}/./${artifactDescriptor}"
   }
 
   def exists(): Boolean = {

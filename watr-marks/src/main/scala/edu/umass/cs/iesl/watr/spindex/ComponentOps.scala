@@ -114,7 +114,8 @@ object ComponentOperations {
       spaceDists
     }
 
-    def tokenizeLine(): Unit = {
+    // TODO this is a side-effect function, doesn't need to be
+    def tokenizeLine(): Component = {
       if (!component.getLabels.contains(LB.TokenizedLine)) {
 
         val tops = findCommonToplines()
@@ -231,6 +232,8 @@ object ComponentOperations {
         component.replaceChildren(asTokens)
         component.addLabel(LB.TokenizedLine)
       }
+
+      component
 
     }
 

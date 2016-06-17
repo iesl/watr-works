@@ -5,6 +5,7 @@ import sbt._
 import Keys._
 // import com.typesafe.sbt.SbtScalariform._
 
+
 /**
  * A bunch of sensible defaults that fommil typically uses.
  *
@@ -22,10 +23,14 @@ object Sensible {
     "[" + blue + projectName + white + "]>> " + c.RESET
   }
 
-  lazy val settings = Seq(
+
+  import com.github.fedragon.todolist.TodoListPlugin.autoImport._
+
+  lazy val settings =  Seq(
+
     ivyLoggingLevel := UpdateLogging.Quiet,
 
-    shellPrompt := colorPrompt,
+    todosTags := Set("FIXME", "TODO", "WIP", "XXX", "\\?\\?\\?"),
 
     scalacOptions in Compile ++= Seq(
       "-encoding", "UTF-8",
@@ -56,7 +61,7 @@ object Sensible {
     // javaOptions ++= Seq("-XX:+UseConcMarkSweepGC"),
 
     // maxErrors := 1,
-    fork := true,
+    // fork := true,
 
     // 4 x 1GB = 4GB
     concurrentRestrictions in Global := Seq(Tags.limitAll(4)),
