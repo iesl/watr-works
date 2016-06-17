@@ -48,10 +48,17 @@ object Works extends App {
     conf.copy(exec=Option(action))
   }
 
-  val parser = new scopt.OptionParser[AppConfig]("scopt") {
-    head("Works command line app", "0.1")
+  val parser = new scopt.OptionParser[AppConfig]("works") {
+    head("Watr Works command line app", "0.1")
 
-    note("Run svg text extraction and analysis")
+    note("Run text extraction and analysis on PDFs")
+
+    help("help")
+    help("usage")
+
+    opt[JFile]('c', "corpus") action { (v, conf) =>
+      conf.copy(corpusRoot = Option(v))
+    } text ("root path of the corpus")
 
     opt[Int]('n', "number") action { (v, conf) =>
       conf.copy(numToRun = v) } text("process n corpus entries")
@@ -64,12 +71,9 @@ object Works extends App {
 
     opt[JFile]('i', "inputs") action { (v, conf) =>
       conf.copy(inputFileList = Option(v))
-    } text("process files listed in specified file")
+    } text("process files listed in specified file. Specify '--' to read from stdin")
 
 
-    opt[JFile]('c', "corpus") action { (v, conf) =>
-      conf.copy(corpusRoot = Option(v))
-    } text ("root path of the corpus")
 
     cmd("init") action { (_, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -77,25 +81,26 @@ object Works extends App {
       })
     } text ("init (or re-init) a corpus directory structure") // children()
 
+    cmd("docseg") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        segmentDocument(ac)
+      })
+    } text ("run document segmentation")
+
     cmd("chars") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         extractCharacters(ac)
       })
-    } text ("char extraction (debugging)")
+    } text ("(dev) char extraction")
 
 
     cmd("bbsvg") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         createBoundingBoxSvg(ac)
       })
-    } text ("run column detection (for debugging)")
+    } text ("(dev) run column detection")
 
 
-    cmd("docseg") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        segmentDocument(ac)
-      })
-    } text ("run document segmentation")
   }
 
 

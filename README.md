@@ -44,7 +44,6 @@ when initializing a corpus, and later checked for when processing corpus entries
 
 > bin/works init --corpus ./path/to/dir/with/pdfs
 
-
 You can add new pdfs to the root of the corpus directory and re-run init without disturbing 
 existing entries.
 
