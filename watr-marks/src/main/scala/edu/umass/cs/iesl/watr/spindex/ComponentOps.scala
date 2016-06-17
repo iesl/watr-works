@@ -10,6 +10,9 @@ import utils.Histogram._
 
 import IndexShapeOperations._
 import utils.SlicingAndDicing._
+import utils.{CompassDirection => CDir}
+
+
 
 object ComponentOperations {
   def centerX(cb: PageRegion) = cb.region.bbox.toCenterPoint.x
@@ -53,6 +56,7 @@ object ComponentOperations {
     spaceDists
   }
 
+  // TODO remove
   def splitAtBreaks(bis: Seq[Int], cs: Seq[Component]): Seq[Seq[Component]] = {
     // println(s"""splitAtBreaks: bis=${bis.mkString(",")}""")
     // println(s"""        cs=${cs.map(_.toText).mkString("")}""")
@@ -66,9 +70,79 @@ object ComponentOperations {
     }
   }
 
-  import utils.{CompassDirection => CDir}
-
   implicit class RicherComponent(val component: Component) extends AnyVal {
+
+    def vdist(other: Component): Double = {
+      component.bounds.toPoint(CDir.W).vdist(
+        other.bounds.toPoint(CDir.W)
+      )
+    }
+
+    def columnContains(other: Component): Boolean = {
+      val slopFactor = 4.5d // XXX test this magic number?
+
+      val left = component.bounds.toWesternPoint.x
+      val right = component.bounds.toEasternPoint.x
+
+      val otherLeft = other.bounds.toWesternPoint.x + slopFactor
+      val otherRight = other.bounds.toEasternPoint.x - slopFactor
+
+      left <= otherLeft && otherRight <= right
+
+    }
+
+    def columnIntersects(other: Component): Boolean = {
+      val slopFactor = 0.31d // XXX what is this magic number?
+
+      val otherx0 = other.bounds.toWesternPoint.x-slopFactor
+      val otherx1 = other.bounds.toEasternPoint.x+slopFactor
+      val candx0 = component.bounds.toWesternPoint.x
+      val candx1 = component.bounds.toEasternPoint.x
+      val candRightInside = otherx0 <= candx1 && candx1 <= otherx1
+      val candLeftOutside = candx0 < otherx0
+      val candLeftInside = otherx0 <= candx0 && candx0 <= otherx1
+      val candRightOutside = otherx1 < candx1
+
+      val crossesLeft = candRightInside && candLeftOutside
+      val crossesRight = candLeftInside && candRightOutside
+
+
+      crossesLeft || crossesRight
+    }
+
+    def isOverlappedVertically(other: Component): Boolean = {
+      !(component.isStrictlyAbove(other) || component.isStrictlyBelow(other))
+    }
+
+    def isStrictlyAbove(other: Component): Boolean = {
+      val y1 = component.bounds.toPoint(CDir.S).y
+      val y2 = other.bounds.toPoint(CDir.N).y
+      y1 < y2
+    }
+    def isStrictlyBelow(other: Component): Boolean = {
+      val y1 = component.bounds.toPoint(CDir.N).y
+      val y2 = other.bounds.toPoint(CDir.S).y
+      y1 > y2
+    }
+
+    def isStrictlyLeftOf(other: Component): Boolean = {
+      val rightEdge = component.bounds.toEasternPoint.x
+      val otherLeftEdge = other.bounds.toWesternPoint.x
+      rightEdge < otherLeftEdge
+    }
+
+    def isStrictlyRightOf(other: Component): Boolean = {
+      val leftEdge = component.bounds.toEasternPoint.x
+      val otherRightEdge = other.bounds.toWesternPoint.x
+      otherRightEdge < leftEdge
+    }
+
+    def candidateIsOutsideLineBounds(other: Component): Boolean = {
+      component.isStrictlyLeftOf(other) || component.isStrictlyRightOf(other)
+    }
+
+
+
 
     def isBelow(other: Component) = component.bounds.top > other.bounds.top
     def isAbove(other: Component) = component.bounds.top < other.bounds.top

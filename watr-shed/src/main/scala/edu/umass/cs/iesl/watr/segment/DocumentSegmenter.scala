@@ -4,7 +4,6 @@ package segment
 import java.io.InputStream
 import watrmarks._
 import spindex._
-// import utils.CompassDirection
 
 import spindex._
 import scalaz.@@
@@ -21,6 +20,7 @@ import ComponentOperations._
 import ComponentRendering._
 import SlicingAndDicing._
 import utils.{CompassDirection => CDir}
+
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
@@ -214,75 +214,40 @@ class DocumentSegmenter(
   }
 
 
-
-  def groupLeftAlignedBlocks(): Unit = {
-    // lines ordered as per cc analysis
-    val leftBinHistResolution = 1.0d
-
-
-    val alignedBlocksPerPage = for {
-      page <- visualLineOnPageComponents
+  def docWideModalParaFocalJump(
+    // alignedBlocksPerPage: Seq[Seq[Seq[(Component, Int)]]],
+    alignedBlocksPerPage: Seq[Seq[BioNode]],
+    modalVDist: Double
+  ): Double = {
+    val allVDists = for {
+      groupedBlocks <- alignedBlocksPerPage
+      block <- groupedBlocks
     } yield {
-      println("Processing page")
+      // block
+      //   .sliding(2).toSeq
+      //   .map({
+      //     case Seq((a1, i1), (a2, i2)) =>
+      //       val a1Left = a1.bounds.toPoint(CDir.W).y
+      //       val a2Left = a2.bounds.toPoint(CDir.W).y
+      //       val vdist = math.abs(a1Left - a2Left)
 
-      val lefts = page.zipWithIndex
-        .map({case (l, i) => (l.bounds.left, i)})
-        .sortBy(_._1)
+      //       math.abs(vdist)
 
-      // val freqLefts = getMostFrequentValues(lefts.map(_._1), leftBinHistResolution)
-      val hist = histogram(lefts.map(_._1), leftBinHistResolution)
-      hist.smooth(leftBinHistResolution)
-
-      val freqLefts = hist
-        .getFrequencies
-        .sortBy(_.frequency)
-        .reverse
-        .takeWhile(_.frequency > 0)
-        .map{b=>(b.value, b.frequency)}
-
-      val fmt = freqLefts.map({case (v, f) => s"${v.pp} ($f)" }).mkString("freq\n   ", "\n   ", "\n/freq")
-      println(fmt)
-
-
-      def valueIsWithinHistBin(bin: Double, res: Double)(value: Double): Boolean = {
-        bin-res <= value && value <= bin+res
-      }
-
-      // val clusters = freqLefts.map({ case (leftBin, freq) =>
-      //   lefts.partition { case (leftX, i) =>
-      //     valueIsWithinHistBin(leftBin, 2.0)(leftX)
-      //   }
-      // })
-
-
-
-      // val clustered = lefts.clusterBy({case ((l1, i1), (l2, i2)) =>
-      //   math.abs(l1 - l2) < 2.0d
-      // })
-
-
-      val groupedBlocks = page.zipWithIndex
-        .splitOnPairs({ case ((l1, l1i), (l2, l2i)) =>
-          // val linesAreClustered = clustered.exists({ grp =>
-          //   grp.exists(_._2==l1i) && grp.exists(_._2==l2i)
-          // })
-
-          val linesAreClustered = freqLefts.exists({ case (leftBin, freq) =>
-            val l1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l1.bounds.left)
-            val l2InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l2.bounds.left)
-            l1InBin && l2InBin
-          })
-
-          val h1 = l1.determineNormalTextBounds.height
-          val h2 = l2.determineNormalTextBounds.height
-          val heightsDiffer = h1 != h2
-
-          heightsDiffer || (!linesAreClustered)
-        })
-
-      groupedBlocks
+      //     case Seq((a1, i1)) => -1
+      //     case Seq() => -1
+      //   }).filter(_ > 0d)
     }
 
+    // getMostFrequentValues(allVDists.flatten, leftBinHistResolution)
+    //   .headOption.map(_._1)
+    //   .getOrElse(12.0)
+
+
+    15.0d
+  }
+
+
+  def docWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[(Component, Int)]]]): Double = {
     val allVDists = for {
       groupedBlocks <- alignedBlocksPerPage
       block <- groupedBlocks
@@ -302,37 +267,76 @@ class DocumentSegmenter(
         }).filter(_ > 0d)
     }
 
-    // TODO use a histogram here for clustering
-    val clusterVDists = allVDists.flatten.clusterBy { (d1, d2) =>
-      math.abs(d1-d2) < 0.18
+    val modalVDist = getMostFrequentValues(allVDists.flatten, leftBinHistResolution)
+      .headOption.map(_._1)
+      .getOrElse(12.0)
+
+
+    modalVDist
+
+  }
+
+  val leftBinHistResolution = 1.0d
+
+  def findLeftAlignedBlocksPerPage(): Seq[Seq[Seq[(Component, Int)]]] = {
+    val alignedBlocksPerPage = for {
+      page <- visualLineOnPageComponents
+    } yield {
+      println("Processing page")
+
+      val lefts = page.zipWithIndex
+        .map({case (l, i) => (l.bounds.left, i)})
+
+      val freqLefts = getMostFrequentValues(lefts.map(_._1), leftBinHistResolution)
+
+      // val fmt = freqLefts.map({case (v, f) => s"${v.pp} ($f)" }).mkString("freq\n   ", "\n   ", "\n/freq")
+      // println(fmt)
+
+
+      def valueIsWithinHistBin(bin: Double, res: Double)(value: Double): Boolean = {
+        bin-res <= value && value <= bin+res
+      }
+
+
+      val groupedBlocks = page.zipWithIndex
+        .splitOnPairs({ case ((l1, l1i), (l2, l2i)) =>
+
+          // println(s"checking left-edge clustering for lines:")
+          // println(s"    l1> ${l1.tokenizeLine().toText}")
+          // println(s"    l2> ${l2.chars}")
+          // println("--")
+
+          val linesAreClustered = freqLefts.exists({ case (leftBin, freq) =>
+            val l1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l1.bounds.left)
+            val l2InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l2.bounds.left)
+            l1InBin && l2InBin
+          })
+
+          val h1 = l1.determineNormalTextBounds.height
+          val h2 = l2.determineNormalTextBounds.height
+          val heightsDiffer = h1 != h2
+
+          heightsDiffer || (!linesAreClustered)
+        })
+
+      groupedBlocks
     }
+    alignedBlocksPerPage
 
-    // println(s"clusters")
-    // val asdf = clusterVDists.map { vclust =>
-    //   val clustpp = vclust.sorted.map(_.pp).toSet.toSeq.sorted.mkString(", ")
-    //   println(s"   ${vclust.length}:  ${clustpp}")
-    //   (vclust.length, vclust.max)
-    // }
-    // println(s"clusters")
-    val modalVDist = clusterVDists
-      .map { vclust => (vclust.length, vclust.max) }
-      .sortBy(_._1)
-      .reverse.headOption
-      .map(_._2)
-      .getOrElse(12.0d)
+  }
 
-
+  def splitBlocksWithLargeVGaps(
+    alignedBlocksPerPage: Seq[Seq[Seq[(Component, Int)]]],
+    modalVDist: Double
+  ): Seq[Seq[Seq[(Component, Int)]]] = {
     // One last pass through block to split over-large vertical line jumps
-    val finalSplit = for {
-      groupedBlocks <- alignedBlocksPerPage
-      block <- groupedBlocks
+    for {
+      blocksOnPage <- alignedBlocksPerPage
+      block <- blocksOnPage
     } yield {
       block.splitOnPairs ({ case ((a1, i1), (a2, i2)) =>
-        val a1Left = a1.bounds.toPoint(CDir.W).y
-        val a2Left = a2.bounds.toPoint(CDir.W).y
-        val vdist = math.abs(a1Left - a2Left)
+        val vdist = a1.vdist(a2)
         val maxVDist = modalVDist * 1.15d
-
         // if (vdist > maxVDist) {
         //   println(s"splitting lines on vdist=${vdist}, maxd=${maxVDist}  modald=${modalVDist}")
         //   println(s"   ${a1.tokenizeLine().toText}")
@@ -343,8 +347,20 @@ class DocumentSegmenter(
       })
     }
 
-    // Now create a BIO labeling linking visual lines into blocks
+  }
 
+  import BioLabeling._
+
+  def groupLeftAlignedBlocks(): Unit = {
+    // lines ordered as per cc analysis
+    val alignedBlocksPerPage = findLeftAlignedBlocksPerPage()
+
+    val modalVDist = docWideModalLineVSpacing(alignedBlocksPerPage)
+
+
+    val finalSplit = splitBlocksWithLargeVGaps(alignedBlocksPerPage, modalVDist)
+
+    // Now create a BIO labeling linking visual lines into blocks
     val spine = finalSplit
       .flatten
       .map({ block =>
@@ -356,19 +372,67 @@ class DocumentSegmenter(
     val textBlockSpine = pages.bioSpine("TextBlockSpine")
     textBlockSpine ++= spine.flatten
 
-    // finalSplit.flatten
-    // .foreach { block =>
-    //   println(s"left-aligned group")
-    //   block.foreach{ case (line, i) =>
-    //     println(s"   ${line.tokenizeLine().toText}")
-    //   }
-    // }
+
+
+
+
+    val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
+
+    val modalParaFocalJump = docWideModalParaFocalJump(blocks, modalVDist)
+
+    blocks.splitOnPairs({
+      case (aNodes: Seq[BioNode], bNodes: Seq[BioNode]) =>
+
+        // if, for consecutive blocks a, b features include
+        //   - a is length 1
+        //   - a is indented (determine std indents)
+        //   - a's width falls strictly within b's width
+        //   - dist a -> b is near doc-wide standard line distance
+        //   - a is at end of column, b is higher on page, or next page
+
+        val onSamePage = true
+        val aIsSingeLine = aNodes.length == 1
+        val aIsAboveB = isStrictlyAbove(aNodes.last.component, bNodes.head.component)
+        val aComp = aNodes.last.component
+        val bComp = bNodes.head.component
+        val aWidth = aComp.bounds.width
+        val bWidth = bComp.bounds.width
+
+        val vdist = aComp.vdist(bComp)
+        val withinCommonVDist = vdist.eqFuzzy(1.0)(modalVDist)
+        val aWithinBsColumn = bComp.columnContains(aComp)
+
+        val aIsIndented = aWidth < bWidth - 4.0
+
+        println("comparing for para begin: ")
+        println(s"  a> ${aComp.chars}")
+        println(s"  b> ${bComp.chars}")
+
+        println(s"     a.bounds=${aComp.bounds.prettyPrint} b.bounds=${bComp.bounds.prettyPrint}")
+        println(s"     a.right=${aComp.bounds.right.pp} b.right=${bComp.bounds.right.pp}")
+        println(s"     a is indented = ${aIsIndented}")
+        println(s"     a strictly above = ${aIsAboveB}")
+        println(s"     b columnContains a = ${aWithinBsColumn}")
+        println(s"     a/b within modal v-dist = ${withinCommonVDist} = ${modalVDist}")
+
+        if (onSamePage &&
+          aIsSingeLine &&
+          aIsAboveB &&
+          aIsIndented &&
+          withinCommonVDist &&
+          aWithinBsColumn
+        ) {
+          pages.addBioLabels(LB.ParaBegin, aNodes)
+        }
+
+        true
+    })
 
   }
 
 
   def runPageSegmentation(): String = { // Seq[ConnectedComponents]
-    // import TB._
+                                        // import TB._
 
     // Bottom-up connected-component line-finding
     runLineDetermination()

@@ -33,6 +33,7 @@ object ComponentRendering {
   import ComponentOperations._
   import IndexShapeOperations._
   import ComponentTypeEnrichments._
+  import BioLabeling._
 
   import TB._
 
@@ -40,43 +41,6 @@ object ComponentRendering {
     n.pins
       .filter(p => p.label==lb)
       .head
-  }
-  def isBegin(lb: Label, n: BioNode) = {
-    n.pins.exists(p => p.label==lb && (p.isBegin || p.isUnit))
-  }
-
-  def hasID(lb: Label, id: Int, n: BioNode) = {
-    n.pins.exists(p => p.label==lb && p.id == id)
-  }
-
-  def selectBioLabelings(l: Label, seq: Seq[BioNode]): Seq[Seq[BioNode]] = {
-
-
-    // if (ns.isEmpty) Seq.empty[Seq[BioNode]] else {
-
-    def loop(ns: Seq[BioNode]): Seq[Seq[BioNode]] = {
-      var currID: Int = 0
-      val atBegin = ns
-        .dropWhile({ node => !isBegin(l, node) })
-
-      atBegin.headOption
-        .map ({ node =>
-          node.pins
-            .filter(_.label==l)
-            .foreach(p => currID = p.id.unwrap)
-
-          val (yes, after) = atBegin
-            .span(node => hasID(l, currID, node))
-
-
-          yes +: loop(after)
-        })
-        .getOrElse({
-          Seq.empty[Seq[BioNode]]
-        })
-    }
-
-    loop(seq)
   }
 
   def serializeLabeling(label: Label, spine: Seq[BioNode]): Box = {
@@ -112,7 +76,8 @@ object ComponentRendering {
     val lineSpine = pages.bioSpine("TextBlockSpine")
 
     val serComponents = List(
-      LB.SectionHeadingLine
+      LB.SectionHeadingLine,
+      LB.ParaBegin
     ).map(l =>
       serializeLabeling(l, lineSpine)
     )

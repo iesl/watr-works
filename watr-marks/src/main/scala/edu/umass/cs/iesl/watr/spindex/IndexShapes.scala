@@ -93,8 +93,11 @@ object IndexShapeOperations {
     }
 
 
-    def hdist(p1: Point): Double = math.abs(p0.x - p1.x)
-    def vdist(p1: Point): Double = math.abs(p0.y - p1.y)
+    def hdist(p1: Point): Double = p1.x - p0.x
+    def hdistAbs(p1: Point): Double = math.abs(hdist(p1))
+
+    def vdist(p1: Point): Double = p1.y - p0.y
+    def vdistAbs(p1: Point): Double = math.abs(vdist(p1))
 
     def dist(p1: Point): Double = {
       val x = (p0 hdist p1)

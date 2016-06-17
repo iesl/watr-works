@@ -31,6 +31,7 @@ object Histogram {
 
   def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
     histogram(in, resolution)
+      // .smooth(resolution)
       .getFrequencies
       .sortBy(_.frequency)
       .reverse
@@ -57,7 +58,7 @@ class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
 
   private var frequencies: Array[Double] = Array.fill(size)(0)
 
-  def smooth(windowLength: Double): Unit = {
+  def smooth(windowLength: Double): Histogram = {
     val size = Math.round(windowLength / resolution).toInt / 2
     var sum = 0.0
     var i = 0
@@ -80,6 +81,8 @@ class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
       sum -= frequencies(i - size)
     }
     frequencies = newFrequencies
+
+    this
   }
 
   def circularSmooth(windowLength: Double): Unit = {
