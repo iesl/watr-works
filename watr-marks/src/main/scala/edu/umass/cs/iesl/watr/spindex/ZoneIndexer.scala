@@ -3,15 +3,9 @@ package spindex
 
 import scala.collection.mutable
 
-import net.sf.jsi
-import net.sf.jsi.rtree.RTree
-
-
 import watrmarks._
 import TypeTags._
 import scalaz.@@
-// import ComponentOperations._
-// import IndexShapeOperations._
 import ComponentTypeEnrichments._
 import utils.IdGenerator
 
@@ -20,11 +14,25 @@ import utils.IdGenerator
 case class PageInfo(
   pageId: Int@@PageID,
   charAtomIndex: SpatialIndex[CharAtom],
-  rComponentIndex: SpatialIndex[Component],
-  geometry: PageGeometry
-  // pageChars: mutable.ArrayBuffer[CharAtom],
-  // charBoxes: mutable.LongMap[CharAtom]
-)
+  componentIndex: SpatialIndex[Component],
+  geometry: PageGeometry,
+  componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
+  labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
+) {
+
+  def getComponentLabels(cid: Int@@ComponentID): Seq[Label] = {
+    componentToLabels.get(cid)
+      .getOrElse(Seq())
+  }
+
+  def getComponentsWithLabel(l: Label): Seq[Component] = {
+    labelToComponents.get(l)
+      .map(_.map(id => componentIndex.getItem(id.unwrap)))
+      .getOrElse(Seq())
+  }
+
+
+}
 
 
 object BioLabeling {
@@ -75,8 +83,8 @@ class ZoneIndexer  {
   val pageInfos = mutable.HashMap[Int@@PageID, PageInfo]()
 
   // Zones are on the way out
-  val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
-  val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
+  // val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
+  // val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
 
   type BioSpine = mutable.MutableList[BioNode]
   val bioSpines = mutable.Map[String, BioSpine]()
@@ -86,7 +94,7 @@ class ZoneIndexer  {
   }
 
 
-  val componentMap = mutable.HashMap[Int@@ComponentID, Component]()
+  // val componentMap = mutable.HashMap[Int@@ComponentID, Component]()
   val componentLabels = mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]]()
 
   val componentIdGen = utils.IdGenerator[ComponentID]()
@@ -100,16 +108,29 @@ class ZoneIndexer  {
   val regionToZone = mutable.HashMap[Int@@RegionID, Zone]()
 
 
+  def getPageInfo(pageId: Int@@PageID) = pageInfos(pageId)
+
   def concatComponents(components: Seq[Component], l: Label*): Component = {
+    val targetPages = components.flatMap(_.atoms).map(_.region.target.unwrap)
+    val numOfTargetPages =  targetPages.toSet.size
+
+    if (numOfTargetPages != 1) {
+      sys.error(s"""cannot concatComponents() from different pages (got pages=${targetPages.mkString(", ")})""")
+    }
+
+    val targetPage = targetPages.head
+
     val c = ConnectedComponent(componentIdGen.nextId, components, this)
+    getPageInfo(PageID(targetPage)).componentIndex.add(c)
     l.foreach(c.addLabel)
-    componentMap.put(c.id, c)
     c
   }
 
-  def toComponent(region: PageAtom): Component = {
-    val c = PageComponent(componentIdGen.nextId, region, this)
-    componentMap.put(c.id, c)
+  def toComponent(pageAtom: PageAtom): Component = {
+    val c = PageComponent(componentIdGen.nextId, pageAtom, this)
+    val pageId = pageAtom.region.target
+    getPageInfo(pageId).componentIndex.add(c)
+
     c
   }
 
@@ -122,7 +143,8 @@ class ZoneIndexer  {
       case c: PageComponent =>
         concatComponents(Seq(component, app))
       case c: ConnectedComponents =>
-        c.copy(components = c.components :+ app)
+        c.components += app
+        c
     }
   }
   private def getComponentLabelBuffer(c: Component): mutable.ArrayBuffer[Label] = {
@@ -138,10 +160,17 @@ class ZoneIndexer  {
     getComponentLabelBuffer(c).toSet
   }
 
-  def getLabeledComponents(l: Label): Seq[Component] = for {
-    (k, v)  <- componentLabels.toSeq
-    if v.contains(l)
-  } yield componentMap(k)
+
+  def getLabeledComponents(l: Label): Seq[Component] = (for {
+    (cid, labels)  <- componentLabels.toSeq
+    if labels.contains(l)
+  } yield {
+    pageInfos
+      .flatMap({ case (_, info) =>
+        info.componentIndex.get(cid.unwrap)
+      }).toSeq
+  }).flatten
+
 
   def removeLabel(c: Component, l: Label): Component = {
     getComponentLabelBuffer(c) -= l
@@ -151,63 +180,36 @@ class ZoneIndexer  {
 
   def getPageGeometry(p: Int@@PageID) = pageInfos(p).geometry
 
-  // def getAtom(pageId: Int@@PageID, charId: Int@@RegionID): CharAtom = {
-  //   pageInfos(pageId).charBoxes(charId.unwrap.toLong)
+
+  // def addLabels(zl: ZoneAndLabel): Unit = {
+  //   val lls = zoneLabelMap.getOrElseUpdate(zl.zoneId, mutable.ArrayBuffer[Label]())
+  //   lls.append(zl.label)
   // }
 
-  // // See getAtomsUnfiltered() for explanation behind filterNot
-  // def getAtoms(pageId: Int@@PageID): Seq[CharAtom] = {
-  //   pageInfos(pageId).pageChars.filterNot(_.isSpace)
+  // def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
+  //   zoneLabelMap.get(id).getOrElse(Seq())
   // }
-
-
-  // // Some chars from a pdf are unuseable, either unprintable or embedded space characters.
-  // //   This will return all of them
-  // def getAtomsUnfiltered(pageId: Int@@PageID): Seq[CharAtom] = {
-  //   pageInfos(pageId).pageChars.filterNot(_.isSpace)
-  // }
-
-  def addLabels(zl: ZoneAndLabel): Unit = {
-    val lls = zoneLabelMap.getOrElseUpdate(zl.zoneId, mutable.ArrayBuffer[Label]())
-    lls.append(zl.label)
-  }
-
-  def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
-    zoneLabelMap.get(id).getOrElse(Seq())
-  }
 
   def getPages(): List[Int@@PageID] = {
     pageInfos.keys.toList.sortBy(PageID.unwrap(_))
   }
 
 
-  def createSpatialIndex(): jsi.SpatialIndex = {
-    val rtree: jsi.SpatialIndex = new RTree()
-    rtree.init(null)
-    rtree
-  }
 
-  def addPage(pageGeometry: PageGeometry): Unit = {
-    if(pageInfos.contains(pageGeometry.id)) {
+  def addPage(pageGeometry: PageGeometry): PageInfo = {
+    val pageInfo = PageInfo(pageGeometry.id,
+      SpatialIndex.createFor[CharAtom](pageGeometry.bounds),
+      SpatialIndex.createFor[Component](pageGeometry.bounds),
+      pageGeometry
+    )
+    val existing = pageInfos.put(pageGeometry.id, pageInfo)
+
+    existing.foreach { e =>
       sys.error("adding new page w/existing id")
     }
-
-    pageInfos.put(pageGeometry.id,
-      PageInfo(pageGeometry.id,
-        SpatialIndex.createFor[CharAtom](pageGeometry.bounds),
-        SpatialIndex.createFor[Component](pageGeometry.bounds),
-        pageGeometry
-        // mutable.ArrayBuffer(),
-        // mutable.LongMap()
-      )
-    )
+    pageInfo
   }
 
-  def addCharInfo(pageId: Int@@PageID, cb: CharAtom): Unit = {
-    pageInfos(pageId)
-      .charAtomIndex
-      .add(cb)
-  }
 
   // def addZone(zone: Zone): Unit = {
   //   val zoneId = zone.id
@@ -221,64 +223,6 @@ class ZoneIndexer  {
   //   }
   // }
 
-
-  // def putCharAtom(pageId: Int@@PageID, cb: CharAtom): Unit = {
-  //   pageInfos(pageId).charBoxes.put(cb.region.id.unwrap.toLong, cb)
-  // }
-
-  // def getCharAtom(pageId: Int@@PageID, id: Int): CharAtom = {
-  //   pageInfos(pageId).
-  //   charBoxes(id.toLong)
-  // }
-
-  // def getCharAtom(pageId: Int@@PageID, id: Int@@RegionID): CharAtom = {
-  //   pageInfos(pageId).
-  //   charBoxes(id.unwrap.toLong)
-  // }
-
-  // def getCharAtom(pageId: Int@@PageID, id: Long): CharAtom = {
-  //   pageInfos(pageId).charBoxes(id)
-  // }
-
-  // def queryForIntersected(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
-  //   queryForIntersectedIDs(pageInfos(pageId).charAtomIndex, q)
-  //     .filter{ id => pageInfos(pageId).charBoxes.contains(id.toLong) }
-  //     .map(cid => pageInfos(pageId).charBoxes(cid.toLong))
-  // }
-
-  // def queryCharsIntersects(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
-  //   queryForIntersectedIDs(pageInfos(pageId).charAtomIndex, q)
-  //       .filter{ id => pageInfos(pageId).charBoxes.contains(id.toLong) }
-  //       .map(cid => pageInfos(pageId).charBoxes(cid.toLong))
-  // }
-
-
-  // def queryChars(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
-  //   queryForContainedIDs(pageInfos(pageId).charAtomIndex, q)
-  //     .filter(id => pageInfos(pageId).charBoxes.contains(id.toLong))
-  //     .map( getCharAtom(pageId, _) )
-  // }
-
-  // def queryComponents(pageId: Int@@PageID, q: LTBounds): Seq[Component] = {
-  //   queryForContainedIDs(pageInfos(pageId).rComponentIndex, q)
-  //     .map(getCharAtom(pageId, _) )
-
-  //   ???
-  // }
-
-  // def query(pageId: Int@@PageID, q: LTBounds): Seq[Zone] = {
-  //   println(s"ZoneIndex.query(${pageId}, ${q.prettyPrint})")
-  //   val charAtomIndex = pageInfos(pageId).charAtomIndex
-
-  //   val collectRegions = ZoneIndexer.rtreeIdCollector()
-  //   charAtomIndex.contains(q.toJsiRectangle, collectRegions)
-  //   // charAtomIndex.intersects(q.toJsiRectangle, collectRegions)
-  //   val regions = collectRegions.getIDs
-  //   val zones = collectRegions
-  //     .getIDs.map{ regionId => regionToZone(RegionID(regionId)) }
-
-  //   zones.sortBy { z => z.regions.head.bbox.left }
-  // }
 
   def addBioLabels(label: Label, node: BioNode): Unit = {
     addBioLabels(label, Seq(node))
@@ -315,12 +259,15 @@ object ZoneIndexer extends ComponentDataTypeFormats {
 
     val zindexer = new ZoneIndexer()
     regionsAndGeometry.foreach { case(regions, geom)  =>
-      zindexer.addPage(geom)
+      val pageInfo = zindexer.addPage(geom)
+      val charAtomIndex =  pageInfo.charAtomIndex
+      // zindexer.getPageInfo(pageId: <refinement>[Int, PageID])
 
-      regions.foreach { cb =>
-        if (!cb.isSpace && cb.isChar) {
-          zindexer.addCharInfo(geom.id, cb.asInstanceOf[CharAtom])
-        }
+      regions.foreach {
+        case cb:CharAtom if !cb.isSpace =>
+          charAtomIndex.add(cb)
+
+        case cb:ImgAtom =>
       }
     }
     zindexer

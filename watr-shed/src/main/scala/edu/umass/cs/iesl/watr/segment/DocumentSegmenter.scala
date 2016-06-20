@@ -204,15 +204,15 @@ class DocumentSegmenter(
 
 
 
-  def runLineDetermination(): Component = {
+  def runLineDetermination(): Unit = {
     val allPageLines = for {
       pageId <- zoneIndexer.getPages
     } yield {
-      val charAtoms = zoneIndexer.pageInfos(pageId).charAtomIndex.getItems
+      val charAtoms = zoneIndexer.getPageInfo(pageId).charAtomIndex.getItems
 
       determineLines(pageId, charAtoms)
     }
-    zoneIndexer.concatComponents(allPageLines, LB.Pages)
+    // zoneIndexer.concatComponents(allPageLines, LB.Pages)
   }
 
 
@@ -460,7 +460,7 @@ class DocumentSegmenter(
   }
 
   private def findNeighbors(pageId: Int@@PageID, qbox: CharAtom): Seq[CharAtom] = {
-    val atomIndex = zoneIndexer.pageInfos(pageId).charAtomIndex
+    val atomIndex = zoneIndexer.getPageInfo(pageId).charAtomIndex
     atomIndex.nearestNItems(qbox, 12, 15.0f)
       .filterNot(_.isWonky)
   }
@@ -479,7 +479,7 @@ class DocumentSegmenter(
 
       val missingChars = missingIds.map(id =>
         // zoneIndexer.getAtom(pageId, RegionID(id))
-        zoneIndexer.pageInfos(pageId).charAtomIndex.getItem(id)
+        zoneIndexer.getPageInfo(pageId).charAtomIndex.getItem(id)
       )
 
       // val missingChars = missingIds.map(id => zoneIndexer.getAtom(pageId, RegionID(id)))
@@ -614,7 +614,7 @@ class DocumentSegmenter(
   def charBasedPageBounds(
     pageId: Int@@PageID
   ): LTBounds = {
-    val allBboxes = zoneIndexer.pageInfos(pageId).charAtomIndex.getItems.map(_.region.bbox)
+    val allBboxes = zoneIndexer.getPageInfo(pageId).charAtomIndex.getItems.map(_.region.bbox)
 
     if (allBboxes.isEmpty) LTBounds(0, 0, 0, 0) else {
       val minX = allBboxes.map(_.left).min
@@ -664,10 +664,11 @@ class DocumentSegmenter(
   }
 
   def visualLineOnPageComponents: Seq[Seq[Component]] = for {
-    ps <- zoneIndexer.getLabeledComponents(LB.Pages)
-    p <- ps.labeledChildren(LB.Page)
-  } yield p.labeledChildren(LB.VisualLine)
-
+    pageId <- zoneIndexer.getPages
+  } yield {
+    val page = zoneIndexer.getPageInfo(pageId)
+    page.getComponentsWithLabel(LB.VisualLine)
+  }
 
 
   def focalJump(c1: Component, c2: Component): Double = {

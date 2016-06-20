@@ -21,6 +21,8 @@ class SpatialIndex[T: SpatialIndexable](
   items: mutable.LongMap[T]
 ) {
 
+  def itemMap: mutable.LongMap[T] = items
+
   def add(item: T): Unit = {
     val si = implicitly[SpatialIndexable[T]]
     spatialIndex.add(
@@ -28,11 +30,14 @@ class SpatialIndex[T: SpatialIndexable](
       si.id(item)
     )
     items.put(si.id(item).toLong, item)
-    // pageInfos(pageId).pageChars.append(cb)
   }
 
   def getItems(): Seq[T] = {
     items.values.toSeq
+  }
+
+  def get(id: Int): Option[T] = {
+    items.get(id.toLong)
   }
 
   def getItem(id: Int): T = {
@@ -41,7 +46,7 @@ class SpatialIndex[T: SpatialIndexable](
 
   def queryForIntersectedIDs(q:LTBounds): Seq[Int] = {
     val collectRegions = SpatialIndex.rtreeIdCollector()
-    spatialIndex.contains(q.toJsiRectangle, collectRegions)
+    spatialIndex.intersects(q.toJsiRectangle, collectRegions)
     collectRegions.getIDs
   }
 

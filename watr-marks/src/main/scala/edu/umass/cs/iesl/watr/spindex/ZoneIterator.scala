@@ -42,26 +42,27 @@ class PageIterator(
   }
 
   def getZones(label: Label): Stream[ZoneIterator] = {
-    val maybeZones = zoneIndex.zoneLabelMap
-      .filter({case (zoneId, labels) =>
-        (zoneIndex.zoneMap(zoneId).regions.exists(
-          tbnds => tbnds.target==currPageID
-        )) &&
-        labels.contains(label)
-      })
-      .map(_._1)
-      .toList
-      .sortBy{ZoneID.unwrap(_)}
-      .toZipper
-      .map(zipper => new ZoneIterator(zipper, label, zoneIndex))
+    // val maybeZones = zoneIndex.zoneLabelMap
+    //   .filter({case (zoneId, labels) =>
+    //     (zoneIndex.zoneMap(zoneId).regions.exists(
+    //       tbnds => tbnds.target==currPageID
+    //     )) &&
+    //     labels.contains(label)
+    //   })
+    //   .map(_._1)
+    //   .toList
+    //   .sortBy{ZoneID.unwrap(_)}
+    //   .toZipper
+    //   .map(zipper => new ZoneIterator(zipper, label, zoneIndex))
 
-    val zoneStream = unfold[Option[ZoneIterator], ZoneIterator](
-      maybeZones
-    )(_ match {
-      case Some(cur) => Some((cur, cur.next))
-      case None => None
-    })
-    zoneStream
+    // val zoneStream = unfold[Option[ZoneIterator], ZoneIterator](
+    //   maybeZones
+    // )(_ match {
+    //   case Some(cur) => Some((cur, cur.next))
+    //   case None => None
+    // })
+    // zoneStream
+    ???
   }
 
 }
@@ -85,10 +86,11 @@ class ZoneIterator(
   }
 
   def getBoundingBoxes(): Seq[TargetRegion] = {
-    zoneIndex.zoneMap(getFocus).regions
+    // zoneIndex.zoneMap(getFocus).regions
+    ???
   }
 
-  def currentZone: Zone = zoneIndex.zoneMap(getFocus)
+  def currentZone: Zone = ??? // zoneIndex.zoneMap(getFocus)
 
   // import StandardLabels._
 

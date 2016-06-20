@@ -4,12 +4,11 @@ package watrmarks
 
 trait DocSegLabels {
 
-  //  Block-role labels
-  val Pages = Label("ds", "pages")
+  // val Pages = Label("ds", "pages")
   val Page = Label("ds", "page")
   val Column = Label("ds", "column")
 
-  val Section = Label("ds", "section")
+  // val Section = Label("ds", "section")
   val SectionHeadingLine = Label("ds", "section-heading-line")
   val SectionNumber = Label("ds", "section-number")
   val SectionTitle = Label("ds", "section-title")
@@ -23,6 +22,7 @@ trait DocSegLabels {
   // val Line = Label("ds", "line")
   val VisualLine = Label("ds", "visual-line")
   val TextLine = Label("ds", "text-line")
+
   val TokenizedLine = Label("ds", "tline")
   val Token = Label("ds", "token")
   val Sup = Label("ds", "sup")

@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import net.sf.jsi
-import utils.CompassDirection
 
 sealed trait Bounds
 
@@ -61,6 +60,7 @@ object jsiRectangle {
 
 
 object IndexShapeOperations {
+  import utils.CompassDirection
 
   def fmt = (d: Double) => f"${d}%1.2f"
 

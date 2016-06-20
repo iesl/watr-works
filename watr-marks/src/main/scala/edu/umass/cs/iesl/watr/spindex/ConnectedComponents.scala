@@ -20,6 +20,8 @@ sealed trait Component {
 
   def chars: String
 
+  def atoms: Seq[PageAtom]
+
   def children(): Seq[Component]
 
   // TODO this seems like an awful idea:
@@ -157,6 +159,8 @@ case class PageComponent(
 
   def charComponents: Seq[PageComponent] = Seq(this)
 
+  def atoms: Seq[PageAtom] = Seq(component)
+
   def char = component match {
     case rg: CharAtom => rg.char.toString
     case rg: ImgAtom => ""
@@ -220,9 +224,6 @@ case class ConnectedComponents(
   id: Int@@ComponentID,
   components: mutable.MutableList[Component],
   override val zoneIndex: ZoneIndexer
-  // blockRole: Option[Label] = None
-  // label: Label = LB.VisualLine
-  // labels: Seq[Label] = Seq()
 ) extends Component {
 
   def targetRegions: Seq[TargetRegion] = components.flatMap(_.targetRegions)
@@ -231,6 +232,8 @@ case class ConnectedComponents(
     this.components.clear()
     this.components ++= ch
   }
+
+  def atoms: Seq[PageAtom] = components.flatMap(_.atoms)
 
   def children(): Seq[Component] = components
 

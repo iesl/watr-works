@@ -61,9 +61,11 @@ class MyBxDocumentCreator(
   var currCharBuffer: mutable.ArrayBuffer[PageAtom] = mutable.ArrayBuffer[PageAtom]()
 
   var pageRectangle: Rectangle = _
+  var pageId: Int@@PageID = _
 
 
-  def processNewBxPage(_pageRectangle: Rectangle): Unit = {
+  def processNewBxPage(_pageId: Int@@PageID, _pageRectangle: Rectangle): Unit = {
+    pageId = _pageId
     pageRectangle = _pageRectangle
   }
 
@@ -162,7 +164,7 @@ class MyBxDocumentCreator(
           CharAtom(
             TargetRegion(
               componentIdGen.nextId,
-              PageID(0),
+              pageId,
               bnds
             ),
             bakedChar,
@@ -291,7 +293,7 @@ class XITextCharacterExtractor(
 
         val pageSize = reader.getPageSize(pageNumber)
 
-        documentCreator.processNewBxPage(pageSize)
+        documentCreator.processNewBxPage(pageId, pageSize)
 
 
         val pageResources = reader.getPageResources(pageNumber)
