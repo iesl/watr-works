@@ -61,9 +61,9 @@ object DocumentExtractor extends ComponentDataTypeFormats {
     val pageLines = segmenter.visualLineOnPageComponents
 
     val allPageLines = for {
-      (pageId, pageLines) <- segmenter.pages.getPages zip pageLines
+      (pageId, pageLines) <- segmenter.zoneIndexer.getPages zip pageLines
     } yield {
-      val pageGeom = segmenter.pages.getPageGeometry(pageId)
+      val pageGeom = segmenter.zoneIndexer.getPageGeometry(pageId)
 
       val sortedYLines = pageLines.map({ line =>
         // val lineX = line.bounds.left
@@ -108,7 +108,7 @@ object DocumentExtractor extends ComponentDataTypeFormats {
       (pageGeom.bounds, pageRect % vcat(sortedYLines) % readingOrderLine)
     }
 
-    // val totalBounds = pages.map(_._1).reduce(_ union _)
+    // val totalBounds = zoneIndexer.map(_._1).reduce(_ union _)
     val (totalBounds, totalSvg) = allPageLines
       .foldLeft({
         (LTBounds(0, 0, 0, 0), nullBox)
@@ -138,7 +138,7 @@ object DocumentExtractor extends ComponentDataTypeFormats {
   def extractChars(
     pdfis: InputStream,
     charsToDebug: Set[Int] = Set()
-  ): Seq[(PageRegions, PageGeometry)] = {
+  ): Seq[(PageAtoms, PageGeometry)] = {
 
     val charExtractor = new XITextCharacterExtractor(
       charsToDebug,

@@ -41,13 +41,13 @@ case class PageSegAccumulator(
 trait DocumentUtils {
 
 
-  def approxSortYX(charBoxes: Seq[PageRegion]): Seq[PageRegion] = {
+  def approxSortYX(charBoxes: Seq[PageAtom]): Seq[PageAtom] = {
     charBoxes.sortBy({ c =>
       (c.region.bbox.top, c.region.bbox.left)
     })
   }
 
-  def squishb(charBoxes: Seq[PageRegion]): String = {
+  def squishb(charBoxes: Seq[PageAtom]): String = {
     approxSortYX(charBoxes)
       .map({ cbox => cbox.prettyPrint })
       .mkString
@@ -60,7 +60,7 @@ trait DocumentUtils {
 
 object DocumentSegmenter extends DocumentUtils {
 
-  def pairwiseSpaces(cs: Seq[CharRegion]): Seq[Double] = {
+  def pairwiseSpaces(cs: Seq[CharAtom]): Seq[Double] = {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
@@ -71,7 +71,7 @@ object DocumentSegmenter extends DocumentUtils {
     dists :+ 0d
   }
 
-  def approximateLineBins(charBoxes: Seq[CharRegion]): Seq[(LTBounds, Seq[CharRegion])] = {
+  def approximateLineBins(charBoxes: Seq[CharAtom]): Seq[(LTBounds, Seq[CharAtom])] = {
     val sortedYPage = charBoxes
       .groupBy(_.region.bbox.bottom.pp)
       .toSeq
@@ -120,7 +120,7 @@ object DocumentSegmenter extends DocumentUtils {
     createSegmenter(chars.map(c => (c._1.regions, c._2)))
   }
 
-  def createSegmenter(pagedefs: Seq[(Seq[PageRegion], PageGeometry)]): DocumentSegmenter = {
+  def createSegmenter(pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
     val zoneIndex = ZoneIndexer.loadSpatialIndices2(pagedefs)
     new DocumentSegmenter(zoneIndex)
   }
@@ -188,7 +188,7 @@ object DocumentSegmenter extends DocumentUtils {
 
 
 class DocumentSegmenter(
-  val pages: ZoneIndexer
+  val zoneIndexer: ZoneIndexer
 ) {
 
   import scala.math.Ordering.Implicits._
@@ -206,11 +206,11 @@ class DocumentSegmenter(
 
   def runLineDetermination(): Component = {
     val allPageLines = for {
-      pageId <- pages.getPages
+      pageId <- zoneIndexer.getPages
     } yield {
-      determineLines(pageId, pages.getComponents(pageId))
+      determineLines(pageId, zoneIndexer.getAtoms(pageId))
     }
-    pages.concatComponents(allPageLines, LB.Pages)
+    zoneIndexer.concatComponents(allPageLines, LB.Pages)
   }
 
 
@@ -365,15 +365,12 @@ class DocumentSegmenter(
       .flatten
       .map({ block =>
         val bios = block.map(_._1).map(BioNode(_))
-        pages.addBioLabels(LB.TextBlock, bios)
+        zoneIndexer.addBioLabels(LB.TextBlock, bios)
         bios
       })
 
-    val textBlockSpine = pages.bioSpine("TextBlockSpine")
+    val textBlockSpine = zoneIndexer.bioSpine("TextBlockSpine")
     textBlockSpine ++= spine.flatten
-
-
-
 
 
     val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
@@ -422,7 +419,7 @@ class DocumentSegmenter(
           withinCommonVDist &&
           aWithinBsColumn
         ) {
-          pages.addBioLabels(LB.ParaBegin, aNodes)
+          zoneIndexer.addBioLabels(LB.ParaBegin, aNodes)
         }
 
         true
@@ -443,7 +440,7 @@ class DocumentSegmenter(
     // findMostFrequentFocalJumps()
 
     // val orderedLinesPerPage = for {
-    //   pageId <- pages.getPages
+    //   pageId <- zoneIndexer.getPages
     // } yield {
     //   println(s"segmenting page ${pageId}")
     //   groupPageTextBlocks(pageId)
@@ -460,16 +457,16 @@ class DocumentSegmenter(
 
   }
 
-
-  private def findNeighbors(pageId: Int@@PageID, qbox: CharRegion): Seq[CharRegion] = {
-    pages.nearestNChars(pageId, qbox, 12, 15.0f)
+  private def findNeighbors(pageId: Int@@PageID, qbox: CharAtom): Seq[CharAtom] = {
+    val atomIndex = zoneIndexer.pageInfos(pageId).rCharIndex
+    atomIndex.nearestNItems(qbox, 12, 15.0f)
       .filterNot(_.isWonky)
   }
 
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
-  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[CharRegion]): Seq[CharRegion] = {
+  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[CharAtom]): Seq[CharAtom] = {
     if (charBoxes.isEmpty) Seq()
     else {
       val ids = charBoxes.map(_.region.id.unwrap)
@@ -477,7 +474,7 @@ class DocumentSegmenter(
       val maxId = ids.max
 
       val missingIds = (ids.min to ids.max) diff ids
-      val missingChars = missingIds.map(id => pages.getComponent(pageId, RegionID(id)))
+      val missingChars = missingIds.map(id => zoneIndexer.getAtom(pageId, RegionID(id)))
 
       // TODO check missing chars for overlap w/lineChars
       val completeLine = (charBoxes ++ missingChars).sortBy(_.region.bbox.left)
@@ -492,10 +489,10 @@ class DocumentSegmenter(
 
   def determineLines(
     pageId: Int@@PageID,
-    components: Seq[CharRegion]
+    components: Seq[CharAtom]
   ): Component = {
 
-    val lineSets = new DisjointSets[CharRegion](components)
+    val lineSets = new DisjointSets[CharAtom](components)
 
     // line-bin coarse segmentation
     val lineBins = approximateLineBins(components)
@@ -506,7 +503,7 @@ class DocumentSegmenter(
       if !lineChars.isEmpty
     } {
 
-      def spanloop(chars: Seq[CharRegion]): Seq[Int] = {
+      def spanloop(chars: Seq[CharAtom]): Seq[Int] = {
         if (chars.isEmpty) Seq()
         else {
           val (line1, line2) = chars
@@ -549,7 +546,7 @@ class DocumentSegmenter(
       .map({ line =>
         line.toSeq
           .sortBy(c => (c.region.bbox.left, c.region.bbox.top))
-          .map(c => pages.toComponent(c))
+          .map(c => zoneIndexer.toComponent(c))
       })
       .sortBy(line => minRegionId(line))
 
@@ -599,9 +596,9 @@ class DocumentSegmenter(
 
     val linesJoined = maybeJoined
       .sortBy(b => b.map(regionIds(_)).min)
-      .map(l => pages.concatComponents(l, LB.VisualLine))
+      .map(l => zoneIndexer.concatComponents(l, LB.VisualLine))
 
-    pages.concatComponents(linesJoined, LB.Page)
+    zoneIndexer.concatComponents(linesJoined, LB.Page)
   }
 
 
@@ -609,7 +606,7 @@ class DocumentSegmenter(
   def charBasedPageBounds(
     pageId: Int@@PageID
   ): LTBounds = {
-    val allBboxes = pages.getComponents(pageId).map(_.region.bbox)
+    val allBboxes = zoneIndexer.getAtoms(pageId).map(_.region.bbox)
 
     if (allBboxes.isEmpty) LTBounds(0, 0, 0, 0) else {
       val minX = allBboxes.map(_.left).min
@@ -659,7 +656,7 @@ class DocumentSegmenter(
   }
 
   def visualLineOnPageComponents: Seq[Seq[Component]] = for {
-    ps <- pages.getLabeledComponents(LB.Pages)
+    ps <- zoneIndexer.getLabeledComponents(LB.Pages)
     p <- ps.labeledChildren(LB.Page)
   } yield p.labeledChildren(LB.VisualLine)
 
@@ -766,7 +763,7 @@ class DocumentSegmenter(
 
   def labelSectionHeadings(): Unit = {
 
-    val vlines = pages.bioSpine("TextBlockSpine")
+    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
     println(s"len lineSpine = ${vlines.length}")
     for {
       lineBioNode <- vlines
@@ -782,7 +779,7 @@ class DocumentSegmenter(
       // _ = println(s"""    >${numbering}""")
     } {
       val ns = numbering.split("\\.").toList.map(_.toInt)
-      pages.addBioLabels(LB.SectionHeadingLine, lineBioNode)
+      zoneIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
 
       (lineComp, ns)
 
@@ -799,7 +796,7 @@ class DocumentSegmenter(
     //   println(s"${nss}   ${rline}")
     // }
 
-    // pages.addLabels(zl: ZoneAndLabel)
+    // zoneIndexer.addLabels(zl: ZoneAndLabel)
     // sortedSections.foreach({ case (linecc, ns) =>
     //   val asdf =linecc.withLabel(LB.Heading)
     // })
@@ -860,7 +857,7 @@ class DocumentSegmenter(
   //   // Walk down column lines pair-wise, and take while diagonal distances match
 
 
-  //   // pages.concatComponents(totalLineSorted, LB.Block)
+  //   // zoneIndexer.concatComponents(totalLineSorted, LB.Block)
   //   // totalLineSorted
 
   //   ???

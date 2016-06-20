@@ -58,7 +58,7 @@ class MyBxDocumentCreator(
   componentIdGen: IdGenerator[RegionID]
 ) extends RenderListener {
 
-  var currCharBuffer: mutable.ArrayBuffer[PageRegion] = mutable.ArrayBuffer[PageRegion]()
+  var currCharBuffer: mutable.ArrayBuffer[PageAtom] = mutable.ArrayBuffer[PageAtom]()
 
   var pageRectangle: Rectangle = _
 
@@ -159,7 +159,7 @@ class MyBxDocumentCreator(
       if (!wonkyChar.exists(_ == 32)) {
 
         val charBox = charBounds.map(bnds =>
-          CharRegion(
+          CharAtom(
             TargetRegion(
               componentIdGen.nextId,
               PageID(0),
@@ -209,7 +209,7 @@ class MyBxDocumentCreator(
     //   w, h
     // )
 
-    // val imgRegion = ImgRegion(
+    // val imgRegion = ImgAtom(
     //     TargetRegion(
     //       componentIdGen.nextId,
     //       PageID(0),
@@ -272,7 +272,7 @@ class XITextCharacterExtractor(
   }
 
 
-  var pagesInfo: List[(PageRegions, PageGeometry)] = List()
+  var pagesInfo: List[(PageAtoms, PageGeometry)] = List()
 
   def extractCharacters(stream: InputStream): Unit = {
     try {
@@ -306,9 +306,9 @@ class XITextCharacterExtractor(
 
         val pageGeometry = getReportedPageGeometry(pageId, pageSize)
 
-        val pageCharRegions = Seq[PageRegion](documentCreator.currCharBuffer:_*)
+        val pageCharAtoms = Seq[PageAtom](documentCreator.currCharBuffer:_*)
 
-        val pageChars = PageRegions(pageId, pageCharRegions)
+        val pageChars = PageAtoms(pageId, pageCharAtoms)
 
         pagesInfo = pagesInfo :+ (
           (pageChars, pageGeometry)

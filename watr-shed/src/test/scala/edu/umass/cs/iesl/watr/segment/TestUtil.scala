@@ -20,6 +20,24 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
 
   def wsv(s: String) = s.split(" ").map(_.trim).toList
 
+  def getAttrVal(attr: String, text:String): String = {
+    val index = text.indexOf(s""" ${attr}=""")
+    text.substring(index)
+      .dropWhile(_ != '"')
+      .drop(1)
+      .takeWhile(_ != '"')
+      .mkString
+  }
+
+
+  def attrsToBounds(text: String): LTBounds = {
+    LTBounds(
+      getAttrVal("x", text).toDouble,
+      getAttrVal("y", text).toDouble,
+      getAttrVal("width", text).toDouble,
+      getAttrVal("height", text).toDouble
+    )
+  }
 
   def svgCutAndPasteToTest(svgstr: String): ParsedExample = {
     val lines = svgstr.split("\n").toList
@@ -41,23 +59,6 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
     val file = fileAndPageLine
       .split("/").last.dropRight(1)
 
-    def getAttrVal(attr: String, text:String): String = {
-      val index = text.indexOf(s""" ${attr}=""")
-      text.substring(index)
-        .dropWhile(_ != '"')
-        .drop(1)
-        .takeWhile(_ != '"')
-        .mkString
-    }
-
-    def attrsToBounds(text: String): LTBounds = {
-      LTBounds(
-        getAttrVal("x", text).toDouble,
-        getAttrVal("y", text).toDouble,
-        getAttrVal("width", text).toDouble,
-        getAttrVal("height", text).toDouble
-      )
-    }
 
     val parsedFrags = boundsLines
       .map({line =>
@@ -97,6 +98,20 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
     )
   }
 
+  // def testRegion(
+  //   pdf: String,
+  //   page: Int,
+  //   bbox: LTBounds
+  // ): ParsedExample = {
+  //   ParsedExample(
+  //     pdf,
+  //     PageID(page),
+  //     bbox
+  //   )
+
+  // }
+
+
 }
 
 
@@ -123,3 +138,4 @@ case class ParsedExample(
   regions: Seq[(String, Int@@PageID, LTBounds)],
   expectedOutput: Seq[String]
 )
+

@@ -32,7 +32,7 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
     )
 
     // Old method:
-    val chars: Seq[CharRegion] = zoneIndex.queryChars(pg, bbox)
+    val chars = zoneIndex.pageInfos(pg).rCharIndex.queryForIntersects(bbox)
     val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
     val lineChars = chars.sortBy(_.region.bbox.left)
     val ccs = zoneIndex.concatRegions(lineChars).addLabel(LB.VisualLine)

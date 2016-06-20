@@ -261,7 +261,7 @@ object Works extends App {
     def proc(pdfins: InputStream, outputPath: String): String = {
       val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
       segmenter.runPageSegmentation()
-      ComponentRendering.serializeDocument(segmenter.pages).toString()
+      ComponentRendering.serializeDocument(segmenter.zoneIndexer).toString()
     }
 
   }
@@ -287,7 +287,7 @@ object Works extends App {
         .extractChars(pdf)
         .map({case(pageRegions, pageGeom) =>
           val sortedYPage = pageRegions.regions
-            .collect({case c: CharRegion => c})
+            .collect({case c: CharAtom => c})
             .groupBy(_.region.bbox.top.pp)
             .toSeq
             .sortBy(_._1.toDouble)

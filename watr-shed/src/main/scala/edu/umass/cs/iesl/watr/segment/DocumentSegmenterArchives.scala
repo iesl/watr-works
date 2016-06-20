@@ -96,11 +96,11 @@
   // /** Groups components into text lines. */
   // def determineLinesNNSearchVersion(
   //   pageId: Int@@PageID,
-  //   components: Seq[CharRegion]
+  //   components: Seq[CharAtom]
   // ): Seq[ConnectedComponents] = {
 
   //   val readableComponents = components.filterNot(_.isWonky)
-  //   val sets = new DisjointSets[CharRegion](readableComponents)
+  //   val sets = new DisjointSets[CharAtom](readableComponents)
 
 
   //   for { component <- readableComponents.sortBy(_.region.bbox.left) } {
@@ -194,7 +194,7 @@
   //           val candidateLines = remainingLinesWithFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) })
   //           val visBlocks = groupVisualTextBlocks(colX, candidateLines, unusedPageLines)
   //           visBlocks.foreach { vblock =>
-  //             pages.concatComponents(vblock, LB.TextBlock)
+  //             zoneIndexer.concatComponents(vblock, LB.TextBlock)
   //             unusedPageLines --= vblock
   //           }
   //         }
@@ -279,5 +279,5 @@
   //   unusedLines --= totalLineSorted
   //   usedLines ++= totalLineSorted
 
-  //   pages.concatComponents(totalLineSorted, LB.Block)
+  //   zoneIndexer.concatComponents(totalLineSorted, LB.Block)
   // }

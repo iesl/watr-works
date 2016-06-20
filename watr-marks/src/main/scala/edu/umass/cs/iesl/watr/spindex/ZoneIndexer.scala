@@ -11,16 +11,19 @@ import watrmarks._
 import TypeTags._
 import scalaz.@@
 // import ComponentOperations._
-import IndexShapeOperations._
+// import IndexShapeOperations._
 import ComponentTypeEnrichments._
 import utils.IdGenerator
 
+
+
 case class PageInfo(
   pageId: Int@@PageID,
-  rindex: jsi.SpatialIndex,
+  rCharIndex: SpatialIndex[CharAtom],
+  rComponentIndex: jsi.SpatialIndex,
   geometry: PageGeometry,
-  pageChars: mutable.ArrayBuffer[CharRegion],
-  charBoxes: mutable.LongMap[CharRegion]
+  pageChars: mutable.ArrayBuffer[CharAtom],
+  charBoxes: mutable.LongMap[CharAtom]
 )
 
 
@@ -67,6 +70,8 @@ object BioLabeling {
 
 
 class ZoneIndexer  {
+  import SpatialIndex._
+
   val pageInfos = mutable.HashMap[Int@@PageID, PageInfo]()
 
   // Zones are on the way out
@@ -102,13 +107,13 @@ class ZoneIndexer  {
     c
   }
 
-  def toComponent(region: PageRegion): Component = {
+  def toComponent(region: PageAtom): Component = {
     val c = PageComponent(componentIdGen.nextId, region, this)
     componentMap.put(c.id, c)
     c
   }
 
-  def concatRegions(regions: Seq[PageRegion], l: Option[Label]=None): Component = {
+  def concatRegions(regions: Seq[PageAtom], l: Option[Label]=None): Component = {
     concatComponents(regions.map(toComponent(_)))
   }
 
@@ -146,19 +151,19 @@ class ZoneIndexer  {
 
   def getPageGeometry(p: Int@@PageID) = pageInfos(p).geometry
 
-  def getComponent(pageId: Int@@PageID, charId: Int@@RegionID): CharRegion = {
+  def getAtom(pageId: Int@@PageID, charId: Int@@RegionID): CharAtom = {
     pageInfos(pageId).charBoxes(charId.unwrap.toLong)
   }
 
-  // See getComponentsUnfiltered() for explanation behind filterNot
-  def getComponents(pageId: Int@@PageID): Seq[CharRegion] = {
+  // See getAtomsUnfiltered() for explanation behind filterNot
+  def getAtoms(pageId: Int@@PageID): Seq[CharAtom] = {
     pageInfos(pageId).pageChars.filterNot(_.isSpace)
   }
 
 
   // Some chars from a pdf are unuseable, either unprintable or embedded space characters.
   //   This will return all of them
-  def getComponentsUnfiltered(pageId: Int@@PageID): Seq[CharRegion] = {
+  def getAtomsUnfiltered(pageId: Int@@PageID): Seq[CharAtom] = {
     pageInfos(pageId).pageChars.filterNot(_.isSpace)
   }
 
@@ -176,121 +181,103 @@ class ZoneIndexer  {
   }
 
 
-  def addPage(p: PageGeometry): Unit = {
-
-    if(pageInfos.contains(p.id)) {
-      sys.error("adding new page w/existing id")
-    }
+  def createSpatialIndex(): jsi.SpatialIndex = {
     val rtree: jsi.SpatialIndex = new RTree()
     rtree.init(null)
+    rtree
+  }
 
-    pageInfos.put(p.id,
-      PageInfo(p.id, rtree, p, mutable.ArrayBuffer(), mutable.LongMap())
+  def addPage(pageGeometry: PageGeometry): Unit = {
+    if(pageInfos.contains(pageGeometry.id)) {
+      sys.error("adding new page w/existing id")
+    }
+
+    pageInfos.put(pageGeometry.id,
+      PageInfo(pageGeometry.id,
+        SpatialIndex.createFor[CharAtom](pageGeometry.bounds),
+        createSpatialIndex(),
+        pageGeometry,
+        mutable.ArrayBuffer(),
+        mutable.LongMap())
     )
   }
 
-  def addCharInfo(pageId: Int@@PageID, cb: CharRegion): Unit = {
-    val rindex = pageInfos(pageId).rindex
-    rindex.add(cb.region.bbox.toJsiRectangle, cb.region.id.unwrap.toInt)
-    pageInfos(pageId).pageChars.append(cb)
+  def addCharInfo(pageId: Int@@PageID, cb: CharAtom): Unit = {
+    pageInfos(pageId)
+      .rCharIndex
+      .add(cb)
+  }
+
+  // def addZone(zone: Zone): Unit = {
+  //   val zoneId = zone.id
+  //   zoneMap.put(zoneId, zone).map(existing => sys.error(s"zone already exists in zoneMap"))
+  //   zone.regions.foreach{ targetedBounds  =>
+  //     regionToZone.put(targetedBounds.id, zone)
+  //     pageInfos(targetedBounds.target).rCharIndex.add(
+  //       targetedBounds.bbox.toJsiRectangle,
+  //       RegionID.unwrap(targetedBounds.id)
+  //     )
+  //   }
+  // }
+
+
+  def putCharAtom(pageId: Int@@PageID, cb: CharAtom): Unit = {
     pageInfos(pageId).charBoxes.put(cb.region.id.unwrap.toLong, cb)
   }
 
-  def addZone(zone: Zone): Unit = {
-    val zoneId = zone.id
-    zoneMap.put(zoneId, zone).map(existing => sys.error(s"zone already exists in zoneMap"))
-    zone.regions.foreach{ targetedBounds  =>
-      regionToZone.put(targetedBounds.id, zone)
-      pageInfos(targetedBounds.target).rindex.add(
-        targetedBounds.bbox.toJsiRectangle,
-        RegionID.unwrap(targetedBounds.id)
-      )
-    }
-  }
-
-
-  def putCharRegion(pageId: Int@@PageID, cb: CharRegion): Unit = {
-    pageInfos(pageId).charBoxes.put(cb.region.id.unwrap.toLong, cb)
-  }
-
-  def getCharRegion(pageId: Int@@PageID, id: Int): CharRegion = {
+  def getCharAtom(pageId: Int@@PageID, id: Int): CharAtom = {
     pageInfos(pageId).
     charBoxes(id.toLong)
   }
 
-  def getCharRegion(pageId: Int@@PageID, id: Int@@RegionID): CharRegion = {
+  def getCharAtom(pageId: Int@@PageID, id: Int@@RegionID): CharAtom = {
     pageInfos(pageId).
     charBoxes(id.unwrap.toLong)
   }
 
-  def getCharRegion(pageId: Int@@PageID, id: Long): CharRegion = {
+  def getCharAtom(pageId: Int@@PageID, id: Long): CharAtom = {
     pageInfos(pageId).charBoxes(id)
   }
 
-  def queryCharsIntersects(pageId: Int@@PageID, q: LTBounds): Seq[CharRegion] = {
-    val rindex = pageInfos(pageId).rindex
+  // def queryForIntersected(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
+  //   queryForIntersectedIDs(pageInfos(pageId).rCharIndex, q)
+  //     .filter{ id => pageInfos(pageId).charBoxes.contains(id.toLong) }
+  //     .map(cid => pageInfos(pageId).charBoxes(cid.toLong))
+  // }
 
-    val collectRegions = ZoneIndexer.rtreeIdCollector()
-    // rindex.intersects(x$1: Rectangle, x$2: TIntProcedure)
-    rindex.intersects(q.toJsiRectangle, collectRegions)
-    val neighbors = collectRegions.getIDs.filter{ id =>
-      pageInfos(pageId).charBoxes.contains(id.toLong)
-    }
-    neighbors.map(cid =>
-      pageInfos(pageId).charBoxes(cid.toLong))
-  }
+  // def queryCharsIntersects(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
+  //   queryForIntersectedIDs(pageInfos(pageId).rCharIndex, q)
+  //       .filter{ id => pageInfos(pageId).charBoxes.contains(id.toLong) }
+  //       .map(cid => pageInfos(pageId).charBoxes(cid.toLong))
+  // }
 
-  def queryChars(pageId: Int@@PageID, q: LTBounds): Seq[CharRegion] = {
-    val rindex = pageInfos(pageId).rindex
 
-    val collectRegions = ZoneIndexer.rtreeIdCollector()
-    rindex.contains(q.toJsiRectangle, collectRegions)
-    val neighbors = collectRegions.getIDs.filter{ id =>
-      pageInfos(pageId).charBoxes.contains(id.toLong)
-    }
+  // def queryChars(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
+  //   queryForContainedIDs(pageInfos(pageId).rCharIndex, q)
+  //     .filter(id => pageInfos(pageId).charBoxes.contains(id.toLong))
+  //     .map( getCharAtom(pageId, _) )
+  // }
 
-    neighbors map (getCharRegion(pageId, _))
-  }
+  // def queryComponents(pageId: Int@@PageID, q: LTBounds): Seq[Component] = {
+  //   queryForContainedIDs(pageInfos(pageId).rComponentIndex, q)
+  //     .map(getCharAtom(pageId, _) )
 
-  def nearestNChars(pageId: Int@@PageID, fromChar: CharRegion, n: Int, radius: Float): Seq[CharRegion] = {
-    val rindex = pageInfos(pageId).rindex
-    val ctr = fromChar.region.bbox.toCenterPoint
-    val searchRect = LTBounds(
-      left   =ctr.x - radius,
-      top    =ctr.y - radius,
-      width  =(radius*2.0).toDouble,
-      height =(radius*2.0).toDouble
-    )
+  //   ???
+  // }
 
-    val collectRegions = ZoneIndexer.rtreeIdCollector()
-    // println(s" searching ${n} nearest from c=${fromChar.char} bbox ${searchRect.prettyPrint}, ctr=${ctr}, radius: ${radius}")
+  // def query(pageId: Int@@PageID, q: LTBounds): Seq[Zone] = {
+  //   println(s"ZoneIndex.query(${pageId}, ${q.prettyPrint})")
+  //   val rCharIndex = pageInfos(pageId).rCharIndex
 
-    rindex.intersects(searchRect.toJsiRectangle, collectRegions)
-    // println(s""" found ${collectRegions.getIDs.mkString(",")} """)
-    collectRegions.getIDs
-      .map({ id =>
-        val cbox = getCharRegion(pageId, id)
-        (cbox.region.bbox.toCenterPoint.dist(ctr), cbox)
-      })
-      .filterNot(_._2.region.id == fromChar.region.id)
-      .sortBy(_._1)
-      .take(n)
-      .map(_._2)
-  }
+  //   val collectRegions = ZoneIndexer.rtreeIdCollector()
+  //   rCharIndex.contains(q.toJsiRectangle, collectRegions)
+  //   // rCharIndex.intersects(q.toJsiRectangle, collectRegions)
+  //   val regions = collectRegions.getIDs
+  //   val zones = collectRegions
+  //     .getIDs.map{ regionId => regionToZone(RegionID(regionId)) }
 
-  def query(pageId: Int@@PageID, q: LTBounds): Seq[Zone] = {
-    println(s"ZoneIndex.query(${pageId}, ${q.prettyPrint})")
-    val rindex = pageInfos(pageId).rindex
-
-    val collectRegions = ZoneIndexer.rtreeIdCollector()
-    rindex.contains(q.toJsiRectangle, collectRegions)
-    // rindex.intersects(q.toJsiRectangle, collectRegions)
-    val regions = collectRegions.getIDs
-    val zones = collectRegions
-      .getIDs.map{ regionId => regionToZone(RegionID(regionId)) }
-
-    zones.sortBy { z => z.regions.head.bbox.left }
-  }
+  //   zones.sortBy { z => z.regions.head.bbox.left }
+  // }
 
   def addBioLabels(label: Label, node: BioNode): Unit = {
     addBioLabels(label, Seq(node))
@@ -319,11 +306,11 @@ object ZoneIndexer extends ComponentDataTypeFormats {
     (minMax._1, minMax._2-minMax._1)
   }
 
-  def loadSpatialIndices(regionsAndGeometry: Seq[(PageRegions, PageGeometry)]): ZoneIndexer = {
+  def loadSpatialIndices(regionsAndGeometry: Seq[(PageAtoms, PageGeometry)]): ZoneIndexer = {
     loadSpatialIndices2(regionsAndGeometry.map(c => (c._1.regions, c._2)))
   }
 
-  def loadSpatialIndices2(regionsAndGeometry: Seq[(Seq[PageRegion], PageGeometry)]): ZoneIndexer = {
+  def loadSpatialIndices2(regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): ZoneIndexer = {
 
     val zindexer = new ZoneIndexer()
     regionsAndGeometry.foreach { case(regions, geom)  =>
@@ -331,7 +318,7 @@ object ZoneIndexer extends ComponentDataTypeFormats {
 
       regions.foreach { cb =>
         if (!cb.isSpace && cb.isChar) {
-          zindexer.addCharInfo(geom.id, cb.asInstanceOf[CharRegion])
+          zindexer.addCharInfo(geom.id, cb.asInstanceOf[CharAtom])
         }
       }
     }
@@ -340,42 +327,27 @@ object ZoneIndexer extends ComponentDataTypeFormats {
 
   def loadSpatialIndices(zoneRec: ZoneRecords): ZoneIndexer = {
 
-    val zindexer = new ZoneIndexer()
+    // val zindexer = new ZoneIndexer()
 
-    println("added zone indexer")
+    // println("added zone indexer")
 
-    zoneRec.pageGeometries.foreach { p =>
-      zindexer.addPage(p)
-    }
-    println("added zone pages")
+    // zoneRec.pageGeometries.foreach { p =>
+    //   zindexer.addPage(p)
+    // }
+    // println("added zone pages")
 
-    zoneRec.zones.foreach { z =>
-      zindexer.addZone(z)
-    }
-    println("added zones")
-    zoneRec.labels.foreach { zl =>
-      zindexer.addLabels(zl)
-    }
-    println("added zone labels")
+    // zoneRec.zones.foreach { z =>
+    //   zindexer.addZone(z)
+    // }
+    // println("added zones")
+    // zoneRec.labels.foreach { zl =>
+    //   zindexer.addLabels(zl)
+    // }
+    // println("added zone labels")
 
-    zindexer
+    // zindexer
+    ???
   }
 
-  import gnu.trove.procedure.TIntProcedure
-  class CollectRegionIds extends TIntProcedure {
-    import scala.collection.mutable
-    val ids = mutable.ArrayBuffer[Int]()
-
-    override def execute(id: Int): Boolean = {
-      ids.append(id)
-      true
-    }
-
-    def getIDs: Seq[Int] = ids
-  }
-
-  def rtreeIdCollector(): CollectRegionIds = {
-    new CollectRegionIds()
-  }
 
 }

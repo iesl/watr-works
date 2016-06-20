@@ -293,7 +293,7 @@ object IndexShapeOperations {
     }
   }
 
-  def charBoxesBounds(charBoxes: Seq[PageRegion]): LTBounds = {
+  def charBoxesBounds(charBoxes: Seq[PageAtom]): LTBounds = {
     if (charBoxes.isEmpty) {
       LTBounds(0, 0, 0, 0)
     } else {

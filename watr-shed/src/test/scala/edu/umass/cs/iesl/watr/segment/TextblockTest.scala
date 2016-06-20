@@ -63,7 +63,7 @@ class TextBlockTest extends DocsegTestUtil  {
         DocumentExtractor.extractChars(pdfIns)
       )
       val pages = zoneIndex.getPages.take(1).map({ pageId =>
-        val pageChars = zoneIndex.getComponents(pageId)
+        val pageChars = zoneIndex.getAtoms(pageId)
         val pageGeom = zoneIndex.getPageGeometry(pageId)
 
       })
@@ -81,9 +81,9 @@ class TextBlockTest extends DocsegTestUtil  {
       // val docstrum = new DocumentSegmenter(zoneIndex)
 
       // val allPageLines = for {
-      //   pageId <- docstrum.pages.getPages
+      //   pageId <- docstrum.zoneIndexer.getPages
       // } yield {
-      //   docstrum.determineLines(pageId, docstrum.pages.getComponents(pageId))
+      //   docstrum.determineLines(pageId, docstrum.zoneIndexer.getAtoms(pageId))
       // }
 
     }

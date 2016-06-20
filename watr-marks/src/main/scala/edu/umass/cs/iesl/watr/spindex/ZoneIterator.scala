@@ -90,21 +90,23 @@ class ZoneIterator(
 
   def currentZone: Zone = zoneIndex.zoneMap(getFocus)
 
-  import StandardLabels._
+  // import StandardLabels._
 
 
   def getTokens(): Seq[(Zone, Label)] = {
-    val res = getBoundingBoxes.map{ bbox =>
-      zoneIndex.query(bbox.target, bbox.bbox)
-    }.flatten
+    // val res = getBoundingBoxes.map{ bbox =>
+    //   zoneIndex.query(bbox.target, bbox.bbox)
+    // }.flatten
 
-    val tokens = res.map{ zone =>
-      val labels = zoneIndex.zoneLabelMap(zone.id)
-      labels
-        .filter(_ matches Token)
-        .map(l => (zone, l))
-    }
-    tokens.flatten
+    // val tokens = res.map{ zone =>
+    //   val labels = zoneIndex.zoneLabelMap(zone.id)
+    //   labels
+    //     .filter(_ matches Token)
+    //     .map(l => (zone, l))
+    // }
+    // tokens.flatten
+
+    ???
   }
 
   def getText(): String = {

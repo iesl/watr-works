@@ -15,10 +15,10 @@ import utils.{CompassDirection => CDir}
 
 
 object ComponentOperations {
-  def centerX(cb: PageRegion) = cb.region.bbox.toCenterPoint.x
-  def centerY(cb: PageRegion) = cb.region.bbox.toCenterPoint.y
+  def centerX(cb: PageAtom) = cb.region.bbox.toCenterPoint.x
+  def centerY(cb: PageAtom) = cb.region.bbox.toCenterPoint.y
 
-  def spaceWidths(cs: Seq[CharRegion]): Seq[Double] = {
+  def spaceWidths(cs: Seq[CharAtom]): Seq[Double] = {
     // pairwiseSpaceWidths(cs.map(Component(_)))
     val cpairs = cs.sliding(2).toList
 
@@ -41,7 +41,7 @@ object ComponentOperations {
     dists :+ 0d
   }
 
-  def determineCharSpacings(chars: Seq[CharRegion]): Seq[Double] = {
+  def determineCharSpacings(chars: Seq[CharAtom]): Seq[Double] = {
     val dists = spaceWidths(chars)
     val resolution = 0.5d
 

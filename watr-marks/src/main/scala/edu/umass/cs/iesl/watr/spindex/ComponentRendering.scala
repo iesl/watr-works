@@ -66,14 +66,14 @@ object ComponentRendering {
     vjoinTrailSep(sep=",")(spanBoxes:_*)
   }
 
-  def serializeDocument(pages: ZoneIndexer): String = {
+  def serializeDocument(zoneIndexer: ZoneIndexer): String = {
 
     implicit val initState = Option(CCRenderState(
-      numOfPages = pages.getPages.length,
+      numOfPages = zoneIndexer.getPages.length,
       startingPage = PageID(0)
     ))
 
-    val lineSpine = pages.bioSpine("TextBlockSpine")
+    val lineSpine = zoneIndexer.bioSpine("TextBlockSpine")
 
     val serComponents = List(
       LB.SectionHeadingLine,
@@ -237,9 +237,9 @@ object ComponentRendering {
 
 
       case comp: PageComponent => comp.component match {
-        case b: CharRegion =>
+        case b: CharAtom =>
           Seq(b.bestGuessChar.box)
-        case b: ImgRegion =>
+        case b: ImgAtom =>
           Seq()
       }
     }
@@ -258,7 +258,7 @@ object ComponentRendering {
 
 
 
-  def charInfosBox(cbs: Seq[CharRegion]): Seq[TB.Box] = {
+  def charInfosBox(cbs: Seq[CharAtom]): Seq[TB.Box] = {
     import TB._
 
     cbs.zip(spaceWidths(cbs))

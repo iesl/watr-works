@@ -17,7 +17,7 @@ object SpatialIndexOperations {
 
 
 
-    def approximateColumnBins(pageId: Int@@PageID, charBoxes: Seq[CharRegion]): Seq[(CompassDirection, Line)] = {
+    def approximateColumnBins(pageId: Int@@PageID, charBoxes: Seq[CharAtom]): Seq[(CompassDirection, Line)] = {
       val leftBins = charBoxes
         .groupBy(_.region.bbox.left.pp)
         .toSeq
@@ -36,15 +36,11 @@ object SpatialIndexOperations {
           leftEdge.p2.y - leftEdge.p1.y
         ).translate(-5.1, 0)
 
-        val charsToLeft = index.queryCharsIntersects(pageId, query)
-
-        println(s"ysorted = ${bin.map(_.prettyPrint).mkString(", ")}")
-        println(s"charsToLeft = ${charsToLeft.map(_.prettyPrint).mkString(", ")}")
-
+        val charsToLeft = index.pageInfos(pageId).rCharIndex.queryForIntersects(query)
 
         val (splits, leftovers) = charsToLeft
           .sortBy(_.region.bbox.bottom)
-          .foldLeft((Seq[Seq[CharRegion]](), ysorted)) ({case ((split, remaining), e) =>
+          .foldLeft((Seq[Seq[CharAtom]](), ysorted)) ({case ((split, remaining), e) =>
             val cbottom = e.region.bbox.bottom.pp
 
             val cleanEdge = remaining

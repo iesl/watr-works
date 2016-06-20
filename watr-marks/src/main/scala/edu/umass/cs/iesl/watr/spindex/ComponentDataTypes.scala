@@ -27,61 +27,61 @@ case class PageGeometry(
   borders:Option[Borders]
 )
 
-case class PageRegions(
+case class PageAtoms(
   id: Int@@PageID,
-  regions: Seq[PageRegion]
+  regions: Seq[PageAtom]
 )
 
-sealed trait PageRegion {
+sealed trait PageAtom {
   def region: TargetRegion
 }
 
-// object PageRegion {
+// object PageAtom {
 //   def apply(
 //     region: TargetRegion,
 //     char: String,
 //     subs: String = "",
 //     wonkyCharCode: Option[Int] = None
-//   ) = CharRegion(region, char, subs, wonkyCharCode)
+//   ) = CharAtom(region, char, subs, wonkyCharCode)
 
-//   def apply(region: TargetRegion) = ImgRegion(region)
+//   def apply(region: TargetRegion) = ImgAtom(region)
 
 
 
 // }
 
 
-class CharRegion(
+class CharAtom(
   val region: TargetRegion,
   val char: String,
   val subs: String = "",
   val wonkyCharCode: Option[Int] = None
-) extends PageRegion {
+) extends PageAtom {
   // override def toString = {
   //   " "
   // }
 }
 
-object CharRegion {
-  def unapply(r: CharRegion): Option[(TargetRegion, String, String, Option[Int])] =
+object CharAtom {
+  def unapply(r: CharAtom): Option[(TargetRegion, String, String, Option[Int])] =
     Some((r.region, r.char, r.subs, r.wonkyCharCode))
 
   def apply(region: TargetRegion,
      char: String,
      subs: String = "",
      wonkyCharCode: Option[Int] = None
-  ): CharRegion = new CharRegion(region, char, subs, wonkyCharCode)
+  ): CharAtom = new CharAtom(region, char, subs, wonkyCharCode)
 
 }
 
 
-class ImgRegion(
+class ImgAtom(
   val region: TargetRegion
-) extends PageRegion
+) extends PageAtom
 
-object ImgRegion {
-  def unapply(rg: ImgRegion): Option[(TargetRegion)] = Some(rg.region)
-  def apply(region: TargetRegion): ImgRegion = new ImgRegion(region)
+object ImgAtom {
+  def unapply(rg: ImgAtom): Option[(TargetRegion)] = Some(rg.region)
+  def apply(region: TargetRegion): ImgAtom = new ImgAtom(region)
 
 }
 
@@ -100,7 +100,7 @@ case class ZoneRecords(
   pageGeometries: Seq[PageGeometry],
   zones: Seq[Zone],
   labels: Seq[ZoneAndLabel],
-  pageRegions: Seq[PageRegions]
+  pageRegions: Seq[PageAtoms]
 )
 
 trait ComponentDataTypeFormats extends TypeTagFormats {
@@ -115,10 +115,10 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   implicit def FormatPageGeometry     = Json.format[PageGeometry]
   implicit def FormatZone             = Json.format[Zone]
   implicit def FormatZoneAndLabel     = Json.format[ZoneAndLabel]
-  implicit def FormatCharRegion       = Json.format[CharRegion]
-  implicit def FormatImgRegion        = Json.format[ImgRegion]
-  implicit def FormatPageRegion:Format[PageRegion]       = ??? // Json.format[PageRegion]
-  implicit def FormatPageRegions:Format[PageRegions]      = ??? // Json.format[PageRegions]
+  implicit def FormatCharAtom       = Json.format[CharAtom]
+  implicit def FormatImgAtom        = Json.format[ImgAtom]
+  implicit def FormatPageAtom:Format[PageAtom]       = ??? // Json.format[PageAtom]
+  implicit def FormatPageAtoms:Format[PageAtoms]      = ??? // Json.format[PageAtoms]
   implicit def FormatZoneRecords:Format[ZoneRecords]      = ??? // Json.format[ZoneRecords]
 
 
@@ -135,26 +135,26 @@ object ComponentTypeEnrichments {
     }
 
   }
-  implicit class RicherPageRegion(val pageRegion: PageRegion) extends AnyVal {
+  implicit class RicherPageAtom(val pageRegion: PageAtom) extends AnyVal {
 
     def prettyPrint: String = pageRegion match {
-      case b: CharRegion => b.prettyPrint
-      case b: ImgRegion => "<img>"
+      case b: CharAtom => b.prettyPrint
+      case b: ImgAtom => "<img>"
     }
 
     def bestGuessChar: String = pageRegion match {
-      case b: CharRegion => b.bestGuessChar
-      case b: ImgRegion => ""
+      case b: CharAtom => b.bestGuessChar
+      case b: ImgAtom => ""
     }
 
     def isSpace: Boolean = pageRegion match {
-      case b: CharRegion => b.isSpace
-      case b: ImgRegion => false
+      case b: CharAtom => b.isSpace
+      case b: ImgAtom => false
     }
 
     def isChar: Boolean = pageRegion match {
-      case b: CharRegion => true
-      case b: ImgRegion => false
+      case b: CharAtom => true
+      case b: ImgAtom => false
     }
     // def isWonky: Boolean = charRegion.wonkyCharCode.isDefined
 
@@ -162,7 +162,7 @@ object ComponentTypeEnrichments {
   }
 
 
-  implicit class RicherCharRegion(val charRegion: CharRegion) extends AnyVal {
+  implicit class RicherCharAtom(val charRegion: CharAtom) extends AnyVal {
 
     def debugPrint: String = {
       val bbox = charRegion.region.bbox.prettyPrint

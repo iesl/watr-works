@@ -145,7 +145,7 @@ sealed trait Component {
 
 case class PageComponent(
   id: Int@@ComponentID,
-  component: PageRegion,
+  component: PageAtom,
   override val zoneIndex: ZoneIndexer
 ) extends Component {
 
@@ -158,8 +158,8 @@ case class PageComponent(
   def charComponents: Seq[PageComponent] = Seq(this)
 
   def char = component match {
-    case rg: CharRegion => rg.char.toString
-    case rg: ImgRegion => ""
+    case rg: CharAtom => rg.char.toString
+    case rg: ImgAtom => ""
   }
 
   def mapChars(subs: Seq[(Char, String)]): Component  = {
@@ -167,11 +167,11 @@ case class PageComponent(
       .find(_._1.toString==char)
       .map({case (_, sub) =>
         component match {
-          case rg: CharRegion => this.copy(
-            component= CharRegion.apply(rg.region, rg.char, sub, rg.wonkyCharCode))
+          case rg: CharAtom => this.copy(
+            component= CharAtom.apply(rg.region, rg.char, sub, rg.wonkyCharCode))
 
 
-          case rg: ImgRegion  => this
+          case rg: ImgAtom  => this
         }
       })
       .getOrElse(this)
@@ -195,8 +195,8 @@ case class PageComponent(
 
   def toText(implicit idgen:Option[CCRenderState] = None): String = {
     component match {
-      case rg: CharRegion => rg.char.toString
-      case rg: ImgRegion => ""
+      case rg: CharAtom => rg.char.toString
+      case rg: ImgAtom => ""
     }
   }
 

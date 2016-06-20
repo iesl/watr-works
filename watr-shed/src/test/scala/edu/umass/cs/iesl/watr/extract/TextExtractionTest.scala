@@ -57,7 +57,7 @@ class TextExtractionTest extends DocsegTestUtil {
       )
 
       segmenter.runLineDetermination()
-      val interestingChars = segmenter.pages.queryCharsIntersects(pageId, totalBounds)
+      val interestingChars = segmenter.zoneIndexer.pageInfos(pageId).rCharIndex.queryForIntersects(totalBounds)
 
       println("["+squishb(interestingChars)+"]")
 
@@ -75,7 +75,7 @@ class TextExtractionTest extends DocsegTestUtil {
             desc match {
               case PageComponent(id, comp, zoneIndex) =>
                 comp match {
-                  case cr:CharRegion =>
+                  case cr:CharAtom =>
                     println("   " + cr.debugPrint)
                   case _ =>
                 }
