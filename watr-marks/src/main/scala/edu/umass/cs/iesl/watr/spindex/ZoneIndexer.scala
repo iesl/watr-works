@@ -19,11 +19,11 @@ import utils.IdGenerator
 
 case class PageInfo(
   pageId: Int@@PageID,
-  rCharIndex: SpatialIndex[CharAtom],
-  rComponentIndex: jsi.SpatialIndex,
-  geometry: PageGeometry,
-  pageChars: mutable.ArrayBuffer[CharAtom],
-  charBoxes: mutable.LongMap[CharAtom]
+  charAtomIndex: SpatialIndex[CharAtom],
+  rComponentIndex: SpatialIndex[Component],
+  geometry: PageGeometry
+  // pageChars: mutable.ArrayBuffer[CharAtom],
+  // charBoxes: mutable.LongMap[CharAtom]
 )
 
 
@@ -151,21 +151,21 @@ class ZoneIndexer  {
 
   def getPageGeometry(p: Int@@PageID) = pageInfos(p).geometry
 
-  def getAtom(pageId: Int@@PageID, charId: Int@@RegionID): CharAtom = {
-    pageInfos(pageId).charBoxes(charId.unwrap.toLong)
-  }
+  // def getAtom(pageId: Int@@PageID, charId: Int@@RegionID): CharAtom = {
+  //   pageInfos(pageId).charBoxes(charId.unwrap.toLong)
+  // }
 
-  // See getAtomsUnfiltered() for explanation behind filterNot
-  def getAtoms(pageId: Int@@PageID): Seq[CharAtom] = {
-    pageInfos(pageId).pageChars.filterNot(_.isSpace)
-  }
+  // // See getAtomsUnfiltered() for explanation behind filterNot
+  // def getAtoms(pageId: Int@@PageID): Seq[CharAtom] = {
+  //   pageInfos(pageId).pageChars.filterNot(_.isSpace)
+  // }
 
 
-  // Some chars from a pdf are unuseable, either unprintable or embedded space characters.
-  //   This will return all of them
-  def getAtomsUnfiltered(pageId: Int@@PageID): Seq[CharAtom] = {
-    pageInfos(pageId).pageChars.filterNot(_.isSpace)
-  }
+  // // Some chars from a pdf are unuseable, either unprintable or embedded space characters.
+  // //   This will return all of them
+  // def getAtomsUnfiltered(pageId: Int@@PageID): Seq[CharAtom] = {
+  //   pageInfos(pageId).pageChars.filterNot(_.isSpace)
+  // }
 
   def addLabels(zl: ZoneAndLabel): Unit = {
     val lls = zoneLabelMap.getOrElseUpdate(zl.zoneId, mutable.ArrayBuffer[Label]())
@@ -195,16 +195,17 @@ class ZoneIndexer  {
     pageInfos.put(pageGeometry.id,
       PageInfo(pageGeometry.id,
         SpatialIndex.createFor[CharAtom](pageGeometry.bounds),
-        createSpatialIndex(),
-        pageGeometry,
-        mutable.ArrayBuffer(),
-        mutable.LongMap())
+        SpatialIndex.createFor[Component](pageGeometry.bounds),
+        pageGeometry
+        // mutable.ArrayBuffer(),
+        // mutable.LongMap()
+      )
     )
   }
 
   def addCharInfo(pageId: Int@@PageID, cb: CharAtom): Unit = {
     pageInfos(pageId)
-      .rCharIndex
+      .charAtomIndex
       .add(cb)
   }
 
@@ -213,7 +214,7 @@ class ZoneIndexer  {
   //   zoneMap.put(zoneId, zone).map(existing => sys.error(s"zone already exists in zoneMap"))
   //   zone.regions.foreach{ targetedBounds  =>
   //     regionToZone.put(targetedBounds.id, zone)
-  //     pageInfos(targetedBounds.target).rCharIndex.add(
+  //     pageInfos(targetedBounds.target).charAtomIndex.add(
   //       targetedBounds.bbox.toJsiRectangle,
   //       RegionID.unwrap(targetedBounds.id)
   //     )
@@ -221,39 +222,39 @@ class ZoneIndexer  {
   // }
 
 
-  def putCharAtom(pageId: Int@@PageID, cb: CharAtom): Unit = {
-    pageInfos(pageId).charBoxes.put(cb.region.id.unwrap.toLong, cb)
-  }
+  // def putCharAtom(pageId: Int@@PageID, cb: CharAtom): Unit = {
+  //   pageInfos(pageId).charBoxes.put(cb.region.id.unwrap.toLong, cb)
+  // }
 
-  def getCharAtom(pageId: Int@@PageID, id: Int): CharAtom = {
-    pageInfos(pageId).
-    charBoxes(id.toLong)
-  }
+  // def getCharAtom(pageId: Int@@PageID, id: Int): CharAtom = {
+  //   pageInfos(pageId).
+  //   charBoxes(id.toLong)
+  // }
 
-  def getCharAtom(pageId: Int@@PageID, id: Int@@RegionID): CharAtom = {
-    pageInfos(pageId).
-    charBoxes(id.unwrap.toLong)
-  }
+  // def getCharAtom(pageId: Int@@PageID, id: Int@@RegionID): CharAtom = {
+  //   pageInfos(pageId).
+  //   charBoxes(id.unwrap.toLong)
+  // }
 
-  def getCharAtom(pageId: Int@@PageID, id: Long): CharAtom = {
-    pageInfos(pageId).charBoxes(id)
-  }
+  // def getCharAtom(pageId: Int@@PageID, id: Long): CharAtom = {
+  //   pageInfos(pageId).charBoxes(id)
+  // }
 
   // def queryForIntersected(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
-  //   queryForIntersectedIDs(pageInfos(pageId).rCharIndex, q)
+  //   queryForIntersectedIDs(pageInfos(pageId).charAtomIndex, q)
   //     .filter{ id => pageInfos(pageId).charBoxes.contains(id.toLong) }
   //     .map(cid => pageInfos(pageId).charBoxes(cid.toLong))
   // }
 
   // def queryCharsIntersects(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
-  //   queryForIntersectedIDs(pageInfos(pageId).rCharIndex, q)
+  //   queryForIntersectedIDs(pageInfos(pageId).charAtomIndex, q)
   //       .filter{ id => pageInfos(pageId).charBoxes.contains(id.toLong) }
   //       .map(cid => pageInfos(pageId).charBoxes(cid.toLong))
   // }
 
 
   // def queryChars(pageId: Int@@PageID, q: LTBounds): Seq[CharAtom] = {
-  //   queryForContainedIDs(pageInfos(pageId).rCharIndex, q)
+  //   queryForContainedIDs(pageInfos(pageId).charAtomIndex, q)
   //     .filter(id => pageInfos(pageId).charBoxes.contains(id.toLong))
   //     .map( getCharAtom(pageId, _) )
   // }
@@ -267,11 +268,11 @@ class ZoneIndexer  {
 
   // def query(pageId: Int@@PageID, q: LTBounds): Seq[Zone] = {
   //   println(s"ZoneIndex.query(${pageId}, ${q.prettyPrint})")
-  //   val rCharIndex = pageInfos(pageId).rCharIndex
+  //   val charAtomIndex = pageInfos(pageId).charAtomIndex
 
   //   val collectRegions = ZoneIndexer.rtreeIdCollector()
-  //   rCharIndex.contains(q.toJsiRectangle, collectRegions)
-  //   // rCharIndex.intersects(q.toJsiRectangle, collectRegions)
+  //   charAtomIndex.contains(q.toJsiRectangle, collectRegions)
+  //   // charAtomIndex.intersects(q.toJsiRectangle, collectRegions)
   //   val regions = collectRegions.getIDs
   //   val zones = collectRegions
   //     .getIDs.map{ regionId => regionToZone(RegionID(regionId)) }

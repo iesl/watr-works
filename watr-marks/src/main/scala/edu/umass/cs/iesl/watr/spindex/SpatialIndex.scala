@@ -31,6 +31,14 @@ class SpatialIndex[T: SpatialIndexable](
     // pageInfos(pageId).pageChars.append(cb)
   }
 
+  def getItems(): Seq[T] = {
+    items.values.toSeq
+  }
+
+  def getItem(id: Int): T = {
+    items(id.toLong)
+  }
+
   def queryForIntersectedIDs(q:LTBounds): Seq[Int] = {
     val collectRegions = SpatialIndex.rtreeIdCollector()
     spatialIndex.contains(q.toJsiRectangle, collectRegions)

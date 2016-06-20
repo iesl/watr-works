@@ -160,7 +160,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
       maxY-minY
     )
 
-    val interestingChars = segmenter.zoneIndexer.pageInfos(pageId).rCharIndex.queryForIntersects(totalBounds)
+    val interestingChars = segmenter.zoneIndexer.pageInfos(pageId).charAtomIndex.queryForIntersects(totalBounds)
 
     println("["+squishb(interestingChars)+"]")
 

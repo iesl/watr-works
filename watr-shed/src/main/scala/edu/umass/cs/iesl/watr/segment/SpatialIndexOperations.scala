@@ -36,7 +36,7 @@ object SpatialIndexOperations {
           leftEdge.p2.y - leftEdge.p1.y
         ).translate(-5.1, 0)
 
-        val charsToLeft = index.pageInfos(pageId).rCharIndex.queryForIntersects(query)
+        val charsToLeft = index.pageInfos(pageId).charAtomIndex.queryForIntersects(query)
 
         val (splits, leftovers) = charsToLeft
           .sortBy(_.region.bbox.bottom)

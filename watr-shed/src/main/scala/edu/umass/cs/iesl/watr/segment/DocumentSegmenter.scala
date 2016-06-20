@@ -208,7 +208,9 @@ class DocumentSegmenter(
     val allPageLines = for {
       pageId <- zoneIndexer.getPages
     } yield {
-      determineLines(pageId, zoneIndexer.getAtoms(pageId))
+      val charAtoms = zoneIndexer.pageInfos(pageId).charAtomIndex.getItems
+
+      determineLines(pageId, charAtoms)
     }
     zoneIndexer.concatComponents(allPageLines, LB.Pages)
   }
@@ -458,7 +460,7 @@ class DocumentSegmenter(
   }
 
   private def findNeighbors(pageId: Int@@PageID, qbox: CharAtom): Seq[CharAtom] = {
-    val atomIndex = zoneIndexer.pageInfos(pageId).rCharIndex
+    val atomIndex = zoneIndexer.pageInfos(pageId).charAtomIndex
     atomIndex.nearestNItems(qbox, 12, 15.0f)
       .filterNot(_.isWonky)
   }
@@ -474,7 +476,13 @@ class DocumentSegmenter(
       val maxId = ids.max
 
       val missingIds = (ids.min to ids.max) diff ids
-      val missingChars = missingIds.map(id => zoneIndexer.getAtom(pageId, RegionID(id)))
+
+      val missingChars = missingIds.map(id =>
+        // zoneIndexer.getAtom(pageId, RegionID(id))
+        zoneIndexer.pageInfos(pageId).charAtomIndex.getItem(id)
+      )
+
+      // val missingChars = missingIds.map(id => zoneIndexer.getAtom(pageId, RegionID(id)))
 
       // TODO check missing chars for overlap w/lineChars
       val completeLine = (charBoxes ++ missingChars).sortBy(_.region.bbox.left)
@@ -606,7 +614,7 @@ class DocumentSegmenter(
   def charBasedPageBounds(
     pageId: Int@@PageID
   ): LTBounds = {
-    val allBboxes = zoneIndexer.getAtoms(pageId).map(_.region.bbox)
+    val allBboxes = zoneIndexer.pageInfos(pageId).charAtomIndex.getItems.map(_.region.bbox)
 
     if (allBboxes.isEmpty) LTBounds(0, 0, 0, 0) else {
       val minX = allBboxes.map(_.left).min

@@ -80,7 +80,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
           DocumentExtractor.extractChars(example.region.pdf)
         )
 
-        val chars = zoneIndex.pageInfos(example.region.page).rCharIndex.queryForIntersects(example.region.bbox)
+        val chars = zoneIndex.pageInfos(example.region.page).charAtomIndex.queryForIntersects(example.region.bbox)
 
         val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
 
