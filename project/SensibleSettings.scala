@@ -39,6 +39,7 @@ object Sensible {
       "-deprecation",
       "-language:postfixOps",
       "-language:implicitConversions",
+      "-language:higherKinds",
       "-Xlint",
       "-Yinline-warnings",
       "-Yno-adapted-args",

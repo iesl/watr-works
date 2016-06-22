@@ -38,15 +38,15 @@ object Frame {
 
         <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.6/css/bootstrap.min.css"),
 
-        <.style(
-          ^.`type` := "text/css",
-          WatrStyles.styleSheetText
-        )
+        <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
       ),
 
       body(margin := 0, WatrStyles.htmlBody)(
         <.div(^.id := "main")("Loading..."),
         script("edu.umass.cs.iesl.watr.watrcolors.client.WatrColorClient().main()")
+        // <.script(^.`type`:="text/javascript")("edu.umass.cs.iesl.watr.watrcolors.client.WatrColorClient().main()"
+        //   // raw(s""" edu.umass.cs.iesl.watr.watrcolors.client.WatrColorClient().main() """)
+        // )
       )
     )
   }

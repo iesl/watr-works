@@ -166,10 +166,13 @@ object Works extends App {
   }
 
   def processCorpusArtifact(entry: CorpusEntry, outputName: String, processor: (InputStream, String) => String): Unit = {
-    val pdfArtifact = entry.getPdfArtifact()
-    val outputString = pdfArtifact.asInputStream
-      .map({ pdf =>  try {
-        processor(pdf, pdfArtifact.artifactPath.toString)
+    (for {
+      pdfArtifact <- entry.getPdfArtifact
+      pdfIns <- pdfArtifact.asInputStream.toOption
+    } yield {
+      try {
+        val output = processor(pdfIns, pdfArtifact.artifactPath.toString)
+        entry.putArtifact(outputName, output)
       } catch {
         case t: Throwable =>
           println(s"could not extract ${outputName}  for ${pdfArtifact}: ${t.getMessage}\n")
@@ -180,20 +183,6 @@ object Works extends App {
           t.getCause.printStackTrace()
           s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
       }})
-      .map({ output =>
-        entry.putArtifact(outputName, output)
-      })
-      .recover({ case t: Throwable =>
-        val msg = (s"ERROR: could not extract ${outputName} for ${pdfArtifact}: ${t.getMessage}")
-        println(msg)
-        println(t.toString())
-        t.printStackTrace()
-        println(t.getCause.toString())
-        t.getCause.printStackTrace()
-      })
-      .getOrElse({
-        sys.error(s"ERROR: processing ${pdfArtifact} -> ${outputName}")
-      })
   }
 
   def processCorpus(conf: AppConfig, artifactOutputName: String, processor: (InputStream, String) => String): Unit = {

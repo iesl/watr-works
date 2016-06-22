@@ -78,6 +78,12 @@ class Corpus(
       stat(corpusRoot / entryDescriptor).isDir)
   }
 
+
+  // def artifactExists(entryDescriptor: String, artifactDescriptor: String): Boolean = {
+  //   val artifactPath = corpusRoot / RelPath(entryDescriptor) / artifactDescriptor
+  //   entryExists(corpusRoot, entryDescriptor) && ammonite.ops.exists(artifactPath)
+  // }
+
   // e.g., 3245.pdf, or sha1:afe23s...
   def entry(entryDescriptor: String): Option[CorpusEntry]= {
     Option(new CorpusEntry(entryDescriptor, this))
@@ -126,21 +132,27 @@ class CorpusEntry(
     new CorpusArtifact(artifactDescriptor, this)
   }
 
-  def getArtifact(artifactDescriptor: String): CorpusArtifact = {
-    new CorpusArtifact(artifactDescriptor, this)
+  def getArtifact(artifactDescriptor: String): Option[CorpusArtifact] = {
+    if (hasArtifact(artifactDescriptor)) {
+      (new CorpusArtifact(artifactDescriptor, this)).some
+    } else None
   }
+
   def deleteArtifact(artifactDescriptor: String): Unit = {
     new CorpusArtifact(artifactDescriptor, this).delete
   }
 
   def hasArtifact(artifactDescriptor: String): Boolean ={
-    getArtifact(artifactDescriptor).exists
-
-
+    exists(artifactsRoot / artifactDescriptor)
   }
 
-  def getPdfArtifact(): CorpusArtifact =
-    new CorpusArtifact(s"${entryDescriptorRoot}", this)
+  def getPdfArtifact(): Option[CorpusArtifact] = {
+    // TODO fixme
+    Some(
+      new CorpusArtifact(s"${entryDescriptorRoot}", this)
+    )
+
+  }
 
   def getSvgArtifact(): CorpusArtifact = {
     new CorpusArtifact(s"${entryDescriptorRoot}.svg", this)

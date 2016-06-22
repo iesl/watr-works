@@ -3,7 +3,7 @@ package spindex
 
 
 import watrmarks.{StandardLabels => LB, Label}
-import scala.collection.mutable
+// import scala.collection.mutable
 import utils.Histogram
 import utils.Histogram._
 // import textboxing.{TextBoxing => TB}
@@ -11,7 +11,6 @@ import utils.Histogram._
 import IndexShapeOperations._
 import utils.SlicingAndDicing._
 import utils.{CompassDirection => CDir}
-
 
 
 object ComponentOperations {
@@ -71,6 +70,8 @@ object ComponentOperations {
   }
 
   implicit class RicherComponent(val component: Component) extends AnyVal {
+
+    def hasLabel(l: Label): Boolean = component.getLabels.contains(l)
 
     def vdist(other: Component): Double = {
       component.bounds.toPoint(CDir.W).vdist(
@@ -188,74 +189,77 @@ object ComponentOperations {
       spaceDists
     }
 
+    import utils.TraceLog
+    import utils.VisualTrace._
+
     // TODO this is a side-effect function, doesn't need to be
     def tokenizeLine(): Component = {
       if (!component.getLabels.contains(LB.TokenizedLine)) {
 
+        TraceLog.trace{ SetViewport(component.bounds) }
+        TraceLog.traces{ component.children.map(_.bounds).map(Show(_)) }
+
         val tops = findCommonToplines()
         val bottoms = findCommonBaselines()
         val modalTop = tops.head // - 0.01d
+
         val modalBottom = bottoms.head // + 0.01d
 
+
         val modalCenterY = (modalBottom + modalTop)/2
-        val meanCenterY = component.characteristicLine.centerPoint.y
+        // val meanCenterY = component.characteristicLine.centerPoint.y
 
+        TraceLog.trace{ HRuler(modalTop) }
+        TraceLog.trace{ HRuler(modalBottom) }
+        TraceLog.trace{ HRuler(modalCenterY) }
 
-        // val searchLog = mutable.ArrayBuffer[TB.Box]()
 
         // label individual chars as super/sub if char.ctr fall above/below centerline
         val supSubs = component.children.map({c =>
           val cctr = c.bounds.toCenterPoint
-          if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
-            c
+
+          val ssLabel: Option[Label] = if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
+            None
           } else if (cctr.y > modalCenterY) {
-            c.addLabel(LB.Sub)
+            LB.Sub.some
           } else {
-            c.addLabel(LB.Sup)
+            LB.Sup.some
           }
+
+          TraceLog.trace{ FocusOn(cctr) }
+          TraceLog.trace{ ShowVDiff(cctr.y, modalCenterY) }
+          TraceLog.trace{ Message(ssLabel.toString) }
+
+          ssLabel.foreach { c.addLabel(_) }
+          c
         })
 
-        def slurpUnlabeled(cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
-          val unLabeled = cs.takeWhile({ _.getLabels.isEmpty })
-          (unLabeled, cs.drop(unLabeled.length))
+
+        def isLabelBoundary(l: Label, a: Component, b: Component): Boolean = {
+          ((a.hasLabel(l) && !b.hasLabel(l)) ||
+            (!a.hasLabel(l) && b.hasLabel(l)))
         }
 
-        def slurpLabels(l: Label, cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
-          val withLabel = cs.takeWhile(_.getLabels contains l)
-          (withLabel, cs.drop(withLabel.length))
+        def concatLabels(l: Label, cs: Seq[Component]): Seq[Component] = {
+          cs.headOption.map({ c0 =>
+            if (c0.hasLabel(l)) {
+              cs.foreach(_.removeLabel(l))
+              Seq(zoneIndex.concatComponents(cs, l))
+            } else { cs }
+          }).getOrElse(cs)
         }
 
-        val unconnected = mutable.ArrayBuffer[Component](supSubs:_*)
-        val connectedSupSubs = mutable.ArrayBuffer[Component]()
-
-        while (!unconnected.isEmpty) {
-          { val (withL, _) = slurpUnlabeled(unconnected)
-            if (!withL.isEmpty) {
-              connectedSupSubs ++= withL
-              unconnected.remove(0, withL.length)
-            } }
-
-          { val (withL, _) = slurpLabels(LB.Sub, unconnected)
-            if (!withL.isEmpty) {
-              val connected = withL
-                .map(_.removeLabel(LB.Sub))
-
-              val c0 = zoneIndex.concatComponents(connected, LB.Sub)
-
-              connectedSupSubs += c0
-              unconnected.remove(0, withL.length)
-            } }
-
-          { val (withL, _) = slurpLabels(LB.Sup, unconnected)
-            if (!withL.isEmpty) {
-              val connected = withL
-                .map(_.removeLabel(LB.Sup))
-              val c0 = zoneIndex.concatComponents(connected, LB.Sup)
-              connectedSupSubs += c0
-              unconnected.remove(0, withL.length)
-            } }
+        val supSubGroups = supSubs.splitOnPairs { (ca, cb) =>
+          isLabelBoundary(LB.Sup, ca, cb) || isLabelBoundary(LB.Sub, ca, cb)
         }
 
+        val connectedSupSubs = (for {
+          connSpan <- supSubGroups
+        } yield {
+          connSpan |>
+            (concatLabels(LB.Sup, _)) |>
+            (concatLabels(LB.Sub, _))
+        }).flatten
 
 
         val charDists = determineSpacings()

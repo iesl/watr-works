@@ -1,6 +1,6 @@
 resolvers += "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public"
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.9")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.10")
 
 addSbtPlugin("com.lihaoyi" % "workbench" % "0.2.3")
 
@@ -13,3 +13,6 @@ addSbtPlugin("com.github.fedragon" % "sbt-todolist" % "0.6")
 // addSbtPlugin("com.zavakid.sbt" % "sbt-one-log" % "1.0.1")
 // addSbtPlugin("com.sksamuel.scapegoat" %% "sbt-scapegoat" % "1.0.4")
 // libraryDependencies <+= sbtVersion("org.scala-sbt" % "scripted-plugin" % _)
+// Freek
+
+addSbtPlugin("me.lessis" % "bintray-sbt" % "0.3.0")

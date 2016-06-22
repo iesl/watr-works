@@ -13,7 +13,14 @@ trait CorpusExplorerApi {
 trait SvgOverviewApi {
   def createView(artifactId: String): List[HtmlUpdate]
   def getCharLevelOverlay(artifactId: String, query: BBox): List[BBox]
-  def getDocumentOverlay(artifactId: String): List[BBox]
+  // def getDocumentOverlay(artifactId: String): List[BBox]
   def onSelectBBox(artifactId: String, bbox: BBox): List[HtmlUpdate]
   def onDrawPath(artifactId: String, path: Seq[Point]): List[HtmlUpdate]
+}
+
+trait VisualTraceApi {
+  def createView(): List[HtmlUpdate]
+
+  def runTrace(): List[VisualTrace.DSL]
+
 }

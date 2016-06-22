@@ -4,20 +4,26 @@ package spindex
 import net.sf.jsi
 
 sealed trait Bounds
+sealed trait Shape
+
+object Bounds {
+  val empty = LTBounds(0, 0, 0, 0)
+}
 
 case class LTBounds(
   left: Double,
   top: Double,
   width: Double,
   height: Double
-) extends Bounds
+) extends Bounds with Shape
 
 case class LBBounds(
   left: Double,
   bottom: Double,
   width: Double,
   height: Double
-) extends Bounds
+) extends Bounds with Shape
+
 
 case class Borders(
   bleft: Double,
@@ -28,11 +34,11 @@ case class Borders(
 
 case class Point(
   x: Double, y: Double
-)
+) extends Shape
 
 case class Line(
   p1: Point, p2: Point
-)
+) extends Shape
 
 object jsiRectangle {
   def apply(
@@ -307,4 +313,3 @@ object IndexShapeOperations {
     }
   }
 }
-

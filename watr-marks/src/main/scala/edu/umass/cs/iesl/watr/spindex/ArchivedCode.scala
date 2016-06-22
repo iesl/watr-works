@@ -70,3 +70,45 @@ package spindex
 // // }
 
 // zoneIndex.concatComponents(asTokens, LB.TokenizedLine)
+
+        // def slurpUnlabeled(cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
+        //   val unLabeled = cs.takeWhile({ _.getLabels.isEmpty })
+        //   (unLabeled, cs.drop(unLabeled.length))
+        // }
+
+        // def slurpLabels(l: Label, cs: Seq[Component]): (Seq[Component], Seq[Component]) = {
+        //   val withLabel = cs.takeWhile(_.getLabels contains l)
+        //   (withLabel, cs.drop(withLabel.length))
+        // }
+
+        // val unconnected = mutable.ArrayBuffer[Component](supSubs:_*)
+        // val connectedSupSubs = mutable.ArrayBuffer[Component]()
+
+        // while (!unconnected.isEmpty) {
+        //   { val (withL, _) = slurpUnlabeled(unconnected)
+        //     if (!withL.isEmpty) {
+        //       connectedSupSubs ++= withL
+        //       unconnected.remove(0, withL.length)
+        //     } }
+
+        //   { val (withL, _) = slurpLabels(LB.Sub, unconnected)
+        //     if (!withL.isEmpty) {
+        //       val connected = withL
+        //         .map(_.removeLabel(LB.Sub))
+
+        //       val c0 = zoneIndex.concatComponents(connected, LB.Sub)
+
+        //       connectedSupSubs += c0
+        //       unconnected.remove(0, withL.length)
+        //     } }
+
+        //   { val (withL, _) = slurpLabels(LB.Sup, unconnected)
+        //     if (!withL.isEmpty) {
+        //       val connected = withL
+        //         .map(_.removeLabel(LB.Sup))
+        //       val c0 = zoneIndex.concatComponents(connected, LB.Sup)
+        //       connectedSupSubs += c0
+        //       unconnected.remove(0, withL.length)
+        //     } }
+        // }
+

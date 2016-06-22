@@ -52,7 +52,7 @@ class SvgOverview(
 
   override val initKeys = Keybindings(List(
     "c" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
-    "b" -> ((e: MousetrapEvent) => createDocumentOverlay()),
+    // "b" -> ((e: MousetrapEvent) => createDocumentOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
     "z" -> ((e: MousetrapEvent) => selectViaLine()),
     "d" -> ((e: MousetrapEvent) => initDeletion())
@@ -121,29 +121,28 @@ class SvgOverview(
     rect.hasControls = false
     rect.hasBorders = false
     rect.selectable = false
-    rect.title = bbox.info
 
     fabricCanvas.add(rect)
   }
 
-  def createDocumentOverlay(): Boolean = {
-    server.getDocumentOverlay(artifactId).call().foreach{ overlays =>
-      overlays.foreach { bbox =>
-        addBBoxRect(bbox, "green")
-      }
-    }
+  // def createDocumentOverlay(): Boolean = {
+  //   server.getDocumentOverlay(artifactId).call().foreach{ overlays =>
+  //     overlays.foreach { bbox =>
+  //       addBBoxRect(bbox, "green")
+  //     }
+  //   }
 
 
-    fabricCanvas.on("mouse:over", ((options: fabric.Options) => {
-      val title = options.target.title
-      jQuery("#selection-info").html(s"title: ${title}")
-    }))
+  //   fabricCanvas.on("mouse:over", ((options: fabric.Options) => {
+  //     val title = options.target.title
+  //     jQuery("#selection-info").html(s"title: ${title}")
+  //   }))
 
-    fabricCanvas.on("mouse:out", ((options: fabric.Options) => {
-      jQuery("#selection-info").html(s"title: ")
-    }))
-    true
-  }
+  //   fabricCanvas.on("mouse:out", ((options: fabric.Options) => {
+  //     jQuery("#selection-info").html(s"title: ")
+  //   }))
+  //   true
+  // }
 
 
   def alignBboxToDiv(divID: String, bbox: BBox): BBox = {

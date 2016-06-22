@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 
 
-
 // import scalaz.syntax.FoldableSyntax
 import scalaz.syntax.ToIdOps
 // import scalaz.syntax.ToValidationOps

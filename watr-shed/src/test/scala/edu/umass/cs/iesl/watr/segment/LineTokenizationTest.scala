@@ -9,7 +9,7 @@ import spindex._
 import IndexShapeOperations._
 // import ComponentTypeEnrichments._
 // import ComponentRendering._
-// import ComponentOperations._
+import ComponentOperations._
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"
@@ -128,15 +128,19 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
   it should "identify text lines" in {
-    testExamplesFromSVG
-      .drop(1)
-      .take(1)
-      .map(svgCutAndPasteToTest(_)).foreach{ example =>
-      testExample(example)
-    }
-    // testExamples.map(cutAndPasteToTestExample(_)).foreach{ example =>
-    //   testExample(example)
-    // }
+    // val justRunThisOne:Option[Int] = None
+    val justRunThisOne:Option[Int] = Some(1)
+
+    val examples = (testExamplesFromSVG.map(svgCutAndPasteToTest(_)) ++
+      testExamples.map(cutAndPasteToTestExample(_)))
+
+    justRunThisOne
+      .map(i => examples.drop(i).take(1))
+      .getOrElse(examples)
+      .foreach({example =>
+        testExample(example)
+      })
+
   }
 
 
@@ -172,41 +176,38 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
     segmenter.runLineDetermination()
+
     // find visual lines in bounds:
-
-    // val lines = segmenter.determineLines(pageId, interestingChars)
-
-    val intersectedComponents = segmenter.zoneIndexer
+    val lineComponents = segmenter.zoneIndexer
       .getPageInfo(pageId)
       .componentIndex
       .queryForIntersects(totalBounds)
+      .sortBy(_.bounds.top)
       .filter(_.getLabels.contains(LB.VisualLine))
 
-    println(s"found ${intersectedComponents.length} components")
-
-    intersectedComponents.foreach { c =>
-      println(s"""component= ${c.chars}, ${c.id} (${c.getLabels.mkString(", ")})""")
+    val tokenizedLines = lineComponents.map { lineComponent =>
+      lineComponent.tokenizeLine().toText
     }
 
-    // val tokenized = for {
-    //   page <- segmenter.visualLineOnPageComponents
-    //   line <- page
-    // } yield { line.tokenizeLine().toText }
 
+    // println(s"""component= ${lineComponent.chars}, ${lineComponent.id} (${lineComponent.getLabels.mkString(", ")})""")
     // println(s"""expecting: ${example.expectedOutput.mkString(" \\\\  ")}""")
     // println(s"""tokenized: ${tokenized.mkString(" \\\\  ")}""")
 
-    // example.expectedOutput.zip(tokenized).foreach({case (expect, actual) =>
-    //   if (expect != actual) {
-    //     println(s"want >$expect")
-    //     println(s"got  >$actual")
-    //   } else {
-    //     println(s"(ok)> $expect")
-    //   }
-    //   assertResult(expect){ actual }
-    // })
+    example.expectedOutput.zip(tokenizedLines)
+      .foreach({case (expect, actual) =>
+        if (expect != actual) {
+          println(s"want> $expect")
+          println(s"got > $actual")
+        } else {
+          println(s"ok> $expect")
+        }
+        // assertResult(expect){ actual }
+      })
+
     // assertResult(example.expectedOutput.length)(tokenized.length)
   }
+
 
 }
 

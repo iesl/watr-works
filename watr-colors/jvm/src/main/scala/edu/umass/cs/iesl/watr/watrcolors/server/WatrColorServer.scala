@@ -83,6 +83,8 @@ class WatrColorServer(
   def run(): Unit = {
     val corpusExplorerServer = new CorpusExplorerServer(rootDirectory)
     val svgOverviewServer = new SvgOverviewServer(rootDirectory)
+    val visualTraceServer  = new VisualTraceServer(rootDirectory)
+
     implicit val system = ActorSystem()
 
     val _ = startServer("0.0.0.0", port = 8080) {
@@ -101,7 +103,8 @@ class WatrColorServer(
       } ~
       post {
         apiRoute("explorer", AutowireServer.route[CorpusExplorerApi](corpusExplorerServer)) ~
-        apiRoute("svg", AutowireServer.route[SvgOverviewApi](svgOverviewServer))
+        apiRoute("svg", AutowireServer.route[SvgOverviewApi](svgOverviewServer)) ~
+        apiRoute("vtrace", AutowireServer.route[VisualTraceApi](visualTraceServer))
       }
       // put {}
     }

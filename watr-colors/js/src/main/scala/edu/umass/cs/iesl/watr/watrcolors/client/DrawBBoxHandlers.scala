@@ -60,7 +60,7 @@ object handlers {
       val w = math.abs(px2 - px1)
       val h = math.abs(py2 - py1)
 
-      BBox(x.toDouble, y.toDouble, w.toDouble, h.toDouble, "")
+      BBox(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
     }
   }
 
