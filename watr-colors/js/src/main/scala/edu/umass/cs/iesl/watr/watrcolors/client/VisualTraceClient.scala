@@ -45,32 +45,43 @@ class VisualTraceClient(
 
     println("running trace, hold on...")
 
+    val canvasBorder = 10
+
     var canvasX: Int = 0
     var canvasY: Int = 0
-    var canvasW: Int = 0
-    var canvasH: Int = 0
+    var canvasW: Int = canvasBorder*2
+    var canvasH: Int = canvasBorder*2
 
     var canvasXScale = 4
     var canvasYScale = 4
 
+    def offsetX(v: Double): Double = {
+      v - canvasX + canvasBorder
+    }
 
-    def scaleY(v: Double): Int = {
-      (canvasYScale * v).toInt
+    def offsetY(v: Double): Double = {
+      v - canvasY + canvasBorder
     }
-    def scaleX(v: Double): Int = {
-      (canvasXScale * v).toInt
+    def scaleY(v: Double): Double = {
+      (canvasYScale * v)
     }
+    def scaleX(v: Double): Double = {
+      (canvasXScale * v)
+    }
+
+    def transformX(v: Double) = offsetX(scaleX(v))
+    def transformY(v: Double) = offsetY(scaleY(v))
 
     def translate(shape: Overlay): Overlay = {
       shape match {
         case s: BBox =>
           BBox(
-            scaleX(s.x)-canvasX, scaleY(s.y)-canvasY,
+            transformX(s.x), transformY(s.y),
             scaleX(s.width), scaleY(s.height)
           )
         case s: Point =>
           Point(
-            scaleX(s.x)-canvasX, scaleY(s.y)-canvasY
+            transformX(s.x), transformY(s.y)
           )
         case s: Line =>
           Line(
@@ -78,7 +89,6 @@ class VisualTraceClient(
             translate(s.p2).asInstanceOf[Point]
           )
       }
-
     }
 
     import scala.scalajs.js
@@ -120,15 +130,17 @@ class VisualTraceClient(
           // put a border around the canvas
           // put message area below canvas
           // set total width/height
-          canvasX = scaleX(b.x)
-          canvasY = scaleY(b.y)
-          canvasW = scaleX(b.width)
-          canvasH = scaleY(b.height)
+          canvasX = scaleX(b.x).toInt
+          canvasY = scaleY(b.y).toInt
+          canvasW = scaleX(b.width).toInt
+          canvasH = scaleY(b.height).toInt
 
-          fabricCanvas.setWidth(canvasW)
-          fabricCanvas.setHeight(canvasH)
+          fabricCanvas.setWidth(canvasW+canvasBorder*2+1)
+          fabricCanvas.setHeight(canvasH+canvasBorder*2+1)
 
-          addShape(translate(b), "black")
+          addShape(BBox(
+            canvasX, canvasY, canvasW, canvasH
+          ), "black")
           // fabricCanvas.setBackgroundColor("green", () => {})
 
           println("b = " + translate(b))
@@ -145,25 +157,25 @@ class VisualTraceClient(
 
           import scala.scalajs.js
           val r = fabric.Rect()
-          r.left = 10
-          r.top =  scaleY(s) - canvasY
-          r.width = canvasW
-          r.height = 2
+          r.left = 0
+          r.top =  transformY(s)
+          r.width = canvasW+canvasBorder
+          r.height = 1
           r.stroke      = "red"
           r.strokeWidth = 1
           r.fill        = "rgb(100, 30, 52)"
           r.opacity = 0.2
 
-          setGradient(r,
-            "fill",
-            "linear",
-            (0, 0),
-            (50, 15),
-            js.Dynamic.literal(
-              "0" -> "#222",
-              "1" -> "#888"
-            )
-          )
+          // setGradient(r,
+          //   "fill",
+          //   "linear",
+          //   (0, 0),
+          //   (50, 15),
+          //   js.Dynamic.literal(
+          //     "0" -> "#222",
+          //     "1" -> "#888"
+          //   )
+          // )
 
           fabricCanvas.add(r)
 

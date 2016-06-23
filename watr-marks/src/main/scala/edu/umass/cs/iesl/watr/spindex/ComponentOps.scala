@@ -218,19 +218,24 @@ object ComponentOperations {
         val supSubs = component.children.map({c =>
           val cctr = c.bounds.toCenterPoint
 
-          val ssLabel: Option[Label] = if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
-            None
-          } else if (cctr.y > modalCenterY) {
-            LB.Sub.some
-          } else {
-            LB.Sup.some
-          }
+          val maybeLabel: Option[Label] =
+            if (c.bounds.top < modalTop && c.bounds.bottom > modalBottom) {
+              // if our child's top/bottom extends beyond modal top/bottom, it is a larger font and not super/sub
+              None
+            } else if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
+              None
+            } else if (cctr.y > modalCenterY) {
+              LB.Sub.some
+            } else {
+              LB.Sup.some
+            }
 
-          TraceLog.trace{ FocusOn(cctr) }
+
+          TraceLog.trace{ Show(cctr) }
           TraceLog.trace{ ShowVDiff(cctr.y, modalCenterY) }
-          TraceLog.trace{ Message(ssLabel.toString) }
+          // TraceLog.trace{ Message(ssLabel.toString) }
 
-          ssLabel.foreach { c.addLabel(_) }
+          maybeLabel.foreach { c.addLabel(_) }
           c
         })
 

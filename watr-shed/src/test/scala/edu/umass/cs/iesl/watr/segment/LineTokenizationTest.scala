@@ -33,14 +33,14 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
        |------------------
        |JOURNAL OF SOLID STATE CHEMISTRY {^{78,294–300(1989)}} --> <svg:rect class="linebox" x="53.52" y="52.42" width="206.14"  height="8.21" />
        |============
-       |JOURNAL OF SOLID STATE CHEMISTRY 78, 294–300 (1989)
+       |JOURNAL OF SOLID STATE CHEMISTRY 78, 294-300 (1989)
        |""".stripMargin,
 
     """|page="0" file="/0575.pdf"
        |------------------
        |Single–Crystal X–Ray andPowder Neutron Diffraction --> <svg:rect class="linebox" x="52.80" y="101.96" width="293.24"  height="10.88" />
        |============
-       |Single–Crystal X–Ray and Powder Neutron Diffraction
+       |Single–Crystal X-Ray and Powder Neutron Diffraction
        |""".stripMargin,
 
     """|page="0" file="/0575.pdf"
@@ -126,10 +126,9 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   )
 
 
-
   it should "identify text lines" in {
-    // val justRunThisOne:Option[Int] = None
-    val justRunThisOne:Option[Int] = Some(1)
+    val justRunThisOne:Option[Int] = None
+    // val justRunThisOne:Option[Int] = Some(1)
 
     val examples = (testExamplesFromSVG.map(svgCutAndPasteToTest(_)) ++
       testExamples.map(cutAndPasteToTestExample(_)))

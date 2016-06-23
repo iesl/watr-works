@@ -22,15 +22,40 @@ trait FabricCanvasOperations {
 
   def addShape(shape: Overlay, color: String): Unit = {
     shape match {
-      case  Point(x: Double, y: Double) =>
+      case  p: Point =>
+        // addCircle(p, color)
+        addBBoxRect(BBox(
+          p.x-1, p.y-1, 2, 2
+        ), color)
 
       case  Line(p1: Point, p2: Point) =>
 
-      case b:BBox => addBBoxRect(b, color)
+      case b:BBox =>
+        addBBoxRect(b, color)
     }
 
   }
 
+  def addCircle(point: Point, color: String): Unit = {
+    val radius = 3
+
+    val c = new fabric.Circle()
+    c.left = point.x - radius
+    c.top = point.y - radius
+    c.radius = radius
+    // c.top         =.y
+    // c.left        = bbox.x
+    // c.width       = bbox.width
+    // c.height      = bbox.height
+    c.stroke      = color
+    c.strokeWidth = 1
+    c.fill        = ""
+    c.hasControls = false
+    c.hasBorders  = false
+    c.selectable  = false
+
+    fabricCanvas.add(c)
+  }
 
   def addBBoxRect(bbox: BBox, color: String): Unit = {
 

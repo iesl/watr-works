@@ -298,14 +298,23 @@ trait FabricObject extends ObjectProperties {
 }
 
 @js.native @JSName("fabric.Rect")
-class Rect extends FabricObject {
+class Rect extends FabricObject {}
+
+
+@js.native @JSName("fabric.Circle")
+class Circle extends FabricObject {
+
+  def getRadiusX(): Double = js.native
+  def getRadiusY(): Double = js.native
+
+  def setRadius(value: Double): Circle = js.native
+
+  var     radius: Int = js.native
+  var     startAngle: Double = js.native
+  var     endAngle: Double = js.native // =  pi * 2,
 
 }
 
-// @js.native @JSName("fabric.Path")
-// class PathNative(
-//   opts: PathOpts
-// ) extends FabricObject
 
 
 @js.native
@@ -328,14 +337,6 @@ object props {
 
 
 object Rect {
-  // def apply(
-  //   top: Double, left: Double, width: Double, height: Double,
-  //   fill: String = "",
-  //   stroke: String = "",
-  //   strokeWidth: Int = 1
-  // ): Rect = {
-  //   new RectNative(RectOpts(top, left, width, height, fill, strokeWidth, stroke))
-  // }
   def apply(): Rect = new Rect()
 }
 

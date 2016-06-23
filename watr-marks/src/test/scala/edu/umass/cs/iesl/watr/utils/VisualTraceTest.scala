@@ -43,13 +43,13 @@ class VisualTraceTest extends FlatSpec with Matchers {
 
     // VisualTraceInterpreter.nat
     // val interpreter: Interpreter[PRG, cats.Id] = interp.visualTraceInterpreter
-    val interpreter = interp.visualTraceInterpreter // :&: interp.visualTraceInterpreter
+    // val interpreter = interp.visualTraceInterpreter // :&: interp.visualTraceInterpreter
 
     // prg.interpret(interpreter)
     // prg.interpret(interpreter)
 
-    val sdf = prg.compile(interpreter.nat) // Iv(VisualTraceInterpreter)
-    val asdf = sdf.run
+    // val sdf = prg.compile(interpreter.nat) // Iv(VisualTraceInterpreter)
+    // val asdf = sdf.run
     // sdf.foldMap(interpreter.nat)
 
     // val qewr = prg.foldMap(VisualTraceInterpreter.nat)
