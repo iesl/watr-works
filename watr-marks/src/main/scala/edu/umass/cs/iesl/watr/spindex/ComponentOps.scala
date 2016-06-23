@@ -224,7 +224,7 @@ object ComponentOperations {
               None
             } else if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
               None
-            } else if (cctr.y > modalCenterY) {
+            } else if (cctr.y < modalCenterY) {
               LB.Sub.some
             } else {
               LB.Sup.some

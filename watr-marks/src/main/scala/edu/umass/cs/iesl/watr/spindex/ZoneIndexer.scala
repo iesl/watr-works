@@ -20,6 +20,7 @@ case class PageInfo(
   labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
 ) {
 
+
   def getComponentLabels(cid: Int@@ComponentID): Seq[Label] = {
     componentToLabels.get(cid)
       .getOrElse(Seq())
@@ -30,6 +31,44 @@ case class PageInfo(
       .map(_.map(id => componentIndex.getItem(id.unwrap)))
       .getOrElse(Seq())
   }
+
+  private def getComponentLabelBuffer(c: Component): mutable.ArrayBuffer[Label] = {
+    componentToLabels.getOrElseUpdate(c.id, mutable.ArrayBuffer[Label]())
+  }
+
+  private def getLabelToComponentBuffer(l: Label): mutable.ArrayBuffer[Int@@ComponentID] = {
+    labelToComponents.getOrElseUpdate(l, mutable.ArrayBuffer[Int@@ComponentID]())
+  }
+
+  def addLabel(c: Component, l: Label): Component = {
+    getComponentLabelBuffer(c) += l
+    getLabelToComponentBuffer(l) += c.id
+    c
+  }
+
+  def removeLabel(c: Component, l: Label): Component = {
+    getComponentLabelBuffer(c) -= l
+    getLabelToComponentBuffer(l) -= c.id
+    c
+  }
+
+  def getLabels(c: Component): Set[Label] = {
+    getComponentLabelBuffer(c).toSet
+  }
+
+
+
+
+  // def getLabeledComponents(l: Label): Seq[Component] = (for {
+  //   (cid, labels)  <- componentToLabels.toSeq
+  //   if labels.contains(l)
+  // } yield {
+  //   pageInfos
+  //     .flatMap({ case (_, info) =>
+  //       info.componentIndex.get(cid.unwrap)
+  //     }).toSeq
+  // }).flatten
+
 
 
 }
@@ -95,10 +134,36 @@ class ZoneIndexer  {
 
 
   // val componentMap = mutable.HashMap[Int@@ComponentID, Component]()
-  val componentLabels = mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]]()
+  // val componentLabels = mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]]()
 
   val componentIdGen = utils.IdGenerator[ComponentID]()
   val labelIdGen = IdGenerator[LabelID]()
+
+  def getPageForComponent(c: Component): Int@@PageID = {
+    c.targetRegions
+      .headOption.map(_.target)
+      .getOrElse(sys.error("no page specified for component"))
+  }
+
+
+  def addLabel(c: Component, l: Label): Component = {
+    val pageId = getPageForComponent(c)
+    val pinfo = getPageInfo(pageId)
+    pinfo.addLabel(c, l)
+  }
+
+  def removeLabel(c: Component, l: Label): Component = {
+    val pageId = getPageForComponent(c)
+    val pinfo = getPageInfo(pageId)
+    pinfo.removeLabel(c, l)
+  }
+
+
+  def getLabels(c: Component): Set[Label] = {
+    val pageId = getPageForComponent(c)
+    val pinfo = getPageInfo(pageId)
+    pinfo.getLabels(c)
+  }
 
   def empty(): Component = {
     concatComponents(Seq())
@@ -121,8 +186,12 @@ class ZoneIndexer  {
     val targetPage = targetPages.head
 
     val c = ConnectedComponent(componentIdGen.nextId, components, this)
-    getPageInfo(PageID(targetPage)).componentIndex.add(c)
+    val pinfo = getPageInfo(getPageForComponent(c))
+
+    pinfo.componentIndex.add(c)
+
     l.foreach(c.addLabel)
+
     c
   }
 
@@ -147,48 +216,9 @@ class ZoneIndexer  {
         c
     }
   }
-  private def getComponentLabelBuffer(c: Component): mutable.ArrayBuffer[Label] = {
-    componentLabels.getOrElseUpdate(c.id, mutable.ArrayBuffer[Label]())
-  }
-
-  def addLabel(c: Component, l: Label): Component = {
-    getComponentLabelBuffer(c).append(l)
-    c
-  }
-
-  def getLabels(c: Component): Set[Label] = {
-    getComponentLabelBuffer(c).toSet
-  }
-
-
-  def getLabeledComponents(l: Label): Seq[Component] = (for {
-    (cid, labels)  <- componentLabels.toSeq
-    if labels.contains(l)
-  } yield {
-    pageInfos
-      .flatMap({ case (_, info) =>
-        info.componentIndex.get(cid.unwrap)
-      }).toSeq
-  }).flatten
-
-
-  def removeLabel(c: Component, l: Label): Component = {
-    getComponentLabelBuffer(c) -= l
-    c
-  }
-
 
   def getPageGeometry(p: Int@@PageID) = pageInfos(p).geometry
 
-
-  // def addLabels(zl: ZoneAndLabel): Unit = {
-  //   val lls = zoneLabelMap.getOrElseUpdate(zl.zoneId, mutable.ArrayBuffer[Label]())
-  //   lls.append(zl.label)
-  // }
-
-  // def getZoneLabels(id: Int@@ZoneID): Seq[Label] = {
-  //   zoneLabelMap.get(id).getOrElse(Seq())
-  // }
 
   def getPages(): List[Int@@PageID] = {
     pageInfos.keys.toList.sortBy(PageID.unwrap(_))

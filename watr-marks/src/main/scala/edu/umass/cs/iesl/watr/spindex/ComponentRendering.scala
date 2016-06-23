@@ -43,7 +43,7 @@ object ComponentRendering {
       .head
   }
 
-  def serializeLabeling(label: Label, spine: Seq[BioNode]): Box = {
+  def serializeLabeling(label: Label, spine: Seq[BioNode]): Seq[Box] = {
     val labeledSpans = selectBioLabelings(label, spine)
 
     // serialize a bio labeling
@@ -63,7 +63,8 @@ object ComponentRendering {
       s"""["${label}", [${cids}], ${spanId}]""".box
     }
 
-    vjoinTrailSep(sep=",")(spanBoxes:_*)
+    // vjoinTrailSep(sep=",")(spanBoxes:_*)
+    spanBoxes
   }
 
   def serializeDocument(zoneIndexer: ZoneIndexer): String = {
@@ -91,7 +92,7 @@ object ComponentRendering {
     }
 
     val joinedLines =  vjoinTrailSep(left, ",")(lines:_*)
-    val joinedLabels =  vjoinTrailSep(left, ",")(serComponents:_*)
+    val joinedLabels =  vjoinTrailSep(left, ",")(serComponents.flatten:_*)
 
 
     val tokenDict = initState.map { state =>
@@ -106,15 +107,14 @@ object ComponentRendering {
 
 
 
-    (s"""|
-         |  "labels": [
-         |    ${indent(4)(joinedLabels)}
+    (s"""|{ "labels": [
+         |${indent(4)(joinedLabels)}
          |  ],
-         |{ "lines": [
-         |    ${indent(4)(joinedLines)}
+         |  "lines": [
+         |${indent(4)(joinedLines)}
          |  ],
          |  "ids": [
-         |     ${indent()(tokenDict)}
+         |${indent()(tokenDict)}
          |  ]}
          |""".stripMargin)
 
@@ -251,7 +251,7 @@ object ComponentRendering {
     } else {
       val cclabels = hsep(_cc.getLabels.map(_.key.box).toSeq)
 
-      s"""{"labels": [${cclabels}], "lines": [""".box +: subrender :+ "]}".box
+      s"""{"labels": [${cclabels}] "lines": [""".box +: subrender :+ "]}".box
 
     }
   }

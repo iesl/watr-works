@@ -212,7 +212,11 @@ class DocumentSegmenter(
 
       determineLines(pageId, charAtoms)
     }
-    // zoneIndexer.concatComponents(allPageLines, LB.Pages)
+
+    // allPageLines.foreach { c =>
+    //   println()
+    //   println(c.chars)
+    // }
   }
 
 
@@ -359,7 +363,6 @@ class DocumentSegmenter(
 
     val modalVDist = docWideModalLineVSpacing(alignedBlocksPerPage)
 
-
     val finalSplit = splitBlocksWithLargeVGaps(alignedBlocksPerPage, modalVDist)
 
     // Now create a BIO labeling linking visual lines into blocks
@@ -374,8 +377,8 @@ class DocumentSegmenter(
     val textBlockSpine = zoneIndexer.bioSpine("TextBlockSpine")
     textBlockSpine ++= spine.flatten
 
-
     val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
+
 
     val modalParaFocalJump = docWideModalParaFocalJump(blocks, modalVDist)
 
@@ -403,16 +406,16 @@ class DocumentSegmenter(
 
         val aIsIndented = aWidth < bWidth - 4.0
 
-        println("comparing for para begin: ")
-        println(s"  a> ${aComp.chars}")
-        println(s"  b> ${bComp.chars}")
+        // println("comparing for para begin: ")
+        // println(s"  a> ${aComp.chars}")
+        // println(s"  b> ${bComp.chars}")
 
-        println(s"     a.bounds=${aComp.bounds.prettyPrint} b.bounds=${bComp.bounds.prettyPrint}")
-        println(s"     a.right=${aComp.bounds.right.pp} b.right=${bComp.bounds.right.pp}")
-        println(s"     a is indented = ${aIsIndented}")
-        println(s"     a strictly above = ${aIsAboveB}")
-        println(s"     b columnContains a = ${aWithinBsColumn}")
-        println(s"     a/b within modal v-dist = ${withinCommonVDist} = ${modalVDist}")
+        // println(s"     a.bounds=${aComp.bounds.prettyPrint} b.bounds=${bComp.bounds.prettyPrint}")
+        // println(s"     a.right=${aComp.bounds.right.pp} b.right=${bComp.bounds.right.pp}")
+        // println(s"     a is indented = ${aIsIndented}")
+        // println(s"     a strictly above = ${aIsAboveB}")
+        // println(s"     b columnContains a = ${aWithinBsColumn}")
+        // println(s"     a/b within modal v-dist = ${withinCommonVDist} = ${modalVDist}")
 
         if (onSamePage &&
           aIsSingeLine &&
@@ -498,7 +501,7 @@ class DocumentSegmenter(
   def determineLines(
     pageId: Int@@PageID,
     components: Seq[CharAtom]
-  ): Component = {
+  ): Unit = {
 
     val lineSets = new DisjointSets[CharAtom](components)
 
@@ -606,7 +609,9 @@ class DocumentSegmenter(
       .sortBy(b => b.map(regionIds(_)).min)
       .map(l => zoneIndexer.concatComponents(l, LB.VisualLine))
 
-    zoneIndexer.concatComponents(linesJoined, LB.Page)
+    if (!linesJoined.isEmpty) {
+      zoneIndexer.concatComponents(linesJoined, LB.Page)
+    }
   }
 
 
@@ -667,7 +672,9 @@ class DocumentSegmenter(
     pageId <- zoneIndexer.getPages
   } yield {
     val page = zoneIndexer.getPageInfo(pageId)
-    page.getComponentsWithLabel(LB.VisualLine)
+    val lls = page.getComponentsWithLabel(LB.VisualLine)
+
+    lls
   }
 
 
@@ -771,9 +778,7 @@ class DocumentSegmenter(
   }
 
   def labelSectionHeadings(): Unit = {
-
     val vlines = zoneIndexer.bioSpine("TextBlockSpine")
-    println(s"len lineSpine = ${vlines.length}")
     for {
       lineBioNode <- vlines
       lineComp = lineBioNode.component

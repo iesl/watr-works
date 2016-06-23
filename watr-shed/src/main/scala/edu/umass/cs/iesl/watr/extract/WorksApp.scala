@@ -250,7 +250,10 @@ object Works extends App {
     def proc(pdfins: InputStream, outputPath: String): String = {
       val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
       segmenter.runPageSegmentation()
-      ComponentRendering.serializeDocument(segmenter.zoneIndexer).toString()
+      val output = ComponentRendering.serializeDocument(segmenter.zoneIndexer).toString()
+      // prevents mem leak
+      utils.TraceLog.getAndClearTraceLog()
+      output
     }
 
   }
