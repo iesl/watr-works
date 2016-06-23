@@ -12,6 +12,47 @@ import scala.async.Async.{async, await}
 
 import scala.collection.mutable
 
+
+trait FabricCanvasOperations {
+  import org.scalajs.jquery.jQuery
+
+  def fabricCanvas: fabric.Canvas = {
+    jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
+  }
+
+  def addShape(shape: Overlay, color: String): Unit = {
+    shape match {
+      case  Point(x: Double, y: Double) =>
+
+      case  Line(p1: Point, p2: Point) =>
+
+      case b:BBox => addBBoxRect(b, color)
+    }
+
+  }
+
+
+  def addBBoxRect(bbox: BBox, color: String): Unit = {
+
+    val rect = fabric.Rect()
+    rect.top         = bbox.y
+    rect.left        = bbox.x
+    rect.width       = bbox.width
+    rect.height      = bbox.height
+    rect.stroke      = color
+    rect.strokeWidth = 1
+    rect.fill        = ""
+    rect.hasControls = false
+    rect.hasBorders  = false
+    rect.selectable  = false
+
+    fabricCanvas.add(rect)
+  }
+
+  def addPath(path: Seq[Point], color: String): Unit = {
+  }
+}
+
 object handlers {
 
   def getUserPath(c: fabric.Canvas): Future[Seq[Point]] = {
@@ -76,6 +117,3 @@ object handlers {
   }
 
 }
-
-
-

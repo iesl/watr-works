@@ -14,7 +14,7 @@ case class Keybindings(
 )
 
 
-trait ClientView {
+trait ClientView extends FabricCanvasOperations {
 
   def setKeybindings(kb: Keybindings) = {
     Mousetrap.reset()

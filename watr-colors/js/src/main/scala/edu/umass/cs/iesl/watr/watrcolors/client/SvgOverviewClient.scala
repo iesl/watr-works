@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
+
 // import scala.concurrent.{Future, Promise}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -39,16 +40,14 @@ object util {
   }
 }
 
+// trait Fabric
+
 @JSExport
 class SvgOverview(
   artifactId: String
 ) extends ClientView { self =>
 
   val server = ServerWire("svg")[SvgOverviewApi]
-
-  def fabricCanvas: fabric.Canvas = {
-    jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
-  }
 
   override val initKeys = Keybindings(List(
     "c" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
@@ -104,26 +103,7 @@ class SvgOverview(
 
 // var path = new fabric.Path('M 0 0 L 200 100 L 170 200 z');
 
-  def addPath(path: Seq[Point], color: String): Unit = {
-  }
 
-  def addBBoxRect(bbox: BBox, color: String): Unit = {
-    // bbox.info
-
-    val rect = fabric.Rect(
-      top         = bbox.y,
-      left        = bbox.x,
-      width       = bbox.width,
-      height      = bbox.height,
-      stroke      = color
-    )
-
-    rect.hasControls = false
-    rect.hasBorders = false
-    rect.selectable = false
-
-    fabricCanvas.add(rect)
-  }
 
   // def createDocumentOverlay(): Boolean = {
   //   server.getDocumentOverlay(artifactId).call().foreach{ overlays =>

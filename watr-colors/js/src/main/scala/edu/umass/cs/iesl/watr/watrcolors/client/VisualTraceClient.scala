@@ -34,9 +34,6 @@ class VisualTraceClient(
     server.createView().call().foreach(applyHtmlUpdates(_))
   }
 
-  def fabricCanvas: fabric.Canvas = {
-    jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
-  }
 
   override val initKeys = Keybindings(List(
     "t" -> ((e: MousetrapEvent) => runTrace())
@@ -46,22 +43,26 @@ class VisualTraceClient(
   def runTrace(): Boolean = {
     import VisualTrace._
 
+    println("running trace, hold on...")
+
     server.runTrace().call().foreach({ traceEntries =>
 
       traceEntries.foreach({ _ match {
         case Noop =>
         case SetViewport(b: BBox) =>
+          fabricCanvas.setWidth(b.width.toInt)
         case GetViewport() =>
           println("set!")
         case Show(s: Overlay) =>
-          println("show!")
+          addShape(s, "blue")
 
         case ShowVDiff(d1: Double, d2: Double) =>
         case FocusOn(s: Overlay) =>
         case HRuler(s: Double) =>
-          println("rule!")
+          println(s"rule! ${s}")
 
         case Message(s: String) =>
+          println(s"Message: ${s}")
           // case And(t1, t2) =>
           // case AndThen(t1, t2) =>
       }})

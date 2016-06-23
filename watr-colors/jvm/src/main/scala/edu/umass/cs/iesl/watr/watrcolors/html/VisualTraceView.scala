@@ -68,7 +68,14 @@ class VisualTraceView() {
         <.div(col(6))(
           <.div(^.id:="overlay-container", SvgStyles.overlayContainer)(
             <.div(^.id:="svg-container", SvgStyles.svgImage),
-            <.canvas(^.id:="fabric-canvas", SvgStyles.fabricCanvas)
+            <.canvas(^.id:="fabric-canvas", SvgStyles.fabricCanvas),
+            <.script(^.`type`:="text/javascript")(
+              raw(s"""|var canvasEle = document.getElementById("fabric-canvas");
+                      |var canvas = new fabric.Canvas('fabric-canvas');
+                      |canvasEle.fabric = canvas;
+                      |canvas.uniScaleTransform = true;
+                      |fabric.Object.prototype.transparentCorners = false;
+                      |""".stripMargin))
           )
         ),
 

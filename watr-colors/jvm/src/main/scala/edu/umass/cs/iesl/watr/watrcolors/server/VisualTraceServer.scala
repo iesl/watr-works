@@ -70,14 +70,7 @@ class VisualTraceServer(
       // println(s"VisualTrace: createView(${corpusEntryId}) path=(${corpusPath})")
 
       testExample(pdfIns)
-    })
-
-
-    // val initHtml = html.CorpusExplorerView.init(state)
-    List(
-      // HtmlReplaceInner("#main", initHtml.render)
-    )
-
+    }).flatten
   }
 
   import java.io.InputStream
