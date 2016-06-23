@@ -25,6 +25,7 @@ import cats.~>
 // import cats.syntax.traverse._
 
 import freek._
+import scala.language.existentials
 
 import FabricShapes._
 
@@ -53,8 +54,11 @@ object TraceLog {
     entries ++= p
   }
 
-  def getTraceLog(): Seq[VisualTrace.DSL[_]] = {
-    entries
+
+  def getAndClearTraceLog(): Seq[VisualTrace.DSL[_]] = {
+    val ret = Seq(entries:_*)
+    entries.clear()
+    ret
   }
 }
 

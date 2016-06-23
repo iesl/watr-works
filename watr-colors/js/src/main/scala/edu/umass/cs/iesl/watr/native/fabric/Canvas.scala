@@ -8,97 +8,53 @@ import js.annotation.JSName
 @js.native
 trait StaticCanvasProperties extends js.Object {
 
-  //  * @type {(String|fabric.Pattern)}
-  // backgroundColor: '',
-  //  * @type fabric.Image
-  // backgroundImage: null,
-  //  * @type {(String|fabric.Pattern)}
-  // overlayColor: '',
-  //  * @type fabric.Image
-  // overlayImage: null,
-  //  * @type Boolean
-  // includeDefaultValues: true,
-  //  * @type Boolean
-  // stateful: true,
 
-
-  //  * @type Boolean
-  // renderOnAddRemove: true,
-  var renderOnAddRemove: Boolean = js.native
-
-  //  * @type Function
-  // clipTo: null,
-  //  * @type Boolean
-  // controlsAboveOverlay: false,
-  //  * @type Boolean
-  // allowTouchScrolling: false,
-  //  * @type Boolean
-  // imageSmoothingEnabled: true,
-  //  * @type Boolean
-  // preserveObjectStacking: false,
-  //  * @type Array
-  // viewportTransform: [1, 0, 0, 1, 0, 0],
-  //  * @type Boolean
-  // backgroundVpt: true,
-  //  * @type Boolean
-  // overlayVpt: true,
-  //  * @type Boolean
-  // svgViewportTransformation: true,
+  // backgroundColor:{(String|fabric.Pattern)} = '',
+  var backgroundColor: String                  =  js.native // ''
+  // backgroundImage:fabric.Image              = null,
+  // overlayColor:{(String|fabric.Pattern)}    = '',
+  // overlayImage:fabric.Image                 = null,
+  var includeDefaultValues:Boolean             = js.native // true
+  var stateful:Boolean                         = js.native // true
+  var renderOnAddRemove: Boolean               = js.native
+  // clipTo:Function                           = js.native // null,
+  var controlsAboveOverlay:Boolean             = js.native // false
+  var allowTouchScrolling:Boolean              = js.native // false
+  var imageSmoothingEnabled:Boolean            = js.native // true
+  var preserveObjectStacking:Boolean           = js.native // false
+  var viewportTransform:Array[Int]             = js.native // [1, 0, 0, 1, 0, 0]
+  var backgroundVpt:Boolean                    = js.native // true
+  var overlayVpt:Boolean                       = js.native // true
+  var svgViewportTransformation:Boolean        = js.native // true
 
 }
 
 @js.native
 trait CanvasProperties extends StaticCanvasProperties {
-  //      * @type Boolean
-  //     uniScaleTransform:      false,
-  //      * @type String
-  //     uniScaleKey:           'shiftKey',
-  //      * @type Boolean
-  //     centeredScaling:        false,
-  //      * @type Boolean
-  //     centeredRotation:       false,
-  //      * @type String
-  //     centeredKey:           'altKey',
-  //      * @type String
-  //     altActionKey:           'shiftKey',
-  //      * @type String
-  //     lastRenderedKey:        'altKey',
-  //      * @type Boolean
-  //     interactive:            true,
-  //      * @type Boolean
-  //     selection:              true,
-  //      * @type String
-  //     selectionKey:           'shiftKey',
-  //      * @type String
-  //     selectionColor:         'rgba(100, 100, 255, 0.3)', // blue
-  //      * @type Array
-  //     selectionDashArray:     [ ],
-  //      * @type String
-  //     selectionBorderColor:   'rgba(255, 255, 255, 0.3)',
-  //      * @type Number
-  //     selectionLineWidth:     1,
-  //      * @type String
-  //     hoverCursor:            'move',
-  //      * @type String
-  //     moveCursor:             'move',
-  //      * @type String
-  //     defaultCursor:          'default',
-  //      * @type String
-  //     freeDrawingCursor:      'crosshair',
-  //      * @type String
-  //     rotationCursor:         'crosshair',
-  //      * @type String
-  //     containerClass:         'canvas-container',
-  //      * @type Boolean
-  //     perPixelTargetFind:     false,
-  //      * @type Number
-  //     targetFindTolerance:    0,
-  //      * @type Boolean
-  //     skipTargetFind:         false,
-  //      * @type Boolean
-  //     isDrawingMode:          false,
-
-
+  var uniScaleTransform:Boolean      = js.native //  false
+  var uniScaleKey:String             = js.native //  "shiftKey"
+  var centeredScaling:Boolean        = js.native //  false
+  var centeredRotation:Boolean       = js.native //  false
+  var centeredKey:String             = js.native //  "altKey"
+  var altActionKey:String            = js.native //  "shiftKey"
+  var lastRenderedKey:String         = js.native //  "altKey"
+  var interactive:Boolean            = js.native //  true
+  var selection:Boolean              = js.native //  true
+  var selectionKey:String            = js.native //  "shiftKey"
+  var selectionColor:String          = js.native //  "rgba(100, 100, 255, 0.3)" // blue
+  var selectionDashArray: Array[Int] = js.native //  Array()
+  var selectionBorderColor:String    = js.native //  "rgba(255, 255, 255, 0.3)"
+  var selectionLineWidth:Number      = js.native //  1
+  var hoverCursor:String             = js.native //  "move"
+  var moveCursor:String              = js.native //  "move"
+  var defaultCursor:String           = js.native //  "default"
+  var freeDrawingCursor:String       = js.native //  "crosshair"
+  var rotationCursor:String          = js.native //  "crosshair"
+  var containerClass:String          = js.native //  "canvas-container"
+  var perPixelTargetFind:Boolean     = js.native //  false
+  var targetFindTolerance:Number     = js.native //  0
+  var skipTargetFind:Boolean         = js.native //  false
+  var isDrawingMode:Boolean          = js.native //  false
 }
 
 
@@ -198,13 +154,13 @@ class StaticCanvas(
   // @param {(String|fabric.Pattern)} overlayColor Color or pattern to set background color to
   // @param {Function} callback Callback to invoke when background color is set
   // @return {fabric.Canvas} thisArg
-  // def setOverlayColor(overlayColor, callback) : XXX = js.native
+  def setOverlayColor(overlayColor: Any, callback: js.Function): Canvas = js.native
 
 
   // @param {(String|fabric.Pattern)} backgroundColor Color or pattern to set background color to
   // @param {Function} callback Callback to invoke when background color is set
   // @return {fabric.Canvas} thisArg
-  // def setBackgroundColor(backgroundColor, callback) : XXX = js.native
+  def setBackgroundColor(backgroundColor: Any, callback: js.Function): Canvas = js.native
 
 
   // @param {String} property Property to set ({@link fabric.StaticCanvas#backgroundImage|backgroundImage}
@@ -217,12 +173,9 @@ class StaticCanvas(
   // @param {HTMLElement} element
   // @param {Object} [options] Options object
   // @param {HTMLElement} [canvasEl]
-  // @return {Number}
-  // def getWidth() : XXX = js.native
 
-
-  // @return {Number}
-  // def getHeight() : XXX = js.native
+  def getWidth(): Int = js.native
+  def getHeight() : Int = js.native
 
 
 
@@ -230,7 +183,6 @@ class StaticCanvas(
   // @param {Object}        [options]                     Options object
   // @param {Boolean}       [options.backstoreOnly=false] Set the given dimensions only as canvas backstore dimensions
   // @param {Boolean}       [options.cssOnly=false]       Set the given dimensions only as css dimensions
-  // @return {fabric.Canvas} instance
   def setWidth(value: Int, options: js.Object = js.Dynamic.literal(backstoreOnly=false, cssOnly=false)): Canvas = js.native
 
 
@@ -239,8 +191,7 @@ class StaticCanvas(
   // @param {Object}        [options]                     Options object
   // @param {Boolean}       [options.backstoreOnly=false] Set the given dimensions only as canvas backstore dimensions
   // @param {Boolean}       [options.cssOnly=false]       Set the given dimensions only as css dimensions
-  // @return {fabric.Canvas} instance
-  // def setHeight(value, options) : XXX = js.native
+  def setHeight(value: Int, options: js.Object = js.Dynamic.literal(backstoreOnly=false, cssOnly=false)): Canvas = js.native
 
 
   // @param {Object}        dimensions                    Object with width/height properties
@@ -249,8 +200,10 @@ class StaticCanvas(
   // @param {Object}        [options]                     Options object
   // @param {Boolean}       [options.backstoreOnly=false] Set the given dimensions only as canvas backstore dimensions
   // @param {Boolean}       [options.cssOnly=false]       Set the given dimensions only as css dimensions
-  // @return {fabric.Canvas} thisArg
-  // def setDimensions(dimensions, options) : XXX = js.native
+  def setDimensions(
+    width: js.Object = js.Dynamic.literal(width=10, height=10),
+    options: js.Object = js.Dynamic.literal(backstoreOnly=false, cssOnly=false)
+  ): Canvas = js.native
 
 
   // @param {String} prop property (width|height)
@@ -407,40 +360,28 @@ class StaticCanvas(
   // def toSVG(options, reviver) : XXX = js.native
 
 
-  // @param {fabric.Object} object Object to send to back
-  // @return {fabric.Canvas} thisArg
-  // def sendToBack(object) : XXX = js.native
-
-
-  // @param {fabric.Object} object Object to send
-  // @return {fabric.Canvas} thisArg
-  // def bringToFront(object) : XXX = js.native
+  def sendToBack(o: FabricObject): Canvas = js.native
+  def bringToFront(o: FabricObject): Canvas = js.native
 
 
   // @param {fabric.Object} object Object to send
   // @param {Boolean} [intersecting] If `true`, send object behind next lower intersecting object
-  // @return {fabric.Canvas} thisArg
-  // def sendBackwards(object, intersecting) : XXX = js.native
+  def sendBackwards(o: FabricObject, intersecting: Boolean): Canvas = js.native
 
 
   // @param {fabric.Object} object Object to send
   // @param {Boolean} [intersecting] If `true`, send object in front of next upper intersecting object
   // @return {fabric.Canvas} thisArg
-  // def bringForward(object, intersecting) : XXX = js.native
+  def bringForward(o: FabricObject, intersecting: Boolean): Canvas = js.native
 
 
   // @param {fabric.Object} object Object to send
   // @param {Number} index Position to move to
-  // @return {fabric.Canvas} thisArg
-  // def moveTo(object, index) : XXX = js.native
+  def moveTo(o: FabricObject, index: Int): Canvas = js.native
 
 
   // @return {fabric.Canvas} thisArg
-  // def dispose() : XXX = js.native
-
-
-  // @return {String} string representation of an instance
-  // def toString() : XXX = js.native
+  def dispose(): Canvas = js.native
 
 
   // @param {String} methodName Method to check support for;
@@ -574,29 +515,6 @@ class Canvas(
   // def clear()  = js.native
 
 
-  // def add(r: Rect): Unit = js.native
-
-  // // def forEachObject: js.Function(callback, context)
-  // def clear(): Unit = js.native
-  // // def containsPoint(e, target, point): Unit = js.native
-  // def deactivateAll(): Unit = js.native
-  // def deactivateAllWithDispatch(e): Unit = js.native
-  // def discardActiveGroup(e): Unit = js.native
-  // def discardActiveObject(e): Unit = js.native
-  // def dispose(): Unit = js.native
-  // def drawControls(ctx): Unit = js.native
-  // def findTarget(e, skipGroup): Unit = js.native
-  // def getActiveGroup(): Unit = js.native
-  // def getActiveObject(): Unit = js.native
-  // def getPointer(e, ignoreZoom, upperCanvasEl): Unit = js.native
-  // def getSelectionContext(): Unit = js.native
-  // def getSelectionElement(): Unit = js.native
-  // def initialize(el, fopts: FabricOptions): Unit = js.native
-  // def isTargetTransparent(target, x, y): Unit = js.native
-  // def setActiveGroup(group, e): Unit = js.native
-  // def setActiveObject(fobj: FabricObject, e): Unit = js.native
-  // def setCursor(value): Unit = js.native
-
 }
 
 
@@ -613,4 +531,3 @@ object Canvas {
 
 @js.native
 object CanvasOptions extends CanvasProperties//  {}
-
