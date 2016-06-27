@@ -180,7 +180,7 @@ class MyBxDocumentCreator(
         // if (wonkyChar.isDefined || subChars.isDefined) {
         //   println(s"char: ${charBox}")
         // }
-        // DocumentFontInfo.outputCharInfo(charTri, reader)
+        DocumentFontInfo.outputCharInfo(charTri, reader)
         // DocumentFontInfo.reportFontInfo(charTri.getFont)
         // DocumentFontInfo.addFontInfo(charTri.getFont
         // val fullFontName = charTri.getFont().getFullFontName()(0)(3)
@@ -287,6 +287,39 @@ class XITextCharacterExtractor(
 
       val processor = new PdfContentStreamProcessor(documentCreator)
 
+      {
+        formatting.followIndirect = false
+
+        import ammonite.ops._
+        val tf = cwd / s"pdf-trailer.txt"
+        val cf = cwd / s"pdf-catalog.txt"
+        rm(tf)
+        rm(cf)
+
+        val nn1 = reader.getNamedDestinationFromNames
+        val nn2 = reader.getNamedDestinationFromStrings
+        println("getNamedDestinationFromNames")
+        println(nn1.keys.mkString(", "))
+        println("getNamedDestinationFromStrings")
+        println(nn2.keys.mkString(", "))
+
+        val objf = cwd / s"pdf-name-objs.txt"
+        rm(objf)
+
+        nn2.foreach { case (name, pdfobj) =>
+          val fmt = formatting.formatObject(pdfobj, reader)
+          write.append(objf, fmt.toString())
+          write.append(objf, "\n\n")
+        }
+
+        val trailer = formatting.formatDictionary(reader.getTrailer, reader)
+        val catalog = formatting.formatDictionary(reader.getCatalog, reader)
+        write.append(tf, trailer.toString())
+        write.append(cf, catalog.toString())
+
+        formatting.followIndirect = true
+      }
+
       for (pageNumber <- 1 to reader.getNumberOfPages) {
 
         val pageId = PageID(pageNumber-1)
@@ -299,6 +332,21 @@ class XITextCharacterExtractor(
         val pageResources = reader.getPageResources(pageNumber)
 
         val resources = reader.getPageN(pageNumber).getAsDict(PdfName.RESOURCES)
+
+
+        {
+          import ammonite.ops._
+          val of = cwd / s"pdf-resources.txt"
+          if (pageNumber == 1) {
+            rm(of)
+          }
+
+          val op = formatting.formatDictionary(resources, reader)
+
+          write.append(of, s"PAGE ${pageNumber}\n\n")
+          write.append(of, op.toString())
+          write.append(of, s"\n\nEND PAGE ${pageNumber}\n")
+        }
 
         processAlternativeFontNames(resources)
         processAlternativeColorSpace(resources)
@@ -362,7 +410,6 @@ class XITextCharacterExtractor(
       if (!(fontsDictionary.get(pdfFontName).isInstanceOf[PRIndirectReference])) {
         return
       } else {
-
         val indRef = fontsDictionary.get(pdfFontName).asInstanceOf[PRIndirectReference]
         val fontDictionary = PdfReader.getPdfObjectRelease(indRef).asInstanceOf[PdfDictionary]
 
@@ -389,204 +436,4 @@ class XITextCharacterExtractor(
     }
   }
 
-  // import scala.collection.mutable
-  // def removeDuplicateChunks(document: BxDocument): BxDocument = {
-  //   for (page <- document) {
-  //     val chunks = mutable.ArrayBuffer[BxChunk]()
-  //     val filteredChunks = mutable.ArrayBuffer[BxChunk]()
-
-  //     def intToChunksMap = mutable.HashMap[Integer, mutable.Set[BxChunk]]()
-  //     def chunkSet = mutable.Set[BxChunk]()
-
-  //     val chunkMap = mutable.HashMap[Integer, mutable.HashMap[Integer, mutable.Set[BxChunk]]]()
-
-  //     for (chunk <- chunks) {
-  //       val x = chunk.getX().toInt
-  //       val y = chunk.getY().toInt
-  //       var duplicate = false
-
-  //       // duplicateSearch:
-  //       try {
-  //         for (
-  //           i <- x - 1 to x + 1;
-  //           j <- y - 1 to y + 1
-  //         ) {
-  //           if (chunkMap.contains(i) && chunkMap(i).contains(j)) {
-
-  //             for (ch <- chunkMap(i)(j)) {
-  //               if (chunk.toText().equals(ch.toText()) && chunk.getBounds().isSimilarTo(ch.getBounds(), 1)) {
-  //                 duplicate = true
-  //                 // break duplicateSearch
-  //                 println(s"duplicate: ${chunk.toText()}")
-  //                 throw new Throwable()
-  //               }
-  //             }
-  //           }
-  //         }
-
-  //       } catch {
-  //         case break: Throwable =>
-  //       }
-
-  //       if (!duplicate) {
-  //         filteredChunks.add(chunk)
-  //         val x = chunk.getX().toInt
-  //         val y = chunk.getY().toInt
-
-  //         if (!chunkMap.contains(x)) {
-  //           chunkMap.put(x, intToChunksMap)
-  //         }
-  //         if (!chunkMap(x).contains(y)) {
-  //           chunkMap(x).put(y, chunkSet)
-  //         }
-  //         chunkMap(x)(y).add(chunk)
-  //       }
-  //     }
-  //     page.setChunks(filteredChunks)
-  //   }
-  //   document
-  // }
-
-  // val CHUNK_DENSITY_LIMIT = 15
-  // val PAGE_GRID_SIZE = 10
-
-  // def filterComponents(document: BxDocument): BxDocument = {
-  //   for (page <- document) {
-  //     val bounds = new BxBoundsBuilder()
-  //     // val chunks = Lists.newArrayList(page.getChunks())
-  //     // val chunks = page.getChunks
-  //     val chunks = mutable.ArrayBuffer(page.getChunks.toList: _*)
-  //     for (ch <- chunks) {
-  //       bounds.expand(ch.getBounds())
-  //     }
-
-  //     val density = 100.0 * chunks.size / (bounds.getBounds().getWidth() * bounds.getBounds().getHeight())
-  //     if (density.nan || density < CHUNK_DENSITY_LIMIT) {
-  //       //continue
-  //     } else {
-
-  //       val map = mutable.HashMap[String, mutable.ArrayBuffer[BxChunk]]()
-  //       for (ch <- chunks) {
-  //         val x = (ch.getX() / PAGE_GRID_SIZE).toInt
-  //         val y = (ch.getY() / PAGE_GRID_SIZE).toInt
-  //         val key = Integer.toString(x) + " " + Integer.toString(y)
-  //         if (map.contains(key) == null) {
-  //           map.put(key, mutable.ArrayBuffer[BxChunk]())
-  //         }
-  //         map(key).add(ch)
-  //       }
-
-  //       for (list <- map.values()) {
-  //         if (list.size() > CHUNK_DENSITY_LIMIT) {
-  //           for (ch <- list) {
-  //             chunks.remove(ch)
-  //           }
-  //         }
-  //       }
-  //       page.setChunks(chunks)
-  //     }
-  //   }
-  //   document
-  // }
-
 }
-
-  // override def renderText(trix: TextRenderInfo): Unit = {
-  //   for (charTri <- trix.getCharacterRenderInfos()) {
-  //     val text = charTri.getText()
-
-  //     val ch = charTri.getText().charAt(0)
-  //     maybeSubChar(ch)
-
-  //     if (ch <= ' '
-  //       || text.matches("^[\uD800-\uD8FF]$")
-  //       || text.matches("^[\uDC00-\uDFFF]$")
-  //       || text.matches("^[\uFFF0-\uFFFF]$")) {
-  //       // no-op
-  //       val displayable = text.getBytes.map({b => b.toInt}).mkString(", ")
-  //       // println(s"skipping character(s) w/bytes= [${displayable}]")
-  //     } else {
-  //       val ascentStart = charTri.getAscentLine().getStartPoint()
-  //       val descentStart = charTri.getDescentLine().getStartPoint()
-
-  //       val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
-  //       val absoluteCharBottom: Double = descentStart.get(PVector.I2).toDouble
-
-  //       val charLeft = absoluteCharLeft - pageRectangle.getLeft()
-  //       val charBottom = absoluteCharBottom - pageRectangle.getBottom() // in math coords
-
-
-  //       var charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
-  //       var charWidth = charTri.getDescentLine().getLength().toDouble
-
-  //       if (charHeight.nan || charHeight.inf) {
-  //         println(s"warning: char height is NaN or Inf")
-  //         charHeight = 0
-  //       }
-
-  //       if (charWidth.nan || (charWidth.inf)) {
-  //         println(s"warning: char width is NaN or Inf")
-  //         charWidth = 0
-  //       }
-
-  //       if (absoluteCharLeft < pageRectangle.getLeft()
-  //         || absoluteCharLeft + charWidth > pageRectangle.getRight()
-  //         || absoluteCharBottom < pageRectangle.getBottom()
-  //         || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
-  //         // no-op
-  //         println(s"skipping text w/bbox out of page bounds: ${text}")
-  //       } else {
-  //         page0Chars += 1
-
-  //         val x = charLeft
-  //         val y = pageRectangle.getHeight() - charBottom - charHeight
-
-  //         val bounds = new BxBounds(
-  //           x, y, charWidth, charHeight
-  //         )
-
-  //         if(charsToDebug contains charIndex) {
-  //           println(
-  //             s"""|Char bounds
-  //                 | x      ${x}
-  //                 | y      ${y}
-  //                 | width  ${charWidth}
-  //                 | height ${charHeight}
-  //                 |""".stripMargin
-  //           )
-  //         }
-
-  //         if (bounds.getX().nan || bounds.getX().inf
-  //           || bounds.getY().nan || bounds.getY().inf
-  //           || bounds.getHeight().nan || bounds.getHeight().inf
-  //           || bounds.getWidth().nan || bounds.getWidth().inf) {
-  //           // skip
-  //           println(s"skipping text w/bbox= nan|inf: ${text}")
-  //         } else {
-  //           charIndex = charIndex+1
-
-  //           if (!charsToDebug.isEmpty) {
-  //             if(charsToDebug contains charIndex) {
-  //               println(s"Outputting char info #${charIndex}")
-  //               println(s"  text = ${text}")
-  //               DocumentFontInfo.outputCharInfo(charTri, reader)
-  //               DocumentFontInfo.reportFontInfo(charTri.getFont)
-  //               println(s"-------------------------------------\n\n")
-  //             } else {
-  //               if (charsToDebug.min - 10 < charIndex && charIndex < charsToDebug.max + 10) {
-  //                 println(s" renderText(${text} ${charIndex})")
-  //               }
-  //             }
-  //           }
-  //           val chunk = new BxChunk(bounds, text)
-  //           val fullFontName = charTri.getFont().getFullFontName()(0)(3)
-  //           chunk.setFontName(fullFontName)
-  //           actPage.addChunk(chunk)
-  //           boundsBuilder.expand(bounds)
-
-  //           addFontInfo(charTri.getFont)
-  //         }
-  //       }
-  //     }
-  //   }
-  // }

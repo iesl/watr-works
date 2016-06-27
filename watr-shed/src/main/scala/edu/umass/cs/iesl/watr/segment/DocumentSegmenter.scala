@@ -116,7 +116,7 @@ object DocumentSegmenter extends DocumentUtils {
 
 
   def createSegmenter(pdfins: InputStream): DocumentSegmenter = {
-    val chars = extract.DocumentExtractor.extractChars(pdfins)
+    val chars = format.DocumentIO.extractChars(pdfins)
     createSegmenter(chars.map(c => (c._1.regions, c._2)))
   }
 

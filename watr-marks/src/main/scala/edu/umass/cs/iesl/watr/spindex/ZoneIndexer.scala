@@ -114,8 +114,6 @@ object BioLabeling {
 }
 
 
-
-
 class ZoneIndexer  {
   import SpatialIndex._
 

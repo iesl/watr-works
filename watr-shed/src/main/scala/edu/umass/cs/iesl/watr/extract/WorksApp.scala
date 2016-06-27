@@ -87,6 +87,13 @@ object Works extends App {
       })
     } text ("run document segmentation")
 
+    cmd("richtext") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        runCmdRichText(ac)
+      })
+    } text ("output pdf as text, with some added embedded tex and labels")
+
+
     cmd("chars") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         extractCharacters(ac)
@@ -94,11 +101,11 @@ object Works extends App {
     } text ("(dev) char extraction")
 
 
-    cmd("bbsvg") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        createBoundingBoxSvg(ac)
-      })
-    } text ("(dev) run column detection")
+    // cmd("bbsvg") action { (v, conf) =>
+    //   setAction(conf, {(ac: AppConfig) =>
+    //     createBoundingBoxSvg(ac)
+    //   })
+    // } text ("(dev) run column detection")
 
 
   }
@@ -242,6 +249,21 @@ object Works extends App {
   }
 
 
+  def runCmdRichText(conf: AppConfig): Unit = {
+
+    val artifactOutputName = "richtext.txt"
+    processCorpus(conf, artifactOutputName, proc)
+
+    def proc(pdfins: InputStream, outputPath: String): String = {
+      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
+      segmenter.runPageSegmentation()
+      val output = format.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, None)
+      // prevents mem leak
+      utils.TraceLog.getAndClearTraceLog()
+      output
+    }
+
+  }
   def segmentDocument(conf: AppConfig): Unit = {
 
     val artifactOutputName = "docseg.json"
@@ -250,7 +272,7 @@ object Works extends App {
     def proc(pdfins: InputStream, outputPath: String): String = {
       val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
       segmenter.runPageSegmentation()
-      val output = ComponentRendering.serializeDocument(segmenter.zoneIndexer).toString()
+      val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
       // prevents mem leak
       utils.TraceLog.getAndClearTraceLog()
       output
@@ -259,13 +281,12 @@ object Works extends App {
   }
 
 
-  def createBoundingBoxSvg(conf: AppConfig): Unit = {
-
-    processCorpus(conf, "bbox.svg", (pdfins: InputStream, outputPath: String) => {
-      extract.DocumentExtractor.extractBBoxesAsSvg(pdfins, Some(outputPath))
-    })
-
-  }
+  // def createBoundingBoxSvg(conf: AppConfig): Unit = {
+  //   processCorpus(conf, "bbox.svg", (pdfins: InputStream, outputPath: String) => {
+  //     // format.DocumentIO.extractChars()
+  //     // extract.DocumentExtractor.extractBBoxesAsSvg(pdfins, Some(outputPath))
+  //   })
+  // }
 
   def extractCharacters(conf: AppConfig): Unit = {
     import TB._
@@ -275,7 +296,7 @@ object Works extends App {
     processCorpus(conf, artifactOutputName: String, proc)
 
     def proc(pdf: InputStream, outputPath: String): String = {
-      val pageChars = DocumentExtractor
+      val pageChars = format.DocumentIO
         .extractChars(pdf)
         .map({case(pageRegions, pageGeom) =>
           val sortedYPage = pageRegions.regions

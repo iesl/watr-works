@@ -2,21 +2,21 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import scala.collection.mutable
-import scalaz._
-// import utils._
-import watrmarks._
-
-import TypeTags._
 import textboxing.{TextBoxing => TB}
+import watrmarks._
+import TypeTags._
+import scalaz.@@
+
 import watrmarks.{StandardLabels => LB}
 
-
+import ComponentOperations._
+import ComponentTypeEnrichments._
 case class CCRenderState(
   numOfPages: Int,
   startingPage: Int@@PageID = PageID(0),
   // idgen: IdGenerator[TokenID] = IdGenerator[TokenID](),
   tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@ComponentID, LTBounds)] = mutable.ArrayBuffer()
-  // tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@TokenID, LTBounds)] = mutable.ArrayBuffer()
+    // tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@TokenID, LTBounds)] = mutable.ArrayBuffer()
 ) {
   private var currPage: Int@@PageID = startingPage
 
@@ -30,127 +30,9 @@ case class CCRenderState(
 
 
 object ComponentRendering {
-  import ComponentOperations._
-  import IndexShapeOperations._
-  import ComponentTypeEnrichments._
-  import BioLabeling._
-
   import TB._
 
-  def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
-    n.pins
-      .filter(p => p.label==lb)
-      .head
-  }
-
-  def serializeLabeling(label: Label, spine: Seq[BioNode]): Seq[Box] = {
-    val labeledSpans = selectBioLabelings(label, spine)
-
-    // serialize a bio labeling
-
-    val spanBoxes = for {
-      span <- labeledSpans
-    } yield {
-
-      val bioSpan = span
-        .map(p => selectPinForLabel(label, p))
-
-      val spanId = bioSpan.head.id
-      val compIds = span.map(_.component.id)
-
-      val cids = compIds.mkString(",")
-
-      s"""["${label}", [${cids}], ${spanId}]""".box
-    }
-
-    // vjoinTrailSep(sep=",")(spanBoxes:_*)
-    spanBoxes
-  }
-
-  def serializeDocument(zoneIndexer: ZoneIndexer): String = {
-
-    implicit val initState = Option(CCRenderState(
-      numOfPages = zoneIndexer.getPages.length,
-      startingPage = PageID(0)
-    ))
-
-    val lineSpine = zoneIndexer.bioSpine("TextBlockSpine")
-
-    val serComponents = List(
-      LB.SectionHeadingLine,
-      LB.ParaBegin
-    ).map(l =>
-      serializeLabeling(l, lineSpine)
-    )
-
-
-    val lines = for {
-      linec <- lineSpine
-      line = linec.component
-    } yield {
-      hjoin(center1, ", ")(renderConnectedComponents(line):_*)
-    }
-
-    val joinedLines =  vjoinTrailSep(left, ",")(lines:_*)
-    val joinedLabels =  vjoinTrailSep(left, ",")(serComponents.flatten:_*)
-
-
-    val tokenDict = initState.map { state =>
-      val tokLines = state.tokens
-        .map({case (pg, tok, bb) => s"[${tok},[${pg}, ${bb.compactPrint}]]".box })
-        .grouped(10)
-        .map(group => hjoin(sep=",")(group:_*))
-        .toList
-
-      indent()(vjoinTrailSep(left, ",")(tokLines:_*))
-    } getOrElse nullBox
-
-
-
-    (s"""|{ "labels": [
-         |${indent(4)(joinedLabels)}
-         |  ],
-         |  "lines": [
-         |${indent(4)(joinedLines)}
-         |  ],
-         |  "ids": [
-         |${indent()(tokenDict)}
-         |  ]}
-         |""".stripMargin)
-
-  }
-
-  def serializeComponent(currentComponent: Component)(implicit ostate: Option[CCRenderState] = None): Unit = {
-    import TB._
-
-    // dfs through components:
-    def loopDfs[A](_cc: Component, path: List[Component], prefn: (Component, List[Component]) => A): Unit = {
-      prefn(_cc, path)
-
-      _cc.children
-        .map(c => loopDfs(c, _cc :: path, prefn))
-    }
-
-
-    def fn0(c: Component, p: List[Component]): Unit = {
-      val indent = "   "*p.length
-      val lls = c.getLabels
-      if (!lls.isEmpty) {
-        if (lls.contains(LB.VisualLine)) {
-          val renderedLine = hsep(renderConnectedComponents(c)).toString
-          println(s"""$indent${renderedLine}      [${c.getLabels.mkString(", ")}] ${c.id}""")
-        } else {
-          println(s"""$indent[${c.getLabels.mkString(", ")}] ${c.id}""")
-        }
-      }
-    }
-
-    loopDfs(currentComponent, Nil, fn0)
-
-  }
-
   def renderConnectedComponents(_cc: Component)(implicit ostate: Option[CCRenderState] = None): Seq[TB.Box] = {
-    import TB._
 
     val subrender = _cc match {
       case cc: ConnectedComponents =>
@@ -256,59 +138,4 @@ object ComponentRendering {
     }
   }
 
-
-
-  def charInfosBox(cbs: Seq[CharAtom]): Seq[TB.Box] = {
-    import TB._
-
-    cbs.zip(spaceWidths(cbs))
-      .map{ case (c, dist) =>
-        (tbox(c.char.toString) +| "->" +| (dist.pp)) %
-          c.region.bbox.top.pp %
-          (c.region.bbox.left.pp +| c.region.bbox.right.pp) %
-          (c.region.bbox.bottom.pp +| "(w:" + c.region.bbox.width.pp + ")")
-    }
   }
-
-
-  def debugLineComponentStats(linecc: ConnectedComponents): Unit = {
-    // linecc.components.foreach{_ match {
-    //   case cc: ConnectedComponents =>
-    //     println(s"""    cc: ${cc.toText} ${cc.bounds.prettyPrint} cc.right: ${cc.bounds.right}""")
-
-    //   case cc: PageComponent =>
-    //     println(s"""    c:  ${cc.toText} ${cc.bounds.prettyPrint} cc.right: ${cc.bounds.right}""")
-
-    // }}
-    val firstCC = linecc.components.head
-    linecc.components.sliding(2).foreach{_ match {
-      case Seq(c1, c2) =>
-        val totalBBox = firstCC.bounds.union(c2.bounds)
-        println(s"""| ${c1.toText} - ${c2.toText}
-                    |    ${c1.bounds.prettyPrint} - ${c2.bounds.prettyPrint}
-                    |    c1.left: ${c1.bounds.left} c1.right: ${c1.bounds.right} c2.left: ${c2.bounds.left}
-                    |    dist = ${c2.bounds.left} - ${c1.bounds.right} = ${c2.bounds.left - c1.bounds.right}
-                    |    totalBBox = ${totalBBox.prettyPrint}, bb.right:${totalBBox.right.pp}
-                    |""".stripMargin)
-      case Seq(c1) =>
-    }}
-
-  }
-
-  def printCCStats(component: Component, range: (Int, Int), centerY: Double): Unit = {
-    import TB._
-
-    val stats = component.children.zip(pairwiseSpaceWidths(component.children))
-      .drop(range._1)
-      .take(range._2).map({case (c, dist) =>
-        (tbox(c.toText) +| "->" +| (dist.pp)) %
-          c.bounds.top.pp %
-          (c.bounds.left.pp +| c.bounds.right.pp) %
-          (c.bounds.bottom.pp +| "(w:" +| c.bounds.width.pp)
-      }).toList
-
-    println(
-      hsep(stats)
-    )
-  }
-}

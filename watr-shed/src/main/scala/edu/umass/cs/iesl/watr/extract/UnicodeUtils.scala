@@ -3,44 +3,6 @@ package extract
 
 object UnicodeUtil {
 
-  //   function mapSpecialUnicodeValues(code) {
-  //     if (code >= 0xFFF0 && code <= 0xFFFF) { // Specials unicode block.
-  //       return 0;
-  //     } else if (code >= 0xF600 && code <= 0xF8FF) {
-  //       return (getSpecialPUASymbols()[code] || code);
-  //     }
-  //     return code;
-  //   }
-
-  //   function getUnicodeForGlyph(name, glyphsUnicodeMap) {
-  //     var unicode = glyphsUnicodeMap[name];
-  //     if (unicode !== undefined) {
-  //       return unicode;
-  //     }
-  //     if (!name) {
-  //       return -1;
-  //     }
-  //     // Try to recover valid Unicode values from 'uniXXXX'/'uXXXX{XX}' glyphs.
-  //     if (name[0] === 'u') {
-  //       var nameLen = name.length, hexStr;
-
-  //       if (nameLen === 7 && name[1] === 'n' && name[2] === 'i') { // 'uniXXXX'
-  //         hexStr = name.substr(3);
-  //       } else if (nameLen >= 5 && nameLen <= 7) { // 'uXXXX{XX}'
-  //         hexStr = name.substr(1);
-  //       } else {
-  //         return -1;
-  //       }
-  //       // Check for upper-case hexadecimal characters, to avoid false positives.
-  //       if (hexStr === hexStr.toUpperCase()) {
-  //         unicode = parseInt(hexStr, 16);
-  //         if (unicode >= 0) {
-  //           return unicode;
-  //         }
-  //       }
-  //     }
-  //     return -1;
-  //   }
 
 
 
