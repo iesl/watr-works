@@ -1,11 +1,11 @@
 package edu.umass.cs.iesl.watr
 package format 
 
-import scala.collection.mutable
-import scalaz.@@
-import utils._
+// import scala.collection.mutable
+// import scalaz.@@
+// import utils._
 import watrmarks._
-import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
+// import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 
 import TypeTags._
 import textboxing.{TextBoxing => TB}
@@ -17,7 +17,7 @@ import ComponentRendering._
 object DocumentIO {
   import ComponentOperations._
   import IndexShapeOperations._
-  import ComponentTypeEnrichments._
+  // import ComponentTypeEnrichments._
   import BioLabeling._
 
   import TB._
@@ -196,11 +196,11 @@ object DocumentIO {
   import watrmarks._
   import play.api.libs.json._
   import java.io.InputStream
-  import com.itextpdf.text.pdf.DocumentFont
+  // import com.itextpdf.text.pdf.DocumentFont
   import play.api.libs.json._
 
   import spindex._
-  import extract.XITextCharacterExtractor
+  import extract.PdfTextExtractor
 
   // import IndexShapeOperations._
 
@@ -212,7 +212,7 @@ object DocumentIO {
     charsToDebug: Set[Int] = Set()
   ): Seq[(PageAtoms, PageGeometry)] = {
 
-    val charExtractor = new XITextCharacterExtractor(
+    val charExtractor = new PdfTextExtractor(
       charsToDebug,
       IdGenerator[RegionID]() //, IdGenerator[PageID]
     )
@@ -363,7 +363,7 @@ object DocumentIO {
   //   charsToDebug: Set[Int] = Set()
   // ): Seq[(PageAtoms, PageGeometry)] = {
 
-  //   val charExtractor = new XITextCharacterExtractor(
+  //   val charExtractor = new PdfTextExtractor(
   //     charsToDebug,
   //     IdGenerator[RegionID]() //, IdGenerator[PageID]
   //   )
@@ -391,10 +391,6 @@ object DocumentIO {
     Label("bx", s"${pre}:${post}")
   }
 
-  def getFontID(fullFontName: String, fontDict: Map[String, (Long, DocumentFont)]): Long = {
-    val maybeFont = fontDict.getOrElse(fullFontName, sys.error(s"no font found with fullname =${fullFontName}"))
-    maybeFont._1
-  }
 
   def loadSpatialIndices(jsvalue: JsValue): ZoneIndexer = {
     // jsvalue.validate[ZoneRecords] match {

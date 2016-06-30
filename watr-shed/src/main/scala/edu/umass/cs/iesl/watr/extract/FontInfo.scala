@@ -2,222 +2,279 @@ package edu.umass.cs.iesl.watr
 package extract
 
 
+import _root_.com.itextpdf
+import com.itextpdf.io.font.{ FontProgramFactory, _ }
+import com.itextpdf.io.font.otf.Glyph
+import com.itextpdf.kernel.pdf.PdfName
+// import com.itextpdf.io.font.{ FontIdentification, FontNames, FontProgram }
+import com.itextpdf.kernel.font.PdfFont
+import com.itextpdf.kernel.geom.LineSegment
+import com.itextpdf.kernel.pdf.{ PdfArray, PdfIndirectReference, PdfStream, PdfString }
+import itextpdf.kernel.pdf.PdfReader
+import com.itextpdf.kernel.pdf.PdfDictionary;
+import com.itextpdf.kernel.pdf.PdfObject
+import itextpdf.kernel.pdf.canvas.parser.data._
 
-import com.itextpdf.text.pdf._
-import com.itextpdf.text.pdf.parser.{Vector => PVector, _}
+
+import com.itextpdf.kernel.geom.{Vector => PVector}
+
 import scala.collection.JavaConversions._
 import textboxing.{TextBoxing => TB}
 
 object DocumentFontInfo {
-  def addFontInfo(font: DocumentFont): Unit = {
-    // val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")
-    // val allNameEntries = font.getAllNameEntries.map(_.mkString("[", ",", "]")).mkString(", ")
-    // val fontDictionary = font.getFontDictionary
 
-    // val fontDictionaryKeys = fontDictionary.getKeys.map(_.toString()).mkString(",")
-    val fontNameKey = font.getFullFontName.map(_.mkString("").trim).mkString("_").trim
-    // val _ = fontDict.put(fontNameKey, font)
+  import TB._
 
+  def getPdfStringInfo(pdfFont: PdfFont, pdfString: PdfString, reader: PdfReader): Box = {
 
-    // debugReport(
-    //   allNameEntries,
-    //   // font.getCharBBox,
-    //   // font.getFontDictionary,
-    //   fontDictionaryKeys,
-    //   // font.getFontMatrix,
-    //   fontFullname,
-    //   font.getFullFontStream,
-    //   // font.getKerning,
-    //   font.getPostscriptFontName,
-    //   // font.getWidth,
-    //   // font.getWidth,
-    //   font.hasKernPairs,
-    //   font.isVertical,
-    //   // font.getAscent,
-    //   // font.getAscentPoint,
-    //   // font.getCidCode,
-    //   // font.getCodePagesSupported.mkString(", "),
-    //   // font.getCompressionLevel,
-    //   // font.getDescent,
-    //   // font.getDescentPoint,
-    //   // font.getDifferences.mkString(", "),
-    //   font.getEncoding,
-    //   font.getFontType,
-    //   font.getSubfamily,
-    //   // font.getUnicodeDifferences.mkString(", "),
-    //   // font.getUnicodeEquivalent,
-    //   // font.getWidthPoint,
-    //   // font.getWidthPoint,
-    //   // font.getWidthPointKerned,
-    //   // font.getWidths.mkString(", "),
-    //   font.isDirectTextToByte,
-    //   font.isEmbedded,
-    //   font.isFontSpecific,
-    //   font.isForceWidthsOutput,
-    //   font.isSubset
-    // )
+    val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
+    val b0 = bs(0)
+    val fprogram = pdfFont.getFontProgram
+    // val pglyph = fprogram.getGlyph(b0)
+    val pglyphByCode = fprogram.getGlyphByCode(b0)
 
-    // charExists            (Int)           => Boolean
-    // convertToBytes        (String)        => Array[Byte]
-    // getAllNameEntries     ()              => Array[Array[String]]
-    // getCharBBox           (Int)           => Array[Int]
-    // getFamilyFontName     ()              => Array[Array[String]]
-    // getFontDescriptor     (Int, Float)    => Float
-    // getFontDictionary     ()              => PdfDictionary
-    // getFontMatrix         ()              => Array[Double]
-    // getFullFontName       ()              => Array[Array[String]]
-    // getFullFontStream     ()              => PdfStream
-    // getKerning            (Int, Int)      => Int
-    // getPostscriptFontName ()              => String
-    // getWidth              (String)        => Int
-    // getWidth              (Int)           => Int
-    // hasKernPairs          ()              => Boolean
-    // isVertical            ()              => Boolean
-    // setKerning            (Int, Int, Int) => Boolean
-    // setPostscriptFontName (String)        => Unit
+    val decoded = pdfFont.decode(pdfString)
 
 
-    // com.itextpdf.text.pdf.BaseFont
-    // ---------------------------
-    // addSubsetRange        (Array[Int])    => Unit
-    // correctArabicAdvance  ()              => Unit
-    // getAscent             (String)        => Int
-    // getAscentPoint        (String, Float) => Float
-    // getCidCode            (Int)           => Int
-    // getCodePagesSupported ()              => Array[String]
-    // getCompressionLevel   ()              => Int
-    // getDescent            (String)        => Int
-    // getDescentPoint       (String, Float) => Float
-    // getDifferences        ()              => Array[String]
-    // getEncoding           ()              => String
-    // getFontType           ()              => Int
-    // getSubfamily          ()              => String
-    // getUnicodeDifferences ()              => Array[Char]
-    // getUnicodeEquivalent  (Int)           => Int
-    // getWidthPoint         (String, Float) => Float
-    // getWidthPoint         (Int, Float)    => Float
-    // getWidthPointKerned   (String, Float) => Float
-    // getWidths             ()              => Array[Int]
-    // isDirectTextToByte    ()              => Boolean
-    // isEmbedded            ()              => Boolean
-    // isFontSpecific        ()              => Boolean
-    // isForceWidthsOutput   ()              => Boolean
-    // isSubset              ()              => Boolean
-    // setCharAdvance        (Int, Int)      => Boolean
-    // setCompressionLevel   (Int)           => Unit
-    // setDirectTextToByte   (Boolean)       => Unit
-    // setFontDescriptor     (Int, Float)    => Unit
-    // setForceWidthsOutput  (Boolean)       => Unit
-    // setSubset             (Boolean)       => Unit
+    val bsstr = bs.mkString("bytes:[", ", ", "]")
+
+    s"""|PdfString:
+        |   decoded: ${decoded}
+        |   getEncoding     ${pdfString.getEncoding      }   () => String
+        |   getType         ${pdfString.getType          }   () => Byte
+        |   getValue        ${pdfString.getValue         }   () => String
+        |   getValueBytes   ${bsstr}                         () => Array[Byte]
+        |   isHexWriting    ${pdfString.isHexWriting     }   () => Boolean
+        |   toString        ${pdfString.toString         }   () => String
+        |   toUnicodeString ${pdfString.toUnicodeString  }   () => String
+        |""".stripMargin.mbox
   }
 
-  def reportFontInfo(font: DocumentFont): Unit = {
-    val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")
-    val allNameEntries = font.getAllNameEntries.map(_.mkString("[", ",", "]")).mkString(", ")
-    val fontDictionary = font.getFontDictionary
-    val fontDictionaryKeys = fontDictionary.getKeys.map(_.toString()).mkString(",")
-    val unicodeDiffs = font.getUnicodeDifferences.dropWhile(_ == "").mkString(",")
-    val diffs = font.getDifferences.dropWhile(_ == null).mkString(",")
+  def getCharTriInfo(tri: TextRenderInfo, reader: PdfReader, recurse: Boolean = false): Box = {
+    val textRenderInfoStr =
+    s"""|TextRenderInfo =>
+        |     getActualText           ${tri.getActualText             }
+        |     getAscentLine           ${outputLineSegmentInfo(tri.getAscentLine)}
+        |     getBaseline             ${outputLineSegmentInfo(tri.getBaseline)}
+        |     getCanvasTagHierarchy   ${tri.getCanvasTagHierarchy     }
+        |     getCharSpacing          ${tri.getCharSpacing            }
+        |     getDescentLine          ${outputLineSegmentInfo(tri.getDescentLine)}
+        |     getFillColor            ${tri.getFillColor.getColorValue.mkString(", ")}
+        |     getFont                 (below)
+        |     getFontSize             ${tri.getFontSize               }
+        |     getHorizontalScaling    ${tri.getHorizontalScaling      }
+        |     getLeading              ${tri.getLeading                }
+        |     getMcid                 ${tri.getMcid                   }
+        |     getPdfString            ${tri.getPdfString              }
+        |     getRise                 ${tri.getRise                   }
+        |     getSingleSpaceWidth     ${tri.getSingleSpaceWidth       }
+        |     getStrokeColor          ${tri.getStrokeColor            }
+        |     getText                 ${tri.getText                   }
+        |     getTextRenderMode       ${tri.getTextRenderMode         }
+        |     getUnscaledBaseline     ${outputLineSegmentInfo(tri.getUnscaledBaseline)}
+        |     getUnscaledWidth        ${tri.getUnscaledWidth          }
+        |     getWordSpacing          ${tri.getWordSpacing            }
+        |     getCharacterRenderInfos:
+        |""".stripMargin.mbox
+
+    val pdfString = tri.getPdfString
+
+    val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
+    val b0 = bs(0)
+    val font = tri.getFont
+    val fprogram = font.getFontProgram
+    // val pglyph = fprogram.getGlyph(b0)
+    val pglyphByCode = fprogram.getGlyphByCode(b0)
 
 
-    debugReport(
-      allNameEntries,
-      // font.getCharBBox,
-      // font.getFontDictionary,
-      fontDictionaryKeys,
-      // font.getFontMatrix,
-      fontFullname,
-      font.getFullFontStream,
-      // font.getKerning,
-      font.getPostscriptFontName,
-      // font.getWidth,
-      // font.getWidth,
-      font.hasKernPairs,
-      font.isVertical,
-      // font.getAscent,
-      // font.getAscentPoint,
-      // font.getCidCode,
-      // font.getCodePagesSupported.mkString(", "),
-      // font.getCompressionLevel,
-      // font.getDescent,
-      // font.getDescentPoint,
-      font.getEncoding,
-      font.getFontType,
-      // font.getSubfamily,
-      unicodeDiffs,
-      diffs,
-      // font.getUnicodeEquivalent,
-      // font.getWidthPoint,
-      // font.getWidthPoint,
-      // font.getWidthPointKerned,
-      // font.getWidths.take(3).mkString(", "),
-      font.isDirectTextToByte,
-      font.isEmbedded,
-      font.isFontSpecific,
-      font.isForceWidthsOutput,
-      font.isSubset
+    val pdfStrInfo = getPdfStringInfo(tri.getFont, tri.getPdfString, reader)
+
+    (textRenderInfoStr atop
+      indent(2)(outputFontInfo(tri.getFont, reader, None)) atop
+      indent(2)(pdfStrInfo)
+    )
+  }
+
+  def outputVectorInfo(vec: PVector): String = {
+    s"(${vec.get(0)}, ${vec.get(1)})"
+  }
+
+  def outputLineSegmentInfo(ls: LineSegment): String = {
+    val sv = ls.getStartPoint
+    val ev = ls.getEndPoint
+    val l = ls.getLength
+
+    s"ln[${outputVectorInfo(sv)}, ${outputVectorInfo(ev)} (l:${l})]"
+  }
+
+  import scala.reflect.runtime.universe._
+
+  def typesOf[T : TypeTag](v: T): List[Type] = typeOf[T].baseClasses.map(typeOf[T].baseType)
+
+
+
+  def outputFontInfo(pdfFont: PdfFont, reader: PdfReader, maybeGlyph:Option[Glyph] = None): Box = {
+
+    val glyphBytes = maybeGlyph.map(pdfFont.convertToBytes(_)).map(_.mkString(",")).getOrElse("none")
+
+    val registered = FontProgramFactory.getRegisteredFonts.mkString(", ")
+
+    val fmtPdfObject = formatting.formatPdfObject(
+      pdfFont.getPdfObject, reader
     )
 
-    // charExists            (Int)           => Boolean
-    // convertToBytes        (String)        => Array[Byte]
-    // getAllNameEntries     ()              => Array[Array[String]]
-    // getCharBBox           (Int)           => Array[Int]
-    // getFamilyFontName     ()              => Array[Array[String]]
-    // getFontDescriptor     (Int, Float)    => Float
-    // getFontDictionary     ()              => PdfDictionary
-    // getFontMatrix         ()              => Array[Double]
-    // getFullFontName       ()              => Array[Array[String]]
-    // getFullFontStream     ()              => PdfStream
-    // getKerning            (Int, Int)      => Int
-    // getPostscriptFontName ()              => String
-    // getWidth              (String)        => Int
-    // getWidth              (Int)           => Int
-    // hasKernPairs          ()              => Boolean
-    // isVertical            ()              => Boolean
-    // setKerning            (Int, Int, Int) => Boolean
-    // setPostscriptFontName (String)        => Unit
+    // |    reg: ${registered}
 
-    // com.itextpdf.text.pdf.BaseFont
-    // ---------------------------
-    // addSubsetRange        (Array[Int])    => Unit
-    // correctArabicAdvance  ()              => Unit
-    // getAscent             (String)        => Int
-    // getAscentPoint        (String, Float) => Float
-    // getCidCode            (Int)           => Int
-    // getCodePagesSupported ()              => Array[String]
-    // getCompressionLevel   ()              => Int
-    // getDescent            (String)        => Int
-    // getDescentPoint       (String, Float) => Float
-    // getDifferences        ()              => Array[String]
-    // getEncoding           ()              => String
-    // getFontType           ()              => Int
-    // getSubfamily          ()              => String
-    // getUnicodeDifferences ()              => Array[Char]
-    // getUnicodeEquivalent  (Int)           => Int
-    // getWidthPoint         (String, Float) => Float
-    // getWidthPoint         (Int, Float)    => Float
-    // getWidthPointKerned   (String, Float) => Float
-    // getWidths             ()              => Array[Int]
-    // isDirectTextToByte    ()              => Boolean
-    // isEmbedded            ()              => Boolean
-    // isFontSpecific        ()              => Boolean
-    // isForceWidthsOutput   ()              => Boolean
-    // isSubset              ()              => Boolean
-    // setCharAdvance        (Int, Int)      => Boolean
-    // setCompressionLevel   (Int)           => Unit
-    // setDirectTextToByte   (Boolean)       => Unit
-    // setFontDescriptor     (Int, Float)    => Unit
-    // setForceWidthsOutput  (Boolean)       => Unit
-    // setSubset             (Boolean)       => Unit
+    val fontHdr =
+    s"""|Font:
+        |    Glyph bytes   ${glyphBytes}
+        |    getFontMatrix ${pdfFont.getFontMatrix }      () => Array[Double]
+        |    isEmbedded    ${pdfFont.isEmbedded    }      () => Boolean
+        |    isSubset      ${pdfFont.isSubset      }      () => Boolean
+        |    getFontProgram =>
+        |""".stripMargin.mbox
+
+    val fontPrgm = indent(6)(outputFontProgramInfo(pdfFont.getFontProgram, reader))
+
+    (fontHdr atop
+      fontPrgm atop
+      "Font Object" atop
+      indent(8)(fmtPdfObject)
+    )
+
+
+
+
+  }
+
+  def outputFontNameInfo(fontNames: FontNames): Box = {
+    s"""|FontName:
+        |   allowEmbedding   ${fontNames.allowEmbedding }     () => Boolean
+        |   getCidFontName   ${fontNames.getCidFontName }     () => String
+        |   getFamilyName    ${fontNames.getFamilyName  }     () => Array[Array[String]]
+        |   getFontName      ${fontNames.getFontName    }     () => String
+        |   getFontWeight    ${fontNames.getFontWeight  }     () => Int
+        |   getFontWidth     ${fontNames.getFontWidth   }     () => Int
+        |   getFullName      ${fontNames.getFullName    }     () => Array[Array[String]]
+        |   getStyle         ${fontNames.getStyle       }     () => String
+        |   getSubfamily     ${fontNames.getSubfamily   }     () => String
+        |   isBold           ${fontNames.isBold         }     () => Boolean
+        |   isCondensed      ${fontNames.isCondensed    }     () => Boolean
+        |   isExtended       ${fontNames.isExtended     }     () => Boolean
+        |   isItalic         ${fontNames.isItalic       }     () => Boolean
+        |   isOutline        ${fontNames.isOutline      }     () => Boolean
+        |   isShadow         ${fontNames.isShadow       }     () => Boolean
+        |   isUnderline      ${fontNames.isUnderline    }     () => Boolean
+        |""".stripMargin.mbox
+  }
+
+  def outputFontIdentificationInfo(fontId: FontIdentification, reader: PdfReader): Box = {
+
+    s"""|FontIdentification:
+        |    getPanose       ${fontId.getPanose       }
+        |    getTtfUniqueId  ${fontId.getTtfUniqueId  }
+        |    getTtfVersion   ${fontId.getTtfVersion   }
+        |    getType1Xuid    ${fontId.getType1Xuid    }
+        |""".stripMargin.mbox
   }
 
 
 
-  def outputCharInfo(tri: TextRenderInfo, reader: PdfReader): Unit = {
-    val font = tri.getFont()
+  def outputGlyphInfo(glyph: Glyph, reader: PdfReader): Box = {
+    s"""|Glyph:
+        |    getAnchorDelta    ${glyph.getAnchorDelta   }   () => Byte
+        |    getBbox           ${glyph.getBbox }   () => Array[Int]
+        |    getChars          ${glyph.getChars }   () => Array[Char]
+        |    getCode           ${glyph.getCode          }   () => Int
+        |    getUnicode        ${glyph.getUnicode       }   () => Integer
+        |    getWidth          ${glyph.getWidth         }   () => Int
+        |    getXAdvance       ${glyph.getXAdvance      }   () => Short
+        |    getXPlacement     ${glyph.getXPlacement    }   () => Short
+        |    getYAdvance       ${glyph.getYAdvance      }   () => Short
+        |    getYPlacement     ${glyph.getYPlacement    }   () => Short
+        |    hasAdvance        ${glyph.hasAdvance       }   () => Boolean
+        |    hasOffsets        ${glyph.hasOffsets       }   () => Boolean
+        |    hasPlacement      ${glyph.hasPlacement     }   () => Boolean
+        |    hasValidUnicode   ${glyph.hasValidUnicode  }   () => Boolean
+        |    hashCode          ${glyph.hashCode         }   () => Int
+        |    isMark            ${glyph.isMark           }   () => Boolean
+        |""".stripMargin.mbox
+  }
+
+
+
+
+  def outputType1FontProgramInfo(fp: Type1Font, reader: PdfReader): Box = {
+    // |    getGlyph             ${fp.getGlyph            }(String) => Glyph
+    // |    getKerning           ${fp.getKerning          }(Glyph, Glyph) => Int
+    // |    setKerning           ${fp.setKerning          }(Int, Int, Int) => Boolean
+    val fstrm = if (fp.isBuiltInFont) fp.getFontStreamBytes else "(!built-in, bytes unavailabe)"
+
+
+    s"""|Type1Font:
+        |    getCharacterSet      ${fp.getCharacterSet     }
+        |    isBuiltInFont        ${fp.isBuiltInFont       }
+        |    getFontStreamBytes   ${fstrm}
+        |    getFontStreamLengths ${fp.getFontStreamLengths}
+        |    getPdfFontFlags      ${fp.getPdfFontFlags     }
+        |    hasKernPairs         ${fp.hasKernPairs        }
+        |""".stripMargin.mbox
+  }
+
+
+  def outputFontProgramInfo(fontProgram: FontProgram, reader: PdfReader): Box = {
+    val fontTypes = typesOf(fontProgram).mkString("["," ", "]" )
+
+    val fontIdBox = outputFontIdentificationInfo(fontProgram.getFontIdentification, reader)
+
+    val fontPBox = if (fontProgram.isInstanceOf[Type1Font]) {
+      val fp = fontProgram.asInstanceOf[Type1Font]
+      outputType1FontProgramInfo(fp, reader)
+    } else if (fontProgram.isInstanceOf[CidFont]) {
+      val fp = fontProgram.asInstanceOf[CidFont]
+      "(TODO no specific font info)".box
+    } else if (fontProgram.isInstanceOf[TrueTypeFont]) {
+      val fp = fontProgram.asInstanceOf[TrueTypeFont]
+      "(TODO no specific font info)".box
+    } else if (fontProgram.isInstanceOf[TrueTypeFont]) {
+      val fp = fontProgram.asInstanceOf[TrueTypeFont]
+      "(TODO no specific font info)".box
+    } else {
+      "(no specific font info)".box
+    }
+
+
+    val fontProgramInfo =
+      s"""|FontProgram:
+          |    T: ${fontProgram.getClass}
+          |    countOfGlyphs       () => Int                 ${fontProgram.countOfGlyphs          }
+          |    getAvgWidth         () => Int                 ${fontProgram.getAvgWidth            }
+          |    getFontMetrics      () => FontMetrics         ${fontProgram.getFontMetrics         }
+          |    getPdfFontFlags     () => Int                 ${fontProgram.getPdfFontFlags        }
+          |    getRegistry         () => String              ${fontProgram.getRegistry            }
+          |    hasKernPairs        () => Boolean             ${fontProgram.hasKernPairs           }
+          |    isFontSpecific      () => Boolean             ${fontProgram.isFontSpecific         }
+          |    getFontNames =>
+          |""".stripMargin.mbox
+
+    val fnInfor = outputFontNameInfo(fontProgram.getFontNames)
+
+    (fontIdBox atop
+      fontProgramInfo atop
+      indent(7)(fontPBox) atop
+      indent(7)(fnInfor)
+      )
+  }
+
+  def outputCharInfo(tri: TextRenderInfo, reader: PdfReader, force: Boolean = false): Unit = {
     val doDebugOutput = tri.getText == "⇑"
 
-    if (doDebugOutput) {
+    if (doDebugOutput || force) {
+      println(getCharTriInfo(tri, reader))
+
+      val font = tri.getFont()
+
+
       // val text2 = font.getUnicodeEquivalent(tri.getMcid)
       val pdfstring = tri.getPdfString
 
@@ -233,96 +290,97 @@ object DocumentFontInfo {
       //   font.getFontDictionary.get(new PdfName(s"/$key"))
       // }.mkString("\n")
 
-      println("885")
-      println(formatting.formatObject(reader.getPdfObject(885) , reader))
-      println("886")
-      println(formatting.formatObject(reader.getPdfObject(886) , reader))
-      println("887")
-      println(formatting.formatObject(reader.getPdfObject(887) , reader))
-      println("888")
-      println(formatting.formatObject(reader.getPdfObject(888) , reader))
+      // println("885")
+      // println(formatting.formatObject(reader.getPdfObject(885) , reader))
+      // println("886")
+      // println(formatting.formatObject(reader.getPdfObject(886) , reader))
+      // println("887")
+      // println(formatting.formatObject(reader.getPdfObject(887) , reader))
+      // println("888")
+      // println(formatting.formatObject(reader.getPdfObject(888) , reader))
 
       val asString = tri.getText.toCharArray().map{c =>
         Char.char2int(c).toString
       }.mkString
 
-      val bs = pdfstring.getBytes.map(Byte.byte2int(_)).mkString(",")
-      val obs = pdfstring.getOriginalBytes.map(Byte.byte2int(_)).mkString(",")
-      pdfstring.getEncoding
-
-      // |        bytes            ${byteStr} => Array[Byte]
-      //   |        bytes            ${byteStr} => Array[Byte]
 
 
-      val d0 = font.getDifferences
-      val d1 = font.getUnicodeDifferences
-      val dict  = font.getFontDictionary
 
-      val dictKvs = font.getFontDictionary.getKeys.map{ key =>
-        "    " +key.toString() + ": " + font.getFontDictionary.get(key)
-      }.mkString("\n")
+      val bs = pdfstring.getValueBytes.map(Byte.byte2int(_)).mkString(",")
+
+      // val obs = pdfstring.getOriginalBytes.map(Byte.byte2int(_)).mkString(",")
+      // pdfstring.getEncoding
 
 
-      val diffStr = d0.mkString(",")
-      val udiffStr = d1.mkString(",")
 
-      val unicodeEquiv = font.getUnicodeEquivalent(0)
+      // val d0 = font.getDifferences
+      // val d1 = font.getUnicodeDifferences
+      // val dict  = font.getFontDictionary
+
+      // val dictKvs = font.getFontDictionary.getKeys.map{ key =>
+      //   "    " +key.toString() + ": " + font.getFontDictionary.get(key)
+      // }.mkString("\n")
+
+
+      // val diffStr = d0.mkString(",")
+      // val udiffStr = d1.mkString(",")
+
+      // val unicodeEquiv = font.getUnicodeEquivalent(0)
       // |    diffs             ${diffStr}
       // |    unidiffs          ${udiffStr}
 
 
-      val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")
-      val charProcs = dict.getAsDict(new PdfName("CharProcs"))
-      val charProcInf = if (charProcs != null) {
-        formatting.formatPdfObject(charProcs, reader).toString()
-      } else "<no CharProcs>"
+      // val fontFullname = font.getFullFontName.map(_.mkString("[", ",", "]")).mkString(", ")
+      // val charProcs = dict.getAsDict(new PdfName("CharProcs"))
+      // val charProcInf = if (charProcs != null) {
+      //   formatting.formatPdfObject(charProcs, reader).toString()
+      // } else "<no CharProcs>"
 
 
-      def formatLineVector(ls: PVector): String = {
-        s"""[${ls.get(0)} ${ls.get(1)}, ${ls.get(2)}}}]"""
-      }
+      // def formatLineVector(ls: PVector): String = {
+      //   s"""[${ls.get(0)} ${ls.get(1)}, ${ls.get(2)}}}]"""
+      // }
 
-      def formatLineSegment(ls: LineSegment): String = {
-        s""" ${formatLineVector(ls.getStartPoint)} -> ${formatLineVector(ls.getEndPoint)} ${ls.getLength}}"""
+      // def formatLineSegment(ls: LineSegment): String = {
+      //   s""" ${formatLineVector(ls.getStartPoint)} -> ${formatLineVector(ls.getEndPoint)} ${ls.getLength}}"""
 
-      }
+      // }
+      val fontProgram = font.getFontProgram
+      val fontProgramInfo =
+        s"""|  ${fontProgram.getFontIdentification} getFontIdentification
+            |  countOfGlyphs       () => Int                 ${fontProgram.countOfGlyphs          }
+            |  getAvgWidth         () => Int                 ${fontProgram.getAvgWidth            }
+            |  getFontMetrics      () => FontMetrics         ${fontProgram.getFontMetrics         }
+            |  getFontNames        () => FontNames           ${fontProgram.getFontNames           }
+            |  getPdfFontFlags     () => Int                 ${fontProgram.getPdfFontFlags        }
+            |  getRegistry         () => String              ${fontProgram.getRegistry            }
+            |  hasKernPairs        () => Boolean             ${fontProgram.hasKernPairs           }
+            |  isFontSpecific      () => Boolean             ${fontProgram.isFontSpecific         }
+            |""".stripMargin
+
 
       val pdfstrInf = s"""| tri.text: ${tri.getText}:  As c->int: '${asString}'
                           |        isEmbedded       ${font.isEmbedded()}        => Boolean
-                          |        getPostscriptFontName ${font.getPostscriptFontName}
                           |        getBytes         ${bs} => Array[Byte]
                           |        getEncoding      ${pdfstring.getEncoding} => String
-                          |        getOriginalBytes ${obs} => Array[Byte]
                           |        isHexWriting     ${pdfstring.isHexWriting        } => Boolean
                           |        toString         ${pdfstring.toString            } => String
                           |        toUnicodeString  ${pdfstring.toUnicodeString     } => String
-                          |        canBeInObjStm    ${pdfstring.canBeInObjStm       } => Boolean
-                          |        getIndRef        ${pdfstring.getIndRef           } => PRIndirectReference
                           |        isArray          ${pdfstring.isArray             } => Boolean
                           |        isBoolean        ${pdfstring.isBoolean           } => Boolean
                           |        isDictionary     ${pdfstring.isDictionary        } => Boolean
-                          |        isIndirect       ${pdfstring.isIndirect          } => Boolean
+                          |        isIndirect       ${pdfstring.isIndirectReference()} => Boolean
                           |        isName           ${pdfstring.isName              } => Boolean
                           |        isNull           ${pdfstring.isNull              } => Boolean
                           |        isNumber         ${pdfstring.isNumber            } => Boolean
                           |        isStream         ${pdfstring.isStream            } => Boolean
                           |        isString         ${pdfstring.isString            } => Boolean
-                          |        length           ${pdfstring.length              } => Int
-                          |        type             ${pdfstring.`type`              } => Int
                           |        Rise              ${tri.getRise}                                => Float
-                          |        AscentLine        ${formatLineSegment(tri.getAscentLine)}       => LineSegment
-                          |        Baseline          ${formatLineSegment(tri.getBaseline)}         => LineSegment
-                          |        Baseline (uns)    ${formatLineSegment(tri.getUnscaledBaseline)} => LineSegment
-                          |        DescentLine       ${formatLineSegment(tri.getDescentLine)}      => LineSegment
                           |        Mcid              ${tri.getMcid}              => Integer
                           |        PdfString         ${tri.getPdfString}              => PdfString
-                          |        Font              ${fontFullname}      => DocumentFont
-                          |        Unic.Equiv        ${unicodeEquiv}      => Int
                           |        Mcid              ${tri.getMcid}              => Integer
                           |        PdfString         ${tri.getPdfString}              => PdfString
                           |        TextRenderMode    ${tri.getTextRenderMode}              => Int
-                          |        ${dictKvs}
-                          |        ${charProcInf}
                           |""".stripMargin
 
       println(pdfstrInf)
@@ -337,6 +395,13 @@ object DocumentFontInfo {
 
 
 
+class MyCFFFont(bytes: Array[Byte]) extends CFFFont(bytes) {
+  def getFonts() = fonts
+
+
+  def getRange(i: Int) = getEntireIndexRange(i)
+}
+
 object formatting {
   import TB._
 
@@ -349,48 +414,117 @@ object formatting {
 
   def formatIndirectObject(obj: PdfObject, reader: PdfReader): Box = {
     val iref: PdfIndirectReference = obj.asInstanceOf[PdfIndirectReference]
-    val refNum =iref.getNumber
-    val refGen =iref.getGeneration
+    val refNum =iref.getObjNumber
+    val refGen =iref.getGenNumber
     if (followIndirect)  {
-      val objDirect = reader.getPdfObject(refNum)
+      val objDirect = iref.getDocument.getPdfObject(refNum)
       formatObject(objDirect, reader)
     } else {
       s"ind*${refNum}"
     }
   }
 
+
+
+  def formatCFFFont(cf: MyCFFFont): Box = {
+    // PrivateSubrsOffsets     ${font.PrivateSubrsOffsets }  Array  Array[Array[Int]]
+    val fontname = cf.getNames()(0)
+
+    val cidFontByteArray = cf.getCID(fontname)
+
+
+    val bas = cidFontByteArray.take(10).mkString(", ")
+
+    val cidBytesStr = s""" fontByteArray.len = ${cidFontByteArray.length}= [${bas}]"""
+
+    val fontBoxes = cf.getFonts.toList.map({font =>
+
+      val bytesAtOffset = font.charstringsOffsets.take(4).map({offset =>
+        val cidOff = cidFontByteArray(offset)
+        val cidOff1 = cidFontByteArray(offset+1)
+        val cidOff2 = cidFontByteArray(offset+2)
+        s"""bytes@${offset}=${cidOff}, ${cidOff1}, ${cidOff2}"""
+      }).mkString(" :: ")
+
+
+      s"""|font
+          |    CharsetLength           ${font.CharsetLength       }  Int
+          |    CharstringType          ${font.CharstringType      }  Int
+          |    FDArrayCount            ${font.FDArrayCount        }  Int
+          |    FDArrayOffsets          ${font.FDArrayOffsets      }  Array[Int]
+          |    FDArrayOffsize          ${font.FDArrayOffsize      }  Int
+          |    FDSelect                ${font.FDSelect            }  Array[Int]
+          |    FDSelectFormat          ${font.FDSelectFormat      }  Int
+          |    FDSelectLength          ${font.FDSelectLength      }  Int
+          |    PrivateSubrsOffset      ${font.PrivateSubrsOffset   }  Array[Int]
+          |    SubrsOffsets            ${font.SubrsOffsets       }  Array[Int]
+          |    charset                 ${font.charset             }  Array[Int]
+          |    charsetOffset           ${font.charsetOffset       }  Int
+          |    charstringsOffset       ${font.charstringsOffset   }  Int
+          |    charstringsOffsets      ${font.charstringsOffsets.mkString(",")}  Array[Int]
+          |      BytesAtOffset         ${bytesAtOffset}
+          |    encodingOffset          ${font.encodingOffset      }  Int
+          |    fdarrayOffset           ${font.fdarrayOffset       }  Int
+          |    fdprivateLengths        ${font.fdprivateLengths   }  Array[Int]
+          |    fdprivateOffsets        ${font.fdprivateOffsets   }  Array[Int]
+          |    fdprivateSubrs          ${font.fdprivateSubrs   }  Array[Int]
+          |    fdselectOffset          ${font.fdselectOffset      }  Int
+          |    fullName                ${font.fullName            }  String
+          |    isCID                   ${font.isCID               }  Boolean
+          |    name                    ${font.name                }  String
+          |    nglyphs                 ${font.nglyphs             }  Int
+          |    nstrings                ${font.nstrings            }  Int
+          |    privateLength           ${font.privateLength       }  Int
+          |    privateOffset           ${font.privateOffset       }  Int
+          |    privateSubrs            ${font.privateSubrs        }  Int
+          |""".stripMargin.mbox
+    })
+
+    val allFontBoxes = vcat(left)(fontBoxes)
+
+    // | exists     ${cf.exists    }          (String) => Boolean
+    //   | getCID     ${cf.getCID    }          (String) => Array[Byte]
+    // | getString  ${cf.getString }          (Char) => String
+    //   | isCID      ${cf.isCID     }          (String) => Boolean
+    val hdr =
+    s"""|CFFFont:
+        |    getNames   ${cf.getNames.mkString(", ")  }          () => Array[String]
+        |""".stripMargin.mbox
+
+    hdr atop cidBytesStr.box atop allFontBoxes
+  }
+
   def formatStreamObject(obj: PdfObject, reader: PdfReader): Box = {
-
-
-
     val strm = obj.asInstanceOf[PdfStream]
+    // /FontFile3 :: stream =>
+    //                     stream /Length=508
+    //                        /Length :: num => 508
+    //                        /Subtype :: name => /Type1C
 
-    // val xo = obj.asInstanceOf[PdfStream]
-    // new java.io.OutputStreamWriter(new java.io.StringWriter())
-    // val sw = new java.io.StringWriter()
+    val subtype = strm.getAsName(new PdfName("Subtype"))
+    val isType1C = subtype != null && subtype.getValue == "Type1C"
 
-    // val baos = new java.io.ByteArrayOutputStream()
-    // strm.writeContent(baos)
-    // val strmBytes = baos.toByteArray().mkString("[", ",", "]")
 
-    // val rlen = strm.getRawLength
-    val bytes = if (strm.getBytes != null) {
-      strm.getBytes.mkString(",")
-    } else "[]"
+    val byteBox = if (strm.getBytes != null && isType1C) {
+      val cffFont = new MyCFFFont(strm.getBytes())
+      // val bs = PdfReader.decodeBytes(strm.getBytes, strm)
+      // val cffFont = new CFFFont(bs)
+      formatCFFFont(cffFont)
+    } else "[empty]".box
 
     // val strmNum = strm.getIndRef.getNumber
     // strm.getDirectObject(strm.getIndRef)
+    // val b = s"""${bytes}""".box atop formatDictionary(strm, reader)
+    // val bi = indent(3)(b)
+    val strmAsDict = indent(3)(formatDictionary(strm, reader))
 
-    val b = s"""B:${bytes}""".box atop formatDictionary(strm, reader)
-    val bi = indent(3)(b)
-
-    s"stream len=${strm.getRawLength}/${strm.size()}".box atop bi
+    s"""stream /Length=${strm.getLength}""".box atop strmAsDict  atop byteBox
 
   }
 
   def objectType(obj: PdfObject, reader: PdfReader): String = {
     if (obj.isArray()) {
-      "array"
+      "arr"
     } else if (obj.isBoolean()) {
       "bool"
     } else if (obj.isNull()) {
@@ -401,17 +535,17 @@ object formatting {
       "str"
     } else if (obj.isName) {
       "name"
-    } else if (obj.isIndirect()) {
+    } else if (obj.isDictionary) {
+      "dict"
+    } else if (obj.isIndirectReference()) {
       val iref: PdfIndirectReference = obj.asInstanceOf[PdfIndirectReference]
-      val refNum =iref.getNumber
-      val refGen =iref.getGeneration
-      val objDirect = reader.getPdfObject(refNum)
+      val refNum =iref.getObjNumber
+      val refGen =iref.getGenNumber
+      val objDirect = iref.getDocument.getPdfObject(refNum)
       val dtype = objectType(objDirect, reader)
       s"${dtype}*${refNum}"
     } else if (obj.isStream()) {
       "stream"
-    } else if (obj.isDictionary) {
-      "dict"
     } else {
       "T?"
     }
@@ -421,7 +555,7 @@ object formatting {
     // val cbi = obj.canBeInObjStm()
     // val objNumber = obj.getIndRef.getNumber
     vcat(left)(
-      xo.getKeys.toList.map{ key =>
+      xo.keySet().toList.map{ key =>
         val pdfVal = xo.get(key)
         val valBox = formatObject(pdfVal, reader)
         if( valBox.rows == 1 ) {
@@ -438,8 +572,11 @@ object formatting {
 
     if (obj.isArray()) {
       val arr = obj.asInstanceOf[PdfArray]
-      val arrstr = arr.mkString("[", ", ", "]")
+      val arrstr = arr.take(22).mkString("[", ", ", s", ..+${arr.size}]")
       arrstr
+    } else if (obj.isDictionary) {
+      val xo = obj.asInstanceOf[PdfDictionary]
+      indent(4)(formatDictionary(obj, reader))
     } else if (obj.isBoolean()) {
       s"${obj.toString().trim()}"
     } else if (obj.isNull()) {
@@ -450,26 +587,13 @@ object formatting {
       s"${obj.toString().trim()}"
     } else if (obj.isName) {
       s"${obj.toString().trim()}"
-    } else if (obj.isIndirect()) {
+    } else if (obj.isIndirectReference()) {
       formatIndirectObject(obj, reader)
     } else if (obj.isStream()) {
       formatStreamObject(obj, reader)
-    } else if (obj.isDictionary) {
-      val xo = obj.asInstanceOf[PdfDictionary]
-      indent(4)(formatDictionary(obj, reader))
     } else {
       s"??unknown-pdf-obj??".box
     }
   }
 
-  def main(args: Array[String]) = {
-    import ammonite.ops._
-    val fn = cwd / RelPath(args(0))
-    // val content = read(fn)
-    val cbytes = read.bytes(fn)
-    val deflated = PdfReader.FlateDecode(cbytes, false)
-    println(cbytes.mkString(", "))
-    println("deflated:")
-    println(deflated.mkString(", "))
-  }
 }

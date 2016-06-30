@@ -43,7 +43,7 @@ val commonDeps = freeKDeps ++ Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "com.lihaoyi" %% "ammonite-ops" % "0.6.2",
   "com.typesafe.play" %% "play-json" % "2.5.4",
   "com.github.scopt" %% "scopt" % "3.5.0",
-  "com.itextpdf" % "itextpdf" % "5.5.9",
+  // "com.itextpdf" % "itextpdf" % "5.5.9",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
 )
 

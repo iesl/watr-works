@@ -1,0 +1,20 @@
+
+
+fontsInFile= FontsInFile($1)
+
+i=0
+fontCount = SizeOf(fontsInFile)
+
+pdfName=$1
+
+while(i<fontCount)
+   fname = fontsInFile[i]
+   pdfFontName = pdfName+"("+fname+")"
+   Print(pdfFontName)
+   Open(pdfFontName)
+   Save(pdfFontName + ".sdf")
+
+  ++i
+endloop
+
+# Open($1)

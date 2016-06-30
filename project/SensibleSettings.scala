@@ -46,11 +46,10 @@ object Sensible {
       "-Ywarn-dead-code",
       //"-Ywarn-numeric-widen", // noisy
       //"-Ywarn-value-discard", // will require a lot of work
+      "-Ywarn-unused-import", // noisy, but good to run occasionally
       "-Xfuture"
-    ) ++ {
-        if (scalaVersion.value.startsWith("2.11")) Seq("-Ywarn-unused-import")
-        else Nil
-      },
+    ),
+
     javacOptions in (Compile, compile) ++= Seq(
       "-source", "1.6", "-target", "1.6", "-Xlint:all", "-Werror",
       "-Xlint:-options", "-Xlint:-path", "-Xlint:-processing"
