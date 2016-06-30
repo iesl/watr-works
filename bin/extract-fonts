@@ -1,0 +1,64 @@
+#!/bin/bash
+
+SCRIPT=`basename $0`
+SCRIPTDIR=$(cd `dirname $0` && pwd -P)
+
+
+
+for i in "$@"
+do
+    case $i in
+        -d=*|--outdir=*)
+            OUTDIR="${i#*=}"
+            shift # past argument=value
+            ;;
+        -f=*|--file=*)
+            INFILE="${i#*=}"
+            shift # past argument=value
+            ;;
+        --default)
+            DEFAULT=YES
+            shift # past argument with no value
+            ;;
+        *)
+            # unknown option
+            ;;
+    esac
+done
+
+if [[ -n $1 ]]; then
+    echo "Last line of file specified as non-opt/last argument:"
+    tail -1 $1
+fi
+
+
+usage() {
+    local prog="$SCRIPT"
+    echo "Usage: $prog <todo>"
+    echo "       $prog -h for help."
+    exit 2
+}
+
+showhelp() {
+    echo "Usage: $SCRIPT: "
+    echo "  todo  "
+    exit 2
+}
+
+if [[ -z $OUTDIR ]]; then
+    OUTDIR=".fonts-$INFILE"
+fi
+
+if [[ ! -d $OUTDIR ]]; then
+    mkdir $OUTDIR
+fi
+
+LOGFILE=extract-font.log
+# echo "Number files in SEARCH PATH with EXTENSION:" $(ls -1 "${SEARCHPATH}"/*."${EXTENSION}" | wc -l)
+# default arg vals
+
+
+
+echo "fontforge -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR"
+
+fontforge -quiet -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR &> $OUTDIR/$LOGFILE

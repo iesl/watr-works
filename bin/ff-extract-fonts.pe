@@ -1,20 +1,22 @@
 
+pdfName=$1
+outputDir=$2
 
-fontsInFile= FontsInFile($1)
+fontsInFile=FontsInFile(pdfName)
 
-i=0
 fontCount = SizeOf(fontsInFile)
 
-pdfName=$1
 
+i=0
 while(i<fontCount)
    fname = fontsInFile[i]
    pdfFontName = pdfName+"("+fname+")"
+   sdfOutputFile="font-"+i+".sdf"
+
    Print(pdfFontName)
    Open(pdfFontName)
-   Save(pdfFontName + ".sdf")
 
-  ++i
+   Save(outputDir +"/"+ sdfOutputFile)
+
+   ++i
 endloop
-
-# Open($1)
