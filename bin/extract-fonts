@@ -45,20 +45,23 @@ showhelp() {
     exit 2
 }
 
+LOGFILE=extract-font.log
+
+
 if [[ -z $OUTDIR ]]; then
-    OUTDIR=".fonts-$INFILE"
+    OUTPATH=$(dirname $INFILE)
+    OUTDIR="$OUTPATH/fonts"
 fi
 
-if [[ ! -d $OUTDIR ]]; then
+if [[ ! -e $OUTDIR ]]; then
     mkdir $OUTDIR
 fi
 
-LOGFILE=extract-font.log
 # echo "Number files in SEARCH PATH with EXTENSION:" $(ls -1 "${SEARCHPATH}"/*."${EXTENSION}" | wc -l)
 # default arg vals
 
 
 
-echo "fontforge -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR"
 
-fontforge -quiet -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR &> $OUTDIR/$LOGFILE
+# echo "fontforge -quiet -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR &> $OUTDIR/$LOGFILE"
+exec fontforge -quiet -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR &> $OUTDIR/$LOGFILE
