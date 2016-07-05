@@ -14,9 +14,16 @@ class FontDatabaseTablesTest extends FlatSpec {
   behavior of "font database"
   val db = new FontDatabase(cwd / "fontdb")
 
+  val fontPath = Path(getClass.getResource("/fontdb/gulliver-sfdirs").getPath)
+
   it should "create tables" in {
     db.commit()
     db.shutdown()
+  }
+
+  it should "load font dirs into db" in {
+
+    // println(s"path = ${fontPath} exists= ${exists(fontPath)} ")
 
   }
 
