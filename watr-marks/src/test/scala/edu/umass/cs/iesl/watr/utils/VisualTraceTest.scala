@@ -20,40 +20,40 @@ import spindex._
 // import cats.std.list._
 // import ExecutionContext.Implicits.global
 
-import freek._
+// import freek._
 
 
 class VisualTraceTest extends FlatSpec with Matchers {
   behavior of "visual trace logging"
 
 
-  import VisualTrace._
-  type PRG = VisualTrace.DSL :|: FXNil
+  // import VisualTrace._
+  // type PRG = VisualTrace.DSL :|: FXNil
 
-  it should "produce a stream of overlays/messages" in {
-    // val asdf = SetViewport(Bounds.empty).freek[VisualTrace.PRG]
-
-
-    val prg = for {
-      _ <- SetViewport(Bounds.empty).freek[PRG]
-      _ <- Show(Bounds.empty).freek[PRG]
-      _ <- HRuler(0d).freek[PRG]
-    } yield ()
+  // it should "produce a stream of overlays/messages" in {
+  //   // val asdf = SetViewport(Bounds.empty).freek[VisualTrace.PRG]
 
 
-    // VisualTraceInterpreter.nat
-    // val interpreter: Interpreter[PRG, cats.Id] = interp.visualTraceInterpreter
-    // val interpreter = interp.visualTraceInterpreter // :&: interp.visualTraceInterpreter
+  //   val prg = for {
+  //     _ <- SetViewport(Bounds.empty).freek[PRG]
+  //     _ <- Show(Bounds.empty).freek[PRG]
+  //     _ <- HRuler(0d).freek[PRG]
+  //   } yield ()
 
-    // prg.interpret(interpreter)
-    // prg.interpret(interpreter)
 
-    // val sdf = prg.compile(interpreter.nat) // Iv(VisualTraceInterpreter)
-    // val asdf = sdf.run
-    // sdf.foldMap(interpreter.nat)
+  //   // VisualTraceInterpreter.nat
+  //   // val interpreter: Interpreter[PRG, cats.Id] = interp.visualTraceInterpreter
+  //   // val interpreter = interp.visualTraceInterpreter // :&: interp.visualTraceInterpreter
 
-    // val qewr = prg.foldMap(VisualTraceInterpreter.nat)
-  }
+  //   // prg.interpret(interpreter)
+  //   // prg.interpret(interpreter)
+
+  //   // val sdf = prg.compile(interpreter.nat) // Iv(VisualTraceInterpreter)
+  //   // val asdf = sdf.run
+  //   // sdf.foldMap(interpreter.nat)
+
+  //   // val qewr = prg.foldMap(VisualTraceInterpreter.nat)
+  // }
 
 
 }

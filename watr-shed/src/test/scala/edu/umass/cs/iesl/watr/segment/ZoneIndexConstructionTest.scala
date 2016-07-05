@@ -2,15 +2,10 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
-import extract._
 
-// import IndexShapeOperations._
-// import ComponentTypeEnrichments._
 import ComponentRendering._
-
 import ComponentOperations._
 
-// import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}
 import TypeTags._
 
@@ -28,7 +23,7 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
 
     val paper = papers.`6376.pdf`
     val zoneIndex = ZoneIndexer.loadSpatialIndices(
-      DocumentExtractor.extractChars(paper)
+        format.DocumentIO.extractChars(paper)
     )
 
     // Old method:

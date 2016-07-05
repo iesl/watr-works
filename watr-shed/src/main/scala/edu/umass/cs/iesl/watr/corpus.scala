@@ -173,21 +173,28 @@ class CorpusArtifact(
   val artifactDescriptor: String,
   val entry: CorpusEntry
 ) {
+  import ammonite.{ops => fs}
+
   override val toString = {
     s"${entry}/./${artifactDescriptor}"
   }
 
+
   def exists(): Boolean = {
-    ammonite.ops.exists! artifactPath
+    fs.exists(artifactPath)
   }
 
   def delete(): Unit = {
-    ammonite.ops.rm! artifactPath
+    fs.rm(artifactPath)
   }
 
   def artifactPath = entry.artifactsRoot / artifactDescriptor
 
   def asPath: Try[Path] = Success(artifactPath)
+
+  def asDirectory: Try[Path] = {
+    asPath.filter({p => fs.stat(p).isDir})
+  }
 
   def asInputStream: Try[InputStream] = {
     val fis = nio.Files.newInputStream(artifactPath.toNIO)

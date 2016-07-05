@@ -11,7 +11,7 @@ i=0
 while(i<fontCount)
    fname = fontsInFile[i]
    pdfFontName = pdfName+"("+fname+")"
-   sdfOutputFile="font-"+i+".sdf"
+   sdfOutputFile="font-"+i+".sfdir"
 
    Print(pdfFontName)
    Open(pdfFontName)

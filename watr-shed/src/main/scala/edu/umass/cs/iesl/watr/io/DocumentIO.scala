@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package format 
+package format
 
 // import scala.collection.mutable
 // import scalaz.@@

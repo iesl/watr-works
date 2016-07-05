@@ -266,6 +266,21 @@ object DocumentFontInfo {
       )
   }
 
+  def outputPdfDecoding(tri: TextRenderInfo, reader: PdfReader, prefix: String): Unit = {
+    val pdfstring = tri.getPdfString
+
+    val valueBytes = pdfstring.getValueBytes.map(Byte.byte2int(_))
+    val font = tri.getFont()
+    val fontProgram = font.getFontProgram
+    val fontNames = fontProgram.getFontNames
+    val fontName = fontNames.getFontName
+
+    println(
+      s"""${prefix} '${tri.getText}': vbytes:[${valueBytes.mkString(",")}] ${fontName}"""
+    )
+
+  }
+
   def outputCharInfo(tri: TextRenderInfo, reader: PdfReader, force: Boolean = false): Unit = {
     val doDebugOutput = tri.getText == "⇑"
 
@@ -409,6 +424,7 @@ object formatting {
   def formatPdfObject(obj: PdfObject, reader: PdfReader): String = {
     formatObject(obj, reader).toString()
   }
+
 
   var followIndirect: Boolean = true
 

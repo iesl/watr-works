@@ -2,12 +2,6 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
-// import Bounds._
-import extract._
-
-// import IndexShapeOperations._
-// import ComponentTypeEnrichments._
-// import ComponentRendering._
 import ComponentOperations._
 
 
@@ -77,7 +71,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
         // DocumentExtractor.extractChars(pdfIns, Set(375, 376))// add char ids to output pathological debug info
 
         val zoneIndex = ZoneIndexer.loadSpatialIndices(
-          DocumentExtractor.extractChars(example.region.pdf)
+          format.DocumentIO.extractChars(example.region.pdf)
         )
 
         val chars = zoneIndex.getPageInfo(example.region.page).charAtomIndex.queryForIntersects(example.region.bbox)

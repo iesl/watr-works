@@ -99,70 +99,64 @@ class CharExtractionListener(
   import DocumentFontInfo._
   val charWindow = mutable.MutableList[Char]()
 
+
+
+  def charTranslation(tri: TextRenderInfo): Unit = {
+    // map from spline -> char
+
+  }
+
+
+
   def renderText(charTrix: TextRenderInfo): Unit = {
     for {
       charTri <- charTrix.getCharacterRenderInfos
     } {
 
       val mcid = charTri.getMcid
-      if (charTri.getText.isEmpty && charTri.hasMcid(mcid, true)) {
+      if (charTri.getText.isEmpty && charTri.hasMcid(mcid, false)) {
+        println(s"""MCID encoded text near: ${charWindow.takeRight(20).mkString}""")
+        DocumentFontInfo.outputPdfDecoding(charTri, reader, "    ")
         val font = charTri.getFont
 
         val at = charTri.getActualText
         val spi = pdfPage.getStructParentIndex
         val structRoot = pdfPage.getDocument.getStructTreeRoot
         val pageMC = structRoot.getPageMarkedContentReferences(pdfPage)
-        pageMC
-          .filter(_.getMcid==charTri.getMcid)
-          .headOption.map({ mc =>
-            println(
-              PdfPageObjectOutput.renderElemLoc(mc)
-            )
-          })
+        // pageMC
+        //   .filter(_.getMcid==charTri.getMcid)
+        //   .headOption.map({ mc =>
+        //     println(
+        //       PdfPageObjectOutput.renderElemLoc(mc)
+        //     )
+        //   })
         // println(s"actual text = ${at}")
         // DocumentFontInfo.outputCharInfo(charTri, reader, true)
 
 
       } else if (charTri.getText.isEmpty) {
+        println(s"""Empty text near: ${charWindow.takeRight(20).mkString}""")
+        DocumentFontInfo.outputPdfDecoding(charTri, reader, "    ")
+
         val pdfString = charTri.getPdfString
         // val bs = pdfString.getValueBytes.m
         val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
         val b0 = bs(0)
 
+
         val font = charTri.getFont
-        println(s"""unknown char near ${charWindow.takeRight(20).mkString}""")
 
         val fprogram = font.getFontProgram
         val pglyph = fprogram.getGlyph(b0)
         val pglyphByCode = fprogram.getGlyphByCode(b0)
 
-        println(s"got glyph ${b0}? ${pglyph}, by-code:${pglyphByCode}")
-        println(outputGlyphInfo(pglyphByCode, reader))
-        println(
-          getCharTriInfo(charTri, reader, true)
-        )
+        // println(s"got glyph ${b0}? ${pglyph}, by-code:${pglyphByCode}")
+        // println(outputGlyphInfo(pglyphByCode, reader))
+        // println(
+        //   getCharTriInfo(charTri, reader, true)
+        // )
       } else {
-
-        if (charWindow.takeRight(5).mkString.endsWith("ThB")) {
-          val pdfString = charTri.getPdfString
-          // val bs = pdfString.getValueBytes.m
-          val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
-          val b0 = bs(0)
-          val font = charTri.getFont
-          println(s"""Text near ${charWindow.takeRight(20).mkString}""")
-
-          val fprogram = font.getFontProgram
-          val pglyph = fprogram.getGlyph(b0)
-          val pglyphByCode = fprogram.getGlyphByCode(b0)
-
-          println(s"got glyph ${b0}? ${pglyph}, by-code:${pglyphByCode}")
-          println(outputGlyphInfo(pglyphByCode, reader))
-          println(
-            getCharTriInfo(charTri, reader, true)
-          )
-
-        }
-
+        // DocumentFontInfo.outputPdfDecoding(charTri, reader, "normal")
 
         val rawChar = charTri.getText().charAt(0)
         charWindow += rawChar
@@ -195,7 +189,8 @@ class CharExtractionListener(
           // if (wonkyChar.isDefined || subChars.isDefined) {
           //   println(s"char: ${charBox}")
           // }
-          DocumentFontInfo.outputCharInfo(charTri, reader)
+          // DocumentFontInfo.outputCharInfo(charTri, reader)
+
           // DocumentFontInfo.reportFontInfo(charTri.getFont)
           // DocumentFontInfo.addFontInfo(charTri.getFont
           // val fullFontName = charTri.getFont().getFullFontName()(0)(3)

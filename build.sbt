@@ -2,8 +2,6 @@ import sbt.Keys._
 import spray.revolver.AppProcess
 import com.lihaoyi.workbench.Plugin._
 
-// import spray.revolver.RevolverPlugin.Revolver
-
 enablePlugins(ScalaJSPlugin)
 
 organization in ThisBuild := "edu.umass.cs.iesl"
@@ -14,36 +12,29 @@ scalaVersion in ThisBuild := "2.11.8"
 
 shellPrompt in ThisBuild := Sensible.colorPrompt
 
-
 addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 
 addCompilerPlugin("org.spire-math" %% "kind-projector"  % "0.7.1")
 
-// scapegoatVersion in ThisBuild:= "1.2.1"
-// required for javacpp
-// classpathTypes in ThisBuild += "maven-plugin"
-
 val freeKDeps = Seq(
-  "com.projectseptember"            %% "freek"                        % "0.4.1",
+  "com.projectseptember"            %% "freek"                        % "0.4.3",
   // "org.spire-math"                  %% "kind-projector"               % "0.7.1",
   "com.milessabin"                  % "si2712fix-library"             % "1.2.0"  cross CrossVersion.full,
-  "org.typelevel" %% "cats" % "0.5.0"
+  "org.typelevel" %% "cats" % "0.6.0"
 )
 
 
-val commonDeps = freeKDeps ++ Sensible.testLibs() ++ Sensible.logback ++ Seq(
+val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
   "org.apache.commons" % "commons-lang3" % "3.4",
   "org.scalaz" %% "scalaz-core" % "7.2.4",
-  // "org.scala-lang.modules" %% "scala-async" % "latest.release",
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4",
+  "com.lihaoyi" %% "fastparse" % "0.3.7",
   "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.5.5",
   "com.lihaoyi" %% "ammonite-ops" % "0.6.2",
   "com.typesafe.play" %% "play-json" % "2.5.4",
   "com.github.scopt" %% "scopt" % "3.5.0",
-  // "com.itextpdf" % "itextpdf" % "5.5.9",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
 )
 
@@ -69,18 +60,19 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= commonDeps)
   .settings(libraryDependencies ++= Seq(
     "org.bouncycastle" % "bcprov-jdk15on" % "1.54",
-    "org.bouncycastle" % "bcpkix-jdk15on" % "1.54"
+    "org.bouncycastle" % "bcpkix-jdk15on" % "1.54",
+    "com.h2database" % "h2" % "1.4.192",
+    "com.zaxxer" % "HikariCP" % "2.4.6",
+    "com.typesafe.slick" %% "slick" % "3.1.1"
   ))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
 
-
-Revolver.settings
-
+// Revolver.settings
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
-    "me.chrons" %%% "boopickle" % "1.2.2",
+    "me.chrons" %%% "boopickle" % "1.2.4",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     "com.lihaoyi" %%% "scalarx" % "0.3.1",
     "com.lihaoyi" %%% "scalatags" % "0.5.5"

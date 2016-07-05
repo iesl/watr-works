@@ -118,7 +118,7 @@ class TextExtractionTest extends DocsegTestUtil {
     //     which also applied for the ThB*C phase, -->
     //     <svg:rect class="linebox" x="57.84" y="140.01" width="191.18"  height="9.99" />
 
-    val _ = DocumentExtractor.extractChars(papers.`6376.pdf`)
+    val _ = format.DocumentIO.extractChars(papers.`6376.pdf`)
 
     // assertResult(example.expectedChars.replaceAll(" ",""))(found)
     // val exc = example.expectedChars.replaceAll(" ", "")

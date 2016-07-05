@@ -64,4 +64,4 @@ fi
 
 
 # echo "fontforge -quiet -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR &> $OUTDIR/$LOGFILE"
-exec fontforge -quiet -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR &> $OUTDIR/$LOGFILE
+exec $SCRIPTDIR/fontforge -quiet -lang=ff -script $SCRIPTDIR/ff-extract-fonts.pe $INFILE $OUTDIR &> $OUTDIR/$LOGFILE

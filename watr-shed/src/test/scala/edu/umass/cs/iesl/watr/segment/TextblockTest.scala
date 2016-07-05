@@ -5,12 +5,6 @@ package segment
 import scalaz.@@
 
 import spindex._
-import extract._
-
-// import segment.SpatialIndexOperations._
-// import segment.DocumentSegmenter._
-// import Bounds._
-// import SpatialIndexOperations._
 
 case class TextblockExample(
   source: String,
@@ -60,7 +54,7 @@ class TextBlockTest extends DocsegTestUtil  {
       val pdfIns = papers.paper(example.source)
 
       val zoneIndex = ZoneIndexer.loadSpatialIndices(
-        DocumentExtractor.extractChars(pdfIns)
+        format.DocumentIO.extractChars(pdfIns)
       )
       val pages = zoneIndex.getPages.take(1).map({ pageId =>
         val pageChars = zoneIndex.getPageInfo(pageId).charAtomIndex.getItems()

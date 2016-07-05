@@ -9,7 +9,6 @@ import spindex._
 import IndexShapeOperations._
 
 
-
 object Works extends App {
 
   import java.io.{File => JFile}
@@ -97,6 +96,12 @@ object Works extends App {
     cmd("chars") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         extractCharacters(ac)
+      })
+    } text ("(dev) char extraction")
+
+    cmd("fonts") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        examineFonts(ac)
       })
     } text ("(dev) char extraction")
 
@@ -192,6 +197,13 @@ object Works extends App {
       }})
   }
 
+  def processCorpusEntryList(conf: AppConfig, processor: (CorpusEntry) => Unit): Unit = {
+    getProcessList(conf).foreach { entry =>
+      println(s"processing ${entry}")
+      processor(entry)
+    }
+  }
+
   def processCorpus(conf: AppConfig, artifactOutputName: String, processor: (InputStream, String) => String): Unit = {
     runProcessor(conf, artifactOutputName, process)
 
@@ -281,12 +293,50 @@ object Works extends App {
   }
 
 
-  // def createBoundingBoxSvg(conf: AppConfig): Unit = {
-  //   processCorpus(conf, "bbox.svg", (pdfins: InputStream, outputPath: String) => {
-  //     // format.DocumentIO.extractChars()
-  //     // extract.DocumentExtractor.extractBBoxesAsSvg(pdfins, Some(outputPath))
-  //   })
-  // }
+  def examineFonts(conf: AppConfig): Unit = {
+    import ammonite.{ops => fs}
+    import extract.SplineFont
+
+
+    processCorpusEntryList(conf, {corpusEntry =>
+      if (corpusEntry.hasArtifact("fonts")) {
+        corpusEntry.getArtifact("fonts").foreach{ fontDir =>
+          fontDir.asPath.foreach { pdir =>
+            val sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
+            // println(s"""Found ${sfdirs.length}  .sfdir directories""")
+            val parsedDir = sfdirs.map({sfdir =>
+              fs.ls(sfdir)
+                .filter(_.ext=="glyph")
+                .foreach({ glyphFile =>
+                  val glyphStr = fs.read(glyphFile)
+                  val glyph = extract.SplineQuickParser.parser(glyphStr)
+                  val glyphSplineStrs = glyph.stanzas.collect({
+                    case SplineFont.SplineSet(splines) =>
+                      splines.map({s =>
+                        s"""${s.ns.mkString(" ")} ${s.code} ${s.flags}"""
+                      }).mkString("|")
+                  })
+                  if (glyphSplineStrs.length != 1 && glyphFile.name != "space.glyph") {
+                    println(s"${glyphFile.name} ${corpusEntry.entryDescriptor}")
+                    println(s"error: # of glyph spline sets = ${glyphSplineStrs.length}")
+                  }
+
+                  // glyphSplineStrs.headOption.foreach({sstr =>
+                  //   val sha1 = DigestUtils.shaHex(sstr.getBytes)
+                  //   println(s"${sha1}  ${glyphFile.name} ${corpusEntry.entryDescriptor}")
+                  // })
+                })
+
+              // SplineFont.Dir(SplineFont.Props(), glyphs)
+            })
+          }
+        }
+      }
+    })
+
+  }
+
+
 
   def extractCharacters(conf: AppConfig): Unit = {
     import TB._
