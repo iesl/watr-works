@@ -18,6 +18,7 @@ import itextpdf.kernel.pdf.canvas.parser.EventType
 import itextpdf.kernel.pdf.canvas.parser.data._
 import itextpdf.kernel.pdf.PdfReader
 
+import fonts._
 import UnicodeUtil._
 import utils.IdGenerator
 
@@ -96,7 +97,7 @@ class CharExtractionListener(
       renderText(tri)
     }
   }
-  import DocumentFontInfo._
+  // import fonts.DocumentFontInfo._
   val charWindow = mutable.MutableList[Char]()
 
 

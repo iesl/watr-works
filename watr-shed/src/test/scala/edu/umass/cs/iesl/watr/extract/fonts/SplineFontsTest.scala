@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package extract
+package fonts
 
 import org.scalatest._
 

@@ -295,7 +295,7 @@ object Works extends App {
 
   def examineFonts(conf: AppConfig): Unit = {
     import ammonite.{ops => fs}
-    import extract.SplineFont
+    import extract.fonts._
 
 
     processCorpusEntryList(conf, {corpusEntry =>
@@ -309,9 +309,9 @@ object Works extends App {
                 .filter(_.ext=="glyph")
                 .foreach({ glyphFile =>
                   val glyphStr = fs.read(glyphFile)
-                  val glyph = extract.SplineQuickParser.parser(glyphStr)
-                  val glyphSplineStrs = glyph.stanzas.collect({
-                    case SplineFont.SplineSet(splines) =>
+                  val glyph = SplineQuickParser.parser(glyphStr)
+                  val glyphSplineStrs = glyph.props.collect({
+                    case GlyphProp.SplineSet(splines) =>
                       splines.map({s =>
                         s"""${s.ns.mkString(" ")} ${s.code} ${s.flags}"""
                       }).mkString("|")

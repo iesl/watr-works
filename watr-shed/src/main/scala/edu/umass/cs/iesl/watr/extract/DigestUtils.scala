@@ -5,18 +5,25 @@ import java.security.MessageDigest
 import scalaz.@@
 import TypeTags._
 
-object DigestUtils {
+object Hash {
 
-  def shaHex(bytes: Array[Byte]): String@@SHA1String = {
-    val digest = MessageDigest.getInstance("SHA")
-    val digestBytes = digest.digest(bytes)
-
-    hexEncode(digestBytes.toList)
+  def toSHA1String(s: String): String@@SHA1String = {
+    hexEncode(digestBytes(s.getBytes))
   }
 
-  def hexEncode(bytes: List[Byte]): String@@SHA1String = {
+
+  // def shaHex(bytes: Array[Byte]): String@@SHA1String = {
+  //   hexEncode(digestBytes(bytes))
+  // }
+
+  private def hexEncode(bytes: Seq[Byte]): String@@SHA1String = {
     SHA1String(bytes.map {
       b => String.format("%02X", java.lang.Byte.valueOf(b))
     }.mkString("").toLowerCase)
+  }
+
+  lazy val digest = MessageDigest.getInstance("SHA")
+  private def digestBytes(bytes: Array[Byte]): Array[Byte] = {
+    digest.digest(bytes)
   }
 }

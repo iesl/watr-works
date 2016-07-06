@@ -2,19 +2,18 @@ package edu.umass.cs.iesl.watr
 package extract
 
 import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
-import com.itextpdf.kernel.pdf.tagging.PdfMcr
 import java.io.{InputStream, IOException}
 
 import _root_.com.itextpdf
 import itextpdf.kernel.pdf._
 
-import scala.collection.JavaConversions._
-import scala.collection.JavaConverters._
+// import scala.collection.JavaConversions._
+// import scala.collection.JavaConverters._
 import utils.IdGenerator
 import spindex._
 import TypeTags._
 import scala.collection.mutable
-import textboxing.{TextBoxing => TB}
+// import textboxing.{TextBoxing => TB}
 
 import scalaz.{@@}
 

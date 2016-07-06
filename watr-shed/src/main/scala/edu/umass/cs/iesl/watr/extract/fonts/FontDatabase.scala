@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package extract
+package fonts
 
 import org.slf4j.LoggerFactory
 import scala.concurrent._
@@ -8,42 +9,100 @@ import ammonite.ops._
 
 import com.zaxxer.hikari.HikariDataSource
 import slick.driver.H2Driver.api._
+// import slick.driver.H2Driver.DDL
 
 import scala.concurrent._
 import scala.concurrent.duration._
 
-object FontDatabase {
+
+
+object FontDatabase extends EdgeTables {
   val log = LoggerFactory.getLogger(this.getClass)
 
-  final case class FqnSymbol(
-      id: Option[Int],
-      file: String,
-      source: Option[String],
-      line: Option[Int],
-      offset: Option[Int] = None
-  )
+  //   def filename = foreignKey("filename_fk", file, fileChecks)(_.filename, onDelete = ForeignKeyAction.Cascade)
 
+  final case class Font(id: Int=0) extends Identified
 
-  private class FqnSymbols(tag: Tag) extends Table[FqnSymbol](tag, "FQN_SYMBOLS") {
+  class Fonts(tag: Tag) extends Table[Font](tag, "FONTS") {
     def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
-    def file = column[String]("file")
-    def source = column[Option[String]]("source handle")
-    def line = column[Option[Int]]("line in source")
-    def offset = column[Option[Int]]("offset in source")
-    def * = (id.?, file, source, line, offset) <> (FqnSymbol.tupled, FqnSymbol.unapply)
-
-    def fileIdx = index("idx_file", file, unique = false) // FASTER DELETES
-    // def filename = foreignKey("filename_fk", file, fileChecks)(_.filename, onDelete = ForeignKeyAction.Cascade)
+    def * = id <> (Font.apply, Font.unapply)
   }
 
-  private val fqnSymbols = TableQuery[FqnSymbols]
-  private val fqnSymbolsCompiled = Compiled { TableQuery[FqnSymbols] }
+  object fonts extends TableQuery(new Fonts(_)) {
+    val ccQuery = (this returning this.map(_.id) into ((f, i) => f.copy(id = i)))
+    def findById(id: Int) = this.findBy(_.id).apply(id).result.headOption
+  }
+
+
+
+
+
+
+
+  final case class Family(family: String, id: Int=0)
+
+  class Families(tag: Tag) extends Table[Family](tag, "FAMILIES") {
+    def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def family = column[String]("family")  // unique key
+    def * = (family, id) <> (Family.tupled, Family.unapply)
+
+    def familyIdx = index("idx_family", family, unique = true)
+  }
+
+  object families extends TableQuery(new Families(_)) {
+    val ccQuery = (this returning this.map(_.id) into ((f, i) => f.copy(id = i)))
+    def findById(id: Int) = this.findBy(_.id).apply(id).result.headOption
+  }
+
+
+
+  final case class Name(name: String, id: Int=0)
+
+  class Names(tag: Tag) extends Table[Name](tag, "NAME") {
+    def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")  // unique key
+    def * = (name, id) <> (Name.tupled, Name.unapply)
+  }
+
+  object names extends TableQuery(new Names(_)) {
+    val ccQuery = (this returning this.map(_.id) into ((f, i) => f.copy(id = i)))
+    def findById(id: Int) = this.findBy(_.id).apply(id).result.headOption
+  }
+
+
+  final case class SplineHash(hash: String, id: Int=0) extends Identified {
+    override def toString = s"#${hash.take(3).mkString}"
+  }
+
+  class SplineHashes(tag: Tag) extends Table[SplineHash](tag, "SPLINEHASHES") {
+    def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def hash = column[String]("hash")
+    def * = (hash, id) <> (SplineHash.tupled, SplineHash.unapply)
+
+    def hashIdx = index("idx_hash", hash, unique = true)
+
+  }
+
+  object splineHashes extends TableQuery(new SplineHashes(_)) {
+    val ccQuery = (this returning this.map(_.id) into ((f, i) => f.copy(id = i)))
+    def findById(id: Int) = this.findBy(_.id).apply(id).result.headOption
+  }
+
+  val fontToHash = oneToMany[Font, SplineHash]
+
+  def schemas = (names.schema ++
+    splineHashes.schema ++
+    families.schema ++
+    fonts.schema ++
+    fontToHash.schema
+  )
 
 }
 
 
 class FontDatabase(dir: Path)  {
   import FontDatabase._
+
 
   lazy val (datasource, db) = {
 
@@ -76,126 +135,134 @@ class FontDatabase(dir: Path)  {
     } yield ()
   }
 
-  if (!exists(dir)) {
-    log.info("creating the search database...")
-    mkdir(dir)
-    Await.result(
-      db.run(
-        (fqnSymbols.schema).create
-      ),
-      Duration.Inf
-    )
-    log.info("... created the search database")
+  def rmDBDir(): Unit = {
+    if (exists(dir)) {
+      rm(dir)
+    }
   }
 
-  // file with last modified time
-  // def knownFiles(): Future[Seq[FileCheck]] = db.run(fileChecks.result)
+  def createDBDir(): Unit = {
+    if (!exists(dir)) {
+      log.info("creating the search database...")
+      mkdir(dir)
 
-  // def removeFiles(files: List[FileObject]): Future[Int] =
-  //   db.run {
-  //     val restrict = files.map(_.getName.getURI)
-  //     // Deletion from fqnSymbols relies on fk cascade delete action
-  //     fileChecks.filter(_.filename inSetBind restrict).delete
-  //   }
+      Await.result(
+        db.run(schemas.create),
+        Duration.Inf
+      )
+      log.info("... created the search database")
+    }
+  }
 
-  // private val timestampsQuery = Compiled {
-  //   filename: Rep[String] => fileChecks.filter(_.filename === filename).take(1)
-  // }
+  def updateSpline(s: GlyphProp.SplineSet): DBIO[Either[SplineHash, SplineHash]] = {
+    val splineHash = SplineHash(GlyphProp.splineSetHash(s).toString)
 
-  // def outOfDate(f: FileObject)(implicit vfs: EnsimeVFS): Future[Boolean] = {
-  //   val uri = f.getName.getURI
-  //   val modified = f.getContent.getLastModifiedTime
+    splineHashes.ccQuery
+      .insertOrUpdate(splineHash)
+      .flatMap({ resHash => resHash match {
+        case Some(insHash) =>
+          DBIOX.successful(Right[SplineHash, SplineHash](insHash))
+        case None =>
+          DBIOX.successful(Left[SplineHash, SplineHash](resHash.get))
+      }})
+  }
 
-  //   db.run(
-  //     for {
-  //       check <- timestampsQuery(uri).result.headOption
-  //     } yield check.map(_.changed).getOrElse(true)
-  //   )
-  // }
+  def addFontDir(fontDir: SplineFont.Dir): Unit = {
+    val insSplines = for {
+      glyph <- fontDir.glyphs
+      splines <- glyph.get[GlyphProp.SplineSet]
+    } yield {
+      updateSpline(splines)
+    }
 
-  // def persist(check: FileCheck, symbols: Seq[FqnSymbol]): Future[Int] =
-  //   if (symbols.isEmpty) Future.successful(0)
-  //   else {
-  //     val batches = symbols.grouped(10000)
-  //     db.run(
-  //       (fileChecksCompiled += check)
-  //     ) flatMap { _ =>
-  //         val foo = batches.map { batch => db.run(fqnSymbolsCompiled ++= batch) }
-  //         Future.sequence(foo).map { inserts => inserts.flatten.sum }
-  //       }
-  //   }
+    val eitherExistOrNot = Await.result(
+      db.run(DBIOX.sequence(insSplines)),
+      Duration.Inf
+    )
 
-  // private val findCompiled = Compiled {
-  //   fqn: Rep[String] => fqnSymbols.filter(_.fqn === fqn).take(1)
-  // }
+    val existing = eitherExistOrNot.collect({
+      case Left(spline) => spline
+    })
 
-  // def find(fqn: String): Future[Option[FqnSymbol]] = db.run(
-  //   findCompiled(fqn).result.headOption
-  // )
+    val newlyIns = eitherExistOrNot.collect({
+      case Right(spline) => spline
+    })
 
-  // import org.ensime.indexer.IndexService._
-  // def find(fqns: List[FqnIndex]): Future[List[FqnSymbol]] = {
-  //   val restrict = fqns.map(_.fqn)
-  //   db.run(
-  //     fqnSymbols.filter(_.fqn inSet restrict).result
-  //   ).map { results =>
-  //     val grouped = results.groupBy(_.fqn)
-  //     restrict.flatMap(grouped.get(_).map(_.head))
-  //   }
-  // }
-}
-
-object DatabaseService {
+    if (existing.length>0) {
+      // If any of the splines in the dir clash w/existing, then this entire font dir should be merged with
+      //   the pre-existing font
 
 
-  // private class FileChecks(tag: Tag) extends Table[FileCheck](tag, "FILECHECKS") {
-  //   def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
-  //   def filename = column[String]("filename")
-  //   def timestamp = column[Timestamp]("timestamp")
-  //   def * = (id.?, filename, timestamp) <> (FileCheck.tupled, FileCheck.unapply)
-  //   def idx = index("idx_filename", filename, unique = true)
-  // }
-  // private val fileChecks = TableQuery[FileChecks]
-  // private val fileChecksCompiled = Compiled(TableQuery[FileChecks])
 
-  // final case class FqnSymbol(
-  //     id: Option[Int],
-  //     file: String, // the underlying file
-  //     path: String, // the VFS handle (e.g. classes in jars)
-  //     fqn: String,
-  //     internal: Option[String], // for fields
-  //     source: Option[String], // VFS
-  //     line: Option[Int],
-  //     offset: Option[Int] = None // future features:
-  // ) {
-  //   // this is just as a helper until we can use more sensible
-  //   // domain objects with slick
-  //   def sourceFileObject(implicit vfs: EnsimeVFS) = source.map(vfs.vfile)
 
-  //   // legacy: note that we can't distinguish class/trait
-  //   def declAs: DeclaredAs =
-  //     if (fqn.contains("(")) DeclaredAs.Method
-  //     else if (internal.isDefined) DeclaredAs.Field
-  //     else DeclaredAs.Class
-  // }
-  // private class FqnSymbols(tag: Tag) extends Table[FqnSymbol](tag, "FQN_SYMBOLS") {
-  //   def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
-  //   def file = column[String]("file")
-  //   def path = column[String]("path")
-  //   def fqn = column[String]("fqn")
-  //   def descriptor = column[Option[String]]("descriptor")
-  //   def internal = column[Option[String]]("internal")
-  //   def source = column[Option[String]]("source handle")
-  //   def line = column[Option[Int]]("line in source")
-  //   def offset = column[Option[Int]]("offset in source")
-  //   def * = (id.?, file, path, fqn, internal, source, line, offset) <> (FqnSymbol.tupled, FqnSymbol.unapply)
-  //   // our FQNs have descriptors, making them unique. but when scala
-  //   // aliases use the same namespace we get collisions
-  //   def fqnIdx = index("idx_fqn", fqn, unique = false)
+    } else {
+      //... otherwise, (no clashes), create a new font entry
+      val qq = for {
+        f <- fonts.ccQuery += Font()
+        _ <- DBIOX.seqs{
+          newlyIns.map({hash => fontToHash.addEdge(f, hash) })
+        }
+      } yield ()
 
-  //   def fileIdx = index("idx_file", file, unique = false) // FASTER DELETES
-  //   def filename = foreignKey("filename_fk", file, fileChecks)(_.filename, onDelete = ForeignKeyAction.Cascade)
-  // }
-  // private val fqnSymbols = TableQuery[FqnSymbols]
-  // private val fqnSymbolsCompiled = Compiled { TableQuery[FqnSymbols] }
+      DBIOX.runAndAwait(db, qq)
+
+
+    }
+
+
+
+
+
+
+
+    // val qs = fontDir.props.map { p => p match  {
+    //   // case FontProp.SplineFontDB(v: String)    =>
+    //   // case FontProp.FontName(v: String)        => names += Name(None, v)
+    //   // case FontProp.FullName(v: String)        => names += Name(None, v)
+    //   // case FontProp.FamilyName(v: String)      => families += Family(None, v)
+    //   // case FontProp.Weight(v: String)          =>
+    //   // case FontProp.Copyright(v: String)       =>
+    //   // case FontProp.Version(v: String)         =>
+    //   // case FontProp.ItalicAngle(v: Double)     =>
+    //   // case FontProp.UnderlinePosition(v: Int)  =>
+    //   // case FontProp.UnderlineWidth(v: Int)     =>
+    //   // case FontProp.Ascent(v: Int)             =>
+    //   // case FontProp.Descent(v: Int)            =>
+
+    //   case _                              => DBIOX.noop
+    // }}
+
+    // val ps = fontDir.glyphs.flatMap { gl => gl.props.map{ pr => pr match {
+    //   case s: GlyphProp.SplineSet         => splineHashes += SplineHash(None, GlyphProp.splineSetHash(s).toString)
+    //   // case GlyphProp.StartChar(glyphName) =>
+    //   // case GlyphProp.Encoding(other)      =>
+    //   // case GlyphProp.Width(other)         =>
+    //   // case GlyphProp.Flags(other)         =>
+    //   // case GlyphProp.HStem(other)         =>
+    //   // case GlyphProp.VStem(other)         =>
+    //   // case GlyphProp.LayerCount(other)    =>
+    //   case _                              => DBIOX.noop
+    // }}}
+  }
+
+  def reportAll() = {
+
+    Await.result(
+      db.run((for {
+        _ <- names.to[List].result.map(x => println(s"names: ${x}"))
+        _ <- families.to[List].result.map(x => println(s"families: ${x}"))
+        _ <- splineHashes.to[List].result.map(x => println(s"splineHash: ${x}"))
+        _ <- fontToHash.to[List].result.map({a => println(s"font->hash: ${a}")})
+      } yield ())),
+      Duration.Inf
+    )
+  }
+
+
+
+  def dropAndRecreateDatabase(): Unit = {
+    rmDBDir()
+    createDBDir()
+  }
+
 }

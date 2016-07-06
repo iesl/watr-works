@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package extract
+package fonts
 
 import org.scalatest._
 
@@ -8,24 +9,37 @@ import ammonite.ops._
 
 
 
-class FontDatabaseTablesTest extends FlatSpec {
-  // sequential
+class FontDatabaseTablesTest extends FlatSpec with SequentialNestedSuiteExecution with BeforeAndAfterEach {
 
-  behavior of "font database"
-  val db = new FontDatabase(cwd / "fontdb")
-
+  val db = new FontDatabase(cwd / "fontdb~")
   val fontPath = Path(getClass.getResource("/fontdb/gulliver-sfdirs").getPath)
 
-  it should "create tables" in {
-    db.commit()
-    db.shutdown()
+  override def beforeEach(): Unit = {
+    db.dropAndRecreateDatabase()
   }
 
-  it should "load font dirs into db" in {
+  override def afterEach(): Unit = {
+  }
 
-    // println(s"path = ${fontPath} exists= ${exists(fontPath)} ")
+
+  behavior of "font database"
+
+
+  it should "load a unique font dir into db" in {
+    db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-0.sfdir"))
+
+    db.reportAll()
 
   }
+
+  // it should "load an overlapping font dir into db" in {
+
+  //   db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-0.sfdir"))
+  //   db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-1.sfdir"))
+
+
+  //   db.reportAll()
+  // }
 
 
 }
