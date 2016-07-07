@@ -1,13 +1,13 @@
 SplineFontDB: 3.0
-FontName: FLEHFD+VestaLight
-FullName: Vesta Light
-FamilyName: Vesta Light
-Weight: Regular
-Copyright: Copyright (c) Gerard Unger, 2001. Produced by Visualogik Technology & Design, 2002. This software is licensed, not sold. ALL RIGHTS RESERVED. Unauthorised use strictly prohibited.
-Version: 001.000
+FontName: FLEEKA+CorantoSC-Bold
+FullName: Coranto SC Bold
+FamilyName: Coranto SC
+Weight: Bold
+Copyright: (c) Gerard Unger, 1999. ALL RIGHTS RESERVED. Produced by Visualogik Technology & Design,  2000. This software is licensed, not sold. Unauthorised use prohibited.
+Version: 001.001
 ItalicAngle: 0
-UnderlinePosition: -100
-UnderlineWidth: 50
+UnderlinePosition: -154
+UnderlineWidth: 23
 Ascent: 800
 Descent: 200
 InvalidEm: 0
@@ -43,12 +43,12 @@ DisplaySize: -48
 AntiAlias: 1
 FitToEm: 0
 BeginPrivate: 7
-BlueValues 23 [-13 0 503 518 706 717]
-OtherBlues 11 [-227 -225]
+BlueValues 24 [-12 -1 516 537 701 711]
 BlueScale 7 0.36364
-StdHW 4 [47]
-StdVW 4 [81]
-StemSnapH 7 [47 56]
-StemSnapV 7 [81 90]
+StdHW 4 [41]
+StdVW 4 [90]
+StemSnapH 8 [41 159]
+StemSnapV 8 [90 114]
+ForceBold 4 true
 EndPrivate
 EndSplineFont
