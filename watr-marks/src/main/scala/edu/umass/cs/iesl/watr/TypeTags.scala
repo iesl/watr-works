@@ -14,6 +14,9 @@ sealed trait ComponentID
 
 sealed trait SHA1String
 
+object TagUnwrapping {
+
+}
 
 object TypeTags {
   val SHA1String = Tag.of[SHA1String]

@@ -59,25 +59,47 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
       Duration.Inf
     )
 
-    val existing = eitherExistOrNot.collect({
+    val existingGlyphHashes = eitherExistOrNot.collect({
       case Left(spline) => spline
     })
 
-    val newlyIns = eitherExistOrNot.collect({
+    val newGlyphHashes = eitherExistOrNot.collect({
       case Right(spline) => spline
     })
 
-    if (existing.length>0) {
-      // If any of the splines in the dir clash w/existing, then this entire font dir should be merged with
-      //   the pre-existing font
+    if (existingGlyphHashes.isEmpty) {
+      // None of the glyphs have been seen before, according to their hash values, so create a new font entry
+      val linkQ = for {
+        font <- fonts.ccQuery += Font()
+        _ <- DBIOX.seqs{ newGlyphHashes.map { glhash =>
+          for {
+            glyph <- glyphs.ccQuery += Glyph()
+            _ <- glyphToHash.addEdge(glyph, glhash)
+            _ <- fontToGlyph.addEdge(font, glyph)
+          } yield()
+        }}
+      } yield ()
+
+      DBIOX.runAndAwait(db, linkQ)
+
+
+    } else {
+      // If any of the glyphs in the dir clash w/existing hashed glyphs, then this entire
+      // font dir should be merged with the pre-existing font
+
 
       val linkedFontQ = DBIOX.sequence(
-        existing.map({ e => (for {
-          f <- fonts
-          f2h <-  fontToHash
-          h <- splineHashes
-          if h.id === e.id
-        } yield f).result })
+        existingGlyphHashes.map { glhash =>
+          val q = for {
+            h <- splineHashes if h.id === glhash.id
+            g2h <- glyphToHash if h.id === g2h.dstId
+            glyph <- glyphs if glyph.id === g2h.srcId
+            f2g <- fontToGlyph if f2g.dstId === glyph.id
+            font <- fonts if font.id == f2g.srcId
+          } yield font
+
+          q.result
+        }
       )
 
       val linkedFonts = DBIOX.runAndAwait(db, linkedFontQ).flatten.toSet
@@ -86,48 +108,95 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
         println(s"""found existing linked font: ${font} """)
       }
 
-      // merge all linked fonts:
-      ///  TODO
-      // val font = linkedFonts.head
 
-      //
       def relinkQ(font: Font) = for {
-        _ <- DBIOX.seqs{
-          existing.map(fontToHash.rmEdgesRhs(_))
-        }
-        _ <- DBIOX.seqs{
-          existing.map(fontToHash.addEdge(font, _) )
-        }
-        _ <- DBIOX.seqs{
-          newlyIns.map(fontToHash.addEdge(font, _) )
-        }
-      } yield ()
-
-      val relinkAllQ = DBIOX.seqs{
-        linkedFonts.toList.map({font => relinkQ(font) })
-      }
-
-      DBIOX.runAndAwait(db, relinkAllQ)
-
-
-    } else {
-      //... otherwise, (no clashes), create a new font entry
-      val linkQ = for {
-        f <- fonts.ccQuery += Font()
-        _ <- DBIOX.seqs{
-          newlyIns.map({hash => fontToHash.addEdge(f, hash) })
+        _ <- DBIOX.seqs {
+          existingGlyphHashes.map(glhash => for {
+            // glyph <- glyphTohash.selectAdjacentToDst(glhash)
+            // _ <- fontToGlyph.rmEdgesToDst(glyph)
+            // _ <- fontToGlyph.addEdge(font, glyph)
+            _ <- fontToGlyph.rmEdgesToDst(glhash)
+            _ <- fontToGlyph.addEdge(font, glhash)
+          } yield ())
         }
       } yield ()
 
-      DBIOX.runAndAwait(db, linkQ)
+      linkedFonts.toList.map({font0 =>
+
+      })
+
+      // // merge all linked fonts:
+      // ///  TODO
+      // // val font = linkedFonts.head
+
+
+      // val relinkAllQ = DBIOX.seqs{
+      //   linkedFonts.toList.map({font => relinkQ(font) })
+      // }
+
+      // DBIOX.runAndAwait(db, relinkAllQ)
 
 
     }
+  }
+
+  // def selectFontHashEdges(): Seq[(Font, SplineHash)] = {
+  //   val fontHashPairs = for {
+  //     font <- fonts
+  //     f2h <- fontToHash
+  //     h <- splineHashes
+  //     if font.id === f2h.srcId && f2h.dstId === h.id
+  //   } yield (font, h)
+
+  //   Await.result(db.run(fontHashPairs.result), Duration.Inf)
+  // }
+
+  def showFontTree(font: Font): Unit = {
+    val qq = for {
+      fontGlyphs <- fonts.selectGlyphs(font)
+      res <-  DBIOX.sequence {
+        fontGlyphs.map{ g => for {
+          hash <- glyphs.selectHash(g)
+          sfds <- glyphs.selectSfdUrls(g)
+        } yield (hash, sfds) }
+      }
+    } yield fontGlyphs.zip(res).map {
+      case (a, bc) => (a, bc._1, bc._2)
+    }
+
+    val res = Await.result(db.run(qq), Duration.Inf)
+
+    val rstr = res.map { case (g:Glyph, oh:Option[SplineHash], urls: Seq[CorpusUrl]) =>
+      s""" ${g}: ${oh}: [${urls.mkString(", ")}]"""
+    }
+    println(rstr.mkString("\n"))
+  }
+
+  def showFontTrees(): Unit = {
+
+    val fontList = Await.result(db.run(fonts.to[List].result), Duration.Inf)
+
+    fontList.map(showFontTree(_))
+
+  }
+
+  def reportAll() = {
+
+    Await.result(
+      db.run((for {
+        _ <- fonts.to[List].result.map(x => println(s"fonts: ${x}"))
+        // _ <- names.to[List].result.map(x => println(s"names: ${x}"))
+        // _ <- families.to[List].result.map(x => println(s"families: ${x}"))
+        _ <- splineHashes.to[List].result.map(x => println(s"splineHash: ${x}"))
+        _ <- fontToGlyph.to[List].result.map({a => println(s"font->glyph: ${a}")})
+        _ <- glyphToHash.to[List].result.map({a => println(s"glyph->hash: ${a}")})
+      } yield ())),
+      Duration.Inf
+    )
+  }
 
 
-
-
-
+}
 
 
     // val qs = fontDir.props.map { p => p match  {
@@ -158,21 +227,3 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
     //   // case GlyphProp.LayerCount(other)    =>
     //   case _                              => DBIOX.noop
     // }}}
-  }
-
-  def reportAll() = {
-
-    Await.result(
-      db.run((for {
-        _ <- fonts.to[List].result.map(x => println(s"fonts: ${x}"))
-        // _ <- names.to[List].result.map(x => println(s"names: ${x}"))
-        // _ <- families.to[List].result.map(x => println(s"families: ${x}"))
-        _ <- splineHashes.to[List].result.map(x => println(s"splineHash: ${x}"))
-        _ <- fontToHash.to[List].result.map({a => println(s"font->hash: ${a}")})
-      } yield ())),
-      Duration.Inf
-    )
-  }
-
-
-}
