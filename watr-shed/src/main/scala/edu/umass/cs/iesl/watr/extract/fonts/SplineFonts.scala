@@ -4,9 +4,9 @@ package fonts
 
 import scalaz.@@
 
+import ammonite.{ops => fs}
+
 object SplineFonts {
-  // import ammonite.ops._
-  import ammonite.{ops => fs}
 
   def loadSfdir(sfdir: fs.Path): SplineFont.Dir = {
     val glyphs = fs.ls(sfdir)
@@ -14,6 +14,7 @@ object SplineFonts {
       .map({ glyphFile =>
         val glyphStr = fs.read(glyphFile)
         SplineQuickParser.parser(glyphStr)
+          .copy(path=Some(glyphFile))
       })
 
     val propSeq = fs.ls(sfdir)
@@ -26,7 +27,7 @@ object SplineFonts {
 
     val props = propSeq.headOption.getOrElse(sys.error("no font.props found"))
 
-    SplineFont.Dir(props, glyphs)
+    SplineFont.Dir(props, glyphs, sfdir)
   }
 }
 
@@ -35,20 +36,27 @@ object SplineFont {
   import scala.reflect._
 
   case class Glyph(
-    props: Seq[GlyphProp]
+    props: Seq[GlyphProp],
+    path: Option[fs.Path] = None
   ) {
+
+    def prop[P <: GlyphProp](implicit ct: ClassTag[P]): P = {
+      props.collectFirst({
+        case pr if ct.unapply(pr).isDefined => pr.asInstanceOf[P]
+      }).headOption.getOrElse(sys.error(s"glyph prop ${ct.runtimeClass.getSimpleName} not found"))
+    }
 
     def get[P <: GlyphProp](implicit ct: ClassTag[P]): Option[P] = {
       props.collectFirst({
         case pr if ct.unapply(pr).isDefined => pr.asInstanceOf[P]
       })
-
     }
   }
 
   case class Dir(
     props: Seq[FontProp],
-    glyphs: Seq[Glyph]
+    glyphs: Seq[Glyph],
+    path: fs.Path
   )
 
 }

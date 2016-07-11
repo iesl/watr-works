@@ -9,13 +9,17 @@ class StringCaseUtilsTest extends FlatSpec with Matchers {
 
   import StringCaseUtils._
 
-  it should "convert camel->snake->camel" in {
+  it should "convert camel/snake/underscore case" in {
 
     assertResult("this-is-camel-case"){
       "ThisIsCamelCase".toSnakeCase
     }
     assertResult("ThisIsCamelCase"){
       "this-is-camel-case".toCamelCase()
+    }
+
+    assertResult("this_is_camel_case"){
+      "ThisIsCamelCase".toUnderscoreCase()
     }
 
   }

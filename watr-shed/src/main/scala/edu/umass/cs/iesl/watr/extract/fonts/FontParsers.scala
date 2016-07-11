@@ -116,21 +116,27 @@ object SplineQuickParser {
 
   def readKeyValPair(str: String): Option[GlyphProp] = {
     import GlyphProp._
-    str.split(":", 2) match {
-      case Array("StartChar"  , rest) => Some(StartChar(rest))
-      case Array("Encoding"   , rest) => Some(Encoding(rest)) // 13 169 0
-      case Array("Width"      , rest) => Some(Width(rest)) // 1027
-      case Array("Flags"      , rest) => Some(Flags(rest)) // MW
-      case Array("HStem"      , rest) => Some(HStem(rest)) // -216 43<400 626.5 400 638> 673 43<400.5 627>
-      case Array("VStem"      , rest) => Some(VStem(rest)) // 57 43<133.5 367.5 133.5 378.5> 927 43<132.5 366.5>
-      case Array("LayerCount" , rest) => Some(LayerCount(rest)) // 2
-      case _ => None
-    }
+    val kvs = str.split(":", 2)
+    if (kvs.length==2) {
+      val Array(key, value) = kvs
+      val vtrim = value.trim
+      key match {
+        case "StartChar"   => Some(StartChar(vtrim))
+        case "Encoding"    => Some(Encoding(vtrim)) // 13 169 0
+        case "Width"       => Some(Width(vtrim)) // 1027
+        case "Flags"       => Some(Flags(vtrim)) // MW
+        case "HStem"       => Some(HStem(vtrim)) // -216 43<400 626.5 400 638> 673 43<400.5 627>
+        case "VStem"       => Some(VStem(vtrim)) // 57 43<133.5 367.5 133.5 378.5> 927 43<132.5 366.5>
+        case "LayerCount"  => Some(LayerCount(vtrim)) // 2
+        case _ => None
+      }
+    } else None
   }
 
   def readKeyValPairs(strs: Seq[String]): Seq[GlyphProp] = {
     val glyphsWithIndex = strs
-      .filter(str => str.matches("""^\\w+ *:"""))
+      .filter(str => str.matches("""^\w+\s*:.*$"""))
+      // .map({s => println(s"  ${s} matches"); s})
       .map(str => readKeyValPair(str))
 
     glyphsWithIndex.flatten
@@ -141,7 +147,8 @@ object SplineQuickParser {
     val nonEmptyLines = nonemptyLines(glyphStr)
 
     val (splines, remaining) = readSplines(nonEmptyLines)
-    val kvPairs = readKeyValPairs(remaining)
+
+    val kvPairs = readKeyValPairs(nonEmptyLines)
 
     splines.map({spl =>
       Glyph(spl +: kvPairs)

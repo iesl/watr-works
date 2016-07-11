@@ -36,11 +36,11 @@ class FontDatabaseTablesTest extends FlatSpec with SequentialNestedSuiteExecutio
   it should "load an overlapping font dir into db" in {
 
     db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-0.sfdir"))
-    // db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3a.sfdir"))
-    // db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3b.sfdir"))
+    db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3a.sfdir"))
+    db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3b.sfdir"))
+    db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3c.sfdir"))
 
-    // db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-0.sfdir"))
-
+    // db.reportAll()
     db.showFontTrees()
   }
 

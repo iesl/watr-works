@@ -11,11 +11,6 @@ object Hash {
     hexEncode(digestBytes(s.getBytes))
   }
 
-
-  // def shaHex(bytes: Array[Byte]): String@@SHA1String = {
-  //   hexEncode(digestBytes(bytes))
-  // }
-
   private def hexEncode(bytes: Seq[Byte]): String@@SHA1String = {
     SHA1String(bytes.map {
       b => String.format("%02X", java.lang.Byte.valueOf(b))
