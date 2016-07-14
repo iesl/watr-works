@@ -20,9 +20,12 @@ lib_managed
 #pdf svg extractor
 svgdump
 
-#svg output dirs
+# Common directory names
 *.d
+*.db
 
 *~
 /corpus-*/
 .zz-attic
+
+*.log
