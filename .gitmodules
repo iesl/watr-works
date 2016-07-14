@@ -1,3 +1,0 @@
-[submodule "ext/iesl-pdf-to-text"]
-	path = ext/iesl-pdf-to-text
-	url = git@github.com:iesl/iesl-pdf-to-text.git
