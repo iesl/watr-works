@@ -8,15 +8,7 @@ import ammonite.{ops => fs}
 
 object SplineFonts {
 
-  def loadSfdir(sfdir: fs.Path): SplineFont.Dir = {
-    val glyphs = fs.ls(sfdir)
-      .filter(_.ext=="glyph")
-      .map({ glyphFile =>
-        val glyphStr = fs.read(glyphFile)
-        SplineQuickParser.parser(glyphStr)
-          .copy(path=Some(glyphFile))
-      })
-
+  def loadProps(sfdir: fs.Path): SplineFont.Dir = {
     val propSeq = fs.ls(sfdir)
       .filter(_.ext=="props")
       .map({ propFile =>
@@ -26,8 +18,26 @@ object SplineFonts {
       })
 
     val props = propSeq.headOption.getOrElse(sys.error("no font.props found"))
+    SplineFont.Dir(props, glyphs=Seq(), sfdir)
+  }
 
-    SplineFont.Dir(props, glyphs, sfdir)
+  def addGlyph(dir: SplineFont.Dir, glyphPath: fs.Path): SplineFont.Dir = {
+    // println("adding glyph")
+    val glyphStr = fs.read(glyphPath)
+    val glyph = SplineQuickParser.parser(glyphStr)
+      .copy(path=Some(glyphPath))
+
+    dir.copy(glyphs = dir.glyphs :+ glyph)
+  }
+
+  def loadSfdir(sfdir: fs.Path): SplineFont.Dir = {
+    val dir = loadProps(sfdir)
+
+    fs.ls(sfdir)
+      .filter(_.ext=="glyph")
+      .foldLeft(dir)({case (acc, e) =>
+        addGlyph(acc, e)
+      })
   }
 }
 
@@ -57,8 +67,21 @@ object SplineFont {
     props: Seq[FontProp],
     glyphs: Seq[Glyph],
     path: fs.Path
-  )
+  ) {
 
+    def prop[P <: FontProp](implicit ct: ClassTag[P]): P = {
+      props.collectFirst({
+        case pr if ct.unapply(pr).isDefined => pr.asInstanceOf[P]
+      }).headOption.getOrElse(sys.error(s"font prop ${ct.runtimeClass.getSimpleName} not found"))
+    }
+
+    def get[P <: FontProp](implicit ct: ClassTag[P]): Option[P] = {
+      props.collectFirst({
+        case pr if ct.unapply(pr).isDefined => pr.asInstanceOf[P]
+      })
+    }
+
+  }
 }
 
 
@@ -66,18 +89,15 @@ sealed trait GlyphProp
 
 object GlyphProp {
 
-  // case class GenKeyVal(key: String, v: String) extends GlyphProp
-  // case class GenKey(key: String)               extends GlyphProp
-
-  case class SplineSet(splines: Seq[Spline])   extends GlyphProp
-  case class StartChar(glyphName: String)      extends GlyphProp
-  case class Encoding(other: String)           extends GlyphProp
-  case class Width(other: String)              extends GlyphProp
-  case class Flags(other: String)              extends GlyphProp
-  case class HStem(other: String)              extends GlyphProp
-  case class VStem(other: String)              extends GlyphProp
-  case class LayerCount(other: String)         extends GlyphProp
-  case class Err(key: String)                  extends GlyphProp
+  case class SplineSet(splines: Seq[Spline]) extends GlyphProp
+  case class StartChar(v: String)            extends GlyphProp
+  case class Encoding(v: String)             extends GlyphProp
+  case class Width(v: String)                extends GlyphProp
+  case class Flags(v: String)                extends GlyphProp
+  case class HStem(v: String)                extends GlyphProp
+  case class VStem(v: String)                extends GlyphProp
+  case class LayerCount(v: String)           extends GlyphProp
+  case class Err(key: String)                extends GlyphProp
 
   case class Spline(ns: Seq[Float], code: Char, flags: String)
 

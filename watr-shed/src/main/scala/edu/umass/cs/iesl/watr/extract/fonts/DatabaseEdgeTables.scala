@@ -3,7 +3,6 @@ package extract
 package fonts
 
 import slick.driver.H2Driver.api._
-// import slick.lifted.AbstractTable
 
 
 abstract class AnyToAny(tag: Tag, tableName: String) extends Table[(Int, Int)](tag, tableName) {
@@ -30,21 +29,17 @@ class OneToOne(tag: Tag, tableName:String) extends AnyToAny(tag, tableName) {
 sealed trait EdgeTable {
 
   def addEdge(src: Identified, dst: Identified): DBIOAction[Int, NoStream, Effect.Write]
-  def rmEdgesToDst(rhs: Identified): DBIOAction[Int, NoStream, Effect.Write]
-  def selectAdjacentToSrc(src: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read]
-  def selectAdjacentToDst(dst: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read]
+
+  def deleteAdjacentToSrc(node: Identified): DBIOAction[Int, NoStream, Effect.Write]
+  def deleteAdjacentToDst(node: Identified): DBIOAction[Int, NoStream, Effect.Write]
+
+  def selectAdjacentToSrc(node: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read]
+  def selectAdjacentToDst(node: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read]
 
 }
 
 trait Identified {
   def id: Int
-}
-
-
-trait Adjacency[S] {
-
-  type Op
-
 }
 
 
@@ -63,6 +58,7 @@ trait EdgeTables {
     s"${tName}_to_${uName}".toUpperCase
   }
 
+  import slick.lifted.Query
 
   def oneToMany[T <: Identified, U <: Identified](
     implicit ttag: ClassTag[T], utag: ClassTag[U]
@@ -71,30 +67,13 @@ trait EdgeTables {
 
     lazy val tq: OneToManyEdgeTable = new TableQuery(new OneToMany(_, tableName)) with EdgeTable {
 
-      def rmEdgesToDst(rhs: Identified): DBIOAction[Int, NoStream, Effect.Write] = {
-        val selQ = for {
-          f2h <- this if f2h.dstId === rhs.id
-        } yield f2h
+      def adjacentToSrc(node: Identified): Query[OneToMany, (Int, Int), Seq] = filter(_.srcId===node.id)
+      def adjacentToDst(node: Identified): Query[OneToMany, (Int, Int), Seq] = filter(_.dstId===node.id)
 
-        selQ.delete
-      }
-
-      def selectAdjacentToSrc(src: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read] = {
-        val q = for {
-          f2h <- this if f2h.srcId === src.id
-        } yield f2h.dstId
-
-        q.result
-      }
-
-      def selectAdjacentToDst(dst: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read] = {
-        val q = for {
-          f2h <- this if f2h.dstId === dst.id
-        } yield f2h.srcId
-
-        q.result
-
-      }
+      def deleteAdjacentToSrc(node: Identified)= adjacentToSrc(node).delete
+      def deleteAdjacentToDst(node: Identified)= adjacentToDst(node).delete
+      def selectAdjacentToSrc(node: Identified)= adjacentToSrc(node).map(_.dstId).result
+      def selectAdjacentToDst(node: Identified)= adjacentToDst(node).map(_.srcId).result
 
       // TODO use tighter bounds than Identified
       override def addEdge(lhs: Identified, rhs: Identified): DBIOAction[Int, NoStream, Effect.Write] = {
@@ -117,30 +96,15 @@ trait EdgeTables {
     val tableName = createAnyToAnyTableName[T, U]
 
     lazy val tq: OneToOneEdgeTable = new TableQuery(new OneToOne(_, tableName)) with EdgeTable {
-      def rmEdgesToDst(rhs: Identified): DBIOAction[Int, NoStream, Effect.Write] = {
-        val selQ = for {
-          f2h <- this if f2h.dstId === rhs.id
-        } yield f2h
 
-        selQ.delete
-      }
+      def adjacentToSrc(node: Identified): Query[OneToOne, (Int, Int), Seq] = filter(_.srcId===node.id)
+      def adjacentToDst(node: Identified): Query[OneToOne, (Int, Int), Seq] = filter(_.dstId===node.id)
 
-      def selectAdjacentToSrc(src: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read] = {
-        val q = for {
-          f2h <- this if f2h.srcId === src.id
-        } yield f2h.dstId
+      def deleteAdjacentToSrc(node: Identified)= adjacentToSrc(node).delete
+      def deleteAdjacentToDst(node: Identified)= adjacentToDst(node).delete
+      def selectAdjacentToSrc(node: Identified)= adjacentToSrc(node).map(_.dstId).result
+      def selectAdjacentToDst(node: Identified)= adjacentToDst(node).map(_.srcId).result
 
-        q.result
-      }
-
-      def selectAdjacentToDst(dst: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read] = {
-        val q = for {
-          f2h <- this if f2h.dstId === dst.id
-        } yield f2h.srcId
-
-        q.result
-
-      }
 
 
       override def addEdge(lhs: Identified, rhs: Identified): DBIOAction[Int, NoStream, Effect.Write] = {
@@ -210,7 +174,7 @@ trait EdgeTables {
 //     ???
 //   }
 
-//   def rmEdgesToDst(rhs: Identified): DBIOAction[Int, NoStream, Effect.Write] = {
+//   def deleteAdjacentToDst(rhs: Identified): DBIOAction[Int, NoStream, Effect.Write] = {
 //     val selQ = for {
 //       f2h <- this if f2h.dstId === rhs.id
 //     } yield f2h
@@ -277,10 +241,10 @@ trait EdgeTables {
   //         )"""
   //     }
 
-  //     def rmEdgesToDst(dst: A2): DBIOAction[Int, NoStream, Effect.Write] = {
+  //     def deleteAdjacentToDst(dst: A2): DBIOAction[Int, NoStream, Effect.Write] = {
   //       (for { src2dst <- this if src2dst.dstId === dst.id } yield src2dst).delete
   //     }
-  //     def rmEdgesFromSrc(src: A1): DBIOAction[Int, NoStream, Effect.Write] = {
+  //     def deleteAdjacentToSrc(src: A1): DBIOAction[Int, NoStream, Effect.Write] = {
   //       (for { src2dst <- this if src2dst.srcId === src.id } yield src2dst).delete
   //     }
 

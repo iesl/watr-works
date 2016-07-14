@@ -49,6 +49,12 @@ object FontDatabaseTables extends EdgeTables {
     val ccQuery = (this returning this.map(_.id) into ((f, i) => f.copy(id = i)))
     def findById(id: Int) = this.findBy(_.id).apply(id).result.headOption
 
+    def deleteFont(font: Font): DBIO[Unit] = {
+      for {
+        _ <- FontToFontSubset.deleteAdjacentToSrc(font)
+        _ <- this.filter(_.id===font.id).delete
+      } yield ()
+    }
 
     def selectFontSubsets(font: Font): DBIO[Seq[FontSubset]] = {
       for {
@@ -72,6 +78,28 @@ object FontDatabaseTables extends EdgeTables {
   object FontSubsets extends TableQuery(new FontSubsets(_)) {
     val ccQuery = (this returning this.map(_.id) into ((f, i) => f.copy(id = i)))
     def findById(id: Int) = this.findBy(_.id).apply(id).result.headOption
+
+    def selectPath(fontSubset: FontSubset): DBIO[CorpusUrl] = {
+      for {
+        ids <- FontSubsetToPath.selectAdjacentToSrc(fontSubset)
+        adjs <- sequence{ ids.map{ id =>
+          CorpusUrls.findById(id)
+        }}
+      } yield adjs.flatten
+        .headOption
+        .getOrElse(sys.error(s"no path found for font subset ${fontSubset}"))
+    }
+
+    def selectFont(fontSubset: FontSubset): DBIO[Font] = {
+      for {
+        ids <- FontToFontSubset.selectAdjacentToDst(fontSubset)
+        adjs <- sequence{ ids.map{ id =>
+          Fonts.findById(id)
+        }}
+      } yield adjs.flatten
+        .headOption
+        .getOrElse(sys.error(s"no font found for font subset ${fontSubset}"))
+    }
 
     def selectGlyphs(fontSubset: FontSubset): DBIO[Seq[Glyph]] = {
       for {
@@ -101,7 +129,7 @@ object FontDatabaseTables extends EdgeTables {
 
 
   final case class GlyphHash(hash: String, id: Int=0) extends Identified {
-    override def toString = s"#${hash.take(3).mkString}"
+    override def toString = s"#${hash.take(7).mkString}"
   }
   class GlyphHashes(tag: Tag) extends Table[GlyphHash](tag, tableName("GlyphHashes")) {
     def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
@@ -159,6 +187,27 @@ object FontDatabaseTables extends EdgeTables {
         .getOrElse(sys.error(s"no path found for glyph ${g}")))
     }
 
+
+    def forHash(glhash: GlyphHash): DBIO[Seq[Glyph]] = {
+      (for {
+        ids <- GlyphHashToGlyph.selectAdjacentToSrc(glhash)
+        adjs <- sequence{ ids.map { id =>
+          Glyphs.findById(id)
+        }}
+      } yield adjs.flatten)
+    }
+
+    def selectFontSubset(g: Glyph): DBIO[FontSubset] = {
+      (for {
+        ids <- FontSubsetToGlyph.selectAdjacentToDst(g)
+        adjs <- sequence{ ids.map { id =>
+          FontSubsets.findById(id)
+        }}
+      } yield adjs.flatten
+        .headOption
+        .getOrElse(sys.error(s"no font subset found for glyph ${g}"))
+      )
+    }
 
     def selectHash(g: Glyph): DBIO[GlyphHash] = {
       (for {

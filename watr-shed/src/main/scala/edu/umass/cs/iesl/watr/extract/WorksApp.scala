@@ -18,6 +18,7 @@ object Works extends App {
     corpusRoot: Option[JFile] = None,
     inputFileList: Option[JFile] = None,
     action: Option[String] = None,
+    dbPath: Option[JFile] = None,
     force: Boolean = false,
     numToRun: Int = 0,
     numToSkip: Int = 0,
@@ -72,6 +73,9 @@ object Works extends App {
       conf.copy(inputFileList = Option(v))
     } text("process files listed in specified file. Specify '--' to read from stdin")
 
+    opt[JFile]('d', "db") action { (v, conf) =>
+      conf.copy(dbPath = Option(v))
+    } text("h2 database path")
 
 
     cmd("init") action { (_, conf) =>
@@ -103,7 +107,13 @@ object Works extends App {
       setAction(conf, {(ac: AppConfig) =>
         examineFonts(ac)
       })
-    } text ("(dev) char extraction")
+    } text ("")
+
+    cmd("showfonts") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        showFontDB(ac)
+      })
+    } text ("")
 
 
     // cmd("bbsvg") action { (v, conf) =>
@@ -254,7 +264,7 @@ object Works extends App {
     println(s"normalizing corpus at ${corpus.corpusRoot}")
 
     ls(corpus.corpusRoot)
-    .filter(p=> p.isFile && p.ext=="pdf")
+    .filter(p=> p.isFile && (p.ext=="pdf" || p.ext=="ps"))
     .foreach { pdf =>
       normalizeCorpusEntry(corpus, pdf)
     }
@@ -297,46 +307,69 @@ object Works extends App {
     import ammonite.{ops => fs}
     import extract.fonts._
 
+    val dbfile = conf.dbPath.getOrElse {
+      sys.error("please specify database path")
+    }
 
-    processCorpusEntryList(conf, {corpusEntry =>
-      if (corpusEntry.hasArtifact("fonts")) {
-        corpusEntry.getArtifact("fonts").foreach{ fontDir =>
-          fontDir.asPath.foreach { pdir =>
-            val sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
-            // println(s"""Found ${sfdirs.length}  .sfdir directories""")
-            val parsedDir = sfdirs.map({sfdir =>
-              fs.ls(sfdir)
-                .filter(_.ext=="glyph")
-                .foreach({ glyphFile =>
-                  val glyphStr = fs.read(glyphFile)
-                  val glyph = SplineQuickParser.parser(glyphStr)
-                  val glyphSplineStrs = glyph.props.collect({
-                    case GlyphProp.SplineSet(splines) =>
-                      splines.map({s =>
-                        s"""${s.ns.mkString(" ")} ${s.code} ${s.flags}"""
-                      }).mkString("|")
-                  })
-                  if (glyphSplineStrs.length != 1 && glyphFile.name != "space.glyph") {
-                    println(s"${glyphFile.name} ${corpusEntry.entryDescriptor}")
-                    println(s"error: # of glyph spline sets = ${glyphSplineStrs.length}")
-                  }
+    val dbpath = cwd / RelPath(dbfile)
 
-                  // glyphSplineStrs.headOption.foreach({sstr =>
-                  //   val sha1 = DigestUtils.shaHex(sstr.getBytes)
-                  //   println(s"${sha1}  ${glyphFile.name} ${corpusEntry.entryDescriptor}")
-                  // })
-                })
+    val db = new FontDatabaseApi(dbpath)
 
-              // SplineFont.Dir(SplineFont.Props(), glyphs)
-            })
+    try {
+      db.createDBDir()
+
+      processCorpusEntryList(conf, {corpusEntry =>
+
+        if (corpusEntry.hasArtifact("fonts")) {
+          for {
+            fontDir <- corpusEntry.getArtifact("fonts")
+            pdir <- fontDir.asPath
+            sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
+            sfdir <- sfdirs
+          } {
+            println(s"adding fonts from ${sfdir}")
+            val sfs = SplineFonts.loadSfdir(sfdir)
+            // relativize the paths:
+            // val relSfs = sfs.copy(
+            //   path = corpusEntry.corpus.corpusRoot,
+            //   relPath = Option(sfdir.relativeTo(corpusEntry.corpus.corpusRoot)
+            // )
+
+            db.addFontDir(sfs)
           }
         }
-      }
-    })
+      })
+
+    } finally {
+      db.shutdown()
+
+    }
+
 
   }
 
 
+  def showFontDB(conf: AppConfig): Unit = {
+    import extract.fonts._
+
+    val dbfile = conf.dbPath.getOrElse {
+      sys.error("please specify database path")
+    }
+
+    val dbpath = cwd / RelPath(dbfile)
+
+    val db = new FontDatabaseApi(dbpath)
+
+    try {
+      // db.showFontTrees()
+      db.showHashedGlyphs()
+
+    } finally {
+      db.shutdown()
+    }
+
+
+  }
 
   def extractCharacters(conf: AppConfig): Unit = {
     import TB._

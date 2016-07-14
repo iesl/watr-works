@@ -17,6 +17,7 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
   val log = LoggerFactory.getLogger(this.getClass)
 
 
+  import DBIOX._
   val D = FontDatabaseTables
   import ExecutionContext.Implicits.global
 
@@ -41,90 +42,186 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
     }
   }
 
-  def addFontSubsetDir(fontDir: SplineFont.Dir): DBIO[D.FontSubset] = {
+  def addFontSubsetDir(fontDir: SplineFont.Dir): DBIO[(D.Font, D.FontSubset)] = {
     for {
       fontSubset     <- D.FontSubsets.ccQuery += D.FontSubset()
+      font           <- D.Fonts.ccQuery += D.Font()
+      _              <- D.FontToFontSubset.addEdge(font, fontSubset)
       fontSubsetPath <- D.CorpusUrls.ccQuery += D.CorpusUrl(fontDir.path.toString())
       _              <- D.FontSubsetToPath.addEdge(fontSubset, fontSubsetPath)
       glyphHashes    <- addGlyphHashes(fontDir.glyphs)
-      _              <- DBIOX.seqs{
+      glyphs         <- sequence{
         for {
-          (fontGlyph, glhash) <- (fontDir.glyphs zip glyphHashes)
+          (fontGlyph, glhash) <- (fontDir.glyphs.filter(_.get[GlyphProp.SplineSet].isDefined) zip glyphHashes)
         } yield for {
           glyph     <- D.Glyphs.ccQuery += D.Glyph()
-          glyphPath <- D.CorpusUrls.ccQuery += D.CorpusUrl(fontGlyph.path.toString())
-          _         <- D.GlyphToGlyphPath.addEdge(glyph, glyphPath)
+
+          _ <- seq({
+            fontGlyph.path.map ({ p =>
+              for {
+                glyphPath <- D.CorpusUrls.ccQuery += D.CorpusUrl(p.toString())
+                _         <- D.GlyphToGlyphPath.addEdge(glyph, glyphPath)
+              } yield ()
+            }).getOrElse (
+              successful(())
+            )
+          })
+
           _         <- D.GlyphHashToGlyph.addEdge(glhash, glyph)
           _         <- D.FontSubsetToGlyph.addEdge(fontSubset, glyph)
-        } yield()
+        } yield glyph
       }
-    } yield fontSubset
+      _                  = println(s"""    Added font subset dir ${fontSubset} -> ${font} with ${glyphs.length} glyphs""")
+    } yield (font, fontSubset)
   }
 
+  def mergeFonts(fonts: Seq[D.Font]): DBIO[Unit] = {
+    for {
+      allFontSubsets   <- sequence{ fonts.map{ D.Fonts.selectFontSubsets(_) } }
+      uniqFontSubsets   = allFontSubsets.flatten.toSet.toList
+      sortedFontSubsets = uniqFontSubsets.sortBy(_.id)
+      uniqFonts = fonts.toSet.toList
+      sortedFonts = uniqFonts.sortBy(_.id)
+      _ <- {
+        sortedFonts.headOption.map{ canonicalFont =>
+          for {
+            _                 <- sequence{ sortedFonts.tail.map(D.Fonts.deleteFont(_)) }
+            _                 <- sequence{ sortedFontSubsets.map(D.FontToFontSubset.addEdge(canonicalFont, _)) }
+          } yield ()
+        } getOrElse successful(())
+      }
+    } yield ()
+  }
 
   def addFontDir(fontDir: SplineFont.Dir): Unit = {
 
     DBIOX.runAndAwait(db, {
       for {
-        font <- D.Fonts.ccQuery += D.Font()
-        fontSubset <- addFontSubsetDir(fontDir)
-        _ <- D.FontToFontSubset.addEdge(font, fontSubset)
-      } yield ()
+        (newFont, newFontSubset)       <- addFontSubsetDir(fontDir)
+
+        // Select and merge any font subsets that have overlapping glyphs
+        glyphs            <- D.FontSubsets.selectGlyphs(newFontSubset)
+        glhashes          <- sequence { glyphs.map(D.Glyphs.selectHash(_)) }
+        allGlyphs         <- sequence { glhashes.map(D.Glyphs.forHash(_)) }
+        allFontSubsets    <- sequence { allGlyphs.flatten.map(D.Glyphs.selectFontSubset(_)) }
+        uniqueFontSubsets  = (newFontSubset +: allFontSubsets).toSet.toList
+        allFonts          <- sequence{ uniqueFontSubsets.map{ D.FontSubsets.selectFont(_) } }
+
+        _                 <- mergeFonts(allFonts)
+      } yield{
+        // if (sortedUniqFonts.size>1) {
+        //   println(s"""    Merged fonts ${sortedUniqFonts.mkString("\n      ", "\n      ", "\n")}""")
+        // }
+        // println(s"""   Created ${newFontSubset} -> ${canonicalFont} with ${glyphs.length} glyphs """)
+        // showFontTree(canonicalFont)
+      }
     })
-
-
-
-    // if (existingGlyphHashes.isEmpty) {
-    //   // None of the glyphs have been seen before, according to their hash values, so create a new font entry
-
-    // } else {
-    //   println(s"merging fonts")
-    //   // If any of the glyphs in the dir clash w/existing hashed glyphs, then this entire
-    //   // font dir should be merged with the pre-existing font
-
-    //   val linkedFontQ = DBIOX.sequence(
-    //     existingGlyphHashes.map { glhash =>
-    //       val q = for {
-    //         h     <- D.GlyphHashes if h.id === glhash.id
-    //         g2h   <- D.GlyphHashToGlyph if h.id === g2h.dstId
-    //         glyph <- D.Glyphs if glyph.id === g2h.srcId
-    //         f2g   <- D.FontSubsetToGlyph if f2g.dstId === glyph.id
-    //         font  <- D.Fonts if font.id == f2g.srcId
-    //       } yield font
-
-    //       q.result
-    //     }
-    //   )
-
-    //   val linkedFonts = DBIOX.runAndAwait(db, linkedFontQ).flatten.toSet
-
-    //   linkedFonts.foreach { font =>
-    //     println(s"""found existing linked font: ${font} """)
-    //   }
-
-
-    //   def relinkQ(font: D.Font) = for {
-    //     _ <- DBIOX.seqs {
-    //       existingGlyphHashes.map(glhash => for {
-    //         _ <- D.FontSubsetToGlyph.rmEdgesToDst(glhash)
-    //         _ <- D.FontSubsetToGlyph.addEdge(font, glhash)
-    //       } yield ())
-    //     }
-    //   } yield ()
-    // }
 
   }
 
-  // def selectFontHashEdges(): Seq[(Font, GlyphHash)] = {
-  //   val fontHashPairs = for {
-  //     font <- fonts
-  //     f2h <- fontToHash
-  //     h <- GlyphHashes
-  //     if font.id === f2h.srcId && f2h.dstId === h.id
-  //   } yield (font, h)
+  def buildGlyphTranslationTable(): Unit = {
 
-  //   Await.result(db.run(fontHashPairs.result), Duration.Inf)
-  // }
+  }
+
+  def showHashedGlyphs(): Unit = {
+    val glyphHashes = Await.result(db.run(D.GlyphHashes.to[List].result), Duration.Inf)
+
+    val qq = for {
+      glyphHash <- glyphHashes
+    } yield for {
+      glyphsForHash <- D.Glyphs.forHash(glyphHash)
+      pathsAndSubsets <- sequence { glyphsForHash.map { glyph =>
+        for {
+          glyphPath <- D.Glyphs.selectPath(glyph)
+          fontSubset <- D.Glyphs.selectFontSubset(glyph)
+          fontSubsetPath <- D.FontSubsets.selectPath(fontSubset)
+        } yield (glyphPath, fontSubset, fontSubsetPath)
+      }}
+      _ = {
+        if (glyphsForHash.length>1) {
+
+          val groupedGlyphs = pathsAndSubsets.groupBy(_._3.url)
+
+          val loadedFontDirs = groupedGlyphs.map { case group =>
+            group._2.headOption.map{
+              case (glyphPath, fontSubset, fontSubsetPath) =>
+
+                val dirProps = SplineFonts.addGlyph(
+                  SplineFonts.loadProps(Path(fontSubsetPath.url)),
+                  Path(glyphPath.url))
+
+
+                group._2.tail.foldLeft(dirProps){
+                  case (acc, (glyphPath, fontSubset, fontSubsetPath)) =>
+                    SplineFonts.addGlyph(acc, (Path(glyphPath.url)))
+
+                }
+            } getOrElse {
+              sys.error(s"no glyph.props found for glyph w/hash = ${glyphHash}")
+            }
+          }
+
+
+          val glyphProps = for {
+            fontDir <- loadedFontDirs
+            glyph <- fontDir.glyphs
+          } yield {
+            val startChar = glyph.prop[GlyphProp.StartChar].v
+            val width = glyph.prop[GlyphProp.Width].v
+            val encoding = glyph.prop[GlyphProp.Encoding].v
+            // val italic = glyph.prop[GlyphProp.].v
+            // val Array[String](e1, e2, e2) = encoding.trim.split(" ")
+            val enc = encoding.trim.split(" ")
+            val encH = enc(1).toInt.toHexString
+            (startChar.value, width, encH)
+          }
+          val uniqChars = glyphProps.map(_._1).toSet
+          val uniqWidths = glyphProps.map(_._2).toSet
+          val uniqEnc = glyphProps.map(_._3).toSet
+
+          val weights = loadedFontDirs.map(_.prop[FontProp.Weight].v).toSet
+
+          val names = loadedFontDirs.map({ d =>
+            val name = d.prop[FontProp.FontName].v
+            if (name.contains('+')) name.dropWhile(_ != '+').drop(1).mkString
+            else name
+          }).toSet
+
+          val fullNames = loadedFontDirs.map({ d =>
+            val name = d.prop[FontProp.FullName].v
+            if (name.contains('+')) name.dropWhile(_ != '+').drop(1).mkString
+            else name
+          }).toSet
+
+          val familyNames = loadedFontDirs.map({ d =>
+            val name = d.prop[FontProp.FamilyName].v
+            if (name.contains('+')) name.dropWhile(_ != '+').drop(1).mkString
+            else name
+          }).toSet
+
+          val info =
+          s"""|GlyphHash ${glyphHash} (${glyphsForHash.length} glyphs)
+              |   chars     : ${uniqChars.mkString(", ")}
+              |   enc       : ${uniqEnc.mkString(", ")}
+              |   widths    : ${uniqWidths.mkString(", ")}
+              |   names     : ${names.toSet.toList.mkString(", ")}
+              |   fullnames : ${fullNames.toSet.toList.mkString(", ")}
+              |   family    : ${familyNames.toSet.toList.mkString(", ")}
+              |   weights   : ${weights.toSet.toList.mkString(", ")}
+              |""".stripMargin
+
+          println(info)
+        }
+      }
+    } yield {
+      ()
+    }
+
+    Await.result(db.run(
+      sequence(qq)
+    ), Duration.Inf)
+
+  }
 
   def showFontTree(font: D.Font): Unit = {
     val qq = for {
@@ -148,11 +245,13 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
 
     for {
       (fontSubset, glyphInfos) <- res
-      _ = println(s"  FontSubset ${fontSubset}")
-      (glyph, hash, path) <- glyphInfos
     } {
-      println(s"""      glyph> ${glyph} ${hash} ${path}""")
-
+      println(s"  FontSubset ${fontSubset}")
+      for {
+        (glyph, hash, path) <- glyphInfos
+      } {
+        println(s"""      glyph> f:${fontSubset.id} ${glyph} ${hash} ${path}""")
+      }
     }
   }
 
