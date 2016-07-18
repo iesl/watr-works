@@ -85,11 +85,25 @@ object ImgAtom {
 
 }
 
+case class GlyphInstance(
+  glyphHash: String
+)
 
-case class FontInfo(
-  // fontName: String,
-  fontFamily: String,
-  fontSize: String
+
+case class GlyphClass(
+  glyphHash: String,
+  char: Char,
+  fontInfo: FontClass
+)
+
+
+
+case class FontClass(
+  name: String,
+  familyName: String,
+  vendorName: String,
+  italicAngle: Int, // = rnd(italic angle * 100)
+  weight: String
 )
 
 case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)

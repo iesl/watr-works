@@ -20,6 +20,7 @@ class OneToMany(tag: Tag, tableName:String) extends AnyToAny(tag, tableName) {
 }
 
 
+
 class OneToOne(tag: Tag, tableName:String) extends AnyToAny(tag, tableName) {
   def i0 = index("idx_srcid_"+tableName, srcId, unique=true)
   def i1 = index("idx_dstId_"+tableName, dstId, unique=true)
@@ -37,6 +38,7 @@ sealed trait EdgeTable {
   def selectAdjacentToDst(node: Identified): DBIOAction[Seq[Int], NoStream, Effect.Read]
 
 }
+
 
 trait Identified {
   def id: Int

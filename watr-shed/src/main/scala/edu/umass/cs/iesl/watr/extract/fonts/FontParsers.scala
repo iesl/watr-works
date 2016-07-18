@@ -17,6 +17,8 @@ object SplineQuickParser {
     def getS: String = os.getOrElse(sys.error(s"expected String from '${os}'"))
   }
 
+
+
   def readFontProps(propStr: String): Seq[FontProp] = {
     val props = nonemptyLines(propStr).map { line =>
       val (key, value) = if (line.contains(":")) {

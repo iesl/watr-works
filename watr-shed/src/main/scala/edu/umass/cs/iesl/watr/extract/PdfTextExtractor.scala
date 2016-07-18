@@ -196,7 +196,7 @@ class PdfTextExtractor(
 
         val pageGeometry = getReportedPageGeometry(pageId, pdfPage)
 
-        // WTF?
+        // TODO: WTF are all of these?
         pdfPage.getPageSize
         pdfPage.getPageSizeWithRotation
         pdfPage.getArtBox

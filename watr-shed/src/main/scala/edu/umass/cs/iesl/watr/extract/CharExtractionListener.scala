@@ -23,7 +23,7 @@ import UnicodeUtil._
 import utils.IdGenerator
 
 
-object PdfPageObjectOutput{
+object PdfPageObjectOutput {
   import textboxing.{TextBoxing => TB}
 
   import com.itextpdf.kernel.pdf.tagging.IPdfStructElem
@@ -76,7 +76,6 @@ object PdfPageObjectOutput{
 }
 
 class CharExtractionListener(
-
   // fontDict: mutable.Map[String, DocumentFont],
   reader: PdfReader,
   charsToDebug: Set[Int] = Set(),
@@ -107,12 +106,43 @@ class CharExtractionListener(
 
   }
 
+  // Global lookup table
+  val globalGlyphTranslation = Map[String, GlyphClass]()
 
+
+  // Local lookup table (built at start of extraction)
+  // fontname/glyphcode -> glyphHash
+  // e.g., 'EAXSD+TimesMT/32'   -> sha:xxxxxxxx
+  val localGlyphTranslation = Map[String, GlyphInstance]()
+
+
+  def lookupGlyph(charTri: TextRenderInfo): Unit = {
+    val pdfString = charTri.getPdfString
+    val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
+    val glyphCode = bs(0)
+
+    val font = charTri.getFont
+
+    val fprogram = font.getFontProgram
+    val fontNames = fprogram.getFontNames
+    val fontName = fontNames.getFontName
+
+
+    // map this to a canonical glyph
+    val glyphInstanceId = s"""${fontName}/${glyphCode}"""
+    val glyphInstance = localGlyphTranslation(glyphInstanceId)
+
+
+  }
 
   def renderText(charTrix: TextRenderInfo): Unit = {
     for {
       charTri <- charTrix.getCharacterRenderInfos
     } {
+      // Map charTri to an extracted glyph, and try to match it to our
+      //   glyph hash table
+
+      lookupGlyph(charTri)
 
       val mcid = charTri.getMcid
       if (charTri.getText.isEmpty && charTri.hasMcid(mcid, false)) {
