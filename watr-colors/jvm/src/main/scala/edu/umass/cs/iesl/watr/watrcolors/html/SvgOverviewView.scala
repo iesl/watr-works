@@ -21,13 +21,21 @@ class SvgOverviewView() {
     )
 
 
-    def svgImage = cls(
+    def pageImg = cls(
+      padding:="0",
+      margin:="0",
+      border := "0",
+      zIndex:=10
+    )
+
+    def imgContainer = cls(
       position.absolute,
       left:="0",
       top:="0",
       padding:="0",
       margin:="0",
       border := "0",
+      zIndex:=0,
       backgroundColor := "ivory"
     )
 
@@ -37,6 +45,7 @@ class SvgOverviewView() {
       margin:="0",
       border := "0",
       left:="0",
+      zIndex:=100,
       top:="0"
     )
 
@@ -54,34 +63,61 @@ class SvgOverviewView() {
   def row = `class` := "row"
   def col(n: Int) = `class` := s"col-md-$n"
 
+  def initPageImages(corpusEntry: CorpusEntry): TextTag = {
 
+    val imgList = for {
+      pageImages <- corpusEntry.getArtifactGroup("page-images")
+    } yield for {
+      image <- pageImages.getArtifacts
+      path <- image.asPath.toOption.toSeq
+    } yield {
+      val src = s"/repo/${image.descriptor}"
 
-  // split pane, svg on left, bbox hover info on right..
-  def init(corpusEntryId: String)  = {
+      <.img(^.src := src, ^.`class`:="page-image", SvgStyles.pageImg)
+    }
 
     div(containerFluid)(
       <.style(^.`type`:="text/css", SvgStyles.styleSheetText),
       <.div(row)(
         <.div(col(6))(
           <.div(^.id:="overlay-container", SvgStyles.overlayContainer)(
-            <.div(^.id:="svg-container", SvgStyles.svgImage),
             <.canvas(^.id:="fabric-canvas", SvgStyles.fabricCanvas),
-            <.script(^.`type`:="text/javascript")(
-              raw(s"""|var documentIconURI = "images/pdf_50x50.png";
-                      |var corpusEntryId = "$corpusEntryId";
-                      |""".stripMargin)),
-            <.script(^.`type`:="text/javascript", ^.src:="/assets/js/edit-document.js" )
-          )
-        ),
-
-        <.div(col(6))(
-          <.div(SvgStyles.infoPane)(
-            <.span("Info Area"),
-            <.span(^.id:="rxinfo"),
-            <.span(^.id:="selection-info")
+            <.div(^.id:="img-container", SvgStyles.imgContainer)(
+              imgList
+            )
           )
         )
       )
     )
+
   }
+
+
+  // def init(corpusEntryId: String)  = {
+
+  //   div(containerFluid)(
+  //     <.style(^.`type`:="text/css", SvgStyles.styleSheetText),
+  //     <.div(row)(
+  //       <.div(col(6))(
+  //         <.div(^.id:="overlay-container", SvgStyles.overlayContainer)(
+  //           <.div(^.id:="svg-container", SvgStyles.svgImage),
+  //           <.canvas(^.id:="fabric-canvas", SvgStyles.fabricCanvas),
+  //           <.script(^.`type`:="text/javascript")(
+  //             raw(s"""|var documentIconURI = "images/pdf_50x50.png";
+  //                     |var corpusEntryId = "$corpusEntryId";
+  //                     |""".stripMargin)),
+  //           <.script(^.`type`:="text/javascript", ^.src:="/assets/js/edit-document.js" )
+  //         )
+  //       ),
+
+  //       <.div(col(6))(
+  //         <.div(SvgStyles.infoPane)(
+  //           <.span("Info Area"),
+  //           <.span(^.id:="rxinfo"),
+  //           <.span(^.id:="selection-info")
+  //         )
+  //       )
+  //     )
+  //   )
+  // }
 }

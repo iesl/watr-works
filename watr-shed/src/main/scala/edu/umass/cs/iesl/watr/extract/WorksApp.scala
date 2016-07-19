@@ -115,13 +115,11 @@ object Works extends App {
       })
     } text ("")
 
-
-    // cmd("bbsvg") action { (v, conf) =>
-    //   setAction(conf, {(ac: AppConfig) =>
-    //     createBoundingBoxSvg(ac)
-    //   })
-    // } text ("(dev) run column detection")
-
+    cmd("images") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        extractImages(ac)
+      })
+    } text ("extract pdf pages as images")
 
   }
 
@@ -302,6 +300,30 @@ object Works extends App {
 
   }
 
+  def extractImages(conf: AppConfig): Unit = {
+    import ammonite.{ops => fs}
+    import fs._
+    import fs.ImplicitWd._
+
+
+    processCorpusEntryList(conf, {corpusEntry =>
+
+      for {
+        pdf <- corpusEntry.getPdfArtifact
+        pdfPath <- pdf.asPath
+      } {
+        val pageImagePath = corpusEntry.artifactsRoot / "page-images"
+        if (! exists(pageImagePath)) {
+          mkdir(pageImagePath)
+        }
+        val pageImageFilespec = pageImagePath / "page-%d.png"
+
+        val res = %%("mudraw", "-r", "128", "-o", pageImageFilespec, pdfPath)
+
+      }
+
+    })
+  }
 
   def examineFonts(conf: AppConfig): Unit = {
     import ammonite.{ops => fs}
@@ -329,11 +351,6 @@ object Works extends App {
           } {
             println(s"adding fonts from ${sfdir}")
             val sfs = SplineFonts.loadSfdir(sfdir)
-            // relativize the paths:
-            // val relSfs = sfs.copy(
-            //   path = corpusEntry.corpus.corpusRoot,
-            //   relPath = Option(sfdir.relativeTo(corpusEntry.corpus.corpusRoot)
-            // )
 
             db.addFontDir(sfs)
           }

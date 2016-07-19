@@ -142,12 +142,12 @@ class CharExtractionListener(
       // Map charTri to an extracted glyph, and try to match it to our
       //   glyph hash table
 
-      lookupGlyph(charTri)
+      // lookupGlyph(charTri)
 
       val mcid = charTri.getMcid
       if (charTri.getText.isEmpty && charTri.hasMcid(mcid, false)) {
-        println(s"""MCID encoded text near: ${charWindow.takeRight(20).mkString}""")
-        DocumentFontInfo.outputPdfDecoding(charTri, reader, "    ")
+        // println(s"""MCID encoded text near: ${charWindow.takeRight(20).mkString}""")
+        // DocumentFontInfo.outputPdfDecoding(charTri, reader, "    ")
         val font = charTri.getFont
 
         val at = charTri.getActualText
@@ -166,8 +166,8 @@ class CharExtractionListener(
 
 
       } else if (charTri.getText.isEmpty) {
-        println(s"""Empty text near: ${charWindow.takeRight(20).mkString}""")
-        DocumentFontInfo.outputPdfDecoding(charTri, reader, "    ")
+        // println(s"""Empty text near: ${charWindow.takeRight(20).mkString}""")
+        // DocumentFontInfo.outputPdfDecoding(charTri, reader, "    ")
 
         val pdfString = charTri.getPdfString
         // val bs = pdfString.getValueBytes.m

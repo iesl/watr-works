@@ -126,57 +126,88 @@ class CorpusEntry(
     allFiles.map(_.name)
   }
 
-  def putArtifact(artifactDescriptor: String, content: String): CorpusArtifact = {
-    val outputPath = artifactsRoot/artifactDescriptor
+
+  def putArtifact(artifactDescriptor: String, content: String, groupDescriptor: String = "."): CorpusArtifact = {
+    val outputPath = artifactsRoot / groupDescriptor / artifactDescriptor
     write(outputPath, content)
-    new CorpusArtifact(artifactDescriptor, this)
+    val group = new CorpusArtifactGroup(groupDescriptor, this)
+    new CorpusArtifact(artifactDescriptor, group)
   }
 
-  def getArtifact(artifactDescriptor: String): Option[CorpusArtifact] = {
-    if (hasArtifact(artifactDescriptor)) {
-      (new CorpusArtifact(artifactDescriptor, this)).some
+  def getArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Option[CorpusArtifact] = {
+    if (hasArtifact(artifactDescriptor, groupDescriptor)) {
+      val group = new CorpusArtifactGroup(groupDescriptor, this)
+      (new CorpusArtifact(artifactDescriptor, group)).some
     } else None
   }
 
-  def deleteArtifact(artifactDescriptor: String): Unit = {
-    new CorpusArtifact(artifactDescriptor, this).delete
+  def getArtifactGroup(groupDescriptor: String): Option[CorpusArtifactGroup] = {
+    if (hasArtifactGroup(groupDescriptor)) {
+      new CorpusArtifactGroup(groupDescriptor, this).some
+    } else None
   }
 
-  def hasArtifact(artifactDescriptor: String): Boolean ={
+  def deleteArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Unit = {
+    val artifact = new CorpusArtifact(artifactDescriptor,
+      new CorpusArtifactGroup(groupDescriptor, this)
+    )
+
+    artifact.delete
+  }
+  def hasArtifactGroup(groupDescriptor: String): Boolean ={
+    exists(artifactsRoot / groupDescriptor)
+  }
+
+  def hasArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Boolean ={
     exists(artifactsRoot / artifactDescriptor)
   }
 
   def getPdfArtifact(): Option[CorpusArtifact] = {
-    // TODO fixme
-    Some(
-      new CorpusArtifact(s"${entryDescriptorRoot}", this)
+    val artifact = new CorpusArtifact(s"${entryDescriptorRoot}",
+      new CorpusArtifactGroup(".", this)
     )
 
+    artifact.some
   }
 
   def getSvgArtifact(): CorpusArtifact = {
-    new CorpusArtifact(s"${entryDescriptorRoot}.svg", this)
-  }
-
-  def updateMetadata(m: Option[CorpusEntryMetadata] = None): CorpusEntryMetadata = {
-    new CorpusArtifact("metadata.inf", this).asJson.map {
-      _.validate[CorpusEntryMetadata]
-    }
-
-    ???
+    new CorpusArtifact(s"${entryDescriptorRoot}.svg",
+        new CorpusArtifactGroup(".", this)
+    )
   }
 
 }
 
 
+class CorpusArtifactGroup(
+  val groupDescriptor: String,
+  val entry: CorpusEntry
+) {
+  lazy val rootPath = entry.artifactsRoot / groupDescriptor
+
+  def descriptor = s"""${entry.entryDescriptor}/${groupDescriptor}"""
+
+  override val toString = {
+    s"${entry}/${groupDescriptor}"
+  }
+
+  def getArtifacts(): Seq[CorpusArtifact] = {
+    ls(rootPath)
+      .sortBy(_.name)
+      .map(path => new CorpusArtifact(path.name, this))
+  }
+
+}
+
 class CorpusArtifact(
   val artifactDescriptor: String,
-  val entry: CorpusEntry
+  val group: CorpusArtifactGroup
+  // val entry: CorpusEntry
 ) {
   import ammonite.{ops => fs}
 
   override val toString = {
-    s"${entry}/./${artifactDescriptor}"
+    s"${group}/${artifactDescriptor}"
   }
 
 
@@ -188,7 +219,9 @@ class CorpusArtifact(
     fs.rm(artifactPath)
   }
 
-  def artifactPath = entry.artifactsRoot / artifactDescriptor
+  def descriptor = s"""${group.descriptor}/${artifactDescriptor}"""
+
+  def artifactPath = group.rootPath / artifactDescriptor
 
   def asPath: Try[Path] = Success(artifactPath)
 

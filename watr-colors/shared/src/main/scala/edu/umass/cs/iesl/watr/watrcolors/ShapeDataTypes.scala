@@ -34,6 +34,7 @@ object VisualTrace {
   case class ShowVDiff(d1: Double, d2: Double) extends DSL// [Unit]
   case class FocusOn(s: Overlay) extends DSL// [Unit]
   case class HRuler(s: Double) extends DSL// [Overlay]
+  case class VRuler(s: Double) extends DSL// [Overlay]
   case class Message(s: String) extends DSL// [Unit]
 
 
@@ -63,6 +64,7 @@ trait ShapeDataTypePicklers {
   implicit val pShowVDiff   = PicklerGenerator.generatePickler[ShowVDiff]
   implicit val pFocusOn     = PicklerGenerator.generatePickler[FocusOn]
   implicit val pHRuler      = PicklerGenerator.generatePickler[HRuler]
+  implicit val pVRuler      = PicklerGenerator.generatePickler[VRuler]
   implicit val pMessage     = PicklerGenerator.generatePickler[Message]
 
   pDSL
@@ -73,5 +75,6 @@ trait ShapeDataTypePicklers {
     .addConcreteType[ShowVDiff]
     .addConcreteType[FocusOn]
     .addConcreteType[HRuler]
+    .addConcreteType[VRuler]
     .addConcreteType[Message]
 }

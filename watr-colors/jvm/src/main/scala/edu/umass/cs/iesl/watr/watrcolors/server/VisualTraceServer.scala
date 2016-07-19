@@ -38,13 +38,10 @@ class VisualTraceServer(
     (for {
       entry <- corpus.entry(corpusEntryId).toList
       pdfArtifact <- entry.getPdfArtifact
-      // f <- pdfArtifact.asPath.toOption
       pdfIns <- pdfArtifact.asInputStream.toOption
     } yield {
-      // val corpusPath = f.relativeTo(corpus.corpusRoot)
-      // println(s"VisualTrace: createView(${corpusEntryId}) path=(${corpusPath})")
-
-      testExample(pdfIns)
+       // println(s"VisualTrace: createView(${corpusEntryId}) path=(${corpusPath})")
+       testLineTokenization(pdfIns)
     }).flatten
   }
 
@@ -52,9 +49,7 @@ class VisualTraceServer(
   import utils.TraceLog
 
 
-
-
-  def testExample(pdfIns: InputStream): List[VisualTrace.DSL] = {
+  def testLineTokenization(pdfIns: InputStream): List[VisualTrace.DSL] = {
     import spindex._
 
     val segmenter = DocumentSegmenter.createSegmenter(pdfIns)

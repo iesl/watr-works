@@ -4,10 +4,6 @@ package client
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
-// import scala.scalajs.{js => sjs}
-
-// import org.scalajs.dom
-// import org.scalajs.jquery.jQuery
 
 import autowire._
 import boopickle.DefaultBasic._
@@ -16,11 +12,8 @@ import Picklers._
 import native.fabric
 import native.mousetrap._
 
-// import rx._
 
-// import scalatags.JsDom.all._
-
-
+import scala.async.Async.{async, await}
 
 
 @JSExport
@@ -30,8 +23,11 @@ class VisualTraceClient(
 
   val server = ServerWire("vtrace")[VisualTraceApi]
 
-  def createView(): Unit = {
-    server.createView().call().foreach(applyHtmlUpdates(_))
+  def createView(): Unit = async {
+    val res = await {
+      server.createView().call()
+    }
+    applyHtmlUpdates(res)
   }
 
 
@@ -122,7 +118,11 @@ class VisualTraceClient(
     }
 
 
-    server.runTrace().call().foreach({ traceEntries =>
+    async{
+      val traceEntries = await {
+        server.runTrace().call()
+      }
+
 
       traceEntries.foreach({ _ match {
         case Noop =>
@@ -155,7 +155,6 @@ class VisualTraceClient(
         case HRuler(s: Double) =>
           println(s"rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
 
-          import scala.scalajs.js
           val r = fabric.Rect()
           r.left = 0
           r.top =  transformY(s)
@@ -185,8 +184,7 @@ class VisualTraceClient(
           // case AndThen(t1, t2) =>
       }})
 
-    })
-
+    }
     true
   }
 }

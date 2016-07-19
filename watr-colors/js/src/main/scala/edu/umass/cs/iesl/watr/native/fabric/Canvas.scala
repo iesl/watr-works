@@ -115,7 +115,7 @@ trait JsElement extends js.Object {
 }
 
 
-@js.native
+@js.native @JSName("fabric.StaticCanvas")
 class StaticCanvas(
   el: String,
   options: StaticCanvasProperties
@@ -390,7 +390,7 @@ class StaticCanvas(
 
 }
 
-@js.native
+@js.native @JSName("fabric.Canvas")
 class Canvas(
   el: String,
   options: CanvasProperties

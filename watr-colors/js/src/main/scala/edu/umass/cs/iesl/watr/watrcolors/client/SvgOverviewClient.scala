@@ -3,44 +3,21 @@ package watrcolors
 package client
 
 
-// import scala.concurrent.{Future, Promise}
+import scala.async.Async.{async, await}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
-import scala.scalajs.{js => sjs}
-
-import org.scalajs.dom
 import org.scalajs.jquery.jQuery
+import org.scalajs.dom._
 
 import autowire._
 import boopickle.DefaultBasic._
 import Picklers._
 
-import native.fabric
 import native.mousetrap._
-
-import rx._
-
-import scalatags.JsDom.all._
+import native.fabric
 
 
-object util {
-
-  implicit def rxFrag[T](r: Rx[T])(implicit ev: (T) => Frag, ctx: Ctx.Data, d: Ctx.Owner): Frag = {
-    def rSafe: dom.Node = span(r()).render
-    var last = rSafe
-    r.triggerLater {
-      val newLast = rSafe
-      sjs.Dynamic.global.last = last
-      last.parentNode.replaceChild(newLast, last)
-      last = newLast
-    }
-
-    last
-  }
-}
-
-// trait Fabric
 
 @JSExport
 class SvgOverview(
@@ -50,17 +27,11 @@ class SvgOverview(
   val server = ServerWire("svg")[SvgOverviewApi]
 
   override val initKeys = Keybindings(List(
-    "c" -> ((e: MousetrapEvent) => createCharLevelOverlay()),
     // "b" -> ((e: MousetrapEvent) => createDocumentOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
     "z" -> ((e: MousetrapEvent) => selectViaLine()),
     "d" -> ((e: MousetrapEvent) => initDeletion())
   ))
-
-
-
-  // choose an active label name
-  // allow labeling of existing bboxes by drawing line across them
 
   import handlers._
   def selectViaLine(): Boolean = {
@@ -95,8 +66,12 @@ class SvgOverview(
       println(s"got user bbox: ${bbox}")
       val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
       val bboxAbs = translateBBox(-offset.left, -offset.top, bbox)
-      server.onSelectBBox(artifactId, bboxAbs).call().foreach{ applyHtmlUpdates(_) }
-      addBBoxRect(bboxAbs, "black")
+
+      async {
+        val res = await { server.onSelectBBox(artifactId, bboxAbs).call() }
+        applyHtmlUpdates(res)
+        addBBoxRect(bboxAbs, "black")
+      }
     }
     true
   }
@@ -130,30 +105,48 @@ class SvgOverview(
     translateBBox(-offset.left, -offset.top, bbox)
   }
 
-  def createCharLevelOverlay(): Boolean = {
-    for {
-      bbox <- getUserBBox(self.fabricCanvas)
-    } yield {
-      val aligned = alignBboxToDiv("#overlay-container", bbox)
-      val bboxes = server.getCharLevelOverlay(artifactId, aligned).call()
 
-      fabricCanvas.renderOnAddRemove = false
+  def createView(): Unit = async {
 
-      bboxes.foreach{ overlays =>
-        overlays.foreach { bbox =>
-          addBBoxRect(bbox, "blue")
-        }
-        fabricCanvas.renderAll()
-        fabricCanvas.renderOnAddRemove = true
-      }
+    val res = await {
+      server.createView(artifactId).call()
     }
+    applyHtmlUpdates(res)
+
+    val jqOverlayContainer = jQuery("#overlay-container")
+
+    val c = new fabric.Canvas("fabric-canvas", fabric.CanvasOptions)
 
 
+    jQuery("#fabric-canvas").prop("fabric", c)
+    c.uniScaleTransform = true
 
-    true
-  }
+    var imgCount = jQuery(".page-image").length
+    var imgReady = 0
 
-  def createView(): Unit = {
-    server.createView(artifactId).call().foreach(applyHtmlUpdates(_))
+    jQuery(".page-image").map({ (i: Int, elem: Element) =>
+
+      def loaded(): Unit = {
+        imgReady += 1
+        println(s"img count = ${imgReady} / ${imgCount}")
+        if (imgReady == imgCount) {
+          val h = jQuery("#img-container").height()
+          fabricCanvas.setHeight(h.toInt+1)
+
+          val w = jQuery("#img-container").width()
+          fabricCanvas.setWidth(w.toInt+1)
+
+          println(s"fabric canvas loaded h/w = ${h}/${w}")
+
+        }
+      }
+
+      elem.addEventListener("load", {(e: Event) => loaded() })
+        elem.addEventListener("error", (e: Event) => {
+          println("image load encountered an error")
+        })
+
+    })
+
   }
 }

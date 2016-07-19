@@ -196,8 +196,12 @@ object ComponentOperations {
     def tokenizeLine(): Component = {
       if (!component.getLabels.contains(LB.TokenizedLine)) {
 
-        TraceLog.trace{ SetViewport(component.bounds) }
-        TraceLog.traces{ component.children.map(_.bounds).map(Show(_)) }
+
+        TraceLog.trace(
+          SetViewport(component.bounds),
+          All(component.children.map(_.bounds).map(Show(_)):_*),
+          Message("tokenizing line")
+        )
 
         val tops = findCommonToplines()
         val bottoms = findCommonBaselines()

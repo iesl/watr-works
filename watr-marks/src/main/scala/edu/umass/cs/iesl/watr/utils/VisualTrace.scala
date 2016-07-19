@@ -13,13 +13,13 @@ object TraceLog {
 
   var currPRG = Noop
 
-  def trace[T](p: => VisualTrace.DSL[T]): Unit = {
-    entries += p
-  }
-
-  def traces[T](p: => Seq[VisualTrace.DSL[T]]): Unit = {
+  def trace(p: VisualTrace.DSL[_]*): Unit = {
     entries ++= p
   }
+
+  // def traces[T](p: => Seq[VisualTrace.DSL[T]]): Unit = {
+  //   entries ++= p
+  // }
 
 
   def getAndClearTraceLog(): Seq[VisualTrace.DSL[_]] = {
@@ -42,8 +42,10 @@ object VisualTrace {
   case class ShowVDiff(d1: Double, d2: Double) extends DSL[Unit]
   case class FocusOn(s: Shape) extends DSL[Unit]
   case class HRuler(s: Double) extends DSL[Shape]
+  case class VRuler(s: Double) extends DSL[Shape]
   case class Message(s: String) extends DSL[Unit]
 
+  case class All[A](ts: DSL[A]*) extends DSL[Unit]
   case class And[A](t1: DSL[A], t2: DSL[A]) extends DSL[Unit]
   case class AndThen[A](t1: DSL[A], t2: DSL[A]) extends DSL[Unit]
 

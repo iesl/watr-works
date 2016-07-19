@@ -38,10 +38,13 @@ object TypeConverters {
       case utils.VisualTrace.ShowVDiff(d1: Double, d2: Double) => VisualTrace.ShowVDiff(d1, d2)
       case utils.VisualTrace.FocusOn(s: Shape)                 => VisualTrace.FocusOn(s.toOverlay)
       case utils.VisualTrace.HRuler(s: Double)                 => VisualTrace.HRuler(s)
+      case utils.VisualTrace.VRuler(s: Double)                 => VisualTrace.VRuler(s)
       case utils.VisualTrace.Message(s: String)                => VisualTrace.Message(s)
       case utils.VisualTrace.And(t1, t2)                       =>  ???
         // VisualTrace.And(convertVisualTraceTypes(t1),convertVisualTraceTypes(t2))
       case utils.VisualTrace.AndThen(t1, t2)                   => ??? // VisualTrace.AndThen(t1, t2)
+      case utils.VisualTrace.All(t1, t2)                   => ??? // VisualTrace.AndThen(t1, t2)
+      // case utils.VisualTrace.All(t1, t2)                   => ??? // VisualTrace.AndThen(t1, t2)
     }
   }
 }

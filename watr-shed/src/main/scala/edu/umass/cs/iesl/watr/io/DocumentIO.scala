@@ -1,11 +1,7 @@
 package edu.umass.cs.iesl.watr
 package format
 
-// import scala.collection.mutable
-// import scalaz.@@
-// import utils._
 import watrmarks._
-// import org.apache.commons.lang3.StringEscapeUtils.escapeXml11
 
 import TypeTags._
 import textboxing.{TextBoxing => TB}
@@ -63,11 +59,13 @@ object DocumentIO {
 
     val serComponents = List(
       LB.SectionHeadingLine,
-      LB.ParaBegin
+      LB.ParaBegin,
+      LB.TextBlock,
+      LB.Abstract,
+      LB.AbstractHeading
     ).map(l =>
       serializeLabeling(l, lineSpine)
     )
-
 
     val lines = for {
       linec <- lineSpine

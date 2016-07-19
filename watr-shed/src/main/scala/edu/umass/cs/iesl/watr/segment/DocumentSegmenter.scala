@@ -284,20 +284,28 @@ class DocumentSegmenter(
 
   val leftBinHistResolution = 1.0d
 
+  import utils.TraceLog
+  import utils.VisualTrace._
+
   def findLeftAlignedBlocksPerPage(): Seq[Seq[Seq[(Component, Int)]]] = {
     val alignedBlocksPerPage = for {
       page <- visualLineOnPageComponents
     } yield {
       println("Processing page")
 
+      TraceLog.trace(
+        Message("findLeftAlignedBlocksPerPage")
+      )
+
       val lefts = page.zipWithIndex
         .map({case (l, i) => (l.bounds.left, i)})
 
       val freqLefts = getMostFrequentValues(lefts.map(_._1), leftBinHistResolution)
 
-      // val fmt = freqLefts.map({case (v, f) => s"${v.pp} ($f)" }).mkString("freq\n   ", "\n   ", "\n/freq")
-      // println(fmt)
-
+      TraceLog.trace(
+        All(freqLefts.map({ case (bin, freq) => VRuler(bin) }):_*),
+        Message("most frequent lefts")
+      )
 
       def valueIsWithinHistBin(bin: Double, res: Double)(value: Double): Boolean = {
         bin-res <= value && value <= bin+res
@@ -306,11 +314,6 @@ class DocumentSegmenter(
 
       val groupedBlocks = page.zipWithIndex
         .splitOnPairs({ case ((l1, l1i), (l2, l2i)) =>
-
-          // println(s"checking left-edge clustering for lines:")
-          // println(s"    l1> ${l1.tokenizeLine().toText}")
-          // println(s"    l2> ${l2.chars}")
-          // println("--")
 
           val linesAreClustered = freqLefts.exists({ case (leftBin, freq) =>
             val l1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l1.bounds.left)
@@ -433,9 +436,7 @@ class DocumentSegmenter(
   }
 
 
-  def runPageSegmentation(): String = { // Seq[ConnectedComponents]
-                                        // import TB._
-
+  def runPageSegmentation(): Unit = {
     // Bottom-up connected-component line-finding
     runLineDetermination()
     groupLeftAlignedBlocks()
@@ -444,21 +445,11 @@ class DocumentSegmenter(
     // findMostFrequentLineDimensions()
     // findMostFrequentFocalJumps()
 
-    // val orderedLinesPerPage = for {
-    //   pageId <- zoneIndexer.getPages
-    // } yield {
-    //   println(s"segmenting page ${pageId}")
-    //   groupPageTextBlocks(pageId)
-    // }
+    // val orderedLinesPerPage = for { pageId <- zoneIndexer.getPages }
+    //     yield { groupPageTextBlocks(pageId) }
 
-    // // label text lines (added label on page lines)
-    // // label text blocks BIO labeling on text lines
-    // // label figure/captions
-
+    labelAbstract()
     labelSectionHeadings()
-
-
-    ""
 
   }
 
@@ -777,6 +768,25 @@ class DocumentSegmenter(
     )
   }
 
+  def labelAbstract(): Unit = {
+    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
+    for {
+      lineBioNode <- vlines.take(100) //  magic # ~= page 1
+      lineComp = lineBioNode.component
+      lineText = lineComp.chars
+
+      isAbstractHeader = ! """(?i:(abstract|a b s t r a c t))""".r.findAllIn(lineText).isEmpty
+
+      if isAbstractHeader
+
+    } {
+      println(s"found abstract header: ${lineText}")
+      // zoneIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
+      zoneIndexer.addBioLabels(LB.AbstractHeading, lineBioNode)
+
+    }
+  }
+
   def labelSectionHeadings(): Unit = {
     val vlines = zoneIndexer.bioSpine("TextBlockSpine")
     for {
@@ -787,16 +797,14 @@ class DocumentSegmenter(
       isTOCLine = """\.+""".r.findAllIn(nexts).toSeq.sortBy(_.length).lastOption.exists(_.length > 4)
 
       if !numbering.isEmpty && !nexts.isEmpty()
-      // _ = println(s"""${lineComp.chars}""")
       if numbering.matches("^[1-9]+\\.([1-9]\\.)*")
       if !isTOCLine
-      // _ = println(s"""    >${numbering}""")
     } {
       val ns = numbering.split("\\.").toList.map(_.toInt)
       zoneIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
 
-      (lineComp, ns)
 
+      (lineComp, ns)
     }
 
     // val numberedSectionLines = for {

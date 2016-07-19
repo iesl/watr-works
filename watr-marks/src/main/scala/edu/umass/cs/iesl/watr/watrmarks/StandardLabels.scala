@@ -13,6 +13,8 @@ trait DocSegLabels {
   val SectionNumber = Label("ds", "section-number")
   val SectionTitle = Label("ds", "section-title")
 
+  val AbstractHeading = Label("ds", "abstract-heading")
+  val Abstract = Label("ds", "abstract")
 
   val TextBlock = Label("ds", "text-block")
   val ParaBegin = Label("ds", "para-begin")

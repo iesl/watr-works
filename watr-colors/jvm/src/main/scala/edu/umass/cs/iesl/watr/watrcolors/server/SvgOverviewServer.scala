@@ -16,15 +16,11 @@ class SvgOverviewServer(
     println(s"getting corpusEntry '${corpusEntryId}'")
     (for {
       entry <- corpus.entry(corpusEntryId).toList
-      artifact <- entry.getArtifact("bbox.svg")
-      f <- artifact.asPath.toOption
-    } yield {
-      val corpusPath = f.relativeTo(corpus.corpusRoot)
-      println(s"SvgOverviewServer: createView(${corpusEntryId}) path=(${corpusPath})")
-      HtmlReplaceInner("#main", new html.SvgOverviewView().init(corpusPath.toString).toString)
-    })
+     } yield {
+      val initHtml = new html.SvgOverviewView().initPageImages(entry)
+      HtmlReplaceInner("#main", initHtml.toString())
+     })
   }
-
 
   def jsiRectangleToBBox(r: Rectangle): BBox = {
     val x = r.minX
