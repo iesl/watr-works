@@ -128,7 +128,7 @@ class CorpusEntry(
 
 
   def putArtifact(artifactDescriptor: String, content: String, groupDescriptor: String = "."): CorpusArtifact = {
-    val outputPath = artifactsRoot / groupDescriptor / artifactDescriptor
+    val outputPath = artifactsRoot / RelPath(groupDescriptor) / RelPath(artifactDescriptor)
     write(outputPath, content)
     val group = new CorpusArtifactGroup(groupDescriptor, this)
     new CorpusArtifact(artifactDescriptor, group)
@@ -155,11 +155,11 @@ class CorpusEntry(
     artifact.delete
   }
   def hasArtifactGroup(groupDescriptor: String): Boolean ={
-    exists(artifactsRoot / groupDescriptor)
+    exists(artifactsRoot / RelPath(groupDescriptor))
   }
 
   def hasArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Boolean ={
-    exists(artifactsRoot / artifactDescriptor)
+    exists(artifactsRoot / RelPath(artifactDescriptor))
   }
 
   def getPdfArtifact(): Option[CorpusArtifact] = {

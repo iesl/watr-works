@@ -322,7 +322,8 @@ class DocumentSegmenter(
 
           val h1 = l1.determineNormalTextBounds.height
           val h2 = l2.determineNormalTextBounds.height
-          val heightsDiffer = h1 != h2
+          // val heightsDiffer = h1 != h2
+          val heightsDiffer = ! h1.eqFuzzy(0.2)(h2)
 
           heightsDiffer || (!linesAreClustered)
         })
@@ -359,7 +360,6 @@ class DocumentSegmenter(
 
   import BioLabeling._
 
-  var xxx = 10
   def groupLeftAlignedBlocks(): Unit = {
     // lines ordered as per cc analysis
     val alignedBlocksPerPage = findLeftAlignedBlocksPerPage()
@@ -376,14 +376,14 @@ class DocumentSegmenter(
         zoneIndexer.addBioLabels(LB.TextBlock, bios)
 
         // each block is a list of line components that have been grouped into a text block
-        vtrace.trace(
-          vtrace.all(
-            bios.map(b => vtrace.link(
-              vtrace.showComponent(b.component),
-              vtrace.showLabel(LB.TextBlock)
-            ))
-          )
-        )
+        // vtrace.trace(
+        //   vtrace.link(
+        //     vtrace.all(
+        //       bios.map(b => vtrace.showComponent(b.component))
+        //     ),
+        //     vtrace.showLabel(LB.TextBlock)
+        //   )
+        // )
 
         bios
       })
@@ -784,21 +784,59 @@ class DocumentSegmenter(
   }
 
   def labelAbstract(): Unit = {
-    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
-    for {
-      lineBioNode <- vlines.take(100) //  magic # ~= page 1
-      lineComp = lineBioNode.component
-      lineText = lineComp.chars
+    // find the word "abstract" in some form, then,
+    // if the text block containing "abstract" is a single line,
+    //    take subsequent text blocks until we take a multiline
+    // else if the text block is multi-line, take that block to be the entire abstract
+    val textBlockSpine = zoneIndexer.bioSpine("TextBlockSpine")
+    val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
+    val maybeLookingAtAbstract = blocks.dropWhile { tblines =>
+      tblines.headOption.exists { l1 =>
+        val lineComp = l1.component
+        val lineText = lineComp.chars
+        val isAbstractHeader =  """^(?i:(abstract|a b s t r a c t))""".r.findAllIn(lineText).length > 0
+        !isAbstractHeader
+      }
+    }
 
-      isAbstractHeader = ! """(?i:(abstract|a b s t r a c t))""".r.findAllIn(lineText).isEmpty
 
-      if isAbstractHeader
+    if (maybeLookingAtAbstract.length > 0) {
+      val firstBlockIsMultiline = maybeLookingAtAbstract.headOption.exists(_.length > 1)
+      if (firstBlockIsMultiline) {
+        // label this as the abstract
+        maybeLookingAtAbstract.headOption.foreach { abs =>
+          zoneIndexer.addBioLabels(LB.Abstract, abs)
 
-    } {
-      println(s"found abstract header: ${lineText}")
-      // zoneIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
-      zoneIndexer.addBioLabels(LB.AbstractHeading, lineBioNode)
+          // vtrace.trace(
+          //   vtrace.link(
+          //     vtrace.all(
+          //       abs.map(b => vtrace.showComponent(b.component))
+          //     ),
+          //     vtrace.showLabel(LB.Abstract)
+          //   )
+          // )
 
+
+        }
+      } else {
+        val singleLines = maybeLookingAtAbstract.takeWhile { tblines =>
+          tblines.length == 1
+        }
+        val absBlock = maybeLookingAtAbstract.drop(singleLines.length).headOption.getOrElse(Seq())
+        val totalABs = singleLines :+ absBlock
+
+        zoneIndexer.addBioLabels(LB.Abstract, totalABs.flatten)
+
+        // vtrace.trace(
+        //   vtrace.link(
+        //     vtrace.all(
+        //       totalABs.flatten.map(b => vtrace.showComponent(b.component))
+        //     ),
+        //     vtrace.showLabel(LB.Abstract)
+        //   )
+        // )
+
+      }
     }
   }
 

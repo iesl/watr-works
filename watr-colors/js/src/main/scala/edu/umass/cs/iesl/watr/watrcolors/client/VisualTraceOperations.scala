@@ -107,89 +107,156 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
 
 
-  def runTrace(traceEntries: Seq[TraceLog]): Unit = {
+  def runTrace(traces: Seq[TraceLog]): Unit = {
     fabricCanvas.renderOnAddRemove = false
 
-    traceEntries.foreach({ _ match {
-      case Noop =>
-      case SetPageGeometries(b: Seq[PageGeometry]) =>
-        pageGeometry.clear()
-        pageOffsets.clear()
+    var classNum = 0
 
-        b.foreach { geom =>
-          pageGeometry.put(geom.id, geom)
-        }
+    val classStack = mutable.Stack[String]()
 
-        pageGeometry.keys.toList.sorted.foreach{k =>
-          val geom = pageGeometry(k)
+    var currR = 0
+    var currG = 0
+    var currB = 0
 
-          pageOffsets.lastOption match {
-            case Some(lastPageGeom) =>
-              pageOffsets += geom.bounds.copy(
-                top=geom.bounds.top + lastPageGeom.top + lastPageGeom.height
-              )
-            case None =>
-              pageOffsets += geom.bounds
+    def nextRGB(): String  = {
+      currR += 1; currR = currR % 16
+      currG += 3; currG = currG % 16
+      currB += 5; currB = currB % 16
+      val r = currR.toHexString
+      val g = currG.toHexString
+      val b = currB.toHexString
+      s"#$r$g$b"
+    }
+
+    var currRGB = nextRGB()
+
+
+
+
+    def _run(traceEntries: Seq[TraceLog]): Unit = {
+      traceEntries.foreach({ _ match {
+        case Noop =>
+        case SetPageGeometries(b: Seq[PageGeometry]) =>
+          pageGeometry.clear()
+          pageOffsets.clear()
+
+          b.foreach { geom =>
+            pageGeometry.put(geom.id, geom)
           }
-        }
-        println(s"""offset pages = ${pageOffsets.mkString("\n   ")}""")
 
-      case Show(s: Seq[TargetRegion]) =>
-        val rs = s.map(
-          transformTargetRegion(_)
-        )
-        // println(s"Show! ${s}")
+          pageGeometry.keys.toList.sorted.foreach{k =>
+            val geom = pageGeometry(k)
 
-        rs.foreach(tr => addShape(tr.bbox, "blue"))
+            pageOffsets.lastOption match {
+              case Some(lastPageGeom) =>
+                pageOffsets += geom.bounds.copy(
+                  top=geom.bounds.top + lastPageGeom.top + lastPageGeom.height
+                )
+              case None =>
+                pageOffsets += geom.bounds
+            }
+          }
+          println(s"""offset pages = ${pageOffsets.mkString("\n   ")}""")
 
+        case Show(s: Seq[TargetRegion]) =>
+          val rs = s.map(
+            transformTargetRegion(_)
+          )
 
-      case ShowZone(s: Zone) =>
-        println(s"ShowZone! ${s}")
-
-      case ShowComponent(s: Component) =>
-        val ttrans = transformTargetRegion(s.targetRegion)
-        addShape(ttrans.bbox, "blue")
-
-      case ShowLabel(s: Label) =>
-        // println(s"ShowLabel! ${s}")
-
-      case ShowVDiff(d1: Double, d2: Double) =>
-      case FocusOn(s: GeometricFigure) =>
-      case VRuler(s: Double) =>
-        // println(s"v-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
-
-      case HRuler(s: Double) =>
-        // println(s"h-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
-
-        // val r = fabric.Rect()
-        // r.left = 0
-        // r.top =  transformY(s)
-        // r.width = canvasW+canvasBorder
-        // r.height = 1
-        // r.stroke      = "red"
-        // r.strokeWidth = 1
-        // r.fill        = "rgb(100, 30, 52)"
-        // r.opacity = 0.2
-
-        // // setGradient(r,
-        // //   "fill",
-        // //   "linear",
-        // //   (0, 0),
-        // //   (50, 15),
-        // //   js.Dynamic.literal(
-        // //     "0" -> "#222",
-        // //     "1" -> "#888"
-        // //   )
-        // // )
-
-        // fabricCanvas.add(r)
-
-      case Message(s: String) => println(s"Message: ${s}")
-      case a:All => runTrace(a.ts)
-      case a:Link => runTrace(a.ts)
+          rs.foreach(tr => addShape(tr.bbox, "blue", currRGB))
 
 
-    }})
+        case ShowZone(s: Zone) =>
+          println(s"ShowZone! ${s}")
+
+        case ShowComponent(s: Component) =>
+          val ttrans = transformTargetRegion(s.targetRegion)
+          addShape(ttrans.bbox, "blue", currRGB)
+
+        case ShowLabel(s: Label) =>
+          import org.scalajs.jquery.jQuery
+
+          // val cls = classStack.mkString(" ")
+          val cls = "."+classStack.top
+
+          val content = s"""<li><button class="$cls">${s.ns}:${s.key}</button></li>"""
+
+          // jQuery("#messages").hover(handlerInOut: Function1[JQueryEventObject, Any])
+
+          jQuery("#messages").append(
+            content
+          )
+
+          import org.scalajs.jquery._
+
+          val hin = (e:JQueryEventObject) => {
+            println("hover in")
+            jQuery(e.target).addClass("hover")
+            jQuery(cls).addClass("hover")
+          }
+          val hout = (e:JQueryEventObject) => {
+            println("hover out")
+            jQuery(e.target).removeClass("hover")
+            jQuery(cls).removeClass("hover")
+          }
+
+          // jQuery(cls).hover(hin, hout)
+
+        case ShowVDiff(d1: Double, d2: Double) =>
+        case FocusOn(s: GeometricFigure) =>
+        case VRuler(s: Double) =>
+          // println(s"v-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
+
+        case HRuler(s: Double) =>
+          // println(s"h-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
+
+          // val r = fabric.Rect()
+          // r.left = 0
+          // r.top =  transformY(s)
+          // r.width = canvasW+canvasBorder
+          // r.height = 1
+          // r.stroke      = "red"
+          // r.strokeWidth = 1
+          // r.fill        = "rgb(100, 30, 52)"
+          // r.opacity = 0.2
+
+          // // setGradient(r,
+          // //   "fill",
+          // //   "linear",
+          // //   (0, 0),
+          // //   (50, 15),
+          // //   js.Dynamic.literal(
+          // //     "0" -> "#222",
+          // //     "1" -> "#888"
+          // //   )
+          // // )
+
+          // fabricCanvas.add(r)
+
+        case Message(s: String) => println(s"Message: ${s}")
+        case a:All =>
+          currRGB = nextRGB()
+
+          classNum += 1
+          classStack.push(s"c${classNum}")
+
+          _run(a.ts)
+
+          classStack.pop()
+
+        case a:Link =>
+          classNum += 1
+          classStack.push(s"c${classNum}")
+
+          _run(a.ts)
+
+          classStack.pop()
+
+
+      }})
+    }
+
+    _run(traces)
 
     fabricCanvas.renderAll()
     fabricCanvas.renderOnAddRemove = true

@@ -46,9 +46,10 @@ class PdfTextExtractor(
 
   def getReportedPageGeometry(pageId: Int@@PageID, pdfPage: PdfPage): (PageGeometry, GeometryTranslation) = {
 
-    // val mediabox = pdfPage.getPdfObject.getAsArray(PdfName.MediaBox)
-    val cropbox = pdfPage.getPdfObject.getAsArray(PdfName.CropBox)
-    val usebox = cropbox
+    var usebox = pdfPage.getPdfObject.getAsArray(PdfName.CropBox)
+    if (usebox==null) {
+      usebox = pdfPage.getPdfObject.getAsArray(PdfName.MediaBox)
+    }
     val i1 = usebox.get(0).asInstanceOf[PdfNumber]
     val i2 = usebox.get(1).asInstanceOf[PdfNumber]
     val i3 = usebox.get(2).asInstanceOf[PdfNumber]

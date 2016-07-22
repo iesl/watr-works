@@ -56,7 +56,8 @@ class SvgOverviewView() {
       position.absolute,
       padding:="0",
       margin:="0",
-      border := "0",
+      borderTop := "2px solid #AAA",
+      borderLeft := "2px solid #AAA",
       left:="0",
       top:="0"
     )
@@ -90,6 +91,7 @@ class SvgOverviewView() {
 
     div(containerFluid)(
       <.style(^.`type`:="text/css", SvgStyles.styleSheetText),
+      <.style(^.`type`:="text/css",""".hover { background-color: green; }"""),
       <.div(row)(
         <.div(col(6))(
           <.div(^.id:="overlay-container", SvgStyles.overlayContainer)(
@@ -103,8 +105,7 @@ class SvgOverviewView() {
         <.div(col(6))(
           <.div(SvgStyles.infoPane)(
             <.span("Info Area"),
-            <.span(^.id:="rxinfo"),
-            <.span(^.id:="selection-info")
+            <.ul(^.id:="messages", ^.style:="")
           )
         )
       )

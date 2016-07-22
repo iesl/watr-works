@@ -22,18 +22,18 @@ trait FabricCanvasOperations {
     jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
   }
 
-  def addShape(shape: GeometricFigure, color: String): Unit = {
+  def addShape(shape: GeometricFigure, color: String, bg: String): Unit = {
     shape match {
       case  p: Point =>
         // addCircle(p, color)
         addLTBoundsRect(LTBounds(
           p.x-1, p.y-1, 2, 2
-        ), color)
+        ), color, bg)
 
       case  Line(p1: Point, p2: Point) =>
 
       case b:LTBounds =>
-        addLTBoundsRect(b, color)
+        addLTBoundsRect(b, color, bg)
     }
 
   }
@@ -59,7 +59,7 @@ trait FabricCanvasOperations {
     fabricCanvas.add(c)
   }
 
-  def addLTBoundsRect(bbox: LTBounds, color: String): Unit = {
+  def addLTBoundsRect(bbox: LTBounds, color: String, bg: String): Unit = {
 
     val rect = fabric.Rect()
     rect.top         = bbox.top
@@ -68,10 +68,11 @@ trait FabricCanvasOperations {
     rect.height      = bbox.height
     rect.stroke      = color
     rect.strokeWidth = 1
-    rect.fill        = ""
+    rect.fill        = bg
     rect.hasControls = false
     rect.hasBorders  = false
     rect.selectable  = false
+    rect.opacity = 0.2
 
     fabricCanvas.add(rect)
   }

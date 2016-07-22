@@ -109,7 +109,7 @@ class SvgOverview(
       async {
         val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
         applyHtmlUpdates(res)
-        addLTBoundsRect(bboxAbs, "black")
+        addLTBoundsRect(bboxAbs, "black", "#000")
       }
     }
     true

@@ -3,7 +3,6 @@ package native
 package mousetrap
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.JSName
 
 @js.native
 object Mousetrap extends js.Object {

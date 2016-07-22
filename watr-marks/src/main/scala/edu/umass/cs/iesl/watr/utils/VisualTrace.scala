@@ -12,7 +12,7 @@ object TraceLog {
   case class SetPageGeometries(b: Seq[PageGeometry]) extends TraceLog
   case class Show(s: Seq[TargetRegion])              extends TraceLog
   case class ShowZone(s: Zone)                       extends TraceLog
-  case class ShowComponent(s: Component)                       extends TraceLog
+  case class ShowComponent(s: Component)             extends TraceLog
   case class ShowLabel(l:Label)                      extends TraceLog
   case class ShowVDiff(d1: Double, d2: Double)       extends TraceLog
   case class FocusOn(s: GeometricFigure)             extends TraceLog
@@ -39,7 +39,7 @@ class VisualTracer() {
   def showRegion(s: TargetRegion): TraceLog             = Show(Seq(s))
   def showRegions(s: Seq[TargetRegion]): TraceLog       = Show(s)
   def showZone(s: Zone): TraceLog                       = ShowZone(s)
-  def showComponent(s: Component): TraceLog                       = ShowComponent(s)
+  def showComponent(s: Component): TraceLog             = ShowComponent(s)
   def showLabel(s: Label): TraceLog                     = ShowLabel(s)
   def showVDiff(d1: Double, d2: Double): TraceLog       = ShowVDiff(d1, d2)
   def focusOn(s: GeometricFigure): TraceLog             = FocusOn(s)
