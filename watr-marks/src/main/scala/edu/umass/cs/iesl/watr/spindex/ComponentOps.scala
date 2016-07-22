@@ -70,6 +70,7 @@ object ComponentOperations {
   }
 
   implicit class RicherComponent(val component: Component) extends AnyVal {
+    // component.zoneIndex
 
     def hasLabel(l: Label): Boolean = component.getLabels.contains(l)
 
@@ -189,19 +190,20 @@ object ComponentOperations {
       spaceDists
     }
 
-    import utils.TraceLog
-    import utils.VisualTrace._
+
+    def vtrace = component.zoneIndex.vtrace
+
 
     // TODO this is a side-effect function, doesn't need to be
     def tokenizeLine(): Component = {
       if (!component.getLabels.contains(LB.TokenizedLine)) {
 
-
-        TraceLog.trace(
-          SetViewport(component.bounds),
-          All(component.children.map(_.bounds).map(Show(_)):_*),
-          Message("tokenizing line")
-        )
+        // vtrace.trace(
+        //   vtrace.all(
+        //     component.children.map(_.bounds).map(vtrace.show(_))
+        //   ),
+        //   vtrace.message("tokenizing line")
+        // )
 
         val tops = findCommonToplines()
         val bottoms = findCommonBaselines()
@@ -213,9 +215,9 @@ object ComponentOperations {
         val modalCenterY = (modalBottom + modalTop)/2
         // val meanCenterY = component.characteristicLine.centerPoint.y
 
-        TraceLog.trace{ HRuler(modalTop) }
-        TraceLog.trace{ HRuler(modalBottom) }
-        TraceLog.trace{ HRuler(modalCenterY) }
+        vtrace.hRuler(modalTop)
+        vtrace.hRuler(modalBottom)
+        vtrace.hRuler(modalCenterY)
 
 
         // label individual chars as super/sub if char.ctr fall above/below centerline
@@ -235,9 +237,6 @@ object ComponentOperations {
             }
 
 
-          TraceLog.trace{ Show(cctr) }
-          TraceLog.trace{ ShowVDiff(cctr.y, modalCenterY) }
-          // TraceLog.trace{ Message(ssLabel.toString) }
 
           maybeLabel.foreach { c.addLabel(_) }
           c

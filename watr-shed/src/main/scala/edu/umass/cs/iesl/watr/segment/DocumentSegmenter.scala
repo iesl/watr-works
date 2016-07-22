@@ -4,11 +4,10 @@ package segment
 import java.io.InputStream
 import watrmarks._
 import spindex._
+import GeometricFigure._
 
 import spindex._
 import scalaz.@@
-// import Bounds._
-// import Component._
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import utils._
@@ -20,6 +19,7 @@ import ComponentOperations._
 import ComponentRendering._
 import SlicingAndDicing._
 import utils.{CompassDirection => CDir}
+
 
 
 import utils.{Histogram, AngleFilter, DisjointSets}
@@ -190,6 +190,7 @@ object DocumentSegmenter extends DocumentUtils {
 class DocumentSegmenter(
   val zoneIndexer: ZoneIndexer
 ) {
+  def vtrace = zoneIndexer.vtrace
 
   import scala.math.Ordering.Implicits._
   implicit def RegionIDOrdering: Ordering[Int@@RegionID] = Ordering.by(_.unwrap)
@@ -284,8 +285,6 @@ class DocumentSegmenter(
 
   val leftBinHistResolution = 1.0d
 
-  import utils.TraceLog
-  import utils.VisualTrace._
 
   def findLeftAlignedBlocksPerPage(): Seq[Seq[Seq[(Component, Int)]]] = {
     val alignedBlocksPerPage = for {
@@ -293,19 +292,19 @@ class DocumentSegmenter(
     } yield {
       println("Processing page")
 
-      TraceLog.trace(
-        Message("findLeftAlignedBlocksPerPage")
-      )
+      // vtrace.trace(
+      //   vtrace.message("findLeftAlignedBlocksPerPage")
+      // )
 
       val lefts = page.zipWithIndex
         .map({case (l, i) => (l.bounds.left, i)})
 
       val freqLefts = getMostFrequentValues(lefts.map(_._1), leftBinHistResolution)
 
-      TraceLog.trace(
-        All(freqLefts.map({ case (bin, freq) => VRuler(bin) }):_*),
-        Message("most frequent lefts")
-      )
+      // vtrace.trace(
+      //   vtrace.all(freqLefts.map({ case (bin, freq) => vtrace.vRuler(bin) })),
+      //   vtrace.message("most frequent lefts")
+      // )
 
       def valueIsWithinHistBin(bin: Double, res: Double)(value: Double): Boolean = {
         bin-res <= value && value <= bin+res
@@ -360,6 +359,7 @@ class DocumentSegmenter(
 
   import BioLabeling._
 
+  var xxx = 10
   def groupLeftAlignedBlocks(): Unit = {
     // lines ordered as per cc analysis
     val alignedBlocksPerPage = findLeftAlignedBlocksPerPage()
@@ -374,6 +374,17 @@ class DocumentSegmenter(
       .map({ block =>
         val bios = block.map(_._1).map(BioNode(_))
         zoneIndexer.addBioLabels(LB.TextBlock, bios)
+
+        // each block is a list of line components that have been grouped into a text block
+        vtrace.trace(
+          vtrace.all(
+            bios.map(b => vtrace.link(
+              vtrace.showComponent(b.component),
+              vtrace.showLabel(LB.TextBlock)
+            ))
+          )
+        )
+
         bios
       })
 
@@ -381,7 +392,6 @@ class DocumentSegmenter(
     textBlockSpine ++= spine.flatten
 
     val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
-
 
     val modalParaFocalJump = docWideModalParaFocalJump(blocks, modalVDist)
 
@@ -437,6 +447,11 @@ class DocumentSegmenter(
 
 
   def runPageSegmentation(): Unit = {
+    vtrace.trace(vtrace.setPageGeometries(
+      zoneIndexer.pageInfos.map(_._2.geometry).toSeq
+    ))
+
+
     // Bottom-up connected-component line-finding
     runLineDetermination()
     groupLeftAlignedBlocks()

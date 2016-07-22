@@ -5,6 +5,7 @@ import scalaz.@@
 import watrmarks._
 
 import IndexShapeOperations._
+import GeometricFigure._
 
 case class TargetRegion(
   id: Int@@RegionID,
@@ -14,7 +15,7 @@ case class TargetRegion(
 
 case class Zone(
   id: Int@@ZoneID,
-  regions: List[TargetRegion]
+  regions: Seq[TargetRegion]
 ) {
   def withLabel(l: Label) = ZoneAndLabel(
     this.id, l
@@ -36,31 +37,12 @@ sealed trait PageAtom {
   def region: TargetRegion
 }
 
-// object PageAtom {
-//   def apply(
-//     region: TargetRegion,
-//     char: String,
-//     subs: String = "",
-//     wonkyCharCode: Option[Int] = None
-//   ) = CharAtom(region, char, subs, wonkyCharCode)
-
-//   def apply(region: TargetRegion) = ImgAtom(region)
-
-
-
-// }
-
-
 class CharAtom(
   val region: TargetRegion,
   val char: String,
   val subs: String = "",
   val wonkyCharCode: Option[Int] = None
-) extends PageAtom {
-  // override def toString = {
-  //   " "
-  // }
-}
+) extends PageAtom
 
 object CharAtom {
   def unapply(r: CharAtom): Option[(TargetRegion, String, String, Option[Int])] =

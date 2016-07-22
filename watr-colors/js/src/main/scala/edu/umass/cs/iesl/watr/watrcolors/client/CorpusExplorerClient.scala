@@ -48,18 +48,10 @@ class CorpusExplorerClient() extends ClientView {
     true
   }
 
-  def visualTrace(): Boolean = {
-    server.getCorpusEntryInFocus().call().foreach { corpusEntry =>
-      WatrColorClient.switchViews(new VisualTraceClient(corpusEntry))
-    }
-    true
-  }
-
   override val initKeys = Keybindings(List(
     "j" -> ((e: MousetrapEvent) => navNext),
     "k" -> ((e: MousetrapEvent) => navPrev),
-    "x" -> ((e: MousetrapEvent) => openFocus),
-    "t" -> ((e: MousetrapEvent) => visualTrace)
+    "x" -> ((e: MousetrapEvent) => openFocus)
   ))
 
 }

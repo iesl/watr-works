@@ -2,85 +2,57 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import spindex._
+import watrmarks.Label
 
-import scala.language.existentials
-import scala.collection.mutable
-
+sealed trait TraceLog
 
 object TraceLog {
-  import VisualTrace._
-  val entries: mutable.MutableList[VisualTrace.DSL[_]] = mutable.MutableList()
 
-  var currPRG = Noop
+  case object Noop                                   extends TraceLog
+  case class SetPageGeometries(b: Seq[PageGeometry]) extends TraceLog
+  case class Show(s: Seq[TargetRegion])              extends TraceLog
+  case class ShowZone(s: Zone)                       extends TraceLog
+  case class ShowComponent(s: Component)                       extends TraceLog
+  case class ShowLabel(l:Label)                      extends TraceLog
+  case class ShowVDiff(d1: Double, d2: Double)       extends TraceLog
+  case class FocusOn(s: GeometricFigure)             extends TraceLog
+  case class HRuler(s: Double)                       extends TraceLog
+  case class VRuler(s: Double)                       extends TraceLog
+  case class Message(s: String)                      extends TraceLog
+  case class All(ts: Seq[TraceLog])                  extends TraceLog
+  case class Link(ts: Seq[TraceLog])                 extends TraceLog
 
-  def trace(p: VisualTrace.DSL[_]*): Unit = {
-    entries ++= p
-  }
-
-  // def traces[T](p: => Seq[VisualTrace.DSL[T]]): Unit = {
-  //   entries ++= p
-  // }
-
-
-  def getAndClearTraceLog(): Seq[VisualTrace.DSL[_]] = {
-    val ret = Seq(entries:_*)
-    entries.clear()
-    ret
-  }
-}
-
-
-
-
-object VisualTrace {
-  sealed trait DSL[A]
-
-  case object Noop extends DSL[Unit]
-  case class SetViewport(b: LTBounds) extends DSL[Unit]
-  case class GetViewport() extends DSL[LTBounds]
-  case class Show(s: Shape) extends DSL[Unit]
-  case class ShowVDiff(d1: Double, d2: Double) extends DSL[Unit]
-  case class FocusOn(s: Shape) extends DSL[Unit]
-  case class HRuler(s: Double) extends DSL[Shape]
-  case class VRuler(s: Double) extends DSL[Shape]
-  case class Message(s: String) extends DSL[Unit]
-
-  case class All[A](ts: DSL[A]*) extends DSL[Unit]
-  case class And[A](t1: DSL[A], t2: DSL[A]) extends DSL[Unit]
-  case class AndThen[A](t1: DSL[A], t2: DSL[A]) extends DSL[Unit]
 
 }
 
+import scala.collection.mutable
+
+class VisualTracer() {
+
+  val vtrace = mutable.MutableList[TraceLog]()
+
+  import TraceLog._
+
+  def trace(tls: TraceLog*): Unit = tls.foreach(vtrace += _)
+
+  def setPageGeometries(b: Seq[PageGeometry]): TraceLog = SetPageGeometries(b)
+  def showRegion(s: TargetRegion): TraceLog             = Show(Seq(s))
+  def showRegions(s: Seq[TargetRegion]): TraceLog       = Show(s)
+  def showZone(s: Zone): TraceLog                       = ShowZone(s)
+  def showComponent(s: Component): TraceLog                       = ShowComponent(s)
+  def showLabel(s: Label): TraceLog                     = ShowLabel(s)
+  def showVDiff(d1: Double, d2: Double): TraceLog       = ShowVDiff(d1, d2)
+  def focusOn(s: GeometricFigure): TraceLog             = FocusOn(s)
+  def hRuler(s: Double): TraceLog                       = HRuler(s)
+  def vRuler(s: Double): TraceLog                       = VRuler(s)
+  def message(s: String): TraceLog                      = Message(s)
+  def all(ts: Seq[TraceLog]): TraceLog                  = All(ts)
+  def link(ts: TraceLog*): TraceLog                     = Link(ts)
 
 
-
-// object interp {
-//   import VisualTrace._
-
-//   class EmitTracesInterpreter() extends (VisualTrace.DSL ~> cats.Id) {
-//     def apply[A](a: VisualTrace.DSL[A]) = a match {
-//       case Noop =>
-//       case SetViewport(b: LTBounds) =>
-//       case GetViewport() =>
-//         println("set!")
-//         Bounds.empty
-//       case Show(s: Shape) =>
-//         println("show!")
-//         Json.obj(
-//           "" -> ""
-//         )
-
-//         ()
-
-
-//       case ShowVDiff(d1: Double, d2: Double) =>
-//       case FocusOn(s: Shape) =>
-//       case HRuler(s: Double) =>
-//         println("rule!")
-//           ???
-//       case Message(s: String) =>
-//       case And(t1, t2) =>
-//       case AndThen(t1, t2) =>
-//     }
-//   }
-
+  def getAndResetTrace(): List[TraceLog] = {
+    val t = vtrace.toList
+    vtrace.clear()
+    t
+  }
+}

@@ -1,13 +1,13 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-// import watrmarks._
 import com.itextpdf.kernel.pdf.PdfPage
 import spindex._
+import GeometricFigure._
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
-  // import TypeTags._
+// import TypeTags._
 import scalaz.{@@}
 import util._
 
@@ -76,14 +76,14 @@ object PdfPageObjectOutput {
 }
 
 class CharExtractionListener(
-  // fontDict: mutable.Map[String, DocumentFont],
   reader: PdfReader,
   charsToDebug: Set[Int] = Set(),
   componentIdGen: IdGenerator[RegionID],
   currCharBuffer: mutable.ArrayBuffer[PageAtom], // = mutable.ArrayBuffer[PageAtom]()
   pdfPage: PdfPage,
-  // pageRectangle: Rectangle,
-  pageId: Int@@PageID
+  pageId: Int@@PageID,
+  pageGeometry: PageGeometry,
+  geomTranslation:GeometryTranslation
 ) extends IEventListener {
 
   override def getSupportedEvents(): java.util.Set[EventType] ={
@@ -234,18 +234,22 @@ class CharExtractionListener(
   }
 
 
-
-
   def computeTextBounds(charTri: TextRenderInfo): Option[LTBounds] = {
     val ascentStart = charTri.getAscentLine().getStartPoint()
     val descentStart = charTri.getDescentLine().getStartPoint()
 
     val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
     val absoluteCharBottom: Double = descentStart.get(PVector.I2).toDouble
-    val pageRectangle = pdfPage.getPageSize
 
-    val charLeft = absoluteCharLeft - pageRectangle.getLeft()
-    val charBottom = absoluteCharBottom - pageRectangle.getBottom() // in math coords
+    // val pageRectangle = pdfPage.getCropBox()
+    // pageGeometry.bounds
+
+    val charLeft = geomTranslation.transX(absoluteCharLeft)
+    val charBottom = geomTranslation.transY(absoluteCharBottom)
+
+
+    // val charLeft = absoluteCharLeft - pageRectangle.getLeft()
+    // val charBottom = absoluteCharBottom - pageRectangle.getBottom() // in math coords
 
 
     var charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
@@ -261,29 +265,26 @@ class CharExtractionListener(
       charWidth = 0
     }
 
-    if (absoluteCharLeft < pageRectangle.getLeft()
-      || absoluteCharLeft + charWidth > pageRectangle.getRight()
-      || absoluteCharBottom < pageRectangle.getBottom()
-      || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
-      None
-    } else {
-      // if (bounds.getX().nan || bounds.getX().inf
-      //   || bounds.getY().nan || bounds.getY().inf
-      //   || bounds.getHeight().nan || bounds.getHeight().inf
-      //   || bounds.getWidth().nan || bounds.getWidth().inf) {
-      //   // skip
-      //   println(s"skipping text w/bbox= nan|inf: ${text}")
-      // } else {
+    // if (absoluteCharLeft < pageRectangle.getLeft()
+    //   || absoluteCharLeft + charWidth > pageRectangle.getRight()
+    //   || absoluteCharBottom < pageRectangle.getBottom()
+    //   || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
+    // if (bounds.getX().nan || bounds.getX().inf
+    //   || bounds.getY().nan || bounds.getY().inf
+    //   || bounds.getHeight().nan || bounds.getHeight().inf
+    //   || bounds.getWidth().nan || bounds.getWidth().inf) {
+    //   // skip
+    //   println(s"skipping text w/bbox= nan|inf: ${text}")
+    // } else {
 
-      val y = pageRectangle.getHeight() - charBottom - charHeight
+    val charTop = charBottom - charHeight
 
-      Some(LTBounds(
-        left=charLeft,
-        top=y,
-        width=charWidth,
-        height=charHeight
-      ))
-    }
+    Some(LTBounds(
+      left=charLeft,
+      top=charTop,
+      width=charWidth,
+      height=charHeight
+    ))
   }
 
   def transformRawChar(ch: Char): String = {

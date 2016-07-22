@@ -10,6 +10,9 @@ import textboxing.{TextBoxing => TB}
 import ComponentRendering._
 import ComponentOperations._
 import IndexShapeOperations._
+import GeometricFigure._
+
+import TypeTags._
 
 sealed trait Component {
   def id: Int@@ComponentID
@@ -17,6 +20,12 @@ sealed trait Component {
   def zoneIndex: ZoneIndexer
 
   def targetRegions: Seq[TargetRegion]
+
+  def targetRegion: TargetRegion = {
+    targetRegions.headOption
+      .map(tr => TargetRegion(RegionID(0), tr.target, bounds))
+      .getOrElse {  sys.error("no target region found in Component}") }
+  }
 
   def chars: String
 
@@ -142,8 +151,6 @@ sealed trait Component {
     getLabels() ++ descLabelSet
   }
 }
-
-// import Component._
 
 case class PageComponent(
   id: Int@@ComponentID,

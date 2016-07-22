@@ -11,6 +11,8 @@ import watrmarks.{StandardLabels => LB}
 
 import ComponentOperations._
 import ComponentTypeEnrichments._
+import GeometricFigure._
+
 case class CCRenderState(
   numOfPages: Int,
   startingPage: Int@@PageID = PageID(0),

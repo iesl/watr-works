@@ -12,6 +12,8 @@ import scala.async.Async.{async, await}
 
 import scala.collection.mutable
 
+import GeometricFigure._
+import TraceLog._
 
 trait FabricCanvasOperations {
   import org.scalajs.jquery.jQuery
@@ -20,18 +22,18 @@ trait FabricCanvasOperations {
     jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
   }
 
-  def addShape(shape: Overlay, color: String): Unit = {
+  def addShape(shape: GeometricFigure, color: String): Unit = {
     shape match {
       case  p: Point =>
         // addCircle(p, color)
-        addBBoxRect(BBox(
+        addLTBoundsRect(LTBounds(
           p.x-1, p.y-1, 2, 2
         ), color)
 
       case  Line(p1: Point, p2: Point) =>
 
-      case b:BBox =>
-        addBBoxRect(b, color)
+      case b:LTBounds =>
+        addLTBoundsRect(b, color)
     }
 
   }
@@ -57,11 +59,11 @@ trait FabricCanvasOperations {
     fabricCanvas.add(c)
   }
 
-  def addBBoxRect(bbox: BBox, color: String): Unit = {
+  def addLTBoundsRect(bbox: LTBounds, color: String): Unit = {
 
     val rect = fabric.Rect()
-    rect.top         = bbox.y
-    rect.left        = bbox.x
+    rect.top         = bbox.top
+    rect.left        = bbox.left
     rect.width       = bbox.width
     rect.height      = bbox.height
     rect.stroke      = color
@@ -105,7 +107,7 @@ object handlers {
 
 
 
-  def getUserBBox(c: fabric.Canvas): Future[BBox] = {
+  def getUserLTBounds(c: fabric.Canvas): Future[LTBounds] = {
 
     val chan = CanvasMouseChannels(c)
 
@@ -126,14 +128,14 @@ object handlers {
       val w = math.abs(px2 - px1)
       val h = math.abs(py2 - py1)
 
-      BBox(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
+      LTBounds(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
     }
   }
 
-  def translateBBox(x0: Double, y0: Double, bb: BBox): BBox = {
+  def translateLTBounds(x0: Double, y0: Double, bb: LTBounds): LTBounds = {
     bb.copy(
-      x = bb.x + x0,
-      y = bb.y + y0
+      left = bb.left + x0,
+      top = bb.top + y0
     )
   }
 

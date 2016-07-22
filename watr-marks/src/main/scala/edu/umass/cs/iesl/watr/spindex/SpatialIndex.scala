@@ -8,6 +8,7 @@ import scala.collection.mutable
 
 import TypeTags._
 import IndexShapeOperations._
+import GeometricFigure._
 
 
 trait SpatialIndexable[T] {

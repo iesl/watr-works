@@ -93,7 +93,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   name := "watrcolors-server",
   libraryDependencies ++= Seq(
     "io.spray" %% "spray-can" % "1.3.3",
-    "io.spray" %% "spray-routing" % "1.3.3",
+    "io.spray" %% "spray-routing-shapeless2" % "1.3.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.7",
     "org.webjars.bower" % "fabric" % "1.6.2",
     "org.webjars" % "bootstrap" % "3.3.6",

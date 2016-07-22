@@ -24,7 +24,9 @@ class SvgOverviewView() {
     def pageImg = cls(
       padding:="0",
       margin:="0",
-      border := "0",
+      border := "1px solid #000",
+      width := "100%",
+      display:="block",
       zIndex:=10
     )
 
@@ -34,9 +36,10 @@ class SvgOverviewView() {
       top:="0",
       padding:="0",
       margin:="0",
-      border := "0",
+      border := "1px solid #000",
       zIndex:=0,
-      backgroundColor := "ivory"
+      backgroundColor := "ivory",
+      display:="inline-block"
     )
 
     def fabricCanvas = cls(
@@ -67,8 +70,17 @@ class SvgOverviewView() {
 
     val imgList = for {
       pageImages <- corpusEntry.getArtifactGroup("page-images")
+      imgArtifacts = pageImages.getArtifacts
+      sortedArtifacts = {
+        imgArtifacts.sortBy { a =>
+          // dirty hack to make sure we get the images in order
+          val name = a.artifactPath.name
+          val imgNumber = name.dropWhile(!_.isDigit).takeWhile(_.isDigit).mkString.toInt
+          imgNumber
+        }
+      }
     } yield for {
-      image <- pageImages.getArtifacts
+      image <- sortedArtifacts
       path <- image.asPath.toOption.toSeq
     } yield {
       val src = s"/repo/${image.descriptor}"
@@ -86,17 +98,25 @@ class SvgOverviewView() {
               imgList
             )
           )
+        ),
+
+        <.div(col(6))(
+          <.div(SvgStyles.infoPane)(
+            <.span("Info Area"),
+            <.span(^.id:="rxinfo"),
+            <.span(^.id:="selection-info")
+          )
         )
       )
     )
 
-  }
+}
 
 
-  // def init(corpusEntryId: String)  = {
+// def init(corpusEntryId: String)  = {
 
-  //   div(containerFluid)(
-  //     <.style(^.`type`:="text/css", SvgStyles.styleSheetText),
+//   div(containerFluid)(
+//     <.style(^.`type`:="text/css", SvgStyles.styleSheetText),
   //     <.div(row)(
   //       <.div(col(6))(
   //         <.div(^.id:="overlay-container", SvgStyles.overlayContainer)(

@@ -1,15 +1,12 @@
-// Copyright 2016 Sam Halliday
-// Licence: http://www.apache.org/licenses/LICENSE-2.0
 import scala.util.{ Properties, Try }
 import sbt._
 import Keys._
-// import com.typesafe.sbt.SbtScalariform._
 
+// Copyright 2016 Sam Halliday
+// Licence: http://www.apache.org/licenses/LICENSE-2.0
 
 /**
- * A bunch of sensible defaults that fommil typically uses.
- *
- * TODO: integrate / contribute to the typelevel sbt plugin.
+ * A bunch of sensible defaults
  */
 object Sensible {
 
@@ -37,6 +34,7 @@ object Sensible {
       "-target:jvm-1.6",
       "-feature",
       "-deprecation",
+      "-unchecked",
       "-language:postfixOps",
       "-language:implicitConversions",
       "-language:higherKinds",

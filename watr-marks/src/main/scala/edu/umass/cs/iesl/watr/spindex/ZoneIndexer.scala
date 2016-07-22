@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
+import edu.umass.cs.iesl.watr.utils.VisualTracer
 import scala.collection.mutable
 
 import watrmarks._
@@ -114,7 +115,11 @@ object BioLabeling {
 }
 
 
-class ZoneIndexer  {
+
+class ZoneIndexer()  {
+
+  val vtrace: VisualTracer = new VisualTracer()
+
   import SpatialIndex._
 
   val pageInfos = mutable.HashMap[Int@@PageID, PageInfo]()

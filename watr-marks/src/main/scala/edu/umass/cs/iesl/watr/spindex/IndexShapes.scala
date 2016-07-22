@@ -3,42 +3,44 @@ package spindex
 
 import net.sf.jsi
 
-sealed trait Bounds
-sealed trait Shape
+sealed trait GeometricFigure
+sealed trait Area
 
-object Bounds {
-  val empty = LTBounds(0, 0, 0, 0)
+object GeometricFigure {
+
+  case class LTBounds(
+    left: Double,
+    top: Double,
+    width: Double,
+    height: Double
+  ) extends GeometricFigure with Area
+
+  case class LBBounds(
+    left: Double,
+    bottom: Double,
+    width: Double,
+    height: Double
+  ) extends GeometricFigure with Area
+
+
+  case class Borders(
+    bleft: Double,
+    btop: Double,
+    bright: Double,
+    bbottom: Double
+  ) extends GeometricFigure with Area
+
+  case class Point(
+    x: Double, y: Double
+  ) extends GeometricFigure
+
+  case class Line(
+    p1: Point, p2: Point
+  ) extends GeometricFigure
+
 }
 
-case class LTBounds(
-  left: Double,
-  top: Double,
-  width: Double,
-  height: Double
-) extends Bounds with Shape
-
-case class LBBounds(
-  left: Double,
-  bottom: Double,
-  width: Double,
-  height: Double
-) extends Bounds with Shape
-
-
-case class Borders(
-  bleft: Double,
-  btop: Double,
-  bright: Double,
-  bbottom: Double
-)
-
-case class Point(
-  x: Double, y: Double
-) extends Shape
-
-case class Line(
-  p1: Point, p2: Point
-) extends Shape
+import GeometricFigure._
 
 object jsiRectangle {
   def apply(

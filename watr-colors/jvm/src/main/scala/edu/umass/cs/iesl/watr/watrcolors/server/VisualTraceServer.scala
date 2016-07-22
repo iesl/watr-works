@@ -1,96 +1,92 @@
-package edu.umass.cs.iesl.watr
-package watrcolors
-package server
+// package edu.umass.cs.iesl.watr
+// package watrcolors
+// package server
 
-import ammonite.ops._
+// import ammonite.ops._
 
-import segment._
+// import segment._
 
-// import IndexShapeOperations._
-// import ComponentTypeEnrichments._
-// import ComponentRendering._
-
-import TypeTags._
-import watrmarks.{StandardLabels => LB}
+// import TypeTags._
+// import watrmarks.{StandardLabels => LB}
 
 
-class VisualTraceServer(
-  rootDirectory: Path
-) extends VisualTraceApi  {
-  lazy val corpus = Corpus(rootDirectory)
+// class VisualTraceServer(
+//   rootDirectory: Path
+// ) extends VisualTraceApi  {
+//   lazy val corpus = Corpus(rootDirectory)
 
-  def createView(): List[HtmlUpdate] = {
-    List(
-      HtmlReplaceInner("#main", new html.VisualTraceView().init().toString)
-    )
-  }
+//   def createView(): List[HtmlUpdate] = {
+//     List(
+//       HtmlReplaceInner("#main", new html.VisualTraceView().init().toString)
+//     )
+//   }
 
-  def runTrace(): List[VisualTrace.DSL] = {
-    // Hard-code the pdf/line info we are interested in:
-    // Text should be: JOURNAL OF SOLID STATE CHEMISTRY 78, 294–300 (1989)
-    val page = 0
-    val corpusEntryId = "0575.pdf.d"
-    val bbox = spindex.LTBounds(
-      53.52, 52.42, 206.14, 8.21
-    )
+//   def runTrace(): List[TraceLog] = {
+//     // Hard-code the pdf/line info we are interested in:
+//     // Text should be: JOURNAL OF SOLID STATE CHEMISTRY 78, 294–300 (1989)
+//     val page = 0
+//     val corpusEntryId = "0575.pdf.d"
+//     val bbox = spindex.LTBounds(
+//       53.52, 52.42, 206.14, 8.21
+//     )
 
-    // println(s"getting corpusEntry '${corpusEntryId}'")
-    (for {
-      entry <- corpus.entry(corpusEntryId).toList
-      pdfArtifact <- entry.getPdfArtifact
-      pdfIns <- pdfArtifact.asInputStream.toOption
-    } yield {
-       // println(s"VisualTrace: createView(${corpusEntryId}) path=(${corpusPath})")
-       testLineTokenization(pdfIns)
-    }).flatten
-  }
+//     // println(s"getting corpusEntry '${corpusEntryId}'")
+//     (for {
+//       entry <- corpus.entry(corpusEntryId).toList
+//       pdfArtifact <- entry.getPdfArtifact
+//       pdfIns <- pdfArtifact.asInputStream.toOption
+//     } yield {
+//        // println(s"VisualTrace: createView(${corpusEntryId}) path=(${corpusPath})")
+//        testLineTokenization(pdfIns)
+//     }).flatten
+//   }
 
-  import java.io.InputStream
-  import utils.TraceLog
-
-
-  def testLineTokenization(pdfIns: InputStream): List[VisualTrace.DSL] = {
-    import spindex._
-
-    val segmenter = DocumentSegmenter.createSegmenter(pdfIns)
-
-    val pageId = PageID(0)
-
-    val bbox = LTBounds(
-      53.52, 52.42, 206.14, 8.21
-    )
-    val totalBounds = bbox
-
-    val interestingChars = segmenter.zoneIndexer
-      .getPageInfo(pageId)
-      .charAtomIndex
-      .queryForIntersects(totalBounds)
-
-    // println("["+squishb(interestingChars)+"]")
+//   import java.io.InputStream
+//   import utils.TraceLog
 
 
-    segmenter.runLineDetermination()
+//   def testLineTokenization(pdfIns: InputStream): List[TraceLog] = {
+//     import spindex._
 
-    import spindex.ComponentOperations._
+//     val segmenter = DocumentSegmenter.createSegmenter(pdfIns)
 
-    // find visual lines in bounds:
-    val lineComponents = segmenter.zoneIndexer
-      .getPageInfo(pageId)
-      .componentIndex
-      .queryForIntersects(totalBounds)
-      .sortBy(_.bounds.top)
-      .filter(_.getLabels.contains(LB.VisualLine))
+//     val pageId = PageID(0)
 
-    val tokenizedLines = lineComponents.map { lineComponent =>
-      lineComponent.tokenizeLine().toText
-    }
+//     val bbox = LTBounds(
+//       53.52, 52.42, 206.14, 8.21
+//     )
+//     val totalBounds = bbox
 
+//     val interestingChars = segmenter.zoneIndexer
+//       .getPageInfo(pageId)
+//       .charAtomIndex
+//       .queryForIntersects(totalBounds)
 
-    import TypeConverters._
-
-    TraceLog.getAndClearTraceLog().map(convertVisualTraceTypes(_)).toList
+//     // println("["+squishb(interestingChars)+"]")
 
 
-  }
+//     segmenter.runLineDetermination()
 
-}
+//     import spindex.ComponentOperations._
+
+//     // find visual lines in bounds:
+//     val lineComponents = segmenter.zoneIndexer
+//       .getPageInfo(pageId)
+//       .componentIndex
+//       .queryForIntersects(totalBounds)
+//       .sortBy(_.bounds.top)
+//       .filter(_.getLabels.contains(LB.VisualLine))
+
+//     val tokenizedLines = lineComponents.map { lineComponent =>
+//       lineComponent.tokenizeLine().toText
+//     }
+
+
+//     import TypeConverters._
+
+//     TraceLog.getAndClearTraceLog().map(convertVisualTraceTypes(_)).toList
+
+
+//   }
+
+// }

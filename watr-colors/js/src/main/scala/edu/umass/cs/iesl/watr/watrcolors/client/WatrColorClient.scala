@@ -25,7 +25,6 @@ trait ClientView extends FabricCanvasOperations {
   }
 
   def applyHtmlUpdates(updates: List[HtmlUpdate]): Unit = {
-    println("starting html update")
     updates.foreach { u =>
       u match {
         case HtmlAppend(css, content) => jQuery(css).append(content)
@@ -35,7 +34,6 @@ trait ClientView extends FabricCanvasOperations {
         case HtmlRemove(css) => jQuery(css).remove()
       }
     }
-    println("finished html update")
   }
 
   def initKeys: Keybindings

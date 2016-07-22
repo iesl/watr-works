@@ -278,8 +278,6 @@ object Works extends App {
       val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
       segmenter.runPageSegmentation()
       val output = format.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, None)
-      // prevents mem leak
-      utils.TraceLog.getAndClearTraceLog()
       output
     }
 
@@ -293,8 +291,6 @@ object Works extends App {
       val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
       segmenter.runPageSegmentation()
       val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
-      // prevents mem leak
-      utils.TraceLog.getAndClearTraceLog()
       output
     }
 
@@ -390,6 +386,7 @@ object Works extends App {
 
   def extractCharacters(conf: AppConfig): Unit = {
     import TB._
+    import GeometricFigure._
     // import watrmarks._
     val artifactOutputName = "chars.txt"
 

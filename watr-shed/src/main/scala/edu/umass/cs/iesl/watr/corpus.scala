@@ -183,7 +183,7 @@ class CorpusArtifactGroup(
   val groupDescriptor: String,
   val entry: CorpusEntry
 ) {
-  lazy val rootPath = entry.artifactsRoot / groupDescriptor
+  lazy val rootPath = entry.artifactsRoot / RelPath(groupDescriptor)
 
   def descriptor = s"""${entry.entryDescriptor}/${groupDescriptor}"""
 

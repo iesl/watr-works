@@ -4,11 +4,10 @@ package segment
 import scalaz.@@
 
 import spindex._
+import GeometricFigure._
 import utils.CompassDirection
 import IndexShapeOperations._
 import ComponentTypeEnrichments._
-// import ComponentOperations._
-// import ComponentRendering._
 
 object SpatialIndexOperations {
 

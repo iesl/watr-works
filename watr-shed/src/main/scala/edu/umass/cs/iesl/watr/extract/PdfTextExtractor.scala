@@ -7,13 +7,11 @@ import java.io.{InputStream, IOException}
 import _root_.com.itextpdf
 import itextpdf.kernel.pdf._
 
-// import scala.collection.JavaConversions._
-// import scala.collection.JavaConverters._
 import utils.IdGenerator
 import spindex._
+import GeometricFigure._
 import TypeTags._
 import scala.collection.mutable
-// import textboxing.{TextBoxing => TB}
 
 import scalaz.{@@}
 
@@ -29,7 +27,10 @@ object util {
   }
 }
 
-// import UnicodeUtil._
+case class GeometryTranslation(
+  transX: (Double) => Double,
+  transY: (Double) => Double
+)
 
 class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),
@@ -40,43 +41,47 @@ class PdfTextExtractor(
   val frontPagesLimit = DEFAULT_FRONT_PAGES_LIMIT
   val backPagesLimit = DEFAULT_BACK_PAGES_LIMIT
 
-  // val fontDict = mutable.HashMap[String, DocumentFont]()
+  // def getTransformedMediaBox()
 
-  // var bxDocumentCreator:MyBxDocumentCreator = _
 
-  // def getZoneRecords() = bxDocumentCreator.getZoneRecords
+  def getReportedPageGeometry(pageId: Int@@PageID, pdfPage: PdfPage): (PageGeometry, GeometryTranslation) = {
 
-  def getReportedPageGeometry(pageId: Int@@PageID, pdfPage: PdfPage): PageGeometry = {
-    // val borders = if (pageRectangle.hasBorders) {
-    //   Some(Borders(
-    //     bleft = pageRectangle.getBorderWidthLeft.toDouble,
-    //     bbottom = pageRectangle.getBorderWidthBottom.toDouble,
-    //     btop = pageRectangle.getBorderWidthTop.toDouble,
-    //     bright = pageRectangle.getBorderWidthRight.toDouble
-    //   ))
-    // } else None
+    // val mediabox = pdfPage.getPdfObject.getAsArray(PdfName.MediaBox)
+    val cropbox = pdfPage.getPdfObject.getAsArray(PdfName.CropBox)
+    val usebox = cropbox
+    val i1 = usebox.get(0).asInstanceOf[PdfNumber]
+    val i2 = usebox.get(1).asInstanceOf[PdfNumber]
+    val i3 = usebox.get(2).asInstanceOf[PdfNumber]
+    val i4 = usebox.get(3).asInstanceOf[PdfNumber]
+    val lval = i1.doubleValue()
+    val bval = i2.doubleValue()
+    val rval = i3.doubleValue()
+    val tval = i4.doubleValue()
 
-    // println(s"""| Extracting page Bounds
-    //             |  Top       ${pageRectangle.getTop}
-    //             |  Bottom    ${pageRectangle.getBottom}
-    //             |  Left      ${pageRectangle.getLeft}
-    //             |  Right     ${pageRectangle.getRight}
-    //             |  Width     ${pageRectangle.getWidth}
-    //             |  Height    ${pageRectangle.getHeight}
-    //             |  Border    ${pageRectangle.getBorder}
-    //             |  Borders   ${pageRectangle.hasBorders}
-    //             |""".stripMargin)
+    def xtrans(x: Double): Double = {
+      x - lval
+    }
+    def ytrans(y: Double): Double = {
+      // (tval - y) - bval
+      (tval - y)
+    }
+    // println(s"direct page rect report = [$lval, $bval, $rval, $tval], vs. [${pageRectangle.getX}, ${pageRectangle.getBottom}, ${pageRectangle.getRight}, ${pageRectangle.getTop}]")
+    /// In screen-coords:
+    val left = xtrans(lval)
+    val top = ytrans(tval)
+    val right = xtrans(rval)
+    val bottom = ytrans(bval)
 
-    // PageRectangle coords have origin @ lower left (normal cartesian origin)
-    val pageRectangle  = pdfPage.getPageSize
+
     val bounds = LTBounds(
-      left = pageRectangle.getLeft.toDouble,
-      top = pageRectangle.getBottom.toDouble, // ???
-      width = pageRectangle.getWidth.toDouble,
-      height = pageRectangle.getHeight.toDouble
+      left = left.toDouble,
+      top = top.toDouble,
+      width = right.toDouble,
+      height = bottom.toDouble
     )
 
-    PageGeometry(pageId, bounds, None)
+    (PageGeometry(pageId, bounds, None),
+      GeometryTranslation(xtrans, ytrans))
 
   }
 
@@ -129,14 +134,9 @@ class PdfTextExtractor(
       for (pageNumber <- 1 to document.getNumberOfPages) {
         // val tagStructureContext = pdfPage.getDocument.getTagStructureContext
 
-
-
-
-
         val pageId = PageID(pageNumber-1)
 
         val pdfPage = document.getPage(pageNumber)
-        val pageSize = pdfPage.getPageSize
 
         // val structTreeRoot = pdfPage.getDocument.getStructTreeRoot
         // println("struct root role")
@@ -170,40 +170,25 @@ class PdfTextExtractor(
         val resources = pdfPage.getResources
 
 
-        {
-          // import ammonite.ops._
-          // val of = cwd / s"pdf-resources.txt"
-          // if (pageNumber == 1) {
-          //   rm(of)
-          // }
-
-          // val op = formatting.formatDictionary(resources.getPdfObject, reader)
-
-          // write.append(of, s"PAGE ${pageNumber}\n\n")
-          // write.append(of, op.toString())
-          // write.append(of, s"\n\nEND PAGE ${pageNumber}\n")
-        }
-
         val currCharBuffer: mutable.ArrayBuffer[PageAtom] = mutable.ArrayBuffer[PageAtom]()
+        val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage)
 
         val extractor = new CharExtractionListener(
           reader, charsToDebug,
-          componentIdGen, currCharBuffer, pdfPage, pageId
+          componentIdGen, currCharBuffer, pdfPage, pageId, pageGeometry, geomTrans
         )
 
         val parser = new PdfCanvasProcessor(extractor);
         parser.processPageContent(pdfPage)
 
-        val pageGeometry = getReportedPageGeometry(pageId, pdfPage)
 
-        // TODO: WTF are all of these?
-        pdfPage.getPageSize
-        pdfPage.getPageSizeWithRotation
-        pdfPage.getArtBox
-        pdfPage.getTrimBox
-        pdfPage.getCropBox
-        pdfPage.getMediaBox
-
+        // explanation at https://acrobatusers.com/tutorials/finding-page-boundaries
+        // pdfPage.getPageSize
+        // pdfPage.getPageSizeWithRotation
+        // pdfPage.getArtBox
+        // pdfPage.getTrimBox
+        // pdfPage.getCropBox
+        // pdfPage.getMediaBox
         // val autoTagging = tagStructureContext.getAutoTaggingPointer
 
 

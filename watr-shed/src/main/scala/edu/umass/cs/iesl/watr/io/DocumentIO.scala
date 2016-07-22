@@ -194,13 +194,10 @@ object DocumentIO {
   import watrmarks._
   import play.api.libs.json._
   import java.io.InputStream
-  // import com.itextpdf.text.pdf.DocumentFont
   import play.api.libs.json._
 
   import spindex._
   import extract.PdfTextExtractor
-
-  // import IndexShapeOperations._
 
   import utils.IdGenerator
 
@@ -218,15 +215,8 @@ object DocumentIO {
 
     val pageInfos = charExtractor.pagesInfo
 
-    // Use computed page bounds (based on char bounds) rather than reported page bounds
     pageInfos.map({ case (pchars, pgeom) =>
-
-      val computedBounds =  charBoxesBounds(pchars.regions)
-
-      (pchars,
-        pgeom.copy(bounds = computedBounds)
-      )
-
+      (pchars, pgeom)
     })
 
   }

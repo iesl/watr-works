@@ -19,21 +19,63 @@ import native.fabric
 
 
 
+import GeometricFigure._
+import TraceLog._
+
 @JSExport
 class SvgOverview(
   artifactId: String
-) extends ClientView { self =>
+) extends ClientView with VisualTraceOperations { self =>
+  import handlers._
 
   val server = ServerWire("svg")[SvgOverviewApi]
 
   override val initKeys = Keybindings(List(
-    // "b" -> ((e: MousetrapEvent) => createDocumentOverlay()),
+    "b" -> ((e: MousetrapEvent) => getLabelOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
     "z" -> ((e: MousetrapEvent) => selectViaLine()),
     "d" -> ((e: MousetrapEvent) => initDeletion())
   ))
 
-  import handlers._
+  def canvasOffset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+
+  def canvasBorder: Int = 10 // ???
+  def canvasH: Int = fabricCanvas.getHeight
+  def canvasW: Int = fabricCanvas.getWidth
+  def canvasX: Int = canvasOffset.left.toInt
+  def canvasY: Int = canvasOffset.top.toInt
+
+
+  def getLabelOverlay(): Boolean = {
+    async {
+      // Set geometries for each page image, for coord scaling/translation:
+      pageImageGeometries.clear()
+
+      jQuery(".page-image").map({ (i: Int, elem: Element) =>
+        val igeom = LTBounds(
+          elem.clientLeft.toDouble,
+          elem.clientTop.toDouble,
+          elem.clientWidth.toDouble,
+          elem.clientHeight.toDouble
+        )
+        pageImageGeometries += igeom
+      })
+
+
+      server
+        .getLabelOverlay(artifactId).call()
+        .map(runTrace(_))
+
+    }
+
+    true
+  }
+
+  def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
+    val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]
+    translateLTBounds(-offset.left, -offset.top, bbox)
+  }
+
   def selectViaLine(): Boolean = {
     for {
       userPath <- getUserPath(self.fabricCanvas)
@@ -45,12 +87,11 @@ class SvgOverview(
     }
 
     true
-
   }
-  def initDeletion(): Boolean = {
 
+  def initDeletion(): Boolean = {
     for {
-      bbox <- getUserBBox(self.fabricCanvas)
+      bbox <- getUserLTBounds(self.fabricCanvas)
     } yield {
       val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
     }
@@ -61,50 +102,18 @@ class SvgOverview(
   def initSelection(): Boolean = {
     for {
       // TODO alter cursor to reflect selection mode
-      bbox <- getUserBBox(fabricCanvas)
+      bbox <- getUserLTBounds(fabricCanvas)
     } yield {
-      println(s"got user bbox: ${bbox}")
-      val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
-      val bboxAbs = translateBBox(-offset.left, -offset.top, bbox)
+      val bboxAbs = alignBboxToDiv("#overlay-container", bbox)
 
       async {
-        val res = await { server.onSelectBBox(artifactId, bboxAbs).call() }
+        val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
         applyHtmlUpdates(res)
-        addBBoxRect(bboxAbs, "black")
+        addLTBoundsRect(bboxAbs, "black")
       }
     }
     true
   }
-
-// var path = new fabric.Path('M 0 0 L 200 100 L 170 200 z');
-
-
-
-  // def createDocumentOverlay(): Boolean = {
-  //   server.getDocumentOverlay(artifactId).call().foreach{ overlays =>
-  //     overlays.foreach { bbox =>
-  //       addBBoxRect(bbox, "green")
-  //     }
-  //   }
-
-
-  //   fabricCanvas.on("mouse:over", ((options: fabric.Options) => {
-  //     val title = options.target.title
-  //     jQuery("#selection-info").html(s"title: ${title}")
-  //   }))
-
-  //   fabricCanvas.on("mouse:out", ((options: fabric.Options) => {
-  //     jQuery("#selection-info").html(s"title: ")
-  //   }))
-  //   true
-  // }
-
-
-  def alignBboxToDiv(divID: String, bbox: BBox): BBox = {
-    val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]
-    translateBBox(-offset.left, -offset.top, bbox)
-  }
-
 
   def createView(): Unit = async {
 
@@ -128,11 +137,9 @@ class SvgOverview(
 
       def loaded(): Unit = {
         imgReady += 1
-        println(s"img count = ${imgReady} / ${imgCount}")
         if (imgReady == imgCount) {
           val h = jQuery("#img-container").height()
           fabricCanvas.setHeight(h.toInt+1)
-
           val w = jQuery("#img-container").width()
           fabricCanvas.setWidth(w.toInt+1)
 
