@@ -199,3 +199,8 @@ Y.D. Wa _J_ n _.__N_ g _._ ^a^^,^_D_ ^b^^,^^*^ _e_ ,_n_E _g_.W _a__,_ . _H_ H _.
                     [167.76, 576.41, 27.26, 9.99]
                     ]}
              }
+
+
+- extraction of text particular to material science: 
+-- formula, math, super/subscript parsing
+-- Parsing sentence structure while respecting the atomicity of chemical formula
