@@ -589,7 +589,7 @@ object formatting {
 
     if (obj.isArray()) {
       val arr = obj.asInstanceOf[PdfArray]
-      val arrstr = arr.take(22).mkString("[", ", ", s", ..+${arr.size}]")
+      val arrstr = arr.take(22).mkString("[", ", ", s", ..l=+${arr.size}]")
       arrstr
     } else if (obj.isDictionary) {
       val xo = obj.asInstanceOf[PdfDictionary]

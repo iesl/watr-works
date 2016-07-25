@@ -166,7 +166,7 @@ object Works extends App {
 
 
     val skipped = if (conf.numToSkip > 0) toProcess.drop(conf.numToSkip) else toProcess
-    val taken = if (conf.numToRun > 0) skipped.take(conf.numToRun) else toProcess
+    val taken = if (conf.numToRun > 0) skipped.take(conf.numToRun) else skipped
 
     taken
 
@@ -174,14 +174,16 @@ object Works extends App {
 
 
   def runProcessor(conf: AppConfig, artifactOutputName: String, process: (CorpusEntry, String) => Unit): Unit = {
+    var i = 0
     getProcessList(conf).foreach { entry =>
-      println(s"extracting ${entry} ${artifactOutputName}")
+      println(s"${i}. extracting ${entry} ${artifactOutputName}")
       if (entry.hasArtifact(artifactOutputName)) {
         if (conf.force){
           entry.deleteArtifact(artifactOutputName)
           process(entry, artifactOutputName)
         } else println(s"skipping existing ${entry}, use -x to force reprocessing")
       } else process(entry, artifactOutputName)
+      i += 1
     }
   }
 

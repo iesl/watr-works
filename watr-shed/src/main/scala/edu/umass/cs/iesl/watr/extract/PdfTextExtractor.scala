@@ -42,22 +42,38 @@ class PdfTextExtractor(
   val backPagesLimit = DEFAULT_BACK_PAGES_LIMIT
 
   // def getTransformedMediaBox()
+  import scala.collection.JavaConversions._
 
+  val bboxNames = List[PdfName](
+    PdfName.CropBox,
+    PdfName.TrimBox,
+    PdfName.MediaBox,
+    PdfName.BleedBox
+  )
+  def getBestBoundingBox(pdfPage: PdfPage): Array[Double] = {
+    val parent = pdfPage.getPdfObject.getAsDictionary(PdfName.Parent)
+    val bestBox = bboxNames
+      .map({n => List(
+        pdfPage.getPdfObject.getAsArray(n),
+        parent.getAsArray(n)
+      )})
+      .flatten
+      .filterNot(_ == null)
+      .headOption.getOrElse { sys.error("no bounding box (media/crop/trim/etc) found in pdfobjects!") }
 
-  def getReportedPageGeometry(pageId: Int@@PageID, pdfPage: PdfPage): (PageGeometry, GeometryTranslation) = {
+    val nums: Array[Double] = bestBox.toArray.map(_.asInstanceOf[PdfNumber].doubleValue())
 
-    var usebox = pdfPage.getPdfObject.getAsArray(PdfName.CropBox)
-    if (usebox==null) {
-      usebox = pdfPage.getPdfObject.getAsArray(PdfName.MediaBox)
-    }
-    val i1 = usebox.get(0).asInstanceOf[PdfNumber]
-    val i2 = usebox.get(1).asInstanceOf[PdfNumber]
-    val i3 = usebox.get(2).asInstanceOf[PdfNumber]
-    val i4 = usebox.get(3).asInstanceOf[PdfNumber]
-    val lval = i1.doubleValue()
-    val bval = i2.doubleValue()
-    val rval = i3.doubleValue()
-    val tval = i4.doubleValue()
+    nums
+  }
+
+  def getReportedPageGeometry(pageId: Int@@PageID, pdfPage: PdfPage, reader: PdfReader): (PageGeometry, GeometryTranslation) = {
+
+    val nums: Array[Double] = getBestBoundingBox(pdfPage)
+
+    val lval = nums(0)
+    val bval = nums(1)
+    val rval = nums(2)
+    val tval = nums(3)
 
     def xtrans(x: Double): Double = {
       x - lval
@@ -172,7 +188,7 @@ class PdfTextExtractor(
 
 
         val currCharBuffer: mutable.ArrayBuffer[PageAtom] = mutable.ArrayBuffer[PageAtom]()
-        val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage)
+        val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage, reader)
 
         val extractor = new CharExtractionListener(
           reader, charsToDebug,
