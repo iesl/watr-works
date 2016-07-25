@@ -31,8 +31,8 @@ val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
   "com.lihaoyi" %% "fastparse" % "0.3.7",
   "org.jdom" % "jdom2" % "2.0.6",
-  "com.lihaoyi" %% "scalatags" % "0.5.5",
-  "com.lihaoyi" %% "ammonite-ops" % "0.6.2",
+  "com.lihaoyi" %% "scalatags" % "0.6.0",
+  "com.lihaoyi" %% "ammonite-ops" % "0.7.0",
   "com.typesafe.play" %% "play-json" % "2.5.4",
   "com.github.scopt" %% "scopt" % "3.5.0",
   "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
@@ -62,7 +62,7 @@ lazy val watrshed = (project in file("watr-shed"))
     "org.bouncycastle" % "bcprov-jdk15on" % "1.54",
     "org.bouncycastle" % "bcpkix-jdk15on" % "1.54",
     "com.h2database" % "h2" % "1.4.192",
-    "com.zaxxer" % "HikariCP" % "2.4.6",
+    "com.zaxxer" % "HikariCP" % "2.4.7",
     "com.typesafe.slick" %% "slick" % "3.1.1"
   ))
   .dependsOn(watrmarks)
@@ -94,7 +94,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   libraryDependencies ++= Seq(
     "io.spray" %% "spray-can" % "1.3.3",
     "io.spray" %% "spray-routing-shapeless2" % "1.3.3",
-    "com.typesafe.akka" %% "akka-actor" % "2.4.7",
+    "com.typesafe.akka" %% "akka-actor" % "2.4.8",
     "org.webjars.bower" % "fabric" % "1.6.2",
     "org.webjars" % "bootstrap" % "3.3.6",
     "org.webjars" % "jquery" % "2.2.3",

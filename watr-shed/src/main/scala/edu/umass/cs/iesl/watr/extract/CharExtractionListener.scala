@@ -96,7 +96,8 @@ class CharExtractionListener(
       renderText(tri)
     }
   }
-  // import fonts.DocumentFontInfo._
+
+
   val charWindow = mutable.MutableList[Char]()
 
 
@@ -117,6 +118,9 @@ class CharExtractionListener(
 
 
   def lookupGlyph(charTri: TextRenderInfo): Unit = {
+    // Get glyphHash for this char
+
+
     val pdfString = charTri.getPdfString
     val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
     val glyphCode = bs(0)
@@ -126,6 +130,8 @@ class CharExtractionListener(
     val fprogram = font.getFontProgram
     val fontNames = fprogram.getFontNames
     val fontName = fontNames.getFontName
+
+    // fprogram.getFontStreamBytes()
 
 
     // map this to a canonical glyph

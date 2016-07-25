@@ -2,26 +2,75 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package html
 
-// import scalatags.stylesheet.{CascadingStyleSheet, StyleSheet, StyleSheetTags, Sheet, Selector}
-import scalatags.stylesheet.{CascadingStyleSheet, Sheet}
+import scalatags.stylesheet._
+import scalatags.Text.all._
+
+object WatrStyles extends CascadingStyleSheet {
+
+  def htmlBody = cls(
+    (html ~ body)(
+      height := "100%",
+      minHeight := "100%",
+      margin := 0,
+      padding := 0
+    )
+  )
+
+  def overlayContainer = cls(
+    padding:="0",
+    border:="0",
+    margin:="0",
+    position.relative
+  )
+
+
+  def pageImg = cls(
+    padding:="0",
+    margin:="0",
+    border := "1px solid #000",
+    width := "100%",
+    display:="block",
+    zIndex:=10
+  )
+
+  def imgContainer = cls(
+    position.absolute,
+    left:="0",
+    top:="0",
+    padding:="0",
+    margin:="0",
+    border := "1px solid #000",
+    zIndex:=0,
+    backgroundColor := "ivory",
+    display:="inline-block"
+  )
+
+  def fabricCanvas = cls(
+    position.absolute,
+    padding:="0",
+    margin:="0",
+    border := "0",
+    left:="0",
+    zIndex:=100,
+    top:="0"
+  )
+
+  def infoPane = cls(
+    position.absolute,
+    padding:="0",
+    margin:="0",
+    borderTop := "2px solid #AAA",
+    borderLeft := "2px solid #AAA",
+    left:="0",
+    top:="0"
+  )
+}
 
 object Frame {
 
-  import scalatags.Text.all._
 
-  val WatrStyles = Sheet[WatrStyles]
+  // val WatrStyles = Sheet[WatrStyles]
 
-  trait WatrStyles extends CascadingStyleSheet {
-
-    def htmlBody = cls(
-      (html ~ body)(
-        height := "100%",
-        minHeight := "100%",
-        margin := 0,
-        padding := 0
-      )
-    )
-  }
 
   def apply() = {
     <.html(

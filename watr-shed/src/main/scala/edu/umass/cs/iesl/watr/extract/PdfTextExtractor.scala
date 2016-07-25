@@ -110,44 +110,6 @@ class PdfTextExtractor(
       val reader = new PdfReader(stream)
       val document = new PdfDocument(reader)
 
-
-      // parser.processContent(x$1: Array[Byte], x$2: PdfResources)
-      // val processor = new PdfContentStreamProcessor(documentCreator)
-
-      // {
-      //   formatting.followIndirect = false
-
-      //   import ammonite.ops._
-      //   val tf = cwd / s"pdf-trailer.txt"
-      //   val cf = cwd / s"pdf-catalog.txt"
-      //   rm(tf)
-      //   rm(cf)
-
-      //   val nn1 = reader.getNamedDestinationFromNames
-      //   val nn2 = reader.getNamedDestinationFromStrings
-      //   println("getNamedDestinationFromNames")
-      //   println(nn1.keys.mkString(", "))
-      //   println("getNamedDestinationFromStrings")
-      //   println(nn2.keys.mkString(", "))
-
-      //   val objf = cwd / s"pdf-name-objs.txt"
-      //   rm(objf)
-
-      //   nn2.foreach { case (name, pdfobj) =>
-      //     val fmt = formatting.formatObject(pdfobj, reader)
-      //     write.append(objf, fmt.toString())
-      //     write.append(objf, "\n\n")
-      //   }
-
-      //   val trailer = formatting.formatDictionary(reader.getTrailer, reader)
-      //   val catalog = formatting.formatDictionary(reader.getCatalog, reader)
-      //   write.append(tf, trailer.toString())
-      //   write.append(cf, catalog.toString())
-
-      //   formatting.followIndirect = true
-      // }
-
-
       for (pageNumber <- 1 to document.getNumberOfPages) {
         // val tagStructureContext = pdfPage.getDocument.getTagStructureContext
 
@@ -155,37 +117,8 @@ class PdfTextExtractor(
 
         val pdfPage = document.getPage(pageNumber)
 
-        // val structTreeRoot = pdfPage.getDocument.getStructTreeRoot
-        // println("struct root role")
-        // println(structTreeRoot.getRole)
-        // println("struct root role map")
-        // println(formatting.formatObject(structTreeRoot.getRoleMap, reader: PdfReader))
-        // val kids = structTreeRoot.getKids
-        // val mcrs = structTreeRoot.getPageMarkedContentReferences(pdfPage)
-
-        // kids.foreach({k =>
-        //   println(renderElemTree(k))
-        // })
-
-        // mcrs.foreach({ mcr =>
-
-        //   def fmtmcr(e: PdfMcr) = {
-        //     s"""| findMcrByMcid ${mcr.getMcid}
-        //         |   getKids       = ${e.getKids        }
-        //         |   getMcid       = ${e.getMcid        }
-        //         |   getParent     = ${e.getParent      }
-        //         |   getRole       = ${e.getRole        }
-        //         |   getPdfObject  = ${e.getPdfObject   }
-        //         |   isFlushed     = ${e.isFlushed      }
-        //         |""".stripMargin
-        //   }
-        //   println(fmtmcr(mcr))
-        // })
-
-
 
         val resources = pdfPage.getResources
-
 
         val currCharBuffer: mutable.ArrayBuffer[PageAtom] = mutable.ArrayBuffer[PageAtom]()
         val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage, reader)
@@ -197,16 +130,6 @@ class PdfTextExtractor(
 
         val parser = new PdfCanvasProcessor(extractor);
         parser.processPageContent(pdfPage)
-
-
-        // explanation at https://acrobatusers.com/tutorials/finding-page-boundaries
-        // pdfPage.getPageSize
-        // pdfPage.getPageSizeWithRotation
-        // pdfPage.getArtBox
-        // pdfPage.getTrimBox
-        // pdfPage.getCropBox
-        // pdfPage.getMediaBox
-        // val autoTagging = tagStructureContext.getAutoTaggingPointer
 
 
         val pageCharAtoms = Seq[PageAtom](currCharBuffer:_*)

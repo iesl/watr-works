@@ -853,11 +853,7 @@ class DocumentSegmenter(
       if numbering.matches("^[1-9]+\\.([1-9]\\.)*")
       if !isTOCLine
     } {
-      val ns = numbering.split("\\.").toList.map(_.toInt)
       zoneIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
-
-
-      (lineComp, ns)
     }
 
     // val numberedSectionLines = for {

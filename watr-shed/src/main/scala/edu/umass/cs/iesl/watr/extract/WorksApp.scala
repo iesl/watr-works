@@ -302,8 +302,6 @@ object Works extends App {
           println(s"could not extract ${outputPath}: ${t.getMessage}\n")
           println(t.toString())
           t.printStackTrace()
-          println(t.getCause.toString())
-          t.getCause.printStackTrace()
           s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
       }
     }

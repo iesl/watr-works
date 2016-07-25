@@ -80,8 +80,8 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
       allFontSubsets   <- sequence{ fonts.map{ D.Fonts.selectFontSubsets(_) } }
       uniqFontSubsets   = allFontSubsets.flatten.toSet.toList
       sortedFontSubsets = uniqFontSubsets.sortBy(_.id)
-      uniqFonts = fonts.toSet.toList
-      sortedFonts = uniqFonts.sortBy(_.id)
+      uniqFonts         = fonts.toSet.toList
+      sortedFonts       = uniqFonts.sortBy(_.id)
       _ <- {
         sortedFonts.headOption.map{ canonicalFont =>
           for {
