@@ -282,16 +282,28 @@ object Works extends App {
     }
 
   }
+
   def segmentDocument(conf: AppConfig): Unit = {
 
     val artifactOutputName = "docseg.json"
     processCorpus(conf, artifactOutputName, proc)
 
     def proc(pdfins: InputStream, outputPath: String): String = {
-      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
-      segmenter.runPageSegmentation()
-      val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
-      output
+      try {
+
+        val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
+        segmenter.runPageSegmentation()
+        val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
+        output
+      } catch {
+        case t: Throwable =>
+          println(s"could not extract ${outputPath}: ${t.getMessage}\n")
+          println(t.toString())
+          t.printStackTrace()
+          println(t.getCause.toString())
+          t.getCause.printStackTrace()
+          s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
+      }
     }
 
   }
