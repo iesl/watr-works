@@ -5,6 +5,7 @@ import spindex._
 
 import ComponentRendering._
 import ComponentOperations._
+import GeometricFigure._
 
 import textboxing.{TextBoxing => TB}
 import TypeTags._

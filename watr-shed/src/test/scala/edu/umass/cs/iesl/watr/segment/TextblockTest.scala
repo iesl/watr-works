@@ -5,32 +5,13 @@ package segment
 import scalaz.@@
 
 import spindex._
+import GeometricFigure._
 
 case class TextblockExample(
   source: String,
   pageId: Int@@PageID,
   regionsWithLabels: Seq[(LTBounds, String)]
 )
-
-
-
-
-// Paragraphs/section headings:
-
-
-// Section heading
-   // 1. Introduction --> <svg:rect class="linebox" x="47.28" y="548.31" width="90.75"  height="9.46" />
-// paragraph start
-// textblock start
-   //  Lithium ion batteries (LIBs) have been extensively used in por– --> <svg:rect class="linebox" x="47.06" y="571.07" width="239.30"  height="7.97" />
-
-   // textblock end
-   //  alternative anode materials has become an urgent task now– {^{adays.Amongthefeasibleanodematerials,Fe}} --> <svg:rect class="linebox" x="47.28" y="548.40" width="444.22"  height="145.22" />
-
-
-   // <!--
-   // textblock end
-   //  charging and discharging at high current densities. --> <svg:rect class="linebox" x="304.27" y="685.87" width="200.90"  height="7.97" />
 
 class TextBlockTest extends DocsegTestUtil  {
   behavior of "block identification and ordering"

@@ -5,6 +5,7 @@ import org.scalatest._
 
 import spindex._
 import IndexShapeOperations._
+import GeometricFigure._
 
 class AngleFilteringTest extends FlatSpec with Matchers {
   // import DocumentSegmenter._

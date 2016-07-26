@@ -204,6 +204,8 @@ object Works extends App {
           println(t.getCause.toString())
           t.getCause.printStackTrace()
           s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
+      } finally {
+        pdfIns.close()
       }})
   }
 

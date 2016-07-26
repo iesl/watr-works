@@ -36,12 +36,6 @@ class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),
   componentIdGen: IdGenerator[RegionID]
 ) {
-  val DEFAULT_FRONT_PAGES_LIMIT = 20
-  val DEFAULT_BACK_PAGES_LIMIT = 20
-  val frontPagesLimit = DEFAULT_FRONT_PAGES_LIMIT
-  val backPagesLimit = DEFAULT_BACK_PAGES_LIMIT
-
-  // def getTransformedMediaBox()
   import scala.collection.JavaConversions._
 
   val bboxNames = List[PdfName](
@@ -79,16 +73,13 @@ class PdfTextExtractor(
       x - lval
     }
     def ytrans(y: Double): Double = {
-      // (tval - y) - bval
       (tval - y)
     }
-    // println(s"direct page rect report = [$lval, $bval, $rval, $tval], vs. [${pageRectangle.getX}, ${pageRectangle.getBottom}, ${pageRectangle.getRight}, ${pageRectangle.getTop}]")
-    /// In screen-coords:
+
     val left = xtrans(lval)
     val top = ytrans(tval)
     val right = xtrans(rval)
     val bottom = ytrans(bval)
-
 
     val bounds = LTBounds(
       left = left.toDouble,
@@ -141,6 +132,91 @@ class PdfTextExtractor(
         )
 
         parser.reset()
+
+      }
+
+    } catch {
+      case ex: IOException =>
+        throw new Exception("Cannot extract characters from PDF file", ex)
+      case ex: Throwable =>
+        throw new Exception("Invalid PDF file", ex)
+    }
+  }
+  import com.itextpdf.kernel.font._
+  import com.itextpdf.io.font._
+  import com.itextpdf.io.font._
+  // import com.itextpdf.kernel.font.IDocFontProgram
+
+  def extractGlyphs(stream: InputStream): Unit = {
+    try {
+      val reader = new PdfReader(stream)
+      val document = new PdfDocument(reader)
+
+      for (pageNumber <- 1 to document.getNumberOfPages) {
+        println(s"page ${pageNumber}")
+        val pdfPage = document.getPage(pageNumber)
+        val resources = pdfPage.getResources
+        val pdfObject = pdfPage.getResources.getPdfObject
+        val fontDict = pdfObject.getAsDictionary(PdfName.Font)
+        // val glyph = pdfFont.getGlyph(1)
+
+        fontDict.keySet().foreach{ key =>
+          println("Font...")
+          val fontVal = fontDict.getAsDictionary(key)
+          val pdfFont = PdfFontFactory.createFont(fontVal)
+
+          if (pdfFont.getFontProgram.isInstanceOf[Type1Font]) {
+            val fontProgram = pdfFont.getFontProgram.asInstanceOf[Type1Font]
+            if (fontProgram.isBuiltInFont()) {
+              println("builtin font")
+            } else {
+              println("pdf stream bytes")
+              val stream = fontProgram.getFontStreamBytes
+            }
+            // val fontProgram = pdfFont.getFontProgram.asInstanceOf[Type1Font].getFontStreamBytes()
+
+
+
+          }
+
+
+          // val ftype = fontVal.getAsString(PdfName.Type)
+          // val baseFont = fontVal.getAsString(PdfName.BaseFont)
+          // val fname = fontVal.getAsString(PdfName.Name)
+
+          val subtype = fontVal.getAsName(new PdfName("Subtype"))
+          val subtype2 = fontVal.getAsName(PdfName.Subtype2)
+          if (subtype == PdfName.Type0) {
+            println("Type0")
+            println(fonts.formatting.formatObject(fontVal, reader))
+          } else if (subtype == PdfName.Type1) {
+            println("Type1")
+            val fontDescriptor = fontVal.getAsDictionary(PdfName.FontDescriptor)
+            if (fontDescriptor!=null) {
+              val ff2 = fontDescriptor.getAsStream(PdfName.FontFile2)
+              val ff3 = fontDescriptor.getAsStream(PdfName.FontFile3)
+              if (ff2!=null) {
+                println(s"fontfile2: len = ${ff2.getBytes.length}")
+
+              } else if (ff3!=null) {
+                println(s"fontfile3: len = ${ff3.getBytes.length}")
+
+              }
+            }
+          } else if (subtype == PdfName.Type3) {
+            println("Type3")
+            val charProcs = fontVal.getAsDictionary(PdfName.CharProcs)
+            charProcs.keySet().foreach { charProcKey  =>
+              val charProc = charProcs.getAsStream(charProcKey)
+              val cpBytes= charProc.getBytes
+              val l = cpBytes.length
+              // println(s"glyph ${charProcKey}: len = ${l}")
+            }
+          } else {
+
+          }
+
+        }
 
       }
 

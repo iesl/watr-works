@@ -3,8 +3,8 @@ package segment
 
 import spindex._
 import ComponentOperations._
-
-
+// import IndexShapeOperations._
+import GeometricFigure._
 
 class SuperSubScriptTest extends DocsegTestUtil {
   behavior of "docstrum segmenter"

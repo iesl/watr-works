@@ -10,6 +10,7 @@ import IndexShapeOperations._
 // import ComponentTypeEnrichments._
 // import ComponentRendering._
 import ComponentOperations._
+import GeometricFigure._
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"
