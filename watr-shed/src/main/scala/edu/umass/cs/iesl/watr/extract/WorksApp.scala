@@ -103,17 +103,24 @@ object Works extends App {
       })
     } text ("(dev) char extraction")
 
-    cmd("fonts") action { (v, conf) =>
+    cmd("build-fontdb") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
-        examineFonts(ac)
+        buildFontDB(ac)
       })
     } text ("")
 
-    cmd("showfonts") action { (v, conf) =>
+    cmd("show-fontdb") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
         showFontDB(ac)
       })
     } text ("")
+
+    cmd("extract-fonts") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        extractFonts(ac)
+      })
+    } text ("")
+
 
     cmd("images") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -135,14 +142,12 @@ object Works extends App {
 
     println(s"starting Works in corpus ${corpus}")
 
-
     val toProcess = conf.inputFileList
       .map({ inputs =>
         // User specifed input file on command line:
         val inputLines = if (inputs.toString == "--") {
           io.Source.stdin.getLines.toList
         } else {
-          // corpus.
           val inputFiles =  RelPath(inputs)
           val lines = read(cwd/inputFiles)
           lines.split("\n").toList
@@ -163,13 +168,21 @@ object Works extends App {
         corpus.entries()
       })
 
-
-
     val skipped = if (conf.numToSkip > 0) toProcess.drop(conf.numToSkip) else toProcess
     val taken = if (conf.numToRun > 0) skipped.take(conf.numToRun) else skipped
 
     taken
+  }
 
+
+  // Decide if the specified output artifact exists, or if the --force option is specified
+  def processOrSkipOrForce(conf: AppConfig, entry: CorpusEntry, artifactOutputName: String): Option[String] = {
+    if (entry.hasArtifact(artifactOutputName)) {
+      if (conf.force) {
+        entry.deleteArtifact(artifactOutputName)
+        Some(artifactOutputName)
+      } else None
+    } else Some(artifactOutputName)
   }
 
 
@@ -177,12 +190,12 @@ object Works extends App {
     var i = 0
     getProcessList(conf).foreach { entry =>
       println(s"${i}. extracting ${entry} ${artifactOutputName}")
-      if (entry.hasArtifact(artifactOutputName)) {
-        if (conf.force){
-          entry.deleteArtifact(artifactOutputName)
-          process(entry, artifactOutputName)
-        } else println(s"skipping existing ${entry}, use -x to force reprocessing")
-      } else process(entry, artifactOutputName)
+
+      processOrSkipOrForce(conf, entry, artifactOutputName) match {
+        case Some(_) => process(entry, artifactOutputName)
+        case None    => println(s"skipping existing ${entry}, use -x to force reprocessing")
+      }
+
       i += 1
     }
   }
@@ -210,9 +223,11 @@ object Works extends App {
   }
 
   def processCorpusEntryList(conf: AppConfig, processor: (CorpusEntry) => Unit): Unit = {
+    var i = 0
     getProcessList(conf).foreach { entry =>
-      println(s"processing ${entry}")
+      println(s"${i}. processing ${entry} ")
       processor(entry)
+      i += 1
     }
   }
 
@@ -224,6 +239,11 @@ object Works extends App {
       processCorpusArtifact(entry, outputName, processor)
     }
   }
+
+
+
+  ///////////////////////
+  // Initialize/normalize corpus entries
 
   def normalizeCorpusEntry(corpus: Corpus, pdf: Path): Unit = {
     val artifactPath = corpus.corpusRoot / s"${pdf.name}.d"
@@ -272,6 +292,8 @@ object Works extends App {
     }
   }
 
+
+  /////////// Specific Commands
 
   def runCmdRichText(conf: AppConfig): Unit = {
 
@@ -335,7 +357,7 @@ object Works extends App {
     })
   }
 
-  def examineFonts(conf: AppConfig): Unit = {
+  def buildFontDB(conf: AppConfig): Unit = {
     import ammonite.{ops => fs}
     import extract.fonts._
 
@@ -366,13 +388,33 @@ object Works extends App {
           }
         }
       })
-
     } finally {
       db.shutdown()
-
     }
+  }
 
 
+  def extractFonts(conf: AppConfig): Unit = {
+    import utils.IdGenerator
+
+    processCorpusEntryList(conf, {corpusEntry =>
+
+      val charExtractor = new PdfTextExtractor(Set(), IdGenerator[RegionID]())
+
+      for {
+        pdfArtifact <- corpusEntry.getPdfArtifact
+        pdfIns <- pdfArtifact.asInputStream.toOption
+      } yield {
+        val fobjs = charExtractor.extractFontObjects(pdfIns)
+
+        val fontObjsFile = "fontobjs.txt"
+
+        processOrSkipOrForce(conf, corpusEntry, fontObjsFile) match {
+          case Some(_) => corpusEntry.putArtifact(fontObjsFile, fobjs)
+          case None    =>
+        }
+      }
+    })
   }
 
 
@@ -471,3 +513,17 @@ object Works extends App {
 
 
 }
+
+
+/*
+
+The sheep murder mystery:
+ Three Bags Full: A Sheep Detective Story http://amzn.to/2a9mJCH
+Religious missionaries in Space:
+ The Book of Strange New Things: A Novel http://amzn.to/2a0Eqol
+
+The Sparrow: A Novel (Ballantine Reader's Circle)
+Performing Shakespeare after the apocalypse:
+ Station Eleven
+
+ */

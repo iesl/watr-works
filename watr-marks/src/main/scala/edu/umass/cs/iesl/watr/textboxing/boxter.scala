@@ -77,9 +77,6 @@ object TextBoxing extends ToListOps with ToIdOps {
   def mstringToList(s: String): Seq[String] =
     scala.io.Source.fromString(s).getLines.toSeq
 
-
-
-
   // Given a string, split it back into a box
   def unrenderString(s:String): Box =
     linesToBox(s.split("\n"))
@@ -279,17 +276,10 @@ object TextBoxing extends ToListOps with ToIdOps {
     n => b => alignHoriz(right)(b.cols + n)(b)
 
 
-  //------------------------------------------------------------------------------
-  //  Implementation  ------------------------------------------------------------
-  //------------------------------------------------------------------------------
 
-  // Render a 'Box' as a String, suitable for writing to the screen or
-  //   a file.
+  // Render a 'Box' as a String, suitable for writing to the screen or a file.
   def render : Box => String =
     b => renderBox(b) |> (_.mkString("\n"))
-
-
-
 
 
   // Generate a string of spaces.
@@ -346,29 +336,9 @@ object TextBoxing extends ToListOps with ToIdOps {
     else takec ++ ((1 to rows-takec.length).map(_ => " "*cols))
   }
 
-
-  // Resize a rendered list of lines, using given alignments.
-  // def resizeBoxAlignedXX(r: Int, c: Int, ha: Alignment, va : Alignment): Seq[String] => Seq[String] = {
-  //   ss => takePadAlign(va, blanks(c), r, {
-  //     val aaa:Seq[Seq[Char]] = (ss.map (_))
-  //     val bbb:Seq[Seq[Char]] = aaa map (takePadAlign(ha, ' ', c, _))
-  //     val ccc:Seq[String] = bbb map (_.mkString(""))
-  //     // (ss.map (_)) map (takePadAlign(ha, ' ', c, _)) map (_.mkString(""))
-  //     ccc
-  //   })
-  // }
-
   def resizeBoxAligned(r: Int, c: Int, ha: Alignment, va : Alignment): Seq[String] => Seq[String] = {
     ss => takePadAlignList(va, blanks(c), r, {
-      // val aaa:Seq[Seq[Char]] = (ss.map (_))
-      // val bbb:Seq[Seq[Char]] = aaa map (takePadAlign(ha, ' ', c, _))
-      // val ccc:Seq[String] = bbb map (_.mkString(""))
-
-      // val aaa:Seq[Seq[Char]] = (ss.map (_))
-      val bbb:Seq[String] = ss.map (takePadAlignStr(ha, " ", c, _))
-      // val ccc:Seq[String] = bbb map (_.mkString(""))
-      // (ss.map (_)) map (takePadAlign(ha, ' ', c, _)) map (_.mkString(""))
-      bbb
+      ss.map (takePadAlignStr(ha, " ", c, _))
     })
   }
 
@@ -393,75 +363,32 @@ object TextBoxing extends ToListOps with ToIdOps {
   }
 
   def takePadAlignList(align:Alignment, pad:String, n:Int, xs: Seq[String]): Seq[String] = {
-    // val padFwd = pad*numFwd(align, n)
-
     val (a0, a1) = xs.splitAt(numRev(align, xs.length))
 
     val padRev = (0 until numRev(align, n)-a0.length).map(_ => pad)
     val padFwd = (0 until numFwd(align, n)-a1.length).map(_ => pad)
 
-    val joined = padRev ++ a0 ++ a1 ++ padFwd
-    // if (a0.length>0) {
-      // println(s"""|List align: ${align} width: ${n}
-      //             |  xs: ${xs.mkString(",")}
-      //             |     -${a0.mkString(",")}'
-      //             |     -${a1.mkString(",")}'
-      //             |  pad-rev: '${padRev.mkString(",")}'
-      //             |  pad-fwd: '${padFwd.mkString(",")}'
-      //             |  =${joined}'
-      //             |""".stripMargin)
-    // }
-    joined
-
+    padRev ++ a0 ++ a1 ++ padFwd
   }
+
   def takePadAlignStr(align:Alignment, pad:String, n:Int, xs: String): String = {
-
-    // def split(bs: Seq[A]): (Seq[A], Seq[A]) = {
-    //   val (l1, l2) = bs.splitAt(numRev(align, bs.length))
-    //   (l1.reverse, l2)
-    // }
-
-    // val padRev = takePad(pad, numRev(align, n))
-    // val padFwd = takePad(pad, numFwd(align,n))
-
     val (a0, a1) = xs.splitAt(numRev(align, xs.length))
 
     val padRev = pad*(numRev(align, n) - a0.length)
     val padFwd = pad*(numFwd(align, n) - a1.length)
 
-
-
-    val joined = padRev + a0 ++ a1 + padFwd
-
-    // println(s"""|String align: ${align}  width: ${n}
-    //             |  xs: ${xs.mkString}
-    //             |     -${a0.mkString}'
-    //             |     -${a1.mkString}'
-    //             |  pad-rev: '${padRev}'
-    //             |  pad-fwd: '${padFwd}'
-    //             |  =${joined}'
-    //             |""".stripMargin)
-    // }
-    joined
-
+    padRev + a0 ++ a1 + padFwd
   }
 
-  /** take n copies from list, padding end with A if necessary */
-  // def takePad[A](a:A, n:Int): Seq[A] => Seq[A] = { aas =>
+  // take n copies from list, padding end with A if necessary
   def takePad[A](a:A, n:Int): Seq[A] => Seq[A] = { aas =>
     val pad = if (n <= aas.length) 0 else n - aas.length
     aas.take(n) ++ Stream.continually(a).take(pad)
   }
 
-  // A convenience function for rendering a box to stdout.
-  def printBox : Box => Unit =
-    box => println(render(box))
-
-
   def repeat(b:Box): Stream[Box] = {
     Stream.continually(b)
   }
-
 
   def borderLR(c:String)(b:Box): Box = {
     val b0 = vjoin()( repeat(c).take(b.rows):_* )
@@ -535,9 +462,9 @@ object TextBoxing extends ToListOps with ToIdOps {
   // para algn w t is a box of width w, containing text t,
   //   aligned according to algn, flowed to fit within the given
   //   width.
-  def para: Alignment => Int => String => Box =
-    a => n => t =>
-  flow(n)(t) |> (ss => mkParaBox(a, ss.length, ss))
+  def para: Alignment => Int => String => Box = { a => n => t =>
+    flow(n)(t) |> (ss => mkParaBox(a, ss.length, ss))
+  }
 
 
   // columns w h t is a list of boxes, each of width w and height
@@ -605,14 +532,7 @@ object TextBoxing extends ToListOps with ToIdOps {
     }
 
   case class Line(len: Int, words: Seq[Word])
-  // object Line {
-  //   val lenL: Lens[Line, Int] = lensu((obj, v) => obj copy (len = v), _.len)
-  //   val wordsL: Lens[Line, Seq[Word]] = lensu((obj, v) => obj copy (words = v), _.words)
-  //   val getLen = lenL.get(_)
-  //   val getWords = wordsL.get(_)
-  // }
 
-  //
   def mkLine : Seq[Word] => Line =
     ws => Line((ws map (_.len)).sum + ws.length - 1, ws)
 
@@ -621,12 +541,6 @@ object TextBoxing extends ToListOps with ToIdOps {
 
 
   case class Word(len:Int, word:String)
-  // object Word {
-  //   val lenL: Lens[Word, Int] = lensu((obj, v) => obj copy (len = v), _.len)
-  //   val wordL: Lens[Word, String] = lensu((obj, v) => obj copy (word = v), _.word)
-  //   val getLen = lenL.get(_)
-  //   val getWord = wordL.get(_)
-  // }
 
   def mkWord : String => Word =
     w => Word(w.length, w)

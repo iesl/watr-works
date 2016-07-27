@@ -413,8 +413,6 @@ object DocumentFontInfo {
 
 class MyCFFFont(bytes: Array[Byte]) extends CFFFont(bytes) {
   def getFonts() = fonts
-
-
   def getRange(i: Int) = getEntireIndexRange(i)
 }
 
@@ -433,22 +431,21 @@ object formatting {
     val iref: PdfIndirectReference = obj.asInstanceOf[PdfIndirectReference]
     val refNum =iref.getObjNumber
     val refGen =iref.getGenNumber
+    val refStr = s"[${refNum} $refGen R]"
     if (followIndirect)  {
       val objDirect = iref.getDocument.getPdfObject(refNum)
-      formatObject(objDirect, reader)
+      refStr.box + formatObject(objDirect, reader)
     } else {
-      s"ind*${refNum}"
+      refStr
     }
   }
 
 
 
   def formatCFFFont(cf: MyCFFFont): Box = {
-    // PrivateSubrsOffsets     ${font.PrivateSubrsOffsets }  Array  Array[Array[Int]]
     val fontname = cf.getNames()(0)
 
     val cidFontByteArray = cf.getCID(fontname)
-
 
     val bas = cidFontByteArray.take(10).mkString(", ")
 
@@ -499,10 +496,6 @@ object formatting {
 
     val allFontBoxes = vcat(left)(fontBoxes)
 
-    // | exists     ${cf.exists    }          (String) => Boolean
-    //   | getCID     ${cf.getCID    }          (String) => Array[Byte]
-    // | getString  ${cf.getString }          (Char) => String
-    //   | isCID      ${cf.isCID     }          (String) => Boolean
     val hdr =
     s"""|CFFFont:
         |    getNames   ${cf.getNames.mkString(", ")  }          () => Array[String]
@@ -513,10 +506,6 @@ object formatting {
 
   def formatStreamObject(obj: PdfObject, reader: PdfReader): Box = {
     val strm = obj.asInstanceOf[PdfStream]
-    // /FontFile3 :: stream =>
-    //                     stream /Length=508
-    //                        /Length :: num => 508
-    //                        /Subtype :: name => /Type1C
 
     val subtype = strm.getAsName(new PdfName("Subtype"))
     val isType1C = subtype != null && subtype.getValue == "Type1C"
@@ -524,18 +513,12 @@ object formatting {
 
     val byteBox = if (strm.getBytes != null && isType1C) {
       val cffFont = new MyCFFFont(strm.getBytes())
-      // val bs = PdfReader.decodeBytes(strm.getBytes, strm)
-      // val cffFont = new CFFFont(bs)
       formatCFFFont(cffFont)
     } else "[empty]".box
 
-    // val strmNum = strm.getIndRef.getNumber
-    // strm.getDirectObject(strm.getIndRef)
-    // val b = s"""${bytes}""".box atop formatDictionary(strm, reader)
-    // val bi = indent(3)(b)
     val strmAsDict = indent(3)(formatDictionary(strm, reader))
 
-    s"""stream /Length=${strm.getLength}""".box atop strmAsDict  atop byteBox
+    strmAsDict atop "bytes:" atop byteBox
 
   }
 
@@ -585,12 +568,18 @@ object formatting {
   }
 
   def formatObject(obj: PdfObject, reader: PdfReader): Box = {
-    // obj.canBeInObjStm
 
     if (obj.isArray()) {
       val arr = obj.asInstanceOf[PdfArray]
-      val arrstr = arr.take(22).mkString("[", ", ", s", ..l=+${arr.size}]")
-      arrstr
+      val alen = arr.size()
+      val fmt = arr.map{ formatObject(_, reader) }.toSeq
+      val isMultiLine = fmt.exists { _.rows > 1 }
+      val fbox = if (isMultiLine) {
+        vcat(fmt)
+      } else {
+        s"(${fmt.size}) [".box + hjoins(center1, ", ")(fmt.toSeq.take(15)) + "]".box
+      }
+      fbox
     } else if (obj.isDictionary) {
       val xo = obj.asInstanceOf[PdfDictionary]
       indent(4)(formatDictionary(obj, reader))

@@ -144,10 +144,48 @@ class PdfTextExtractor(
   }
   import com.itextpdf.kernel.font._
   import com.itextpdf.io.font._
-  import com.itextpdf.io.font._
-  // import com.itextpdf.kernel.font.IDocFontProgram
 
-  def extractGlyphs(stream: InputStream): Unit = {
+  def extractFontObjects(stream: InputStream): String = {
+    import textboxing.{TextBoxing => TB}
+    import TB._
+
+    try {
+      val reader = new PdfReader(stream)
+      val document = new PdfDocument(reader)
+
+      val fontsPerPage = for (pageNumber <- 1 to document.getNumberOfPages) yield {
+        val pdfPage = document.getPage(pageNumber)
+        val resources = pdfPage.getResources
+        val pdfObject = resources.getPdfObject
+        val fontDict = pdfObject.getAsDictionary(PdfName.Font)
+
+        if (fontDict != null) {
+          fontDict.keySet().toList.map { key =>
+            val fontVal = fontDict.getAsDictionary(key)
+            (key.toString, fontVal)
+          }.toMap
+        } else {
+          Map[String, PdfObject]()
+        }
+      }
+
+      val allFonts = fontsPerPage.reduce { _ ++ _ }
+
+      val fontsBox = allFonts.toSeq.map{ case (name, fontObj) =>
+        name atop fonts.formatting.formatObject(fontObj, reader)
+      }
+
+      render(vcat(fontsBox))
+
+    } catch {
+      case ex: IOException =>
+        throw new Exception("Cannot extract characters from PDF file", ex)
+      case ex: Throwable =>
+        throw new Exception("Invalid PDF file", ex)
+    }
+  }
+
+  def extractGlyphs(stream: InputStream): String = {
     try {
       val reader = new PdfReader(stream)
       val document = new PdfDocument(reader)
@@ -164,47 +202,42 @@ class PdfTextExtractor(
           println("Font...")
           val fontVal = fontDict.getAsDictionary(key)
           val pdfFont = PdfFontFactory.createFont(fontVal)
+          println(fonts.formatting.formatObject(fontVal, reader))
 
           if (pdfFont.getFontProgram.isInstanceOf[Type1Font]) {
             val fontProgram = pdfFont.getFontProgram.asInstanceOf[Type1Font]
             if (fontProgram.isBuiltInFont()) {
-              println("builtin font")
+              // println("builtin font")
             } else {
-              println("pdf stream bytes")
-              val stream = fontProgram.getFontStreamBytes
             }
-            // val fontProgram = pdfFont.getFontProgram.asInstanceOf[Type1Font].getFontStreamBytes()
-
-
-
           }
 
 
           // val ftype = fontVal.getAsString(PdfName.Type)
           // val baseFont = fontVal.getAsString(PdfName.BaseFont)
           // val fname = fontVal.getAsString(PdfName.Name)
-
           val subtype = fontVal.getAsName(new PdfName("Subtype"))
           val subtype2 = fontVal.getAsName(PdfName.Subtype2)
+
           if (subtype == PdfName.Type0) {
             println("Type0")
-            println(fonts.formatting.formatObject(fontVal, reader))
+            // println(fonts.formatting.formatObject(fontVal, reader))
           } else if (subtype == PdfName.Type1) {
-            println("Type1")
+            // println("Type1")
             val fontDescriptor = fontVal.getAsDictionary(PdfName.FontDescriptor)
             if (fontDescriptor!=null) {
               val ff2 = fontDescriptor.getAsStream(PdfName.FontFile2)
               val ff3 = fontDescriptor.getAsStream(PdfName.FontFile3)
               if (ff2!=null) {
-                println(s"fontfile2: len = ${ff2.getBytes.length}")
+                // println(s"fontfile2: len = ${ff2.getBytes.length}")
 
               } else if (ff3!=null) {
-                println(s"fontfile3: len = ${ff3.getBytes.length}")
+                // println(s"fontfile3: len = ${ff3.getBytes.length}")
 
               }
             }
           } else if (subtype == PdfName.Type3) {
-            println("Type3")
+            // println("Type3")
             val charProcs = fontVal.getAsDictionary(PdfName.CharProcs)
             charProcs.keySet().foreach { charProcKey  =>
               val charProc = charProcs.getAsStream(charProcKey)
@@ -226,6 +259,8 @@ class PdfTextExtractor(
       case ex: Throwable =>
         throw new Exception("Invalid PDF file", ex)
     }
+
+    ""
   }
 
   // val ALT_TO_STANDART_FONTS = Map[String, PdfName](
