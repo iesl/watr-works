@@ -24,8 +24,7 @@ case class Zone(
 
 case class PageGeometry(
   id: Int@@PageID,
-  bounds: LTBounds,
-  borders:Option[Borders]
+  bounds: LTBounds
 )
 
 case class PageAtoms(
@@ -106,7 +105,6 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   implicit def FormatLBBounds         = Json.format[LBBounds]
   implicit def FormatLTBounds         = Json.format[LTBounds]
   implicit def FormatTargetedBounds   = Json.format[TargetRegion]
-  implicit def FormatBorders          = Json.format[Borders]
   implicit def FormatLabel            = Json.format[Label]
   implicit def FormatPageGeometry     = Json.format[PageGeometry]
   implicit def FormatZone             = Json.format[Zone]

@@ -7,7 +7,7 @@ import GeometricFigure._
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
-// import TypeTags._
+import TypeTags._
 import scalaz.{@@}
 import util._
 
@@ -141,10 +141,12 @@ class CharExtractionListener(
 
   }
 
+  var index = 20
   def renderText(charTrix: TextRenderInfo): Unit = {
     for {
       charTri <- charTrix.getCharacterRenderInfos
     } {
+      index -= 1
       // Map charTri to an extracted glyph, and try to match it to our
       //   glyph hash table
 
@@ -180,12 +182,11 @@ class CharExtractionListener(
         val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
         val b0 = bs(0)
 
-
         val font = charTri.getFont
 
         val fprogram = font.getFontProgram
         val pglyph = fprogram.getGlyph(b0)
-        val pglyphByCode = fprogram.getGlyphByCode(b0)
+        val pglyphByCode = fprogram.getGlyphByCode(b0 & 0xFF)
 
         // println(s"got glyph ${b0}? ${pglyph}, by-code:${pglyphByCode}")
         // println(outputGlyphInfo(pglyphByCode, reader))
@@ -222,6 +223,12 @@ class CharExtractionListener(
             sys.error(msg)
           })
 
+          if (index > 0 && pageId.unwrap == 0)  {
+            println(s"char ${charBox.char}: bounds= ${charBox.region}")
+            GlyphPositioning.traceGlyphPositioning(charTri, reader)
+            // println(fonts.DocumentFontInfo.getCharTriInfo(charTri, reader))
+            println("\n\n")
+          }
 
           // if (wonkyChar.isDefined || subChars.isDefined) {
           //   println(s"char: ${charBox}")
@@ -241,47 +248,64 @@ class CharExtractionListener(
 
 
   def computeTextBounds(charTri: TextRenderInfo): Option[LTBounds] = {
+    val fontProgramEmbedded = charTri.getFont.getFontProgram
+
+    val maybeFontProgram = FontLookup.getFontProgram(fontProgramEmbedded.getFontNames.getFontName.toLowerCase())
+    val fontProgram = maybeFontProgram.getOrElse { fontProgramEmbedded }
+
+    val fontMetrics = fontProgram.getFontMetrics
+
     val ascentStart = charTri.getAscentLine().getStartPoint()
     val descentStart = charTri.getDescentLine().getStartPoint()
 
     val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
     val absoluteCharBottom: Double = descentStart.get(PVector.I2).toDouble
 
-    // val pageRectangle = pdfPage.getCropBox()
-    // pageGeometry.bounds
-
     val charLeft = geomTranslation.transX(absoluteCharLeft)
     val charBottom = geomTranslation.transY(absoluteCharBottom)
 
-
-    // val charLeft = absoluteCharLeft - pageRectangle.getLeft()
-    // val charBottom = absoluteCharBottom - pageRectangle.getBottom() // in math coords
-
-
     var charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
     var charWidth = charTri.getDescentLine().getLength().toDouble
+
+    if (charWidth.toInt == 0) {
+      // figure out the exact dimensions of this glyph...
+      // In glyph space:
+
+      val pdfString = charTri.getPdfString
+      val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
+      val glyphCode = bs(0)
+      if (glyphCode < 0) {
+        println(s"""bs = [${bs.mkString(", ")}], pdfString = ${pdfString.toString()}""")
+
+        import DocumentFontInfo._
+        println(getCharTriInfo(charTri, reader))
+
+      }
+      val charBBox = fontProgram.getCharBBox(glyphCode)
+      val fontBbox = fontMetrics.getBbox
+      val glyphWidths = fontMetrics.getGlyphWidths
+      if (glyphWidths!=null && glyphWidths.length > glyphCode) {
+        charWidth = glyphWidths(glyphCode).toDouble
+      } else {
+        if (fontBbox != null) {
+          val y0 = fontBbox(1)
+          val y1 = fontBbox(3)
+          charWidth = (y1 - y0).toDouble
+        }
+      }
+    }
+
 
     if (charHeight.nan || charHeight.inf) {
       println(s"warning: char height is NaN or Inf")
       charHeight = 0
     }
 
-    if (charWidth.nan || (charWidth.inf)) {
-      println(s"warning: char width is NaN or Inf")
+    if (charWidth.nan || charWidth.inf || charWidth.toInt==0) {
+      println(s"warning: char width is 0, NaN, or Inf")
       charWidth = 0
     }
 
-    // if (absoluteCharLeft < pageRectangle.getLeft()
-    //   || absoluteCharLeft + charWidth > pageRectangle.getRight()
-    //   || absoluteCharBottom < pageRectangle.getBottom()
-    //   || absoluteCharBottom + charHeight > pageRectangle.getTop()) {
-    // if (bounds.getX().nan || bounds.getX().inf
-    //   || bounds.getY().nan || bounds.getY().inf
-    //   || bounds.getHeight().nan || bounds.getHeight().inf
-    //   || bounds.getWidth().nan || bounds.getWidth().inf) {
-    //   // skip
-    //   println(s"skipping text w/bbox= nan|inf: ${text}")
-    // } else {
 
     val charTop = charBottom - charHeight
 
@@ -346,3 +370,6 @@ class CharExtractionListener(
     // currCharBuffer.append(imgRegion)
   }
 }
+
+
+

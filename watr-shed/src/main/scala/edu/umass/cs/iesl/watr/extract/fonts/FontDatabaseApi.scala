@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package extract
 package fonts
 
-import org.slf4j.LoggerFactory
+// import org.slf4j.LoggerFactory
 import scala.concurrent._
 import ammonite.ops._
 
@@ -10,11 +10,12 @@ import slick.driver.H2Driver.api._
 
 import scala.concurrent._
 import scala.concurrent.duration._
+import db._
 
 
 
 class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
-  val log = LoggerFactory.getLogger(this.getClass)
+  // val log = LoggerFactory.getLogger(this.getClass)
 
 
   import DBIOX._
@@ -95,7 +96,7 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
 
   def addFontDir(fontDir: SplineFont.Dir): Unit = {
 
-    DBIOX.runAndAwait(db, {
+    DBIOX.runAndAwait(database, {
       for {
         (newFont, newFontSubset)       <- addFontSubsetDir(fontDir)
 
@@ -124,7 +125,7 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
   }
 
   def showHashedGlyphs(): Unit = {
-    val glyphHashes = Await.result(db.run(D.GlyphHashes.to[List].result), Duration.Inf)
+    val glyphHashes = Await.result(database.run(D.GlyphHashes.to[List].result), Duration.Inf)
 
     val qq = for {
       glyphHash <- glyphHashes
@@ -217,7 +218,7 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
       ()
     }
 
-    Await.result(db.run(
+    Await.result(database.run(
       sequence(qq)
     ), Duration.Inf)
 
@@ -239,7 +240,7 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
       }}
     } yield fontSubsetGlyphs
 
-    val res = Await.result(db.run(qq), Duration.Inf)
+    val res = Await.result(database.run(qq), Duration.Inf)
 
     println(s"Font ${font}")
 
@@ -257,7 +258,7 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
 
   def showFontTrees(): Unit = {
 
-    val fontList = Await.result(db.run(D.Fonts.to[List].result), Duration.Inf)
+    val fontList = Await.result(database.run(D.Fonts.to[List].result), Duration.Inf)
 
     fontList.map(showFontTree(_))
 
@@ -266,7 +267,7 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
   def reportAll() = {
 
     Await.result(
-      db.run((for {
+      database.run((for {
         _ <- D.Fonts.to[List].result.map(x => println(s"fonts: ${x}"))
         // _ <- D.FontSubsets.to[List].result.map(x => println(s"font subsets: ${x}"))
         _ <- D.FontToFontSubset.to[List].result.map({a => println(s"font -> fsubset: ${a}")})

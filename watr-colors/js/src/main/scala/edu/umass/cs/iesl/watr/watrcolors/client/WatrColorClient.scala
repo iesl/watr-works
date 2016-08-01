@@ -3,11 +3,8 @@ package watrcolors
 package client
 
 import scala.scalajs.js.annotation.JSExport
-import org.scalajs.jquery.jQuery
 
 import native.mousetrap._
-
-
 
 case class Keybindings(
   bindings: List[(String, (MousetrapEvent) => Boolean)]

@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
-// TODO factor out commonalities between ScalatagsDomDefs and ScalatagsDomDefs
 import scalatags.jsdom
 import scalatags.JsDom
 
@@ -26,13 +25,12 @@ trait ScalatagsDomDefs {
   }
 
   object ^ extends JsDom.Cap with JsDom.Attrs {
-    lazy val x = "x".attr
-    lazy val y = "y".attr
-    lazy val width = "width".attr
-    lazy val height = "height".attr
-    lazy val labelName = "label-name".attr
-    lazy val labelValue = "label-value".attr
-
+    lazy val x = attr("x")
+    lazy val y = attr("y")
+    lazy val width = attr("width")
+    lazy val height =     attr("height")
+    lazy val labelName =  attr("label-name")
+    lazy val labelValue = attr("label-value")
   }
 
   object $ extends JsDom.Cap with JsDom.Styles with JsDom.Styles2
@@ -45,7 +43,6 @@ trait ScalatagsDomDefs {
     def id = ^.`id` := s
     def labelName = ^.labelName:=s
     def labelValue = ^.labelValue:=s
-    def attrTarget = "target".attr:=s
   }
 
   def fmt = (d: Double) => f"${d}%1.2f"
@@ -59,7 +56,10 @@ trait ScalatagsDomDefs {
 
 }
 
-package object client extends ScalatagsDomDefs {
 
+import org.querki.jquery
+
+package object client extends ScalatagsDomDefs {
+  val jQuery = jquery.$
 
 }

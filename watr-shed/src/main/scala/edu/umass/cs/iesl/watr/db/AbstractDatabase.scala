@@ -1,23 +1,22 @@
 package edu.umass.cs.iesl.watr
-package extract
-package fonts
+package db
 
 import scala.concurrent._
+import scala.concurrent.duration._
 import ammonite.ops._
 
+import org.slf4j.LoggerFactory
 
 import com.zaxxer.hikari.HikariDataSource
 import slick.driver.H2Driver.api._
 
 import scala.concurrent._
-import scala.concurrent.duration._
-
 
 abstract class AbstractDatabase(dir: Path)  {
-  import FontDatabaseTables._
+  val log = LoggerFactory.getLogger(this.getClass)
   import ExecutionContext.Implicits.global
 
-  lazy val (datasource, db) = {
+  lazy val (datasource, database) = {
 
     // MVCC plus connection pooling speeds up the tests ~10%
     val backend = "jdbc:h2:file:"
@@ -40,8 +39,8 @@ abstract class AbstractDatabase(dir: Path)  {
     for {
       // call directly - using slick withSession barfs as it runs a how many rows were updated
       // after shutdown is executed.
-      _ <- db.run(sqlu"shutdown")
-      _ <- db.shutdown
+      _ <- database.run(sqlu"shutdown")
+      _ <- database.shutdown
       _ = datasource.close()
     } yield ()
   }
@@ -52,13 +51,15 @@ abstract class AbstractDatabase(dir: Path)  {
     }
   }
 
+
+  def getSchemas(): DBIOAction[Unit, NoStream, Effect.Schema] = DBIOX.noop
+
   def createDBDir(): Unit = {
     if (!exists(dir)) {
       log.info("creating the search database...")
       mkdir(dir)
-
       Await.result(
-        db.run(schemas.create),
+        database.run(getSchemas()),
         Duration.Inf
       )
       log.info("... created the search database")

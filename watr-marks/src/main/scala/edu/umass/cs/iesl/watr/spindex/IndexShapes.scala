@@ -23,13 +23,6 @@ object GeometricFigure {
   ) extends GeometricFigure with Area
 
 
-  case class Borders(
-    bleft: Double,
-    btop: Double,
-    bright: Double,
-    bbottom: Double
-  ) extends GeometricFigure with Area
-
   case class Point(
     x: Double, y: Double
   ) extends GeometricFigure
@@ -74,14 +67,6 @@ object IndexShapeOperations {
 
   implicit class RicherDouble(val d: Double) extends AnyVal {
     def pp:String = fmt(d)
-
-    // def ltFuzzy(tolerance: Double)(d2: Double): Boolean = {
-    //   d > d2
-    //   d < (d2+tolerance)
-    // }
-
-    // def gtFuzzy(tolerance: Double)(d2: Double): Boolean =
-    //   compareFuzzy(tolerance)(d2) > 0
 
     def eqFuzzy(tolerance: Double)(d2: Double): Boolean =
       compareFuzzy(tolerance)(d2) == 0

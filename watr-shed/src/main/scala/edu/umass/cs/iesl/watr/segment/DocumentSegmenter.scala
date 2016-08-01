@@ -214,10 +214,6 @@ class DocumentSegmenter(
       determineLines(pageId, charAtoms)
     }
 
-    // allPageLines.foreach { c =>
-    //   println()
-    //   println(c.chars)
-    // }
   }
 
 
@@ -466,6 +462,25 @@ class DocumentSegmenter(
     labelAbstract()
     labelSectionHeadings()
 
+    joinLines()
+
+  }
+
+  def joinLines(): Unit = {
+    val alignedBlocksPerPage = for {
+      page <- visualLineOnPageComponents
+      line <- page
+    } yield {
+      val wordBreaks = "–-"
+      val lineMinLenReq = line.chars.length > 10 // magic # for minimum line length
+      val hasNonLetterPrefix = line.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
+      val endsWithDash = line.chars.lastOption.exists { wordBreaks contains _ }
+      val isBrokenWord = endsWithDash && lineMinLenReq && hasNonLetterPrefix
+
+      if (isBrokenWord) {
+        println(s"found line break: ${line.chars}")
+      }
+    }
   }
 
   private def findNeighbors(pageId: Int@@PageID, qbox: CharAtom): Seq[CharAtom] = {
@@ -491,15 +506,8 @@ class DocumentSegmenter(
         zoneIndexer.getPageInfo(pageId).charAtomIndex.getItem(id)
       )
 
-      // val missingChars = missingIds.map(id => zoneIndexer.getAtom(pageId, RegionID(id)))
-
-      // TODO check missing chars for overlap w/lineChars
       val completeLine = (charBoxes ++ missingChars).sortBy(_.region.bbox.left)
 
-      // // check for split in line
-      // println(s"""${charBoxes.map(_.bestGuessChar).mkString}""")
-      // println(s"""  +: ${missingChars.map(_.bestGuessChar).mkString}""")
-      // println(s"""  =: ${completeLine.map(_.bestGuessChar).mkString}""")
       completeLine
     }
   }
@@ -541,9 +549,6 @@ class DocumentSegmenter(
 
           m.tail.foreach({char =>
             lineSets.union(char, m.head)
-            // if (!char.isWonky) {
-            //   lineSets.union(char, m.head)
-            // }
           })
           totalIndex += index+1;
         })

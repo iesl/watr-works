@@ -11,7 +11,6 @@ import scala.util.Random
 import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalatags.JsDom.all._
-import org.scalajs.jquery.jQuery
 
 
 import boopickle.DefaultBasic._

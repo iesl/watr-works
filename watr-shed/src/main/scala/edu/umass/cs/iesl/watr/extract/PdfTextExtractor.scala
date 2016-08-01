@@ -12,8 +12,9 @@ import spindex._
 import GeometricFigure._
 import TypeTags._
 import scala.collection.mutable
+import scala.collection.JavaConversions._
 
-import scalaz.{@@}
+import scalaz.@@
 
 object util {
 
@@ -36,7 +37,6 @@ class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),
   componentIdGen: IdGenerator[RegionID]
 ) {
-  import scala.collection.JavaConversions._
 
   val bboxNames = List[PdfName](
     PdfName.CropBox,
@@ -88,7 +88,7 @@ class PdfTextExtractor(
       height = bottom.toDouble
     )
 
-    (PageGeometry(pageId, bounds, None),
+    (PageGeometry(pageId, bounds),
       GeometryTranslation(xtrans, ytrans))
 
   }
@@ -142,176 +142,5 @@ class PdfTextExtractor(
         throw new Exception("Invalid PDF file", ex)
     }
   }
-  import com.itextpdf.kernel.font._
-  import com.itextpdf.io.font._
-
-  def extractFontObjects(stream: InputStream): String = {
-    import textboxing.{TextBoxing => TB}
-    import TB._
-
-    try {
-      val reader = new PdfReader(stream)
-      val document = new PdfDocument(reader)
-
-      val fontsPerPage = for (pageNumber <- 1 to document.getNumberOfPages) yield {
-        val pdfPage = document.getPage(pageNumber)
-        val resources = pdfPage.getResources
-        val pdfObject = resources.getPdfObject
-        val fontDict = pdfObject.getAsDictionary(PdfName.Font)
-
-        if (fontDict != null) {
-          fontDict.keySet().toList.map { key =>
-            val fontVal = fontDict.getAsDictionary(key)
-            (key.toString, fontVal)
-          }.toMap
-        } else {
-          Map[String, PdfObject]()
-        }
-      }
-
-      val allFonts = fontsPerPage.reduce { _ ++ _ }
-
-      val fontsBox = allFonts.toSeq.map{ case (name, fontObj) =>
-        name atop fonts.formatting.formatObject(fontObj, reader)
-      }
-
-      render(vcat(fontsBox))
-
-    } catch {
-      case ex: IOException =>
-        throw new Exception("Cannot extract characters from PDF file", ex)
-      case ex: Throwable =>
-        throw new Exception("Invalid PDF file", ex)
-    }
-  }
-
-  def extractGlyphs(stream: InputStream): String = {
-    try {
-      val reader = new PdfReader(stream)
-      val document = new PdfDocument(reader)
-
-      for (pageNumber <- 1 to document.getNumberOfPages) {
-        println(s"page ${pageNumber}")
-        val pdfPage = document.getPage(pageNumber)
-        val resources = pdfPage.getResources
-        val pdfObject = pdfPage.getResources.getPdfObject
-        val fontDict = pdfObject.getAsDictionary(PdfName.Font)
-        // val glyph = pdfFont.getGlyph(1)
-
-        fontDict.keySet().foreach{ key =>
-          println("Font...")
-          val fontVal = fontDict.getAsDictionary(key)
-          val pdfFont = PdfFontFactory.createFont(fontVal)
-          println(fonts.formatting.formatObject(fontVal, reader))
-
-          if (pdfFont.getFontProgram.isInstanceOf[Type1Font]) {
-            val fontProgram = pdfFont.getFontProgram.asInstanceOf[Type1Font]
-            if (fontProgram.isBuiltInFont()) {
-              // println("builtin font")
-            } else {
-            }
-          }
-
-
-          // val ftype = fontVal.getAsString(PdfName.Type)
-          // val baseFont = fontVal.getAsString(PdfName.BaseFont)
-          // val fname = fontVal.getAsString(PdfName.Name)
-          val subtype = fontVal.getAsName(new PdfName("Subtype"))
-          val subtype2 = fontVal.getAsName(PdfName.Subtype2)
-
-          if (subtype == PdfName.Type0) {
-            println("Type0")
-            // println(fonts.formatting.formatObject(fontVal, reader))
-          } else if (subtype == PdfName.Type1) {
-            // println("Type1")
-            val fontDescriptor = fontVal.getAsDictionary(PdfName.FontDescriptor)
-            if (fontDescriptor!=null) {
-              val ff2 = fontDescriptor.getAsStream(PdfName.FontFile2)
-              val ff3 = fontDescriptor.getAsStream(PdfName.FontFile3)
-              if (ff2!=null) {
-                // println(s"fontfile2: len = ${ff2.getBytes.length}")
-
-              } else if (ff3!=null) {
-                // println(s"fontfile3: len = ${ff3.getBytes.length}")
-
-              }
-            }
-          } else if (subtype == PdfName.Type3) {
-            // println("Type3")
-            val charProcs = fontVal.getAsDictionary(PdfName.CharProcs)
-            charProcs.keySet().foreach { charProcKey  =>
-              val charProc = charProcs.getAsStream(charProcKey)
-              val cpBytes= charProc.getBytes
-              val l = cpBytes.length
-              // println(s"glyph ${charProcKey}: len = ${l}")
-            }
-          } else {
-
-          }
-
-        }
-
-      }
-
-    } catch {
-      case ex: IOException =>
-        throw new Exception("Cannot extract characters from PDF file", ex)
-      case ex: Throwable =>
-        throw new Exception("Invalid PDF file", ex)
-    }
-
-    ""
-  }
-
-  // val ALT_TO_STANDART_FONTS = Map[String, PdfName](
-  //   "CourierNew" -> PdfName.COURIER,
-  //   "CourierNew,Bold" -> PdfName.COURIER_BOLD,
-  //   "CourierNew,BoldItalic" -> PdfName.COURIER_BOLDOBLIQUE,
-  //   "CourierNew,Italic" -> PdfName.COURIER_OBLIQUE,
-  //   "Arial" -> PdfName.HELVETICA,
-  //   "Arial,Bold" -> PdfName.HELVETICA_BOLD,
-  //   "Arial,BoldItalic" -> PdfName.HELVETICA_BOLDOBLIQUE,
-  //   "Arial,Italic" -> PdfName.HELVETICA_OBLIQUE,
-  //   "TimesNewRoman" -> PdfName.TIMES_ROMAN,
-  //   "TimesNewRoman,Bold" -> PdfName.TIMES_BOLD,
-  //   "TimesNewRoman,BoldItalic" -> PdfName.TIMES_BOLDITALIC,
-  //   "TimesNewRoman,Italic" -> PdfName.TIMES_ITALIC
-  // )
-
-  // def processAlternativeFontNames(resources: PdfDictionary): Unit = {
-  //   val fontsDictionary = resources.getAsDict(PdfName.FONT)
-
-  //   if (fontsDictionary == null) {
-  //     return
-  //   }
-  //   for (pdfFontName <- fontsDictionary.getKeys()) {
-  //     if (!(fontsDictionary.get(pdfFontName).isInstanceOf[PRIndirectReference])) {
-  //       return
-  //     } else {
-  //       val indRef = fontsDictionary.get(pdfFontName).asInstanceOf[PRIndirectReference]
-  //       val fontDictionary = PdfReader.getPdfObjectRelease(indRef).asInstanceOf[PdfDictionary]
-
-  //       val baseFont = fontDictionary.getAsName(PdfName.BASEFONT)
-  //       if (baseFont != null) {
-  //         val fontName = PdfName.decodeName(baseFont.toString())
-  //         if (fontDictionary.getAsArray(PdfName.WIDTHS) == null && ALT_TO_STANDART_FONTS.containsKey(fontName)) {
-  //           fontDictionary.put(PdfName.BASEFONT, ALT_TO_STANDART_FONTS(fontName))
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-
-  // def processAlternativeColorSpace(resources: PdfDictionary): Unit = {
-  //   val csDictionary = resources.getAsDict(PdfName.COLORSPACE)
-  //   if (csDictionary == null) {
-  //     return
-  //   }
-  //   for (csName <- csDictionary.getKeys()) {
-  //     if (csDictionary.getAsArray(csName) != null) {
-  //       csDictionary.put(csName, PdfName.DEVICEGRAY)
-  //     }
-  //   }
-  // }
 
 }

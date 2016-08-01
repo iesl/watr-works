@@ -1,6 +1,5 @@
 package edu.umass.cs.iesl.watr
-package extract
-package fonts
+package db
 
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent._

@@ -43,7 +43,6 @@ trait ScalatagsDefs {
     def id = ^.`id` := s
     def labelName = ^.labelName:=s
     def labelValue = ^.labelValue:=s
-    // def attrTarget = "target".attr:=s
   }
 
   def fmt = (d: Double) => f"${d}%1.2f"

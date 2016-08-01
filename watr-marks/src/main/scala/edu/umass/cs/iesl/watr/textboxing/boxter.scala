@@ -564,8 +564,8 @@ object TextBoxing extends ToListOps with ToIdOps {
 
 
   def wordFits : (Int, Word, Line) => Boolean =
-    (pw, w, l) =>
-  l.len == 0 || l.len + w.len + 1 <= pw
+    (pw, w, l) => l.len == 0 || l.len + w.len + 1 <= pw
+
 
 }
 
@@ -660,5 +660,9 @@ object App extends App {
   ))
 
   println("\n\n")
+
+  println("Matrices")
+
+
 
 }

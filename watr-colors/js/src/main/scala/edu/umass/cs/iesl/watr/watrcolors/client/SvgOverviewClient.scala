@@ -7,7 +7,6 @@ import scala.async.Async.{async, await}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
-import org.scalajs.jquery.jQuery
 import org.scalajs.dom._
 
 import autowire._
@@ -51,7 +50,7 @@ class SvgOverview(
       // Set geometries for each page image, for coord scaling/translation:
       pageImageGeometries.clear()
 
-      jQuery(".page-image").map({ (i: Int, elem: Element) =>
+      jQuery(".page-image").map({ (elem: Element) =>
         val igeom = LTBounds(
           elem.clientLeft.toDouble,
           elem.clientTop.toDouble,
@@ -133,7 +132,7 @@ class SvgOverview(
     var imgCount = jQuery(".page-image").length
     var imgReady = 0
 
-    jQuery(".page-image").map({ (i: Int, elem: Element) =>
+    jQuery(".page-image").map({ (elem: Element) =>
 
       def loaded(): Unit = {
         imgReady += 1

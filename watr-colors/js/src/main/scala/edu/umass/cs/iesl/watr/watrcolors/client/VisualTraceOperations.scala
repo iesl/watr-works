@@ -3,6 +3,7 @@ package watrcolors
 package client
 
 import scala.collection.mutable
+import org.querki.jquery._
 
 trait VisualTraceOperations extends FabricCanvasOperations {
 
@@ -174,7 +175,6 @@ trait VisualTraceOperations extends FabricCanvasOperations {
           addShape(ttrans.bbox, "blue", currRGB)
 
         case ShowLabel(s: Label) =>
-          import org.scalajs.jquery.jQuery
 
           // val cls = classStack.mkString(" ")
           val cls = "."+classStack.top
@@ -187,7 +187,7 @@ trait VisualTraceOperations extends FabricCanvasOperations {
             content
           )
 
-          import org.scalajs.jquery._
+          // import org.scalajs.jquery._
 
           val hin = (e:JQueryEventObject) => {
             println("hover in")

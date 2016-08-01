@@ -18,9 +18,6 @@ object SharedTypeConversions {
   implicit class RicherLBBounds(val in: spindex.GeometricFigure.LBBounds) extends AnyVal {
     def convert() = LBBounds(in.left, in.bottom, in.width, in.height)
   }
-  implicit class RicherBorders(val in: spindex.GeometricFigure.Borders) extends AnyVal {
-    def convert(): Borders = Borders(in.bleft, in.btop, in.bright, in.bbottom)
-  }
 
   implicit class RicherLine(val in: spindex.GeometricFigure.Line) extends AnyVal {
     def convert(): Line = Line(in.p1.convert(), in.p2.convert())
@@ -30,10 +27,9 @@ object SharedTypeConversions {
 
     in match {
       case v: spindex.GeometricFigure.LTBounds => v.convert()
+      case v: spindex.GeometricFigure.LBBounds => v.convert()
       case v: spindex.GeometricFigure.Point    => v.convert()
       case v: spindex.GeometricFigure.Line     => v.convert()
-      case v: spindex.GeometricFigure.Borders  => v.convert()
-      case v: spindex.GeometricFigure.LBBounds => v.convert()
     }
   }
 
@@ -41,8 +37,7 @@ object SharedTypeConversions {
   implicit class RicherPageGeometry(val in: spindex.PageGeometry) extends AnyVal {
     def convert(): PageGeometry = PageGeometry(
       in.id.unwrap,
-      in.bounds.convert,
-      in.borders.map(_.convert)
+      in.bounds.convert
     )
   }
 

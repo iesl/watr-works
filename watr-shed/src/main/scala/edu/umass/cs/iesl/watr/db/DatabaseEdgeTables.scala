@@ -1,6 +1,5 @@
 package edu.umass.cs.iesl.watr
-package extract
-package fonts
+package db
 
 import slick.driver.H2Driver.api._
 

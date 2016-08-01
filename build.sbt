@@ -14,7 +14,7 @@ shellPrompt in ThisBuild := Sensible.colorPrompt
 
 addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 
-addCompilerPlugin("org.spire-math" %% "kind-projector"  % "0.7.1")
+addCompilerPlugin("org.spire-math" %% "kind-projector"  % "0.8.0")
 
 val freeKDeps = Seq(
   "com.projectseptember"            %% "freek"                        % "0.4.3",
@@ -75,14 +75,15 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "me.chrons" %%% "boopickle" % "1.2.4",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     "com.lihaoyi" %%% "scalarx" % "0.3.1",
-    "com.lihaoyi" %%% "scalatags" % "0.5.5"
+    "com.lihaoyi" %%% "scalatags" % "0.6.0"
   )
 ).jsSettings(
   workbenchSettings:_*
 ).jsSettings(
   name := "watrcolors-client",
   libraryDependencies ++= Seq(
-    "be.doeraene" %%% "scalajs-jquery" % "0.9.0",
+    // "be.doeraene" %%% "scalajs-jquery" % "0.9.0",
+    "org.querki" %%% "jquery-facade" % "1.0-RC6",
     "org.scala-js" %%% "scalajs-dom" % "0.9.1"
   ),
   // refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),
@@ -96,8 +97,8 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "io.spray" %% "spray-routing-shapeless2" % "1.3.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.8",
     "org.webjars.bower" % "fabric" % "1.6.2",
-    "org.webjars" % "bootstrap" % "3.3.6",
-    "org.webjars" % "jquery" % "2.2.3",
+    "org.webjars" % "bootstrap" % "3.3.7",
+    "org.webjars" % "jquery" % "2.2.4",
     // "org.webjars" % "jquery" % "3.0.0",
     "org.webjars" % "mousetrap" % "1.5.3"
   )

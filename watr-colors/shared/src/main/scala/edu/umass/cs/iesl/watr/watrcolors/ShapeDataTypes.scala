@@ -22,13 +22,6 @@ object GeometricFigure {
   ) extends GeometricFigure with Area with SharedJs
 
 
-  case class Borders(
-    bleft: Double,
-    btop: Double,
-    bright: Double,
-    bbottom: Double
-  ) extends GeometricFigure with Area with SharedJs
-
   case class Point(
     x: Double, y: Double
   ) extends GeometricFigure with SharedJs
@@ -43,8 +36,7 @@ import GeometricFigure._
 
 case class PageGeometry(
   id: Int, //@@PageID,
-  bounds: LTBounds,
-  borders:Option[Borders]
+  bounds: LTBounds
 ) extends SharedJs
 
 case class TargetRegion(
@@ -99,14 +91,12 @@ trait ShapeDataTypePicklers {
   implicit val pLBBounds = PicklerGenerator.generatePickler[LBBounds]
   implicit val pPoint= PicklerGenerator.generatePickler[Point]
   implicit val pLine = PicklerGenerator.generatePickler[Line]
-  implicit val pBorders = PicklerGenerator.generatePickler[Borders]
 
   pGeometricFigure
     .addConcreteType[LTBounds]
     .addConcreteType[LBBounds]
     .addConcreteType[Point]
     .addConcreteType[Line]
-    .addConcreteType[Borders]
 
   implicit val pSharedJs = compositePickler[SharedJs]
   implicit val pPageGeometry = PicklerGenerator.generatePickler[PageGeometry]

@@ -8,6 +8,7 @@ import slick.driver.H2Driver.api._
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 
+import db._
 
 object FontDatabaseTables extends EdgeTables {
   val log = LoggerFactory.getLogger(this.getClass)
@@ -243,6 +244,10 @@ object FontDatabaseTables extends EdgeTables {
       GlyphHashes.schema ++
       Glyphs.schema
   )
+
+  def getSchemas(): DBIOAction[Unit, NoStream, Effect.Schema] = {
+    schemas.create
+  }
 
 }
 

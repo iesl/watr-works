@@ -6,17 +6,14 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import native.fabric
 
-
 import scala.concurrent.Future
 import scala.async.Async.{async, await}
-
 import scala.collection.mutable
 
 import GeometricFigure._
-import TraceLog._
 
 trait FabricCanvasOperations {
-  import org.scalajs.jquery.jQuery
+  // import org.scalajs.jquery.jQuery
 
   def fabricCanvas: fabric.Canvas = {
     jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
@@ -25,15 +22,15 @@ trait FabricCanvasOperations {
   def addShape(shape: GeometricFigure, color: String, bg: String): Unit = {
     shape match {
       case  p: Point =>
-        // addCircle(p, color)
         addLTBoundsRect(LTBounds(
           p.x-1, p.y-1, 2, 2
         ), color, bg)
 
-      case  Line(p1: Point, p2: Point) =>
+      case  Line(p1: Point, p2: Point) => ???
 
-      case b:LTBounds =>
-        addLTBoundsRect(b, color, bg)
+      case b:LTBounds => addLTBoundsRect(b, color, bg)
+
+      case b:LBBounds => ??? // addLBBoundsRect(b, color, bg)
     }
 
   }
