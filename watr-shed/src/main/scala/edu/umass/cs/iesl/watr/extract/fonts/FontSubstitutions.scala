@@ -11,7 +11,6 @@ object FontLookup {
   val fontPrograms = mutable.HashMap[String, FontProgram]()
 
   val fontPaths = List[(String, String)](
-    "arial" -> "/usr/share/fonts/truetype/msttcorefonts/Arial.ttf"
   )
 
   def init(): Unit = {

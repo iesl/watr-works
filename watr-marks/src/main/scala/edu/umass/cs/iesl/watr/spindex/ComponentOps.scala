@@ -199,10 +199,11 @@ object ComponentOperations {
 
         // focus on this component
         vtrace.trace(
+          vtrace.begin("Tokenize Line"),
           vtrace.link(
             vtrace.message("tokenizing line"),
             vtrace.focusOn(component.targetRegion),
-            vtrace.all(component.children.map(_.targetRegion).map(vtrace.showRegion(_)))
+            vtrace.all(component.children.map(c => vtrace.showRegion(c.targetRegion)))
           )
         )
 
@@ -334,7 +335,9 @@ object ComponentOperations {
         component.replaceChildren(asTokens)
         component.addLabel(LB.TokenizedLine)
       }
-
+      vtrace.trace(
+        vtrace.end("Tokenize Line")
+      )
       component
 
     }
