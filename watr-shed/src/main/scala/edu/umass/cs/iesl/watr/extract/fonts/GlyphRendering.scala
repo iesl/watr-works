@@ -3,19 +3,13 @@ package extract
 package fonts
 
 import com.itextpdf
-import itextpdf.kernel.pdf.PdfReader
-import com.itextpdf.io.font.FontProgramFactory
-import com.itextpdf.io.font.otf.Glyph
-import com.itextpdf.kernel.pdf.PdfName
-// import com.itextpdf.io.font.{ FontIdentification, FontNames, FontProgram, FontProgramFactory }
-// import com.itextpdf.kernel.font.PdfFont
-// import com.itextpdf.kernel.geom.LineSegment
-// import com.itextpdf.kernel.geom
-// import com.itextpdf.kernel.pdf.{ PdfArray, PdfIndirectReference, PdfStream, PdfString }
-// import com.itextpdf.kernel.pdf.PdfDictionary;
-// import com.itextpdf.kernel.pdf.PdfObject
+import itextpdf.kernel.pdf._
+import itextpdf.io.font.FontProgramFactory
+import itextpdf.io.font.otf.Glyph
 import itextpdf.kernel.pdf.canvas.parser.data._
 
+import textboxing.{TextBoxing => TB}
+import TB._
 
 import DocumentFontInfo._
 
@@ -47,6 +41,70 @@ object GlyphPositioning {
     |   0  Tr
     |   ET
     */
+  def getPdfPath(pdfObject: PdfObject, path: String): Option[PdfObject] = {
+    val pathParts = path.split("/").map(_.trim).filterNot(_.isEmpty())
+    getPdfObject(pdfObject, pathParts)
+  }
+
+  def getPdfObject(pdfObject: PdfObject, pathParts: Seq[String]): Option[PdfObject] = {
+    if (pathParts.isEmpty) Some(pdfObject) else {
+      if (pdfObject.isInstanceOf[PdfDictionary]) {
+        val pobj = pdfObject.asInstanceOf[PdfDictionary].get(new PdfName(pathParts(0)))
+        getPdfObject(pobj, pathParts.drop(1))
+      } else None
+    }
+  }
+
+  def guessDiffEncodedGlyph(tri: TextRenderInfo, reader: PdfReader): Seq[Glyph] = {
+    val font = tri.getFont
+
+    getPdfPath(font.getPdfObject, "/Encoding/Differences") match {
+      case Some(differences: PdfArray) =>
+        differences.size()
+      case None =>
+    }
+
+    ???
+  }
+  def guessTheGlyphChar(tri: TextRenderInfo, reader: PdfReader): Unit = {
+    val font = tri.getFont
+
+    // Step 1: What glyph is this?
+    val pdfString = tri.getPdfString
+    val valueBytes = pdfString
+      .getValueBytes
+      .map(Byte.byte2int(_))
+      .map({ charCode =>
+        getPdfPath(font.getPdfObject, "/Encoding/Differences")
+
+      })
+
+    // val bsMasked = bs.map(_ & 0xFF)
+    // val b0 = bs(0)
+    // var glyph = fontProgram.getGlyph(b0)
+    // var techBox = ".getGlyph(b0)".box
+    // if (glyph==null) {
+    //   glyph = fontProgram.getGlyphByCode(b0)
+    //   techBox = ".getGlyphByCode(b0)".box
+    // }
+    // if (glyph==null) {
+    //   glyph = fontProgram.getGlyph(b0 & 0xFF)
+    //   techBox = ".getGlyph(b0 & 0xff)".box
+    // }
+    // if (glyph==null) {
+    //   glyph = fontProgram.getGlyphByCode(b0 & 0xFF)
+    //   techBox = ".getGlyphByCode(b0 & 0xff)".box
+    // }
+    // if (glyph==null) {
+
+    //   techBox = "No Idea what glyph this is!!!".box
+    //   /// Look in font object/differences
+    //   // font /Encoding /Differences
+    // }
+
+
+    // font.getEncoding()
+  }
 
   def traceGlyphPositioning(tri: TextRenderInfo, reader: PdfReader): Unit = {
     val graphicState = tri.gs
@@ -56,20 +114,69 @@ object GlyphPositioning {
     val fontProgram = maybeFontProgram.getOrElse { fontProgramEmbedded }
     val fontMetrics = font.getFontProgram.getFontMetrics
 
-    println(outputFontProgramInfo(fontProgram))
-    println(outputFontMetrics(fontMetrics))
+    // println(outputFontProgramInfo(fontProgram))
+    // println(outputFontMetrics(fontMetrics))
+
+
+    // Step 1: What glyph is this?
+    val pdfString = tri.getPdfString
+    val decoded = font.decode(pdfString)
+    val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
+    val bsMasked = bs.map(_ & 0xFF)
+    val b0 = bs(0)
+    var glyph = fontProgram.getGlyph(b0)
+    var techBox = ".getGlyph(b0)".box
+    if (glyph==null) {
+      glyph = fontProgram.getGlyphByCode(b0)
+      techBox = ".getGlyphByCode(b0)".box
+    }
+    if (glyph==null) {
+      glyph = fontProgram.getGlyph(b0 & 0xFF)
+      techBox = ".getGlyph(b0 & 0xff)".box
+    }
+    if (glyph==null) {
+      glyph = fontProgram.getGlyphByCode(b0 & 0xFF)
+      techBox = ".getGlyphByCode(b0 & 0xff)".box
+    }
+    if (glyph==null) {
+
+      techBox = "No Idea what glyph this is!!!".box
+      /// Look in font object/differences
+      // font /Encoding /Differences
+    }
+
+
+    // font.getEncoding()
+
+    var glyphInf =  s"""Glyph Info decoded='${decoded}' bs=${bs.mkString(",")} / &0xFF= ${bsMasked.mkString(", ")}""".box
+
+    if (glyph != null) {
+      glyphInf = glyphInf atop techBox atop outputGlyphInfo(glyph, reader)
+    }
+
+    println(glyphInf)
+
+
+    // Guess what char this glyph represents:
+
+
+
+
+
+
+
+
 
     // 9.2.4 Glyph Positioning and Metrics
     val charCode = tri.getCharCode(tri.getText)
-    val glyph = fontProgram.getGlyph(charCode)
 
-    println(outputGlyphInfo(glyph, reader))
+    println(outputFontInfo(font, reader))
 
     // Transform Glyph -> Text Space
     //   For all but Type3 fonts text-space = glyph-space*1000
     //   For Type3, T=FontMatrix
     val fontMatrix = tri.fontMatrix
-    println(formatMatrixArr(fontMatrix, Some("FontMatrix")))
+    // println(formatMatrixArr(fontMatrix, Some("FontMatrix")))
 
 
     // Get font horizontal displacement (width)
@@ -79,7 +186,7 @@ object GlyphPositioning {
     val fontProgramWidths = fontProgram.getFontMetrics.getGlyphWidths()
 
 
-    println(outputGraphicsState(graphicState))
+    // println(outputGraphicsState(graphicState))
 
     // Text state parameters:
     //   Tc Character spacing

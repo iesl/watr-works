@@ -115,8 +115,9 @@ object DocumentSegmenter extends DocumentUtils {
   }
 
 
-  def createSegmenter(pdfins: InputStream): DocumentSegmenter = {
-    val chars = format.DocumentIO.extractChars(pdfins)
+  import extract.fonts.SplineFont
+  def createSegmenter(pdfins: InputStream, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
+    val chars = format.DocumentIO.extractChars(pdfins, Set(), glyphDefs)
     createSegmenter(chars.map(c => (c._1.regions, c._2)))
   }
 

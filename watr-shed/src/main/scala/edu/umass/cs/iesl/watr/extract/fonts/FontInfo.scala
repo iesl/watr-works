@@ -32,22 +32,23 @@ object DocumentFontInfo {
   def getPdfStringInfo(pdfFont: PdfFont, pdfString: PdfString, reader: PdfReader): Box = {
 
     val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
-    val b0 = bs(0)
+    val bsMasked = bs.map(_ & 0xFF)
+    val b0 = bsMasked(0)
     val fprogram = pdfFont.getFontProgram
-    // val pglyph = fprogram.getGlyph(b0)
-    val pglyphByCode = fprogram.getGlyphByCode(b0 & 0xFF)
+    val pglyphByCode = fprogram.getGlyphByCode(b0)
 
     val decoded = pdfFont.decode(pdfString)
 
 
     val bsstr = bs.mkString("bytes:[", ", ", "]")
+    val bsstrm = bsMasked.mkString("bytes:[", ", ", "]")
 
     s"""|PdfString:
         |   decoded: ${decoded}
         |   getEncoding     ${pdfString.getEncoding      }   () => String
         |   getType         ${pdfString.getType          }   () => Byte
         |   getValue        ${pdfString.getValue         }   () => String
-        |   getValueBytes   ${bsstr}                         () => Array[Byte]
+        |   getValueBytes   ${bsstr}/&0xFF=${bsstrm}
         |   isHexWriting    ${pdfString.isHexWriting     }   () => Boolean
         |   toString        ${pdfString.toString         }   () => String
         |   toUnicodeString ${pdfString.toUnicodeString  }   () => String
@@ -176,8 +177,9 @@ object DocumentFontInfo {
     val fprogram = font.getFontProgram
     val pglyph = fprogram.getGlyph(b0)
     val pglyphByCode = fprogram.getGlyphByCode(b0 & 0xFF)
+    val decoded = font.decode(tri.getPdfString)
 
-    var glyphInf =  "Glyph Info".box
+    var glyphInf =  s"Glyph Info decoded='${decoded}'".box
 
     if (pglyph != null) {
       glyphInf = glyphInf atop "pglyph" atop outputGlyphInfo(pglyph, reader)
@@ -287,11 +289,12 @@ object DocumentFontInfo {
 
   def outputGlyphInfo(glyph: Glyph, reader: PdfReader): Box = {
     val getBbox = if (glyph.getBbox!=null) {glyph.getBbox.mkString(", ")} else "null"
+    val getChars = if (glyph.getChars!=null) {glyph.getChars.mkString(", ")} else "null"
 
     s"""|Glyph:
         |    getAnchorDelta    ${glyph.getAnchorDelta   }   () => Byte
         |    getBbox           ${getBbox }   () => Array[Int]
-        |    getChars          [${glyph.getChars.mkString(", ") }]   () => Array[Char]
+        |    getChars          [${getChars}]   () => Array[Char]
         |    getCode           ${glyph.getCode          }   () => Int
         |    getUnicode        ${glyph.getUnicode       }   () => Integer
         |    getWidth          ${glyph.getWidth         }   () => Int
@@ -371,20 +374,6 @@ object DocumentFontInfo {
       indent(7)(fontPBox) atop
       indent(7)(fnInfor)
       )
-  }
-
-  def outputPdfDecoding(tri: TextRenderInfo, reader: PdfReader, prefix: String): Unit = {
-    val pdfstring = tri.getPdfString
-
-    val valueBytes = pdfstring.getValueBytes.map(Byte.byte2int(_))
-    val font = tri.getFont()
-    val fontProgram = font.getFontProgram
-    val fontNames = fontProgram.getFontNames
-    val fontName = fontNames.getFontName
-
-    println(
-      s"""${prefix} '${tri.getText}': vbytes:[${valueBytes.mkString(",")}] ${fontName}"""
-    )
   }
 
   def outputFontMetrics(fontMetrics: FontMetrics): Box = {
@@ -595,15 +584,9 @@ object formatting {
     val subtype = strm.getAsName(new PdfName("Subtype"))
     val isType1C = subtype != null && subtype.getValue == "Type1C"
 
-
-    val byteBox = if (strm.getBytes != null && isType1C) {
-      val cffFont = new MyCFFFont(strm.getBytes())
-      formatCFFFont(cffFont)
-    } else "[empty]".box
-
     val strmAsDict = indent(3)(formatDictionary(strm, reader))
 
-    strmAsDict atop "bytes:" atop byteBox
+    strmAsDict  // atop "bytes:" atop byteBox
 
   }
 

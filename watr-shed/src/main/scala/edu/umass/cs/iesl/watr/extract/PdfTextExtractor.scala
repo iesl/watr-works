@@ -13,6 +13,7 @@ import GeometricFigure._
 import TypeTags._
 import scala.collection.mutable
 import scala.collection.JavaConversions._
+import extract.fonts._
 
 import scalaz.@@
 
@@ -35,8 +36,27 @@ case class GeometryTranslation(
 
 class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),
-  componentIdGen: IdGenerator[RegionID]
+  componentIdGen: IdGenerator[RegionID],
+  glyphDefs: Seq[SplineFont.Dir] = Seq()
 ) {
+  // map font-name,encoding-index -> glyph-hash
+  // map glyph-hash -> unicode/bbox
+
+  val glyphList = glyphDefs.map({sdir =>
+    val fontName = sdir.prop[FontProp.FontName]
+    sdir.glyphs.flatMap({glyph =>
+      val splines = glyph.get[GlyphProp.SplineSet]
+      val enc = glyph.prop[GlyphProp.Encoding]
+      val encNums = enc.v.trim.split(" ").map(_.toInt)
+      val encIndex = encNums(2)
+      splines.map(sp =>
+        ((fontName.v.trim, encIndex), GlyphProp.splineSetHash(sp).unwrap)
+      )
+    })
+  })
+
+  val glyphMap = glyphList.flatten.toMap
+
 
   val bboxNames = List[PdfName](
     PdfName.CropBox,
@@ -44,20 +64,25 @@ class PdfTextExtractor(
     PdfName.MediaBox,
     PdfName.BleedBox
   )
-  def getBestBoundingBox(pdfPage: PdfPage): Array[Double] = {
-    val parent = pdfPage.getPdfObject.getAsDictionary(PdfName.Parent)
-    val bestBox = bboxNames
-      .map({n => List(
-        pdfPage.getPdfObject.getAsArray(n),
-        parent.getAsArray(n)
-      )})
-      .flatten
+
+  def getBestBoundingBox(pdfObject: PdfDictionary): Array[Double] = {
+    bboxNames
+      .map(pdfObject.getAsArray(_))
       .filterNot(_ == null)
-      .headOption.getOrElse { sys.error("no bounding box (media/crop/trim/etc) found in pdfobjects!") }
+      .headOption
+      .map(_.toArray.map(_.asInstanceOf[PdfNumber].doubleValue()))
+      .getOrElse({
+        val parent = pdfObject.getAsDictionary(PdfName.Parent)
+        if (parent!=null) {
+          getBestBoundingBox(parent)
+        } else {
+          sys.error("no bounding box (media/crop/trim/etc) found in pdfobjects!")
+        }
+      })
+  }
 
-    val nums: Array[Double] = bestBox.toArray.map(_.asInstanceOf[PdfNumber].doubleValue())
-
-    nums
+  def getBestBoundingBox(pdfPage: PdfPage): Array[Double] = {
+    getBestBoundingBox(pdfPage.getPdfObject)
   }
 
   def getReportedPageGeometry(pageId: Int@@PageID, pdfPage: PdfPage, reader: PdfReader): (PageGeometry, GeometryTranslation) = {
@@ -116,7 +141,13 @@ class PdfTextExtractor(
 
         val extractor = new CharExtractionListener(
           reader, charsToDebug,
-          componentIdGen, currCharBuffer, pdfPage, pageId, pageGeometry, geomTrans
+          componentIdGen,
+          currCharBuffer,
+          pdfPage,
+          pageId,
+          pageGeometry,
+          geomTrans,
+          glyphMap
         )
 
         val parser = new PdfCanvasProcessor(extractor);

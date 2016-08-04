@@ -39,19 +39,18 @@ sealed trait PageAtom {
 class CharAtom(
   val region: TargetRegion,
   val char: String,
-  val subs: String = "",
   val wonkyCharCode: Option[Int] = None
 ) extends PageAtom
 
 object CharAtom {
-  def unapply(r: CharAtom): Option[(TargetRegion, String, String, Option[Int])] =
-    Some((r.region, r.char, r.subs, r.wonkyCharCode))
+  def unapply(r: CharAtom): Option[(TargetRegion, String, Option[Int])] =
+    Some((r.region, r.char, r.wonkyCharCode))
 
   def apply(region: TargetRegion,
      char: String,
      subs: String = "",
      wonkyCharCode: Option[Int] = None
-  ): CharAtom = new CharAtom(region, char, subs, wonkyCharCode)
+  ): CharAtom = new CharAtom(region, char, wonkyCharCode)
 
 }
 
@@ -109,8 +108,8 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   implicit def FormatPageGeometry     = Json.format[PageGeometry]
   implicit def FormatZone             = Json.format[Zone]
   implicit def FormatZoneAndLabel     = Json.format[ZoneAndLabel]
-  implicit def FormatCharAtom       = Json.format[CharAtom]
-  implicit def FormatImgAtom        = Json.format[ImgAtom]
+  implicit def FormatCharAtom:Format[CharAtom]       =  ??? // Json.format[CharAtom]
+  implicit def FormatImgAtom        =  Json.format[ImgAtom]
   implicit def FormatPageAtom:Format[PageAtom]       = ??? // Json.format[PageAtom]
   implicit def FormatPageAtoms:Format[PageAtoms]      = ??? // Json.format[PageAtoms]
   implicit def FormatZoneRecords:Format[ZoneRecords]      = ??? // Json.format[ZoneRecords]
@@ -167,10 +166,10 @@ object ComponentTypeEnrichments {
           else { s"?:#${code}?" }
         }) getOrElse { "" }
 
-      val subs = if (!charRegion.subs.isEmpty()) s"@`charRegion.subs`" else ""
+      // val subs = if (!charRegion.subs.isEmpty()) s"@`charRegion.subs`" else ""
 
 
-      s"""${charRegion.char}${subs} ${wonk} ${bbox}"""
+      s"""${charRegion.char} ${wonk} ${bbox}"""
     }
 
     def prettyPrint: String = {
@@ -180,8 +179,7 @@ object ComponentTypeEnrichments {
           else { s"#${code}?" }
         })
         .getOrElse({
-          if (!charRegion.subs.isEmpty()) charRegion.subs
-          else charRegion.char
+          charRegion.char
         })
     }
 
@@ -192,8 +190,7 @@ object ComponentTypeEnrichments {
           else { s"#{${code}}" }
         })
         .getOrElse({
-          if (!charRegion.subs.isEmpty()) charRegion.subs
-          else charRegion.char
+          charRegion.char
         })
     }
 

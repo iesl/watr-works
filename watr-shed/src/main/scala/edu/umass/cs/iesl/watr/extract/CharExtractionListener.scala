@@ -7,7 +7,7 @@ import GeometricFigure._
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
-import TypeTags._
+// import TypeTags._
 import scalaz.{@@}
 import util._
 
@@ -83,7 +83,8 @@ class CharExtractionListener(
   pdfPage: PdfPage,
   pageId: Int@@PageID,
   pageGeometry: PageGeometry,
-  geomTranslation:GeometryTranslation
+  geomTranslation:GeometryTranslation,
+  glyphMap: Map[(String, Int), String]
 ) extends IEventListener {
 
   override def getSupportedEvents(): java.util.Set[EventType] ={
@@ -102,110 +103,52 @@ class CharExtractionListener(
 
 
 
-  def charTranslation(tri: TextRenderInfo): Unit = {
-    // map from spline -> char
 
-  }
-
-  // Global lookup table
-  val globalGlyphTranslation = Map[String, GlyphClass]()
-
-
-  // Local lookup table (built at start of extraction)
-  // fontname/glyphcode -> glyphHash
-  // e.g., 'EAXSD+TimesMT/32'   -> sha:xxxxxxxx
-  val localGlyphTranslation = Map[String, GlyphInstance]()
-
-
-  def lookupGlyph(charTri: TextRenderInfo): Unit = {
+  def lookupGlyph(charTri: TextRenderInfo): Seq[Char] = {
     // Get glyphHash for this char
-
-
     val pdfString = charTri.getPdfString
-    val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
-    val glyphCode = bs(0)
-
     val font = charTri.getFont
-
     val fprogram = font.getFontProgram
     val fontNames = fprogram.getFontNames
     val fontName = fontNames.getFontName
 
-    // fprogram.getFontStreamBytes()
+    val valueBytes = pdfString.getValueBytes.map(Byte.byte2int(_))
 
+    val chars = for {
+      vb <- valueBytes
+      glHash <- glyphMap.get((fontName, vb))
+      glChar <- GlyphHashLookup.global.lookup(glHash)
+    } yield {
+      glChar
+      // println(s"found ${hash} / $ival")
+    }
 
-    // map this to a canonical glyph
-    val glyphInstanceId = s"""${fontName}/${glyphCode}"""
-    val glyphInstance = localGlyphTranslation(glyphInstanceId)
-
-
+    chars
   }
 
-  var index = 20
+  var index = 0
   def renderText(charTrix: TextRenderInfo): Unit = {
     for {
       charTri <- charTrix.getCharacterRenderInfos
     } {
-      index -= 1
-      // Map charTri to an extracted glyph, and try to match it to our
-      //   glyph hash table
-
-      // lookupGlyph(charTri)
 
       val mcid = charTri.getMcid
-      if (charTri.getText.isEmpty && charTri.hasMcid(mcid, false)) {
-        // println(s"""MCID encoded text near: ${charWindow.takeRight(20).mkString}""")
-        // DocumentFontInfo.outputPdfDecoding(charTri, reader, "    ")
-        val font = charTri.getFont
-
-        val at = charTri.getActualText
-        val spi = pdfPage.getStructParentIndex
-        val structRoot = pdfPage.getDocument.getStructTreeRoot
-        val pageMC = structRoot.getPageMarkedContentReferences(pdfPage)
-        // pageMC
-        //   .filter(_.getMcid==charTri.getMcid)
-        //   .headOption.map({ mc =>
-        //     println(
-        //       PdfPageObjectOutput.renderElemLoc(mc)
-        //     )
-        //   })
-        // println(s"actual text = ${at}")
-        // DocumentFontInfo.outputCharInfo(charTri, reader, true)
-
-
+      val rawChars = if (charTri.getText.isEmpty && charTri.hasMcid(mcid, false)) {
+        lookupGlyph(charTri: TextRenderInfo)
       } else if (charTri.getText.isEmpty) {
-        // println(s"""Empty text near: ${charWindow.takeRight(20).mkString}""")
-        // DocumentFontInfo.outputPdfDecoding(charTri, reader, "    ")
-
-        val pdfString = charTri.getPdfString
-        // val bs = pdfString.getValueBytes.m
-        val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
-        val b0 = bs(0)
-
-        val font = charTri.getFont
-
-        val fprogram = font.getFontProgram
-        val pglyph = fprogram.getGlyph(b0)
-        val pglyphByCode = fprogram.getGlyphByCode(b0 & 0xFF)
-
-        // println(s"got glyph ${b0}? ${pglyph}, by-code:${pglyphByCode}")
-        // println(outputGlyphInfo(pglyphByCode, reader))
-        // println(
-        //   getCharTriInfo(charTri, reader, true)
-        // )
+        lookupGlyph(charTri: TextRenderInfo)
       } else {
-        // DocumentFontInfo.outputPdfDecoding(charTri, reader, "normal")
+        charTri.getText().toCharArray().toSeq
+      }
 
-        val rawChar = charTri.getText().charAt(0)
-        charWindow += rawChar
 
-        val subChars = maybeSubChar(rawChar)
-        val bakedChar = transformRawChar(rawChar)
-        val charBounds = computeTextBounds(charTri)
+      rawChars.foreach({ rawCharX =>
 
-        val wonkyChar = if (rawChar.toString != bakedChar.toString) Some(rawChar.toInt) else None
-        // skip spaces
-        if (!wonkyChar.exists(_ == 32)) {
+        val subChars = maybeSubChar(rawCharX).filterNot(_ == ' ')
+
+        if (!subChars.isEmpty) {
+          val charBounds = computeTextBounds(charTri)
+          val charStr = subChars.mkString
 
           val charBox = charBounds.map(bnds =>
             CharAtom(
@@ -214,38 +157,27 @@ class CharExtractionListener(
                 pageId,
                 bnds
               ),
-              bakedChar,
-              subChars.map(_.mkString).getOrElse(""),
-              wonkyCharCode = wonkyChar
+              charStr
             )
           ).getOrElse ({
             val msg = s"ERROR bounds are invalid"
             sys.error(msg)
           })
-
-          if (index > 0 && pageId.unwrap == 0)  {
-            println(s"char ${charBox.char}: bounds= ${charBox.region}")
-            GlyphPositioning.traceGlyphPositioning(charTri, reader)
-            // println(fonts.DocumentFontInfo.getCharTriInfo(charTri, reader))
-            println("\n\n")
-          }
-
-          // if (wonkyChar.isDefined || subChars.isDefined) {
-          //   println(s"char: ${charBox}")
-          // }
-          // DocumentFontInfo.outputCharInfo(charTri, reader)
-
-          // DocumentFontInfo.reportFontInfo(charTri.getFont)
-          // DocumentFontInfo.addFontInfo(charTri.getFont
-          // val fullFontName = charTri.getFont().getFullFontName()(0)(3)
-          // chunk.setFontName(fullFontName)
-
           currCharBuffer.append(charBox)
+          charWindow ++= subChars
         }
-      }
+
+        if (index > 0)  {
+          println(s"""chars: raw:${rawCharX} subs: [${subChars.mkString(", ")}] / ${subChars.map(_.toInt).mkString(", ")}""")
+          // GlyphPositioning.traceGlyphPositioning(charTri, reader)
+          // println(fonts.DocumentFontInfo.getCharTriInfo(charTri, reader))
+          // println("\n\n")
+          index -= 1
+        }
+
+      })
     }
   }
-
 
   def computeTextBounds(charTri: TextRenderInfo): Option[LTBounds] = {
     val fontProgramEmbedded = charTri.getFont.getFontProgram
@@ -272,18 +204,21 @@ class CharExtractionListener(
       // In glyph space:
 
       val pdfString = charTri.getPdfString
-      val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
+      val decoded = charTri.getFont.decode(pdfString)
+      val bs = pdfString.getValueBytes.map(Byte.byte2int(_) & 0xFF)
       val glyphCode = bs(0)
-      if (glyphCode < 0) {
-        println(s"""bs = [${bs.mkString(", ")}], pdfString = ${pdfString.toString()}""")
 
-        import DocumentFontInfo._
-        println(getCharTriInfo(charTri, reader))
+      if (glyphCode < 0) {
+        // println(s"""bs = [${bs.mkString(", ")}], pdfString = ${pdfString.toString()}""")
+
+        // import DocumentFontInfo._
+        // println(getCharTriInfo(charTri, reader))
 
       }
       val charBBox = fontProgram.getCharBBox(glyphCode)
       val fontBbox = fontMetrics.getBbox
       val glyphWidths = fontMetrics.getGlyphWidths
+
       if (glyphWidths!=null && glyphWidths.length > glyphCode) {
         charWidth = glyphWidths(glyphCode).toDouble
       } else {
@@ -317,10 +252,6 @@ class CharExtractionListener(
     ))
   }
 
-  def transformRawChar(ch: Char): String = {
-    if (ch <= ' ') ""
-    else ch.toString
-  }
 
   def outputCharDebugInfo():Unit = {
     // if(charsToDebug contains charIndex) {
@@ -370,6 +301,3 @@ class CharExtractionListener(
     // currCharBuffer.append(imgRegion)
   }
 }
-
-
-

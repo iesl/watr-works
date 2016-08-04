@@ -198,17 +198,21 @@ object DocumentIO {
   import spindex._
   import extract.PdfTextExtractor
 
+  import extract.fonts._
   import utils.IdGenerator
 
 
   def extractChars(
     pdfis: InputStream,
-    charsToDebug: Set[Int] = Set()
+    charsToDebug: Set[Int] = Set(),
+    glyphDefs: Seq[SplineFont.Dir] = Seq()
   ): Seq[(PageAtoms, PageGeometry)] = {
+
 
     val charExtractor = new PdfTextExtractor(
       charsToDebug,
-      IdGenerator[RegionID]() //, IdGenerator[PageID]
+      IdGenerator[RegionID](), //, IdGenerator[PageID]
+      glyphDefs
     )
     val _ = charExtractor.extractCharacters(pdfis)
 

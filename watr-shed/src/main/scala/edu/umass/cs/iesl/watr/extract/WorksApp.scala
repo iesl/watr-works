@@ -2,7 +2,8 @@ package edu.umass.cs.iesl.watr
 
 package extract
 
-import ammonite.ops._
+import ammonite.{ops => fs}
+import fs._
 import java.io.{ InputStream  }
 import textboxing.{TextBoxing => TB}
 import spindex._
@@ -90,11 +91,11 @@ object Works extends App {
       })
     } text ("run document segmentation")
 
-    cmd("richtext") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        runCmdRichText(ac)
-      })
-    } text ("output pdf as text, with some added embedded tex and labels")
+    // cmd("richtext") action { (v, conf) =>
+    //   setAction(conf, {(ac: AppConfig) =>
+    //     runCmdRichText(ac)
+    //   })
+    // } text ("output pdf as text, with some added embedded tex and labels")
 
 
     cmd("chars") action { (v, conf) =>
@@ -295,40 +296,83 @@ object Works extends App {
 
   /////////// Specific Commands
 
-  def runCmdRichText(conf: AppConfig): Unit = {
+  // def runCmdRichText(conf: AppConfig): Unit = {
 
-    val artifactOutputName = "richtext.txt"
-    processCorpus(conf, artifactOutputName, proc)
+  //   val artifactOutputName = "richtext.txt"
+  //   processCorpus(conf, artifactOutputName, proc)
 
-    def proc(pdfins: InputStream, outputPath: String): String = {
-      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
-      segmenter.runPageSegmentation()
-      val output = format.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, None)
-      output
+  //   def proc(pdfins: InputStream, outputPath: String): String = {
+  //     val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
+  //     segmenter.runPageSegmentation()
+  //     val output = format.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, None)
+  //     output
+  //   }
+
+  // }
+
+  import extract.fonts.SplineFont
+
+  def loadOrExtractFonts(conf: AppConfig, corpusEntry: CorpusEntry): Seq[SplineFont.Dir] = {
+    import extract.fonts.SplineFonts
+    import ammonite.{ops => fs}
+    import fs._
+    import fs.ImplicitWd._
+
+    if (!corpusEntry.hasArtifact("fonts")) {
+      for {
+        pdf <- corpusEntry.getPdfArtifact
+        pdfPath <- pdf.asPath
+      } {
+        val res = %%("bin/extract-fonts", "-f="+pdfPath.toString())
+        println(s"ran extract-fonts exit=${res.exitCode}")
+      }
     }
 
+    if (corpusEntry.hasArtifact("fonts")) {
+      val fontDirs = for {
+        fontDir <- corpusEntry.getArtifact("fonts").toSeq
+        pdir <- fontDir.asPath.toOption.toSeq
+        sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
+        sfdir <- sfdirs
+      } yield {
+        // println(s"loading fonts from ${sfdir}")
+        SplineFonts.loadSfdir(sfdir)
+      }
+
+      fontDirs
+    } else {
+      println(s"no extracted fonts found")
+      Seq()
+    }
   }
 
   def segmentDocument(conf: AppConfig): Unit = {
 
     val artifactOutputName = "docseg.json"
-    processCorpus(conf, artifactOutputName, proc)
+    // processCorpus(conf, artifactOutputName, proc)
+    processCorpusEntryList(conf, {corpusEntry =>
 
-    def proc(pdfins: InputStream, outputPath: String): String = {
       try {
+        for {
+          _         <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
+          fontDirs   = loadOrExtractFonts(conf, corpusEntry)
+          pdf       <- corpusEntry.getPdfArtifact
+          pdfins    <- pdf.asInputStream
+        } {
 
-        val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
-        segmenter.runPageSegmentation()
-        val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
-        output
+          val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins, fontDirs)
+          segmenter.runPageSegmentation()
+          val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
+          corpusEntry.putArtifact(artifactOutputName, output)
+        }
       } catch {
         case t: Throwable =>
-          println(s"could not extract ${outputPath}: ${t.getMessage}\n")
+          println(s"could not extract ${corpusEntry}: ${t.getMessage}\n")
           println(t.toString())
           t.printStackTrace()
           s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
       }
-    }
+    })
 
   }
 
@@ -359,6 +403,8 @@ object Works extends App {
 
   def buildFontDB(conf: AppConfig): Unit = {
     import ammonite.{ops => fs}
+    import fs._
+    // import fs.ImplicitWd._
     import extract.fonts._
 
     val dbfile = conf.dbPath.getOrElse {
@@ -405,7 +451,8 @@ object Works extends App {
         pdfArtifact <- corpusEntry.getPdfArtifact
         pdfIns <- pdfArtifact.asInputStream.toOption
       } yield {
-        val fobjs = charExtractor.extractFontObjects(pdfIns)
+
+        val fobjs = FontExtractor.extractFontObjects(pdfIns)
 
         val fontObjsFile = "fontobjs.txt"
 
@@ -471,11 +518,7 @@ object Works extends App {
                       else { (s"${code}".box, "?") }
                     })
                     .getOrElse({
-                      if (charBox.subs.isEmpty()) {
-                        (charBox.char.box, " ")
-                      } else {
-                        (charBox.subs.box, charBox.char)
-                      }
+                      (charBox.char.box, " ")
                     })
                 })
 
@@ -507,23 +550,5 @@ object Works extends App {
     }
 
   }
-
-
-
-
-
 }
 
-
-/*
-
-The sheep murder mystery:
- Three Bags Full: A Sheep Detective Story http://amzn.to/2a9mJCH
-Religious missionaries in Space:
- The Book of Strange New Things: A Novel http://amzn.to/2a0Eqol
-
-The Sparrow: A Novel (Ballantine Reader's Circle)
-Performing Shakespeare after the apocalypse:
- Station Eleven
-
- */

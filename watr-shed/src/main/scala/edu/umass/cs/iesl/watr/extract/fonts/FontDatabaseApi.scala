@@ -200,18 +200,25 @@ class FontDatabaseApi(dir: Path) extends AbstractDatabase(dir)  {
             else name
           }).toSet
 
-          val info =
-          s"""|GlyphHash ${glyphHash} (${glyphsForHash.length} glyphs)
-              |   chars     : ${uniqChars.mkString(", ")}
-              |   enc       : ${uniqEnc.mkString(", ")}
-              |   widths    : ${uniqWidths.mkString(", ")}
-              |   names     : ${names.toSet.toList.mkString(", ")}
-              |   fullnames : ${fullNames.toSet.toList.mkString(", ")}
-              |   family    : ${familyNames.toSet.toList.mkString(", ")}
-              |   weights   : ${weights.toSet.toList.mkString(", ")}
-              |""".stripMargin
 
-          println(info)
+          val ucs = uniqChars.mkString(", ")
+          val ues = uniqEnc.mkString(", ")
+          val uws = uniqWidths.mkString(", ")
+
+          val rec = s"""${glyphHash.hash} || ${ucs} || ${ues} || ${uws}"""
+
+          // val info =
+          // s"""|GlyphHash ${glyphHash} (${glyphsForHash.length} glyphs)
+          //     |   chars     : ${uniqChars.mkString(", ")}
+          //     |   enc       : ${uniqEnc.mkString(", ")}
+          //     |   widths    : ${uniqWidths.mkString(", ")}
+          //     |   names     : ${names.toSet.toList.mkString(", ")}
+          //     |   fullnames : ${fullNames.toSet.toList.mkString(", ")}
+          //     |   family    : ${familyNames.toSet.toList.mkString(", ")}
+          //     |   weights   : ${weights.toSet.toList.mkString(", ")}
+          //     |""".stripMargin
+
+          println(rec)
         }
       }
     } yield {
