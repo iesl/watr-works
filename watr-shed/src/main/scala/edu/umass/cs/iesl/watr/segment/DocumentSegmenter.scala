@@ -470,16 +470,49 @@ class DocumentSegmenter(
   def joinLines(): Unit = {
     val alignedBlocksPerPage = for {
       page <- visualLineOnPageComponents
-      line <- page
+      (line, linenum) <- page.zipWithIndex
     } yield {
-      val wordBreaks = "–-"
+      val wordBreaks = "-"
       val lineMinLenReq = line.chars.length > 10 // magic # for minimum line length
       val hasNonLetterPrefix = line.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
       val endsWithDash = line.chars.lastOption.exists { wordBreaks contains _ }
-      val isBrokenWord = endsWithDash && lineMinLenReq && hasNonLetterPrefix
+      val isBrokenWord = endsWithDash && lineMinLenReq && !hasNonLetterPrefix
+
 
       if (isBrokenWord) {
-        println(s"found line break: ${line.chars}")
+        val endToken = line.tokenizeLine.labeledChildren(LB.Token).lastOption
+        // look ahead 1 line for word continuation
+        page.drop(linenum+1)
+          .take(1)
+          .map({ nextLine =>
+            val startToken = nextLine.tokenizeLine().labeledChildren(LB.Token).headOption
+
+            (startToken, endToken) match {
+              case (Some(start), Some(end)) =>
+                val w1 = end.chars.dropRight(1)
+                val w2 = start.chars.reverse.dropWhile(!_.isLetter).reverse
+
+                val word = w1 + w2
+
+                val dict = utils.EnglishDictionary.global
+                if (dict.contains(word)) {
+                  // join word
+                  val joinedWord = LB.LineBreakToken(word)
+                  start.addLabel(LB.Invisible)
+                  end.addLabel(joinedWord)
+                } else if (dict.contains(w1) && dict.contains(w2)) {
+                  // join word, but retain hyphen
+                  val wjoin = s"${w1}-${w2}"
+                  val joinedWord = LB.LineBreakToken(wjoin)
+                  start.addLabel(LB.Invisible)
+                  end.addLabel(joinedWord)
+                }
+
+              case _ =>
+                println(s"couldn't find broken word continuation")
+
+            }
+          })
       }
     }
   }

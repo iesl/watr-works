@@ -27,6 +27,8 @@ trait DocSegLabels {
 
   val TokenizedLine = Label("ds", "tline")
   val Token = Label("ds", "token")
+  val LineBreakToken = Label("ds", "lb-token")
+  val Invisible = Label("ds", "invisible")
   val Sup = Label("ds", "sup")
   val Sub = Label("ds", "sub")
 }

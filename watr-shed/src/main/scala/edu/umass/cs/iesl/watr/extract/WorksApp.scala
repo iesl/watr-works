@@ -318,13 +318,18 @@ object Works extends App {
     import fs._
     import fs.ImplicitWd._
 
-    if (!corpusEntry.hasArtifact("fonts")) {
+    if (!corpusEntry.hasArtifact("font.props", "fonts")) {
       for {
         pdf <- corpusEntry.getPdfArtifact
         pdfPath <- pdf.asPath
       } {
+        try{
+
         val res = %%("bin/extract-fonts", "-f="+pdfPath.toString())
         println(s"ran extract-fonts exit=${res.exitCode}")
+        } catch {
+          case t: Throwable => println(s"Error extracting fonts, skipping")
+        }
       }
     }
 

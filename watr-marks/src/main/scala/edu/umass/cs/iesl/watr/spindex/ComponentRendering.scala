@@ -39,7 +39,10 @@ object ComponentRendering {
     val subrender = _cc match {
       case cc: ConnectedComponents =>
         val labels = cc.getLabels
-        if (labels.contains(LB.VisualLine)) {
+        if (labels.contains(LB.Invisible)) {
+          // skip
+          Seq(nullBox)
+        } else if (labels.contains(LB.VisualLine)) {
           cc.tokenizeLine()
 
           ostate.map{ state =>
@@ -68,32 +71,38 @@ object ComponentRendering {
             Seq(hsep(vs))
           }
 
-
         } else if (labels.contains(LB.Token)) {
-          val clabelsx = cc.containedLabels()
-          val clabels:Set[Label] = cc.components.map(_.containedLabels).reduce(_++_)
-          val texFmtLabels = (clabels intersect Set(LB.Sup, LB.Sub))
-
-          val subs = Seq(
-            ('"' -> "\\\""),
-            ('\\' -> "\\\\"),
-            ('{' -> "\\\\{"),
-            ('}' -> "\\\\}")
-          ) ++ (if (!texFmtLabels.isEmpty) Seq( // add extra escapes inside tex-formatted tokens
-            ('_' -> "\\\\_"),
-            ('^' -> "\\\\^")
-          ) else Seq())
-
-          val mapped = cc.components.map({c =>
-            hcat(
-              renderConnectedComponents(
-                c.mapChars(subs)))
-          })
-
-          if (texFmtLabels.isEmpty) {
-            mapped
+          if (labels.contains(LB.LineBreakToken)) {
+            val lineBreak = labels.find(_ ==LB.LineBreakToken).get
+            val joinedText = lineBreak.value.get
+            Seq(joinedText.box)
           } else {
-            "{".box +: mapped :+ "}".box
+
+            val clabelsx = cc.containedLabels()
+            val clabels:Set[Label] = cc.components.map(_.containedLabels).reduce(_++_)
+            val texFmtLabels = (clabels intersect Set(LB.Sup, LB.Sub))
+
+            val subs = Seq(
+              ('"' -> "\\\""),
+              ('\\' -> "\\\\"),
+              ('{' -> "\\\\{"),
+              ('}' -> "\\\\}")
+            ) ++ (if (!texFmtLabels.isEmpty) Seq( // add extra escapes inside tex-formatted tokens
+              ('_' -> "\\\\_"),
+              ('^' -> "\\\\^")
+            ) else Seq())
+
+            val mapped = cc.components.map({c =>
+              hcat(
+                renderConnectedComponents(
+                  c.mapChars(subs)))
+            })
+
+            if (texFmtLabels.isEmpty) {
+              mapped
+            } else {
+              "{".box +: mapped :+ "}".box
+            }
           }
 
         } else if (labels.contains(LB.Sub)) {
@@ -140,4 +149,4 @@ object ComponentRendering {
     }
   }
 
-  }
+}

@@ -100,6 +100,13 @@ case class Label(ns: String, key: String, value: Option[String]=None) {
     s"${ns}:${key}".box
   }
 
+  override def hashCode = (ns, key).##
+
+  override def equals(o:Any) = o match {
+    case Label(`ns`, `key`, _) => true
+    case _ => false
+  }
+
   def matches(l: Label) =
     ns==l.ns && key==l.key
 }

@@ -56,22 +56,6 @@ case class PageInfo(
   def getLabels(c: Component): Set[Label] = {
     getComponentLabelBuffer(c).toSet
   }
-
-
-
-
-  // def getLabeledComponents(l: Label): Seq[Component] = (for {
-  //   (cid, labels)  <- componentToLabels.toSeq
-  //   if labels.contains(l)
-  // } yield {
-  //   pageInfos
-  //     .flatMap({ case (_, info) =>
-  //       info.componentIndex.get(cid.unwrap)
-  //     }).toSeq
-  // }).flatten
-
-
-
 }
 
 
@@ -124,20 +108,12 @@ class ZoneIndexer()  {
 
   val pageInfos = mutable.HashMap[Int@@PageID, PageInfo]()
 
-  // Zones are on the way out
-  // val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
-  // val zoneLabelMap = mutable.HashMap[Int@@ZoneID, mutable.ArrayBuffer[Label]]()
-
   type BioSpine = mutable.MutableList[BioNode]
   val bioSpines = mutable.Map[String, BioSpine]()
 
   def bioSpine(name: String): BioSpine = {
     bioSpines.getOrElseUpdate(name, mutable.MutableList[BioNode]())
   }
-
-
-  // val componentMap = mutable.HashMap[Int@@ComponentID, Component]()
-  // val componentLabels = mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]]()
 
   val componentIdGen = utils.IdGenerator[ComponentID]()
   val labelIdGen = IdGenerator[LabelID]()
