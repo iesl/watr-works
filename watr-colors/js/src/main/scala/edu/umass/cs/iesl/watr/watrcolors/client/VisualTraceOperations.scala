@@ -203,7 +203,9 @@ trait VisualTraceOperations extends FabricCanvasOperations {
           // jQuery(cls).hover(hin, hout)
 
         case ShowVDiff(d1: Double, d2: Double) =>
-        case FocusOn(s: GeometricFigure) =>
+        case FocusOn(s: TargetRegion) =>
+          println(s"FocusOn ${s}")
+
         case VRuler(s: Double) =>
           // println(s"v-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
 
@@ -233,7 +235,9 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
           // fabricCanvas.add(r)
 
-        case Message(s: String) => println(s"Message: ${s}")
+        case Message(s: String) =>
+          jQuery("#messages").append(s)
+
         case a:All =>
           currRGB = nextRGB()
 

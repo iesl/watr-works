@@ -15,7 +15,7 @@ object TraceLog {
   case class ShowComponent(s: Component)             extends TraceLog
   case class ShowLabel(l:Label)                      extends TraceLog
   case class ShowVDiff(d1: Double, d2: Double)       extends TraceLog
-  case class FocusOn(s: GeometricFigure)             extends TraceLog
+  case class FocusOn(s: TargetRegion)                extends TraceLog
   case class HRuler(s: Double)                       extends TraceLog
   case class VRuler(s: Double)                       extends TraceLog
   case class Message(s: String)                      extends TraceLog
@@ -42,7 +42,7 @@ class VisualTracer() {
   def showComponent(s: Component): TraceLog             = ShowComponent(s)
   def showLabel(s: Label): TraceLog                     = ShowLabel(s)
   def showVDiff(d1: Double, d2: Double): TraceLog       = ShowVDiff(d1, d2)
-  def focusOn(s: GeometricFigure): TraceLog             = FocusOn(s)
+  def focusOn(s: TargetRegion): TraceLog                = FocusOn(s)
   def hRuler(s: Double): TraceLog                       = HRuler(s)
   def vRuler(s: Double): TraceLog                       = VRuler(s)
   def message(s: String): TraceLog                      = Message(s)

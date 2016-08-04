@@ -1,5 +1,4 @@
 package edu.umass.cs.iesl.watr
-
 package extract
 
 import ammonite.{ops => fs}
@@ -8,28 +7,30 @@ import java.io.{ InputStream  }
 import textboxing.{TextBoxing => TB}
 import spindex._
 import IndexShapeOperations._
+import java.io.{File => JFile}
 
+case class AppConfig(
+  runRoot: Option[JFile] = None,
+  corpusRoot: Option[JFile] = None,
+  inputFileList: Option[JFile] = None,
+  inputEntryDescriptor: Option[String] = None,
+  action: Option[String] = None,
+  dbPath: Option[JFile] = None,
+  force: Boolean = false,
+  numToRun: Int = 0,
+  numToSkip: Int = 0,
+  exec: Option[(AppConfig) => Unit] = None
+)
 
 object Works extends App {
 
-  import java.io.{File => JFile}
 
-  case class AppConfig(
-    runRoot: Option[JFile] = None,
-    corpusRoot: Option[JFile] = None,
-    inputFileList: Option[JFile] = None,
-    action: Option[String] = None,
-    dbPath: Option[JFile] = None,
-    force: Boolean = false,
-    numToRun: Int = 0,
-    numToSkip: Int = 0,
-    exec: Option[(AppConfig) => Unit] = None
-  )
 
-  def corpusRootOrDie(ac: AppConfig): Path = ac
-    .corpusRoot
+  def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot
     .map({croot =>
-      val fullPath = cwd/RelPath(croot)
+
+      val fullPath = if (croot.isAbsolute()) Path(croot) else cwd/RelPath(croot)
+
       val corpusSentinel =  fullPath / ".corpus-root"
       val validPath = exists(fullPath)
       val validSentinel = exists(fullPath/".corpus-root")
@@ -166,7 +167,11 @@ object Works extends App {
           .map(corpus.entry(_).get)
 
       }).getOrElse({
-        corpus.entries()
+        conf.inputEntryDescriptor
+          .map(e => Seq(corpus.entry(e).getOrElse{sys.error(s"unknown corpus entry${e}")}))
+          .getOrElse(corpus.entries())
+
+        // corpus.entries()
       })
 
     val skipped = if (conf.numToSkip > 0) toProcess.drop(conf.numToSkip) else toProcess
@@ -351,12 +356,12 @@ object Works extends App {
     }
   }
 
-  def segmentDocument(conf: AppConfig): Unit = {
-
+  def segmentDocument(conf: AppConfig): Seq[Seq[utils.TraceLog]] = {
     val artifactOutputName = "docseg.json"
-    // processCorpus(conf, artifactOutputName, proc)
-    processCorpusEntryList(conf, {corpusEntry =>
+    import scala.collection.mutable
+    val traceLogs = mutable.MutableList[Seq[utils.TraceLog]]()
 
+    processCorpusEntryList(conf, {corpusEntry =>
       try {
         for {
           _         <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
@@ -364,11 +369,11 @@ object Works extends App {
           pdf       <- corpusEntry.getPdfArtifact
           pdfins    <- pdf.asInputStream
         } {
-
           val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins, fontDirs)
           segmenter.runPageSegmentation()
           val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
           corpusEntry.putArtifact(artifactOutputName, output)
+          traceLogs += segmenter.vtrace.getAndResetTrace()
         }
       } catch {
         case t: Throwable =>
@@ -378,6 +383,8 @@ object Works extends App {
           s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
       }
     })
+
+    traceLogs
 
   }
 
@@ -556,4 +563,3 @@ object Works extends App {
 
   }
 }
-

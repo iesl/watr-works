@@ -41,7 +41,7 @@ object ComponentRendering {
         val labels = cc.getLabels
         if (labels.contains(LB.Invisible)) {
           // skip
-          Seq(nullBox)
+          Seq()
         } else if (labels.contains(LB.VisualLine)) {
           cc.tokenizeLine()
 
@@ -106,20 +106,18 @@ object ComponentRendering {
           }
 
         } else if (labels.contains(LB.Sub)) {
-          // println(s"   ${cc.blockRole}")
-          val vs = cc.components.flatMap(c =>
-            renderConnectedComponents(c)
-          )
-
-          Seq("^{".box + hcat(vs) + "}")
-
-        } else if (labels.contains(LB.Sup)) {
-          // println(s"   ${cc.blockRole}")
           val vs = cc.components.flatMap(c =>
             renderConnectedComponents(c)
           )
 
           Seq("_{".box + hcat(vs) + "}")
+
+        } else if (labels.contains(LB.Sup)) {
+          val vs = cc.components.flatMap(c =>
+            renderConnectedComponents(c)
+          )
+
+          Seq("^{".box + hcat(vs) + "}")
         } else {
           val vs = cc.components.flatMap(c =>
             renderConnectedComponents(c)

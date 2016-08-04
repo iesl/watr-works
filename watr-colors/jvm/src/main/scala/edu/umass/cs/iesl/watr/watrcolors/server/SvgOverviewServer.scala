@@ -16,21 +16,17 @@ class SvgOverviewServer(
   def getLabelOverlay(entryDescriptor: String): List[TraceLog] = {
     println(s"getting corpusEntry '${entryDescriptor}'")
 
-    val traceLog = for {
-      entry <- corpus.entry(entryDescriptor).toList
-      pdfArtifact <- entry.getPdfArtifact
-      pdfIns <- pdfArtifact.asInputStream.toOption
-    } yield {
-      // println(s"VisualTrace: createView(${corpusEntryId}) path=(${corpusPath})")
-      // testLineTokenization(pdfIns)
-      val segmenter = segment.DocumentSegmenter.createSegmenter(pdfIns)
-      segmenter.runPageSegmentation()
-      val trace = segmenter.vtrace.getAndResetTrace()
-      trace.map(TypeConverters.convertVisualTraceTypes(_))
-    }
+    val conf = extract.AppConfig(
+      corpusRoot = rootDirectory.toIO.some,
+      inputEntryDescriptor = entryDescriptor.some,
+      action = "docseg".some,
+      force = true
+    )
 
-    traceLog.flatten
+    val traces = extract.Works.segmentDocument(conf)
+    val traceLog = traces.head.map(TypeConverters.convertVisualTraceTypes(_))
 
+    traceLog.toList
   }
 
   def createView(corpusEntryId: String): List[HtmlUpdate] = {

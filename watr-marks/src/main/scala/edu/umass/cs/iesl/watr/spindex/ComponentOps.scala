@@ -194,16 +194,17 @@ object ComponentOperations {
     def vtrace = component.zoneIndex.vtrace
 
 
-    // TODO this is a side-effect function, doesn't need to be
     def tokenizeLine(): Component = {
       if (!component.getLabels.contains(LB.TokenizedLine)) {
 
-        // vtrace.trace(
-        //   vtrace.all(
-        //     component.children.map(_.bounds).map(vtrace.show(_))
-        //   ),
-        //   vtrace.message("tokenizing line")
-        // )
+        // focus on this component
+        vtrace.trace(
+          vtrace.link(
+            vtrace.message("tokenizing line"),
+            vtrace.focusOn(component.targetRegion),
+            vtrace.all(component.children.map(_.targetRegion).map(vtrace.showRegion(_)))
+          )
+        )
 
         val tops = findCommonToplines()
         val bottoms = findCommonBaselines()
@@ -215,25 +216,40 @@ object ComponentOperations {
         val modalCenterY = (modalBottom + modalTop)/2
         // val meanCenterY = component.characteristicLine.centerPoint.y
 
-        vtrace.hRuler(modalTop)
-        vtrace.hRuler(modalBottom)
-        vtrace.hRuler(modalCenterY)
+        vtrace.trace(
+          vtrace.link(vtrace.message("modal top"), vtrace.hRuler(modalTop)),
+          vtrace.link(vtrace.message("modal bottom"), vtrace.hRuler(modalBottom)),
+          vtrace.link(vtrace.message("modal center Y"), vtrace.hRuler(modalCenterY))
+        )
 
 
         // label individual chars as super/sub if char.ctr fall above/below centerline
         val supSubs = component.children.map({c =>
           val cctr = c.bounds.toCenterPoint
+          val cbottom = c.bounds.bottom
+          val supSubTolerance = component.bounds.height / 10.0
+
+          vtrace.trace(vtrace.link(
+            vtrace.message("char ctr"),
+            vtrace.all(Seq(vtrace.hRuler(cctr.y), vtrace.vRuler(cctr.x)))
+          ))
 
           val maybeLabel: Option[Label] =
             if (c.bounds.top < modalTop && c.bounds.bottom > modalBottom) {
               // if our child's top/bottom extends beyond modal top/bottom, it is a larger font and not super/sub
               None
-            } else if (cctr.y.eqFuzzy(0.3)(modalCenterY)) {
+            } else if (c.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
               None
             } else if (cctr.y < modalCenterY) {
-              LB.Sub.some
-            } else {
+              // println(s"""Line: ${component.chars}""")
+              // println(s"""(sub)  ${c.chars}>  cctr.toCenterPoint: ${cctr.prettyPrint} modalCenterY: ${modalCenterY}""")
+              // println(s"""modal bottom: ${modalBottom}, c.bottom = ${cbottom}""")
               LB.Sup.some
+            } else {
+              // println(s"""Line: ${component.chars}""")
+              // println(s"""(sup)  ${c.chars}>  cctr.toCenterPoint: ${cctr.prettyPrint} modalCenterY: ${modalCenterY}""")
+              // println(s"""modal bottom: ${modalBottom}, c.bottom = ${cbottom}""")
+              LB.Sub.some
             }
 
 

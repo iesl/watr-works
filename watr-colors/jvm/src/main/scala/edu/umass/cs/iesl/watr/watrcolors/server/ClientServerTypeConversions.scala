@@ -15,7 +15,7 @@ object TypeConverters {
       case utils.TraceLog.ShowComponent(s: spindex.Component) => TraceLog.ShowComponent(s.convert)
       case utils.TraceLog.ShowLabel(l: watrmarks.Label)       => TraceLog.ShowLabel(l.convert)
       case utils.TraceLog.ShowVDiff(d1: Double, d2: Double)   => TraceLog.ShowVDiff(d1, d2)
-      case utils.TraceLog.FocusOn(s: spindex.GeometricFigure) => TraceLog.FocusOn(convert(s))
+      case utils.TraceLog.FocusOn(s: spindex.TargetRegion)    => TraceLog.FocusOn(s.convert)
       case utils.TraceLog.HRuler(s: Double)                   => TraceLog.HRuler(s)
       case utils.TraceLog.VRuler(s: Double)                   => TraceLog.VRuler(s)
       case utils.TraceLog.Message(s: String)                  => TraceLog.Message(s)

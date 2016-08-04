@@ -69,10 +69,10 @@ object TraceLog {
   case class SetPageGeometries(b: Seq[PageGeometry]) extends TraceLog
   case class Show(s: Seq[TargetRegion])              extends TraceLog
   case class ShowZone(s: Zone)                       extends TraceLog
-  case class ShowComponent(s: Component)                       extends TraceLog
+  case class ShowComponent(s: Component)             extends TraceLog
   case class ShowLabel(l:Label)                      extends TraceLog
   case class ShowVDiff(d1: Double, d2: Double)       extends TraceLog
-  case class FocusOn(s: GeometricFigure)             extends TraceLog
+  case class FocusOn(s: TargetRegion)                extends TraceLog
   case class HRuler(s: Double)                       extends TraceLog
   case class VRuler(s: Double)                       extends TraceLog
   case class Message(s: String)                      extends TraceLog
