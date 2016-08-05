@@ -6,6 +6,8 @@ import scala.collection.mutable
 import org.querki.jquery._
 
 trait VisualTraceOperations extends FabricCanvasOperations {
+  // import scala.scalajs.js
+  // import native.fabric
 
   import GeometricFigure._
   import TraceLog._
@@ -26,28 +28,6 @@ trait VisualTraceOperations extends FabricCanvasOperations {
   def canvasY: Int
   def canvasW: Int
   def canvasH: Int
-
-
-
-  // def canvasXScale = 2
-  // def canvasYScale = 2
-
-  // def offsetX(v: Double): Double = {
-  //   v - canvasX + canvasBorder
-  // }
-
-  // def offsetY(v: Double): Double = {
-  //   v - canvasY + canvasBorder
-  // }
-  // def scaleY(v: Double): Double = {
-  //   (canvasYScale * v)
-  // }
-  // def scaleX(v: Double): Double = {
-  //   (canvasXScale * v)
-  // }
-
-  // def transformX(v: Double) = offsetX(scaleX(v))
-  // def transformY(v: Double) = offsetY(scaleY(v))
 
   var xxx = 10
   def transformTargetRegion(tr: TargetRegion): TargetRegion = {
@@ -74,100 +54,153 @@ trait VisualTraceOperations extends FabricCanvasOperations {
     tr.copy(bbox = bounds)
   }
 
-  import scala.scalajs.js
-  import native.fabric
 
-  def setGradient(
-    obj: fabric.FabricObject,
-    strokeOrFill: String, // stroke|fill
-    gtype: String, // radial|linear
-    start: (Int, Int),
-    end: (Int, Int),
-    colorStops: js.Object,
-    radii: Option[(Int, Int)] = None
-      // gradientTransform: js.Object = js.Dynamic.literal()
-  ): fabric.FabricObject = {
+  def printlog(msg: String): Unit = {
+    jQuery("#messages").prepend(
+      s"""<li><small>${msg}</small></li>"""
+    )
+  }
 
-    val rd1 = radii.map(_._1).getOrElse(0)
-    val rd2 = radii.map(_._2).getOrElse(0)
+  def printtree(msg: String, indent: Int=0): Unit = {
+    val padl = "&nbsp;" * (indent * 4)
+    jQuery("#messages").append(
+      s"""<li><small>${padl}${msg}</small></li>"""
+    )
+  }
 
-    obj.setGradient(strokeOrFill,
-      js.Dynamic.literal(
-        "type"       -> gtype,
-        "x1"         -> start._1,
-        "x2"         -> start._2,
-        "y1"         -> end._1,
-        "y2"         -> end._2,
-        "r1"         -> rd1,
-        "r2"         -> rd2,
-        "colorStops" -> colorStops,
-        "gradientTransform" -> js.Array[Int](1, 0, 0, 1, 0, 0)
-      ))
+  def drawGroupTree(traceEntries: Seq[TraceLog], level: Int): Unit = {
+    val groupStack = mutable.Stack[Group]()
+    traceEntries.foreach({ _ match {
+      case SetPageGeometries(b: Seq[PageGeometry]) =>
+        pageGeometry.clear()
+        pageOffsets.clear()
+
+        b.foreach { geom =>
+          pageGeometry.put(geom.id, geom)
+        }
+
+        pageGeometry.keys.toList.sorted.foreach{k =>
+          val geom = pageGeometry(k)
+
+          pageOffsets.lastOption match {
+            case Some(lastPageGeom) =>
+              pageOffsets += geom.bounds.copy(
+                top=geom.bounds.top + lastPageGeom.top + lastPageGeom.height
+              )
+            case None =>
+              pageOffsets += geom.bounds
+          }
+        }
+      case a:Group =>
+        groupStack.push(a)
+        val slen = groupStack.length
+
+        val button = s"""<button id="group${slen}">${a.name}</button>"""
+
+        printtree(button, level)
+        drawGroupTree(a.ts, level+1)
+
+        jQuery(s"#group${slen}").on("click", {(ev: JQueryEventObject) =>
+          // fabricCanvas.renderOnAddRemove = false
+          printlog(s"rendering visual trace")
+          runTrace(Seq(a))
+          // fabricCanvas.renderAll()
+          // fabricCanvas.renderOnAddRemove = true
+          printlog(s"finished visual trace")
+          // removeTraceKeybindings()
+        })
+      case _ =>
+
+    }})
   }
 
 
+  // TODO create State class
+  var classNum = 0
 
-  def execTrace(traces: Seq[TraceLog]): Unit = {
+  val classStack = mutable.Stack[String]()
 
+  var currR = 0
+  var currG = 0
+  var currB = 0
+
+  def nextRGB(): String  = {
+    currR += 1; currR = currR % 16
+    currG += 3; currG = currG % 16
+    currB += 5; currB = currB % 16
+    val r = currR.toHexString
+    val g = currG.toHexString
+    val b = currB.toHexString
+    s"#$r$g$b"
   }
+
+  var currRGB = nextRGB()
+
+
+
+  // import scala.concurrent.Future
+  import scala.concurrent.Promise
+  import scala.async.Async.{async, await}
+  import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+  import scala.collection.mutable
+  import native.mousetrap._
 
   def runTrace(traces: Seq[TraceLog]): Unit = {
-    fabricCanvas.renderOnAddRemove = false
+    drawGroupTree(traces, 0)
 
-    var classNum = 0
+    var stepper: Promise[Int] = Promise[Int]
 
-    val classStack = mutable.Stack[String]()
+    Mousetrap.bind("n", ((e: MousetrapEvent) => {
+      val lastStepper = stepper
+      stepper = Promise[Int]()
+      lastStepper.success(1)
+      true
+    }))
 
-    var currR = 0
-    var currG = 0
-    var currB = 0
+    Mousetrap.bind("q", ((e: MousetrapEvent) => {
+      val lastStepper = stepper
+      stepper = Promise[Int]()
+      lastStepper.success(0)
+      true
+    }))
 
-    def nextRGB(): String  = {
-      currR += 1; currR = currR % 16
-      currG += 3; currG = currG % 16
-      currB += 5; currB = currB % 16
-      val r = currR.toHexString
-      val g = currG.toHexString
-      val b = currB.toHexString
-      s"#$r$g$b"
+    val execStack = mutable.Stack[mutable.Queue[TraceLog]]()
+
+    def pushLogs(ls: Seq[TraceLog]): Unit = {
+      execStack.push(mutable.Queue(ls:_*))
     }
 
-    var currRGB = nextRGB()
+    pushLogs(traces)
 
+    async {
 
+      var res = await { stepper.future }
+      while (res > 0 && !execStack.isEmpty) {
+        if (execStack.top.isEmpty) {
+          execStack.pop()
+        } else {
+          val t = execStack.top.dequeue()
+          printlog(s"running ${t}")
+          if (execStack.top.isEmpty) {
+            execStack.pop()
+          }
+          stepTraceLog(t)
+        }
 
+        fabricCanvas.renderAll()
+        res = await { stepper.future }
+      }
+    }
 
-    def _run(traceEntries: Seq[TraceLog]): Unit = {
-      traceEntries.foreach({ _ match {
+    def stepTraceLog(logEntry: TraceLog): Unit = {
+      logEntry match {
         case Noop =>
-        case SetPageGeometries(b: Seq[PageGeometry]) =>
-          pageGeometry.clear()
-          pageOffsets.clear()
-
-          b.foreach { geom =>
-            pageGeometry.put(geom.id, geom)
-          }
-
-          pageGeometry.keys.toList.sorted.foreach{k =>
-            val geom = pageGeometry(k)
-
-            pageOffsets.lastOption match {
-              case Some(lastPageGeom) =>
-                pageOffsets += geom.bounds.copy(
-                  top=geom.bounds.top + lastPageGeom.top + lastPageGeom.height
-                )
-              case None =>
-                pageOffsets += geom.bounds
-            }
-          }
-          println(s"""offset pages = ${pageOffsets.mkString("\n   ")}""")
+        case SetPageGeometries(b: Seq[PageGeometry]) => // set above
 
         case Show(s: Seq[TargetRegion]) =>
-          val rs = s.map(
-            transformTargetRegion(_)
-          )
+          val rs = s.map(transformTargetRegion(_))
 
-          rs.foreach(tr => addShape(tr.bbox, "blue", currRGB))
+          rs.foreach(tr => addShape(tr.bbox, "blue", currRGB, 0.1f))
 
 
         case ShowZone(s: Zone) =>
@@ -175,11 +208,12 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
         case ShowComponent(s: Component) =>
           val ttrans = transformTargetRegion(s.targetRegion)
-          addShape(ttrans.bbox, "blue", currRGB)
+          addShape(ttrans.bbox, "blue", currRGB, 0.1f)
 
         case ShowLabel(s: Label) =>
 
           // val cls = classStack.mkString(" ")
+
           val cls = "."+classStack.top
 
           val content = s"""<li><button class="$cls">${s.ns}:${s.key}</button></li>"""
@@ -206,8 +240,11 @@ trait VisualTraceOperations extends FabricCanvasOperations {
           // jQuery(cls).hover(hin, hout)
 
         case ShowVDiff(d1: Double, d2: Double) =>
+
         case FocusOn(s: TargetRegion) =>
           println(s"FocusOn ${s}")
+          val ttrans = transformTargetRegion(s)
+          addShape(ttrans.bbox, "black", "yellow", 0.1f)
 
         case VRuler(s: Double) =>
           // println(s"v-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
@@ -215,65 +252,51 @@ trait VisualTraceOperations extends FabricCanvasOperations {
         case HRuler(s: Double) =>
           // println(s"h-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
 
-          // val r = fabric.Rect()
-          // r.left = 0
-          // r.top =  transformY(s)
-          // r.width = canvasW+canvasBorder
-          // r.height = 1
-          // r.stroke      = "red"
-          // r.strokeWidth = 1
-          // r.fill        = "rgb(100, 30, 52)"
-          // r.opacity = 0.2
-
-          // // setGradient(r,
-          // //   "fill",
-          // //   "linear",
-          // //   (0, 0),
-          // //   (50, 15),
-          // //   js.Dynamic.literal(
-          // //     "0" -> "#222",
-          // //     "1" -> "#888"
-          // //   )
-          // // )
-
-          // fabricCanvas.add(r)
-
         case Message(s: String) =>
-          jQuery("#messages").append(s)
+          // printlog(s)
 
         case a:All =>
-          currRGB = nextRGB()
+          // currRGB = nextRGB()
+          // classNum += 1
+          // classStack.push(s"c${classNum}")
 
-          classNum += 1
-          classStack.push(s"c${classNum}")
+          pushLogs(a.ts)
 
-          _run(a.ts)
-
-          classStack.pop()
+          // classStack.pop()
 
         case a:Link =>
-          classNum += 1
-          classStack.push(s"c${classNum}")
+          // classNum += 1
+          // classStack.push(s"c${classNum}")
+          pushLogs(a.ts)
+          // classStack.pop()
 
-          _run(a.ts)
-
-          classStack.pop()
         case a:Group =>
+          pushLogs(a.ts)
 
         case a:GroupEnd =>
 
 
-      }})
+      }
     }
-
-    _run(traces)
-
-    fabricCanvas.renderAll()
-    fabricCanvas.renderOnAddRemove = true
 
   }
 
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 // case SetViewport(b: LTBounds) =>
 // put a border around the canvas
@@ -293,3 +316,31 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 // // fabricCanvas.setBackgroundColor("green", () => {})
 
 // println("b = " + translate(b))
+
+// def setGradient(
+//   obj: fabric.FabricObject,
+//   strokeOrFill: String, // stroke|fill
+//   gtype: String, // radial|linear
+//   start: (Int, Int),
+//   end: (Int, Int),
+//   colorStops: js.Object,
+//   radii: Option[(Int, Int)] = None
+//     // gradientTransform: js.Object = js.Dynamic.literal()
+// ): fabric.FabricObject = {
+
+//   val rd1 = radii.map(_._1).getOrElse(0)
+//   val rd2 = radii.map(_._2).getOrElse(0)
+
+//   obj.setGradient(strokeOrFill,
+//     js.Dynamic.literal(
+//       "type"       -> gtype,
+//       "x1"         -> start._1,
+//       "x2"         -> start._2,
+//       "y1"         -> end._1,
+//       "y2"         -> end._2,
+//       "r1"         -> rd1,
+//       "r2"         -> rd2,
+//       "colorStops" -> colorStops,
+//       "gradientTransform" -> js.Array[Int](1, 0, 0, 1, 0, 0)
+//     ))
+// }

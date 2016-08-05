@@ -295,6 +295,10 @@ trait FabricObject extends ObjectProperties {
 
   // TODO Use Dynamic trait for this...
   var title: String = js.native
+
+  def animate(prop: String, delta: String, tweenFunc: js.Object): Unit = js.native
+  def animate(prop: String, delta: String): Unit = js.native
+
 }
 
 @js.native @JSName("fabric.Rect")

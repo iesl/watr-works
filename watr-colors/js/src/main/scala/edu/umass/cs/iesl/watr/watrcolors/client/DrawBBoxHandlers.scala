@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
+import scala.scalajs.js
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import native.fabric
@@ -19,16 +20,16 @@ trait FabricCanvasOperations {
     jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
   }
 
-  def addShape(shape: GeometricFigure, color: String, bg: String): Unit = {
+  def addShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): Unit = {
     shape match {
       case  p: Point =>
         addLTBoundsRect(LTBounds(
           p.x-1, p.y-1, 2, 2
-        ), color, bg)
+        ), color, bg, opacity)
 
       case  Line(p1: Point, p2: Point) => ???
 
-      case b:LTBounds => addLTBoundsRect(b, color, bg)
+      case b:LTBounds => addLTBoundsRect(b, color, bg, opacity)
 
       case b:LBBounds => ??? // addLBBoundsRect(b, color, bg)
     }
@@ -56,7 +57,7 @@ trait FabricCanvasOperations {
     fabricCanvas.add(c)
   }
 
-  def addLTBoundsRect(bbox: LTBounds, color: String, bg: String): Unit = {
+  def addLTBoundsRect(bbox: LTBounds, color: String, bg: String, opacity: Float): Unit = {
 
     val rect = fabric.Rect()
     rect.top         = bbox.top
@@ -69,9 +70,22 @@ trait FabricCanvasOperations {
     rect.hasControls = false
     rect.hasBorders  = false
     rect.selectable  = false
-    rect.opacity = 0.2
+    rect.opacity = opacity
 
     fabricCanvas.add(rect)
+
+    // rect.animate('angle', '-=5', { onChange: canvas.renderAll.bind(canvas) });
+    // val canv = js.Dynamic.literal(
+    //   c=jQuery("#fabric-canvas")
+    // )
+
+    rect.animate("opacity", "-=0.02")
+
+    // rect.animate("top", "+=10", js.Dynamic.literal(
+    //   onChange=canv.c.renderAll.bind(canv.c),
+    //   duration=2000
+    // ))
+
   }
 
   def addPath(path: Seq[Point], color: String): Unit = {
@@ -79,6 +93,7 @@ trait FabricCanvasOperations {
 }
 
 object handlers {
+
 
   def getUserPath(c: fabric.Canvas): Future[Seq[Point]] = {
 
@@ -106,6 +121,7 @@ object handlers {
 
 
   def getUserLTBounds(c: fabric.Canvas): Future[LTBounds] = {
+    println("getUserLTBounds")
 
     val chan = CanvasMouseChannels(c)
 

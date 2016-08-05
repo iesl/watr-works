@@ -19,9 +19,9 @@ object TraceLog {
   case class HRuler(s: Double)                       extends TraceLog
   case class VRuler(s: Double)                       extends TraceLog
   case class Message(s: String)                      extends TraceLog
-  case class All(ts: Seq[TraceLog])                  extends TraceLog
-  case class Link(ts: Seq[TraceLog])                 extends TraceLog
-  case class Group(name: String, ts: Seq[TraceLog])  extends TraceLog
+  case class All(ts: Seq[TraceLog])                  extends TraceLog { override val toString = s"all#${ts.length}"}
+  case class Link(ts: Seq[TraceLog])                 extends TraceLog { override val toString = s"link#${ts.length}"}
+  case class Group(name: String, ts: Seq[TraceLog])  extends TraceLog { override val toString = s"group:${name}#${ts.length}"}
   case class GroupEnd(name: String)                  extends TraceLog
 
 }
@@ -36,31 +36,39 @@ class VisualTracer() {
 
   def closeTopGroup(): Unit = {
     val group1 = vtraceStack.pop()
+    // println(s"pop ${group1}")
     val group2 = vtraceStack.pop()
-    vtraceStack.push(group2.copy(ts = group2.ts :+ group1))
+    // println(s"pop ${group2}")
+    val group12 = group2.copy(ts = group2.ts :+ group1)
+    vtraceStack.push(group12)
+    // println(s"push ${group12}")
   }
 
   def trace(tls: TraceLog*): Unit = {
-    // tls.foreach { trace =>
-    //   trace match {
-    //     case g:Group =>
-    //       vtraceStack.push(g)
+    tls.foreach { trace =>
+      trace match {
+        case g:Group =>
+          vtraceStack.push(g)
+          // println(s"push ${g}")
 
-    //     case g:GroupEnd =>
-    //       if (!vtraceStack.exists(_.name == g.name)) {
-    //         sys.error(s"visual trace end(${g.name}) has no open() statement")
-    //       }
-    //       while (vtraceStack.top.name != g.name) {
-    //         closeTopGroup()
-    //       }
-    //       closeTopGroup()
+        case g:GroupEnd =>
+          if (!vtraceStack.exists(_.name == g.name)) {
+            // println(s"""vtrace stack = ${vtraceStack.mkString("\n  ", "\n  ", "---\n")}""")
+            sys.error(s"visual trace end(${g.name}) has no open() statement")
+          }
+          while (vtraceStack.top.name != g.name) {
+            closeTopGroup()
+          }
+          closeTopGroup()
 
-    //     case _ =>
-    //       val group = vtraceStack.pop()
-    //       vtraceStack.push(group.copy(ts = group.ts :+ trace))
-    //   }
-    // }
-
+        case _ =>
+          val group = vtraceStack.pop()
+          // println(s"pop ${group}")
+          val g2 = group.copy(ts = group.ts :+ trace)
+          vtraceStack.push(g2)
+          // println(s"push ${g2}")
+      }
+    }
   }
 
   def setPageGeometries(b: Seq[PageGeometry]): TraceLog = SetPageGeometries(b)

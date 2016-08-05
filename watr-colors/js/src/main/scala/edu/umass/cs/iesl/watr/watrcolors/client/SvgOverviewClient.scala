@@ -4,8 +4,8 @@ package client
 
 
 import scala.async.Async.{async, await}
-
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom._
 
@@ -19,7 +19,7 @@ import native.fabric
 
 
 import GeometricFigure._
-import TraceLog._
+// import TraceLog._
 
 @JSExport
 class SvgOverview(
@@ -57,10 +57,12 @@ class SvgOverview(
           elem.clientWidth.toDouble,
           elem.clientHeight.toDouble
         )
+        printlog(s"page image geom = ${igeom} ")
         pageImageGeometries += igeom
       })
 
 
+      printlog(s"getting overlay")
       server
         .getLabelOverlay(artifactId).call()
         .map(runTrace(_))
@@ -108,7 +110,7 @@ class SvgOverview(
       async {
         val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
         applyHtmlUpdates(res)
-        addLTBoundsRect(bboxAbs, "black", "#000")
+        addLTBoundsRect(bboxAbs, "black", "#000", 0.1f)
       }
     }
     true

@@ -458,6 +458,8 @@ class DocumentSegmenter(
     runLineDetermination()
     vtrace.trace(vtrace.end("runLineDetermination"))
 
+    tokenizeLines()
+
     vtrace.trace(vtrace.begin("groupLeftAlignedBlocks"))
     groupLeftAlignedBlocks()
     vtrace.trace(vtrace.end("groupLeftAlignedBlocks"))
@@ -474,6 +476,16 @@ class DocumentSegmenter(
 
     joinLines()
 
+  }
+
+  // force tokenization of all visual lines
+  def tokenizeLines(): Unit = {
+    for {
+      page <- visualLineOnPageComponents
+      (line, linenum) <- page.zipWithIndex
+    } {
+      line.tokenizeLine
+    }
   }
 
   def joinLines(): Unit = {
@@ -728,7 +740,7 @@ class DocumentSegmenter(
     val page = zoneIndexer.getPageInfo(pageId)
     val lls = page.getComponentsWithLabel(LB.VisualLine)
 
-    lls
+    lls.sortBy { _.bounds.top }
   }
 
 

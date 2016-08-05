@@ -82,7 +82,6 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
 ).jsSettings(
   name := "watrcolors-client",
   libraryDependencies ++= Seq(
-    // "be.doeraene" %%% "scalajs-jquery" % "0.9.0",
     "org.querki" %%% "jquery-facade" % "1.0-RC6",
     "org.scala-js" %%% "scalajs-dom" % "0.9.1"
   ),

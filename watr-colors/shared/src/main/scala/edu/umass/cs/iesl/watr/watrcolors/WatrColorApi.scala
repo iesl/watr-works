@@ -18,10 +18,3 @@ trait SvgOverviewApi {
   def onSelectLTBounds(artifactId: String, bbox: LTBounds): List[HtmlUpdate]
   def onDrawPath(artifactId: String, path: Seq[Point]): List[HtmlUpdate]
 }
-
-trait VisualTraceApi {
-  def createView(): List[HtmlUpdate]
-
-  def runTrace(): List[TraceLog]
-
-}

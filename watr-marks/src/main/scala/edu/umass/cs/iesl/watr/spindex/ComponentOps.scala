@@ -197,14 +197,10 @@ object ComponentOperations {
     def tokenizeLine(): Component = {
       if (!component.getLabels.contains(LB.TokenizedLine)) {
 
-        // focus on this component
         vtrace.trace(
           vtrace.begin("Tokenize Line"),
-          vtrace.link(
-            vtrace.message("tokenizing line"),
-            vtrace.focusOn(component.targetRegion),
-            vtrace.all(component.children.map(c => vtrace.showRegion(c.targetRegion)))
-          )
+          vtrace.focusOn(component.targetRegion),
+          vtrace.all(component.children.map(c => vtrace.showRegion(c.targetRegion)))
         )
 
         val tops = findCommonToplines()
@@ -252,8 +248,6 @@ object ComponentOperations {
               // println(s"""modal bottom: ${modalBottom}, c.bottom = ${cbottom}""")
               LB.Sub.some
             }
-
-
 
           maybeLabel.foreach { c.addLabel(_) }
           c
@@ -334,10 +328,10 @@ object ComponentOperations {
 
         component.replaceChildren(asTokens)
         component.addLabel(LB.TokenizedLine)
+
+        vtrace.trace(vtrace.end("Tokenize Line"))
+
       }
-      vtrace.trace(
-        vtrace.end("Tokenize Line")
-      )
       component
 
     }
