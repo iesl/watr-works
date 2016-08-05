@@ -370,15 +370,25 @@ object Works extends App {
           pdf       <- corpusEntry.getPdfArtifact
           pdfins    <- pdf.asInputStream
         } {
-          val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins, fontDirs)
-          segmenter.runPageSegmentation()
-          val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
-          corpusEntry.putArtifact(artifactOutputName, output)
-          traceLogs += segmenter.vtrace.getAndResetTrace()
+          try {
+            val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins, fontDirs)
+            segmenter.runPageSegmentation()
+            val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
+            corpusEntry.putArtifact(artifactOutputName, output)
+            traceLogs += segmenter.vtrace.getAndResetTrace()
+          } catch {
+            case t: Throwable =>
+              println(s"could not segment ${corpusEntry}: ${t.getMessage}\n")
+              println(t.toString())
+              t.printStackTrace()
+              s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
+          } finally {
+            if (pdfins!=null) pdfins.close()
+          }
         }
       } catch {
         case t: Throwable =>
-          println(s"could not extract ${corpusEntry}: ${t.getMessage}\n")
+          println(s"could not process ${corpusEntry}: ${t.getMessage}\n")
           println(t.toString())
           t.printStackTrace()
           s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""

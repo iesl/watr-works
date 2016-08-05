@@ -21,9 +21,8 @@ object TraceLog {
   case class Message(s: String)                      extends TraceLog
   case class All(ts: Seq[TraceLog])                  extends TraceLog
   case class Link(ts: Seq[TraceLog])                 extends TraceLog
-
   case class Group(name: String, ts: Seq[TraceLog])  extends TraceLog
-  case class GroupEnd(name: String)  extends TraceLog
+  case class GroupEnd(name: String)                  extends TraceLog
 
 }
 
@@ -31,34 +30,34 @@ import scala.collection.mutable
 
 class VisualTracer() {
 
-  val vtrace = mutable.Stack[TraceLog.Group](TraceLog.Group("root", Seq()))
+  val vtraceStack = mutable.Stack[TraceLog.Group](TraceLog.Group("root", Seq()))
 
   import TraceLog._
 
   def closeTopGroup(): Unit = {
-    val group1 = vtrace.pop()
-    val group2 = vtrace.pop()
-    vtrace.push(group2.copy(ts = group2.ts :+ group1))
+    val group1 = vtraceStack.pop()
+    val group2 = vtraceStack.pop()
+    vtraceStack.push(group2.copy(ts = group2.ts :+ group1))
   }
 
   def trace(tls: TraceLog*): Unit = {
     // tls.foreach { trace =>
     //   trace match {
     //     case g:Group =>
-    //       vtrace.push(g)
+    //       vtraceStack.push(g)
 
     //     case g:GroupEnd =>
-    //       if (!vtrace.exists(_.name == g.name)) {
+    //       if (!vtraceStack.exists(_.name == g.name)) {
     //         sys.error(s"visual trace end(${g.name}) has no open() statement")
     //       }
-    //       while (vtrace.top.name != g.name) {
+    //       while (vtraceStack.top.name != g.name) {
     //         closeTopGroup()
     //       }
     //       closeTopGroup()
 
     //     case _ =>
-    //       val group = vtrace.pop()
-    //       vtrace.push(group.copy(ts = group.ts :+ trace))
+    //       val group = vtraceStack.pop()
+    //       vtraceStack.push(group.copy(ts = group.ts :+ trace))
     //   }
     // }
 
@@ -82,9 +81,9 @@ class VisualTracer() {
   def end(name: String) = GroupEnd(name)
 
   def getAndResetTrace(): List[TraceLog] = {
-    val t = vtrace.toList
-    vtrace.clear()
-    vtrace.push(Group("root", Seq()))
+    val t = vtraceStack.toList
+    vtraceStack.clear()
+    vtraceStack.push(Group("root", Seq()))
     t
   }
 }

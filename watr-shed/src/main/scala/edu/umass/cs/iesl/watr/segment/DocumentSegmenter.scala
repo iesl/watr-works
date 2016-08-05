@@ -444,14 +444,23 @@ class DocumentSegmenter(
 
 
   def runPageSegmentation(): Unit = {
-    vtrace.trace(vtrace.setPageGeometries(
-      zoneIndexer.pageInfos.map(_._2.geometry).toSeq
-    ))
+    vtrace.trace(
+      vtrace.begin("SetPageGeometries"),
+      vtrace.setPageGeometries(
+        zoneIndexer.pageInfos.map(_._2.geometry).toSeq
+      ),
+      vtrace.end("SetPageGeometries")
+    )
 
 
     // Bottom-up connected-component line-finding
+    vtrace.trace(vtrace.begin("runLineDetermination"))
     runLineDetermination()
+    vtrace.trace(vtrace.end("runLineDetermination"))
+
+    vtrace.trace(vtrace.begin("groupLeftAlignedBlocks"))
     groupLeftAlignedBlocks()
+    vtrace.trace(vtrace.end("groupLeftAlignedBlocks"))
 
     // document-wide stats on cc discovered lines
     // findMostFrequentLineDimensions()

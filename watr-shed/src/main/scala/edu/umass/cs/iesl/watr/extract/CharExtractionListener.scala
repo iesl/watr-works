@@ -182,9 +182,7 @@ class CharExtractionListener(
   def computeTextBounds(charTri: TextRenderInfo): Option[LTBounds] = {
     val fontProgramEmbedded = charTri.getFont.getFontProgram
 
-    // val maybeFontProgram = FontLookup.getFontProgram(fontProgramEmbedded.getFontNames.getFontName.toLowerCase())
-    // val fontProgram = maybeFontProgram.getOrElse { fontProgramEmbedded }
-    val fontProgram = fontProgramEmbedded 
+    val fontProgram = fontProgramEmbedded
 
     val fontMetrics = fontProgram.getFontMetrics
 

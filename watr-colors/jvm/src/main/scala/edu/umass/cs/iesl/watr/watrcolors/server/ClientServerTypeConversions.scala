@@ -21,6 +21,8 @@ object TypeConverters {
       case utils.TraceLog.Message(s: String)                  => TraceLog.Message(s)
       case utils.TraceLog.All(ts)                             => TraceLog.All(ts.map(convertVisualTraceTypes(_)))
       case utils.TraceLog.Link(ts)                            => TraceLog.Link(ts.map(convertVisualTraceTypes(_)))
+      case utils.TraceLog.Group(name, ts)                     => TraceLog.Group(name, ts.map(convertVisualTraceTypes(_)))
+      case utils.TraceLog.GroupEnd(name)                      => TraceLog.GroupEnd(name)
 
     }
   }

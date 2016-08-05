@@ -107,6 +107,9 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
 
 
+  def execTrace(traces: Seq[TraceLog]): Unit = {
+
+  }
 
   def runTrace(traces: Seq[TraceLog]): Unit = {
     fabricCanvas.renderOnAddRemove = false
@@ -255,6 +258,9 @@ trait VisualTraceOperations extends FabricCanvasOperations {
           _run(a.ts)
 
           classStack.pop()
+        case a:Group =>
+
+        case a:GroupEnd =>
 
 
       }})

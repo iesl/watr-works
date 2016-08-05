@@ -78,6 +78,8 @@ object TraceLog {
   case class Message(s: String)                      extends TraceLog
   case class All(ts: Seq[TraceLog])                  extends TraceLog
   case class Link(ts: Seq[TraceLog])                 extends TraceLog
+  case class Group(name: String, ts: Seq[TraceLog])  extends TraceLog
+  case class GroupEnd(name: String)                  extends TraceLog
 
 }
 
@@ -127,6 +129,8 @@ trait ShapeDataTypePicklers {
   implicit val pMessage         = PicklerGenerator.generatePickler[Message]
   implicit val pAll             = PicklerGenerator.generatePickler[All]
   implicit val pLink            = PicklerGenerator.generatePickler[Link]
+  implicit val pGroup            = PicklerGenerator.generatePickler[Group]
+  implicit val pGroupEnd            = PicklerGenerator.generatePickler[GroupEnd]
 
   pDSL
     .addConcreteType[SetPageGeometries]
@@ -141,5 +145,7 @@ trait ShapeDataTypePicklers {
     .addConcreteType[Message]
     .addConcreteType[All]
     .addConcreteType[Link]
+    .addConcreteType[Group]
+    .addConcreteType[GroupEnd]
 
 }
