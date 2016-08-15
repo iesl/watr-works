@@ -3,6 +3,9 @@ package spindex
 
 import net.sf.jsi
 
+import scalaz.@@
+import TypeTags._
+
 sealed trait GeometricFigure
 sealed trait Area
 
@@ -77,6 +80,25 @@ object IndexShapeOperations {
       else if (d < d2) -1
       else 1
     }
+
+
+    def toHLine: Line = Line(
+      Point(Double.MinValue, d),
+      Point(Double.MaxValue, d))
+
+    def toVLine: Line = Line(
+      Point(d, Double.MinValue),
+      Point(d, Double.MaxValue))
+
+  }
+
+  implicit class RicherFigure(val figure: spindex.GeometricFigure) extends AnyVal {
+    def targetTo(page: Int@@PageID): TargetFigure = {
+      TargetFigure(
+        RegionID(0), // TODO gen region id
+        page, figure
+      )
+    }
   }
 
   implicit class RicherPoint(val p0: Point) extends AnyVal {
@@ -143,6 +165,30 @@ object IndexShapeOperations {
       ((line.p1.y+line.p2.y) / 2)
     )
 
+    def setY(y: Double): Line = {
+      line.copy(
+        p1 = line.p1.copy(y=y),
+        p2 = line.p2.copy(y=y)
+      )
+    }
+
+    def normalizeOrder: Line = {
+      val (p1x, p2x) = if (line.p1.x < line.p2.x) (line.p1.x, line.p2.x) else (line.p2.x, line.p1.x)
+      val (p1y, p2y) = if (line.p1.y < line.p2.y) (line.p1.y, line.p2.y) else (line.p2.y, line.p1.y)
+
+      Line(Point(p1x, p1y), Point(p2x, p2y))
+    }
+
+
+    def clipTo(b: LTBounds): Line = {
+      val lnorm = line.normalizeOrder
+      val p1x = math.max(lnorm.p1.x, b.left)
+      val p2x = math.min(lnorm.p2.x, b.left+b.width)
+      val p1y = math.max(lnorm.p1.y, b.top)
+      val p2y = math.min(lnorm.p2.y, b.left+b.width)
+      Line(Point(p1x, p1y), Point(p2x, p2y))
+
+    }
   }
 
   implicit class RicherLTBounds(val tb: LTBounds) extends AnyVal {

@@ -54,6 +54,34 @@ trait VisualTraceOperations extends FabricCanvasOperations {
     tr.copy(bbox = bounds)
   }
 
+  def transformTargetFigure(tr: TargetFigure): TargetFigure = {
+    val offsetPage = pageOffsets(tr.page)
+    val pageImgGeometry = pageImageGeometries(tr.page)
+
+    def transformPoint(p: Point): Point = {
+      val pageTopTrans = (offsetPage.top * canvasH / totalPagesHeight) + canvasY
+      val xtrans = (p.x * pageImgGeometry.width / offsetPage.width)
+      val ytrans = (p.y * pageImgGeometry.height / offsetPage.height) + pageTopTrans
+      p
+    }
+
+    val ftrans = tr.figure match {
+      case f: LTBounds =>
+        val lt = transformPoint(Point(f.left, f.top))
+        val wh = transformPoint(Point(f.width, f.height))
+        LTBounds(lt.x, lt.y, wh.x, wh.y)
+
+      case f: LBBounds =>
+        val lt = transformPoint(Point(f.left, f.bottom))
+        val wh = transformPoint(Point(f.width, f.height))
+        LBBounds(lt.x, lt.y, wh.x, wh.y)
+
+      case f: Point => transformPoint(f)
+      case f: Line => Line(transformPoint(f.p1), transformPoint(f.p2))
+    }
+
+    tr.copy(figure = ftrans)
+  }
 
   def printlog(msg: String): Unit = {
     jQuery("#messages").prepend(
@@ -137,7 +165,6 @@ trait VisualTraceOperations extends FabricCanvasOperations {
   var currRGB = nextRGB()
 
 
-
   // import scala.concurrent.Future
   import scala.concurrent.Promise
   import scala.async.Async.{async, await}
@@ -161,6 +188,15 @@ trait VisualTraceOperations extends FabricCanvasOperations {
       val lastStepper = stepper
       stepper = Promise[Int]()
       lastStepper.success(0)
+      true
+    }))
+
+    // Clear the canvas
+    Mousetrap.bind("c", ((e: MousetrapEvent) => {
+      fabricCanvas.forEachObject({(obj: native.fabric.FabricObject) =>
+        fabricCanvas.remove(obj)
+        fabricCanvas
+      })
       true
     }))
 
@@ -239,18 +275,15 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
           // jQuery(cls).hover(hin, hout)
 
-        case ShowVDiff(d1: Double, d2: Double) =>
 
         case FocusOn(s: TargetRegion) =>
-          println(s"FocusOn ${s}")
           val ttrans = transformTargetRegion(s)
           addShape(ttrans.bbox, "black", "yellow", 0.1f)
 
-        case VRuler(s: Double) =>
-          // println(s"v-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
-
-        case HRuler(s: Double) =>
-          // println(s"h-rule! ${s} scaled: ${scaleY(s)}, inplace = ${scaleY(s) - canvasY}}")
+        case Indicate(s: TargetFigure) =>
+          val ftrans = transformTargetFigure(s)
+          println(s"Indicate: ${ftrans}")
+          addShape(ftrans.figure, "black", "red", 0.2f)
 
         case Message(s: String) =>
           // printlog(s)

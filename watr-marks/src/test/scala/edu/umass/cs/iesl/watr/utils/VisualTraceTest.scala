@@ -37,7 +37,7 @@ class VisualTraceTest extends FlatSpec with Matchers {
   //   val prg = for {
   //     _ <- SetViewport(Bounds.empty).freek[PRG]
   //     _ <- Show(Bounds.empty).freek[PRG]
-  //     _ <- HRuler(0d).freek[PRG]
+  //     _ <- Indicate(0d).freek[PRG]
   //   } yield ()
 
 

@@ -301,6 +301,14 @@ trait FabricObject extends ObjectProperties {
 
 }
 
+@js.native @JSName("fabric.Line")
+class Line extends FabricObject {
+  var     x1: Number = js.native
+  var     y1: Number = js.native
+  var     x2: Number = js.native
+  var     y2: Number = js.native
+}
+
 @js.native @JSName("fabric.Rect")
 class Rect extends FabricObject {}
 
@@ -313,9 +321,9 @@ class Circle extends FabricObject {
 
   def setRadius(value: Double): Circle = js.native
 
-  var     radius: Int = js.native
-  var     startAngle: Double = js.native
-  var     endAngle: Double = js.native // =  pi * 2,
+  var     radius: Number = js.native
+  var     startAngle: Number = js.native
+  var     endAngle: Number = js.native // =  pi * 2,
 
 }
 

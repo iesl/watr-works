@@ -27,7 +27,7 @@ val freeKDeps = Seq(
 val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
   "org.apache.commons" % "commons-lang3" % "3.4",
-  "org.scalaz" %% "scalaz-core" % "7.2.4",
+  "org.scalaz" %% "scalaz-core" % "7.2.5",
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
   "com.lihaoyi" %% "fastparse" % "0.3.7",
   "org.jdom" % "jdom2" % "2.0.6",

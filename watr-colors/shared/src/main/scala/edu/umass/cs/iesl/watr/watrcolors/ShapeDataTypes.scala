@@ -45,6 +45,12 @@ case class TargetRegion(
   bbox: LTBounds
 ) extends SharedJs
 
+case class TargetFigure(
+  id: Int,
+  page: Int,
+  figure: GeometricFigure
+) extends SharedJs
+
 case class Zone(
   id: Int, // @@ZoneID,
   regions: Seq[TargetRegion]
@@ -71,10 +77,8 @@ object TraceLog {
   case class ShowZone(s: Zone)                       extends TraceLog
   case class ShowComponent(s: Component)             extends TraceLog
   case class ShowLabel(l:Label)                      extends TraceLog
-  case class ShowVDiff(d1: Double, d2: Double)       extends TraceLog
   case class FocusOn(s: TargetRegion)                extends TraceLog
-  case class HRuler(s: Double)                       extends TraceLog
-  case class VRuler(s: Double)                       extends TraceLog
+  case class Indicate(figure: TargetFigure)          extends TraceLog
   case class Message(s: String)                      extends TraceLog
   case class All(ts: Seq[TraceLog])                  extends TraceLog
   case class Link(ts: Seq[TraceLog])                 extends TraceLog
@@ -103,6 +107,7 @@ trait ShapeDataTypePicklers {
   implicit val pSharedJs = compositePickler[SharedJs]
   implicit val pPageGeometry = PicklerGenerator.generatePickler[PageGeometry]
   implicit val pTargetRegion = PicklerGenerator.generatePickler[TargetRegion]
+  implicit val pTargetFigure = PicklerGenerator.generatePickler[TargetFigure]
   implicit val pLabel = PicklerGenerator.generatePickler[Label]
   implicit val pZone = PicklerGenerator.generatePickler[Zone]
   implicit val pComponent = PicklerGenerator.generatePickler[Component]
@@ -110,6 +115,7 @@ trait ShapeDataTypePicklers {
   pSharedJs
     .addConcreteType[PageGeometry]
     .addConcreteType[TargetRegion]
+    .addConcreteType[TargetFigure]
     .addConcreteType[Label]
     .addConcreteType[Zone]
     .addConcreteType[Component]
@@ -120,17 +126,15 @@ trait ShapeDataTypePicklers {
   implicit val pSetPageGeometry = PicklerGenerator.generatePickler[SetPageGeometries]
   implicit val pShow            = PicklerGenerator.generatePickler[Show]
   implicit val pShowZone        = PicklerGenerator.generatePickler[ShowZone]
-  implicit val pShowComponent        = PicklerGenerator.generatePickler[ShowComponent]
+  implicit val pShowComponent   = PicklerGenerator.generatePickler[ShowComponent]
   implicit val pShowLabel       = PicklerGenerator.generatePickler[ShowLabel]
-  implicit val pShowVDiff       = PicklerGenerator.generatePickler[ShowVDiff]
   implicit val pFocusOn         = PicklerGenerator.generatePickler[FocusOn]
-  implicit val pHRuler          = PicklerGenerator.generatePickler[HRuler]
-  implicit val pVRuler          = PicklerGenerator.generatePickler[VRuler]
+  implicit val pIndicate        = PicklerGenerator.generatePickler[Indicate]
   implicit val pMessage         = PicklerGenerator.generatePickler[Message]
   implicit val pAll             = PicklerGenerator.generatePickler[All]
   implicit val pLink            = PicklerGenerator.generatePickler[Link]
-  implicit val pGroup            = PicklerGenerator.generatePickler[Group]
-  implicit val pGroupEnd            = PicklerGenerator.generatePickler[GroupEnd]
+  implicit val pGroup           = PicklerGenerator.generatePickler[Group]
+  implicit val pGroupEnd        = PicklerGenerator.generatePickler[GroupEnd]
 
   pDSL
     .addConcreteType[SetPageGeometries]
@@ -138,10 +142,8 @@ trait ShapeDataTypePicklers {
     .addConcreteType[ShowZone]
     .addConcreteType[ShowComponent]
     .addConcreteType[ShowLabel]
-    .addConcreteType[ShowVDiff]
     .addConcreteType[FocusOn]
-    .addConcreteType[HRuler]
-    .addConcreteType[VRuler]
+    .addConcreteType[Indicate]
     .addConcreteType[Message]
     .addConcreteType[All]
     .addConcreteType[Link]

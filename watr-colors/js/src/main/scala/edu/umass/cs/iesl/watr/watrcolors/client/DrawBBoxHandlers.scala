@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import scala.scalajs.js
+// import scala.scalajs.js
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import native.fabric
@@ -20,44 +20,51 @@ trait FabricCanvasOperations {
     jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
   }
 
-  def addShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): Unit = {
+  def addShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): fabric.FabricObject = {
     shape match {
-      case  p: Point =>
-        addLTBoundsRect(LTBounds(
-          p.x-1, p.y-1, 2, 2
-        ), color, bg, opacity)
+      case p: Point =>
+        val radius = 20
 
-      case  Line(p1: Point, p2: Point) => ???
+        val c = new fabric.Circle()
+        c.left = p.x - radius
+        c.top = p.y - radius
+        c.radius = radius
+        c.stroke      = color
+        c.strokeWidth = 2
+        c.fill        = bg
+        c.hasControls = false
+        c.hasBorders  = false
+        c.selectable  = false
+        // c.opacity = opacity
+
+        fabricCanvas.add(c)
+        c
+
+      case Line(p1: Point, p2: Point) =>
+        val l = new fabric.Line()
+        l.x1 = p1.x
+        l.y1 = p1.y
+        l.x2 = p2.x
+        l.y2 = p2.y
+        l.stroke      = color
+        l.strokeWidth = 2
+        l.fill        = bg
+        // l.opacity = opacity
+
+        fabricCanvas.add(l)
+        l
 
       case b:LTBounds => addLTBoundsRect(b, color, bg, opacity)
 
-      case b:LBBounds => ??? // addLBBoundsRect(b, color, bg)
+      case b:LBBounds =>
+        val lt = LTBounds(b.left, b.bottom-b.height, b.width, b.height)
+        addLTBoundsRect(lt, color, bg, opacity)
+
     }
-
   }
 
-  def addCircle(point: Point, color: String): Unit = {
-    val radius = 3
 
-    val c = new fabric.Circle()
-    c.left = point.x - radius
-    c.top = point.y - radius
-    c.radius = radius
-    // c.top         =.y
-    // c.left        = bbox.x
-    // c.width       = bbox.width
-    // c.height      = bbox.height
-    c.stroke      = color
-    c.strokeWidth = 1
-    c.fill        = ""
-    c.hasControls = false
-    c.hasBorders  = false
-    c.selectable  = false
-
-    fabricCanvas.add(c)
-  }
-
-  def addLTBoundsRect(bbox: LTBounds, color: String, bg: String, opacity: Float): Unit = {
+  def addLTBoundsRect(bbox: LTBounds, color: String, bg: String, opacity: Float): fabric.FabricObject = {
 
     val rect = fabric.Rect()
     rect.top         = bbox.top
@@ -73,13 +80,14 @@ trait FabricCanvasOperations {
     rect.opacity = opacity
 
     fabricCanvas.add(rect)
+    rect
 
     // rect.animate('angle', '-=5', { onChange: canvas.renderAll.bind(canvas) });
     // val canv = js.Dynamic.literal(
     //   c=jQuery("#fabric-canvas")
     // )
 
-    rect.animate("opacity", "-=0.02")
+    // rect.animate("opacity", "-=0.02")
 
     // rect.animate("top", "+=10", js.Dynamic.literal(
     //   onChange=canv.c.renderAll.bind(canv.c),
@@ -88,8 +96,6 @@ trait FabricCanvasOperations {
 
   }
 
-  def addPath(path: Seq[Point], color: String): Unit = {
-  }
 }
 
 object handlers {

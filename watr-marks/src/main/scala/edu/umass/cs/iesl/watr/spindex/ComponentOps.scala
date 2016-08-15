@@ -11,6 +11,7 @@ import utils.Histogram._
 import IndexShapeOperations._
 import utils.SlicingAndDicing._
 import utils.{CompassDirection => CDir}
+import utils.VisualTracer._
 
 
 object ComponentOperations {
@@ -198,9 +199,9 @@ object ComponentOperations {
       if (!component.getLabels.contains(LB.TokenizedLine)) {
 
         vtrace.trace(
-          vtrace.begin("Tokenize Line"),
-          vtrace.focusOn(component.targetRegion),
-          vtrace.all(component.children.map(c => vtrace.showRegion(c.targetRegion)))
+          begin("Tokenize Line"),
+          focusOn(component.targetRegion),
+          all(component.children.map(c => showRegion(c.targetRegion)))
         )
 
         val tops = findCommonToplines()
@@ -209,14 +210,25 @@ object ComponentOperations {
 
         val modalBottom = bottoms.head // + 0.01d
 
-
         val modalCenterY = (modalBottom + modalTop)/2
-        // val meanCenterY = component.characteristicLine.centerPoint.y
+
+        /// indicate a set of h-lines inside component.targetRegion
+        val mline = component.targetRegion.bbox.toLine(CDir.N)
+
+        // vtrace.trace(
+        //   vtrace.link(vtrace.message("modal top"), vtrace.indicate(mline.setY(modalTop))),
+        //   vtrace.link(vtrace.message("modal bottom"), vtrace.indicate(mline.setY(modalBottom))),
+        //   vtrace.link(vtrace.message("modal center Y"), vtrace.indicate(mline.setY(modalCenterY)))
+        // )
+
+        def indicateHLine(y: Double): TargetFigure = y.toHLine
+          .clipTo(component.targetRegion.bbox)
+          .targetTo(component.targetRegion.target)
 
         vtrace.trace(
-          vtrace.link(vtrace.message("modal top"), vtrace.hRuler(modalTop)),
-          vtrace.link(vtrace.message("modal bottom"), vtrace.hRuler(modalBottom)),
-          vtrace.link(vtrace.message("modal center Y"), vtrace.hRuler(modalCenterY))
+          "modal top" withTrace indicateHLine(modalTop),
+          "modal bottom" withTrace indicateHLine(modalBottom),
+          "modal center Y" withTrace indicateHLine(modalCenterY)
         )
 
 
@@ -226,10 +238,9 @@ object ComponentOperations {
           val cbottom = c.bounds.bottom
           val supSubTolerance = component.bounds.height / 10.0
 
-          vtrace.trace(vtrace.link(
-            vtrace.message("char ctr"),
-            vtrace.all(Seq(vtrace.hRuler(cctr.y), vtrace.vRuler(cctr.x)))
-          ))
+          vtrace.trace(
+            "char center" withTrace cctr.targetTo(component.targetRegion.target)
+          )
 
           val maybeLabel: Option[Label] =
             if (c.bounds.top < modalTop && c.bounds.bottom > modalBottom) {
@@ -329,7 +340,7 @@ object ComponentOperations {
         component.replaceChildren(asTokens)
         component.addLabel(LB.TokenizedLine)
 
-        vtrace.trace(vtrace.end("Tokenize Line"))
+        vtrace.trace(end("Tokenize Line"))
 
       }
       component

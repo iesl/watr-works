@@ -14,10 +14,8 @@ object TraceLog {
   case class ShowZone(s: Zone)                       extends TraceLog
   case class ShowComponent(s: Component)             extends TraceLog
   case class ShowLabel(l:Label)                      extends TraceLog
-  case class ShowVDiff(d1: Double, d2: Double)       extends TraceLog
   case class FocusOn(s: TargetRegion)                extends TraceLog
-  case class HRuler(s: Double)                       extends TraceLog
-  case class VRuler(s: Double)                       extends TraceLog
+  case class Indicate(figure: TargetFigure)          extends TraceLog
   case class Message(s: String)                      extends TraceLog
   case class All(ts: Seq[TraceLog])                  extends TraceLog { override val toString = s"all#${ts.length}"}
   case class Link(ts: Seq[TraceLog])                 extends TraceLog { override val toString = s"link#${ts.length}"}
@@ -28,7 +26,41 @@ object TraceLog {
 
 import scala.collection.mutable
 
-class VisualTracer() {
+object VisualTracer {
+  import TraceLog._
+  import scala.language.implicitConversions
+
+
+  implicit def Figure2Trace(f: TargetFigure): TraceLog = indicate(f)
+
+  implicit class RicherString(val s: String) extends AnyVal {
+    def withTrace(t: TraceLog): TraceLog = link(
+      message(s), t
+    )
+  }
+
+  implicit class RicherTraceLog(val trace: TraceLog) extends AnyVal {
+
+  }
+
+  def setPageGeometries(b: Seq[PageGeometry]): TraceLog = SetPageGeometries(b)
+  def showRegion(s: TargetRegion): TraceLog             = Show(Seq(s))
+  def showRegions(s: Seq[TargetRegion]): TraceLog       = Show(s)
+  def showZone(s: Zone): TraceLog                       = ShowZone(s)
+  def showComponent(s: Component): TraceLog             = ShowComponent(s)
+  def showLabel(s: Label): TraceLog                     = ShowLabel(s)
+  def focusOn(s: TargetRegion): TraceLog                = FocusOn(s)
+  def indicate(s: TargetFigure): TraceLog               = Indicate(s)
+  def message(s: String): TraceLog                      = Message(s)
+  def all(ts: Seq[TraceLog]): TraceLog                  = All(ts)
+  def link(ts: TraceLog*): TraceLog                     = Link(ts)
+
+  def begin(name: String) = Group(name, Seq())
+  def end(name: String) = GroupEnd(name)
+
+}
+
+class VisualTracer {
 
   val vtraceStack = mutable.Stack[TraceLog.Group](TraceLog.Group("root", Seq()))
 
@@ -71,22 +103,6 @@ class VisualTracer() {
     }
   }
 
-  def setPageGeometries(b: Seq[PageGeometry]): TraceLog = SetPageGeometries(b)
-  def showRegion(s: TargetRegion): TraceLog             = Show(Seq(s))
-  def showRegions(s: Seq[TargetRegion]): TraceLog       = Show(s)
-  def showZone(s: Zone): TraceLog                       = ShowZone(s)
-  def showComponent(s: Component): TraceLog             = ShowComponent(s)
-  def showLabel(s: Label): TraceLog                     = ShowLabel(s)
-  def showVDiff(d1: Double, d2: Double): TraceLog       = ShowVDiff(d1, d2)
-  def focusOn(s: TargetRegion): TraceLog                = FocusOn(s)
-  def hRuler(s: Double): TraceLog                       = HRuler(s)
-  def vRuler(s: Double): TraceLog                       = VRuler(s)
-  def message(s: String): TraceLog                      = Message(s)
-  def all(ts: Seq[TraceLog]): TraceLog                  = All(ts)
-  def link(ts: TraceLog*): TraceLog                     = Link(ts)
-
-  def begin(name: String) = Group(name, Seq())
-  def end(name: String) = GroupEnd(name)
 
   def getAndResetTrace(): List[TraceLog] = {
     val t = vtraceStack.toList

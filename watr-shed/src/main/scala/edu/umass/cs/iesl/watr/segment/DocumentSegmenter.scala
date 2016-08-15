@@ -19,6 +19,7 @@ import ComponentOperations._
 import ComponentRendering._
 import SlicingAndDicing._
 import utils.{CompassDirection => CDir}
+import utils.VisualTracer._
 
 
 
@@ -445,24 +446,24 @@ class DocumentSegmenter(
 
   def runPageSegmentation(): Unit = {
     vtrace.trace(
-      vtrace.begin("SetPageGeometries"),
-      vtrace.setPageGeometries(
+      begin("SetPageGeometries"),
+      setPageGeometries(
         zoneIndexer.pageInfos.map(_._2.geometry).toSeq
       ),
-      vtrace.end("SetPageGeometries")
+      end("SetPageGeometries")
     )
 
 
     // Bottom-up connected-component line-finding
-    vtrace.trace(vtrace.begin("runLineDetermination"))
+    vtrace.trace(begin("runLineDetermination"))
     runLineDetermination()
-    vtrace.trace(vtrace.end("runLineDetermination"))
+    vtrace.trace(end("runLineDetermination"))
 
     tokenizeLines()
 
-    vtrace.trace(vtrace.begin("groupLeftAlignedBlocks"))
+    vtrace.trace(begin("groupLeftAlignedBlocks"))
     groupLeftAlignedBlocks()
-    vtrace.trace(vtrace.end("groupLeftAlignedBlocks"))
+    vtrace.trace(end("groupLeftAlignedBlocks"))
 
     // document-wide stats on cc discovered lines
     // findMostFrequentLineDimensions()

@@ -13,6 +13,13 @@ case class TargetRegion(
   bbox: LTBounds
 )
 
+// TODO this should fully replace TargetRegion:
+case class TargetFigure(
+  id: Int@@RegionID,
+  page: Int@@PageID,
+  figure: GeometricFigure
+)
+
 case class Zone(
   id: Int@@ZoneID,
   regions: Seq[TargetRegion]
@@ -48,7 +55,6 @@ object CharAtom {
 
   def apply(region: TargetRegion,
      char: String,
-     subs: String = "",
      wonkyCharCode: Option[Int] = None
   ): CharAtom = new CharAtom(region, char, wonkyCharCode)
 
@@ -190,6 +196,7 @@ object ComponentTypeEnrichments {
           else { s"#{${code}}" }
         })
         .getOrElse({
+          // if (charRegion)
           charRegion.char
         })
     }

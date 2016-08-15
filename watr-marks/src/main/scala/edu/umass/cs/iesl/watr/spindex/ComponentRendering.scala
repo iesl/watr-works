@@ -75,6 +75,7 @@ object ComponentRendering {
           if (labels.contains(LB.LineBreakToken)) {
             val lineBreak = labels.find(_ ==LB.LineBreakToken).get
             val joinedText = lineBreak.value.get
+
             Seq(joinedText.box)
           } else {
 
@@ -92,11 +93,13 @@ object ComponentRendering {
               ('^' -> "\\\\^")
             ) else Seq())
 
+
             val mapped = cc.components.map({c =>
               hcat(
                 renderConnectedComponents(
                   c.mapChars(subs)))
             })
+
 
             if (texFmtLabels.isEmpty) {
               mapped

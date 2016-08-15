@@ -179,7 +179,7 @@ case class PageComponent(
       .map({case (_, sub) =>
         component match {
           case rg: CharAtom => this.copy(
-            component= CharAtom.apply(rg.region, rg.char, sub, rg.wonkyCharCode))
+            component= CharAtom.apply(rg.region, sub, rg.wonkyCharCode))
 
 
           case rg: ImgAtom  => this

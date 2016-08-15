@@ -23,8 +23,9 @@ object SharedTypeConversions {
     def convert(): Line = Line(in.p1.convert(), in.p2.convert())
   }
 
-  def convert(in: spindex.GeometricFigure): GeometricFigure = {
+  def convertFigure(in: spindex.GeometricFigure): GeometricFigure = convert(in)
 
+  def convert(in: spindex.GeometricFigure): GeometricFigure = {
     in match {
       case v: spindex.GeometricFigure.LTBounds => v.convert()
       case v: spindex.GeometricFigure.LBBounds => v.convert()
@@ -38,6 +39,13 @@ object SharedTypeConversions {
     def convert(): PageGeometry = PageGeometry(
       in.id.unwrap,
       in.bounds.convert
+    )
+  }
+  implicit class RicherTargetFigure(val in: spindex.TargetFigure) extends AnyVal {
+    def convert(): TargetFigure = TargetFigure(
+      in.id.unwrap,
+      in.page.unwrap,
+      convertFigure(in.figure)
     )
   }
 
