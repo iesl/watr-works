@@ -12,24 +12,9 @@ scalaVersion in ThisBuild := "2.11.8"
 
 shellPrompt in ThisBuild := Sensible.colorPrompt
 
-addCompilerPlugin("com.milessabin" % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
-
-addCompilerPlugin("org.spire-math" %% "kind-projector"  % "0.8.0")
-
-val freeKDeps = Seq(
-  "com.projectseptember"            %% "freek"                        % "0.4.3",
-  // "org.spire-math"                  %% "kind-projector"               % "0.7.1",
-  "com.milessabin"                  % "si2712fix-library"             % "1.2.0"  cross CrossVersion.full,
-  "org.typelevel" %% "cats" % "0.6.0"
-)
-
-
 val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "org.scalaz" %% "scalaz-core" % "7.2.5",
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
-  // "org.apache.commons" % "commons-lang3" % "3.4",
-  // "com.lihaoyi" %% "fastparse" % "0.3.7",
-  // "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.6.0",
   "com.lihaoyi" %% "ammonite-ops" % "0.7.2",
   "com.typesafe.play" %% "play-json" % "2.5.4",
@@ -45,8 +30,8 @@ resolvers in ThisBuild ++= List(
 )
 
 lazy val root = (project in file("."))
-  .dependsOn(watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
-  .aggregate(watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
+  .dependsOn(watrprelude, watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
+  .aggregate(watrprelude, watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
 
 
 lazy val watrprelude = (project in file("watr-prelude"))
