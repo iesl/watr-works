@@ -2,7 +2,34 @@ package edu.umass.cs.iesl.watr
 package extract
 package fonts
 
+
+/*
+ Liberation is the collective name of four TrueType font families: Liberation
+ Sans, Liberation Sans Narrow, Liberation Serif and Liberation Mono. These fonts
+ are metrically compatible with Monotype Corporation's Arial, Arial Narrow,
+ Times New Roman, and Courier New (respectively), the most commonly used fonts
+ on Microsoft Windows operating system and Office suite, for which Liberation is
+ intended as free substitute.[2]
+
+
+ Although the characters are not exactly the same, Nimbus Sans L has metrics almost identical to Helvetica and Arial.
+
+
+ One of the best-known Palatino PostScript clones is "Book Antiqua" (originally by Monotype),
+
+
+
+ Table:
+
+
+
+
+ Nimbus Sans L ~= Liberation Sans
+ Helvetica = Arial
+ */
+
 object FontLookup {
+  import com.itextpdf.kernel.pdf._
   import com.itextpdf.io.font.FontProgramFactory
   import com.itextpdf.io.font.FontProgram
   import scala.collection.mutable
@@ -27,6 +54,115 @@ object FontLookup {
   }
 
   // def substituteFontProgram()
+  // /BaseFont :: name => /Arial
+  //             /Encoding :: name => /WinAnsiEncoding
+  //             /Name :: name => /F0
+  //             /Subtype :: name => /TrueType
+  //             /Type :: name => /Font
+  val fontSubs = Map(
+    "Arial" ->  "Liberation Sans",
+    "Arial Narrow" ->  "Liberation Sans Narrow",
+    "Times New Roman" ->  "Liberation Serif",
+    "Courier New" ->  "Liberation Mono",
+    "Book Antiqua" ->  "Palitino"
+  )
+  def getSubstituteFontName(fontName: String): Option[String] ={
+    val hasEmbeddingPrefix = fontName.matches("""^/\\w{6}\\+.*""")
+/*
+ Arial
+ ArialBlack
+ Arial,Bold
+ Arial,BoldItalic
+ Arial-BoldItalicMT
+ Arial,Italic
+ ArialMT
+ ArialUnicodeMS-KSCms-UHC-H-Identity-H
+
+ BookAntiqua
+ BookAntiqua,Bold
+ BookAntiqua,BoldItalic
+ BookmanOldStyle
+
+ Candara
+
+ CenturySchoolbook,Bold
+
+ Courier-Bold
+ Courier-BoldOblique
+ CourierNew
+ CourierNew,Bold
+ CourierNew,BoldItalic
+ CourierNew,BoldItalic
+ CourierNew,Italic
+ Courier-Oblique
+
+ Helvetica
+ Helvetica-Bold
+ Helvetica-BoldOblique
+ Helvetica-BoldOblique
+ HelveticaNeue-Black
+ HelveticaNeue-BoldCond
+ HelveticaNeue-Condensed
+ HelveticaNeue-Italic
+ HelveticaNeue-LightCond
+ HelveticaNeue-Roman
+ Helvetica-Oblique
+
+ Times-Bold
+ Times-BoldItalic
+ Times-Italic
+ TimesNewRoman
+ Times.New.Roman075
+ TimesNewRoman,Bold
+ TimesNewRoman,BoldItalic
+ TimesNewRoman,BoldItalic
+ TimesNewRoman,Italic
+ TimesNewRoman,Italic
+ TimesNewRomanMTExtraBold,Bold
+ TimesNewRomanPS-BoldItalicMT
+ TimesNewRomanPSMT
+ Times-Roman
+
+ Symbol
+ SymbolMT
+ ZapfDingbats
+
+ KozGoPro-Regular-90msp-RKSJ-H-Identity-H
+
+ Minion-Bold
+ Minion-Italic
+ Minion-Regular
+
+ MS-Mincho-90ms-RKSJ-H-Identity-H
+ PMingLiU-Identity-H
+ SimSun-GBK-EUC-H-Identity-H
+ */
+
+    None
+  }
+
+  def checkMaybeNonEmbeddedFont(fontObject: PdfDictionary): Option[FontProgram] = {
+
+    val baseFont = fontObject.getAsString(PdfName.BaseFont).getValue
+    val encoding = fontObject.get(PdfName.BaseFont)
+    if (encoding.isName()) {
+
+    }
+
+
+    None
+  }
+
+  def getFontProgram(fontObject: PdfDictionary): FontProgram = {
+    // Jump through hoops to figure out whether which FontProgram to use
+
+    // Font is non-embedded, standard encoding,
+    checkMaybeNonEmbeddedFont(fontObject)
+
+
+
+    ???
+  }
 }
 
 

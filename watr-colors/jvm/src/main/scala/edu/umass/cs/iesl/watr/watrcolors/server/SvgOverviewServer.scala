@@ -13,6 +13,36 @@ class SvgOverviewServer(
 ) extends SvgOverviewApi  {
   lazy val corpus = Corpus(rootDirectory)
 
+  def getTextOverlay(entryDescriptor: String): (Seq[PageGeometry], Seq[Seq[Component]]) = {
+
+    import SharedTypeConversions._
+    println(s"getting corpusEntry '${entryDescriptor}'")
+
+    val conf = extract.AppConfig(
+      corpusRoot = rootDirectory.toIO.some,
+      inputEntryDescriptor = entryDescriptor.some,
+      action = "docseg".some,
+      force = true
+    )
+
+    extract.Works
+      .segmentDocument(conf)
+      .map({ segmenter =>
+        val pageComponents = segmenter
+          .visualLineOnPageComponents.map(_.map(
+            _.convert()
+          ))
+
+
+        val pageGeoms = segmenter.zoneIndexer.pageInfos.values.map(_.geometry.convert())toSeq
+
+
+        (pageGeoms, pageComponents)
+      })
+      .getOrElse { (Seq(), Seq()) }
+
+  }
+
   def getLabelOverlay(entryDescriptor: String): List[TraceLog] = {
     println(s"getting corpusEntry '${entryDescriptor}'")
 
@@ -23,10 +53,14 @@ class SvgOverviewServer(
       force = true
     )
 
-    val traces = extract.Works.segmentDocument(conf)
-    val traceLog = traces.head.map(TypeConverters.convertVisualTraceTypes(_))
-
-    traceLog.toList
+    val segmenter = extract.Works.segmentDocument(conf)
+    segmenter.map{s =>
+      s.vtrace.getAndResetTrace.map(
+        TypeConverters.convertVisualTraceTypes(_)
+      )
+    } getOrElse {
+      List()
+    }
   }
 
   def createView(corpusEntryId: String): List[HtmlUpdate] = {

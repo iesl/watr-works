@@ -58,7 +58,8 @@ case class Zone(
 
 case class Component(
   id: Int, // @@ComponentID,
-  targetRegion: TargetRegion
+  targetRegion: TargetRegion,
+  content: Option[String]
 ) extends SharedJs
 
 case class Label(

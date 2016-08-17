@@ -73,7 +73,7 @@ trait FabricCollection extends js.Object {
 
   // @param {...fabric.Object} object Zero or more fabric instances
   // @return {Self} thisArg
-  def remove(fs: FabricObject*)  = js.native
+  def remove(fs: FabricObject*): Unit = js.native
 
   // @param {Function} callback
   // @param {Object} context Context (aka thisObject)

@@ -4,10 +4,9 @@ package client
 
 import scala.collection.mutable
 import org.querki.jquery._
+import org.scalajs.dom._
 
 trait VisualTraceOperations extends FabricCanvasOperations {
-  // import scala.scalajs.js
-  // import native.fabric
 
   import GeometricFigure._
   import TraceLog._
@@ -96,34 +95,56 @@ trait VisualTraceOperations extends FabricCanvasOperations {
     )
   }
 
+  def setupImageGeometries(): Unit = {
+    pageImageGeometries.clear()
+
+    jQuery(".page-image").map({ (elem: Element) =>
+      val igeom = LTBounds(
+        elem.clientLeft.toDouble,
+        elem.clientTop.toDouble,
+        elem.clientWidth.toDouble,
+        elem.clientHeight.toDouble
+      )
+      printlog(s"page image geom = ${igeom} ")
+      pageImageGeometries += igeom
+    })
+
+  }
+  def setupPageGeometries(pageGeometries: Seq[PageGeometry]): Unit = {
+    setupImageGeometries()
+    pageGeometry.clear()
+    pageOffsets.clear()
+
+    pageGeometries.foreach { geom =>
+      pageGeometry.put(geom.id, geom)
+    }
+
+    pageGeometry.keys.toList.sorted.foreach{k =>
+      val geom = pageGeometry(k)
+
+      pageOffsets.lastOption match {
+        case Some(lastPageGeom) =>
+          pageOffsets += geom.bounds.copy(
+            top=geom.bounds.top + lastPageGeom.top + lastPageGeom.height
+          )
+        case None =>
+          pageOffsets += geom.bounds
+      }
+    }
+
+  }
+
   def drawGroupTree(traceEntries: Seq[TraceLog], level: Int): Unit = {
     val groupStack = mutable.Stack[Group]()
-    traceEntries.foreach({ _ match {
+    traceEntries.zipWithIndex.foreach({ case (traceEntry, i) => traceEntry match {
       case SetPageGeometries(b: Seq[PageGeometry]) =>
-        pageGeometry.clear()
-        pageOffsets.clear()
+        setupPageGeometries(b)
 
-        b.foreach { geom =>
-          pageGeometry.put(geom.id, geom)
-        }
-
-        pageGeometry.keys.toList.sorted.foreach{k =>
-          val geom = pageGeometry(k)
-
-          pageOffsets.lastOption match {
-            case Some(lastPageGeom) =>
-              pageOffsets += geom.bounds.copy(
-                top=geom.bounds.top + lastPageGeom.top + lastPageGeom.height
-              )
-            case None =>
-              pageOffsets += geom.bounds
-          }
-        }
       case a:Group =>
         groupStack.push(a)
         val slen = groupStack.length
 
-        val button = s"""<button id="group${slen}">${a.name}</button>"""
+        val button = s"""<button id="group${slen}">${i}. ${a.name}</button>"""
 
         printtree(button, level)
         drawGroupTree(a.ts, level+1)
@@ -191,6 +212,7 @@ trait VisualTraceOperations extends FabricCanvasOperations {
       true
     }))
 
+
     // Clear the canvas
     Mousetrap.bind("c", ((e: MousetrapEvent) => {
       fabricCanvas.forEachObject({(obj: native.fabric.FabricObject) =>
@@ -248,33 +270,10 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
         case ShowLabel(s: Label) =>
 
-          // val cls = classStack.mkString(" ")
-
           val cls = "."+classStack.top
-
           val content = s"""<li><button class="$cls">${s.ns}:${s.key}</button></li>"""
 
-          // jQuery("#messages").hover(handlerInOut: Function1[JQueryEventObject, Any])
-
-          jQuery("#messages").append(
-            content
-          )
-
-          // import org.scalajs.jquery._
-
-          val hin = (e:JQueryEventObject) => {
-            println("hover in")
-            jQuery(e.target).addClass("hover")
-            jQuery(cls).addClass("hover")
-          }
-          val hout = (e:JQueryEventObject) => {
-            println("hover out")
-            jQuery(e.target).removeClass("hover")
-            jQuery(cls).removeClass("hover")
-          }
-
-          // jQuery(cls).hover(hin, hout)
-
+          jQuery("#messages").append(content)
 
         case FocusOn(s: TargetRegion) =>
           val ttrans = transformTargetRegion(s)
@@ -286,16 +285,13 @@ trait VisualTraceOperations extends FabricCanvasOperations {
           addShape(ftrans.figure, "black", "red", 0.2f)
 
         case Message(s: String) =>
-          // printlog(s)
+
+          val msg = s"<pre>${s}</pre>"
+          printlog(msg)
 
         case a:All =>
-          // currRGB = nextRGB()
-          // classNum += 1
-          // classStack.push(s"c${classNum}")
-
           pushLogs(a.ts)
 
-          // classStack.pop()
 
         case a:Link =>
           // classNum += 1
@@ -307,7 +303,6 @@ trait VisualTraceOperations extends FabricCanvasOperations {
           pushLogs(a.ts)
 
         case a:GroupEnd =>
-
 
       }
     }

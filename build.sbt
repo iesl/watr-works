@@ -51,9 +51,16 @@ lazy val root = (project in file("."))
   .aggregate(watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
 
 
+lazy val watrprelude = (project in file("watr-prelude"))
+  .settings(Sensible.settings)
+  .settings(libraryDependencies ++= commonDeps)
+
+
 lazy val watrmarks = (project in file("watr-marks"))
   .settings(Sensible.settings)
   .settings(libraryDependencies ++= commonDeps)
+  .dependsOn(watrprelude)
+  .aggregate(watrprelude)
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(Sensible.settings)

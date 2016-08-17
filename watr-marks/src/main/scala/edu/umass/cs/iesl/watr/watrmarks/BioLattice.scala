@@ -233,3 +233,16 @@ package watrmarks
 //   }
 
 // }
+/*
+
+
+=resistance R^{h,x}_{m} defined as:<
+>resistance Rh,xm defined as:<
+|t........$ TTTTT t.....$ t$T|
+|            s.$B            | {s: super, b:sub}
+|129349    |
+|129349    |
+|129349    |
+
+
+ */

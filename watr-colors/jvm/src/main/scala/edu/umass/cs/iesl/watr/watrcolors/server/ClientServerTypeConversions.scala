@@ -6,6 +6,10 @@ object TypeConverters {
 
   import SharedTypeConversions._
 
+  def convertComponent(cc1: spindex.Component): watrcolors.Component = {
+    ???
+  }
+
   def convertVisualTraceTypes(cc1: utils.TraceLog): TraceLog = {
     cc1 match {
       case utils.TraceLog.Noop                                => TraceLog.Noop

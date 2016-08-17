@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-
 import scala.collection.mutable
 import textboxing.{TextBoxing => TB}
 import scalaz.@@

@@ -1,5 +1,4 @@
 package edu.umass.cs.iesl.watr
-
 package textboxing
 
 import scalaz.syntax.ToIdOps

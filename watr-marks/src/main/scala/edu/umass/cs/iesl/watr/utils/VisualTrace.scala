@@ -1,12 +1,15 @@
 package edu.umass.cs.iesl.watr
 package utils
 
+import scala.language.experimental.macros
+
 import spindex._
 import watrmarks.Label
 
 sealed trait TraceLog
 
 object TraceLog {
+
 
   case object Noop                                   extends TraceLog
   case class SetPageGeometries(b: Seq[PageGeometry]) extends TraceLog
@@ -43,24 +46,28 @@ object VisualTracer {
 
   }
 
-  def setPageGeometries(b: Seq[PageGeometry]): TraceLog = SetPageGeometries(b)
-  def showRegion(s: TargetRegion): TraceLog             = Show(Seq(s))
-  def showRegions(s: Seq[TargetRegion]): TraceLog       = Show(s)
-  def showZone(s: Zone): TraceLog                       = ShowZone(s)
-  def showComponent(s: Component): TraceLog             = ShowComponent(s)
-  def showLabel(s: Label): TraceLog                     = ShowLabel(s)
-  def focusOn(s: TargetRegion): TraceLog                = FocusOn(s)
-  def indicate(s: TargetFigure): TraceLog               = Indicate(s)
-  def message(s: String): TraceLog                      = Message(s)
-  def all(ts: Seq[TraceLog]): TraceLog                  = All(ts)
-  def link(ts: TraceLog*): TraceLog                     = Link(ts)
+  def setPageGeometries(b: Seq[PageGeometry]): TraceLog = {SetPageGeometries(b)}
+  def showRegion(s: TargetRegion): TraceLog             = {Show(Seq(s))}
+  def showRegions(s: Seq[TargetRegion]): TraceLog       = {Show(s)}
+  def showZone(s: Zone): TraceLog                       = {ShowZone(s)}
+  def showComponent(s: Component): TraceLog             = {ShowComponent(s)}
+  def showLabel(s: Label): TraceLog                     = {ShowLabel(s)}
+  def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
+  def indicate(s: TargetFigure): TraceLog               = {Indicate(s)}
+  def message(s: String): TraceLog                      = {Message(s)}
+  def all(ts: Seq[TraceLog]): TraceLog                  = {All(ts)}
+  def link(ts: TraceLog*): TraceLog                     = {Link(ts)}
 
   def begin(name: String) = Group(name, Seq())
   def end(name: String) = GroupEnd(name)
 
+
+  // TODO remove this global
+  var visualTracingEnabled: Boolean = false
 }
 
-class VisualTracer {
+class VisualTracer() extends utils.EnableTrace[TraceLog] {
+  def tracingEnabled(): Boolean = VisualTracer.visualTracingEnabled
 
   val vtraceStack = mutable.Stack[TraceLog.Group](TraceLog.Group("root", Seq()))
 
@@ -76,8 +83,20 @@ class VisualTracer {
     // println(s"push ${group12}")
   }
 
-  def trace(tls: TraceLog*): Unit = {
-    tls.foreach { trace =>
+
+  // def trace(tlogs: => Seq[TraceLog]): Unit = dotrace(() => maybeTrace(tlogs))
+  // def trace(tlogs: TraceLog*): Unit = dotrace(() => maybeTrace(Seq(tlogs:_*)))
+  // private def dotrace(func: (() => Unit)): Unit = macro utils.VisualTraceMacros.ifEnabled[VisualTracer]
+
+
+  // def trace(exprs: TraceLog*)(f: (Seq[TraceLog]=>Unit) = maybeTrace(_)): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
+  // def trace(f: (Seq[TraceLog]=>Unit) = maybeTrace(_))(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
+
+  def trace(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
+
+
+  def runTrace(tlogs: TraceLog*): Unit = {
+    tlogs.foreach { trace =>
       trace match {
         case g:Group =>
           vtraceStack.push(g)

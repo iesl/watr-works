@@ -16,10 +16,9 @@ import Picklers._
 import native.mousetrap._
 import native.fabric
 
-
+import org.querki.jquery._
 
 import GeometricFigure._
-// import TraceLog._
 
 @JSExport
 class SvgOverview(
@@ -32,6 +31,7 @@ class SvgOverview(
   override val initKeys = Keybindings(List(
     "b" -> ((e: MousetrapEvent) => getLabelOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
+    "w" -> ((e: MousetrapEvent) => getTextOverlay()),
     "z" -> ((e: MousetrapEvent) => selectViaLine()),
     "d" -> ((e: MousetrapEvent) => initDeletion())
   ))
@@ -44,23 +44,56 @@ class SvgOverview(
   def canvasX: Int = canvasOffset.left.toInt
   def canvasY: Int = canvasOffset.top.toInt
 
+  def getTextOverlay(): Boolean = {
+    // Clear the canvas
+    Mousetrap.bind("c", ((e: MousetrapEvent) => {
+      fabricCanvas.forEachObject({(obj: native.fabric.FabricObject) =>
+        fabricCanvas.remove(obj)
+        fabricCanvas
+      })
+      true
+    }))
+    async {
+
+      printlog(s"getting text overlay")
+      server
+        .getTextOverlay(artifactId).call()
+        .foreach({ case (pageGeometries,  textOverlays) =>
+
+          setupPageGeometries(pageGeometries)
+
+          var totalLineNum = 0
+
+          for {
+            (page, pagenum) <- textOverlays.zipWithIndex
+            (line, linenum) <- page.zipWithIndex
+          } {
+            val msg = line.content.getOrElse("")
+            val target = line.targetRegion
+            // printlog(s"target region: ${target} -> ?")
+            val ttrans = transformTargetRegion(target)
+
+            val cid = s"p${pagenum}l${linenum}"
+
+            jQuery("#messages").append(
+              s"""<li id="${cid}"><small>${totalLineNum}. <pre>${msg}</pre></small></li>"""
+            )
+
+            val hin = (e:JQueryEventObject) => { addShape(ttrans.bbox, "black", "yellow", 0.1f) }
+            val hout = (e:JQueryEventObject) => {}
+            jQuery(s"#${cid}").hover(hin, hout)
+            totalLineNum += 1
+          }
+
+        })
+
+    }
+    true
+  }
 
   def getLabelOverlay(): Boolean = {
     async {
-      // Set geometries for each page image, for coord scaling/translation:
-      pageImageGeometries.clear()
-
-      jQuery(".page-image").map({ (elem: Element) =>
-        val igeom = LTBounds(
-          elem.clientLeft.toDouble,
-          elem.clientTop.toDouble,
-          elem.clientWidth.toDouble,
-          elem.clientHeight.toDouble
-        )
-        printlog(s"page image geom = ${igeom} ")
-        pageImageGeometries += igeom
-      })
-
+      setupImageGeometries()
 
       printlog(s"getting overlay")
       server

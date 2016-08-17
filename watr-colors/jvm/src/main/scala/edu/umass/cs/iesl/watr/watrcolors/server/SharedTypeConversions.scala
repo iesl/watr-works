@@ -63,15 +63,27 @@ object SharedTypeConversions {
     )
   }
 
+  import watrmarks.{StandardLabels => LB}
+
   implicit class RicherComponent(val in: spindex.Component) extends AnyVal {
-    def convert(): Component = Component(
-      in.id.unwrap,
-      in.targetRegion.convert
-    )
+
+    def convert(): Component = {
+      val content: Option[String] = if (in.getLabels.contains(LB.TokenizedLine)) {
+        Some(in.toText)
+      } else {
+        None
+      }
+
+      Component(
+        in.id.unwrap,
+        in.targetRegion.convert,
+        content
+      )
+    }
   }
 
 
   implicit class RicherLabel(val in: watrmarks.Label) extends AnyVal {
-    def convert(): Label = Label(in.ns, in.key, in.value)
+    def convert(): watrcolors.Label = watrcolors.Label(in.ns, in.key, in.value)
   }
 }

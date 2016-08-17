@@ -144,7 +144,7 @@ class CharExtractionListener(
 
       rawChars.foreach({ rawCharX =>
 
-        val subChars = maybeSubChar(rawCharX).filterNot(_ < ' ')
+        val subChars = maybeSubChar(rawCharX).filterNot(_ <= ' ')
 
         if (!subChars.isEmpty) {
           val charBounds = computeTextBounds(charTri)
@@ -170,8 +170,8 @@ class CharExtractionListener(
         if (index > 0)  {
           println(s"""chars: raw:${rawCharX} subs: [${subChars.mkString(", ")}] / ${subChars.map(_.toInt).mkString(", ")}""")
           // GlyphPositioning.traceGlyphPositioning(charTri, reader)
-          // println(fonts.DocumentFontInfo.getCharTriInfo(charTri, reader))
-          // println("\n\n")
+          println(fonts.DocumentFontInfo.getCharTriInfo(charTri, reader))
+          println("=======================\n\n")
           index -= 1
         }
 
@@ -231,7 +231,7 @@ class CharExtractionListener(
 
 
     if (charHeight.nan || charHeight.inf || charHeight.toInt==0) {
-      println(s"warning: char height is 0, NaN, or Inf")
+      // println(s"warning: char height is 0, NaN, or Inf")
       charHeight = 0
       // println(DocumentFontInfo.getCharTriInfo(charTri, reader))
     }

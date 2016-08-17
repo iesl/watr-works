@@ -480,14 +480,11 @@ class DocumentSegmenter(
   }
 
   // force tokenization of all visual lines
-  def tokenizeLines(): Unit = {
-    for {
-      page <- visualLineOnPageComponents
-      (line, linenum) <- page.zipWithIndex
-    } {
-      line.tokenizeLine
-    }
-  }
+  def tokenizeLines(): Unit = for {
+    page <- visualLineOnPageComponents
+    (line, linenum) <- page.zipWithIndex
+  } line.tokenizeLine
+
 
   def joinLines(): Unit = {
     val alignedBlocksPerPage = for {

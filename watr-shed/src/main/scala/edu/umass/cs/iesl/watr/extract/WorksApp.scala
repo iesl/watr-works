@@ -25,7 +25,7 @@ case class AppConfig(
 
 object Works extends App {
 
-
+  utils.VisualTracer.visualTracingEnabled = false
 
   def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot
     .map({croot =>
@@ -356,11 +356,14 @@ object Works extends App {
       Seq()
     }
   }
+  // def segmentDocument(conf: AppConfig): Seq[Seq[utils.TraceLog]] = {
 
-  def segmentDocument(conf: AppConfig): Seq[Seq[utils.TraceLog]] = {
+  def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
     val artifactOutputName = "docseg.json"
-    import scala.collection.mutable
-    val traceLogs = mutable.MutableList[Seq[utils.TraceLog]]()
+    // import scala.collection.mutable
+    // val traceLogs = mutable.MutableList[Seq[utils.TraceLog]]()
+
+    var rsegmenter: Option[segment.DocumentSegmenter] = None
 
     processCorpusEntryList(conf, {corpusEntry =>
       try {
@@ -375,7 +378,8 @@ object Works extends App {
             segmenter.runPageSegmentation()
             val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
             corpusEntry.putArtifact(artifactOutputName, output)
-            traceLogs += segmenter.vtrace.getAndResetTrace()
+            // traceLogs += segmenter.vtrace.getAndResetTrace()
+            rsegmenter = Some(segmenter)
           } catch {
             case t: Throwable =>
               println(s"could not segment ${corpusEntry}: ${t.getMessage}\n")
@@ -395,7 +399,8 @@ object Works extends App {
       }
     })
 
-    traceLogs
+    // traceLogs
+    rsegmenter
 
   }
 
