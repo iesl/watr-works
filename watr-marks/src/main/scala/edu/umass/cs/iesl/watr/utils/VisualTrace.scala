@@ -42,9 +42,7 @@ object VisualTracer {
     )
   }
 
-  implicit class RicherTraceLog(val trace: TraceLog) extends AnyVal {
-
-  }
+  // implicit class RicherTraceLog(val trace: TraceLog) extends AnyVal {}
 
   def setPageGeometries(b: Seq[PageGeometry]): TraceLog = {SetPageGeometries(b)}
   def showRegion(s: TargetRegion): TraceLog             = {Show(Seq(s))}
@@ -75,36 +73,21 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
 
   def closeTopGroup(): Unit = {
     val group1 = vtraceStack.pop()
-    // println(s"pop ${group1}")
     val group2 = vtraceStack.pop()
-    // println(s"pop ${group2}")
     val group12 = group2.copy(ts = group2.ts :+ group1)
     vtraceStack.push(group12)
-    // println(s"push ${group12}")
   }
 
-
-  // def trace(tlogs: => Seq[TraceLog]): Unit = dotrace(() => maybeTrace(tlogs))
-  // def trace(tlogs: TraceLog*): Unit = dotrace(() => maybeTrace(Seq(tlogs:_*)))
-  // private def dotrace(func: (() => Unit)): Unit = macro utils.VisualTraceMacros.ifEnabled[VisualTracer]
-
-
-  // def trace(exprs: TraceLog*)(f: (Seq[TraceLog]=>Unit) = maybeTrace(_)): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
-  // def trace(f: (Seq[TraceLog]=>Unit) = maybeTrace(_))(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
-
   def trace(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
-
 
   def runTrace(tlogs: TraceLog*): Unit = {
     tlogs.foreach { trace =>
       trace match {
         case g:Group =>
           vtraceStack.push(g)
-          // println(s"push ${g}")
 
         case g:GroupEnd =>
           if (!vtraceStack.exists(_.name == g.name)) {
-            // println(s"""vtrace stack = ${vtraceStack.mkString("\n  ", "\n  ", "---\n")}""")
             sys.error(s"visual trace end(${g.name}) has no open() statement")
           }
           while (vtraceStack.top.name != g.name) {
@@ -114,10 +97,8 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
 
         case _ =>
           val group = vtraceStack.pop()
-          // println(s"pop ${group}")
           val g2 = group.copy(ts = group.ts :+ trace)
           vtraceStack.push(g2)
-          // println(s"push ${g2}")
       }
     }
   }

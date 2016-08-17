@@ -166,38 +166,38 @@ case class NamedFunction[T, V](f: T => V, name: String) extends (T => V){
 
 }
 
-object SplineLexer {
-  // Whitespace sensitive parsers
-  import fastparse.all._
+// object SplineLexer {
+//   // Whitespace sensitive parsers
+//   import fastparse.all._
 
 
-  //Numbers and digits
+//   //Numbers and digits
 
-  val digits = "0123456789"
-  val Digit = P( CharIn(digits) )
-  val hexDigits = digits + "abcdefABCDEF"
-  val HexDigit = P( CharIn(hexDigits) )
-  val HexDigits = P(CharsWhile(hexDigits.contains(_)) )
-  val HexNum = P( "0x" ~ HexDigits)
-  val DecNum = P( CharsWhile(digits.contains(_)) ).!.map(_.toInt)
-  val DecNumSigned = P( CharIn("+-").? ~ DecNum )
-
-
-  val Exp = P( CharIn("Ee") ~ CharIn("+-").? ~ DecNum )
-  val FloatType = P( CharIn("fFdD") )
-
-  val WSChars = P( CharsWhile("\u0020\u0009".contains(_)) )
-  val Newline = P( StringIn("\r\n", "\n") )
-
-  val Letter = P( CharPred(c => c.isLetter) )
-  val Lower = P( CharPred(c => c.isLower) )
-  val Upper = P( CharPred(_.isUpper) )
+//   val digits = "0123456789"
+//   val Digit = P( CharIn(digits) )
+//   val hexDigits = digits + "abcdefABCDEF"
+//   val HexDigit = P( CharIn(hexDigits) )
+//   val HexDigits = P(CharsWhile(hexDigits.contains(_)) )
+//   val HexNum = P( "0x" ~ HexDigits)
+//   val DecNum = P( CharsWhile(digits.contains(_)) ).!.map(_.toInt)
+//   val DecNumSigned = P( CharIn("+-").? ~ DecNum )
 
 
+//   val Exp = P( CharIn("Ee") ~ CharIn("+-").? ~ DecNum )
+//   val FloatType = P( CharIn("fFdD") )
+
+//   val WSChars = P( CharsWhile("\u0020\u0009".contains(_)) )
+//   val Newline = P( StringIn("\r\n", "\n") )
+
+//   val Letter = P( CharPred(c => c.isLetter) )
+//   val Lower = P( CharPred(c => c.isLower) )
+//   val Upper = P( CharPred(_.isUpper) )
 
 
-  val SplineChar: P[Char] = P(CharIn("cml").! ~ CharPred(_.isSpaceChar)).map(_.head)
-}
+
+
+//   val SplineChar: P[Char] = P(CharIn("cml").! ~ CharPred(_.isSpaceChar)).map(_.head)
+// }
 
 // object SplineFontParsers {
 //   import SplineLexer._

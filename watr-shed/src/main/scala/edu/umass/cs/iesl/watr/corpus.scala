@@ -7,7 +7,6 @@ import java.io.Reader
 import java.nio.{file => nio}
 import play.api.libs.json
 import scala.util.{Try, Failure, Success}
-import org.jdom2
 import scalaz.@@
 import ammonite.ops._
 
@@ -240,12 +239,6 @@ class CorpusArtifact(
 
   def asJson: Try[json.JsValue] = try {
     asInputStream.map(json.Json.parse(_))
-  } catch {
-    case t: Exception => Failure(t)
-  }
-
-  def asXml: Try[jdom2.Document] = try {
-    asInputStream.map(is => new jdom2.input.SAXBuilder().build(is))
   } catch {
     case t: Exception => Failure(t)
   }

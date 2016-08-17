@@ -25,17 +25,15 @@ val freeKDeps = Seq(
 
 
 val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
-  "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT",
-  "org.apache.commons" % "commons-lang3" % "3.4",
   "org.scalaz" %% "scalaz-core" % "7.2.5",
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
-  "com.lihaoyi" %% "fastparse" % "0.3.7",
-  "org.jdom" % "jdom2" % "2.0.6",
+  // "org.apache.commons" % "commons-lang3" % "3.4",
+  // "com.lihaoyi" %% "fastparse" % "0.3.7",
+  // "org.jdom" % "jdom2" % "2.0.6",
   "com.lihaoyi" %% "scalatags" % "0.6.0",
-  "com.lihaoyi" %% "ammonite-ops" % "0.7.0",
+  "com.lihaoyi" %% "ammonite-ops" % "0.7.2",
   "com.typesafe.play" %% "play-json" % "2.5.4",
-  "com.github.scopt" %% "scopt" % "3.5.0",
-  "com.softwaremill.scalamacrodebug" %% "macros" % "0.4"
+  "com.github.scopt" %% "scopt" % "3.5.0"
 )
 
 
@@ -58,7 +56,9 @@ lazy val watrprelude = (project in file("watr-prelude"))
 
 lazy val watrmarks = (project in file("watr-marks"))
   .settings(Sensible.settings)
-  .settings(libraryDependencies ++= commonDeps)
+  .settings(libraryDependencies ++= commonDeps ++ Seq(
+    "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT"
+  ))
   .dependsOn(watrprelude)
   .aggregate(watrprelude)
 

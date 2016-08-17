@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-import net.sf.jsi.Rectangle
 
 import ammonite.ops._
 
@@ -73,23 +72,6 @@ class SvgOverviewServer(
      })
   }
 
-  def jsiRectangleToLTBounds(r: Rectangle): LTBounds = {
-    val x = r.minX
-    val y = r.minY
-    val w = r.maxX - r.minX
-    val h = r.maxY - r.minY
-    LTBounds(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
-  }
-
-  // def pointInside(x: Double, y: Double, b: LTBounds): Boolean = {
-  //   (b.x <= x && x <= b.x+b.width) && (b.y <= y && y <= b.y+b.height)
-  // }
-  // def overlaps(b1: LTBounds, b2: LTBounds): Boolean = {
-  //   (pointInside(b1.x, b1.y, b2)
-  //     || pointInside(b1.x+b1.width, b1.y, b2)
-  //     || pointInside(b1.x, b1.y+b1.height, b2)
-  //     || pointInside(b1.x+b1.width, b1.y+b1.height, b2))
-  // }
 
   def onDrawPath(artifactId: String, path: Seq[Point]): List[HtmlUpdate] = {
     println(s"""draw-path:(${artifactId}, ${path.mkString(", ")} """)
