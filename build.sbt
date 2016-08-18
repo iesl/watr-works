@@ -90,7 +90,6 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "org.webjars.bower" % "fabric" % "1.6.2",
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "2.2.4",
-    // "org.webjars" % "jquery" % "3.0.0",
     "org.webjars" % "mousetrap" % "1.5.3"
   )
 )

@@ -160,11 +160,11 @@ object SplineQuickParser {
   }
 }
 
-case class NamedFunction[T, V](f: T => V, name: String) extends (T => V){
-  def apply(t: T) = f(t)
-  override def toString() = name
+// case class NamedFunction[T, V](f: T => V, name: String) extends (T => V){
+//   def apply(t: T) = f(t)
+//   override def toString() = name
 
-}
+// }
 
 // object SplineLexer {
 //   // Whitespace sensitive parsers

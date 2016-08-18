@@ -17,16 +17,47 @@ package fonts
 
  One of the best-known Palatino PostScript clones is "Book Antiqua" (originally by Monotype),
 
-
-
  Table:
-
-
-
 
  Nimbus Sans L ~= Liberation Sans
  Helvetica = Arial
+
+
+LiberationMono-Bold
+LiberationMono-BoldItalic
+LiberationMono-Italic
+LiberationMono-Regular
+LiberationSans-Bold
+LiberationSans-BoldItalic
+LiberationSans-Italic
+LiberationSans-Regular
+LiberationSansNarrow-Bold
+LiberationSansNarrow-BoldItalic
+LiberationSansNarrow-Italic
+LiberationSansNarrow-Regular
+LiberationSerif-Bold
+LiberationSerif-BoldItalic
+LiberationSerif-Italic
+LiberationSerif-Regular
+
+
+
+ Non embedded font table
+   LiberationSans-Regular ->
+       (enc=uni=34, w=682)
+
  */
+
+class FontLookup(mapping: Map[String, Map[Int, Int]]){
+  def lookup(fontName: String, enc: Int): Option[Int] = {
+    for {
+      f <- mapping.get(fontName)
+      m <- f.get(enc)
+    } yield m
+  }
+
+}
+
 
 object FontLookup {
   import com.itextpdf.kernel.pdf._
@@ -60,11 +91,12 @@ object FontLookup {
   //             /Subtype :: name => /TrueType
   //             /Type :: name => /Font
   val fontSubs = Map(
-    "Arial" ->  "Liberation Sans",
-    "Arial Narrow" ->  "Liberation Sans Narrow",
+    "Helvetica"       ->  "Liberation Sans",
+    "Arial"           ->  "Liberation Sans",
+    "Arial Narrow"    ->  "Liberation Sans Narrow",
     "Times New Roman" ->  "Liberation Serif",
-    "Courier New" ->  "Liberation Mono",
-    "Book Antiqua" ->  "Palitino"
+    "Courier New"     ->  "Liberation Mono",
+    "Book Antiqua"    ->  "Palitino"
   )
   def getSubstituteFontName(fontName: String): Option[String] ={
     val hasEmbeddingPrefix = fontName.matches("""^/\\w{6}\\+.*""")

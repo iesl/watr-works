@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-
 import ammonite.ops._
 
 import GeometricFigure._
@@ -11,6 +10,7 @@ class SvgOverviewServer(
   rootDirectory: Path
 ) extends SvgOverviewApi  {
   lazy val corpus = Corpus(rootDirectory)
+
 
   def getTextOverlay(entryDescriptor: String): (Seq[PageGeometry], Seq[Seq[Component]]) = {
 
