@@ -64,9 +64,6 @@ object TextBoxing extends ToListOps with ToIdOps {
   }
 
 
-  // implicit def ToBoxingConstructors(v: String): BoxingConstructors =
-  //   new BoxingConstructors(v)
-
   implicit class BoxingConstructors(val value: String) extends AnyVal {
     def box: Box = tbox(value)
     def mbox: Box = unrenderString(value)

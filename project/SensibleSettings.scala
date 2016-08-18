@@ -40,10 +40,12 @@ object Sensible {
       "-language:higherKinds",
       "-Xlint",
       "-Yinline-warnings",
-      "-Yno-adapted-args",
+      "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
+      "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
+      "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
+      "-Ywarn-inaccessible",
       "-Ywarn-dead-code",
       //"-Ywarn-numeric-widen", // noisy
-      //"-Ywarn-value-discard", // will require a lot of work
       "-Ywarn-unused-import", // noisy, but good to run occasionally
       "-Xfuture"
     ),

@@ -46,7 +46,7 @@ class TextExtractionTest extends DocsegTestUtil {
         utils.IdGenerator[RegionID]()
       )
 
-    charExtractor.extractGlyphs(paper1)
+    // charExtractor.extractGlyphs(paper1)
 
 
   }
