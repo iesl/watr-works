@@ -24,6 +24,9 @@ object Sensible {
   import com.github.fedragon.todolist.TodoListPlugin.autoImport._
 
   lazy val settings =  Seq(
+    autoCompilerPlugins := true,
+
+    addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.4"),
 
     ivyLoggingLevel := UpdateLogging.Quiet,
 
@@ -40,14 +43,15 @@ object Sensible {
       "-language:higherKinds",
       "-Xlint",
       "-Yinline-warnings",
-      "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
       "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
-      "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
       "-Ywarn-inaccessible",
       "-Ywarn-dead-code",
-      //"-Ywarn-numeric-widen", // noisy
-      "-Ywarn-unused-import", // noisy, but good to run occasionally
       "-Xfuture"
+
+      // "-Ywarn-unused-import", // noisy, but good to run occasionally
+      // "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
+      // "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
+      //"-Ywarn-numeric-widen", // noisy
     ),
 
     javacOptions in (Compile, compile) ++= Seq(
@@ -74,11 +78,9 @@ object Sensible {
       "org.scala-lang.modules" %% "scala-xml" % scalaModulesVersion,
       "org.scala-lang.modules" %% "scala-parser-combinators" % scalaModulesVersion,
       "org.scalamacros" %% "quasiquotes" % quasiquotesVersion
-    ) ++ logback // ++ guava ++ shapeless(scalaVersion.value)
+    ) ++ logback
   ) ++ inConfig(Test)(testSettings)
-// ) ++ inConfig(Test)(testSettings) ++ scalariformSettings
 
-  // TODO: scalariformSettingsWithIt generalised
   def testSettings = Seq(
     parallelExecution := true,
 
@@ -140,10 +142,6 @@ object Sensible {
 
   def testLibs(config: String = "test") = Seq(
     "org.scalatest" %% "scalatest" % scalatestVersion % config
-    // "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % config,
-    // "org.scalacheck" %% "scalacheck" % "1.13.1" % config,
-    // "com.typesafe.akka" %% "akka-testkit" % akkaVersion % config,
-    // "com.typesafe.akka" %% "akka-slf4j" % akkaVersion % config
   ) ++ logback.map(_ % config)
 
 

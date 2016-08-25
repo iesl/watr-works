@@ -24,6 +24,14 @@ class SpatialIndex[T: SpatialIndexable](
 
   def itemMap: mutable.LongMap[T] = items
 
+  def remove(item: T): Unit = {
+    val si = implicitly[SpatialIndexable[T]]
+    spatialIndex.delete(
+      si.ltBounds(item).toJsiRectangle,
+      si.id(item)
+    )
+  }
+
   def add(item: T): Unit = {
     val si = implicitly[SpatialIndexable[T]]
     spatialIndex.add(
@@ -92,11 +100,6 @@ object SpatialIndex {
     def id(t: Component): Int = t.id.unwrap
     def ltBounds(t: Component): LTBounds = t.bounds
   }
-
-  // implicit object PageAtomIndexable extends SpatialIndexable[PageAtom] {
-  //   def id(t: PageAtom): Int = t.region.id.unwrap
-  //   def ltBounds(t: PageAtom): LTBounds = t.region.bbox
-  // }
 
   implicit object CharAtomIndexable extends SpatialIndexable[CharAtom] {
     def id(t: CharAtom): Int = t.region.id.unwrap

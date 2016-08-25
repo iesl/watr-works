@@ -3,16 +3,17 @@ package spindex
 
 
 import watrmarks.{StandardLabels => LB, Label}
-// import scala.collection.mutable
 import utils.Histogram
 import utils.Histogram._
 import textboxing.{TextBoxing => TB}
+import TB._
 
 import IndexShapeOperations._
 import utils.SlicingAndDicing._
-import utils.{CompassDirection => CDir}
+import utils.{CompassDirection => Compass}
 import utils.VisualTracer._
-
+import spindex.GeometricFigure._
+import scala.collection.mutable
 
 object ComponentOperations {
   def centerX(cb: PageAtom) = cb.region.bbox.toCenterPoint.x
@@ -56,28 +57,18 @@ object ComponentOperations {
     spaceDists
   }
 
-  // TODO remove
-  def splitAtBreaks(bis: Seq[Int], cs: Seq[Component]): Seq[Seq[Component]] = {
-    // println(s"""splitAtBreaks: bis=${bis.mkString(",")}""")
-    // println(s"""        cs=${cs.map(_.toText).mkString("")}""")
-    if (bis.isEmpty){
-      Seq(cs)
-    } else {
-      val (pre, post) = cs.splitAt(bis.head+1)
-      // println(s"""        pre=${pre.map(_.toText).mkString("")}""")
-      // println(s"""        post=${post.map(_.toText).mkString("")}""")
-      pre +: splitAtBreaks(bis.tail.map(_-bis.head-1), post)
-    }
-  }
-
   implicit class RicherComponent(val component: Component) extends AnyVal {
-    // component.zoneIndex
+
+    def zoneIndex = component.zoneIndex
+    def vtrace = component.zoneIndex.vtrace
+
+    def height: Double  = component.bounds.height
 
     def hasLabel(l: Label): Boolean = component.getLabels.contains(l)
 
     def vdist(other: Component): Double = {
-      component.bounds.toPoint(CDir.W).vdist(
-        other.bounds.toPoint(CDir.W)
+      component.bounds.toPoint(Compass.W).vdist(
+        other.bounds.toPoint(Compass.W)
       )
     }
 
@@ -118,13 +109,13 @@ object ComponentOperations {
     }
 
     def isStrictlyAbove(other: Component): Boolean = {
-      val y1 = component.bounds.toPoint(CDir.S).y
-      val y2 = other.bounds.toPoint(CDir.N).y
+      val y1 = component.bounds.toPoint(Compass.S).y
+      val y2 = other.bounds.toPoint(Compass.N).y
       y1 < y2
     }
     def isStrictlyBelow(other: Component): Boolean = {
-      val y1 = component.bounds.toPoint(CDir.N).y
-      val y2 = other.bounds.toPoint(CDir.S).y
+      val y1 = component.bounds.toPoint(Compass.N).y
+      val y2 = other.bounds.toPoint(Compass.S).y
       y1 > y2
     }
 
@@ -154,31 +145,78 @@ object ComponentOperations {
       component.bounds.toCenterPoint.x.eqFuzzy(tolerance)(other.bounds.toCenterPoint.x)
 
     def hasSameLeftEdge(tolerance: Double=0.3)(other: Component) =
-      component.bounds.toPoint(CDir.W).x.eqFuzzy(tolerance)(other.bounds.toPoint(CDir.W).x)
+      component.bounds.toPoint(Compass.W).x.eqFuzzy(tolerance)(other.bounds.toPoint(Compass.W).x)
 
     def isEqualWidth(tolerance: Double=0.1)(other: Component) =
       component.bounds.width.eqFuzzy(tolerance)(other.bounds.width)
 
 
-    def zoneIndex = component.zoneIndex
+    import utils.TraceLog
+
+    def vtraceHistogram(hist: Histogram): TraceLog = {
+      vtraceHistogram(
+        hist.getFrequencies
+          .sortBy(_.frequency)
+          .reverse
+          .takeWhile(_.frequency > 0)
+          .map{b=>(b.value, b.frequency)},
+        hist.getStartingResolution, hist.getComputedResolution
+      )
+    }
+
+    def vtraceHistogram(vfs: Seq[(Double, Double)], resStart: Double, resComputed: Double): TraceLog = {
+        message(
+          vjoin()(
+            s"histogram: res(in)=${resStart}, res(computed):${resComputed}", indent(2)(
+            hjoins(sep=" ")(
+              vfs.map({case d =>
+                vjoin(center1)(
+                  "v="+d._1.pp,
+                  "f="+d._2.pp
+                )
+              })
+            ))
+          )
+        )
+    }
+
+    def getMostFrequentValues(in: Seq[Double], resolution: Double, msg: String=""): Seq[Double] = {
+      val hist = histogram(in, resolution)
+
+      val vfs = hist.getFrequencies
+        .sortBy(_.frequency)
+        .reverse
+        .takeWhile(_.frequency > 0)
+        .map{b=>(b.value, b.frequency)}
+
+      vtrace.trace(vtraceHistogram(hist))
+
+      vfs.map(_._1)
+    }
+
+
+
+    def atoms = component.queryInside(LB.PageAtom)
 
     def findCommonToplines(): Seq[Double] = {
-      Histogram.getMostFrequentValues(
-        component.children.map({c => c.bounds.top}),
-        0.001d
-      ).toList.map(_._1)
+      vtrace.trace(message("findCommonToplines"))
+      getMostFrequentValues(
+        atoms.map({c => c.bounds.top}),
+        0.01d
+      )
     }
 
     def findCommonBaselines(): Seq[Double] = {
-      Histogram.getMostFrequentValues(
-        component.children.map({c => c.bounds.bottom}),
-        0.001d
-      ).toList.map(_._1)
+      vtrace.trace(message("findCommonBaselines"))
+      getMostFrequentValues(
+        atoms.map({c => c.bounds.bottom}),
+        0.01d
+      )
     }
 
     // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
     def determineSpacings(): Seq[Double] = {
-      val dists = pairwiseSpaceWidths(component.children)
+      val dists = pairwiseSpaceWidths(atoms)
       val resolution = 0.3d
 
       val hist = Histogram.histogram(dists, resolution)
@@ -188,201 +226,391 @@ object ComponentOperations {
         .reverse
         .takeWhile(_.frequency > 0d)
 
-      import TB._
-
-      vtrace.trace(
-        "determineSpacings()" withTrace message(hjoins(sep=" ")(
-          spaceDists.map({case d =>
-            vcat(center1)(Seq(
-              d.value.pp,
-              "f"+d.frequency.pp
-            ))
-          })).toString()
-      ))
+      vtrace.trace("most frequent space dists" withTrace vtraceHistogram(hist))
 
       spaceDists.map(_.value)
     }
 
 
-    def vtrace = component.zoneIndex.vtrace
+
+    def labelSuperAndSubscripts(): Unit = {
+      vtrace.trace(begin("labelSuperAndSubscripts()"))
+
+      val tops = findCommonToplines()
+      val bottoms = findCommonBaselines()
+      val modalTop = tops.head // - 0.01d
+      val modalBottom = bottoms.head // + 0.01d
+      val modalCenterY = (modalBottom + modalTop)/2
+
+      // indicate a set of h-lines inside component.targetRegion
+      def indicateHLine(y: Double): TargetFigure = y.toHLine
+        .clipTo(component.targetRegion.bbox)
+        .targetTo(component.targetRegion.target)
+
+      vtrace.trace(
+        "modal top" withTrace indicateHLine(modalTop),
+        "modal bottom" withTrace indicateHLine(modalBottom),
+        "modal center Y" withTrace indicateHLine(modalCenterY)
+      )
+
+      val labeledRegions = mutable.Stack[RegionComponent]()
+
+      def extendOrBegin(lb: Label, c: Component): Unit = {
+        if (!labeledRegions.isEmpty && labeledRegions.top.getLabels().contains(lb)) {
+          labeledRegions.top.extendRegion(c.targetRegion)
+        } else {
+          val rcomp = zoneIndex.createRegionComponent(c.targetRegion, lb)
+          rcomp.addLabel(lb)
+          labeledRegions push rcomp
+        }
+      }
+
+      val visualLineOpt = component.getChildTree(LB.VisualLine)
+      val visualLine = visualLineOpt.getOrElse { sys.error("getChildTree(LB.VisualLine) not found") }
 
 
-    def tokenizeLine(): Component = {
-      if (!component.getLabels.contains(LB.TokenizedLine)) {
-
-        vtrace.trace(
-          begin("Tokenize Line"),
-          focusOn(component.targetRegion),
-          all(component.children.map(c => showRegion(c.targetRegion)))
-        )
-
-        val tops = findCommonToplines()
-        val bottoms = findCommonBaselines()
-        val modalTop = tops.head // - 0.01d
-
-        val modalBottom = bottoms.head // + 0.01d
-
-        val modalCenterY = (modalBottom + modalTop)/2
-
-        /// indicate a set of h-lines inside component.targetRegion
-        val mline = component.targetRegion.bbox.toLine(CDir.N)
-
-        def indicateHLine(y: Double): TargetFigure = y.toHLine
-          .clipTo(component.targetRegion.bbox)
-          .targetTo(component.targetRegion.target)
-
-        vtrace.trace(
-          "modal top" withTrace indicateHLine(modalTop),
-          "modal bottom" withTrace indicateHLine(modalBottom),
-          "modal center Y" withTrace indicateHLine(modalCenterY)
-        )
+      component.children.foreach({c =>
+        val cctr = c.bounds.toCenterPoint
+        val cbottom = c.bounds.bottom
+        val supSubTolerance = component.bounds.height / 20.0
 
 
-        // label individual chars as super/sub if char.ctr fall above/below centerline
-        val supSubs = component.children.map({c =>
-          val cctr = c.bounds.toCenterPoint
-          val cbottom = c.bounds.bottom
-          val supSubTolerance = component.bounds.height / 10.0
+        if (c.bounds.top < modalTop && c.bounds.bottom > modalBottom) {
+          // if our child's top/bottom extends beyond modal top/bottom, it is a larger font and not super/sub
+          vtrace.trace(message(s"${c.chars.mkString} c.bounds.top < modalTop && c.bounds.bottom > modalBottom"))
+          extendOrBegin(LB.Marker, c)
+        } else if (c.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
+          vtrace.trace(message(s"${c.chars.mkString} bottom ~= modalBottom: ${c.bounds.bottom.pp} ~= ${modalBottom.pp}"))
+          extendOrBegin(LB.Marker, c)
+        } else if (cctr.y < modalCenterY){
+          vtrace.trace(message(s"^ ${c.chars.mkString} => ctr.y < modalCenterY: ${cctr.y.pp} < ${modalCenterY.pp}"))
+          extendOrBegin(LB.Sup, c)
+        } else {
+          vtrace.trace(message(s"_ ${c.chars.mkString}"))
+          extendOrBegin(LB.Sub, c)
+        }
+      })
 
-          // vtrace.trace(
-          //   "char center" withTrace cctr.targetTo(component.targetRegion.target)
-          // )
 
-          val maybeLabel: Option[Label] =
-            if (c.bounds.top < modalTop && c.bounds.bottom > modalBottom) {
-              // if our child's top/bottom extends beyond modal top/bottom, it is a larger font and not super/sub
-              None
-            } else if (c.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
-              None
-            } else if (cctr.y < modalCenterY) {
-              // println(s"""Line: ${component.chars}""")
-              // println(s"""(sub)  ${c.chars}>  cctr.toCenterPoint: ${cctr.prettyPrint} modalCenterY: ${modalCenterY}""")
-              // println(s"""modal bottom: ${modalBottom}, c.bottom = ${cbottom}""")
-              LB.Sup.some
-            } else {
-              // println(s"""Line: ${component.chars}""")
-              // println(s"""(sup)  ${c.chars}>  cctr.toCenterPoint: ${cctr.prettyPrint} modalCenterY: ${modalCenterY}""")
-              // println(s"""modal bottom: ${modalBottom}, c.bottom = ${cbottom}""")
-              LB.Sub.some
-            }
+      vtrace.trace(end("labelSuperAndSubscripts()"))
+    }
 
-          maybeLabel.foreach { c.addLabel(_) }
-          c
+
+    def splitWhitespace(): Unit = {
+      vtrace.trace(begin("Split On Whitespace"))
+      vtrace.trace(message(s"chars: ${component.chars}"))
+
+      // val trs = component.children().map(c => s"${c.targetRegion.target}: ${c.targetRegion.bbox.prettyPrint}").mkString(", ")
+      // println(s"splitWhitespace():chars = ${component.chars}): ${trs}")
+
+      // TODO: determineSpacings() should take into account all text lines for inter-word char spacings,
+      //       not just the current line. Also text size, font type, etc.
+
+      // Scan text in line to determine most common distances between consecutive chars
+      val charDists = determineSpacings()
+      // Most frequent space is assumed to be the space between chars within a word:
+      val modalLittleGap = charDists.head
+      // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+      val modalBigGap = charDists
+        .drop(1)
+        .filter(_ > modalLittleGap)
+        .headOption.getOrElse(modalLittleGap)
+
+      val splitValue = (modalBigGap*2+modalLittleGap)/3
+      val splittable = charDists.length > 1
+
+      vtrace.trace(
+        begin("Char Distance Metrics"),
+        message(s"""| top char dists: ${charDists.map(_.pp).mkString(", ")}
+                    | modal little gap = ${modalLittleGap.pp} modal big gap = ${modalBigGap.pp}
+                    | splitValue = ${splitValue.pp}
+                    |""".stripMargin.mbox)
+      )
+
+      val charSpans = component.children()
+
+      val tokenSpans = (charSpans
+        .zip(pairwiseSpaceWidths(charSpans)))
+        .splitOnPairs({ case ((c1, d1), (c2, d2)) =>
+          val dist = c2.bounds.left - c1.bounds.right
+
+          val effectiveDist = dist
+
+          def boundsBox(c: Component): TB.Box = {
+            vcat(center1)(Seq(
+              c.chars,
+              c.bounds.top.pp,
+              c.bounds.left.pp +| c.bounds.right.pp,
+              c.bounds.bottom.pp,
+              "(w=" + c.bounds.width.pp + ")"
+            ))
+
+          }
+          vtrace.trace(
+            showRegions(Seq(c1.targetRegion, c2.targetRegion)),
+            message(
+              vcat(left)(Seq(
+                hcat(center1)(Seq(boundsBox(c1) + " <-> " + boundsBox(c2))),
+                s"""|  pairwisedist: ${d1}  east-west dist: ${dist} effective dist: ${effectiveDist}
+                    |  split value: ${splitValue}, splittable? ${splittable}
+                    |  Will split? : ${splittable && effectiveDist > splitValue}
+                    |""".stripMargin.mbox
+              ))
+            )
+          )
+
+          splittable && effectiveDist > splitValue
+
         })
 
 
-        def isLabelBoundary(l: Label, a: Component, b: Component): Boolean = {
-          ((a.hasLabel(l) && !b.hasLabel(l)) ||
-            (!a.hasLabel(l) && b.hasLabel(l)))
-        }
-
-        def concatLabels(l: Label, cs: Seq[Component]): Seq[Component] = {
-          cs.headOption.map({ c0 =>
-            if (c0.hasLabel(l)) {
-              cs.foreach(_.removeLabel(l))
-              Seq(zoneIndex.concatComponents(cs, l))
-            } else { cs }
-          }).getOrElse(cs)
-        }
-
-        val supSubGroups = supSubs.splitOnPairs { (ca, cb) =>
-          isLabelBoundary(LB.Sup, ca, cb) || isLabelBoundary(LB.Sub, ca, cb)
-        }
-
-        val connectedSupSubs = (for {
-          connSpan <- supSubGroups
-        } yield {
-          connSpan |>
-            (concatLabels(LB.Sup, _)) |>
-            (concatLabels(LB.Sub, _))
-        }).flatten
+      tokenSpans
+        .map(_.map(_._1))
+        .foreach({cs => zoneIndex.connectComponents(cs, LB.Token) })
 
 
-        vtrace.trace(begin("Split On Whitespace"))
-        val charDists = determineSpacings()
-        // Most frequent space is assumed to be the space between chars within a word:
-        val modalLittleGap = charDists.head
-        // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
-        val modalBigGap = charDists
-          .drop(1)
-          .filter(_ > modalLittleGap)
-          .headOption.getOrElse(modalLittleGap)
-
-        val splitValue = (modalBigGap*2+modalLittleGap)/3
-        val splittable = charDists.length > 1
+      // component.replaceChildren(asTokens)
+      vtrace.trace(end("Split On Whitespace"))
+    }
 
 
-        // hist display
+    def tokenizeLine(): Unit = {
+      if (!component.getLabels.contains(LB.TokenizedLine)) {
 
-        vtrace.trace(
-          begin("Char Distance Metrics"),
-          message(s"""| top char dists: ${charDists.map(_.pp).mkString(", ")}
-                      | modalTop = ${modalTop.pp} modalBottom = ${modalBottom.pp}
-                      | modalCenter: ${modalCenterY.pp}
-                      | modal little gap = ${modalLittleGap.pp} modal big gap = ${modalBigGap.pp}
-                      | splitValue = ${splitValue.pp}
-                      |""".stripMargin)
-        )
+        vtrace.trace(begin("Tokenize Line"), focusOn(component.targetRegion))
+        vtrace.trace(message(s"chars=>${component.chars}"))
 
-        val tokenSpans = (connectedSupSubs
-          .zip(pairwiseSpaceWidths(connectedSupSubs)))
-          .splitOnPairs({ case ((c1, d1), (c2, d2)) =>
-            val dist = c2.bounds.left - c1.bounds.right
+        labelSuperAndSubscripts()
+        // Split whitespace for super/subscript regions first
+        // component.labeledChildren(LB.Sup).foreach{ _.splitWhitespace() }
+        // component.labeledChildren(LB.Sub).foreach{ _.splitWhitespace() }
+        // // Now split on whitespace for normal text
+        // component.labeledChildren(LB.Marker).foreach{ _.splitWhitespace() }
 
-            // val effectiveDist = d1*1.1
-            val effectiveDist = dist
+        // Now figure out how the super/sub/normal text spans should be joined together token-wise
+        // component.labeledChildren(LB.Sub|LB.Sub|LB.Marker).foreach{ _.join() }
+        // component.removeLabels(LB.Marker)
+        // labeledRegions.foreach({ comp =>
+        //   if (comp.getLabels.contains(LB.Marker)) {
+        //     zoneIndex.removeComponent(comp)
+        //   }
+        // })
 
-
-            import TB._
-            def boundsBox(c: Component): TB.Box = {
-              vcat(center1)(Seq(
-                c.chars,
-                c.bounds.top.pp,
-                c.bounds.left.pp +| c.bounds.right.pp,
-                c.bounds.bottom.pp,
-                "(w=" + c.bounds.width.pp + ")"
-              ))
-
-            }
-
-            vtrace.trace(
-              showRegions(Seq(c1.targetRegion, c2.targetRegion)),
-              message(
-                vcat(left)(Seq(
-                  hcat(center1)(Seq(boundsBox(c1) + " <-> " + boundsBox(c2))),
-                  s"""|  pairwisedist: ${d1}  east-west dist: ${dist} effective dist: ${effectiveDist}
-                      |  split value: ${splitValue}, splittable? ${splittable}
-                      |  Will split? : ${splittable && effectiveDist > splitValue}
-                      |""".stripMargin.mbox
-                )).toString
-              )
-            )
-
-            splittable && effectiveDist > splitValue
-
-          })
-
-
-
-        val asTokens = tokenSpans.map(_.map(_._1))
-          .map({cs => zoneIndex.concatComponents(cs, LB.Token) })
-
-        vtrace.trace(
-          "final tokenization" withTrace showRegions(asTokens.map(_.targetRegion))
-        )
-
-        vtrace.trace(end("Split On Whitespace"))
-
-        component.replaceChildren(asTokens)
         component.addLabel(LB.TokenizedLine)
 
+        vtrace.trace(message(s"tokenized=>${component.toText}"))
         vtrace.trace(end("Tokenize Line"))
-
       }
-      component
+    }
 
+
+    def determineNormalTextBounds: LTBounds = {
+      val mfHeights = Histogram.getMostFrequentValues(component.children.map(_.bounds.height), 0.1d)
+      val mfTops = Histogram.getMostFrequentValues(component.children.map(_.bounds.top), 0.1d)
+
+
+      val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
+      val mfTop = mfTops.headOption.map(_._1).getOrElse(0d)
+
+      component.children
+        .map({ c =>
+          val cb = c.bounds
+          LTBounds(
+            left=cb.left, top=mfTop,
+            width=cb.width, height=mfHeight
+          )
+        })
+        .foldLeft(component.children().head.bounds)( { case (b1, b2) =>
+          b1 union b2
+        })
     }
 
   }
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // def tokenizeLineOrig(): Component = {
+    //   if (!component.getLabels.contains(LB.TokenizedLine)) {
+
+    //     vtrace.trace(
+    //       begin("Tokenize Line"),
+    //       focusOn(component.targetRegion),
+    //       message(s"chars:`${component.chars}`")
+    //       // all(component.children.map(c => showRegion(c.targetRegion)))
+    //     )
+
+    //     val tops = findCommonToplines()
+    //     val bottoms = findCommonBaselines()
+    //     val modalTop = tops.head // - 0.01d
+
+    //     val modalBottom = bottoms.head // + 0.01d
+
+    //     val modalCenterY = (modalBottom + modalTop)/2
+
+    //     // indicate a set of h-lines inside component.targetRegion
+    //     def indicateHLine(y: Double): TargetFigure = y.toHLine
+    //       .clipTo(component.targetRegion.bbox)
+    //       .targetTo(component.targetRegion.target)
+
+    //     vtrace.trace(
+    //       "modal top" withTrace indicateHLine(modalTop),
+    //       "modal bottom" withTrace indicateHLine(modalBottom),
+    //       "modal center Y" withTrace indicateHLine(modalCenterY)
+    //     )
+
+
+    //     // label individual chars as super/sub if char.ctr fall above/below centerline
+    //     val supSubs = component.children.map({c =>
+    //       val cctr = c.bounds.toCenterPoint
+    //       val cbottom = c.bounds.bottom
+    //       val supSubTolerance = component.bounds.height / 10.0
+
+    //       // vtrace.trace(
+    //       //   "char center" withTrace cctr.targetTo(component.targetRegion.target)
+    //       // )
+
+    //       val maybeLabel: Option[Label] = {
+    //         // vtrace.trace()
+    //         // println(s"""Line: ${component.chars}""")
+    //         // println(s"""(sub)  ${c.chars}>  cctr.toCenterPoint: ${cctr.prettyPrint} modalCenterY: ${modalCenterY}""")
+    //         // println(s"""modal bottom: ${modalBottom}, c.bottom = ${cbottom}""")
+
+    //         if (c.bounds.top < modalTop && c.bounds.bottom > modalBottom) {
+    //           None // if our child's top/bottom extends beyond modal top/bottom, it is a larger font and not super/sub
+    //         }
+    //         else if (c.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) None
+    //         else if (cctr.y < modalCenterY) LB.Sup.some
+    //         else LB.Sub.some
+    //       }
+
+    //       maybeLabel.foreach { c.addLabel(_) }
+    //       c
+    //     })
+
+
+    //     def isLabelBoundary(l: Label, a: Component, b: Component): Boolean = {
+    //       ((a.hasLabel(l) && !b.hasLabel(l)) ||
+    //         (!a.hasLabel(l) && b.hasLabel(l)))
+    //     }
+
+    //     val supSubGroups = supSubs.splitOnPairs { (ca, cb) =>
+    //       isLabelBoundary(LB.Sup, ca, cb) || isLabelBoundary(LB.Sub, ca, cb)
+    //     }
+
+    //     def concatLabels(l: Label, cs: Seq[Component]): Seq[Component] = {
+    //       cs.headOption.map({ c0 =>
+    //         if (c0.hasLabel(l)) {
+    //           cs.foreach(_.removeLabel(l))
+    //           Seq(zoneIndex.connectComponents(cs, l))
+    //         } else { cs }
+    //       }).getOrElse(cs)
+    //     }
+
+    //     val connectedSupSubs = (for {
+    //       connSpan <- supSubGroups
+    //     } yield {
+    //       connSpan |>
+    //         (concatLabels(LB.Sup, _)) |>
+    //         (concatLabels(LB.Sub, _))
+    //     }).flatten
+
+
+    //     vtrace.trace(begin("Split On Whitespace"))
+    //     val charDists = determineSpacings()
+    //     // Most frequent space is assumed to be the space between chars within a word:
+    //     val modalLittleGap = charDists.head
+    //     // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+    //     val modalBigGap = charDists
+    //       .drop(1)
+    //       .filter(_ > modalLittleGap)
+    //       .headOption.getOrElse(modalLittleGap)
+
+    //     val splitValue = (modalBigGap*2+modalLittleGap)/3
+    //     val splittable = charDists.length > 1
+
+
+    //     // hist display
+
+    //     vtrace.trace(
+    //       begin("Char Distance Metrics"),
+    //       message(s"""| top char dists: ${charDists.map(_.pp).mkString(", ")}
+    //                   | modalTop = ${modalTop.pp} modalBottom = ${modalBottom.pp}
+    //                   | modalCenter: ${modalCenterY.pp}
+    //                   | modal little gap = ${modalLittleGap.pp} modal big gap = ${modalBigGap.pp}
+    //                   | splitValue = ${splitValue.pp}
+    //                   |""".stripMargin.mbox)
+    //     )
+
+    //     val tokenSpans = (connectedSupSubs
+    //       .zip(pairwiseSpaceWidths(connectedSupSubs)))
+    //       .splitOnPairs({ case ((c1, d1), (c2, d2)) =>
+    //         val dist = c2.bounds.left - c1.bounds.right
+
+    //         // val effectiveDist = d1*1.1
+    //         val effectiveDist = dist
+
+
+    //         def boundsBox(c: Component): TB.Box = {
+    //           vcat(center1)(Seq(
+    //             c.chars,
+    //             c.bounds.top.pp,
+    //             c.bounds.left.pp +| c.bounds.right.pp,
+    //             c.bounds.bottom.pp,
+    //             "(w=" + c.bounds.width.pp + ")"
+    //           ))
+
+    //         }
+
+
+    //         vtrace.trace(
+    //           showRegions(Seq(c1.targetRegion, c2.targetRegion)),
+    //           message(
+    //             vcat(left)(Seq(
+    //               hcat(center1)(Seq(boundsBox(c1) + " <-> " + boundsBox(c2))),
+    //               s"""|  pairwisedist: ${d1}  east-west dist: ${dist} effective dist: ${effectiveDist}
+    //                   |  split value: ${splitValue}, splittable? ${splittable}
+    //                   |  Will split? : ${splittable && effectiveDist > splitValue}
+    //                   |""".stripMargin.mbox
+    //             ))
+    //           )
+    //         )
+
+    //         splittable && effectiveDist > splitValue
+
+    //       })
+
+
+
+    //     val asTokens = tokenSpans.map(_.map(_._1))
+    //       .map({cs => zoneIndex.connectComponents(cs, LB.Token) })
+
+    //     vtrace.trace(
+    //       "final tokenization" withTrace showRegions(asTokens.map(_.targetRegion))
+    //     )
+
+    //     vtrace.trace(end("Split On Whitespace"))
+
+    //     component.replaceChildren(asTokens)
+    //     component.addLabel(LB.TokenizedLine)
+
+    //     vtrace.trace(end("Tokenize Line"))
+
+    //   }
+    //   component
+
+    // }

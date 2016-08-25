@@ -185,25 +185,25 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
       .sortBy(_.bounds.top)
       .filter(_.getLabels.contains(LB.VisualLine))
 
-    val tokenizedLines = lineComponents.map { lineComponent =>
-      lineComponent.tokenizeLine().toText
-    }
+    // val tokenizedLines = lineComponents.map { lineComponent =>
+    //   lineComponent.tokenizeLine().toText
+    // }
 
 
     // println(s"""component= ${lineComponent.chars}, ${lineComponent.id} (${lineComponent.getLabels.mkString(", ")})""")
     // println(s"""expecting: ${example.expectedOutput.mkString(" \\\\  ")}""")
     // println(s"""tokenized: ${tokenized.mkString(" \\\\  ")}""")
 
-    example.expectedOutput.zip(tokenizedLines)
-      .foreach({case (expect, actual) =>
-        if (expect != actual) {
-          println(s"want> $expect")
-          println(s"got > $actual")
-        } else {
-          println(s"ok> $expect")
-        }
-        // assertResult(expect){ actual }
-      })
+    // example.expectedOutput.zip(tokenizedLines)
+    //   .foreach({case (expect, actual) =>
+    //     if (expect != actual) {
+    //       println(s"want> $expect")
+    //       println(s"got > $actual")
+    //     } else {
+    //       println(s"ok> $expect")
+    //     }
+    //     // assertResult(expect){ actual }
+    //   })
 
     // assertResult(example.expectedOutput.length)(tokenized.length)
   }

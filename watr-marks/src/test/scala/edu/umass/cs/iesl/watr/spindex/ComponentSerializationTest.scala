@@ -57,10 +57,5 @@ class ComponentSerializationTest extends FlatSpec {
   }
 
 
-
-  it should "load info from json" in new ComponentDataTypeFormats {
-    val is = getClass().getResourceAsStream("/spatial/spinfo0.json")
-    val jsvalue = json.Json.parse(is).as[ZoneRecords]
-    val pspinfo = ZoneIndexer.loadSpatialIndices(jsvalue)
-  }
 }
+

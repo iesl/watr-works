@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-
 import ammonite.{ops => fs}
 import fs._
 import java.io.{ InputStream  }
@@ -25,7 +24,9 @@ case class AppConfig(
 
 object Works extends App {
 
-  utils.VisualTracer.visualTracingEnabled = false
+  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Append
+  utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+
 
   def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot
     .map({croot =>
@@ -360,8 +361,6 @@ object Works extends App {
 
   def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
     val artifactOutputName = "docseg.json"
-    // import scala.collection.mutable
-    // val traceLogs = mutable.MutableList[Seq[utils.TraceLog]]()
 
     var rsegmenter: Option[segment.DocumentSegmenter] = None
 
@@ -375,11 +374,10 @@ object Works extends App {
         } {
           try {
             val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins, fontDirs)
+            rsegmenter = Some(segmenter)
             segmenter.runPageSegmentation()
             val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
             corpusEntry.putArtifact(artifactOutputName, output)
-            // traceLogs += segmenter.vtrace.getAndResetTrace()
-            rsegmenter = Some(segmenter)
           } catch {
             case t: Throwable =>
               println(s"could not segment ${corpusEntry}: ${t.getMessage}\n")
@@ -399,7 +397,6 @@ object Works extends App {
       }
     })
 
-    // traceLogs
     rsegmenter
 
   }

@@ -56,13 +56,13 @@ object GlyphPositioning {
   }
 
   def guessDiffEncodedGlyph(tri: TextRenderInfo, reader: PdfReader): Seq[Glyph] = {
-    val font = tri.getFont
+    // val font = tri.getFont
 
-    getPdfPath(font.getPdfObject, "/Encoding/Differences") match {
-      case Some(differences: PdfArray) =>
-        differences.size()
-      case None =>
-    }
+    // getPdfPath(font.getPdfObject, "/Encoding/Differences") match {
+    //   case Some(differences: PdfArray) =>
+    //     differences.size()
+    //   case None =>
+    // }
 
     ???
   }

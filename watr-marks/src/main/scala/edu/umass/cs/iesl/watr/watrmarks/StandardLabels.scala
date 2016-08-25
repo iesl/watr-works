@@ -21,9 +21,8 @@ trait DocSegLabels {
   val Para = Label("ds", "para")
   val Image = Label("ds", "image")
   val Table = Label("ds", "table")
-  // val Line = Label("ds", "line")
   val VisualLine = Label("ds", "visual-line")
-  val TextLine = Label("ds", "text-line")
+  val SemanticLine = Label("ds", "semantic-line")
 
   val TokenizedLine = Label("ds", "tline")
   val Token = Label("ds", "token")
@@ -31,6 +30,11 @@ trait DocSegLabels {
   val Invisible = Label("ds", "invisible")
   val Sup = Label("ds", "sup")
   val Sub = Label("ds", "sub")
+
+  // A temporary label meant to be applied as a placeholder, then removed, but not serialized. Grep the code for examples
+  val Marker = Label("ds", "marker")
+  val PageAtom = Label("ds", "atom")
+
 }
 
 

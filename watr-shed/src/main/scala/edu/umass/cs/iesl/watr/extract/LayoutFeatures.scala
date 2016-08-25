@@ -1,20 +1,17 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-import spindex._
+// import spindex._
 
 object DocumentFeatures {
 
 
   // def textDensity(zoneIter: ZoneIterator): Double = {
-
   //   // add up area of each token (a bit rougher approx. than char level)
   //   val tokenArea: Double = zoneIter.getTokens.map(_._1.area).sum
   //   val zoneArea = zoneIter.currentZone.area
-
   //   tokenArea / zoneArea
   // }
-
 
   // def charCountFeature(zoneIter: ZoneIterator): Double = {
   //   val charCount = zoneIter
@@ -27,57 +24,16 @@ object DocumentFeatures {
   //   charCount.toDouble
   // }
 
-  def lineHeightMaxMeanFeature(zoneIter: ZoneIterator): Double = {
+  // def lineHeightMaxMeanFeature(zoneIter: ZoneIterator): Double = {
 
-    // double zoneMean = 0;
-    // for (BxLine line : zone) {
-    //     zoneMean += line.getBounds().getHeight();
-    // }
-    // zoneMean /= (double) zone.childrenCount();
-    // for (BxZone z : page) {
-    //     if (z.equals(zone)) {
-    //         continue;
-    //     }
-    //     double pageMean = 0;
-    //     for (BxLine line : z) {
-    //         pageMean += line.getBounds().getHeight();
-    //     }
-    //     pageMean /= z.childrenCount();
-    //     if (pageMean > zoneMean + 1) {
-    //         return 0;
-    //     }
-    // }
-    // return 1;
-    ???
-  }
-
-
-
-
-
-
-  //   def lineHeightMeanFeature(zone: BxZone, page: BxPage): Double = {
-  //         double mean = 0;
-  //         for (BxLine line : zone) {
-  //             mean += line.getHeight();
-  //         }
-  //         return mean / (double) zone.childrenCount();
-  //     }
-
-
-
-
-
+  // def lineHeightMeanFeature(zone: BxZone, page: BxPage): Double = {
   //   def bibinfoFeature(zone: BxZone, page: BxPage): Double = {
 
   //         String[] keywords = {"cite", "pages", "article", "volume", "publishing", "journal", "doi", "cite this article",
   //                              "citation", "issue", "issn"};
-
   //         String[] otherKeywords = {"author details", "university", "department", "school", "institute", "affiliation",
   //                              "hospital", "laboratory", "faculty", "author", "abstract", "keywords", "key words",
   //                              "correspondence", "editor", "address", "email"};
-
-
   //         int count = 0;
   //         for (String keyword : keywords) {
 //             if (zone.toText().toLowerCase().contains(keyword)) {
@@ -95,75 +51,17 @@ object DocumentFeatures {
 
 
 //   def charCountRelativeFeature(zone: BxZone, page: BxPage): Double = {
-//         int count = 0;
-//         for (BxLine line : zone) {
-//             for (BxWord word : line) {
-//                 for (BxChunk chunk : word) {
-//                     count += chunk.toText().length();
-//                 }
-//             }
-//         }
-
-//         int pCount = 0;
-//         for (BxZone pZone : page) {
-//             for (BxLine line : pZone) {
-//                 for (BxWord word : line) {
-//                     for (BxChunk chunk : word) {
-//                         pCount += chunk.toText().length();
-//                     }
-//                 }
-//             }
-//         }
-//         return (double) count / (double) pCount;
-//     }
-
 
 
 
 
 //   def commaCountFeature(zone: BxZone, page: BxPage): Double = {
-//         int count = 0;
-//         for (BxLine line : zone) {
-//             for (BxWord word : line) {
-//                 for (BxChunk chunk : word) {
-//                     char[] arr = chunk.toText().toCharArray();
-//                     for (int i = 0; i < arr.length; i++) {
-//                         if (arr[i]==',') {
-//                             count++;
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//         return (double) count;
-//     }
 
 
 
 
 
 //   def commaRelativeCountFeature(zone: BxZone, page: BxPage): Double = {
-//         int count = 0;
-//         int allCount = 0;
-//         for (BxLine line : zone) {
-//             for (BxWord word : line) {
-//                 for (BxChunk chunk : word) {
-//                     char[] arr = chunk.toText().toCharArray();
-//                     for (int i = 0; i < arr.length; i++) {
-//                         allCount++;
-//                         if (arr[i]==',') {
-//                             count++;
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//         return (double) count / (double) allCount;
-//     }
-
-
-
-
 
 //     private static String featureName = "ContainsCuePhrases";
 //     private static String[] cuePhrases = {"although", "therefore", "therein", "hereby",

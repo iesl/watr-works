@@ -16,8 +16,9 @@ val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "org.scalaz" %% "scalaz-core" % "7.2.5",
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
   "com.lihaoyi" %% "scalatags" % "0.6.0",
-  "com.lihaoyi" %% "ammonite-ops" % "0.7.2",
-  "com.typesafe.play" %% "play-json" % "2.5.4",
+  "com.lihaoyi" %% "acyclic" % "0.1.4" % "provided",
+  "com.lihaoyi" %% "ammonite-ops" % "0.7.4",
+  "com.typesafe.play" %% "play-json" % "2.5.6",
   "com.github.scopt" %% "scopt" % "3.5.0"
 )
 
@@ -51,8 +52,8 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(Sensible.settings)
   .settings(libraryDependencies ++= commonDeps)
   .settings(libraryDependencies ++= Seq(
-    "org.bouncycastle" % "bcprov-jdk15on" % "1.54",
-    "org.bouncycastle" % "bcpkix-jdk15on" % "1.54",
+    "org.bouncycastle" % "bcprov-jdk15on" % "1.55",
+    "org.bouncycastle" % "bcpkix-jdk15on" % "1.55",
     "com.h2database" % "h2" % "1.4.192",
     "com.zaxxer" % "HikariCP" % "2.4.7",
     "com.typesafe.slick" %% "slick" % "3.1.1"

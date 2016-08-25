@@ -11,7 +11,9 @@ case class TargetRegion(
   id: Int@@RegionID,
   target: Int@@PageID,
   bbox: LTBounds
-)
+) {
+  override def toString = s"""<region:${id} pg:${target} ${bbox.prettyPrint}>"""
+}
 
 // TODO this should fully replace TargetRegion:
 case class TargetFigure(
@@ -47,7 +49,9 @@ class CharAtom(
   val region: TargetRegion,
   val char: String,
   val wonkyCharCode: Option[Int] = None
-) extends PageAtom
+) extends PageAtom {
+  override def toString = s"CharAtom($char, $region)"
+}
 
 object CharAtom {
   def unapply(r: CharAtom): Option[(TargetRegion, String, Option[Int])] =
@@ -81,8 +85,6 @@ case class GlyphClass(
   char: Char,
   fontInfo: FontClass
 )
-
-
 
 case class FontClass(
   name: String,
@@ -119,7 +121,6 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   implicit def FormatPageAtom:Format[PageAtom]       = ??? // Json.format[PageAtom]
   implicit def FormatPageAtoms:Format[PageAtoms]      = ??? // Json.format[PageAtoms]
   implicit def FormatZoneRecords:Format[ZoneRecords]      = ??? // Json.format[ZoneRecords]
-
 
 }
 
@@ -160,6 +161,14 @@ object ComponentTypeEnrichments {
 
   }
 
+  implicit class RicherTargetRegion(val targetRegion: TargetRegion) extends AnyVal {
+    def union(r: TargetRegion): TargetRegion = {
+      if (targetRegion.target != r.target) {
+        sys.error(s"""cannot union targetRegions from different pages: ${targetRegion} + ${r}""")
+      }
+      targetRegion.copy(bbox = targetRegion.bbox union r.bbox)
+    }
+  }
 
   implicit class RicherCharAtom(val charRegion: CharAtom) extends AnyVal {
 

@@ -47,7 +47,6 @@ class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
     val value: Double = (index + 0.5) * resolution + min
   }
 
-
   private val min: Double = minValue - EPSILON
 
   private val delta: Double = maxValue - minValue + 2 * EPSILON
@@ -55,6 +54,10 @@ class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
   val size = Math.max(1, Math.round((maxValue - minValue) / _resolution).toInt)
 
   private val resolution: Double = delta / size
+
+  def getStartingResolution(): Double = _resolution
+  def getComputedResolution(): Double = resolution
+
 
   private var frequencies: Array[Double] = Array.fill(size)(0)
 

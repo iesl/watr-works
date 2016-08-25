@@ -78,13 +78,14 @@ object DocumentSegmenter extends DocumentUtils {
       .toSeq
       .sortBy(_._1.toDouble)
 
-    val sortedXY = sortedYPage
-      .map({case (topY, charBoxes) =>
+    val sortedYX = sortedYPage
+      .map({case (bottomY, charBoxes) =>
         val sortedXLine = charBoxes
           .sortBy(_.region.bbox.left)
         (charBoxesBounds(sortedXLine), sortedXLine)
       })
-    sortedXY
+
+    sortedYX
   }
 
   def compareDouble(d1: Double, d2: Double, precision: Double): Int = {
@@ -116,7 +117,9 @@ object DocumentSegmenter extends DocumentUtils {
   }
 
 
+
   import extract.fonts.SplineFont
+
   def createSegmenter(pdfins: InputStream, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
     val chars = format.DocumentIO.extractChars(pdfins, Set(), glyphDefs)
     createSegmenter(chars.map(c => (c._1.regions, c._2)))
@@ -205,13 +208,12 @@ class DocumentSegmenter(
 
   var pageSegAccum: PageSegAccumulator = PageSegAccumulator(Seq())
 
-
-
   def runLineDetermination(): Unit = {
     val allPageLines = for {
       pageId <- zoneIndexer.getPages
     } yield {
       val charAtoms = zoneIndexer.getPageInfo(pageId).charAtomIndex.getItems
+      vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${charAtoms.length} char atom"))
 
       determineLines(pageId, charAtoms)
     }
@@ -219,37 +221,31 @@ class DocumentSegmenter(
   }
 
 
-  def docWideModalParaFocalJump(
-    // alignedBlocksPerPage: Seq[Seq[Seq[(Component, Int)]]],
-    alignedBlocksPerPage: Seq[Seq[BioNode]],
-    modalVDist: Double
-  ): Double = {
-    val allVDists = for {
-      groupedBlocks <- alignedBlocksPerPage
-      block <- groupedBlocks
-    } yield {
-      // block
-      //   .sliding(2).toSeq
-      //   .map({
-      //     case Seq((a1, i1), (a2, i2)) =>
-      //       val a1Left = a1.bounds.toPoint(CDir.W).y
-      //       val a2Left = a2.bounds.toPoint(CDir.W).y
-      //       val vdist = math.abs(a1Left - a2Left)
-
-      //       math.abs(vdist)
-
-      //     case Seq((a1, i1)) => -1
-      //     case Seq() => -1
-      //   }).filter(_ > 0d)
-    }
-
-    // getMostFrequentValues(allVDists.flatten, leftBinHistResolution)
-    //   .headOption.map(_._1)
-    //   .getOrElse(12.0)
-
-
-    15.0d
-  }
+  // def docWideModalParaFocalJump(
+  //   alignedBlocksPerPage: Seq[Seq[BioNode]],
+  //   modalVDist: Double
+  // ): Double = {
+  //   val allVDists = for {
+  //     groupedBlocks <- alignedBlocksPerPage
+  //     block <- groupedBlocks
+  //   } yield {
+  //     // block
+  //     //   .sliding(2).toSeq
+  //     //   .map({
+  //     //     case Seq((a1, i1), (a2, i2)) =>
+  //     //       val a1Left = a1.bounds.toPoint(CDir.W).y
+  //     //       val a2Left = a2.bounds.toPoint(CDir.W).y
+  //     //       val vdist = math.abs(a1Left - a2Left)
+  //     //       math.abs(vdist)
+  //     //     case Seq((a1, i1)) => -1
+  //     //     case Seq() => -1
+  //     //   }).filter(_ > 0d)
+  //   }
+  //   // getMostFrequentValues(allVDists.flatten, leftBinHistResolution)
+  //   //   .headOption.map(_._1)
+  //   //   .getOrElse(12.0)
+  //   15.0d
+  // }
 
 
   def docWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[(Component, Int)]]]): Double = {
@@ -391,7 +387,7 @@ class DocumentSegmenter(
 
     val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
 
-    val modalParaFocalJump = docWideModalParaFocalJump(blocks, modalVDist)
+    // val modalParaFocalJump = docWideModalParaFocalJump(blocks, modalVDist)
 
     blocks.splitOnPairs({
       case (aNodes: Seq[BioNode], bNodes: Seq[BioNode]) =>
@@ -447,9 +443,7 @@ class DocumentSegmenter(
   def runPageSegmentation(): Unit = {
     vtrace.trace(
       begin("SetPageGeometries"),
-      setPageGeometries(
-        zoneIndexer.pageInfos.map(_._2.geometry).toSeq
-      ),
+      setPageGeometries(zoneIndexer.pageInfos.map(_._2.geometry).toSeq),
       end("SetPageGeometries")
     )
 
@@ -483,7 +477,9 @@ class DocumentSegmenter(
   def tokenizeLines(): Unit = for {
     page <- visualLineOnPageComponents
     (line, linenum) <- page.zipWithIndex
-  } line.tokenizeLine
+  } {
+    line.tokenizeLine
+  }
 
 
   def joinLines(): Unit = {
@@ -499,12 +495,12 @@ class DocumentSegmenter(
 
 
       if (isBrokenWord) {
-        val endToken = line.tokenizeLine.labeledChildren(LB.Token).lastOption
+        val endToken = line.queryInside(LB.Token).lastOption
         // look ahead 1 line for word continuation
         page.drop(linenum+1)
           .take(1)
           .map({ nextLine =>
-            val startToken = nextLine.tokenizeLine().labeledChildren(LB.Token).headOption
+            val startToken = nextLine.queryInside(LB.Token).headOption
 
             (startToken, endToken) match {
               case (Some(start), Some(end)) =>
@@ -644,37 +640,24 @@ class DocumentSegmenter(
             && idgap < 5
         )
 
-        // def isStrictlyLeftToRight(cand: Component, line: Component): Boolean = {
-        // val acclast = l1.last.bounds.prettyPrint
-        // val next = l2.head.bounds.prettyPrint
-        // val l1EastX = l1.last.bounds.toEasternPoint.x
-        // val l2WestX = l2.head.bounds.toWesternPoint.x
-        // val totalAcc = l1.map(_.toText).mkString
-        // val considering = l2.map(_.toText).mkString
-        // println(s"${totalAcc}  ?:: ${considering}")
-        // println(s"  idgap = ${idgap}, shouldJoin = ${shouldJoin} l1-east=${l1EastX.pp}, l2-west=${l2WestX.pp}")
-        // println(s"  ${acclast}  -- ${next}")
-
         if (shouldJoin) acc.dropRight(1) :+ (l1 ++ l2)
         else acc :+ l2
       })
 
-    // val maybeJoined = prejoined.sliding(2).toSeq.map({
-    //   case Seq(l1, l2) =>
-    //     val idgap = l2.head.component.id.unwrap - l1.last.component.id.unwrap
-    //     val shouldJoin = isStrictlyLeftToRight(l1.last, l2.head) && idgap < 5
-    //     if (shouldJoin) Seq(l1 ++ l2)
-    //     else Seq(l1, l2)
-    //   case Seq(x) => Seq(x)
-    //   case _ => Seq(Seq())
-    // })
-
     val linesJoined = maybeJoined
       .sortBy(b => b.map(regionIds(_)).min)
-      .map(l => zoneIndexer.concatComponents(l, LB.VisualLine))
+      .map({lineComponents =>
+        val sortedAtoms = lineComponents.sortBy(_.bounds.left)
+        zoneIndexer
+          .labelRegion(sortedAtoms, LB.VisualLine)
+          .map({labeledRegion =>
+            zoneIndexer.connectComponents(lineComponents.sortBy(_.bounds.left), LB.VisualLine)
+          })
+      })
+      .flatten
 
     if (!linesJoined.isEmpty) {
-      zoneIndexer.concatComponents(linesJoined, LB.Page)
+      zoneIndexer.connectComponents(linesJoined.flatten, LB.Page)
     }
   }
 
@@ -986,7 +969,7 @@ class DocumentSegmenter(
   //   // Walk down column lines pair-wise, and take while diagonal distances match
 
 
-  //   // zoneIndexer.concatComponents(totalLineSorted, LB.Block)
+  //   // zoneIndexer.connectComponents(totalLineSorted, LB.Block)
   //   // totalLineSorted
 
   //   ???

@@ -36,6 +36,7 @@ object GeometricFigure {
 
 }
 
+
 import GeometricFigure._
 
 object jsiRectangle {
@@ -99,6 +100,7 @@ object IndexShapeOperations {
         page, figure
       )
     }
+
   }
 
   implicit class RicherPoint(val p0: Point) extends AnyVal {
@@ -310,6 +312,13 @@ object IndexShapeOperations {
       val width = tb.width
       val height = tb.height
       s"""[${left.pp}, ${top.pp}, ${width.pp}, ${height.pp}]"""
+    }
+
+    def targetRegionTo(page: Int@@PageID): TargetRegion = {
+      TargetRegion(
+        RegionID(0), // TODO gen region id
+        page,tb
+      )
     }
   }
 

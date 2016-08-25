@@ -75,6 +75,7 @@ object PdfPageObjectOutput {
 
 }
 
+// TypeTag[Int, PageID]
 class CharExtractionListener(
   reader: PdfReader,
   charsToDebug: Set[Int] = Set(),
@@ -98,12 +99,6 @@ class CharExtractionListener(
     }
   }
 
-
-  val charWindow = mutable.MutableList[Char]()
-
-
-
-
   def lookupGlyph(charTri: TextRenderInfo): Seq[Char] = {
     // Get glyphHash for this char
     val pdfString = charTri.getPdfString
@@ -120,7 +115,6 @@ class CharExtractionListener(
       glChar <- GlyphHashLookup.global.lookup(glHash)
     } yield {
       glChar
-      // println(s"found ${hash} / $ival")
     }
 
     chars
@@ -164,7 +158,6 @@ class CharExtractionListener(
             sys.error(msg)
           })
           currCharBuffer.append(charBox)
-          charWindow ++= subChars
         }
 
         if (index > 0)  {

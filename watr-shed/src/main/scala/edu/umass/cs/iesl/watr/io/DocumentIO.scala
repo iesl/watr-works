@@ -8,6 +8,7 @@ import textboxing.{TextBoxing => TB}
 import watrmarks.{StandardLabels => LB}
 import spindex._
 
+
 import ComponentRendering._
 
 object DocumentIO {
@@ -145,30 +146,6 @@ object DocumentIO {
     }
   }
 
-
-  def debugLineComponentStats(linecc: ConnectedComponents): Unit = {
-    // linecc.components.foreach{_ match {
-    //   case cc: ConnectedComponents =>
-    //     println(s"""    cc: ${cc.toText} ${cc.bounds.prettyPrint} cc.right: ${cc.bounds.right}""")
-
-    //   case cc: PageComponent =>
-    //     println(s"""    c:  ${cc.toText} ${cc.bounds.prettyPrint} cc.right: ${cc.bounds.right}""")
-
-    // }}
-    val firstCC = linecc.components.head
-    linecc.components.sliding(2).foreach{_ match {
-      case Seq(c1, c2) =>
-        val totalBBox = firstCC.bounds.union(c2.bounds)
-        println(s"""| ${c1.toText} - ${c2.toText}
-                    |    ${c1.bounds.prettyPrint} - ${c2.bounds.prettyPrint}
-                    |    c1.left: ${c1.bounds.left} c1.right: ${c1.bounds.right} c2.left: ${c2.bounds.left}
-                    |    dist = ${c2.bounds.left} - ${c1.bounds.right} = ${c2.bounds.left - c1.bounds.right}
-                    |    totalBBox = ${totalBBox.prettyPrint}, bb.right:${totalBBox.right.pp}
-                    |""".stripMargin)
-      case Seq(c1) =>
-    }}
-
-  }
 
   def printCCStats(component: Component, range: (Int, Int), centerY: Double): Unit = {
     import TB._

@@ -6,6 +6,9 @@ import scala.language.experimental.macros
 import spindex._
 import watrmarks.Label
 
+import textboxing.{TextBoxing => TB}
+import TB._
+
 sealed trait TraceLog
 
 object TraceLog {
@@ -13,21 +16,22 @@ object TraceLog {
 
   case object Noop                                   extends TraceLog
   case class SetPageGeometries(b: Seq[PageGeometry]) extends TraceLog
-  case class Show(s: Seq[TargetRegion])              extends TraceLog
-  case class ShowZone(s: Zone)                       extends TraceLog
-  case class ShowComponent(s: Component)             extends TraceLog
-  case class ShowLabel(l:Label)                      extends TraceLog
-  case class FocusOn(s: TargetRegion)                extends TraceLog
-  case class Indicate(figure: TargetFigure)          extends TraceLog
-  case class Message(s: String)                      extends TraceLog
-  case class All(ts: Seq[TraceLog])                  extends TraceLog { override val toString = s"all#${ts.length}"}
-  case class Link(ts: Seq[TraceLog])                 extends TraceLog { override val toString = s"link#${ts.length}"}
-  case class Group(name: String, ts: Seq[TraceLog])  extends TraceLog { override val toString = s"group:${name}#${ts.length}"}
+  case class Show(s: Seq[TargetRegion])              extends TraceLog { override val toString = s"""${s.map(_.toString).mkString(",")}"""}
+  case class ShowZone(s: Zone)                       extends TraceLog { override val toString = s"""${s}"""}
+  case class ShowComponent(s: Component)             extends TraceLog { override val toString = s"""${s}"""}
+  case class ShowLabel(l:Label)                      extends TraceLog { override val toString = s"""${l}"""}
+  case class FocusOn(s: TargetRegion)                extends TraceLog { override val toString = s"""focus: ${s}"""}
+  case class Indicate(figure: TargetFigure)          extends TraceLog { override val toString = s"""indicate: ${figure}"""}
+  case class Message(s: TB.Box)                      extends TraceLog { override val toString = s"""${s}""" }
+  case class All(ts: Seq[TraceLog])                  extends TraceLog { override val toString = s"""all: ${ts.map(_.toString).mkString(" ")}"""}
+  case class Link(ts: Seq[TraceLog])                 extends TraceLog { override val toString = s"""link: ${ts.map(_.toString()).mkString(" ")}"""}
+  case class Group(name: String, ts: Seq[TraceLog])  extends TraceLog { override val toString = s"""group:${name} (l=${ts.length}) """}
   case class GroupEnd(name: String)                  extends TraceLog
 
 }
 
 import scala.collection.mutable
+
 
 object VisualTracer {
   import TraceLog._
@@ -52,7 +56,7 @@ object VisualTracer {
   def showLabel(s: Label): TraceLog                     = {ShowLabel(s)}
   def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
   def indicate(s: TargetFigure): TraceLog               = {Indicate(s)}
-  def message(s: String): TraceLog                      = {Message(s)}
+  def message(s: Box): TraceLog                         = {Message(s)}
   def all(ts: Seq[TraceLog]): TraceLog                  = {All(ts)}
   def link(ts: TraceLog*): TraceLog                     = {Link(ts)}
 
@@ -60,12 +64,13 @@ object VisualTracer {
   def end(name: String) = GroupEnd(name)
 
 
-  // TODO remove this global
-  var visualTracingEnabled: Boolean = false
+  // TODO replace this global w/config
+  var visualTraceLevel: VisualTraceLevel = VisualTraceLevel.Off
 }
 
 class VisualTracer() extends utils.EnableTrace[TraceLog] {
-  def tracingEnabled(): Boolean = VisualTracer.visualTracingEnabled
+
+  override def traceLevel(): VisualTraceLevel = VisualTracer.visualTraceLevel
 
   val vtraceStack = mutable.Stack[TraceLog.Group](TraceLog.Group("root", Seq()))
 
@@ -77,13 +82,33 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
     val group12 = group2.copy(ts = group2.ts :+ group1)
     vtraceStack.push(group12)
   }
+  def printlnIndent(s: Box) = {
+    val leftIndent = vtraceStack.length * 4
+    val ibox = indent(leftIndent)(s)
+    println(ibox.toString)
+  }
 
   def trace(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
 
-  def runTrace(tlogs: TraceLog*): Unit = {
+  def formatTrace(trace: TraceLog): Box = {
+    trace match {
+      case g:Group    => nullBox
+      case g:GroupEnd => nullBox
+      case All(ts)    => hjoin(sep=" ")(ts.map(formatTrace(_)):_*)
+      case Link(ts)   => hjoin(sep=" ")(ts.map(formatTrace(_)):_*)
+      case Message(m) => m
+      case _          => trace.toString
+    }
+  }
+
+
+  def runTrace(level: VisualTraceLevel, tlogs: TraceLog*): Unit = {
     tlogs.foreach { trace =>
       trace match {
         case g:Group =>
+          if (level == VisualTraceLevel.Print)  {
+            printlnIndent(s"begin:${g.name}")
+          }
           vtraceStack.push(g)
 
         case g:GroupEnd =>
@@ -92,14 +117,28 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
           }
           while (vtraceStack.top.name != g.name) {
             closeTopGroup()
+            if (level == VisualTraceLevel.Print)  {
+              printlnIndent(s"/end:${g.name}")
+            }
           }
           closeTopGroup()
+          if (level == VisualTraceLevel.Print)  {
+            printlnIndent(s"/end:${g.name}")
+          }
 
         case _ =>
           val group = vtraceStack.pop()
           val g2 = group.copy(ts = group.ts :+ trace)
           vtraceStack.push(g2)
+
+          if (level == VisualTraceLevel.Print)  {
+            val ftrace = vcat(
+              tlogs.toSeq.map({t => formatTrace(t)})
+            )
+            printlnIndent(ftrace)
+          }
       }
+
     }
   }
 
