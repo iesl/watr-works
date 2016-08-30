@@ -12,7 +12,7 @@ import ComponentTypeEnrichments._
 object SpatialIndexOperations {
 
 
-  implicit class RicherZoneIndex(val index: ZoneIndexer) extends AnyVal {
+  implicit class RicherZoneIndex(val zoneIndex: ZoneIndexer) extends AnyVal {
 
 
 
@@ -35,12 +35,12 @@ object SpatialIndexOperations {
           leftEdge.p2.y - leftEdge.p1.y
         ).translate(-5.1, 0)
 
-        val charsToLeft = index.getPageInfo(pageId).charAtomIndex.queryForIntersects(query)
+        val charsToLeft = zoneIndex.getPageInfo(pageId).componentIndex.queryForIntersects(query)
 
         val (splits, leftovers) = charsToLeft
-          .sortBy(_.region.bbox.bottom)
+          .sortBy(_.targetRegion.bbox.bottom)
           .foldLeft((Seq[Seq[CharAtom]](), ysorted)) ({case ((split, remaining), e) =>
-            val cbottom = e.region.bbox.bottom.pp
+            val cbottom = e.bounds.bottom.pp
 
             val cleanEdge = remaining
               .takeWhile(ys => cbottom != ys.region.bbox.bottom.pp)

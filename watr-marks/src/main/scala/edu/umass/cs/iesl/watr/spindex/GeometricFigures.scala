@@ -341,15 +341,15 @@ object IndexShapeOperations {
     }
   }
 
-  def charBoxesBounds(charBoxes: Seq[PageAtom]): LTBounds = {
+  def charBoxesBounds(charBoxes: Seq[PageComponent]): LTBounds = {
     if (charBoxes.isEmpty) {
       LTBounds(0, 0, 0, 0)
     } else {
-      val cbs = charBoxes.sortBy(_.region.bbox.left)
-      val top = cbs.map(_.region.bbox.top).min
-      val bottom = cbs.map(_.region.bbox.bottom).max
-      val l=cbs.head.region.bbox.left
-      val r=cbs.last.region.bbox.right
+      val cbs = charBoxes.sortBy(_.bounds.left)
+      val top = cbs.map(_.bounds.top).min
+      val bottom = cbs.map(_.bounds.bottom).max
+      val l=cbs.head.bounds.left
+      val r=cbs.last.bounds.right
 
       LTBounds(l, top, r-l, bottom-top)
     }

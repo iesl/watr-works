@@ -12,33 +12,51 @@ import utils.IdGenerator
 
 import VisualTracer._
 
-import scalaz.Tree
+// import scalaz.Tree
 
 // One or more indexes over a given page geometry, along with label maps
 case class PageInfo(
   pageId: Int@@PageID,
-  charAtomIndex: SpatialIndex[CharAtom],
+  // charAtomIndex: SpatialIndex[CharAtom],
   componentIndex: SpatialIndex[Component],
   geometry: PageGeometry,
   componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
-  componentToChildTrees: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Tree[Int@@ComponentID]]] = mutable.HashMap(),
-  labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
+  componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),
+  labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap(),
+  charAtoms: mutable.HashMap[Int@@RegionID, (CharAtom, PageComponent)] = mutable.HashMap()
 ) {
 
-  def getPageAtoms(): Seq[PageAtom] = {
-    charAtomIndex.getItems
+  def getPageAtoms(): Seq[CharAtom] = {
+    charAtoms.values.toSeq.map(_._1)
   }
 
-  def setChildTreeWithLabel(cid: Int@@ComponentID, l: Label, tree: Tree[Int@@ComponentID]):Unit = {
-    val lmap = componentToChildTrees.getOrElse(cid, mutable.HashMap())
+  def getPageAtomComponents(): Seq[PageComponent] = {
+    charAtoms.values.toSeq.map(_._2)
+  }
+
+  def setChildTreeWithLabel(cid: Int@@ComponentID, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
+    // val lmap = componentToChildTrees.getOrElse(cid, mutable.HashMap())
+    val lmap = componentToChildren.getOrElse(cid, mutable.HashMap())
     val l0 = lmap.put(l, tree)
-    componentToChildTrees.put(cid, lmap)
+    componentToChildren.put(cid, lmap)
+
+    // // DEBUG
+    // val cindexdbg = componentIndex.getItems.toList.map(_.toString()).mkString("{\n  ", "\n  ", "\n}")
+    // val dbgstr = componentToChildren.map({ case (k, v) =>
+    //   val m2 = v.map({case (k2, v2) =>
+    //     s"""$k2: $v2"""
+    //   }).mkString("\n  ", "\n  ", "\n")
+    //   s"""$k: $m2"""
+    // }).mkString("\n  ", "\n  ", "\n")
+
+    // println(s"""setChildTreeWithLabel: \n$dbgstr""")
+    // println(s"""componentIndex: ${cindexdbg}""")
   }
 
 
-  def getChildTreeWithLabel(cid: Int@@ComponentID, l: Label): Option[Tree[Int@@ComponentID]] = {
+  def getChildTreeWithLabel(cid: Int@@ComponentID, l: Label): Option[Seq[Int@@ComponentID]] = {
     for {
-      lt <- componentToChildTrees.get(cid)
+      lt <- componentToChildren.get(cid)
       t <- lt.get(l)
     } yield t
   }
@@ -132,6 +150,7 @@ class ZoneIndexer()  {
   // ID generators
   val componentIdGen = utils.IdGenerator[ComponentID]()
   val labelIdGen = IdGenerator[LabelID]()
+  val regionIdGen = IdGenerator[RegionID]()
 
   type BioSpine = mutable.MutableList[BioNode]
   val bioSpines = mutable.Map[String, BioSpine]()
@@ -140,18 +159,18 @@ class ZoneIndexer()  {
     bioSpines.getOrElseUpdate(name, mutable.MutableList[BioNode]())
   }
 
-  def setChildTreeWithLabel(c: Component, l: Label, tree: Tree[Int@@ComponentID]):Unit = {
+  def setChildTreeWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
     val pageInfo = pageInfos(getPageForComponent(c))
     pageInfo.setChildTreeWithLabel(c.id, l, tree)
   }
 
-  def getChildTreeWithLabel(c: Component, l: Label): Option[Tree[Int@@ComponentID]] = {
+  def getChildTreeWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
     val pageInfo = pageInfos(getPageForComponent(c))
     val sdf = pageInfo.componentIndex.get(0)
     pageInfo.getChildTreeWithLabel(c.id, l)
   }
 
-  def getChildTree(c: Component, l: Label): Option[Tree[Component]] = {
+  def getChildTree(c: Component, l: Label): Option[Seq[Component]] = {
     val pageInfo = pageInfos(getPageForComponent(c))
     pageInfo.getChildTreeWithLabel(c.id, l)
       .map(tree => tree.map{ cid =>
@@ -233,19 +252,21 @@ class ZoneIndexer()  {
 
   def createRegionComponent(tr: TargetRegion, role: Label): RegionComponent = {
     val region = RegionComponent(componentIdGen.nextId, role, tr, this)
-    val pinfo = getPageInfo(getPageForComponent(region))
-    pinfo.componentIndex.add(region)
+    addComponent(region)
 
     vtrace.trace("create RegionComponent" withTrace showComponent(region))
-
     region
+
   }
 
-  def toComponent(pageAtom: PageAtom): Component = {
+  def addPageAtom(pageAtom: PageAtom): Component = {
     val c = PageComponent(componentIdGen.nextId, pageAtom, this)
-    val pageId = pageAtom.region.target
-    getPageInfo(pageId).componentIndex.add(c)
+    addComponent(c)
+  }
 
+  def addComponent(c: Component): Component = {
+    val pageId = c.targetRegion.target
+    getPageInfo(pageId).componentIndex.add(c)
     c
   }
 
@@ -280,7 +301,7 @@ class ZoneIndexer()  {
 
   def addPage(pageGeometry: PageGeometry): PageInfo = {
     val pageInfo = PageInfo(pageGeometry.id,
-      SpatialIndex.createFor[CharAtom](pageGeometry.bounds),
+      // SpatialIndex.createFor[CharAtom](pageGeometry.bounds),
       SpatialIndex.createFor[Component](pageGeometry.bounds),
       pageGeometry
     )
@@ -329,13 +350,9 @@ object ZoneIndexer extends ComponentDataTypeFormats {
     val zindexer = new ZoneIndexer()
     regionsAndGeometry.foreach { case(regions, geom)  =>
       val pageInfo = zindexer.addPage(geom)
-      val charAtomIndex =  pageInfo.charAtomIndex
-      // zindexer.getPageInfo(pageId: <refinement>[Int, PageID])
 
       regions.foreach {
-        case cb:CharAtom if !cb.isSpace =>
-          charAtomIndex.add(cb)
-
+        case cb:CharAtom if !cb.isSpace => zindexer.addPageAtom(cb)
         case cb:ImgAtom =>
       }
     }

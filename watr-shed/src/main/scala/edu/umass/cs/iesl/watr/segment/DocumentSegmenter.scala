@@ -72,16 +72,16 @@ object DocumentSegmenter extends DocumentUtils {
     dists :+ 0d
   }
 
-  def approximateLineBins(charBoxes: Seq[CharAtom]): Seq[(LTBounds, Seq[CharAtom])] = {
+  def approximateLineBins(charBoxes: Seq[PageComponent]): Seq[(LTBounds, Seq[PageComponent])] = {
     val sortedYPage = charBoxes
-      .groupBy(_.region.bbox.bottom.pp)
+      .groupBy(_.bounds.bottom.pp)
       .toSeq
       .sortBy(_._1.toDouble)
 
     val sortedYX = sortedYPage
       .map({case (bottomY, charBoxes) =>
         val sortedXLine = charBoxes
-          .sortBy(_.region.bbox.left)
+          .sortBy(_.bounds.left)
         (charBoxesBounds(sortedXLine), sortedXLine)
       })
 
@@ -212,8 +212,8 @@ class DocumentSegmenter(
     val allPageLines = for {
       pageId <- zoneIndexer.getPages
     } yield {
-      val charAtoms = zoneIndexer.getPageInfo(pageId).charAtomIndex.getItems
-      vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${charAtoms.length} char atom"))
+      val charAtoms = zoneIndexer.getPageInfo(pageId).getPageAtomComponents
+      vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${charAtoms.length} char atoms"))
 
       determineLines(pageId, charAtoms)
     }
@@ -532,16 +532,16 @@ class DocumentSegmenter(
     }
   }
 
-  private def findNeighbors(pageId: Int@@PageID, qbox: CharAtom): Seq[CharAtom] = {
-    val atomIndex = zoneIndexer.getPageInfo(pageId).charAtomIndex
-    atomIndex.nearestNItems(qbox, 12, 15.0f)
-      .filterNot(_.isWonky)
-  }
+  // private def findNeighbors(pageId: Int@@PageID, qbox: CharAtom): Seq[CharAtom] = {
+  //   val atomIndex = zoneIndexer.getPageInfo(pageId).componentIndex
+  //   atomIndex.nearestNItems(qbox, 12, 15.0f)
+  //     .filterNot(_.isWonky)
+  // }
 
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
-  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[CharAtom]): Seq[CharAtom] = {
+  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[PageComponent]): Seq[PageComponent] = {
     if (charBoxes.isEmpty) Seq()
     else {
       val ids = charBoxes.map(_.region.id.unwrap)
@@ -552,10 +552,10 @@ class DocumentSegmenter(
 
       val missingChars = missingIds.map(id =>
         // zoneIndexer.getAtom(pageId, RegionID(id))
-        zoneIndexer.getPageInfo(pageId).charAtomIndex.getItem(id)
+        zoneIndexer.getPageInfo(pageId).componentIndex.getItem(id)
       )
 
-      val completeLine = (charBoxes ++ missingChars).sortBy(_.region.bbox.left)
+      val completeLine = (charBoxes ++ missingChars).sortBy(_.region.bounds.left)
 
       completeLine
     }
@@ -563,10 +563,10 @@ class DocumentSegmenter(
 
   def determineLines(
     pageId: Int@@PageID,
-    components: Seq[CharAtom]
+    components: Seq[PageComponent]
   ): Unit = {
 
-    val lineSets = new DisjointSets[CharAtom](components)
+    val lineSets = new DisjointSets[PageComponent](components)
 
     // line-bin coarse segmentation
     val lineBins = approximateLineBins(components)
@@ -577,7 +577,7 @@ class DocumentSegmenter(
       if !lineChars.isEmpty
     } {
 
-      def spanloop(chars: Seq[CharAtom]): Seq[Int] = {
+      def spanloop(chars: Seq[PageComponent]): Seq[Int] = {
         if (chars.isEmpty) Seq()
         else {
           val (line1, line2) = chars

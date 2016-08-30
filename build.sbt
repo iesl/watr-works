@@ -17,7 +17,7 @@ val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
   "com.lihaoyi" %% "scalatags" % "0.6.0",
   "com.lihaoyi" %% "acyclic" % "0.1.4" % "provided",
-  "com.lihaoyi" %% "ammonite-ops" % "0.7.4",
+  "com.lihaoyi" %% "ammonite-ops" % "0.7.5",
   "com.typesafe.play" %% "play-json" % "2.5.6",
   "com.github.scopt" %% "scopt" % "3.5.0"
 )
@@ -87,7 +87,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   libraryDependencies ++= Seq(
     "io.spray" %% "spray-can" % "1.3.3",
     "io.spray" %% "spray-routing-shapeless2" % "1.3.3",
-    "com.typesafe.akka" %% "akka-actor" % "2.4.8",
+    "com.typesafe.akka" %% "akka-actor" % "2.4.9",
     "org.webjars.bower" % "fabric" % "1.6.2",
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "2.2.4",

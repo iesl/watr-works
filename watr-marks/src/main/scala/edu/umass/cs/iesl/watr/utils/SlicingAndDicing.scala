@@ -11,12 +11,14 @@ object SlicingAndDicing {
   }
 
   implicit class RicherSeq[A](val aas: Seq[A]) extends AnyVal {
-    def splitOnPairs(f: (A, A) => Boolean): Seq[Seq[A]] = {
+
+
+    def splitOnPairsWithIndex(f: (A, A, Int) => Boolean): Seq[Seq[A]] = {
       val splits: Seq[Int] = aas
         .sliding(2).toSeq
         .zipWithIndex
         .map({
-          case (Seq(a1, a2), i) => if (f(a1, a2)) Some(i) else None
+          case (Seq(a1, a2), i) => if (f(a1, a2, i)) Some(i) else None
           case (Seq(a), i)      => None
           case (Seq(), i)       => None
         })
@@ -24,6 +26,11 @@ object SlicingAndDicing {
 
       splitAtBreaks(splits, aas)
     }
+
+
+    def splitOnPairs(f: (A, A) => Boolean): Seq[Seq[A]] =
+      splitOnPairsWithIndex((a, b, _) => f(a, b))
+
 
     def clusterBy(f: (A, A)=>Boolean): Seq[Seq[A]] = {
       clusterSeqBy(aas)(f)

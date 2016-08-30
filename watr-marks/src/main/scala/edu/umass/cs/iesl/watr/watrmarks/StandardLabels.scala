@@ -17,6 +17,7 @@ trait DocSegLabels {
   val Abstract = Label("ds", "abstract")
 
   val TextBlock = Label("ds", "text-block")
+  val TextSpan = Label("ds", "text-span")
   val ParaBegin = Label("ds", "para-begin")
   val Para = Label("ds", "para")
   val Image = Label("ds", "image")

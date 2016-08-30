@@ -12,7 +12,7 @@ case class TargetRegion(
   target: Int@@PageID,
   bbox: LTBounds
 ) {
-  override def toString = s"""<region:${id} pg:${target} ${bbox.prettyPrint}>"""
+  override def toString = s"""<r#${id} p#${target} ${bbox.prettyPrint}>"""
 }
 
 // TODO this should fully replace TargetRegion:

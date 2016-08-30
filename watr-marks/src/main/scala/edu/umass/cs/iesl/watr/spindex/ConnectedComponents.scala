@@ -55,12 +55,19 @@ sealed trait Component {
 
   def roleLabel: Label
 
+  def queryAtoms(): Seq[PageComponent] = {
+    queryInside(LB.PageAtom).map(_.asInstanceOf[PageComponent])
+  }
+
   def queryInside(role: Label): Seq[Component] = {
-    val pinfo = zoneIndex.getPageInfo(zoneIndex.getPageForComponent(this))
-    val bounds = this.targetRegion.bbox
-    pinfo.componentIndex
-      .queryForContained(bounds)
-      .filter(_.roleLabel == role)
+    getChildTree(role)
+      .getOrElse ({
+        val pinfo = zoneIndex.getPageInfo(zoneIndex.getPageForComponent(this))
+        val bounds = this.targetRegion.bbox
+        pinfo.componentIndex
+          .queryForContained(bounds)
+          .filter(_.roleLabel == role)
+      })
   }
 
   def queryFor(qt: Query.Type, quantifier: Quantifier, labels: Label*): Seq[Component] = {
@@ -92,27 +99,25 @@ sealed trait Component {
   def chars: String
 
   // TODO: this is a convoluted function:
-  def children(): Seq[Component] = {
-    getChildTree(roleLabel)
-      .map({ childTree =>
-        childTree.levels.drop(1).headOption.getOrElse { Seq() }
-      })
-      .getOrElse {Seq()}
+  def getChildren(): Seq[Component] = {
+    getChildren(roleLabel)
   }
-  // // TODO this seems like an awful idea:
-  // def replaceChildren(ch: Seq[Component]): Unit
 
-  def getChildTree(l: Label): Option[Tree[Component]] = {
+  def getChildren(l: Label): Seq[Component] = {
+    getChildTree(l).getOrElse {Seq()}
+  }
+
+
+  def getChildTree(l: Label): Option[Seq[Component]] = {
     zoneIndex.getChildTree(this, l)
   }
 
-  def setChildTree(l: Label, tree: Tree[Component]): Unit = {
+  def setChildTree(l: Label, tree: Seq[Component]): Unit = {
     zoneIndex.setChildTreeWithLabel(this, l, tree.map(_.id))
   }
 
   def connectChildren(l: Label, cs: Seq[Component]): Unit = {
-    cs.map(Tree.Leaf(_))
-
+    zoneIndex.setChildTreeWithLabel(this, l, cs.map(_.id))
   }
 
 
@@ -121,22 +126,6 @@ sealed trait Component {
       .map(_.asInstanceOf[PageComponent])
   }
 
-  // def descendants(): Seq[Component] = {
-  //   def _loop(c: Component): Seq[Component] = {
-  //     if (c.children().isEmpty) List.empty
-  //     else c.children.flatMap(cn => cn +: _loop(cn))
-  //   }
-
-  //   _loop(this)
-  // }
-
-  // def labeledChildren(l: Label): Seq[Component] = {
-  //   children.filter(_.getLabels.contains(l))
-  // }
-
-  // def labeledDescendants(l: Label): Seq[Component] = {
-  //   descendants.filter(_.getLabels.contains(l))
-  // }
 
   def mapChars(subs: Seq[(Char, String)]): Component
 
@@ -146,10 +135,6 @@ sealed trait Component {
   def bounds: LTBounds
 
   def orientation: Double = 0.0d // placeholder until this is implemented for real
-
-  // def findCenterY(): Double = {
-  //   children().map({c => c.bounds.toCenterPoint.y}).sum / children().length
-  // }
 
   import utils.VisualTracer._
 
@@ -167,11 +152,23 @@ sealed trait Component {
     zoneIndex.getLabels(this)
   }
 
-  // def containedLabels(): Set[Label] = {
-  //   val descLabels = children.map(_.containedLabels())
-  //   val descLabelSet = descLabels.foldLeft(Set[Label]())(_ ++ _)
-  //   getLabels() ++ descLabelSet
-  // }
+  def setChildren(l: Label, cs: Seq[Component]): Unit = {
+    setChildTree(l, cs)
+  }
+
+  def toTree(roles: Label*): Tree[Component] = {
+    if (roles.isEmpty) {
+      // println(s"toTree: empty ${this}")
+      Tree.Leaf(this)
+    } else {
+      // println(s"""toTree: ${this} / ${roles.mkString(", ")}""")
+      val childForest = getChildren(roles.head)
+        .map(_.toTree(roles.tail:_*))
+        .toStream
+
+      Tree.Node(this, childForest)
+    }
+  }
 }
 
 
@@ -183,6 +180,42 @@ case class RegionComponent(
   override val zoneIndex: ZoneIndexer
 ) extends Component {
 
+  def cloneAs(l: Label): RegionComponent = {
+    val atoms = queryAtoms()
+    val clone = copy(
+      id = zoneIndex.componentIdGen.nextId,
+      roleLabel = l,
+      region = region.copy(
+        id = zoneIndex.regionIdGen.nextId
+      )
+    )
+    zoneIndex.addComponent(clone)
+    clone.setChildTree(LB.PageAtom, atoms)
+    clone
+  }
+
+  def splitAtomsIf(splitf: (PageComponent, PageComponent, Int) => Boolean): Seq[RegionComponent] = {
+    import utils.SlicingAndDicing._
+
+    def cbounds(cs: Seq[Component]) = {
+      cs.map(_.bounds)
+        .reduce(_ union _)
+    }
+
+    val splitAtoms = queryAtoms().splitOnPairsWithIndex(splitf)
+
+    val splitRegions = splitAtoms.map({case atoms =>
+      val rc = cloneAs(roleLabel)
+      val split = rc.copy(
+        region = rc.region.copy(
+          bbox = cbounds(atoms)))
+
+      split.setChildren(LB.PageAtom, atoms)
+      split
+    })
+
+    splitRegions
+  }
 
   def targetRegions: Seq[TargetRegion] = Seq(region)
 
@@ -205,7 +238,7 @@ case class RegionComponent(
   }
 
   override def toString(): String = {
-    s"RegionC(${id}:${region.toString})"
+    s"<${roleLabel}#${id} ${region}>"
   }
 }
 
@@ -259,7 +292,9 @@ case class PageComponent(
 
   def chars: String = toText
 
-  override def toString: String = chars
+  override def toString(): String = {
+    s"<${roleLabel}#${id} ${chars}>"
+  }
 
 }
 

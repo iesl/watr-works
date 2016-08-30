@@ -269,7 +269,7 @@ object ComponentOperations {
       val visualLine = visualLineOpt.getOrElse { sys.error("getChildTree(LB.VisualLine) not found") }
 
 
-      component.children.foreach({c =>
+      component.getChildren.foreach({c =>
         val cctr = c.bounds.toCenterPoint
         val cbottom = c.bounds.bottom
         val supSubTolerance = component.bounds.height / 20.0
@@ -300,7 +300,7 @@ object ComponentOperations {
       vtrace.trace(begin("Split On Whitespace"))
       vtrace.trace(message(s"chars: ${component.chars}"))
 
-      // val trs = component.children().map(c => s"${c.targetRegion.target}: ${c.targetRegion.bbox.prettyPrint}").mkString(", ")
+      // val trs = component.getChildren().map(c => s"${c.targetRegion.target}: ${c.targetRegion.bbox.prettyPrint}").mkString(", ")
       // println(s"splitWhitespace():chars = ${component.chars}): ${trs}")
 
       // TODO: determineSpacings() should take into account all text lines for inter-word char spacings,
@@ -327,7 +327,7 @@ object ComponentOperations {
                     |""".stripMargin.mbox)
       )
 
-      val charSpans = component.children()
+      val charSpans = component.getChildren()
 
       val tokenSpans = (charSpans
         .zip(pairwiseSpaceWidths(charSpans)))
@@ -405,14 +405,14 @@ object ComponentOperations {
 
 
     def determineNormalTextBounds: LTBounds = {
-      val mfHeights = Histogram.getMostFrequentValues(component.children.map(_.bounds.height), 0.1d)
-      val mfTops = Histogram.getMostFrequentValues(component.children.map(_.bounds.top), 0.1d)
+      val mfHeights = Histogram.getMostFrequentValues(component.getChildren.map(_.bounds.height), 0.1d)
+      val mfTops = Histogram.getMostFrequentValues(component.getChildren.map(_.bounds.top), 0.1d)
 
 
       val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
       val mfTop = mfTops.headOption.map(_._1).getOrElse(0d)
 
-      component.children
+      component.getChildren
         .map({ c =>
           val cb = c.bounds
           LTBounds(
@@ -420,7 +420,7 @@ object ComponentOperations {
             width=cb.width, height=mfHeight
           )
         })
-        .foldLeft(component.children().head.bounds)( { case (b1, b2) =>
+        .foldLeft(component.getChildren().head.bounds)( { case (b1, b2) =>
           b1 union b2
         })
     }

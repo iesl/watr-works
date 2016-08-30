@@ -1,4 +1,17 @@
 
+
+WatrWorks is PDF text extraction and analysis system that improves on existing open-source systems in several respects. It improves on the accuracy of character-level extraction, particularly when handling symbols, Greek letters, and other math-related characters. The exact dimensions of the bounding box for each extracted character is calculated, which allows for accurate spatial analysis of layout. Through spatial analysis, text-line formatting is preserved, including super- and sub-scripting, along with column finding and left/right justification. Text is grouped into lines and labeled as paragraphs, section headings, abstracts, and other high-level organizational units. Several output formats are supported, including SVG and JSON. 
+
+Our work with MIT has focused on improving text extraction in material science literature. Particular attention is given to chemical formulas, symbols used to express quantities and measures, and labeling sections of text that are of interest. IESL and MIT have coordinated through weekly online meetings, as well as larger group meetings each semester. 
+
+
+
+- extraction of text particular to material science:
+-- formula, math, super/subscript parsing
+-- Parsing sentence structure while respecting the atomicity of chemical formula
+
+
+
 *** Varieties of bounding boxes: (anything with some type of x,y,width,height)
     - spatialindex.Bounds
       - stores min/max pairs for x/y
@@ -120,7 +133,7 @@ Y.D. Wa _J_ n _.__N_ g _._ ^a^^,^_D_ ^b^^,^^*^ _e_ ,_n_E _g_.W _a__,_ . _H_ H _.
          */
 
     ["page/marker"]},
-[[["entity"], [124, 125]], [["quantity"], [32, 33, 36]], 
+[[["entity"], [124, 125]], [["quantity"], [32, 33, 36]],
 
            {"components": [
                ["body", [..ordered list of all lines in body], 00]
@@ -185,22 +198,17 @@ Y.D. Wa _J_ n _.__N_ g _._ ^a^^,^_D_ ^b^^,^^*^ _e_ ,_n_E _g_.W _a__,_ . _H_ H _.
 
 
            {"labels": ["page/end"]}
-           
-       
-           {"ids", 
-               {"series": [[1,99], [0, [-1,-1,-1,-1]]], 
+
+
+           {"ids",
+               {"series": [[1,99], [0, [-1,-1,-1,-1]]],
                 "fill": [
                     [167.76, 576.41, 27.26, 9.99]
                     [200.64, 576.41, 41.42, 9.99],
                     [52.08, 588.17, 20.75, 9.99],
                     ]}
-               {"series": [[323, 789], [1, [-1,-1,-1,-1]]], 
+               {"series": [[323, 789], [1, [-1,-1,-1,-1]]],
                 "fill": [
                     [167.76, 576.41, 27.26, 9.99]
                     ]}
              }
-
-
-- extraction of text particular to material science: 
--- formula, math, super/subscript parsing
--- Parsing sentence structure while respecting the atomicity of chemical formula
