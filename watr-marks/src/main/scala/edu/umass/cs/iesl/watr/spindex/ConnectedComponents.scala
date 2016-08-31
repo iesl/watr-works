@@ -70,22 +70,22 @@ sealed trait Component {
       })
   }
 
-  def queryFor(qt: Query.Type, quantifier: Quantifier, labels: Label*): Seq[Component] = {
-    val pinfo = zoneIndex.getPageInfo(zoneIndex.getPageForComponent(this))
-    val cindex = pinfo.componentIndex
-    val bounds = this.targetRegion.bbox
-    val hits = qt match {
-      case Query.Intersects => cindex.queryForIntersects(bounds)
-      case Query.Contains   => cindex.queryForContained(bounds)
-    }
+  // def queryFor(qt: Query.Type, quantifier: Quantifier, labels: Label*): Seq[Component] = {
+  //   val pinfo = zoneIndex.getPageInfo(zoneIndex.getPageForComponent(this))
+  //   val cindex = pinfo.componentIndex
+  //   val bounds = this.targetRegion.bbox
+  //   val hits = qt match {
+  //     case Query.Intersects => cindex.queryForIntersects(bounds)
+  //     case Query.Contains   => cindex.queryForContained(bounds)
+  //   }
 
-    val labelSet = labels.toSet
+  //   val labelSet = labels.toSet
 
-    quantifier match {
-      case Quantifier.All    => hits.filter(labelSet subsetOf _.getLabels)
-      case Quantifier.Exists => hits.filterNot(_.getLabels.intersect(labelSet).isEmpty)
-    }
-  }
+  //   quantifier match {
+  //     case Quantifier.All    => hits.filter(labelSet subsetOf _.getLabels)
+  //     case Quantifier.Exists => hits.filterNot(_.getLabels.intersect(labelSet).isEmpty)
+  //   }
+  // }
 
   def targetRegions: Seq[TargetRegion]
 
@@ -98,11 +98,11 @@ sealed trait Component {
 
   def chars: String
 
-  // TODO: this is a convoluted function:
   def getChildren(): Seq[Component] = {
     getChildren(roleLabel)
   }
 
+  // TODO: this should really return a Seq[Option[Component]] to signify existance vs. empty children
   def getChildren(l: Label): Seq[Component] = {
     getChildTree(l).getOrElse {Seq()}
   }
@@ -119,13 +119,6 @@ sealed trait Component {
   def connectChildren(l: Label, cs: Seq[Component]): Unit = {
     zoneIndex.setChildTreeWithLabel(this, l, cs.map(_.id))
   }
-
-
-  def atomicComponents: Seq[PageComponent] =  {
-    queryFor(Query.Contains, Quantifier.All, LB.PageAtom)
-      .map(_.asInstanceOf[PageComponent])
-  }
-
 
   def mapChars(subs: Seq[(Char, String)]): Component
 
@@ -155,6 +148,35 @@ sealed trait Component {
   def setChildren(l: Label, cs: Seq[Component]): Unit = {
     setChildTree(l, cs)
   }
+
+  def toRoleTree(roles: Label*): Tree[Component] = {
+
+    val children = for {
+      r <- roles
+    } yield getChildren(r)
+
+    // val childrenOrAtoms = children.headOption.orElse(Some(queryAtoms()))
+
+
+    val roleTree = children
+      .filterNot(_.isEmpty)
+      .headOption
+      .map({ c =>
+        val cf = c.map(_.toRoleTree(roles:_*))
+        Tree.Node(this, cf.toStream)
+      })
+      .getOrElse({
+        Tree.Leaf(this)
+        // Tree.Node(this,
+        //   queryAtoms()
+        //     .map(c => Tree.Leaf(c.asInstanceOf[Component]))
+        //     .toStream
+        // )
+      })
+
+    roleTree
+  }
+
 
   def toTree(roles: Label*): Tree[Component] = {
     if (roles.isEmpty) {
@@ -238,7 +260,8 @@ case class RegionComponent(
   }
 
   override def toString(): String = {
-    s"<${roleLabel}#${id} ${region}>"
+    val lls = getLabels.mkString(",")
+    s"<${roleLabel}#${id} ${region} [${lls}]>"
   }
 }
 
@@ -293,7 +316,8 @@ case class PageComponent(
   def chars: String = toText
 
   override def toString(): String = {
-    s"<${roleLabel}#${id} ${chars}>"
+    val lls = getLabels.mkString(",")
+    s"<${roleLabel}#${id} ${chars} [$lls]>"
   }
 
 }

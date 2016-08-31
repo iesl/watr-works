@@ -33,16 +33,46 @@ case class CCRenderState(
 
 object ComponentRendering {
   import TB._
-  /*
-   Rendering Specs: starting query, plus recursive queries for each thing to be rendered
-   LB.Page
-     LB.VisualLine
-       LB.Token
 
-   LB.Page
-     LB.DehyphenatedLine
-       LB.Token
-   */
+  object VisualLine {
+    def render(cc: Component): TB.Box = {
+      cc.roleLabel match {
+        case LB.VisualLine
+           | LB.TextSpan =>
+
+          val children = childSpansOrAtoms(cc)
+          val rc = children.map(render(_))
+          val hsep = if (isTokenized(cc)) " " else ""
+          val joined = hjoins(sep=hsep)(rc)
+
+          surroundCC(cc, joined)
+
+        case LB.PageAtom =>
+          surroundCC(cc, cc.chars.box)
+
+        case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
+      }
+    }
+
+    def childSpansOrAtoms(cc: Component): Seq[Component] = {
+      val sub = cc.getChildren(LB.TextSpan)
+      if (sub.isEmpty) cc.queryAtoms()
+      else sub
+    }
+
+    def hasLabel(cc: Component, l: Label) = cc.getLabels.contains(l)
+    def isSup(cc: Component) = hasLabel(cc, LB.Sup)
+    def isSub(cc: Component) = hasLabel(cc, LB.Sub)
+    // def isToken(cc: Component) = hasLabel(cc, LB.Token)
+    def isTokenized(cc: Component) = hasLabel(cc, LB.Tokenized)
+
+    def surroundCC(cc: Component, b: TB.Box): TB.Box = {
+      if (isSup(cc)) "^{".box + b + "}"
+      else if (isSub(cc)) "_{".box + b + "}"
+      else b
+    }
+
+  }
 
   def renderConnectedComponents(_cc: Component)(implicit ostate: Option[CCRenderState] = None): Seq[TB.Box] = {
 
