@@ -9,6 +9,7 @@ import textboxing.{TextBoxing => TB}
 import spindex._
 import IndexShapeOperations._
 import java.io.{File => JFile}
+import scala.io
 
 case class AppConfig(
   runRoot: Option[JFile] = None,
