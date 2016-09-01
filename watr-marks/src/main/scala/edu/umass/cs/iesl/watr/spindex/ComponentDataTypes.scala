@@ -12,7 +12,7 @@ case class TargetRegion(
   target: Int@@PageID,
   bbox: LTBounds
 ) {
-  override def toString = s"""<r#${id} p#${target} ${bbox.prettyPrint}>"""
+  override def toString = s"""<reg.${id} pg.${target} ${bbox.prettyPrint}>"""
 }
 
 // TODO this should fully replace TargetRegion:
@@ -20,16 +20,14 @@ case class TargetFigure(
   id: Int@@RegionID,
   page: Int@@PageID,
   figure: GeometricFigure
-)
+) {
+  override def toString = s"""<fig.${id} pg.${page} ${figure.toString}>"""
+}
 
 case class Zone(
   id: Int@@ZoneID,
   regions: Seq[TargetRegion]
-) {
-  def withLabel(l: Label) = ZoneAndLabel(
-    this.id, l
-  )
-}
+)
 
 case class PageGeometry(
   id: Int@@PageID,

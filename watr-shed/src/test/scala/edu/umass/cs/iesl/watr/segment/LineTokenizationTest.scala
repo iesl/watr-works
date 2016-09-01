@@ -2,61 +2,64 @@ package edu.umass.cs.iesl.watr
 
 package segment
 
-// import scalaz.@@
 import org.scalatest._
 
 import spindex._
 import IndexShapeOperations._
-// import ComponentTypeEnrichments._
-// import ComponentRendering._
 import ComponentOperations._
 import GeometricFigure._
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"
- // import Component._
+
+  // val testExamplesFromSVG = List(
+  //   """| page="0" file="/0575.pdf"
+  //      |------------------
+  //      |JOURNAL OF SOLID STATE CHEMISTRY {^{78,294–300(1989)}} --> <svg:rect class="linebox" x="53.52" y="52.42" width="206.14"  height="8.21" />
+  //      |============
+  //      |JOURNAL OF SOLID STATE CHEMISTRY 78, 294-300 (1989)
+  //      |""".stripMargin,
+
+  //   """| page="6" file="/0575.pdf"
+  //      | class="pagebox" x="51.84016418457031" y="54.6148681640625" width="400.3195037841797"  height="499.7032928466797" />
+  //      |------------------
+  //      |{^{L.E.}} TOTH, {^{F.}} BENESOVSKY, {^{H.}} NOWOTNY, AND --> <svg:rect class="linebox" x="272.16" y="137.14" width="176.51"  height="8.21" />
+  //      |E. RUDY, Monatsh. Chem. 92, 956 --> <svg:rect class="linebox" x="272.15" y="147.67" width="125.98"  height="7.33" />
+  //      |(1961). --> <svg:rect class="linebox" x="401.52" y="146.98" width="24.71"  height="8.21" />
+  //      |============
+  //      |L. E. TOTH, F. BENESOVSKY, H. NOWOTNY, AND
+  //      |E. RUDY, Monatsh. Chem. 92, 956 (1961).
+  //      |""".stripMargin,
 
 
-  val testExamplesFromSVG = List(
+  //   """|page="0" file="/0575.pdf"
+  //      |------------------
+  //      |Single–Crystal X–Ray andPowder Neutron Diffraction --> <svg:rect class="linebox" x="52.80" y="101.96" width="293.24"  height="10.88" />
+  //      |============
+  //      |Single–Crystal X-Ray and Powder Neutron Diffraction
+  //      |""".stripMargin,
 
-    """| page="6" file="/0575.pdf"
-       | class="pagebox" x="51.84016418457031" y="54.6148681640625" width="400.3195037841797"  height="499.7032928466797" />
-       |------------------
-       |{^{L.E.}} TOTH, {^{F.}} BENESOVSKY, {^{H.}} NOWOTNY, AND --> <svg:rect class="linebox" x="272.16" y="137.14" width="176.51"  height="8.21" />
-       |E. RUDY, Monatsh. Chem. 92, 956 --> <svg:rect class="linebox" x="272.15" y="147.67" width="125.98"  height="7.33" />
-       |(1961). --> <svg:rect class="linebox" x="401.52" y="146.98" width="24.71"  height="8.21" />
-       |============
-       |L. E. TOTH, F. BENESOVSKY, H. NOWOTNY, AND
-       |E. RUDY, Monatsh. Chem. 92, 956 (1961).
-       |""".stripMargin,
-
-    """| page="0" file="/0575.pdf"
-       |------------------
-       |JOURNAL OF SOLID STATE CHEMISTRY {^{78,294–300(1989)}} --> <svg:rect class="linebox" x="53.52" y="52.42" width="206.14"  height="8.21" />
-       |============
-       |JOURNAL OF SOLID STATE CHEMISTRY 78, 294-300 (1989)
-       |""".stripMargin,
-
-    """|page="0" file="/0575.pdf"
-       |------------------
-       |Single–Crystal X–Ray andPowder Neutron Diffraction --> <svg:rect class="linebox" x="52.80" y="101.96" width="293.24"  height="10.88" />
-       |============
-       |Single–Crystal X-Ray and Powder Neutron Diffraction
-       |""".stripMargin,
-
-    """|page="0" file="/0575.pdf"
-       |------------------
-       |ofThB& (ThB$–Type) --> <svg:rect class="linebox" x="53.28" y="116.84" width="111.17"  height="10.88" />
-       |============
-       |of {ThB_{2}C} {(ThB_{2}C–Type)}
-       |""".stripMargin
-  )
+  //   """|page="0" file="/0575.pdf"
+  //      |------------------
+  //      |ofThB& (ThB$–Type) --> <svg:rect class="linebox" x="53.28" y="116.84" width="111.17"  height="10.88" />
+  //      |============
+  //      |of {ThB_{2}C} {(ThB_{2}C–Type)}
+  //      |""".stripMargin
+  // )
 
   val testExamples = List(
     TextExample(
       """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016japsusc201210126.pdf.d/101016japsusc201210126.pdf
          |""".stripMargin,
-      """|be    (l:41.23, t:497.77, w:251.54, h:18.43)
+      """|be    (l:32.23, t:488.00, w:251.54, h:9.0)
+         |""".stripMargin,
+      """|Proton exchange membrane fuel cell (PEMFC) is considered to
+         |""".stripMargin
+    ),
+    TextExample(
+      """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016japsusc201210126.pdf.d/101016japsusc201210126.pdf
+         |""".stripMargin,
+      """|be    (l:32.23, t:488.00, w:251.54, h:18.43)
          |""".stripMargin,
       """|Proton exchange membrane fuel cell (PEMFC) is considered to
          |be the most attractive energy technology for the future due to
@@ -128,11 +131,11 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
   it should "identify text lines" in {
-    val justRunThisOne:Option[Int] = None
-    // val justRunThisOne:Option[Int] = Some(1)
+    // val justRunThisOne:Option[Int] = None
+    val justRunThisOne:Option[Int] = Some(0)
 
-    val examples = (testExamplesFromSVG.map(svgCutAndPasteToTest(_)) ++
-      testExamples.map(cutAndPasteToTestExample(_)))
+    // (testExamplesFromSVG.map(svgCutAndPasteToTest(_)) ++
+    val examples = testExamples.map(cutAndPasteToTestExample(_))
 
     justRunThisOne
       .map(i => examples.drop(i).take(1))
@@ -145,14 +148,15 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
   def testExample(example: ParsedExample): Unit = {
-    println(s"\n\ntesting ${example.source}")
+    println(s"\ntesting ${example.source}")
 
     val pdfIns = papers.paper(example.source)
 
-    val segmenter:DocumentSegmenter =  null // DocumentSegmenter.createSegmenter(pdfIns)
+    val segmenter =  DocumentSegmenter.createSegmenter(pdfIns, Seq())
 
     // Assume these example regions are all from one page
     val pageId = example.regions.map(_._2).head
+
 
     val allBboxes = example.regions.map(_._3)
 
@@ -166,14 +170,18 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
       maxX-minX,
       maxY-minY
     )
+    segmenter.zoneIndexer.dbgFilterPages(pageId)
+    segmenter.zoneIndexer.dbgFilterComponents(pageId, totalBounds)
 
     val interestingChars = segmenter.zoneIndexer
       .getPageInfo(pageId)
-      .charAtomIndex
+      .componentIndex
       .queryForIntersects(totalBounds)
 
-    println("["+squishb(interestingChars)+"]")
+    println("tokenizing line w/chars: ["+squishb(interestingChars)+"]")
 
+    // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
+    utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
 
     segmenter.runLineDetermination()
 
@@ -183,11 +191,20 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
       .componentIndex
       .queryForIntersects(totalBounds)
       .sortBy(_.bounds.top)
-      .filter(_.getLabels.contains(LB.VisualLine))
+      .filter(_.roleLabel != LB.PageAtom)
 
-    // val tokenizedLines = lineComponents.map { lineComponent =>
-    //   lineComponent.tokenizeLine().toText
-    // }
+    lineComponents.foreach { line =>
+      // println(line)
+      import scalaz.std.string._
+      val treeView = line.toRoleTree(LB.TextSpan, LB.PageAtom).map(_.toString()).drawTree
+      // println("Line")
+      // println(treeView)
+    }
+
+
+    val tokenizedLines = lineComponents.map { lineComponent =>
+      lineComponent.tokenizeLine()
+    }
 
 
     // println(s"""component= ${lineComponent.chars}, ${lineComponent.id} (${lineComponent.getLabels.mkString(", ")})""")

@@ -30,11 +30,11 @@ trait DocSegLabels {
   val Tokenized = Label("ds", "tokenized")
   val LineBreakToken = Label("ds", "lb-token")
   val Invisible = Label("ds", "invisible")
-  val Sup = Label("ds", "sup")
-  val Sub = Label("ds", "sub")
+  val Sup = Label("ds", "sup-script")
+  val Sub = Label("ds", "sub-script")
+  val CenterScript = Label("ds", "ctr-script")
 
-  // A temporary label meant to be applied as a placeholder, then removed, but not serialized. Grep the code for examples
-  val Marker = Label("ds", "marker")
+  // val Marker = Label("ds", "marker")
   val PageAtom = Label("ds", "atom")
 
 }

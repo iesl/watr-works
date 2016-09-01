@@ -10,29 +10,37 @@ sealed trait GeometricFigure
 sealed trait Area
 
 object GeometricFigure {
-
+  import IndexShapeOperations._
   case class LTBounds(
     left: Double,
     top: Double,
     width: Double,
     height: Double
-  ) extends GeometricFigure with Area
+  ) extends GeometricFigure with Area {
+    override def toString: String = this.prettyPrint
+  }
 
   case class LBBounds(
     left: Double,
     bottom: Double,
     width: Double,
     height: Double
-  ) extends GeometricFigure with Area
+  ) extends GeometricFigure with Area {
+    override def toString: String = this.prettyPrint 
+  }
 
 
   case class Point(
     x: Double, y: Double
-  ) extends GeometricFigure
+  ) extends GeometricFigure {
+    override def toString: String = this.prettyPrint
+  }
 
   case class Line(
     p1: Point, p2: Point
-  ) extends GeometricFigure
+  ) extends GeometricFigure{
+    override def toString: String = this.prettyPrint
+  }
 
 }
 
@@ -94,6 +102,7 @@ object IndexShapeOperations {
   }
 
   implicit class RicherFigure(val figure: spindex.GeometricFigure) extends AnyVal {
+
     def targetTo(page: Int@@PageID): TargetFigure = {
       TargetFigure(
         RegionID(0), // TODO gen region id
@@ -130,7 +139,7 @@ object IndexShapeOperations {
       }
     }
     def prettyPrint: String = {
-      s"""[${fmt(p0.x)}, ${fmt(p0.y)}]"""
+      s"""(${fmt(p0.x)}, ${fmt(p0.y)})"""
     }
 
   }
@@ -144,6 +153,11 @@ object IndexShapeOperations {
   }
 
   implicit class RicherLine(val line: Line) extends AnyVal {
+    def prettyPrint(): String = {
+      val p1 = line.p1.prettyPrint
+      val p2 = line.p2.prettyPrint
+      s"<line:$p1->$p2>"
+    }
 
     def rise(): Double = line.p2.y - line.p1.y
 
@@ -280,7 +294,7 @@ object IndexShapeOperations {
     }
 
     def toJsiRectangle: jsi.Rectangle = {
-       jsiRectangle(tb.left, tb.top, tb.width, tb.height)
+      jsiRectangle(tb.left, tb.top, tb.width, tb.height)
     }
 
     def jsiCenterPoint: jsi.Point = {

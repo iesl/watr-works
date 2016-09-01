@@ -14,8 +14,8 @@ import ComponentRendering._
 object DocumentIO {
   import ComponentOperations._
   import IndexShapeOperations._
-  // import ComponentTypeEnrichments._
   import BioLabeling._
+
 
   import TB._
 
@@ -103,36 +103,6 @@ object DocumentIO {
 
   }
 
-  def serializeComponent(currentComponent: Component)(implicit ostate: Option[CCRenderState] = None): Unit = {
-    import TB._
-
-    // dfs through components:
-    def loopDfs[A](_cc: Component, path: List[Component], prefn: (Component, List[Component]) => A): Unit = {
-      prefn(_cc, path)
-
-      _cc.children
-        .map(c => loopDfs(c, _cc :: path, prefn))
-    }
-
-
-    def fn0(c: Component, p: List[Component]): Unit = {
-      val indent = "   "*p.length
-      val lls = c.getLabels
-      if (!lls.isEmpty) {
-        if (lls.contains(LB.VisualLine)) {
-          val renderedLine = hsep(renderConnectedComponents(c)).toString
-          println(s"""$indent${renderedLine}      [${c.getLabels.mkString(", ")}] ${c.id}""")
-        } else {
-          println(s"""$indent[${c.getLabels.mkString(", ")}] ${c.id}""")
-        }
-      }
-    }
-
-    loopDfs(currentComponent, Nil, fn0)
-
-  }
-
-
 
   def charInfosBox(cbs: Seq[CharAtom]): Seq[TB.Box] = {
     import TB._
@@ -147,22 +117,22 @@ object DocumentIO {
   }
 
 
-  def printCCStats(component: Component, range: (Int, Int), centerY: Double): Unit = {
-    import TB._
+  // def printCCStats(component: Component, range: (Int, Int), centerY: Double): Unit = {
+  //   import TB._
 
-    val stats = component.children.zip(pairwiseSpaceWidths(component.children))
-      .drop(range._1)
-      .take(range._2).map({case (c, dist) =>
-        (tbox(c.toText) +| "->" +| (dist.pp)) %
-          c.bounds.top.pp %
-          (c.bounds.left.pp +| c.bounds.right.pp) %
-          (c.bounds.bottom.pp +| "(w:" +| c.bounds.width.pp)
-      }).toList
+  //   val stats = component.children.zip(pairwiseSpaceWidths(component.children))
+  //     .drop(range._1)
+  //     .take(range._2).map({case (c, dist) =>
+  //       (tbox(c.toText) +| "->" +| (dist.pp)) %
+  //         c.bounds.top.pp %
+  //         (c.bounds.left.pp +| c.bounds.right.pp) %
+  //         (c.bounds.bottom.pp +| "(w:" +| c.bounds.width.pp)
+  //     }).toList
 
-    println(
-      hsep(stats)
-    )
-  }
+  //   println(
+  //     hsep(stats)
+  //   )
+  // }
 
 
 

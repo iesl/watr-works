@@ -235,6 +235,11 @@ object ComponentOperations {
 
     def labelSuperAndSubscripts(): Unit = {
       vtrace.trace(begin("labelSuperAndSubscripts()"))
+      vtrace.trace("Starting Tree" withTrace {
+        import scalaz.std.string._
+        val treeView = component.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom).map(_.toString()).drawTree
+        message(treeView)
+      })
 
       val tops = findCommonToplines()
       val bottoms = findCommonBaselines()
@@ -248,48 +253,69 @@ object ComponentOperations {
         .targetTo(component.targetRegion.target)
 
       vtrace.trace(
-        "modal top" withTrace indicateHLine(modalTop),
-        "modal bottom" withTrace indicateHLine(modalBottom),
+        "modal top     " withTrace indicateHLine(modalTop),
+        "modal bottom  " withTrace indicateHLine(modalBottom),
         "modal center Y" withTrace indicateHLine(modalCenterY)
       )
 
-      val labeledRegions = mutable.Stack[RegionComponent]()
 
+      // (start, len, label)
+      val labeledRegions = mutable.Stack[(Int, Int, Label)]()
       def extendOrBegin(lb: Label, c: Component): Unit = {
-        if (!labeledRegions.isEmpty && labeledRegions.top.getLabels().contains(lb)) {
-          labeledRegions.top.extendRegion(c.targetRegion)
+        if (!labeledRegions.isEmpty && labeledRegions.top._3 == lb) {
+          val t = labeledRegions.pop()
+          labeledRegions.push((t._1, t._2+1, t._3))
+          vtrace.trace(s"extend ${lb} over" withTrace message(labeledRegions.top.toString()))
         } else {
-          val rcomp = zoneIndex.createRegionComponent(c.targetRegion, lb)
-          rcomp.addLabel(lb)
-          labeledRegions push rcomp
+          val (st, len, _) = if (!labeledRegions.isEmpty) labeledRegions.top else (-1, 1, lb)
+          labeledRegions.push((st+len, 1, lb))
+          vtrace.trace(s"begin ${lb} at" withTrace message(labeledRegions.top.toString()))
         }
       }
 
-      val visualLineOpt = component.getChildTree(LB.VisualLine)
-      val visualLine = visualLineOpt.getOrElse { sys.error("getChildTree(LB.VisualLine) not found") }
+      component.getChildren(LB.TextSpan).foreach({ textSpan =>
+        textSpan.atoms.foreach { atom =>
+          val cctr = atom.bounds.toCenterPoint
+          val cbottom = atom.bounds.bottom
+          val supSubTolerance = component.bounds.height / 20.0
 
 
-      component.getChildren.foreach({c =>
-        val cctr = c.bounds.toCenterPoint
-        val cbottom = c.bounds.bottom
-        val supSubTolerance = component.bounds.height / 20.0
-
-
-        if (c.bounds.top < modalTop && c.bounds.bottom > modalBottom) {
-          // if our child's top/bottom extends beyond modal top/bottom, it is a larger font and not super/sub
-          vtrace.trace(message(s"${c.chars.mkString} c.bounds.top < modalTop && c.bounds.bottom > modalBottom"))
-          extendOrBegin(LB.Marker, c)
-        } else if (c.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
-          vtrace.trace(message(s"${c.chars.mkString} bottom ~= modalBottom: ${c.bounds.bottom.pp} ~= ${modalBottom.pp}"))
-          extendOrBegin(LB.Marker, c)
-        } else if (cctr.y < modalCenterY){
-          vtrace.trace(message(s"^ ${c.chars.mkString} => ctr.y < modalCenterY: ${cctr.y.pp} < ${modalCenterY.pp}"))
-          extendOrBegin(LB.Sup, c)
-        } else {
-          vtrace.trace(message(s"_ ${c.chars.mkString}"))
-          extendOrBegin(LB.Sub, c)
+          if (atom.bounds.top < modalTop && atom.bounds.bottom > modalBottom) {
+            extendOrBegin(LB.CenterScript, atom)
+          } else if (atom.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
+            extendOrBegin(LB.CenterScript, atom)
+          } else if (cctr.y < modalCenterY){
+            extendOrBegin(LB.Sup, atom)
+          } else {
+            extendOrBegin(LB.Sub, atom)
+          }
         }
       })
+
+      // vtrace.trace(message(s"${textSpan.chars.mkString} textSpan.bounds.top < modalTop && textSpan.bounds.bottom > modalBottom"))
+      // vtrace.trace(message(s"${textSpan.chars.mkString} bottom ~= modalBottom: ${textSpan.bounds.bottom.pp} ~= ${modalBottom.pp}"))
+      // vtrace.trace(message(s"^ ${textSpan.chars.mkString} => ctr.y < modalCenterY: ${cctr.y.pp} < ${modalCenterY.pp}"))
+      // vtrace.trace(message(s"_ ${textSpan.chars.mkString}"))
+      val regions = labeledRegions.toList.reverse
+      val regionStartIndexes = regions.map(_._1)
+      val labels = regions.map(_._3)
+      vtrace.trace("Final span labeling " withTrace
+        message(
+          regions.map({case (a, b, c) => s"(s:$a len:$b $c)"}).mkString(", ")
+        ))
+
+      component.getChildren(LB.TextSpan)
+        .foreach({ startingTextSpan =>
+          startingTextSpan
+            .splitAtomsIf({(c1, c2, pairIndex) =>
+              vtrace.trace(message(s"splitIf ${regionStartIndexes.toList} contains pairIndex=$pairIndex"))
+              regionStartIndexes.contains(pairIndex)
+            }, {(region, regionIndex) =>
+              vtrace.trace(message(s"splitIf (true) r:${region}, i:${regionIndex}"))
+              region.addLabel(labels(regionIndex))
+            })
+        })
+
 
 
       vtrace.trace(end("labelSuperAndSubscripts()"))
@@ -366,7 +392,7 @@ object ComponentOperations {
 
       tokenSpans
         .map(_.map(_._1))
-        .foreach({cs => zoneIndex.connectComponents(cs, LB.Token) })
+        .foreach({cs => zoneIndex.labelRegion(cs, LB.Token) })
 
 
       // component.replaceChildren(asTokens)
@@ -378,11 +404,11 @@ object ComponentOperations {
       if (!component.getLabels.contains(LB.TokenizedLine)) {
 
         vtrace.trace(begin("Tokenize Line"), focusOn(component.targetRegion))
-        vtrace.trace(message(s"chars=>${component.chars}"))
+        vtrace.trace(message(s"Line chars: ${component.chars}"))
 
         labelSuperAndSubscripts()
         // Split whitespace for super/subscript regions first
-        // component.labeledChildren(LB.Sup).foreach{ _.splitWhitespace() }
+        component.getChildren(LB.Sup).foreach{ _.splitWhitespace() }
         // component.labeledChildren(LB.Sub).foreach{ _.splitWhitespace() }
         // // Now split on whitespace for normal text
         // component.labeledChildren(LB.Marker).foreach{ _.splitWhitespace() }
@@ -396,9 +422,9 @@ object ComponentOperations {
         //   }
         // })
 
-        component.addLabel(LB.TokenizedLine)
+        component.addLabel(LB.TokenizedLine(s"TODO: char=${component.chars}"))
 
-        vtrace.trace(message(s"tokenized=>${component.toText}"))
+        vtrace.trace(message(s"tokenized=>${component.chars}"))
         vtrace.trace(end("Tokenize Line"))
       }
     }

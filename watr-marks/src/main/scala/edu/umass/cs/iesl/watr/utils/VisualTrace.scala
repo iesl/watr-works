@@ -92,15 +92,21 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
 
   def formatTrace(trace: TraceLog): Box = {
     trace match {
-      case g:Group    => nullBox
-      case g:GroupEnd => nullBox
-      case All(ts)    => hjoin(sep=" ")(ts.map(formatTrace(_)):_*)
-      case Link(ts)   => hjoin(sep=" ")(ts.map(formatTrace(_)):_*)
-      case Message(m) => m
-      case _          => trace.toString
+      case g:Group                => nullBox
+      case g:GroupEnd             => nullBox
+      case Noop                   => nullBox
+      case SetPageGeometries(pgs) => "SetPageGeometries".box
+      case ShowZone(zone)         => "ShowZone".box
+      case All(ts)                => "all" besideS vjoin()(ts.map(formatTrace(_)):_*)
+      case ShowLabel(l)           => s"Show label ${l}"
+      case ShowComponent(c)       => s"Show Component".box besideS c.toString()
+      case Show(targetRegions)    => "Show Target Regions" besideS vjoins()(targetRegions.map(_.toString.box))
+      case Link(ts)               => hjoin(sep=" ")(ts.map(formatTrace(_)):_*)
+      case Message(m)             => "-" besideS m
+      case FocusOn(targetRegion)  => "Focus On Target Region" besideS targetRegion.toString
+      case Indicate(targetRegion) => "Indicate Target Region" besideS targetRegion.toString
     }
   }
-
 
   def runTrace(level: VisualTraceLevel, tlogs: TraceLog*): Unit = {
     tlogs.foreach { trace =>
@@ -132,9 +138,8 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
           vtraceStack.push(g2)
 
           if (level == VisualTraceLevel.Print)  {
-            val ftrace = vcat(
-              tlogs.toSeq.map({t => formatTrace(t)})
-            )
+            // tlogs.toSeq.map({t => formatTrace(t)})
+            val ftrace = formatTrace(trace)
             printlnIndent(ftrace)
           }
       }

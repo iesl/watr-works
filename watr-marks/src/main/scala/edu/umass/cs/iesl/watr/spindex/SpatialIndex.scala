@@ -30,6 +30,7 @@ class SpatialIndex[T: SpatialIndexable](
       si.ltBounds(item).toJsiRectangle,
       si.id(item)
     )
+    itemMap.remove(si.id(item).toLong)
   }
 
   def add(item: T): Unit = {

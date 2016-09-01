@@ -74,11 +74,11 @@ class SuperSubScriptTest extends DocsegTestUtil {
           format.DocumentIO.extractChars(example.region.pdf)
         )
 
-        val chars = zoneIndex.getPageInfo(example.region.page).charAtomIndex.queryForIntersects(example.region.bbox)
+        // val chars = zoneIndex.getPageInfo(example.region.page).charAtomIndex.queryForIntersects(example.region.bbox)
 
-        val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
+        // val found = chars.sortBy(_.region.bbox.left).map({ cbox => cbox.char }).toList.mkString
 
-        val lineChars = chars.sortBy(_.region.bbox.left)
+        // val lineChars = chars.sortBy(_.region.bbox.left)
         // val ccs = zoneIndex.concatRegions(lineChars).addLabel(LB.VisualLine)
 
         // val tokenized = ccs.tokenizeLine().toText

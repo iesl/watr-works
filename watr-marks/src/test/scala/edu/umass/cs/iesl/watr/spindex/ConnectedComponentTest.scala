@@ -75,11 +75,6 @@ trait ConnectedComponentTestUtil extends Matchers {
     reg
   }
 
-  def sortAndConnect(c: Component, l:Label, orderingLabel: Label, sortf: (Component) => Double): Unit = {
-    val patoms = c.queryInside(l)
-    c.connectChildren(orderingLabel, patoms.sortBy(sortf))
-  }
-
   def createZoneIndexer(str: String): ZoneIndexer = {
     val (atoms, geom) = stringToPageAtoms(str)
     ZoneIndexer.loadSpatialIndices2(Seq((atoms -> geom)))
@@ -96,101 +91,6 @@ class ConnectedComponentTest extends FlatSpec with ConnectedComponentTestUtil {
   import watrmarks.{StandardLabels => LB}
 
 
-  // it should "label, sort and connect regions" in {
-  //   val ccs =(
-  //     """|a b c
-  //        |d e f
-  //        |""".stripMargin)
-
-  //   val zoneIndex = createZoneIndexer(ccs)
-
-  //   val l1 = labelRow(zoneIndex, 0, LB.VisualLine)
-  //   val l2 = labelRow(zoneIndex, 1, LB.VisualLine)
-
-
-  //   // Create an ordered list of page atoms within a labeled region
-  //   l1.foreach { regionComp =>
-  //     sortAndConnect(regionComp, LB.PageAtom, LB.PageAtom, _.bounds.left)
-  //   }
-
-  //   l2.foreach { regionComp =>
-  //     sortAndConnect(regionComp, LB.PageAtom, LB.PageAtom, _.bounds.left)
-  //   }
-
-  //   println("create ordering")
-
-  //   l1.foreach { regionComp =>
-  //     val children = regionComp.getChildTree(LB.PageAtom)
-  //     children.foreach { tree =>
-  //       println(tree.mkString(", "))
-  //     }
-  //   }
-
-  //   l2.foreach { regionComp =>
-  //     val children = regionComp.getChildTree(LB.PageAtom)
-  //     children.foreach { tree =>
-  //       println(tree.mkString(", "))
-  //     }
-  //   }
-  // }
-
-  // it should "demonstrate tokenizing operations" in {
-  //   val zoneIndex = createZoneIndexer(
-  //     // 01234567890
-  //     """Eu1-xBixVO4"""
-  //   )
-  //   //  when ccs are 'connected' they query is cached such that future lookups return the ordered children
-  //   for { row  <- labelRow(zoneIndex, 0, LB.VisualLine) } {
-
-  //     sortAndConnect(row, LB.PageAtom, LB.PageAtom, _.bounds.left)
-
-  //     // Create a CC w/same target region, same atom sorting, linked as child to row
-  //     val textSpanRegion = row.cloneAs(LB.TextSpan)
-
-  //     // Region CCs r1,r2 become siblings in parent ordering tree, and inherit PageAtom ordering
-  //     val splitRegions = textSpanRegion
-  //       .splitAtomsIf((_, _, pairIndex) => Set(1, 4, 6, 7, 9).contains(pairIndex))
-
-  //     splitRegions.zipWithIndex.foreach{case (r, i) =>
-  //       if ((i % 2)==1) {
-  //         r.addLabel(LB.Sub)
-  //       }
-  //     }
-
-  //     row.setChildren(LB.TextSpan, splitRegions)
-
-  //     // val treeView = row.toTree(LB.TextSpan, LB.PageAtom).map(_.toString()).drawTree
-
-
-  //     val rendered = row.toTree(LB.TextSpan, LB.PageAtom)
-  //       .scanr[String]({case (c: Component, ts: Stream[Tree[String]]) =>
-  //         c.roleLabel match {
-  //           case LB.VisualLine =>
-  //             ts.map(_.rootLabel).mkString
-
-  //           case LB.TextSpan =>
-  //             val sdf = ts.map(_.rootLabel).mkString
-  //             if (c.getLabels.contains(LB.Sub)) {
-  //               s"""_{${sdf}}"""
-  //             } else {
-  //               s"""${sdf}"""
-  //             }
-  //           case LB.PageAtom => c.chars
-  //           case _ => c.toString
-  //         }
-  //       })
-
-  //     assertResult("Eu_{1-x}Bi_{x}VO_{4}"){
-  //       rendered.rootLabel
-  //     }
-
-  //     // println("Super/subscript=")
-  //     // println(treeView)
-  //     // println(rendered.rootLabel)
-
-  //   }
-  // }
-
 
   it should "demonstrate sup/subscript labeling" in {
     val zoneIndex = createZoneIndexer(
@@ -201,7 +101,7 @@ class ConnectedComponentTest extends FlatSpec with ConnectedComponentTestUtil {
     //  when ccs are 'connected' they query is cached such that future lookups return the ordered children
     for { row  <- labelRow(zoneIndex, 0, LB.VisualLine) } {
 
-      sortAndConnect(row, LB.PageAtom, LB.PageAtom, _.bounds.left)
+      row.connectChildren(LB.PageAtom, Some(_.bounds.left))
 
       // Create a CC w/same target region, same atom sorting, linked as child to row
       val textSpanRegion = row.cloneAs(LB.TextSpan)
@@ -226,10 +126,9 @@ class ConnectedComponentTest extends FlatSpec with ConnectedComponentTestUtil {
 
       textSpanRegion.setChildren(LB.TextSpan, splitRegions)
 
-      // val treeView = row.toRoleTree(LB.TextSpan, LB.PageAtom).map(_.toString()).drawTree
-      // println("Super/subscript=")
-      // println(treeView)
-      // println(rendered.toString)
+      val treeView = row.toRoleTree(LB.TextSpan, LB.PageAtom).map(_.toString()).drawTree
+      println("Final Tree")
+      println(treeView)
 
       import ComponentRendering.VisualLine
       val rendered = VisualLine.render(row)

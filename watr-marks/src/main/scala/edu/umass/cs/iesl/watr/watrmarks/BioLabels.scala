@@ -91,13 +91,16 @@ case class Label(ns: String, key: String, value: Option[String]=None) {
     }
   }
 
-  override def toString = s"${ns}:${key}"
+  override def toString = {
+    val v = value.map(x => s"=$x").getOrElse("")
+    s"${ns}:${key}$v"
+  }
 
   import TB._
 
-  def showBox: Box = {
-    s"${ns}:${key}".box
-  }
+  // def showBox: Box = {
+  //   s"${ns}:${key}".box
+  // }
 
   override def hashCode = (ns, key).##
 

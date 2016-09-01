@@ -41,22 +41,19 @@ case class PageSegAccumulator(
 
 trait DocumentUtils {
 
-
-  def approxSortYX(charBoxes: Seq[PageAtom]): Seq[PageAtom] = {
+  def approxSortYX(charBoxes: Seq[Component]): Seq[Component] = {
     charBoxes.sortBy({ c =>
-      (c.region.bbox.top, c.region.bbox.left)
+      (c.bounds.top, c.bounds.left)
     })
   }
 
-  def squishb(charBoxes: Seq[PageAtom]): String = {
+
+  def squishb(charBoxes: Seq[Component]): String = {
     approxSortYX(charBoxes)
-      .map({ cbox => cbox.prettyPrint })
+      .map({ cbox => cbox.chars })
       .mkString
   }
 
-  def squishc(charBoxes: Seq[PageComponent]): String = {
-    squishb(charBoxes.map(_.component))
-  }
 }
 
 object DocumentSegmenter extends DocumentUtils {
@@ -212,7 +209,7 @@ class DocumentSegmenter(
     val allPageLines = for {
       pageId <- zoneIndexer.getPages
     } yield {
-      val charAtoms = zoneIndexer.getPageInfo(pageId).getPageAtomComponents
+      val charAtoms = zoneIndexer.getPageInfo(pageId).getPageAtoms
       vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${charAtoms.length} char atoms"))
 
       determineLines(pageId, charAtoms)
@@ -541,10 +538,10 @@ class DocumentSegmenter(
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
-  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[PageComponent]): Seq[PageComponent] = {
+  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[PageComponent]): Seq[Component] = {
     if (charBoxes.isEmpty) Seq()
     else {
-      val ids = charBoxes.map(_.region.id.unwrap)
+      val ids = charBoxes.map(_.id.unwrap)
       val minId = ids.min
       val maxId = ids.max
 
@@ -555,7 +552,7 @@ class DocumentSegmenter(
         zoneIndexer.getPageInfo(pageId).componentIndex.getItem(id)
       )
 
-      val completeLine = (charBoxes ++ missingChars).sortBy(_.region.bounds.left)
+      val completeLine = (charBoxes ++ missingChars).sortBy(_.bounds.left)
 
       completeLine
     }
@@ -566,43 +563,62 @@ class DocumentSegmenter(
     components: Seq[PageComponent]
   ): Unit = {
 
-    val lineSets = new DisjointSets[PageComponent](components)
+    val lineSets = new DisjointSets[Component](components)
 
     // line-bin coarse segmentation
     val lineBins = approximateLineBins(components)
 
+    import TB._
+
+    vtrace.trace("approximate line bins" withTrace message(
+      vcat(lineBins.map({case (bbox, ccs) =>
+        bbox.prettyPrint.box besideS ccs.map(_.chars).mkString
+      }))
+    ))
+
+    vtrace.trace(begin("fill in ID Gaps"))
     /// Split run-on lines (crossing columns, e.g.,), by looking for jumps in the char.id
     val splitAndFilledLines = for {
       (lineBounds, lineChars) <- lineBins
       if !lineChars.isEmpty
     } {
 
-      def spanloop(chars: Seq[PageComponent]): Seq[Int] = {
+
+      // determine all the offsets where the given chars have large gaps in ID#s
+      def idGapOffsets(chars: Seq[PageComponent]): Seq[Int] = {
         if (chars.isEmpty) Seq()
         else {
+          // split chars at the point where the difference between ids is > 20
           val (line1, line2) = chars
             .sliding(2).span({
-              case Seq(ch1, ch2) => ch2.region.id.unwrap - ch1.region.id.unwrap < 20
+              case Seq(ch1, ch2) => ch2.id.unwrap - ch1.id.unwrap < 20
               case Seq(_)     => true
             })
           val len = line1.length
-          len +: spanloop(chars.drop(len+1))
+          len +: idGapOffsets(chars.drop(len+1))
         }
       }
 
       var totalIndex: Int = 0
 
-      val splitLines = spanloop(lineChars)
+      val splitLines = idGapOffsets(lineChars)
         .foreach({ index =>
-          val m = fillInMissingChars(pageId, lineChars.drop(totalIndex).take(index+1))
+          val asdf =  lineChars.drop(totalIndex).take(index+1)
+          val m = fillInMissingChars(pageId, asdf)
+
+          vtrace.trace("Filling in ID gap" withTrace {
+            message("TODO")
+            // all(asdf.map(showComponent(_)))
+          })
 
           m.tail.foreach({char =>
             lineSets.union(char, m.head)
           })
-          totalIndex += index+1;
+          totalIndex += index+1
         })
     }
 
+    vtrace.trace(end("fill in ID Gaps"))
 
     def regionIds(cc: Component): Seq[Int@@RegionID] = {
       cc.component.targetRegions.map(_.id)
@@ -615,9 +631,7 @@ class DocumentSegmenter(
     // consider each line pair-wise and decide if they should be re-joined:
     val prejoined = lineSets.iterator().toSeq
       .map({ line =>
-        line.toSeq
-          .sortBy(c => (c.region.bbox.left, c.region.bbox.top))
-          .map(c => zoneIndexer.toComponent(c))
+        line.toSeq.sortBy(c => (c.bounds.left, c.bounds.top))
       })
       .sortBy(line => minRegionId(line))
 
@@ -644,42 +658,27 @@ class DocumentSegmenter(
         else acc :+ l2
       })
 
+
     val linesJoined = maybeJoined
       .sortBy(b => b.map(regionIds(_)).min)
       .map({lineComponents =>
-        val sortedAtoms = lineComponents.sortBy(_.bounds.left)
-        zoneIndexer
-          .labelRegion(sortedAtoms, LB.VisualLine)
-          .map({labeledRegion =>
-            zoneIndexer.connectComponents(lineComponents.sortBy(_.bounds.left), LB.VisualLine)
+        // Glue together page atoms into a VisualLine/TextSpan
+        zoneIndexer.labelRegion(lineComponents, LB.VisualLine)
+          .map ({ visualLine =>
+            visualLine.connectChildren(LB.PageAtom, Some(_.bounds.left))
+            val textSpan = visualLine.cloneAndNest(LB.TextSpan)
+            vtrace.trace("Created VisualLine w/Tree" withTrace {
+              import scalaz.std.string._
+              val treeView = visualLine.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom).map(_.toString()).drawTree
+              message(treeView)
+            })
+            visualLine
           })
       })
-      .flatten
 
-    if (!linesJoined.isEmpty) {
-      zoneIndexer.connectComponents(linesJoined.flatten, LB.Page)
-    }
-  }
-
-
-
-  def charBasedPageBounds(
-    pageId: Int@@PageID
-  ): LTBounds = {
-    val allBboxes = zoneIndexer.getPageInfo(pageId).charAtomIndex.getItems.map(_.region.bbox)
-
-    if (allBboxes.isEmpty) LTBounds(0, 0, 0, 0) else {
-      val minX = allBboxes.map(_.left).min
-      val minY = allBboxes.map(_.top).min
-      val maxX = allBboxes.map(_.right).max
-      val maxY = allBboxes.map(_.bottom).max
-
-      LTBounds(
-        minX, minY,
-        maxX-minX,
-        maxY-minY
-      )
-    }
+    zoneIndexer
+      .labelRegion(linesJoined.flatten, LB.Page)
+      .map(_.connectChildren(LB.VisualLine, None))
   }
 
 
@@ -703,7 +702,7 @@ class DocumentSegmenter(
       .foreach({ case (width, lines) =>
         println(" "*indent + s"Lines within width ${width}")
         lines.sortBy(_.bounds.top).foreach{ line =>
-          println("  "*indent + s"w:${line.bounds.width.pp}, h:${line.bounds.height.pp} ${line.bounds.prettyPrint} > ${line.toText}")
+          println("  "*indent + s"w:${line.bounds.width.pp}, h:${line.bounds.height.pp} ${line.bounds.prettyPrint} > ${line.chars}")
         }
     })
   }
@@ -774,7 +773,7 @@ class DocumentSegmenter(
     val jstr = focalJumps.map({case (k, v) => s"""w:${k} = [${v.mkString(", ")}]"""})
     val jcol = jstr.mkString("\n   ", "\n   ",  "\n")
 
-    println(s""" focalJumps: ${jcol} """)
+    // println(s""" focalJumps: ${jcol} """)
 
     pageSegAccum = pageSegAccum.copy(
       commonFocalJumps = focalJumps

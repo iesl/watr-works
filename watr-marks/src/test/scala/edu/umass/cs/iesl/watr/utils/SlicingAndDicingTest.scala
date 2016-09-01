@@ -28,6 +28,41 @@ class SlicingAndDicingTest extends FlatSpec with Matchers {
   }
 
 
+  it should "group lists on pairwise functions" in {
+
+    assertResult( List[List[Int]]() ){
+      List[Int]().groupByPairsWithIndex({ (e1, e2, index) =>
+        true
+      })
+    }
+    assertResult( List(List(23)) ){
+      List[Int](23).groupByPairsWithIndex({ (e1, e2, index) =>
+        true
+      })
+    }
+    assertResult( List(List(23)) ){
+      List[Int](23).groupByPairsWithIndex({ (e1, e2, index) =>
+       false
+      })
+    }
+    assertResult( List(List(23, 24)) ){
+      List[Int](23, 24).groupByPairsWithIndex({ (e1, e2, index) =>
+        true
+      })
+    }
+    assertResult( List(List(23), List(24)) ){
+      List[Int](23, 24).groupByPairsWithIndex({ (e1, e2, index) =>
+        false
+      })
+    }
+    assertResult(List(List(0, 1, 2), List(3, 4))){
+      List(0, 1, 2, 3, 4).groupByPairsWithIndex({ (e1, e2, index) =>
+        e2 % 3 != 0
+      })
+    }
+  }
+
+
   it should "do greedy clustering on lists" in {
 
     val hasSharedLetter: ((String, String) => Boolean) = (s1, s2) => {

@@ -10,8 +10,41 @@ object SlicingAndDicing {
     }
   }
 
+  private def groupByStartIndexes[A](lengths: Seq[Int], cs: Seq[A]): Seq[Seq[A]] = {
+    if (lengths.isEmpty) Seq() else {
+      val (group, post) = cs.splitAt(lengths.head)
+      group +: groupByStartIndexes(lengths.tail, post)
+    }
+  }
+
   implicit class RicherSeq[A](val aas: Seq[A]) extends AnyVal {
 
+    import scala.collection.mutable
+
+    def groupByPairsWithIndex(f: (A, A, Int) => Boolean): Seq[Seq[A]] = {
+      // Queue[(start, len)*]
+      if (aas.isEmpty) Seq() else {
+
+        val groupSpans = mutable.Stack[(Int, Int)]((0, 1))
+
+        aas.sliding(2).toSeq
+          .zipWithIndex
+          .foreach({
+            case (Seq(a1, a2), i) =>
+              if (f(a1, a2, i)) {
+                val (start, len) = groupSpans.pop()
+                groupSpans.push((start, len+1))
+              } else {
+                groupSpans.push((i+1, 1))
+              }
+
+            case (Seq(a), i) => // noop
+            case (Seq(), i) => // noop
+          })
+
+        groupByStartIndexes(groupSpans.map(_._2).reverse, aas)
+      }
+    }
 
     def splitOnPairsWithIndex(f: (A, A, Int) => Boolean): Seq[Seq[A]] = {
       val splits: Seq[Int] = aas

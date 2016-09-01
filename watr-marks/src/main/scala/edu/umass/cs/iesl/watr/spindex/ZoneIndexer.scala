@@ -11,6 +11,7 @@ import ComponentTypeEnrichments._
 import utils.IdGenerator
 
 import VisualTracer._
+import watrmarks.{StandardLabels => LB}
 
 // import scalaz.Tree
 
@@ -22,20 +23,18 @@ case class PageInfo(
   geometry: PageGeometry,
   componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
   componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),
-  labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap(),
-  charAtoms: mutable.HashMap[Int@@RegionID, (CharAtom, PageComponent)] = mutable.HashMap()
+  labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
+  // charAtoms: mutable.HashMap[Int@@RegionID, (CharAtom, PageComponent)] = mutable.HashMap()
 ) {
 
-  def getPageAtoms(): Seq[CharAtom] = {
-    charAtoms.values.toSeq.map(_._1)
+  def getPageAtoms(): Seq[PageComponent] = {
+    componentIndex.getItems
+      .filter(_.roleLabel==LB.PageAtom)
+      .map(_.asInstanceOf[PageComponent])
   }
 
-  def getPageAtomComponents(): Seq[PageComponent] = {
-    charAtoms.values.toSeq.map(_._2)
-  }
 
   def setChildTreeWithLabel(cid: Int@@ComponentID, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
-    // val lmap = componentToChildTrees.getOrElse(cid, mutable.HashMap())
     val lmap = componentToChildren.getOrElse(cid, mutable.HashMap())
     val l0 = lmap.put(l, tree)
     componentToChildren.put(cid, lmap)
@@ -147,6 +146,26 @@ class ZoneIndexer()  {
 
   val pageInfos = mutable.HashMap[Int@@PageID, PageInfo]()
 
+  def dbgFilterComponents(pg: Int@@PageID, include: GeometricFigure.LTBounds): Unit ={
+    pageInfos.get(pg).foreach ({ pageInfo =>
+      val keep = pageInfo.componentIndex.queryForIntersects(include).map(_.id)
+      println(s"dbgFilterComponents(): keeping ${keep.length} components")
+      pageInfo.componentIndex.getItems
+        .filterNot(c => keep.contains(c.id))
+        .foreach({ c =>
+          pageInfo.componentIndex.remove(c)
+        })
+      // pageInfo.componentIndex.remove(c)
+    })
+  }
+  def dbgFilterPages(pg: Int@@PageID): Unit ={
+    getPages
+      .filterNot(_ == pg)
+      .foreach ({ p =>
+        pageInfos.remove(p)
+      })
+  }
+
   // ID generators
   val componentIdGen = utils.IdGenerator[ComponentID]()
   val labelIdGen = IdGenerator[LabelID]()
@@ -214,9 +233,9 @@ class ZoneIndexer()  {
     pinfo.componentIndex.remove(c)
   }
 
-  def labelRegion(components: Seq[Component], l: Label): Option[RegionComponent] = {
+  def labelRegion(components: Seq[Component], role: Label): Option[RegionComponent] = {
     if (components.isEmpty) None else {
-      val targetRegions = components.flatMap(_.targetRegions)
+      val targetRegions = components.map(_.targetRegion)
       val targetPages = targetRegions.map(_.target.unwrap)
       val numOfTargetPages =  targetPages.toSet.size
 
@@ -226,29 +245,15 @@ class ZoneIndexer()  {
 
       val totalRegion = targetRegions.reduce(_ union _)
 
-      val region = createRegionComponent(totalRegion, l)
+      val region = createRegionComponent(totalRegion, role)
 
-      // l.foreach(region.addLabel)
-
-      vtrace.trace("labelComponents" withTrace all(components.map(showComponent(_))))
+      vtrace.trace(s"Label Region as ${role}" withTrace all(components.map(showComponent(_))))
 
       Some(region)
     }
   }
 
 
-  def connectComponents(components: Seq[Component], l: Label): Option[Component] = {
-    // labeledRegion.map({regionComponent =>
-    //   regionComponent.setChildTree(l,
-    //     Tree.Node(regionComponent, components.map(Tree.Leaf(_)).toStream)
-    //   )
-
-    //   vtrace.trace(message("connectComponents"))
-
-    //   regionComponent
-    // })
-    ???
-  }
 
   def createRegionComponent(tr: TargetRegion, role: Label): RegionComponent = {
     val region = RegionComponent(componentIdGen.nextId, role, tr, this)
@@ -256,7 +261,6 @@ class ZoneIndexer()  {
 
     vtrace.trace("create RegionComponent" withTrace showComponent(region))
     region
-
   }
 
   def addPageAtom(pageAtom: PageAtom): Component = {
@@ -270,28 +274,7 @@ class ZoneIndexer()  {
     c
   }
 
-  // def concatRegions(regions: Seq[PageAtom], l: Option[Label]=None): Component = {
-  //   connectComponents(regions.map(toComponent(_)))
-  // }
-
-
-  // def appendComponent(component: Component, app: Component): Component = {
-  //   component match {
-  //     case c: PageComponent =>
-  //       connectComponents(Seq(component, app))
-  //     case c: ConnectedComponents =>
-  //       c.components += app
-  //       c
-
-  //     case c: RegionComponent =>
-  //       // val extRegion = c.region.bbox.union(app.bounds).targetRegionTo(c.region.target)
-  //       // c.region = extRegion
-  //       ???
-  //   }
-  // }
-
   def getPageGeometry(p: Int@@PageID) = pageInfos(p).geometry
-
 
   def getPages(): List[Int@@PageID] = {
     pageInfos.keys.toList.sortBy(PageID.unwrap(_))

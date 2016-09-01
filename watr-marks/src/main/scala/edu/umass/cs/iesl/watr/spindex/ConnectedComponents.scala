@@ -70,22 +70,16 @@ sealed trait Component {
       })
   }
 
-  // def queryFor(qt: Query.Type, quantifier: Quantifier, labels: Label*): Seq[Component] = {
-  //   val pinfo = zoneIndex.getPageInfo(zoneIndex.getPageForComponent(this))
-  //   val cindex = pinfo.componentIndex
-  //   val bounds = this.targetRegion.bbox
-  //   val hits = qt match {
-  //     case Query.Intersects => cindex.queryForIntersects(bounds)
-  //     case Query.Contains   => cindex.queryForContained(bounds)
-  //   }
+  def groupAtomsIf(
+    groupf: (PageComponent, PageComponent, Int) => Boolean,
+    onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent]
 
-  //   val labelSet = labels.toSet
+  def splitAtomsIf(
+    splitf: (PageComponent, PageComponent, Int) => Boolean,
+    onSplit: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent]
 
-  //   quantifier match {
-  //     case Quantifier.All    => hits.filter(labelSet subsetOf _.getLabels)
-  //     case Quantifier.Exists => hits.filterNot(_.getLabels.intersect(labelSet).isEmpty)
-  //   }
-  // }
 
   def targetRegions: Seq[TargetRegion]
 
@@ -116,13 +110,25 @@ sealed trait Component {
     zoneIndex.setChildTreeWithLabel(this, l, tree.map(_.id))
   }
 
-  def connectChildren(l: Label, cs: Seq[Component]): Unit = {
-    zoneIndex.setChildTreeWithLabel(this, l, cs.map(_.id))
+  def connectChildren(l: Label, sortf: Option[((Component)=>Double)]): Unit = {
+    val sub = queryInside(l)
+    val sorted = sortf
+      .map(sub.sortBy(_))
+      .getOrElse(sub)
+      .map(_.id)
+
+    zoneIndex.setChildTreeWithLabel(this, l, sorted)
   }
 
-  def mapChars(subs: Seq[(Char, String)]): Component
 
-  def toText(implicit idgen:Option[CCRenderState] = None): String
+  // def connectChildrens(l: Label, cs: Seq[Component]): Unit = {
+  //   zoneIndex.setChildTreeWithLabel(this, l, cs.map(_.id))
+  // }
+
+  // def mapChars(subs: Seq[(Char, String)]): Component
+
+  // def toText(implicit idgen:Option[CCRenderState] = None): String
+  // def toText(): String
 
   // TODO: This is redundant w/targetregion
   def bounds: LTBounds
@@ -150,13 +156,9 @@ sealed trait Component {
   }
 
   def toRoleTree(roles: Label*): Tree[Component] = {
-
     val children = for {
       r <- roles
     } yield getChildren(r)
-
-    // val childrenOrAtoms = children.headOption.orElse(Some(queryAtoms()))
-
 
     val roleTree = children
       .filterNot(_.isEmpty)
@@ -167,30 +169,11 @@ sealed trait Component {
       })
       .getOrElse({
         Tree.Leaf(this)
-        // Tree.Node(this,
-        //   queryAtoms()
-        //     .map(c => Tree.Leaf(c.asInstanceOf[Component]))
-        //     .toStream
-        // )
       })
 
     roleTree
   }
 
-
-  def toTree(roles: Label*): Tree[Component] = {
-    if (roles.isEmpty) {
-      // println(s"toTree: empty ${this}")
-      Tree.Leaf(this)
-    } else {
-      // println(s"""toTree: ${this} / ${roles.mkString(", ")}""")
-      val childForest = getChildren(roles.head)
-        .map(_.toTree(roles.tail:_*))
-        .toStream
-
-      Tree.Node(this, childForest)
-    }
-  }
 }
 
 
@@ -202,6 +185,11 @@ case class RegionComponent(
   override val zoneIndex: ZoneIndexer
 ) extends Component {
 
+  def cloneAndNest(l: Label): RegionComponent = {
+    val clone = cloneAs(l)
+    this.setChildren(l, Seq(clone))
+    clone
+  }
   def cloneAs(l: Label): RegionComponent = {
     val atoms = queryAtoms()
     val clone = copy(
@@ -216,7 +204,18 @@ case class RegionComponent(
     clone
   }
 
-  def splitAtomsIf(splitf: (PageComponent, PageComponent, Int) => Boolean): Seq[RegionComponent] = {
+  def groupAtomsIf(
+    groupf: (PageComponent, PageComponent, Int) => Boolean,
+    onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent] = {
+
+    ???
+  }
+
+  def splitAtomsIf(
+    splitf: (PageComponent, PageComponent, Int) => Boolean,
+    onSplit: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent] = {
     import utils.SlicingAndDicing._
 
     def cbounds(cs: Seq[Component]) = {
@@ -226,13 +225,16 @@ case class RegionComponent(
 
     val splitAtoms = queryAtoms().splitOnPairsWithIndex(splitf)
 
-    val splitRegions = splitAtoms.map({case atoms =>
+    val splitRegions = splitAtoms
+      .zipWithIndex
+      .map({case (atoms, regionIndex) =>
       val rc = cloneAs(roleLabel)
       val split = rc.copy(
         region = rc.region.copy(
           bbox = cbounds(atoms)))
 
       split.setChildren(LB.PageAtom, atoms)
+      onSplit(split, regionIndex)
       split
     })
 
@@ -241,18 +243,11 @@ case class RegionComponent(
 
   def targetRegions: Seq[TargetRegion] = Seq(region)
 
-  def chars: String = ""
-
   def bounds: LTBounds = region.bbox
 
-  def toText(implicit idgen:Option[CCRenderState] = None): String = {
-    ""
+  def chars: String = {
+    queryAtoms().map(_.char).mkString
   }
-
-  def mapChars(subs: Seq[(Char, String)]): Component = {
-    this
-  }
-
 
   def extendRegion(r: TargetRegion): Unit = {
     region = region.copy(bbox = region.bbox union r.bbox)
@@ -261,7 +256,7 @@ case class RegionComponent(
 
   override def toString(): String = {
     val lls = getLabels.mkString(",")
-    s"<${roleLabel}#${id} ${region} [${lls}]>"
+    s"<${roleLabel.key}.${id} ${region}${lls}>"
   }
 }
 
@@ -271,116 +266,37 @@ case class PageComponent(
   component: PageAtom,
   override val zoneIndex: ZoneIndexer
 ) extends Component {
+
+  def splitAtomsIf(
+    splitf: (PageComponent, PageComponent, Int) => Boolean,
+    onSplit: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent] = { Seq() }
+
+  def groupAtomsIf(
+    groupf: (PageComponent, PageComponent, Int) => Boolean,
+    onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent] = {
+
+    ???
+  }
+
+
+
   def roleLabel: Label = LB.PageAtom
 
   def targetRegions: Seq[TargetRegion] = Seq(component.region)
-
-  // def children(): Seq[Component] = Seq()
-
-  // def replaceChildren(ch: Seq[Component]): Unit = ()
-
-  // def charComponents: Seq[PageComponent] = Seq(this)
-
-  // def atoms: Seq[PageAtom] = Seq(component)
 
   def char = component match {
     case rg: CharAtom => rg.char.toString
     case rg: ImgAtom => ""
   }
 
-  def mapChars(subs: Seq[(Char, String)]): Component  = {
-    subs
-      .find(_._1.toString==char)
-      .map({case (_, sub) =>
-        component match {
-          case rg: CharAtom => this.copy(
-            component= CharAtom.apply(rg.region, sub, rg.wonkyCharCode))
-
-
-          case rg: ImgAtom  => this
-        }
-      })
-      .getOrElse(this)
-  }
-
-
   val bounds = component.region.bbox
 
-  def toText(implicit idgen:Option[CCRenderState] = None): String = {
-    component match {
-      case rg: CharAtom => rg.char.toString
-      case rg: ImgAtom => ""
-    }
-  }
-
-  def chars: String = toText
+  def chars: String = char
 
   override def toString(): String = {
     val lls = getLabels.mkString(",")
-    s"<${roleLabel}#${id} ${chars} [$lls]>"
+    s"<`${chars}`${id} ${component.region}$lls>"
   }
-
 }
-
-
-// object ConnectedComponent {
-//   def apply(
-//     id: Int@@ComponentID,
-//     components: Seq[Component],
-//     zoneIndex: ZoneIndexer
-//   ): ConnectedComponents = ConnectedComponents(
-//     id, mutable.MutableList(components:_*), zoneIndex
-//   )
-// }
-
-
-// case class ConnectedComponents(
-//   id: Int@@ComponentID,
-//   components: mutable.MutableList[Component],
-//   override val zoneIndex: ZoneIndexer
-// ) extends Component {
-
-//   def targetRegions: Seq[TargetRegion] = components.flatMap(_.targetRegions)
-
-//   def replaceChildren(ch: Seq[Component]): Unit = {
-//     this.components.clear()
-//     this.components ++= ch
-//   }
-
-//   def atoms: Seq[PageAtom] = components.flatMap(_.atoms)
-
-//   def children(): Seq[Component] = components
-
-//   def mapChars(subs: Seq[(Char, String)]): Component  = {
-//     copy(
-//       components = components.map(_.mapChars(subs))
-//     )
-//   }
-
-//   def chars:String = {
-//     components.map(_.chars).mkString
-//   }
-
-//   def charComponents: Seq[PageComponent] =
-//     components.flatMap(_.charComponents)
-
-//   def toText(implicit idgen:Option[CCRenderState] = None): String ={
-//     val ccs = renderConnectedComponents(this)
-//     TB.hcat(ccs).toString()
-//   }
-
-
-//   def bounds: LTBounds = components.tail
-//     .map(_.bounds)
-//     .foldLeft(components.head.bounds)( { case (b1, b2) =>
-//       b1 union b2
-//     })
-
-//   override def toString(): String = {
-//     s"""cc:${components.map(_.toString()).mkString("")}"""
-//   }
-
-
-
-
-// }

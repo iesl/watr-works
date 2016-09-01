@@ -34,7 +34,8 @@ object RichTextIO {
         val lineComponent = lineBio.component
 
         lineComponent.tokenizeLine()
-        lineComponent.toText
+        // FIXME
+        lineComponent.chars
       })
 
       pageText.mkString("", "\n", "")
