@@ -6,7 +6,7 @@ import segment._
 // import ComponentOperations._
 // import ComponentTypeEnrichments._
 // import GeometricFigure._
-// import IndexShapeOperations._
+// import EnrichGeometricFigures._
 
 class TextExtractionTest extends DocsegTestUtil {
   // import watrmarks._

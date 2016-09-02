@@ -44,6 +44,10 @@ object VisualTracer {
     def withTrace(t: TraceLog): TraceLog = link(
       message(s), t
     )
+
+    def withInfo(t: TB.Box): TraceLog = link(
+      message(s), message(t)
+    )
   }
 
   // implicit class RicherTraceLog(val trace: TraceLog) extends AnyVal {}

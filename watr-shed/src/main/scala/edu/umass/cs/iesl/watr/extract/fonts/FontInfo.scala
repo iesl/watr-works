@@ -23,7 +23,7 @@ import com.itextpdf.kernel.geom.{Vector => PVector}
 import scala.collection.JavaConversions._
 import textboxing.{TextBoxing => TB}
 
-import utils.ShowNumerics._
+import utils.EnrichNumerics._
 
 object DocumentFontInfo {
 

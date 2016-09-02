@@ -5,6 +5,8 @@ package watrmarks
 trait DocSegLabels {
 
   // val Pages = Label("ds", "pages")
+  val NullLabel = Label("","null")
+
   val Page = Label("ds", "page")
   val Column = Label("ds", "column")
 

@@ -7,7 +7,7 @@ import java.io.InputStream
 import scalaz.@@
 import spindex._
 import TypeTags._
-// import IndexShapeOperations._
+// import EnrichGeometricFigures._
 import GeometricFigure._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {

@@ -6,7 +6,7 @@ import scalaz.@@
 import spindex._
 import GeometricFigure._
 import utils.CompassDirection
-import IndexShapeOperations._
+import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
 
 object SpatialIndexOperations {

@@ -4,7 +4,7 @@ package spindex
 import scalaz.@@
 import watrmarks._
 
-import IndexShapeOperations._
+import EnrichGeometricFigures._
 import GeometricFigure._
 
 import TypeTags._
@@ -101,6 +101,11 @@ sealed trait Component {
     getChildTree(l).getOrElse {Seq()}
   }
 
+  def getDescendants(l: Label): Seq[Component] = {
+    getChildren(l)
+      .flatMap(ch => ch +: ch.getDescendants(l))
+  }
+
 
   def getChildTree(l: Label): Option[Seq[Component]] = {
     zoneIndex.getChildTree(this, l)
@@ -155,6 +160,14 @@ sealed trait Component {
     setChildTree(l, cs)
   }
 
+  def addChild(c: Component): Unit = {
+    val maybeChildren = getChildTree(c.roleLabel)
+    maybeChildren match {
+      case Some(children)  => setChildren(c.roleLabel, children :+ c)
+      case None            => setChildren(c.roleLabel, Seq(c))
+    }
+  }
+
   def toRoleTree(roles: Label*): Tree[Component] = {
     val children = for {
       r <- roles
@@ -190,55 +203,71 @@ case class RegionComponent(
     this.setChildren(l, Seq(clone))
     clone
   }
-  def cloneAs(l: Label): RegionComponent = {
-    val atoms = queryAtoms()
-    val clone = copy(
+
+  private def initCloneAs(l: Label): RegionComponent = {
+    copy(
       id = zoneIndex.componentIdGen.nextId,
       roleLabel = l,
       region = region.copy(
         id = zoneIndex.regionIdGen.nextId
       )
     )
+  }
+
+  def cloneAs(l: Label): RegionComponent = {
+    val atoms = queryAtoms()
+    val clone = initCloneAs(l)
     zoneIndex.addComponent(clone)
     clone.setChildTree(LB.PageAtom, atoms)
     clone
   }
 
+  import utils.SlicingAndDicing._
+
+  private def cbounds(cs: Seq[Component]) = {
+    cs.map(_.bounds)
+      .reduce(_ union _)
+  }
+
+  private def initRegionFromAtoms(atoms: Seq[PageComponent]): RegionComponent = {
+    val initRegion = initCloneAs(roleLabel)
+    val newRegion = initRegion.copy(
+      region = initRegion.region.copy(
+        bbox = cbounds(atoms)))
+
+    newRegion.setChildren(LB.PageAtom, atoms)
+    zoneIndex.addComponent(newRegion)
+    newRegion
+  }
+
   def groupAtomsIf(
     groupf: (PageComponent, PageComponent, Int) => Boolean,
-    onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
+    onRegionCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
 
-    ???
+    queryAtoms()
+      .groupByPairsWithIndex(groupf)
+      .zipWithIndex
+      .map({case (atoms, regionIndex) =>
+        val newRegion = initRegionFromAtoms(atoms)
+        onRegionCreate(newRegion, regionIndex)
+        newRegion
+      })
   }
 
   def splitAtomsIf(
     splitf: (PageComponent, PageComponent, Int) => Boolean,
-    onSplit: (RegionComponent, Int) => Unit = ((_, _) => ())
+    onRegionCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
-    import utils.SlicingAndDicing._
 
-    def cbounds(cs: Seq[Component]) = {
-      cs.map(_.bounds)
-        .reduce(_ union _)
-    }
-
-    val splitAtoms = queryAtoms().splitOnPairsWithIndex(splitf)
-
-    val splitRegions = splitAtoms
+    queryAtoms()
+      .splitOnPairsWithIndex(splitf)
       .zipWithIndex
       .map({case (atoms, regionIndex) =>
-      val rc = cloneAs(roleLabel)
-      val split = rc.copy(
-        region = rc.region.copy(
-          bbox = cbounds(atoms)))
-
-      split.setChildren(LB.PageAtom, atoms)
-      onSplit(split, regionIndex)
-      split
-    })
-
-    splitRegions
+        val newRegion = initRegionFromAtoms(atoms)
+        onRegionCreate(newRegion, regionIndex)
+        newRegion
+      })
   }
 
   def targetRegions: Seq[TargetRegion] = Seq(region)
@@ -247,11 +276,6 @@ case class RegionComponent(
 
   def chars: String = {
     queryAtoms().map(_.char).mkString
-  }
-
-  def extendRegion(r: TargetRegion): Unit = {
-    region = region.copy(bbox = region.bbox union r.bbox)
-    vtrace.trace(message(s"extendRegion: ${this.toString()}"))
   }
 
   override def toString(): String = {
@@ -276,8 +300,9 @@ case class PageComponent(
     groupf: (PageComponent, PageComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
-
-    ???
+    val newRegion = zoneIndex.createRegionComponent(component.region, LB.NullLabel)
+    onGrouped(newRegion, 0)
+    Seq(newRegion)
   }
 
 

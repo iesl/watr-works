@@ -10,7 +10,7 @@ sealed trait GeometricFigure
 sealed trait Area
 
 object GeometricFigure {
-  import IndexShapeOperations._
+  import EnrichGeometricFigures._
   case class LTBounds(
     left: Double,
     top: Double,
@@ -72,25 +72,12 @@ object jsiRectangle {
 
 
 
-object IndexShapeOperations {
+object EnrichGeometricFigures {
+  import utils.EnrichNumerics._
   import utils.CompassDirection
 
-  def fmt = (d: Double) => f"${d}%1.2f"
 
-  implicit class RicherDouble(val d: Double) extends AnyVal {
-    def pp:String = fmt(d)
-
-    def eqFuzzy(tolerance: Double)(d2: Double): Boolean =
-      compareFuzzy(tolerance)(d2) == 0
-
-
-    def compareFuzzy(tolerance: Double)(d2: Double): Int = {
-      if (math.abs(d - d2) < tolerance) 0
-      else if (d < d2) -1
-      else 1
-    }
-
-
+  implicit class RicherDouble_2(val d: Double) extends AnyVal {
     def toHLine: Line = Line(
       Point(Double.MinValue, d),
       Point(Double.MaxValue, d))
@@ -111,6 +98,7 @@ object IndexShapeOperations {
     }
 
   }
+
 
   implicit class RicherPoint(val p0: Point) extends AnyVal {
 
@@ -312,6 +300,7 @@ object IndexShapeOperations {
         height = tb.height
       )
     }
+
     def prettyPrint: String = {
       val left = tb.left
       val top=  tb.top
@@ -325,6 +314,7 @@ object IndexShapeOperations {
       val top=  tb.top
       val width = tb.width
       val height = tb.height
+      s"""[${fmt(left)}, ${top.pp}, ${width.pp}, ${height.pp}]"""
       s"""[${left.pp}, ${top.pp}, ${width.pp}, ${height.pp}]"""
     }
 

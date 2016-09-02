@@ -6,7 +6,8 @@ import fs._
 import java.io.{ InputStream  }
 import textboxing.{TextBoxing => TB}
 import spindex._
-import IndexShapeOperations._
+import EnrichGeometricFigures._
+import utils.EnrichNumerics._
 import java.io.{File => JFile}
 
 case class AppConfig(

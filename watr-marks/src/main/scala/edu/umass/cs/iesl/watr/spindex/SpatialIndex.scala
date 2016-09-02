@@ -7,7 +7,7 @@ import net.sf.jsi.rtree.RTree
 import scala.collection.mutable
 
 import TypeTags._
-import IndexShapeOperations._
+import EnrichGeometricFigures._
 import GeometricFigure._
 
 

@@ -4,8 +4,10 @@ package utils
 import org.scalatest._
 
 import spindex._
-import IndexShapeOperations._
+
 import GeometricFigure._
+import EnrichGeometricFigures._
+import EnrichNumerics._
 
 class AngleFilteringTest extends FlatSpec with Matchers {
   // import DocumentSegmenter._
@@ -26,7 +28,6 @@ class AngleFilteringTest extends FlatSpec with Matchers {
       println(s"r:${r.pp} (${(r/Pi).pp})  = ${point.prettyPrint}, atan: ${atan.pp} p1 angleto p2: ${ctr.angleTo(point)}")
     }
 
-
     // val pointsOnUnitCircleRev = (0.0 to -Pi by -0.2).map{ r =>
     //   (Point(cos(r),  sin(r)), r)
     // }
@@ -35,10 +36,6 @@ class AngleFilteringTest extends FlatSpec with Matchers {
     //   val atan = math.atan2(point.y, point.x)
     //   println(s"r:${r.pp} (${(r/Pi).pp})  = ${point.prettyPrint}, atan: ${atan.pp} p1 angleto p2: ${ctr.angleTo(point)}")
     // }
-
-
-
-
 
 
   }

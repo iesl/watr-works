@@ -21,6 +21,7 @@ object SlicingAndDicing {
 
     import scala.collection.mutable
 
+
     def groupByPairsWithIndex(f: (A, A, Int) => Boolean): Seq[Seq[A]] = {
       // Queue[(start, len)*]
       if (aas.isEmpty) Seq() else {
@@ -60,6 +61,8 @@ object SlicingAndDicing {
       splitAtBreaks(splits, aas)
     }
 
+    def groupByPairs(f: (A, A) => Boolean): Seq[Seq[A]] =
+      groupByPairsWithIndex((a, b, _) => f(a, b))
 
     def splitOnPairs(f: (A, A) => Boolean): Seq[Seq[A]] =
       splitOnPairsWithIndex((a, b, _) => f(a, b))
@@ -72,6 +75,23 @@ object SlicingAndDicing {
   }
 
 
+  def groupSeqBy[A](as: Seq[A])(f: (A, A)=>Boolean): Seq[Seq[A]] = {
+
+    def loop(ns: Seq[A]): Seq[Seq[A]] = {
+      ns.headOption.map ({ headA =>
+
+        val matches = ns.tail.filter(n => f(headA, n))
+
+        (headA +: matches) +: loop(ns.tail diff matches)
+
+      }).getOrElse({
+        Seq.empty[Seq[A]]
+      })
+
+    }
+
+    loop(as)
+  }
   def clusterSeqBy[A](as: Seq[A])(f: (A, A)=>Boolean): Seq[Seq[A]] = {
 
     def loop(ns: Seq[A]): Seq[Seq[A]] = {

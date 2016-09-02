@@ -10,10 +10,11 @@ import spindex._
 
 
 import ComponentRendering._
+import utils.EnrichNumerics._
 
 object DocumentIO {
   import ComponentOperations._
-  import IndexShapeOperations._
+  import EnrichGeometricFigures._
   import BioLabeling._
 
 

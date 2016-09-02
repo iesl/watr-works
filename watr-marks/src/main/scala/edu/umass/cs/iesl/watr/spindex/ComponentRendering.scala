@@ -35,6 +35,15 @@ object ComponentRendering {
   import TB._
 
   object VisualLine {
+    import scalaz.std.string._
+
+    def renderRoleTree(c: Component): TB.Box = {
+      c.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
+        .map(_.toString())
+        .drawTree
+    }
+
+
     def render(cc: Component): TB.Box = {
       cc.roleLabel match {
         case LB.VisualLine
@@ -194,4 +203,21 @@ object ComponentRendering {
     Seq()
   }
 
+
+  object PageAtom {
+    import EnrichGeometricFigures._
+    import utils.EnrichNumerics._
+
+
+    def boundsBox(c: Component): TB.Box = {
+      vcat(center1)(Seq(
+        c.chars,
+        c.bounds.top.pp,
+        c.bounds.left.prettyPrint +| c.bounds.right.prettyPrint,
+        c.bounds.bottom.prettyPrint,
+        "(w=" + c.bounds.width.prettyPrint + ")"
+      ))
+    }
+
+  }
 }

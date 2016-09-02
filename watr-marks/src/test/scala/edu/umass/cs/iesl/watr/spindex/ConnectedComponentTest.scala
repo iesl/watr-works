@@ -7,7 +7,7 @@ trait ConnectedComponentTestUtil extends Matchers {
   import utils.IdGenerator
   import TypeTags._
   import GeometricFigure._
-  import IndexShapeOperations._
+  import EnrichGeometricFigures._
   import watrmarks.{StandardLabels => LB}
   import edu.umass.cs.iesl.watr.watrmarks.Label
 
@@ -83,8 +83,7 @@ trait ConnectedComponentTestUtil extends Matchers {
 
 
 class ConnectedComponentTest extends FlatSpec with ConnectedComponentTestUtil {
-  import scalaz.Tree
-  import scalaz.std.string._
+  import ComponentRendering.VisualLine
 
   behavior of "connected components"
 
@@ -126,11 +125,9 @@ class ConnectedComponentTest extends FlatSpec with ConnectedComponentTestUtil {
 
       textSpanRegion.setChildren(LB.TextSpan, splitRegions)
 
-      val treeView = row.toRoleTree(LB.TextSpan, LB.PageAtom).map(_.toString()).drawTree
       println("Final Tree")
-      println(treeView)
+      println(VisualLine.renderRoleTree(row))
 
-      import ComponentRendering.VisualLine
       val rendered = VisualLine.render(row)
 
       assertResult("Eu_{1 - x}Bi_{x}VO_{4}"){

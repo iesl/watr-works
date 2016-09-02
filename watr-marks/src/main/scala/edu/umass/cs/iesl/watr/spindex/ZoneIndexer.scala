@@ -149,13 +149,12 @@ class ZoneIndexer()  {
   def dbgFilterComponents(pg: Int@@PageID, include: GeometricFigure.LTBounds): Unit ={
     pageInfos.get(pg).foreach ({ pageInfo =>
       val keep = pageInfo.componentIndex.queryForIntersects(include).map(_.id)
-      println(s"dbgFilterComponents(): keeping ${keep.length} components")
+      // println(s"dbgFilterComponents(): keeping ${keep.length} components")
       pageInfo.componentIndex.getItems
         .filterNot(c => keep.contains(c.id))
         .foreach({ c =>
           pageInfo.componentIndex.remove(c)
         })
-      // pageInfo.componentIndex.remove(c)
     })
   }
   def dbgFilterPages(pg: Int@@PageID): Unit ={

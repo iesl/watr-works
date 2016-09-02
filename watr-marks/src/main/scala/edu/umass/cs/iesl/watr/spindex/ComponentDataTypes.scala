@@ -4,7 +4,7 @@ package spindex
 import scalaz.@@
 import watrmarks._
 
-import IndexShapeOperations._
+import EnrichGeometricFigures._
 import GeometricFigure._
 
 case class TargetRegion(

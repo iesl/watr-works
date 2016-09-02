@@ -13,15 +13,14 @@ import scala.collection.mutable
 import utils._
 import TypeTags._
 import textboxing.{TextBoxing => TB}
-import IndexShapeOperations._
+import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
+import utils.EnrichNumerics._
 import ComponentOperations._
 import ComponentRendering._
 import SlicingAndDicing._
 import utils.{CompassDirection => CDir}
 import utils.VisualTracer._
-
-
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
@@ -621,7 +620,7 @@ class DocumentSegmenter(
     vtrace.trace(end("fill in ID Gaps"))
 
     def regionIds(cc: Component): Seq[Int@@RegionID] = {
-      cc.component.targetRegions.map(_.id)
+      cc.targetRegions.map(_.id)
     }
 
     def minRegionId(ccs: Seq[Component]): Int@@RegionID = {
@@ -667,11 +666,7 @@ class DocumentSegmenter(
           .map ({ visualLine =>
             visualLine.connectChildren(LB.PageAtom, Some(_.bounds.left))
             val textSpan = visualLine.cloneAndNest(LB.TextSpan)
-            vtrace.trace("Created VisualLine w/Tree" withTrace {
-              import scalaz.std.string._
-              val treeView = visualLine.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom).map(_.toString()).drawTree
-              message(treeView)
-            })
+            vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
             visualLine
           })
       })
