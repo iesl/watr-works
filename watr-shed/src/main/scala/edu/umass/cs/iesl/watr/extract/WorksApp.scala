@@ -25,8 +25,8 @@ case class AppConfig(
 
 object Works extends App {
 
-  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Append
-  utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+  utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
+  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
 
 
   def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot
@@ -95,12 +95,11 @@ object Works extends App {
       })
     } text ("run document segmentation")
 
-    // cmd("richtext") action { (v, conf) =>
-    //   setAction(conf, {(ac: AppConfig) =>
-    //     runCmdRichText(ac)
-    //   })
-    // } text ("output pdf as text, with some added embedded tex and labels")
-
+    cmd("richtext") action { (v, conf) =>
+      setAction(conf, {(ac: AppConfig) =>
+        runCmdRichText(ac)
+      })
+    } text ("output pdf as text, with some added embedded tex and labels")
 
     cmd("chars") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -304,19 +303,6 @@ object Works extends App {
 
   /////////// Specific Commands
 
-  // def runCmdRichText(conf: AppConfig): Unit = {
-
-  //   val artifactOutputName = "richtext.txt"
-  //   processCorpus(conf, artifactOutputName, proc)
-
-  //   def proc(pdfins: InputStream, outputPath: String): String = {
-  //     val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins)
-  //     segmenter.runPageSegmentation()
-  //     val output = format.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, None)
-  //     output
-  //   }
-
-  // }
 
   import extract.fonts.SplineFont
 
@@ -360,6 +346,43 @@ object Works extends App {
   }
   // def segmentDocument(conf: AppConfig): Seq[Seq[utils.TraceLog]] = {
 
+  def runCmdRichText(conf: AppConfig): Unit = {
+    val artifactOutputName = "richtext.txt"
+
+
+    processCorpusEntryList(conf, {corpusEntry =>
+      try {
+        for {
+          _         <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
+          fontDirs   = loadOrExtractFonts(conf, corpusEntry)
+          pdf       <- corpusEntry.getPdfArtifact
+          pdfins    <- pdf.asInputStream
+        } {
+          try {
+            val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins, fontDirs)
+            segmenter.runPageSegmentation()
+            val output = format.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, Some(corpusEntry.toString))
+            corpusEntry.putArtifact(artifactOutputName, output)
+          } catch {
+            case t: Throwable =>
+              println(s"could not segment ${corpusEntry}: ${t.getMessage}\n")
+              println(t.toString())
+              t.printStackTrace()
+              s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
+          } finally {
+            if (pdfins!=null) pdfins.close()
+          }
+        }
+      } catch {
+        case t: Throwable =>
+          println(s"could not process ${corpusEntry}: ${t.getMessage}\n")
+          println(t.toString())
+          t.printStackTrace()
+          s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
+      }
+    })
+
+  }
   def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
     val artifactOutputName = "docseg.json"
 

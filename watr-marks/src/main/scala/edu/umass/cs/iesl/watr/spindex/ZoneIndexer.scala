@@ -13,12 +13,9 @@ import utils.IdGenerator
 import VisualTracer._
 import watrmarks.{StandardLabels => LB}
 
-// import scalaz.Tree
-
 // One or more indexes over a given page geometry, along with label maps
 case class PageInfo(
   pageId: Int@@PageID,
-  // charAtomIndex: SpatialIndex[CharAtom],
   componentIndex: SpatialIndex[Component],
   geometry: PageGeometry,
   componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
@@ -26,6 +23,11 @@ case class PageInfo(
   labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
   // charAtoms: mutable.HashMap[Int@@RegionID, (CharAtom, PageComponent)] = mutable.HashMap()
 ) {
+  def addComponent(c: Component): Component = {
+    componentIndex.add(c)
+    addLabel(c, c.roleLabel)
+    c
+  }
 
   def getPageAtoms(): Seq[PageComponent] = {
     componentIndex.getItems
@@ -269,8 +271,8 @@ class ZoneIndexer()  {
 
   def addComponent(c: Component): Component = {
     val pageId = c.targetRegion.target
-    getPageInfo(pageId).componentIndex.add(c)
-    c
+    getPageInfo(pageId)
+      .addComponent(c)
   }
 
   def getPageGeometry(p: Int@@PageID) = pageInfos(p).geometry

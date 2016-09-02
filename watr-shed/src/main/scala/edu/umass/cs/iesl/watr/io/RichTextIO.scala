@@ -4,44 +4,42 @@ package format
 
 import spindex._
 import ComponentOperations._
+import EnrichGeometricFigures._
+import watrmarks.{StandardLabels => LB}
 
 
 object RichTextIO {
 
   import utils.SlicingAndDicing._
+  import ComponentRendering.VisualLine
+  import textboxing.{TextBoxing => TB}
+  import TB._
+
+
   def serializeDocumentAsText(zoneIndexer: ZoneIndexer, artifactPath: Option[String]): String = {
-    val lineSpine = zoneIndexer.bioSpine("TextBlockSpine")
 
-
-    val pages = lineSpine.splitOnPairs({ (l1, l2) =>
-      zoneIndexer.getPageForComponent(l1.component) != zoneIndexer.getPageForComponent(l2.component)
-    })
-
-    val fmtPages = for {
-      page <- pages
+    val allDocumentLines = for {
+      pageId <- zoneIndexer.getPages
+      pageInfo = zoneIndexer.getPageInfo(pageId)
+      page <- pageInfo.getComponentsWithLabel(LB.Page)
+      line <-  page.getChildren(LB.VisualLine)
     } yield {
-      val pageHeader = page.headOption.map({c0 =>
-        val comp = c0.component
-        val pageId = zoneIndexer.getPageForComponent(comp)
-        // val pageGeom = zoneIndexer.getPageGeometry(pageId)
-        s"Page ${pageId}"
-      }).getOrElse("Page (empty)")
-
-
-      val pageText = pageHeader +: (for {
-        lineBio <- page
-      } yield {
-        val lineComponent = lineBio.component
-
-        lineComponent.tokenizeLine()
-        // FIXME
-        lineComponent.chars
-      })
-
-      pageText.mkString("", "\n", "")
+      val lineText = VisualLine.render(line)
+      val region = line.targetRegion.toString()
+      (lineText, region.box)
     }
 
-    fmtPages.mkString("\n\n")
+    vjoin()(
+      "===================",
+      artifactPath.map(_.box).getOrElse("corpus:unknown artifact".box) ,
+      hjoin()(
+        vjoins(a=left)(allDocumentLines.map(_._1)),
+        "     ",
+        vjoins(a=left)(allDocumentLines.map(_._2))
+      ),
+      "==================="
+    ).toString()
+
 
   }
 }

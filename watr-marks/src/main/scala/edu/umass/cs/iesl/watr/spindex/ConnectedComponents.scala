@@ -125,16 +125,6 @@ sealed trait Component {
     zoneIndex.setChildTreeWithLabel(this, l, sorted)
   }
 
-
-  // def connectChildrens(l: Label, cs: Seq[Component]): Unit = {
-  //   zoneIndex.setChildTreeWithLabel(this, l, cs.map(_.id))
-  // }
-
-  // def mapChars(subs: Seq[(Char, String)]): Component
-
-  // def toText(implicit idgen:Option[CCRenderState] = None): String
-  // def toText(): String
-
   // TODO: This is redundant w/targetregion
   def bounds: LTBounds
 

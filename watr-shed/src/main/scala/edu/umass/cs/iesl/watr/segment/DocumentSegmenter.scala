@@ -451,21 +451,21 @@ class DocumentSegmenter(
 
     tokenizeLines()
 
-    vtrace.trace(begin("groupLeftAlignedBlocks"))
-    groupLeftAlignedBlocks()
-    vtrace.trace(end("groupLeftAlignedBlocks"))
+    // vtrace.trace(begin("groupLeftAlignedBlocks"))
+    // groupLeftAlignedBlocks()
+    // vtrace.trace(end("groupLeftAlignedBlocks"))
 
-    // document-wide stats on cc discovered lines
-    // findMostFrequentLineDimensions()
-    // findMostFrequentFocalJumps()
+    // // document-wide stats on cc discovered lines
+    // // findMostFrequentLineDimensions()
+    // // findMostFrequentFocalJumps()
 
-    // val orderedLinesPerPage = for { pageId <- zoneIndexer.getPages }
-    //     yield { groupPageTextBlocks(pageId) }
+    // // val orderedLinesPerPage = for { pageId <- zoneIndexer.getPages }
+    // //     yield { groupPageTextBlocks(pageId) }
 
-    labelAbstract()
-    labelSectionHeadings()
+    // labelAbstract()
+    // labelSectionHeadings()
 
-    joinLines()
+    // joinLines()
 
   }
 
