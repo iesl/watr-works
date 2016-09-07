@@ -4,9 +4,7 @@ package fonts
 
 import org.scalatest._
 
-// import DatabaseApi._
 import ammonite.ops._
-
 
 
 class FontDatabaseTablesTest extends FlatSpec with SequentialNestedSuiteExecution with BeforeAndAfter {
@@ -14,36 +12,36 @@ class FontDatabaseTablesTest extends FlatSpec with SequentialNestedSuiteExecutio
   val db = new FontDatabaseApi(cwd / "fontdb~")
   val fontPath = Path(getClass.getResource("/fontdb/gulliver-sfdirs").getPath)
 
-  before {
-    db.dropAndRecreateDatabase()
-  }
-
-  after {
-  }
-
-
-
-  behavior of "font database"
-
-
-  // it should "load a unique font dir into db" in {
-  //   db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-0.sfdir"))
-
-  //   // db.reportAll()
+  // before {
+  //   db.dropAndRecreateDatabase()
   // }
 
-  // it should "correctly deal with space glyphs" in {}
+  // after {
+  // }
 
-  it should "load an overlapping font dir into db" in {
 
-    db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-0.sfdir"))
-    db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3a.sfdir"))
-    db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3b.sfdir"))
-    db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3c.sfdir"))
 
-    // db.reportAll()
-    db.showFontTrees()
-  }
+  // behavior of "font database"
+
+
+  // // it should "load a unique font dir into db" in {
+  // //   db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-0.sfdir"))
+
+  // //   // db.reportAll()
+  // // }
+
+  // // it should "correctly deal with space glyphs" in {}
+
+  // it should "load an overlapping font dir into db" in {
+
+  //   db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-0.sfdir"))
+  //   db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3a.sfdir"))
+  //   db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3b.sfdir"))
+  //   db.addFontDir(SplineFonts.loadSfdir(fontPath / "font-3c.sfdir"))
+
+  //   // db.reportAll()
+  //   db.showFontTrees()
+  // }
 
 
 }

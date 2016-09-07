@@ -8,6 +8,8 @@ import spindex._
 import EnrichGeometricFigures._
 import ComponentOperations._
 import GeometricFigure._
+import scalaz.@@
+import java.io.InputStream
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"
@@ -152,14 +154,15 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
   }
 
-  // import TypeTags._
-  import scalaz.@@
-  import java.io.InputStream
 
+
+  def println0(s: String): Unit = {
+    // println(s)
+  }
 
 
   def testExample(example: ParsedExample): Unit = {
-    println(s"\ntesting ${example.source}")
+    println0(s"\ntesting ${example.source}")
 
     val pdfIns = papers.paper(example.source)
     // Assume these example regions are all from one page
@@ -188,11 +191,11 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
     example.expectedOutput.zip(tokenizedLines)
       .foreach({case (expect, actual) =>
         if (!expect.isEmpty && expect != actual) {
-          println(s"want> $expect")
+          println0(s"want> $expect")
         } else  if (expect.isEmpty) {
-          println(s"want? (not specified)")
+          println0(s"want? (not specified)")
         }
-        println(s"got> ${actual}")
+        println0(s"got> ${actual}")
         // if (!expect.isEmpty()) {
         //   assertResult(expect){ actual }
         // }

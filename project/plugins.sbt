@@ -1,6 +1,6 @@
 resolvers += "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public"
 
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.11")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.12")
 
 addSbtPlugin("com.lihaoyi" % "workbench" % "0.2.3")
 

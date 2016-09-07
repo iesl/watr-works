@@ -36,7 +36,7 @@ object Works extends App {
   def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot
     .map({croot =>
 
-      val fullPath = if (croot.isAbsolute()) Path(croot) else cwd/RelPath(croot)
+      val fullPath = if (croot.isAbsolute()) Path(croot) else pwd/RelPath(croot)
 
       val corpusSentinel =  fullPath / ".corpus-root"
       val validPath = exists(fullPath)
@@ -157,7 +157,7 @@ object Works extends App {
           io.Source.stdin.getLines.toList
         } else {
           val inputFiles =  RelPath(inputs)
-          val lines = read(cwd/inputFiles)
+          val lines = read(pwd/inputFiles)
           lines.split("\n").toList
         }
 
@@ -278,7 +278,7 @@ object Works extends App {
   def initCorpus(conf: AppConfig): Unit = {
       conf.corpusRoot
       .map({croot =>
-        val fullPath = cwd/RelPath(croot)
+        val fullPath = pwd/RelPath(croot)
         val validPath = exists(fullPath)
 
         if (!validPath) {
@@ -464,7 +464,7 @@ object Works extends App {
       sys.error("please specify database path")
     }
 
-    val dbpath = cwd / RelPath(dbfile)
+    val dbpath = pwd / RelPath(dbfile)
 
     val db = new FontDatabaseApi(dbpath)
 
@@ -525,7 +525,7 @@ object Works extends App {
       sys.error("please specify database path")
     }
 
-    val dbpath = cwd / RelPath(dbfile)
+    val dbpath = pwd / RelPath(dbfile)
 
     val db = new FontDatabaseApi(dbpath)
 

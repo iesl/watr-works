@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
+import textboxing.{TextBoxing => TB}
+
 object TypeConverters {
 
   import SharedTypeConversions._
@@ -20,7 +22,7 @@ object TypeConverters {
       case utils.TraceLog.ShowLabel(l: watrmarks.Label)       => TraceLog.ShowLabel(l.convert)
       case utils.TraceLog.FocusOn(s: spindex.TargetRegion)    => TraceLog.FocusOn(s.convert)
       case utils.TraceLog.Indicate(s: spindex.TargetFigure)   => TraceLog.Indicate(s.convert)
-      case utils.TraceLog.Message(s: String)                  => TraceLog.Message(s)
+      case utils.TraceLog.Message(s: TB.Box)                  => TraceLog.Message(s.toString)
       case utils.TraceLog.All(ts)                             => TraceLog.All(ts.map(convertVisualTraceTypes(_)))
       case utils.TraceLog.Link(ts)                            => TraceLog.Link(ts.map(convertVisualTraceTypes(_)))
       case utils.TraceLog.Group(name, ts)                     => TraceLog.Group(name, ts.map(convertVisualTraceTypes(_)))

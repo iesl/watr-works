@@ -68,16 +68,16 @@ object SharedTypeConversions {
   implicit class RicherComponent(val in: spindex.Component) extends AnyVal {
 
     def convert(): Component = {
-      val content: Option[String] = if (in.getLabels.contains(LB.TokenizedLine)) {
-        Some(in.toText)
-      } else {
-        None
-      }
+      // val content: Option[String] = if (in.getLabels.contains(LB.TokenizedLine)) {
+      //   Some(in.toText)
+      // } else {
+      //   None
+      // }
 
       Component(
         in.id.unwrap,
         in.targetRegion.convert,
-        content
+        None // content
       )
     }
   }

@@ -64,7 +64,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
         ComponentRendering.VisualLine.render(lineComponent).get.toString()
       }
 
-      println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")
+      // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")
 
     }
   }

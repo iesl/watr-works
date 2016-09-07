@@ -10,7 +10,7 @@ class CorpusExplorerServer(
 ) extends CorpusExplorerApi  {
 
   // val initpath = rootDirectory
-  println(s"CorpusExplorerServer current dir=${cwd}, corpus root=${rootDirectory}")
+  println(s"CorpusExplorerServer current dir=${pwd}, corpus root=${rootDirectory}")
 
   val init = DirectoryCursor.init(rootDirectory).get
 
