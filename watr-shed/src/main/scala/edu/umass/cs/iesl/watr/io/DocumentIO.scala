@@ -4,7 +4,7 @@ package format
 import watrmarks._
 
 import TypeTags._
-import textboxing.{TextBoxing => TB}
+import textboxing.{TextBoxing => TB}, TB._
 import watrmarks.{StandardLabels => LB}
 import spindex._
 
@@ -18,7 +18,6 @@ object DocumentIO {
   import BioLabeling._
 
 
-  import TB._
 
   def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
     n.pins
@@ -28,8 +27,6 @@ object DocumentIO {
 
   def serializeLabeling(label: Label, spine: Seq[BioNode]): Seq[Box] = {
     val labeledSpans = selectBioLabelings(label, spine)
-
-    // serialize a bio labeling
 
     val spanBoxes = for {
       span <- labeledSpans
@@ -46,16 +43,11 @@ object DocumentIO {
       s"""["${label}", [${cids}], ${spanId}]""".box
     }
 
-    // vjoinTrailSep(sep=",")(spanBoxes:_*)
     spanBoxes
   }
 
-  def serializeDocument(zoneIndexer: ZoneIndexer): String = {
 
-    implicit val initState = Option(CCRenderState(
-      numOfPages = zoneIndexer.getPages.length,
-      startingPage = PageID(0)
-    ))
+  def serializeDocument(zoneIndexer: ZoneIndexer): String = {
 
     val lineSpine = zoneIndexer.bioSpine("TextBlockSpine")
 
@@ -72,6 +64,7 @@ object DocumentIO {
       linec <- lineSpine
       line = linec.component
     } yield {
+      println(s"line> ${line}")
       VisualLine.renderWithIDs(line)
     }
 
@@ -102,18 +95,6 @@ object DocumentIO {
       .toList
 
     val tokenBlock = indent()(vjoinTrailSep(left, ",")(tokenDict:_*))
-
-    // val tokenDict = initState.map { state =>
-    //   val tokLines = state.tokens
-    //     .map({case (pg, tok, bb) => s"[${tok},[${pg}, ${bb.compactPrint}]]".box })
-    //     .grouped(10)
-    //     .map(group => hjoin(sep=",")(group:_*))
-    //     .toList
-
-      // indent()(vjoinTrailSep(left, ",")(tokLines:_*))
-    // } getOrElse nullBox
-
-
 
     (s"""|{ "labels": [
          |${indent(4)(joinedLabels)}

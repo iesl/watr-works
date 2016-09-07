@@ -13,9 +13,12 @@ import java.io.InputStream
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"
-
-
   val testExamples = List(
+    TextExample(
+      """Page:0 file:///quantification-Smith-2013.pdf""",
+      """(311.98, 631.27, 239.99, 10.32)""",
+      ""
+    ),
     TextExample(
       """Page:0 file:///Schauer-1987.pdf""",
       """TaS2.["]Only a s s u m p t i o n s c a n b e m a d e a b o u t t h e arrange- (l:42.70, t:36.67, w:230.84, h:6.14)""",
@@ -140,8 +143,8 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
   it should "identify text lines" in {
-    val justRunThisOne:Option[Int] = None
-    // val justRunThisOne:Option[Int] = Some(0)
+    // val justRunThisOne:Option[Int] = None
+    val justRunThisOne:Option[Int] = Some(0)
 
     val examples = testExamples.map(cutAndPasteToTestExample(_))
 
@@ -157,7 +160,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
   def println0(s: String): Unit = {
-    // println(s)
+    println(s)
   }
 
 
@@ -170,8 +173,8 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
     val segmenter = createFilteredZoneIndexer(pdfIns, pageId, example.regions.map(_._3))
 
 
-    utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
-    // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+    // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
+    utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
 
     segmenter.runLineDetermination()
 
@@ -206,4 +209,3 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
 }
-

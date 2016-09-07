@@ -122,12 +122,6 @@ object ComponentRendering {
           val hsep = if (isTokenized(cc)) " " else ""
           val joined = hjoins(sep=hsep)(rc.flatten)
 
-          // Some(squareBracket(
-          //   hjoin()(
-          //     cc.id.toString(),
-          //     surroundCC(cc, joined)
-          //   )
-          // ))
           Some(surroundCC(cc, joined))
 
         case LB.TextSpan =>

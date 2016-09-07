@@ -681,23 +681,28 @@ class DocumentSegmenter(
         val idgap = l2min - l1max
         val leftToRight = isStrictlyLeftToRight(l1, l2)
         val overlapped = isOverlappedVertically(l1, l2)
-        val shouldJoin = (
-          idgap < 5
-        )
+        val smallIdGap = idgap < 5
         vtrace.trace("maybe join line parts" withInfo
           s"idgap:${idgap}, left2right:${leftToRight}, overlapped:${overlapped}")
 
-        // val shouldJoin = (
-        //   isStrictlyLeftToRight(l1.last, l2.head)
-        //     && isOverlappedVertically(l1.last, l2.head)
-        //     && idgap < 5
-        // )
+        val shouldJoin = leftToRight && overlapped && smallIdGap
 
         shouldJoin
       })
 
     val pageLines = longLines.map({ lineGroups =>
+      // println("Line Groups-----")
+      // lineGroups.foreach { lgrp =>
+      //   println("---Line Group-----")
+      //   lgrp.foreach { l =>
+      //     println("----line")
+      //     println(l)
+      //   }
+      // }
+
+
       val line = lineGroups.reduce(_ ++ _)
+
       val uio = line.map(_.chars).mkString(", ")
 
       vtrace.trace("debug starting line atoms" withInfo
@@ -706,6 +711,7 @@ class DocumentSegmenter(
       // Glue together page atoms into a VisualLine/TextSpan
       zoneIndexer.labelRegion(line, LB.VisualLine)
         .map ({ visualLine =>
+          visualLine.setChildren(LB.PageAtom, line)
           visualLine.connectChildren(LB.PageAtom, Some(_.bounds.left))
 
           val asdf = visualLine.atoms.map(_.chars).mkString(", ")
