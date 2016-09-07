@@ -61,7 +61,8 @@ object DocumentIO {
       LB.SectionHeadingLine,
       LB.ParaBegin,
       LB.TextBlock,
-      LB.Abstract
+      LB.Abstract,
+      LB.Title
     ).map(l =>
       serializeLabeling(l, lineSpine)
     )
