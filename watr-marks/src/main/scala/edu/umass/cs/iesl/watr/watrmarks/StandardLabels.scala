@@ -8,6 +8,8 @@ trait DocSegLabels {
   val Page = Label("ds", "page")
   val Column = Label("ds", "column")
 
+  val Title = Label("ds", "title")
+
   // val Section = Label("ds", "section")
   val SectionHeadingLine = Label("ds", "section-heading-line")
   val SectionNumber = Label("ds", "section-number")
