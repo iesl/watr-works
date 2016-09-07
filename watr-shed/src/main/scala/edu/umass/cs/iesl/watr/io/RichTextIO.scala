@@ -23,8 +23,8 @@ object RichTextIO {
       pageInfo = zoneIndexer.getPageInfo(pageId)
       page <- pageInfo.getComponentsWithLabel(LB.Page)
       line <-  page.getChildren(LB.VisualLine)
+      lineText <- VisualLine.render(line)
     } yield {
-      val lineText = VisualLine.render(line)
       val region = line.targetRegion.toString()
       (lineText, region.box)
     }

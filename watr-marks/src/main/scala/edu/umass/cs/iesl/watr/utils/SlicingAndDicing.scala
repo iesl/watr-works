@@ -68,6 +68,10 @@ object SlicingAndDicing {
       splitOnPairsWithIndex((a, b, _) => f(a, b))
 
 
+    def foreachPair(f: (A, A) => Unit): Unit = {
+      splitOnPairs((a, b) => {f(a, b); true})
+    }
+
     def clusterBy(f: (A, A)=>Boolean): Seq[Seq[A]] = {
       clusterSeqBy(aas)(f)
     }

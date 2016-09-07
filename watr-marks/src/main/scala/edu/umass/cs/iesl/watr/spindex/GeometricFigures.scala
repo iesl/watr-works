@@ -345,7 +345,7 @@ object EnrichGeometricFigures {
     }
   }
 
-  def charBoxesBounds(charBoxes: Seq[PageComponent]): LTBounds = {
+  def charBoxesBounds(charBoxes: Seq[AtomicComponent]): LTBounds = {
     if (charBoxes.isEmpty) {
       LTBounds(0, 0, 0, 0)
     } else {

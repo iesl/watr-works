@@ -72,22 +72,46 @@ object DocumentIO {
       linec <- lineSpine
       line = linec.component
     } yield {
-      hjoin(center1, ", ")(renderConnectedComponents(line):_*)
+      VisualLine.renderWithIDs(line)
     }
 
     val joinedLines =  vjoinTrailSep(left, ",")(lines:_*)
     val joinedLabels =  vjoinTrailSep(left, ",")(serComponents.flatten:_*)
 
+    val idBlock = for {
+      pageId <-zoneIndexer.getPages
+    } yield {
+      val pageInfo = zoneIndexer.getPageInfo(pageId)
 
-    val tokenDict = initState.map { state =>
-      val tokLines = state.tokens
-        .map({case (pg, tok, bb) => s"[${tok},[${pg}, ${bb.compactPrint}]]".box })
-        .grouped(10)
-        .map(group => hjoin(sep=",")(group:_*))
-        .toList
+      pageInfo.componentToLabels.toSeq
+        .filter({case (k, v) =>
+          v.exists({ l =>
+            l==LB.VisualLine || l==LB.Token
+          })
+        })
+        .sortBy({case (k, v) => k.unwrap})
+        .map({case (cid, _) =>
+          val comp = zoneIndexer.getComponent(cid, pageId)
+          s"[${cid},[${pageId}, ${comp.bounds.compactPrint}]]".box
+        })
+    }
 
-      indent()(vjoinTrailSep(left, ",")(tokLines:_*))
-    } getOrElse nullBox
+    val tokenDict = idBlock.flatten
+      .grouped(10)
+      .map(group => hjoin(sep=",")(group:_*))
+      .toList
+
+    val tokenBlock = indent()(vjoinTrailSep(left, ",")(tokenDict:_*))
+
+    // val tokenDict = initState.map { state =>
+    //   val tokLines = state.tokens
+    //     .map({case (pg, tok, bb) => s"[${tok},[${pg}, ${bb.compactPrint}]]".box })
+    //     .grouped(10)
+    //     .map(group => hjoin(sep=",")(group:_*))
+    //     .toList
+
+      // indent()(vjoinTrailSep(left, ",")(tokLines:_*))
+    // } getOrElse nullBox
 
 
 
@@ -98,7 +122,7 @@ object DocumentIO {
          |${indent(4)(joinedLines)}
          |  ],
          |  "ids": [
-         |${indent()(tokenDict)}
+         |${indent()(tokenBlock)}
          |  ]}
          |""".stripMargin)
 
@@ -139,7 +163,6 @@ object DocumentIO {
 
   import java.io.InputStream
   import watrmarks._
-  import play.api.libs.json._
   import java.io.InputStream
   import play.api.libs.json._
 

@@ -154,7 +154,7 @@
   //   }
 
   //   val lines = sets.iterator().toSeq.map{
-  //     _.toSeq.sortBy(c => (c.region.bbox.left, c.region.bbox.top)).map(new PageComponent(_, docOrientation))
+  //     _.toSeq.sortBy(c => (c.region.bbox.left, c.region.bbox.top)).map(new AtomicComponent(_, docOrientation))
   //   }
 
 

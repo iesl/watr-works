@@ -21,7 +21,7 @@ case class PageInfo(
   componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
   componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),
   labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
-  // charAtoms: mutable.HashMap[Int@@RegionID, (CharAtom, PageComponent)] = mutable.HashMap()
+  // charAtoms: mutable.HashMap[Int@@RegionID, (CharAtom, AtomicComponent)] = mutable.HashMap()
 ) {
   def addComponent(c: Component): Component = {
     componentIndex.add(c)
@@ -29,10 +29,10 @@ case class PageInfo(
     c
   }
 
-  def getPageAtoms(): Seq[PageComponent] = {
+  def getPageAtoms(): Seq[AtomicComponent] = {
     componentIndex.getItems
       .filter(_.roleLabel==LB.PageAtom)
-      .map(_.asInstanceOf[PageComponent])
+      .map(_.asInstanceOf[AtomicComponent])
   }
 
 
@@ -247,6 +247,7 @@ class ZoneIndexer()  {
       val totalRegion = targetRegions.reduce(_ union _)
 
       val region = createRegionComponent(totalRegion, role)
+      // region.setChildren(LB., cs: Seq[Component])
 
       vtrace.trace(s"Label Region as ${role}" withTrace all(components.map(showComponent(_))))
 
@@ -264,9 +265,14 @@ class ZoneIndexer()  {
     region
   }
 
-  def addPageAtom(pageAtom: PageAtom): Component = {
-    val c = PageComponent(componentIdGen.nextId, pageAtom, this)
+  def addPageAtom(pageAtom: PageAtom): AtomicComponent = {
+    val c = AtomicComponent(componentIdGen.nextId, pageAtom, this)
     addComponent(c)
+    c
+  }
+
+  def getComponent(id: Int@@ComponentID, pageId: Int@@PageID): Component = {
+    getPageInfo(pageId).componentIndex.getItem(id.unwrap)
   }
 
   def addComponent(c: Component): Component = {

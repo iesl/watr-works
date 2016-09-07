@@ -7,11 +7,11 @@ import java.io.InputStream
 import scalaz.@@
 import spindex._
 import TypeTags._
-// import EnrichGeometricFigures._
 import GeometricFigure._
+import EnrichGeometricFigures._
+import ComponentOperations._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
-
 
   val LB = watrmarks.StandardLabels
 
@@ -100,19 +100,36 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
     )
   }
 
-  // def testRegion(
-  //   pdf: String,
-  //   page: Int,
-  //   bbox: LTBounds
-  // ): ParsedExample = {
-  //   ParsedExample(
-  //     pdf,
-  //     PageID(page),
-  //     bbox
-  //   )
+  def createFilteredZoneIndexer(pdfIns: InputStream, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
 
-  // }
+    val segmenter =  DocumentSegmenter.createSegmenter(pdfIns, Seq())
 
+    // Assume these example regions are all from one page
+    // val pageId = regions.map(_.target).head
+    // val allBboxes = regions.map(_.bbox)
+
+    val minX = regions.map(_.left).min
+    val minY = regions.map(_.top).min
+    val maxX = regions.map(_.right).max
+    val maxY = regions.map(_.bottom).max
+
+    val totalBounds = LTBounds(
+      minX, minY,
+      maxX-minX,
+      maxY-minY
+    )
+    segmenter.zoneIndexer.dbgFilterPages(pageId)
+    segmenter.zoneIndexer.dbgFilterComponents(pageId, totalBounds)
+
+    val interestingChars = segmenter.zoneIndexer
+      .getPageInfo(pageId)
+      .componentIndex
+      .queryForIntersects(totalBounds)
+
+
+    println("examining chars: ["+squishb(interestingChars)+"]")
+    segmenter
+  }
 
 }
 

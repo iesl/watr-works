@@ -34,6 +34,7 @@ case class CCRenderState(
 object ComponentRendering {
   import TB._
 
+
   object VisualLine {
     import scalaz.std.string._
 
@@ -43,21 +44,117 @@ object ComponentRendering {
         .drawTree
     }
 
+    def bracket(l:Char, r:Char, b: Box): Box = {
+      val lb = l.toString.box
+      val rb = r.toString.box
+       lb + b + rb
+    }
+    def dquote(b: Box): Box = bracket('"', '"', b)
+    def squareBracket(b: Box): Box = bracket('[', ']', b)
+    def curlyBrace(b: Box): Box = bracket('{', '}', b)
 
-    def render(cc: Component): TB.Box = {
+
+    def escapeString(s: String, subs: Seq[(Char, String)]): String = {
+      val submap = subs.toMap
+      s.map({ch => submap.get(ch).getOrElse(ch.toString) })
+        .mkString
+    }
+    def escapeTex(s: String): String = {
+      val subs = Seq(
+        ('_' -> "\\_"),
+        ('^' -> "\\^"),
+        ('{' -> "\\{"),
+        ('}' -> "\\}")
+      )
+      escapeString(s, subs)
+    }
+    def escapeJson(s: String): String = {
+      val subs = Seq(
+        ('"' -> "\\\""),
+        ('\\' -> "\\\\")
+      )
+      escapeString(s, subs)
+    }
+
+    def getDescendantLabels(cc: Component): Set[Label] = {
+      cc.getLabels ++ (
+        cc.getDescendants(LB.TextSpan)
+          .map(_.getLabels)
+          .reduce(_ ++ _)
+      )
+    }
+
+    def hasTex(cc: Component): Boolean = {
+      val lls = getDescendantLabels(cc)
+      !(lls intersect Set(LB.Sup, LB.Sub)).isEmpty
+    }
+
+    def doEscapeAndQuote(cc: Component, s: TB.Box): TB.Box = {
+      dquote(escapeJson(s.toString()))
+    }
+
+    def renderWithIDs(cc: Component): TB.Box = {
+      val textAndIds = for {
+        tokenizedChild <- cc.getDescendants(LB.TextSpan).find(_.hasLabel(LB.Tokenized)).toSeq
+        textSpan <- tokenizedChild.getChildren(LB.TextSpan)
+        tokenBox <- render(textSpan)
+      } yield {
+        val tokenId = textSpan.id
+        (doEscapeAndQuote(cc, tokenBox), tokenId)
+      }
+      val lineText = hsepb(textAndIds.map(_._1), ",")
+      val lineIDs = hsepb(textAndIds.map(_._2.toString.box), ",")
+      val visualLineID = cc.id.toString
+
+      squareBracket(
+        hsepb(
+          Seq(squareBracket(lineText), squareBracket(lineIDs), visualLineID),
+          ","
+        )
+      )
+    }
+
+    def render(cc: Component): Option[TB.Box] = {
       cc.roleLabel match {
-        case LB.VisualLine
-           | LB.TextSpan =>
-
+        case LB.VisualLine =>
           val children = childSpansOrAtoms(cc)
           val rc = children.map(render(_))
           val hsep = if (isTokenized(cc)) " " else ""
-          val joined = hjoins(sep=hsep)(rc)
+          val joined = hjoins(sep=hsep)(rc.flatten)
 
-          surroundCC(cc, joined)
+          // Some(squareBracket(
+          //   hjoin()(
+          //     cc.id.toString(),
+          //     surroundCC(cc, joined)
+          //   )
+          // ))
+          Some(surroundCC(cc, joined))
+
+        case LB.TextSpan =>
+          if (cc.hasLabel(LB.Invisible)) {
+            None
+          } else {
+            val ccBox = cc.getLabels
+              .find(_ == LB.LineBreakToken)
+              .map({ label =>
+                surroundCC(cc, label.value.get)
+              })
+              .getOrElse({
+                val children = childSpansOrAtoms(cc)
+                val rc = children.map(render(_))
+                val hsep = if (isTokenized(cc)) " " else ""
+                val joined = hjoins(sep=hsep)(rc.flatten)
+
+                surroundCC(cc, joined)
+              })
+
+            Some(ccBox)
+          }
+
 
         case LB.PageAtom =>
-          surroundCC(cc, cc.chars.box)
+          val esc = escapeTex(cc.chars).box
+          Some(surroundCC(cc, esc))
 
         case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
       }
@@ -83,7 +180,7 @@ object ComponentRendering {
 
   }
 
-  def renderConnectedComponents(_cc: Component)(implicit ostate: Option[CCRenderState] = None): Seq[TB.Box] = {
+  def renderConnectedComponents(cc: Component): Seq[TB.Box] = {
 
     // val subrender = _cc match {
     //   // case cc: ConnectedComponents =>
@@ -181,7 +278,7 @@ object ComponentRendering {
 
 
 
-    //   case comp: PageComponent => comp.component match {
+    //   case comp: AtomicComponent => comp.component match {
     //     case b: CharAtom =>
     //       Seq(b.bestGuessChar.box)
     //     case b: ImgAtom =>

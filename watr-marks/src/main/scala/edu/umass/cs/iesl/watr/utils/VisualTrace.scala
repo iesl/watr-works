@@ -57,6 +57,7 @@ object VisualTracer {
   def showRegions(s: Seq[TargetRegion]): TraceLog       = {Show(s)}
   def showZone(s: Zone): TraceLog                       = {ShowZone(s)}
   def showComponent(s: Component): TraceLog             = {ShowComponent(s)}
+  def showComponents(cs: Seq[Component]): TraceLog      = {all(cs.map(ShowComponent(_)))}
   def showLabel(s: Label): TraceLog                     = {ShowLabel(s)}
   def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
   def indicate(s: TargetFigure): TraceLog               = {Indicate(s)}
@@ -66,19 +67,43 @@ object VisualTracer {
 
   def begin(name: String) = Group(name, Seq())
   def end(name: String) = GroupEnd(name)
+  import scala.collection.mutable
 
 
   // TODO replace this global w/config
   var visualTraceLevel: VisualTraceLevel = VisualTraceLevel.Off
+  val visualTraceFilters  = mutable.Stack[String]()
+  val vtraceStack = mutable.Stack[TraceLog.Group](TraceLog.Group("root", Seq()))
+
+  def getFilters(): Seq[String] = visualTraceFilters
+
+  def addFilter(s: String): Unit = {
+    visualTraceFilters.push(s)
+  }
+
+  def clearFilters(): Unit = {
+    visualTraceFilters.clear()
+  }
+
+  def traceIsUnfiltered(): Boolean = {
+    getFilters.isEmpty || vtraceStack.exists({ group =>
+      getFilters.exists({ filter =>
+        group.name.toLowerCase().contains(filter.toLowerCase())
+      })
+    })
+
+  }
 }
 
 class VisualTracer() extends utils.EnableTrace[TraceLog] {
-
-  override def traceLevel(): VisualTraceLevel = VisualTracer.visualTraceLevel
-
-  val vtraceStack = mutable.Stack[TraceLog.Group](TraceLog.Group("root", Seq()))
-
+  import VisualTracer._
   import TraceLog._
+
+  override def traceLevel(): VisualTraceLevel = visualTraceLevel
+  override def tracingEnabled(): Boolean = {
+    traceLevel() != VisualTraceLevel.Off && traceIsUnfiltered()
+  }
+
 
   def closeTopGroup(): Unit = {
     val group1 = vtraceStack.pop()
@@ -86,10 +111,12 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
     val group12 = group2.copy(ts = group2.ts :+ group1)
     vtraceStack.push(group12)
   }
-  def printlnIndent(s: Box) = {
-    val leftIndent = vtraceStack.length * 4
-    val ibox = indent(leftIndent)(s)
-    println(ibox.toString)
+  def printlnIndent(s: Box, force: Boolean = false) = {
+    if (traceIsUnfiltered()) {
+      val leftIndent = vtraceStack.length * 4
+      val ibox = indent(leftIndent)(s)
+      println(ibox.toString)
+    }
   }
 
   def trace(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
@@ -117,7 +144,7 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
       trace match {
         case g:Group =>
           if (level == VisualTraceLevel.Print)  {
-            printlnIndent(s"begin:${g.name}")
+            printlnIndent(s"begin:${g.name}", true)
           }
           vtraceStack.push(g)
 
@@ -128,12 +155,12 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
           while (vtraceStack.top.name != g.name) {
             closeTopGroup()
             if (level == VisualTraceLevel.Print)  {
-              printlnIndent(s"/end:${g.name}")
+              printlnIndent(s"/end:${g.name}", true)
             }
           }
           closeTopGroup()
           if (level == VisualTraceLevel.Print)  {
-            printlnIndent(s"/end:${g.name}")
+            printlnIndent(s"/end:${g.name}", true)
           }
 
         case _ =>
@@ -142,7 +169,6 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
           vtraceStack.push(g2)
 
           if (level == VisualTraceLevel.Print)  {
-            // tlogs.toSeq.map({t => formatTrace(t)})
             val ftrace = formatTrace(trace)
             printlnIndent(ftrace)
           }

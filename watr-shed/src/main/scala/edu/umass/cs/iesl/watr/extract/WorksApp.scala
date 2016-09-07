@@ -27,6 +27,10 @@ object Works extends App {
 
   utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+  // utils.VisualTracer.addFilter("determineVisualLineOrder")
+  // utils.VisualTracer.addFilter("LabelAbstract")
+  // utils.VisualTracer.addFilter("LabelSectionH")
+  // utils.VisualTracer.addFilter("joinlines")
 
 
   def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot

@@ -13,6 +13,7 @@ import scala.collection.mutable
 import utils._
 import TypeTags._
 import textboxing.{TextBoxing => TB}
+import TB._
 import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
 import utils.EnrichNumerics._
@@ -68,20 +69,18 @@ object DocumentSegmenter extends DocumentUtils {
     dists :+ 0d
   }
 
-  def approximateLineBins(charBoxes: Seq[PageComponent]): Seq[(LTBounds, Seq[PageComponent])] = {
+  // (charBoxesBounds(sortedXLine), sortedXLine)
+  def approximateLineBins(charBoxes: Seq[AtomicComponent]): Seq[Seq[AtomicComponent]] = {
     val sortedYPage = charBoxes
       .groupBy(_.bounds.bottom.pp)
       .toSeq
       .sortBy(_._1.toDouble)
 
-    val sortedYX = sortedYPage
+    sortedYPage
       .map({case (bottomY, charBoxes) =>
-        val sortedXLine = charBoxes
-          .sortBy(_.bounds.left)
-        (charBoxesBounds(sortedXLine), sortedXLine)
+        charBoxes.sortBy(_.bounds.left)
       })
 
-    sortedYX
   }
 
   def compareDouble(d1: Double, d2: Double, precision: Double): Int = {
@@ -244,7 +243,7 @@ class DocumentSegmenter(
   // }
 
 
-  def docWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[(Component, Int)]]]): Double = {
+  def docWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Double = {
     val allVDists = for {
       groupedBlocks <- alignedBlocksPerPage
       block <- groupedBlocks
@@ -252,20 +251,20 @@ class DocumentSegmenter(
       block
         .sliding(2).toSeq
         .map({
-          case Seq((a1, i1), (a2, i2)) =>
-            val a1Left = a1.bounds.toPoint(CDir.W).y
-            val a2Left = a2.bounds.toPoint(CDir.W).y
+          case Seq(a1, a2) =>
+            val a1Left = a1.bounds.toPoint(CDir.SW).y
+            val a2Left = a2.bounds.toPoint(CDir.SW).y
             val vdist = math.abs(a1Left - a2Left)
+            vdist
 
-            math.abs(vdist)
-
-          case Seq((a1, i1)) => -1
+          case Seq(a1) => -1
           case Seq() => -1
-        }).filter(_ > 0d)
+        }).filter(_ > 1.0d)
     }
 
-    val modalVDist = getMostFrequentValues(allVDists.flatten, leftBinHistResolution)
-      .headOption.map(_._1)
+    vtrace.trace(message("Compute docWideModalLineVSpacing"))
+    val modalVDist = getMostFrequentValues(vtrace)(allVDists.flatten, leftBinHistResolution)
+      .headOption
       .getOrElse(12.0)
 
 
@@ -276,66 +275,91 @@ class DocumentSegmenter(
   val leftBinHistResolution = 1.0d
 
 
-  def findLeftAlignedBlocksPerPage(): Seq[Seq[Seq[(Component, Int)]]] = {
+  def findLeftAlignedBlocksPerPage(): Seq[Seq[Seq[Component]]] = {
+    vtrace.trace(begin("findLeftAlignedBlocksPerPage"))
+
     val alignedBlocksPerPage = for {
       page <- visualLineOnPageComponents
     } yield {
-      println("Processing page")
-
-      // vtrace.trace(
-      //   vtrace.message("findLeftAlignedBlocksPerPage")
-      // )
 
       val lefts = page.zipWithIndex
         .map({case (l, i) => (l.bounds.left, i)})
 
-      val freqLefts = getMostFrequentValues(lefts.map(_._1), leftBinHistResolution)
+      vtrace.trace(message(s"Most frequent left-edge text alignment"))
+      val leftsAndFreqs = getMostFrequentValuesAndFreqs(vtrace)(lefts.map(_._1), leftBinHistResolution)
 
-      // vtrace.trace(
-      //   vtrace.all(freqLefts.map({ case (bin, freq) => vtrace.vRuler(bin) })),
-      //   vtrace.message("most frequent lefts")
-      // )
+      val commonLeftEdges = leftsAndFreqs.takeWhile(_._2 > 1.0)
+
 
       def valueIsWithinHistBin(bin: Double, res: Double)(value: Double): Boolean = {
         bin-res <= value && value <= bin+res
       }
 
 
-      val groupedBlocks = page.zipWithIndex
-        .splitOnPairs({ case ((l1, l1i), (l2, l2i)) =>
+      def minAtomId(c: Component): Int = {
+        c.atoms.map(_.id.unwrap).min
+      }
 
-          val linesAreClustered = freqLefts.exists({ case (leftBin, freq) =>
-            val l1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l1.bounds.left)
-            val l2InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(l2.bounds.left)
-            l1InBin && l2InBin
+      val groupedBlocks = page
+        .sortBy(minAtomId(_))
+        .groupByPairs({ case (line1, line2) =>
+
+
+          val linesAreClustered = commonLeftEdges.exists({ case (leftBin, _) =>
+            val line1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(line1.left)
+            val line2InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(line2.left)
+
+            val areClustered = line1InBin && line2InBin
+            areClustered
           })
 
-          val h1 = l1.determineNormalTextBounds.height
-          val h2 = l2.determineNormalTextBounds.height
+          val h1 = line1.height
+          val h2 = line2.height
           // val heightsDiffer = h1 != h2
-          val heightsDiffer = ! h1.eqFuzzy(0.2)(h2)
+          // val heightsDiffer = ! h1.eqFuzzy(0.2)(h2)
+          val areGrouped = linesAreClustered //  && !heightsDiffer
 
-          heightsDiffer || (!linesAreClustered)
+          vtrace.trace(message(
+            s"""| ${areGrouped} Group ${VisualLine.render(line1)} +??+ ${VisualLine.render(line2)}
+                |     l1.left: ${line1.left}        .height: ${h1}
+                |     l2.left: ${line2.left}        .height: ${h2}
+                |     linesAreClustered=${linesAreClustered}
+                |""".stripMargin
+          ))
+
+          areGrouped
         })
 
+      vtrace.trace({
+        val blocks = groupedBlocks.map{ block =>
+          block.map(VisualLine.render(_))
+            .mkString("Block\n    ", "\n    ", "\n")
+        }
+        val allBlocks = blocks.mkString("\n  ", "\n  ", "\n")
+
+        message(allBlocks)
+      })
       groupedBlocks
     }
+
+    vtrace.trace(end("findLeftAlignedBlocksPerPage"))
+
     alignedBlocksPerPage
 
   }
 
   def splitBlocksWithLargeVGaps(
-    alignedBlocksPerPage: Seq[Seq[Seq[(Component, Int)]]],
+    alignedBlocksPerPage: Seq[Seq[Seq[Component]]],
     modalVDist: Double
-  ): Seq[Seq[Seq[(Component, Int)]]] = {
+  ): Seq[Seq[Seq[Component]]] = {
     // One last pass through block to split over-large vertical line jumps
     for {
       blocksOnPage <- alignedBlocksPerPage
       block <- blocksOnPage
     } yield {
-      block.splitOnPairs ({ case ((a1, i1), (a2, i2)) =>
+      block.splitOnPairs ({ case (a1, a2) =>
         val vdist = a1.vdist(a2)
-        val maxVDist = modalVDist * 1.15d
+        val maxVDist = modalVDist * 1.4d
         // if (vdist > maxVDist) {
         //   println(s"splitting lines on vdist=${vdist}, maxd=${maxVDist}  modald=${modalVDist}")
         //   println(s"   ${a1.tokenizeLine().toText}")
@@ -350,8 +374,8 @@ class DocumentSegmenter(
 
   import BioLabeling._
 
-  def groupLeftAlignedBlocks(): Unit = {
-    // lines ordered as per cc analysis
+  def determineVisualLineOrdering(): Unit = {
+    vtrace.trace(begin("determineVisualLineOrdering"))
     val alignedBlocksPerPage = findLeftAlignedBlocksPerPage()
 
     val modalVDist = docWideModalLineVSpacing(alignedBlocksPerPage)
@@ -362,7 +386,7 @@ class DocumentSegmenter(
     val spine = finalSplit
       .flatten
       .map({ block =>
-        val bios = block.map(_._1).map(BioNode(_))
+        val bios = block.map(BioNode(_))
         zoneIndexer.addBioLabels(LB.TextBlock, bios)
 
         // each block is a list of line components that have been grouped into a text block
@@ -432,6 +456,16 @@ class DocumentSegmenter(
 
         true
     })
+    vtrace.trace({
+      val blockStrs = blocks.map{ block =>
+        block.map(b => VisualLine.render(b.component))
+          .mkString("Block\n    ", "\n    ", "\n")
+      }
+      val allBlocks = blockStrs.mkString("\n  ", "\n  ", "\n")
+
+      "Final Block Structure" withTrace message(allBlocks)
+    })
+    vtrace.trace(end("determineVisualLineOrdering"))
 
   }
 
@@ -451,9 +485,9 @@ class DocumentSegmenter(
 
     tokenizeLines()
 
-    // vtrace.trace(begin("groupLeftAlignedBlocks"))
-    // groupLeftAlignedBlocks()
-    // vtrace.trace(end("groupLeftAlignedBlocks"))
+    vtrace.trace(begin("determineVisualLineOrdering"))
+    determineVisualLineOrdering()
+    vtrace.trace(end("determineVisualLineOrdering"))
 
     // // document-wide stats on cc discovered lines
     // // findMostFrequentLineDimensions()
@@ -462,10 +496,10 @@ class DocumentSegmenter(
     // // val orderedLinesPerPage = for { pageId <- zoneIndexer.getPages }
     // //     yield { groupPageTextBlocks(pageId) }
 
-    // labelAbstract()
-    // labelSectionHeadings()
+    labelAbstract()
+    labelSectionHeadings()
 
-    // joinLines()
+    joinLines()
 
   }
 
@@ -479,209 +513,228 @@ class DocumentSegmenter(
 
 
   def joinLines(): Unit = {
-    val alignedBlocksPerPage = for {
-      page <- visualLineOnPageComponents
-      (line, linenum) <- page.zipWithIndex
-    } yield {
+    vtrace.trace(begin("JoinLines"))
+
+    val textBlockSpine = zoneIndexer.bioSpine("TextBlockSpine")
+    val textBlocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
+
+    textBlocks.flatten.foreachPair({(line1Node, line2Node) =>
+      val line1 = line1Node.component
+      val line2 = line2Node.component
       val wordBreaks = "-"
-      val lineMinLenReq = line.chars.length > 10 // magic # for minimum line length
-      val hasNonLetterPrefix = line.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
-      val endsWithDash = line.chars.lastOption.exists { wordBreaks contains _ }
+      val lineMinLenReq = line1.chars.length > 10 // magic # for minimum line length
+      val hasNonLetterPrefix = line1.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
+      val endsWithDash = line1.chars.lastOption.exists { wordBreaks contains _ }
       val isBrokenWord = endsWithDash && lineMinLenReq && !hasNonLetterPrefix
 
-
       if (isBrokenWord) {
-        val endToken = line.queryInside(LB.Token).lastOption
-        // look ahead 1 line for word continuation
-        page.drop(linenum+1)
-          .take(1)
-          .map({ nextLine =>
-            val startToken = nextLine.queryInside(LB.Token).headOption
 
-            (startToken, endToken) match {
-              case (Some(start), Some(end)) =>
-                val w1 = end.chars.dropRight(1)
-                val w2 = start.chars.reverse.dropWhile(!_.isLetter).reverse
+        val wordHalfFirst = line1.getDescendants(LB.TextSpan)
+          .find(_.hasLabel(LB.Tokenized))
+          .flatMap({_.getChildren(LB.TextSpan).lastOption })
 
-                val word = w1 + w2
+        val wordHalfSecond = line2.getDescendants(LB.TextSpan)
+          .find(_.hasLabel(LB.Tokenized))
+          .flatMap({_.getChildren(LB.TextSpan).headOption })
 
-                val dict = utils.EnglishDictionary.global
-                if (dict.contains(word)) {
-                  // join word
-                  val joinedWord = LB.LineBreakToken(word)
-                  start.addLabel(LB.Invisible)
-                  end.addLabel(joinedWord)
-                } else if (dict.contains(w1) && dict.contains(w2)) {
-                  // join word, but retain hyphen
-                  val wjoin = s"${w1}-${w2}"
-                  val joinedWord = LB.LineBreakToken(wjoin)
-                  start.addLabel(LB.Invisible)
-                  end.addLabel(joinedWord)
-                }
+        vtrace.trace("Broken word found" withTrace all(Seq(
+          showComponent(line1), // endToken.map(showComponent(_)),
+          showComponent(line2), // startToken.map(showComponent(_)),
+          message(VisualLine.render(line1).get),
+          message(VisualLine.render(line2).get),
+          showComponents(wordHalfFirst.toSeq++wordHalfSecond.toSeq)
+        )))
 
-              case _ =>
-                println(s"couldn't find broken word continuation")
+        (wordHalfFirst, wordHalfSecond) match {
+          case (Some(firstHalf), Some(secondHalf)) =>
+            val w1 = firstHalf.chars.dropRight(1)
+            val w2 = secondHalf.chars.reverse.dropWhile(!_.isLetter).reverse
+            val w2Extra = secondHalf.chars.reverse.takeWhile(!_.isLetter).reverse
 
+            val word = w1 + w2
+
+            val dict = utils.EnglishDictionary.global
+            if (dict.contains(word)) {
+              vtrace.trace("Broken word joined:" withInfo(word))
+              // join word
+              val joinedWord = LB.LineBreakToken(word)
+              firstHalf.addLabel(joinedWord)
+              secondHalf.addLabel(LB.Invisible)
+              // if (w2Extra.isEmpty()) {
+              // } else {
+              //   // TODO add back the extra final punctuation w2Extra
+              // }
+            } else if (dict.contains(w1) && dict.contains(w2)) {
+              // join word, but retain hyphen
+              val wjoin = s"${w1}-${w2}"
+              vtrace.trace("Broken word hyphenated:" withInfo(wjoin))
+              val joinedWord = LB.LineBreakToken(wjoin)
+              firstHalf.addLabel(joinedWord)
+              // if (w2Extra.isEmpty()) {
+              // } else {
+              //   // TODO add back the extra final punctuation w2Extra
+              // }
+              secondHalf.addLabel(LB.Invisible)
             }
-          })
-      }
-    }
-  }
 
-  // private def findNeighbors(pageId: Int@@PageID, qbox: CharAtom): Seq[CharAtom] = {
-  //   val atomIndex = zoneIndexer.getPageInfo(pageId).componentIndex
-  //   atomIndex.nearestNItems(qbox, 12, 15.0f)
-  //     .filterNot(_.isWonky)
-  // }
+          case _ =>
+            vtrace.trace(message(s"couldn't find broken word continuation"))
+
+        }
+      }
+    })
+
+    vtrace.trace(end("JoinLines"))
+
+  }
 
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
-  def fillInMissingChars(pageId: Int@@PageID, charBoxes: Seq[PageComponent]): Seq[Component] = {
-    if (charBoxes.isEmpty) Seq()
-    else {
-      val ids = charBoxes.map(_.id.unwrap)
-      val minId = ids.min
-      val maxId = ids.max
+  def fillInMissingChars(pageId: Int@@PageID, lineBinChars: Seq[AtomicComponent]): Seq[Component] = {
+    // val consecutiveCharGroups = lineBinChars.groupByPairs({ (ch1, ch2) =>
+    //   ch2.id.unwrap - ch1.id.unwrap == 1
+    // })
+    val ids = lineBinChars.map(_.id.unwrap)
+    val minId = ids.min
+    val maxId = ids.max
 
-      val missingIds = (ids.min to ids.max) diff ids
+    val missingIds = (ids.min to ids.max) diff ids
 
-      val missingChars = missingIds.map(id =>
-        // zoneIndexer.getAtom(pageId, RegionID(id))
-        zoneIndexer.getPageInfo(pageId).componentIndex.getItem(id)
-      )
+    val missingChars = missingIds.map(id =>
+      zoneIndexer.getComponent(ComponentID(id), pageId)
+    )
 
-      val completeLine = (charBoxes ++ missingChars).sortBy(_.bounds.left)
+    vtrace.trace("inserting missing chars" withTrace
+      all(missingChars.map(showComponent(_))))
 
-      completeLine
-    }
+    (lineBinChars ++ missingChars).sortBy(_.bounds.left)
   }
+
+
+  def splitRunOnLines(lineBins: Seq[Seq[AtomicComponent]]): Seq[Seq[AtomicComponent]] = {
+    for {
+      lineBin <- lineBins
+      shortLine <- lineBin.splitOnPairs({ (ch1, ch2) =>
+        val largeIdGap = ch2.id.unwrap - ch1.id.unwrap > 10
+        if (largeIdGap) {
+          vtrace.trace("splitting chars" withTrace link(showComponent(ch1), showComponent(ch2)))
+        }
+        largeIdGap
+      })
+    } yield shortLine
+  }
+
+  // determine all the offsets where the given chars have large gaps in ID#s
+  def idGapOffsets(lineBinChars: Seq[AtomicComponent]): Seq[Int] = {
+    val consecutiveCharGroups = lineBinChars.groupByPairs({ (ch1, ch2) =>
+      ch2.id.unwrap - ch1.id.unwrap == 1
+    })
+    // val m = fillInMissingChars(pageId, asdf)
+      ???
+  }
+
 
   def determineLines(
     pageId: Int@@PageID,
-    components: Seq[PageComponent]
+    components: Seq[AtomicComponent]
   ): Unit = {
+    def regionIds(cc: Component): Seq[Int@@RegionID] = cc.targetRegions.map(_.id)
+    def minRegionId(ccs: Seq[Component]): Int@@RegionID =  ccs.flatMap(regionIds(_)).min
 
     val lineSets = new DisjointSets[Component](components)
 
     // line-bin coarse segmentation
-    val lineBins = approximateLineBins(components)
-
-    import TB._
-
-    vtrace.trace("approximate line bins" withTrace message(
-      vcat(lineBins.map({case (bbox, ccs) =>
-        bbox.prettyPrint.box besideS ccs.map(_.chars).mkString
-      }))
-    ))
-
-    vtrace.trace(begin("fill in ID Gaps"))
-    /// Split run-on lines (crossing columns, e.g.,), by looking for jumps in the char.id
-    val splitAndFilledLines = for {
-      (lineBounds, lineChars) <- lineBins
-      if !lineChars.isEmpty
-    } {
+    val lineBinsx = approximateLineBins(components)
 
 
-      // determine all the offsets where the given chars have large gaps in ID#s
-      def idGapOffsets(chars: Seq[PageComponent]): Seq[Int] = {
-        if (chars.isEmpty) Seq()
-        else {
-          // split chars at the point where the difference between ids is > 20
-          val (line1, line2) = chars
-            .sliding(2).span({
-              case Seq(ch1, ch2) => ch2.id.unwrap - ch1.id.unwrap < 20
-              case Seq(_)     => true
-            })
-          val len = line1.length
-          len +: idGapOffsets(chars.drop(len+1))
-        }
-      }
+    vtrace.trace("Visual lines, first approximation" withInfo
+      vcat(lineBinsx.map(ccs =>
+        ccs.map(_.chars).mkString.box
+      )))
 
-      var totalIndex: Int = 0
+    val shortLines = splitRunOnLines(lineBinsx)
 
-      val splitLines = idGapOffsets(lineChars)
-        .foreach({ index =>
-          val asdf =  lineChars.drop(totalIndex).take(index+1)
-          val m = fillInMissingChars(pageId, asdf)
+    for {
+      line <- shortLines.map(fillInMissingChars(pageId, _))
+      if !line.isEmpty
+      char <- line
+    } { lineSets.union(char, line.head) }
 
-          vtrace.trace("Filling in ID gap" withTrace {
-            message("TODO")
-            // all(asdf.map(showComponent(_)))
-          })
 
-          m.tail.foreach({char =>
-            lineSets.union(char, m.head)
-          })
-          totalIndex += index+1
-        })
-    }
-
-    vtrace.trace(end("fill in ID Gaps"))
-
-    def regionIds(cc: Component): Seq[Int@@RegionID] = {
-      cc.targetRegions.map(_.id)
-    }
-
-    def minRegionId(ccs: Seq[Component]): Int@@RegionID = {
-      ccs.flatMap(regionIds(_)).min
-    }
-
-    // consider each line pair-wise and decide if they should be re-joined:
-    val prejoined = lineSets.iterator().toSeq
-      .map({ line =>
-        line.toSeq.sortBy(c => (c.bounds.left, c.bounds.top))
-      })
+    val shortLinesFilledIn = lineSets.iterator().toSeq
+      .map(_.toSeq.sortBy(c => (c.bounds.left, c.bounds.top)))
       .sortBy(line => minRegionId(line))
 
+    vtrace.trace("Vis. Lines, second approx." withInfo
+      vcat(shortLinesFilledIn.map(ccs =>
+        ccs.map(_.chars).mkString.box
+      )))
 
 
-    val first = prejoined.headOption.toSeq
-
-    val maybeJoined = prejoined.drop(1).toSeq
-      .foldLeft(first)({ case (acc, l2) =>
-        val l1 = acc.last
-
-        val l1max = regionIds(l1.last).max.unwrap
-        val l2min = regionIds(l2.head).min.unwrap
+    val longLines = shortLinesFilledIn
+      .groupByPairs({ (linePart1, linePart2) =>
+        val l1 = linePart1.last
+        val l2 = linePart2.head
+        val l1max = l1.targetRegion.id.unwrap
+        val l2min = l2.targetRegion.id.unwrap
         val idgap = l2min - l1max
-
-        // val idgap = l2.head.component.region.id.unwrap - l1.last.component.region.id.unwrap
+        val leftToRight = isStrictlyLeftToRight(l1, l2)
+        val overlapped = isOverlappedVertically(l1, l2)
         val shouldJoin = (
-          isStrictlyLeftToRight(l1.last, l2.head)
-            && isOverlappedVertically(l1.last, l2.head)
-            && idgap < 5
+          idgap < 5
         )
+        vtrace.trace("maybe join line parts" withInfo
+          s"idgap:${idgap}, left2right:${leftToRight}, overlapped:${overlapped}")
 
-        if (shouldJoin) acc.dropRight(1) :+ (l1 ++ l2)
-        else acc :+ l2
+        // val shouldJoin = (
+        //   isStrictlyLeftToRight(l1.last, l2.head)
+        //     && isOverlappedVertically(l1.last, l2.head)
+        //     && idgap < 5
+        // )
+
+        shouldJoin
       })
 
+    val pageLines = longLines.map({ lineGroups =>
+      val line = lineGroups.reduce(_ ++ _)
+      val uio = line.map(_.chars).mkString(", ")
 
-    val linesJoined = maybeJoined
-      .sortBy(b => b.map(regionIds(_)).min)
-      .map({lineComponents =>
-        // Glue together page atoms into a VisualLine/TextSpan
-        zoneIndexer.labelRegion(lineComponents, LB.VisualLine)
-          .map ({ visualLine =>
-            visualLine.connectChildren(LB.PageAtom, Some(_.bounds.left))
-            val textSpan = visualLine.cloneAndNest(LB.TextSpan)
-            vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
-            visualLine
-          })
-      })
+      vtrace.trace("debug starting line atoms" withInfo
+        s""" ${uio} """)
+
+      // Glue together page atoms into a VisualLine/TextSpan
+      zoneIndexer.labelRegion(line, LB.VisualLine)
+        .map ({ visualLine =>
+          visualLine.connectChildren(LB.PageAtom, Some(_.bounds.left))
+
+          val asdf = visualLine.atoms.map(_.chars).mkString(", ")
+          vtrace.trace("debug vline atoms" withInfo
+            s""" ${asdf} """)
+
+          val textSpan = visualLine.cloneAndNest(LB.TextSpan)
+          val qewr = textSpan.atoms.map(_.chars).mkString(", ")
+          vtrace.trace("debug textSpan atoms" withInfo
+            s""" ${qewr} """)
+
+          vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
+          visualLine
+        })
+    })
 
     zoneIndexer
-      .labelRegion(linesJoined.flatten, LB.Page)
+      .labelRegion(pageLines.flatten, LB.Page)
       .map(_.connectChildren(LB.VisualLine, None))
   }
 
 
   def lineWidthMatches(line: Component, width: Double): Boolean  = {
-    line.determineNormalTextBounds.width.eqFuzzy(0.5d)(width)
+    // line.determineNormalTextBounds.width.eqFuzzy(0.5d)(width)
+    line.width.eqFuzzy(0.5d)(width)
   }
   def lineHeightMatches(line: Component, height: Double): Boolean  = {
-    line.determineNormalTextBounds.height.eqFuzzy(0.5d)(height)
+    // line.determineNormalTextBounds.height.eqFuzzy(0.5d)(height)
+    line.height.eqFuzzy(0.5d)(height)
   }
 
   def lineDimensionsMatch(line: Component, hw: Point): Boolean = {
@@ -785,8 +838,7 @@ class DocumentSegmenter(
 
     val allDocumentWidths = allPageLines.map(_.bounds.width)
 
-    val topWidths = getMostFrequentValues(allDocumentWidths, 0.2d).toList
-    // val topNWidths = topWidths // .take(7)
+    val topWidths = getMostFrequentValuesAndFreqs(vtrace)(allDocumentWidths, 0.2d).toList
     val topNWidths = topWidths.takeWhile(_._2 > 1.0)
     // Common width meaning from largest->smallest:
     //    left/right justified line width
@@ -819,12 +871,16 @@ class DocumentSegmenter(
   }
 
   def labelAbstract(): Unit = {
+    vtrace.trace(begin("LabelAbstract"))
     // find the word "abstract" in some form, then,
     // if the text block containing "abstract" is a single line,
     //    take subsequent text blocks until we take a multiline
     // else if the text block is multi-line, take that block to be the entire abstract
     val textBlockSpine = zoneIndexer.bioSpine("TextBlockSpine")
     val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
+
+    vtrace.trace(message(s"TextBlock count: ${blocks.length}"))
+
     val maybeLookingAtAbstract = blocks.dropWhile { tblines =>
       tblines.headOption.exists { l1 =>
         val lineComp = l1.component
@@ -842,16 +898,8 @@ class DocumentSegmenter(
         maybeLookingAtAbstract.headOption.foreach { abs =>
           zoneIndexer.addBioLabels(LB.Abstract, abs)
 
-          // vtrace.trace(
-          //   vtrace.link(
-          //     vtrace.all(
-          //       abs.map(b => vtrace.showComponent(b.component))
-          //     ),
-          //     vtrace.showLabel(LB.Abstract)
-          //   )
-          // )
-
-
+          vtrace.trace("Found Abstract in multi-line block" withTrace
+            all(abs.map(b => showComponent(b.component))))
         }
       } else {
         val singleLines = maybeLookingAtAbstract.takeWhile { tblines =>
@@ -862,20 +910,18 @@ class DocumentSegmenter(
 
         zoneIndexer.addBioLabels(LB.Abstract, totalABs.flatten)
 
-        // vtrace.trace(
-        //   vtrace.link(
-        //     vtrace.all(
-        //       totalABs.flatten.map(b => vtrace.showComponent(b.component))
-        //     ),
-        //     vtrace.showLabel(LB.Abstract)
-        //   )
-        // )
+        vtrace.trace("Found Abstract in single-line block" withTrace all(
+          totalABs.flatMap(_.map(b => showComponent(b.component)))
+        ))
+
 
       }
     }
+    vtrace.trace(end("LabelAbstract"))
   }
 
   def labelSectionHeadings(): Unit = {
+    vtrace.trace(begin("LabelSectionHeadings"))
     val vlines = zoneIndexer.bioSpine("TextBlockSpine")
     for {
       lineBioNode <- vlines
@@ -888,37 +934,20 @@ class DocumentSegmenter(
       if numbering.matches("^[1-9]+\\.([1-9]\\.)*")
       if !isTOCLine
     } {
+
+      vtrace.trace("Labeled section heading" withInfo
+        VisualLine.render(lineBioNode.component).get)
+
       zoneIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
     }
 
-    // val numberedSectionLines = for {
-    //   page <- visualLineOnPageComponents
-
-
-    // println("sorted sections ")
-    // sortedSections.foreach { case (line, ns) =>
-    //   val rline = renderConnectedComponents(line)
-    //   val nss = ns.mkString(".")
-    //   println(s"${nss}   ${rline}")
-    // }
-
-    // zoneIndexer.addLabels(zl: ZoneAndLabel)
-    // sortedSections.foreach({ case (linecc, ns) =>
-    //   val asdf =linecc.withLabel(LB.Heading)
-    // })
+    vtrace.trace(end("LabelSectionHeadings"))
 
     // What are the predominant fonts per 'level'?
-
     // Distinguish between TOC and in-situ section IDs
-
-    // println(s"""section: ${headerLines.map(_.toText).mkString(" ")}""")
-
     // look for rectangular blocks of text (plus leading/trailing lines)
-    // look for for left-aligned (column-wise) single or double numbered text lines w/
-    //   large gaps
-
+    // look for for left-aligned (column-wise) single or double numbered text lines w/ large gaps
     // filter out figure/caption/footnotes based on embedded images and page locations
-
   }
 
 

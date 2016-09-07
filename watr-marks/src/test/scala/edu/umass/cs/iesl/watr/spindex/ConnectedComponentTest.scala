@@ -125,18 +125,17 @@ class ConnectedComponentTest extends FlatSpec with ConnectedComponentTestUtil {
 
       textSpanRegion.setChildren(LB.TextSpan, splitRegions)
 
-      println("Final Tree")
-      println(VisualLine.renderRoleTree(row))
+      val rendered = VisualLine.render(row).get
 
-      val rendered = VisualLine.render(row)
+      // println("Final Tree")
+      // println(VisualLine.renderRoleTree(row))
+      // println(s"rendered: ${rendered}")
 
       assertResult("Eu_{1 - x}Bi_{x}VO_{4}"){
         rendered.toString()
       }
 
     }
-
-
 
   }
 

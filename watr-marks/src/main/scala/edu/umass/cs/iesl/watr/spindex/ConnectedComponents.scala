@@ -17,8 +17,8 @@ import scalaz.Tree
  Connected components represent a (rectangular) query against a spatial index
 
  PageAtoms are the smallest rectangular blocks extracted from PDFs.
- PageComponent is the query that selects a single PageAtom
- RegionComponent is the query that selects everything within its boundary (whitespace and/or PageComponent)
+ AtomicComponent is the query that selects a single PageAtom
+ RegionComponent is the query that selects everything within its boundary (whitespace and/or AtomicComponent)
 
 
  child/descendant methods on Component should go away, as there is no strict hierarchical structure to CCs
@@ -55,8 +55,8 @@ sealed trait Component {
 
   def roleLabel: Label
 
-  def queryAtoms(): Seq[PageComponent] = {
-    queryInside(LB.PageAtom).map(_.asInstanceOf[PageComponent])
+  def queryAtoms(): Seq[AtomicComponent] = {
+    queryInside(LB.PageAtom).map(_.asInstanceOf[AtomicComponent])
   }
 
   def queryInside(role: Label): Seq[Component] = {
@@ -71,12 +71,12 @@ sealed trait Component {
   }
 
   def groupAtomsIf(
-    groupf: (PageComponent, PageComponent, Int) => Boolean,
+    groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent]
 
   def splitAtomsIf(
-    splitf: (PageComponent, PageComponent, Int) => Boolean,
+    splitf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onSplit: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent]
 
@@ -219,7 +219,7 @@ case class RegionComponent(
       .reduce(_ union _)
   }
 
-  private def initRegionFromAtoms(atoms: Seq[PageComponent]): RegionComponent = {
+  private def initRegionFromAtoms(atoms: Seq[AtomicComponent]): RegionComponent = {
     val initRegion = initCloneAs(roleLabel)
     val newRegion = initRegion.copy(
       region = initRegion.region.copy(
@@ -231,7 +231,7 @@ case class RegionComponent(
   }
 
   def groupAtomsIf(
-    groupf: (PageComponent, PageComponent, Int) => Boolean,
+    groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onRegionCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
 
@@ -246,7 +246,7 @@ case class RegionComponent(
   }
 
   def splitAtomsIf(
-    splitf: (PageComponent, PageComponent, Int) => Boolean,
+    splitf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onRegionCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
 
@@ -275,19 +275,19 @@ case class RegionComponent(
 }
 
 
-case class PageComponent(
+case class AtomicComponent(
   id: Int@@ComponentID,
   component: PageAtom,
   override val zoneIndex: ZoneIndexer
 ) extends Component {
 
   def splitAtomsIf(
-    splitf: (PageComponent, PageComponent, Int) => Boolean,
+    splitf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onSplit: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = { Seq() }
 
   def groupAtomsIf(
-    groupf: (PageComponent, PageComponent, Int) => Boolean,
+    groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
     val newRegion = zoneIndex.createRegionComponent(component.region, LB.NullLabel)

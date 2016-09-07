@@ -43,7 +43,7 @@ class ZoneIndexConstructionTest extends DocsegTestUtil  {
   //   println(s"found chars: ${found}")
   //   println(s"tokenized  : ${rendered.toString}")
   //   // Line labeling process
-  //   // val chars: Seq[PageComponent] = zoneIndex.queryChars(pg, bbox)
+  //   // val chars: Seq[AtomicComponent] = zoneIndex.queryChars(pg, bbox)
   //   // zoneIndex.addComponent()
   //   // zoneIndex.addLabels(ccs)
   //   // val ccRet = zoneIndex.query(LB.VisualLine)

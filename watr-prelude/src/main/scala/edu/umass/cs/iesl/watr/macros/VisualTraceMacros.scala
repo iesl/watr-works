@@ -15,7 +15,8 @@ object VisualTraceLevel {
 trait EnableTrace[T] {
   def traceLevel(): VisualTraceLevel
 
-  def tracingEnabled(): Boolean = traceLevel() != VisualTraceLevel.Off
+  // def tracingEnabled(): Boolean = traceLevel() != VisualTraceLevel.Off
+  def tracingEnabled(): Boolean
   def runTrace(level: VisualTraceLevel, ts: T*): Unit
 }
 

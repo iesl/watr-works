@@ -3,27 +3,25 @@ package spindex
 
 
 import watrmarks.{StandardLabels => LB, Label}
-import utils.Histogram
-import utils.Histogram._
-import textboxing.{TextBoxing => TB}
-import TB._
+import utils.Histogram, Histogram._
+import textboxing.{TextBoxing => TB}, TB._
 
 import EnrichGeometricFigures._
 import utils.SlicingAndDicing._
 import utils.{CompassDirection => Compass}
-import utils.VisualTracer._
+import utils.VisualTracer, VisualTracer._
 import spindex.GeometricFigure._
 import scala.collection.mutable
 import ComponentRendering.PageAtom
 import utils.EnrichNumerics._
 import ComponentRendering.VisualLine
 
+
 object ComponentOperations {
   def centerX(cb: PageAtom) = cb.region.bbox.toCenterPoint.x
   def centerY(cb: PageAtom) = cb.region.bbox.toCenterPoint.y
 
   def spaceWidths(cs: Seq[CharAtom]): Seq[Double] = {
-    // pairwiseSpaceWidths(cs.map(Component(_)))
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
@@ -45,27 +43,15 @@ object ComponentOperations {
     dists :+ 0d
   }
 
-  def determineCharSpacings(chars: Seq[CharAtom]): Seq[Double] = {
-    val dists = spaceWidths(chars)
-    val resolution = 0.5d
-
-    val hist = histogram(dists, resolution)
-
-    val spaceDists = hist.getFrequencies
-      .sortBy(_.frequency)
-      .dropWhile(_.frequency==0)
-      .map(_.value)
-      .reverse
-
-    spaceDists
-  }
-
   implicit class RicherComponent(val selfComponent: Component) extends AnyVal {
 
     def zoneIndex = selfComponent.zoneIndex
     def vtrace = selfComponent.zoneIndex.vtrace
 
+    def left: Double  = selfComponent.bounds.left
+    def top: Double  = selfComponent.bounds.top
     def height: Double  = selfComponent.bounds.height
+    def width: Double  = selfComponent.bounds.width
 
     def hasLabel(l: Label): Boolean = selfComponent.getLabels.contains(l)
 
@@ -154,56 +140,11 @@ object ComponentOperations {
       selfComponent.bounds.width.eqFuzzy(tolerance)(other.bounds.width)
 
 
-    import utils.TraceLog
-
-    def vtraceHistogram(hist: Histogram): TraceLog = {
-      vtraceHistogram(
-        hist.getFrequencies
-          .sortBy(_.frequency)
-          .reverse
-          .takeWhile(_.frequency > 0)
-          .map{b=>(b.value, b.frequency)},
-        hist.getStartingResolution, hist.getComputedResolution
-      )
-    }
-
-    def vtraceHistogram(vfs: Seq[(Double, Double)], resStart: Double, resComputed: Double): TraceLog = {
-        message(
-          vjoin()(
-            s"histogram: res(in)=${resStart}, res(computed):${resComputed}", indent(2)(
-            hjoins(sep=" ")(
-              vfs.map({case d =>
-                vjoin(center1)(
-                  "v="+d._1.pp,
-                  "f="+d._2.pp
-                )
-              })
-            ))
-          )
-        )
-    }
-
-    def getMostFrequentValues(in: Seq[Double], resolution: Double, msg: String=""): Seq[Double] = {
-      val hist = histogram(in, resolution)
-
-      val vfs = hist.getFrequencies
-        .sortBy(_.frequency)
-        .reverse
-        .takeWhile(_.frequency > 0)
-        .map{b=>(b.value, b.frequency)}
-
-      vtrace.trace(vtraceHistogram(hist))
-
-      vfs.map(_._1)
-    }
-
-
-
     def atoms = selfComponent.queryInside(LB.PageAtom)
 
     def findCommonToplines(): Seq[Double] = {
       vtrace.trace(message("findCommonToplines"))
-      getMostFrequentValues(
+      getMostFrequentValues(vtrace)(
         atoms.map({c => c.bounds.top}),
         0.01d
       )
@@ -211,16 +152,18 @@ object ComponentOperations {
 
     def findCommonBaselines(): Seq[Double] = {
       vtrace.trace(message("findCommonBaselines"))
-      getMostFrequentValues(
+      getMostFrequentValues(vtrace)(
         atoms.map({c => c.bounds.bottom}),
         0.01d
       )
     }
 
+    def determineSpacingsHistResolution =  0.3d
+
     // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
     def determineSpacings(): Seq[Double] = {
       val dists = pairwiseSpaceWidths(atoms)
-      val resolution = 0.3d
+      val resolution = determineSpacingsHistResolution
 
       val hist = Histogram.histogram(dists, resolution)
 
@@ -229,7 +172,7 @@ object ComponentOperations {
         .reverse
         .takeWhile(_.frequency > 0d)
 
-      vtrace.trace("most frequent space dists" withTrace vtraceHistogram(hist))
+      vtrace.trace("determine line/char spacings" withTrace vtraceHistogram(hist))
 
       spaceDists.map(_.value)
     }
@@ -259,19 +202,26 @@ object ComponentOperations {
 
 
       selfComponent.getChildren(LB.TextSpan).foreach({ textSpan =>
+        // textSpan.groupAtomsIf({(atom1, atom2, pairIndex) =>
+        // })
 
         val supOrSubList = textSpan.atoms.map { atom =>
           val cctr = atom.bounds.toCenterPoint
           val cbottom = atom.bounds.bottom
           val supSubTolerance = selfComponent.bounds.height / 20.0
+          vtrace.trace(s"checking sup/sub, tol:${supSubTolerance}" withInfo PageAtom.boundsBox(atom))
 
           if (atom.bounds.top < modalTop && atom.bounds.bottom > modalBottom) {
+            vtrace.trace((message(s"big char")))
             LB.CenterScript
           } else if (atom.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
+            vtrace.trace((message(s"atom.bottom ~= modalBottom")))
             LB.CenterScript
           } else if (cctr.y < modalCenterY) {
+            vtrace.trace((message(s"sup")))
             LB.Sup
           } else {
+            vtrace.trace((message(s"sub")))
             LB.Sub
           }
         }
@@ -279,14 +229,15 @@ object ComponentOperations {
         val labelSpans = supOrSubList.groupByPairs({(l1, l2) => l1 == l2 })
           .map({lls => lls.head})
 
+        // vtrace.trace((message(s"label spans = ${labelSpans}")))
+
         val supSubRegions = textSpan
           .groupAtomsIf({(atom1, atom2, pairIndex) =>
-            supOrSubList(pairIndex) == supOrSubList(pairIndex+1)
-            // vtrace.trace(message(s"splitIf ${regionStartIndexes.toList} contains pairIndex=$pairIndex"))
-            // regionStartIndexes.contains(pairIndex)
-            true
+            val shouldGroup = supOrSubList(pairIndex) == supOrSubList(pairIndex+1)
+            // vtrace.trace(message(s"groupIf ${supOrSubList.toList(pairIndex)} == ${supOrSubList.toList(pairIndex+1)}"))
+            shouldGroup
           }, {(region, regionIndex) =>
-            // vtrace.trace(message(s"splitIf (true) r:${region}, i:${regionIndex}"))
+            // vtrace.trace(message(s"groupIf (true) r:${region}, i:${regionIndex}"))
             region.addLabel(labelSpans(regionIndex))
           })
 
@@ -298,33 +249,138 @@ object ComponentOperations {
 
       vtrace.trace(end("labelSuperAndSubscripts()"))
     }
+    def guessWordbreakWhitespaceThresholdVersion0(): Double = {
+      val charDists = determineSpacings()
+      val charWidths = selfComponent.atoms.map(_.bounds.width)
 
+      val widestChar = charWidths.max
+      // Don't  accept a space wider than (some magic number)*the widest char?
+      val saneCharDists = charDists.filter(_ < widestChar*3)
+      val resolution = determineSpacingsHistResolution
+
+      // See if we can divide our histogram values by some value > 2*histResolution
+      val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
+        math.abs(c2 - c1) < resolution*1.1
+      })
+
+      val threshold = if (distGroups.length >= 2) {
+        // vtrace.trace(message(""))
+        val d1 = distGroups(0).last
+        val d2 = distGroups(1).head
+
+        (d1+d2) / 2
+      } else if (saneCharDists.length >= 2) {
+        // Take most common space to be char space within words
+        val modalLittleGap = saneCharDists.head
+        // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+        val modalBigGap = saneCharDists
+          .drop(1)
+          .filter(_ > modalLittleGap)
+          .headOption.getOrElse(modalLittleGap)
+
+        (modalBigGap+modalLittleGap)/2
+      } else {
+        // Fallback to using unfiltered char dists
+        val modalLittleGap = charDists.head
+        // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+        val modalBigGap = charDists
+          .drop(1)
+          .filter(_ > modalLittleGap)
+          .headOption.getOrElse(modalLittleGap)
+
+        (modalBigGap*2+modalLittleGap)/3
+      }
+
+      vtrace.trace(
+        "guessWordbreakWhitespaceThreshold" withInfo
+          s"""| Char Dists     = ${charDists.map(_.pp).mkString(", ")}
+              | Sane Dists     = ${saneCharDists.map(_.pp).mkString(", ")}
+              | Widest Char    = ${widestChar.pp}
+              | Threshold      = ${threshold.pp}
+              |""".stripMargin.mbox
+      )
+      threshold
+    }
+
+    def guessWordbreakWhitespaceThreshold(): Double = {
+      val charDists = determineSpacings()
+
+      val charWidths = selfComponent.atoms.map(_.bounds.width)
+      val widestChar = charWidths.max
+
+      // Don't  accept a space wider than (some magic number)*the widest char?
+      val saneCharDists = charDists.filter(_ < widestChar*2)
+      val resolution = determineSpacingsHistResolution
+
+
+      // Try to divide the list of char dists into 2 groups, small gap and large gap:
+      saneCharDists.max
+
+
+
+      // See if we can divide our histogram values by some value > 2*histResolution
+      val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
+        math.abs(c2 - c1) < resolution*1.1
+      })
+
+      val threshold = if (distGroups.length >= 2) {
+        // vtrace.trace(message(""))
+        val d1 = distGroups(0).last
+        val d2 = distGroups(1).head
+
+        (d1+d2) / 2
+      } else if (saneCharDists.length >= 2) {
+        // Take most common space to be char space within words
+        val modalLittleGap = saneCharDists.head
+        // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+        val modalBigGap = saneCharDists
+          .drop(1)
+          .filter(_ > modalLittleGap)
+          .headOption.getOrElse(modalLittleGap)
+
+        (modalBigGap+modalLittleGap)/2
+      } else {
+        // Fallback to using unfiltered char dists
+        val modalLittleGap = charDists.head
+        // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+        val modalBigGap = charDists
+          .drop(1)
+          .filter(_ > modalLittleGap)
+          .headOption.getOrElse(modalLittleGap)
+
+        (modalBigGap*2+modalLittleGap)/3
+      }
+
+      vtrace.trace(
+        "guessWordbreakWhitespaceThreshold" withInfo
+          s"""| Char Dists     = ${charDists.map(_.pp).mkString(", ")}
+              | Sane Dists     = ${saneCharDists.map(_.pp).mkString(", ")}
+              | Widest Char    = ${widestChar.pp}
+              | Threshold      = ${threshold.pp}
+              |""".stripMargin.mbox
+      )
+      threshold
+    }
 
     def groupTokens(): Unit = {
       vtrace.trace(begin("Split On Whitespace"))
       vtrace.trace(message(s"chars: ${selfComponent.chars}"))
       // TODO assert selfComponent roleLabel structure is TextSpan/TextSpan*/PageAtom
 
-      // Scan text in line to determine most common distances between consecutive chars
-      val charDists = determineSpacings()
-      // Most frequent space is assumed to be the space between chars within a word:
-      val modalLittleGap = charDists.head
-      // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
-      val modalBigGap = charDists
-        .drop(1)
-        .filter(_ > modalLittleGap)
-        .headOption.getOrElse(modalLittleGap)
+      // // Scan text in line to determine most common distances between consecutive chars
+      // val charDists = determineSpacings()
+      // // Most frequent space is assumed to be the space between chars within a word:
+      // val modalLittleGap = charDists.head
+      // // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+      // val modalBigGap = charDists
+      //   .drop(1)
+      //   .filter(_ > modalLittleGap)
+      //   .headOption.getOrElse(modalLittleGap)
 
-      val splitValue = (modalBigGap*2+modalLittleGap)/3
+      // val splitValue = (modalBigGap*2+modalLittleGap)/3
       // val splittable = charDists.length > 1
+      val splitValue = guessWordbreakWhitespaceThreshold()
 
-      vtrace.trace(
-        begin("Char Distance Metrics"),
-        message(s"""| top char dists    = ${charDists.map(_.pp).mkString(", ")}
-                    | modal little gap  = ${modalLittleGap.pp} modal big gap = ${modalBigGap.pp}
-                    | splitValue        = ${splitValue.pp}
-                    |""".stripMargin.mbox)
-      )
 
       selfComponent.addLabel(LB.Tokenized)
       selfComponent.groupAtomsIf({ (c1, c2, pairIndex) =>
@@ -335,11 +391,11 @@ object ComponentOperations {
         vtrace.trace(
           showRegions(Seq(c1.targetRegion, c2.targetRegion)),
           message(
-            vcat(left)(Seq(
+            vcat(Seq(
               hcat(center1)(Seq(PageAtom.boundsBox(c1) + " <-> " + PageAtom.boundsBox(c2))),
-              s"""|  pairwisedist: ${pairwiseDist}  east-west dist: ${pairwiseDist}
+              s"""|  pairwisedist: ${pairwiseDist.pp}  east-west dist: ${pairwiseDist.pp}
                   |  split value: ${splitValue},
-                  |  Will split? : ${pairwiseDist > splitValue}
+                  |  Will split? : ${pairwiseDist < splitValue}
                   |""".stripMargin.mbox
             ))
           )
@@ -360,6 +416,7 @@ object ComponentOperations {
 
     def tokenizeLine(): Unit = {
       if (!selfComponent.getLabels.contains(LB.TokenizedLine)) {
+        // println(s"tokenizing line")
 
         vtrace.trace(begin("Tokenize Line"), focusOn(selfComponent.targetRegion))
         vtrace.trace(message(s"Line chars: ${selfComponent.chars}"))
@@ -378,7 +435,7 @@ object ComponentOperations {
         selfComponent.addLabel(LB.TokenizedLine)
 
         vtrace.trace("Final Tokenization" withInfo
-          ComponentRendering.VisualLine.render(selfComponent))
+          ComponentRendering.VisualLine.render(selfComponent).get)
 
         vtrace.trace(end("Tokenize Line"))
       }
@@ -386,14 +443,14 @@ object ComponentOperations {
 
 
     def determineNormalTextBounds: LTBounds = {
-      val mfHeights = Histogram.getMostFrequentValues(selfComponent.getChildren.map(_.bounds.height), 0.1d)
-      val mfTops = Histogram.getMostFrequentValues(selfComponent.getChildren.map(_.bounds.top), 0.1d)
+      val mfHeights = Histogram.getMostFrequentValues(vtrace)(selfComponent.atoms.map(_.bounds.height), 0.1d)
+      val mfTops = Histogram.getMostFrequentValues(vtrace)(selfComponent.atoms.map(_.bounds.top), 0.1d)
 
 
-      val mfHeight= mfHeights.headOption.map(_._1).getOrElse(0d)
-      val mfTop = mfTops.headOption.map(_._1).getOrElse(0d)
+      val mfHeight= mfHeights.headOption.getOrElse(0d)
+      val mfTop = mfTops.headOption.getOrElse(0d)
 
-      selfComponent.getChildren
+      selfComponent.atoms
         .map({ c =>
           val cb = c.bounds
           LTBounds(
@@ -401,7 +458,7 @@ object ComponentOperations {
             width=cb.width, height=mfHeight
           )
         })
-        .foldLeft(selfComponent.getChildren().head.bounds)( { case (b1, b2) =>
+        .foldLeft(selfComponent.atoms.head.bounds)( { case (b1, b2) =>
           b1 union b2
         })
     }

@@ -29,15 +29,56 @@ object Histogram {
     Histogram.fromValues(values, resolution)
   }
 
-  def getMostFrequentValues(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
-    histogram(in, resolution)
-      // .smooth(resolution)
-      .getFrequencies
+  import TraceLog._
+  import VisualTracer._
+  import textboxing.{TextBoxing => TB}, TB._
+  import EnrichNumerics._
+
+  def vtraceHistogram(hist: Histogram): TraceLog = {
+    vtraceHistogram(
+      hist.getFrequencies
+        .sortBy(_.frequency)
+        .reverse
+        .takeWhile(_.frequency > 0)
+        .map{b=>(b.value, b.frequency)},
+      hist.getStartingResolution, hist.getComputedResolution
+    )
+  }
+
+  def vtraceHistogram(vfs: Seq[(Double, Double)], resStart: Double, resComputed: Double): TraceLog = {
+    message(
+      vjoin()(
+        s"histogram: res(in)=${resStart.pp}, res(computed):${resComputed.pp}", indent(2)(
+          hjoins(sep=" ")(
+            vfs.map({case d =>
+              vjoin(center1)(
+                "v="+d._1.pp,
+                "f="+d._2.pp
+              )
+            })
+          ))
+      )
+    )
+  }
+
+  def getMostFrequentValuesAndFreqs(vtrace: VisualTracer)(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
+    val hist = histogram(in, resolution)
+
+    val res = hist.getFrequencies
       .sortBy(_.frequency)
       .reverse
       .takeWhile(_.frequency > 0)
-      .map{b=>(b.value, b.frequency)}
+      .map{b=> (b.value, b.frequency)}
+
+    vtrace.trace(vtraceHistogram(hist))
+    res
   }
+
+
+  def getMostFrequentValues(vtrace: VisualTracer)(in: Seq[Double], resolution: Double): Seq[Double] = {
+    getMostFrequentValuesAndFreqs(vtrace)(in, resolution).map(_._1)
+  }
+
 }
 
 class Histogram(minValue: Double, maxValue: Double, _resolution: Double) {
