@@ -6,8 +6,6 @@ enablePlugins(ScalaJSPlugin)
 
 organization in ThisBuild := "edu.umass.cs.iesl"
 
-version in ThisBuild := "0.1-SNAPSHOT"
-
 scalaVersion in ThisBuild := "2.11.8"
 
 shellPrompt in ThisBuild := Sensible.colorPrompt
@@ -32,8 +30,8 @@ resolvers in ThisBuild ++= List(
 
 import ReleaseTransformations._
 
-releaseProcess in ThisBuild := Seq[ReleaseStep](
-  checkSnapshotDependencies,              // : ReleaseStep
+releaseProcess := Seq[ReleaseStep](
+  // checkSnapshotDependencies,              // : ReleaseStep
   inquireVersions,                        // : ReleaseStep
   // runTest,                                // : ReleaseStep
   setReleaseVersion,                      // : ReleaseStep
