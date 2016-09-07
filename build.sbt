@@ -117,4 +117,3 @@ lazy val watrcolorsJVM = watrcolors.jvm.settings(
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value
   })
 ).dependsOn(watrshed)
-
