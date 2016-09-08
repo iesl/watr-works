@@ -625,20 +625,48 @@ class DocumentSegmenter(
     } yield shortLine
   }
 
-  // determine all the offsets where the given chars have large gaps in ID#s
-  def idGapOffsets(lineBinChars: Seq[AtomicComponent]): Seq[Int] = {
-    val consecutiveCharGroups = lineBinChars.groupByPairs({ (ch1, ch2) =>
-      ch2.id.unwrap - ch1.id.unwrap == 1
-    })
-    // val m = fillInMissingChars(pageId, asdf)
-      ???
-  }
+  def gutterDetection(
+    pageId: Int@@PageID,
+    components: Seq[AtomicComponent]
+  ): Unit = {
+    vtrace.trace(begin("GutterDetection"))
+    vtrace.trace(message(s"page ${pageId}"))
+    // Find most common left Xs
+    // starting w/most frequent left-x (lx0), try to construct the largest whitespace boxes
+    // with right-x=lx0-epsilon, left=?
+    // line-bin coarse segmentation
+    val lefts = components.map(_.left)
+    val hist = histogram(lefts, 0.1d)
+    val freqLefts = hist.getFrequencies
+      .sortBy(_.frequency)
+      .reverse
+      .takeWhile(_.frequency > 2.0)
 
+    vtrace.trace(vtraceHistogram(hist))
+
+    val epsilon = 0.01d
+    freqLefts.foreach({leftXBin =>
+      val leftX = leftXBin.value
+
+
+      // LTBounds(
+      //   left=leftX-epsilon,
+      //   top=pageMin,
+      //   width=
+      // )
+    })
+
+    vtrace.trace(end("GutterDetection"))
+  }
 
   def determineLines(
     pageId: Int@@PageID,
     components: Seq[AtomicComponent]
   ): Unit = {
+
+
+    gutterDetection(pageId, components)
+
     def regionIds(cc: Component): Seq[Int@@RegionID] = cc.targetRegions.map(_.id)
     def minRegionId(ccs: Seq[Component]): Int@@RegionID =  ccs.flatMap(regionIds(_)).min
 

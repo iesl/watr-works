@@ -170,7 +170,7 @@ object ComponentOperations {
       val spaceDists = hist.getFrequencies
         .sortBy(_.frequency)
         .reverse
-        .takeWhile(_.frequency > 0d)
+        // .takeWhile(_.frequency > 0d)
 
       vtrace.trace("determine line/char spacings" withTrace vtraceHistogram(hist))
 
@@ -249,58 +249,59 @@ object ComponentOperations {
 
       vtrace.trace(end("labelSuperAndSubscripts()"))
     }
-    def guessWordbreakWhitespaceThresholdVersion0(): Double = {
-      val charDists = determineSpacings()
-      val charWidths = selfComponent.atoms.map(_.bounds.width)
+    // def guessWordbreakWhitespaceThresholdVersion0(): Double = {
+    //   val charDists = determineSpacings()
+    //   val charWidths = selfComponent.atoms.map(_.bounds.width)
 
-      val widestChar = charWidths.max
-      // Don't  accept a space wider than (some magic number)*the widest char?
-      val saneCharDists = charDists.filter(_ < widestChar*3)
-      val resolution = determineSpacingsHistResolution
+    //   val widestChar = charWidths.max
+    //   // Don't  accept a space wider than (some magic number)*the widest char?
+    //   val saneCharDists = charDists.filter(_ < widestChar*3)
+    //   val resolution = determineSpacingsHistResolution
 
-      // See if we can divide our histogram values by some value > 2*histResolution
-      val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
-        math.abs(c2 - c1) < resolution*1.1
-      })
+    //   // See if we can divide our histogram values by some value > 2*histResolution
+    //   val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
+    //     math.abs(c2 - c1) < resolution*1.1
+    //   })
 
-      val threshold = if (distGroups.length >= 2) {
-        // vtrace.trace(message(""))
-        val d1 = distGroups(0).last
-        val d2 = distGroups(1).head
+    //   val threshold =
+    //     } else if (distGroups.length >= 2) {
+    //     // vtrace.trace(message(""))
+    //     val d1 = distGroups(0).last
+    //     val d2 = distGroups(1).head
 
-        (d1+d2) / 2
-      } else if (saneCharDists.length >= 2) {
-        // Take most common space to be char space within words
-        val modalLittleGap = saneCharDists.head
-        // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
-        val modalBigGap = saneCharDists
-          .drop(1)
-          .filter(_ > modalLittleGap)
-          .headOption.getOrElse(modalLittleGap)
+    //     (d1+d2) / 2
+    //   } else if (saneCharDists.length >= 2) {
+    //     // Take most common space to be char space within words
+    //     val modalLittleGap = saneCharDists.head
+    //     // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+    //     val modalBigGap = saneCharDists
+    //       .drop(1)
+    //       .filter(_ > modalLittleGap)
+    //       .headOption.getOrElse(modalLittleGap)
 
-        (modalBigGap+modalLittleGap)/2
-      } else {
-        // Fallback to using unfiltered char dists
-        val modalLittleGap = charDists.head
-        // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
-        val modalBigGap = charDists
-          .drop(1)
-          .filter(_ > modalLittleGap)
-          .headOption.getOrElse(modalLittleGap)
+    //     (modalBigGap+modalLittleGap)/2
+    //   } else {
+    //     // Fallback to using unfiltered char dists
+    //     val modalLittleGap = charDists.head
+    //     // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+    //     val modalBigGap = charDists
+    //       .drop(1)
+    //       .filter(_ > modalLittleGap)
+    //       .headOption.getOrElse(modalLittleGap)
 
-        (modalBigGap*2+modalLittleGap)/3
-      }
+    //     (modalBigGap*2+modalLittleGap)/3
+    //   }
 
-      vtrace.trace(
-        "guessWordbreakWhitespaceThreshold" withInfo
-          s"""| Char Dists     = ${charDists.map(_.pp).mkString(", ")}
-              | Sane Dists     = ${saneCharDists.map(_.pp).mkString(", ")}
-              | Widest Char    = ${widestChar.pp}
-              | Threshold      = ${threshold.pp}
-              |""".stripMargin.mbox
-      )
-      threshold
-    }
+    //   vtrace.trace(
+    //     "guessWordbreakWhitespaceThreshold" withInfo
+    //       s"""| Char Dists     = ${charDists.map(_.pp).mkString(", ")}
+    //           | Sane Dists     = ${saneCharDists.map(_.pp).mkString(", ")}
+    //           | Widest Char    = ${widestChar.pp}
+    //           | Threshold      = ${threshold.pp}
+    //           |""".stripMargin.mbox
+    //   )
+    //   threshold
+    // }
 
     def guessWordbreakWhitespaceThreshold(): Double = {
       val charDists = determineSpacings()
@@ -312,18 +313,18 @@ object ComponentOperations {
       val saneCharDists = charDists.filter(_ < widestChar*2)
       val resolution = determineSpacingsHistResolution
 
-
       // Try to divide the list of char dists into 2 groups, small gap and large gap:
-      saneCharDists.max
-
-
 
       // See if we can divide our histogram values by some value > 2*histResolution
       val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
         math.abs(c2 - c1) < resolution*1.1
       })
 
-      val threshold = if (distGroups.length >= 2) {
+
+      val threshold = if (saneCharDists.length == 1) {
+        // If there is only 1 distance, the line is only 1 word (no word breaks)
+        1.0d
+      } else if (distGroups.length >= 2) {
         // vtrace.trace(message(""))
         val d1 = distGroups(0).last
         val d2 = distGroups(1).head

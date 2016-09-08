@@ -11,9 +11,26 @@ import GeometricFigure._
 import scalaz.@@
 import java.io.InputStream
 
+
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"
+
   val testExamples = List(
+    TextExample(
+      """Page:0 file:///101016japsusc201210126.pdf""",
+      """ h tt p :/ / d x .d o i .o r g / 1 0 . 1 0 1 6 / j .a p s u s c .2 0 1 2 . 1 0 . 1 2 6      (l:32.73, t:737.54, w:142.92, h:6.36)""",
+      ""
+    ),
+    TextExample(
+      """Page:1 file:///101016japsusc201210126.pdf""",
+      """ P t^{0}by sodium formate. The Pt/PANi nanocomposite was assessed    (l:41.92, t:305.87, w:251.55, h:9.28) """,
+      ""
+    ),
+    TextExample(
+      """Page:0 file:///101016japsusc201210126.pdf""",
+      """ C om p o s i te  (l:32.73, t:376.02, w:32.54, h:6.36) """,
+      ""
+    ),
     TextExample(
       """Page:0 file:///quantification-Smith-2013.pdf""",
       """(311.98, 631.27, 239.99, 10.32)""",
@@ -144,7 +161,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
   it should "identify text lines" in {
     // val justRunThisOne:Option[Int] = None
-    val justRunThisOne:Option[Int] = Some(0)
+    val justRunThisOne:Option[Int] = Some(1)
 
     val examples = testExamples.map(cutAndPasteToTestExample(_))
 

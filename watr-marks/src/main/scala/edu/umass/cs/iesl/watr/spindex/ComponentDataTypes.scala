@@ -154,8 +154,6 @@ object ComponentTypeEnrichments {
       case b: CharAtom => true
       case b: ImgAtom => false
     }
-    // def isWonky: Boolean = charRegion.wonkyCharCode.isDefined
-
 
   }
 
@@ -165,6 +163,12 @@ object ComponentTypeEnrichments {
         sys.error(s"""cannot union targetRegions from different pages: ${targetRegion} + ${r}""")
       }
       targetRegion.copy(bbox = targetRegion.bbox union r.bbox)
+    }
+
+    def prettyPrint(): String = {
+      val pg = targetRegion.target
+      val bbox = targetRegion.bbox.prettyPrint
+      s"""<target pg:${pg} ${bbox}"""
     }
   }
 

@@ -64,7 +64,7 @@ object DocumentIO {
       linec <- lineSpine
       line = linec.component
     } yield {
-      println(s"line> ${line}")
+      // println(s"line> ${line}")
       VisualLine.renderWithIDs(line)
     }
 

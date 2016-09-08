@@ -11,7 +11,6 @@ class CorpusExplorerServer(
 
   // val initpath = rootDirectory
   println(s"CorpusExplorerServer current dir=${pwd}, corpus root=${rootDirectory}")
-  jkl
 
   val init = DirectoryCursor.init(rootDirectory).get
 

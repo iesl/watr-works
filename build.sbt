@@ -20,7 +20,6 @@ val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "com.github.scopt" %% "scopt" % "3.5.0"
 )
 
-
 resolvers in ThisBuild ++= List(
   "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
@@ -67,6 +66,7 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
     "org.bouncycastle" % "bcprov-jdk15on" % "1.55",
     "org.bouncycastle" % "bcpkix-jdk15on" % "1.55",
+    "com.lihaoyi" % "ammonite" % "0.7.6" cross CrossVersion.full,
     "com.h2database" % "h2" % "1.4.192",
     "com.zaxxer" % "HikariCP" % "2.5.0",
     "com.typesafe.slick" %% "slick" % "3.1.1"

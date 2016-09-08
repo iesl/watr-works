@@ -10,32 +10,12 @@ import scala.util.{Try, Failure, Success}
 import scalaz.@@
 import ammonite.ops._
 
-// import TypeTags._
-
-
-case class HeaderInfo(
-  title: String,
-  authors: String
-)
 
 case class CorpusEntryMetadata(
   pdfSha1: String@@SHA1String,
   filenames: Seq[String],
-  urls: Seq[String],
-  headers: Option[HeaderInfo]
+  urls: Seq[String]
 )
-
-trait CorpusJsonFormats extends TypeTagFormats {
-  import play.api.libs.json
-  import json._
-
-
-  implicit def HeaderInfoFormat = Json.format[HeaderInfo]
-  implicit def CorpusEntryMetadataFormat = Json.format[CorpusEntryMetadata]
-}
-
-object corpusFormats extends CorpusJsonFormats
-
 
 object Corpus {
 
@@ -105,7 +85,7 @@ sealed trait ArtifactDescriptor
 class CorpusEntry(
   val entryDescriptor: String,
   val corpus: Corpus
-) extends CorpusJsonFormats {
+) {
 
   override val toString = {
     s"${corpus}/./${entryDescriptor}"

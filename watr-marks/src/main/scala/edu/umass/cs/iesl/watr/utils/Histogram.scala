@@ -8,12 +8,8 @@ object Histogram {
   private val EPSILON = 1.0e-6
 
   def fromValues(samples: Seq[Double], resolution: Double): Histogram = {
-    var min = java.lang.Double.POSITIVE_INFINITY
-    var max = java.lang.Double.NEGATIVE_INFINITY
-    for (sample <- samples) {
-      min = Math.min(min, sample)
-      max = Math.max(max, sample)
-    }
+    val min = samples.min
+    val max = samples.max
     val histogram = new Histogram(min, max, resolution)
     for (sample <- samples) {
       histogram.add(sample)

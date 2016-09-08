@@ -114,6 +114,16 @@ object ComponentRendering {
       )
     }
 
+    def renderWords(cc: Component): Seq[TB.Box] = {
+      cc.roleLabel match {
+        case LB.VisualLine =>
+          val children = childSpansOrAtoms(cc)
+          val rc = children.map(render(_))
+          rc.flatten
+
+        case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
+      }
+    }
     def render(cc: Component): Option[TB.Box] = {
       cc.roleLabel match {
         case LB.VisualLine =>
