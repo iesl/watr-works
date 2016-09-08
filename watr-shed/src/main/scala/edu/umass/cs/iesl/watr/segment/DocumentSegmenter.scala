@@ -495,7 +495,7 @@ class DocumentSegmenter(
 
     // // val orderedLinesPerPage = for { pageId <- zoneIndexer.getPages }
     // //     yield { groupPageTextBlocks(pageId) }
-
+    labelTitle()
     labelAbstract()
     labelSectionHeadings()
 
@@ -922,6 +922,54 @@ class DocumentSegmenter(
 
 
       }
+    } else {
+      println("abstract is unlabled")
+      // abstract is unlabled, look for the first multi-line text block before the intro?
+      var found = false
+      val allBlocksBeforeIntro = blocks.takeWhile { tblines =>
+        tblines.headOption.exists { l1 =>
+          // l1 is a BioNode
+          val lineComp = l1.component
+          val lineText = lineComp.chars
+          //todo: might accidentally mistake title for introduction - throwing out multi-work lines to fix this
+          val isIntroHeader =
+          {"""introduction""".r.findAllIn(lineText.toLowerCase).length > 0 && lineText.split(" ").length == 1}
+          if(isIntroHeader){
+            //println("found intro header")
+            found = true
+          }
+          !isIntroHeader
+        }
+      }
+      // todo: fix so that it checks for other labels
+      // todo: handle case where the intro isn't labeled either (should we attempt to label things in this case?)
+      // find first multiline block before intro and label it as abstract, if it has no other labelings
+      if (found && allBlocksBeforeIntro.length > 0) {
+        //todo: this is for testing, remove eventually
+        allBlocksBeforeIntro.foreach(block => {
+          //block.foreach(node => println(node.component.toText))
+          //println
+        })
+
+        val lastMultilineBeforeIntro = allBlocksBeforeIntro.lastIndexWhere(_.length > 3)
+        if (lastMultilineBeforeIntro != -1) {
+          // label this as the abstract
+          allBlocksBeforeIntro.get(lastMultilineBeforeIntro).foreach { abs =>
+            zoneIndexer.addBioLabels(LB.Abstract, abs)
+            //println("labeling as part of abstract: " + abs.component.toText)
+            // vtrace.trace(
+            //   vtrace.link(
+            //     vtrace.all(
+            //       abs.map(b => vtrace.showComponent(b.component))
+            //     ),
+            //     vtrace.showLabel(LB.Abstract)
+            //   )
+            // )
+
+
+          }
+        }
+      }
     }
     vtrace.trace(end("LabelAbstract"))
   }
@@ -955,6 +1003,30 @@ class DocumentSegmenter(
     // look for for left-aligned (column-wise) single or double numbered text lines w/ large gaps
     // filter out figure/caption/footnotes based on embedded images and page locations
   }
+
+  def labelTitle(): Unit = {
+    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
+    // look for lines with biggest font within first [x] lines of paper
+    // get rid of lines with length less than some arbitrary length (to weed out some weird cases)
+    val biggestLineAtBeginning = vlines.take(50)
+      .filter(_.component.chars.length() > 5)
+      .sortWith(_.component.height > _.component.height)
+    biggestLineAtBeginning.foreach(node => println(node.component.chars))
+    println
+
+    //todo: why isn't this actually labeling anything
+    if(biggestLineAtBeginning.headOption.isDefined) {
+      println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
+      zoneIndexer.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
+      println
+    } else {
+      println("there isn't a biggest line?")
+    }
+  }
+
+  //    def labelAuthors(): Unit = {
+  //
+  //    }
 
 
 

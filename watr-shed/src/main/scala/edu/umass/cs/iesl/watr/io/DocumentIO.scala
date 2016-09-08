@@ -55,7 +55,8 @@ object DocumentIO {
       LB.SectionHeadingLine,
       LB.ParaBegin,
       LB.TextBlock,
-      LB.Abstract
+      LB.Abstract,
+      LB.Title
     ).map(l =>
       serializeLabeling(l, lineSpine)
     )
@@ -64,7 +65,6 @@ object DocumentIO {
       linec <- lineSpine
       line = linec.component
     } yield {
-      println(s"line> ${line}")
       VisualLine.renderWithIDs(line)
     }
 
