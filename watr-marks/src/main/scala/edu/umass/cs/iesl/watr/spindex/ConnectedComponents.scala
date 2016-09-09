@@ -70,6 +70,11 @@ sealed trait Component {
       })
   }
 
+  def groupChildren(withLabel: Label, newLabel: Label)(
+    groupf: (Component, Component, Int) => Boolean,
+    onCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent]
+
   def groupAtomsIf(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
@@ -150,11 +155,11 @@ sealed trait Component {
     setChildTree(l, cs)
   }
 
-  def addChild(c: Component): Unit = {
-    val maybeChildren = getChildTree(c.roleLabel)
+  def addChild(label: Label, c: Component): Unit = {
+    val maybeChildren = getChildTree(label)
     maybeChildren match {
-      case Some(children)  => setChildren(c.roleLabel, children :+ c)
-      case None            => setChildren(c.roleLabel, Seq(c))
+      case Some(children)  => setChildren(label, children :+ c)
+      case None            => setChildren(label, Seq(c))
     }
   }
 
@@ -230,6 +235,36 @@ case class RegionComponent(
     newRegion
   }
 
+  private def initRegion(newLabel: Label, children: Seq[Component]): RegionComponent = {
+    val initRegion = initCloneAs(newLabel)
+    val newRegion = initRegion.copy(
+      region = initRegion.region.copy(
+        bbox = cbounds(children)))
+
+    newRegion.setChildren(newLabel, children)
+    zoneIndex.addComponent(newRegion)
+    newRegion
+  }
+
+  def groupChildren(withLabel: Label, newLabel: Label)(
+    groupf: (Component, Component, Int) => Boolean,
+    onCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent] = {
+
+    val oldChildren = getChildren(withLabel)
+    setChildren(withLabel, Seq())
+
+    oldChildren
+      .groupByPairsWithIndex(groupf)
+      .zipWithIndex
+      .map({case (childGrp, regionIndex) =>
+        val newRegion = initRegion(newLabel, childGrp)
+        addChild(newLabel, newRegion)
+        onCreate(newRegion, regionIndex)
+        newRegion
+      })
+  }
+
   def groupAtomsIf(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onRegionCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
@@ -290,10 +325,15 @@ case class AtomicComponent(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
-    val newRegion = zoneIndex.createRegionComponent(component.region, LB.NullLabel)
+    val newRegion = zoneIndex.createRegionComponent(component.region, LB.NullLabel) // FIXME <- nulllabel????
     onGrouped(newRegion, 0)
     Seq(newRegion)
   }
+
+  def groupChildren(withLabel: Label, newLabel: Label)(
+    groupf: (Component, Component, Int) => Boolean,
+    onCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
+  ): Seq[RegionComponent] = { Seq() }
 
 
 

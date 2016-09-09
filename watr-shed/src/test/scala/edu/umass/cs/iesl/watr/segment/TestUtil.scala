@@ -127,7 +127,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
       .queryForIntersects(totalBounds)
 
 
-    println("examining chars: ["+squishb(interestingChars)+"]")
+    // println("examining chars: ["+squishb(interestingChars)+"]")
     segmenter
   }
 

@@ -15,25 +15,8 @@ import GeometricFigure._
 
 import acyclic.file
 
-case class CCRenderState(
-  numOfPages: Int,
-  startingPage: Int@@PageID = PageID(0),
-  tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@ComponentID, LTBounds)] = mutable.ArrayBuffer()
-) {
-  private var currPage: Int@@PageID = startingPage
-
-  def currentPage: Int@@PageID = currPage
-
-  def advancePage(): Int@@PageID = {
-    currPage = PageID(PageID.unwrap(currPage)+1)
-    currentPage
-  }
-}
-
-
 object ComponentRendering {
   import TB._
-
 
   object VisualLine {
     import scalaz.std.string._
