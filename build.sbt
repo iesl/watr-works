@@ -29,7 +29,7 @@ resolvers in ThisBuild ++= List(
 
 import ReleaseTransformations._
 
-releaseProcess := Seq[ReleaseStep](
+releaseProcess in ThisBuild := Seq[ReleaseStep](
   // checkSnapshotDependencies,              // : ReleaseStep
   inquireVersions,                        // : ReleaseStep
   // runTest,                                // : ReleaseStep
