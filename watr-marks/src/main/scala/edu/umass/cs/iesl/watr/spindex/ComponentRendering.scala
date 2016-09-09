@@ -77,9 +77,9 @@ object ComponentRendering {
     }
 
     def renderWithIDs(cc: Component): TB.Box = {
+      // TODO asser that cc is role VisualLine
       val textAndIds = for {
-        tokenizedChild <- cc.getDescendants(LB.TextSpan).find(_.hasLabel(LB.Tokenized)).toSeq
-        textSpan <- tokenizedChild.getChildren(LB.TextSpan)
+        textSpan <- cc.getChildren(LB.TextSpan)
         tokenBox <- render(textSpan)
       } yield {
         val tokenId = textSpan.id

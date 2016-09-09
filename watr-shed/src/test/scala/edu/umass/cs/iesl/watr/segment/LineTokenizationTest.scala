@@ -17,6 +17,9 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   //   """Page:0 file:///Schauer-1987.pdf""",
 
 
+// epithelial                    and epithelial absorption require very di^{ff}erent surface        acsnano.5b00028.pdf.d
+// di^{ff}erent                      <target pg:1 (l:55.74, t:222.64, w:201.23, h:10.84)
+
 
   behavior of "text line identification"
   val testExamples = List(

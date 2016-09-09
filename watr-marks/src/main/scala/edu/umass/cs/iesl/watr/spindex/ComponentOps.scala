@@ -48,6 +48,7 @@ object ComponentOperations {
     dists :+ 0d
   }
 
+
   implicit class RicherComponent(val selfComponent: Component) extends AnyVal {
     // TODO move this operation (and other more fundamental operations) into another class
     def ungroupChildren(label: Label)(
@@ -55,24 +56,15 @@ object ComponentOperations {
     ): Unit = {
 
       val flat = mutable.MutableList[Component]()
-      for {
-        child <- selfComponent.getChildren(label)
-      } {
-        vtrace.trace("ungroupChildren" withInfo s"${child}")
+
+      for (child <- selfComponent.getChildren(label)) {
         if (fn(child)) {
-          vtrace.trace("ungrouping" withInfo s"${child}")
           val cchilds = child.getChildren(label)
           flat ++= cchilds
           selfComponent.zoneIndex.removeComponent(child)
-
         } else {
-          vtrace.trace("not ungrouping" withInfo s"${child}")
           flat += child
         }
-
-        vtrace.trace("final ungrouping" withInfo
-          flat.map(_.toString()).mkString("\n")
-        )
 
         selfComponent.setChildren(label, flat)
       }
@@ -278,6 +270,7 @@ object ComponentOperations {
 
       })
 
+      selfComponent.ungroupChildren(LB.TextSpan)(_ => true)
       vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(selfComponent))
 
       vtrace.trace(end("labelSuperAndSubscripts()"))
@@ -391,7 +384,7 @@ object ComponentOperations {
         labelSuperAndSubscripts()
         // Structure is: VisualLine/TextSpan/[TextSpan[sup/sub/ctr]]
         // Group each TextSpan w/sup/sub/ctr-script label into tokens
-        selfComponent.getDescendants(LB.TextSpan)
+        selfComponent.getChildren(LB.TextSpan)
           .filterNot(_.getLabels
             .intersect( Set(LB.CenterScript, LB.Sub, LB.Sup) )
             .isEmpty)
@@ -404,8 +397,6 @@ object ComponentOperations {
 
         vtrace.trace("Tree after Tokenization" withInfo VisualLine.renderRoleTree(selfComponent))
 
-        selfComponent.ungroupChildren(LB.TextSpan)(_ => true)
-        vtrace.trace("Tree after Flatten 1" withInfo VisualLine.renderRoleTree(selfComponent))
 
         selfComponent.ungroupChildren(LB.TextSpan)({c =>
           if (c.hasLabel(LB.Sup) || c.hasLabel(LB.Sub)) {
@@ -434,6 +425,10 @@ object ComponentOperations {
             region.addLabel(LB.Token)
           }
         )
+
+        selfComponent.ungroupChildren(LB.TextSpan)({c =>
+          c.getChildren(LB.TextSpan).length == 1
+        })
 
         vtrace.trace("Tree after Flatten 2" withInfo VisualLine.renderRoleTree(selfComponent))
 
@@ -468,4 +463,3 @@ object ComponentOperations {
 
   }
 }
-

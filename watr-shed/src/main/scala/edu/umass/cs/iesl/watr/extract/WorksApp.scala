@@ -26,8 +26,8 @@ case class AppConfig(
 object Works extends App {
 
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
-  utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
-  utils.VisualTracer.clearFilters()
+  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+  // utils.VisualTracer.clearFilters()
   // utils.VisualTracer.addFilter("GutterDetection")
   // utils.VisualTracer.addFilter("LabelAbstract")
   // utils.VisualTracer.addFilter("LabelSectionH")

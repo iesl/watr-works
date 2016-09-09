@@ -60,11 +60,16 @@ object DocumentIO {
       serializeLabeling(l, lineSpine)
     )
 
+    var i = 20
     val lines = for {
       linec <- lineSpine
       line = linec.component
     } yield {
-      // println(s"line> ${line}")
+      if (i > 0) {
+        println(s"line> ${line}")
+        println(VisualLine.renderRoleTree(line))
+        i = i - 1
+      }
       VisualLine.renderWithIDs(line)
     }
 

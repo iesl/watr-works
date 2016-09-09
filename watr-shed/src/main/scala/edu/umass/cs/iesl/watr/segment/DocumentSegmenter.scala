@@ -529,13 +529,8 @@ class DocumentSegmenter(
 
       if (isBrokenWord) {
 
-        val wordHalfFirst = line1.getDescendants(LB.TextSpan)
-          .find(_.hasLabel(LB.Tokenized))
-          .flatMap({_.getChildren(LB.TextSpan).lastOption })
-
-        val wordHalfSecond = line2.getDescendants(LB.TextSpan)
-          .find(_.hasLabel(LB.Tokenized))
-          .flatMap({_.getChildren(LB.TextSpan).headOption })
+        val wordHalfFirst = line1.getChildren(LB.TextSpan).lastOption
+        val wordHalfSecond = line2.getChildren(LB.TextSpan).headOption
 
         vtrace.trace("Broken word found" withTrace all(Seq(
           showComponent(line1), // endToken.map(showComponent(_)),

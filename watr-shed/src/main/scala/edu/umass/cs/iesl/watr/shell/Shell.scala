@@ -26,6 +26,7 @@ object Shell {
           |import ShellCommands._
           |implicit val pp0 = pprintComponent
           |implicit val pp1 = pprintBox
+          | println("..")
           |""".stripMargin
 
     val welcomeBanner =
@@ -145,6 +146,7 @@ object ShellCommands {
 
     isWord(word) || isHyphentedWords(word) || isPrefixedWord(word)
   }
+
 
 
   /*
