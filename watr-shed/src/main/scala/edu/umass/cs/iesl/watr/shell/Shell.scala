@@ -8,8 +8,10 @@ import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import pprint.PPrinter
 import scala.util.matching.Regex
 import spindex._
-// import EnrichGeometricFigures._
+import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
+import TypeTags._
+// import java.net.URI
 
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -211,6 +213,21 @@ object ShellCommands {
       VisualLine.render(thisComponent).getOrElse("<could not render>".box)
     }
 
+    def webShow(): String = {
+      val text = thisComponent.show()
+      import WebShow._
+      import texttags._
+      val imgUri = thisComponent.extractImage()
+
+      val html =
+        <.tr(
+          <.td(<.a(^.href := imgUri.toString())),
+          <.td(text.toString)
+        )
+
+      html.toString()
+    }
+
     def filter(fn: (Component) => Boolean): Option[Component] = {
       if (fn(thisComponent)) {
         thisComponent.some
@@ -260,6 +277,32 @@ object ShellCommands {
         Some(thisComponent)
       } else None
     }
+
+    import java.net.URI
+
+    def extractImage(): URI = {
+      import com.sksamuel.scrimage._
+
+      val pageId = thisComponent.pageId.unwrap+1
+      val srcUri = thisComponent.getSrcUri()
+
+
+      val pageSrc = srcUri.resolve("page-images/").resolve(s"page-${pageId}.png")
+      println(s"page src: ${pageSrc}")
+      val image = Image.fromFile(new java.io.File(pageSrc.getPath))
+      val cropped = Images.cropTo(image, thisComponent.bounds, thisComponent.getPageGeometry)
+
+      val x = thisComponent.bounds.left.toInt
+      val y = thisComponent.bounds.top.toInt
+      val w = cropped.width
+      val h = cropped.height
+
+      val imgDst = srcUri.resolve("page-images/").resolve(s"page-${pageId}-x$x-y$y-w$w-h$h.png")
+      println(s"page dest: ${imgDst}")
+      cropped.output(new java.io.File(imgDst.getPath))
+
+      imgDst
+    }
   }
 
   implicit class RicherDocumentSegmenter(val thisDocumentSegmenter: DocumentSegmenter) extends AnyVal {
@@ -273,6 +316,7 @@ object ShellCommands {
       } yield line
     }
   }
+
   implicit class RicherCorpusEntry(val thisCorpusEntry: CorpusEntry) extends AnyVal {
 
     def lines(): Seq[Component]= {
@@ -283,6 +327,17 @@ object ShellCommands {
       }
       lls.getOrElse(Seq())
     }
+
+    def linesw(): Seq[String]= {
+      val lls = for {
+        segmenter <- thisCorpusEntry.segment()
+      } yield {
+        segmenter.lines()
+      }
+
+      lls.map(_.map(_.webShow())).getOrElse(Seq())
+    }
+
 
     def segment(): Option[DocumentSegmenter] = {
 
@@ -297,7 +352,6 @@ object ShellCommands {
       )
 
       extract.Works.segmentDocument(conf)
-
     }
 
   }
@@ -305,19 +359,35 @@ object ShellCommands {
 
   implicit class RicherCorpus(val thisCorpus: Corpus) extends AnyVal {
 
+    def chooseEntries(n: Int = 0, skip: Int = 0): Seq[CorpusEntry] = {
+      val allEntries = thisCorpus.entries()
+      val skipped = if (skip > 0) allEntries.drop(skip) else allEntries
+      val entries = if (n > 0) skipped.take(n) else skipped
+      entries
+    }
+
+    def formatLineComponent(entry: CorpusEntry, c: Component): TB.Box = {
+      c.showUnknowns beside indent(8)(entry.entryDescriptor.box)
+    }
+
+    def sketchyLines(n: Int = 0, skip: Int = 0): Seq[Component] = {
+      val lls = for (entry <- chooseEntries(n, skip)) yield {
+        entry.lines.filter(_.hasUnknownWords())
+      }
+      lls.flatten
+    }
+
     def showSketchyLines(n: Int = 0, skip: Int = 0): Seq[Box] = {
-      val entries = thisCorpus.entries()
-      val skipped = if (skip > 0) entries.drop(skip) else entries
-      val taken = if (n > 0) skipped.take(n) else skipped
-
-      val lls = for (entry <- taken) yield {
-        val elines = entry.lines
+      val lls = for (entry <- chooseEntries(n, skip)) yield {
+        entry.lines
           .filter(_.hasUnknownWords())
-          .map(c => c.showUnknowns beside indent(8)(entry.entryDescriptor.box))
-
-        elines
+          .map(formatLineComponent(entry, _))
       }
       lls.flatten
     }
   }
 }
+
+
+object WebShow extends ScalatagsDefs
+

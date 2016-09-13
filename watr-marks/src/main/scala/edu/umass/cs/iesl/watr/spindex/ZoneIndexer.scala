@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import edu.umass.cs.iesl.watr.utils.VisualTracer
+import java.net.URI
 import scala.collection.mutable
 
 import watrmarks._
@@ -140,7 +141,11 @@ object BioLabeling {
 
 
 
-class ZoneIndexer()  {
+class ZoneIndexer(
+  srcUri: URI
+)  {
+
+  def getSrcUri():URI = srcUri
 
   val vtrace: VisualTracer = new VisualTracer()
 
@@ -329,17 +334,10 @@ class ZoneIndexer()  {
 
 
 object ZoneIndexer extends ComponentDataTypeFormats {
-  def minMaxPairToPointWidth(minMax: (Double, Double)): (Double, Double) = {
-    (minMax._1, minMax._2-minMax._1)
-  }
 
-  def loadSpatialIndices(regionsAndGeometry: Seq[(PageAtoms, PageGeometry)]): ZoneIndexer = {
-    loadSpatialIndices2(regionsAndGeometry.map(c => (c._1.regions, c._2)))
-  }
+  def loadSpatialIndices(srcUri: URI, regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): ZoneIndexer = {
 
-  def loadSpatialIndices2(regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): ZoneIndexer = {
-
-    val zindexer = new ZoneIndexer()
+    val zindexer = new ZoneIndexer(srcUri)
     regionsAndGeometry.foreach { case(regions, geom)  =>
       val pageInfo = zindexer.addPage(geom)
 

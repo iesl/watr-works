@@ -122,29 +122,12 @@ object DocumentIO {
   }
 
 
-  // def printCCStats(component: Component, range: (Int, Int), centerY: Double): Unit = {
-  //   import TB._
-
-  //   val stats = component.children.zip(pairwiseSpaceWidths(component.children))
-  //     .drop(range._1)
-  //     .take(range._2).map({case (c, dist) =>
-  //       (tbox(c.toText) +| "->" +| (dist.pp)) %
-  //         c.bounds.top.pp %
-  //         (c.bounds.left.pp +| c.bounds.right.pp) %
-  //         (c.bounds.bottom.pp +| "(w:" +| c.bounds.width.pp)
-  //     }).toList
-
-  //   println(
-  //     hsep(stats)
-  //   )
-  // }
 
 
 
   import java.io.InputStream
   import watrmarks._
   import java.io.InputStream
-  import play.api.libs.json._
 
   import spindex._
   import extract.PdfTextExtractor
@@ -334,13 +317,4 @@ object DocumentIO {
   }
 
 
-  def loadSpatialIndices(jsvalue: JsValue): ZoneIndexer = {
-    // jsvalue.validate[ZoneRecords] match {
-    //   case JsSuccess(zoneRecords, path) =>
-    //     ZoneIndexer.loadSpatialIndices(zoneRecords)
-    //   case JsError(err) =>
-    //     sys.error(s"error validating zone records: ${err}")
-    // }
-    ???
-  }
 }

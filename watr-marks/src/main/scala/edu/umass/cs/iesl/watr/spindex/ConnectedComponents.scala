@@ -8,7 +8,6 @@ import EnrichGeometricFigures._
 import GeometricFigure._
 
 import TypeTags._
-import utils.VisualTracer._
 import watrmarks.{StandardLabels => LB}
 import scalaz.Tree
 
@@ -54,6 +53,14 @@ sealed trait Component {
   def vtrace = zoneIndex.vtrace
 
   def roleLabel: Label
+
+  lazy val pageId = zoneIndex.getPageForComponent(this)
+
+  def getSrcUri() = zoneIndex.getSrcUri()
+
+  def getPageGeometry(): PageGeometry = {
+    zoneIndex.getPageGeometry(pageId)
+  }
 
   def queryAtoms(): Seq[AtomicComponent] = {
     queryInside(LB.PageAtom).map(_.asInstanceOf[AtomicComponent])

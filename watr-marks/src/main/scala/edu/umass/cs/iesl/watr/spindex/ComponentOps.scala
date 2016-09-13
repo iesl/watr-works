@@ -214,6 +214,11 @@ object ComponentOperations {
       val modalBottom = bottoms.head // + 0.01d
       val modalCenterY = (modalBottom + modalTop)/2
 
+
+      val supSubTol = (modalCenterY-modalTop) * 0.25
+      val subScriptUpperLimit = modalCenterY-supSubTol
+      val superScriptLowerLimit = modalCenterY+supSubTol
+
       // indicate a set of h-lines inside selfComponent.targetRegion
       def indicateHLine(y: Double): TargetFigure = y.toHLine
         .clipTo(selfComponent.targetRegion.bbox)
@@ -227,8 +232,6 @@ object ComponentOperations {
 
 
       selfComponent.getChildren(LB.TextSpan).foreach({ textSpan =>
-        // textSpan.groupAtomsIf({(atom1, atom2, pairIndex) =>
-        // })
 
         val supOrSubList = textSpan.atoms.map { atom =>
           val cctr = atom.bounds.toCenterPoint
@@ -236,19 +239,30 @@ object ComponentOperations {
           val supSubTolerance = selfComponent.bounds.height / 20.0
           vtrace.trace(s"checking sup/sub, tol:${supSubTolerance}" withInfo PageAtom.boundsBox(atom))
 
-          if (atom.bounds.top < modalTop && atom.bounds.bottom > modalBottom) {
-            vtrace.trace((message(s"big char")))
-            LB.CenterScript
-          } else if (atom.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
-            vtrace.trace((message(s"atom.bottom ~= modalBottom")))
-            LB.CenterScript
-          } else if (cctr.y < modalCenterY) {
+          if (atom.bounds.bottom < superScriptLowerLimit) {
             vtrace.trace((message(s"sup")))
             LB.Sup
-          } else {
+          } else if (atom.bounds.top > subScriptUpperLimit) {
             vtrace.trace((message(s"sub")))
             LB.Sub
+          } else {
+            LB.CenterScript
           }
+
+
+          // if (atom.bounds.top < modalTop && atom.bounds.bottom > modalBottom) {
+          //   vtrace.trace((message(s"big char")))
+          //   LB.CenterScript
+          // } else if (atom.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
+          //   vtrace.trace((message(s"atom.bottom ~= modalBottom")))
+          //   LB.CenterScript
+          // } else if (atom.bounds.bottom < modalCenterY) {
+          //   vtrace.trace((message(s"sup")))
+          //   LB.Sup
+          // } else {
+          //   vtrace.trace((message(s"sub")))
+          //   LB.Sub
+          // }
         }
 
         val labelSpans = supOrSubList.groupByPairs({(l1, l2) => l1 == l2 })
@@ -391,12 +405,10 @@ object ComponentOperations {
           .foreach{ _.groupTokens() }
 
         // Now figure out how the super/sub/normal text spans should be joined together token-wise
-        // TODO write a function that takes a TextSpan and groups its children into tokens
 
         selfComponent.addLabel(LB.Tokenized)
 
         vtrace.trace("Tree after Tokenization" withInfo VisualLine.renderRoleTree(selfComponent))
-
 
         selfComponent.ungroupChildren(LB.TextSpan)({c =>
           if (c.hasLabel(LB.Sup) || c.hasLabel(LB.Sub)) {

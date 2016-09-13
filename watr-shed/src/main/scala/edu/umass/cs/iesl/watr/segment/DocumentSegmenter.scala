@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import java.io.InputStream
+import java.net.URI
 import watrmarks._
 import spindex._
 import GeometricFigure._
@@ -15,7 +16,6 @@ import TypeTags._
 import textboxing.{TextBoxing => TB}
 import TB._
 import EnrichGeometricFigures._
-import ComponentTypeEnrichments._
 import utils.EnrichNumerics._
 import ComponentOperations._
 import ComponentRendering._
@@ -115,13 +115,14 @@ object DocumentSegmenter extends DocumentUtils {
 
   import extract.fonts.SplineFont
 
-  def createSegmenter(pdfins: InputStream, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
+  def createSegmenter(srcUri: URI, pdfins: InputStream, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
     val chars = format.DocumentIO.extractChars(pdfins, Set(), glyphDefs)
-    createSegmenter(chars.map(c => (c._1.regions, c._2)))
+    createSegmenter(srcUri, chars.map(c => (c._1.regions, c._2)))
   }
 
-  def createSegmenter(pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
-    val zoneIndex = ZoneIndexer.loadSpatialIndices2(pagedefs)
+
+  def createSegmenter(srcUri: URI, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
+    val zoneIndex = ZoneIndexer.loadSpatialIndices(srcUri, pagedefs)
     new DocumentSegmenter(zoneIndex)
   }
 

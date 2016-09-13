@@ -7,7 +7,7 @@ import GeometricFigure._
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
-// import TypeTags._
+import TypeTags._
 import scalaz.{@@}
 import util._
 
@@ -19,7 +19,7 @@ import itextpdf.kernel.pdf.canvas.parser.data._
 import itextpdf.kernel.pdf.PdfReader
 
 import fonts._
-import UnicodeUtil._
+// import UnicodeUtil._
 import utils.IdGenerator
 
 
@@ -99,7 +99,7 @@ class CharExtractionListener(
     }
   }
 
-  def lookupGlyph(charTri: TextRenderInfo): Seq[Char] = {
+  def lookupGlyphHash(charTri: TextRenderInfo): Seq[Char] = {
     // Get glyphHash for this char
     val pdfString = charTri.getPdfString
     val font = charTri.getFont
@@ -120,55 +120,47 @@ class CharExtractionListener(
     chars
   }
 
-  var index = 0
-  def renderText(charTrix: TextRenderInfo): Unit = {
-    for {
-      charTri <- charTrix.getCharacterRenderInfos
-    } {
+  def fallbackRep(charTri: TextRenderInfo): String = {
+    val pdfString = charTri.getPdfString
+    val valueBytes = pdfString.getValueBytes.map(Byte.byte2int(_))
+
+    (for (b <- valueBytes) yield s"¿$b").mkString
+  }
+
+
+  def renderText(charTris: TextRenderInfo): Unit = {
+    for (charTri <- charTris.getCharacterRenderInfos) {
 
       val mcid = charTri.getMcid
-      val rawChars = if (charTri.getText.isEmpty && charTri.hasMcid(mcid, false)) {
-        lookupGlyph(charTri: TextRenderInfo)
-      } else if (charTri.getText.isEmpty) {
-        lookupGlyph(charTri: TextRenderInfo)
+
+      val stringRep: String = if (!charTri.getText.isEmpty) {
+        charTri.getText()
+          .map(c => UnicodeUtil.maybeSubChar(c).filterNot(_ == ' ').mkString)
+          .mkString
       } else {
-        charTri.getText().toCharArray().toSeq
+        // TODO reinstate glyph hash lookups
+        fallbackRep(charTri)
       }
 
+      if (!stringRep.isEmpty) {
+        val charBounds = computeTextBounds(charTri)
 
-      rawChars.foreach({ rawCharX =>
+        val charBox = charBounds.map(bnds =>
+          CharAtom(
+            TargetRegion(
+              componentIdGen.nextId,
+              pageId,
+              bnds
+            ),
+            stringRep
+          )
+        ).getOrElse ({
+          val msg = s"ERROR bounds are invalid"
+          sys.error(msg)
+        })
+        currCharBuffer.append(charBox)
+      }
 
-        val subChars = maybeSubChar(rawCharX).filterNot(_ <= ' ')
-
-        if (!subChars.isEmpty) {
-          val charBounds = computeTextBounds(charTri)
-          val charStr = subChars.mkString
-
-          val charBox = charBounds.map(bnds =>
-            CharAtom(
-              TargetRegion(
-                componentIdGen.nextId,
-                pageId,
-                bnds
-              ),
-              charStr
-            )
-          ).getOrElse ({
-            val msg = s"ERROR bounds are invalid"
-            sys.error(msg)
-          })
-          currCharBuffer.append(charBox)
-        }
-
-        if (index > 0)  {
-          println(s"""chars: raw:${rawCharX} subs: [${subChars.mkString(", ")}] / ${subChars.map(_.toInt).mkString(", ")}""")
-          // GlyphPositioning.traceGlyphPositioning(charTri, reader)
-          println(fonts.DocumentFontInfo.getCharTriInfo(charTri, reader))
-          println("=======================\n\n")
-          index -= 1
-        }
-
-      })
     }
   }
 
@@ -294,3 +286,37 @@ class CharExtractionListener(
     // currCharBuffer.append(imgRegion)
   }
 }
+
+      // val rawChars = if (charTri.getText.isEmpty && charTri.hasMcid(mcid, false)) {
+      //   val gl = lookupGlyph(charTri: TextRenderInfo)
+      //   if (gl.isEmpty) {
+      //     val pdfString = charTri.getPdfString
+      //     val bs = pdfString.getValueBytes.map(Byte.byte2int(_).toString.toSeq).mkString(",").toSeq
+      //     // Seq('?', '{') ++ bs ++ Seq('}')
+      //     '¿' +: bs
+      //   } else gl
+      // } else if (charTri.getText.isEmpty) {
+      //   if (1455 <= index && index <= 1470) {
+      //     println("here 2")
+      //   }
+      //   lookupGlyph(charTri: TextRenderInfo)
+      // } else {
+      //   if (1455 <= index && index <= 1470) {
+      //     println("here 3")
+      //   }
+      //   val txt = charTri.getText().toCharArray().toSeq
+      //   if (txt.isEmpty) {
+      //     val pdfString = charTri.getPdfString
+      //     val bs = pdfString.getValueBytes.map(Byte.byte2int(_).toString.toSeq).mkString(",").toSeq
+      //     // Seq('¿', '{') ++ bs ++ Seq('}')
+      //     '¿' +: bs
+      //   } else txt
+      // }
+
+// if (index > 0)  {
+//   println(s"""chars: raw:${rawCharX} subs: [${subChars.mkString(", ")}] / ${subChars.map(_.toInt).mkString(", ")}""")
+//   // GlyphPositioning.traceGlyphPositioning(charTri, reader)
+//   // println(fonts.DocumentFontInfo.getCharTriInfo(charTri, reader))
+//   println("=======================\n\n")
+//   index -= 1
+// }

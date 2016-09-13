@@ -24,7 +24,6 @@ case class AppConfig(
 )
 
 object Works extends App {
-
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
   // utils.VisualTracer.clearFilters()
@@ -364,7 +363,7 @@ object Works extends App {
           pdfins    <- pdf.asInputStream
         } {
           try {
-            val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins, fontDirs)
+            val segmenter = segment.DocumentSegmenter.createSegmenter(corpusEntry.getURI, pdfins, fontDirs)
             segmenter.runPageSegmentation()
             val output = format.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, Some(corpusEntry.toString))
             corpusEntry.putArtifact(artifactOutputName, output)
@@ -402,7 +401,8 @@ object Works extends App {
           pdfins    <- pdf.asInputStream
         } {
           try {
-            val segmenter = segment.DocumentSegmenter.createSegmenter(pdfins, fontDirs)
+            val baseURI = corpusEntry.getURI // .resolve(java.net.URI.create("file://"))
+            val segmenter = segment.DocumentSegmenter.createSegmenter(baseURI, pdfins, fontDirs)
             rsegmenter = Some(segmenter)
             segmenter.runPageSegmentation()
             val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()

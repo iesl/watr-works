@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import org.scalatest._
-// import watrmarks._
 import java.io.InputStream
 import scalaz.@@
 import spindex._
@@ -127,7 +126,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
       .queryForIntersects(totalBounds)
 
 
-    // println("examining chars: ["+squishb(interestingChars)+"]")
+    println("examining chars: ["+squishb(interestingChars)+"]")
     segmenter
   }
 

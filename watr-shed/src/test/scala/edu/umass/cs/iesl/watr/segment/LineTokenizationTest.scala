@@ -10,19 +10,26 @@ import ComponentOperations._
 import GeometricFigure._
 import scalaz.@@
 import java.io.InputStream
-
-
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
   //   """Page:0 file:///Schauer-1987.pdf""",
-
-
-// epithelial                    and epithelial absorption require very di^{ff}erent surface        acsnano.5b00028.pdf.d
-// di^{ff}erent                      <target pg:1 (l:55.74, t:222.64, w:201.23, h:10.84)
-
-
   behavior of "text line identification"
   val testExamples = List(
+    TextExample(
+      """Page:7 /101016jactamat201501032.pdf""",
+      """and 10 ^{5} s ^{1}. In general, the three curves exhibit a plateau  (305.52, 172.83, 245.0, 10.0)""",
+      """and 10^{5} s^{1}. In general, the three curves exhibit a plateau"""
+    ),
+    TextExample(
+      """Page:0 /101016jcarbon201301056.pdf""",
+      """One-pot synthesis of uniform Fe3O4 nanocrystals (47.28, 159.86, 397.48, 17.71) """,
+      """One-pot synthesis of uniform Fe_{3}O_{4} nanocrystals"""
+    ),
+    TextExample(
+      """Page:1 /acsnano.5b00028.pdf""",
+      """and epithelial absorption require very di^{ff}erent surface   (l:55.74, t:222.64, w:201.23, h:10.84)""",
+      """and epithelial absorption require very different surface"""
+    ),
     TextExample(
       """Page:0 file:///101016japsusc201210126.pdf""",
       """http://dx.doi.org/10.1016/j.apsusc.2012.10.126 (l:32.73, t:737.54, w:142.92, h:6.36)""",
@@ -113,8 +120,8 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
   it should "identify text lines" in {
-    val justRunThisOne:Option[Int] = None
-    // val justRunThisOne:Option[Int] = Some(8)
+    // val justRunThisOne:Option[Int] = None
+    val justRunThisOne:Option[Int] = Some(0)
 
     val examples = testExamples.map(cutAndPasteToTestExample(_))
 
@@ -143,8 +150,8 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
     val segmenter = createFilteredZoneIndexer(pdfIns, pageId, example.regions.map(_._3))
 
 
-    utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
-    // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+    // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
+    utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
 
     segmenter.runLineDetermination()
 

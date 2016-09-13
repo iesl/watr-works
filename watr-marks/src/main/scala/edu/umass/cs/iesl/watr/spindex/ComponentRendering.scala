@@ -294,13 +294,15 @@ object ComponentRendering {
 
 
     def boundsBox(c: Component): TB.Box = {
-      vcat(center1)(Seq(
-        c.chars,
-        c.bounds.top.pp,
-        c.bounds.left.prettyPrint +| c.bounds.right.prettyPrint,
-        c.bounds.bottom.prettyPrint,
-        "(w=" + c.bounds.width.prettyPrint + ")"
-      ))
+      vjoin()(
+        c.chars.box,
+        vcat(center1)(Seq(
+          c.bounds.top.pp,
+          c.bounds.left.prettyPrint +| c.bounds.right.prettyPrint,
+          c.bounds.bottom.prettyPrint
+        )),
+        s"(w=${c.bounds.width.prettyPrint}, ctr:${c.bounds.toCenterPoint})"
+      )
     }
 
   }

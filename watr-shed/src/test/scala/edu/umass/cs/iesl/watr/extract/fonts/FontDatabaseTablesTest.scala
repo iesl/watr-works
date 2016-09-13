@@ -9,7 +9,7 @@ import ammonite.ops._
 
 class FontDatabaseTablesTest extends FlatSpec with SequentialNestedSuiteExecution with BeforeAndAfter {
 
-  val db = new FontDatabaseApi(cwd / "fontdb~")
+  val db = new FontDatabaseApi(pwd / "fontdb~")
   val fontPath = Path(getClass.getResource("/fontdb/gulliver-sfdirs").getPath)
 
   // before {

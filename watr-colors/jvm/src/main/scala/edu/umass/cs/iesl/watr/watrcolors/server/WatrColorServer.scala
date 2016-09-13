@@ -25,7 +25,7 @@ object AutowireServer extends autowire.Server[ByteBuffer, Pickler, Pickler] {
 object WatrColorServer {
   def main(args: Array[String]): Unit = {
     // val conf = configuration.getPdfCorpusConfig(args(0))
-    val corpusRoot = cwd/RelPath(args(0))
+    val corpusRoot = pwd/RelPath(args(0))
     println(s"WatrColorServer: root = ${corpusRoot}")
     val server = new WatrColorServer(corpusRoot)
     server.run()

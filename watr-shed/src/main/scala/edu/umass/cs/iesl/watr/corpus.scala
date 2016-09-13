@@ -4,6 +4,7 @@ package edu.umass.cs.iesl.watr
 import java.io.{ InputStream }
 import java.io.InputStreamReader
 import java.io.Reader
+import java.net.URI
 import java.nio.{file => nio}
 import play.api.libs.json
 import scala.util.{Try, Failure, Success}
@@ -39,6 +40,9 @@ class Corpus(
     s"corpus:${corpusRoot}"
   }
 
+  def getURI(): URI = {
+    corpusRoot.toIO.toURI()
+  }
   lazy val corpusSentinel =  corpusRoot / ".corpus-root"
 
   def touchSentinel(): Unit = {
@@ -91,6 +95,9 @@ class CorpusEntry(
     s"${corpus}/./${entryDescriptor}"
   }
 
+  def getURI(): URI = {
+    artifactsRoot.toIO.toURI()
+  }
 
   val artifactsRoot = corpus.corpusRoot / RelPath(entryDescriptor)
 

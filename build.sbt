@@ -11,12 +11,12 @@ scalaVersion in ThisBuild := "2.11.8"
 shellPrompt in ThisBuild := Sensible.colorPrompt
 
 val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.5",
-  "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
+  "org.scalaz" %% "scalaz-core" % "7.2.6",
+  "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC5",
   "com.lihaoyi" %% "scalatags" % "0.6.0",
   "com.lihaoyi" %% "acyclic" % "0.1.4" % "provided",
   "com.lihaoyi" %% "ammonite-ops" % "0.7.6",
-  "com.typesafe.play" %% "play-json" % "2.5.6",
+  "com.typesafe.play" %% "play-json" % "2.5.7",
   "com.github.scopt" %% "scopt" % "3.5.0"
 )
 
@@ -60,6 +60,8 @@ lazy val watrmarks = (project in file("watr-marks"))
   .dependsOn(watrprelude)
   .aggregate(watrprelude)
 
+val scrimageVersion = "2.1.7"
+
 lazy val watrshed = (project in file("watr-shed"))
   .settings(Sensible.settings)
   .settings(libraryDependencies ++= commonDeps)
@@ -69,15 +71,19 @@ lazy val watrshed = (project in file("watr-shed"))
     "com.lihaoyi" % "ammonite" % "0.7.6" cross CrossVersion.full,
     "com.h2database" % "h2" % "1.4.192",
     "com.zaxxer" % "HikariCP" % "2.5.0",
-    "com.typesafe.slick" %% "slick" % "3.1.1"
+    "com.typesafe.slick" %% "slick" % "3.1.1",
+    "com.sksamuel.scrimage" %% "scrimage-core"     % scrimageVersion,
+    "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion,
+    "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion
   ))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
 
+
 // Revolver.settings
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(libraryDependencies ++= Seq(
-    "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC2",
+    "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC5",
     "me.chrons" %%% "boopickle" % "1.2.4",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     "com.lihaoyi" %%% "scalarx" % "0.3.1",
