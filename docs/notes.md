@@ -5,6 +5,9 @@ WatrWorks is PDF text extraction and analysis system that improves on existing o
 Our work with MIT has focused on improving text extraction in material science literature. Particular attention is given to chemical formulas, symbols used to express quantities and measures, and labeling sections of text that are of interest. IESL and MIT have coordinated through weekly online meetings, as well as larger group meetings each semester. 
 
 
+- TODO create a way to label paper failure w/reasons, for future reference
+  e.g., the paper text is actually images, with hand-entered transcription text underneath
+
 
 - extraction of text particular to material science:
 -- formula, math, super/subscript parsing

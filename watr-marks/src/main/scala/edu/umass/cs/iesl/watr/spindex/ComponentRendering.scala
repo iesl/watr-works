@@ -15,25 +15,8 @@ import GeometricFigure._
 
 import acyclic.file
 
-case class CCRenderState(
-  numOfPages: Int,
-  startingPage: Int@@PageID = PageID(0),
-  tokens:mutable.ArrayBuffer[(Int@@PageID, Int@@ComponentID, LTBounds)] = mutable.ArrayBuffer()
-) {
-  private var currPage: Int@@PageID = startingPage
-
-  def currentPage: Int@@PageID = currPage
-
-  def advancePage(): Int@@PageID = {
-    currPage = PageID(PageID.unwrap(currPage)+1)
-    currentPage
-  }
-}
-
-
 object ComponentRendering {
   import TB._
-
 
   object VisualLine {
     import scalaz.std.string._
@@ -94,9 +77,9 @@ object ComponentRendering {
     }
 
     def renderWithIDs(cc: Component): TB.Box = {
+      // TODO asser that cc is role VisualLine
       val textAndIds = for {
-        tokenizedChild <- cc.getDescendants(LB.TextSpan).find(_.hasLabel(LB.Tokenized)).toSeq
-        textSpan <- tokenizedChild.getChildren(LB.TextSpan)
+        textSpan <- cc.getChildren(LB.TextSpan)
         tokenBox <- render(textSpan)
       } yield {
         val tokenId = textSpan.id
@@ -114,6 +97,16 @@ object ComponentRendering {
       )
     }
 
+    def renderWords(cc: Component): Seq[TB.Box] = {
+      cc.roleLabel match {
+        case LB.VisualLine =>
+          val children = childSpansOrAtoms(cc)
+          val rc = children.map(render(_))
+          rc.flatten
+
+        case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
+      }
+    }
     def render(cc: Component): Option[TB.Box] = {
       cc.roleLabel match {
         case LB.VisualLine =>

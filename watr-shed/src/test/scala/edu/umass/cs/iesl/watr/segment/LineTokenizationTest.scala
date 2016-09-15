@@ -11,74 +11,44 @@ import GeometricFigure._
 import scalaz.@@
 import java.io.InputStream
 
+
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
+  // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
+  //   """Page:0 file:///Schauer-1987.pdf""",
+
+
+// epithelial                    and epithelial absorption require very di^{ff}erent surface        acsnano.5b00028.pdf.d
+// di^{ff}erent                      <target pg:1 (l:55.74, t:222.64, w:201.23, h:10.84)
+
+
   behavior of "text line identification"
   val testExamples = List(
     TextExample(
-      """Page:0 file:///quantification-Smith-2013.pdf""",
-      """(311.98, 631.27, 239.99, 10.32)""",
-      ""
+      """Page:0 file:///101016japsusc201210126.pdf""",
+      """http://dx.doi.org/10.1016/j.apsusc.2012.10.126 (l:32.73, t:737.54, w:142.92, h:6.36)""",
+      """http://dx.doi.org/10.1016/j.apsusc.2012.10.126"""
     ),
     TextExample(
-      """Page:0 file:///Schauer-1987.pdf""",
-      """TaS2.["]Only a s s u m p t i o n s c a n b e m a d e a b o u t t h e arrange- (l:42.70, t:36.67, w:230.84, h:6.14)""",
-      """TaS_{2}^{[6]}. Only assumptions can be made about the arrange-"""
+      """Page:1 file:///101016japsusc201210126.pdf""",
+      """ P t^{0}by sodium formate. The Pt/PANi nanocomposite was assessed    (l:41.92, t:305.87, w:251.55, h:9.28) """,
+      """Pt^{0} by sodium formate. The Pt/PANi nanocomposite was assessed"""
     ),
     TextExample(
-      """Page:0 file:///Schauer-1987.pdf""",
-      """sponding to the selected points of the curves, the oxidation was interrupted  (l:43.70, t:313.95, w:230.99, h:4.79)""",
-      """sponding to the selected points of the curves, the oxidation was interrupted"""
+      """Page:0 file:///101016japsusc201210126.pdf""",
+      """ C om p o s i te  (l:32.73, t:376.02, w:32.54, h:6.36) """,
+      """Composite"""
     ),
     TextExample(
-      """Page:0 file:///Schauer-1987.pdf""",
-      """[Fe3(CO)9(p3-O)]2Q l I 3 O with one equivalent of       (l:301.00, t:292.27, w:230.74, h:6.16)""",
-      ""
-    ),
-    // The system fails to  find the entire line for this example
-    TextExample(
-      """Page:0 file:///Schauer-1987.pdf""",
-      """[Mn(CO)3(C H3CN) 3][PF, l' 61                                                (l:300.70, t:302.50, w:236.51, h:6.35)""",
-      ""
-    ),
-    TextExample(
-      """Page:0 file:///Schauer-1987.pdf""",
-      """0 x 0 cluster PPN[Fe3Mn(CO),,(p4-0)] 2 in 75% ~ i e 1 d . I 'T~h e           (l:301.00, t:323.67, w:230.79, h:6.31)""",
-      ""
-    ),
-    TextExample(
-      """Page:0 file:///Schauer-1987.pdf""",
-      """structureof 2 is shown in Figure 1(see also Table The                        (l:301.00, t:334.09, w:230.79, h:6.51)""",
-      ""
-    ),
-    TextExample(
-      """Page:0 file:///Schauer-1987.pdf""",
-      """TaS2.["]Only assumptions can be m a d e a b o u t the arrange-               (l:42.70, t:36.67, w:230.84, h:6.14)""",
-      ""
-    ),
-    TextExample(
-      """Page:0 file:///Schauer-1987.pdf""",
-      """t u r e of t h e C 4 F 9 c h a i n s is unlikely, because of t h e size of   (l:43.00, t:68.30, w:230.97, h:6.41)""",
-      ""
-    ),
-    TextExample(
-      """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016japsusc201210126.pdf.d/101016japsusc201210126.pdf
+      """|Page:0 /101016japsusc201210126.pdf
          |""".stripMargin,
-      """|be    (l:32.23, t:488.00, w:251.54, h:9.0)
-         |""".stripMargin,
-      """|Proton exchange membrane fuel cell (PEMFC) is considered to
-         |""".stripMargin
-    ),
-    TextExample(
-      """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-test/101016japsusc201210126.pdf.d/101016japsusc201210126.pdf
-         |""".stripMargin,
-      """|be    (l:32.23, t:488.00, w:251.54, h:18.43)
+      """|   (l:32.23, t:488.00, w:251.54, h:18.43)
          |""".stripMargin,
       """|Proton exchange membrane fuel cell (PEMFC) is considered to
          |be the most attractive energy technology for the future due to
          |""".stripMargin
     ),
     TextExample(
-      """|Page:0 file:///home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201112024.pdf.d/101016jactamat201112024.pdf
+      """|Page:0 /101016jactamat201112024.pdf
          |""".stripMargin,
       """|the                                                         (l:520.27, t:465.98, w:13.17, h:9.96)
          |Perhaps                                                     (l:477.92, t:465.98, w:34.10, h:9.96)
@@ -92,17 +62,17 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
       """|ing), strain, and other variables. Perhaps the most
          |""".stripMargin
     ),
-    // TextExample(
-    //   """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
-    //      |""".stripMargin,
-    //   """|A bs t r a c t               (l:42.52, t:294.50, w:32.20, h:8.97)
-    //      |""".stripMargin,
-    //   """|Abstract
-    //      |""".stripMargin
-    // ),
+    TextExample(
+      """|Page:0 /101016jactamat200401025.pdf
+         |""".stripMargin,
+      """|A bs t r a c t               (l:42.52, t:294.50, w:32.20, h:8.97)
+         |""".stripMargin,
+      """|Abstract
+         |""".stripMargin
+    ),
 
     TextExample(
-      """|Page:0 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat200401025.pdf.d/101016jactamat200401025.pdf
+      """|Page:0 /101016jactamat200401025.pdf
          |""".stripMargin,
       """|safet y       (l:519.76, t:452.43, w:24.88, h:9.96)
          |c om b i ne   (l:334.94, t:452.43, w:36.08, h:9.96)
@@ -118,16 +88,16 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
     ),
 
     TextExample(
-      """| Page:1 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201501032.pdf.d/101016jactamat201501032.pdf
+      """| Page:1 /101016jactamat201501032.pdf
          |""".stripMargin,
       """|C.M. Cepeda-Jiménez et al. / Acta Materialia 88 (2015) 232–244               (l:183.34, t:47.54, w:220.59, h:8.08)
          |""".stripMargin,
-      """|C.M. Cepeda-Jiménez et al./Acta Materialia 88 (2015) 232–244
+      """|C.M. Cepeda-Jiménez et al. / Acta Materialia 88 (2015) 232–244
          |""".stripMargin
     ),
 
     TextExample(
-      """|Page:1 /home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/corpus-one/101016jactamat201501032.pdf.d/101016jactamat201501032.pdf
+      """|Page:1 /101016jactamat201501032.pdf
          |""".stripMargin,
       """| grain size of 1 lm in               (l:42.52, t:76.04, w:87.32, h:9.84)
          | pure               (l:133.74, t:76.04, w:18.23, h:9.46)
@@ -135,7 +105,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
          | by               (l:254.15, t:76.04, w:9.96, h:9.46)
          | hot               (l:268.04, t:76.04, w:13.60, h:9.46)
          |""".stripMargin,
-      """|grain size of 1lm in pure Mg samples fabricated by hot
+      """|grain size of 1 lm in pure Mg samples fabricated by hot
          |""".stripMargin
     )
 
@@ -143,8 +113,8 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
   it should "identify text lines" in {
-    // val justRunThisOne:Option[Int] = None
-    val justRunThisOne:Option[Int] = Some(0)
+    val justRunThisOne:Option[Int] = None
+    // val justRunThisOne:Option[Int] = Some(8)
 
     val examples = testExamples.map(cutAndPasteToTestExample(_))
 
@@ -173,8 +143,8 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
     val segmenter = createFilteredZoneIndexer(pdfIns, pageId, example.regions.map(_._3))
 
 
-    // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
-    utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+    utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
+    // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
 
     segmenter.runLineDetermination()
 
@@ -193,12 +163,15 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
     example.expectedOutput.zip(tokenizedLines)
       .foreach({case (expect, actual) =>
-        if (!expect.isEmpty && expect != actual) {
+        if (!expect.isEmpty && expect == actual) {
+          println0(s"ok> ${actual}")
+        } else if (!expect.isEmpty && expect != actual) {
           println0(s"want> $expect")
+          println0(s"got> ${actual}")
         } else  if (expect.isEmpty) {
-          println0(s"want? (not specified)")
+          println0(s"got> ${actual}")
         }
-        println0(s"got> ${actual}")
+
         // if (!expect.isEmpty()) {
         //   assertResult(expect){ actual }
         // }

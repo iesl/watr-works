@@ -231,7 +231,9 @@ class ZoneIndexer()  {
   def removeComponent(c: Component): Unit = {
     vtrace.trace("removeComponent" withTrace showComponent(c))
     val pinfo = getPageInfo(getPageForComponent(c))
+    pinfo.componentToLabels -= c.id
     pinfo.componentIndex.remove(c)
+    // FIXME also delete label maps, etc.
   }
 
   def labelRegion(components: Seq[Component], role: Label): Option[RegionComponent] = {

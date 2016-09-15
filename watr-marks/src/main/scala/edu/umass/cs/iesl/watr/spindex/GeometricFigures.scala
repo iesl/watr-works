@@ -309,6 +309,7 @@ object EnrichGeometricFigures {
       s"""(l:${fmt(left)}, t:${fmt(top)}, w:${fmt(width)}, h:${fmt(height)})"""
     }
 
+
     def compactPrint: String = {
       val left = tb.left
       val top=  tb.top
