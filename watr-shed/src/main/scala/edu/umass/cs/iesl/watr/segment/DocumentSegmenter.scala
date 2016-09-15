@@ -1034,8 +1034,10 @@ class DocumentSegmenter(
     val biggestLineAtBeginning = vlines.take(50)
       .filter(_.component.chars.length() > 5)
       .sortWith(_.component.height > _.component.height)
-    biggestLineAtBeginning.foreach(node => println(node.component.chars))
-    println
+    
+    // for debugging, print out all the lines sorted in order from largest to smallest
+//    biggestLineAtBeginning.foreach(node => println(node.component.chars))
+//    println
 
     if(biggestLineAtBeginning.headOption.isDefined) {
       println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
@@ -1045,6 +1047,7 @@ class DocumentSegmenter(
       println("there isn't a biggest line?")
     }
   }
+
 
   //    def labelAuthors(): Unit = {
   //
