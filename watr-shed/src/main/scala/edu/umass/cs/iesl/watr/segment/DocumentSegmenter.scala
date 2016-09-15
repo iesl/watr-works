@@ -1014,7 +1014,6 @@ class DocumentSegmenter(
     biggestLineAtBeginning.foreach(node => println(node.component.chars))
     println
 
-    //todo: why isn't this actually labeling anything
     if(biggestLineAtBeginning.headOption.isDefined) {
       println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
       zoneIndexer.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
