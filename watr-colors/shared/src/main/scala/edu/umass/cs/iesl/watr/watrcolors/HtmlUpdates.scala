@@ -29,4 +29,17 @@ trait HtmlUpdatePicklers {
     .addConcreteType[HtmlReplace]
 
 
+
+
+}
+
+final case class RemoteCall(
+  path: Seq[String], args: Seq[(String, Array[Byte])]
+)
+
+trait RemoteCallPicklers {
+  import boopickle.DefaultBasic._
+
+
+  implicit val rcp: Pickler[RemoteCall] = PicklerGenerator.generatePickler[RemoteCall]
 }

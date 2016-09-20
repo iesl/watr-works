@@ -15,42 +15,17 @@ import textboxing.{TextBoxing => TB}, TB._
 
 object WebShell {
 
+  def main(args: Array[String]): Unit = {
+    val server =  new Server("localhost", 9999)
 
-  // def run(): Unit = {
-  //   val hello = "Hello"
-  //   val predef =
-  //     s"""|import edu.umass.cs.iesl.watr
-  //         |import watr._, spindex._, ComponentRendering._
-  //         |import shell._
-  //         |import ShellCommands._
-  //         |implicit val pp0 = pprintComponent
-  //         |implicit val pp1 = pprintBox
-  //         | println("..")
-  //         |""".stripMargin
+    WatrShell.replMain().run(
+      "server" -> server
+    )
 
-  //   val welcomeBanner =
-  //     s"""|>> WatrColors Shell <<
-  //         |""".stripMargin
-
-
-  //   ammonite.Main(
-  //     predef = predef,
-  //     //   defaultPredef: Boolean = true,
-  //     //   storageBackend: Storage = new Storage.Folder(Defaults.ammoniteHome),
-  //     wd = pwd,
-  //     welcomeBanner = Some(welcomeBanner),
-  //     inputStream = System.in,
-  //     outputStream  = System.out,
-  //     errorStream = System.err,
-  //     verboseOutput = true
-  //   ).run(
-  //     "corpus" -> initCorpus()
-  //   )
-  // }
-
+    server.kill()
+  }
 }
 
 
 
 
-// object WebShow extends ScalatagsDefs

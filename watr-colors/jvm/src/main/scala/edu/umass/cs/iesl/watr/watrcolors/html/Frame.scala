@@ -100,3 +100,34 @@ object Frame {
     )
   }
 }
+
+object ShellHtml {
+
+
+  // val WatrStyles = Sheet[WatrStyles]
+
+
+  def apply() = {
+    <.html(
+      ^.lang := "en",
+      <.head(
+        <.title("WatrColors"),
+        <.meta(content := "width=device-width, initial-scale=1", name := "viewport"),
+        <.meta(httpEquiv := "Content-Type", content := "text/html; charset=UTF-8"),
+        <.script(`type` := "text/javascript", src := "/assets/watrcolors-client-fastopt.js"),
+        <.script(`type` := "text/javascript", src := "/webjars/mousetrap/1.6.0/mousetrap.min.js"),
+        <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.4/jquery.min.js"),
+        <.script(`type` := "text/javascript", src := "/webjars/fabric/1.6.2/dist/fabric.js"),
+
+        <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.7/css/bootstrap.min.css"),
+
+        <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
+      ),
+
+      body(margin := 0, WatrStyles.htmlBody)(
+        <.div(^.id := "main")("Loading..."),
+        script("edu.umass.cs.iesl.watr.watrcolors.client.WatrShellClient().main()")
+      )
+    )
+  }
+}

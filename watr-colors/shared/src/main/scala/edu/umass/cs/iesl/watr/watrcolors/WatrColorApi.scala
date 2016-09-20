@@ -20,9 +20,8 @@ trait SvgOverviewApi {
   def onDrawPath(artifactId: String, path: Seq[Point]): List[HtmlUpdate]
 }
 
-import fs2._
 
 trait WatrShellApi {
-  def startShell(): Unit
-  def update(): List[HtmlUpdate]
+  def clear(): Unit
+  def print(level: String, msg: String): Unit
 }

@@ -71,7 +71,7 @@ lazy val watrshed = (project in file("watr-shed"))
     "org.bouncycastle" % "bcpkix-jdk15on" % "1.55",
     "com.lihaoyi" % "ammonite" % "0.7.7" cross CrossVersion.full,
     "com.h2database" % "h2" % "1.4.192",
-    "com.zaxxer" % "HikariCP" % "2.5.0",
+    "com.zaxxer" % "HikariCP" % "2.5.1",
     "com.typesafe.slick" %% "slick" % "3.1.1",
     "com.sksamuel.scrimage" %% "scrimage-core"     % scrimageVersion,
     "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion,

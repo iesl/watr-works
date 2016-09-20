@@ -60,7 +60,7 @@ object WatrColorClient {
 
       println("WatrColors Client started")
       // switchViews(new CorpusExplorerClient())
-      switchViews(new WatrShellClient())
+      // switchViews(new WatrShellClient())
 
     }
   }

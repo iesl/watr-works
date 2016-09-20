@@ -82,7 +82,7 @@ class WatrColorServer(
 
     // val corpusExplorerServer = new CorpusExplorerServer(rootDirectory)
     val svgOverviewServer = new SvgOverviewServer(rootDirectory)
-    val shellServer = new WatrShellServer(rootDirectory)
+    // val shellServer = new WatrShellServer(rootDirectory)
 
     implicit val system = ActorSystem()
 
@@ -101,9 +101,9 @@ class WatrColorServer(
         }
       } ~
       post {
-        apiRoute("shell", AutowireServer.route[WatrShellApi](shellServer)) ~
-          apiRoute("svg", AutowireServer.route[SvgOverviewApi](svgOverviewServer))
-          // apiRoute("explorer", AutowireServer.route[CorpusExplorerApi](corpusExplorerServer)) ~
+        apiRoute("svg", AutowireServer.route[SvgOverviewApi](svgOverviewServer))
+        // apiRoute("shell", AutowireServer.route[WatrShellApi](shellServer)) ~
+        // apiRoute("explorer", AutowireServer.route[CorpusExplorerApi](corpusExplorerServer)) ~
       }
     }
   }

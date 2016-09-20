@@ -23,39 +23,39 @@ object DataExchange {
 
 
 }
-class WatrShellServer(
-  rootDirectory: Path
-) extends WatrShellApi  {
-  import fs2._
-  import fs2.util._
-  import fs2.async._
-  implicit val S = Strategy.fromFixedDaemonPool(4, "workers")
-  // val T = implicitly[Async[Task]]
+// class WatrShellServer(
+//   rootDirectory: Path
+// ) extends WatrShellApi  {
+//   import fs2._
+//   import fs2.util._
+//   import fs2.async._
+//   implicit val S = Strategy.fromFixedDaemonPool(4, "workers")
+//   // val T = implicitly[Async[Task]]
 
 
-  val semaphore = mutable.Semaphore[Task](1)
+//   val semaphore = mutable.Semaphore[Task](1)
 
-  def enqueueUpdates[A]: Pipe[Task, Either[Unit, String], Unit] = _.evalMap{ a =>
-    a.fold(
-      {_ => Task.delay{ () }},
-      {str => Task.delay {
-        val up = HtmlAppend("#main", str)
-        DataExchange.queue.enqueue(up)
-      } }
-    )
+//   def enqueueUpdates[A]: Pipe[Task, Either[Unit, String], Unit] = _.evalMap{ a =>
+//     a.fold(
+//       {_ => Task.delay{ () }},
+//       {str => Task.delay {
+//         val up = HtmlAppend("#main", str)
+//         DataExchange.queue.enqueue(up)
+//       } }
+//     )
 
-  }
+//   }
 
-  def startShell(): Unit = {
-    val stream = WatrShell.replStream().through(enqueueUpdates)
-    stream.run.unsafeRunAsyncFuture()
-  }
+//   def startShell(): Unit = {
+//     val stream = WatrShell.replStream().through(enqueueUpdates)
+//     stream.run.unsafeRunAsyncFuture()
+//   }
 
 
 
-  def update(): List[HtmlUpdate] = {
-    /// non-blocking stream
-    List(DataExchange.queue.dequeue())
-  }
+//   def update(): List[HtmlUpdate] = {
+//     /// non-blocking stream
+//     List(DataExchange.queue.dequeue())
+//   }
 
-}
+// }
