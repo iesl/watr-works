@@ -6,7 +6,8 @@ import spindex._
 import EnrichGeometricFigures._
 import GeometricFigure._
 
-object Images {
+
+trait ImageManipulation {
 
   def cropTo(image: Image, cropBox: LTBounds, pageGeometry: PageGeometry): Image = {
     println(s"page geometry is ${pageGeometry.bounds.prettyPrint}")
@@ -35,3 +36,5 @@ object Images {
   }
 
 }
+
+object ImageManipulation extends ImageManipulation

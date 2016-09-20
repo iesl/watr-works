@@ -3,7 +3,6 @@ package extract
 package fonts
 
 // import org.slf4j.LoggerFactory
-import scala.concurrent._
 import ammonite.ops._
 
 import slick.driver.H2Driver.api._

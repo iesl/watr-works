@@ -4,10 +4,7 @@ package server
 
 import akka.util.ByteString
 import java.nio.ByteBuffer
-// import scala.concurrent.Future
-// import scala.reflect.ClassTag
 import spray.http.HttpData
-// import spray.http.Uri.Path
 import spray.routing.SimpleRoutingApp
 import akka.actor.ActorSystem
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -80,12 +77,12 @@ class WatrColorServer(
           ))}}
   }
 
-  def run(): Unit = {
-    val corpusExplorerServer = new CorpusExplorerServer(rootDirectory)
-    val svgOverviewServer = new SvgOverviewServer(rootDirectory)
 
-    // val visualTraceServer  = new VisualTraceServer(rootDirectory)
-    // apiRoute("vtrace", AutowireServer.route[VisualTraceApi](visualTraceServer))
+  def run(): Unit = {
+
+    // val corpusExplorerServer = new CorpusExplorerServer(rootDirectory)
+    val svgOverviewServer = new SvgOverviewServer(rootDirectory)
+    val shellServer = new WatrShellServer(rootDirectory)
 
     implicit val system = ActorSystem()
 
@@ -96,16 +93,17 @@ class WatrColorServer(
         assets ~
         pathPrefix("") {
           extract(_.request.entity.data) { requestData => ctx =>
-            val uri = ctx.request.uri
-            val q = uri.query
-            val frag = uri.fragment
+            // val uri = ctx.request.uri
+            // val q = uri.query
+            // val frag = uri.fragment
             ctx.complete { httpResponse(html.Frame().toString()) }
           }
         }
       } ~
       post {
-        apiRoute("explorer", AutowireServer.route[CorpusExplorerApi](corpusExplorerServer)) ~
-        apiRoute("svg", AutowireServer.route[SvgOverviewApi](svgOverviewServer))
+        apiRoute("shell", AutowireServer.route[WatrShellApi](shellServer)) ~
+          apiRoute("svg", AutowireServer.route[SvgOverviewApi](svgOverviewServer))
+          // apiRoute("explorer", AutowireServer.route[CorpusExplorerApi](corpusExplorerServer)) ~
       }
     }
   }

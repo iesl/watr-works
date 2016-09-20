@@ -7,6 +7,7 @@ import org.scalatest._
 class TreeShaperTests extends FlatSpec with Matchers {
   import scalaz._
   import Scalaz._
+  import scalaz.std.int
 
   behavior of "tree shaper"
 

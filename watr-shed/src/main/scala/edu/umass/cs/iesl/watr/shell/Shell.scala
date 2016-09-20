@@ -11,56 +11,103 @@ import spindex._
 import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
 import TypeTags._
-// import java.net.URI
+
+import scala.concurrent._
+import scala.async.{Async => ScalaAsync}
+import ExecutionContext.Implicits.global
 
 import textboxing.{TextBoxing => TB}, TB._
 
-object Shell {
+import fs2._
+import fs2.util._
+import fs2.async._
+import scala.concurrent.duration._
 
+
+object WatrShell {
+  def main(args: Array[String]): Unit = {
+    run()
+  }
   import ShellCommands._
 
-  def main(args: Array[String]): Unit = {
-    val hello = "Hello"
-    val predef =
-      s"""|import edu.umass.cs.iesl.watr
-          |import watr._, spindex._, ComponentRendering._
-          |import shell._
-          |import ShellCommands._
-          |implicit val pp0 = pprintComponent
-          |implicit val pp1 = pprintBox
-          | println("..")
-          |""".stripMargin
+  def log[A](prefix: String): Pipe[Task, A, A] = _.evalMap{ a => Task.delay { println(s"$prefix> $a"); a } }
 
-    val welcomeBanner =
-      s"""|>> WatrWorks Shell <<
-          |""".stripMargin
+  val predef =
+    s"""|import edu.umass.cs.iesl.watr
+        |import watr._, spindex._, ComponentRendering._
+        |import shell._
+        |import ShellCommands._
+        |implicit val pp0 = pprintComponent
+        |implicit val pp1 = pprintBox
+        |import fs2._
+        |import fs2.util._
+        |import fs2.async._
+        |import scala.concurrent.duration._
+        |""".stripMargin
+
+  val welcomeBanner = s""">> WatrWorks Shell <<"""
+
+  def replMain() = ammonite.Main(
+    //storageBackend = new Storage.Folder(Defaults.ammoniteHome)
+    // predef = predef,
+    // defaultPredef = true,
+    wd = pwd,
+    welcomeBanner = Some(welcomeBanner),
+    inputStream = System.in,
+    outputStream  = System.out,
+    errorStream = System.err,
+    verboseOutput = false
+  )
 
 
-    ammonite.Main(
-      predef = predef,
-      //   defaultPredef: Boolean = true,
-      //   storageBackend: Storage = new Storage.Folder(Defaults.ammoniteHome),
-      wd = pwd,
-      welcomeBanner = Some(welcomeBanner),
-      inputStream = System.in,
-      outputStream  = System.out,
-      errorStream = System.err,
-      verboseOutput = true
-    ).run(
+  def replStream(): Stream[Task, Either[Unit, String]] = {
+    implicit val S = Strategy.fromFixedDaemonPool(4, "workers")
+    val T = implicitly[Async[Task]]
+
+    val aq = async.unboundedQueue[Task, Either[Unit, String]]
+
+    val st = Stream.eval(aq).flatMap { q =>
+      val outputStream: Stream[Task, Either[Unit, String]] =
+        q.dequeue.through(log("dequeuing")).drain
+
+      def enq(str: String) = {
+        println(s"called:enc($str)")
+
+        q.enqueue1(Right(str))
+      }
+
+      val data: Stream[Task, Either[Unit, String]] = Stream.eval{
+        println(s"data:Stream.eval")
+        Task.delay{
+          println(s"data:inside:Task.delay")
+          replMain().run(
+            "q" -> (enq(_))
+          )
+          println(s"data:after:replMain.run()")
+          Left(())
+        }
+      }
+
+      data mergeHaltBoth outputStream
+    }
+    st
+  }
+
+
+
+  def run(): Unit = {
+    implicit val S = Strategy.fromFixedDaemonPool(4, "workers")
+    val T = implicitly[Async[Task]]
+
+    replMain().run(
       "corpus" -> initCorpus()
     )
   }
 }
 
 
-
 object ShellCommands {
   import ComponentRendering.VisualLine
-
-
-
-
-
 
   // implicit val ppConfig = pprint.Config(
   // width: Int = Config.defaultMaxWidth,
@@ -286,11 +333,10 @@ object ShellCommands {
       val pageId = thisComponent.pageId.unwrap+1
       val srcUri = thisComponent.getSrcUri()
 
-
       val pageSrc = srcUri.resolve("page-images/").resolve(s"page-${pageId}.png")
       println(s"page src: ${pageSrc}")
       val image = Image.fromFile(new java.io.File(pageSrc.getPath))
-      val cropped = Images.cropTo(image, thisComponent.bounds, thisComponent.getPageGeometry)
+      val cropped = ImageManipulation.cropTo(image, thisComponent.bounds, thisComponent.getPageGeometry)
 
       val x = thisComponent.bounds.left.toInt
       val y = thisComponent.bounds.top.toInt
@@ -304,6 +350,7 @@ object ShellCommands {
       imgDst
     }
   }
+
 
   implicit class RicherDocumentSegmenter(val thisDocumentSegmenter: DocumentSegmenter) extends AnyVal {
     def lines(): Seq[Component] = {
@@ -390,4 +437,3 @@ object ShellCommands {
 
 
 object WebShow extends ScalatagsDefs
-

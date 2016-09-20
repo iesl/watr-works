@@ -19,3 +19,10 @@ trait SvgOverviewApi {
   def onSelectLTBounds(artifactId: String, bbox: LTBounds): List[HtmlUpdate]
   def onDrawPath(artifactId: String, path: Seq[Point]): List[HtmlUpdate]
 }
+
+import fs2._
+
+trait WatrShellApi {
+  def startShell(): Unit
+  def update(): List[HtmlUpdate]
+}

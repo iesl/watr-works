@@ -12,7 +12,6 @@ object TreeShaper {
 
 abstract class TreeShaper[N](
   implicit ord: Ordering[N], num: Numeric[N]
-
 ) {
   import scalaz.Tree
   import scalaz.TreeLoc

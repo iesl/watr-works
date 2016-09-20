@@ -15,8 +15,8 @@ val commonDeps =  Sensible.testLibs() ++ Sensible.logback ++ Seq(
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC5",
   "com.lihaoyi" %% "scalatags" % "0.6.0",
   "com.lihaoyi" %% "acyclic" % "0.1.4" % "provided",
-  "com.lihaoyi" %% "ammonite-ops" % "0.7.6",
-  "com.typesafe.play" %% "play-json" % "2.5.7",
+  "com.lihaoyi" %% "ammonite-ops" % "0.7.7",
+  "com.typesafe.play" %% "play-json" % "2.5.8",
   "com.github.scopt" %% "scopt" % "3.5.0"
 )
 
@@ -61,6 +61,7 @@ lazy val watrmarks = (project in file("watr-marks"))
   .aggregate(watrprelude)
 
 val scrimageVersion = "2.1.7"
+val fs2Version = "0.9.1"
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(Sensible.settings)
@@ -68,13 +69,15 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
     "org.bouncycastle" % "bcprov-jdk15on" % "1.55",
     "org.bouncycastle" % "bcpkix-jdk15on" % "1.55",
-    "com.lihaoyi" % "ammonite" % "0.7.6" cross CrossVersion.full,
+    "com.lihaoyi" % "ammonite" % "0.7.7" cross CrossVersion.full,
     "com.h2database" % "h2" % "1.4.192",
     "com.zaxxer" % "HikariCP" % "2.5.0",
     "com.typesafe.slick" %% "slick" % "3.1.1",
     "com.sksamuel.scrimage" %% "scrimage-core"     % scrimageVersion,
     "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion,
-    "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion
+    "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion,
+    "co.fs2" %% "fs2-core" % fs2Version,
+    "co.fs2" %% "fs2-io" % fs2Version
   ))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
@@ -84,6 +87,7 @@ lazy val watrshed = (project in file("watr-shed"))
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC5",
+    "co.fs2" %%% "fs2-core" % fs2Version,
     "me.chrons" %%% "boopickle" % "1.2.4",
     "com.lihaoyi" %%% "autowire" % "0.2.5",
     "com.lihaoyi" %%% "scalarx" % "0.3.1",
@@ -110,7 +114,10 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "org.webjars.bower" % "fabric" % "1.6.2",
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "2.2.4",
-    "org.webjars" % "mousetrap" % "1.5.3"
+    "org.webjars" % "mousetrap" % "1.6.0",
+    "com.sksamuel.scrimage" %% "scrimage-core"     % scrimageVersion,
+    "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion,
+    "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion
   )
 )
 
