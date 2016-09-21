@@ -496,6 +496,7 @@ class DocumentSegmenter(
     // // val orderedLinesPerPage = for { pageId <- zoneIndexer.getPages }
     // //     yield { groupPageTextBlocks(pageId) }
     labelTitle()
+    labelAuthors()
     labelAbstract()
     labelSectionHeadings()
 
@@ -1049,9 +1050,22 @@ class DocumentSegmenter(
   }
 
 
-  //    def labelAuthors(): Unit = {
-  //
-  //    }
+  def labelAuthors(): Unit = {
+    val fnStream: InputStream = getClass().getClassLoader.getResourceAsStream("first_names.txt")
+    val firstNames = scala.io.Source.fromInputStream(fnStream).getLines()
+    val lnStream: InputStream = getClass.getClassLoader.getResourceAsStream("last_names.txt")
+    val lastNames = scala.io.Source.fromInputStream(lnStream).getLines()
+
+    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
+
+    val firstLines = vlines.filter(_.component.chars.length() > 5).take(15)
+
+    for(line <- firstLines) {
+      val lineText = ComponentRendering.VisualLine.render(line.component)
+      println(lineText)
+    }
+
+  }
 
 
 
