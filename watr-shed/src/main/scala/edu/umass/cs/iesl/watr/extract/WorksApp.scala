@@ -365,7 +365,7 @@ object Works extends App {
           try {
             val segmenter = segment.DocumentSegmenter.createSegmenter(corpusEntry.getURI, pdfins, fontDirs)
             segmenter.runPageSegmentation()
-            val output = format.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, Some(corpusEntry.toString))
+            val output = formats.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, Some(corpusEntry.toString))
             corpusEntry.putArtifact(artifactOutputName, output)
           } catch {
             case t: Throwable =>
@@ -405,7 +405,7 @@ object Works extends App {
             val segmenter = segment.DocumentSegmenter.createSegmenter(baseURI, pdfins, fontDirs)
             rsegmenter = Some(segmenter)
             segmenter.runPageSegmentation()
-            val output = format.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
+            val output = formats.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
             corpusEntry.putArtifact(artifactOutputName, output)
           } catch {
             case t: Throwable =>
@@ -550,7 +550,7 @@ object Works extends App {
     processCorpus(conf, artifactOutputName: String, proc)
 
     def proc(pdf: InputStream, outputPath: String): String = {
-      val pageChars = format.DocumentIO
+      val pageChars = formats.DocumentIO
         .extractChars(pdf)
         .map({case(pageRegions, pageGeom) =>
           val sortedYPage = pageRegions.regions

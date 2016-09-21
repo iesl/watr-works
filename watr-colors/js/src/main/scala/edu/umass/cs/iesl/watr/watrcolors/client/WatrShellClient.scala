@@ -23,58 +23,29 @@ import java.nio.ByteBuffer
 
 object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler]  with RemoteCallPicklers {
 
-
   def wire(incoming: Array[Byte]): Unit = {
-
     val inbytes = ByteBuffer.wrap(incoming)
+    val unpacked = read[List[RemoteCall]](inbytes)
 
-    println(s"trying to unpack... ")
-    val unpacked = read[
-      List[RemoteCall]
-    ](inbytes)
-
-    println(s"unpacked... ")
     unpacked.foreach { case RemoteCall(callPath, callArgs) =>
       val req = new Request(callPath, callArgs.map(b => (b._1, ByteBuffer.wrap(b._2))).toMap)
-      Wire.route[WatrShellApi](WatrShellClient).apply(req)
+      Wire.route[WatrTableApi](WatrTableClient).apply(req)
     }
-  }
-
-  // def wire(parsed: (List[String], Map[String, ByteBuffer])): Unit = {
-  def wire0(parsed: ByteBuffer): Unit = {
-
-    // read[(List[String], Seq[(String, ByteBuffer)])
-    //   val Js.Arr(path, args: Js.Obj) = parsed
-    // val (path, args) = parsed
-    // val req = new Request(upickle.readJs[Seq[String]](path), args.value.toMap)
-    // val req = new Request(read[Seq[String]](path), args.value.toMap)
-    //   Wire.route[Api](WatrShellClient).apply(req)
   }
 
   override def read[R: Pickler](p: ByteBuffer) = Unpickle[R].fromBytes(p)
   override def write[R: Pickler](r: R) = Pickle.intoBytes(r)
 }
 
-// object Wire extends autowire.Server[Js.Value, upickle.Reader, upickle.Writer] with ReadWrite{
-//   def wire(parsed: Js.Arr): Unit = {
-//     val Js.Arr(path, args: Js.Obj) = parsed
-//     val req = new Request(upickle.readJs[Seq[String]](path), args.value.toMap)
-//     Wire.route[Api](WorkbenchClient).apply(req)
-//   }
-// }
 
 @JSExport
-object WatrShellClient extends ClientView with WatrShellApi {
-
+object WatrTableClient extends ClientView with WatrTableApi {
 
   override val initKeys = Keybindings(List(
   ))
 
-  def createView(): Unit = {
-    // server.startShell().call().foreach { _ =>
-    //   println("server shell started")
-    // }
-  }
+  def createView(): Unit = {}
+
   @JSExport
   lazy val shadowBody = dom.document.body.cloneNode(deep = true)
 
@@ -91,7 +62,7 @@ object WatrShellClient extends ClientView with WatrShellApi {
       Ajax.post(s"http://$host:$port/notifications").onComplete {
 
         case util.Success(data) =>
-          if (!success) println("WatrShell connected via POST /notifications")
+          if (!success) println("WatrTable connected via POST /notifications")
           success = true
           interval = 1000
 

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package format
+package formats
 
 import watrmarks._
 
@@ -25,8 +25,8 @@ object DocumentIO {
       .head
   }
 
-  def serializeLabeling(label: Label, spine: Seq[BioNode]): Seq[Box] = {
-    val labeledSpans = selectBioLabelings(label, spine)
+  def serializeLabeling(label: Label, bioLabeling: Seq[BioNode]): Seq[Box] = {
+    val labeledSpans = selectBioLabelings(label, bioLabeling)
 
     val spanBoxes = for {
       span <- labeledSpans
@@ -49,7 +49,7 @@ object DocumentIO {
 
   def serializeDocument(zoneIndexer: ZoneIndexer): String = {
 
-    val lineSpine = zoneIndexer.bioSpine("TextBlockSpine")
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
     val serComponents = List(
       LB.SectionHeadingLine,
@@ -57,11 +57,11 @@ object DocumentIO {
       LB.TextBlock,
       LB.Abstract
     ).map(l =>
-      serializeLabeling(l, lineSpine)
+      serializeLabeling(l, lineBioLabels)
     )
 
     val lines = for {
-      linec <- lineSpine
+      linec <- lineBioLabels
       line = linec.component
     } yield {
       VisualLine.renderWithIDs(line)
@@ -196,11 +196,11 @@ object DocumentIO {
 
 
 
-  //   val lineSpine = zoneIndexer.bioSpine("TextBlockSpine")
+  //   val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
 
   //   val lines = for {
-  //     linec <- lineSpine
+  //     linec <- lineBioLabels
   //     lineComponent = linec.component
   //   } yield {
   //     val pageId = zoneIndexer.getPageForComponent(lineComponent)

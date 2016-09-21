@@ -21,7 +21,7 @@ trait SvgOverviewApi {
 }
 
 
-trait WatrShellApi {
+trait WatrTableApi {
   def clear(): Unit
   def print(level: String, msg: String): Unit
 }

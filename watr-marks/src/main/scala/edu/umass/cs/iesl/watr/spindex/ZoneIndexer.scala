@@ -177,11 +177,11 @@ class ZoneIndexer(
   val labelIdGen = IdGenerator[LabelID]()
   val regionIdGen = IdGenerator[RegionID]()
 
-  type BioSpine = mutable.MutableList[BioNode]
-  val bioSpines = mutable.Map[String, BioSpine]()
+  type BioLabeling = mutable.MutableList[BioNode]
+  val bioLabelings = mutable.Map[String, BioLabeling]()
 
-  def bioSpine(name: String): BioSpine = {
-    bioSpines.getOrElseUpdate(name, mutable.MutableList[BioNode]())
+  def bioLabeling(name: String): BioLabeling = {
+    bioLabelings.getOrElseUpdate(name, mutable.MutableList[BioNode]())
   }
 
   def setChildTreeWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {

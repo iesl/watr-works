@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package shell
+package table
 
 import com.sksamuel.scrimage._
 import spindex._

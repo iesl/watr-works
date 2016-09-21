@@ -116,7 +116,7 @@ object DocumentSegmenter extends DocumentUtils {
   import extract.fonts.SplineFont
 
   def createSegmenter(srcUri: URI, pdfins: InputStream, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
-    val chars = format.DocumentIO.extractChars(pdfins, Set(), glyphDefs)
+    val chars = formats.DocumentIO.extractChars(pdfins, Set(), glyphDefs)
     createSegmenter(srcUri, chars.map(c => (c._1.regions, c._2)))
   }
 
@@ -384,7 +384,7 @@ class DocumentSegmenter(
     val finalSplit = splitBlocksWithLargeVGaps(alignedBlocksPerPage, modalVDist)
 
     // Now create a BIO labeling linking visual lines into blocks
-    val spine = finalSplit
+    val bioLabels = finalSplit
       .flatten
       .map({ block =>
         val bios = block.map(BioNode(_))
@@ -403,10 +403,10 @@ class DocumentSegmenter(
         bios
       })
 
-    val textBlockSpine = zoneIndexer.bioSpine("TextBlockSpine")
-    textBlockSpine ++= spine.flatten
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    lineBioLabels ++= bioLabels.flatten
 
-    val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
+    val blocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
 
     // val modalParaFocalJump = docWideModalParaFocalJump(blocks, modalVDist)
 
@@ -516,8 +516,8 @@ class DocumentSegmenter(
   def joinLines(): Unit = {
     vtrace.trace(begin("JoinLines"))
 
-    val textBlockSpine = zoneIndexer.bioSpine("TextBlockSpine")
-    val textBlocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    val textBlocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
 
     textBlocks.flatten.foreachPair({(line1Node, line2Node) =>
       val line1 = line1Node.component
@@ -906,8 +906,8 @@ class DocumentSegmenter(
     // if the text block containing "abstract" is a single line,
     //    take subsequent text blocks until we take a multiline
     // else if the text block is multi-line, take that block to be the entire abstract
-    val textBlockSpine = zoneIndexer.bioSpine("TextBlockSpine")
-    val blocks = selectBioLabelings(LB.TextBlock, textBlockSpine)
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    val blocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
 
     vtrace.trace(message(s"TextBlock count: ${blocks.length}"))
 
@@ -952,7 +952,7 @@ class DocumentSegmenter(
 
   def labelSectionHeadings(): Unit = {
     vtrace.trace(begin("LabelSectionHeadings"))
-    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
+    val vlines = zoneIndexer.bioLabeling("LineBioLabels")
     for {
       lineBioNode <- vlines
       lineComp = lineBioNode.component

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package format
+package formats
 
 import spindex._
 import ComponentOperations._
@@ -17,10 +17,10 @@ object RichTextIO {
 
   def serializeDocumentAsText(zoneIndexer: ZoneIndexer, artifactPath: Option[String]): String = {
 
-    val lineSpine = zoneIndexer.bioSpine("TextBlockSpine")
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
     val lines = for {
-      linec <- lineSpine
+      linec <- lineBioLabels
       line = linec.component
       rline <- VisualLine.render(line)
     } yield { rline }

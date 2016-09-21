@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package shell
+package table
 
 import ammonite.ops._
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
@@ -18,37 +18,28 @@ import ExecutionContext.Implicits.global
 
 import textboxing.{TextBoxing => TB}, TB._
 
-import fs2._
-import fs2.util._
-import fs2.async._
-import scala.concurrent.duration._
-
-
-object WatrShell {
-  def main(args: Array[String]): Unit = {
-    run()
-  }
+object WatrTable {
   import ShellCommands._
 
-  def log[A](prefix: String): Pipe[Task, A, A] = _.evalMap{ a => Task.delay { println(s"$prefix> $a"); a } }
+  def main(args: Array[String]): Unit = {
+    replMain().run(
+      "corpus" -> initCorpus()
+    )
+  }
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
         |import watr._, spindex._, ComponentRendering._
-        |import shell._
+        |import table._
         |import ShellCommands._
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox
-        |import fs2._
-        |import fs2.util._
-        |import fs2.async._
-        |import scala.concurrent.duration._
         |""".stripMargin
 
-  val welcomeBanner = s""">> WatrWorks Shell <<"""
+  val welcomeBanner = s""">> WatrTable Shell <<"""
 
   def replMain() = ammonite.Main(
-    //storageBackend = new Storage.Folder(Defaults.ammoniteHome)
+    // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
     // predef = predef,
     // defaultPredef = true,
     wd = pwd,
@@ -59,50 +50,6 @@ object WatrShell {
     verboseOutput = false
   )
 
-
-  def replStream(): Stream[Task, Either[Unit, String]] = {
-    implicit val S = Strategy.fromFixedDaemonPool(4, "workers")
-    val T = implicitly[Async[Task]]
-
-    val aq = async.unboundedQueue[Task, Either[Unit, String]]
-
-    val st = Stream.eval(aq).flatMap { q =>
-      val outputStream: Stream[Task, Either[Unit, String]] =
-        q.dequeue.through(log("dequeuing")).drain
-
-      def enq(str: String) = {
-        println(s"called:enc($str)")
-
-        q.enqueue1(Right(str))
-      }
-
-      val data: Stream[Task, Either[Unit, String]] = Stream.eval{
-        println(s"data:Stream.eval")
-        Task.delay{
-          println(s"data:inside:Task.delay")
-          replMain().run(
-            "q" -> (enq(_))
-          )
-          println(s"data:after:replMain.run()")
-          Left(())
-        }
-      }
-
-      data mergeHaltBoth outputStream
-    }
-    st
-  }
-
-
-
-  def run(): Unit = {
-    implicit val S = Strategy.fromFixedDaemonPool(4, "workers")
-    val T = implicitly[Async[Task]]
-
-    replMain().run(
-      "corpus" -> initCorpus()
-    )
-  }
 }
 
 
@@ -355,16 +302,21 @@ object ShellCommands {
   implicit class RicherDocumentSegmenter(val thisDocumentSegmenter: DocumentSegmenter) extends AnyVal {
     def lines(): Seq[Component] = {
       val zoneIndexer = thisDocumentSegmenter.zoneIndexer
-      val lineSpine = zoneIndexer.bioSpine("TextBlockSpine")
+      val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
       for {
-        linec <- lineSpine
+        linec <- lineBioLabels
         line = linec.component
       } yield line
     }
   }
 
   implicit class RicherCorpusEntry(val thisCorpusEntry: CorpusEntry) extends AnyVal {
+
+    def paragraphs(): Unit = {
+
+
+    }
 
     def lines(): Seq[Component]= {
       val lls = for {

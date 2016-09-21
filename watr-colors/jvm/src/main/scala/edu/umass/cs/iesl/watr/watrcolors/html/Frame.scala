@@ -126,7 +126,7 @@ object ShellHtml {
 
       body(margin := 0, WatrStyles.htmlBody)(
         <.div(^.id := "main")("Loading..."),
-        script("edu.umass.cs.iesl.watr.watrcolors.client.WatrShellClient().main()")
+        script("edu.umass.cs.iesl.watr.watrcolors.client.WatrTableClient().main()")
       )
     )
   }

@@ -32,7 +32,7 @@ import boopickle.DefaultBasic._
 import java.nio.ByteBuffer
 
 
-class Server(url: String, port: Int) extends SimpleRoutingApp with WatrShellApi with RemoteCallPicklers {
+class Server(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi with RemoteCallPicklers {
   val corsHeaders: List[ModeledHeader] =
     List(
       `Access-Control-Allow-Methods`(OPTIONS, GET, POST),
@@ -44,7 +44,7 @@ class Server(url: String, port: Int) extends SimpleRoutingApp with WatrShellApi 
   implicit val system = ActorSystem()
   import system.dispatcher
 
-  val api = Wire[WatrShellApi]
+  val api = Wire[WatrTableApi]
 
   def clear(): Unit = {
     api.clear().call()
@@ -161,10 +161,7 @@ class Server(url: String, port: Int) extends SimpleRoutingApp with WatrShellApi 
   }
 
   /**
-   * Simple spray server:
-   *
-   * - /workbench.js is hardcoded to be the workbench javascript client
-   * - Any other GET request just pulls from the local filesystem
+   * Spray server:
    * - POSTs to /notifications get routed to the longPoll actor
    */
   startServer(url, port) {

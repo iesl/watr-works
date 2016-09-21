@@ -82,7 +82,7 @@ class WatrColorServer(
 
     // val corpusExplorerServer = new CorpusExplorerServer(rootDirectory)
     val svgOverviewServer = new SvgOverviewServer(rootDirectory)
-    // val shellServer = new WatrShellServer(rootDirectory)
+    // val tableServer = new WatrTableServer(rootDirectory)
 
     implicit val system = ActorSystem()
 
@@ -102,7 +102,7 @@ class WatrColorServer(
       } ~
       post {
         apiRoute("svg", AutowireServer.route[SvgOverviewApi](svgOverviewServer))
-        // apiRoute("shell", AutowireServer.route[WatrShellApi](shellServer)) ~
+        // apiRoute("table", AutowireServer.route[WatrTableApi](tableServer)) ~
         // apiRoute("explorer", AutowireServer.route[CorpusExplorerApi](corpusExplorerServer)) ~
       }
     }

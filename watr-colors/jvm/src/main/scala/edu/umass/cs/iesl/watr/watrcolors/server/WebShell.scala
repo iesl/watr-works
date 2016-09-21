@@ -3,29 +3,29 @@ package watrcolors
 package server
 
 import ammonite.ops._
-import pprint.PPrinter
-import scala.util.matching.Regex
-import spindex._
-import EnrichGeometricFigures._
-import ComponentTypeEnrichments._
-import TypeTags._
-import _root_.edu.umass.cs.iesl.watr.shell._
+import edu.umass.cs.iesl.watr.table._
 
-import textboxing.{TextBoxing => TB}, TB._
 
-object WebShell {
+object WatrColorTable {
 
   def main(args: Array[String]): Unit = {
     val server =  new Server("localhost", 9999)
 
-    WatrShell.replMain().run(
-      "server" -> server
+    ammonite.Main(
+      // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
+      predef = WatrTable.predef,
+      defaultPredef = true,
+      wd = pwd,
+      welcomeBanner = Some(s""">> WatrTable+WatrColors @ http://localhost:9999/  <<"""),
+      inputStream = System.in,
+      outputStream  = System.out,
+      errorStream = System.err,
+      verboseOutput = false
+    ).run(
+      "server" -> server,
+      "corpus" -> ShellCommands.initCorpus()
     )
 
     server.kill()
   }
 }
-
-
-
-

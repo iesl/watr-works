@@ -56,6 +56,8 @@ declare -a collsOfInterest=(
     annotated_operations
     annotated_papers
     annotated_paragraphs
+    chemical_blacklist
+    chemical_db
 )
 
 for c in "${collsOfInterest[@]}"; do
