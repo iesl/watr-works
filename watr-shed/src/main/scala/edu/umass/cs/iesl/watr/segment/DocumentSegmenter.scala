@@ -1056,13 +1056,25 @@ class DocumentSegmenter(
     val lnStream: InputStream = getClass.getClassLoader.getResourceAsStream("last_names.txt")
     val lastNames = scala.io.Source.fromInputStream(lnStream).getLines()
 
+    val firstNameSet = firstNames.toSet
+    val lastNameSet = lastNames.toSet
+
     val vlines = zoneIndexer.bioSpine("TextBlockSpine")
 
-    val firstLines = vlines.filter(_.component.chars.length() > 5).take(15)
+    val firstLines = vlines.filter(_.component.chars.length() > 5).take(5)
 
-    for(line <- firstLines) {
-      val lineText = ComponentRendering.VisualLine.render(line.component)
-      println(lineText)
+    for(lineNode <- firstLines) {
+      val lineText = ComponentRendering.VisualLine.render(lineNode.component)
+      if(!lineText.isEmpty) {
+        val lines = lineText.get.lines
+        val words = lines.mkString(" ").split(" ")
+        //words.foreach(println)
+        for(word <- words if firstNameSet.contains(words) || lastNameSet.contains(word)) {
+          println("found " + word + " in the names corpus")
+          zoneIndexer.addBioLabels(LB.Author, lineNode)
+          println("labeling " + lines + " as author ")
+        }
+      }
     }
 
   }
