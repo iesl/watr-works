@@ -1069,14 +1069,20 @@ class DocumentSegmenter(
         val lines = lineText.get.lines
         val words = lines.mkString(" ").split(" ")
         //words.foreach(println)
-        for(word <- words if firstNameSet.contains(words) || lastNameSet.contains(word)) {
-          println("found " + word + " in the names corpus")
-          zoneIndexer.addBioLabels(LB.Author, lineNode)
-          println("labeling " + lines + " as author ")
+        //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
+        // first check for word in set of known names
+        for (word <- words) {
+          if (firstNameSet.contains(word) || lastNameSet.contains(word) && word.length > 1)
+          {
+            println("found " + word + " in the names corpus")
+            zoneIndexer.addBioLabels(LB.Author, lineNode)
+            println("labeling " + lines + " as author ")
+          }
         }
+        // todo: use pattern matching to look for things like initials, etc.
       }
     }
-
+    println()
   }
 
 
