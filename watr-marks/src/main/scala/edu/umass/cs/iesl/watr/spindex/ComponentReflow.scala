@@ -27,7 +27,9 @@ object ComponentReflow {
     case object Space extends Content
 
     case class StringCC(uri: URI, text: String) extends Content
+    case class Text(uri: URI, text: String) extends Content
     case class CC(c:Component, text: String) extends Content
+    case class Concat(cs: Seq[Content]) extends Content
 
     case class Clipped(b:Reflow, clip: LTBounds) extends Content
     case class Row(bs:Seq[Reflow]) extends Content

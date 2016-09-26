@@ -58,16 +58,16 @@ class ComponentReflowTest extends ConnectedComponentTestUtil {
   behavior of "component reflowing"
 
   it should "join lines into single (virtual) line of text" in {
-    val zoneIndex = createZoneIndexer(
+    val (zoneIndex, lines) = createZoneIndexerAndLines(
       """|of LiFePO4 scan-
          |ning electron
-         |""".stripMargin
-    )
+         |""".stripMargin)
+
 
     val visualLines = (0 to 1).flatMap{ i => labelRow(zoneIndex, i, LB.VisualLine) }
 
-    val lineReflows: Seq[Reflow] = visualLines.map{l =>
-      Reflow(Content.CC(l, "of LiFePO4 scan-"))
+    val lineReflows: Seq[Reflow] = visualLines.zipWithIndex.map{ case (l, i) =>
+      Reflow(Content.CC(l, lines(i)))
     }
 
     val row = Content.Row(lineReflows)   // ==>  'of LiFePO4 scan-ning electron'
