@@ -86,7 +86,6 @@ class Server(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi 
      */
     case object Clear
 
-
     system.scheduler.schedule(0.seconds, 10.seconds, self, Clear)
 
     def respond(a: ActorRef, s: ByteBuffer) = {
@@ -98,15 +97,11 @@ class Server(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi 
     }
     def receive = (x: Any) => (x, waitingActor, queuedMessages) match {
       case (a: ActorRef, _, Nil) =>
-        // println(s"""receive: new Actor""")
-        // Even if there's someone already waiting,
-        // a new actor waiting replaces the old one
         waitingActor = Some(a)
 
       case (a: ActorRef, None, msgs) =>
         println(s"""receive: Actor ! msgs waiting""")
         val bs = Pickle.intoBytes(msgs)
-        // respond(a, upickle.json.write(Js.Arr(msgs:_*)))
         respond(a, bs)
         queuedMessages = Nil
 
@@ -118,14 +113,12 @@ class Server(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi 
       case (msg: RemoteCall, Some(a), Nil) =>
         println(s"""receive: waiting actor gets msg""")
         val bs = Pickle.intoBytes(List(msg))
-        // respond(a, upickle.json.write(Js.Arr(msg)))
         respond(a, bs)
         waitingActor = None
 
       case (Clear, waitingOpt, msgs) =>
         // println(s"""receive: Clear""")
         val bs = Pickle.intoBytes(msgs)
-        // waitingOpt.foreach(respond(_, upickle.json.write(Js.Arr(msgs :_*))))
         waitingOpt.foreach(respond(_, bs))
         waitingActor = None
     }
@@ -184,3 +177,4 @@ class Server(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi 
   def kill() = system.terminate()
 
 }
+

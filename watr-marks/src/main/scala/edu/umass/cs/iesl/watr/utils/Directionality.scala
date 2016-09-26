@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package utils
 
 
-
 sealed trait CompassDirection
 
 object CompassDirection {
@@ -25,6 +24,3 @@ object RelativeDirection {
   case object Up extends RelativeDirection
   case object Down extends RelativeDirection
 }
-
-
-// TODO Angular directions Double@@Radians, etc

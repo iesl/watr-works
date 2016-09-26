@@ -109,7 +109,6 @@ object TextBoxing extends ToListOps with ToIdOps {
   case class Row(bs:Seq[Box]) extends Content
   case class Col(bs:Seq[Box]) extends Content
   case class SubBox(a1: Alignment, a2: Alignment, b:Box) extends Content
-  case class AnnotatedBox(props:Map[String, String], b:Box) extends Content
 
 
   // The null box, which has no content and no size.
@@ -298,9 +297,6 @@ object TextBoxing extends ToListOps with ToIdOps {
     case Box(r, c, SubBox(ha, va, b)) => resizeBoxAligned(r, c, ha, va)(renderBox(b))
     case Box(r, c, Row(bs))           => {
       bs.map( renderBoxWithRows(r)) |> merge |> (resizeBox(r, c, _))
-    }
-    case Box(r, c, AnnotatedBox(props, b))  => {
-      renderBox(b)
     }
   }
 

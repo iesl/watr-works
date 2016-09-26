@@ -73,7 +73,7 @@ object DocumentIO {
     val idBlock = for {
       pageId <-zoneIndexer.getPages
     } yield {
-      val pageInfo = zoneIndexer.getPageInfo(pageId)
+      val pageInfo = zoneIndexer.getPageIndex(pageId)
 
       pageInfo.componentToLabels.toSeq
         .filter({case (k, v) =>

@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-object `package` extends PackageDefs {
+object `package` {
 
 }

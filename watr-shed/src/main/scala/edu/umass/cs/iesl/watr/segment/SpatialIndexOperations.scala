@@ -33,7 +33,7 @@ object SpatialIndexOperations {
   //         leftEdge.p2.y - leftEdge.p1.y
   //       ).translate(-5.1, 0)
 
-  //       val charsToLeft = zoneIndex.getPageInfo(pageId).componentIndex.queryForIntersects(query)
+  //       val charsToLeft = zoneIndex.getPageIndex(pageId).componentIndex.queryForIntersects(query)
 
   //       val (splits, leftovers) = charsToLeft
   //         .sortBy(_.targetRegion.bbox.bottom)

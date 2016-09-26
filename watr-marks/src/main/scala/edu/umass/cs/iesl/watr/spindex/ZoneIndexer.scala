@@ -14,132 +14,6 @@ import utils.IdGenerator
 import VisualTracer._
 import watrmarks.{StandardLabels => LB}
 
-// One or more indexes over a given page geometry, along with label maps
-case class PageInfo(
-  pageId: Int@@PageID,
-  componentIndex: SpatialIndex[Component],
-  geometry: PageGeometry,
-  componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
-  componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),
-  labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
-  // charAtoms: mutable.HashMap[Int@@RegionID, (CharAtom, AtomicComponent)] = mutable.HashMap()
-) {
-  def addComponent(c: Component): Component = {
-    componentIndex.add(c)
-    addLabel(c, c.roleLabel)
-    c
-  }
-
-  def getPageAtoms(): Seq[AtomicComponent] = {
-    componentIndex.getItems
-      .filter(_.roleLabel==LB.PageAtom)
-      .map(_.asInstanceOf[AtomicComponent])
-  }
-
-
-  def setChildTreeWithLabel(cid: Int@@ComponentID, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
-    val lmap = componentToChildren.getOrElse(cid, mutable.HashMap())
-    val l0 = lmap.put(l, tree)
-    componentToChildren.put(cid, lmap)
-
-    // // DEBUG
-    // val cindexdbg = componentIndex.getItems.toList.map(_.toString()).mkString("{\n  ", "\n  ", "\n}")
-    // val dbgstr = componentToChildren.map({ case (k, v) =>
-    //   val m2 = v.map({case (k2, v2) =>
-    //     s"""$k2: $v2"""
-    //   }).mkString("\n  ", "\n  ", "\n")
-    //   s"""$k: $m2"""
-    // }).mkString("\n  ", "\n  ", "\n")
-
-    // println(s"""setChildTreeWithLabel: \n$dbgstr""")
-    // println(s"""componentIndex: ${cindexdbg}""")
-  }
-
-
-  def getChildTreeWithLabel(cid: Int@@ComponentID, l: Label): Option[Seq[Int@@ComponentID]] = {
-    for {
-      lt <- componentToChildren.get(cid)
-      t <- lt.get(l)
-    } yield t
-  }
-
-  def getComponentLabels(cid: Int@@ComponentID): Seq[Label] = {
-    componentToLabels.get(cid)
-      .getOrElse(Seq())
-  }
-
-  def getComponentsWithLabel(l: Label): Seq[Component] = {
-    labelToComponents.get(l)
-      .map(_.map(id => componentIndex.getItem(id.unwrap)))
-      .getOrElse(Seq())
-  }
-
-  private def getComponentLabelBuffer(c: Component): mutable.ArrayBuffer[Label] = {
-    componentToLabels.getOrElseUpdate(c.id, mutable.ArrayBuffer[Label]())
-  }
-
-  private def getLabelToComponentBuffer(l: Label): mutable.ArrayBuffer[Int@@ComponentID] = {
-    labelToComponents.getOrElseUpdate(l, mutable.ArrayBuffer[Int@@ComponentID]())
-  }
-
-  def addLabel(c: Component, l: Label): Component = {
-    getComponentLabelBuffer(c) += l
-    getLabelToComponentBuffer(l) += c.id
-    c
-  }
-
-  def removeLabel(c: Component, l: Label): Component = {
-    getComponentLabelBuffer(c) -= l
-    getLabelToComponentBuffer(l) -= c.id
-    c
-  }
-
-  def getLabels(c: Component): Set[Label] = {
-    getComponentLabelBuffer(c).toSet
-  }
-}
-
-
-object BioLabeling {
-
-  def isBegin(lb: Label, n: BioNode) = {
-    n.pins.exists(p => p.label==lb && (p.isBegin || p.isUnit))
-  }
-
-  def hasID(lb: Label, id: Int, n: BioNode) = {
-    n.pins.exists(p => p.label==lb && p.id == id)
-  }
-
-
-  def selectBioLabelings(l: Label, seq: Seq[BioNode]): Seq[Seq[BioNode]] = {
-
-    def loop(ns: Seq[BioNode]): Seq[Seq[BioNode]] = {
-      var currID: Int = 0
-      val atBegin = ns
-        .dropWhile({ node => !isBegin(l, node) })
-
-      atBegin.headOption
-        .map ({ node =>
-          node.pins
-            .filter(_.label==l)
-            .foreach(p => currID = p.id.unwrap)
-
-          val (yes, after) = atBegin
-            .span(node => hasID(l, currID, node))
-
-
-          yes +: loop(after)
-        })
-        .getOrElse({
-          Seq.empty[Seq[BioNode]]
-        })
-    }
-
-    loop(seq)
-  }
-}
-
-
 
 class ZoneIndexer(
   srcUri: URI
@@ -151,7 +25,7 @@ class ZoneIndexer(
 
   import SpatialIndex._
 
-  val pageInfos = mutable.HashMap[Int@@PageID, PageInfo]()
+  val pageInfos = mutable.HashMap[Int@@PageID, PageIndex]()
 
   def dbgFilterComponents(pg: Int@@PageID, include: GeometricFigure.LTBounds): Unit ={
     pageInfos.get(pg).foreach ({ pageInfo =>
@@ -184,23 +58,23 @@ class ZoneIndexer(
     bioLabelings.getOrElseUpdate(name, mutable.MutableList[BioNode]())
   }
 
-  def setChildTreeWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
+  def setChildrenWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
     val pageInfo = pageInfos(getPageForComponent(c))
-    pageInfo.setChildTreeWithLabel(c.id, l, tree)
+    pageInfo.setChildrenWithLabel(c.id, l, tree)
   }
 
-  def getChildTreeWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
+  def getChildrenWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
     val pageInfo = pageInfos(getPageForComponent(c))
     val sdf = pageInfo.componentIndex.get(0)
-    pageInfo.getChildTreeWithLabel(c.id, l)
+    pageInfo.getChildrenWithLabel(c.id, l)
   }
 
-  def getChildTree(c: Component, l: Label): Option[Seq[Component]] = {
+  def getChildren(c: Component, l: Label): Option[Seq[Component]] = {
     val pageInfo = pageInfos(getPageForComponent(c))
-    pageInfo.getChildTreeWithLabel(c.id, l)
+    pageInfo.getChildrenWithLabel(c.id, l)
       .map(tree => tree.map{ cid =>
         pageInfo.componentIndex.get(cid.unwrap).getOrElse {
-          sys.error(s"getChildTree(${c}, ${l}) contained an invalid component id: ${cid}")
+          sys.error(s"getChildren(${c}, ${l}) contained an invalid component id: ${cid}")
         }
       })
   }
@@ -214,28 +88,28 @@ class ZoneIndexer(
 
   def addLabel(c: Component, l: Label): Component = {
     val pageId = getPageForComponent(c)
-    val pinfo = getPageInfo(pageId)
+    val pinfo = getPageIndex(pageId)
     pinfo.addLabel(c, l)
   }
 
   def removeLabel(c: Component, l: Label): Component = {
     val pageId = getPageForComponent(c)
-    val pinfo = getPageInfo(pageId)
+    val pinfo = getPageIndex(pageId)
     pinfo.removeLabel(c, l)
   }
 
 
   def getLabels(c: Component): Set[Label] = {
     val pageId = getPageForComponent(c)
-    val pinfo = getPageInfo(pageId)
+    val pinfo = getPageIndex(pageId)
     pinfo.getLabels(c)
   }
 
-  def getPageInfo(pageId: Int@@PageID) = pageInfos(pageId)
+  def getPageIndex(pageId: Int@@PageID) = pageInfos(pageId)
 
   def removeComponent(c: Component): Unit = {
     vtrace.trace("removeComponent" withTrace showComponent(c))
-    val pinfo = getPageInfo(getPageForComponent(c))
+    val pinfo = getPageIndex(getPageForComponent(c))
     pinfo.componentToLabels -= c.id
     pinfo.componentIndex.remove(c)
     // FIXME also delete label maps, etc.
@@ -279,12 +153,12 @@ class ZoneIndexer(
   }
 
   def getComponent(id: Int@@ComponentID, pageId: Int@@PageID): Component = {
-    getPageInfo(pageId).componentIndex.getItem(id.unwrap)
+    getPageIndex(pageId).componentIndex.getItem(id.unwrap)
   }
 
   def addComponent(c: Component): Component = {
     val pageId = c.targetRegion.target
-    getPageInfo(pageId)
+    getPageIndex(pageId)
       .addComponent(c)
   }
 
@@ -296,8 +170,8 @@ class ZoneIndexer(
 
 
 
-  def addPage(pageGeometry: PageGeometry): PageInfo = {
-    val pageInfo = PageInfo(pageGeometry.id,
+  def addPage(pageGeometry: PageGeometry): PageIndex = {
+    val pageInfo = PageIndex(pageGeometry.id,
       // SpatialIndex.createFor[CharAtom](pageGeometry.bounds),
       SpatialIndex.createFor[Component](pageGeometry.bounds),
       pageGeometry

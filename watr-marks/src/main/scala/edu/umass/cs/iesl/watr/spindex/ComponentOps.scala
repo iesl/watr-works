@@ -57,7 +57,7 @@ object ComponentOperations {
 
       val flat = mutable.MutableList[Component]()
 
-      for (child <- selfComponent.getChildren(label)) {
+      for { child <- selfComponent.getChildren(label) } {
         if (fn(child)) {
           val cchilds = child.getChildren(label)
           flat ++= cchilds

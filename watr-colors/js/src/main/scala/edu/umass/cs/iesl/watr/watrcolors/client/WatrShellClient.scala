@@ -2,9 +2,8 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-
-// import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scalajs.concurrent.JSExecutionContext.Implicits.runNow
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+// import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.annotation.JSExport
 
 import autowire._

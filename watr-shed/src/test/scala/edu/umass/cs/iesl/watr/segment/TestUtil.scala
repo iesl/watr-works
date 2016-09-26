@@ -121,7 +121,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
     segmenter.zoneIndexer.dbgFilterComponents(pageId, totalBounds)
 
     val interestingChars = segmenter.zoneIndexer
-      .getPageInfo(pageId)
+      .getPageIndex(pageId)
       .componentIndex
       .queryForIntersects(totalBounds)
 

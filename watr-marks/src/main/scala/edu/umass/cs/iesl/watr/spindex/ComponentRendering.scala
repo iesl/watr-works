@@ -79,7 +79,7 @@ object ComponentRendering {
     def renderWithIDs(cc: Component): TB.Box = {
       // TODO asser that cc is role VisualLine
       val textAndIds = for {
-        textSpan <- cc.getChildren(LB.TextSpan)
+        textSpan  <- cc.getChildren(LB.TextSpan)
         tokenBox <- render(textSpan)
       } yield {
         val tokenId = textSpan.id
@@ -148,9 +148,11 @@ object ComponentRendering {
     }
 
     def childSpansOrAtoms(cc: Component): Seq[Component] = {
-      val sub = cc.getChildren(LB.TextSpan)
-      if (sub.isEmpty) cc.queryAtoms()
-      else sub
+      if (cc.hasChildren(LB.TextSpan)) {
+        cc.getChildren(LB.TextSpan)
+      } else {
+        cc.queryAtoms()
+      }
     }
 
     def hasLabel(cc: Component, l: Label) = cc.getLabels.contains(l)
@@ -179,7 +181,7 @@ object ComponentRendering {
     //     } else if (labels.contains(LB.VisualLine)) {
     //       cc.tokenizeLine()
     //       // val children = cc.queryFor(Query.Contains, Quantifier.All, LB.Token)
-    //       val children = cc.getChildTree(LB.Token)
+    //       val children = cc.getChildren(LB.Token)
 
     //       ostate.map{ state =>
     //         val currPage = state.currentPage

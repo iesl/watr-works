@@ -32,6 +32,7 @@ import scalaz.Tree
 
  */
 
+
 object Query {
   sealed trait Filter
   sealed trait Type
@@ -67,16 +68,16 @@ sealed trait Component {
   }
 
   def queryInside(role: Label): Seq[Component] = {
-    getChildTree(role)
-      .getOrElse ({
-        val pinfo = zoneIndex.getPageInfo(zoneIndex.getPageForComponent(this))
+    zoneIndex.getChildren(this, role) match {
+      case Some(children) => children
+      case None =>
+        val pinfo = zoneIndex.getPageIndex(zoneIndex.getPageForComponent(this))
         val bounds = this.targetRegion.bbox
         pinfo.componentIndex
           .queryForContained(bounds)
           .filter(_.roleLabel == role)
-      })
+    }
   }
-
   def groupChildren(withLabel: Label, newLabel: Label)(
     groupf: (Component, Component, Int) => Boolean,
     onCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
@@ -104,13 +105,14 @@ sealed trait Component {
 
   def chars: String
 
-  def getChildren(): Seq[Component] = {
-    getChildren(roleLabel)
-  }
 
   // TODO: this should really return a Seq[Option[Component]] to signify existance vs. empty children
   def getChildren(l: Label): Seq[Component] = {
-    getChildTree(l).getOrElse {Seq()}
+    zoneIndex.getChildren(this, l).getOrElse {Seq()}
+  }
+
+  def hasChildren(l: Label): Boolean = {
+    zoneIndex.getChildren(this, l).isDefined
   }
 
   def getDescendants(l: Label): Seq[Component] = {
@@ -119,12 +121,12 @@ sealed trait Component {
   }
 
 
-  def getChildTree(l: Label): Option[Seq[Component]] = {
-    zoneIndex.getChildTree(this, l)
-  }
+  // def getChildren(l: Label): Option[Seq[Component]] = {
+  //   // zoneIndex.getChildren(this, l)
+  // }
 
-  def setChildTree(l: Label, tree: Seq[Component]): Unit = {
-    zoneIndex.setChildTreeWithLabel(this, l, tree.map(_.id))
+  def setChildren(l: Label, tree: Seq[Component]): Unit = {
+    zoneIndex.setChildrenWithLabel(this, l, tree.map(_.id))
   }
 
   def connectChildren(l: Label, sortf: Option[((Component)=>Double)]): Unit = {
@@ -134,7 +136,7 @@ sealed trait Component {
       .getOrElse(sub)
       .map(_.id)
 
-    zoneIndex.setChildTreeWithLabel(this, l, sorted)
+    zoneIndex.setChildrenWithLabel(this, l, sorted)
   }
 
   // TODO: This is redundant w/targetregion
@@ -158,35 +160,19 @@ sealed trait Component {
     zoneIndex.getLabels(this)
   }
 
-  def setChildren(l: Label, cs: Seq[Component]): Unit = {
-    setChildTree(l, cs)
-  }
 
   def addChild(label: Label, c: Component): Unit = {
-    val maybeChildren = getChildTree(label)
-    maybeChildren match {
-      case Some(children)  => setChildren(label, children :+ c)
-      case None            => setChildren(label, Seq(c))
-    }
+    setChildren(label, getChildren(label) :+ c)
   }
 
   def toRoleTree(roles: Label*): Tree[Component] = {
-    val children = for {
-      r <- roles
-    } yield getChildren(r)
-
-    val roleTree = children
+    roles.map(getChildren(_))
       .filterNot(_.isEmpty)
       .headOption
-      .map({ c =>
-        val cf = c.map(_.toRoleTree(roles:_*))
-        Tree.Node(this, cf.toStream)
-      })
-      .getOrElse({
-        Tree.Leaf(this)
-      })
-
-    roleTree
+      .map(c => Tree.Node(this,
+        c.map(_.toRoleTree(roles:_*)).toStream
+      ))
+      .getOrElse (Tree.Leaf(this))
   }
 
 }
@@ -220,7 +206,7 @@ case class RegionComponent(
     val atoms = queryAtoms()
     val clone = initCloneAs(l)
     zoneIndex.addComponent(clone)
-    clone.setChildTree(LB.PageAtom, atoms)
+    clone.setChildren(LB.PageAtom, atoms)
     clone
   }
 
@@ -259,6 +245,7 @@ case class RegionComponent(
   ): Seq[RegionComponent] = {
 
     val oldChildren = getChildren(withLabel)
+    // Reset children to Nil
     setChildren(withLabel, Seq())
 
     oldChildren

@@ -208,7 +208,7 @@ class DocumentSegmenter(
     val allPageLines = for {
       pageId <- zoneIndexer.getPages
     } yield {
-      val charAtoms = zoneIndexer.getPageInfo(pageId).getPageAtoms
+      val charAtoms = zoneIndexer.getPageIndex(pageId).getPageAtoms
       vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${charAtoms.length} char atoms"))
 
       determineLines(pageId, charAtoms)
@@ -795,7 +795,7 @@ class DocumentSegmenter(
   def visualLineOnPageComponents: Seq[Seq[Component]] = for {
     pageId <- zoneIndexer.getPages
   } yield {
-    val page = zoneIndexer.getPageInfo(pageId)
+    val page = zoneIndexer.getPageIndex(pageId)
     val lls = page.getComponentsWithLabel(LB.VisualLine)
 
     lls.sortBy { _.bounds.top }

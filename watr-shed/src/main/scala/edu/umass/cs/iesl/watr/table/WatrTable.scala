@@ -1,20 +1,21 @@
 package edu.umass.cs.iesl.watr
 package table
 
-import ammonite.ops._
-import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
-import edu.umass.cs.iesl.watr.spindex.{ Component, ComponentRendering }
-import edu.umass.cs.iesl.watr.utils.EnglishDictionary
-import pprint.PPrinter
 import scala.util.matching.Regex
+import scala.concurrent._
+import scala.async.{Async => ScalaAsync}
+
+import ammonite.ops._
+import pprint.PPrinter
+import ExecutionContext.Implicits.global
+
+import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
+import edu.umass.cs.iesl.watr.utils.EnglishDictionary
+import watrmarks._
 import spindex._
 import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
 import TypeTags._
-
-import scala.concurrent._
-import scala.async.{Async => ScalaAsync}
-import ExecutionContext.Implicits.global
 
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -299,7 +300,19 @@ object ShellCommands {
   }
 
 
+
   implicit class RicherDocumentSegmenter(val thisDocumentSegmenter: DocumentSegmenter) extends AnyVal {
+
+    def linesx(l: Label): Seq[Component] = {
+      val zoneIndexer = thisDocumentSegmenter.zoneIndexer
+      val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+      val lls = BioLabeling.selectBioLabelings(l, lineBioLabels)
+
+      for {
+        linec <- lineBioLabels
+        line = linec.component
+      } yield line
+    }
     def lines(): Seq[Component] = {
       val zoneIndexer = thisDocumentSegmenter.zoneIndexer
       val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
@@ -313,8 +326,11 @@ object ShellCommands {
 
   implicit class RicherCorpusEntry(val thisCorpusEntry: CorpusEntry) extends AnyVal {
 
-    def paragraphs(): Unit = {
+    def textBlocks(): Unit = {
 
+    }
+
+    def paragraphs(): Unit = {
 
     }
 

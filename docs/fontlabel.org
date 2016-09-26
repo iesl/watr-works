@@ -1,9 +1,5 @@
 
 
-⌂ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ
-
-αßΓπΣσµτΦΘΩδ∞φε∩
-
 ** Rules
    For a given glyph hash:
 
@@ -12,10 +8,6 @@
        unicode names) matches the unicode hex#, then assume the glyph hash is
        properly named (mark it as such in db)
 
-     - 
-
-
- [[#93d47f6][hash #93d47f6]]
 
   chars     : endash, plusminus
  enc       : 2013, b1
@@ -34,8 +26,5 @@
 
 - Contexts
 
-
-
- 
-
- 
+⌂ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ
+αßΓπΣσµτΦΘΩδ∞φε∩

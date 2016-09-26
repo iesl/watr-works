@@ -4,6 +4,8 @@ import com.lihaoyi.workbench.Plugin._
 
 enablePlugins(ScalaJSPlugin)
 
+scalaJSUseRhino in Global := false
+
 organization in ThisBuild := "edu.umass.cs.iesl"
 
 scalaVersion in ThisBuild := "2.11.8"
@@ -81,6 +83,7 @@ lazy val watrshed = (project in file("watr-shed"))
   ))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
+
 
 
 // Revolver.settings
