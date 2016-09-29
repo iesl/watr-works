@@ -947,7 +947,7 @@ class DocumentSegmenter(
 
       }
     } else {
-      println("abstract is unlabled")
+      // println("abstract is unlabled")
       // abstract is unlabled, look for the first multi-line text block before the intro?
       var found = false
       val allBlocksBeforeIntro = blocks.takeWhile { tblines =>
@@ -1066,20 +1066,28 @@ class DocumentSegmenter(
     for(lineNode <- firstLines) {
       val lineText = ComponentRendering.VisualLine.render(lineNode.component)
       if(!lineText.isEmpty) {
-        val lines = lineText.get.lines
-        val words = lines.mkString(" ").split(" ")
+        val lines = lineText.get.lines.mkString(" ")
+        val words = lines.split(" ")
         //words.foreach(println)
         //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
-        // first check for word in set of known names
-        for (word <- words) {
-          if (firstNameSet.contains(word) || lastNameSet.contains(word) && word.length > 1)
-          {
-            println("found " + word + " in the names corpus")
-            zoneIndexer.addBioLabels(LB.Author, lineNode)
-            println("labeling " + lines + " as author ")
+        val lowerLines = lines.toLowerCase()
+        if(!lowerLines.contains("university") && !lowerLines.contains("department")
+          && !lowerLines.contains("school") && !lowerLines.contains("college")) {
+          // first check for word in set of known names
+          for (word <- words) {
+            if (firstNameSet.contains(word) || lastNameSet.contains(word) && word.length > 1) {
+              println("found " + word + " in the names corpus")
+              zoneIndexer.addBioLabels(LB.Author, lineNode)
+              println("labeling " + lines + " as author ")
+            }
           }
         }
-        // todo: use pattern matching to look for things like initials, etc.
+        // todo: use pattern matching to look for things like initials, etc. (figure how why this isn't working)
+        val initial = """[A-Z]+\.+\s""".r
+        if((initial findAllIn lines).length > 0) {
+          println("found a possible initial in line " + lines)
+          zoneIndexer.addBioLabels(LB.Author, lineNode)
+          println("labeling " + lines + " as author ")
       }
     }
     println()
