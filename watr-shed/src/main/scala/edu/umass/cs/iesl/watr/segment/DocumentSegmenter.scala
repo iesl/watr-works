@@ -1061,7 +1061,7 @@ class DocumentSegmenter(
 
     val vlines = zoneIndexer.bioSpine("TextBlockSpine")
 
-    val firstLines = vlines.filter(_.component.chars.length() > 5).take(5)
+    val firstLines = vlines.filter(_.component.chars.length() > 5).take(8)
 
     for(lineNode <- firstLines) {
       val lineText = ComponentRendering.VisualLine.render(lineNode.component)
@@ -1072,10 +1072,10 @@ class DocumentSegmenter(
         //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
         val lowerLines = lines.toLowerCase()
         if(!lowerLines.contains("university") && !lowerLines.contains("department")
-          && !lowerLines.contains("school") && !lowerLines.contains("college")) {
+          && !lowerLines.contains("school") && !lowerLines.contains("college") && !lowerLines.contains("center")) {
           // first check for word in set of known names
           for (word <- words) {
-            if (firstNameSet.contains(word) || lastNameSet.contains(word) && word.length > 1) {
+            if ((firstNameSet.contains(word) || lastNameSet.contains(word))&& word.length > 1) {
               println("found " + word + " in the names corpus")
               zoneIndexer.addBioLabels(LB.Author, lineNode)
               println("labeling " + lines + " as author ")
@@ -1088,6 +1088,7 @@ class DocumentSegmenter(
           println("found a possible initial in line " + lines)
           zoneIndexer.addBioLabels(LB.Author, lineNode)
           println("labeling " + lines + " as author ")
+        }
       }
     }
     println()
