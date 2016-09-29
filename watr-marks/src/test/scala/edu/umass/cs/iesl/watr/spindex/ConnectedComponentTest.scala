@@ -21,7 +21,7 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
       // Create an ordering for page atoms
       row.connectChildren(LB.PageAtom, Some(_.bounds.left))
 
-      println(VisualLine.renderRoleTree(row))
+      // println(VisualLine.renderRoleTree(row))
 
       // Group all PageAtom children into one large sub group (also labeled TextSpan)
       row.groupChildren(withLabel=LB.PageAtom, newLabel=LB.TextSpan)({(atom1, atom2, pairIndex) =>
@@ -29,12 +29,6 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
       }, {(region, regionIndex) =>
         // Nothing to do here...
       })
-      // row.groupAtomsIf({(atom1, atom2, pairIndex) =>
-      //   true
-      // }, {(region, regionIndex) =>
-      //   region.addLabel(LB.TextSpan)
-      //   row.addChild(LB.TextSpan, region)
-      // })
 
       // println(VisualLine.renderRoleTree(row))
 
@@ -82,7 +76,8 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
 
       textSpanRegion.setChildren(LB.TextSpan, splitRegions)
 
-      val rendered = VisualLine.render(row).get
+      val textFlow = VisualLine.render(row).get
+      val rendered = textFlow.text
 
       // println("Final Tree")
       // println(VisualLine.renderRoleTree(row))

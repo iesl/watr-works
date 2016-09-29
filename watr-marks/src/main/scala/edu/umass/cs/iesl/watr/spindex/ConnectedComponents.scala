@@ -306,7 +306,7 @@ case class RegionComponent(
 
 case class AtomicComponent(
   id: Int@@ComponentID,
-  component: PageAtom,
+  pageAtom: PageAtom,
   override val zoneIndex: ZoneIndexer
 ) extends Component {
 
@@ -319,7 +319,7 @@ case class AtomicComponent(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
-    val newRegion = zoneIndex.createRegionComponent(component.region, LB.NullLabel) // FIXME <- nulllabel????
+    val newRegion = zoneIndex.createRegionComponent(pageAtom.region, LB.NullLabel) // FIXME <- nulllabel????
     onGrouped(newRegion, 0)
     Seq(newRegion)
   }
@@ -333,19 +333,19 @@ case class AtomicComponent(
 
   def roleLabel: Label = LB.PageAtom
 
-  def targetRegions: Seq[TargetRegion] = Seq(component.region)
+  def targetRegions: Seq[TargetRegion] = Seq(pageAtom.region)
 
-  def char = component match {
+  def char = pageAtom match {
     case rg: CharAtom => rg.char.toString
     case rg: ImgAtom => ""
   }
 
-  val bounds = component.region.bbox
+  val bounds = pageAtom.region.bbox
 
   def chars: String = char
 
   override def toString(): String = {
     val lls = getLabels.mkString(",")
-    s"<`${chars}`${id} ${component.region}$lls>"
+    s"<`${chars}`${id} ${pageAtom.region}$lls>"
   }
 }

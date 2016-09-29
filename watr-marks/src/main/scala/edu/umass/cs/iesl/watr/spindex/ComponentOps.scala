@@ -445,7 +445,7 @@ object ComponentOperations {
         vtrace.trace("Tree after Flatten 2" withInfo VisualLine.renderRoleTree(selfComponent))
 
         vtrace.trace("Final Tokenization" withInfo
-          ComponentRendering.VisualLine.render(selfComponent).get)
+          ComponentRendering.VisualLine.render(selfComponent).get.text)
 
         vtrace.trace(end("Tokenize Line"))
       }

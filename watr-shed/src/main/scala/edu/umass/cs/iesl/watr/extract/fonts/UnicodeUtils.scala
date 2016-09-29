@@ -1548,15 +1548,11 @@ object UnicodeUtil {
 
   )
 
-  // val subMap:Map[Int, Int] = substitutionList
-  // .filter(_._2.length==1)
-  // .map({case (k, v) => (k, v.head)})
-
   val subMap:Map[Int, Seq[Int]] = substitutionList.toMap
 
   def maybeSubChar(c: Char): Seq[Char] = {
     if (c.toInt < ' ') {
-      s"?{${c.toInt}}"
+      s"¿${c.toInt};"
     } else {
       subMap.get(c.toInt)
         .map(_.map(_.toChar))

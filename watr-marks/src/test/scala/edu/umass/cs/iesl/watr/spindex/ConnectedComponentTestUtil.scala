@@ -24,6 +24,24 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
       .map(_.trim)
   }
 
+  val ffi = 0xFB03.toChar
+  val charSubs = Map(
+    ffi -> "ffi",
+    'ﬂ' -> "fl",
+    'ﬆ' -> "st",
+    'æ' -> "ae",
+    'Æ' -> "AE"
+  )
+
+  def lineWithSubs(line: String): Unit = {
+
+    line.zipWithIndex
+      .foldLeft(List[Char]())({case (acc, e) => 
+
+        acc
+      })
+  }
+
   def stringToPageAtoms(str: String): (Seq[PageAtom], PageGeometry) = {
 
     val atoms = lines(str).zipWithIndex
@@ -94,5 +112,29 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
       lines(str))
   }
 
+  def tokenizeStringToZoneIndex(str: String): (ZoneIndexer, Seq[RegionComponent]) = {
+    val (zoneIndex, lines) = createZoneIndexerAndLines(str)
+    val visualLines = for {
+      i <- 0 until lines.length
+      visualLine <- labelRow(zoneIndex, i, LB.VisualLine)
+    } yield {
+      // visualLine.addLabel(LB.Tokenized)
+      val textSpanRegion = visualLine.cloneAs(LB.TextSpan)
+      textSpanRegion.addLabel(LB.Tokenized)
+      visualLine.setChildren(LB.TextSpan, Seq(textSpanRegion))
+
+      textSpanRegion.groupAtomsIf({(atom1, atom2, pairIndex) =>
+        val dist = atom2.bounds.right - atom1.bounds.right
+        dist <= xscale
+      }, {(region, regionIndex) =>
+        region.addLabel(LB.TextSpan)
+        region.addLabel(LB.Token)
+        textSpanRegion.addChild(LB.TextSpan, region)
+      })
+
+      visualLine
+    }
+    (zoneIndex, visualLines)
+  }
 
 }

@@ -126,14 +126,6 @@ object DocumentSegmenter extends DocumentUtils {
     new DocumentSegmenter(zoneIndex)
   }
 
-
-  def debugFormatLine(cc: Component): String = {
-    import TB._
-    val line = renderConnectedComponents(cc)
-    s"${cc.bounds.prettyPrint}, r:${cc.bounds.right.pp} b:${cc.bounds.bottom} ctr:${cc.bounds.toCenterPoint.prettyPrint} > ${hsep(line)}"
-  }
-
-
   def candidateCrossesLineBounds(cand: Component, line: Component): Boolean = {
     val slopFactor = 0.31d
 

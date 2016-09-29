@@ -124,7 +124,7 @@ class CharExtractionListener(
     val pdfString = charTri.getPdfString
     val valueBytes = pdfString.getValueBytes.map(Byte.byte2int(_))
 
-    (for (b <- valueBytes) yield s"¿$b").mkString
+    (for (b <- valueBytes) yield s"¿$b;").mkString
   }
 
 

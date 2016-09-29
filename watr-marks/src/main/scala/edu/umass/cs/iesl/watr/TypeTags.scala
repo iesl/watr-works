@@ -37,9 +37,6 @@ object TypeTags {
 
 import TypeTags._
 
-// trait TypeTagImplicits {
-//   // implicit def RegionIDOrdering: Ordering[Int@@RegionID] = Ordering.by(_.unwrap)
-// }
 
 trait TypeTagFormats {
   import play.api.libs.json
