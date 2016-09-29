@@ -16,7 +16,6 @@ class MITAlignLabelTask extends ConnectedComponentTestUtil {
    - Create a one-line representation of the text of a pdf via watr, by joining all visual lines into one line
 
 
-
    - Create a table for each paper like so:
       paras: [
         {id: 0, text 'sdfj lsd'}

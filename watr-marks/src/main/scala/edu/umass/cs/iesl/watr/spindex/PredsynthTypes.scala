@@ -100,15 +100,20 @@ case class Connection(
 )
 
 
-
-import ammonite.{ops => fs}
-import fs._
+import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
-import play.api.libs.json
-import play.api.libs.json._
+import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
 
 object PredsynthLoad extends PredsynthPaperAnnotationTypes {
+
+  def findMatchingParagraphs(paper: Paper, r: RawText): Seq[(Paragraph, Int)] = {
+    for {
+      p <- paper.paragraphs
+      if p.text.indexOf(r.raw_text) > -1
+    } yield (p, p.text.indexOf(r.raw_text))
+  }
+
   def main(args: Array[String]) = {
 
     val jsonPath = pwd / RelPath(args(0))
@@ -163,17 +168,11 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
                         println(s"(1) scan matched raw_text: ${rtext}")
                       case None =>
                         println(s"(1) no matching para for ${rtext}")
-                        var found = false
-                        paper.paragraphs.foreach(p =>
-                          if (p.text.indexOf(rtext) > -1) {
-                            val i = p.text.indexOf(rtext)
-                            val (imin, imax) = (math.max(0, i-15), math.min(i+rtext.length()+20, p.text.length()))
-                            val context = p.text.substring(imin, imax)
-                            println(s"(1) para:${p._id}, found substring near: ${context}")
-                            found = true
-                          }
-                        )
-                        if (!found) { println(s"xx-nope") }
+                        val matchedParas = findMatchingParagraphs(paper, rawText)
+                            // val i = p.text.indexOf(rtext)
+                            // val (imin, imax) = (math.max(0, i-15), math.min(i+rtext.length()+20, p.text.length()))
+                            // val context = p.text.substring(imin, imax)
+                            // println(s"(1) para:${p._id}, found substring near: ${context}")
                     }
                   }
                 case None =>
@@ -186,17 +185,7 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
                       println(s"(2) scan matched raw_text: ${rtext}")
                     case None =>
                       println(s"(2) no matching para ")
-                      var found = false
-                      paper.paragraphs.foreach(p =>
-                        if (p.text.indexOf(rtext) > -1) {
-                          val i = p.text.indexOf(rtext)
-                          val (imin, imax) = (math.max(0, i-15), math.min(i+rtext.length()+20, p.text.length()))
-                          val context = p.text.substring(imin, imax)
-                          println(s"(2) para:${p._id}, found substring near: ${context}")
-                          found = true
-                        }
-                      )
-                      if (!found) { println(s"xx-nope") }
+                      val matchedParas = findMatchingParagraphs(paper, rawText)
                   }
 
               }
