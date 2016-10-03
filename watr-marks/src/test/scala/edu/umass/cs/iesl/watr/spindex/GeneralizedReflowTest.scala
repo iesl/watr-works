@@ -46,7 +46,12 @@ class GeneralizedReflowTest extends ConnectedComponentTestUtil {
 
   }
 
-  it should "grep-search virtual lines" in {}
+  it should "grep-search virtual lines" in {
+    val atoms = """samples was set to 0.5 mol%. The nanopowder""".map(atom(_))
+    val flow0 = flow(atoms:_*)
+    val context = ???
+
+  }
   it should "define a repr for MIT-annots with context" in {}
 
 }

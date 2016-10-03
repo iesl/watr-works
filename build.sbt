@@ -15,13 +15,16 @@ shellPrompt in ThisBuild := Sensible.colorPrompt
 val scalazVersion = "7.2.6"
 val specs2Version = "3.7"
 val scalatestVersion = "3.0.0"
+val scalaTagsVersion = "0.6.0"
 
 val commonDeps =  Sensible.logback ++ Seq(
   "org.scalaz" %% "scalaz-core" % "7.2.6",
   "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC5",
-  "com.lihaoyi" %% "scalatags" % "0.6.0",
+  "com.lihaoyi" %% "scalatags" % scalaTagsVersion,
   "com.lihaoyi" %% "acyclic" % "0.1.4" % "provided",
-  "com.lihaoyi" %% "ammonite-ops" % "0.7.7",
+  "com.lihaoyi" % "ammonite" % "0.7.7" cross CrossVersion.full,
+  // "com.lihaoyi" %% "ammonite-ops" % "0.7.7",
+  "com.lihaoyi" %% "fastparse" % "0.4.1",
   "com.typesafe.play" %% "play-json" % "2.5.8",
   "com.slamdata" %% "matryoshka-core" % "0.11.1",
   "com.github.scopt" %% "scopt" % "3.5.0",
@@ -88,7 +91,6 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++= Seq(
     "org.bouncycastle" % "bcprov-jdk15on" % "1.55",
     "org.bouncycastle" % "bcpkix-jdk15on" % "1.55",
-    "com.lihaoyi" % "ammonite" % "0.7.7" cross CrossVersion.full,
     "com.h2database" % "h2" % "1.4.192",
     "com.zaxxer" % "HikariCP" % "2.5.1",
     "com.typesafe.slick" %% "slick" % "3.1.1",
@@ -106,9 +108,9 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC5",
     "me.chrons" %%% "boopickle" % "1.2.4",
-    "com.lihaoyi" %%% "autowire" % "0.2.5",
-    // "com.lihaoyi" %%% "scalarx" % "0.3.1",
-    "com.lihaoyi" %%% "scalatags" % "0.6.0"
+    "com.lihaoyi" %%% "scalatags" % scalaTagsVersion,
+    "com.lihaoyi" %%% "autowire" % "0.2.5"
+    // "com.lihaoyi" %%% "scalarx" % "0.3.1"
   )
 ).jsSettings(
   workbenchSettings:_*
@@ -132,9 +134,6 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "2.2.4",
     "org.webjars" % "mousetrap" % "1.6.0"
-    // "com.sksamuel.scrimage" %% "scrimage-core"     % scrimageVersion,
-    // "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion,
-    // "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion
   )
 )
 

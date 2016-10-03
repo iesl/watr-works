@@ -7,9 +7,7 @@ import scalaz.syntax.ToIdOps
 import scalaz.syntax.std.ToListOps
 
 
-case class TextFlow(
-  flow: Seq[FlowUnit]
-) {
+case class TextFlow(flow: Seq[FlowUnit]) {
   def text: String = {
     flow.map({
       case u: FlowUnit.Atom => u.atomicComponent.chars
