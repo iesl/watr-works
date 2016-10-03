@@ -111,7 +111,9 @@ object Sensible {
       },
 
     testOptions ++= noColorIfEmacs,
-    testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.JUnit)
+    logBuffered in Test := false,
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
+    testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
   )
 
   val scalaModulesVersion = "1.0.4"

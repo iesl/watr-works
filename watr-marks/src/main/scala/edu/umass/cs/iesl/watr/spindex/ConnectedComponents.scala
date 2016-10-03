@@ -33,20 +33,6 @@ import scalaz.Tree
  */
 
 
-object Query {
-  sealed trait Filter
-  sealed trait Type
-  case object Intersects extends Type
-  case object Contains extends Type
-}
-
-sealed trait Quantifier
-object Quantifier {
-  case object All extends Quantifier
-  case object Exists extends Quantifier
-}
-
-
 sealed trait Component {
   def id: Int@@ComponentID
 

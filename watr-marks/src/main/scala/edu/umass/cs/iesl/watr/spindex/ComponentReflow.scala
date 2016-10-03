@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-
 import java.net.URI
 import GeometricFigure._
 import scalaz.syntax.ToIdOps
@@ -81,8 +80,8 @@ object TextFlow extends ToListOps with ToIdOps {
     concat(bs.toList intersperse mkPad(sep))
 
   def concat(bs: Seq[TextFlow]): TextFlow = {
-    val zz = bs.map(unzipTextFlow(_)).flatten
-    TextFlow(zz.map(_._2))
+    val flowUnits = bs.map(unzipTextFlow(_)).flatten
+    TextFlow(flowUnits.map(_._2))
   }
 
 }

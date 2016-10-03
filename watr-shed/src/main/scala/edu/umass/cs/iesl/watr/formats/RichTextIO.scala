@@ -23,7 +23,7 @@ object RichTextIO {
       linec <- lineBioLabels
       line = linec.component
       rline <- VisualLine.render(line)
-    } yield { rline }
+    } yield { rline.text.box }
 
     val joinedLines =  vcat(lines)
 

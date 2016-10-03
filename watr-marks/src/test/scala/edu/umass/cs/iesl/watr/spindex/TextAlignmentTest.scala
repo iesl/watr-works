@@ -51,7 +51,7 @@ class MITAlignLabelTask extends ConnectedComponentTestUtil {
       >   - try exact string match over entire context. if exactly 1 hit, take it.
       >   - try exact string using pre and/or post context. If both pre/post match uniquely, mark middle as "hit"
       >   - try progressively shorter versions of pre- context until something is matched, then
-      >     use take the one with shorted edit distance to watr-derived target position
+      >     use take the one with shortest edit distance to watr-derived target position
 
 
    - Reshape docseg into a stream of semantically meaningful line, e.g., visual lines

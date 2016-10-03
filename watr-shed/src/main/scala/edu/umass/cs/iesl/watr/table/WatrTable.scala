@@ -182,6 +182,7 @@ object ShellCommands {
     """\d+[-—–]\d+""".r
   )
 
+
   implicit class RicherComponent(val thisComponent: Component) extends AnyVal {
     def showUnknowns(): TB.Box = {
       val nonDictWords = for {
@@ -193,7 +194,7 @@ object ShellCommands {
         if !acceptableWordPatterns.exists(re => word.matches(re.regex))
       } yield word.box
 
-      val line = VisualLine.render(thisComponent).getOrElse("<could not render>".box)
+      val line = thisComponent.show
       val b0 = alignHoriz(left)(30)(vjoins()(nonAcceptedWords))
       vjoin()(
         hjoin()(
@@ -205,7 +206,7 @@ object ShellCommands {
     }
 
     def show(): TB.Box = {
-      VisualLine.render(thisComponent).getOrElse("<could not render>".box)
+      VisualLine.render(thisComponent).map(t => t.text.box).getOrElse("<could not render>".box)
     }
 
     def webShow(): String = {

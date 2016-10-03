@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
+
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -11,12 +12,11 @@ object MITLabeling {
 
 }
 
+
 class ComponentReflowTest extends ConnectedComponentTestUtil {
   import ComponentReflow._
   import ComponentRendering._
   import TextFlow._
-
-  behavior of "component reflowing"
 
 
 
@@ -73,7 +73,7 @@ class ComponentReflowTest extends ConnectedComponentTestUtil {
       val textFlow = VisualLine.render(visualLine).get
       val rendered = textFlow.text
       // println(VisualLine.renderRoleTree(visualLine))
-      println(s">${rendered}")
+      // println(s">${rendered}")
       textFlow
     }
 
@@ -102,6 +102,7 @@ class ComponentReflowTest extends ConnectedComponentTestUtil {
       val resultText = lineContentTextFlow(result)
       println("results======")
       println(resultText.flow.mkString("\n"))
+
       println("results text=======")
       println(resultText.text)
     }

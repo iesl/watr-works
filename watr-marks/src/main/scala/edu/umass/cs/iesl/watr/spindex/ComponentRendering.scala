@@ -19,6 +19,7 @@ import acyclic.file
 
 object ComponentRendering {
   import TB._
+  import utils.ScalazTreeImplicits._
 
   object BX {
     def bracket(l:Char, r:Char, b: Box): Box = {
@@ -39,7 +40,7 @@ object ComponentRendering {
     def renderRoleTree(c: Component): TB.Box = {
       c.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
         .map(_.toString())
-        .drawTree
+        .draw
     }
 
 
@@ -51,9 +52,9 @@ object ComponentRendering {
     def escapeString(s: TextFlow, subs: Seq[(Char, String)]): TextFlow = {
       val submap = subs.map(kv => (kv._1.toString(), kv._2)).toMap
       foldMapTextFlow(s, {case (textUnit, flowUnit) =>
-        val tsub = submap.get(textUnit).getOrElse(textUnit)
-        (tsub, flowUnit)
-      })
+                        val tsub = submap.get(textUnit).getOrElse(textUnit)
+                        (tsub, flowUnit)
+                      })
     }
 
     def escapeTex(s: TextFlow): TextFlow = {

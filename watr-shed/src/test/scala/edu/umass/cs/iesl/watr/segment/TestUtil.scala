@@ -99,9 +99,10 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
     )
   }
 
+  import java.net.URI
   def createFilteredZoneIndexer(pdfIns: InputStream, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
-
-    val segmenter =  DocumentSegmenter.createSegmenter(pdfIns, Seq())
+    val dummyUri = URI.create("/")
+    val segmenter =  DocumentSegmenter.createSegmenter(dummyUri, pdfIns, Seq())
 
     // Assume these example regions are all from one page
     // val pageId = regions.map(_.target).head

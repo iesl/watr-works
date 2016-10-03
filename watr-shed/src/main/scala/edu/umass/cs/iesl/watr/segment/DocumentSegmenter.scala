@@ -504,6 +504,9 @@ class DocumentSegmenter(
     line.tokenizeLine
   }
 
+  def show(c: Component): TB.Box = {
+    VisualLine.render(c).map(t => t.text.box).getOrElse("<could not render>".box)
+  }
 
   def joinLines(): Unit = {
     vtrace.trace(begin("JoinLines"))
@@ -528,8 +531,7 @@ class DocumentSegmenter(
         vtrace.trace("Broken word found" withTrace all(Seq(
           showComponent(line1), // endToken.map(showComponent(_)),
           showComponent(line2), // startToken.map(showComponent(_)),
-          message(VisualLine.render(line1).get),
-          message(VisualLine.render(line2).get),
+          message(show(line1)), message(show(line2)),
           showComponents(wordHalfFirst.toSeq++wordHalfSecond.toSeq)
         )))
 
@@ -958,7 +960,7 @@ class DocumentSegmenter(
     } {
 
       vtrace.trace("Labeled section heading" withInfo
-        VisualLine.render(lineBioNode.component).get)
+        show(lineBioNode.component))
 
       zoneIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
     }
