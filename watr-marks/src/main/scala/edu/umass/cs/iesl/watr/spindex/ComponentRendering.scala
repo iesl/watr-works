@@ -4,6 +4,7 @@ package spindex
 import scala.collection.mutable
 import textboxing.{TextBoxing => TB}
 import watrmarks._
+import textflow._
 import TypeTags._
 import scalaz.@@
 

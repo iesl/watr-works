@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package textflow
 
+import spindex._
 import java.net.URI
 import GeometricFigure._
 import scalaz.syntax.ToIdOps

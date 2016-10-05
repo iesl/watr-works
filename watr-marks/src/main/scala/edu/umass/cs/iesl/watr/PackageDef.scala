@@ -14,4 +14,6 @@ trait ScalaZCommonOps
 
 trait PackageDefs
     extends ScalaZCommonOps {
+  kjl
 }
+

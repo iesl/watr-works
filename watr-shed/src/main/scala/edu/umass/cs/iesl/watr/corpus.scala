@@ -27,10 +27,7 @@ object Corpus {
   def apply(appRoot: Path): Corpus = {
     new Corpus(appRoot)
   }
-
-
 }
-
 
 class Corpus(
   val corpusRoot: Path
@@ -44,6 +41,7 @@ class Corpus(
     corpusRoot.toIO.toURI()
   }
   lazy val corpusSentinel =  corpusRoot / ".corpus-root"
+
 
   def touchSentinel(): Unit = {
     if (!sentinelExists()) {
@@ -63,11 +61,11 @@ class Corpus(
 
 
   // def artifactExists(entryDescriptor: String, artifactDescriptor: String): Boolean = {
-  //   val artifactPath = corpusRoot / RelPath(entryDescriptor) / artifactDescriptor
+  //   val artifa = corpusRoot / RelPath(entryDescriptor) / artifactDescriptor
   //   entryExists(corpusRoot, entryDescriptor) && ammonite.ops.exists(artifactPath)
   // }
 
-  // e.g., 3245.pdf, or sha1:afe23s...
+  // e.g., 3245.pf, or sha1:afe23s...
   def entry(entryDescriptor: String): Option[CorpusEntry]= {
     Option(new CorpusEntry(entryDescriptor, this))
   }

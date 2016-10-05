@@ -17,18 +17,18 @@ object SlicingAndDicing {
     }
   }
 
-  implicit class RicherSeq[A](val aas: Seq[A]) extends AnyVal {
+  implicit class RicherSeq[A](val thisSeq: Seq[A]) extends AnyVal {
 
     import scala.collection.mutable
 
 
     def groupByPairsWithIndex(f: (A, A, Int) => Boolean): Seq[Seq[A]] = {
       // Queue[(start, len)*]
-      if (aas.isEmpty) Seq() else {
+      if (thisSeq.isEmpty) Seq() else {
 
         val groupSpans = mutable.Stack[(Int, Int)]((0, 1))
 
-        aas.sliding(2).toSeq
+        thisSeq.sliding(2).toSeq
           .zipWithIndex
           .foreach({
             case (Seq(a1, a2), i) =>
@@ -43,12 +43,12 @@ object SlicingAndDicing {
             case (Seq(), i) => // noop
           })
 
-        groupByStartIndexes(groupSpans.map(_._2).reverse, aas)
+        groupByStartIndexes(groupSpans.map(_._2).reverse, thisSeq)
       }
     }
 
     def splitOnPairsWithIndex(f: (A, A, Int) => Boolean): Seq[Seq[A]] = {
-      val splits: Seq[Int] = aas
+      val splits: Seq[Int] = thisSeq
         .sliding(2).toSeq
         .zipWithIndex
         .map({
@@ -58,7 +58,7 @@ object SlicingAndDicing {
         })
         .flatten
 
-      splitAtBreaks(splits, aas)
+      splitAtBreaks(splits, thisSeq)
     }
 
     def groupByPairs(f: (A, A) => Boolean): Seq[Seq[A]] =
@@ -73,7 +73,7 @@ object SlicingAndDicing {
     }
 
     def clusterBy(f: (A, A)=>Boolean): Seq[Seq[A]] = {
-      clusterSeqBy(aas)(f)
+      clusterSeqBy(thisSeq)(f)
     }
 
   }

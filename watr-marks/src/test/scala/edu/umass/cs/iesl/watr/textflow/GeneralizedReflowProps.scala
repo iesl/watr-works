@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package textflow
 
 
 import org.scalacheck._

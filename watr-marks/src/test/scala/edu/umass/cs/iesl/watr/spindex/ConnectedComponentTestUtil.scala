@@ -42,6 +42,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
       })
   }
 
+
   def stringToPageAtoms(str: String): (Seq[PageAtom], PageGeometry) = {
 
     val atoms = lines(str).zipWithIndex

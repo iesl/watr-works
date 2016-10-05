@@ -18,17 +18,18 @@ val scalatestVersion = "3.0.0"
 val scalaTagsVersion = "0.6.0"
 
 val commonDeps =  Sensible.logback ++ Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.6",
-  "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC5",
-  "com.lihaoyi" %% "scalatags" % scalaTagsVersion,
-  "com.lihaoyi" %% "acyclic" % "0.1.4" % "provided",
-  "com.lihaoyi" % "ammonite" % "0.7.7" cross CrossVersion.full,
-  // "com.lihaoyi" %% "ammonite-ops" % "0.7.7",
-  "com.lihaoyi" %% "fastparse" % "0.4.1",
-  "com.typesafe.play" %% "play-json" % "2.5.8",
-  "com.slamdata" %% "matryoshka-core" % "0.11.1",
-  "com.github.scopt" %% "scopt" % "3.5.0",
-  "org.typelevel" %% "machinist" % "0.5.0",
+
+   "org.scalaz"              %% "scalaz-core"      % "7.2.6",
+   "org.scala-lang.modules"  %% "scala-async"      % "0.9.6-RC5",
+   "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion,
+   "com.lihaoyi"             %% "acyclic"          % "0.1.4"        % "provided",
+   "com.lihaoyi"             % "ammonite"          % "0.7.7" cross CrossVersion.full,
+   "com.lihaoyi"             %% "fastparse"        % "0.4.1",
+   "com.typesafe.play"       %% "play-json"        % "2.5.8",
+   "com.slamdata"            %% "matryoshka-core"  % "0.11.1",
+   "com.github.scopt"        %% "scopt"            % "3.5.0",
+   "org.typelevel"           %% "machinist"        % "0.5.0",
+
   // Test deps
   "org.scalaz"     %% "scalaz-scalacheck-binding" % scalazVersion  % "test",
   "org.scalacheck" %% "scalacheck"                % "1.13.2"       % "test" force(),
