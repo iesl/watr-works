@@ -22,19 +22,19 @@ object GeneralizedReflowProps extends Properties("GeneralizedReflowProps") {
 
   // }
 
-  implicit def arbitraryReflow: Delay[Arbitrary, Reflow] = new Delay[Arbitrary, Reflow] {
-    def apply[α](arb: Arbitrary[α]): Arbitrary[Reflow[α]] =
-      Arbitrary(Gen.oneOf(
-        Arbitrary.arbitrary[Char].map(v => Atom(v)),
-        Arbitrary.arbitrary[String].map(s => Edit(s)),
-        Gen.listOfN(20, arb.arbitrary).map(s => Flow(s))
-      ))
-  }
+  // implicit def arbitraryReflow: Delay[Arbitrary, Reflow] = new Delay[Arbitrary, Reflow] {
+  //   def apply[α](arb: Arbitrary[α]): Arbitrary[Reflow[α]] =
+  //     Arbitrary(Gen.oneOf(
+  //       Arbitrary.arbitrary[Char].map(v => Atom(v)),
+  //       Arbitrary.arbitrary[String].map(s => Edit(s)),
+  //       Gen.listOfN(20, arb.arbitrary).map(s => Flow(s))
+  //     ))
+  // }
 
 
-  property("myprop") = forAll { l: List[Int] =>
-    l.reverse.reverse == l
-  }
+  // property("myprop") = forAll { l: List[Int] =>
+  //   l.reverse.reverse == l
+  // }
 
 
 

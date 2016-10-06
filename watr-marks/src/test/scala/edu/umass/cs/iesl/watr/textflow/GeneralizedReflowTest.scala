@@ -5,43 +5,46 @@ import spindex._
 
 import scalaz._, Scalaz._
 import matryoshka._,  Recursive.ops._ , TraverseT.ops._
-import utils.ScalazTreeImplicits._
 
 import GeneralizedReflow._
+import watrmarks.{StandardLabels => LB, _}
 
 class GeneralizedReflowTest extends ConnectedComponentTestUtil {
   behavior of "component reflowing"
 
   import Reflow._
 
-  s"""|foo Eu_{1-x}Bi_{x}VO_{4} bar
-      |foo Eu_{1¿23;x}Bi_{x}VO_{4} bar
-      |foo Fe^{+}_{x+1.0}O_{x}
-      |foo ¿23;ﬂ bar-
-      |food ﬂavor ﬆars e${ffi}cient bar
-      |foo æon Æon bar
-      |""".stripMargin
 
+  def toAtoms(s: String): List[FixReflow] = {
+    s.toList.map(_ match {
+      case ' ' => space()
+      case c   => atom(c)
+    })
+  }
 
+  it should "represent sup/sub" in {
+    // e.g., "Eu_{1-x}Bi_{x}VO_{4}"
 
-  it should "construct reflows" in {
+    val labeler = new Labeler()
+    val sub = labeler.getLabel(LB.Sub)
 
-    val a1 = atom('3')
-    val a2 = atom('5')
-    val a3 = atom('8')
-    val f1 = flow(a1, a2)
-
-    val f2 = flow(
-      flow(a1, a2), f1, a1
+    val f0 = flow(
+      flows(toAtoms("Eu")),
+      anchor(sub.B),
+      flows(toAtoms("1 - x")),
+      anchor(sub.L)
     )
 
-    val q1 = f2
-    // q1.map { _0: Reflow[Fix[Reflow]] => G[Fix[G]] }
+    // println("Tree-like")
+    // println(prettyPrintTree(f0))
 
-    val qTree = q1.cata(toTree).draw
-    println(qTree)
+    val linear = linearize(f0)
+
+    // println("Line-like")
+    // println(prettyPrintTree(linear))
 
   }
+
 
   it should "join lines into single virtual line" in {
     val ls = lines(
@@ -50,31 +53,42 @@ class GeneralizedReflowTest extends ConnectedComponentTestUtil {
          |""".stripMargin
     )
 
-    val textFlow = flows(ls.map({ l =>
-      flows(l.map(atom(_)))
-    }))
+    val textFlow = flows(
+      ls.map(l =>
+        labeled(LB.VisualLine, flows(toAtoms(l)))
+      ))
 
-    // fold pairwise to decide how to join lines together
+    // println(prettyPrintTree(textFlow))
 
-    val qTree = textFlow.cata(toTree).draw
-    println(qTree)
+    val tr0 = transLabeled(textFlow, LB.VisualLine, reflow =>{
+      groupByPairs(reflow)({
+        case (Atom(a), Atom(b), i) => true
+        case qq => false
+      }, onGrouped = {groups =>
+        val ggs = groups.map {_ match {
+          case f @ Flow(_) => labeled(LB.Token, fixf(f)).unFix
+          case x           => x
+        }}
+
+        ggs.toZipper.map { z =>
+          z.start.modify { r: Reflow[Fix[Reflow]] =>
+            labeled(LB.First, fixf(r)).unFix
+          }.end.modify { r: Reflow[Fix[Reflow]] =>
+            labeled(LB.Last, fixf(r)).unFix
+          }.toList
+        }.getOrElse{
+          ggs
+        }
+      })
+    })
+
+    println(prettyPrintTree(tr0))
+
+
+    // flatten the structure, and consider pairs w/ labels First, Last
+
 
   }
 
-
-  // it should "represent a 'window' within a text flow" in {
-  //   val atoms = """samples was set to 0.5 mol%. The nanopowder""".map(atom(_))
-  //   val flow0 = flow(atoms:_*)
-  //   val (pr, h, nx) =(
-  //     "samples was set to".map(atom(_)),
-  //     " 0.5 mol%.".map(atom(_)),
-  //     "The nanopowder".map(atom(_))
-  //   )
-  // }
-
-
-
-  it should "define a repr for MIT-annots with context" in {}
-  it should "grep-search virtual lines" in {}
 
 }

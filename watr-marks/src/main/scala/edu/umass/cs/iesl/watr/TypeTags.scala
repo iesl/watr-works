@@ -62,6 +62,10 @@ trait TypeTagFormats {
   val WriteCharID: Writes[Int@@CharID] = Writes[Int@@CharID] { i => JsNumber(i.unwrap) }
   implicit def FormatCharID            = Format(ReadCharID, WriteCharID)
 
+  val ReadLabelID: Reads[Int@@LabelID]   = __.read[Int].map(i => Tag.of[LabelID](i))
+  val WriteLabelID: Writes[Int@@LabelID] = Writes[Int@@LabelID] { i => JsNumber(i.unwrap) }
+  implicit def FormatLabelID            = Format(ReadLabelID, WriteLabelID)
+
   val ReadComponentID: Reads[Int@@ComponentID]   = __.read[Int].map(i => Tag.of[ComponentID](i))
   val WriteComponentID: Writes[Int@@ComponentID] = Writes[Int@@ComponentID] { i => JsNumber(i.unwrap) }
   implicit def FormatComponentID            = Format(ReadComponentID, WriteComponentID)

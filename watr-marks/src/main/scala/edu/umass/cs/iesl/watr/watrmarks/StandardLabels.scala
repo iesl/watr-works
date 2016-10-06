@@ -39,6 +39,9 @@ trait DocSegLabels {
   // val Marker = Label("ds", "marker")
   val PageAtom = Label("ds", "atom")
 
+  val First = Label("", "first")
+  val Last = Label("", "last")
+
 }
 
 

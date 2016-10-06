@@ -9,6 +9,7 @@ class TreeShaperTests extends FlatSpec with Matchers {
   import Scalaz._
   import scalaz.std.int
 
+
   behavior of "tree shaper"
 
   behavior of "rose tree construction"

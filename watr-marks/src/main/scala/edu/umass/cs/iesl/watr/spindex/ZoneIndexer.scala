@@ -193,13 +193,13 @@ class ZoneIndexer(
     val labelId = labelIdGen.nextId
 
     if (nodes.length==1) {
-      nodes.foreach(_.pins += label.U(labelId))
+      nodes.foreach(_.pins += label.U)
     } else if (nodes.length > 1) {
-      nodes.head.pins += label.B(labelId)
-      nodes.last.pins += label.L(labelId)
+      nodes.head.pins += label.B
+      nodes.last.pins += label.L
 
       nodes.drop(1).dropRight(1).foreach(
-        _.pins += label.I(labelId)
+        _.pins += label.I
       )
     }
   }

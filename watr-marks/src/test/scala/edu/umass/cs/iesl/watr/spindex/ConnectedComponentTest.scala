@@ -10,7 +10,7 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
   import watrmarks.{StandardLabels => LB}
 
 
-  it should "join and flatten child structure" in {
+  it should "create and flatten child structure" in {
     val zoneIndex = createZoneIndexer(
       // 012 3 4567890
       """Eu1 - xBixVO4"""
@@ -40,7 +40,6 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
 
     }
   }
-
 
   it should "demonstrate sup/subscript labeling" in {
     val zoneIndex = createZoneIndexer(
