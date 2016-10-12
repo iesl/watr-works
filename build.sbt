@@ -22,10 +22,9 @@ val commonDeps =  Sensible.logback ++ Seq(
    "org.scalaz"              %% "scalaz-core"      % "7.2.6",
    "org.scala-lang.modules"  %% "scala-async"      % "0.9.6-RC5",
    "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion,
-   "com.lihaoyi"             %% "acyclic"          % "0.1.4"        % "provided",
-   "com.lihaoyi"             % "ammonite"          % "0.7.7" cross CrossVersion.full,
+   "com.lihaoyi"              % "ammonite"         % "0.7.8" cross CrossVersion.full,
    "com.lihaoyi"             %% "fastparse"        % "0.4.1",
-   "com.typesafe.play"       %% "play-json"        % "2.5.8",
+   "com.typesafe.play"       %% "play-json"        % "2.5.9",
    "com.slamdata"            %% "matryoshka-core"  % "0.11.1",
    "com.github.scopt"        %% "scopt"            % "3.5.0",
    "org.typelevel"           %% "machinist"        % "0.5.0",
@@ -39,6 +38,7 @@ val commonDeps =  Sensible.logback ++ Seq(
 )
 
 
+// "com.lihaoyi"             %% "acyclic"          % "0.1.4"        % "provided",
 // "org.typelevel"  %% "discipline"                % "0.4"          % "test",
 // "org.typelevel"  %% "scalaz-specs2"             % "0.4.0"        % "test",
 // "org.specs2"     %% "specs2-core"               % specs2Version  % "test" force(),

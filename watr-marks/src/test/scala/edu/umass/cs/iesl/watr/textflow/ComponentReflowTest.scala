@@ -71,8 +71,22 @@ class ComponentReflowTest extends ConnectedComponentTestUtil {
          |ning electron
          |""".stripMargin)
 
+
     val visualLineTextFlows = visualLines.map { visualLine =>
+      // Map this to a Reflow
       val textFlow = VisualLine.render(visualLine).get
+
+      // for {
+      //   atom <- visualLine.queryAtoms()
+      // } yield {
+      //   if (atom.chars.length == 1) {
+      //     Reflow.Element1[_](atom, atom.char)
+      //   } else {
+      //     Reflow.Element(atom, atom.chars.toList)
+      //   }
+      // }
+
+
       val rendered = textFlow.text
       // println(VisualLine.renderRoleTree(visualLine))
       // println(s">${rendered}")

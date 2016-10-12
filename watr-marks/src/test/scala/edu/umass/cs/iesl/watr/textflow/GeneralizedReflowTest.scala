@@ -9,52 +9,6 @@ import matryoshka._,  Recursive.ops._ , TraverseT.ops._
 import GeneralizedReflow._, Reflow._
 import watrmarks.{StandardLabels => LB, _}
 
-trait ReflowTestUtil extends ConnectedComponentTestUtil {
-  def toAtoms(s: String): List[FixReflow] = {
-    s.toList.map(_ match {
-      case ' ' => space()
-      case c   => atom(c)
-    })
-  }
-
-  def makeTestSample(): FixReflow = {
-
-    val ls = lines(
-      """|of LiFePO4 scan-
-         |ning electron
-         |""".stripMargin
-    )
-
-    val textFlow = flows(
-      ls.map(l =>
-        labeled(LB.VisualLine, flows(toAtoms(l)))
-      ))
-
-    // println(prettyPrintTree(textFlow))
-
-    val tr0 = transLabeled(textFlow, LB.VisualLine, reflow =>{
-      groupByPairs(reflow)({
-        case (Atom(a), Atom(b), i) => true
-        case qq => false
-      }, onGrouped = {groups =>
-
-        val tokenGroups = groups.map {_ match {
-          case f @ Flow(ls, as) => addLabel(LB.Token)(f)
-          case x                => x
-        }}
-
-        tokenGroups.toZipper.map (
-          _.start.modify { addLabel(LB.First) }
-            .end.modify { addLabel(LB.Last) }
-            .toList)
-          .getOrElse(tokenGroups)
-
-      })
-    })
-    tr0
-  }
-
-}
 
 class GeneralizedReflowTest extends ReflowTestUtil {
   behavior of "component reflowing"
@@ -109,7 +63,8 @@ class GeneralizedReflowTest extends ReflowTestUtil {
       }, onGrouped = {groups =>
 
         val tokenGroups = groups.map {_ match {
-          case f @ Flow(ls, as) => addLabel(LB.Token)(f)
+          case f @ Flow(labels, as) if as.length > 1 =>
+            addLabel(LB.Token)(f)
           case x                => x
         }}
 
@@ -124,7 +79,7 @@ class GeneralizedReflowTest extends ReflowTestUtil {
 
     println(prettyPrintTree(tr0))
 
-    val tr1 = flatten(flatten(flatten(tr0)))
+    val tr1 = unFlow(unFlow(unFlow(tr0)))
     println(prettyPrintTree(tr1))
 
     // val linear = linearize(tr0.unFix)

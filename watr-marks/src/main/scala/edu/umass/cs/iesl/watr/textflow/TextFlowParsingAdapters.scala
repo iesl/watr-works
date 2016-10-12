@@ -14,6 +14,12 @@ import Reflow._
 import scala.collection.mutable
 
 
+/*
+ Provide a set of adapter classes to allow parsing/searching within the text flow class
+ hierarchy.
+
+
+ */
 
 sealed trait ParseElem {
   def intVal: Int
@@ -54,7 +60,7 @@ object ParseElem {
   }
 
   def textFlowLeafToParseElems(leaf: TextFlowLeaf): Seq[ParseElem] = {
-    val reflow = leaf.asInstanceOf[ReflowF]
+    val reflow = leaf.asInstanceOf[ReflowU]
     val str = asString.shows(reflow)
     str.zipWithIndex
       .map{ case (c, i) => CharElem(c, leaf, i) }
@@ -84,13 +90,15 @@ sealed trait TextFlowParseInput { self =>
 
 object TextFlowParseInput {
   case object EmptyInput extends TextFlowParseInput {
-    def reflow: ReflowF = sys.error("empty parse input")
+    def reflow: ReflowU = sys.error("empty parse input")
     def parseElems: Array[ParseElem] = Array()
   }
 
-  def apply(reflow: ReflowF): TextFlowParseInput= {
+  def apply(reflowU: ReflowU): TextFlowParseInput= {
     new TextFlowParseInput {
-      def reflow: ReflowF = reflow
+
+      def reflow: ReflowU = reflowU
+
       def parseElems: Array[ParseElem] =
         toLeafList(reflow)
           .flatMap(ParseElem.textFlowLeafToParseElems(_))
@@ -114,48 +122,6 @@ object TextFlowParseInput {
       def parseElems: Array[ParseElem] = elems
     }
   }
-
-  // class RootParseInput(
-  //   val rs: List[ReflowF]
-  // ) extends TextFlowParseInput {
-  //   def inputElems: List[ParseElem] = {
-  //     rs.map({ reflow =>
-
-
-  //     })
-
-  //   }
-
-  //   def prettyPrint(): String = {
-  //     parseInput.map({
-  //       case ParseElem.CharElem(c, _, _) => c.toString()
-  //       case _ => ""
-  //     }).mkString(",")
-  //   }
-
-  //   def slice(start: Int, end: Int): TextFlowParseInput = {
-  //     // List[Int]().slice(from: Int, until: Int)
-  //     rs.slice(start, end)
-  //     // TextFlowParseInput()
-  //       ???
-  //   }
-
-  //   def at(i: Int): ParseElem = ???
-  //   def length: Int = ???
-  //   def toArray: Array[ParseElem] = ???
-
-  // }
-
-  // class CompoundParseInput(
-  //   inputs: List[TextFlowParseInput]
-  // ) extends TextFlowParseInput {
-  // }
-
-  // class ChildParseInput(
-  //   parentAndOffset: TextFlowParseInput,
-  //   offset: Int, length: Int
-  // ) extends TextFlowParseInput {
-  // }
 
 }
 
