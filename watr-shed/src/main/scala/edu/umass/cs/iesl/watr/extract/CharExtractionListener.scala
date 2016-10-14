@@ -120,11 +120,12 @@ class CharExtractionListener(
     chars
   }
 
-  def fallbackRep(charTri: TextRenderInfo): String = {
+  def fallbackRep(charTri: TextRenderInfo): (String, Option[Int]) = {
     val pdfString = charTri.getPdfString
     val valueBytes = pdfString.getValueBytes.map(Byte.byte2int(_))
 
-    (for (b <- valueBytes) yield s"¿$b;").mkString
+    ((for (b <- valueBytes) yield s"¿$b;").mkString ->
+      Option(valueBytes(0)))
   }
 
 
@@ -133,10 +134,11 @@ class CharExtractionListener(
 
       val mcid = charTri.getMcid
 
-      val stringRep: String = if (!charTri.getText.isEmpty) {
-        charTri.getText()
+      val (stringRep: String, code: Option[Int]) = if (!charTri.getText.isEmpty) {
+        val t = charTri.getText()
           .map(c => UnicodeUtil.maybeSubChar(c).filterNot(_ == ' ').mkString)
           .mkString
+        (t, None)
       } else {
         // TODO reinstate glyph hash lookups
         fallbackRep(charTri)
@@ -152,7 +154,8 @@ class CharExtractionListener(
               pageId,
               bnds
             ),
-            stringRep
+            stringRep,
+            code
           )
         ).getOrElse ({
           val msg = s"ERROR bounds are invalid"

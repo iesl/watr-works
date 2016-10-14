@@ -18,6 +18,66 @@ object DocumentIO {
   import BioLabeling._
 
 
+  def richTextSerializeDocument(zoneIndexer: ZoneIndexer): String = {
+
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+
+    val serComponents = List(
+      LB.SectionHeadingLine,
+      LB.ParaBegin,
+      LB.TextBlock,
+      LB.Abstract
+    ).map(l =>
+      serializeLabeling(l, lineBioLabels)
+    )
+
+    val lines = for {
+      linec <- lineBioLabels
+      line = linec.component
+    } yield {
+      VisualLine.renderWithIDs(line)
+    }
+
+    val joinedLines =  vjoinTrailSep(left, ",")(lines:_*)
+    val joinedLabels =  vjoinTrailSep(left, ",")(serComponents.flatten:_*)
+
+    val idBlock = for {
+      pageId <-zoneIndexer.getPages
+    } yield {
+      val pageInfo = zoneIndexer.getPageIndex(pageId)
+
+      pageInfo.componentToLabels.toSeq
+        .filter({case (k, v) =>
+          v.exists({ l =>
+            l==LB.VisualLine || l==LB.Token
+          })
+        })
+        .sortBy({case (k, v) => k.unwrap})
+        .map({case (cid, _) =>
+          val comp = zoneIndexer.getComponent(cid, pageId)
+          s"[${cid},[${pageId}, ${comp.bounds.compactPrint}]]".box
+        })
+    }
+
+    val tokenDict = idBlock.flatten
+      .grouped(10)
+      .map(group => hjoin(sep=",")(group:_*))
+      .toList
+
+    val tokenBlock = indent()(vjoinTrailSep(left, ",")(tokenDict:_*))
+
+    (s"""|{ "labels": [
+         |${indent(4)(joinedLabels)}
+         |  ],
+         |  "lines": [
+         |${indent(4)(joinedLines)}
+         |  ],
+         |  "ids": [
+         |${indent()(tokenBlock)}
+         |  ]}
+         |""".stripMargin)
+
+  }
 
   def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
     n.pins

@@ -26,7 +26,7 @@ object Sensible {
   lazy val settings =  Seq(
     autoCompilerPlugins := true,
 
-    addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.4"),
+    // addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.4"),
 
     ivyLoggingLevel := UpdateLogging.Quiet,
 

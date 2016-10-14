@@ -16,7 +16,7 @@ import GeometricFigure._
 import ComponentReflow._
 import TextFlow._
 
-import acyclic.file
+// import acyclic.file
 
 object ComponentRendering {
   import TB._
@@ -115,6 +115,38 @@ object ComponentRendering {
       )
     }
 
+
+    def renderWithoutFormatting(cc: Component): Option[TextFlow] = {
+      cc.roleLabel match {
+        case LB.VisualLine
+           | LB.TextSpan =>
+          val children = childSpansOrAtoms(cc)
+          val childTextFlows = children.map(renderWithoutFormatting(_))
+          val joined = if (isTokenized(cc)) {
+            joins(" ")(childTextFlows.flatten)
+          } else {
+            concat(childTextFlows.flatten)
+          }
+
+          Some(joined)
+
+        case LB.PageAtom =>
+          val ac = cc.asInstanceOf[AtomicComponent]
+          val charAtom = ac.pageAtom.asInstanceOf[CharAtom]
+
+          val textFlow = charAtom.wonkyCharCode
+            .map({_ =>
+              TextFlow(Seq(FlowUnit.Rewrite(FlowUnit.Atom(ac), "")))
+            })
+            .getOrElse({
+              TextFlow(Seq(FlowUnit.Atom(ac)))
+            })
+
+          Some(textFlow)
+
+        case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
+      }
+    }
 
     def render(cc: Component): Option[TextFlow] = {
       cc.roleLabel match {

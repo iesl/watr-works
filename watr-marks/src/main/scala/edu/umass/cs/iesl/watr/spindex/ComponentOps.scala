@@ -473,5 +473,25 @@ object ComponentOperations {
         })
     }
 
+
+    import textflow.GeneralizedReflow._
+    import scalaz.Tree
+
+    def componentToTextFlow(): Reflow = {
+      val cTree = selfComponent
+        .toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
+
+      // cTree.scanr { (c: Component, childs: Stream[Tree[B]]) => B }
+
+      cTree.scanr((c: Component, childs: Stream[Tree[Reflow]]) =>
+
+        ???
+      )
+
+
+      ???
+
+    }
+
   }
 }

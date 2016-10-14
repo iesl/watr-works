@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textflow
 
-import acyclic.file
+// import acyclic.file
 
 // import scala.collection.mutable
 import textboxing.{TextBoxing => TB}
@@ -44,18 +44,19 @@ object TextFlowRendering {
       append(r, prepend(l, b))
     }
 
-    // private def mkPad(s: String) = Reflow(Seq(FlowUnit.Insert(s)))
+    private def mkPad(s: String): Reflow = ??? // Reflow(Seq(FlowUnit.Insert(s)))
 
-    // def join(sep:String)(bs:Reflow*): Reflow =
-    //   joins(sep)(bs.toSeq)
+    def join(sep:String)(bs:Reflow*): Reflow =
+      joins(sep)(bs.toSeq)
 
-    // def joins(sep:String)(bs:Seq[Reflow]): Reflow =
-    //   concat(bs.toList intersperse mkPad(sep))
+    def joins(sep:String)(bs:Seq[Reflow]): Reflow =
+      concat(bs.toList intersperse mkPad(sep))
 
-    // def concat(bs: Seq[Reflow]): Reflow = {
-    //   val flowUnits = bs.map(unzipReflow(_)).flatten
-    //   Reflow(flowUnits.map(_._2))
-    // }
+    def concat(bs: Seq[Reflow]): Reflow = {
+      // val flowUnits = bs.map(unzipReflow(_)).flatten
+      // Reflow(flowUnits.map(_._2))
+      ???
+    }
   }
 
   object BX {
@@ -160,9 +161,9 @@ object TextFlowRendering {
           val children = childSpansOrAtoms(cc)
           val childReflows = children.map(render(_))
           val joined = if (isTokenized(cc)) {
-            joins(" ")(childReflows.flatten)
+            Tx.joins(" ")(childReflows.flatten)
           } else {
-            concat(childReflows.flatten)
+            Tx.concat(childReflows.flatten)
           }
 
           Some(surroundCC(cc, joined))

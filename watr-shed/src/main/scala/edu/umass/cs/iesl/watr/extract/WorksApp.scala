@@ -17,6 +17,7 @@ case class AppConfig(
   inputEntryDescriptor: Option[String] = None,
   action: Option[String] = None,
   dbPath: Option[JFile] = None,
+  predsynthJson: Option[JFile] = None,
   force: Boolean = false,
   numToRun: Int = 0,
   numToSkip: Int = 0,
@@ -86,6 +87,9 @@ object Works extends App {
       conf.copy(dbPath = Option(v))
     } text("h2 database path")
 
+    opt[JFile]("predsynth") action { (v, conf) =>
+      conf.copy(predsynthJson = Option(v))
+    } text("location of predsynth db export (as json)")
 
     cmd("init") action { (_, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -348,7 +352,7 @@ object Works extends App {
       Seq()
     }
   }
-  // def segmentDocument(conf: AppConfig): Seq[Seq[utils.TraceLog]] = {
+
 
   def runCmdRichText(conf: AppConfig): Unit = {
     val artifactOutputName = "richtext.txt"
@@ -387,10 +391,18 @@ object Works extends App {
     })
 
   }
+
+
+  var predsynthPapers: Option[Map[String, Paper]] = None
+
   def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
     val artifactOutputName = "docseg.json"
 
     var rsegmenter: Option[segment.DocumentSegmenter] = None
+
+    conf.predsynthJson.map({json =>
+      predsynthPapers = PredsynthLoad.loadPapers(pwd / RelPath(json))
+    })
 
     processCorpusEntryList(conf, {corpusEntry =>
       try {
@@ -401,11 +413,23 @@ object Works extends App {
           pdfins    <- pdf.asInputStream
         } {
           try {
-            val baseURI = corpusEntry.getURI // .resolve(java.net.URI.create("file://"))
+            val baseURI = corpusEntry.getURI
             val segmenter = segment.DocumentSegmenter.createSegmenter(baseURI, pdfins, fontDirs)
             rsegmenter = Some(segmenter)
             segmenter.runPageSegmentation()
-            val output = formats.DocumentIO.serializeDocument(segmenter.zoneIndexer).toString()
+            val entryFilename = corpusEntry.entryDescriptorRoot
+
+
+            for {
+              paperDict <- predsynthPapers
+              _ = println(s"getting ${entryFilename}")
+              predSynthPaper <- paperDict.get(entryFilename)
+            } {
+              segmenter.alignPredSynthPaper(predSynthPaper)
+            }
+
+
+            val output = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer).toString()
             corpusEntry.putArtifact(artifactOutputName, output)
           } catch {
             case t: Throwable =>

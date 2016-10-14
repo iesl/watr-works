@@ -27,12 +27,9 @@ object RichTextIO {
 
     val joinedLines =  vcat(lines)
 
-
     vjoin()(
       artifactPath.map(_.box).getOrElse("corpus:unknown artifact".box),
       joinedLines
     ).toString()
-
-
   }
 }

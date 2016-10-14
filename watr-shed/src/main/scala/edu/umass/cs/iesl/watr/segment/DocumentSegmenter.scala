@@ -7,7 +7,6 @@ import watrmarks._
 import spindex._
 import GeometricFigure._
 
-import spindex._
 import scalaz.@@
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -506,6 +505,26 @@ class DocumentSegmenter(
 
   def show(c: Component): TB.Box = {
     VisualLine.render(c).map(t => t.text.box).getOrElse("<could not render>".box)
+  }
+
+
+
+  def alignPredSynthPaper(paper: Paper): Unit = {
+    println("aligning predsynth paper ")
+
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+
+    val lineText = for {
+      linec <- lineBioLabels
+      line = linec.component
+      line <- VisualLine.renderWithoutFormatting(line)
+    } yield { line.text }
+
+
+    val plaintext = lineText.mkString(" ")
+
+    val context = PredsynthLoad.alignContexts(paper, plaintext)
+
   }
 
   def joinLines(): Unit = {
