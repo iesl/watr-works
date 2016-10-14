@@ -509,22 +509,103 @@ class DocumentSegmenter(
 
 
 
+  import textflow._
+
   def alignPredSynthPaper(paper: Paper): Unit = {
     println("aligning predsynth paper ")
 
     val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
-    val lineText = for {
+    val lineTextAndUnits = for {
       linec <- lineBioLabels
-      line = linec.component
-      line <- VisualLine.renderWithoutFormatting(line)
-    } yield { line.text }
+      line   <- VisualLine.renderWithoutFormatting(linec.component).toSeq
+    } yield {
+
+      val ltext = line.text
+
+      val lunits = line.flow.flatMap(funit =>
+        (0 until funit.length).map(_ => "*").mkString)
+
+      val lineUnits = line.flow.flatMap(funit =>
+        (0 until funit.length).map(_ => funit))
+
+      if(ltext.length != lunits.length) {
+        val lflow = line.flow.mkString("\n    ", "\n    ", "\n")
+
+        println(s"""flow/text lengths are unequal""")
+        println(s"""${ltext}""")
+        println(s"""${lflow}""")
+      }
+
+      (ltext, lineUnits)
+
+    }
+
+    // val lineUnits = (for {
+    //   linec  <- lineBioLabels
+    //   line   <- VisualLine.renderWithoutFormatting(linec.component).toSeq
+    //   funit  <- line.flow
+    // } yield {
+    //   (0 until funit.length).map(_ => funit)
+    // }).flatten.toArray
+
+    val plaintext = lineTextAndUnits.map(_._1).mkString
+    val lineUnits = lineTextAndUnits.flatMap(_._2)
+
+    println(s"text len = ${plaintext.length()} lineunits len = ${lineUnits.length}")
+
+    // val plaintext = lineText.mkString("")
 
 
-    val plaintext = lineText.mkString(" ")
 
-    val context = PredsynthLoad.alignContexts(paper, plaintext)
+    ////////DEBUG
+    // (for {
+    //   linec  <- lineBioLabels
+    //   line   <- VisualLine.renderWithoutFormatting(linec.component).toSeq
+    // }  {
+    //   val lflow = line.flow.mkString("\n    ", "\n    ", "\n")
+    //   val ltext = line.text
 
+    //   val lunits = line.flow.map(funit =>
+    //     (funit -> (0 until funit.length).map(_ => "*"))
+    //   )
+    //   val lfunitstr = lunits.mkString("\n    ", "\n    ", "\n")
+    //   println(s"""|Debug:
+    //               |    $ltext
+    //               |    ${lfunitstr}
+    //               |""".stripMargin)
+    // })
+
+    // // val dbgOffset = 4970
+    // // println(s"""| Debug:
+    // //             |   plaintext: ${plaintext.substring(dbgOffset, dbgOffset+90)}
+    // //             |   lineunits: ${lineUnits.slice(dbgOffset, dbgOffset+90).mkString("\n  ", "\n  ", "\n") }
+    // //             |""".stripMargin)
+
+    // ////////DEBUG
+
+
+
+    // left=error, right=(begin, end) str offsets
+    val contexts: Seq[Either[(RawTextContext, String), (RawTextContext, (Int, Int))]]
+        = PredsynthLoad.alignContexts(paper, plaintext)
+
+    contexts.map{
+      case Left((rtc, err)) =>
+        println(s"err> ${rtc.toString()} ${err}")
+      case Right((rtc, (begin, end))) =>
+
+        val slice = lineUnits.slice(begin, end)
+        val foundText = slice.map({ funit =>
+          TextFlow.toText(funit)
+        }).mkString
+
+        if (rtc.rawText.raw_text == foundText) {
+          println(s"  > ${rtc.toString()}")
+        } else {
+          println(s"XX> ${rtc.toString()}  ===>  ${foundText}")
+        }
+    }
   }
 
   def joinLines(): Unit = {

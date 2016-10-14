@@ -302,13 +302,9 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
             rtext == substr
           }
 
-          // println(s"""   trying to match '${rtext}' to '${substr}' """)
-
           if (exactMatch) {
-            // println("    success!")
             Seq((para, start))
           } else {
-            // println("    fail!")
 
             findMatchingParagraphs(paragraphs, rawText)
           }
@@ -322,8 +318,57 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
   import scala.util.matching.Regex
   import ammonite.ops._
   import ammonite.ops.ImplicitWd._
+  import scala.collection.mutable
 
-  def runAGrep(patterns: Seq[String], text: String): Unit = {
+  def runAGrep(pattern: String, filePath: Path): Either[String, (Int, Int)] = {
+    try {
+      val res = %%("tre-agrep", "-k", "--show-position",
+        "--no-filename",
+        "--substitute-cost", "3",
+        "--insert-cost", "1",
+        "--delete-cost", "1",
+        "-4",
+        "-e", pattern,
+        s"${filePath}"
+      )
+
+
+      val ranges = res.out.lines.map(_.split(":", 2)(0))
+      if (ranges.length==1) {
+        val Array(begin, end) = ranges(0).trim.split("-")
+        val range = (begin.toInt, end.toInt)
+        Right(range)
+      } else {
+        Left("No unique match")
+      }
+    } catch {
+      case s: ShelloutException =>
+        Left(s"Exit code ${s.result.toString()}")
+    }
+
+  }
+
+
+  def byteOffsetToCharOffset(instr: String, boff: Int): Int = {
+    var coff = 0
+    var bcurr = 0
+    val charsAndWidths = instr.map(c => (c, c.toString().getBytes.length))
+
+    charsAndWidths.dropWhile {case (c:Char, w:Int) =>
+      if (bcurr < boff) {
+        bcurr += w
+        coff += 1
+        true
+      } else false
+    }
+    coff
+  }
+
+  def strByteLen(s: String): Int = {
+    s.getBytes.length
+  }
+
+  def findPatternContexts(patterns: Seq[(String, String, String)], text: String): Seq[Either[String, (Int, Int)]] = {
     println(s"running agrep with ${patterns.length} patterns")
 
     // write text to a tmp file
@@ -332,65 +377,86 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
 
     write(txtPath, text)
 
-    patterns.map{regex =>
-      val patt = regex
+    patterns.map{ case (strPre, str, strPost) =>
 
-      println(s"""=> ${patt}""")
+      // val res = runAGrep(s"$strPre$str$strPost", txtPath)
 
-      try {
-        val res = %%("tre-agrep", "-k", "--show-position", // "--ignore-case",
-          "-9",
-          "-e", s"$patt",
-          s"${txtPath}"
-        )
+      // res match {
+      //   case Right((bOffBegin, bOffEnd)) =>
 
-        val out = res.out.lines
-        val ranges = out.map(_.split(":", 2)(0))
-        val rangeStr = ranges.mkString(",")
-        if (ranges.length==1) {
-          println(s"Unique match: ${rangeStr}")
-        } else {
-          println(s"No unique match")
-          println(ranges)
-        }
-        println(res.err.lines.mkString("\n"))
+      //     val strPreByteLen = strByteLen(strPre)
+      //     val strMidByteLen = strByteLen(str)
 
-      } catch {
-        case s: ShelloutException =>
-          println("error")
-          println(s.result.toString())
+      //     val midStrBegin = bOffBegin + strPreByteLen
+      //     val midStrEnd = midStrBegin + strMidByteLen
+
+      //     val charBegin = byteOffsetToCharOffset(text, midStrBegin)
+      //     val charEnd = byteOffsetToCharOffset(text, midStrEnd)
+
+      //     val inContext = s"""${strPre} [${str}] ${strPost}"""
+      //     println(s"""findPatternContexts: ${inContext}  """)
+      //     println(s"    ==> text.slice($charBegin, $charEnd): '${text.slice(charBegin, charEnd)}'          ${text.slice(charBegin-10, charEnd+10)}")
+
+      //     Right((charBegin, charEnd))
+
+      //   case _ =>
+      //     Left("Could not match ")
+      // }
+
+      val resBegin = runAGrep(s"$str$strPost", txtPath)
+      val resEnd = runAGrep(s"$strPre$str", txtPath)
+
+
+      (resBegin,  resEnd) match {
+        case (Right(rbegin), Right(rend)) =>
+          val charBegin = byteOffsetToCharOffset(text, rbegin._1)
+          var charEnd = byteOffsetToCharOffset(text, rend._2)
+
+          if ( charEnd <= charBegin || charEnd - charBegin > str.length()*2) {
+            // found context is way too long, try again...
+            charEnd = charBegin + str.length()
+          }
+
+          // val inContext = s"""${strPre} [${str}] ${strPost}"""
+          // println(s"""findPatternContexts:    ${inContext}  byte ranges = ${rbegin} -> ${rend} """)
+          // println(s"    ==> text.slice($charBegin, $charEnd):    '${text.slice(charBegin, charEnd)}'")
+
+          Right((charBegin, charEnd))
+
+        case _ =>
+          Left("Could not match ")
       }
-
     }
   }
 
-  def alignContexts(paper: Paper, oneLine: String): Unit = { // Seq[()]
+  def alignContexts(paper: Paper, oneLine: String): Seq[Either[(RawTextContext, String), (RawTextContext, (Int, Int))]] = { // Seq[()]
 
     val paperContexts = buildContexts(paper)
 
-    def mkSearchPatterns(contexts: Seq[RawTextContext]): Seq[String] = {
+    def mkSearchPatterns(contexts: Seq[RawTextContext]): Seq[(String, String, String)] = {
       contexts.map { textContext =>
-        val (pre, text, post) = textContext.stringContext(10)
-        s"$pre$text$post"
+        textContext.stringContext(15)
       }
     }
 
-    val searchPatterns = paperContexts.entityContexts.map { ectx =>
-      mkSearchPatterns(ectx.ent) ++
-      mkSearchPatterns(ectx.amounts) ++
-      mkSearchPatterns(ectx.edesc)
+    val entContexts = paperContexts.entityContexts.map { ectx =>
+      ectx.ent ++ ectx.amounts ++ ectx.edesc
     }
 
-
-    val opPatterns = paperContexts.opContexts.map { ectx =>
-      mkSearchPatterns(ectx.ops) ++
-        mkSearchPatterns(ectx.app) ++
-        mkSearchPatterns(ectx.cond)
+    val opContexts = paperContexts.opContexts.map { ectx =>
+      ectx.ops ++ ectx.app ++ ectx.cond
     }
-    val allPatterns = searchPatterns.flatten ++ opPatterns.flatten
 
-    runAGrep(allPatterns, oneLine)
+    val allContexts = (entContexts ++ opContexts).flatten
+    val allPatterns = allContexts.map(_.stringContext(10))
 
+    val foundContexts = findPatternContexts(allPatterns, oneLine)
+
+    foundContexts.zip(allContexts).map{ case (foundCtx, context) =>
+      foundCtx
+        .right.map(range => (context, range))
+        .left.map(msg => (context, msg))
+    }
   }
 
 

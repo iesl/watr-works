@@ -21,6 +21,14 @@ case class TextFlow(flow: Seq[FlowUnit]) {
 
 
 object TextFlow extends ToListOps with ToIdOps {
+
+  def toText(funit: FlowUnit): String = funit match {
+    case u: FlowUnit.Atom => u.atomicComponent.chars
+    case u: FlowUnit.Rewrite => u.rewrite
+    case u: FlowUnit.Insert => u.value
+  }
+
+
   def unzipTextFlow(textFlow: TextFlow): Seq[(String, FlowUnit)] = {
 
     def _loop(text:String, fUnits: Seq[FlowUnit]):  Seq[(String, FlowUnit)] = {
