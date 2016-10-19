@@ -1,22 +1,47 @@
 package edu.umass.cs.iesl.watr
 package formats
 
-import watrmarks._
+import java.io.InputStream
 
 import TypeTags._
-import textboxing.{TextBoxing => TB}, TB._
-import watrmarks.{StandardLabels => LB}
+
+import extract.PdfTextExtractor
+import extract.fonts._
+
 import spindex._
+import spindex.ComponentOperations._
+import spindex.ComponentRendering._
+import spindex.EnrichGeometricFigures._
 
+import textboxing.{TextBoxing => TB}, TB._
 
-import ComponentRendering._
+import textflow.{TextFlow, FlowUnit}
+import textflow.TextFlowRendering.BX
+
 import utils.EnrichNumerics._
+import utils.IdGenerator
+
+import watrmarks.BioLabeling._
+import watrmarks.{StandardLabels => LB, _}
+
+import predsynth._
+
 
 object DocumentIO {
-  import ComponentOperations._
-  import EnrichGeometricFigures._
-  import BioLabeling._
 
+  def serializeTargetRegion(tr: TargetRegion): TB.Box = {
+    s"[${tr.target}, ${tr.bbox.compactPrint}]]"
+  }
+
+  // def serializeTargetRegionLowLeftCorner(tr: TargetRegion): TB.Box = {
+  //   s"[${tr.target}, ${tr.bbox.lowLeftCornerPrint}]]"
+  // }
+
+  def serializeZone(zone: Zone): TB.Box = {
+    val trs = zone.regions.map(serializeTargetRegion(_)).mkString(",")
+    /// Zone = [line#, charBegin, #chars]
+    s"[${zone.id}, ${zone.label}, [${trs}]]"
+  }
 
   def richTextSerializeDocument(zoneIndexer: ZoneIndexer): String = {
 
@@ -27,54 +52,160 @@ object DocumentIO {
       LB.ParaBegin,
       LB.TextBlock,
       LB.Abstract
-    ).map(l =>
-      serializeLabeling(l, lineBioLabels)
-    )
+    ).map(serializeLabeling(_, lineBioLabels))
 
     val lines = for {
       linec <- lineBioLabels
       line = linec.component
-    } yield {
-      VisualLine.renderWithIDs(line)
-    }
+      textFlow <- VisualLine.render(line)
+    } yield (textFlow, line.id, line.targetRegion)
 
-    val joinedLines =  vjoinTrailSep(left, ",")(lines:_*)
     val joinedLabels =  vjoinTrailSep(left, ",")(serComponents.flatten:_*)
 
-    val idBlock = for {
-      pageId <-zoneIndexer.getPages
-    } yield {
-      val pageInfo = zoneIndexer.getPageIndex(pageId)
 
-      pageInfo.componentToLabels.toSeq
-        .filter({case (k, v) =>
-          v.exists({ l =>
-            l==LB.VisualLine || l==LB.Token
-          })
-        })
-        .sortBy({case (k, v) => k.unwrap})
-        .map({case (cid, _) =>
-          val comp = zoneIndexer.getComponent(cid, pageId)
-          s"[${cid},[${pageId}, ${comp.bounds.compactPrint}]]".box
-        })
+    // serialize Zones
+    // map zone to line#
+    val zones = zoneIndexer
+      .getZones.map({ zone =>
+
+        val linePerZTR = zone.regions.map({zoneTargetRegion =>
+          lines.map(_._1).zipWithIndex
+            .map({case (textFlow, lineNum) =>
+              TextFlow.clipToTargetRegion(textFlow, zoneTargetRegion)
+                .map(t => (t, lineNum))
+            })
+            .flatten.headOption
+            .map({ case ((textFlow, begin, len), lineNum)  =>
+              (s"""[${lineNum}, ${begin}, ${len}]""", textFlow)
+            })
+
+        }).flatten
+
+        val trs = linePerZTR.map(_._1).mkString(",")
+        val ts = linePerZTR.map(_._2)
+        val jtextFlow = TextFlow.joins(" ")(ts)
+        val labelStr = zone.label.value.get
+        val pad1 = " "*(20-labelStr.length())
+        val pad2 = " "*(20 - jtextFlow.text.length())
+
+        val mentionId = MentionID(zone.id.unwrap)
+
+        val clustId = zoneIndexer.relations.collect({
+          case Relation.Record(id,
+            Relation.Elem.Cluster(clusterId),
+            "hasMember", Relation.Elem.Mention(`mentionId`)) =>
+            clusterId
+        }).headOption.getOrElse(ClusterID(0))
+
+
+        val pad3 = " "*(3 - mentionId.toString.length)
+        val pad4 = " "*(3 - clustId.toString.length)
+
+        val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 "${labelStr}",${pad1} "${jtextFlow.text}",${pad2} [${trs}]]""".box
+
+        (0, 0, mentionStr)
+        (mentionId.unwrap, clustId.unwrap, mentionStr)
+      })
+      .toSeq
+      .sortBy({x => (x._1, x._2) })
+
+
+    val zoneBlock =  vjoinTrailSep(left, ",")(zones.map(_._3):_*)
+
+    val allCharIds = for {
+      (lineText, lineId, _) <- lines
+      cc <- lineText.flow.collect({
+        case u: FlowUnit.Atom     => u.atomicComponent
+        case u: FlowUnit.Rewrite  => u.atom.atomicComponent
+      })
+    } yield {
+      val tr = serializeTargetRegion(cc.targetRegion)
+      s"[${cc.id}, ${tr}]".box
     }
 
-    val tokenDict = idBlock.flatten
+    val lineTextAndIds = for {
+      (lineText, lineId, _) <- lines
+    } yield {
+      val charIds = (for {
+        funit0 <- lineText.flow
+        funit <- (0 until funit0.length).map(_ => funit0)
+      } yield funit match {
+        case u: FlowUnit.Atom => u.atomicComponent.id.unwrap
+        case u: FlowUnit.Rewrite => u.atom.atomicComponent.id.unwrap
+        case u: FlowUnit.Insert => 0
+      }).mkString("[", ",", "]")
+
+      val text = BX.bracket('"', '"', lineText.text.box)
+      (text, charIds.box)
+    }
+
+    val joinedLineText =  vjoinTrailSep(left, ",")(lineTextAndIds.map(_._1):_*)
+    val joinedLineCharIds =  vjoinTrailSep(left, ",")(lineTextAndIds.map(_._2):_*)
+
+
+    val tokenDict = allCharIds
       .grouped(10)
       .map(group => hjoin(sep=",")(group:_*))
       .toList
 
-    val tokenBlock = indent()(vjoinTrailSep(left, ",")(tokenDict:_*))
+    val tokenBlock = vjoinTrailSep(left, ",")(tokenDict:_*)
 
-    (s"""|{ "labels": [
+    // output all relationships:
+    // rawTextMentionsById
+    val relations = zoneIndexer.relations
+      .filter({
+        case Relation.Record(_, _, rel, _)
+            if rel=="hasType" || rel== "hasMember" =>  false
+        case _ => true
+      })
+      .map({relation =>
+        val id = relation.id
+        val lhs = Relation.formatElem(relation.lhs)
+        val rhs = Relation.formatElem(relation.rhs)
+        val rel = relation.relationship
+        val pad1 = " "*(15-lhs.length())
+        val pad2 = " "*(12-rel.length())
+        s"""[$lhs, $pad1 "$rel", $pad2 $rhs]""".box
+      })
+
+    val relationBlock = vjoinTrailSep(left, ",")(relations:_*)
+
+
+    val props =
+      vjoinTrailSep(left, ",")(
+        zoneIndexer.props.map({ prop =>
+          Relation.formatPropRec(prop).box
+        }):_*
+      )
+
+    (s"""|{ "lines": [
+         |${indent(4)(joinedLineText)}
+         |  ],
+         |  "__comments": [
+         |    "mention entry format:",
+         |      "[mentionId, clusterId, mentionType, mentionText, textPosition]",
+         |    "textPostion format:",
+         |      "[lineNumber, mentionStart, mentionLength]",
+         |      "where start is relative to lineNumber, and mentionLength can span consecutive lines"
+         |    ],
+         |  "mentions": [
+         |${indent(4)(zoneBlock)}
+         |  ],
+         |  "relations": [
+         |${indent(4)(relationBlock)}
+         |  ],
+         |  "properties": [
+         |${indent(4)(props)}
+         |  ],
+         |  "labels": [
          |${indent(4)(joinedLabels)}
          |  ],
-         |  "lines": [
-         |${indent(4)(joinedLines)}
+         |  "lineDefs": [
+         |${indent(4)(joinedLineCharIds)}
          |  ],
          |  "ids": [
-         |${indent()(tokenBlock)}
-         |  ]}
+         |${indent(4)(tokenBlock)}
+         |  ] }
          |""".stripMargin)
 
   }
@@ -170,7 +301,6 @@ object DocumentIO {
 
 
   def charInfosBox(cbs: Seq[CharAtom]): Seq[TB.Box] = {
-    import TB._
 
     cbs.zip(spaceWidths(cbs))
       .map{ case (c, dist) =>
@@ -180,20 +310,6 @@ object DocumentIO {
           (c.region.bbox.bottom.pp +| "(w:" + c.region.bbox.width.pp + ")")
     }
   }
-
-
-
-
-
-  import java.io.InputStream
-  import watrmarks._
-  import java.io.InputStream
-
-  import spindex._
-  import extract.PdfTextExtractor
-
-  import extract.fonts._
-  import utils.IdGenerator
 
 
   def extractChars(
@@ -219,155 +335,6 @@ object DocumentIO {
   }
 
 
-  // def serializeDocumentAsSvg(zoneIndexer: ZoneIndexer, artifactPath: Option[String]): String = {
-
-  //   import TB._
-
-  //   def animationStyle = {
-  //     """|<svg:style>
-  //        |  .path {
-  //        |    opacity: 0.2;
-  //        |    stroke: cyan;
-  //        |    fill: none;
-  //        |    stroke-width: 1;
-  //        |    stroke-dasharray: 20;
-  //        |    stroke-dashoffset: 200;
-  //        |    animation: dash 5s linear forwards infinite;
-  //        |  }
-  //        |
-  //        |  // @keyframes dash {
-  //        |  //   to {
-  //        |  //     stroke-dashoffset: 0;
-  //        |  //   }
-  //        |  // }
-  //        |  .linebox {
-  //        |    opacity: 0.3;
-  //        |    stroke: blue;
-  //        |    stroke-width: 1;
-  //        |  }
-  //        |  .pagebox {
-  //        |    opacity: 0.3;
-  //        |    stroke: black;
-  //        |    stroke-width: 1;
-  //        |  }
-  //        |</svg:style>
-  //        |""".stripMargin.mbox
-  //   }
-
-
-
-  //   val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
-
-
-  //   val lines = for {
-  //     linec <- lineBioLabels
-  //     lineComponent = linec.component
-  //   } yield {
-  //     val pageId = zoneIndexer.getPageForComponent(lineComponent)
-
-  //     // hjoin(center1, ", ")(renderConnectedComponents(line):_*)
-
-
-  //   // val allPageLines = for {
-  //   //   (pageId, pageLines) <- segmenter.zoneIndexer.getPages zip pageLines
-  //   // } yield {
-  //     val pageGeom = zoneIndexer.getPageGeometry(pageId)
-
-  //     val sortedYLines = pageLines.map({ line =>
-  //       // val lineX = line.bounds.left
-  //       // val lineY = line.bounds.top
-
-  //       val xs = line.charComponents.map(_.component.region.bbox.left.pp).mkString(" ")
-  //       val ys = line.charComponents.map(_.component.region.bbox.bottom.pp).mkString(" ")
-  //       val escChars = escapeXml11(line.chars)
-
-  //       line.tokenizeLine()
-
-  //       val linetext = line.toText.replaceAll("-", "–")
-  //       s"""|                <!--
-  //           |${linetext} --> <svg:rect class="linebox" x="${line.bounds.left.pp}" y="${line.bounds.top.pp}" width="${line.bounds.width.pp}"  height="${line.bounds.height.pp}" />
-  //           |                <svg:text font-size="1" height="${line.bounds.height}" width="${line.bounds.width}"><svg:tspan height="${line.bounds.height}" x="${xs}" y="${ys}">${escChars}</svg:tspan></svg:text>
-  //           |""".stripMargin.trim.mbox
-  //     })
-
-
-  //     val readingOrder = s"""M0,0""".box +| hsep(
-  //       pageLines.map({ line =>
-  //         val c = line.bounds.toCenterPoint
-  //         s"""L${c.x.pp},${c.y.pp}""".box
-  //       })
-  //     )
-
-  //     val readingOrderLine = s"""<svg:path class="path" d="${readingOrder}" />"""
-
-
-  //     val x = pageGeom.bounds.left
-  //     val y = pageGeom.bounds.top
-  //     val pwidth = pageGeom.bounds.width
-  //     val pheight = pageGeom.bounds.height
-
-
-  //     val pageRect = s"""|  <svg:rect
-  //                        |      page="${pageId}" file="file://${artifactPath.getOrElse("")}"
-  //                        |      class="pagebox" x="${x}" y="${y}" width="${pwidth}"  height="${pheight}" />
-  //                        |""".stripMargin.trim.mbox
-
-
-  //     (pageGeom.bounds, pageRect % vcat(sortedYLines) % readingOrderLine)
-  //   }
-
-  //   // val totalBounds = zoneIndexer.map(_._1).reduce(_ union _)
-  //   val (totalBounds, totalSvg) = allPageLines
-  //     .foldLeft({
-  //       (LTBounds(0, 0, 0, 0), nullBox)
-  //     })({case ((totalBounds, totalSvg), (pageBounds, pageSvg)) =>
-  //       val translatedPageBounds = pageBounds.translate(0, totalBounds.bottom)
-  //       val newBounds = totalBounds union translatedPageBounds
-
-  //       (newBounds,
-  //         (
-  //           totalSvg %
-  //             s"""<svg:g transform="translate(0, ${totalBounds.bottom.pp})">""".box %
-  //             indent(4)(pageSvg) %
-  //             """</svg:g>"""))
-
-  //     })
-
-  //   val pwidth = totalBounds.width
-  //   val pheight = totalBounds.height
-
-  //   val svgHead = s"""<svg:svg version="1.1" width="${pwidth}px" height="${pheight}px" viewBox="0 0 ${pwidth} ${pheight}" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">"""
-
-  //   (svgHead % animationStyle % totalSvg % "</svg:svg>").toString
-  // }
-
-
-
-  // def extractChars(
-  //   pdfis: InputStream,
-  //   charsToDebug: Set[Int] = Set()
-  // ): Seq[(PageAtoms, PageGeometry)] = {
-
-  //   val charExtractor = new PdfTextExtractor(
-  //     charsToDebug,
-  //     IdGenerator[RegionID]() //, IdGenerator[PageID]
-  //   )
-  //   val _ = charExtractor.extractCharacters(pdfis)
-
-  //   val pageInfos = charExtractor.pagesInfo
-
-  //   // Use computed page bounds (based on char bounds) rather than reported page bounds
-  //   pageInfos.map({ case (pchars, pgeom) =>
-
-  //     val computedBounds =  charBoxesBounds(pchars.regions)
-
-  //     (pchars,
-  //       pgeom.copy(bounds = computedBounds)
-  //     )
-
-  //   })
-
-  // }
 
   def modifyZoneLabelName(name: String): Label = {
     val Array(pre, post0) = name.toLowerCase.split("_", 2)

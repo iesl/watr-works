@@ -9,6 +9,7 @@ import spindex._
 import EnrichGeometricFigures._
 import utils.EnrichNumerics._
 import java.io.{File => JFile}
+import predsynth._
 
 case class AppConfig(
   runRoot: Option[JFile] = None,
@@ -426,7 +427,17 @@ object Works extends App {
               predSynthPaper <- paperDict.get(entryFilename)
             } {
               segmenter.alignPredSynthPaper(predSynthPaper)
+              new predsynth.PredsynthPaperAnnotationTypes {
+                import play.api.libs.json, json._
+                val pjson = Json.toJson(predSynthPaper)
+                val jsOut = Json.prettyPrint(pjson)
+                corpusEntry.putArtifact("predsynth-paper.json", jsOut)
+
+              }
+
             }
+
+            val zoneIndex = segmenter.zoneIndexer
 
 
             val output = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer).toString()

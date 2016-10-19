@@ -12,11 +12,16 @@ sealed trait PageID
 sealed trait CharID
 sealed trait ComponentID
 
+sealed trait MentionID
+sealed trait ClusterID
+sealed trait RelationID
+sealed trait GenericID
+
 sealed trait SHA1String
 
-object TagUnwrapping {
+sealed trait Offset
+sealed trait Length
 
-}
 
 object TypeTags {
   val SHA1String = Tag.of[SHA1String]
@@ -28,6 +33,15 @@ object TypeTags {
   val CharID = Tag.of[CharID]
   val ComponentID = Tag.of[ComponentID]
   val LabelID = Tag.of[LabelID]
+
+  val MentionID= Tag.of[MentionID]
+  val ClusterID = Tag.of[ClusterID]
+  val RelationID = Tag.of[RelationID]
+
+  val GenericID = Tag.of[GenericID]
+
+  val Offset = Tag.of[Offset]
+  val Length = Tag.of[Length]
 
   implicit class TagOps[A, T](val value: A@@T) extends AnyVal {
     def unwrap: A = Tag.of[T].unwrap(value)

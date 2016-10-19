@@ -129,7 +129,16 @@ class CharExtractionListener(
   }
 
 
+  val charWindow = mutable.MutableList[Char]()
+  var __triggerText = "" // "ansferredinto100" // Start debug logging when this text is found
+  var (__curr: Int, __start:Int, __enable:Boolean) = (0, 150, false)
+  var __verbose:Boolean = false
+
+  var (__len: Int, __skip:Int) = (100, 20)
+
   def renderText(charTris: TextRenderInfo): Unit = {
+    if (__enable) { __curr += 1 }
+
     for (charTri <- charTris.getCharacterRenderInfos) {
 
       val mcid = charTri.getMcid
@@ -145,6 +154,8 @@ class CharExtractionListener(
       }
 
       if (!stringRep.isEmpty) {
+        if (__enable) { charWindow ++= stringRep.toList }
+
         val charBounds = computeTextBounds(charTri)
 
         val charBox = charBounds.map(bnds =>
@@ -162,8 +173,28 @@ class CharExtractionListener(
           sys.error(msg)
         })
         currCharBuffer.append(charBox)
-      }
 
+        if (__enable) {
+          if (!__triggerText.isEmpty()) {
+            val currCharWindow = charWindow.takeRight(20).mkString
+            if (currCharWindow.endsWith(__triggerText)) {
+              __start = __curr
+              __verbose = true
+            }
+
+          }
+          if (__start <= __curr &&  __curr < __start + __len) {
+            if (__verbose) {
+              println(s"@${__curr}: ${charBox}")
+              println(s"""text near: ${charWindow.takeRight(20).mkString}""")
+            }
+          } else {
+            __verbose = false
+          }
+
+        }
+
+      }
     }
   }
 
@@ -227,13 +258,13 @@ class CharExtractionListener(
     if (charWidth.nan || charWidth.inf || charWidth.toInt==0) {
       // println(s"warning: char width is 0, NaN, or Inf")
       charWidth = 0
-    }
+      }
 
 
-    val charTop = charBottom - charHeight
+      val charTop = charBottom - charHeight
 
-    Some(LTBounds(
-      left=charLeft,
+      Some(LTBounds(
+        left=charLeft,
       top=charTop,
       width=charWidth,
       height=charHeight

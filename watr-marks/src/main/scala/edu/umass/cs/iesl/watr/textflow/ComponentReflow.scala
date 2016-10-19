@@ -4,8 +4,12 @@ package textflow
 import spindex._
 import java.net.URI
 import GeometricFigure._
+import EnrichGeometricFigures._
 import scalaz.syntax.ToIdOps
 import scalaz.syntax.std.ToListOps
+import scalaz.@@
+import ComponentTypeEnrichments._
+import TypeTags._
 
 
 case class TextFlow(flow: Seq[FlowUnit]) {
@@ -91,6 +95,34 @@ object TextFlow extends ToListOps with ToIdOps {
     TextFlow(flowUnits.map(_._2))
   }
 
+  def flowUnitTargetRegion(funit: FlowUnit): Option[TargetRegion] = funit match {
+    case u: FlowUnit.Atom => u.atomicComponent.targetRegion.some
+    case u: FlowUnit.Rewrite => u.atom.atomicComponent.targetRegion.some
+    case u: FlowUnit.Insert => None
+  }
+
+  def clipToTargetRegion(textFlow: TextFlow, targetRegion: TargetRegion): Option[(TextFlow, Int@@Offset, Int@@Length)] = {
+    val clippedFlow = textFlow.flow
+      .zipWithIndex
+      .dropWhile({case (funit, _) =>
+        val intersects = flowUnitTargetRegion(funit).exists(_ intersects targetRegion)
+          !intersects
+      })
+      .reverse
+      .dropWhile({case (funit, _) =>
+        val intersects = flowUnitTargetRegion(funit).exists(_ intersects targetRegion)
+          !intersects
+      })
+      .reverse
+
+    if (clippedFlow.isEmpty) None else {
+      val start = clippedFlow.head._2
+      val end = clippedFlow.last._2
+
+      Some((TextFlow(clippedFlow.map(_._1)), Offset(start), Length(end-start)))
+    }
+
+  }
 }
 
 sealed trait FlowUnit {
@@ -124,65 +156,66 @@ object FlowUnit {
 
 object ComponentReflow {
 
-  case class Reflow(content: Content)
+  // case class Reflow(content: Content)
 
-  sealed trait Content
-  sealed trait LineContent extends Content
+  // sealed trait Content
+  // sealed trait LineContent extends Content
 
-  object Content {
+  // object Content {
 
-    case class CC(c:Component, textFlow: TextFlow) extends LineContent
-    case class Clipped(cc: LineContent, start: Int, len: Int) extends LineContent
-    case class Concat(cs: Seq[LineContent]) extends LineContent
+  //   case class CC(c:Component, textFlow: TextFlow) extends LineContent
+  //   case class Clipped(cc: LineContent, start: Int, len: Int) extends LineContent
+  //   case class Concat(cs: Seq[LineContent]) extends LineContent
 
-    case class Row(rs:Seq[Reflow]) extends Content
+  //   case class Row(rs:Seq[Reflow]) extends Content
 
-    // case class Clipped(b:Reflow, clip: LTBounds) extends Content
-    // case class Col(bs:Seq[Reflow]) extends Content
+  //   // case class Clipped(b:Reflow, clip: LTBounds) extends Content
+  //   // case class Col(bs:Seq[Reflow]) extends Content
 
-  }
+  // }
 
-  def lineContentTextFlow(lc: LineContent): TextFlow = {
-    lc match {
-      case Content.CC(component, textFlow) =>
-        textFlow
+  // def lineContentTextFlow(lc: LineContent): TextFlow = {
+  //   lc match {
+  //     case Content.CC(component, textFlow) =>
+  //       textFlow
 
-      case Content.Clipped(content, start, len) =>
-        val tf = lineContentTextFlow(content)
-        var totalLength = 0
+  //     case Content.Clipped(content, start, len) =>
+  //       val tf = lineContentTextFlow(content)
+  //       var totalLength = 0
 
-        val slice = tf.flow
-          .dropWhile( { funit =>
-            val b = start > totalLength
-            totalLength += funit.length
-            b
-          })
-          .takeWhile({ funit =>
-            val b = start+len >= totalLength
-            totalLength += funit.length
-            b
-          })
+  //       val slice = tf.flow
+  //         .dropWhile( { funit =>
+  //           val b = start > totalLength
+  //           totalLength += funit.length
+  //           b
+  //         })
+  //         .takeWhile({ funit =>
+  //           val b = start+len >= totalLength
+  //           totalLength += funit.length
+  //           b
+  //         })
 
-        TextFlow(slice)
+  //       TextFlow(slice)
 
-      case Content.Concat(rs) =>
-        val combined = rs.map(lineContentTextFlow(_)).map{_.flow}
-        TextFlow(combined.flatten)
-    }
-  }
+  //     case Content.Concat(rs) =>
+  //       val combined = rs.map(lineContentTextFlow(_)).map{_.flow}
+  //       TextFlow(combined.flatten)
+  //   }
+  // }
 
 
-  def stringMatch(s: String, r: Reflow): Option[Content.Clipped] = {
-    r.content match {
-      case lc:LineContent =>
-        val textFlow = lineContentTextFlow(lc)
-        val start = textFlow.text.indexOf(s)
-        if (start > -1) {
-          Some(Content.Clipped(lc, start, s.length))
-        } else None
+  // def stringMatch(s: String, r: Reflow): Option[Content.Clipped] = {
+  //   r.content match {
+  //     case lc:LineContent =>
+  //       val textFlow = lineContentTextFlow(lc)
+  //       val start = textFlow.text.indexOf(s)
+  //       if (start > -1) {
+  //         Some(Content.Clipped(lc, start, s.length))
+  //       } else None
 
-      case Content.Row(rs) => None
-    }
-  }
+  //     case Content.Row(rs) => None
+  //   }
+  // }
+
 
 }

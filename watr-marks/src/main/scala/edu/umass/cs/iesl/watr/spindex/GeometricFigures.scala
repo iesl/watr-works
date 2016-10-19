@@ -208,6 +208,13 @@ object EnrichGeometricFigures {
       )
     }
 
+    def intersects(rhs:LTBounds):Boolean = {
+      !(tb.left > rhs.right
+        || tb.right < rhs.left
+        || tb.top > rhs.bottom
+        || tb.bottom < rhs.top)
+    }
+
     def union(b: LTBounds): LTBounds = {
       val left   = math.min(tb.left, b.left)
       val top    = math.min(tb.top, b.top)
@@ -309,13 +316,17 @@ object EnrichGeometricFigures {
       s"""(l:${fmt(left)}, t:${fmt(top)}, w:${fmt(width)}, h:${fmt(height)})"""
     }
 
+    def lowLeftCornerPrint: String = {
+      val left = tb.left
+      val bottom = tb.bottom
+      s"""[${left.pp}, ${bottom.pp}]"""
+    }
 
     def compactPrint: String = {
       val left = tb.left
       val top=  tb.top
       val width = tb.width
       val height = tb.height
-      s"""[${fmt(left)}, ${top.pp}, ${width.pp}, ${height.pp}]"""
       s"""[${left.pp}, ${top.pp}, ${width.pp}, ${height.pp}]"""
     }
 

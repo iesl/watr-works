@@ -106,22 +106,22 @@ class ComponentReflowTest extends ConnectedComponentTestUtil {
 
 
     // search for a string (regex/parse) in a reflow
-    val cc0 = Content.CC(visualLines(0), line0)
-    val cc1 = Content.CC(visualLines(1), visualLineTextFlows(1))
-    val ccConcat = Content.Concat(Seq(cc0, cc1))
+    // val cc0 = Content.CC(visualLines(0), line0)
+    // val cc1 = Content.CC(visualLines(1), visualLineTextFlows(1))
+    // val ccConcat = Content.Concat(Seq(cc0, cc1))
 
-    val reflow = Reflow(ccConcat)
+    // val reflow = Reflow(ccConcat)
 
-    val results = stringMatch("scanning", reflow)
+    // val results = stringMatch("scanning", reflow)
 
-    results.foreach { result =>
-      val resultText = lineContentTextFlow(result)
-      println("results======")
-      println(resultText.flow.mkString("\n"))
+    // results.foreach { result =>
+    //   val resultText = lineContentTextFlow(result)
+    //   println("results======")
+    //   println(resultText.flow.mkString("\n"))
 
-      println("results text=======")
-      println(resultText.text)
-    }
+    //   println("results text=======")
+    //   println(resultText.text)
+    // }
 
     // ?? ==> 'of LiFePO4 (scanning) electron'
     //    MatchResult(rs: Seq[TargetRegion]) = Seq("scan-".targetRegion, "ning".targetRegion)

@@ -1,11 +1,12 @@
 package edu.umass.cs.iesl.watr
-package spindex
-
+package predsynth
 
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
 import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
+import TypeTags._
+import scalaz.@@
 
 
 trait PredsynthPaperAnnotationTypes extends TypeTagFormats {
@@ -55,8 +56,6 @@ case class Entity(
   entdescriptors: Seq[Option[EntityDescriptor]],
   x: Double, y: Double
 )
-
-case object Missing
 
 case class Apparatus(raw_text : RawText)
 case class Condition(raw_text : RawText)
@@ -112,14 +111,6 @@ case class Connection(
   paper_dois : Option[Seq[String]]
 )
 
-case class TextPosition(
- postions: Seq[(Int, Int, Int)]
-)
-
-case class MappedContext(
-  textContext: RawTextContext,
-  position: TextPosition
-)
 case class RawTextContext(
   paper: Paper,
   rawText: RawText,
@@ -154,6 +145,39 @@ case class RawTextContext(
   }
 }
 
+case class TextMentionGroup(
+  groupNumber: Int,
+  id: Option[String],
+  rawTextContexts: Seq[RawTextContext],
+  props: Seq[Relation.PropKV]
+
+)
+
+case class Contexts(
+  groups: Seq[TextMentionGroup],
+  props: Seq[Relation.PropKV]
+)
+
+sealed trait AlignedContext
+case class AlignSuccess(
+  rawTextContext: RawTextContext,
+  range: (Int, Int)
+
+) extends AlignedContext
+
+case class AlignFailure(
+  rawTextContext: RawTextContext,
+  msg: String
+) extends AlignedContext
+
+
+case class AlignedGroup(
+  textMentionGroup: TextMentionGroup,
+  groupType: String,
+  alignedContexts: Seq[AlignedContext]
+)
+
+
 object PredsynthLoad extends PredsynthPaperAnnotationTypes {
 
   def findMatchingParagraphs(paragraphs: Seq[Paragraph], r: RawText): Seq[(Paragraph, Int)] = {
@@ -181,7 +205,7 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
         None
 
       }, (paper: Paper) => {
-        println("load went ok.")
+        println("predsynth json load successful.")
         Option(paper)
       }
     )
@@ -204,25 +228,7 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
         None
 
       }, (ps: Seq[Paper]) => {
-        println("load went ok.")
-        // val jsonTmp = pwd / RelPath("predsynth-jsons.d")
-
-        // rm(jsonTmp)
-        // mkdir(jsonTmp)
-
-        // ps.foreach { p =>
-        //   val name = paperName(p)
-        //   val asJson = Json.toJson(p)
-        //   val pPath = jsonTmp / name
-        //   val jstr = Json.prettyPrint(asJson)
-        //   if (exists(pPath)) {
-        //       val vpath = jsonTmp / (name+".v2")
-        //     write(vpath, jstr)
-        //   } else {
-        //     write(pPath, jstr)
-        //   }
-        // }
-
+        println("predsynth json load successful.")
 
         ps.map(p=> {
           (p.name -> p)
@@ -232,21 +238,6 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
   }
 
 
-  case class EntityContexts(
-    ent: Seq[RawTextContext],
-    amounts: Seq[RawTextContext],
-    edesc: Seq[RawTextContext]
-  )
-  case class OpContexts(
-    ops: Seq[RawTextContext],
-    app: Seq[RawTextContext],
-    cond: Seq[RawTextContext]
-  )
-
-  case class Contexts(
-    entityContexts: Seq[EntityContexts],
-    opContexts: Seq[OpContexts]
-  )
 
   def buildContexts(paper: Paper): Contexts = {
 
@@ -257,27 +248,64 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
 
 
     val ents = for {
-      entity <- paper.entities.flatten
+      (entity, groupNum) <- paper.entities.flatten.zipWithIndex
     } yield {
+      // Group these and record the sha1-id:
+      val id = entity._id
       val entities = findContexts(entity.raw_texts.flatten, "entity")
-      val amounts = findContexts(entity.amounts.flatten.map(_.raw_text), "entity/amounts")
+      val amounts = findContexts(entity.amounts.flatten.map(_.raw_text), "entity/amount")
       val edesc = findContexts(entity.entdescriptors.flatten.map(_.raw_text), "entity/descriptor")
 
-      EntityContexts(entities, amounts, edesc)
+      val relations = Seq(
+        Relation.PropKV(
+          "isTarget",
+          Relation.Prop.Bool(entity.is_target.exists(t=>t))
+        )
+      )
+
+      // EntityContexts(entities, amounts, edesc)
+      TextMentionGroup(
+        groupNum,
+        entity._id,
+        entities ++ amounts ++ edesc,
+        relations
+      )
+
     }
 
 
     val ops = for {
-      operation <- paper.operations.flatten
+      (operation, index) <- paper.operations.flatten.zipWithIndex
     } yield {
+      val groupNum = ents.length+index
+
       val ops = findContexts(operation.raw_texts.flatten, "operation")
       val apps = findContexts(operation.apparatuses.flatten.map(_.raw_text), "operation/apparatus")
       val conds = findContexts(operation.conditions.flatten.map(_.raw_text), "operation/condition")
 
-      OpContexts(ops, apps , conds)
+      val props = Seq(
+        Relation.PropKV(
+          "hasOrder",
+          Relation.Prop.Num(operation.order)
+        )
+      )
+
+      TextMentionGroup(
+        groupNum,
+        operation._id,
+        ops ++ apps ++ conds,
+        props
+      )
     }
 
-    Contexts(ents, ops)
+    // TODO: paragraph: isRecipe
+    // TODO: paper: hasTag
+    // paper.paragraphs
+
+    Contexts(
+      ents++ops,
+      Seq()
+    )
   }
 
   def matchRawTextToPara(rawText: RawText, paragraphs: Seq[Paragraph]):  Seq[(Paragraph, Int)] = {
@@ -429,7 +457,8 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
     }
   }
 
-  def alignContexts(paper: Paper, oneLine: String): Seq[Either[(RawTextContext, String), (RawTextContext, (Int, Int))]] = { // Seq[()]
+
+  def alignContexts(paper: Paper, oneLine: String): Seq[AlignedGroup] = {
 
     val paperContexts = buildContexts(paper)
 
@@ -439,23 +468,30 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
       }
     }
 
-    val entContexts = paperContexts.entityContexts.map { ectx =>
-      ectx.ent ++ ectx.amounts ++ ectx.edesc
-    }
+    paperContexts.groups.map { textMentionGroup: TextMentionGroup =>
 
-    val opContexts = paperContexts.opContexts.map { ectx =>
-      ectx.ops ++ ectx.app ++ ectx.cond
-    }
+      val allContexts = textMentionGroup.rawTextContexts
+      val allPatterns = allContexts.map(_.stringContext(10))
 
-    val allContexts = (entContexts ++ opContexts).flatten
-    val allPatterns = allContexts.map(_.stringContext(10))
+      val groupType = allContexts.headOption
+        .map(_.textType.takeWhile(_ != '/'))
+        .getOrElse("")
 
-    val foundContexts = findPatternContexts(allPatterns, oneLine)
+      val foundContexts = findPatternContexts(allPatterns, oneLine)
 
-    foundContexts.zip(allContexts).map{ case (foundCtx, context) =>
-      foundCtx
-        .right.map(range => (context, range))
-        .left.map(msg => (context, msg))
+      val alignments = foundContexts.zip(allContexts)
+        .map({ case (foundCtx, context) =>
+          foundCtx.fold(
+            msg => AlignFailure(context, msg),
+            range => AlignSuccess(context, range)
+          )
+        })
+
+      AlignedGroup(
+        textMentionGroup,
+        groupType,
+        alignments
+      )
     }
   }
 
@@ -471,27 +507,27 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
     //   println(s"context: $context")
     // }
 
-    val jsonPath = pwd / RelPath(args(0))
+    // val jsonPath = pwd / RelPath(args(0))
 
-    for {
-      papers <- loadPapers(jsonPath)
-      (paperName, paper) <- papers
-    } {
-      println(s"${paper.name} =========")
-      val context = buildContexts(paper)
-      println(s" Entities ")
-      context.entityContexts.foreach { ectx =>
-        ectx.ent.foreach { rt => println(s"     ${rt}") }
-        ectx.amounts.foreach { rt => println(s"         ${rt}") }
-        ectx.edesc.foreach { rt => println(s"         ${rt}") }
-      }
-      println(s" Operations")
-      context.opContexts.foreach { ectx =>
-        ectx.ops.foreach { rt => println(s"     ${rt}") }
-        ectx.app.foreach { rt => println(s"         ${rt}") }
-        ectx.cond.foreach { rt => println(s"         ${rt}") }
-      }
-    }
-
+    // for {
+    //   papers <- loadPapers(jsonPath)
+    //   (paperName, paper) <- papers
+    // } {
+    //   println(s"${paper.name} =========")
+    //   val context = buildContexts(paper)
+    //   println(s" Entities ")
+    //   context.entityContexts.foreach { ectx =>
+    //     ectx.ent.foreach { rt => println(s"     ${rt}") }
+    //     ectx.amounts.foreach { rt => println(s"         ${rt}") }
+    //     ectx.edesc.foreach { rt => println(s"         ${rt}") }
+    //   }
+    //   println(s" Operations")
+    //   context.opContexts.foreach { ectx =>
+    //     ectx.ops.foreach { rt => println(s"     ${rt}") }
+    //     ectx.app.foreach { rt => println(s"         ${rt}") }
+    //     ectx.cond.foreach { rt => println(s"         ${rt}") }
+    //   }
+    // }
   }
+
 }

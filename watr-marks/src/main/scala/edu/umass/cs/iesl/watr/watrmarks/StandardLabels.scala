@@ -42,6 +42,8 @@ trait DocSegLabels {
   val First = Label("", "first")
   val Last = Label("", "last")
 
+  val Annotation = Label("ds", "annotation")
+
 }
 
 

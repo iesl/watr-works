@@ -26,8 +26,11 @@ case class TargetFigure(
 
 case class Zone(
   id: Int@@ZoneID,
-  regions: Seq[TargetRegion]
+  regions: Seq[TargetRegion],
+  label: Label
 )
+
+// case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)
 
 case class PageGeometry(
   id: Int@@PageID,
@@ -92,14 +95,12 @@ case class FontClass(
   weight: String
 )
 
-case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)
 
 case class ZoneRecords(
   id: String,
   target: String,
   pageGeometries: Seq[PageGeometry],
   zones: Seq[Zone],
-  labels: Seq[ZoneAndLabel],
   pageRegions: Seq[PageAtoms]
 )
 
@@ -113,7 +114,6 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   implicit def FormatLabel            = Json.format[Label]
   implicit def FormatPageGeometry     = Json.format[PageGeometry]
   implicit def FormatZone             = Json.format[Zone]
-  implicit def FormatZoneAndLabel     = Json.format[ZoneAndLabel]
   implicit def FormatCharAtom:Format[CharAtom]       =  ??? // Json.format[CharAtom]
   implicit def FormatImgAtom        =  Json.format[ImgAtom]
   implicit def FormatPageAtom:Format[PageAtom]       = ??? // Json.format[PageAtom]
@@ -163,6 +163,11 @@ object ComponentTypeEnrichments {
         sys.error(s"""cannot union targetRegions from different pages: ${targetRegion} + ${r}""")
       }
       targetRegion.copy(bbox = targetRegion.bbox union r.bbox)
+    }
+
+    def intersects(r: TargetRegion): Boolean = {
+      val samePage = targetRegion.target == r.target
+      samePage && (targetRegion.bbox intersects r.bbox)
     }
 
     def prettyPrint(): String = {

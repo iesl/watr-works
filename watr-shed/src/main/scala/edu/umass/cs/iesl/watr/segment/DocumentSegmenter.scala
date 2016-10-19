@@ -8,19 +8,22 @@ import spindex._
 import GeometricFigure._
 
 import scalaz.@@
-import scala.collection.JavaConversions._
-import scala.collection.mutable
-import utils._
 import TypeTags._
-import textboxing.{TextBoxing => TB}
-import TB._
+import scala.collection.JavaConversions._
+import textboxing.{TextBoxing => TB}, TB._
 import EnrichGeometricFigures._
-import utils.EnrichNumerics._
 import ComponentOperations._
 import ComponentRendering._
-import SlicingAndDicing._
+
+import utils._
 import utils.{CompassDirection => CDir}
 import utils.VisualTracer._
+import utils.EnrichNumerics._
+import SlicingAndDicing._
+
+import scala.collection.mutable
+
+import predsynth._
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
@@ -538,74 +541,174 @@ class DocumentSegmenter(
       }
 
       (ltext, lineUnits)
-
     }
-
-    // val lineUnits = (for {
-    //   linec  <- lineBioLabels
-    //   line   <- VisualLine.renderWithoutFormatting(linec.component).toSeq
-    //   funit  <- line.flow
-    // } yield {
-    //   (0 until funit.length).map(_ => funit)
-    // }).flatten.toArray
 
     val plaintext = lineTextAndUnits.map(_._1).mkString
     val lineUnits = lineTextAndUnits.flatMap(_._2)
 
     println(s"text len = ${plaintext.length()} lineunits len = ${lineUnits.length}")
 
-    // val plaintext = lineText.mkString("")
-
-
-
-    ////////DEBUG
-    // (for {
-    //   linec  <- lineBioLabels
-    //   line   <- VisualLine.renderWithoutFormatting(linec.component).toSeq
-    // }  {
-    //   val lflow = line.flow.mkString("\n    ", "\n    ", "\n")
-    //   val ltext = line.text
-
-    //   val lunits = line.flow.map(funit =>
-    //     (funit -> (0 until funit.length).map(_ => "*"))
-    //   )
-    //   val lfunitstr = lunits.mkString("\n    ", "\n    ", "\n")
-    //   println(s"""|Debug:
-    //               |    $ltext
-    //               |    ${lfunitstr}
-    //               |""".stripMargin)
-    // })
-
-    // // val dbgOffset = 4970
-    // // println(s"""| Debug:
-    // //             |   plaintext: ${plaintext.substring(dbgOffset, dbgOffset+90)}
-    // //             |   lineunits: ${lineUnits.slice(dbgOffset, dbgOffset+90).mkString("\n  ", "\n  ", "\n") }
-    // //             |""".stripMargin)
-
-    // ////////DEBUG
-
-
-
     // left=error, right=(begin, end) str offsets
-    val contexts: Seq[Either[(RawTextContext, String), (RawTextContext, (Int, Int))]]
-        = PredsynthLoad.alignContexts(paper, plaintext)
+    // val contexts: Seq[Either[(RawTextContext, String), (RawTextContext, (Int, Int))]]
+    val contexts: Seq[AlignedGroup]
+      = PredsynthLoad.alignContexts(paper, plaintext)
 
-    contexts.map{
-      case Left((rtc, err)) =>
-        println(s"err> ${rtc.toString()} ${err}")
-      case Right((rtc, (begin, end))) =>
+    val mongoIdToClusterId = mutable.HashMap[String, Int@@ClusterID]()
+    val rawTextMentionsById = mutable.HashMap[Int@@MentionID, RawTextContext]()
 
-        val slice = lineUnits.slice(begin, end)
-        val foundText = slice.map({ funit =>
-          TextFlow.toText(funit)
-        }).mkString
+    val relations = mutable.ArrayBuffer[Relation.Record]()
+    val props = mutable.ArrayBuffer[Relation.PropRec]()
 
-        if (rtc.rawText.raw_text == foundText) {
-          println(s"  > ${rtc.toString()}")
-        } else {
-          println(s"XX> ${rtc.toString()}  ===>  ${foundText}")
+    import utils.IdGenerator
+
+    val relationIds = IdGenerator[RelationID]()
+    // val mentionIds = IdGenerator[MentionID]()
+    val clusterIds = IdGenerator[ClusterID]()
+
+
+
+    // idGen.nextId
+    contexts.foreach({ alignedGroup: AlignedGroup =>
+      val groupNumber = alignedGroup.textMentionGroup.groupNumber
+      val id = alignedGroup.textMentionGroup.id
+      val groupClusterID = clusterIds.nextId
+      id.foreach { mongoId =>
+        mongoIdToClusterId.put(mongoId, groupClusterID)
+      }
+
+
+      val groupCluster = Relation.Elem.Cluster(groupClusterID)
+
+      props += Relation.PropRec(
+        groupCluster,
+        Relation.PropKV(
+          "recipeRole",
+          Relation.Prop.Str(alignedGroup.groupType)
+        )
+      )
+
+      props += Relation.PropRec(
+        groupCluster,
+        Relation.PropKV(
+          "mongoId",
+          Relation.Prop.Str(id.getOrElse("null"))
+        )
+      )
+
+      props ++= alignedGroup.textMentionGroup.props.map(Relation.PropRec(groupCluster, _))
+
+      alignedGroup.alignedContexts.foreach {
+        case AlignSuccess(rtc, (begin, end)) =>
+
+          // val rawTextMentionId = mentionIds.nextId
+          // rawTextMentionsById.put(rawTextMentionId, rtc)
+
+          val slice = lineUnits.slice(begin, end)
+          val foundText = slice.map({ funit =>
+            TextFlow.toText(funit)
+          }).mkString
+
+
+          val targetRegions = slice.collect({
+            case u: FlowUnit.Atom =>
+              val cc = u.atomicComponent
+              cc.pageAtom.region
+
+            case u: FlowUnit.Rewrite =>
+              val cc = u.atom.atomicComponent
+              cc.pageAtom.region
+          })
+
+
+          val intersectedVisualLines  = targetRegions.map{ targetRegion =>
+            val pageIndex = zoneIndexer.getPageIndex(targetRegion.target)
+
+            pageIndex.componentIndex
+              .queryForIntersects(targetRegion.bbox)
+              .filter(_.hasLabel(LB.VisualLine))
+              .headOption
+              .getOrElse { sys.error(s"no visual line found intersecting ${targetRegion}") }
+
+          }
+
+          val uniqVisualLines = intersectedVisualLines
+            .groupByPairs ({ case (c1, c2) => c1.id == c2.id })
+            .map(_.head)
+
+
+          val ann = LB.Annotation(rtc.textType)
+
+          val annotationRegions = uniqVisualLines.map{visualLine =>
+            val pageForLine = visualLine.pageId
+            val pageRegions = targetRegions.filter(_.target == visualLine.pageId)
+            // Select the span for each line that corresponds to labeled region
+            val intersectingLineAtoms = visualLine.queryAtoms()
+              .dropWhile({ lineAtom: AtomicComponent =>
+                val haveIntersection = pageRegions.exists { _.bbox.intersects(lineAtom.bounds) }
+                  !haveIntersection
+              }).reverse
+              .dropWhile({ lineAtom: AtomicComponent =>
+                val haveIntersection = pageRegions.exists { _.bbox.intersects(lineAtom.bounds) }
+                  !haveIntersection
+              }).reverse
+
+
+            zoneIndexer.labelRegion(intersectingLineAtoms, ann)
+          }
+
+          val annRegions = annotationRegions.flatten.map{_.targetRegion}
+          val newZone = Zone(ZoneID(0), annRegions,ann)
+          val zAdded = zoneIndexer.addZone(newZone)
+          val mentionId = MentionID(zAdded.id.unwrap)
+
+          rawTextMentionsById.put(mentionId, rtc)
+
+          relations += Relation.Record(RelationID(zAdded.id.unwrap),
+            groupCluster,
+            "hasMember",
+            Relation.Elem.Mention(mentionId)
+          )
+
+          if (rtc.rawText.raw_text == foundText) {
+            println(s"   > g:${groupNumber} ${id} >> ${rtc.toString()}")
+          } else {
+            println(s"***> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${foundText}")
+          }
+
+        case AlignFailure(rawTextContext, message) =>
+          println(s"!!!> ${rawTextContext.toString()} ${message}")
+
+      }
+    })
+
+    paper.connections
+      .flatten.foreach({ connection =>
+        (connection.id1, connection.id2) match {
+          case (Some(id1), Some(id2)) =>
+            val group1 = mongoIdToClusterId(id1)
+            val group2 = mongoIdToClusterId(id2)
+
+            relations += Relation.Record(relationIds.nextId,
+              Relation.Elem.Cluster(group1),
+              "connectsTo",
+              Relation.Elem.Cluster(group2)
+            )
+
+          case (None, Some(id2)) =>
+            val group2 = mongoIdToClusterId(id2)
+            println(
+              s"""errata: (?? `connectsTo` group:${group2})""")
+          case (Some(id1), None) =>
+            val group1 = mongoIdToClusterId(id1)
+            println(
+              s"""(group:${group1} `connectsTo` ??)""")
+          case _ =>
         }
-    }
+      })
+
+    zoneIndexer.addRelations(relations)
+    zoneIndexer.addProps(props)
+
   }
 
   def joinLines(): Unit = {
@@ -876,7 +979,7 @@ class DocumentSegmenter(
         lines.sortBy(_.bounds.top).foreach{ line =>
           println("  "*indent + s"w:${line.bounds.width.pp}, h:${line.bounds.height.pp} ${line.bounds.prettyPrint} > ${line.chars}")
         }
-    })
+      })
   }
 
   def printCommonLineBins(lineBins: Seq[LineDimensionBins]): Unit = {
@@ -1010,7 +1113,7 @@ class DocumentSegmenter(
         val lineComp = l1.component
         val lineText = lineComp.chars
         val isAbstractHeader =  """^(?i:(abstract|a b s t r a c t))""".r.findAllIn(lineText).length > 0
-        !isAbstractHeader
+          !isAbstractHeader
       }
     }
 

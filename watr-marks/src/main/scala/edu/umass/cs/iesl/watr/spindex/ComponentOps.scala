@@ -118,6 +118,10 @@ object ComponentOperations {
       crossesLeft || crossesRight
     }
 
+    def isOverlapped(other: Component): Boolean = {
+      selfComponent.bounds.intersects(other.bounds)
+    }
+
     def isOverlappedVertically(other: Component): Boolean = {
       !(selfComponent.isStrictlyAbove(other) || selfComponent.isStrictlyBelow(other))
     }

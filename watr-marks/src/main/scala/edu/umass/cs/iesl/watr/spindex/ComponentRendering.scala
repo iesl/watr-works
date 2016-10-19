@@ -100,7 +100,6 @@ object ComponentRendering {
         textFlow <- render(textSpan)
       } yield {
         val tokenId = textSpan.id
-        // (doEscapeAndQuote(cc, tokenBox), tokenId)
         (escapeJson(textFlow), tokenId)
       }
       val lineText = hsepb(textAndIds.map(_._1.text.box), ",")

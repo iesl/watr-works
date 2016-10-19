@@ -13,7 +13,7 @@ import utils.IdGenerator
 
 import VisualTracer._
 import watrmarks.{StandardLabels => LB}
-
+import predsynth._
 
 class ZoneIndexer(
   srcUri: URI
@@ -26,6 +26,7 @@ class ZoneIndexer(
   import SpatialIndex._
 
   val pageInfos = mutable.HashMap[Int@@PageID, PageIndex]()
+
 
   def dbgFilterComponents(pg: Int@@PageID, include: GeometricFigure.LTBounds): Unit ={
     pageInfos.get(pg).foreach ({ pageInfo =>
@@ -50,6 +51,37 @@ class ZoneIndexer(
   val componentIdGen = utils.IdGenerator[ComponentID]()
   val labelIdGen = IdGenerator[LabelID]()
   val regionIdGen = IdGenerator[RegionID]()
+
+  // Zone-related
+  val zoneIdGen = IdGenerator[ZoneID]()
+  val labelToZones: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ZoneID]] = mutable.HashMap()
+  val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
+
+  def getZones(): Seq[Zone] = {
+    zoneMap.values.toSeq
+  }
+
+  private def getLabelToZoneBuffer(l: Label): mutable.ArrayBuffer[Int@@ZoneID] = {
+    labelToZones.getOrElseUpdate(l, mutable.ArrayBuffer[Int@@ZoneID]())
+  }
+
+  def addZone(z: Zone): Zone =  {
+    val zid = zoneIdGen.nextId
+    val zupdate = z.copy(id=zid)
+    zoneMap.put(zid, zupdate)
+    getLabelToZoneBuffer(z.label) += zid
+    zupdate
+  }
+  val relations = mutable.ArrayBuffer[Relation.Record]()
+  val props = mutable.ArrayBuffer[Relation.PropRec]()
+
+  def addRelations(rs: Seq[Relation.Record]): Unit = {
+    relations ++= rs
+  }
+  def addProps(rs: Seq[Relation.PropRec]): Unit = {
+    props ++= rs
+  }
+
 
   type BioLabeling = mutable.MutableList[BioNode]
   val bioLabelings = mutable.Map[String, BioLabeling]()
@@ -84,6 +116,7 @@ class ZoneIndexer(
       .headOption.map(_.target)
       .getOrElse(sys.error("no page specified for component"))
   }
+
 
 
   def addLabel(c: Component, l: Label): Component = {
