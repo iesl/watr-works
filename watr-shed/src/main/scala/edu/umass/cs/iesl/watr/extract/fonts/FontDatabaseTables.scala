@@ -14,7 +14,7 @@ object FontDatabaseTables extends EdgeTables {
   val log = LoggerFactory.getLogger(this.getClass)
 
   import DBIOX._
-  import utils.StringCaseUtils._
+  import utils.StringUtils._
 
   def tableName(s: String) = s.toUnderscoreCase.toUpperCase
 

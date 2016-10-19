@@ -3,6 +3,8 @@ package predsynth
 
 import scalaz.@@
 
+import utils.{StringUtils => SU}
+
 
 sealed trait Relation
 
@@ -55,11 +57,11 @@ object Relation {
   )
 
   def formatElem(e: RecNode): String = e match {
-    case Elem.Mention(v)  => s"""mention:$v"""
-    case Elem.Cluster(v)  => s"""cluster:$v"""
-    case Elem.Relation(v) => s"""relation:$v"""
-    case Prop.Bool(v)     => s"""$v"""
-    case Prop.Str(v)      => '"'+ v +'"'
+    case Elem.Mention(v)  => SU.dquote(s"mention:$v")
+    case Elem.Cluster(v)  => SU.dquote(s"cluster:$v")
+    case Elem.Relation(v) => SU.dquote(s"relation:$v")
+    case Prop.Bool(v)     => v.toString
+    case Prop.Str(v)      => SU.dquote(v)
     case Prop.Num(v)      => v.toString
   }
 

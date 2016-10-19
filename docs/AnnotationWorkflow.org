@@ -1,0 +1,45 @@
+
+* Annotation workflow
+
+
+** Start: Annotated corpus
+
+   
+
+ #+BEGIN_SRC js 
+{ "lines": [
+    "Cryst. Res. Technol. 50, No. 7, 566–573 (2015) / DOI 10.1002/crat.201500063",                           
+    "Elliptic NdCrO_{3} microplate by a simple one-step hydrothermal",                                       
+    "synthesis route and its characterization and magnetic",                                                 
+    "proper ties",                                                                                           
+    "Chengpeng Yao, Youjin Zhang∗, Yun Fan, Maozhong Zhou, and Hai Wu",                                      
+
+
+  "mentions": [
+    [1,   1,   "entity",               "Nd(NO_{3})_{3}¿-127;6H_{2}O", [[131, 34, 18]]],
+    [2,   1,   "entity",               "Neodymium nitrate",    [[125, 0, 16]]],
+    [3,   1,   "entity/amount",        "4.48 mmol",            [[131, 24, 8]]],
+    [4,   1,   "entity/amount",        "99.0%),",              [[125, 40, 6]]],
+    [5,   2,   "entity",               "water",                [[132, 29, 4]]],
+    [6,   2,   "entity/amount",        "10 mL",                [[132, 13, 4]]],
+    [7,   2,   "entity/descriptor",    "distilled",            [[132, 19, 8]]],
+
+  "relations": [
+    [cluster:1,      "connectsTo",    cluster:20],
+
+  "properties": [
+    [cluster:1, "role", "recipe/entity"],
+    [cluster:1, "mongoId",    "5759e995a15158513d86d53f"],
+    [cluster:1, "isTarget",   false],
+    
+    ...
+}
+
+ #+END_SRC
+ 
+
+** Add new mentions 
+
+
+
+

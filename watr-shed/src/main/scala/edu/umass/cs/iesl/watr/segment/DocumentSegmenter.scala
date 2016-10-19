@@ -484,12 +484,6 @@ class DocumentSegmenter(
     determineVisualLineOrdering()
     vtrace.trace(end("determineVisualLineOrdering"))
 
-    // // document-wide stats on cc discovered lines
-    // // findMostFrequentLineDimensions()
-    // // findMostFrequentFocalJumps()
-
-    // // val orderedLinesPerPage = for { pageId <- zoneIndexer.getPages }
-    // //     yield { groupPageTextBlocks(pageId) }
     labelTitle()
     labelAuthors()
     labelAbstract()
@@ -583,8 +577,8 @@ class DocumentSegmenter(
       props += Relation.PropRec(
         groupCluster,
         Relation.PropKV(
-          "recipeRole",
-          Relation.Prop.Str(alignedGroup.groupType)
+          "role",
+          Relation.Prop.Str("recipe/"+alignedGroup.groupType)
         )
       )
 
@@ -1198,9 +1192,9 @@ class DocumentSegmenter(
 
   def labelSectionHeadings(): Unit = {
     vtrace.trace(begin("LabelSectionHeadings"))
-    val vlines = zoneIndexer.bioLabeling("LineBioLabels")
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
     for {
-      lineBioNode <- vlines
+      lineBioNode <- lineBioLabels
       lineComp = lineBioNode.component
       numbering = lineComp.chars.takeWhile(c => c.isDigit || c=='.')
       nexts = lineComp.chars.drop(numbering.length) //.takeWhile(c => c.isLetter)
@@ -1227,13 +1221,13 @@ class DocumentSegmenter(
   }
 
   def labelTitle(): Unit = {
-    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
     // look for lines with biggest font within first [x] lines of paper
     // get rid of lines with length less than some arbitrary length (to weed out some weird cases)
-    val biggestLineAtBeginning = vlines.take(50)
+    val biggestLineAtBeginning = lineBioLabels.take(50)
       .filter(_.component.chars.length() > 5)
       .sortWith(_.component.height > _.component.height)
-    
+
     // for debugging, print out all the lines sorted in order from largest to smallest
 //    biggestLineAtBeginning.foreach(node => println(node.component.chars))
 //    println
@@ -1257,39 +1251,40 @@ class DocumentSegmenter(
     val firstNameSet = firstNames.toSet
     val lastNameSet = lastNames.toSet
 
-    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
+    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
-    val firstLines = vlines.filter(_.component.chars.length() > 5).take(8)
+    val firstLines = lineBioLabels.filter(_.component.chars.length() > 5).take(8)
 
-    for(lineNode <- firstLines) {
-      val lineText = ComponentRendering.VisualLine.render(lineNode.component)
-      if(!lineText.isEmpty) {
-        val lines = lineText.get.lines.mkString(" ")
-        val words = lines.split(" ")
-        //words.foreach(println)
-        //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
-        val lowerLines = lines.toLowerCase()
-        if(!lowerLines.contains("university") && !lowerLines.contains("department")
-          && !lowerLines.contains("school") && !lowerLines.contains("college") && !lowerLines.contains("center")) {
-          // first check for word in set of known names
-          for (word <- words) {
-            if ((firstNameSet.contains(word) || lastNameSet.contains(word))&& word.length > 1) {
-              println("found " + word + " in the names corpus")
-              zoneIndexer.addBioLabels(LB.Author, lineNode)
-              println("labeling " + lines + " as author ")
-            }
-          }
-        }
-        // todo: use pattern matching to look for things like initials, etc. (figure how why this isn't working)
-        val initial = """[A-Z]+\.+\s""".r
-        if((initial findAllIn lines).length > 0) {
-          println("found a possible initial in line " + lines)
-          zoneIndexer.addBioLabels(LB.Author, lineNode)
-          println("labeling " + lines + " as author ")
-        }
-      }
-    }
-    println()
+    // FIXME: integrate w/textflow and reinstate this block
+    // for(lineNode <- firstLines) {
+    //   val lineText = ComponentRendering.VisualLine.render(lineNode.component)
+    //   if(!lineText.isEmpty) {
+    //     val lines = lineText.get.lines.mkString(" ")
+    //     val words = lines.split(" ")
+    //     //words.foreach(println)
+    //     //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
+    //     val lowerLines = lines.toLowerCase()
+    //     if(!lowerLines.contains("university") && !lowerLines.contains("department")
+    //       && !lowerLines.contains("school") && !lowerLines.contains("college") && !lowerLines.contains("center")) {
+    //       // first check for word in set of known names
+    //       for (word <- words) {
+    //         if ((firstNameSet.contains(word) || lastNameSet.contains(word))&& word.length > 1) {
+    //           println("found " + word + " in the names corpus")
+    //           zoneIndexer.addBioLabels(LB.Author, lineNode)
+    //           println("labeling " + lines + " as author ")
+    //         }
+    //       }
+    //     }
+    //     // todo: use pattern matching to look for things like initials, etc. (figure how why this isn't working)
+    //     val initial = """[A-Z]+\.+\s""".r
+    //     if((initial findAllIn lines).length > 0) {
+    //       println("found a possible initial in line " + lines)
+    //       zoneIndexer.addBioLabels(LB.Author, lineNode)
+    //       println("labeling " + lines + " as author ")
+    //     }
+    //   }
+    // }
+    // println()
   }
 
 

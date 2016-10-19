@@ -22,6 +22,14 @@ sealed trait SHA1String
 sealed trait Offset
 sealed trait Length
 
+// Maybe someday: 
+// sealed trait StringCase
+// sealed trait SnakeCase extends StringCase
+// sealed trait CamelCase extends StringCase
+// sealed trait SnakeUScoreCase extends StringCase
+// val SnakeCase = Tag.of[SnakeCase]
+// val SnakeUScoreCase = Tag.of[SnakeUScoreCase]
+// val CamelCase = Tag.of[CamelCase]
 
 object TypeTags {
   val SHA1String = Tag.of[SHA1String]

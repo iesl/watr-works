@@ -15,12 +15,13 @@ shellPrompt in ThisBuild := Sensible.colorPrompt
 val scalazVersion = "7.2.6"
 val specs2Version = "3.7"
 val scalatestVersion = "3.0.0"
-val scalaTagsVersion = "0.6.0"
+val scalaTagsVersion = "0.6.1"
+val scalaAsyncVersion = "0.9.6-RC6"
 
 val commonDeps =  Sensible.logback ++ Seq(
 
    "org.scalaz"              %% "scalaz-core"      % "7.2.6",
-   "org.scala-lang.modules"  %% "scala-async"      % "0.9.6-RC5",
+   "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion,
    "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion,
    "com.lihaoyi"              % "ammonite"         % "0.7.8" cross CrossVersion.full,
    "com.lihaoyi"             %% "fastparse"        % "0.4.1",
@@ -107,7 +108,7 @@ lazy val watrshed = (project in file("watr-shed"))
 // Revolver.settings
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(libraryDependencies ++= Seq(
-    "org.scala-lang.modules" %% "scala-async" % "0.9.6-RC5",
+    "org.scala-lang.modules" %% "scala-async" % scalaAsyncVersion,
     "me.chrons" %%% "boopickle" % "1.2.4",
     "com.lihaoyi" %%% "scalatags" % scalaTagsVersion,
     "com.lihaoyi" %%% "autowire" % "0.2.5"
@@ -128,9 +129,9 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
 ).jvmSettings(
   name := "watrcolors-server",
   libraryDependencies ++= Seq(
-    "io.spray" %% "spray-can" % "1.3.3",
+    "io.spray" %% "spray-can" % "1.3.4",
     "io.spray" %% "spray-routing-shapeless2" % "1.3.3",
-    "com.typesafe.akka" %% "akka-actor" % "2.4.10",
+    "com.typesafe.akka" %% "akka-actor" % "2.4.11",
     "org.webjars.bower" % "fabric" % "1.6.2",
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "2.2.4",

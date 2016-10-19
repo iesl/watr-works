@@ -1,38 +1,21 @@
 package edu.umass.cs.iesl.watr
 package utils
 
-// import scalaz.Tag
-// import scalaz.@@
 
-// sealed trait StringCase
 
-// sealed trait SnakeCase extends StringCase
-// sealed trait CamelCase extends StringCase
-// sealed trait SnakeUScoreCase extends StringCase
+object StringUtils {
 
-object StringCaseUtils {
+  def bracket(l:Char, r:Char, b: String): String = {
+    val lb = l.toString
+    val rb = r.toString
+    lb + b + rb
+  }
 
-  // implicit class TagOps[T <: StringCase](val value: String@@T) extends AnyVal {
-  //   def unwrap: String = Tag.of[T].unwrap(value)
-  // }
+  def dquote(b: String): String = bracket('"', '"', b)
+  def squareBracket(b: String): String = bracket('[', ']', b)
+  def curlyBrace(b: String): String = bracket('{', '}', b)
 
-  // val SnakeCase = Tag.of[SnakeCase]
-  // val SnakeUScoreCase = Tag.of[SnakeUScoreCase]
-  // val CamelCase = Tag.of[CamelCase]
 
-  // implicit class RicherStringCase[C <: StringCase](val str: String@@C) extends AnyVal {
-
-  //   def toSnakeCase(): String@@SnakeCase = {
-  //     str match {
-  //       case t: SnakeCase  => str
-  //       case t: SnakeUScoreCase  =>
-  //       case t: CamelCase  =>
-  //     }
-
-  //     SnakeCase(str.unwrap.replaceAll("([A-Z])", "-$1").toLowerCase.replaceAll("^-", ""))
-  //   }
-
-  // }
 
   implicit class RicherString(val str: String) extends AnyVal {
     def toSnakeCase(): String = {

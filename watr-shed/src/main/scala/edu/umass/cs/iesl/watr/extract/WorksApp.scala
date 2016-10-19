@@ -427,14 +427,12 @@ object Works extends App {
               predSynthPaper <- paperDict.get(entryFilename)
             } {
               segmenter.alignPredSynthPaper(predSynthPaper)
-              new predsynth.PredsynthPaperAnnotationTypes {
-                import play.api.libs.json, json._
-                val pjson = Json.toJson(predSynthPaper)
-                val jsOut = Json.prettyPrint(pjson)
-                corpusEntry.putArtifact("predsynth-paper.json", jsOut)
-
-              }
-
+              // new predsynth.PredsynthPaperAnnotationTypes {
+              //   import play.api.libs.json, json._
+              //   val pjson = Json.toJson(predSynthPaper)
+              //   val jsOut = Json.prettyPrint(pjson)
+              //   corpusEntry.putArtifact("predsynth-paper.json", jsOut)
+              // }
             }
 
             val zoneIndex = segmenter.zoneIndexer
