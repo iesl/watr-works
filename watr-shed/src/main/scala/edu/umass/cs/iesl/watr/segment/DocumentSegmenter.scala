@@ -490,7 +490,8 @@ class DocumentSegmenter(
 
     // // val orderedLinesPerPage = for { pageId <- zoneIndexer.getPages }
     // //     yield { groupPageTextBlocks(pageId) }
-
+    labelTitle()
+    labelAuthors()
     labelAbstract()
     labelSectionHeadings()
 
@@ -1143,6 +1144,54 @@ class DocumentSegmenter(
 
 
       }
+    } else {
+      // println("abstract is unlabled")
+      // abstract is unlabled, look for the first multi-line text block before the intro?
+      var found = false
+      val allBlocksBeforeIntro = blocks.takeWhile { tblines =>
+        tblines.headOption.exists { l1 =>
+          // l1 is a BioNode
+          val lineComp = l1.component
+          val lineText = lineComp.chars
+          //todo: might accidentally mistake title for introduction - throwing out multi-work lines to fix this
+          val isIntroHeader =
+          {"""introduction""".r.findAllIn(lineText.toLowerCase).length > 0 && lineText.split(" ").length == 1}
+          if(isIntroHeader){
+            //println("found intro header")
+            found = true
+          }
+          !isIntroHeader
+        }
+      }
+      // todo: fix so that it checks for other labels
+      // todo: handle case where the intro isn't labeled either (should we attempt to label things in this case?)
+      // find first multiline block before intro and label it as abstract, if it has no other labelings
+      if (found && allBlocksBeforeIntro.length > 0) {
+        //todo: this is for testing, remove eventually
+        allBlocksBeforeIntro.foreach(block => {
+          //block.foreach(node => println(node.component.toText))
+          //println
+        })
+
+        val lastMultilineBeforeIntro = allBlocksBeforeIntro.lastIndexWhere(_.length > 3)
+        if (lastMultilineBeforeIntro != -1) {
+          // label this as the abstract
+          allBlocksBeforeIntro.get(lastMultilineBeforeIntro).foreach { abs =>
+            zoneIndexer.addBioLabels(LB.Abstract, abs)
+            //println("labeling as part of abstract: " + abs.component.toText)
+            // vtrace.trace(
+            //   vtrace.link(
+            //     vtrace.all(
+            //       abs.map(b => vtrace.showComponent(b.component))
+            //     ),
+            //     vtrace.showLabel(LB.Abstract)
+            //   )
+            // )
+
+
+          }
+        }
+      }
     }
     vtrace.trace(end("LabelAbstract"))
   }
@@ -1175,6 +1224,72 @@ class DocumentSegmenter(
     // look for rectangular blocks of text (plus leading/trailing lines)
     // look for for left-aligned (column-wise) single or double numbered text lines w/ large gaps
     // filter out figure/caption/footnotes based on embedded images and page locations
+  }
+
+  def labelTitle(): Unit = {
+    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
+    // look for lines with biggest font within first [x] lines of paper
+    // get rid of lines with length less than some arbitrary length (to weed out some weird cases)
+    val biggestLineAtBeginning = vlines.take(50)
+      .filter(_.component.chars.length() > 5)
+      .sortWith(_.component.height > _.component.height)
+    
+    // for debugging, print out all the lines sorted in order from largest to smallest
+//    biggestLineAtBeginning.foreach(node => println(node.component.chars))
+//    println
+
+    if(biggestLineAtBeginning.headOption.isDefined) {
+      println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
+      zoneIndexer.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
+      println
+    } else {
+      println("there isn't a biggest line?")
+    }
+  }
+
+
+  def labelAuthors(): Unit = {
+    val fnStream: InputStream = getClass().getClassLoader.getResourceAsStream("first_names.txt")
+    val firstNames = scala.io.Source.fromInputStream(fnStream).getLines()
+    val lnStream: InputStream = getClass.getClassLoader.getResourceAsStream("last_names.txt")
+    val lastNames = scala.io.Source.fromInputStream(lnStream).getLines()
+
+    val firstNameSet = firstNames.toSet
+    val lastNameSet = lastNames.toSet
+
+    val vlines = zoneIndexer.bioSpine("TextBlockSpine")
+
+    val firstLines = vlines.filter(_.component.chars.length() > 5).take(8)
+
+    for(lineNode <- firstLines) {
+      val lineText = ComponentRendering.VisualLine.render(lineNode.component)
+      if(!lineText.isEmpty) {
+        val lines = lineText.get.lines.mkString(" ")
+        val words = lines.split(" ")
+        //words.foreach(println)
+        //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
+        val lowerLines = lines.toLowerCase()
+        if(!lowerLines.contains("university") && !lowerLines.contains("department")
+          && !lowerLines.contains("school") && !lowerLines.contains("college") && !lowerLines.contains("center")) {
+          // first check for word in set of known names
+          for (word <- words) {
+            if ((firstNameSet.contains(word) || lastNameSet.contains(word))&& word.length > 1) {
+              println("found " + word + " in the names corpus")
+              zoneIndexer.addBioLabels(LB.Author, lineNode)
+              println("labeling " + lines + " as author ")
+            }
+          }
+        }
+        // todo: use pattern matching to look for things like initials, etc. (figure how why this isn't working)
+        val initial = """[A-Z]+\.+\s""".r
+        if((initial findAllIn lines).length > 0) {
+          println("found a possible initial in line " + lines)
+          zoneIndexer.addBioLabels(LB.Author, lineNode)
+          println("labeling " + lines + " as author ")
+        }
+      }
+    }
+    println()
   }
 
 

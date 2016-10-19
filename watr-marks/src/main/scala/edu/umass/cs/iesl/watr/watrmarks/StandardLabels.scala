@@ -15,6 +15,9 @@ trait DocSegLabels {
   val SectionNumber = Label("ds", "section-number")
   val SectionTitle = Label("ds", "section-title")
 
+  val Title = Label("ds", "title")
+  val Author = Label("ds", "author")
+
   val AbstractHeading = Label("ds", "abstract-heading")
   val Abstract = Label("ds", "abstract")
 
