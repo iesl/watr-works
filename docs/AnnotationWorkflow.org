@@ -52,7 +52,7 @@
                  |
                  v
 
-> bin/works --corpus ... --predsynth-papers ./predsynth-papers.json
+> bin/works docseg --align-predsynth-papers ./predsynth-papers.json
 
                  |
                  |              +-  WatrWorks can read the Predsynth annotated-paper collection (via json
@@ -61,33 +61,29 @@
                  |
                  |
            +-----------+
+           |           |<---------------------+
+           | Annotated |                      |
+           | WatrWorks |                      |
+           | .json(s)  |       +--------------+-------------+
+           |           |       |  Cleanup and adjustments are required. Some text could not
+           |           |----->-|  be automatically aligned, and there are errors
+           +-----------+       |  in the predsynth database that need correcting
+                 |             +----------------------------+
+                 |
+                 |
+                 v
+           +-----------+
            |           |
-           | Annotated |
            | WatrWorks |
-           |  .json    |
+           | Annotated |
+           | Docsegs   |
            |           |
            |           |
            +-----------+
-                 |
-                 |
-                 |
-                 +-----------<------------<---------------------+
-                 |                                              |
-                 v                                              |
- +--------------------------------+              +--------------+-------------+
- |  Annotated PDFs are aligned    |              |       Some cleanup and     |
- |    with WatrWorks text         |------------>-|   adjustments required     |
- +--------------------------------+              +----------------------------+
 
 
-     +-----------+
-     |           |
-     |  Aligned  |
-     | WatrWorks |
-     |  .json    |
-     |           |
-     |           |
-     +-----------+
+Once the current set of annotated documents is sufficiently cleaned
+and errors have been fixed,
 
 
 
@@ -96,20 +92,50 @@
 
 
 
-
-    MIT: Continue Labeling
-
-
-
-UMass:
-
-
-
-
-
-
-
-
+            +-------------------------------+                                             +-----------------------+
+            |  MIT continuing analysis      | mongo-export             github updates     |  UMass:               |
+    +-------+  and annotation in predsynth  +-------------+      +----------------------- +  WatrWorks updates    |
+    |       |   (in MongoDB)                |             |      |                        |                       |
+    |       +----------+--------------------+             |      |                        +-----------------------+
+    |                  ^                                  |      |
+    |                  |                                  |      |
+    |                  |                                  v      v
+    |                  |
+    |                  |                     >bin/works -merge predsynth.json
+    |                  |                     -----------------------------------      
+    |                  ^                                     |
+    |                  |                                     v
+    |          +----------------+                      +---------+
+    |          | import DocSegs |                      |Annotated|
+    |          |  into MongoDB  |                      | Docsegs |
+    |          +----------------+                      |         |
+    |                  |                               |         |
+    |                  |                               |         |
+    |                  |                               +----+----+
+    |                  |                                    |                              +----------------------------+
+    |                  |                                    |                              | UMass:                     |
+    |                  +<---------<---------------<---------+----->--------->------------->| Entity/Relation extraction |
+    |                  |                                                                   |                            |
+    |                  |                                                                   +-------------+--------------+
+    |                  ^                                                                                 |
+    |                  |                                                                                 |
+    |                  |                                                                                 |
+    |                                                                                                    |
+    |     >bin/works -include predsynth.json,umass.json   
+    |     ----------------------------------------------------------                                
+    |              ^   ^                                                                                 |
+    |              |   |                                                                                 |
+    |              |   |                                                                                 |
+    |              |   |                            +---------+                                          |
+    +--------------+   +------------<---------------|Annotated|----------------------<-------------------+
+                                                    | Docsegs |
+                                                    | (UMass) |      
+                                                    |         |      
+                                                    |         |      
+                                                    +----+----+      
+                                                          
+                                                          
+                                                          
 
 
 
