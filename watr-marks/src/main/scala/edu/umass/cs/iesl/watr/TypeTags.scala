@@ -22,7 +22,9 @@ sealed trait SHA1String
 sealed trait Offset
 sealed trait Length
 
-// Maybe someday: 
+sealed trait Percent
+
+// Maybe someday:
 // sealed trait StringCase
 // sealed trait SnakeCase extends StringCase
 // sealed trait CamelCase extends StringCase
@@ -50,6 +52,8 @@ object TypeTags {
 
   val Offset = Tag.of[Offset]
   val Length = Tag.of[Length]
+
+  val Percent = Tag.of[Percent]
 
   implicit class TagOps[A, T](val value: A@@T) extends AnyVal {
     def unwrap: A = Tag.of[T].unwrap(value)

@@ -26,6 +26,7 @@ case class AppConfig(
 )
 
 object Works extends App {
+
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
   // utils.VisualTracer.clearFilters()
@@ -394,16 +395,17 @@ object Works extends App {
   }
 
 
-  var predsynthPapers: Option[Map[String, Paper]] = None
 
   def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
     val artifactOutputName = "docseg.json"
 
     var rsegmenter: Option[segment.DocumentSegmenter] = None
 
-    conf.predsynthJson.map({json =>
-      predsynthPapers = PredsynthLoad.loadPapers(pwd / RelPath(json))
-    })
+
+    val predsynthPapers: Map[String, Paper] = conf.predsynthJson
+      .flatMap(json => PredsynthLoad.loadPapers(pwd / RelPath(json)))
+      .getOrElse(Map())
+
 
     processCorpusEntryList(conf, {corpusEntry =>
       try {
@@ -420,11 +422,8 @@ object Works extends App {
             segmenter.runPageSegmentation()
             val entryFilename = corpusEntry.entryDescriptorRoot
 
-
             for {
-              paperDict <- predsynthPapers
-              _ = println(s"getting ${entryFilename}")
-              predSynthPaper <- paperDict.get(entryFilename)
+              predSynthPaper <- predsynthPapers.get(entryFilename)
             } {
               segmenter.alignPredSynthPaper(predSynthPaper)
               // new predsynth.PredsynthPaperAnnotationTypes {
@@ -434,9 +433,6 @@ object Works extends App {
               //   corpusEntry.putArtifact("predsynth-paper.json", jsOut)
               // }
             }
-
-            val zoneIndex = segmenter.zoneIndexer
-
 
             val output = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer).toString()
             corpusEntry.putArtifact(artifactOutputName, output)

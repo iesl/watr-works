@@ -237,6 +237,14 @@ class DocumentSegmenter(
   //   15.0d
   // }
 
+  // def verticalLineJumpsPerHeightPerPage(): Map[Int@@PageID, (Double, Double)] = {
+  //   val alignedBlocksPerPage = for {
+  //     page <- visualLineOnPageComponents
+  //   } yield {
+  //   }
+  // }
+
+
 
   def docWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Double = {
     val allVDists = for {
@@ -304,21 +312,32 @@ class DocumentSegmenter(
             val line1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(line1.left)
             val line2InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(line2.left)
 
-            val areClustered = line1InBin && line2InBin
-            areClustered
+            line1InBin && line2InBin
           })
 
           val h1 = line1.height
           val h2 = line2.height
-          // val heightsDiffer = h1 != h2
-          // val heightsDiffer = ! h1.eqFuzzy(0.2)(h2)
-          val areGrouped = linesAreClustered //  && !heightsDiffer
+
+          val similarLineHeights = h2.withinRange(
+            h1.plusOrMinus(3.percent)
+          )
+
+          val verticalJump = line2.bounds.bottom - line1.bounds.bottom
+          val largeVerticalJump = verticalJump > line1.bounds.height*2.0
+          // val largeVerticalJump = line2.bounds.bottom.withinRange(
+          //   line1.bounds
+          // )
+
+          val areGrouped = linesAreClustered && similarLineHeights && !largeVerticalJump
+
+          val g = if (areGrouped) "+" else "-/-"
 
           vtrace.trace(message(
-            s"""| ${areGrouped} Group ${VisualLine.render(line1)} +??+ ${VisualLine.render(line2)}
-                |     l1.left: ${line1.left}        .height: ${h1}
-                |     l2.left: ${line2.left}        .height: ${h2}
-                |     linesAreClustered=${linesAreClustered}
+            s"""|   $g${VisualLine.render(line1).map(_.text).getOrElse("?")}
+                |   $g${VisualLine.render(line2).map(_.text).getOrElse("?")}
+                |     l1.left: ${line1.left}     .height: ${h1}
+                |     l2.left: ${line2.left}     .height: ${h2}
+                |     similarHeights=${similarLineHeights}, verticalJum=${verticalJump}, largeVerticalJump=${largeVerticalJump}
                 |""".stripMargin
           ))
 
@@ -327,7 +346,7 @@ class DocumentSegmenter(
 
       vtrace.trace({
         val blocks = groupedBlocks.map{ block =>
-          block.map(VisualLine.render(_))
+          block.map(VisualLine.render(_).map(_.text).getOrElse("<no text>"))
             .mkString("Block\n    ", "\n    ", "\n")
         }
         val allBlocks = blocks.mkString("\n  ", "\n  ", "\n")
@@ -347,23 +366,19 @@ class DocumentSegmenter(
     alignedBlocksPerPage: Seq[Seq[Seq[Component]]],
     modalVDist: Double
   ): Seq[Seq[Seq[Component]]] = {
+    val maxVDist = modalVDist * 1.4d
     // One last pass through block to split over-large vertical line jumps
     for {
       blocksOnPage <- alignedBlocksPerPage
-      block <- blocksOnPage
-    } yield {
-      block.splitOnPairs ({ case (a1, a2) =>
-        val vdist = a1.vdist(a2)
-        val maxVDist = modalVDist * 1.4d
-        // if (vdist > maxVDist) {
-        //   println(s"splitting lines on vdist=${vdist}, maxd=${maxVDist}  modald=${modalVDist}")
-        //   println(s"   ${a1.tokenizeLine().toText}")
-        //   println(s"   ${a2.tokenizeLine().toText}")
-        // }
-
+    } yield for {
+      block       <- blocksOnPage
+      blockPart   <- block.splitOnPairs({ case (block1, block2) =>
+        val b1BottomY = block1.bounds.toPoint(CDir.S).y
+        val b2TopY = block2.bounds.toPoint(CDir.N).y
+        val vdist = b2TopY - b1BottomY
         vdist > maxVDist
       })
-    }
+    } yield blockPart
 
   }
 
@@ -378,31 +393,23 @@ class DocumentSegmenter(
     val finalSplit = splitBlocksWithLargeVGaps(alignedBlocksPerPage, modalVDist)
 
     // Now create a BIO labeling linking visual lines into blocks
-    val bioLabels = finalSplit
-      .flatten
-      .map({ block =>
-        val bios = block.map(BioNode(_))
-        zoneIndexer.addBioLabels(LB.TextBlock, bios)
+    println(s"Doing final split")
+    val bioLabels = for {
+      page <- finalSplit
+      block <- page
+    } yield {
+      println(s"block len: ${block.length}")
+      val bios = block.map(BioNode(_))
+      zoneIndexer.addBioLabels(LB.TextBlock, bios)
+      bios
+    }
 
-        // each block is a list of line components that have been grouped into a text block
-        // vtrace.trace(
-        //   vtrace.link(
-        //     vtrace.all(
-        //       bios.map(b => vtrace.showComponent(b.component))
-        //     ),
-        //     vtrace.showLabel(LB.TextBlock)
-        //   )
-        // )
-
-        bios
-      })
 
     val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
     lineBioLabels ++= bioLabels.flatten
 
     val blocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
-
-    // val modalParaFocalJump = docWideModalParaFocalJump(blocks, modalVDist)
+    // println(s"There are now ${blocks.length} labeled blocks")
 
     blocks.splitOnPairs({
       case (aNodes: Seq[BioNode], bNodes: Seq[BioNode]) =>
@@ -413,6 +420,7 @@ class DocumentSegmenter(
         //   - a's width falls strictly within b's width
         //   - dist a -> b is near doc-wide standard line distance
         //   - a is at end of column, b is higher on page, or next page
+
 
         val onSamePage = true
         val aIsSingeLine = aNodes.length == 1
@@ -453,7 +461,7 @@ class DocumentSegmenter(
     })
     vtrace.trace({
       val blockStrs = blocks.map{ block =>
-        block.map(b => VisualLine.render(b.component))
+        block.map(b => VisualLine.render(b.component).map(_.text).getOrElse("<no text>"))
           .mkString("Block\n    ", "\n    ", "\n")
       }
       val allBlocks = blockStrs.mkString("\n  ", "\n  ", "\n")
@@ -1229,11 +1237,11 @@ class DocumentSegmenter(
       .sortWith(_.component.height > _.component.height)
 
     // for debugging, print out all the lines sorted in order from largest to smallest
-//    biggestLineAtBeginning.foreach(node => println(node.component.chars))
-//    println
+    //    biggestLineAtBeginning.foreach(node => println(node.component.chars))
+    //    println
 
     if(biggestLineAtBeginning.headOption.isDefined) {
-      println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
+      // println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
       zoneIndexer.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
       println
     } else {

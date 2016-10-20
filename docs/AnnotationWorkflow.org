@@ -4,15 +4,15 @@
 
 ** Start: Annotated corpus
 
-   
 
- #+BEGIN_SRC js 
+
+ #+BEGIN_SRC js
 { "lines": [
-    "Cryst. Res. Technol. 50, No. 7, 566–573 (2015) / DOI 10.1002/crat.201500063",                           
-    "Elliptic NdCrO_{3} microplate by a simple one-step hydrothermal",                                       
-    "synthesis route and its characterization and magnetic",                                                 
-    "proper ties",                                                                                           
-    "Chengpeng Yao, Youjin Zhang∗, Yun Fan, Maozhong Zhou, and Hai Wu",                                      
+    "Cryst. Res. Technol. 50, No. 7, 566–573 (2015) / DOI 10.1002/crat.201500063",
+    "Elliptic NdCrO_{3} microplate by a simple one-step hydrothermal",
+    "synthesis route and its characterization and magnetic",
+    "proper ties",
+    "Chengpeng Yao, Youjin Zhang∗, Yun Fan, Maozhong Zhou, and Hai Wu",
 
 
   "mentions": [
@@ -31,15 +31,91 @@
     [cluster:1, "role", "recipe/entity"],
     [cluster:1, "mongoId",    "5759e995a15158513d86d53f"],
     [cluster:1, "isTarget",   false],
-    
+
     ...
 }
 
  #+END_SRC
- 
-
-** Add new mentions 
 
 
+ #+BEGIN_EXAMPLE
 
 
+ - Starting with 200+ Annotated PDFs in MongoDB
+                 |
+                 | - mongo-export to json
+                 |
+                 v
+           predsynth-papers.json
+                 |
+                 |
+                 |
+                 v
+
+> bin/works --corpus ... --predsynth-papers ./predsynth-papers.json
+
+                 |
+                 |              +-  WatrWorks can read the Predsynth annotated-paper collection (via json
+                 +--------------|   export), and align those annotations based on text-similarity.
+                 |              +-  Hopefully, that process is a one-time deal.
+                 |
+                 |
+           +-----------+
+           |           |
+           | Annotated |
+           | WatrWorks |
+           |  .json    |
+           |           |
+           |           |
+           +-----------+
+                 |
+                 |
+                 |
+                 +-----------<------------<---------------------+
+                 |                                              |
+                 v                                              |
+ +--------------------------------+              +--------------+-------------+
+ |  Annotated PDFs are aligned    |              |       Some cleanup and     |
+ |    with WatrWorks text         |------------>-|   adjustments required     |
+ +--------------------------------+              +----------------------------+
+
+
+     +-----------+
+     |           |
+     |  Aligned  |
+     | WatrWorks |
+     |  .json    |
+     |           |
+     |           |
+     +-----------+
+
+
+
+         WatrWorks docseg --annotations ./prior.docseg.json
+
+
+
+
+
+    MIT: Continue Labeling
+
+
+
+UMass:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#+END_EXAMPLE

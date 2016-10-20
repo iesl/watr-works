@@ -81,9 +81,11 @@ object ComponentOperations {
     def hasLabel(l: Label): Boolean = selfComponent.getLabels.contains(l)
 
     def vdist(other: Component): Double = {
-      selfComponent.bounds.toPoint(Compass.W).vdist(
-        other.bounds.toPoint(Compass.W)
-      )
+      other.bounds.bottom - selfComponent.bounds.bottom
+
+      // selfComponent.bounds.toPoint(Compass.S).vdist(
+      //   other.bounds.toPoint(Compass.S)
+      // )
     }
 
     def columnContains(other: Component): Boolean = {

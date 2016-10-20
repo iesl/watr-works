@@ -156,10 +156,12 @@ object BioLabeling {
 
 
   def isBegin(lb: Label, n: BioNode) = {
+    println(s"isBegin: Label: ${lb}: Node: $n")
     n.pins.exists(p => p.label==lb && (p.isBegin || p.isUnit))
   }
 
   def hasID(lb: Label, id: Int, n: BioNode) = {
+    println(s"hasID: label: ${lb}: id: $id  Node: $n")
     n.pins.exists(p => p.label==lb && p.id == id)
   }
 
@@ -168,9 +170,11 @@ object BioLabeling {
 
     def loop(ns: Seq[BioNode]): Seq[Seq[BioNode]] = {
       var currID: Int = 0
+      println("starting atBegin")
       val atBegin = ns
         .dropWhile({ node => !isBegin(l, node) })
 
+      println("Found begin")
       atBegin.headOption
         .map ({ node =>
           node.pins

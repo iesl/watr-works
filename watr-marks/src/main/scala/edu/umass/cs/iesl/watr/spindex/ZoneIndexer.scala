@@ -224,15 +224,16 @@ class ZoneIndexer(
 
   def addBioLabels(label: Label, nodes: Seq[BioNode]): Unit = {
     val labelId = labelIdGen.nextId
+    val l = label.copy(id=labelId)
 
     if (nodes.length==1) {
-      nodes.foreach(_.pins += label.U)
+      nodes.foreach(_.pins += l.U)
     } else if (nodes.length > 1) {
-      nodes.head.pins += label.B
-      nodes.last.pins += label.L
+      nodes.head.pins += l.B
+      nodes.last.pins += l.L
 
       nodes.drop(1).dropRight(1).foreach(
-        _.pins += label.I
+        _.pins += l.I
       )
     }
   }
