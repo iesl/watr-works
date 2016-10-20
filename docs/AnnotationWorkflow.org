@@ -1,42 +1,5 @@
 
-* Annotation workflow
-
-
-** Start: Annotated corpus
-
-
-
- #+BEGIN_SRC js
-{ "lines": [
-    "Cryst. Res. Technol. 50, No. 7, 566–573 (2015) / DOI 10.1002/crat.201500063",
-    "Elliptic NdCrO_{3} microplate by a simple one-step hydrothermal",
-    "synthesis route and its characterization and magnetic",
-    "proper ties",
-    "Chengpeng Yao, Youjin Zhang∗, Yun Fan, Maozhong Zhou, and Hai Wu",
-
-
-  "mentions": [
-    [1,   1,   "entity",               "Nd(NO_{3})_{3}¿-127;6H_{2}O", [[131, 34, 18]]],
-    [2,   1,   "entity",               "Neodymium nitrate",    [[125, 0, 16]]],
-    [3,   1,   "entity/amount",        "4.48 mmol",            [[131, 24, 8]]],
-    [4,   1,   "entity/amount",        "99.0%),",              [[125, 40, 6]]],
-    [5,   2,   "entity",               "water",                [[132, 29, 4]]],
-    [6,   2,   "entity/amount",        "10 mL",                [[132, 13, 4]]],
-    [7,   2,   "entity/descriptor",    "distilled",            [[132, 19, 8]]],
-
-  "relations": [
-    [cluster:1,      "connectsTo",    cluster:20],
-
-  "properties": [
-    [cluster:1, "role", "recipe/entity"],
-    [cluster:1, "mongoId",    "5759e995a15158513d86d53f"],
-    [cluster:1, "isTarget",   false],
-
-    ...
-}
-
- #+END_SRC
-
+** Annotation workflow
 
  #+BEGIN_EXAMPLE
 
@@ -83,31 +46,32 @@
 
 
 Once the current set of annotated documents is sufficiently cleaned
-and errors have been fixed,
+and errors have been fixed, the workflow looks something like this:
 
-
-
-         WatrWorks docseg --annotations ./prior.docseg.json
+- There are two storage mechanisms for annotations, Predsynth (MongoDB), and Docseg (WatrWorks output)
+- WatrWorks can merge prior Docseg and Predsynth stored annotations into new Docseg as it extracts text.
+- MIT will produce new annotations in Predsynth, pull WatrWorks changes, and produce annotated Docsegs
+- UMass will use MIT-produced Docsegs to do further analysis, which will be shared with MIT
 
 
 
 
             +-------------------------------+                                             +-----------------------+
-            |  MIT continuing analysis      | mongo-export             github updates     |  UMass:               |
+            |  MIT continuing analysis      | mongo-export             github pull        |  UMass:               |
     +-------+  and annotation in predsynth  +-------------+      +----------------------- +  WatrWorks updates    |
-    |       |   (in MongoDB)                |             |      |                        |                       |
+    |       |   (MongoDB)                   |             |      |                        |                       |
     |       +----------+--------------------+             |      |                        +-----------------------+
     |                  ^                                  |      |
     |                  |                                  |      |
     |                  |                                  v      v
     |                  |
     |                  |                     >bin/works -merge predsynth.json
-    |                  |                     -----------------------------------      
+    |                  |                     -----------------------------------
     |                  ^                                     |
     |                  |                                     v
     |          +----------------+                      +---------+
     |          | import DocSegs |                      |Annotated|
-    |          |  into MongoDB  |                      | Docsegs |
+    |          |  into MongoDB  |                      | Docsegs | ---[ this now contains prior annotations with improved text extraction
     |          +----------------+                      |         |
     |                  |                               |         |
     |                  |                               |         |
@@ -121,27 +85,92 @@ and errors have been fixed,
     |                  |                                                                                 |
     |                  |                                                                                 |
     |                                                                                                    |
-    |     >bin/works -include predsynth.json,umass.json   
-    |     ----------------------------------------------------------                                
+    |     >bin/works -merge predsynth.json -merge umass.json
+    |     --------------------------------------------------                                             |
     |              ^   ^                                                                                 |
     |              |   |                                                                                 |
     |              |   |                                                                                 |
     |              |   |                            +---------+                                          |
     +--------------+   +------------<---------------|Annotated|----------------------<-------------------+
                                                     | Docsegs |
-                                                    | (UMass) |      
-                                                    |         |      
-                                                    |         |      
-                                                    +----+----+      
-                                                          
-                                                          
-                                                          
-
-
-
-
+                                                    | (UMass) |
+                                                    |         |
+                                                    |         |
+                                                    +----+----+
 
 
 
 
 #+END_EXAMPLE
+
+
+
+** Docseg format changes
+
+
+ #+BEGIN_SRC js
+{ "lines": [
+    "Cryst. Res. Technol. 50, No. 7, 566–573 (2015) / DOI 10.1002/crat.201500063",
+    "Elliptic NdCrO_{3} microplate by a simple one-step hydrothermal",
+    "synthesis route and its characterization and magnetic",
+    "proper ties",
+    "Chengpeng Yao, Youjin Zhang∗, Yun Fan, Maozhong Zhou, and Hai Wu",
+
+
+  "mentions": [
+    [1,   1,   "entity",               "Nd(NO_{3})_{3}¿-127;6H_{2}O", [[131, 34, 18]]],
+    [2,   1,   "entity",               "Neodymium nitrate",           [[125, 0, 16]]],
+    [3,   1,   "entity/amount",        "4.48 mmol",                   [[131, 24, 8]]],
+    [4,   1,   "entity/amount",        "99.0%),",                     [[125, 40, 6]]],
+    [5,   2,   "entity",               "water",                       [[132, 29, 4]]],
+    [6,   2,   "entity/amount",        "10 mL",                       [[132, 13, 4]]],
+    [7,   2,   "entity/descriptor",    "distilled",                   [[132, 19, 8]]],
+
+
+  "relations": [
+    [cluster:1,      "connectsTo",    cluster:20],
+
+  "properties": [
+    [cluster:1, "role",       "recipe/entity"],
+    [cluster:1, "mongoId",    "5759e995a15158513d86d53f"],
+    [cluster:1, "isTarget",   false],
+
+    ...
+}
+
+ #+END_SRC
+
+
+* Errors Found while processing current Predsynth Annotations: 
+
+
+** Empty Operation/entity records
+
+   #+BEGIN_EXAMPLE
+   {
+         "is_target": false,
+         "raw_texts": [],
+         "amounts": [],
+         "entdescriptors": [],
+         "_id": "574707f9a15158672f425701"
+   },
+   #+END_EXAMPLE
+
+
+** Operation/entity records with empty top-level raw_text blocks, but operations and/or conditions specified
+
+** Whitespace and other begin/end boundary issues around text
+
+   #+BEGIN_EXAMPLE
+       "raw_texts": [{
+               "end_char_index": 165,
+               "start_char_index": 162,
+               "raw_text": " Cu",
+               "paragraph_id": "57387cbda151585d8e640f6d"
+           }, {
+               "raw_text": "microcrystals ",
+
+#+END_EXAMPLE
+
+** Many repeated records, e.g., the same start/end raw_text span repeated within the same record
+
