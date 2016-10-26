@@ -1,9 +1,6 @@
 package edu.umass.cs.iesl.watr
 package textflow
 
-// import acyclic.file
-
-// import scala.collection.mutable
 import textboxing.{TextBoxing => TB}
 // import TypeTags._
 
@@ -13,11 +10,6 @@ import spindex._
 import watrmarks.{StandardLabels => LB}
 
 import watrmarks._
-// import ComponentOperations._
-// import ComponentTypeEnrichments._
-// import GeometricFigure._
-// import ComponentReflow._
-// import TextFlow._
 import GeneralizedReflow._
 
 object TextFlowRendering {
@@ -245,6 +237,12 @@ object TextFlowRendering {
         s"(w=${c.bounds.width.prettyPrint}, ctr:${c.bounds.toCenterPoint})"
       )
     }
+
+  }
+
+  implicit class RicherReflow(val theReflow: Reflow) extends AnyVal {
+
+    def text: String = toText(theReflow)
 
   }
 }

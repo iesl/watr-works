@@ -116,6 +116,7 @@ object DocumentIO {
   def serializeMentions(zoneIndexer: ZoneIndexer): TB.Box = {
     val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
+    println("serializeMentions(1)")
     val lines = for {
       linec <- lineBioLabels
       line = linec.component

@@ -15,6 +15,7 @@ import EnrichGeometricFigures._
 import ComponentOperations._
 import ComponentRendering._
 
+
 import utils._
 import utils.{CompassDirection => CDir}
 import utils.VisualTracer._
@@ -398,7 +399,7 @@ class DocumentSegmenter(
       page <- finalSplit
       block <- page
     } yield {
-      println(s"block len: ${block.length}")
+      // println(s"block len: ${block.length}")
       val bios = block.map(BioNode(_))
       zoneIndexer.addBioLabels(LB.TextBlock, bios)
       bios

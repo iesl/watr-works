@@ -429,7 +429,6 @@ object TextBoxing extends ToListOps with ToIdOps {
     )
   }
 
-
   def borderInlineTop(b:Box): Box = {
     if (b.rows==0) b
     else if (b.rows==1)

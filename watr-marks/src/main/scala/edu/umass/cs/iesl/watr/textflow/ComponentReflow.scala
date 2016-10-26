@@ -95,6 +95,7 @@ object TextFlow extends ToListOps with ToIdOps {
     TextFlow(flowUnits.map(_._2))
   }
 
+
   def flowUnitTargetRegion(funit: FlowUnit): Option[TargetRegion] = funit match {
     case u: FlowUnit.Atom => u.atomicComponent.targetRegion.some
     case u: FlowUnit.Rewrite => u.atom.atomicComponent.targetRegion.some
@@ -150,72 +151,4 @@ object FlowUnit {
   ) extends FlowUnit {
     val length: Int = value.length
   }
-}
-
-
-
-object ComponentReflow {
-
-  // case class Reflow(content: Content)
-
-  // sealed trait Content
-  // sealed trait LineContent extends Content
-
-  // object Content {
-
-  //   case class CC(c:Component, textFlow: TextFlow) extends LineContent
-  //   case class Clipped(cc: LineContent, start: Int, len: Int) extends LineContent
-  //   case class Concat(cs: Seq[LineContent]) extends LineContent
-
-  //   case class Row(rs:Seq[Reflow]) extends Content
-
-  //   // case class Clipped(b:Reflow, clip: LTBounds) extends Content
-  //   // case class Col(bs:Seq[Reflow]) extends Content
-
-  // }
-
-  // def lineContentTextFlow(lc: LineContent): TextFlow = {
-  //   lc match {
-  //     case Content.CC(component, textFlow) =>
-  //       textFlow
-
-  //     case Content.Clipped(content, start, len) =>
-  //       val tf = lineContentTextFlow(content)
-  //       var totalLength = 0
-
-  //       val slice = tf.flow
-  //         .dropWhile( { funit =>
-  //           val b = start > totalLength
-  //           totalLength += funit.length
-  //           b
-  //         })
-  //         .takeWhile({ funit =>
-  //           val b = start+len >= totalLength
-  //           totalLength += funit.length
-  //           b
-  //         })
-
-  //       TextFlow(slice)
-
-  //     case Content.Concat(rs) =>
-  //       val combined = rs.map(lineContentTextFlow(_)).map{_.flow}
-  //       TextFlow(combined.flatten)
-  //   }
-  // }
-
-
-  // def stringMatch(s: String, r: Reflow): Option[Content.Clipped] = {
-  //   r.content match {
-  //     case lc:LineContent =>
-  //       val textFlow = lineContentTextFlow(lc)
-  //       val start = textFlow.text.indexOf(s)
-  //       if (start > -1) {
-  //         Some(Content.Clipped(lc, start, s.length))
-  //       } else None
-
-  //     case Content.Row(rs) => None
-  //   }
-  // }
-
-
 }

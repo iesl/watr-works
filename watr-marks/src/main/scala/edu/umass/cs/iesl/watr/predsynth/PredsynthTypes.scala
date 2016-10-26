@@ -400,7 +400,7 @@ object PredsynthLoad extends PredsynthPaperAnnotationTypes {
     println(s"running agrep with ${patterns.length} patterns")
 
     // write text to a tmp file
-    val txtPath = pwd / "agrep.txt"
+    val txtPath = pwd / "agrep.tmp"
     if (exists(txtPath)) rm(txtPath)
 
     write(txtPath, text)

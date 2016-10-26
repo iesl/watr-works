@@ -171,6 +171,8 @@ class PdfTextExtractor(
         throw new Exception("Cannot extract characters from PDF file", ex)
       case ex: Throwable =>
         throw new Exception("Invalid PDF file", ex)
+    } finally {
+      stream.close()
     }
   }
 

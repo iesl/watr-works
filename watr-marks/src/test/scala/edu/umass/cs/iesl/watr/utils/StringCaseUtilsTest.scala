@@ -7,7 +7,7 @@ import org.scalatest._
 class StringCaseUtilsTest extends FlatSpec with Matchers {
   behavior of "string casing"
 
-  import StringCaseUtils._
+  import StringUtils._
 
   it should "convert camel/snake/underscore case" in {
 

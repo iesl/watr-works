@@ -86,7 +86,7 @@ object GeneralizedReflow {
 
     def asString[A]: Show[ReflowF[A]] = Show.show { _ match {
       case Atom(c)                    => c.toString()
-      case e:Element[_]               => show.shows(e) 
+      case e:Element[_]               => show.shows(e)
       case e:Element1[_]              => show.shows(e)
       case Space(breaking)            => " "
       case Insert(value)              => value
@@ -240,6 +240,9 @@ object GeneralizedReflow {
     reflow.cata(toTree).draw
   }
 
+  def toText(reflow: Reflow): String = {
+    ???
+  }
 
 
 }

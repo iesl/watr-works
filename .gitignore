@@ -29,5 +29,6 @@ svgdump
 .zz-attic
 
 *.log
+*.tmp
 
 itext*

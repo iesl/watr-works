@@ -13,10 +13,7 @@ import watrmarks.{StandardLabels => LB}
 import ComponentOperations._
 import ComponentTypeEnrichments._
 import GeometricFigure._
-import ComponentReflow._
 import TextFlow._
-
-// import acyclic.file
 
 object ComponentRendering {
   import TB._

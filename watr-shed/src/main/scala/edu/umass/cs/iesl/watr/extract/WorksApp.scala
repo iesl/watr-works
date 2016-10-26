@@ -2,14 +2,18 @@ package edu.umass.cs.iesl.watr
 package extract
 
 import ammonite.{ops => fs}
+import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
 import fs._
-import java.io.{ InputStream  }
+import java.io.InputStream
+import java.net.URI
 import textboxing.{TextBoxing => TB}
 import spindex._
 import EnrichGeometricFigures._
 import utils.EnrichNumerics._
 import java.io.{File => JFile}
 import predsynth._
+import scala.util.{Try, Failure, Success}
+import segment.DocumentSegmenter
 
 case class AppConfig(
   runRoot: Option[JFile] = None,
@@ -18,8 +22,11 @@ case class AppConfig(
   inputEntryDescriptor: Option[String] = None,
   action: Option[String] = None,
   dbPath: Option[JFile] = None,
-  predsynthJson: Option[JFile] = None,
+  priorPredsynthFile: Option[JFile] = None,
+  priorDocsegFile: Option[JFile] = None,
+  textAlignPredsynth: Boolean = false,
   force: Boolean = false,
+  extractFonts: Boolean = false,
   numToRun: Int = 0,
   numToSkip: Int = 0,
   exec: Option[(AppConfig) => Unit] = None
@@ -32,8 +39,6 @@ object Works extends App {
   // utils.VisualTracer.clearFilters()
   // utils.VisualTracer.addFilter("GutterDetection")
   // utils.VisualTracer.addFilter("LabelAbstract")
-  // utils.VisualTracer.addFilter("LabelSectionH")
-  // utils.VisualTracer.addFilter("joinlines")
 
 
   def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot
@@ -65,7 +70,6 @@ object Works extends App {
 
     note("Run text extraction and analysis on PDFs")
 
-    help("help")
     help("usage")
 
     opt[JFile]('c', "corpus") action { (v, conf) =>
@@ -81,6 +85,9 @@ object Works extends App {
     opt[Unit]('x', "overwrite") action { (v, conf) =>
       conf.copy(force = true) } text("force overwrite of existing files")
 
+    opt[Unit]("extract-fonts") action { (v, conf) =>
+      conf.copy(extractFonts = true) } text("try to extract font defs from pdf")
+
     opt[JFile]('i', "inputs") action { (v, conf) =>
       conf.copy(inputFileList = Option(v))
     } text("process files listed in specified file. Specify '--' to read from stdin")
@@ -89,9 +96,17 @@ object Works extends App {
       conf.copy(dbPath = Option(v))
     } text("h2 database path")
 
-    opt[JFile]("predsynth") action { (v, conf) =>
-      conf.copy(predsynthJson = Option(v))
+    opt[Unit]("text-align-predsynth") action { (v, conf) =>
+      conf.copy(textAlignPredsynth = true)
+    } text("use text heuristics to align predsynth db to watrworks output")
+
+    opt[JFile]("merge-predsynth") action { (v, conf) =>
+      conf.copy(priorPredsynthFile = Option(v))
     } text("location of predsynth db export (as json)")
+
+    opt[JFile]("merge-docseg") action { (v, conf) =>
+      conf.copy(priorDocsegFile = Option(v))
+    } text("location of prior docseg: annotations will carry forward into current text extraction")
 
     cmd("init") action { (_, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -104,12 +119,6 @@ object Works extends App {
         segmentDocument(ac)
       })
     } text ("run document segmentation")
-
-    cmd("richtext") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        runCmdRichText(ac)
-      })
-    } text ("output pdf as text, with some added embedded tex and labels")
 
     cmd("chars") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -149,8 +158,6 @@ object Works extends App {
     config.exec.foreach { _.apply(config) }
   }
 
-  val autoInit = true
-
   def getProcessList(conf: AppConfig): Seq[CorpusEntry] = {
     val corpus = Corpus(corpusRootOrDie(conf))
 
@@ -182,8 +189,6 @@ object Works extends App {
         conf.inputEntryDescriptor
           .map(e => Seq(corpus.entry(e).getOrElse{sys.error(s"unknown corpus entry${e}")}))
           .getOrElse(corpus.entries())
-
-        // corpus.entries()
       })
 
     val skipped = if (conf.numToSkip > 0) toProcess.drop(conf.numToSkip) else toProcess
@@ -194,13 +199,15 @@ object Works extends App {
 
 
   // Decide if the specified output artifact exists, or if the --force option is specified
-  def processOrSkipOrForce(conf: AppConfig, entry: CorpusEntry, artifactOutputName: String): Option[String] = {
-    if (entry.hasArtifact(artifactOutputName)) {
-      if (conf.force) {
-        entry.deleteArtifact(artifactOutputName)
-        Some(artifactOutputName)
-      } else None
-    } else Some(artifactOutputName)
+  def processOrSkipOrForce(conf: AppConfig, entry: CorpusEntry, artifactOutputName: String): Try[Option[String]] = {
+    Try {
+      if (entry.hasArtifact(artifactOutputName)) {
+        if (conf.force) {
+          entry.deleteArtifact(artifactOutputName)
+          Some(artifactOutputName)
+        } else None
+      } else Some(artifactOutputName)
+    }
   }
 
 
@@ -210,8 +217,9 @@ object Works extends App {
       println(s"${i}. extracting ${entry} ${artifactOutputName}")
 
       processOrSkipOrForce(conf, entry, artifactOutputName) match {
-        case Some(_) => process(entry, artifactOutputName)
-        case None    => println(s"skipping existing ${entry}, use -x to force reprocessing")
+        case Success(Some(_)) => process(entry, artifactOutputName)
+        case Success(None)    => println(s"skipping existing ${entry}, use -x to force reprocessing")
+        case Failure(t)       => sys.error(s"error: ${t.getClass} ${t.getMessage}")
       }
 
       i += 1
@@ -356,44 +364,47 @@ object Works extends App {
   }
 
 
-  def runCmdRichText(conf: AppConfig): Unit = {
-    val artifactOutputName = "richtext.txt"
 
-
-    processCorpusEntryList(conf, {corpusEntry =>
-      try {
-        for {
-          _         <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
-          fontDirs   = loadOrExtractFonts(conf, corpusEntry)
-          pdf       <- corpusEntry.getPdfArtifact
-          pdfins    <- pdf.asInputStream
-        } {
-          try {
-            val segmenter = segment.DocumentSegmenter.createSegmenter(corpusEntry.getURI, pdfins, fontDirs)
-            segmenter.runPageSegmentation()
-            val output = formats.RichTextIO.serializeDocumentAsText(segmenter.zoneIndexer, Some(corpusEntry.toString))
-            corpusEntry.putArtifact(artifactOutputName, output)
-          } catch {
-            case t: Throwable =>
-              println(s"could not segment ${corpusEntry}: ${t.getMessage}\n")
-              println(t.toString())
-              t.printStackTrace()
-              s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
-          } finally {
-            if (pdfins!=null) pdfins.close()
-          }
-        }
-      } catch {
-        case t: Throwable =>
-          println(s"could not process ${corpusEntry}: ${t.getMessage}\n")
-          println(t.toString())
-          t.printStackTrace()
-          s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
-      }
-    })
-
+  def loadPredsynthUberJson(conf: AppConfig): Option[Map[String, Paper]] = {
+    for {
+      pfile <- conf.priorPredsynthFile
+      dict <- PredsynthLoad.loadPapers(pwd / RelPath(pfile))
+    } yield dict
   }
 
+
+
+  def runPageSegmentation(documentURI: URI, pdfins: InputStream, fontDirs: Seq[Dir]): Try[DocumentSegmenter] =  {
+    Try {
+      val segmenter = DocumentSegmenter.createSegmenter(documentURI, pdfins, fontDirs)
+      segmenter.runPageSegmentation()
+      segmenter
+    }
+  }
+
+  def writePredsynthJson(predsynthPaper: Paper, corpusEntry: CorpusEntry): Unit = {
+    new predsynth.PredsynthPaperAnnotationTypes {
+      import play.api.libs.json, json._
+      val pjson = Json.toJson(predsynthPaper)
+      val jsOut = Json.prettyPrint(pjson)
+      corpusEntry.putArtifact("predsynth.json", jsOut)
+    }
+  }
+
+
+  def textAlignPredsynthDB(segmenter: DocumentSegmenter, entry: Option[Paper]): Try[Unit] = {
+    Try { for {
+      predSynthPaper <- entry
+    } {
+      segmenter.alignPredSynthPaper(predSynthPaper)
+    }}
+  }
+
+  def die(t: Throwable): Unit = {
+    val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+    println(s"ERROR: ${message}")
+    t.printStackTrace()
+  }
 
 
   def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
@@ -401,57 +412,32 @@ object Works extends App {
 
     var rsegmenter: Option[segment.DocumentSegmenter] = None
 
-
-    val predsynthPapers: Map[String, Paper] = conf.predsynthJson
-      .flatMap(json => PredsynthLoad.loadPapers(pwd / RelPath(json)))
-      .getOrElse(Map())
-
+    val predsynthPapers: Map[String, Paper] =
+      loadPredsynthUberJson(conf)
+        .getOrElse(Map())
 
     processCorpusEntryList(conf, {corpusEntry =>
       try {
-        for {
-          _         <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
-          fontDirs   = loadOrExtractFonts(conf, corpusEntry)
-          pdf       <- corpusEntry.getPdfArtifact
-          pdfins    <- pdf.asInputStream
+        val processResults = for {
+          output        <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
+          _             <- output
+          // fontDirs    = loadOrExtractFonts(conf, corpusEntry)
+          pdf           <- corpusEntry.getPdfArtifact
+          pdfins        <- pdf.asInputStream
+          _ = pdf.asPath
+          segmenter     <- runPageSegmentation(corpusEntry.getURI, pdfins, Seq())
+          _              = if (pdfins!=null) pdfins.close()
+          rsegmenter     = Some(segmenter)
+          entryFilename  = corpusEntry.entryDescriptorRoot
+          paper          = predsynthPapers.get(entryFilename)
+          _             <- textAlignPredsynthDB(segmenter, paper)
+          _              = paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
+          output         = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer)
         } {
-          try {
-            val baseURI = corpusEntry.getURI
-            val segmenter = segment.DocumentSegmenter.createSegmenter(baseURI, pdfins, fontDirs)
-            rsegmenter = Some(segmenter)
-            segmenter.runPageSegmentation()
-            val entryFilename = corpusEntry.entryDescriptorRoot
-
-            for {
-              predSynthPaper <- predsynthPapers.get(entryFilename)
-            } {
-              segmenter.alignPredSynthPaper(predSynthPaper)
-              // new predsynth.PredsynthPaperAnnotationTypes {
-              //   import play.api.libs.json, json._
-              //   val pjson = Json.toJson(predSynthPaper)
-              //   val jsOut = Json.prettyPrint(pjson)
-              //   corpusEntry.putArtifact("predsynth-paper.json", jsOut)
-              // }
-            }
-
-            val output = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer).toString()
-            corpusEntry.putArtifact(artifactOutputName, output)
-          } catch {
-            case t: Throwable =>
-              println(s"could not segment ${corpusEntry}: ${t.getMessage}\n")
-              println(t.toString())
-              t.printStackTrace()
-              s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
-          } finally {
-            if (pdfins!=null) pdfins.close()
-          }
+          corpusEntry.putArtifact(artifactOutputName, output)
         }
       } catch {
-        case t: Throwable =>
-          println(s"could not process ${corpusEntry}: ${t.getMessage}\n")
-          println(t.toString())
-          t.printStackTrace()
-          s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
+        case t: Throwable => die(t)
       }
     })
 
@@ -540,8 +526,9 @@ object Works extends App {
         val fontObjsFile = "fontobjs.txt"
 
         processOrSkipOrForce(conf, corpusEntry, fontObjsFile) match {
-          case Some(_) => corpusEntry.putArtifact(fontObjsFile, fobjs)
-          case None    =>
+          case Success(Some(_)) => corpusEntry.putArtifact(fontObjsFile, fobjs)
+          case Success(None)    =>
+          case Failure(t)       => sys.error(s"error: ${t.getClass} ${t.getMessage}")
         }
       }
     })
