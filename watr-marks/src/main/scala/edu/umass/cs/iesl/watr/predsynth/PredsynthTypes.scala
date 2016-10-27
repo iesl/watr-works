@@ -9,7 +9,7 @@ import TypeTags._
 import scalaz.@@
 
 
-trait PredsynthPaperAnnotationTypes extends TypeTagFormats {
+trait PredsynthJsonFormats extends TypeTagFormats {
   import play.api.libs.json._
   import play.api.libs.functional.syntax._
 
@@ -25,7 +25,7 @@ trait PredsynthPaperAnnotationTypes extends TypeTagFormats {
       }
     }
 
-  implicit def formatModified: Format[Modified] =
+  implicit def Format_Modified: Format[Modified] =
     new Format[Modified] {
       override def reads(json: JsValue): JsResult[Modified] = json match {
         case _ => JsSuccess(Modified(0))
@@ -178,7 +178,7 @@ case class AlignedGroup(
 )
 
 
-object PredsynthLoad extends PredsynthPaperAnnotationTypes {
+object PredsynthLoad extends PredsynthJsonFormats {
 
   def findMatchingParagraphs(paragraphs: Seq[Paragraph], r: RawText): Seq[(Paragraph, Int)] = {
     for {

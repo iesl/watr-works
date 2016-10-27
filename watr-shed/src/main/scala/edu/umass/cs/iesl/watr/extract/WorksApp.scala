@@ -15,6 +15,8 @@ import predsynth._
 import scala.util.{Try, Failure, Success}
 import segment.DocumentSegmenter
 
+// TODO: 'overwrite' should be changed to 'preserve-annots'|'overwrite'
+
 case class AppConfig(
   runRoot: Option[JFile] = None,
   corpusRoot: Option[JFile] = None,
@@ -22,6 +24,7 @@ case class AppConfig(
   inputEntryDescriptor: Option[String] = None,
   action: Option[String] = None,
   dbPath: Option[JFile] = None,
+  preserveAnnotations: Boolean = true,
   priorPredsynthFile: Option[JFile] = None,
   priorDocsegFile: Option[JFile] = None,
   textAlignPredsynth: Boolean = false,
@@ -40,6 +43,11 @@ object Works extends App {
   // utils.VisualTracer.addFilter("GutterDetection")
   // utils.VisualTracer.addFilter("LabelAbstract")
 
+  def die(t: Throwable): Unit = {
+    val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+    println(s"ERROR: ${message}")
+    t.printStackTrace()
+  }
 
   def corpusRootOrDie(ac: AppConfig): Path = ac.corpusRoot
     .map({croot =>
@@ -96,7 +104,7 @@ object Works extends App {
       conf.copy(dbPath = Option(v))
     } text("h2 database path")
 
-    opt[Unit]("text-align-predsynth") action { (v, conf) =>
+    opt[Unit]("text-align") action { (v, conf) =>
       conf.copy(textAlignPredsynth = true)
     } text("use text heuristics to align predsynth db to watrworks output")
 
@@ -105,6 +113,10 @@ object Works extends App {
     } text("location of predsynth db export (as json)")
 
     opt[JFile]("merge-docseg") action { (v, conf) =>
+      conf.copy(priorDocsegFile = Option(v))
+    } text("location of prior docseg: annotations will carry forward into current text extraction")
+
+    opt[Unit]("preserve-annotations") action { (v, conf) =>
       conf.copy(priorDocsegFile = Option(v))
     } text("location of prior docseg: annotations will carry forward into current text extraction")
 
@@ -119,12 +131,6 @@ object Works extends App {
         segmentDocument(ac)
       })
     } text ("run document segmentation")
-
-    cmd("chars") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        extractCharacters(ac)
-      })
-    } text ("(dev) char extraction")
 
     cmd("build-fontdb") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -400,13 +406,6 @@ object Works extends App {
     }}
   }
 
-  def die(t: Throwable): Unit = {
-    val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
-    println(s"ERROR: ${message}")
-    t.printStackTrace()
-  }
-
-
   def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
     val artifactOutputName = "docseg.json"
 
@@ -419,21 +418,32 @@ object Works extends App {
     processCorpusEntryList(conf, {corpusEntry =>
       try {
         val processResults = for {
-          output        <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
-          _             <- output
-          // fontDirs    = loadOrExtractFonts(conf, corpusEntry)
-          pdf           <- corpusEntry.getPdfArtifact
-          pdfins        <- pdf.asInputStream
-          _ = pdf.asPath
-          segmenter     <- runPageSegmentation(corpusEntry.getURI, pdfins, Seq())
-          _              = if (pdfins!=null) pdfins.close()
-          rsegmenter     = Some(segmenter)
-          entryFilename  = corpusEntry.entryDescriptorRoot
-          paper          = predsynthPapers.get(entryFilename)
-          _             <- textAlignPredsynthDB(segmenter, paper)
-          _              = paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
-          output         = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer)
+          output          <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
+          predsynthOutput <- processOrSkipOrForce(conf, corpusEntry, "predsynth.json")
+          _               <- output
+          // fontDirs      = loadOrExtractFonts(conf, corpusEntry)
+          pdf             <- corpusEntry.getPdfArtifact
+          pdfins          <- pdf.asInputStream
+          _                = pdf.asPath
+          segmenter       <- runPageSegmentation(corpusEntry.getURI, pdfins, Seq())
         } {
+          // TODO pass the URI of the pdf into the extractor, don't pass the InputStream and close it here.
+          if (pdfins!=null) pdfins.close()
+
+          rsegmenter = Some(segmenter)
+
+          val entryFilename = corpusEntry.entryDescriptorRoot
+          val paper = predsynthPapers.get(entryFilename)
+          if (conf.preserveAnnotations) {
+            // load the prior docseg
+            //  wl pf
+
+          }
+
+          textAlignPredsynthDB(segmenter, paper)
+
+          paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
+          val output         = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer)
           corpusEntry.putArtifact(artifactOutputName, output)
         }
       } catch {
@@ -528,7 +538,7 @@ object Works extends App {
         processOrSkipOrForce(conf, corpusEntry, fontObjsFile) match {
           case Success(Some(_)) => corpusEntry.putArtifact(fontObjsFile, fobjs)
           case Success(None)    =>
-          case Failure(t)       => sys.error(s"error: ${t.getClass} ${t.getMessage}")
+          case Failure(t)       => die(t)
         }
       }
     })
@@ -553,71 +563,8 @@ object Works extends App {
     } finally {
       db.shutdown()
     }
-
-
   }
 
-  def extractCharacters(conf: AppConfig): Unit = {
-    import TB._
-    import GeometricFigure._
-    // import watrmarks._
-    val artifactOutputName = "chars.txt"
+  // def extractCharacters(conf: AppConfig): Unit = {}
 
-    processCorpus(conf, artifactOutputName: String, proc)
-
-    def proc(pdf: InputStream, outputPath: String): String = {
-      val pageChars = formats.DocumentIO
-        .extractChars(pdf)
-        .map({case(pageRegions, pageGeom) =>
-          val sortedYPage = pageRegions.regions
-            .collect({case c: CharAtom => c})
-            .groupBy(_.region.bbox.top.pp)
-            .toSeq
-            .sortBy(_._1.toDouble)
-
-          val sortedXY = sortedYPage
-            .map({case (topY, charBoxes) =>
-
-
-              val sortedXLine = charBoxes
-                .sortBy(_.region.bbox.left)
-                .map({ charBox =>
-                  charBox.wonkyCharCode
-                    .map({ code =>
-                      if (code==32) { (s"${code}".box , "_") }
-                      else { (s"${code}".box, "?") }
-                    })
-                    .getOrElse({
-                      (charBox.char.box, " ")
-                    })
-                })
-
-              val cbs = charBoxes.sortBy(_.region.bbox.left)
-              val top = cbs.map(_.region.bbox.top).min
-              val bottom = cbs.map(_.region.bbox.bottom).max
-              val l=cbs.head.region.bbox.left
-              val r=cbs.last.region.bbox.right
-
-
-              val cbspp = charBoxes.mkString(", ")
-
-              val lineBounds = LTBounds(l, top, r-l, bottom-top).prettyPrint
-
-              val lineChars = if(sortedXLine.exists(_._2!=" ")) {
-                cbspp.box %
-                  ((">>".box % "?>") +| hcat(sortedXLine.map(x => x._1 % x._2)))
-              } else {
-                cbspp.box %
-                  (">>".box +| hcat(sortedXLine.map(x => x._1)))
-              }
-
-              lineChars % lineBounds
-            })
-          vcat(sortedXY)
-        })
-
-      vsep(pageChars, 2, left).toString()
-    }
-
-  }
 }

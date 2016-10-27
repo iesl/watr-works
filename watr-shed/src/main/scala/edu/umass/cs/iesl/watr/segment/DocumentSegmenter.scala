@@ -514,8 +514,6 @@ class DocumentSegmenter(
     VisualLine.render(c).map(t => t.text.box).getOrElse("<could not render>".box)
   }
 
-
-
   import textflow._
 
   def alignPredSynthPaper(paper: Paper): Unit = {

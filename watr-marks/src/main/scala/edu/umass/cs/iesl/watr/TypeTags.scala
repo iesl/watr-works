@@ -15,7 +15,6 @@ sealed trait ComponentID
 sealed trait MentionID
 sealed trait ClusterID
 sealed trait RelationID
-sealed trait GenericID
 
 sealed trait SHA1String
 
@@ -48,7 +47,6 @@ object TypeTags {
   val ClusterID = Tag.of[ClusterID]
   val RelationID = Tag.of[RelationID]
 
-  val GenericID = Tag.of[GenericID]
 
   val Offset = Tag.of[Offset]
   val Length = Tag.of[Length]
@@ -91,6 +89,22 @@ trait TypeTagFormats {
   val ReadLabelID: Reads[Int@@LabelID]   = __.read[Int].map(i => Tag.of[LabelID](i))
   val WriteLabelID: Writes[Int@@LabelID] = Writes[Int@@LabelID] { i => JsNumber(i.unwrap) }
   implicit def FormatLabelID            = Format(ReadLabelID, WriteLabelID)
+
+  val ReadLength: Reads[Int@@Length]   = __.read[Int].map(i => Tag.of[Length](i))
+  val WriteLength: Writes[Int@@Length] = Writes[Int@@Length] { i => JsNumber(i.unwrap) }
+  implicit def FormatLength            = Format(ReadLength, WriteLength)
+
+  val ReadOffset: Reads[Int@@Offset]   = __.read[Int].map(i => Tag.of[Offset](i))
+  val WriteOffset: Writes[Int@@Offset] = Writes[Int@@Offset] { i => JsNumber(i.unwrap) }
+  implicit def FormatOffset            = Format(ReadOffset, WriteOffset)
+
+  val ReadClusterID: Reads[Int@@ClusterID]   = __.read[Int].map(i => Tag.of[ClusterID](i))
+  val WriteClusterID: Writes[Int@@ClusterID] = Writes[Int@@ClusterID] { i => JsNumber(i.unwrap) }
+  implicit def FormatClusterID            = Format(ReadClusterID, WriteClusterID)
+
+  val ReadMentionID: Reads[Int@@MentionID]   = __.read[Int].map(i => Tag.of[MentionID](i))
+  val WriteMentionID: Writes[Int@@MentionID] = Writes[Int@@MentionID] { i => JsNumber(i.unwrap) }
+  implicit def FormatMentionID            = Format(ReadMentionID, WriteMentionID)
 
   val ReadComponentID: Reads[Int@@ComponentID]   = __.read[Int].map(i => Tag.of[ComponentID](i))
   val WriteComponentID: Writes[Int@@ComponentID] = Writes[Int@@ComponentID] { i => JsNumber(i.unwrap) }
