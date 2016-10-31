@@ -14,16 +14,17 @@ val libV = LibVersions
 
 val commonDeps =  LogLibs.logback ++ Seq(
 
-   "org.scalaz"              %% "scalaz-core"      % libV.scalazVersion,
-   "org.scala-lang.modules"  %% "scala-async"      % libV.scalaAsyncVersion,
-   "com.lihaoyi"             %% "scalatags"        % libV.scalaTagsVersion,
-   "com.lihaoyi"              % "ammonite"         % "0.7.8" cross CrossVersion.full,
-   "com.lihaoyi"             %% "fastparse"        % "0.4.2",
-   "com.typesafe.play"       %% "play-json"        % "2.5.9",
-   "com.slamdata"            %% "matryoshka-core"  % "0.11.1",
-   "com.github.scopt"        %% "scopt"            % "3.5.0",
-   "org.typelevel"           %% "machinist"        % "0.6.0",
-
+  "org.scalaz"              %% "scalaz-core"      % libV.scalazVersion,
+  "org.scala-lang.modules"  %% "scala-async"      % libV.scalaAsyncVersion,
+  "com.lihaoyi"             %% "scalatags"        % libV.scalaTagsVersion,
+  "com.lihaoyi"              % "ammonite"         % "0.7.8" cross CrossVersion.full,
+  "com.lihaoyi"             %% "fastparse"        % "0.4.2",
+  "com.typesafe.play"       %% "play-json"        % "2.5.9",
+  "com.slamdata"            %% "matryoshka-core"  % "0.11.1",
+  "com.github.scopt"        %% "scopt"            % "3.5.0",
+  "org.typelevel"           %% "machinist"        % "0.6.1",
+  "com.chuusai"             %% "shapeless"        % "2.3.2",
+  "org.julienrf"            %% "play-json-derived-codecs" % "3.3",
   // Test deps
   "org.scalaz"     %% "scalaz-scalacheck-binding" % libV.scalazVersion  % "test",
   "org.scalacheck" %% "scalacheck"                % "1.13.3"       % "test" force(),

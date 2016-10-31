@@ -29,7 +29,9 @@ import watrmarks.{StandardLabels => LB, _}
 
 import predsynth._
 
-object DocumentIO {
+object DocumentIO extends DocsegJsonFormats {
+  import play.api.libs.json._
+  import play.api.libs.functional.syntax._
 
   def serializeTargetRegion(tr: TargetRegion): TB.Box = {
     s"[${tr.target}, ${tr.bbox.compactPrint}]]"
@@ -64,23 +66,24 @@ object DocumentIO {
       })
       .map({relation =>
         val id = relation.id
-        val lhs = Relation.formatElem(relation.lhs)
-        val rhs = Relation.formatElem(relation.rhs)
+        val lhs = relation.lhs.map(Identities.write).unify
+        val rhs = relation.rhs.map(Identities.write).unify
+
         val rel = relation.relationship
         val pad1 = " "*(15-lhs.length())
         val pad2 = " "*(12-rel.length())
-        s"""[$lhs, $pad1 "$rel", $pad2 $rhs]""".box
+        s"""["$lhs", $pad1 "$rel", $pad2 "$rhs"]""".box
       })
 
     val relationBlock = vjoinTrailSep(left, ",")(relations:_*)
 
+    val propertyBlock = vjoinTrailSep(left, ",")(
+      zoneIndexer.props.map({ prop =>
+        Json.stringify(Json.toJson(prop)).box
+      }):_*
+    )
 
-    val propertyBlock =
-      vjoinTrailSep(left, ",")(
-        zoneIndexer.props.map({ prop =>
-          Relation.formatPropRec(prop).box
-        }):_*
-      )
+
 
     (s"""|{ "lines": [
          |${indent(4)(lineTextBlock)}
@@ -150,9 +153,9 @@ object DocumentIO {
 
         val clustId = zoneIndexer.relations.collect({
           case Relation.Record(id,
-            Relation.Elem.Cluster(clusterId),
-            "hasMember", Relation.Elem.Mention(`mentionId`)) =>
-            clusterId
+            clusterId,
+            "hasMember", `mentionId`) =>
+            clusterId.asInstanceOf[Int@@ClusterID]
         }).headOption.getOrElse(ClusterID(0))
 
 

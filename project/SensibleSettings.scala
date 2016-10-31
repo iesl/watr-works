@@ -9,9 +9,9 @@ import com.github.fedragon.todolist.TodoListPlugin.autoImport._
 import com.lihaoyi.workbench.Plugin._
 
 trait LibVersions {
-  val scalazVersion       = "7.2.6"
+  val scalazVersion       = "7.2.7"
   val scalaTagsVersion    = "0.6.2"
-  val scalaAsyncVersion   = "0.9.6-RC6"
+  val scalaAsyncVersion   = "0.9.6"
   val scalaModulesVersion = "1.0.4"
   val akkaVersion         = "2.3.14"
   val streamsVersion      = "1.0"

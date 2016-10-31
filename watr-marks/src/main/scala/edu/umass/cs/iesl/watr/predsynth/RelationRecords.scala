@@ -4,73 +4,100 @@ package predsynth
 import scalaz.@@
 
 import utils.{StringUtils => SU}
+import TypeTags._
+import scala.reflect._
 
 
-sealed trait Relation
+trait Identities {
+  import shapeless._
+
+  type C = Int @@ ClusterID
+  type M = Int @@ MentionID
+
+  type Entity = C :+: M :+: CNil
+
+  object write extends Poly1 {
+    implicit val caseClusterID     = at[C](i => s"ClusterID:$i")
+    implicit val caseMentionID     = at[M](i => s"MentionID:$i")
+  }
+
+  def read(str: String): Either[String,Entity] = {
+    val Array(tagType, id) = str.split(":")
+    tagType match {
+      case "ClusterID" => Right(cluster(ClusterID(id.toInt)))
+      case "MentionID" => Right(mention(MentionID(id.toInt)))
+      case _ =>  Left(s"error unpacking tag type ${str}")
+    }
+  }
+
+  def cluster(c: C): Entity = {
+    Coproduct[Entity](c)
+  }
+
+  def mention(m: M): Entity = {
+    Coproduct[Entity](m)
+  }
+
+}
+
+object Identities extends Identities
+
+object Prop {
+  import play.api.libs.json._
+  import Identities._
+
+  case class Value(jsval: JsValue)
+
+  case class PropKV(
+    key: String,
+    value: Value
+  )
+
+  def formatValue(prop: Value): String = prop.jsval match {
+    case JsString(v)    => v.toString
+    case JsBoolean(v)   => SU.dquote(v.toString)
+    case JsNumber(v)    => v.toString
+    case _              => sys.error("")
+  }
+
+  case class PropRec(
+    propHolder: Entity,
+    prop: PropKV
+  )
+
+  def formatPropRec(propRec: PropRec): String = {
+    val e = propRec.propHolder.map(write).unify
+    val k = propRec.prop.key
+    val v = formatValue(propRec.prop.value)
+    s"""["$e", "$k", $v]"""
+  }
+
+  def Str(s: String): Value = Value(JsString(s))
+
+}
+
 
 object Relation {
-  sealed trait RecNode
-  sealed trait Elem extends RecNode
-  sealed trait Prop extends RecNode
-
-  object Elem {
-    case class Mention(v: Int@@MentionID) extends Elem
-    case class Cluster(v: Int@@ClusterID) extends Elem
-    case class Relation(v: Int@@RelationID) extends Elem
-  }
-
-  object Prop {
-    case class Bool(v: Boolean) extends Prop
-    case class Str(v: String) extends Prop
-    case class Num(v: Int) extends Prop
-  }
+  import Identities._
 
   sealed trait RelationRec
   sealed trait RelationPartial extends RelationRec
-  sealed trait Property extends RelationRec
 
   case class Record(
-    id: Int@@RelationID,
-    lhs: Elem,
+    // id: Int@@RelationID,
+    lhs: Entity,
     relationship: String,
-    rhs: Elem
+    rhs: Entity
   ) extends RelationRec
 
   case class LeftPartial(
-    lhs: Elem,
+    lhs: Entity,
     relationship: String
   ) extends RelationPartial
 
   case class RightPartial(
     relationship: String,
-    rhs: Elem
+    rhs: Entity
   ) extends RelationPartial
-
-  case class PropKV(
-    key: String,
-    value: Prop
-  )
-
-  case class PropRec(
-    elem: Elem,
-    prop: PropKV
-  )
-
-  def formatElem(e: RecNode): String = e match {
-    case Elem.Mention(v)  => SU.dquote(s"mention:$v")
-    case Elem.Cluster(v)  => SU.dquote(s"cluster:$v")
-    case Elem.Relation(v) => SU.dquote(s"relation:$v")
-    case Prop.Bool(v)     => v.toString
-    case Prop.Str(v)      => SU.dquote(v)
-    case Prop.Num(v)      => v.toString
-  }
-
-  def formatPropRec(propRec: PropRec): String = {
-    val e = formatElem(propRec.elem)
-    val k = propRec.prop.key
-    val v = formatElem(propRec.prop.value)
-    s"""[$e, "$k", $v]"""
-  }
-
 
 }

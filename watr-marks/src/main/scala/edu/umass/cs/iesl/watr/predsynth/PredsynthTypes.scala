@@ -8,8 +8,10 @@ import play.api.data.validation.ValidationError
 import TypeTags._
 import scalaz.@@
 
+import Prop._
 
-trait PredsynthJsonFormats extends TypeTagFormats {
+// trait PredsynthJsonFormats extends TypeTagFormats {
+trait PredsynthJsonFormats  {
   import play.api.libs.json._
   import play.api.libs.functional.syntax._
 
@@ -149,13 +151,13 @@ case class TextMentionGroup(
   groupNumber: Int,
   id: Option[String],
   rawTextContexts: Seq[RawTextContext],
-  props: Seq[Relation.PropKV]
+  props: Seq[PropKV]
 
 )
 
 case class Contexts(
   groups: Seq[TextMentionGroup],
-  props: Seq[Relation.PropKV]
+  props: Seq[PropKV]
 )
 
 sealed trait AlignedContext
@@ -257,9 +259,9 @@ object PredsynthLoad extends PredsynthJsonFormats {
       val edesc = findContexts(entity.entdescriptors.flatten.map(_.raw_text), "entity/descriptor")
 
       val relations = Seq(
-        Relation.PropKV(
+        PropKV(
           "isTarget",
-          Relation.Prop.Bool(entity.is_target.exists(t=>t))
+          Value(JsBoolean(entity.is_target.exists(t=>t)))
         )
       )
 
@@ -284,9 +286,9 @@ object PredsynthLoad extends PredsynthJsonFormats {
       val conds = findContexts(operation.conditions.flatten.map(_.raw_text), "operation/condition")
 
       val props = Seq(
-        Relation.PropKV(
+        PropKV(
           "hasOrder",
-          Relation.Prop.Num(operation.order)
+          Value(JsNumber(operation.order))
         )
       )
 

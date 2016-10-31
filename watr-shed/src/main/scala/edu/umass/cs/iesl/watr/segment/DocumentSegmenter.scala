@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+
 import java.io.InputStream
 import java.net.URI
 import watrmarks._
@@ -559,7 +560,7 @@ class DocumentSegmenter(
     val rawTextMentionsById = mutable.HashMap[Int@@MentionID, RawTextContext]()
 
     val relations = mutable.ArrayBuffer[Relation.Record]()
-    val props = mutable.ArrayBuffer[Relation.PropRec]()
+    val props = mutable.ArrayBuffer[Prop.PropRec]()
 
     import utils.IdGenerator
 
@@ -579,31 +580,30 @@ class DocumentSegmenter(
       }
 
 
-      val groupCluster = Relation.Elem.Cluster(groupClusterID)
+      // val groupCluster = Relation.Elem.Cluster(groupClusterID)
 
-      props += Relation.PropRec(
-        groupCluster,
-        Relation.PropKV(
+      props += Prop.PropRec(
+        Identities.cluster(groupClusterID),
+        Prop.PropKV(
           "role",
-          Relation.Prop.Str("recipe/"+alignedGroup.groupType)
+          Prop.Str("recipe/"+alignedGroup.groupType)
         )
       )
 
-      props += Relation.PropRec(
-        groupCluster,
-        Relation.PropKV(
+      props += Prop.PropRec(
+        Identities.cluster(groupClusterID),
+        Prop.PropKV(
           "mongoId",
-          Relation.Prop.Str(id.getOrElse("null"))
+          Prop.Str(id.getOrElse("null"))
         )
       )
 
-      props ++= alignedGroup.textMentionGroup.props.map(Relation.PropRec(groupCluster, _))
+      props ++= alignedGroup.textMentionGroup.props.map(
+        Prop.PropRec(
+          Identities.cluster(groupClusterID), _))
 
       alignedGroup.alignedContexts.foreach {
         case AlignSuccess(rtc, (begin, end)) =>
-
-          // val rawTextMentionId = mentionIds.nextId
-          // rawTextMentionsById.put(rawTextMentionId, rtc)
 
           val slice = lineUnits.slice(begin, end)
           val foundText = slice.map({ funit =>
@@ -666,9 +666,9 @@ class DocumentSegmenter(
           rawTextMentionsById.put(mentionId, rtc)
 
           relations += Relation.Record(RelationID(zAdded.id.unwrap),
-            groupCluster,
+            Identities.cluster(groupClusterID),
             "hasMember",
-            Relation.Elem.Mention(mentionId)
+            Identities.mention(mentionId)
           )
 
           if (rtc.rawText.raw_text == foundText) {
@@ -691,9 +691,9 @@ class DocumentSegmenter(
             val group2 = mongoIdToClusterId(id2)
 
             relations += Relation.Record(relationIds.nextId,
-              Relation.Elem.Cluster(group1),
+              Identities.cluster(group1),
               "connectsTo",
-              Relation.Elem.Cluster(group2)
+              Identities.cluster(group2)
             )
 
           case (None, Some(id2)) =>

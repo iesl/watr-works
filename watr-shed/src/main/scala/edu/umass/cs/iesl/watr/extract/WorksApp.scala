@@ -24,7 +24,7 @@ case class AppConfig(
   inputEntryDescriptor: Option[String] = None,
   action: Option[String] = None,
   dbPath: Option[JFile] = None,
-  preserveAnnotations: Boolean = true,
+  preserveAnnotations: Boolean = false,
   priorPredsynthFile: Option[JFile] = None,
   priorDocsegFile: Option[JFile] = None,
   textAlignPredsynth: Boolean = false,
@@ -117,7 +117,7 @@ object Works extends App {
     } text("location of prior docseg: annotations will carry forward into current text extraction")
 
     opt[Unit]("preserve-annotations") action { (v, conf) =>
-      conf.copy(priorDocsegFile = Option(v))
+      conf.copy(preserveAnnotations = true)
     } text("location of prior docseg: annotations will carry forward into current text extraction")
 
     cmd("init") action { (_, conf) =>
@@ -389,7 +389,7 @@ object Works extends App {
   }
 
   def writePredsynthJson(predsynthPaper: Paper, corpusEntry: CorpusEntry): Unit = {
-    new predsynth.PredsynthPaperAnnotationTypes {
+    new predsynth.PredsynthJsonFormats {
       import play.api.libs.json, json._
       val pjson = Json.toJson(predsynthPaper)
       val jsOut = Json.prettyPrint(pjson)
@@ -436,14 +436,12 @@ object Works extends App {
           val paper = predsynthPapers.get(entryFilename)
           if (conf.preserveAnnotations) {
             // load the prior docseg
-            //  wl pf
-
           }
 
           textAlignPredsynthDB(segmenter, paper)
 
           paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
-          val output         = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer)
+          val output = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer)
           corpusEntry.putArtifact(artifactOutputName, output)
         }
       } catch {

@@ -73,12 +73,12 @@ class ZoneIndexer(
     zupdate
   }
   val relations = mutable.ArrayBuffer[Relation.Record]()
-  val props = mutable.ArrayBuffer[Relation.PropRec]()
+  val props = mutable.ArrayBuffer[Prop.PropRec]()
 
   def addRelations(rs: Seq[Relation.Record]): Unit = {
     relations ++= rs
   }
-  def addProps(rs: Seq[Relation.PropRec]): Unit = {
+  def addProps(rs: Seq[Prop.PropRec]): Unit = {
     props ++= rs
   }
 

@@ -43,8 +43,8 @@ object TypeTags {
   val ComponentID = Tag.of[ComponentID]
   val LabelID = Tag.of[LabelID]
 
-  val MentionID= Tag.of[MentionID]
-  val ClusterID = Tag.of[ClusterID]
+  val MentionID  = Tag.of[MentionID]
+  val ClusterID  = Tag.of[ClusterID]
   val RelationID = Tag.of[RelationID]
 
 
@@ -55,16 +55,58 @@ object TypeTags {
 
   implicit class TagOps[A, T](val value: A@@T) extends AnyVal {
     def unwrap: A = Tag.of[T].unwrap(value)
+
+
   }
+
+  import scala.reflect._
+
+  def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
+    val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+    s"${tagClsname}:${tt.unwrap}"
+  }
+
+
 
 }
 
 import TypeTags._
 
+trait ExplicitTypeTagFormats {
+  import play.api.libs.json
+  import json._
+  import scala.reflect._
+
+
+  def WriteTaggedInt[T: ClassTag]: Writes[Int @@ T] = Writes[Int @@ T] { tagged =>
+    val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+    JsString(s"${tagClsname}:${tagged.unwrap}")
+  }
+
+  def ReadTaggedInt[T: ClassTag]: Reads[Int @@ T] = {
+    val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+
+    __.read[String].map({str =>
+      val Array(id, tagType) = str.split(":")
+      val tagged = tagType match {
+        case `tagClsname` => Tag.of[T](id.toInt)
+        case _ => sys.error("")
+      }
+      tagged.asInstanceOf[Int @@ T]
+    })
+  }
+
+  implicit def FormatTaggedInt[T: ClassTag]: Format[Int @@ T] = Format(
+    ReadTaggedInt[T], WriteTaggedInt[T]
+  )
+}
 
 trait TypeTagFormats {
   import play.api.libs.json
   import json._
+  import scala.reflect._
+
+
 
   val ReadPageID: Reads[Int@@PageID]   = __.read[Int].map(i => Tag.of[PageID](i))
   val WritePageID: Writes[Int@@PageID] = Writes[Int@@PageID] { i => JsNumber(i.unwrap) }
