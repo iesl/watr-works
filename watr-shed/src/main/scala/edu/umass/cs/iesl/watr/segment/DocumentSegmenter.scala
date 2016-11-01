@@ -665,7 +665,7 @@ class DocumentSegmenter(
 
           rawTextMentionsById.put(mentionId, rtc)
 
-          relations += Relation.Record(RelationID(zAdded.id.unwrap),
+          relations += Relation.Record(
             Identities.cluster(groupClusterID),
             "hasMember",
             Identities.mention(mentionId)
@@ -690,7 +690,7 @@ class DocumentSegmenter(
             val group1 = mongoIdToClusterId(id1)
             val group2 = mongoIdToClusterId(id2)
 
-            relations += Relation.Record(relationIds.nextId,
+            relations += Relation.Record(
               Identities.cluster(group1),
               "connectsTo",
               Identities.cluster(group2)

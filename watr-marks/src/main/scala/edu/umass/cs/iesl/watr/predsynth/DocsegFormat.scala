@@ -322,29 +322,6 @@ object Docseg extends DocsegJsonFormats {
   import genericjson._
 
   def main(args: Array[String]): Unit = {
-    // import shapeless._
-
-    // Json.obj().validate[ HNil ]
-    // JsString("toto").validate[ String :: HNil ]
-    // val ptSer = JsArray(Seq(JsNumber(23.34), JsNumber(23.34)))
-
-
-    // val pgen = Generic[Point]
-
-    // val valid1 = ptSer.validate[Double :: Double :: HNil]
-    // val valid2 = ptSer.validate[pgen.Repr]
-
-    // val p = Point(9.0, 9.34)
-
-    // val sdf = pgen.to(p)
-    // println(s"sdf: $sdf")
-    // println(s"valid1: ${valid1}")
-    // println(s"valid2: ${valid2}")
-
-    // val px = valid1.map { pgen.from(_) }
-
-    // println(s"px: ${px}")
-
     val loadPath = pwd / RelPath(args(0))
     val docseg = read(loadPath)
     docseg.foreach { d =>

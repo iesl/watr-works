@@ -60,12 +60,11 @@ object DocumentIO extends DocsegJsonFormats {
     // rawTextMentionsById
     val relations = zoneIndexer.relations
       .filter({
-        case Relation.Record(_, _, rel, _)
+        case Relation.Record(_, rel, _)
             if rel=="hasType" || rel== "hasMember" =>  false
         case _ => true
       })
       .map({relation =>
-        val id = relation.id
         val lhs = relation.lhs.map(Identities.write).unify
         val rhs = relation.rhs.map(Identities.write).unify
 
@@ -149,14 +148,13 @@ object DocumentIO extends DocsegJsonFormats {
         val pad1 = " "*(20-labelStr.length())
         val pad2 = " "*(20 - jtextFlow.text.length())
 
-        val mentionId = MentionID(zone.id.unwrap)
+        val mentionId = zone.id.unwrap
+
 
         val clustId = zoneIndexer.relations.collect({
-          case Relation.Record(id,
-            clusterId,
-            "hasMember", `mentionId`) =>
-            clusterId.asInstanceOf[Int@@ClusterID]
-        }).headOption.getOrElse(ClusterID(0))
+          case Relation.Record(clusterId, "hasMember", e2) if Identities.idValue(e2) == mentionId =>
+            Identities.idValue(clusterId)
+        }).headOption.getOrElse(0)
 
 
         val pad3 = " "*(3 - mentionId.toString.length)
@@ -165,7 +163,7 @@ object DocumentIO extends DocsegJsonFormats {
         val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 "${labelStr}",${pad1} "${jtextFlow.text}",${pad2} [${trs}]]""".box
 
         (0, 0, mentionStr)
-        (mentionId.unwrap, clustId.unwrap, mentionStr)
+        (mentionId, clustId, mentionStr)
       })
       .toSeq
       .sortBy({x => (x._1, x._2) })

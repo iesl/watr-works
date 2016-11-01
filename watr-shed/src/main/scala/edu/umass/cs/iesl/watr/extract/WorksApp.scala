@@ -436,6 +436,7 @@ object Works extends App {
           val paper = predsynthPapers.get(entryFilename)
           if (conf.preserveAnnotations) {
             // load the prior docseg
+            println("loading/converting prior annots")
           }
 
           textAlignPredsynthDB(segmenter, paper)

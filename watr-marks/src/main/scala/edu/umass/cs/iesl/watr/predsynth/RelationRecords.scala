@@ -21,6 +21,10 @@ trait Identities {
     implicit val caseMentionID     = at[M](i => s"MentionID:$i")
   }
 
+  object idVal extends Poly1 {
+    implicit def default[A, T]  = at[A @@ T](_.unwrap)
+  }
+
   def read(str: String): Either[String,Entity] = {
     val Array(tagType, id) = str.split(":")
     tagType match {
@@ -38,6 +42,10 @@ trait Identities {
     Coproduct[Entity](m)
   }
 
+
+  def idValue(e: Entity): Int = {
+    e.map(idVal).unify
+  }
 }
 
 object Identities extends Identities
@@ -84,7 +92,6 @@ object Relation {
   sealed trait RelationPartial extends RelationRec
 
   case class Record(
-    // id: Int@@RelationID,
     lhs: Entity,
     relationship: String,
     rhs: Entity
