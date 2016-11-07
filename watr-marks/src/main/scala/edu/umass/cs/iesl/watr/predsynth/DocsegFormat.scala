@@ -4,14 +4,15 @@ package predsynth
 import TypeTags._
 import edu.umass.cs.iesl.watr.spindex.GeometricFigure.Point
 import scalaz.@@
-import scalaz.Tag
+import ammonite.{ops => fs}, fs._
+import java.nio.{file => nio}
+import play.api.libs.json, json._
+import play.api.data.validation.ValidationError
 
 trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats {
-  import play.api.libs.json._
-  import play.api.libs.functional.syntax._
-  import shapeless._
+  private[this] val log = org.log4s.getLogger
 
-  import genericjson._
+  import play.api.libs.json._
   import Prop._
   import Docseg._
   import Json.format
@@ -236,6 +237,7 @@ trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats
 
 
 object Docseg extends DocsegJsonFormats {
+  private[this] val log = org.log4s.getLogger
 
   case class TextPosition(
     lineNumber: Int@@Offset,
@@ -255,12 +257,6 @@ object Docseg extends DocsegJsonFormats {
     clusterID: Int@@ClusterID,
     role: String
   )
-
-  // case class Relation(
-  //   lhs: Int@@ClusterID,
-  //   relation: String,
-  //   rhs: Int@@ClusterID
-  // )
 
   case class Label(
     role: String,
@@ -292,12 +288,10 @@ object Docseg extends DocsegJsonFormats {
     ids: List[IdDef]
   )
 
-  import ammonite.{ops => fs}, fs._
-  import java.nio.{file => nio}
-  import play.api.libs.json, json._
-  import play.api.data.validation.ValidationError
 
   def read(path: Path): Option[Docseg] = {
+    log.trace(s"reading Docseg ${path}")
+
     val fis = nio.Files.newInputStream(path.toNIO)
     val paper = json.Json.parse(fis).validate[Docseg]
 
@@ -319,7 +313,6 @@ object Docseg extends DocsegJsonFormats {
     )
   }
 
-  import genericjson._
 
   def main(args: Array[String]): Unit = {
     val loadPath = pwd / RelPath(args(0))

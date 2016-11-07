@@ -12,7 +12,7 @@ import ComponentTypeEnrichments._
 import utils.IdGenerator
 
 import VisualTracer._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 import predsynth._
 
 class ZoneIndexer(

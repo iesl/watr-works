@@ -446,6 +446,21 @@ object TextBoxing extends ToListOps with ToIdOps {
 
 
 
+  object OneRow {
+    def bracket(l:Char, r:Char, b: Box): Box = {
+      val lb = l.toString.box
+      val rb = r.toString.box
+      lb + b + rb
+    }
+
+    def dquote(b: Box): Box = bracket('"', '"', b)
+    def squareBracket(b: Box): Box = bracket('[', ']', b)
+    def curlyBrace(b: Box): Box = bracket('{', '}', b)
+
+  }
+
+
+
   //------------------------------------------------------------------------------
   //  Paragraph flowing  ---------------------------------------------------------
   //------------------------------------------------------------------------------

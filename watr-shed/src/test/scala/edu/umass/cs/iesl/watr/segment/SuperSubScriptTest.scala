@@ -25,7 +25,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
       //   """to be 431 K and 2.6 {10^{−2}} {GPa^{−1}} for {Rh_{2}MnSn,} and 471 K and 1.7 {10^{−2}} for {GPa^{−1}} {Rh_{2}MnGe,} respectively"""
       // ),
 
-      Example(TestRegion(papers.`bongard2005.pdf`, page(0), LTBounds(145.95, 150.21, 310.0, 8.06)),
+      Example(TestRegion(papers.paperUrl("bongard2005.pdf"), page(0), LTBounds(145.95, 150.21, 310.0, 8.06)),
         """by Dirk {Bongard^{a}),} Martin {Möller^{a})^{b}),} S. Nagaraja Rao, David {Corr^{b}),} and Lorenz {Walder*^{a})}"""
       )
 
@@ -45,7 +45,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
     )
 
     examples.foreach { example =>
-      val pdfIns = example.region.pdf
+      val pdfIns = example.region.pdfUrl
       val pageId = example.region.page
       val bounds = example.region.bbox
 

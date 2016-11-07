@@ -11,27 +11,21 @@ enablePlugins(ScalaJSPlugin)
 scalaJSUseRhino in Global := false
 
 val libV = LibVersions
+val Lib = CommonLibs
 
-val commonDeps =  LogLibs.logback ++ Seq(
-
-  "org.scalaz"              %% "scalaz-core"      % libV.scalazVersion,
-  "org.scala-lang.modules"  %% "scala-async"      % libV.scalaAsyncVersion,
-  "com.lihaoyi"             %% "scalatags"        % libV.scalaTagsVersion,
-  "com.lihaoyi"              % "ammonite"         % "0.7.8" cross CrossVersion.full,
-  "com.lihaoyi"             %% "fastparse"        % "0.4.2",
-  "com.typesafe.play"       %% "play-json"        % "2.5.9",
-  "com.slamdata"            %% "matryoshka-core"  % "0.11.1",
-  "com.github.scopt"        %% "scopt"            % "3.5.0",
-  "org.typelevel"           %% "machinist"        % "0.6.1",
-  "com.chuusai"             %% "shapeless"        % "2.3.2",
-  "org.julienrf"            %% "play-json-derived-codecs" % "3.3",
-  // Test deps
-  "org.scalaz"     %% "scalaz-scalacheck-binding" % libV.scalazVersion  % "test",
-  "org.scalacheck" %% "scalacheck"                % "1.13.3"       % "test" force(),
-  "org.scalatest" %% "scalatest" % libV.scalatestVersion % "test",
-  "org.scalactic" %% "scalactic" % libV.scalatestVersion
-
-)
+val commonDeps = LogLibs.logback ++
+  TestLibs.testAndCheck ++
+  Lib.matryoshkaLibs ++ Seq(
+    Lib.scalazCore,
+    Lib.scalaAsync,
+    Lib.scalatags,
+    Lib.ammonite,
+    Lib.fastparse,
+    Lib.playJson,
+    Lib.scopt,
+    Lib.machinist,
+    Lib.shapeless
+  )
 
 
 import ReleaseTransformations._
@@ -40,7 +34,7 @@ lazy val root = (project in file("."))
   .settings(releaseProcess  := Seq[ReleaseStep](
     // checkSnapshotDependencies,            // : ReleaseStep
     inquireVersions,                        // : ReleaseStep
-    // runTest,                             // : ReleaseStep
+                                            // runTest,                             // : ReleaseStep
     setReleaseVersion,                      // : ReleaseStep
     commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
     tagRelease,                             // : ReleaseStep
@@ -64,20 +58,16 @@ lazy val watrmarks = (project in file("watr-marks"))
   .dependsOn(watrprelude)
   .aggregate(watrprelude)
 
-val scrimageVersion = "2.1.7"
 
 lazy val watrshed = project
   .in(file("watr-shed"))
-  .settings(libraryDependencies ++= (commonDeps ++ Seq(
-    "org.bouncycastle" % "bcprov-jdk15on" % "1.55",
-    "org.bouncycastle" % "bcpkix-jdk15on" % "1.55",
-    "com.h2database" % "h2" % "1.4.192",
-    "com.zaxxer" % "HikariCP" % "2.5.1",
-    "com.typesafe.slick" %% "slick" % "3.1.1",
-    "com.sksamuel.scrimage" %% "scrimage-core"     % scrimageVersion,
-    "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion,
-    "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion
-  )))
+  .settings(libraryDependencies ++= (
+    commonDeps ++ DatabaseLibs.slickDb ++ Seq(
+      "com.sksamuel.scrimage" %% "scrimage-core"     % libV.scrimageVersion,
+      "com.sksamuel.scrimage" %% "scrimage-io-extra" % libV.scrimageVersion,
+      "com.sksamuel.scrimage" %% "scrimage-filters"  % libV.scrimageVersion
+    )
+  ))
   .dependsOn(watrmarks)
   .aggregate(watrmarks)
 
@@ -92,8 +82,8 @@ lazy val watrcolors = crossProject
   ))
   .jsSettings(workbenchSettings:_*)
   .jsSettings(
-    libraryDependencies ++= Seq(
-      "org.querki" %%% "jquery-facade" % "1.0-RC6",
+  libraryDependencies ++= Seq(
+    "org.querki" %%% "jquery-facade" % "1.0-RC6",
       "org.scala-js" %%% "scalajs-dom" % "0.9.1"
     ),
     // refreshBrowsers <<= refreshBrowsers.triggeredBy(fastOptJS in Compile),

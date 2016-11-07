@@ -4,12 +4,17 @@ package textflow
 import spindex._
 
 import scalaz._, Scalaz._
-import matryoshka._,  Recursive.ops._ , TraverseT.ops._
+// import matryoshka._
 
-import GeneralizedReflow._, Reflow._
-import watrmarks.{StandardLabels => LB, _}
+import watrmarks.{StandardLabels => LB}
 
-trait ReflowTestUtil extends ConnectedComponentTestUtil {
+class StringReflowTestUtil(
+  val genReflow: GeneralizedReflow[Char]
+) extends ConnectedComponentTestUtil {
+
+  import genReflow._
+  import Reflow._
+
   def toAtoms(s: String): List[Reflow] = {
     s.toList.map(_ match {
       case ' ' => space()
@@ -32,8 +37,8 @@ trait ReflowTestUtil extends ConnectedComponentTestUtil {
 
     // println(prettyPrintTree(textFlow))
 
-    val tr0 = transLabeled(textFlow, LB.VisualLine, reflow =>{
-      groupByPairs(reflow)({
+    val tr0 = everyLabel(LB.VisualLine, textFlow)(reflow =>{
+      groupByPairs(reflow.unFix)({
         case (Atom(a), Atom(b), i) => true
         case qq => false
       }, onGrouped = {groups =>
@@ -49,7 +54,7 @@ trait ReflowTestUtil extends ConnectedComponentTestUtil {
             .toList)
           .getOrElse(tokenGroups)
 
-      })
+      }).embed
     })
     tr0
   }

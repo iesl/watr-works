@@ -9,7 +9,7 @@ import java.nio.{file => nio}
 import play.api.libs.json
 import scala.util.{Try, Failure, Success}
 import scalaz.@@
-import ammonite.ops._
+import ammonite.{ops => fs}, fs._
 
 
 case class CorpusEntryMetadata(
@@ -138,6 +138,14 @@ class CorpusEntry(
 
     artifact.delete
   }
+
+  def stashArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Option[Path] = {
+    val artifact = new CorpusArtifact(artifactDescriptor,
+      new CorpusArtifactGroup(groupDescriptor, this)
+    )
+    artifact.stash
+  }
+
   def hasArtifactGroup(groupDescriptor: String): Boolean ={
     exists(artifactsRoot / RelPath(groupDescriptor))
   }
@@ -186,9 +194,14 @@ class CorpusArtifactGroup(
 class CorpusArtifact(
   val artifactDescriptor: String,
   val group: CorpusArtifactGroup
-  // val entry: CorpusEntry
 ) {
-  import ammonite.{ops => fs}
+  private[this] val log = org.log4s.getLogger
+
+  def rootPath = group.rootPath
+
+  def descriptor = s"""${group.descriptor}/${artifactDescriptor}"""
+
+  def artifactPath = rootPath / artifactDescriptor
 
   override val toString = {
     s"${group}/${artifactDescriptor}"
@@ -203,9 +216,26 @@ class CorpusArtifact(
     fs.rm(artifactPath)
   }
 
-  def descriptor = s"""${group.descriptor}/${artifactDescriptor}"""
+  import utils.PathUtils._
 
-  def artifactPath = group.rootPath / artifactDescriptor
+  def stash(): Option[Path] = {
+    val fileWithTimestamp = appendTimestamp(artifactPath.segments.last)
+    val stashedName = group.rootPath / fileWithTimestamp
+    log.trace(s"stashing ${artifactPath} as ${stashedName}")
+    fs.mv(artifactPath, stashedName)
+    Some(stashedName)
+  }
+
+  def unstash(): Option[Path] = {
+    fs.ls(rootPath)
+      .filter(_.toIO.getName.startsWith(artifactDescriptor))
+      .sortBy(_.toIO.getName)
+      .lastOption
+      .map({ path =>
+        fs.mv(path, artifactPath)
+        artifactPath
+      })
+  }
 
   def asPath: Try[Path] = Success(artifactPath)
 

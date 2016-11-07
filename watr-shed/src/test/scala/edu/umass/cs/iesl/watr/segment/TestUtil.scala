@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+import java.net.URL
 import org.scalatest._
 import java.io.InputStream
 import scalaz.@@
@@ -9,6 +10,7 @@ import TypeTags._
 import GeometricFigure._
 import EnrichGeometricFigures._
 import ComponentOperations._
+import ammonite.{ops => fs}, fs._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
 
@@ -100,9 +102,12 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
   }
 
   import java.net.URI
-  def createFilteredZoneIndexer(pdfIns: InputStream, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
+  import java.net.URL
+  def createFilteredZoneIndexer(pdfIns: URL, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
     val dummyUri = URI.create("/")
-    val segmenter =  DocumentSegmenter.createSegmenter(dummyUri, pdfIns, Seq())
+    val path = fs.Path(pdfIns.getPath)
+
+    val segmenter =  DocumentSegmenter.createSegmenter(dummyUri, path, Seq()).get
 
     // Assume these example regions are all from one page
     // val pageId = regions.map(_.target).head
@@ -135,7 +140,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
 
 
 case class TestRegion(
-  pdf: InputStream,
+  pdfUrl: URL,
   page: Int@@PageID,
   bbox: LTBounds
 )

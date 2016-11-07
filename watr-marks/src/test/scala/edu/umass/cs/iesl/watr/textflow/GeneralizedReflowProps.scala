@@ -1,18 +1,17 @@
 package edu.umass.cs.iesl.watr
 package textflow
 
+// import org.scalacheck._
+// import scalaz._, Scalaz._
 
-import org.scalacheck._
-import scalaz._, Scalaz._
-
-import org.scalacheck.Properties
-import org.scalacheck.Prop.forAll
-import matryoshka._
+// import org.scalacheck.Properties
+// import org.scalacheck.Prop.forAll
+// import matryoshka._
 
 
-object GeneralizedReflowProps extends Properties("GeneralizedReflowProps") {
-  import GeneralizedReflow._
-  import Reflow._
+// object GeneralizedReflowProps extends Properties("GeneralizedReflowProps") {
+//   import GeneralizedReflow._
+//   import Reflow._
 
   // def genFlow[A] = Gen.listOf[Reflow[A]]
 
@@ -35,11 +34,7 @@ object GeneralizedReflowProps extends Properties("GeneralizedReflowProps") {
   // property("myprop") = forAll { l: List[Int] =>
   //   l.reverse.reverse == l
   // }
-
-
-
-}
-
+// }
 
 // class ReflowSpec extends Specification  {
 //   // def checkAll(name: String, ruleSet: Laws#RuleSet): Unit = {

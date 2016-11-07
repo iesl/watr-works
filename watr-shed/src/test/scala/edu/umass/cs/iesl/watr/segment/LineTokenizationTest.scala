@@ -144,7 +144,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   def testExample(example: ParsedExample): Unit = {
     println0(s"\ntesting ${example.source}")
 
-    val pdfIns = papers.paper(example.source)
+    val pdfIns = papers.paperUrl(example.source)
     // Assume these example regions are all from one page
     val pageId = example.regions.map(_._2).head
     val segmenter = createFilteredZoneIndexer(pdfIns, pageId, example.regions.map(_._3))

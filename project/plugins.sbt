@@ -10,3 +10,5 @@ addSbtPlugin("me.lessis"            % "bintray-sbt"    % "0.3.0")
 addSbtPlugin("com.github.gseitz"    % "sbt-release"    % "1.0.3")
 
 // addSbtPlugin("com.artima.supersafe" % "sbtplugin" % "1.1.0")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-aspectj" % "0.10.6")

@@ -118,12 +118,17 @@ class PdfTextExtractor(
 
   }
 
+  import ammonite.{ops => fs}, fs._
+  import java.nio.{file => nio}
+  import scala.util.{Try, Failure, Success}
 
   var pagesInfo: List[(PageAtoms, PageGeometry)] = List()
 
-  def extractCharacters(stream: InputStream): Unit = {
-    try {
-      val reader = new PdfReader(stream)
+  def extractCharacters(pdfPath: Path): Try[List[(PageAtoms, PageGeometry)]] = {
+    var instr: InputStream = null
+    val res = Try({
+      instr = nio.Files.newInputStream(pdfPath.toNIO)
+      val reader = new PdfReader(instr)
       val document = new PdfDocument(reader)
 
       for (pageNumber <- 1 to document.getNumberOfPages) {
@@ -166,14 +171,15 @@ class PdfTextExtractor(
 
       }
 
-    } catch {
-      case ex: IOException =>
-        throw new Exception("Cannot extract characters from PDF file", ex)
-      case ex: Throwable =>
-        throw new Exception("Invalid PDF file", ex)
-    } finally {
-      stream.close()
-    }
+      pagesInfo
+    }).transform(
+      {s: List[(PageAtoms, PageGeometry)] => Success(s) },
+      {f: Throwable => Failure(f)}
+    )
+
+    if (instr != null) instr.close()
+
+    res
   }
 
 }

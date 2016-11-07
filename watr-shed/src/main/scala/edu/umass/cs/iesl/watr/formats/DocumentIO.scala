@@ -1,9 +1,7 @@
 package edu.umass.cs.iesl.watr
 package formats
 
-import java.io.InputStream
 
-import scalaz.@@
 import TypeTags._
 
 
@@ -11,17 +9,15 @@ import extract.PdfTextExtractor
 import extract.fonts._
 
 import spindex._
-import GeometricFigure._
-import ComponentOperations._
 import ComponentRendering._
 import EnrichGeometricFigures._
 
 import textboxing.{TextBoxing => TB}, TB._
 
-import textflow.{TextFlow, FlowUnit}
-import textflow.TextFlowRendering.BX
+// import textflow.{TextFlow, FlowUnit}
+// import textflow.TextFlowRendering.BX
 
-import utils.EnrichNumerics._
+// import utils.EnrichNumerics._
 import utils.IdGenerator
 
 import watrmarks.BioLabeling._
@@ -29,9 +25,13 @@ import watrmarks.{StandardLabels => LB, _}
 
 import predsynth._
 
+import ammonite.{ops => fs}, fs._
+// import scala.util.{Try, Failure, Success}
+
+
 object DocumentIO extends DocsegJsonFormats {
   import play.api.libs.json._
-  import play.api.libs.functional.syntax._
+  // import play.api.libs.functional.syntax._
 
   def serializeTargetRegion(tr: TargetRegion): TB.Box = {
     s"[${tr.target}, ${tr.bbox.compactPrint}]]"
@@ -41,7 +41,6 @@ object DocumentIO extends DocsegJsonFormats {
     val trs = zone.regions.map(serializeTargetRegion(_)).mkString(",")
     s"[${zone.id}, ${zone.label}, [${trs}]]"
   }
-
 
 
   def richTextSerializeDocument(zoneIndexer: ZoneIndexer): String = {
@@ -118,7 +117,6 @@ object DocumentIO extends DocsegJsonFormats {
   def serializeMentions(zoneIndexer: ZoneIndexer): TB.Box = {
     val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
-    println("serializeMentions(1)")
     val lines = for {
       linec <- lineBioLabels
       line = linec.component
@@ -131,7 +129,7 @@ object DocumentIO extends DocsegJsonFormats {
         val linePerZTR = zone.regions.map({zoneTargetRegion =>
           lines.map(_._1).zipWithIndex
             .map({case (textFlow, lineNum) =>
-              TextFlow.clipToTargetRegion(textFlow, zoneTargetRegion)
+              TextReflow.clipToTargetRegion(textFlow, zoneTargetRegion)
                 .map(t => (t, lineNum))
             })
             .flatten.headOption
@@ -143,7 +141,7 @@ object DocumentIO extends DocsegJsonFormats {
 
         val trs = linePerZTR.map(_._1).mkString(",")
         val ts = linePerZTR.map(_._2)
-        val jtextFlow = TextFlow.joins(" ")(ts)
+        val jtextFlow = TextReflow.joins(" ")(ts)
         val labelStr = zone.label.value.get
         val pad1 = " "*(20-labelStr.length())
         val pad2 = " "*(20 - jtextFlow.text.length())
@@ -271,87 +269,22 @@ object DocumentIO extends DocsegJsonFormats {
     vjoinTrailSep(left, ",")(tokenDict:_*)
   }
 
-  // def serializeDocument(zoneIndexer: ZoneIndexer): String = {
-
-  //   val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
-
-  //   val serComponents = List(
-  //     LB.SectionHeadingLine,
-  //     LB.ParaBegin,
-  //     LB.TextBlock,
-  //     LB.Abstract
-  //   ).map(l =>
-  //     serializeLabeling(l, lineBioLabels)
-  //   )
-
-  //   val lines = for {
-  //     linec <- lineBioLabels
-  //     line = linec.component
-  //   } yield {
-  //     VisualLine.renderWithIDs(line)
-  //   }
-
-  //   val joinedLines =  vjoinTrailSep(left, ",")(lines:_*)
-  //   val joinedLabels =  vjoinTrailSep(left, ",")(serComponents.flatten:_*)
-
-  //   val pageAtomBlock = serializePageAtoms(zoneIndexer)
-
-  //   (s"""|{ "labels": [
-  //        |${indent(4)(joinedLabels)}
-  //        |  ],
-  //        |  "lines": [
-  //        |${indent(4)(joinedLines)}
-  //        |  ],
-  //        |  "ids": [
-  //        |${indent(4)(pageAtomBlock)}
-  //        |  ]}
-  //        |""".stripMargin)
-
-  // }
-
-
-  // def charInfosBox(cbs: Seq[CharAtom]): Seq[TB.Box] = {
-
-  //   cbs.zip(spaceWidths(cbs))
-  //     .map{ case (c, dist) =>
-  //       (tbox(c.char.toString) +| "->" +| (dist.pp)) %
-  //         c.region.bbox.top.pp %
-  //         (c.region.bbox.left.pp +| c.region.bbox.right.pp) %
-  //         (c.region.bbox.bottom.pp +| "(w:" + c.region.bbox.width.pp + ")")
-  //   }
-  // }
-
 
   def extractChars(
-    pdfis: InputStream,
+    pdfPath: Path,
     charsToDebug: Set[Int] = Set(),
     glyphDefs: Seq[SplineFont.Dir] = Seq()
-  ): Seq[(PageAtoms, PageGeometry)] = {
-
+  ): Try[Seq[(PageAtoms, PageGeometry)]] = {
 
     val charExtractor = new PdfTextExtractor(
       charsToDebug,
       IdGenerator[RegionID](), //, IdGenerator[PageID]
       glyphDefs
     )
-    val _ = charExtractor.extractCharacters(pdfis)
 
-    val pageInfos = charExtractor.pagesInfo
-
-    pageInfos.map({ case (pchars, pgeom) =>
-      (pchars, pgeom)
-    })
-
+    charExtractor.extractCharacters(pdfPath)
   }
 
-
-
-  // def modifyZoneLabelName(name: String): Label = {
-  //   val Array(pre, post0) = name.toLowerCase.split("_", 2)
-  //   val post = post0.replace("_", "-")
-
-  //   Label("bx", s"${pre}:${post}")
-  // }
 
 
 }

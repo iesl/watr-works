@@ -1,36 +1,16 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import scala.collection.mutable
 import textboxing.{TextBoxing => TB}
 import watrmarks._
-import textflow._
-import TypeTags._
-import scalaz.@@
-
 import watrmarks.{StandardLabels => LB}
 
-import ComponentOperations._
-import ComponentTypeEnrichments._
-import GeometricFigure._
-import TextFlow._
 
 object ComponentRendering {
   import TB._
   import utils.ScalazTreeImplicits._
+  import textflow.GeneralizedReflow.componentReflow._
 
-  object BX {
-    def bracket(l:Char, r:Char, b: Box): Box = {
-      val lb = l.toString.box
-      val rb = r.toString.box
-      lb + b + rb
-    }
-
-    def dquote(b: Box): Box = bracket('"', '"', b)
-    def squareBracket(b: Box): Box = bracket('[', ']', b)
-    def curlyBrace(b: Box): Box = bracket('{', '}', b)
-
-  }
 
   object VisualLine {
     import scalaz.std.string._
@@ -42,20 +22,21 @@ object ComponentRendering {
     }
 
 
-    def dquote(b: TextFlow): TextFlow = bracket('"', '"', b)
-    def squareBracket(b: TextFlow): TextFlow = bracket('[', ']', b)
-    def curlyBrace(b: TextFlow): TextFlow = bracket('{', '}', b)
+    def dquote(b: TextReflow): TextReflow = bracket('"', '"', b)
+    def squareBracket(b: TextReflow): TextReflow = bracket('[', ']', b)
+    def curlyBrace(b: TextReflow): TextReflow = bracket('{', '}', b)
 
 
-    def escapeString(s: TextFlow, subs: Seq[(Char, String)]): TextFlow = {
-      val submap = subs.map(kv => (kv._1.toString(), kv._2)).toMap
-      foldMapTextFlow(s, {case (textUnit, flowUnit) =>
-                        val tsub = submap.get(textUnit).getOrElse(textUnit)
-                        (tsub, flowUnit)
-                      })
+    def escapeString(s: TextReflow, subs: Seq[(Char, String)]): TextReflow = {
+      ???
+      // val submap = subs.map(kv => (kv._1.toString(), kv._2)).toMap
+      // foldMapTextReflow(s, {case (textUnit, flowUnit) =>
+      //   val tsub = submap.get(textUnit).getOrElse(textUnit)
+      //   (tsub, flowUnit)
+      // })
     }
 
-    def escapeTex(s: TextFlow): TextFlow = {
+    def escapeTex(s: TextReflow): TextReflow = {
       val subs = Seq(
         ('_' -> "\\_"),
         ('^' -> "\\^"),
@@ -65,7 +46,7 @@ object ComponentRendering {
       escapeString(s, subs)
     }
 
-    def escapeJson(s: TextFlow): TextFlow = {
+    def escapeJson(s: TextReflow): TextReflow = {
       val subs = Seq(
         ('"' -> "\\\""),
         ('\\' -> "\\\\")
@@ -86,12 +67,12 @@ object ComponentRendering {
       !(lls intersect Set(LB.Sup, LB.Sub)).isEmpty
     }
 
-    def doEscapeAndQuote(cc: Component, s: TextFlow): TextFlow = {
+    def doEscapeAndQuote(cc: Component, s: TextReflow): TextReflow = {
       dquote(escapeJson(s))
     }
 
     def renderWithIDs(cc: Component): TB.Box = {
-      // TODO asser that cc is role VisualLine
+      // TODO assert that cc is role VisualLine
       val textAndIds = for {
         textSpan  <- cc.getChildren(LB.TextSpan)
         textFlow <- render(textSpan)
@@ -99,29 +80,30 @@ object ComponentRendering {
         val tokenId = textSpan.id
         (escapeJson(textFlow), tokenId)
       }
-      val lineText = hsepb(textAndIds.map(_._1.text.box), ",")
+      // val lineText = hsepb(textAndIds.map(_._1.text.box), ",")
       val lineIDs = hsepb(textAndIds.map(_._2.toString.box), ",")
       val visualLineID = cc.id.toString
 
-      BX.squareBracket(
-        hsepb(
-          Seq(BX.squareBracket(lineText), BX.squareBracket(lineIDs), visualLineID),
-          ","
-        )
-      )
+      // OneRow.squareBracket(
+      //   hsepb(
+      //     Seq(OneRow.squareBracket(lineText), OneRow.squareBracket(lineIDs), visualLineID),
+      //     ","
+      //   )
+      // )
+      ???
     }
 
 
-    def renderWithoutFormatting(cc: Component): Option[TextFlow] = {
+    def renderWithoutFormatting(cc: Component): Option[TextReflow] = {
       cc.roleLabel match {
         case LB.VisualLine
            | LB.TextSpan =>
           val children = childSpansOrAtoms(cc)
-          val childTextFlows = children.map(renderWithoutFormatting(_))
+          val childTextReflows = children.map(renderWithoutFormatting(_))
           val joined = if (isTokenized(cc)) {
-            joins(" ")(childTextFlows.flatten)
+            joins(" ")(childTextReflows.flatten)
           } else {
-            concat(childTextFlows.flatten)
+            concat(childTextReflows.flatten)
           }
 
           Some(joined)
@@ -130,21 +112,22 @@ object ComponentRendering {
           val ac = cc.asInstanceOf[AtomicComponent]
           val charAtom = ac.pageAtom.asInstanceOf[CharAtom]
 
-          val textFlow = charAtom.wonkyCharCode
-            .map({_ =>
-              TextFlow(Seq(FlowUnit.Rewrite(FlowUnit.Atom(ac), "")))
-            })
-            .getOrElse({
-              TextFlow(Seq(FlowUnit.Atom(ac)))
-            })
+          // val textFlow = charAtom.wonkyCharCode
+          //   .map({_ =>
+          //     TextReflow(Seq(FlowUnit.Rewrite(FlowUnit.Atom(ac), "")))
+          //   })
+          //   .getOrElse({
+          //     TextReflow(Seq(FlowUnit.Atom(ac)))
+          //   })
+          // Some(textFlow)
 
-          Some(textFlow)
+          ???
 
         case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
       }
     }
 
-    def render(cc: Component): Option[TextFlow] = {
+    def render(cc: Component): Option[TextReflow] = {
       cc.roleLabel match {
         case LB.VisualLine
            | LB.TextSpan =>
@@ -182,13 +165,12 @@ object ComponentRendering {
 
 
         case LB.PageAtom =>
-          val textFlow = TextFlow(
-            Seq(FlowUnit.Atom(cc.asInstanceOf[AtomicComponent]))
-          )
-
-
-          val esc = escapeTex(textFlow)
-          Some(surroundCC(cc, esc))
+          // val textFlow = TextReflow(
+          //   Seq(FlowUnit.Atom(cc.asInstanceOf[AtomicComponent]))
+          // )
+          // val esc = escapeTex(textFlow)
+          // Some(surroundCC(cc, esc))
+          ???
 
         case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
       }
@@ -210,7 +192,7 @@ object ComponentRendering {
     // def isToken(cc: Component) = hasLabel(cc, LB.Token)
     def isTokenized(cc: Component) = hasLabel(cc, LB.Tokenized)
 
-    def surroundCC(cc: Component, b: TextFlow): TextFlow = {
+    def surroundCC(cc: Component, b: TextReflow): TextReflow = {
       if (isSup(cc)) {
         bracket("^{", "}", b)
       }

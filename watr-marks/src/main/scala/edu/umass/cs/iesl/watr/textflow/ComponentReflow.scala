@@ -1,16 +1,16 @@
 package edu.umass.cs.iesl.watr
 package textflow
 
+
 import spindex._
-import java.net.URI
-import GeometricFigure._
-import EnrichGeometricFigures._
 import scalaz.syntax.ToIdOps
 import scalaz.syntax.std.ToListOps
 import scalaz.@@
 import ComponentTypeEnrichments._
 import TypeTags._
 
+
+object HIDDEN {
 
 case class TextFlow(flow: Seq[FlowUnit]) {
   def text: String = {
@@ -95,7 +95,6 @@ object TextFlow extends ToListOps with ToIdOps {
     TextFlow(flowUnits.map(_._2))
   }
 
-
   def flowUnitTargetRegion(funit: FlowUnit): Option[TargetRegion] = funit match {
     case u: FlowUnit.Atom => u.atomicComponent.targetRegion.some
     case u: FlowUnit.Rewrite => u.atom.atomicComponent.targetRegion.some
@@ -151,4 +150,6 @@ object FlowUnit {
   ) extends FlowUnit {
     val length: Int = value.length
   }
+}
+
 }

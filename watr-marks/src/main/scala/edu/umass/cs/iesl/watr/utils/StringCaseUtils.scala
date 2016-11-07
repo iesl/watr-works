@@ -16,7 +16,6 @@ object StringUtils {
   def curlyBrace(b: String): String = bracket('{', '}', b)
 
 
-
   implicit class RicherString(val str: String) extends AnyVal {
     def toSnakeCase(): String = {
       str.replaceAll("([A-Z])", "-$1")

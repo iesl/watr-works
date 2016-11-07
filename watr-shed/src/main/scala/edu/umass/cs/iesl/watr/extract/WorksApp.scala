@@ -1,9 +1,8 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-import ammonite.{ops => fs}
+import ammonite.{ops => fs}, fs._
 import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
-import fs._
 import java.io.InputStream
 import java.net.URI
 import textboxing.{TextBoxing => TB}
@@ -36,6 +35,7 @@ case class AppConfig(
 )
 
 object Works extends App {
+  private[this] val log = org.log4s.getLogger
 
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
@@ -45,7 +45,7 @@ object Works extends App {
 
   def die(t: Throwable): Unit = {
     val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
-    println(s"ERROR: ${message}")
+    log.info(s"ERROR: ${message}")
     t.printStackTrace()
   }
 
@@ -126,11 +126,13 @@ object Works extends App {
       })
     } text ("init (or re-init) a corpus directory structure") // children()
 
-    cmd("docseg") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        segmentDocument(ac)
-      })
-    } text ("run document segmentation")
+    cmd("docseg")
+      .action((v, conf) => setAction(conf, segmentDocument(_)))
+      .text ("run document segmentation")
+
+    cmd("fast-forward-docseg")
+      .action((v, conf) => setAction(conf, fastForwardDocsegs(_)))
+      .text ("re-run document segmentation while preserving existing annotations")
 
     cmd("build-fontdb") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -167,7 +169,7 @@ object Works extends App {
   def getProcessList(conf: AppConfig): Seq[CorpusEntry] = {
     val corpus = Corpus(corpusRootOrDie(conf))
 
-    println(s"starting Works in corpus ${corpus}")
+    log.info(s"running Works in corpus ${corpus}")
 
     val toProcess = conf.inputFileList
       .map({ inputs =>
@@ -185,7 +187,7 @@ object Works extends App {
           .map(_.trim).filterNot(_.isEmpty())
           .filter({ inputLine =>
             if (!corpus.hasEntry(inputLine)) {
-              println(s"warning: no corpus entry with id ${inputLine}, skipping")
+              log.info(s"warning: no corpus entry with id ${inputLine}, skipping")
               false
             } else true
           })
@@ -200,6 +202,7 @@ object Works extends App {
     val skipped = if (conf.numToSkip > 0) toProcess.drop(conf.numToSkip) else toProcess
     val taken = if (conf.numToRun > 0) skipped.take(conf.numToRun) else skipped
 
+    log.info(s"processing entries ${conf.numToRun}-${taken.length}")
     taken
   }
 
@@ -216,59 +219,18 @@ object Works extends App {
     }
   }
 
-
-  def runProcessor(conf: AppConfig, artifactOutputName: String, process: (CorpusEntry, String) => Unit): Unit = {
-    var i = 0
-    getProcessList(conf).foreach { entry =>
-      println(s"${i}. extracting ${entry} ${artifactOutputName}")
-
-      processOrSkipOrForce(conf, entry, artifactOutputName) match {
-        case Success(Some(_)) => process(entry, artifactOutputName)
-        case Success(None)    => println(s"skipping existing ${entry}, use -x to force reprocessing")
-        case Failure(t)       => sys.error(s"error: ${t.getClass} ${t.getMessage}")
-      }
-
-      i += 1
-    }
-  }
-
-  def processCorpusArtifact(entry: CorpusEntry, outputName: String, processor: (InputStream, String) => String): Unit = {
-    (for {
-      pdfArtifact <- entry.getPdfArtifact
-      pdfIns <- pdfArtifact.asInputStream.toOption
-    } yield {
-      try {
-        val output = processor(pdfIns, pdfArtifact.artifactPath.toString)
-        entry.putArtifact(outputName, output)
-      } catch {
-        case t: Throwable =>
-          println(s"could not extract ${outputName}  for ${pdfArtifact}: ${t.getMessage}\n")
-
-          println(t.toString())
-          t.printStackTrace()
-          println(t.getCause.toString())
-          t.getCause.printStackTrace()
-          s"""{ "error": "exception thrown ${t}: ${t.getCause}: ${t.getMessage}" }"""
-      } finally {
-        pdfIns.close()
-      }})
+  def skipOrStashArtifact(conf: AppConfig, entry: CorpusEntry, artifactOutputName: String): Option[Path] = {
+    if (entry.hasArtifact(artifactOutputName)) {
+      entry.stashArtifact(artifactOutputName)
+    } else None
   }
 
   def processCorpusEntryList(conf: AppConfig, processor: (CorpusEntry) => Unit): Unit = {
     var i = 0
     getProcessList(conf).foreach { entry =>
-      println(s"${i}. processing ${entry} ")
+      log.info(s"${i}. processing ${entry} ")
       processor(entry)
       i += 1
-    }
-  }
-
-  def processCorpus(conf: AppConfig, artifactOutputName: String, processor: (InputStream, String) => String): Unit = {
-    runProcessor(conf, artifactOutputName, process)
-
-    def process(entry: CorpusEntry, outputName: String): Unit = {
-      val pdfArtifact = entry.getPdfArtifact()
-      processCorpusArtifact(entry, outputName, processor)
     }
   }
 
@@ -280,16 +242,16 @@ object Works extends App {
   def normalizeCorpusEntry(corpus: Corpus, pdf: Path): Unit = {
     val artifactPath = corpus.corpusRoot / s"${pdf.name}.d"
     if (pdf.isFile && !(exists! artifactPath)) {
-      println(s" creating artifact dir ${pdf}")
+      log.info(s" creating artifact dir ${pdf}")
       mkdir! artifactPath
     }
     if (pdf.isFile) {
       val dest = artifactPath / pdf.name
 
       if (exists(dest)) {
-        println(s"corpus already contains file ${dest}, skipping...")
+        log.info(s"corpus already contains file ${dest}, skipping...")
       } else {
-        println(s" stashing ${pdf}")
+        log.info(s" stashing ${pdf}")
         mv.into(pdf, artifactPath)
       }
     }
@@ -315,7 +277,7 @@ object Works extends App {
   def normalizeCorpusEntries(conf: AppConfig): Unit = {
     val corpus = Corpus(corpusRootOrDie(conf))
 
-    println(s"normalizing corpus at ${corpus.corpusRoot}")
+    log.info(s"normalizing corpus at ${corpus.corpusRoot}")
 
     ls(corpus.corpusRoot)
     .filter(p=> p.isFile && (p.ext=="pdf" || p.ext=="ps"))
@@ -344,9 +306,9 @@ object Works extends App {
         try{
 
         val res = %%("bin/extract-fonts", "-f="+pdfPath.toString())
-        println(s"ran extract-fonts exit=${res.exitCode}")
+        log.info(s"ran extract-fonts exit=${res.exitCode}")
         } catch {
-          case t: Throwable => println(s"Error extracting fonts, skipping")
+          case t: Throwable => log.info(s"Error extracting fonts, skipping")
         }
       }
     }
@@ -358,13 +320,13 @@ object Works extends App {
         sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
         sfdir <- sfdirs
       } yield {
-        // println(s"loading fonts from ${sfdir}")
+        // log.info(s"loading fonts from ${sfdir}")
         SplineFonts.loadSfdir(sfdir)
       }
 
       fontDirs
     } else {
-      println(s"no extracted fonts found")
+      log.info(s"no extracted fonts found")
       Seq()
     }
   }
@@ -379,13 +341,10 @@ object Works extends App {
   }
 
 
-
-  def runPageSegmentation(documentURI: URI, pdfins: InputStream, fontDirs: Seq[Dir]): Try[DocumentSegmenter] =  {
-    Try {
-      val segmenter = DocumentSegmenter.createSegmenter(documentURI, pdfins, fontDirs)
-      segmenter.runPageSegmentation()
-      segmenter
-    }
+  def runPageSegmentation(documentURI: URI, pdfPath: Path, fontDirs: Seq[Dir]): Try[DocumentSegmenter] =  {
+      DocumentSegmenter
+        .createSegmenter(documentURI, pdfPath, fontDirs)
+        .map({s => s.runPageSegmentation(); s})
   }
 
   def writePredsynthJson(predsynthPaper: Paper, corpusEntry: CorpusEntry): Unit = {
@@ -402,8 +361,47 @@ object Works extends App {
     Try { for {
       predSynthPaper <- entry
     } {
-      segmenter.alignPredSynthPaper(predSynthPaper)
+      segment.MITAlignPredsynth.alignPredSynthPaper(segmenter.zoneIndexer, predSynthPaper)
     }}
+  }
+
+
+  // Load pre-existing docseg
+  // If it contains annotation:
+  //   stash it via datestamped filename + dir
+  //   do text extraction
+  //   align old annots w/new docseg
+  //   write new docseg w/annots
+  // else
+  //   do nothing
+  def fastForwardDocsegs(conf: AppConfig): Unit = {
+    val docsegFile = "docseg.json"
+    log.info(s"fast-forwarding docsegs")
+    for {
+      corpusEntry      <- getProcessList(conf)
+      priorDocsegArt   <- corpusEntry.getArtifact(docsegFile).orElse { log.info("No prior docseg") ; None }
+      priorPath        <- priorDocsegArt.asPath
+      priorDocseg      <- Docseg.read(priorPath)
+      // stashedDocseg  <- skipOrStashArtifact(conf, corpusEntry, "docseg.json")
+      hasPriorAnnots  = !priorDocseg.mentions.isEmpty
+      _               = log.info(s"prior annotations=${hasPriorAnnots}")
+      _               = if (hasPriorAnnots) { corpusEntry.stashArtifact("docseg.json") }
+
+      if hasPriorAnnots
+
+      stashed          <- priorDocsegArt.stash
+      _                 = log.info(s"prior docseg stashed at ${stashed}")
+
+      pdfArtifact    <- corpusEntry.getPdfArtifact
+      pdfPath        <- pdfArtifact.asPath
+      segmenter      <- runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
+    } {
+      val mergedZoneIndex = segment.DocsegMerging.mergePriorDocseg(segmenter.zoneIndexer, priorDocseg)
+
+      val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex)
+      corpusEntry.putArtifact(docsegFile, output)
+    }
+
   }
 
   def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
@@ -421,23 +419,15 @@ object Works extends App {
           output          <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
           predsynthOutput <- processOrSkipOrForce(conf, corpusEntry, "predsynth.json")
           _               <- output
-          // fontDirs      = loadOrExtractFonts(conf, corpusEntry)
-          pdf             <- corpusEntry.getPdfArtifact
-          pdfins          <- pdf.asInputStream
-          _                = pdf.asPath
-          segmenter       <- runPageSegmentation(corpusEntry.getURI, pdfins, Seq())
+          pdfArtifact     <- corpusEntry.getPdfArtifact
+          pdfPath         <- pdfArtifact.asPath
+          segmenter       <- runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
         } {
-          // TODO pass the URI of the pdf into the extractor, don't pass the InputStream and close it here.
-          if (pdfins!=null) pdfins.close()
 
           rsegmenter = Some(segmenter)
 
           val entryFilename = corpusEntry.entryDescriptorRoot
           val paper = predsynthPapers.get(entryFilename)
-          if (conf.preserveAnnotations) {
-            // load the prior docseg
-            println("loading/converting prior annots")
-          }
 
           textAlignPredsynthDB(segmenter, paper)
 
@@ -505,7 +495,7 @@ object Works extends App {
             sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
             sfdir <- sfdirs
           } {
-            println(s"adding fonts from ${sfdir}")
+            log.info(s"adding fonts from ${sfdir}")
             val sfs = SplineFonts.loadSfdir(sfdir)
 
             db.addFontDir(sfs)
@@ -558,12 +548,10 @@ object Works extends App {
     try {
       // db.showFontTrees()
       db.showHashedGlyphs()
-
     } finally {
       db.shutdown()
     }
   }
 
-  // def extractCharacters(conf: AppConfig): Unit = {}
 
 }

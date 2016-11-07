@@ -17,7 +17,10 @@ import utils.EnrichNumerics._
 import ComponentRendering.VisualLine
 
 
+
 object ComponentOperations {
+  import textflow.GeneralizedReflow.componentReflow._
+  import scalaz.Tree
 
 
 
@@ -451,7 +454,7 @@ object ComponentOperations {
         vtrace.trace("Tree after Flatten 2" withInfo VisualLine.renderRoleTree(selfComponent))
 
         vtrace.trace("Final Tokenization" withInfo
-          ComponentRendering.VisualLine.render(selfComponent).get.text)
+          VisualLine.render(selfComponent).get.toText())
 
         vtrace.trace(end("Tokenize Line"))
       }
@@ -480,8 +483,6 @@ object ComponentOperations {
     }
 
 
-    import textflow.GeneralizedReflow._
-    import scalaz.Tree
 
     def componentToTextFlow(): Reflow = {
       val cTree = selfComponent

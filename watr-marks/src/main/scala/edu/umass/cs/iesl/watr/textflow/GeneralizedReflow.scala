@@ -1,126 +1,96 @@
 package edu.umass.cs.iesl.watr
 package textflow
 
+import spindex._
 import watrmarks._
-
 import textboxing.{TextBoxing => TB}
-import utils.ScalazTreeImplicits._
+
+import scalaz._, Scalaz.{fix => _, _}
 
 
-object GeneralizedReflow {
-  import scalaz._, Scalaz.{fix => _, _}
-  import matryoshka._,  Recursive.ops._, TraverseT.ops._, Corecursive.ops._
-
-
-  sealed trait TextFlowLeaf
+class GeneralizedReflow[AtomT](
+  implicit showAtomT: Show[AtomT]
+) {
+  import matryoshka._,  Recursive.ops._, TraverseT.ops._
+  import matryoshka.data._
 
   sealed trait ReflowF[+A]
 
   type Reflow = Fix[ReflowF]
 
+  type TextReflow = Reflow
+
   def fixf = Fix[ReflowF](_)
 
 
   object Reflow {
-    case class Element[T](t: T, chars: List[Char])    extends ReflowF[Nothing]
-    case class Element1[T](t: T, char: Char)          extends ReflowF[Nothing]
+    case class Atom(c: AtomT)                               extends ReflowF[Nothing]
+    case class Insert(value: String)                        extends ReflowF[Nothing]
+    case class Rewrite[A](from: A, to: String)              extends ReflowF[A]
+    case class Bracket[A](pre: String, post: String, a: A)  extends ReflowF[A]
 
-    case class Atom(c: Char)                          extends ReflowF[Nothing] with TextFlowLeaf
-    case class Space(breaking: Boolean=true)          extends ReflowF[Nothing] with TextFlowLeaf
-    case class Anchor(labels: Set[BioPin])            extends ReflowF[Nothing] with TextFlowLeaf
-
-    // Edits
-    case class Insert(value: String)                  extends ReflowF[Nothing]
-    case class Rewrite[A](from: A, to: String)        extends ReflowF[A]
-    case class Delete[A](a: A)                        extends ReflowF[A]
-
-    case class Flow[A](labels: Set[Label], as: List[A])  extends ReflowF[A]
-    case class Labeled[A](labels: Set[Label], a: A)      extends ReflowF[A]
-
-    case class Window[A](
-      hole: A,
-      prevs: List[A],
-      nexts: List[A]
-    ) extends ReflowF[A]
-
-
+    case class Flow[A](labels: Set[Label], as: List[A])     extends ReflowF[A]
+    case class Labeled[A](labels: Set[Label], a: A)         extends ReflowF[A]
 
     implicit val ReflowTraverse: Traverse[ReflowF] = new Traverse[ReflowF] {
       def traverseImpl[G[_], A, B](fa: ReflowF[A])(f: A => G[B])(implicit G: Applicative[G]): G[ReflowF[B]] = fa match {
         case Atom(c)                    => G.point(Atom(c))
-        case e:Element[_]               => G.point(e)
-        case e:Element1[_]              => G.point(e)
-        case Space(breaking)            => G.point(Space(breaking))
-        case Anchor(ls)                 => G.point(Anchor(ls))
         case Insert(value)              => G.point(Insert(value))
         case Rewrite(from, to)          => f(from).map(Rewrite(_, to))
-        case Delete(a)                  => f(a).map(Delete(_))
+        case Bracket(pre, post, a)      => f(a).map(Bracket(pre, post, _))
         case Flow(labels, atoms)        => atoms.traverse(f).map(Flow(labels, _))
-        // case Flow(atoms)                => atoms.traverse(f).map(Flow( _))
         case Labeled(labels, a)         => f(a).map(Labeled(labels, _))
-        case Window(hole, prevs, nexts) =>
-
-          implicitly[Apply[G]].apply3(
-            f(hole), prevs.traverse(f), nexts.traverse(f)
-          )(Window(_, _, _))
-
       }
     }
-    implicit val ReflowUnzip = new Unzip[ReflowF] {
-      def unzip[A, B](f: ReflowF[(A, B)]) = (f.map(_._1), f.map(_._2))
+
+    // implicit def show[A]: Show[ReflowF[A]] = Show.show { _ match {
+    //   case Atom(c)                    => c.toString
+    //   case Insert(value)              => s"+$value"
+    //   case Rewrite(from, to)          => s"rewrite"
+    //   case Bracket(pre, post, a)      => s"""${pre}`${a.toString}`{post} """
+    //   case Flow(ls, atoms)            => s"""flow${ls.mkString(":#", " #", "")}"""
+    //   case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
+    // }}
+
+    implicit val show: Delay[Show, ReflowF] = new Delay[Show, ReflowF] {
+      def apply[A](show: Show[A]) = Show.show {
+          case Atom(c)                    => c.toString
+          case Insert(value)              => s"+$value"
+          case Rewrite(from, to)          => s"rewrite"
+          case Bracket(pre, post, a)      => s"""${pre}`${a.toString}`{post} """
+          case Flow(ls, atoms)            => s"""flow${ls.mkString(":#", " #", "")}"""
+          case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
+
+          // case Num(v)       => v.shows
+          // case Mul(a, b)    =>
+          //   "Mul(" + show.shows(a) + ", " + show.shows(b) + ")"
+          // case Var(s)       => "$" + s.name
+          // case Lambda(p, a) => "Lambda(" + p.name + ", " + show.shows(a) + ")"
+          // case Apply(f, a)  =>
+          //   "Apply(" + show.shows(f) + ", " + show.shows(a) + ")"
+          // case Let(n, v, i) =>
+          //   "Let(" + n.name + ", " + show.shows(v) + ", " + show.shows(i) + ")"
+        }
     }
-
-    implicit def show[A]: Show[ReflowF[A]] = Show.show { _ match {
-      case Atom(c)                    => c.toString
-      case e:Element[_]               => e.chars.mkString
-      case e:Element1[_]              => e.char.toString
-      case Space(breaking)            => " "
-      case Anchor(ls: Set[BioPin])    => s"""anchor:${ls.mkString(",")}"""
-      case Insert(value)              => s"edit:$value"
-      case Rewrite(from, to)          => s"rewrite"
-      case Delete(a)                  => s"del"
-      case Flow(ls, atoms)            => s"""flow${ls.mkString(":#", " #", "")}"""
-      case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
-      case Window(hole, prevs, nexts) => s"window"
-    }}
-
-    def asString[A]: Show[ReflowF[A]] = Show.show { _ match {
-      case Atom(c)                    => c.toString()
-      case e:Element[_]               => show.shows(e)
-      case e:Element1[_]              => show.shows(e)
-      case Space(breaking)            => " "
-      case Insert(value)              => value
-      case Rewrite(from, to)          => to
-      case Anchor(ls: Set[BioPin])    => ""
-      case Delete(a)                  => ""
-      case Flow(ls, atoms)            => ""
-      case Labeled(ls, _)             => ""
-      case Window(hole, prevs, nexts) => ""
-    }}
 
   }
 
   import Reflow._
 
-
-  def element[T](t: T, charf: (T) => Seq[Char]) = fixf({
-    val cs = charf(t)
-
-    if (cs.length == 1) Element1(t, cs(0))
-    else Element(t, cs.toList)
-  })
-
-  def atom(c: Char) = fixf(Atom(c))
-  def space() = fixf(Space())
-  def anchor(ls: BioPin) = fixf(Anchor(Set(ls)))
-  def anchors(ls: Set[BioPin]) = fixf(Anchor(ls))
+  def atom(c: AtomT) = fixf(Atom(c))
   def flow(as: Reflow*) = flows(as)
   def flows(as: Seq[Reflow]) = fixf(Flow(Set(), as.toList))
 
-  def labeled(l: Label, a: Reflow) = fixf(Labeled(Set(l), a))
+  def bracket(pre: Char, post: Char, a: Reflow) = fixf(
+    Bracket(pre.toString, post.toString, a)
+  )
+  def bracket(pre: String, post: String, a: Reflow) = fixf(
+    Bracket(pre, post, a)
+  )
 
+  def labeled(l: Label, a: Reflow) = fixf(Labeled(Set(l), a))
   def insert(s: String) = fixf(Insert(s))
-  def window[F[_]](hole: Reflow, prevs: List[Reflow], nexts: List[Reflow]) = fixf(Window(hole, prevs, nexts))
+  def space() = insert(" ")
 
 
   type ReflowU = ReflowF[Fix[ReflowF]]
@@ -132,11 +102,10 @@ object GeneralizedReflow {
   }
 
   // Linearize a tree structure
-  import watrmarks.{StandardLabels => LB, _}
+  // import watrmarks.{StandardLabels => LB, _}
   import utils.SlicingAndDicing._
 
 
-  // onGrouped: Window[Reflow] => Window[Reflow] = (w => w)
   def groupByPairs(reflow: ReflowU)(
     groupf: (ReflowU, ReflowU, Int) => Boolean,
     onGrouped: List[Flow[Reflow]] => List[ReflowU] = (w => w)
@@ -150,9 +119,7 @@ object GeneralizedReflow {
           .map(g =>Flow(labels, g.toList))
           .toList
 
-
         f.copy(as = onGrouped(grouped).map(fixf(_)))
-
 
       case x =>
         println(s"unmatched ${x}")
@@ -168,12 +135,46 @@ object GeneralizedReflow {
   }
 
 
-  def transLabeled(r: Reflow, l: Label, f: ReflowU => ReflowU): Reflow = {
+  def allSiblings(label: Label, r: Reflow)(
+    f: List[Reflow] => List[Reflow]
+  ): Reflow = {
 
-    val ifLabeled: ReflowU => ReflowU = r => {
+    // everyLabel(label, r)({labeled => })
 
+    // everySequence(r)({ seq: (List[Reflow]) => 
+    //   seq
+    // })
+    // r.children.exists { ch: Fix[ReflowF] =>
+
+
+    //   false
+    // }
+
+    // def ifLabeled(r:ReflowU): ReflowU =  {
+    //   if (hasLabel(label)(r)) holes(r) match {
+    //     case Labeled(labels, (a, fWhole)) =>
+    //     case _ => r
+    //   } else r
+    // }
+
+    ???
+  }
+
+
+  def everySequence(r: Reflow)(f: List[Reflow] => List[Reflow]): Reflow = {
+    def atFlows: ReflowU => ReflowU = r => r match {
+      case fl @ Flow(labels: Set[Label], as: List[Reflow]) =>
+        fl.copy(as = f(as))
+      case fl => fl
+    }
+
+    r.transCata(atFlows)
+  }
+
+  def everyLabel(l: Label, r: Reflow)(f: Reflow => Reflow): Reflow = {
+    def ifLabeled(r:ReflowU): ReflowU =  {
       if (hasLabel(l)(r)) holes(r) match {
-        case Labeled(labels, (Fix(a), fWhole)) =>  fWhole(fixf(f(a)))
+        case Labeled(labels, (a, fWhole)) => fWhole(f(a))
         case _ => r
       } else r
     }
@@ -181,62 +182,12 @@ object GeneralizedReflow {
     r.transCata(ifLabeled)
   }
 
-  def explode(r: Reflow): List[Reflow] = {
-    r.unFix match {
-      case f @ Flow(labels, atoms) =>
-
-        if (labels.isEmpty) atoms else {
-          val bAnchors = anchors(labels.map(_.B))
-          val lAnchors = anchors(labels.map(_.L))
-          (bAnchors :: atoms) :+ lAnchors
-        }
-
-      case Labeled(labels, a)  =>
-
-        if (labels.isEmpty) List(a) else {
-          val bAnchors = anchors(labels.map(_.B))
-          val lAnchors = anchors(labels.map(_.L))
-          List(bAnchors, a, lAnchors)
-        }
-
-      case x => List(r)
-    }
+  def everywhere(r: Reflow)(f: ReflowU => ReflowU): Reflow = {
+    r.transCata(f)
   }
 
-  def unFlow(r: Reflow): Reflow = fixf { r.unFix match {
-    case Flow(labels, as)     => Flow(labels, as.flatMap(explode(_)))
-    // case Labeled(labels, a)   => Labeled(labels, flattenf(a.unFix))
-    case x                    => x
-  }}
-
-  // def flatten(r: Reflow): Reflow = fixf {
-  //   r.unFix match {
-  //     case Flow(labels, as)     => Flow(labels, as.flatMap(explode(_)))
-  //     case Labeled(labels, a)   => Labeled(labels, flatten(a))
-  //     case x                    => x
-  //   }
-  // }
-
-  // def linearize(r: Reflow): Reflow = {
-  //   r.cata(unFlow).unFix
-  // }
-
-  def toLeafList(r: ReflowU): List[TextFlowLeaf] = ???
-
-
-  // def toLeafList(r: ReflowU): List[TextFlowLeaf]= {
-  //   linearize(r)
-  //     .foldLeft( List[TextFlowLeaf]() ){
-  //     case (acc, e) =>
-  //     if (e.unFix.isInstanceOf[TextFlowLeaf]) {
-  //       e.unFix.asInstanceOf[TextFlowLeaf] :: acc
-  //     } else acc
-  //   }
-  // }
-
-
-
   def prettyPrintTree(reflow: Reflow): TB.Box = {
+    import utils.ScalazTreeImplicits._
     reflow.cata(toTree).draw
   }
 
@@ -245,4 +196,45 @@ object GeneralizedReflow {
   }
 
 
+  private def mkPad(s: String): TextReflow = ???
+
+  def join(sep:String)(bs:TextReflow*): TextReflow =
+    joins(sep)(bs.toSeq)
+
+  def joins(sep:String)(bs:Seq[TextReflow]): TextReflow =
+    concat(bs.toList intersperse mkPad(sep))
+
+  def concat(bs: Seq[TextReflow]): TextReflow = {
+    ???
+  }
+
+  implicit class RicherTextReflow(val theReflow: TextReflow)   {
+
+    def toText(): String = {
+      ???
+    }
+
+    def slice(begin: Int, end:Int): TextReflow = ???
+
+    def targetRegions(): Seq[TargetRegion] = ???
+
+    def intersect(other: TextReflow): TextReflow = ???
+
+    def intersectPage(other: PageIndex): Seq[Component] = {
+      ???
+    }
+  }
+
+
+
+}
+
+object GeneralizedReflow {
+  implicit def ShowAtomicComponent: Show[AtomicComponent] =
+    Show.show { _.chars }
+
+  // implicit class RicherTextReflow(val theReflow: TextReflow) extends AnyVal {
+  val textReflow = new GeneralizedReflow[Char]()
+
+  val componentReflow = new GeneralizedReflow[AtomicComponent]()
 }
