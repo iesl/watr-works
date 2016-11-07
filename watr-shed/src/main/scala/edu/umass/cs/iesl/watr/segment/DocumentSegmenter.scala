@@ -219,42 +219,6 @@ class DocumentSegmenter(
 
   }
 
-
-  // def docWideModalParaFocalJump(
-  //   alignedBlocksPerPage: Seq[Seq[BioNode]],
-  //   modalVDist: Double
-  // ): Double = {
-  //   val allVDists = for {
-  //     groupedBlocks <- alignedBlocksPerPage
-  //     block <- groupedBlocks
-  //   } yield {
-  //     // block
-  //     //   .sliding(2).toSeq
-  //     //   .map({
-  //     //     case Seq((a1, i1), (a2, i2)) =>
-  //     //       val a1Left = a1.bounds.toPoint(CDir.W).y
-  //     //       val a2Left = a2.bounds.toPoint(CDir.W).y
-  //     //       val vdist = math.abs(a1Left - a2Left)
-  //     //       math.abs(vdist)
-  //     //     case Seq((a1, i1)) => -1
-  //     //     case Seq() => -1
-  //     //   }).filter(_ > 0d)
-  //   }
-  //   // getMostFrequentValues(allVDists.flatten, leftBinHistResolution)
-  //   //   .headOption.map(_._1)
-  //   //   .getOrElse(12.0)
-  //   15.0d
-  // }
-
-  // def verticalLineJumpsPerHeightPerPage(): Map[Int@@PageID, (Double, Double)] = {
-  //   val alignedBlocksPerPage = for {
-  //     page <- visualLineOnPageComponents
-  //   } yield {
-  //   }
-  // }
-
-
-
   def docWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Double = {
     val allVDists = for {
       groupedBlocks <- alignedBlocksPerPage
@@ -565,20 +529,12 @@ class DocumentSegmenter(
               val joinedWord = LB.LineBreakToken(word)
               firstHalf.addLabel(joinedWord)
               secondHalf.addLabel(LB.Invisible)
-              // if (w2Extra.isEmpty()) {
-              // } else {
-              //   // TODO add back the extra final punctuation w2Extra
-              // }
             } else if (dict.contains(w1) && dict.contains(w2)) {
               // join word, but retain hyphen
               val wjoin = s"${w1}-${w2}"
               vtrace.trace("Broken word hyphenated:" withInfo(wjoin))
               val joinedWord = LB.LineBreakToken(wjoin)
               firstHalf.addLabel(joinedWord)
-              // if (w2Extra.isEmpty()) {
-              // } else {
-              //   // TODO add back the extra final punctuation w2Extra
-              // }
               secondHalf.addLabel(LB.Invisible)
             }
 

@@ -63,7 +63,7 @@ class GeneralizedReflowTest extends StringReflowTestUtil(
 
     println(prettyPrintTree(textFlow))
 
-    // 
+    //
 
   }
   //   val tr0 = transLabeled(textFlow, LB.VisualLine, reflow =>{

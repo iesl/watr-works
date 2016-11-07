@@ -8,28 +8,6 @@ import scalaz._, Scalaz._
 import scalaz.scalacheck.ScalaCheckBinding._
 
 
-// import simulacrum.typeclass
-
-// @typeclass
-// trait ShowF[F[_]] {
-//   def show[A](fa: F[A])(implicit sa: Show[A]): String
-// }
-
-
-// object ShowFA {
-
-//   implicit def ShowFNT[F[_]](implicit SF: ShowF[F]) =
-//     λ[Show ~> λ[α => Show[F[α]]]](st => ShowShowF(st, SF))
-
-//   // implicit def ShowFNT[F[_]](implicit SF: ShowF[F]) =
-//   //   Lambda[Show ~> Lambda[a => Show[F[a]]]](st => ShowShowF(st, SF))
-
-//   implicit def ShowShowF[F[_], A: Show, FF[A] <: F[A]](implicit FS: ShowF[F]):
-//       Show[FF[A]] = new Show[FF[A]] { override def show(fa: FF[A]) = FS.show(fa) }
-
-// }
-
-
 sealed trait Exp[+A]
 
 object Exp  {

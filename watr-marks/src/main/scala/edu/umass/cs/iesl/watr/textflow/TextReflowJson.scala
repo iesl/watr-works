@@ -8,7 +8,7 @@ object TextReflowJson {
 
   import play.api.libs.json._
 
-  def serializeTextReflow(textReflow: TextReflow): JsValue = {
+  def serializeTextReflow(textReflow: Reflow): JsValue = {
     ???
   }
 }

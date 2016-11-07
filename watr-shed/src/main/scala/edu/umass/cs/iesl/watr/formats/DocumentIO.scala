@@ -14,10 +14,6 @@ import EnrichGeometricFigures._
 
 import textboxing.{TextBoxing => TB}, TB._
 
-// import textflow.{TextFlow, FlowUnit}
-// import textflow.TextFlowRendering.BX
-
-// import utils.EnrichNumerics._
 import utils.IdGenerator
 
 import watrmarks.BioLabeling._
@@ -26,11 +22,11 @@ import watrmarks.{StandardLabels => LB, _}
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
-// import scala.util.{Try, Failure, Success}
 
 
 object DocumentIO extends DocsegJsonFormats {
   import play.api.libs.json._
+  import textflow.GeneralizedReflow.componentReflow._
   // import play.api.libs.functional.syntax._
 
   def serializeTargetRegion(tr: TargetRegion): TB.Box = {
@@ -129,7 +125,7 @@ object DocumentIO extends DocsegJsonFormats {
         val linePerZTR = zone.regions.map({zoneTargetRegion =>
           lines.map(_._1).zipWithIndex
             .map({case (textFlow, lineNum) =>
-              TextReflow.clipToTargetRegion(textFlow, zoneTargetRegion)
+              textFlow.clipToTargetRegion(zoneTargetRegion)
                 .map(t => (t, lineNum))
             })
             .flatten.headOption

@@ -6,66 +6,52 @@ import org.scalatest._
 
 class ExprExamples extends FlatSpec with Matchers {
 
-  // import scalaz.{
-  //   Scalaz,
-  //   Cord,
-  //   Functor,
-  //   Foldable,
-  //   Traverse,
-  //   Show,
-  //   ~>
-  // }
-  import scalaz._
-
-  import Scalaz.{
-    fix => _,
+  import scalaz.{
+    Apply => _,
     _
   }
+
+  import Scalaz.{fix => _, _}
+  // import scalaz.std.anyVal._
+  // import scalaz.syntax.apply._
+  // import scalaz.syntax.applicative._
+  // import scalaz.syntax.std.option._
+
 
   import textboxing.{TextBoxing => TB}
   // import TB._
   import utils.ScalazTreeImplicits._
 
   import matryoshka._
-  import Recursive.ops._, FunctorT.ops._, TraverseT.nonInheritedOps._
-  import matryoshka.data._
+  import Recursive.ops._, FunctorT.ops._ // , TraverseT.nonInheritedOps._
+  // import matryoshka.data._
 
-  // import Recursive.ops._
-  // import Corecursive.ops._
-  // // import TraverseT.nonInheritedOps._
-  // import FunctorT.ops._
-  // import ShowT.ops._
-  // import TraverseT.ops._
-  // import FunctorT.ops._
 
   import Exp._
-
-  // import ShowFA._
-  // import ShowF.ops._
-
 
   def prettyPrintTree[T[_[_]]: Recursive:Corecursive:ShowT, F[_]: Functor:Foldable](exp: T[F])(
     implicit ShowF: Delay[Show, F]
   ): TB.Box = {
-    // exp.transCata(toTree)
-    // exp.map(_.toString)
     exp.cata(toTree).draw
   }
-
-  def ppfix[F[_]: Traverse, A](exp: Fix[F])(
-    implicit ShowA: Show[F[Unit]]
-  ): TB.Box = {
-    // exp.transCata(toTree)
-    exp.cata(toTree).draw
-  }
-
-  // def ppfp: Fix[Exp] => TB.Box = { exp =>
-  //   exp.cata(toTree).draw
-  // }
 
   def printlnx(s: String): Unit = {
     val r = s.replaceAll("Fix", "_")
-    // println(r)
+    println(r)
+  }
+
+  val example1f: Exp[Option[Int]] => Option[Int] = {exp =>
+    printlnx(s"+example1f: ${exp} ~> ")
+    val res = exp match {
+      case Num(v)           => Option(v)
+      case Mul(left, right) => (left ⊛ right)(_ * _)
+      case Var(v)           => None
+      case Lambda(_, b)     => b
+      case Apply(func, arg) => None
+      case Let(_, _, i)     => i
+    }
+    printlnx(s"${res}/example1f")
+    res
   }
 
   // def addOneOptƒ[T[_[_]]]: Exp[Fix[Exp]] => Option[Exp[Fix[Exp]]] = { exp =>
@@ -132,48 +118,54 @@ class ExprExamples extends FlatSpec with Matchers {
 
   it should "apply ~> in original space" in {
     println("apply ~> in original space")
-    // val example = mul(num(1), mul(num(12), num(8)))
-    val example =
-      mul(
-        mul(
-          mul(
-            mul(num(0), num(0)),
-            num(0)
-          ),
-          num(0)
-        ),
-        num(0)
-      )
+    val example = mul(num(1), mul(num(12), num(8)))
+
+    // val example =
+    //   mul(
+    //     mul(
+    //       mul(
+    //         mul(num(0), num(0)),
+    //         num(0)
+    //       ),
+    //       num(0)
+    //     ),
+    //     num(0)
+    //   )
     println("input")
-    // println(ppfp(example))
     println(prettyPrintTree(example))
+    // val res2 = example.transPrepro(MinusThree, addOneƒ)
 
-    val res = example.transPostpro(MinusThree, addOneƒ)
-    val res2 = example.transPrepro(MinusThree, addOneƒ)
+    // println("result: transPrepro")
+    // println(prettyPrintTree(res2))
 
-    println("result")
-    println(prettyPrintTree(res))
-    println("result 2")
-    println(prettyPrintTree(res2))
+    // val res = example.transPostpro(MinusThree, addOneƒ)
+
+    // println("result: transPostpro")
+    // println(prettyPrintTree(res))
+
+    val res3 = example.prepro(MinusThree, example1f)
+
+    println("result: prepro")
+    println(res3)
 
     // res shouldEqual {
     //   mul(num(-1), mul(num(7), num(3)))
     // }
   }
 
-  it should "apply ~> in changed space" in {
-    printlnx("apply ~> in changed space")
+  // it should "apply ~> in changed space" in {
+  //   printlnx("apply ~> in changed space")
 
-    val example = num(2)//mul(num(1), mul(num(12), num(8)))
-    println("input")
-    println(prettyPrintTree(example))
+  //   val example = num(2)//mul(num(1), mul(num(12), num(8)))
+  //   println("input")
+  //   println(prettyPrintTree(example))
 
-    val res = example.transPrepro(MinusThree, addOneExpExp2ƒ)
-    println("result")
-    println(prettyPrintTree(res))
+  //   val res = example.transPrepro(MinusThree, addOneExpExp2ƒ)
+  //   println("result")
+  //   println(prettyPrintTree(res))
 
-    // example.transPostpro(MinusThree, addOneExp2Expƒ ) shouldEqual {
-    //   mul(num(-1), mul(num(7), num(3)))
-    // }
-  }
+  //   // example.transPostpro(MinusThree, addOneExp2Expƒ ) shouldEqual {
+  //   //   mul(num(-1), mul(num(7), num(3)))
+  //   // }
+  // }
 }

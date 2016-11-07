@@ -6,7 +6,7 @@ import watrmarks._
 import textboxing.{TextBoxing => TB}
 
 import scalaz._, Scalaz.{fix => _, _}
-
+// import TypeTags._
 
 class GeneralizedReflow[AtomT](
   implicit showAtomT: Show[AtomT]
@@ -17,11 +17,11 @@ class GeneralizedReflow[AtomT](
   sealed trait ReflowF[+A]
 
   type Reflow = Fix[ReflowF]
-
   type TextReflow = Reflow
 
-  def fixf = Fix[ReflowF](_)
+  type ReflowU = ReflowF[Fix[ReflowF]]
 
+  def fixf = Fix[ReflowF](_)
 
   object Reflow {
     case class Atom(c: AtomT)                               extends ReflowF[Nothing]
@@ -43,34 +43,16 @@ class GeneralizedReflow[AtomT](
       }
     }
 
-    // implicit def show[A]: Show[ReflowF[A]] = Show.show { _ match {
-    //   case Atom(c)                    => c.toString
-    //   case Insert(value)              => s"+$value"
-    //   case Rewrite(from, to)          => s"rewrite"
-    //   case Bracket(pre, post, a)      => s"""${pre}`${a.toString}`{post} """
-    //   case Flow(ls, atoms)            => s"""flow${ls.mkString(":#", " #", "")}"""
-    //   case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
-    // }}
 
     implicit val show: Delay[Show, ReflowF] = new Delay[Show, ReflowF] {
       def apply[A](show: Show[A]) = Show.show {
-          case Atom(c)                    => c.toString
-          case Insert(value)              => s"+$value"
-          case Rewrite(from, to)          => s"rewrite"
-          case Bracket(pre, post, a)      => s"""${pre}`${a.toString}`{post} """
-          case Flow(ls, atoms)            => s"""flow${ls.mkString(":#", " #", "")}"""
-          case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
-
-          // case Num(v)       => v.shows
-          // case Mul(a, b)    =>
-          //   "Mul(" + show.shows(a) + ", " + show.shows(b) + ")"
-          // case Var(s)       => "$" + s.name
-          // case Lambda(p, a) => "Lambda(" + p.name + ", " + show.shows(a) + ")"
-          // case Apply(f, a)  =>
-          //   "Apply(" + show.shows(f) + ", " + show.shows(a) + ")"
-          // case Let(n, v, i) =>
-          //   "Let(" + n.name + ", " + show.shows(v) + ", " + show.shows(i) + ")"
-        }
+        case Atom(c)                    => c.toString
+        case Insert(value)              => s"+$value"
+        case Rewrite(from, to)          => s"rewrite"
+        case Bracket(pre, post, a)      => s"""${pre}`${a.toString}`{post} """
+        case Flow(ls, atoms)            => s"""flow${ls.mkString(":#", " #", "")}"""
+        case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
+      }
     }
 
   }
@@ -93,7 +75,6 @@ class GeneralizedReflow[AtomT](
   def space() = insert(" ")
 
 
-  type ReflowU = ReflowF[Fix[ReflowF]]
 
   def addLabel(l: Label): ReflowU => ReflowU = _ match {
     case f @ Flow(ls, as)    => f.copy(labels = ls + l)
@@ -101,8 +82,6 @@ class GeneralizedReflow[AtomT](
     case r                   => labeled(l, fixf(r)).unFix
   }
 
-  // Linearize a tree structure
-  // import watrmarks.{StandardLabels => LB, _}
   import utils.SlicingAndDicing._
 
 
@@ -141,7 +120,7 @@ class GeneralizedReflow[AtomT](
 
     // everyLabel(label, r)({labeled => })
 
-    // everySequence(r)({ seq: (List[Reflow]) => 
+    // everySequence(r)({ seq: (List[Reflow]) =>
     //   seq
     // })
     // r.children.exists { ch: Fix[ReflowF] =>
@@ -196,33 +175,59 @@ class GeneralizedReflow[AtomT](
   }
 
 
-  private def mkPad(s: String): TextReflow = ???
+  private def mkPad(s: String): Reflow = ???
 
-  def join(sep:String)(bs:TextReflow*): TextReflow =
+  def join(sep:String)(bs:Reflow*): Reflow =
     joins(sep)(bs.toSeq)
 
-  def joins(sep:String)(bs:Seq[TextReflow]): TextReflow =
+  def joins(sep:String)(bs:Seq[Reflow]): Reflow =
     concat(bs.toList intersperse mkPad(sep))
 
-  def concat(bs: Seq[TextReflow]): TextReflow = {
+  def concat(bs: Seq[Reflow]): Reflow = {
     ???
   }
 
-  implicit class RicherTextReflow(val theReflow: TextReflow)   {
+  implicit class RicherReflow(val theReflow: Reflow)   {
 
     def toText(): String = {
       ???
     }
 
-    def slice(begin: Int, end:Int): TextReflow = ???
+    def slice(begin: Int, end:Int): Reflow = ???
 
     def targetRegions(): Seq[TargetRegion] = ???
 
-    def intersect(other: TextReflow): TextReflow = ???
+    def intersect(other: Reflow): Reflow = ???
 
     def intersectPage(other: PageIndex): Seq[Component] = {
       ???
     }
+
+
+    def clipToTargetRegion(targetRegion: TargetRegion): Option[(TextReflow, Int@@Offset, Int@@Length)] = {
+      // val clippedFlow = theReflow.flow
+      //   .zipWithIndex
+      //   .dropWhile({case (funit, _) =>
+      //     val intersects = flowUnitTargetRegion(funit).exists(_ intersects targetRegion)
+      //       !intersects
+      //   })
+      //   .reverse
+      //   .dropWhile({case (funit, _) =>
+      //     val intersects = flowUnitTargetRegion(funit).exists(_ intersects targetRegion)
+      //       !intersects
+      //   })
+      //   .reverse
+
+      // if (clippedFlow.isEmpty) None else {
+      //   val start = clippedFlow.head._2
+      //   val end = clippedFlow.last._2
+
+      //   Some((TextFlow(clippedFlow.map(_._1)), Offset(start), Length(end-start)))
+      // }
+      ???
+    }
+
+
   }
 
 
@@ -233,7 +238,6 @@ object GeneralizedReflow {
   implicit def ShowAtomicComponent: Show[AtomicComponent] =
     Show.show { _.chars }
 
-  // implicit class RicherTextReflow(val theReflow: TextReflow) extends AnyVal {
   val textReflow = new GeneralizedReflow[Char]()
 
   val componentReflow = new GeneralizedReflow[AtomicComponent]()
