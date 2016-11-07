@@ -22,11 +22,13 @@ import watrmarks.{StandardLabels => LB, _}
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
+import scala.util.{Try, Failure, Success}
 
 
 object DocumentIO extends DocsegJsonFormats {
   import play.api.libs.json._
-  import textflow.GeneralizedReflow.componentReflow._
+  import textflow.TextReflow
+  import textflow.TextReflow._
   // import play.api.libs.functional.syntax._
 
   def serializeTargetRegion(tr: TargetRegion): TB.Box = {
@@ -203,30 +205,31 @@ object DocumentIO extends DocsegJsonFormats {
   def serializeTextLines(zoneIndexer: ZoneIndexer): (TB.Box, TB.Box) = {
     val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
-    val lines = for {
-      linec <- lineBioLabels
-      line = linec.component
-      textFlow <- VisualLine.render(line)
-    } yield (textFlow, line.id, line.targetRegion)
-    val lineTextAndIds = for {
-      (lineText, lineId, _) <- lines
-    } yield {
-      val charIds = (for {
-        funit0 <- lineText.flow
-        funit <- (0 until funit0.length).map(_ => funit0)
-      } yield funit match {
-        case u: FlowUnit.Atom => u.atomicComponent.id.unwrap
-        case u: FlowUnit.Rewrite => u.atom.atomicComponent.id.unwrap
-        case u: FlowUnit.Insert => 0
-      }).mkString("[", ",", "]")
+    // val lines = for {
+    //   linec <- lineBioLabels
+    //   line = linec.component
+    //   textFlow <- VisualLine.render(line)
+    // } yield (textFlow, line.id, line.targetRegion)
+    // val lineTextAndIds = for {
+    //   (lineText, lineId, _) <- lines
+    // } yield {
+    //   val charIds = (for {
+    //     funit0 <- lineText.flow
+    //     funit <- (0 until funit0.length).map(_ => funit0)
+    //   } yield funit match {
+    //     case u: FlowUnit.Atom => u.atomicComponent.id.unwrap
+    //     case u: FlowUnit.Rewrite => u.atom.atomicComponent.id.unwrap
+    //     case u: FlowUnit.Insert => 0
+    //   }).mkString("[", ",", "]")
 
-      val text = BX.bracket('"', '"', lineText.text.box)
-      (text, charIds.box)
-    }
+    //   val text = BX.bracket('"', '"', lineText.text.box)
+    //   (text, charIds.box)
+    // }
 
-    val joinedLineText =  vjoinTrailSep(left, ",")(lineTextAndIds.map(_._1):_*)
-    val joinedLineCharIds =  vjoinTrailSep(left, ",")(lineTextAndIds.map(_._2):_*)
-    (joinedLineText, joinedLineCharIds)
+    // val joinedLineText =  vjoinTrailSep(left, ",")(lineTextAndIds.map(_._1):_*)
+    // val joinedLineCharIds =  vjoinTrailSep(left, ",")(lineTextAndIds.map(_._2):_*)
+    // (joinedLineText, joinedLineCharIds)
+    ???
   }
 
   def serializePageAtoms(zoneIndexer: ZoneIndexer): TB.Box = {

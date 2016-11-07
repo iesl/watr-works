@@ -4,25 +4,22 @@ package textflow
 import spindex._
 
 import scalaz._, Scalaz._
-// import matryoshka._
 
 import watrmarks.{StandardLabels => LB}
 
-class StringReflowTestUtil(
-  val genReflow: GeneralizedReflow[Char]
-) extends ConnectedComponentTestUtil {
+class StringReflowTestUtil extends ConnectedComponentTestUtil {
 
-  import genReflow._
-  import Reflow._
+  import TextReflow._
+  import TextReflowF._
 
-  def toAtoms(s: String): List[Reflow] = {
+  def toAtoms(s: String): List[TextReflow] = {
     s.toList.map(_ match {
       case ' ' => space()
       case c   => atom(c)
     })
   }
 
-  def makeTestSample(): Reflow = {
+  def makeTestSample(): TextReflow = {
 
     val ls = lines(
       """|of LiFePO4 scan-

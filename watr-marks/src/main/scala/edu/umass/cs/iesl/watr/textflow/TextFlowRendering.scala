@@ -1,54 +1,17 @@
 package edu.umass.cs.iesl.watr
 package textflow
 
-import textboxing.{TextBoxing => TB}
-
 
 import spindex._
+
+import textboxing.{TextBoxing => TB}
 import watrmarks.{StandardLabels => LB}
-
 import watrmarks._
-import GeneralizedReflow.componentReflow._
-
 
 object TextFlowRendering {
   import TB._
   import utils.ScalazTreeImplicits._
-
-  // object Tx {
-
-  //   def append(l:String, b: Reflow): Reflow = {
-  //     flows(l.map(atom(_)))
-  //   }
-  //   def prepend(l:String, b: Reflow): Reflow = {
-  //     // val lpad = FlowUnit.Insert(l)
-  //     // Reflow(lpad +: b.flow)
-  //     ???
-  //   }
-
-  //   def bracket(l:Char, r:Char, b: Reflow): Reflow = {
-  //     bracket(l.toString(), r.toString(), b)
-  //   }
-
-  //   def bracket(l:String, r:String, b: Reflow): Reflow = {
-  //     append(r, prepend(l, b))
-  //   }
-
-  //   private def mkPad(s: String): Reflow = ??? // Reflow(Seq(FlowUnit.Insert(s)))
-
-  //   def join(sep:String)(bs:Reflow*): Reflow =
-  //     joins(sep)(bs.toSeq)
-
-  //   def joins(sep:String)(bs:Seq[Reflow]): Reflow =
-  //     concat(bs.toList intersperse mkPad(sep))
-
-  //   def concat(bs: Seq[Reflow]): Reflow = {
-  //     // val flowUnits = bs.map(unzipReflow(_)).flatten
-  //     // Reflow(flowUnits.map(_._2))
-  //     ???
-  //   }
-  // }
-
+  import TextReflow._
 
   object VisualLine {
     import scalaz.std.string._
@@ -60,21 +23,21 @@ object TextFlowRendering {
     }
 
 
-    // def dquote(b: Reflow): Reflow = bracket('"', '"', b)
-    // def squareBracket(b: Reflow): Reflow = bracket('[', ']', b)
-    // def curlyBrace(b: Reflow): Reflow = bracket('{', '}', b)
+    // def dquote(b: TextReflow): TextReflow = bracket('"', '"', b)
+    // def squareBracket(b: TextReflow): TextReflow = bracket('[', ']', b)
+    // def curlyBrace(b: TextReflow): TextReflow = bracket('{', '}', b)
 
 
-    def escapeString(s: Reflow, subs: Seq[(Char, String)]): Reflow = {
+    def escapeString(s: TextReflow, subs: Seq[(Char, String)]): TextReflow = {
       // val submap = subs.map(kv => (kv._1.toString(), kv._2)).toMap
-      // foldMapReflow(s, {case (textUnit, flowUnit) =>
+      // foldMapTextReflow(s, {case (textUnit, flowUnit) =>
       //                   val tsub = submap.get(textUnit).getOrElse(textUnit)
       //                   (tsub, flowUnit)
       //                 })
       ???
     }
 
-    def escapeTex(s: Reflow): Reflow = {
+    def escapeTex(s: TextReflow): TextReflow = {
       val subs = Seq(
         ('_' -> "\\_"),
         ('^' -> "\\^"),
@@ -84,7 +47,7 @@ object TextFlowRendering {
       escapeString(s, subs)
     }
 
-    def escapeJson(s: Reflow): Reflow = {
+    def escapeJson(s: TextReflow): TextReflow = {
       val subs = Seq(
         ('"' -> "\\\""),
         ('\\' -> "\\\\")
@@ -105,7 +68,7 @@ object TextFlowRendering {
       !(lls intersect Set(LB.Sup, LB.Sub)).isEmpty
     }
 
-    // def doEscapeAndQuote(cc: Component, s: Reflow): Reflow = {
+    // def doEscapeAndQuote(cc: Component, s: TextReflow): TextReflow = {
     //   dquote(escapeJson(s))
     // }
 
@@ -132,7 +95,7 @@ object TextFlowRendering {
     // }
 
 
-    def render(cc: Component): Option[Reflow] = {
+    def render(cc: Component): Option[TextReflow] = {
       cc.roleLabel match {
         case LB.VisualLine
            | LB.TextSpan =>
@@ -195,7 +158,7 @@ object TextFlowRendering {
     // def isToken(cc: Component) = hasLabel(cc, LB.Token)
     def isTokenized(cc: Component) = hasLabel(cc, LB.Tokenized)
 
-    def surroundCC(cc: Component, b: Reflow): Reflow = {
+    def surroundCC(cc: Component, b: TextReflow): TextReflow = {
       if (isSup(cc)) {
         bracket("^{", "}", b)
       }

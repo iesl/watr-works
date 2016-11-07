@@ -4,11 +4,8 @@ package textflow
 
 import watrmarks.{StandardLabels => LB, Labeler}
 
-class GeneralizedReflowTest extends StringReflowTestUtil(
-  GeneralizedReflow.textReflow
-) {
-  import genReflow._
-  // import Reflow._
+class GeneralizedReflowTest extends StringReflowTestUtil {
+  import TextReflow._
 
   behavior of "component reflowing"
   // import matryoshka._

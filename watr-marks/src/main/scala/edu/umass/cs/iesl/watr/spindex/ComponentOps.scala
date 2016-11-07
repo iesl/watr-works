@@ -19,11 +19,8 @@ import ComponentRendering.VisualLine
 
 
 object ComponentOperations {
-  import textflow.GeneralizedReflow.componentReflow._
+  import textflow.TextReflow._
   import scalaz.Tree
-
-
-
 
 
   def centerX(cb: PageAtom) = cb.region.bbox.toCenterPoint.x
@@ -484,13 +481,13 @@ object ComponentOperations {
 
 
 
-    def componentToTextFlow(): Reflow = {
+    def componentToTextFlow(): TextReflow = {
       val cTree = selfComponent
         .toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
 
       // cTree.scanr { (c: Component, childs: Stream[Tree[B]]) => B }
 
-      cTree.scanr((c: Component, childs: Stream[Tree[Reflow]]) =>
+      cTree.scanr((c: Component, childs: Stream[Tree[TextReflow]]) =>
 
         ???
       )

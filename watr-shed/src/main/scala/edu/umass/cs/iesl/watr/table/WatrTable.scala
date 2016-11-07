@@ -16,6 +16,7 @@ import spindex._
 import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
 import TypeTags._
+import textflow.TextReflow._
 
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -181,7 +182,6 @@ object ShellCommands {
     """\d+(\.(\d+))*""".r,
     """\d+[-—–]\d+""".r
   )
-
 
   implicit class RicherComponent(val thisComponent: Component) extends AnyVal {
     def showUnknowns(): TB.Box = {

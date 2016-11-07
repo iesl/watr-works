@@ -6,10 +6,9 @@ import spindex._
 import scalaz.@@
 import TypeTags._
 import ComponentRendering._
-
-
-// import utils._
-// import SlicingAndDicing._
+import ComponentOperations._
+import EnrichGeometricFigures._
+import utils.SlicingAndDicing._
 
 import scala.collection.mutable
 import watrmarks.{StandardLabels => LB}
@@ -18,40 +17,28 @@ import predsynth._
 
 object MITAlignPredsynth {
 
-  import textflow.GeneralizedReflow._
+  import textflow.TextReflow._
 
   def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Unit = {
     println("aligning predsynth paper ")
 
     val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
-    val lineTextAndUnits = for {
+    val lineTextReflows = for {
       linec <- lineBioLabels
-      line   <- VisualLine.renderWithoutFormatting(linec.component).toSeq
-    } yield {
-
-      val ltext = line.text
-
-      // val lunits = line.flow.flatMap(funit =>
-      //   (0 until funit.length).map(_ => "*").mkString)
-
-      // val lineUnits = line.flow.flatMap(funit =>
-      //   (0 until funit.length).map(_ => funit))
-
-
-      // (ltext, lineUnits)
-      ltext
-    }
+      line   <- VisualLine.toTextReflow(linec.component).toSeq
+    } yield { line }
 
     // Join the TextReflow into a single line:
-    // val plaintext = lineTextAndUnits.map(_._1).mkString
-    val plaintext = lineTextAndUnits.mkString
+    // TODO: join using de-hyphenation
+    val oneLineReflow = joins(" ")(lineTextReflows)
+    val oneLineText = oneLineReflow.toText
     // val lineUnits = lineTextAndUnits.flatMap(_._2)
 
 
     // val contexts: Seq[Either[(RawTextContext, String), (RawTextContext, (Int, Int))]]
     val contexts: Seq[AlignedGroup]
-      = PredsynthLoad.alignContexts(paper, plaintext)
+      = PredsynthLoad.alignContexts(paper, oneLineText)
 
     val mongoIdToClusterId = mutable.HashMap[String, Int@@ClusterID]()
     val rawTextMentionsById = mutable.HashMap[Int@@MentionID, RawTextContext]()
@@ -102,24 +89,25 @@ object MITAlignPredsynth {
       alignedGroup.alignedContexts.foreach {
         case AlignSuccess(rtc, (begin, end)) =>
 
-          // TODO: sliced = textReflow.slice(begin, end)
+          val slice = oneLineReflow.slice(begin, end)
+          val foundText = slice.toText
 
-          val slice = lineUnits.slice(begin, end)
-          val foundText = slice.map({ funit =>
-            TextFlow.toText(funit)
-          }).mkString
+          // val slice = lineUnits.slice(begin, end)
+          // val foundText = slice.map({ funit =>
+          //   TextFlow.toText(funit)
+          // }).mkString
 
 
-          // TODO: targetRegtions = sliced.targetRegions
-          val targetRegions = slice.collect({
-            case u: FlowUnit.Atom =>
-              val cc = u.atomicComponent
-              cc.pageAtom.region
+          val targetRegions = slice.targetRegions
+          // val targetRegions = slice.collect({
+          //   case u: FlowUnit.Atom =>
+          //     val cc = u.atomicComponent
+          //     cc.pageAtom.region
 
-            case u: FlowUnit.Rewrite =>
-              val cc = u.atom.atomicComponent
-              cc.pageAtom.region
-          })
+          //   case u: FlowUnit.Rewrite =>
+          //     val cc = u.atom.atomicComponent
+          //     cc.pageAtom.region
+          // })
 
 
           val intersectedVisualLines  = targetRegions.map{ targetRegion =>
