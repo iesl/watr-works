@@ -3,36 +3,49 @@ package textflow
 
 import org.scalatest._
 
+
 class ExprExamples extends FlatSpec with Matchers {
+
+  // import scalaz.{
+  //   Scalaz,
+  //   Cord,
+  //   Functor,
+  //   Foldable,
+  //   Traverse,
+  //   Show,
+  //   ~>
+  // }
   import scalaz._
-  // import Scalaz.{none}
-  import scalaz._, Scalaz.{fix => _, _}
+
+  import Scalaz.{
+    fix => _,
+    _
+  }
 
   import textboxing.{TextBoxing => TB}
   // import TB._
   import utils.ScalazTreeImplicits._
 
   import matryoshka._
+  import Recursive.ops._, FunctorT.ops._, TraverseT.nonInheritedOps._
   import matryoshka.data._
-  import Recursive.ops._
-  // import TraverseT.nonInheritedOps._
+
+  // import Recursive.ops._
   // import Corecursive.ops._
+  // // import TraverseT.nonInheritedOps._
   // import FunctorT.ops._
   // import ShowT.ops._
   // import TraverseT.ops._
   // import FunctorT.ops._
 
-  // abstract class FuncRunner[F[_], G[_]] {
-  //   def run[T[_[_]]: FunctorT: Corecursive](implicit Eq: Equal[T[G]], S: Show[T[G]]):
-  //       T[F] => MatchResult[T[G]]
-  // }
+  import Exp._
+
+  // import ShowFA._
+  // import ShowF.ops._
 
 
-  def prettyPrintTree[T[_[_]]: Recursive, F[_]: Traverse, A](exp: T[F])(implicit
-    ShowU: Show[F[Unit]],
-    ShowT: Show[T[F]],
-    ShowF: Show[F[A]],
-    ShowA: Show[A]
+  def prettyPrintTree[T[_[_]]: Recursive:Corecursive:ShowT, F[_]: Functor:Foldable](exp: T[F])(
+    implicit ShowF: Delay[Show, F]
   ): TB.Box = {
     // exp.transCata(toTree)
     // exp.map(_.toString)
@@ -117,7 +130,6 @@ class ExprExamples extends FlatSpec with Matchers {
     }
 
 
-  import Exp._
   it should "apply ~> in original space" in {
     println("apply ~> in original space")
     // val example = mul(num(1), mul(num(12), num(8)))
@@ -136,30 +148,32 @@ class ExprExamples extends FlatSpec with Matchers {
     // println(ppfp(example))
     println(prettyPrintTree(example))
 
-    // val res = example.transPrepro(MinusThree, addOneƒ)
+    val res = example.transPostpro(MinusThree, addOneƒ)
+    val res2 = example.transPrepro(MinusThree, addOneƒ)
 
-    // println("result")
-    // println(formatFixType[Exp, Fix](res))
+    println("result")
+    println(prettyPrintTree(res))
+    println("result 2")
+    println(prettyPrintTree(res2))
 
     // res shouldEqual {
     //   mul(num(-1), mul(num(7), num(3)))
     // }
   }
 
-  // it should "apply ~> in changed space" in {
-  //   printlnx("apply ~> in changed space")
+  it should "apply ~> in changed space" in {
+    printlnx("apply ~> in changed space")
 
-  //   val example = num(2)//mul(num(1), mul(num(12), num(8)))
-  //   printlnx("input")
-  //   ppfp(example)
+    val example = num(2)//mul(num(1), mul(num(12), num(8)))
+    println("input")
+    println(prettyPrintTree(example))
 
-  //   val res = example.transPrepro(MinusThree, addOneExpExp2ƒ)
-  //   printlnx("result")
-  //   printlnx(res.toString)
-  //   // ppfp(res)
+    val res = example.transPrepro(MinusThree, addOneExpExp2ƒ)
+    println("result")
+    println(prettyPrintTree(res))
 
-  //   // example.transPostpro(MinusThree, addOneExp2Expƒ ) shouldEqual {
-  //   //   mul(num(-1), mul(num(7), num(3)))
-  //   // }
-  // }
+    // example.transPostpro(MinusThree, addOneExp2Expƒ ) shouldEqual {
+    //   mul(num(-1), mul(num(7), num(3)))
+    // }
+  }
 }

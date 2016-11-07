@@ -7,22 +7,48 @@ import org.scalacheck._
 import scalaz._, Scalaz._
 import scalaz.scalacheck.ScalaCheckBinding._
 
+
+// import simulacrum.typeclass
+
+// @typeclass
+// trait ShowF[F[_]] {
+//   def show[A](fa: F[A])(implicit sa: Show[A]): String
+// }
+
+
+// object ShowFA {
+
+//   implicit def ShowFNT[F[_]](implicit SF: ShowF[F]) =
+//     λ[Show ~> λ[α => Show[F[α]]]](st => ShowShowF(st, SF))
+
+//   // implicit def ShowFNT[F[_]](implicit SF: ShowF[F]) =
+//   //   Lambda[Show ~> Lambda[a => Show[F[a]]]](st => ShowShowF(st, SF))
+
+//   implicit def ShowShowF[F[_], A: Show, FF[A] <: F[A]](implicit FS: ShowF[F]):
+//       Show[FF[A]] = new Show[FF[A]] { override def show(fa: FF[A]) = FS.show(fa) }
+
+// }
+
+
 sealed trait Exp[+A]
-case class Num[A](value: Int) extends Exp[A]
-case class Mul[A](left: A, right: A) extends Exp[A]
-case class Var[A](value: Symbol) extends Exp[A]
-case class Lambda[A](param: Symbol, body: A) extends Exp[A]
-case class Apply[A](func: A, arg: A) extends Exp[A]
-case class Let[A](name: Symbol, value: A, inBody: A) extends Exp[A]
+
+object Exp  {
 
 
-object Exp {
+  case class Num[A](value: Int) extends Exp[A]
+  case class Mul[A](left: A, right: A) extends Exp[A]
+  case class Var[A](value: Symbol) extends Exp[A]
+  case class Lambda[A](param: Symbol, body: A) extends Exp[A]
+  case class Apply[A](func: A, arg: A) extends Exp[A]
+  case class Let[A](name: Symbol, value: A, inBody: A) extends Exp[A]
+
   def num(v: Int) = Fix[Exp](Num(v))
   def mul(left: Fix[Exp], right: Fix[Exp]) = Fix[Exp](Mul(left, right))
   def vari(v: Symbol) = Fix[Exp](Var(v))
   def lam(param: Symbol, body: Fix[Exp]) = Fix[Exp](Lambda(param, body))
   def ap(func: Fix[Exp], arg: Fix[Exp]) = Fix[Exp](Apply(func, arg))
   def let(name: Symbol, v: Fix[Exp], inBody: Fix[Exp]) = Fix[Exp](Let(name, v, inBody))
+
 
   implicit val arbSymbol = Arbitrary(Arbitrary.arbitrary[String].map(Symbol(_)))
 
@@ -76,6 +102,7 @@ object Exp {
       }
   }
 
+
   // NB: Something like this currently needs to be defined for any Functor in
   //     order to get the generalize operations for the algebra.
   implicit def toExpAlgebraOps[A](a: Algebra[Exp, A]): AlgebraOps[Exp, A] =
@@ -96,9 +123,9 @@ object Exp {
       }
   }
 
-  implicit val unzip = new Unzip[Exp] {
-    def unzip[A, B](f: Exp[(A, B)]) = (f.map(_._1), f.map(_._2))
-  }
+  // implicit val unzip = new Unzip[Exp] {
+  //   def unzip[A, B](f: Exp[(A, B)]) = (f.map(_._1), f.map(_._2))
+  // }
 
 
 }

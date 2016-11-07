@@ -18,7 +18,7 @@ trait LibVersions {
   val guavaVersion        = "18.0"
   val specs2Version       = "3.7"
   val scrimageVersion     = "2.1.7"
-  val monocleVersion      = "1.3.1"
+  val monocleVersion      = "1.3.2"
 }
 
 object LibVersions extends LibVersions
@@ -39,7 +39,7 @@ object TestLibs extends LibVersions {
 
 object LogLibs extends LibVersions {
   val logback = Seq(
-    "org.log4s"      %% "log4s"            % "1.3.2",
+    "org.log4s"      %% "log4s"            % "1.3.3",
     "ch.qos.logback"  % "logback-classic"  % "1.1.7",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
@@ -94,7 +94,9 @@ object ThisBuildDefault {
 
     resolvers in ThisBuild ++= List(
       "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
-      "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+      // "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+      Resolver.sonatypeRepo("snapshots"),
+      Resolver.sonatypeRepo("releases"),
       Resolver.jcenterRepo
     ),
 
@@ -103,7 +105,6 @@ object ThisBuildDefault {
     shellPrompt in ThisBuild := colorPrompt,
 
     autoCompilerPlugins in ThisBuild := true,
-
     // addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
 
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
@@ -155,9 +156,7 @@ object Sensible extends LibVersions {
 
   lazy val settings =  Seq(
 
-
     // addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.4"),
-
 
     javacOptions in (Compile, compile) ++= Seq(
       "-source", "1.6", "-target", "1.6", "-Xlint:all", "-Werror",

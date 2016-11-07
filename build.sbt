@@ -4,6 +4,9 @@ import com.lihaoyi.workbench.Plugin._
 
 ThisBuildDefault.settings
 
+// autoCompilerPlugins in ThisBuild := true
+autoCompilerPlugins := true
+
 organization in ThisBuild := "edu.umass.cs.iesl"
 
 enablePlugins(ScalaJSPlugin)
@@ -23,7 +26,6 @@ val commonDeps = LogLibs.logback ++
     Lib.fastparse,
     Lib.playJson,
     Lib.scopt,
-    Lib.machinist,
     Lib.shapeless
   )
 
