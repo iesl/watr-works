@@ -27,7 +27,7 @@ object MITAlignPredsynth {
     val lineTextReflows = for {
       linec <- lineBioLabels
       line   <- VisualLine.toTextReflow(linec.component).toSeq
-    } yield { line }
+    } yield line
 
     // Join the TextReflow into a single line:
     // TODO: join using de-hyphenation

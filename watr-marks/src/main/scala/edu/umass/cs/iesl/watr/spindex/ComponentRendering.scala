@@ -112,9 +112,7 @@ object ComponentRendering {
         case LB.PageAtom =>
           val ac = cc.asInstanceOf[AtomicComponent]
           val charAtom = ac.pageAtom.asInstanceOf[CharAtom]
-          atom(charAtom)
-
-          ???
+          atom(charAtom).some
 
         case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
       }

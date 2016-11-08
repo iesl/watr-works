@@ -13,7 +13,7 @@ import matryoshka.data._
 sealed trait TextReflowF[+A]
 
 object TextReflowF {
-  case class Atom[AtomT](c: AtomT)                        extends TextReflowF[Nothing]
+  case class Atom[T](c: T)                                extends TextReflowF[Nothing]
   case class Insert(value: String)                        extends TextReflowF[Nothing]
   case class Rewrite[A](from: A, to: String)              extends TextReflowF[A]
   case class Bracket[A](pre: String, post: String, a: A)  extends TextReflowF[A]
@@ -46,6 +46,7 @@ object TextReflowF {
 }
 
 
+// TODO rename this to avoid object name/type clashes
 object TextReflow {
   import TextReflowF._
 
@@ -149,12 +150,7 @@ object TextReflow {
     reflow.cata(toTree).draw
   }
 
-  def toText(reflow: TextReflow): String = {
-    ???
-  }
-
-
-  private def mkPad(s: String): TextReflow = ???
+  private def mkPad(s: String): TextReflow = insert(s)
 
   def join(sep:String)(bs:TextReflow*): TextReflow =
     joins(sep)(bs.toSeq)
@@ -163,16 +159,18 @@ object TextReflow {
     concat(bs.toList intersperse mkPad(sep))
 
   def concat(bs: Seq[TextReflow]): TextReflow = {
-    ???
+    flows(bs)
+  }
+
+  implicit class RicherReflowU(val theReflow: TextReflowU) extends AnyVal  {
+
+    def hasLabel(l: Label): Boolean = theReflow match {
+      case Labeled(labels, _) if labels.contains(l) => true
+      case _ => false
+    }
   }
 
   implicit class RicherReflow(val theReflow: TextReflow) extends AnyVal  {
-
-    def text(): String = ???
-
-    def toText(): String = {
-      ???
-    }
 
     def slice(begin: Int, end:Int): TextReflow = ???
 
@@ -213,11 +211,3 @@ object TextReflow {
 
 }
 
-// object GeneralizedReflow {
-//   implicit def ShowAtomicComponent: Show[AtomicComponent] =
-//     Show.show { _.chars }
-
-//   val textReflow = new GeneralizedReflow[Char]()
-
-//   val componentReflow = new GeneralizedReflow[AtomicComponent]()
-// }

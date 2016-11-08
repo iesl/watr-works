@@ -20,6 +20,8 @@ import ComponentRendering.VisualLine
 
 object ComponentOperations {
   import textflow.TextReflow._
+  import textflow.ComponentReflow._
+
   import scalaz.Tree
 
 

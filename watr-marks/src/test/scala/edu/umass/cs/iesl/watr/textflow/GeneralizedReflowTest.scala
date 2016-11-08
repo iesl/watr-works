@@ -6,6 +6,7 @@ import watrmarks.{StandardLabels => LB, Labeler}
 
 class GeneralizedReflowTest extends StringReflowTestUtil {
   import TextReflow._
+  import ComponentReflow._
 
   behavior of "component reflowing"
   // import matryoshka._
@@ -22,10 +23,12 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
 
     val f0 = flow(
       flows(toAtoms("Eu")),
-      flows(toAtoms("1 - x"))
+      labeled(LB.Sub, flows(toAtoms("1 - x")))
     )
     // println("Tree-like")
     // println(prettyPrintTree(f0))
+    println(s"toText: ${f0.toText()}")
+    println(s"toFormattedText: ${f0.toFormattedText()}")
   }
 
   it should "insert space into text" in {
@@ -41,8 +44,9 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
     })
 
     // println("post")
-    println(prettyPrintTree(withSpace))
-
+    // println(prettyPrintTree(withSpace))
+    println(s"toText: ${withSpace.toText()}")
+    println(s"toFormattedText: ${withSpace.toFormattedText()}")
   }
 
 
@@ -58,7 +62,9 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
         labeled(LB.VisualLine, flows(toAtoms(l)))
       ))
 
-    println(prettyPrintTree(textFlow))
+    // println(prettyPrintTree(textFlow))
+    println(s"toText: ${textFlow.toText()}")
+    println(s"toFormattedText: ${textFlow.toFormattedText()}")
 
     //
 
