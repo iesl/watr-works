@@ -8,7 +8,6 @@ import pprint.PPrinter
 
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import edu.umass.cs.iesl.watr.utils.EnglishDictionary
-import watrmarks._
 import spindex._
 import ComponentTypeEnrichments._
 import TypeTags._
@@ -191,7 +190,7 @@ object ShellCommands {
       } yield word.box
 
       val line = thisComponent.show
-      val b0 = alignHoriz(left)(30)(vjoins()(nonAcceptedWords))
+      val b0 = alignHoriz(left, 30, vjoins()(nonAcceptedWords))
       vjoin()(
         hjoin()(
           b0,

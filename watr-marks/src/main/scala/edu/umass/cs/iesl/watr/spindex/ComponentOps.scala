@@ -364,31 +364,43 @@ object ComponentOperations {
       val splitValue = guessWordbreakWhitespaceThreshold()
 
       theComponent.addLabel(LB.Tokenized)
+
+      var dbgGrid = Grid.widthAligned(
+        (1, AlignLeft), // join indicator
+        (2, AlignLeft), // char(s)
+        (6, AlignRight), // char.left
+        (1, AlignLeft), // space
+        (5, AlignRight) // char.width
+      )
+
+
       theComponent.groupAtomsIf({ (c1, c2, pairIndex) =>
 
         val pairwiseDist = c2.bounds.left - c1.bounds.right
+        val willGroup = pairwiseDist < splitValue
 
-        vtrace.trace(
-          showRegions(Seq(c1.targetRegion, c2.targetRegion)),
-          message(
-            vcat(Seq(
-              hcat(center1)(Seq(PageAtom.boundsBox(c1) + " <-> " + PageAtom.boundsBox(c2))),
-              s"""|  pairwisedist: ${pairwiseDist.pp}  east-west dist: ${pairwiseDist.pp}
-                  |  split value: ${splitValue},
-                  |  Will split? : ${pairwiseDist < splitValue}
-                  |""".stripMargin.mbox
-            ))
+        vtrace.ifTrace({
+          dbgGrid = dbgGrid.addRow(
+            if(willGroup) "_" else "$",
+            c1.chars,
+            c1.bounds.left.pp,
+            "~",
+            c1.bounds.width.pp
           )
-        )
+        })
 
-        pairwiseDist < splitValue
+        willGroup
 
       }, { (newRegion, regionIndex) =>
         newRegion.addLabel(LB.Token)
         theComponent.addChild(LB.TextSpan, newRegion)
       })
 
-      vtrace.trace("Tree after split whitespace" withInfo VisualLine.renderRoleTree(theComponent))
+      vtrace.trace({
+        "line groups" withInfo dbgGrid.toBox().transpose()
+      })
+
+      // vtrace.trace("Tree after split whitespace" withInfo VisualLine.renderRoleTree(theComponent))
 
       vtrace.trace(end("Split On Whitespace"))
     }

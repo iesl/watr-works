@@ -50,6 +50,7 @@ object VisualTracer {
 
   // implicit class RicherTraceLog(val trace: TraceLog) extends AnyVal {}
 
+  def noop                                              = Noop
   def setPageGeometries(b: Seq[PageGeometry]): TraceLog = {SetPageGeometries(b)}
   def showRegion(s: TargetRegion): TraceLog             = {Show(Seq(s))}
   def showRegions(s: Seq[TargetRegion]): TraceLog       = {Show(s)}
@@ -120,6 +121,8 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
   def traceIf(cond: Boolean)(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabledWithCondition[TraceLog]
 
   def trace(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
+
+  def ifTrace(body: Unit): Unit = macro utils.VisualTraceMacros.sideEffectIfEnabled[TraceLog]
 
   def formatTrace(trace: TraceLog): Box = {
     trace match {

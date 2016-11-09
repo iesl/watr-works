@@ -64,14 +64,27 @@ object TextBoxing extends ToListOps with ToIdOps {
   }
 
 
-  implicit class BoxingConstructors(val value: String) extends AnyVal {
-    def box: Box = tbox(value)
-    def mbox: Box = unrenderString(value)
+  implicit class BoxingConstructors(val theString: String) extends AnyVal {
+    def box: Box = tbox(theString)
+    def mbox: Box = unrenderString(theString)
+
+    def padCentered(width: Int, centerIndex: Int): String = {
+      val trim = theString.trim()
+      val padTo = width - trim.length()
+      if (padTo > 0) {
+        val (pre, post) = trim.splitAt(centerIndex)
+        val prePadLen = (width/2) - pre.length
+        val postPadLen = width - (prePadLen + trim.length)
+
+        val prePad = " " * prePadLen
+        val postPad = " " * postPadLen
+
+        prePad+trim+postPad
+      } else theString
+    }
+
   }
 
-
-  def mstringToList(s: String): Seq[String] =
-    scala.io.Source.fromString(s).getLines.toSeq
 
   // Given a string, split it back into a box
   def unrenderString(s:String): Box =
@@ -82,6 +95,29 @@ object TextBoxing extends ToListOps with ToIdOps {
     vjoin()((lines map (tbox(_))):_*)
   }
 
+
+  // sealed trait Align
+  // sealed trait AlignH extends Align
+  // sealed trait AlignV extends Align
+
+  // object Align {
+  //   object H {
+  //     case object Top      extends AlignH
+  //     case object Bottom   extends AlignH
+  //   }
+
+  //   object V {
+  //     case object First   extends AlignV
+  //     case object Last    extends AlignV
+  //     case object Center1 extends AlignV
+  //     case object Center2 extends AlignV
+  //     val Center= Center1
+  //     val Left  = First
+  //     val Right = Last
+  //   }
+  // }
+
+
   // Data type for specifying the alignment of boxes.
   sealed trait Alignment
 
@@ -89,6 +125,10 @@ object TextBoxing extends ToListOps with ToIdOps {
   case object AlignLast extends Alignment
   case object AlignCenter1 extends Alignment
   case object AlignCenter2 extends Alignment
+
+  val AlignLeft = AlignFirst
+  val AlignRight = AlignLast
+  val AlignCenter = AlignCenter1
 
   // Align boxes along their top/bottom/left/right
   def top = AlignFirst
@@ -108,7 +148,64 @@ object TextBoxing extends ToListOps with ToIdOps {
   case class Text(s:String) extends Content
   case class Row(bs:Seq[Box]) extends Content
   case class Col(bs:Seq[Box]) extends Content
-  case class SubBox(a1: Alignment, a2: Alignment, b:Box) extends Content
+  case class SubBox(hAlign: Alignment, vAlign: Alignment, b:Box) extends Content
+
+
+  case class RowSpec(
+    alignment: Alignment,
+    width: Int = 0
+  )
+
+  class Grid(
+    val rowSpec: Seq[RowSpec],
+    val rows: List[Row] = List()
+  )
+
+  object Grid {
+    def aligned(aligns: Alignment*): Grid = {
+      new Grid(aligns.map(a => RowSpec(a)))
+    }
+    def widthAligned(aligns: (Int, Alignment)*): Grid = {
+      new Grid(aligns.map(a => RowSpec(a._2, a._1)))
+    }
+
+    implicit class RicherGrid(val theGrid: Grid) extends AnyVal {
+      def addRow(bs: Box*): Grid = {
+        new Grid(
+          theGrid.rowSpec,
+          Row(bs) :: theGrid.rows
+        )
+      }
+
+      def toBox(): Box = {
+        val bx = theGrid.rows
+          .map({ row =>
+            val rowbs = row.bs.zipAll(theGrid.rowSpec,
+              nullBox, RowSpec(AlignLeft, 0)
+            ).map({case (cellBox, spec) =>
+              if (spec.width > 0) {
+                Box(
+                  rows = cellBox.rows,
+                  cols = spec.width,
+                  SubBox(
+                    hAlign = spec.alignment,
+                    vAlign = AlignFirst,
+                    cellBox
+                  )
+                )
+              } else cellBox
+
+            })
+            hcat(rowbs)
+          })
+        vcat(bx.reverse)
+      }
+    }
+
+    def transpose(): Grid = {
+      ???
+    }
+  }
 
 
   // The null box, which has no content and no size.
@@ -157,7 +254,8 @@ object TextBoxing extends ToListOps with ToIdOps {
     a => bs => {
       def h = (bs map (_.rows)).sum
       def w = (0 +: (bs map (_.cols))) max
-      val aligned = alignHoriz(a)(w)
+      val aligned = (b:Box) => alignHoriz(a, w, b)
+
       Box(h, w, Col(bs map aligned))
     }
 
@@ -209,16 +307,36 @@ object TextBoxing extends ToListOps with ToIdOps {
   def boxlf(b: Box): Box =
     emptyBox(1)(0).atop(b)
 
-  implicit class BoxOps(val value: Box) extends AnyVal {
-    def padTop1 = boxlf(value)
+  implicit class BoxOps(val theBox: Box) extends AnyVal {
+    def padTop1 = boxlf(theBox)
+
+    def alignRight(a:Alignment): Box = {
+      hcat(right)(Seq(theBox))
+    }
+
+    def width(w: Int): Box = {
+      theBox
+    }
+
+    def transpose(): Box = {
+      hcat(theBox.lines
+        .map(l => vcat(l.toList.map(_.toString.box)))
+      )
+
+    }
+
+    //------------------------------------------------------------------------------
+    //  Paragraph flowing  ---------------------------------------------------------
+    //------------------------------------------------------------------------------
+
   }
 
-  implicit class BoxSeqOps(val value: Seq[Box]) extends AnyVal {
+  implicit class BoxSeqOps(val theBoxes: Seq[Box]) extends AnyVal {
     def mkHBox(separator: Box=nullBox) =
-      hjoin(sep=separator)(value:_*)
+      hjoin(sep=separator)(theBoxes:_*)
 
     def mkVBox(separator: Box=nullBox) =
-      vjoin(sep=separator)(value:_*)
+      vjoin(sep=separator)(theBoxes:_*)
   }
   //------------------------------------------------------------------------------
   //  Alignment  -----------------------------------------------------------------
@@ -227,10 +345,10 @@ object TextBoxing extends ToListOps with ToIdOps {
   // alignHoriz algn n bx creates a box of width n, with the
   //   contents and height of bx, horizontally aligned according to
   //   algn.
-  def alignHoriz: Alignment => Int => Box => Box =
-    a => c => b => {
-      Box(b.rows, c, SubBox(a, AlignFirst, b))
-    }
+  // def alignHoriz: Alignment => Int => Box => Box =
+  def alignHoriz(a:Alignment, cols:Int, b:Box): Box = {
+    Box(b.rows, cols, SubBox(a, AlignFirst, b))
+  }
 
   // alignVert creates a box of height n, with the contents and width of bx,
   // vertically aligned according to algn
@@ -262,13 +380,13 @@ object TextBoxing extends ToListOps with ToIdOps {
   //   being moved left by the specified amount if it is already in a
   //   larger right-aligned context.
   def moveLeft : Int => Box => Box =
-    n => b => alignHoriz(left)(b.cols + n)(b)
+    n => b => alignHoriz(left, b.cols + n, b)
 
 
   // Move a box right by putting it in a larger box with extra
   //   columns, aligned right.  See the disclaimer for 'moveLeft'.
   def moveRight : Int => Box => Box =
-    n => b => alignHoriz(right)(b.cols + n)(b)
+    n => b => alignHoriz(right, b.cols + n, b)
 
 
 
@@ -447,6 +565,7 @@ object TextBoxing extends ToListOps with ToIdOps {
 
 
   object OneRow {
+    // functions only make sense if the Box is a single row
     def bracket(l:Char, r:Char, b: Box): Box = {
       val lb = l.toString.box
       val rb = r.toString.box
@@ -461,9 +580,6 @@ object TextBoxing extends ToListOps with ToIdOps {
 
 
 
-  //------------------------------------------------------------------------------
-  //  Paragraph flowing  ---------------------------------------------------------
-  //------------------------------------------------------------------------------
 
   // para algn w t is a box of width w, containing text t,
   //   aligned according to algn, flowed to fit within the given
