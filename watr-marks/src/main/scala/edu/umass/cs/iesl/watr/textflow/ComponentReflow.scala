@@ -4,6 +4,8 @@ package textflow
 import matryoshka._ ,  Recursive.ops._, FunctorT.ops._
 import matryoshka.data._
 
+import spindex.AtomicComponent
+
 object ComponentReflow {
 
   import TextReflowF._
@@ -22,23 +24,25 @@ object ComponentReflow {
 
   }
 
-  def evalFlatText(t: TextReflowF[(TextReflow, String)]): String = t match {
-    case Atom    (ac)                    => ac.toString
-    case Insert  (value)                 => s"$value"
-    case Rewrite ((from, attr), to)      => s"$to"
-    case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
-    case Flow    (labels, atomsAndattrs) => s"""${atomsAndattrs.map(_._2).mkString}"""
-    case Labeled (labels, (a, attr))     => s"${attr}"
+  def evalFlatText(t: TextReflowF[(TextReflow, String)]): String = {
+    t match {
+      case Atom    (ac)                    => ac.asInstanceOf[AtomicComponent].chars
+      case Insert  (value)                 => s"$value"
+      case Rewrite ((from, attr), to)      => s"$to"
+      case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
+      case Flow    (labels, atomsAndattrs) => s"""${atomsAndattrs.map(_._2).mkString}"""
+      case Labeled (labels, (a, attr))     => s"${attr}"
+    }
   }
 
-  def evalFormattedText(t: TextReflowF[(TextReflow, String)]): String = t match {
-    case Atom    (ac)                    => ac.toString
-    case Insert  (value)                 => s"$value"
-    case Rewrite ((from, attr), to)      => s"$to"
-    case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
-    case Flow    (labels, atomsAndattrs) => s"""${atomsAndattrs.map(_._2).mkString}"""
-    case Labeled (labels, (a, attr))     => s"${attr}"
-  }
+  // def evalFormattedText(t: TextReflowF[(TextReflow, String)]): String = t match {
+  //   case Atom    (ac)                    => ac.asInstanceOf[AtomicComponent].chars
+  //   case Insert  (value)                 => s"$value"
+  //   case Rewrite ((from, attr), to)      => s"$to"
+  //   case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
+  //   case Flow    (labels, atomsAndattrs) => s"""${atomsAndattrs.map(_._2).mkString}"""
+  //   case Labeled (labels, (a, attr))     => s"${attr}"
+  // }
 
   implicit class RicherComponentReflow(val theReflow: TR.TextReflow) extends AnyVal  {
 

@@ -160,7 +160,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
     val tokenizedLines = lineComponents.map { lineComponent =>
       lineComponent.tokenizeLine()
-      ComponentRendering.VisualLine.render(lineComponent).get.toString()
+      ComponentRendering.VisualLine.toTextReflow(lineComponent).get.toString()
     }
 
 

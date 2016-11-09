@@ -75,7 +75,7 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
 
       textSpanRegion.setChildren(LB.TextSpan, splitRegions)
 
-      val textFlow = VisualLine.render(row).get
+      val textFlow = VisualLine.toTextReflow(row).get
       // val rendered = textFlow.toText()
 
       // println("Final Tree")

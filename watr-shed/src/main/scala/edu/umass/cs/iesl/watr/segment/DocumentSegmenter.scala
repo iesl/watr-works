@@ -17,17 +17,16 @@ import EnrichGeometricFigures._
 import ComponentOperations._
 import ComponentRendering._
 
-
 import utils._
 import utils.{CompassDirection => CDir}
 import utils.VisualTracer._
 import utils.EnrichNumerics._
 import SlicingAndDicing._
+import textflow.ComponentReflow._
 import textflow.TextReflow._
 
 import scala.collection.mutable
 
-import predsynth._
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
@@ -42,7 +41,8 @@ case class LineDimensionBins(
 case class PageSegAccumulator(
   commonLineDimensions: Seq[Point] = Seq(),
   lineDimensionBins: Seq[LineDimensionBins] = Seq(),
-  commonFocalJumps: Map[String, Seq[String]] = Map()
+  commonFocalJumps: Map[String, Seq[String]] = Map(),
+  docWideModalVerticalLineDist: Double = 0.0
 )
 
 trait DocumentUtils {
@@ -120,7 +120,7 @@ object DocumentSegmenter extends DocumentUtils {
 
 
   import extract.fonts.SplineFont
-  import scala.util.{Try, Failure, Success}
+  import scala.util.{Try}
 
   def createSegmenter(srcUri: URI, pdfPath: Path, glyphDefs: Seq[SplineFont.Dir]): Try[DocumentSegmenter] = {
     formats.DocumentIO
@@ -220,7 +220,7 @@ class DocumentSegmenter(
 
   }
 
-  def docWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Double = {
+  def findDocWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Unit = {
     val allVDists = for {
       groupedBlocks <- alignedBlocksPerPage
       block <- groupedBlocks
@@ -244,8 +244,9 @@ class DocumentSegmenter(
       .headOption
       .getOrElse(12.0)
 
+    pageSegAccum.copy(docWideModalVerticalLineDist = modalVDist)
 
-    modalVDist
+
 
   }
 
@@ -307,8 +308,8 @@ class DocumentSegmenter(
           val g = if (areGrouped) "+" else "-/-"
 
           vtrace.trace(message(
-            s"""|   $g${VisualLine.render(line1).map(_.text).getOrElse("?")}
-                |   $g${VisualLine.render(line2).map(_.text).getOrElse("?")}
+            s"""|   $g${line1.getTextReflow.map(_.toText).getOrElse("?")}
+                |   $g${line2.getTextReflow.map(_.toText).getOrElse("?")}
                 |     l1.left: ${line1.left}     .height: ${h1}
                 |     l2.left: ${line2.left}     .height: ${h2}
                 |     similarHeights=${similarLineHeights}, verticalJum=${verticalJump}, largeVerticalJump=${largeVerticalJump}
@@ -320,7 +321,7 @@ class DocumentSegmenter(
 
       vtrace.trace({
         val blocks = groupedBlocks.map{ block =>
-          block.map(VisualLine.render(_).map(_.text).getOrElse("<no text>"))
+          block.map(VisualLine.toTextReflow(_).map(_.toText()).getOrElse("<no text>"))
             .mkString("Block\n    ", "\n    ", "\n")
         }
         val allBlocks = blocks.mkString("\n  ", "\n  ", "\n")
@@ -358,93 +359,55 @@ class DocumentSegmenter(
 
   import BioLabeling._
 
-  def determineVisualLineOrdering(): Unit = {
-    vtrace.trace(begin("determineVisualLineOrdering"))
+  def joinTextblockReflow(textBlockRegion: Component): Unit = {
+    val visualLines = textBlockRegion.getChildren(LB.VisualLine)
+      .flatMap(c => c.getTextReflow)
+    val joined = visualLines.reduce { joinTextLines(_, _) }
+    textBlockRegion.setTextReflow(joined)
+  }
+
+  def findTextBlocksPerPage(): Seq[RegionComponent] = {
+    vtrace.trace(begin("findTextBlocks"))
+
     val alignedBlocksPerPage = findLeftAlignedBlocksPerPage()
 
-    val modalVDist = docWideModalLineVSpacing(alignedBlocksPerPage)
+    findDocWideModalLineVSpacing(alignedBlocksPerPage)
 
-    val finalSplit = splitBlocksWithLargeVGaps(alignedBlocksPerPage, modalVDist)
+    val finalBlockStructure = splitBlocksWithLargeVGaps(alignedBlocksPerPage, pageSegAccum.docWideModalVerticalLineDist)
 
-    // Now create a BIO labeling linking visual lines into blocks
-    println(s"Doing final split")
-    val bioLabels = for {
-      page <- finalSplit
-      block <- page
-    } yield {
-      // println(s"block len: ${block.length}")
-      val bios = block.map(BioNode(_))
-      zoneIndexer.addBioLabels(LB.TextBlock, bios)
-      bios
+    val pages = for {
+      pageBlocks <- finalBlockStructure
+    } yield{
+
+      val pageTextBlockCCs = for {
+        textBlock <- pageBlocks
+        textBlockRegion <- zoneIndexer.labelRegion(textBlock, LB.TextBlock)
+      } yield {
+        assert(textBlock.forall(_.hasLabel(LB.VisualLine)))
+        textBlockRegion.setChildren(LB.VisualLine, textBlock)
+
+        joinTextblockReflow(textBlockRegion)
+        textBlockRegion
+      }
+
+      sortPageTextBlocks(pageTextBlockCCs)
     }
 
 
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
-    lineBioLabels ++= bioLabels.flatten
-
-    val blocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
-    // println(s"There are now ${blocks.length} labeled blocks")
-
-    blocks.splitOnPairs({
-      case (aNodes: Seq[BioNode], bNodes: Seq[BioNode]) =>
-
-        // if, for consecutive blocks a, b features include
-        //   - a is length 1
-        //   - a is indented (determine std indents)
-        //   - a's width falls strictly within b's width
-        //   - dist a -> b is near doc-wide standard line distance
-        //   - a is at end of column, b is higher on page, or next page
-
-
-        val onSamePage = true
-        val aIsSingeLine = aNodes.length == 1
-        val aIsAboveB = isStrictlyAbove(aNodes.last.component, bNodes.head.component)
-        val aComp = aNodes.last.component
-        val bComp = bNodes.head.component
-        val aWidth = aComp.bounds.width
-        val bWidth = bComp.bounds.width
-
-        val vdist = aComp.vdist(bComp)
-        val withinCommonVDist = vdist.eqFuzzy(1.0)(modalVDist)
-        val aWithinBsColumn = bComp.columnContains(aComp)
-
-        val aIsIndented = aWidth < bWidth - 4.0
-
-        // println("comparing for para begin: ")
-        // println(s"  a> ${aComp.chars}")
-        // println(s"  b> ${bComp.chars}")
-
-        // println(s"     a.bounds=${aComp.bounds.prettyPrint} b.bounds=${bComp.bounds.prettyPrint}")
-        // println(s"     a.right=${aComp.bounds.right.pp} b.right=${bComp.bounds.right.pp}")
-        // println(s"     a is indented = ${aIsIndented}")
-        // println(s"     a strictly above = ${aIsAboveB}")
-        // println(s"     b columnContains a = ${aWithinBsColumn}")
-        // println(s"     a/b within modal v-dist = ${withinCommonVDist} = ${modalVDist}")
-
-        if (onSamePage &&
-          aIsSingeLine &&
-          aIsAboveB &&
-          aIsIndented &&
-          withinCommonVDist &&
-          aWithinBsColumn
-        ) {
-          zoneIndexer.addBioLabels(LB.ParaBegin, aNodes)
-        }
-
-        true
-    })
-    vtrace.trace({
-      val blockStrs = blocks.map{ block =>
-        block.map(b => VisualLine.render(b.component).map(_.text).getOrElse("<no text>"))
-          .mkString("Block\n    ", "\n    ", "\n")
-      }
-      val allBlocks = blockStrs.mkString("\n  ", "\n  ", "\n")
-
-      "Final Block Structure" withTrace message(allBlocks)
-    })
-    vtrace.trace(end("determineVisualLineOrdering"))
-
+    vtrace.trace(end("findTextBlocks"))
+    pages.flatten
   }
+
+  def sortPageTextBlocks(pageTextBlocks: Seq[Component]): Option[RegionComponent] = {
+    // TODO: actually sort these?
+    zoneIndexer
+      .labelRegion(pageTextBlocks, LB.PageTextBlocks)
+      .map({page =>
+        page.setChildren(LB.TextBlock, pageTextBlocks)
+        page
+      })
+  }
+
 
 
   def runPageSegmentation(): Unit = {
@@ -462,93 +425,84 @@ class DocumentSegmenter(
 
     tokenizeLines()
 
-    vtrace.trace(begin("determineVisualLineOrdering"))
-    determineVisualLineOrdering()
-    vtrace.trace(end("determineVisualLineOrdering"))
+    // this find text blocks per-page, and joins lines within each block
+    val textBlocksPerPage = findTextBlocksPerPage()
+    // this joins lines across pages
+    // joinLinesAcrossPages(textBlocksPerPage)
 
-    labelTitle()
-    labelAuthors()
-    labelAbstract()
-    labelSectionHeadings()
+    // labelTitle()
+    // labelAuthors()
+    // labelAbstract()
+    // labelSectionHeadings()
 
-    joinLines()
 
   }
 
   // force tokenization of all visual lines
   def tokenizeLines(): Unit = for {
     page <- visualLineOnPageComponents
-    (line, linenum) <- page.zipWithIndex
-  } {
-    line.tokenizeLine
-  }
+    line <- page
+  } line.tokenizeLine
 
   def show(c: Component): TB.Box = {
-    VisualLine.render(c).map(t => t.text.box).getOrElse("<could not render>".box)
+    c.getTextReflow
+      .orElse { VisualLine.toTextReflow(c) }
+      .map(t => t.toText().box).getOrElse("<could not render>".box)
   }
 
+  lazy val dict = utils.EnglishDictionary.global
 
-  def joinLines(): Unit = {
-    vtrace.trace(begin("JoinLines"))
+  def joinTextLines(line1: TextReflow, line2: TextReflow): TextReflow = {
 
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
-    val textBlocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
+    val line1Text = line1.toText()
+    val line2Text = line2.toText()
 
-    textBlocks.flatten.foreachPair({(line1Node, line2Node) =>
-      val line1 = line1Node.component
-      val line2 = line2Node.component
-      val wordBreaks = "-"
-      val lineMinLenReq = line1.chars.length > 10 // magic # for minimum line length
-      val hasNonLetterPrefix = line1.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
-      val endsWithDash = line1.chars.lastOption.exists { wordBreaks contains _ }
-      val isBrokenWord = endsWithDash && lineMinLenReq && !hasNonLetterPrefix
+    val lineMinLenReq = line1Text.length > 10 // magic # for minimum line length
+    // val hasNonLetterPrefix = line1.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
+    val endsWithDash = line1Text.lastOption.exists(_ == '-')
+    val isBrokenWord = endsWithDash && lineMinLenReq  // && !hasNonLetterPrefix
 
-      if (isBrokenWord) {
+    // vtrace.trace("Broken word joined:" withInfo(word))
+    // vtrace.trace("Broken word hyphenated:" withInfo(s"${w1}-${w2}"))
 
-        val wordHalfFirst = line1.getChildren(LB.TextSpan).lastOption
-        val wordHalfSecond = line2.getChildren(LB.TextSpan).headOption
+    def dehyphenate(): TextReflow = {
+      // TODO overwrite the '-'
+      // line1.atTextPosition(line1.length){reflow =>
+      //   rewrite(reflow, "")
+      // }
+      join("")(line1, line2)
+    }
+    def concat(): TextReflow = {
+      join("")(line1, line2)
+    }
 
-        vtrace.trace("Broken word found" withTrace all(Seq(
-          showComponent(line1), // endToken.map(showComponent(_)),
-          showComponent(line2), // startToken.map(showComponent(_)),
-          message(show(line1)), message(show(line2)),
-          showComponents(wordHalfFirst.toSeq++wordHalfSecond.toSeq)
-        )))
+    if (isBrokenWord) {
+      val wordHalfFirst = line1Text.split(" ").lastOption
+      val wordHalfSecond =  line2Text.split(" ").headOption
+      (wordHalfFirst, wordHalfSecond) match {
+        case (Some(firstHalf), Some(secondHalf)) =>
+          val w1 = firstHalf.dropRight(1)
+          val w2 = secondHalf.reverse.dropWhile(!_.isLetter).reverse
+          val w2Extra = secondHalf.reverse.takeWhile(!_.isLetter).reverse
 
-        (wordHalfFirst, wordHalfSecond) match {
-          case (Some(firstHalf), Some(secondHalf)) =>
-            val w1 = firstHalf.chars.dropRight(1)
-            val w2 = secondHalf.chars.reverse.dropWhile(!_.isLetter).reverse
-            val w2Extra = secondHalf.chars.reverse.takeWhile(!_.isLetter).reverse
-
-            val word = w1 + w2
-
-            val dict = utils.EnglishDictionary.global
-            if (dict.contains(word)) {
-              vtrace.trace("Broken word joined:" withInfo(word))
-              // join word
-              val joinedWord = LB.LineBreakToken(word)
-              firstHalf.addLabel(joinedWord)
-              secondHalf.addLabel(LB.Invisible)
-            } else if (dict.contains(w1) && dict.contains(w2)) {
-              // join word, but retain hyphen
-              val wjoin = s"${w1}-${w2}"
-              vtrace.trace("Broken word hyphenated:" withInfo(wjoin))
-              val joinedWord = LB.LineBreakToken(wjoin)
-              firstHalf.addLabel(joinedWord)
-              secondHalf.addLabel(LB.Invisible)
-            }
-
-          case _ =>
-            vtrace.trace(message(s"couldn't find broken word continuation"))
-
-        }
+          val word = w1 + w2
+          if (dict.contains(word)) {
+            dehyphenate()
+          } else if (dict.contains(w1) && dict.contains(w2)) {
+            concat()
+          } else {
+            dehyphenate()
+          }
+        case _ =>
+          vtrace.trace(message(s"warning: couldn't find broken word continuation"))
+          dehyphenate()
       }
-    })
-
-    vtrace.trace(end("JoinLines"))
-
+    } else {
+      join(" ")(line1, line2)
+    }
   }
+
+  // def joinLinesAcrossPages(pages: Seq[RegionComponent]): Unit = {}
 
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
@@ -567,8 +521,8 @@ class DocumentSegmenter(
       zoneIndexer.getComponent(ComponentID(id), pageId)
     )
 
-    vtrace.trace("inserting missing chars" withTrace
-      all(missingChars.map(showComponent(_))))
+    // vtrace.trace("inserting missing chars" withTrace
+    //   all(missingChars.map(showComponent(_))))
 
     (lineBinChars ++ missingChars).sortBy(_.bounds.left)
   }
@@ -626,8 +580,7 @@ class DocumentSegmenter(
     components: Seq[AtomicComponent]
   ): Unit = {
 
-
-    gutterDetection(pageId, components)
+    // gutterDetection(pageId, components)
 
     def regionIds(cc: Component): Seq[Int@@RegionID] = cc.targetRegions.map(_.id)
     def minRegionId(ccs: Seq[Component]): Int@@RegionID =  ccs.flatMap(regionIds(_)).min
@@ -636,12 +589,6 @@ class DocumentSegmenter(
 
     // line-bin coarse segmentation
     val lineBinsx = approximateLineBins(components)
-
-
-    vtrace.trace("Visual lines, first approximation" withInfo
-      vcat(lineBinsx.map(ccs =>
-        ccs.map(_.chars).mkString.box
-      )))
 
     val shortLines = splitRunOnLines(lineBinsx)
 
@@ -656,10 +603,11 @@ class DocumentSegmenter(
       .map(_.toSeq.sortBy(c => (c.bounds.left, c.bounds.top)))
       .sortBy(line => minRegionId(line))
 
-    vtrace.trace("Vis. Lines, second approx." withInfo
+    vtrace.trace("Visual Lines" withInfo {
       vcat(shortLinesFilledIn.map(ccs =>
         ccs.map(_.chars).mkString.box
-      )))
+      ))
+    })
 
 
     val longLines = shortLinesFilledIn
@@ -672,55 +620,37 @@ class DocumentSegmenter(
         val leftToRight = isStrictlyLeftToRight(l1, l2)
         val overlapped = isOverlappedVertically(l1, l2)
         val smallIdGap = idgap < 5
-        vtrace.trace("maybe join line parts" withInfo
-          s"idgap:${idgap}, left2right:${leftToRight}, overlapped:${overlapped}")
 
         val shouldJoin = leftToRight && overlapped && smallIdGap
+
+        vtrace.traceIf(shouldJoin)("joining line parts" withInfo {
+          val chs1 = linePart1.map(_.chars).mkString
+          val chs2 = linePart2.map(_.chars).mkString
+          s"""$chs1  <->  $chs2 """
+        })
+
 
         shouldJoin
       })
 
     val pageLines = longLines.map({ lineGroups =>
-      // println("Line Groups-----")
-      // lineGroups.foreach { lgrp =>
-      //   println("---Line Group-----")
-      //   lgrp.foreach { l =>
-      //     println("----line")
-      //     println(l)
-      //   }
-      // }
-
 
       val line = lineGroups.reduce(_ ++ _)
-
-      val uio = line.map(_.chars).mkString(", ")
-
-      vtrace.trace("debug starting line atoms" withInfo
-        s""" ${uio} """)
 
       // Glue together page atoms into a VisualLine/TextSpan
       zoneIndexer.labelRegion(line, LB.VisualLine)
         .map ({ visualLine =>
-          visualLine.setChildren(LB.PageAtom, line)
-          visualLine.connectChildren(LB.PageAtom, Some(_.bounds.left))
+          visualLine.setChildren(LB.PageAtom, line.sortBy(_.bounds.left))
+          visualLine.cloneAndNest(LB.TextSpan)
 
-          val asdf = visualLine.atoms.map(_.chars).mkString(", ")
-          vtrace.trace("debug vline atoms" withInfo
-            s""" ${asdf} """)
-
-          val textSpan = visualLine.cloneAndNest(LB.TextSpan)
-          val qewr = textSpan.atoms.map(_.chars).mkString(", ")
-          vtrace.trace("debug textSpan atoms" withInfo
-            s""" ${qewr} """)
-
-          vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
+          // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
           visualLine
         })
-    })
+    }).flatten
 
     zoneIndexer
-      .labelRegion(pageLines.flatten, LB.Page)
-      .map(_.connectChildren(LB.VisualLine, None))
+      .labelRegion(pageLines, LB.PageLines)
+      .map(_.setChildren(LB.VisualLine, pageLines))
   }
 
 
@@ -762,7 +692,10 @@ class DocumentSegmenter(
     pageId <- zoneIndexer.getPages
   } yield {
     val page = zoneIndexer.getPageIndex(pageId)
-    val lls = page.getComponentsWithLabel(LB.VisualLine)
+    val pageLiness = page.getComponentsWithLabel(LB.PageLines)
+    assert(pageLiness.length==1)
+    val pageLines = pageLiness.head
+    val lls = pageLines.getChildren(LB.VisualLine)
 
     lls.sortBy { _.bounds.top }
   }
@@ -1031,7 +964,7 @@ class DocumentSegmenter(
 
     // FIXME: integrate w/textflow and reinstate this block
     // for(lineNode <- firstLines) {
-    //   val lineText = ComponentRendering.VisualLine.render(lineNode.component)
+    //   val lineText = ComponentRendering.VisualLine.toTextReflow(lineNode.component)
     //   if(!lineText.isEmpty) {
     //     val lines = lineText.get.lines.mkString(" ")
     //     val words = lines.split(" ")
@@ -1110,3 +1043,70 @@ class DocumentSegmenter(
   // }
 
 }
+
+
+
+  // def determineTextBlockOrdering(): Unit = {
+  //   vtrace.trace(begin("determineTextBlockOrdering"))
+  //   textBlocks.splitOnPairs({
+  //     // case (aNodes: Seq[BioNode], bNodes: Seq[BioNode]) =>
+  //     case (block1, block2) =>
+  //       val block1Lines = block1.getChildren(LB.VisualLine)
+  //       val block2Lines = block2.getChildren(LB.VisualLine)
+  //       // if, for consecutive blocks a, b features include
+  //       //   - a is length 1
+  //       //   - a is indented (determine std indents)
+  //       //   - a's width falls strictly within b's width
+  //       //   - dist a -> b is near doc-wide standard line distance
+  //       //   - a is at end of column, b is higher on page, or next page
+  //       val onSamePage = true
+  //       val aIsSingeLine = block1Lines.length == 1
+  //       val aIsAboveB = isStrictlyAbove(block1Lines.last, block2Lines.head)
+  //       val aComp = block1Lines.last
+  //       val bComp = block2Lines.head
+  //       val aWidth = aComp.bounds.width
+  //       val bWidth = bComp.bounds.width
+
+  //       val vdist = aComp.vdist(bComp)
+  //       val withinCommonVDist = vdist.eqFuzzy(1.0)(pageSegAccum.docWideModalVerticalLineDist)
+  //       val aWithinBsColumn = bComp.columnContains(aComp)
+
+  //       val aIsIndented = aWidth < bWidth - 4.0
+
+  //       // println("comparing for para begin: ")
+  //       // println(s"  a> ${aComp.chars}")
+  //       // println(s"  b> ${bComp.chars}")
+
+  //       // println(s"     a.bounds=${aComp.bounds.prettyPrint} b.bounds=${bComp.bounds.prettyPrint}")
+  //       // println(s"     a.right=${aComp.bounds.right.pp} b.right=${bComp.bounds.right.pp}")
+  //       // println(s"     a is indented = ${aIsIndented}")
+  //       // println(s"     a strictly above = ${aIsAboveB}")
+  //       // println(s"     b columnContains a = ${aWithinBsColumn}")
+  //       // println(s"     a/b within modal v-dist = ${withinCommonVDist} = ${modalVDist}")
+
+  //       if (onSamePage &&
+  //         aIsSingeLine &&
+  //         aIsAboveB &&
+  //         aIsIndented &&
+  //         withinCommonVDist &&
+  //         aWithinBsColumn
+  //       ) {
+  //         // zoneIndexer.addBioLabels(LB.ParaBegin, block1Lines)
+  //       }
+
+  //       true
+  //   })
+
+
+  //   vtrace.trace({
+  //     val blockStrs = textBlocks.map{ block =>
+  //       block.getChildren(LB.VisualLine).map(b => b.getTextReflow.map(_.toText()).getOrElse("<no text>"))
+  //         .mkString("Block\n    ", "\n    ", "\n")
+  //     }
+  //     val allBlocks = blockStrs.mkString("\n  ", "\n  ", "\n")
+
+  //     "Final Block Structure" withTrace message(allBlocks)
+  //   })
+  //   vtrace.trace(end("determineTextBlockOrdering"))
+
+  // }

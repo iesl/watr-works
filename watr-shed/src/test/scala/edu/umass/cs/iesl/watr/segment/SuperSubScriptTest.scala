@@ -61,7 +61,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
 
       val tokenizedLines = lineComponents.map { lineComponent =>
         lineComponent.tokenizeLine()
-        ComponentRendering.VisualLine.render(lineComponent).get.toString()
+        ComponentRendering.VisualLine.toTextReflow(lineComponent).get.toString()
       }
 
       // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")

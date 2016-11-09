@@ -23,6 +23,20 @@ trait EnableTrace[T] {
 private object VisualTraceMacros {
   type VTraceContext[S] = Context { type PrefixType = EnableTrace[S] }
 
+  def runIfEnabledWithCondition[T](c: VTraceContext[T])(cond: c.Expr[Boolean])(exprs: c.Expr[T]*) = {
+    import c.universe._
+    // q"if (${c.prefix}.tracingEnabled) { ${c.prefix}.runTrace(..$exprs) }"
+    q"""
+    if (${c.prefix}.tracingEnabled() && $cond) {
+       import _root_.edu.umass.cs.iesl.watr.utils.{VisualTraceLevel => L}
+       ${c.prefix}.traceLevel() match {
+         case L.Off          => // noop
+         case L.Append|L.Print => ${c.prefix}.runTrace(${c.prefix}.traceLevel(), ..$exprs)
+       }
+    }
+    """
+  }
+
   def runIfEnabled[T](c: VTraceContext[T])(exprs: c.Expr[T]*) = {
     import c.universe._
     // q"if (${c.prefix}.tracingEnabled) { ${c.prefix}.runTrace(..$exprs) }"

@@ -66,7 +66,7 @@ import textboxing.{TextBoxing => TB}, TB._
 
 //     val visualLineTextFlows = visualLines.map { visualLine =>
 //       // Map this to a Reflow
-//       val textFlow = VisualLine.render(visualLine).get
+//       val textFlow = VisualLine.toTextReflow(visualLine).get
 
 //       // for {
 //       //   atom <- visualLine.queryAtoms()

@@ -76,7 +76,7 @@ object ComponentRendering {
       // TODO assert that cc is role VisualLine
       val textAndIds = for {
         textSpan  <- cc.getChildren(LB.TextSpan)
-        textFlow <- render(textSpan)
+        textFlow <- toTextReflow(textSpan)
       } yield {
         val tokenId = textSpan.id
         (escapeJson(textFlow), tokenId)
@@ -111,63 +111,62 @@ object ComponentRendering {
 
         case LB.PageAtom =>
           val ac = cc.asInstanceOf[AtomicComponent]
-          val charAtom = ac.pageAtom.asInstanceOf[CharAtom]
-          atom(charAtom).some
+          atom(ac).some
 
         case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
       }
     }
 
-    def render(cc: Component): Option[TextReflow] = {
-      cc.roleLabel match {
-        case LB.VisualLine
-           | LB.TextSpan =>
-          val children = childSpansOrAtoms(cc)
-          val childTextFlows = children.map(render(_))
-          val joined = if (isTokenized(cc)) {
-            joins(" ")(childTextFlows.flatten)
-          } else {
-            concat(childTextFlows.flatten)
-          }
+    // def render(cc: Component): Option[TextReflow] = {
+    //   cc.roleLabel match {
+    //     case LB.VisualLine
+    //        | LB.TextSpan =>
+    //       val children = childSpansOrAtoms(cc)
+    //       val childTextFlows = children.map(render(_))
+    //       val joined = if (isTokenized(cc)) {
+    //         joins(" ")(childTextFlows.flatten)
+    //       } else {
+    //         concat(childTextFlows.flatten)
+    //       }
 
-          Some(surroundCC(cc, joined))
+    //       Some(surroundCC(cc, joined))
 
-        // case LB.TextSpan =>
-        //   //
-        //   if (cc.hasLabel(LB.Invisible)) {
-        //     None
-        //   } else {
-        //     val ccBox = cc.getLabels
-        //       .find(_ == LB.LineBreakToken)
-        //       .map({ label =>
-        //         surroundCC(cc, label.value.get)
-        //       })
-        //       .getOrElse({
-        //         val children = childSpansOrAtoms(cc)
-        //         val rc = children.map(render(_))
-        //         val hsep = if (isTokenized(cc)) " " else ""
-        //         val joined = hjoins(sep=hsep)(rc.flatten)
+    //     // case LB.TextSpan =>
+    //     //   //
+    //     //   if (cc.hasLabel(LB.Invisible)) {
+    //     //     None
+    //     //   } else {
+    //     //     val ccBox = cc.getLabels
+    //     //       .find(_ == LB.LineBreakToken)
+    //     //       .map({ label =>
+    //     //         surroundCC(cc, label.value.get)
+    //     //       })
+    //     //       .getOrElse({
+    //     //         val children = childSpansOrAtoms(cc)
+    //     //         val rc = children.map(render(_))
+    //     //         val hsep = if (isTokenized(cc)) " " else ""
+    //     //         val joined = hjoins(sep=hsep)(rc.flatten)
 
-        //         surroundCC(cc, joined)
-        //       })
+    //     //         surroundCC(cc, joined)
+    //     //       })
 
-        //     Some(ccBox)
-        //   }
+    //     //     Some(ccBox)
+    //     //   }
 
 
-        case LB.PageAtom =>
-          // val textFlow = TextReflow(
-          //   Seq(FlowUnit.Atom(cc.asInstanceOf[AtomicComponent]))
-          // )
-          // val esc = escapeTex(textFlow)
-          // Some(surroundCC(cc, esc))
-          ???
+    //     case LB.PageAtom =>
+    //       // val textFlow = TextReflow(
+    //       //   Seq(FlowUnit.Atom(cc.asInstanceOf[AtomicComponent]))
+    //       // )
+    //       // val esc = escapeTex(textFlow)
+    //       // Some(surroundCC(cc, esc))
+    //       ???
 
-        case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
-      }
+    //     case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
+    //   }
 
-      // None
-    }
+    //   // None
+    // }
 
     def childSpansOrAtoms(cc: Component): Seq[Component] = {
       if (cc.hasChildren(LB.TextSpan)) {

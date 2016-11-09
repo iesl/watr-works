@@ -30,8 +30,6 @@ object TraceLog {
 
 }
 
-import scala.collection.mutable
-
 
 object VisualTracer {
   import TraceLog._
@@ -118,6 +116,8 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
       println(ibox.toString)
     }
   }
+
+  def traceIf(cond: Boolean)(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabledWithCondition[TraceLog]
 
   def trace(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
 

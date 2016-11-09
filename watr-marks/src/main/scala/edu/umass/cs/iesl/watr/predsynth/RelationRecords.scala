@@ -5,7 +5,6 @@ import scalaz.@@
 
 import utils.{StringUtils => SU}
 import TypeTags._
-import scala.reflect._
 
 
 trait Identities {

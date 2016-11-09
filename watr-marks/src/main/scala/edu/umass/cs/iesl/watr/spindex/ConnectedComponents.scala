@@ -106,13 +106,8 @@ sealed trait Component {
       .flatMap(ch => ch +: ch.getDescendants(l))
   }
 
-
-  // def getChildren(l: Label): Option[Seq[Component]] = {
-  //   // zoneIndex.getChildren(this, l)
-  // }
-
-  def setChildren(l: Label, tree: Seq[Component]): Unit = {
-    zoneIndex.setChildrenWithLabel(this, l, tree.map(_.id))
+  def setChildren(l: Label, children: Seq[Component]): Unit = {
+    zoneIndex.setChildrenWithLabel(this, l, children.map(_.id))
   }
 
   def connectChildren(l: Label, sortf: Option[((Component)=>Double)]): Unit = {

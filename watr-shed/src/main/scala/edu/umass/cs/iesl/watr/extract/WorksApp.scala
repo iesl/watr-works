@@ -3,18 +3,12 @@ package extract
 
 import ammonite.{ops => fs}, fs._
 import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
-import java.io.InputStream
 import java.net.URI
-import textboxing.{TextBoxing => TB}
-import spindex._
-import EnrichGeometricFigures._
-import utils.EnrichNumerics._
 import java.io.{File => JFile}
 import predsynth._
 import scala.util.{Try, Failure, Success}
 import segment.DocumentSegmenter
 
-// TODO: 'overwrite' should be changed to 'preserve-annots'|'overwrite'
 
 case class AppConfig(
   runRoot: Option[JFile] = None,
@@ -38,8 +32,9 @@ object Works extends App {
   private[this] val log = org.log4s.getLogger
 
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
-  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
-  // utils.VisualTracer.clearFilters()
+  utils.VisualTracer
+  utils.VisualTracer.clearFilters()
+  utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
   // utils.VisualTracer.addFilter("GutterDetection")
   // utils.VisualTracer.addFilter("LabelAbstract")
 

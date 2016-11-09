@@ -14,6 +14,7 @@ import utils.IdGenerator
 import VisualTracer._
 // import watrmarks.{StandardLabels => LB}
 import predsynth._
+import textflow.TextReflow._
 
 class ZoneIndexer(
   srcUri: URI
@@ -56,6 +57,17 @@ class ZoneIndexer(
   val zoneIdGen = IdGenerator[ZoneID]()
   val labelToZones: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ZoneID]] = mutable.HashMap()
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
+
+  val componentToTextReflow: mutable.HashMap[Int@@ComponentID, TextReflow] = mutable.HashMap()
+
+  def setTextReflow(cc: Component, r: TextReflow): Unit = {
+    componentToTextReflow.put(cc.id, r)
+  }
+
+  def getTextReflow(cc: Int@@ComponentID): Option[TextReflow] = {
+    componentToTextReflow.get(cc)
+  }
+
 
   def getZones(): Seq[Zone] = {
     zoneMap.values.toSeq
@@ -161,9 +173,8 @@ class ZoneIndexer(
       val totalRegion = targetRegions.reduce(_ union _)
 
       val region = createRegionComponent(totalRegion, role)
-      // region.setChildren(LB., cs: Seq[Component])
 
-      vtrace.trace(s"Label Region as ${role}" withTrace all(components.map(showComponent(_))))
+      vtrace.trace(s"Label Region as ${role}" withTrace showComponent(region))
 
       Some(region)
     }

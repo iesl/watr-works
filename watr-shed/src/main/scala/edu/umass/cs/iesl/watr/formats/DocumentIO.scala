@@ -9,7 +9,7 @@ import extract.PdfTextExtractor
 import extract.fonts._
 
 import spindex._
-import ComponentRendering._
+// import ComponentOperations._
 import EnrichGeometricFigures._
 
 import textboxing.{TextBoxing => TB}, TB._
@@ -22,13 +22,14 @@ import watrmarks.{StandardLabels => LB, _}
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
-import scala.util.{Try, Failure, Success}
+import scala.util.{Try}
+import textflow.ComponentReflow._
 
 
 object DocumentIO extends DocsegJsonFormats {
   import play.api.libs.json._
-  import textflow.TextReflow
-  import textflow.TextReflow._
+  // import textflow.TextReflow
+  // import TextReflow._
   // import play.api.libs.functional.syntax._
 
   def serializeTargetRegion(tr: TargetRegion): TB.Box = {
@@ -113,71 +114,71 @@ object DocumentIO extends DocsegJsonFormats {
   }
 
   def serializeMentions(zoneIndexer: ZoneIndexer): TB.Box = {
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
-    val lines = for {
-      linec <- lineBioLabels
-      line = linec.component
-      textFlow <- VisualLine.render(line)
-    } yield (textFlow, line.id, line.targetRegion)
+    // val lines = for {
+    //   linec <- lineBioLabels
+    //   line = linec.component
+    //   textFlow <- line.getTextReflow 
+    // } yield (textFlow, line.id, line.targetRegion)
 
-    val zones = zoneIndexer
-      .getZones.map({ zone =>
+    // val zones = zoneIndexer
+    //   .getZones.map({ zone =>
 
-        val linePerZTR = zone.regions.map({zoneTargetRegion =>
-          lines.map(_._1).zipWithIndex
-            .map({case (textFlow, lineNum) =>
-              textFlow.clipToTargetRegion(zoneTargetRegion)
-                .map(t => (t, lineNum))
-            })
-            .flatten.headOption
-            .map({ case ((textFlow, begin, len), lineNum)  =>
-              (s"""[${lineNum}, ${begin}, ${len}]""", textFlow)
-            })
+    //     val linePerZTR = zone.regions.map({zoneTargetRegion =>
+    //       lines.map(_._1).zipWithIndex
+    //         .map({case (textFlow, lineNum) =>
+    //           textFlow.clipToTargetRegion(zoneTargetRegion)
+    //             .map(t => (t, lineNum))
+    //         })
+    //         .flatten.headOption
+    //         .map({ case ((textFlow, begin, len), lineNum)  =>
+    //           (s"""[${lineNum}, ${begin}, ${len}]""", textFlow)
+    //         })
 
-        }).flatten
+    //     }).flatten
 
-        val trs = linePerZTR.map(_._1).mkString(",")
-        val ts = linePerZTR.map(_._2)
-        val jtextFlow = TextReflow.joins(" ")(ts)
-        val labelStr = zone.label.value.get
-        val pad1 = " "*(20-labelStr.length())
-        val pad2 = " "*(20 - jtextFlow.text.length())
+    //     val trs = linePerZTR.map(_._1).mkString(",")
+    //     val ts = linePerZTR.map(_._2)
+    //     val jtextFlow = TextReflow.joins(" ")(ts)
+    //     val labelStr = zone.label.value.get
+    //     val pad1 = " "*(20-labelStr.length())
+    //     val pad2 = " "*(20 - jtextFlow.toText.length())
 
-        val mentionId = zone.id.unwrap
-
-
-        val clustId = zoneIndexer.relations.collect({
-          case Relation.Record(clusterId, "hasMember", e2) if Identities.idValue(e2) == mentionId =>
-            Identities.idValue(clusterId)
-        }).headOption.getOrElse(0)
+    //     val mentionId = zone.id.unwrap
 
 
-        val pad3 = " "*(3 - mentionId.toString.length)
-        val pad4 = " "*(3 - clustId.toString.length)
+    //     val clustId = zoneIndexer.relations.collect({
+    //       case Relation.Record(clusterId, "hasMember", e2) if Identities.idValue(e2) == mentionId =>
+    //         Identities.idValue(clusterId)
+    //     }).headOption.getOrElse(0)
 
-        val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 "${labelStr}",${pad1} "${jtextFlow.text}",${pad2} [${trs}]]""".box
 
-        (0, 0, mentionStr)
-        (mentionId, clustId, mentionStr)
-      })
-      .toSeq
-      .sortBy({x => (x._1, x._2) })
+    //     val pad3 = " "*(3 - mentionId.toString.length)
+    //     val pad4 = " "*(3 - clustId.toString.length)
 
-    vjoinTrailSep(left, ",")(zones.map(_._3):_*)
+    //     val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 "${labelStr}",${pad1} "${jtextFlow.toText()}",${pad2} [${trs}]]""".box
+
+    //     (0, 0, mentionStr)
+    //     (mentionId, clustId, mentionStr)
+    //   })
+    //   .toSeq
+    //   .sortBy({x => (x._1, x._2) })
+
+    // vjoinTrailSep(left, ",")(zones.map(_._3):_*)
+    ???
   }
 
   def serializeLineLabels(zoneIndexer: ZoneIndexer): TB.Box = {
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
-    val serComponents = List(
-      LB.SectionHeadingLine,
-      LB.ParaBegin,
-      LB.TextBlock,
-      LB.Abstract
-    ).map(serializeLabeling(_, lineBioLabels))
+    // val serComponents = List(
+    //   LB.SectionHeadingLine,
+    //   LB.ParaBegin,
+    //   LB.TextBlock,
+    //   LB.Abstract
+    // ).map(serializeLabeling(_, lineBioLabels))
 
-    vjoinTrailSep(left, ",")(serComponents.flatten:_*)
+    // vjoinTrailSep(left, ",")(serComponents.flatten:_*)
+    ???
   }
 
   def serializeLabeling(label: Label, bioLabeling: Seq[BioNode]): Seq[Box] = {
@@ -203,12 +204,11 @@ object DocumentIO extends DocsegJsonFormats {
 
 
   def serializeTextLines(zoneIndexer: ZoneIndexer): (TB.Box, TB.Box) = {
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
 
     // val lines = for {
     //   linec <- lineBioLabels
     //   line = linec.component
-    //   textFlow <- VisualLine.render(line)
+    //   textFlow <- VisualLine.toTextReflow(line)
     // } yield (textFlow, line.id, line.targetRegion)
     // val lineTextAndIds = for {
     //   (lineText, lineId, _) <- lines

@@ -19,10 +19,8 @@ import ComponentRendering.VisualLine
 
 
 object ComponentOperations {
-  import textflow.TextReflow._
   import textflow.ComponentReflow._
 
-  import scalaz.Tree
 
 
   def centerX(cb: PageAtom) = cb.region.bbox.toCenterPoint.x
@@ -51,7 +49,7 @@ object ComponentOperations {
   }
 
 
-  implicit class RicherComponent(val selfComponent: Component) extends AnyVal {
+  implicit class RicherComponent(val theComponent: Component) extends AnyVal {
     // TODO move this operation (and other more fundamental operations) into another class
     def ungroupChildren(label: Label)(
       fn: (Component) => Boolean
@@ -59,33 +57,33 @@ object ComponentOperations {
 
       val flat = mutable.MutableList[Component]()
 
-      for { child <- selfComponent.getChildren(label) } {
+      for { child <- theComponent.getChildren(label) } {
         if (fn(child)) {
           val cchilds = child.getChildren(label)
           flat ++= cchilds
-          selfComponent.zoneIndex.removeComponent(child)
+          theComponent.zoneIndex.removeComponent(child)
         } else {
           flat += child
         }
 
-        selfComponent.setChildren(label, flat)
+        theComponent.setChildren(label, flat)
       }
     }
 
-    def zoneIndex = selfComponent.zoneIndex
-    def vtrace = selfComponent.zoneIndex.vtrace
+    def zoneIndex = theComponent.zoneIndex
+    def vtrace = theComponent.zoneIndex.vtrace
 
-    def left: Double  = selfComponent.bounds.left
-    def top: Double  = selfComponent.bounds.top
-    def height: Double  = selfComponent.bounds.height
-    def width: Double  = selfComponent.bounds.width
+    def left: Double  = theComponent.bounds.left
+    def top: Double  = theComponent.bounds.top
+    def height: Double  = theComponent.bounds.height
+    def width: Double  = theComponent.bounds.width
 
-    def hasLabel(l: Label): Boolean = selfComponent.getLabels.contains(l)
+    def hasLabel(l: Label): Boolean = theComponent.getLabels.contains(l)
 
     def vdist(other: Component): Double = {
-      other.bounds.bottom - selfComponent.bounds.bottom
+      other.bounds.bottom - theComponent.bounds.bottom
 
-      // selfComponent.bounds.toPoint(Compass.S).vdist(
+      // theComponent.bounds.toPoint(Compass.S).vdist(
       //   other.bounds.toPoint(Compass.S)
       // )
     }
@@ -93,8 +91,8 @@ object ComponentOperations {
     def columnContains(other: Component): Boolean = {
       val slopFactor = 4.5d // XXX test this magic number?
 
-      val left = selfComponent.bounds.toWesternPoint.x
-      val right = selfComponent.bounds.toEasternPoint.x
+      val left = theComponent.bounds.toWesternPoint.x
+      val right = theComponent.bounds.toEasternPoint.x
 
       val otherLeft = other.bounds.toWesternPoint.x + slopFactor
       val otherRight = other.bounds.toEasternPoint.x - slopFactor
@@ -108,8 +106,8 @@ object ComponentOperations {
 
       val otherx0 = other.bounds.toWesternPoint.x-slopFactor
       val otherx1 = other.bounds.toEasternPoint.x+slopFactor
-      val candx0 = selfComponent.bounds.toWesternPoint.x
-      val candx1 = selfComponent.bounds.toEasternPoint.x
+      val candx0 = theComponent.bounds.toWesternPoint.x
+      val candx1 = theComponent.bounds.toEasternPoint.x
       val candRightInside = otherx0 <= candx1 && candx1 <= otherx1
       val candLeftOutside = candx0 < otherx0
       val candLeftInside = otherx0 <= candx0 && candx0 <= otherx1
@@ -123,57 +121,57 @@ object ComponentOperations {
     }
 
     def isOverlapped(other: Component): Boolean = {
-      selfComponent.bounds.intersects(other.bounds)
+      theComponent.bounds.intersects(other.bounds)
     }
 
     def isOverlappedVertically(other: Component): Boolean = {
-      !(selfComponent.isStrictlyAbove(other) || selfComponent.isStrictlyBelow(other))
+      !(theComponent.isStrictlyAbove(other) || theComponent.isStrictlyBelow(other))
     }
 
     def isStrictlyAbove(other: Component): Boolean = {
-      val y1 = selfComponent.bounds.toPoint(Compass.S).y
+      val y1 = theComponent.bounds.toPoint(Compass.S).y
       val y2 = other.bounds.toPoint(Compass.N).y
       y1 < y2
     }
     def isStrictlyBelow(other: Component): Boolean = {
-      val y1 = selfComponent.bounds.toPoint(Compass.N).y
+      val y1 = theComponent.bounds.toPoint(Compass.N).y
       val y2 = other.bounds.toPoint(Compass.S).y
       y1 > y2
     }
 
     def isStrictlyLeftOf(other: Component): Boolean = {
-      val rightEdge = selfComponent.bounds.toEasternPoint.x
+      val rightEdge = theComponent.bounds.toEasternPoint.x
       val otherLeftEdge = other.bounds.toWesternPoint.x
       rightEdge < otherLeftEdge
     }
 
     def isStrictlyRightOf(other: Component): Boolean = {
-      val leftEdge = selfComponent.bounds.toEasternPoint.x
+      val leftEdge = theComponent.bounds.toEasternPoint.x
       val otherRightEdge = other.bounds.toWesternPoint.x
       otherRightEdge < leftEdge
     }
 
     def candidateIsOutsideLineBounds(other: Component): Boolean = {
-      selfComponent.isStrictlyLeftOf(other) || selfComponent.isStrictlyRightOf(other)
+      theComponent.isStrictlyLeftOf(other) || theComponent.isStrictlyRightOf(other)
     }
 
 
 
 
-    def isBelow(other: Component) = selfComponent.bounds.top > other.bounds.top
-    def isAbove(other: Component) = selfComponent.bounds.top < other.bounds.top
+    def isBelow(other: Component) = theComponent.bounds.top > other.bounds.top
+    def isAbove(other: Component) = theComponent.bounds.top < other.bounds.top
 
     def hasSameVCenterPoint(tolerance: Double=0.1)(other: Component) =
-      selfComponent.bounds.toCenterPoint.x.eqFuzzy(tolerance)(other.bounds.toCenterPoint.x)
+      theComponent.bounds.toCenterPoint.x.eqFuzzy(tolerance)(other.bounds.toCenterPoint.x)
 
     def hasSameLeftEdge(tolerance: Double=0.3)(other: Component) =
-      selfComponent.bounds.toPoint(Compass.W).x.eqFuzzy(tolerance)(other.bounds.toPoint(Compass.W).x)
+      theComponent.bounds.toPoint(Compass.W).x.eqFuzzy(tolerance)(other.bounds.toPoint(Compass.W).x)
 
     def isEqualWidth(tolerance: Double=0.1)(other: Component) =
-      selfComponent.bounds.width.eqFuzzy(tolerance)(other.bounds.width)
+      theComponent.bounds.width.eqFuzzy(tolerance)(other.bounds.width)
 
 
-    def atoms = selfComponent.queryInside(LB.PageAtom)
+    def atoms = theComponent.queryInside(LB.PageAtom)
 
     def findCommonToplines(): Seq[Double] = {
       vtrace.trace(message("findCommonToplines"))
@@ -214,7 +212,7 @@ object ComponentOperations {
 
     def labelSuperAndSubscripts(): Unit = {
       vtrace.trace(begin("labelSuperAndSubscripts()"))
-      vtrace.trace("Starting Tree" withInfo VisualLine.renderRoleTree(selfComponent))
+      // vtrace.trace("Starting Tree" withInfo VisualLine.renderRoleTree(theComponent))
 
       val tops = findCommonToplines()
       val bottoms = findCommonBaselines()
@@ -227,10 +225,10 @@ object ComponentOperations {
       val subScriptUpperLimit = modalCenterY-supSubTol
       val superScriptLowerLimit = modalCenterY+supSubTol
 
-      // indicate a set of h-lines inside selfComponent.targetRegion
+      // indicate a set of h-lines inside theComponent.targetRegion
       def indicateHLine(y: Double): TargetFigure = y.toHLine
-        .clipTo(selfComponent.targetRegion.bbox)
-        .targetTo(selfComponent.targetRegion.target)
+        .clipTo(theComponent.targetRegion.bbox)
+        .targetTo(theComponent.targetRegion.target)
 
       vtrace.trace(
         "modal top     " withTrace indicateHLine(modalTop),
@@ -239,12 +237,12 @@ object ComponentOperations {
       )
 
 
-      selfComponent.getChildren(LB.TextSpan).foreach({ textSpan =>
+      theComponent.getChildren(LB.TextSpan).foreach({ textSpan =>
 
         val supOrSubList = textSpan.atoms.map { atom =>
           val cctr = atom.bounds.toCenterPoint
           val cbottom = atom.bounds.bottom
-          val supSubTolerance = selfComponent.bounds.height / 20.0
+          val supSubTolerance = theComponent.bounds.height / 20.0
           vtrace.trace(s"checking sup/sub, tol:${supSubTolerance}" withInfo PageAtom.boundsBox(atom))
 
           if (atom.bounds.bottom < superScriptLowerLimit) {
@@ -292,8 +290,8 @@ object ComponentOperations {
 
       })
 
-      selfComponent.ungroupChildren(LB.TextSpan)(_ => true)
-      vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(selfComponent))
+      theComponent.ungroupChildren(LB.TextSpan)(_ => true)
+      // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(theComponent))
 
       vtrace.trace(end("labelSuperAndSubscripts()"))
     }
@@ -301,7 +299,7 @@ object ComponentOperations {
     def guessWordbreakWhitespaceThreshold(): Double = {
       val charDists = determineSpacings()
 
-      val charWidths = selfComponent.atoms.map(_.bounds.width)
+      val charWidths = theComponent.atoms.map(_.bounds.width)
       val widestChar = charWidths.max
 
       // Don't  accept a space wider than (some magic number)*the widest char?
@@ -360,13 +358,13 @@ object ComponentOperations {
 
     def groupTokens(): Unit = {
       vtrace.trace(begin("Split On Whitespace"))
-      vtrace.trace(message(s"chars: ${selfComponent.chars}"))
-      // TODO assert selfComponent roleLabel structure is TextSpan/TextSpan*/PageAtom
+      vtrace.trace(message(s"chars: ${theComponent.chars}"))
+      // TODO assert theComponent roleLabel structure is TextSpan/TextSpan*/PageAtom
 
       val splitValue = guessWordbreakWhitespaceThreshold()
 
-      selfComponent.addLabel(LB.Tokenized)
-      selfComponent.groupAtomsIf({ (c1, c2, pairIndex) =>
+      theComponent.addLabel(LB.Tokenized)
+      theComponent.groupAtomsIf({ (c1, c2, pairIndex) =>
 
         val pairwiseDist = c2.bounds.left - c1.bounds.right
 
@@ -387,38 +385,35 @@ object ComponentOperations {
 
       }, { (newRegion, regionIndex) =>
         newRegion.addLabel(LB.Token)
-        selfComponent.addChild(LB.TextSpan, newRegion)
+        theComponent.addChild(LB.TextSpan, newRegion)
       })
 
-      vtrace.trace("Tree after split whitespace" withInfo VisualLine.renderRoleTree(selfComponent))
+      vtrace.trace("Tree after split whitespace" withInfo VisualLine.renderRoleTree(theComponent))
 
       vtrace.trace(end("Split On Whitespace"))
     }
 
 
     def tokenizeLine(): Unit = {
-      if (!selfComponent.getLabels.contains(LB.TokenizedLine)) {
-        // println(s"tokenizing line")
+      if (!theComponent.hasLabel(LB.TokenizedLine)) {
+        theComponent.addLabel(LB.TokenizedLine)
 
-        vtrace.trace(begin("Tokenize Line"), focusOn(selfComponent.targetRegion))
-        vtrace.trace(message(s"Line chars: ${selfComponent.chars}"))
+        vtrace.trace(begin("Tokenize Line"), focusOn(theComponent.targetRegion))
+        vtrace.trace(message(s"Line chars: ${theComponent.chars}"))
 
         labelSuperAndSubscripts()
         // Structure is: VisualLine/TextSpan/[TextSpan[sup/sub/ctr]]
         // Group each TextSpan w/sup/sub/ctr-script label into tokens
-        selfComponent.getChildren(LB.TextSpan)
+        theComponent.getChildren(LB.TextSpan)
           .filterNot(_.getLabels
             .intersect( Set(LB.CenterScript, LB.Sub, LB.Sup) )
             .isEmpty)
           .foreach{ _.groupTokens() }
 
         // Now figure out how the super/sub/normal text spans should be joined together token-wise
+        // vtrace.trace("Tree after Tokenization" withInfo VisualLine.renderRoleTree(theComponent))
 
-        selfComponent.addLabel(LB.Tokenized)
-
-        vtrace.trace("Tree after Tokenization" withInfo VisualLine.renderRoleTree(selfComponent))
-
-        selfComponent.ungroupChildren(LB.TextSpan)({c =>
+        theComponent.ungroupChildren(LB.TextSpan)({c =>
           if (c.hasLabel(LB.Sup) || c.hasLabel(LB.Sub)) {
             c.addLabel(LB.Token)
           }
@@ -428,7 +423,7 @@ object ComponentOperations {
         // TODO don't compute this multiple times
         val splitValue = guessWordbreakWhitespaceThreshold()
 
-        selfComponent.groupChildren(withLabel=LB.TextSpan, newLabel=LB.TextSpan)(
+        theComponent.groupChildren(withLabel=LB.TextSpan, newLabel=LB.TextSpan)(
           {(c1, c2, pairIndex) =>
             val pairwiseDist = c2.bounds.left - c1.bounds.right
 
@@ -446,14 +441,21 @@ object ComponentOperations {
           }
         )
 
-        selfComponent.ungroupChildren(LB.TextSpan)({c =>
+        theComponent.ungroupChildren(LB.TextSpan)({c =>
           c.getChildren(LB.TextSpan).length == 1
         })
 
-        vtrace.trace("Tree after Flatten 2" withInfo VisualLine.renderRoleTree(selfComponent))
+        vtrace.trace("Tree after ungrouping TextSpans" withInfo VisualLine.renderRoleTree(theComponent))
+
+        val maybeReflow = VisualLine.toTextReflow(theComponent)
+
+        maybeReflow.foreach {
+          theComponent.setTextReflow(_)
+        }
+
 
         vtrace.trace("Final Tokenization" withInfo
-          VisualLine.render(selfComponent).get.toText())
+          maybeReflow.map(_.toText().box).getOrElse("<no text>".box))
 
         vtrace.trace(end("Tokenize Line"))
       }
@@ -461,14 +463,14 @@ object ComponentOperations {
 
 
     def determineNormalTextBounds: LTBounds = {
-      val mfHeights = Histogram.getMostFrequentValues(vtrace)(selfComponent.atoms.map(_.bounds.height), 0.1d)
-      val mfTops = Histogram.getMostFrequentValues(vtrace)(selfComponent.atoms.map(_.bounds.top), 0.1d)
+      val mfHeights = Histogram.getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.height), 0.1d)
+      val mfTops = Histogram.getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.top), 0.1d)
 
 
       val mfHeight= mfHeights.headOption.getOrElse(0d)
       val mfTop = mfTops.headOption.getOrElse(0d)
 
-      selfComponent.atoms
+      theComponent.atoms
         .map({ c =>
           val cb = c.bounds
           LTBounds(
@@ -476,28 +478,19 @@ object ComponentOperations {
             width=cb.width, height=mfHeight
           )
         })
-        .foldLeft(selfComponent.atoms.head.bounds)( { case (b1, b2) =>
+        .foldLeft(theComponent.atoms.head.bounds)( { case (b1, b2) =>
           b1 union b2
         })
     }
 
+    import textflow.TextReflow._
 
-
-    def componentToTextFlow(): TextReflow = {
-      val cTree = selfComponent
-        .toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
-
-      // cTree.scanr { (c: Component, childs: Stream[Tree[B]]) => B }
-
-      cTree.scanr((c: Component, childs: Stream[Tree[TextReflow]]) =>
-
-        ???
-      )
-
-
-      ???
-
+    def setTextReflow(r: TextReflow): Unit = {
+      theComponent.zoneIndex.setTextReflow(theComponent, r)
     }
 
+    def getTextReflow(): Option[TextReflow]= {
+      theComponent.zoneIndex.getTextReflow(theComponent.id)
+    }
   }
 }

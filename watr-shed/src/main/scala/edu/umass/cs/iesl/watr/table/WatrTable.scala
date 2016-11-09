@@ -2,21 +2,17 @@ package edu.umass.cs.iesl.watr
 package table
 
 import scala.util.matching.Regex
-import scala.concurrent._
-import scala.async.{Async => ScalaAsync}
 
 import ammonite.ops._
 import pprint.PPrinter
-import ExecutionContext.Implicits.global
 
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import watrmarks._
 import spindex._
-import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
 import TypeTags._
-import textflow.TextReflow._
+import textflow.ComponentReflow._
 
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -206,7 +202,7 @@ object ShellCommands {
     }
 
     def show(): TB.Box = {
-      VisualLine.render(thisComponent).map(t => t.text.box).getOrElse("<could not render>".box)
+      VisualLine.toTextReflow(thisComponent).map(t => t.toText().box).getOrElse("<could not render>".box)
     }
 
     def webShow(): String = {
@@ -239,7 +235,7 @@ object ShellCommands {
           .dropWhile(!_.isLetterOrDigit).reverse
           .mkString.trim
       }
-      VisualLine.render(thisComponent)
+      VisualLine.toTextReflow(thisComponent)
         .map(_.toString.split(" ").map(trimWord(_)).toSeq)
         .getOrElse(Seq())
     }
@@ -267,7 +263,7 @@ object ShellCommands {
     }
 
     def grep(re: String): Option[Component]= {
-      val rendered = VisualLine.render(thisComponent).toString
+      val rendered = VisualLine.toTextReflow(thisComponent).toString
 
       if (rendered.matches(re)) {
         Some(thisComponent)
@@ -304,24 +300,8 @@ object ShellCommands {
 
   implicit class RicherDocumentSegmenter(val thisDocumentSegmenter: DocumentSegmenter) extends AnyVal {
 
-    def linesx(l: Label): Seq[Component] = {
-      val zoneIndexer = thisDocumentSegmenter.zoneIndexer
-      val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
-      val lls = BioLabeling.selectBioLabelings(l, lineBioLabels)
-
-      for {
-        linec <- lineBioLabels
-        line = linec.component
-      } yield line
-    }
     def lines(): Seq[Component] = {
-      val zoneIndexer = thisDocumentSegmenter.zoneIndexer
-      val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
-
-      for {
-        linec <- lineBioLabels
-        line = linec.component
-      } yield line
+      ???
     }
   }
 

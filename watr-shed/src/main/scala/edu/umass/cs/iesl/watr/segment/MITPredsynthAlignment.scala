@@ -12,6 +12,7 @@ import utils.SlicingAndDicing._
 
 import scala.collection.mutable
 import watrmarks.{StandardLabels => LB}
+import textflow.ComponentReflow._
 
 import predsynth._
 
