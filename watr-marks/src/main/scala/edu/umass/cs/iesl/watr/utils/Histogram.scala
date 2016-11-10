@@ -44,12 +44,15 @@ object Histogram {
   def vtraceHistogram(vfs: Seq[(Double, Double)], resStart: Double, resComputed: Double): TraceLog = {
     message(
       vjoin()(
-        s"histogram: res(in)=${resStart.pp}, res(computed):${resComputed.pp}", indent(2)(
-          hjoins(sep=" ")(
+        s"histogram: resolution(in)=${resStart.pp}, resolution(computed):${resComputed.pp}", indent(2)(
+          vjoin(AlignLeft)(
+            "Val:",
+            "Freq:"
+          ) + hjoins(sep=" ")(
             vfs.map({case d =>
-              vjoin(center1)(
-                "v="+d._1.pp,
-                "f="+d._2.pp
+              vjoin(AlignRight)(
+                d._1.pp,
+                d._2.pp
               )
             })
           ))

@@ -186,7 +186,7 @@ object TextBoxing extends ToListOps with ToIdOps {
               if (spec.width > 0) {
                 Box(
                   rows = cellBox.rows,
-                  cols = spec.width,
+                  cols = math.max(spec.width, cellBox.cols),
                   SubBox(
                     hAlign = spec.alignment,
                     vAlign = AlignFirst,
@@ -577,9 +577,6 @@ object TextBoxing extends ToListOps with ToIdOps {
     def curlyBrace(b: Box): Box = bracket('{', '}', b)
 
   }
-
-
-
 
   // para algn w t is a box of width w, containing text t,
   //   aligned according to algn, flowed to fit within the given

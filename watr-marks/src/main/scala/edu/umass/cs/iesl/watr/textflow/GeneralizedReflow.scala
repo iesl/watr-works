@@ -75,11 +75,11 @@ object TextReflow {
 
 
 
-  def addLabel(l: Label): TextReflowU => TextReflowU = _ match {
+  def addLabel(l: Label): TextReflow => TextReflow = tr => fixf(tr.unFix match {
     case f @ Flow(ls, as)    => f.copy(labels = ls + l)
     case f @ Labeled(ls, s)  => f.copy(labels = ls + l)
     case r                   => labeled(l, fixf(r)).unFix
-  }
+  })
 
   import utils.SlicingAndDicing._
 

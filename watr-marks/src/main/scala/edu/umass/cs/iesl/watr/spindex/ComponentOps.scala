@@ -80,6 +80,10 @@ object ComponentOperations {
 
     def hasLabel(l: Label): Boolean = theComponent.getLabels.contains(l)
 
+    def hasAnyLabel(ls: Label*): Boolean = {
+      ls.exists(theComponent.hasLabel(_))
+    }
+
     def vdist(other: Component): Double = {
       other.bounds.bottom - theComponent.bounds.bottom
 
@@ -212,7 +216,6 @@ object ComponentOperations {
 
     def labelSuperAndSubscripts(): Unit = {
       vtrace.trace(begin("labelSuperAndSubscripts()"))
-      // vtrace.trace("Starting Tree" withInfo VisualLine.renderRoleTree(theComponent))
 
       val tops = findCommonToplines()
       val bottoms = findCommonBaselines()
@@ -243,7 +246,8 @@ object ComponentOperations {
           val cctr = atom.bounds.toCenterPoint
           val cbottom = atom.bounds.bottom
           val supSubTolerance = theComponent.bounds.height / 20.0
-          vtrace.trace(s"checking sup/sub, tol:${supSubTolerance}" withInfo PageAtom.boundsBox(atom))
+
+          // vtrace.trace(s"checking sup/sub, tol:${supSubTolerance.pp}" withInfo PageAtom.boundsBox(atom))
 
           if (atom.bounds.bottom < superScriptLowerLimit) {
             vtrace.trace((message(s"sup")))
@@ -254,27 +258,10 @@ object ComponentOperations {
           } else {
             LB.CenterScript
           }
-
-
-          // if (atom.bounds.top < modalTop && atom.bounds.bottom > modalBottom) {
-          //   vtrace.trace((message(s"big char")))
-          //   LB.CenterScript
-          // } else if (atom.bounds.bottom.eqFuzzy(supSubTolerance)(modalBottom)) {
-          //   vtrace.trace((message(s"atom.bottom ~= modalBottom")))
-          //   LB.CenterScript
-          // } else if (atom.bounds.bottom < modalCenterY) {
-          //   vtrace.trace((message(s"sup")))
-          //   LB.Sup
-          // } else {
-          //   vtrace.trace((message(s"sub")))
-          //   LB.Sub
-          // }
         }
 
         val labelSpans = supOrSubList.groupByPairs({(l1, l2) => l1 == l2 })
           .map({lls => lls.head})
-
-        // vtrace.trace((message(s"label spans = ${labelSpans}")))
 
         val supSubRegions = textSpan
           .groupAtomsIf({(atom1, atom2, pairIndex) =>
@@ -411,19 +398,20 @@ object ComponentOperations {
         theComponent.addLabel(LB.TokenizedLine)
 
         vtrace.trace(begin("Tokenize Line"), focusOn(theComponent.targetRegion))
-        vtrace.trace(message(s"Line chars: ${theComponent.chars}"))
+
+        // vtrace.trace(message(s"Line chars: ${theComponent.chars}"))
 
         labelSuperAndSubscripts()
         // Structure is: VisualLine/TextSpan/[TextSpan[sup/sub/ctr]]
         // Group each TextSpan w/sup/sub/ctr-script label into tokens
         theComponent.getChildren(LB.TextSpan)
-          .filterNot(_.getLabels
-            .intersect( Set(LB.CenterScript, LB.Sub, LB.Sup) )
-            .isEmpty)
+          .filter(_.hasAnyLabel(LB.CenterScript, LB.Sub, LB.Sup))
           .foreach{ _.groupTokens() }
 
+        theComponent.addLabel(LB.Tokenized)
+
         // Now figure out how the super/sub/normal text spans should be joined together token-wise
-        // vtrace.trace("Tree after Tokenization" withInfo VisualLine.renderRoleTree(theComponent))
+        // vtrace.trace("Tree after _.groupTokens()" withInfo VisualLine.renderRoleTree(theComponent))
 
         theComponent.ungroupChildren(LB.TextSpan)({c =>
           if (c.hasLabel(LB.Sup) || c.hasLabel(LB.Sub)) {
@@ -432,6 +420,8 @@ object ComponentOperations {
           c.hasLabel(LB.CenterScript)
         })
 
+        // vtrace.trace("Tree after ungroupChildren()" withInfo VisualLine.renderRoleTree(theComponent))
+
         // TODO don't compute this multiple times
         val splitValue = guessWordbreakWhitespaceThreshold()
 
@@ -439,25 +429,26 @@ object ComponentOperations {
           {(c1, c2, pairIndex) =>
             val pairwiseDist = c2.bounds.left - c1.bounds.right
 
-            vtrace.trace("token grouping" withInfo vcat(Seq(
-              hcat(center1)(Seq(PageAtom.boundsBox(c1) + " <-> " + PageAtom.boundsBox(c2))),
-              s"""|  pairwisedist: ${pairwiseDist.pp}  east-west dist: ${pairwiseDist.pp}
-                  |  split value: ${splitValue},
-                  |  Will split? : ${pairwiseDist < splitValue}
-                  |""".stripMargin.mbox
-            )))
+            // vtrace.trace("token grouping" withInfo vcat(Seq(
+            //   hcat(center1)(Seq(PageAtom.boundsBox(c1) + " <-> " + PageAtom.boundsBox(c2))),
+            //   s"""|  pairwisedist: ${pairwiseDist.pp}  east-west dist: ${pairwiseDist.pp}
+            //       |  split value: ${splitValue},
+            //       |  Will split? : ${pairwiseDist < splitValue}
+            //       |""".stripMargin.mbox
+            // )))
 
             pairwiseDist < splitValue
           },{(region, regionIndex) =>
             region.addLabel(LB.Token)
           }
         )
+        // vtrace.trace("Tree after regrouping tokens" withInfo VisualLine.renderRoleTree(theComponent))
 
         theComponent.ungroupChildren(LB.TextSpan)({c =>
           c.getChildren(LB.TextSpan).length == 1
         })
 
-        vtrace.trace("Tree after ungrouping TextSpans" withInfo VisualLine.renderRoleTree(theComponent))
+        // vtrace.trace("Tree after Final ungrouping " withInfo VisualLine.renderRoleTree(theComponent))
 
         val maybeReflow = VisualLine.toTextReflow(theComponent)
 

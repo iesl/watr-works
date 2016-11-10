@@ -229,9 +229,9 @@ class DocumentSegmenter(
         .sliding(2).toSeq
         .map({
           case Seq(a1, a2) =>
-            val a1Left = a1.bounds.toPoint(CDir.SW).y
-            val a2Left = a2.bounds.toPoint(CDir.SW).y
-            val vdist = math.abs(a1Left - a2Left)
+            val upperLowerLeft = a1.bounds.toPoint(CDir.SW).y
+            val lowerTopLeft = a2.bounds.toPoint(CDir.NW).y
+            val vdist = math.abs(lowerTopLeft-upperLowerLeft)
             vdist
 
           case Seq(a1) => -1
@@ -244,10 +244,7 @@ class DocumentSegmenter(
       .headOption
       .getOrElse(12.0)
 
-    pageSegAccum.copy(docWideModalVerticalLineDist = modalVDist)
-
-
-
+    pageSegAccum = pageSegAccum.copy(docWideModalVerticalLineDist = modalVDist)
   }
 
   val leftBinHistResolution = 1.0d
@@ -278,8 +275,30 @@ class DocumentSegmenter(
         c.atoms.map(_.id.unwrap).min
       }
 
-      val groupedBlocks = page
+      var lineGrouping = Grid.widthAligned(
+        (4, AlignLeft),  // join indicator
+        (7, AlignRight), // left
+        (7, AlignRight), // height
+        (1, AlignRight), // spacing
+        (80, AlignLeft)  // text
+      )
+
+      val sortedBlocks = page
         .sortBy(minAtomId(_))
+
+      vtrace.ifTrace({
+        sortedBlocks.headOption.foreach { line =>
+          lineGrouping = lineGrouping.addRow(
+            "+++",
+            line.left.pp,
+            line.height.pp,
+            " ",
+            line.getTextReflow.map(_.toText.box).getOrElse("?")
+          )
+        }
+      })
+
+      val groupedBlocks = sortedBlocks
         .groupByPairs({ case (line1, line2) =>
 
 
@@ -305,65 +324,85 @@ class DocumentSegmenter(
 
           val areGrouped = linesAreClustered && similarLineHeights && !largeVerticalJump
 
-          val g = if (areGrouped) "+" else "-/-"
-
-          vtrace.trace(message(
-            s"""|   $g${line1.getTextReflow.map(_.toText).getOrElse("?")}
-                |   $g${line2.getTextReflow.map(_.toText).getOrElse("?")}
-                |     l1.left: ${line1.left}     .height: ${h1}
-                |     l2.left: ${line2.left}     .height: ${h2}
-                |     similarHeights=${similarLineHeights}, verticalJum=${verticalJump}, largeVerticalJump=${largeVerticalJump}
-                |""".stripMargin
-          ))
+          vtrace.ifTrace({
+            lineGrouping = lineGrouping.addRow(
+              if (areGrouped) "  |" else "+++",
+              line2.left.pp, h2.pp,
+              " ",
+              line2.getTextReflow.map(_.toText.box).getOrElse("?")
+            )
+          })
 
           areGrouped
         })
 
       vtrace.trace({
-        val blocks = groupedBlocks.map{ block =>
-          block.map(VisualLine.toTextReflow(_).map(_.toText()).getOrElse("<no text>"))
-            .mkString("Block\n    ", "\n    ", "\n")
-        }
-        val allBlocks = blocks.mkString("\n  ", "\n  ", "\n")
-
-        message(allBlocks)
+        "block structure" withInfo lineGrouping.toBox()
       })
+
       groupedBlocks
     }
 
     vtrace.trace(end("findLeftAlignedBlocksPerPage"))
 
     alignedBlocksPerPage
-
   }
 
   def splitBlocksWithLargeVGaps(
-    alignedBlocksPerPage: Seq[Seq[Seq[Component]]],
-    modalVDist: Double
+    alignedBlocksPerPage: Seq[Seq[Seq[Component]]]
   ): Seq[Seq[Seq[Component]]] = {
+    val modalVDist = pageSegAccum.docWideModalVerticalLineDist
     val maxVDist = modalVDist * 1.4d
     // One last pass through block to split over-large vertical line jumps
     for {
       blocksOnPage <- alignedBlocksPerPage
-    } yield for {
-      block       <- blocksOnPage
-      blockPart   <- block.splitOnPairs({ case (block1, block2) =>
-        val b1BottomY = block1.bounds.toPoint(CDir.S).y
-        val b2TopY = block2.bounds.toPoint(CDir.N).y
-        val vdist = b2TopY - b1BottomY
-        vdist > maxVDist
-      })
-    } yield blockPart
+    } yield {
+      // var lineGrouping = Grid.widthAligned(
+      //   (4, AlignLeft),  // join indicator
+      //   (7, AlignRight), // left
+      //   (7, AlignRight), // height
+      //   (1, AlignRight), // spacing
+      //   (80, AlignLeft)  // text
+      // )
+
+      val splitBlocks = for {
+        block       <- blocksOnPage
+        blockPart   <- block.splitOnPairs({ case (block1, block2) =>
+          val b1BottomY = block1.bounds.toPoint(CDir.S).y
+          val b2TopY = block2.bounds.toPoint(CDir.N).y
+          val vdist = b2TopY - b1BottomY
+          val willSplit = vdist > maxVDist
+          vtrace.traceIf(willSplit)(message(
+            s"splitting TextBlock at w/vdist=${vdist.pp} : ${block1.bounds} / ${block2.bounds} "
+          ))
+
+          willSplit
+        })
+      } yield blockPart
+
+      splitBlocks
+    }
 
   }
 
-  import BioLabeling._
 
   def joinTextblockReflow(textBlockRegion: Component): Unit = {
-    val visualLines = textBlockRegion.getChildren(LB.VisualLine)
-      .flatMap(c => c.getTextReflow)
+    // println("joinTextblockReflow")
+    // println(VisualLine.renderRoleTree(textBlockRegion))
+    val visualLines = for {
+      vline       <- textBlockRegion.getChildren(LB.VisualLine)
+      textReflow  <- vline.getTextReflow
+    } yield textReflow
+
+
     val joined = visualLines.reduce { joinTextLines(_, _) }
     textBlockRegion.setTextReflow(joined)
+
+    vtrace.trace("Text Block TextReflow" withInfo {
+      s"Joining ${visualLines.length} VisualLines".box atop
+      joined.toText().box
+      // (joined.toText().box atop prettyPrintTree(joined))
+    })
   }
 
   def findTextBlocksPerPage(): Seq[RegionComponent] = {
@@ -373,7 +412,7 @@ class DocumentSegmenter(
 
     findDocWideModalLineVSpacing(alignedBlocksPerPage)
 
-    val finalBlockStructure = splitBlocksWithLargeVGaps(alignedBlocksPerPage, pageSegAccum.docWideModalVerticalLineDist)
+    val finalBlockStructure = splitBlocksWithLargeVGaps(alignedBlocksPerPage)
 
     val pages = for {
       pageBlocks <- finalBlockStructure
@@ -801,99 +840,101 @@ class DocumentSegmenter(
 
   def labelAbstract(): Unit = {
     vtrace.trace(begin("LabelAbstract"))
-    // find the word "abstract" in some form, then,
-    // if the text block containing "abstract" is a single line,
-    //    take subsequent text blocks until we take a multiline
-    // else if the text block is multi-line, take that block to be the entire abstract
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
-    val blocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
 
-    vtrace.trace(message(s"TextBlock count: ${blocks.length}"))
+    // // find the word "abstract" in some form, then,
+    // // if the text block containing "abstract" is a single line,
+    // //    take subsequent text blocks until we take a multiline
+    // // else if the text block is multi-line, take that block to be the entire abstract
+    // val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    // val blocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
 
-    val maybeLookingAtAbstract = blocks.dropWhile { tblines =>
-      tblines.headOption.exists { l1 =>
-        val lineComp = l1.component
-        val lineText = lineComp.chars
-        val isAbstractHeader =  """^(?i:(abstract|a b s t r a c t))""".r.findAllIn(lineText).length > 0
-          !isAbstractHeader
-      }
-    }
+    // vtrace.trace(message(s"TextBlock count: ${blocks.length}"))
 
-
-    if (maybeLookingAtAbstract.length > 0) {
-      val firstBlockIsMultiline = maybeLookingAtAbstract.headOption.exists(_.length > 1)
-      if (firstBlockIsMultiline) {
-        // label this as the abstract
-        maybeLookingAtAbstract.headOption.foreach { abs =>
-          zoneIndexer.addBioLabels(LB.Abstract, abs)
-
-          vtrace.trace("Found Abstract in multi-line block" withTrace
-            all(abs.map(b => showComponent(b.component))))
-        }
-      } else {
-        val singleLines = maybeLookingAtAbstract.takeWhile { tblines =>
-          tblines.length == 1
-        }
-        val absBlock = maybeLookingAtAbstract.drop(singleLines.length).headOption.getOrElse(Seq())
-        val totalABs = singleLines :+ absBlock
-
-        zoneIndexer.addBioLabels(LB.Abstract, totalABs.flatten)
-
-        vtrace.trace("Found Abstract in single-line block" withTrace all(
-          totalABs.flatMap(_.map(b => showComponent(b.component)))
-        ))
+    // val maybeLookingAtAbstract = blocks.dropWhile { tblines =>
+    //   tblines.headOption.exists { l1 =>
+    //     val lineComp = l1.component
+    //     val lineText = lineComp.chars
+    //     val isAbstractHeader =  """^(?i:(abstract|a b s t r a c t))""".r.findAllIn(lineText).length > 0
+    //       !isAbstractHeader
+    //   }
+    // }
 
 
-      }
-    } else {
-      // println("abstract is unlabled")
-      // abstract is unlabled, look for the first multi-line text block before the intro?
-      var found = false
-      val allBlocksBeforeIntro = blocks.takeWhile { tblines =>
-        tblines.headOption.exists { l1 =>
-          // l1 is a BioNode
-          val lineComp = l1.component
-          val lineText = lineComp.chars
-          //todo: might accidentally mistake title for introduction - throwing out multi-work lines to fix this
-          val isIntroHeader =
-          {"""introduction""".r.findAllIn(lineText.toLowerCase).length > 0 && lineText.split(" ").length == 1}
-          if(isIntroHeader){
-            //println("found intro header")
-            found = true
-          }
-          !isIntroHeader
-        }
-      }
-      // todo: fix so that it checks for other labels
-      // todo: handle case where the intro isn't labeled either (should we attempt to label things in this case?)
-      // find first multiline block before intro and label it as abstract, if it has no other labelings
-      if (found && allBlocksBeforeIntro.length > 0) {
-        //todo: this is for testing, remove eventually
-        allBlocksBeforeIntro.foreach(block => {
-          //block.foreach(node => println(node.component.toText))
-          //println
-        })
+    // if (maybeLookingAtAbstract.length > 0) {
+    //   val firstBlockIsMultiline = maybeLookingAtAbstract.headOption.exists(_.length > 1)
+    //   if (firstBlockIsMultiline) {
+    //     // label this as the abstract
+    //     maybeLookingAtAbstract.headOption.foreach { abs =>
+    //       zoneIndexer.addBioLabels(LB.Abstract, abs)
 
-        val lastMultilineBeforeIntro = allBlocksBeforeIntro.lastIndexWhere(_.length > 3)
-        if (lastMultilineBeforeIntro != -1) {
-          // label this as the abstract
-          allBlocksBeforeIntro.get(lastMultilineBeforeIntro).foreach { abs =>
-            zoneIndexer.addBioLabels(LB.Abstract, abs)
-            //println("labeling as part of abstract: " + abs.component.toText)
-            // vtrace.trace(
-            //   vtrace.link(
-            //     vtrace.all(
-            //       abs.map(b => vtrace.showComponent(b.component))
-            //     ),
-            //     vtrace.showLabel(LB.Abstract)
-            //   )
-            // )
+    //       vtrace.trace("Found Abstract in multi-line block" withTrace
+    //         all(abs.map(b => showComponent(b.component))))
+    //     }
+    //   } else {
+    //     val singleLines = maybeLookingAtAbstract.takeWhile { tblines =>
+    //       tblines.length == 1
+    //     }
+    //     val absBlock = maybeLookingAtAbstract.drop(singleLines.length).headOption.getOrElse(Seq())
+    //     val totalABs = singleLines :+ absBlock
+
+    //     zoneIndexer.addBioLabels(LB.Abstract, totalABs.flatten)
+
+    //     vtrace.trace("Found Abstract in single-line block" withTrace all(
+    //       totalABs.flatMap(_.map(b => showComponent(b.component)))
+    //     ))
 
 
-          }
-        }
-      }
-    }
+    //   }
+    // } else {
+    //   // println("abstract is unlabled")
+    //   // abstract is unlabled, look for the first multi-line text block before the intro?
+    //   var found = false
+    //   val allBlocksBeforeIntro = blocks.takeWhile { tblines =>
+    //     tblines.headOption.exists { l1 =>
+    //       // l1 is a BioNode
+    //       val lineComp = l1.component
+    //       val lineText = lineComp.chars
+    //       //todo: might accidentally mistake title for introduction - throwing out multi-work lines to fix this
+    //       val isIntroHeader =
+    //       {"""introduction""".r.findAllIn(lineText.toLowerCase).length > 0 && lineText.split(" ").length == 1}
+    //       if(isIntroHeader){
+    //         //println("found intro header")
+    //         found = true
+    //       }
+    //       !isIntroHeader
+    //     }
+    //   }
+    //   // todo: fix so that it checks for other labels
+    //   // todo: handle case where the intro isn't labeled either (should we attempt to label things in this case?)
+    //   // find first multiline block before intro and label it as abstract, if it has no other labelings
+    //   if (found && allBlocksBeforeIntro.length > 0) {
+    //     //todo: this is for testing, remove eventually
+    //     allBlocksBeforeIntro.foreach(block => {
+    //       //block.foreach(node => println(node.component.toText))
+    //       //println
+    //     })
+
+    //     val lastMultilineBeforeIntro = allBlocksBeforeIntro.lastIndexWhere(_.length > 3)
+    //     if (lastMultilineBeforeIntro != -1) {
+    //       // label this as the abstract
+    //       allBlocksBeforeIntro.get(lastMultilineBeforeIntro).foreach { abs =>
+    //         zoneIndexer.addBioLabels(LB.Abstract, abs)
+    //         //println("labeling as part of abstract: " + abs.component.toText)
+    //         // vtrace.trace(
+    //         //   vtrace.link(
+    //         //     vtrace.all(
+    //         //       abs.map(b => vtrace.showComponent(b.component))
+    //         //     ),
+    //         //     vtrace.showLabel(LB.Abstract)
+    //         //   )
+    //         // )
+
+
+    //       }
+    //     }
+    //   }
+    // }
+
     vtrace.trace(end("LabelAbstract"))
   }
 
