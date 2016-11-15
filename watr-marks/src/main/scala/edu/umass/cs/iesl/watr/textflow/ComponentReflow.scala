@@ -4,16 +4,14 @@ package textflow
 import matryoshka._ ,  Recursive.ops._, FunctorT.ops._
 import matryoshka.data._
 
-import spindex.AtomicComponent
-
 object ComponentReflow {
 
   import TextReflowF._
-  // import TextReflow._
   val TR = TextReflow
   import watrmarks.{StandardLabels => LB}
 
   import TR._
+
   val BracketTexFormatting: TextReflowU => TextReflowU = {
     case l @ Labeled (labels, a)     =>
       if (l.hasLabel(LB.Sup))      { Bracket("^{", "}",  a) }
@@ -26,7 +24,7 @@ object ComponentReflow {
 
   def evalFlatText(t: TextReflowF[(TextReflow, String)]): String = {
     t match {
-      case Atom    (ac)                    => ac.asInstanceOf[AtomicComponent].chars
+      case Atom    (ac, ops)               => ops.toString
       case Insert  (value)                 => s"$value"
       case Rewrite ((from, attr), to)      => s"$to"
       case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
@@ -34,15 +32,6 @@ object ComponentReflow {
       case Labeled (labels, (a, attr))     => s"${attr}"
     }
   }
-
-  // def evalFormattedText(t: TextReflowF[(TextReflow, String)]): String = t match {
-  //   case Atom    (ac)                    => ac.asInstanceOf[AtomicComponent].chars
-  //   case Insert  (value)                 => s"$value"
-  //   case Rewrite ((from, attr), to)      => s"$to"
-  //   case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
-  //   case Flow    (labels, atomsAndattrs) => s"""${atomsAndattrs.map(_._2).mkString}"""
-  //   case Labeled (labels, (a, attr))     => s"${attr}"
-  // }
 
   implicit class RicherComponentReflow(val theReflow: TR.TextReflow) extends AnyVal  {
 

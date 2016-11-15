@@ -12,7 +12,7 @@ trait LibVersions {
   val scalaModulesVersion = "1.0.4"
   val akkaVersion         = "2.3.14"
   val streamsVersion      = "1.0"
-  val scalatestVersion    = "3.0.0"
+  val scalatestVersion    = "3.0.1"
   val logbackVersion      = "1.7.21"
   val quasiquotesVersion  = "2.0.1"
   val guavaVersion        = "18.0"
@@ -62,7 +62,7 @@ object CommonLibs extends LibVersions {
   val scalazCore       = "org.scalaz"              %% "scalaz-core"      % scalazVersion
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   val scalatags        = "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion
-  val ammonite         = "com.lihaoyi"              % "ammonite"         % "0.7.8" cross CrossVersion.full
+  val ammonite         = "com.lihaoyi"              % "ammonite"         % "0.8.0" cross CrossVersion.full
   val fastparse        = "com.lihaoyi"             %% "fastparse"        % "0.4.2"
   val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.9"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
@@ -105,11 +105,11 @@ object ThisBuildDefault {
     shellPrompt in ThisBuild := colorPrompt,
 
     autoCompilerPlugins in ThisBuild := true,
+
     // addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
+    // addCompilerPlugin("org.spire-math" %% "kind-projector"  % "0.8.0"),
 
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
-
-    // todosTags in ThisBuild := Set("FIXME", "TODO", "WIP", "XXX", "\\?\\?\\?"),
 
     scalacOptions in ThisBuild ++= Seq(
       "-encoding", "UTF-8",

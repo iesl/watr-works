@@ -23,7 +23,6 @@ import utils.VisualTracer._
 import utils.EnrichNumerics._
 import SlicingAndDicing._
 import textflow.ComponentReflow._
-import textflow.TextReflow._
 
 import scala.collection.mutable
 
@@ -394,8 +393,7 @@ class DocumentSegmenter(
       textReflow  <- vline.getTextReflow
     } yield textReflow
 
-
-    val joined = visualLines.reduce { joinTextLines(_, _) }
+    val joined = visualLines.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
     textBlockRegion.setTextReflow(joined)
 
     vtrace.trace("Text Block TextReflow" withInfo {
@@ -489,59 +487,6 @@ class DocumentSegmenter(
       .map(t => t.toText().box).getOrElse("<could not render>".box)
   }
 
-  lazy val dict = utils.EnglishDictionary.global
-
-  def joinTextLines(line1: TextReflow, line2: TextReflow): TextReflow = {
-
-    val line1Text = line1.toText()
-    val line2Text = line2.toText()
-
-    val lineMinLenReq = line1Text.length > 10 // magic # for minimum line length
-    // val hasNonLetterPrefix = line1.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
-    val endsWithDash = line1Text.lastOption.exists(_ == '-')
-    val isBrokenWord = endsWithDash && lineMinLenReq  // && !hasNonLetterPrefix
-
-    // vtrace.trace("Broken word joined:" withInfo(word))
-    // vtrace.trace("Broken word hyphenated:" withInfo(s"${w1}-${w2}"))
-
-    def dehyphenate(): TextReflow = {
-      // TODO overwrite the '-'
-      // line1.atTextPosition(line1.length){reflow =>
-      //   rewrite(reflow, "")
-      // }
-      join("")(line1, line2)
-    }
-    def concat(): TextReflow = {
-      join("")(line1, line2)
-    }
-
-    if (isBrokenWord) {
-      val wordHalfFirst = line1Text.split(" ").lastOption
-      val wordHalfSecond =  line2Text.split(" ").headOption
-      (wordHalfFirst, wordHalfSecond) match {
-        case (Some(firstHalf), Some(secondHalf)) =>
-          val w1 = firstHalf.dropRight(1)
-          val w2 = secondHalf.reverse.dropWhile(!_.isLetter).reverse
-          val w2Extra = secondHalf.reverse.takeWhile(!_.isLetter).reverse
-
-          val word = w1 + w2
-          if (dict.contains(word)) {
-            dehyphenate()
-          } else if (dict.contains(w1) && dict.contains(w2)) {
-            concat()
-          } else {
-            dehyphenate()
-          }
-        case _ =>
-          vtrace.trace(message(s"warning: couldn't find broken word continuation"))
-          dehyphenate()
-      }
-    } else {
-      join(" ")(line1, line2)
-    }
-  }
-
-  // def joinLinesAcrossPages(pages: Seq[RegionComponent]): Unit = {}
 
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)

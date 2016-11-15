@@ -124,7 +124,8 @@ object ComponentRendering {
 
         case LB.PageAtom =>
           val ac = cc.asInstanceOf[AtomicComponent]
-          atom(ac).some
+          val ops = new textflow.TextReflowAtomOps(ac.chars)
+          atom(ac, ops).some
 
         case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
       }

@@ -15,7 +15,7 @@ class StringReflowTestUtil extends ConnectedComponentTestUtil {
   def toAtoms(s: String): List[TextReflow] = {
     s.toList.map(_ match {
       case ' ' => space()
-      case c   => atom(c)
+      case c   => atom(c, new TextReflowAtomOps(Seq(c)))
     })
   }
 
@@ -36,7 +36,7 @@ class StringReflowTestUtil extends ConnectedComponentTestUtil {
 
     val tr0 = everyLabel(LB.VisualLine, textFlow)(reflow =>{
       groupByPairs(reflow.unFix)({
-        case (Atom(a), Atom(b), i) => true
+        case (Atom(a, aops), Atom(b, bops), i) => true
         case qq => false
       }, onGrouped = {groups =>
 

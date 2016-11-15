@@ -26,7 +26,9 @@ val commonDeps = LogLibs.logback ++
     Lib.fastparse,
     Lib.playJson,
     Lib.scopt,
-    Lib.shapeless
+    Lib.shapeless,
+    compilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
+    compilerPlugin("org.spire-math" %% "kind-projector"  % "0.9.3")
   )
 
 

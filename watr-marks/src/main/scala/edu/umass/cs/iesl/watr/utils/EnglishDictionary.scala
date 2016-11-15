@@ -6,6 +6,9 @@ object EnglishDictionary {
   import java.io.BufferedInputStream
   import java.util.zip.GZIPInputStream
 
+  def fromWords(words: String*): EnglishDictionary = {
+    new EnglishDictionary(words.toSet)
+  }
 
   def apply(): EnglishDictionary = {
     val inputStream = new GZIPInputStream(new BufferedInputStream(this.getClass.getResourceAsStream("/eng-dict.txt.gz")))

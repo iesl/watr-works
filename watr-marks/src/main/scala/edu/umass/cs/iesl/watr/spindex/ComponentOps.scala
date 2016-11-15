@@ -12,7 +12,7 @@ import utils.{CompassDirection => Compass}
 import utils.VisualTracer, VisualTracer._
 import spindex.GeometricFigure._
 import scala.collection.mutable
-import ComponentRendering.PageAtom
+// import ComponentRendering.PageAtom
 import utils.EnrichNumerics._
 import ComponentRendering.VisualLine
 
@@ -20,7 +20,58 @@ import ComponentRendering.VisualLine
 
 object ComponentOperations {
   import textflow.ComponentReflow._
+  import textflow.TextReflow._
+  import utils.EnglishDictionary
 
+  def joinTextLines(line1: TextReflow, line2: TextReflow)(dict: EnglishDictionary): TextReflow = {
+
+    val line1Text = line1.toText()
+    val line2Text = line2.toText()
+
+    val lineMinLenReq = line1Text.length > 10 // magic # for minimum line length
+    // val hasNonLetterPrefix = line1.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
+    val endsWithDash = line1Text.lastOption.exists(_ == '-')
+    val isBrokenWord = endsWithDash && lineMinLenReq  // && !hasNonLetterPrefix
+
+    // vtrace.trace("Broken word joined:" withInfo(word))
+    // vtrace.trace("Broken word hyphenated:" withInfo(s"${w1}-${w2}"))
+
+    def dehyphenate(): TextReflow = {
+
+      // TODO overwrite the '-'
+      // line1.atTextPosition(line1.length){reflow =>
+      //   rewrite(reflow, "")
+      // }
+      join("")(line1, line2)
+    }
+    def concat(): TextReflow = {
+      join("")(line1, line2)
+    }
+
+    if (isBrokenWord) {
+      val wordHalfFirst = line1Text.split(" ").lastOption
+      val wordHalfSecond =  line2Text.split(" ").headOption
+      (wordHalfFirst, wordHalfSecond) match {
+        case (Some(firstHalf), Some(secondHalf)) =>
+          val w1 = firstHalf.dropRight(1)
+          val w2 = secondHalf.reverse.dropWhile(!_.isLetter).reverse
+          val w2Extra = secondHalf.reverse.takeWhile(!_.isLetter).reverse
+
+          val word = w1 + w2
+          if (dict.contains(word)) {
+            dehyphenate()
+          } else if (dict.contains(w1) && dict.contains(w2)) {
+            concat()
+          } else {
+            dehyphenate()
+          }
+        case _ =>
+          dehyphenate()
+      }
+    } else {
+      join(" ")(line1, line2)
+    }
+  }
 
 
   def centerX(cb: PageAtom) = cb.region.bbox.toCenterPoint.x
@@ -495,5 +546,5 @@ object ComponentOperations {
     def getTextReflow(): Option[TextReflow]= {
       theComponent.zoneIndex.getTextReflow(theComponent.id)
     }
-  }
+  } // RicherComponent
 }
