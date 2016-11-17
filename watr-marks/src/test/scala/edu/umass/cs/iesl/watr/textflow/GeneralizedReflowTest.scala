@@ -3,23 +3,16 @@ package textflow
 
 
 import watrmarks.{StandardLabels => LB}
-  // import watrmarks.{StandardLabels => LB, Labeler}
 
 class GeneralizedReflowTest extends StringReflowTestUtil {
   import TextReflow._
-  import TextReflowF._
-  // import ComponentReflow._
-  import scalaz._
-  import Scalaz._
+  // import TextReflowF._
   import matryoshka._
   import matryoshka.data._
-  // import Recursive.ops._
-  // import TraverseT.ops._
-  // import ShowT.ops._
-  // import FunctorT.ops._
-  // import matryoshka.data.cofree._
 
 
+  import scalaz._, Scalaz._
+  import TextReflowOps._
 
 
   behavior of "component reflowing"

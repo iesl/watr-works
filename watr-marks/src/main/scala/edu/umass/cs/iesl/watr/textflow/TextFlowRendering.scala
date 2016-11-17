@@ -191,7 +191,4 @@ object TextFlowRendering {
 
   }
 
-  // implicit class RicherReflow(val theReflow: Reflow) extends AnyVal {
-  //   def text: String = toText(theReflow)
-  // }
 }

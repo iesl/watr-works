@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package textflow
 
-import spindex._
 import watrmarks._
 import textboxing.{TextBoxing => TB}
 
@@ -9,13 +8,11 @@ import scalaz._, Scalaz.{fix => _, _}
 
 import matryoshka._
 import matryoshka.data._
-// import matryoshka.data.cofree._
 
 import Recursive.ops._
 // import Corecursive.ops._
-// import TraverseT.ops._
-// import ShowT.ops._
 import FunctorT.ops._
+import utils.Ranges
 
 
 class TextReflowAtomOps(
@@ -28,7 +25,8 @@ class TextReflowAtomOps(
 sealed trait TextReflowF[+A]
 
 object TextReflowF {
-  case class Atom[T](c: T, ops: TextReflowAtomOps)        extends TextReflowF[Nothing]
+  // case class Atom[T](c: T, ops: TextReflowAtomOps)        extends TextReflowF[Nothing]
+  case class Atom(c: Any, ops: TextReflowAtomOps)        extends TextReflowF[Nothing]
   case class Insert(value: String)                        extends TextReflowF[Nothing]
   case class Rewrite[A](from: A, to: String)              extends TextReflowF[A]
   case class Bracket[A](pre: String, post: String, a: A)  extends TextReflowF[A]
@@ -50,12 +48,13 @@ object TextReflowF {
     def apply[A](show: Show[A]) = Show.show {
       case Atom(c, ops)               => ops.toString
       case Insert(value)              => s"+'$value'"
-      case Rewrite(from, to)          => s"-+'${to}"
+      case Rewrite(from, to)          => s"-+'${to}'"
       case Bracket(pre, post, a)      => s"""${pre}`${a.toString}`{post} """
       case Flow(ls, atoms)            => s"""flow${ls.mkString(":#", " #", "")}"""
       case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
     }
   }
+
 
 }
 
@@ -119,7 +118,6 @@ object TextReflow {
 
     }
   }
-
 
   def hasLabel(l: Label): TextReflowU => Boolean = _ match {
     case Labeled(labels, _) if labels.contains(l) => true
@@ -190,170 +188,20 @@ object TextReflow {
     flows(bs)
   }
 
-  implicit class RicherReflowU(val theReflow: TextReflowU) extends AnyVal  {
 
-    def hasLabel(l: Label): Boolean = theReflow match {
-      case Labeled(labels, _) if labels.contains(l) => true
-      case _ => false
-    }
-  }
+  implicit object RangesInts extends Monoid[Ranges.Ints] with Show[Ranges.Ints] with Equal[Ranges.Ints] with Order[Ranges.Ints] with IsEmpty[Lambda[a => Ranges.Ints]] {
+    import Ranges.Ints
 
-  // def countX[T[_[_]]: Recursive, F[_]: Functor: Foldable](form: T[F]): GAlgebra[(T[F], ?), F, Int] =
-  //   e => e.foldRight(if (e ∘ (_._1) == form.project) 1 else 0)(_._2 + _)
-
-  // // Evaluate as usual, but trap 0*0 as a special case
-  // def peval[T[_[_]]: Recursive](t: Exp[(T[Exp], Int)]): Int = t match {
-  //   case Mul((Embed(Num(0)), _), (Embed(Num(0)), _)) => -1
-  //   case Mul((_,             x), (_,             y)) => x * y
-  //   case Num(x)                                      => x
-  //   case _                                           => Predef.???
-  // }
-
-  def countChars: TextReflow => Int = tr => {
-
-    val res =tr.project match {
-      case Atom(c, ops)               => ops.toString.length
-      case Insert(value)              => value.length
-      case Rewrite(from, to)          => to.length
-      case Bracket(pre, post, a)      => pre.length + post.length
-      case Flow(ls, atoms)            => 0
-      case Labeled(ls, _)             => 0
-      case _ =>
-        println(s"""ERR: countChars: ${tr} => ?  """)
-        0
-    }
-    println(s"""countChars: ${tr} => $res """)
-
-    res
-  }
-
-  def charCount(fw: TextReflowF[(TextReflow, Int)]): Int = {
-    fw.map(e=>countChars(e._1)).suml
-  }
-
-  def charCount2(fw: TextReflowF[(TextReflow, Int)]): Int = {
-    fw.map(e=>countChars(e._1)).suml
-  }
-
-  def countAtoms: GAlgebra[(TextReflow, ?), TextReflowF, Int] = {
-    trF => trF.foldRight({
-      val res = charCount(trF)
-      println(s"foldRight z @ ${trF}: $res")
-      res
-    })({case z => (z._2 + z._1._2) })
-  }
-
-  def sequential2: (Int, TextReflow) => State[Int, Int] =
-    (_, _) => State.get[Int] <* State.modify[Int](_ + 1)
-
-  def starts(i: Int, t: TextReflowU): State[Int, Int] = {
-    val chars = countChars(t.embed)
-    State.get[Int] <* State.modify[Int](_ + chars)
-  }
-
-  type IRange = (Int, Int)
-
-  def ranges(i: (Int, Int), t: TextReflowU): State[IRange, IRange] = {
-    val chars = countChars(t.embed)
-    println(s"eval ranges(${i}, ${t}) => ${chars}")
-    State.get[IRange] <* State.modify[IRange]({
-      case (rbegin, rlen) => (rbegin+chars, rlen+1)
-    })
-  }
-
-  def hideChar: TextReflow => TextReflow = {tr =>
-    fixf {
-      tr.project match {
-        case a @ Atom(c, ops)  =>
-          println(s"hideChar: Atom: ${a}")
-          Rewrite(fixf(a), "")
-        case f =>
-          println(s"hideChar: pass ${f}")
-          f
-      }
-    }
-  }
-
-
-  implicit class RicherReflow(val theReflow: TextReflow) extends AnyVal  {
-
-
-    // import matryoshka.data.cofree.cofreeRecursive
-    // import matryoshka.data.cofree.cofreeCorecursive
-    // implicitly[Monoid[IRange]]
-    // implicit val RF = implicitly[Recursive[Cofree[?[_], IRange]]]
-    // implicit val CRF = implicitly[Corecursive[Cofree[?[_], IRange]]]
-
-    import matryoshka.FunctorT.recCorecFunctorT
-
-    // implicit def cof = cofreeRecursive
-    // scalaz.Cofree[TextReflowF, Tuple2]
-    // bottom-up transform of cofree:
-    def modifyCharAtom[T](i: Int)(func : TextReflow => TextReflow): TextReflow = {
-      val cRanges: scalaz.Cofree[TextReflowF, IRange] = theReflow.annotateCharRanges
-
-      val CFT = recCorecFunctorT[Cofree[?[_], IRange]]
-
-
-      // // cof: Cofree[TextReflowF, (Int, Int)]
-      // CFT.transCataT(cRanges)({  cof =>
-      //   val charN = cof.head._1
-      //   if (i == charN) {
-      //     cof match {
-      //       case ll @ Cofree(h, t) =>
-      //         t.map({case uio =>
-      //         })
-      //     }
-      //     cof
-      //   } else {
-      //     cof
-      //   }
-      // })
-
-      ???
-    }
-
-    def charCount: Int = {
-      theReflow.para(countAtoms)
-    }
-
-    // def transCataT[F[_]: Functor](t: T[F])(f: T[F] => T[F]): T[F] =
-    //   f(map(t)(_.map(transCataT(_)(f))))
-
-    // type AlgebraicTransform[T[_[_]], F[_], G[_]]               = F[T[G]] => G[T[G]]
-
-    // def transCata[F[_]: Functor, G[_]: Functor](t: T[F])(f: AlgebraicTransform[T, F, G]): T[G] =
-    //   map(t)(ft => f(ft.map(transCata(_)(f))))
-
-
-    def annotateCharRanges(): Cofree[TextReflowF, IRange] = {
-      theReflow.attributeTopDownM[State[IRange, ?], IRange]((0, 0))(ranges).eval((0, 0))
-    }
-
-    def annotateCharLengths(): Cofree[TextReflowF, IRange] = {
-      theReflow.attributeTopDownM[State[IRange, ?], IRange]((9, 9))(ranges).eval((0, 0))
-    }
-
-    def annotateOffsets(): Cofree[TextReflowF, Int] = {
-      theReflow.cata(attributePara(countAtoms))
-    }
-
-    def slice(begin: Int, end:Int): TextReflow = ???
-
-    def targetRegions(): Seq[TargetRegion] = ???
-
-    def intersect(other: TextReflow): TextReflow = ???
-
-    def intersectPage(other: PageIndex): Seq[Component] = {
-      ???
-    }
-
-
-    def clipToTargetRegion(targetRegion: TargetRegion): Option[(TextReflow, Int@@Offset, Int@@Length)] = {
-      ???
-    }
-
-
+    type SA[A] = Ints
+    def append(f1: Ranges.Ints, f2: => Ranges.Ints) = Ints(math.min(f1.min, f2.min), math.max(f1.max, f2.max))
+    def zero: Ranges.Ints = Ranges.Ints(0, 0)
+    override def shows(f: Ranges.Ints): String = s"[${f.min}-${f.max}]"
+    def order(r1: Ranges.Ints, r2: Ranges.Ints) = Ordering.fromLessThan(r1, r2) { (a, b) => a.min < b.min && a.max < b.max }
+    override def equal(x: Ranges.Ints, y: Ranges.Ints) = x.min==y.min && x.max==y.max
+    override def equalIsNatural: Boolean = true
+    def empty[A] = zero
+    def plus[A](f1: SA[A], f2: => SA[A]) = append(f1, f2)
+    def isEmpty[A](s: SA[A]) = equal(s, empty)
   }
 
 }

@@ -1,7 +1,21 @@
 
-WatrWorks is PDF text extraction and analysis system that improves on existing open-source systems in several respects. It improves on the accuracy of character-level extraction, particularly when handling symbols, Greek letters, and other math-related characters. The exact dimensions of the bounding box for each extracted character is calculated, which allows for accurate spatial analysis of layout. Through spatial analysis, text-line formatting is preserved, including super- and sub-scripting, along with column finding and left/right justification. Text is grouped into lines and labeled as paragraphs, section headings, abstracts, and other high-level organizational units. Several output formats are supported, including SVG and JSON.
+WatrWorks is PDF text extraction and analysis system that improves on existing
+open-source systems in several respects. It improves on the accuracy of
+character-level extraction, particularly when handling symbols, Greek letters,
+and other math-related characters. The exact dimensions of the bounding box for
+each extracted character is calculated, which allows for accurate spatial
+analysis of layout. Through spatial analysis, text-line formatting is preserved,
+including super- and sub-scripting, along with column finding and left/right
+justification. Text is grouped into lines and labeled as paragraphs, section
+headings, abstracts, and other high-level organizational units. Several output
+formats are supported, including SVG and JSON.
 
-Our work with MIT has focused on improving text extraction in material science literature. Particular attention is given to chemical formulas, symbols used to express quantities and measures, and labeling sections of text that are of interest. IESL and MIT have coordinated through weekly online meetings, as well as larger group meetings each semester.
+
+Our work with MIT has focused on improving text extraction in material science
+literature. Particular attention is given to chemical formulas, symbols used to
+express quantities and measures, and labeling sections of text that are of
+interest. IESL and MIT have coordinated through weekly online meetings, as well
+as larger group meetings each semester.
 
 
 - TODO create a way to label paper failure w/reasons, for future reference
@@ -72,3 +86,18 @@ for (paras <- paperEntry1.labels(Paragraph)) yield {
   % visualLineText)
 
 }
+
+
+- Features
+
+- Mathematical symbols, Greek
+- Line-based formatting information
+- Simplification of unicode text to a canonical standard
+  + e.g., reduce combining mark + letter to single codepoint: '̂ '+a => â
+  
+- Text alignment tools
+- Spatial alignment tools
+- Labeling 
+  
+ 
+-

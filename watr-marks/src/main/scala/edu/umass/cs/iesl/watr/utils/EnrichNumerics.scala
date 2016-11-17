@@ -6,9 +6,11 @@ import scalaz.@@
 import TypeTags._
 
 
-sealed trait DoubleRange
-object DoubleRange {
-  case class Extent(min: Double, max: Double)
+sealed trait RangeAB
+
+object Ranges {
+  case class Doubles(min: Double, max: Double)
+  case class Ints(min: Int, max: Int)
 }
 
 object EnrichNumerics {
@@ -35,12 +37,12 @@ object EnrichNumerics {
       Percent(theDouble)
     }
 
-    def plusOrMinus(i: Double@@Percent): DoubleRange.Extent = {
+    def plusOrMinus(i: Double@@Percent): Ranges.Doubles ={
       val half = theDouble * i.unwrap
-      DoubleRange.Extent(theDouble-half, theDouble+half)
+      Ranges.Doubles(theDouble-half, theDouble+half)
     }
 
-    def withinRange(r: DoubleRange.Extent): Boolean = {
+    def withinRange(r: Ranges.Doubles): Boolean = {
       r.min <= theDouble && theDouble <= r.max
     }
 

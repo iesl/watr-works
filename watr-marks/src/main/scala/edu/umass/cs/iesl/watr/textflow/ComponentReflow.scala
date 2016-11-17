@@ -4,6 +4,8 @@ package textflow
 import matryoshka._ ,  Recursive.ops._, FunctorT.ops._
 import matryoshka.data._
 
+import TextReflowOps._
+
 object ComponentReflow {
 
   import TextReflowF._
