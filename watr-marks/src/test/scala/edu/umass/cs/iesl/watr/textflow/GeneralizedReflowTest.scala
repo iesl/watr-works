@@ -6,7 +6,6 @@ import watrmarks.{StandardLabels => LB}
 
 class GeneralizedReflowTest extends StringReflowTestUtil {
   import TextReflow._
-  // import TextReflowF._
   import matryoshka._
   import matryoshka.data._
 
@@ -17,6 +16,10 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
 
   behavior of "component reflowing"
 
+  def `Eu1-x` = flow(
+    flows(toAtoms("Eu")),
+    labeled(LB.Sub, flows(toAtoms("1 - x")))
+  )
 
 
   // it should "count atoms correctly" in {
@@ -29,29 +32,21 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
   // }
 
   it should "annotate reflow with (begin, len) ranges over chars" in {
-    // Eu1 - x
-    // 0123456
+    val ranges = `Eu1-x`.annotateCharRanges()
 
-    val f0 = flow(
-      flows(toAtoms("Eu")),
-      labeled(LB.Sub, flows(toAtoms("1 - x")))
+    // println(prettyPrintTree(f0))
+    println(printCofree(ranges))
+
+    // val hidden = `Eu1-x`.modifyCharAt(6)(hideChar)
+
+    val rewritten = `Eu1-x`.modifyCharAt(6)(
+      (c: Char, index: Int)  => None: Option[Char]
     )
-
-    // val resE = f0.annotateOffsets()
-    val resStart = f0.annotateCharRanges()
-
-    println(prettyPrintTree(f0))
-    // println("offs")
-    // println(printCofree(resE))
-    println("starts")
-    println(printCofree(resStart))
-
-    val hidden = f0.modifyCharAtom(6)(hideChar)
-    println(prettyPrintTree(hidden))
 
   }
 
   // import spindex.{ComponentOperations => CO}
+  // import ComponentReflow._
 
   // it should "join lines into single virtual line" in {
   //   val dict = utils.EnglishDictionary.fromWords("scanning")

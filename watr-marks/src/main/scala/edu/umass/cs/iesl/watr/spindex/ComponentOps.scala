@@ -21,6 +21,7 @@ import ComponentRendering.VisualLine
 object ComponentOperations {
   import textflow.ComponentReflow._
   import textflow.TextReflow._
+  import textflow.TextReflowOps._
   import utils.EnglishDictionary
 
   def joinTextLines(line1: TextReflow, line2: TextReflow)(dict: EnglishDictionary): TextReflow = {
@@ -37,12 +38,9 @@ object ComponentOperations {
     // vtrace.trace("Broken word hyphenated:" withInfo(s"${w1}-${w2}"))
 
     def dehyphenate(): TextReflow = {
+      val dehyph = line1.modifyCharAtom(line1Text.length-1)(hideChar)
 
-      // TODO overwrite the '-'
-      // line1.atTextPosition(line1.length){reflow =>
-      //   rewrite(reflow, "")
-      // }
-      join("")(line1, line2)
+      join("")(dehyph, line2)
     }
     def concat(): TextReflow = {
       join("")(line1, line2)

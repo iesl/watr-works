@@ -10,12 +10,13 @@ import watrmarks._
 import utils.Ranges
 
 object TextReflowOps {
-  import matryoshka._
-  import matryoshka.data._
-  import Recursive.ops._
 
   import scalaz._, Scalaz._
 
+  import matryoshka._
+  import matryoshka.data._
+  import matryoshka.patterns.EnvT
+  import Recursive.ops._
 
   implicit class RicherReflowU(val theReflow: TextReflowU) extends AnyVal  {
 
@@ -75,12 +76,33 @@ object TextReflowOps {
 
   type TextReflowCR = TextReflowF[Cofree[TextReflowF, RangeAccum]]
 
-  def charStarts[A](i: RangeAccum, t: TextReflowCR): State[RangeAccum, RangeAccum] = {
+  // def charStarts[A](i: RangeAccum, t: TextReflowCR): State[RangeAccum, RangeAccum] = {
+  //   val chars = countCharsF(t)
+  //   State.modify[RangeAccum]({
+  //     case r => (r._3, chars, r._3+chars)
+  //   }) *> State.get[RangeAccum]
+  // }
+  def charStarts[A](i: RangeAccum, t: TextReflowU): State[RangeAccum, RangeAccum] = {
     val chars = countCharsF(t)
     State.modify[RangeAccum]({
       case r => (r._3, chars, r._3+chars)
     }) *> State.get[RangeAccum]
   }
+
+  // def hideCharXX[T[_[_]]: CorecursiveT]: TextReflowF[T[TextReflowF]] => TextReflowF[T[TextReflowF]] =
+  //   tr => {
+
+  //     tr match {
+  //       case a @ Atom(c, ops)  =>
+  //         println(s"hideChar: Atom: ${a}")
+  //         val embedA = implicitly[Corecursive[T]].embed(a)
+  //         Rewrite(embedA, "")
+
+  //       case f =>
+  //         println(s"hideChar: pass ${f}")
+  //         f
+  //     }
+  //   }
 
   def hideChar: TextReflow => TextReflow = {tr =>
     fixf {
@@ -134,39 +156,89 @@ object TextReflowOps {
   }
 
   implicit class RicherReflow(val theReflow: TextReflow) extends AnyVal  {
-    def RF = implicitly[Recursive[Cofree[?[_], RangeAccum]]]
-    def CoRF[F[_]] = implicitly[Corecursive[Cofree[?[_], RangeAccum]]]
+    // def RF = implicitly[Recursive.Aux[Cofree[TextReflowF, RangeAccum], EnvT[RangeAccum, TextReflowF, ?]]]
+    // def CoRF[F[_]] = implicitly[Corecursive.Aux[Cofree[?[_], RangeAccum]]]
+
+    def RRF = Recursive[Cofree[TextReflowF, RangeAccum], EnvT[RangeAccum, TextReflowF, ?]]
+
     def FuncT = implicitly[FunctorT[Cofree[?[_], RangeAccum]]]
+    def MS = implicitly[MonadState[State[RangeAccum, ?], RangeAccum]]
 
     def annotateCharRanges(): Cofree[TextReflowF, RangeAccum] = {
       // annotate as: ((0, len), reflow)
-      val init  = theReflow.cata(attributePara(initLengths))
+      // val init: Cofree[TextReflowF, RangeAccum]  = theReflow.cata(attributePara(initLengths))
 
+      val withStarts = theReflow.attributeTopDownM[State[RangeAccum, ?], RangeAccum]((0, 0, 0))({
+        case e => charStarts(e._1, e._2)
+      }).eval((0, 0, 0))
+      // )
       // top-down state-driven char-starts
-      // init.attributeTopDownM[State[RangeAccum, ?], RangeAccum](RangesInts.empty)(charStarts).eval(RangesInts.empty)
-      val withStarts = RF.attributeTopDownM[TextReflowF, State[RangeAccum, ?], RangeAccum](
-        init, (0, 0, 0)
-      )(charStarts(_, _)).eval((0, 0, 0))
 
-      val converted = RF.convertTo[TextReflowF, Fix](withStarts)
-      println("converted")
-      println(prettyPrintTree(converted))
+      // final case class EnvT[E, W[_], A](run: (E, W[A])) { self =>
+      // type T[A] = Cofree[ EnvT[RangeAccum, TextReflowF, ?], RangeAccum]
 
-
+      // val withStarts = RRF.attributeTopDownM[State[RangeAccum, ?], RangeAccum](
+      //   init, (0, 0, 0)
+      // )({case e => charStarts(e._2.ask, e._2.lower)}).eval((0, 0, 0))
+      // RRF.cata(withStarts)(deattribute[TextReflowF, RangeAccum, TextReflow](f => fixf(f)))
       withStarts
+
     }
+    // def modifyCharAt(i: Int)(fn: (Char, Int) => ): TextReflow = {
 
-
-    def modifyCharAtom[T](i: Int)(func : TextReflow => TextReflow): TextReflow = {
+    def modifyCharAt(i: Int)(fn: (Char, Int) => Option[Char]): TextReflow = {
       val cRanges: scalaz.Cofree[TextReflowF, RangeAccum] = theReflow.annotateCharRanges
 
       def mod: Cofree[TextReflowF, RangeAccum] => Cofree[TextReflowF, RangeAccum] =
         tr => {
           val ranges = tr.toPair._1
+          // println(s"mod: @${ranges}")
           if (ranges._1 == i) {
             val cof = tr.toPair._2
             cof match {
-              // case a : Atom[_]  =>
+              case a @ Atom(c, ops)  =>
+                println(s"hidingChar: Atom: ${a}")
+
+                val qwer = ops.toString().toList
+                  .zipWithIndex
+                  .map(ci => fn(ci._1, ci._2))
+
+                val ca = Cofree[TextReflowF, RangeAccum](ranges, a)
+                Cofree[TextReflowF, RangeAccum](ranges, Rewrite(ca, ""))
+              case f =>
+                println(s"(pass) hideChar: pass ${f}")
+                Cofree[TextReflowF, RangeAccum](ranges, f)
+            }
+          } else {
+            tr
+          }
+        }
+
+      val trans = FuncT.transCataT(cRanges)(mod)
+      println("post-mod")
+      println(printCofree(trans))
+
+
+      // val converted = RF.convertTo[Fix](trans)
+      // converted
+      RRF.cata(trans)(deattribute[TextReflowF, RangeAccum, TextReflow](f => fixf(f)))
+    }
+
+
+    def modifyCharAtom(i: Int)(func : TextReflow => TextReflow): TextReflow = {
+      val cRanges: scalaz.Cofree[TextReflowF, RangeAccum] = theReflow.annotateCharRanges
+      // println("modifyCharAtom")
+      // println(prettyPrintTree(theReflow))
+      // println("pre-mod")
+      // println(printCofree(cRanges))
+
+      def mod: Cofree[TextReflowF, RangeAccum] => Cofree[TextReflowF, RangeAccum] =
+        tr => {
+          val ranges = tr.toPair._1
+          // println(s"mod: @${ranges}")
+          if (ranges._1 == i) {
+            val cof = tr.toPair._2
+            cof match {
               case a @ Atom(c, ops)  =>
                 println(s"hidingChar: Atom: ${a}")
                 val ca = Cofree[TextReflowF, RangeAccum](ranges, a)
@@ -181,27 +253,11 @@ object TextReflowOps {
         }
 
       val trans = FuncT.transCataT(cRanges)(mod)
-      val converted = RF.convertTo[TextReflowF, Fix](trans)
-      converted
+      println("post-mod")
+      println(printCofree(trans))
 
-      // // type   AlgebraicTransform[T[_[_]],                  F[_],        G[_]]        = F[T[G]] => G[T[G]]
-      // def mod2: AlgebraicTransform[Cofree[?[_], RangeAccum], TextReflowF, TextReflowF] = {
-      //   // F[T[G]] => G[T[G]]
-      //   ft: TextReflowF[Cofree[TextReflowF, RangeAccum]] =>
-      //   ft match {
-      //     case a @ Atom(c, ops)  =>
-      //       println(s"hideChar: Atom: ${a}")
-      //       Rewrite(fixf(a), "")
-      //     case f =>
-      //       println(s"hideChar: pass ${f}")
-      //       f
-      //   }
-      //   val res: TextReflowF[Cofree[TextReflowF, RangeAccum]] = ???
-      //   res
-      // }
-      // FuncT.transCata(cRanges)(mod2)
 
-      // ???
+      RRF.cata(trans)(deattribute[TextReflowF, RangeAccum, TextReflow](f => fixf(f)))
     }
 
     def charCount: Int = {

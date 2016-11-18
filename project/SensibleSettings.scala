@@ -19,6 +19,7 @@ trait LibVersions {
   val specs2Version       = "3.7"
   val scrimageVersion     = "2.1.7"
   val monocleVersion      = "1.3.2"
+  val aspectjVersion      = "1.8.9"
 }
 
 object LibVersions extends LibVersions
@@ -68,6 +69,7 @@ object CommonLibs extends LibVersions {
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val machinist        = "org.typelevel"           %% "machinist"        % "0.6.1"
   val shapeless        = "com.chuusai"             %% "shapeless"        % "2.3.2"
+  val aspectJ          = "org.aspectj"              % "aspectjweaver"    % aspectjVersion
 
   val matryoshkaCore   = "com.slamdata"            %% "matryoshka-core"  % "0.11.1"
   // Needed for matryoshka, not needed when I properly build it (rather than putting in ./lib dir)
@@ -76,6 +78,7 @@ object CommonLibs extends LibVersions {
     "org.scalaz"                 %% "scalaz-core"  % scalazVersion  % "compile, test",
     "com.github.mpilquist"       %% "simulacrum"   % "0.10.0"       % "compile, test"
   )
+
 
 }
 

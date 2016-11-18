@@ -11,6 +11,7 @@ class StringReflowTestUtil extends ConnectedComponentTestUtil {
 
   import TextReflow._
   import TextReflowF._
+  import matryoshka.implicits._
 
   def toAtoms(s: String): List[TextReflow] = {
     s.toList.map(_ match {

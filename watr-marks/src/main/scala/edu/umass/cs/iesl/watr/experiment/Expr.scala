@@ -83,8 +83,8 @@ object Exp  {
 
   // NB: Something like this currently needs to be defined for any Functor in
   //     order to get the generalize operations for the algebra.
-  implicit def toExpAlgebraOps[A](a: Algebra[Exp, A]): AlgebraOps[Exp, A] =
-    toAlgebraOps[Exp, A](a)
+  // implicit def toExpAlgebraOps[A](a: Algebra[Exp, A]): AlgebraOps[Exp, A] =
+  //   toAlgebraOps[Exp, A](a)
 
   implicit val show: Delay[Show, Exp] = new Delay[Show, Exp] {
     def apply[α](show: Show[α]) =

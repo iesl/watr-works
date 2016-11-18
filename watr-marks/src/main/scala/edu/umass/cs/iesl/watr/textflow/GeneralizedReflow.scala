@@ -10,7 +10,6 @@ import matryoshka._
 import matryoshka.data._
 
 import Recursive.ops._
-// import Corecursive.ops._
 import FunctorT.ops._
 import utils.Ranges
 
@@ -25,8 +24,7 @@ class TextReflowAtomOps(
 sealed trait TextReflowF[+A]
 
 object TextReflowF {
-  // case class Atom[T](c: T, ops: TextReflowAtomOps)        extends TextReflowF[Nothing]
-  case class Atom(c: Any, ops: TextReflowAtomOps)        extends TextReflowF[Nothing]
+  case class Atom(c: Any, ops: TextReflowAtomOps)         extends TextReflowF[Nothing]
   case class Insert(value: String)                        extends TextReflowF[Nothing]
   case class Rewrite[A](from: A, to: String)              extends TextReflowF[A]
   case class Bracket[A](pre: String, post: String, a: A)  extends TextReflowF[A]
@@ -205,74 +203,3 @@ object TextReflow {
   }
 
 }
-
-    // def modifyCharAtom[T](i: Int)(func : TextReflow => TextReflow): TextReflow = {
-    //   val cRanges: scalaz.Cofree[TextReflowF, IRange] = theReflow.annotateCharRanges
-
-    //   val CFT = recCorecFunctorT[Cofree[?[_], IRange]]
-
-    //   // CFT.transCata(t: Cofree[F, (Int, Int)]) { (_0:  => Cofree[α$5$, (Int, Int)], _1: F) => G }
-    //   val scanRes = cRanges.scanr[TextReflow]({ case (r, trc:TextReflowF[Cofree[TextReflowF, TextReflow]]) =>
-    //     val range1 = r._1
-    //     val range2 = r._2
-    //     val scr = if (range1 == i) {
-    //       println("(modifying)")
-    //       // val qwer = trc.traverse(_.head.project)
-
-    //       val sdf =trc.map({ rf =>
-    //         func(rf.head)
-    //       })
-    //       fixf(sdf)
-
-    //     } else {
-    //       val sdf =trc.map({ rf =>
-    //         rf.head
-    //       })
-    //       fixf(sdf)
-    //     }
-    //     println(s"scanr:  ${r}")
-    //     println(prettyPrintTree(scr))
-
-    //     scr
-    //   })
-
-    //   scanRes.head
-    //   // // cof: Cofree[TextReflowF, (Int, Int)]
-    //   // CFT.transCataT(cRanges)({  cof =>
-    //   //   val charN = cof.head._1
-    //   //   if (i == charN) {
-    //   //     cof match {
-    //   //       case ll @ Cofree(h, t) =>
-    //   //         t.map({case uio =>
-    //   //         })
-    //   //     }
-    //   //     cof
-    //   //   } else {
-    //   //     cof
-    //   //   }
-    //   // })
-
-    // }
-
-// def clipToTargetRegion(targetRegion: TargetRegion): Option[(TextReflow, Int@@Offset, Int@@Length)] = {
-//   // val clippedFlow = theReflow.flow
-//   //   .zipWithIndex
-//   //   .dropWhile({case (funit, _) =>
-//   //     val intersects = flowUnitTargetRegion(funit).exists(_ intersects targetRegion)
-//   //       !intersects
-//   //   })
-//   //   .reverse
-//   //   .dropWhile({case (funit, _) =>
-//   //     val intersects = flowUnitTargetRegion(funit).exists(_ intersects targetRegion)
-//   //       !intersects
-//   //   })
-//   //   .reverse
-
-//   // if (clippedFlow.isEmpty) None else {
-//   //   val start = clippedFlow.head._2
-//   //   val end = clippedFlow.last._2
-
-//   //   Some((TextFlow(clippedFlow.map(_._1)), Offset(start), Length(end-start)))
-//   // }
-//   ???
-// }

@@ -6,16 +6,8 @@ import org.scalatest._
 
 class ExprExamples extends FlatSpec with Matchers {
 
-  import scalaz.{
-    Apply => _,
-    _
-  }
-
+  import scalaz.{Apply => _, _ }
   import Scalaz.{fix => _, _}
-  // import scalaz.std.anyVal._
-  // import scalaz.syntax.apply._
-  // import scalaz.syntax.applicative._
-  // import scalaz.syntax.std.option._
 
 
   import textboxing.{TextBoxing => TB}
@@ -23,13 +15,23 @@ class ExprExamples extends FlatSpec with Matchers {
   import utils.ScalazTreeImplicits._
 
   import matryoshka._
-  import Recursive.ops._, FunctorT.ops._ // , TraverseT.nonInheritedOps._
-  // import matryoshka.data._
+  import matryoshka.data._
+  import matryoshka.implicits._
 
 
   import Exp._
 
-  def prettyPrintTree[T[_[_]]: Recursive:Corecursive:ShowT, F[_]: Functor:Foldable](exp: T[F])(
+  // (implicit TR: RecursiveT[T], TC: CorecursiveT[T], ShowF: Delay[Show, F]): TB.Box = {
+  // def prettyPrintTree[T[_[_]]: RecursiveT :CorecursiveT, F[_]]
+  // def prettyPrintTree[T[_[_]], F[_]]
+  //   (exp: T[F])
+  //   (implicit TR: Recursive.Aux[T, F], TC: Corecursive.Aux[T, F], ShowF: Delay[Show, F]): TB.Box = {
+  //   // TR.recursive[T, F].cata(exp)(toTree).draw
+  //   exp.cata(toTree).draw
+  // }
+
+  // def prettyPrintTree[T[_[_]]: FunctorT, F[_]: Functor: Foldable](exp: T[F])(
+  def prettyPrintTree[F[_]: Functor: Foldable](exp: Fix[F])(
     implicit ShowF: Delay[Show, F]
   ): TB.Box = {
     exp.cata(toTree).draw

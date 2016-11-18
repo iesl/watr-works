@@ -24,8 +24,9 @@ val commonDeps = LogLibs.logback ++
     Lib.ammonite,
     Lib.playJson,
     Lib.shapeless,
+    Lib.aspectJ,
     compilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
-    compilerPlugin("org.spire-math" %% "kind-projector"  % "0.9.3")
+    compilerPlugin("org.spire-math" %% "kind-projector"  % "0.9.2")
 
       // Not needed in watrmarks
       // Lib.scopt,
@@ -47,10 +48,12 @@ lazy val watrprelude = (project in file("watr-prelude"))
 
 
 lazy val watrmarks = (project in file("watr-marks"))
+  .settings(AspectJ.settings: _*)
   .settings(libraryDependencies ++= commonDeps ++ Seq(
     "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT"
   ))
   .dependsOn(watrprelude)
+  .aggregate(watrprelude)
 
 
 // lazy val watrshed = project
