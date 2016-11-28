@@ -85,10 +85,6 @@ object ScalazTreeImplicits {
 
   implicit class RicherTree[A](val thisTree: scalaz.Tree[A]) extends AnyVal {
 
-    def drawx(implicit sh: Show[A]): TB.Box = {
-      TB.linesToBox(thisTree.draw0)
-    }
-
     def draw(implicit sh: Show[A]): TB.Box = {
       TB.linesToBox(thisTree.draw0)
     }

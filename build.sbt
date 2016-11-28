@@ -2,12 +2,9 @@ import sbt.Keys._
 import spray.revolver.AppProcess
 import com.lihaoyi.workbench.Plugin._
 
-ThisBuildDefault.settings
+SensibleThisBuild.settings
 
-// autoCompilerPlugins in ThisBuild := true
 autoCompilerPlugins := true
-
-organization in ThisBuild := "edu.umass.cs.iesl"
 
 enablePlugins(ScalaJSPlugin)
 
@@ -16,22 +13,28 @@ scalaJSUseRhino in Global := false
 val libV = LibVersions
 val Lib = CommonLibs
 
-val commonDeps = LogLibs.logback ++
-  TestLibs.testAndCheck ++
-  Lib.matryoshkaLibs ++ Seq(
-    Lib.scalazCore,
-    Lib.scalatags,
-    Lib.ammonite,
-    Lib.playJson,
-    Lib.shapeless,
-    Lib.aspectJ,
-    compilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
-    compilerPlugin("org.spire-math" %% "kind-projector"  % "0.9.2")
+val commonSettings =
+  SensibleProject.settings ++ Seq(
+    libraryDependencies ++= LogLibs.logback,
+    libraryDependencies ++= TestLibs.testAndCheck,
+    libraryDependencies ++= Lib.matryoshkaLibs,
+    libraryDependencies ++= Seq(
+      Lib.scalazCore,
+      Lib.scalatags,
+      Lib.ammonite,
+      Lib.playJson,
+      Lib.shapeless,
+      Lib.sourcecode,
+      Lib.aspectJ
 
+      // compilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
+      // compilerPlugin("org.spire-math" %% "kind-projector"  % "0.9.2")
       // Not needed in watrmarks
       // Lib.scopt,
       // Lib.scalaAsync,
       // Lib.fastparse,
+
+    )
   )
 
 
@@ -44,12 +47,12 @@ lazy val root = (project in file("."))
 
 
 lazy val watrprelude = (project in file("watr-prelude"))
-  .settings(libraryDependencies ++= commonDeps)
+  .settings(commonSettings: _*)
 
 
 lazy val watrmarks = (project in file("watr-marks"))
-  .settings(AspectJ.settings: _*)
-  .settings(libraryDependencies ++= commonDeps ++ Seq(
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= Seq(
     "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT"
   ))
   .dependsOn(watrprelude)
