@@ -8,13 +8,12 @@ autoCompilerPlugins := true
 
 enablePlugins(ScalaJSPlugin)
 
-scalaJSUseRhino in Global := false
-
 val libV = LibVersions
 val Lib = CommonLibs
 
-val commonSettings =
-  SensibleProject.settings ++ Seq(
+val commonSettings = SensibleProject.settings ++
+  SensibleProject.testSettings  ++
+  Seq(
     libraryDependencies ++= LogLibs.logback,
     libraryDependencies ++= TestLibs.testAndCheck,
     libraryDependencies ++= Lib.matryoshkaLibs,
@@ -43,7 +42,7 @@ import ReleaseTransformations._
 lazy val root = (project in file("."))
   .settings(Release.settings :_*)
   .aggregate(watrprelude, watrmarks)
-  // .aggregate(watrprelude, watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
+// .aggregate(watrprelude, watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
 
 
 lazy val watrprelude = (project in file("watr-prelude"))

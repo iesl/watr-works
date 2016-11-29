@@ -104,8 +104,6 @@ trait ExplicitTypeTagFormats {
 trait TypeTagFormats {
   import play.api.libs.json
   import json._
-  import scala.reflect._
-
 
 
   val ReadPageID: Reads[Int@@PageID]   = __.read[Int].map(i => Tag.of[PageID](i))

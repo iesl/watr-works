@@ -20,7 +20,7 @@ object ComponentRendering {
     def renderRoleTree(c: Component): TB.Box = {
       c.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
         .map(_.toString())
-        .draw
+        .drawTree
     }
 
 

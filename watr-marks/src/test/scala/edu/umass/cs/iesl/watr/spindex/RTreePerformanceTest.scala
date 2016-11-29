@@ -3,6 +3,9 @@ package spindex
 
 import org.scalatest._
 
+import scala.language.postfixOps
+
+
 class RTreePerformanceTest extends FlatSpec {
 
   import gnu.trove.procedure.TIntProcedure

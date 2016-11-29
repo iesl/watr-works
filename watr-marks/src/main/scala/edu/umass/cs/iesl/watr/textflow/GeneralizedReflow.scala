@@ -4,14 +4,16 @@ package textflow
 import watrmarks._
 import textboxing.{TextBoxing => TB}
 
-import scalaz._, Scalaz.{fix => _, _}
+import scalaz._
+import Scalaz._
+// import scalaz.syntax.apply._
+// import scalaz.syntax.traverse._
 
 import matryoshka._
 import matryoshka.data._
 
 import Recursive.ops._
 import FunctorT.ops._
-import utils.Ranges
 
 
 class TextReflowAtomOps(
@@ -31,7 +33,7 @@ object TextReflowF {
   case class Flow[A](labels: Set[Label], as: List[A])     extends TextReflowF[A]
   case class Labeled[A](labels: Set[Label], a: A)         extends TextReflowF[A]
 
-  implicit val ReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
+  implicit val TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
     def traverseImpl[G[_], A, B](fa: TextReflowF[A])(f: A => G[B])(implicit G: Applicative[G]): G[TextReflowF[B]] = fa match {
       case Atom(c, ops)               => G.point(Atom(c, ops))
       case Insert(value)              => G.point(Insert(value))
@@ -42,7 +44,7 @@ object TextReflowF {
     }
   }
 
-  implicit val show: Delay[Show, TextReflowF] = new Delay[Show, TextReflowF] {
+  implicit val TextReflowShow: Delay[Show, TextReflowF] = new Delay[Show, TextReflowF] {
     def apply[A](show: Show[A]) = Show.show {
       case Atom(c, ops)               => ops.toString
       case Insert(value)              => s"+'$value'"
@@ -53,6 +55,20 @@ object TextReflowF {
     }
   }
 
+  // implicit def ZipUnZip[F[_] <: TextReflowF[_] : Functor] = new Unzip[F] with Zip[F] {
+  //   def unzip[A, B](f: TextReflowF[(A, B)]): (TextReflowF[A], TextReflowF[B]) =
+  //     (f.map(_._1), f.map(_._2))
+
+
+  //   def zip[A, B](fa: => F[A], fb: => F[B]): F[(A, B)] = {
+  //     val asdf = fa.map(a => fb.strengthL(a))
+  //     val asdf2 = fa.map(a => fb.strengthR(a))
+
+  //     // val sdf = fa.product(implicitly[Traverse[TextReflowF]])
+
+  //     ???
+  //   }
+  // }
 
 }
 
@@ -148,31 +164,47 @@ object TextReflow {
     r.transCata(f)
   }
 
-  def prettyPrintTree(reflow: TextReflow): TB.Box = {
-    import utils.ScalazTreeImplicits._
-    reflow.cata(toTree).draw
+  import utils.ScalazTreeImplicits._
+
+  def boxTF[T, F[_]: Foldable: Functor](
+    tf: T
+  )(implicit
+    TR: Recursive.Aux[T, F],
+    FShow: Delay[Show, F]
+  ): TB.Box = {
+    tf.cata(toTree).drawBox
   }
+
+  def prettyPrintTree(reflow: TextReflow): TB.Box = {
+    reflow.cata(toTree).drawBox
+    // boxTF(reflow)
+  }
+
+
   def prettyPrintCofree[B](cof: Cofree[TextReflowF, B])(implicit
     BS: Show[B],
     CS: Delay[Show, Cofree[TextReflowF, ?]]
   ): String = {
     CS(BS).shows(cof)
   }
-  // Tree.Node(c.head, c.tail.map(from(_)))
+
   def cofreeToTree[A](c: Cofree[TextReflowF, A]): Tree[A] = {
     Tree.Node(
       c.head,
       c.tail.toStream.map(cofreeToTree(_))
     )
   }
-  def printCofree[B](cof: Cofree[TextReflowF, B])(implicit
-    BS: Show[B],
-    CS: Delay[Show, Cofree[TextReflowF, ?]]
-  ): TB.Box = {
-    import utils.ScalazTreeImplicits._
-    // CS(BS).shows(cof)
-    cofreeToTree(cof).draw
-  }
+
+  // def printCofree[B](cof: Cofree[TextReflowF, B])(implicit
+  //   BS: Show[B],
+  //   CS: Delay[Show, Cofree[TextReflowF, ?]]
+  // ): TB.Box = {
+  //   // val RC = implicitly[Recursive.Aux[Cofree[Exp, Int], EnvT[Int, Exp, ?]]]
+  //   // val rbox2 = RC.cata(res2)(toTree).drawBox
+  //   // import utils.ScalazTreeImplicits._
+  //   // CS(BS).shows(cof)
+  //   cofreeToTree(cof).draw
+  // }
 
   private def mkPad(s: String): TextReflow = insert(s)
 
@@ -187,19 +219,19 @@ object TextReflow {
   }
 
 
-  implicit object RangesInts extends Monoid[Ranges.Ints] with Show[Ranges.Ints] with Equal[Ranges.Ints] with Order[Ranges.Ints] with IsEmpty[Lambda[a => Ranges.Ints]] {
-    import Ranges.Ints
+  // implicit object RangesInts extends Monoid[Ranges.Ints] with Show[Ranges.Ints] with Equal[Ranges.Ints] with Order[Ranges.Ints] with IsEmpty[Lambda[a => Ranges.Ints]] {
+  //   import Ranges.Ints
 
-    type SA[A] = Ints
-    def append(f1: Ranges.Ints, f2: => Ranges.Ints) = Ints(math.min(f1.min, f2.min), math.max(f1.max, f2.max))
-    def zero: Ranges.Ints = Ranges.Ints(0, 0)
-    override def shows(f: Ranges.Ints): String = s"[${f.min}-${f.max}]"
-    def order(r1: Ranges.Ints, r2: Ranges.Ints) = Ordering.fromLessThan(r1, r2) { (a, b) => a.min < b.min && a.max < b.max }
-    override def equal(x: Ranges.Ints, y: Ranges.Ints) = x.min==y.min && x.max==y.max
-    override def equalIsNatural: Boolean = true
-    def empty[A] = zero
-    def plus[A](f1: SA[A], f2: => SA[A]) = append(f1, f2)
-    def isEmpty[A](s: SA[A]) = equal(s, empty)
-  }
+  //   type SA[A] = Ints
+  //   def append(f1: Ranges.Ints, f2: => Ranges.Ints) = Ints(math.min(f1.min, f2.min), math.max(f1.max, f2.max))
+  //   def zero: Ranges.Ints = Ranges.Ints(0, 0)
+  //   override def shows(f: Ranges.Ints): String = s"[${f.min}-${f.max}]"
+  //   def order(r1: Ranges.Ints, r2: Ranges.Ints) = Ordering.fromLessThan(r1, r2) { (a, b) => a.min < b.min && a.max < b.max }
+  //   override def equal(x: Ranges.Ints, y: Ranges.Ints) = x.min==y.min && x.max==y.max
+  //   override def equalIsNatural: Boolean = true
+  //   def empty[A] = zero
+  //   def plus[A](f1: SA[A], f2: => SA[A]) = append(f1, f2)
+  //   def isEmpty[A](s: SA[A]) = equal(s, empty)
+  // }
 
 }

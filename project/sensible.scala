@@ -7,11 +7,57 @@ import Keys._
 
 
 object SensibleProject {
+
+  def noColorIfEmacs = {
+    // WORKAROUND: https://github.com/scalatest/scalatest/issues/511
+    if (sys.env.get("INSIDE_EMACS").isDefined)
+      Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oWF"))
+    else
+      Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oF"))
+    // testOptions ++= noColorIfEmacs
+  }
+
   lazy val settings =  Seq(
     // addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.2"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full),
     addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
+  )
+
+  lazy val testSettings = Seq(
+    parallelExecution := true,
+
+    // one JVM per test suite
+    // fork := true,
+    testForkedParallel := true,
+    // testGrouping <<= (
+    //   definedTests,
+    //   baseDirectory,
+    //   javaOptions,
+    //   outputStrategy,
+    //   envVars,
+    //   javaHome,
+    //   connectInput
+    // ).map { (tests, base, options, strategy, env, javaHomeDir, connectIn) =>
+    //   val opts = ForkOptions(
+    //     bootJars = Nil,
+    //     javaHome = javaHomeDir,
+    //     connectInput = connectIn,
+    //     outputStrategy = strategy,
+    //     runJVMOptions = options,
+    //     workingDirectory = Some(base),
+    //     envVars = env
+    //   )
+    //   tests.map { test =>
+    //     Tests.Group(test.name, Seq(test), Tests.SubProcess(opts))
+    //   }
+    // },
+
+    testOptions ++= noColorIfEmacs,
+    logBuffered in Test := false,
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
+    // testFrameworks := Seq(TestFrameworks.ScalaTest)
+    testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
   )
 }
 
@@ -25,20 +71,10 @@ object SensibleThisBuild {
     "[" + blue + projectName + white + "]>> " + c.RESET
   }
 
-  def noColorIfEmacs = {
-    // WORKAROUND: https://github.com/scalatest/scalatest/issues/511
-    if (sys.env.get("INSIDE_EMACS").isDefined)
-      Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oWF"))
-    else
-      Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oF"))
-    // testOptions ++= noColorIfEmacs
 
 
-  }
 
   lazy val settings =  Seq(
-
-    organization in ThisBuild := "edu.umass.cs.iesl",
 
     resolvers in ThisBuild ++= List(
       "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
@@ -48,12 +84,11 @@ object SensibleThisBuild {
       Resolver.jcenterRepo
     ),
 
+    organization in ThisBuild := "edu.umass.cs.iesl",
+    // scalaOrganization in ThisBuild := "org.typelevel",
     scalaVersion in ThisBuild := "2.11.8",
-
     shellPrompt in ThisBuild := colorPrompt,
-
     autoCompilerPlugins in ThisBuild := true,
-
     ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet,
 
     scalacOptions in ThisBuild ++= Seq(
@@ -62,22 +97,23 @@ object SensibleThisBuild {
       "-feature",
       "-target:jvm-1.6",
       "-unchecked",
-
       "-language:existentials",
       "-language:higherKinds",
       "-language:implicitConversions",
-      "-language:postfixOps",
+      // "-Ypartial-unification", // typelevel.org scala specific
+      // "-language:postfixOps",
 
       "-Xlint",
       "-Yinline-warnings",
       "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
       "-Ywarn-inaccessible",
+      "-Ywarn-unused-import", // noisy, but good to run occasionally
       "-Ywarn-dead-code",
       "-Xfuture"
-        // "-Ywarn-unused-import", // noisy, but good to run occasionally
-        // "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
-        // "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
-        //"-Ywarn-numeric-widen", // noisy
+
+      // "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
+      // "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
+      //"-Ywarn-numeric-widen", // noisy
     ),
 
     javacOptions in (Compile, compile) ++= Seq(
@@ -99,42 +135,3 @@ object SensibleThisBuild {
 }
 
 
-// object Sensible extends LibVersions {
-
-//   def testSettings = Seq(
-//     parallelExecution := true,
-
-//     // one JVM per test suite
-//     // fork := true,
-//     testForkedParallel := true,
-//     testGrouping <<= (
-//       definedTests,
-//       baseDirectory,
-//       javaOptions,
-//       outputStrategy,
-//       envVars,
-//       javaHome,
-//       connectInput
-//     ).map { (tests, base, options, strategy, env, javaHomeDir, connectIn) =>
-//       val opts = ForkOptions(
-//         bootJars = Nil,
-//         javaHome = javaHomeDir,
-//         connectInput = connectIn,
-//         outputStrategy = strategy,
-//         runJVMOptions = options,
-//         workingDirectory = Some(base),
-//         envVars = env
-//       )
-//       tests.map { test =>
-//         Tests.Group(test.name, Seq(test), Tests.SubProcess(opts))
-//       }
-//     },
-
-//     testOptions ++= noColorIfEmacs,
-//     logBuffered in Test := false,
-//     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
-//     testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
-//   )
-
-
-// }

@@ -5,15 +5,12 @@ import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
 import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
-import TypeTags._
-import scalaz.@@
 
 import Prop._
 
 // trait PredsynthJsonFormats extends TypeTagFormats {
 trait PredsynthJsonFormats  {
   import play.api.libs.json._
-  import play.api.libs.functional.syntax._
 
   implicit def optionalFormat[T](implicit jsFmt: Format[T]): Format[Option[T]] =
     new Format[Option[T]] {
@@ -345,10 +342,8 @@ object PredsynthLoad extends PredsynthJsonFormats {
     }
   }
 
-  import scala.util.matching.Regex
   import ammonite.ops._
   import ammonite.ops.ImplicitWd._
-  import scala.collection.mutable
 
   def runAGrep(pattern: String, filePath: Path): Either[String, (Int, Int)] = {
     try {

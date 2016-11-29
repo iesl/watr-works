@@ -422,11 +422,11 @@ object Works extends App {
           rsegmenter = Some(segmenter)
 
           val entryFilename = corpusEntry.entryDescriptorRoot
-          val paper = predsynthPapers.get(entryFilename)
 
-          textAlignPredsynthDB(segmenter, paper)
+          // val paper = predsynthPapers.get(entryFilename)
+          // textAlignPredsynthDB(segmenter, paper)
+          // paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
 
-          paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
           val output = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer)
           corpusEntry.putArtifact(artifactOutputName, output)
         }

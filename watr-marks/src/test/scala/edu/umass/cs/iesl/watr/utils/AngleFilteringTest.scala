@@ -6,8 +6,6 @@ import org.scalatest._
 import spindex._
 
 import GeometricFigure._
-import EnrichGeometricFigures._
-import EnrichNumerics._
 
 class AngleFilteringTest extends FlatSpec with Matchers {
 
