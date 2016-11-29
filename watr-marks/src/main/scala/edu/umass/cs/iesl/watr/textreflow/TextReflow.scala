@@ -51,21 +51,6 @@ object TextReflowF {
     }
   }
 
-  // implicit def ZipUnZip[F[_] <: TextReflowF[_] : Functor] = new Unzip[F] with Zip[F] {
-  //   def unzip[A, B](f: TextReflowF[(A, B)]): (TextReflowF[A], TextReflowF[B]) =
-  //     (f.map(_._1), f.map(_._2))
-
-
-  //   def zip[A, B](fa: => F[A], fb: => F[B]): F[(A, B)] = {
-  //     val asdf = fa.map(a => fb.strengthL(a))
-  //     val asdf2 = fa.map(a => fb.strengthR(a))
-
-  //     // val sdf = fa.product(implicitly[Traverse[TextReflowF]])
-
-  //     ???
-  //   }
-  // }
-
 }
 
 
@@ -81,10 +66,7 @@ object TextReflow {
 
 
   def atom[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
-
   def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
-
-
   def flow(as:TextReflow*) = flows(as)
   def flows(as: Seq[TextReflow]) = fixf(Flow(Set(), as.toList))
 

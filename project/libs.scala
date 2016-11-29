@@ -15,7 +15,7 @@ trait LibVersions {
   val quasiquotesVersion  = "2.0.1"
   val guavaVersion        = "18.0"
   val specs2Version       = "3.7"
-  val scrimageVersion     = "2.1.7"
+  val scrimageVersion     = "2.1.8"
   val monocleVersion      = "1.2.2"
   val aspectjVersion      = "1.8.9"
 }
