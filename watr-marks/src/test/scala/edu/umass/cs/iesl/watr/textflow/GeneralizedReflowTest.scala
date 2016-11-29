@@ -15,31 +15,6 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
   import scalaz._, Scalaz._
   import TextReflowOps._
 
-  // "annotate and fold" >> {
-  //   val RC = implicitly[Recursive.Aux[Cofree[Exp, Int], EnvT[Int, Exp, ?]]]
-
-  //   val res = 100.elgotApo[Fix[Exp]](extract2sAnd5[Fix[Exp]])
-  //   val rbox = boxTF[Fix[Exp], Exp](res)
-  //   println(s"${rbox}")
-  //   println(res.shows)
-
-  //   val res2 = res.attributeTopDownM[State[Int, ?], Int](0)(sequential).eval(0)
-  //   // val rbox2 = boxTF[Fix[Exp], Exp](res2)
-  //   val rbox2 = RC.cata(res2)(toTree).drawBox
-  //   println(s"${rbox2}")
-  //   println(res2.shows)
-
-  //   // val res3 = res2.cataM(liftTM(attributeElgotM[(Int, ?), Option](weightedEval)))
-  //   val res3 = res2.cataM(liftTM(attributeElgotM[(Int, ?), Option](weightedEval)))
-
-  //   res3.foreach { r =>
-  //     // envT[Cofree](r)
-  //     val cbox = RC.cata(r)(toTree).drawBox
-  //     // val box = boxTF[Cofree[Exp, Int], Exp](r)
-  //     println(s"${cbox}")
-  //     println(r.shows)
-  //   }
-  // }
 
   behavior of "component reflowing"
 
@@ -68,7 +43,11 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
     // boxTF[Cofree[TextReflowF, CharOffsetState], TextReflowF](ranges)
     println(ranges.shows)
 
-    // val hidden = `Eu1-x`.modifyCharAt(6)(hideChar)
+    val hidden = `Eu1-x`.modifyCharAt(6)({case (c, i) =>
+      Some("")
+    })
+
+    println(prettyPrintTree(hidden))
 
     // val rewritten = `Eu1-x`.modifyCharAt(6)(
     //   (c: Char, index: Int)  => None: Option[Char]

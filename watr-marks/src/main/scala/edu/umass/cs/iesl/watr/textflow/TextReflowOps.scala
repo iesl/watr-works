@@ -15,6 +15,8 @@ object TextReflowOps {
   import matryoshka._
   import matryoshka.data._
   import matryoshka.implicits._
+  // import matryoshka.patterns.EnvT
+  // import matryoshka.patterns.EnvT._
 
   case class CharOffsetState(cbegin: Int, clen: Int)
 
@@ -132,24 +134,76 @@ object TextReflowOps {
       withStarts
     }
 
-    // def modifyCharAt(i: Int)(fn: (Char, Int) => ): TextReflow = {
+    // "annotate and fold" >> {
+    //   val res = 100.elgotApo[Fix[Exp]](extract2sAnd5[Fix[Exp]])
+    //   val rbox = boxTF[Fix[Exp], Exp](res)
+    //   val res2 = res.attributeTopDownM[State[Int, ?], Int](0)(sequential).eval(0)
+    //   // val rbox2 = boxTF[Fix[Exp], Exp](res2)
+    //   println(s"${rbox2}")
+    //   println(res2.shows)
+    //   // val res3 = res2.cataM(liftTM(attributeElgotM[(Int, ?), Option](weightedEval)))
+    //   val res3 = res2.cataM(liftTM(attributeElgotM[(Int, ?), Option](weightedEval)))
+    //   res3.foreach { r =>
+    //     // envT[Cofree](r)
+    //   }
+    // }
+    // def simplifyƒ[T[_[_]]: RecursiveT]: Exp[T[Exp]] => Option[Exp[T[Exp]]] = {
+    //   case Mul(a, b) => (a.projectT, b.projectT) match {
+    //     case (Num(0), Num(_)) => Num(0).some
+    //     case (_,      _)      => None
+    //   }
+    //   case _         => None
+    // }
 
-    def modifyCharAt(i: Int)(fn: (Char, Int) => Option[Char]): TextReflow = {
+    // def addOneOrSimplifyƒ[T[_[_]]: RecursiveT]: Exp[T[Exp]] => Exp[T[Exp]] = {
+    //   case t @ Num(_)    => addOneƒ(t)
+    //   case t @ Mul(_, _) => repeatedly(simplifyƒ[T]).apply(t)
+    //   case t             => t
+    // }
+    // def addOneOrSimplify[T[_[_]]: RecursiveT]: TextReflowF[Cofree[TextReflowF, CharOffsetState]] => TextReflowU = {
+    //   case (charOffs, Atom(c, ops))    => Atom(c, ops)
+    //   // case t @ Mul(_, _) => repeatedly(simplifyƒ[T]).apply(t)
+    //   // case t             => t
+    // }
+
+    // //  :: W[F[A]] => M[A]
+    // def transChars(begin: Int, len: Int): ElgotAlgebraM[(CharOffsetState, ?), Option, TextReflowF, Int] = {
+    //   case (charOffs, Atom(c, ops))    => Option(0)
+    //   case (_,      _)                 => None
+    // }
+
+    //  :: W[F[A]] => A
+    def transChars(begin: Int, len: Int)(
+      fn: (Char, Int) => Option[String]
+    ): ElgotAlgebraM[(CharOffsetState, ?), Option, TextReflowF, TextReflow] = {
+      case (charOffs, a@ Atom(c, ops))
+          if begin <= charOffs.cbegin &&  charOffs.cbegin < begin+len =>
+
+        for {
+          ch  <- ops.chars.headOption
+          mod <- fn(ch, begin+len)
+                    .map(rewrite(fixf(a), _))
+                    .orElse(Option(fixf(a)))
+        } yield mod
+
+
+      case (_,      f)                 => Some(fixf(f))
+    }
+
+    // import matryoshka.implicits._
+    def modifyCharAt(i: Int)(fn: (Char, Int) => Option[String]): TextReflow = {
       val cRanges: scalaz.Cofree[TextReflowF, CharOffsetState] = theReflow.annotateCharRanges
 
-      val offsetTree = cofreeToTree(cRanges)
-      val allLocs  = offsetTree.loc.cojoin.toTree.levels.flatten
-      theReflow
-
-      offsetTree.loc.map({ offsetLoc =>
-
-      })
-      // cRanges.head
-
-      // cRanges.transCata()
-
-      // trans.cata(deattribute[TextReflowF, CharOffsetState, TextReflow](f => fixf(f)))
-      ???
+      val telgot = attributeElgotM[(CharOffsetState, ?), Option](transChars(i, 1)(fn))
+      val telgotL = liftTM(telgot)
+      // cRanges.transCata(addOneOrSimplify)
+      val r = cRanges.cataM(telgotL)
+      val res = r.get.head
+      // val qewr = EnvT.cofreeIso.set(cRanges)
+      // val cRangesEnv = EnvT.envT(cRanges.toPair)
+      // cRanges.transAnaT()
+      // cRangesEnv.transAnaT()
+      res
     }
 
 

@@ -86,6 +86,9 @@ object TextReflow {
 
   def atom[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
 
+  def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
+
+
   def flow(as:TextReflow*) = flows(as)
   def flows(as: Seq[TextReflow]) = fixf(Flow(Set(), as.toList))
 
