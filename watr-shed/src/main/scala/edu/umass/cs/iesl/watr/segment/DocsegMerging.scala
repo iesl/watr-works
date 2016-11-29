@@ -33,7 +33,7 @@ import predsynth._
 
 object DocsegMerging {
 
-  // import textflow._
+  // import textreflow._
 
   def mergePriorDocseg(zoneIndexer: ZoneIndexer, priorDocseg: Docseg.Docseg): ZoneIndexer = {
     // 1. map each mention to one or more target figures within the prior docseg

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textflow
+package textreflow
 
 import watrmarks.{StandardLabels => LB}
 
@@ -58,7 +58,7 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
   }
 
   import spindex.{ComponentOperations => CO}
-  import textflow.TextReflowRendering._
+  import textreflow.TextReflowRendering._
 
   it should "join lines into single virtual line" in {
     val dict = utils.EnglishDictionary.fromWords("scanning")

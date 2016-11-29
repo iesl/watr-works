@@ -10,8 +10,8 @@ import ComponentOperations._
 object ComponentRendering {
   import TB._
   import utils.ScalazTreeImplicits._
-  // import textflow.GeneralizedReflow.componentReflow._
-  import textflow.TextReflow._
+  // import textreflow.GeneralizedReflow.componentReflow._
+  import textreflow.TextReflow._
 
 
   object VisualLine {
@@ -124,7 +124,7 @@ object ComponentRendering {
 
         case LB.PageAtom =>
           val ac = cc.asInstanceOf[AtomicComponent]
-          val ops = new textflow.TextReflowAtomOps(ac.chars)
+          val ops = new textreflow.TextReflowAtomOps(ac.chars)
           atom(ac, ops).some
 
         case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")

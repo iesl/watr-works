@@ -22,7 +22,7 @@ import utils.{CompassDirection => CDir}
 import utils.VisualTracer._
 import utils.EnrichNumerics._
 import SlicingAndDicing._
-import textflow.TextReflowRendering._
+import textreflow.TextReflowRendering._
 
 import scala.collection.mutable
 
@@ -946,7 +946,7 @@ class DocumentSegmenter(
 
     val firstLines = lineBioLabels.filter(_.component.chars.length() > 5).take(8)
 
-    // FIXME: integrate w/textflow and reinstate this block
+    // FIXME: integrate w/textreflow and reinstate this block
     // for(lineNode <- firstLines) {
     //   val lineText = ComponentRendering.VisualLine.toTextReflow(lineNode.component)
     //   if(!lineText.isEmpty) {

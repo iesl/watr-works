@@ -26,8 +26,8 @@ import scala.util.{Try}
 import watrmarks.{StandardLabels => LB}
 object DocumentIO extends DocsegJsonFormats {
   // import play.api.libs.json._
-  // import textflow.TextReflow
-  import textflow.TextReflowRendering._
+  // import textreflow.TextReflow
+  import textreflow.TextReflowRendering._
   // import TextReflow._
   // import play.api.libs.functional.syntax._
 

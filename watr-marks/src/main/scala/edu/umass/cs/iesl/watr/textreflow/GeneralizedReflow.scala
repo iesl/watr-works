@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textflow
+package textreflow
 
 import watrmarks._
 import textboxing.{TextBoxing => TB}

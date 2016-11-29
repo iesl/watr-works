@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textflow
+package textreflow
 
 
 import spindex._
@@ -177,7 +177,7 @@ object TextReflowRendering {
 
     //     case LB.PageAtom =>
     //       val ac = cc.asInstanceOf[AtomicComponent]
-    //       val ops = new textflow.TextReflowAtomOps(ac.chars)
+    //       val ops = new textreflow.TextReflowAtomOps(ac.chars)
     //       val textFlow = atom(ac, ops)
 
     //       val esc = escapeTex(textFlow)

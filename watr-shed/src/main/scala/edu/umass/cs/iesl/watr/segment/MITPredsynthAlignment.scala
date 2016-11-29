@@ -8,7 +8,7 @@ import TypeTags._
 
 import scala.collection.mutable
 import watrmarks.{StandardLabels => LB}
-import textflow.TextReflowRendering._
+import textreflow.TextReflowRendering._
 import ComponentRendering.{VisualLine=>CVisualLine}
 
 import predsynth._
@@ -19,8 +19,8 @@ import utils.SlicingAndDicing._
 object MITAlignPredsynth {
 
   import utils.IdGenerator
-  import textflow.TextReflow._
-  import textflow.TextReflowOps._
+  import textreflow.TextReflow._
+  import textreflow.TextReflowOps._
 
   def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Unit = {
     println("aligning predsynth paper ")

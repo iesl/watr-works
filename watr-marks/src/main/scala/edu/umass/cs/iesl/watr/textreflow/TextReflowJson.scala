@@ -1,8 +1,8 @@
 package edu.umass.cs.iesl.watr
-package textflow
+package textreflow
 
 
-import textflow.TextReflow._
+import textreflow.TextReflow._
 
 object TextReflowJson {
 

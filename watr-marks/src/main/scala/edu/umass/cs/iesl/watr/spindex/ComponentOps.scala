@@ -19,9 +19,9 @@ import ComponentRendering.{VisualLine=>CVisualLine}
 
 
 object ComponentOperations {
-  import textflow.TextReflow._
-  import textflow.TextReflowRendering._
-  import textflow.TextReflowOps._
+  import textreflow.TextReflow._
+  import textreflow.TextReflowRendering._
+  import textreflow.TextReflowOps._
   import utils.EnglishDictionary
 
   def joinTextLines(line1: TextReflow, line2: TextReflow)(dict: EnglishDictionary): TextReflow = {
@@ -535,7 +535,7 @@ object ComponentOperations {
         })
     }
 
-    import textflow.TextReflow._
+    import textreflow.TextReflow._
 
     def setTextReflow(r: TextReflow): Unit = {
       theComponent.zoneIndex.setTextReflow(theComponent, r)
