@@ -2,39 +2,38 @@ package edu.umass.cs.iesl.watr
 package segment
 
 
-import ammonite.{ops => fs}, fs._
-import java.io.InputStream
-import java.net.URI
-import watrmarks._
+// import ammonite.{ops => fs}, fs._
+// import java.io.InputStream
+// import java.net.URI
+// import watrmarks._
 import spindex._
-import GeometricFigure._
+// import GeometricFigure._
 
-import scalaz.@@
-import TypeTags._
-import scala.collection.JavaConversions._
-import textboxing.{TextBoxing => TB}, TB._
-import EnrichGeometricFigures._
-import ComponentOperations._
-import ComponentRendering._
+// import scalaz.@@
+// import TypeTags._
+// import scala.collection.JavaConversions._
+// import textboxing.{TextBoxing => TB}, TB._
+// import EnrichGeometricFigures._
+// import ComponentOperations._
+// import ComponentRendering._
 
+// import utils._
+// import utils.{CompassDirection => CDir}
+// import utils.VisualTracer._
+// import utils.EnrichNumerics._
+// import SlicingAndDicing._
 
-import utils._
-import utils.{CompassDirection => CDir}
-import utils.VisualTracer._
-import utils.EnrichNumerics._
-import SlicingAndDicing._
-
-import scala.collection.mutable
+// import scala.collection.mutable
 
 import predsynth._
 
-import utils.{Histogram, AngleFilter, DisjointSets}
-import Histogram._
+// import utils.{Histogram, AngleFilter, DisjointSets}
+// import Histogram._
 
 
 object DocsegMerging {
 
-  import textflow._
+  // import textflow._
 
   def mergePriorDocseg(zoneIndexer: ZoneIndexer, priorDocseg: Docseg.Docseg): ZoneIndexer = {
     // 1. map each mention to one or more target figures within the prior docseg

@@ -31,10 +31,10 @@ case class AppConfig(
 object Works extends App {
   private[this] val log = org.log4s.getLogger
 
-  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
-  utils.VisualTracer
-  utils.VisualTracer.clearFilters()
-  utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+  utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
+  // utils.VisualTracer
+  // utils.VisualTracer.clearFilters()
+  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
   // utils.VisualTracer.addFilter("GutterDetection")
   // utils.VisualTracer.addFilter("LabelAbstract")
 

@@ -9,25 +9,25 @@ import extract.PdfTextExtractor
 import extract.fonts._
 
 import spindex._
-// import ComponentOperations._
 import EnrichGeometricFigures._
 
 import textboxing.{TextBoxing => TB}, TB._
 
 import utils.IdGenerator
 
-import watrmarks.{StandardLabels => LB, _}
+import watrmarks._
 
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
 import scala.util.{Try}
-import textflow.ComponentReflow._
 
 
+import watrmarks.{StandardLabels => LB}
 object DocumentIO extends DocsegJsonFormats {
-  import play.api.libs.json._
+  // import play.api.libs.json._
   // import textflow.TextReflow
+  import textflow.ComponentReflow._
   // import TextReflow._
   // import play.api.libs.functional.syntax._
 
@@ -42,68 +42,83 @@ object DocumentIO extends DocsegJsonFormats {
 
 
   def richTextSerializeDocument(zoneIndexer: ZoneIndexer): String = {
+    for {
+      pageId <- zoneIndexer.getPages
+      pageTextBlocks <- zoneIndexer.getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
+      _ = println(s"Page $pageId")
+      textBlock <- pageTextBlocks.getChildren(LB.TextBlock)
+    }  {
+      val blockText = zoneIndexer.getTextReflow(textBlock.id)
 
-    val mentionBlock = serializeMentions(zoneIndexer)
+      blockText.foreach{bt =>
+        println("Block Text")
+        println(bt.toFormattedText())
+      }
 
-    val lineLabelBlock = serializeLineLabels(zoneIndexer)
+    }
 
-    val (lineTextBlock, lineDefBlock) = serializeTextLines(zoneIndexer)
+    // val mentionBlock = serializeMentions(zoneIndexer)
 
-    // val tokenBlock = vjoinTrailSep(left, ",")(tokenDict:_*)
+    // val lineLabelBlock = serializeLineLabels(zoneIndexer)
 
-    val pageAtomBlock = serializePageAtoms(zoneIndexer)
+    // val (lineTextBlock, lineDefBlock) = serializeTextLines(zoneIndexer)
 
-    // output all relationships:
-    // rawTextMentionsById
-    val relations = zoneIndexer.relations
-      .filter({
-        case Relation.Record(_, rel, _)
-            if rel=="hasType" || rel== "hasMember" =>  false
-        case _ => true
-      })
-      .map({relation =>
-        val lhs = relation.lhs.map(Identities.write).unify
-        val rhs = relation.rhs.map(Identities.write).unify
+    // // val tokenBlock = vjoinTrailSep(left, ",")(tokenDict:_*)
 
-        val rel = relation.relationship
-        val pad1 = " "*(15-lhs.length())
-        val pad2 = " "*(12-rel.length())
-        s"""["$lhs", $pad1 "$rel", $pad2 "$rhs"]""".box
-      })
+    // val pageAtomBlock = serializePageAtoms(zoneIndexer)
 
-    val relationBlock = vjoinTrailSep(left, ",")(relations:_*)
+    // // output all relationships:
+    // // rawTextMentionsById
+    // val relations = zoneIndexer.relations
+    //   .filter({
+    //     case Relation.Record(_, rel, _)
+    //         if rel=="hasType" || rel== "hasMember" =>  false
+    //     case _ => true
+    //   })
+    //   .map({relation =>
+    //     val lhs = relation.lhs.map(Identities.write).unify
+    //     val rhs = relation.rhs.map(Identities.write).unify
 
-    val propertyBlock = vjoinTrailSep(left, ",")(
-      zoneIndexer.props.map({ prop =>
-        Json.stringify(Json.toJson(prop)).box
-      }):_*
-    )
+    //     val rel = relation.relationship
+    //     val pad1 = " "*(15-lhs.length())
+    //     val pad2 = " "*(12-rel.length())
+    //     s"""["$lhs", $pad1 "$rel", $pad2 "$rhs"]""".box
+    //   })
+
+    // val relationBlock = vjoinTrailSep(left, ",")(relations:_*)
+
+    // val propertyBlock = vjoinTrailSep(left, ",")(
+    //   zoneIndexer.props.map({ prop =>
+    //     Json.stringify(Json.toJson(prop)).box
+    //   }):_*
+    // )
 
 
 
-    (s"""|{ "lines": [
-         |${indent(4)(lineTextBlock)}
-         |  ],
-         |  "mentions": [
-         |${indent(4)(mentionBlock)}
-         |  ],
-         |  "relations": [
-         |${indent(4)(relationBlock)}
-         |  ],
-         |  "properties": [
-         |${indent(4)(propertyBlock)}
-         |  ],
-         |  "labels": [
-         |${indent(4)(lineLabelBlock)}
-         |  ],
-         |  "lineDefs": [
-         |${indent(4)(lineDefBlock)}
-         |  ],
-         |  "ids": [
-         |${indent(4)(pageAtomBlock)}
-         |  ] }
-         |""".stripMargin)
+    // (s"""|{ "lines": [
+    //      |${indent(4)(lineTextBlock)}
+    //      |  ],
+    //      |  "mentions": [
+    //      |${indent(4)(mentionBlock)}
+    //      |  ],
+    //      |  "relations": [
+    //      |${indent(4)(relationBlock)}
+    //      |  ],
+    //      |  "properties": [
+    //      |${indent(4)(propertyBlock)}
+    //      |  ],
+    //      |  "labels": [
+    //      |${indent(4)(lineLabelBlock)}
+    //      |  ],
+    //      |  "lineDefs": [
+    //      |${indent(4)(lineDefBlock)}
+    //      |  ],
+    //      |  "ids": [
+    //      |${indent(4)(pageAtomBlock)}
+    //      |  ] }
+    //      |""".stripMargin)
 
+    ???
   }
 
   def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
@@ -117,7 +132,7 @@ object DocumentIO extends DocsegJsonFormats {
     // val lines = for {
     //   linec <- lineBioLabels
     //   line = linec.component
-    //   textFlow <- line.getTextReflow 
+    //   textFlow <- line.getTextReflow
     // } yield (textFlow, line.id, line.targetRegion)
 
     // val zones = zoneIndexer

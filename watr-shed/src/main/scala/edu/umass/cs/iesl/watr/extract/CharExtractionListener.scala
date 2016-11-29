@@ -7,7 +7,6 @@ import GeometricFigure._
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
-import TypeTags._
 import scalaz.{@@}
 import util._
 

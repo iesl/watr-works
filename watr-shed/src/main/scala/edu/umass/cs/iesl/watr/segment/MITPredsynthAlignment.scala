@@ -6,19 +6,21 @@ import spindex._
 import scalaz.@@
 import TypeTags._
 import ComponentRendering._
-import ComponentOperations._
-import EnrichGeometricFigures._
-import utils.SlicingAndDicing._
 
 import scala.collection.mutable
 import watrmarks.{StandardLabels => LB}
 import textflow.ComponentReflow._
 
 import predsynth._
+import spindex.ComponentOperations._
+import spindex.EnrichGeometricFigures._
+import utils.SlicingAndDicing._
 
 object MITAlignPredsynth {
 
+  import utils.IdGenerator
   import textflow.TextReflow._
+  import textflow.TextReflowOps._
 
   def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Unit = {
     println("aligning predsynth paper ")
@@ -47,7 +49,6 @@ object MITAlignPredsynth {
     val relations = mutable.ArrayBuffer[Relation.Record]()
     val props = mutable.ArrayBuffer[Prop.PropRec]()
 
-    import utils.IdGenerator
 
     val relationIds = IdGenerator[RelationID]()
     // val mentionIds = IdGenerator[MentionID]()

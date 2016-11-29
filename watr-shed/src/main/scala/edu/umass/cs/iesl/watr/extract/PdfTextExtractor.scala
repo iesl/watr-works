@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package extract
 
 import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
-import java.io.{InputStream, IOException}
+import java.io.InputStream 
 
 import _root_.com.itextpdf
 import itextpdf.kernel.pdf._

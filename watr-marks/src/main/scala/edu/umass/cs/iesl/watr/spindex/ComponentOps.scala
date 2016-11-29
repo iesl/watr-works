@@ -38,7 +38,7 @@ object ComponentOperations {
     // vtrace.trace("Broken word hyphenated:" withInfo(s"${w1}-${w2}"))
 
     def dehyphenate(): TextReflow = {
-      val dehyph = line1.modifyCharAtom(line1Text.length-1)(hideChar)
+      val dehyph = line1.modifyCharAt(line1Text.length-1)({case _ => Some("")})
 
       join("")(dehyph, line2)
     }
@@ -98,7 +98,7 @@ object ComponentOperations {
   }
 
 
-  implicit class RicherComponent(val theComponent: Component) extends AnyVal {
+  implicit class ComponentOps_RicherComponent(val theComponent: Component) extends AnyVal {
     // TODO move this operation (and other more fundamental operations) into another class
     def ungroupChildren(label: Label)(
       fn: (Component) => Boolean

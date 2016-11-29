@@ -58,16 +58,15 @@ lazy val watrmarks = (project in file("watr-marks"))
   .aggregate(watrprelude)
 
 
-// lazy val watrshed = project
-//   .in(file("watr-shed"))
-//   .settings(libraryDependencies ++= (
-//     commonDeps ++ DatabaseLibs.slickDb ++ Seq(
-//       "com.sksamuel.scrimage" %% "scrimage-core"     % libV.scrimageVersion,
-//       "com.sksamuel.scrimage" %% "scrimage-io-extra" % libV.scrimageVersion,
-//       "com.sksamuel.scrimage" %% "scrimage-filters"  % libV.scrimageVersion
-//     )
-//   ))
-//   .dependsOn(watrmarks)
+lazy val watrshed = (project in file("watr-shed"))
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= Seq(
+    "com.sksamuel.scrimage" %% "scrimage-core"     % libV.scrimageVersion,
+    "com.sksamuel.scrimage" %% "scrimage-io-extra" % libV.scrimageVersion,
+    "com.sksamuel.scrimage" %% "scrimage-filters"  % libV.scrimageVersion
+  ))
+  .settings(libraryDependencies ++= DatabaseLibs.slickDb)
+  .dependsOn(watrmarks)
 
 
 // lazy val watrcolors = crossProject

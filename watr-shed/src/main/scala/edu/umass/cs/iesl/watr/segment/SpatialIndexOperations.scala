@@ -1,13 +1,8 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import scalaz.@@
 
 import spindex._
-import GeometricFigure._
-import utils.CompassDirection
-import EnrichGeometricFigures._
-import ComponentTypeEnrichments._
 
 object SpatialIndexOperations {
 

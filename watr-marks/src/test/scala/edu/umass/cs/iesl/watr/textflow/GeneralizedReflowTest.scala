@@ -7,12 +7,12 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
   import TextReflow._
   import matryoshka._
   import matryoshka.data._
-  // import matryoshka.implicits._
-  import matryoshka.patterns.EnvT
-  import utils.ScalazTreeImplicits._
+  import matryoshka.implicits._
+  // import matryoshka.patterns.EnvT
+  // import utils.ScalazTreeImplicits._
 
 
-  import scalaz._, Scalaz._
+  // import scalaz._, Scalaz._
   import TextReflowOps._
 
 
@@ -24,58 +24,60 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
   )
 
 
-  // it should "count atoms correctly" in {
-  //   val f0 = flow(
-  //     flows(toAtoms("Eu")),
-  //     labeled(LB.Sub, flows(toAtoms("1 - x")))
-  //   )
-  //   val s = f0.charCount
-  //   f0.charCount shouldBe 7
-  // }
+  it should "count atoms correctly" in {
+    val f0 = flow(
+      flows(toAtoms("Eu")),
+      labeled(LB.Sub, flows(toAtoms("1 - x")))
+    )
+    val s = f0.charCount
+    f0.charCount shouldBe 7
+  }
 
   it should "annotate reflow with (begin, len) ranges over chars" in {
     val ranges = `Eu1-x`.annotateCharRanges()
 
-    val RC = implicitly[Recursive.Aux[Cofree[TextReflowF, CharOffsetState], EnvT[CharOffsetState, TextReflowF, ?]]]
-    val rbox = RC.cata(ranges)(toTree).drawBox
-    println(rbox)
+    cofreeToTree(ranges).flatten.toList.map(_.cbegin) shouldBe {
+      List(0, 0, 0, 1, 2, 2, 2, 3, 4, 5, 6)
+    }
+    // ranges.cata(deattribute[TextReflowF, CharOffsetState, TextReflow](f => fixf(f)))
+  }
 
-    // boxTF[Cofree[TextReflowF, CharOffsetState], TextReflowF](ranges)
-    println(ranges.shows)
+  it should "rewrite chars" in {
 
-    val hidden = `Eu1-x`.modifyCharAt(6)({case (c, i) =>
+    // val RC = implicitly[Recursive.Aux[Cofree[TextReflowF, CharOffsetState], EnvT[CharOffsetState, TextReflowF, ?]]]
+    // val rbox = RC.cata(ranges)(toTree).drawBox
+    // println(rbox)
+
+
+    val rewritten = `Eu1-x`.modifyCharAt(6)({case (c, i) =>
       Some("")
     })
 
-    println(prettyPrintTree(hidden))
-
-    // val rewritten = `Eu1-x`.modifyCharAt(6)(
-    //   (c: Char, index: Int)  => None: Option[Char]
-    // )
+    println(prettyPrintTree(rewritten))
 
   }
 
-  // import spindex.{ComponentOperations => CO}
-  // import ComponentReflow._
+  import spindex.{ComponentOperations => CO}
+  import ComponentReflow._
 
-  // it should "join lines into single virtual line" in {
-  //   val dict = utils.EnglishDictionary.fromWords("scanning")
-  //   val ls = lines(
-  //     """|of LiFePO4 scan-
-  //        |ning electron
-  //        |""".stripMargin
-  //   )
+  it should "join lines into single virtual line" in {
+    val dict = utils.EnglishDictionary.fromWords("scanning")
+    val ls = lines(
+      """|of LiFePO4 scan-
+         |ning electron
+         |""".stripMargin
+    )
 
-  //   val textFlows = ls.map(l =>
-  //     labeled(LB.VisualLine, flows(toAtoms(l)))
-  //   )
+    val textFlows = ls.map(l =>
+      labeled(LB.VisualLine, flows(toAtoms(l)))
+    )
 
-  //   val joined = CO.joinTextLines(textFlows(0), textFlows(1))(dict)
+    val joined = CO.joinTextLines(textFlows(0), textFlows(1))(dict)
 
-  //   joined.toText() shouldBe {
-  //     "of LiFePO4 scanning electron"
-  //   }
-  // }
+    joined.toText() shouldBe {
+      "of LiFePO4 scanning electron"
+    }
+  }
 
   // it should "represent sup/sub" in {
   //   val f0 = flow(

@@ -386,8 +386,6 @@ class DocumentSegmenter(
 
 
   def joinTextblockReflow(textBlockRegion: Component): Unit = {
-    // println("joinTextblockReflow")
-    // println(VisualLine.renderRoleTree(textBlockRegion))
     val visualLines = for {
       vline       <- textBlockRegion.getChildren(LB.VisualLine)
       textReflow  <- vline.getTextReflow
