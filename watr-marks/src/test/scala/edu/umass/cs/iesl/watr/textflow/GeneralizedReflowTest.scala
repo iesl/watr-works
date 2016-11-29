@@ -58,7 +58,7 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
   }
 
   import spindex.{ComponentOperations => CO}
-  import ComponentReflow._
+  import textflow.TextReflowRendering._
 
   it should "join lines into single virtual line" in {
     val dict = utils.EnglishDictionary.fromWords("scanning")

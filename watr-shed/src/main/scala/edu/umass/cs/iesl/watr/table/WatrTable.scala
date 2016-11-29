@@ -11,7 +11,7 @@ import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import spindex._
 import ComponentTypeEnrichments._
 import TypeTags._
-import textflow.ComponentReflow._
+import textflow.TextReflowRendering._
 
 import textboxing.{TextBoxing => TB}, TB._
 

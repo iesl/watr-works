@@ -6,14 +6,10 @@ import textboxing.{TextBoxing => TB}
 
 import scalaz._
 import Scalaz._
-// import scalaz.syntax.apply._
-// import scalaz.syntax.traverse._
 
 import matryoshka._
 import matryoshka.data._
-
-import Recursive.ops._
-import FunctorT.ops._
+import matryoshka.implicits._
 
 
 class TextReflowAtomOps(

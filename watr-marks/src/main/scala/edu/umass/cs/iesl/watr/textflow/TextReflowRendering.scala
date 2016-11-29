@@ -7,18 +7,14 @@ import spindex._
 import textboxing.{TextBoxing => TB}
 import TB._
 
-object ComponentReflow {
 
-
-}
-
-object TextFlowRendering {
+object TextReflowRendering {
   import utils.ScalazTreeImplicits._
   import TextReflow._
   import TextReflowOps._
   import TextReflowF._
   val TR = TextReflow
-  import watrmarks.{StandardLabels => LB}
+  import watrmarks.{StandardLabels => LB, _}
 
 
   import TR._
@@ -45,6 +41,9 @@ object TextFlowRendering {
   }
 
   implicit class RicherTextReflow(val theReflow: TR.TextReflow) extends AnyVal  {
+    import matryoshka._
+    import matryoshka.data._
+    import matryoshka.implicits._
 
     def toText(): String = {
       val res = theReflow.cata(attributePara(evalFlatText))

@@ -5,11 +5,8 @@ package segment
 import org.scalatest._
 
 import spindex._
-import EnrichGeometricFigures._
 import ComponentOperations._
-import GeometricFigure._
-import scalaz.@@
-import java.io.InputStream
+
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
   //   """Page:0 file:///Schauer-1987.pdf""",

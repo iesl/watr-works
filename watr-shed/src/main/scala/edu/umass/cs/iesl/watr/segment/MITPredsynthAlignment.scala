@@ -5,11 +5,11 @@ import spindex._
 
 import scalaz.@@
 import TypeTags._
-import ComponentRendering._
 
 import scala.collection.mutable
 import watrmarks.{StandardLabels => LB}
-import textflow.ComponentReflow._
+import textflow.TextReflowRendering._
+import ComponentRendering.{VisualLine=>CVisualLine}
 
 import predsynth._
 import spindex.ComponentOperations._
@@ -29,7 +29,7 @@ object MITAlignPredsynth {
 
     val lineTextReflows = for {
       linec <- lineBioLabels
-      line   <- VisualLine.toTextReflow(linec.component).toSeq
+      line   <- CVisualLine.toTextReflow(linec.component).toSeq
     } yield line
 
     // Join the TextReflow into a single line:

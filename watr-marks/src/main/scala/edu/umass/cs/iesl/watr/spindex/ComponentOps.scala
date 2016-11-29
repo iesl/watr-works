@@ -14,13 +14,13 @@ import spindex.GeometricFigure._
 import scala.collection.mutable
 // import ComponentRendering.PageAtom
 import utils.EnrichNumerics._
-import ComponentRendering.VisualLine
+import ComponentRendering.{VisualLine=>CVisualLine}
 
 
 
 object ComponentOperations {
-  import textflow.ComponentReflow._
   import textflow.TextReflow._
+  import textflow.TextReflowRendering._
   import textflow.TextReflowOps._
   import utils.EnglishDictionary
 
@@ -499,7 +499,7 @@ object ComponentOperations {
 
         // vtrace.trace("Tree after Final ungrouping " withInfo VisualLine.renderRoleTree(theComponent))
 
-        val maybeReflow = VisualLine.toTextReflow(theComponent)
+        val maybeReflow = CVisualLine.toTextReflow(theComponent)
 
         maybeReflow.foreach {
           theComponent.setTextReflow(_)

@@ -27,7 +27,7 @@ import watrmarks.{StandardLabels => LB}
 object DocumentIO extends DocsegJsonFormats {
   // import play.api.libs.json._
   // import textflow.TextReflow
-  import textflow.ComponentReflow._
+  import textflow.TextReflowRendering._
   // import TextReflow._
   // import play.api.libs.functional.syntax._
 
