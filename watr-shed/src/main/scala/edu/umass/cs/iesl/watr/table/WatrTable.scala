@@ -26,7 +26,7 @@ object WatrTable {
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
-        |import watr._, spindex._, ComponentRendering._
+        |import watr._, spindex._
         |import table._
         |import ShellCommands._
         |implicit val pp0 = pprintComponent
@@ -51,7 +51,7 @@ object WatrTable {
 
 
 object ShellCommands {
-  import ComponentRendering.VisualLine
+  import TextReflowConversion._
 
   // implicit val ppConfig = pprint.Config(
   // width: Int = Config.defaultMaxWidth,
@@ -201,7 +201,7 @@ object ShellCommands {
     }
 
     def show(): TB.Box = {
-      VisualLine.toTextReflow(thisComponent).map(t => t.toText().box).getOrElse("<could not render>".box)
+      toTextReflow(thisComponent).map(t => t.toText().box).getOrElse("<could not render>".box)
     }
 
     def webShow(): String = {
@@ -234,7 +234,7 @@ object ShellCommands {
           .dropWhile(!_.isLetterOrDigit).reverse
           .mkString.trim
       }
-      VisualLine.toTextReflow(thisComponent)
+      toTextReflow(thisComponent)
         .map(_.toString.split(" ").map(trimWord(_)).toSeq)
         .getOrElse(Seq())
     }
@@ -262,7 +262,7 @@ object ShellCommands {
     }
 
     def grep(re: String): Option[Component]= {
-      val rendered = VisualLine.toTextReflow(thisComponent).toString
+      val rendered = toTextReflow(thisComponent).toString
 
       if (rendered.matches(re)) {
         Some(thisComponent)

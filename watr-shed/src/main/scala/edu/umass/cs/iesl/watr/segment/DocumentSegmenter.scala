@@ -15,14 +15,13 @@ import scala.collection.JavaConversions._
 import textboxing.{TextBoxing => TB}, TB._
 import EnrichGeometricFigures._
 import ComponentOperations._
-import ComponentRendering.{VisualLine=>CVisualLine}
-
 import utils._
 import utils.{CompassDirection => CDir}
 import utils.VisualTracer._
 import utils.EnrichNumerics._
 import SlicingAndDicing._
 import textreflow.TextReflowRendering._
+import TextReflowConversion._
 
 import scala.collection.mutable
 
@@ -481,7 +480,7 @@ class DocumentSegmenter(
 
   def show(c: Component): TB.Box = {
     c.getTextReflow
-      .orElse { CVisualLine.toTextReflow(c) }
+      .orElse { toTextReflow(c) }
       .map(t => t.toText().box).getOrElse("<could not render>".box)
   }
 

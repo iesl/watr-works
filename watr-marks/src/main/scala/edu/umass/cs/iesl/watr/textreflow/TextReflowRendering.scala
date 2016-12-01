@@ -56,13 +56,12 @@ object TextReflowRendering {
   }
 
   object VisualLine {
-    import scalaz.std.string._
-
-    def renderRoleTree(c: Component): TB.Box = {
-      c.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
-        .map(_.toString())
-        .drawBox
-    }
+    // import scalaz.std.string._
+    // def renderRoleTree(c: Component): TB.Box = {
+    //   c.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
+    //     .map(_.toString())
+    //     .drawBox
+    // }
 
 
     // def dquote(b: TextReflow): TextReflow = bracket('"', '"', b)

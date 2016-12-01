@@ -15,7 +15,6 @@ import spindex._
 // import textboxing.{TextBoxing => TB}, TB._
 // import EnrichGeometricFigures._
 // import ComponentOperations._
-// import ComponentRendering._
 
 // import utils._
 // import utils.{CompassDirection => CDir}
