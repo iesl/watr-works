@@ -4,12 +4,18 @@ package spindex
 import org.scalatest._
 
 trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
+  import scalaz._, Scalaz._
+  import utils.ScalazTreeImplicits._
   import utils.IdGenerator
   import TypeTags._
   import GeometricFigure._
   import EnrichGeometricFigures._
   import watrmarks.{StandardLabels => LB}
   import edu.umass.cs.iesl.watr.watrmarks.Label
+
+  import textreflow._
+  import TextReflow._
+  import TextReflowF._
 
   // import scalaz.@@
   val regionIDs = IdGenerator[RegionID]()
@@ -34,16 +40,94 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
   )
 
   def lineWithSubs(line: String): Unit = {
-
     line.zipWithIndex
-      .foldLeft(List[Char]())({case (acc, e) => 
-
+      .foldLeft(List[Char]())({case (acc, e) =>
         acc
       })
   }
 
+  // def stringToTextReflow(multiLines: String): TextReflow = {
+  def stringToTextReflow(multiLines: String): Unit = {
+    import scalaz.Tree
+    // import scalaz.TreeLoc
+    // import scalaz.syntax.tree._
+    val t: Tree[TextReflowF[Int]] = Tree.Leaf(Flow(Set(), List()))
+
+    var tloc = t.loc
+
+    def insertRight(tr: TextReflowF[Int]): Unit = {
+      tloc = tloc.insertRight(Tree.Leaf(tr))
+    }
+    def insertLeft(tr: TextReflowF[Int]): Unit = {
+      tloc = tloc.insertLeft(Tree.Leaf(tr))
+    }
+    def insertDownLast(tr: TextReflowF[Int]): Unit = {
+      tloc = tloc.insertDownLast(Tree.Node(tr, Stream()))
+    }
+
+    def pop(): Unit = {
+      tloc = tloc.parent.get
+    }
+
+    def debug(): Unit = {
+      println(tloc.toTree.map(_.toString).drawBox)
+    }
+
+    for {
+      (line, linenum) <- lines(multiLines).zipWithIndex
+      _ = insertDownLast(Labeled(Set(LB.VisualLine), 0))
+      _ = insertDownLast(Flow(Set(), List()))
+      (ch, chnum)     <- line.zipWithIndex
+    } {
+      ch match {
+        case '^' => insertDownLast(Labeled(Set(LB.Sup), 0))
+        case '_' => insertDownLast(Labeled(Set(LB.Sub), 0))
+        case '{' => insertDownLast(Flow(Set(), List()))
+        case '}' => pop(); pop()
+        case ' ' => insertDownLast(Insert(" ")); pop()
+        case _ =>
+          val charAtom = CharAtom(
+            TargetRegion(regionIDs.nextId, page0,
+              LTBounds(
+                left=chnum*xscale, top=linenum*yscale,
+                width=xscale, height=yscale
+              )
+            ),
+            ch.toString
+          )
+          val ops = new textreflow.TextReflowAtomOps(Seq(ch))
+          insertDownLast(Atom(charAtom, ops))
+          pop()
+      }
+
+      // println(s"ch: ${ch} n:${chnum} line:${linenum}")
+      // debug()
+      // println()
+      // println()
+    }
+
+    println("done")
+    debug()
+
+  }
+
 
   def stringToPageAtoms(str: String): (Seq[PageAtom], PageGeometry) = {
+    for {
+      (line, linenum) <- lines(str).zipWithIndex
+      (ch, chnum)     <- line.zipWithIndex
+    } yield {
+      CharAtom(
+        TargetRegion(regionIDs.nextId, page0,
+          LTBounds(
+            left=chnum*xscale, top=linenum*yscale,
+            width=xscale, height=yscale
+          )
+        ),
+        ch.toString
+      )
+
+    }
 
     val atoms = lines(str).zipWithIndex
       .map({ case (line, linenum) =>
@@ -100,6 +184,9 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
   }
 
   import java.net.URI
+
+
+
   def createZoneIndexer(str: String): ZoneIndexer = {
     val (atoms, geom) = stringToPageAtoms(str)
     val dummyUri = URI.create("/")

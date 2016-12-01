@@ -25,39 +25,39 @@ object SensibleProject {
   )
 
   lazy val testSettings = Seq(
-    parallelExecution := true,
+    // parallelExecution := true,
 
-    // one JVM per test suite
-    // fork := true,
-    testForkedParallel := true,
-    // testGrouping <<= (
-    //   definedTests,
-    //   baseDirectory,
-    //   javaOptions,
-    //   outputStrategy,
-    //   envVars,
-    //   javaHome,
-    //   connectInput
-    // ).map { (tests, base, options, strategy, env, javaHomeDir, connectIn) =>
-    //   val opts = ForkOptions(
-    //     bootJars = Nil,
-    //     javaHome = javaHomeDir,
-    //     connectInput = connectIn,
-    //     outputStrategy = strategy,
-    //     runJVMOptions = options,
-    //     workingDirectory = Some(base),
-    //     envVars = env
-    //   )
-    //   tests.map { test =>
-    //     Tests.Group(test.name, Seq(test), Tests.SubProcess(opts))
-    //   }
-    // },
+    // // one JVM per test suite
+    // // fork := true,
+    // testForkedParallel := true,
+    // // testGrouping <<= (
+    // //   definedTests,
+    // //   baseDirectory,
+    // //   javaOptions,
+    // //   outputStrategy,
+    // //   envVars,
+    // //   javaHome,
+    // //   connectInput
+    // // ).map { (tests, base, options, strategy, env, javaHomeDir, connectIn) =>
+    // //   val opts = ForkOptions(
+    // //     bootJars = Nil,
+    // //     javaHome = javaHomeDir,
+    // //     connectInput = connectIn,
+    // //     outputStrategy = strategy,
+    // //     runJVMOptions = options,
+    // //     workingDirectory = Some(base),
+    // //     envVars = env
+    // //   )
+    // //   tests.map { test =>
+    // //     Tests.Group(test.name, Seq(test), Tests.SubProcess(opts))
+    // //   }
+    // // },
 
-    testOptions ++= noColorIfEmacs,
-    logBuffered in Test := false,
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
-    // testFrameworks := Seq(TestFrameworks.ScalaTest)
-    testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
+    // testOptions ++= noColorIfEmacs,
+    // logBuffered in Test := false,
+    // testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
+    // // testFrameworks := Seq(TestFrameworks.ScalaTest)
+    // testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
   )
 }
 

@@ -3,20 +3,19 @@ package textreflow
 
 import watrmarks.{StandardLabels => LB}
 
-class GeneralizedReflowTest extends StringReflowTestUtil {
+class TextReflowTest extends StringReflowTestUtil {
   import TextReflow._
-  import matryoshka._
-  import matryoshka.data._
-  import matryoshka.implicits._
+  // import matryoshka._
+  // import matryoshka.data._
+  // import matryoshka.implicits._
   // import matryoshka.patterns.EnvT
   // import utils.ScalazTreeImplicits._
-
-
   // import scalaz._, Scalaz._
+
   import TextReflowOps._
 
 
-  behavior of "component reflowing"
+  behavior of "text reflowing"
 
   def `Eu1-x` = flow(
     flows(toAtoms("Eu")),
@@ -109,13 +108,13 @@ class GeneralizedReflowTest extends StringReflowTestUtil {
 
 
   //     val ffi = 0xFB03.toChar
-  //     s"""foo Eu1-xBixVO4 bar
+  //     s"""| Eu1-xBixVO4 bar
   //         |      bbb  b  b
-  //         |foo Eu_{1¿23;x}Bi_{x}VO_{4} bar
-  //         |foo Fe^{+}_{x+1.0}O_{x}
-  //         |foo ¿23;ﬂ bar
-  //         |foo ﬂavor ﬆars e${ffi}cient bar
-  //         |foo æon Æon bar
+  //         | Eu_{1¿23;x}Bi_{x}VO_{4} bar
+  //         | Fe^{+}_{x+1.0}O_{x}
+  //         | ¿23;ﬂ bar
+  //         | ﬂavor ﬆars e${ffi}cient bar
+  //         | æon Æon bar
   //         |""".stripMargin
 
   //   it should "correctly compute string-match offsets" in {

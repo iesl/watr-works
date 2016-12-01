@@ -288,7 +288,6 @@ case class RegionComponent(
 case class AtomicComponent(
   id: Int@@ComponentID,
   pageAtom: PageAtom,
-  // charAtom: CharAtom,
   override val zoneIndex: ZoneIndexer
 ) extends Component {
 

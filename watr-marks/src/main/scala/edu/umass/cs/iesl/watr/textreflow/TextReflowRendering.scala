@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-
 import spindex._
 
 import textboxing.{TextBoxing => TB}
