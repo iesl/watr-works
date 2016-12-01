@@ -6,11 +6,9 @@ import spindex._
 import textboxing.{TextBoxing => TB}, TB._
 
 object TextReflowRendering {
-  import utils.ScalazTreeImplicits._
   import TextReflowOps._
   import TextReflowF._
   import watrmarks.{StandardLabels => LB, _}
-
 
   def escapeLineFormatting: TextReflowT => TextReflowT = {
     case l @ Labeled (labels, a)     =>
@@ -19,10 +17,9 @@ object TextReflowRendering {
       else                         { l }
 
     case t      => t
-
   }
 
-  def evalFlatText(t: TextReflowF[(TextReflow, String)]): String = {
+  def renderText(t: TextReflowF[(TextReflow, String)]): String = {
     t match {
       case Atom    (ac, ops)               => ops.toString
       case Insert  (value)                 => s"$value"
@@ -37,9 +34,15 @@ object TextReflowRendering {
     import matryoshka._
     import matryoshka.data._
     import matryoshka.implicits._
+    import TextReflowJson._
+
+    def toIdList(): Seq[TargetRegion] = {
+      val res = theReflow.cata(attributePara(extractTargetRegions))
+      res.toPair._1
+    }
 
     def toText(): String = {
-      val res = theReflow.cata(attributePara(evalFlatText))
+      val res = theReflow.cata(attributePara(renderText))
       res.toPair._1
     }
 

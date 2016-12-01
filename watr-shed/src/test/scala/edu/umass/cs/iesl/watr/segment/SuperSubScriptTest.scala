@@ -44,6 +44,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
       // )
     )
 
+    import TextReflowConversion.toTextReflow
     examples.foreach { example =>
       val pdfIns = example.region.pdfUrl
       val pageId = example.region.page
@@ -61,7 +62,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
 
       val tokenizedLines = lineComponents.map { lineComponent =>
         lineComponent.tokenizeLine()
-        ComponentRendering.VisualLine.toTextReflow(lineComponent).get.toString()
+        toTextReflow(lineComponent).get.toString()
       }
 
       // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")

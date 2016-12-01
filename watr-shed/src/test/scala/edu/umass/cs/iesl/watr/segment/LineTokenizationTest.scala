@@ -6,6 +6,7 @@ import org.scalatest._
 
 import spindex._
 import ComponentOperations._
+import TextReflowConversion.toTextReflow
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
@@ -157,7 +158,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
     val tokenizedLines = lineComponents.map { lineComponent =>
       lineComponent.tokenizeLine()
-      ComponentRendering.VisualLine.toTextReflow(lineComponent).get.toString()
+      toTextReflow(lineComponent).get.toString()
     }
 
 

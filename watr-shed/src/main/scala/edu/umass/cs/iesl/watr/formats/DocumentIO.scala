@@ -4,32 +4,22 @@ package formats
 
 import TypeTags._
 
-
 import extract.PdfTextExtractor
 import extract.fonts._
-
 import spindex._
 import EnrichGeometricFigures._
-
 import textboxing.{TextBoxing => TB}, TB._
-
 import utils.IdGenerator
-
-import watrmarks._
-
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
 import scala.util.{Try}
 
-
+import watrmarks._
 import watrmarks.{StandardLabels => LB}
+
 object DocumentIO extends DocsegJsonFormats {
-  // import play.api.libs.json._
-  // import textreflow.TextReflow
   import textreflow.TextReflowRendering._
-  // import TextReflow._
-  // import play.api.libs.functional.syntax._
 
   def serializeTargetRegion(tr: TargetRegion): TB.Box = {
     s"[${tr.target}, ${tr.bbox.compactPrint}]]"
@@ -51,7 +41,12 @@ object DocumentIO extends DocsegJsonFormats {
     } yield {
 
       val formattedText = blockTextReflow.toFormattedText()
+      val idList = blockTextReflow.toIdList()
+      println()
       println(formattedText)
+      println(idList)
+
+      assert(formattedText.length()==idList.length)
     }
     // val (lineTextBlock, lineDefBlock) = serializeTextLines(zoneIndexer)
 
