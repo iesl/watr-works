@@ -4,7 +4,7 @@ package textreflow
 import watrmarks.{StandardLabels => LB}
 
 class TextReflowTest extends StringReflowTestUtil {
-  import TextReflow._
+  // import TextReflow._
   // import matryoshka._
   // import matryoshka.data._
   // import matryoshka.implicits._

@@ -18,7 +18,6 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
   def dummyUri = URI.create("/")
 
   import textreflow._
-  import TextReflow._
   import TextReflowF._
 
   val regionIDs = IdGenerator[RegionID]()

@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-import TextReflow._
+//import TextReflow._
 
 class TextReflowParsingTest extends StringReflowTestUtil {
   behavior of "text reflow construction from string"

@@ -14,7 +14,7 @@ import utils.IdGenerator
 import VisualTracer._
 // import watrmarks.{StandardLabels => LB}
 import predsynth._
-import textreflow.TextReflow._
+import textreflow._
 
 class ZoneIndexer(
   srcUri: URI

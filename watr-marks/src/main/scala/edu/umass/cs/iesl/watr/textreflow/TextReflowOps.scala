@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-import TextReflow._
+ //import TextReflow._
 import TextReflowF._
 
 import spindex._
@@ -23,7 +23,7 @@ object TextReflowOps {
     override def shows(f: CharOffsetState): String = s"[${f.cbegin}-${f.clen}]"
   }
 
-  implicit class RicherReflowU(val theReflow: TextReflowU) extends AnyVal  {
+  implicit class RicherTextReflowT(val theReflow: TextReflowT) extends AnyVal  {
 
     def hasLabel(l: Label): Boolean = theReflow match {
       case Labeled(labels, _) if labels.contains(l) => true
@@ -80,7 +80,7 @@ object TextReflowOps {
 
   type TextReflowCR = TextReflowF[Cofree[TextReflowF, CharOffsetState]]
 
-  def charStarts[A](i: CharOffsetState, t: TextReflowU): State[CharOffsetState, CharOffsetState] = {
+  def charStarts[A](i: CharOffsetState, t: TextReflowT): State[CharOffsetState, CharOffsetState] = {
     val chars = countCharsF(t)
     State.modify[CharOffsetState]({
       case r => CharOffsetState(r.cbegin+r.clen, chars)
@@ -92,7 +92,7 @@ object TextReflowOps {
   type CharLocState = State[CharLoc, CharLoc]
 
   def charRangeState[A](
-    i: CharLoc, t: TextReflowU
+    i: CharLoc, t: TextReflowT
   ): CharLocState = {
     State.get[CharLoc] <* State.modify[CharLoc]({
       case r => r.right

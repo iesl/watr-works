@@ -3,22 +3,16 @@ package textreflow
 
 import spindex._
 
-import textboxing.{TextBoxing => TB}
-import TB._
-
+import textboxing.{TextBoxing => TB}, TB._
 
 object TextReflowRendering {
   import utils.ScalazTreeImplicits._
-  import TextReflow._
   import TextReflowOps._
   import TextReflowF._
-  val TR = TextReflow
   import watrmarks.{StandardLabels => LB, _}
 
 
-  import TR._
-
-  val BracketTexFormatting: TextReflowU => TextReflowU = {
+  def escapeLineFormatting: TextReflowT => TextReflowT = {
     case l @ Labeled (labels, a)     =>
       if (l.hasLabel(LB.Sup))      { Bracket("^{", "}",  a) }
       else if (l.hasLabel(LB.Sub)) { Bracket("_{", "}",  a) }
@@ -39,7 +33,7 @@ object TextReflowRendering {
     }
   }
 
-  implicit class RicherTextReflow(val theReflow: TR.TextReflow) extends AnyVal  {
+  implicit class RicherTextReflow(val theReflow: TextReflow) extends AnyVal  {
     import matryoshka._
     import matryoshka.data._
     import matryoshka.implicits._
@@ -50,7 +44,7 @@ object TextReflowRendering {
     }
 
     def toFormattedText(): String = {
-      val res = theReflow.transCata(BracketTexFormatting)
+      val res = theReflow.transCata(escapeLineFormatting)
       res.toText
     }
   }

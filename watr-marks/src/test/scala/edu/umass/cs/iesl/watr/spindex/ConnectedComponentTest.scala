@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 class ConnectedComponentTest extends ConnectedComponentTestUtil {
-  import ComponentRendering.VisualLine
   import ComponentOperations._
 
   behavior of "connected components"
@@ -75,7 +74,7 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
 
       textSpanRegion.setChildren(LB.TextSpan, splitRegions)
 
-      val textFlow = VisualLine.toTextReflow(row).get
+      // val textFlow = VisualLine.toTextReflow(row).get
       // val rendered = textFlow.toText()
 
       // println("Final Tree")

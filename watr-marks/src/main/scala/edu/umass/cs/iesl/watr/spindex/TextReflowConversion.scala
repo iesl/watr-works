@@ -9,7 +9,7 @@ import ComponentOperations._
 
 object TextReflowConversion {
   import TB._
-  import textreflow.TextReflow._
+  import textreflow._
 
 
   def childSpansOrAtoms(cc: Component): Seq[Component] = {

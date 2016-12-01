@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package textreflow
 
 
-import textreflow.TextReflow._
+ //import textreflow._
 
 object TextReflowJson {
 

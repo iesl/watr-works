@@ -9,7 +9,7 @@ import watrmarks.{StandardLabels => LB}
 
 class StringReflowTestUtil extends ConnectedComponentTestUtil {
 
-  import TextReflow._
+  // import TextReflow._
   import TextReflowF._
   import matryoshka.implicits._
 

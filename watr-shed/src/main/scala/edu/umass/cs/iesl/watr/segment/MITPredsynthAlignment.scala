@@ -19,7 +19,7 @@ import utils.SlicingAndDicing._
 object MITAlignPredsynth {
 
   import utils.IdGenerator
-  import textreflow.TextReflow._
+  import textreflow._
   import textreflow.TextReflowOps._
 
   def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Unit = {

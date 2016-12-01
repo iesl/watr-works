@@ -11,7 +11,6 @@ import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
 
-
 class TextReflowAtomOps(
   val chars: Seq[Char]
 ) {
@@ -54,16 +53,11 @@ object TextReflowF {
 }
 
 
-// TODO rename this to avoid object name/type clashes
-object TextReflow {
+trait TextReflowFunctions {
   import TextReflowF._
-
-  type TextReflow = Fix[TextReflowF]
-
-  type TextReflowU = TextReflowF[Fix[TextReflowF]]
+  import utils.SlicingAndDicing._
 
   def fixf = Fix[TextReflowF](_)
-
 
   def atom[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
   def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
@@ -81,7 +75,7 @@ object TextReflow {
   def insert(s: String) = fixf(Insert(s))
   def space() = insert(" ")
 
-
+  private def mkPad(s: String): TextReflow = insert(s)
 
   def addLabel(l: Label): TextReflow => TextReflow = tr => fixf(tr.unFix match {
     case f @ Flow(ls, as)    => f.copy(labels = ls + l)
@@ -89,13 +83,21 @@ object TextReflow {
     case r                   => labeled(l, fixf(r)).unFix
   })
 
-  import utils.SlicingAndDicing._
 
+  def join(sep:String)(bs:TextReflow*): TextReflow =
+    joins(sep)(bs.toSeq)
 
-  def groupByPairs(reflow: TextReflowU)(
-    groupf: (TextReflowU, TextReflowU, Int) => Boolean,
-    onGrouped: List[TextReflowU] => List[TextReflowU] = (w => w)
-  ): TextReflowU = {
+  def joins(sep:String)(bs:Seq[TextReflow]): TextReflow =
+    concat(bs.toList intersperse mkPad(sep))
+
+  def concat(bs: Seq[TextReflow]): TextReflow = {
+    flows(bs)
+  }
+
+  def groupByPairs(reflow: TextReflowT)(
+    groupf: (TextReflowT, TextReflowT, Int) => Boolean,
+    onGrouped: List[TextReflowT] => List[TextReflowT] = (w => w)
+  ): TextReflowT = {
     reflow match {
       case f @ Flow(labels, as) =>
         val grouped = as
@@ -114,14 +116,14 @@ object TextReflow {
     }
   }
 
-  def hasLabel(l: Label): TextReflowU => Boolean = _ match {
+  def hasLabel(l: Label): TextReflowT => Boolean = _ match {
     case Labeled(labels, _) if labels.contains(l) => true
     case _ => false
   }
 
 
   def everySequence(r: TextReflow)(f: List[TextReflow] => List[TextReflow]): TextReflow = {
-    def atFlows: TextReflowU => TextReflowU = r => r match {
+    def atFlows: TextReflowT => TextReflowT = r => r match {
       case fl @ Flow(labels: Set[Label], as: List[TextReflow]) =>
         fl.copy(as = f(as))
       case fl => fl
@@ -131,7 +133,7 @@ object TextReflow {
   }
 
   def everyLabel(l: Label, r: TextReflow)(f: TextReflow => TextReflow): TextReflow = {
-    def ifLabeled(r:TextReflowU): TextReflowU =  {
+    def ifLabeled(r:TextReflowT): TextReflowT =  {
       if (hasLabel(l)(r)) holes(r) match {
         case Labeled(labels, (a, fWhole)) => fWhole(f(a))
         case _ => r
@@ -141,7 +143,7 @@ object TextReflow {
     r.transCata(ifLabeled)
   }
 
-  def everywhere(r: TextReflow)(f: TextReflowU => TextReflowU): TextReflow = {
+  def everywhere(r: TextReflow)(f: TextReflowT => TextReflowT): TextReflow = {
     r.transCata(f)
   }
 
@@ -175,44 +177,5 @@ object TextReflow {
       c.tail.toStream.map(cofreeToTree(_))
     )
   }
-
-  // def printCofree[B](cof: Cofree[TextReflowF, B])(implicit
-  //   BS: Show[B],
-  //   CS: Delay[Show, Cofree[TextReflowF, ?]]
-  // ): TB.Box = {
-  //   // val RC = implicitly[Recursive.Aux[Cofree[Exp, Int], EnvT[Int, Exp, ?]]]
-  //   // val rbox2 = RC.cata(res2)(toTree).drawBox
-  //   // import utils.ScalazTreeImplicits._
-  //   // CS(BS).shows(cof)
-  //   cofreeToTree(cof).draw
-  // }
-
-  private def mkPad(s: String): TextReflow = insert(s)
-
-  def join(sep:String)(bs:TextReflow*): TextReflow =
-    joins(sep)(bs.toSeq)
-
-  def joins(sep:String)(bs:Seq[TextReflow]): TextReflow =
-    concat(bs.toList intersperse mkPad(sep))
-
-  def concat(bs: Seq[TextReflow]): TextReflow = {
-    flows(bs)
-  }
-
-
-  // implicit object RangesInts extends Monoid[Ranges.Ints] with Show[Ranges.Ints] with Equal[Ranges.Ints] with Order[Ranges.Ints] with IsEmpty[Lambda[a => Ranges.Ints]] {
-  //   import Ranges.Ints
-
-  //   type SA[A] = Ints
-  //   def append(f1: Ranges.Ints, f2: => Ranges.Ints) = Ints(math.min(f1.min, f2.min), math.max(f1.max, f2.max))
-  //   def zero: Ranges.Ints = Ranges.Ints(0, 0)
-  //   override def shows(f: Ranges.Ints): String = s"[${f.min}-${f.max}]"
-  //   def order(r1: Ranges.Ints, r2: Ranges.Ints) = Ordering.fromLessThan(r1, r2) { (a, b) => a.min < b.min && a.max < b.max }
-  //   override def equal(x: Ranges.Ints, y: Ranges.Ints) = x.min==y.min && x.max==y.max
-  //   override def equalIsNatural: Boolean = true
-  //   def empty[A] = zero
-  //   def plus[A](f1: SA[A], f2: => SA[A]) = append(f1, f2)
-  //   def isEmpty[A](s: SA[A]) = equal(s, empty)
-  // }
 
 }

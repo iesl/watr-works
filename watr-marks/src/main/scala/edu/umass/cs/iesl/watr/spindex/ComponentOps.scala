@@ -19,7 +19,7 @@ import TextReflowConversion._
 
 
 object ComponentOperations {
-  import textreflow.TextReflow._
+  import textreflow._
   import textreflow.TextReflowRendering._
   import textreflow.TextReflowOps._
   import utils.EnglishDictionary
@@ -535,7 +535,7 @@ object ComponentOperations {
         })
     }
 
-    import textreflow.TextReflow._
+    import textreflow._
 
     def setTextReflow(r: TextReflow): Unit = {
       theComponent.zoneIndex.setTextReflow(theComponent, r)
