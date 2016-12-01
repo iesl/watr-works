@@ -2,7 +2,8 @@ package edu.umass.cs.iesl.watr
 package textreflow
 
 // import watrmarks.{StandardLabels => LB}
-// import TextReflow._
+import TextReflow._
+// import TextReflowOps._
 
 trait TextReflowExamples extends StringReflowTestUtil {
   // val ffi = 0xFB03.toChar
@@ -18,13 +19,28 @@ trait TextReflowExamples extends StringReflowTestUtil {
 
 class TextReflowRenderingTest extends TextReflowExamples {
 
+  behavior of "text reflow construction from string"
+
+
+  it should "parse a string into correct nested structure" in {
+    val textReflow = stringToTextReflow("""Eu_{1 - x}Bi_{x}VO_{4}""")
+
+    println(prettyPrintTree(textReflow))
+  }
+
+  it should "parse multiline strings" in {
+    val textReflow = stringToTextReflow(
+      """|of LiFePO4 scan-
+         |ning electron
+         |""".stripMargin
+    )
+
+    println(prettyPrintTree(textReflow))
+  }
 
   behavior of "text reflow rendering"
 
   it should "render greppable (char-count) text" in {
-    val textReflow = stringToTextReflow(
-      """Eu_{1 - x}Bi_{x}VO_{4}"""
-    )
     // val zoneIndex = createZoneIndexer(
     //   // 012 3 4567890
     //   """Eu1 - xBixVO4"""
