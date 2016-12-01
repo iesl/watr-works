@@ -2,49 +2,22 @@ package edu.umass.cs.iesl.watr
 package textreflow
 
 // import watrmarks.{StandardLabels => LB}
-import TextReflow._
+// import TextReflow._
 // import TextReflowOps._
 
-trait TextReflowExamples extends StringReflowTestUtil {
-  // val ffi = 0xFB03.toChar
-  // val sufficient = flows(toAtoms(s"su${ffi}cient"))
 
-  // def `Eu1 - x` = flow(
-  //   flows(toAtoms("Eu")),
-  //   labeled(LB.Sub, flows(toAtoms("1 - x")))
-  // )
+class TextReflowRenderingTest extends StringReflowTestUtil {
 
-  // Eu_{1¿23;x}Bi_{x}VO_{4} bar
-}
-
-class TextReflowRenderingTest extends TextReflowExamples {
-
-  behavior of "text reflow construction from string"
-
-
-  it should "parse a string into correct nested structure" in {
-    val textReflow = stringToTextReflow("""Eu_{1 - x}Bi_{x}VO_{4}""")
-
-    println(prettyPrintTree(textReflow))
-  }
-
-  it should "parse multiline strings" in {
-    val textReflow = stringToTextReflow(
-      """|of LiFePO4 scan-
-         |ning electron
-         |""".stripMargin
-    )
-
-    println(prettyPrintTree(textReflow))
-  }
 
   behavior of "text reflow rendering"
 
+  import spindex.ZoneIndexer
+
   it should "render greppable (char-count) text" in {
-    // val zoneIndex = createZoneIndexer(
-    //   // 012 3 4567890
-    //   """Eu1 - xBixVO4"""
-    // )
+    val textReflow0 = stringToTextReflow("""Eu_{1 - x}Bi_{x}VO_{4}""")
+    val zoneIndex = new ZoneIndexer(dummyUri)
+    val textReflow = textReflowToComponentReflow(textReflow0, zoneIndex)
+
     // Sufficient len = 10
     // `Eu1 - x` len = 7
   }

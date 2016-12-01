@@ -46,7 +46,7 @@ class RTreePerformanceTest extends FlatSpec {
       }
 
       val end = System.currentTimeMillis()
-      println(s"time to insert ${iterations}= ${(end-start)} ms")
+      // println(s"time to insert ${iterations}= ${(end-start)} ms")
     }
 
     case class Stats(iter: Int, time: Long, nres: Int)
@@ -86,7 +86,7 @@ class RTreePerformanceTest extends FlatSpec {
         )
       }) toList
 
-    println(timings.mkString("\n"))
+    // println(timings.mkString("\n"))
   }
 
 }

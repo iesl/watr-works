@@ -102,6 +102,7 @@ class ZoneIndexer(
     bioLabelings.getOrElseUpdate(name, mutable.MutableList[BioNode]())
   }
 
+
   def setChildrenWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
     val pageInfo = pageInfos(getPageForComponent(c))
     pageInfo.setChildrenWithLabel(c.id, l, tree)
@@ -216,7 +217,6 @@ class ZoneIndexer(
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
     val pageInfo = PageIndex(pageGeometry.id,
-      // SpatialIndex.createFor[CharAtom](pageGeometry.bounds),
       SpatialIndex.createFor[Component](pageGeometry.bounds),
       pageGeometry
     )

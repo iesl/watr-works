@@ -12,6 +12,10 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
   import EnrichGeometricFigures._
   import watrmarks.{StandardLabels => LB}
   import edu.umass.cs.iesl.watr.watrmarks.Label
+  import matryoshka._
+  import matryoshka.implicits._
+  import java.net.URI
+  def dummyUri = URI.create("/")
 
   import textreflow._
   import TextReflow._
@@ -38,72 +42,23 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
     'Æ' -> "AE"
   )
 
-  def lineWithSubs(line: String): Unit = {
-    line.zipWithIndex
-      .foldLeft(List[Char]())({case (acc, e) =>
-        acc
-      })
+
+  def textReflowToComponentReflow(textReflow: TextReflow, zoneIndex: ZoneIndexer): TextReflow = {
+    val regions = textReflow.collect({
+      case  t@ Embed(Atom(c, ops)) => c.asInstanceOf[PageAtom].region.bbox
+    })
+    val totalPageGeometry = regions.reduce(_ union _)
+    val geom = PageGeometry(PageID(0), totalPageGeometry)
+
+    zoneIndex.addPage(geom)
+    textReflow.mapT({
+      case Atom(c, ops) =>
+        val atomicComponent = zoneIndex.addPageAtom(c.asInstanceOf[PageAtom])
+        Atom(atomicComponent, ops)
+      case t => t
+    })
   }
-  // def stringToTextReflow(multiLines: String): Unit = {
-  def stringToTextReflowX(multiLines: String): TextReflow = {
-    val t: Tree[TextReflowF[Int]] = Tree.Leaf(Flow(Set(), List()))
 
-    var tloc = t.loc
-    var linenum = 0
-
-    def insertRight(tr: TextReflowF[Int]): Unit    = { tloc = tloc.insertRight(Tree.Leaf(tr)) }
-    def insertLeft(tr: TextReflowF[Int]): Unit     = { tloc = tloc.insertLeft(Tree.Leaf(tr)) }
-    def insertDownLast(tr: TextReflowF[Int]): Unit = { tloc = tloc.insertDownLast(Tree.Node(tr, Stream())) }
-    def pop(): Unit = { tloc = tloc.parent.get }
-    //
-    def debug(): Unit = { println(tloc.toTree.map(_.toString).drawBox) }
-
-    for {
-      (line, linenum) <- lines(multiLines).zipWithIndex
-      // line <- lines(multiLines).zipWithIndex
-      _ = insertDownLast(Labeled(Set(LB.VisualLine), 0))
-      _ = insertDownLast(Flow(Set(), List()))
-      (ch, chnum)     <- line.zipWithIndex
-    } {
-      ch match {
-        case '^' => insertDownLast(Labeled(Set(LB.Sup), 0))
-        case '_' => insertDownLast(Labeled(Set(LB.Sub), 0))
-        case '{' => insertDownLast(Flow(Set(), List()))
-        case '}' => pop(); pop()
-        case ' ' => insertDownLast(Insert(" ")); pop()
-        case _ =>
-          val charAtom = CharAtom(
-            TargetRegion(regionIDs.nextId, page0,
-              LTBounds(
-                left=chnum*xscale, top=linenum*yscale,
-                width=xscale, height=yscale
-              )
-            ),
-            ch.toString
-          )
-          val ops = new textreflow.TextReflowAtomOps(Seq(ch))
-          insertDownLast(Atom(charAtom, ops))
-          pop()
-      }
-
-    }
-
-    // Now construct the Fix[] version of the tree:
-    val ftree = tloc.toTree
-    val res = ftree.scanr ((reflowNode: TextReflowF[Int], childs: Stream[Tree[TextReflow]]) => {
-      reflowNode match {
-          case t@ Atom(c, ops)               => fixf(Atom(c, ops))
-          case t@ Insert(value)              => fixf(Insert(value))
-          case t@ Rewrite(from, to)          => fixf(Rewrite(childs.head.rootLabel, to))
-          case t@ Bracket(pre, post, a)      => fixf(Bracket(pre, post, childs.head.rootLabel))
-          case t@ Flow(ls, atoms)            => fixf(Flow(ls, childs.toList.map(_.rootLabel)))
-          case t@ Labeled(ls, _)             => fixf(Labeled(ls, childs.head.rootLabel))
-        }
-      }
-    )
-
-    res.rootLabel
-  }
 
   def stringToTextReflow(multiLines: String): TextReflow = {
     val t: Tree[TextReflowF[Int]] =
@@ -123,9 +78,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
     //
     def debug(): Unit = { println(tloc.toTree.map(_.toString).drawBox) }
 
-    for {
-      ch   <- multiLines
-    } {
+    for (ch <- lines(multiLines).mkString) {
       ch match {
         case '\n' =>
           linenum += 1

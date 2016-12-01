@@ -46,22 +46,31 @@ object DocumentIO extends DocsegJsonFormats {
       pageId <- zoneIndexer.getPages
       pageTextBlocks <- zoneIndexer.getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
       _ = println(s"Page $pageId")
-      textBlock <- pageTextBlocks.getChildren(LB.TextBlock)
-    }  {
-      val blockText = zoneIndexer.getTextReflow(textBlock.id)
+      textBlockCC <- pageTextBlocks.getChildren(LB.TextBlock)
+      blockTextReflow <- zoneIndexer.getTextReflow(textBlockCC.id)
+    } yield {
 
-      blockText.foreach{bt =>
-        println("Block Text")
-        println(bt.toFormattedText())
-      }
-
+      val formattedText = blockTextReflow.toFormattedText()
+      println(formattedText)
     }
+    // val (lineTextBlock, lineDefBlock) = serializeTextLines(zoneIndexer)
+
+    // |${indent(4)(lineTextBlock)}
+    val finalDocument = (
+      s"""|{ "lines": [
+          |  ],
+          |  "mentions": [
+          |  "relations": [
+          |  "properties": [
+          |  "labels": [
+          |  "lineDefs": [
+          |  "ids": [
+          |""".stripMargin)
 
     // val mentionBlock = serializeMentions(zoneIndexer)
 
     // val lineLabelBlock = serializeLineLabels(zoneIndexer)
 
-    // val (lineTextBlock, lineDefBlock) = serializeTextLines(zoneIndexer)
 
     // // val tokenBlock = vjoinTrailSep(left, ",")(tokenDict:_*)
 
@@ -118,7 +127,7 @@ object DocumentIO extends DocsegJsonFormats {
     //      |  ] }
     //      |""".stripMargin)
 
-    ???
+    finalDocument
   }
 
   def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
@@ -220,6 +229,7 @@ object DocumentIO extends DocsegJsonFormats {
 
 
   def serializeTextLines(zoneIndexer: ZoneIndexer): (TB.Box, TB.Box) = {
+    //
 
     // val lines = for {
     //   linec <- lineBioLabels

@@ -4,7 +4,7 @@ package textboxing
 import org.scalatest._
 
 
-class TextBoxingTest extends FlatSpec {
+class TextBoxingTest extends FlatSpec with Matchers {
   import TextBoxing._
 
   behavior of "textboxing"
@@ -38,8 +38,12 @@ class TextBoxingTest extends FlatSpec {
       .addRow("1%>","-!-", "<2%" )
       .addRow("1%>","-!-", "<2%" )
 
-    val res = gFinal.toBox().toString()
-    println(res)
+    // gFinal.toBox().toString() shouldBe {
+    //   """|          1%>   -!-    <2%
+    //      |          1%>   -!-    <2%
+    //      |          1%>   -!-    <2%
+    //      |""".stripMargin
+    // }
 
 
   }

@@ -7,14 +7,13 @@ import watrmarks.{StandardLabels => LB}
 
 import ComponentOperations._
 
-object ComponentRendering {
+object TextReflowConversion {
   import TB._
-  import utils.ScalazTreeImplicits._
+  // import utils.ScalazTreeImplicits._
   // import textreflow.GeneralizedReflow.componentReflow._
   import textreflow.TextReflow._
 
 
-  object VisualLine {
     import scalaz.std.string._
 
     def renderRoleTree(c: Component): TB.Box = {
@@ -73,27 +72,21 @@ object ComponentRendering {
       dquote(escapeJson(s))
     }
 
-    def renderWithIDs(cc: Component): TB.Box = {
-      // TODO assert that cc is role VisualLine
-      val textAndIds = for {
-        textSpan  <- cc.getChildren(LB.TextSpan)
-        textFlow <- toTextReflow(textSpan)
-      } yield {
-        val tokenId = textSpan.id
-        (escapeJson(textFlow), tokenId)
-      }
-      // val lineText = hsepb(textAndIds.map(_._1.text.box), ",")
-      val lineIDs = hsepb(textAndIds.map(_._2.toString.box), ",")
-      val visualLineID = cc.id.toString
+    // def renderWithIDs(cc: Component): TB.Box = {
+    //   // TODO assert that cc is role VisualLine
+    //   val textAndIds = for {
+    //     textSpan  <- cc.getChildren(LB.TextSpan)
+    //     textFlow <- toTextReflow(textSpan)
+    //   } yield {
+    //     val tokenId = textSpan.id
+    //     (escapeJson(textFlow), tokenId)
+    //   }
+    //   // val lineText = hsepb(textAndIds.map(_._1.text.box), ",")
+    //   val lineIDs = hsepb(textAndIds.map(_._2.toString.box), ",")
+    //   val visualLineID = cc.id.toString
 
-      // OneRow.squareBracket(
-      //   hsepb(
-      //     Seq(OneRow.squareBracket(lineText), OneRow.squareBracket(lineIDs), visualLineID),
-      //     ","
-      //   )
-      // )
-      ???
-    }
+    //   ???
+    // }
 
     def transferLabel(l: Label, cc: Component)(t: TextReflow): TextReflow = {
       if (cc.hasLabel(l)) {
@@ -225,5 +218,4 @@ object ComponentRendering {
       )
     }
 
-  }
 }
