@@ -72,14 +72,14 @@ object ComponentOperations {
   }
 
 
-  def centerX(cb: PageAtom) = cb.region.bbox.toCenterPoint.x
-  def centerY(cb: PageAtom) = cb.region.bbox.toCenterPoint.y
+  def centerX(cb: PageAtom) = cb.targetRegion.bbox.toCenterPoint.x
+  def centerY(cb: PageAtom) = cb.targetRegion.bbox.toCenterPoint.y
 
   def spaceWidths(cs: Seq[CharAtom]): Seq[Double] = {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.region.bbox.left - c1.region.bbox.right
+      case Seq(c1, c2)  => c2.targetRegion.bbox.left - c1.targetRegion.bbox.right
       case _  => 0d
     })
 

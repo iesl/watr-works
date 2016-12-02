@@ -44,7 +44,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
 
   def textReflowToComponentReflow(textReflow: TextReflow, zoneIndex: ZoneIndexer): TextReflow = {
     val regions = textReflow.collect({
-      case  t@ Embed(Atom(c, ops)) => c.asInstanceOf[PageAtom].region.bbox
+      case  t@ Embed(Atom(c, ops)) => c.asInstanceOf[PageAtom].targetRegion.bbox
     })
     val totalPageGeometry = regions.reduce(_ union _)
     val geom = PageGeometry(PageID(0), totalPageGeometry)
@@ -161,8 +161,8 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
       })
       .flatten.toSeq
 
-    val maxX = atoms.map(_.region.bbox.right).max
-    val maxY = atoms.map(_.region.bbox.bottom).max
+    val maxX = atoms.map(_.targetRegion.bbox.right).max
+    val maxY = atoms.map(_.targetRegion.bbox.bottom).max
 
 
     val pageGeom = PageGeometry(

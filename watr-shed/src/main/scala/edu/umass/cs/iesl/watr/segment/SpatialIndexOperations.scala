@@ -11,14 +11,14 @@ object SpatialIndexOperations {
 
   //   def approximateColumnBins(pageId: Int@@PageID, charBoxes: Seq[CharAtom]): Seq[(CompassDirection, Line)] = {
   //     val leftBins = charBoxes
-  //       .groupBy(_.region.bbox.left.pp)
+  //       .groupBy(_.targetRegion.bbox.left.pp)
   //       .toSeq
   //       .filter(_._2.length > 1)
   //       .sortBy(_._1.toDouble)
 
 
   //     val leftEdges = leftBins.map({ case (leftXstr, bin) =>
-  //       val ysorted = bin.sortBy(_.region.bbox.bottom)
+  //       val ysorted = bin.sortBy(_.targetRegion.bbox.bottom)
   //       val colbounds = charBoxesBounds(ysorted)
   //       val leftEdge = colbounds.toLine(CompassDirection.W)
 
@@ -36,10 +36,10 @@ object SpatialIndexOperations {
   //           val cbottom = e.bounds.bottom.pp
 
   //           val cleanEdge = remaining
-  //             .takeWhile(ys => cbottom != ys.region.bbox.bottom.pp)
+  //             .takeWhile(ys => cbottom != ys.targetRegion.bbox.bottom.pp)
 
   //           val next = remaining.drop(cleanEdge.length)
-  //             .dropWhile(ys => cbottom == ys.region.bbox.bottom.pp)
+  //             .dropWhile(ys => cbottom == ys.targetRegion.bbox.bottom.pp)
 
   //           (split :+ cleanEdge, next)
   //         })

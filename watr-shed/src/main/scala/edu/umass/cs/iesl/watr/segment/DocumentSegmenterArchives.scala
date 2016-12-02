@@ -103,19 +103,19 @@
   //   val sets = new DisjointSets[CharAtom](readableComponents)
 
 
-  //   for { component <- readableComponents.sortBy(_.region.bbox.left) } {
+  //   for { component <- readableComponents.sortBy(_.targetRegion.bbox.left) } {
   //     // val searchLog = mutable.ArrayBuffer[TB.Box]()
   //     findNeighbors(pageId, component)
   //       .foreach({neighbor =>
-  //         val angle = component.region.bbox.toCenterPoint.angleTo(neighbor.region.bbox.toCenterPoint)
+  //         val angle = component.targetRegion.bbox.toCenterPoint.angleTo(neighbor.targetRegion.bbox.toCenterPoint)
 
-  //         val maxWidth = math.max(neighbor.region.bbox.width, component.region.bbox.width)
-  //         val dx = neighbor.region.bbox.toCenterPoint.hdist(component.region.bbox.toCenterPoint)
-  //         val dy = neighbor.region.bbox.toCenterPoint.vdist(component.region.bbox.toCenterPoint)
-  //         val dist = neighbor.region.bbox.toCenterPoint.dist(component.region.bbox.toCenterPoint)
+  //         val maxWidth = math.max(neighbor.targetRegion.bbox.width, component.targetRegion.bbox.width)
+  //         val dx = neighbor.targetRegion.bbox.toCenterPoint.hdist(component.targetRegion.bbox.toCenterPoint)
+  //         val dy = neighbor.targetRegion.bbox.toCenterPoint.vdist(component.targetRegion.bbox.toCenterPoint)
+  //         val dist = neighbor.targetRegion.bbox.toCenterPoint.dist(component.targetRegion.bbox.toCenterPoint)
 
-  //         val eastWestDist = component.region.bbox.toEasternPoint.dist(
-  //           neighbor.region.bbox.toWesternPoint
+  //         val eastWestDist = component.targetRegion.bbox.toEasternPoint.dist(
+  //           neighbor.targetRegion.bbox.toWesternPoint
   //         )
 
   //         var joinWith = false
@@ -132,10 +132,10 @@
   //         }
 
   //         // { import TB._
-  //         //   val topsNotEq = component.region.bbox.top.pp != neighbor.region.bbox.top.pp
+  //         //   val topsNotEq = component.targetRegion.bbox.top.pp != neighbor.targetRegion.bbox.top.pp
   //         //   val angleNotZero = angle.pp != "0.00"
   //         //   searchLog.append(
-  //         //     s"   '${neighbor.char}' ${neighbor.wonkyCharCode} #${neighbor.id} ${neighbor.region.bbox.prettyPrint}".box %
+  //         //     s"   '${neighbor.char}' ${neighbor.wonkyCharCode} #${neighbor.id} ${neighbor.targetRegion.bbox.prettyPrint}".box %
   //         //       s"""       ${ if (joinWith && topsNotEq) "!join" else if (joinWith) "join" else "" }""" %
   //         //       s"       angle:${angle.pp} dx:${dx.pp} dy:${dy.pp}" %
   //         //       s"       dist:${dist.pp} e/wi-dist:${eastWestDist.pp}" %
@@ -146,7 +146,7 @@
 
   //     // { import TB._
   //     //   println(
-  //     //     s"'${component.char} #${component.id} ${component.region.bbox.prettyPrint}".box %
+  //     //     s"'${component.char} #${component.id} ${component.targetRegion.bbox.prettyPrint}".box %
   //     //     vcat(top)(searchLog.toList)
   //     //   )
   //     // }
@@ -154,7 +154,7 @@
   //   }
 
   //   val lines = sets.iterator().toSeq.map{
-  //     _.toSeq.sortBy(c => (c.region.bbox.left, c.region.bbox.top)).map(new AtomicComponent(_, docOrientation))
+  //     _.toSeq.sortBy(c => (c.targetRegion.bbox.left, c.targetRegion.bbox.top)).map(new AtomicComponent(_, docOrientation))
   //   }
 
 

@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import edu.umass.cs.iesl.watr.utils.VisualTracer, VisualTracer._
+// import edu.umass.cs.iesl.watr.utils.VisualTracer
 import scala.collection.mutable
 
 import watrmarks._

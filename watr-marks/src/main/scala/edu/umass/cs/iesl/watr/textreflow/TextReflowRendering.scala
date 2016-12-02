@@ -34,8 +34,13 @@ object TextReflowRendering {
     import matryoshka._
     import matryoshka.data._
     import matryoshka.implicits._
-    import TextReflowJson._
+    import TextReflowTransforms._
+    import play.api.libs.json._
 
+    def toJson(): Seq[JsValue] = {
+      val res = theReflow.cata(attributePara(serializeTextReflow))
+      res.toPair._1
+    }
     def toIdList(): Seq[TargetRegion] = {
       val res = theReflow.cata(attributePara(extractTargetRegions))
       res.toPair._1

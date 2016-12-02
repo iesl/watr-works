@@ -21,8 +21,8 @@ class TextReflowAtomOps(
 sealed trait TextReflowF[+A]
 
 object TextReflowF {
-  case class Atom(c: Any, ops: TextReflowAtomOps)         extends TextReflowF[Nothing]
-  case class Insert(value: String)                        extends TextReflowF[Nothing]
+  case class Atom[A](c: Any, ops: TextReflowAtomOps)      extends TextReflowF[A]
+  case class Insert[A](value: String)                     extends TextReflowF[A]
   case class Rewrite[A](from: A, to: String)              extends TextReflowF[A]
   case class Bracket[A](pre: String, post: String, a: A)  extends TextReflowF[A]
   case class Flow[A](labels: Set[Label], as: List[A])     extends TextReflowF[A]
@@ -32,9 +32,9 @@ object TextReflowF {
     def traverseImpl[G[_], A, B](fa: TextReflowF[A])(f: A => G[B])(implicit G: Applicative[G]): G[TextReflowF[B]] = fa match {
       case Atom(c, ops)               => G.point(Atom(c, ops))
       case Insert(value)              => G.point(Insert(value))
-      case Rewrite(from, to)          => f(from).map(Rewrite(_, to))
+      case Rewrite(fromA, to)         => f(fromA).map(Rewrite(_, to))
       case Bracket(pre, post, a)      => f(a).map(Bracket(pre, post, _))
-      case Flow(labels, atoms)        => atoms.traverse(f).map(Flow(labels, _))
+      case Flow(labels, as)           => as.traverse(f).map(Flow(labels, _))
       case Labeled(labels, a)         => f(a).map(Labeled(labels, _))
     }
   }

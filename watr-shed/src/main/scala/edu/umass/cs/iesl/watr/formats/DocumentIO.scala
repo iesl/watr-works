@@ -41,12 +41,12 @@ object DocumentIO extends DocsegJsonFormats {
     } yield {
 
       val formattedText = blockTextReflow.toFormattedText()
-      val idList = blockTextReflow.toIdList()
+      val idList = blockTextReflow.toJson()
       println()
       println(formattedText)
       println(idList)
 
-      assert(formattedText.length()==idList.length)
+      // assert(formattedText.length()==idList.length)
     }
     // val (lineTextBlock, lineDefBlock) = serializeTextLines(zoneIndexer)
 

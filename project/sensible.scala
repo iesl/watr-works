@@ -54,10 +54,10 @@ object SensibleProject {
     // // },
 
     // testOptions ++= noColorIfEmacs,
+    // testFrameworks := Seq(TestFrameworks.ScalaTest)
     logBuffered in Test := false,
-    // testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
-    testFrameworks := Seq(TestFrameworks.ScalaTest)
-    // testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
+    testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
   )
 }
 

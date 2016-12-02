@@ -201,7 +201,7 @@ case class RegionComponent(
   private def initRegionFromAtoms(atoms: Seq[AtomicComponent]): RegionComponent = {
     val initRegion = initCloneAs(roleLabel)
     val newRegion = initRegion.copy(
-      region = initRegion.region.copy(
+      region = initRegion.targetRegion.copy(
         bbox = cbounds(atoms)))
 
     newRegion.setChildren(LB.PageAtom, atoms)
@@ -212,7 +212,7 @@ case class RegionComponent(
   private def initRegion(newLabel: Label, children: Seq[Component]): RegionComponent = {
     val initRegion = initCloneAs(newLabel)
     val newRegion = initRegion.copy(
-      region = initRegion.region.copy(
+      region = initRegion.targetRegion.copy(
         bbox = cbounds(children)))
 
     newRegion.setChildren(newLabel, children)
@@ -300,7 +300,7 @@ case class AtomicComponent(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
-    val newRegion = zoneIndex.createRegionComponent(pageAtom.region, LB.NullLabel) // FIXME <- nulllabel????
+    val newRegion = zoneIndex.createRegionComponent(pageAtom.targetRegion, LB.NullLabel) // FIXME <- nulllabel????
     onGrouped(newRegion, 0)
     Seq(newRegion)
   }
@@ -314,19 +314,19 @@ case class AtomicComponent(
 
   def roleLabel: Label = LB.PageAtom
 
-  def targetRegions: Seq[TargetRegion] = Seq(pageAtom.region)
+  def targetRegions: Seq[TargetRegion] = Seq(pageAtom.targetRegion)
 
   def char = pageAtom match {
     case rg: CharAtom => rg.char.toString
     case rg: ImgAtom => ""
   }
 
-  val bounds = pageAtom.region.bbox
+  val bounds = pageAtom.targetRegion.bbox
 
   def chars: String = char
 
   override def toString(): String = {
     val lls = getLabels.mkString(",")
-    s"<`${chars}`${id} ${pageAtom.region}$lls>"
+    s"<`${chars}`${id} ${pageAtom.targetRegion}$lls>"
   }
 }

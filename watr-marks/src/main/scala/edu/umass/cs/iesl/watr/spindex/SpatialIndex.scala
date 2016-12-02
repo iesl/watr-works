@@ -103,8 +103,8 @@ object SpatialIndex {
   }
 
   implicit object CharAtomIndexable extends SpatialIndexable[CharAtom] {
-    def id(t: CharAtom): Int = t.region.id.unwrap
-    def ltBounds(t: CharAtom): LTBounds = t.region.bbox
+    def id(t: CharAtom): Int = t.targetRegion.id.unwrap
+    def ltBounds(t: CharAtom): LTBounds = t.targetRegion.bbox
   }
 
   def createSpatialIndex(): jsi.SpatialIndex = {

@@ -43,20 +43,20 @@ case class PageAtoms(
 )
 
 sealed trait PageAtom {
-  def region: TargetRegion
+  def targetRegion: TargetRegion
 }
 
 class CharAtom(
-  val region: TargetRegion,
+  val targetRegion: TargetRegion,
   val char: String,
   val wonkyCharCode: Option[Int] = None
 ) extends PageAtom {
-  override def toString = s"CharAtom($char, $region)"
+  override def toString = s"CharAtom($char, $targetRegion)"
 }
 
 object CharAtom {
   def unapply(r: CharAtom): Option[(TargetRegion, String, Option[Int])] =
-    Some((r.region, r.char, r.wonkyCharCode))
+    Some((r.targetRegion, r.char, r.wonkyCharCode))
 
   def apply(region: TargetRegion,
      char: String,
@@ -67,11 +67,11 @@ object CharAtom {
 
 
 class ImgAtom(
-  val region: TargetRegion
+  val targetRegion: TargetRegion
 ) extends PageAtom
 
 object ImgAtom {
-  def unapply(rg: ImgAtom): Option[(TargetRegion)] = Some(rg.region)
+  def unapply(rg: ImgAtom): Option[(TargetRegion)] = Some(rg.targetRegion)
   def apply(region: TargetRegion): ImgAtom = new ImgAtom(region)
 
 }
@@ -106,20 +106,69 @@ case class ZoneRecords(
 
 trait ComponentDataTypeFormats extends TypeTagFormats {
   import play.api.libs.json._
+  import Json._
+  import utils.EnrichNumerics._
+  def jstr(s: String) = JsString(s)
 
 
   implicit def FormatLBBounds         = Json.format[LBBounds]
-  implicit def FormatLTBounds         = Json.format[LTBounds]
-  implicit def FormatTargetedBounds   = Json.format[TargetRegion]
-  implicit def FormatLabel            = Json.format[Label]
+  // implicit def FormatLTBounds         = Json.format[LTBounds]
+
+  implicit def FormatLTBounds: Format[LTBounds] = new Format[LTBounds] {
+    override def reads(json: JsValue)= json match {
+      case _ => JsError("")
+    }
+    override def writes(o: LTBounds) = arr(jstr("ltb"),
+      jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}""")
+    )
+  }
+  // implicit def FormatTargetedBounds   = Json.format[TargetRegion]
+
+  implicit def FormatTargetRegion: Format[TargetRegion] = new Format[TargetRegion] {
+    override def reads(json: JsValue)= json match {
+      case _ => JsError("")
+    }
+    override def writes(o: TargetRegion) = arr(
+      toJson(o.id), toJson(o.target), toJson(o.bbox))
+  }
+
   implicit def FormatPageGeometry     = Json.format[PageGeometry]
+  implicit def FormatLabel            = Json.format[Label]
   implicit def FormatZone             = Json.format[Zone]
-  implicit def FormatCharAtom:Format[CharAtom]       =  ??? // Json.format[CharAtom]
-  implicit def FormatImgAtom        =  Json.format[ImgAtom]
-  implicit def FormatPageAtom:Format[PageAtom]       = ??? // Json.format[PageAtom]
+
+  implicit def FormatPageAtom: Format[PageAtom] = new Format[PageAtom] {
+    override def reads(json: JsValue)= json match {
+      case _ => JsError("")
+    }
+    override def writes(o: PageAtom) = o match {
+      case a: CharAtom =>
+        obj("catom" ->
+          arr(jstr(a.char), toJson(a.targetRegion), a.wonkyCharCode)
+        )
+      case a: ImgAtom =>
+        obj("iatom" ->
+          arr()
+        )
+    }
+  }
+
+
+  // implicit def FormatCharAtom:Format[CharAtom]       =  ??? // Json.format[CharAtom]
+  // implicit def FormatImgAtom        =  Json.format[ImgAtom]
+  // implicit def FormatPageAtom:Format[PageAtom]       = ??? // Json.format[PageAtom]
+
   implicit def FormatPageAtoms:Format[PageAtoms]      = ??? // Json.format[PageAtoms]
   implicit def FormatZoneRecords:Format[ZoneRecords]      = ??? // Json.format[ZoneRecords]
 
+
+  // implicit def FormatLabel: Format[Label] = new Format[Label] {
+  //   override def reads(json: JsValue)= json match {
+  //     case _ => JsError("")
+  //   }
+  //   override def writes(o: Label) = {
+  //     arr(jstr(o.fqn), o.value.map(jstr(_)), o.id)
+  //   }
+  // }
 }
 
 object ComponentTypeEnrichments {
@@ -180,7 +229,7 @@ object ComponentTypeEnrichments {
   implicit class RicherCharAtom(val charRegion: CharAtom) extends AnyVal {
 
     def debugPrint: String = {
-      val bbox = charRegion.region.bbox.prettyPrint
+      val bbox = charRegion.targetRegion.bbox.prettyPrint
 
       val wonk = charRegion.wonkyCharCode
         .map({ code =>
@@ -223,4 +272,3 @@ object ComponentTypeEnrichments {
 
   }
 }
-

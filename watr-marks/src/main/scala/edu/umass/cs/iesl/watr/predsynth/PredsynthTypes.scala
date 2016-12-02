@@ -8,9 +8,7 @@ import play.api.data.validation.ValidationError
 
 import Prop._
 
-// trait PredsynthJsonFormats extends TypeTagFormats {
 trait PredsynthJsonFormats  {
-  import play.api.libs.json._
 
   implicit def optionalFormat[T](implicit jsFmt: Format[T]): Format[Option[T]] =
     new Format[Option[T]] {

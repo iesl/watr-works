@@ -104,11 +104,11 @@ object MITAlignPredsynth {
           // val targetRegions = slice.collect({
           //   case u: FlowUnit.Atom =>
           //     val cc = u.atomicComponent
-          //     cc.pageAtom.region
+          //     cc.pageAtom.targetRegion
 
           //   case u: FlowUnit.Rewrite =>
           //     val cc = u.atom.atomicComponent
-          //     cc.pageAtom.region
+          //     cc.pageAtom.targetRegion
           // })
 
 

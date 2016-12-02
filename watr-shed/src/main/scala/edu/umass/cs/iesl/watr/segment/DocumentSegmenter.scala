@@ -66,7 +66,7 @@ object DocumentSegmenter extends DocumentUtils {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.region.bbox.left - c1.region.bbox.right
+      case Seq(c1, c2)  => c2.targetRegion.bbox.left - c1.targetRegion.bbox.right
       case _  => 0d
     })
 

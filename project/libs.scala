@@ -44,7 +44,7 @@ object TestLibs extends LibVersions {
 
   val scalacheck = Seq(
     "org.scalaz"     %% "scalaz-scalacheck-binding" % scalazVersion  % "test",
-    "org.scalacheck" %% "scalacheck"                % "1.13.4"       % "test" force()
+    "org.scalacheck" %% "scalacheck"                % "1.12.5"       % "test" force()
   )
 
   val testAndCheck = scalatest ++ scalacheck

@@ -69,7 +69,6 @@ object TextReflowOps {
     fw.map(e=>countChars(e._1)).suml
   }
 
-
   def countAtoms: GAlgebra[(TextReflow, ?), TextReflowF, Int] = {
     trF => trF.foldRight(
       charCount(trF)
