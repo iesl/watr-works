@@ -6,6 +6,12 @@ import spindex._
 import textboxing.{TextBoxing => TB}, TB._
 
 object TextReflowRendering {
+  import matryoshka._
+  import matryoshka.data._
+  import matryoshka.implicits._
+  import play.api.libs.json._
+
+  import TextReflowTransforms._
   import TextReflowOps._
   import TextReflowF._
   import watrmarks.{StandardLabels => LB, _}
@@ -30,14 +36,15 @@ object TextReflowRendering {
     }
   }
 
-  implicit class RicherTextReflow(val theReflow: TextReflow) extends AnyVal  {
-    import matryoshka._
-    import matryoshka.data._
-    import matryoshka.implicits._
-    import TextReflowTransforms._
-    import play.api.libs.json._
+  def fromJson(jsValue: JsValue): TextReflow  = {
+    import scalaz.std.option._
+    val tr = jsValue.apoM[TextReflow](unfoldJsonToTextReflow)
+    tr.getOrElse { sys.error("could not unserialize text flow") }
+  }
 
-    def toJson(): Seq[JsValue] = {
+  implicit class RicherTextReflow(val theReflow: TextReflow) extends AnyVal  {
+
+    def toJson(): JsValue = {
       val res = theReflow.cata(attributePara(serializeTextReflow))
       res.toPair._1
     }
