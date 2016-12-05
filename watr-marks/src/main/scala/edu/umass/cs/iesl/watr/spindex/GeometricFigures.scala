@@ -2,8 +2,9 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import net.sf.jsi
-
 import scalaz.@@
+import scalaz.Equal
+
 import TypeTags._
 
 sealed trait GeometricFigure
@@ -26,7 +27,7 @@ object GeometricFigure {
     width: Double,
     height: Double
   ) extends GeometricFigure with Area {
-    override def toString: String = this.prettyPrint 
+    override def toString: String = this.prettyPrint
   }
 
 
@@ -41,6 +42,22 @@ object GeometricFigure {
   ) extends GeometricFigure{
     override def toString: String = this.prettyPrint
   }
+
+  implicit def EqualGeometricFigure
+      : Equal[GeometricFigure] =
+    Equal.equal((a, b)  => (a, b) match {
+      case (g1: LTBounds, g2: LTBounds) => g1.prettyPrint == g2.prettyPrint
+      case (g1: LBBounds, g2: LBBounds) => g1.prettyPrint == g2.prettyPrint
+      case (g1: Point, g2: Point)       => g1.prettyPrint == g2.prettyPrint
+      case (g1: Line, g2: Line)         => g1.prettyPrint == g2.prettyPrint
+      case (_, _)                       => false
+    })
+
+  implicit val EqualLTBounds: Equal[LTBounds] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
+  implicit val EqualLBBounds: Equal[LBBounds] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
+  implicit val EqualPoint: Equal[Point] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
+  implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
+
 
 }
 

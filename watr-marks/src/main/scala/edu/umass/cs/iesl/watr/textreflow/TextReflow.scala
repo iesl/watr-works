@@ -50,6 +50,23 @@ object TextReflowF {
     }
   }
 
+  implicit val equal: Delay[Equal, TextReflowF] = new Delay[Equal, TextReflowF] {
+    def apply[α](eq: Equal[α]) = Equal.equal((a, b) => {
+      implicit val ieq = eq;
+      val isEq= (a, b) match {
+        case (Atom(c, ops)          , Atom(c2, ops2))           => ops.toString()==ops2.toString()
+        case (Insert(value)         , Insert(value2))           => value == value2
+        case (Rewrite(from, to)     , Rewrite(from2, to2))      => from === from2 && to == to2
+        case (Bracket(pre, post, a) , Bracket(pre2, post2, a2)) => pre==pre && post==post && a===a2
+        case (Flow(ls, atoms)       , Flow(ls2, atoms2))        => ls == ls2 && atoms === atoms2
+        case (Labeled(ls, a)        , Labeled(ls2, a2))         => ls == ls2 && a === a2
+        case (_                     , _)                        => false
+      }
+
+      isEq
+    })
+  }
+
 }
 
 

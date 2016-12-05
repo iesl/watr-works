@@ -3,18 +3,21 @@ package textreflow
 
 import org.scalacheck._
 import scalaz._, Scalaz._
-
 import org.scalacheck.Prop._
 
 import matryoshka._
+// import matryoshka.implicits._
 import matryoshka.scalacheck.arbitrary._
 
 import scalaz.scalacheck.ScalaCheckBinding._
 
+import spindex._
+import watrmarks._
+import TextReflowF._
+import ComponentTypeEnrichments._
+
 trait ArbitraryTextReflows {
-  import TextReflowF._
   import Arbitrary._
-  import spindex._
   import GeometricFigure._
   import TypeTags._
 
@@ -34,12 +37,33 @@ trait ArbitraryTextReflows {
     })
   }
 
-  implicit def arbPageAtom: Arbitrary[PageAtom] = {
-    (arbTargetRegion |@| arbString)(
-      CharAtom(_, _, None)
+  implicit def arbCharAtom: Arbitrary[CharAtom] = {
+    (arbTargetRegion |@| arbString |@| arbOption[Int])(
+      CharAtom(_, _, _)
     )
   }
 
+  implicit def arbImgAtom: Arbitrary[ImgAtom] = {
+    arbTargetRegion.map(ImgAtom(_))
+  }
+
+  implicit def arbPageAtom: Arbitrary[PageAtom] = {
+    arbCharAtom.map(_.asInstanceOf[PageAtom])
+    // Arbitrary(Gen.oneOf(Seq(
+    //   arbCharAtom.arbitrary,
+    //   // arbImgAtom.arbitrary
+    // )))
+  }
+
+  implicit def arbLabel: Arbitrary[Label] = {
+    (arbString |@| arbString |@| arbOption[String] |@| arbInt)({
+      case (ns, key, value, id) =>
+        Label(ns, key, value, LabelID(id))
+    })
+  }
+  implicit def arbLabels: Arbitrary[Set[Label]] = {
+    Arbitrary(Gen.listOf(arbLabel.arbitrary).map(_.toSet))
+  }
 
   implicit val arbTextReflow: Delay[Arbitrary, TextReflowF] =
     new Delay[Arbitrary, TextReflowF]{
@@ -48,9 +72,9 @@ trait ArbitraryTextReflows {
         val gAtom      = (arbPageAtom.arbitrary |@| arbOps.arbitrary)(Atom[A](_, _))
         val gins       = arbString.arbitrary.map(Insert[A](_))
         val gRewrite   = (arbA.arbitrary ⊛ arbString.arbitrary)(Rewrite[A](_, _))
-        val gFlow      = Gen.listOf(arbA.arbitrary).map(rs =>Flow[A](Set(), rs))
+        val gFlow      = (arbLabels.arbitrary |@| Gen.listOf(arbA.arbitrary))(Flow[A](_, _))
         val genBracket = (arbString.arbitrary |@| arbString.arbitrary |@| arbA.arbitrary)(Bracket[A](_, _, _))
-        val genLabeled = arbA.arbitrary.map(Labeled[A](Set(), _))
+        val genLabeled = (arbLabels.arbitrary |@| arbA.arbitrary)(Labeled[A](_, _))
 
         Arbitrary(
           Gen.oneOf(gAtom, gins, gRewrite, gFlow, genBracket, genLabeled)
@@ -64,22 +88,51 @@ trait ArbitraryTextReflows {
 
 
 object TextReflowProps extends Properties("TextReflowProps") with ArbitraryTextReflows {
+  import play.api.libs.json._
   import TextReflowRendering._
+  import TextReflowTransforms._
+  import GeometricFigure._
 
-  // def expGen = Gen.resize(1, corecursiveArbitrary[Mu[TextReflowF], TextReflowF].arbitrary)
-  // property("arb x") =forAll(expGen){ tr => }
+  property("json <--> LTBounds") = forAll{ (example: LTBounds) =>
+    val jsVal = Json.toJson(example)
+    val jsOut = Json.prettyPrint(jsVal)
+    jsVal.validate[LTBounds] match   {
+      case JsSuccess(ltb, path) =>
+        example === ltb
+      case _ => false
+    }
+  }
 
 
-  property("examine examples") = forAll{ (i: TextReflow) =>
-    // println(i)
-    true
+  property("json <--> TargetRegion") = forAll{ (example: TargetRegion) =>
+    val jsVal = Json.toJson(example)
+    val jsOut = Json.prettyPrint(jsVal)
+    jsVal.validate[TargetRegion] match   {
+      case JsSuccess(targetRegion, path) =>
+        // if (example =/= targetRegion) {
+        //   println("mismatch: ")
+        //   println(example)
+        //   println(targetRegion)
+        // }
+        example === targetRegion
+      case _ => false
+    }
+  }
+
+  property("json <--> PageAtom") = forAll{ (example: PageAtom) =>
+    val jsVal = Json.toJson(example)
+    val jsOut = Json.prettyPrint(jsVal)
+    jsVal.validate[PageAtom] match   {
+      case JsSuccess(pageAtom, path) => 
+        example === pageAtom
+      case _ => false
+    }
   }
 
   property("json <--> textReflow isomorphism") = forAll{ (textReflowEx: TextReflow) =>
     val asJson = textReflowEx.toJson()
-    val textReflow = fromJson(asJson)
-
-    true
+    val textReflow = jsonToTextReflow(asJson)
+    textReflowEx === textReflow
   }
 
 

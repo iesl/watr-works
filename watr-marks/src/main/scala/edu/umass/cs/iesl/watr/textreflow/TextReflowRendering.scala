@@ -36,21 +36,10 @@ object TextReflowRendering {
     }
   }
 
-  def fromJson(jsValue: JsValue): TextReflow  = {
-    import scalaz.std.option._
-    val tr = jsValue.apoM[TextReflow](unfoldJsonToTextReflow)
-    tr.getOrElse { sys.error("could not unserialize text flow") }
-  }
-
   implicit class RicherTextReflow(val theReflow: TextReflow) extends AnyVal  {
 
     def toJson(): JsValue = {
-      val res = theReflow.cata(attributePara(serializeTextReflow))
-      res.toPair._1
-    }
-    def toIdList(): Seq[TargetRegion] = {
-      val res = theReflow.cata(attributePara(extractTargetRegions))
-      res.toPair._1
+      textReflowToJson(theReflow)
     }
 
     def toText(): String = {

@@ -1,7 +1,8 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import scalaz.@@
+import scalaz._
+import Scalaz._
 import watrmarks._
 
 import EnrichGeometricFigures._
@@ -58,6 +59,7 @@ object CharAtom {
   def unapply(r: CharAtom): Option[(TargetRegion, String, Option[Int])] =
     Some((r.targetRegion, r.char, r.wonkyCharCode))
 
+
   def apply(region: TargetRegion,
      char: String,
      wonkyCharCode: Option[Int] = None
@@ -110,26 +112,47 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   import utils.EnrichNumerics._
   def jstr(s: String) = JsString(s)
 
+  implicit def optionalFormat[T](implicit jsFmt: Format[T]): Format[Option[T]] =
+    new Format[Option[T]] {
+      override def reads(json: JsValue): JsResult[Option[T]] = json match {
+        case JsNull => JsSuccess(None)
+        case js     => jsFmt.reads(js).map(Some(_))
+      }
+      override def writes(o: Option[T]): JsValue = o match {
+        case None    => JsNull
+        case Some(t) => jsFmt.writes(t)
+      }
+    }
 
   implicit def FormatLBBounds         = Json.format[LBBounds]
-  // implicit def FormatLTBounds         = Json.format[LTBounds]
 
   implicit def FormatLTBounds: Format[LTBounds] = new Format[LTBounds] {
-    override def reads(json: JsValue)= json match {
-      case _ => JsError("")
+    override def reads(json: JsValue) =  json match {
+      case JsArray(Seq(
+        JsString("ltb"), JsString(bounds)
+      )) =>
+        val Array(l, t, w, h) = bounds.trim.split(" ").map(_.toDouble)
+        JsSuccess(LTBounds(l, t, w, h))
     }
-    override def writes(o: LTBounds) = arr(jstr("ltb"),
-      jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}""")
-    )
+
+    override def writes(o: LTBounds) = {
+      arr(jstr("ltb"), jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}"""))
+    }
   }
-  // implicit def FormatTargetedBounds   = Json.format[TargetRegion]
 
   implicit def FormatTargetRegion: Format[TargetRegion] = new Format[TargetRegion] {
     override def reads(json: JsValue)= json match {
-      case _ => JsError("")
+      case JsArray(Seq(
+        id: JsNumber, targetPage: JsNumber, ltBounds
+      )) => JsSuccess(
+        TargetRegion(
+          id.as[Int@@RegionID],
+          targetPage.as[Int@@PageID],
+          ltBounds.as[LTBounds]
+        ))
     }
-    override def writes(o: TargetRegion) = arr(
-      toJson(o.id), toJson(o.target), toJson(o.bbox))
+    override def writes(o: TargetRegion) =
+      arr(toJson(o.id), toJson(o.target), toJson(o.bbox))
   }
 
   implicit def FormatPageGeometry     = Json.format[PageGeometry]
@@ -138,12 +161,25 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
 
   implicit def FormatPageAtom: Format[PageAtom] = new Format[PageAtom] {
     override def reads(json: JsValue)= json match {
-      case _ => JsError("")
+      case JsObject(fields) => fields.get("catom") match {
+        case Some(JsArray(Seq(
+          JsString(achar), targetRegionJs, optWonkyJs
+        ))) =>
+          JsSuccess(
+            CharAtom(
+              targetRegionJs.as[TargetRegion],
+              achar,
+              optWonkyJs.as[Option[Int]]
+            )
+          )
+      }
+      case _ => JsError(s"unmatched PageAtom ${json}")
     }
+
     override def writes(o: PageAtom) = o match {
       case a: CharAtom =>
-        obj("catom" ->
-          arr(jstr(a.char), toJson(a.targetRegion), a.wonkyCharCode)
+        obj(
+          ("catom", arr(jstr(a.char), toJson(a.targetRegion), toJson(a.wonkyCharCode)))
         )
       case a: ImgAtom =>
         obj("iatom" ->
@@ -152,13 +188,6 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
     }
   }
 
-
-  // implicit def FormatCharAtom:Format[CharAtom]       =  ??? // Json.format[CharAtom]
-  // implicit def FormatImgAtom        =  Json.format[ImgAtom]
-  // implicit def FormatPageAtom:Format[PageAtom]       = ??? // Json.format[PageAtom]
-
-  implicit def FormatPageAtoms:Format[PageAtoms]      = ??? // Json.format[PageAtoms]
-  implicit def FormatZoneRecords:Format[ZoneRecords]      = ??? // Json.format[ZoneRecords]
 
 
   // implicit def FormatLabel: Format[Label] = new Format[Label] {
@@ -172,7 +201,28 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
 }
 
 object ComponentTypeEnrichments {
+  import TypeTags._
+  import GeometricFigure._
 
+  implicit val EqualPageAtom: Equal[PageAtom] = Equal.equal((a, b)  => (a, b) match {
+    case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
+      t===t2 && c==c2 && w==w2
+    case (_, _) => false
+
+  })
+
+  implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
+    case (TargetRegion(id, targetPage, bbox), TargetRegion(id2, targetPage2, bbox2)) =>
+      // println(s"Comparing TargetRegion($id $targetPage, $bbox)")
+      // println(s"          TargetRegion($id2 $targetPage2, $bbox2)")
+      // val eqI = id.unwrap==id2.unwrap 
+      // val eqT = targetPage.unwrap==targetPage2.unwrap 
+      // val eqB = bbox == bbox2
+      // println(s"eq: $eqI, $eqT, $eqB")
+      id.unwrap==id2.unwrap && targetPage.unwrap==targetPage2.unwrap && (bbox: GeometricFigure) === bbox2
+    case (_, _) => false
+
+  })
   implicit class RicherZone(val zone: Zone) extends AnyVal {
 
     def area(): Double = {
