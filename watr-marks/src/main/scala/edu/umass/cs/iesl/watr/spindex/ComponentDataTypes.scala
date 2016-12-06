@@ -127,16 +127,18 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   implicit def FormatLBBounds         = Json.format[LBBounds]
 
   implicit def FormatLTBounds: Format[LTBounds] = new Format[LTBounds] {
-    override def reads(json: JsValue) =  json match {
-      case JsArray(Seq(
-        JsString("ltb"), JsString(bounds)
-      )) =>
+    override def reads(json: JsValue) = json match {
+      // case JsArray(Seq(JsString("lt"), JsString(bounds))) =>
+      case JsString(bounds) =>
         val Array(l, t, w, h) = bounds.trim.split(" ").map(_.toDouble)
         JsSuccess(LTBounds(l, t, w, h))
+
+      case _ => JsError("LTBounds")
     }
 
     override def writes(o: LTBounds) = {
-      arr(jstr("ltb"), jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}"""))
+      // arr(jstr("lt"), jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}"""))
+      jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}""")
     }
   }
 
@@ -161,16 +163,14 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
 
   implicit def FormatPageAtom: Format[PageAtom] = new Format[PageAtom] {
     override def reads(json: JsValue)= json match {
-      case JsObject(fields) => fields.get("catom") match {
-        case Some(JsArray(Seq(
-          JsString(achar), targetRegionJs, optWonkyJs
-        ))) =>
+      case JsObject(fields) => fields.get("c") match {
+        case Some(JsArray(Seq(JsString(achar), targetRegionJs, optWonkyJs))) =>
           JsSuccess(
-            CharAtom(
-              targetRegionJs.as[TargetRegion],
-              achar,
-              optWonkyJs.as[Option[Int]]
-            )
+            CharAtom(targetRegionJs.as[TargetRegion], achar, optWonkyJs.as[Option[Int]])
+          )
+        case Some(JsArray(Seq(JsString(achar), targetRegionJs))) =>
+          JsSuccess(
+            CharAtom(targetRegionJs.as[TargetRegion], achar, None)
           )
       }
       case _ => JsError(s"unmatched PageAtom ${json}")
@@ -178,26 +178,15 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
 
     override def writes(o: PageAtom) = o match {
       case a: CharAtom =>
-        obj(
-          ("catom", arr(jstr(a.char), toJson(a.targetRegion), toJson(a.wonkyCharCode)))
+        a.wonkyCharCode.map(ccode =>
+          obj(("c", arr(jstr(a.char), toJson(a.targetRegion), JsNumber(ccode))))
+        ).getOrElse(
+          obj(("c", arr(jstr(a.char), toJson(a.targetRegion))))
         )
       case a: ImgAtom =>
-        obj("iatom" ->
-          arr()
-        )
+        obj("i" -> arr())
     }
   }
-
-
-
-  // implicit def FormatLabel: Format[Label] = new Format[Label] {
-  //   override def reads(json: JsValue)= json match {
-  //     case _ => JsError("")
-  //   }
-  //   override def writes(o: Label) = {
-  //     arr(jstr(o.fqn), o.value.map(jstr(_)), o.id)
-  //   }
-  // }
 }
 
 object ComponentTypeEnrichments {
@@ -213,12 +202,6 @@ object ComponentTypeEnrichments {
 
   implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
     case (TargetRegion(id, targetPage, bbox), TargetRegion(id2, targetPage2, bbox2)) =>
-      // println(s"Comparing TargetRegion($id $targetPage, $bbox)")
-      // println(s"          TargetRegion($id2 $targetPage2, $bbox2)")
-      // val eqI = id.unwrap==id2.unwrap 
-      // val eqT = targetPage.unwrap==targetPage2.unwrap 
-      // val eqB = bbox == bbox2
-      // println(s"eq: $eqI, $eqT, $eqB")
       id.unwrap==id2.unwrap && targetPage.unwrap==targetPage2.unwrap && (bbox: GeometricFigure) === bbox2
     case (_, _) => false
 

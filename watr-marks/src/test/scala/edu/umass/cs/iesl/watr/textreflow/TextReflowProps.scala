@@ -72,7 +72,7 @@ trait ArbitraryTextReflows {
         val gAtom      = (arbPageAtom.arbitrary |@| arbOps.arbitrary)(Atom[A](_, _))
         val gins       = arbString.arbitrary.map(Insert[A](_))
         val gRewrite   = (arbA.arbitrary ⊛ arbString.arbitrary)(Rewrite[A](_, _))
-        val gFlow      = (arbLabels.arbitrary |@| Gen.listOf(arbA.arbitrary))(Flow[A](_, _))
+        val gFlow      = Gen.listOf(arbA.arbitrary).map(Flow[A](_))
         val genBracket = (arbString.arbitrary |@| arbString.arbitrary |@| arbA.arbitrary)(Bracket[A](_, _, _))
         val genLabeled = (arbLabels.arbitrary |@| arbA.arbitrary)(Labeled[A](_, _))
 
@@ -109,11 +109,6 @@ object TextReflowProps extends Properties("TextReflowProps") with ArbitraryTextR
     val jsOut = Json.prettyPrint(jsVal)
     jsVal.validate[TargetRegion] match   {
       case JsSuccess(targetRegion, path) =>
-        // if (example =/= targetRegion) {
-        //   println("mismatch: ")
-        //   println(example)
-        //   println(targetRegion)
-        // }
         example === targetRegion
       case _ => false
     }
@@ -132,6 +127,12 @@ object TextReflowProps extends Properties("TextReflowProps") with ArbitraryTextR
   property("json <--> textReflow isomorphism") = forAll{ (textReflowEx: TextReflow) =>
     val asJson = textReflowEx.toJson()
     val textReflow = jsonToTextReflow(asJson)
+    if (textReflowEx =/= textReflow) {
+      println("mismatch: ")
+      println(asJson)
+      println(textReflowEx)
+      println(textReflow)
+    }
     textReflowEx === textReflow
   }
 

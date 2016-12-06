@@ -25,7 +25,8 @@ object TextReflowF {
   case class Insert[A](value: String)                     extends TextReflowF[A]
   case class Rewrite[A](from: A, to: String)              extends TextReflowF[A]
   case class Bracket[A](pre: String, post: String, a: A)  extends TextReflowF[A]
-  case class Flow[A](labels: Set[Label], as: List[A])     extends TextReflowF[A]
+  // case class Flow[A](labels: Set[Label], as: List[A])     extends TextReflowF[A]
+  case class Flow[A](as: List[A])     extends TextReflowF[A]
   case class Labeled[A](labels: Set[Label], a: A)         extends TextReflowF[A]
 
   implicit val TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
@@ -34,7 +35,7 @@ object TextReflowF {
       case Insert(value)              => G.point(Insert(value))
       case Rewrite(fromA, to)         => f(fromA).map(Rewrite(_, to))
       case Bracket(pre, post, a)      => f(a).map(Bracket(pre, post, _))
-      case Flow(labels, as)           => as.traverse(f).map(Flow(labels, _))
+      case Flow(as)           => as.traverse(f).map(Flow(_))
       case Labeled(labels, a)         => f(a).map(Labeled(labels, _))
     }
   }
@@ -45,7 +46,7 @@ object TextReflowF {
       case Insert(value)              => s"+'$value'"
       case Rewrite(from, to)          => s"-+'${to}'"
       case Bracket(pre, post, a)      => s"""${pre}`${a.toString}`{post} """
-      case Flow(ls, atoms)            => s"""flow${ls.mkString(":#", " #", "")}"""
+      case Flow(atoms)            => s"""flow"""
       case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
     }
   }
@@ -58,7 +59,7 @@ object TextReflowF {
         case (Insert(value)         , Insert(value2))           => value == value2
         case (Rewrite(from, to)     , Rewrite(from2, to2))      => from === from2 && to == to2
         case (Bracket(pre, post, a) , Bracket(pre2, post2, a2)) => pre==pre && post==post && a===a2
-        case (Flow(ls, atoms)       , Flow(ls2, atoms2))        => ls == ls2 && atoms === atoms2
+        case (Flow(atoms)       , Flow(atoms2))        =>  atoms === atoms2
         case (Labeled(ls, a)        , Labeled(ls2, a2))         => ls == ls2 && a === a2
         case (_                     , _)                        => false
       }
@@ -79,7 +80,7 @@ trait TextReflowFunctions {
   def atom[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
   def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
   def flow(as:TextReflow*) = flows(as)
-  def flows(as: Seq[TextReflow]) = fixf(Flow(Set(), as.toList))
+  def flows(as: Seq[TextReflow]) = fixf(Flow(as.toList))
 
   def bracket(pre: Char, post: Char, a:TextReflow) = fixf(
     Bracket(pre.toString, post.toString, a)
@@ -95,7 +96,6 @@ trait TextReflowFunctions {
   private def mkPad(s: String): TextReflow = insert(s)
 
   def addLabel(l: Label): TextReflow => TextReflow = tr => fixf(tr.unFix match {
-    case f @ Flow(ls, as)    => f.copy(labels = ls + l)
     case f @ Labeled(ls, s)  => f.copy(labels = ls + l)
     case r                   => labeled(l, fixf(r)).unFix
   })
@@ -116,12 +116,12 @@ trait TextReflowFunctions {
     onGrouped: List[TextReflowT] => List[TextReflowT] = (w => w)
   ): TextReflowT = {
     reflow match {
-      case f @ Flow(labels, as) =>
+      case f @ Flow(as) =>
         val grouped = as
           .groupByPairsWithIndex({
             case (a, b, i) => groupf(a.unFix, b.unFix, i)
           })
-          .map(g =>Flow(labels, g.toList))
+          .map(g =>Flow(g.toList))
           .toList
 
         f.copy(as = onGrouped(grouped).map(fixf(_)))
@@ -139,15 +139,15 @@ trait TextReflowFunctions {
   }
 
 
-  def everySequence(r: TextReflow)(f: List[TextReflow] => List[TextReflow]): TextReflow = {
-    def atFlows: TextReflowT => TextReflowT = r => r match {
-      case fl @ Flow(labels: Set[Label], as: List[TextReflow]) =>
-        fl.copy(as = f(as))
-      case fl => fl
-    }
+  // def everySequence(r: TextReflow)(f: List[TextReflow] => List[TextReflow]): TextReflow = {
+  //   def atFlows: TextReflowT => TextReflowT = r => r match {
+  //     case fl @ Flow(labels: Set[Label], as: List[TextReflow]) =>
+  //       fl.copy(as = f(as))
+  //     case fl => fl
+  //   }
 
-    r.transCata(atFlows)
-  }
+  //   r.transCata(atFlows)
+  // }
 
   def everyLabel(l: Label, r: TextReflow)(f: TextReflow => TextReflow): TextReflow = {
     def ifLabeled(r:TextReflowT): TextReflowT =  {

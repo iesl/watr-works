@@ -42,8 +42,8 @@ class StringReflowTestUtil extends ConnectedComponentTestUtil {
       }, onGrouped = {groups =>
 
         val tokenGroups = groups.map {_ match {
-          case f @ Flow(ls, as) => addLabel(LB.Token)(fixf(f)).unFix
-          case x                => x
+          case f @ Flow(as) => addLabel(LB.Token)(fixf(f)).unFix
+          case x            => x
         }}
 
         tokenGroups.toZipper.map (

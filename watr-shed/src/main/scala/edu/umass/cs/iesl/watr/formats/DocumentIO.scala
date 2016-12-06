@@ -32,7 +32,9 @@ object DocumentIO extends DocsegJsonFormats {
 
 
   def richTextSerializeDocument(zoneIndexer: ZoneIndexer): String = {
-    for {
+    import play.api.libs.json, json._
+
+    val textAndJsons = for {
       pageId <- zoneIndexer.getPages
       pageTextBlocks <- zoneIndexer.getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
       _ = println(s"Page $pageId")
@@ -41,26 +43,36 @@ object DocumentIO extends DocsegJsonFormats {
     } yield {
 
       val formattedText = blockTextReflow.toFormattedText()
-      val idList = blockTextReflow.toJson()
-      println()
-      println(formattedText)
-      println(idList)
+      val json = blockTextReflow.toJson()
+      // println()
+      // println(formattedText)
+      // println(idList)
 
       // assert(formattedText.length()==idList.length)
+      (formattedText, json)
     }
-    // val (lineTextBlock, lineDefBlock) = serializeTextLines(zoneIndexer)
 
-    // |${indent(4)(lineTextBlock)}
+    val textLines = indent(4)(vjoins()(textAndJsons.map(_._1.box)))
+    val jsonLines = indent(4)(vjoins()(textAndJsons.map(pair => Json.stringify(pair._2).box)))
+
     val finalDocument = (
       s"""|{ "lines": [
+          |${textLines}
           |  ],
           |  "mentions": [
           |  "relations": [
           |  "properties": [
           |  "labels": [
           |  "lineDefs": [
+          |${jsonLines}
+          |  ],
           |  "ids": [
           |""".stripMargin)
+
+    finalDocument.split("\n")
+      .map(_.reverse.dropWhile(_==' ').reverse)
+      .mkString("\n")
+
 
     // val mentionBlock = serializeMentions(zoneIndexer)
 
@@ -122,7 +134,7 @@ object DocumentIO extends DocsegJsonFormats {
     //      |  ] }
     //      |""".stripMargin)
 
-    finalDocument
+    // finalDocument
   }
 
   def selectPinForLabel(lb: Label, n: BioNode): BioPin = {

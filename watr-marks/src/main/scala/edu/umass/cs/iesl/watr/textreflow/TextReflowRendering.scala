@@ -31,7 +31,7 @@ object TextReflowRendering {
       case Insert  (value)                 => s"$value"
       case Rewrite ((from, attr), to)      => s"$to"
       case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
-      case Flow    (labels, atomsAndattrs) => s"""${atomsAndattrs.map(_._2).mkString}"""
+      case Flow    (atomsAndattrs)         => s"""${atomsAndattrs.map(_._2).mkString}"""
       case Labeled (labels, (a, attr))     => s"${attr}"
     }
   }

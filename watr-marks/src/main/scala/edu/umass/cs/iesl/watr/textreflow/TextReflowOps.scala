@@ -38,7 +38,7 @@ object TextReflowOps {
       case Insert(value)              => value.length
       case Rewrite(from, to)          => to.length
       case Bracket(pre, post, a)      => pre.length + post.length
-      case Flow(ls, atoms)            => 0
+      case Flow(atoms)            => 0
       case Labeled(ls, _)             => 0
       case _ =>
         println(s"""ERR: countChars: ${tr} => ?  """)
@@ -55,7 +55,7 @@ object TextReflowOps {
       case Insert(value)              => value.length
       case Rewrite(from, to)          => to.length
       case Bracket(pre, post, a)      => pre.length + post.length
-      case Flow(ls, atoms)            => 0
+      case Flow(atoms)            => 0
       case Labeled(ls, _)             => 0
       case _ =>
         println(s"""ERR: countChars: ${tr} => ?  """)

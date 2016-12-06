@@ -21,12 +21,12 @@ trait TextReflowJsonFormats extends ComponentDataTypeFormats {
   }
 
   def serializeTextReflow(t: TextReflowF[(TextReflow, JsValue)]): JsValue = t match {
-    case Atom(c, ops)                     => obj("atom" -> arr(jstr(ops.toString()), toJson(c.asInstanceOf[PageAtom])))
-    case Insert (value)                   => obj("ins" -> jstr(value))
-    case Rewrite ((from, attrJs), to)     => obj("sub" -> arr(attrJs, JsString(to.toString)))
-    case Bracket (pre, post, (a, attrJs)) => obj("br" -> arr(jstr(pre), attrJs, jstr(post)))
-    case Flow(labels, atomsAndattrs)      => obj("as" -> arr(packLabels(labels), atomsAndattrs.map(_._2)))
-    case Labeled(labels, (a, attrJs))     => obj("lb" -> arr(packLabels(labels), attrJs))
+    case Atom(c, ops)                     => obj("a" -> arr(jstr(ops.toString()), toJson(c.asInstanceOf[PageAtom])))
+    case Insert (value)                   => jstr(value)
+    case Rewrite ((from, attrJs), to)     => obj("s" -> arr(attrJs, JsString(to.toString)))
+    case Bracket (pre, post, (a, attrJs)) => obj("b" -> arr(jstr(pre), attrJs, jstr(post)))
+    case Flow(atomsAndattrs)              => toJson(atomsAndattrs.map(_._2))
+    case Labeled(labels, (a, attrJs))     => obj("l" -> arr(packLabels(labels), attrJs))
   }
 
 
@@ -47,30 +47,29 @@ trait TextReflowJsonFormats extends ComponentDataTypeFormats {
   }
 
   def unfoldJsonToTextReflow: Coalgebra[TextReflowF, JsValue] = jsValue => {
-
-  jsValue match {
-    case JsObject(fields) =>
-      val field0 = fields.toList.headOption.getOrElse { sys.error("Empty object while unserializing text reflow") }
-      field0 match {
-        case ("atom", JsArray(Seq(JsString(ops), pageAtomJs)))           => Atom(pageAtomJs.as[PageAtom], new TextReflowAtomOps(ops.toString()))
-        case ("ins", JsString(value))                                    => Insert(value)
-        case ("sub", JsArray(Seq(fromJsValue, JsString(toStr))))         => Rewrite(fromJsValue, toStr)
-        case ("br", JsArray(Seq(JsString(pre), jsAttr, JsString(post)))) => Bracket(pre, post, jsAttr)
-        case ("as", JsArray(Seq(labels, JsArray(jsAttrs))))              => Flow(unpackLabels(labels), jsAttrs.toList)
-        case ("lb", JsArray(Seq(labels, jsAttr)))                        => Labeled(unpackLabels(labels), jsAttr)
-        case (_, _)                                                      => sys.error(s"couldn't match JsValue= ${jsValue}")
-      }
-    case _ => ???
+    jsValue match {
+      case JsArray(jsAttrs) => Flow(jsAttrs.toList)
+      case JsString(value) => Insert(value)
+      case JsObject(fields) =>
+        val field0 = fields.toList.headOption.getOrElse { sys.error("Empty object while unserializing text reflow") }
+        field0 match {
+          case ("a", JsArray(Seq(JsString(ops), pageAtomJs)))           => Atom(pageAtomJs.as[PageAtom], new TextReflowAtomOps(ops.toString()))
+          case ("s", JsArray(Seq(fromJsValue, JsString(toStr))))         => Rewrite(fromJsValue, toStr)
+          case ("b", JsArray(Seq(JsString(pre), jsAttr, JsString(post)))) => Bracket(pre, post, jsAttr)
+          case ("l", JsArray(Seq(labels, jsAttr)))                        => Labeled(unpackLabels(labels), jsAttr)
+          case (_, _)                                                      => sys.error(s"couldn't match JsValue= ${jsValue}")
+        }
+      case _ => ???
+    }
   }
-}
 
   // type GAlgebra                   [W[_],            F[_],        A]          = F[W[A]]   => A
   def refoldJsonTextReflow: GAlgebra[(TextReflow, ?), TextReflowF, TextReflow] = t => fixf(t match {
     case Atom(c, ops)                   => Atom(c, ops)
-    case Insert (value)                 => Insert(value)
+    case Insert(value)                  => Insert(value)
     case Rewrite ((from, attr), to)     => Rewrite(attr, to)
     case Bracket (pre, post, (a, attr)) => Bracket(pre, post, attr)
-    case Flow(labels, atomsAndattrs)    => Flow(labels, atomsAndattrs.map(_._2))
+    case Flow(atomsAndattrs)            => Flow(atomsAndattrs.map(_._2))
     case Labeled(labels, (a, attr))     => Labeled(labels, attr)
 
   })

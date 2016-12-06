@@ -64,8 +64,8 @@ object TextReflowConversion {
 
       case LB.PageAtom =>
         val ac = cc.asInstanceOf[AtomicComponent]
-        val ops = new textreflow.TextReflowAtomOps(ac.chars)
-        atom(ac, ops).some
+        val ops = new textreflow.TextReflowAtomOps(ac.char)
+        atom(ac.pageAtom, ops).some
 
       case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
     }

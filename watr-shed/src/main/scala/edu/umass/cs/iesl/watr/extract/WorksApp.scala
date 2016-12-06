@@ -31,7 +31,7 @@ case class AppConfig(
 object Works extends App {
   private[this] val log = org.log4s.getLogger
 
-  utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
+  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
   // utils.VisualTracer
   // utils.VisualTracer.clearFilters()
   // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
@@ -404,9 +404,9 @@ object Works extends App {
 
     var rsegmenter: Option[segment.DocumentSegmenter] = None
 
-    val predsynthPapers: Map[String, Paper] =
-      loadPredsynthUberJson(conf)
-        .getOrElse(Map())
+    // val predsynthPapers: Map[String, Paper] =
+    //   loadPredsynthUberJson(conf)
+    //     .getOrElse(Map())
 
     processCorpusEntryList(conf, {corpusEntry =>
       try {
@@ -419,6 +419,7 @@ object Works extends App {
           segmenter       <- runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
         } {
 
+          println("????")
           rsegmenter = Some(segmenter)
 
           val entryFilename = corpusEntry.entryDescriptorRoot
