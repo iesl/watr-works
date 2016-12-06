@@ -3,14 +3,12 @@ package segment
 
 import java.net.URL
 import org.scalatest._
-import java.io.InputStream
 import scalaz.@@
 import spindex._
 import TypeTags._
 import GeometricFigure._
 import EnrichGeometricFigures._
-import ComponentOperations._
-import ammonite.{ops => fs}, fs._
+import ammonite.{ops => fs}
 
 trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
 
@@ -159,7 +157,6 @@ case class TextExample(
 
 case class ParsedExample(
   source: String,
-  regions: Seq[(String, Int@@PageID, LTBounds)],
+  targetRegions: Seq[(String, Int@@PageID, LTBounds)],
   expectedOutput: Seq[String]
 )
-

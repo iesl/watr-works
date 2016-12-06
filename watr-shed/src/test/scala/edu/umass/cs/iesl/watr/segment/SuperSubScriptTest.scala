@@ -46,9 +46,9 @@ class SuperSubScriptTest extends DocsegTestUtil {
 
     import TextReflowConversion.toTextReflow
     examples.foreach { example =>
-      val pdfIns = example.targetRegion.pdfUrl
-      val pageId = example.targetRegion.page
-      val bounds = example.targetRegion.bbox
+      val pdfIns = example.region.pdfUrl
+      val pageId = example.region.page
+      val bounds = example.region.bbox
 
       val segmenter = createFilteredZoneIndexer(pdfIns, pageId, Seq(bounds))
       val pageInfo = segmenter.zoneIndexer.getPageIndex(pageId)

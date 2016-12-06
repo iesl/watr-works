@@ -3,10 +3,8 @@ package textreflow
 
 import org.scalacheck._
 import scalaz._, Scalaz._
-import org.scalacheck.Prop._
 
 import matryoshka._
-// import matryoshka.implicits._
 import matryoshka.scalacheck.arbitrary._
 
 import scalaz.scalacheck.ScalaCheckBinding._
@@ -14,7 +12,6 @@ import scalaz.scalacheck.ScalaCheckBinding._
 import spindex._
 import watrmarks._
 import TextReflowF._
-import ComponentTypeEnrichments._
 
 trait ArbitraryTextReflows {
   import Arbitrary._
@@ -81,60 +78,6 @@ trait ArbitraryTextReflows {
         )
       }
     }
-
-
-}
-
-
-
-object TextReflowProps extends Properties("TextReflowProps") with ArbitraryTextReflows {
-  import play.api.libs.json._
-  import TextReflowRendering._
-  import TextReflowTransforms._
-  import GeometricFigure._
-
-  property("json <--> LTBounds") = forAll{ (example: LTBounds) =>
-    val jsVal = Json.toJson(example)
-    val jsOut = Json.prettyPrint(jsVal)
-    jsVal.validate[LTBounds] match   {
-      case JsSuccess(ltb, path) =>
-        example === ltb
-      case _ => false
-    }
-  }
-
-
-  property("json <--> TargetRegion") = forAll{ (example: TargetRegion) =>
-    val jsVal = Json.toJson(example)
-    val jsOut = Json.prettyPrint(jsVal)
-    jsVal.validate[TargetRegion] match   {
-      case JsSuccess(targetRegion, path) =>
-        example === targetRegion
-      case _ => false
-    }
-  }
-
-  property("json <--> PageAtom") = forAll{ (example: PageAtom) =>
-    val jsVal = Json.toJson(example)
-    val jsOut = Json.prettyPrint(jsVal)
-    jsVal.validate[PageAtom] match   {
-      case JsSuccess(pageAtom, path) => 
-        example === pageAtom
-      case _ => false
-    }
-  }
-
-  property("json <--> textReflow isomorphism") = forAll{ (textReflowEx: TextReflow) =>
-    val asJson = textReflowEx.toJson()
-    val textReflow = jsonToTextReflow(asJson)
-    if (textReflowEx =/= textReflow) {
-      println("mismatch: ")
-      println(asJson)
-      println(textReflowEx)
-      println(textReflow)
-    }
-    textReflowEx === textReflow
-  }
 
 
 }
