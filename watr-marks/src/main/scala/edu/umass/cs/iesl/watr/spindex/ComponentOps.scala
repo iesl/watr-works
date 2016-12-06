@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-
 import watrmarks.{StandardLabels => LB, Label}
 import utils.Histogram, Histogram._
 import textboxing.{TextBoxing => TB}, TB._
@@ -17,11 +16,8 @@ import utils.EnrichNumerics._
 import TextReflowConversion._
 
 
-
 object ComponentOperations {
   import textreflow._
-  import textreflow.TextReflowRendering._
-  import textreflow.TextReflowOps._
   import utils.EnglishDictionary
 
   def joinTextLines(line1: TextReflow, line2: TextReflow)(dict: EnglishDictionary): TextReflow = {

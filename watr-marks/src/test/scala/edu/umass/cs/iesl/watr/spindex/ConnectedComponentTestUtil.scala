@@ -21,7 +21,6 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
   import TextReflowF._
 
   val regionIDs = IdGenerator[RegionID]()
-  // val pageIDs = IdGenerator[PageID]()
 
   val page0 = PageID(0)
   val xscale = 10.0d
@@ -86,11 +85,29 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
           insertDownLast(Labeled(Set(LB.VisualLine), 0))
           insertDownLast(Flow(List()))
 
+
         case '^' => insertDownLast(Labeled(Set(LB.Sup), 0))
         case '_' => insertDownLast(Labeled(Set(LB.Sub), 0))
         case '{' => insertDownLast(Flow(List()))
         case '}' => pop(); pop()
         case ' ' => insertDownLast(Insert(" ")); pop()
+
+        case chx if charSubs.contains(chx) =>
+          insertDownLast(Rewrite(0, charSubs(chx)))
+          val charAtom = CharAtom(
+            TargetRegion(regionIDs.nextId, page0,
+              LTBounds(
+                left=chnum*xscale, top=linenum*yscale,
+                width=xscale, height=yscale
+              )
+            ),
+            ch.toString
+          )
+          val ops = new textreflow.TextReflowAtomOps(Seq(ch))
+          insertDownLast(Atom(charAtom, ops))
+          pop()
+          pop()
+
         case _ =>
           val charAtom = CharAtom(
             TargetRegion(regionIDs.nextId, page0,
@@ -112,14 +129,14 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
     val ftree = tloc.toTree
     val res = ftree.scanr ((reflowNode: TextReflowF[Int], childs: Stream[Tree[TextReflow]]) => {
       reflowNode match {
-          case t@ Atom(c, ops)               => fixf(Atom(c, ops))
-          case t@ Insert(value)              => fixf(Insert(value))
-          case t@ Rewrite(from, to)          => fixf(Rewrite(childs.head.rootLabel, to))
-          case t@ Bracket(pre, post, a)      => fixf(Bracket(pre, post, childs.head.rootLabel))
-          case t@ Flow(atoms)                => fixf(Flow(childs.toList.map(_.rootLabel)))
-          case t@ Labeled(ls, _)             => fixf(Labeled(ls, childs.head.rootLabel))
-        }
-      }
+        case t@ Atom(c, ops)               => fixf(Atom(c, ops))
+        case t@ Insert(value)              => fixf(Insert(value))
+        case t@ Rewrite(from, to)          => fixf(Rewrite(childs.head.rootLabel, to))
+        case t@ Bracket(pre, post, a)      => fixf(Bracket(pre, post, childs.head.rootLabel))
+        case t@ Mask(mL, mR, a)            => fixf(Mask(mL, mR, childs.head.rootLabel))
+        case t@ Flow(atoms)                => fixf(Flow(childs.toList.map(_.rootLabel)))
+        case t@ Labeled(ls, _)             => fixf(Labeled(ls, childs.head.rootLabel))
+      }}
     )
 
     res.rootLabel

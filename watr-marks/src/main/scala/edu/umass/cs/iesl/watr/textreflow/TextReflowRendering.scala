@@ -5,14 +5,14 @@ import spindex._
 
 import textboxing.{TextBoxing => TB}, TB._
 
-object TextReflowRendering {
-  import matryoshka._
-  import matryoshka.data._
-  import matryoshka.implicits._
-  import play.api.libs.json._
 
-  import TextReflowTransforms._
-  import TextReflowOps._
+object TextReflowRendering {
+  // import matryoshka._
+  // import matryoshka.data._
+  // import matryoshka.implicits._
+  // import play.api.libs.json._
+
+  // import TextReflowTransforms._
   import TextReflowF._
   import watrmarks.{StandardLabels => LB, _}
 
@@ -25,32 +25,14 @@ object TextReflowRendering {
     case t      => t
   }
 
-  def renderText(t: TextReflowF[(TextReflow, String)]): String = {
-    t match {
-      case Atom    (ac, ops)               => ops.toString
-      case Insert  (value)                 => s"$value"
-      case Rewrite ((from, attr), to)      => s"$to"
-      case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
-      case Flow    (atomsAndattrs)         => s"""${atomsAndattrs.map(_._2).mkString}"""
-      case Labeled (labels, (a, attr))     => s"${attr}"
-    }
-  }
-
-  implicit class RicherTextReflow(val theReflow: TextReflow) extends AnyVal  {
-
-    def toJson(): JsValue = {
-      textReflowToJson(theReflow)
-    }
-
-    def toText(): String = {
-      val res = theReflow.cata(attributePara(renderText))
-      res.toPair._1
-    }
-
-    def toFormattedText(): String = {
-      val res = theReflow.transCata(escapeLineFormatting)
-      res.toText
-    }
+  def renderText(t: TextReflowF[(TextReflow, String)]): String = t match {
+    case Atom    (ac, ops)               => ops.toString
+    case Insert  (value)                 => value
+    case Rewrite ((from, attr), to)      => to
+    case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
+    case Mask    (mL, mR, (a, attr))     => attr.drop(mL).dropRight(mR).mkString
+    case Flow    (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
+    case Labeled (labels, (a, attr))     => attr
   }
 
   object VisualLine {

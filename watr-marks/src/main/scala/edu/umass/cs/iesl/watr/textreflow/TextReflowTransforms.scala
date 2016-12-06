@@ -4,9 +4,8 @@ package textreflow
 import spindex._
 import play.api.libs.json._
 import Json._
-
-
 import watrmarks.Label
+
 trait TextReflowJsonFormats extends ComponentDataTypeFormats {
   import play.api.libs.json._
   import spindex._
@@ -25,6 +24,7 @@ trait TextReflowJsonFormats extends ComponentDataTypeFormats {
     case Insert (value)                   => jstr(value)
     case Rewrite ((from, attrJs), to)     => obj("s" -> arr(attrJs, JsString(to.toString)))
     case Bracket (pre, post, (a, attrJs)) => obj("b" -> arr(jstr(pre), attrJs, jstr(post)))
+    case Mask    (mL, mR, (a, attrJs))    => obj("m" -> arr(mL, mR, attrJs))
     case Flow(atomsAndattrs)              => toJson(atomsAndattrs.map(_._2))
     case Labeled(labels, (a, attrJs))     => obj("l" -> arr(packLabels(labels), attrJs))
   }
@@ -53,22 +53,23 @@ trait TextReflowJsonFormats extends ComponentDataTypeFormats {
       case JsObject(fields) =>
         val field0 = fields.toList.headOption.getOrElse { sys.error("Empty object while unserializing text reflow") }
         field0 match {
-          case ("a", JsArray(Seq(JsString(ops), pageAtomJs)))           => Atom(pageAtomJs.as[PageAtom], new TextReflowAtomOps(ops.toString()))
-          case ("s", JsArray(Seq(fromJsValue, JsString(toStr))))         => Rewrite(fromJsValue, toStr)
+          case ("a", JsArray(Seq(JsString(ops), pageAtomJs)))             => Atom(pageAtomJs.as[PageAtom], new TextReflowAtomOps(ops.toString()))
+          case ("s", JsArray(Seq(fromJsValue, JsString(toStr))))          => Rewrite(fromJsValue, toStr)
           case ("b", JsArray(Seq(JsString(pre), jsAttr, JsString(post)))) => Bracket(pre, post, jsAttr)
+          case ("m", JsArray(Seq(JsNumber(mL), JsNumber(mR), jsAttr)))     => Mask(mL.toInt, mR.toInt, jsAttr)
           case ("l", JsArray(Seq(labels, jsAttr)))                        => Labeled(unpackLabels(labels), jsAttr)
-          case (_, _)                                                      => sys.error(s"couldn't match JsValue= ${jsValue}")
+          case (_, _)                                                     => sys.error(s"couldn't match JsValue= ${jsValue}")
         }
       case _ => ???
     }
   }
 
-  // type GAlgebra                   [W[_],            F[_],        A]          = F[W[A]]   => A
   def refoldJsonTextReflow: GAlgebra[(TextReflow, ?), TextReflowF, TextReflow] = t => fixf(t match {
     case Atom(c, ops)                   => Atom(c, ops)
     case Insert(value)                  => Insert(value)
     case Rewrite ((from, attr), to)     => Rewrite(attr, to)
     case Bracket (pre, post, (a, attr)) => Bracket(pre, post, attr)
+    case Mask    (mL, mR, (a, attr))    => Mask(mL, mR, attr)
     case Flow(atomsAndattrs)            => Flow(atomsAndattrs.map(_._2))
     case Labeled(labels, (a, attr))     => Labeled(labels, attr)
 

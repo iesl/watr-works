@@ -1,9 +1,6 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-// import watrmarks.{StandardLabels => LB}
-// import TextReflow._
-// import TextReflowOps._
 
 
 class TextReflowRenderingTest extends StringReflowTestUtil {

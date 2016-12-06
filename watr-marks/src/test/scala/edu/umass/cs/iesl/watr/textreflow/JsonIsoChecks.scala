@@ -13,9 +13,8 @@ import TextReflowF._
 import ComponentTypeEnrichments._
 
 
-object TextReflowProps extends Properties("TextReflowProps") with ArbitraryTextReflows {
+object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflows {
   import play.api.libs.json._
-  import TextReflowRendering._
   import TextReflowTransforms._
   import GeometricFigure._
 

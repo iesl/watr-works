@@ -20,7 +20,6 @@ object MITAlignPredsynth {
 
   import utils.IdGenerator
   import textreflow._
-  import textreflow.TextReflowOps._
 
   def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Unit = {
     println("aligning predsynth paper ")

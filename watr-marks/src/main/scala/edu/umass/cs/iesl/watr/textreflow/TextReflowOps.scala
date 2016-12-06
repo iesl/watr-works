@@ -1,29 +1,145 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
- //import TextReflow._
-import TextReflowF._
+import scalaz._, Scalaz._
 
 import spindex._
 import watrmarks._
 import utils.Ranges
+import textboxing.{TextBoxing => TB}
 
-object TextReflowOps {
+import matryoshka._
+import matryoshka.data._
+import matryoshka.implicits._
 
-  import scalaz._, Scalaz._
+trait TextReflowFunctions {
+  import TextReflowF._
+  import utils.SlicingAndDicing._
 
-  import matryoshka._
-  import matryoshka.data._
-  import matryoshka.implicits._
+  def fixf = Fix[TextReflowF](_)
 
-  case class CharOffsetState(cbegin: Int, clen: Int)
+  def atom[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
+  def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
+  def flow(as:TextReflow*) = flows(as)
+  def flows(as: Seq[TextReflow]) = fixf(Flow(as.toList))
 
-  implicit object CharOffsetStateInst extends Show[CharOffsetState] {
-    def zero: CharOffsetState = CharOffsetState(0, 0)
-    override def shows(f: CharOffsetState): String = s"[${f.cbegin}-${f.clen}]"
+  def bracket(pre: Char, post: Char, a:TextReflow) = fixf(
+    Bracket(pre.toString, post.toString, a)
+  )
+  def bracket(pre: String, post: String, a:TextReflow) = fixf(
+    Bracket(pre, post, a)
+  )
+
+  def labeled(l: Label, a:TextReflow) = fixf(Labeled(Set(l), a))
+  def insert(s: String) = fixf(Insert(s))
+  def space() = insert(" ")
+
+  private def mkPad(s: String): TextReflow = insert(s)
+
+  def addLabel(l: Label): TextReflow => TextReflow = tr => fixf(tr.unFix match {
+    case f @ Labeled(ls, s)  => f.copy(labels = ls + l)
+    case r                   => labeled(l, fixf(r)).unFix
+  })
+
+
+  def join(sep:String)(bs:TextReflow*): TextReflow =
+    joins(sep)(bs.toSeq)
+
+  def joins(sep:String)(bs:Seq[TextReflow]): TextReflow =
+    concat(bs.toList intersperse mkPad(sep))
+
+  def concat(bs: Seq[TextReflow]): TextReflow = {
+    flows(bs)
   }
 
-  implicit class RicherTextReflowT(val theReflow: TextReflowT) extends AnyVal  {
+  def groupByPairs(reflow: TextReflowT)(
+    groupf: (TextReflowT, TextReflowT, Int) => Boolean,
+    onGrouped: List[TextReflowT] => List[TextReflowT] = (w => w)
+  ): TextReflowT = {
+    reflow match {
+      case f @ Flow(as) =>
+        val grouped = as
+          .groupByPairsWithIndex({
+            case (a, b, i) => groupf(a.unFix, b.unFix, i)
+          })
+          .map(g =>Flow(g.toList))
+          .toList
+
+        f.copy(as = onGrouped(grouped).map(fixf(_)))
+
+      case x =>
+        println(s"unmatched ${x}")
+        x
+
+    }
+  }
+
+  def hasLabel(l: Label): TextReflowT => Boolean = _ match {
+    case Labeled(labels, _) if labels.contains(l) => true
+    case _ => false
+  }
+
+
+  def everyLabel(l: Label, r: TextReflow)(f: TextReflow => TextReflow): TextReflow = {
+    def ifLabeled(r:TextReflowT): TextReflowT =  {
+      if (hasLabel(l)(r)) holes(r) match {
+        case Labeled(labels, (a, fWhole)) => fWhole(f(a))
+        case _ => r
+      } else r
+    }
+
+    r.transCata(ifLabeled)
+  }
+
+  def everywhere(r: TextReflow)(f: TextReflowT => TextReflowT): TextReflow = {
+    r.transCata(f)
+  }
+
+  import utils.ScalazTreeImplicits._
+
+  def boxTF[T, F[_]: Foldable: Functor](
+    tf: T
+  )(implicit
+    TR: Recursive.Aux[T, F],
+    FShow: Delay[Show, F]
+  ): TB.Box = {
+    tf.cata(toTree).drawBox
+  }
+
+  def prettyPrintTree(reflow: TextReflow): TB.Box = {
+    reflow.cata(toTree).drawBox
+  }
+
+
+  def prettyPrintCofree[B](cof: Cofree[TextReflowF, B])(implicit
+    BS: Show[B],
+    CS: Delay[Show, Cofree[TextReflowF, ?]]
+  ): String = {
+    CS(BS).shows(cof)
+  }
+
+  def cofreeBox[B](cof: Cofree[TextReflowF, B])(implicit
+    BS: Show[B]
+  ): TB.Box = {
+    cofreeAttrToTree(cof).drawBox
+  }
+
+  def cofreeAttrToTree[A](c: Cofree[TextReflowF, A]): Tree[A] = {
+    // val cname = c.tail.getClass.getSimpleName
+    Tree.Node(
+      c.head,
+      c.tail.toStream.map(cofreeAttrToTree(_))
+    )
+  }
+
+  case class Offsets(cbegin: Int, clen: Int, totalOffset: Int)
+
+  implicit object OffsetsInst extends Show[Offsets] {
+    def zero: Offsets = Offsets(0, 0, 0)
+    override def shows(f: Offsets): String = s"[${f.cbegin}-${f.clen} (${f.totalOffset})]"
+  }
+
+  implicit class RicherTextReflowT(val theReflow: TextReflowT)  {
 
     def hasLabel(l: Label): Boolean = theReflow match {
       case Labeled(labels, _) if labels.contains(l) => true
@@ -31,63 +147,9 @@ object TextReflowOps {
     }
   }
 
-  def countChars: TextReflow => Int = tr => {
+  type TextReflowCR = TextReflowF[Cofree[TextReflowF, Offsets]]
 
-    val res = tr.project match {
-      case Atom(c, ops)               => ops.toString.length
-      case Insert(value)              => value.length
-      case Rewrite(from, to)          => to.length
-      case Bracket(pre, post, a)      => pre.length + post.length
-      case Flow(atoms)            => 0
-      case Labeled(ls, _)             => 0
-      case _ =>
-        println(s"""ERR: countChars: ${tr} => ?  """)
-        0
-    }
-
-    res
-  }
-
-  def countCharsF[A]: TextReflowF[A] => Int = tr => {
-
-    val res = tr match {
-      case Atom(c, ops)               => ops.toString.length
-      case Insert(value)              => value.length
-      case Rewrite(from, to)          => to.length
-      case Bracket(pre, post, a)      => pre.length + post.length
-      case Flow(atoms)            => 0
-      case Labeled(ls, _)             => 0
-      case _ =>
-        println(s"""ERR: countChars: ${tr} => ?  """)
-        0
-    }
-
-    res
-  }
-
-  def charCount(fw: TextReflowF[(TextReflow, Int)]): Int = {
-    fw.map(e=>countChars(e._1)).suml
-  }
-
-  def countAtoms: GAlgebra[(TextReflow, ?), TextReflowF, Int] = {
-    trF => trF.foldRight(
-      charCount(trF)
-    )({case z => (z._2 + z._1._2) })
-  }
-
-
-
-  type TextReflowCR = TextReflowF[Cofree[TextReflowF, CharOffsetState]]
-
-  def charStarts[A](i: CharOffsetState, t: TextReflowT): State[CharOffsetState, CharOffsetState] = {
-    val chars = countCharsF(t)
-    State.modify[CharOffsetState]({
-      case r => CharOffsetState(r.cbegin+r.clen, chars)
-    }) *> State.get[CharOffsetState]
-  }
-
-
-  type CharLoc = TreeLoc[CharOffsetState]
+  type CharLoc = TreeLoc[Offsets]
   type CharLocState = State[CharLoc, CharLoc]
 
   def charRangeState[A](
@@ -119,30 +181,175 @@ object TextReflowOps {
   }
 
 
-  implicit class RicherReflow(val theReflow: TextReflow) extends AnyVal  {
+  implicit class RicherReflow(val theReflow: TextReflow) extends TextReflowJsonFormats {
+    import play.api.libs.json._
+    import TextReflowRendering._
+    def toJson(): JsValue = {
+      textReflowToJson(theReflow)
+    }
 
-    def annotateCharRanges(): Cofree[TextReflowF, CharOffsetState] = {
+    def toText(): String = {
+      val res = theReflow.cata(attributePara(renderText))
+      res.toPair._1
+    }
 
-      val withStarts = theReflow.attributeTopDownM[State[CharOffsetState, ?], CharOffsetState](
-        CharOffsetStateInst.zero)({ case e =>
-          charStarts(e._1, e._2)
-        }).eval(CharOffsetStateInst.zero)
+    def toFormattedText(): String = {
+      val res = theReflow.transCata(escapeLineFormatting)
+      res.toText
+    }
 
-      withStarts
+    // def charStarts: (i: CharOffsetState, t: TextReflowT) =>  State[CharOffsetState, CharOffsetState] = {
+    def charStarts: (Offsets, TextReflowT) =>  State[Offsets, Offsets] = {
+      (i, tf) =>
+      val charCount = tf.embed.charCount
+      State.modify[Offsets]({
+        case r => Offsets(r.cbegin+r.clen, charCount, 0)
+      }) *> State.get[Offsets]
+    }
+
+    // def localCharCount: TextReflowF[_] => Int= _ match {
+    //   case Atom(c, ops)                   =>  ops.toString.length
+    //   case Insert(value)                  =>  value.length
+    //   case Rewrite ((from, attr), to)     =>  to.length
+    //   case Bracket (pre, post, (a, attr)) =>  pre.length + post.length + attr
+    //   case Mask    (mL, mR, (a, attr))    =>  attr - mL - mR
+    //   case Flow(atomsAndattrs)            =>  atomsAndattrs.map(_._2).sum
+    //   case Labeled(labels, (a, attr))     =>  attr
+    // }
+    def countChars: GAlgebra[(TextReflow, ?), TextReflowF, Int] = _ match {
+      case Atom(c, ops)                   =>  ops.toString.length
+      case Insert(value)                  =>  value.length
+      case Rewrite ((from, attr), to)     =>  to.length
+      case Bracket (pre, post, (a, attr)) =>  pre.length + post.length + attr
+      case Mask    (mL, mR, (a, attr))    =>  attr - mL - mR
+      case Flow(atomsAndattrs)            =>  atomsAndattrs.map(_._2).sum
+      case Labeled(labels, (a, attr))     =>  attr
+    }
+
+    def aggregateLengths: GAlgebra[(TextReflow, ?), TextReflowF, Offsets] = fwa => {
+      val aggLens = fwa match {
+        case Atom(c, ops)                   =>  ops.toString.length
+        case Insert(value)                  =>  value.length
+        case Rewrite ((from, attr), to)     =>  to.length
+        case Bracket (pre, post, (a, attr)) =>  pre.length + post.length + attr.clen
+        case Mask    (mL, mR, (a, attr))    =>  attr.clen - mL - mR
+        case Flow(atomsAndattrs)            =>  atomsAndattrs.map(_._2.clen).sum
+        case Labeled(labels, (a, attr))     =>  attr.clen
+      }
+      Offsets(0, aggLens, 0)
+    }
+
+
+    // (A, FT) => M[A]
+    def attrBegins2(offs: Offsets, ft:TextReflowF[_]): State[Offsets, Offsets] = {
+      for {
+        _ <- ft match {
+          case Atom(c2, ops2) =>
+            State.modify[Offsets](st =>
+              offs.copy(cbegin=st.totalOffset,  totalOffset=st.totalOffset+offs.clen))
+
+          case Insert(value) =>
+            State.modify[Offsets](st =>
+              offs.copy(cbegin=st.totalOffset, totalOffset=st.totalOffset+offs.clen))
+
+          case Flow(atoms2) =>
+            State.modify[Offsets](st =>
+              offs.copy(cbegin=st.totalOffset, totalOffset=st.totalOffset))
+
+          case Labeled(ls2, a2)         =>
+            State.modify[Offsets](st =>
+              offs.copy(cbegin=st.totalOffset, totalOffset=st.totalOffset))
+        }
+        snext <- State.get[Offsets]
+      } yield snext
+    }
+
+
+    def attrBegins: ElgotAlgebraM[(Offsets, ?), State[Offsets, ?], TextReflowF, Offsets] = {
+      wfa => {
+        for {
+          _ <- wfa match {
+            case (coff , Atom(c2, ops2))           =>
+              State.modify[Offsets](st =>
+                Offsets(cbegin=st.totalOffset, clen=coff.clen, totalOffset=st.totalOffset+coff.clen))
+
+            case (coff , Insert(value2))           =>
+              State.modify[Offsets](st => coff.copy(cbegin=st.cbegin + st.clen))
+            case (coff , Rewrite(from2, to2))      =>
+              State.modify[Offsets](st => coff.copy(cbegin=st.cbegin))
+            case (coff , Bracket(pre2, post2, a2)) =>
+              State.modify[Offsets](st => coff.copy(cbegin=st.cbegin))
+            case (coff , Mask(maskL2, maskR2, a2)) =>
+              State.modify[Offsets](st => coff.copy(cbegin=st.cbegin))
+            case (coff , Flow(atoms2))             =>
+              State.modify[Offsets](st =>
+                Offsets(cbegin=st.totalOffset, clen=coff.clen, totalOffset=st.totalOffset+coff.clen))
+
+            case (coff , Labeled(ls2, a2))         =>
+              State.modify[Offsets](st =>
+                Offsets(cbegin=st.totalOffset, clen=coff.clen, totalOffset=st.totalOffset+coff.clen))
+          }
+          snext <- State.get[Offsets]
+        } yield {
+          snext
+        }
+        // State.get[CharOffsetState]
+      }}
+
+    // def attrBegins(sinit: CharOffsetState, t: TextReflowT): State[CharOffsetState, CharOffsetState] = {
+    //   State.modify[CharOffsetState]({
+    //     case r => CharOffsetState(sinit.cbegin+r.clen, r.clen)
+    //   }) *> State.get[CharOffsetState]
+    // }
+
+    import patterns.EnvT
+    def stripEnv = new (EnvT[Offsets, TextReflowF, ?] ~> TextReflowF[?]) {
+      // def apply(env: EnvT[Offsets, TextReflowF, Offsets]): TextReflowF[Offsets] = {
+      def apply[A](env: EnvT[Offsets, TextReflowF, A]): TextReflowF[A] = {
+        env.lower
+      }
+    }
+    def annotateCharRanges(): Cofree[TextReflowF, Offsets] = {
+      // bottom-up, fully annotate w/(0, ch-len)
+      val charCountAttr:Cofree[TextReflowF, Offsets] =
+        theReflow.cata(attributePara(aggregateLengths))
+
+      println(cofreeBox(charCountAttr))
+
+      // // Variation 1:
+      // val attElgot = attributeElgotM[(Offsets, ?), State[Offsets, ?]](attrBegins)
+      // val attrFn = liftTM(attElgot)
+      // val withOffsets = charCountAttr.cataM(attrFn)
+      // val ran = withOffsets.eval(OffsetsInst.zero)
+
+      // Top down adjustment of attributes:
+      val qwer = charCountAttr.attributeTopDownM[State[Offsets, ?], Offsets](
+        OffsetsInst.zero
+      )({case e => attrBegins2(e._2.ask, e._2.lower)})
+
+      val ran = qwer.eval(OffsetsInst.zero)
+      val qwer2 = ran.mapBranching(stripEnv)
+
+      println()
+      println(cofreeBox(qwer2))
+      println()
+
+      // withStarts
+      qwer2
     }
 
     //  :: W[F[A]] => M[A]
     def transChars(begin: Int, len: Int)(
       fn: (Char, Int) => Option[String]
-    ): ElgotAlgebraM[(CharOffsetState, ?), Option, TextReflowF, TextReflow] = {
+    ): ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] = {
       case (charOffs, a@ Atom(c, ops))
           if begin <= charOffs.cbegin &&  charOffs.cbegin < begin+len =>
 
         for {
           ch  <- ops.chars.headOption
           mod <- fn(ch, begin+len)
-                    .map(rewrite(fixf(a), _))
-                    .orElse(Option(fixf(a)))
+          .map(rewrite(fixf(a), _))
+          .orElse(Option(fixf(a)))
         } yield mod
 
       case (_,      f)                 => Some(fixf(f))
@@ -155,20 +362,15 @@ object TextReflowOps {
     def modifyChars(begin: Int, len: Int)(fn: (Char, Int) => Option[String]): TextReflow = {
 
       val trans = liftTM(
-        attributeElgotM[(CharOffsetState, ?), Option](transChars(begin, len)(fn))
+        attributeElgotM[(Offsets, ?), Option](transChars(begin, len)(fn))
       )
 
       val res = theReflow.annotateCharRanges.cataM(trans)
       res.get.head
     }
 
-
     def charCount: Int = {
-      theReflow.para(countAtoms)
-    }
-
-    def annotateOffsets(): Cofree[TextReflowF, Int] = {
-      theReflow.cata(attributePara(countAtoms))
+      theReflow.para(countChars)
     }
 
     def slice(begin: Int, end:Int): TextReflow = ???
@@ -188,3 +390,22 @@ object TextReflowOps {
   }
 
 }
+
+// def charCount(fw: TextReflowF[(TextReflow, Int)]): Int = {
+//   fw.map(e=>countChars(e._1)).suml
+// }
+
+// def countAtoms: GAlgebra[(TextReflow, ?), TextReflowF, Int] =
+//   trF => trF.foldRight(charCount(trF))({
+//     case z => (z._2 + z._1._2)
+//   })
+
+// val charLen = fwa match {
+//   case Atom(c, ops)                   =>  ops.toString.length
+//   case Insert(value)                  =>  value.length
+//   case Rewrite ((from, attr), to)     =>  to.length
+//   case Bracket (pre, post, (a, attr)) =>  pre.length + post.length
+//   case Mask    (mL, mR, (a, attr))    =>  - (mL+mR)
+//   case Flow(atomsAndattrs)            =>  0
+//   case Labeled(labels, (a, attr))     =>  0
+// }
