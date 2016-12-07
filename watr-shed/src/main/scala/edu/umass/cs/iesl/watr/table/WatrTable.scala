@@ -205,18 +205,19 @@ object ShellCommands {
     }
 
     def webShow(): String = {
-      val text = thisComponent.show()
-      import WebShow._
-      import texttags._
-      val imgUri = thisComponent.extractImage()
+      // val text = thisComponent.show()
+      // import WebShow._
+      // import texttags._
+      // val imgUri = thisComponent.extractImage()
 
-      val html =
-        <.tr(
-          <.td(<.a(^.href := imgUri.toString())),
-          <.td(text.toString)
-        )
+      // val html =
+      //   <.tr(
+      //     <.td(<.a(^.href := imgUri.toString())),
+      //     <.td(text.toString)
+      //   )
 
-      html.toString()
+      // html.toString()
+      ???
     }
 
     def filter(fn: (Component) => Boolean): Option[Component] = {
@@ -271,28 +272,28 @@ object ShellCommands {
 
     import java.net.URI
 
-    def extractImage(): URI = {
-      import com.sksamuel.scrimage._
+    // def extractImage(): URI = {
+    //   import com.sksamuel.scrimage._
 
-      val pageId = thisComponent.pageId.unwrap+1
-      val srcUri = thisComponent.getSrcUri()
+    //   val pageId = thisComponent.pageId.unwrap+1
+    //   val srcUri = thisComponent.getSrcUri()
 
-      val pageSrc = srcUri.resolve("page-images/").resolve(s"page-${pageId}.png")
-      println(s"page src: ${pageSrc}")
-      val image = Image.fromFile(new java.io.File(pageSrc.getPath))
-      val cropped = ImageManipulation.cropTo(image, thisComponent.bounds, thisComponent.getPageGeometry)
+    //   val pageSrc = srcUri.resolve("page-images/").resolve(s"page-${pageId}.png")
+    //   println(s"page src: ${pageSrc}")
+    //   val image = Image.fromFile(new java.io.File(pageSrc.getPath))
+    //   val cropped = ImageManipulation.cropTo(image, thisComponent.bounds, thisComponent.getPageGeometry)
 
-      val x = thisComponent.bounds.left.toInt
-      val y = thisComponent.bounds.top.toInt
-      val w = cropped.width
-      val h = cropped.height
+    //   val x = thisComponent.bounds.left.toInt
+    //   val y = thisComponent.bounds.top.toInt
+    //   val w = cropped.width
+    //   val h = cropped.height
 
-      val imgDst = srcUri.resolve("page-images/").resolve(s"page-${pageId}-x$x-y$y-w$w-h$h.png")
-      println(s"page dest: ${imgDst}")
-      cropped.output(new java.io.File(imgDst.getPath))
+    //   val imgDst = srcUri.resolve("page-images/").resolve(s"page-${pageId}-x$x-y$y-w$w-h$h.png")
+    //   println(s"page dest: ${imgDst}")
+    //   cropped.output(new java.io.File(imgDst.getPath))
 
-      imgDst
-    }
+    //   imgDst
+    // }
   }
 
 

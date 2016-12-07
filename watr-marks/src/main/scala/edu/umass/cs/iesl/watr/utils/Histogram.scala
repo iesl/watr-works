@@ -25,7 +25,7 @@ object Histogram {
     Histogram.fromValues(values, resolution)
   }
 
-  import TraceLog._
+  // import TraceLog._
   import VisualTracer._
   import textboxing.{TextBoxing => TB}, TB._
   import EnrichNumerics._

@@ -16,16 +16,14 @@ val commonSettings = SensibleProject.settings ++
   Seq(
     libraryDependencies ++= LogLibs.logback,
     libraryDependencies ++= TestLibs.testAndCheck,
-    libraryDependencies ++= Lib.matryoshkaLibs,
+    libraryDependencies ++= Lib.matryoshkaLibs, // Includes scalaz-core
     libraryDependencies ++= Seq(
-      Lib.scalazCore,
       Lib.scalatags,
       Lib.ammonite,
       Lib.playJson,
-      Lib.shapeless,
-      Lib.sourcecode,
-      Lib.aspectJ
-
+      Lib.shapeless
+      // Lib.sourcecode,
+      // Lib.aspectJ
       // compilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
       // compilerPlugin("org.spire-math" %% "kind-projector"  % "0.9.2")
       // Not needed in watrmarks
@@ -58,13 +56,9 @@ lazy val watrmarks = (project in file("watr-marks"))
   .aggregate(watrprelude)
 
 
+// .settings(libraryDependencies ++= Lib.scrimage)
 lazy val watrshed = (project in file("watr-shed"))
   .settings(commonSettings: _*)
-  .settings(libraryDependencies ++= Seq(
-    "com.sksamuel.scrimage" %% "scrimage-core"     % libV.scrimageVersion,
-    "com.sksamuel.scrimage" %% "scrimage-io-extra" % libV.scrimageVersion,
-    "com.sksamuel.scrimage" %% "scrimage-filters"  % libV.scrimageVersion
-  ))
   .settings(libraryDependencies ++= DatabaseLibs.slickDb)
   .dependsOn(watrmarks)
 

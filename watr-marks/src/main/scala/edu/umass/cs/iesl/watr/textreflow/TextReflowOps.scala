@@ -12,7 +12,9 @@ import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
 
-trait TextReflowFunctions {
+case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
+
+trait TextReflowFunctions extends StructuredRecursion {
   import TextReflowF._
   import utils.SlicingAndDicing._
 
@@ -132,11 +134,9 @@ trait TextReflowFunctions {
     )
   }
 
-  case class Offsets(cbegin: Int, clen: Int, totalOffset: Int)
-
   implicit object OffsetsInst extends Show[Offsets] {
-    def zero: Offsets = Offsets(0, 0, 0)
-    override def shows(f: Offsets): String = s"[${f.cbegin}-${f.clen} (${f.totalOffset})]"
+    def zero: Offsets = Offsets(0, 0, 0, 0)
+    override def shows(f: Offsets): String = s"(${f.begin} ${f.len}) ${f.total} +:${f.pad}"
   }
 
   implicit class RicherTextReflowT(val theReflow: TextReflowT)  {
@@ -203,7 +203,7 @@ trait TextReflowFunctions {
       (i, tf) =>
       val charCount = tf.embed.charCount
       State.modify[Offsets]({
-        case r => Offsets(r.cbegin+r.clen, charCount, 0)
+        case r => Offsets(r.begin+r.len, charCount, 0, 0)
       }) *> State.get[Offsets]
     }
 
@@ -226,116 +226,94 @@ trait TextReflowFunctions {
       case Labeled(labels, (a, attr))     =>  attr
     }
 
+
+    // Bottom-up initial evaluator for char-begin/len offsets
     def aggregateLengths: GAlgebra[(TextReflow, ?), TextReflowF, Offsets] = fwa => {
-      val aggLens = fwa match {
-        case Atom(c, ops)                   =>  ops.toString.length
-        case Insert(value)                  =>  value.length
-        case Rewrite ((from, attr), to)     =>  to.length
-        case Bracket (pre, post, (a, attr)) =>  pre.length + post.length + attr.clen
-        case Mask    (mL, mR, (a, attr))    =>  attr.clen - mL - mR
-        case Flow(atomsAndattrs)            =>  atomsAndattrs.map(_._2.clen).sum
-        case Labeled(labels, (a, attr))     =>  attr.clen
+      fwa match {
+        case Atom(c, ops)                   => Offsets(0, ops.toString.length, 0, 0)
+        case Insert(value)                  => Offsets(0, value.length, 0, 0)
+        case Rewrite ((fromA, attr), to)    => Offsets(0, to.length, 0, -attr.len)
+        case Bracket (pre, post, (a, attr)) => Offsets(0, attr.len+pre.length+post.length, pre.length, post.length)
+        case Mask    (mL, mR, (a, attr))    => Offsets(0, attr.len-mL-mR, 0, -(mL+mR))
+        case Flow(atomsAndattrs)            => Offsets(0, atomsAndattrs.map(_._2.len).sum, 0, 0)
+        case Labeled(labels, (a, attr))     => Offsets(0, attr.len, 0, 0)
       }
-      Offsets(0, aggLens, 0)
     }
 
+    // (A, FT) => M[A] applied top-down
+    def attrBegins(offs: Offsets, ft:TextReflowF[_]): State[Offsets, Offsets] = {
 
-    // (A, FT) => M[A]
-    def attrBegins2(offs: Offsets, ft:TextReflowF[_]): State[Offsets, Offsets] = {
+      def modS  = State.modify[Offsets] _
+
+      //              (s.pl+s.pr l) s.l  s.l-l_s.r-r
+      // def adjust()     = modS(st => offs.copy(begin= st.total,  len= aggLen,  total= st.total+aggLen ))
+      // def adjustRW()   = modS(st => offs.copy(begin= st.total,  len= aggLen,  total= st.total+aggLen ))
+      // def adjustFlow() = modS(st => offs.copy(begin= st.begin, len= aggLen,  total= st.total        ))
+
+      def adjustFlow() = modS(st =>
+        if (st.pad < 0) offs.copy(
+          begin = st.pad,
+          total = st.total,
+          pad   = st.pad+offs.len
+        ) else offs.copy(
+          begin = st.total,
+          total = st.total
+        )
+      )
+      def adjust() = modS(st =>
+        if (st.pad < 0) offs.copy(
+          begin = st.pad,
+          total = st.total,
+          pad   = st.pad+offs.len
+        ) else offs.copy(
+          begin = st.total,
+          total = st.total+offs.len
+        )
+      )
       for {
+        sprev <- State.get[Offsets]
         _ <- ft match {
-          case Atom(c2, ops2) =>
-            State.modify[Offsets](st =>
-              offs.copy(cbegin=st.totalOffset,  totalOffset=st.totalOffset+offs.clen))
-
-          case Insert(value) =>
-            State.modify[Offsets](st =>
-              offs.copy(cbegin=st.totalOffset, totalOffset=st.totalOffset+offs.clen))
-
-          case Flow(atoms2) =>
-            State.modify[Offsets](st =>
-              offs.copy(cbegin=st.totalOffset, totalOffset=st.totalOffset))
-
-          case Labeled(ls2, a2)         =>
-            State.modify[Offsets](st =>
-              offs.copy(cbegin=st.totalOffset, totalOffset=st.totalOffset))
+          case Atom(c2, ops2)        => adjust()
+          case Insert(value)         => adjust()
+          case Rewrite(from, to)     => adjust()
+          case Bracket(pre, post, a) => adjust()
+          case Mask(mL, mR, a)       => adjust()
+          case Flow(atoms)           => adjustFlow()
+          case Labeled(ls, a)        => adjustFlow()
         }
-        snext <- State.get[Offsets]
-      } yield snext
-    }
+        sfin <- State.get[Offsets]
+      } yield {
 
-
-    def attrBegins: ElgotAlgebraM[(Offsets, ?), State[Offsets, ?], TextReflowF, Offsets] = {
-      wfa => {
-        for {
-          _ <- wfa match {
-            case (coff , Atom(c2, ops2))           =>
-              State.modify[Offsets](st =>
-                Offsets(cbegin=st.totalOffset, clen=coff.clen, totalOffset=st.totalOffset+coff.clen))
-
-            case (coff , Insert(value2))           =>
-              State.modify[Offsets](st => coff.copy(cbegin=st.cbegin + st.clen))
-            case (coff , Rewrite(from2, to2))      =>
-              State.modify[Offsets](st => coff.copy(cbegin=st.cbegin))
-            case (coff , Bracket(pre2, post2, a2)) =>
-              State.modify[Offsets](st => coff.copy(cbegin=st.cbegin))
-            case (coff , Mask(maskL2, maskR2, a2)) =>
-              State.modify[Offsets](st => coff.copy(cbegin=st.cbegin))
-            case (coff , Flow(atoms2))             =>
-              State.modify[Offsets](st =>
-                Offsets(cbegin=st.totalOffset, clen=coff.clen, totalOffset=st.totalOffset+coff.clen))
-
-            case (coff , Labeled(ls2, a2))         =>
-              State.modify[Offsets](st =>
-                Offsets(cbegin=st.totalOffset, clen=coff.clen, totalOffset=st.totalOffset+coff.clen))
-          }
-          snext <- State.get[Offsets]
-        } yield {
-          snext
-        }
-        // State.get[CharOffsetState]
-      }}
-
-    // def attrBegins(sinit: CharOffsetState, t: TextReflowT): State[CharOffsetState, CharOffsetState] = {
-    //   State.modify[CharOffsetState]({
-    //     case r => CharOffsetState(sinit.cbegin+r.clen, r.clen)
-    //   }) *> State.get[CharOffsetState]
-    // }
-
-    import patterns.EnvT
-    def stripEnv = new (EnvT[Offsets, TextReflowF, ?] ~> TextReflowF[?]) {
-      // def apply(env: EnvT[Offsets, TextReflowF, Offsets]): TextReflowF[Offsets] = {
-      def apply[A](env: EnvT[Offsets, TextReflowF, A]): TextReflowF[A] = {
-        env.lower
+        println(s"@${offs}  $sprev  ->  $sfin")
+        sfin
       }
     }
+
+
     def annotateCharRanges(): Cofree[TextReflowF, Offsets] = {
+      val reflowBox = prettyPrintTree(theReflow)
       // bottom-up, fully annotate w/(0, ch-len)
       val charCountAttr:Cofree[TextReflowF, Offsets] =
         theReflow.cata(attributePara(aggregateLengths))
 
-      println(cofreeBox(charCountAttr))
-
-      // // Variation 1:
-      // val attElgot = attributeElgotM[(Offsets, ?), State[Offsets, ?]](attrBegins)
-      // val attrFn = liftTM(attElgot)
-      // val withOffsets = charCountAttr.cataM(attrFn)
-      // val ran = withOffsets.eval(OffsetsInst.zero)
+      // println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
+      println("charCountAttrs")
+      println(cofreeAttrToTree(charCountAttr).drawBox besideS reflowBox)
 
       // Top down adjustment of attributes:
-      val qwer = charCountAttr.attributeTopDownM[State[Offsets, ?], Offsets](
+      val adjustBegins = charCountAttr.attributeTopDownM[State[Offsets, ?], Offsets](
         OffsetsInst.zero
-      )({case e => attrBegins2(e._2.ask, e._2.lower)})
+      )({case e => attrBegins(e._2.ask, e._2.lower)})
 
-      val ran = qwer.eval(OffsetsInst.zero)
-      val qwer2 = ran.mapBranching(stripEnv)
+      val asCofree:Cofree[TextReflowF, Offsets] = adjustBegins
+        .eval(OffsetsInst.zero)
+        .mapBranching(stripEnv)
 
-      println()
-      println(cofreeBox(qwer2))
-      println()
+      println("adjusted begins")
+      println(cofreeAttrToTree(asCofree).drawBox besideS reflowBox)
 
       // withStarts
-      qwer2
+      asCofree
     }
 
     //  :: W[F[A]] => M[A]
@@ -343,7 +321,7 @@ trait TextReflowFunctions {
       fn: (Char, Int) => Option[String]
     ): ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] = {
       case (charOffs, a@ Atom(c, ops))
-          if begin <= charOffs.cbegin &&  charOffs.cbegin < begin+len =>
+          if begin <= charOffs.begin &&  charOffs.begin < begin+len =>
 
         for {
           ch  <- ops.chars.headOption
@@ -409,3 +387,40 @@ trait TextReflowFunctions {
 //   case Flow(atomsAndattrs)            =>  0
 //   case Labeled(labels, (a, attr))     =>  0
 // }
+
+    // def attrBegins: ElgotAlgebraM[(Offsets, ?), State[Offsets, ?], TextReflowF, Offsets] = {
+    //   wfa => {
+    //     for {
+    //       _ <- wfa match {
+    //         case (coff , Atom(c2, ops2))           =>
+    //           State.modify[Offsets](st =>
+    //             Offsets(begin=st.total, len=coff.len, total=st.total+coff.len))
+
+    //         case (coff , Insert(value2))           =>
+    //           State.modify[Offsets](st => coff.copy(begin=st.begin + st.len))
+    //         case (coff , Rewrite(from2, to2))      =>
+    //           State.modify[Offsets](st => coff.copy(begin=st.begin))
+    //         case (coff , Bracket(pre2, post2, a2)) =>
+    //           State.modify[Offsets](st => coff.copy(begin=st.begin))
+    //         case (coff , Mask(maskL2, maskR2, a2)) =>
+    //           State.modify[Offsets](st => coff.copy(begin=st.begin))
+    //         case (coff , Flow(atoms2))             =>
+    //           State.modify[Offsets](st =>
+    //             Offsets(begin=st.total, len=coff.len, total=st.total+coff.len))
+
+    //         case (coff , Labeled(ls2, a2))         =>
+    //           State.modify[Offsets](st =>
+    //             Offsets(begin=st.total, len=coff.len, total=st.total+coff.len))
+    //       }
+    //       snext <- State.get[Offsets]
+    //     } yield {
+    //       snext
+    //     }
+    //     // State.get[CharOffsetState]
+    //   }}
+
+    // def attrBegins(sinit: CharOffsetState, t: TextReflowT): State[CharOffsetState, CharOffsetState] = {
+    //   State.modify[CharOffsetState]({
+    //     case r => CharOffsetState(sinit.begin+r.len, r.len)
+    //   }) *> State.get[CharOffsetState]
+    // }

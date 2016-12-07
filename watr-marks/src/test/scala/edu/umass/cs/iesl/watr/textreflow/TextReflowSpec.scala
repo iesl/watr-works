@@ -14,36 +14,48 @@ class TextReflowSpec extends StringReflowTestUtil {
 
   behavior of "text reflowing"
 
-  def Eu1_x = stringToTextReflow("""Eu_{1 - x}""")
-
-  // val rbox = prettyPrintTree(Eu1_x)
-  // println(cofreeBox(ranges) besideS rbox)
-  // println(
-  //   cofreeAttrToTree(ranges).flatten.toList.map(coff => (coff.cbegin, coff.clen))
-  // )
 
   it should "count atoms correctly" in {
-    // val s = f0.charCount
+    val Eu1_x = stringToTextReflow("Eu_{1 - x}")
     Eu1_x.charCount shouldBe 7
   }
 
-  it should "annotate reflow with (begin, len) ranges over chars" in {
-    val ranges = Eu1_x.annotateCharRanges()
-
-    val rbox = prettyPrintTree(Eu1_x)
-    println(cofreeAttrToTree(ranges.map(coff => (coff.cbegin, coff.clen))).drawBox besideS rbox)
-
-    cofreeAttrToTree(ranges).flatten.toList
-      .map(coff => (coff.cbegin, coff.clen))
-      .shouldBe({
-        List((0,7), (0,7), (0,7), (0,1), (1,1), (2,5), (2,5), (2,1), (3,1), (4,1), (5,1), (6,1))
-      })
+  def annotateAndPrint(tr: TextReflow): Unit = {
+    val ranges = tr.annotateCharRanges()
+    val rbox = prettyPrintTree(tr)
+    println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
   }
+
+  it should "annotate reflow with (begin, len) ranges over chars" in {
+    // annotateAndPrint(stringToTextReflow("abc"))
+    // annotateAndPrint(stringToTextReflow("a_{b}"))
+    annotateAndPrint(stringToTextReflow("bc\naﬂﬆﬂ_{b}ﬂc"))
+
+
+    // annotateAndPrint(stringToTextReflow("aﬂc"))
+    // annotateAndPrint(stringToTextReflow("aﬂc"))
+    // val abc = stringToTextReflow("""abc""")
+    // val ranges = Eu1_x.annotateCharRanges()
+
+    // val rbox = prettyPrintTree(Eu1_x)
+    // println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
+
+    // cofreeAttrToTree(ranges).flatten.toList
+    //   .map(coff => (coff.begin, coff.len))
+    //   .shouldBe({
+    //     List((0,7), (0,7), (0,7), (0,1), (1,1), (2,5), (2,5), (2,1), (3,1), (4,1), (5,1), (6,1))
+    //   })
+  }
+
   // behavior of "unicode char rewriting"
 
   // it should "handle replaced unicode -> ascii chars" in {
   //   val flavor = stringToTextReflow("""ﬂavor""")
-  //   println(prettyPrintTree(flavor))
+
+  //   val rbox = prettyPrintTree(flavor)
+  //   val ranges = flavor.annotateCharRanges()
+  //   println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
+
   //   flavor.charCount shouldBe 6
   // }
 

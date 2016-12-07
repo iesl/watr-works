@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package utils
 
-import scala.language.experimental.macros
+// import scala.language.experimental.macros
 
 import spindex._
 import watrmarks.Label
@@ -118,11 +118,11 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
     }
   }
 
-  def traceIf(cond: Boolean)(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabledWithCondition[TraceLog]
+  def traceIf(cond: Boolean)(exprs: TraceLog*): Unit = ??? // macro utils.VisualTraceMacros.runIfEnabledWithCondition[TraceLog]
 
-  def trace(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
+  def trace(exprs: TraceLog*): Unit = ??? // macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
 
-  def ifTrace(body: Unit): Unit = macro utils.VisualTraceMacros.sideEffectIfEnabled[TraceLog]
+  def ifTrace(body: Unit): Unit = ??? // macro utils.VisualTraceMacros.sideEffectIfEnabled[TraceLog]
 
   def formatTrace(trace: TraceLog): Option[Box] = {
     trace match {

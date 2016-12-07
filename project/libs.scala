@@ -92,4 +92,9 @@ object CommonLibs extends LibVersions {
     "com.github.mpilquist"       %% "simulacrum"   % "0.10.0"       % "compile, test"
   )
 
+  val scrimage = Seq(
+    "com.sksamuel.scrimage" %% "scrimage-core"     % scrimageVersion,
+    "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion,
+    "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion
+  )
 }
