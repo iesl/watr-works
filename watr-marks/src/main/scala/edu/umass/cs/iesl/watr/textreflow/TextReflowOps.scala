@@ -5,12 +5,14 @@ import scalaz._, Scalaz._
 
 import spindex._
 import watrmarks._
-import utils.Ranges
 import textboxing.{TextBoxing => TB}
 
 import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
+import matryoshka.patterns.EnvT
+
+import utils.EnrichNumerics._
 
 case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 
@@ -112,7 +114,6 @@ trait TextReflowFunctions extends StructuredRecursion {
     reflow.cata(toTree).drawBox
   }
 
-
   def prettyPrintCofree[B](cof: Cofree[TextReflowF, B])(implicit
     BS: Show[B],
     CS: Delay[Show, Cofree[TextReflowF, ?]]
@@ -172,15 +173,6 @@ trait TextReflowFunctions extends StructuredRecursion {
   }
 
 
-  def setRangeLen(rng: Ranges.Ints, l: Int): Ranges.Ints = {
-    rng.copy(max=l)
-  }
-
-  def rlen(l: Int): Ranges.Ints = {
-    Ranges.Ints(min=0, max=l)
-  }
-
-
   implicit class RicherReflow(val theReflow: TextReflow) extends TextReflowJsonFormats {
     import play.api.libs.json._
     import TextReflowRendering._
@@ -198,24 +190,6 @@ trait TextReflowFunctions extends StructuredRecursion {
       res.toText
     }
 
-    // def charStarts: (i: CharOffsetState, t: TextReflowT) =>  State[CharOffsetState, CharOffsetState] = {
-    def charStarts: (Offsets, TextReflowT) =>  State[Offsets, Offsets] = {
-      (i, tf) =>
-      val charCount = tf.embed.charCount
-      State.modify[Offsets]({
-        case r => Offsets(r.begin+r.len, charCount, 0, 0)
-      }) *> State.get[Offsets]
-    }
-
-    // def localCharCount: TextReflowF[_] => Int= _ match {
-    //   case Atom(c, ops)                   =>  ops.toString.length
-    //   case Insert(value)                  =>  value.length
-    //   case Rewrite ((from, attr), to)     =>  to.length
-    //   case Bracket (pre, post, (a, attr)) =>  pre.length + post.length + attr
-    //   case Mask    (mL, mR, (a, attr))    =>  attr - mL - mR
-    //   case Flow(atomsAndattrs)            =>  atomsAndattrs.map(_._2).sum
-    //   case Labeled(labels, (a, attr))     =>  attr
-    // }
     def countChars: GAlgebra[(TextReflow, ?), TextReflowF, Int] = _ match {
       case Atom(c, ops)                   =>  ops.toString.length
       case Insert(value)                  =>  value.length
@@ -244,11 +218,6 @@ trait TextReflowFunctions extends StructuredRecursion {
     def attrBegins(offs: Offsets, ft:TextReflowF[_]): State[Offsets, Offsets] = {
 
       def modS  = State.modify[Offsets] _
-
-      //              (s.pl+s.pr l) s.l  s.l-l_s.r-r
-      // def adjust()     = modS(st => offs.copy(begin= st.total,  len= aggLen,  total= st.total+aggLen ))
-      // def adjustRW()   = modS(st => offs.copy(begin= st.total,  len= aggLen,  total= st.total+aggLen ))
-      // def adjustFlow() = modS(st => offs.copy(begin= st.begin, len= aggLen,  total= st.total        ))
 
       def adjustFlow() = modS(st =>
         if (st.pad < 0) offs.copy(
@@ -283,64 +252,60 @@ trait TextReflowFunctions extends StructuredRecursion {
         }
         sfin <- State.get[Offsets]
       } yield {
-
-        println(s"@${offs}  $sprev  ->  $sfin")
+        // println(s"@${offs}  $sprev  ->  $sfin")
         sfin
       }
     }
 
 
     def annotateCharRanges(): Cofree[TextReflowF, Offsets] = {
-      val reflowBox = prettyPrintTree(theReflow)
       // bottom-up, fully annotate w/(0, ch-len)
       val charCountAttr:Cofree[TextReflowF, Offsets] =
         theReflow.cata(attributePara(aggregateLengths))
 
-      // println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
-      println("charCountAttrs")
-      println(cofreeAttrToTree(charCountAttr).drawBox besideS reflowBox)
-
       // Top down adjustment of attributes:
-      val adjustBegins = charCountAttr.attributeTopDownM[State[Offsets, ?], Offsets](
-        OffsetsInst.zero
-      )({case e => attrBegins(e._2.ask, e._2.lower)})
+      val adjustBegins = charCountAttr
+        .attributeTopDownM[State[Offsets, ?], Offsets](OffsetsInst.zero)({
+          case e => attrBegins(e._2.ask, e._2.lower)
+        })
 
       val asCofree:Cofree[TextReflowF, Offsets] = adjustBegins
         .eval(OffsetsInst.zero)
         .mapBranching(stripEnv)
 
-      println("adjusted begins")
-      println(cofreeAttrToTree(asCofree).drawBox besideS reflowBox)
+      // val reflowBox = prettyPrintTree(theReflow)
+      // println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
+      // println("charCountAttrs")
+      // println(cofreeAttrToTree(charCountAttr).drawBox besideS reflowBox)
+      // println("adjusted begins")
+      // println(cofreeAttrToTree(asCofree).drawBox besideS reflowBox)
 
-      // withStarts
       asCofree
     }
 
-    //  :: W[F[A]] => M[A]
-    def transChars(begin: Int, len: Int)(
-      fn: (Char, Int) => Option[String]
-    ): ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] = {
-      case (charOffs, a@ Atom(c, ops))
-          if begin <= charOffs.begin &&  charOffs.begin < begin+len =>
-
-        for {
-          ch  <- ops.chars.headOption
-          mod <- fn(ch, begin+len)
-          .map(rewrite(fixf(a), _))
-          .orElse(Option(fixf(a)))
-        } yield mod
-
-      case (_,      f)                 => Some(fixf(f))
-    }
 
     def modifyCharAt(i: Int)(fn: (Char, Int) => Option[String]): TextReflow = {
       modifyChars(i, 1)(fn)
     }
 
     def modifyChars(begin: Int, len: Int)(fn: (Char, Int) => Option[String]): TextReflow = {
+      //  :: W[F[A]] => M[A]
+      def transChars: ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] = {
+        case (charOffs, a@ Atom(c, ops))
+            if begin <= charOffs.begin &&  charOffs.begin < begin+len =>
+
+          for {
+            ch  <- ops.chars.headOption
+            mod <- fn(ch, begin+len)
+            .map(rewrite(fixf(a), _))
+            .orElse(Option(fixf(a)))
+          } yield mod
+
+        case (_,      f)                 => Some(fixf(f))
+      }
 
       val trans = liftTM(
-        attributeElgotM[(Offsets, ?), Option](transChars(begin, len)(fn))
+        attributeElgotM[(Offsets, ?), Option](transChars)
       )
 
       val res = theReflow.annotateCharRanges.cataM(trans)
@@ -351,7 +316,75 @@ trait TextReflowFunctions extends StructuredRecursion {
       theReflow.para(countChars)
     }
 
-    def slice(begin: Int, end:Int): TextReflow = ???
+    def slice(begin: Int, len:Int): Option[TextReflow] = {
+      val sliceRange = RangeInt(begin, len)
+
+      def retain(wfa: EnvT[Offsets, TextReflowF, Option[TextReflow]]): Option[TextReflow] = {
+        val Offsets(cbegin, clen, _, _) = wfa.ask
+        val r = RangeInt(cbegin, clen)
+
+        if (cbegin < 0 || !sliceRange.intersect(r).isEmpty) {
+          Option(
+            fixf { wfa.lower match {
+              case Atom(c, ops)           => Atom(c, ops)
+              case Insert(value)          => Insert(value)
+              case Rewrite(from, to)      => Rewrite(from.get, to)
+              case Bracket(pre, post, a)  => Bracket(pre, post, a.get)
+              case Mask(mL, mR, a)        => Mask(mL, mR, a.get)
+              case Flow(atomsAndattrs)    => Flow(atomsAndattrs.flatten)
+              case Labeled(labels, a)     => Labeled(labels, a.get)
+            }}
+          )
+
+
+        } else  None
+      }
+
+      theReflow
+        .annotateCharRanges
+        .cata(retain)
+
+      // def retain: ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] =
+      //   wfa => {
+      //     val Offsets(cbegin, clen, _, _) = wfa._1
+      //     val r = RangeInt(cbegin, clen)
+      //     println(s"at $r")
+
+      //     if (cbegin < 0 || !sliceRange.intersect(r).isEmpty) {
+      //       // keep this section
+      //       println(s"keep ${wfa._2}" )
+
+      //       Option(fixf { wfa._2 match {
+      //         case Atom(c, ops)           => Atom(c, ops)
+      //         case Insert(value)          => Insert(value)
+      //         case Rewrite(from, to)      => Rewrite(from, to)
+      //         case Bracket(pre, post, a)  => Bracket(pre, post, a)
+      //         case Mask(mL, mR, a)        => Mask(mL, mR, a)
+      //         case Flow(atomsAndattrs)    => Flow(atomsAndattrs)
+      //         case Labeled(labels, a)     => Labeled(labels, a)
+      //       }})
+
+      //     } else {
+      //       // println(s"discard: ${wfa._2}")
+      //       // Some(fixf(wfa._2))
+      //       None
+      //     }
+      //   }
+
+
+
+      // val res = theReflow
+      //   .annotateCharRanges
+      //   .cataM(liftTM(attributeElgotM[(Offsets, ?), Option](retain)))
+
+      // res.foreach{ x =>
+      //   val (h, t) = x.toPair
+      //   println(s"res: $h -> $t")
+      // }
+
+      // res.map(_.head)
+
+    }
 
     def targetRegions(): Seq[TargetRegion] = ???
 
@@ -369,58 +402,55 @@ trait TextReflowFunctions extends StructuredRecursion {
 
 }
 
-// def charCount(fw: TextReflowF[(TextReflow, Int)]): Int = {
-//   fw.map(e=>countChars(e._1)).suml
+// def attributePara[T, F[_]: Functor, A]
+// (f: GAlgebra[(T, ?), F, A])
+
+// def retain2: GAlgebra[(Cofree[TextReflowF, Offsets], ?), Cofree[TextReflowF, ?], TextReflow] = {
+//   wfa => {
+//     val Offsets(cbegin, clen, _, _) = wfa._1
+//     val r = RangeInt(cbegin, clen)
+//     println(s"at $r")
+
+//     if (cbegin < 0 || !sliceRange.intersect(r).isEmpty) {
+//       // keep this section
+//       println(s"keep ${wfa._2}" )
+//       Some(fixf(wfa._2))
+//     } else {
+//       println(s"discard: ${wfa._2}")
+//       // Some(fixf(wfa._2))
+//       None
+//     }
+//   }
+
+
+//  ???
 // }
 
-// def countAtoms: GAlgebra[(TextReflow, ?), TextReflowF, Int] =
-//   trF => trF.foldRight(charCount(trF))({
-//     case z => (z._2 + z._1._2)
-//   })
 
-// val charLen = fwa match {
-//   case Atom(c, ops)                   =>  ops.toString.length
-//   case Insert(value)                  =>  value.length
-//   case Rewrite ((from, attr), to)     =>  to.length
-//   case Bracket (pre, post, (a, attr)) =>  pre.length + post.length
-//   case Mask    (mL, mR, (a, attr))    =>  - (mL+mR)
-//   case Flow(atomsAndattrs)            =>  0
-//   case Labeled(labels, (a, attr))     =>  0
-// }
+      // type CFOff  = Cofree[TextReflowF, Offsets]
+      // type CFA[A] = Cofree[TextReflowF, A]
+      // def transPara[F[_]: Functor, G[_]: Functor](t: T[F])(f: GAlgebraicTransform[T, (T[F], ?), F, G]):
+      // GAlgebraicTransform[T, (T[F], ?), F, G]
 
-    // def attrBegins: ElgotAlgebraM[(Offsets, ?), State[Offsets, ?], TextReflowF, Offsets] = {
-    //   wfa => {
-    //     for {
-    //       _ <- wfa match {
-    //         case (coff , Atom(c2, ops2))           =>
-    //           State.modify[Offsets](st =>
-    //             Offsets(begin=st.total, len=coff.len, total=st.total+coff.len))
+      // type GAlgebraicTransform[T[_[_]], W[_], F[_], G[_]]
+      //    = F[W[T[G]]] => G[T[G]]
+      //def retainGAT: GAlgebraicTransform[CFOff, (CFOff, ?), F, TextReflowF]
 
-    //         case (coff , Insert(value2))           =>
-    //           State.modify[Offsets](st => coff.copy(begin=st.begin + st.len))
-    //         case (coff , Rewrite(from2, to2))      =>
-    //           State.modify[Offsets](st => coff.copy(begin=st.begin))
-    //         case (coff , Bracket(pre2, post2, a2)) =>
-    //           State.modify[Offsets](st => coff.copy(begin=st.begin))
-    //         case (coff , Mask(maskL2, maskR2, a2)) =>
-    //           State.modify[Offsets](st => coff.copy(begin=st.begin))
-    //         case (coff , Flow(atoms2))             =>
-    //           State.modify[Offsets](st =>
-    //             Offsets(begin=st.total, len=coff.len, total=st.total+coff.len))
+      // def retain22: ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] =
+      //   wfa => {
+      //     val Offsets(cbegin, clen, _, _) = wfa._1
+      //     val r = RangeInt(cbegin, clen)
+      //     println(s"at $r")
 
-    //         case (coff , Labeled(ls2, a2))         =>
-    //           State.modify[Offsets](st =>
-    //             Offsets(begin=st.total, len=coff.len, total=st.total+coff.len))
-    //       }
-    //       snext <- State.get[Offsets]
-    //     } yield {
-    //       snext
-    //     }
-    //     // State.get[CharOffsetState]
-    //   }}
+      //     if (cbegin < 0 || !sliceRange.intersect(r).isEmpty) {
+      //       // keep this section
+      //       println(s"keep ${wfa._2}" )
+      //       Some(fixf(wfa._2))
+      //     } else {
+      //       println(s"discard: ${wfa._2}")
+      //       // Some(fixf(wfa._2))
+      //       None
+      //     }
+      //   }
 
-    // def attrBegins(sinit: CharOffsetState, t: TextReflowT): State[CharOffsetState, CharOffsetState] = {
-    //   State.modify[CharOffsetState]({
-    //     case r => CharOffsetState(sinit.begin+r.len, r.len)
-    //   }) *> State.get[CharOffsetState]
-    // }
+      // val retainLifted = liftTM(attributeElgotM[(TextReflow, ?), Option](retain22))

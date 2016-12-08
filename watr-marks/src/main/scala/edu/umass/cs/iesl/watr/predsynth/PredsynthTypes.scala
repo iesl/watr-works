@@ -440,9 +440,9 @@ object PredsynthLoad extends PredsynthJsonFormats {
             charEnd = charBegin + str.length()
           }
 
-          // val inContext = s"""${strPre} [${str}] ${strPost}"""
-          // println(s"""findPatternContexts:    ${inContext}  byte ranges = ${rbegin} -> ${rend} """)
-          // println(s"    ==> text.slice($charBegin, $charEnd):    '${text.slice(charBegin, charEnd)}'")
+          val inContext = s"""${strPre}[${str}]${strPost}"""
+          println(s"""findPatternContexts:    ${inContext}  byte ranges = ${rbegin} -> ${rend} """)
+          println(s"    ==> text.slice($charBegin, $charEnd):    '${text.slice(charBegin, charEnd)}'")
 
           Right((charBegin, charEnd))
 

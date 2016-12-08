@@ -404,9 +404,9 @@ object Works extends App {
 
     var rsegmenter: Option[segment.DocumentSegmenter] = None
 
-    // val predsynthPapers: Map[String, Paper] =
-    //   loadPredsynthUberJson(conf)
-    //     .getOrElse(Map())
+    val predsynthPapers: Map[String, Paper] =
+      loadPredsynthUberJson(conf)
+        .getOrElse(Map())
 
     processCorpusEntryList(conf, {corpusEntry =>
       try {
@@ -419,14 +419,13 @@ object Works extends App {
           segmenter       <- runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
         } {
 
-          println("????")
           rsegmenter = Some(segmenter)
 
           val entryFilename = corpusEntry.entryDescriptorRoot
 
-          // val paper = predsynthPapers.get(entryFilename)
-          // textAlignPredsynthDB(segmenter, paper)
-          // paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
+          val paper = predsynthPapers.get(entryFilename)
+          textAlignPredsynthDB(segmenter, paper)
+          paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
 
           val output = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer)
           corpusEntry.putArtifact(artifactOutputName, output)

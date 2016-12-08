@@ -8,7 +8,6 @@ autoCompilerPlugins := true
 
 enablePlugins(ScalaJSPlugin)
 
-val libV = LibVersions
 val Lib = CommonLibs
 
 val commonSettings = SensibleProject.settings ++
@@ -23,14 +22,12 @@ val commonSettings = SensibleProject.settings ++
       Lib.playJson,
       Lib.shapeless
       // Lib.sourcecode,
-      // Lib.aspectJ
       // compilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
       // compilerPlugin("org.spire-math" %% "kind-projector"  % "0.9.2")
       // Not needed in watrmarks
       // Lib.scopt,
       // Lib.scalaAsync,
       // Lib.fastparse,
-
     )
   )
 

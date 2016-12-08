@@ -8,8 +8,8 @@ import TypeTags._
 
 import scala.collection.mutable
 import watrmarks.{StandardLabels => LB}
-import textreflow.TextReflowRendering._
-import TextReflowConversion._
+// import textreflow.TextReflowRendering._
+// import TextReflowConversion._
 
 import predsynth._
 import spindex.ComponentOperations._
@@ -24,19 +24,24 @@ object MITAlignPredsynth {
   def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Unit = {
     println("aligning predsynth paper ")
 
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    val paperTextReflows = for {
+      pageId <- zoneIndexer.getPages
+      pageTextBlocks <- zoneIndexer.getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
+      textBlockCC <- pageTextBlocks.getChildren(LB.TextBlock)
+      blockTextReflow <- zoneIndexer.getTextReflow(textBlockCC.id)
+    } yield {
+      blockTextReflow
+    }
 
-    val lineTextReflows = for {
-      linec <- lineBioLabels
-      line   <- toTextReflow(linec.component).toSeq
-    } yield line
 
-    // Join the TextReflow into a single line:
-    // TODO: join using de-hyphenation
-    val oneLineReflow = joins(" ")(lineTextReflows)
+
+    println("creating one line from entire paper")
+    val oneLineReflow = paperTextReflows.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
+    // val oneLineReflow = joins(" ")(lineTextReflows)
     val oneLineText = oneLineReflow.toText
-    // val lineUnits = lineTextAndUnits.flatMap(_._2)
 
+
+    println("aligning contexts")
 
     // val contexts: Seq[Either[(RawTextContext, String), (RawTextContext, (Int, Int))]]
     val contexts: Seq[AlignedGroup]
@@ -90,26 +95,15 @@ object MITAlignPredsynth {
       alignedGroup.alignedContexts.foreach {
         case AlignSuccess(rtc, (begin, end)) =>
 
-          val slice = oneLineReflow.slice(begin, end)
-          val foundText = slice.toText
+          val reflowSlice = oneLineReflow.slice(begin, end)
+          val reflowSliceText = reflowSlice.toText
+          println(s"reflow.slice(): ${reflowSliceText}")
 
-          // val slice = lineUnits.slice(begin, end)
-          // val foundText = slice.map({ funit =>
-          //   TextFlow.toText(funit)
-          // }).mkString
+          val textSlice = oneLineText.slice(begin, end)
 
+          println(s"text.slice(): ${textSlice}")
 
-          val targetRegions = slice.targetRegions
-          // val targetRegions = slice.collect({
-          //   case u: FlowUnit.Atom =>
-          //     val cc = u.atomicComponent
-          //     cc.pageAtom.targetRegion
-
-          //   case u: FlowUnit.Rewrite =>
-          //     val cc = u.atom.atomicComponent
-          //     cc.pageAtom.targetRegion
-          // })
-
+          val targetRegions = reflowSlice.targetRegions
 
           val intersectedVisualLines  = targetRegions.map{ targetRegion =>
             val pageIndex = zoneIndexer.getPageIndex(targetRegion.target)
@@ -161,10 +155,10 @@ object MITAlignPredsynth {
             Identities.mention(mentionId)
           )
 
-          if (rtc.rawText.raw_text == foundText) {
+          if (rtc.rawText.raw_text == textSlice) {
             println(s"   > g:${groupNumber} ${id} >> ${rtc.toString()}")
           } else {
-            println(s"***> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${foundText}")
+            println(s"***> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${textSlice}")
           }
 
         case AlignFailure(rawTextContext, message) =>

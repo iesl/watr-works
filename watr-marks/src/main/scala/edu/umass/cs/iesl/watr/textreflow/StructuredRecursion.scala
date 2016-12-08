@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-import scalaz._ // , Scalaz._
+import scalaz._ , Scalaz._
 
 import matryoshka._
 // import matryoshka.data._

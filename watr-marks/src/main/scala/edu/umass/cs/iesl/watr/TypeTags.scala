@@ -18,19 +18,11 @@ sealed trait RelationID
 
 sealed trait SHA1String
 
+sealed trait Ranging
 sealed trait Offset
 sealed trait Length
 
 sealed trait Percent
-
-// Maybe someday:
-// sealed trait StringCase
-// sealed trait SnakeCase extends StringCase
-// sealed trait CamelCase extends StringCase
-// sealed trait SnakeUScoreCase extends StringCase
-// val SnakeCase = Tag.of[SnakeCase]
-// val SnakeUScoreCase = Tag.of[SnakeUScoreCase]
-// val CamelCase = Tag.of[CamelCase]
 
 object TypeTags {
   val SHA1String = Tag.of[SHA1String]
@@ -47,7 +39,7 @@ object TypeTags {
   val ClusterID  = Tag.of[ClusterID]
   val RelationID = Tag.of[RelationID]
 
-
+  val Ranging = Tag.of[Ranging]
   val Offset = Tag.of[Offset]
   val Length = Tag.of[Length]
 
