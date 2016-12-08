@@ -316,75 +316,44 @@ trait TextReflowFunctions extends StructuredRecursion {
       theReflow.para(countChars)
     }
 
-    def slice(begin: Int, len:Int): Option[TextReflow] = {
-      val sliceRange = RangeInt(begin, len)
+
+    def slice(begin: Int, until:Int): Option[TextReflow] = {
+      val sliceRange = RangeInt(begin, until-begin)
 
       def retain(wfa: EnvT[Offsets, TextReflowF, Option[TextReflow]]): Option[TextReflow] = {
         val Offsets(cbegin, clen, _, _) = wfa.ask
         val r = RangeInt(cbegin, clen)
 
-        if (cbegin < 0 || !sliceRange.intersect(r).isEmpty) {
-          Option(
-            fixf { wfa.lower match {
+        val maybeIntersect = sliceRange.intersect(r)
+        val fa = wfa.lower
+        if (cbegin < 0) {
+          fa.sequence.map(fixf(_))
+        } else {
+          maybeIntersect.map({ irange =>
+            val trange = irange.translate(-irange.min)
+            println(s"  keep: ${fa}, $sliceRange intersect $r =  ${irange}")
+            def clip(s: String) = s.slice(trange.min, trange.max)
+
+            fixf { fa match {
               case Atom(c, ops)           => Atom(c, ops)
-              case Insert(value)          => Insert(value)
-              case Rewrite(from, to)      => Rewrite(from.get, to)
+              case Insert(value)          => Insert(clip(value))
+              case Rewrite(from, to)      => Rewrite(from.get, clip(to))
               case Bracket(pre, post, a)  => Bracket(pre, post, a.get)
               case Mask(mL, mR, a)        => Mask(mL, mR, a.get)
               case Flow(atomsAndattrs)    => Flow(atomsAndattrs.flatten)
               case Labeled(labels, a)     => Labeled(labels, a.get)
             }}
-          )
-
-
-        } else  None
+          })
+        }
       }
 
       theReflow
         .annotateCharRanges
         .cata(retain)
 
-      // def retain: ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] =
-      //   wfa => {
-      //     val Offsets(cbegin, clen, _, _) = wfa._1
-      //     val r = RangeInt(cbegin, clen)
-      //     println(s"at $r")
-
-      //     if (cbegin < 0 || !sliceRange.intersect(r).isEmpty) {
-      //       // keep this section
-      //       println(s"keep ${wfa._2}" )
-
-      //       Option(fixf { wfa._2 match {
-      //         case Atom(c, ops)           => Atom(c, ops)
-      //         case Insert(value)          => Insert(value)
-      //         case Rewrite(from, to)      => Rewrite(from, to)
-      //         case Bracket(pre, post, a)  => Bracket(pre, post, a)
-      //         case Mask(mL, mR, a)        => Mask(mL, mR, a)
-      //         case Flow(atomsAndattrs)    => Flow(atomsAndattrs)
-      //         case Labeled(labels, a)     => Labeled(labels, a)
-      //       }})
-
-      //     } else {
-      //       // println(s"discard: ${wfa._2}")
-      //       // Some(fixf(wfa._2))
-      //       None
-      //     }
-      //   }
-
-
-
-      // val res = theReflow
-      //   .annotateCharRanges
-      //   .cataM(liftTM(attributeElgotM[(Offsets, ?), Option](retain)))
-
-      // res.foreach{ x =>
-      //   val (h, t) = x.toPair
-      //   println(s"res: $h -> $t")
-      // }
-
-      // res.map(_.head)
-
     }
+
+    def lines: Seq[TextReflow] = ???
 
     def targetRegions(): Seq[TargetRegion] = ???
 
@@ -427,12 +396,12 @@ trait TextReflowFunctions extends StructuredRecursion {
 // }
 
 
-      // type CFOff  = Cofree[TextReflowF, Offsets]
-      // type CFA[A] = Cofree[TextReflowF, A]
-      // def transPara[F[_]: Functor, G[_]: Functor](t: T[F])(f: GAlgebraicTransform[T, (T[F], ?), F, G]):
-      // GAlgebraicTransform[T, (T[F], ?), F, G]
+// type CFOff  = Cofree[TextReflowF, Offsets]
+// type CFA[A] = Cofree[TextReflowF, A]
+// def transPara[F[_]: Functor, G[_]: Functor](t: T[F])(f: GAlgebraicTransform[T, (T[F], ?), F, G]):
+// GAlgebraicTransform[T, (T[F], ?), F, G]
 
-      // type GAlgebraicTransform[T[_[_]], W[_], F[_], G[_]]
+// type GAlgebraicTransform[T[_[_]], W[_], F[_], G[_]]
       //    = F[W[T[G]]] => G[T[G]]
       //def retainGAT: GAlgebraicTransform[CFOff, (CFOff, ?), F, TextReflowF]
 

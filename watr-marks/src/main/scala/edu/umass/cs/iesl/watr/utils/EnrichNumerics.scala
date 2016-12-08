@@ -33,8 +33,11 @@ object EnrichNumerics {
   }
 
   implicit class RicherRangeInt(val theRange: RangeInt) extends AnyVal {
+    def len: Int = theRange.unwrap._2
     def min: Int = theRange.unwrap._1
-    def max: Int = theRange.unwrap._1+theRange.unwrap._2
+    def max: Int = min + len
+
+    def translate(x: Int) = RangeInt(min+x, len)
 
     def intersect(r2: RangeInt): Option[RangeInt] =
       rangeIntersection(theRange, r2)
