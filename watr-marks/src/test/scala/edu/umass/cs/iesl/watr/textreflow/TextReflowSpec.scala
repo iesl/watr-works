@@ -78,13 +78,26 @@ class TextReflowSpec extends StringReflowTestUtil {
 
   it should "slice reflows" in {
     val reflow = stringToTextReflow("lime _{^{ﬂ}a}vor")
-    annotateAndPrint(reflow)
+    // annotateAndPrint(reflow)
+    // reflow.slice(6, 8).foreach{ tr =>
+    //   val text = tr.toText()
+    //   println(s"Slice:  $text")
+    //   // annotateAndPrint(tr)
+    // }
 
-    reflow.slice(3, 6).foreach{ tr =>
-      val text = tr.toText()
-      println(s"Sliced: $text")
-      annotateAndPrint(tr)
+    for (i <- 0 to 11; j <- 0 to 11) {
+      reflow.slice(i, j).foreach{ tr =>
+        val text = tr.toText()
+        println(s"($i, $j):  $text")
+        // annotateAndPrint(tr)
+      }
     }
+
+    // reflow.slice(3, 6).foreach{ tr =>
+    //   val text = tr.toText()
+    //   println(s"Sliced: $text")
+    //   annotateAndPrint(tr)
+    // }
 
     // reflow.slice(0, 3).foreach{ tr =>
     //   val text = tr.toText()

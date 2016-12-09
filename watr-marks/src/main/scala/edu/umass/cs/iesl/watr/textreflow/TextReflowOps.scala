@@ -23,6 +23,7 @@ trait TextReflowFunctions extends StructuredRecursion {
   def fixf = Fix[TextReflowF](_)
 
   def atom[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
+  def atomStr[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
   def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
   def flow(as:TextReflow*) = flows(as)
   def flows(as: Seq[TextReflow]) = fixf(Flow(as.toList))
@@ -35,6 +36,7 @@ trait TextReflowFunctions extends StructuredRecursion {
   )
 
   def labeled(l: Label, a:TextReflow) = fixf(Labeled(Set(l), a))
+  def labeled(ls: Set[Label], a:TextReflow) = fixf(Labeled(ls, a))
   def insert(s: String) = fixf(Insert(s))
   def space() = insert(" ")
 
@@ -316,40 +318,81 @@ trait TextReflowFunctions extends StructuredRecursion {
       theReflow.para(countChars)
     }
 
+    def trimFlow[A](b: (=> A) => Boolean)(fa: TextReflowF[A]): TextReflowF[A] = {
+      fa match {
+        case tr@ Flow(as)
+            if as.exists(b(_)) => Flow(as.filter(b(_)))
+        case tr      => tr
+      }
+    }
+
 
     def slice(begin: Int, until:Int): Option[TextReflow] = {
       val sliceRange = RangeInt(begin, until-begin)
 
-      def retain(wfa: EnvT[Offsets, TextReflowF, Option[TextReflow]]): Option[TextReflow] = {
+      def retain(wfa: EnvT[Offsets, TextReflowF, Option[(TextReflow, String)]]): Option[(TextReflow, String)] = {
         val Offsets(cbegin, clen, _, _) = wfa.ask
-        val r = RangeInt(cbegin, clen)
 
-        val maybeIntersect = sliceRange.intersect(r)
-        val fa = wfa.lower
-        if (cbegin < 0) {
-          fa.sequence.map(fixf(_))
-        } else {
-          maybeIntersect.map({ irange =>
-            val trange = irange.translate(-irange.min)
-            println(s"  keep: ${fa}, $sliceRange intersect $r =  ${irange}")
-            def clip(s: String) = s.slice(trange.min, trange.max)
+        val fa : TextReflowF[Option[(TextReflow, String)]] = wfa.lower
 
-            fixf { fa match {
-              case Atom(c, ops)           => Atom(c, ops)
-              case Insert(value)          => Insert(clip(value))
-              case Rewrite(from, to)      => Rewrite(from.get, clip(to))
-              case Bracket(pre, post, a)  => Bracket(pre, post, a.get)
-              case Mask(mL, mR, a)        => Mask(mL, mR, a.get)
-              case Flow(atomsAndattrs)    => Flow(atomsAndattrs.flatten)
-              case Labeled(labels, a)     => Labeled(labels, a.get)
-            }}
+        // filter out None values for Flows, only traverse to None iff !exists(_.isDefined)
+
+        // fa.filter
+        val fa2 = trimFlow[Option[(TextReflow, String)]](_.isDefined)(fa)
+
+        val t1: Option[TextReflowF[(TextReflow, String)]] = fa2.sequence
+
+        val t2: Option[(List[TextReflow], TextReflowF[String])] =
+          t1.map({ t10 : TextReflowF[(TextReflow, String)] =>
+            t10.traverse(p => (List(p._1), p._2))
           })
+
+        val t3: Option[String] = t1.map(renderText(_))
+
+        val tz: Option[(TextReflow, String)] = (t1 |@| t3).apply({
+          case (tr, str) =>
+            // println(s"tz: tr=${tr}, s=$str")
+            (fixf(tr.map(_._1)), str)
+        })
+
+        if (cbegin < 0) {
+          tz
+        } else {
+          val r = RangeInt(cbegin, clen)
+
+          for {
+            (textReflow, text) <- tz
+            textReflowF        <- t1
+            irange             <- sliceRange.intersect(r)
+          } yield {
+            val trange = irange.translate(-r.min)
+            // println(s"  keep: ${fa2}, $sliceRange intersect $r = ${irange} => $trange")
+            def clip(s: String) = s.slice(trange.min, trange.max)
+            val ctext = clip(text)
+
+            val tf = textReflowF match {
+              case Atom(c, ops)            => atom(c, new TextReflowAtomOps(ops.toString))
+              case Insert(value)           => insert(ctext)
+              case Rewrite((from, attr), to)       => rewrite(from, ctext)
+              case Bracket(pre, post, (a, attr))   =>
+                val pre1 = clip(pre)
+                val post1 = ctext.substring(pre.length+attr.length, ctext.length)
+                bracket(pre1, post1, a)
+
+              case Mask(mL, mR, (a, attr))         => ??? // Mask(mL, mR, a.get)
+              case Flow(atomsAndattrs)       => flows(atomsAndattrs.map(_._1))
+              case Labeled(labels, (a, attr))        => labeled(labels, a)
+            }
+            (tf, ctext)
+          }
+
         }
       }
 
       theReflow
         .annotateCharRanges
         .cata(retain)
+        .map(_._1)
 
     }
 
@@ -370,6 +413,14 @@ trait TextReflowFunctions extends StructuredRecursion {
   }
 
 }
+
+
+
+
+
+
+
+
 
 // def attributePara[T, F[_]: Functor, A]
 // (f: GAlgebra[(T, ?), F, A])
@@ -423,3 +474,91 @@ trait TextReflowFunctions extends StructuredRecursion {
       //   }
 
       // val retainLifted = liftTM(attributeElgotM[(TextReflow, ?), Option](retain22))
+
+// fa.sequence.map(ffa => fixf(ffa))
+// val asd: Option[TextReflowF[(TextReflow, String)]] =
+//   fa.sequence
+
+// val qwe = asd.map(f =>{
+
+//   val uio: (TextReflow, String)
+//     = f.traverse[(TextReflow, ?), String](a => a.map(_._1))
+
+//   val uio2: Option[TextReflowF[String]] =
+//     f.traverse[Option, String](a => Some(""))
+
+//   // val uio = f.sequenceU
+//   (fixf(f.map(_._1)), f.map(_._2))
+
+          // })
+
+        // if (cbegin < 0) {
+        //   // Want:
+        //   //// fa map (deattribute . fix &&& toText)
+        //   // val res: Option[(TextReflow, String)] = Option {
+        //   Option { fa match {
+        //     case Atom(c, ops)                        => (fixf(Atom(c, ops)), ops.toString())
+        //     case Insert(value)                       => (fixf(Insert(value)), value)
+        //     case Rewrite(Some((from, attr)), to)     => (fixf(Rewrite(from, to)), to)
+        //     case Bracket(pre, post, Some((a, attr))) => (fixf(Bracket(pre, post, a)), "")
+        //     case Mask(mL, mR, Some((a, attr)))       => (fixf(Mask(mL, mR, a)), "")
+        //     case Flow(atomsAndattrs)                 => (fixf(Flow(atomsAndattrs.map(_.get._1))), "")
+        //     case Labeled(labels, Some((a, attr)))    => (fixf(Labeled(labels, a)), "")
+        //   }}
+
+
+        // } else {
+        //   val r = RangeInt(cbegin, clen)
+        //   val maybeIntersect = sliceRange.intersect(r)
+        //   maybeIntersect.map({ irange =>
+        //     val trange = irange.translate(-irange.min)
+        //     // println(s"  keep: ${fa}, $sliceRange intersect $r =  ${irange}")
+        //     def clip(s: String) = s.slice(trange.min, trange.max)
+
+        //     fa match {
+        //       case Atom(c, ops)                    => (fixf(Atom(c, ops)), "")
+        //       case Insert(value)                   => (fixf(Insert(clip(value))), "")
+        //       case Rewrite(Some((from, attr)), to) => (fixf( Rewrite(from, clip(to)) ), "")
+        //       case Bracket(pre, post, a)           => ??? // Bracket(pre, post, a.get)
+        //       case Mask(mL, mR, a)                 => ??? // Mask(mL, mR, a.get)
+        //       case Flow(atomsAndattrs)             => ??? // Flow(atomsAndattrs.flatten)
+        //       case Labeled(labels, a)              => ??? // Labeled(labels, a.get)
+        //     }
+        //   })
+        // }
+
+    // def slice(begin: Int, until:Int): Option[TextReflow] = {
+    //   val sliceRange = RangeInt(begin, until-begin)
+
+    //   def retain(wfa: EnvT[Offsets, TextReflowF, Option[TextReflow]]): Option[TextReflow] = {
+    //     val Offsets(cbegin, clen, _, _) = wfa.ask
+    //     val fa = wfa.lower
+    //     val r = RangeInt(cbegin, clen)
+
+    //     val maybeIntersect = sliceRange.intersect(r)
+    //     if (cbegin < 0) {
+    //       fa.sequence.map(fixf(_))
+    //     } else {
+    //       maybeIntersect.map({ irange =>
+    //         val trange = irange.translate(-irange.min)
+    //         // println(s"  keep: ${fa}, $sliceRange intersect $r =  ${irange}")
+    //         def clip(s: String) = s.slice(trange.min, trange.max)
+
+    //         fixf { fa match {
+    //           case Atom(c, ops)           => Atom(c, ops)
+    //           case Insert(value)          => Insert(clip(value))
+    //           case Rewrite(from, to)      => Rewrite(from.get, clip(to))
+    //           case Bracket(pre, post, a)  => Bracket(pre, post, a.get)
+    //           case Mask(mL, mR, a)        => Mask(mL, mR, a.get)
+    //           case Flow(atomsAndattrs)    => Flow(atomsAndattrs.flatten)
+    //           case Labeled(labels, a)     => Labeled(labels, a.get)
+    //         }}
+    //       })
+    //     }
+    //   }
+
+    //   theReflow
+    //     .annotateCharRanges
+    //     .cata(retain)
+
+    // }

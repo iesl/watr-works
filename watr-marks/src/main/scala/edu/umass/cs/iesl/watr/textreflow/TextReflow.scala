@@ -23,7 +23,8 @@ object TextReflowF {
   case class Flow[A](as: List[A])                         extends TextReflowF[A]
   case class Labeled[A](labels: Set[Label], a: A)         extends TextReflowF[A]
 
-  implicit val TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
+
+  implicit def TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
     def traverseImpl[G[_], A, B](fa: TextReflowF[A])(f: A => G[B])(implicit G: Applicative[G]): G[TextReflowF[B]] = fa match {
       case Atom(c, ops)               => G.point(Atom(c, ops))
       case Insert(value)              => G.point(Insert(value))
@@ -35,22 +36,21 @@ object TextReflowF {
     }
   }
 
-  implicit val TextReflowShow: Delay[Show, TextReflowF] = new Delay[Show, TextReflowF] {
+  implicit def TextReflowShow: Delay[Show, TextReflowF] = new Delay[Show, TextReflowF] {
     def apply[A](show: Show[A]) = Show.show {
       case Atom(c, ops)               => ops.toString
       case Insert(value)              => s"+'$value'"
       case Rewrite(from, to)          => s"-+'${to}'"
       case Bracket(pre, post, a)      => s"""${pre}`${a.toString}`{post} """
-      case Mask(maskL, maskR, a)      => s"""mask""" 
+      case Mask(maskL, maskR, a)      => s"""mask"""
       case Flow(atoms)                => s"""flow"""
       case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
     }
   }
 
   implicit val equal: Delay[Equal, TextReflowF] = new Delay[Equal, TextReflowF] {
-    def apply[α](eq: Equal[α]) = Equal.equal((a, b) => {
-      implicit val ieq = eq;
-      val isEq= (a, b) match {
+    def apply[α](eq: Equal[α]) = Equal.equal((a, b) => { implicit val ieq = eq;
+      (a, b) match {
         case (Atom(c, ops)          , Atom(c2, ops2))           => ops.toString()==ops2.toString()
         case (Insert(value)         , Insert(value2))           => value == value2
         case (Rewrite(from, to)     , Rewrite(from2, to2))      => from === from2 && to == to2
@@ -60,11 +60,20 @@ object TextReflowF {
         case (Labeled(ls, a)        , Labeled(ls2, a2))         => ls == ls2 && a === a2
         case (_                     , _)                        => false
       }
-
-      isEq
     })
   }
 
+  def deattr(tf: TextReflowF[(TextReflow, _)]): TextReflow = {
+    tf match {
+      case Atom(c, ops)                  => atom(c, ops)
+      case Insert(value)                 => insert(value)
+      case Rewrite((from, attr), to)     => rewrite(from, to)
+      case Bracket(pre, post, (a, attr)) => bracket(pre, post, a)
+      case Mask(mL, mR, (a, attr))       => ???
+      case Flow(asAndAttrs)              => flows(asAndAttrs.map(_._1))
+      case Labeled(labels, (a, attr))    => labeled(labels, a)
+
+    }
+  }
+
 }
-
-
