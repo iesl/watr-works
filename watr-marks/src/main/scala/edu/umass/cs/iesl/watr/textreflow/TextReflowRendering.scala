@@ -7,12 +7,6 @@ import textboxing.{TextBoxing => TB}, TB._
 
 
 object TextReflowRendering {
-  // import matryoshka._
-  // import matryoshka.data._
-  // import matryoshka.implicits._
-  // import play.api.libs.json._
-
-  // import TextReflowTransforms._
   import TextReflowF._
   import watrmarks.{StandardLabels => LB, _}
 
@@ -33,28 +27,12 @@ object TextReflowRendering {
     case Mask    (mL, mR, (a, attr))     => attr.drop(mL).dropRight(mR).mkString
     case Flow    (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
     case Labeled (labels, (a, attr))     => attr
+    case CachedText((a, attr), text)     => text
   }
 
   object VisualLine {
-    // import scalaz.std.string._
-    // def renderRoleTree(c: Component): TB.Box = {
-    //   c.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
-    //     .map(_.toString())
-    //     .drawBox
-    // }
-
-
-    // def dquote(b: TextReflow): TextReflow = bracket('"', '"', b)
-    // def squareBracket(b: TextReflow): TextReflow = bracket('[', ']', b)
-    // def curlyBrace(b: TextReflow): TextReflow = bracket('{', '}', b)
-
 
     def escapeString(s: TextReflow, subs: Seq[(Char, String)]): TextReflow = {
-      // val submap = subs.map(kv => (kv._1.toString(), kv._2)).toMap
-      // foldMapTextReflow(s, {case (textUnit, flowUnit) =>
-      //                   val tsub = submap.get(textUnit).getOrElse(textUnit)
-      //                   (tsub, flowUnit)
-      //                 })
       ???
     }
 
@@ -88,84 +66,6 @@ object TextReflowRendering {
       val lls = getDescendantLabels(cc)
       !(lls intersect Set(LB.Sup, LB.Sub)).isEmpty
     }
-
-    // def doEscapeAndQuote(cc: Component, s: TextReflow): TextReflow = {
-    //   dquote(escapeJson(s))
-    // }
-
-    // def renderWithIDs(cc: Component): TB.Box = {
-    //   // TODO asser that cc is role VisualLine
-    //   val textAndIds = for {
-    //     textSpan  <- cc.getChildren(LB.TextSpan)
-    //     textFlow <- render(textSpan)
-    //   } yield {
-    //     val tokenId = textSpan.id
-    //     // (doEscapeAndQuote(cc, tokenBox), tokenId)
-    //     (escapeJson(textFlow), tokenId)
-    //   }
-    //   val lineText = hsepb(textAndIds.map(_._1.text.box), ",")
-    //   val lineIDs = hsepb(textAndIds.map(_._2.toString.box), ",")
-    //   val visualLineID = cc.id.toString
-
-    //   BX.squareBracket(
-    //     hsepb(
-    //       Seq(BX.squareBracket(lineText), BX.squareBracket(lineIDs), visualLineID),
-    //       ","
-    //     )
-    //   )
-    // }
-
-
-    // def render(cc: Component): Option[TextReflow] = {
-    //   cc.roleLabel match {
-    //     case LB.VisualLine
-    //        | LB.TextSpan =>
-    //       val children = childSpansOrAtoms(cc)
-    //       val childReflows = children.map(render(_))
-    //       val joined = if (isTokenized(cc)) {
-    //         joins(" ")(childReflows.flatten)
-    //       } else {
-    //         concat(childReflows.flatten)
-    //       }
-
-    //       Some(surroundCC(cc, joined))
-
-    //     // case LB.TextSpan =>
-    //     //   //
-    //     //   if (cc.hasLabel(LB.Invisible)) {
-    //     //     None
-    //     //   } else {
-    //     //     val ccBox = cc.getLabels
-    //     //       .find(_ == LB.LineBreakToken)
-    //     //       .map({ label =>
-    //     //         surroundCC(cc, label.value.get)
-    //     //       })
-    //     //       .getOrElse({
-    //     //         val children = childSpansOrAtoms(cc)
-    //     //         val rc = children.map(render(_))
-    //     //         val hsep = if (isTokenized(cc)) " " else ""
-    //     //         val joined = hjoins(sep=hsep)(rc.flatten)
-
-    //     //         surroundCC(cc, joined)
-    //     //       })
-
-    //     //     Some(ccBox)
-    //     //   }
-
-
-    //     case LB.PageAtom =>
-    //       val ac = cc.asInstanceOf[AtomicComponent]
-    //       val ops = new textreflow.TextReflowAtomOps(ac.chars)
-    //       val textFlow = atom(ac, ops)
-
-    //       val esc = escapeTex(textFlow)
-    //       Some(surroundCC(cc, esc))
-
-    //     case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
-    //   }
-
-    //   // None
-    // }
 
     def childSpansOrAtoms(cc: Component): Seq[Component] = {
       if (cc.hasChildren(LB.TextSpan)) {

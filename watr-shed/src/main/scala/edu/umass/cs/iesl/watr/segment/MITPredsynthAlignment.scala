@@ -37,7 +37,7 @@ object MITAlignPredsynth {
 
     println("creating one line from entire paper")
     val oneLineReflow = paperTextReflows.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
-    // val oneLineReflow = joins(" ")(lineTextReflows)
+
     val oneLineText = oneLineReflow.toText
 
 
@@ -58,13 +58,12 @@ object MITAlignPredsynth {
     // val mentionIds = IdGenerator[MentionID]()
     val clusterIds = IdGenerator[ClusterID]()
 
-
-
-    // idGen.nextId
     contexts.foreach({ alignedGroup: AlignedGroup =>
       val groupNumber = alignedGroup.textMentionGroup.groupNumber
       val id = alignedGroup.textMentionGroup.id
       val groupClusterID = clusterIds.nextId
+      println(s"aligning group ${groupClusterID}")
+
       id.foreach { mongoId =>
         mongoIdToClusterId.put(mongoId, groupClusterID)
       }
@@ -92,74 +91,80 @@ object MITAlignPredsynth {
         Prop.PropRec(
           Identities.cluster(groupClusterID), _))
 
+
       alignedGroup.alignedContexts.foreach {
         case AlignSuccess(rtc, (begin, end)) =>
 
-          val reflowSlice = oneLineReflow.slice(begin, end)
-          val reflowSliceText = reflowSlice.toText
-          println(s"reflow.slice(): ${reflowSliceText}")
-
           val textSlice = oneLineText.slice(begin, end)
 
-          println(s"text.slice(): ${textSlice}")
+          println(s"(string) text.slice(): ${textSlice}")
 
-          val targetRegions = reflowSlice.targetRegions
+          val reflowSliceOpt = oneLineReflow.slice(begin, end)
 
-          val intersectedVisualLines  = targetRegions.map{ targetRegion =>
-            val pageIndex = zoneIndexer.getPageIndex(targetRegion.target)
+          reflowSliceOpt match {
+            case Some(reflowSlice) =>
+              val reflowSliceText = reflowSlice.toText
+              println(s"reflow.slice(): ${reflowSliceText}")
 
-            pageIndex.componentIndex
-              .queryForIntersects(targetRegion.bbox)
-              .filter(_.hasLabel(LB.VisualLine))
-              .headOption
-              .getOrElse { sys.error(s"no visual line found intersecting ${targetRegion}") }
+              // TODO The following should be captured by something like textReflow.intersectPages(LB.VisualLine, ..) function
+              val targetRegions = reflowSlice.targetRegions
 
+              val intersectedVisualLines  = targetRegions.map{ targetRegion =>
+                val pageIndex = zoneIndexer.getPageIndex(targetRegion.target)
+
+                println("TODO: don't filter by LB.VisualLine")
+                pageIndex.componentIndex
+                  .queryForIntersects(targetRegion.bbox)
+                  .filter(_.hasLabel(LB.VisualLine))
+                  .headOption
+                  .getOrElse { sys.error(s"no visual line found intersecting ${targetRegion}") }
+
+              }
+
+              val uniqVisualLines = intersectedVisualLines
+                .groupByPairs ({ case (c1, c2) => c1.id == c2.id })
+                .map(_.head)
+
+              val ann = LB.Annotation(rtc.textType)
+
+              // Compute the intersection of a TextReflow w/ RegionComponent
+              val annotationRegions = uniqVisualLines.map{visualLine =>
+                val pageForLine = visualLine.pageId
+                val pageRegions = targetRegions.filter(_.target == visualLine.pageId)
+                // Select the span for each line that corresponds to labeled region
+                val intersectingLineAtoms = visualLine.queryAtoms()
+                  .trimLeftRightBy({lineAtom: AtomicComponent =>
+                    val intersects = pageRegions.exists(_.bbox.intersects(lineAtom.bounds));
+                    !intersects
+                  })
+
+                zoneIndexer.labelRegion(intersectingLineAtoms, ann)
+              }
+
+              val annRegions = annotationRegions.flatten.map{_.targetRegion}
+              val newZone = Zone(ZoneID(0), annRegions,ann)
+              val zAdded = zoneIndexer.addZone(newZone)
+              // HACK: make zoneId==mentionId TODO document why
+              val mentionId = MentionID(zAdded.id.unwrap)
+
+              rawTextMentionsById.put(mentionId, rtc)
+
+              relations += Relation.Record(
+                Identities.cluster(groupClusterID),
+                "hasMember",
+                Identities.mention(mentionId)
+              )
+
+              if (rtc.rawText.raw_text == textSlice) {
+                println(s"   > g:${groupNumber} ${id} >> ${rtc.toString()}")
+              } else {
+                println(s"***> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${textSlice}")
+              }
+
+            case None =>
+              println("Error: couldn't slice textreflow")
           }
 
-          val uniqVisualLines = intersectedVisualLines
-            .groupByPairs ({ case (c1, c2) => c1.id == c2.id })
-            .map(_.head)
-
-
-          val ann = LB.Annotation(rtc.textType)
-
-          // Compute the intersection of a TextReflow w/ RegionComponent
-          val annotationRegions = uniqVisualLines.map{visualLine =>
-            val pageForLine = visualLine.pageId
-            val pageRegions = targetRegions.filter(_.target == visualLine.pageId)
-            // Select the span for each line that corresponds to labeled region
-            val intersectingLineAtoms = visualLine.queryAtoms()
-              .dropWhile({ lineAtom: AtomicComponent =>
-                val haveIntersection = pageRegions.exists { _.bbox.intersects(lineAtom.bounds) }
-                  !haveIntersection
-              }).reverse
-              .dropWhile({ lineAtom: AtomicComponent =>
-                val haveIntersection = pageRegions.exists { _.bbox.intersects(lineAtom.bounds) }
-                  !haveIntersection
-              }).reverse
-
-
-            zoneIndexer.labelRegion(intersectingLineAtoms, ann)
-          }
-
-          val annRegions = annotationRegions.flatten.map{_.targetRegion}
-          val newZone = Zone(ZoneID(0), annRegions,ann)
-          val zAdded = zoneIndexer.addZone(newZone)
-          val mentionId = MentionID(zAdded.id.unwrap)
-
-          rawTextMentionsById.put(mentionId, rtc)
-
-          relations += Relation.Record(
-            Identities.cluster(groupClusterID),
-            "hasMember",
-            Identities.mention(mentionId)
-          )
-
-          if (rtc.rawText.raw_text == textSlice) {
-            println(s"   > g:${groupNumber} ${id} >> ${rtc.toString()}")
-          } else {
-            println(s"***> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${textSlice}")
-          }
 
         case AlignFailure(rawTextContext, message) =>
           println(s"!!!> ${rawTextContext.toString()} ${message}")

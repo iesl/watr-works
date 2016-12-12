@@ -37,12 +37,10 @@ import ReleaseTransformations._
 lazy val root = (project in file("."))
   .settings(Release.settings :_*)
   .aggregate(watrprelude, watrmarks)
-// .aggregate(watrprelude, watrmarks, watrshed, watrcolorsJVM, watrcolorsJS)
 
 
 lazy val watrprelude = (project in file("watr-prelude"))
   .settings(commonSettings: _*)
-
 
 lazy val watrmarks = (project in file("watr-marks"))
   .settings(commonSettings: _*)

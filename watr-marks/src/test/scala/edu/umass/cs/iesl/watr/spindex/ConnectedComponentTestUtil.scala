@@ -40,6 +40,15 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
     'Æ' -> "AE"
   )
 
+  def targetRegionForXY(x: Int, y: Int, w: Int, h: Int) = TargetRegion(
+    RegionID(0),
+    page0,
+    LTBounds(
+      left=x*xscale, top=y*yscale,
+      width=w*xscale - 0.1, height=h*yscale - 0.1 // bbox areas are a bit smaller than full 1x1 area
+    )
+  )
+
 
   def textReflowToComponentReflow(textReflow: TextReflow, zoneIndex: ZoneIndexer): TextReflow = {
     val regions = textReflow.collect({
@@ -87,7 +96,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
       ch match {
         case '\n' =>
           linenum += 1
-          chnum = 0
+          chnum = -1
           pop(); pop()
           insertDownLast(Labeled(Set(LB.VisualLine), 0))
           insertDownLast(Flow(List()))
@@ -102,12 +111,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
         case chx if charSubs.contains(chx) =>
           insertDownLast(Rewrite(0, charSubs(chx)))
           val charAtom = CharAtom(
-            TargetRegion(regionIDs.nextId, page0,
-              LTBounds(
-                left=chnum*xscale, top=linenum*yscale,
-                width=xscale, height=yscale
-              )
-            ),
+            targetRegionForXY(chnum, linenum, 1, 1),
             ch.toString
           )
           val ops = new textreflow.TextReflowAtomOps(Seq(ch))
@@ -117,19 +121,14 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
 
         case _ =>
           val charAtom = CharAtom(
-            TargetRegion(regionIDs.nextId, page0,
-              LTBounds(
-                left=chnum*xscale, top=linenum*yscale,
-                width=xscale, height=yscale
-              )
-            ),
+            targetRegionForXY(chnum, linenum, 1, 1),
             ch.toString
           )
           val ops = new textreflow.TextReflowAtomOps(Seq(ch))
           insertDownLast(Atom(charAtom, ops))
           pop()
       }
-
+      chnum += 1
     }
 
     // Now construct the Fix[] version of the tree:

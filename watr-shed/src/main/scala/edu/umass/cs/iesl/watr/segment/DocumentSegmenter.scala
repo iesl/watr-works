@@ -20,7 +20,7 @@ import utils.{CompassDirection => CDir}
 import utils.VisualTracer._
 import utils.EnrichNumerics._
 import SlicingAndDicing._
-import textreflow.TextReflowRendering._
+// import textreflow.TextReflowRendering._
 import TextReflowConversion._
 
 import scala.collection.mutable

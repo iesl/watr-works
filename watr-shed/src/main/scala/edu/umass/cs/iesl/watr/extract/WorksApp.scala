@@ -203,15 +203,13 @@ object Works extends App {
 
 
   // Decide if the specified output artifact exists, or if the --force option is specified
-  def processOrSkipOrForce(conf: AppConfig, entry: CorpusEntry, artifactOutputName: String): Try[Option[String]] = {
-    Try {
-      if (entry.hasArtifact(artifactOutputName)) {
-        if (conf.force) {
-          entry.deleteArtifact(artifactOutputName)
-          Some(artifactOutputName)
-        } else None
-      } else Some(artifactOutputName)
-    }
+  def processOrSkipOrForce(conf: AppConfig, entry: CorpusEntry, artifactOutputName: String): Option[String] = {
+    if (entry.hasArtifact(artifactOutputName)) {
+      if (conf.force) {
+        entry.deleteArtifact(artifactOutputName)
+        Some(artifactOutputName)
+      } else None
+    } else Some(artifactOutputName)
   }
 
   def skipOrStashArtifact(conf: AppConfig, entry: CorpusEntry, artifactOutputName: String): Option[Path] = {
@@ -413,7 +411,6 @@ object Works extends App {
         val processResults = for {
           output          <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
           predsynthOutput <- processOrSkipOrForce(conf, corpusEntry, "predsynth.json")
-          _               <- output
           pdfArtifact     <- corpusEntry.getPdfArtifact
           pdfPath         <- pdfArtifact.asPath
           segmenter       <- runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
@@ -519,11 +516,13 @@ object Works extends App {
 
         val fontObjsFile = "fontobjs.txt"
 
-        processOrSkipOrForce(conf, corpusEntry, fontObjsFile) match {
-          case Success(Some(_)) => corpusEntry.putArtifact(fontObjsFile, fobjs)
-          case Success(None)    =>
-          case Failure(t)       => die(t)
-        }
+        // processOrSkipOrForce(conf, corpusEntry, fontObjsFile)
+        // processOrSkipOrForce(conf, corpusEntry, fontObjsFile) match {
+        //   case Success(Some(_)) => corpusEntry.putArtifact(fontObjsFile, fobjs)
+        //   case Success(None)    =>
+        //   case Failure(t)       => die(t)
+        // }
+        ???
       }
     })
   }

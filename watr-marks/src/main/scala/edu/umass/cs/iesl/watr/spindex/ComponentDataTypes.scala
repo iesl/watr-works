@@ -31,8 +31,6 @@ case class Zone(
   label: Label
 )
 
-// case class ZoneAndLabel(zoneId: Int@@ZoneID, label:Label)
-
 case class PageGeometry(
   id: Int@@PageID,
   bounds: LTBounds

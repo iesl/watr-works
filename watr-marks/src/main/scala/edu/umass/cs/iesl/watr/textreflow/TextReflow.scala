@@ -22,6 +22,7 @@ object TextReflowF {
   case class Mask[A](maskL: Int, maskR: Int, a: A)        extends TextReflowF[A]
   case class Flow[A](as: List[A])                         extends TextReflowF[A]
   case class Labeled[A](labels: Set[Label], a: A)         extends TextReflowF[A]
+  case class CachedText[A](a: A, text: String)            extends TextReflowF[A]
 
 
   implicit def TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
@@ -33,6 +34,7 @@ object TextReflowF {
       case Mask(maskL, maskR, a)      => f(a).map(Mask(maskL, maskR, _))
       case Flow(as)                   => as.traverse(f).map(Flow(_))
       case Labeled(labels, a)         => f(a).map(Labeled(labels, _))
+      case CachedText(a, text)        => f(a).map(CachedText(_, text))
     }
   }
 
@@ -45,6 +47,7 @@ object TextReflowF {
       case Mask(maskL, maskR, a)      => s"""mask"""
       case Flow(atoms)                => s"""flow"""
       case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
+      case CachedText(a, text)        => text
     }
   }
 
@@ -58,22 +61,23 @@ object TextReflowF {
         case (Mask(maskL, maskR, a) , Mask(maskL2, maskR2, a2)) => maskL==maskL2 && maskR==maskR2 && a===a2
         case (Flow(atoms)           , Flow(atoms2))             => atoms === atoms2
         case (Labeled(ls, a)        , Labeled(ls2, a2))         => ls == ls2 && a === a2
+        case (CachedText(a, text)   , CachedText(a2, text2))    => a === a2 && text == text2
         case (_                     , _)                        => false
       }
     })
   }
 
-  def deattr(tf: TextReflowF[(TextReflow, _)]): TextReflow = {
-    tf match {
-      case Atom(c, ops)                  => atom(c, ops)
-      case Insert(value)                 => insert(value)
-      case Rewrite((from, attr), to)     => rewrite(from, to)
-      case Bracket(pre, post, (a, attr)) => bracket(pre, post, a)
-      case Mask(mL, mR, (a, attr))       => ???
-      case Flow(asAndAttrs)              => flows(asAndAttrs.map(_._1))
-      case Labeled(labels, (a, attr))    => labeled(labels, a)
+  // def deattr(tf: TextReflowF[(TextReflow, _)]): TextReflow = {
+  //   tf match {
+  //     case Atom(c, ops)                  => atom(c, ops)
+  //     case Insert(value)                 => insert(value)
+  //     case Rewrite((from, attr), to)     => rewrite(from, to)
+  //     case Bracket(pre, post, (a, attr)) => bracket(pre, post, a)
+  //     case Mask(mL, mR, (a, attr))       => ???
+  //     case Flow(asAndAttrs)              => flows(asAndAttrs.map(_._1))
+  //     case Labeled(labels, (a, attr))    => labeled(labels, a)
 
-    }
-  }
+  //   }
+  // }
 
 }

@@ -21,6 +21,11 @@ object SlicingAndDicing {
 
     import scala.collection.mutable
 
+    def trimLeftRightBy(f: (A) => Boolean): Seq[A] = {
+      thisSeq
+        .dropWhile(f(_)).reverse
+        .dropWhile(f(_)).reverse
+    }
 
     def groupByPairsWithIndex(f: (A, A, Int) => Boolean): Seq[Seq[A]] = {
       // Queue[(start, len)*]

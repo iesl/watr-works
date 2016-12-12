@@ -1,14 +1,17 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
+
 // import watrmarks.{StandardLabels => LB}
 // import matryoshka._
 // import matryoshka.data._
 // import matryoshka.implicits._
+import spindex.EnrichGeometricFigures._
 
 import utils.ScalazTreeImplicits._
 import scalaz._
 import Scalaz._
+
 class TextReflowSpec extends StringReflowTestUtil {
 
 
@@ -76,39 +79,60 @@ class TextReflowSpec extends StringReflowTestUtil {
   // }
 
 
-  it should "slice reflows" in {
-    val reflow = stringToTextReflow("lime _{^{ﬂ}a}vor")
-    // annotateAndPrint(reflow)
-    // reflow.slice(6, 8).foreach{ tr =>
-    //   val text = tr.toText()
-    //   println(s"Slice:  $text")
-    //   // annotateAndPrint(tr)
-    // }
+  // it should "slice reflows" in {
+  //   val reflow = stringToTextReflow("lime _{^{ﬂ}a}vor")
+  //   // annotateAndPrint(reflow)
+  //   // reflow.slice(6, 8).foreach{ tr =>
+  //   //   val text = tr.toText()
+  //   //   println(s"Slice:  $text")
+  //   //   // annotateAndPrint(tr)
+  //   // }
 
-    for (i <- 0 to 11; j <- 0 to 11) {
-      reflow.slice(i, j).foreach{ tr =>
-        val text = tr.toText()
-        println(s"($i, $j):  $text")
-        // annotateAndPrint(tr)
+  //   for (i <- 0 to 11; j <- 0 to 11) {
+  //     reflow.slice(i, j).foreach{ tr =>
+  //       val text = tr.toText()
+  //       println(s"($i, $j):  $text")
+  //       // annotateAndPrint(tr)
+  //     }
+  //   }
+
+  //   // reflow.slice(3, 6).foreach{ tr =>
+  //   //   val text = tr.toText()
+  //   //   println(s"Sliced: $text")
+  //   //   annotateAndPrint(tr)
+  //   // }
+
+  //   // reflow.slice(0, 3).foreach{ tr =>
+  //   //   val text = tr.toText()
+  //   //   println(s"Sliced: $text")
+  //   //   annotateAndPrint(reflow)
+  //   // }
+
+
+  //   // stringToTextReflow("ﬂavor").slice(0, 3).toText() shouldBe {
+  //   //   "fla"
+  //   // }
+
+  // }
+
+  it should "clip to target regions" in {
+    val reflow = stringToTextReflow("abcdef")
+    annotateAndPrint(reflow)
+
+    val y = 0
+
+    for (x <- 0 to 7; x2 <- 0 to 7 if x <= x2) {
+      val tr = targetRegionForXY(x, y, x2-x, 1)
+      println(s"clipping to ${tr.bbox.prettyPrint}")
+      val res = reflow.clipToTargetRegion(tr)
+      res.foreach { case (resReflow, range) =>
+        println(s"in range ${range}: ")
+        // annotateAndPrint(resReflow)
       }
     }
 
-    // reflow.slice(3, 6).foreach{ tr =>
-    //   val text = tr.toText()
-    //   println(s"Sliced: $text")
-    //   annotateAndPrint(tr)
-    // }
-
-    // reflow.slice(0, 3).foreach{ tr =>
-    //   val text = tr.toText()
-    //   println(s"Sliced: $text")
-    //   annotateAndPrint(reflow)
-    // }
 
 
-    // stringToTextReflow("ﬂavor").slice(0, 3).toText() shouldBe {
-    //   "fla"
-    // }
 
   }
   //   it should "join/break paragraph" in {}
