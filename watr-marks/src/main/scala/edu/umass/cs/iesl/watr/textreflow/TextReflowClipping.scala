@@ -11,19 +11,22 @@ import matryoshka.implicits._
 import matryoshka.patterns.EnvT
 
 import utils.EnrichNumerics._
+import scala.{Range => _}
 
-trait TextReflowClipping extends StructuredRecursion {
+
+trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._
 
   import ComponentTypeEnrichments._
 
-  type ReflowAndRange     = (TextReflow, RangeInt)
-  type AtomOrInsert       = ReflowAndRange \/ ReflowAndRange
-  type AtomOrInsertOrGap  = AtomOrInsert \/ RangeInt
+  type ReflowRange = RangeInt
+  type AtomOrInsertOrGap  = (ReflowRange \/ ReflowRange) \/ ReflowRange
 
-  def anAtom(a: TextReflow, r:RangeInt): AtomOrInsertOrGap = -\/(-\/((a, r)))
-  def anInsert(a: TextReflow, r: RangeInt): AtomOrInsertOrGap = -\/(\/-((a, r)))
-  def aGap(r: RangeInt): AtomOrInsertOrGap = \/-(r)
+  def ReflowRange(b: Int, len: Int) = RangeInt(b, len)
+
+  def anAtom(r:ReflowRange): AtomOrInsertOrGap = -\/(-\/(r))
+  def anInsert(r: ReflowRange): AtomOrInsertOrGap = -\/(\/-(r))
+  def aGap(r: ReflowRange): AtomOrInsertOrGap = \/-(r)
 
   def isAnAtom(v: AtomOrInsertOrGap) = v.isLeft && v.left.isLeft
   def isAnInsert(v: AtomOrInsertOrGap) = v.isLeft && v.left.isRight
@@ -31,128 +34,81 @@ trait TextReflowClipping extends StructuredRecursion {
   def hasAnAtom(as: List[AtomOrInsertOrGap]) = as.exists(isAnAtom(_))
   def allGaps(as: List[AtomOrInsertOrGap]) = as.all(isAGap(_))
 
-  def toReflowAndRange(aig: AtomOrInsertOrGap): ReflowAndRange = {
-    aig.fold(
-      ai => ai.fold(
-        a => a,
-        i => i
-      ),
-      g => sys.error("toReflowAndRange error")
-    )
+  def pp(aig: AtomOrInsertOrGap): String = aig.fold(
+    ai => ai.fold(
+      a => s"atm(${a.min}, ${a.len})",
+      i => s"ins(${i.min}, ${i.len})"
+    ),
+    g => s"gap(${g.min}, ${g.len})"
+  )
+
+  def setRange(aig: AtomOrInsertOrGap, r: ReflowRange): AtomOrInsertOrGap = {
+    aig.fold(ai => ai.fold(_ => anAtom(r), _ => anInsert(r)), _ => aGap(r))
   }
 
-  def toReflowsAndRanges(as: List[AtomOrInsertOrGap]): List[ReflowAndRange] = as.map(toReflowAndRange(_))
+  def setRanges(aigs: List[AtomOrInsertOrGap], r: ReflowRange): List[AtomOrInsertOrGap] =
+    aigs.map(setRange(_, r))
 
-  def toReflow(as: AtomOrInsertOrGap): TextReflow = toReflowAndRange(as)._1
-  def toReflows(as: List[AtomOrInsertOrGap]): List[TextReflow] = toReflowsAndRanges(as).map(_._1)
 
-  def toRange(aig: AtomOrInsertOrGap): RangeInt = {
+  def toReflowRange(aig: AtomOrInsertOrGap): ReflowRange = {
     aig.fold(
-      ai => ai.fold(a => a._2, i => i._2),
+      ai => ai.fold(a => a, i => i),
       g => g)
   }
 
-  def toRanges(as: List[AtomOrInsertOrGap]): List[RangeInt] = as.map(toRange(_))
+  def toReflowRanges(as: List[AtomOrInsertOrGap]): List[ReflowRange] = as.map(toReflowRange(_))
+  def reduceRanges(as: List[ReflowRange]) = as.reduce(_ union _)
 
-  def reduceRanges(as: List[RangeInt]) = as.reduce(_ union _)
-  def reduceRangesRR(as: List[ReflowAndRange]) = reduceRanges(as.map(_._2))
-  def reduceRangesAI(as: List[AtomOrInsertOrGap]) = reduceRangesRR(toReflowsAndRanges(as))
-
-  def bubbleUpAIGs(
-    aigs: List[AtomOrInsertOrGap],
-    envRange: RangeInt,
-    aif: TextReflowF[AtomOrInsertOrGap]
-  ): AtomOrInsertOrGap = {
-    if (allGaps(aigs)) {
-      aGap(envRange)
-    } else {
-      if (hasAnAtom(aigs)) {
-        anAtom(aif, envRange)
-      } else {
-        anInsert(aif, envRange)
-      }
-    }
-  }
-
-  def clipReflowToTargetRegion(theReflow: TextReflow, targetRegion: TargetRegion): Seq[ReflowAndRange] = {
+  def clipReflowToTargetRegion(textReflow: TextReflow, targetRegion: TargetRegion): Seq[(TextReflow, RangeInt)] = {
 
     def retainAtoms(wfa: EnvT[Offsets, TextReflowF, List[AtomOrInsertOrGap]]): List[AtomOrInsertOrGap] = {
       val Offsets(cbegin, clen, _, _) = wfa.ask
-      val envRange = RangeInt(cbegin, clen)
+      val envRange = ReflowRange(cbegin, clen)
 
-      val fa: TextReflowF[AtomOrInsertOrGap] = wfa.lower
+      val fa: TextReflowF[List[AtomOrInsertOrGap]] = wfa.lower
 
       fa match {
         case Atom(c, ops) =>
-          val pageAtom = c.asInstanceOf[PageAtom]
-          val pageAtomTargetRegion = pageAtom.targetRegion
-          val intersects = pageAtomTargetRegion.intersects(targetRegion)
+          val tr = c.asInstanceOf[PageAtom].targetRegion
+          val intersects = tr.intersects(targetRegion)
 
-          if (intersects) List(anAtom(atom(c, new TextReflowAtomOps(ops.toString)), envRange))
+          if (intersects) List(anAtom(envRange))
           else            List(aGap(envRange))
 
-        case Insert(value) =>  List(anInsert(insert(value), envRange))
-
-        case Rewrite(aigs, to)     =>
-          List(bubbleUpAIGs(aigs,
-            envRange,
-            rewrite(aigs, to)
-          ))
-
-        case Bracket(pre, post, aigs) =>
-          val childRange = toRange(a)
-          val paddingLen = pre.length+post.length
-
-          // if (childRange.len + paddingLen == envRange.len) {
-          //   // the entirety of the child is included, so include the padding:
-          //   // anAtom(bracket(pre, post, toReflow(a)), envRange)
-          //   bubbleUpAIGs(aigs, (rr) => bracket(pre, post, rr._1, to), rr._2)
-          // } else {
-          //   bubbleUpAIGs(aigs, (rr) => bracket(pre, post, rr._1, to), rr._2)
-          // }
-          List(
-            bubbleUpAIGs(aigs,
-              envRange,
-              bracket(pre, post, aigs)
-            )
-          )
-
-        case Mask(mL, mR, aAttrS)       => ??? // Mask(mL, mR, a.get)
-
-        case Flow(childAIGs) =>
-          List(bubbleUpAIGs(childAIGs.flatten,
-            envRange,
-            flow(childAigs.flatten)
-          ))
-          // val childRange = reduceRangesAI(childAtomsOrInsertsOrGaps)
-          // anAtom(flows(toReflows(childAtomsOrInsertsOrGaps)), childRange)
-
-        case Labeled(labels, aigs)    =>
-          List(bubbleUpAIGs(aigs,
-            envRange,
-            labeled(labels, aigs)
-          ))
-
-        case CachedText(a, text)   =>
-          ??? // cache(a, attr)
+        case Insert(value)            => List(anInsert(envRange))
+        case Rewrite(aigs, to)        => setRanges(aigs, envRange)
+        case Bracket(pre, post, aigs) => aigs
+        case Mask(mL, mR, aAttrS)     => ??? // Mask(mL, mR, a.get)
+        case Flow(childAIGs)          => childAIGs.flatten
+        case Labeled(labels, aigs)    => aigs
+        case CachedText(aigs, text)   => aigs
       }
-
-
     }
 
 
-    val res: AtomOrInsertOrGap =
-      theReflow
-        .annotateCharRanges
+    val res: List[AtomOrInsertOrGap] =
+      textReflow.annotateCharRanges
         .cata(retainAtoms)
 
-    // val pruned = pruneAtomsAndInserts(List(res))
-    //   .headOption
-    //   .toList
+    // find contiguous runs of atoms/inserts, divided by gaps
 
-    // toReflowsAndRanges(pruned)
+    println("res: " + res.map(pp(_)).mkString(", "))
 
-    ???
+    val firstRun = res
+      .dropWhile(isAGap)
+      .takeWhile(a => !isAGap(a))
+
+    println("slice: " + firstRun.map(pp(_)).mkString(", "))
+
+    val ranges = toReflowRanges(firstRun)
+    val reducedRange = reduceRanges(ranges)
+
+    val maybeSlice = textReflow.slice(reducedRange.min, reducedRange.max)
+
+    maybeSlice
+      .map( slice => List((slice, reducedRange)))
+      .getOrElse(List())
+
   }
 
 }
@@ -272,4 +228,24 @@ trait TextReflowClipping extends StructuredRecursion {
 //       .map(Option(_)))
 
 //   case _ => fa
+// }
+
+// def reduceRanges(as: List[RangeInt]) = as.reduce(_ union _)
+// def reduceRangesRR(as: List[Range]) = reduceRanges(as.map(_._2))
+// def reduceRangesAI(as: List[AtomOrInsertOrGap]) = reduceRangesRR(toReflowsAndRanges(as))
+
+// def bubbleUpAIGs(
+//   aigs: List[AtomOrInsertOrGap],
+//   envRange: ReflowRange,
+//   aif: TextReflowF[AtomOrInsertOrGap]
+// ): AtomOrInsertOrGap = {
+//   if (allGaps(aigs)) {
+//     aGap(envRange)
+//   } else {
+//     if (hasAnAtom(aigs)) {
+//       anAtom(envRange)
+//     } else {
+//       anInsert(envRange)
+//     }
+//   }
 // }

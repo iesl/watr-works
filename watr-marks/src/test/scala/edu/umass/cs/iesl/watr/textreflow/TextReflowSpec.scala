@@ -137,18 +137,21 @@ class TextReflowSpec extends StringReflowTestUtil {
     for {
       (line, linenum) <- lines(pageText).zipWithIndex
       lineLen = line.length()
-      x1 <- 0 until lineLen
-      width <- x1+1 to lineLen
+      maxlen = lines(pageText).map(_.length).max
+      x1 <- 0 until maxlen
       height <- 1 to pageLines.length
+      width <- x1+1 to (lineLen-x1)
 
     } {
+      val bounds = s"$x1, $linenum, $width, $height"
       val tr = targetRegionForXY(x1, linenum, width, height)
       // println(s"clipping to ${tr.bbox.prettyPrint}")
 
       val res = reflow.clipToTargetRegion(tr)
       res.foreach { case (resReflow, range) =>
         val resText = resReflow.toText()
-        println(s"range ${range}: ${resText}  in bbox =${tr.bbox.prettyPrint} ")
+        // println(s"range ${range}: ${resText}  in bbox =${tr.bbox.prettyPrint} ")
+        println(s"range ${range}: ${resText}   in ${bounds}")
         // annotateAndPrint(resReflow)
       }
     }
