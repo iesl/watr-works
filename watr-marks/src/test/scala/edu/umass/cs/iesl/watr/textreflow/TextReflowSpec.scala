@@ -117,7 +117,7 @@ class TextReflowSpec extends StringReflowTestUtil {
 
   it should "clip to target regions" in {
     val pageText = (
-      """|a
+      """|a q1
          |e ^{ﬂ}
          |""".stripMargin)
     // val pageText = (
@@ -135,23 +135,21 @@ class TextReflowSpec extends StringReflowTestUtil {
     annotateAndPrint(reflow)
 
     for {
-      (line, linenum) <- lines(pageText).zipWithIndex
-      lineLen = line.length()
-      maxlen = lines(pageText).map(_.length).max
-      x1 <- 0 until maxlen
-      height <- 1 to pageLines.length
-      width <- x1+1 to (lineLen-x1)
+      (line, y)       <- pageLines.zipWithIndex
+      height          <- 1 to pageLines.length
+      maxlen           = lines(pageText).map(_.length).max
+      x               <- 0 until maxlen
+      width           <- 1 until maxlen
 
     } {
-      val bounds = s"$x1, $linenum, $width, $height"
-      val tr = targetRegionForXY(x1, linenum, width, height)
-      // println(s"clipping to ${tr.bbox.prettyPrint}")
+      val bounds = s"x:$x, y:$y, w:$width, h:$height"
+      val tr = targetRegionForXY(x, y, width, height)
 
       val res = reflow.clipToTargetRegion(tr)
+      println(s"[$bounds]  ${tr.bbox.prettyPrint}")
       res.foreach { case (resReflow, range) =>
         val resText = resReflow.toText()
-        // println(s"range ${range}: ${resText}  in bbox =${tr.bbox.prettyPrint} ")
-        println(s"range ${range}: ${resText}   in ${bounds}")
+        println(s"    ${resText}   ${range}")
         // annotateAndPrint(resReflow)
       }
     }

@@ -96,7 +96,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
       ch match {
         case '\n' =>
           linenum += 1
-          chnum = -1
+          chnum = 0
           pop(); pop()
           insertDownLast(Labeled(Set(LB.VisualLine), 0))
           insertDownLast(Flow(List()))
@@ -106,7 +106,10 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
         case '_' => insertDownLast(Labeled(Set(LB.Sub), 0))
         case '{' => insertDownLast(Flow(List()))
         case '}' => pop(); pop()
-        case ' ' => insertDownLast(Insert(" ")); pop()
+        case ' ' =>
+          insertDownLast(Insert(" "))
+          pop()
+          chnum += 1
 
         case chx if charSubs.contains(chx) =>
           insertDownLast(Rewrite(0, charSubs(chx)))
@@ -118,6 +121,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
           insertDownLast(Atom(charAtom, ops))
           pop()
           pop()
+          chnum += 1
 
         case _ =>
           val charAtom = CharAtom(
@@ -127,8 +131,8 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
           val ops = new textreflow.TextReflowAtomOps(Seq(ch))
           insertDownLast(Atom(charAtom, ops))
           pop()
+          chnum += 1
       }
-      chnum += 1
     }
 
     // Now construct the Fix[] version of the tree:

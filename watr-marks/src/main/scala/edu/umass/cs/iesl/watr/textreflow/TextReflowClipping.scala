@@ -3,6 +3,7 @@ package textreflow
 
 import scalaz._, Scalaz._
 
+
 import spindex._
 
 import matryoshka._
@@ -28,9 +29,9 @@ trait TextReflowClipping extends TextReflowBasics {
   def anInsert(r: ReflowRange): AtomOrInsertOrGap = -\/(\/-(r))
   def aGap(r: ReflowRange): AtomOrInsertOrGap = \/-(r)
 
-  def isAnAtom(v: AtomOrInsertOrGap) = v.isLeft && v.left.isLeft
-  def isAnInsert(v: AtomOrInsertOrGap) = v.isLeft && v.left.isRight
-  def isAGap(v: AtomOrInsertOrGap) = v.isRight
+  def isAnAtom(v: AtomOrInsertOrGap)   = v.fold(_.fold(_ => true, _  => false), _ => false)
+  def isAnInsert(v: AtomOrInsertOrGap) = v.fold(_.fold(_ => false, _ => true),  _ => false)
+  def isAGap(v: AtomOrInsertOrGap)     = v.fold(_.fold(_ => false, _ => false), _ => true)
   def hasAnAtom(as: List[AtomOrInsertOrGap]) = as.exists(isAnAtom(_))
   def allGaps(as: List[AtomOrInsertOrGap]) = as.all(isAGap(_))
 
@@ -77,7 +78,7 @@ trait TextReflowClipping extends TextReflowBasics {
 
         case Insert(value)            => List(anInsert(envRange))
         case Rewrite(aigs, to)        => setRanges(aigs, envRange)
-        case Bracket(pre, post, aigs) => aigs
+        case Bracket(pre, post, aigs) => setRanges(aigs, envRange)
         case Mask(mL, mR, aAttrS)     => ??? // Mask(mL, mR, a.get)
         case Flow(childAIGs)          => childAIGs.flatten
         case Labeled(labels, aigs)    => aigs
@@ -90,25 +91,28 @@ trait TextReflowClipping extends TextReflowBasics {
       textReflow.annotateCharRanges
         .cata(retainAtoms)
 
-    // find contiguous runs of atoms/inserts, divided by gaps
+    // println("res: " + res.map(pp(_)).mkString(", "))
 
-    println("res: " + res.map(pp(_)).mkString(", "))
+    def splitLoop(aigs: List[AtomOrInsertOrGap]): List[List[AtomOrInsertOrGap]] = {
+      val start = aigs.dropWhile(isAGap)
+      if (start.isEmpty) Nil else {
+        val (h, rest) = start.span(a => !isAGap(a))
+        h :: splitLoop(rest)
+      }
+    }
 
-    val firstRun = res
-      .dropWhile(isAGap)
-      .takeWhile(a => !isAGap(a))
+    val nonGaps = splitLoop(res).filter(hasAnAtom)
 
-    println("slice: " + firstRun.map(pp(_)).mkString(", "))
+    val clippedRanges = nonGaps.map({nonGap =>
+      // println("  no gaps:" + nonGap.toList.map(pp(_)).mkString(", "))
+      val ranges = toReflowRanges(nonGap.toList)
+      val aggRange = reduceRanges(ranges)
 
-    val ranges = toReflowRanges(firstRun)
-    val reducedRange = reduceRanges(ranges)
+      textReflow.slice(aggRange.min, aggRange.max)
+        .map(slice => (slice, aggRange))
+    })
 
-    val maybeSlice = textReflow.slice(reducedRange.min, reducedRange.max)
-
-    maybeSlice
-      .map( slice => List((slice, reducedRange)))
-      .getOrElse(List())
-
+    clippedRanges.flatten
   }
 
 }
