@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
+
 import scalaz._, Scalaz._
 
 import spindex._
@@ -13,11 +14,10 @@ import matryoshka.implicits._
 import matryoshka.patterns.EnvT
 
 import utils.EnrichNumerics._
-// import EnrichGeometricFigures._
 
 case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 
-trait TextReflowFunctions extends StructuredRecursion {
+trait TextReflowFunctions extends TextReflowClipping {
   import TextReflowF._
   import utils.SlicingAndDicing._
 
@@ -277,6 +277,9 @@ trait TextReflowFunctions extends StructuredRecursion {
       val charCountAttr:Cofree[TextReflowF, Offsets] =
         theReflow.cata(attributePara(aggregateLengths))
 
+      // val rbox = prettyPrintTree(theReflow)
+      // val aggLens = cofreeAttrToTree(charCountAttr.map(coff => (coff.begin, coff.len))).drawBox
+
       // Top down adjustment of attributes:
       val adjustBegins = charCountAttr
         .attributeTopDownM[State[Offsets, ?], Offsets](OffsetsInst.zero)({
@@ -286,6 +289,9 @@ trait TextReflowFunctions extends StructuredRecursion {
       val asCofree:Cofree[TextReflowF, Offsets] = adjustBegins
         .eval(OffsetsInst.zero)
         .mapBranching(stripEnv)
+
+      // val withOffs = cofreeAttrToTree(asCofree.map(coff => (coff.begin, coff.len))).drawBox
+      // println(aggLens besideS withOffs besideS rbox)
 
       asCofree
     }
@@ -400,7 +406,6 @@ trait TextReflowFunctions extends StructuredRecursion {
 
     def lines: Seq[TextReflow] = ???
 
-
     def targetRegions(): Seq[TargetRegion] = {
       def regions(t: TextReflowF[Seq[TargetRegion]]): Seq[TargetRegion] = t match {
         case Atom    (ac, ops)               => Seq(ac.asInstanceOf[CharAtom].targetRegion)
@@ -422,70 +427,9 @@ trait TextReflowFunctions extends StructuredRecursion {
       ???
     }
 
-    import ComponentTypeEnrichments._
-
-    // this is a tricky function, but I'll start with a few assumptions that will work in the short-term:
-    //   - The targetRegion does not divide the given text reflow into non-contiguous spans of text
-    //   - This means I can just take the first span of text that intersects the target region
-    def clipToTargetRegion(targetRegion: TargetRegion): Option[(TextReflow, RangeInt)] = {
-
-      // def bubbleUpAttrs: GAlgebra[(TextReflow, ?), TextReflowF, Int] = _ match {
-
-      def retain(wfa: EnvT[Offsets, TextReflowF, Option[(TextReflow, RangeInt)]]): Option[(TextReflow, RangeInt)] = {
-        val Offsets(cbegin, clen, _, _) = wfa.ask
-        val range = RangeInt(cbegin, clen)
-
-        val fa: TextReflowF[Option[(TextReflow, RangeInt)]] =
-          trimFlow[Option[(TextReflow, RangeInt)]](_.isDefined)(wfa.lower)
-
-        val t1: Option[TextReflowF[(TextReflow, RangeInt)]] = fa.sequence
-
-        val tz: Option[(TextReflow, RangeInt)] = t1.map(trF => (fixf(trF.map(_._1)), range) )
-
-        // println(s"retain on ${tz} for targetRegion=${targetRegion.bbox.prettyPrint}")
-        if (cbegin < 0) tz else {
-          val r = RangeInt(cbegin, clen)
-
-          for {
-            (textReflow, range) <- tz
-            textReflowF        <- t1
-            // irange              <- sliceRange.intersect(r)
-            m <- textReflowF match {
-              case Atom(c, ops) =>
-                val pageAtom = c.asInstanceOf[PageAtom]
-                val pageAtomTargetRegion = pageAtom.targetRegion
-                val intersects = pageAtomTargetRegion.intersects(targetRegion)
-
-                // println(s"Atom:  ${pageAtomTargetRegion}.intersects(${targetRegion})=$intersects")
-                // println(s"Atom: intersects=$intersects")
-
-                if (pageAtom.targetRegion.intersects(targetRegion)) Some(
-                  (atom(c, new TextReflowAtomOps(ops.toString)), range)
-                ) else None
-
-              case Insert(value)                 => None // insert(value)
-              case Rewrite((from, attr), to)     => Some((rewrite(from, to), attr))
-              case Bracket(pre, post, (a, attr)) => Some((bracket(pre, post, a), attr))
-              case Mask(mL, mR, (a, attr))       => ??? // Mask(mL, mR, a.get)
-              case Flow(atomsAndattrs)           =>
-                val totalRange: RangeInt = atomsAndattrs.map(_._2).reduce(_.union(_))
-                Some((flows(atomsAndattrs.map(_._1)), totalRange))
-              case Labeled(labels, (a, attr))    => Some((labeled(labels, a), attr))
-              case CachedText((a, attr), text)   => ??? // cache(a, attr)
-            }
-          } yield {
-            // println(s"yield : ${m}")
-            m
-          }
-
-        }
-      }
-
-      theReflow
-        .annotateCharRanges
-        .cata(retain)
+    def clipToTargetRegion(targetRegion: TargetRegion): Seq[(TextReflow, RangeInt)] = {
+      clipReflowToTargetRegion(theReflow, targetRegion)
     }
-
-
   }
 }
+

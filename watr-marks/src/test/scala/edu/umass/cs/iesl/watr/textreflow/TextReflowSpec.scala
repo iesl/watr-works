@@ -116,23 +116,56 @@ class TextReflowSpec extends StringReflowTestUtil {
   // }
 
   it should "clip to target regions" in {
-    val reflow = stringToTextReflow("abcdef")
+    val pageText = (
+      """|a
+         |e ^{ﬂ}
+         |""".stripMargin)
+    // val pageText = (
+    //   """|abcdef
+    //      |lime _{^{ﬂ}a}vored scan-
+    //      |ning electron
+    //      |""".stripMargin)
+    // val pageText = (
+    //   """|abc
+    //      |def
+    //      |""".stripMargin)
+
+    val pageLines = lines(pageText)
+    val reflow = stringToTextReflow(pageText)
     annotateAndPrint(reflow)
 
-    val y = 0
+    for {
+      (line, linenum) <- lines(pageText).zipWithIndex
+      lineLen = line.length()
+      x1 <- 0 until lineLen
+      width <- x1+1 to lineLen
+      height <- 1 to pageLines.length
 
-    for (x <- 0 to 7; x2 <- 0 to 7 if x <= x2) {
-      val tr = targetRegionForXY(x, y, x2-x, 1)
-      println(s"clipping to ${tr.bbox.prettyPrint}")
+    } {
+      val tr = targetRegionForXY(x1, linenum, width, height)
+      // println(s"clipping to ${tr.bbox.prettyPrint}")
+
       val res = reflow.clipToTargetRegion(tr)
       res.foreach { case (resReflow, range) =>
-        println(s"in range ${range}: ")
+        val resText = resReflow.toText()
+        println(s"range ${range}: ${resText}  in bbox =${tr.bbox.prettyPrint} ")
         // annotateAndPrint(resReflow)
       }
     }
 
+    // val reflow = stringToTextReflow("abcdef")
 
+    // val y = 0
 
+    // for (x <- 0 to 7; x2 <- 0 to 7 if x <= x2) {
+    //   val tr = targetRegionForXY(x, y, x2-x, 1)
+    //   println(s"clipping to ${tr.bbox.prettyPrint}")
+    //   val res = reflow.clipToTargetRegion(tr)
+    //   res.foreach { case (resReflow, range) =>
+    //     println(s"in range ${range}: ")
+    //     annotateAndPrint(resReflow)
+    //   }
+    // }
 
   }
   //   it should "join/break paragraph" in {}

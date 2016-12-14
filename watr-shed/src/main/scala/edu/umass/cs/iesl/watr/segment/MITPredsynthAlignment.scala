@@ -112,7 +112,6 @@ object MITAlignPredsynth {
               val intersectedVisualLines  = targetRegions.map{ targetRegion =>
                 val pageIndex = zoneIndexer.getPageIndex(targetRegion.target)
 
-                println("TODO: don't filter by LB.VisualLine")
                 pageIndex.componentIndex
                   .queryForIntersects(targetRegion.bbox)
                   .filter(_.hasLabel(LB.VisualLine))
@@ -127,16 +126,19 @@ object MITAlignPredsynth {
 
               val ann = LB.Annotation(rtc.textType)
 
+              println(s"creating zone annotation on ${uniqVisualLines.length} VisualLines: ")
               // Compute the intersection of a TextReflow w/ RegionComponent
               val annotationRegions = uniqVisualLines.map{visualLine =>
                 val pageForLine = visualLine.pageId
                 val pageRegions = targetRegions.filter(_.target == visualLine.pageId)
                 // Select the span for each line that corresponds to labeled region
+                println(s"    Starting VisualLine bbox = ${visualLine.targetRegion.bbox.prettyPrint} ")
                 val intersectingLineAtoms = visualLine.queryAtoms()
                   .trimLeftRightBy({lineAtom: AtomicComponent =>
                     val intersects = pageRegions.exists(_.bbox.intersects(lineAtom.bounds));
                     !intersects
                   })
+                println(s"    Ending VisualLine bbox = ${intersectingLineAtoms.map(_.targetRegion.bbox.prettyPrint)} ")
 
                 zoneIndexer.labelRegion(intersectingLineAtoms, ann)
               }

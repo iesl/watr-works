@@ -53,6 +53,8 @@ object DocumentIO extends DocsegJsonFormats {
           |${textLines}
           |  ],
           |  "mentions": [
+          |${serializedZones}
+          |  ],
           |  "relations": [
           |  "properties": [
           |  "labels": [
@@ -152,28 +154,24 @@ object DocumentIO extends DocsegJsonFormats {
 
         // for each target region in each zone, find the (begin, end) bounds of the TextReflow in that zone
         val linePerZTR = zone.regions.map({zoneTargetRegion =>
-          textBlockReflows.zipWithIndex
-            .map({case (textFlow, lineNum) =>
-              textFlow.clipToTargetRegion(zoneTargetRegion)
-                .map(t => (t, lineNum))
-            })
-            .flatten.headOption
-            .map({ case ((textFlow, intRange), lineNum)  =>
-              val begin = intRange.min
-              val len = intRange.len
-              (s"""[${lineNum}, ${begin}, ${len}]""", textFlow)
-            })
-
+          for {
+            (textFlow, lineNum) <- textBlockReflows.zipWithIndex
+            (clipped, range) <- textFlow.clipToTargetRegion(zoneTargetRegion)
+          } yield {
+            val begin = range.min
+            val len = range.len
+            (s"""[${lineNum}, ${begin}, ${len}]""", clipped)
+          }
         }).flatten
 
         val trs = linePerZTR.map(_._1).mkString(",")
         val ts = linePerZTR.map(_._2)
         // TODO This is an error! it will only work b/c I happen to know in this case that
         //    labeled zones won't cross TextReflow instances for the MIT labeling
-        val jtextFlow = joins(" ")(ts)
+        val jtextFlow = joins("")(ts)
         val labelStr = zone.label.value.get
         val pad1 = " "*(20-labelStr.length())
-        val pad2 = " "*(20 - jtextFlow.toText.length())
+        val pad2 = " " // *(20 - jtextFlow.toText.length())
 
         val mentionId = zone.id.unwrap
 
