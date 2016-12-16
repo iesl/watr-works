@@ -9,9 +9,14 @@ import pprint.PPrinter
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import spindex._
+// import TypeTags._
+// import textreflow.TextReflowRendering._
+// import java.net.URI
+import geometry._
+
+// import GeometricFigure._
+// import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
-import TypeTags._
-import textreflow.TextReflowRendering._
 
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -270,7 +275,6 @@ object ShellCommands {
       } else None
     }
 
-    import java.net.URI
 
     // def extractImage(): URI = {
     //   import com.sksamuel.scrimage._

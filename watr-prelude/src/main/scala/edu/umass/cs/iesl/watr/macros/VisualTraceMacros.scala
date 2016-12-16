@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package utils
+package tracing 
 
 import scala.reflect.macros.blackbox.Context
 
@@ -27,7 +27,7 @@ private object VisualTraceMacros {
     import c.universe._
     q"""
     if (${c.prefix}.tracingEnabled() && $cond) {
-       import _root_.edu.umass.cs.iesl.watr.utils.{VisualTraceLevel => L}
+       import _root_.edu.umass.cs.iesl.watr.tracing.{VisualTraceLevel => L}
        ${c.prefix}.traceLevel() match {
          case L.Off          => // noop
          case L.Append|L.Print => ${c.prefix}.runTrace(${c.prefix}.traceLevel(), ..$exprs)
@@ -40,7 +40,7 @@ private object VisualTraceMacros {
     import c.universe._
     q"""
     if (${c.prefix}.tracingEnabled()) {
-       import _root_.edu.umass.cs.iesl.watr.utils.{VisualTraceLevel => L}
+       import _root_.edu.umass.cs.iesl.watr.tracing.{VisualTraceLevel => L}
        ${c.prefix}.traceLevel() match {
          case L.Off          => // noop
          case _              => ..$body
@@ -53,7 +53,7 @@ private object VisualTraceMacros {
     // q"if (${c.prefix}.tracingEnabled) { ${c.prefix}.runTrace(..$exprs) }"
     q"""
     if (${c.prefix}.tracingEnabled()) {
-       import _root_.edu.umass.cs.iesl.watr.utils.{VisualTraceLevel => L}
+       import _root_.edu.umass.cs.iesl.watr.tracing.{VisualTraceLevel => L}
        ${c.prefix}.traceLevel() match {
          case L.Off          => // noop
          case L.Append|L.Print => ${c.prefix}.runTrace(${c.prefix}.traceLevel(), ..$exprs)

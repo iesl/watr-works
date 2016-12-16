@@ -29,12 +29,12 @@ case class AppConfig(
 object Works extends App {
   private[this] val log = org.log4s.getLogger
 
-  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
-  // utils.VisualTracer
-  // utils.VisualTracer.clearFilters()
-  // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
-  // utils.VisualTracer.addFilter("GutterDetection")
-  // utils.VisualTracer.addFilter("LabelAbstract")
+  // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
+  // tracing.VisualTracer
+  // tracing.VisualTracer.clearFilters()
+  // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+  // tracing.VisualTracer.addFilter("GutterDetection")
+  // tracing.VisualTracer.addFilter("LabelAbstract")
 
   def die(t: Throwable): Unit = {
     val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """

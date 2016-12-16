@@ -8,14 +8,15 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
   import utils.ScalazTreeImplicits._
   import utils.IdGenerator
   import TypeTags._
-  import GeometricFigure._
-  import EnrichGeometricFigures._
   import watrmarks.{StandardLabels => LB}
   import edu.umass.cs.iesl.watr.watrmarks.Label
   import matryoshka._
   import matryoshka.implicits._
   import java.net.URI
   def dummyUri = URI.create("/")
+  import geometry._
+  import GeometricFigure._
+  import EnrichGeometricFigures._
 
   import textreflow._
   import TextReflowF._

@@ -53,8 +53,8 @@ class SuperSubScriptTest extends DocsegTestUtil {
       val segmenter = createFilteredZoneIndexer(pdfIns, pageId, Seq(bounds))
       val pageInfo = segmenter.zoneIndexer.getPageIndex(pageId)
 
-      // utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Off
-      utils.VisualTracer.visualTraceLevel = utils.VisualTraceLevel.Print
+      // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
+      tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
       segmenter.runLineDetermination()
 

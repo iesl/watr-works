@@ -8,15 +8,17 @@ import org.scalacheck.Prop._
 import matryoshka._
 import matryoshka.scalacheck.arbitrary._
 
-import spindex._
-import TextReflowF._
+import geometry._
+import GeometricFigure._
+// import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
+
+import TextReflowF._
 
 
 object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflows {
   import play.api.libs.json._
   import TextReflowTransforms._
-  import GeometricFigure._
 
 
   def showFailed[A: Equal](a1: A, a2: A): Unit = {

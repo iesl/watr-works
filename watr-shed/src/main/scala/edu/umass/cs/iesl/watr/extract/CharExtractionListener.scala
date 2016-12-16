@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package extract
 
 import com.itextpdf.kernel.pdf.PdfPage
-import spindex._
+import geometry._
 import GeometricFigure._
 
 import scala.collection.mutable

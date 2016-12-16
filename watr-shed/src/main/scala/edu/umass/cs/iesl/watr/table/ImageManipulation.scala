@@ -2,9 +2,10 @@ package edu.umass.cs.iesl.watr
 package table
 
 // import com.sksamuel.scrimage._
-import spindex._
-import EnrichGeometricFigures._
+// import spindex._
+import geometry._
 import GeometricFigure._
+import EnrichGeometricFigures._
 
 
 trait ImageManipulation {

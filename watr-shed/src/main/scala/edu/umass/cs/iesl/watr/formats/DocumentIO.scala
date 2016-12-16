@@ -17,6 +17,11 @@ import watrmarks.{StandardLabels => LB}
 import textreflow._
 import utils.EnrichNumerics._
 
+import geometry._
+// import GeometricFigure._
+// import EnrichGeometricFigures._
+// import ComponentTypeEnrichments._
+
 object DocumentIO extends DocsegJsonFormats {
 
   def richTextSerializeDocument(zoneIndexer: ZoneIndexer, alignedGroups: Seq[AlignedGroup]): String = {

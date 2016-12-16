@@ -3,8 +3,7 @@ package utils
 
 import org.scalatest._
 
-import spindex._
-
+import geometry._
 import GeometricFigure._
 
 class AngleFilteringTest extends FlatSpec with Matchers {

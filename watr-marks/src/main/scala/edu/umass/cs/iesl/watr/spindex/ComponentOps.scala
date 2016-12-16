@@ -7,7 +7,8 @@ import textboxing.{TextBoxing => TB}, TB._
 
 import utils.SlicingAndDicing._
 import utils.{CompassDirection => Compass}
-import utils.VisualTracer, VisualTracer._
+import tracing.VisualTracer, VisualTracer._
+import tracing.TraceLog, TraceLog._
 import scala.collection.mutable
 import utils.EnrichNumerics._
 import TextReflowConversion._
@@ -19,6 +20,59 @@ import EnrichGeometricFigures._
 object ComponentOperations {
   import textreflow._
   import utils.EnglishDictionary
+
+  import tracing.TraceLog._
+  // import VisualTracer._
+  // import textboxing.{TextBoxing => TB}, TB._
+  // import EnrichNumerics._
+
+  def vtraceHistogram(hist: Histogram): TraceLog = {
+    vtraceHistogram(
+      hist.getFrequencies
+        .sortBy(_.frequency)
+        .reverse
+        .takeWhile(_.frequency > 0)
+        .map{b=>(b.value, b.frequency)},
+      hist.getStartingResolution, hist.getComputedResolution
+    )
+  }
+
+  def vtraceHistogram(vfs: Seq[(Double, Double)], resStart: Double, resComputed: Double): TraceLog = {
+    message(
+      vjoin()(
+        s"histogram: resolution(in)=${resStart.pp}, resolution(computed):${resComputed.pp}", indent(2)(
+          vjoin(AlignLeft)(
+            "Val:",
+            "Freq:"
+          ) + hjoins(sep=" ")(
+            vfs.map({case d =>
+              vjoin(AlignRight)(
+                d._1.pp,
+                d._2.pp
+              )
+            })
+          ))
+      )
+    )
+  }
+
+  def getMostFrequentValuesAndFreqs(vtrace: VisualTracer)(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
+    val hist = histogram(in, resolution)
+
+    val res = hist.getFrequencies
+      .sortBy(_.frequency)
+      .reverse
+      .takeWhile(_.frequency > 0)
+      .map{b=> (b.value, b.frequency)}
+
+    vtrace.trace(vtraceHistogram(hist))
+    res
+  }
+
+
+  def getMostFrequentValues(vtrace: VisualTracer)(in: Seq[Double], resolution: Double): Seq[Double] = {
+    getMostFrequentValuesAndFreqs(vtrace)(in, resolution).map(_._1)
+  }
 
   def joinTextLines(line1: TextReflow, line2: TextReflow)(dict: EnglishDictionary): TextReflow = {
 
@@ -511,8 +565,8 @@ object ComponentOperations {
 
 
     def determineNormalTextBounds: LTBounds = {
-      val mfHeights = Histogram.getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.height), 0.1d)
-      val mfTops = Histogram.getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.top), 0.1d)
+      val mfHeights = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.height), 0.1d)
+      val mfTops = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.top), 0.1d)
 
 
       val mfHeight= mfHeights.headOption.getOrElse(0d)

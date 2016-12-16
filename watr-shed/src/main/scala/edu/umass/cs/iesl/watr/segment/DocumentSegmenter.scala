@@ -7,17 +7,22 @@ import java.io.InputStream
 import java.net.URI
 import watrmarks._
 import spindex._
-import GeometricFigure._
 
 import scalaz.@@
 import TypeTags._
 import scala.collection.JavaConversions._
 import textboxing.{TextBoxing => TB}, TB._
+
+import geometry._
+import GeometricFigure._
 import EnrichGeometricFigures._
+import ComponentTypeEnrichments._
+
 import ComponentOperations._
+
 import utils._
 import utils.{CompassDirection => CDir}
-import utils.VisualTracer._
+import tracing.VisualTracer._
 import utils.EnrichNumerics._
 import SlicingAndDicing._
 // import textreflow.TextReflowRendering._

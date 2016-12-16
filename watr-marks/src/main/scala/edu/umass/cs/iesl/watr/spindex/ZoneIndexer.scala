@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import edu.umass.cs.iesl.watr.utils.VisualTracer
 import java.net.URI
 import scala.collection.mutable
 
@@ -15,7 +14,7 @@ import scalaz.@@
 import ComponentTypeEnrichments._
 import utils.IdGenerator
 
-import VisualTracer._
+import tracing.VisualTracer
 import predsynth._
 import textreflow._
 

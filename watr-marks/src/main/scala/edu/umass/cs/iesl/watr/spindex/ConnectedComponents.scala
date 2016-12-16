@@ -111,7 +111,7 @@ sealed trait Component {
 
   def orientation: Double = 0.0d // placeholder until this is implemented for real
 
-  import utils.VisualTracer._
+  import tracing.VisualTracer._
 
   def addLabel(l: Label): Component = {
     // vtrace.trace("addLabel" withTrace link(showComponent(this), showLabel(l)))

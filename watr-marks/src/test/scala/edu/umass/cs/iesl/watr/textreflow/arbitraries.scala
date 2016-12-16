@@ -9,9 +9,13 @@ import matryoshka.scalacheck.arbitrary._
 
 import scalaz.scalacheck.ScalaCheckBinding._
 
-import spindex._
+// import spindex._
 import watrmarks._
 import TextReflowF._
+
+import geometry._
+import GeometricFigure._
+import EnrichGeometricFigures._
 
 trait ArbitraryTextReflows {
   import Arbitrary._

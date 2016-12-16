@@ -6,7 +6,7 @@ package textreflow
 // import matryoshka._
 // import matryoshka.data._
 // import matryoshka.implicits._
-import spindex.EnrichGeometricFigures._
+import geometry.EnrichGeometricFigures._
 
 import utils.ScalazTreeImplicits._
 import scalaz._

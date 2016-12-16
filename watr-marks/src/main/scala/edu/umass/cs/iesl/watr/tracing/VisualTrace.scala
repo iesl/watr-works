@@ -1,10 +1,10 @@
 package edu.umass.cs.iesl.watr
-package utils
+package tracing
 
 import scala.language.experimental.macros
 
 import geometry._
-import watrmarks.Label
+// import watrmarks.Label
 
 import textboxing.{TextBoxing => TB}
 import TB._
@@ -19,7 +19,7 @@ object TraceLog {
   case class Show(s: Seq[TargetRegion])              extends TraceLog { override val toString = s"""${s.map(_.toString).mkString(",")}"""}
   case class ShowZone(s: Zone)                       extends TraceLog { override val toString = s"""${s}"""}
   // case class ShowComponent(s: Component)             extends TraceLog { override val toString = s"""${s}"""}
-  case class ShowLabel(l:Label)                      extends TraceLog { override val toString = s"""${l}"""}
+  // case class ShowLabel(l:Label)                      extends TraceLog { override val toString = s"""${l}"""}
   case class FocusOn(s: TargetRegion)                extends TraceLog { override val toString = s"""focus: ${s}"""}
   case class Indicate(figure: TargetFigure)          extends TraceLog { override val toString = s"""indicate: ${figure}"""}
   case class Message(s: TB.Box)                      extends TraceLog { override val toString = s"""${s}""" }
@@ -57,7 +57,7 @@ object VisualTracer {
   def showZone(s: Zone): TraceLog                       = {ShowZone(s)}
   // def showComponent(s: Component): TraceLog             = {ShowComponent(s)}
   // def showComponents(cs: Seq[Component]): TraceLog      = {all(cs.map(ShowComponent(_)))}
-  def showLabel(s: Label): TraceLog                     = {ShowLabel(s)}
+  // def showLabel(s: Label): TraceLog                     = {ShowLabel(s)}
   def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
   def indicate(s: TargetFigure): TraceLog               = {Indicate(s)}
   def message(s: Box): TraceLog                         = {Message(s)}
@@ -94,7 +94,7 @@ object VisualTracer {
   }
 }
 
-class VisualTracer() extends utils.EnableTrace[TraceLog] {
+class VisualTracer() extends EnableTrace[TraceLog] {
   import VisualTracer._
   import TraceLog._
 
@@ -118,11 +118,11 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
     }
   }
 
-  def traceIf(cond: Boolean)(exprs: TraceLog*): Unit =  macro utils.VisualTraceMacros.runIfEnabledWithCondition[TraceLog]
+  def traceIf(cond: Boolean)(exprs: TraceLog*): Unit =  macro VisualTraceMacros.runIfEnabledWithCondition[TraceLog]
 
-  def trace(exprs: TraceLog*): Unit = macro utils.VisualTraceMacros.runIfEnabled[TraceLog]
+  def trace(exprs: TraceLog*): Unit = macro VisualTraceMacros.runIfEnabled[TraceLog]
 
-  def ifTrace(body: Unit): Unit = macro utils.VisualTraceMacros.sideEffectIfEnabled[TraceLog]
+  def ifTrace(body: Unit): Unit = macro VisualTraceMacros.sideEffectIfEnabled[TraceLog]
 
   def formatTrace(trace: TraceLog): Option[Box] = {
     trace match {
@@ -132,7 +132,7 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
       case SetPageGeometries(pgs) => "SetPageGeometries".box.some
       case ShowZone(zone)         => "ShowZone".box.some
       case All(ts)                => ("all" besideS vjoins()(ts.map(formatTrace(_)).flatten)).some
-      case ShowLabel(l)           => l.toString.box.some
+      // case ShowLabel(l)           => l.toString.box.some
       // case ShowComponent(c)       => c.toString.box.some
       case Show(targetRegions)    => vjoins()(targetRegions.map(_.toString.box)).some
       case Link(ts)               => hjoins(sep=" ")(ts.map(formatTrace(_)).flatten).some

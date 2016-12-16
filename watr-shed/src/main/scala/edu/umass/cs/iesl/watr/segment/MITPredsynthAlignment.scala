@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
+import ComponentOperations._
 
 import scalaz.@@
 import TypeTags._
@@ -10,9 +11,13 @@ import scala.collection.mutable
 import watrmarks.{StandardLabels => LB}
 
 import predsynth._
-import spindex.ComponentOperations._
-import spindex.EnrichGeometricFigures._
 import utils.SlicingAndDicing._
+
+import geometry._
+import GeometricFigure._
+import EnrichGeometricFigures._
+import ComponentTypeEnrichments._
+
 
 object MITAlignPredsynth {
   private[this] val log = org.log4s.getLogger

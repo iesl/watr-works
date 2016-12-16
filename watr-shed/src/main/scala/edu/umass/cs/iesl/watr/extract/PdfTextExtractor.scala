@@ -8,7 +8,7 @@ import _root_.com.itextpdf
 import itextpdf.kernel.pdf._
 
 import utils.IdGenerator
-import spindex._
+import geometry._
 import GeometricFigure._
 import TypeTags._
 import scala.collection.mutable
