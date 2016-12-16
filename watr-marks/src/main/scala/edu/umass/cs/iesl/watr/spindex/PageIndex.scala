@@ -10,8 +10,8 @@ import scalaz.@@
 import watrmarks.{StandardLabels => LB}
 
 import geometry._
-import GeometricFigure._
-import EnrichGeometricFigures._
+// import GeometricFigure._
+// import EnrichGeometricFigures._
 
 // One or more indexes over a given page geometry, along with label maps
 case class PageIndex(

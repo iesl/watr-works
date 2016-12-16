@@ -5,8 +5,8 @@ import java.net.URI
 import scala.collection.mutable
 
 import geometry._
-import GeometricFigure._
-import EnrichGeometricFigures._
+// import GeometricFigure._
+// import EnrichGeometricFigures._
 
 import watrmarks._
 import TypeTags._

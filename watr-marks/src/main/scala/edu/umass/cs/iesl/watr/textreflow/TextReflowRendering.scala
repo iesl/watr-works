@@ -1,14 +1,9 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-import geometry._
-
-import textboxing.{TextBoxing => TB}, TB._
-
-
 object TextReflowRendering {
   import TextReflowF._
-  import watrmarks.{StandardLabels => LB, _}
+  import watrmarks.{StandardLabels => LB}
 
   def escapeLineFormatting: TextReflowT => TextReflowT = {
     case l @ Labeled (labels, a)     =>

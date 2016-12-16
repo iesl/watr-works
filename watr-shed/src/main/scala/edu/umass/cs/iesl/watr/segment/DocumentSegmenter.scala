@@ -16,7 +16,6 @@ import textboxing.{TextBoxing => TB}, TB._
 import geometry._
 import GeometricFigure._
 import EnrichGeometricFigures._
-import ComponentTypeEnrichments._
 
 import ComponentOperations._
 

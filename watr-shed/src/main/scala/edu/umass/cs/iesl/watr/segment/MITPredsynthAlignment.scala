@@ -14,9 +14,9 @@ import predsynth._
 import utils.SlicingAndDicing._
 
 import geometry._
-import GeometricFigure._
+// import GeometricFigure._
 import EnrichGeometricFigures._
-import ComponentTypeEnrichments._
+// import ComponentTypeEnrichments._
 
 
 object MITAlignPredsynth {

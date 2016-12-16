@@ -14,8 +14,6 @@ import watrmarks._
 import TextReflowF._
 
 import geometry._
-import GeometricFigure._
-import EnrichGeometricFigures._
 
 trait ArbitraryTextReflows {
   import Arbitrary._
