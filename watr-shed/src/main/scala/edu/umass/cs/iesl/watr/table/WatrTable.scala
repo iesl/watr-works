@@ -13,6 +13,7 @@ import spindex._
 // import textreflow.TextReflowRendering._
 // import java.net.URI
 import geometry._
+// import apps._
 
 // import GeometricFigure._
 // import EnrichGeometricFigures._
@@ -341,17 +342,18 @@ object ShellCommands {
 
     def segment(): Option[DocumentSegmenter] = {
 
-      val rootDirectory = thisCorpusEntry.corpus.corpusRoot
-      val entryDescriptor = thisCorpusEntry.entryDescriptor
+      // val rootDirectory = thisCorpusEntry.corpus.corpusRoot
+      // val entryDescriptor = thisCorpusEntry.entryDescriptor
 
-      val conf = extract.AppConfig(
-        corpusRoot = rootDirectory.toIO.some,
-        inputEntryDescriptor = entryDescriptor.some,
-        action = "docseg".some,
-        force = true
-      )
+      // val conf = extract.AppConfig(
+      //   corpusRoot = rootDirectory.toIO.some,
+      //   inputEntryDescriptor = entryDescriptor.some,
+      //   action = "docseg".some,
+      //   force = true
+      // )
 
-      extract.Works.segmentDocument(conf)
+      // extract.Works.segmentDocument(conf)
+      ???
     }
 
   }

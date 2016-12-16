@@ -1,5 +1,7 @@
 package edu.umass.cs.iesl.watr
-package extract
+package apps
+
+import extract._
 
 import ammonite.{ops => fs}, fs._
 import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir

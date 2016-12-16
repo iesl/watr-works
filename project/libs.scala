@@ -54,8 +54,8 @@ object TestLibs extends LibVersions {
 
 object LogLibs extends LibVersions {
   val logback = Seq(
-    "org.log4s"      %% "log4s"            % "1.3.3",
-    "ch.qos.logback"  % "logback-classic"  % "1.1.7",
+    "org.log4s"      %% "log4s"            % "1.3.4",
+    "ch.qos.logback"  % "logback-classic"  % "1.1.8",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
     "org.slf4j"       % "jcl-over-slf4j"   % logbackVersion
@@ -77,7 +77,7 @@ object CommonLibs extends LibVersions {
   val scalazCore       = "org.scalaz"              %% "scalaz-core"      % scalazVersion
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   val scalatags        = "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion
-  val ammonite         = "com.lihaoyi"              % "ammonite"         % "0.8.0" cross CrossVersion.full
+  val ammonite         = "com.lihaoyi"              % "ammonite"         % "0.8.1" cross CrossVersion.full
   val fastparse        = "com.lihaoyi"             %% "fastparse"        % "0.4.2"
   val sourcecode       = "com.lihaoyi"             %% "sourcecode"       % "0.1.3"
   val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.10"

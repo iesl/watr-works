@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
+import geometry._
 import ComponentOperations._
 import GeometricFigure._
 

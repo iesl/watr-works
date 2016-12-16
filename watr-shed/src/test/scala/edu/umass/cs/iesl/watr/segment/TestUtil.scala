@@ -4,8 +4,9 @@ package segment
 import java.net.URL
 import org.scalatest._
 import scalaz.@@
-import spindex._
+// import spindex._
 import TypeTags._
+import geometry._
 import GeometricFigure._
 import EnrichGeometricFigures._
 import ammonite.{ops => fs}
