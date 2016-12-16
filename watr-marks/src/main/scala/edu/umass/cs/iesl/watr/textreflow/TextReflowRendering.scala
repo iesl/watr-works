@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-import spindex._
+import geometry._
 
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -30,86 +30,86 @@ object TextReflowRendering {
     case CachedText((a, attr), text)     => text
   }
 
-  object VisualLine {
+  // object VisualLine {
 
-    def escapeString(s: TextReflow, subs: Seq[(Char, String)]): TextReflow = {
-      ???
-    }
+  //   def escapeString(s: TextReflow, subs: Seq[(Char, String)]): TextReflow = {
+  //     ???
+  //   }
 
-    def escapeTex(s: TextReflow): TextReflow = {
-      val subs = Seq(
-        ('_' -> "\\_"),
-        ('^' -> "\\^"),
-        ('{' -> "\\{"),
-        ('}' -> "\\}")
-      )
-      escapeString(s, subs)
-    }
+  //   def escapeTex(s: TextReflow): TextReflow = {
+  //     val subs = Seq(
+  //       ('_' -> "\\_"),
+  //       ('^' -> "\\^"),
+  //       ('{' -> "\\{"),
+  //       ('}' -> "\\}")
+  //     )
+  //     escapeString(s, subs)
+  //   }
 
-    def escapeJson(s: TextReflow): TextReflow = {
-      val subs = Seq(
-        ('"' -> "\\\""),
-        ('\\' -> "\\\\")
-      )
-      escapeString(s, subs)
-    }
+  //   def escapeJson(s: TextReflow): TextReflow = {
+  //     val subs = Seq(
+  //       ('"' -> "\\\""),
+  //       ('\\' -> "\\\\")
+  //     )
+  //     escapeString(s, subs)
+  //   }
 
-    def getDescendantLabels(cc: Component): Set[Label] = {
-      cc.getLabels ++ (
-        cc.getDescendants(LB.TextSpan)
-          .map(_.getLabels)
-          .reduce(_ ++ _)
-      )
-    }
+  //   def getDescendantLabels(cc: Component): Set[Label] = {
+  //     cc.getLabels ++ (
+  //       cc.getDescendants(LB.TextSpan)
+  //         .map(_.getLabels)
+  //         .reduce(_ ++ _)
+  //     )
+  //   }
 
-    def hasTex(cc: Component): Boolean = {
-      val lls = getDescendantLabels(cc)
-      !(lls intersect Set(LB.Sup, LB.Sub)).isEmpty
-    }
+  //   def hasTex(cc: Component): Boolean = {
+  //     val lls = getDescendantLabels(cc)
+  //     !(lls intersect Set(LB.Sup, LB.Sub)).isEmpty
+  //   }
 
-    def childSpansOrAtoms(cc: Component): Seq[Component] = {
-      if (cc.hasChildren(LB.TextSpan)) {
-        cc.getChildren(LB.TextSpan)
-      } else {
-        cc.queryAtoms()
-      }
-    }
+  //   def childSpansOrAtoms(cc: Component): Seq[Component] = {
+  //     if (cc.hasChildren(LB.TextSpan)) {
+  //       cc.getChildren(LB.TextSpan)
+  //     } else {
+  //       cc.queryAtoms()
+  //     }
+  //   }
 
-    def hasLabel(cc: Component, l: Label) = cc.getLabels.contains(l)
-    def isSup(cc: Component) = hasLabel(cc, LB.Sup)
-    def isSub(cc: Component) = hasLabel(cc, LB.Sub)
-    // def isToken(cc: Component) = hasLabel(cc, LB.Token)
-    def isTokenized(cc: Component) = hasLabel(cc, LB.Tokenized)
+  //   def hasLabel(cc: Component, l: Label) = cc.getLabels.contains(l)
+  //   def isSup(cc: Component) = hasLabel(cc, LB.Sup)
+  //   def isSub(cc: Component) = hasLabel(cc, LB.Sub)
+  //   // def isToken(cc: Component) = hasLabel(cc, LB.Token)
+  //   def isTokenized(cc: Component) = hasLabel(cc, LB.Tokenized)
 
-    def surroundCC(cc: Component, b: TextReflow): TextReflow = {
-      if (isSup(cc)) {
-        bracket("^{", "}", b)
-      }
-      else if (isSub(cc)) {
-        bracket("_{", "}", b)
-      }
-      else b
-    }
-  }
-
-
-  object PageAtom {
-    import EnrichGeometricFigures._
-    import utils.EnrichNumerics._
+  //   def surroundCC(cc: Component, b: TextReflow): TextReflow = {
+  //     if (isSup(cc)) {
+  //       bracket("^{", "}", b)
+  //     }
+  //     else if (isSub(cc)) {
+  //       bracket("_{", "}", b)
+  //     }
+  //     else b
+  //   }
+  // }
 
 
-    def boundsBox(c: Component): TB.Box = {
-      vjoin()(
-        c.chars.box,
-        vcat(center1)(Seq(
-          c.bounds.top.pp,
-          c.bounds.left.prettyPrint +| c.bounds.right.prettyPrint,
-          c.bounds.bottom.prettyPrint
-        )),
-        s"(w=${c.bounds.width.prettyPrint}, ctr:${c.bounds.toCenterPoint})"
-      )
-    }
+  // object PageAtom {
+  //   import EnrichGeometricFigures._
+  //   import utils.EnrichNumerics._
 
-  }
+
+  //   def boundsBox(c: Component): TB.Box = {
+  //     vjoin()(
+  //       c.chars.box,
+  //       vcat(center1)(Seq(
+  //         c.bounds.top.pp,
+  //         c.bounds.left.prettyPrint +| c.bounds.right.prettyPrint,
+  //         c.bounds.bottom.prettyPrint
+  //       )),
+  //       s"(w=${c.bounds.width.prettyPrint}, ctr:${c.bounds.toCenterPoint})"
+  //     )
+  //   }
+
+  // }
 
 }

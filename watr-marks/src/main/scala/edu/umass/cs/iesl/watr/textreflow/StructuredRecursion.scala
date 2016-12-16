@@ -4,9 +4,6 @@ package textreflow
 import scalaz._ , Scalaz._
 
 import matryoshka._
-// import matryoshka.data._
-// import matryoshka.implicits._
-
 trait StructuredRecursion {
 
   import patterns.EnvT

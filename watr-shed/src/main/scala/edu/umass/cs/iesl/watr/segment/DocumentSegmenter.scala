@@ -509,7 +509,7 @@ class DocumentSegmenter(
       shortLine <- lineBin.splitOnPairs({ (ch1, ch2) =>
         val largeIdGap = ch2.id.unwrap - ch1.id.unwrap > 10
         if (largeIdGap) {
-          vtrace.trace("splitting chars" withTrace link(showComponent(ch1), showComponent(ch2)))
+          // vtrace.trace("splitting chars" withTrace link(showComponent(ch1), showComponent(ch2)))
         }
         largeIdGap
       })

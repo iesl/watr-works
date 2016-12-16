@@ -7,8 +7,9 @@ import net.sf.jsi.rtree.RTree
 import scala.collection.mutable
 
 import TypeTags._
-import EnrichGeometricFigures._
+import geometry._
 import GeometricFigure._
+import EnrichGeometricFigures._
 
 
 trait SpatialIndexable[T] {

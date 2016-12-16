@@ -1,14 +1,13 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-import spindex._
+import geometry._
 import play.api.libs.json._
 import Json._
 import watrmarks.Label
 
 trait TextReflowJsonFormats extends ComponentDataTypeFormats {
   import play.api.libs.json._
-  import spindex._
   import TextReflowF._
   import matryoshka._
   import matryoshka.data._

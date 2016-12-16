@@ -2,12 +2,13 @@ package edu.umass.cs.iesl.watr
 package predsynth
 
 import TypeTags._
-import edu.umass.cs.iesl.watr.spindex.GeometricFigure.Point
 import scalaz.@@
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
 import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
+import geometry._
+import GeometricFigure.Point
 
 trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats {
   private[this] val log = org.log4s.getLogger

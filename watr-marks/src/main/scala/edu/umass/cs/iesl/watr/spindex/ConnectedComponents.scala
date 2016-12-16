@@ -4,34 +4,20 @@ package spindex
 import scalaz.@@
 import watrmarks._
 
-import EnrichGeometricFigures._
+import geometry._
 import GeometricFigure._
+import EnrichGeometricFigures._
 
 import TypeTags._
 import watrmarks.{StandardLabels => LB}
 import scalaz.Tree
+import scala.collection.mutable
 
-/*
-
- Connected components represent a (rectangular) query against a spatial index
-
- PageAtoms are the smallest rectangular blocks extracted from PDFs.
- AtomicComponent is the query that selects a single PageAtom
- RegionComponent is the query that selects everything within its boundary (whitespace and/or AtomicComponent)
-
-
- child/descendant methods on Component should go away, as there is no strict hierarchical structure to CCs
-
- Instead of child/desc methods, we introduce query types, which select everything within a given region,
-   filtered by predicates, including labels on regions, and query modifiers such as "contains|intersects|isInside|etc.."
-
-
- Ordering of components within a region (e.g., char/word ordering in a visual line, or line ordering within text blocks),
- is a function of the containing component, e.g., a text block region imposes an ordering on all contained line regions, with
- a vertical increasing Y ordering (implicit), or a link to an explicit ordering
-
- */
-
+// TODO move and/or delete this
+case class BioNode(
+  component: Component,
+  pins: mutable.Set[BioPin] =  mutable.Set()
+)
 
 sealed trait Component {
   def id: Int@@ComponentID
@@ -128,12 +114,12 @@ sealed trait Component {
   import utils.VisualTracer._
 
   def addLabel(l: Label): Component = {
-    vtrace.trace("addLabel" withTrace link(showComponent(this), showLabel(l)))
+    // vtrace.trace("addLabel" withTrace link(showComponent(this), showLabel(l)))
     zoneIndex.addLabel(this, l)
   }
 
   def removeLabel(l: Label): Component = {
-    vtrace.trace("removeLabel())" withTrace link(showComponent(this), showLabel(l)))
+    // vtrace.trace("removeLabel())" withTrace link(showComponent(this), showLabel(l)))
     zoneIndex.removeLabel(this, l)
   }
 

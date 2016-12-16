@@ -3,9 +3,6 @@ package textreflow
 
 import scalaz._, Scalaz._
 
-
-import spindex._
-
 import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
@@ -14,6 +11,7 @@ import matryoshka.patterns.EnvT
 import utils.EnrichNumerics._
 import scala.{Range => _}
 
+import geometry._
 
 trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._

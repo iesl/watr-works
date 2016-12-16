@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package geometry 
 
 import scalaz._
 import Scalaz._

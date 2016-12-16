@@ -3,7 +3,7 @@ package utils
 
 import scala.language.experimental.macros
 
-import spindex._
+import geometry._
 import watrmarks.Label
 
 import textboxing.{TextBoxing => TB}
@@ -18,7 +18,7 @@ object TraceLog {
   case class SetPageGeometries(b: Seq[PageGeometry]) extends TraceLog
   case class Show(s: Seq[TargetRegion])              extends TraceLog { override val toString = s"""${s.map(_.toString).mkString(",")}"""}
   case class ShowZone(s: Zone)                       extends TraceLog { override val toString = s"""${s}"""}
-  case class ShowComponent(s: Component)             extends TraceLog { override val toString = s"""${s}"""}
+  // case class ShowComponent(s: Component)             extends TraceLog { override val toString = s"""${s}"""}
   case class ShowLabel(l:Label)                      extends TraceLog { override val toString = s"""${l}"""}
   case class FocusOn(s: TargetRegion)                extends TraceLog { override val toString = s"""focus: ${s}"""}
   case class Indicate(figure: TargetFigure)          extends TraceLog { override val toString = s"""indicate: ${figure}"""}
@@ -55,8 +55,8 @@ object VisualTracer {
   def showRegion(s: TargetRegion): TraceLog             = {Show(Seq(s))}
   def showRegions(s: Seq[TargetRegion]): TraceLog       = {Show(s)}
   def showZone(s: Zone): TraceLog                       = {ShowZone(s)}
-  def showComponent(s: Component): TraceLog             = {ShowComponent(s)}
-  def showComponents(cs: Seq[Component]): TraceLog      = {all(cs.map(ShowComponent(_)))}
+  // def showComponent(s: Component): TraceLog             = {ShowComponent(s)}
+  // def showComponents(cs: Seq[Component]): TraceLog      = {all(cs.map(ShowComponent(_)))}
   def showLabel(s: Label): TraceLog                     = {ShowLabel(s)}
   def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
   def indicate(s: TargetFigure): TraceLog               = {Indicate(s)}
@@ -133,7 +133,7 @@ class VisualTracer() extends utils.EnableTrace[TraceLog] {
       case ShowZone(zone)         => "ShowZone".box.some
       case All(ts)                => ("all" besideS vjoins()(ts.map(formatTrace(_)).flatten)).some
       case ShowLabel(l)           => l.toString.box.some
-      case ShowComponent(c)       => c.toString.box.some
+      // case ShowComponent(c)       => c.toString.box.some
       case Show(targetRegions)    => vjoins()(targetRegions.map(_.toString.box)).some
       case Link(ts)               => hjoins(sep=" ")(ts.map(formatTrace(_)).flatten).some
       case Message(m)             => ("-" besideS m).some

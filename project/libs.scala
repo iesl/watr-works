@@ -18,6 +18,8 @@ trait LibVersions {
   val scrimageVersion     = "2.1.8"
   val monocleVersion      = "1.2.2"
   val aspectjVersion      = "1.8.9"
+  val acyclicVersion      = "0.1.5"
+
 }
 
 object SensibleLib extends LibVersions {
@@ -28,8 +30,8 @@ object SensibleLib extends LibVersions {
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       "org.scala-lang" % "scalap" % scalaVersion.value,
       "org.scala-lang.modules" %% "scala-xml" % scalaModulesVersion,
-      "org.scala-lang.modules" %% "scala-parser-combinators" % scalaModulesVersion,
-      "org.scalamacros" %% "quasiquotes" % quasiquotesVersion
+      "org.scala-lang.modules" %% "scala-parser-combinators" % scalaModulesVersion
+      // "org.scalamacros" %% "quasiquotes" % quasiquotesVersion
     )
   )
 }
@@ -83,6 +85,7 @@ object CommonLibs extends LibVersions {
   val machinist        = "org.typelevel"           %% "machinist"        % "0.6.1"
   val shapeless        = "com.chuusai"             %% "shapeless"        % "2.3.2"
   val aspectJ          = "org.aspectj"              % "aspectjweaver"    % aspectjVersion
+  val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
 
   val matryoshkaCore   = "com.slamdata"            %% "matryoshka-core"  % "0.11.1"
   // Needed for matryoshka, not needed when I properly build it (rather than putting in ./lib dir)

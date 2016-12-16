@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package geometry
 
 import net.sf.jsi
 import scalaz.@@
@@ -58,7 +58,6 @@ object GeometricFigure {
   implicit val EqualPoint: Equal[Point] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
-
 }
 
 
@@ -105,7 +104,7 @@ object EnrichGeometricFigures {
 
   }
 
-  implicit class RicherFigure(val figure: spindex.GeometricFigure) extends AnyVal {
+  implicit class RicherFigure(val figure: GeometricFigure) extends AnyVal {
 
     def targetTo(page: Int@@PageID): TargetFigure = {
       TargetFigure(
@@ -374,17 +373,17 @@ object EnrichGeometricFigures {
     }
   }
 
-  def charBoxesBounds(charBoxes: Seq[AtomicComponent]): LTBounds = {
-    if (charBoxes.isEmpty) {
-      LTBounds(0, 0, 0, 0)
-    } else {
-      val cbs = charBoxes.sortBy(_.bounds.left)
-      val top = cbs.map(_.bounds.top).min
-      val bottom = cbs.map(_.bounds.bottom).max
-      val l=cbs.head.bounds.left
-      val r=cbs.last.bounds.right
+  // def charBoxesBounds(charBoxes: Seq[AtomicComponent]): LTBounds = {
+  //   if (charBoxes.isEmpty) {
+  //     LTBounds(0, 0, 0, 0)
+  //   } else {
+  //     val cbs = charBoxes.sortBy(_.bounds.left)
+  //     val top = cbs.map(_.bounds.top).min
+  //     val bottom = cbs.map(_.bounds.bottom).max
+  //     val l=cbs.head.bounds.left
+  //     val r=cbs.last.bounds.right
 
-      LTBounds(l, top, r-l, bottom-top)
-    }
-  }
+  //     LTBounds(l, top, r-l, bottom-top)
+  //   }
+  // }
 }

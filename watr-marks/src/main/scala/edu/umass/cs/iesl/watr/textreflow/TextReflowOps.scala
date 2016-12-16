@@ -1,10 +1,9 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-
 import scalaz._, Scalaz._
 
-import spindex._
+import geometry._
 import watrmarks._
 import textboxing.{TextBoxing => TB}
 
@@ -258,9 +257,9 @@ trait TextReflowFunctions extends TextReflowClipping {
 
     def intersect(other: TextReflow): TextReflow = ???
 
-    def intersectPage(other: PageIndex): Seq[Component] = {
-      ???
-    }
+    // def intersectPage(other: PageIndex): Seq[Component] = {
+    //   ???
+    // }
 
     def clipToTargetRegion(targetRegion: TargetRegion): Seq[(TextReflow, RangeInt)] = {
       clipReflowToTargetRegion(theReflow, targetRegion)

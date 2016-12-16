@@ -20,10 +20,9 @@ val commonSettings = SensibleProject.settings ++
       Lib.scalatags,
       Lib.ammonite,
       Lib.playJson,
-      Lib.shapeless
+      Lib.shapeless,
+      Lib.acyclic
       // Lib.sourcecode,
-      // compilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
-      // compilerPlugin("org.spire-math" %% "kind-projector"  % "0.9.2")
       // Not needed in watrmarks
       // Lib.scopt,
       // Lib.scalaAsync,

@@ -5,16 +5,16 @@ import watrmarks.{StandardLabels => LB, Label}
 import utils.Histogram, Histogram._
 import textboxing.{TextBoxing => TB}, TB._
 
-import EnrichGeometricFigures._
 import utils.SlicingAndDicing._
 import utils.{CompassDirection => Compass}
 import utils.VisualTracer, VisualTracer._
-import spindex.GeometricFigure._
 import scala.collection.mutable
-// import ComponentRendering.PageAtom
 import utils.EnrichNumerics._
 import TextReflowConversion._
 
+import geometry._
+import GeometricFigure._
+import EnrichGeometricFigures._
 
 object ComponentOperations {
   import textreflow._

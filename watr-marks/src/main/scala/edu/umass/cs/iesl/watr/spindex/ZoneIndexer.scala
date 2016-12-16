@@ -5,6 +5,10 @@ import edu.umass.cs.iesl.watr.utils.VisualTracer
 import java.net.URI
 import scala.collection.mutable
 
+import geometry._
+import GeometricFigure._
+import EnrichGeometricFigures._
+
 import watrmarks._
 import TypeTags._
 import scalaz.@@
@@ -12,7 +16,6 @@ import ComponentTypeEnrichments._
 import utils.IdGenerator
 
 import VisualTracer._
-// import watrmarks.{StandardLabels => LB}
 import predsynth._
 import textreflow._
 
@@ -168,7 +171,7 @@ class ZoneIndexer(
   def getPageIndex(pageId: Int@@PageID) = pageInfos(pageId)
 
   def removeComponent(c: Component): Unit = {
-    vtrace.trace("removeComponent" withTrace showComponent(c))
+    // vtrace.trace("removeComponent" withTrace showComponent(c))
     val pinfo = getPageIndex(getPageForComponent(c))
     pinfo.componentToLabels -= c.id
     pinfo.componentIndex.remove(c)
@@ -189,7 +192,7 @@ class ZoneIndexer(
 
       val region = createRegionComponent(totalRegion, role)
 
-      vtrace.trace(s"Label Region as ${role}" withTrace showComponent(region))
+      // vtrace.trace(s"Label Region as ${role}" withTrace showComponent(region))
 
       Some(region)
     }
@@ -201,7 +204,7 @@ class ZoneIndexer(
     val region = RegionComponent(componentIdGen.nextId, role, tr, this)
     addComponent(region)
 
-    vtrace.trace("create RegionComponent" withTrace showComponent(region))
+    // vtrace.trace("create RegionComponent" withTrace showComponent(region))
     region
   }
 

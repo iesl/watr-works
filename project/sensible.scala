@@ -6,7 +6,7 @@ import Keys._
 // import com.lihaoyi.workbench.Plugin._
 
 
-object SensibleProject {
+object SensibleProject extends LibVersions {
 
   def noColorIfEmacs = {
     // WORKAROUND: https://github.com/scalatest/scalatest/issues/511
@@ -14,11 +14,10 @@ object SensibleProject {
       Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oWF"))
     else
       Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oF"))
-    // testOptions ++= noColorIfEmacs
   }
 
   lazy val settings =  Seq(
-    // addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.5"),
+    addCompilerPlugin("com.lihaoyi" %% "acyclic" % acyclicVersion),
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.2"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full),
     addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)

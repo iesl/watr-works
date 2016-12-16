@@ -141,8 +141,4 @@ case class BioDictionary(
   def get(s: Char): Option[Label] = byChar.get(s)
 }
 
-case class BioNode(
-  component: Component,
-  pins: mutable.Set[BioPin] =  mutable.Set()
-)
 

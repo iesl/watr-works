@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-// import edu.umass.cs.iesl.watr.utils.VisualTracer
 import scala.collection.mutable
 
 import watrmarks._
@@ -9,6 +8,10 @@ import TypeTags._
 import scalaz.@@
 
 import watrmarks.{StandardLabels => LB}
+
+import geometry._
+import GeometricFigure._
+import EnrichGeometricFigures._
 
 // One or more indexes over a given page geometry, along with label maps
 case class PageIndex(
