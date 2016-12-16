@@ -8,8 +8,6 @@ import TypeTags._
 
 import scala.collection.mutable
 import watrmarks.{StandardLabels => LB}
-// import textreflow.TextReflowRendering._
-// import TextReflowConversion._
 
 import predsynth._
 import spindex.ComponentOperations._
@@ -17,59 +15,44 @@ import spindex.EnrichGeometricFigures._
 import utils.SlicingAndDicing._
 
 object MITAlignPredsynth {
+  private[this] val log = org.log4s.getLogger
 
   import utils.IdGenerator
   import textreflow._
 
-  def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Unit = {
-    println("aligning predsynth paper ")
+  def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Seq[AlignedGroup] = {
+    log.debug("aligning predsynth paper ")
 
-    val paperTextReflows = for {
-      pageId <- zoneIndexer.getPages
-      pageTextBlocks <- zoneIndexer.getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
-      textBlockCC <- pageTextBlocks.getChildren(LB.TextBlock)
-      blockTextReflow <- zoneIndexer.getTextReflow(textBlockCC.id)
-    } yield {
-      blockTextReflow
-    }
+    val paperTextReflows = zoneIndexer.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
 
 
-
-    println("creating one line from entire paper")
+    log.debug("creating one line from entire paper")
     val oneLineReflow = paperTextReflows.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
 
     val oneLineText = oneLineReflow.toText
 
+    log.debug("Aligning contexts")
 
-    println("aligning contexts")
-
-    // val contexts: Seq[Either[(RawTextContext, String), (RawTextContext, (Int, Int))]]
-    val contexts: Seq[AlignedGroup]
-      = PredsynthLoad.alignContexts(paper, oneLineText)
+    val alignedGroups: Seq[AlignedGroup] = PredsynthLoad.alignContexts(paper, oneLineText)
 
     val mongoIdToClusterId = mutable.HashMap[String, Int@@ClusterID]()
     val rawTextMentionsById = mutable.HashMap[Int@@MentionID, RawTextContext]()
-
     val relations = mutable.ArrayBuffer[Relation.Record]()
     val props = mutable.ArrayBuffer[Prop.PropRec]()
 
-
     val relationIds = IdGenerator[RelationID]()
-    // val mentionIds = IdGenerator[MentionID]()
     val clusterIds = IdGenerator[ClusterID]()
 
-    contexts.foreach({ alignedGroup: AlignedGroup =>
+
+    alignedGroups.foreach({ alignedGroup: AlignedGroup =>
       val groupNumber = alignedGroup.textMentionGroup.groupNumber
       val id = alignedGroup.textMentionGroup.id
       val groupClusterID = clusterIds.nextId
-      println(s"aligning group ${groupClusterID}")
+      log.debug(s"aligning group w/ClusterID:${groupClusterID}")
 
       id.foreach { mongoId =>
         mongoIdToClusterId.put(mongoId, groupClusterID)
       }
-
-
-      // val groupCluster = Relation.Elem.Cluster(groupClusterID)
 
       props += Prop.PropRec(
         Identities.cluster(groupClusterID),
@@ -95,16 +78,12 @@ object MITAlignPredsynth {
       alignedGroup.alignedContexts.foreach {
         case AlignSuccess(rtc, (begin, end)) =>
 
-          val textSlice = oneLineText.slice(begin, end)
-
-          println(s"(string) text.slice(): ${textSlice}")
-
           val reflowSliceOpt = oneLineReflow.slice(begin, end)
 
           reflowSliceOpt match {
             case Some(reflowSlice) =>
               val reflowSliceText = reflowSlice.toText
-              println(s"reflow.slice(): ${reflowSliceText}")
+              log.debug(s"found mention: ${reflowSliceText}")
 
               // TODO The following should be captured by something like textReflow.intersectPages(LB.VisualLine, ..) function
               val targetRegions = reflowSlice.targetRegions
@@ -126,19 +105,16 @@ object MITAlignPredsynth {
 
               val ann = LB.Annotation(rtc.textType)
 
-              println(s"creating zone annotation on ${uniqVisualLines.length} VisualLines: ")
               // Compute the intersection of a TextReflow w/ RegionComponent
               val annotationRegions = uniqVisualLines.map{visualLine =>
                 val pageForLine = visualLine.pageId
                 val pageRegions = targetRegions.filter(_.target == visualLine.pageId)
                 // Select the span for each line that corresponds to labeled region
-                println(s"    Starting VisualLine bbox = ${visualLine.targetRegion.bbox.prettyPrint} ")
                 val intersectingLineAtoms = visualLine.queryAtoms()
                   .trimLeftRightBy({lineAtom: AtomicComponent =>
                     val intersects = pageRegions.exists(_.bbox.intersects(lineAtom.bounds));
                     !intersects
                   })
-                println(s"    Ending VisualLine bbox = ${intersectingLineAtoms.map(_.targetRegion.bbox.prettyPrint)} ")
 
                 zoneIndexer.labelRegion(intersectingLineAtoms, ann)
               }
@@ -146,6 +122,7 @@ object MITAlignPredsynth {
               val annRegions = annotationRegions.flatten.map{_.targetRegion}
               val newZone = Zone(ZoneID(0), annRegions,ann)
               val zAdded = zoneIndexer.addZone(newZone)
+
               // HACK: make zoneId==mentionId TODO document why
               val mentionId = MentionID(zAdded.id.unwrap)
 
@@ -157,20 +134,20 @@ object MITAlignPredsynth {
                 Identities.mention(mentionId)
               )
 
+              val textSlice = oneLineText.slice(begin, end)
               if (rtc.rawText.raw_text == textSlice) {
-                println(s"   > g:${groupNumber} ${id} >> ${rtc.toString()}")
+                log.debug(s"exact str match  > g:${groupNumber} ${id} >> ${rtc.toString()}")
               } else {
-                println(s"***> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${textSlice}")
+                log.debug(s"*inexact match> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${textSlice}")
               }
 
             case None =>
-              println("Error: couldn't slice textreflow")
+              log.debug("Error: couldn't slice textreflow")
           }
 
 
-        case AlignFailure(rawTextContext, message) =>
-          println(s"!!!> ${rawTextContext.toString()} ${message}")
-
+        case AlignFailure(rtc, message) =>
+          log.debug(s"!failed to align> ${rtc} ${message}")
       }
     })
 
@@ -189,11 +166,11 @@ object MITAlignPredsynth {
 
           case (None, Some(id2)) =>
             val group2 = mongoIdToClusterId(id2)
-            println(
+            log.debug(
               s"""errata: (?? `connectsTo` group:${group2})""")
           case (Some(id1), None) =>
             val group1 = mongoIdToClusterId(id1)
-            println(
+            log.debug(
               s"""(group:${group1} `connectsTo` ??)""")
           case _ =>
         }
@@ -201,6 +178,8 @@ object MITAlignPredsynth {
 
     zoneIndexer.addRelations(relations)
     zoneIndexer.addProps(props)
+
+    alignedGroups
 
   }
 

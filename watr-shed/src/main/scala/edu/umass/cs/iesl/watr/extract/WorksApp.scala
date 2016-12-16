@@ -6,9 +6,7 @@ import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
 import java.net.URI
 import java.io.{File => JFile}
 import predsynth._
-import scala.util.{Try, Failure, Success}
 import segment.DocumentSegmenter
-
 
 case class AppConfig(
   runRoot: Option[JFile] = None,
@@ -334,10 +332,12 @@ object Works extends App {
   }
 
 
-  def runPageSegmentation(documentURI: URI, pdfPath: Path, fontDirs: Seq[Dir]): Try[DocumentSegmenter] =  {
-      DocumentSegmenter
-        .createSegmenter(documentURI, pdfPath, fontDirs)
-        .map({s => s.runPageSegmentation(); s})
+  def runPageSegmentation(documentURI: URI, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
+    val segmenter = DocumentSegmenter
+      .createSegmenter(documentURI, pdfPath, fontDirs)
+
+    segmenter.runPageSegmentation()
+    segmenter
   }
 
   def writePredsynthJson(predsynthPaper: Paper, corpusEntry: CorpusEntry): Unit = {
@@ -348,16 +348,6 @@ object Works extends App {
       corpusEntry.putArtifact("predsynth.json", jsOut)
     }
   }
-
-
-  def textAlignPredsynthDB(segmenter: DocumentSegmenter, entry: Option[Paper]): Try[Unit] = {
-    Try { for {
-      predSynthPaper <- entry
-    } {
-      segment.MITAlignPredsynth.alignPredSynthPaper(segmenter.zoneIndexer, predSynthPaper)
-    }}
-  }
-
 
   // Load pre-existing docseg
   // If it contains annotation:
@@ -387,11 +377,11 @@ object Works extends App {
 
       pdfArtifact    <- corpusEntry.getPdfArtifact
       pdfPath        <- pdfArtifact.asPath
-      segmenter      <- runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
     } {
+      val segmenter = runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
       val mergedZoneIndex = segment.DocsegMerging.mergePriorDocseg(segmenter.zoneIndexer, priorDocseg)
 
-      val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex)
+      val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex, Seq())
       corpusEntry.putArtifact(docsegFile, output)
     }
 
@@ -413,18 +403,24 @@ object Works extends App {
           predsynthOutput <- processOrSkipOrForce(conf, corpusEntry, "predsynth.json")
           pdfArtifact     <- corpusEntry.getPdfArtifact
           pdfPath         <- pdfArtifact.asPath
-          segmenter       <- runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
         } {
+          val segmenter = runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
 
           rsegmenter = Some(segmenter)
 
           val entryFilename = corpusEntry.entryDescriptorRoot
 
           val paper = predsynthPapers.get(entryFilename)
-          textAlignPredsynthDB(segmenter, paper)
-          paper.foreach{ p => writePredsynthJson(p, corpusEntry) }
 
-          val output = formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer)
+          val output = paper.map({ p =>
+            val alignedGroups =
+              segment.MITAlignPredsynth.alignPredSynthPaper(segmenter.zoneIndexer, p)
+            writePredsynthJson(p, corpusEntry)
+            formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer, alignedGroups)
+          }).getOrElse(
+            formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer, Seq())
+          )
+
           corpusEntry.putArtifact(artifactOutputName, output)
         }
       } catch {

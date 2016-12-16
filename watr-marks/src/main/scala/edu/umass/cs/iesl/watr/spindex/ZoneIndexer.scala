@@ -68,6 +68,20 @@ class ZoneIndexer(
     componentToTextReflow.get(cc)
   }
 
+  // TODO: this should become the canonical way to get text reflows within a document
+  def getTextReflows(labels: Label*): Seq[TextReflow]  = {
+    import watrmarks.{StandardLabels => LB}
+
+    for {
+      pageId <- getPages
+      pageTextBlocks <- getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
+      textBlockCC <- pageTextBlocks.getChildren(LB.TextBlock)
+      blockTextReflow <- getTextReflow(textBlockCC.id)
+    } yield {
+      blockTextReflow
+    }
+  }
+
 
   def getZones(): Seq[Zone] = {
     zoneMap.values.toSeq

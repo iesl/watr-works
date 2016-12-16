@@ -112,33 +112,44 @@ case class RawTextContext(
   paper: Paper,
   rawText: RawText,
   paragaph: Paragraph,
-  begin: Int,
+  paragaphIndex: Int,
+  begins: List[Int],
   textType: String
 ) {
-  override def toString = {
-    val text = rawText.raw_text
 
-    // println(s"  >>>for ${text}, trying para l=${paragaph.text.length()}> ${paragaph.text}")
+  lazy val asString = {
+    val text = rawText.raw_text
 
     if (paragaph.text.isEmpty()){
       s"""${textType} (no context) [${text}] """
     } else {
-      val (pre, text, post) =  stringContext(15)
-      s"""${textType} :: ${pre}[${text}]${post}"""
+      val contexts = stringContexts(15)
+      if (contexts.isEmpty) {
+        s"""${textType} (no context) [${text}] """
+      } else if (contexts.length==1) {
+        val (pre, text, post) = contexts(0)
+        s"""${textType} :: ${pre}[${text}]${post}"""
+      } else {
+        val (pre, text, post) = contexts(0)
+        s"""(multiple) ${textType} :: ${pre}[${text}]${post}"""
+      }
     }
   }
 
-  def stringContext(width: Int): (String, String, String) = {
-    val text = rawText.raw_text
-    val prebegin = math.max(0, begin-width)
-    val preend = begin
-    val postbegin = begin + text.length()
-    val postend = math.min(paragaph.text.length(), postbegin+width)
+  override def toString(): String = asString
 
-    val prectx = paragaph.text.substring(prebegin, preend)
-    val postctx = paragaph.text.substring(postbegin, postend)
-    (prectx, text, postctx)
+  def stringContexts(width: Int): List[(String, String, String)] = {
+    begins.map({begin =>
+      val text = rawText.raw_text
+      val prebegin = math.max(0, begin-width)
+      val preend = begin
+      val postbegin = begin + text.length()
+      val postend = math.min(paragaph.text.length(), postbegin+width)
 
+      val prectx = paragaph.text.substring(prebegin, preend)
+      val postctx = paragaph.text.substring(postbegin, postend)
+      (prectx, text, postctx)
+    })
   }
 }
 
@@ -147,7 +158,6 @@ case class TextMentionGroup(
   id: Option[String],
   rawTextContexts: Seq[RawTextContext],
   props: Seq[PropKV]
-
 )
 
 case class Contexts(
@@ -176,12 +186,27 @@ case class AlignedGroup(
 
 
 object PredsynthLoad extends PredsynthJsonFormats {
+  private[this] val log = org.log4s.getLogger
 
-  def findMatchingParagraphs(paragraphs: Seq[Paragraph], r: RawText): Seq[(Paragraph, Int)] = {
+  def allIndices(instr: String, query: String, ioffset: Int=0): List[Int] = {
+    val i = instr.indexOf(query)
+    if (i > -1) {
+      val (_, head) = instr.splitAt(i)
+      val (_, tail) = head.splitAt(query.length())
+      i :: allIndices(tail, query, ioffset+i+query.length())
+    } else {
+      Nil
+    }
+  }
+
+  def findMatchingParagraphs(paragraphs: Seq[Paragraph], r: RawText): Seq[(Int, List[Int])] = {
     for {
-      p <- paragraphs
-      if p.text.indexOf(r.raw_text) > -1
-    } yield (p, p.text.indexOf(r.raw_text))
+      (p, paraIndex) <- paragraphs.zipWithIndex
+      indices         = allIndices(p.text, r.raw_text)
+      if indices.nonEmpty
+    } yield {
+      (paraIndex, indices)
+    }
   }
 
 
@@ -237,21 +262,47 @@ object PredsynthLoad extends PredsynthJsonFormats {
 
 
   def buildContexts(paper: Paper): Contexts = {
+    val paperParagraphs = paper.paragraphs
 
-    def findContexts(rawTexts: Seq[RawText], ct: String): Seq[RawTextContext] = for {
-      rt <- rawTexts
-      (p, i) <- matchRawTextToPara(rt, paper.paragraphs)
-    } yield RawTextContext(paper, rt, p, i, ct)
+    def findContexts(rawTexts: Seq[RawText], contextType: String): Seq[RawTextContext] =  {
+      log.debug(s"finding paragraph locations+offsets for mention type $contextType")
+      for {
+        rt <- rawTexts
+        (paraIndex, mentionOffsets) <- matchRawTextToPara(rt, paper.paragraphs)
+      } yield RawTextContext(paper, rt, paperParagraphs(paraIndex), paraIndex, mentionOffsets, contextType)
+    }
 
+    def filterToOverlappingParas(rawTextContexts: Seq[RawTextContext]*): Seq[Seq[RawTextContext]] = {
+      val nonEmptyParas = for {
+        c <- rawTextContexts
+        pis = c.map(_.paragaphIndex).toSet
+        _ = log.debug(s"""  paraIndexes: ${pis}""")
+        if pis.nonEmpty
+      } yield pis
+
+      if (nonEmptyParas.isEmpty){
+        rawTextContexts
+      } else {
+        val intersection = nonEmptyParas.reduce(_ intersect _)
+        rawTextContexts.map(_.filter(c => {
+          val x = intersection.contains(c.paragaphIndex)
+          intersection.contains(c.paragaphIndex)
+        }))
+      }
+    }
 
     val ents = for {
       (entity, groupNum) <- paper.entities.flatten.zipWithIndex
     } yield {
       // Group these and record the sha1-id:
       val id = entity._id
+
       val entities = findContexts(entity.raw_texts.flatten, "entity")
       val amounts = findContexts(entity.amounts.flatten.map(_.raw_text), "entity/amount")
       val edesc = findContexts(entity.entdescriptors.flatten.map(_.raw_text), "entity/descriptor")
+
+      val allMentions = filterToOverlappingParas(entities, amounts, edesc).flatten
+      log.debug(s"filtered all but ${allMentions.length} mentions")
 
       val relations = Seq(
         PropKV(
@@ -260,14 +311,12 @@ object PredsynthLoad extends PredsynthJsonFormats {
         )
       )
 
-      // EntityContexts(entities, amounts, edesc)
       TextMentionGroup(
         groupNum,
         entity._id,
-        entities ++ amounts ++ edesc,
+        allMentions,
         relations
       )
-
     }
 
 
@@ -280,6 +329,9 @@ object PredsynthLoad extends PredsynthJsonFormats {
       val apps = findContexts(operation.apparatuses.flatten.map(_.raw_text), "operation/apparatus")
       val conds = findContexts(operation.conditions.flatten.map(_.raw_text), "operation/condition")
 
+      val allMentions = filterToOverlappingParas(ops, apps, conds).flatten
+      log.debug(s"filtered all but ${allMentions.length} operation mentions")
+
       val props = Seq(
         PropKV(
           "hasOrder",
@@ -290,7 +342,7 @@ object PredsynthLoad extends PredsynthJsonFormats {
       TextMentionGroup(
         groupNum,
         operation._id,
-        ops ++ apps ++ conds,
+        allMentions,
         props
       )
     }
@@ -305,11 +357,11 @@ object PredsynthLoad extends PredsynthJsonFormats {
     )
   }
 
-  def matchRawTextToPara(rawText: RawText, paragraphs: Seq[Paragraph]):  Seq[(Paragraph, Int)] = {
+  def matchRawTextToPara(rawText: RawText, paragraphs: Seq[Paragraph]):  Seq[(Int, List[Int])] = {
 
-    val paras = paragraphs.map({ para =>
-      para._id -> para
-    }).toMap
+    val paras = paragraphs.zipWithIndex
+      .map(pi => (pi._1._id, pi))
+      .toMap
 
 
     val pId = rawText.paragraph_id.getOrElse { "" }
@@ -317,10 +369,14 @@ object PredsynthLoad extends PredsynthJsonFormats {
     val end = rawText.end_char_index.getOrElse { 0 }
     val rtext = rawText.raw_text.trim()
 
+    if (rtext.isEmpty()) {
+      log.warn(s"Empty raw text context ${rawText}")
+    }
+
     if (rtext.isEmpty()) Seq() else {
 
       paras.get(pId) match {
-        case Some(para) =>
+        case Some((para, paraIndex)) =>
           val tlen = para.text.length
           val exactMatch = start <= end && end <= tlen && {
             val substr = para.text.substring(start, end)
@@ -328,14 +384,22 @@ object PredsynthLoad extends PredsynthJsonFormats {
           }
 
           if (exactMatch) {
-            Seq((para, start))
+            log.debug(s"matched raw text to paragraph ${paraIndex} by exact string: $rtext")
+            Seq((paraIndex, List(start)))
           } else {
-
-            findMatchingParagraphs(paragraphs, rawText)
+            val m = findMatchingParagraphs(paragraphs, rawText)
+            val mentionCount = m.map(_._2.length).mkString(",")
+            val paraIndexes = m.map(_._1).mkString(",")
+            log.debug(s"fuzzy matched raw text to ${m.length} paragraph(s) (${paraIndexes}) w/mention counts [$mentionCount]: $rtext")
+            m
           }
 
         case None =>
-          findMatchingParagraphs(paragraphs, rawText)
+          val m = findMatchingParagraphs(paragraphs, rawText)
+          val mentionCount = m.map(_._2.length).mkString(",")
+          val paraIndexes = m.map(_._1).mkString(",")
+          log.debug(s"fuzzy matched raw text to ${m.length} paragraph(s) (${paraIndexes}) w/mention counts [$mentionCount]: $rtext")
+          m
       }
     }
   }
@@ -362,7 +426,7 @@ object PredsynthLoad extends PredsynthJsonFormats {
         val range = (begin.toInt, end.toInt)
         Right(range)
       } else {
-        Left("No unique match")
+        Left(s"No unique match for pattern '${pattern}'")
       }
     } catch {
       case s: ShelloutException =>
@@ -391,138 +455,92 @@ object PredsynthLoad extends PredsynthJsonFormats {
     s.getBytes.length
   }
 
-  def findPatternContexts(patterns: Seq[(String, String, String)], text: String): Seq[Either[String, (Int, Int)]] = {
-    println(s"running agrep with ${patterns.length} patterns")
-
+  def writeAgrepTmpfile(text: String): Path = {
     // write text to a tmp file
     val txtPath = pwd / "agrep.tmp"
     if (exists(txtPath)) rm(txtPath)
-
     write(txtPath, text)
+    txtPath
+  }
 
-    patterns.map{ case (strPre, str, strPost) =>
+  def findPatternContext(pattern: (String, String, String), txtPath: Path, text:String): Either[String, (Int, Int)] = {
+    val (strPre, str, strPost) = pattern
+    val prePatt = s"$strPre$str"
+    val postPatt = s"$str$strPost"
+    val patts = s"pre: $prePatt / post: $postPatt"
 
-      // val res = runAGrep(s"$strPre$str$strPost", txtPath)
+    log.debug(s"grepping for ${patts}")
 
-      // res match {
-      //   case Right((bOffBegin, bOffEnd)) =>
-
-      //     val strPreByteLen = strByteLen(strPre)
-      //     val strMidByteLen = strByteLen(str)
-
-      //     val midStrBegin = bOffBegin + strPreByteLen
-      //     val midStrEnd = midStrBegin + strMidByteLen
-
-      //     val charBegin = byteOffsetToCharOffset(text, midStrBegin)
-      //     val charEnd = byteOffsetToCharOffset(text, midStrEnd)
-
-      //     val inContext = s"""${strPre} [${str}] ${strPost}"""
-      //     println(s"""findPatternContexts: ${inContext}  """)
-      //     println(s"    ==> text.slice($charBegin, $charEnd): '${text.slice(charBegin, charEnd)}'          ${text.slice(charBegin-10, charEnd+10)}")
-
-      //     Right((charBegin, charEnd))
-
-      //   case _ =>
-      //     Left("Could not match ")
-      // }
-
-      val resBegin = runAGrep(s"$str$strPost", txtPath)
-      val resEnd = runAGrep(s"$strPre$str", txtPath)
+    val resBegin = runAGrep(postPatt, txtPath)
+    val resEnd = runAGrep(prePatt, txtPath)
 
 
-      (resBegin,  resEnd) match {
-        case (Right(rbegin), Right(rend)) =>
-          val charBegin = byteOffsetToCharOffset(text, rbegin._1)
-          var charEnd = byteOffsetToCharOffset(text, rend._2)
+    (resBegin,  resEnd) match {
+      case (Right(rbegin), Right(rend)) =>
+        val charBegin = byteOffsetToCharOffset(text, rbegin._1)
+        var charEnd = byteOffsetToCharOffset(text, rend._2)
 
-          if ( charEnd <= charBegin || charEnd - charBegin > str.length()*2) {
-            // found context is way too long, try again...
-            charEnd = charBegin + str.length()
-          }
+        val beginEnd = s"($charBegin, $charEnd)"
+        if ( charEnd <= charBegin || charEnd - charBegin > str.length()*2) {
+          // found context is way too long, try again...
+          charEnd = charBegin + str.length()
+          val beginEndAdj = s"($charBegin, $charEnd)"
 
-          val inContext = s"""${strPre}[${str}]${strPost}"""
-          println(s"""findPatternContexts:    ${inContext}  byte ranges = ${rbegin} -> ${rend} """)
-          println(s"    ==> text.slice($charBegin, $charEnd):    '${text.slice(charBegin, charEnd)}'")
+          log.debug(s"   adjusting match (begin,end) $beginEnd to $beginEndAdj")
+        }
 
-          Right((charBegin, charEnd))
+        log.debug(s"    matched '${text.slice(charBegin, charEnd)}'")
 
-        case _ =>
-          Left("Could not match ")
-      }
+        Right((charBegin, charEnd))
+
+      case _ =>
+        log.debug(s"   no match")
+        Left(s"Could not match ${patts} ")
+
     }
   }
 
-
   def alignContexts(paper: Paper, oneLine: String): Seq[AlignedGroup] = {
+
+    def mkSearchPatterns(contexts: Seq[RawTextContext]): Seq[(String, String, String)] = {
+      for {
+        textContext <- contexts
+        tc <- textContext.stringContexts(15)
+      } yield tc
+    }
 
     val paperContexts = buildContexts(paper)
 
-    def mkSearchPatterns(contexts: Seq[RawTextContext]): Seq[(String, String, String)] = {
-      contexts.map { textContext =>
-        textContext.stringContext(15)
-      }
-    }
+    log.debug(s"Aligning contexts")
+    val agrepTextFile = writeAgrepTmpfile(oneLine)
 
-    paperContexts.groups.map { textMentionGroup: TextMentionGroup =>
-
-      val allContexts = textMentionGroup.rawTextContexts
-      val allPatterns = allContexts.map(_.stringContext(10))
-
-      val groupType = allContexts.headOption
+    for {
+      textMentionGroup <- paperContexts.groups
+    } yield {
+      val groupType = textMentionGroup
+        .rawTextContexts.headOption
         .map(_.textType.takeWhile(_ != '/'))
         .getOrElse("")
 
-      val foundContexts = findPatternContexts(allPatterns, oneLine)
+      val alignments = for {
+        context <- textMentionGroup.rawTextContexts
+        pattern <- context.stringContexts(10)
+      } yield {
+        log.debug(s"""aligning context {${context}} using pattern [${pattern}]""")
+        val foundContext = findPatternContext(pattern, agrepTextFile, oneLine)
 
-      val alignments = foundContexts.zip(allContexts)
-        .map({ case (foundCtx, context) =>
-          foundCtx.fold(
-            msg => AlignFailure(context, msg),
-            range => AlignSuccess(context, range)
-          )
-        })
-
+        foundContext.fold(
+          msg   => AlignFailure(context, msg),
+          range => AlignSuccess(context, range)
+        )
+      }
       AlignedGroup(
         textMentionGroup,
         groupType,
         alignments
       )
     }
-  }
 
-
-
-  def main(args: Array[String]) = {
-    // for {
-    //   paper <- loadPaper(pwd / "predsynth-jsons.d" /
-    //     "101016jsolidstatesciences200901008.pdf"
-    //   )
-    //   context <- buildContexts(paper)
-    // } {
-    //   println(s"context: $context")
-    // }
-
-    // val jsonPath = pwd / RelPath(args(0))
-
-    // for {
-    //   papers <- loadPapers(jsonPath)
-    //   (paperName, paper) <- papers
-    // } {
-    //   println(s"${paper.name} =========")
-    //   val context = buildContexts(paper)
-    //   println(s" Entities ")
-    //   context.entityContexts.foreach { ectx =>
-    //     ectx.ent.foreach { rt => println(s"     ${rt}") }
-    //     ectx.amounts.foreach { rt => println(s"         ${rt}") }
-    //     ectx.edesc.foreach { rt => println(s"         ${rt}") }
-    //   }
-    //   println(s" Operations")
-    //   context.opContexts.foreach { ectx =>
-    //     ectx.ops.foreach { rt => println(s"     ${rt}") }
-    //     ectx.app.foreach { rt => println(s"         ${rt}") }
-    //     ectx.cond.foreach { rt => println(s"         ${rt}") }
-    //   }
-    // }
   }
 
 }

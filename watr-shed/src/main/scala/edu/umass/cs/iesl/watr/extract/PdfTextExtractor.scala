@@ -120,18 +120,16 @@ class PdfTextExtractor(
 
   import ammonite.{ops => fs}, fs._
   import java.nio.{file => nio}
-  import scala.util.{Try, Failure, Success}
 
-  var pagesInfo: List[(PageAtoms, PageGeometry)] = List()
 
-  def extractCharacters(pdfPath: Path): Try[List[(PageAtoms, PageGeometry)]] = {
+  def extractCharacters(pdfPath: Path): List[(Seq[PageAtom], PageGeometry)] = {
     var instr: InputStream = null
-    val res = Try({
+    try {
       instr = nio.Files.newInputStream(pdfPath.toNIO)
       val reader = new PdfReader(instr)
       val document = new PdfDocument(reader)
 
-      for (pageNumber <- 1 to document.getNumberOfPages) {
+      val pageInfos = for (pageNumber <- 1 to document.getNumberOfPages) yield {
         // val tagStructureContext = pdfPage.getDocument.getTagStructureContext
 
         val pageId = PageID(pageNumber-1)
@@ -159,27 +157,18 @@ class PdfTextExtractor(
         parser.processPageContent(pdfPage)
 
 
-        val pageCharAtoms = Seq[PageAtom](currCharBuffer:_*)
-
-        val pageChars = PageAtoms(pageId, pageCharAtoms)
-
-        pagesInfo = pagesInfo :+ (
-          (pageChars, pageGeometry)
-        )
+        val pageAtoms = Seq[PageAtom](currCharBuffer:_*)
 
         parser.reset()
 
+        (pageAtoms, pageGeometry)
       }
-
-      pagesInfo
-    }).transform(
-      {s: List[(PageAtoms, PageGeometry)] => Success(s) },
-      {f: Throwable => Failure(f)}
-    )
-
-    if (instr != null) instr.close()
-
-    res
+      pageInfos.toList
+    } catch {
+      case f: Throwable => throw f 
+    } finally {
+      if (instr != null) instr.close()
+    }
   }
 
 }

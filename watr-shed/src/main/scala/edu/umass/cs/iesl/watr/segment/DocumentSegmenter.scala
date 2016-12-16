@@ -115,25 +115,19 @@ object DocumentSegmenter extends DocumentUtils {
     AngleFilter(direction - t2, direction + t2)
   }
 
-
-
   import extract.fonts.SplineFont
-  import scala.util.{Try}
 
-  def createSegmenter(srcUri: URI, pdfPath: Path, glyphDefs: Seq[SplineFont.Dir]): Try[DocumentSegmenter] = {
-    formats.DocumentIO
+  def createSegmenter(srcUri: URI, pdfPath: Path, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
+    val pageAtomsAndGeometry = formats.DocumentIO
       .extractChars(pdfPath, Set(), glyphDefs)
-      .flatMap({ chars =>
-        createSegmenter(srcUri, chars.map(c => (c._1.regions, c._2)))
-      })
+
+    createSegmenter(srcUri, pageAtomsAndGeometry)
   }
 
 
-  def createSegmenter(srcUri: URI, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): Try[DocumentSegmenter] = {
-    Try {
+  def createSegmenter(srcUri: URI, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
       val zoneIndex = ZoneIndexer.loadSpatialIndices(srcUri, pagedefs)
       new DocumentSegmenter(zoneIndex)
-    }
   }
 
   def candidateCrossesLineBounds(cand: Component, line: Component): Boolean = {

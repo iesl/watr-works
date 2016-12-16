@@ -1,19 +1,16 @@
 package edu.umass.cs.iesl.watr
 package formats
 
-
 import TypeTags._
 
 import extract.PdfTextExtractor
 import extract.fonts._
 import spindex._
-// import EnrichGeometricFigures._
 import textboxing.{TextBoxing => TB}, TB._
 import utils.IdGenerator
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
-import scala.util.{Try}
 
 import watrmarks._
 import watrmarks.{StandardLabels => LB}
@@ -22,7 +19,7 @@ import utils.EnrichNumerics._
 
 object DocumentIO extends DocsegJsonFormats {
 
-  def richTextSerializeDocument(zoneIndexer: ZoneIndexer): String = {
+  def richTextSerializeDocument(zoneIndexer: ZoneIndexer, alignedGroups: Seq[AlignedGroup]): String = {
     import play.api.libs.json, json._
 
     val textAndJsons = for {
@@ -43,10 +40,28 @@ object DocumentIO extends DocsegJsonFormats {
       (formattedText, json)
     }
 
+    // Misalignments
+    for {
+      group <- alignedGroups
+      if group.alignedContexts.exists(_.isInstanceOf[AlignFailure])
+    } {
+
+    }
+
     val textLines = indent(4)(vjoins()(textAndJsons.map(_._1.box)))
     val jsonLines = indent(4)(vjoins()(textAndJsons.map(pair => Json.stringify(pair._2).box)))
 
-    val serializedZones = serializeZones(zoneIndexer)
+    val serializedZones = indent(4)(serializeZones(zoneIndexer))
+
+    val relations = serializeRelation(zoneIndexer)
+
+    val relationBlock = vjoinTrailSep(left, ",")(relations:_*)
+
+    val propertyBlock = vjoinTrailSep(left, ",")(
+      zoneIndexer.props.map({ prop =>
+        Json.stringify(Json.toJson(prop)).box
+      }):_*
+    )
 
     val finalDocument = (
       s"""|{ "lines": [
@@ -56,12 +71,13 @@ object DocumentIO extends DocsegJsonFormats {
           |${serializedZones}
           |  ],
           |  "relations": [
+          |${relationBlock}
+          |  ],
           |  "properties": [
           |  "labels": [
           |  "lineDefs": [
           |${jsonLines}
-          |  ],
-          |  "ids": [
+          |  ]
           |""".stripMargin)
 
     finalDocument.split("\n")
@@ -69,40 +85,11 @@ object DocumentIO extends DocsegJsonFormats {
       .mkString("\n")
 
 
-
     // val lineLabelBlock = serializeLineLabels(zoneIndexer)
 
 
-    // // val tokenBlock = vjoinTrailSep(left, ",")(tokenDict:_*)
-
-    // val pageAtomBlock = serializePageAtoms(zoneIndexer)
-
-    // // output all relationships:
-    // // rawTextMentionsById
-    // val relations = zoneIndexer.relations
-    //   .filter({
-    //     case Relation.Record(_, rel, _)
-    //         if rel=="hasType" || rel== "hasMember" =>  false
-    //     case _ => true
-    //   })
-    //   .map({relation =>
-    //     val lhs = relation.lhs.map(Identities.write).unify
-    //     val rhs = relation.rhs.map(Identities.write).unify
-
-    //     val rel = relation.relationship
-    //     val pad1 = " "*(15-lhs.length())
-    //     val pad2 = " "*(12-rel.length())
-    //     s"""["$lhs", $pad1 "$rel", $pad2 "$rhs"]""".box
-    //   })
-
-    // val relationBlock = vjoinTrailSep(left, ",")(relations:_*)
-
-    // val propertyBlock = vjoinTrailSep(left, ",")(
-    //   zoneIndexer.props.map({ prop =>
-    //     Json.stringify(Json.toJson(prop)).box
-    //   }):_*
-    // )
-
+    // output all relationships:
+    // rawTextMentionsById
 
 
     // (s"""|{ "lines": [
@@ -130,6 +117,25 @@ object DocumentIO extends DocsegJsonFormats {
 
     // finalDocument
   }
+
+  def serializeRelation(zoneIndexer: ZoneIndexer): Seq[TB.Box] = {
+    zoneIndexer.relations
+      .filter({
+        case Relation.Record(_, rel, _)
+            if rel=="hasType" || rel== "hasMember" =>  false
+        case _ => true
+      })
+      .map({relation =>
+        val lhs = relation.lhs.map(Identities.write).unify
+        val rhs = relation.rhs.map(Identities.write).unify
+
+        val rel = relation.relationship
+        val pad1 = " "*(15-lhs.length())
+        val pad2 = " "*(12-rel.length())
+        s"""["$lhs", $pad1 "$rel", $pad2 "$rhs"]""".box
+      })
+  }
+
 
   def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
     n.pins
@@ -231,12 +237,11 @@ object DocumentIO extends DocsegJsonFormats {
   }
 
 
-
   def extractChars(
     pdfPath: Path,
     charsToDebug: Set[Int] = Set(),
     glyphDefs: Seq[SplineFont.Dir] = Seq()
-  ): Try[Seq[(PageAtoms, PageGeometry)]] = {
+  ): Seq[(Seq[PageAtom], PageGeometry)] = {
 
     val charExtractor = new PdfTextExtractor(
       charsToDebug,

@@ -105,7 +105,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
     val dummyUri = URI.create("/")
     val path = fs.Path(pdfIns.getPath)
 
-    val segmenter =  DocumentSegmenter.createSegmenter(dummyUri, path, Seq()).get
+    val segmenter =  DocumentSegmenter.createSegmenter(dummyUri, path, Seq())
 
     // Assume these example regions are all from one page
     // val pageId = regions.map(_.target).head

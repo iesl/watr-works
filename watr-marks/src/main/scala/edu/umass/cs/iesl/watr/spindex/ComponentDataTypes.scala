@@ -36,10 +36,6 @@ case class PageGeometry(
   bounds: LTBounds
 )
 
-case class PageAtoms(
-  id: Int@@PageID,
-  regions: Seq[PageAtom]
-)
 
 sealed trait PageAtom {
   def targetRegion: TargetRegion
@@ -93,15 +89,6 @@ case class FontClass(
   vendorName: String,
   italicAngle: Int, // = rnd(italic angle * 100)
   weight: String
-)
-
-
-case class ZoneRecords(
-  id: String,
-  target: String,
-  pageGeometries: Seq[PageGeometry],
-  zones: Seq[Zone],
-  pageRegions: Seq[PageAtoms]
 )
 
 trait ComponentDataTypeFormats extends TypeTagFormats {
