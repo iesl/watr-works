@@ -72,6 +72,15 @@ object DatabaseLibs extends LibVersions {
   )
 }
 
+trait JsLib extends LibVersions {
+  // import org.scalajs.sbtplugin.ScalaJSPlugin
+  // import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
+
+  // val scalatags        = "com.lihaoyi"            %%% "scalatags"        % scalaTagsVersion
+}
+
+object JsLib extends JsLib
+
 trait CommonLibs extends LibVersions {
 
   val scalazCore       = "org.scalaz"              %% "scalaz-core"      % scalazVersion

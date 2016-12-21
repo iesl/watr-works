@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package tracing 
+package tracing
 
 import scala.reflect.macros.blackbox.Context
 

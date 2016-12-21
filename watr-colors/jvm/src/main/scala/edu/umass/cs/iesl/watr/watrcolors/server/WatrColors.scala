@@ -9,7 +9,7 @@ import edu.umass.cs.iesl.watr.table._
 object WatrColorTable {
 
   def main(args: Array[String]): Unit = {
-    val server =  new Server("localhost", 9999)
+    val server =  new EmbeddedServer("localhost", 9999)
 
     ammonite.Main(
       // storageBackend = new Storage.Folder(Defaults.ammoniteHome)

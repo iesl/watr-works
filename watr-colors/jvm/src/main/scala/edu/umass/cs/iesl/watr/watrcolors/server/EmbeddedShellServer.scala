@@ -32,7 +32,7 @@ import boopickle.DefaultBasic._
 import java.nio.ByteBuffer
 
 
-class Server(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi with RemoteCallPicklers {
+class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi with RemoteCallPicklers {
   val corsHeaders: List[ModeledHeader] =
     List(
       `Access-Control-Allow-Methods`(OPTIONS, GET, POST),
