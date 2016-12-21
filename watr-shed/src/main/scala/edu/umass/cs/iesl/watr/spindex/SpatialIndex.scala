@@ -22,13 +22,24 @@ class SpatialIndex[T: SpatialIndexable](
   spatialIndex: jsi.SpatialIndex,
   items: mutable.LongMap[T]
 ) {
+  def toJsiRectangle(tb: LTBounds): jsi.Rectangle = {
+    jsiRectangle(tb.left, tb.top, tb.width, tb.height)
+  }
+
+  def jsiCenterPoint(tb: LTBounds): jsi.Point = {
+    new jsi.Point(
+      (tb.left+tb.width/2).toFloat,
+      (tb.top+tb.height/2).toFloat
+    )
+  }
+
 
   def itemMap: mutable.LongMap[T] = items
 
   def remove(item: T): Unit = {
     val si = implicitly[SpatialIndexable[T]]
     spatialIndex.delete(
-      si.ltBounds(item).toJsiRectangle,
+      toJsiRectangle(si.ltBounds(item)),
       si.id(item)
     )
     itemMap.remove(si.id(item).toLong)
@@ -37,7 +48,7 @@ class SpatialIndex[T: SpatialIndexable](
   def add(item: T): Unit = {
     val si = implicitly[SpatialIndexable[T]]
     spatialIndex.add(
-      si.ltBounds(item).toJsiRectangle,
+      toJsiRectangle(si.ltBounds(item)),
       si.id(item)
     )
     items.put(si.id(item).toLong, item)
@@ -57,14 +68,14 @@ class SpatialIndex[T: SpatialIndexable](
 
   def queryForIntersectedIDs(q:LTBounds): Seq[Int] = {
     val collectRegions = SpatialIndex.rtreeIdCollector()
-    spatialIndex.intersects(q.toJsiRectangle, collectRegions)
+    spatialIndex.intersects(toJsiRectangle(q), collectRegions)
     collectRegions.getIDs
   }
 
 
   def queryForContainedIDs(q:LTBounds): Seq[Int] = {
     val collectRegions = SpatialIndex.rtreeIdCollector()
-    spatialIndex.contains(q.toJsiRectangle, collectRegions)
+    spatialIndex.contains(toJsiRectangle(q), collectRegions)
     collectRegions.getIDs
   }
 
@@ -94,6 +105,29 @@ class SpatialIndex[T: SpatialIndexable](
       .take(n)
   }
 
+}
+
+object jsiRectangle {
+  def apply(
+    x: Double, y: Double, width: Double, height: Double
+  ): jsi.Rectangle = apply(
+    x.toFloat, y.toFloat, width.toFloat, height.toFloat
+  )
+
+  def apply(
+    x: Float, y: Float, width: Float, height: Float
+  ): jsi.Rectangle = new jsi.Rectangle(
+    x, y, x+width, y+height
+  )
+
+  def toLTBounds(r: jsi.Rectangle): LTBounds = {
+    LTBounds(
+      left = r.minX.toDouble,
+      top =  r.minY.toDouble,
+      width = (r.maxX - r.minX).toDouble,
+      height = (r.maxY - r.minY).toDouble
+    )
+  }
 }
 
 object SpatialIndex {

@@ -12,6 +12,7 @@ import geometry._
 import GeometricFigure._
 // import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
+import TextReflowJsonFormats._
 
 import TextReflowF._
 

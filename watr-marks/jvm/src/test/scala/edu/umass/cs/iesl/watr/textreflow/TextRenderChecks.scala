@@ -9,7 +9,8 @@ import matryoshka._
 import matryoshka.scalacheck.arbitrary._
 
 import TextReflowF._
-import TextReflowTransforms._
+// import TextReflowTransforms._
+import TextReflowJsonFormats._
 
 object TextRenderChecks extends Properties("TextRenderChecks") with ArbitraryTextReflows {
 

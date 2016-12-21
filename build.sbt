@@ -48,13 +48,11 @@ lazy val watrprelude = (project in file("watr-prelude"))
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++= Seq(
-    "org.scalaz"                 %%% "scalaz-core" % Lib.scalazVersion,
+    "org.scalaz"                 %%% "scalaz-core"  % Lib.scalazVersion,
     "com.github.julien-truffaut" %%% "monocle-core" % Lib.monocleVersion % "compile, test",
-    "com.github.mpilquist"       %%% "simulacrum"   % "0.10.0"       % "compile, test",
-    "com.lihaoyi"             %%% "scalatags"   % LibVersions.scalaTagsVersion,
-    "me.chrons"               %%% "boopickle"   % "1.2.5"
-      // "org.scala-lang.modules"  %%% "scala-async" % Lib.scalaAsyncVersion,
-    // "com.lihaoyi"             %%% "autowire"    % "0.2.6"
+    "com.github.mpilquist"       %%% "simulacrum"   % "0.10.0"           % "compile, test",
+    "com.lihaoyi"                %%% "scalatags"    % LibVersions.scalaTagsVersion,
+    "me.chrons"                  %%% "boopickle"    % "1.2.5"
   ))
   .jvmSettings(commonSettings: _*)
 
@@ -65,6 +63,7 @@ lazy val watrmarksJS = watrmarks.js
 lazy val watrshed = (project in file("watr-shed"))
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= DatabaseLibs.slickDb)
+  .settings(libraryDependencies += "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT")
   .dependsOn(watrprelude) // .aggregate(watrprelude)
   .dependsOn(watrmarksJVM)
 

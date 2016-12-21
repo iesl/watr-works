@@ -62,41 +62,6 @@ object GeometricFigure {
 
 import GeometricFigure._
 
-// import net.sf.jsi
-// object jsiRectangle {
-//   def apply(
-//     x: Double, y: Double, width: Double, height: Double
-//   ): jsi.Rectangle = apply(
-//     x.toFloat, y.toFloat, width.toFloat, height.toFloat
-//   )
-
-//   def apply(
-//     x: Float, y: Float, width: Float, height: Float
-//   ): jsi.Rectangle = new jsi.Rectangle(
-//     x, y, x+width, y+height
-//   )
-
-//   def toLTBounds(r: jsi.Rectangle): LTBounds = {
-//     LTBounds(
-//       left = r.minX.toDouble,
-//       top =  r.minY.toDouble,
-//       width = (r.maxX - r.minX).toDouble,
-//       height = (r.maxY - r.minY).toDouble
-//     )
-//   }
-// }
-// def toJsiRectangle: jsi.Rectangle = {
-//   jsiRectangle(tb.left, tb.top, tb.width, tb.height)
-// }
-
-// def jsiCenterPoint: jsi.Point = {
-//   new jsi.Point(
-//     (tb.left+tb.width/2).toFloat,
-//     (tb.top+tb.height/2).toFloat
-//   )
-// }
-
-
 
 object EnrichGeometricFigures {
   import utils.EnrichNumerics._

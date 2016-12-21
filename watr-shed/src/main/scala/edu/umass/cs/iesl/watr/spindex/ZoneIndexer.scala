@@ -268,7 +268,7 @@ class ZoneIndexer(
 }
 
 
-object ZoneIndexer extends ComponentDataTypeFormats {
+object ZoneIndexer {
 
   def loadSpatialIndices(srcUri: URI, regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): ZoneIndexer = {
 

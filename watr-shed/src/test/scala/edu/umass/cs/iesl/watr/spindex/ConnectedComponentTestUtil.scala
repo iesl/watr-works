@@ -3,7 +3,17 @@ package spindex
 
 import org.scalatest._
 
-trait ConnectedComponentTestUtil extends PlainTextReflow with FlatSpec with Matchers {
+import textreflow._
+import watrmarks._
+import geometry._
+import matryoshka._
+import matryoshka.implicits._
+import TypeTags._
+import GeometricFigure._
+import EnrichGeometricFigures._
+import TextReflowF._
+
+trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextReflow {
 
   def textReflowToComponentReflow(textReflow: TextReflow, zoneIndex: ZoneIndexer): TextReflow = {
     val regions = textReflow.collect({
