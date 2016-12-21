@@ -107,18 +107,8 @@ object ScalazTreeImplicits {
       }
 
       val body = sh.shows(thisTree.rootLabel)
-      // val (prefix, body, suffix) = (simpleType, label) match {
-      //   case (None,             None)        => ("", "", "")
-      //   case (None,             Some(label)) => ("", label, "")
-      //   case (Some(simpleType), None)        => ("", simpleType, "")
-      //   case (Some(simpleType), Some(label)) => (simpleType + "(",  label, ")")
-      // }
-      // val indent = " " * (prefix.length-2)
       val lines = body.split("\n").toStream
       mapParts(lines) { (a, first, last) =>
-        // val pre = if (first) prefix else indent
-        // val suf = if (last) suffix else ""
-        // pre + a + suf
         a
       } ++ drawSubTrees(thisTree.subForest.toList)
     }

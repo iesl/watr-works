@@ -19,7 +19,7 @@ trait TextReflowJsonFormats extends ComponentDataTypeFormats {
   }
 
   def serializeTextReflow(t: TextReflowF[(TextReflow, JsValue)]): JsValue = t match {
-    case Atom(c, ops)                     => obj("a" -> arr(jstr(ops.toString()), toJson(c.asInstanceOf[PageAtom])))
+    case Atom(c)                          => obj("a" -> toJson(c.asInstanceOf[CharAtom]))
     case Insert (value)                   => jstr(value)
     case Rewrite ((from, attrJs), to)     => obj("s" -> arr(attrJs, JsString(to.toString)))
     case Bracket (pre, post, (a, attrJs)) => obj("b" -> arr(jstr(pre), attrJs, jstr(post)))
@@ -52,10 +52,10 @@ trait TextReflowJsonFormats extends ComponentDataTypeFormats {
       case JsObject(fields) =>
         val field0 = fields.toList.headOption.getOrElse { sys.error("Empty object while unserializing text reflow") }
         field0 match {
-          case ("a", JsArray(Seq(JsString(ops), pageAtomJs)))             => Atom(pageAtomJs.as[PageAtom], new TextReflowAtomOps(ops.toString()))
+          case ("a", charAtomJs)                                          => Atom(charAtomJs.as[CharAtom])
           case ("s", JsArray(Seq(fromJsValue, JsString(toStr))))          => Rewrite(fromJsValue, toStr)
           case ("b", JsArray(Seq(JsString(pre), jsAttr, JsString(post)))) => Bracket(pre, post, jsAttr)
-          case ("m", JsArray(Seq(JsNumber(mL), JsNumber(mR), jsAttr)))     => Mask(mL.toInt, mR.toInt, jsAttr)
+          case ("m", JsArray(Seq(JsNumber(mL), JsNumber(mR), jsAttr)))    => Mask(mL.toInt, mR.toInt, jsAttr)
           case ("l", JsArray(Seq(labels, jsAttr)))                        => Labeled(unpackLabels(labels), jsAttr)
           case (_, _)                                                     => sys.error(s"couldn't match JsValue= ${jsValue}")
         }
@@ -64,14 +64,13 @@ trait TextReflowJsonFormats extends ComponentDataTypeFormats {
   }
 
   def refoldJsonTextReflow: GAlgebra[(TextReflow, ?), TextReflowF, TextReflow] = t => fixf(t match {
-    case Atom(c, ops)                   => Atom(c, ops)
+    case Atom(c)                        => Atom(c)
     case Insert(value)                  => Insert(value)
     case Rewrite ((from, attr), to)     => Rewrite(attr, to)
     case Bracket (pre, post, (a, attr)) => Bracket(pre, post, attr)
     case Mask    (mL, mR, (a, attr))    => Mask(mL, mR, attr)
     case Flow(atomsAndattrs)            => Flow(atomsAndattrs.map(_._2))
     case Labeled(labels, (a, attr))     => Labeled(labels, attr)
-
   })
 
 }
@@ -86,8 +85,7 @@ object TextReflowTransforms extends TextReflowJsonFormats {}
 //       ))
 //     ))) =>
 //       Option(Atom(
-//         pageAtomJs.validate[PageAtom],
-//         new TextReflowAtomOps(ops.toString())
+//         pageAtomJs.validate[PageAtom]
 //       ))
 
 //     case JsObject(Seq(("ins",
@@ -120,7 +118,7 @@ object TextReflowTransforms extends TextReflowJsonFormats {}
 //   )
 //   def zeros(i: Int) = Seq.fill(i)(emptyTargetRegion)
 //   t match {
-//     case Atom    (c, ops)               =>
+//     case Atom    (c)               =>
 //       val ac = c.asInstanceOf[AtomicComponent]
 //       val charAtom = ac.pageAtom
 //       // ops.chars.map(_ => pageAtom.targetRegion)
@@ -141,7 +139,7 @@ object TextReflowTransforms extends TextReflowJsonFormats {}
 //   def zeros(i: Int) = Seq.fill(i)(emptyTargetRegion)
 
 //   t match {
-//     case Atom(c, ops) =>
+//     case Atom(c) =>
 //       val ac = c.asInstanceOf[AtomicComponent]
 //       val pageAtom = ac.pageAtom
 //       val pageAtomJs = toJson(pageAtom)

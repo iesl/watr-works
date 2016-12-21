@@ -14,9 +14,7 @@ import predsynth._
 import utils.SlicingAndDicing._
 
 import geometry._
-// import GeometricFigure._
 import EnrichGeometricFigures._
-// import ComponentTypeEnrichments._
 
 
 object MITAlignPredsynth {
@@ -29,7 +27,6 @@ object MITAlignPredsynth {
     log.debug("aligning predsynth paper ")
 
     val paperTextReflows = zoneIndexer.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
-
 
     log.debug("creating one line from entire paper")
     val oneLineReflow = paperTextReflows.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
@@ -46,13 +43,13 @@ object MITAlignPredsynth {
     val props = mutable.ArrayBuffer[Prop.PropRec]()
 
     val relationIds = IdGenerator[RelationID]()
-    val clusterIds = IdGenerator[ClusterID]()
+    // val clusterIds = IdGenerator[ClusterID]()
 
 
     alignedGroups.foreach({ alignedGroup: AlignedGroup =>
       val groupNumber = alignedGroup.textMentionGroup.groupNumber
       val id = alignedGroup.textMentionGroup.id
-      val groupClusterID = clusterIds.nextId
+      val groupClusterID = ClusterID(groupNumber) // clusterIds.nextId
       log.debug(s"aligning group w/ClusterID:${groupClusterID}")
 
       id.foreach { mongoId =>

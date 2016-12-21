@@ -20,8 +20,6 @@ trait ArbitraryTextReflows {
   import GeometricFigure._
   import TypeTags._
 
-  implicit def arbOps: Arbitrary[TextReflowAtomOps] =
-    Arbitrary(arbitrary[String].map(s => new TextReflowAtomOps(s.toList)))
 
   implicit def arbLTBounds: Arbitrary[LTBounds] = {
     (arbDouble |@| arbDouble |@| arbDouble |@| arbDouble)(
@@ -42,17 +40,6 @@ trait ArbitraryTextReflows {
     )
   }
 
-  implicit def arbImgAtom: Arbitrary[ImgAtom] = {
-    arbTargetRegion.map(ImgAtom(_))
-  }
-
-  implicit def arbPageAtom: Arbitrary[PageAtom] = {
-    arbCharAtom.map(_.asInstanceOf[PageAtom])
-    // Arbitrary(Gen.oneOf(Seq(
-    //   arbCharAtom.arbitrary,
-    //   // arbImgAtom.arbitrary
-    // )))
-  }
 
   implicit def arbLabel: Arbitrary[Label] = {
     (arbString |@| arbString |@| arbOption[String] |@| arbInt)({
@@ -68,15 +55,15 @@ trait ArbitraryTextReflows {
     new Delay[Arbitrary, TextReflowF]{
       def apply[A](arbA: Arbitrary[A]): Arbitrary[TextReflowF[A]] =  {
 
-        val gAtom      = (arbPageAtom.arbitrary |@| arbOps.arbitrary)(Atom[A](_, _))
-        val gins       = arbString.arbitrary.map(Insert[A](_))
+        val gAtom      = arbCharAtom.arbitrary.map(Atom(_))
+        val gins       = arbString.arbitrary.map(Insert(_))
         val gRewrite   = (arbA.arbitrary ⊛ arbString.arbitrary)(Rewrite[A](_, _))
         val gFlow      = Gen.listOf(arbA.arbitrary).map(Flow[A](_))
-        val genBracket = (arbString.arbitrary |@| arbString.arbitrary |@| arbA.arbitrary)(Bracket[A](_, _, _))
+        // val genBracket = (arbString.arbitrary |@| arbString.arbitrary |@| arbA.arbitrary)(Bracket[A](_, _, _))
         val genLabeled = (arbLabels.arbitrary |@| arbA.arbitrary)(Labeled[A](_, _))
 
         Arbitrary(
-          Gen.oneOf(gAtom, gins, gRewrite, gFlow, genBracket, genLabeled)
+          Gen.oneOf(gAtom, gins, gRewrite, gFlow, genLabeled)
         )
       }
     }

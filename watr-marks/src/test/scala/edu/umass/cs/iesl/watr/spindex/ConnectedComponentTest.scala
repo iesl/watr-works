@@ -85,7 +85,7 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
       //   rendered.toString()
       // }
 
-      ???
+      // ???
 
     }
 

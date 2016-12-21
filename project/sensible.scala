@@ -6,7 +6,8 @@ import Keys._
 // import com.lihaoyi.workbench.Plugin._
 
 
-object SensibleProject extends LibVersions {
+object SensibleProject extends CommonLibs {
+
 
   def noColorIfEmacs = {
     // WORKAROUND: https://github.com/scalatest/scalatest/issues/511
@@ -16,9 +17,14 @@ object SensibleProject extends LibVersions {
       Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oF"))
   }
 
-  lazy val settings =  Seq(
+
+  lazy val acyclicPlugin =  Seq(
     addCompilerPlugin("com.lihaoyi" %% "acyclic" % acyclicVersion),
-    addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.2"),
+    libraryDependencies ++= Seq(acyclic)
+  )
+
+  lazy val settings =  Seq(
+    addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full),
     addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
   )
@@ -101,7 +107,7 @@ object SensibleThisBuild {
       "-language:implicitConversions",
       // "-Ypartial-unification", // typelevel.org scala specific
       // "-language:postfixOps",
-
+      "-Ypatmat-exhaust-depth", "40",
       "-Xlint",
       "-Yinline-warnings",
       "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver

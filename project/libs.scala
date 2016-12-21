@@ -4,14 +4,14 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.7"
+  val scalazVersion       = "7.2.8"
   val scalaTagsVersion    = "0.6.2"
   val scalaAsyncVersion   = "0.9.6"
   val scalaModulesVersion = "1.0.4"
   val akkaVersion         = "2.3.14"
   val streamsVersion      = "1.0"
   val scalatestVersion    = "3.0.1"
-  val logbackVersion      = "1.7.21"
+  val logbackVersion      = "1.7.22"
   val quasiquotesVersion  = "2.0.1"
   val guavaVersion        = "18.0"
   val specs2Version       = "3.7"
@@ -72,7 +72,7 @@ object DatabaseLibs extends LibVersions {
   )
 }
 
-object CommonLibs extends LibVersions {
+trait CommonLibs extends LibVersions {
 
   val scalazCore       = "org.scalaz"              %% "scalaz-core"      % scalazVersion
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
@@ -101,3 +101,5 @@ object CommonLibs extends LibVersions {
     "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion
   )
 }
+
+object CommonLibs extends CommonLibs

@@ -45,6 +45,8 @@ object EnrichNumerics {
 
     def translate(x: Int) = RangeInt(min+x, len)
 
+    def contains(i: Int): Boolean = min <= i && i < max
+
     def intersect(r2: RangeInt): Option[RangeInt] =
       rangeIntersection(theRange, r2)
 

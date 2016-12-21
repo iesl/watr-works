@@ -67,8 +67,8 @@ trait TextReflowClipping extends TextReflowBasics {
       val fa: TextReflowF[List[AtomOrInsertOrGap]] = wfa.lower
 
       fa match {
-        case Atom(c, ops) =>
-          val tr = c.asInstanceOf[PageAtom].targetRegion
+        case Atom(c) =>
+          val tr = c.targetRegion
           val intersects = tr.intersects(targetRegion)
 
           if (intersects) List(anAtom(envRange))

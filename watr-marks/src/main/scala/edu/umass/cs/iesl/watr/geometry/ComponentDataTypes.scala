@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package geometry 
+package geometry
 
 import scalaz._
 import Scalaz._
@@ -146,37 +146,43 @@ trait ComponentDataTypeFormats extends TypeTagFormats {
   implicit def FormatLabel            = Json.format[Label]
   implicit def FormatZone             = Json.format[Zone]
 
-  implicit def FormatPageAtom: Format[PageAtom] = new Format[PageAtom] {
+  implicit def FormatCharAtom: Format[CharAtom] = new Format[CharAtom] {
     override def reads(json: JsValue)= json match {
       case JsObject(fields) => fields.get("c") match {
-        case Some(JsArray(Seq(JsString(achar), targetRegionJs, optWonkyJs))) =>
+        case Some(JsArray(Seq(JsString(achar), targetRegionJs, JsNumber(wonkyCode)))) =>
           JsSuccess(
-            CharAtom(targetRegionJs.as[TargetRegion], achar, optWonkyJs.as[Option[Int]])
+            CharAtom(targetRegionJs.as[TargetRegion], achar, Option(wonkyCode.toInt))
           )
         case Some(JsArray(Seq(JsString(achar), targetRegionJs))) =>
           JsSuccess(
             CharAtom(targetRegionJs.as[TargetRegion], achar, None)
           )
       }
-      case _ => JsError(s"unmatched PageAtom ${json}")
+      case _ => JsError(s"unmatched CharAtom ${json}")
     }
 
-    override def writes(o: PageAtom) = o match {
+    override def writes(o: CharAtom) = o match {
       case a: CharAtom =>
         a.wonkyCharCode.map(ccode =>
           obj(("c", arr(jstr(a.char), toJson(a.targetRegion), JsNumber(ccode))))
         ).getOrElse(
           obj(("c", arr(jstr(a.char), toJson(a.targetRegion))))
         )
-      case a: ImgAtom =>
-        obj("i" -> arr())
     }
   }
+
 }
 
 object ComponentTypeEnrichments {
   import TypeTags._
   import GeometricFigure._
+
+  implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
+    case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
+      t===t2 && c==c2 && w==w2
+    case (_, _) => false
+
+  })
 
   implicit val EqualPageAtom: Equal[PageAtom] = Equal.equal((a, b)  => (a, b) match {
     case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>

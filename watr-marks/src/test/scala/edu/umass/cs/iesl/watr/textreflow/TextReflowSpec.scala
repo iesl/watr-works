@@ -1,19 +1,62 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-
-// import watrmarks.{StandardLabels => LB}
-// import matryoshka._
-// import matryoshka.data._
-// import matryoshka.implicits._
-import geometry.EnrichGeometricFigures._
-
+// import geometry.EnrichGeometricFigures._
 import utils.ScalazTreeImplicits._
+
 import scalaz._
 import Scalaz._
 
-class TextReflowSpec extends StringReflowTestUtil {
 
+class TextReflowSpec extends spindex.ConnectedComponentTestUtil {
+  def annotateAndPrint(tr: TextReflow): Unit = {
+    val ranges = tr.annotateCharRanges()
+    val rbox = prettyPrintTree(tr)
+    println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
+  }
+
+  def checkSlices(t: TextReflow): Unit = {
+    val text = t.toText()
+
+    for (i <- 0 to text.length; j <- i to text.length) {
+      t.slice(i, j).foreach{ tr =>
+        val sliceText = tr.toText()
+        val expected = text.slice(i, j)
+        // println(s"slice($i, $j)")
+        // println(s"got: $sliceText")
+        // println(s"exp: $expected")
+        sliceText shouldBe expected
+      }
+    }
+  }
+
+
+  behavior of "modifying chars"
+
+  it should "mod single char" in {
+    val pageText = (
+      """|a q1
+         |e ^{ﬂ}
+         |""".stripMargin)
+    val pageLines = lines(pageText)
+    val reflowLines = lines(pageText).map(stringToTextReflow(_))
+    val reflowPage = stringToTextReflow(pageText)
+    val reflowPageText = reflowPage.toText
+
+    annotateAndPrint(reflowPage)
+
+
+    for (i <- 0 to reflowPage.length) {
+      println(s"@ $i")
+      val modified = reflowPage
+        .modifyCharAt(i)({(ch, index) =>
+          println(s"mod char ${ch} ($index) ")
+
+          None
+        })
+    }
+
+  }
 
   // behavior of "text reflowing"
 
@@ -24,19 +67,11 @@ class TextReflowSpec extends StringReflowTestUtil {
   //   Eu1_x.charCount shouldBe 7
   // }
 
-  def annotateAndPrint(tr: TextReflow): Unit = {
-    val ranges = tr.annotateCharRanges()
-    val rbox = prettyPrintTree(tr)
-    println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
-  }
 
   // it should "annotate reflow with (begin, len) ranges over chars" in {
   //   // annotateAndPrint(stringToTextReflow("bc\naﬂﬆﬂ_{b}ﬂc"))
 
   //   val ranges = Eu1_x.annotateCharRanges()
-
-  //   // val rbox = prettyPrintTree(Eu1_x)
-  //   // println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
 
   //   cofreeAttrToTree(ranges).flatten.toList
   //     .map(coff => (coff.begin, coff.len))
@@ -53,122 +88,70 @@ class TextReflowSpec extends StringReflowTestUtil {
   //   }
   // }
 
-  // // import spindex.{ComponentOperations => CO}
-  // // import textreflow.TextReflowRendering._
+  // import spindex.{ComponentOperations => CO}
 
   // it should "join lines into single virtual line" in {
   //   val dict = utils.EnglishDictionary.fromWords("scanning")
 
-  //   val ls = stringToTextReflow(
-  //     """|of LiFePO4 scan-
-  //        |ning electron
-  //        |""".stripMargin
-  //   )
-  //   // val rbox = prettyPrintTree(ls)
-  //   // println(rbox)
+  //   val textReflow1 = stringToTextReflow("PO_{4} scan-")
+  //   val textReflow2 = stringToTextReflow("ning")
 
-  //   // val textFlows = ls.map(l =>
-  //   //   labeled(LB.VisualLine, flows(toAtoms(l)))
-  //   // )
+  //   val joined = CO.joinTextLines(textReflow1, textReflow2, force=true)(dict)
+  //   val formatted = joined.applyLineFormatting()
 
-  //   // val joined = CO.joinTextLines(textFlows(0), textFlows(1))(dict)
+  //   val rbox = prettyPrintTree(formatted)
+  //   val ranges = formatted.annotateCharRanges()
+  //   println(cofreeAttrToTree(ranges.map(coff => (coff.begin, coff.len))).drawBox besideS rbox)
 
-  //   // joined.toText() shouldBe {
-  //   //   "of LiFePO4 scanning electron"
-  //   // }
+  //   val joinedText = formatted.toText()
+  //   println(joinedText)
+  //   checkSlices(formatted)
   // }
 
+  // // it should "slice reflows" in {
+  // //   val reflow = stringToTextReflow("lime _{^{ﬂ}a}vor")
+  // // }
+  // // val pageText = (
+  // //   """|abcdef
+  // //      |lime _{^{ﬂ}a}vored scan-
+  // //      |ning electron
+  // //      |""".stripMargin)
+  // // val pageText = (
+  // //   """|abc
+  // //      |def
+  // //      |""".stripMargin)
 
-  // it should "slice reflows" in {
-  //   val reflow = stringToTextReflow("lime _{^{ﬂ}a}vor")
+
+  // it should "clip to target regions" in {
+  //   val pageText = (
+  //     """|a q1
+  //        |e ^{ﬂ}
+  //        |""".stripMargin)
+  //   val pageLines = lines(pageText)
+  //   val reflow = stringToTextReflow(pageText)
   //   // annotateAndPrint(reflow)
-  //   // reflow.slice(6, 8).foreach{ tr =>
-  //   //   val text = tr.toText()
-  //   //   println(s"Slice:  $text")
-  //   //   // annotateAndPrint(tr)
-  //   // }
 
-  //   for (i <- 0 to 11; j <- 0 to 11) {
-  //     reflow.slice(i, j).foreach{ tr =>
-  //       val text = tr.toText()
-  //       println(s"($i, $j):  $text")
-  //       // annotateAndPrint(tr)
+  //   for {
+  //     (line, y)       <- pageLines.zipWithIndex
+  //     height          <- 1 to pageLines.length
+  //     maxlen           = lines(pageText).map(_.length).max
+  //     x               <- 0 until maxlen
+  //     width           <- 1 until maxlen
+
+  //   } {
+  //     val bounds = s"x:$x, y:$y, w:$width, h:$height"
+  //     val tr = targetRegionForXY(x, y, width, height)
+
+  //     val res = reflow.clipToTargetRegion(tr)
+  //     println(s"[$bounds]  ${tr.bbox.prettyPrint}")
+  //     res.foreach { case (resReflow, range) =>
+  //       val resText = resReflow.toText()
+  //       // println(s"    ${resText}   ${range}")
+  //       // annotateAndPrint(resReflow)
   //     }
   //   }
-
-  //   // reflow.slice(3, 6).foreach{ tr =>
-  //   //   val text = tr.toText()
-  //   //   println(s"Sliced: $text")
-  //   //   annotateAndPrint(tr)
-  //   // }
-
-  //   // reflow.slice(0, 3).foreach{ tr =>
-  //   //   val text = tr.toText()
-  //   //   println(s"Sliced: $text")
-  //   //   annotateAndPrint(reflow)
-  //   // }
-
-
-  //   // stringToTextReflow("ﬂavor").slice(0, 3).toText() shouldBe {
-  //   //   "fla"
-  //   // }
-
   // }
 
-  it should "clip to target regions" in {
-    val pageText = (
-      """|a q1
-         |e ^{ﬂ}
-         |""".stripMargin)
-    // val pageText = (
-    //   """|abcdef
-    //      |lime _{^{ﬂ}a}vored scan-
-    //      |ning electron
-    //      |""".stripMargin)
-    // val pageText = (
-    //   """|abc
-    //      |def
-    //      |""".stripMargin)
-
-    val pageLines = lines(pageText)
-    val reflow = stringToTextReflow(pageText)
-    annotateAndPrint(reflow)
-
-    for {
-      (line, y)       <- pageLines.zipWithIndex
-      height          <- 1 to pageLines.length
-      maxlen           = lines(pageText).map(_.length).max
-      x               <- 0 until maxlen
-      width           <- 1 until maxlen
-
-    } {
-      val bounds = s"x:$x, y:$y, w:$width, h:$height"
-      val tr = targetRegionForXY(x, y, width, height)
-
-      val res = reflow.clipToTargetRegion(tr)
-      println(s"[$bounds]  ${tr.bbox.prettyPrint}")
-      res.foreach { case (resReflow, range) =>
-        val resText = resReflow.toText()
-        println(s"    ${resText}   ${range}")
-        // annotateAndPrint(resReflow)
-      }
-    }
-
-    // val reflow = stringToTextReflow("abcdef")
-
-    // val y = 0
-
-    // for (x <- 0 to 7; x2 <- 0 to 7 if x <= x2) {
-    //   val tr = targetRegionForXY(x, y, x2-x, 1)
-    //   println(s"clipping to ${tr.bbox.prettyPrint}")
-    //   val res = reflow.clipToTargetRegion(tr)
-    //   res.foreach { case (resReflow, range) =>
-    //     println(s"in range ${range}: ")
-    //     annotateAndPrint(resReflow)
-    //   }
-    // }
-
-  }
   //   it should "join/break paragraph" in {}
   //   it should "grep-search virtual lines" in {}
   //   it should "define a repr for MIT-annots with context" in {}

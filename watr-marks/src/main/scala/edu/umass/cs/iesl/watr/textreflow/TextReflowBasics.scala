@@ -3,7 +3,6 @@ package textreflow
 
 import scalaz._, Scalaz._
 
-
 import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
@@ -11,14 +10,14 @@ import matryoshka.patterns.EnvT
 
 import utils.EnrichNumerics._
 import scala.{Range => _}
+import utils.ScalazTreeImplicits._
 
 trait TextReflowBasics extends StructuredRecursion {
   import TextReflowF._
   import TextReflowRendering._
 
-
   def countChars: GAlgebra[(TextReflow, ?), TextReflowF, Int] = _ match {
-    case Atom(c, ops)                   =>  ops.toString.length
+    case Atom(c)                        =>  c.char.length
     case Insert(value)                  =>  value.length
     case Rewrite ((from, attr), to)     =>  to.length
     case Bracket (pre, post, (a, attr)) =>  pre.length + post.length + attr
@@ -28,42 +27,42 @@ trait TextReflowBasics extends StructuredRecursion {
     case CachedText((a, attr), text)    =>  attr
   }
 
-
   // Bottom-up initial evaluator for char-begin/len offsets
   def aggregateLengths: GAlgebra[(TextReflow, ?), TextReflowF, Offsets] = fwa => {
+    // case Bracket (pre, post, (a, attr)) => Offsets(0,     attr.len+pre.length+post.length,   -(pre.length+post.length), post.length)
     fwa match {
-      case Atom(c, ops)                   => Offsets(0, ops.toString.length, 0, 0)
-      case Insert(value)                  => Offsets(0, value.length, 0, 0)
-      case Rewrite ((fromA, attr), to)    => Offsets(0, to.length, 0, -attr.len)
-      case Bracket (pre, post, (a, attr)) => Offsets(0, attr.len+pre.length+post.length, pre.length, post.length)
-      case Mask    (mL, mR, (a, attr))    => Offsets(0, attr.len-mL-mR, 0, -(mL+mR))
-      case Flow(atomsAndattrs)            => Offsets(0, atomsAndattrs.map(_._2.len).sum, 0, 0)
-      case Labeled(labels, (a, attr))     => Offsets(0, attr.len, 0, 0)
-      case CachedText((a, attr), text)    => Offsets(0, attr.len, 0, 0)
+      //                                     Offsets(begin, len,                               total,                     pad)
+      case Atom(c)                        => Offsets(0,     c.char.length,                     0,                         0)
+      case Insert(value)                  => Offsets(0,     value.length,                      0,                         0)
+      case Rewrite ((fromA, attr), to)    => Offsets(0,     to.length,                         0,                         -attr.len)
+      case Bracket (pre, post, (a, attr)) => Offsets(0,     pre.length,                        attr.len,                  post.length)
+      case Mask    (mL, mR, (a, attr))    => Offsets(0,     attr.len-mL-mR,                    0,                         -(mL+mR))
+      case Flow(atomsAndattrs)            => Offsets(0,     atomsAndattrs.map(_._2.len).sum,   0,                         0)
+      case Labeled(labels, (a, attr))     => Offsets(0,     attr.len,                          0,                         0)
+      case CachedText((a, attr), text)    => Offsets(0,     attr.len,                          0,                         0)
     }
   }
 
 
   // (A, FT) => M[A] applied top-down
-  def attrBegins(offs: Offsets, ft:TextReflowF[_]): State[Offsets, Offsets] = {
-
+  def adjustOffsets(offs: Offsets, ft:TextReflowF[_]): State[Offsets, Offsets] = {
     def modS  = State.modify[Offsets] _
 
+    // Offsets(begin: Int, len: Int, total: Int, pad: Int)
     def adjustOverwrite(st: Offsets) = offs.copy(
       begin = st.pad,
       total = st.total,
       pad   = st.pad+offs.len
     )
 
-
-    def adjust() = modS(st =>
+    def incTotalLen() = modS(st =>
       if (st.pad < 0) adjustOverwrite(st)
       else offs.copy(
         begin = st.total,
         total = st.total+offs.len
       ))
 
-    def adjustFlow() = modS(st =>
+    def setTotalLen() = modS(st =>
       if (st.pad < 0) adjustOverwrite(st)
       else offs.copy(
         begin = st.total,
@@ -73,14 +72,14 @@ trait TextReflowBasics extends StructuredRecursion {
     for {
       sprev <- State.get[Offsets]
       _ <- ft match {
-        case Atom(c2, ops2)        => adjust()
-        case Insert(value)         => adjust()
-        case Rewrite(from, to)     => adjust()
-        case Bracket(pre, post, a) => adjust()
-        case Mask(mL, mR, a)       => adjust()
-        case Flow(atoms)           => adjustFlow()
-        case Labeled(ls, a)        => adjustFlow()
-        case CachedText(a, text)   => adjustFlow()
+        case Atom(c2)        => incTotalLen()
+        case Insert(value)         => incTotalLen()
+        case Rewrite(from, to)     => incTotalLen()
+        case Bracket(pre, post, a) => incTotalLen()
+        case Mask(mL, mR, a)       => incTotalLen()
+        case Flow(atoms)           => setTotalLen()
+        case Labeled(ls, a)        => setTotalLen()
+        case CachedText(a, text)   => setTotalLen()
       }
       sfin <- State.get[Offsets]
 
@@ -89,27 +88,31 @@ trait TextReflowBasics extends StructuredRecursion {
     }
   }
 
+  var doDebugPrinting = false
 
   def annotateReflowCharRanges(textReflow: TextReflow): Cofree[TextReflowF, Offsets] = {
     // bottom-up, fully annotate w/(0, ch-len)
     val charCountAttr:Cofree[TextReflowF, Offsets] =
       textReflow.cata(attributePara(aggregateLengths))
 
-    // val rbox = prettyPrintTree(theReflow)
-    // val aggLens = cofreeAttrToTree(charCountAttr.map(coff => (coff.begin, coff.len))).drawBox
-
     // Top down adjustment of attributes:
     val adjustBegins = charCountAttr
       .attributeTopDownM[State[Offsets, ?], Offsets](OffsetsInst.zero)({
-        case e => attrBegins(e._2.ask, e._2.lower)
+        case e => adjustOffsets(e._2.ask, e._2.lower)
       })
 
     val asCofree:Cofree[TextReflowF, Offsets] = adjustBegins
       .eval(OffsetsInst.zero)
       .mapBranching(stripEnv)
 
-    // val withOffs = cofreeAttrToTree(asCofree.map(coff => (coff.begin, coff.len))).drawBox
-    // println(aggLens besideS withOffs besideS rbox)
+    {// Debugging print code
+      if (doDebugPrinting) {
+        val rbox = prettyPrintTree(textReflow)
+        val aggLens = cofreeAttrToTree(charCountAttr.map(coff => (coff.begin, coff.len))).drawBox
+        val withOffs = cofreeAttrToTree(asCofree.map(coff => (coff.begin, coff.len))).drawBox
+        println(aggLens besideS withOffs besideS rbox)
+      }
+    }///////
 
     asCofree
   }
@@ -160,7 +163,7 @@ trait TextReflowBasics extends StructuredRecursion {
           val ctext = clip(text)
 
           val tf = textReflowF match {
-            case Atom(c, ops)                  => atom(c, new TextReflowAtomOps(ops.toString))
+            case Atom(c)                  => atom(c)
             case Insert(value)                 => insert(ctext)
             case Rewrite((from, attr), to)     => rewrite(from, ctext)
             case Bracket(pre, post, (a, attr)) =>

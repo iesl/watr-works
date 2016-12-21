@@ -74,13 +74,12 @@ object ComponentOperations {
     getMostFrequentValuesAndFreqs(vtrace)(in, resolution).map(_._1)
   }
 
-  def joinTextLines(line1: TextReflow, line2: TextReflow)(dict: EnglishDictionary): TextReflow = {
+  def joinTextLines(line1: TextReflow, line2: TextReflow, force: Boolean=false)(dict: EnglishDictionary): TextReflow = {
 
     val line1Text = line1.toText()
     val line2Text = line2.toText()
 
-    val lineMinLenReq = line1Text.length > 10 // magic # for minimum line length
-    // val hasNonLetterPrefix = line1.chars.reverse.drop(1).take(2).exists { !_.isLetter  }
+    val lineMinLenReq = line1Text.length > 10  || force // magic # for minimum line length
     val endsWithDash = line1Text.lastOption.exists(_ == '-')
     val isBrokenWord = endsWithDash && lineMinLenReq  // && !hasNonLetterPrefix
 
@@ -88,8 +87,8 @@ object ComponentOperations {
     // vtrace.trace("Broken word hyphenated:" withInfo(s"${w1}-${w2}"))
 
     def dehyphenate(): TextReflow = {
+      // println(s"(4) isBrokenWord")
       val dehyph = line1.modifyCharAt(line1Text.length-1)({case _ => Some("")})
-
       join("")(dehyph, line2)
     }
     def concat(): TextReflow = {

@@ -4,7 +4,7 @@ package spindex
 import textboxing.{TextBoxing => TB}
 import watrmarks._
 import watrmarks.{StandardLabels => LB}
-
+import geometry.CharAtom
 import ComponentOperations._
 
 object TextReflowConversion {
@@ -22,11 +22,6 @@ object TextReflowConversion {
 
   def hasLabel(cc: Component, l: Label) = cc.getLabels.contains(l)
   def isTokenized(cc: Component) = hasLabel(cc, LB.Tokenized)
-
-  def dquote(b: TextReflow): TextReflow = bracket('"', '"', b)
-  def squareBracket(b: TextReflow): TextReflow = bracket('[', ']', b)
-  def curlyBrace(b: TextReflow): TextReflow = bracket('{', '}', b)
-
 
   def getDescendantLabels(cc: Component): Set[Label] = {
     cc.getLabels ++ (
@@ -64,8 +59,7 @@ object TextReflowConversion {
 
       case LB.PageAtom =>
         val ac = cc.asInstanceOf[AtomicComponent]
-        val ops = new textreflow.TextReflowAtomOps(ac.char)
-        atom(ac.pageAtom, ops).some
+        atom(ac.pageAtom.asInstanceOf[CharAtom]).some
 
       case _ => sys.error(s"renderCC(${cc}): unmatched roleLabel ${cc.roleLabel}")
     }

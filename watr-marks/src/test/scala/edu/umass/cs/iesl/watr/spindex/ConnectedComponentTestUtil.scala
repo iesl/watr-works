@@ -53,19 +53,20 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
 
   def textReflowToComponentReflow(textReflow: TextReflow, zoneIndex: ZoneIndexer): TextReflow = {
     val regions = textReflow.collect({
-      case  t@ Embed(Atom(c, ops)) => c.asInstanceOf[PageAtom].targetRegion.bbox
+      case t@ Embed(Atom(c)) => c.targetRegion.bbox
     })
     val totalPageGeometry = regions.reduce(_ union _)
     val geom = PageGeometry(PageID(0), totalPageGeometry)
 
     zoneIndex.addPage(geom)
-    textReflow.mapT({
-      case Atom(c, ops) =>
-        val atomicComponent = zoneIndex.addPageAtom(c.asInstanceOf[PageAtom])
-        Atom(atomicComponent, ops)
-      case t => t
-    })
+
+    val _ = textReflow
+      .collect { case a@ Embed(Atom(c)) => c }
+      .map(a => zoneIndex.addPageAtom(a))
+
+    textReflow
   }
+
 
   def stringToTextReflow(multiLines: String): TextReflow = {
     val isMultiline = multiLines.contains("\n")
@@ -118,8 +119,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
             targetRegionForXY(chnum, linenum, 1, 1),
             ch.toString
           )
-          val ops = new textreflow.TextReflowAtomOps(Seq(ch))
-          insertDownLast(Atom(charAtom, ops))
+          insertDownLast(Atom(charAtom))
           pop()
           pop()
           chnum += 1
@@ -129,8 +129,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
             targetRegionForXY(chnum, linenum, 1, 1),
             ch.toString
           )
-          val ops = new textreflow.TextReflowAtomOps(Seq(ch))
-          insertDownLast(Atom(charAtom, ops))
+          insertDownLast(Atom(charAtom))
           pop()
           chnum += 1
       }
@@ -140,7 +139,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers {
     val ftree = tloc.toTree
     val res = ftree.scanr ((reflowNode: TextReflowF[Int], childs: Stream[Tree[TextReflow]]) => {
       reflowNode match {
-        case t@ Atom(c, ops)               => fixf(Atom(c, ops))
+        case t@ Atom(c)                    => fixf(Atom(c))
         case t@ Insert(value)              => fixf(Insert(value))
         case t@ Rewrite(from, to)          => fixf(Rewrite(childs.head.rootLabel, to))
         case t@ Bracket(pre, post, a)      => fixf(Bracket(pre, post, childs.head.rootLabel))

@@ -4,7 +4,7 @@ package textreflow
 import matryoshka.data._
 
 object `package` extends TextReflowFunctions {
-  import acyclic.pkg
+  // import acyclic.pkg
 
   type TextReflow = Fix[TextReflowF]
 

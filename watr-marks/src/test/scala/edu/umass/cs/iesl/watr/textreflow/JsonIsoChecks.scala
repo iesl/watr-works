@@ -15,7 +15,6 @@ import ComponentTypeEnrichments._
 
 import TextReflowF._
 
-
 object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflows {
   import play.api.libs.json._
   import TextReflowTransforms._
@@ -51,10 +50,10 @@ object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflo
     }
   }
 
-  property("json <--> PageAtom") = forAll{ (example: PageAtom) =>
+  property("json <--> CharAtom") = forAll{ (example: CharAtom) =>
     val jsVal = Json.toJson(example)
     val jsOut = Json.prettyPrint(jsVal)
-    jsVal.validate[PageAtom] match   {
+    jsVal.validate[CharAtom] match   {
       case JsSuccess(pageAtom, path) =>
         example === pageAtom
       case _ => false

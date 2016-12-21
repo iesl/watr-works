@@ -21,8 +21,8 @@ trait TextReflowFunctions extends TextReflowClipping {
 
   def fixf = Fix[TextReflowF](_)
 
-  def atom[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
-  def atomStr[AtomT](c: AtomT, ops:TextReflowAtomOps) = fixf(Atom(c, ops))
+  def atom(c: CharAtom) = fixf(Atom(c))
+  def atomStr(c: CharAtom) = fixf(Atom(c))
   def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
   def flow(as:TextReflow*) = flows(as)
   def flows(as: Seq[TextReflow]) = fixf(Flow(as.toList))
@@ -55,7 +55,13 @@ trait TextReflowFunctions extends TextReflowClipping {
     concat(bs.toList intersperse mkPad(sep))
 
   def concat(bs: Seq[TextReflow]): TextReflow = {
-    flows(bs)
+    if (bs.length==1) bs(0) else {
+      bs.foldLeft(flow())((acc, e) => (acc.project, e.project) match {
+        case (Flow(a1), Flow(a2)) => flows(a1++a2)
+        case (Flow(a1), b)        => flows(a1 :+ fixf(b))
+        case (_,        _)        => sys.error(s"concat on $acc \n ++ $e")
+      })
+    }
   }
 
   def groupByPairs(reflow: TextReflowT)(
@@ -94,11 +100,11 @@ trait TextReflowFunctions extends TextReflowClipping {
       } else r
     }
 
-    r.transCata(ifLabeled)
+    r.transCata[TextReflow](ifLabeled)
   }
 
   def everywhere(r: TextReflow)(f: TextReflowT => TextReflowT): TextReflow = {
-    r.transCata(f)
+    r.transCata[TextReflow](f)
   }
 
   import utils.ScalazTreeImplicits._
@@ -168,7 +174,7 @@ trait TextReflowFunctions extends TextReflowClipping {
   def hideChar: TextReflow => TextReflow = {tr =>
     fixf {
       tr.project match {
-        case a @ Atom(c, ops)  => Rewrite(fixf(a), "")
+        case a: Atom           => Rewrite(fixf(a), "")
         case f                 => f
       }
     }
@@ -182,10 +188,9 @@ trait TextReflowFunctions extends TextReflowClipping {
       textReflowToJson(theReflow)
     }
 
-    // def cacheText(): String = {
-    //   val res = theReflow.cata(attributePara(renderText))
-    //   res.toPair._1
-    // }
+    def applyLineFormatting(): TextReflow = {
+      theReflow.transCata[TextReflow](escapeLineFormatting)
+    }
 
     def toText(): String = {
       val res = theReflow.cata(attributePara(renderText))
@@ -193,7 +198,7 @@ trait TextReflowFunctions extends TextReflowClipping {
     }
 
     def toFormattedText(): String = {
-      val res = theReflow.transCata(escapeLineFormatting)
+      val res = theReflow.transCata[TextReflow](escapeLineFormatting)
       res.toText
     }
 
@@ -205,16 +210,17 @@ trait TextReflowFunctions extends TextReflowClipping {
       annotateReflowCharRanges(theReflow)
 
     def modifyChars(begin: Int, len: Int)(fn: (Char, Int) => Option[String]): TextReflow = {
-      //  :: W[F[A]] => M[A]
+      val modRange = RangeInt(begin, len)
+
       def transChars: ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] = {
-        case (charOffs, a@ Atom(c, ops))
-            if begin <= charOffs.begin &&  charOffs.begin < begin+len =>
+        case (charOffs, a@ Atom(c)) // if begin <= charOffs.begin &&  charOffs.begin < begin+len =>
+            if modRange contains charOffs.begin =>
 
           for {
-            ch  <- ops.chars.headOption
+            ch  <- c.char.headOption
             mod <- fn(ch, begin+len)
-            .map(rewrite(fixf(a), _))
-            .orElse(Option(fixf(a)))
+                     .map{ rewrite(fixf(a), _) }
+                     .orElse(Option(fixf(a)))
           } yield mod
 
         case (_,      f)                 => Some(fixf(f))
@@ -229,27 +235,26 @@ trait TextReflowFunctions extends TextReflowClipping {
       res.get.head
     }
 
-    def charCount: Int = {
-      theReflow.para(countChars)
-    }
+    def charCount: Int = theReflow.para(countChars)
+
+    def length: Int = charCount
 
 
     def slice(begin: Int, until:Int): Option[TextReflow] =
       sliceTextReflow(theReflow, begin, until)
 
-
     def lines: Seq[TextReflow] = ???
 
     def targetRegions(): Seq[TargetRegion] = {
       def regions(t: TextReflowF[Seq[TargetRegion]]): Seq[TargetRegion] = t match {
-        case Atom    (ac, ops)               => Seq(ac.asInstanceOf[CharAtom].targetRegion)
-        case Insert  (value)                 => Seq()
-        case Rewrite (attr, to)             => attr
-        case Bracket (pre, post, attr)  => attr
-        case Mask    (mL, mR, attr)     => attr
-        case Flow    (asAndattrs)            => asAndattrs.flatten
-        case Labeled (labels, attr)     => attr
-        case CachedText(attr, text)     => attr
+        case Atom    (ac)         => Seq(ac.asInstanceOf[CharAtom].targetRegion)
+        case Insert  (value)           => Seq()
+        case Rewrite (attr, to)        => attr
+        case Bracket (pre, post, attr) => attr
+        case Mask    (mL, mR, attr)    => attr
+        case Flow    (asAndattrs)      => asAndattrs.flatten
+        case Labeled (labels, attr)    => attr
+        case CachedText(attr, text)    => attr
       }
 
       theReflow.cata(regions)

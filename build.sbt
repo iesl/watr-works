@@ -10,25 +10,20 @@ enablePlugins(ScalaJSPlugin)
 
 val Lib = CommonLibs
 
-val commonSettings = SensibleProject.settings ++
-  SensibleProject.testSettings  ++
-  Seq(
-    libraryDependencies ++= LogLibs.logback,
-    libraryDependencies ++= TestLibs.testAndCheck,
-    libraryDependencies ++= Lib.matryoshkaLibs, // Includes scalaz-core
-    libraryDependencies ++= Seq(
-      Lib.scalatags,
-      Lib.ammonite,
-      Lib.playJson,
-      Lib.shapeless,
-      Lib.acyclic
-      // Lib.sourcecode,
-      // Not needed in watrmarks
-      // Lib.scopt,
-      // Lib.scalaAsync,
-      // Lib.fastparse,
-    )
-  )
+val commonSettings = (
+    SensibleProject.settings ++   // SensibleProject.acyclicPlugin ++
+    SensibleProject.testSettings ++
+    Seq(
+      libraryDependencies ++= LogLibs.logback,
+      libraryDependencies ++= TestLibs.testAndCheck,
+      libraryDependencies ++= Lib.matryoshkaLibs, // Includes scalaz-core
+      libraryDependencies ++= Seq(
+        Lib.scalatags,
+        Lib.ammonite,
+        Lib.playJson,
+        Lib.shapeless
+      )
+    ))
 
 
 import ReleaseTransformations._

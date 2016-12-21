@@ -312,7 +312,7 @@ object PredsynthLoad extends PredsynthJsonFormats {
       )
 
       TextMentionGroup(
-        groupNum,
+        groupNum+1,
         entity._id,
         allMentions,
         relations
@@ -323,7 +323,7 @@ object PredsynthLoad extends PredsynthJsonFormats {
     val ops = for {
       (operation, index) <- paper.operations.flatten.zipWithIndex
     } yield {
-      val groupNum = ents.length+index
+      val groupNum = ents.length+index+1
 
       val ops = findContexts(operation.raw_texts.flatten, "operation")
       val apps = findContexts(operation.apparatuses.flatten.map(_.raw_text), "operation/apparatus")
