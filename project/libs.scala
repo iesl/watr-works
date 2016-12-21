@@ -1,6 +1,6 @@
-import scala.util.{ Properties, Try }
 import sbt._
 import Keys._
+// import scala.util.{ Properties, Try }
 
 
 trait LibVersions {
@@ -72,14 +72,13 @@ object DatabaseLibs extends LibVersions {
   )
 }
 
-trait JsLib extends LibVersions {
-  // import org.scalajs.sbtplugin.ScalaJSPlugin
-  // import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
-
-  // val scalatags        = "com.lihaoyi"            %%% "scalatags"        % scalaTagsVersion
-}
-
-object JsLib extends JsLib
+// trait JsLib extends LibVersions {
+//   import org.scalajs.sbtplugin.ScalaJSPlugin
+//   import ScalaJSPlugin._
+//   import ScalaJSPlugin.autoImport._
+//   val scalatags        = "com.lihaoyi"            %%% "scalatags"        % scalaTagsVersion
+// }
+// object JsLib extends JsLib
 
 trait CommonLibs extends LibVersions {
 
@@ -96,7 +95,7 @@ trait CommonLibs extends LibVersions {
   val aspectJ          = "org.aspectj"              % "aspectjweaver"    % aspectjVersion
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
 
-  val matryoshkaCore   = "com.slamdata"            %% "matryoshka-core"  % "0.11.1"
+  // val matryoshkaCore   = "com.slamdata"            %% "matryoshka-core"  % "0.11.1"
   // Needed for matryoshka, not needed when I properly build it (rather than putting in ./lib dir)
   val matryoshkaLibs = Seq(
     "com.github.julien-truffaut" %% "monocle-core" % monocleVersion % "compile, test",

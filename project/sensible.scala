@@ -5,9 +5,7 @@ import Keys._
 // import com.github.fedragon.todolist.TodoListPlugin.autoImport._
 // import com.lihaoyi.workbench.Plugin._
 
-
 object SensibleProject extends CommonLibs {
-
 
   def noColorIfEmacs = {
     // WORKAROUND: https://github.com/scalatest/scalatest/issues/511
@@ -16,7 +14,6 @@ object SensibleProject extends CommonLibs {
     else
       Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oF"))
   }
-
 
   lazy val acyclicPlugin =  Seq(
     addCompilerPlugin("com.lihaoyi" %% "acyclic" % acyclicVersion),

@@ -3,7 +3,7 @@ package textreflow
 
 import matryoshka.data._
 
-object `package` extends TextReflowFunctions {
+object `package` extends TextReflowSharedFunctions {
   // import acyclic.pkg
 
   type TextReflow = Fix[TextReflowF]

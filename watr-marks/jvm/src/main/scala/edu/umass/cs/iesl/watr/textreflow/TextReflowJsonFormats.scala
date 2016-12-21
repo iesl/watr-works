@@ -6,7 +6,19 @@ import play.api.libs.json._
 import Json._
 import watrmarks.Label
 
-trait TextReflowJsonFormats extends ComponentDataTypeFormats {
+object TextReflowJsonFormats extends TextReflowJsonFormats {
+
+  implicit class JsonFormats_RicherTextReflow(val theReflow: TextReflow) extends TextReflowJsonFormats {
+    import play.api.libs.json._
+    import TextReflowRendering._
+
+    def toJson(): JsValue = {
+      textReflowToJson(theReflow)
+    }
+
+  }
+}
+trait TextReflowJsonFormats extends GeometryJsonFormats {
   import play.api.libs.json._
   import TextReflowF._
   import matryoshka._

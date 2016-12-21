@@ -15,7 +15,7 @@ import utils.EnrichNumerics._
 
 case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 
-trait TextReflowFunctions extends TextReflowClipping {
+trait TextReflowSharedFunctions extends TextReflowClipping {
   import TextReflowF._
   import utils.SlicingAndDicing._
 
@@ -180,13 +180,8 @@ trait TextReflowFunctions extends TextReflowClipping {
     }
   }
 
-  implicit class RicherReflow(val theReflow: TextReflow) extends TextReflowJsonFormats {
-    import play.api.libs.json._
+  implicit class RicherReflow(val theReflow: TextReflow)  {
     import TextReflowRendering._
-
-    def toJson(): JsValue = {
-      textReflowToJson(theReflow)
-    }
 
     def applyLineFormatting(): TextReflow = {
       theReflow.transCata[TextReflow](escapeLineFormatting)

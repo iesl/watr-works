@@ -1,14 +1,15 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
+import org.scalatest._
 // import geometry.EnrichGeometricFigures._
 import utils.ScalazTreeImplicits._
 
 import scalaz._
 import Scalaz._
 
+class TextReflowSpec extends PlainTextReflow with FlatSpec with Matchers {
 
-class TextReflowSpec extends spindex.ConnectedComponentTestUtil {
   def annotateAndPrint(tr: TextReflow): Unit = {
     val ranges = tr.annotateCharRanges()
     val rbox = prettyPrintTree(tr)
