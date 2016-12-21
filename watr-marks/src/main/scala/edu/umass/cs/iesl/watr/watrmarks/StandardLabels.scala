@@ -4,14 +4,13 @@ package watrmarks
 
 trait DocSegLabels {
 
+  // FIXME <- nulllabel????
   val NullLabel = Label("","null")
 
   val PageLines = Label("ds", "page-lines")
   val PageTextBlocks = Label("ds", "page-textblocks")
-  // val Pages = Label("ds", "pages")
   val Column = Label("ds", "column")
 
-  // val Section = Label("ds", "section")
   val SectionHeadingLine = Label("ds", "section-heading-line")
   val SectionNumber = Label("ds", "section-number")
   val SectionTitle = Label("ds", "section-title")

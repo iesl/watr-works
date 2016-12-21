@@ -46,14 +46,15 @@ class TextReflowSpec extends spindex.ConnectedComponentTestUtil {
     annotateAndPrint(reflowPage)
 
 
-    for (i <- 0 to reflowPage.length) {
+    for (i <- 0 until reflowPage.length) {
       println(s"@ $i")
       val modified = reflowPage
         .modifyCharAt(i)({(ch, index) =>
           println(s"mod char ${ch} ($index) ")
 
-          None
+          Some("")
         })
+      println(s"=> ${modified.toText()}")
     }
 
   }

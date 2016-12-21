@@ -80,6 +80,7 @@ object MITAlignPredsynth {
       alignedGroup.alignedContexts.foreach {
         case AlignSuccess(rtc, (begin, end)) =>
 
+          val len = oneLineText.length
           val reflowSliceOpt = oneLineReflow.slice(begin, end)
 
           reflowSliceOpt match {

@@ -211,19 +211,46 @@ trait TextReflowFunctions extends TextReflowClipping {
 
     def modifyChars(begin: Int, len: Int)(fn: (Char, Int) => Option[String]): TextReflow = {
       val modRange = RangeInt(begin, len)
+      def offs(o: Offsets) =  RangeInt(o.begin, o.len)
 
-      def transChars: ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] = {
-        case (charOffs, a@ Atom(c)) // if begin <= charOffs.begin &&  charOffs.begin < begin+len =>
-            if modRange contains charOffs.begin =>
+      def transChars: ElgotAlgebraM[(Offsets, ?), Option, TextReflowF, TextReflow] = wfa => {
+        wfa match {
+          case (charOffs, tf) if modRange.intersect(offs(charOffs)).nonEmpty => tf match {
+            case  Rewrite(a, str) =>
 
-          for {
-            ch  <- c.char.headOption
-            mod <- fn(ch, begin+len)
-                     .map{ rewrite(fixf(a), _) }
-                     .orElse(Option(fixf(a)))
-          } yield mod
+              val newstr = for {
+                (ch, i) <- str.zip(charOffs.begin until charOffs.begin+charOffs.len)
+              } yield {
+                if (modRange.contains(i)) fn(ch, i).getOrElse(ch.toString())
+                else ch.toString()
+              }
 
-        case (_,      f)                 => Some(fixf(f))
+              Option(rewrite(a, newstr.mkString))
+            case  a@ Insert(str) =>
+              val newstr = for {
+                (ch, i) <- str.zip(charOffs.begin until charOffs.begin+charOffs.len)
+              } yield {
+                if (modRange.contains(i)) fn(ch, i).getOrElse(ch.toString())
+                else ch.toString()
+              }
+
+              Option(insert(newstr.mkString))
+
+            case a@ Atom(c) =>
+              val newstr = for {
+                (ch, i) <- c.char.zip(charOffs.begin until charOffs.begin+charOffs.len)
+              } yield {
+                if (modRange.contains(i)) fn(ch, i).getOrElse(ch.toString())
+                else ch.toString()
+              }
+
+              Option(rewrite(fixf(a), newstr.mkString))
+
+            case f          => Some(fixf(f))
+          }
+
+          case (charOffs, tf) => Some(fixf(tf))
+        }
       }
 
       val trans = liftTM(

@@ -87,9 +87,9 @@ object ComponentOperations {
     // vtrace.trace("Broken word hyphenated:" withInfo(s"${w1}-${w2}"))
 
     def dehyphenate(): TextReflow = {
-      // println(s"(4) isBrokenWord")
       val dehyph = line1.modifyCharAt(line1Text.length-1)({case _ => Some("")})
-      join("")(dehyph, line2)
+      val res = join("")(dehyph, line2)
+      res
     }
     def concat(): TextReflow = {
       join("")(line1, line2)
