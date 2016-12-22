@@ -47,8 +47,6 @@ object TypeTags {
 
   implicit class TagOps[A, T](val value: A@@T) extends AnyVal {
     def unwrap: A = Tag.of[T].unwrap(value)
-
-
   }
 
   import scala.reflect._
@@ -58,7 +56,22 @@ object TypeTags {
     s"${tagClsname}:${tt.unwrap}"
   }
 
+  import boopickle.DefaultBasic._
+  // import PicklerGenerator._
+
+
+  // (implicit tpickler: Pickler[TagT]): Pickler[Int @@ TagT] = {
+  implicit def TypeTag_Pickler[TagT]: Pickler[Int @@ TagT] = {
+    transformPickler(
+      (t:Int) => Tag.of[TagT](t))(
+      t => (t.unwrap))
+  }
+
+  // implicit val PageID_Pickler   = TypeTag_Pickler[PageID]
+  // implicit val RegionID_Pickler = TypeTag_Pickler[RegionID]
+
+  // implicit val PageID_Pickler = compositePickler[PageID]
+  // implicit val RegionID_Pickler = compositePickler[RegionID]
 
 
 }
-

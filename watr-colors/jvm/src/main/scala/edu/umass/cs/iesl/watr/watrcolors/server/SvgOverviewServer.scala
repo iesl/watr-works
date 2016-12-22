@@ -2,9 +2,8 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-import ammonite.ops._
-
-import GeometricFigure._
+// import ammonite.ops._
+// import GeometricFigure._
 
 // class SvgOverviewServer(
 //   rootDirectory: Path

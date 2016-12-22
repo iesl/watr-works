@@ -31,7 +31,7 @@ class SvgOverview(
   override val initKeys = Keybindings(List(
     "b" -> ((e: MousetrapEvent) => getLabelOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
-    "w" -> ((e: MousetrapEvent) => getTextOverlay()),
+    // "w" -> ((e: MousetrapEvent) => getTextOverlay()),
     "z" -> ((e: MousetrapEvent) => selectViaLine()),
     "d" -> ((e: MousetrapEvent) => initDeletion())
   ))

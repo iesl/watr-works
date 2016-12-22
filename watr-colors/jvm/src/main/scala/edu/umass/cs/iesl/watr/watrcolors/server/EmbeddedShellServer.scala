@@ -5,7 +5,6 @@ package server
 
 import akka.actor.{ActorRef, Actor, ActorSystem}
 import akka.util.ByteString
-import spray.httpx.encoding.Gzip
 import spray.routing.SimpleRoutingApp
 import spray.http.HttpData
 import spray.http.{MediaTypes, HttpEntity}
@@ -13,18 +12,15 @@ import akka.actor.ActorDSL._
 
 import spray.http.{HttpEntity, AllOrigins, HttpResponse}
 import spray.http.HttpHeaders.`Access-Control-Allow-Origin`
-import spray.http.ContentType
 import concurrent.duration._
 import scala.concurrent.Future
-import scala.io.Source
-import scala.tools.nsc
-import scala.tools.nsc.Settings
-
-import scala.tools.nsc.backend.JavaPlatform
-import scala.tools.nsc.util.ClassPath.JavaContext
-import scala.collection.mutable
-import scala.tools.nsc.typechecker.Analyzer
-import scala.tools.nsc.util.{JavaClassPath, DirectoryClassPath}
+// import scala.tools.nsc
+// import scala.tools.nsc.Settings
+// import scala.tools.nsc.backend.JavaPlatform
+// import scala.tools.nsc.util.ClassPath.JavaContext
+// import scala.collection.mutable
+// import scala.tools.nsc.typechecker.Analyzer
+// import scala.tools.nsc.util.{JavaClassPath, DirectoryClassPath}
 import spray.http.HttpHeaders._
 import spray.http.HttpMethods._
 import autowire._
