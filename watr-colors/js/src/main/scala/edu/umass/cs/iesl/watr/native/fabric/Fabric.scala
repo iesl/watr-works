@@ -3,7 +3,7 @@ package native
 package fabric
 
 import scala.scalajs.js
-import js.annotation.JSName
+// import js.annotation.JSName
 
 
 @js.native

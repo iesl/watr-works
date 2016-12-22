@@ -3,13 +3,16 @@ package watrcolors
 package client
 
 import scala.collection.mutable
-import org.querki.jquery._
+// import org.querki.jquery._
 import org.scalajs.dom._
+import textboxing.{TextBoxing => TB}
 
 trait VisualTraceOperations extends FabricCanvasOperations {
 
+  import geometry._
   import GeometricFigure._
   import TraceLog._
+  import TypeTags._
 
   val pageGeometry = mutable.Map[Int, PageGeometry]()
 
@@ -30,8 +33,8 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
   var xxx = 10
   def transformTargetRegion(tr: TargetRegion): TargetRegion = {
-    val offsetPage = pageOffsets(tr.target)
-    val pageImgGeometry = pageImageGeometries(tr.target)
+    val offsetPage = pageOffsets(tr.target.unwrap)
+    val pageImgGeometry = pageImageGeometries(tr.target.unwrap)
 
     val s = tr.bbox
 
@@ -54,8 +57,8 @@ trait VisualTraceOperations extends FabricCanvasOperations {
   }
 
   def transformTargetFigure(tr: TargetFigure): TargetFigure = {
-    val offsetPage = pageOffsets(tr.page)
-    val pageImgGeometry = pageImageGeometries(tr.page)
+    val offsetPage = pageOffsets(tr.page.unwrap)
+    val pageImgGeometry = pageImageGeometries(tr.page.unwrap)
 
     def transformPoint(p: Point): Point = {
       val pageTopTrans = (offsetPage.top * canvasH / totalPagesHeight) + canvasY
@@ -116,7 +119,7 @@ trait VisualTraceOperations extends FabricCanvasOperations {
     pageOffsets.clear()
 
     pageGeometries.foreach { geom =>
-      pageGeometry.put(geom.id, geom)
+      pageGeometry.put(geom.id.unwrap, geom)
     }
 
     pageGeometry.keys.toList.sorted.foreach{k =>
@@ -134,34 +137,34 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
   }
 
-  def drawGroupTree(traceEntries: Seq[TraceLog], level: Int): Unit = {
-    val groupStack = mutable.Stack[Group]()
-    traceEntries.zipWithIndex.foreach({ case (traceEntry, i) => traceEntry match {
-      case SetPageGeometries(b: Seq[PageGeometry]) =>
-        setupPageGeometries(b)
+  // def drawGroupTree(traceEntries: Seq[TraceLog], level: Int): Unit = {
+  //   val groupStack = mutable.Stack[Group]()
+  //   traceEntries.zipWithIndex.foreach({ case (traceEntry, i) => traceEntry match {
+  //     case SetPageGeometries(b: Seq[PageGeometry]) =>
+  //       setupPageGeometries(b)
 
-      case a:Group =>
-        groupStack.push(a)
-        val slen = groupStack.length
+  //     case a:Group =>
+  //       groupStack.push(a)
+  //       val slen = groupStack.length
 
-        val button = s"""<button id="group${slen}">${i}. ${a.name}</button>"""
+  //       val button = s"""<button id="group${slen}">${i}. ${a.name}</button>"""
 
-        printtree(button, level)
-        drawGroupTree(a.ts, level+1)
+  //       printtree(button, level)
+  //       drawGroupTree(a.ts, level+1)
 
-        jQuery(s"#group${slen}").on("click", {(ev: JQueryEventObject) =>
-          // fabricCanvas.renderOnAddRemove = false
-          printlog(s"rendering visual trace")
-          runTrace(Seq(a))
-          // fabricCanvas.renderAll()
-          // fabricCanvas.renderOnAddRemove = true
-          printlog(s"finished visual trace")
-          // removeTraceKeybindings()
-        })
-      case _ =>
+  //       $(s"#group${slen}").on("click", {(ev: JQueryEventObject) =>
+  //         // fabricCanvas.renderOnAddRemove = false
+  //         printlog(s"rendering visual trace")
+  //         runTrace(Seq(a))
+  //         // fabricCanvas.renderAll()
+  //         // fabricCanvas.renderOnAddRemove = true
+  //         printlog(s"finished visual trace")
+  //         // removeTraceKeybindings()
+  //       })
+  //     case _ =>
 
-    }})
-  }
+  //   }})
+  // }
 
 
   // TODO create State class
@@ -194,7 +197,7 @@ trait VisualTraceOperations extends FabricCanvasOperations {
   import native.mousetrap._
 
   def runTrace(traces: Seq[TraceLog]): Unit = {
-    drawGroupTree(traces, 0)
+    // drawGroupTree(traces, 0)
 
     var stepper: Promise[Int] = Promise[Int]
 
@@ -264,16 +267,16 @@ trait VisualTraceOperations extends FabricCanvasOperations {
         case ShowZone(s: Zone) =>
           println(s"ShowZone! ${s}")
 
-        case ShowComponent(s: Component) =>
-          val ttrans = transformTargetRegion(s.targetRegion)
-          addShape(ttrans.bbox, "blue", currRGB, 0.1f)
+        // case ShowComponent(s: Component) =>
+        //   val ttrans = transformTargetRegion(s.targetRegion)
+        //   addShape(ttrans.bbox, "blue", currRGB, 0.1f)
 
-        case ShowLabel(s: Label) =>
+        // case ShowLabel(s: Label) =>
 
-          val cls = "."+classStack.top
-          val content = s"""<li><button class="$cls">${s.ns}:${s.key}</button></li>"""
+        //   val cls = "."+classStack.top
+        //   val content = s"""<li><button class="$cls">${s.ns}:${s.key}</button></li>"""
 
-          jQuery("#messages").append(content)
+        //   jQuery("#messages").append(content)
 
         case FocusOn(s: TargetRegion) =>
           val ttrans = transformTargetRegion(s)
@@ -284,7 +287,7 @@ trait VisualTraceOperations extends FabricCanvasOperations {
           println(s"Indicate: ${ftrans}")
           addShape(ftrans.figure, "black", "red", 0.2f)
 
-        case Message(s: String) =>
+        case Message(s: TB.Box) =>
 
           val msg = s"<pre>${s}</pre>"
           printlog(msg)

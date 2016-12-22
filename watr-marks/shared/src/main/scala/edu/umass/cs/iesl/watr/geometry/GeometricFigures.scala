@@ -59,7 +59,6 @@ object GeometricFigure {
 
 }
 
-
 import GeometricFigure._
 
 

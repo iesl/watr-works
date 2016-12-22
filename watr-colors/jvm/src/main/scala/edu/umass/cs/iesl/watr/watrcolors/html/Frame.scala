@@ -66,47 +66,8 @@ object WatrStyles extends CascadingStyleSheet {
   )
 }
 
-object Frame {
-
-
-  // val WatrStyles = Sheet[WatrStyles]
-
-
-  def apply() = {
-    <.html(
-      ^.lang := "en",
-      <.head(
-        <.title("WatrColors"),
-        <.meta(content := "width=device-width, initial-scale=1", name := "viewport"),
-        <.meta(httpEquiv := "Content-Type", content := "text/html; charset=UTF-8"),
-        <.script(`type` := "text/javascript", src := "//localhost:12345/workbench.js"),
-        <.script(`type` := "text/javascript", src := "/assets/watrcolors-client-fastopt.js"),
-        <.script(`type` := "text/javascript", src := "/webjars/mousetrap/1.6.0/mousetrap.min.js"),
-        <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.4/jquery.min.js"),
-        <.script(`type` := "text/javascript", src := "/webjars/fabric/1.6.2/dist/fabric.js"),
-
-        <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.7/css/bootstrap.min.css"),
-
-        <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
-      ),
-
-      body(margin := 0, WatrStyles.htmlBody)(
-        <.div(^.id := "main")("Loading..."),
-        script("edu.umass.cs.iesl.watr.watrcolors.client.WatrColorClient().main()")
-        // <.script(^.`type`:="text/javascript")("edu.umass.cs.iesl.watr.watrcolors.client.WatrColorClient().main()"
-        //   // raw(s""" edu.umass.cs.iesl.watr.watrcolors.client.WatrColorClient().main() """)
-        // )
-      )
-    )
-  }
-}
-
 object ShellHtml {
 
-
-  // val WatrStyles = Sheet[WatrStyles]
-
-
   def apply() = {
     <.html(
       ^.lang := "en",
@@ -114,7 +75,7 @@ object ShellHtml {
         <.title("WatrColors"),
         <.meta(content := "width=device-width, initial-scale=1", name := "viewport"),
         <.meta(httpEquiv := "Content-Type", content := "text/html; charset=UTF-8"),
-        <.script(`type` := "text/javascript", src := "/assets/watrcolors-client-fastopt.js"),
+        <.script(`type` := "text/javascript", src := "/assets/watrcolors-fastopt.js"),
         <.script(`type` := "text/javascript", src := "/webjars/mousetrap/1.6.0/mousetrap.min.js"),
         <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.4/jquery.min.js"),
         <.script(`type` := "text/javascript", src := "/webjars/fabric/1.6.2/dist/fabric.js"),
@@ -126,8 +87,38 @@ object ShellHtml {
 
       body(margin := 0, WatrStyles.htmlBody)(
         <.div(^.id := "main")("Loading..."),
-        script("edu.umass.cs.iesl.watr.watrcolors.client.WatrTableClient().main()")
+        <.script(`type` := "text/javascript")(
+          raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrTableClient().main()")
+        )
       )
     )
   }
 }
+
+/*
+
+<nav class="navbar navbar-fixed-top navbar-dark bg-inverse">
+  <a class="navbar-brand" href="#">Project name</a>
+  <ul class="nav navbar-nav">
+  <li class="nav-item active">
+  <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+  </li>
+  <li class="nav-item">
+  <a class="nav-link" href="#">About</a>
+  </li>
+  <li class="nav-item">
+  <a class="nav-link" href="#">Contact</a>
+  </li>
+  </ul>
+  </nav>
+
+<div class="container">
+
+<div class="starter-template">
+  <h1>Bootstrap starter template</h1>
+  <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>
+  </div>
+
+</div><!-- /.container -->
+
+ */

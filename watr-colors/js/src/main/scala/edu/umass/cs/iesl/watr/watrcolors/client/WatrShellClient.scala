@@ -6,14 +6,14 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 // import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.annotation.JSExport
 
-import autowire._
+// import autowire._
 import boopickle.DefaultBasic._
-import Picklers._
+// import Picklers._
 
-import native.mousetrap._
+// import native.mousetrap._
 
-import scala.concurrent.Future
-import scala.async.Async.{async, await}
+// import scala.concurrent.Future
+// import scala.async.Async.{async, await}
 import org.scalajs.dom
 import org.scalajs.dom.ext._
 import scala.scalajs.js
@@ -35,7 +35,6 @@ object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler]  with RemoteCa
   override def read[R: Pickler](p: ByteBuffer) = Unpickle[R].fromBytes(p)
   override def write[R: Pickler](r: R) = Pickle.intoBytes(r)
 }
-
 
 @JSExport
 object WatrTableClient extends ClientView with WatrTableApi {
@@ -96,7 +95,7 @@ object WatrTableClient extends ClientView with WatrTableApi {
 
   @JSExport
   override def print(level: String, msg: String): Unit = {
-    jQuery("#main").append(msg)
+    jQuery("#main").append(msg+" and more!")
 
     level match {
       case "error" => dom.console.error(msg)

@@ -18,6 +18,7 @@ import native.fabric
 
 import org.querki.jquery._
 
+import geometry._
 import GeometricFigure._
 
 @JSExport
@@ -29,7 +30,7 @@ class SvgOverview(
   val server = ServerWire("svg")[SvgOverviewApi]
 
   override val initKeys = Keybindings(List(
-    "b" -> ((e: MousetrapEvent) => getLabelOverlay()),
+    // "b" -> ((e: MousetrapEvent) => getLabelOverlay()),
     "t" -> ((e: MousetrapEvent) => initSelection()),
     // "w" -> ((e: MousetrapEvent) => getTextOverlay()),
     "z" -> ((e: MousetrapEvent) => selectViaLine()),
@@ -44,66 +45,65 @@ class SvgOverview(
   def canvasX: Int = canvasOffset.left.toInt
   def canvasY: Int = canvasOffset.top.toInt
 
-  def getTextOverlay(): Boolean = {
-    // Clear the canvas
-    Mousetrap.bind("c", ((e: MousetrapEvent) => {
-      fabricCanvas.forEachObject({(obj: native.fabric.FabricObject) =>
-        fabricCanvas.remove(obj)
-        fabricCanvas
-      })
-      true
-    }))
-    async {
+  // def getTextOverlay(): Boolean = {
+  //   // Clear the canvas
+  //   Mousetrap.bind("c", ((e: MousetrapEvent) => {
+  //     fabricCanvas.forEachObject({(obj: native.fabric.FabricObject) =>
+  //       fabricCanvas.remove(obj)
+  //       fabricCanvas
+  //     })
+  //     true
+  //   }))
+  //   async {
 
-      printlog(s"getting text overlay")
-      server
-        .getTextOverlay(artifactId).call()
-        .foreach({ case (pageGeometries,  textOverlays) =>
+  //     printlog(s"getting text overlay")
+  //     server
+  //       .getTextOverlay(artifactId).call()
+  //       .foreach({ case (pageGeometries,  textOverlays) =>
 
-          setupPageGeometries(pageGeometries)
+  //         setupPageGeometries(pageGeometries)
 
-          var totalLineNum = 0
+  //         var totalLineNum = 0
 
-          for {
-            (page, pagenum) <- textOverlays.zipWithIndex
-            (line, linenum) <- page.zipWithIndex
-          } {
-            val msg = line.content.getOrElse("")
-            val target = line.targetRegion
-            // printlog(s"target region: ${target} -> ?")
-            val ttrans = transformTargetRegion(target)
+  //         for {
+  //           (page, pagenum) <- textOverlays.zipWithIndex
+  //           (line, linenum) <- page.zipWithIndex
+  //         } {
+  //           val msg = line.content.getOrElse("")
+  //           val target = line.targetRegion
+  //           // printlog(s"target region: ${target} -> ?")
+  //           val ttrans = transformTargetRegion(target)
 
-            val cid = s"p${pagenum}l${linenum}"
+  //           val cid = s"p${pagenum}l${linenum}"
 
-            jQuery("#messages").append(
-              s"""<li id="${cid}"><small>${totalLineNum}. <pre>${msg}</pre></small></li>"""
-            )
+  //           jQuery("#messages").append(
+  //             s"""<li id="${cid}"><small>${totalLineNum}. <pre>${msg}</pre></small></li>"""
+  //           )
 
-            val hin = (e:JQueryEventObject) => { addShape(ttrans.bbox, "black", "yellow", 0.1f) }
-            val hout = (e:JQueryEventObject) => {}
-            jQuery(s"#${cid}").hover(hin, hout)
-            totalLineNum += 1
-          }
+  //           val hin = (e:JQueryEventObject) => { addShape(ttrans.bbox, "black", "yellow", 0.1f) }
+  //           val hout = (e:JQueryEventObject) => {}
+  //           jQuery(s"#${cid}").hover(hin, hout)
+  //           totalLineNum += 1
+  //         }
 
-        })
+  //       })
 
-    }
-    true
-  }
+  //   }
+  //   true
+  // }
 
-  def getLabelOverlay(): Boolean = {
-    async {
-      setupImageGeometries()
+  // def getLabelOverlay(): Boolean = {
+  //   async {
+  //     setupImageGeometries()
 
-      printlog(s"getting overlay")
-      server
-        .getLabelOverlay(artifactId).call()
-        .map(runTrace(_))
+  //     printlog(s"getting overlay")
+  //     server
+  //       .getLabelOverlay(artifactId).call()
+  //       .map(runTrace(_))
+  //   }
 
-    }
-
-    true
-  }
+  //   true
+  // }
 
   def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
     val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]

@@ -3,15 +3,11 @@ package watrcolors
 package client
 
 import java.nio.ByteBuffer
-import scala.annotation.tailrec
-import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import scala.scalajs.js.typedarray.{ ArrayBuffer, TypedArrayBuffer }
-import scala.util.Random
 import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scalatags.JsDom.all._
-
 
 import boopickle.DefaultBasic._
 

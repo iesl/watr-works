@@ -11,10 +11,11 @@ import scala.concurrent.Future
 import scala.async.Async.{async, await}
 import scala.collection.mutable
 
+import geometry._
 import GeometricFigure._
 
 trait FabricCanvasOperations {
-  // import org.scalajs.jquery.jQuery
+  import org.querki.jquery.{$ => jQuery}
 
   def fabricCanvas: fabric.Canvas = {
     jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]

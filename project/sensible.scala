@@ -73,9 +73,6 @@ object SensibleThisBuild {
     "[" + blue + projectName + white + "]>> " + c.RESET
   }
 
-
-
-
   lazy val settings =  Seq(
 
     resolvers in ThisBuild ++= List(

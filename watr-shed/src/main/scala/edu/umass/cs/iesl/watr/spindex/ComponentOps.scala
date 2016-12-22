@@ -8,7 +8,6 @@ import textboxing.{TextBoxing => TB}, TB._
 import utils.SlicingAndDicing._
 import utils.{CompassDirection => Compass}
 import tracing.VisualTracer, VisualTracer._
-import tracing.TraceLog // , TraceLog._
 import scala.collection.mutable
 import utils.EnrichNumerics._
 import TextReflowConversion._
@@ -16,6 +15,7 @@ import TextReflowConversion._
 import geometry._
 import GeometricFigure._
 import EnrichGeometricFigures._
+// import TraceLog // , TraceLog._
 
 object ComponentOperations {
   import textreflow._

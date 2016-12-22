@@ -10,7 +10,7 @@ trait StaticCanvasProperties extends js.Object {
 
 
   // backgroundColor:{(String|fabric.Pattern)} = '',
-  var backgroundColor: String                  =  js.native // ''
+  def backgroundColor: String                  =  js.native // ''
   // backgroundImage:fabric.Image              = null,
   // overlayColor:{(String|fabric.Pattern)}    = '',
   // overlayImage:fabric.Image                 = null,
