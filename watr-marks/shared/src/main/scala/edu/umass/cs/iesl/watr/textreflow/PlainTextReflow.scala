@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
+// TODO plaintext reflow started as testing util, and still has a mix of testing and production code
 trait PlainTextReflow {
   import scalaz._, Scalaz._
   import utils.ScalazTreeImplicits._

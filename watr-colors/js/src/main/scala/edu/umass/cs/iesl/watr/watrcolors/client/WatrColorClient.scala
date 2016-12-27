@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
+import scala.scalajs.js.annotation.JSExport
 
 @JSExport
 object WatrColorClient {
