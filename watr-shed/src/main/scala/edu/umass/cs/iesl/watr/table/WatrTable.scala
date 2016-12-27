@@ -12,9 +12,11 @@ import spindex._
 // import TypeTags._
 // import textreflow.TextReflowRendering._
 // import java.net.URI
-import geometry._
-// import apps._
 
+import geometry._
+import textreflow._
+
+// import apps._
 // import GeometricFigure._
 // import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
@@ -32,18 +34,19 @@ object WatrTable {
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
-        |import watr._, spindex._
+        |import watr._, spindex._, geometry._
         |import table._
         |import ShellCommands._
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox
+        |implicit val pp2 = pprintTextReflow
         |""".stripMargin
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
 
   def replMain() = ammonite.Main(
     // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
-    // predef = predef,
+    predef = predef,
     // defaultPredef = true,
     wd = pwd,
     welcomeBanner = Some(welcomeBanner),
@@ -74,6 +77,11 @@ object ShellCommands {
 
   def pprintBox: PPrinter[TB.Box] = PPrinter({(box, config) =>
     Iterator(box.toString())
+  })
+
+  def pprintTextReflow: PPrinter[TextReflow] = PPrinter({(textReflow, config) =>
+    val text = textReflow.toText()
+    Iterator(text)
   })
 
   def initCorpus(): Corpus = {
@@ -305,8 +313,9 @@ object ShellCommands {
 
   implicit class RicherDocumentSegmenter(val thisDocumentSegmenter: DocumentSegmenter) extends AnyVal {
 
-    def lines(): Seq[Component] = {
-      ???
+    def lines(): Seq[TextReflow] = {
+      val zoneIndexer = thisDocumentSegmenter.zoneIndexer
+      zoneIndexer.getTextReflows()
     }
   }
 
@@ -320,7 +329,7 @@ object ShellCommands {
 
     }
 
-    def lines(): Seq[Component]= {
+    def lines(): Seq[TextReflow]= {
       val lls = for {
         segmenter <- thisCorpusEntry.segment()
       } yield {
@@ -329,31 +338,19 @@ object ShellCommands {
       lls.getOrElse(Seq())
     }
 
-    def linesw(): Seq[String]= {
-      val lls = for {
-        segmenter <- thisCorpusEntry.segment()
-      } yield {
-        segmenter.lines()
-      }
-
-      lls.map(_.map(_.webShow())).getOrElse(Seq())
-    }
-
 
     def segment(): Option[DocumentSegmenter] = {
+      for {
+        pdfArtifact    <- thisCorpusEntry.getPdfArtifact
+        pdfPath        <- pdfArtifact.asPath.toOption
+      } yield {
 
-      // val rootDirectory = thisCorpusEntry.corpus.corpusRoot
-      // val entryDescriptor = thisCorpusEntry.entryDescriptor
+        val segmenter = DocumentSegmenter
+          .createSegmenter(thisCorpusEntry.getURI, pdfPath, Seq())
 
-      // val conf = extract.AppConfig(
-      //   corpusRoot = rootDirectory.toIO.some,
-      //   inputEntryDescriptor = entryDescriptor.some,
-      //   action = "docseg".some,
-      //   force = true
-      // )
-
-      // extract.Works.segmentDocument(conf)
-      ???
+        segmenter.runPageSegmentation()
+        segmenter
+      }
     }
 
   }
@@ -373,19 +370,21 @@ object ShellCommands {
     }
 
     def sketchyLines(n: Int = 0, skip: Int = 0): Seq[Component] = {
-      val lls = for (entry <- chooseEntries(n, skip)) yield {
-        entry.lines.filter(_.hasUnknownWords())
-      }
-      lls.flatten
+      // val lls = for (entry <- chooseEntries(n, skip)) yield {
+      //   entry.lines.filter(_.hasUnknownWords())
+      // }
+      // lls.flatten
+      ???
     }
 
     def showSketchyLines(n: Int = 0, skip: Int = 0): Seq[Box] = {
-      val lls = for (entry <- chooseEntries(n, skip)) yield {
-        entry.lines
-          .filter(_.hasUnknownWords())
-          .map(formatLineComponent(entry, _))
-      }
-      lls.flatten
+      // val lls = for (entry <- chooseEntries(n, skip)) yield {
+      //   entry.lines
+      //     .filter(_.hasUnknownWords())
+      //     .map(formatLineComponent(entry, _))
+      // }
+      // lls.flatten
+      ???
     }
   }
 }

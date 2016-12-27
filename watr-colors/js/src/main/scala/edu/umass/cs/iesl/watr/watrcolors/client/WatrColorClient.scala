@@ -59,10 +59,17 @@ object WatrColorClient {
       started = true
 
       println("WatrColors Client started")
-      // switchViews(new CorpusExplorerClient())
-      // switchViews(new WatrTableClient())
 
     }
+  }
+}
+
+@JSExport
+object DevClient {
+
+  @JSExport
+  def main(): Unit = {
+    println("Dev Client started (yet again)")
   }
 
 }

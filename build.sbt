@@ -1,12 +1,11 @@
 import sbt.Keys._
-import spray.revolver.AppProcess
-import com.lihaoyi.workbench.Plugin._
+// import spray.revolver.AppProcess
+// import com.lihaoyi.workbench.Plugin._
 
 SensibleThisBuild.settings
 
 autoCompilerPlugins := true
 
-enablePlugins(ScalaJSPlugin)
 
 val Lib = CommonLibs
 
@@ -69,6 +68,10 @@ lazy val watrshed = (project in file("watr-shed"))
   .dependsOn(watrprelude)
   .dependsOn(watrmarksJVM)
 
+
+enablePlugins(ScalaJSPlugin)
+enablePlugins(WorkbenchPlugin)
+
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++= Seq(
@@ -91,7 +94,6 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "org.webjars" % "mousetrap" % "1.6.0"))
   .dependsOn(watrmarks)
 
-
 lazy val watrcolorsJS = watrcolors.js
 
 
@@ -103,7 +105,3 @@ lazy val watrcolorsJVM = watrcolors.jvm
     ((classDirectory in (watrcolorsJS, Compile)).value / ".." / "watrcolors-fastopt.js.map").get.head
   ))
 
-// (fastOptJS in (watrcolorsJS, Compile)).value.data
-// (artifactPath in(watrcolorsJS, Compile, fullOptJS)).value,
-// (artifactPath in(watrcolorsJS, Compile, packageJSDependencies)).value,
-// (artifactPath in(watrcolorsJS, Compile, packageScalaJSLauncher)).value,
