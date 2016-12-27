@@ -4,12 +4,11 @@ package client
 
 import scala.scalajs.js.annotation.JSExport
 
-// import native.mousetrap._
-
 import textreflow._
+import geometry._
+import GeometricFigure._
 
-
-object TextReflowExamples extends PlainTextReflow {
+object TextReflowExamples extends PlainTextReflow with HtmlCanvasRendering {
   import TextReflowF._
   import matryoshka._
   import matryoshka.data._
@@ -36,6 +35,13 @@ object TextReflowExamples extends PlainTextReflow {
     val res = tr.cata(attributePara(renderToHtml))
     res.toPair._1
   }
+
+  def textHtmlCanvasShapes(): Unit = {
+    val ltb = LTBounds(10, 10, 20, 50)
+    val shape = createShape(ltb, "black", "yellow", 0.3f)
+    jQuery("#canvas")
+
+  }
 }
 
 
@@ -44,11 +50,12 @@ object DevClient {
 
   import TextReflowExamples._
 
-  // construct a text reflow widget
-
   @JSExport
   def main(): Unit = {
     println("Dev Client started (yet again)")
+    val html = renderHtml(example1)
+
+    jQuery("#main").append(html)
   }
 
 }

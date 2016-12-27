@@ -156,7 +156,7 @@ class SvgOverview(
     }
     applyHtmlUpdates(res)
 
-    val jqOverlayContainer = jQuery("#overlay-container")
+    // val jqOverlayContainer = jQuery("#overlay-container")
 
     val c = new fabric.Canvas("fabric-canvas", fabric.CanvasOptions)
 

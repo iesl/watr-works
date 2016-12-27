@@ -5,7 +5,6 @@ package html
 import scalatags.Text.all._
 
 
-
 class SvgOverviewView() {
 
 

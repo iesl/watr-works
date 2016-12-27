@@ -14,87 +14,19 @@ import scala.collection.mutable
 import geometry._
 import GeometricFigure._
 
-trait FabricCanvasOperations {
-  import org.querki.jquery.{$ => jQuery}
-
-  def fabricCanvas: fabric.Canvas = {
-    jQuery("#fabric-canvas").prop("fabric").asInstanceOf[fabric.Canvas]
-  }
+trait FabricCanvasOperations extends HtmlCanvasRendering {
 
   def addShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): fabric.FabricObject = {
-    shape match {
-      case p: Point =>
-        val radius = 20
+    val cshape = createShape(shape, color, bg, opacity)
+    getFabric("fabric-canvas").add(cshape)
 
-        val c = new fabric.Circle()
-        c.left = p.x - radius
-        c.top = p.y - radius
-        c.radius = radius
-        c.stroke      = color
-        c.strokeWidth = 2
-        c.fill        = bg
-        c.hasControls = false
-        c.hasBorders  = false
-        c.selectable  = false
-        // c.opacity = opacity
-
-        fabricCanvas.add(c)
-        c
-
-      case Line(p1: Point, p2: Point) =>
-        val l = new fabric.Line()
-        l.x1 = p1.x
-        l.y1 = p1.y
-        l.x2 = p2.x
-        l.y2 = p2.y
-        l.stroke      = color
-        l.strokeWidth = 2
-        l.fill        = bg
-        // l.opacity = opacity
-
-        fabricCanvas.add(l)
-        l
-
-      case b:LTBounds => addLTBoundsRect(b, color, bg, opacity)
-
-      case b:LBBounds =>
-        val lt = LTBounds(b.left, b.bottom-b.height, b.width, b.height)
-        addLTBoundsRect(lt, color, bg, opacity)
-
-    }
+    cshape
   }
 
-
   def addLTBoundsRect(bbox: LTBounds, color: String, bg: String, opacity: Float): fabric.FabricObject = {
-
-    val rect = fabric.Rect()
-    rect.top         = bbox.top
-    rect.left        = bbox.left
-    rect.width       = bbox.width
-    rect.height      = bbox.height
-    rect.stroke      = color
-    rect.strokeWidth = 1
-    rect.fill        = bg
-    rect.hasControls = false
-    rect.hasBorders  = false
-    rect.selectable  = false
-    rect.opacity = opacity
-
-    fabricCanvas.add(rect)
-    rect
-
-    // rect.animate('angle', '-=5', { onChange: canvas.renderAll.bind(canvas) });
-    // val canv = js.Dynamic.literal(
-    //   c=jQuery("#fabric-canvas")
-    // )
-
-    // rect.animate("opacity", "-=0.02")
-
-    // rect.animate("top", "+=10", js.Dynamic.literal(
-    //   onChange=canv.c.renderAll.bind(canv.c),
-    //   duration=2000
-    // ))
-
+    val cshape = addLTBoundsRect(bbox, color, bg, opacity)
+    getFabric("fabric-canvas").add(cshape)
+    cshape
   }
 
 }
