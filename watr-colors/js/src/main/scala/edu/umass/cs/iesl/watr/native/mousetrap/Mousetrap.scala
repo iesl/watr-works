@@ -19,3 +19,5 @@ object Mousetrap extends js.Object {
 trait MousetrapEvent extends js.Object {
   def `type`: String = js.native
 }
+
+
