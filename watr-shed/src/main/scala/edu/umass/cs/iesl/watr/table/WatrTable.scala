@@ -22,7 +22,7 @@ import textreflow._
 import ComponentTypeEnrichments._
 
 import textboxing.{TextBoxing => TB}, TB._
-
+pprintBox
 object WatrTable {
   import ShellCommands._
 
