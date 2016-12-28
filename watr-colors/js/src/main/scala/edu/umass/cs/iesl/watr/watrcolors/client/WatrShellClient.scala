@@ -38,6 +38,7 @@ object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler]  with RemoteCa
 
 @JSExport
 object WatrTableClient extends ClientView with WatrTableApi {
+  override def fabricCanvas = getFabric("fabric-canvas")
 
   override val initKeys = Keybindings(List(
   ))

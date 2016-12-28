@@ -58,7 +58,7 @@ trait CanvasProperties extends StaticCanvasProperties {
 }
 
 
-@js.native @JSName("fabric.Collection")
+@js.native
 trait FabricCollection extends js.Object {
 
   // @param {...fabric.Object} object Zero or more fabric instances

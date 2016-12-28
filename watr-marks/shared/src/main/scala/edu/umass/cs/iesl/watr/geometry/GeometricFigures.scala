@@ -11,6 +11,7 @@ sealed trait Area
 
 object GeometricFigure {
   import EnrichGeometricFigures._
+
   case class LTBounds(
     left: Double,
     top: Double,

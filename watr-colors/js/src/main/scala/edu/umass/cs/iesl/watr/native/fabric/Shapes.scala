@@ -6,8 +6,9 @@ import scala.scalajs.js
 import js.annotation.JSName
 // import scala.language.dynamics
 
-@js.native @JSName("fabric.Object")
+@js.native
 trait FabricObject extends ObjectProperties {
+
 
   def getClipTo(): js.Function = js.native
   def setClipTo(clipTo: js.Function): FabricObject = js.native
@@ -321,9 +322,9 @@ class Circle extends FabricObject {
 
   def setRadius(value: Double): Circle = js.native
 
-  var     radius: Number = js.native
-  var     startAngle: Number = js.native
-  var     endAngle: Number = js.native // =  pi * 2,
+  var radius: Number = js.native
+  var startAngle: Number = js.native
+  var endAngle: Number = js.native // =  pi * 2,
 
 }
 

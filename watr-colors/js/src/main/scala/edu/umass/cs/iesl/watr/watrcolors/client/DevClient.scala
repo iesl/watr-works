@@ -8,11 +8,18 @@ import textreflow._
 import geometry._
 import GeometricFigure._
 
-object TextReflowExamples extends PlainTextReflow with HtmlCanvasRendering {
+import native.fabric
+
+trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   import TextReflowF._
   import matryoshka._
   import matryoshka.data._
   import matryoshka.implicits._
+
+  override lazy val fabricCanvas =  {
+    initFabric("canvas")
+    getFabric("canvas")
+  }
 
   def example1(): TextReflow = {
     val p0 = stringToTextReflow("To be or not to be.")
@@ -37,18 +44,17 @@ object TextReflowExamples extends PlainTextReflow with HtmlCanvasRendering {
   }
 
   def textHtmlCanvasShapes(): Unit = {
-    val ltb = LTBounds(10, 10, 20, 50)
-    val shape = createShape(ltb, "black", "yellow", 0.3f)
-    jQuery("#canvas")
 
+    fabricCanvas.add(createShape(Point(240, 240), "black", "blue", 0.5f))
+    fabricCanvas.add(createShape(LBBounds(240, 240, 100, 200), "red", "black", 0.5f))
+    fabricCanvas.add(createShape(LTBounds(240, 240, 100, 200), "black", "yellow", 0.5f))
+    fabricCanvas.add(createShape(Line(Point(240, 40), Point(340, 440)), "black", "green", 0.5f))
   }
 }
 
 
 @JSExport
-object DevClient {
-
-  import TextReflowExamples._
+class DevClient extends TextReflowExamples {
 
   @JSExport
   def main(): Unit = {
@@ -56,6 +62,8 @@ object DevClient {
     val html = renderHtml(example1)
 
     jQuery("#main").append(html)
+
+    textHtmlCanvasShapes()
   }
 
 }

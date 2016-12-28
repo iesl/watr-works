@@ -6,11 +6,10 @@ import scala.scalajs.js
 import js.annotation.JSName
 
 
-
 @js.native
 trait ObjectProperties extends js.Object {
-  @JSName("type")
-  var otype:                     String = js.native // 'object',
+  @JSName("type") var otype:                     String = js.native // 'object',
+
   var originX:                  String = js.native // 'left',
   var originY:                  String = js.native // 'top',
   var top:                      Number = js.native // 0,

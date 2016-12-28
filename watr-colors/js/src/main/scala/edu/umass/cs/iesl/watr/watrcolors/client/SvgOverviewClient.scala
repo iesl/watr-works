@@ -7,43 +7,43 @@ import scala.async.Async.{async, await}
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import scala.scalajs.js.annotation.JSExport
-import org.scalajs.dom._
+// import org.scalajs.dom._
 
-import autowire._
-import boopickle.DefaultBasic._
-import Picklers._
+// import autowire._
+// import boopickle.DefaultBasic._
+// import Picklers._
 
-import native.mousetrap._
-import native.fabric
+// import native.mousetrap._
+// import native.fabric
 
-import org.querki.jquery._
 
 import geometry._
-import GeometricFigure._
+// import GeometricFigure._
 
 @JSExport
 class SvgOverview(
   artifactId: String
-) extends ClientView with VisualTraceOperations { self =>
-  import handlers._
+) extends ClientView { self =>
+  // import handlers._
 
-  val server = ServerWire("svg")[SvgOverviewApi]
+  // val server = ServerWire("svg")[SvgOverviewApi]
 
   override val initKeys = Keybindings(List(
-    // "b" -> ((e: MousetrapEvent) => getLabelOverlay()),
-    "t" -> ((e: MousetrapEvent) => initSelection()),
-    // "w" -> ((e: MousetrapEvent) => getTextOverlay()),
-    "z" -> ((e: MousetrapEvent) => selectViaLine()),
-    "d" -> ((e: MousetrapEvent) => initDeletion())
+  //   // "b" -> ((e: MousetrapEvent) => getLabelOverlay()),
+  //   // "t" -> ((e: MousetrapEvent) => initSelection()),
+  //   // "w" -> ((e: MousetrapEvent) => getTextOverlay()),
+  //   // "z" -> ((e: MousetrapEvent) => selectViaLine()),
+  //   // "d" -> ((e: MousetrapEvent) => initDeletion())
   ))
 
-  def canvasOffset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+  // def canvasOffset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+  def fabricCanvas = getFabric("fabric-canvas")
 
-  def canvasBorder: Int = 10 // ???
-  def canvasH: Int = fabricCanvas.getHeight
-  def canvasW: Int = fabricCanvas.getWidth
-  def canvasX: Int = canvasOffset.left.toInt
-  def canvasY: Int = canvasOffset.top.toInt
+  // def canvasBorder: Int = 10 // ???
+  // def canvasH: Int = fabricCanvas.getHeight
+  // def canvasW: Int = fabricCanvas.getWidth
+  // def canvasX: Int = canvasOffset.left.toInt
+  // def canvasY: Int = canvasOffset.top.toInt
 
   // def getTextOverlay(): Boolean = {
   //   // Clear the canvas
@@ -105,89 +105,89 @@ class SvgOverview(
   //   true
   // }
 
-  def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
-    val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]
-    translateLTBounds(-offset.left, -offset.top, bbox)
-  }
+  // def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
+  //   val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]
+  //   translateLTBounds(-offset.left, -offset.top, bbox)
+  // }
 
-  def selectViaLine(): Boolean = {
-    for {
-      userPath <- getUserPath(self.fabricCanvas)
-    } yield {
-      val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
-      val pathAbs = translatePath(-offset.left, -offset.top, userPath)
+  // def selectViaLine(): Boolean = {
+  //   for {
+  //     userPath <- getUserPath(self.fabricCanvas)
+  //   } yield {
+  //     val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+  //     val pathAbs = translatePath(-offset.left, -offset.top, userPath)
 
-      server.onDrawPath(artifactId, pathAbs).call().foreach{ applyHtmlUpdates(_) }
-    }
+  //     server.onDrawPath(artifactId, pathAbs).call().foreach{ applyHtmlUpdates(_) }
+  //   }
 
-    true
-  }
+  //   true
+  // }
 
-  def initDeletion(): Boolean = {
-    for {
-      bbox <- getUserLTBounds(self.fabricCanvas)
-    } yield {
-      val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
-    }
+  // def initDeletion(): Boolean = {
+  //   for {
+  //     bbox <- getUserLTBounds(self.fabricCanvas)
+  //   } yield {
+  //     val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+  //   }
 
-    true
-  }
+  //   true
+  // }
 
-  def initSelection(): Boolean = {
-    for {
-      // TODO alter cursor to reflect selection mode
-      bbox <- getUserLTBounds(fabricCanvas)
-    } yield {
-      val bboxAbs = alignBboxToDiv("#overlay-container", bbox)
+  // def initSelection(): Boolean = {
+  //   for {
+  //     // TODO alter cursor to reflect selection mode
+  //     bbox <- getUserLTBounds(fabricCanvas)
+  //   } yield {
+  //     val bboxAbs = alignBboxToDiv("#overlay-container", bbox)
 
-      async {
-        val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
-        applyHtmlUpdates(res)
-        addLTBoundsRect(bboxAbs, "black", "#000", 0.1f)
-      }
-    }
-    true
-  }
+  //     async {
+  //       val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
+  //       applyHtmlUpdates(res)
+  //       addLTBoundsRect(bboxAbs, "black", "#000", 0.1f)
+  //     }
+  //   }
+  //   true
+  // }
 
   def createView(): Unit = async {
 
-    val res = await {
-      server.createView(artifactId).call()
-    }
-    applyHtmlUpdates(res)
+    // val res = await {
+    //   server.createView(artifactId).call()
+    // }
+    // applyHtmlUpdates(res)
 
-    // val jqOverlayContainer = jQuery("#overlay-container")
+    // // val jqOverlayContainer = jQuery("#overlay-container")
 
-    val c = new fabric.Canvas("fabric-canvas", fabric.CanvasOptions)
+    // val c = new fabric.Canvas("fabric-canvas", fabric.CanvasOptions)
 
 
-    jQuery("#fabric-canvas").prop("fabric", c)
-    c.uniScaleTransform = true
+    // jQuery("#fabric-canvas").prop("fabric", c)
+    // c.uniScaleTransform = true
 
-    var imgCount = jQuery(".page-image").length
-    var imgReady = 0
+    // var imgCount = jQuery(".page-image").length
+    // var imgReady = 0
 
-    jQuery(".page-image").map({ (elem: Element) =>
+    // jQuery(".page-image").map({ (elem: Element) =>
 
-      def loaded(): Unit = {
-        imgReady += 1
-        if (imgReady == imgCount) {
-          val h = jQuery("#img-container").height()
-          fabricCanvas.setHeight(h.toInt+1)
-          val w = jQuery("#img-container").width()
-          fabricCanvas.setWidth(w.toInt+1)
+    //   def loaded(): Unit = {
+    //     imgReady += 1
+    //     if (imgReady == imgCount) {
+    //       val h = jQuery("#img-container").height()
+    //       fabricCanvas.setHeight(h.toInt+1)
+    //       val w = jQuery("#img-container").width()
+    //       fabricCanvas.setWidth(w.toInt+1)
 
-          println(s"fabric canvas loaded h/w = ${h}/${w}")
+    //       println(s"fabric canvas loaded h/w = ${h}/${w}")
 
-        }
-      }
+    //     }
+    //   }
 
-      elem.addEventListener("load", {(e: Event) => loaded() })
-        elem.addEventListener("error", (e: Event) => {
-          println("image load encountered an error")
-        })
+    //   elem.addEventListener("load", {(e: Event) => loaded() })
+    //     elem.addEventListener("error", (e: Event) => {
+    //       println("image load encountered an error")
+    //     })
 
-    })
+    // })
 
   }
 }

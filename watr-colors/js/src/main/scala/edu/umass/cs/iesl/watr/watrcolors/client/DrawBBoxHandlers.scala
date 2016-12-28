@@ -4,6 +4,7 @@ package client
 
 // import scala.scalajs.js
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js.annotation.JSExport
 
 import native.fabric
 
@@ -15,17 +16,18 @@ import geometry._
 import GeometricFigure._
 
 trait FabricCanvasOperations extends HtmlCanvasRendering {
+  def fabricCanvas: fabric.Canvas
 
   def addShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): fabric.FabricObject = {
     val cshape = createShape(shape, color, bg, opacity)
-    getFabric("fabric-canvas").add(cshape)
+    fabricCanvas.add(cshape)
 
     cshape
   }
 
   def addLTBoundsRect(bbox: LTBounds, color: String, bg: String, opacity: Float): fabric.FabricObject = {
-    val cshape = addLTBoundsRect(bbox, color, bg, opacity)
-    getFabric("fabric-canvas").add(cshape)
+    val cshape = createLTBoundsRect(bbox, color, bg, opacity)
+    fabricCanvas.add(cshape)
     cshape
   }
 
