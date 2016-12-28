@@ -1,6 +1,8 @@
 # WATR-works
-[WatrWorks Documentation (WIP)](http://iesl.github.io/watr-works/)
 A set of related projects to extract text from PDFs
+
+[WatrWorks Documentation (WIP)](http://iesl.github.io/watr-works/)
+
 ## Running the command-line app, bin/works
 
 From the project root,

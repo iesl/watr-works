@@ -10,12 +10,12 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
 
 
   it should "create and flatten child structure" in {
-    val zoneIndex = createZoneIndexer(
+    val mpageIndex = createMultiPageIndex(
       // 012 3 4567890
       """Eu1 - xBixVO4"""
     )
 
-    for { row  <- labelRow(zoneIndex, 0, LB.VisualLine) } {
+    for { row  <- labelRow(mpageIndex, 0, LB.VisualLine) } {
 
       // Create an ordering for page atoms
       row.connectChildren(LB.PageAtom, Some(_.bounds.left))
@@ -41,13 +41,13 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
   }
 
   it should "demonstrate sup/subscript labeling" in {
-    val zoneIndex = createZoneIndexer(
+    val mpageIndex = createMultiPageIndex(
       // 012 3 4567890
       """Eu1 - xBixVO4"""
     )
 
     //  when ccs are 'connected' they query is cached such that future lookups return the ordered children
-    for { row  <- labelRow(zoneIndex, 0, LB.VisualLine) } {
+    for { row  <- labelRow(mpageIndex, 0, LB.VisualLine) } {
 
       row.connectChildren(LB.PageAtom, Some(_.bounds.left))
 

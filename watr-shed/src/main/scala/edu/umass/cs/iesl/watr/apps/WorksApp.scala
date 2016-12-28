@@ -381,7 +381,7 @@ object Works extends App {
       pdfPath        <- pdfArtifact.asPath
     } {
       val segmenter = runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
-      val mergedZoneIndex = segment.DocsegMerging.mergePriorDocseg(segmenter.zoneIndexer, priorDocseg)
+      val mergedZoneIndex = segment.DocsegMerging.mergePriorDocseg(segmenter.mpageIndexer, priorDocseg)
 
       val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex, Seq())
       corpusEntry.putArtifact(docsegFile, output)
@@ -416,11 +416,11 @@ object Works extends App {
 
           val output = paper.map({ p =>
             val alignedGroups =
-              segment.MITAlignPredsynth.alignPredSynthPaper(segmenter.zoneIndexer, p)
+              segment.MITAlignPredsynth.alignPredSynthPaper(segmenter.mpageIndexer, p)
             writePredsynthJson(p, corpusEntry)
-            formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer, alignedGroups)
+            formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndexer, alignedGroups)
           }).getOrElse(
-            formats.DocumentIO.richTextSerializeDocument(segmenter.zoneIndexer, Seq())
+            formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndexer, Seq())
           )
 
           corpusEntry.putArtifact(artifactOutputName, output)

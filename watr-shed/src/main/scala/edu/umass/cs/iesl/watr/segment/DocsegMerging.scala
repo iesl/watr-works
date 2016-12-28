@@ -34,10 +34,10 @@ object DocsegMerging {
 
   // import textreflow._
 
-  def mergePriorDocseg(zoneIndexer: ZoneIndexer, priorDocseg: Docseg.Docseg): ZoneIndexer = {
+  def mergePriorDocseg(mpageIndexer: MultiPageIndex, priorDocseg: Docseg.Docseg): MultiPageIndex = {
     // 1. map each mention to one or more target figures within the prior docseg
-    // 2. translate the prior target figures into new zoneIndex geometry
-    // 3. query the new zoneIndex for spans of text that fall within the range of the target figures
+    // 2. translate the prior target figures into new mpageIndex geometry
+    // 3. query the new mpageIndex for spans of text that fall within the range of the target figures
     // 4. construct new Docseg.Mention(...) with updated text/positions, copying existing role/ids
     // priorDocseg.lines
 
@@ -48,7 +48,7 @@ object DocsegMerging {
     })
 
 
-    zoneIndexer
+    mpageIndexer
   }
 
 

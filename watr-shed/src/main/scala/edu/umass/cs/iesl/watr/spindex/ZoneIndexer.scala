@@ -18,7 +18,9 @@ import tracing.VisualTracer
 import predsynth._
 import textreflow._
 
-class ZoneIndexer(
+/**
+  */
+class MultiPageIndex(
   srcUri: URI
 )  {
 
@@ -267,11 +269,11 @@ class ZoneIndexer(
 }
 
 
-object ZoneIndexer {
+object MultiPageIndex {
 
-  def loadSpatialIndices(srcUri: URI, regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): ZoneIndexer = {
+  def loadSpatialIndices(srcUri: URI, regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): MultiPageIndex = {
 
-    val zindexer = new ZoneIndexer(srcUri)
+    val zindexer = new MultiPageIndex(srcUri)
     regionsAndGeometry.foreach { case(regions, geom)  =>
       val pageInfo = zindexer.addPage(geom)
 

@@ -7,7 +7,7 @@ import spindex._
 object SpatialIndexOperations {
 
 
-  implicit class RicherZoneIndex(val zoneIndex: ZoneIndexer) extends AnyVal {
+  implicit class RicherZoneIndex(val mpageIndex: MultiPageIndex) extends AnyVal {
 
   //   def approximateColumnBins(pageId: Int@@PageID, charBoxes: Seq[CharAtom]): Seq[(CompassDirection, Line)] = {
   //     val leftBins = charBoxes
@@ -28,7 +28,7 @@ object SpatialIndexOperations {
   //         leftEdge.p2.y - leftEdge.p1.y
   //       ).translate(-5.1, 0)
 
-  //       val charsToLeft = zoneIndex.getPageIndex(pageId).componentIndex.queryForIntersects(query)
+  //       val charsToLeft = mpageIndex.getPageIndex(pageId).componentIndex.queryForIntersects(query)
 
   //       val (splits, leftovers) = charsToLeft
   //         .sortBy(_.targetRegion.bbox.bottom)

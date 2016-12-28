@@ -22,17 +22,17 @@ case class BioNode(
 sealed trait Component {
   def id: Int@@ComponentID
 
-  def zoneIndex: ZoneIndexer
-  def vtrace = zoneIndex.vtrace
+  def mpageIndex: MultiPageIndex
+  def vtrace = mpageIndex.vtrace
 
   def roleLabel: Label
 
-  lazy val pageId = zoneIndex.getPageForComponent(this)
+  lazy val pageId = mpageIndex.getPageForComponent(this)
 
-  def getSrcUri() = zoneIndex.getSrcUri()
+  def getSrcUri() = mpageIndex.getSrcUri()
 
   def getPageGeometry(): PageGeometry = {
-    zoneIndex.getPageGeometry(pageId)
+    mpageIndex.getPageGeometry(pageId)
   }
 
   def queryAtoms(): Seq[AtomicComponent] = {
@@ -40,10 +40,10 @@ sealed trait Component {
   }
 
   def queryInside(role: Label): Seq[Component] = {
-    zoneIndex.getChildren(this, role) match {
+    mpageIndex.getChildren(this, role) match {
       case Some(children) => children
       case None =>
-        val pinfo = zoneIndex.getPageIndex(zoneIndex.getPageForComponent(this))
+        val pinfo = mpageIndex.getPageIndex(mpageIndex.getPageForComponent(this))
         val bounds = this.targetRegion.bbox
         pinfo.componentIndex
           .queryForContained(bounds)
@@ -80,11 +80,11 @@ sealed trait Component {
 
   // TODO: this should really return a Seq[Option[Component]] to signify existance vs. empty children
   def getChildren(l: Label): Seq[Component] = {
-    zoneIndex.getChildren(this, l).getOrElse {Seq()}
+    mpageIndex.getChildren(this, l).getOrElse {Seq()}
   }
 
   def hasChildren(l: Label): Boolean = {
-    zoneIndex.getChildren(this, l).isDefined
+    mpageIndex.getChildren(this, l).isDefined
   }
 
   def getDescendants(l: Label): Seq[Component] = {
@@ -93,7 +93,7 @@ sealed trait Component {
   }
 
   def setChildren(l: Label, children: Seq[Component]): Unit = {
-    zoneIndex.setChildrenWithLabel(this, l, children.map(_.id))
+    mpageIndex.setChildrenWithLabel(this, l, children.map(_.id))
   }
 
   def connectChildren(l: Label, sortf: Option[((Component)=>Double)]): Unit = {
@@ -103,7 +103,7 @@ sealed trait Component {
       .getOrElse(sub)
       .map(_.id)
 
-    zoneIndex.setChildrenWithLabel(this, l, sorted)
+    mpageIndex.setChildrenWithLabel(this, l, sorted)
   }
 
   // TODO: This is redundant w/targetregion
@@ -113,16 +113,16 @@ sealed trait Component {
 
   def addLabel(l: Label): Component = {
     // vtrace.trace("addLabel" withTrace link(showComponent(this), showLabel(l)))
-    zoneIndex.addLabel(this, l)
+    mpageIndex.addLabel(this, l)
   }
 
   def removeLabel(l: Label): Component = {
     // vtrace.trace("removeLabel())" withTrace link(showComponent(this), showLabel(l)))
-    zoneIndex.removeLabel(this, l)
+    mpageIndex.removeLabel(this, l)
   }
 
   def getLabels(): Set[Label] = {
-    zoneIndex.getLabels(this)
+    mpageIndex.getLabels(this)
   }
 
 
@@ -148,7 +148,7 @@ case class RegionComponent(
   id: Int@@ComponentID,
   override val roleLabel: Label,
   var region: TargetRegion,
-  override val zoneIndex: ZoneIndexer
+  override val mpageIndex: MultiPageIndex
 ) extends Component {
 
   def cloneAndNest(l: Label): RegionComponent = {
@@ -159,10 +159,10 @@ case class RegionComponent(
 
   private def initCloneAs(l: Label): RegionComponent = {
     copy(
-      id = zoneIndex.componentIdGen.nextId,
+      id = mpageIndex.componentIdGen.nextId,
       roleLabel = l,
       region = region.copy(
-        id = zoneIndex.regionIdGen.nextId
+        id = mpageIndex.regionIdGen.nextId
       )
     )
   }
@@ -170,7 +170,7 @@ case class RegionComponent(
   def cloneAs(l: Label): RegionComponent = {
     val atoms = queryAtoms()
     val clone = initCloneAs(l)
-    zoneIndex.addComponent(clone)
+    mpageIndex.addComponent(clone)
     clone.setChildren(LB.PageAtom, atoms)
     clone
   }
@@ -189,7 +189,7 @@ case class RegionComponent(
         bbox = cbounds(atoms)))
 
     newRegion.setChildren(LB.PageAtom, atoms)
-    zoneIndex.addComponent(newRegion)
+    mpageIndex.addComponent(newRegion)
     newRegion
   }
 
@@ -200,7 +200,7 @@ case class RegionComponent(
         bbox = cbounds(children)))
 
     newRegion.setChildren(newLabel, children)
-    zoneIndex.addComponent(newRegion)
+    mpageIndex.addComponent(newRegion)
     newRegion
   }
 
@@ -272,7 +272,7 @@ case class RegionComponent(
 case class AtomicComponent(
   id: Int@@ComponentID,
   pageAtom: PageAtom,
-  override val zoneIndex: ZoneIndexer
+  override val mpageIndex: MultiPageIndex
 ) extends Component {
 
   def splitAtomsIf(
@@ -284,7 +284,7 @@ case class AtomicComponent(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
-    val newRegion = zoneIndex.createRegionComponent(pageAtom.targetRegion, LB.NullLabel) // FIXME <- nulllabel????
+    val newRegion = mpageIndex.createRegionComponent(pageAtom.targetRegion, LB.NullLabel) // FIXME <- nulllabel????
     onGrouped(newRegion, 0)
     Seq(newRegion)
   }

@@ -11,9 +11,12 @@ import watrmarks.{StandardLabels => LB}
 
 import geometry._
 
-// One or more indexes over a given page geometry, along with label maps
 /**
+  A PageIndex wraps a SpatialIndex for Components, and adds:
+    - the ability to associate labels with components
+    - A tree-like parent/child relationship between components, which provides, e.g., a reading order
   */
+
 case class PageIndex(
   componentIndex: SpatialIndex[Component],
   pageGeometry: PageGeometry,

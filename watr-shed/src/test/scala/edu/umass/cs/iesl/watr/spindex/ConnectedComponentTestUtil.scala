@@ -15,27 +15,27 @@ import TextReflowF._
 
 trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextReflow {
 
-  def textReflowToComponentReflow(textReflow: TextReflow, zoneIndex: ZoneIndexer): TextReflow = {
+  def textReflowToComponentReflow(textReflow: TextReflow, mpageIndex: MultiPageIndex): TextReflow = {
     val regions = textReflow.collect({
       case t@ Embed(Atom(c)) => c.targetRegion.bbox
     })
     val totalPageGeometry = regions.reduce(_ union _)
     val geom = PageGeometry(PageID(0), totalPageGeometry)
 
-    zoneIndex.addPage(geom)
+    mpageIndex.addPage(geom)
 
     val _ = textReflow
       .collect { case a@ Embed(Atom(c)) => c }
-      .map(a => zoneIndex.addPageAtom(a))
+      .map(a => mpageIndex.addPageAtom(a))
 
     textReflow
   }
 
-  def labelRow(zoneIndex: ZoneIndexer, row: Int, l: Label): Option[RegionComponent] = {
-    val pageInfo = zoneIndex.getPageIndex(page0)
+  def labelRow(mpageIndex: MultiPageIndex, row: Int, l: Label): Option[RegionComponent] = {
+    val pageInfo = mpageIndex.getPageIndex(page0)
     val q = LTBounds(0, row*yscale, Int.MaxValue, yscale)
     val charAtoms = pageInfo.componentIndex.queryForContained(q)
-    val reg = zoneIndex.labelRegion(charAtoms, l)
+    val reg = mpageIndex.labelRegion(charAtoms, l)
     // assert each region can select its contained page atoms
     reg.foreach { rc =>
       val patoms = rc.queryInside(LB.PageAtom)
@@ -50,24 +50,24 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextRe
 
 
 
-  def createZoneIndexer(str: String): ZoneIndexer = {
+  def createMultiPageIndex(str: String): MultiPageIndex = {
     val (atoms, geom) = stringToPageAtoms(str)
     val dummyUri = URI.create("/")
-    ZoneIndexer.loadSpatialIndices(dummyUri, Seq((atoms -> geom)))
+    MultiPageIndex.loadSpatialIndices(dummyUri, Seq((atoms -> geom)))
   }
 
-  def createZoneIndexerAndLines(str: String): (ZoneIndexer, Seq[String]) = {
+  def createMultiPageIndexAndLines(str: String): (MultiPageIndex, Seq[String]) = {
     val (atoms, geom) = stringToPageAtoms(str)
     val dummyUri = URI.create("/")
-    (ZoneIndexer.loadSpatialIndices(dummyUri, Seq((atoms -> geom))),
+    (MultiPageIndex.loadSpatialIndices(dummyUri, Seq((atoms -> geom))),
       lines(str))
   }
 
-  def tokenizeStringToZoneIndex(str: String): (ZoneIndexer, Seq[RegionComponent]) = {
-    val (zoneIndex, lines) = createZoneIndexerAndLines(str)
+  def tokenizeStringToZoneIndex(str: String): (MultiPageIndex, Seq[RegionComponent]) = {
+    val (mpageIndex, lines) = createMultiPageIndexAndLines(str)
     val visualLines = for {
       i <- 0 until lines.length
-      visualLine <- labelRow(zoneIndex, i, LB.VisualLine)
+      visualLine <- labelRow(mpageIndex, i, LB.VisualLine)
     } yield {
       // visualLine.addLabel(LB.Tokenized)
       val textSpanRegion = visualLine.cloneAs(LB.TextSpan)
@@ -85,7 +85,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextRe
 
       visualLine
     }
-    (zoneIndex, visualLines)
+    (mpageIndex, visualLines)
   }
 
   def queryComponents(pageInfo: PageIndex, x: Int, y: Int, w: Int, h: Int): Seq[Component] = {

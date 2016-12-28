@@ -22,10 +22,10 @@ import TextReflowJsonFormats._
 
 object DocumentIO extends DocsegJsonFormats {
 
-  def richTextSerializeDocument(zoneIndexer: ZoneIndexer, alignedGroups: Seq[AlignedGroup]): String = {
+  def richTextSerializeDocument(mpageIndexer: MultiPageIndex, alignedGroups: Seq[AlignedGroup]): String = {
     import play.api.libs.json, json._
 
-    val escapedTextReflows = zoneIndexer.getTextReflows()
+    val escapedTextReflows = mpageIndexer.getTextReflows()
       .map({ blockTextReflow =>
         blockTextReflow.applyLineFormatting()
       })
@@ -64,19 +64,19 @@ object DocumentIO extends DocsegJsonFormats {
     val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(   textLines.map(t => Json.stringify(JsString(t)).box):_*))
     val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
 
-    val serializedZones = indent(4)(serializeZones(zoneIndexer, escapedTextReflows, textLines))
+    val serializedZones = indent(4)(serializeZones(mpageIndexer, escapedTextReflows, textLines))
 
-    val relations = serializeRelation(zoneIndexer)
+    val relations = serializeRelation(mpageIndexer)
 
     val relationBlock = indent(4)(vjoinTrailSep(left, ",")(relations:_*))
 
     val propertyBlock = indent(4)(vjoinTrailSep(left, ",")(
-      zoneIndexer.props.map({ prop =>
+      mpageIndexer.props.map({ prop =>
         Json.stringify(Json.toJson(prop)).box
       }):_*
     ))
 
-    // val lineLabelBlock = serializeLineLabels(zoneIndexer)
+    // val lineLabelBlock = serializeLineLabels(mpageIndexer)
 
     val finalDocument = (
       s"""|{ "lines": [
@@ -110,8 +110,8 @@ object DocumentIO extends DocsegJsonFormats {
 
   }
 
-  def serializeRelation(zoneIndexer: ZoneIndexer): Seq[TB.Box] = {
-    zoneIndexer.relations
+  def serializeRelation(mpageIndexer: MultiPageIndex): Seq[TB.Box] = {
+    mpageIndexer.relations
       .filter({
         case Relation.Record(_, rel, _)
             if rel=="hasType" || rel== "hasMember" =>  false
@@ -136,10 +136,10 @@ object DocumentIO extends DocsegJsonFormats {
   }
 
 
-  def serializeZones(zoneIndexer: ZoneIndexer, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): TB.Box = {
+  def serializeZones(mpageIndexer: MultiPageIndex, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): TB.Box = {
 
     // Serialize all zones (mentions)
-    val zones = zoneIndexer.getZones
+    val zones = mpageIndexer.getZones
       .map({ zone =>
 
         // for each target region in each zone, find the (begin, end) bounds of the TextReflow in that zone
@@ -174,7 +174,7 @@ object DocumentIO extends DocsegJsonFormats {
         val pad1 = " "*(20-zoneLabel.length)
         val mentionId = zone.id.unwrap
 
-        val clustId = zoneIndexer.relations.collect({
+        val clustId = mpageIndexer.relations.collect({
           case Relation.Record(clusterId, "hasMember", e2) if Identities.idValue(e2) == mentionId =>
             Identities.idValue(clusterId)
         }).headOption.getOrElse(0)
@@ -193,7 +193,7 @@ object DocumentIO extends DocsegJsonFormats {
     vjoinTrailSep(left, ",")(zones.map(_._3):_*)
   }
 
-  def serializeLineLabels(zoneIndexer: ZoneIndexer): TB.Box = {
+  def serializeLineLabels(mpageIndexer: MultiPageIndex): TB.Box = {
 
     // val serComponents = List(
     //   LB.SectionHeadingLine,

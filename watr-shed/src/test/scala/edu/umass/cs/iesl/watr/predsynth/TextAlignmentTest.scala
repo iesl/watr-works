@@ -89,7 +89,7 @@ class MITAlignLabelTask extends ConnectedComponentTestUtil {
 
     // val allRawTexts: Seq[RawText] = ...orderBy{ (rawText.para.order, rawText.start)}
 
-    // val (zoneIndex, visualLines) = tokenizeStringToZoneIndex()
+    // val (mpageIndex, visualLines) = tokenizeStringToZoneIndex()
     /*
 
      val allVisLines = reflow.concat(visualLines) { _ => pad/dehyphenate }

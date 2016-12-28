@@ -159,7 +159,7 @@ object ComponentOperations {
         if (fn(child)) {
           val cchilds = child.getChildren(label)
           flat ++= cchilds
-          theComponent.zoneIndex.removeComponent(child)
+          theComponent.mpageIndex.removeComponent(child)
         } else {
           flat += child
         }
@@ -168,8 +168,8 @@ object ComponentOperations {
       }
     }
 
-    def zoneIndex = theComponent.zoneIndex
-    def vtrace = theComponent.zoneIndex.vtrace
+    def mpageIndex = theComponent.mpageIndex
+    def vtrace = theComponent.mpageIndex.vtrace
 
     def left: Double  = theComponent.bounds.left
     def top: Double  = theComponent.bounds.top
@@ -587,11 +587,11 @@ object ComponentOperations {
     import textreflow._
 
     def setTextReflow(r: TextReflow): Unit = {
-      theComponent.zoneIndex.setTextReflow(theComponent, r)
+      theComponent.mpageIndex.setTextReflow(theComponent, r)
     }
 
     def getTextReflow(): Option[TextReflow]= {
-      theComponent.zoneIndex.getTextReflow(theComponent.id)
+      theComponent.mpageIndex.getTextReflow(theComponent.id)
     }
   } // RicherComponent
 }

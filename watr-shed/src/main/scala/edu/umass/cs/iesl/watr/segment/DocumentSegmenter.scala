@@ -130,8 +130,8 @@ object DocumentSegmenter extends DocumentUtils {
 
 
   def createSegmenter(srcUri: URI, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
-      val zoneIndex = ZoneIndexer.loadSpatialIndices(srcUri, pagedefs)
-      new DocumentSegmenter(zoneIndex)
+      val mpageIndex = MultiPageIndex.loadSpatialIndices(srcUri, pagedefs)
+      new DocumentSegmenter(mpageIndex)
   }
 
   def candidateCrossesLineBounds(cand: Component, line: Component): Boolean = {
@@ -189,9 +189,9 @@ object DocumentSegmenter extends DocumentUtils {
 
 
 class DocumentSegmenter(
-  val zoneIndexer: ZoneIndexer
+  val mpageIndexer: MultiPageIndex
 ) {
-  def vtrace = zoneIndexer.vtrace
+  def vtrace = mpageIndexer.vtrace
 
   import scala.math.Ordering.Implicits._
   implicit def RegionIDOrdering: Ordering[Int@@RegionID] = Ordering.by(_.unwrap)
@@ -206,9 +206,9 @@ class DocumentSegmenter(
 
   def runLineDetermination(): Unit = {
     val allPageLines = for {
-      pageId <- zoneIndexer.getPages
+      pageId <- mpageIndexer.getPages
     } yield {
-      val charAtoms = zoneIndexer.getPageIndex(pageId).getPageAtoms
+      val charAtoms = mpageIndexer.getPageIndex(pageId).getPageAtoms
       vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${charAtoms.length} char atoms"))
 
       determineLines(pageId, charAtoms)
@@ -413,7 +413,7 @@ class DocumentSegmenter(
 
       val pageTextBlockCCs = for {
         textBlock <- pageBlocks
-        textBlockRegion <- zoneIndexer.labelRegion(textBlock, LB.TextBlock)
+        textBlockRegion <- mpageIndexer.labelRegion(textBlock, LB.TextBlock)
       } yield {
         assert(textBlock.forall(_.hasLabel(LB.VisualLine)))
         textBlockRegion.setChildren(LB.VisualLine, textBlock)
@@ -432,7 +432,7 @@ class DocumentSegmenter(
 
   def sortPageTextBlocks(pageTextBlocks: Seq[Component]): Option[RegionComponent] = {
     // TODO: actually sort these?
-    zoneIndexer
+    mpageIndexer
       .labelRegion(pageTextBlocks, LB.PageTextBlocks)
       .map({page =>
         page.setChildren(LB.TextBlock, pageTextBlocks)
@@ -445,7 +445,7 @@ class DocumentSegmenter(
   def runPageSegmentation(): Unit = {
     vtrace.trace(
       begin("SetPageGeometries"),
-      setPageGeometries(zoneIndexer.pageInfos.map(_._2.pageGeometry).toSeq),
+      setPageGeometries(mpageIndexer.pageInfos.map(_._2.pageGeometry).toSeq),
       end("SetPageGeometries")
     )
 
@@ -497,7 +497,7 @@ class DocumentSegmenter(
     val missingIds = (ids.min to ids.max) diff ids
 
     val missingChars = missingIds.map(id =>
-      zoneIndexer.getComponent(ComponentID(id), pageId)
+      mpageIndexer.getComponent(ComponentID(id), pageId)
     )
 
     // vtrace.trace("inserting missing chars" withTrace
@@ -617,7 +617,7 @@ class DocumentSegmenter(
       val line = lineGroups.reduce(_ ++ _)
 
       // Glue together page atoms into a VisualLine/TextSpan
-      zoneIndexer.labelRegion(line, LB.VisualLine)
+      mpageIndexer.labelRegion(line, LB.VisualLine)
         .map ({ visualLine =>
           visualLine.setChildren(LB.PageAtom, line.sortBy(_.bounds.left))
           visualLine.cloneAndNest(LB.TextSpan)
@@ -627,7 +627,7 @@ class DocumentSegmenter(
         })
     }).flatten
 
-    zoneIndexer
+    mpageIndexer
       .labelRegion(pageLines, LB.PageLines)
       .map(_.setChildren(LB.VisualLine, pageLines))
   }
@@ -668,9 +668,9 @@ class DocumentSegmenter(
   }
 
   def visualLineOnPageComponents: Seq[Seq[Component]] = for {
-    pageId <- zoneIndexer.getPages
+    pageId <- mpageIndexer.getPages
   } yield {
-    val page = zoneIndexer.getPageIndex(pageId)
+    val page = mpageIndexer.getPageIndex(pageId)
     val pageLiness = page.getComponentsWithLabel(LB.PageLines)
     assert(pageLiness.length==1)
     val pageLines = pageLiness.head
@@ -785,7 +785,7 @@ class DocumentSegmenter(
     // // if the text block containing "abstract" is a single line,
     // //    take subsequent text blocks until we take a multiline
     // // else if the text block is multi-line, take that block to be the entire abstract
-    // val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    // val lineBioLabels = mpageIndexer.bioLabeling("LineBioLabels")
     // val blocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
 
     // vtrace.trace(message(s"TextBlock count: ${blocks.length}"))
@@ -805,7 +805,7 @@ class DocumentSegmenter(
     //   if (firstBlockIsMultiline) {
     //     // label this as the abstract
     //     maybeLookingAtAbstract.headOption.foreach { abs =>
-    //       zoneIndexer.addBioLabels(LB.Abstract, abs)
+    //       mpageIndexer.addBioLabels(LB.Abstract, abs)
 
     //       vtrace.trace("Found Abstract in multi-line block" withTrace
     //         all(abs.map(b => showComponent(b.component))))
@@ -817,7 +817,7 @@ class DocumentSegmenter(
     //     val absBlock = maybeLookingAtAbstract.drop(singleLines.length).headOption.getOrElse(Seq())
     //     val totalABs = singleLines :+ absBlock
 
-    //     zoneIndexer.addBioLabels(LB.Abstract, totalABs.flatten)
+    //     mpageIndexer.addBioLabels(LB.Abstract, totalABs.flatten)
 
     //     vtrace.trace("Found Abstract in single-line block" withTrace all(
     //       totalABs.flatMap(_.map(b => showComponent(b.component)))
@@ -858,7 +858,7 @@ class DocumentSegmenter(
     //     if (lastMultilineBeforeIntro != -1) {
     //       // label this as the abstract
     //       allBlocksBeforeIntro.get(lastMultilineBeforeIntro).foreach { abs =>
-    //         zoneIndexer.addBioLabels(LB.Abstract, abs)
+    //         mpageIndexer.addBioLabels(LB.Abstract, abs)
     //         //println("labeling as part of abstract: " + abs.component.toText)
     //         // vtrace.trace(
     //         //   vtrace.link(
@@ -880,7 +880,7 @@ class DocumentSegmenter(
 
   def labelSectionHeadings(): Unit = {
     vtrace.trace(begin("LabelSectionHeadings"))
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    val lineBioLabels = mpageIndexer.bioLabeling("LineBioLabels")
     for {
       lineBioNode <- lineBioLabels
       lineComp = lineBioNode.component
@@ -896,7 +896,7 @@ class DocumentSegmenter(
       vtrace.trace("Labeled section heading" withInfo
         show(lineBioNode.component))
 
-      zoneIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
+      mpageIndexer.addBioLabels(LB.SectionHeadingLine, lineBioNode)
     }
 
     vtrace.trace(end("LabelSectionHeadings"))
@@ -909,7 +909,7 @@ class DocumentSegmenter(
   }
 
   def labelTitle(): Unit = {
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    val lineBioLabels = mpageIndexer.bioLabeling("LineBioLabels")
     // look for lines with biggest font within first [x] lines of paper
     // get rid of lines with length less than some arbitrary length (to weed out some weird cases)
     val biggestLineAtBeginning = lineBioLabels.take(50)
@@ -922,7 +922,7 @@ class DocumentSegmenter(
 
     if(biggestLineAtBeginning.headOption.isDefined) {
       // println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
-      zoneIndexer.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
+      mpageIndexer.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
       println
     } else {
       println("there isn't a biggest line?")
@@ -939,7 +939,7 @@ class DocumentSegmenter(
     val firstNameSet = firstNames.toSet
     val lastNameSet = lastNames.toSet
 
-    val lineBioLabels = zoneIndexer.bioLabeling("LineBioLabels")
+    val lineBioLabels = mpageIndexer.bioLabeling("LineBioLabels")
 
     val firstLines = lineBioLabels.filter(_.component.chars.length() > 5).take(8)
 
@@ -958,7 +958,7 @@ class DocumentSegmenter(
     //       for (word <- words) {
     //         if ((firstNameSet.contains(word) || lastNameSet.contains(word))&& word.length > 1) {
     //           println("found " + word + " in the names corpus")
-    //           zoneIndexer.addBioLabels(LB.Author, lineNode)
+    //           mpageIndexer.addBioLabels(LB.Author, lineNode)
     //           println("labeling " + lines + " as author ")
     //         }
     //       }
@@ -967,7 +967,7 @@ class DocumentSegmenter(
     //     val initial = """[A-Z]+\.+\s""".r
     //     if((initial findAllIn lines).length > 0) {
     //       println("found a possible initial in line " + lines)
-    //       zoneIndexer.addBioLabels(LB.Author, lineNode)
+    //       mpageIndexer.addBioLabels(LB.Author, lineNode)
     //       println("labeling " + lines + " as author ")
     //     }
     //   }
@@ -1017,7 +1017,7 @@ class DocumentSegmenter(
   //   // Walk down column lines pair-wise, and take while diagonal distances match
 
 
-  //   // zoneIndexer.connectComponents(totalLineSorted, LB.Block)
+  //   // mpageIndexer.connectComponents(totalLineSorted, LB.Block)
   //   // totalLineSorted
 
   //   ???
@@ -1072,7 +1072,7 @@ class DocumentSegmenter(
   //         withinCommonVDist &&
   //         aWithinBsColumn
   //       ) {
-  //         // zoneIndexer.addBioLabels(LB.ParaBegin, block1Lines)
+  //         // mpageIndexer.addBioLabels(LB.ParaBegin, block1Lines)
   //       }
 
   //       true

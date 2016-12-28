@@ -102,7 +102,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
 
   import java.net.URI
   import java.net.URL
-  def createFilteredZoneIndexer(pdfIns: URL, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
+  def createFilteredMultiPageIndex(pdfIns: URL, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
     val dummyUri = URI.create("/")
     val path = fs.Path(pdfIns.getPath)
 
@@ -122,10 +122,10 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
       maxX-minX,
       maxY-minY
     )
-    segmenter.zoneIndexer.dbgFilterPages(pageId)
-    segmenter.zoneIndexer.dbgFilterComponents(pageId, totalBounds)
+    segmenter.mpageIndexer.dbgFilterPages(pageId)
+    segmenter.mpageIndexer.dbgFilterComponents(pageId, totalBounds)
 
-    val interestingChars = segmenter.zoneIndexer
+    val interestingChars = segmenter.mpageIndexer
       .getPageIndex(pageId)
       .componentIndex
       .queryForIntersects(totalBounds)

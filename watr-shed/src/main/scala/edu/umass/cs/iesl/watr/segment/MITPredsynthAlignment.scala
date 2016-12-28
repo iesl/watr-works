@@ -23,10 +23,10 @@ object MITAlignPredsynth {
   import utils.IdGenerator
   import textreflow._
 
-  def alignPredSynthPaper(zoneIndexer: ZoneIndexer, paper: Paper): Seq[AlignedGroup] = {
+  def alignPredSynthPaper(mpageIndexer: MultiPageIndex, paper: Paper): Seq[AlignedGroup] = {
     log.debug("aligning predsynth paper ")
 
-    val paperTextReflows = zoneIndexer.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
+    val paperTextReflows = mpageIndexer.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
 
     log.debug("creating one line from entire paper")
     val oneLineReflow = paperTextReflows.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
@@ -92,7 +92,7 @@ object MITAlignPredsynth {
               val targetRegions = reflowSlice.targetRegions
 
               val intersectedVisualLines  = targetRegions.map{ targetRegion =>
-                val pageIndex = zoneIndexer.getPageIndex(targetRegion.target)
+                val pageIndex = mpageIndexer.getPageIndex(targetRegion.target)
 
                 pageIndex.componentIndex
                   .queryForIntersects(targetRegion.bbox)
@@ -119,12 +119,12 @@ object MITAlignPredsynth {
                     !intersects
                   })
 
-                zoneIndexer.labelRegion(intersectingLineAtoms, ann)
+                mpageIndexer.labelRegion(intersectingLineAtoms, ann)
               }
 
               val annRegions = annotationRegions.flatten.map{_.targetRegion}
               val newZone = Zone(ZoneID(0), annRegions,ann)
-              val zAdded = zoneIndexer.addZone(newZone)
+              val zAdded = mpageIndexer.addZone(newZone)
 
               // HACK: make zoneId==mentionId TODO document why
               val mentionId = MentionID(zAdded.id.unwrap)
@@ -179,8 +179,8 @@ object MITAlignPredsynth {
         }
       })
 
-    zoneIndexer.addRelations(relations)
-    zoneIndexer.addProps(props)
+    mpageIndexer.addRelations(relations)
+    mpageIndexer.addProps(props)
 
     alignedGroups
 

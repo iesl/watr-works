@@ -51,8 +51,8 @@ class SuperSubScriptTest extends DocsegTestUtil {
       val pageId = example.region.page
       val bounds = example.region.bbox
 
-      val segmenter = createFilteredZoneIndexer(pdfIns, pageId, Seq(bounds))
-      val pageInfo = segmenter.zoneIndexer.getPageIndex(pageId)
+      val segmenter = createFilteredMultiPageIndex(pdfIns, pageId, Seq(bounds))
+      val pageInfo = segmenter.mpageIndexer.getPageIndex(pageId)
 
       // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
       tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print

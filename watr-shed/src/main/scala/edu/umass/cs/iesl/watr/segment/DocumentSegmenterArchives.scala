@@ -194,7 +194,7 @@
   //           val candidateLines = remainingLinesWithFreq.filter({ line => line.bounds.toCenterPoint.x.eqFuzzy(0.4)(colX) })
   //           val visBlocks = groupVisualTextBlocks(colX, candidateLines, unusedPageLines)
   //           visBlocks.foreach { vblock =>
-  //             zoneIndexer.connectComponents(vblock, LB.TextBlock)
+  //             mpageIndexer.connectComponents(vblock, LB.TextBlock)
   //             unusedPageLines --= vblock
   //           }
   //         }
@@ -279,5 +279,5 @@
   //   unusedLines --= totalLineSorted
   //   usedLines ++= totalLineSorted
 
-  //   zoneIndexer.connectComponents(totalLineSorted, LB.Block)
+  //   mpageIndexer.connectComponents(totalLineSorted, LB.Block)
   // }
