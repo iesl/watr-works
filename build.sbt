@@ -7,8 +7,7 @@ autoCompilerPlugins := true
 val Lib = CommonLibs
 val commonSettings = (
     SensibleProject.settings ++   // SensibleProject.acyclicPlugin ++
-    SensibleProject.testSettings ++
-    scalatex.SbtPlugin.projectSettings ++
+    SensibleProject.testSettings ++ // scalatex.SbtPlugin.projectSettings ++
     Seq(
       libraryDependencies ++= LogLibs.logback,
       libraryDependencies ++= TestLibs.testAndCheck,
@@ -49,6 +48,13 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     "me.chrons"                  %%% "boopickle"    % "1.2.5"
   ))
   .jvmSettings(commonSettings: _*)
+
+lazy val watrdocs = scalatex.ScalatexReadme(
+  projectId = "watr-docs",
+  wd = file("watr-docs"),
+  url = "https://github.com/iesl/watr-works/tree/acs-dev",
+  source = "Readme")
+  .settings(commonSettings: _*)
 
 lazy val watrmarksJS = watrmarks.js
 
@@ -101,4 +107,3 @@ lazy val watrcolorsJVM = watrcolors.jvm
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value,
     ((classDirectory in (watrcolorsJS, Compile)).value / ".." / "watrcolors-fastopt.js.map").get.head
   ))
-
