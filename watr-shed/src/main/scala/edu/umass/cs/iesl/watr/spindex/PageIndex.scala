@@ -10,18 +10,16 @@ import scalaz.@@
 import watrmarks.{StandardLabels => LB}
 
 import geometry._
-// import GeometricFigure._
-// import EnrichGeometricFigures._
 
 // One or more indexes over a given page geometry, along with label maps
+/**
+  */
 case class PageIndex(
-  pageId: Int@@PageID,
   componentIndex: SpatialIndex[Component],
-  geometry: PageGeometry,
+  pageGeometry: PageGeometry,
   componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
   componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),
   labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
-  // charAtoms: mutable.HashMap[Int@@RegionID, (CharAtom, AtomicComponent)] = mutable.HashMap()
 ) {
   def addComponent(c: Component): Component = {
     componentIndex.add(c)

@@ -72,7 +72,7 @@ trait TextReflowBasics extends StructuredRecursion {
     for {
       sprev <- State.get[Offsets]
       _ <- ft match {
-        case Atom(c2)        => incTotalLen()
+        case Atom(c2)              => incTotalLen()
         case Insert(value)         => incTotalLen()
         case Rewrite(from, to)     => incTotalLen()
         case Bracket(pre, post, a) => incTotalLen()

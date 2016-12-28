@@ -64,9 +64,9 @@ object LogLibs extends LibVersions {
 
 object DatabaseLibs extends LibVersions {
   val slickDb = Seq(
-    "org.bouncycastle" % "bcprov-jdk15on" % "1.55",
-    "org.bouncycastle" % "bcpkix-jdk15on" % "1.55",
-    "com.h2database" % "h2" % "1.4.192",
+    "org.bouncycastle" % "bcprov-jdk15on" % "1.56",
+    "org.bouncycastle" % "bcpkix-jdk15on" % "1.56",
+    "com.h2database" % "h2" % "1.4.193",
     "com.zaxxer" % "HikariCP" % "2.5.1",
     "com.typesafe.slick" %% "slick" % "3.1.1"
   )

@@ -23,14 +23,6 @@ object TextReflowConversion {
   def hasLabel(cc: Component, l: Label) = cc.getLabels.contains(l)
   def isTokenized(cc: Component) = hasLabel(cc, LB.Tokenized)
 
-  def getDescendantLabels(cc: Component): Set[Label] = {
-    cc.getLabels ++ (
-      cc.getDescendants(LB.TextSpan)
-        .map(_.getLabels)
-        .reduce(_ ++ _)
-    )
-  }
-
   def transferLabel(l: Label, cc: Component)(t: TextReflow): TextReflow = {
     if (cc.hasLabel(l)) {
       addLabel(l)(t)

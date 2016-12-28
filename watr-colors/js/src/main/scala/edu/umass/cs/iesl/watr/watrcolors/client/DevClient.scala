@@ -8,7 +8,6 @@ import textreflow._
 import geometry._
 import GeometricFigure._
 
-import native.fabric
 
 trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   import TextReflowF._
@@ -28,7 +27,8 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   }
 
   def renderToHtml(t: TextReflowF[(TextReflow, String)]): String = t match {
-    case Atom    (ac)                    => ac.char
+    case Atom    (ac)                    => 
+      ac.char
     case Insert  (value)                 => value
     case Rewrite ((from, attr), to)      => to
     case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
@@ -43,8 +43,7 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
     res.toPair._1
   }
 
-  def textHtmlCanvasShapes(): Unit = {
-
+  def displayBasicCanvasShapes(): Unit = {
     fabricCanvas.add(createShape(Point(240, 240), "black", "blue", 0.5f))
     fabricCanvas.add(createShape(LBBounds(240, 240, 100, 200), "red", "black", 0.5f))
     fabricCanvas.add(createShape(LTBounds(240, 240, 100, 200), "black", "yellow", 0.5f))
@@ -63,7 +62,6 @@ class DevClient extends TextReflowExamples {
 
     jQuery("#main").append(html)
 
-    textHtmlCanvasShapes()
   }
 
 }

@@ -1,17 +1,14 @@
 import sbt.Keys._
-// import spray.revolver.AppProcess
-// import com.lihaoyi.workbench.Plugin._
 
 SensibleThisBuild.settings
 
 autoCompilerPlugins := true
 
-
 val Lib = CommonLibs
-
 val commonSettings = (
     SensibleProject.settings ++   // SensibleProject.acyclicPlugin ++
     SensibleProject.testSettings ++
+    scalatex.SbtPlugin.projectSettings ++
     Seq(
       libraryDependencies ++= LogLibs.logback,
       libraryDependencies ++= TestLibs.testAndCheck,

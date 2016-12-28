@@ -93,10 +93,10 @@ class SpatialIndex[T: SpatialIndexable](
     val ctr = si.ltBounds(fromItem).toCenterPoint
 
     val searchRect = LTBounds(
-      left   =ctr.x - radius,
-      top    =ctr.y - radius,
-      width  =(radius*2.0).toDouble,
-      height =(radius*2.0).toDouble
+      left   = ctr.x - radius,
+      top    = ctr.y - radius,
+      width  = (radius*2.0).toDouble,
+      height = (radius*2.0).toDouble
     )
 
     queryForIntersects(searchRect)
@@ -135,11 +135,6 @@ object SpatialIndex {
   implicit object ComponentIndexable extends SpatialIndexable[Component] {
     def id(t: Component): Int = t.id.unwrap
     def ltBounds(t: Component): LTBounds = t.bounds
-  }
-
-  implicit object CharAtomIndexable extends SpatialIndexable[CharAtom] {
-    def id(t: CharAtom): Int = t.targetRegion.id.unwrap
-    def ltBounds(t: CharAtom): LTBounds = t.targetRegion.bbox
   }
 
   def createSpatialIndex(): jsi.SpatialIndex = {

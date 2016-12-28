@@ -223,16 +223,15 @@ class ZoneIndexer(
       .addComponent(c)
   }
 
-  def getPageGeometry(p: Int@@PageID) = pageInfos(p).geometry
+  def getPageGeometry(p: Int@@PageID) = pageInfos(p).pageGeometry
 
   def getPages(): List[Int@@PageID] = {
     pageInfos.keys.toList.sortBy(PageID.unwrap(_))
   }
 
 
-
   def addPage(pageGeometry: PageGeometry): PageIndex = {
-    val pageInfo = PageIndex(pageGeometry.id,
+    val pageInfo = PageIndex(
       SpatialIndex.createFor[Component](pageGeometry.bounds),
       pageGeometry
     )

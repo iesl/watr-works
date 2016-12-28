@@ -445,7 +445,7 @@ class DocumentSegmenter(
   def runPageSegmentation(): Unit = {
     vtrace.trace(
       begin("SetPageGeometries"),
-      setPageGeometries(zoneIndexer.pageInfos.map(_._2.geometry).toSeq),
+      setPageGeometries(zoneIndexer.pageInfos.map(_._2.pageGeometry).toSeq),
       end("SetPageGeometries")
     )
 
