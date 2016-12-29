@@ -32,7 +32,7 @@ package server
 //           ))
 
 
-//         val pageGeoms = segmenter.mpageIndexer.pageInfos.values.map(_.geometry.convert())toSeq
+//         val pageGeoms = segmenter.mpageIndex.pageIndexes.values.map(_.geometry.convert())toSeq
 
 
 //         (pageGeoms, pageComponents)
@@ -141,7 +141,7 @@ package server
 
 
 //   // def concatVertical(pages: Seq[MultiPageIndex]): MultiPageIndex = {
-//   //   mpageIndexer.headOption.getOrElse(sys.error("concat vertical"))
+//   //   mpageIndex.headOption.getOrElse(sys.error("concat vertical"))
 //   // }
 // }
 

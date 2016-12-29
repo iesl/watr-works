@@ -52,14 +52,14 @@ class SuperSubScriptTest extends DocsegTestUtil {
       val bounds = example.region.bbox
 
       val segmenter = createFilteredMultiPageIndex(pdfIns, pageId, Seq(bounds))
-      val pageInfo = segmenter.mpageIndexer.getPageIndex(pageId)
+      val pageIndex = segmenter.mpageIndex.getPageIndex(pageId)
 
       // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
       tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
       segmenter.runLineDetermination()
 
-      val lineComponents = pageInfo.getComponentsWithLabel(LB.VisualLine)
+      val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
 
       val tokenizedLines = lineComponents.map { lineComponent =>
         lineComponent.tokenizeLine()

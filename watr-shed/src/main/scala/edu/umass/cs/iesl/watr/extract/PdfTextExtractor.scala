@@ -129,7 +129,7 @@ class PdfTextExtractor(
       val reader = new PdfReader(instr)
       val document = new PdfDocument(reader)
 
-      val pageInfos = for (pageNumber <- 1 to document.getNumberOfPages) yield {
+      val pageIndexes = for (pageNumber <- 1 to document.getNumberOfPages) yield {
         // val tagStructureContext = pdfPage.getDocument.getTagStructureContext
 
         val pageId = PageID(pageNumber-1)
@@ -163,7 +163,7 @@ class PdfTextExtractor(
 
         (pageAtoms, pageGeometry)
       }
-      pageInfos.toList
+      pageIndexes.toList
     } catch {
       case f: Throwable => throw f 
     } finally {

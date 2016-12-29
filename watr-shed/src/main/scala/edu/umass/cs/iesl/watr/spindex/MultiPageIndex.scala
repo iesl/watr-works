@@ -19,6 +19,29 @@ import predsynth._
 import textreflow._
 
 /**
+
+  MultiPageIndex manages:
+    - PageIndexes, one per pdf page
+    - TextReflow -> Component mapping (e.g., text contained in VisualLine, TextBlock) (TODO perhaps TextReflow should be Zone-associated)
+    - Zones, each of which is a list of Components, potentially crossing PageIndexes
+    - Relations and Props, e.g., {ClusterID -hasMember-> MentionID}, {id hasProp isTargetEntity}
+      - nb. this is a kludge that will be removed at some point
+
+    - BioLabeling, a BIOLU format list of TextBlock regions, for labeling Sections, Headers, and a few other things. Obsolete and on the chopping block
+
+    - Interface to individual PageIndex functions
+
+    - RegionComponent creation and indexing, per PageIndex
+      - Creates a new bounding box around lists of other PageIndex components
+
+    - Add/remove Pages/PageAtoms/ConnectedComponents
+
+
+    TODO:
+      - Handle PageIndexes across PDFs (or create another layered class over this one)
+      - Caching, either within this class or attachable
+
+
   */
 class MultiPageIndex(
   srcUri: URI
@@ -30,17 +53,17 @@ class MultiPageIndex(
 
   import SpatialIndex._
 
-  val pageInfos = mutable.HashMap[Int@@PageID, PageIndex]()
+  val pageIndexes = mutable.HashMap[Int@@PageID, PageIndex]()
 
 
   def dbgFilterComponents(pg: Int@@PageID, include: GeometricFigure.LTBounds): Unit ={
-    pageInfos.get(pg).foreach ({ pageInfo =>
-      val keep = pageInfo.componentIndex.queryForIntersects(include).map(_.id)
+    pageIndexes.get(pg).foreach ({ pageIndex =>
+      val keep = pageIndex.componentIndex.queryForIntersects(include).map(_.id)
       // println(s"dbgFilterComponents(): keeping ${keep.length} components")
-      pageInfo.componentIndex.getItems
+      pageIndex.componentIndex.getItems
         .filterNot(c => keep.contains(c.id))
         .foreach({ c =>
-          pageInfo.componentIndex.remove(c)
+          pageIndex.componentIndex.remove(c)
         })
     })
   }
@@ -48,7 +71,7 @@ class MultiPageIndex(
     getPages
       .filterNot(_ == pg)
       .foreach ({ p =>
-        pageInfos.remove(p)
+        pageIndexes.remove(p)
       })
   }
 
@@ -122,21 +145,21 @@ class MultiPageIndex(
 
 
   def setChildrenWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
-    val pageInfo = pageInfos(getPageForComponent(c))
-    pageInfo.setChildrenWithLabel(c.id, l, tree)
+    val pageIndex = pageIndexes(getPageForComponent(c))
+    pageIndex.setChildrenWithLabel(c.id, l, tree)
   }
 
   def getChildrenWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
-    val pageInfo = pageInfos(getPageForComponent(c))
-    val sdf = pageInfo.componentIndex.get(0)
-    pageInfo.getChildrenWithLabel(c.id, l)
+    val pageIndex = pageIndexes(getPageForComponent(c))
+    val sdf = pageIndex.componentIndex.get(0)
+    pageIndex.getChildrenWithLabel(c.id, l)
   }
 
   def getChildren(c: Component, l: Label): Option[Seq[Component]] = {
-    val pageInfo = pageInfos(getPageForComponent(c))
-    pageInfo.getChildrenWithLabel(c.id, l)
+    val pageIndex = pageIndexes(getPageForComponent(c))
+    pageIndex.getChildrenWithLabel(c.id, l)
       .map(tree => tree.map{ cid =>
-        pageInfo.componentIndex.get(cid.unwrap).getOrElse {
+        pageIndex.componentIndex.get(cid.unwrap).getOrElse {
           sys.error(s"getChildren(${c}, ${l}) contained an invalid component id: ${cid}")
         }
       })
@@ -169,7 +192,7 @@ class MultiPageIndex(
     pinfo.getLabels(c)
   }
 
-  def getPageIndex(pageId: Int@@PageID) = pageInfos(pageId)
+  def getPageIndex(pageId: Int@@PageID) = pageIndexes(pageId)
 
   def removeComponent(c: Component): Unit = {
     // vtrace.trace("removeComponent" withTrace showComponent(c))
@@ -225,24 +248,24 @@ class MultiPageIndex(
       .addComponent(c)
   }
 
-  def getPageGeometry(p: Int@@PageID) = pageInfos(p).pageGeometry
+  def getPageGeometry(p: Int@@PageID) = pageIndexes(p).pageGeometry
 
   def getPages(): List[Int@@PageID] = {
-    pageInfos.keys.toList.sortBy(PageID.unwrap(_))
+    pageIndexes.keys.toList.sortBy(PageID.unwrap(_))
   }
 
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
-    val pageInfo = PageIndex(
+    val pageIndex = PageIndex(
       SpatialIndex.createFor[Component](pageGeometry.bounds),
       pageGeometry
     )
-    val existing = pageInfos.put(pageGeometry.id, pageInfo)
+    val existing = pageIndexes.put(pageGeometry.id, pageIndex)
 
     existing.foreach { e =>
       sys.error("adding new page w/existing id")
     }
-    pageInfo
+    pageIndex
   }
 
 
@@ -275,7 +298,7 @@ object MultiPageIndex {
 
     val zindexer = new MultiPageIndex(srcUri)
     regionsAndGeometry.foreach { case(regions, geom)  =>
-      val pageInfo = zindexer.addPage(geom)
+      val pageIndex = zindexer.addPage(geom)
 
       regions.foreach {
         case cb:CharAtom if !cb.isSpace => zindexer.addPageAtom(cb)
@@ -284,7 +307,5 @@ object MultiPageIndex {
     }
     zindexer
   }
-
-
 
 }

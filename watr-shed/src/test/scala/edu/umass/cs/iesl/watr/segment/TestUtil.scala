@@ -122,10 +122,10 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
       maxX-minX,
       maxY-minY
     )
-    segmenter.mpageIndexer.dbgFilterPages(pageId)
-    segmenter.mpageIndexer.dbgFilterComponents(pageId, totalBounds)
+    segmenter.mpageIndex.dbgFilterPages(pageId)
+    segmenter.mpageIndex.dbgFilterComponents(pageId, totalBounds)
 
-    val interestingChars = segmenter.mpageIndexer
+    val interestingChars = segmenter.mpageIndex
       .getPageIndex(pageId)
       .componentIndex
       .queryForIntersects(totalBounds)

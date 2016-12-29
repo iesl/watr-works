@@ -32,9 +32,9 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextRe
   }
 
   def labelRow(mpageIndex: MultiPageIndex, row: Int, l: Label): Option[RegionComponent] = {
-    val pageInfo = mpageIndex.getPageIndex(page0)
+    val pageIndex = mpageIndex.getPageIndex(page0)
     val q = LTBounds(0, row*yscale, Int.MaxValue, yscale)
-    val charAtoms = pageInfo.componentIndex.queryForContained(q)
+    val charAtoms = pageIndex.componentIndex.queryForContained(q)
     val reg = mpageIndex.labelRegion(charAtoms, l)
     // assert each region can select its contained page atoms
     reg.foreach { rc =>
@@ -88,9 +88,9 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextRe
     (mpageIndex, visualLines)
   }
 
-  def queryComponents(pageInfo: PageIndex, x: Int, y: Int, w: Int, h: Int): Seq[Component] = {
+  def queryComponents(pageIndex: PageIndex, x: Int, y: Int, w: Int, h: Int): Seq[Component] = {
     val q = LTBounds(x*xscale, y*yscale, w*xscale, h*xscale)
-    pageInfo.componentIndex.queryForContained(q)
+    pageIndex.componentIndex.queryForContained(q)
   }
 
 

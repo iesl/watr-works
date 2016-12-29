@@ -34,7 +34,7 @@ object DocsegMerging {
 
   // import textreflow._
 
-  def mergePriorDocseg(mpageIndexer: MultiPageIndex, priorDocseg: Docseg.Docseg): MultiPageIndex = {
+  def mergePriorDocseg(mpageIndex: MultiPageIndex, priorDocseg: Docseg.Docseg): MultiPageIndex = {
     // 1. map each mention to one or more target figures within the prior docseg
     // 2. translate the prior target figures into new mpageIndex geometry
     // 3. query the new mpageIndex for spans of text that fall within the range of the target figures
@@ -48,7 +48,7 @@ object DocsegMerging {
     })
 
 
-    mpageIndexer
+    mpageIndex
   }
 
 

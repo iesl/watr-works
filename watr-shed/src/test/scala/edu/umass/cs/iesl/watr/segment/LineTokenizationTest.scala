@@ -153,8 +153,8 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
     segmenter.runLineDetermination()
 
-    val pageInfo = segmenter.mpageIndexer.getPageIndex(pageId)
-    val lineComponents = pageInfo.getComponentsWithLabel(LB.VisualLine)
+    val pageIndex = segmenter.mpageIndex.getPageIndex(pageId)
+    val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
 
     val tokenizedLines = lineComponents.map { lineComponent =>
       lineComponent.tokenizeLine()

@@ -313,8 +313,8 @@ object ShellCommands {
   implicit class RicherDocumentSegmenter(val thisDocumentSegmenter: DocumentSegmenter) extends AnyVal {
 
     def lines(): Seq[TextReflow] = {
-      val mpageIndexer = thisDocumentSegmenter.mpageIndexer
-      mpageIndexer.getTextReflows()
+      val mpageIndex = thisDocumentSegmenter.mpageIndex
+      mpageIndex.getTextReflows()
     }
   }
 
