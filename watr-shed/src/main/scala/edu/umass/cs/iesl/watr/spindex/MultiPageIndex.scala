@@ -167,7 +167,7 @@ class MultiPageIndex(
 
   def getPageForComponent(c: Component): Int@@PageID = {
     c.targetRegions
-      .headOption.map(_.target)
+      .headOption.map(_.pageId)
       .getOrElse(sys.error("no page specified for component"))
   }
 
@@ -205,7 +205,7 @@ class MultiPageIndex(
   def labelRegion(components: Seq[Component], role: Label): Option[RegionComponent] = {
     if (components.isEmpty) None else {
       val targetRegions = components.map(_.targetRegion)
-      val targetPages = targetRegions.map(_.target.unwrap)
+      val targetPages = targetRegions.map(_.pageId.unwrap)
       val numOfTargetPages =  targetPages.toSet.size
 
       if (numOfTargetPages != 1) {
@@ -243,7 +243,7 @@ class MultiPageIndex(
   }
 
   def addComponent(c: Component): Component = {
-    val pageId = c.targetRegion.target
+    val pageId = c.targetRegion.pageId
     getPageIndex(pageId)
       .addComponent(c)
   }

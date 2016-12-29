@@ -34,8 +34,8 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
   var xxx = 10
   def transformTargetRegion(tr: TargetRegion): TargetRegion = {
-    val offsetPage = pageOffsets(tr.target.unwrap)
-    val pageImgGeometry = pageImageGeometries(tr.target.unwrap)
+    val offsetPage = pageOffsets(tr.pageId.unwrap)
+    val pageImgGeometry = pageImageGeometries(tr.pageId.unwrap)
 
     val s = tr.bbox
 

@@ -10,13 +10,13 @@ import GeometricFigure._
 
 case class TargetRegion(
   id: Int@@RegionID,
-  target: Int@@PageID,
+  pageId: Int@@PageID,
   bbox: LTBounds
 ) {
-  override def toString = s"""<reg.${id} pg.${target} ${bbox.prettyPrint}>"""
+  override def toString = s"""<reg.${id} pg.${pageId} ${bbox.prettyPrint}>"""
 }
 
-// TODO this should fully replace TargetRegion:
+// Generalized version of TargetRegion
 case class TargetFigure(
   id: Int@@RegionID,
   page: Int@@PageID,
@@ -151,19 +151,19 @@ object ComponentTypeEnrichments {
 
   implicit class RicherTargetRegion(val targetRegion: TargetRegion) extends AnyVal {
     def union(r: TargetRegion): TargetRegion = {
-      if (targetRegion.target != r.target) {
+      if (targetRegion.pageId != r.pageId) {
         sys.error(s"""cannot union targetRegions from different pages: ${targetRegion} + ${r}""")
       }
       targetRegion.copy(bbox = targetRegion.bbox union r.bbox)
     }
 
     def intersects(r: TargetRegion): Boolean = {
-      val samePage = targetRegion.target == r.target
+      val samePage = targetRegion.pageId == r.pageId
       samePage && (targetRegion.bbox intersects r.bbox)
     }
 
     def prettyPrint(): String = {
-      val pg = targetRegion.target
+      val pg = targetRegion.pageId
       val bbox = targetRegion.bbox.prettyPrint
       s"""<target pg:${pg} ${bbox}"""
     }

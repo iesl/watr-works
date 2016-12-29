@@ -53,7 +53,7 @@ package server
 //   implicit class RicherTargetRegion(val in: spindex.TargetRegion) extends AnyVal {
 //     def convert(): TargetRegion = TargetRegion(
 //       in.id.unwrap,
-//       in.target.unwrap,
+//       in.pageId.unwrap,
 //       in.bbox.convert()
 //     )
 //   }

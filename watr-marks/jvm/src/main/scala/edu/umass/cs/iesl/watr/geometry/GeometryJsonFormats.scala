@@ -27,10 +27,6 @@ trait TypeTagFormats {
   val WriteRegionID: Writes[Int@@RegionID] = Writes[Int@@RegionID] { i => JsNumber(i.unwrap) }
   implicit def FormatRegionID            = Format(ReadRegionID, WriteRegionID)
 
-  val ReadTokenID: Reads[Int@@TokenID]   = __.read[Int].map(i => Tag.of[TokenID](i))
-  val WriteTokenID: Writes[Int@@TokenID] = Writes[Int@@TokenID] { i => JsNumber(i.unwrap) }
-  implicit def FormatTokenID            = Format(ReadTokenID, WriteTokenID)
-
   val ReadCharID: Reads[Int@@CharID]   = __.read[Int].map(i => Tag.of[CharID](i))
   val WriteCharID: Writes[Int@@CharID] = Writes[Int@@CharID] { i => JsNumber(i.unwrap) }
   implicit def FormatCharID            = Format(ReadCharID, WriteCharID)
@@ -148,7 +144,7 @@ trait GeometryJsonFormats extends TypeTagFormats {
         ))
     }
     override def writes(o: TargetRegion) =
-      arr(toJson(o.id), toJson(o.target), toJson(o.bbox))
+      arr(toJson(o.id), toJson(o.pageId), toJson(o.bbox))
   }
 
   implicit def FormatPageGeometry     = Json.format[PageGeometry]

@@ -26,21 +26,24 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
     p0
   }
 
-  def renderToHtml(t: TextReflowF[(TextReflow, String)]): String = t match {
-    case Atom    (ac)                    => 
-      ac.char
-    case Insert  (value)                 => value
-    case Rewrite ((from, attr), to)      => to
-    case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
-    case Mask    (mL, mR, (a, attr))     => attr.drop(mL).dropRight(mR).mkString
-    case Flow    (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
-    case Labeled (labels, (a, attr))     => attr
-    case CachedText((a, attr), text)     => text
-  }
 
   def renderHtml(tr: TextReflow): String = {
-    val res = tr.cata(attributePara(renderToHtml))
-    res.toPair._1
+    def render(t: TextReflowF[(TextReflow, String)]): String = t match {
+      case Atom      (charAtom)              =>
+        // find the visual line associated with this CharAtom
+
+        charAtom.char
+      case Insert    (value)                 => value
+      case Rewrite   ((from, attr), to)      => to
+      case Bracket   (pre, post, (a, attr))  => s"$pre${attr}$post"
+      case Mask      (mL, mR, (a, attr))     => attr.drop(mL).dropRight(mR).mkString
+      case Flow      (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
+      case Labeled   (labels, (a, attr))     => attr
+      case CachedText((a, attr), text)     => text
+    }
+
+    tr.cata(attributePara(render))
+      .toPair._1
   }
 
   def displayBasicCanvasShapes(): Unit = {

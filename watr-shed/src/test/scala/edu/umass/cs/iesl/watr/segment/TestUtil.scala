@@ -109,7 +109,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
     val segmenter =  DocumentSegmenter.createSegmenter(dummyUri, path, Seq())
 
     // Assume these example regions are all from one page
-    // val pageId = regions.map(_.target).head
+    // val pageId = regions.map(_.pageId).head
     // val allBboxes = regions.map(_.bbox)
 
     val minX = regions.map(_.left).min

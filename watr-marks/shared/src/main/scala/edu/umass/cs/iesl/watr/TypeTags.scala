@@ -3,10 +3,14 @@ package edu.umass.cs.iesl.watr
 import scalaz.Tag
 import scalaz.@@
 
+sealed trait SHA1String
+
+// Documents are identified by the SHA1 hash of their contents
+sealed trait DocumentID extends SHA1String
+
 sealed trait ZoneID
 sealed trait LabelID
 sealed trait RegionID
-sealed trait TokenID
 
 sealed trait PageID
 sealed trait CharID
@@ -16,7 +20,6 @@ sealed trait MentionID
 sealed trait ClusterID
 sealed trait RelationID
 
-sealed trait SHA1String
 
 sealed trait Ranging
 sealed trait Offset
@@ -27,9 +30,10 @@ sealed trait Percent
 object TypeTags {
   val SHA1String = Tag.of[SHA1String]
 
+  val DocumentID = Tag.of[DocumentID]
+
   val ZoneID = Tag.of[ZoneID]
   val RegionID = Tag.of[RegionID]
-  val TokenID = Tag.of[TokenID]
   val PageID = Tag.of[PageID]
   val CharID = Tag.of[CharID]
   val ComponentID = Tag.of[ComponentID]
