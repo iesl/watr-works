@@ -53,6 +53,9 @@ object TypeTags {
     def unwrap: A = Tag.of[T].unwrap(value)
   }
 
+  val emptyDocId: String@@DocumentID =
+    DocumentID("empty")
+
   import scala.reflect._
 
   def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
@@ -60,22 +63,21 @@ object TypeTags {
     s"${tagClsname}:${tt.unwrap}"
   }
 
+
   import boopickle.DefaultBasic._
   // import PicklerGenerator._
 
 
   // (implicit tpickler: Pickler[TagT]): Pickler[Int @@ TagT] = {
-  implicit def TypeTag_Pickler[TagT]: Pickler[Int @@ TagT] = {
+  implicit def IntTypeTag_Pickler[TagT]: Pickler[Int @@ TagT] = {
     transformPickler(
       (t:Int) => Tag.of[TagT](t))(
       t => (t.unwrap))
   }
-
-  // implicit val PageID_Pickler   = TypeTag_Pickler[PageID]
-  // implicit val RegionID_Pickler = TypeTag_Pickler[RegionID]
-
-  // implicit val PageID_Pickler = compositePickler[PageID]
-  // implicit val RegionID_Pickler = compositePickler[RegionID]
-
+  implicit def StringTypeTag_Pickler[TagT]: Pickler[String @@ TagT] = {
+    transformPickler(
+      (t:String) => Tag.of[TagT](t))(
+      t => (t.unwrap))
+  }
 
 }

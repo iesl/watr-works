@@ -33,13 +33,14 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
         // find the visual line associated with this CharAtom
 
         charAtom.char
-      case Insert    (value)                 => value
-      case Rewrite   ((from, attr), to)      => to
-      case Bracket   (pre, post, (a, attr))  => s"$pre${attr}$post"
-      case Mask      (mL, mR, (a, attr))     => attr.drop(mL).dropRight(mR).mkString
-      case Flow      (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
-      case Labeled   (labels, (a, attr))     => attr
-      case CachedText((a, attr), text)     => text
+      case Insert     (value)                 => value
+      case Rewrite    ((from, attr), to)      => to
+      case Bracket    (pre, post, (a, attr))  => s"$pre${attr}$post"
+      case Mask       (mL, mR, (a, attr))     => attr.drop(mL).dropRight(mR).mkString
+      case Flow       (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
+      case Labeled    (labels, (a, attr))     => attr
+      case CachedText ((a, attr), text)       => text
+      // case Region     (targetRegion)          => text
     }
 
     tr.cata(attributePara(render))

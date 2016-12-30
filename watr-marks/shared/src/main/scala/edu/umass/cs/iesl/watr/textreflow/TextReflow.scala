@@ -21,6 +21,7 @@ object TextReflowF {
   case class Flow[A](as: List[A])                         extends TextReflowF[A]
   case class Labeled[A](labels: Set[Label], a: A)         extends TextReflowF[A]
   case class CachedText[A](a: A, text: String)            extends TextReflowF[A]
+  // case class Region[A](targetRegion: TargetRegion)        extends TextReflowF[A]
 
 
   implicit def TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {

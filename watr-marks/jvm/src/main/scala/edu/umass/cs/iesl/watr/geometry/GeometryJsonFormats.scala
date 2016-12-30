@@ -135,16 +135,17 @@ trait GeometryJsonFormats extends TypeTagFormats {
   implicit def FormatTargetRegion: Format[TargetRegion] = new Format[TargetRegion] {
     override def reads(json: JsValue)= json match {
       case JsArray(Seq(
-        id: JsNumber, targetPage: JsNumber, ltBounds
+        id: JsNumber, JsString(docId), targetPage: JsNumber, ltBounds
       )) => JsSuccess(
         TargetRegion(
           id.as[Int@@RegionID],
+          DocumentID(docId),
           targetPage.as[Int@@PageID],
           ltBounds.as[LTBounds]
         ))
     }
     override def writes(o: TargetRegion) =
-      arr(toJson(o.id), toJson(o.pageId), toJson(o.bbox))
+      arr(toJson(o.id), toJson(o.docId.unwrap), toJson(o.pageId), toJson(o.bbox))
   }
 
   implicit def FormatPageGeometry     = Json.format[PageGeometry]

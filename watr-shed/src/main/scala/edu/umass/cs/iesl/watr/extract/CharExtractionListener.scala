@@ -16,6 +16,7 @@ import itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import itextpdf.kernel.pdf.canvas.parser.EventType
 import itextpdf.kernel.pdf.canvas.parser.data._
 import itextpdf.kernel.pdf.PdfReader
+import TypeTags.emptyDocId
 
 import fonts._
 // import UnicodeUtil._
@@ -161,6 +162,7 @@ class CharExtractionListener(
           CharAtom(
             TargetRegion(
               componentIdGen.nextId,
+              emptyDocId,
               pageId,
               bnds
             ),

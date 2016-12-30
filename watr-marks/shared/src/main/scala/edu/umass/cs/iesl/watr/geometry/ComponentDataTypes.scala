@@ -10,6 +10,7 @@ import GeometricFigure._
 
 case class TargetRegion(
   id: Int@@RegionID,
+  docId: String@@DocumentID,
   pageId: Int@@PageID,
   bbox: LTBounds
 ) {
@@ -19,10 +20,10 @@ case class TargetRegion(
 // Generalized version of TargetRegion
 case class TargetFigure(
   id: Int@@RegionID,
-  page: Int@@PageID,
+  pageId: Int@@PageID,
   figure: GeometricFigure
 ) {
-  override def toString = s"""<fig.${id} pg.${page} ${figure.toString}>"""
+  override def toString = s"""<fig.${id} pg.${pageId} ${figure.toString}>"""
 }
 
 case class Zone(
@@ -94,7 +95,7 @@ case class FontClass(
 
 object ComponentTypeEnrichments {
   import TypeTags._
-  import GeometricFigure._
+  // import GeometricFigure._
 
   implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
     case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
@@ -111,8 +112,12 @@ object ComponentTypeEnrichments {
   })
 
   implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
-    case (TargetRegion(id, targetPage, bbox), TargetRegion(id2, targetPage2, bbox2)) =>
-      id.unwrap==id2.unwrap && targetPage.unwrap==targetPage2.unwrap && (bbox: GeometricFigure) === bbox2
+    case (TargetRegion(id, docId, targetPage, bbox), TargetRegion(id2, docId2, targetPage2, bbox2)) =>
+      (id.unwrap==id2.unwrap
+        && docId.unwrap==docId.unwrap
+        && targetPage.unwrap==targetPage2.unwrap
+        && (bbox: GeometricFigure) === bbox2
+      )
     case (_, _) => false
 
   })

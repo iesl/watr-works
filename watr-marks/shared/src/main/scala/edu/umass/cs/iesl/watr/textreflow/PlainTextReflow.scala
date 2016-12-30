@@ -36,8 +36,10 @@ trait PlainTextReflow {
     'Æ' -> "AE"
   )
 
+
   def targetRegionForXY(x: Int, y: Int, w: Int, h: Int) = TargetRegion(
     RegionID(0),
+    emptyDocId,
     page0,
     LTBounds(
       left=x*xscale, top=y*yscale,
@@ -141,7 +143,9 @@ trait PlainTextReflow {
       (ch, chnum)     <- line.zipWithIndex
     } yield {
       CharAtom(
-        TargetRegion(regionIDs.nextId, page0,
+        TargetRegion(regionIDs.nextId, 
+          emptyDocId,
+          page0,
           LTBounds(
             left=chnum*xscale, top=linenum*yscale,
             width=xscale, height=yscale
@@ -158,7 +162,9 @@ trait PlainTextReflow {
           .filterNot(_._1 == ' ')
           .map({ case (ch, chnum) =>
             CharAtom(
-              TargetRegion(regionIDs.nextId, page0,
+              TargetRegion(regionIDs.nextId, 
+                emptyDocId,
+                page0,
                 LTBounds(
                   left=chnum*xscale, top=linenum*yscale,
                   width=xscale, height=yscale

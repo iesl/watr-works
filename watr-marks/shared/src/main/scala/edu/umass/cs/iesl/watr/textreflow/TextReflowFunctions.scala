@@ -16,6 +16,8 @@ import utils.EnrichNumerics._
 case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 
 trait TextReflowSharedFunctions extends TextReflowClipping {
+
+
   import TextReflowF._
   import utils.SlicingAndDicing._
 

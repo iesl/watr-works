@@ -314,6 +314,7 @@ object EnrichGeometricFigures {
     def targetRegionTo(page: Int@@PageID): TargetRegion = {
       TargetRegion(
         RegionID(0), // TODO gen region id
+        emptyDocId,
         page,tb
       )
     }
