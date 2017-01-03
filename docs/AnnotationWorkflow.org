@@ -72,8 +72,7 @@ and errors have been fixed, the workflow looks something like this:
     |          +----------------+                      +---------+
     |          | import DocSegs |                      |Annotated|
     |          |  into MongoDB  |                      | Docsegs | ---[ this now contains prior annotations with improved text extraction
-    |          +-------
-    ---------+                      |         |
+    |          +----------------+                      |         |
     |                  |                               |         |
     |                  |                               |         |
     |                  |                               +----+----+
