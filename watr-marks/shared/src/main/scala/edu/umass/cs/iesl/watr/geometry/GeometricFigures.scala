@@ -315,7 +315,7 @@ object EnrichGeometricFigures {
       val top=  tb.top
       val width = tb.width
       val height = tb.height
-      s"""x${left.pp}y${top.pp}w${width.pp}h${height.pp}"""
+      s"""${left.pp}+${top.pp}+${width.pp}+${height.pp}"""
     }
 
     def targetRegionTo(page: Int@@PageID): TargetRegion = {

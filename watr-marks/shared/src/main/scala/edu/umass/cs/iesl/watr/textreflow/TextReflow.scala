@@ -30,10 +30,8 @@ object TextReflowF {
       case Insert(value)              => G.point(Insert(value))
       case Rewrite(fromA, to)         => f(fromA).map(Rewrite(_, to))
       case Bracket(pre, post, a)      => f(a).map(Bracket(pre, post, _))
-      // case Mask(maskL, maskR, a)      => f(a).map(Mask(maskL, maskR, _))
       case Flow(as)                   => as.traverse(f).map(Flow(_))
       case Labeled(labels, a)         => f(a).map(Labeled(labels, _))
-      // case CachedText(a, text)        => f(a).map(CachedText(_, text))
     }
   }
 
@@ -43,10 +41,8 @@ object TextReflowF {
       case Insert(value)              => s"+'$value'"
       case Rewrite(from, to)          => s"/'${to}'"
       case Bracket(pre, post, a)      => s"""${pre}..${post} """
-      // case Mask(maskL, maskR, a)      => s"""mask"""
       case Flow(atoms)                => s"""flow"""
       case Labeled(ls, _)             => s"""#${ls.mkString(" #")}"""
-      // case CachedText(a, text)        => text
     }
   }
 
@@ -57,10 +53,8 @@ object TextReflowF {
         case (Insert(value)         , Insert(value2))           => value == value2
         case (Rewrite(from, to)     , Rewrite(from2, to2))      => from === from2 && to == to2
         case (Bracket(pre, post, a) , Bracket(pre2, post2, a2)) => pre==pre && post==post && a===a2
-        // case (Mask(maskL, maskR, a) , Mask(maskL2, maskR2, a2)) => maskL==maskL2 && maskR==maskR2 && a===a2
         case (Flow(atoms)           , Flow(atoms2))             => atoms === atoms2
         case (Labeled(ls, a)        , Labeled(ls2, a2))         => ls == ls2 && a === a2
-        // case (CachedText(a, text)   , CachedText(a2, text2))    => a === a2 && text == text2
         case (_                     , _)                        => false
       }
     })

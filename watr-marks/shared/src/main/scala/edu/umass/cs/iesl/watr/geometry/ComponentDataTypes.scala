@@ -177,7 +177,7 @@ object ComponentTypeEnrichments {
       val doc = targetRegion.docId
       val pg = targetRegion.pageId
       val bbox = targetRegion.bbox.uriString
-      s"${doc}:${pg}:${bbox}"
+      s"${doc}+${pg}+${bbox}"
     }
   }
 

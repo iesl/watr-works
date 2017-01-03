@@ -9,7 +9,6 @@ import js.annotation.JSName
 @js.native
 trait FabricObject extends ObjectProperties {
 
-
   def getClipTo(): js.Function = js.native
   def setClipTo(clipTo: js.Function): FabricObject = js.native
 
@@ -312,6 +311,10 @@ class Line extends FabricObject {
 
 @js.native @JSName("fabric.Rect")
 class Rect extends FabricObject {}
+object Rect {
+  def apply(): Rect = new Rect()
+}
+
 
 
 @js.native @JSName("fabric.Circle")
@@ -330,28 +333,24 @@ class Circle extends FabricObject {
 
 
 
-@js.native
-class PropBuilder() extends ObjectProperties  {
-  // val accum = js.Dynamic
-  // accum.global.sdf = 23
+// @js.native
+// class PropBuilder() extends ObjectProperties  {
+//   // val accum = js.Dynamic
+//   // accum.global.sdf = 23
 
-  // def updateDynamic(name: String)(value: Any): PropBuilder = {
-  //   // map += name -> value
-  //   // accum.literal(name = value)
-  //   this
-  // }
-}
+//   // def updateDynamic(name: String)(value: Any): PropBuilder = {
+//   //   // map += name -> value
+//   //   // accum.literal(name = value)
+//   //   this
+//   // }
+// }
 
-object props {
-  def apply() = {
-    new PropBuilder()
-  }
-}
+// object props {
+//   def apply() = {
+//     new PropBuilder()
+//   }
+// }
 
-
-object Rect {
-  def apply(): Rect = new Rect()
-}
 
 
 // @js.native

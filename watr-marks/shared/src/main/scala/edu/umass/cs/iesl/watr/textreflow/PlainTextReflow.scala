@@ -14,6 +14,7 @@ trait PlainTextReflow {
   import geometry._
   import GeometricFigure._
   import EnrichGeometricFigures._
+  import ComponentTypeEnrichments._
   import TextReflowF._
 
   val regionIDs = IdGenerator[RegionID]()
@@ -37,15 +38,35 @@ trait PlainTextReflow {
   )
 
 
-  def targetRegionForXY(x: Int, y: Int, w: Int, h: Int) = TargetRegion(
-    RegionID(0),
-    emptyDocId,
-    page0,
-    LTBounds(
-      left=x*xscale, top=y*yscale,
-      width=w*xscale - 0.1, height=h*yscale - 0.1 // bbox areas are a bit smaller than full 1x1 area
+  def mkTargetRegion(docId: String@@DocumentID, pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int) = {
+    // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
+    val width = if (w>0) {
+      w*xscale - 0.1
+    } else 0
+    val height = if (h>0) {
+      h*yscale - 0.1
+    } else 0
+
+    TargetRegion(
+      RegionID(0),
+      docId, pageId,
+      LTBounds(
+        left=x*xscale, top=y*yscale,
+        width, height
+      )
     )
-  )
+  }
+
+  // def targetRegionForXY(x: Int, y: Int, w: Int, h: Int) = TargetRegion(
+  //   RegionID(0),
+  //   emptyDocId,
+  //   page0,
+  //   LTBounds(
+  //     left=x*xscale, top=y*yscale,
+  //     width=w*xscale - 0.1,
+  //     height=h*yscale - 0.1 // bbox areas are a bit smaller than full 1x1 area
+  //   )
+  // )
 
 
 
@@ -65,8 +86,14 @@ trait PlainTextReflow {
       t.loc
     }
 
-    var linenum = 0
+    import scala.collection.mutable
+
+    var docId = DocumentID("doc-0")
+    var pageId = PageID(0)
+    var linenum:Int = 0
     var chnum = 0
+    var lineCharAtoms = mutable.ArrayBuffer[CharAtom]()
+
 
     def insertRight(tr: TextReflowF[Int]): Unit    = { tloc = tloc.insertRight(Tree.Leaf(tr)) }
     def insertLeft(tr: TextReflowF[Int]): Unit     = { tloc = tloc.insertLeft(Tree.Leaf(tr)) }
@@ -75,12 +102,35 @@ trait PlainTextReflow {
     //
     def debug(): Unit = { println(tloc.toTree.map(_.toString).drawBox) }
 
+    def createUriString(): String = {
+      val z = mkTargetRegion(
+        docId, pageId,
+        0, linenum, 0, 0
+      )
+
+      val accumLineTargetRegion = lineCharAtoms
+        .map(_.targetRegion)
+        .foldLeft(z)(_ union _)
+
+      lineCharAtoms.clear()
+      accumLineTargetRegion.uriString
+
+    }
+
     for (ch <- lines(multiLines).mkString("\n")) {
       ch match {
         case '\n' =>
+
+          val uriStr = createUriString()
+
           linenum += 1
           chnum = 0
-          pop(); pop()
+          // update the VisualLine w/exact dimensions
+          pop()
+
+          tloc = tloc.modifyLabel(_ => Labeled(Set(LB.VisualLine(uriStr)), 0))
+
+          pop()
           insertDownLast(Labeled(Set(LB.VisualLine), 0))
           insertDownLast(Flow(List()))
 
@@ -97,9 +147,11 @@ trait PlainTextReflow {
         case chx if charSubs.contains(chx) =>
           insertDownLast(Rewrite(0, charSubs(chx)))
           val charAtom = CharAtom(
-            targetRegionForXY(chnum, linenum, 1, 1),
+            mkTargetRegion(docId, pageId,
+              chnum, linenum, 1, 1),
             ch.toString
           )
+          lineCharAtoms += charAtom
           insertDownLast(Atom(charAtom))
           pop()
           pop()
@@ -107,13 +159,20 @@ trait PlainTextReflow {
 
         case _ =>
           val charAtom = CharAtom(
-            targetRegionForXY(chnum, linenum, 1, 1),
+            mkTargetRegion(docId, pageId, chnum, linenum, 1, 1),
             ch.toString
           )
+          lineCharAtoms += charAtom
           insertDownLast(Atom(charAtom))
           pop()
           chnum += 1
       }
+    }
+
+    if (!tloc.isRoot) {
+      pop()
+      val uriStr = createUriString()
+      tloc = tloc.modifyLabel(_ => Labeled(Set(LB.VisualLine(uriStr)), 0))
     }
 
     // Now construct the Fix[] version of the tree:
@@ -124,7 +183,6 @@ trait PlainTextReflow {
         case t@ Insert(value)           => Insert(value)
         case t@ Rewrite(from, to)       => Rewrite(childs.head.rootLabel, to)
         case t@ Bracket(pre, post, a)   => Bracket(pre, post, childs.head.rootLabel)
-        // case t@ Mask(mL, mR, a)         => Mask(mL, mR, childs.head.rootLabel)
         case t@ Flow(atoms)             => Flow(childs.toList.map(_.rootLabel))
         case t@ Labeled(ls, _)          => Labeled(ls, childs.head.rootLabel)
       }}
