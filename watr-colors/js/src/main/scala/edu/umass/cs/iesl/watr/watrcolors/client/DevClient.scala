@@ -7,7 +7,7 @@ import scala.scalajs.js.annotation.JSExport
 import textreflow._
 import geometry._
 import GeometricFigure._
-
+import watrmarks.{StandardLabels => LB}
 
 trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   import TextReflowF._
@@ -21,26 +21,24 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   }
 
   def example1(): TextReflow = {
-    val p0 = stringToTextReflow("To be or not to be.")
-
-    p0
+    stringToTextReflow("""|To be or not to be,
+                          |That is the question.
+                          |""")
   }
 
 
-  def renderHtml(tr: TextReflow): String = {
-    def render(t: TextReflowF[(TextReflow, String)]): String = t match {
-      case Atom      (charAtom)              =>
-        // find the visual line associated with this CharAtom
+  def extractVisualLineIds(tr: TextReflow): Seq[String] = {
+    def render(t: TextReflowF[(TextReflow, Seq[String])]): Seq[String] = t match {
+      case Rewrite    ((from, attr), to)      => attr
+      case Bracket    (pre, post, (a, attr))  => attr
+      case Flow       (atomsAndattrs)         => atomsAndattrs.flatMap(_._2)
+      case Labeled    (labels, (a, attr))     =>
+        attr ++ labels.
+          filter(_ == LB.VisualLine)
+          .flatMap(_.value)
+          .toSeq
 
-        charAtom.char
-      case Insert     (value)                 => value
-      case Rewrite    ((from, attr), to)      => to
-      case Bracket    (pre, post, (a, attr))  => s"$pre${attr}$post"
-      case Mask       (mL, mR, (a, attr))     => attr.drop(mL).dropRight(mR).mkString
-      case Flow       (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
-      case Labeled    (labels, (a, attr))     => attr
-      case CachedText ((a, attr), text)       => text
-      // case Region     (targetRegion)          => text
+      case _ => Seq()
     }
 
     tr.cata(attributePara(render))
@@ -62,9 +60,12 @@ class DevClient extends TextReflowExamples {
   @JSExport
   def main(): Unit = {
     println("Dev Client started (yet again)")
-    val html = renderHtml(example1)
+    val vlineIds = extractVisualLineIds(example1)
+    val qwer = vlineIds.mkString("\n")
 
-    jQuery("#main").append(html)
+    jQuery("#main").append("Starting")
+    jQuery("#main").append(qwer)
+    jQuery("#main").append("Done")
 
   }
 

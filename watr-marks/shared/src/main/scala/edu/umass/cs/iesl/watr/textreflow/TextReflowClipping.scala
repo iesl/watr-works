@@ -77,10 +77,10 @@ trait TextReflowClipping extends TextReflowBasics {
         case Insert(value)            => List(anInsert(envRange))
         case Rewrite(aigs, to)        => setRanges(aigs, envRange)
         case Bracket(pre, post, aigs) => setRanges(aigs, envRange)
-        case Mask(mL, mR, aAttrS)     => ??? // Mask(mL, mR, a.get)
+        // case Mask(mL, mR, aAttrS)     => ??? // Mask(mL, mR, a.get)
         case Flow(childAIGs)          => childAIGs.flatten
         case Labeled(labels, aigs)    => aigs
-        case CachedText(aigs, text)   => aigs
+        // case CachedText(aigs, text)   => aigs
       }
     }
 

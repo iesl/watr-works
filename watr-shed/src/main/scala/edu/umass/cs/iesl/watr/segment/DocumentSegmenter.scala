@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-
 import ammonite.{ops => fs}, fs._
 import java.io.InputStream
 import java.net.URI
@@ -18,6 +17,7 @@ import GeometricFigure._
 import EnrichGeometricFigures._
 
 import ComponentOperations._
+import ComponentTypeEnrichments._
 
 import utils._
 import utils.{CompassDirection => CDir}
@@ -616,13 +616,22 @@ class DocumentSegmenter(
 
       val line = lineGroups.reduce(_ ++ _)
 
+      // Construct a string repr for line bounding box
+
       // Glue together page atoms into a VisualLine/TextSpan
       mpageIndex.labelRegion(line, LB.VisualLine)
         .map ({ visualLine =>
           visualLine.setChildren(LB.PageAtom, line.sortBy(_.bounds.left))
           visualLine.cloneAndNest(LB.TextSpan)
 
+          val uriStr = visualLine.targetRegion.uriString
+          val vlineLabel = LB.VisualLine(uriStr)
+
+          visualLine.removeLabel(LB.VisualLine)
+          visualLine.addLabel(vlineLabel)
+
           // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
+
           visualLine
         })
     }).flatten

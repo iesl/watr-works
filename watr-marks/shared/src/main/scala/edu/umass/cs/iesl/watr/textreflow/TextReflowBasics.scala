@@ -21,10 +21,10 @@ trait TextReflowBasics extends StructuredRecursion {
     case Insert(value)                  =>  value.length
     case Rewrite ((from, attr), to)     =>  to.length
     case Bracket (pre, post, (a, attr)) =>  pre.length + post.length + attr
-    case Mask    (mL, mR, (a, attr))    =>  attr - mL - mR
+    // case Mask    (mL, mR, (a, attr))    =>  attr - mL - mR
     case Flow(atomsAndattrs)            =>  atomsAndattrs.map(_._2).sum
     case Labeled(labels, (a, attr))     =>  attr
-    case CachedText((a, attr), text)    =>  attr
+    // case CachedText((a, attr), text)    =>  attr
   }
 
   // Bottom-up initial evaluator for char-begin/len offsets
@@ -36,10 +36,10 @@ trait TextReflowBasics extends StructuredRecursion {
       case Insert(value)                  => Offsets(0,     value.length,                      0,                         0)
       case Rewrite ((fromA, attr), to)    => Offsets(0,     to.length,                         0,                         -attr.len)
       case Bracket (pre, post, (a, attr)) => Offsets(0,     pre.length,                        attr.len,                  post.length)
-      case Mask    (mL, mR, (a, attr))    => Offsets(0,     attr.len-mL-mR,                    0,                         -(mL+mR))
+      // case Mask    (mL, mR, (a, attr))    => Offsets(0,     attr.len-mL-mR,                    0,                         -(mL+mR))
       case Flow(atomsAndattrs)            => Offsets(0,     atomsAndattrs.map(_._2.len).sum,   0,                         0)
       case Labeled(labels, (a, attr))     => Offsets(0,     attr.len,                          0,                         0)
-      case CachedText((a, attr), text)    => Offsets(0,     attr.len,                          0,                         0)
+      // case CachedText((a, attr), text)    => Offsets(0,     attr.len,                          0,                         0)
     }
   }
 
@@ -76,10 +76,10 @@ trait TextReflowBasics extends StructuredRecursion {
         case Insert(value)         => incTotalLen()
         case Rewrite(from, to)     => incTotalLen()
         case Bracket(pre, post, a) => incTotalLen()
-        case Mask(mL, mR, a)       => incTotalLen()
+        // case Mask(mL, mR, a)       => incTotalLen()
         case Flow(atoms)           => setTotalLen()
         case Labeled(ls, a)        => setTotalLen()
-        case CachedText(a, text)   => setTotalLen()
+        // case CachedText(a, text)   => setTotalLen()
       }
       sfin <- State.get[Offsets]
 
@@ -171,10 +171,10 @@ trait TextReflowBasics extends StructuredRecursion {
               val post1 = ctext.substring(pre.length+attr.length, ctext.length)
               bracket(pre1, post1, a)
 
-            case Mask(mL, mR, (a, attr))       => ??? // Mask(mL, mR, a.get)
+            // case Mask(mL, mR, (a, attr))       => ??? // Mask(mL, mR, a.get)
             case Flow(atomsAndattrs)           => flows(atomsAndattrs.map(_._1))
             case Labeled(labels, (a, attr))    => labeled(labels, a)
-            case CachedText((a, attr), text)   => cache(a, attr)
+            // case CachedText((a, attr), text)   => cache(a, attr)
           }
           (tf, ctext)
         }

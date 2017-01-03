@@ -65,9 +65,6 @@ case class UPin(
 }
 
 
-
-
-
 case class Label(
   ns: String, key: String,
   value: Option[String]=None,
@@ -117,26 +114,3 @@ class Labeler() {
 
 
 }
-
-
-trait LabelDictionary {
-  def apply(c: Char): Label
-  def get(s: Char): Option[Label]
-
-  def apply(s: String): Label
-  def get(s: String): Option[Label]
-}
-
-case class BioDictionary(
-  byName: Map[String, Label],
-  byChar: Map[Char, Label]
-) extends LabelDictionary {
-
-  def apply(s: String) = byName(s)
-  def get(s: String): Option[Label] = byName.get(s)
-
-  def apply(s: Char) = byChar(s)
-  def get(s: Char): Option[Label] = byChar.get(s)
-}
-
-

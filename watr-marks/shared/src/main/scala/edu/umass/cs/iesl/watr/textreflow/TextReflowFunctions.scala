@@ -28,7 +28,7 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
   def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
   def flow(as:TextReflow*) = flows(as)
   def flows(as: Seq[TextReflow]) = fixf(Flow(as.toList))
-  def cache(a: TextReflow, text: String) = fixf(CachedText(a, text))
+  // def cache(a: TextReflow, text: String) = fixf(CachedText(a, text))
 
   def bracket(pre: Char, post: Char, a:TextReflow) = fixf(
     Bracket(pre.toString, post.toString, a)
@@ -45,7 +45,10 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
   private def mkPad(s: String): TextReflow = insert(s)
 
   def addLabel(l: Label): TextReflow => TextReflow = tr => fixf(tr.unFix match {
-    case f @ Labeled(ls, s)  => f.copy(labels = ls + l)
+    case f @ Labeled(ls, s)  => 
+
+      println(s"adding label ${l}")
+      f.copy(labels = ls + l)
     case r                   => labeled(l, fixf(r)).unFix
   })
 
@@ -275,10 +278,8 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
         case Insert  (value)           => Seq()
         case Rewrite (attr, to)        => attr
         case Bracket (pre, post, attr) => attr
-        case Mask    (mL, mR, attr)    => attr
         case Flow    (asAndattrs)      => asAndattrs.flatten
         case Labeled (labels, attr)    => attr
-        case CachedText(attr, text)    => attr
       }
 
       theReflow.cata(regions)

@@ -262,7 +262,6 @@ object EnrichGeometricFigures {
     )
 
 
-
     def toCenterPoint: Point = Point(
       (tb.left+tb.width/2),
       (tb.top+tb.height/2)
@@ -309,6 +308,14 @@ object EnrichGeometricFigures {
       val width = tb.width
       val height = tb.height
       s"""[${left.pp}, ${top.pp}, ${width.pp}, ${height.pp}]"""
+    }
+
+    def uriString: String = {
+      val left = tb.left
+      val top=  tb.top
+      val width = tb.width
+      val height = tb.height
+      s"""x${left.pp}y${top.pp}w${width.pp}h${height.pp}"""
     }
 
     def targetRegionTo(page: Int@@PageID): TargetRegion = {

@@ -3,6 +3,7 @@ package spindex
 
 import org.scalatest._
 
+import watrmarks.{StandardLabels => LB}
 import textreflow._
 import watrmarks._
 import geometry._
@@ -49,15 +50,18 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextRe
   import java.net.URI
 
 
-
   def createMultiPageIndex(str: String): MultiPageIndex = {
-    val (atoms, geom) = stringToPageAtoms(str)
+    val pageId = 0
+    val docId = ""
+    val (atoms, geom) = stringToPageAtoms(str, pageId, docId)
     val dummyUri = URI.create("/")
     MultiPageIndex.loadSpatialIndices(dummyUri, Seq((atoms -> geom)))
   }
 
   def createMultiPageIndexAndLines(str: String): (MultiPageIndex, Seq[String]) = {
-    val (atoms, geom) = stringToPageAtoms(str)
+    val pageId = 0
+    val docId = ""
+    val (atoms, geom) = stringToPageAtoms(str, pageId, docId)
     val dummyUri = URI.create("/")
     (MultiPageIndex.loadSpatialIndices(dummyUri, Seq((atoms -> geom))),
       lines(str))

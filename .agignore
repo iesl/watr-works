@@ -1,8 +1,10 @@
+*.d/
+webjars/
 docs
-.ensime_cache
+/.ensime_cache
+/bin
 *.sql
 iesl-pdf-to-text
-/ext
 target
 corpus-*
 *.pdf

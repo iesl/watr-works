@@ -118,15 +118,15 @@ trait PlainTextReflow {
 
     // Now construct the Fix[] version of the tree:
     val ftree = tloc.toTree
-    val res = ftree.scanr ((reflowNode: TextReflowF[Int], childs: Stream[Tree[TextReflow]]) => {
+    val res = ftree.scanr ((reflowNode: TextReflowF[Int], childs: Stream[Tree[TextReflow]]) => fixf {
       reflowNode match {
-        case t@ Atom(c)                    => fixf(Atom(c))
-        case t@ Insert(value)              => fixf(Insert(value))
-        case t@ Rewrite(from, to)          => fixf(Rewrite(childs.head.rootLabel, to))
-        case t@ Bracket(pre, post, a)      => fixf(Bracket(pre, post, childs.head.rootLabel))
-        case t@ Mask(mL, mR, a)            => fixf(Mask(mL, mR, childs.head.rootLabel))
-        case t@ Flow(atoms)                => fixf(Flow(childs.toList.map(_.rootLabel)))
-        case t@ Labeled(ls, _)             => fixf(Labeled(ls, childs.head.rootLabel))
+        case t@ Atom(c)                 => Atom(c)
+        case t@ Insert(value)           => Insert(value)
+        case t@ Rewrite(from, to)       => Rewrite(childs.head.rootLabel, to)
+        case t@ Bracket(pre, post, a)   => Bracket(pre, post, childs.head.rootLabel)
+        // case t@ Mask(mL, mR, a)         => Mask(mL, mR, childs.head.rootLabel)
+        case t@ Flow(atoms)             => Flow(childs.toList.map(_.rootLabel))
+        case t@ Labeled(ls, _)          => Labeled(ls, childs.head.rootLabel)
       }}
     )
 
@@ -135,15 +135,13 @@ trait PlainTextReflow {
 
 
 
-
-
-  def stringToPageAtoms(str: String): (Seq[PageAtom], PageGeometry) = {
+  def stringToPageAtoms(str: String, pageId: Int, docId: String): (Seq[PageAtom], PageGeometry) = {
     for {
       (line, linenum) <- lines(str).zipWithIndex
       (ch, chnum)     <- line.zipWithIndex
     } yield {
       CharAtom(
-        TargetRegion(regionIDs.nextId, 
+        TargetRegion(regionIDs.nextId,
           emptyDocId,
           page0,
           LTBounds(
@@ -162,7 +160,7 @@ trait PlainTextReflow {
           .filterNot(_._1 == ' ')
           .map({ case (ch, chnum) =>
             CharAtom(
-              TargetRegion(regionIDs.nextId, 
+              TargetRegion(regionIDs.nextId,
                 emptyDocId,
                 page0,
                 LTBounds(

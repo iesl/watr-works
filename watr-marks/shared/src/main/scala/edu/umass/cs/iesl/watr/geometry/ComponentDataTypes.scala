@@ -172,6 +172,13 @@ object ComponentTypeEnrichments {
       val bbox = targetRegion.bbox.prettyPrint
       s"""<target pg:${pg} ${bbox}"""
     }
+
+    def uriString: String = {
+      val doc = targetRegion.docId
+      val pg = targetRegion.pageId
+      val bbox = targetRegion.bbox.uriString
+      s"${doc}:${pg}:${bbox}"
+    }
   }
 
   implicit class RicherCharAtom(val charRegion: CharAtom) extends AnyVal {
