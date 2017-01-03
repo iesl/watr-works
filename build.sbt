@@ -2,6 +2,11 @@ import sbt.Keys._
 
 SensibleThisBuild.settings
 
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption._
+
+lazy val copyDocs = TaskKey[Unit]("copyDocs")
+
 autoCompilerPlugins := true
 
 val Lib = CommonLibs
@@ -49,12 +54,29 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
   ))
   .jvmSettings(commonSettings: _*)
 
+
+
+
+
 lazy val watrdocs = scalatex.ScalatexReadme(
-  projectId = "docs",
-  wd = file("docs"),
+  projectId = "watr-docs",
+  wd = file("watr-docs"),
   url = "https://github.com/iesl/watr-works/tree/master",
   source = "Readme")
   .settings(commonSettings: _*)
+  .settings(copyDocs <<= (baseDirectory, target) map ({ (base, trg) =>
+    println("copying doc files..")
+      (trg / "scalatex").listFiles().foreach({file =>
+        val from = file.toPath
+        val to = base/".."/"docs"/file.getName()
+        println(s"copying files from ${from} to ${to}")
+        if (file.isDirectory) {
+          sbt.IO.copyDirectory(file, to, overwrite = true)
+        } else {
+          Files.copy(from, to.toPath, REPLACE_EXISTING)
+        }
+      })
+  }))
 
 lazy val watrmarksJS = watrmarks.js
 
