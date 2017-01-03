@@ -50,9 +50,9 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
   .jvmSettings(commonSettings: _*)
 
 lazy val watrdocs = scalatex.ScalatexReadme(
-  projectId = "watr-docs",
-  wd = file("watr-docs"),
-  url = "https://github.com/iesl/watr-works/tree/acs-dev",
+  projectId = "docs",
+  wd = file("docs"),
+  url = "https://github.com/iesl/watr-works/tree/master",
   source = "Readme")
   .settings(commonSettings: _*)
 
