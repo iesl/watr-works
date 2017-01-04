@@ -6,7 +6,7 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
 
   behavior of "connected components"
 
-  import watrmarks.{StandardLabels => LB}
+  
 
 
   it should "create and flatten child structure" in {

@@ -10,7 +10,7 @@ import spindex._
 // import GeometricFigure._
 
 // import scalaz.@@
-// import TypeTags._
+// //import TypeTags._
 // import scala.collection.JavaConversions._
 // import textboxing.{TextBoxing => TB}, TB._
 // import EnrichGeometricFigures._

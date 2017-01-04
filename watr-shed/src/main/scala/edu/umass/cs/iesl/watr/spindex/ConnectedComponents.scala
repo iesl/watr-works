@@ -8,8 +8,8 @@ import geometry._
 import GeometricFigure._
 import EnrichGeometricFigures._
 
-import TypeTags._
-import watrmarks.{StandardLabels => LB}
+//import TypeTags._
+
 import scalaz.Tree
 import scala.collection.mutable
 

@@ -9,7 +9,7 @@ import GeometricFigure._
 trait ShapeDataTypePicklers {
   // import scala.reflect._
   import boopickle.DefaultBasic._
-  import TypeTags._
+  //import TypeTags._
   import watrmarks._
 
   implicit val pGeometricFigure = compositePickler[GeometricFigure]

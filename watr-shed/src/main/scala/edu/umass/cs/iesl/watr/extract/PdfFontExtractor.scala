@@ -13,7 +13,7 @@ object FontExtractor {
 
 
   def extractFontObjects(stream: InputStream): String = {
-    import textboxing.{TextBoxing => TB}, TB._
+    import TB._
 
     try {
       val reader = new PdfReader(stream)

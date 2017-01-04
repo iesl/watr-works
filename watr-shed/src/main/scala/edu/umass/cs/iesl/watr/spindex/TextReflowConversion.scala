@@ -1,9 +1,7 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import textboxing.{TextBoxing => TB}
 import watrmarks._
-import watrmarks.{StandardLabels => LB}
 import geometry.CharAtom
 import ComponentOperations._
 

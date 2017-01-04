@@ -1,10 +1,8 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-import textboxing.{TextBoxing => TB}
 import scalaz.@@
-import TypeTags._
-
+//import TypeTags._
 
 sealed trait BioPin {
   def label: Label

@@ -4,9 +4,6 @@ package tracing
 import scala.language.experimental.macros
 
 import geometry._
-// import watrmarks.Label
-
-import textboxing.{TextBoxing => TB}
 import TB._
 
 object VisualTracer {

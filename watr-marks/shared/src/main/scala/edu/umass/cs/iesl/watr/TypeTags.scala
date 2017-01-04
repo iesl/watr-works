@@ -27,7 +27,9 @@ sealed trait Length
 
 sealed trait Percent
 
-object TypeTags {
+object TypeTags extends TypeTags
+
+trait TypeTags {
   val SHA1String = Tag.of[SHA1String]
 
   val DocumentID = Tag.of[DocumentID]
@@ -49,9 +51,9 @@ object TypeTags {
 
   val Percent = Tag.of[Percent]
 
-  implicit class TagOps[A, T](val value: A@@T) extends AnyVal {
-    def unwrap: A = Tag.of[T].unwrap(value)
-  }
+  // implicit class TagOps[A, T](val value: A@@T) extends AnyVal {
+  //   def unwrap: A = Tag.of[T].unwrap(value)
+  // }
 
   val emptyDocId: String@@DocumentID =
     DocumentID("empty")

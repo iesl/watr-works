@@ -28,7 +28,7 @@ object Image {
       }
     }
 
-    util.loadImage(url, jscb) 
+    util.loadImage(url, jscb)
   }
 }
 

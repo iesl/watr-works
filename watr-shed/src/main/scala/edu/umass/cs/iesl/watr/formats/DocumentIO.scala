@@ -2,12 +2,11 @@ package edu.umass.cs.iesl.watr
 package formats
 
 
-import TypeTags._
 
 import extract.PdfTextExtractor
 import extract.fonts._
 import spindex._
-import textboxing.{TextBoxing => TB}, TB._
+import TB._
 import utils.IdGenerator
 import predsynth._
 

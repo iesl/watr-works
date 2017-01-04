@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package predsynth
 
-import TypeTags._
+//import TypeTags._
 import scalaz.@@
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}

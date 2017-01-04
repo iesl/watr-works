@@ -3,7 +3,8 @@ package watrcolors
 package client
 
 
-import scala.async.Async.{async, await}
+// import scala.async.Async.await
+import scala.async.Async.async
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import scala.scalajs.js.annotation.JSExport
@@ -17,7 +18,7 @@ import scala.scalajs.js.annotation.JSExport
 // import native.fabric
 
 
-import geometry._
+// import geometry._
 // import GeometricFigure._
 
 @JSExport

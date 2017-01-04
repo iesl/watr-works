@@ -13,7 +13,7 @@ trait VisualTraceOperations extends FabricCanvasOperations {
   import geometry._
   import GeometricFigure._
   import TraceLog._
-  import TypeTags._
+  //import TypeTags._
 
   val pageGeometry = mutable.Map[Int, PageGeometry]()
 

@@ -5,10 +5,10 @@ import spindex._
 import ComponentOperations._
 
 import scalaz.@@
-import TypeTags._
+//import TypeTags._
 
 import scala.collection.mutable
-import watrmarks.{StandardLabels => LB}
+
 
 import predsynth._
 import utils.SlicingAndDicing._

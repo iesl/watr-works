@@ -3,13 +3,13 @@ package spindex
 
 import org.scalatest._
 
-import watrmarks.{StandardLabels => LB}
+
 import textreflow._
 import watrmarks._
 import geometry._
 import matryoshka._
 import matryoshka.implicits._
-import TypeTags._
+//import TypeTags._
 import GeometricFigure._
 import EnrichGeometricFigures._
 import TextReflowF._

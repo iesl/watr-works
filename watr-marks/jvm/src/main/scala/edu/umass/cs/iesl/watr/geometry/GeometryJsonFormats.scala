@@ -5,10 +5,7 @@ import scalaz._
 import Scalaz._
 import watrmarks._
 
-import EnrichGeometricFigures._
 import GeometricFigure._
-
-import TypeTags._
 
 trait TypeTagFormats {
   import play.api.libs.json

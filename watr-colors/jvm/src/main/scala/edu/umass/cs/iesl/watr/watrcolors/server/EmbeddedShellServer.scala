@@ -29,6 +29,8 @@ import java.nio.ByteBuffer
 // import scala.tools.nsc.util.{JavaClassPath, DirectoryClassPath}
 
 class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi with RemoteCallPicklers {
+  implicit val system = ActorSystem()
+  import system.dispatcher
   val corsHeaders: List[ModeledHeader] =
     List(
       `Access-Control-Allow-Methods`(OPTIONS, GET, POST),
@@ -36,20 +38,6 @@ class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrT
       `Access-Control-Allow-Headers`("Origin, X-Requested-With, Content-Type, Accept, Accept-Encoding, Accept-Language, Host, Referer, User-Agent"),
       `Access-Control-Max-Age`(1728000)
     )
-
-  implicit val system = ActorSystem()
-  import system.dispatcher
-
-  val api = Wire[WatrTableApi]
-
-  def clear(): Unit = {
-    api.clear().call()
-  }
-
-  def print(level: String, msg: String): Unit = {
-    api.print(level, msg).call()
-  }
-
 
   object Wire extends autowire.Client[ByteBuffer, Pickler, Pickler] {
     def doCall(req: Request): Future[ByteBuffer] = {
@@ -68,6 +56,18 @@ class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrT
     override def read[Result: Pickler](p: ByteBuffer) = Unpickle[Result].fromBytes(p)
     override def write[Result: Pickler](r: Result) = Pickle.intoBytes(r)
   }
+
+  val api = Wire[WatrTableApi]
+
+  def clear(): Unit = {
+    api.clear().call()
+  }
+
+  def print(level: String, msg: String): Unit = {
+    api.print(level, msg).call()
+  }
+
+
   /**
    * Actor meant to handle long polling, buffering messages or waiting actors
    */
@@ -132,6 +132,28 @@ class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrT
     HttpEntity(MediaTypes.`text/html`, resp)
   }
 
+
+  def producePageImage(path: List[String]): Array[Byte] = {
+
+    ???
+  }
+
+  def pageImageServer = pathPrefix("img")(
+    path(Segments)(pathSegments =>
+      complete(
+        HttpResponse(entity =
+          HttpEntity(MediaTypes.`image/png`, HttpData(producePageImage(pathSegments)))
+        )
+      )
+    )
+  )
+
+  def mainFrame = pathPrefix("") (
+    extract(_.request.entity.data) ( requestData => ctx =>
+      ctx.complete { httpResponse(html.ShellHtml().toString()) }
+    )
+  )
+
   // Helper function for constructing Autowire routes
   def apiRoute(
     prefix: String,
@@ -149,28 +171,19 @@ class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrT
           ))}}
   }
 
-  /**
-   * Spray server:
-   * - POSTs to /notifications get routed to the longPoll actor
-   */
-  startServer(url, port) {
-    get {
-      webjarResources ~
-      assets ~
-      pathPrefix("") {
-        extract(_.request.entity.data) { requestData => ctx =>
-            ctx.complete { httpResponse(html.ShellHtml().toString()) }
-        }
-      }
-    } ~
-    post {
-      path("notifications") { ctx =>
+
+  startServer(url, port)(
+    get( webjarResources
+      ~  assets
+      ~  pageImageServer
+      ~  mainFrame
+    ) ~ post(
+      path("notifications") ( ctx =>
         longPoll ! ctx.responder
-      }
-    }
-  }
+      )
+    )
+  )
 
   def kill() = system.terminate()
 
 }
-

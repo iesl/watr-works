@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import scalaz.@@
-import TypeTags._
+//import TypeTags._
 
 
 

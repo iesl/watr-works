@@ -3,7 +3,7 @@ package textreflow
 
 object TextReflowRendering {
   import TextReflowF._
-  import watrmarks.{StandardLabels => LB}
+ 
 
   //  if (l.hasLabel(LB.Sup)) { Bracket("^{", "}",  a) }
   def escapeLineFormatting: TextReflowT => TextReflowT = {

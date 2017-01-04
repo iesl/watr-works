@@ -94,7 +94,6 @@ case class FontClass(
 
 
 object ComponentTypeEnrichments {
-  import TypeTags._
   // import GeometricFigure._
 
   implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {

@@ -1,9 +1,9 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import watrmarks.{StandardLabels => LB, Label}
+import watrmarks.Label
 import utils.Histogram, Histogram._
-import textboxing.{TextBoxing => TB}, TB._
+import TB._
 
 import utils.SlicingAndDicing._
 import utils.{CompassDirection => Compass}

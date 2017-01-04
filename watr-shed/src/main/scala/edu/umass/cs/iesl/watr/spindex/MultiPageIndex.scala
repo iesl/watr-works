@@ -9,7 +9,7 @@ import geometry._
 // import EnrichGeometricFigures._
 
 import watrmarks._
-import TypeTags._
+//import TypeTags._
 import scalaz.@@
 import ComponentTypeEnrichments._
 import utils.IdGenerator
@@ -97,7 +97,7 @@ class MultiPageIndex(
 
   // TODO: this should become the canonical way to get text reflows within a document
   def getTextReflows(labels: Label*): Seq[TextReflow]  = {
-    import watrmarks.{StandardLabels => LB}
+
 
     for {
       pageId <- getPages

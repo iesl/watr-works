@@ -16,7 +16,7 @@ import itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import itextpdf.kernel.pdf.canvas.parser.EventType
 import itextpdf.kernel.pdf.canvas.parser.data._
 import itextpdf.kernel.pdf.PdfReader
-import TypeTags.emptyDocId
+//import TypeTags.emptyDocId
 
 import fonts._
 // import UnicodeUtil._
@@ -24,7 +24,6 @@ import utils.IdGenerator
 
 
 object PdfPageObjectOutput {
-  import textboxing.{TextBoxing => TB}
 
   import com.itextpdf.kernel.pdf.tagging.IPdfStructElem
 

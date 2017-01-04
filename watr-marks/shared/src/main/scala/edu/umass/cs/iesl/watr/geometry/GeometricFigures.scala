@@ -4,7 +4,7 @@ package geometry
 import scalaz.@@
 import scalaz.Equal
 
-import TypeTags._
+//import TypeTags._
 
 sealed trait GeometricFigure
 sealed trait Area

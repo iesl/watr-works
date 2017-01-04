@@ -89,6 +89,7 @@ lazy val watrmarksJVM = watrmarks.jvm
 lazy val watrshed = (project in file("watr-shed"))
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= DatabaseLibs.slickDb)
+  .settings(libraryDependencies += Lib.scrimageCore)
   .settings(libraryDependencies += "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT")
   .dependsOn(watrprelude)
   .dependsOn(watrmarksJVM)

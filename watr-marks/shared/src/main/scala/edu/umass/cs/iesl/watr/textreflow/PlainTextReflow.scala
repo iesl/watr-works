@@ -6,8 +6,7 @@ trait PlainTextReflow {
   import scalaz._, Scalaz._
   import utils.ScalazTreeImplicits._
   import utils.IdGenerator
-  import TypeTags._
-  import watrmarks.{StandardLabels => LB}
+  //import TypeTags._
   import matryoshka._
   import java.net.URI
   def dummyUri = URI.create("/")

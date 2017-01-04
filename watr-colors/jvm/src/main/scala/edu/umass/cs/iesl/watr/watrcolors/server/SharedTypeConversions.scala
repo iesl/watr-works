@@ -64,7 +64,7 @@ package server
 //     )
 //   }
 
-//   import watrmarks.{StandardLabels => LB}
+
 
 //   implicit class RicherComponent(val in: spindex.Component) extends AnyVal {
 

@@ -3,7 +3,7 @@ package utils
 
 import java.security.MessageDigest
 import scalaz.@@
-import TypeTags._
+//import TypeTags._
 
 object Hashing {
 

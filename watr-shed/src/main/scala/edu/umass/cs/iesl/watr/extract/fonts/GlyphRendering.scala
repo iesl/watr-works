@@ -8,12 +8,12 @@ import itextpdf.io.font.FontProgramFactory
 import itextpdf.io.font.otf.Glyph
 import itextpdf.kernel.pdf.canvas.parser.data._
 
-import textboxing.{TextBoxing => TB}
 import TB._
 
-import DocumentFontInfo._
+
 
 object GlyphPositioning {
+  import DocumentFontInfo._
   // http://www.adobe.com/content/dam/Adobe/en/devnet/acrobat/pdfs/PDF32000_2008.pdf
 
   /**
@@ -162,11 +162,6 @@ object GlyphPositioning {
 
 
 
-
-
-
-
-
     // 9.2.4 Glyph Positioning and Metrics
     val charCode = tri.getCharCode(tri.getText)
 
@@ -230,11 +225,11 @@ object GlyphPositioning {
 
 }
 
-object GlyphTest extends App {
-  val arialFontPath = "/usr/share/fonts/truetype/msttcorefonts/Arial.ttf"
-  val arialFont = FontProgramFactory.createFont(arialFontPath)
-  val fontMetrics = arialFont.getFontMetrics
-  println(outputFontProgramInfo(arialFont))
-  println(outputFontMetrics(fontMetrics))
+// object GlyphTest extends App {
+//   val arialFontPath = "/usr/share/fonts/truetype/msttcorefonts/Arial.ttf"
+//   val arialFont = FontProgramFactory.createFont(arialFontPath)
+//   val fontMetrics = arialFont.getFontMetrics
+//   println(outputFontProgramInfo(arialFont))
+//   println(outputFontMetrics(fontMetrics))
 
-}
+// }

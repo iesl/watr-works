@@ -18,7 +18,7 @@ import geometry._
 trait ArbitraryTextReflows {
   import Arbitrary._
   import GeometricFigure._
-  import TypeTags._
+  //import TypeTags._
 
 
   implicit def arbLTBounds: Arbitrary[LTBounds] = {

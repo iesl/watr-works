@@ -4,10 +4,10 @@ package spindex
 import scala.collection.mutable
 
 import watrmarks._
-import TypeTags._
+//import TypeTags._
 import scalaz.@@
 
-import watrmarks.{StandardLabels => LB}
+
 
 import geometry._
 

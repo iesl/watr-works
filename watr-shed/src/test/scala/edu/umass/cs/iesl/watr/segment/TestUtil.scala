@@ -5,7 +5,7 @@ import java.net.URL
 import org.scalatest._
 import scalaz.@@
 // import spindex._
-import TypeTags._
+//import TypeTags._
 import geometry._
 import GeometricFigure._
 import EnrichGeometricFigures._

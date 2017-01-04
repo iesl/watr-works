@@ -21,7 +21,6 @@ import itextpdf.kernel.pdf.canvas.parser.data._
 import com.itextpdf.kernel.geom.{Vector => PVector}
 
 import scala.collection.JavaConversions._
-import textboxing.{TextBoxing => TB}
 
 import utils.EnrichNumerics._
 

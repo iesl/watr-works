@@ -8,9 +8,8 @@ import watrmarks._
 import spindex._
 
 import scalaz.@@
-import TypeTags._
 import scala.collection.JavaConversions._
-import textboxing.{TextBoxing => TB}, TB._
+import TB._
 
 import geometry._
 import GeometricFigure._

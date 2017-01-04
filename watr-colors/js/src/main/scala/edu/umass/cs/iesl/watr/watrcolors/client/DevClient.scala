@@ -8,8 +8,8 @@ import textreflow._
 import geometry._
 import GeometricFigure._
 import ComponentTypeEnrichments._
-import watrmarks.{StandardLabels => LB}
-import TypeTags._
+
+//import TypeTags._
 import native.fabric
 import native.fabric._
 

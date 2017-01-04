@@ -4,7 +4,7 @@ package predsynth
 import scalaz.@@
 
 import utils.{StringUtils => SU}
-import TypeTags._
+//import TypeTags._
 
 
 trait Identities {

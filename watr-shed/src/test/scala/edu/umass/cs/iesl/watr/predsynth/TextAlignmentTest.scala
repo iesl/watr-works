@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 
-// import watrmarks.{StandardLabels => LB}
+
 // import textboxing.{TextBoxing => TB}, TB._
 
 class MITAlignLabelTask extends ConnectedComponentTestUtil {
