@@ -14,7 +14,11 @@ case class TargetRegion(
   pageId: Int@@PageID,
   bbox: LTBounds
 ) {
-  override def toString = s"""<reg.${id} pg.${pageId} ${bbox.prettyPrint}>"""
+  lazy val uri = {
+    import ComponentTypeEnrichments._
+    this.uriString
+  }
+  override def toString = s"""<${uri}>"""
 }
 
 // Generalized version of TargetRegion
