@@ -1,23 +1,13 @@
 package edu.umass.cs.iesl.watr
 package table  //;import acyclic.file
 
-
 import ammonite.ops._
 import pprint.PPrinter
 
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import spindex._
-// import textreflow.TextReflowRendering._
-
-// import geometry._
 import textreflow._
 
-// import apps._
-// import GeometricFigure._
-// import EnrichGeometricFigures._
-// import ComponentTypeEnrichments._
-
-// import textboxing.{TextBoxing => TB}, TB._
 object WatrTable {
   import ShellCommands._
 
@@ -54,15 +44,8 @@ object WatrTable {
 }
 
 
-object ShellCommands extends CorpusAPI {
+object ShellCommands extends CorpusEnrichments {
 
-  // implicit val ppConfig = pprint.Config(
-  // width: Int = Config.defaultMaxWidth,
-  // height: Int = Config.defaultLines,
-  // depth: Int = 0,
-  // indent: Int = Config.defaultIndent,
-  // colors: Colors = pprint.Colors.BlackWhite,
-  // renames: Map[String, String] = Config.defaultRenames)
 
   def pprintComponent: PPrinter[Component] = PPrinter({(component, config) =>
     val box = component.show
@@ -79,7 +62,7 @@ object ShellCommands extends CorpusAPI {
   })
 
   def initCorpus(): Corpus = {
-    Corpus(pwd / "corpus-test")
+    initCorpus(cwd)
   }
 
 
@@ -124,12 +107,12 @@ object ShellCommands extends CorpusAPI {
 
   implicit class RicherCorpusEntry(val thisCorpusEntry: CorpusEntry) extends AnyVal {
 
-    def textBlocks(): Unit = {
+    // def textBlocks(): Unit = {}
+    // def paragraphs(): Unit = {}
 
-    }
-
-    def paragraphs(): Unit = {
-
+    def pageImages(): CorpusArtifactGroup = {
+      // pageImages <- corpusEntry.getArtifactGroup("page-images")
+      ???
     }
 
     def lines(): Seq[TextReflow]= {
@@ -160,6 +143,3 @@ object ShellCommands extends CorpusAPI {
 
 
 }
-
-
-object WebShow extends ScalatagsDefs

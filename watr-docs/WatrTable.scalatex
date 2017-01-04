@@ -1,0 +1,7 @@
+@import Main._
+
+@sect("WatrTable", "WatrTable Command Line")
+
+  @p
+    Dependencies
+      mudraw
