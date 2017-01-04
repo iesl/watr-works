@@ -8,6 +8,7 @@ import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import spindex._
 import textreflow._
 
+
 object WatrTable {
   import ShellCommands._
 
@@ -19,8 +20,7 @@ object WatrTable {
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
-        |import watr._, spindex._, geometry._
-        |import table._
+        |import watr._, spindex._, geometry._, table._
         |import ShellCommands._
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox
@@ -43,7 +43,6 @@ object WatrTable {
 
 }
 
-
 object ShellCommands extends CorpusEnrichments {
 
 
@@ -62,7 +61,7 @@ object ShellCommands extends CorpusEnrichments {
   })
 
   def initCorpus(): Corpus = {
-    initCorpus(cwd)
+    initCorpus(pwd)
   }
 
 
@@ -97,27 +96,48 @@ object ShellCommands extends CorpusEnrichments {
    */
 
 
-  implicit class RicherDocumentSegmenter(val thisDocumentSegmenter: DocumentSegmenter) extends AnyVal {
+  implicit class RicherDocumentSegmenter(val theDocumentSegmenter: DocumentSegmenter) extends AnyVal {
 
     def lines(): Seq[TextReflow] = {
-      val mpageIndex = thisDocumentSegmenter.mpageIndex
-      mpageIndex.getTextReflows()
+      theDocumentSegmenter
+        .mpageIndex
+        .getVisualLineTextReflows()
     }
   }
 
-  implicit class RicherCorpusEntry(val thisCorpusEntry: CorpusEntry) extends AnyVal {
+  implicit class RicherCorpusEntry(val theCorpusEntry: CorpusEntry) extends AnyVal {
 
     // def textBlocks(): Unit = {}
     // def paragraphs(): Unit = {}
 
-    def pageImages(): CorpusArtifactGroup = {
-      // pageImages <- corpusEntry.getArtifactGroup("page-images")
-      ???
+    def pageImages(): ImageArtifacts = {
+      import ammonite.{ops => fs}
+      import fs._
+      import fs.ImplicitWd._
+      val artifacts = new ImageArtifacts(
+        theCorpusEntry.ensureArtifactGroup("page-images")
+      )
+      val imgPath = artifacts.artifactGroup.rootPath
+
+      for {
+        pdf <- theCorpusEntry.getPdfArtifact
+        pdfPath <- pdf.asPath
+      } {
+        val pageImageFilespec = imgPath / "page-%d.png"
+
+        val res = %%("mudraw", "-r", "128", "-o", pageImageFilespec, pdfPath)
+      }
+
+      artifacts.artifactGroup.getArtifacts.foreach { a =>
+        println(s"extracted image ${a}")
+      }
+
+      artifacts
     }
 
     def lines(): Seq[TextReflow]= {
       val lls = for {
-        segmenter <- thisCorpusEntry.segment()
+        segmenter <- theCorpusEntry.segment()
       } yield {
         segmenter.lines()
       }
@@ -127,12 +147,12 @@ object ShellCommands extends CorpusEnrichments {
 
     def segment(): Option[DocumentSegmenter] = {
       for {
-        pdfArtifact    <- thisCorpusEntry.getPdfArtifact
+        pdfArtifact    <- theCorpusEntry.getPdfArtifact
         pdfPath        <- pdfArtifact.asPath.toOption
       } yield {
 
         val segmenter = DocumentSegmenter
-          .createSegmenter(thisCorpusEntry.getURI, pdfPath, Seq())
+          .createSegmenter(theCorpusEntry.getURI, pdfPath, Seq())
 
         segmenter.runPageSegmentation()
         segmenter

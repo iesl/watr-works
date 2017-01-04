@@ -5,7 +5,6 @@ import scalaz._, Scalaz._
 
 import geometry._
 import watrmarks._
-import textboxing.{TextBoxing => TB}
 
 import matryoshka._
 import matryoshka.data._
@@ -45,7 +44,7 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
   private def mkPad(s: String): TextReflow = insert(s)
 
   def addLabel(l: Label): TextReflow => TextReflow = tr => fixf(tr.unFix match {
-    case f @ Labeled(ls, s)  => 
+    case f @ Labeled(ls, s)  =>
 
       println(s"adding label ${l}")
       f.copy(labels = ls + l)
@@ -266,7 +265,6 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
 
     def length: Int = charCount
 
-
     def slice(begin: Int, until:Int): Option[TextReflow] =
       sliceTextReflow(theReflow, begin, until)
 
@@ -285,11 +283,11 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
       theReflow.cata(regions)
     }
 
-    def intersect(other: TextReflow): TextReflow = ???
+    def visualLinesRegions(): Seq[TargetRegion] = {
+      extractVisualLineTargetRegions(theReflow)
+    }
 
-    // def intersectPage(other: PageIndex): Seq[Component] = {
-    //   ???
-    // }
+    def intersect(other: TextReflow): TextReflow = ???
 
     def clipToTargetRegion(targetRegion: TargetRegion): Seq[(TextReflow, RangeInt)] = {
       clipReflowToTargetRegion(theReflow, targetRegion)

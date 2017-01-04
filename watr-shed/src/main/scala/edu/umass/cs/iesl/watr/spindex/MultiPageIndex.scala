@@ -95,10 +95,21 @@ class MultiPageIndex(
     componentToTextReflow.get(cc)
   }
 
+  // TODO: merge with other text reflow access function
+  def getVisualLineTextReflows(labels: Label*): Seq[TextReflow]  = {
+    for {
+      pageId <- getPages
+      pageTextBlocks <- getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
+      textBlockCC <- pageTextBlocks.getChildren(LB.TextBlock)
+      vline <- textBlockCC.getChildren(LB.VisualLine)
+      vlineTextReflow <- getTextReflow(vline.id)
+    } yield {
+      vlineTextReflow
+    }
+  }
+
   // TODO: this should become the canonical way to get text reflows within a document
   def getTextReflows(labels: Label*): Seq[TextReflow]  = {
-
-
     for {
       pageId <- getPages
       pageTextBlocks <- getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)

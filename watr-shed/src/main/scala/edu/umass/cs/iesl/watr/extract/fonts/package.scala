@@ -2,6 +2,6 @@ package edu.umass.cs.iesl.watr
 package extract
 package fonts
 
-object `package` extends PackageDefs {
+object `package` {
   // import acyclic.pkg
 }

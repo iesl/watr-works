@@ -16,6 +16,7 @@ trait TextReflowBasics extends StructuredRecursion {
   import TextReflowF._
   import TextReflowRendering._
 
+
   def countChars: GAlgebra[(TextReflow, ?), TextReflowF, Int] = _ match {
     case Atom(c)                        =>  c.char.length
     case Insert(value)                  =>  value.length

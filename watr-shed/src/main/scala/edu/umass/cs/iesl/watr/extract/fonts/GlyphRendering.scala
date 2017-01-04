@@ -4,7 +4,6 @@ package fonts
 
 import com.itextpdf
 import itextpdf.kernel.pdf._
-import itextpdf.io.font.FontProgramFactory
 import itextpdf.io.font.otf.Glyph
 import itextpdf.kernel.pdf.canvas.parser.data._
 

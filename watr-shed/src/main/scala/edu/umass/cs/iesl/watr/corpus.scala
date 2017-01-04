@@ -100,12 +100,11 @@ class CorpusEntry(
   val artifactsRoot = corpus.corpusRoot / RelPath(entryDescriptor)
 
   val entryDescriptorRoot = {
-    // if (entryDescriptor)
     entryDescriptor.dropRight(2)
   }
 
   def getArtifacts(): Seq[String] = {
-    val allFiles = ls! artifactsRoot //  map{ pdf => pdf }
+    val allFiles = ls! artifactsRoot
 
     allFiles.map(_.name)
   }
@@ -129,6 +128,14 @@ class CorpusEntry(
     if (hasArtifactGroup(groupDescriptor)) {
       new CorpusArtifactGroup(groupDescriptor, this).some
     } else None
+  }
+
+  def ensureArtifactGroup(groupDescriptor: String): CorpusArtifactGroup = {
+    val group = new CorpusArtifactGroup(groupDescriptor, this)
+    if (!exists(group.rootPath)) {
+      mkdir(group.rootPath)
+    }
+    group
   }
 
   def deleteArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Unit = {
@@ -181,6 +188,14 @@ class CorpusArtifactGroup(
 
   override val toString = {
     s"${entry}/${groupDescriptor}"
+  }
+
+  def putArtifact(artifactDescriptor: String, content: String): CorpusArtifact = {
+    entry.putArtifact(artifactDescriptor, content, groupDescriptor)
+  }
+
+  def getArtifact(artifactDescriptor: String): Option[CorpusArtifact] = {
+    entry.getArtifact(artifactDescriptor, groupDescriptor)
   }
 
   def getArtifacts(): Seq[CorpusArtifact] = {

@@ -22,9 +22,9 @@ object TextReflowConversion {
   def isTokenized(cc: Component) = hasLabel(cc, LB.Tokenized)
 
   def transferLabel(l: Label, cc: Component)(t: TextReflow): TextReflow = {
-    if (cc.hasLabel(l)) {
-      addLabel(l)(t)
-    } else t
+    cc.getLabel(l)
+      .map(l => addLabel(l)(t))
+      .getOrElse(t)
   }
 
   def toTextReflow(cc: Component): Option[TextReflow] = {
@@ -43,6 +43,8 @@ object TextReflowConversion {
         val labeled = (joined
           |> transferLabel(LB.Sup, cc)
           |> transferLabel(LB.Sub, cc)
+          |> transferLabel(LB.VisualLine, cc)
+          |> transferLabel(LB.TextBlock, cc)
         )
 
         Some(labeled)

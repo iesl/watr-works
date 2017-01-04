@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package formats
 
 
-
 import extract.PdfTextExtractor
 import extract.fonts._
 import spindex._

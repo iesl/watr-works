@@ -125,6 +125,10 @@ sealed trait Component {
     mpageIndex.getLabels(this)
   }
 
+  def getLabel(l: Label): Option[Label] = {
+    getLabels().filter(_ == l).headOption
+  }
+
 
   def addChild(label: Label, c: Component): Unit = {
     setChildren(label, getChildren(label) :+ c)

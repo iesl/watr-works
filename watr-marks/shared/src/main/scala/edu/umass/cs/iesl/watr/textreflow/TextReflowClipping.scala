@@ -12,6 +12,7 @@ import utils.EnrichNumerics._
 import scala.{Range => _}
 
 import geometry._
+import GeometricFigure._
 
 trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._
@@ -111,6 +112,34 @@ trait TextReflowClipping extends TextReflowBasics {
     })
 
     clippedRanges.flatten
+  }
+
+
+  def targetRegionFromUri(uriString: String): TargetRegion = {
+    val Array(docId, pageId, l, t, w, h) = uriString.split("\\+")
+
+    TargetRegion(RegionID(0), DocumentID(docId), PageID(pageId.toInt),
+      LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble)
+    )
+  }
+
+  def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = {
+    def render(t: TextReflowF[(TextReflow, Seq[TargetRegion])]): Seq[TargetRegion] = t match {
+      case Rewrite    ((from, attr), to)      => attr
+      case Bracket    (pre, post, (a, attr))  => attr
+      case Flow       (atomsAndattrs)         => atomsAndattrs.flatMap(_._2)
+      case Labeled    (labels, (a, attr))     =>
+
+        attr ++ (for {
+          l      <- labels if l == LB.VisualLine
+          value  <- l.value
+        } yield targetRegionFromUri(value))
+
+      case _ => Seq()
+    }
+
+    tr.cata(attributePara(render))
+      .toPair._1
   }
 
 }

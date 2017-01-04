@@ -3,7 +3,10 @@ package table  //;import acyclic.file
 
 import spindex._
 
-trait CorpusEnrichments extends ComponentEnrichments {
+trait CorpusEnrichments extends
+    ComponentEnrichments with
+    ImageArtifactEnrichments with
+    TextReflowEnrichments {
   import TB._
 
   import ammonite.ops._
