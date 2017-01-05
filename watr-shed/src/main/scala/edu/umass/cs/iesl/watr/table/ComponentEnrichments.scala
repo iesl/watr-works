@@ -114,28 +114,6 @@ trait ComponentEnrichments extends JargonDictionaries {
     }
 
 
-    def sourceImage(): URI = {
-      import com.sksamuel.scrimage._
-
-      val pageId = theComponent.pageId.unwrap+1
-      val srcUri = theComponent.getSrcUri()
-
-      val pageSrc = srcUri.resolve("page-images/").resolve(s"page-${pageId}.png")
-      println(s"page src: ${pageSrc}")
-      val image = Image.fromFile(new java.io.File(pageSrc.getPath))
-      val cropped = ImageManipulation.cropTo(image, theComponent.bounds, theComponent.getPageGeometry)
-
-      val x = theComponent.bounds.left.toInt
-      val y = theComponent.bounds.top.toInt
-      val w = cropped.width
-      val h = cropped.height
-
-      val imgDst = srcUri.resolve("page-images/").resolve(s"page-${pageId}-x$x-y$y-w$w-h$h.png")
-      println(s"page dest: ${imgDst}")
-      cropped.output(new java.io.File(imgDst.getPath))
-
-      imgDst
-    }
   }
 
 }

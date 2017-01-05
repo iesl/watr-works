@@ -44,7 +44,8 @@ case class PageSegAccumulator(
   docWideModalVerticalLineDist: Double = 0.0
 )
 
-trait DocumentUtils {
+
+object DocumentSegmenter {
 
   def approxSortYX(charBoxes: Seq[Component]): Seq[Component] = {
     charBoxes.sortBy({ c =>
@@ -59,9 +60,6 @@ trait DocumentUtils {
       .mkString
   }
 
-}
-
-object DocumentSegmenter extends DocumentUtils {
 
   def pairwiseSpaces(cs: Seq[CharAtom]): Seq[Double] = {
     val cpairs = cs.sliding(2).toList
@@ -154,13 +152,13 @@ object DocumentSegmenter extends DocumentUtils {
   }
 
   def isStrictlyAbove(line1: Component, line2: Component): Boolean = {
-    val y1 = line1.bounds.toPoint(CompassDirection.S).y
-    val y2 = line2.bounds.toPoint(CompassDirection.N).y
+    val y1 = line1.bounds.toPoint(CDir.S).y
+    val y2 = line2.bounds.toPoint(CDir.N).y
     y1 < y2
   }
   def isStrictlyBelow(line1: Component, line2: Component): Boolean = {
-    val y1 = line1.bounds.toPoint(CompassDirection.N).y
-    val y2 = line2.bounds.toPoint(CompassDirection.S).y
+    val y1 = line1.bounds.toPoint(CDir.N).y
+    val y2 = line2.bounds.toPoint(CDir.S).y
     y1 > y2
   }
 
@@ -182,26 +180,13 @@ object DocumentSegmenter extends DocumentUtils {
 }
 
 
-class ImageExtractor {
-  def getPages(): Seq[PageImage] = {
-    ???
-  }
-}
-
-case class PageImage(
-  imageArtifact: CorpusArtifact,
-  pageGeometry: PageGeometry,
-  clipped: Option[(LTBounds, Image)]
-)
-
 
 class DocumentSegmenter(
   val mpageIndex: MultiPageIndex
 ) {
 
-  def getPageImages(): Seq[PageImage] = {
+  // def getPageImages(): Seq[PageImage] = {// }
 
-  }
   def vtrace = mpageIndex.vtrace
 
   import scala.math.Ordering.Implicits._
@@ -699,8 +684,8 @@ class DocumentSegmenter(
 
 
   def focalJump(c1: Component, c2: Component): Double = {
-    val c1East = c1.bounds.toPoint(CompassDirection.E)
-    val c2West = c2.bounds.toPoint(CompassDirection.W)
+    val c1East = c1.bounds.toPoint(CDir.E)
+    val c2West = c2.bounds.toPoint(CDir.W)
     c1East.dist(c2West)
   }
 

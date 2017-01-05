@@ -9,6 +9,7 @@ import spindex._
 import textreflow._
 import extract.images._
 import corpora._
+import segment._
 
 
 object WatrTable {
@@ -67,68 +68,47 @@ object ShellCommands extends CorpusEnrichments {
   }
 
 
-  /*
 
-   Current problems:
-
-   Patterns like these:
-       cind @nitt.edu
-       www.*.*
-       Pt/PANi
-       [7,17–24]
-       10^{5}s^{1}
-       doi: 10.1029/2005JD006318
-       70^{◦}C
-       Fe_{3}O_{4}@C
-
-
-   - [ ] words parsed as stream of single chars (particularly on line w/one word)
-        - 2 0 1 2 J D 0 1 7 45 9 . 1010022013gl058232.pdf.d <target pg:4 (l:319.97, t:560.87, w:50.71, h:7.28)
-   - [ ] sup/subs are squished w/adjacent words
-   - [ ] ligatures get sup/subscripted
-   - [ ] join words before rendering
-   - [ ] Proper names
-   - [ ] technical vocab needs work
-   - [ ] phrase parsing (e.g, "et al." as a single token)
-   - [ ] parse footnote sup/sub markers as independent tokens
-   - [ ] Reversed words across entire paper ??!!
-   - [ ] Non-textline elimination
-   - [ ] weight/measure/quantity parsing
-
-   */
-
-
-  implicit class RicherDocumentSegmenter(val theDocumentSegmenter: DocumentSegmenter) extends AnyVal {
+  implicit class RicherDocumentSegmenter(val theSegmentation: DocumentSegmentation) extends AnyVal {
 
     def lines(): Seq[TextReflow] = {
-      theDocumentSegmenter
-        .mpageIndex
+      theSegmentation.mpageIndex
         .getVisualLineTextReflows()
     }
 
-    def pageImages(): Seq[PageImage] = {
-      ???
+    def pageImages(): PageImages = {
+      theSegmentation.pageImages
     }
 
   }
 
   implicit class RicherCorpusEntry(val theCorpusEntry: CorpusEntry) extends AnyVal {
 
-    // def textBlocks(): Unit = {}
-    // def paragraphs(): Unit = {}
-
-
-    def segment(): Option[DocumentSegmenter] = {
+    def segment(): Option[DocumentSegmentation] = {
       for {
         pdfArtifact    <- theCorpusEntry.getPdfArtifact
         pdfPath        <- pdfArtifact.asPath.toOption
       } yield {
 
+
         val segmenter = DocumentSegmenter
           .createSegmenter(theCorpusEntry.getURI, pdfPath, Seq())
 
         segmenter.runPageSegmentation()
-        segmenter
+
+        val pageImageArtifacts = theCorpusEntry.ensureArtifactGroup("page-images")
+        val pageImages =
+        if (pageImageArtifacts.getArtifacts.isEmpty) {
+          ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
+        } else {
+          ExtractImages.load(pageImageArtifacts.rootPath)
+        }
+
+
+        DocumentSegmentation(
+          segmenter.mpageIndex,
+          pageImages
+        )
       }
     }
 

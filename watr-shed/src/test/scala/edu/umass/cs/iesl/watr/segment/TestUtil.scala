@@ -4,16 +4,15 @@ package segment
 import java.net.URL
 import org.scalatest._
 
-// import spindex._
-//import TypeTags._
 import geometry._
 
 import EnrichGeometricFigures._
 import ammonite.{ops => fs}
+import java.net.URI
+import java.net.URL
 
 trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
-
-  val LB = watrmarks.StandardLabels
+  import DocumentSegmenter._
 
   object page {
     val page = (0 to 10).map(PageID(_))
@@ -100,8 +99,6 @@ trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
     )
   }
 
-  import java.net.URI
-  import java.net.URL
   def createFilteredMultiPageIndex(pdfIns: URL, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
     val dummyUri = URI.create("/")
     val path = fs.Path(pdfIns.getPath)

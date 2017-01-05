@@ -7,7 +7,6 @@ import extract.images._
 
 trait CorpusEnrichments extends
     ComponentEnrichments with
-    ImageArtifactEnrichments with
     TextReflowEnrichments {
   import TB._
 
