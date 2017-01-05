@@ -1,4 +1,5 @@
 package edu.umass.cs.iesl.watr
+package corpora //;import acyclic.file
 
 
 import java.io.{ InputStream }

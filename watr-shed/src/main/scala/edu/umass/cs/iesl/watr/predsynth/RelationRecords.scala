@@ -2,10 +2,7 @@ package edu.umass.cs.iesl.watr
 package predsynth
 
 
-
 import utils.{StringUtils => SU}
-//import TypeTags._
-
 
 trait Identities {
   import shapeless._

@@ -1,19 +1,13 @@
 package edu.umass.cs.iesl.watr
-package segment
+package predsynth
 
 import spindex._
 import ComponentOperations._
 
-
-//import TypeTags._
-
 import scala.collection.mutable
 
-
-import predsynth._
 import utils.SlicingAndDicing._
 
-import geometry._
 import EnrichGeometricFigures._
 
 

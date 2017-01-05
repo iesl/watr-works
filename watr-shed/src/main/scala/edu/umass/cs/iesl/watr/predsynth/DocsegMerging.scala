@@ -1,6 +1,5 @@
 package edu.umass.cs.iesl.watr
-package segment
-
+package predsynth
 
 // import ammonite.{ops => fs}, fs._
 // import java.io.InputStream
@@ -9,7 +8,7 @@ package segment
 import spindex._
 // import GeometricFigure._
 
-// 
+//
 // //import TypeTags._
 // import scala.collection.JavaConversions._
 // import textboxing.{TextBoxing => TB}, TB._

@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
-package table  //;import acyclic.file
+package extract
+package images //;import acyclic.file
 
 import com.sksamuel.scrimage._
 import geometry._
