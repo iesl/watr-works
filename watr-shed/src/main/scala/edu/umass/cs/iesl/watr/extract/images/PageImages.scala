@@ -3,6 +3,7 @@ package extract
 package images //;import acyclic.file
 
 import geometry._
+import corpora._
 import GeometricFigure._
 import com.sksamuel.scrimage._
 

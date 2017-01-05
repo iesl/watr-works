@@ -10,7 +10,6 @@ object TextReflowJsonFormats extends TextReflowJsonFormats {
 
   implicit class JsonFormats_RicherTextReflow(val theReflow: TextReflow) extends TextReflowJsonFormats {
     import play.api.libs.json._
-    import TextReflowRendering._
 
     def toJson(): JsValue = {
       textReflowToJson(theReflow)

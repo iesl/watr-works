@@ -7,6 +7,8 @@ import pprint.PPrinter
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import spindex._
 import textreflow._
+import extract.images._
+import corpora._
 
 
 object WatrTable {

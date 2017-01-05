@@ -79,7 +79,6 @@ abstract class TreeShaper[N](
 
 object ScalazTreeImplicits {
   import scalaz._
-  import textboxing.{TextBoxing => TB}
 
 
   implicit class RicherTree[A](val thisTree: scalaz.Tree[A]) extends AnyVal {

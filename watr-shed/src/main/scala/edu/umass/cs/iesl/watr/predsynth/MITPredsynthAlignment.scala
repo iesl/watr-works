@@ -8,6 +8,7 @@ import scala.collection.mutable
 
 import utils.SlicingAndDicing._
 
+import geometry._
 import EnrichGeometricFigures._
 
 

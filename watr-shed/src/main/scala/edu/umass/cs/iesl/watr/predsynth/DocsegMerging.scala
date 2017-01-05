@@ -23,7 +23,7 @@ import spindex._
 
 // import scala.collection.mutable
 
-import predsynth._
+// import predsynth._
 
 // import utils.{Histogram, AngleFilter, DisjointSets}
 // import Histogram._

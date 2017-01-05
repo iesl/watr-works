@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package utils
 
-import scalaz.{Tag, @@}
+import scalaz.Tag
 
 object IdGenerator {
   def apply[T](start: Int=1): IdGenerator[T] = new IdGenerator[T]{

@@ -1,7 +1,9 @@
 package edu.umass.cs.iesl.watr
 package apps
 
+import corpora._
 import extract._
+import predsynth._
 
 import ammonite.{ops => fs}, fs._
 import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
@@ -381,7 +383,7 @@ object Works extends App {
       pdfPath        <- pdfArtifact.asPath
     } {
       val segmenter = runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
-      val mergedZoneIndex = segment.DocsegMerging.mergePriorDocseg(segmenter.mpageIndex, priorDocseg)
+      val mergedZoneIndex = DocsegMerging.mergePriorDocseg(segmenter.mpageIndex, priorDocseg)
 
       val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex, Seq())
       corpusEntry.putArtifact(docsegFile, output)
@@ -416,7 +418,7 @@ object Works extends App {
 
           val output = paper.map({ p =>
             val alignedGroups =
-              segment.MITAlignPredsynth.alignPredSynthPaper(segmenter.mpageIndex, p)
+              MITAlignPredsynth.alignPredSynthPaper(segmenter.mpageIndex, p)
             writePredsynthJson(p, corpusEntry)
             formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex, alignedGroups)
           }).getOrElse(
