@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 
 import scalaz.Tag
-import scalaz.@@
+
 
 sealed trait SHA1String
 

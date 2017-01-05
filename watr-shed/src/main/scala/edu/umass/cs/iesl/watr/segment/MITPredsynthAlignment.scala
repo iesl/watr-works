@@ -4,7 +4,7 @@ package segment
 import spindex._
 import ComponentOperations._
 
-import scalaz.@@
+
 //import TypeTags._
 
 import scala.collection.mutable

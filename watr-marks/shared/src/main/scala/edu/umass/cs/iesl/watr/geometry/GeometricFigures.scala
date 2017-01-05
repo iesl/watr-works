@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package geometry
 
-import scalaz.@@
+
 import scalaz.Equal
 
 //import TypeTags._

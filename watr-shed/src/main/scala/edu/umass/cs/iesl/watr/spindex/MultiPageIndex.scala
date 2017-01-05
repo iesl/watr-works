@@ -10,7 +10,7 @@ import geometry._
 
 import watrmarks._
 //import TypeTags._
-import scalaz.@@
+
 import ComponentTypeEnrichments._
 import utils.IdGenerator
 

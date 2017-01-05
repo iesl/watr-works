@@ -15,7 +15,7 @@ import scala.collection.mutable
 import scala.collection.JavaConversions._
 import extract.fonts._
 
-import scalaz.@@
+
 
 object util {
 

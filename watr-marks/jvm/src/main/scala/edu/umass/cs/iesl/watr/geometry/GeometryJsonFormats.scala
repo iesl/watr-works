@@ -1,9 +1,8 @@
 package edu.umass.cs.iesl.watr
 package geometry
 
-import scalaz._
-import Scalaz._
 import watrmarks._
+import scalaz.Tag
 
 import GeometricFigure._
 

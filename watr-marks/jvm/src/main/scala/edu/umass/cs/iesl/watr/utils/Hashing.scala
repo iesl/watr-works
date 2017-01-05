@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import java.security.MessageDigest
-import scalaz.@@
+
 //import TypeTags._
 
 object Hashing {

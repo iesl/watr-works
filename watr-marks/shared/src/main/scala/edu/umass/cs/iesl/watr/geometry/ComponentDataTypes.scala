@@ -1,8 +1,10 @@
 package edu.umass.cs.iesl.watr
 package geometry
 
-import scalaz._
-import Scalaz._
+
+import scalaz.Equal
+import scalaz.syntax.equal._
+
 import watrmarks._
 
 import EnrichGeometricFigures._

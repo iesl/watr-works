@@ -3,7 +3,6 @@ package spindex
 
 import watrmarks._
 import geometry.CharAtom
-import ComponentOperations._
 
 object TextReflowConversion {
   import TB._

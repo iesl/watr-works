@@ -4,7 +4,6 @@ package edu.umass.cs.iesl.watr
 import scalaz.syntax
 import scalaz.syntax.std
 import scalaz.Tag
-import scalaz.@@
 
 trait ScalaZCommonOps
     extends syntax.ToIdOps
@@ -17,6 +16,8 @@ trait PackageDefs
 
   val LB = watrmarks.StandardLabels
   val TB = textboxing.TextBoxing
+
+  type @@[A, B] = scalaz.@@[A, B]
 
 
   implicit class TagOps[A, T](val value: A@@T) {

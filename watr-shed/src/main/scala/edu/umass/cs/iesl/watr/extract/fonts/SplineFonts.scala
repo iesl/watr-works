@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package extract
 package fonts
 
-import scalaz.@@
+
 
 import ammonite.{ops => fs}
 

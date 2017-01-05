@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import scalaz.@@
+
 import watrmarks._
 
 import geometry._

@@ -8,7 +8,7 @@ import java.net.URI
 import java.nio.{file => nio}
 import play.api.libs.json
 import scala.util.{Try, Failure, Success}
-import scalaz.@@
+
 import ammonite.{ops => fs}, fs._
 
 

@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package watrmarks
 
-import scalaz.@@
+
 //import TypeTags._
 
 sealed trait BioPin {

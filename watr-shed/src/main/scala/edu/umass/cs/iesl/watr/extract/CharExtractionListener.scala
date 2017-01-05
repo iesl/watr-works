@@ -7,7 +7,6 @@ import GeometricFigure._
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
-import scalaz.{@@}
 import util._
 
 import _root_.com.itextpdf

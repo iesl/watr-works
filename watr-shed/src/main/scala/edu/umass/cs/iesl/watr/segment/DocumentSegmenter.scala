@@ -7,7 +7,7 @@ import java.net.URI
 import watrmarks._
 import spindex._
 
-import scalaz.@@
+
 import scala.collection.JavaConversions._
 import TB._
 

@@ -3,18 +3,19 @@ package textreflow
 
 // TODO plaintext reflow started as testing util, and still has a mix of testing and production code
 trait PlainTextReflow {
-  import scalaz._, Scalaz._
+  import scalaz.std.string._
+  import scalaz.Tree
   import utils.ScalazTreeImplicits._
   import utils.IdGenerator
-  //import TypeTags._
   import matryoshka._
   import java.net.URI
-  def dummyUri = URI.create("/")
   import geometry._
   import GeometricFigure._
   import EnrichGeometricFigures._
   import ComponentTypeEnrichments._
   import TextReflowF._
+
+  def dummyUri = URI.create("/")
 
   val regionIDs = IdGenerator[RegionID]()
 
