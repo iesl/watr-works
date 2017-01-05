@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package table  //;import acyclic.file
 
 import geometry._
+import GeometricFigure._
+import com.sksamuel.scrimage._
 
 case class ImageArtifacts(
   artifactGroup: CorpusArtifactGroup
@@ -11,7 +13,8 @@ case class ImageArtifacts(
 }
 case class PageImage(
   imageArtifact: CorpusArtifact,
-  pageGeometry: PageGeometry
+  pageGeometry: PageGeometry,
+  clipped: Option[(LTBounds, Image)]
 )
 
 trait ImageArtifactEnrichments extends ImageManipulation {
@@ -33,28 +36,26 @@ trait ImageArtifactEnrichments extends ImageManipulation {
       ???
     }
 
-    def getPage(pageId: Int@@PageID): Seq[PageImage] = {
+    def getPage(pageId: Int@@PageID): Option[PageImage] = {
 
       ???
     }
 
-    def clipTo(tr: TargetRegion): Unit = {
-      import com.sksamuel.scrimage._
+    def clipTo(tr: TargetRegion): Either[String, PageImage] = {
 
       val TargetRegion(id, docId, pageId, bbox) = tr
 
-      for {
+      val clipped = for {
         page <- getPage(pageId)
-        ins <- page.asInputStream
-      } {
-
-        val corpusEntry = theImageArtifacts.artifactGroup.entry
-
+        ins <- page.imageArtifact.asInputStream.toOption
+      } yield {
         val image = Image.fromStream(ins, 0)
-        val cropped = cropTo(image, bbox, theComponent.getPageGeometry)
 
+        page.copy(
+          clipped= (bbox, cropTo(image, bbox, page.pageGeometry)).some
+        )
       }
-
+      clipped.toRight(s"error clipping ${tr}")
     }
   }
 

@@ -1,8 +1,8 @@
 -verbose
--J-Xmx4g
+-J-Xmx3g
 -J-Xss20M
 -J-XX:ReservedCodeCacheSize=128m
--J-XX:MetaspaceSize=512m
--J-XX:MaxMetaspaceSize=1024m
+-J-XX:MetaspaceSize=256m
+-J-XX:MaxMetaspaceSize=512m
 -J-XX:+CMSClassUnloadingEnabled
 -J-XX:+UseCodeCacheFlushing

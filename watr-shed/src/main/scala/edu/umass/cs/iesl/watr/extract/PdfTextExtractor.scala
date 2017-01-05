@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package extract
 
 import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
-import java.io.InputStream 
+import java.io.InputStream
 
 import _root_.com.itextpdf
 import itextpdf.kernel.pdf._
@@ -14,7 +14,6 @@ import GeometricFigure._
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 import extract.fonts._
-
 
 
 object util {
@@ -165,7 +164,7 @@ class PdfTextExtractor(
       }
       pageIndexes.toList
     } catch {
-      case f: Throwable => throw f 
+      case f: Throwable => throw f
     } finally {
       if (instr != null) instr.close()
     }
