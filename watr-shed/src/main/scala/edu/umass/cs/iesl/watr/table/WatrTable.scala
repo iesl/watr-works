@@ -105,46 +105,17 @@ object ShellCommands extends CorpusEnrichments {
         .mpageIndex
         .getVisualLineTextReflows()
     }
+
+    def pageImages(): Seq[PageImage] = {
+      ???
+    }
+
   }
 
   implicit class RicherCorpusEntry(val theCorpusEntry: CorpusEntry) extends AnyVal {
 
     // def textBlocks(): Unit = {}
     // def paragraphs(): Unit = {}
-
-    def pageImages(): ImageArtifacts = {
-      import ammonite.{ops => fs}
-      import fs._
-      import fs.ImplicitWd._
-      val artifacts = new ImageArtifacts(
-        theCorpusEntry.ensureArtifactGroup("page-images")
-      )
-      val imgPath = artifacts.artifactGroup.rootPath
-
-      for {
-        pdf <- theCorpusEntry.getPdfArtifact
-        pdfPath <- pdf.asPath
-      } {
-        val pageImageFilespec = imgPath / "page-%d.png"
-
-        val res = %%("mudraw", "-r", "128", "-o", pageImageFilespec, pdfPath)
-      }
-
-      artifacts.artifactGroup.getArtifacts.foreach { a =>
-        println(s"extracted image ${a}")
-      }
-
-      artifacts
-    }
-
-    def lines(): Seq[TextReflow]= {
-      val lls = for {
-        segmenter <- theCorpusEntry.segment()
-      } yield {
-        segmenter.lines()
-      }
-      lls.getOrElse(Seq())
-    }
 
 
     def segment(): Option[DocumentSegmenter] = {

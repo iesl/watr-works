@@ -4,44 +4,48 @@ package geometry
 
 import scalaz.Equal
 
-//import TypeTags._
+sealed trait GeometricFigure {
 
-sealed trait GeometricFigure
+}
+
 sealed trait Area
 
+import EnrichGeometricFigures._
+
+case class LTBounds(
+  left: Double,
+  top: Double,
+  width: Double,
+  height: Double
+) extends GeometricFigure with Area {
+  override def toString: String = this.prettyPrint
+}
+
+case class LBBounds(
+  left: Double,
+  bottom: Double,
+  width: Double,
+  height: Double
+) extends GeometricFigure with Area {
+  override def toString: String = this.prettyPrint
+}
+
+
+case class Point(
+  x: Double, y: Double
+) extends GeometricFigure {
+  override def toString: String = this.prettyPrint
+}
+
+case class Line(
+  p1: Point, p2: Point
+) extends GeometricFigure{
+  override def toString: String = this.prettyPrint
+}
+
 object GeometricFigure {
+
   import EnrichGeometricFigures._
-
-  case class LTBounds(
-    left: Double,
-    top: Double,
-    width: Double,
-    height: Double
-  ) extends GeometricFigure with Area {
-    override def toString: String = this.prettyPrint
-  }
-
-  case class LBBounds(
-    left: Double,
-    bottom: Double,
-    width: Double,
-    height: Double
-  ) extends GeometricFigure with Area {
-    override def toString: String = this.prettyPrint
-  }
-
-
-  case class Point(
-    x: Double, y: Double
-  ) extends GeometricFigure {
-    override def toString: String = this.prettyPrint
-  }
-
-  case class Line(
-    p1: Point, p2: Point
-  ) extends GeometricFigure{
-    override def toString: String = this.prettyPrint
-  }
 
   implicit def EqualGeometricFigure
       : Equal[GeometricFigure] =
@@ -59,8 +63,6 @@ object GeometricFigure {
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
 }
-
-import GeometricFigure._
 
 
 object EnrichGeometricFigures {

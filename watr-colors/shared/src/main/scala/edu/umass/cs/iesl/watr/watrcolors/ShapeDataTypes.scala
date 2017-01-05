@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 
 import geometry._
-import GeometricFigure._
+
 // import EnrichGeometricFigures._
 
 

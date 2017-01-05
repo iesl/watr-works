@@ -10,7 +10,7 @@ trait PlainTextReflow {
   import matryoshka._
   import java.net.URI
   import geometry._
-  import GeometricFigure._
+  
   import EnrichGeometricFigures._
   import ComponentTypeEnrichments._
   import TextReflowF._

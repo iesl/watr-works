@@ -3,7 +3,7 @@ package watrcolors
 package server
 
 // import ammonite.ops._
-// import GeometricFigure._
+// 
 
 // class SvgOverviewServer(
 //   rootDirectory: Path

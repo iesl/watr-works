@@ -4,24 +4,46 @@ package images //;import acyclic.file
 
 import geometry._
 import corpora._
-import GeometricFigure._
+
 import com.sksamuel.scrimage._
+
 
 case class ImageArtifacts(
   artifactGroup: CorpusArtifactGroup
 ) {
   def rootPath = artifactGroup.rootPath
 
+  def pageImages(): ImageArtifacts = {
+    import ammonite.{ops => fs}
+    import fs._
+    import fs.ImplicitWd._
+    val artifacts = new ImageArtifacts(
+      theCorpusEntry.ensureArtifactGroup("page-images")
+    )
+    val imgPath = artifacts.artifactGroup.rootPath
+
+    for {
+      pdf <- theCorpusEntry.getPdfArtifact
+      pdfPath <- pdf.asPath
+    } {
+      val pageImageFilespec = imgPath / "page-%d.png"
+
+      val res = %%("mudraw", "-r", "128", "-o", pageImageFilespec, pdfPath)
+    }
+
+    artifacts.artifactGroup.getArtifacts.foreach { a =>
+      println(s"extracted image ${a}")
+    }
+
+    artifacts
+  }
+
 }
-case class PageImage(
-  imageArtifact: CorpusArtifact,
-  pageGeometry: PageGeometry,
-  clipped: Option[(LTBounds, Image)]
-)
 
 trait ImageArtifactEnrichments extends ImageManipulation {
 
   implicit class RicherImageArtifacts(val theImageArtifacts: ImageArtifacts)  {
+
     // def corpusEntry
     def getPageArtifacts(): Seq[CorpusArtifact] = {
       theImageArtifacts.artifactGroup.getArtifacts

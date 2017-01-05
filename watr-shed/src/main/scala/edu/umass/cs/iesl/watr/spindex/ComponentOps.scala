@@ -13,7 +13,7 @@ import utils.EnrichNumerics._
 import TextReflowConversion._
 
 import geometry._
-import GeometricFigure._
+
 import EnrichGeometricFigures._
 // import TraceLog // , TraceLog._
 

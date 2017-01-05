@@ -4,7 +4,7 @@ package segment
 import spindex._
 import geometry._
 import ComponentOperations._
-import GeometricFigure._
+
 
 class SuperSubScriptTest extends DocsegTestUtil {
   behavior of "super/subscript labeling"

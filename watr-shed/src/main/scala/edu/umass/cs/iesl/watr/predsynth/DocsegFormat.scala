@@ -6,7 +6,7 @@ import java.nio.{file => nio}
 import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
 import geometry._
-import GeometricFigure.Point
+
 
 trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats {
   private[this] val log = org.log4s.getLogger

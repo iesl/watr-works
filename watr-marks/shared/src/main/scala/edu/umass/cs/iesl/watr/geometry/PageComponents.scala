@@ -1,14 +1,12 @@
 package edu.umass.cs.iesl.watr
 package geometry
 
-
 import scalaz.Equal
 import scalaz.syntax.equal._
 
 import watrmarks._
 
 import EnrichGeometricFigures._
-import GeometricFigure._
 
 case class TargetRegion(
   id: Int@@RegionID,
@@ -21,6 +19,20 @@ case class TargetRegion(
     this.uriString
   }
   override def toString = s"""<${uri}>"""
+}
+
+object TargetRegion {
+
+  implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
+    case (TargetRegion(id, docId, targetPage, bbox), TargetRegion(id2, docId2, targetPage2, bbox2)) =>
+      (id.unwrap==id2.unwrap
+        && docId.unwrap==docId.unwrap
+        && targetPage.unwrap==targetPage2.unwrap
+        && (bbox: GeometricFigure) === bbox2
+      )
+    case (_, _) => false
+  })
+
 }
 
 // Generalized version of TargetRegion
@@ -46,6 +58,14 @@ case class PageGeometry(
 
 sealed trait PageAtom {
   def targetRegion: TargetRegion
+
+
+  implicit val EqualPageAtom: Equal[PageAtom] = Equal.equal((a, b)  => (a, b) match {
+    case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
+      t===t2 && c==c2 && w==w2
+    case (_, _) => false
+
+  })
 }
 
 class CharAtom(
@@ -66,6 +86,12 @@ object CharAtom {
      wonkyCharCode: Option[Int] = None
   ): CharAtom = new CharAtom(region, char, wonkyCharCode)
 
+  implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
+    case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
+      t===t2 && c==c2 && w==w2
+    case (_, _) => false
+
+  })
 }
 
 
@@ -100,32 +126,8 @@ case class FontClass(
 
 
 object ComponentTypeEnrichments {
-  // import GeometricFigure._
 
-  implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
-    case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
-      t===t2 && c==c2 && w==w2
-    case (_, _) => false
 
-  })
-
-  implicit val EqualPageAtom: Equal[PageAtom] = Equal.equal((a, b)  => (a, b) match {
-    case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
-      t===t2 && c==c2 && w==w2
-    case (_, _) => false
-
-  })
-
-  implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
-    case (TargetRegion(id, docId, targetPage, bbox), TargetRegion(id2, docId2, targetPage2, bbox2)) =>
-      (id.unwrap==id2.unwrap
-        && docId.unwrap==docId.unwrap
-        && targetPage.unwrap==targetPage2.unwrap
-        && (bbox: GeometricFigure) === bbox2
-      )
-    case (_, _) => false
-
-  })
   implicit class RicherZone(val zone: Zone) extends AnyVal {
 
     def area(): Double = {

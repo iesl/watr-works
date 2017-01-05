@@ -4,30 +4,28 @@ package segment
 import ammonite.{ops => fs}, fs._
 import java.io.InputStream
 import java.net.URI
-import watrmarks._
 import spindex._
 
+import extract.fonts.SplineFont
+import extract.images._
 
 import scala.collection.JavaConversions._
 import TB._
 
 import geometry._
-import GeometricFigure._
+
 import EnrichGeometricFigures._
 
 import ComponentOperations._
 import ComponentTypeEnrichments._
 
-import utils._
-import utils.{CompassDirection => CDir}
+import utils.{CompassDirection => CDir, _}
 import tracing.VisualTracer._
-import utils.EnrichNumerics._
+import EnrichNumerics._
 import SlicingAndDicing._
-// import textreflow.TextReflowRendering._
 import TextReflowConversion._
 
 import scala.collection.mutable
-
 
 import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
@@ -118,7 +116,6 @@ object DocumentSegmenter extends DocumentUtils {
     AngleFilter(direction - t2, direction + t2)
   }
 
-  import extract.fonts.SplineFont
 
   def createSegmenter(srcUri: URI, pdfPath: Path, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
     val pageAtomsAndGeometry = formats.DocumentIO
@@ -182,22 +179,35 @@ object DocumentSegmenter extends DocumentUtils {
     isStrictlyLeftToRight(cand, line) ||
       isStrictlyRightToLeft(cand, line)
   }
-
 }
 
+
+class ImageExtractor {
+  def getPages(): Seq[PageImage] = {
+    ???
+  }
+}
+
+case class PageImage(
+  imageArtifact: CorpusArtifact,
+  pageGeometry: PageGeometry,
+  clipped: Option[(LTBounds, Image)]
+)
 
 
 class DocumentSegmenter(
   val mpageIndex: MultiPageIndex
 ) {
+
+  def getPageImages(): Seq[PageImage] = {
+
+  }
   def vtrace = mpageIndex.vtrace
 
   import scala.math.Ordering.Implicits._
   implicit def RegionIDOrdering: Ordering[Int@@RegionID] = Ordering.by(_.unwrap)
 
   import DocumentSegmenter._
-
-  val LB = StandardLabels
 
   var docOrientation: Double = 0d
 

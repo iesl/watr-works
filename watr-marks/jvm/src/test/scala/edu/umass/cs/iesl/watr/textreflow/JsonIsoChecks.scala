@@ -9,7 +9,7 @@ import matryoshka._
 import matryoshka.scalacheck.arbitrary._
 
 import geometry._
-import GeometricFigure._
+
 // import EnrichGeometricFigures._
 import ComponentTypeEnrichments._
 import TextReflowJsonFormats._

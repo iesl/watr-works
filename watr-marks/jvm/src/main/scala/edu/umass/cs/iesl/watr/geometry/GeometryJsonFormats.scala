@@ -4,7 +4,7 @@ package geometry
 import watrmarks._
 import scalaz.Tag
 
-import GeometricFigure._
+
 
 trait TypeTagFormats {
   import play.api.libs.json

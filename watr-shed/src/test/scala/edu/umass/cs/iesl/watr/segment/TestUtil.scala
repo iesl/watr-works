@@ -7,7 +7,7 @@ import org.scalatest._
 // import spindex._
 //import TypeTags._
 import geometry._
-import GeometricFigure._
+
 import EnrichGeometricFigures._
 import ammonite.{ops => fs}
 

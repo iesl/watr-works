@@ -3,7 +3,7 @@ package extract
 
 import com.itextpdf.kernel.pdf.PdfPage
 import geometry._
-import GeometricFigure._
+
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._

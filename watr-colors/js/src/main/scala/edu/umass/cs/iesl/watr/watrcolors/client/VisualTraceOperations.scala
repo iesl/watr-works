@@ -11,7 +11,7 @@ import native.fabric
 trait VisualTraceOperations extends FabricCanvasOperations {
 
   import geometry._
-  import GeometricFigure._
+  
   import TraceLog._
   //import TypeTags._
 

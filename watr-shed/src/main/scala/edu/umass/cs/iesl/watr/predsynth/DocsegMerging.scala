@@ -6,7 +6,7 @@ package predsynth
 // import java.net.URI
 // import watrmarks._
 import spindex._
-// import GeometricFigure._
+// 
 
 //
 // //import TypeTags._

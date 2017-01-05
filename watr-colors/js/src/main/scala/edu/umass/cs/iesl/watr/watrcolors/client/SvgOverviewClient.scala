@@ -19,7 +19,7 @@ import scala.scalajs.js.annotation.JSExport
 
 
 // import geometry._
-// import GeometricFigure._
+// 
 
 @JSExport
 class SvgOverview(

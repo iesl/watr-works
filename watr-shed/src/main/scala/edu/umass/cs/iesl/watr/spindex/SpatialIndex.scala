@@ -8,7 +8,7 @@ import scala.collection.mutable
 
 //import TypeTags._
 import geometry._
-import GeometricFigure._
+
 import EnrichGeometricFigures._
 
 

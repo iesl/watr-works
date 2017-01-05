@@ -6,7 +6,7 @@ import scala.scalajs.js.annotation.JSExport
 
 import textreflow._
 import geometry._
-import GeometricFigure._
+
 import ComponentTypeEnrichments._
 
 //import TypeTags._

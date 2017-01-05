@@ -9,7 +9,7 @@ import itextpdf.kernel.pdf._
 
 import utils.IdGenerator
 import geometry._
-import GeometricFigure._
+
 //import TypeTags._
 import scala.collection.mutable
 import scala.collection.JavaConversions._

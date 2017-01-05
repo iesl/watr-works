@@ -12,7 +12,7 @@ import utils.EnrichNumerics._
 import scala.{Range => _}
 
 import geometry._
-import GeometricFigure._
+
 
 trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._

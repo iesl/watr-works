@@ -3,7 +3,7 @@ package watrcolors
 package client
 
 import geometry._
-import GeometricFigure._
+
 import native.fabric
 // import scala.scalajs.js.annotation.JSExport
 

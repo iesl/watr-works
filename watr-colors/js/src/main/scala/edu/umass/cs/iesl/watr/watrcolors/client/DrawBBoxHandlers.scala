@@ -13,7 +13,7 @@ import scala.async.Async.{async, await}
 import scala.collection.mutable
 
 import geometry._
-import GeometricFigure._
+
 
 trait FabricCanvasOperations extends HtmlCanvasRendering {
   def fabricCanvas: fabric.Canvas

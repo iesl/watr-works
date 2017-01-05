@@ -5,7 +5,7 @@ package spindex
 import watrmarks._
 
 import geometry._
-import GeometricFigure._
+
 import EnrichGeometricFigures._
 
 //import TypeTags._

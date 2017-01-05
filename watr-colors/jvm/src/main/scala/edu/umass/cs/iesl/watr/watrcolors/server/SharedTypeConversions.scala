@@ -6,7 +6,7 @@ package server
 // object SharedTypeConversions {
 //   import geometry._
 
-//   import GeometricFigure._
+//   
 //   import TypeTags._
 
 

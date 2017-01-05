@@ -3,7 +3,7 @@ package watrcolors
 
 import geometry._
 // import tracing._
-import GeometricFigure._
+
 
 trait CorpusExplorerApi {
   def navNext()     : List[HtmlUpdate]

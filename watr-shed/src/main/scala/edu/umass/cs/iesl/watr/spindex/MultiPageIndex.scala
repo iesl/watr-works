@@ -5,11 +5,8 @@ import java.net.URI
 import scala.collection.mutable
 
 import geometry._
-// import GeometricFigure._
-// import EnrichGeometricFigures._
 
 import watrmarks._
-//import TypeTags._
 
 import ComponentTypeEnrichments._
 import utils.IdGenerator
@@ -56,7 +53,7 @@ class MultiPageIndex(
   val pageIndexes = mutable.HashMap[Int@@PageID, PageIndex]()
 
 
-  def dbgFilterComponents(pg: Int@@PageID, include: GeometricFigure.LTBounds): Unit ={
+  def dbgFilterComponents(pg: Int@@PageID, include: LTBounds): Unit ={
     pageIndexes.get(pg).foreach ({ pageIndex =>
       val keep = pageIndex.componentIndex.queryForIntersects(include).map(_.id)
       // println(s"dbgFilterComponents(): keeping ${keep.length} components")
