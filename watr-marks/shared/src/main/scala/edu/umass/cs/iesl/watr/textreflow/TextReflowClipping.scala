@@ -115,14 +115,6 @@ trait TextReflowClipping extends TextReflowBasics {
   }
 
 
-  def targetRegionFromUri(uriString: String): TargetRegion = {
-    val Array(docId, pageId, l, t, w, h) = uriString.split("\\+")
-
-    TargetRegion(RegionID(0), DocumentID(docId), PageID(pageId.toInt),
-      LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble)
-    )
-  }
-
   def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = {
     def render(t: TextReflowF[(TextReflow, Seq[TargetRegion])]): Seq[TargetRegion] = t match {
       case Rewrite    ((from, attr), to)      => attr
@@ -133,7 +125,7 @@ trait TextReflowClipping extends TextReflowBasics {
         attr ++ (for {
           l      <- labels if l == LB.VisualLine
           value  <- l.value
-        } yield targetRegionFromUri(value))
+        } yield TargetRegion.fromUri(value))
 
       case _ => Seq()
     }

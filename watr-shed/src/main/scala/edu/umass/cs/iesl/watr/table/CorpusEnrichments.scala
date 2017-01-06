@@ -3,7 +3,6 @@ package table  //;import acyclic.file
 
 import spindex._
 import corpora._
-import extract.images._
 
 trait CorpusEnrichments extends
     ComponentEnrichments with

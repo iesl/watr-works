@@ -67,8 +67,6 @@ object ShellCommands extends CorpusEnrichments {
     initCorpus(pwd)
   }
 
-
-
   implicit class RicherDocumentSegmenter(val theSegmentation: DocumentSegmentation) extends AnyVal {
 
     def lines(): Seq[TextReflow] = {

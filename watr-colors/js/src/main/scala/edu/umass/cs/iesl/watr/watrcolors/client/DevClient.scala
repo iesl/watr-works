@@ -30,13 +30,6 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
                           |""".stripMargin)
   }
 
-  def targetRegionFromUri(uriString: String): TargetRegion = {
-    val Array(docId, pageId, l, t, w, h) = uriString.split("\\+")
-
-    TargetRegion(RegionID(0), DocumentID(docId), PageID(pageId.toInt),
-      LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble)
-    )
-  }
 
 
   def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = {
@@ -49,7 +42,7 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
           l <- labels if l == LB.VisualLine
           value <- l.value
         } yield {
-          targetRegionFromUri(value)
+          TargetRegion.fromUri(value)
         }
 
         attr ++ trs

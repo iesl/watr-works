@@ -11,7 +11,7 @@ import ammonite.{ops => fs}
 import java.net.URI
 import java.net.URL
 
-trait DocsegTestUtil extends  FlatSpec with Matchers with DocumentUtils {
+trait DocsegTestUtil extends  FlatSpec with Matchers {
   import DocumentSegmenter._
 
   object page {

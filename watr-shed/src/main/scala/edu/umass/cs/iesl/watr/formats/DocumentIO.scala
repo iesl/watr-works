@@ -16,7 +16,7 @@ import textreflow._
 import utils.EnrichNumerics._
 
 import geometry._
-import TextReflowJsonFormats._
+import TextReflowJsonCodecs._
 
 object DocumentIO extends DocsegJsonFormats {
 

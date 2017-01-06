@@ -27,10 +27,6 @@ trait HtmlUpdatePicklers {
     .addConcreteType[HtmlRemove]
     .addConcreteType[HtmlReplaceInner]
     .addConcreteType[HtmlReplace]
-
-
-
-
 }
 
 final case class RemoteCall(
@@ -43,3 +39,4 @@ trait RemoteCallPicklers {
 
   implicit val rcp: Pickler[RemoteCall] = PicklerGenerator.generatePickler[RemoteCall]
 }
+

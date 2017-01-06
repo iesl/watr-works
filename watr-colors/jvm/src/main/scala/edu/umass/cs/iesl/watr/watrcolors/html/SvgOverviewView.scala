@@ -4,6 +4,7 @@ package html
 
 import scalatags.Text.all._
 
+import corpora._
 
 class SvgOverviewView() {
 

@@ -24,7 +24,6 @@ trait ImageManipulation {
     val pageImageFilespec = pageImagePath / "page-%d.png"
 
     val res = %%("mudraw", "-r", "128", "-o", pageImageFilespec, pdfPath)
-    // val res = %%("mutool", "info", "-o", pageImageFilespec, pdfPath)
 
   }
 

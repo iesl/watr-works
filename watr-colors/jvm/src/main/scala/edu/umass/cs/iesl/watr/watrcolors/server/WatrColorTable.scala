@@ -9,7 +9,8 @@ import edu.umass.cs.iesl.watr.table._
 object WatrColorTable {
 
   def main(args: Array[String]): Unit = {
-    val server =  new EmbeddedServer("localhost", 9999)
+    val corpus = ShellCommands.initCorpus()
+    val server =  new EmbeddedServer(corpus, "localhost", 9999)
 
     ammonite.Main(
       // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
@@ -23,7 +24,7 @@ object WatrColorTable {
       verboseOutput = false
     ).run(
       "server" -> server,
-      "corpus" -> ShellCommands.initCorpus()
+      "corpus" -> corpus
     )
 
     server.kill()

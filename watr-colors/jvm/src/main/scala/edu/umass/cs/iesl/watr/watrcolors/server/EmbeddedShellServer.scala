@@ -7,12 +7,9 @@ import akka.util.ByteString
 import akka.actor.ActorDSL._
 
 import spray.routing.SimpleRoutingApp
-import spray.http.HttpData
-import spray.http.MediaTypes
-import spray.http.HttpEntity
-import spray.http.{AllOrigins, HttpResponse}
-import spray.http.HttpHeaders._
-import spray.http.HttpMethods._
+import spray.http._
+import HttpHeaders._
+import HttpMethods._
 
 import concurrent.duration._
 import scala.concurrent.Future
@@ -20,15 +17,11 @@ import autowire._
 import boopickle.DefaultBasic._
 import java.nio.ByteBuffer
 
-// import scala.tools.nsc
-// import scala.tools.nsc.Settings
-// import scala.tools.nsc.backend.JavaPlatform
-// import scala.tools.nsc.util.ClassPath.JavaContext
-// import scala.collection.mutable
-// import scala.tools.nsc.typechecker.Analyzer
-// import scala.tools.nsc.util.{JavaClassPath, DirectoryClassPath}
+import extract.images._
+import corpora._
+import textreflow._
 
-class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrTableApi with RemoteCallPicklers {
+class EmbeddedServer(corpus: Corpus, url: String, port: Int) extends SimpleRoutingApp with WatrTableApi with RemoteCallPicklers {
   implicit val system = ActorSystem()
   import system.dispatcher
   val corsHeaders: List[ModeledHeader] =
@@ -67,6 +60,10 @@ class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrT
     api.print(level, msg).call()
   }
 
+  def echo(textReflow: TextReflow): Unit = {
+    // api.echo(textReflow).call()
+    ???
+  }
 
   /**
    * Actor meant to handle long polling, buffering messages or waiting actors
@@ -132,10 +129,27 @@ class EmbeddedServer(url: String, port: Int) extends SimpleRoutingApp with WatrT
     HttpEntity(MediaTypes.`text/html`, resp)
   }
 
+  import geometry._
 
   def producePageImage(path: List[String]): Array[Byte] = {
+    println(s"producePageImage: ${path}")
 
-    ???
+    val uriPath = path.headOption.getOrElse { sys.error("producePageImage: no path specified") }
+    // s"${doc}+${pg}+${bbox}"
+    val TargetRegion(id, docId, pageId, bbox) = TargetRegion.fromUri(uriPath)
+
+    val imagesOpt = for {
+      entry <- corpus.entry(docId.unwrap)
+      group <- entry.getArtifactGroup("page-images")
+    } yield {
+      ExtractImages.load(group.rootPath)
+    }
+
+    val images = imagesOpt.getOrElse { sys.error("producePageImage: no images found")}
+
+    val bytes = images.pageBytes(pageId)
+
+    bytes
   }
 
   def pageImageServer = pathPrefix("img")(

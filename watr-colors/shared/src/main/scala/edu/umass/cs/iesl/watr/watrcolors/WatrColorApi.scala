@@ -2,17 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 
 import geometry._
-// import tracing._
-
-
-trait CorpusExplorerApi {
-  def navNext()     : List[HtmlUpdate]
-  def navPrev()     : List[HtmlUpdate]
-  def openFocus()   : List[HtmlUpdate]
-  def getCorpusEntryInFocus() : String
-  def createView()    : List[HtmlUpdate]
-}
-
+import textreflow._
 
 trait SvgOverviewApi {
   def createView(artifactId: String): List[HtmlUpdate]
@@ -26,4 +16,5 @@ trait SvgOverviewApi {
 trait WatrTableApi {
   def clear(): Unit
   def print(level: String, msg: String): Unit
+  def echo(textReflow: TextReflow): Unit
 }

@@ -25,6 +25,20 @@ case class PageImages(
       .map({case (w, h) => s"img:${w}x${h}"})
       .mkString("[", ", ", "]")
   }
+
+  def page(p: Int@@PageID): Image = {
+    if (p.unwrap < images.length) {
+      images(p.unwrap)
+    } else {
+      sys.error(s"PageImage ${p} not found in pages ${toString()}")
+    }
+  }
+
+  def pageBytes(p: Int@@PageID): Array[Byte]= {
+    val image = page(p)
+    image.bytes
+  }
+
 }
 
 object ExtractImages extends ImageManipulation {
@@ -56,6 +70,7 @@ object ExtractImages extends ImageManipulation {
   def load(rootPath: Path): PageImages = {
     val images = ls(rootPath)
       .filter(_.ext=="png")
+      .sortBy(_.name.drop(5).dropRight(4).toInt)
       .map(p => Image.fromFile(p.toNIO.toFile))
 
     PageImages(images)

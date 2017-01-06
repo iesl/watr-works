@@ -92,7 +92,7 @@ trait ExplicitTypeTagFormats {
   )
 }
 
-trait GeometryJsonFormats extends TypeTagFormats {
+trait GeometryJsonCodecs extends TypeTagFormats {
   import play.api.libs.json._
   import Json._
   import utils.EnrichNumerics._
@@ -173,4 +173,3 @@ trait GeometryJsonFormats extends TypeTagFormats {
     }
   }
 }
-

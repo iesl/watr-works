@@ -19,8 +19,9 @@ import org.scalajs.dom.ext._
 import scala.scalajs.js
 
 import java.nio.ByteBuffer
+import textreflow._
 
-object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler]  with RemoteCallPicklers {
+object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler]  with AllPicklers {
 
   def wire(incoming: Array[Byte]): Unit = {
     val inbytes = ByteBuffer.wrap(incoming)
@@ -37,8 +38,8 @@ object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler]  with RemoteCa
 }
 
 @JSExport
-object WatrTableClient extends ClientView with WatrTableApi {
-  override def fabricCanvas = getFabric("fabric-canvas")
+object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamples {
+  // override def fabricCanvas = getFabric("fabric-canvas")
 
   override val initKeys = Keybindings(List(
   ))
@@ -104,6 +105,11 @@ object WatrTableClient extends ClientView with WatrTableApi {
       case "info" => dom.console.info(msg)
       case "log" => dom.console.log(msg)
     }
+  }
+
+  @JSExport
+  def echo(textReflow: TextReflow): Unit = {
+
   }
 
   // @JSExport

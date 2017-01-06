@@ -178,7 +178,6 @@ class CorpusEntry(
 
 }
 
-
 class CorpusArtifactGroup(
   val groupDescriptor: String,
   val entry: CorpusEntry

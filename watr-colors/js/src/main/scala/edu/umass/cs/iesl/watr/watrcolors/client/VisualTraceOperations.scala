@@ -5,15 +5,13 @@ package client
 import scala.collection.mutable
 // import org.querki.jquery._
 import org.scalajs.dom._
-import textboxing.{TextBoxing => TB}
-import native.fabric
+// import native.fabric
 
 trait VisualTraceOperations extends FabricCanvasOperations {
 
   import geometry._
-  
+
   import TraceLog._
-  //import TypeTags._
 
   val pageGeometry = mutable.Map[Int, PageGeometry]()
 
