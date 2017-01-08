@@ -221,7 +221,7 @@ class StaticCanvas(
 
 
   // @return {fabric.Canvas} thisArg
-  // def clear() : XXX = js.native
+  def clear() : Canvas = js.native
 
 
   // @param {Boolean} [allOnTop] Whether we want to force all images to be rendered on the top canvas
@@ -467,7 +467,7 @@ class Canvas(
 
   // @param {fabric.Object} obj Object that was removed
   // @return {fabric.Canvas} thisArg
-  // def clear()  = js.native
+  // def clear(): Canvas  = js.native
 
 
 }

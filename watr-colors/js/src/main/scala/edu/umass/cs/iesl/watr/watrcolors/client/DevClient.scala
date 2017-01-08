@@ -9,7 +9,6 @@ import geometry._
 
 import ComponentTypeEnrichments._
 
-//import TypeTags._
 import native.fabric
 import native.fabric._
 
@@ -84,15 +83,20 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
 
   def createAnnotWidget(textReflow: TextReflow): fabric.Group = {
     val text = textReflow.toText()
+    println(s"createAnnotWidget: got ${textReflow}")
+    println(s"widget for ${text}")
     val vlineIds = extractVisualLineTargetRegions(textReflow)
+    println(s"got line ids ${vlineIds}")
     val ftext = fabric.Text(text)
     ftext.setFontSize(15)
 
     val placeholders = makePlaceholderImgs(vlineIds)
+    println("created placeholders")
     val widgetGroup = fabric.Group(
       ftext +: placeholders
     )
 
+    println("created placeholder group")
     widgetGroup
   }
 

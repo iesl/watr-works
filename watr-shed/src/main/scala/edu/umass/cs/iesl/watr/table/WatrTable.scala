@@ -24,6 +24,8 @@ object WatrTable {
   val predef =
     s"""|import edu.umass.cs.iesl.watr
         |import watr._, spindex._, geometry._, table._
+        |import textreflow._
+        |import watrmarks.StandardLabels._
         |import ShellCommands._
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox

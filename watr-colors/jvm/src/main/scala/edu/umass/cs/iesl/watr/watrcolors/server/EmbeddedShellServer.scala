@@ -20,8 +20,15 @@ import java.nio.ByteBuffer
 import extract.images._
 import corpora._
 import textreflow._
+import geometry._
+import TypeTagPicklers._
 
-class EmbeddedServer(corpus: Corpus, url: String, port: Int) extends SimpleRoutingApp with WatrTableApi with RemoteCallPicklers {
+class EmbeddedServer(corpus: Corpus, url: String, port: Int)
+    extends SimpleRoutingApp
+    with WatrTableApi
+    with TextReflowBoopicklers
+{
+
   implicit val system = ActorSystem()
   import system.dispatcher
   val corsHeaders: List[ModeledHeader] =
@@ -35,9 +42,10 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int) extends SimpleRouti
   object Wire extends autowire.Client[ByteBuffer, Pickler, Pickler] {
     def doCall(req: Request): Future[ByteBuffer] = {
 
+
       val rc = RemoteCall(
-        req.path,
-        req.args.toSeq.map(p => (p._1, p._2.array()))
+        req.path.toList,
+        req.args.toList.map(p => (p._1, p._2.array()))
       )
 
       longPoll ! rc
@@ -61,8 +69,23 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int) extends SimpleRouti
   }
 
   def echo(textReflow: TextReflow): Unit = {
-    // api.echo(textReflow).call()
-    ???
+    api.echo(textReflow).call()
+  }
+
+  def echo2(textReflows: List[TextReflow]): Unit = {
+    api.echo2(textReflows).call()
+  }
+
+  def echoTargetRegion(tr: TargetRegion): Unit = {
+    api.echoTargetRegion(tr).call()
+  }
+
+  def echoLTBounds(bbox: LTBounds): Unit = {
+    api.echoLTBounds(bbox).call()
+  }
+
+  def echoCharAtom(charAtom: CharAtom): Unit = {
+    api.echoCharAtom(charAtom).call()
   }
 
   /**

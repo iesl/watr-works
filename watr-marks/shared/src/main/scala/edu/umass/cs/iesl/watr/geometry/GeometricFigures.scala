@@ -4,9 +4,7 @@ package geometry
 
 import scalaz.Equal
 
-sealed trait GeometricFigure {
-
-}
+sealed trait GeometricFigure
 
 sealed trait Area
 

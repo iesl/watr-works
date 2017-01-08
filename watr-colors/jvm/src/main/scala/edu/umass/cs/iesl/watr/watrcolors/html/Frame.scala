@@ -122,7 +122,6 @@ object ShellHtml {
       <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.7/css/bootstrap.min.css"),
 
       <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
-      // <.script(`type`:="text/javascript", src:="/workbench.js")
     )
   }
 
@@ -156,10 +155,18 @@ object ShellHtml {
       <.p(^.`class`:="text-warning")(
         "No grid classes are necessary for full-width elements."
       ),
-      <.div(^.id := "main")("Loading..."),
+
+      <.div(
+        <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000")
+      ),
+
+      <.div(^.id := "main"),
+
       <.script(`type` := "text/javascript")(
         raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrTableClient().main()")
       )
+
+      // <.script(`type`:="text/javascript", src:="/workbench.js")
     )
 
   }
@@ -192,7 +199,6 @@ object ShellHtml {
       ),
 
       body(margin := 0, WatrStyles.htmlBody)(
-        <.div(^.id := "main")("Loading..."),
         <.script(`type` := "text/javascript")(
           raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrTableClient().main()")
         )

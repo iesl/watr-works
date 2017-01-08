@@ -3,7 +3,7 @@ package textreflow
 
 object TextReflowRendering {
   import TextReflowF._
- 
+
 
   //  if (l.hasLabel(LB.Sup)) { Bracket("^{", "}",  a) }
   def escapeLineFormatting: TextReflowT => TextReflowT = {
@@ -24,9 +24,7 @@ object TextReflowRendering {
     case Insert  (value)                 => value
     case Rewrite ((from, attr), to)      => to
     case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
-    // case Mask    (mL, mR, (a, attr))     => attr.drop(mL).dropRight(mR).mkString
     case Flow    (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
     case Labeled (labels, (a, attr))     => attr
-    // case CachedText((a, attr), text)     => text
   }
 }

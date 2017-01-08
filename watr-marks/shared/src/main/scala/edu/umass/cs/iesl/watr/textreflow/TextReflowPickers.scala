@@ -6,29 +6,37 @@ package textreflow
 // import matryoshka.data._
 // import matryoshka.implicits._
 
-import boopickle._
-import boopickle.DefaultBasic._
 
 // import java.nio.ByteBuffer
-import geometry._
+// import geometry._
 
-trait TextReflowBoopicklers extends GeometryBoopicklers {
-  // import TextReflowF._
-  // import watrmarks.Label
+// import boopickle._
 
-  implicit def TextReflowPickler: P[TextReflow] = new P[TextReflow] {
-    override def pickle(tr: TextReflow)(implicit state: PickleState): Unit = {
-      Pickle.intoBytes(tr)
-      // pickleTextReflow(tr, state)
-    }
+// trait TextReflowBoopicklers extends GeometryBoopicklers {
+//   // import TextReflowF._
+//   import watrmarks.Label
+//   import boopickle.Default._
 
-    override def unpickle(implicit state: UnpickleState): TextReflow = {
-      // unpickleTextReflow(state)
-      state.unpickle[TextReflow]
-      // Unpickle[TextReflow].fromBytes()
-    }
-  }
-}
+//   implicit val TextReflowTPickler: P[TextReflowT] = new P[TextReflowT] {
+//     override def pickle(tr: TextReflowT)(implicit state: PickleState): Unit = {
+//       Pickle.intoBytes(tr)
+//     }
+
+//     override def unpickle(implicit state: UnpickleState): TextReflowT = {
+//       state.unpickle[TextReflowT]
+//     }
+//   }
+
+//   implicit val TextReflowPickler: P[TextReflow] = new P[TextReflow] {
+//     override def pickle(tr: TextReflow)(implicit state: PickleState): Unit = {
+//       Pickle.intoBytes(tr.unFix)
+//     }
+
+//     override def unpickle(implicit state: UnpickleState): TextReflow = {
+//       state.unpickle[TextReflow]
+//     }
+//   }
+// }
 
   // final val ConstAtom    : Byte = 1
   // final val ConstInsert  : Byte = 2

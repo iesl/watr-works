@@ -42,7 +42,7 @@ object TargetRegion {
   }
 }
 
-// Generalized version of TargetRegion
+// More General version of TargetRegion
 case class TargetFigure(
   id: Int@@RegionID,
   pageId: Int@@PageID,
@@ -75,29 +75,19 @@ sealed trait PageAtom {
   })
 }
 
-class CharAtom(
-  val targetRegion: TargetRegion,
-  val char: String,
-  val wonkyCharCode: Option[Int] = None
+case class CharAtom(
+  targetRegion: TargetRegion,
+  char: String,
+  wonkyCharCode: Option[Int] = None
 ) extends PageAtom {
   override def toString = s"CharAtom($char, $targetRegion)"
 }
 
 object CharAtom {
-  def unapply(r: CharAtom): Option[(TargetRegion, String, Option[Int])] =
-    Some((r.targetRegion, r.char, r.wonkyCharCode))
-
-
-  def apply(region: TargetRegion,
-     char: String,
-     wonkyCharCode: Option[Int] = None
-  ): CharAtom = new CharAtom(region, char, wonkyCharCode)
-
   implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
     case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
       t===t2 && c==c2 && w==w2
     case (_, _) => false
-
   })
 }
 

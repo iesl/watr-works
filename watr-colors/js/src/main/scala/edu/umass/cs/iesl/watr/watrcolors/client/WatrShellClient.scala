@@ -3,33 +3,33 @@ package watrcolors
 package client
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-// import scalajs.concurrent.JSExecutionContext.Implicits.runNow
 import scala.scalajs.js.annotation.JSExport
 
-// import autowire._
-import boopickle.DefaultBasic._
-// import Picklers._
 
-// import native.mousetrap._
-
-// import scala.concurrent.Future
-// import scala.async.Async.{async, await}
 import org.scalajs.dom
 import org.scalajs.dom.ext._
 import scala.scalajs.js
 
 import java.nio.ByteBuffer
 import textreflow._
+import geometry._
 
-object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler]  with AllPicklers {
+import TypeTagPicklers._
+
+import boopickle.DefaultBasic._
+
+object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler] with TextReflowBoopicklers {
 
   def wire(incoming: Array[Byte]): Unit = {
     val inbytes = ByteBuffer.wrap(incoming)
     val unpacked = read[List[RemoteCall]](inbytes)
 
     unpacked.foreach { case RemoteCall(callPath, callArgs) =>
+      println(s"Server: Remote Call recv'd ${callPath}")
       val req = new Request(callPath, callArgs.map(b => (b._1, ByteBuffer.wrap(b._2))).toMap)
+      println("Server: req unpacked")
       Wire.route[WatrTableApi](WatrTableClient).apply(req)
+      println("Server: req routed")
     }
   }
 
@@ -39,7 +39,6 @@ object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler]  with AllPickl
 
 @JSExport
 object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamples {
-  // override def fabricCanvas = getFabric("fabric-canvas")
 
   override val initKeys = Keybindings(List(
   ))
@@ -88,11 +87,12 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
 
   @JSExport
   override def clear(): Unit = {
-    dom.document.asInstanceOf[js.Dynamic].body = shadowBody.cloneNode(true)
-    for(i <- 0 until 100000){
-      dom.window.clearTimeout(i)
-      dom.window.clearInterval(i)
-    }
+    fabricCanvas.clear()
+    // dom.document.asInstanceOf[js.Dynamic].body = shadowBody.cloneNode(true)
+    // for(i <- 0 until 100000){
+    //   dom.window.clearTimeout(i)
+    //   dom.window.clearInterval(i)
+    // }
   }
 
   @JSExport
@@ -108,32 +108,39 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
   }
 
   @JSExport
-  def echo(textReflow: TextReflow): Unit = {
+  def echoTargetRegion(tr: TargetRegion): Unit = {
+    println(s"got TargetRegion ${tr}")
+  }
+
+  @JSExport
+  def echoLTBounds(bbox: LTBounds): Unit = {
+    println(s"got LTBounds ${bbox}")
+  }
+
+  @JSExport
+  def echoCharAtom(charAtom: CharAtom): Unit = {
+    println(s"got CharAtom ${charAtom}")
+  }
+
+  @JSExport
+  override def echo(textReflow: TextReflow): Unit = {
+    println(s"got into  Echo w/${textReflow}")
+    // textReflow
+
+    vcatWidgets(Seq(
+      textReflow,
+      textReflow
+    ))
 
   }
 
-  // @JSExport
-  // override def reload(): Unit = {
-  //   dom.console.log("Reloading page...")
-  //   dom.location.reload()
-  // }
-  // @JSExport
-  // override def run(path: String, bootSnippet: Option[String]): Unit = {
-  //   val tag = dom.document.createElement("script").asInstanceOf[HTMLElement]
-  //   var loaded = false
+  @JSExport
+  override def echo2(textReflows: List[TextReflow]): Unit = {
+    // println(s"got into  Echo w/${textReflow}")
+    println("got into  Echo2")
+    vcatWidgets(textReflows)
+  }
 
-  //   tag.setAttribute("src", path)
-  //   bootSnippet.foreach{ bootSnippet =>
-  //     tag.onreadystatechange = (e: dom.Event) => {
-  //       if (!loaded) {
-  //         dom.console.log("Workbench reboot")
-  //         js.eval(bootSnippet)
-  //       }
-  //       loaded = true
-  //     }
-  //     tag.asInstanceOf[js.Dynamic].onload = tag.onreadystatechange
-  //   }
-  //   dom.document.head.appendChild(tag)
-  // }
+
 
 }
