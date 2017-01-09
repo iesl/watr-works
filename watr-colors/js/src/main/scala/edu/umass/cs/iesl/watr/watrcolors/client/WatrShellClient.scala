@@ -2,55 +2,42 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import java.nio.ByteOrder
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
-
 
 import org.scalajs.dom
 import org.scalajs.dom.ext._
 
-import java.nio.ByteBuffer
 import textreflow._
 import geometry._
 
+import autowire._
 
-import boopickle.DefaultBasic._
+import upickle.{default => UPickle}
+import UPickle._
+import TypeTagPicklers._
 
-object ServerSite extends autowire.Server[ByteBuffer, Pickler, Pickler] with TextReflowBoopicklers {
+object ServerSite extends autowire.Server[String, UPickle.Reader, UPickle.Writer] {
+  def routes = ServerSite.route[WatrTableApi](WatrTableClient)
 
-  def wire(incoming: Array[Byte]): Unit = {
-    val inbytes = ByteBuffer
-      .wrap(incoming)
-      .order(ByteOrder.LITTLE_ENDIAN)
+  def wire(incoming: String): Unit = {
 
-    val unpacked = read[List[RemoteCall]](inbytes)
+    val remoteCalls = UPickle.read[List[RemoteCall]](incoming)
 
-    println(s"  Server byte order: ${inbytes.order}")
-    unpacked.foreach { case RemoteCall(callPath, callArgs) =>
+    remoteCalls.foreach { case RemoteCall(callPath, callArgs) =>
       println(s"Server: Remote Call recv'd ${callPath}")
-      // callArgs.foreach({case (param, value) =>
-      //   println(s"${param}:")
-      //   val iarr = value.array.map(_.toInt).mkString(", ")
-      //   println(s"  [$iarr]")
-      // })
+
       val req = new Request(
         callPath,
-        callArgs
-          .map(b => (
-            b._1,
-            ByteBuffer.wrap(b._2).order(ByteOrder.LITTLE_ENDIAN)
-          )
-        ).toMap
+        callArgs.toMap
       )
-      println("Server: req unpacked")
-      ServerSite.route[WatrTableApi](WatrTableClient).apply(req)
-      println("Server: req routed")
+
+      routes.apply(req)
     }
   }
 
-  override def read[R: Pickler](p: ByteBuffer) = Unpickle[R].fromBytes(p)
-  override def write[R: Pickler](r: R) = Pickle.intoBytes(r)
+  override def write[Result: UPickle.Writer](r: Result) = UPickle.write(r)
+  override def read[Result: UPickle.Reader](p: String) = UPickle.read[Result](p)
 }
 
 @JSExport
@@ -82,7 +69,7 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
           interval = 1000
 
 
-          ServerSite.wire(data.responseText.getBytes)
+          ServerSite.wire(data.responseText)
           rec()
         case util.Failure(e) =>
           if (success) println("Workbench disconnected " + e)
@@ -144,9 +131,8 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
   }
 
   @JSExport
-  override def echo(textReflow: TextReflow): Unit = {
+  override def echoTextReflow(textReflow: TextReflow): Unit = {
     println(s"got into  Echo w/${textReflow}")
-    // textReflow
 
     vcatWidgets(Seq(
       textReflow,
@@ -156,7 +142,7 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
   }
 
   @JSExport
-  override def echo2(textReflows: List[TextReflow]): Unit = {
+  override def echoTextReflows(textReflows: List[TextReflow]): Unit = {
     // println(s"got into  Echo w/${textReflow}")
     println("got into  Echo2")
     vcatWidgets(textReflows)

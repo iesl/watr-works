@@ -81,6 +81,7 @@ lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm
   .dependsOn(watrprelude)
+  .aggregate(watrmarksJS)
   .settings((resources in Compile) += (
     (fastOptJS in (watrmarksJS, Compile)).value.data
   ))
@@ -102,7 +103,8 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(libraryDependencies ++= Seq(
     Lib.scalaAsync,
     "com.lihaoyi"  %%% "scalatags"   % LibVersions.scalaTagsVersion,
-    "me.chrons" %%% "boopickle" % "1.2.5",
+    // "me.chrons" %%% "boopickle" % "1.2.5",
+    "com.lihaoyi" %%% "upickle" % "0.4.3",
     "com.lihaoyi" %%% "autowire" % "0.2.6"
   ))
   .jsSettings(libraryDependencies ++= Seq(
@@ -120,10 +122,11 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .dependsOn(watrmarks)
 
 lazy val watrcolorsJS = watrcolors.js
+  .dependsOn(watrmarksJS)
 
 
 lazy val watrcolorsJVM = watrcolors.jvm
-  .dependsOn(watrshed)
+  .dependsOn(watrshed, watrmarksJVM)
   .settings((resources in Compile) ++= Seq(
     (fastOptJS in (watrcolorsJS, Compile)).value.data,
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value,
