@@ -12,6 +12,7 @@ package client
 // import boopickle.Default._
 
 // case class ServerWire(prefix: String) extends autowire.Client[ByteBuffer, Pickler, Pickler] {
+// case class ClientSite(prefix: String) extends autowire.Client[ByteBuffer, Pickler, Pickler] {
 //   override def doCall(req: Request): Future[ByteBuffer] = {
 //     dom.ext.Ajax.post(
 //       url = s"""/api/${prefix}/${req.path.mkString("/")}""",

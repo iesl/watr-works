@@ -16,12 +16,12 @@ import scala.concurrent.Future
 import autowire._
 import boopickle.DefaultBasic._
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 import extract.images._
 import corpora._
 import textreflow._
 import geometry._
-import TypeTagPicklers._
 
 class EmbeddedServer(corpus: Corpus, url: String, port: Int)
     extends SimpleRoutingApp
@@ -39,18 +39,33 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
       `Access-Control-Max-Age`(1728000)
     )
 
-  object Wire extends autowire.Client[ByteBuffer, Pickler, Pickler] {
+  object ClientSite extends autowire.Client[ByteBuffer, Pickler, Pickler] {
+    val pUnit = Pickle.intoBytes(())
+
     def doCall(req: Request): Future[ByteBuffer] = {
+      val reqArgs = req.args.toList.map({case (param, arg) =>
+        // val iarr = value.array.map(_.toInt).mkString(", ")
+        // println(s"  [$iarr]")
+        val value = arg.order(ByteOrder.LITTLE_ENDIAN)
 
+        println(s"  Client byte order: ${arg.order}/${value.order}")
 
-      val rc = RemoteCall(
-        req.path.toList,
-        req.args.toList.map(p => (p._1, p._2.array()))
-      )
+        val data = Array.ofDim[Byte](value.remaining())
+        val _ = value.get(data)
+        // val array = new Array[Byte](len)
+        // buf.get(array)
+        (param -> data)
+      })
+
+      val rc = RemoteCall(req.path.toList, reqArgs)
+
+      // val rc = RemoteCall(
+      //   req.path.toList,
+      //   req.args.toList.map(p => (p._1, p._2.array()))
+      // )
 
       longPoll ! rc
 
-      val pUnit = Pickle.intoBytes(())
       Future.successful(pUnit)
     }
 
@@ -58,7 +73,7 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
     override def write[Result: Pickler](r: Result) = Pickle.intoBytes(r)
   }
 
-  val api = Wire[WatrTableApi]
+  val api = ClientSite[WatrTableApi]
 
   def clear(): Unit = {
     api.clear().call()
@@ -80,6 +95,10 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
     api.echoTargetRegion(tr).call()
   }
 
+  def echoDouble(d: Double): Unit = {
+    api.echoDouble(d).call()
+  }
+
   def echoLTBounds(bbox: LTBounds): Unit = {
     api.echoLTBounds(bbox).call()
   }
@@ -93,7 +112,6 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
    */
   private val longPoll = actor(new Actor{
     var waitingActor: Option[ActorRef] = None
-    // var queuedMessages = List[ByteBuffer]()
     var queuedMessages = List[RemoteCall]()
 
     /**
@@ -105,9 +123,12 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
     system.scheduler.schedule(0.seconds, 10.seconds, self, Clear)
 
     def respond(a: ActorRef, s: ByteBuffer) = {
-      val respEntity = HttpEntity(HttpData(ByteString(s)))
+      val respEntity = HttpEntity(
+        MediaTypes.`application/octet-stream`,
+        HttpData(ByteString(s))
+      )
       a ! HttpResponse(
-        entity =respEntity,
+        entity = respEntity,
         headers = corsHeaders
       )
     }
@@ -121,7 +142,6 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
         respond(a, bs)
         queuedMessages = Nil
 
-      // case (msg: ByteBuffer, None, msgs) =>
       case (msg: RemoteCall, None, msgs) =>
         println(s"""receive: msg enqueue""")
         queuedMessages = msg :: msgs
@@ -201,7 +221,8 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
         ctx.complete(
           router(
             autowire.Core.Request(segs,
-              Unpickle[Map[String, ByteBuffer]].fromBytes(requestData.toByteString.asByteBuffer)
+              Unpickle[Map[String, ByteBuffer]]
+                .fromBytes(requestData.toByteString.asByteBuffer.order(ByteOrder.LITTLE_ENDIAN))
             )
           ).map(responseData =>
             HttpEntity(HttpData(ByteString(responseData)))

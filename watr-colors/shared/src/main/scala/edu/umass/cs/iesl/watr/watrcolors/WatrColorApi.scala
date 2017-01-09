@@ -21,5 +21,6 @@ trait WatrTableApi {
   def echoCharAtom(charAtom: CharAtom): Unit
   def echoTargetRegion(tr: TargetRegion): Unit
   def echoLTBounds(bbox: LTBounds): Unit
+  def echoDouble(d: Double): Unit
 
 }

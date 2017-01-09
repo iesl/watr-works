@@ -34,20 +34,21 @@ final case class RemoteCall(
 )
 
 
+import boopickle._
+
 object RemoteCall {
   import boopickle.DefaultBasic._
   implicit val rcp: Pickler[RemoteCall] = PicklerGenerator.generatePickler[RemoteCall]
 }
 
+import watrmarks._
 import geometry._
-
-import boopickle._
-import boopickle.DefaultBasic._
+import textreflow._
 
 trait TextReflowBoopicklers extends GeometryBoopicklers {
-  // import TextReflowF._
+  import TextReflowF._
   import watrmarks.Label
-  import boopickle.Default._
+  import boopickle.DefaultBasic._
 
   implicit val TextReflowTPickler: P[TextReflowT] = new P[TextReflowT] {
     override def pickle(tr: TextReflowT)(implicit state: PickleState): Unit = {
@@ -71,17 +72,17 @@ trait TextReflowBoopicklers extends GeometryBoopicklers {
 }
 
 
-import TypeTagPicklers._
-
 trait GeometryBoopicklers extends PicklerHelper {
+  import boopickle.DefaultBasic._
   import PicklerGenerator._
-
-  import watrmarks._
-  import geometry._
-
+  import TypeTagPicklers._
 
   implicit val pGeometricFigure = compositePickler[GeometricFigure]
-  implicit val pLTBounds        = generatePickler[LTBounds]
+  // implicit val pLTBounds        = generatePickler[LTBounds]
+  implicit val pLTBounds        = transformPickler[LTBounds, (Double, Double, Double, Double)](
+      t => new LTBounds(t._1, t._2, t._3, t._4))(
+      t => (t.left, t.top, t.width, t.height))
+
   implicit val pLBBounds        = generatePickler[LBBounds]
   implicit val pPoint           = generatePickler[Point]
   implicit val pLine            = generatePickler[Line]
@@ -108,6 +109,7 @@ trait GeometryBoopicklers extends PicklerHelper {
 
 
 object TypeTagPicklers extends PicklerHelper {
+  import boopickle.DefaultBasic._
 
   implicit val Int_RegionID_Pickler: Pickler[Int @@ RegionID] = new Pickler[Int @@ RegionID] {
     override def pickle(obj: Int @@ RegionID)(implicit state: PickleState): Unit = write[Int](obj.unwrap)

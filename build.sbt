@@ -50,7 +50,6 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     "com.github.julien-truffaut" %%% "monocle-core" % Lib.monocleVersion % "compile, test",
     "com.github.mpilquist"       %%% "simulacrum"   % "0.10.0"           % "compile, test",
     "com.lihaoyi"                %%% "scalatags"    % LibVersions.scalaTagsVersion
-    // "me.chrons"                  %%% "boopickle"    % "1.2.5"
   ))
   .jvmSettings(commonSettings: _*)
 

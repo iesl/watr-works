@@ -2,33 +2,49 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
+import java.nio.ByteOrder
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
 
 
 import org.scalajs.dom
 import org.scalajs.dom.ext._
-import scala.scalajs.js
 
 import java.nio.ByteBuffer
 import textreflow._
 import geometry._
 
-import TypeTagPicklers._
 
 import boopickle.DefaultBasic._
 
-object Wire extends autowire.Server[ByteBuffer, Pickler, Pickler] with TextReflowBoopicklers {
+object ServerSite extends autowire.Server[ByteBuffer, Pickler, Pickler] with TextReflowBoopicklers {
 
   def wire(incoming: Array[Byte]): Unit = {
-    val inbytes = ByteBuffer.wrap(incoming)
+    val inbytes = ByteBuffer
+      .wrap(incoming)
+      .order(ByteOrder.LITTLE_ENDIAN)
+
     val unpacked = read[List[RemoteCall]](inbytes)
 
+    println(s"  Server byte order: ${inbytes.order}")
     unpacked.foreach { case RemoteCall(callPath, callArgs) =>
       println(s"Server: Remote Call recv'd ${callPath}")
-      val req = new Request(callPath, callArgs.map(b => (b._1, ByteBuffer.wrap(b._2))).toMap)
+      // callArgs.foreach({case (param, value) =>
+      //   println(s"${param}:")
+      //   val iarr = value.array.map(_.toInt).mkString(", ")
+      //   println(s"  [$iarr]")
+      // })
+      val req = new Request(
+        callPath,
+        callArgs
+          .map(b => (
+            b._1,
+            ByteBuffer.wrap(b._2).order(ByteOrder.LITTLE_ENDIAN)
+          )
+        ).toMap
+      )
       println("Server: req unpacked")
-      Wire.route[WatrTableApi](WatrTableClient).apply(req)
+      ServerSite.route[WatrTableApi](WatrTableClient).apply(req)
       println("Server: req routed")
     }
   }
@@ -66,7 +82,7 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
           interval = 1000
 
 
-          Wire.wire(data.responseText.getBytes)
+          ServerSite.wire(data.responseText.getBytes)
           rec()
         case util.Failure(e) =>
           if (success) println("Workbench disconnected " + e)
@@ -110,6 +126,11 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
   @JSExport
   def echoTargetRegion(tr: TargetRegion): Unit = {
     println(s"got TargetRegion ${tr}")
+  }
+
+  @JSExport
+  def echoDouble(d: Double): Unit = {
+    println(s"got Double ${d}")
   }
 
   @JSExport
