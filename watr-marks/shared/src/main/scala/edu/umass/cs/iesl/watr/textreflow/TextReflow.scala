@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow
+package textreflow //;import acyclic.file
 
 import watrmarks._
 

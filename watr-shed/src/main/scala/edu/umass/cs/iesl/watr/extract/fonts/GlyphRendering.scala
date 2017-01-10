@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
 package extract
-package fonts
+package fonts //;import acyclic.file
 
 import com.itextpdf
 import itextpdf.kernel.pdf._

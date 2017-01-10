@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package tracing
+package tracing //;import acyclic.file
 
 import scala.language.experimental.macros
 

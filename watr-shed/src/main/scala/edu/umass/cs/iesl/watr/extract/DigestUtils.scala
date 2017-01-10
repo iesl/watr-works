@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package extract
+package extract //;import acyclic.file
 
 import java.security.MessageDigest
 

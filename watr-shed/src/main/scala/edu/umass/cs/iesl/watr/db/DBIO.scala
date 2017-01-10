@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package db
+package db //;import acyclic.file
 
 // import scala.collection.generic.CanBuildFrom
 // import scala.concurrent._

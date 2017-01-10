@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package predsynth
+package predsynth //;import acyclic.file
 
 
 import utils.{StringUtils => SU}

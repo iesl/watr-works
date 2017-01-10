@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package spindex //;import acyclic.file
 
 import watrmarks.Label
 import utils.Histogram, Histogram._

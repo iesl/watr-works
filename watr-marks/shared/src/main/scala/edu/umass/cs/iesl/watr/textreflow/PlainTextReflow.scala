@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow
+package textreflow //;import acyclic.file
 
 // TODO plaintext reflow started as testing util, and still has a mix of testing and production code
 trait PlainTextReflow {

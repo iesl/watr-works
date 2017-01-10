@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package geometry
+package geometry //;import acyclic.file
 
 import scalaz.Equal
 import scalaz.syntax.equal._

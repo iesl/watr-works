@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package formats
+package formats //;import acyclic.file
 
 
 import extract.PdfTextExtractor
