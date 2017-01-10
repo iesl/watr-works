@@ -2,15 +2,15 @@ package edu.umass.cs.iesl.watr
 package textreflow
 
 
-import org.scalacheck._
-import scalaz._, Scalaz._
-import org.scalacheck.Prop._
+// import org.scalacheck._
+// import scalaz._, Scalaz._
+// import org.scalacheck.Prop._
 
-import matryoshka._
-import matryoshka.scalacheck.arbitrary._
+// import matryoshka._
+// import matryoshka.scalacheck.arbitrary._
 // import java.nio.ByteBuffer
 
-import TextReflowF._
+// import TextReflowF._
 
 // object BoopickleIsoChecks extends Properties("BoopickleIsoChecks") with ArbitraryTextReflows with TextReflowBoopicklers {
 // object BoopickleIsoChecks extends Properties("BoopickleIsoChecks")

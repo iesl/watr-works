@@ -88,7 +88,7 @@ lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(commonSettings: _*)
-  .settings(libraryDependencies ++= DatabaseLibs.slickDb)
+  .settings(libraryDependencies ++= DatabaseLibs.doobieDb)
   .settings(libraryDependencies += Lib.scrimageCore)
   .settings(libraryDependencies += "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT")
   .dependsOn(watrprelude)
@@ -98,13 +98,14 @@ lazy val watrshed = (project in file("watr-shed"))
 enablePlugins(ScalaJSPlugin)
 enablePlugins(WorkbenchPlugin)
 
+
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++= Seq(
     Lib.scalaAsync,
     "com.lihaoyi"  %%% "scalatags"   % LibVersions.scalaTagsVersion,
     // "me.chrons" %%% "boopickle" % "1.2.5",
-    "com.lihaoyi" %%% "upickle" % "0.4.3",
+    "com.lihaoyi" %%% "upickle" % "0.4.4",
     "com.lihaoyi" %%% "autowire" % "0.2.6"
   ))
   .jsSettings(libraryDependencies ++= Seq(

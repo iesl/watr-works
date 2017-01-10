@@ -19,6 +19,7 @@ trait LibVersions {
   val monocleVersion      = "1.2.2"
   val aspectjVersion      = "1.8.9"
   val acyclicVersion      = "0.1.5"
+  val doobieVersion       = "0.3.0"
 
 }
 
@@ -70,6 +71,13 @@ object DatabaseLibs extends LibVersions {
     "com.zaxxer" % "HikariCP" % "2.5.1",
     "com.typesafe.slick" %% "slick" % "3.1.1"
   )
+
+  val doobieDb = Seq(
+    "org.tpolecat" %% "doobie-core"               % doobieVersion,
+    "org.tpolecat" %% "doobie-contrib-postgresql" % doobieVersion,
+    "org.tpolecat" %% "doobie-contrib-specs2"     % doobieVersion
+  )
+
 }
 
 // trait JsLib extends LibVersions {

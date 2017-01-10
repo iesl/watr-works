@@ -467,41 +467,41 @@ object Works extends App {
   }
 
   def buildFontDB(conf: AppConfig): Unit = {
-    import ammonite.{ops => fs}
-    import fs._
-    // import fs.ImplicitWd._
-    import extract.fonts._
+    // import ammonite.{ops => fs}
+    // import fs._
+    // // import fs.ImplicitWd._
+    // import extract.fonts._
 
-    val dbfile = conf.dbPath.getOrElse {
-      sys.error("please specify database path")
-    }
+    // val dbfile = conf.dbPath.getOrElse {
+    //   sys.error("please specify database path")
+    // }
 
-    val dbpath = pwd / RelPath(dbfile)
+    // val dbpath = pwd / RelPath(dbfile)
 
-    val db = new FontDatabaseApi(dbpath)
+    // val db = new FontDatabaseApi(dbpath)
 
-    try {
-      db.createDBDir()
+    // try {
+    //   db.createDBDir()
 
-      processCorpusEntryList(conf, {corpusEntry =>
+    //   processCorpusEntryList(conf, {corpusEntry =>
 
-        if (corpusEntry.hasArtifact("fonts")) {
-          for {
-            fontDir <- corpusEntry.getArtifact("fonts")
-            pdir <- fontDir.asPath
-            sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
-            sfdir <- sfdirs
-          } {
-            log.info(s"adding fonts from ${sfdir}")
-            val sfs = SplineFonts.loadSfdir(sfdir)
+    //     if (corpusEntry.hasArtifact("fonts")) {
+    //       for {
+    //         fontDir <- corpusEntry.getArtifact("fonts")
+    //         pdir <- fontDir.asPath
+    //         sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
+    //         sfdir <- sfdirs
+    //       } {
+    //         log.info(s"adding fonts from ${sfdir}")
+    //         val sfs = SplineFonts.loadSfdir(sfdir)
 
-            db.addFontDir(sfs)
-          }
-        }
-      })
-    } finally {
-      db.shutdown()
-    }
+    //         db.addFontDir(sfs)
+    //       }
+    //     }
+    //   })
+    // } finally {
+    //   db.shutdown()
+    // }
   }
 
 
@@ -534,22 +534,22 @@ object Works extends App {
 
 
   def showFontDB(conf: AppConfig): Unit = {
-    import extract.fonts._
+    // import extract.fonts._
 
-    val dbfile = conf.dbPath.getOrElse {
-      sys.error("please specify database path")
-    }
+    // val dbfile = conf.dbPath.getOrElse {
+    //   sys.error("please specify database path")
+    // }
 
-    val dbpath = pwd / RelPath(dbfile)
+    // val dbpath = pwd / RelPath(dbfile)
 
-    val db = new FontDatabaseApi(dbpath)
+    // val db = new FontDatabaseApi(dbpath)
 
-    try {
-      // db.showFontTrees()
-      db.showHashedGlyphs()
-    } finally {
-      db.shutdown()
-    }
+    // try {
+    //   // db.showFontTrees()
+    //   db.showHashedGlyphs()
+    // } finally {
+    //   db.shutdown()
+    // }
   }
 
 
