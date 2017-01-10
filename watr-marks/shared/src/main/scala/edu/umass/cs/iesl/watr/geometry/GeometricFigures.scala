@@ -318,13 +318,13 @@ object EnrichGeometricFigures {
       s"""${left.pp}+${top.pp}+${width.pp}+${height.pp}"""
     }
 
-    def targetRegionTo(page: Int@@PageID): TargetRegion = {
-      TargetRegion(
-        RegionID(0), // TODO gen region id
-        emptyDocId,
-        page,tb
-      )
-    }
+    // def targetRegionTo(page: Int@@PageID): TargetRegion = {
+    //   TargetRegion(
+    //     RegionID(0), // TODO gen region id
+    //     docId??,
+    //     page,tb
+    //   )
+    // }
   }
 
   implicit class RicherLBBounds(val tb: LBBounds) extends AnyVal {

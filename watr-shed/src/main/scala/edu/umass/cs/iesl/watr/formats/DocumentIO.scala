@@ -229,6 +229,7 @@ object DocumentIO extends DocsegJsonFormats {
 
 
   def extractChars(
+    docId: String@@DocumentID,
     pdfPath: Path,
     charsToDebug: Set[Int] = Set(),
     glyphDefs: Seq[SplineFont.Dir] = Seq()
@@ -240,7 +241,7 @@ object DocumentIO extends DocsegJsonFormats {
       glyphDefs
     )
 
-    charExtractor.extractCharacters(pdfPath)
+    charExtractor.extractCharacters(docId, pdfPath)
   }
 
 

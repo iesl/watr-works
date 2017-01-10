@@ -15,10 +15,8 @@ import itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import itextpdf.kernel.pdf.canvas.parser.EventType
 import itextpdf.kernel.pdf.canvas.parser.data._
 import itextpdf.kernel.pdf.PdfReader
-//import TypeTags.emptyDocId
 
 import fonts._
-// import UnicodeUtil._
 import utils.IdGenerator
 
 
@@ -73,9 +71,9 @@ object PdfPageObjectOutput {
 
 }
 
-// TypeTag[Int, PageID]
 class CharExtractionListener(
   reader: PdfReader,
+  docId: String@@DocumentID,
   charsToDebug: Set[Int] = Set(),
   componentIdGen: IdGenerator[RegionID],
   currCharBuffer: mutable.ArrayBuffer[PageAtom], // = mutable.ArrayBuffer[PageAtom]()
@@ -160,7 +158,7 @@ class CharExtractionListener(
           CharAtom(
             TargetRegion(
               componentIdGen.nextId,
-              emptyDocId,
+              docId,
               pageId,
               bnds
             ),

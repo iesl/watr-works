@@ -3,11 +3,9 @@ package segment
 
 import ammonite.{ops => fs}, fs._
 import java.io.InputStream
-import java.net.URI
 import spindex._
 
 import extract.fonts.SplineFont
-import extract.images._
 
 import scala.collection.JavaConversions._
 import TB._
@@ -115,16 +113,16 @@ object DocumentSegmenter {
   }
 
 
-  def createSegmenter(srcUri: URI, pdfPath: Path, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
+  def createSegmenter(docId: String@@DocumentID, pdfPath: Path, glyphDefs: Seq[SplineFont.Dir]): DocumentSegmenter = {
     val pageAtomsAndGeometry = formats.DocumentIO
-      .extractChars(pdfPath, Set(), glyphDefs)
+      .extractChars(docId, pdfPath, Set(), glyphDefs)
 
-    createSegmenter(srcUri, pageAtomsAndGeometry)
+    createSegmenter(docId, pageAtomsAndGeometry)
   }
 
 
-  def createSegmenter(srcUri: URI, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
-      val mpageIndex = MultiPageIndex.loadSpatialIndices(srcUri, pagedefs)
+  def createSegmenter(docId: String@@DocumentID, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
+      val mpageIndex = MultiPageIndex.loadSpatialIndices(docId, pagedefs)
       new DocumentSegmenter(mpageIndex)
   }
 

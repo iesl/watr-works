@@ -144,29 +144,15 @@ object ShellHtml {
 
   def bodyContent() = {
     <.div(^.`class`:="container", WatrStyles.container)(
-      <.h3("Two columns"),
-      <.p("Get two columns starting at desktops and scaling to large desktops)."),
-      <.div(^.`class`:="row")(
-        <.div(WatrStyles.colN, ^.`class`:="col-md-8")(".col-md-8"),
-        <.div(WatrStyles.colN, ^.`class`:="col-md-4")(".col-md-4")
-      ),
-
-      <.h3("Full width, single column"),
-      <.p(^.`class`:="text-warning")(
-        "No grid classes are necessary for full-width elements."
-      ),
 
       <.div(
         <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000")
       ),
 
-      <.div(^.id := "main"),
-
       <.script(`type` := "text/javascript")(
         raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrTableClient().main()")
       )
 
-      // <.script(`type`:="text/javascript", src:="/workbench.js")
     )
 
   }

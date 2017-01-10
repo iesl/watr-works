@@ -121,7 +121,7 @@ class PdfTextExtractor(
   import java.nio.{file => nio}
 
 
-  def extractCharacters(pdfPath: Path): List[(Seq[PageAtom], PageGeometry)] = {
+  def extractCharacters(docId: String@@DocumentID, pdfPath: Path): List[(Seq[PageAtom], PageGeometry)] = {
     var instr: InputStream = null
     try {
       instr = nio.Files.newInputStream(pdfPath.toNIO)
@@ -142,7 +142,7 @@ class PdfTextExtractor(
         val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage, reader)
 
         val extractor = new CharExtractionListener(
-          reader, charsToDebug,
+          reader, docId, charsToDebug,
           componentIdGen,
           currCharBuffer,
           pdfPage,

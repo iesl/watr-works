@@ -52,7 +52,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextRe
 
   def createMultiPageIndex(str: String): MultiPageIndex = {
     val pageId = 0
-    val docId = ""
+    val docId = DocumentID("dummy-id")
     val (atoms, geom) = stringToPageAtoms(str, pageId, docId)
     val dummyUri = URI.create("/")
     MultiPageIndex.loadSpatialIndices(dummyUri, Seq((atoms -> geom)))
@@ -60,7 +60,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextRe
 
   def createMultiPageIndexAndLines(str: String): (MultiPageIndex, Seq[String]) = {
     val pageId = 0
-    val docId = ""
+    val docId = DocumentID("dummy-id")
     val (atoms, geom) = stringToPageAtoms(str, pageId, docId)
     val dummyUri = URI.create("/")
     (MultiPageIndex.loadSpatialIndices(dummyUri, Seq((atoms -> geom))),

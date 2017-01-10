@@ -1,11 +1,9 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-import java.net.URI
 import scala.collection.mutable
 
 import geometry._
-
 import watrmarks._
 
 import ComponentTypeEnrichments._
@@ -40,11 +38,9 @@ import textreflow._
 
 
   */
-class MultiPageIndex(
-  srcUri: URI
-)  {
+class MultiPageIndex(docId: String@@DocumentID) {
 
-  def getSrcUri():URI = srcUri
+  def getDocumentID(): String@@DocumentID = docId
 
   val vtrace: VisualTracer = new VisualTracer()
 
@@ -302,10 +298,11 @@ class MultiPageIndex(
 
 object MultiPageIndex {
 
-  def loadSpatialIndices(srcUri: URI, regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): MultiPageIndex = {
+  def loadSpatialIndices(docId: String@@DocumentID, regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): MultiPageIndex = {
 
-    val zindexer = new MultiPageIndex(srcUri)
+    val zindexer = new MultiPageIndex(docId)
     regionsAndGeometry.foreach { case(regions, geom)  =>
+      println(s"adding page w/geometry ${geom}")
       val pageIndex = zindexer.addPage(geom)
 
       regions.foreach {

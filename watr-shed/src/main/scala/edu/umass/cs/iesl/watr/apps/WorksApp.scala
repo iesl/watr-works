@@ -7,7 +7,6 @@ import predsynth._
 
 import ammonite.{ops => fs}, fs._
 import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
-import java.net.URI
 import java.io.{File => JFile}
 import predsynth._
 import segment.DocumentSegmenter
@@ -336,9 +335,9 @@ object Works extends App {
   }
 
 
-  def runPageSegmentation(documentURI: URI, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
+  def runPageSegmentation(docId: String@@DocumentID, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
     val segmenter = DocumentSegmenter
-      .createSegmenter(documentURI, pdfPath, fontDirs)
+      .createSegmenter(docId, pdfPath, fontDirs)
 
     segmenter.runPageSegmentation()
     segmenter
@@ -382,7 +381,10 @@ object Works extends App {
       pdfArtifact    <- corpusEntry.getPdfArtifact
       pdfPath        <- pdfArtifact.asPath
     } {
-      val segmenter = runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
+
+      val docId = DocumentID(corpusEntry.entryDescriptor)
+
+      val segmenter = runPageSegmentation(docId, pdfPath, Seq())
       val mergedZoneIndex = DocsegMerging.mergePriorDocseg(segmenter.mpageIndex, priorDocseg)
 
       val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex, Seq())
@@ -408,7 +410,10 @@ object Works extends App {
           pdfArtifact     <- corpusEntry.getPdfArtifact
           pdfPath         <- pdfArtifact.asPath
         } {
-          val segmenter = runPageSegmentation(corpusEntry.getURI, pdfPath, Seq())
+
+          val docId = DocumentID(corpusEntry.entryDescriptor)
+
+          val segmenter = runPageSegmentation(docId, pdfPath, Seq())
 
           rsegmenter = Some(segmenter)
 

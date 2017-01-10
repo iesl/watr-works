@@ -91,8 +91,10 @@ object ShellCommands extends CorpusEnrichments {
       } yield {
 
 
+        val docId = DocumentID(theCorpusEntry.entryDescriptor)
+
         val segmenter = DocumentSegmenter
-          .createSegmenter(theCorpusEntry.getURI, pdfPath, Seq())
+          .createSegmenter(docId, pdfPath, Seq())
 
         segmenter.runPageSegmentation()
 

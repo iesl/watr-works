@@ -21,7 +21,6 @@ sealed trait MentionID
 sealed trait ClusterID
 sealed trait RelationID
 
-
 sealed trait Ranging
 sealed trait Offset
 sealed trait Length
@@ -53,10 +52,6 @@ trait TypeTags {
   val Length = Tag.of[Length]
 
   val Percent = Tag.of[Percent]
-
-  val emptyDocId: String@@DocumentID =
-    DocumentID("empty")
-
 
   def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
     val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName

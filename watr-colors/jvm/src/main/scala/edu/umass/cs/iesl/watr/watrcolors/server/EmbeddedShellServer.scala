@@ -166,18 +166,28 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
     // s"${doc}+${pg}+${bbox}"
     val TargetRegion(id, docId, pageId, bbox) = TargetRegion.fromUri(uriPath)
 
+    // PageGeometry: (l:0.00, t:0.00, w:594.00, h:783.00)
+    // ImageGeometry:
+
     val imagesOpt = for {
       entry <- corpus.entry(docId.unwrap)
       group <- entry.getArtifactGroup("page-images")
     } yield {
-      ExtractImages.load(group.rootPath)
+      val image = ExtractImages.load(group.rootPath)
+      val pageImage  = image.page(pageId)
+      val pageGeometry = PageGeometry(pageId, LTBounds(
+        0, 0, 594.0, 783.0
+      ))
+      val cropped = ExtractImages.cropTo(
+        pageImage, bbox, pageGeometry
+      )
+      cropped
     }
 
-    val images = imagesOpt.getOrElse { sys.error("producePageImage: no images found")}
+    imagesOpt
+      .map(_.bytes)
+      .getOrElse { sys.error("producePageImage: no images found")}
 
-    val bytes = images.pageBytes(pageId)
-
-    bytes
   }
 
   def pageImageServer = pathPrefix("img")(
@@ -200,7 +210,7 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
   def apiRoute(
     prefix: String,
     router: autowire.Core.Router[String] // (which expands to)  PartialFunction[autowire.Core.Request[java.nio.ByteBuffer],scala.concurrent.Future[java.nio.ByteBuffer]]
-  ) = pathPrefix("api") {
+  ) = pathPrefix("api")(
     path(prefix / Segments) { segs =>
       extract(_.request.entity.data) { requestData => ctx =>
         ctx.complete(
@@ -210,8 +220,11 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
             autowire.Core.Request(segs, argmap)
           }).map(responseData =>
             HttpEntity(HttpData(ByteString(responseData)))
-          ))}}
-  }
+          )
+        )
+      }
+    }
+  )
 
 
   startServer(url, port)(

@@ -3,9 +3,7 @@ package table  //;import acyclic.file
 
 import spindex._
 import geometry._
-import extract.images._
 
-import java.net.URI
 import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import TextReflowConversion._
 import TB._

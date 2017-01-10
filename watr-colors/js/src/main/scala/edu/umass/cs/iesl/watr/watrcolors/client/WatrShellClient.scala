@@ -132,19 +132,12 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
 
   @JSExport
   override def echoTextReflow(textReflow: TextReflow): Unit = {
-    println(s"got into  Echo w/${textReflow}")
-
-    vcatWidgets(Seq(
-      textReflow,
-      textReflow
-    ))
+    vcatWidgets(Seq(textReflow))
 
   }
 
   @JSExport
   override def echoTextReflows(textReflows: List[TextReflow]): Unit = {
-    // println(s"got into  Echo w/${textReflow}")
-    println("got into  Echo2")
     vcatWidgets(textReflows)
   }
 

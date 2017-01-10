@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
+import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 
 import textreflow._
@@ -63,40 +64,49 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
 
   def makePlaceholderImgs(trs: Seq[TargetRegion]): Seq[FabricObject] = {
     val objs = trs.zipWithIndex.map({case (tr, i) =>
-      val shape = createShape(tr.bbox.copy(
+      val bbox = tr.bbox.copy(
         left=20, top=((i+1)*20).toDouble
-      ), "black", "yellow", 0.5f)
+      )
+
+      val shape = createShape (bbox , "black", "yellow", 0.5f)
 
       val targetRegionURI = tr.uriString
-      Image.fromURL(s"/api/tr/${targetRegionURI}", {(img) =>
-        shape.setFill("green")
-      }, {() =>
-        shape.setFill("red")
-      })
+      val scb = (img:Image) => {
+        img.top = bbox.top
+        img.left = bbox.left
+        img.width = bbox.width
+        img.height = bbox.height
+
+        fabricCanvas.add(img)
+        fabricCanvas.renderAll()
+        ()
+      }
+      val jscb: js.Function1[Image, Unit] = scb
+
+      val img = Image.fromURL(s"/img/${targetRegionURI}", jscb)
 
       shape
     })
-    fabricCanvas.renderAll()
     objs
   }
 
 
   def createAnnotWidget(textReflow: TextReflow): fabric.Group = {
     val text = textReflow.toText()
-    println(s"createAnnotWidget: got ${textReflow}")
-    println(s"widget for ${text}")
+    // println(s"createAnnotWidget: got ${textReflow}")
+    // println(s"widget for ${text}")
     val vlineIds = extractVisualLineTargetRegions(textReflow)
-    println(s"got line ids ${vlineIds}")
+    // println(s"got line ids ${vlineIds}")
     val ftext = fabric.Text(text)
     ftext.setFontSize(15)
 
     val placeholders = makePlaceholderImgs(vlineIds)
-    println("created placeholders")
+    // println("created placeholders")
     val widgetGroup = fabric.Group(
       ftext +: placeholders
     )
 
-    println("created placeholder group")
+    // println("created placeholder group")
     widgetGroup
   }
 

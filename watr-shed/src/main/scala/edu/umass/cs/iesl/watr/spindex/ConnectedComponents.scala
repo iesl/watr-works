@@ -1,14 +1,11 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
-
 import watrmarks._
 
 import geometry._
 
 import EnrichGeometricFigures._
-
-//import TypeTags._
 
 import scalaz.Tree
 import scala.collection.mutable
@@ -29,7 +26,7 @@ sealed trait Component {
 
   lazy val pageId = mpageIndex.getPageForComponent(this)
 
-  def getSrcUri() = mpageIndex.getSrcUri()
+  def getDocumentID() = mpageIndex.getDocumentID()
 
   def getPageGeometry(): PageGeometry = {
     mpageIndex.getPageGeometry(pageId)

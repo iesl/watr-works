@@ -193,14 +193,14 @@ trait PlainTextReflow {
 
 
 
-  def stringToPageAtoms(str: String, pageId: Int, docId: String): (Seq[PageAtom], PageGeometry) = {
+  def stringToPageAtoms(str: String, pageId: Int, docId: String@@DocumentID): (Seq[PageAtom], PageGeometry) = {
     for {
       (line, linenum) <- lines(str).zipWithIndex
       (ch, chnum)     <- line.zipWithIndex
     } yield {
       CharAtom(
         TargetRegion(regionIDs.nextId,
-          emptyDocId,
+          docId,
           page0,
           LTBounds(
             left=chnum*xscale, top=linenum*yscale,
@@ -219,7 +219,7 @@ trait PlainTextReflow {
           .map({ case (ch, chnum) =>
             CharAtom(
               TargetRegion(regionIDs.nextId,
-                emptyDocId,
+                docId,
                 page0,
                 LTBounds(
                   left=chnum*xscale, top=linenum*yscale,
