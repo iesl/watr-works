@@ -10,8 +10,6 @@ import textreflow._
 import extract.images._
 import corpora._
 import segment._
-import db._
-
 
 object WatrTable {
 

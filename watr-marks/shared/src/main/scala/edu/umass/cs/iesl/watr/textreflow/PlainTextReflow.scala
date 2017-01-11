@@ -234,47 +234,12 @@ trait PlainTextReflow {
     (atoms, pageGeom)
   }
 
-  import com.sksamuel.scrimage._
-
-  def textToImage(text: String): Unit = {
-
-    import java.awt.Color
-    import java.awt.Font
-    import java.awt.FontMetrics
-    import java.awt.Graphics2D
-    import java.awt.RenderingHints
-    import java.awt.image.BufferedImage
-
-    /*
-     Because font metrics is based on a graphics context, we need to create
-     a small, temporary image so we can ascertain the width and height
-     of the final image
-     */
-    val imgtmp: BufferedImage =  new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
-    val g2dtmp: Graphics2D  = imgtmp.createGraphics()
-    val font: Font  = new Font("Arial", Font.PLAIN, 48)
-    g2dtmp.setFont(font)
-    val fmetrics: FontMetrics  = g2dtmp.getFontMetrics()
-    val width = fmetrics.stringWidth(text)
-    val height = fmetrics.getHeight()
-    g2dtmp.dispose()
-
-    val img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-    val g2d = img.createGraphics()
-    g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY)
-    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-    g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY)
-    g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE)
-    g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
-    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-    g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
-    g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE)
-    g2d.setFont(font)
-    val fm = g2d.getFontMetrics()
-    g2d.setColor(Color.BLACK)
-    g2d.drawString(text, 0, fm.getAscent())
-    g2d.dispose()
-    Image.wrapAwt(img)
+  def stringsToMultiPageAtoms(docId: String@@DocumentID, strs: String*): Seq[(Seq[PageAtom], PageGeometry)] = {
+    for {
+      (pstr, pagenum) <- strs.zipWithIndex
+    } yield {
+      stringToPageAtoms(pstr, pagenum, docId)
+    }
   }
 
 }

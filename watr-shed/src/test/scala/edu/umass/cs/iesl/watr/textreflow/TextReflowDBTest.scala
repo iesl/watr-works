@@ -1,20 +1,22 @@
 package edu.umass.cs.iesl.watr
-package databasics
+package textreflow
 
-// import scalaz._, Scalaz._
 import scalaz.concurrent.Task
 import doobie.imports._
-// import doobie.contrib.postgresql.pgtypes._
 import spindex._
 
-class FreshTextReflowDBTables(
-  xa: Transactor[Task]
-) {
+class FreshTextReflowDBTables(xa: Transactor[Task]) {
   val tables = new TextReflowDBTables(xa)
   tables.dropAndCreate.unsafePerformSync
   val reflowDB = new TextReflowDB(tables)
 }
-class TextReflowDBTest extends ConnectedComponentTestUtil {
+
+
+trait TextReflowTestUtil extends FlatSpec with Matchers with ImageTextReflow {
+
+}
+
+class TextReflowDBTest extends TextReflowTestUtil {
   val xa = DriverManagerTransactor[Task](
     "org.postgresql.Driver",
     "jdbc:postgresql:watrdev",
