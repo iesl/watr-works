@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package db
+package databasics
 
 object `package` {
   // import acyclic.pkg

@@ -5,12 +5,13 @@ package server
 import ammonite.ops._
 import edu.umass.cs.iesl.watr.table._
 
-
 object WatrColorTable {
 
   def main(args: Array[String]): Unit = {
     val corpus = ShellCommands.initCorpus()
-    val server =  new EmbeddedServer(corpus, "localhost", 9999)
+    val reflowDB = ShellCommands.initReflowDB()
+
+    val server =  new EmbeddedServer(reflowDB, corpus, "localhost", 9999)
 
     ammonite.Main(
       // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
@@ -24,7 +25,8 @@ object WatrColorTable {
       verboseOutput = false
     ).run(
       "server" -> server,
-      "corpus" -> corpus
+      "corpus" -> corpus,
+      "db" -> reflowDB
     )
 
     server.kill()

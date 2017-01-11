@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package db //;import acyclic.file
+package databasics //;import acyclic.file
 
 // import slick.driver.H2Driver.api._
 

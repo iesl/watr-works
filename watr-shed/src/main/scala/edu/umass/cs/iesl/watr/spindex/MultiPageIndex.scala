@@ -69,7 +69,7 @@ class MultiPageIndex(docId: String@@DocumentID) {
   }
 
   // ID generators
-  val componentIdGen = utils.IdGenerator[ComponentID]()
+  val componentIdGen = IdGenerator[ComponentID]()
   val labelIdGen = IdGenerator[LabelID]()
   val regionIdGen = IdGenerator[RegionID]()
 

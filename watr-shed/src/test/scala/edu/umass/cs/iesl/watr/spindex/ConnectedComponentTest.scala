@@ -6,11 +6,11 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
 
   behavior of "connected components"
 
-  
-
 
   it should "create and flatten child structure" in {
+    val docId = DocumentID("doc-0")
     val mpageIndex = createMultiPageIndex(
+      docId,
       // 012 3 4567890
       """Eu1 - xBixVO4"""
     )
@@ -41,7 +41,9 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
   }
 
   it should "demonstrate sup/subscript labeling" in {
+    val docId = DocumentID("doc-0")
     val mpageIndex = createMultiPageIndex(
+      docId, 
       // 012 3 4567890
       """Eu1 - xBixVO4"""
     )

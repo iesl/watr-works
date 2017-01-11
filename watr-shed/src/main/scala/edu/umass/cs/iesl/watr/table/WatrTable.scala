@@ -10,14 +10,18 @@ import textreflow._
 import extract.images._
 import corpora._
 import segment._
+import db._
 
 
 object WatrTable {
+
   import ShellCommands._
 
   def main(args: Array[String]): Unit = {
+
     replMain().run(
-      "corpus" -> initCorpus()
+      "corpus" -> initCorpus(),
+      "db" -> initReflowDB()
     )
   }
 
@@ -50,6 +54,19 @@ object WatrTable {
 
 object ShellCommands extends CorpusEnrichments {
 
+  def initReflowDB(): TextReflowDB = {
+    import doobie.imports._
+    import scalaz.concurrent.Task
+
+    val xa = DriverManagerTransactor[Task](
+      "org.postgresql.Driver",
+      "jdbc:postgresql:watrdev",
+      "watrworker", "watrpasswd"
+    )
+
+    val tables = new TextReflowDBTables(xa)
+    new TextReflowDB(tables)
+  }
 
   def pprintComponent: PPrinter[Component] = PPrinter({(component, config) =>
     val box = component.show
@@ -82,6 +99,17 @@ object ShellCommands extends CorpusEnrichments {
 
   }
 
+
+  implicit class RicherTextReflowDB(val theDB: TextReflowDB) extends AnyVal {
+    def dropAndCreateTables(): Unit = {
+      theDB.tables.dropAndCreate.unsafePerformSync
+    }
+
+    def addSementation(ds: DocumentSegmentation): Unit = {
+      theDB.addSegmentation(ds)
+    }
+  }
+
   implicit class RicherCorpusEntry(val theCorpusEntry: CorpusEntry) extends AnyVal {
 
     def segment(): Option[DocumentSegmentation] = {
@@ -98,6 +126,7 @@ object ShellCommands extends CorpusEnrichments {
 
         segmenter.runPageSegmentation()
 
+
         val pageImageArtifacts = theCorpusEntry.ensureArtifactGroup("page-images")
         val pageImages =
         if (pageImageArtifacts.getArtifacts.isEmpty) {
@@ -105,6 +134,7 @@ object ShellCommands extends CorpusEnrichments {
         } else {
           ExtractImages.load(pageImageArtifacts.rootPath)
         }
+
 
 
         DocumentSegmentation(

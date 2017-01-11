@@ -1,14 +1,12 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import java.net.URL
 import org.scalatest._
 
 import geometry._
 
 import EnrichGeometricFigures._
 import ammonite.{ops => fs}
-import java.net.URI
 import java.net.URL
 
 trait DocsegTestUtil extends  FlatSpec with Matchers {
@@ -100,10 +98,11 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
   }
 
   def createFilteredMultiPageIndex(pdfIns: URL, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
-    val dummyUri = URI.create("/")
     val path = fs.Path(pdfIns.getPath)
 
-    val segmenter =  DocumentSegmenter.createSegmenter(dummyUri, path, Seq())
+    val docId = DocumentID("dummy-id")
+
+    val segmenter =  DocumentSegmenter.createSegmenter(docId, path, Seq())
 
     // Assume these example regions are all from one page
     // val pageId = regions.map(_.pageId).head

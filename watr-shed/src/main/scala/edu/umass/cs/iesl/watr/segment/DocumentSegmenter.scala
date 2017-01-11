@@ -183,8 +183,6 @@ class DocumentSegmenter(
   val mpageIndex: MultiPageIndex
 ) {
 
-  // def getPageImages(): Seq[PageImage] = {// }
-
   def vtrace = mpageIndex.vtrace
 
   import scala.math.Ordering.Implicits._

@@ -18,6 +18,7 @@ import extract.images._
 import corpora._
 import textreflow._
 import geometry._
+import db.TextReflowDB
 
 import autowire._
 import upickle.{default => UPickle}
@@ -25,10 +26,9 @@ import UPickle._
 import TypeTagPicklers._
 
 
-class EmbeddedServer(corpus: Corpus, url: String, port: Int)
+class EmbeddedServer(reflowDB: TextReflowDB, corpus: Corpus, url: String, port: Int)
     extends SimpleRoutingApp
     with WatrTableApi {
-
 
 
   implicit val system = ActorSystem()
@@ -163,31 +163,11 @@ class EmbeddedServer(corpus: Corpus, url: String, port: Int)
     println(s"producePageImage: ${path}")
 
     val uriPath = path.headOption.getOrElse { sys.error("producePageImage: no path specified") }
-    // s"${doc}+${pg}+${bbox}"
-    val TargetRegion(id, docId, pageId, bbox) = TargetRegion.fromUri(uriPath)
 
-    // PageGeometry: (l:0.00, t:0.00, w:594.00, h:783.00)
-    // ImageGeometry:
-
-    val imagesOpt = for {
-      entry <- corpus.entry(docId.unwrap)
-      group <- entry.getArtifactGroup("page-images")
-    } yield {
-      val image = ExtractImages.load(group.rootPath)
-      val pageImage  = image.page(pageId)
-      val pageGeometry = PageGeometry(pageId, LTBounds(
-        0, 0, 594.0, 783.0
-      ))
-      val cropped = ExtractImages.cropTo(
-        pageImage, bbox, pageGeometry
-      )
-      cropped
-    }
-
-    imagesOpt
+    reflowDB
+      .serveImageWithURI(TargetRegion.fromUri(uriPath))
       .map(_.bytes)
       .getOrElse { sys.error("producePageImage: no images found")}
-
   }
 
   def pageImageServer = pathPrefix("img")(
