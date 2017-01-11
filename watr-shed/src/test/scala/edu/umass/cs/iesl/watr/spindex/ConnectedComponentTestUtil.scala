@@ -7,7 +7,7 @@ import textreflow._
 import watrmarks._
 import geometry._
 
-trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextReflow {
+trait ConnectedComponentTestUtil extends FlatSpec with Matchers with ImageTextReflow {
 
   def labelRow(mpageIndex: MultiPageIndex, row: Int, l: Label): Option[RegionComponent] = {
     val pageIndex = mpageIndex.getPageIndex(page0)
@@ -24,11 +24,20 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with PlainTextRe
     reg
   }
 
+  def createMultiPageIndex(docId: String@@DocumentID, strs: String*): MultiPageIndex = {
+    MultiPageIndex.loadSpatialIndices(
+      docId,
+      stringsToMultiPageAtoms(docId, strs:_*)
+    )
+  }
 
-  // def queryComponents(pageIndex: PageIndex, x: Int, y: Int, w: Int, h: Int): Seq[Component] = {
-  //   val q = LTBounds(x*xscale, y*yscale, w*xscale, h*xscale)
-  //   pageIndex.componentIndex.queryForContained(q)
-  // }
+  import com.sksamuel.scrimage._
+  def createMultiPageIndexWithImages(docId: String@@DocumentID, strs: String*): (MultiPageIndex, Seq[Image]) = {
+    val pages =
+      stringsToMultiPageAtomsWithImages(docId, strs:_*)
+        .map({case (atom, geom, img) => ((atom, geom), img)})
 
+    (MultiPageIndex.loadSpatialIndices(docId, pages.map(_._1)), pages.map(_._2))
+  }
 
 }

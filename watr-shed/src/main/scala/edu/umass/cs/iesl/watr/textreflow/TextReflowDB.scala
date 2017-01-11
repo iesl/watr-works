@@ -2,22 +2,17 @@ package edu.umass.cs.iesl.watr
 package textreflow //;import acyclic.file
 
 import doobie.imports._
-// import doobie.free.{ drivermanager => DM }
-// import doobie.free.{ connection => C }
-// import doobie.free.{ preparedstatement => PS }
-// import doobie.free.{ resultset => RS }
 
 import scalaz.concurrent.Task
 import scalaz.syntax.applicative._
-// import scalaz.syntax.traverse._
-// import scalaz.syntax.id._
-// import scalaz.\/
 
 import geometry._
 import spindex._
 import segment._
 
 import com.sksamuel.scrimage._
+import shapeless._
+
 
 class TextReflowDB(
   val tables: TextReflowDBTables
@@ -38,7 +33,7 @@ class TextReflowDB(
     } {
       val query = for {
         docPrKey <- upsertDocumentID(docId)
-        pagePrKey <- addPageIndex(docPrKey, mpageIndex.getPageIndex(pageId), ds.pageImages.page(pageId))
+        pagePrKey <- insertPageIndex(docPrKey, mpageIndex.getPageIndex(pageId), ds.pageImages.page(pageId))
       } yield ()
 
       query
@@ -50,13 +45,13 @@ class TextReflowDB(
   def dtoi(d: Double): Int = (d*100.0).toInt
   def itod(i: Int): Double = (i.toDouble)/100.0
 
-  def addPageIndex(docPrKey: Int, pageIndex: PageIndex, pageImage: Image): ConnectionIO[Int] = {
+  // import doobie.util.composite._
+  def insertPageIndex(docPrKey: Int, pageIndex: PageIndex, pageImage: Image): ConnectionIO[Int] = {
+
+    println(s"adding page w/image dims ${pageImage.dimensions} ")
 
     val PageGeometry(pageId, LTBounds(l, t, w, h)) = pageIndex.pageGeometry
-    val bl = dtoi(l)
-    val bt = dtoi(t)
-    val bw = dtoi(w)
-    val bh = dtoi(h)
+    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
 
     sql"""
       insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
@@ -70,14 +65,15 @@ class TextReflowDB(
       .update.withUniqueGeneratedKeys("id")
   }
 
+
   def selectPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): ConnectionIO[PageGeometry] = {
     val query = sql"""
        select bleft, btop, bwidth, bheight from page p join document d
        using p.document
        where d.stable_id = ${docId.unwrap} AND p.pagenum = ${pageId.unwrap}
-    """.query[(Int, Int, Int, Int)]
+    """.query[Int :: Int :: Int :: Int :: HNil]
       .unique
-      .map({case (l, t, w, h) =>
+      .map({case l :: t :: w :: h :: HNil =>
         val (bl, bt, bw, bh) = (
           itod(l), itod(t), itod(w), itod(h)
         )
@@ -110,30 +106,6 @@ class TextReflowDB(
     """.query[Array[Byte]]
       .option
       .map(_.map(Image(_)))
-
-    query
-  }
-
-
-  // .exceptSqlState { case UNIQUE_VIOLATION => insert(name + "_20", age) }
-  def insertPage(targetRegion: TargetRegion, image: Image): ConnectionIO[Unit] = {
-    val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) = targetRegion
-    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
-    val trUri = targetRegion.uri
-
-    val imagebytes = image.bytes
-    val query = for {
-      trPrKey <- sql"""
-              insert into targetregion (document, page, bleft, btop, bwidth, bheight)
-              values (${docId.unwrap}, ${pageId.unwrap}, $bl, $bt, $bw, $bh)
-              """.update.withUniqueGeneratedKeys[Int]("id")
-
-      _ <- (sql"""
-              insert into targetregion_image (image, targetregion)
-              values (${imagebytes}, ${trPrKey})
-              """.update.run)
-
-    } yield ()
 
     query
   }

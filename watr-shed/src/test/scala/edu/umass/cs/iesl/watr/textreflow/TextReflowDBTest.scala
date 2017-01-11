@@ -4,6 +4,8 @@ package textreflow
 import scalaz.concurrent.Task
 import doobie.imports._
 import spindex._
+import segment.DocumentSegmentation
+import extract.images.PageImages
 
 class FreshTextReflowDBTables(xa: Transactor[Task]) {
   val tables = new TextReflowDBTables(xa)
@@ -12,11 +14,7 @@ class FreshTextReflowDBTables(xa: Transactor[Task]) {
 }
 
 
-trait TextReflowTestUtil extends FlatSpec with Matchers with ImageTextReflow {
-
-}
-
-class TextReflowDBTest extends TextReflowTestUtil {
+class TextReflowDBTest extends ConnectedComponentTestUtil {
   val xa = DriverManagerTransactor[Task](
     "org.postgresql.Driver",
     "jdbc:postgresql:watrdev",
@@ -46,11 +44,17 @@ class TextReflowDBTest extends TextReflowTestUtil {
          |
          |""".stripMargin)
 
+    val tr0 = stringToTextReflow(page0)
+    // tr0
+    // construct a page index from this text reflow
+
     val docId = DocumentID("doc-0")
-    val mpageIndex = createMultiPageIndex(docId, page0, page1)
+    val (mpageIndex, images) = createMultiPageIndexWithImages(docId, page0, page1)
+    val ds = DocumentSegmentation(
+      mpageIndex, PageImages(images)
+    )
 
-    reflowDB.addMultiPageIndex(mpageIndex)
+    reflowDB.addMultiPageIndex(ds)
   }
-
 
 }

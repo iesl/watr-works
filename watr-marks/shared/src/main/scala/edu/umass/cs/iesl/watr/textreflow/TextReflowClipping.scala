@@ -12,52 +12,54 @@ import utils.EnrichNumerics._
 import scala.{Range => _}
 
 import geometry._
-
+import watrmarks.Label
 
 trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._
-
   import ComponentTypeEnrichments._
 
   type ReflowRange = RangeInt
   type AtomOrInsertOrGap  = (ReflowRange \/ ReflowRange) \/ ReflowRange
 
-  def ReflowRange(b: Int, len: Int) = RangeInt(b, len)
+  protected object helpers {
 
-  def anAtom(r:ReflowRange): AtomOrInsertOrGap = -\/(-\/(r))
-  def anInsert(r: ReflowRange): AtomOrInsertOrGap = -\/(\/-(r))
-  def aGap(r: ReflowRange): AtomOrInsertOrGap = \/-(r)
+    def ReflowRange(b: Int, len: Int) = RangeInt(b, len)
+    def anAtom(r:ReflowRange): AtomOrInsertOrGap = -\/(-\/(r))
+    def anInsert(r: ReflowRange): AtomOrInsertOrGap = -\/(\/-(r))
+    def aGap(r: ReflowRange): AtomOrInsertOrGap = \/-(r)
+    def isAnAtom(v: AtomOrInsertOrGap)   = v.fold(_.fold(_ => true, _  => false), _ => false)
+    def isAnInsert(v: AtomOrInsertOrGap) = v.fold(_.fold(_ => false, _ => true),  _ => false)
+    def isAGap(v: AtomOrInsertOrGap)     = v.fold(_.fold(_ => false, _ => false), _ => true)
+    def hasAnAtom(as: List[AtomOrInsertOrGap]) = as.exists(isAnAtom(_))
+    def allGaps(as: List[AtomOrInsertOrGap]) = as.all(isAGap(_))
 
-  def isAnAtom(v: AtomOrInsertOrGap)   = v.fold(_.fold(_ => true, _  => false), _ => false)
-  def isAnInsert(v: AtomOrInsertOrGap) = v.fold(_.fold(_ => false, _ => true),  _ => false)
-  def isAGap(v: AtomOrInsertOrGap)     = v.fold(_.fold(_ => false, _ => false), _ => true)
-  def hasAnAtom(as: List[AtomOrInsertOrGap]) = as.exists(isAnAtom(_))
-  def allGaps(as: List[AtomOrInsertOrGap]) = as.all(isAGap(_))
+    def pp(aig: AtomOrInsertOrGap): String = aig.fold(
+      ai => ai.fold(
+        a => s"atm(${a.min}, ${a.len})",
+        i => s"ins(${i.min}, ${i.len})"
+      ),
+      g => s"gap(${g.min}, ${g.len})"
+    )
 
-  def pp(aig: AtomOrInsertOrGap): String = aig.fold(
-    ai => ai.fold(
-      a => s"atm(${a.min}, ${a.len})",
-      i => s"ins(${i.min}, ${i.len})"
-    ),
-    g => s"gap(${g.min}, ${g.len})"
-  )
+    def setRange(aig: AtomOrInsertOrGap, r: ReflowRange): AtomOrInsertOrGap = {
+      aig.fold(ai => ai.fold(_ => anAtom(r), _ => anInsert(r)), _ => aGap(r))
+    }
 
-  def setRange(aig: AtomOrInsertOrGap, r: ReflowRange): AtomOrInsertOrGap = {
-    aig.fold(ai => ai.fold(_ => anAtom(r), _ => anInsert(r)), _ => aGap(r))
+    def setRanges(aigs: List[AtomOrInsertOrGap], r: ReflowRange): List[AtomOrInsertOrGap] =
+      aigs.map(setRange(_, r))
+
+
+    def toReflowRange(aig: AtomOrInsertOrGap): ReflowRange = {
+      aig.fold(
+        ai => ai.fold(a => a, i => i),
+        g => g)
+    }
+
+    def toReflowRanges(as: List[AtomOrInsertOrGap]): List[ReflowRange] = as.map(toReflowRange(_))
+    def reduceRanges(as: List[ReflowRange]) = as.reduce(_ union _)
   }
 
-  def setRanges(aigs: List[AtomOrInsertOrGap], r: ReflowRange): List[AtomOrInsertOrGap] =
-    aigs.map(setRange(_, r))
-
-
-  def toReflowRange(aig: AtomOrInsertOrGap): ReflowRange = {
-    aig.fold(
-      ai => ai.fold(a => a, i => i),
-      g => g)
-  }
-
-  def toReflowRanges(as: List[AtomOrInsertOrGap]): List[ReflowRange] = as.map(toReflowRange(_))
-  def reduceRanges(as: List[ReflowRange]) = as.reduce(_ union _)
+  import helpers._
 
   def clipReflowToTargetRegion(textReflow: TextReflow, targetRegion: TargetRegion): Seq[(TextReflow, RangeInt)] = {
 
@@ -81,7 +83,7 @@ trait TextReflowClipping extends TextReflowBasics {
         // case Mask(mL, mR, aAttrS)     => ??? // Mask(mL, mR, a.get)
         case Flow(childAIGs)          => childAIGs.flatten
         case Labeled(labels, aigs)    => aigs
-        // case CachedText(aigs, text)   => aigs
+          // case CachedText(aigs, text)   => aigs
       }
     }
 
@@ -89,8 +91,6 @@ trait TextReflowClipping extends TextReflowBasics {
     val res: List[AtomOrInsertOrGap] =
       textReflow.annotateCharRanges
         .cata(retainAtoms)
-
-    // println("res: " + res.map(pp(_)).mkString(", "))
 
     def splitLoop(aigs: List[AtomOrInsertOrGap]): List[List[AtomOrInsertOrGap]] = {
       val start = aigs.dropWhile(isAGap)
@@ -103,7 +103,6 @@ trait TextReflowClipping extends TextReflowBasics {
     val nonGaps = splitLoop(res).filter(hasAnAtom)
 
     val clippedRanges = nonGaps.map({nonGap =>
-      // println("  no gaps:" + nonGap.toList.map(pp(_)).mkString(", "))
       val ranges = toReflowRanges(nonGap.toList)
       val aggRange = reduceRanges(ranges)
 
@@ -115,23 +114,32 @@ trait TextReflowClipping extends TextReflowBasics {
   }
 
 
-  def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = {
-    def render(t: TextReflowF[(TextReflow, Seq[TargetRegion])]): Seq[TargetRegion] = t match {
-      case Rewrite    ((from, attr), to)      => attr
-      case Bracket    (pre, post, (a, attr))  => attr
-      case Flow       (atomsAndattrs)         => atomsAndattrs.flatMap(_._2)
-      case Labeled    (labels, (a, attr))     =>
 
-        attr ++ (for {
-          l      <- labels if l == LB.VisualLine
-          value  <- l.value
-        } yield TargetRegion.fromUri(value))
+  def extractVisualLines(tr: TextReflow, label: Label): Seq[TextReflow] = {
+    import scalaz.std.list._
 
-      case _ => Seq()
+    def visit(t: TextReflowF[(TextReflow, List[TextReflow])]): List[TextReflow] = {
+      orBubbleUp[List[TextReflow]](t) {
+        case Labeled (labels, (a, attr)) =>
+          if (labels.exists(_ == label)) attr
+          else List()
+      }
     }
 
-    tr.cata(attributePara(render))
+    tr.cata(attributePara(visit))
       .toPair._1
   }
+
+  def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = for {
+    vline <- extractVisualLines(tr, LB.VisualLine)
+    tr    <- vline.unFix match {
+      case Labeled(labels, _) =>
+        for {
+          l      <- labels if l == LB.VisualLine
+          value  <- l.value
+        } yield TargetRegion.fromUri(value)
+      case _ => sys.error("no TargetRegion label found on VisualLine")
+    }
+  } yield tr
 
 }

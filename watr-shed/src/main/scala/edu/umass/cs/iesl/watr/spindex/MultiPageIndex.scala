@@ -298,19 +298,23 @@ class MultiPageIndex(docId: String@@DocumentID) {
 
 object MultiPageIndex {
 
-  def loadSpatialIndices(docId: String@@DocumentID, regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]): MultiPageIndex = {
+  def loadSpatialIndices(
+    docId: String@@DocumentID,
+    regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]
+  ): MultiPageIndex = {
 
-    val zindexer = new MultiPageIndex(docId)
+    val mpageIndex = new MultiPageIndex(docId)
+
     regionsAndGeometry.foreach { case(regions, geom)  =>
       println(s"adding page w/geometry ${geom}")
-      val pageIndex = zindexer.addPage(geom)
+      val pageIndex = mpageIndex.addPage(geom)
 
       regions.foreach {
-        case cb:CharAtom if !cb.isSpace => zindexer.addPageAtom(cb)
+        case cb:CharAtom if !cb.isSpace => mpageIndex.addPageAtom(cb)
         case cb:ImgAtom =>
       }
     }
-    zindexer
+    mpageIndex
   }
 
 }

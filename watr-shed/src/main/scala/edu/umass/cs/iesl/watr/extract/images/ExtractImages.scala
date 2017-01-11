@@ -2,16 +2,8 @@ package edu.umass.cs.iesl.watr
 package extract
 package images //;import acyclic.file
 
-// import geometry._
-// import corpora._
 
 import com.sksamuel.scrimage._
-
-// case class PageImage(
-//   imageArtifact: CorpusArtifact,
-//   pageGeometry: PageGeometry,
-//   clipped: Option[(LTBounds, Image)]
-// )
 
 case class PageImages(
   images: Seq[Image]
