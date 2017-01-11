@@ -5,7 +5,7 @@ package images //;import acyclic.file
 import com.sksamuel.scrimage._
 import geometry._
 
-import EnrichGeometricFigures._
+import GeometryImplicits._
 import ammonite.{ops => fs}
 import fs._
 

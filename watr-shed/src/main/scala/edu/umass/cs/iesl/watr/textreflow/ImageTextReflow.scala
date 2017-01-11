@@ -29,4 +29,23 @@ trait ImageTextReflow extends PlainTextReflow {
     }
     canvas1.image
   }
+
+  import PageComponentImplicits._
+
+  def textReflowToImage(pageReflow: TextReflow): Image = {
+    val vlines =  pageReflow.sliceLabels(LB.VisualLine)
+
+    // total page target region
+    val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) =
+      pageReflow.targetRegions.reduce(_ union _)
+
+    val blank = Image.filled((w*10).toInt, (h*10).toInt, X11Colorlist.White)
+    val canvas = new Canvas(blank)
+    for ((vline, n) <- vlines.zipWithIndex) yield {
+      val ltext = vline.toText()
+      canvas.draw(Drawable(ltext, 0, 10*n*yscale.toInt))
+    }
+
+    canvas.image.scale(0.10, ScaleMethod.FastScale)
+  }
 }

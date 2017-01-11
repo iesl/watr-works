@@ -6,7 +6,7 @@ import scalaz.syntax.equal._
 
 import watrmarks._
 
-import EnrichGeometricFigures._
+import GeometryImplicits._
 
 case class TargetRegion(
   id: Int@@RegionID,
@@ -15,7 +15,7 @@ case class TargetRegion(
   bbox: LTBounds
 ) {
   lazy val uri = {
-    import ComponentTypeEnrichments._
+    import PageComponentImplicits._
     this.uriString
   }
   override def toString = s"""<${uri}>"""
@@ -122,8 +122,7 @@ case class FontClass(
 )
 
 
-object ComponentTypeEnrichments {
-
+object PageComponentImplicits {
 
   implicit class RicherZone(val zone: Zone) extends AnyVal {
 

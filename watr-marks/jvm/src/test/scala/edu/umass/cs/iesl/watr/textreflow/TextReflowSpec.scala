@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package textreflow
 
 import org.scalatest._
-// import geometry.EnrichGeometricFigures._
+// import geometry.GeometryImplicits._
 import utils.ScalazTreeImplicits._
 
 import scalaz._
@@ -34,14 +34,17 @@ class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
 
   behavior of "modifying chars"
 
+  def stringToReflow(s: String): TextReflow =
+    stringToTextReflow(s)(DocumentID("d0"), PageID(0))
+
   it should "mod single char" in {
     val pageText = (
       """|a q1
          |e ^{ﬂ}
          |""".stripMargin)
     val pageLines = lines(pageText)
-    val reflowLines = lines(pageText).map(stringToTextReflow(_))
-    val reflowPage = stringToTextReflow(pageText)
+    val reflowLines = lines(pageText).map(stringToReflow(_))
+    val reflowPage = stringToReflow(pageText)
     val reflowPageText = reflowPage.toText
 
     annotateAndPrint(reflowPage)

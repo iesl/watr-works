@@ -9,7 +9,7 @@ import scala.collection.mutable
 //import TypeTags._
 import geometry._
 
-import EnrichGeometricFigures._
+import GeometryImplicits._
 
 
 trait SpatialIndexable[T] {

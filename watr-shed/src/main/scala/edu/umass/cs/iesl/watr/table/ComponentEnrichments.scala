@@ -7,7 +7,7 @@ import geometry._
 import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import TextReflowConversion._
 import TB._
-import ComponentTypeEnrichments._
+import PageComponentImplicits._
 
 trait ComponentEnrichments extends JargonDictionaries {
 

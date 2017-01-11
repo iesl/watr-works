@@ -8,7 +8,7 @@ sealed trait GeometricFigure
 
 sealed trait Area
 
-import EnrichGeometricFigures._
+import GeometryImplicits._
 
 case class LTBounds(
   left: Double,
@@ -43,7 +43,7 @@ case class Line(
 
 object GeometricFigure {
 
-  import EnrichGeometricFigures._
+  import GeometryImplicits._
 
   implicit def EqualGeometricFigure
       : Equal[GeometricFigure] =
@@ -63,7 +63,7 @@ object GeometricFigure {
 }
 
 
-object EnrichGeometricFigures {
+object GeometryImplicits {
   import utils.EnrichNumerics._
   import utils.CompassDirection
 

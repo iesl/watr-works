@@ -6,7 +6,7 @@ import scala.collection.mutable
 import geometry._
 import watrmarks._
 
-import ComponentTypeEnrichments._
+import PageComponentImplicits._
 import utils.IdGenerator
 
 import tracing.VisualTracer

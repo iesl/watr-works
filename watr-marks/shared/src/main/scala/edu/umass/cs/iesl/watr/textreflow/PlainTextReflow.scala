@@ -11,8 +11,8 @@ trait PlainTextReflow {
   import java.net.URI
   import geometry._
 
-  import EnrichGeometricFigures._
-  import ComponentTypeEnrichments._
+  import GeometryImplicits._
+  import PageComponentImplicits._
   import TextReflowF._
 
   def dummyUri = URI.create("/")
@@ -57,8 +57,29 @@ trait PlainTextReflow {
     )
   }
 
+  def textReflowsToAtoms(
+    docId: String@@DocumentID, pages: Seq[TextReflow]
+  ): Seq[(Seq[PageAtom], PageGeometry)] = for {
+    page <- pages
+  } yield {
+    val TargetRegion(id, docId, pageId, bbox@ LTBounds(l, t, w, h) ) =
+      page.targetRegions.reduce(_ union _)
 
-  def stringToTextReflow(multiLines: String): TextReflow = {
+    (page.charAtoms(), PageGeometry(pageId, bbox))
+  }
+
+  def stringsToTextReflows(docId: String@@DocumentID, pages:Seq[String]): Seq[TextReflow] = {
+    for {
+      (page, n) <- pages.zipWithIndex
+    } yield {
+      stringToTextReflow(page)(docId, PageID(n))
+    }
+  }
+
+  def stringToTextReflow(multiLines: String)(
+    docId: String@@DocumentID,
+    pageId: Int@@PageID
+  ): TextReflow = {
     val isMultiline = multiLines.contains("\n")
 
     var tloc = if (isMultiline) {
@@ -76,8 +97,8 @@ trait PlainTextReflow {
 
     import scala.collection.mutable
 
-    var docId = DocumentID("doc-0")
-    var pageId = PageID(0)
+    // var docId = DocumentID("doc-0")
+    // var pageId = PageID(0)
     var linenum:Int = 0
     var chnum = 0
     var lineCharAtoms = mutable.ArrayBuffer[CharAtom]()

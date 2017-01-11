@@ -10,7 +10,7 @@ import matryoshka.scalacheck.arbitrary._
 
 import geometry._
 
-import ComponentTypeEnrichments._
+import PageComponentImplicits._
 import TextReflowJsonCodecs._
 
 import TextReflowF._

@@ -41,7 +41,7 @@ class Smokescreen extends FlatSpec with Matchers {
     """.update
 
   it should "drop/recreate table" in {
-    (drop.quick *> create.quick).unsafePerformSync
+    (drop.quick *> create.quick *> drop.quick).unsafePerformSync
   }
 
   behavior of "binary BYTEA (byte array) type"

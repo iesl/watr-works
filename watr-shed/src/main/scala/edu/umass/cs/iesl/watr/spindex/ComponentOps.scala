@@ -14,7 +14,7 @@ import TextReflowConversion._
 
 import geometry._
 
-import EnrichGeometricFigures._
+import GeometryImplicits._
 // import TraceLog // , TraceLog._
 
 object ComponentOperations {

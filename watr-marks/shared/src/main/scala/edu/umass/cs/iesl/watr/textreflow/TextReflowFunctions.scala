@@ -267,19 +267,20 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
     def slice(begin: Int, until:Int): Option[TextReflow] =
       sliceTextReflow(theReflow, begin, until)
 
-    def lines: Seq[TextReflow] = ???
+    def sliceLabels(l: Label): Seq[TextReflow] = {
+      labeledSlices(theReflow, l)
+    }
+
+    def charAtoms(): Seq[CharAtom] = theReflow.cata(
+      (t:TextReflowF[List[CharAtom]]) => {
+        orBubbleAttr[List[CharAtom]](t) {
+          case Atom(ac) => List(ac)
+        }
+      }
+    )
 
     def targetRegions(): Seq[TargetRegion] = {
-      def regions(t: TextReflowF[Seq[TargetRegion]]): Seq[TargetRegion] = t match {
-        case Atom    (ac)         => Seq(ac.asInstanceOf[CharAtom].targetRegion)
-        case Insert  (value)           => Seq()
-        case Rewrite (attr, to)        => attr
-        case Bracket (pre, post, attr) => attr
-        case Flow    (asAndattrs)      => asAndattrs.flatten
-        case Labeled (labels, attr)    => attr
-      }
-
-      theReflow.cata(regions)
+      charAtoms().map(_.targetRegion)
     }
 
     def visualLinesRegions(): Seq[TargetRegion] = {

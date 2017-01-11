@@ -8,7 +8,7 @@ import scala.scalajs.js.annotation.JSExport
 import textreflow._
 import geometry._
 
-import ComponentTypeEnrichments._
+import PageComponentImplicits._
 
 import native.fabric
 import native.fabric._
@@ -27,7 +27,7 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   def example1(): TextReflow = {
     stringToTextReflow("""|To be or not to be,
                           |That is the question.
-                          |""".stripMargin)
+                          |""".stripMargin)(DocumentID("d0"), PageID(0)
   }
 
 

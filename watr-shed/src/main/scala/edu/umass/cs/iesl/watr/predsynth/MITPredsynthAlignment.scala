@@ -9,7 +9,7 @@ import scala.collection.mutable
 import utils.SlicingAndDicing._
 
 import geometry._
-import EnrichGeometricFigures._
+import GeometryImplicits._
 
 
 object MITAlignPredsynth {

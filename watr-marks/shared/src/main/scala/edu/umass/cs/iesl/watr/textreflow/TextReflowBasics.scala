@@ -32,7 +32,7 @@ trait TextReflowBasics extends StructuredRecursion {
     }
   }
 
-  def orBubbleUp[A: Monoid](
+  def orBubblePara[A: Monoid](
     v: TextReflowF[(TextReflow, A)]
   )(
     pf: PartialFunction[TextReflowF[(TextReflow, A)], A]
@@ -43,6 +43,22 @@ trait TextReflowBasics extends StructuredRecursion {
     cf.apply(v)
   }
 
+  def orBubbleAttr[A: Monoid](v: TextReflowF[A])(
+    ffa: PartialFunction[TextReflowF[A], A]
+  ): A = {
+    val A: Monoid[A] = implicitly[Monoid[A]]
+    val cf: PartialFunction[TextReflowF[A], A] =
+      ffa.orElse(_ match {
+        case Atom    (ac)              => A.zero
+        case Insert  (value)           => A.zero
+        case Rewrite (attr, to)        => attr
+        case Bracket (pre, post, attr) => attr
+        case Labeled (labels, attr)    => attr
+        case Flow    (attrs)           => attrs.foldLeft(A.zero)(A.append(_, _))
+      })
+
+    cf.apply(v)
+  }
   def countChars: GAlgebra[(TextReflow, ?), TextReflowF, Int] = _ match {
     case Atom(c)                        =>  c.char.length
     case Insert(value)                  =>  value.length

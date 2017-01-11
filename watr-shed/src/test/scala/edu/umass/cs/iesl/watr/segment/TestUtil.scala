@@ -5,7 +5,7 @@ import org.scalatest._
 
 import geometry._
 
-import EnrichGeometricFigures._
+import GeometryImplicits._
 import ammonite.{ops => fs}
 import java.net.URL
 

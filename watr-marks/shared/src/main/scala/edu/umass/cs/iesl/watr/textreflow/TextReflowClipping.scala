@@ -16,7 +16,7 @@ import watrmarks.Label
 
 trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._
-  import ComponentTypeEnrichments._
+  import PageComponentImplicits._
 
   type ReflowRange = RangeInt
   type AtomOrInsertOrGap  = (ReflowRange \/ ReflowRange) \/ ReflowRange
@@ -114,16 +114,15 @@ trait TextReflowClipping extends TextReflowBasics {
   }
 
 
-
-  def extractVisualLines(tr: TextReflow, label: Label): Seq[TextReflow] = {
+  def labeledSlices(tr: TextReflow, label: Label): Seq[TextReflow] = {
     import scalaz.std.list._
 
-    def visit(t: TextReflowF[(TextReflow, List[TextReflow])]): List[TextReflow] = {
-      orBubbleUp[List[TextReflow]](t) {
-        case Labeled (labels, (a, attr)) =>
-          if (labels.exists(_ == label)) attr
-          else List()
-      }
+    def visit(
+      t: TextReflowF[(TextReflow, List[TextReflow])]
+    ): List[TextReflow] = orBubblePara[List[TextReflow]](t) {
+      case l @ Labeled (labels, (a, attr))
+          if (labels.exists(_ == label)) =>
+        labeled(labels, a) :: attr
     }
 
     tr.cata(attributePara(visit))
@@ -131,15 +130,19 @@ trait TextReflowClipping extends TextReflowBasics {
   }
 
   def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = for {
-    vline <- extractVisualLines(tr, LB.VisualLine)
-    tr    <- vline.unFix match {
-      case Labeled(labels, _) =>
-        for {
-          l      <- labels if l == LB.VisualLine
-          value  <- l.value
-        } yield TargetRegion.fromUri(value)
-      case _ => sys.error("no TargetRegion label found on VisualLine")
-    }
+    vline <- labeledSlices(tr, LB.VisualLine)
+    tr    <- extractVisualLineTargetRegion(vline)
   } yield tr
 
+  def extractVisualLineTargetRegion(vline: TextReflow): Option[TargetRegion] = {
+    vline.unFix match {
+      case Labeled(labels, _) if labels.contains(LB.VisualLine) =>
+        labels
+          .filter(_ == LB.VisualLine)
+          .head.value
+          .map(TargetRegion.fromUri(_))
+
+      case _ => None
+    }
+  }
 }

@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package textreflow //;import acyclic.file
 
 import doobie.imports._
+import doobie.enum.sqlstate.SqlState
 
 import scalaz.concurrent.Task
 import scalaz.syntax.applicative._
@@ -24,6 +25,9 @@ class TextReflowDB(
     addMultiPageIndex(documentSegmentation)
   }
 
+  def putStrLn(s: => String): ConnectionIO[Unit] =
+    FC.delay(println(s))
+
   def addMultiPageIndex(ds: DocumentSegmentation): Unit = {
     val mpageIndex = ds.mpageIndex
     val docId = mpageIndex.getDocumentID()
@@ -32,8 +36,11 @@ class TextReflowDB(
       pageId <- mpageIndex.getPages // .zip(ds.pageImages)
     } {
       val query = for {
-        docPrKey <- upsertDocumentID(docId)
+        _         <- putStrLn("...upserting")
+        docPrKey  <- upsertDocumentID(docId)
+        _         <- putStrLn("upserted!")
         pagePrKey <- insertPageIndex(docPrKey, mpageIndex.getPageIndex(pageId), ds.pageImages.page(pageId))
+        _         <- putStrLn("insertPageIndex")
       } yield ()
 
       query
@@ -60,9 +67,31 @@ class TextReflowDB(
 
   }
 
+  val FOREIGN_KEY_VIOLATION = SqlState("23503")
+  val UNIQUE_VIOLATION = SqlState("23505")
+
   def upsertDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
-    sql"insert into document (stable_id) values (${docId.unwrap})"
-      .update.withUniqueGeneratedKeys("id")
+
+    sql"select id from document where stable_id=${docId.unwrap}"
+      .query[Int].option
+      .flatMap({
+        case Some(pk) => FC.delay(pk)
+        case None =>
+          sql"insert into document (stable_id) values (${docId.unwrap})"
+            .update.withUniqueGeneratedKeys[Int]("id")
+      })
+    // sql"insert into document (stable_id) values (${docId.unwrap})"
+    //   .update.withUniqueGeneratedKeys[Int]("id")
+    // .exceptSqlState( {
+    //   case UNIQUE_VIOLATION =>
+    //   case other =>
+    //     println(s"got some other key ${other}")
+    //     sql"select 0".query[Int].unique
+    // })
+    // .attemptSome( {
+    //   case e: java.sql.SQLException  =>
+    //     sql"select id from document where stable_id=${docId.unwrap}".query[Int].unique
+    // })
   }
 
 
@@ -189,7 +218,7 @@ class TextReflowDBTables(
   val createDocumentTable: Update0 = sql"""
       CREATE TABLE document (
         id            SERIAL PRIMARY KEY,
-        stable_id     VARCHAR(128)
+        stable_id     VARCHAR(128) UNIQUE
       );
       CREATE INDEX document_stable_id ON document USING hash (stable_id);
     """.update

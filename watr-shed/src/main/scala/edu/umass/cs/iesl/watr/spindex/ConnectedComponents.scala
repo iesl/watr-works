@@ -5,7 +5,7 @@ import watrmarks._
 
 import geometry._
 
-import EnrichGeometricFigures._
+import GeometryImplicits._
 
 import scalaz.Tree
 import scala.collection.mutable

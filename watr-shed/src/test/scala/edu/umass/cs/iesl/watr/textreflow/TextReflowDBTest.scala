@@ -7,6 +7,9 @@ import spindex._
 import segment.DocumentSegmentation
 import extract.images.PageImages
 
+// import geometry._
+// import PageComponentImplicits._
+
 class FreshTextReflowDBTables(xa: Transactor[Task]) {
   val tables = new TextReflowDBTables(xa)
   tables.dropAndCreate.unsafePerformSync
@@ -44,12 +47,17 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
          |
          |""".stripMargin)
 
-    val tr0 = stringToTextReflow(page0)
-    // tr0
-    // construct a page index from this text reflow
-
     val docId = DocumentID("doc-0")
-    val (mpageIndex, images) = createMultiPageIndexWithImages(docId, page0, page1)
+
+    val pages = stringsToTextReflows(docId, List(page0, page1))
+
+    val atomsAndGeometry = textReflowsToAtoms(docId, pages)
+    val images = pages.map(textReflowToImage(_))
+
+    val mpageIndex = MultiPageIndex.loadSpatialIndices(
+      docId, atomsAndGeometry
+    )
+
     val ds = DocumentSegmentation(
       mpageIndex, PageImages(images)
     )

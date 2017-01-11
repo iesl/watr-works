@@ -12,7 +12,7 @@ import spindex._
 // //import TypeTags._
 // import scala.collection.JavaConversions._
 // import textboxing.{TextBoxing => TB}, TB._
-// import EnrichGeometricFigures._
+// import GeometryImplicits._
 // import ComponentOperations._
 
 // import utils._

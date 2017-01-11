@@ -12,10 +12,10 @@ import TB._
 
 import geometry._
 
-import EnrichGeometricFigures._
+import GeometryImplicits._
 
 import ComponentOperations._
-import ComponentTypeEnrichments._
+import PageComponentImplicits._
 
 import utils.{CompassDirection => CDir, _}
 import tracing.VisualTracer._
