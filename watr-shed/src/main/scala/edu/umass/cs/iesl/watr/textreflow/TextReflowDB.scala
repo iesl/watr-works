@@ -2,9 +2,6 @@ package edu.umass.cs.iesl.watr
 package textreflow //;import acyclic.file
 
 import doobie.imports._
-import doobie.enum.sqlstate.SqlState
-
-import scalaz.concurrent.Task
 import scalaz.syntax.applicative._
 
 import geometry._
@@ -13,48 +10,75 @@ import segment._
 
 import com.sksamuel.scrimage._
 import shapeless._
+import databasics._
 
+import scalaz.std.list._
+import scalaz.syntax.traverse._
+
+
+// import java.io.PrintWriter
+// import doobie.free.{ drivermanager => DM }
 
 class TextReflowDB(
   val tables: TextReflowDBTables
-) {
+) extends DoobiePredef {
 
   lazy val xa = tables.xa
 
-  def addSegmentation(documentSegmentation: DocumentSegmentation): Unit = {
-    addMultiPageIndex(documentSegmentation)
-  }
+  def addSegmentation(ds: DocumentSegmentation): Unit = {
 
-  def putStrLn(s: => String): ConnectionIO[Unit] =
-    FC.delay(println(s))
+    // val pw = new PrintWriter(System.out)
+    // _         <- HC.delay{ DM.setLogWriter(pw)}
 
-  def addMultiPageIndex(ds: DocumentSegmentation): Unit = {
     val mpageIndex = ds.mpageIndex
     val docId = mpageIndex.getDocumentID()
 
+    val query = for {
+      _         <- putStrLn("Starting ...")
+      docPrKey  <- getOrInsertDocumentID(docId)
+      _         <- putStrLn("insert multi pages...")
+      _         <- insertMultiPageIndex(docId, mpageIndex)
+    } yield docPrKey
+
+    val docPrKey = query.transact(xa).unsafePerformSync
+
     for {
-      pageId <- mpageIndex.getPages // .zip(ds.pageImages)
+      pageId <- mpageIndex.getPages
     } {
-      val query = for {
-        _         <- putStrLn("...upserting")
-        docPrKey  <- upsertDocumentID(docId)
-        _         <- putStrLn("upserted!")
+      val q2 = for {
+        _         <- putStrLn(s"insert page ${pageId}")
         pagePrKey <- insertPageIndex(docPrKey, mpageIndex.getPageIndex(pageId), ds.pageImages.page(pageId))
-        _         <- putStrLn("insertPageIndex")
       } yield ()
 
-      query
-        .transact(xa)
-        .unsafePerformSync
+      q2.transact(xa).unsafePerformSync
     }
+
   }
 
-  def dtoi(d: Double): Int = (d*100.0).toInt
-  def itod(i: Int): Double = (i.toDouble)/100.0
+  def insertMultiPageIndex(docId: String@@DocumentID, mpageIndex: MultiPageIndex): ConnectionIO[List[Unit]] = {
+    // To start, just create entries for all Component/Zones labelled VisualLine
 
-  // import doobie.util.composite._
+    val query: ConnectionIO[List[Unit]] = (for {
+      vline <-  mpageIndex.getDocumentVisualLines.flatten.toList
+      maybeReflow = mpageIndex.getTextReflowForComponent(vline.id)
+      vlineZoneId = mpageIndex.getZoneForComponent(vline.id).get
+    } yield for {
+      _ <- putStrLn(s"Inserting zone for line ${vline.id}")
+      _ <- insertZone(docId, vlineZoneId)
+    } yield ()).sequenceU
+
+    query
+  }
+
+  def insertZone(docId: String@@DocumentID, zoneId: Int@@ZoneID): ConnectionIO[Int] = {
+
+    sql"""
+       insert into zone (zoneid, document)
+       values (${zoneId}, (select id from document where stable_id='${docId}'))
+    """.update.withUniqueGeneratedKeys[Int]("id")
+  }
+
   def insertPageIndex(docPrKey: Int, pageIndex: PageIndex, pageImage: Image): ConnectionIO[Int] = {
-
     println(s"adding page w/image dims ${pageImage.dimensions} ")
 
     val PageGeometry(pageId, LTBounds(l, t, w, h)) = pageIndex.pageGeometry
@@ -62,36 +86,26 @@ class TextReflowDB(
 
     sql"""
       insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
-      values (${docPrKey}, ${pageId.unwrap}, ${pageImage.bytes}, $bl, $bt, $bw, $bh)
+      values (${docPrKey}, ${pageId}, ${pageImage.bytes}, $bl, $bt, $bw, $bh)
     """.update.withUniqueGeneratedKeys("id")
 
   }
 
-  val FOREIGN_KEY_VIOLATION = SqlState("23503")
-  val UNIQUE_VIOLATION = SqlState("23505")
 
-  def upsertDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
+  def insertDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
+    sql"""
+       insert into document (stable_id)
+       values (${docId})
+    """.update.withUniqueGeneratedKeys[Int]("id")
+  }
 
-    sql"select id from document where stable_id=${docId.unwrap}"
+  def getOrInsertDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
+    sql"select id from document where stable_id=${docId}"
       .query[Int].option
       .flatMap({
         case Some(pk) => FC.delay(pk)
-        case None =>
-          sql"insert into document (stable_id) values (${docId.unwrap})"
-            .update.withUniqueGeneratedKeys[Int]("id")
+        case None => insertDocumentID(docId)
       })
-    // sql"insert into document (stable_id) values (${docId.unwrap})"
-    //   .update.withUniqueGeneratedKeys[Int]("id")
-    // .exceptSqlState( {
-    //   case UNIQUE_VIOLATION =>
-    //   case other =>
-    //     println(s"got some other key ${other}")
-    //     sql"select 0".query[Int].unique
-    // })
-    // .attemptSome( {
-    //   case e: java.sql.SQLException  =>
-    //     sql"select id from document where stable_id=${docId.unwrap}".query[Int].unique
-    // })
   }
 
 
@@ -99,7 +113,7 @@ class TextReflowDB(
     val query = sql"""
        select bleft, btop, bwidth, bheight from page p join document d
        using p.document
-       where d.stable_id = ${docId.unwrap} AND p.pagenum = ${pageId.unwrap}
+       where d.stable_id = ${docId} AND p.pagenum = ${pageId}
     """.query[Int :: Int :: Int :: Int :: HNil]
       .unique
       .map({case l :: t :: w :: h :: HNil =>
@@ -116,7 +130,7 @@ class TextReflowDB(
     val query = sql"""
        select pageimg, bleft, btop, bwidth, bheight from page p join document d
        using p.document
-       where d.stable_id = ${docId.unwrap} AND p.pagenum = ${pageId.unwrap}
+       where d.stable_id = ${docId} AND p.pagenum = ${pageId}
     """.query[Array[Byte]]
       .unique
       .map({case bytes => Image(bytes)})
@@ -139,6 +153,17 @@ class TextReflowDB(
     query
   }
 
+  def insertTargetRegion(targetRegion: TargetRegion): ConnectionIO[Int] = {
+    val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) = targetRegion
+    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+    val trUri = targetRegion.uri
+
+    sql"""
+       insert into targetregion (document, page, bleft, btop, bwidth, bheight)
+       values (${docId}, ${pageId}, $bl, $bt, $bw, $bh)
+    """.update.withUniqueGeneratedKeys[Int]("id")
+  }
+
   def insertTargetRegionImage(targetRegion: TargetRegion, image: Image): ConnectionIO[Unit] = {
     val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) = targetRegion
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
@@ -148,7 +173,7 @@ class TextReflowDB(
     val query = for {
       trPrKey <- sql"""
               insert into targetregion (document, page, bleft, btop, bwidth, bheight)
-              values (${docId.unwrap}, ${pageId.unwrap}, $bl, $bt, $bw, $bh)
+              values (${docId}, ${pageId}, $bl, $bt, $bw, $bh)
               """.update.withUniqueGeneratedKeys[Int]("id")
 
       _ <- (sql"""
@@ -190,7 +215,7 @@ class TextReflowDB(
 
   }
   // val imagesOpt = for {
-  //   entry <- corpus.entry(docId.unwrap)
+  //   entry <- corpus.entry(docId)
   //   group <- entry.getArtifactGroup("page-images")
   // } yield {
   //   val image = ExtractImages.load(group.rootPath)
@@ -206,95 +231,5 @@ class TextReflowDB(
 
   None
 
-
-}
-
-
-class TextReflowDBTables(
-  val xa: Transactor[Task]
-) {
-  import xa.yolo._
-
-  val createDocumentTable: Update0 = sql"""
-      CREATE TABLE document (
-        id            SERIAL PRIMARY KEY,
-        stable_id     VARCHAR(128) UNIQUE
-      );
-      CREATE INDEX document_stable_id ON document USING hash (stable_id);
-    """.update
-
-  val createPageTable: Update0 = sql"""
-      CREATE TABLE page (
-        id          SERIAL PRIMARY KEY,
-        document    INTEGER REFERENCES document,
-        pagenum     SMALLINT,
-        pageimg     BYTEA,
-        bleft       INTEGER,
-        btop        INTEGER,
-        bwidth      INTEGER,
-        bheight     INTEGER
-      );
-    """.update
-
-  val createTargetRegion: Update0 = sql"""
-      CREATE TABLE targetregion (
-        id          SERIAL PRIMARY KEY,
-        document    INTEGER REFERENCES document,
-        page        INTEGER REFERENCES page,
-        bleft       INTEGER,
-        btop        INTEGER,
-        bwidth      INTEGER,
-        bheight     INTEGER,
-        uri         VARCHAR(256) UNIQUE
-      );
-      CREATE INDEX targetregion_uri ON targetregion USING hash (uri);
-    """.update
-
-  val createLabelTable: Update0 = sql"""
-      CREATE TABLE label (
-        id             SERIAL PRIMARY KEY,
-        ns             VARCHAR(8),
-        key            VARCHAR(20),
-        value          VARCHAR(256)
-      );
-    """.update
-
-  val createTextReflowTable: Update0 = sql"""
-      CREATE TABLE textreflow (
-        id            SERIAL PRIMARY KEY,
-        reflow        JSON,
-        targetregion  INTEGER REFERENCES targetregion
-      )
-    """.update
-
-
-  val createTargetRegionImageTable: Update0 = sql"""
-      CREATE TABLE targetregion_image (
-        id            SERIAL PRIMARY KEY,
-        image         BYTEA,
-        targetregion  INTEGER REFERENCES targetregion
-      )
-    """.update
-
-  def createAll = {
-    (createDocumentTable.quick
-       *> createPageTable.quick
-       *> createTargetRegion.quick
-       *> createTextReflowTable.quick
-       *> createLabelTable.quick
-       *> createTargetRegionImageTable.quick)
-  }
-  val dropAll: Update0 = sql"""
-    DROP TABLE IF EXISTS targetregion_image;
-    DROP TABLE IF EXISTS textreflow;
-    DROP TABLE IF EXISTS label;
-    DROP TABLE IF EXISTS targetregion;
-    DROP TABLE IF EXISTS page;
-    DROP TABLE IF EXISTS document;
-  """.update
-
-  def dropAndCreate = {
-    (dropAll.quick *> createAll)
-  }
 
 }

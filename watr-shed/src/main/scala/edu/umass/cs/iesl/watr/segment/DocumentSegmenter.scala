@@ -666,17 +666,20 @@ class DocumentSegmenter(
     }
   }
 
-  def visualLineOnPageComponents: Seq[Seq[Component]] = for {
-    pageId <- mpageIndex.getPages
-  } yield {
-    val page = mpageIndex.getPageIndex(pageId)
-    val pageLiness = page.getComponentsWithLabel(LB.PageLines)
-    assert(pageLiness.length==1)
-    val pageLines = pageLiness.head
-    val lls = pageLines.getChildren(LB.VisualLine)
+  def visualLineOnPageComponents: Seq[Seq[Component]] = 
+    mpageIndex
+      .getDocumentVisualLines
+      .map(_.sortBy(_.bounds.top))
 
-    lls.sortBy { _.bounds.top }
-  }
+  // } yield {
+  //   val page = mpageIndex.getPageIndex(pageId)
+  //   val pageLiness = page.getComponentsWithLabel(LB.PageLines)
+  //   assert(pageLiness.length==1)
+  //   val pageLines = pageLiness.head
+  //   val lls = pageLines.getChildren(LB.VisualLine)
+
+  //   lls.sortBy { _.bounds.top }
+  // }
 
 
   def focalJump(c1: Component, c2: Component): Double = {

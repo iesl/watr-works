@@ -54,7 +54,7 @@ case class TargetFigure(
 case class Zone(
   id: Int@@ZoneID,
   regions: Seq[TargetRegion],
-  label: Label
+  labels: Seq[Label]
 )
 
 case class PageGeometry(

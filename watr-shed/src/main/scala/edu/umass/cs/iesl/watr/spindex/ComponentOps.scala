@@ -591,7 +591,7 @@ object ComponentOperations {
     }
 
     def getTextReflow(): Option[TextReflow]= {
-      theComponent.mpageIndex.getTextReflow(theComponent.id)
+      theComponent.mpageIndex.getTextReflowForComponent(theComponent.id)
     }
   } // RicherComponent
 }

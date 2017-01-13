@@ -118,7 +118,8 @@ object MITAlignPredsynth {
               }
 
               val annRegions = annotationRegions.flatten.map{_.targetRegion}
-              val newZone = Zone(ZoneID(0), annRegions,ann)
+              val newZone = Zone(ZoneID(0), annRegions, List(ann))
+
               val zAdded = mpageIndex.addZone(newZone)
 
               // HACK: make zoneId==mentionId TODO document why

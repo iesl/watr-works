@@ -103,9 +103,6 @@ object ShellCommands extends CorpusEnrichments {
       theDB.tables.dropAndCreate.unsafePerformSync
     }
 
-    def addSementation(ds: DocumentSegmentation): Unit = {
-      theDB.addSegmentation(ds)
-    }
   }
 
   implicit class RicherCorpusEntry(val theCorpusEntry: CorpusEntry) extends AnyVal {

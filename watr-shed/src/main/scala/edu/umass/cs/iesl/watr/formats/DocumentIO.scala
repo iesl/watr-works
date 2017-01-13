@@ -168,8 +168,7 @@ object DocumentIO extends DocsegJsonFormats {
             s"""[${l}, ${r.min}, ${r.len}]"""
           }).mkString(",")
 
-        val zoneLabel = zone.label.value.get
-        val pad1 = " "*(20-zoneLabel.length)
+        val zoneLabels = zone.labels.map(l => '"'.toString + l.toString + '"').mkString(", ")
         val mentionId = zone.id.unwrap
 
         val clustId = mpageIndex.relations.collect({
@@ -181,7 +180,7 @@ object DocumentIO extends DocsegJsonFormats {
         val pad3 = " "*(3 - mentionId.toString.length)
         val pad4 = " "*(3 - clustId.toString.length)
 
-        val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 "${zoneLabel}",${pad1} "${zoneText}", [${zoneTargets}]]""".box
+        val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 [$zoneLabels], "${zoneText}", [${zoneTargets}]]""".box
 
         (mentionId, clustId, mentionStr)
       })

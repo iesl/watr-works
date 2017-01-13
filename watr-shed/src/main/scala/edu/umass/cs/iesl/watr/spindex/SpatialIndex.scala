@@ -6,9 +6,7 @@ import net.sf.jsi.rtree.RTree
 
 import scala.collection.mutable
 
-//import TypeTags._
 import geometry._
-
 import GeometryImplicits._
 
 

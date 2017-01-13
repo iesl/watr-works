@@ -84,11 +84,20 @@ trait PlainTextReflow {
 
     var tloc = if (isMultiline) {
       val t: Tree[TextReflowF[Int]] =
-        Tree.Node(Flow(List()),
-          Stream(
-            Tree.Node(Labeled(Set(LB.VisualLine), 0),
-              Stream(Tree.Leaf(Flow(List()))))))
-      t.loc.lastChild.get.lastChild.get
+        Tree.Node(Labeled(Set(LB.PageLines), 0), Stream(
+          Tree.Node(Flow(List()), Stream(
+            Tree.Node(Labeled(Set(LB.VisualLine), 0), Stream(
+              Tree.Leaf(Flow(List()))
+            ))
+          ))
+        ))
+      // val tx: Tree[TextReflowF[Int]] =
+      //   Tree.Node(Flow(List()),
+      //     Stream(
+      //       Tree.Node(Labeled(Set(LB.VisualLine), 0),
+      //         Stream(Tree.Leaf(Flow(List()))))))
+
+      t.loc.lastChild.get.lastChild.get.lastChild.get
     } else {
       val t: Tree[TextReflowF[Int]] =
         Tree.Leaf(Flow(List()))

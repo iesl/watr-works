@@ -75,31 +75,52 @@ class MultiPageIndex(docId: String@@DocumentID) {
 
   // Zone-related
   val zoneIdGen = IdGenerator[ZoneID]()
-  val labelToZones: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ZoneID]] = mutable.HashMap()
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
+  val labelToZones: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ZoneID]] = mutable.HashMap()
+  val zoneToTextReflow: mutable.HashMap[Int@@ZoneID, TextReflow] = mutable.HashMap()
 
-  val componentToTextReflow: mutable.HashMap[Int@@ComponentID, TextReflow] = mutable.HashMap()
+  // FIXME: remove this kludge
+  //   map component to zone when there is a 1-to-1 correspondence and a TextReflow for the Zone involved
+  val componentIdToZoneId: mutable.HashMap[Int@@ComponentID, Int@@ZoneID] = mutable.HashMap()
 
-  def setTextReflow(cc: Component, r: TextReflow): Unit = {
-    componentToTextReflow.put(cc.id, r)
+  def getZoneForComponent(cc: Int@@ComponentID): Option[Int@@ZoneID] = {
+    componentIdToZoneId.get(cc)
   }
 
-  def getTextReflow(cc: Int@@ComponentID): Option[TextReflow] = {
-    componentToTextReflow.get(cc)
+  def setTextReflow(cc: Component, r: TextReflow): Zone = {
+    val zone = addZone(
+      Zone(ZoneID(0), List(cc.targetRegion), List(cc.roleLabel))
+    )
+    zoneToTextReflow.put(zone.id, r)
+    componentIdToZoneId.put(cc.id, zone.id)
+    zone
   }
+
+  // TODO: fix this to make TextReflow assoc with Zones, not Components
+  def getTextReflowForComponent(ccId: Int@@ComponentID): Option[TextReflow] = {
+    // kludge: find a zone that has this Component as it's sole member and return its TextReflow
+    componentIdToZoneId.get(ccId)
+      .flatMap(zoneToTextReflow.get(_))
+  }
+
+  def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
+    zoneToTextReflow.get(zoneId)
+  }
+
+  def getPageVisualLines(pageId: Int@@PageID): Seq[Component]  = for {
+    pageLineCC <- getPageIndex(pageId).getComponentsWithLabel(LB.PageLines)
+    vline <- pageLineCC.getChildren(LB.VisualLine)
+  } yield vline
+
+  def getDocumentVisualLines(): Seq[Seq[Component]] = for {
+    pageId <- getPages
+  } yield getPageVisualLines(pageId)
 
   // TODO: merge with other text reflow access function
-  def getVisualLineTextReflows(labels: Label*): Seq[TextReflow]  = {
-    for {
-      pageId <- getPages
-      pageTextBlocks <- getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
-      textBlockCC <- pageTextBlocks.getChildren(LB.TextBlock)
-      vline <- textBlockCC.getChildren(LB.VisualLine)
-      vlineTextReflow <- getTextReflow(vline.id)
-    } yield {
-      vlineTextReflow
-    }
-  }
+  def getVisualLineTextReflows(): Seq[TextReflow] = for {
+    vline  <- getDocumentVisualLines().flatten
+    reflow <- getTextReflowForComponent(vline.id)
+  } yield  reflow
 
   // TODO: this should become the canonical way to get text reflows within a document
   def getTextReflows(labels: Label*): Seq[TextReflow]  = {
@@ -107,7 +128,7 @@ class MultiPageIndex(docId: String@@DocumentID) {
       pageId <- getPages
       pageTextBlocks <- getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
       textBlockCC <- pageTextBlocks.getChildren(LB.TextBlock)
-      blockTextReflow <- getTextReflow(textBlockCC.id)
+      blockTextReflow <- getTextReflowForComponent(textBlockCC.id)
     } yield {
       blockTextReflow
     }
@@ -126,7 +147,9 @@ class MultiPageIndex(docId: String@@DocumentID) {
     val zid = zoneIdGen.nextId
     val zupdate = z.copy(id=zid)
     zoneMap.put(zid, zupdate)
-    getLabelToZoneBuffer(z.label) += zid
+    z.labels.foreach{l =>
+      getLabelToZoneBuffer(l) += zid
+    }
     zupdate
   }
   val relations = mutable.ArrayBuffer[Relation.Record]()
@@ -220,7 +243,10 @@ class MultiPageIndex(docId: String@@DocumentID) {
 
       val region = createRegionComponent(totalRegion, role)
 
-      // vtrace.trace(s"Label Region as ${role}" withTrace showComponent(region))
+      val zone = addZone(
+        Zone(ZoneID(0), List(region.targetRegion), List(region.roleLabel))
+      )
+
 
       Some(region)
     }

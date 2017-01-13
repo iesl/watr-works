@@ -75,6 +75,7 @@ object DatabaseLibs extends LibVersions {
   val doobieDb = Seq(
     "org.tpolecat" %% "doobie-core"               % doobieVersion,
     "org.tpolecat" %% "doobie-contrib-postgresql" % doobieVersion,
+    "org.tpolecat" %% "doobie-contrib-hikari" % doobieVersion,
     "org.tpolecat" %% "doobie-contrib-specs2"     % doobieVersion
   )
 

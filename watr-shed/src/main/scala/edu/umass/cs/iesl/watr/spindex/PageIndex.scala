@@ -4,17 +4,15 @@ package spindex //;import acyclic.file
 import scala.collection.mutable
 
 import watrmarks._
-//import TypeTags._
-
-
-
-
 import geometry._
 
 /**
   A PageIndex wraps a SpatialIndex for Components, and adds:
     - the ability to associate labels with components
     - A tree-like parent/child relationship between components, which provides, e.g., a reading order
+
+
+  TargetRegions
   */
 
 case class PageIndex(
@@ -24,6 +22,7 @@ case class PageIndex(
   componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),
   labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
 ) {
+
   def addComponent(c: Component): Component = {
     componentIndex.add(c)
     addLabel(c, c.roleLabel)
@@ -41,18 +40,6 @@ case class PageIndex(
     val lmap = componentToChildren.getOrElse(cid, mutable.HashMap())
     val l0 = lmap.put(l, tree)
     componentToChildren.put(cid, lmap)
-
-    // // DEBUG
-    // val cindexdbg = componentIndex.getItems.toList.map(_.toString()).mkString("{\n  ", "\n  ", "\n}")
-    // val dbgstr = componentToChildren.map({ case (k, v) =>
-    //   val m2 = v.map({case (k2, v2) =>
-    //     s"""$k2: $v2"""
-    //   }).mkString("\n  ", "\n  ", "\n")
-    //   s"""$k: $m2"""
-    // }).mkString("\n  ", "\n  ", "\n")
-
-    // println(s"""setChildrenWithLabel: \n$dbgstr""")
-    // println(s"""componentIndex: ${cindexdbg}""")
   }
 
 
