@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex //;import acyclic.file
+package spindex 
 
 import net.sf.jsi
 import net.sf.jsi.rtree.RTree
@@ -16,7 +16,7 @@ trait SpatialIndexable[T] {
 }
 
 class SpatialIndex[T: SpatialIndexable](
-  bounds: LTBounds,
+  // bounds: LTBounds,
   spatialIndex: jsi.SpatialIndex,
   items: mutable.LongMap[T]
 ) {
@@ -141,9 +141,9 @@ object SpatialIndex {
     rtree
   }
 
-  def createFor[T : SpatialIndexable](bounds: LTBounds): SpatialIndex[T] = {
+  def createFor[T : SpatialIndexable](): SpatialIndex[T] = {
     new SpatialIndex[T](
-      bounds,
+      // bounds,
       createSpatialIndex(),
       mutable.LongMap[T]()
     )

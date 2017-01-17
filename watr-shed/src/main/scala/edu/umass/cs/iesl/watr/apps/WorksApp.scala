@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package apps //;import acyclic.file
+package apps 
 
 import corpora._
 import extract._

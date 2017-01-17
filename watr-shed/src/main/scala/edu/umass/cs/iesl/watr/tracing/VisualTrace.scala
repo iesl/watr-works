@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
-package tracing //;import acyclic.file
+package tracing
 
-import scala.language.experimental.macros
+// import scala.language.experimental.macros
 
 import geometry._
 import TB._
@@ -93,11 +93,11 @@ class VisualTracer() extends EnableTrace[TraceLog] {
     }
   }
 
-  def traceIf(cond: Boolean)(exprs: TraceLog*): Unit =  macro VisualTraceMacros.runIfEnabledWithCondition[TraceLog]
+  def traceIf(cond: Boolean)(exprs: TraceLog*): Unit =  () // macro VisualTraceMacros.runIfEnabledWithCondition[TraceLog]
 
-  def trace(exprs: TraceLog*): Unit = macro VisualTraceMacros.runIfEnabled[TraceLog]
+  def trace(exprs: TraceLog*): Unit = () // macro VisualTraceMacros.runIfEnabled[TraceLog]
 
-  def ifTrace(body: Unit): Unit = macro VisualTraceMacros.sideEffectIfEnabled[TraceLog]
+  def ifTrace(body: Unit): Unit = () // macro VisualTraceMacros.sideEffectIfEnabled[TraceLog]
 
   def formatTrace(trace: TraceLog): Option[Box] = {
     trace match {

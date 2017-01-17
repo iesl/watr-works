@@ -1,25 +1,23 @@
 package edu.umass.cs.iesl.watr
-package textreflow //;import acyclic.file
+package textreflow 
 
 // TODO plaintext reflow started as testing util, and still has a mix of testing and production code
+
 trait PlainTextReflow {
+  import scala.collection.mutable
   import scalaz.std.string._
   import scalaz.Tree
   import utils.ScalazTreeImplicits._
   import utils.IdGenerator
   import matryoshka._
-  import java.net.URI
   import geometry._
 
   import GeometryImplicits._
   import PageComponentImplicits._
   import TextReflowF._
 
-  def dummyUri = URI.create("/")
-
   val regionIDs = IdGenerator[RegionID]()
 
-  val page0 = PageID(0)
   val xscale = 10.0d
   val yscale = 10.0d
 
@@ -104,10 +102,7 @@ trait PlainTextReflow {
       t.loc
     }
 
-    import scala.collection.mutable
 
-    // var docId = DocumentID("doc-0")
-    // var pageId = PageID(0)
     var linenum:Int = 0
     var chnum = 0
     var lineCharAtoms = mutable.ArrayBuffer[CharAtom]()
@@ -219,7 +214,7 @@ trait PlainTextReflow {
       CharAtom(
         TargetRegion(regionIDs.nextId,
           docId,
-          page0,
+          PageID(pageId),
           LTBounds(
             left=chnum*xscale, top=linenum*yscale,
             width=xscale, height=yscale
@@ -238,7 +233,7 @@ trait PlainTextReflow {
             CharAtom(
               TargetRegion(regionIDs.nextId,
                 docId,
-                page0,
+                PageID(pageId),
                 LTBounds(
                   left=chnum*xscale, top=linenum*yscale,
                   width=xscale, height=yscale

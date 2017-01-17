@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex //;import acyclic.file
+package spindex
 
 import scala.collection.mutable
 
@@ -178,7 +178,6 @@ class MultiPageIndex(docId: String@@DocumentID) {
 
   def getChildrenWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
     val pageIndex = pageIndexes(getPageForComponent(c))
-    val sdf = pageIndex.componentIndex.get(0)
     pageIndex.getChildrenWithLabel(c.id, l)
   }
 
@@ -286,10 +285,12 @@ class MultiPageIndex(docId: String@@DocumentID) {
 
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
+
     val pageIndex = PageIndex(
-      SpatialIndex.createFor[Component](pageGeometry.bounds),
+      SpatialIndex.createFor[Component](),
       pageGeometry
     )
+
     val existing = pageIndexes.put(pageGeometry.id, pageIndex)
 
     existing.foreach { e =>
@@ -323,6 +324,98 @@ class MultiPageIndex(docId: String@@DocumentID) {
 
 
 object MultiPageIndex {
+
+
+  import matryoshka._
+  import matryoshka.data._
+  import matryoshka.implicits._
+  // import scala.collection.mutable
+
+
+  import scalaz.std.list._
+  import scalaz.std.map._
+  import scalaz.syntax.monoid._
+
+  import TextReflowF._
+  import PageComponentImplicits._
+
+  def loadTextReflows(
+    docId: String@@DocumentID,
+    textReflows: Seq[TextReflow]
+  ): MultiPageIndex = {
+    val mpageIndex = new MultiPageIndex(docId)
+
+
+    textReflows.zipWithIndex.foreach { case (textReflow, pagenum) =>
+      val pageId = PageID(pagenum)
+      val pageTargetRegions = textReflow.targetRegions()
+      val pageTargetRegion = pageTargetRegions.reduce(_ union _)
+
+      val pageGeom = PageGeometry(
+        pageId, pageTargetRegion.bbox
+      )
+
+      val pageIndex = mpageIndex.addPage(pageGeom)
+
+      type Attr = Map[Label, List[Component]]
+
+      def visit(t: TextReflowF[(TextReflow, Attr)]): Attr = t match {
+        case Atom    (ac)                    =>
+          val atomicComponent = mpageIndex.addPageAtom(ac)
+
+          Map((LB.PageAtom, List(atomicComponent)))
+
+        case Insert  (value)                 => Map()
+        case Rewrite ((from, attr), to)      => attr
+        case Bracket (pre, post, (a, attr))  => attr
+        case Flow    (atomsAndattrs)         =>
+          if (atomsAndattrs.isEmpty) {
+            Map[Label, List[Component]]()
+          } else {
+            atomsAndattrs
+              .map(_._2)
+              .reduce(_ |+| _)
+          }
+
+        case l @ Labeled (labels, (a, attr))     =>
+          val childAtoms = attr.get(LB.PageAtom).getOrElse(List())
+
+          val allLabelMaps = labels.toList.map { label =>
+            if (label == LB.VisualLine || label == LB.PageLines) {
+              mpageIndex
+                .labelRegion(childAtoms,  label)
+                .map({region =>
+
+                  attr.foreach { case (childLabel, comps) =>
+                    region.setChildren(childLabel, comps)
+                  }
+                  if (label == LB.VisualLine) {
+                    // Clip text reflow to region bounds
+                    val clippedTRs = textReflow.clipToTargetRegion(region.targetRegion)
+                    if (clippedTRs.length != 1) {
+                      println("ERROR: VisualLine clipped area is wrong")
+                    }
+                    val clippedTR = clippedTRs.head._1
+                    mpageIndex.setTextReflow(region, clippedTR)
+                  }
+
+                  Map((label -> List[Component](region)))
+                })
+
+            } else {
+              Option(Map((label -> List[Component]())))
+            }
+          }
+          val ms = allLabelMaps.flatten
+
+          ms.foldLeft(attr)(_ |+| _)
+      }
+
+      textReflow.cata(attributePara(visit))
+    }
+
+    mpageIndex
+  }
 
   def loadSpatialIndices(
     docId: String@@DocumentID,

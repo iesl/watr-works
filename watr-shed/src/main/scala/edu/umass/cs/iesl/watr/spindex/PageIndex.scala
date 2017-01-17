@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex //;import acyclic.file
+package spindex 
 
 import scala.collection.mutable
 
@@ -17,11 +17,15 @@ import geometry._
 
 case class PageIndex(
   componentIndex: SpatialIndex[Component],
-  pageGeometry: PageGeometry,
+  startingGeometry: PageGeometry,
   componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
   componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),
   labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
 ) {
+
+  var pageGeometry: PageGeometry = startingGeometry
+  def getPageGeometry(): PageGeometry = pageGeometry
+  def adjustBounds(bbox: LTBounds): Unit = pageGeometry = pageGeometry.copy(bounds=bbox)
 
   def addComponent(c: Component): Component = {
     componentIndex.add(c)

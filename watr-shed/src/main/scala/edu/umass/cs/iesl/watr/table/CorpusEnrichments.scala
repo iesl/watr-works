@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package table  //;import acyclic.file
+package table  
 
 import spindex._
 import corpora._

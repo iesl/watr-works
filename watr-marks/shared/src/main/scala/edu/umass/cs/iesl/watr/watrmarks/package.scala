@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
-package watrmarks //;import acyclic.file
+package watrmarks
 
 object `package` {
-  // import acyclic.pkg
+
 }

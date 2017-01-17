@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow //;import acyclic.file
+package textreflow
 
 import doobie.imports._
 import scalaz.syntax.applicative._
@@ -15,10 +15,6 @@ import databasics._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
 
-
-// import java.io.PrintWriter
-// import doobie.free.{ drivermanager => DM }
-
 class TextReflowDB(
   val tables: TextReflowDBTables
 ) extends DoobiePredef {
@@ -27,31 +23,26 @@ class TextReflowDB(
 
   def addSegmentation(ds: DocumentSegmentation): Unit = {
 
-    // val pw = new PrintWriter(System.out)
-    // _         <- HC.delay{ DM.setLogWriter(pw)}
-
     val mpageIndex = ds.mpageIndex
     val docId = mpageIndex.getDocumentID()
+
+    def insertPages(docPk: Int) = for {
+      pageId <- mpageIndex.getPages.toList
+    } yield for {
+      _         <- putStrLn(s"inserting page rec for page ${pageId}")
+      pagePrKey <- insertPageIndex(docPk, mpageIndex.getPageIndex(pageId), ds.pageImages.page(pageId))
+    } yield ()
 
     val query = for {
       _         <- putStrLn("Starting ...")
       docPrKey  <- getOrInsertDocumentID(docId)
+      _         <- insertPages(docPrKey).sequenceU
       _         <- putStrLn("insert multi pages...")
       _         <- insertMultiPageIndex(docId, mpageIndex)
     } yield docPrKey
 
     val docPrKey = query.transact(xa).unsafePerformSync
 
-    for {
-      pageId <- mpageIndex.getPages
-    } {
-      val q2 = for {
-        _         <- putStrLn(s"insert page ${pageId}")
-        pagePrKey <- insertPageIndex(docPrKey, mpageIndex.getPageIndex(pageId), ds.pageImages.page(pageId))
-      } yield ()
-
-      q2.transact(xa).unsafePerformSync
-    }
 
   }
 
@@ -59,22 +50,44 @@ class TextReflowDB(
     // To start, just create entries for all Component/Zones labelled VisualLine
 
     val query: ConnectionIO[List[Unit]] = (for {
-      vline <-  mpageIndex.getDocumentVisualLines.flatten.toList
-      maybeReflow = mpageIndex.getTextReflowForComponent(vline.id)
-      vlineZoneId = mpageIndex.getZoneForComponent(vline.id).get
+      vlineCC      <- mpageIndex.getDocumentVisualLines.flatten.toList
+      maybeReflow   = mpageIndex.getTextReflowForComponent(vlineCC.id)
+      vlineZoneId   = mpageIndex.getZoneForComponent(vlineCC.id).get
     } yield for {
-      _ <- putStrLn(s"Inserting zone for line ${vline.id}")
-      _ <- insertZone(docId, vlineZoneId)
+      _            <- putStrLn(s"Inserting zone for line ${vlineCC.id}")
+      zpk          <- insertZone(docId, vlineZoneId)
+      _            <- putStrLn(s"   inserting textreflow")
+      treflowPk    <- maybeReflow.toList.map(r => insertTextReflow(zpk, r)).sequence
+
+      // insert zone -> targetregion (w/ordering)
+      _            <- putStrLn(s"   inserting targetregion")
+      targetRegPk  <- insertTargetRegion(vlineCC.targetRegion)
+      _            <- putStrLn(s"   linking zone -> targetregion ")
+      _            <- linkZoneToTargetRegion(zpk, targetRegPk)
+
+      // insert zone -> label (VisualLine is the only important label right now)
+      _            <- linkZoneToLabel(zpk, LB.VisualLine)
+
     } yield ()).sequenceU
 
     query
   }
 
   def insertZone(docId: String@@DocumentID, zoneId: Int@@ZoneID): ConnectionIO[Int] = {
-
     sql"""
        insert into zone (zoneid, document)
-       values (${zoneId}, (select id from document where stable_id='${docId}'))
+       values (${zoneId}, (select id from document where stable_id=${docId}))
+    """.update.withUniqueGeneratedKeys[Int]("id")
+  }
+
+  def insertTextReflow(zonePk: Int, textReflow: TextReflow): ConnectionIO[Int] = {
+    import TextReflowJsonCodecs._
+    import play.api.libs.json, json._
+    val js = textReflow.toJson()
+    val jsStr = Json.stringify(js)
+    sql"""
+       insert into textreflow (reflow, zone)
+       values (${jsStr}, ${zonePk})
     """.update.withUniqueGeneratedKeys[Int]("id")
   }
 
@@ -97,6 +110,11 @@ class TextReflowDB(
        insert into document (stable_id)
        values (${docId})
     """.update.withUniqueGeneratedKeys[Int]("id")
+  }
+
+  def selectDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
+    sql"select id from document where stable_id=${docId}"
+      .query[Int].unique
   }
 
   def getOrInsertDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
@@ -153,37 +171,56 @@ class TextReflowDB(
     query
   }
 
+  import watrmarks.Label
+
+  def linkZoneToLabel(zonePk: Int, label: Label): ConnectionIO[Unit] = {
+    for {
+      labelPk <- sql""" insert into label (key) values (${label.fqn}) """.update.run
+      _       <- sql""" insert into zone_to_label (zone, label) values (${zonePk}, ${labelPk})""".update.run
+    } yield ()
+  }
+
+  def linkZoneToTargetRegion(zonePk: Int, targetRegionPk: Int): ConnectionIO[Unit] = {
+    sql"""
+       insert into zone_to_targetregion (zone, targetregion)
+       values (${zonePk}, ${targetRegionPk})
+    """.update.run.map(_ => ())
+  }
+
+
+  def selectPage(docPk: Int, pageId: Int@@PageID): ConnectionIO[Int] = {
+    sql"""select id from page where document=${docPk} and pagenum=${pageId.unwrap}"""
+      .query[Int].unique
+  }
+
   def insertTargetRegion(targetRegion: TargetRegion): ConnectionIO[Int] = {
     val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) = targetRegion
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
-    val trUri = targetRegion.uri
 
-    sql"""
-       insert into targetregion (document, page, bleft, btop, bwidth, bheight)
-       values (${docId}, ${pageId}, $bl, $bt, $bw, $bh)
-    """.update.withUniqueGeneratedKeys[Int]("id")
+    for {
+      docPk <- selectDocumentID(docId)
+      _   <- putStrLn(s"   selected docid ${docPk}")
+      pagePk <- selectPage(docPk, pageId)
+      _   <- putStrLn(s"   selected pageid ${pagePk}")
+      trPk <- sql"""
+       insert into targetregion (page, bleft, btop, bwidth, bheight, uri)
+       values (${pagePk}, $bl, $bt, $bw, $bh, ${targetRegion.uri})
+      """.update.run
+    } yield trPk
+
   }
 
   def insertTargetRegionImage(targetRegion: TargetRegion, image: Image): ConnectionIO[Unit] = {
-    val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) = targetRegion
-    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
-    val trUri = targetRegion.uri
-
     val imagebytes = image.bytes
-    val query = for {
-      trPrKey <- sql"""
-              insert into targetregion (document, page, bleft, btop, bwidth, bheight)
-              values (${docId}, ${pageId}, $bl, $bt, $bw, $bh)
-              """.update.withUniqueGeneratedKeys[Int]("id")
+    for {
+
+     trPk <- insertTargetRegion(targetRegion)
 
       _ <- (sql"""
               insert into targetregion_image (image, targetregion)
-              values (${imagebytes}, ${trPrKey})
+              values (${imagebytes}, ${trPk})
               """.update.run)
-
     } yield ()
-
-    query
   }
 
   def getOrCreateTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Image] = {

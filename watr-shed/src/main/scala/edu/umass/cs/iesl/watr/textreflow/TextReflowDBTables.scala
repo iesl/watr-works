@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow //;import acyclic.file
+package textreflow 
 
 
 import doobie.imports._
@@ -17,43 +17,43 @@ object Foo  {
 
 import databasics._
 
-object Tables extends DoobiePredef {
-  object Document {
-    val create = sql"""
-      CREATE TABLE document (
-        id            SERIAL PRIMARY KEY,
-        stable_id     VARCHAR(128) UNIQUE
-      );
-      CREATE INDEX document_stable_id ON document USING hash (stable_id);
-    """.update
+// object Tables extends DoobiePredef {
+//   object Document {
+//     val create = sql"""
+//       CREATE TABLE document (
+//         id            SERIAL PRIMARY KEY,
+//         stable_id     VARCHAR(128) UNIQUE
+//       );
+//       CREATE INDEX document_stable_id ON document USING hash (stable_id);
+//     """.update
 
-    case class Model(
-      id: Int,
-      stableId: String@@DocumentID
-    )
+//     case class Model(
+//       id: Int,
+//       stableId: String@@DocumentID
+//     )
 
-    def insert(docId: String@@DocumentID) = sql"""
-       insert into document (stable_id) values (${docId})
-    """.update.withUniqueGeneratedKeys[Int]("id")
-  }
+//     def insert(docId: String@@DocumentID) = sql"""
+//        insert into document (stable_id) values (${docId})
+//     """.update.withUniqueGeneratedKeys[Int]("id")
+//   }
 
-  object Page {
+//   object Page {
 
-    val createPageTable: Update0 = sql"""
-      CREATE TABLE page (
-        id          SERIAL PRIMARY KEY,
-        document    INTEGER REFERENCES document,
-        pagenum     SMALLINT,
-        pageimg     BYTEA,
-        bleft       INTEGER,
-        btop        INTEGER,
-        bwidth      INTEGER,
-        bheight     INTEGER
-      );
-    """.update
+//     val createPageTable: Update0 = sql"""
+//       CREATE TABLE page (
+//         id          SERIAL PRIMARY KEY,
+//         document    INTEGER REFERENCES document,
+//         pagenum     SMALLINT,
+//         pageimg     BYTEA,
+//         bleft       INTEGER,
+//         btop        INTEGER,
+//         bwidth      INTEGER,
+//         bheight     INTEGER
+//       );
+//     """.update
 
-  }
-}
+//   }
+// }
 
 class TextReflowDBTables(
   val xa: Transactor[Task]
@@ -135,7 +135,7 @@ class TextReflowDBTables(
   val createTextReflowTable: Update0 = sql"""
       CREATE TABLE textreflow (
         id        SERIAL PRIMARY KEY,
-        reflow    JSON,
+        reflow    text,
         zone      INTEGER REFERENCES zone
       )
     """.update

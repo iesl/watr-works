@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package segment //;import acyclic.file
+package segment 
 
 
 import spindex._

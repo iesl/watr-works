@@ -17,6 +17,7 @@ object SensibleProject extends CommonLibs {
 
   lazy val acyclicPlugin =  Seq(
     addCompilerPlugin("com.lihaoyi" %% "acyclic" % acyclicVersion),
+    scalacOptions += "-P:acyclic:force",
     libraryDependencies ++= Seq(acyclic)
   )
 

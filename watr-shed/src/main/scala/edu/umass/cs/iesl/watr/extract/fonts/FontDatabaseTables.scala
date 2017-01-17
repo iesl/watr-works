@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
 package extract
-package fonts //;import acyclic.file
+package fonts 
 
 // import org.slf4j.LoggerFactory
 // import slick.driver.H2Driver.api._

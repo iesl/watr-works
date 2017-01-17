@@ -18,7 +18,7 @@ trait LibVersions {
   val scrimageVersion     = "2.1.8"
   val monocleVersion      = "1.2.2"
   val aspectjVersion      = "1.8.9"
-  val acyclicVersion      = "0.1.5"
+  val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.3.0"
 
 }

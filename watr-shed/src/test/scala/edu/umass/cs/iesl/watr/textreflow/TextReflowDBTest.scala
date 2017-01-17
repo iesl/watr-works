@@ -61,13 +61,36 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
       )
     }
 
-    val docAtomsAndGeometry = textReflowsToAtoms(docId, pages)
+    // val docAtomsAndGeometry = textReflowsToAtoms(docId, pages)
 
     val images = pages.map(textReflowToImage(_))
 
-    val mpageIndex = MultiPageIndex.loadSpatialIndices(
-      docId, docAtomsAndGeometry
+    val mpageIndex = MultiPageIndex.loadTextReflows(
+      docId, pages
     )
+
+
+    mpageIndex.pageIndexes.foreach({case (pageId, pageIndex) =>
+      println(s"children for page ${pageId}")
+      val cc = pageIndex.componentToChildren
+        .foreach({case (cid, childIds) =>
+          val parentCC = mpageIndex.getComponent(cid, pageId)
+          val s = parentCC.toString() + childIds
+            .map({case (chlbl, chids) =>
+              chlbl +": " + chids.map(mpageIndex.getComponent(_, pageId).roleLabel).mkString(", ")
+            })
+            .mkString("\n  ", "\n  ", "\n")
+          println(s)
+        })
+        // .mkString("\n  ", "\n  ", "\n")
+
+      // println(cc)
+
+    })
+
+    // val mpageIndex = MultiPageIndex.loadSpatialIndices(
+    //   docId, docAtomsAndGeometry
+    // )
 
     val ds = DocumentSegmentation(
       mpageIndex, PageImages(images)

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package databasics //;import acyclic.file
+package databasics 
 
 import doobie.imports._
 

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package extract //;import acyclic.file
+package extract 
 
 import com.itextpdf.kernel.pdf.PdfPage
 import geometry._

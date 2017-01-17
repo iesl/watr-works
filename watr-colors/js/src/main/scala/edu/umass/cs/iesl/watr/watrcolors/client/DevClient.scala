@@ -27,7 +27,7 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   def example1(): TextReflow = {
     stringToTextReflow("""|To be or not to be,
                           |That is the question.
-                          |""".stripMargin)(DocumentID("d0"), PageID(0)
+                          |""".stripMargin)(DocumentID("d0"), PageID(0))
   }
 
 

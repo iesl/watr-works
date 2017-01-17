@@ -9,8 +9,8 @@ import geometry._
 
 trait ConnectedComponentTestUtil extends FlatSpec with Matchers with ImageTextReflow {
 
-  def labelRow(mpageIndex: MultiPageIndex, row: Int, l: Label): Option[RegionComponent] = {
-    val pageIndex = mpageIndex.getPageIndex(page0)
+  def labelRow(mpageIndex: MultiPageIndex, row: Int, l: Label, pageId: Int@@PageID=PageID(0)): Option[RegionComponent] = {
+    val pageIndex = mpageIndex.getPageIndex(pageId)
     val q = LTBounds(0, row*yscale, Int.MaxValue, yscale)
     val charAtoms = pageIndex.componentIndex.queryForContained(q)
     val reg = mpageIndex.labelRegion(charAtoms, l)

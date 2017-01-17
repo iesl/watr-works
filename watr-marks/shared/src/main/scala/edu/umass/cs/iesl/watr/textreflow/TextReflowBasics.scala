@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow //;import acyclic.file
+package textreflow
 
 import scalaz._, Scalaz._
 
@@ -11,6 +11,8 @@ import matryoshka.patterns.EnvT
 import utils.EnrichNumerics._
 import scala.{Range => _}
 import utils.ScalazTreeImplicits._
+
+case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 
 trait TextReflowBasics extends StructuredRecursion {
   import TextReflowF._

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package utils //;import acyclic.file
+package utils 
 
 /**
   * Filter class for neighbor objects that checks if the angle of the

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow //;import acyclic.file
+package textreflow 
 
 object TextReflowRendering {
   import TextReflowF._

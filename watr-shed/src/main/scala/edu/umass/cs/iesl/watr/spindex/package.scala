@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
-package spindex //;import acyclic.file
+package spindex 
 
 object `package` {
-  // import acyclic.pkg
+  
 }

@@ -1,8 +1,16 @@
-package edu.umass.cs.iesl.watr
-package watrmarks //;import acyclic.file
+package edu.umass.cs.iesl.watr.watrmarks
 
+import scalaz.@@
 
-//import TypeTags._
+import _root_.edu.umass.cs.iesl.watr
+import watr.utils
+
+import watr.LabelID
+import watr.TypeTags
+import TypeTags._
+
+import watr.textboxing.{TextBoxing => TB}
+
 
 sealed trait BioPin {
   def label: Label

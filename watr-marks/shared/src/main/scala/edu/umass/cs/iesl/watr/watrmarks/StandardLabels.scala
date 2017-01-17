@@ -1,5 +1,4 @@
-package edu.umass.cs.iesl.watr
-package watrmarks //;import acyclic.file
+package edu.umass.cs.iesl.watr.watrmarks
 
 
 trait DocSegLabels {

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package utils //;import acyclic.file
+package utils 
 
 
 object TreeShaper {

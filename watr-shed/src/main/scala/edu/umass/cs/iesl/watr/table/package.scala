@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
-package table //;import acyclic.file
+package table 
 
 object `package` {
-  // import acyclic.pkg
+  
 }

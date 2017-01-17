@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow //;import acyclic.file
+package textreflow
 
 import scalaz._, Scalaz._
 
@@ -12,8 +12,10 @@ import matryoshka.implicits._
 
 import utils.EnrichNumerics._
 
-case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 
+trait TextReflowPredef {
+
+}
 trait TextReflowSharedFunctions extends TextReflowClipping {
 
   import TextReflowF._

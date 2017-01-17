@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
-package predsynth //;import acyclic.file
+package predsynth 
 
 object `package` {
-  // import acyclic.pkg
+  
 }

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package segment //;import acyclic.file
+package segment 
 
 import ammonite.{ops => fs}, fs._
 import java.io.InputStream

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textboxing //;import acyclic.file
+package textboxing 
 
 import scalaz.syntax.ToIdOps
 import scalaz.syntax.std.ToListOps
