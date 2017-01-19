@@ -131,6 +131,12 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
   }
 
   @JSExport
+  def showTargetRegion(targetRegion: TargetRegion, label: watrmarks.Label): Unit = {
+    clear()
+    makeTargetRegionImage(targetRegion)
+  }
+
+  @JSExport
   override def echoTextReflow(textReflow: TextReflow): Unit = {
     vcatWidgets(Seq(textReflow))
 

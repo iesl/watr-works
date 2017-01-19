@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package geometry 
+package geometry
 
 import scalaz.Equal
 import scalaz.syntax.equal._
@@ -56,6 +56,8 @@ case class Zone(
   regions: Seq[TargetRegion],
   labels: Seq[Label]
 )
+
+
 
 case class PageGeometry(
   id: Int@@PageID,
@@ -194,9 +196,6 @@ object PageComponentImplicits {
           if (code==32) { "<sp>"  }
           else { s"?:#${code}?" }
         }) getOrElse { "" }
-
-      // val subs = if (!charRegion.subs.isEmpty()) s"@`charRegion.subs`" else ""
-
 
       s"""${charRegion.char} ${wonk} ${bbox}"""
     }

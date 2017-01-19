@@ -6,16 +6,15 @@ import doobie.imports._
 import spindex._
 import segment.DocumentSegmentation
 import extract.images.PageImages
-
-// import geometry._
-// import PageComponentImplicits._
+import doobie.free.{ connection => C }
 
 class FreshTextReflowDBTables(xa: Transactor[Task]) {
+
   val tables = new TextReflowDBTables(xa)
   tables.dropAndCreate.unsafePerformSync
   val reflowDB = new TextReflowDB(tables)
-}
 
+}
 
 class TextReflowDBTest extends ConnectedComponentTestUtil {
 
@@ -70,23 +69,21 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
     )
 
 
-    mpageIndex.pageIndexes.foreach({case (pageId, pageIndex) =>
-      println(s"children for page ${pageId}")
-      val cc = pageIndex.componentToChildren
-        .foreach({case (cid, childIds) =>
-          val parentCC = mpageIndex.getComponent(cid, pageId)
-          val s = parentCC.toString() + childIds
-            .map({case (chlbl, chids) =>
-              chlbl +": " + chids.map(mpageIndex.getComponent(_, pageId).roleLabel).mkString(", ")
-            })
-            .mkString("\n  ", "\n  ", "\n")
-          println(s)
-        })
-        // .mkString("\n  ", "\n  ", "\n")
-
-      // println(cc)
-
-    })
+    // mpageIndex.pageIndexes.foreach({case (pageId, pageIndex) =>
+    //   println(s"children for page ${pageId}")
+    //   val cc = pageIndex.componentToChildren
+    //     .foreach({case (cid, childIds) =>
+    //       val parentCC = mpageIndex.getComponent(cid, pageId)
+    //       val s = parentCC.toString() + childIds
+    //         .map({case (chlbl, chids) =>
+    //           chlbl +": " + chids.map(mpageIndex.getComponent(_, pageId).roleLabel).mkString(", ")
+    //         })
+    //         .mkString("\n  ", "\n  ", "\n")
+    //       println(s)
+    //     })
+    //     // .mkString("\n  ", "\n  ", "\n")
+    //   // println(cc)
+    // })
 
     // val mpageIndex = MultiPageIndex.loadSpatialIndices(
     //   docId, docAtomsAndGeometry
@@ -98,6 +95,17 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
 
     reflowDB.addSegmentation(ds)
 
+    val targetRegions = reflowDB.selectTargetRegions(docId, PageID(0))
+    println("targetRegions")
+    println(targetRegions)
+
+    println("Zones page 0")
+    val vlineZones0 = reflowDB.selectZones(docId, PageID(0), LB.VisualLine)
+    println(vlineZones0.mkString("\n"))
+
+    val vlineZones = reflowDB.selectZones(docId, PageID(1), LB.VisualLine)
+    println("Zones page 1")
+    println(vlineZones.mkString("\n"))
 
     // re-read DocumentSegmentation from DB and verify that it is the same?
 
@@ -107,3 +115,52 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
   }
 
 }
+
+
+
+// import doobie.free.{ drivermanager => DM }
+// import geometry._
+// import PageComponentImplicits._
+
+// import doobie.contrib.hikari.hikaritransactor._
+
+// object HikariExample {
+
+//   def tmain: Task[Unit] =
+//     for {
+//       xa <- HikariTransactor[Task]("org.h2.Driver", "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", "sa", "")
+//       _  <- FirstExample.examples.transact(xa)
+//       _  <- xa.shutdown
+//     } yield ()
+
+//   def main(args: Array[String]): Unit =
+//     tmain.unsafePerformSync
+
+// }
+
+// case class FreshTables(
+//   ex: TextReflowDB => Unit
+// ) {
+//   val doLogging = false
+//   val loggingProp = if (doLogging) "?loglevel=2" else ""
+
+//   val xa = DriverManagerTransactor[Task](
+//     s"org.postgresql.Driver",
+//     s"jdbc:postgresql:watrdev${loggingProp}",
+//     "watrworker", "watrpasswd"
+//   )
+
+//   val tables = new TextReflowDBTables(xa)
+//   val reflowDB = new TextReflowDB(tables)
+
+
+//   def run: ConnectionIO[String] = for {
+//     _ <- C.delay(println("Running example"))
+//     _ <- tables.dropAndCreateAll
+//     _  = ex(reflowDB) // .except(t => t.toString.point[ConnectionIO])
+//     _ <- C.close
+//     // _ <- xa.shutdown
+//   } yield "Ok"
+
+//   run.transact(xa).unsafePerformSync
+// }

@@ -14,11 +14,9 @@ import HttpMethods._
 import concurrent.duration._
 import scala.concurrent.Future
 
-import extract.images._
 import corpora._
 import textreflow._
 import geometry._
-import db.TextReflowDB
 
 import autowire._
 import upickle.{default => UPickle}
@@ -84,6 +82,99 @@ class EmbeddedServer(reflowDB: TextReflowDB, corpus: Corpus, url: String, port: 
 
   def echoDouble(d: Double): Unit = {
     api.echoDouble(d).call()
+  }
+
+  def imageScratch(): Unit = {
+
+    // import java.awt.{AlphaComposite, Graphics2D}
+    // val maskImage = Image(w, h)
+    //Rect(x: Int, y: Int, width: Int, height: Int)
+    // val g2: Graphics2D => Unit = { g2 =>
+    //   g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC))
+    //   g2.setColor(Color.Black)
+    // }
+    //   Line(100, 100, 120, 120)
+    // import scrimage.canvas
+
+    // import scrimage.composite.AlphaComposite
+    // import java.awt.Graphics2D
+    // import java.awt
+    // import scrimage.composite.OverlayComposite
+
+    // val g2: Graphics2D => Unit = { g2 =>
+    //   g2.setComposite(awt.AlphaComposite.getInstance(awt.AlphaComposite.SRC))
+    //   g2.setColor(Color.Black)
+    // }
+
+  }
+
+  def rescale(bbox: LTBounds, page1: LTBounds, page2: LTBounds): LTBounds = {
+    val LTBounds(l, t, w, h) = bbox
+
+
+    val scaleX = page2.width/page1.width
+    val scaleY = page2.height/page1.height
+    val l2 = l * scaleX
+    val t2 = t * scaleY
+    val w2 = w * scaleX
+    val h2 = h * scaleY
+    val res = LTBounds(l2, t2, w2, h2)
+    // println(s"rescaling ${bbox}/[$page1] => x/ [$page2] ==> scalex=${scaleX}, scaley=${scaleY} ")
+    // println(s"   $res")
+    res
+  }
+
+  def showPageImage(docId: String@@DocumentID, pagenum: Int): Unit = {
+    val pageId = PageID(pagenum)
+    val (pageImage, pageGeometry) = reflowDB.getPageImageAndGeometry(docId, pageId)
+    val pageTargetRegion = TargetRegion(RegionID(0), docId, pageId, pageGeometry.bounds)
+
+    showTargetRegion(pageTargetRegion, LB.VisualLine)
+  }
+
+  def showTargetRegion(targetRegion: TargetRegion, label: watrmarks.Label): Unit = {
+
+    import com.sksamuel.scrimage
+    import scrimage._
+    import scrimage.canvas._
+
+    val docId = targetRegion.docId
+    val pageId = targetRegion.pageId
+
+    val (pageImage, pageGeometry) = reflowDB.getPageImageAndGeometry(docId, pageId)
+
+    // select all zones w/label on given page
+    val zones = reflowDB.selectZones(docId, pageId, label)
+    val (w, h) = pageImage.dimensions
+    val pageImageBounds = LTBounds(0, 0, w.toDouble, h.toDouble)
+    println(s"showTargetRegion: pageImage has dims ${w}, $h = ${pageImageBounds}")
+
+    val blank = Image.filled(w, h, Color(0, 0, 0, 20))
+    val maskCanvas = new Canvas(blank)
+
+    val zoneRects = for { zone <- zones } yield {
+      zone.regions.map({
+        case TargetRegion(id, docId, pageId, bbox @ LTBounds(l, t, w, h)) =>
+          val re @ LTBounds(rl, rt, rw, rh) = rescale(bbox, pageGeometry.bounds, pageImageBounds)
+          val ctx = Context.painter(Color(10, 10, 220, 40))
+          val r = Rect(rl.toInt, rt.toInt, rw.toInt, rh.toInt, ctx)
+          // println(s"adding rescaled rect ${re}")
+          r.fill
+      })
+    }
+
+    val rectsCanvas = maskCanvas.draw(zoneRects.flatten)
+
+    val maskImage = rectsCanvas.image
+
+    val overlay = pageImage.overlay(maskImage, 0, 0)
+
+    val pageTargetRegion = TargetRegion(RegionID(0), docId, pageId, pageGeometry.bounds)
+    // val labelUri = pageUri + "?l=" + label.fqn
+
+    reflowDB.putTargetRegionImage(pageTargetRegion, overlay)
+
+    api.showTargetRegion(pageTargetRegion, label).call()
   }
 
   def echoLTBounds(bbox: LTBounds): Unit = {
@@ -166,8 +257,9 @@ class EmbeddedServer(reflowDB: TextReflowDB, corpus: Corpus, url: String, port: 
 
     reflowDB
       .serveImageWithURI(TargetRegion.fromUri(uriPath))
-      .map(_.bytes)
-      .getOrElse { sys.error("producePageImage: no images found")}
+      .bytes
+      // .map(_.bytes)
+      // .getOrElse { sys.error("producePageImage: no images found")}
   }
 
   def pageImageServer = pathPrefix("img")(

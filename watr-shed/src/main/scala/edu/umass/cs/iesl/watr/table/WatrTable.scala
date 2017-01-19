@@ -97,10 +97,13 @@ object ShellCommands extends CorpusEnrichments {
 
   }
 
-
   implicit class RicherTextReflowDB(val theDB: TextReflowDB) extends AnyVal {
     def dropAndCreateTables(): Unit = {
       theDB.tables.dropAndCreate.unsafePerformSync
+    }
+
+    def addSegmentation(ds: DocumentSegmentation): Unit = {
+      theDB.addSegmentation(ds)
     }
 
   }
@@ -113,7 +116,6 @@ object ShellCommands extends CorpusEnrichments {
         pdfPath        <- pdfArtifact.asPath.toOption
       } yield {
 
-
         val docId = DocumentID(theCorpusEntry.entryDescriptor)
 
         val segmenter = DocumentSegmenter
@@ -123,8 +125,8 @@ object ShellCommands extends CorpusEnrichments {
 
 
         val pageImageArtifacts = theCorpusEntry.ensureArtifactGroup("page-images")
-        val pageImages =
-        if (pageImageArtifacts.getArtifacts.isEmpty) {
+
+        val pageImages = if (pageImageArtifacts.getArtifacts.isEmpty) {
           ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
         } else {
           ExtractImages.load(pageImageArtifacts.rootPath)

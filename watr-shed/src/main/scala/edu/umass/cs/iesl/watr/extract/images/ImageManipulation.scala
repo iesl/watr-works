@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
 package extract
-package images 
+package images
 
 import com.sksamuel.scrimage._
 import geometry._
@@ -51,7 +51,9 @@ trait ImageManipulation {
 
     println(s"scaling factors are  scaleX: ${rescaleFactorX}, scaleY: ${rescaleFactorY}")
 
-    trimmed.scale(rescaleFactorX)
+    trimmed
+      .pad(3, Color.Black)
+      .scale(rescaleFactorX)
   }
 
 }

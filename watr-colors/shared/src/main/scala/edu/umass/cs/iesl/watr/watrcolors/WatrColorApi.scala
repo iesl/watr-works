@@ -3,6 +3,7 @@ package watrcolors
 
 import geometry._
 import textreflow._
+import watrmarks.Label
 
 trait SvgOverviewApi {
   def createView(artifactId: String): List[HtmlUpdate]
@@ -22,5 +23,5 @@ trait WatrTableApi {
   def echoTargetRegion(tr: TargetRegion): Unit
   def echoLTBounds(bbox: LTBounds): Unit
   def echoDouble(d: Double): Unit
-
+  def showTargetRegion(targetRegion: TargetRegion, label: Label): Unit
 }

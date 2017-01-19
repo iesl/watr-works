@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow 
+package textreflow
 
 
 import doobie.imports._
@@ -62,7 +62,7 @@ class TextReflowDBTables(
 
   val createDocumentTable: Update0 = sql"""
       CREATE TABLE document (
-        id            SERIAL PRIMARY KEY,
+        document            SERIAL PRIMARY KEY,
         stable_id     VARCHAR(128) UNIQUE
       );
       CREATE INDEX document_stable_id ON document USING hash (stable_id);
@@ -70,7 +70,7 @@ class TextReflowDBTables(
 
   val createPageTable: Update0 = sql"""
       CREATE TABLE page (
-        id          SERIAL PRIMARY KEY,
+        page        SERIAL PRIMARY KEY,
         document    INTEGER REFERENCES document,
         pagenum     SMALLINT,
         pageimg     BYTEA,
@@ -86,15 +86,15 @@ class TextReflowDBTables(
   // insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
   val createLabelTable: Update0 = sql"""
       CREATE TABLE label (
-        id             SERIAL PRIMARY KEY,
-        key            VARCHAR(50)
+        label          SERIAL PRIMARY KEY,
+        key            VARCHAR(50) UNIQUE
       );
       CREATE INDEX label_key ON label USING hash (key);
     """.update
 
   val createZoneTable: Update0 = sql"""
       CREATE TABLE zone (
-        id          SERIAL PRIMARY KEY,
+        zone          SERIAL PRIMARY KEY,
         zoneid      INTEGER NOT NULL,
         document    INTEGER REFERENCES document
       );
@@ -120,13 +120,13 @@ class TextReflowDBTables(
 
   val createTargetRegion: Update0 = sql"""
       CREATE TABLE targetregion (
-        id          SERIAL PRIMARY KEY,
-        page        INTEGER REFERENCES page,
-        bleft       INTEGER,
-        btop        INTEGER,
-        bwidth      INTEGER,
-        bheight     INTEGER,
-        uri         VARCHAR(256) UNIQUE
+        targetregion  SERIAL PRIMARY KEY,
+        page          INTEGER REFERENCES page,
+        bleft         INTEGER,
+        btop          INTEGER,
+        bwidth        INTEGER,
+        bheight       INTEGER,
+        uri           VARCHAR(256) UNIQUE
       );
       CREATE INDEX targetregion_uri ON targetregion USING hash (uri);
     """.update
@@ -134,18 +134,18 @@ class TextReflowDBTables(
 
   val createTextReflowTable: Update0 = sql"""
       CREATE TABLE textreflow (
-        id        SERIAL PRIMARY KEY,
-        reflow    text,
-        zone      INTEGER REFERENCES zone
+        textreflow  SERIAL PRIMARY KEY,
+        reflow      text,
+        zone        INTEGER REFERENCES zone
       )
     """.update
 
 
   val createTargetRegionImageTable: Update0 = sql"""
       CREATE TABLE targetregion_image (
-        id            SERIAL PRIMARY KEY,
-        image         BYTEA,
-        targetregion  INTEGER REFERENCES targetregion
+        targetregion_image     SERIAL PRIMARY KEY,
+        image                  BYTEA,
+        targetregion           INTEGER REFERENCES targetregion
       )
     """.update
 
@@ -182,9 +182,14 @@ class TextReflowDBTables(
     DROP TABLE IF EXISTS document;
   """.update
 
+  def dropAndCreateAll = for{
+    _ <- dropAll.run
+    _ <- createAll
+  } yield ()
+
   def dropAndCreate = {
     val run = for{
-      _ <- dropAll.run;
+      _ <- dropAll.run
       _ <- createAll
     } yield ()
     run.transact(xa)

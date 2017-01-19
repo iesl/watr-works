@@ -161,7 +161,7 @@ object ShellHtml {
     <.html(
       htmlHead(),
       <.body(WatrStyles.htmlBody)(
-        navbar(),
+        // navbar(),
         bodyContent()
       )
     )

@@ -62,6 +62,25 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   }
 
 
+  def makeTargetRegionImage(targetRegion: TargetRegion): Unit = {
+    val bbox = targetRegion.bbox
+    val targetRegionURI = targetRegion.uriString
+
+    val scb = (img:Image) => {
+      img.top = bbox.top
+      img.left = bbox.left
+      img.width = bbox.width
+      img.height = bbox.height
+
+      fabricCanvas.add(img)
+      fabricCanvas.renderAll()
+      ()
+    }
+    val jscb: js.Function1[Image, Unit] = scb
+
+    Image.fromURL(s"/img/${targetRegionURI}", jscb)
+  }
+
   def makePlaceholderImgs(trs: Seq[TargetRegion]): Seq[FabricObject] = {
     val objs = trs.zipWithIndex.map({case (tr, i) =>
       val bbox = tr.bbox.copy(
