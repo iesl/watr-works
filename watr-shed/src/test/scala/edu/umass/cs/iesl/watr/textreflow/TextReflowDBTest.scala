@@ -7,6 +7,7 @@ import spindex._
 import segment.DocumentSegmentation
 import extract.images.PageImages
 import doobie.free.{ connection => C }
+import com.sksamuel.scrimage._
 
 class FreshTextReflowDBTables(xa: Transactor[Task]) {
 
@@ -106,6 +107,14 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
     val vlineZones = reflowDB.selectZones(docId, PageID(1), LB.VisualLine)
     println("Zones page 1")
     println(vlineZones.mkString("\n"))
+    val blank = Image.filled(w, h, Color.Transparent)
+
+    vlineZones.foreach{zone =>
+      zone.regions.foreach {tr =>
+        reflowDB.overwriteTargetRegionImage(tr, blank)
+      }
+
+    }
 
     // re-read DocumentSegmentation from DB and verify that it is the same?
 

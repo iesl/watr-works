@@ -94,6 +94,10 @@ class TextReflowDB(
     query.transact(xa).unsafePerformSync
   }
 
+  def selectTextReflow(zone: Zone): Option[TextReflow] = {
+
+    ???
+  }
 
   def selectZones(docId: String@@DocumentID, pageId: Int@@PageID, label: watrmarks.Label): List[Zone] = {
     val query = sql"""
@@ -176,6 +180,13 @@ class TextReflowDB(
     """.update.withUniqueGeneratedKeys[Int]("document")
   }
 
+  def getDocuments(): List[String@@DocumentID] = {
+    sql"select stable_id from document"
+      .query[String@@DocumentID].list
+      .transact(xa)
+      .unsafePerformSync
+  }
+
   def selectDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
     sql"select document from document where stable_id=${docId}"
       .query[Int].unique
@@ -222,6 +233,17 @@ class TextReflowDB(
     query
   }
 
+  def deleteTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Int] = {
+    val trUri = targetRegion.uri
+    sql"""
+       delete from targetregion_image
+       using
+          targetregion as tr
+       where
+          tr.targetregion = targetregion_image.targetregion AND
+          tr.uri = ${trUri}
+    """.update.run
+  }
 
   def selectTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Option[Image]] = {
     val trUri = targetRegion.uri
@@ -327,6 +349,12 @@ class TextReflowDB(
     } yield ()
   }
 
+  def getPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): PageGeometry = {
+    selectPageGeometry(docId, pageId)
+      .transact(xa)
+      .unsafePerformSync
+  }
+
   def getPageImageAndGeometry(docId: String@@DocumentID, pageId: Int@@PageID): (Image, PageGeometry) = {
     val query = for {
       pageImage    <- selectPageImage(docId, pageId)
@@ -336,6 +364,17 @@ class TextReflowDB(
     query.transact(xa).unsafePerformSync
   }
 
+  def overwriteTargetRegionImage(targetRegion: TargetRegion, image: Image): Unit = {
+    val query = for {
+      _  <- putStrLn(s"overwriteTargetRegionImage for ${targetRegion}")
+      _  <- deleteTargetRegionImage(targetRegion)
+      _  <- insertTargetRegionImage(targetRegion, image)
+    } yield ()
+
+    query
+      .transact(xa)
+      .unsafePerformSync
+  }
   def putTargetRegionImage(targetRegion: TargetRegion, image: Image): Unit = {
     val query = for {
       _           <- putStrLn(s"putTargetRegionImage for ${targetRegion}")

@@ -13,9 +13,6 @@ import matryoshka.implicits._
 import utils.EnrichNumerics._
 
 
-trait TextReflowPredef {
-
-}
 trait TextReflowSharedFunctions extends TextReflowClipping {
 
   import TextReflowF._

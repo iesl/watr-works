@@ -81,6 +81,25 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
     Image.fromURL(s"/img/${targetRegionURI}", jscb)
   }
 
+  import scala.concurrent.{ Future, Promise }
+  // import scala.concurrent.ExecutionContext.Implicits.global
+
+  def makeImageForTargetRegion(tr: TargetRegion): Future[FabricObject] = {
+    val targetRegionURI = tr.uriString
+
+    val promise = Promise[FabricObject]()
+
+    val callback: js.Function1[Image, Unit] =
+      (img:Image) => {
+        promise.success(img)
+        ()
+      }
+
+    Image.fromURL(s"/img/${targetRegionURI}", callback)
+    promise.future
+
+  }
+
   def makePlaceholderImgs(trs: Seq[TargetRegion]): Seq[FabricObject] = {
     val objs = trs.zipWithIndex.map({case (tr, i) =>
       val bbox = tr.bbox.copy(
@@ -138,6 +157,27 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
       currTop = (currTop + widget.height.intValue())
       fabricCanvas.add(widget)
     }
+  }
+
+
+  import display._
+  import LabelWidgetF._
+
+  def renderLabelWidget(lwidget: LabelWidget): Future[FabricObject] = {
+
+    def visit(t: LabelWidgetF[(LabelWidget, Future[FabricObject])]): Future[FabricObject] = t match {
+      case Target(tr, emboss)  =>
+        makeImageForTargetRegion(tr)
+
+      case MouseOverlay((bkplane, attr), selects) =>
+        // createShape(tr.bounds, "black", "yellow", 1f)
+        attr
+      case _ => sys.error("echoLabeler: TODO")
+    }
+
+    lwidget
+      .cata(attributePara(visit))
+      .toPair._1
   }
 }
 

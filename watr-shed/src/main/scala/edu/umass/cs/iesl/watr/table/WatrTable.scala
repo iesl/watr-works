@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package table  
+package table
 
 import ammonite.ops._
 import pprint.PPrinter
@@ -32,6 +32,7 @@ object WatrTable {
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox
         |implicit val pp2 = pprintTextReflow
+        |implicit val db0: TextReflowDB = db
         |""".stripMargin
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
@@ -104,6 +105,77 @@ object ShellCommands extends CorpusEnrichments {
 
     def addSegmentation(ds: DocumentSegmentation): Unit = {
       theDB.addSegmentation(ds)
+    }
+
+    import display._
+    import geometry._
+
+    def documents(): List[String@@DocumentID] = {
+      theDB.getDocuments()
+    }
+
+    def titleLabeler(docId: String@@DocumentID): LabelWidget = {
+      val Lw = LabelWidgets
+
+      // - presumptively label the title lines
+      //    val tallestLines = page0.vlines.filter(_.height == tallest font height)
+      //    val titleZone: List[Zone] = Zone(tallestLines, LB.Title)
+
+      // - display:
+      //   - top half of page 1 w/ title labeling rects and visual line indicators
+      //   - "accept" button
+      //   - clear title label button
+      //   - rectangle select for labeling
+      //   - ? maybe show the extracted text w/button to indicate errors
+
+      val page0 = PageID(0)
+      val r0 = RegionID(0)
+
+      val pageGeometry = theDB.getPageGeometry(docId, page0)
+
+      val pageTargetRegion = TargetRegion(r0, docId, page0,
+        pageGeometry.bounds.copy(
+          top = pageGeometry.bounds.top + 10.0 ,
+          height = pageGeometry.bounds.height / 2.0
+        )
+      )
+
+      println(s"titleLabeler: pageGeometry=${pageGeometry},  half-page = ${pageTargetRegion}")
+
+      // val halfPageTargetRegion = pageGeometry := height / 2
+      // val displayTR = titleZone.targetRegion union halfPageTargetRegion
+
+      // val textDisplay = col(
+      //   titleZone.targetRegions.map(tr => val z = getZone(tr, VisualLine); getZoneTextReflow(z))
+      // )
+
+      //val preselects = List() // titleZone.targetRegions.map(selectionRect(_))
+
+      val selector = Lw.mouseOverlay(
+        Lw.target(
+          pageTargetRegion, LB.VisualLine
+        )
+      )
+
+      // val buttons = col(
+      //   toggle("accept", "unaccept")
+      //   button("clear selections")
+      //   ok, err, clearSelects
+      // )
+
+      // val finalWidget = row(
+      //   col(
+      //     annotWidget,
+      //     textDisplay
+      //   ),
+      //   buttons
+      // )
+
+      // // web client implementation
+      // val okButton = fabric.Text("✓")
+      // val errButton = "𝐗"
+
+      selector
     }
 
   }

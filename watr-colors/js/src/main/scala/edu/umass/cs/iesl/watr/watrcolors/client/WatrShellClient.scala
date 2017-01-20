@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
+import scala.async.Async
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
 
@@ -10,8 +11,9 @@ import org.scalajs.dom.ext._
 
 import textreflow._
 import geometry._
+import display._
 
-import autowire._
+// import autowire._
 
 import upickle.{default => UPickle}
 import UPickle._
@@ -121,8 +123,14 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
   }
 
   @JSExport
-  def echoLTBounds(bbox: LTBounds): Unit = {
-    println(s"got LTBounds ${bbox}")
+  def echoLabeler(lwidget: LabelWidget) = Async.async {
+    clear()
+    val labeler = Async.await {
+      renderLabelWidget(lwidget)
+    }
+
+    fabricCanvas.add(labeler)
+    fabricCanvas.renderAll()
   }
 
   @JSExport

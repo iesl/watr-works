@@ -17,6 +17,7 @@ import scala.concurrent.Future
 import corpora._
 import textreflow._
 import geometry._
+import display._
 
 import autowire._
 import upickle.{default => UPickle}
@@ -24,8 +25,32 @@ import UPickle._
 import TypeTagPicklers._
 
 
-class EmbeddedServer(reflowDB: TextReflowDB, corpus: Corpus, url: String, port: Int)
-    extends SimpleRoutingApp
+
+object ClientSiteConn {
+  type Conn[T] = ClientProxy[T, String, Reader, Writer]
+}
+
+class ClientSiteConn(pollActor: ActorRef)
+    extends autowire.Client[String, UPickle.Reader, UPickle.Writer] {
+
+  override def doCall(req: Request)= {
+    val reqArgs = req.args.toList.map({case (param, arg) =>
+      (param -> arg)
+    })
+
+    val rc = RemoteCall(req.path.toList, reqArgs)
+
+    pollActor ! rc
+
+    Future.successful("")
+  }
+
+  override def write[Result: UPickle.Writer](r: Result) = UPickle.write(r)
+  override def read[Result: UPickle.Reader](p: String) = UPickle.read[Result](p)
+}
+class EmbeddedServer(
+  reflowDB: TextReflowDB, corpus: Corpus, url: String, port: Int
+) extends SimpleRoutingApp
     with WatrTableApi {
 
 
@@ -39,151 +64,6 @@ class EmbeddedServer(reflowDB: TextReflowDB, corpus: Corpus, url: String, port: 
       `Access-Control-Max-Age`(1728000)
     )
 
-  object ClientSite extends autowire.Client[String, UPickle.Reader, UPickle.Writer] {
-
-    override def doCall(req: Request)= {
-      val reqArgs = req.args.toList.map({case (param, arg) =>
-        (param -> arg)
-      })
-
-      val rc = RemoteCall(req.path.toList, reqArgs)
-
-      longPoll ! rc
-
-      Future.successful("")
-    }
-
-    override def write[Result: UPickle.Writer](r: Result) = UPickle.write(r)
-    override def read[Result: UPickle.Reader](p: String) = UPickle.read[Result](p)
-
-  }
-
-  val api = ClientSite[WatrTableApi]
-
-  def clear(): Unit = {
-    api.clear().call()
-  }
-
-  def print(level: String, msg: String): Unit = {
-    api.print(level, msg).call()
-  }
-
-  def echoTextReflow(textReflow: TextReflow): Unit = {
-    api.echoTextReflow(textReflow).call()
-  }
-
-  def echoTextReflows(textReflows: List[TextReflow]): Unit = {
-    api.echoTextReflows(textReflows).call()
-  }
-
-  def echoTargetRegion(tr: TargetRegion): Unit = {
-    api.echoTargetRegion(tr).call()
-  }
-
-  def echoDouble(d: Double): Unit = {
-    api.echoDouble(d).call()
-  }
-
-  def imageScratch(): Unit = {
-
-    // import java.awt.{AlphaComposite, Graphics2D}
-    // val maskImage = Image(w, h)
-    //Rect(x: Int, y: Int, width: Int, height: Int)
-    // val g2: Graphics2D => Unit = { g2 =>
-    //   g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC))
-    //   g2.setColor(Color.Black)
-    // }
-    //   Line(100, 100, 120, 120)
-    // import scrimage.canvas
-
-    // import scrimage.composite.AlphaComposite
-    // import java.awt.Graphics2D
-    // import java.awt
-    // import scrimage.composite.OverlayComposite
-
-    // val g2: Graphics2D => Unit = { g2 =>
-    //   g2.setComposite(awt.AlphaComposite.getInstance(awt.AlphaComposite.SRC))
-    //   g2.setColor(Color.Black)
-    // }
-
-  }
-
-  def rescale(bbox: LTBounds, page1: LTBounds, page2: LTBounds): LTBounds = {
-    val LTBounds(l, t, w, h) = bbox
-
-
-    val scaleX = page2.width/page1.width
-    val scaleY = page2.height/page1.height
-    val l2 = l * scaleX
-    val t2 = t * scaleY
-    val w2 = w * scaleX
-    val h2 = h * scaleY
-    val res = LTBounds(l2, t2, w2, h2)
-    // println(s"rescaling ${bbox}/[$page1] => x/ [$page2] ==> scalex=${scaleX}, scaley=${scaleY} ")
-    // println(s"   $res")
-    res
-  }
-
-  def showPageImage(docId: String@@DocumentID, pagenum: Int): Unit = {
-    val pageId = PageID(pagenum)
-    val (pageImage, pageGeometry) = reflowDB.getPageImageAndGeometry(docId, pageId)
-    val pageTargetRegion = TargetRegion(RegionID(0), docId, pageId, pageGeometry.bounds)
-
-    showTargetRegion(pageTargetRegion, LB.VisualLine)
-  }
-
-  def showTargetRegion(targetRegion: TargetRegion, label: watrmarks.Label): Unit = {
-
-    import com.sksamuel.scrimage
-    import scrimage._
-    import scrimage.canvas._
-
-    val docId = targetRegion.docId
-    val pageId = targetRegion.pageId
-
-    val (pageImage, pageGeometry) = reflowDB.getPageImageAndGeometry(docId, pageId)
-
-    // select all zones w/label on given page
-    val zones = reflowDB.selectZones(docId, pageId, label)
-    val (w, h) = pageImage.dimensions
-    val pageImageBounds = LTBounds(0, 0, w.toDouble, h.toDouble)
-    println(s"showTargetRegion: pageImage has dims ${w}, $h = ${pageImageBounds}")
-
-    val blank = Image.filled(w, h, Color(0, 0, 0, 20))
-    val maskCanvas = new Canvas(blank)
-
-    val zoneRects = for { zone <- zones } yield {
-      zone.regions.map({
-        case TargetRegion(id, docId, pageId, bbox @ LTBounds(l, t, w, h)) =>
-          val re @ LTBounds(rl, rt, rw, rh) = rescale(bbox, pageGeometry.bounds, pageImageBounds)
-          val ctx = Context.painter(Color(10, 10, 220, 40))
-          val r = Rect(rl.toInt, rt.toInt, rw.toInt, rh.toInt, ctx)
-          // println(s"adding rescaled rect ${re}")
-          r.fill
-      })
-    }
-
-    val rectsCanvas = maskCanvas.draw(zoneRects.flatten)
-
-    val maskImage = rectsCanvas.image
-
-    val overlay = pageImage.overlay(maskImage, 0, 0)
-
-    val pageTargetRegion = TargetRegion(RegionID(0), docId, pageId, pageGeometry.bounds)
-    // val labelUri = pageUri + "?l=" + label.fqn
-
-    reflowDB.putTargetRegionImage(pageTargetRegion, overlay)
-
-    api.showTargetRegion(pageTargetRegion, label).call()
-  }
-
-  def echoLTBounds(bbox: LTBounds): Unit = {
-    api.echoLTBounds(bbox).call()
-  }
-
-  def echoCharAtom(charAtom: CharAtom): Unit = {
-    api.echoCharAtom(charAtom).call()
-  }
 
   /**
    * Actor meant to handle long polling, buffering messages or waiting actors
@@ -248,7 +128,7 @@ class EmbeddedServer(reflowDB: TextReflowDB, corpus: Corpus, url: String, port: 
     HttpEntity(MediaTypes.`text/html`, resp)
   }
 
-  import geometry._
+  // import geometry._
 
   def producePageImage(path: List[String]): Array[Byte] = {
     println(s"producePageImage: ${path}")
@@ -312,5 +192,69 @@ class EmbeddedServer(reflowDB: TextReflowDB, corpus: Corpus, url: String, port: 
   )
 
   def kill() = system.terminate()
+
+  val ClientSite  = new ClientSiteConn(longPoll)
+
+  val labeler = new LabelingServer(reflowDB, corpus)
+
+  val api = ClientSite[WatrTableApi]
+
+  def clear(): Unit = {
+    api.clear().call()
+  }
+
+  def print(level: String, msg: String): Unit = {
+    api.print(level, msg).call()
+  }
+
+  def echoTextReflow(textReflow: TextReflow): Unit = {
+    api.echoTextReflow(textReflow).call()
+  }
+
+  def echoTextReflows(textReflows: List[TextReflow]): Unit = {
+    api.echoTextReflows(textReflows).call()
+  }
+
+  def echoTargetRegion(tr: TargetRegion): Unit = {
+    api.echoTargetRegion(tr).call()
+  }
+
+  def echoDouble(d: Double): Unit = {
+    api.echoDouble(d).call()
+  }
+
+  // FIXME this is NOT a showTargetRegion function, it is hardcoded to show all VisualLines on a page image
+  def showTargetRegion(targetRegion: TargetRegion, label: watrmarks.Label): Unit = {
+    val pageTargetRegion = labeler.showTargetRegion(targetRegion, label)
+    api.showTargetRegion(pageTargetRegion, label).call()
+  }
+
+  def echoLabeler(lwidget: LabelWidget): Unit = {
+    import matryoshka._
+    import matryoshka.data._
+    import matryoshka.implicits._
+
+    import LabelWidgetF._
+
+    /// pre-create target region images w/embossings
+    def visit(t: LabelWidgetF[Unit]): Unit = t match {
+      case Target(tr, emboss)    =>
+
+        labeler.embossTargetRegion(tr, emboss)
+
+      case MouseOverlay(bkplane, selects) =>
+
+      case _ => sys.error("echoLabeler: TODO")
+    }
+
+    // side-effecting...
+    lwidget.cata(visit)
+
+    api.echoLabeler(lwidget).call()
+  }
+
+  def echoCharAtom(charAtom: CharAtom): Unit = {
+    api.echoCharAtom(charAtom).call()
+  }
 
 }
