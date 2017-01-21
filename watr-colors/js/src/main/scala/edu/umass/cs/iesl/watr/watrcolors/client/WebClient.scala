@@ -2,13 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-// import scala.scalajs.js.annotation.JSExport
-
 import native.mousetrap._
-
-/**
-
-  */
 
 case class Keybindings(
   bindings: List[(String, (MousetrapEvent) => Boolean)]
@@ -17,9 +11,12 @@ case class Keybindings(
 trait ClientView extends FabricCanvasOperations {
 
   def setKeybindings(kb: Keybindings) = {
+    println(s"setKeybindings")
     Mousetrap.reset()
+    println(s"setKeybindings:reset()")
     kb.bindings.foreach {
       case (str, fn) =>
+        println(s"setKeybindings: ${str} -> $fn")
         Mousetrap.bind(str, fn, "keypress")
     }
   }

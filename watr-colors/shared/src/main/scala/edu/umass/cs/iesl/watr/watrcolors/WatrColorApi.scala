@@ -18,11 +18,6 @@ trait SvgOverviewApi {
 trait WatrTableApi {
   def clear(): Unit
   def print(level: String, msg: String): Unit
-  def echoTextReflow(textReflow: TextReflow): Unit
   def echoTextReflows(textReflows: List[TextReflow]): Unit
-  def echoCharAtom(charAtom: CharAtom): Unit
-  def echoTargetRegion(tr: TargetRegion): Unit
   def echoLabeler(lwidget: LabelWidget): Unit
-  def echoDouble(d: Double): Unit
-  def showTargetRegion(targetRegion: TargetRegion, label: Label): Unit
 }

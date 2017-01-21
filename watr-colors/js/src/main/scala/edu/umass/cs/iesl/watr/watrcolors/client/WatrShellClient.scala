@@ -19,6 +19,8 @@ import upickle.{default => UPickle}
 import UPickle._
 import TypeTagPicklers._
 
+import native.mousetrap._
+
 object ServerSite extends autowire.Server[String, UPickle.Reader, UPickle.Writer] {
   def routes = ServerSite.route[WatrTableApi](WatrTableClient)
 
@@ -45,7 +47,35 @@ object ServerSite extends autowire.Server[String, UPickle.Reader, UPickle.Writer
 @JSExport
 object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamples {
 
+  @JSExport
+  def doSelection(): Boolean = {
+    println("getUserLTBounds")
+
+    for {
+      bbox <- handlers.getUserLTBounds(fabricCanvas)
+    } yield {
+      println(s"getUserLTBounds: got ${bbox}")
+      addLTBoundsRect(bbox, "black", "#000", 0.3f)
+
+      // val bboxAbs = alignBboxToDiv("#overlay-container", bbox)
+      // async {
+      //   val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
+      //   applyHtmlUpdates(res)
+      //   addLTBoundsRect(bboxAbs, "black", "#000", 0.1f)
+      // }
+    }
+    true
+  }
+
+  @JSExport
+  def hello(): Boolean = {
+    println(s"Hello!!!")
+    true
+  }
+
   override val initKeys = Keybindings(List(
+    "s" -> ((e: MousetrapEvent) => doSelection()),
+    "r" -> ((e: MousetrapEvent) => hello())
   ))
 
   def createView(): Unit = {}
@@ -61,6 +91,8 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
 
   @JSExport
   def main(host: String="localhost", port: Int=9999): Unit = {
+    setKeybindings(initKeys)
+
     def rec(): Unit = {
 
       Ajax.post(s"http://$host:$port/notifications").onComplete {
@@ -113,16 +145,6 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
   }
 
   @JSExport
-  def echoTargetRegion(tr: TargetRegion): Unit = {
-    println(s"got TargetRegion ${tr}")
-  }
-
-  @JSExport
-  def echoDouble(d: Double): Unit = {
-    println(s"got Double ${d}")
-  }
-
-  @JSExport
   def echoLabeler(lwidget: LabelWidget) = Async.async {
     clear()
     val labeler = Async.await {
@@ -133,22 +155,6 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
     fabricCanvas.renderAll()
   }
 
-  @JSExport
-  def echoCharAtom(charAtom: CharAtom): Unit = {
-    println(s"got CharAtom ${charAtom}")
-  }
-
-  @JSExport
-  def showTargetRegion(targetRegion: TargetRegion, label: watrmarks.Label): Unit = {
-    clear()
-    makeTargetRegionImage(targetRegion)
-  }
-
-  @JSExport
-  override def echoTextReflow(textReflow: TextReflow): Unit = {
-    vcatWidgets(Seq(textReflow))
-
-  }
 
   @JSExport
   override def echoTextReflows(textReflows: List[TextReflow]): Unit = {

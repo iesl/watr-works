@@ -13,6 +13,8 @@ import PageComponentImplicits._
 import native.fabric
 import native.fabric._
 
+import scala.concurrent.{ Future, Promise }
+
 trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   import TextReflowF._
   import matryoshka._
@@ -62,27 +64,25 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
   }
 
 
-  def makeTargetRegionImage(targetRegion: TargetRegion): Unit = {
-    val bbox = targetRegion.bbox
-    val targetRegionURI = targetRegion.uriString
+  // def makeTargetRegionImage(targetRegion: TargetRegion): Unit = {
+  //   val bbox = targetRegion.bbox
+  //   val targetRegionURI = targetRegion.uriString
 
-    val scb = (img:Image) => {
-      img.top = bbox.top
-      img.left = bbox.left
-      img.width = bbox.width
-      img.height = bbox.height
+  //   val scb = (img:Image) => {
+  //     img.top = bbox.top
+  //     img.left = bbox.left
+  //     img.width = bbox.width
+  //     img.height = bbox.height
 
-      fabricCanvas.add(img)
-      fabricCanvas.renderAll()
-      ()
-    }
-    val jscb: js.Function1[Image, Unit] = scb
+  //     fabricCanvas.add(img)
+  //     fabricCanvas.renderAll()
+  //     ()
+  //   }
+  //   val jscb: js.Function1[Image, Unit] = scb
 
-    Image.fromURL(s"/img/${targetRegionURI}", jscb)
-  }
+  //   Image.fromURL(s"/img/${targetRegionURI}", jscb)
+  // }
 
-  import scala.concurrent.{ Future, Promise }
-  // import scala.concurrent.ExecutionContext.Implicits.global
 
   def makeImageForTargetRegion(tr: TargetRegion): Future[FabricObject] = {
     val targetRegionURI = tr.uriString
@@ -91,6 +91,7 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
 
     val callback: js.Function1[Image, Unit] =
       (img:Image) => {
+        noControls(img)
         promise.success(img)
         ()
       }
@@ -158,7 +159,6 @@ trait TextReflowExamples extends PlainTextReflow with FabricCanvasOperations {
       fabricCanvas.add(widget)
     }
   }
-
 
   import display._
   import LabelWidgetF._

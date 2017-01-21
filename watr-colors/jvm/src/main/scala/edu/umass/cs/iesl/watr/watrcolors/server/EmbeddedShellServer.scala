@@ -207,26 +207,8 @@ class EmbeddedServer(
     api.print(level, msg).call()
   }
 
-  def echoTextReflow(textReflow: TextReflow): Unit = {
-    api.echoTextReflow(textReflow).call()
-  }
-
   def echoTextReflows(textReflows: List[TextReflow]): Unit = {
     api.echoTextReflows(textReflows).call()
-  }
-
-  def echoTargetRegion(tr: TargetRegion): Unit = {
-    api.echoTargetRegion(tr).call()
-  }
-
-  def echoDouble(d: Double): Unit = {
-    api.echoDouble(d).call()
-  }
-
-  // FIXME this is NOT a showTargetRegion function, it is hardcoded to show all VisualLines on a page image
-  def showTargetRegion(targetRegion: TargetRegion, label: watrmarks.Label): Unit = {
-    val pageTargetRegion = labeler.showTargetRegion(targetRegion, label)
-    api.showTargetRegion(pageTargetRegion, label).call()
   }
 
   def echoLabeler(lwidget: LabelWidget): Unit = {
@@ -238,23 +220,17 @@ class EmbeddedServer(
 
     /// pre-create target region images w/embossings
     def visit(t: LabelWidgetF[Unit]): Unit = t match {
-      case Target(tr, emboss)    =>
-
+      case Target(tr, emboss) =>
+        // pre-create the images w/labels embossed as color overlays and put them in database
         labeler.embossTargetRegion(tr, emboss)
 
-      case MouseOverlay(bkplane, selects) =>
-
-      case _ => sys.error("echoLabeler: TODO")
+      case _ => ()
     }
 
     // side-effecting...
     lwidget.cata(visit)
 
     api.echoLabeler(lwidget).call()
-  }
-
-  def echoCharAtom(charAtom: CharAtom): Unit = {
-    api.echoCharAtom(charAtom).call()
   }
 
 }
