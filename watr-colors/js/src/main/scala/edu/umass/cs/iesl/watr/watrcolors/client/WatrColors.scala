@@ -3,56 +3,50 @@ package watrcolors
 package client
 
 import scala.async.Async
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js.annotation.JSExport
 
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+// import scala.scalajs.js
+import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import org.scalajs.dom.ext._
+
+import autowire._
 
 import textreflow._
 import geometry._
 import display._
 
-// import autowire._
-
-import upickle.{default => UPickle}
-import UPickle._
-import TypeTagPicklers._
-
 import native.mousetrap._
 
-object ServerSite extends autowire.Server[String, UPickle.Reader, UPickle.Writer] {
-  def routes = ServerSite.route[WatrTableApi](WatrTableClient)
 
-  def wire(incoming: String): Unit = {
+@JSExport
+object WatrColors extends WatrColorsApi with WatrShellApi with TextReflowExamples {
 
-    val remoteCalls = UPickle.read[List[RemoteCall]](incoming)
+  val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
+    "s" -> ((e: MousetrapEvent) => doSelection()),
+    "r" -> ((e: MousetrapEvent) => helloShell("Hello from WatrColors!"))
+  )
 
-    remoteCalls.foreach { case RemoteCall(callPath, callArgs) =>
-      println(s"Server: Remote Call recv'd ${callPath}")
+  def initKeybindings() = {
+    Mousetrap.reset()
+    keybindings.foreach { case (str, fn) =>
+      val bindFunc: MousetrapEvent => Boolean = e => {
+        fn(e); true
+      }
 
-      val req = new Request(
-        callPath,
-        callArgs.toMap
-      )
-
-      routes.apply(req)
+      Mousetrap.bind(str, bindFunc, "keypress")
     }
   }
 
-  override def write[Result: UPickle.Writer](r: Result) = UPickle.write(r)
-  override def read[Result: UPickle.Reader](p: String) = UPickle.read[Result](p)
-}
-
-@JSExport
-object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamples {
+  val WebClient = new WebsideClient("autowire")
+  val shellCall = WebClient[WatrShellApi]
 
   @JSExport
-  def doSelection(): Boolean = {
+  def doSelection(): Unit = {
     println("getUserLTBounds")
 
     for {
-      bbox <- handlers.getUserLTBounds(fabricCanvas)
+      bbox <- MouseGestures.getUserLTBounds(fabricCanvas)
     } yield {
       println(s"getUserLTBounds: got ${bbox}")
       addLTBoundsRect(bbox, "black", "#000", 0.3f)
@@ -64,21 +58,28 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
       //   addLTBoundsRect(bboxAbs, "black", "#000", 0.1f)
       // }
     }
-    true
   }
 
   @JSExport
-  def hello(): Boolean = {
-    println(s"Hello!!!")
-    true
+  def helloColors(msg: String): Unit = {
+    println(msg)
   }
 
-  override val initKeys = Keybindings(List(
-    "s" -> ((e: MousetrapEvent) => doSelection()),
-    "r" -> ((e: MousetrapEvent) => hello())
-  ))
+  @JSExport
+  def onSelectLTBounds(artifactId: String, bbox: LTBounds): Unit = {
 
-  def createView(): Unit = {}
+  }
+
+  @JSExport
+  def onDrawPath(artifactId: String, path: Seq[Point]): Unit = {
+
+  }
+
+  @JSExport
+  def helloShell(msg: String): Unit = {
+    shellCall.helloShell(msg).call()
+  }
+
 
   @JSExport
   lazy val shadowBody = dom.document.body.cloneNode(deep = true)
@@ -89,9 +90,13 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
   @JSExport
   var success = false
 
+
+  val websideServer = new WebsideServer(this)
+
   @JSExport
   def main(host: String="localhost", port: Int=9999): Unit = {
-    setKeybindings(initKeys)
+
+    initKeybindings()
 
     def rec(): Unit = {
 
@@ -103,7 +108,7 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
           interval = 1000
 
 
-          ServerSite.wire(data.responseText)
+          websideServer.wire(data.responseText)
           rec()
         case util.Failure(e) =>
           if (success) println("Workbench disconnected " + e)
@@ -141,6 +146,7 @@ object WatrTableClient extends ClientView with WatrTableApi with TextReflowExamp
       case "warn" => dom.console.warn(msg)
       case "info" => dom.console.info(msg)
       case "log" => dom.console.log(msg)
+      case      _ => dom.console.log(level + ":" + msg)
     }
   }
 

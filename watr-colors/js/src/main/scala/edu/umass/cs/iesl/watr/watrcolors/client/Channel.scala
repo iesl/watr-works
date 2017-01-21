@@ -8,24 +8,19 @@ import scala.concurrent.Promise
 
 class Channel[T](init: (T => Unit) => Unit){
 
-  println("initing Channel")
-
   init(update)
+
   private[this] var value: Promise[T] = null
 
   def apply(): Future[T] = {
-    println("applying Channel")
     value = Promise[T]()
     value.future
   }
 
   def update(t: T): Unit = {
-    println("updating Channel")
     if (value != null && !value.isCompleted) {
-      println("updating Channel (success)")
       val _ = value.success(t)
     }
-    println("updating Channel (exiting)")
   }
 
   def |(other: Channel[T]): Future[T] = {
@@ -46,14 +41,17 @@ trait CanvasMouseChannels {
 
   def canvas: fabric.Canvas
 
-  println(s"assembled canvas: ${canvas}")
 
   val mousemove = new Channel[ME](canvas.on("mouse:move", _))
   val mouseup = new Channel[ME](canvas.on("mouse:up", _))
   val mousedown = new Channel[ME](canvas.on("mouse:down", _))
+  val mouseover = new Channel[ME](canvas.on("mouse:over", _))
+  val mouseout = new Channel[ME](canvas.on("mouse:out", _))
 
 
   def teardown(): Unit = {
+    // TODO remove listeners when no longer needed
+    // not sure if this is leaking resources
 
   }
 

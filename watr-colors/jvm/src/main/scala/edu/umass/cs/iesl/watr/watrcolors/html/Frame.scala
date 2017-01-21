@@ -150,7 +150,7 @@ object ShellHtml {
       ),
 
       <.script(`type` := "text/javascript")(
-        raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrTableClient().main()")
+        raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrColors().main()")
       )
 
     )
@@ -186,7 +186,7 @@ object ShellHtml {
 
       body(margin := 0, WatrStyles.htmlBody)(
         <.script(`type` := "text/javascript")(
-          raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrTableClient().main()")
+          raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrColors().main()")
         )
       )
     )

@@ -4,18 +4,15 @@ package watrcolors
 import geometry._
 import textreflow._
 import display._
-import watrmarks.Label
 
-trait SvgOverviewApi {
-  def createView(artifactId: String): List[HtmlUpdate]
-  def getLabelOverlay(artifactId: String): List[TraceLog]
-  // def getTextOverlay(artifactId: String): (Seq[PageGeometry], Seq[Seq[Component]])
-  def onSelectLTBounds(artifactId: String, bbox: LTBounds): List[HtmlUpdate]
-  def onDrawPath(artifactId: String, path: Seq[Point]): List[HtmlUpdate]
+trait WatrShellApi {
+  def helloShell(msg: String): Unit
+  def onSelectLTBounds(artifactId: String, bbox: LTBounds): Unit
+  def onDrawPath(artifactId: String, path: Seq[Point]): Unit
 }
 
-
-trait WatrTableApi {
+trait WatrColorsApi {
+  def helloColors(msg: String): Unit
   def clear(): Unit
   def print(level: String, msg: String): Unit
   def echoTextReflows(textReflows: List[TextReflow]): Unit

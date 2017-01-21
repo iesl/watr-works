@@ -126,3 +126,21 @@ trait HtmlCanvasRendering {
 
 
 }
+
+trait FabricCanvasOperations extends HtmlCanvasRendering {
+  def fabricCanvas: fabric.Canvas
+
+  def addShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): fabric.FabricObject = {
+    val cshape = createShape(shape, color, bg, opacity)
+    fabricCanvas.add(cshape)
+
+    cshape
+  }
+
+  def addLTBoundsRect(bbox: LTBounds, color: String, bg: String, opacity: Float): fabric.FabricObject = {
+    val cshape = createLTBoundsRect(bbox, color, bg, opacity)
+    fabricCanvas.add(cshape)
+    cshape
+  }
+
+}

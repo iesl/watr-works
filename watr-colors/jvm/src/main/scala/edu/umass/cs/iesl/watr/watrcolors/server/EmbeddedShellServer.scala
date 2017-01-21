@@ -25,33 +25,12 @@ import UPickle._
 import TypeTagPicklers._
 
 
-
-object ClientSiteConn {
-  type Conn[T] = ClientProxy[T, String, Reader, Writer]
-}
-
-class ClientSiteConn(pollActor: ActorRef)
-    extends autowire.Client[String, UPickle.Reader, UPickle.Writer] {
-
-  override def doCall(req: Request)= {
-    val reqArgs = req.args.toList.map({case (param, arg) =>
-      (param -> arg)
-    })
-
-    val rc = RemoteCall(req.path.toList, reqArgs)
-
-    pollActor ! rc
-
-    Future.successful("")
-  }
-
-  override def write[Result: UPickle.Writer](r: Result) = UPickle.write(r)
-  override def read[Result: UPickle.Reader](p: String) = UPickle.read[Result](p)
-}
 class EmbeddedServer(
-  reflowDB: TextReflowDB, corpus: Corpus, url: String, port: Int
-) extends SimpleRoutingApp
-    with WatrTableApi {
+  reflowDB: TextReflowDB,
+  corpus: Corpus,
+  url: String,
+  port: Int
+) extends SimpleRoutingApp with WatrColorsApi with WatrShellApi {
 
 
   implicit val system = ActorSystem()
@@ -158,10 +137,30 @@ class EmbeddedServer(
     )
   )
 
-  // Helper function for constructing Autowire routes
+  // def apiRoute(
+  //   prefix: String,
+  //   server: ShellsideServer
+  // ) = pathPrefix("api")(
+  //   path(prefix / Segments) { segs =>
+  //     extract(_.request.entity.data) { requestData => ctx =>
+  //       ctx.complete(
+  //         server
+  //           .route({
+  //             val reqStr = requestData.asString
+  //             val argmap = UPickle.read[Map[String, String]](reqStr)
+  //             autowire.Core.Request(segs, argmap)
+  //           })
+  //           .map({responseData =>
+  //             HttpEntity(HttpData(ByteString(responseData)))
+  //           })
+  //       )
+  //     }
+  //   }
+  // )
+
   def apiRoute(
     prefix: String,
-    router: autowire.Core.Router[String] // (which expands to)  PartialFunction[autowire.Core.Request[java.nio.ByteBuffer],scala.concurrent.Future[java.nio.ByteBuffer]]
+    router: autowire.Core.Router[String]
   ) = pathPrefix("api")(
     path(prefix / Segments) { segs =>
       extract(_.request.entity.data) { requestData => ctx =>
@@ -178,26 +177,33 @@ class EmbeddedServer(
     }
   )
 
+  // apiRoute("explorer", AutowireServer.route[CorpusExplorerApi](corpusExplorerServer)) ~
+
+  // val shellServer = new ShellsideServer(this)
+  // object ShellServer extends autowire.Server[String, UPickle.Reader, UPickle.Writer]
+
+  def autowireRoute = apiRoute("autowire", ShellsideServer.route[WatrShellApi](this))
 
   startServer(url, port)(
     get( webjarResources
       ~  assets
       ~  pageImageServer
       ~  mainFrame
-    ) ~ post(
-      path("notifications") ( ctx =>
-        longPoll ! ctx.responder
-      )
+    ) ~
+    post(
+      path("notifications") (ctx =>
+        longPoll ! ctx.responder)
+      ~  autowireRoute
     )
   )
 
   def kill() = system.terminate()
 
-  val ClientSite  = new ClientSiteConn(longPoll)
 
   val labeler = new LabelingServer(reflowDB, corpus)
 
-  val api = ClientSite[WatrTableApi]
+  val ClientSite  = new ShellsideClient(longPoll)
+  val api = ClientSite[WatrColorsApi]
 
   def clear(): Unit = {
     api.clear().call()
@@ -232,5 +238,29 @@ class EmbeddedServer(
 
     api.echoLabeler(lwidget).call()
   }
+
+  def helloColors(msg: String): Unit = {
+    api.helloColors(msg).call()
+  }
+
+
+  // Handle incoming messages from WatrColors:
+  def helloShell(msg: String): Unit = {
+    println(s"helloShell: $msg")
+  }
+
+  def onDrawPath(artifactId: String,path: Seq[Point]): Unit = {
+    println(s"onDrawPath: ")
+  }
+
+  def onSelectLTBounds(artifactId: String,bbox: LTBounds): Unit = {
+    println(s"onSelectLTBounds: ")
+  }
+
+
+
+
+
+
 
 }
