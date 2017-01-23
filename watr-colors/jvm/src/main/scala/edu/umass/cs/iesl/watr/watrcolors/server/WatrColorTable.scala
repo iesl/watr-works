@@ -13,9 +13,16 @@ object WatrColorTable {
 
     val server =  new EmbeddedServer(reflowDB, corpus, "localhost", 9999)
 
+    server.httpserver.run()
+
+    val predef = (
+      s"""|${WatrTable.predef}
+          | import server.colors
+          |""".stripMargin)
+
     ammonite.Main(
       // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
-      predef = WatrTable.predef,
+      predef = predef,
       defaultPredef = true,
       wd = pwd,
       welcomeBanner = Some(s""">> WatrTable+WatrColors @ http://localhost:9999/  <<"""),
@@ -29,6 +36,6 @@ object WatrColorTable {
       "db" -> reflowDB
     )
 
-    server.kill()
+    server.httpserver.kill()
   }
 }

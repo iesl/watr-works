@@ -33,8 +33,6 @@ object LabelWidgetF {
   case class Col[A](as: List[A])      extends LabelWidgetF[A]
 
 
-
-
   implicit def LabelWidgetTraverse: Traverse[LabelWidgetF] = new Traverse[LabelWidgetF] {
     def traverseImpl[G[_], A, B](
       fa: LabelWidgetF[A])(
@@ -47,8 +45,8 @@ object LabelWidgetF {
         case l @ Button()                       => G.point(l.copy())
         case l @ MouseOverlay(bkplane, sels)    => f(bkplane).map(a => l.copy(backplane=a))
         case l @ Panel(content)                 => f(content).map(a => l.copy(content=a))
-        case l @ Row(holes)                     => holes.traverse(f).map(Row(_))
-        case l @ Col(holes)                     => holes.traverse(f).map(Col(_))
+        case l @ Row(as)                        => as.traverse(f).map(Row(_))
+        case l @ Col(as)                        => as.traverse(f).map(Col(_))
       }
     }
   }
@@ -79,4 +77,14 @@ object LabelWidgets {
   def reflow(tr: TextReflow) = fixlw(Reflow(
     tr
   ))
+
+  def vcat(lwidgets: LabelWidget*): LabelWidget = {
+    fixlw(Col(
+      lwidgets.toList
+    ))
+  }
+
+  def panel(content: LabelWidget): LabelWidget = {
+    fixlw(Panel(content))
+  }
 }

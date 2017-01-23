@@ -109,13 +109,13 @@ class StaticCanvas(
   // @param {(String|fabric.Pattern)} overlayColor Color or pattern to set background color to
   // @param {Function} callback Callback to invoke when background color is set
   // @return {fabric.Canvas} thisArg
-  def setOverlayColor(overlayColor: Any, callback: js.Function): Canvas = js.native
+  def setOverlayColor(overlayColor: String, callback: js.Function): Canvas = js.native
 
 
   // @param {(String|fabric.Pattern)} backgroundColor Color or pattern to set background color to
   // @param {Function} callback Callback to invoke when background color is set
   // @return {fabric.Canvas} thisArg
-  def setBackgroundColor(backgroundColor: Any, callback: js.Function): Canvas = js.native
+  def setBackgroundColor(backgroundColor: String, callback: js.Function): Canvas = js.native
 
 
   // @param {String} property Property to set ({@link fabric.StaticCanvas#backgroundImage|backgroundImage}

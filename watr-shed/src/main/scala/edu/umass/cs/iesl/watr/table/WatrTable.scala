@@ -114,6 +114,14 @@ object ShellCommands extends CorpusEnrichments {
       theDB.getDocuments()
     }
 
+    def titleLabelers(n: Int): LabelWidget = {
+      val Lw = LabelWidgets
+      val lws = documents.take(n)
+        .map(titleLabeler(_))
+
+      Lw.vcat(lws:_*)
+    }
+
     def titleLabeler(docId: String@@DocumentID): LabelWidget = {
       val Lw = LabelWidgets
 
@@ -136,7 +144,7 @@ object ShellCommands extends CorpusEnrichments {
       val pageTargetRegion = TargetRegion(r0, docId, page0,
         pageGeometry.bounds.copy(
           top = pageGeometry.bounds.top + 10.0 ,
-          height = pageGeometry.bounds.height / 2.0
+          height = pageGeometry.bounds.height / 4.0
         )
       )
 
@@ -151,9 +159,11 @@ object ShellCommands extends CorpusEnrichments {
 
       //val preselects = List() // titleZone.targetRegions.map(selectionRect(_))
 
-      val selector = Lw.mouseOverlay(
-        Lw.target(
-          pageTargetRegion, LB.VisualLine
+      val selector = Lw.panel(
+        Lw.mouseOverlay(
+          Lw.target(
+            pageTargetRegion, LB.VisualLine
+          )
         )
       )
 

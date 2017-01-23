@@ -5,7 +5,6 @@ package client
 import scala.async.Async
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-// import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import org.scalajs.dom.ext._
@@ -20,11 +19,10 @@ import native.mousetrap._
 
 
 @JSExport
-object WatrColors extends WatrColorsApi with WatrShellApi with TextReflowExamples {
+object WatrColors extends TextReflowExamples {
 
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
-    "s" -> ((e: MousetrapEvent) => doSelection()),
-    "r" -> ((e: MousetrapEvent) => helloShell("Hello from WatrColors!"))
+    "s" -> ((e: MousetrapEvent) => doSelection())
   )
 
   def initKeybindings() = {
@@ -38,8 +36,6 @@ object WatrColors extends WatrColorsApi with WatrShellApi with TextReflowExample
     }
   }
 
-  val WebClient = new WebsideClient("autowire")
-  val shellCall = WebClient[WatrShellApi]
 
   @JSExport
   def doSelection(): Unit = {
@@ -51,6 +47,8 @@ object WatrColors extends WatrColorsApi with WatrShellApi with TextReflowExample
       println(s"getUserLTBounds: got ${bbox}")
       addLTBoundsRect(bbox, "black", "#000", 0.3f)
 
+      shell.onSelectLTBounds("some-artifact", bbox)
+
       // val bboxAbs = alignBboxToDiv("#overlay-container", bbox)
       // async {
       //   val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
@@ -60,25 +58,21 @@ object WatrColors extends WatrColorsApi with WatrShellApi with TextReflowExample
     }
   }
 
-  @JSExport
-  def helloColors(msg: String): Unit = {
-    println(msg)
+
+  object shell {
+    val Client = new WebsideClient("autowire")
+    val api = Client[WatrShellApi]
+
+    @JSExport
+    def hello(msg: String): Unit = {
+      api.helloShell(msg).call()
+    }
+
+    def onSelectLTBounds(artifactId: String, bbox: LTBounds): Unit = {
+      api.onSelectLTBounds(artifactId, bbox).call()
+    }
   }
 
-  @JSExport
-  def onSelectLTBounds(artifactId: String, bbox: LTBounds): Unit = {
-
-  }
-
-  @JSExport
-  def onDrawPath(artifactId: String, path: Seq[Point]): Unit = {
-
-  }
-
-  @JSExport
-  def helloShell(msg: String): Unit = {
-    shellCall.helloShell(msg).call()
-  }
 
 
   @JSExport
@@ -87,16 +81,72 @@ object WatrColors extends WatrColorsApi with WatrShellApi with TextReflowExample
   @JSExport
   var interval: Double = 1000
 
-  @JSExport
-  var success = false
 
 
-  val websideServer = new WebsideServer(this)
+  object WatrColorsApiListeners extends WatrColorsApi {
+
+    @JSExport
+    def helloColors(msg: String): Unit = {
+      println(msg)
+    }
+
+    @JSExport
+    override def clear(): Unit = {
+      fabricCanvas.clear()
+      // dom.document.asInstanceOf[js.Dynamic].body = shadowBody.cloneNode(true)
+      // for(i <- 0 until 100000){
+      //   dom.window.clearTimeout(i)
+      //   dom.window.clearInterval(i)
+      // }
+    }
+
+    @JSExport
+    override def print(level: String, msg: String): Unit = {
+      jQuery("#main").append(msg+" and more!")
+
+      level match {
+        case "error" => dom.console.error(msg)
+        case "warn" => dom.console.warn(msg)
+        case "info" => dom.console.info(msg)
+        case "log" => dom.console.log(msg)
+        case      _ => dom.console.log(level + ":" + msg)
+      }
+    }
+
+    @JSExport
+    def echoLabeler(lwidget: LabelWidget) = Async.async {
+      clear()
+      val labeler = Async.await {
+        renderLabelWidget(lwidget)
+      }
+
+      val lw = labeler.width
+      fabricCanvas.setWidth(lw.intValue)
+
+      val lh = labeler.height
+      fabricCanvas.setHeight(lh.intValue)
+
+      // fabricCanvas.setBackgroundColor("yellow")
+      fabricCanvas.add(labeler)
+      fabricCanvas.renderAll()
+    }
+
+
+    @JSExport
+    override def echoTextReflows(textReflows: List[TextReflow]): Unit = {
+      vcatWidgets(textReflows)
+    }
+  }
 
   @JSExport
   def main(host: String="localhost", port: Int=9999): Unit = {
 
     initKeybindings()
+
+    val websideServer = new WebsideServer(WatrColorsApiListeners)
+      // @JSExport
+
+    var success = false
 
     def rec(): Unit = {
 
@@ -127,45 +177,6 @@ object WatrColors extends WatrColorsApi with WatrShellApi with TextReflowExample
   }
 
 
-  @JSExport
-  override def clear(): Unit = {
-    fabricCanvas.clear()
-    // dom.document.asInstanceOf[js.Dynamic].body = shadowBody.cloneNode(true)
-    // for(i <- 0 until 100000){
-    //   dom.window.clearTimeout(i)
-    //   dom.window.clearInterval(i)
-    // }
-  }
-
-  @JSExport
-  override def print(level: String, msg: String): Unit = {
-    jQuery("#main").append(msg+" and more!")
-
-    level match {
-      case "error" => dom.console.error(msg)
-      case "warn" => dom.console.warn(msg)
-      case "info" => dom.console.info(msg)
-      case "log" => dom.console.log(msg)
-      case      _ => dom.console.log(level + ":" + msg)
-    }
-  }
-
-  @JSExport
-  def echoLabeler(lwidget: LabelWidget) = Async.async {
-    clear()
-    val labeler = Async.await {
-      renderLabelWidget(lwidget)
-    }
-
-    fabricCanvas.add(labeler)
-    fabricCanvas.renderAll()
-  }
-
-
-  @JSExport
-  override def echoTextReflows(textReflows: List[TextReflow]): Unit = {
-    vcatWidgets(textReflows)
-  }
 
 
 
