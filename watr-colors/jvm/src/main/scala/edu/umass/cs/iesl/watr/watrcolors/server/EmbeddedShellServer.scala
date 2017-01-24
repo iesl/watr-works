@@ -219,7 +219,7 @@ class EmbeddedServer(
 
       /// pre-create target region images w/embossings
       def visit(t: LabelWidgetF[Unit]): Unit = t match {
-        case Target(tr, emboss) =>
+        case Target(tr, emboss, sels) =>
           // pre-create the images w/labels embossed as color overlays and put them in database
           labeler.embossTargetRegion(tr, emboss)
 

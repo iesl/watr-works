@@ -119,7 +119,7 @@ object ShellCommands extends CorpusEnrichments {
       val lws = documents.take(n)
         .map(titleLabeler(_))
 
-      Lw.vcat(lws:_*)
+      Lw.col(lws:_*)
     }
 
     def titleLabeler(docId: String@@DocumentID): LabelWidget = {
@@ -155,7 +155,7 @@ object ShellCommands extends CorpusEnrichments {
       val vlines = for {
         zone   <- zones
         region <- zone.regions
-      } yield { region }
+      } yield { region.bbox }
 
       val titlePreselects = vlines.drop(2).take(2)
 
@@ -169,9 +169,8 @@ object ShellCommands extends CorpusEnrichments {
       val selector = Lw.panel(
         Lw.mouseOverlay(
           Lw.target(
-            pageTargetRegion, LB.VisualLine
-          ),
-          titlePreselects
+            pageTargetRegion, List(LB.VisualLine), titlePreselects
+          )
         )
       )
 

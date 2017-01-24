@@ -94,6 +94,11 @@ class LabelingServer(
   )
 
   def renderLabelWidget(lwidget: LabelWidget): LwAccum = {
+    import matryoshka._
+    import matryoshka.data._
+    import matryoshka.implicits._
+
+    import LabelWidgetF._
 
     def visit(t: LabelWidgetF[(LabelWidget, LwAccum)]): Future[LwAccum] = t match {
       case Target(tr, emboss, sels)  =>
