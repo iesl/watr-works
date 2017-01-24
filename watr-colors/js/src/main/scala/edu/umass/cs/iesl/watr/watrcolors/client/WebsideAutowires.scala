@@ -11,7 +11,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.concurrent.Future
 import org.scalajs.dom
 
-
+ 
 class WebsideClient(prefix: String) extends autowire.Client[String, UPickle.Reader, UPickle.Writer] {
   override def doCall(req: Request): Future[String] = {
     dom.ext.Ajax

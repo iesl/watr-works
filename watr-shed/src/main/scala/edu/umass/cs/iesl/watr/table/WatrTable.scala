@@ -143,12 +143,21 @@ object ShellCommands extends CorpusEnrichments {
 
       val pageTargetRegion = TargetRegion(r0, docId, page0,
         pageGeometry.bounds.copy(
-          top = pageGeometry.bounds.top + 10.0 ,
-          height = pageGeometry.bounds.height / 4.0
+          top = pageGeometry.bounds.top,
+          height = pageGeometry.bounds.height / 3.0
         )
       )
 
-      println(s"titleLabeler: pageGeometry=${pageGeometry},  half-page = ${pageTargetRegion}")
+      // println(s"titleLabeler: pageGeometry=${pageGeometry},  half-page = ${pageTargetRegion}")
+
+      // Find VisualLine zones that are likely titles and pre-select them
+      val zones = theDB.selectZones(docId, page0, LB.VisualLine)
+      val vlines = for {
+        zone   <- zones
+        region <- zone.regions
+      } yield { region }
+
+      val titlePreselects = vlines.drop(2).take(2)
 
       // val halfPageTargetRegion = pageGeometry := height / 2
       // val displayTR = titleZone.targetRegion union halfPageTargetRegion
@@ -157,13 +166,12 @@ object ShellCommands extends CorpusEnrichments {
       //   titleZone.targetRegions.map(tr => val z = getZone(tr, VisualLine); getZoneTextReflow(z))
       // )
 
-      //val preselects = List() // titleZone.targetRegions.map(selectionRect(_))
-
       val selector = Lw.panel(
         Lw.mouseOverlay(
           Lw.target(
             pageTargetRegion, LB.VisualLine
-          )
+          ),
+          titlePreselects
         )
       )
 

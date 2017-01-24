@@ -159,29 +159,40 @@ object PageComponentImplicits {
 
   }
 
-  implicit class RicherTargetRegion(val targetRegion: TargetRegion) extends AnyVal {
+  implicit class RicherPageGeometry(val thePageGeometry: PageGeometry) extends AnyVal {
+    def toTargetRegion(docId: String@@DocumentID): TargetRegion = {
+      TargetRegion(
+        RegionID(0),
+        docId,
+        thePageGeometry.id,
+        thePageGeometry.bounds
+      )
+    }
+  }
+
+  implicit class RicherTargetRegion(val theTargetRegion: TargetRegion) extends AnyVal {
     def union(r: TargetRegion): TargetRegion = {
-      if (targetRegion.pageId != r.pageId) {
-        sys.error(s"""cannot union targetRegions from different pages: ${targetRegion} + ${r}""")
+      if (theTargetRegion.pageId != r.pageId) {
+        sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
       }
-      targetRegion.copy(bbox = targetRegion.bbox union r.bbox)
+      theTargetRegion.copy(bbox = theTargetRegion.bbox union r.bbox)
     }
 
     def intersects(r: TargetRegion): Boolean = {
-      val samePage = targetRegion.pageId == r.pageId
-      samePage && (targetRegion.bbox intersects r.bbox)
+      val samePage = theTargetRegion.pageId == r.pageId
+      samePage && (theTargetRegion.bbox intersects r.bbox)
     }
 
     def prettyPrint(): String = {
-      val pg = targetRegion.pageId
-      val bbox = targetRegion.bbox.prettyPrint
+      val pg = theTargetRegion.pageId
+      val bbox = theTargetRegion.bbox.prettyPrint
       s"""<target pg:${pg} ${bbox}"""
     }
 
     def uriString: String = {
-      val doc = targetRegion.docId
-      val pg = targetRegion.pageId
-      val bbox = targetRegion.bbox.uriString
+      val doc = theTargetRegion.docId
+      val pg = theTargetRegion.pageId
+      val bbox = theTargetRegion.bbox.uriString
       s"${doc}+${pg}+${bbox}"
     }
   }

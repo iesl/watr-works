@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package segment 
+package segment
 
 import ammonite.{ops => fs}, fs._
 import java.io.InputStream
@@ -666,7 +666,7 @@ class DocumentSegmenter(
     }
   }
 
-  def visualLineOnPageComponents: Seq[Seq[Component]] = 
+  def visualLineOnPageComponents: Seq[Seq[Component]] =
     mpageIndex
       .getDocumentVisualLines
       .map(_.sortBy(_.bounds.top))

@@ -1,9 +1,5 @@
 package edu.umass.cs.iesl.watr
-package utils 
-
-
-//import TypeTags._
-
+package utils
 
 
 object EnrichNumerics {
@@ -50,7 +46,7 @@ object EnrichNumerics {
     def intersect(r2: RangeInt): Option[RangeInt] =
       rangeIntersection(theRange, r2)
 
-    def union(r2: RangeInt): RangeInt = 
+    def union(r2: RangeInt): RangeInt =
       rangeUnion(theRange, r2)
 
   }
@@ -120,5 +116,3 @@ object EnrichNumerics {
 //     val half = theDouble * i.unwrap
 //     Ranges.Doubles(theDouble-half, theDouble+half)
 //   }
-
-

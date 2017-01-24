@@ -2,11 +2,11 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-
 import scala.scalajs.js
 
 import textreflow._
 import geometry._
+import GeometryImplicits._
 
 import PageComponentImplicits._
 
@@ -17,6 +17,17 @@ import scala.concurrent.{ Future, Promise }
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
+import display._
+import LabelWidgetF._
+
+import scalaz.std.list._
+import scalaz.std.scalaFuture._
+import scalaz.syntax.traverse._
+
+case class LwRenderingAttrs(
+  fobj: FabricObject,
+  regions: List[(TargetRegion, LTBounds)]
+)
 
 trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   import TextReflowF._
@@ -59,31 +70,33 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     fabricCanvas.add(createShape(Line(Point(240, 40), Point(340, 440)), "black", "green", 0.5f))
   }
 
-  def addBorder(width: Double, fobj: FabricObject): FabricObject = {
-    val bbox = fabricObjectLTBounds(fobj)
+  def addBorder(width: Double, renderAttr: LwRenderingAttrs): LwRenderingAttrs = {
     val tbBbox = LTBounds(0, 0,
-      bbox.width,
+      fabricObjectLTBounds(renderAttr.fobj).width,
       width
     )
+    val top    =  createShape(tbBbox, "black", "black", 0.5f)
+    val bottom =  createShape(tbBbox, "blue", "blue", 0.5f)
+
+    val tbGroup = vjoinAttrs(List(
+      LwRenderingAttrs(top, List()),
+      renderAttr,
+      LwRenderingAttrs(bottom, List())
+    ))
+
     val lrBbox = LTBounds(0, 0,
       width,
-      bbox.height + width*2
+      fabricObjectLTBounds(tbGroup.fobj).height + width*2
     )
+    val left   = createShape(lrBbox, "red", "red", 0.5f)
+    val right  = createShape(lrBbox, "red", "red", 0.5f)
 
-    val top = createShape(tbBbox, "black", "black", 0.5f)
-    val bottom = createShape(tbBbox, "blue", "blue", 0.5f)
-    val left = createShape(lrBbox, "blue", "blue", 0.5f)
-    val right = createShape(lrBbox, "blue", "blue", 0.5f)
 
-    val group = hjoin(List(
-      left,
-      vjoin(List(top, fobj, bottom)),
-      right
+    hjoinAttrs(List(
+      LwRenderingAttrs(left, List()),
+      tbGroup,
+      LwRenderingAttrs(right, List())
     ))
-    group.setLeft(0)
-    group.setTop(0)
-
-    group
   }
 
   def fabricObjectLTBounds(fobj: FabricObject): LTBounds = {
@@ -95,25 +108,6 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     LTBounds(l.doubleValue(), t.doubleValue(),
       w.doubleValue(), h.doubleValue())
   }
-
-  // def makeTargetRegionImage(targetRegion: TargetRegion): Unit = {
-  //   val bbox = targetRegion.bbox
-  //   val targetRegionURI = targetRegion.uriString
-
-  //   val scb = (img:Image) => {
-  //     img.top = bbox.top
-  //     img.left = bbox.left
-  //     img.width = bbox.width
-  //     img.height = bbox.height
-
-  //     fabricCanvas.add(img)
-  //     fabricCanvas.renderAll()
-  //     ()
-  //   }
-  //   val jscb: js.Function1[Image, Unit] = scb
-
-  //   Image.fromURL(s"/img/${targetRegionURI}", jscb)
-  // }
 
 
   def makeImageForTargetRegion(tr: TargetRegion): Future[FabricObject] = {
@@ -175,27 +169,107 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     widgetGroup
   }
 
-  def hjoin(fobjs: Seq[FabricObject]): FabricObject = {
-    var currLeft: Int = 0
-    fobjs.foreach { fobj =>
-      fobj.setLeft(currLeft)
-      currLeft = (currLeft + fobj.width.intValue())
-    }
-    val g = fabric.Group(fobjs)
-    noControls(g)
-    g
-  }
-  def vjoin(fobjs: Seq[FabricObject]): FabricObject = {
-    var currTop: Int = 0
-    fobjs.foreach { fobj =>
-      fobj.setTop(currTop)
-      currTop = (currTop + fobj.height.intValue())
-    }
-    val g = fabric.Group(fobjs)
+  // def hjoin(fobjs: Seq[FabricObject]): FabricObject = {
+  //   var currLeft: Int = 0
+  //   fobjs.foreach { fobj =>
+  //     fobj.setLeft(currLeft)
+  //     currLeft = (currLeft + fobj.width.intValue())
+  //   }
+  //   val g = fabric.Group(fobjs)
+  //   noControls(g)
+  //   g
+  // }
 
+
+  def hjoinAttrs(attrs: List[LwRenderingAttrs]): LwRenderingAttrs = {
+    var currLeft: Int = 0
+    val objsAndBounds = attrs.map({attr =>
+      val shiftedBounds = attr.regions
+        .map({case (tr, bbox) =>
+          (tr, bbox.moveTo(bbox.left+currLeft, y=bbox.top))
+        })
+
+      attr.fobj.setLeft(currLeft)
+
+      currLeft = (currLeft + attr.fobj.width.intValue())
+      (attr.fobj, shiftedBounds)
+    })
+
+    val fobjs = objsAndBounds.map(_._1)
+    val bounds = objsAndBounds.flatMap(_._2)
+
+    val g = fabric.Group(fobjs)
     noControls(g)
-    g
+
+    LwRenderingAttrs(
+      g, bounds
+    )
   }
+  def vjoinAttrs(attrs: List[LwRenderingAttrs]): LwRenderingAttrs = {
+    var currTop: Int = 0
+    val objsAndBounds = attrs.map({attr =>
+      val shiftedBounds = attr.regions
+        .map({case (tr, bbox) =>
+          (tr, bbox.moveTo(bbox.left, y=bbox.top+currTop))
+        })
+
+      attr.fobj.setTop(currTop)
+
+      currTop = (currTop + attr.fobj.height.intValue())
+      (attr.fobj, shiftedBounds)
+    })
+
+    val fobjs = objsAndBounds.map(_._1)
+    val bounds = objsAndBounds.flatMap(_._2)
+
+    val g = fabric.Group(fobjs)
+    noControls(g)
+
+    LwRenderingAttrs(
+      g, bounds
+    )
+  }
+
+  // def vjoinAttrs(attrs: List[LwRenderingAttrs]): LwRenderingAttrs = {
+  //   var currTop: Int = 0
+  //   val objsAndBounds = attrs.map({attr =>
+  //     val shiftedBounds = attr.regions
+  //       .map({case (tr, bbox) =>
+  //         (tr, bbox.moveTo(bbox.left, y=bbox.top+currTop))
+  //       })
+  //     val futureFobj = attr.fobj.map { fobj =>
+  //       fobj.setTop(currTop)
+  //       currTop = (currTop + fobj.height.intValue())
+  //       fobj
+  //     }
+  //     (futureFobj, shiftedBounds)
+  //   })
+
+  //   val fobjs = objsAndBounds.map(_._1)
+  //   val bounds = objsAndBounds.flatMap(_._2)
+  //   val fgroup = fobjs.sequenceU
+  //     .map({objs =>
+  //       val g = fabric.Group(objs)
+  //       noControls(g)
+  //       g
+  //     })
+
+  //   LwRenderingAttrs(
+  //     fgroup, bounds
+  //   )
+  // }
+
+  // def vjoin(fobjs: Seq[FabricObject]): FabricObject = {
+  //   var currTop: Int = 0
+  //   fobjs.foreach { fobj =>
+  //     fobj.setTop(currTop)
+  //     currTop = (currTop + fobj.height.intValue())
+  //   }
+  //   val g = fabric.Group(fobjs)
+
+  //   noControls(g)
+  //   g
+  // }
 
   def vcatWidgets(trs: Seq[TextReflow]): Unit = {
     var currTop: Int = 0
@@ -207,40 +281,54 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     }
   }
 
-  import display._
-  import LabelWidgetF._
-
-  import scalaz.std.list._
-  import scalaz.std.scalaFuture._
-  import scalaz.syntax.traverse._
+  import utils.{CompassDirection => CDir}
 
   def renderLabelWidget(lwidget: LabelWidget): Future[FabricObject] = {
-    def visit(t: LabelWidgetF[(LabelWidget, Future[FabricObject])]): Future[FabricObject] = t match {
+
+    def visit(t: LabelWidgetF[(LabelWidget, Future[LwRenderingAttrs])]): Future[LwRenderingAttrs] = t match {
+      case Target(tr, emboss, sels)  =>
+        makeImageForTargetRegion(tr)
+          .map({img =>
+            val trPositionVec = tr.bbox.toPoint(CDir.NW)
+
+            val adjustedSelects = sels.map({preselect:LTBounds =>
+              val selectPositionVec = preselect.toPoint(CDir.NW)
+              val adjustedPos = selectPositionVec - trPositionVec
+              preselect.moveTo(adjustedPos.x, adjustedPos.y)
+            })
+
+            LwRenderingAttrs(
+              img,
+              List(
+                (tr, tr.bbox.moveToOrigin)
+              )
+            )
+          })
+
+
+      case Col(attrs) =>
+        val lls: Future[List[LwRenderingAttrs]] = attrs.map(_._2).sequenceU
+
+        lls.map(vjoinAttrs(_))
+
       case Panel((content, attr))  =>
         attr.map({ fobj =>
           addBorder(4.0, fobj)
         })
 
-      case Target(tr, emboss)  =>
-        makeImageForTargetRegion(tr)
-
-      case MouseOverlay((bkplane, attr), selects) =>
+      case MouseOverlay((bkplane, fattr)) =>
         // createShape(tr.bounds, "black", "yellow", 1f)
-        attr
-      case Col(attrs) =>
-        val lls: List[Future[FabricObject]] = attrs.map(_._2)
+        fattr.map({ attr =>
+          // addBorder(4.0, fobj)
+        })
 
-        lls.sequenceU
-          .map({ widgets =>
-            vjoin(widgets)
-          })
-
+        ???
 
       case _ => sys.error("echoLabeler: TODO")
     }
 
     lwidget
       .cata(attributePara(visit))
-      .toPair._1
+      .toPair._1.map(_.fobj)
   }
 }

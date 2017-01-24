@@ -192,12 +192,22 @@ object GeometryImplicits {
     def right = tb.left+tb.width
     def bottom = tb.top+tb.height
 
-    def translate(x: Double, y: Double): LTBounds = {
+    def translate(x: Double=0d, y: Double=0d): LTBounds = {
       tb.copy(
         left=tb.left+x,
         top=tb.top+y
       )
     }
+
+    def moveTo(x: Double, y: Double): LTBounds = {
+      tb.copy(left=x, top=y)
+    }
+
+    def moveToOrigin(): LTBounds = {
+      moveTo(0d,0d)
+    }
+
+    // def 
 
     def intersects(rhs:LTBounds):Boolean = {
       !(tb.left > rhs.right

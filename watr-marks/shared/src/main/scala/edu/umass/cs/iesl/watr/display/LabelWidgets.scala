@@ -9,6 +9,7 @@ import matryoshka._
 import geometry._
 import textreflow._
 import watrmarks._
+import utils.EnrichNumerics._
 
 sealed trait LabelWidgetF[+A]
 
@@ -16,15 +17,19 @@ object LabelWidgetF {
 
   case class Target(
     targetRegion: TargetRegion,
-    emboss: List[Label]
+    emboss: List[Label],
+    selections: List[LTBounds] = List()
   ) extends LabelWidgetF[Nothing]
 
-  case class Reflow(textReflow: TextReflow)     extends LabelWidgetF[Nothing]
-  case class Button()                           extends LabelWidgetF[Nothing]
+  case class Reflow(
+    textReflow: TextReflow,
+    selections: List[RangeInt] = List()
+  ) extends LabelWidgetF[Nothing]
+
+  case class Button() extends LabelWidgetF[Nothing]
 
   case class MouseOverlay[A](
-    backplane: A,
-    selections: List[TargetRegion]
+    backplane: A
   ) extends LabelWidgetF[A]
 
 
@@ -40,13 +45,13 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        case l @ Target(tr, emboss)             => G.point(l.copy())
-        case l @ Reflow(tr)                     => G.point(l.copy())
-        case l @ Button()                       => G.point(l.copy())
-        case l @ MouseOverlay(bkplane, sels)    => f(bkplane).map(a => l.copy(backplane=a))
-        case l @ Panel(content)                 => f(content).map(a => l.copy(content=a))
-        case l @ Row(as)                        => as.traverse(f).map(Row(_))
-        case l @ Col(as)                        => as.traverse(f).map(Col(_))
+        case l @ Target(tr, emboss, sels) => G.point(l.copy())
+        case l @ Reflow(tr, sels)         => G.point(l.copy())
+        case l @ Button()                 => G.point(l.copy())
+        case l @ MouseOverlay(bkplane)    => f(bkplane).map(a => l.copy(backplane=a))
+        case l @ Panel(content)           => f(content).map(a => l.copy(content=a))
+        case l @ Row(as)                  => as.traverse(f).map(Row(_))
+        case l @ Col(as)                  => as.traverse(f).map(Col(_))
       }
     }
   }
@@ -65,20 +70,16 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
+  def target(tr: TargetRegion, emboss: List[Label], sels: List[LTBounds]) =
+    fixlw(Target(tr, emboss, sels))
 
-  def target(tr: TargetRegion, emboss: Label*) =
-    fixlw(Target(tr, emboss.toList))
+  def reflow(tr: TextReflow) =
+    fixlw(Reflow(tr))
 
-  def mouseOverlay(bkplane: LabelWidget, preselects: List[TargetRegion]=List()) =
-    fixlw(MouseOverlay(
-      bkplane, preselects
-    ))
+  def mouseOverlay(bkplane: LabelWidget) =
+    fixlw(MouseOverlay(bkplane))
 
-  def reflow(tr: TextReflow) = fixlw(Reflow(
-    tr
-  ))
-
-  def vcat(lwidgets: LabelWidget*): LabelWidget = {
+  def col(lwidgets: LabelWidget*): LabelWidget = {
     fixlw(Col(
       lwidgets.toList
     ))
