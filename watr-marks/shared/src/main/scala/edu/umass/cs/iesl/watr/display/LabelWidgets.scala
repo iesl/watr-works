@@ -1,8 +1,9 @@
 package edu.umass.cs.iesl.watr
 package display
 
-import scalaz._
-import Scalaz._
+import scalaz.{Traverse, Applicative}
+import scalaz.std.list._
+import scalaz.syntax.traverse._
 
 import matryoshka._
 

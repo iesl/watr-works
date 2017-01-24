@@ -3,8 +3,10 @@ package textreflow
 
 import watrmarks._
 
-import scalaz._
-import Scalaz._
+import scalaz.{Traverse, Applicative, Equal, Show}
+import scalaz.std.list._
+import scalaz.syntax.traverse._
+import scalaz.syntax.equal._
 
 import matryoshka._
 import geometry._
@@ -17,11 +19,8 @@ object TextReflowF {
   case class Insert(value: String)                        extends TextReflowF[Nothing]
   case class Rewrite[A](from: A, to: String)              extends TextReflowF[A]
   case class Bracket[A](pre: String, post: String, a: A)  extends TextReflowF[A]  // { val _ = sys.error("disabled"); }
-  // case class Mask[A](maskL: Int, maskR: Int, a: A)        extends TextReflowF[A]
   case class Flow[A](as: List[A])                         extends TextReflowF[A]
   case class Labeled[A](labels: Set[Label], a: A)         extends TextReflowF[A]
-  // case class CachedText[A](a: A, text: String)            extends TextReflowF[A]
-  // case class Region[A](targetRegion: TargetRegion)        extends TextReflowF[A]
 
 
   implicit def TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
