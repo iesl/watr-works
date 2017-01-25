@@ -3,4 +3,6 @@ package geometry
 
 object `package` {
 
+  val syntax = GeometryImplicits
+
 }

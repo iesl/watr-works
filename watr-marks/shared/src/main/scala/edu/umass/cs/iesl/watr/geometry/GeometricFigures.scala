@@ -83,10 +83,17 @@ object GeometryImplicits {
 
   implicit class RicherPoint(val p0: Point) extends AnyVal {
 
+    def unary_-(): Point = {
+      Point(-p0.x, -p0.y)
+    }
+
     def -(p1:Point): Point = {
       Point(p0.x-p1.x, p0.y-p1.y)
     }
 
+    def translate(x: Double=0d, y: Double=0d): Point = {
+      Point(p0.x+x, p0.y+y)
+    }
 
     def hdist(p1: Point): Double = p1.x - p0.x
     def hdistAbs(p1: Point): Double = math.abs(hdist(p1))
@@ -181,6 +188,9 @@ object GeometryImplicits {
 
     def right = tb.left+tb.width
     def bottom = tb.top+tb.height
+
+    def translate(pvec: Point): LTBounds =
+      translate(pvec.x, pvec.y)
 
     def translate(x: Double=0d, y: Double=0d): LTBounds = {
       tb.copy(

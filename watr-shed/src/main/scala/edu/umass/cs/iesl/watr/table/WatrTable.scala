@@ -121,11 +121,10 @@ object ShellCommands extends CorpusEnrichments {
     }
 
     def titleLabelers(n: Int): LabelWidget = {
-      // val Lw = LabelWidgets
       val lws = documents.take(n)
         .map(titleLabeler(_))
 
-      Lw.col(lws:_*)
+      LW.col(lws:_*)
     }
 
     def titleLabeler(docId: String@@DocumentID): LabelWidget = {
@@ -172,9 +171,9 @@ object ShellCommands extends CorpusEnrichments {
       //   titleZone.targetRegions.map(tr => val z = getZone(tr, VisualLine); getZoneTextReflow(z))
       // )
 
-      val selector = Lw.panel(
-        Lw.mouseOverlay(
-          Lw.targetImage(
+      val selector = LW.panel(
+        LW.mouseOverlay(
+          LW.targetImage(
             pageTargetRegion // , List(LB.VisualLine), titlePreselects
           )
         )

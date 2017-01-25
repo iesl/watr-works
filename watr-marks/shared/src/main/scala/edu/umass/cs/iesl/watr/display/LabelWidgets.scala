@@ -1,19 +1,15 @@
 package edu.umass.cs.iesl.watr
 package display
 
-import scalaz._
-import scalaz.Scalaz._
-
-// import scalaz.{Traverse, Applicative}
-// import scalaz.std.list._
-// import scalaz.syntax.traverse._
+import scalaz.{Traverse, Applicative, Show}
+import scalaz.std.list._
+import scalaz.syntax.traverse._
 
 import matryoshka._
 import matryoshka.data._
 
 import geometry._
 import textreflow.data._
-// import watrmarks._
 import utils.EnrichNumerics._
 
 sealed trait LabelWidgetF[+A]
@@ -24,12 +20,6 @@ object LabelWidgetF {
 
   type LabelWidgetT = LabelWidgetF[Fix[LabelWidgetF]]
 
-  // case class Target(
-  //   targetRegion: TargetRegion,
-  //   emboss: List[Label],
-  //   selections: List[TargetRegion] = List()
-  // ) extends LabelWidgetF[Nothing]
-
   case class TargetImage(
     targetRegion: TargetRegion
   ) extends LabelWidgetF[Nothing]
@@ -38,9 +28,10 @@ object LabelWidgetF {
     textReflow: TextReflow
   ) extends LabelWidgetF[Nothing]
 
-  case class TargetSelection(
-    targetRegion: TargetRegion
-  ) extends LabelWidgetF[Nothing]
+  case class TargetSelection[A](
+    backplane: A,
+    sel: TargetRegion
+  ) extends LabelWidgetF[A]
 
   case class RangeSelection(
     range: RangeInt
@@ -64,8 +55,13 @@ object LabelWidgetF {
   case class Col[A](as: List[A]) extends LabelWidgetF[A]
   case class Overlay[A](overs: List[A], under:A)   extends LabelWidgetF[A]
 
-  // Absolute positioning:
-  case class Positioned[A](pos: LTBounds, a: A) extends LabelWidgetF[A]
+  type PositionVector = Point
+
+  case class Positioned[A](
+    a: A,
+    pvec: PositionVector,
+    area: LTBounds
+  ) extends LabelWidgetF[A]
 
 
   implicit def LabelWidgetTraverse: Traverse[LabelWidgetF] = new Traverse[LabelWidgetF] {
@@ -75,25 +71,36 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        case l @ TargetImage(tr) => G.point(l.copy())
-        case l @ TargetSelection(tr) => G.point(l.copy())
-        case l @ RangeSelection(range) => G.point(l.copy())
-        case l @ Reflow(tr)         => G.point(l.copy())
-        case l @ Button()                 => G.point(l.copy())
-        case l @ MouseOverlay(bkplane)    => f(bkplane).map(a => l.copy(backplane=a))
-        case l @ Panel(content)           => f(content).map(a => l.copy(content=a))
-        case l @ Row(as)                  => as.traverse(f).map(Row(_))
-        case l @ Col(as)                  => as.traverse(f).map(Col(_))
-        case l @ Overlay(overs, under)    => (overs.traverse(f) |@| f(under)).apply(Overlay(_, _))
-        case l @ Positioned(pos, a)       => f(a).map(Positioned(pos, _))
+        case l @ TargetImage(tr)             => G.point(l.copy())
+        case l @ TargetSelection(bk, sels)   => f(bk).map(a => l.copy(a, sels))
+        case l @ RangeSelection(range)       => G.point(l.copy())
+        case l @ Reflow(tr)                  => G.point(l.copy())
+        case l @ Button()                    => G.point(l.copy())
+        case l @ MouseOverlay(bkplane)       => f(bkplane).map(a => l.copy(backplane=a))
+        case l @ Panel(content)              => f(content).map(a => l.copy(content=a))
+        case l @ Row(as)                     => as.traverse(f).map(Row(_))
+        case l @ Col(as)                     => as.traverse(f).map(Col(_))
+        case l @ Overlay(overs, under)       => G.apply2(overs.traverse(f), f(under))(Overlay(_, _))
+        case l @ Positioned(a, pvec, area)    => f(a).map(Positioned(_, pvec, area))
       }
     }
   }
 
-  // implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
-  //   def apply[A](show: Show[A]) = Show.show {
-  //   }
-  // }
+  implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
+    def apply[A](show: Show[A]) = Show.show {
+      case l @ TargetImage(tr)             => s"$l"
+      case l @ TargetSelection(bk, sels)   => s"$l"
+      case l @ RangeSelection(range)       => s"$l"
+      case l @ Reflow(tr)                  => s"reflow()"
+      case l @ Button()                    => s"$l"
+      case l @ MouseOverlay(bkplane)       => s"$l"
+      case l @ Panel(content)              => s"$l"
+      case l @ Row(as)                     => s"$l"
+      case l @ Col(as)                     => s"$l"
+      case l @ Overlay(overs, under)       => s"$l"
+      case l @ Positioned(a, pvec, area)   => s"$l"
+    }
+  }
 }
 
 object LabelWidgets {
@@ -107,8 +114,12 @@ object LabelWidgets {
   def targetImage(tr: TargetRegion) =
     fixlw(TargetImage(tr))
 
-  def targetSelect(tr: TargetRegion) =
-    fixlw(TargetSelection(tr))
+  def withSelections(lw: LabelWidget, trs: TargetRegion) =
+    fixlw(TargetSelection(lw, trs))
+
+  def selectRange(range: RangeInt) =
+    fixlw(RangeSelection(range))
+
 
   def reflow(tr: TextReflow) =
     fixlw(Reflow(tr))
@@ -130,5 +141,8 @@ object LabelWidgets {
 
   def overlay(bottom: LabelWidget, overlays: LabelWidget*): LabelWidget =
     fixlw(Overlay(overlays.toList, bottom))
+
+  def positioned(lw: LabelWidget, pvec: PositionVector, area:LTBounds): LabelWidget =
+    fixlw(Positioned(lw, pvec, area))
 
 }
