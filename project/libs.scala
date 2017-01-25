@@ -19,7 +19,7 @@ trait LibVersions {
   val monocleVersion      = "1.2.2"
   val aspectjVersion      = "1.8.9"
   val acyclicVersion      = "0.1.7"
-  val doobieVersion       = "0.3.0"
+  val doobieVersion       = "0.4.1"
 
 }
 
@@ -56,7 +56,7 @@ object TestLibs extends LibVersions {
 object LogLibs extends LibVersions {
   val logback = Seq(
     "org.log4s"      %% "log4s"            % "1.3.4",
-    "ch.qos.logback"  % "logback-classic"  % "1.1.8",
+    "ch.qos.logback"  % "logback-classic"  % "1.1.9",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
     "org.slf4j"       % "jcl-over-slf4j"   % logbackVersion
@@ -73,10 +73,10 @@ object DatabaseLibs extends LibVersions {
   )
 
   val doobieDb = Seq(
-    "org.tpolecat" %% "doobie-core"               % doobieVersion,
-    "org.tpolecat" %% "doobie-contrib-postgresql" % doobieVersion,
-    "org.tpolecat" %% "doobie-contrib-hikari"     % doobieVersion,
-    "org.tpolecat" %% "doobie-contrib-specs2"     % doobieVersion
+    "org.tpolecat" %% "doobie-core"       % doobieVersion,
+    "org.tpolecat" %% "doobie-postgres"   % doobieVersion,
+    "org.tpolecat" %% "doobie-hikari"     % doobieVersion,
+    "org.tpolecat" %% "doobie-specs2"     % doobieVersion
   )
 
 }

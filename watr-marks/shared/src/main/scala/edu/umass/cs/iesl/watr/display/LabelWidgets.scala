@@ -16,27 +16,48 @@ sealed trait LabelWidgetF[+A]
 
 object LabelWidgetF {
 
-  case class Target(
-    targetRegion: TargetRegion,
-    emboss: List[Label],
-    selections: List[LTBounds] = List()
+  // case class Target(
+  //   targetRegion: TargetRegion,
+  //   emboss: List[Label],
+  //   selections: List[TargetRegion] = List()
+  // ) extends LabelWidgetF[Nothing]
+
+  case class TargetImage(
+    targetRegion: TargetRegion
   ) extends LabelWidgetF[Nothing]
 
   case class Reflow(
-    textReflow: TextReflow,
-    selections: List[RangeInt] = List()
+    textReflow: TextReflow
   ) extends LabelWidgetF[Nothing]
 
-  case class Button() extends LabelWidgetF[Nothing]
+  case class TargetSelection(
+    targetRegion: TargetRegion
+  ) extends LabelWidgetF[Nothing]
 
+  case class RangeSelection(
+    range: RangeInt
+  ) extends LabelWidgetF[Nothing]
+
+
+  case class Button(
+  ) extends LabelWidgetF[Nothing]
+
+  // Overlay that accepts mouse gesture input
   case class MouseOverlay[A](
     backplane: A
   ) extends LabelWidgetF[A]
 
 
-  case class Panel[A](content: A)     extends LabelWidgetF[A]
-  case class Row[A](as: List[A])      extends LabelWidgetF[A]
-  case class Col[A](as: List[A])      extends LabelWidgetF[A]
+  // Grouping container for widget
+  case class Panel[A](content: A) extends LabelWidgetF[A]
+
+  // Relative positioning
+  case class Row[A](as: List[A]) extends LabelWidgetF[A]
+  case class Col[A](as: List[A]) extends LabelWidgetF[A]
+  case class Overlay[A](overs: List[A], under:A)   extends LabelWidgetF[A]
+
+  // Absolute positioning:
+  case class Positioned[A](pos: LTBounds, a: A) extends LabelWidgetF[A]
 
 
   implicit def LabelWidgetTraverse: Traverse[LabelWidgetF] = new Traverse[LabelWidgetF] {
@@ -71,7 +92,7 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
-  def target(tr: TargetRegion, emboss: List[Label], sels: List[LTBounds]) =
+  def target(tr: TargetRegion, emboss: List[Label], sels: List[TargetRegion]) =
     fixlw(Target(tr, emboss, sels))
 
   def reflow(tr: TextReflow) =

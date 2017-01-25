@@ -9,12 +9,23 @@ import geometry._
 // import GeometryImplicits._
 // import PageComponentImplicits._
 
+case class LwAccum(
+  regions: List[(TargetRegion, LTBounds)]
+)
+
 object LabelWidgetRendering {
   // import LabelWidgetF._
 
-  case class LwAccum(
-    regions: List[(TargetRegion, LTBounds)]
-  )
+  /*
+   - create a spatial index containing all the bboxes in the labeler
+
+   - bubble up:
+   List(
+     Target(_, _, _) -> LTBounds(_) -> List[LTBounds]
+   )
+
+   */
+
 
   def renderLabelWidget(lwidget: LabelWidget): LwAccum = {
     // import matryoshka._
@@ -22,6 +33,13 @@ object LabelWidgetRendering {
     // import matryoshka.implicits._
 
     import LabelWidgetF._
+
+    type LabelWidgetBbox = LabelWidgetF[LTBounds]
+
+    type Accum = List[(
+      LabelWidgetBbox,
+      List[(TargetRegion, LTBounds)]
+    )]
 
     def visit(t: LabelWidgetF[(LabelWidget, LwAccum)]): LwAccum = t match {
       case Target(tr, emboss, sels)  =>
