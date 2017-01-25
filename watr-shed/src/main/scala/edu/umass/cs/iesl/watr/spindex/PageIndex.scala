@@ -1,10 +1,12 @@
 package edu.umass.cs.iesl.watr
-package spindex 
+package spindex
 
 import scala.collection.mutable
 
 import watrmarks._
 import geometry._
+
+import watrmarks.{StandardLabels => LB}
 
 /**
   A PageIndex wraps a SpatialIndex for Components, and adds:

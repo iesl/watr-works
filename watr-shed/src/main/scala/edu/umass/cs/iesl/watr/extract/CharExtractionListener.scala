@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package extract 
+package extract
 
 import com.itextpdf.kernel.pdf.PdfPage
 import geometry._
@@ -18,6 +18,7 @@ import itextpdf.kernel.pdf.PdfReader
 
 import fonts._
 import utils.IdGenerator
+import utils.EnrichNumerics._
 
 
 object PdfPageObjectOutput {
@@ -71,6 +72,10 @@ object PdfPageObjectOutput {
 
 }
 
+case class GeometryTranslation(
+  transX: (Double) => Double,
+  transY: (Double) => Double
+)
 class CharExtractionListener(
   reader: PdfReader,
   docId: String@@DocumentID,

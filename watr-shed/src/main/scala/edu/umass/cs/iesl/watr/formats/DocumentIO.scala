@@ -1,11 +1,12 @@
 package edu.umass.cs.iesl.watr
-package formats 
+package formats
 
 
 import extract.PdfTextExtractor
 import extract.fonts._
 import spindex._
-import TB._
+import textboxing.{TextBoxing => TB}, TB._
+import watrmarks.{StandardLabels => LB}
 import utils.IdGenerator
 import predsynth._
 
@@ -13,6 +14,7 @@ import ammonite.{ops => fs}, fs._
 
 import watrmarks._
 import textreflow._
+import textreflow.data._
 import utils.EnrichNumerics._
 
 import geometry._

@@ -18,26 +18,6 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
   import TextReflowF._
   import utils.SlicingAndDicing._
 
-  def fixf = Fix[TextReflowF](_)
-
-  def atom(c: CharAtom) = fixf(Atom(c))
-  def atomStr(c: CharAtom) = fixf(Atom(c))
-  def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
-  def flow(as:TextReflow*) = flows(as)
-  def flows(as: Seq[TextReflow]) = fixf(Flow(as.toList))
-  // def cache(a: TextReflow, text: String) = fixf(CachedText(a, text))
-
-  def bracket(pre: Char, post: Char, a:TextReflow) = fixf(
-    Bracket(pre.toString, post.toString, a)
-  )
-  def bracket(pre: String, post: String, a:TextReflow) = fixf(
-    Bracket(pre, post, a)
-  )
-
-  def labeled(l: Label, a:TextReflow) = fixf(Labeled(Set(l), a))
-  def labeled(ls: Set[Label], a:TextReflow) = fixf(Labeled(ls, a))
-  def insert(s: String) = fixf(Insert(s))
-  def space() = insert(" ")
 
   private def mkPad(s: String): TextReflow = insert(s)
 
@@ -109,54 +89,7 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
     r.transCata[TextReflow](f)
   }
 
-  import utils.ScalazTreeImplicits._
 
-  def boxTF[T, F[_]: Foldable: Functor](
-    tf: T
-  )(implicit
-    TR: Recursive.Aux[T, F],
-    FShow: Delay[Show, F]
-  ): TB.Box = {
-    tf.cata(toTree).drawBox
-  }
-
-  def prettyPrintTree(reflow: TextReflow): TB.Box = {
-    reflow.cata(toTree).drawBox
-  }
-
-  def prettyPrintCofree[B](cof: Cofree[TextReflowF, B])(implicit
-    BS: Show[B],
-    CS: Delay[Show, Cofree[TextReflowF, ?]]
-  ): String = {
-    CS(BS).shows(cof)
-  }
-
-  def cofreeBox[B](cof: Cofree[TextReflowF, B])(implicit
-    BS: Show[B]
-  ): TB.Box = {
-    cofreeAttrToTree(cof).drawBox
-  }
-
-  def cofreeAttrToTree[A](c: Cofree[TextReflowF, A]): Tree[A] = {
-    // val cname = c.tail.getClass.getSimpleName
-    Tree.Node(
-      c.head,
-      c.tail.toStream.map(cofreeAttrToTree(_))
-    )
-  }
-
-  implicit object OffsetsInst extends Show[Offsets] {
-    def zero: Offsets = Offsets(0, 0, 0, 0)
-    override def shows(f: Offsets): String = s"(${f.begin} ${f.len}) ${f.total} +:${f.pad}"
-  }
-
-  implicit class RicherTextReflowT(val theReflow: TextReflowT)  {
-
-    def hasLabel(l: Label): Boolean = theReflow match {
-      case Labeled(labels, _) if labels.contains(l) => true
-      case _ => false
-    }
-  }
 
   type TextReflowCR = TextReflowF[Cofree[TextReflowF, Offsets]]
 
@@ -183,7 +116,6 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
   }
 
   implicit class RicherReflow(val theReflow: TextReflow)  {
-    import TextReflowRendering._
 
     def applyLineFormatting(): TextReflow = {
       theReflow.transCata[TextReflow](escapeLineFormatting)

@@ -1,47 +1,45 @@
 package edu.umass.cs.iesl.watr
 package extract
-package fonts 
-
-
+package fonts
 
 import ammonite.{ops => fs}
 
-object SplineFonts {
+// object SplineFonts {
 
-  def loadProps(sfdir: fs.Path): SplineFont.Dir = {
-    val propSeq = fs.ls(sfdir)
-      .filter(_.ext=="props")
-      .map({ propFile =>
-        val propStr = fs.read(propFile)
+//   def loadProps(sfdir: fs.Path): SplineFont.Dir = {
+//     val propSeq = fs.ls(sfdir)
+//       .filter(_.ext=="props")
+//       .map({ propFile =>
+//         val propStr = fs.read(propFile)
 
-        SplineQuickParser.readFontProps(propStr)
-      })
+//         SplineQuickParser.readFontProps(propStr)
+//       })
 
-    val props = propSeq.headOption.getOrElse(sys.error("no font.props found"))
-    SplineFont.Dir(props, glyphs=Seq(), sfdir)
-  }
+//     val props = propSeq.headOption.getOrElse(sys.error("no font.props found"))
+//     SplineFont.Dir(props, glyphs=Seq(), sfdir)
+//   }
 
-  def addGlyph(dir: SplineFont.Dir, glyphPath: fs.Path): SplineFont.Dir = {
-    // println("adding glyph")
-    val glyphStr = fs.read(glyphPath)
-    val glyph = SplineQuickParser.parser(glyphStr)
-      .copy(path=Some(glyphPath))
+//   def addGlyph(dir: SplineFont.Dir, glyphPath: fs.Path): SplineFont.Dir = {
+//     // println("adding glyph")
+//     val glyphStr = fs.read(glyphPath)
+//     val glyph = SplineQuickParser.parser(glyphStr)
+//       .copy(path=Some(glyphPath))
 
-    dir.copy(glyphs = dir.glyphs :+ glyph)
-  }
+//     dir.copy(glyphs = dir.glyphs :+ glyph)
+//   }
 
-  def loadSfdir(sfdir: fs.Path): SplineFont.Dir = {
-    val dir = loadProps(sfdir)
+//   def loadSfdir(sfdir: fs.Path): SplineFont.Dir = {
+//     val dir = loadProps(sfdir)
 
-    fs.ls(sfdir)
-      .filter(_.ext=="glyph")
-      .foldLeft(dir)({case (acc, e) =>
-        addGlyph(acc, e)
-      })
-  }
+//     fs.ls(sfdir)
+//       .filter(_.ext=="glyph")
+//       .foldLeft(dir)({case (acc, e) =>
+//         addGlyph(acc, e)
+//       })
+//   }
 
 
-}
+// }
 
 
 object SplineFont {

@@ -12,6 +12,11 @@ import utils.IdGenerator
 import tracing.VisualTracer
 import predsynth._
 import textreflow._
+import textreflow.data._
+import TypeTags._
+
+import textboxing.{TextBoxing => TB}
+import watrmarks.{StandardLabels => LB}
 
 /**
 

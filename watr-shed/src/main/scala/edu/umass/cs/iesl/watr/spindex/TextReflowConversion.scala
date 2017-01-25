@@ -1,12 +1,14 @@
 package edu.umass.cs.iesl.watr
-package spindex 
+package spindex
 
 import watrmarks._
 import geometry.CharAtom
 
 object TextReflowConversion {
+  import textboxing.{TextBoxing => TB}
+  import watrmarks.{StandardLabels => LB}
   import TB._
-  import textreflow._
+  import textreflow.data._
 
 
   def childSpansOrAtoms(cc: Component): Seq[Component] = {

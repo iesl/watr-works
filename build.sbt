@@ -11,7 +11,7 @@ autoCompilerPlugins := true
 
 val Lib = CommonLibs
 val commonSettings = (
-    SensibleProject.settings ++ // SensibleProject.acyclicPlugin ++
+    SensibleProject.settings ++ //  SensibleProject.acyclicPlugin ++
     SensibleProject.testSettings ++ // scalatex.SbtPlugin.projectSettings ++
     Seq(
       libraryDependencies ++= LogLibs.logback,

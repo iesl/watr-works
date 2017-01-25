@@ -11,11 +11,11 @@ trait ScalaZCommonOps
     with std.ToOptionIdOps
     with std.ToOptionOps
 
-trait PackageDefs
-    extends ScalaZCommonOps with TypeTags {
+// extends ScalaZCommonOps with TypeTags {
+trait PackageDefs extends ScalaZCommonOps {
 
-  val LB = watrmarks.StandardLabels
-  val TB = textboxing.TextBoxing
+  // val LB = watrmarks.StandardLabels
+  // val TB = textboxing.TextBoxing
 
   type @@[A, B] = scalaz.@@[A, B]
 

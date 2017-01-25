@@ -1,9 +1,10 @@
 package edu.umass.cs.iesl.watr
-package spindex 
+package spindex
 
 import watrmarks.Label
 import utils.Histogram, Histogram._
-import TB._
+import textboxing.{TextBoxing => TB}, TB._
+import watrmarks.{StandardLabels => LB}
 
 import utils.SlicingAndDicing._
 import utils.{CompassDirection => Compass}
@@ -19,6 +20,7 @@ import GeometryImplicits._
 
 object ComponentOperations {
   import textreflow._
+  import textreflow.data._
   import utils.EnglishDictionary
 
   // import tracing.TraceLog._
@@ -326,16 +328,16 @@ object ComponentOperations {
       val subScriptUpperLimit = modalCenterY-supSubTol
       val superScriptLowerLimit = modalCenterY+supSubTol
 
-      // indicate a set of h-lines inside theComponent.targetRegion
-      def indicateHLine(y: Double): TargetFigure = y.toHLine
-        .clipTo(theComponent.targetRegion.bbox)
-        .targetTo(theComponent.targetRegion.pageId)
+      // // indicate a set of h-lines inside theComponent.targetRegion
+      // def indicateHLine(y: Double): TargetFigure = y.toHLine
+      //   .clipTo(theComponent.targetRegion.bbox)
+      //   .targetTo(theComponent.targetRegion.pageId)
 
-      vtrace.trace(
-        "modal top     " withTrace indicateHLine(modalTop),
-        "modal bottom  " withTrace indicateHLine(modalBottom),
-        "modal center Y" withTrace indicateHLine(modalCenterY)
-      )
+      // vtrace.trace(
+      //   "modal top     " withTrace indicateHLine(modalTop),
+      //   "modal bottom  " withTrace indicateHLine(modalBottom),
+      //   "modal center Y" withTrace indicateHLine(modalCenterY)
+      // )
 
 
       theComponent.getChildren(LB.TextSpan).foreach({ textSpan =>

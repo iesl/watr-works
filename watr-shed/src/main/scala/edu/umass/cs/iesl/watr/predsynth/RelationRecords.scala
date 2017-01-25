@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
-package predsynth 
+package predsynth
 
-
+import TypeTags._
 import utils.{StringUtils => SU}
 
 trait Identities {

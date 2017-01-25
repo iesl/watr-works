@@ -15,6 +15,10 @@ import databasics._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
 
+import textreflow.data._
+import watrmarks.{StandardLabels => LB}
+import TypeTags._
+
 class TextReflowDB(
   val tables: TextReflowDBTables
 ) extends DoobiePredef {

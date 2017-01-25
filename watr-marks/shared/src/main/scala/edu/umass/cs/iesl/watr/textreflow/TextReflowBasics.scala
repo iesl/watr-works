@@ -11,12 +11,44 @@ import matryoshka.patterns.EnvT
 import utils.EnrichNumerics._
 import scala.{Range => _}
 import utils.ScalazTreeImplicits._
+import geometry._
+import watrmarks._
+
+import textboxing.{TextBoxing => TB}
+import watrmarks.{StandardLabels => LB}
 
 case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 
-trait TextReflowBasics extends StructuredRecursion {
+trait TextReflowBasics {
   import TextReflowF._
-  import TextReflowRendering._
+
+  // Natural Transformation  from EnvT ~> TextReflow
+  def stripEnv = new (EnvT[Offsets, TextReflowF, ?] ~> TextReflowF[?]) {
+    def apply[A](env: EnvT[Offsets, TextReflowF, A]): TextReflowF[A] = {
+      env.lower
+    }
+  }
+
+  def fixf = Fix[TextReflowF](_)
+
+  def atom(c: CharAtom) = fixf(Atom(c))
+  def atomStr(c: CharAtom) = fixf(Atom(c))
+  def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
+  def flow(as:TextReflow*) = flows(as)
+  def flows(as: Seq[TextReflow]) = fixf(Flow(as.toList))
+  // def cache(a: TextReflow, text: String) = fixf(CachedText(a, text))
+
+  def bracket(pre: Char, post: Char, a:TextReflow) = fixf(
+    Bracket(pre.toString, post.toString, a)
+  )
+  def bracket(pre: String, post: String, a:TextReflow) = fixf(
+    Bracket(pre, post, a)
+  )
+
+  def labeled(l: Label, a:TextReflow) = fixf(Labeled(Set(l), a))
+  def labeled(ls: Set[Label], a:TextReflow) = fixf(Labeled(ls, a))
+  def insert(s: String) = fixf(Insert(s))
+  def space() = insert(" ")
 
 
   def bubbleUpAttrs[A: Monoid]: PartialFunction[TextReflowF[(TextReflow, A)], A] = {
@@ -165,6 +197,29 @@ trait TextReflowBasics extends StructuredRecursion {
     }
   }
 
+  //  if (l.hasLabel(LB.Sup)) { Bracket("^{", "}",  a) }
+  def escapeLineFormatting: TextReflowT => TextReflowT = {
+    case l @ Labeled (labels, a)     =>
+      val esc = if (l.hasLabel(LB.Sup)) Option("^")
+      else if (l.hasLabel(LB.Sub))      Option("_")
+      else None
+
+      esc.map(e =>
+        flow(insert(s"$e{"), a, insert("}")).unFix
+      ) getOrElse (l)
+
+    case t      => t
+  }
+
+  def renderText(t: TextReflowF[(TextReflow, String)]): String = t match {
+    case Atom    (ac)                    => ac.char
+    case Insert  (value)                 => value
+    case Rewrite ((from, attr), to)      => to
+    case Bracket (pre, post, (a, attr))  => s"$pre${attr}$post"
+    case Flow    (atomsAndattrs)         => atomsAndattrs.map(_._2).mkString
+    case Labeled (labels, (a, attr))     => attr
+  }
+
   def sliceTextReflow(textReflow: TextReflow, begin: Int, until:Int): Option[TextReflow] = {
     val sliceRange = RangeInt(begin, until-begin)
 
@@ -220,5 +275,55 @@ trait TextReflowBasics extends StructuredRecursion {
       .cata(retain)
       .map(_._1)
 
+  }
+
+  import utils.ScalazTreeImplicits._
+
+  def boxTF[T, F[_]: Foldable: Functor](
+    tf: T
+  )(implicit
+    TR: Recursive.Aux[T, F],
+    FShow: Delay[Show, F]
+  ): TB.Box = {
+    tf.cata(toTree).drawBox
+  }
+
+  def prettyPrintTree(reflow: TextReflow): TB.Box = {
+    reflow.cata(toTree).drawBox
+  }
+
+  def prettyPrintCofree[B](cof: Cofree[TextReflowF, B])(implicit
+    BS: Show[B],
+    CS: Delay[Show, Cofree[TextReflowF, ?]]
+  ): String = {
+    CS(BS).shows(cof)
+  }
+
+  def cofreeBox[B](cof: Cofree[TextReflowF, B])(implicit
+    BS: Show[B]
+  ): TB.Box = {
+    cofreeAttrToTree(cof).drawBox
+  }
+
+  def cofreeAttrToTree[A](c: Cofree[TextReflowF, A]): Tree[A] = {
+    // val cname = c.tail.getClass.getSimpleName
+    Tree.Node(
+      c.head,
+      c.tail.toStream.map(cofreeAttrToTree(_))
+    )
+  }
+
+  implicit object OffsetsInst extends Show[Offsets] {
+    def zero: Offsets = Offsets(0, 0, 0, 0)
+    override def shows(f: Offsets): String = s"(${f.begin} ${f.len}) ${f.total} +:${f.pad}"
+  }
+
+
+  implicit class RicherTextReflowT(val theReflow: TextReflowT)  {
+
+    def hasLabel(l: Label): Boolean = theReflow match {
+      case Labeled(labels, _) if labels.contains(l) => true
+      case _ => false
+    }
   }
 }

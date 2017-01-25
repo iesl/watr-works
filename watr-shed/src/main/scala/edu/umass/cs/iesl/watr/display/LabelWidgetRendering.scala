@@ -5,6 +5,7 @@ package display
 
 import geometry._
 // import textreflow._
+import display.data._
 
 // import GeometryImplicits._
 // import PageComponentImplicits._
@@ -42,25 +43,25 @@ object LabelWidgetRendering {
     )]
 
     def visit(t: LabelWidgetF[(LabelWidget, LwAccum)]): LwAccum = t match {
-      case Target(tr, emboss, sels)  =>
-        // makeImageForTargetRegion(tr)
-        //   .map({img =>
-        //     val trPositionVec = tr.bbox.toPoint(CDir.NW)
+      // case Target(tr, emboss, sels)  =>
+      //   // makeImageForTargetRegion(tr)
+      //   //   .map({img =>
+      //   //     val trPositionVec = tr.bbox.toPoint(CDir.NW)
 
-        //     val adjustedSelects = sels.map({preselect:LTBounds =>
-        //       val selectPositionVec = preselect.toPoint(CDir.NW)
-        //       val adjustedPos = selectPositionVec - trPositionVec
-        //       preselect.moveTo(adjustedPos.x, adjustedPos.y)
-        //     })
+      //   //     val adjustedSelects = sels.map({preselect:LTBounds =>
+      //   //       val selectPositionVec = preselect.toPoint(CDir.NW)
+      //   //       val adjustedPos = selectPositionVec - trPositionVec
+      //   //       preselect.moveTo(adjustedPos.x, adjustedPos.y)
+      //   //     })
 
-        //     LwAccum(
-        //       img,
-        //       List(
-        //         (tr, tr.bbox.moveToOrigin)
-        //       )
-        //     )
-        //   })
-        ???
+      //   //     LwAccum(
+      //   //       img,
+      //   //       List(
+      //   //         (tr, tr.bbox.moveToOrigin)
+      //   //       )
+      //   //     )
+      //   //   })
+      //   ???
 
 
       // case Col(attrs) =>

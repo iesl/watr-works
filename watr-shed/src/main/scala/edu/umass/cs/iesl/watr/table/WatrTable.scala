@@ -7,9 +7,17 @@ import pprint.PPrinter
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import spindex._
 import textreflow._
+import textreflow.data._
 import extract.images._
 import corpora._
 import segment._
+
+import textboxing.{TextBoxing => TB}, TB._
+import watrmarks.{StandardLabels => LB}
+import TypeTags._
+
+import display.data._
+import geometry._
 
 object WatrTable {
 
@@ -107,15 +115,13 @@ object ShellCommands extends CorpusEnrichments {
       theDB.addSegmentation(ds)
     }
 
-    import display._
-    import geometry._
 
     def documents(): List[String@@DocumentID] = {
       theDB.getDocuments()
     }
 
     def titleLabelers(n: Int): LabelWidget = {
-      val Lw = LabelWidgets
+      // val Lw = LabelWidgets
       val lws = documents.take(n)
         .map(titleLabeler(_))
 
@@ -123,7 +129,7 @@ object ShellCommands extends CorpusEnrichments {
     }
 
     def titleLabeler(docId: String@@DocumentID): LabelWidget = {
-      val Lw = LabelWidgets
+      // val Lw = LabelWidgets
 
       // - presumptively label the title lines
       //    val tallestLines = page0.vlines.filter(_.height == tallest font height)
@@ -168,8 +174,8 @@ object ShellCommands extends CorpusEnrichments {
 
       val selector = Lw.panel(
         Lw.mouseOverlay(
-          Lw.target(
-            pageTargetRegion, List(LB.VisualLine), titlePreselects
+          Lw.targetImage(
+            pageTargetRegion // , List(LB.VisualLine), titlePreselects
           )
         )
       )
@@ -208,7 +214,7 @@ object ShellCommands extends CorpusEnrichments {
         val docId = DocumentID(theCorpusEntry.entryDescriptor)
 
         val segmenter = DocumentSegmenter
-          .createSegmenter(docId, pdfPath, Seq())
+          .createSegmenter(docId, pdfPath)
 
         segmenter.runPageSegmentation()
 

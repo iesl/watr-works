@@ -1,12 +1,14 @@
 package edu.umass.cs.iesl.watr
 package display
 
-import matryoshka.data._
 
 object `package` {
 
-  type LabelWidget = Fix[LabelWidgetF]
+  object data  {
+    type LabelWidget = LabelWidgetF.LabelWidget
+    type LabelWidgetT = LabelWidgetF.LabelWidgetT
+    val Lw = LabelWidgets
+ }
 
-  type LabelWidgetT = LabelWidgetF[Fix[LabelWidgetF]]
 
 }

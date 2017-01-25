@@ -1,20 +1,28 @@
 package edu.umass.cs.iesl.watr
 package display
 
-import scalaz.{Traverse, Applicative}
-import scalaz.std.list._
-import scalaz.syntax.traverse._
+import scalaz._
+import scalaz.Scalaz._
+
+// import scalaz.{Traverse, Applicative}
+// import scalaz.std.list._
+// import scalaz.syntax.traverse._
 
 import matryoshka._
+import matryoshka.data._
 
 import geometry._
-import textreflow._
-import watrmarks._
+import textreflow.data._
+// import watrmarks._
 import utils.EnrichNumerics._
 
 sealed trait LabelWidgetF[+A]
 
 object LabelWidgetF {
+
+  type LabelWidget = Fix[LabelWidgetF]
+
+  type LabelWidgetT = LabelWidgetF[Fix[LabelWidgetF]]
 
   // case class Target(
   //   targetRegion: TargetRegion,
@@ -67,13 +75,17 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        case l @ Target(tr, emboss, sels) => G.point(l.copy())
-        case l @ Reflow(tr, sels)         => G.point(l.copy())
+        case l @ TargetImage(tr) => G.point(l.copy())
+        case l @ TargetSelection(tr) => G.point(l.copy())
+        case l @ RangeSelection(range) => G.point(l.copy())
+        case l @ Reflow(tr)         => G.point(l.copy())
         case l @ Button()                 => G.point(l.copy())
         case l @ MouseOverlay(bkplane)    => f(bkplane).map(a => l.copy(backplane=a))
         case l @ Panel(content)           => f(content).map(a => l.copy(content=a))
         case l @ Row(as)                  => as.traverse(f).map(Row(_))
         case l @ Col(as)                  => as.traverse(f).map(Col(_))
+        case l @ Overlay(overs, under)    => (overs.traverse(f) |@| f(under)).apply(Overlay(_, _))
+        case l @ Positioned(pos, a)       => f(a).map(Positioned(pos, _))
       }
     }
   }
@@ -92,22 +104,31 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
-  def target(tr: TargetRegion, emboss: List[Label], sels: List[TargetRegion]) =
-    fixlw(Target(tr, emboss, sels))
+  def targetImage(tr: TargetRegion) =
+    fixlw(TargetImage(tr))
+
+  def targetSelect(tr: TargetRegion) =
+    fixlw(TargetSelection(tr))
 
   def reflow(tr: TextReflow) =
     fixlw(Reflow(tr))
 
+  def button() =
+    fixlw(Button())
+
   def mouseOverlay(bkplane: LabelWidget) =
     fixlw(MouseOverlay(bkplane))
 
-  def col(lwidgets: LabelWidget*): LabelWidget = {
-    fixlw(Col(
-      lwidgets.toList
-    ))
-  }
+  def col(lwidgets: LabelWidget*): LabelWidget =
+    fixlw(Col(lwidgets.toList))
 
-  def panel(content: LabelWidget): LabelWidget = {
+  def row(lwidgets: LabelWidget*): LabelWidget =
+    fixlw(Row(lwidgets.toList))
+
+  def panel(content: LabelWidget): LabelWidget =
     fixlw(Panel(content))
-  }
+
+  def overlay(bottom: LabelWidget, overlays: LabelWidget*): LabelWidget =
+    fixlw(Overlay(overlays.toList, bottom))
+
 }

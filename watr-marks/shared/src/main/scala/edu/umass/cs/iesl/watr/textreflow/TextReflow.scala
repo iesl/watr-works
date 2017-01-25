@@ -9,12 +9,18 @@ import scalaz.syntax.traverse._
 import scalaz.syntax.equal._
 
 import matryoshka._
+import matryoshka.data._
 import geometry._
 
 
 sealed trait TextReflowF[+A]
 
 object TextReflowF {
+
+  type TextReflow = Fix[TextReflowF]
+  type TextReflowT = TextReflowF[Fix[TextReflowF]]
+
+
   case class Atom(c: CharAtom)                            extends TextReflowF[Nothing]
   case class Insert(value: String)                        extends TextReflowF[Nothing]
   case class Rewrite[A](from: A, to: String)              extends TextReflowF[A]

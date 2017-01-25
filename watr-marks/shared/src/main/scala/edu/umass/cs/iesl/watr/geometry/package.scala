@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
-package geometry 
+package geometry
 
 object `package` {
-  
+
 }

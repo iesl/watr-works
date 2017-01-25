@@ -10,13 +10,16 @@ import utils.SlicingAndDicing._
 
 import geometry._
 import GeometryImplicits._
+import textreflow.data._
+import watrmarks.{StandardLabels => LB}
+
+import TypeTags._
 
 
 object MITAlignPredsynth {
   private[this] val log = org.log4s.getLogger
 
   import utils.IdGenerator
-  import textreflow._
 
   def alignPredSynthPaper(mpageIndex: MultiPageIndex, paper: Paper): Seq[AlignedGroup] = {
     log.debug("aligning predsynth paper ")

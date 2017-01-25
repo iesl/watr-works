@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package extract 
+package extract
 
 import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
 import java.io.InputStream
@@ -15,23 +15,8 @@ import scala.collection.mutable
 import scala.collection.JavaConversions._
 import extract.fonts._
 
+import utils.EnrichNumerics._
 
-object util {
-
-  implicit class RicherFloat(val d: Float) extends AnyVal {
-    def nan = java.lang.Float.isNaN(d)
-    def inf = java.lang.Float.isInfinite(d)
-  }
-  implicit class RicherDouble(val d: Double) extends AnyVal {
-    def nan = java.lang.Double.isNaN(d)
-    def inf = java.lang.Double.isInfinite(d)
-  }
-}
-
-case class GeometryTranslation(
-  transX: (Double) => Double,
-  transY: (Double) => Double
-)
 
 class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),

@@ -1,8 +1,9 @@
 package edu.umass.cs.iesl.watr
-package textreflow 
-
+package textreflow
 
 import geometry._
+import textreflow.data._
+import watrmarks.{StandardLabels => LB}
 
 trait ImageTextReflow extends PlainTextReflow {
   import com.sksamuel.scrimage._

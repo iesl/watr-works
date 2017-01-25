@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package utils
 
+// val LB = watrmarks.StandardLabels
+// val TB = textboxing.TextBoxing
+import TypeTags._
 
 object EnrichNumerics {
   def fmt = (d: Double) => f"${d}%1.2f"
@@ -86,9 +89,14 @@ object EnrichNumerics {
       r.min <= theDouble && theDouble <= r.max
     }
 
+    def nan = java.lang.Double.isNaN(theDouble)
+    def inf = java.lang.Double.isInfinite(theDouble)
   }
 
-
+  implicit class RicherFloat_EnrichNumerics(val d: Float) extends AnyVal {
+    def nan = java.lang.Float.isNaN(d)
+    def inf = java.lang.Float.isInfinite(d)
+  }
 
 }
 

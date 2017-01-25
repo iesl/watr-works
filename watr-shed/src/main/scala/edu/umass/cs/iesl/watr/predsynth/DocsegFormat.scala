@@ -1,11 +1,14 @@
 package edu.umass.cs.iesl.watr
-package predsynth 
+package predsynth
 
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
 import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
 import geometry._
+
+import watrmarks.{StandardLabels => LB}
+import TypeTags._
 
 
 trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats {

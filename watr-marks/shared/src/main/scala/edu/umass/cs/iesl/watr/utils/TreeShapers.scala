@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
-package utils 
+package utils
 
+
+import textboxing.{TextBoxing => TB}
 
 object TreeShaper {
   def apply[N : Numeric](

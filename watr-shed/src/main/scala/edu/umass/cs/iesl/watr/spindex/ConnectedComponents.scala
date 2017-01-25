@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex 
+package spindex
 
 import watrmarks._
 
@@ -9,6 +9,11 @@ import GeometryImplicits._
 
 import scalaz.Tree
 import scala.collection.mutable
+
+import textboxing.{TextBoxing => TB}
+import watrmarks.{StandardLabels => LB}
+
+import TypeTags._
 
 // TODO move and/or delete this
 case class BioNode(

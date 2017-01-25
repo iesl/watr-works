@@ -1,9 +1,10 @@
 package edu.umass.cs.iesl.watr
-package geometry 
+package geometry
 
 import watrmarks._
 import scalaz.Tag
 
+import TypeTags._
 
 
 trait TypeTagFormats {

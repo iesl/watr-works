@@ -1,14 +1,12 @@
 package edu.umass.cs.iesl.watr
 package textreflow
 
-import matryoshka.data._
 
-object `package` extends TextReflowSharedFunctions {
+object `package` {
 
-  // object implicits extends TextReflowSharedFunctions
-
-  type TextReflow = Fix[TextReflowF]
-
-  type TextReflowT = TextReflowF[Fix[TextReflowF]]
+  object data extends TextReflowSharedFunctions {
+    type TextReflow = TextReflowF.TextReflow
+    type TextReflowT = TextReflowF.TextReflowT
+  }
 
 }

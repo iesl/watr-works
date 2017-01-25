@@ -6,7 +6,7 @@ import extract._
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
-import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
+// import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
 import java.io.{File => JFile}
 import predsynth._
 import segment.DocumentSegmenter
@@ -283,47 +283,46 @@ object Works extends App {
 
   /////////// Specific Commands
 
+  // import extract.fonts.SplineFont
 
-  import extract.fonts.SplineFont
+  // def loadOrExtractFonts(conf: AppConfig, corpusEntry: CorpusEntry): Seq[SplineFont.Dir] = {
+  //   import extract.fonts.SplineFonts
+  //   import ammonite.{ops => fs}
+  //   import fs._
+  //   import fs.ImplicitWd._
 
-  def loadOrExtractFonts(conf: AppConfig, corpusEntry: CorpusEntry): Seq[SplineFont.Dir] = {
-    import extract.fonts.SplineFonts
-    import ammonite.{ops => fs}
-    import fs._
-    import fs.ImplicitWd._
+  //   if (!corpusEntry.hasArtifact("font.props", "fonts")) {
+  //     for {
+  //       pdf <- corpusEntry.getPdfArtifact
+  //       pdfPath <- pdf.asPath
+  //     } {
+  //       try{
 
-    if (!corpusEntry.hasArtifact("font.props", "fonts")) {
-      for {
-        pdf <- corpusEntry.getPdfArtifact
-        pdfPath <- pdf.asPath
-      } {
-        try{
+  //       val res = %%("bin/extract-fonts", "-f="+pdfPath.toString())
+  //       log.info(s"ran extract-fonts exit=${res.exitCode}")
+  //       } catch {
+  //         case t: Throwable => log.info(s"Error extracting fonts, skipping")
+  //       }
+  //     }
+  //   }
 
-        val res = %%("bin/extract-fonts", "-f="+pdfPath.toString())
-        log.info(s"ran extract-fonts exit=${res.exitCode}")
-        } catch {
-          case t: Throwable => log.info(s"Error extracting fonts, skipping")
-        }
-      }
-    }
+  //   if (corpusEntry.hasArtifact("fonts")) {
+  //     val fontDirs = for {
+  //       fontDir <- corpusEntry.getArtifact("fonts").toSeq
+  //       pdir <- fontDir.asPath.toOption.toSeq
+  //       sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
+  //       sfdir <- sfdirs
+  //     } yield {
+  //       // log.info(s"loading fonts from ${sfdir}")
+  //       SplineFonts.loadSfdir(sfdir)
+  //     }
 
-    if (corpusEntry.hasArtifact("fonts")) {
-      val fontDirs = for {
-        fontDir <- corpusEntry.getArtifact("fonts").toSeq
-        pdir <- fontDir.asPath.toOption.toSeq
-        sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
-        sfdir <- sfdirs
-      } yield {
-        // log.info(s"loading fonts from ${sfdir}")
-        SplineFonts.loadSfdir(sfdir)
-      }
-
-      fontDirs
-    } else {
-      log.info(s"no extracted fonts found")
-      Seq()
-    }
-  }
+  //     fontDirs
+  //   } else {
+  //     log.info(s"no extracted fonts found")
+  //     Seq()
+  //   }
+  // }
 
 
 
@@ -335,9 +334,10 @@ object Works extends App {
   }
 
 
-  def runPageSegmentation(docId: String@@DocumentID, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
+  // def runPageSegmentation(docId: String@@DocumentID, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
+  def runPageSegmentation(docId: String@@DocumentID, pdfPath: Path): DocumentSegmenter =  {
     val segmenter = DocumentSegmenter
-      .createSegmenter(docId, pdfPath, fontDirs)
+      .createSegmenter(docId, pdfPath)
 
     segmenter.runPageSegmentation()
     segmenter
@@ -384,7 +384,7 @@ object Works extends App {
 
       val docId = DocumentID(corpusEntry.entryDescriptor)
 
-      val segmenter = runPageSegmentation(docId, pdfPath, Seq())
+      val segmenter = runPageSegmentation(docId, pdfPath)
       val mergedZoneIndex = DocsegMerging.mergePriorDocseg(segmenter.mpageIndex, priorDocseg)
 
       val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex, Seq())
@@ -413,7 +413,7 @@ object Works extends App {
 
           val docId = DocumentID(corpusEntry.entryDescriptor)
 
-          val segmenter = runPageSegmentation(docId, pdfPath, Seq())
+          val segmenter = runPageSegmentation(docId, pdfPath)
 
           rsegmenter = Some(segmenter)
 

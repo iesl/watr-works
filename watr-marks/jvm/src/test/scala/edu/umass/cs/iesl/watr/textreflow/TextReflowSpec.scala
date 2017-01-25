@@ -8,6 +8,9 @@ import utils.ScalazTreeImplicits._
 import scalaz._
 import Scalaz._
 
+import TextReflowF._
+import TypeTags._
+
 class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
 
   def annotateAndPrint(tr: TextReflow): Unit = {

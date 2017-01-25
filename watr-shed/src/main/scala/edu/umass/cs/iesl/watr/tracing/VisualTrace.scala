@@ -4,7 +4,7 @@ package tracing
 // import scala.language.experimental.macros
 
 import geometry._
-import TB._
+import textboxing.{TextBoxing => TB}, TB._
 
 object VisualTracer {
   import TraceLog._

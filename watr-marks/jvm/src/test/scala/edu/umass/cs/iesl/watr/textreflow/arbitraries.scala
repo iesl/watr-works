@@ -9,16 +9,15 @@ import matryoshka.scalacheck.arbitrary._
 
 import scalaz.scalacheck.ScalaCheckBinding._
 
-// import spindex._
 import watrmarks._
-import TextReflowF._
-
 import geometry._
+import TextReflowF._
+import TypeTags._
+
 
 trait ArbitraryTextReflows {
   import Arbitrary._
-  
-  //import TypeTags._
+
 
 
   implicit def arbLTBounds: Arbitrary[LTBounds] = {

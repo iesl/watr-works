@@ -1,8 +1,10 @@
 package edu.umass.cs.iesl.watr
-package table  
+package table
 
-import textreflow._
+import textreflow.data._
 import geometry._
+
+import textboxing.{TextBoxing => TB}
 
 trait TextReflowEnrichments {
 

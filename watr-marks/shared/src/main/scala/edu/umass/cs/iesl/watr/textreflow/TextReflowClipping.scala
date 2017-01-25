@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow 
+package textreflow
 
 import scalaz._, Scalaz._
 
@@ -10,6 +10,8 @@ import matryoshka.patterns.EnvT
 
 import utils.EnrichNumerics._
 import scala.{Range => _}
+
+import watrmarks.{StandardLabels => LB}
 
 import geometry._
 import watrmarks.Label
@@ -89,7 +91,7 @@ trait TextReflowClipping extends TextReflowBasics {
 
 
     val res: List[AtomOrInsertOrGap] =
-      textReflow.annotateCharRanges
+      annotateReflowCharRanges(textReflow)
         .cata(retainAtoms)
 
     def splitLoop(aigs: List[AtomOrInsertOrGap]): List[List[AtomOrInsertOrGap]] = {
@@ -106,7 +108,7 @@ trait TextReflowClipping extends TextReflowBasics {
       val ranges = toReflowRanges(nonGap.toList)
       val aggRange = reduceRanges(ranges)
 
-      textReflow.slice(aggRange.min, aggRange.max)
+      sliceTextReflow(textReflow, aggRange.min, aggRange.max)
         .map(slice => (slice, aggRange))
     })
 

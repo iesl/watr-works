@@ -1,8 +1,13 @@
 package edu.umass.cs.iesl.watr
-package table  
+package table
 
 import spindex._
 import corpora._
+// import textreflow.data._
+
+import textboxing.{TextBoxing => TB}
+// import watrmarks.{StandardLabels => LB}
+// import TypeTags._
 
 trait CorpusEnrichments extends
     ComponentEnrichments with

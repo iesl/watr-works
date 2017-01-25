@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package geometry 
+package geometry
 
 
 import scalaz.Equal
@@ -79,16 +79,6 @@ object GeometryImplicits {
 
   }
 
-  implicit class RicherFigure(val figure: GeometricFigure) extends AnyVal {
-
-    def targetTo(page: Int@@PageID): TargetFigure = {
-      TargetFigure(
-        RegionID(0), // TODO gen region id
-        page, figure
-      )
-    }
-
-  }
 
 
   implicit class RicherPoint(val p0: Point) extends AnyVal {
@@ -207,7 +197,7 @@ object GeometryImplicits {
       moveTo(0d,0d)
     }
 
-    // def 
+    // def
 
     def intersects(rhs:LTBounds):Boolean = {
       !(tb.left > rhs.right

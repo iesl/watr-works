@@ -5,6 +5,8 @@ import doobie.imports._
 import shapeless._
 import geometry._
 
+import TypeTags._
+
 trait DoobiePredef {
 
   def putStrLn(s: => String): ConnectionIO[Unit] =

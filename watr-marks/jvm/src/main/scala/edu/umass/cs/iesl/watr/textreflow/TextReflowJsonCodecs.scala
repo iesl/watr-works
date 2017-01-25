@@ -1,10 +1,12 @@
 package edu.umass.cs.iesl.watr
-package textreflow 
+package textreflow
 
 import geometry._
 import play.api.libs.json._
 import Json._
 import watrmarks.Label
+
+import TextReflowF._
 
 object TextReflowJsonCodecs extends TextReflowJsonCodecs {
 
@@ -18,9 +20,8 @@ object TextReflowJsonCodecs extends TextReflowJsonCodecs {
 }
 
 
-trait TextReflowJsonCodecs extends GeometryJsonCodecs {
+trait TextReflowJsonCodecs extends GeometryJsonCodecs with TextReflowBasics {
   import play.api.libs.json._
-  import TextReflowF._
   import matryoshka._
   import matryoshka.data._
   import matryoshka.implicits._
@@ -85,4 +86,3 @@ trait TextReflowJsonCodecs extends GeometryJsonCodecs {
 }
 
 object TextReflowTransforms extends TextReflowJsonCodecs {}
-

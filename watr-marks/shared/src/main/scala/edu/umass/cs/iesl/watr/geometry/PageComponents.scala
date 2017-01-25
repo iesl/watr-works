@@ -6,6 +6,8 @@ import scalaz.syntax.equal._
 
 import watrmarks._
 
+import TypeTags._
+
 import GeometryImplicits._
 
 case class TargetRegion(
@@ -22,6 +24,14 @@ case class TargetRegion(
 }
 
 object TargetRegion {
+  // implicit class RicherFigure(val figure: GeometricFigure) extends AnyVal {
+  //   def targetTo(page: Int@@PageID): TargetFigure = {
+  //     TargetFigure(
+  //       RegionID(0), // TODO gen region id
+  //       page, figure
+  //     )
+  //   }
+  // }
 
   implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
     case (TargetRegion(id, docId, targetPage, bbox), TargetRegion(id2, docId2, targetPage2, bbox2)) =>
@@ -57,17 +67,13 @@ case class Zone(
   labels: Seq[Label]
 )
 
-
-
 case class PageGeometry(
   id: Int@@PageID,
   bounds: LTBounds
 )
 
-
 sealed trait PageAtom {
   def targetRegion: TargetRegion
-
 
   implicit val EqualPageAtom: Equal[PageAtom] = Equal.equal((a, b)  => (a, b) match {
     case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>

@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
-package spindex 
+package spindex
 
 object `package` {
-  
+
 }

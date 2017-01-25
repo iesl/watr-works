@@ -1,12 +1,16 @@
 package edu.umass.cs.iesl.watr
-package table  
+package table
 
 import spindex._
 import geometry._
 
+import textreflow.data._
+import textboxing.{TextBoxing => TB}, TB._
+// import watrmarks.{StandardLabels => LB}
+// import TypeTags._
+
 import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import TextReflowConversion._
-import TB._
 import PageComponentImplicits._
 
 trait ComponentEnrichments extends JargonDictionaries {
