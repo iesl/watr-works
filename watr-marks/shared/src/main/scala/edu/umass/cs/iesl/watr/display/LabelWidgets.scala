@@ -115,8 +115,16 @@ object LabelWidgets {
   def targetImage(tr: TargetRegion) =
     fixlw(TargetImage(tr))
 
-  def withSelections(lw: LabelWidget, trs: TargetRegion) =
-    fixlw(TargetSelection(lw, trs))
+  def withSelections(lw: LabelWidget, trs: TargetRegion*): LabelWidget = {
+    val trlist = trs.toList
+    if (trlist.isEmpty)
+      lw
+    else
+      withSelections(selectTarget(lw, trlist.head), trlist.tail:_*)
+  }
+
+  def selectTarget(lw: LabelWidget, tr: TargetRegion) =
+    fixlw(TargetSelection(lw, tr))
 
   def selectRange(range: RangeInt) =
     fixlw(RangeSelection(range.unwrap))

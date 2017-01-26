@@ -11,7 +11,6 @@ import matryoshka.scalacheck.arbitrary._
 import geometry._
 
 import TextReflowJsonCodecs._
-
 import TextReflowF._
 
 object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflows {

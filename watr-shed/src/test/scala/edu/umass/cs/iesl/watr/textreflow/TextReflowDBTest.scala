@@ -6,8 +6,6 @@ import doobie.imports._
 import spindex._
 import segment.DocumentSegmentation
 import extract.images.PageImages
-// import doobie.free.{ connection => C }
-import com.sksamuel.scrimage._
 import TypeTags._
 import watrmarks.{StandardLabels => LB}
 
@@ -98,9 +96,15 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
 
     reflowDB.addSegmentation(ds)
 
-    val targetRegions = reflowDB.selectTargetRegions(docId, PageID(0))
-    println("targetRegions")
-    println(targetRegions)
+    println("TargetRegions:")
+    val targetRegionsPg1 = reflowDB.selectTargetRegions(docId, PageID(1))
+    println("targetRegions page 1")
+    println(targetRegionsPg1.mkString("\n"))
+
+    val targetRegionsPg0 = reflowDB.selectTargetRegions(docId, PageID(0))
+    println("targetRegions page 0")
+    println(targetRegionsPg0.mkString("\n"))
+
 
     println("Zones page 0")
     val vlineZones0 = reflowDB.selectZones(docId, PageID(0), LB.VisualLine)
@@ -110,6 +114,15 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
     println("Zones page 1")
     println(vlineZones.mkString("\n"))
 
+
+    println("Zones for target regions")
+    targetRegionsPg1.foreach { tr =>
+      val zonesAndReflows = reflowDB.getTextReflowsForTargetRegion(tr)
+      zonesAndReflows.foreach({case (zone, reflow) =>
+        println(s"for ${zone}")
+        println(s"=> ${reflow.toText()}")
+      })
+    }
     // val blank = Image.filled(w, h, Color.Transparent)
 
     // vlineZones.foreach{zone =>

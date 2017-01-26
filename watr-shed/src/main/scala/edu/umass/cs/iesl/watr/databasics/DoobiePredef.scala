@@ -6,14 +6,13 @@ import shapeless._
 import geometry._
 
 import TypeTags._
+import utils.EnrichNumerics._
 
 trait DoobiePredef {
 
   def putStrLn(s: => String): ConnectionIO[Unit] =
     FC.delay(println(s))
 
-  def dtoi(d: Double): Int = (d*100.0).toInt
-  def itod(i: Int): Double = (i.toDouble)/100.0
 
   type Int4 = Int :: Int :: Int :: Int :: HNil
 

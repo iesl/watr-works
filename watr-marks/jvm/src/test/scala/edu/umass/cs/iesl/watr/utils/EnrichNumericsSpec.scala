@@ -20,3 +20,17 @@ class EnrichNumericsSpec extends FlatSpec with Matchers {
   }
 
 }
+
+import org.scalacheck._
+import org.scalacheck.Prop._
+
+object EnrichNumericsCheck extends Properties("EnrichNumericsCheck")  {
+
+  property("double <--> string rep") = forAll{ (d: Double) =>
+    itod(dtoi(d))
+
+    true
+
+  }
+
+}

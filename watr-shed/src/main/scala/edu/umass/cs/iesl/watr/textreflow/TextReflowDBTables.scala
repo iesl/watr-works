@@ -94,7 +94,7 @@ class TextReflowDBTables(
 
   val createZoneTable: Update0 = sql"""
       CREATE TABLE zone (
-        zone          SERIAL PRIMARY KEY,
+        zone        SERIAL PRIMARY KEY,
         zoneid      INTEGER NOT NULL,
         document    INTEGER REFERENCES document
       );

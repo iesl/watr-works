@@ -15,7 +15,6 @@ import textreflow._
 import textreflow.data._
 import TypeTags._
 
-import textboxing.{TextBoxing => TB}
 import watrmarks.{StandardLabels => LB}
 
 /**
@@ -43,7 +42,12 @@ import watrmarks.{StandardLabels => LB}
 
 
   */
-class MultiPageIndex(docId: String@@DocumentID) {
+class MultiPageIndex(
+  docId: String@@DocumentID
+  // zoneIdGen: IdGenerator[ZoneID]
+) {
+
+  val zoneIdGen = IdGenerator[ZoneID]()
 
   def getDocumentID(): String@@DocumentID = docId
 
@@ -79,7 +83,6 @@ class MultiPageIndex(docId: String@@DocumentID) {
   val regionIdGen = IdGenerator[RegionID]()
 
   // Zone-related
-  val zoneIdGen = IdGenerator[ZoneID]()
   val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
   val labelToZones: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ZoneID]] = mutable.HashMap()
   val zoneToTextReflow: mutable.HashMap[Int@@ZoneID, TextReflow] = mutable.HashMap()

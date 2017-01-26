@@ -17,7 +17,8 @@ import scalaz.syntax.traverse._
 
 import textreflow.data._
 import watrmarks.{StandardLabels => LB}
-import TypeTags._
+import watrmarks._
+import utils.EnrichNumerics._
 
 class TextReflowDB(
   val tables: TextReflowDBTables
@@ -60,7 +61,6 @@ class TextReflowDB(
     } yield for {
       _            <- putStrLn(s"Inserting zone for line ${vlineCC.id}")
       zpk          <- insertZone(docId, vlineZoneId)
-      _            <- putStrLn(s"   inserting textreflow")
       treflowPk    <- maybeReflow.toList.map(r => insertTextReflow(zpk, r)).sequence
 
       // insert zone -> targetregion (w/ordering)
@@ -87,7 +87,7 @@ class TextReflowDB(
           tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
      from
           targetregion   as tr join
-          page           as pg using(page) join
+          page           as pg on (pg.page=tr.page) join
           document       as d  on (pg.document=d.document)
      where
         d.stable_id=${docId} AND
@@ -98,15 +98,10 @@ class TextReflowDB(
     query.transact(xa).unsafePerformSync
   }
 
-  def selectTextReflow(zone: Zone): Option[TextReflow] = {
-
-    ???
-  }
-
-  def selectZones(docId: String@@DocumentID, pageId: Int@@PageID, label: watrmarks.Label): List[Zone] = {
+  def selectZones(docId: String@@DocumentID, pageId: Int@@PageID, label: Label): List[Zone] = {
     val query = sql"""
      select
-        zn.zone, tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
+        zn.zoneid, tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
      from
         zone                      as zn
         join zone_to_label        as z2l   on (zn.zone=z2l.zone)
@@ -157,10 +152,94 @@ class TextReflowDB(
     import play.api.libs.json, json._
     val js = textReflow.toJson()
     val jsStr = Json.stringify(js)
-    sql"""
+    val query = for {
+      _  <- putStrLn(s"   inserted textreflow ${}")
+      pk <- sql"""
        insert into textreflow (reflow, zone)
        values (${jsStr}, ${zonePk})
-    """.update.withUniqueGeneratedKeys[Int]("textreflow")
+      """.update.withUniqueGeneratedKeys[Int]("textreflow")
+    } yield { pk }
+
+    query
+  }
+
+
+  def getTextReflowsForTargetRegion(targetRegion: TargetRegion): List[(Zone, TextReflow)] = {
+    val query = for {
+      _          <- putStrLn(s"getTextReflowsForTargetRegion: ${targetRegion}")
+      _          <- putStrLn(s"selectZonesForTargetRegion")
+      zones      <- selectZonesForTargetRegion(targetRegion, LB.VisualLine)
+      zids        = zones.map(z => z.id).mkString(", ")
+      _          <- putStrLn(s"zone (${zids}) count ${zones.length}; selecting reflows")
+      reflows    <- zones.toList.map(selectTextReflowForZone(_)).sequence
+    } yield {
+      zones.zip(reflows)
+    }
+
+    query.
+      transact(xa).unsafePerformSync
+      .filter(_._2.isDefined)
+      .map({case(z, r) => (z, r.get)})
+  }
+
+  def selectZonesForTargetRegion(targetRegion: TargetRegion, label: Label): ConnectionIO[List[Zone]] = {
+    val trUri = targetRegion.uri
+
+    val query = sql"""
+     select
+        zn.zoneid, tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
+     from
+        zone                      as zn
+        join zone_to_label        as z2l   on (zn.zone=z2l.zone)
+        join label                as lb    on (z2l.label=lb.label)
+        join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
+        join targetregion         as tr    on (z2tr.targetregion=tr.targetregion)
+        join page                 as pg    on (pg.page=tr.page)
+        join document             as d     on (pg.document=d.document)
+     where
+        tr.uri = ${trUri}
+    """.query[ZonedRegion]
+      .list
+      .map(_.foldLeft(List[Zone]())({ case (zones, zrec) =>
+        import scala.::
+        zones match {
+          case Nil =>
+            Zone(zrec.id, List(zrec.targetRegion), List()) :: Nil
+
+          case h :: tail if h.id == zrec.id =>
+            h.copy(regions = zrec.targetRegion +: h.regions) :: tail
+
+          case h :: tail =>
+            Zone(zrec.id, List(zrec.targetRegion), List()) :: zones
+        }
+
+      }))
+      .map({zoneList =>
+        zoneList
+          .map(z => z.copy(regions = z.regions.reverse))
+          .reverse
+      })
+
+    query
+  }
+
+  def selectTextReflowForZone(zone: Zone): ConnectionIO[Option[TextReflow]] = {
+    import TextReflowJsonCodecs._
+    import play.api.libs.json, json._
+
+    val query = sql"""
+     select reflow
+     from   textreflow as tr join zone as z on (tr.zone=z.zone)
+     where  zone.zoneid=${zone.id}
+    """.query[String]
+      .option
+      .map({maybeStr =>
+        maybeStr.map({str =>
+          jsonToTextReflow(Json.parse(str))
+        })
+      })
+
+    query
   }
 
   def insertPageIndex(docPrKey: Int, pageIndex: PageIndex, pageImage: Image): ConnectionIO[Int] = {
@@ -263,7 +342,6 @@ class TextReflowDB(
     query
   }
 
-  import watrmarks.Label
   def ensureLabel(label: Label): ConnectionIO[Int] = for {
     maybePk <- sql"""select label from label where key=${label.fqn}""".query[Int].option
     pk      <- maybePk match {
@@ -309,25 +387,13 @@ class TextReflowDB(
     query
   }
 
-  // def selectTargetRegion(targetRegion: TargetRegion): ConnectionIO[Option[Int]] = {
-  //   val trUri = targetRegion.uri
-  //   val query = for {
-  //     // docPk  <- selectDocumentID(docId)
-  //     // pagePk <- selectPage(docPk, pageId)
-  //     geom   <- sql"""
-  //                   select id, page, bleft, btop, bwidth, bheight, uri
-  //                   from targetregion
-  //                   where uri=${trUri}
-  //     """.query[Int :: Int :: B4Int :: String :: HNil]
-  //     .option
-  //     .map({case Some(id :: pagenum :: (l :: t :: w :: h :: HNil) :: uri :: HNil) =>
-  //       val (bl, bt, bw, bh) = (
-  //         itod(l), itod(t), itod(w), itod(h)
-  //       )
 
   def insertTargetRegion(targetRegion: TargetRegion): ConnectionIO[Int] = {
     val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) = targetRegion
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+    println(s"inserting TargetRegion w/int rep:  ${targetRegion}")
+    println(s"  ${bl}, $bt, $bw, $bh")
+    println(s"  ${l}, $t, $w, $h")
 
     for {
       docPk <- selectDocumentID(docId)

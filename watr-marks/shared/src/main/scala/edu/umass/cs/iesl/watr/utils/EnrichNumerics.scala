@@ -1,12 +1,31 @@
 package edu.umass.cs.iesl.watr
 package utils
 
-// val LB = watrmarks.StandardLabels
-// val TB = textboxing.TextBoxing
 import TypeTags._
 
 object EnrichNumerics {
-  def fmt = (d: Double) => f"${d}%1.2f"
+  def fmt = (d: Double) => {
+    f"${d}%1.2f"
+  }
+  def fmtXX = (d: Double) => {
+    val dp = d * 1000.0d
+    val di = dp.toInt
+    val ds = di.toString.toList
+    val dec = ds.dropRight(1).takeRight(2)
+    val ints = ds.take(ds.length-3)
+    s"${ints.mkString}.${dec.mkString}"
+  }
+
+  def dtoi(d: Double): Int = {
+    // TODO: this conversion is critical code, document it!
+    val dfmt = fmt(d)
+    dfmt.filter(_.isDigit).mkString.toInt
+  }
+
+  def itod(i: Int): Double =  {
+    // s"000${i}"
+    (i.toDouble)/100.0d
+  }
 
   type RangeDouble = (Double, Double)@@Ranging
   type RangeInt = (Int, Int)@@Ranging

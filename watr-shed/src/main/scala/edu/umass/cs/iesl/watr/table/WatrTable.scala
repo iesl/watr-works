@@ -160,22 +160,34 @@ object ShellCommands extends CorpusEnrichments {
       val vlines = for {
         zone   <- zones
         region <- zone.regions
-      } yield { region.bbox }
+      } yield { region }
 
       val titlePreselects = vlines.drop(2).take(2)
 
-      // val halfPageTargetRegion = pageGeometry := height / 2
-      // val displayTR = titleZone.targetRegion union halfPageTargetRegion
+      val halfPage = LW.targetImage(
+        pageTargetRegion // , List(LB.VisualLine), titlePreselects
+      )
 
-      // val textDisplay = col(
-      //   titleZone.targetRegions.map(tr => val z = getZone(tr, VisualLine); getZoneTextReflow(z))
-      // )
+      val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)
+
+      val vlineText = for {
+        zone   <- zones
+        region <- zone.regions
+        (zone, reflow) <- theDB.getTextReflowsForTargetRegion(region)
+      } yield {
+        LW.reflow(reflow)
+      }
+
+      val textCol = LW.col(
+        vlineText:_*
+      )
 
       val selector = LW.panel(
-        LW.mouseOverlay(
-          LW.targetImage(
-            pageTargetRegion // , List(LB.VisualLine), titlePreselects
-          )
+        LW.row(
+          LW.mouseOverlay(
+            halfPageWSelects
+          ),
+          textCol
         )
       )
 
