@@ -60,7 +60,8 @@ object LabelWidgetF {
   case class Positioned[A](
     a: A,
     pvec: PositionVector,
-    area: LTBounds,
+    widgetBbox: LTBounds,
+    totalBbox: LTBounds,
     id: Int@@RegionID
   ) extends LabelWidgetF[A]
 
@@ -82,7 +83,7 @@ object LabelWidgetF {
         case l @ Row(as)                     => as.traverse(f).map(Row(_))
         case l @ Col(as)                     => as.traverse(f).map(Col(_))
         case l @ Overlay(overs, under)       => G.apply2(overs.traverse(f), f(under))(Overlay(_, _))
-        case l @ Positioned(a, pvec, area, id)    => f(a).map(Positioned(_, pvec, area, id))
+        case l @ Positioned(a, pvec, wbbox, tbbox, id)    => f(a).map(Positioned(_, pvec, wbbox, tbbox, id))
       }
     }
   }
@@ -99,7 +100,7 @@ object LabelWidgetF {
       case l @ Row(as)                     => s"$l"
       case l @ Col(as)                     => s"$l"
       case l @ Overlay(overs, under)       => s"$l"
-      case l @ Positioned(a, pvec, area, id)   => s"$l"
+      case l @ Positioned(a, pvec, wbbox, tbbox, id)   => s"$l"
     }
   }
 }
@@ -152,7 +153,7 @@ object LabelWidgets {
     fixlw(Overlay(overlays.toList, bottom))
 
   // (implicit ids: utils.IdGenerator[RegionID]): LabelWidget =
-  def positioned(lw: LabelWidget, pvec: PositionVector, area:LTBounds, id: Int@@RegionID): LabelWidget =
-    fixlw(Positioned(lw, pvec, area, id))
+  def positioned(lw: LabelWidget, pvec: PositionVector, wbbox:LTBounds, tbbox: LTBounds, id: Int@@RegionID): LabelWidget =
+    fixlw(Positioned(lw, pvec, wbbox, tbbox, id))
 
 }

@@ -94,6 +94,9 @@ object GeometryImplicits {
     def translate(x: Double=0d, y: Double=0d): Point = {
       Point(p0.x+x, p0.y+y)
     }
+    def translate(p: Point): Point = {
+      Point(p0.x+p.x, p0.y+p.y)
+    }
 
     def hdist(p1: Point): Double = p1.x - p0.x
     def hdistAbs(p1: Point): Double = math.abs(hdist(p1))

@@ -113,13 +113,18 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   }
 
 
-  def makeImageForTargetRegion(tr: TargetRegion): Future[FabricObject] = {
+  def makeImageForTargetRegion(tr: TargetRegion, absPos: LTBounds): Future[FabricObject] = {
     val targetRegionURI = tr.uriString
 
     val promise = Promise[FabricObject]()
 
     val callback: js.Function1[Image, Unit] =
       (img:Image) => {
+        img.top = absPos.top
+        img.left = absPos.left
+        img.width = absPos.width
+        img.height = absPos.height
+        img.opacity = 1.0f
         noControls(img)
         promise.success(img)
         ()
@@ -285,50 +290,103 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   // }
 
 
-  def renderLabelWidget(lwidget: LabelWidget): Future[FabricObject] = {
+  import scalaz.std.list._
+  import scalaz.syntax.traverse._
+    import scalaz.std.scalaFuture._
+
+  def renderLabelWidget(lwidget: LabelWidget): (LTBounds, Future[List[FabricObject]]) = {
 
     // case Target(tr, emboss, sels)  =>  makeImageForTargetRegion(tr)
     // case Col(attrs) => lls.map(vjoinAttrs(_))
     // case Panel((content, attr))  =>   attr.map({ fobj =>  addBorder(4.0, fobj)  })
     // case MouseOverlay((bkplane, fattr)) => createShape(tr.bounds, "black", "yellow", 1f)
-    val zeroShape = createShape(LTBounds(0, 0, 0, 0), "black", "yellow", 0f)
-
+    // val zeroShape = createShape(LTBounds(0, 0, 0, 0), "black", "yellow", 0f)
     // var currObj = Future { zeroShape }
+    // def makeObj(t: LabelWidget): Future[Option[FabricObject]] = t.project match {
+    //   case l @ Positioned(Fix(fa), pvec, area, id)    => fa match {
+    //     case TargetImage(tr) =>
+    //       makeImageForTargetRegion(tr, area).map(Some(_))
+    //     case  TargetSelection(bk, sels)   => Future { Some(createShape(area, "black", "yellow", 0.2f)) }
+    //     case  RangeSelection(range)       => Future { None }
+    //     case  Reflow(tr)                  => Future { Some(createShape(area, "red", "blue", 0.2f)) }
+    //     case  Button()                    => Future { None }
+    //     case  MouseOverlay(bkplane)       => Future { None }
+    //     case  Panel(content)              => Future { None }
+    //     case  Row(as)                     => Future { None }
+    //     case  Col(as)                     => Future { None }
+    //     case  Overlay(overs, under)       => Future { None }
+    //   }
+    //   case _ => Future { None }
+    // }
 
-    def makeObj(t: LabelWidget): Option[FabricObject] = t.project match {
-      case l @ Positioned(Fix(fa), pvec, area, id)    => fa match {
-        case TargetImage(tr) =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  TargetSelection(bk, sels)   =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  RangeSelection(range)       =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  Reflow(tr)                  =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  Button()                    =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  MouseOverlay(bkplane)       =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  Panel(content)              =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  Row(as)                     =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  Col(as)                     =>
-          Some(createShape(area, "black", "yellow", 1f))
-        case  Overlay(overs, under)       =>
-          Some(createShape(area, "black", "yellow", 1f))
-      }
-      case _ => None
+    import scala.collection.mutable
+    val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
+
+
+    def reposition(
+      currVec: PositionVector,
+      lwidget: LabelWidget
+    ): (PositionVector, LabelWidget) = lwidget.project match {
+      case p @ Positioned( tf @ Fix(fa), pvec, wbbox, tbbox, id)  =>
+        val newWArea = wbbox.translate(currVec)
+        val newVec = currVec.translate(pvec)
+        println(s"Positioning ${fa.getClass.getName} to: ${newWArea}")
+        println(s"   currVec: ${currVec}, newVec: ${newVec}")
+        fa match {
+          case TargetImage(tr) =>
+            objStack += makeImageForTargetRegion(tr, newWArea)
+
+          case  TargetSelection(bk, sels)   =>
+            objStack += Future { createShape(newWArea, "black", "", 0.5f) }
+
+          case  Reflow(tr) =>
+            objStack += Future { createShape(newWArea, "red", "green", 0.5f) }
+
+          case  MouseOverlay(bkplane)       =>
+          case  Panel(content)              =>
+
+          case  Row(as)                     =>
+            objStack += Future { createShape(newWArea, "black", "", 0.1f) }
+
+          case  Col(as)                     =>
+            objStack += Future { createShape(newWArea, "blue", "red", 0.1f) }
+
+          case _ =>
+        }
+        (newVec, tf)
+
+      case _ => (currVec, lwidget)
     }
 
-    val objs = lwidget.universe.map({ tf =>
-      makeObj(tf)
-    })
+    lwidget.topDownCata(Point(0, 0))(reposition)
 
-    val g = fabric.Group(objs.flatten)
-    noControls(g)
+    // val objs = lwidget.universe
+    //   .map({ tf =>
+    //     makeObj(tf)
+    //   })
+    //   .sequenceU
+    //   .map({ff =>
+    //     val g = fabric.Group(ff.flatten)
+    //     noControls(g)
+    //     g
+    //   })
 
-    Future { g }
+    def position(lw: LabelWidget): (PositionVector, LTBounds) = lw.unFix match {
+      case Positioned(a, pvec, wbbox, tbbox, id) => (pvec, tbbox)
+      case x => sys.error(s"found non-positioned LabelWidget ${x}")
+    }
+
+    val (_, widgetBounds) = position(lwidget)
+
+    val fobjs = objStack.toList
+      .reverse.sequenceU
+      .map({ff =>
+        // val g = fabric.Group(ff)
+        ff.map(noControls(_))
+        ff
+      })
+
+    (widgetBounds, fobjs)
 
   }
 }

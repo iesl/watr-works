@@ -31,17 +31,17 @@ class TextReflowDB(
     val mpageIndex = ds.mpageIndex
     val docId = mpageIndex.getDocumentID()
 
-    def insertPages(docPk: Int) = for {
+    def insertPagesInfo(docPk: Int) = for {
       pageId <- mpageIndex.getPages.toList
     } yield for {
       _         <- putStrLn(s"inserting page rec for page ${pageId}")
-      pagePrKey <- insertPageIndex(docPk, mpageIndex.getPageIndex(pageId), ds.pageImages.page(pageId))
+      pagePrKey <- insertPageGeometry(docPk, mpageIndex.getPageGeometry(pageId), ds.pageImages.page(pageId))
     } yield ()
 
     val query = for {
       _         <- putStrLn("Starting ...")
       docPrKey  <- getOrInsertDocumentID(docId)
-      _         <- insertPages(docPrKey).sequenceU
+      _         <- insertPagesInfo(docPrKey).sequenceU
       _         <- putStrLn("insert multi pages...")
       _         <- insertMultiPageIndex(docId, mpageIndex)
     } yield docPrKey
@@ -101,7 +101,7 @@ class TextReflowDB(
   def selectZones(docId: String@@DocumentID, pageId: Int@@PageID, label: Label): List[Zone] = {
     val query = sql"""
      select
-        zn.zoneid, tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
+        zn.zone, tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
      from
         zone                      as zn
         join zone_to_label        as z2l   on (zn.zone=z2l.zone)
@@ -167,10 +167,10 @@ class TextReflowDB(
   def getTextReflowsForTargetRegion(targetRegion: TargetRegion): List[(Zone, TextReflow)] = {
     val query = for {
       _          <- putStrLn(s"getTextReflowsForTargetRegion: ${targetRegion}")
-      _          <- putStrLn(s"selectZonesForTargetRegion")
+      // _          <- putStrLn(s"selectZonesForTargetRegion")
       zones      <- selectZonesForTargetRegion(targetRegion, LB.VisualLine)
       zids        = zones.map(z => z.id).mkString(", ")
-      _          <- putStrLn(s"zone (${zids}) count ${zones.length}; selecting reflows")
+      // _          <- putStrLn(s"zone (${zids}) count ${zones.length}; selecting reflows")
       reflows    <- zones.toList.map(selectTextReflowForZone(_)).sequence
     } yield {
       zones.zip(reflows)
@@ -187,7 +187,7 @@ class TextReflowDB(
 
     val query = sql"""
      select
-        zn.zoneid, tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
+        zn.zone, tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
      from
         zone                      as zn
         join zone_to_label        as z2l   on (zn.zone=z2l.zone)
@@ -228,9 +228,9 @@ class TextReflowDB(
     import play.api.libs.json, json._
 
     val query = sql"""
-     select reflow
+     select tr.reflow
      from   textreflow as tr join zone as z on (tr.zone=z.zone)
-     where  zone.zoneid=${zone.id}
+     where  z.zone=${zone.id}
     """.query[String]
       .option
       .map({maybeStr =>
@@ -242,10 +242,10 @@ class TextReflowDB(
     query
   }
 
-  def insertPageIndex(docPrKey: Int, pageIndex: PageIndex, pageImage: Image): ConnectionIO[Int] = {
+  def insertPageGeometry(docPrKey: Int, pageGeometry: PageGeometry, pageImage: Image): ConnectionIO[Int] = {
     println(s"adding page w/image dims ${pageImage.dimensions} ")
 
-    val PageGeometry(pageId, LTBounds(l, t, w, h)) = pageIndex.pageGeometry
+    val PageGeometry(pageId, LTBounds(l, t, w, h)) = pageGeometry
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
 
     sql"""

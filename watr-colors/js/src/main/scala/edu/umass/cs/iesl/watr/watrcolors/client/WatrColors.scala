@@ -118,18 +118,17 @@ object WatrColors extends TextReflowExamples {
     @JSExport
     def echoLabeler(lwidget: LabelWidget) = Async.async {
       clear()
-      val labeler = Async.await {
-        renderLabelWidget(lwidget)
+      val (bbox, fobjs) = renderLabelWidget(lwidget)
+      fabricCanvas.setWidth(bbox.width.toInt)
+      fabricCanvas.setHeight(bbox.height.toInt)
+
+      // val labelobjs = Async.await {
+      //   fobjs
+      // }
+      fobjs.foreach{os =>
+        os.foreach(fabricCanvas.add(_))
       }
-
-      val lw = labeler.width
-      fabricCanvas.setWidth(lw.intValue)
-
-      val lh = labeler.height
-      fabricCanvas.setHeight(lh.intValue)
-
       // fabricCanvas.setBackgroundColor("yellow")
-      fabricCanvas.add(labeler)
       fabricCanvas.renderAll()
     }
 

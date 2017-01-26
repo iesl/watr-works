@@ -216,22 +216,16 @@ class EmbeddedServer(
       val lwIndex = LabelWidgetIndexing.indexLabelWidget(lwidget)
 
       val pWidget = lwIndex.positioned
-      // import matryoshka._
-      // import matryoshka.data._
-      // import matryoshka.implicits._
 
-      // import LabelWidgetF._
+      val pp = LabelWidgetIndexing.prettyPrintLabelWidget(pWidget)
+      println("=======")
+      println(pp)
 
       /// pre-create target region images w/embossings
       // def visit(t: LabelWidgetF[Unit]): Unit = t match {
       //   // case Target(tr, emboss, sels) =>
       //   //   // pre-create the images w/labels embossed as color overlays and put them in database
       //   //   labeler.embossTargetRegion(tr, emboss)
-
-      //   case _ => ()
-      // }
-
-      // // side-effecting...
       // lwidget.cata(visit)
 
       api.echoLabeler(pWidget).call()

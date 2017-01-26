@@ -25,7 +25,7 @@ object LabelWidgetIndex {
 
   implicit object LabelWidget extends SpatialIndexable[PositionedT] {
     def id(t: PositionedT): Int = t.id.unwrap
-    def ltBounds(t: PositionedT): LTBounds = t.area
+    def ltBounds(t: PositionedT): LTBounds = t.widgetBbox
   }
 }
 
@@ -47,7 +47,7 @@ object LabelWidgetIndexing extends LabelWidgetBasics {
     val positionedLabelWidget = absPositionLabelWidget(lwidget)
 
     def visit(t: LabelWidgetF[Unit]): Unit = t match {
-      case p @ Positioned(a, pvec, area, id) =>
+      case p @ Positioned(a, pvec, wbbox, tbbox, id) =>
         lwIndex.add(p)
 
       case _ => ()

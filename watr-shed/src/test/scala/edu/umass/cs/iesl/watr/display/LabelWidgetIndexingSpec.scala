@@ -44,7 +44,7 @@ class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflo
 
     val row1 = LW.row(w1, w2)
 
-    val panel1 =  row1 // LW.panel(row1)
+    val panel1 = LW.panel(row1)
 
     println("layout")
     println(

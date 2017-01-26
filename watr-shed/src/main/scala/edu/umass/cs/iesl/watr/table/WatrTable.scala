@@ -16,6 +16,7 @@ import textboxing.{TextBoxing => TB}, TB._
 import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
+import display._
 import display.data._
 import geometry._
 
@@ -40,6 +41,7 @@ object WatrTable {
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox
         |implicit val pp2 = pprintTextReflow
+        |implicit val pp3 = pprintLabelWidget
         |implicit val db0: TextReflowDB = db
         |""".stripMargin
 
@@ -75,18 +77,23 @@ object ShellCommands extends CorpusEnrichments {
     new TextReflowDB(tables)
   }
 
-  def pprintComponent: PPrinter[Component] = PPrinter({(component, config) =>
+  val pprintComponent: PPrinter[Component] = PPrinter({(component, config) =>
     val box = component.show
     Iterator(box.toString())
   })
 
-  def pprintBox: PPrinter[TB.Box] = PPrinter({(box, config) =>
+  val pprintBox: PPrinter[TB.Box] = PPrinter({(box, config) =>
     Iterator(box.toString())
   })
 
-  def pprintTextReflow: PPrinter[TextReflow] = PPrinter({(textReflow, config) =>
+  val pprintTextReflow: PPrinter[TextReflow] = PPrinter({(textReflow, config) =>
     val text = textReflow.toText()
-    Iterator(text)
+    Iterator("text")
+  })
+
+  val pprintLabelWidget: PPrinter[LabelWidget] = PPrinter({(lwidget, config) =>
+    val pp = LabelWidgetIndexing.prettyPrintLabelWidget(lwidget)
+    Iterator(pp.toString)
   })
 
   def initCorpus(): Corpus = {
@@ -162,7 +169,7 @@ object ShellCommands extends CorpusEnrichments {
         region <- zone.regions
       } yield { region }
 
-      val titlePreselects = vlines.drop(2).take(2)
+      val titlePreselects = vlines.drop(0).take(2)
 
       val halfPage = LW.targetImage(
         pageTargetRegion // , List(LB.VisualLine), titlePreselects
@@ -171,8 +178,7 @@ object ShellCommands extends CorpusEnrichments {
       val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)
 
       val vlineText = for {
-        zone   <- zones
-        region <- zone.regions
+        region <- titlePreselects
         (zone, reflow) <- theDB.getTextReflowsForTargetRegion(region)
       } yield {
         LW.reflow(reflow)
@@ -182,14 +188,16 @@ object ShellCommands extends CorpusEnrichments {
         vlineText:_*
       )
 
-      val selector = LW.panel(
-        LW.row(
-          LW.mouseOverlay(
-            halfPageWSelects
-          ),
-          textCol
-        )
-      )
+      // val selector = LW.panel(
+      //   LW.row(
+      //     LW.mouseOverlay(
+      //       halfPageWSelects
+      //     ),
+      //     textCol
+      //   )
+      // )
+      // val selector = LW.panel(halfPageWSelects)
+      val selector = halfPageWSelects
 
       // val buttons = col(
       //   toggle("accept", "unaccept")
