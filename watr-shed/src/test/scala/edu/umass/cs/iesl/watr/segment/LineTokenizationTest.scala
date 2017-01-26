@@ -7,6 +7,8 @@ import org.scalatest._
 import spindex._
 import ComponentOperations._
 import TextReflowConversion.toTextReflow
+import watrmarks.{StandardLabels => LB}
+import TypeTags._
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text

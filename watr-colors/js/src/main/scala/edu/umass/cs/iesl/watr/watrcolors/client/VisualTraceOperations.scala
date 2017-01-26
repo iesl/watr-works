@@ -3,9 +3,8 @@ package watrcolors
 package client
 
 import scala.collection.mutable
-// import org.querki.jquery._
 import org.scalajs.dom._
-// import native.fabric
+import textboxing.{TextBoxing => TB}
 
 trait VisualTraceOperations extends FabricCanvasOperations {
 

@@ -5,6 +5,8 @@ package client
 
 import scala.scalajs.js.annotation.JSExport
 import textreflow._
+import textreflow.data._
+import TypeTags._
 
 trait TextReflowExamples extends PlainTextReflow with LabelerRendering {
 
@@ -25,7 +27,7 @@ class DevClient extends TextReflowExamples {
       example1()
     }
 
-    vcatWidgets(widgets)
+    // vcatWidgets(widgets)
   }
 
 }

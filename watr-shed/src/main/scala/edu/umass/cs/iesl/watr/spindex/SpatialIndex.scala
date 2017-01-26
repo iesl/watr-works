@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex 
+package spindex
 
 import net.sf.jsi
 import net.sf.jsi.rtree.RTree

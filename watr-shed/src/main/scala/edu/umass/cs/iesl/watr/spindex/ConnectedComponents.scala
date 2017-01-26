@@ -10,7 +10,6 @@ import GeometryImplicits._
 import scalaz.Tree
 import scala.collection.mutable
 
-import textboxing.{TextBoxing => TB}
 import watrmarks.{StandardLabels => LB}
 
 import TypeTags._

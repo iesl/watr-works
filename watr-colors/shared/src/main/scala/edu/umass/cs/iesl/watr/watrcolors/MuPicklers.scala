@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
+import TypeTags._
 
 object TypeTagPicklers {
   import upickle.{default => UPickle}

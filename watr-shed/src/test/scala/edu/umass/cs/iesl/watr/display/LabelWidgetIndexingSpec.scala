@@ -10,9 +10,8 @@ import display.data._
 import utils.EnrichNumerics._
 import TypeTags._
 
-class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with LabelWidgetBasics {
-
-  behavior of "label widgets"
+class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflow {
+  import LabelWidgetIndexing._
 
   val bbox = LTBounds(0d, 0d, 10d, 10d)
   val tr = TargetRegion(RegionID(0), DocumentID("doc-id-0"), PageID(23), bbox)
@@ -20,8 +19,8 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with 
   def stringToReflow(s: String): TextReflow =
     stringToTextReflow(s)(DocumentID("doc-id-0"), PageID(23))
 
+  "LabelWidgetIndexing" should "have a test" in {
 
-  it should "specify widget layout" in {
     def reg0: TargetRegion = tr
     def sel0: TargetRegion = tr
     def sel1: TargetRegion = tr
@@ -59,10 +58,6 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with 
     )
 
 
-
-    // // approve all selections within layout regions:
-    // button(approveSelections(w2))
-    // button(approveSelections(row1))
-
+    val lwIndex = indexLabelWidget(panel1)
   }
 }

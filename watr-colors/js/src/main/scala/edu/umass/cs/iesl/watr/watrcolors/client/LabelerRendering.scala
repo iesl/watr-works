@@ -19,10 +19,13 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import display._
 import LabelWidgetF._
+import watrmarks.{StandardLabels => LB}
 
-import scalaz.std.list._
-import scalaz.std.scalaFuture._
-import scalaz.syntax.traverse._
+// import utils.{CompassDirection => CDir}
+
+// import scalaz.std.list._
+// import scalaz.std.scalaFuture._
+// import scalaz.syntax.traverse._
 
 case class LwRenderingAttrs(
   fobj: FabricObject,
@@ -41,27 +44,27 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   }
 
 
-  def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = {
-    def render(t: TextReflowF[(TextReflow, Seq[TargetRegion])]): Seq[TargetRegion] = t match {
-      case Rewrite    ((from, attr), to)      => attr
-      case Bracket    (pre, post, (a, attr))  => attr
-      case Flow       (atomsAndattrs)         => atomsAndattrs.flatMap(_._2)
-      case Labeled    (labels, (a, attr))     =>
-        val trs = for {
-          l <- labels if l == LB.VisualLine
-          value <- l.value
-        } yield {
-          TargetRegion.fromUri(value)
-        }
+  // def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = {
+  //   def render(t: TextReflowF[(TextReflow, Seq[TargetRegion])]): Seq[TargetRegion] = t match {
+  //     case Rewrite    ((from, attr), to)      => attr
+  //     case Bracket    (pre, post, (a, attr))  => attr
+  //     case Flow       (atomsAndattrs)         => atomsAndattrs.flatMap(_._2)
+  //     case Labeled    (labels, (a, attr))     =>
+  //       val trs = for {
+  //         l <- labels if l == LB.VisualLine
+  //         value <- l.value
+  //       } yield {
+  //         TargetRegion.fromUri(value)
+  //       }
 
-        attr ++ trs
+  //       attr ++ trs
 
-      case _ => Seq()
-    }
+  //     case _ => Seq()
+  //   }
 
-    tr.cata(attributePara(render))
-      .toPair._1
-  }
+  //   tr.cata(attributePara(render))
+  //     .toPair._1
+  // }
 
   def displayBasicCanvasShapes(): Unit = {
     fabricCanvas.add(createShape(Point(240, 240), "black", "blue", 0.5f))
@@ -271,64 +274,61 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   //   g
   // }
 
-  def vcatWidgets(trs: Seq[TextReflow]): Unit = {
-    var currTop: Int = 0
-    trs.foreach { tr =>
-      val widget = createAnnotWidget(tr)
-      widget.setTop(currTop)
-      currTop = (currTop + widget.height.intValue())
-      fabricCanvas.add(widget)
-    }
-  }
+  // def vcatWidgets(trs: Seq[TextReflow]): Unit = {
+  //   var currTop: Int = 0
+  //   trs.foreach { tr =>
+  //     val widget = createAnnotWidget(tr)
+  //     widget.setTop(currTop)
+  //     currTop = (currTop + widget.height.intValue())
+  //     fabricCanvas.add(widget)
+  //   }
+  // }
 
-  import utils.{CompassDirection => CDir}
 
   def renderLabelWidget(lwidget: LabelWidget): Future[FabricObject] = {
 
-    def visit(t: LabelWidgetF[(LabelWidget, Future[LwRenderingAttrs])]): Future[LwRenderingAttrs] = t match {
-      case Target(tr, emboss, sels)  =>
-        makeImageForTargetRegion(tr)
-          .map({img =>
-            val trPositionVec = tr.bbox.toPoint(CDir.NW)
+    // case Target(tr, emboss, sels)  =>  makeImageForTargetRegion(tr)
+    // case Col(attrs) => lls.map(vjoinAttrs(_))
+    // case Panel((content, attr))  =>   attr.map({ fobj =>  addBorder(4.0, fobj)  })
+    // case MouseOverlay((bkplane, fattr)) => createShape(tr.bounds, "black", "yellow", 1f)
+    val zeroShape = createShape(LTBounds(0, 0, 0, 0), "black", "yellow", 0f)
 
-            val adjustedSelects = sels.map({preselect:LTBounds =>
-              val selectPositionVec = preselect.toPoint(CDir.NW)
-              val adjustedPos = selectPositionVec - trPositionVec
-              preselect.moveTo(adjustedPos.x, adjustedPos.y)
-            })
+    // var currObj = Future { zeroShape }
 
-            LwRenderingAttrs(
-              img,
-              List(
-                (tr, tr.bbox.moveToOrigin)
-              )
-            )
-          })
-
-
-      case Col(attrs) =>
-        val lls: Future[List[LwRenderingAttrs]] = attrs.map(_._2).sequenceU
-
-        lls.map(vjoinAttrs(_))
-
-      case Panel((content, attr))  =>
-        attr.map({ fobj =>
-          addBorder(4.0, fobj)
-        })
-
-      case MouseOverlay((bkplane, fattr)) =>
-        // createShape(tr.bounds, "black", "yellow", 1f)
-        fattr.map({ attr =>
-          // addBorder(4.0, fobj)
-        })
-
-        ???
-
-      case _ => sys.error("echoLabeler: TODO")
+    def makeObj(t: LabelWidget): Option[FabricObject] = t.project match {
+      case l @ Positioned(Fix(fa), pvec, area, id)    => fa match {
+        case TargetImage(tr) =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  TargetSelection(bk, sels)   =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  RangeSelection(range)       =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  Reflow(tr)                  =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  Button()                    =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  MouseOverlay(bkplane)       =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  Panel(content)              =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  Row(as)                     =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  Col(as)                     =>
+          Some(createShape(area, "black", "yellow", 1f))
+        case  Overlay(overs, under)       =>
+          Some(createShape(area, "black", "yellow", 1f))
+      }
+      case _ => None
     }
 
-    lwidget
-      .cata(attributePara(visit))
-      .toPair._1.map(_.fobj)
+    val objs = lwidget.universe.map({ tf =>
+      makeObj(tf)
+    })
+
+    val g = fabric.Group(objs.flatten)
+    noControls(g)
+
+    Future { g }
+
   }
 }

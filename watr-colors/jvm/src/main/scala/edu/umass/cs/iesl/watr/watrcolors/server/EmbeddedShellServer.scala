@@ -12,12 +12,14 @@ import HttpHeaders._
 import HttpMethods._
 
 import concurrent.duration._
-import scala.concurrent.Future
+// import scala.concurrent.Future
 
 import corpora._
 import textreflow._
+import textreflow.data._
 import geometry._
 import display._
+import display.data._
 
 import autowire._
 import upickle.{default => UPickle}
@@ -211,25 +213,28 @@ class EmbeddedServer(
     }
 
     def echoLabeler(lwidget: LabelWidget): Unit = {
-      import matryoshka._
-      import matryoshka.data._
-      import matryoshka.implicits._
+      val lwIndex = LabelWidgetIndexing.indexLabelWidget(lwidget)
 
-      import LabelWidgetF._
+      val pWidget = lwIndex.positioned
+      // import matryoshka._
+      // import matryoshka.data._
+      // import matryoshka.implicits._
+
+      // import LabelWidgetF._
 
       /// pre-create target region images w/embossings
-      def visit(t: LabelWidgetF[Unit]): Unit = t match {
-        case Target(tr, emboss, sels) =>
-          // pre-create the images w/labels embossed as color overlays and put them in database
-          labeler.embossTargetRegion(tr, emboss)
+      // def visit(t: LabelWidgetF[Unit]): Unit = t match {
+      //   // case Target(tr, emboss, sels) =>
+      //   //   // pre-create the images w/labels embossed as color overlays and put them in database
+      //   //   labeler.embossTargetRegion(tr, emboss)
 
-        case _ => ()
-      }
+      //   case _ => ()
+      // }
 
-      // side-effecting...
-      lwidget.cata(visit)
+      // // side-effecting...
+      // lwidget.cata(visit)
 
-      api.echoLabeler(lwidget).call()
+      api.echoLabeler(pWidget).call()
     }
 
     def hello(msg: String): Unit = {

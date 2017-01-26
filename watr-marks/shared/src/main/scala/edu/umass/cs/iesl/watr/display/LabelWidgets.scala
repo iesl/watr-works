@@ -34,7 +34,7 @@ object LabelWidgetF {
   ) extends LabelWidgetF[A]
 
   case class RangeSelection(
-    range: RangeInt
+    range: (Int, Int)
   ) extends LabelWidgetF[Nothing]
 
 
@@ -60,7 +60,8 @@ object LabelWidgetF {
   case class Positioned[A](
     a: A,
     pvec: PositionVector,
-    area: LTBounds
+    area: LTBounds,
+    id: Int@@RegionID
   ) extends LabelWidgetF[A]
 
 
@@ -81,7 +82,7 @@ object LabelWidgetF {
         case l @ Row(as)                     => as.traverse(f).map(Row(_))
         case l @ Col(as)                     => as.traverse(f).map(Col(_))
         case l @ Overlay(overs, under)       => G.apply2(overs.traverse(f), f(under))(Overlay(_, _))
-        case l @ Positioned(a, pvec, area)    => f(a).map(Positioned(_, pvec, area))
+        case l @ Positioned(a, pvec, area, id)    => f(a).map(Positioned(_, pvec, area, id))
       }
     }
   }
@@ -98,7 +99,7 @@ object LabelWidgetF {
       case l @ Row(as)                     => s"$l"
       case l @ Col(as)                     => s"$l"
       case l @ Overlay(overs, under)       => s"$l"
-      case l @ Positioned(a, pvec, area)   => s"$l"
+      case l @ Positioned(a, pvec, area, id)   => s"$l"
     }
   }
 }
@@ -118,7 +119,7 @@ object LabelWidgets {
     fixlw(TargetSelection(lw, trs))
 
   def selectRange(range: RangeInt) =
-    fixlw(RangeSelection(range))
+    fixlw(RangeSelection(range.unwrap))
 
 
   def reflow(tr: TextReflow) =
@@ -142,7 +143,8 @@ object LabelWidgets {
   def overlay(bottom: LabelWidget, overlays: LabelWidget*): LabelWidget =
     fixlw(Overlay(overlays.toList, bottom))
 
-  def positioned(lw: LabelWidget, pvec: PositionVector, area:LTBounds): LabelWidget =
-    fixlw(Positioned(lw, pvec, area))
+  // (implicit ids: utils.IdGenerator[RegionID]): LabelWidget =
+  def positioned(lw: LabelWidget, pvec: PositionVector, area:LTBounds, id: Int@@RegionID): LabelWidget =
+    fixlw(Positioned(lw, pvec, area, id))
 
 }

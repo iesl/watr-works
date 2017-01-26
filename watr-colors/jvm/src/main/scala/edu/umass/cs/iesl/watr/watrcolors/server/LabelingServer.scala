@@ -11,6 +11,7 @@ import com.sksamuel.scrimage
 import scrimage._
 import scrimage.{canvas => SC}
 import watrmarks._
+import watrmarks.{StandardLabels => LB}
 
 class LabelingServer(
   reflowDB: TextReflowDB,

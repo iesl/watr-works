@@ -2,8 +2,8 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 
 import geometry._
-import textreflow._
-import display._
+import textreflow.data._
+import display.data._
 
 trait WatrShellApi {
   def helloShell(msg: String): Unit

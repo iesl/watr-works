@@ -3,6 +3,8 @@ package spindex
 
 class ConnectedComponentTest extends ConnectedComponentTestUtil {
   import ComponentOperations._
+  import watrmarks.{StandardLabels => LB}
+  import TypeTags._
 
   behavior of "connected components"
 

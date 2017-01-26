@@ -11,9 +11,11 @@ import org.scalajs.dom.ext._
 
 import autowire._
 
-import textreflow._
+// import textreflow._
+import textreflow.data._
 import geometry._
-import display._
+// import display._
+import display.data._
 
 import native.mousetrap._
 
@@ -134,7 +136,7 @@ object WatrColors extends TextReflowExamples {
 
     @JSExport
     override def echoTextReflows(textReflows: List[TextReflow]): Unit = {
-      vcatWidgets(textReflows)
+      // vcatWidgets(textReflows)
     }
   }
 

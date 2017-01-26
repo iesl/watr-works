@@ -7,6 +7,9 @@ import textreflow._
 import watrmarks._
 import geometry._
 
+import watrmarks.{StandardLabels => LB}
+import TypeTags._
+
 trait ConnectedComponentTestUtil extends FlatSpec with Matchers with ImageTextReflow {
 
   def labelRow(mpageIndex: MultiPageIndex, row: Int, l: Label, pageId: Int@@PageID=PageID(0)): Option[RegionComponent] = {
