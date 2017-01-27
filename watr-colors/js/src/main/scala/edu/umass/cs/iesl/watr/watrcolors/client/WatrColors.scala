@@ -43,13 +43,22 @@ object WatrColors extends TextReflowExamples {
   def doSelection(): Unit = {
     println("getUserLTBounds")
 
+    // fabricCanvas.defaultCursor = "crosshair"
+    // fabricCanvas.skipTargetFind = true
+    fabricCanvas.isDrawingMode = true
+    fabricCanvas.renderAll()
+
     for {
       bbox <- MouseGestures.getUserLTBounds(fabricCanvas)
     } yield {
       println(s"getUserLTBounds: got ${bbox}")
       addLTBoundsRect(bbox, "black", "#000", 0.3f)
+      fabricCanvas.isDrawingMode = false
+      fabricCanvas.renderAll()
 
       shell.onSelectLTBounds("some-artifact", bbox)
+
+      fabricCanvas.defaultCursor = "default"
 
       // val bboxAbs = alignBboxToDiv("#overlay-container", bbox)
       // async {

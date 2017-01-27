@@ -178,6 +178,9 @@ class EmbeddedServer(
     def kill() = system.terminate()
   }
 
+  import display.LabelWidgetIndex._
+  var activeLabelWidgetIndex: Option[LabelWidgetIndex] = None
+
   object WatrShellApiListeners extends WatrShellApi {
 
     // Handle incoming messages from WatrColors:
@@ -189,10 +192,19 @@ class EmbeddedServer(
       println(s"onDrawPath: ")
     }
 
-    def onSelectLTBounds(artifactId: String,bbox: LTBounds): Unit = {
-      println(s"onSelectLTBounds: ")
+    def onSelectLTBounds(artifactId: String, bbox: LTBounds): Unit = {
+      println(s"onSelectLTBounds: ${bbox}")
+
+      // determine which visual lines were selected and send back
+      //  an updated bounding box
+      activeLabelWidgetIndex.foreach({ lwIndex =>
+        val qwer: Seq[PositionedT] = lwIndex.lwIndex.queryForIntersects(bbox)
+
+      })
     }
   }
+
+
 
   object colors {
     val ClientSite  = new ShellsideClient(actors.longPoll)
@@ -214,19 +226,14 @@ class EmbeddedServer(
 
     def echoLabeler(lwidget: LabelWidget): Unit = {
       val lwIndex = LabelWidgetIndexing.indexLabelWidget(lwidget)
+      activeLabelWidgetIndex = Some(lwIndex)
 
       val pWidget = lwIndex.positioned
 
-      val pp = LabelWidgetIndexing.prettyPrintLabelWidget(pWidget)
-      println("=======")
-      println(pp)
-
-      /// pre-create target region images w/embossings
-      // def visit(t: LabelWidgetF[Unit]): Unit = t match {
-      //   // case Target(tr, emboss, sels) =>
-      //   //   // pre-create the images w/labels embossed as color overlays and put them in database
-      //   //   labeler.embossTargetRegion(tr, emboss)
-      // lwidget.cata(visit)
+      // val pp = LabelWidgetIndexing.prettyPrintLabelWidget(pWidget)
+      // println("=======")/ println(pp)
+      //// pre-create the images w/labels embossed as color overlays and put them in database
+      //labeler.embossTargetRegion(tr, emboss)
 
       api.echoLabeler(pWidget).call()
     }

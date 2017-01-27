@@ -197,7 +197,8 @@ object ShellCommands extends CorpusEnrichments {
       //   )
       // )
       // val selector = LW.panel(halfPageWSelects)
-      val selector = halfPageWSelects
+
+      val selector = LW.row(halfPageWSelects, textCol)
 
       // val buttons = col(
       //   toggle("accept", "unaccept")

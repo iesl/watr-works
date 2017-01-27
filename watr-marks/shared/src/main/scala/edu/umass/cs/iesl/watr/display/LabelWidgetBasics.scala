@@ -70,7 +70,7 @@ trait LabelWidgetBasics {
 
         val pos = attrs.map({case (t, attr) => attr.unFix match {
           case Positioned(a, pvec, wbbox, tbbox, id) =>
-            val newVec = pvec.translate(y=currBbox.right)
+            val newVec = pvec.translate(x=currBbox.right)
             val newWArea = wbbox.translate(newVec)
             val newTbbox = tbbox.translate(newVec)
 
@@ -87,14 +87,13 @@ trait LabelWidgetBasics {
         ???
 
       case l @ Reflow(treflow) =>
-        var currBbox: LTBounds = zeroLTBounds
+        var currBbox: LTBounds = LTBounds(0, 0, 1.0, 1.0)
 
         val reflowAreas = treflow.targetRegions
-          .map({tr =>
+          .foreach({tr =>
             // val newVec = pvec.translate(x=currBbox.right)
             val trArea = tr.bbox.moveToOrigin().translate(x=currBbox.right)
-            currBbox = currBbox union tr.bbox
-            trArea
+            currBbox = currBbox union trArea
           })
 
         positioned(reflow(treflow), zeroPosVector, currBbox, currBbox, idgen.nextId)

@@ -57,6 +57,7 @@ object LabelWidgetF {
 
   type PositionVector = Point
 
+  // TODO pretty sure this doesn't need to be part of the LabelWidget hierarchy
   case class Positioned[A](
     a: A,
     pvec: PositionVector,

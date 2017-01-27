@@ -19,8 +19,8 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import display._
 import LabelWidgetF._
-import watrmarks.{StandardLabels => LB}
 
+// import watrmarks.{StandardLabels => LB}
 // import utils.{CompassDirection => CDir}
 
 // import scalaz.std.list._
@@ -161,6 +161,23 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
       shape
     })
     objs
+  }
+
+
+  def createTextReflowWidget(textReflow: TextReflow, bbox: LTBounds): FabricObject = {
+    val text = textReflow.toText()
+    val ftext = fabric.Text(text)
+    ftext.setFontSize(12)
+    ftext.top     = bbox.top
+    ftext.left    = bbox.left
+    // val scaleX = ftext.width.doubleValue/bbox.width
+    // val scaleY = ftext.height.doubleValue/bbox.height
+    val scaleX = bbox.width  / ftext.width.doubleValue
+    val scaleY = bbox.height / ftext.height.doubleValue
+    ftext.setScaleX(scaleX)
+    ftext.setScaleY(scaleY)
+
+    ftext
   }
 
   def createAnnotWidget(textReflow: TextReflow): fabric.Group = {
@@ -340,7 +357,10 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
             objStack += Future { createShape(newWArea, "black", "", 0.5f) }
 
           case  Reflow(tr) =>
-            objStack += Future { createShape(newWArea, "red", "green", 0.5f) }
+            val widget = createTextReflowWidget(tr, newWArea)
+            widget.opacity = 1.0f
+            noControls(widget)
+            objStack += Future { widget }
 
           case  MouseOverlay(bkplane)       =>
           case  Panel(content)              =>

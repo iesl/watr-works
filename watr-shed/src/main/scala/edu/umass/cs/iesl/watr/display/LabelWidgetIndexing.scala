@@ -3,24 +3,16 @@ package display
 
 
 import geometry._
-// import display.data._
 import spindex._
 
-// import utils.{CompassDirection => CDir}
-// import textreflow._
-// import GeometryImplicits._
-// import PageComponentImplicits._
 
 import matryoshka._
-// import matryoshka.data._
 import matryoshka.implicits._
 
 import LabelWidgetF._
-// import LabelWidgets._
 
 object LabelWidgetIndex {
 
-  // type PositionedT = Positioned[LabelWidget]
   type PositionedT = Positioned[Unit]
 
   implicit object LabelWidget extends SpatialIndexable[PositionedT] {

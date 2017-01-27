@@ -394,8 +394,9 @@ class Canvas(
   // @param {Number} x pointer's x coordinate
   // @param {Number} y pointer's y coordinate
   // @return {Boolean} true if the rotation occurred
+
   // @param {String} value Cursor type of the canvas element.
-  // def setCursor(value)  = js.native
+  def setCursor(value: String)  = js.native
 
 
   // @param {Event} e mouse event
