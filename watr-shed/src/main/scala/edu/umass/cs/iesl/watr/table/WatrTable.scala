@@ -28,16 +28,21 @@ object WatrTable {
 
     replMain().run(
       "corpus" -> initCorpus(),
-      "db" -> initReflowDB()
+      "db" -> initReflowDB(),
+      "barx" -> BioArxivOps
     )
   }
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
+        |import ammonite.ops._
+        |import ammonite.ops.ImplicitWd._
         |import watr._, spindex._, geometry._, table._
         |import textreflow._
         |import watrmarks.StandardLabels._
         |import ShellCommands._
+        |import BioArxiv._
+        |import BioArxivOps._
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox
         |implicit val pp2 = pprintTextReflow

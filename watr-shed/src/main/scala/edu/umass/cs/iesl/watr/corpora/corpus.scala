@@ -70,6 +70,15 @@ class Corpus(
   def entry(entryDescriptor: String): Option[CorpusEntry]= {
     Option(new CorpusEntry(entryDescriptor, this))
   }
+  def ensureEntry(entryDescriptor: String): CorpusEntry = {
+    val entry = new CorpusEntry(entryDescriptor, this)
+
+    if (!exists(entry.artifactsRoot)) {
+      mkdir(entry.artifactsRoot)
+    }
+
+    entry
+  }
 
   def entries(): Seq[CorpusEntry] = {
     val artifacts = (ls! corpusRoot)
