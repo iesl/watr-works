@@ -89,7 +89,6 @@ trait TextReflowClipping extends TextReflowBasics {
       }
     }
 
-
     val res: List[AtomOrInsertOrGap] =
       annotateReflowCharRanges(textReflow)
         .cata(retainAtoms)

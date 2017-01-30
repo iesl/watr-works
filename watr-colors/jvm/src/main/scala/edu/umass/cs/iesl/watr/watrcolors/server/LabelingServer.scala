@@ -47,7 +47,7 @@ class LabelingServer(
     val docId = targetRegion.docId
     val pageId = targetRegion.pageId
 
-    val (pageImage, pageGeometry) = reflowDB.getPageImageAndGeometry(docId, pageId)
+    val Some((pageImage, pageGeometry)) = reflowDB.getPageImageAndGeometry(docId, pageId)
 
     val (pageW, pageH) = pageImage.dimensions
     val imageGeometry = LTBounds(0, 0, pageW.toDouble, pageH.toDouble)

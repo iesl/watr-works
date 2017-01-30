@@ -19,8 +19,9 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import display._
 import LabelWidgetF._
+import watrmarks.{StandardLabels => LB}
+import textboxing.{TextBoxing => TB}
 
-// import watrmarks.{StandardLabels => LB}
 // import utils.{CompassDirection => CDir}
 
 // import scalaz.std.list._
@@ -43,24 +44,6 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     getFabric("canvas")
   }
 
-
-  // def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = {
-  //   def render(t: TextReflowF[(TextReflow, Seq[TargetRegion])]): Seq[TargetRegion] = t match {
-  //     case Rewrite    ((from, attr), to)      => attr
-  //     case Bracket    (pre, post, (a, attr))  => attr
-  //     case Flow       (atomsAndattrs)         => atomsAndattrs.flatMap(_._2)
-  //     case Labeled    (labels, (a, attr))     =>
-  //       val trs = for {
-  //         l <- labels if l == LB.VisualLine
-  //         value <- l.value
-  //       } yield {
-  //         TargetRegion.fromUri(value)
-  //       }
-
-  //       attr ++ trs
-
-  //     case _ => Seq()
-  //   }
 
   //   tr.cata(attributePara(render))
   //     .toPair._1
@@ -164,10 +147,24 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   }
 
 
+  def createTextboxWidget(textbox: TB.Box, bbox: LTBounds): FabricObject = {
+    val text = textbox.toString
+    val ftext = fabric.Text(text)
+    ftext.setFontSize(14)
+    ftext.top     = bbox.top
+    ftext.left    = bbox.left
+    val scaleX = bbox.width  / ftext.width.doubleValue
+    val scaleY = bbox.height / ftext.height.doubleValue
+    ftext.setScaleX(scaleX)
+    ftext.setScaleY(scaleY)
+
+    ftext
+  }
+
   def createTextReflowWidget(textReflow: TextReflow, bbox: LTBounds): FabricObject = {
     val text = textReflow.toText()
     val ftext = fabric.Text(text)
-    ftext.setFontSize(12)
+    ftext.setFontSize(16)
     ftext.top     = bbox.top
     ftext.left    = bbox.left
     // val scaleX = ftext.width.doubleValue/bbox.width
@@ -176,6 +173,9 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     val scaleY = bbox.height / ftext.height.doubleValue
     ftext.setScaleX(scaleX)
     ftext.setScaleY(scaleY)
+
+    ftext.opacity = 1.0f
+    noControls(ftext)
 
     ftext
   }
@@ -347,14 +347,21 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
       case p @ Positioned( tf @ Fix(fa), pvec, wbbox, tbbox, id)  =>
         val newWArea = wbbox.translate(currVec)
         val newVec = currVec.translate(pvec)
-        println(s"Positioning ${fa.getClass.getName} to: ${newWArea}")
-        println(s"   currVec: ${currVec}, newVec: ${newVec}")
         fa match {
-          case TargetImage(tr) =>
-            objStack += makeImageForTargetRegion(tr, newWArea)
+          case TargetOverlay(under, overs) =>
+            objStack += makeImageForTargetRegion(under, newWArea)
 
-          case  TargetSelection(bk, sels)   =>
-            objStack += Future { createShape(newWArea, "black", "", 0.5f) }
+          case LabeledTarget(target, label, score)   =>
+            val bgColor = label match {
+              case Some(LB.Title)    => "red"
+              case Some(LB.Authors)  => "blue"
+              case Some(LB.Abstract) => "yellow"
+              case _ => ""
+            }
+            val normalScore = score.getOrElse(0d)
+            val opacity = normalScore.toFloat * 0.2f
+
+            objStack += Future { createShape(newWArea, "", bgColor, opacity) }
 
           case  Reflow(tr) =>
             val widget = createTextReflowWidget(tr, newWArea)
@@ -362,14 +369,17 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
             noControls(widget)
             objStack += Future { widget }
 
+          case TextBox(tb) =>
+            objStack += Future { createTextboxWidget(tb, newWArea) }
+
           case  MouseOverlay(bkplane)       =>
           case  Panel(content)              =>
 
           case  Row(as)                     =>
-            objStack += Future { createShape(newWArea, "black", "", 0.1f) }
+            objStack += Future { createShape(newWArea, "black", "", 0.0f) }
 
           case  Col(as)                     =>
-            objStack += Future { createShape(newWArea, "blue", "red", 0.1f) }
+            objStack += Future { createShape(newWArea, "blue", "", 0.0f) }
 
           case _ =>
         }
@@ -380,17 +390,6 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
 
     lwidget.topDownCata(Point(0, 0))(reposition)
 
-    // val objs = lwidget.universe
-    //   .map({ tf =>
-    //     makeObj(tf)
-    //   })
-    //   .sequenceU
-    //   .map({ff =>
-    //     val g = fabric.Group(ff.flatten)
-    //     noControls(g)
-    //     g
-    //   })
-
     def position(lw: LabelWidget): (PositionVector, LTBounds) = lw.unFix match {
       case Positioned(a, pvec, wbbox, tbbox, id) => (pvec, tbbox)
       case x => sys.error(s"found non-positioned LabelWidget ${x}")
@@ -399,7 +398,7 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     val (_, widgetBounds) = position(lwidget)
 
     val fobjs = objStack.toList
-      .reverse.sequenceU
+      .sequenceU
       .map({ff =>
         // val g = fabric.Group(ff)
         ff.map(noControls(_))

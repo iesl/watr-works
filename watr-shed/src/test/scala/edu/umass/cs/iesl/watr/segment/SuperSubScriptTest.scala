@@ -6,7 +6,6 @@ import geometry._
 import ComponentOperations._
 
 import watrmarks.{StandardLabels => LB}
-import TypeTags._
 
 class SuperSubScriptTest extends DocsegTestUtil {
   behavior of "super/subscript labeling"

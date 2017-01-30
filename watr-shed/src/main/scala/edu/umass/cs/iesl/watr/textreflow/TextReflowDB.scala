@@ -13,6 +13,7 @@ import shapeless._
 import databasics._
 
 import scalaz.std.list._
+import scalaz.std.option._
 import scalaz.syntax.traverse._
 
 import textreflow.data._
@@ -34,15 +35,15 @@ class TextReflowDB(
     def insertPagesInfo(docPk: Int) = for {
       pageId <- mpageIndex.getPages.toList
     } yield for {
-      _         <- putStrLn(s"inserting page rec for page ${pageId}")
+      // _         <- putStrLn(s"inserting page rec for page ${pageId}")
       pagePrKey <- insertPageGeometry(docPk, mpageIndex.getPageGeometry(pageId), ds.pageImages.page(pageId))
     } yield ()
 
     val query = for {
-      _         <- putStrLn("Starting ...")
+      // _         <- putStrLn("Starting ...")
       docPrKey  <- getOrInsertDocumentID(docId)
       _         <- insertPagesInfo(docPrKey).sequenceU
-      _         <- putStrLn("insert multi pages...")
+      // _         <- putStrLn("insert multi pages...")
       _         <- insertMultiPageIndex(docId, mpageIndex)
     } yield docPrKey
 
@@ -59,7 +60,7 @@ class TextReflowDB(
       maybeReflow   = mpageIndex.getTextReflowForComponent(vlineCC.id)
       vlineZoneId   = mpageIndex.getZoneForComponent(vlineCC.id).get
     } yield for {
-      _            <- putStrLn(s"Inserting zone for line ${vlineCC.id}")
+      // _            <- putStrLn(s"Inserting zone for line ${vlineCC.id}")
       zpk          <- insertZone(docId, vlineZoneId)
       treflowPk    <- maybeReflow.toList.map(r => insertTextReflow(zpk, r)).sequence
 
@@ -153,7 +154,7 @@ class TextReflowDB(
     val js = textReflow.toJson()
     val jsStr = Json.stringify(js)
     val query = for {
-      _  <- putStrLn(s"   inserted textreflow ${}")
+      // _  <- putStrLn(s"   inserted textreflow ${}")
       pk <- sql"""
        insert into textreflow (reflow, zone)
        values (${jsStr}, ${zonePk})
@@ -164,9 +165,14 @@ class TextReflowDB(
   }
 
 
+  def getTextReflowForZone(zone: Zone): Option[TextReflow] = {
+    selectTextReflowForZone(zone).
+      transact(xa).unsafePerformSync
+  }
+
   def getTextReflowsForTargetRegion(targetRegion: TargetRegion): List[(Zone, TextReflow)] = {
     val query = for {
-      _          <- putStrLn(s"getTextReflowsForTargetRegion: ${targetRegion}")
+      // _          <- putStrLn(s"getTextReflowsForTargetRegion: ${targetRegion}")
       // _          <- putStrLn(s"selectZonesForTargetRegion")
       zones      <- selectZonesForTargetRegion(targetRegion, LB.VisualLine)
       zids        = zones.map(z => z.id).mkString(", ")
@@ -285,32 +291,32 @@ class TextReflowDB(
   }
 
 
-  def selectPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): ConnectionIO[PageGeometry] = {
+  def selectPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): ConnectionIO[Option[PageGeometry]] = {
+    val e = FC.delay(Option.empty[PageGeometry])
     val query = for {
       docPk  <- selectDocumentID(docId)
-      pagePk <- selectPage(docPk, pageId)
-      geom   <- sql"""
-                    select bleft, btop, bwidth, bheight from page where page=${pagePk}
-                """
-      .query[LTBounds]
-      .unique
-      .map(ltb => PageGeometry(pageId, ltb))
-    } yield geom
-
+      mpagePk <- selectPage(docPk, pageId)
+      pgeom <- mpagePk.fold(e)(pagePk =>
+        sql"""select bleft, btop, bwidth, bheight from page where page=${pagePk}"""
+          .query[LTBounds].unique
+          .map(ltb => Option(PageGeometry(pageId, ltb)))
+      )
+    } yield {
+      pgeom
+    }
     query
   }
 
-  def selectPageImage(docId: String@@DocumentID, pageId: Int@@PageID): ConnectionIO[Image] = {
+  def selectPageImage(docId: String@@DocumentID, pageId: Int@@PageID): ConnectionIO[Option[Image]] = {
+    val e = FC.delay(Option.empty[Image])
     val query = for {
       docPk  <- selectDocumentID(docId)
-      pagePk <- selectPage(docPk, pageId)
-      image <- sql"""
-                  select pageimg from page where page=${pagePk}
-               """.query[Array[Byte]].unique
-      .map({case bytes =>
-        val pageImage = Image(bytes)
-        pageImage
-      })
+      mpagePk <- selectPage(docPk, pageId)
+      image <- mpagePk.fold(e)(pagePk =>
+        sql"""select pageimg from page where page=${pagePk}"""
+          .query[Array[Byte]].unique
+          .map(bytes => Option(Image(bytes)))
+      )
     } yield image
 
     query
@@ -366,9 +372,9 @@ class TextReflowDB(
   }
 
 
-  def selectPage(docPk: Int, pageId: Int@@PageID): ConnectionIO[Int] = {
+  def selectPage(docPk: Int, pageId: Int@@PageID): ConnectionIO[Option[Int]] = {
     sql"""select page from page where document=${docPk} and pagenum=${pageId.unwrap}"""
-      .query[Int].unique
+      .query[Int].option
   }
 
   type B4Int = Int :: Int :: Int :: Int :: HNil
@@ -419,24 +425,24 @@ class TextReflowDB(
     } yield ()
   }
 
-  def getPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): PageGeometry = {
+  def getPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): Option[PageGeometry]= {
     selectPageGeometry(docId, pageId)
       .transact(xa)
       .unsafePerformSync
   }
 
-  def getPageImageAndGeometry(docId: String@@DocumentID, pageId: Int@@PageID): (Image, PageGeometry) = {
+  def getPageImageAndGeometry(docId: String@@DocumentID, pageId: Int@@PageID): Option[(Image, PageGeometry)] = {
     val query = for {
       pageImage    <- selectPageImage(docId, pageId)
       pageGeometry <- selectPageGeometry(docId, pageId)
-    } yield (pageImage, pageGeometry)
+    } yield (pageImage |@| pageGeometry)((_, _))
 
     query.transact(xa).unsafePerformSync
   }
 
   def overwriteTargetRegionImage(targetRegion: TargetRegion, image: Image): Unit = {
     val query = for {
-      _  <- putStrLn(s"overwriteTargetRegionImage for ${targetRegion}")
+      // _  <- putStrLn(s"overwriteTargetRegionImage for ${targetRegion}")
       _  <- deleteTargetRegionImage(targetRegion)
       _  <- insertTargetRegionImage(targetRegion, image)
     } yield ()
@@ -447,10 +453,10 @@ class TextReflowDB(
   }
   def putTargetRegionImage(targetRegion: TargetRegion, image: Image): Unit = {
     val query = for {
-      _           <- putStrLn(s"putTargetRegionImage for ${targetRegion}")
+      // _           <- putStrLn(s"putTargetRegionImage for ${targetRegion}")
       maybeTrClip <- selectTargetRegionImage(targetRegion)
       clipped     <- maybeTrClip match {
-        case Some(tr) => putStrLn(s"  image exists")
+        // case Some(tr) => putStrLn(s"  image exists")
         case None     => insertTargetRegionImage(targetRegion, image)
       }
     } yield ()
@@ -460,26 +466,24 @@ class TextReflowDB(
       .unsafePerformSync
   }
 
+  import extract.images.ExtractImages
   def getOrCreateTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Image] = {
     val TargetRegion(id, docId, pageId, bbox) = targetRegion
 
     val query = for {
-      _         <- putStrLn(s"getOrCreateTargetRegionImage for ${targetRegion}")
+      // _         <- putStrLn(s"getOrCreateTargetRegionImage for ${targetRegion}")
       maybeTrClip <- selectTargetRegionImage(targetRegion)
       clipped     <- maybeTrClip match {
         case Some(tr) => tr.point[ConnectionIO]
         case None     => for {
-          _         <- putStrLn(s"  constructing image")
           pageImage <- selectPageImage(docId, pageId)
-          _         <- putStrLn(s"  select page geometry")
           pageGeometry <- selectPageGeometry(docId, pageId)
-          clippedImage = {
-            import extract.images.ExtractImages
-            val cropped = ExtractImages.cropTo(
-              pageImage, bbox, pageGeometry
+          maybeClippedImage = {
+            (pageImage |@| pageGeometry).apply((pg, geom) =>
+                ExtractImages.cropTo(pg, bbox, geom)
             )
-            cropped
           }
+          clippedImage = maybeClippedImage.getOrElse { sys.error(s"getOrCreateTargetRegionImage: ${targetRegion}") }
           _  <- insertTargetRegionImage(targetRegion, clippedImage)
         } yield clippedImage
       }

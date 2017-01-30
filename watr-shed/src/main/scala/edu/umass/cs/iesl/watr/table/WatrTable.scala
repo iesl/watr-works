@@ -19,24 +19,26 @@ import TypeTags._
 import display._
 import display.data._
 import geometry._
+import PageComponentImplicits._
 
 object WatrTable {
 
   import ShellCommands._
 
   def main(args: Array[String]): Unit = {
+    val dbname = args(0)
 
     replMain().run(
       "corpus" -> initCorpus(),
-      "db" -> initReflowDB(),
+      "db" -> initReflowDB(dbname),
       "barx" -> BioArxivOps
     )
   }
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
-        |import ammonite.ops._
-        |import ammonite.ops.ImplicitWd._
+        | import ammonite.ops._
+        | import ammonite.ops.ImplicitWd._
         |import watr._, spindex._, geometry._, table._
         |import textreflow._
         |import watrmarks.StandardLabels._
@@ -55,7 +57,7 @@ object WatrTable {
   def replMain() = ammonite.Main(
     // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
     predef = predef,
-    // defaultPredef = true,
+    defaultPredef = true,
     wd = pwd,
     welcomeBanner = Some(welcomeBanner),
     inputStream = System.in,
@@ -68,13 +70,13 @@ object WatrTable {
 
 object ShellCommands extends CorpusEnrichments {
 
-  def initReflowDB(): TextReflowDB = {
+  def initReflowDB(dbname: String): TextReflowDB = {
     import doobie.imports._
     import scalaz.concurrent.Task
 
     val xa = DriverManagerTransactor[Task](
       "org.postgresql.Driver",
-      "jdbc:postgresql:watrdev",
+      s"jdbc:postgresql:${dbname}",
       "watrworker", "watrpasswd"
     )
 
@@ -139,9 +141,86 @@ object ShellCommands extends CorpusEnrichments {
       LW.col(lws:_*)
     }
 
-    def titleLabeler(docId: String@@DocumentID): LabelWidget = {
-      // val Lw = LabelWidgets
 
+    import BioArxiv._
+    import AlignBioArxiv._
+    import scala.collection.mutable
+
+    def alignBioArxivPaper(docId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
+      val paperRecWidget = LW.textbox(
+        TB.vjoin()(
+          paperRec.title,
+          indent(4)(
+            TB.vcat(
+              paperRec.authors.map(_.box)
+            )
+          )
+        )
+      )
+
+      val page0 = PageID(0)
+      val r0 = RegionID(0)
+      theDB.getPageGeometry(docId, page0)
+        .map({pageGeometry =>
+          val pageTargetRegion = TargetRegion(r0, docId, page0,
+            pageGeometry.bounds.copy(
+              top = pageGeometry.bounds.top,
+              height = pageGeometry.bounds.height
+            )
+          )
+
+          val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(theDB, paperRec, docId)
+          // - take only 1 score per line (highest of abstract/author/title)
+          // - print paperRec next to labeler
+
+          // linenum -> best-score, label-widget
+          val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()
+
+          val overlays = scores.map({alignScores =>
+            val label = alignScores.alignmentLabel
+
+            val lineScores = alignScores.lineScores.toList
+            val maxScore = lineScores.map(_._2).max
+
+            lineScores.foreach({case (linenum, score) =>
+              val lineReflow = alignScores.lineReflows(linenum)
+              val lineTarget = lineReflow.targetRegions().reduce(_ union _)
+              val normalScore = score/maxScore
+
+              val lt = LW.labeledTarget(lineTarget, Some(label), Some(normalScore))
+
+              if (allLineScores.contains(linenum)) {
+                val Some((currScore, currWidget)) = allLineScores.get(linenum)
+
+                if (normalScore > currScore) {
+                  allLineScores.put(linenum, (normalScore, lt))
+                }
+
+              } else {
+                allLineScores.put(linenum, (normalScore, lt))
+              }
+
+            })
+          })
+
+          val lwidgets = allLineScores.toList
+            .sortBy(_._1)
+            .map({case (linenum, (score, lwidget)) =>
+              lwidget
+            })
+
+          LW.row(
+            LW.targetOverlay(pageTargetRegion, lwidgets),
+            paperRecWidget
+          )
+
+        })
+        .getOrElse(LW.textbox(
+          s"no pages found for ${docId}: ${paperRec.title}"
+        ))
+    }
+
+    def titleLabeler(docId: String@@DocumentID): LabelWidget = {
       // - presumptively label the title lines
       //    val tallestLines = page0.vlines.filter(_.height == tallest font height)
       //    val titleZone: List[Zone] = Zone(tallestLines, LB.Title)
@@ -156,79 +235,82 @@ object ShellCommands extends CorpusEnrichments {
       val page0 = PageID(0)
       val r0 = RegionID(0)
 
-      val pageGeometry = theDB.getPageGeometry(docId, page0)
+      theDB.getPageGeometry(docId, page0)
+        .map({pageGeometry =>
 
-      val pageTargetRegion = TargetRegion(r0, docId, page0,
-        pageGeometry.bounds.copy(
-          top = pageGeometry.bounds.top,
-          height = pageGeometry.bounds.height / 3.0
-        )
-      )
+          val pageTargetRegion = TargetRegion(r0, docId, page0,
+            pageGeometry.bounds.copy(
+              top = pageGeometry.bounds.top,
+              height = pageGeometry.bounds.height / 3.0
+            )
+          )
 
-      // println(s"titleLabeler: pageGeometry=${pageGeometry},  half-page = ${pageTargetRegion}")
+          // Find VisualLine zones that are likely titles and pre-select them
+          val zones = theDB.selectZones(docId, page0, LB.VisualLine)
 
-      // Find VisualLine zones that are likely titles and pre-select them
-      val zones = theDB.selectZones(docId, page0, LB.VisualLine)
-      val vlines = for {
-        zone   <- zones
-        region <- zone.regions
-      } yield { region }
+          val vlines = for {
+            zone   <- zones
+            region <- zone.regions
+          } yield region
 
-      val titlePreselects = vlines.drop(0).take(2)
+          val titlePreselects = vlines.drop(0).take(2)
 
-      val halfPage = LW.targetImage(
-        pageTargetRegion // , List(LB.VisualLine), titlePreselects
-      )
+          val halfPageWSelects = LW.targetOverlay(
+            pageTargetRegion,
+            titlePreselects.map(LW.labeledTarget(_))
+          )
 
-      val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)
+          // val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)
 
-      val vlineText = for {
-        region <- titlePreselects
-        (zone, reflow) <- theDB.getTextReflowsForTargetRegion(region)
-      } yield {
-        LW.reflow(reflow)
-      }
+          val vlineText = for {
+            region <- titlePreselects
+            (zone, reflow) <- theDB.getTextReflowsForTargetRegion(region)
+          } yield  LW.reflow(reflow)
 
-      val textCol = LW.col(
-        vlineText:_*
-      )
+          val textCol = LW.col(vlineText:_*)
 
-      // val selector = LW.panel(
-      //   LW.row(
-      //     LW.mouseOverlay(
-      //       halfPageWSelects
-      //     ),
-      //     textCol
-      //   )
-      // )
-      // val selector = LW.panel(halfPageWSelects)
+          // val okButton = fabric.Text("✓")
+          // val errButton = "𝐗"
+          LW.row(halfPageWSelects, textCol)
+        })
+        .getOrElse(LW.textbox(
+          s"no page 0 found for ${docId}"
+        ))
 
-      val selector = LW.row(halfPageWSelects, textCol)
-
-      // val buttons = col(
-      //   toggle("accept", "unaccept")
-      //   button("clear selections")
-      //   ok, err, clearSelects
-      // )
-
-      // val finalWidget = row(
-      //   col(
-      //     annotWidget,
-      //     textDisplay
-      //   ),
-      //   buttons
-      // )
-
-      // // web client implementation
-      // val okButton = fabric.Text("✓")
-      // val errButton = "𝐗"
-
-      selector
     }
-
   }
 
   implicit class RicherCorpusEntry(val theCorpusEntry: CorpusEntry) extends AnyVal {
+    import BioArxiv._
+    import BioArxivOps._
+    import play.api.libs.json, json._
+    import play.api.data.validation.ValidationError
+
+    def alignBioArxivPaper(reflowDb: TextReflowDB): LabelWidget = {
+      val widget = for {
+        rec      <- theCorpusEntry.getArtifact("bioarxiv.json").toList
+        asJson   <- rec.asJson.toOption
+        paperRec <- asJson.validate[PaperRec].fold(
+          (errors: Seq[(JsPath, Seq[ValidationError])]) => {
+            println(s"errors: ${errors.length}")
+
+            errors.take(10).foreach { case (errPath, errs) =>
+              println(s"$errPath")
+              errs.foreach { e =>
+                println(s"> $e")
+              }
+            }
+            None
+
+          }, ps => Option(ps))
+
+      } yield {
+        val docId = DocumentID(theCorpusEntry.entryDescriptor)
+        reflowDb.alignBioArxivPaper(docId, paperRec)
+      }
+
+      widget.head
+    }
 
     def segment(): Option[DocumentSegmentation] = {
       for {
@@ -263,5 +345,44 @@ object ShellCommands extends CorpusEnrichments {
 
   }
 
+  implicit class RicherCorpus(val thisCorpus: Corpus)  {
+
+    def chooseEntries(n: Int = 0, skip: Int = 0): Seq[CorpusEntry] = {
+      val allEntries = thisCorpus.entries()
+      val skipped = if (skip > 0) allEntries.drop(skip) else allEntries
+      val entries = if (n > 0) skipped.take(n) else skipped
+      entries
+    }
+
+    def alignBioArxivPapers(n: Int = 0, skip: Int = 0)(implicit reflowDB: TextReflowDB): LabelWidget = {
+      val pwidgets = chooseEntries(n, skip).map(entry =>
+        entry.alignBioArxivPaper(reflowDB)
+      )
+
+      LW.col(pwidgets:_*)
+    }
+
+    def formatLineComponent(entry: CorpusEntry, c: Component): TB.Box = {
+      c.showUnknowns beside indent(8)(entry.entryDescriptor.box)
+    }
+
+    def sketchyLines(n: Int = 0, skip: Int = 0): Seq[Component] = {
+      // val lls = for (entry <- chooseEntries(n, skip)) yield {
+      //   entry.lines.filter(_.hasUnknownWords())
+      // }
+      // lls.flatten
+      ???
+    }
+
+    def showSketchyLines(n: Int = 0, skip: Int = 0): Seq[Box] = {
+      // val lls = for (entry <- chooseEntries(n, skip)) yield {
+      //   entry.lines
+      //     .filter(_.hasUnknownWords())
+      //     .map(formatLineComponent(entry, _))
+      // }
+      // lls.flatten
+      ???
+    }
+  }
 
 }

@@ -28,14 +28,10 @@ class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflo
     val reflow0 = stringToReflow("lime _{^{ﬂ}a}vor")
     def range0: RangeInt = RangeInt(1, 3)
 
-    val w1 =
-      LW.withSelections(
-        LW.withSelections(
-          LW.targetImage(reg0),
-          sel0
-        ),
-        sel1
-      )
+    val w1 = LW.targetOverlay(reg0, List(
+      LW.labeledTarget(sel0),
+      LW.labeledTarget(sel1)
+    ))
 
     val w2 = LW.col(
       LW.reflow(reflow0),

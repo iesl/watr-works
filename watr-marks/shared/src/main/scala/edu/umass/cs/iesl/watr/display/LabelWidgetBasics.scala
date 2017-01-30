@@ -35,17 +35,30 @@ trait LabelWidgetBasics {
     val zeroPosVector: PositionVector = Point(0, 0)
 
     def visit(lwidget0: LabelWidgetF[(LabelWidget, LabelWidget)]): LabelWidget = lwidget0 match {
-      case l @ TargetImage(tr)  =>
-        val positionVec = tr.bbox.toPoint(CDir.NW)
-        val bbox = tr.bbox.moveToOrigin
-        // positioned(fixlw(l), positionVec, bbox, idgen.nextId)
-        positioned(targetImage(tr), positionVec, bbox, bbox, idgen.nextId)
 
-      case l @ TargetSelection((bkplane, attr), selTargetRegion)  =>
-        val (childpvec, childbbox, tbbox) = position(attr)
-        val newArea = selTargetRegion.bbox.translate(-childpvec)
+      case TargetOverlay(under, overs)  =>
+        val positionVec = under.bbox.toPoint(CDir.NW)
+        val bbox = under.bbox.moveToOrigin
 
-        positioned(selectTarget(attr, selTargetRegion), childpvec, newArea, tbbox, idgen.nextId)
+        val repositionedOvers = overs.map({case (over, overpos) => overpos.unFix match {
+          case Positioned(a, pvec, wbbox, tbbox, id) =>
+            val newVec = -positionVec // pvec.translate(-positionVec)
+            val newWArea = wbbox.translate(newVec)
+            val newTbbox = tbbox.translate(newVec)
+
+            positioned(a, newVec, newWArea, newTbbox, id)
+
+          case x => sys.error(s"found non-positioned LabelWidget ${x}")
+        }})
+
+        positioned(targetOverlay(under, repositionedOvers), zeroPosVector, bbox, bbox, idgen.nextId)
+
+      case LabeledTarget(target, label, score)  =>
+        val positionVec = target.bbox.toPoint(CDir.NW)
+        val bbox = target.bbox // .moveToOrigin
+
+        positioned(labeledTarget(target, label, score), zeroPosVector, bbox, bbox, idgen.nextId)
+
 
       case Col(attrs) =>
         var currBbox: LTBounds = zeroLTBounds
@@ -97,6 +110,15 @@ trait LabelWidgetBasics {
           })
 
         positioned(reflow(treflow), zeroPosVector, currBbox, currBbox, idgen.nextId)
+
+      case l @ TextBox(box) =>
+        val str = box.toString
+        val lines = str.split("\n")
+        val height = lines.length
+        val maxwidth = lines.map(_.length).max
+        val currBbox: LTBounds = LTBounds(0, 0, maxwidth*6d, height*16d)
+
+        positioned(textbox(box), zeroPosVector, currBbox, currBbox, idgen.nextId)
 
       case l @ Panel((content, attr)) =>
         val (childpvec, childbbox, tbbox) = position(attr)

@@ -172,11 +172,17 @@ class CorpusEntry(
   }
 
   def getPdfArtifact(): Option[CorpusArtifact] = {
-    val artifact = new CorpusArtifact(s"${entryDescriptorRoot}",
-      new CorpusArtifactGroup(".", this)
-    )
+    getArtifacts
+      .filter(_.endsWith(".pdf"))
+      .headOption
+      .map({ name => 
+        new CorpusArtifact(name, new CorpusArtifactGroup(".", this))
+      })
+    // val artifact = new CorpusArtifact(s"${entryDescriptorRoot}",
+    //   new CorpusArtifactGroup(".", this)
+    // )
 
-    artifact.some
+    // artifact.some
   }
 
   def getSvgArtifact(): CorpusArtifact = {

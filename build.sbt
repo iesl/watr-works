@@ -16,7 +16,6 @@ val commonSettings = (
     Seq(
       libraryDependencies ++= LogLibs.logback,
       libraryDependencies ++= TestLibs.testAndCheck,
-      libraryDependencies ++= Lib.matryoshkaLibs, // Includes scalaz-core
       libraryDependencies ++= Seq(
         Lib.scalatags,
         Lib.ammonite,
@@ -46,10 +45,12 @@ lazy val watrprelude = (project in file("watr-prelude"))
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++= Seq(
-    "org.scalaz"                 %%% "scalaz-core"  % Lib.scalazVersion,
-    "com.github.julien-truffaut" %%% "monocle-core" % Lib.monocleVersion % "compile, test",
-    "com.github.mpilquist"       %%% "simulacrum"   % "0.10.0"           % "compile, test",
-    "com.lihaoyi"                %%% "scalatags"    % LibVersions.scalaTagsVersion
+    "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion,
+    "com.github.julien-truffaut" %%% "monocle-core"           % Lib.monocleVersion % "compile, test",
+    "com.github.mpilquist"       %%% "simulacrum"             % "0.10.0"           % "compile, test",
+    "com.lihaoyi"                %%% "scalatags"              % Lib.scalaTagsVersion,
+    "com.slamdata"               %%% "matryoshka-core"        % Lib.matryoshkaCoreV,
+    "com.slamdata"               %%% "matryoshka-scalacheck"  % Lib.matryoshkaCoreV % "compile, test"
   ))
   .jvmSettings(commonSettings: _*)
 

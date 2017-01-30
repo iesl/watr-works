@@ -58,7 +58,6 @@ import databasics._
 class TextReflowDBTables(
   val xa: Transactor[Task]
 ) extends DoobiePredef {
-  // import xa.yolo._
 
   val createDocumentTable: Update0 = sql"""
       CREATE TABLE document (

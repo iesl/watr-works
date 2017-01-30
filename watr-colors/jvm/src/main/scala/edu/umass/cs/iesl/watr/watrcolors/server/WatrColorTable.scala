@@ -8,8 +8,10 @@ import edu.umass.cs.iesl.watr.table._
 object WatrColorTable {
 
   def main(args: Array[String]): Unit = {
+    val dbname = args(0)
+
     val corpus = ShellCommands.initCorpus()
-    val reflowDB = ShellCommands.initReflowDB()
+    val reflowDB = ShellCommands.initReflowDB(dbname)
 
     val server =  new EmbeddedServer(reflowDB, corpus, "localhost", 9999)
 

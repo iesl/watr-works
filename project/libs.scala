@@ -1,6 +1,5 @@
 import sbt._
 import Keys._
-// import scala.util.{ Properties, Try }
 
 
 trait LibVersions {
@@ -20,6 +19,7 @@ trait LibVersions {
   val aspectjVersion      = "1.8.9"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.4.1"
+  val matryoshkaCoreV     = "0.16.5"
 
 }
 
@@ -42,7 +42,6 @@ object LibVersions extends LibVersions
 object TestLibs extends LibVersions {
   val scalatest = Seq(
     "org.scalatest" %% "scalatest" % scalatestVersion % "test"
-    // "org.scalactic" %% "scalactic" % scalatestVersion
   )
 
   val scalacheck = Seq(
@@ -81,14 +80,6 @@ object DatabaseLibs extends LibVersions {
 
 }
 
-// trait JsLib extends LibVersions {
-//   import org.scalajs.sbtplugin.ScalaJSPlugin
-//   import ScalaJSPlugin._
-//   import ScalaJSPlugin.autoImport._
-//   val scalatags        = "com.lihaoyi"            %%% "scalatags"        % scalaTagsVersion
-// }
-// object JsLib extends JsLib
-
 trait CommonLibs extends LibVersions {
 
   val scalazCore       = "org.scalaz"              %% "scalaz-core"      % scalazVersion
@@ -103,16 +94,8 @@ trait CommonLibs extends LibVersions {
   val shapeless        = "com.chuusai"             %% "shapeless"        % "2.3.2"
   val aspectJ          = "org.aspectj"              % "aspectjweaver"    % aspectjVersion
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
-
-  // val matryoshkaCore   = "com.slamdata"            %% "matryoshka-core"  % "0.11.1"
-  // Needed for matryoshka, not needed when I properly build it (rather than putting in ./lib dir)
-  val matryoshkaLibs = Seq(
-    "com.github.julien-truffaut" %% "monocle-core" % monocleVersion % "compile, test",
-    "org.scalaz"                 %% "scalaz-core"  % scalazVersion  % "compile, test",
-    "com.github.mpilquist"       %% "simulacrum"   % "0.10.0"       % "compile, test"
-  )
-
-  val scrimageCore = "com.sksamuel.scrimage" %% "scrimage-core"   % scrimageVersion
+  val matryoshkaCore   = "com.slamdata"            %% "matryoshka-core"  % matryoshkaCoreV
+  val scrimageCore     = "com.sksamuel.scrimage"   %% "scrimage-core"    % scrimageVersion
 
   val scrimage = Seq(
     scrimageCore,
