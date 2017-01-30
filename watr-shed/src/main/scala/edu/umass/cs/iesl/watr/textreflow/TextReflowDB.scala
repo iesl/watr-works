@@ -282,7 +282,7 @@ class TextReflowDB(
   }
 
   def getOrInsertDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
-    sql"select document from document where stable_id=${docId}"
+    sql"""select document from document where stable_id=${docId}"""
       .query[Int].option
       .flatMap({
         case Some(pk) => FC.delay(pk)
@@ -294,13 +294,17 @@ class TextReflowDB(
   def selectPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): ConnectionIO[Option[PageGeometry]] = {
     val e = FC.delay(Option.empty[PageGeometry])
     val query = for {
-      docPk  <- selectDocumentID(docId)
-      mpagePk <- selectPage(docPk, pageId)
-      pgeom <- mpagePk.fold(e)(pagePk =>
+      _ <- putStrLn(s"selectPageGeometry: selecting docid ${docId}")
+      docPk    <- selectDocumentID(docId)
+      _ <- putStrLn(s"selectPageGeometry: selected docid ${docPk}")
+      mpagePk  <- selectPage(docPk, pageId)
+      _ <- putStrLn(s"selectPageGeometry: selected page pk ${mpagePk}")
+      pgeom    <- mpagePk.fold(e)(pagePk =>
         sql"""select bleft, btop, bwidth, bheight from page where page=${pagePk}"""
-          .query[LTBounds].unique
-          .map(ltb => Option(PageGeometry(pageId, ltb)))
+          .query[LTBounds].option
+          .map(_.map(ltb => PageGeometry(pageId, ltb)))
       )
+      _ <- putStrLn(s"selectPageGeometry: selected page geometry ${pgeom}")
     } yield {
       pgeom
     }

@@ -72,7 +72,7 @@ object BioArxivOps extends BioArxivJsonFormats {
 
         ps.map(p=> {
           val pathParts = p.doi_link.split("/")
-          val key = pathParts.takeRight(2).mkString("-")
+          val key = pathParts.takeRight(2).mkString("-") + ".d"
           (key -> p)
         }).toMap.some
       })

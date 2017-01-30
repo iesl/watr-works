@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package corpora 
+package corpora
 
 
 import java.io.{ InputStream }
@@ -175,7 +175,7 @@ class CorpusEntry(
     getArtifacts
       .filter(_.endsWith(".pdf"))
       .headOption
-      .map({ name => 
+      .map({ name =>
         new CorpusArtifact(name, new CorpusArtifactGroup(".", this))
       })
     // val artifact = new CorpusArtifact(s"${entryDescriptorRoot}",

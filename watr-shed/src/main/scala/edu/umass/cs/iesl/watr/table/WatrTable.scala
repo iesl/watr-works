@@ -74,9 +74,12 @@ object ShellCommands extends CorpusEnrichments {
     import doobie.imports._
     import scalaz.concurrent.Task
 
+    val doLogging = true
+    val loggingProp = if (doLogging) "?loglevel=2" else ""
+
     val xa = DriverManagerTransactor[Task](
       "org.postgresql.Driver",
-      s"jdbc:postgresql:${dbname}",
+      s"jdbc:postgresql:${dbname}${loggingProp}",
       "watrworker", "watrpasswd"
     )
 
@@ -95,7 +98,7 @@ object ShellCommands extends CorpusEnrichments {
 
   val pprintTextReflow: PPrinter[TextReflow] = PPrinter({(textReflow, config) =>
     val text = textReflow.toText()
-    Iterator("text")
+    Iterator(text)
   })
 
   val pprintLabelWidget: PPrinter[LabelWidget] = PPrinter({(lwidget, config) =>
@@ -130,13 +133,26 @@ object ShellCommands extends CorpusEnrichments {
     }
 
 
-    def documents(): List[String@@DocumentID] = {
-      theDB.getDocuments()
+    def documents(n: Int=0, skip: Int=0): List[String@@DocumentID] = {
+      val allEntries = theDB.getDocuments()
+      val skipped = if (skip > 0) allEntries.drop(skip) else allEntries
+      val entries = if (n > 0) skipped.take(n) else skipped
+      entries
     }
 
     def titleLabelers(n: Int): LabelWidget = {
-      val lws = documents.take(n)
+      val lws = documents(n)
         .map(titleLabeler(_))
+
+      LW.col(lws:_*)
+    }
+
+    def bioarxivLabelers(n: Int = 0, skip: Int = 0)(implicit corpus: Corpus): LabelWidget = {
+      val lws = for {
+        docId <- documents(n, skip)
+        entry <- corpus.entry(docId.unwrap)
+        rec   <- entry.getBioarxivJsonArtifact
+      } yield { bioArxivLabeler(docId, rec) }
 
       LW.col(lws:_*)
     }
@@ -146,7 +162,7 @@ object ShellCommands extends CorpusEnrichments {
     import AlignBioArxiv._
     import scala.collection.mutable
 
-    def alignBioArxivPaper(docId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
+    def bioArxivLabeler(docId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
       val paperRecWidget = LW.textbox(
         TB.vjoin()(
           paperRec.title,
@@ -286,9 +302,9 @@ object ShellCommands extends CorpusEnrichments {
     import play.api.libs.json, json._
     import play.api.data.validation.ValidationError
 
-    def alignBioArxivPaper(reflowDb: TextReflowDB): LabelWidget = {
-      val widget = for {
-        rec      <- theCorpusEntry.getArtifact("bioarxiv.json").toList
+    def getBioarxivJsonArtifact(): Option[PaperRec] = {
+      for {
+        rec      <- theCorpusEntry.getArtifact("bioarxiv.json")
         asJson   <- rec.asJson.toOption
         paperRec <- asJson.validate[PaperRec].fold(
           (errors: Seq[(JsPath, Seq[ValidationError])]) => {
@@ -303,14 +319,19 @@ object ShellCommands extends CorpusEnrichments {
             None
 
           }, ps => Option(ps))
-
-      } yield {
-        val docId = DocumentID(theCorpusEntry.entryDescriptor)
-        reflowDb.alignBioArxivPaper(docId, paperRec)
-      }
-
-      widget.head
+      } yield  paperRec
     }
+
+    // def alignBioArxivPaper(reflowDb: TextReflowDB): LabelWidget = {
+    //   val widget = for {
+    //     rec      <- theCorpusEntry.getBioarxivJsonArtifact.toList
+    //   } yield {
+    //     val docId = DocumentID(theCorpusEntry.entryDescriptor)
+    //     reflowDb.alignBioArxivPaper(docId, paperRec)
+    //   }
+
+    //   widget.head
+    // }
 
     def segment(): Option[DocumentSegmentation] = {
       for {
@@ -354,13 +375,13 @@ object ShellCommands extends CorpusEnrichments {
       entries
     }
 
-    def alignBioArxivPapers(n: Int = 0, skip: Int = 0)(implicit reflowDB: TextReflowDB): LabelWidget = {
-      val pwidgets = chooseEntries(n, skip).map(entry =>
-        entry.alignBioArxivPaper(reflowDB)
-      )
+    // def alignBioArxivPapers(n: Int = 0, skip: Int = 0)(implicit reflowDB: TextReflowDB): LabelWidget = {
+    //   val pwidgets = chooseEntries(n, skip).map(entry =>
+    //     entry.alignBioArxivPaper(reflowDB)
+    //   )
 
-      LW.col(pwidgets:_*)
-    }
+    //   LW.col(pwidgets:_*)
+    // }
 
     def formatLineComponent(entry: CorpusEntry, c: Component): TB.Box = {
       c.showUnknowns beside indent(8)(entry.entryDescriptor.box)
