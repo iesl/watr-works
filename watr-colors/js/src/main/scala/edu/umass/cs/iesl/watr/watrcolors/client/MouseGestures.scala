@@ -6,6 +6,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 // import scala.scalajs.js.annotation.JSExport
 
 import native.fabric
+import native.fabric._
 
 import scala.concurrent.Future
 import scala.async.Async.{async, await}
@@ -13,7 +14,9 @@ import scala.collection.mutable
 
 import geometry._
 
-object MouseGestures {
+trait MouseGestures extends HtmlCanvasRendering {
+
+  def fabricCanvas: fabric.Canvas
 
   def getUserPath(c: fabric.Canvas): Future[Seq[Point]] = {
 
@@ -39,20 +42,40 @@ object MouseGestures {
   }
 
 
+  def updateShape(fobj: FabricObject, x: Int, y: Int, w: Int, h: Int): Unit = {
+    fobj.left=x
+    fobj.top=y
+    fobj.width=w
+    fobj.height=h
+    fabricCanvas.renderAll()
+  }
 
   def getUserLTBounds(c: fabric.Canvas): Future[LTBounds] = {
 
     val chan = CanvasMouseChannels(c)
+
 
     async {
       var res = await(chan.mousedown())
       val px1: Int = res.e.pageX
       val py1: Int = res.e.pageY
 
+      val sel = createShape(LTBounds(px1, py1, 0, 0), "blue", "blue", 0.1f)
+      fabricCanvas.add(sel)
+
       res = await(chan.mousemove | chan.mouseup)
       while(res.e.`type` == "mousemove"){
+        val px2 = res.e.pageX
+        val py2 = res.e.pageY
+        val x = math.min(px1, px2)
+        val y = math.min(py1, py2)
+        val w = math.abs(px2 - px1)
+        val h = math.abs(py2 - py1)
+        updateShape(sel, x, y, w, h)
         res = await(chan.mousemove | chan.mouseup)
       }
+
+      fabricCanvas.remove(sel)
 
       val px2 = res.e.pageX
       val py2 = res.e.pageY

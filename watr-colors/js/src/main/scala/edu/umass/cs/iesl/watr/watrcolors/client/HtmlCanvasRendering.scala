@@ -5,7 +5,6 @@ package client
 import geometry._
 
 import native.fabric
-// import scala.scalajs.js.annotation.JSExport
 
 trait HtmlCanvasRendering {
   def initFabric(elemId: String): fabric.Canvas = {
@@ -13,6 +12,8 @@ trait HtmlCanvasRendering {
     // Store a ref to the fabric js object for future use
     jQuery(s"#$elemId").prop("fabric", c)
     c.uniScaleTransform = true
+    // c.defaultCursor = "crosshair"
+    c.hoverCursor = "default"
     c
   }
 
@@ -42,6 +43,7 @@ trait HtmlCanvasRendering {
     shape.hasBorders  = true
     shape.selectable  = true
   }
+
   def noControls(shape: fabric.FabricObject): Unit = {
     shape.hasControls = false
     shape.hasBorders  = false
@@ -90,7 +92,6 @@ trait HtmlCanvasRendering {
         l
 
       case bbox:LTBounds =>
-        // createLTBoundsRect(b, color, bg, opacity)
         val rect = fabric.Rect()
         noControls(rect)
         rect.top         = bbox.top
@@ -127,19 +128,13 @@ trait HtmlCanvasRendering {
 
 }
 
-trait FabricCanvasOperations extends HtmlCanvasRendering {
+trait FabricCanvasOperations extends MouseGestures with HtmlCanvasRendering {
   def fabricCanvas: fabric.Canvas
 
   def addShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): fabric.FabricObject = {
     val cshape = createShape(shape, color, bg, opacity)
     fabricCanvas.add(cshape)
 
-    cshape
-  }
-
-  def addLTBoundsRect(bbox: LTBounds, color: String, bg: String, opacity: Float): fabric.FabricObject = {
-    val cshape = createLTBoundsRect(bbox, color, bg, opacity)
-    fabricCanvas.add(cshape)
     cshape
   }
 

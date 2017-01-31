@@ -13,6 +13,11 @@ import PageComponentImplicits._
 import native.fabric
 import native.fabric._
 
+import scalaz.std.list._
+import scalaz.syntax.traverse._
+import scalaz.std.scalaFuture._
+import scala.collection.mutable
+
 import scala.concurrent.{ Future, Promise }
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -39,9 +44,6 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   }
 
 
-  //   tr.cata(attributePara(render))
-  //     .toPair._1
-  // }
 
   def displayBasicCanvasShapes(): Unit = {
     fabricCanvas.add(createShape(Point(240, 240), "black", "blue", 0.5f))
@@ -112,33 +114,33 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
 
   }
 
-  def makePlaceholderImgs(trs: Seq[TargetRegion]): Seq[FabricObject] = {
-    val objs = trs.zipWithIndex.map({case (tr, i) =>
-      val bbox = tr.bbox.copy(
-        left=20, top=((i+1)*20).toDouble
-      )
+  // def makePlaceholderImgs(trs: Seq[TargetRegion]): Seq[FabricObject] = {
+  //   val objs = trs.zipWithIndex.map({case (tr, i) =>
+  //     val bbox = tr.bbox.copy(
+  //       left=20, top=((i+1)*20).toDouble
+  //     )
 
-      val shape = createShape (bbox , "black", "yellow", 0.5f)
+  //     val shape = createShape (bbox , "black", "yellow", 0.5f)
 
-      val targetRegionURI = tr.uriString
-      val scb = (img:Image) => {
-        img.top = bbox.top
-        img.left = bbox.left
-        img.width = bbox.width
-        img.height = bbox.height
+  //     val targetRegionURI = tr.uriString
+  //     val scb = (img:Image) => {
+  //       img.top = bbox.top
+  //       img.left = bbox.left
+  //       img.width = bbox.width
+  //       img.height = bbox.height
 
-        fabricCanvas.add(img)
-        fabricCanvas.renderAll()
-        ()
-      }
-      val jscb: js.Function1[Image, Unit] = scb
+  //       fabricCanvas.add(img)
+  //       fabricCanvas.renderAll()
+  //       ()
+  //     }
+  //     val jscb: js.Function1[Image, Unit] = scb
 
-      val img = Image.fromURL(s"/img/${targetRegionURI}", jscb)
+  //     val img = Image.fromURL(s"/img/${targetRegionURI}", jscb)
 
-      shape
-    })
-    objs
-  }
+  //     shape
+  //   })
+  //   objs
+  // }
 
 
   def createTextboxWidget(textbox: TB.Box, bbox: LTBounds): FabricObject = {
@@ -173,32 +175,6 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
 
     ftext
   }
-
-  def createAnnotWidget(textReflow: TextReflow): fabric.Group = {
-    val text = textReflow.toText()
-    val vlineIds = extractVisualLineTargetRegions(textReflow)
-    val ftext = fabric.Text(text)
-    ftext.setFontSize(15)
-
-    val placeholders = makePlaceholderImgs(vlineIds)
-    val widgetGroup = fabric.Group(
-      ftext +: placeholders
-    )
-
-    widgetGroup
-  }
-
-  // def hjoin(fobjs: Seq[FabricObject]): FabricObject = {
-  //   var currLeft: Int = 0
-  //   fobjs.foreach { fobj =>
-  //     fobj.setLeft(currLeft)
-  //     currLeft = (currLeft + fobj.width.intValue())
-  //   }
-  //   val g = fabric.Group(fobjs)
-  //   noControls(g)
-  //   g
-  // }
-
 
   def hjoinAttrs(attrs: List[LwRenderingAttrs]): LwRenderingAttrs = {
     var currLeft: Int = 0
@@ -249,62 +225,7 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     )
   }
 
-  // def vjoinAttrs(attrs: List[LwRenderingAttrs]): LwRenderingAttrs = {
-  //   var currTop: Int = 0
-  //   val objsAndBounds = attrs.map({attr =>
-  //     val shiftedBounds = attr.regions
-  //       .map({case (tr, bbox) =>
-  //         (tr, bbox.moveTo(bbox.left, y=bbox.top+currTop))
-  //       })
-  //     val futureFobj = attr.fobj.map { fobj =>
-  //       fobj.setTop(currTop)
-  //       currTop = (currTop + fobj.height.intValue())
-  //       fobj
-  //     }
-  //     (futureFobj, shiftedBounds)
-  //   })
 
-  //   val fobjs = objsAndBounds.map(_._1)
-  //   val bounds = objsAndBounds.flatMap(_._2)
-  //   val fgroup = fobjs.sequenceU
-  //     .map({objs =>
-  //       val g = fabric.Group(objs)
-  //       noControls(g)
-  //       g
-  //     })
-
-  //   LwRenderingAttrs(
-  //     fgroup, bounds
-  //   )
-  // }
-
-  // def vjoin(fobjs: Seq[FabricObject]): FabricObject = {
-  //   var currTop: Int = 0
-  //   fobjs.foreach { fobj =>
-  //     fobj.setTop(currTop)
-  //     currTop = (currTop + fobj.height.intValue())
-  //   }
-  //   val g = fabric.Group(fobjs)
-
-  //   noControls(g)
-  //   g
-  // }
-
-  // def vcatWidgets(trs: Seq[TextReflow]): Unit = {
-  //   var currTop: Int = 0
-  //   trs.foreach { tr =>
-  //     val widget = createAnnotWidget(tr)
-  //     widget.setTop(currTop)
-  //     currTop = (currTop + widget.height.intValue())
-  //     fabricCanvas.add(widget)
-  //   }
-  // }
-
-
-  import scalaz.std.list._
-  import scalaz.syntax.traverse._
-  import scalaz.std.scalaFuture._
-  import scala.collection.mutable
 
   def renderLabelWidget(lwidget: LabelWidget): (LTBounds, Future[List[FabricObject]]) = {
 

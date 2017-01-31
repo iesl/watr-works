@@ -12,10 +12,8 @@ import org.scalajs.dom.ext._
 
 import autowire._
 
-// import textreflow._
 import textreflow.data._
 import geometry._
-// import display._
 import display.data._
 
 import native.mousetrap._
@@ -44,25 +42,22 @@ object WatrColors extends TextReflowExamples {
   def doSelection(): Unit = {
     println("getUserLTBounds")
 
-    // fabricCanvas.defaultCursor = "crosshair"
+    fabricCanvas.defaultCursor = "crosshair"
     // fabricCanvas.skipTargetFind = true
-    fabricCanvas.isDrawingMode = true
+    // fabricCanvas.isDrawingMode = true
     fabricCanvas.renderAll()
 
     for {
-      bboxRel <- MouseGestures.getUserLTBounds(fabricCanvas)
+      bboxRel <- getUserLTBounds(fabricCanvas)
     } yield {
       val bbox = alignBboxToDiv("#overlay-container", bboxRel)
-      addLTBoundsRect(bbox, "black", "#000", 0.3f)
 
-      fabricCanvas.isDrawingMode = false
-      fabricCanvas.renderAll()
       fabricCanvas.defaultCursor = "default"
 
       shell.onSelectLTBounds("some-artifact", bbox)
         .foreach({ bboxes =>
           bboxes.foreach{ bbox =>
-            println(s"got reponse: ${bbox}")
+            // println(s"got reponse: ${bbox}")
             addShape(bbox, "black", "", 1f)
           }
         })
@@ -132,13 +127,10 @@ object WatrColors extends TextReflowExamples {
       fabricCanvas.setWidth(bbox.width.toInt)
       fabricCanvas.setHeight(bbox.height.toInt)
 
-      // val labelobjs = Async.await {
-      //   fobjs
-      // }
       fobjs.foreach{os =>
         os.foreach(fabricCanvas.add(_))
       }
-      // fabricCanvas.setBackgroundColor("yellow")
+
       fabricCanvas.renderAll()
     }
 
