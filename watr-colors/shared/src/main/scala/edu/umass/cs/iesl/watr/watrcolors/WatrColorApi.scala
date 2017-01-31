@@ -4,10 +4,11 @@ package watrcolors
 import geometry._
 import textreflow.data._
 import display.data._
+import scala.concurrent.Future
 
 trait WatrShellApi {
   def helloShell(msg: String): Unit
-  def onSelectLTBounds(artifactId: String, bbox: LTBounds): Unit
+  def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]]
   def onDrawPath(artifactId: String, path: Seq[Point]): Unit
 }
 

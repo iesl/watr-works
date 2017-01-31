@@ -143,4 +143,19 @@ trait FabricCanvasOperations extends HtmlCanvasRendering {
     cshape
   }
 
+  def translateLTBounds(x0: Double, y0: Double, bb: LTBounds): LTBounds = {
+    bb.copy(
+      left = bb.left + x0,
+      top = bb.top + y0
+    )
+  }
+
+  def translatePath(x0: Double, y0: Double, ps: Seq[Point]): Seq[Point] = {
+    ps.map(p => Point(p.x + x0, p.y + y0))
+  }
+
+  def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
+    val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]
+    translateLTBounds(-offset.left, -offset.top, bbox)
+  }
 }

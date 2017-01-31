@@ -34,7 +34,7 @@ trait LabelWidgetBasics {
     val zeroLTBounds: LTBounds = LTBounds(0, 0, 0, 0)
     val zeroPosVector: PositionVector = Point(0, 0)
 
-    def visit(lwidget0: LabelWidgetF[(LabelWidget, LabelWidget)]): LabelWidget = lwidget0 match {
+    def visitBottomUp(lwidget0: LabelWidgetF[(LabelWidget, LabelWidget)]): LabelWidget = lwidget0 match {
 
       case TargetOverlay(under, overs)  =>
         val positionVec = under.bbox.toPoint(CDir.NW)
@@ -71,7 +71,7 @@ trait LabelWidgetBasics {
 
             currBbox = currBbox union newTbbox
 
-            positioned(a, newVec, newWArea, newWArea, id)
+            positioned(a, newVec, newWArea, newTbbox, id)
 
           case x => sys.error(s"found non-positioned LabelWidget ${x}")
         }})
@@ -89,7 +89,7 @@ trait LabelWidgetBasics {
 
             currBbox = currBbox union newTbbox
 
-            positioned(a, newVec, newWArea, newWArea, id)
+            positioned(a, newVec, newWArea, newTbbox, id)
 
           case x => sys.error(s"found non-positioned LabelWidget ${x}")
         }})
@@ -133,9 +133,25 @@ trait LabelWidgetBasics {
       case x => sys.error(s"absPositionLabelWidget: case ${x}")
     }
 
+    def visitTopDown(
+      currVec: PositionVector,
+      lwidget: LabelWidget
+    ): (PositionVector, LabelWidget) = lwidget.project match {
+      case p @ Positioned(tfa, pvec, wbbox, tbbox, id)  =>
+        val newWidgetArea = wbbox.translate(currVec)
+        val newTotalArea = tbbox.translate(currVec)
+        val newVec = currVec.translate(pvec)
+        (newVec, positioned(tfa, newVec, newWidgetArea, newTotalArea, id))
+
+      case _ => (currVec, lwidget)
+    }
+
+
+
     lwidget
-      .cata(attributePara(visit))
+      .cata(attributePara(visitBottomUp))
       .toPair._1
+      .topDownCata(Point(0, 0))(visitTopDown)
 
 
   }

@@ -3,7 +3,7 @@ package watrcolors
 package client
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js.annotation.JSExport
+// import scala.scalajs.js.annotation.JSExport
 
 import native.fabric
 
@@ -41,7 +41,6 @@ object MouseGestures {
 
 
   def getUserLTBounds(c: fabric.Canvas): Future[LTBounds] = {
-    println("getUserLTBounds")
 
     val chan = CanvasMouseChannels(c)
 
@@ -66,16 +65,6 @@ object MouseGestures {
     }
   }
 
-  def translateLTBounds(x0: Double, y0: Double, bb: LTBounds): LTBounds = {
-    bb.copy(
-      left = bb.left + x0,
-      top = bb.top + y0
-    )
-  }
-
-  def translatePath(x0: Double, y0: Double, ps: Seq[Point]): Seq[Point] = {
-    ps.map(p => Point(p.x + x0, p.y + y0))
-  }
 
 }
 
@@ -86,10 +75,6 @@ object MouseGestures {
 // def canvasY: Int = canvasOffset.top.toInt
 
 
-// def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
-//   val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]
-//   translateLTBounds(-offset.left, -offset.top, bbox)
-// }
 
 // def selectViaLine(): Boolean = {
 //   for {
@@ -103,38 +88,6 @@ object MouseGestures {
 
 //   true
 // }
-
-// def initDeletion(): Boolean = {
-//   for {
-//     bbox <- getUserLTBounds(self.fabricCanvas)
-//   } yield {
-//     val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
-//   }
-
-//   true
-// }
-
-// def initSelection(): Boolean = {
-//   for {
-//     // TODO alter cursor to reflect selection mode
-//     bbox <- getUserLTBounds(fabricCanvas)
-//   } yield {
-//     val bboxAbs = alignBboxToDiv("#overlay-container", bbox)
-
-//     async {
-//       val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
-//       applyHtmlUpdates(res)
-//       addLTBoundsRect(bboxAbs, "black", "#000", 0.1f)
-//     }
-//   }
-//   true
-// }
-
-
-// val res = await {
-//   server.createView(artifactId).call()
-// }
-// applyHtmlUpdates(res)
 
 // // val jqOverlayContainer = jQuery("#overlay-container")
 

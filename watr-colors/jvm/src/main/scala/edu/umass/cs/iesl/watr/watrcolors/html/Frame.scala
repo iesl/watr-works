@@ -145,7 +145,7 @@ object ShellHtml {
   def bodyContent() = {
     <.div(^.`class`:="container", WatrStyles.container)(
 
-      <.div(
+      <.div(^.id:="overlay-container", WatrStyles.overlayContainer)(
         <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000")
       ),
 

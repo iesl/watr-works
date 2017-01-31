@@ -22,12 +22,6 @@ import LabelWidgetF._
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}
 
-// import utils.{CompassDirection => CDir}
-
-// import scalaz.std.list._
-// import scalaz.std.scalaFuture._
-// import scalaz.syntax.traverse._
-
 case class LwRenderingAttrs(
   fobj: FabricObject,
   regions: List[(TargetRegion, LTBounds)]
@@ -309,47 +303,18 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
 
   import scalaz.std.list._
   import scalaz.syntax.traverse._
-    import scalaz.std.scalaFuture._
+  import scalaz.std.scalaFuture._
+  import scala.collection.mutable
 
   def renderLabelWidget(lwidget: LabelWidget): (LTBounds, Future[List[FabricObject]]) = {
 
-    // case Target(tr, emboss, sels)  =>  makeImageForTargetRegion(tr)
-    // case Col(attrs) => lls.map(vjoinAttrs(_))
-    // case Panel((content, attr))  =>   attr.map({ fobj =>  addBorder(4.0, fobj)  })
-    // case MouseOverlay((bkplane, fattr)) => createShape(tr.bounds, "black", "yellow", 1f)
-    // val zeroShape = createShape(LTBounds(0, 0, 0, 0), "black", "yellow", 0f)
-    // var currObj = Future { zeroShape }
-    // def makeObj(t: LabelWidget): Future[Option[FabricObject]] = t.project match {
-    //   case l @ Positioned(Fix(fa), pvec, area, id)    => fa match {
-    //     case TargetImage(tr) =>
-    //       makeImageForTargetRegion(tr, area).map(Some(_))
-    //     case  TargetSelection(bk, sels)   => Future { Some(createShape(area, "black", "yellow", 0.2f)) }
-    //     case  RangeSelection(range)       => Future { None }
-    //     case  Reflow(tr)                  => Future { Some(createShape(area, "red", "blue", 0.2f)) }
-    //     case  Button()                    => Future { None }
-    //     case  MouseOverlay(bkplane)       => Future { None }
-    //     case  Panel(content)              => Future { None }
-    //     case  Row(as)                     => Future { None }
-    //     case  Col(as)                     => Future { None }
-    //     case  Overlay(overs, under)       => Future { None }
-    //   }
-    //   case _ => Future { None }
-    // }
-
-    import scala.collection.mutable
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
 
-
-    def reposition(
-      currVec: PositionVector,
-      lwidget: LabelWidget
-    ): (PositionVector, LabelWidget) = lwidget.project match {
+    def visit(lwidget: LabelWidget): Unit = lwidget.project match {
       case p @ Positioned( tf @ Fix(fa), pvec, wbbox, tbbox, id)  =>
-        val newWArea = wbbox.translate(currVec)
-        val newVec = currVec.translate(pvec)
         fa match {
           case TargetOverlay(under, overs) =>
-            objStack += makeImageForTargetRegion(under, newWArea)
+            objStack += makeImageForTargetRegion(under, wbbox)
 
           case LabeledTarget(target, label, score)   =>
             val bgColor = label match {
@@ -361,34 +326,34 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
             val normalScore = score.getOrElse(0d)
             val opacity = normalScore.toFloat * 0.2f
 
-            objStack += Future { createShape(newWArea, "", bgColor, opacity) }
+            objStack += Future { createShape(wbbox, "", bgColor, opacity) }
 
           case  Reflow(tr) =>
-            val widget = createTextReflowWidget(tr, newWArea)
+            val widget = createTextReflowWidget(tr, wbbox)
             widget.opacity = 1.0f
             noControls(widget)
             objStack += Future { widget }
 
           case TextBox(tb) =>
-            objStack += Future { createTextboxWidget(tb, newWArea) }
+            objStack += Future { createTextboxWidget(tb, wbbox) }
 
           case  MouseOverlay(bkplane)       =>
           case  Panel(content)              =>
 
           case  Row(as)                     =>
-            objStack += Future { createShape(newWArea, "black", "", 0.0f) }
+            objStack += Future { createShape(wbbox, "black", "", 0.0f) }
 
           case  Col(as)                     =>
-            objStack += Future { createShape(newWArea, "blue", "", 0.0f) }
+            objStack += Future { createShape(wbbox, "blue", "", 0.0f) }
 
           case _ =>
         }
-        (newVec, tf)
 
-      case _ => (currVec, lwidget)
+      case _ =>
     }
 
-    lwidget.topDownCata(Point(0, 0))(reposition)
+    // lwidget.topDownCata(Point(0, 0))(reposition)
+    lwidget.universe.foreach(visit)
 
     def position(lw: LabelWidget): (PositionVector, LTBounds) = lw.unFix match {
       case Positioned(a, pvec, wbbox, tbbox, id) => (pvec, tbbox)
@@ -400,7 +365,6 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     val fobjs = objStack.toList
       .sequenceU
       .map({ff =>
-        // val g = fabric.Group(ff)
         ff.map(noControls(_))
         ff
       })

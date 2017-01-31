@@ -37,9 +37,10 @@ object WatrTable {
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
-        | import ammonite.ops._
-        | import ammonite.ops.ImplicitWd._
+        |import ammonite.ops._
+        |import ammonite.ops.ImplicitWd._
         |import watr._, spindex._, geometry._, table._
+        |import corpora.Corpus
         |import textreflow._
         |import watrmarks.StandardLabels._
         |import ShellCommands._
@@ -50,6 +51,7 @@ object WatrTable {
         |implicit val pp2 = pprintTextReflow
         |implicit val pp3 = pprintLabelWidget
         |implicit val db0: TextReflowDB = db
+        |implicit val corpus0: Corpus = corpus
         |""".stripMargin
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
@@ -74,7 +76,7 @@ object ShellCommands extends CorpusEnrichments {
     import doobie.imports._
     import scalaz.concurrent.Task
 
-    val doLogging = true
+    val doLogging = false
     val loggingProp = if (doLogging) "?loglevel=2" else ""
 
     val xa = DriverManagerTransactor[Task](
@@ -195,8 +197,9 @@ object ShellCommands extends CorpusEnrichments {
           val overlays = scores.map({alignScores =>
             val label = alignScores.alignmentLabel
 
-            val lineScores = alignScores.lineScores.toList
-            val maxScore = lineScores.map(_._2).max
+            val scoreList = alignScores.lineScores.toList
+            val maxScore = scoreList.map(_._2).max
+            val lineScores = scoreList.filter(_._2 > maxScore/2)
 
             lineScores.foreach({case (linenum, score) =>
               val lineReflow = alignScores.lineReflows(linenum)

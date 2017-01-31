@@ -12,7 +12,7 @@ import HttpHeaders._
 import HttpMethods._
 
 import concurrent.duration._
-// import scala.concurrent.Future
+import scala.concurrent.Future
 
 import corpora._
 import textreflow._
@@ -192,15 +192,33 @@ class EmbeddedServer(
       println(s"onDrawPath: ")
     }
 
-    def onSelectLTBounds(artifactId: String, bbox: LTBounds): Unit = {
+    import LabelWidgetF._
+    import matryoshka.data._
+    def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]] = {
       println(s"onSelectLTBounds: ${bbox}")
 
       // determine which visual lines were selected and send back
       //  an updated bounding box
-      activeLabelWidgetIndex.foreach({ lwIndex =>
-        val qwer: Seq[PositionedT] = lwIndex.lwIndex.queryForIntersects(bbox)
+      activeLabelWidgetIndex.map({ lwIndex =>
+        val positioned: Seq[PositionedT] = lwIndex.lwIndex.queryForIntersects(bbox)
 
-      })
+        def visit(p: Positioned[LabelWidget]): List[LTBounds] = {
+          val Positioned(Fix(fa), pvec, wbbox, tbbox, id) = p
+          // val newWArea = wbbox.translate(currVec)
+          // val newVec = currVec.translate(pvec)
+          fa match {
+            case LabeledTarget(target, label, score) =>
+              List(wbbox)
+            case _ => List()
+          }
+        }
+
+        val bboxes = positioned.toList.map(visit(_)).flatten
+
+        Future{ bboxes }
+      }).getOrElse{
+        Future{ List[LTBounds]() }
+      }
     }
   }
 
@@ -229,11 +247,6 @@ class EmbeddedServer(
       activeLabelWidgetIndex = Some(lwIndex)
 
       val pWidget = lwIndex.positioned
-
-      // val pp = LabelWidgetIndexing.prettyPrintLabelWidget(pWidget)
-      // println("=======")/ println(pp)
-      //// pre-create the images w/labels embossed as color overlays and put them in database
-      //labeler.embossTargetRegion(tr, emboss)
 
       api.echoLabeler(pWidget).call()
     }

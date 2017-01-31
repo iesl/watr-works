@@ -13,7 +13,7 @@ import LabelWidgetF._
 
 object LabelWidgetIndex {
 
-  type PositionedT = Positioned[Unit]
+  type PositionedT = Positioned[LabelWidget]
 
   implicit object LabelWidget extends SpatialIndexable[PositionedT] {
     def id(t: PositionedT): Int = t.id.unwrap
@@ -38,14 +38,14 @@ object LabelWidgetIndexing extends LabelWidgetBasics {
 
     val positionedLabelWidget = absPositionLabelWidget(lwidget)
 
-    def visit(t: LabelWidgetF[Unit]): Unit = t match {
+    def visit(t: LabelWidget): Unit = t.project match {
       case p @ Positioned(a, pvec, wbbox, tbbox, id) =>
         lwIndex.add(p)
 
       case _ => ()
     }
 
-    positionedLabelWidget.cata(visit)
+    positionedLabelWidget.universe.foreach(visit)
 
     new LabelWidgetIndex(lwIndex, lwidget, positionedLabelWidget)
   }

@@ -3,6 +3,7 @@ package watrcolors
 package client
 
 import scala.async.Async
+import scala.concurrent.Future
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation.JSExport
@@ -49,24 +50,24 @@ object WatrColors extends TextReflowExamples {
     fabricCanvas.renderAll()
 
     for {
-      bbox <- MouseGestures.getUserLTBounds(fabricCanvas)
+      bboxRel <- MouseGestures.getUserLTBounds(fabricCanvas)
     } yield {
-      println(s"getUserLTBounds: got ${bbox}")
+      val bbox = alignBboxToDiv("#overlay-container", bboxRel)
       addLTBoundsRect(bbox, "black", "#000", 0.3f)
+
       fabricCanvas.isDrawingMode = false
       fabricCanvas.renderAll()
-
-      shell.onSelectLTBounds("some-artifact", bbox)
-
       fabricCanvas.defaultCursor = "default"
 
-      // val bboxAbs = alignBboxToDiv("#overlay-container", bbox)
-      // async {
-      //   val res = await { server.onSelectLTBounds(artifactId, bboxAbs).call() }
-      //   applyHtmlUpdates(res)
-      //   addLTBoundsRect(bboxAbs, "black", "#000", 0.1f)
-      // }
+      shell.onSelectLTBounds("some-artifact", bbox)
+        .foreach({ bboxes =>
+          bboxes.foreach{ bbox =>
+            println(s"got reponse: ${bbox}")
+            addShape(bbox, "black", "", 1f)
+          }
+        })
     }
+
   }
 
 
@@ -79,7 +80,7 @@ object WatrColors extends TextReflowExamples {
       api.helloShell(msg).call()
     }
 
-    def onSelectLTBounds(artifactId: String, bbox: LTBounds): Unit = {
+    def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]] = {
       api.onSelectLTBounds(artifactId, bbox).call()
     }
   }

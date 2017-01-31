@@ -211,7 +211,6 @@ object AlignBioArxiv {
     }
 
 
-    // def alignStringToPage(str: String, pageTrigrams: Seq[(Int, TextReflow, String, Int)]): Unit = {
     def alignStringToPage(str: String, pageTrigrams: Seq[(ReflowSliceInfo, ReflowSliceInfo)]): Unit = {
       println(s"aligning ${str}")
       for {

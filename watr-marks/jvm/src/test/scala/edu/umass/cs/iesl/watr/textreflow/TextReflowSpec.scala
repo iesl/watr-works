@@ -116,18 +116,18 @@ class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
   //   checkSlices(formatted)
   // }
 
-  // // it should "slice reflows" in {
-  // //   val reflow = stringToTextReflow("lime _{^{ﬂ}a}vor")
-  // // }
-  // // val pageText = (
-  // //   """|abcdef
-  // //      |lime _{^{ﬂ}a}vored scan-
-  // //      |ning electron
-  // //      |""".stripMargin)
-  // // val pageText = (
-  // //   """|abc
-  // //      |def
-  // //      |""".stripMargin)
+  // it should "slice reflows" in {
+  //   val reflow = stringToTextReflow("lime _{^{ﬂ}a}vor")
+  // }
+  // val pageText = (
+  //   """|abcdef
+  //      |lime _{^{ﬂ}a}vored scan-
+  //      |ning electron
+  //      |""".stripMargin)
+  // val pageText = (
+  //   """|abc
+  //      |def
+  //      |""".stripMargin)
 
 
   // it should "clip to target regions" in {

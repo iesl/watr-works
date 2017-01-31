@@ -98,7 +98,7 @@ object LabelWidgetF {
 
   implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
     def apply[A](show: Show[A]) = Show.show {
-      case l @ TargetOverlay(under, overs)       => s"$l"
+      case l @ TargetOverlay(under, overs)           => s"$l"
       case l @ LabeledTarget(target, label, score)   => s"label-target"
       case l @ RangeSelection(range)       => s"$l"
       case l @ Reflow(tr)                  => s"reflow()"
