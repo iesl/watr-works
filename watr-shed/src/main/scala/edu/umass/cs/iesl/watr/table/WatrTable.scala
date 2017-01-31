@@ -180,19 +180,21 @@ object ShellCommands extends CorpusEnrichments {
       val r0 = RegionID(0)
       theDB.getPageGeometry(docId, page0)
         .map({pageGeometry =>
-          val pageTargetRegion = TargetRegion(r0, docId, page0,
-            pageGeometry.bounds.copy(
-              top = pageGeometry.bounds.top,
-              height = pageGeometry.bounds.height
-            )
-          )
+          val pageTargetRegion = TargetRegion(r0, docId, page0, pageGeometry.bounds)
+
+          val allPageLines = for {
+            (zone, linenum) <- theDB.selectZones(docId, page0, LB.VisualLine).zipWithIndex
+            lineReflow <- theDB.getTextReflowForZone(zone)
+          } yield {
+            val lt = LW.labeledTarget(lineReflow.targetRegion, None, None)
+            (linenum, (0d, lt))
+          }
 
           val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(theDB, paperRec, docId)
-          // - take only 1 score per line (highest of abstract/author/title)
-          // - print paperRec next to labeler
 
           // linenum -> best-score, label-widget
           val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()
+          allLineScores ++= allPageLines
 
           val overlays = scores.map({alignScores =>
             val label = alignScores.alignmentLabel
@@ -203,7 +205,7 @@ object ShellCommands extends CorpusEnrichments {
 
             lineScores.foreach({case (linenum, score) =>
               val lineReflow = alignScores.lineReflows(linenum)
-              val lineTarget = lineReflow.targetRegions().reduce(_ union _)
+              val lineTarget = lineReflow.targetRegion
               val normalScore = score/maxScore
 
               val lt = LW.labeledTarget(lineTarget, Some(label), Some(normalScore))

@@ -238,16 +238,18 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
             objStack += makeImageForTargetRegion(under, wbbox)
 
           case LabeledTarget(target, label, score)   =>
-            val bgColor = label match {
-              case Some(LB.Title)    => "red"
-              case Some(LB.Authors)  => "blue"
-              case Some(LB.Abstract) => "yellow"
-              case _ => ""
-            }
-            val normalScore = score.getOrElse(0d)
-            val opacity = normalScore.toFloat * 0.2f
+            label.foreach({ l =>
+              val bgColor = l match {
+                case LB.Title    => "red"
+                case LB.Authors  => "blue"
+                case LB.Abstract => "yellow"
+                case _ => ""
+              }
+              val normalScore = score.getOrElse(0d)
+              val opacity = normalScore.toFloat * 0.2f
 
-            objStack += Future { createShape(wbbox, "", bgColor, opacity) }
+              objStack += Future { createShape(wbbox, "", bgColor, opacity) }
+            })
 
           case  Reflow(tr) =>
             val widget = createTextReflowWidget(tr, wbbox)

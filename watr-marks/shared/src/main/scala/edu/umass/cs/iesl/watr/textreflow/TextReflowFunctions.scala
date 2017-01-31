@@ -11,6 +11,7 @@ import matryoshka.data._
 import matryoshka.implicits._
 
 import utils.EnrichNumerics._
+import PageComponentImplicits._
 
 
 trait TextReflowSharedFunctions extends TextReflowClipping {
@@ -212,6 +213,10 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
 
     def targetRegions(): Seq[TargetRegion] = {
       charAtoms().map(_.targetRegion)
+    }
+
+    def targetRegion(): TargetRegion = {
+      targetRegions.reduce(_ union _)
     }
 
     def visualLinesRegions(): Seq[TargetRegion] = {

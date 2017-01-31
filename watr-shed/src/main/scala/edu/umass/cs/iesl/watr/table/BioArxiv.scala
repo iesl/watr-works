@@ -213,15 +213,18 @@ object AlignBioArxiv {
 
     def alignStringToPage(str: String, pageTrigrams: Seq[(ReflowSliceInfo, ReflowSliceInfo)]): Unit = {
       println(s"aligning ${str}")
+      // // Init lineScores/lineReflows
+      // for ((ReflowSliceInfo(linenum, lineReflow, lineText), _) <- pageTrigrams) {
+      //   lineScores.put(linenum, 0d)
+      //   lineReflows.put(linenum, lineReflow)
+      // }
       for {
         tri <- makeTrigrams(str)
         (lineInfo@ReflowSliceInfo(linenum, lineReflow, lineText), triInfo@ReflowSliceInfo(trinum, triReflow, triText)) <- pageTrigrams
       } {
         if (tri == triText) {
-          // println(s"==${tri}")
-          // boostTrigram(linenum, slicenum, pText)
           boostTrigram(lineInfo, triInfo)
-        } else {}
+        }
       }
     }
 
@@ -237,8 +240,6 @@ object AlignBioArxiv {
   }
 
   def makeTrigrams(str: String): Seq[String] = {
-    // val words = str.split(" ")
-    // val trigrams = words.flatMap(_.sliding(3))
     str.sliding(3).toList
   }
 

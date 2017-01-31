@@ -19,7 +19,6 @@ import GeometryImplicits._
 // import TraceLog // , TraceLog._
 
 object ComponentOperations {
-  import textreflow._
   import textreflow.data._
   import utils.EnglishDictionary
 
@@ -585,8 +584,6 @@ object ComponentOperations {
           b1 union b2
         })
     }
-
-    import textreflow._
 
     def setTextReflow(r: TextReflow): Unit = {
       theComponent.mpageIndex.setTextReflow(theComponent, r)
