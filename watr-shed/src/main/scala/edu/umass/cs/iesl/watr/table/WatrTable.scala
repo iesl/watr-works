@@ -19,7 +19,7 @@ import TypeTags._
 import display._
 import display.data._
 import geometry._
-import PageComponentImplicits._
+// import PageComponentImplicits._
 
 object WatrTable {
 
@@ -149,6 +149,11 @@ object ShellCommands extends CorpusEnrichments {
       LW.col(lws:_*)
     }
 
+    import BioArxiv._
+    import AlignBioArxiv._
+    import scala.collection.mutable
+    import LabelWidgetUtils._
+
     def bioarxivLabelers(n: Int = 0, skip: Int = 0)(implicit corpus: Corpus): LabelWidget = {
       val lws = for {
         docId <- documents(n, skip)
@@ -156,13 +161,37 @@ object ShellCommands extends CorpusEnrichments {
         rec   <- entry.getBioarxivJsonArtifact
       } yield { bioArxivLabeler(docId, rec) }
 
-      LW.col(lws:_*)
+      val controls = makeButtons(
+        "Next Labeling Tasks",
+        "Finished"
+      )
+
+      LW.panel(
+        LW.col(
+          controls,
+          LW.col(lws:_*)
+        )
+      )
+    }
+
+    def nameLabelers(n: Int = 0, skip: Int = 0)(implicit corpus: Corpus): LabelWidget = {
+      val docs = for {
+        docId <- documents(n, skip)
+        entry <- corpus.entry(docId.unwrap)
+        rec   <- entry.getBioarxivJsonArtifact
+      } yield (docId, rec)
+
+      val nameLabeler  = AuthorNameLabelers.nameLabeler(theDB, docs)
+
+      LW.panel(
+        LW.col(
+          pageControls,
+          nameLabeler
+        )
+      )
     }
 
 
-    import BioArxiv._
-    import AlignBioArxiv._
-    import scala.collection.mutable
 
     def bioArxivLabeler(docId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
       val paperRecWidget = LW.textbox(
@@ -230,9 +259,23 @@ object ShellCommands extends CorpusEnrichments {
               lwidget
             })
 
-          LW.row(
+          val controls = makeButtons(
+            "Clear Selections",
+            "Skip",
+            "Report Error"
+          )
+
+          val body = LW.row(
             LW.targetOverlay(pageTargetRegion, lwidgets),
             paperRecWidget
+          )
+
+          LW.pad(
+            LW.panel(LW.col(
+              controls,
+              body
+            )),
+            Padding(2d, 2d, 2d, 4d)
           )
 
         })
@@ -290,8 +333,6 @@ object ShellCommands extends CorpusEnrichments {
 
           val textCol = LW.col(vlineText:_*)
 
-          // val okButton = fabric.Text("✓")
-          // val errButton = "𝐗"
           LW.row(halfPageWSelects, textCol)
         })
         .getOrElse(LW.textbox(
@@ -327,16 +368,14 @@ object ShellCommands extends CorpusEnrichments {
       } yield  paperRec
     }
 
-    // def alignBioArxivPaper(reflowDb: TextReflowDB): LabelWidget = {
-    //   val widget = for {
-    //     rec      <- theCorpusEntry.getBioarxivJsonArtifact.toList
-    //   } yield {
-    //     val docId = DocumentID(theCorpusEntry.entryDescriptor)
-    //     reflowDb.alignBioArxivPaper(docId, paperRec)
-    //   }
-
-    //   widget.head
-    // }
+    def addEntryToDatabase(implicit db: TextReflowDB): Unit = {
+      val docId = DocumentID(theCorpusEntry.entryDescriptor)
+      if (!db.hasDocumentID(docId)) {
+        segment.foreach(db.addSegmentation(_))
+      } else {
+        println(s"Skipping ${docId}: already in database")
+      }
+    }
 
     def segment(): Option[DocumentSegmentation] = {
       for {
@@ -360,8 +399,6 @@ object ShellCommands extends CorpusEnrichments {
           ExtractImages.load(pageImageArtifacts.rootPath)
         }
 
-
-
         DocumentSegmentation(
           segmenter.mpageIndex,
           pageImages
@@ -380,35 +417,10 @@ object ShellCommands extends CorpusEnrichments {
       entries
     }
 
-    // def alignBioArxivPapers(n: Int = 0, skip: Int = 0)(implicit reflowDB: TextReflowDB): LabelWidget = {
-    //   val pwidgets = chooseEntries(n, skip).map(entry =>
-    //     entry.alignBioArxivPaper(reflowDB)
-    //   )
-
-    //   LW.col(pwidgets:_*)
-    // }
-
     def formatLineComponent(entry: CorpusEntry, c: Component): TB.Box = {
       c.showUnknowns beside indent(8)(entry.entryDescriptor.box)
     }
 
-    def sketchyLines(n: Int = 0, skip: Int = 0): Seq[Component] = {
-      // val lls = for (entry <- chooseEntries(n, skip)) yield {
-      //   entry.lines.filter(_.hasUnknownWords())
-      // }
-      // lls.flatten
-      ???
-    }
-
-    def showSketchyLines(n: Int = 0, skip: Int = 0): Seq[Box] = {
-      // val lls = for (entry <- chooseEntries(n, skip)) yield {
-      //   entry.lines
-      //     .filter(_.hasUnknownWords())
-      //     .map(formatLineComponent(entry, _))
-      // }
-      // lls.flatten
-      ???
-    }
   }
 
 }

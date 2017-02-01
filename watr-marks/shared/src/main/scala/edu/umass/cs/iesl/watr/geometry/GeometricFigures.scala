@@ -6,8 +6,6 @@ import scalaz.Equal
 
 sealed trait GeometricFigure
 
-sealed trait Area
-
 import GeometryImplicits._
 
 case class LTBounds(
@@ -15,7 +13,7 @@ case class LTBounds(
   top: Double,
   width: Double,
   height: Double
-) extends GeometricFigure with Area {
+) extends GeometricFigure  {
   override def toString: String = this.prettyPrint
 }
 
@@ -24,7 +22,7 @@ case class LBBounds(
   bottom: Double,
   width: Double,
   height: Double
-) extends GeometricFigure with Area {
+) extends GeometricFigure {
   override def toString: String = this.prettyPrint
 }
 
@@ -40,6 +38,14 @@ case class Line(
 ) extends GeometricFigure{
   override def toString: String = this.prettyPrint
 }
+
+case class Padding(
+  left: Double,
+  top: Double,
+  right: Double,
+  bottom: Double
+)
+
 
 object GeometricFigure {
 
@@ -210,7 +216,17 @@ object GeometryImplicits {
       moveTo(0d,0d)
     }
 
-    // def
+    def splitHorizontal(x: Double): List[LTBounds] = {
+      if (intersectsX(x)) {
+        val leftHalf = tb.copy(width=x-tb.left)
+        val rightHalf = tb.copy(left=x, width=tb.width-leftHalf.width)
+        List(leftHalf, rightHalf)
+      } else List(tb)
+    }
+
+    def intersectsX(x: Double):Boolean = {
+      tb.left <= x &&  x <= tb.right
+    }
 
     def intersects(rhs:LTBounds):Boolean = {
       !(tb.left > rhs.right

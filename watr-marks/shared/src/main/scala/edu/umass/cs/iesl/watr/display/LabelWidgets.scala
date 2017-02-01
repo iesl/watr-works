@@ -47,19 +47,22 @@ object LabelWidgetF {
   ) extends LabelWidgetF[Nothing]
 
 
-  case class Button(
-  ) extends LabelWidgetF[Nothing]
-
   // Overlay that accepts mouse gesture input
   case class MouseOverlay[A](
     backplane: A
   ) extends LabelWidgetF[A]
 
+  case class Panel[A](
+    content: A
+  ) extends LabelWidgetF[A]
 
-  // Grouping container for widget
-  case class Panel[A](content: A) extends LabelWidgetF[A]
+  case class Button(
+    action: String
+  ) extends LabelWidgetF[Nothing]
+
   case class Row[A](as: List[A]) extends LabelWidgetF[A]
   case class Col[A](as: List[A]) extends LabelWidgetF[A]
+  case class Pad[A](a: A, pad: Padding) extends LabelWidgetF[A]
 
   type PositionVector = Point
 
@@ -80,17 +83,17 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        // case l @ TargetOverlay(under, overs)           => G.apply2(overs.traverse(f), f(under))(Overlay(_, _))
         case l @ TargetOverlay(under, overs)           => overs.traverse(f).map(TargetOverlay(under, _))
         case l @ LabeledTarget(target, label, score)   => G.point(l.copy())
         case l @ RangeSelection(range)                 => G.point(l.copy())
         case l @ TextBox(tb)                           => G.point(l.copy())
         case l @ Reflow(tr)                            => G.point(l.copy())
-        case l @ Button()                              => G.point(l.copy())
+        case l @ Button(action)                        => G.point(l.copy())
         case l @ MouseOverlay(bkplane)                 => f(bkplane).map(a => l.copy(backplane=a))
-        case l @ Panel(content)                        => f(content).map(a => l.copy(content=a))
+        case l @ Panel(content)                        => f(content).map(Panel(_))
         case l @ Row(as)                               => as.traverse(f).map(Row(_))
         case l @ Col(as)                               => as.traverse(f).map(Col(_))
+        case l @ Pad(a, padding)                       => f(a).map(Pad(_, padding))
         case l @ Positioned(a, pvec, wbbox, tbbox, id) => f(a).map(Positioned(_, pvec, wbbox, tbbox, id))
       }
     }
@@ -103,11 +106,12 @@ object LabelWidgetF {
       case l @ RangeSelection(range)       => s"$l"
       case l @ Reflow(tr)                  => s"reflow()"
       case l @ TextBox(tb)                 => s"textbox"
-      case l @ Button()                    => s"$l"
+      case l @ Button(action)              => s"$l"
       case l @ MouseOverlay(bkplane)       => s"$l"
       case l @ Panel(content)              => s"$l"
       case l @ Row(as)                     => s"$l"
       case l @ Col(as)                     => s"$l"
+      case l @ Pad(a, padding)             => s"$l"
       case l @ Positioned(a, pvec, wbbox, tbbox, id)   => s"$l"
     }
   }
@@ -133,8 +137,8 @@ object LabelWidgets {
   def reflow(tr: TextReflow) =
     fixlw(Reflow(tr))
 
-  def button() =
-    fixlw(Button())
+  def button(a: String) =
+    fixlw(Button(a))
 
   def textbox(tb: TB.Box) =
     fixlw(TextBox(tb))
@@ -151,8 +155,9 @@ object LabelWidgets {
   def panel(content: LabelWidget): LabelWidget =
     fixlw(Panel(content))
 
+  def pad(content: LabelWidget, pad: Padding): LabelWidget =
+    fixlw(Pad(content, pad))
 
-  // (implicit ids: utils.IdGenerator[RegionID]): LabelWidget =
   def positioned(lw: LabelWidget, pvec: PositionVector, wbbox:LTBounds, tbbox: LTBounds, id: Int@@RegionID): LabelWidget =
     fixlw(Positioned(lw, pvec, wbbox, tbbox, id))
 

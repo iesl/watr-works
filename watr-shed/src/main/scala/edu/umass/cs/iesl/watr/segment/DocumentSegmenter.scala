@@ -227,11 +227,17 @@ class DocumentSegmenter(
           case Seq() => -1
         }).filter(_ > 1.0d)
     }
+    val vdists = allVDists.flatten
 
-    vtrace.trace(message("Compute docWideModalLineVSpacing"))
-    val modalVDist = getMostFrequentValues(vtrace)(allVDists.flatten, leftBinHistResolution)
-      .headOption
-      .getOrElse(12.0)
+    val modalVDist = if (!vdists.isEmpty) {
+      vtrace.trace(message("Compute docWideModalLineVSpacing"))
+      getMostFrequentValues(vtrace)(vdists, leftBinHistResolution)
+        .headOption
+        .getOrElse(12.0)
+    } else {
+      0d
+    }
+
 
     pageSegAccum = pageSegAccum.copy(docWideModalVerticalLineDist = modalVDist)
   }

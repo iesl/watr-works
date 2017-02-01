@@ -492,6 +492,7 @@ object ComponentOperations {
     }
 
 
+    // HOTSPOT: textbox operations in particular
     def tokenizeLine(): Unit = {
       if (!theComponent.hasLabel(LB.TokenizedLine)) {
         theComponent.addLabel(LB.TokenizedLine)

@@ -40,9 +40,19 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with 
       LW.reflow(reflow0)
     )
 
-    val row1 = LW.row(w1, w2)
+    val body = LW.row(w1, w2)
 
-    val panel1 =  LW.panel(row1)
+    val controls = LW.row(
+      LW.button("Clear"),
+      LW.button("Skip")
+    )
+
+    val panel1 =  LW.panel(
+      LW.col(
+        controls,
+        body
+      )
+    )
 
     println("layout")
     println(

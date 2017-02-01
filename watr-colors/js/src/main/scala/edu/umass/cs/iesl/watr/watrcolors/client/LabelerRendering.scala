@@ -103,8 +103,16 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
         img.left = absPos.left
         img.width = absPos.width
         img.height = absPos.height
+        img.borderColor = ""
+        img.backgroundColor = ""
         img.opacity = 1.0f
+        img.stroke      = null
+        img.strokeWidth = 0
+        img.fill        = "rgb(0, 0, 0)"
         noControls(img)
+        println("makeImageForTargetRegion")
+        println(img)
+
         promise.success(img)
         ()
       }
@@ -143,8 +151,15 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   // }
 
 
-  def createTextboxWidget(textbox: TB.Box, bbox: LTBounds): FabricObject = {
-    val text = textbox.toString
+  def createButtonWidget(text: String, bbox: LTBounds): FabricObject = {
+    val tw = createTextWidget(text, bbox)
+    val bg = createShape(bbox, "", "blue", 0.1f)
+    val g = fabric.Group(Seq(tw, bg))
+    noControls(g)
+    g
+  }
+
+  def createTextWidget(text: String, bbox: LTBounds): FabricObject = {
     val ftext = fabric.Text(text)
     ftext.setFontSize(14)
     ftext.top     = bbox.top
@@ -153,8 +168,13 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
     val scaleY = bbox.height / ftext.height.doubleValue
     ftext.setScaleX(scaleX)
     ftext.setScaleY(scaleY)
+    noControls(ftext)
 
     ftext
+  }
+  def createTextboxWidget(textbox: TB.Box, bbox: LTBounds): FabricObject = {
+    val text = textbox.toString
+    createTextWidget(text, bbox)
   }
 
   def createTextReflowWidget(textReflow: TextReflow, bbox: LTBounds): FabricObject = {
@@ -236,6 +256,7 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
         fa match {
           case TargetOverlay(under, overs) =>
             objStack += makeImageForTargetRegion(under, wbbox)
+            // objStack += Future { createShape(wbbox, "green", "", 0.2f) }
 
           case LabeledTarget(target, label, score)   =>
             label.foreach({ l =>
@@ -260,14 +281,51 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
           case TextBox(tb) =>
             objStack += Future { createTextboxWidget(tb, wbbox) }
 
-          case  MouseOverlay(bkplane)       =>
-          case  Panel(content)              =>
+          case MouseOverlay(bkplane)       =>
 
-          case  Row(as)                     =>
-            objStack += Future { createShape(wbbox, "black", "", 0.0f) }
+          case Panel(content)              =>
+            objStack += Future { createShape(wbbox, "black", "", 0.1f) }
 
-          case  Col(as)                     =>
-            objStack += Future { createShape(wbbox, "blue", "", 0.0f) }
+          case Pad(a, padding) =>
+            val leftGutter = wbbox.copy(
+              width=padding.left
+            )
+
+            val rightGutter = wbbox.copy(
+              left=wbbox.right-padding.right,
+              width=padding.right
+            )
+
+            val topGutter = wbbox.copy(
+              left=wbbox.left+padding.left,
+              width=wbbox.width-(padding.right+padding.left),
+              height=padding.top
+            )
+            val bottomGutter = wbbox.copy(
+              left=topGutter.left,
+              top=wbbox.bottom-padding.bottom,
+              width=topGutter.width,
+              height=padding.bottom
+            )
+
+            val g = fabric.Group(Seq(
+              createShape(leftGutter, "", "red", 0.2f),
+              createShape(rightGutter, "", "red", 0.2f),
+              createShape(topGutter, "", "red", 0.2f),
+              createShape(bottomGutter, "", "red", 0.2f)
+            ))
+            noControls(g)
+
+            // objStack += Future { g }
+
+          case Button(action) =>
+            objStack += Future { createButtonWidget(action, wbbox) }
+
+          case Row(as)                     =>
+            // objStack += Future { createShape(wbbox, "black", "", 0.0f) }
+
+          case Col(as)                     =>
+            // objStack += Future { createShape(wbbox, "blue", "", 0.0f) }
 
           case _ =>
         }

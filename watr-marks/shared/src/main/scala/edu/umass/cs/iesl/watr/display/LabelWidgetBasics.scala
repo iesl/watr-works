@@ -96,6 +96,23 @@ trait LabelWidgetBasics {
 
         positioned(row(pos:_*), zeroPosVector, currBbox, currBbox, idgen.nextId)
 
+      case Pad((a, attr), padding) =>
+        val (childpvec, childbbox, tbbox) = position(attr)
+
+        val newPvec = childpvec.translate(padding.left, padding.top)
+        val newWBbox = childbbox.translate(newPvec)
+
+        val newTBbox = LTBounds(
+          tbbox.left - padding.left,
+          tbbox.top - padding.top,
+          tbbox.width + padding.left + padding.right,
+          tbbox.height + padding.bottom + padding.top
+        )
+
+
+        positioned(pad(attr, padding), newPvec, newWBbox, newTBbox, idgen.nextId)
+        // positioned(pad(attr, padding), zeroPosVector, newWBbox, newTBbox, idgen.nextId)
+
       case RangeSelection(range) =>
         ???
 
@@ -119,6 +136,14 @@ trait LabelWidgetBasics {
         val currBbox: LTBounds = LTBounds(0, 0, maxwidth*6d, height*16d)
 
         positioned(textbox(box), zeroPosVector, currBbox, currBbox, idgen.nextId)
+
+      case Button(action) =>
+        val width = (action.length+1) * 6d
+        val height = 18d
+        // val wbbox: LTBounds = LTBounds(3d, 1d, width-3d, height-2d)
+        val bbox: LTBounds = LTBounds(0, 0, width, height)
+
+        positioned(button(action), zeroPosVector, bbox, bbox, idgen.nextId)
 
       case l @ Panel((content, attr)) =>
         val (childpvec, childbbox, tbbox) = position(attr)

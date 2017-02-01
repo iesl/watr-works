@@ -115,6 +115,25 @@ trait TextReflowClipping extends TextReflowBasics {
   }
 
 
+  def labelSplit(tr: TextReflow, label: Label): Seq[(TextReflow, Option[Label])] = {
+    import scalaz.std.list._
+
+    def visit(
+      t: TextReflowF[(TextReflow, List[(TextReflow, Option[Label])])]
+    ): List[(TextReflow, Option[Label])] = orBubblePara[List[(TextReflow, Option[Label])]](t) {
+      case l @ Labeled (labels, (a, attr)) =>
+        if (labels.exists(_ == label)) {
+          (labeled(labels, a), Option(label)) :: attr
+        } else {
+          (labeled(labels, a), None) :: attr
+        }
+    }
+
+    tr.cata(attributePara(visit))
+      .toPair._1
+
+  }
+
   def labeledSlices(tr: TextReflow, label: Label): Seq[TextReflow] = {
     import scalaz.std.list._
 

@@ -64,7 +64,7 @@ trait HtmlCanvasRendering {
         c.startAngle = 0
         c.endAngle = math.Pi * 2
         c.stroke      = color
-        c.strokeWidth = 2
+        c.strokeWidth = 1
         c.fill        = bg
         noControls(c)
         c.opacity = opacity
@@ -85,7 +85,7 @@ trait HtmlCanvasRendering {
         l.x2 = p2.x
         l.y2 = p2.y
         l.stroke      = color
-        l.strokeWidth = 2
+        l.strokeWidth = 1
         l.fill        = bg
         l.opacity = opacity
 

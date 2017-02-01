@@ -439,6 +439,7 @@ object MultiPageIndex {
       regions.foreach {
         case cb:CharAtom if !cb.isSpace => mpageIndex.addPageAtom(cb)
         case cb:ImgAtom =>
+        case cb => println(s"error adding ${cb}")
       }
     }
     mpageIndex

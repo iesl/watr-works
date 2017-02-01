@@ -254,6 +254,7 @@ class TextReflowDB(
     val PageGeometry(pageId, LTBounds(l, t, w, h)) = pageGeometry
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
 
+    // HOTSPOT: deflate bytes in pageImage.bytes
     sql"""
       insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
       values (${docPrKey}, ${pageId}, ${pageImage.bytes}, $bl, $bt, $bw, $bh)
@@ -281,6 +282,13 @@ class TextReflowDB(
       .query[Int].unique
   }
 
+  def hasDocumentID(docId: String@@DocumentID): Boolean = {
+    sql"select 1 from document where stable_id=${docId}"
+      .query[Int].option
+      .transact(xa)
+      .unsafePerformSync
+      .isDefined
+  }
   def getOrInsertDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
     sql"""select document from document where stable_id=${docId}"""
       .query[Int].option
@@ -401,9 +409,6 @@ class TextReflowDB(
   def insertTargetRegion(targetRegion: TargetRegion): ConnectionIO[Int] = {
     val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) = targetRegion
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
-    println(s"inserting TargetRegion w/int rep:  ${targetRegion}")
-    println(s"  ${bl}, $bt, $bw, $bh")
-    println(s"  ${l}, $t, $w, $h")
 
     for {
       docPk <- selectDocumentID(docId)

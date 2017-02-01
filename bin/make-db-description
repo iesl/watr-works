@@ -1,0 +1,3 @@
+#!/bin/bash
+
+gen-schema.sh -d bioarxiv -u watrworker -p watrpasswd

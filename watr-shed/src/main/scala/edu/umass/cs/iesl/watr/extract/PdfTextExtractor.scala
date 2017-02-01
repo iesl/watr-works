@@ -149,7 +149,9 @@ class PdfTextExtractor(
       }
       pageIndexes.toList
     } catch {
-      case f: Throwable => throw f
+      case f: Throwable =>
+        println(s"ERROR extractCharacters(): ${f}: ${f.getMessage} ${f.getCause()}")
+        List()
     } finally {
       if (instr != null) instr.close()
     }

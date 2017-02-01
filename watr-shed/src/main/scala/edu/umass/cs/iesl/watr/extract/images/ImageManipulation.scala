@@ -6,27 +6,8 @@ import com.sksamuel.scrimage._
 import geometry._
 
 import GeometryImplicits._
-import ammonite.{ops => fs}
-import fs._
-
 
 trait ImageManipulation {
-  // - get image for specified pdf page(s)
-  // - clip image to bounds
-  // - load image as byte array (to return to client via http get)
-  def extractToFile(pdfPath: Path, pageImagePath: Path): Unit = {
-    import fs.ImplicitWd._
-
-    // val pageImagePath = corpusEntry.artifactsRoot / "page-images"
-    if (!exists(pageImagePath)) {
-      mkdir(pageImagePath)
-    }
-    val pageImageFilespec = pageImagePath / "page-%d.png"
-
-    val res = %%("mudraw", "-r", "128", "-o", pageImageFilespec, pdfPath)
-
-  }
-
 
   def cropTo(image: Image, cropBox: LTBounds, pageGeometry: PageGeometry): Image = {
     println(s"page geometry is ${pageGeometry.bounds.prettyPrint}")
@@ -51,8 +32,8 @@ trait ImageManipulation {
 
     println(s"scaling factors are  scaleX: ${rescaleFactorX}, scaleY: ${rescaleFactorY}")
 
+    // .pad(3, Color.Transparent)
     trimmed
-      .pad(3, Color.Black)
       .scale(rescaleFactorX)
   }
 
