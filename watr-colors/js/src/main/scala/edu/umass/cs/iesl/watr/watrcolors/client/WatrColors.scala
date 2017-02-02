@@ -11,13 +11,15 @@ import org.scalajs.dom
 import org.scalajs.dom.ext._
 
 import autowire._
+import upickle.{default => UPickle}
+import UPickle._
+import TypeTagPicklers._
 
 import textreflow.data._
 import geometry._
-import display.data._
+import display._
 
 import native.mousetrap._
-
 
 @JSExport
 object WatrColors extends TextReflowExamples {
@@ -121,7 +123,7 @@ object WatrColors extends TextReflowExamples {
     }
 
     @JSExport
-    def echoLabeler(lwidget: LabelWidget) = Async.async {
+    def echoLabeler(lwidget: Position) = Async.async {
       clear()
       val (bbox, fobjs) = renderLabelWidget(lwidget)
       fabricCanvas.setWidth(bbox.width.toInt)
@@ -147,7 +149,6 @@ object WatrColors extends TextReflowExamples {
     initKeybindings()
 
     val websideServer = new WebsideServer(WatrColorsApiListeners)
-      // @JSExport
 
     var success = false
 

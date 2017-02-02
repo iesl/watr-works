@@ -6,47 +6,36 @@ import geometry._
 import spindex._
 
 
-import matryoshka._
-import matryoshka.implicits._
-
 import LabelWidgetF._
 
-object LabelWidgetIndex {
+object LabelWidgetIndex extends LabelWidgetLayout {
 
-  type PositionedT = Positioned[LabelWidget]
-
-  implicit object LabelWidget extends SpatialIndexable[PositionedT] {
-    def id(t: PositionedT): Int = t.id.unwrap
-    def ltBounds(t: PositionedT): LTBounds = t.widgetBbox
+  implicit object LabelWidget extends SpatialIndexable[Position] {
+    def id(t: Position): Int = t.id.unwrap
+    def ltBounds(t: Position): LTBounds = t.totalBounds
   }
-}
-
-import LabelWidgetIndex._
-
-case class LabelWidgetIndex(
-  lwIndex: SpatialIndex[PositionedT],
-  lwidget: LabelWidget,
-  positioned: LabelWidget
-) {
-
-}
-
-object LabelWidgetIndexing extends LabelWidgetBasics {
-
   def indexLabelWidget(lwidget: LabelWidget): LabelWidgetIndex = {
-    val lwIndex = SpatialIndex.createFor[PositionedT]()
+    val lwIndex = SpatialIndex.createFor[Position]()
 
-    val positionedLabelWidget = absPositionLabelWidget(lwidget)
+    val positionedLabelWidget = layoutWidgetPositions(lwidget)
 
-    def visit(t: LabelWidget): Unit = t.project match {
-      case p @ Positioned(a, pvec, wbbox, tbbox, id) =>
-        lwIndex.add(p)
-
-      case _ => ()
+    def visit(t: Position): Unit = {
+      lwIndex.add(t)
+      t.children.map(visit)
     }
 
-    positionedLabelWidget.universe.foreach(visit)
+    visit(positionedLabelWidget)
 
     new LabelWidgetIndex(lwIndex, lwidget, positionedLabelWidget)
   }
 }
+
+// import LabelWidgetIndex._
+
+case class LabelWidgetIndex(
+  lwIndex: SpatialIndex[Position],
+  lwidget: LabelWidget,
+  position: Position
+)
+
+// object LabelWidgetIndexing extends LabelWidgetLayout {}

@@ -104,7 +104,7 @@ object ShellCommands extends CorpusEnrichments {
   })
 
   val pprintLabelWidget: PPrinter[LabelWidget] = PPrinter({(lwidget, config) =>
-    val pp = LabelWidgetIndexing.prettyPrintLabelWidget(lwidget)
+    val pp = LabelWidgetIndex.prettyPrintLabelWidget(lwidget)
     Iterator(pp.toString)
   })
 

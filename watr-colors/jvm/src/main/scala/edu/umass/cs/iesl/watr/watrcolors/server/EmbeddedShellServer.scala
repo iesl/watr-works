@@ -200,12 +200,11 @@ class EmbeddedServer(
       // determine which visual lines were selected and send back
       //  an updated bounding box
       activeLabelWidgetIndex.map({ lwIndex =>
-        val positioned: Seq[PositionedT] = lwIndex.lwIndex.queryForIntersects(bbox)
+        val positioned: Seq[Position] = lwIndex.lwIndex.queryForIntersects(bbox)
 
-        def visit(p: Positioned[LabelWidget]): List[LTBounds] = {
-          val Positioned(Fix(fa), pvec, wbbox, tbbox, id) = p
-          // val newWArea = wbbox.translate(currVec)
-          // val newVec = currVec.translate(pvec)
+        def visit(p: Position): List[LTBounds] = {
+          val Position(Fix(fa), pvec, wbbox, tbbox, id, children) = p
+
           fa match {
             case LabeledTarget(target, label, score) =>
               List(wbbox)
@@ -243,10 +242,13 @@ class EmbeddedServer(
     }
 
     def echoLabeler(lwidget: LabelWidget): Unit = {
-      val lwIndex = LabelWidgetIndexing.indexLabelWidget(lwidget)
+      val lwIndex = indexLabelWidget(lwidget)
       activeLabelWidgetIndex = Some(lwIndex)
 
-      val pWidget = lwIndex.positioned
+      val pWidget = lwIndex.position
+      println(
+        prettyPrintPosition(pWidget)
+      )
 
       api.echoLabeler(pWidget).call()
     }

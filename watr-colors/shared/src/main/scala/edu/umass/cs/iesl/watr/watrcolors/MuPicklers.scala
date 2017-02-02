@@ -26,4 +26,6 @@ object TypeTagPicklers {
     {case Js.Str(s) => DocumentID(s)}
   )
 
+  import display.Position
+  implicit val Position_Pickler = UPickle.macroRW[Position]
 }

@@ -66,15 +66,6 @@ object LabelWidgetF {
 
   type PositionVector = Point
 
-  // TODO this doesn't need to be part of the LabelWidget hierarchy, just a cofree attribute
-  case class Positioned[A](
-    a: A,
-    pvec: PositionVector,
-    widgetBbox: LTBounds,
-    totalBbox: LTBounds,
-    id: Int@@RegionID
-  ) extends LabelWidgetF[A]
-
 
   implicit def LabelWidgetTraverse: Traverse[LabelWidgetF] = new Traverse[LabelWidgetF] {
     def traverseImpl[G[_], A, B](
@@ -94,7 +85,7 @@ object LabelWidgetF {
         case l @ Row(as)                               => as.traverse(f).map(Row(_))
         case l @ Col(as)                               => as.traverse(f).map(Col(_))
         case l @ Pad(a, padding)                       => f(a).map(Pad(_, padding))
-        case l @ Positioned(a, pvec, wbbox, tbbox, id) => f(a).map(Positioned(_, pvec, wbbox, tbbox, id))
+        // case l @ Positioned(a, pvec, wbbox, tbbox, id) => f(a).map(Positioned(_, pvec, wbbox, tbbox, id))
       }
     }
   }
@@ -112,7 +103,7 @@ object LabelWidgetF {
       case l @ Row(as)                     => s"$l"
       case l @ Col(as)                     => s"$l"
       case l @ Pad(a, padding)             => s"$l"
-      case l @ Positioned(a, pvec, wbbox, tbbox, id)   => s"$l"
+      // case l @ Positioned(a, pvec, wbbox, tbbox, id)   => s"$l"
     }
   }
 }
@@ -158,7 +149,7 @@ object LabelWidgets {
   def pad(content: LabelWidget, pad: Padding): LabelWidget =
     fixlw(Pad(content, pad))
 
-  def positioned(lw: LabelWidget, pvec: PositionVector, wbbox:LTBounds, tbbox: LTBounds, id: Int@@RegionID): LabelWidget =
-    fixlw(Positioned(lw, pvec, wbbox, tbbox, id))
+  // def positioned(lw: LabelWidget, pvec: PositionVector, wbbox:LTBounds, tbbox: LTBounds, id: Int@@RegionID): LabelWidget =
+  //   fixlw(Positioned(lw, pvec, wbbox, tbbox, id))
 
 }

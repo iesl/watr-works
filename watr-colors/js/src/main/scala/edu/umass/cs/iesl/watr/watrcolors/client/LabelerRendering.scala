@@ -247,101 +247,96 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
 
 
 
-  def renderLabelWidget(lwidget: LabelWidget): (LTBounds, Future[List[FabricObject]]) = {
+  def renderLabelWidget(positions: Position): (LTBounds, Future[List[FabricObject]]) = {
 
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
 
-    def visit(lwidget: LabelWidget): Unit = lwidget.project match {
-      case p @ Positioned( tf @ Fix(fa), pvec, wbbox, tbbox, id)  =>
-        fa match {
-          case TargetOverlay(under, overs) =>
-            objStack += makeImageForTargetRegion(under, wbbox)
-            // objStack += Future { createShape(wbbox, "green", "", 0.2f) }
+    def visit(p: Position): Unit = {
+      val Position( tf @ Fix(fa), pvec, wbbox, tbbox, id, children)  = p
 
-          case LabeledTarget(target, label, score)   =>
-            label.foreach({ l =>
-              val bgColor = l match {
-                case LB.Title    => "red"
-                case LB.Authors  => "blue"
-                case LB.Abstract => "yellow"
-                case _ => ""
-              }
-              val normalScore = score.getOrElse(0d)
-              val opacity = normalScore.toFloat * 0.2f
+      fa match {
+        case TargetOverlay(under, overs) =>
+          objStack += makeImageForTargetRegion(under, wbbox)
+          // objStack += Future { createShape(wbbox, "green", "", 0.2f) }
 
-              objStack += Future { createShape(wbbox, "", bgColor, opacity) }
-            })
+        case LabeledTarget(target, label, score)   =>
+          label.foreach({ l =>
+            val bgColor = l match {
+              case LB.Title    => "red"
+              case LB.Authors  => "blue"
+              case LB.Abstract => "yellow"
+              case _ => ""
+            }
+            val normalScore = score.getOrElse(0d)
+            val opacity = normalScore.toFloat * 0.2f
 
-          case  Reflow(tr) =>
-            val widget = createTextReflowWidget(tr, wbbox)
-            widget.opacity = 1.0f
-            noControls(widget)
-            objStack += Future { widget }
+            objStack += Future { createShape(wbbox, "", bgColor, opacity) }
+          })
 
-          case TextBox(tb) =>
-            objStack += Future { createTextboxWidget(tb, wbbox) }
+        case  Reflow(tr) =>
+          val widget = createTextReflowWidget(tr, wbbox)
+          widget.opacity = 1.0f
+          noControls(widget)
+          objStack += Future { widget }
 
-          case MouseOverlay(bkplane)       =>
+        case TextBox(tb) =>
+          objStack += Future { createTextboxWidget(tb, wbbox) }
 
-          case Panel(content)              =>
-            objStack += Future { createShape(wbbox, "black", "", 0.1f) }
+        case MouseOverlay(bkplane)       =>
 
-          case Pad(a, padding) =>
-            val leftGutter = wbbox.copy(
-              width=padding.left
-            )
+        case Panel(content)              =>
+          objStack += Future { createShape(wbbox, "black", "", 0.1f) }
 
-            val rightGutter = wbbox.copy(
-              left=wbbox.right-padding.right,
-              width=padding.right
-            )
+        case Pad(a, padding) =>
+          val leftGutter = wbbox.copy(
+            width=padding.left
+          )
 
-            val topGutter = wbbox.copy(
-              left=wbbox.left+padding.left,
-              width=wbbox.width-(padding.right+padding.left),
-              height=padding.top
-            )
-            val bottomGutter = wbbox.copy(
-              left=topGutter.left,
-              top=wbbox.bottom-padding.bottom,
-              width=topGutter.width,
-              height=padding.bottom
-            )
+          val rightGutter = wbbox.copy(
+            left=wbbox.right-padding.right,
+            width=padding.right
+          )
 
-            val g = fabric.Group(Seq(
-              createShape(leftGutter, "", "red", 0.2f),
-              createShape(rightGutter, "", "red", 0.2f),
-              createShape(topGutter, "", "red", 0.2f),
-              createShape(bottomGutter, "", "red", 0.2f)
-            ))
-            noControls(g)
+          val topGutter = wbbox.copy(
+            left=wbbox.left+padding.left,
+            width=wbbox.width-(padding.right+padding.left),
+            height=padding.top
+          )
+          val bottomGutter = wbbox.copy(
+            left=topGutter.left,
+            top=wbbox.bottom-padding.bottom,
+            width=topGutter.width,
+            height=padding.bottom
+          )
 
-            // objStack += Future { g }
+          val g = fabric.Group(Seq(
+            createShape(leftGutter, "", "red", 0.2f),
+            createShape(rightGutter, "", "red", 0.2f),
+            createShape(topGutter, "", "red", 0.2f),
+            createShape(bottomGutter, "", "red", 0.2f)
+          ))
+          noControls(g)
 
-          case Button(action) =>
-            objStack += Future { createButtonWidget(action, wbbox) }
+          // objStack += Future { g }
 
-          case Row(as)                     =>
-            // objStack += Future { createShape(wbbox, "black", "", 0.0f) }
+        case Button(action) =>
+          objStack += Future { createButtonWidget(action, wbbox) }
 
-          case Col(as)                     =>
-            // objStack += Future { createShape(wbbox, "blue", "", 0.0f) }
+        case Row(as)                     =>
+          // objStack += Future { createShape(wbbox, "black", "", 0.0f) }
 
-          case _ =>
-        }
+        case Col(as)                     =>
+          // objStack += Future { createShape(wbbox, "blue", "", 0.0f) }
 
-      case _ =>
+        case _ =>
+      }
+
+      p.children.map(visit)
+
     }
 
-    // lwidget.topDownCata(Point(0, 0))(reposition)
-    lwidget.universe.foreach(visit)
+    visit(positions)
 
-    def position(lw: LabelWidget): (PositionVector, LTBounds) = lw.unFix match {
-      case Positioned(a, pvec, wbbox, tbbox, id) => (pvec, tbbox)
-      case x => sys.error(s"found non-positioned LabelWidget ${x}")
-    }
-
-    val (_, widgetBounds) = position(lwidget)
 
     val fobjs = objStack.toList
       .sequenceU
@@ -350,7 +345,7 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
         ff
       })
 
-    (widgetBounds, fobjs)
+    (positions.totalBounds, fobjs)
 
   }
 }

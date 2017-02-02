@@ -11,7 +11,7 @@ import utils.EnrichNumerics._
 import TypeTags._
 
 // import watrmarks.{StandardLabels => LB}
-class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with LabelWidgetBasics {
+class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with LabelWidgetLayout {
 
   behavior of "label widgets"
 
@@ -25,64 +25,77 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with 
   def sel0: TargetRegion = tr
   def sel1: TargetRegion = tr
 
-  it should "specify widget layout" in {
+  // it should "specify widget layout" in {
 
-    val reflow0 = stringToReflow("lime _{^{ﬂ}a}vor")
-    def range0: RangeInt = RangeInt(1, 3)
+  //   val reflow0 = stringToReflow("lime _{^{ﬂ}a}vor")
+  //   def range0: RangeInt = RangeInt(1, 3)
 
-    val w1 = LW.targetOverlay(reg0, List(
-      LW.labeledTarget(sel0),
-      LW.labeledTarget(sel1)
-    ))
+  //   val w1 = LW.targetOverlay(reg0, List(
+  //     LW.labeledTarget(sel0),
+  //     LW.labeledTarget(sel1)
+  //   ))
 
-    val w2 = LW.col(
-      LW.reflow(reflow0),
-      LW.reflow(reflow0)
-    )
+  //   val w2 = LW.col(
+  //     LW.reflow(reflow0),
+  //     LW.reflow(reflow0)
+  //   )
 
-    val body = LW.row(w1, w2)
+  //   val body = LW.row(w1, w2)
 
-    val controls = LW.row(
-      LW.button("Clear"),
-      LW.button("Skip")
-    )
+  //   val controls = LW.row(
+  //     LW.button("Clear"),
+  //     LW.button("Skip")
+  //   )
 
-    val panel1 =  LW.panel(
-      LW.col(
-        controls,
-        body
-      )
-    )
-
-    println("layout")
-    println(
-      prettyPrintLabelWidget(panel1)
-    )
-
-    println("positioned")
-    val abs0 = absPositionLabelWidget(panel1)
-    println(
-      prettyPrintLabelWidget(abs0)
-    )
-
-    // // approve all selections within layout regions:
-    // button(approveSelections(w2))
-    // button(approveSelections(row1))
-  }
-
-
-  // it should "use heatmaps" in {
-  //   val hm = LW.heatmap(
-  //     LW.targetImage(reg0), List(
-  //       LW.labeledTarget(tr, LB.Authors, 10.0d),
-  //       LW.labeledTarget(tr, LB.Authors, 3.3d),
-  //       LW.labeledTarget(tr, LB.Authors, 55.0d)
+  //   val panel1 =  LW.panel(
+  //     LW.col(
+  //       controls,
+  //       body
   //     )
   //   )
-  //   println("positioned")
-  //   val abs0 = absPositionLabelWidget(hm)
+
+  //   println("layout")
+
+  //   val test = panel1 // LW.row(LW.col(LW.labeledTarget(sel0)))
+
   //   println(
-  //     prettyPrintLabelWidget(abs0)
+  //     prettyPrintLabelWidget(test)
   //   )
+  //   println("positioned")
+  //   val abs0 = layoutWidgetPositions(test)
+  //   println(
+  //     prettyPrintPosition(abs0)
+  //   )
+
+  //   // // approve all selections within layout regions:
+  //   // button(approveSelections(w2))
+  //   // button(approveSelections(row1))
   // }
+
+
+  it should "properly position widgets" in {
+    import LW._
+
+    val reflow0 = stringToReflow("Meow, said the cat.")
+    val example =  {
+
+      val col0 = col(
+        pad(
+          reflow(reflow0),
+          Padding(left=1d, right=1d, top=1d, bottom=1d)
+        )
+      )
+
+      row(
+        col0, col0
+      )
+    }
+
+    val pos0 = layoutWidgetPositions(example)
+
+    println(prettyPrintLabelWidget(example))
+    println(prettyPrintPosition(pos0))
+
+
+  }
 }

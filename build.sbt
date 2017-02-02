@@ -103,7 +103,6 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(libraryDependencies ++= Seq(
     Lib.scalaAsync,
     "com.lihaoyi"  %%% "scalatags"   % LibVersions.scalaTagsVersion,
-    // "me.chrons" %%% "boopickle" % "1.2.5",
     "com.lihaoyi" %%% "upickle" % "0.4.4",
     "com.lihaoyi" %%% "autowire" % "0.2.6"
   ))

@@ -3,7 +3,8 @@ package watrcolors
 
 import geometry._
 import textreflow.data._
-import display.data._
+// import display.data._
+import display._
 import scala.concurrent.Future
 
 trait WatrShellApi {
@@ -17,5 +18,5 @@ trait WatrColorsApi {
   def clear(): Unit
   def print(level: String, msg: String): Unit
   def echoTextReflows(textReflows: List[TextReflow]): Unit
-  def echoLabeler(lwidget: LabelWidget): Unit
+  def echoLabeler(lwidget: Position): Unit
 }
