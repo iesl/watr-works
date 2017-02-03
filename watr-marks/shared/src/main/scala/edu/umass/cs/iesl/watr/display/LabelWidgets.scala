@@ -20,6 +20,7 @@ object LabelWidgetF {
 
   type LabelWidget = Fix[LabelWidgetF]
 
+
   type LabelWidgetT = LabelWidgetF[Fix[LabelWidgetF]]
 
   case class TargetOverlay[A](
@@ -65,7 +66,6 @@ object LabelWidgetF {
   case class Pad[A](a: A, pad: Padding) extends LabelWidgetF[A]
 
   type PositionVector = Point
-
 
   implicit def LabelWidgetTraverse: Traverse[LabelWidgetF] = new Traverse[LabelWidgetF] {
     def traverseImpl[G[_], A, B](
