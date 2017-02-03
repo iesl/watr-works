@@ -191,49 +191,33 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
       for {
         _           <- putStrLn(s"@self: ${selfAttr}")
-
+        // Initial state passed from parent
         init       <- State.get[PosAttr]
+        // Initial stack passed from parent
         initStack   = init.childOffsets
-        currVec     = init.selfOffset
 
-        selfStack   = selfAttr.childOffsets
+        // Current offset vector is the top of initial stack
+        headOffsetVec  = initStack.head
+        tailOffsetVecs = initStack.tail
 
-        adjustedSelfStack = selfStack.map(_.translate(currVec))
-        totalStack = adjustedSelfStack ++ initStack
-        newCurrVec = totalStack.head
-        newStack   = totalStack.tail
+        // Relative offset vectors for children of the current node
+        selfOffsetVecs   = selfAttr.childOffsets
 
-        // offStack    = initChOffs ++ selfChOffs
-        // offStackStr = childOffsets.map(_.prettyPrint).mkString(", ")
+        // Translated current-node offset vectors from Relative -> Absolute positioning
+        selfAbsOffsetVecs = selfOffsetVecs.map(_.translate(headOffsetVec))
 
-        _           <- putStrLn(s"   init : ${init.toStackString}")
-
-        newState = {
-          init.copy(
-            selfOffset = newCurrVec,
-            childOffsets = newStack
-          )
-
-          // initChOffs match {
-          //   case Nil =>
-          //     init.copy(
-          //       childOffsets = selfChOffs
-          //     )
-
-          //   case offs :: tail =>
-          //     init.copy(
-          //       selfOffset = offs,
-          //       childOffsets = selfChOffs ++ tail
-          //     )
-          // }
-        }
-
+        // Adjusted current-node bounding box to Absolute positioning
         newSelf = selfAttr.copy(
-          widgetBounds=selfAttr.widgetBounds.translate(newCurrVec)
+          widgetBounds=selfAttr.widgetBounds.translate(headOffsetVec)
         )
 
-        _      <- putStrLn(s"   mods: ${newState.toStackString}")
-        _      <- putStrLn(s"   <-  : ${newSelf}")
+        // Update State monad to include repositioned offset vectors for current-node's children
+        newState = init.copy(
+          childOffsets =  selfAbsOffsetVecs ++ tailOffsetVecs
+        )
+
+        // _      <- putStrLn(s"   mods: ${newState.toStackString}")
+        // _      <- putStrLn(s"   <-  : ${newSelf}")
 
         _      <- State.modify[PosAttr](_ => newState)
       } yield {
