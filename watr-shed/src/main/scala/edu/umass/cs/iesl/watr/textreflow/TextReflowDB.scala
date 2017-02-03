@@ -346,18 +346,21 @@ class TextReflowDB(
     """.update.run
   }
 
-  def selectTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Option[Image]] = {
+  def selectTargetRegionImageBytes(targetRegion: TargetRegion): ConnectionIO[Option[Array[Byte]]] = {
     val trUri = targetRegion.uri
-    val query = sql"""
+    sql"""
        select img.image
        from targetregion_image as img join targetregion as tr
        on img.targetregion=tr.targetregion
        where tr.uri = ${trUri}
     """.query[Array[Byte]]
       .option
+  }
+
+  def selectTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Option[Image]] = {
+    selectTargetRegionImageBytes(targetRegion)
       .map(_.map(Image(_)))
 
-    query
   }
 
   def ensureLabel(label: Label): ConnectionIO[Int] = for {
@@ -465,7 +468,7 @@ class TextReflowDB(
       // _           <- putStrLn(s"putTargetRegionImage for ${targetRegion}")
       maybeTrClip <- selectTargetRegionImage(targetRegion)
       clipped     <- maybeTrClip match {
-        // case Some(tr) => putStrLn(s"  image exists")
+        case Some(tr) => FC.delay(()) // putStrLn(s"  image exists")
         case None     => insertTargetRegionImage(targetRegion, image)
       }
     } yield ()
@@ -501,8 +504,32 @@ class TextReflowDB(
     query
   }
 
-  def serveImageWithURI(targetRegion: TargetRegion): Image = {
-    getOrCreateTargetRegionImage(targetRegion)
+  def getOrCreateTargetRegionImageBytes(targetRegion: TargetRegion): ConnectionIO[Array[Byte]] = {
+    val TargetRegion(id, docId, pageId, bbox) = targetRegion
+
+    val query = for {
+      maybeTrClip <- selectTargetRegionImageBytes(targetRegion)
+      clipped     <- maybeTrClip match {
+        case Some(tr) => tr.point[ConnectionIO]
+        case None     => for {
+          pageImage <- selectPageImage(docId, pageId)
+          pageGeometry <- selectPageGeometry(docId, pageId)
+          maybeClippedImage = {
+            (pageImage |@| pageGeometry).apply((pg, geom) =>
+              ExtractImages.cropTo(pg, bbox, geom)
+            )
+          }
+          clippedImage = maybeClippedImage.getOrElse { sys.error(s"getOrCreateTargetRegionImage: ${targetRegion}") }
+          _  <- insertTargetRegionImage(targetRegion, clippedImage)
+        } yield clippedImage.bytes
+      }
+    } yield clipped
+
+    query
+  }
+
+  def serveImageWithURI(targetRegion: TargetRegion): Array[Byte] = {
+    getOrCreateTargetRegionImageBytes(targetRegion)
       .transact(xa)
       .unsafePerformSync
 

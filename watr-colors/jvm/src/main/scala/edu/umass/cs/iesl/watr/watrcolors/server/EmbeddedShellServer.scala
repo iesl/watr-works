@@ -121,9 +121,7 @@ class EmbeddedServer(
 
       val uriPath = path.headOption.getOrElse { sys.error("producePageImage: no path specified") }
 
-      reflowDB
-        .serveImageWithURI(TargetRegion.fromUri(uriPath))
-        .bytes
+      reflowDB.serveImageWithURI(TargetRegion.fromUri(uriPath))
     }
 
     def pageImageServer = pathPrefix("img")(
