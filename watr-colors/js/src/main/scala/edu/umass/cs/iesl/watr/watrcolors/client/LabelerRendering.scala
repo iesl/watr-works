@@ -35,8 +35,6 @@ case class LwRenderingAttrs(
 trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   import TextReflowF._
   import matryoshka._
-  import matryoshka.data._
-  import matryoshka.implicits._
 
   override lazy val fabricCanvas =  {
     initFabric("canvas")
@@ -246,13 +244,12 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
   }
 
 
-
-  def renderLabelWidget(positions: Position): (LTBounds, Future[List[FabricObject]]) = {
+  def renderLabelWidget(positions: List[PosAttr]): (LTBounds, Future[List[FabricObject]]) = {
 
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
 
-    def visit(p: Position): Unit = {
-      val Position( tf @ Fix(fa), pvec, wbbox, tbbox, id, children)  = p
+    def visit(p: PosAttr): Unit = {
+      val PosAttr(fa, wbbox, id, selfOffset, childOffsets)  = p
 
       fa match {
         case TargetOverlay(under, overs) =>
@@ -331,11 +328,9 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
         case _ =>
       }
 
-      p.children.map(visit)
-
     }
 
-    visit(positions)
+    positions.foreach(visit)
 
 
     val fobjs = objStack.toList
@@ -345,7 +340,8 @@ trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
         ff
       })
 
-    (positions.totalBounds, fobjs)
+    val totalBounds = positions.head.widgetBounds
+    (totalBounds, fobjs)
 
   }
 }

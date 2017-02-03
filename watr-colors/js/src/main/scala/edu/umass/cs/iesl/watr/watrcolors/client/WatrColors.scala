@@ -123,7 +123,7 @@ object WatrColors extends TextReflowExamples {
     }
 
     @JSExport
-    def echoLabeler(lwidget: Position) = Async.async {
+    def echoLabeler(lwidget: List[PosAttr]) = Async.async {
       clear()
       val (bbox, fobjs) = renderLabelWidget(lwidget)
       fabricCanvas.setWidth(bbox.width.toInt)

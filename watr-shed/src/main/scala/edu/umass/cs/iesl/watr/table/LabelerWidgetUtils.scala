@@ -2,12 +2,12 @@ package edu.umass.cs.iesl.watr
 package table
 
 
-import BioArxiv._
-import AlignBioArxiv._
-import display._
+// import BioArxiv._
+// import AlignBioArxiv._
+// import display._
 import display.data._
 import geometry._
-import PageComponentImplicits._
+// import PageComponentImplicits._
 
 trait LabelWidgetUtils {
 

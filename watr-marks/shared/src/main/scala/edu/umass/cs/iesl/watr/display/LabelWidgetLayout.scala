@@ -3,47 +3,44 @@ package display
 
 import scalaz.{@@ => _, _}, Scalaz._
 
-// import scalaz.Cofree
-// import scalaz.State
-// import scalaz.Tree
 import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
+import matryoshka.patterns.EnvT
 
-// import textreflow._
 import textreflow.data._
 import utils.{CompassDirection => CDir}
 import geometry._
 import geometry.syntax._
 import LabelWidgetF._
-import LabelWidgets._
 
-import textboxing.{TextBoxing => TB}
 import utils.ScalazTreeImplicits._
 import TypeTags._
 
-
 case class PosAttr(
+  widget: LabelWidgetF[Unit],
   widgetBounds: LTBounds,
   id: Int@@RegionID,
-  selfOffset: PositionVector = Point(0, 0),
+  selfOffset: PositionVector, // = Point(0, 0),
   childOffsets: List[PositionVector] = List()
 ) {
+
   def toStackString = {
     val soff = selfOffset.prettyPrint
     val ch = childOffsets.map(_.prettyPrint).mkString(", ")
     s"curVec:${soff}   st:[ ${ch} ]"
-
   }
+
   override def toString = {
     val wpp = widgetBounds.prettyPrint
-    val soff = selfOffset.prettyPrint
-    val ch = childOffsets.map(_.prettyPrint).mkString(", ")
-    s"#${id} vec:$soff bb:${wpp} [ ${ch} ]"
-
+    val sstr = toStackString
+    val cn = widget.getClass().getName.split("\\$").last
+    s"${cn}#${id} bb:${wpp} ${sstr} ]"
   }
+
   def translate(pvec: PositionVector): PosAttr = {
     PosAttr(
+      widget,
       widgetBounds.translate(pvec),
       id,
       selfOffset.translate(pvec),
@@ -52,32 +49,35 @@ case class PosAttr(
   }
 }
 
+object LabelWidgetLayoutHelpers {
+  def cofreeLWAttrToTree[A](c: Cofree[LabelWidgetF, A]): Tree[A] = {
+    Tree.Node(
+      c.head,
+      c.tail.toStream.map(cofreeLWAttrToTree(_))
+    )
+  }
+
+  import textboxing.{TextBoxing => TB}
+
+  def printTree(pos: Cofree[LabelWidgetF, PosAttr]): TB.Box = {
+    cofreeLWAttrToTree(
+      pos.map(posAttr => posAttr.toString)
+    ).drawBox
+  }
+}
+
 
 trait LabelWidgetLayout extends LabelWidgetBasics {
 
-  def layoutWidgetPositions(lwidget: LabelWidget): Position = ???
-
-  def prettyPrintPosition(t: Position): TB.Box = {
-    ???
-  }
 
   val zeroLTBounds: LTBounds = LTBounds(0, 0, 0, 0)
   val zeroPosVector: PositionVector = Point(0, 0)
-
-
-  import matryoshka.patterns.EnvT
 
   // Natural Transformation  from EnvT ~> LabelWidget
   def stripLWEnv = new (EnvT[PosAttr, LabelWidgetF, ?] ~> LabelWidgetF[?]) {
     def apply[A](env: EnvT[PosAttr, LabelWidgetF, A]): LabelWidgetF[A] = {
       env.lower
     }
-  }
-  def cofreeLWAttrToTree[A](c: Cofree[LabelWidgetF, A]): Tree[A] = {
-    Tree.Node(
-      c.head,
-      c.tail.toStream.map(cofreeLWAttrToTree(_))
-    )
   }
 
   // calc child offset vectors and total bounding box
@@ -97,33 +97,39 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
     (newpositions._1, newpositions._2.reverse)
   }
-  def layoutWidgetPositions2(lwidget: LabelWidget): Cofree[(LabelWidget, ?), PosAttr] = {
+
+  def layoutWidgetPositions(lwidget: LabelWidget): List[PosAttr] = {
     val idgen = utils.IdGenerator[RegionID]()
 
+    val F = LabelWidgetFunctor
     // Bottom-up first pass evaluator
     def positionAttrs: GAlgebra[(LabelWidget, ?), LabelWidgetF, PosAttr] = fwa => {
       fwa match {
-        case TargetOverlay(under, overs)  =>
-          val positionVec = under.bbox.toPoint(CDir.NW)
+        case flw @ TargetOverlay(under, overs)  =>
+          val selfPosition = under.bbox.toPoint(CDir.NW)
           val bbox = under.bbox.moveToOrigin
-          val (_, childAdjustVecs) = computeOffsets(overs, {(_, _)=> ??? })
+          val (_, childAdjustVecs) = computeOffsets(overs,
+            {(cbbox, overpos) =>
+              val childPosition = overpos.selfOffset
+              childPosition - selfPosition
+            })
 
-          PosAttr(bbox, idgen.nextId, positionVec, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
-        case LabeledTarget(target, label, score)   =>
-          val bbox = target.bbox
-          PosAttr(bbox, idgen.nextId)
+        case flw @ LabeledTarget(target, label, score)   =>
+          val bbox = target.bbox.moveToOrigin()
+          val positionVec = target.bbox.toPoint(CDir.NW)
+          PosAttr(F.void(flw), bbox, idgen.nextId, positionVec)
 
-        case Col(attrs) =>
+        case flw @ Col(attrs) =>
           val (bbox, childAdjustVecs) = computeOffsets(attrs, {(bbox, childPos)=> bbox.toPoint(CDir.SW)  })
-          PosAttr(bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
-
-        case Row(attrs) =>
+        case flw @ Row(attrs) =>
           val (bbox, childAdjustVecs) = computeOffsets(attrs, {(bbox, childPos)=> bbox.toPoint(CDir.NE)  })
-          PosAttr(bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
-        case Pad(p@(a, attr), padding) =>
+        case flw @ Pad(p@(a, attr), padding) =>
           val (chbbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NE)  })
 
           val bbox = LTBounds(
@@ -132,65 +138,53 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
             chbbox.height + padding.top + padding.bottom
           )
 
-          PosAttr(bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
-        // // case RangeSelection(range) =>
-        // //   ???
-
-        case l @ Reflow(textReflow) =>
+        case flw @ Reflow(textReflow) =>
           val target = textReflow.targetRegion
           val bbox = target.bbox.moveToOrigin
 
-          PosAttr(bbox, idgen.nextId, zeroPosVector, List())
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
 
-        // case l @ TextBox(box) =>
-        //   val str = box.toString
-        //   val lines = str.split("\n")
-        //   val height = lines.length
-        //   val maxwidth = lines.map(_.length).max
-        //   val bbox: LTBounds = LTBounds(0, 0, maxwidth*6d, height*16d)
+        case flw @ TextBox(box) =>
+          val str = box.toString
+          val lines = str.split("\n")
+          val height = lines.length
+          val maxwidth = lines.map(_.length).max
+          val bbox: LTBounds = LTBounds(0, 0, maxwidth*6d, height*16d)
 
-        //   PosAttr(bbox, idgen.nextId)
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
 
-        // case Button(action) =>
-        //   val width = (action.length+1) * 6d
-        //   val height = 18d
-        //   val bbox: LTBounds = LTBounds(0, 0, width, height)
+        case flw @ Button(action) =>
+          val width = (action.length+1) * 6d
+          val height = 18d
+          val bbox: LTBounds = LTBounds(0, 0, width, height)
 
-        //   PosAttr(bbox, idgen.nextId)
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
 
-        // case l @ Panel(p@(content, attr)) =>
-        //   val (bbox, repos) = reposition(List(p), _.toPoint(CDir.NW))
 
-        //   PosAttr(bbox, idgen.nextId)
+        case flw @ Panel(p@(content, attr)) =>
+          val (bbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NW)  })
 
-        // case l @ MouseOverlay(p@(bkplane, attr)) =>
-        //   val (bbox, repos) = reposition(List(p), _.toPoint(CDir.NW))
-        //   PosAttr(bbox, idgen.nextId)
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+
+        case flw @ MouseOverlay(p@(bkplane, attr)) =>
+          val (bbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NW)  })
+
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+
       }
     }
 
-    val relativePositioned: Cofree[LabelWidgetF, PosAttr] =
-      lwidget.cata(attributePara(positionAttrs))
-
-
-
-    val withOffs = cofreeLWAttrToTree(
-      relativePositioned.map(posAttr => posAttr.toString)
-    ).drawBox
-    println("withOffs")
-    println(withOffs)
 
     def putStrLn[S](str: => String): State[S, Unit] =
       State.state[S, Unit]( println(str) )
-
 
     def adjustPositions(
       selfAttr: PosAttr, ft:LabelWidgetF[_]
     ): State[PosAttr, PosAttr] = {
 
       for {
-        _           <- putStrLn(s"@self: ${selfAttr}")
         // Initial state passed from parent
         init       <- State.get[PosAttr]
         // Initial stack passed from parent
@@ -216,17 +210,17 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           childOffsets =  selfAbsOffsetVecs ++ tailOffsetVecs
         )
 
-        // _      <- putStrLn(s"   mods: ${newState.toStackString}")
-        // _      <- putStrLn(s"   <-  : ${newSelf}")
-
         _      <- State.modify[PosAttr](_ => newState)
       } yield {
         newSelf
       }
     }
 
-    val zero = PosAttr(zeroLTBounds, RegionID(0), Point(0, 0), List(Point(0, 0)))
-    // val zero = PosAttr(zeroLTBounds, RegionID(0), Point(0,0), List())
+
+    val relativePositioned: Cofree[LabelWidgetF, PosAttr] =
+      lwidget.cata(attributePara(positionAttrs))
+
+    val zero = PosAttr(Button("dummy"), zeroLTBounds, RegionID(0), Point(0, 0), List(Point(0, 0)))
 
     val adjusted: Cofree[LabelWidgetF, PosAttr] = relativePositioned
       .attributeTopDownM[State[PosAttr, ?], PosAttr](zero)({
@@ -235,44 +229,12 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
       .eval(zero)
       .mapBranching(stripLWEnv)
 
-    val adjOffs = cofreeLWAttrToTree(
-      adjusted.map(posAttr => posAttr.toString)
-    ).drawBox
 
-    println("adjOffs")
-    println(adjOffs)
+      adjusted.universe.map({
+        case cof => cof.head
+      })
 
-    ???
   }
+
 }
 
-
-
-
-
-
-
-
-
-
-
-case class Position(
-  lwidget: LabelWidget,
-  pVector: PositionVector,
-  widgetBounds: LTBounds,
-  totalBounds: LTBounds,
-  id: Int@@RegionID,
-  children: List[Position] // =List()
-) {
-  def translate(pvec: PositionVector): Position = {
-    val newvec = pVector.translate(pvec)
-    Position(
-      lwidget,
-      newvec,
-      widgetBounds.translate(newvec),
-      totalBounds.translate(newvec),
-      id,
-      children
-    )
-  }
-}

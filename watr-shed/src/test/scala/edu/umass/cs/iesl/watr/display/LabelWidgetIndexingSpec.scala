@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package display
 
+
 import org.scalatest._
 
 import geometry._
@@ -11,7 +12,7 @@ import utils.EnrichNumerics._
 import TypeTags._
 
 class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflow {
-  import LabelWidgetIndexing._
+  import LabelWidgetIndex._
 
   val bbox = LTBounds(0d, 0d, 10d, 10d)
   val tr = TargetRegion(RegionID(0), DocumentID("doc-id-0"), PageID(23), bbox)
@@ -43,17 +44,14 @@ class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflo
     val panel1 = LW.panel(row1)
 
     println("layout")
-    println(
-      prettyPrintLabelWidget(panel1)
-    )
+    println(prettyPrintLabelWidget(panel1))
 
     println("positioned")
-    val abs0 = absPositionLabelWidget(panel1)
-    println(
-      prettyPrintLabelWidget(abs0)
-    )
+    val abs0 = layoutWidgetPositions(panel1)
+
+    // println(abs0.printTree())
 
 
-    val lwIndex = indexLabelWidget(panel1)
+    val lwIndex = LabelWidgetIndex.create(panel1)
   }
 }

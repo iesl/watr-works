@@ -1,41 +1,31 @@
 package edu.umass.cs.iesl.watr
 package display
 
-
 import geometry._
 import spindex._
-
-
 import LabelWidgetF._
 
 object LabelWidgetIndex extends LabelWidgetLayout {
 
-  implicit object LabelWidget extends SpatialIndexable[Position] {
-    def id(t: Position): Int = t.id.unwrap
-    def ltBounds(t: Position): LTBounds = t.totalBounds
+  implicit object LabelWidget extends SpatialIndexable[PosAttr] {
+    def id(t: PosAttr): Int = t.id.unwrap
+    def ltBounds(t: PosAttr): LTBounds = t.widgetBounds
   }
-  def indexLabelWidget(lwidget: LabelWidget): LabelWidgetIndex = {
-    val lwIndex = SpatialIndex.createFor[Position]()
 
-    val positionedLabelWidget = layoutWidgetPositions(lwidget)
+  def create(lwidget: LabelWidget): LabelWidgetIndex = {
+    val lwIndex = SpatialIndex.createFor[PosAttr]()
 
-    def visit(t: Position): Unit = {
-      lwIndex.add(t)
-      t.children.map(visit)
-    }
+    val layout = layoutWidgetPositions(lwidget)
 
-    visit(positionedLabelWidget)
+    layout.foreach({pos =>
+      lwIndex.add(pos)
+    })
 
-    new LabelWidgetIndex(lwIndex, lwidget, positionedLabelWidget)
+    LabelWidgetIndex(layout, lwIndex)
   }
 }
 
-// import LabelWidgetIndex._
-
 case class LabelWidgetIndex(
-  lwIndex: SpatialIndex[Position],
-  lwidget: LabelWidget,
-  position: Position
+  layout: List[PosAttr],
+  index: SpatialIndex[PosAttr]
 )
-
-// object LabelWidgetIndexing extends LabelWidgetLayout {}

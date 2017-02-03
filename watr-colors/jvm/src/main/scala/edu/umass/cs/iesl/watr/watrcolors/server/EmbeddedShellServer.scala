@@ -178,7 +178,6 @@ class EmbeddedServer(
     def kill() = system.terminate()
   }
 
-  import display.LabelWidgetIndex._
   var activeLabelWidgetIndex: Option[LabelWidgetIndex] = None
 
   object WatrShellApiListeners extends WatrShellApi {
@@ -193,21 +192,20 @@ class EmbeddedServer(
     }
 
     import LabelWidgetF._
-    import matryoshka.data._
     def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]] = {
       println(s"onSelectLTBounds: ${bbox}")
 
       // determine which visual lines were selected and send back
       //  an updated bounding box
       activeLabelWidgetIndex.map({ lwIndex =>
-        val positioned: Seq[Position] = lwIndex.lwIndex.queryForIntersects(bbox)
+        val positioned: Seq[PosAttr] = lwIndex.index.queryForIntersects(bbox)
 
-        def visit(p: Position): List[LTBounds] = {
-          val Position(Fix(fa), pvec, wbbox, tbbox, id, children) = p
+        def visit(p: PosAttr): List[LTBounds] = {
+          val fa = lwIndex.index.getItem(p.id.unwrap)
 
-          fa match {
+          fa.widget match {
             case LabeledTarget(target, label, score) =>
-              List(wbbox)
+              List(p.widgetBounds)
             case _ => List()
           }
         }
@@ -242,15 +240,18 @@ class EmbeddedServer(
     }
 
     def echoLabeler(lwidget: LabelWidget): Unit = {
-      val lwIndex = indexLabelWidget(lwidget)
+      val lwIndex = LabelWidgetIndex.create(lwidget)
       activeLabelWidgetIndex = Some(lwIndex)
 
-      val pWidget = lwIndex.position
+      val layout = lwIndex.layout
+
+      // println(prettyPrintPosition(pWidget))
       println(
-        prettyPrintPosition(pWidget)
+        layout.map(_.toString)
+          .mkString("{\n  ", "\n  ", "\n}")
       )
 
-      api.echoLabeler(pWidget).call()
+      api.echoLabeler(layout).call()
     }
 
     def hello(msg: String): Unit = {

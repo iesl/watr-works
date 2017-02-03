@@ -18,5 +18,5 @@ trait WatrColorsApi {
   def clear(): Unit
   def print(level: String, msg: String): Unit
   def echoTextReflows(textReflows: List[TextReflow]): Unit
-  def echoLabeler(lwidget: Position): Unit
+  def echoLabeler(lwidget: List[PosAttr]): Unit
 }

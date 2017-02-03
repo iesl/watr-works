@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package display
 
-import scalaz.{Traverse, Applicative, Show}
+import scalaz.{Functor, Traverse, Applicative, Show, Cofree}
 import scalaz.std.list._
 import scalaz.syntax.traverse._
 
@@ -10,7 +10,6 @@ import matryoshka.data._
 
 import geometry._
 import textreflow.data._
-import utils.EnrichNumerics._
 import watrmarks.Label
 import textboxing.{TextBoxing => TB}
 
@@ -20,8 +19,15 @@ object LabelWidgetF {
 
   type LabelWidget = Fix[LabelWidgetF]
 
-
+  // unFixed type for LabelWidget
   type LabelWidgetT = LabelWidgetF[Fix[LabelWidgetF]]
+
+  // LabelWidget w/ Cofree attribute
+  type LabelWidgetAttr[A] = Cofree[LabelWidgetF, A]
+
+  // LabelWidget w/position attribute
+  type LabelWidgetPosAttr = LabelWidgetF[LabelWidgetAttr[PosAttr]]
+
 
   case class TargetOverlay[A](
     under: TargetRegion,
@@ -43,9 +49,9 @@ object LabelWidgetF {
     textReflow: TextReflow
   ) extends LabelWidgetF[Nothing]
 
-  case class RangeSelection(
-    range: (Int, Int)
-  ) extends LabelWidgetF[Nothing]
+  // case class RangeSelection(
+  //   range: (Int, Int)
+  // ) extends LabelWidgetF[Nothing]
 
 
   // Overlay that accepts mouse gesture input
@@ -76,7 +82,7 @@ object LabelWidgetF {
       fa match {
         case l @ TargetOverlay(under, overs)           => overs.traverse(f).map(TargetOverlay(under, _))
         case l @ LabeledTarget(target, label, score)   => G.point(l.copy())
-        case l @ RangeSelection(range)                 => G.point(l.copy())
+        // case l @ RangeSelection(range)                 => G.point(l.copy())
         case l @ TextBox(tb)                           => G.point(l.copy())
         case l @ Reflow(tr)                            => G.point(l.copy())
         case l @ Button(action)                        => G.point(l.copy())
@@ -90,11 +96,13 @@ object LabelWidgetF {
     }
   }
 
+  implicit def LabelWidgetFunctor: Functor[LabelWidgetF] = LabelWidgetTraverse
+
   implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
     def apply[A](show: Show[A]) = Show.show {
       case l @ TargetOverlay(under, overs)           => s"$l"
       case l @ LabeledTarget(target, label, score)   => s"label-target"
-      case l @ RangeSelection(range)       => s"$l"
+      // case l @ RangeSelection(range)       => s"$l"
       case l @ Reflow(tr)                  => s"reflow()"
       case l @ TextBox(tb)                 => s"textbox"
       case l @ Button(action)              => s"$l"
@@ -119,8 +127,8 @@ object LabelWidgets {
   def targetOverlay(tr: TargetRegion, overs: Seq[LabelWidget]) =
     fixlw(TargetOverlay(tr, overs.toList))
 
-  def selectRange(range: RangeInt) =
-    fixlw(RangeSelection(range.unwrap))
+  // def selectRange(range: RangeInt) =
+  //   fixlw(RangeSelection(range.unwrap))
 
   def labeledTarget(target: TargetRegion, label: Option[Label]=None, score: Option[Double]=None) =
     fixlw(LabeledTarget(target, label, score))
