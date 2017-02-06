@@ -4,7 +4,7 @@ import Keys._
 
 trait LibVersions {
   val scalazVersion       = "7.2.8"
-  val scalaTagsVersion    = "0.6.2"
+  val scalaTagsVersion    = "0.6.3"
   val scalaAsyncVersion   = "0.9.6"
   val scalaModulesVersion = "1.0.4"
   val akkaVersion         = "2.3.14"
@@ -55,7 +55,7 @@ object TestLibs extends LibVersions {
 object LogLibs extends LibVersions {
   val logback = Seq(
     "org.log4s"      %% "log4s"            % "1.3.4",
-    "ch.qos.logback"  % "logback-classic"  % "1.1.9",
+    "ch.qos.logback"  % "logback-classic"  % "1.1.10",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
     "org.slf4j"       % "jcl-over-slf4j"   % logbackVersion

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package display
+package labeling
 
 import org.scalatest._
 

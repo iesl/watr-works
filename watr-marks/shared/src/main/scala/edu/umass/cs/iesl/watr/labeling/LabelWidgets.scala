@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package display
+package labeling
 
 import scalaz.{Functor, Traverse, Applicative, Show, Cofree}
 import scalaz.std.list._
@@ -82,7 +82,6 @@ object LabelWidgetF {
       fa match {
         case l @ TargetOverlay(under, overs)           => overs.traverse(f).map(TargetOverlay(under, _))
         case l @ LabeledTarget(target, label, score)   => G.point(l.copy())
-        // case l @ RangeSelection(range)                 => G.point(l.copy())
         case l @ TextBox(tb)                           => G.point(l.copy())
         case l @ Reflow(tr)                            => G.point(l.copy())
         case l @ Button(action)                        => G.point(l.copy())
@@ -91,7 +90,6 @@ object LabelWidgetF {
         case l @ Row(as)                               => as.traverse(f).map(Row(_))
         case l @ Col(as)                               => as.traverse(f).map(Col(_))
         case l @ Pad(a, padding)                       => f(a).map(Pad(_, padding))
-        // case l @ Positioned(a, pvec, wbbox, tbbox, id) => f(a).map(Positioned(_, pvec, wbbox, tbbox, id))
       }
     }
   }
@@ -102,7 +100,6 @@ object LabelWidgetF {
     def apply[A](show: Show[A]) = Show.show {
       case l @ TargetOverlay(under, overs)           => s"$l"
       case l @ LabeledTarget(target, label, score)   => s"label-target"
-      // case l @ RangeSelection(range)       => s"$l"
       case l @ Reflow(tr)                  => s"reflow()"
       case l @ TextBox(tb)                 => s"textbox"
       case l @ Button(action)              => s"$l"
@@ -111,7 +108,6 @@ object LabelWidgetF {
       case l @ Row(as)                     => s"$l"
       case l @ Col(as)                     => s"$l"
       case l @ Pad(a, padding)             => s"$l"
-      // case l @ Positioned(a, pvec, wbbox, tbbox, id)   => s"$l"
     }
   }
 }
@@ -126,9 +122,6 @@ object LabelWidgets {
 
   def targetOverlay(tr: TargetRegion, overs: Seq[LabelWidget]) =
     fixlw(TargetOverlay(tr, overs.toList))
-
-  // def selectRange(range: RangeInt) =
-  //   fixlw(RangeSelection(range.unwrap))
 
   def labeledTarget(target: TargetRegion, label: Option[Label]=None, score: Option[Double]=None) =
     fixlw(LabeledTarget(target, label, score))
@@ -156,8 +149,5 @@ object LabelWidgets {
 
   def pad(content: LabelWidget, pad: Padding): LabelWidget =
     fixlw(Pad(content, pad))
-
-  // def positioned(lw: LabelWidget, pvec: PositionVector, wbbox:LTBounds, tbbox: LTBounds, id: Int@@RegionID): LabelWidget =
-  //   fixlw(Positioned(lw, pvec, wbbox, tbbox, id))
 
 }

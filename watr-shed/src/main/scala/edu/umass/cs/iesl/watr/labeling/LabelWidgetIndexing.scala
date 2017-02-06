@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package display
+package labeling
 
 import geometry._
 import spindex._
