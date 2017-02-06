@@ -1,0 +1,11 @@
+@import Main._
+
+@sect("WatrShed", "Command Line and Interactive Shell Tools")
+
+  @h5{ bin/works }
+
+
+  @sect("WatrTable", "WatrTable Command Line")
+    @p
+      Dependencies
+        mudraw

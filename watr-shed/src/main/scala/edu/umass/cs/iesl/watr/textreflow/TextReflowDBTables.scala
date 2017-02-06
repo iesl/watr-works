@@ -99,6 +99,22 @@ class TextReflowDBTables(
       );
     """.update
 
+  val createLabelerTable: Update0 = sql"""
+      CREATE TABLE labelers (
+        labeler     SERIAL PRIMARY KEY,
+        widget      TEXT
+      );
+    """.update
+
+  val createLabelProgressTable: Update0 = sql"""
+      CREATE TABLE labelingtasks (
+        labelingtask     SERIAL PRIMARY KEY,
+        taskname         VARCHAR(128), // title/author
+        progress         VARCHAR(64)// created/todo/assigned/skipped/done
+        labeler          INTEGER REFERENCES labelers
+      );
+    """.update
+
   // zone - label :: * - *
   val createZoneToLabelTable: Update0 = sql"""
       CREATE TABLE zone_to_label (
@@ -134,7 +150,7 @@ class TextReflowDBTables(
   val createTextReflowTable: Update0 = sql"""
       CREATE TABLE textreflow (
         textreflow  SERIAL PRIMARY KEY,
-        reflow      text,
+        reflow      TEXT,
         zone        INTEGER REFERENCES zone
       )
     """.update
