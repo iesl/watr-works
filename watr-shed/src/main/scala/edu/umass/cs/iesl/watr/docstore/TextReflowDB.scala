@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow
+package docstore
 
 import doobie.imports._
 import scalaz.syntax.applicative._
@@ -20,6 +20,7 @@ import textreflow.data._
 import watrmarks.{StandardLabels => LB}
 import watrmarks._
 import utils.EnrichNumerics._
+import textreflow._
 
 class TextReflowDB(
   val tables: TextReflowDBTables

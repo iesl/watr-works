@@ -3,8 +3,7 @@ package watrcolors
 
 import geometry._
 import textreflow.data._
-// import display.data._
-import display._
+import labeling._
 import scala.concurrent.Future
 
 trait WatrShellApi {

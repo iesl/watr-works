@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package textreflow
+package docstore
 
 import scalaz.concurrent.Task
 import doobie.imports._

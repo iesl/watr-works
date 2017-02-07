@@ -7,7 +7,7 @@ import org.scalatest._
 import geometry._
 import textreflow._
 import textreflow.data._
-import display.data._
+import data._
 import utils.EnrichNumerics._
 import TypeTags._
 

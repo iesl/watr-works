@@ -13,8 +13,6 @@ import watrmarks.{StandardLabels => LB}
     - the ability to associate labels with components
     - A tree-like parent/child relationship between components, which provides, e.g., a reading order
 
-
-  TargetRegions
   */
 
 case class PageIndex(

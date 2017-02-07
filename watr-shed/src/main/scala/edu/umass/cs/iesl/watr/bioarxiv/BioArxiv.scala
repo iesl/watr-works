@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package table
+package bioarxiv
 
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
@@ -14,6 +14,7 @@ import scala.collection.mutable
 import textreflow.data._
 import TypeTags._
 import watrmarks._
+import docstore._
 
 object BioArxiv {
 

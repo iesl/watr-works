@@ -1,11 +1,11 @@
 package edu.umass.cs.iesl.watr
-package table
+package labeling
 
 
 // import BioArxiv._
 // import AlignBioArxiv._
 // import display._
-import display.data._
+import data._
 import geometry._
 // import PageComponentImplicits._
 

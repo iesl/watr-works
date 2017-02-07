@@ -11,15 +11,16 @@ import textreflow.data._
 import extract.images._
 import corpora._
 import segment._
+import bioarxiv._
 
 import textboxing.{TextBoxing => TB}, TB._
 import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
-import display._
-import display.data._
 import geometry._
-// import PageComponentImplicits._
+import labeling._
+import labeling.data._
+import docstore._
 
 object WatrTable {
 

@@ -1,10 +1,10 @@
 package edu.umass.cs.iesl.watr
-package table
+package labeling
 
+import bioarxiv._
 import BioArxiv._
 import AlignBioArxiv._
-// import display._
-import display.data._
+import data._
 import geometry._
 import PageComponentImplicits._
 import textreflow._
@@ -12,6 +12,9 @@ import textreflow.data._
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
+import data._
+import textreflow._
+import docstore._
 
 
 object AuthorNameLabelers extends LabelWidgetUtils {

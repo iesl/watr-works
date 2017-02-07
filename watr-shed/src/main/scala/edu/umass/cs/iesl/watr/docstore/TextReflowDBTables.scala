@@ -1,59 +1,10 @@
 package edu.umass.cs.iesl.watr
-package textreflow
-
+package docstore
 
 import doobie.imports._
 import scalaz.concurrent.Task
 
-// import shapeless._
-// import ops.record._
-// import shapeless.record._
-
-
-object Foo  {
-  sealed trait Rec[A]
-  // type ARec = Rec[Record.`'x -> Int`.T]
-}
-
 import databasics._
-
-// object Tables extends DoobiePredef {
-//   object Document {
-//     val create = sql"""
-//       CREATE TABLE document (
-//         id            SERIAL PRIMARY KEY,
-//         stable_id     VARCHAR(128) UNIQUE
-//       );
-//       CREATE INDEX document_stable_id ON document USING hash (stable_id);
-//     """.update
-
-//     case class Model(
-//       id: Int,
-//       stableId: String@@DocumentID
-//     )
-
-//     def insert(docId: String@@DocumentID) = sql"""
-//        insert into document (stable_id) values (${docId})
-//     """.update.withUniqueGeneratedKeys[Int]("id")
-//   }
-
-//   object Page {
-
-//     val createPageTable: Update0 = sql"""
-//       CREATE TABLE page (
-//         id          SERIAL PRIMARY KEY,
-//         document    INTEGER REFERENCES document,
-//         pagenum     SMALLINT,
-//         pageimg     BYTEA,
-//         bleft       INTEGER,
-//         btop        INTEGER,
-//         bwidth      INTEGER,
-//         bheight     INTEGER
-//       );
-//     """.update
-
-//   }
-// }
 
 class TextReflowDBTables(
   val xa: Transactor[Task]
@@ -61,7 +12,7 @@ class TextReflowDBTables(
 
   val createDocumentTable: Update0 = sql"""
       CREATE TABLE document (
-        document            SERIAL PRIMARY KEY,
+        document      SERIAL PRIMARY KEY,
         stable_id     VARCHAR(128) UNIQUE
       );
       CREATE INDEX document_stable_id ON document USING hash (stable_id);
@@ -80,17 +31,6 @@ class TextReflowDBTables(
       );
     """.update
 
-
-
-  // insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
-  val createLabelTable: Update0 = sql"""
-      CREATE TABLE label (
-        label          SERIAL PRIMARY KEY,
-        key            VARCHAR(50) UNIQUE
-      );
-      CREATE INDEX label_key ON label USING hash (key);
-    """.update
-
   val createZoneTable: Update0 = sql"""
       CREATE TABLE zone (
         zone        SERIAL PRIMARY KEY,
@@ -99,21 +39,6 @@ class TextReflowDBTables(
       );
     """.update
 
-  val createLabelerTable: Update0 = sql"""
-      CREATE TABLE labelers (
-        labeler     SERIAL PRIMARY KEY,
-        widget      TEXT
-      );
-    """.update
-
-  val createLabelProgressTable: Update0 = sql"""
-      CREATE TABLE labelingtasks (
-        labelingtask     SERIAL PRIMARY KEY,
-        taskname         VARCHAR(128), // title/author
-        progress         VARCHAR(64)// created/todo/assigned/skipped/done
-        labeler          INTEGER REFERENCES labelers
-      );
-    """.update
 
   // zone - label :: * - *
   val createZoneToLabelTable: Update0 = sql"""
@@ -163,6 +88,30 @@ class TextReflowDBTables(
         targetregion           INTEGER REFERENCES targetregion
       )
     """.update
+
+  // insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
+  val createLabelTable: Update0 = sql"""
+      CREATE TABLE label (
+        label          SERIAL PRIMARY KEY,
+        key            VARCHAR(50) UNIQUE
+      );
+      CREATE INDEX label_key ON label USING hash (key);
+    """.update
+
+  // val createLabelerTable: Update0 = sql"""
+  //     CREATE TABLE labelers (
+  //       labeler     SERIAL PRIMARY KEY,
+  //       widget      TEXT
+  //     );
+  //   """.update
+  // val createLabelProgressTable: Update0 = sql"""
+  //     CREATE TABLE labelingtasks (
+  //       labelingtask     SERIAL PRIMARY KEY,
+  //       taskname         VARCHAR(128), // title/author
+  //       progress         VARCHAR(64)// created/todo/assigned/skipped/done
+  //       labeler          INTEGER REFERENCES labelers
+  //     );
+  //   """.update
 
   def createAll = for {
     _ <- putStrLn("create doc")

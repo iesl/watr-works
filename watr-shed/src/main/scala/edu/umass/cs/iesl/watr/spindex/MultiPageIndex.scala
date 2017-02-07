@@ -16,6 +16,7 @@ import textreflow.data._
 import TypeTags._
 
 import watrmarks.{StandardLabels => LB}
+import docstore._
 
 /**
 
@@ -43,8 +44,8 @@ import watrmarks.{StandardLabels => LB}
 
   */
 class MultiPageIndex(
-  docId: String@@DocumentID
-  // zoneIdGen: IdGenerator[ZoneID]
+  docId: String@@DocumentID,
+  storage: Docstore
 ) {
 
   val zoneIdGen = IdGenerator[ZoneID]()
@@ -61,12 +62,9 @@ class MultiPageIndex(
   def dbgFilterComponents(pg: Int@@PageID, include: LTBounds): Unit ={
     pageIndexes.get(pg).foreach ({ pageIndex =>
       val keep = pageIndex.componentIndex.queryForIntersects(include).map(_.id)
-      // println(s"dbgFilterComponents(): keeping ${keep.length} components")
       pageIndex.componentIndex.getItems
         .filterNot(c => keep.contains(c.id))
-        .foreach({ c =>
-          pageIndex.componentIndex.remove(c)
-        })
+        .foreach(c => pageIndex.componentIndex.remove(c))
     })
   }
   def dbgFilterPages(pg: Int@@PageID): Unit ={
@@ -152,6 +150,7 @@ class MultiPageIndex(
   }
 
   def addZone(z: Zone): Zone =  {
+    // storage.zones
     val zid = zoneIdGen.nextId
     val zupdate = z.copy(id=zid)
     zoneMap.put(zid, zupdate)
@@ -351,7 +350,7 @@ object MultiPageIndex {
     docId: String@@DocumentID,
     textReflows: Seq[TextReflow]
   ): MultiPageIndex = {
-    val mpageIndex = new MultiPageIndex(docId)
+    val mpageIndex = new MultiPageIndex(docId, MemDocstore)
 
 
     textReflows.zipWithIndex.foreach { case (textReflow, pagenum) =>
@@ -430,7 +429,7 @@ object MultiPageIndex {
     regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]
   ): MultiPageIndex = {
 
-    val mpageIndex = new MultiPageIndex(docId)
+    val mpageIndex = new MultiPageIndex(docId, MemDocstore)
 
     regionsAndGeometry.foreach { case(regions, geom)  =>
       println(s"adding page w/geometry ${geom}")
