@@ -116,7 +116,7 @@ package server
 //   //     0, 0, 2000, 2000
 //   //   )
 //   //   // val combinedOverlay = concatVertical(overlays)
-//   //   val zones = overlays.query(PageID(0), maxBBox)
+//   //   val zones = overlays.query(PageNum(0), maxBBox)
 
 //   //   val bboxes = for {
 //   //     zone <- zones

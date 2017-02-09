@@ -43,12 +43,31 @@ import docstore._
 
 
   */
+
 class MultiPageIndex(
   docId: String@@DocumentID,
-  storage: Docstore
+  storage: ReflowDocstore
 ) {
 
-  val zoneIdGen = IdGenerator[ZoneID]()
+  def createZone(): Zone  = {
+    storage.createZone(docId)
+  }
+
+  def getZone(zoneId: Int@@ZoneID): Zone = {
+    storage.getZone(zoneId)
+  }
+
+  def addZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Zone = {
+    storage.addZoneTargetRegions(zoneId, targetRegions)
+  }
+
+  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
+    storage.addZoneLabel(zoneId, label)
+  }
+
+  def getDocumentZones(): Seq[Zone] = {
+    storage.getDocumentZones(docId)
+  }
 
   def getDocumentID(): String@@DocumentID = docId
 
@@ -56,10 +75,10 @@ class MultiPageIndex(
 
   import SpatialIndex._
 
-  val pageIndexes = mutable.HashMap[Int@@PageID, PageIndex]()
+  val pageIndexes = mutable.HashMap[Int@@PageNum, PageIndex]()
 
 
-  def dbgFilterComponents(pg: Int@@PageID, include: LTBounds): Unit ={
+  def dbgFilterComponents(pg: Int@@PageNum, include: LTBounds): Unit ={
     pageIndexes.get(pg).foreach ({ pageIndex =>
       val keep = pageIndex.componentIndex.queryForIntersects(include).map(_.id)
       pageIndex.componentIndex.getItems
@@ -67,7 +86,7 @@ class MultiPageIndex(
         .foreach(c => pageIndex.componentIndex.remove(c))
     })
   }
-  def dbgFilterPages(pg: Int@@PageID): Unit ={
+  def dbgFilterPages(pg: Int@@PageNum): Unit ={
     getPages
       .filterNot(_ == pg)
       .foreach ({ p =>
@@ -94,9 +113,8 @@ class MultiPageIndex(
   }
 
   def setTextReflow(cc: Component, r: TextReflow): Zone = {
-    val zone = addZone(
-      Zone(ZoneID(0), List(cc.targetRegion), List(cc.roleLabel))
-    )
+    // val zone = addZone(Zone(ZoneID(0), List(cc.targetRegion), List(cc.roleLabel)))
+    val zone = addZone(docId)
     zoneToTextReflow.put(zone.id, r)
     componentIdToZoneId.put(cc.id, zone.id)
     zone
@@ -113,7 +131,7 @@ class MultiPageIndex(
     zoneToTextReflow.get(zoneId)
   }
 
-  def getPageVisualLines(pageId: Int@@PageID): Seq[Component]  = for {
+  def getPageVisualLines(pageId: Int@@PageNum): Seq[Component]  = for {
     pageLineCC <- getPageIndex(pageId).getComponentsWithLabel(LB.PageLines)
     vline <- pageLineCC.getChildren(LB.VisualLine)
   } yield vline
@@ -149,15 +167,13 @@ class MultiPageIndex(
     labelToZones.getOrElseUpdate(l, mutable.ArrayBuffer[Int@@ZoneID]())
   }
 
-  def addZone(z: Zone): Zone =  {
-    // storage.zones
-    val zid = zoneIdGen.nextId
-    val zupdate = z.copy(id=zid)
-    zoneMap.put(zid, zupdate)
-    z.labels.foreach{l =>
-      getLabelToZoneBuffer(l) += zid
+  def addZone(docId: String@@DocumentID): Zone =  {
+    val zone = storage.createZone(docId)
+    zoneMap.put(zone.id, zone)
+    zone.labels.foreach{l =>
+      getLabelToZoneBuffer(l) += zone.id
     }
-    zupdate
+    zone
   }
   val relations = mutable.ArrayBuffer[Relation.Record]()
   val props = mutable.ArrayBuffer[Prop.PropRec]()
@@ -198,9 +214,9 @@ class MultiPageIndex(
       })
   }
 
-  def getPageForComponent(c: Component): Int@@PageID = {
+  def getPageForComponent(c: Component): Int@@PageNum = {
     c.targetRegions
-      .headOption.map(_.pageId)
+      .headOption.map(_.pageNum)
       .getOrElse(sys.error("no page specified for component"))
   }
 
@@ -225,7 +241,7 @@ class MultiPageIndex(
     pinfo.getLabels(c)
   }
 
-  def getPageIndex(pageId: Int@@PageID) = pageIndexes(pageId)
+  def getPageIndex(pageId: Int@@PageNum) = pageIndexes(pageId)
 
   def removeComponent(c: Component): Unit = {
     // vtrace.trace("removeComponent" withTrace showComponent(c))
@@ -238,7 +254,7 @@ class MultiPageIndex(
   def labelRegion(components: Seq[Component], role: Label): Option[RegionComponent] = {
     if (components.isEmpty) None else {
       val targetRegions = components.map(_.targetRegion)
-      val targetPages = targetRegions.map(_.pageId.unwrap)
+      val targetPages = targetRegions.map(_.pageNum.unwrap)
       val numOfTargetPages =  targetPages.toSet.size
 
       if (numOfTargetPages != 1) {
@@ -249,10 +265,10 @@ class MultiPageIndex(
 
       val region = createRegionComponent(totalRegion, role)
 
-      val zone = addZone(
-        Zone(ZoneID(0), List(region.targetRegion), List(region.roleLabel))
-      )
+      val zone = addZone(docId)
 
+      addZoneTargetRegions(zone.id, Seq(region.targetRegion))
+      addZoneLabel(zone.id, role)
 
       Some(region)
     }
@@ -274,20 +290,20 @@ class MultiPageIndex(
     c
   }
 
-  def getComponent(id: Int@@ComponentID, pageId: Int@@PageID): Component = {
+  def getComponent(id: Int@@ComponentID, pageId: Int@@PageNum): Component = {
     getPageIndex(pageId).componentIndex.getItem(id.unwrap)
   }
 
   def addComponent(c: Component): Component = {
-    val pageId = c.targetRegion.pageId
-    getPageIndex(pageId)
+    val pageNum = c.targetRegion.pageNum
+    getPageIndex(pageNum)
       .addComponent(c)
   }
 
-  def getPageGeometry(p: Int@@PageID) = pageIndexes(p).pageGeometry
+  def getPageGeometry(p: Int@@PageNum) = pageIndexes(p).pageGeometry
 
-  def getPages(): List[Int@@PageID] = {
-    pageIndexes.keys.toList.sortBy(PageID.unwrap(_))
+  def getPages(): List[Int@@PageNum] = {
+    pageIndexes.keys.toList.sortBy(PageNum.unwrap(_))
   }
 
 
@@ -332,7 +348,6 @@ class MultiPageIndex(
 
 object MultiPageIndex {
 
-
   import matryoshka._
   import matryoshka.data._
   import matryoshka.implicits._
@@ -348,18 +363,19 @@ object MultiPageIndex {
 
   def loadTextReflows(
     docId: String@@DocumentID,
-    textReflows: Seq[TextReflow]
+    textReflows: Seq[TextReflow],
+    docstorage: ReflowDocstore
   ): MultiPageIndex = {
-    val mpageIndex = new MultiPageIndex(docId, MemDocstore)
+    val mpageIndex = new MultiPageIndex(docId, docstorage)
 
 
     textReflows.zipWithIndex.foreach { case (textReflow, pagenum) =>
-      val pageId = PageID(pagenum)
+      val pageNum = PageNum(pagenum)
       val pageTargetRegions = textReflow.targetRegions()
       val pageTargetRegion = pageTargetRegions.reduce(_ union _)
 
       val pageGeom = PageGeometry(
-        pageId, pageTargetRegion.bbox
+        pageNum, pageTargetRegion.bbox
       )
 
       val pageIndex = mpageIndex.addPage(pageGeom)

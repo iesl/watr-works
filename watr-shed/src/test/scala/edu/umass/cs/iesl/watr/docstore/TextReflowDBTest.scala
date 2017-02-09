@@ -8,12 +8,52 @@ import segment.DocumentSegmentation
 import extract.images.PageImages
 import TypeTags._
 import watrmarks.{StandardLabels => LB}
+import textreflow._
 
-class FreshTextReflowDBTables(xa: Transactor[Task]) {
+class FreshTextReflowDBTables(
+  reflowDB:TextReflowDB
+) extends ImageTextReflow {
 
-  val tables = new TextReflowDBTables(xa)
-  tables.dropAndCreate.unsafePerformSync
-  val reflowDB = new TextReflowDB(tables)
+  lazy val docStore: ReflowDocstore = reflowDB.docstorage
+
+
+  def loadSampleDoc(): String@@DocumentID = {
+
+    val pageStrs = List(
+
+      """|            The Title of the Paper
+         |^{a}Faculty of Engineering, Yamagata University, Yonezawa 992-8510, Japan
+         |""".stripMargin,
+
+      """|   EXPERIMENTAL
+         |1. Sample Preparation and Characterization
+         |
+         |   The starting material of NaBiO_{3} ? nH2O (Nacalai Tesque
+         |Inc.) was placed in a Teflon lined autoclave (70 ml) with
+         |LiOH and H2O (30 ml) and was heated at 120–2008C
+         |for 4 days.
+         |
+         |""".stripMargin
+    )
+
+    val docId = DocumentID("doc-0")
+
+    val pages = stringsToTextReflows(docId, pageStrs)
+
+    val images = pages.map(textReflowToImage(_))
+
+    val mpageIndex = MultiPageIndex.loadTextReflows(
+      docId, pages, reflowDB.docstorage
+    )
+
+    val ds = DocumentSegmentation(
+      mpageIndex, PageImages(images)
+    )
+
+    reflowDB.addSegmentation(ds)
+
+    docId
+  }
 
 }
 
@@ -27,165 +67,55 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
     s"jdbc:postgresql:watrdev${loggingProp}",
     "watrworker", "watrpasswd"
   )
+  val tables = new TextReflowDBTables(xa)
+  val reflowDB = new TextReflowDB(tables)
+
+  lazy val docStore: ReflowDocstore = reflowDB.docstorage
 
 
-  behavior of "DDL create/drop"
+  behavior of "database-backed corpus"
 
-  // it should "drop/recreate table" in new FreshTextReflowDBTables(xa){}
-  val pageStrs = List(
+  it should "add zones" in new FreshTextReflowDBTables(reflowDB) {
+    tables.dropAndCreate.unsafePerformSync
 
-    """|            The Title of the Paper
-       |^{a}Faculty of Engineering, Yamagata University, Yonezawa 992-8510, Japan
-       |""".stripMargin,
+    val docId = loadSampleDoc()
 
-    """|   EXPERIMENTAL
-       |1. Sample Preparation and Characterization
-       |
-       |   The starting material of NaBiO_{3} ? nH2O (Nacalai Tesque
-       |Inc.) was placed in a Teflon lined autoclave (70 ml) with
-       |LiOH and H2O (30 ml) and was heated at 120–2008C
-       |for 4 days.
-       |
-       |""".stripMargin
-  )
+    val targetRegionsPg1 = reflowDB.selectTargetRegions(docId, PageNum(1))
 
-  it should "add page indexes" in new FreshTextReflowDBTables(xa) {
+    val newZone = reflowDB.createZone(docId, targetRegionsPg1)
+    reflowDB.addZoneLabel(newZone, LB.PageLines)
+    println(s"newZone: ${newZone}")
 
-    val docId = DocumentID("doc-0")
-
-    val pages = stringsToTextReflows(docId, pageStrs)
-    pages.foreach { page =>
-      println("tree==============")
-      println(
-        prettyPrintTree(page)
-      )
-    }
-
-    // val docAtomsAndGeometry = textReflowsToAtoms(docId, pages)
-
-    val images = pages.map(textReflowToImage(_))
-
-    val mpageIndex = MultiPageIndex.loadTextReflows(
-      docId, pages
-    )
-
-
-    // mpageIndex.pageIndexes.foreach({case (pageId, pageIndex) =>
-    //   println(s"children for page ${pageId}")
-    //   val cc = pageIndex.componentToChildren
-    //     .foreach({case (cid, childIds) =>
-    //       val parentCC = mpageIndex.getComponent(cid, pageId)
-    //       val s = parentCC.toString() + childIds
-    //         .map({case (chlbl, chids) =>
-    //           chlbl +": " + chids.map(mpageIndex.getComponent(_, pageId).roleLabel).mkString(", ")
-    //         })
-    //         .mkString("\n  ", "\n  ", "\n")
-    //       println(s)
-    //     })
-    //     // .mkString("\n  ", "\n  ", "\n")
-    //   // println(cc)
-    // })
-
-    // val mpageIndex = MultiPageIndex.loadSpatialIndices(
-    //   docId, docAtomsAndGeometry
-    // )
-
-    val ds = DocumentSegmentation(
-      mpageIndex, PageImages(images)
-    )
-
-    reflowDB.addSegmentation(ds)
-
-    println("TargetRegions:")
-    val targetRegionsPg1 = reflowDB.selectTargetRegions(docId, PageID(1))
-    println("targetRegions page 1")
-    println(targetRegionsPg1.mkString("\n"))
-
-    val targetRegionsPg0 = reflowDB.selectTargetRegions(docId, PageID(0))
-    println("targetRegions page 0")
-    println(targetRegionsPg0.mkString("\n"))
-
-
-    println("Zones page 0")
-    val vlineZones0 = reflowDB.selectZones(docId, PageID(0), LB.VisualLine)
-    println(vlineZones0.mkString("\n"))
-
-    val vlineZones = reflowDB.selectZones(docId, PageID(1), LB.VisualLine)
-    println("Zones page 1")
-    println(vlineZones.mkString("\n"))
-
-
-    println("Zones for target regions")
     targetRegionsPg1.foreach { tr =>
-      val zonesAndReflows = reflowDB.getTextReflowsForTargetRegion(tr)
-      zonesAndReflows.foreach({case (zone, reflow) =>
-        println(s"for ${zone}")
-        println(s"=> ${reflow.toText()}")
-      })
+      val zones = reflowDB.selectZones(tr.docId, tr.pageNum, LB.PageLines)
+      println(s"Got zones ${zones}")
     }
-    // val blank = Image.filled(w, h, Color.Transparent)
-
-    // vlineZones.foreach{zone =>
-    //   zone.regions.foreach {tr =>
-    //     reflowDB.overwriteTargetRegionImage(tr, blank)
-    //   }
-
-    // }
-
-    // re-read DocumentSegmentation from DB and verify that it is the same?
-
-    // targetregions
-    // zones: ordered list of targetregion, linked to labels
-    // retrieve all textreflows belonging to doc/page (or else zone???)
   }
 
+
+  // it should "add page indexes" in new FreshTextReflowDBTables(xa) {
+  //   val docId = loadSampleDoc()
+
+  //   val targetRegionsPg1 = reflowDB.selectTargetRegions(docId, PageNum(1))
+
+
+  //   println("Zones page 0")
+  //   val vlineZones0 = reflowDB.selectZones(docId, PageNum(0), LB.VisualLine)
+  //   println(vlineZones0.mkString("\n"))
+
+  //   val vlineZones = reflowDB.selectZones(docId, PageNum(1), LB.VisualLine)
+  //   println("Zones page 1")
+  //   println(vlineZones.mkString("\n"))
+
+
+  //   println("Zones for target regions")
+  //   targetRegionsPg1.foreach { tr =>
+  //     val zonesAndReflows = reflowDB.getTextReflowsForTargetRegion(tr)
+  //     zonesAndReflows.foreach({case (zone, reflow) =>
+  //       println(s"for ${zone}")
+  //       println(s"=> ${reflow.toText()}")
+  //     })
+  //   }
+  // }
+
 }
-
-
-
-// import doobie.free.{ drivermanager => DM }
-// import geometry._
-// import PageComponentImplicits._
-
-// import doobie.contrib.hikari.hikaritransactor._
-
-// object HikariExample {
-
-//   def tmain: Task[Unit] =
-//     for {
-//       xa <- HikariTransactor[Task]("org.h2.Driver", "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", "sa", "")
-//       _  <- FirstExample.examples.transact(xa)
-//       _  <- xa.shutdown
-//     } yield ()
-
-//   def main(args: Array[String]): Unit =
-//     tmain.unsafePerformSync
-
-// }
-
-// case class FreshTables(
-//   ex: TextReflowDB => Unit
-// ) {
-//   val doLogging = false
-//   val loggingProp = if (doLogging) "?loglevel=2" else ""
-
-//   val xa = DriverManagerTransactor[Task](
-//     s"org.postgresql.Driver",
-//     s"jdbc:postgresql:watrdev${loggingProp}",
-//     "watrworker", "watrpasswd"
-//   )
-
-//   val tables = new TextReflowDBTables(xa)
-//   val reflowDB = new TextReflowDB(tables)
-
-
-//   def run: ConnectionIO[String] = for {
-//     _ <- C.delay(println("Running example"))
-//     _ <- tables.dropAndCreateAll
-//     _  = ex(reflowDB) // .except(t => t.toString.point[ConnectionIO])
-//     _ <- C.close
-//     // _ <- xa.shutdown
-//   } yield "Ok"
-
-//   run.transact(xa).unsafePerformSync
-// }

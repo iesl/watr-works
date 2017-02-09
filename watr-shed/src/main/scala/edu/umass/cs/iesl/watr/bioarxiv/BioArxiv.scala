@@ -258,7 +258,7 @@ object AlignBioArxiv {
     val abstractBoosts = new AlignmentScores(LB.Abstract)
 
     val lineReflows = for {
-      (vlineCC, linenum)    <- mpageIndex.getPageVisualLines(PageID(0)).zipWithIndex
+      (vlineCC, linenum)    <- mpageIndex.getPageVisualLines(PageNum(0)).zipWithIndex
       vlineReflow           <- mpageIndex.getTextReflowForComponent(vlineCC.id)
     } yield (linenum, vlineReflow, vlineReflow.toText)
 
@@ -312,7 +312,7 @@ object AlignBioArxiv {
     val abstractBoosts = new AlignmentScores(LB.Abstract)
 
 
-    val page0 = PageID(0)
+    val page0 = PageNum(0)
     val r0 = RegionID(0)
 
     val lineReflows = for {

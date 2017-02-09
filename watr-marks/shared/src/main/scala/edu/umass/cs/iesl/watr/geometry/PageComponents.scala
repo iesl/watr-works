@@ -13,7 +13,7 @@ import GeometryImplicits._
 case class TargetRegion(
   id: Int@@RegionID,
   docId: String@@DocumentID,
-  pageId: Int@@PageID,
+  pageNum: Int@@PageNum,
   bbox: LTBounds
 ) {
   lazy val uri = {
@@ -24,14 +24,6 @@ case class TargetRegion(
 }
 
 object TargetRegion {
-  // implicit class RicherFigure(val figure: GeometricFigure) extends AnyVal {
-  //   def targetTo(page: Int@@PageID): TargetFigure = {
-  //     TargetFigure(
-  //       RegionID(0), // TODO gen region id
-  //       page, figure
-  //     )
-  //   }
-  // }
 
   implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
     case (TargetRegion(id, docId, targetPage, bbox), TargetRegion(id2, docId2, targetPage2, bbox2)) =>
@@ -46,7 +38,7 @@ object TargetRegion {
   def fromUri(uriString: String): TargetRegion = {
     val Array(docId, pageId, l, t, w, h) = uriString.split("\\+")
 
-    TargetRegion(RegionID(0), DocumentID(docId), PageID(pageId.toInt),
+    TargetRegion(RegionID(0), DocumentID(docId), PageNum(pageId.toInt),
       LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble)
     )
   }
@@ -55,7 +47,7 @@ object TargetRegion {
 // More General version of TargetRegion
 case class TargetFigure(
   id: Int@@RegionID,
-  pageId: Int@@PageID,
+  pageId: Int@@PageNum,
   figure: GeometricFigure
 ) {
   override def toString = s"""<fig.${id} pg.${pageId} ${figure.toString}>"""
@@ -68,7 +60,7 @@ case class Zone(
 )
 
 case class PageGeometry(
-  id: Int@@PageID,
+  id: Int@@PageNum,
   bounds: LTBounds
 )
 
@@ -178,19 +170,19 @@ object PageComponentImplicits {
 
   implicit class RicherTargetRegion(val theTargetRegion: TargetRegion) extends AnyVal {
     def union(r: TargetRegion): TargetRegion = {
-      if (theTargetRegion.pageId != r.pageId) {
+      if (theTargetRegion.pageNum != r.pageNum) {
         sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
       }
       theTargetRegion.copy(bbox = theTargetRegion.bbox union r.bbox)
     }
 
     def intersects(r: TargetRegion): Boolean = {
-      val samePage = theTargetRegion.pageId == r.pageId
+      val samePage = theTargetRegion.pageNum == r.pageNum
       samePage && (theTargetRegion.bbox intersects r.bbox)
     }
 
     def splitHorizontal(r: TargetRegion): List[TargetRegion] = {
-      if (theTargetRegion.pageId != r.pageId) {
+      if (theTargetRegion.pageNum != r.pageNum) {
         sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
       }
 
@@ -219,14 +211,14 @@ object PageComponentImplicits {
     }
 
     def prettyPrint(): String = {
-      val pg = theTargetRegion.pageId
+      val pg = theTargetRegion.pageNum
       val bbox = theTargetRegion.bbox.prettyPrint
       s"""<target pg:${pg} ${bbox}"""
     }
 
     def uriString: String = {
       val doc = theTargetRegion.docId
-      val pg = theTargetRegion.pageId
+      val pg = theTargetRegion.pageNum
       val bbox = theTargetRegion.bbox.uriString
       s"${doc}+${pg}+${bbox}"
     }

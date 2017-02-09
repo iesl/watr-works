@@ -4,7 +4,6 @@ package server
 
 
 import corpora._
-import textreflow._
 import geometry._
 
 import com.sksamuel.scrimage
@@ -12,6 +11,10 @@ import scrimage._
 import scrimage.{canvas => SC}
 import watrmarks._
 import watrmarks.{StandardLabels => LB}
+// import textreflow._
+// import labeling._
+// import labeling.data._
+import docstore._
 
 class LabelingServer(
   reflowDB: TextReflowDB,
@@ -45,7 +48,7 @@ class LabelingServer(
 
   def embossTargetRegion(targetRegion: TargetRegion, labels: Seq[Label]): Unit = {
     val docId = targetRegion.docId
-    val pageId = targetRegion.pageId
+    val pageNum = targetRegion.pageNum
 
     val Some((pageImage, pageGeometry)) = reflowDB.getPageImageAndGeometry(docId, pageId)
 

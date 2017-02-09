@@ -15,11 +15,11 @@ import concurrent.duration._
 import scala.concurrent.Future
 
 import corpora._
-import textreflow._
 import textreflow.data._
 import geometry._
-import display._
-import display.data._
+import labeling._
+import labeling.data._
+import docstore._
 
 import autowire._
 import upickle.{default => UPickle}
@@ -189,26 +189,13 @@ class EmbeddedServer(
       println(s"onDrawPath: ")
     }
 
-    import LabelWidgetF._
     def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]] = {
       println(s"onSelectLTBounds: ${bbox}")
 
       // determine which visual lines were selected and send back
       //  an updated bounding box
       activeLabelWidgetIndex.map({ lwIndex =>
-        val positioned: Seq[PosAttr] = lwIndex.index.queryForIntersects(bbox)
-
-        def visit(p: PosAttr): List[LTBounds] = {
-          val fa = lwIndex.index.getItem(p.id.unwrap)
-
-          fa.widget match {
-            case LabeledTarget(target, label, score) =>
-              List(p.widgetBounds)
-            case _ => List()
-          }
-        }
-
-        val bboxes = positioned.toList.map(visit(_)).flatten
+        val bboxes = lwIndex.onSelect(bbox)
 
         Future{ bboxes }
       }).getOrElse{
@@ -238,16 +225,10 @@ class EmbeddedServer(
     }
 
     def echoLabeler(lwidget: LabelWidget): Unit = {
-      val lwIndex = LabelWidgetIndex.create(lwidget)
+      val lwIndex = LabelWidgetIndex.create(reflowDB, lwidget)
       activeLabelWidgetIndex = Some(lwIndex)
 
       val layout = lwIndex.layout
-
-      // println(prettyPrintPosition(pWidget))
-      println(
-        layout.map(_.toString)
-          .mkString("{\n  ", "\n  ", "\n}")
-      )
 
       api.echoLabeler(layout).call()
     }

@@ -9,7 +9,7 @@ object SpatialIndexOperations {
 
   implicit class RicherZoneIndex(val mpageIndex: MultiPageIndex) extends AnyVal {
 
-  //   def approximateColumnBins(pageId: Int@@PageID, charBoxes: Seq[CharAtom]): Seq[(CompassDirection, Line)] = {
+  //   def approximateColumnBins(pageId: Int@@PageNum, charBoxes: Seq[CharAtom]): Seq[(CompassDirection, Line)] = {
   //     val leftBins = charBoxes
   //       .groupBy(_.targetRegion.bbox.left.pp)
   //       .toSeq

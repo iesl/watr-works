@@ -22,7 +22,7 @@ import scala.concurrent.{ Future, Promise }
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-import display._
+import labeling._
 import LabelWidgetF._
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}

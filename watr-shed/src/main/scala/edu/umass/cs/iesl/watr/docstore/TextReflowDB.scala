@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package docstore
 
+
 import doobie.imports._
 import scalaz.syntax.applicative._
 
@@ -21,10 +22,13 @@ import watrmarks.{StandardLabels => LB}
 import watrmarks._
 import utils.EnrichNumerics._
 import textreflow._
+import TypeTags._
+
 
 class TextReflowDB(
   val tables: TextReflowDBTables
 ) extends DoobiePredef {
+  self =>
 
   lazy val xa = tables.xa
 
@@ -55,25 +59,25 @@ class TextReflowDB(
 
   def insertMultiPageIndex(docId: String@@DocumentID, mpageIndex: MultiPageIndex): ConnectionIO[List[Unit]] = {
     // To start, just create entries for all Component/Zones labelled VisualLine
-
     val query: ConnectionIO[List[Unit]] = (for {
       vlineCC      <- mpageIndex.getDocumentVisualLines.flatten.toList
       maybeReflow   = mpageIndex.getTextReflowForComponent(vlineCC.id)
       vlineZoneId   = mpageIndex.getZoneForComponent(vlineCC.id).get
     } yield for {
       // _            <- putStrLn(s"Inserting zone for line ${vlineCC.id}")
-      zpk          <- insertZone(docId, vlineZoneId)
-      treflowPk    <- maybeReflow.toList.map(r => insertTextReflow(zpk, r)).sequence
+      zoneId          <- insertZone(docId)
+      treflowPk    <- maybeReflow.toList.map(r => insertTextReflow(zoneId, r)).sequence
 
       // insert zone -> targetregion (w/ordering)
       // _            <- putStrLn(s"   inserting targetregion")
       targetRegPk  <- insertTargetRegion(vlineCC.targetRegion)
+      regionID = RegionID(targetRegPk)
       // _            <- putStrLn(s"   linking zone -> targetregion ")
-      _            <- linkZoneToTargetRegion(zpk, targetRegPk)
+      _            <- linkZoneToTargetRegion(zoneId, regionID)
 
       // insert zone -> label (VisualLine is the only important label right now)
       // _            <- putStrLn(s"   linking zone -> label ")
-      _            <- linkZoneToLabel(zpk, LB.VisualLine)
+      _            <- linkZoneToLabel(zoneId, LB.VisualLine)
 
       // insert targetregion images for VisualLines
       // _            <- putStrLn(s"   creating VisualLines images")
@@ -141,15 +145,60 @@ class TextReflowDB(
     query.transact(xa).unsafePerformSync
   }
 
+  def selectZone(zoneId: Int@@ZoneID): Zone = {
+    val query = sql"""
+     select
+        zn.zone, tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
+     from
+        zone                      as zn
+        join zone_to_label        as z2l   on (zn.zone=z2l.zone)
+        join label                as lb    on (z2l.label=lb.label)
+        join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
+        join targetregion         as tr    on (z2tr.targetregion=tr.targetregion)
+        join page                 as pg    on (pg.page=tr.page)
+        join document             as d     on (pg.document=d.document)
+     where
+        zn.zone=${zoneId}
+    """.query[ZonedRegion]
+      .list
+      .map(_.foldLeft(List[Zone]())({ case (zones, zrec) =>
+        import scala.::
+        zones match {
+          case Nil =>
+            Zone(zrec.id, List(zrec.targetRegion), List()) :: Nil
 
-  def insertZone(docId: String@@DocumentID, zoneId: Int@@ZoneID): ConnectionIO[Int] = {
-    sql"""
-       insert into zone (zoneid, document)
-       values (${zoneId}, (select document from document where stable_id=${docId}))
-    """.update.withUniqueGeneratedKeys[Int]("zone")
+          case h :: tail if h.id == zrec.id =>
+            h.copy(regions = zrec.targetRegion +: h.regions) :: tail
+
+          case h :: tail =>
+            Zone(zrec.id, List(zrec.targetRegion), List()) :: zones
+        }
+
+      }))
+      .map({zoneList =>
+        zoneList
+          .map(z => z.copy(regions = z.regions.reverse))
+          .reverse
+      })
+
+    val res = query.transact(xa).unsafePerformSync
+    if (res.length != 1) {
+      sys.error(s"selectZone(${zoneId}) returned multiple zones")
+    }
+
+    res.head
   }
 
-  def insertTextReflow(zonePk: Int, textReflow: TextReflow): ConnectionIO[Int] = {
+
+
+  def insertZone(docId: String@@DocumentID): ConnectionIO[Int@@ZoneID] = {
+    sql"""
+       insert into zone (document)
+       values ( (select document from document where stable_id=${docId}) )
+    """.update.withUniqueGeneratedKeys[Int]("zone").map(ZoneID(_))
+  }
+
+  def insertTextReflow(zonePk: Int@@ZoneID, textReflow: TextReflow): ConnectionIO[Int] = {
     import TextReflowJsonCodecs._
     import play.api.libs.json, json._
     val js = textReflow.toJson()
@@ -249,6 +298,42 @@ class TextReflowDB(
     query
   }
 
+  def updatePage(pageId: Int@@PageID, geom: LTBounds): ConnectionIO[Unit] = {
+    val LTBounds(l, t, w, h) = geom
+    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+
+    // sql"""
+    //   insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
+    //   values (${docPrKey}, ${pageId}, ${pageImage.bytes}, $bl, $bt, $bw, $bh)
+    // """.update.withUniqueGeneratedKeys("page")
+
+    ???
+  }
+
+  def insertPage(docPrKey: Int@@DocumentID, pageNum: Int@@PageNum): ConnectionIO[Int@@PageID] = {
+    sql"""
+      insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
+      values (${docPrKey}, ${pageNum}, null, 0, 0, 0, 0)
+    """.update.withUniqueGeneratedKeys("page")
+
+  }
+
+  def selectPage(docPrKey: Int@@DocumentID, pageNum: Int@@PageNum): ConnectionIO[Int@@PageID] = {
+    // pg.page, d.document, pg.pagenum, null, pg.bleft, pg.btop, pg.bwidth, pg.bheight
+    val query = sql"""
+     select
+        pg.page
+     from
+        page                      as pg
+        join document             as d     on (pg.document=d.document)
+     where
+        d.document = ${docPrKey.unwrap} AND pg.pagenum = ${pageNum.unwrap}
+    """.query[Int]
+      .unique
+      .map(PageID(_))
+
+    query
+  }
   def insertPageGeometry(docPrKey: Int, pageGeometry: PageGeometry, pageImage: Image): ConnectionIO[Int] = {
     println(s"adding page w/image dims ${pageImage.dimensions} ")
 
@@ -278,9 +363,9 @@ class TextReflowDB(
       .unsafePerformSync
   }
 
-  def selectDocumentID(docId: String@@DocumentID): ConnectionIO[Int] = {
+  def selectDocumentID(docId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
     sql"select document from document where stable_id=${docId}"
-      .query[Int].unique
+      .query[Int].unique.map(DocumentID(_))
   }
 
   def hasDocumentID(docId: String@@DocumentID): Boolean = {
@@ -300,36 +385,35 @@ class TextReflowDB(
   }
 
 
-  def selectPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): ConnectionIO[Option[PageGeometry]] = {
+  def selectPageGeometry(docId: String@@DocumentID, pageNum: Int@@PageNum): ConnectionIO[PageGeometry] = {
     val e = FC.delay(Option.empty[PageGeometry])
     val query = for {
       _ <- putStrLn(s"selectPageGeometry: selecting docid ${docId}")
       docPk    <- selectDocumentID(docId)
       _ <- putStrLn(s"selectPageGeometry: selected docid ${docPk}")
-      mpagePk  <- selectPage(docPk, pageId)
-      _ <- putStrLn(s"selectPageGeometry: selected page pk ${mpagePk}")
-      pgeom    <- mpagePk.fold(e)(pagePk =>
-        sql"""select bleft, btop, bwidth, bheight from page where page=${pagePk}"""
-          .query[LTBounds].option
-          .map(_.map(ltb => PageGeometry(pageId, ltb)))
-      )
-      _ <- putStrLn(s"selectPageGeometry: selected page geometry ${pgeom}")
-    } yield {
-      pgeom
-    }
+      pageId  <- selectPage(docPk, pageNum)
+      _ <- putStrLn(s"selectPageGeometry: selected page pk ${pageId}")
+      geom <-   sql"""select bleft, btop, bwidth, bheight from page where page=${pageId}"""
+          .query[LTBounds].unique
+          .map(ltb => PageGeometry(pageId, ltb))
+      // pgeom    <- mpagePk.fold(e)(pagePk =>
+      //   sql"""select bleft, btop, bwidth, bheight from page where page=${pagePk}"""
+      //     .query[LTBounds].option
+      //     .map(_.map(ltb => PageGeometry(pageId, ltb)))
+      // )
+      // _ <- putStrLn(s"selectPageGeometry: selected page geometry ${pgeom}")
+    } yield { geom }
     query
   }
 
-  def selectPageImage(docId: String@@DocumentID, pageId: Int@@PageID): ConnectionIO[Option[Image]] = {
+  def selectPageImage(docId: String@@DocumentID, pageNum: Int@@PageNum): ConnectionIO[Option[Image]] = {
     val e = FC.delay(Option.empty[Image])
     val query = for {
       docPk  <- selectDocumentID(docId)
-      mpagePk <- selectPage(docPk, pageId)
-      image <- mpagePk.fold(e)(pagePk =>
-        sql"""select pageimg from page where page=${pagePk}"""
-          .query[Array[Byte]].unique
-          .map(bytes => Option(Image(bytes)))
-      )
+      pageId <- selectPage(docPk, pageNum)
+      image <- sql"""select pageimg from page where page=${pageId}"""
+          .query[Array[Byte]].option
+          .map(bytes => bytes.map(Image(_)))
     } yield image
 
     query
@@ -373,14 +457,14 @@ class TextReflowDB(
   } yield pk
 
 
-  def linkZoneToLabel(zonePk: Int, label: Label): ConnectionIO[Unit] = {
+  def linkZoneToLabel(zonePk: Int@@ZoneID, label: Label): ConnectionIO[Unit] = {
     for {
       labelPk <- ensureLabel(label)
       _       <- sql"""insert into zone_to_label (zone, label) values (${zonePk}, ${labelPk})""".update.run
     } yield ()
   }
 
-  def linkZoneToTargetRegion(zonePk: Int, targetRegionPk: Int): ConnectionIO[Unit] = {
+  def linkZoneToTargetRegion(zonePk: Int@@ZoneID, targetRegionPk: Int@@RegionID): ConnectionIO[Unit] = {
     sql"""
        insert into zone_to_targetregion (zone, targetregion)
        values (${zonePk}, ${targetRegionPk})
@@ -438,14 +522,18 @@ class TextReflowDB(
     } yield ()
   }
 
-  def getPageGeometry(docId: String@@DocumentID, pageId: Int@@PageID): Option[PageGeometry]= {
-    selectPageGeometry(docId, pageId)
-      .transact(xa)
-      .unsafePerformSync
+  def getPageGeometry(docId: String@@DocumentID, pageNum: Int@@PageNum): Option[PageGeometry]= {
+    val query = for {
+      pageId <- selectPage(docId, pageNum)
+      pageGeometry <- selectPageGeometry(docId, pageId)
+    } yield pageGeometry
+
+    query.transact(xa).unsafePerformSync
   }
 
-  def getPageImageAndGeometry(docId: String@@DocumentID, pageId: Int@@PageID): Option[(Image, PageGeometry)] = {
+  def getPageImageAndGeometry(docId: String@@DocumentID, pageNum: Int@@PageNum): Option[(Image, PageGeometry)] = {
     val query = for {
+      pageId <- selectPage(docId, pageNum)
       pageImage    <- selectPageImage(docId, pageId)
       pageGeometry <- selectPageGeometry(docId, pageId)
     } yield (pageImage |@| pageGeometry)((_, _))
@@ -533,6 +621,88 @@ class TextReflowDB(
     getOrCreateTargetRegionImageBytes(targetRegion)
       .transact(xa)
       .unsafePerformSync
+  }
+
+
+  def createZone(docId: String@@DocumentID, trs: Seq[TargetRegion]): Zone = {
+    // val z0 = Zone(ZoneID(0), trs.toList, List())
+    val query = for {
+      zPk <- insertZone(docId)
+    } yield Zone(zPk, trs.toList, List())
+
+    query.transact(xa).unsafePerformSync
+  }
+
+  def mergeZones(zones: Seq[Zone]): Zone = {
+
+    ???
+  }
+
+  def addZoneLabel(zone: Zone, label: Label): Unit = {
+    val query = for {
+      _ <- linkZoneToLabel(zone.id, label)
+    } yield ()
+
+    query.transact(xa).unsafePerformSync
+  }
+
+  def addZoneTargetRegion(zone: Zone, targetRegion: TargetRegion): Unit = {
+
+    ???
+  }
+
+  object docstorage extends ReflowDocstore {
+    def createZone(docId: String@@DocumentID): Zone  = {
+      self.createZone(docId, List())
+    }
+
+    def getZone(zoneId: Int@@ZoneID): Zone = {
+      self.selectZone(zoneId)
+    }
+
+    def addZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Zone = {
+      targetRegions.foreach { tr =>
+        linkZoneToTargetRegion(zoneId, tr.id)
+      }
+      getZone(zoneId)
+    }
+
+    def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
+      ???
+    }
+
+    def getDocumentZones(docId: String@@DocumentID): Seq[Zone] = {
+      ???
+    }
+
+    def addDocument(docId: String@@DocumentID): Unit = {
+      getOrInsertDocumentID(docId)
+        .transact(xa).unsafePerformSync
+    }
+
+    def addPage(stableId: String@@DocumentID, pageNum: Int@@PageNum): Int@@PageID = {
+      for {
+        docId <- selectDocumentID(stableId)
+        pageId <- insertPage(docId)
+      } yield pageId
+    }
+
+    def updatePageGeometry(docId: String@@DocumentID, pageNum: Int@@PageNum, geom: LTBounds): Unit = {
+      for {
+        docId <- selectDocumentID(stableId)
+        pageId <- insertPage(docId)
+      } yield pageId
+
+    }
+
+    def addTargetRegion(docId: String@@DocumentID, pageNum: Int@@PageNum, bbox:LTBounds): TargetRegion = {
+      ???
+    }
 
   }
+
+
+
+
+
 }

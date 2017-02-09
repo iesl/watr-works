@@ -83,7 +83,7 @@ class CharExtractionListener(
   componentIdGen: IdGenerator[RegionID],
   currCharBuffer: mutable.ArrayBuffer[PageAtom], // = mutable.ArrayBuffer[PageAtom]()
   pdfPage: PdfPage,
-  pageId: Int@@PageID,
+  pageId: Int@@PageNum,
   pageGeometry: PageGeometry,
   geomTranslation:GeometryTranslation,
   glyphMap: Map[(String, Int), String]
@@ -314,7 +314,7 @@ class CharExtractionListener(
     // val imgRegion = ImgAtom(
     //     TargetRegion(
     //       componentIdGen.nextId,
-    //       PageID(0),
+    //       PageNum(0),
     //       bounds
     //     )
     //   )

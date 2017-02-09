@@ -11,7 +11,6 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
   import scalaz.std.string._
   import scalaz.Tree
   import utils.ScalazTreeImplicits._
-  import utils.IdGenerator
   import matryoshka._
   import geometry._
 
@@ -19,7 +18,7 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
   import PageComponentImplicits._
   import TextReflowF._
 
-  val regionIDs = IdGenerator[RegionID]()
+  def docStore: ReflowDocstore
 
   val xscale = 10.0d
   val yscale = 10.0d
@@ -39,7 +38,7 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
   )
 
 
-  def mkTargetRegion(docId: String@@DocumentID, pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int) = {
+  def mkTargetRegion(docId: String@@DocumentID, pageNum: Int@@PageNum, x: Int, y: Int, w: Int, h: Int) = {
     // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
     val width = if (w>0) {
       w*xscale - 0.1
@@ -48,14 +47,11 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
       h*yscale - 0.1
     } else 0
 
-    TargetRegion(
-      RegionID(0),
-      docId, pageId,
-      LTBounds(
-        left=x*xscale, top=y*yscale,
-        width, height
-      )
+    val bbox = LTBounds(
+      left=x*xscale, top=y*yscale,
+      width, height
     )
+    docStore.addTargetRegion(docId, pageNum, bbox)
   }
 
   def textReflowsToAtoms(
@@ -63,25 +59,27 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
   ): Seq[(Seq[PageAtom], PageGeometry)] = for {
     page <- pages
   } yield {
-    val TargetRegion(id, docId, pageId, bbox@ LTBounds(l, t, w, h) ) =
+    val TargetRegion(id, docId, pageNum, bbox@ LTBounds(l, t, w, h) ) =
       page.targetRegions.reduce(_ union _)
 
-    (page.charAtoms(), PageGeometry(pageId, bbox))
+    (page.charAtoms(), PageGeometry(pageNum, bbox))
   }
 
   def stringsToTextReflows(docId: String@@DocumentID, pages:Seq[String]): Seq[TextReflow] = {
     for {
       (page, n) <- pages.zipWithIndex
     } yield {
-      stringToTextReflow(page)(docId, PageID(n))
+      stringToTextReflow(page)(docId, PageNum(n))
     }
   }
 
   def stringToTextReflow(multiLines: String)(
     docId: String@@DocumentID,
-    pageId: Int@@PageID
+    pageNum: Int@@PageNum
   ): TextReflow = {
     val isMultiline = multiLines.contains("\n")
+    val doc = docStore.addDocument(docId)
+    val page = docStore.addPage(docId, pageNum)
 
     var tloc = if (isMultiline) {
       val t: Tree[TextReflowF[Int]] =
@@ -92,11 +90,6 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
             ))
           ))
         ))
-      // val tx: Tree[TextReflowF[Int]] =
-      //   Tree.Node(Flow(List()),
-      //     Stream(
-      //       Tree.Node(Labeled(Set(LB.VisualLine), 0),
-      //         Stream(Tree.Leaf(Flow(List()))))))
 
       t.loc.lastChild.get.lastChild.get.lastChild.get
     } else {
@@ -120,7 +113,7 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
 
     def createUriString(): String = {
       val z = mkTargetRegion(
-        docId, pageId,
+        docId, pageNum,
         0, linenum, 0, 0
       )
 
@@ -163,7 +156,7 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
         case chx if charSubs.contains(chx) =>
           insertDownLast(Rewrite(0, charSubs(chx)))
           val charAtom = CharAtom(
-            mkTargetRegion(docId, pageId,
+            mkTargetRegion(docId, pageNum,
               chnum, linenum, 1, 1),
             ch.toString
           )
@@ -175,7 +168,7 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
 
         case _ =>
           val charAtom = CharAtom(
-            mkTargetRegion(docId, pageId, chnum, linenum, 1, 1),
+            mkTargetRegion(docId, pageNum, chnum, linenum, 1, 1),
             ch.toString
           )
           lineCharAtoms += charAtom
@@ -204,27 +197,26 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
       }}
     )
 
-    res.rootLabel
+    val finalTextReflow = res.rootLabel
+    val bbox = finalTextReflow.targetRegion().bbox
+
+    docStore.updatePageGeometry(docId, pageNum, bbox)
+    finalTextReflow
   }
 
 
 
-  def stringToPageAtoms(str: String, pageId: Int, docId: String@@DocumentID): (Seq[PageAtom], PageGeometry) = {
+  def stringToPageAtoms(str: String, pageNum: Int, docId: String@@DocumentID): (Seq[PageAtom], PageGeometry) = {
     for {
       (line, linenum) <- lines(str).zipWithIndex
       (ch, chnum)     <- line.zipWithIndex
     } yield {
-      CharAtom(
-        TargetRegion(regionIDs.nextId,
-          docId,
-          PageID(pageId),
-          LTBounds(
-            left=chnum*xscale, top=linenum*yscale,
-            width=xscale, height=yscale
-          )
-        ),
-        ch.toString
+      val bbox = LTBounds(
+        left=chnum*xscale, top=linenum*yscale,
+        width=xscale, height=yscale
       )
+      val tr = docStore.addTargetRegion(docId, PageNum(pageNum), bbox)
+      CharAtom(tr, ch.toString)
 
     }
 
@@ -233,17 +225,12 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
         line.zipWithIndex
           .filterNot(_._1 == ' ')
           .map({ case (ch, chnum) =>
-            CharAtom(
-              TargetRegion(regionIDs.nextId,
-                docId,
-                PageID(pageId),
-                LTBounds(
-                  left=chnum*xscale, top=linenum*yscale,
-                  width=xscale, height=yscale
-                )
-              ),
-              ch.toString
+            val bbox = LTBounds(
+              left=chnum*xscale, top=linenum*yscale,
+              width=xscale, height=yscale
             )
+            val tr = docStore.addTargetRegion(docId, PageNum(pageNum), bbox)
+            CharAtom(tr, ch.toString)
           })
       })
       .flatten.toSeq
@@ -253,7 +240,7 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
 
 
     val pageGeom = PageGeometry(
-      PageID(pageId), LTBounds(
+      PageNum(pageNum), LTBounds(
         left=0, top=0,
         width=maxX, height=maxY
       )

@@ -6,7 +6,7 @@ import org.scalatest._
 import geometry._
 import textreflow._
 import textreflow.data._
-import display.data._
+import labeling.data._
 import utils.EnrichNumerics._
 import TypeTags._
 
@@ -16,14 +16,16 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with 
   behavior of "label widgets"
 
   val bbox = LTBounds(20d, 12d, 10d, 10d)
-  val tr = TargetRegion(RegionID(0), DocumentID("doc-id-0"), PageID(23), bbox)
+  val tr = TargetRegion(RegionID(0), DocumentID("doc-id-0"), PageNum(23), bbox)
 
   def stringToReflow(s: String): TextReflow =
-    stringToTextReflow(s)(DocumentID("doc-id-0"), PageID(23))
+    stringToTextReflow(s)(DocumentID("doc-id-0"), PageNum(23))
 
   def reg0: TargetRegion = tr
   def sel0: TargetRegion = tr
   def sel1: TargetRegion = tr
+
+  def docStore: ReflowDocstore = MemDocstore
 
   // it should "specify widget layout" in {
 

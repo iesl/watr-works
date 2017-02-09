@@ -13,6 +13,8 @@ import TypeTags._
 
 class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
 
+  def docStore: ReflowDocstore = MemDocstore
+
   def annotateAndPrint(tr: TextReflow): Unit = {
     val ranges = tr.annotateCharRanges()
     val rbox = prettyPrintTree(tr)
@@ -38,7 +40,7 @@ class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
   behavior of "modifying chars"
 
   def stringToReflow(s: String): TextReflow =
-    stringToTextReflow(s)(DocumentID("d0"), PageID(0))
+    stringToTextReflow(s)(DocumentID("d0"), PageNum(0))
 
   it should "mod single char" in {
     val pageText = (

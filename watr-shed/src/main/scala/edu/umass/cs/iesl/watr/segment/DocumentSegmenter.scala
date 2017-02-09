@@ -32,7 +32,7 @@ import utils.{Histogram, AngleFilter, DisjointSets}
 import Histogram._
 
 case class LineDimensionBins(
-  page: Int@@PageID,
+  pageNum: Int@@PageNum,
   // Seq[(width, widthFrequency), Seq[lines w/width]]
   widthBin: Seq[((Double, Double), Seq[Component])],
   unBinned: Seq[Component]
@@ -485,7 +485,7 @@ class DocumentSegmenter(
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
-  def fillInMissingChars(pageId: Int@@PageID, lineBinChars: Seq[AtomicComponent]): Seq[Component] = {
+  def fillInMissingChars(pageId: Int@@PageNum, lineBinChars: Seq[AtomicComponent]): Seq[Component] = {
     // val consecutiveCharGroups = lineBinChars.groupByPairs({ (ch1, ch2) =>
     //   ch2.id.unwrap - ch1.id.unwrap == 1
     // })
@@ -520,7 +520,7 @@ class DocumentSegmenter(
   }
 
   def gutterDetection(
-    pageId: Int@@PageID,
+    pageId: Int@@PageNum,
     components: Seq[AtomicComponent]
   ): Unit = {
     vtrace.trace(begin("GutterDetection"))
@@ -554,7 +554,7 @@ class DocumentSegmenter(
   }
 
   def determineLines(
-    pageId: Int@@PageID,
+    pageId: Int@@PageNum,
     components: Seq[AtomicComponent]
   ): Unit = {
 
@@ -781,7 +781,7 @@ class DocumentSegmenter(
         remainingLines --= mws
       }
 
-      LineDimensionBins(PageID(pagenum), widthBins, remainingLines)
+      LineDimensionBins(PageNum(pagenum), widthBins, remainingLines)
     }
     printCommonLineBins(commonLineBins)
     pageSegAccum = pageSegAccum.copy(

@@ -18,7 +18,7 @@ case class PageImages(
       .mkString("[", ", ", "]")
   }
 
-  def page(p: Int@@PageID): Image = {
+  def page(p: Int@@PageNum): Image = {
     if (p.unwrap < images.length) {
       images(p.unwrap)
     } else {
@@ -26,7 +26,7 @@ case class PageImages(
     }
   }
 
-  def pageBytes(p: Int@@PageID): Array[Byte]= {
+  def pageBytes(p: Int@@PageNum): Array[Byte]= {
     val image = page(p)
     image.bytes
   }

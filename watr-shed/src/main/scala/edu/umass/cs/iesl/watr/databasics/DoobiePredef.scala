@@ -27,9 +27,15 @@ trait DoobiePredef {
       bl :: bt :: bw :: bh :: HNil
     })
 
-  implicit val DocumentIDMeta: Meta[String @@ DocumentID] =
+  implicit val StrDocumentIDMeta: Meta[String @@ DocumentID] =
     Meta[String].nxmap(
       str => DocumentID(str),
+      docId => docId.unwrap
+    )
+
+  implicit val DocumentIDMeta: Meta[Int @@ DocumentID] =
+    Meta[Int].xmap(
+      n => DocumentID(n),
       docId => docId.unwrap
     )
 
@@ -41,6 +47,12 @@ trait DoobiePredef {
   implicit val PageIDMeta: Meta[Int @@ PageID] =
     Meta[Int].xmap(
       n => PageID(n),
+      tt => tt.unwrap
+    )
+
+  implicit val PageNumMeta: Meta[Int @@ PageNum] =
+    Meta[Int].xmap(
+      n => PageNum(n),
       tt => tt.unwrap
     )
 

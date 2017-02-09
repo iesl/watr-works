@@ -14,7 +14,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
   import DocumentSegmenter._
 
   object page {
-    val page = (0 to 10).map(PageID(_))
+    val page = (0 to 10).map(PageNum(_))
     def apply(i:Int) = page(i)
   }
 
@@ -65,7 +65,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
         val lineBounds = attrsToBounds(line)
         val foundText = line.split("-->").head.trim
 
-        (foundText, PageID(page), lineBounds)
+        (foundText, PageNum(page), lineBounds)
       })
 
     ParsedExample(
@@ -88,7 +88,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
         .split(", ")
         .map(_.toDouble)
 
-      (foundText, PageID(pageNumber), LTBounds(bounds(0), bounds(1), bounds(2), bounds(3)))
+      (foundText, PageNum(pageNumber), LTBounds(bounds(0), bounds(1), bounds(2), bounds(3)))
     }
 
     ParsedExample(
@@ -98,7 +98,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
     )
   }
 
-  def createFilteredMultiPageIndex(pdfIns: URL, pageId: Int@@PageID, regions: Seq[LTBounds]): DocumentSegmenter = {
+  def createFilteredMultiPageIndex(pdfIns: URL, pageId: Int@@PageNum, regions: Seq[LTBounds]): DocumentSegmenter = {
     val path = fs.Path(pdfIns.getPath)
 
     val docId = DocumentID("dummy-id")
@@ -106,7 +106,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
     val segmenter =  DocumentSegmenter.createSegmenter(docId, path)
 
     // Assume these example regions are all from one page
-    // val pageId = regions.map(_.pageId).head
+    // val pageNum = regions.map(_.pageNum).head
     // val allBboxes = regions.map(_.bbox)
 
     val minX = regions.map(_.left).min
@@ -137,7 +137,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
 
 case class TestRegion(
   pdfUrl: URL,
-  page: Int@@PageID,
+  page: Int@@PageNum,
   bbox: LTBounds
 )
 
@@ -155,6 +155,6 @@ case class TextExample(
 
 case class ParsedExample(
   source: String,
-  targetRegions: Seq[(String, Int@@PageID, LTBounds)],
+  targetRegions: Seq[(String, Int@@PageNum, LTBounds)],
   expectedOutput: Seq[String]
 )

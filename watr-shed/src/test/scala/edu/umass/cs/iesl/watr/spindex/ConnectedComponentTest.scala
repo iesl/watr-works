@@ -3,9 +3,12 @@ package spindex
 
 class ConnectedComponentTest extends ConnectedComponentTestUtil {
   import ComponentOperations._
+  import docstore.MemDocstore
   import watrmarks.{StandardLabels => LB}
   import TypeTags._
+  import textreflow._
 
+  lazy val docStore: ReflowDocstore = MemDocstore
   behavior of "connected components"
 
 
@@ -45,7 +48,7 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
   it should "demonstrate sup/subscript labeling" in {
     val docId = DocumentID("doc-0")
     val mpageIndex = createMultiPageIndex(
-      docId, 
+      docId,
       // 012 3 4567890
       """Eu1 - xBixVO4"""
     )

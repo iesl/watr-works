@@ -238,7 +238,7 @@ object DocumentIO extends DocsegJsonFormats {
 
     val charExtractor = new PdfTextExtractor(
       charsToDebug,
-      IdGenerator[RegionID](), //, IdGenerator[PageID]
+      IdGenerator[RegionID](), //, IdGenerator[PageNum]
       glyphDefs
     )
 

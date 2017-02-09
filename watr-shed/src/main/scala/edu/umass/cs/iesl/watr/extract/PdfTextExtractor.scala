@@ -69,7 +69,7 @@ class PdfTextExtractor(
     getBestBoundingBox(pdfPage.getPdfObject)
   }
 
-  def getReportedPageGeometry(pageId: Int@@PageID, pdfPage: PdfPage, reader: PdfReader): (PageGeometry, GeometryTranslation) = {
+  def getReportedPageGeometry(pageId: Int@@PageNum, pdfPage: PdfPage, reader: PdfReader): (PageGeometry, GeometryTranslation) = {
 
     val nums: Array[Double] = getBestBoundingBox(pdfPage)
 
@@ -116,7 +116,7 @@ class PdfTextExtractor(
       val pageIndexes = for (pageNumber <- 1 to document.getNumberOfPages) yield {
         // val tagStructureContext = pdfPage.getDocument.getTagStructureContext
 
-        val pageId = PageID(pageNumber-1)
+        val pageId = PageNum(pageNumber-1)
 
         val pdfPage = document.getPage(pageNumber)
 

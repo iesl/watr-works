@@ -29,7 +29,7 @@ trait ArbitraryTextReflows {
   implicit def arbTargetRegion: Arbitrary[TargetRegion] = {
     (arbInt |@| arbInt |@| arbLTBounds)({
       case (id, tr, bbox) =>
-        TargetRegion(RegionID(id), DocumentID(""), PageID(tr), bbox)
+        TargetRegion(RegionID(id), DocumentID(""), PageNum(tr), bbox)
     })
   }
 

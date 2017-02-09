@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
-
 import org.scalatest._
 
 import geometry._
@@ -10,15 +9,17 @@ import textreflow.data._
 import data._
 import utils.EnrichNumerics._
 import TypeTags._
+import docstore._
 
 class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflow {
+  def docStore: ReflowDocstore = MemDocstore
   import LabelWidgetIndex._
 
   val bbox = LTBounds(0d, 0d, 10d, 10d)
-  val tr = TargetRegion(RegionID(0), DocumentID("doc-id-0"), PageID(23), bbox)
+  val tr = TargetRegion(RegionID(0), DocumentID("doc-id-0"), PageNum(23), bbox)
 
   def stringToReflow(s: String): TextReflow =
-    stringToTextReflow(s)(DocumentID("doc-id-0"), PageID(23))
+    stringToTextReflow(s)(DocumentID("doc-id-0"), PageNum(23))
 
   "LabelWidgetIndexing" should "have a test" in {
 
@@ -52,6 +53,6 @@ class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflo
     // println(abs0.printTree())
 
 
-    val lwIndex = LabelWidgetIndex.create(panel1)
+    // val lwIndex = LabelWidgetIndex.create(panel1)
   }
 }

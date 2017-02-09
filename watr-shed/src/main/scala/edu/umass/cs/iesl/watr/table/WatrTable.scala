@@ -206,14 +206,15 @@ object ShellCommands extends CorpusEnrichments {
         )
       )
 
-      val page0 = PageID(0)
+      val page0 = PageNum(0)
       val r0 = RegionID(0)
       theDB.getPageGeometry(docId, page0)
         .map({pageGeometry =>
           val pageTargetRegion = TargetRegion(r0, docId, page0, pageGeometry.bounds)
 
           val allPageLines = for {
-            (zone, linenum) <- theDB.selectZones(docId, page0, LB.VisualLine).zipWithIndex
+            pageId <- theDB.selectPage(docId, page0)
+            (zone, linenum) <- theDB.selectZones(docId, pageId, LB.VisualLine).zipWithIndex
             lineReflow <- theDB.getTextReflowForZone(zone)
           } yield {
             val lt = LW.labeledTarget(lineReflow.targetRegion, None, None)
@@ -297,7 +298,7 @@ object ShellCommands extends CorpusEnrichments {
       //   - rectangle select for labeling
       //   - ? maybe show the extracted text w/button to indicate errors
 
-      val page0 = PageID(0)
+      val page0 = PageNum(0)
       val r0 = RegionID(0)
 
       theDB.getPageGeometry(docId, page0)

@@ -90,7 +90,7 @@ object MITAlignPredsynth {
               val targetRegions = reflowSlice.targetRegions
 
               val intersectedVisualLines  = targetRegions.map{ targetRegion =>
-                val pageIndex = mpageIndex.getPageIndex(targetRegion.pageId)
+                val pageIndex = mpageIndex.getPageIndex(targetRegion.pageNum)
 
                 pageIndex.componentIndex
                   .queryForIntersects(targetRegion.bbox)
@@ -108,8 +108,8 @@ object MITAlignPredsynth {
 
               // Compute the intersection of a TextReflow w/ RegionComponent
               val annotationRegions = uniqVisualLines.map{visualLine =>
-                val pageForLine = visualLine.pageId
-                val pageRegions = targetRegions.filter(_.pageId == visualLine.pageId)
+                val pageForLine = visualLine.pageNum
+                val pageRegions = targetRegions.filter(_.pageNum == visualLine.pageNum)
                 // Select the span for each line that corresponds to labeled region
                 val intersectingLineAtoms = visualLine.queryAtoms()
                   .trimLeftRightBy({lineAtom: AtomicComponent =>
@@ -121,12 +121,14 @@ object MITAlignPredsynth {
               }
 
               val annRegions = annotationRegions.flatten.map{_.targetRegion}
-              val newZone = Zone(ZoneID(0), annRegions, List(ann))
+              // val newZone = Zone(ZoneID(0), annRegions, List(ann))
 
-              val zAdded = mpageIndex.addZone(newZone)
+              // val zAdded = mpageIndex.addZone(newZone)
+              val newZone = mpageIndex.addZone(mpageIndex.getDocumentID)
 
+              // mpageIndex
               // HACK: make zoneId==mentionId TODO document why
-              val mentionId = MentionID(zAdded.id.unwrap)
+              val mentionId = MentionID(newZone.id.unwrap)
 
               rawTextMentionsById.put(mentionId, rtc)
 

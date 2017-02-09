@@ -7,7 +7,7 @@ import scala.reflect._
 sealed trait SHA1String
 
 // Documents are identified by the SHA1 hash of their contents
-sealed trait DocumentID extends SHA1String
+sealed trait DocumentID // extends SHA1String
 
 sealed trait ZoneID
 sealed trait LabelID
@@ -20,6 +20,8 @@ sealed trait ComponentID
 sealed trait MentionID
 sealed trait ClusterID
 sealed trait RelationID
+
+sealed trait PageNum
 
 sealed trait Ranging
 sealed trait Offset
@@ -47,6 +49,7 @@ trait TypeTags {
   val ClusterID  = Tag.of[ClusterID]
   val RelationID = Tag.of[RelationID]
 
+  val PageNum = Tag.of[PageNum]
   val Ranging = Tag.of[Ranging]
   val Offset = Tag.of[Offset]
   val Length = Tag.of[Length]

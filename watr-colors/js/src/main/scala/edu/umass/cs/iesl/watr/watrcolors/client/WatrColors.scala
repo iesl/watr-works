@@ -13,11 +13,10 @@ import org.scalajs.dom.ext._
 import autowire._
 import upickle.{default => UPickle}
 import UPickle._
-import TypeTagPicklers._
 
 import textreflow.data._
 import geometry._
-import display._
+import labeling._
 
 import native.mousetrap._
 

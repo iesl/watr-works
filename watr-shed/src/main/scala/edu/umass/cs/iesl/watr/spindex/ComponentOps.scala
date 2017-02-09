@@ -330,7 +330,7 @@ object ComponentOperations {
       // // indicate a set of h-lines inside theComponent.targetRegion
       // def indicateHLine(y: Double): TargetFigure = y.toHLine
       //   .clipTo(theComponent.targetRegion.bbox)
-      //   .targetTo(theComponent.targetRegion.pageId)
+      //   .targetTo(theComponent.targetRegion.pageNum)
 
       // vtrace.trace(
       //   "modal top     " withTrace indicateHLine(modalTop),

@@ -31,8 +31,8 @@ trait VisualTraceOperations extends FabricCanvasOperations {
 
   var xxx = 10
   def transformTargetRegion(tr: TargetRegion): TargetRegion = {
-    val offsetPage = pageOffsets(tr.pageId.unwrap)
-    val pageImgGeometry = pageImageGeometries(tr.pageId.unwrap)
+    val offsetPage = pageOffsets(tr.pageNum.unwrap)
+    val pageImgGeometry = pageImageGeometries(tr.pageNum.unwrap)
 
     val s = tr.bbox
 
@@ -55,8 +55,8 @@ trait VisualTraceOperations extends FabricCanvasOperations {
   }
 
   def transformTargetFigure(tr: TargetFigure): TargetFigure = {
-    val offsetPage = pageOffsets(tr.pageId.unwrap)
-    val pageImgGeometry = pageImageGeometries(tr.pageId.unwrap)
+    val offsetPage = pageOffsets(tr.pageNum.unwrap)
+    val pageImgGeometry = pageImageGeometries(tr.pageNum.unwrap)
 
     def transformPoint(p: Point): Point = {
       val pageTopTrans = (offsetPage.top * canvasH / totalPagesHeight) + canvasY

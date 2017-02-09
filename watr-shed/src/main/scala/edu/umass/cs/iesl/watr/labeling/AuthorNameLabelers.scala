@@ -25,7 +25,7 @@ object AuthorNameLabelers extends LabelWidgetUtils {
 
     val authorBoosts = new AlignmentScores(LB.Authors)
 
-    val page0 = PageID(0)
+    val page0 = PageNum(0)
 
     val lineReflows = for {
       (zone, linenum) <- reflowDB.selectZones(docId, page0, LB.VisualLine).zipWithIndex

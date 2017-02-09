@@ -13,7 +13,7 @@ trait TextReflowExamples extends PlainTextReflow with LabelerRendering {
   def example1(): TextReflow = {
     stringToTextReflow("""|To be or not to be,
                           |That is the question.
-                          |""".stripMargin)(DocumentID("d0"), PageID(0))
+                          |""".stripMargin)(DocumentID("d0"), PageNum(0))
   }
 }
 
