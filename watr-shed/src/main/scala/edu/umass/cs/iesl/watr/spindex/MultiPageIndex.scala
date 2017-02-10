@@ -16,7 +16,6 @@ import textreflow.data._
 import TypeTags._
 
 import watrmarks.{StandardLabels => LB}
-import docstore._
 
 /**
 
@@ -45,12 +44,16 @@ import docstore._
   */
 
 class MultiPageIndex(
-  docId: String@@DocumentID,
+  stableId: String@@DocumentID,
   storage: ReflowDocstore
 ) {
+  lazy val docId: Int@@DocumentID =
+    storage.getDocument(stableId).getOrElse(sys.error("MultiPageIndex created for non-existent document"))
 
   def createZone(): Zone  = {
-    storage.createZone(docId)
+    storage.getZone(
+      storage.createZone(docId)
+    )
   }
 
   def getZone(zoneId: Int@@ZoneID): Zone = {
@@ -58,18 +61,22 @@ class MultiPageIndex(
   }
 
   def addZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Zone = {
-    storage.addZoneTargetRegions(zoneId, targetRegions)
+    storage.setZoneTargetRegions(zoneId, targetRegions)
+    storage.getZone(zoneId)
   }
 
   def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
     storage.addZoneLabel(zoneId, label)
+    storage.getZone(zoneId)
   }
 
   def getDocumentZones(): Seq[Zone] = {
-    storage.getDocumentZones(docId)
+    storage
+      .getZonesForDocument(docId)
+      .map(storage.getZone(_))
   }
 
-  def getDocumentID(): String@@DocumentID = docId
+  def getStableId(): String@@DocumentID = stableId
 
   val vtrace: VisualTracer = new VisualTracer()
 
@@ -113,8 +120,7 @@ class MultiPageIndex(
   }
 
   def setTextReflow(cc: Component, r: TextReflow): Zone = {
-    // val zone = addZone(Zone(ZoneID(0), List(cc.targetRegion), List(cc.roleLabel)))
-    val zone = addZone(docId)
+    val zone = createZone()
     zoneToTextReflow.put(zone.id, r)
     componentIdToZoneId.put(cc.id, zone.id)
     zone
@@ -167,14 +173,6 @@ class MultiPageIndex(
     labelToZones.getOrElseUpdate(l, mutable.ArrayBuffer[Int@@ZoneID]())
   }
 
-  def addZone(docId: String@@DocumentID): Zone =  {
-    val zone = storage.createZone(docId)
-    zoneMap.put(zone.id, zone)
-    zone.labels.foreach{l =>
-      getLabelToZoneBuffer(l) += zone.id
-    }
-    zone
-  }
   val relations = mutable.ArrayBuffer[Relation.Record]()
   val props = mutable.ArrayBuffer[Prop.PropRec]()
 
@@ -265,7 +263,7 @@ class MultiPageIndex(
 
       val region = createRegionComponent(totalRegion, role)
 
-      val zone = addZone(docId)
+      val zone = createZone()
 
       addZoneTargetRegions(zone.id, Seq(region.targetRegion))
       addZoneLabel(zone.id, role)
@@ -445,7 +443,7 @@ object MultiPageIndex {
     regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]
   ): MultiPageIndex = {
 
-    val mpageIndex = new MultiPageIndex(docId, MemDocstore)
+    val mpageIndex = new MultiPageIndex(docId, new MemDocstore)
 
     regionsAndGeometry.foreach { case(regions, geom)  =>
       println(s"adding page w/geometry ${geom}")

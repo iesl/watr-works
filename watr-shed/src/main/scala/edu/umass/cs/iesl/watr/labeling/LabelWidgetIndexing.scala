@@ -5,6 +5,7 @@ import geometry._
 import spindex._
 import docstore._
 import LabelWidgetF._
+import textreflow.ReflowDocstore
 
 object LabelWidgetIndex extends LabelWidgetLayout {
 
@@ -23,19 +24,18 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     })
 
     new LabelWidgetIndex {
-      def reflowDB: TextReflowDB = db
+      def docStore: ReflowDocstore = db.docstorage
       def layout: List[PosAttr] = layout0
       def index: SpatialIndex[PosAttr] = lwIndex
     }
   }
 }
 
-import scalaz.syntax.std.list._
 
 // TODO rename this, it's a general LabelWidget interaction API
 trait LabelWidgetIndex {
 
-  def reflowDB: TextReflowDB
+  def docStore: ReflowDocstore
   def layout: List[PosAttr]
   def index: SpatialIndex[PosAttr]
 
@@ -79,26 +79,41 @@ trait LabelWidgetIndex {
         // ... use that label for zone
         val label = targetLabels.head.get
 
-        val existingZones = selectedTargets
-          .map(p => (p, reflowDB.selectZones(p._2.target.docId, p._2.target.pageNum, label)))
+        val existingZones: Seq[Zone] = for {
+          (posAttr, target) <- selectedTargets
+          zoneId <- docStore.getZonesForTargetRegion(target.target.id)
+        } yield {
+          docStore.getZone(zoneId)
+        }
 
         // If any selected regions are already part of a zone...
         val resultZone = if (existingZones.nonEmpty) {
           // Merge them..
-          val mergedZone = reflowDB.mergeZones(existingZones.map(_._2).flatten)
+          val mergedZone = docStore.getZone(
+            docStore.mergeZones(existingZones.map(_.id))
+          )
 
           // Add all target regions to merged zone
-          selectedTargets
-            .map(tr => reflowDB.addZoneTargetRegion(mergedZone, tr._2.target))
+          selectedTargets.map(tr => docStore.setZoneTargetRegions(
+            mergedZone.id,
+            mergedZone.regions :+ tr._2.target
+          ))
           Option(mergedZone)
 
         } else {
           // Create a new Zone with given label
-          val docId = selectedTargets.head._2.target.docId
+          val stableId = selectedTargets.head._2.target.docId
+          val docId = docStore
+            .getDocument(stableId)
+            .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
 
-          val trs = selectedTargets.map(_._2.target)
+          val targetRegions = selectedTargets.map(_._2.target)
+          val newZone = docStore.getZone(
+            docStore.createZone(docId)
+          )
+          docStore.setZoneTargetRegions(newZone.id, targetRegions)
 
-          Option(reflowDB.createZone(docId, trs))
+          Option(newZone)
         }
 
         resultZone.map({zone =>

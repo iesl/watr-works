@@ -4,6 +4,7 @@ package textreflow
 import geometry._
 import textreflow.data._
 import watrmarks.{StandardLabels => LB}
+import PageComponentImplicits._
 
 trait ImageTextReflow extends PlainTextReflow {
   import com.sksamuel.scrimage._
@@ -31,7 +32,6 @@ trait ImageTextReflow extends PlainTextReflow {
     canvas1.image
   }
 
-  import PageComponentImplicits._
 
   def textReflowToImage(pageReflow: TextReflow): Image = {
     val vlines =  pageReflow.sliceLabels(LB.VisualLine)

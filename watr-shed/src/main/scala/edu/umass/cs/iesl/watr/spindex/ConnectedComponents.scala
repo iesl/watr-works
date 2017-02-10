@@ -28,12 +28,13 @@ sealed trait Component {
 
   def roleLabel: Label
 
-  lazy val pageId = mpageIndex.getPageForComponent(this)
+  lazy val pageNum = mpageIndex.getPageForComponent(this)
 
-  def getDocumentID() = mpageIndex.getDocumentID()
+  def getDocumentID() = mpageIndex.docId
+  def getStableID() = mpageIndex.getStableId()
 
   def getPageGeometry(): PageGeometry = {
-    mpageIndex.getPageGeometry(pageId)
+    mpageIndex.getPageGeometry(pageNum)
   }
 
   def queryAtoms(): Seq[AtomicComponent] = {

@@ -7,14 +7,6 @@ object EnrichNumerics {
   def fmt = (d: Double) => {
     f"${d}%1.2f"
   }
-  def fmtXX = (d: Double) => {
-    val dp = d * 1000.0d
-    val di = dp.toInt
-    val ds = di.toString.toList
-    val dec = ds.dropRight(1).takeRight(2)
-    val ints = ds.take(ds.length-3)
-    s"${ints.mkString}.${dec.mkString}"
-  }
 
   def dtoi(d: Double): Int = {
     // TODO: this conversion is critical code, document it!

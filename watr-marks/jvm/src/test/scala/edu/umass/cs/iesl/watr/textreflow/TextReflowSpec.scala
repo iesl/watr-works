@@ -13,7 +13,8 @@ import TypeTags._
 
 class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
 
-  def docStore: ReflowDocstore = MemDocstore
+  var freshDocstore = new MemDocstore
+  def docStore: ReflowDocstore = freshDocstore
 
   def annotateAndPrint(tr: TextReflow): Unit = {
     val ranges = tr.annotateCharRanges()
@@ -43,6 +44,7 @@ class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
     stringToTextReflow(s)(DocumentID("d0"), PageNum(0))
 
   it should "mod single char" in {
+    freshDocstore = new MemDocstore
     val pageText = (
       """|a q1
          |e ^{ﬂ}

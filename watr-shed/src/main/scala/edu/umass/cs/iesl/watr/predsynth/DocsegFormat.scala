@@ -7,9 +7,7 @@ import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
 import geometry._
 
-import watrmarks.{StandardLabels => LB}
 import TypeTags._
-
 
 trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats {
   private[this] val log = org.log4s.getLogger

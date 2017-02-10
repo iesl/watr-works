@@ -61,5 +61,11 @@ trait TypeTags {
     s"${tagClsname}:${tt.unwrap}"
   }
 
+
+  import scala.math.Ordering.Implicits._
+
+  implicit def TypeTagOrdering[T]: Ordering[Int@@T] = {
+    Ordering.by(_.unwrap)
+  }
 }
 

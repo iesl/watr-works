@@ -7,7 +7,6 @@ import geometry._
 
 import scala.collection.mutable
 import scala.collection.JavaConversions._
-import util._
 
 import _root_.com.itextpdf
 import itextpdf.kernel.geom.{Vector => PVector}

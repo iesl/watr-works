@@ -302,7 +302,6 @@ object AlignBioArxiv {
 
   }
 
-  import textreflow._
 
   def alignPaperWithDB(reflowDB: TextReflowDB, paper: PaperRec, docId: String@@DocumentID): List[AlignmentScores] = {
     log.debug("aligning bioarxiv paper")

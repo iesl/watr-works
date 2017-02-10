@@ -3,8 +3,6 @@ package spindex
 
 class ConnectedComponentTest extends ConnectedComponentTestUtil {
   import ComponentOperations._
-  import docstore.MemDocstore
-  import watrmarks.{StandardLabels => LB}
   import TypeTags._
   import textreflow._
 

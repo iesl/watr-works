@@ -11,7 +11,6 @@ import spray.http._
 import HttpHeaders._
 import HttpMethods._
 
-import concurrent.duration._
 import scala.concurrent.Future
 
 import corpora._

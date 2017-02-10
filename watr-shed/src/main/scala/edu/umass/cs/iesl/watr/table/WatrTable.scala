@@ -6,7 +6,6 @@ import pprint.PPrinter
 
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import spindex._
-import textreflow._
 import textreflow.data._
 import extract.images._
 import corpora._
@@ -14,7 +13,7 @@ import segment._
 import bioarxiv._
 
 import textboxing.{TextBoxing => TB}, TB._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
 import geometry._
@@ -127,6 +126,8 @@ object ShellCommands extends CorpusEnrichments {
   }
 
   implicit class RicherTextReflowDB(val theDB: TextReflowDB) extends AnyVal {
+    def docStorage = theDB.docstorage
+
     def dropAndCreateTables(): Unit = {
       theDB.tables.dropAndCreate.unsafePerformSync
     }
@@ -193,8 +194,22 @@ object ShellCommands extends CorpusEnrichments {
     }
 
 
+    def getZonesForPage(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Int@@ZoneID] = {
+      val pageZones = for {
+        docId <- docStorage.getDocument(stableId)
+        pageId <- docStorage.getPage(docId, pageNum)
+      } yield for {
+        tr <- docStorage.getTargetRegions(pageId)
+        zoneId <- docStorage.getZonesForTargetRegion(tr)
+      } yield { zoneId }
 
-    def bioArxivLabeler(docId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
+      pageZones
+        .getOrElse(sys.error(s"getZonesForPage: error getting ${stableId} page ${pageNum}"))
+    }
+
+    def bioArxivLabeler(stableId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
+      val docStorage = theDB.docstorage
+
       val paperRecWidget = LW.textbox(
         TB.vjoin()(
           paperRec.title,
@@ -208,85 +223,88 @@ object ShellCommands extends CorpusEnrichments {
 
       val page0 = PageNum(0)
       val r0 = RegionID(0)
-      theDB.getPageGeometry(docId, page0)
-        .map({pageGeometry =>
-          val pageTargetRegion = TargetRegion(r0, docId, page0, pageGeometry.bounds)
+      val docId = docStorage.getDocument(stableId)
+        .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
-          val allPageLines = for {
-            pageId <- theDB.selectPage(docId, page0)
-            (zone, linenum) <- theDB.selectZones(docId, pageId, LB.VisualLine).zipWithIndex
-            lineReflow <- theDB.getTextReflowForZone(zone)
-          } yield {
-            val lt = LW.labeledTarget(lineReflow.targetRegion, None, None)
-            (linenum, (0d, lt))
+      val pageId = docStorage.getPage(docId, page0)
+        .getOrElse(sys.error(s"Trying to access non-existent page in doc ${stableId} page 0"))
+
+      val pageGeometry = docStorage.getPageGeometry(pageId)
+        .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
+
+      val pageTargetRegion = TargetRegion(r0, stableId, page0, pageGeometry.bounds)
+
+
+      val allPageLines = for {
+        (zoneId, linenum) <- getZonesForPage(stableId, page0).zipWithIndex
+        lineReflow <- docStorage.getTextReflowForZone(zoneId)
+      } yield {
+        val lt = LW.labeledTarget(lineReflow.targetRegion, None, None)
+        (linenum, (0d, lt))
+      }
+
+      val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(theDB, paperRec, stableId)
+
+      // linenum -> best-score, label-widget
+      val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()
+      allLineScores ++= allPageLines
+
+      val overlays = scores.map({alignScores =>
+        val label = alignScores.alignmentLabel
+
+        val scoreList = alignScores.lineScores.toList
+        val maxScore = scoreList.map(_._2).max
+        val lineScores = scoreList.filter(_._2 > maxScore/2)
+
+        lineScores.foreach({case (linenum, score) =>
+          val lineReflow = alignScores.lineReflows(linenum)
+          val lineTarget = lineReflow.targetRegion
+          val normalScore = score/maxScore
+
+          val lt = LW.labeledTarget(lineTarget, Some(label), Some(normalScore))
+
+          if (allLineScores.contains(linenum)) {
+            val Some((currScore, currWidget)) = allLineScores.get(linenum)
+
+            if (normalScore > currScore) {
+              allLineScores.put(linenum, (normalScore, lt))
+            }
+
+          } else {
+            allLineScores.put(linenum, (normalScore, lt))
           }
 
-          val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(theDB, paperRec, docId)
-
-          // linenum -> best-score, label-widget
-          val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()
-          allLineScores ++= allPageLines
-
-          val overlays = scores.map({alignScores =>
-            val label = alignScores.alignmentLabel
-
-            val scoreList = alignScores.lineScores.toList
-            val maxScore = scoreList.map(_._2).max
-            val lineScores = scoreList.filter(_._2 > maxScore/2)
-
-            lineScores.foreach({case (linenum, score) =>
-              val lineReflow = alignScores.lineReflows(linenum)
-              val lineTarget = lineReflow.targetRegion
-              val normalScore = score/maxScore
-
-              val lt = LW.labeledTarget(lineTarget, Some(label), Some(normalScore))
-
-              if (allLineScores.contains(linenum)) {
-                val Some((currScore, currWidget)) = allLineScores.get(linenum)
-
-                if (normalScore > currScore) {
-                  allLineScores.put(linenum, (normalScore, lt))
-                }
-
-              } else {
-                allLineScores.put(linenum, (normalScore, lt))
-              }
-
-            })
-          })
-
-          val lwidgets = allLineScores.toList
-            .sortBy(_._1)
-            .map({case (linenum, (score, lwidget)) =>
-              lwidget
-            })
-
-          val controls = makeButtons(
-            "Clear Selections",
-            "Skip",
-            "Report Error"
-          )
-
-          val body = LW.row(
-            LW.targetOverlay(pageTargetRegion, lwidgets),
-            paperRecWidget
-          )
-
-          LW.pad(
-            LW.panel(LW.col(
-              controls,
-              body
-            )),
-            Padding(2d, 2d, 2d, 4d)
-          )
-
         })
-        .getOrElse(LW.textbox(
-          s"no pages found for ${docId}: ${paperRec.title}"
-        ))
+      })
+
+      val lwidgets = allLineScores.toList
+        .sortBy(_._1)
+        .map({case (linenum, (score, lwidget)) =>
+          lwidget
+        })
+
+      val controls = makeButtons(
+        "Clear Selections",
+        "Skip",
+        "Report Error"
+      )
+
+      val body = LW.row(
+        LW.targetOverlay(pageTargetRegion, lwidgets),
+        paperRecWidget
+      )
+
+      LW.pad(
+        LW.panel(LW.col(
+          controls,
+          body
+        )),
+        Padding(2d, 2d, 2d, 4d)
+      )
+
     }
 
-    def titleLabeler(docId: String@@DocumentID): LabelWidget = {
+    def titleLabeler(stableId: String@@DocumentID): LabelWidget = {
       // - presumptively label the title lines
       //    val tallestLines = page0.vlines.filter(_.height == tallest font height)
       //    val titleZone: List[Zone] = Zone(tallestLines, LB.Title)
@@ -300,22 +318,29 @@ object ShellCommands extends CorpusEnrichments {
 
       val page0 = PageNum(0)
       val r0 = RegionID(0)
+      val docId = docStorage.getDocument(stableId)
+        .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
-      theDB.getPageGeometry(docId, page0)
+      val pageId = docStorage.getPage(docId, page0)
+        .getOrElse(sys.error(s"Trying to access non-existent page in doc ${stableId} page 0"))
+
+      val pageGeometry = docStorage.getPageGeometry(pageId)
+        .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
+
+      docStorage.getPageGeometry(pageId)
         .map({pageGeometry =>
 
-          val pageTargetRegion = TargetRegion(r0, docId, page0,
+          val pageTargetRegion = TargetRegion(r0, stableId, page0,
             pageGeometry.bounds.copy(
               top = pageGeometry.bounds.top,
               height = pageGeometry.bounds.height / 3.0
             )
           )
 
-          // Find VisualLine zones that are likely titles and pre-select them
-          val zones = theDB.selectZones(docId, page0, LB.VisualLine)
 
           val vlines = for {
-            zone   <- zones
+            zoneId <- getZonesForPage(stableId, page0)
+            zone = docStorage.getZone(zoneId)
             region <- zone.regions
           } yield region
 

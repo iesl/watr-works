@@ -5,37 +5,18 @@ import edu.umass.cs.iesl.watr.{geometry => G}
 import edu.umass.cs.iesl.watr.{watrmarks => W}
 import scala.collection.mutable
 import utils.EnrichNumerics._
-// import TypeTags._
-
-trait DBModelType[IDType] {
-  def id: Int@@IDType
-}
-
-// trait DBResults[IDType, ModelType] {
-
-//   def option(): Option[ModelType]
-
-//   def unique(): Some[ModelType] = {
-//     option().fold(
-//       sys.error(s"Expected unique result; got None")
-//     )(Some(_))
-
-//   }
-// }
-// object DBResults {
-//   def apply[IDType, ModelType](maybeM: Option[ModelType]): DBResults[IDType, ModelType] =
-//     new DBResults[IDType, ModelType] {
-//       // def id = idKey
-//       def option(): Option[ModelType] = maybeM
-//     }
-
-// }
-
+import TypeTags._
+import TextReflowF._
 
 
 class DBRelation[IDType, ModelType](
   table: mutable.HashMap[Int@@IDType, ModelType] = mutable.HashMap[Int@@IDType, ModelType]()
-) {
+)(implicit O: Ordering[Int@@IDType]) {
+
+  def all(): Seq[ModelType] = {
+    val keys = table.keys.toSeq
+    keys.sorted.map(table(_))
+  }
 
   def option(id: Int@@IDType): Option[ModelType] = table.get(id)
 
@@ -44,8 +25,6 @@ class DBRelation[IDType, ModelType](
       sys.error(s"Expected unique ${id}; got None")
     )(x => x)
   }
-
-  def truncate(): Unit = {}
 
   lazy val idGen = utils.IdGenerator[IDType]()
   def nextId(): Int@@IDType = idGen.nextId
@@ -103,7 +82,7 @@ object Model {
 }
 
 
-object MemDocstore extends ReflowDocstore {
+class MemDocstore extends ReflowDocstore {
   object tables  {
 
     object documents extends DBRelation[DocumentID, Model.Document] {
@@ -189,8 +168,120 @@ object MemDocstore extends ReflowDocstore {
         rec
       }
     }
-
   }
+
+
+
+  import tables._
+
+  def getDocuments(): Seq[String@@DocumentID] = {
+    documents.all().map(_.docId)
+  }
+
+  def addDocument(docId: String@@DocumentID): Int@@DocumentID = {
+    documents.add(docId).prKey
+  }
+  def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID] = {
+    documents
+      .forStableId(stableId)
+      .map(docId => documents.unique(docId).prKey)
+  }
+
+  def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID = {
+    pages.add(docId, pageNum).prKey
+  }
+
+  def getPages(docId: Int@@DocumentID): Seq[Int@@PageID] = {
+    ???
+  }
+
+  def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID] = {
+    ???
+  }
+
+  def getPageGeometry(pageId: Int@@PageID): Option[G.PageGeometry] = {
+    ???
+  }
+
+  def updatePageGeometry(pageId: Int@@PageID, pageBounds: G.LTBounds): Unit = {
+    pages.updateGeometry(pageId, pageBounds)
+  }
+
+  def updatePageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
+    ???
+  }
+
+  def addTargetRegion(pageId: Int@@PageID, bbox: G.LTBounds): Int@@RegionID = {
+    val model = targetregions.add(pageId, bbox)
+    model.prKey
+    // val maybeResult = for {
+    //   docId <- tables.documents.forStableId(stableId)
+    //   pageId <- tables.pages.forDocAndPage(docId, pageNum)
+    // } yield {
+    //   val tr = tables.targetregions.add(pageId, bbox)
+    //   G.TargetRegion(tr.prKey, stableId, pageNum, bbox)
+    // }
+    // maybeResult.getOrElse {
+    //   sys.error(s"addTargetRegion(${stableId})")
+    // }
+    // ???
+  }
+
+  def getTargetRegion(regionId: Int@@RegionID): G.TargetRegion = {
+    val model = targetregions.unique(regionId)
+    val modelPage = pages.unique(model.page)
+    val mDocument = documents.unique(modelPage.document)
+    val (l, t, w, h) = (modelPage.bleft, modelPage.btop, modelPage.bwidth, modelPage.bheight)
+    val (bl, bt, bw, bh) = (itod(l), itod(t), itod(w), itod(h))
+    val bbox = G.LTBounds(bl, bt, bw, bh)
+    G.TargetRegion(model.prKey, mDocument.docId, modelPage.pagenum, bbox)
+  }
+
+  def addTargetRegionImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
+    ???
+  }
+
+  def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID] = {
+    ???
+  }
+
+  def createZone(docId: Int@@DocumentID): Int@@ZoneID = {
+    ???
+  }
+
+  def getZone(zoneId: Int@@ZoneID): G.Zone = {
+    ???
+  }
+
+  def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[G.TargetRegion]): Unit = {
+    ???
+  }
+
+  def addZoneLabel(zoneId: Int@@ZoneID, label: W.Label): Unit = {
+    ???
+  }
+
+  def getZonesForDocument(docId: Int@@DocumentID): Seq[Int@@ZoneID] = {
+    ???
+  }
+
+  def getZonesForTargetRegion(regionId: Int@@RegionID): Seq[Int@@ZoneID] = {
+    ???
+  }
+
+  def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
+    ???
+  }
+
+  def mergeZones(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
+    ???
+  }
+
+  def deleteZone(zoneId: Int@@ZoneID): Unit = {
+    ???
+  }
+
+
 
   // select all documents+zone+labels for documents having any zones labeled "author-surname"
   //   returns Model.Document :: List[Model.Zone :: List[Model.TargetRegion] :: List[Label]]
@@ -209,29 +300,9 @@ object MemDocstore extends ReflowDocstore {
       val labels = List[W.Label]()
       G.Zone(zoneId, targetRegions, labels)
     }
-    ???
+      ???
   }
 
-  def getDocument(docId: String@@DocumentID): Option[Model.Document] = {
-    tables.documents
-      .forStableId(docId)
-      .map(tables.documents.unique(_))
-  }
-
-  def addDocument(docId: String@@DocumentID): Unit = {
-    tables.documents.add(docId)
-  }
-
-  def addPage(stableId: String@@DocumentID, pageNum: Int@@PageNum): Int@@PageID = {
-    val maybePage = for {
-      docId <- tables.documents.forStableId(stableId)
-    } yield {
-      tables.pages.add(docId, pageNum)
-    }
-    maybePage.map(_.prKey).getOrElse {
-      sys.error(s"addPage(${stableId}, ${pageNum}): Error")
-    }
-  }
 
   def getPage(stableId: String@@DocumentID, pageNum: Int@@PageNum): Int@@PageID = {
     val maybePage = for {
@@ -245,10 +316,6 @@ object MemDocstore extends ReflowDocstore {
     }
   }
 
-  def updatePageGeometry(pageId: Int@@PageID, pageBounds: G.LTBounds): Unit = {
-    tables.pages
-      .updateGeometry(pageId, pageBounds)
-  }
 
   def updatePageGeometry(stableId: String@@DocumentID, pageNum: Int@@PageNum, geom: G.LTBounds): Unit = {
     for {
@@ -264,17 +331,11 @@ object MemDocstore extends ReflowDocstore {
     G.Zone(mzone.prKey, List(), List())
   }
 
-  def getZone(zoneId: Int@@ZoneID): G.Zone = {
-    ???
-  }
 
   def addZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[G.TargetRegion]): G.Zone = {
     ???
   }
 
-  def addZoneLabel(zoneId: Int@@ZoneID, label: W.Label): G.Zone = {
-    ???
-  }
 
   def addTargetRegion(stableId: String@@DocumentID, pageNum: Int@@PageNum, bbox: G.LTBounds): G.TargetRegion = {
     val maybeResult = for {

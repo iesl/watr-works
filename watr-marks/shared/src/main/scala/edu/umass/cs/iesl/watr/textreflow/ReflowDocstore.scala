@@ -3,36 +3,41 @@ package textreflow
 
 import geometry._
 import watrmarks._
+import TextReflowF._
 
 trait ReflowDocstore {
+  def getDocuments(): Seq[String@@DocumentID]
+  def addDocument(docId: String@@DocumentID): Int@@DocumentID
+  def getDocument(docId: String@@DocumentID): Option[Int@@DocumentID]
 
-  def createZone(docId: String@@DocumentID): Zone
+  def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
+  def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
+  def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID]
+  def getPageGeometry(pageId: Int@@PageID): Option[PageGeometry]
+  def updatePageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
+  def updatePageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
+
+  def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
+  def getTargetRegion(regionId: Int@@RegionID): TargetRegion
+  def addTargetRegionImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
+  def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID]
+
+  def createZone(docId: Int@@DocumentID): Int@@ZoneID
   def getZone(zoneId: Int@@ZoneID): Zone
-  def addZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Zone
-  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone
-
-  def getDocumentZones(docId: String@@DocumentID): Seq[Zone]
-  def addDocument(docId: String@@DocumentID): Unit
-
-  def addPage(docId: String@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
-  def updatePageGeometry(docId: String@@DocumentID, pageNum: Int@@PageNum, geom: LTBounds): Unit
-  // def updatePageImage(docId: String@@DocumentID, pageNum: Int@@PageNum, geom: LTBounds): Unit
-
-  def addTargetRegion(docId: String@@DocumentID, pageId: Int@@PageNum, bbox:LTBounds): TargetRegion
+  def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit
+  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit
+  def getZonesForDocument(docId: Int@@DocumentID): Seq[Int@@ZoneID]
+  def getZonesForTargetRegion(regionId: Int@@RegionID): Seq[Int@@ZoneID]
+  def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
+  def mergeZones(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID
+  def deleteZone(zoneId: Int@@ZoneID): Unit
 
 
-  // Multipage Index
-  //    val pageIndexes = mutable.HashMap[Int@@PageID, PageIndex]()
-  //    val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
-  //    val labelToZones: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ZoneID]] = mutable.HashMap()
-  //    val zoneToTextReflow: mutable.HashMap[Int@@ZoneID, TextReflow] = mutable.HashMap()
-  //    val componentIdToZoneId: mutable.HashMap[Int@@ComponentID, Int@@ZoneID] = mutable.HashMap()
-  //    private def getLabelToZoneBuffer(l: Label): mutable.ArrayBuffer[Int@@ZoneID] = {
-  //    val relations = mutable.ArrayBuffer[Relation.Record]()
-  //    val props = mutable.ArrayBuffer[Prop.PropRec]()
-  //    type BioLabeling = mutable.MutableList[BioNode]
-  //    val bioLabelings = mutable.Map[String, BioLabeling]()
-  //  def getDocumentID(): String@@DocumentID = docId
+  //  def getPageVisualLines(pageId: Int@@PageID): Seq[Component]  = for {
+  //  def getDocumentVisualLines(): Seq[Seq[Component]] = for {
+
+
+
   //  def dbgFilterComponents(pg: Int@@PageID, include: LTBounds): Unit ={
   //  def dbgFilterPages(pg: Int@@PageID): Unit ={
   //  def getZoneForComponent(cc: Int@@ComponentID): Option[Int@@ZoneID] = {
@@ -44,15 +49,9 @@ trait ReflowDocstore {
   //  def getVisualLineTextReflows(): Seq[TextReflow] = for {
   //  def getTextReflows(labels: Label*): Seq[TextReflow]  = {
   //  def getZones(): Seq[Zone] = {
-  //  private def getLabelToZoneBuffer(l: Label): mutable.ArrayBuffer[Int@@ZoneID] = {
-  //  def addZone(z: Zone): Zone =  {
   //  def addRelations(rs: Seq[Relation.Record]): Unit = {
   //  def addProps(rs: Seq[Prop.PropRec]): Unit = {
   //  def bioLabeling(name: String): BioLabeling = {
-  //  def setChildrenWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
-  //  def getChildrenWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
-  //  def getChildren(c: Component, l: Label): Option[Seq[Component]] = {
-  //  def getPageForComponent(c: Component): Int@@PageID = {
   //  def addLabel(c: Component, l: Label): Component = {
   //  def removeLabel(c: Component, l: Label): Component = {
   //  def getLabels(c: Component): Set[Label] = {
@@ -63,11 +62,6 @@ trait ReflowDocstore {
   //  def addPageAtom(pageAtom: PageAtom): AtomicComponent = {
   //  def getComponent(id: Int@@ComponentID, pageId: Int@@PageID): Component = {
   //  def addComponent(c: Component): Component = {
-  //  def getPageGeometry(p: Int@@PageID) = pageIndexes(p).pageGeometry
-  //  def getPages(): List[Int@@PageID] = {
-  //  def addPage(pageGeometry: PageGeometry): PageIndex = {
   //  def addBioLabels(label: Label, node: BioNode): Unit = {
   //  def addBioLabels(label: Label, nodes: Seq[BioNode]): Unit = {
-  //  def loadTextReflows(
-  //  def loadSpatialIndices(
 }

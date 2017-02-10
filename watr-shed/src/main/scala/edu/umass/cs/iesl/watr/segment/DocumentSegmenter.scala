@@ -188,9 +188,6 @@ class DocumentSegmenter(
 
   def vtrace = mpageIndex.vtrace
 
-  import scala.math.Ordering.Implicits._
-  implicit def RegionIDOrdering: Ordering[Int@@RegionID] = Ordering.by(_.unwrap)
-
   import DocumentSegmenter._
 
   var docOrientation: Double = 0d

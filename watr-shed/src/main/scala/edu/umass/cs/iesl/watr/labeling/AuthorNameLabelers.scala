@@ -7,13 +7,11 @@ import AlignBioArxiv._
 import data._
 import geometry._
 import PageComponentImplicits._
-import textreflow._
 import textreflow.data._
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 import data._
-import textreflow._
 import docstore._
 
 

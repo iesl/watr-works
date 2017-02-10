@@ -7,7 +7,6 @@ import geometry._
 import textreflow._
 import textreflow.data._
 import labeling.data._
-import utils.EnrichNumerics._
 import TypeTags._
 
 // import watrmarks.{StandardLabels => LB}
@@ -25,7 +24,8 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with 
   def sel0: TargetRegion = tr
   def sel1: TargetRegion = tr
 
-  def docStore: ReflowDocstore = MemDocstore
+  var freshDocstore = new MemDocstore
+  def docStore: ReflowDocstore = freshDocstore
 
   // it should "specify widget layout" in {
 
@@ -81,6 +81,7 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with 
   }
 
   it should "properly position widgets" in {
+    freshDocstore = new MemDocstore
     import LW._
 
     val reflow0 = stringToReflow("Meow, said the cat.")

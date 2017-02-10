@@ -6,7 +6,6 @@ import extract.PdfTextExtractor
 import extract.fonts._
 import spindex._
 import textboxing.{TextBoxing => TB}, TB._
-import watrmarks.{StandardLabels => LB}
 import utils.IdGenerator
 import predsynth._
 

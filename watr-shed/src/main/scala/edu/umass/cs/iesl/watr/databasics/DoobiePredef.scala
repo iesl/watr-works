@@ -63,12 +63,12 @@ trait DoobiePredef {
     )
 
   implicit val TargetRegionMeta: Composite[TargetRegion] =
-    Composite[(Int@@RegionID) :: (String@@DocumentID) :: (Int@@PageID) :: LTBounds :: HNil].xmap({
-      case regionId :: docId :: pageId :: ltb :: HNil =>
-        TargetRegion(regionId, docId, pageId, ltb)
+    Composite[(Int@@RegionID) :: (String@@DocumentID) :: (Int@@PageNum) :: LTBounds :: HNil].xmap({
+      case regionId :: docId :: pageNum :: ltb :: HNil =>
+        TargetRegion(regionId, docId, pageNum, ltb)
     },{targetRegion =>
-      val TargetRegion(regionId, docId, pageId, ltb@LTBounds(bl, bt, bw, bh)) = targetRegion
-      regionId :: docId :: pageId :: ltb :: HNil
+      val TargetRegion(regionId, docId, pageNum, ltb@LTBounds(bl, bt, bw, bh)) = targetRegion
+      regionId :: docId :: pageNum :: ltb :: HNil
     })
 
   case class ZonedRegion(
