@@ -103,7 +103,7 @@ class TextReflowDBTables(
   //       widget      TEXT
   //     );
   //   """.update
-  // val createLabelProgressTable: Update0 = sql"""
+  // val createLabelingTaskTable: Update0 = sql"""
   //     CREATE TABLE labelingtasks (
   //       labelingtask     SERIAL PRIMARY KEY,
   //       taskname         VARCHAR(128), // title/author

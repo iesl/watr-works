@@ -652,10 +652,15 @@ class TextReflowDB(
       query.transact(xa).unsafePerformSync
     }
 
+    def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID] = {
+      ???
+    }
+
     def getPages(docId: Int@@DocumentID): Seq[Int@@PageID] = {
       ???
     }
-    def getPageGeometry(pageId: Int@@PageID): Option[PageGeometry] = {
+
+    def getPageGeometry(pageId: Int@@PageID): Option[LTBounds] = {
       ???
     }
 

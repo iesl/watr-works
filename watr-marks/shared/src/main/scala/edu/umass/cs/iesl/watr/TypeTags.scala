@@ -29,6 +29,9 @@ sealed trait Length
 
 sealed trait Percent
 
+sealed trait LabelerID
+sealed trait LabelingTaskID
+
 
 object TypeTags extends TypeTags
 
@@ -56,6 +59,9 @@ trait TypeTags {
 
   val Percent = Tag.of[Percent]
 
+  val LabelerID = Tag.of[LabelerID]
+  val LabelingTaskID = Tag.of[LabelingTaskID]
+
   def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
     val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
     s"${tagClsname}:${tt.unwrap}"
@@ -68,4 +74,3 @@ trait TypeTags {
     Ordering.by(_.unwrap)
   }
 }
-

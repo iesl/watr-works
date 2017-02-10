@@ -1,12 +1,14 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
+import watrmarks.{StandardLabels => LB}
+
 class ConnectedComponentTest extends ConnectedComponentTestUtil {
   import ComponentOperations._
   import TypeTags._
   import textreflow._
 
-  lazy val docStore: ReflowDocstore = MemDocstore
+  lazy val docStore: ReflowDocstore = new MemDocstore
   behavior of "connected components"
 
 

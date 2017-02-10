@@ -11,10 +11,8 @@ import watrmarks.{StandardLabels => LB}
 import textreflow._
 
 class FreshTextReflowDBTables(
-  reflowDB:TextReflowDB
+  override val docStore:ReflowDocstore
 ) extends ImageTextReflow {
-
-  lazy val docStore: ReflowDocstore = reflowDB.docstorage
 
 
   def loadSampleDoc(): String@@DocumentID = {
@@ -42,15 +40,14 @@ class FreshTextReflowDBTables(
 
     val images = pages.map(textReflowToImage(_))
 
+
     val mpageIndex = MultiPageIndex.loadTextReflows(
-      docId, pages, reflowDB.docstorage
+      docId, pages, docStore
     )
 
     val ds = DocumentSegmentation(
       mpageIndex, PageImages(images)
     )
-
-    reflowDB.addSegmentation(ds)
 
     docId
   }
@@ -72,22 +69,27 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
 
   lazy val docStore: ReflowDocstore = reflowDB.docstorage
 
-
   behavior of "database-backed corpus"
 
-  it should "add zones" in new FreshTextReflowDBTables(reflowDB) {
+  it should "add zones" in new FreshTextReflowDBTables(docStore) {
     tables.dropAndCreate.unsafePerformSync
 
-    val docId = loadSampleDoc()
+    val stableId = loadSampleDoc()
+    val pageNum = PageNum(1)
 
-    val targetRegionsPg1 = reflowDB.selectTargetRegions(docId, PageNum(1))
+    val docId = docStore.getDocument(stableId).get
+    val pageId = docStore.getPage(docId, pageNum).get
 
-    val newZone = reflowDB.createZone(docId, targetRegionsPg1)
-    reflowDB.addZoneLabel(newZone, LB.PageLines)
+    val targetRegionsPg1 = docStore.getTargetRegions(pageId)
+
+
+    val newZoneId = docStore.createZone(docId)
+    docStore.addZoneLabel(newZoneId, LB.PageLines)
+    val newZone = docStore.getZone(newZoneId)
     println(s"newZone: ${newZone}")
 
-    targetRegionsPg1.foreach { tr =>
-      val zones = reflowDB.selectZones(tr.docId, tr.pageNum, LB.PageLines)
+    targetRegionsPg1.foreach { regionId =>
+      val zones = docStore.getZonesForTargetRegion(regionId)
       println(s"Got zones ${zones}")
     }
   }

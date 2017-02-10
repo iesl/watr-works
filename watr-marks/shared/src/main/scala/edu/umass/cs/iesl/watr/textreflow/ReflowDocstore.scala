@@ -13,7 +13,7 @@ trait ReflowDocstore {
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
   def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
   def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID]
-  def getPageGeometry(pageId: Int@@PageID): Option[PageGeometry]
+  def getPageGeometry(pageId: Int@@PageID): Option[LTBounds]
   def updatePageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
   def updatePageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
 
