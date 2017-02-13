@@ -32,6 +32,7 @@ sealed trait Percent
 sealed trait LabelerID
 sealed trait LabelingTaskID
 
+sealed trait TextReflowID
 
 object TypeTags extends TypeTags
 
@@ -47,6 +48,7 @@ trait TypeTags {
   val CharID = Tag.of[CharID]
   val ComponentID = Tag.of[ComponentID]
   val LabelID = Tag.of[LabelID]
+  val TextReflowID = Tag.of[TextReflowID]
 
   val MentionID  = Tag.of[MentionID]
   val ClusterID  = Tag.of[ClusterID]

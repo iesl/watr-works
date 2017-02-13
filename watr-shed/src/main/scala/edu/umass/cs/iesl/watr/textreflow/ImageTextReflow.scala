@@ -11,11 +11,11 @@ trait ImageTextReflow extends PlainTextReflow {
   import com.sksamuel.scrimage.canvas._
 
   def stringsToMultiPageAtomsWithImages(
-    docId: String@@DocumentID,
+    stableId: String@@DocumentID,
     strs: String*
   ): Seq[(Seq[PageAtom], PageGeometry, Image)] = {
     for {
-      ((atoms, geom), pstr) <- stringsToMultiPageAtoms(docId, strs:_*).zip(strs.toList)
+      ((atoms, geom), pstr) <- stringsToMultiPageAtoms(stableId, strs:_*).zip(strs.toList)
     } yield (atoms, geom, textToImage(pstr))
   }
 
@@ -37,7 +37,7 @@ trait ImageTextReflow extends PlainTextReflow {
     val vlines =  pageReflow.sliceLabels(LB.VisualLine)
 
     // total page target region
-    val TargetRegion(id, docId, pageId, LTBounds(l, t, w, h) ) =
+    val TargetRegion(id, stableId, pageId, LTBounds(l, t, w, h) ) =
       pageReflow.targetRegions.reduce(_ union _)
 
     val blank = Image.filled((w*10).toInt, (h*10).toInt, X11Colorlist.White)

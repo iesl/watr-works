@@ -89,9 +89,8 @@ trait LabelWidgetIndex {
         // If any selected regions are already part of a zone...
         val resultZone = if (existingZones.nonEmpty) {
           // Merge them..
-          val mergedZone = docStore.getZone(
-            docStore.mergeZones(existingZones.map(_.id))
-          )
+          val mergedZone: Zone =  ???
+            // docStore.getZone(docStore.mergeZones(existingZones.map(_.id)))
 
           // Add all target regions to merged zone
           selectedTargets.map(tr => docStore.setZoneTargetRegions(
@@ -102,7 +101,7 @@ trait LabelWidgetIndex {
 
         } else {
           // Create a new Zone with given label
-          val stableId = selectedTargets.head._2.target.docId
+          val stableId = selectedTargets.head._2.target.stableId
           val docId = docStore
             .getDocument(stableId)
             .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))

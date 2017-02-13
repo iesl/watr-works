@@ -12,7 +12,7 @@ import GeometryImplicits._
 
 case class TargetRegion(
   id: Int@@RegionID,
-  docId: String@@DocumentID,
+  stableId: String@@DocumentID,
   pageNum: Int@@PageNum,
   bbox: LTBounds
 ) {
@@ -26,9 +26,9 @@ case class TargetRegion(
 object TargetRegion {
 
   implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
-    case (TargetRegion(id, docId, targetPage, bbox), TargetRegion(id2, docId2, targetPage2, bbox2)) =>
+    case (TargetRegion(id, stableId, targetPage, bbox), TargetRegion(id2, stableId2, targetPage2, bbox2)) =>
       (id.unwrap==id2.unwrap
-        && docId.unwrap==docId.unwrap
+        && stableId.unwrap==stableId.unwrap
         && targetPage.unwrap==targetPage2.unwrap
         && (bbox: GeometricFigure) === bbox2
       )
@@ -36,9 +36,9 @@ object TargetRegion {
   })
 
   def fromUri(uriString: String): TargetRegion = {
-    val Array(docId, pageId, l, t, w, h) = uriString.split("\\+")
+    val Array(stableId, pageId, l, t, w, h) = uriString.split("\\+")
 
-    TargetRegion(RegionID(0), DocumentID(docId), PageNum(pageId.toInt),
+    TargetRegion(RegionID(0), DocumentID(stableId), PageNum(pageId.toInt),
       LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble)
     )
   }
@@ -123,6 +123,9 @@ case class FontClass(
 
 
 object PageComponentImplicits {
+  def createTargetRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
+    s"${stableId}+${pageNum}+${bbox.uriString}"
+  }
 
   implicit class RicherZone(val zone: Zone) extends AnyVal {
 
@@ -158,10 +161,10 @@ object PageComponentImplicits {
   }
 
   implicit class RicherPageGeometry(val thePageGeometry: PageGeometry) extends AnyVal {
-    def toTargetRegion(docId: String@@DocumentID): TargetRegion = {
+    def toTargetRegion(stableId: String@@DocumentID): TargetRegion = {
       TargetRegion(
         RegionID(0),
-        docId,
+        stableId,
         thePageGeometry.id,
         thePageGeometry.bounds
       )
@@ -217,12 +220,14 @@ object PageComponentImplicits {
     }
 
     def uriString: String = {
-      val doc = theTargetRegion.docId
-      val pg = theTargetRegion.pageNum
-      val bbox = theTargetRegion.bbox.uriString
-      s"${doc}+${pg}+${bbox}"
+      createTargetRegionUri(
+        theTargetRegion.stableId,
+        theTargetRegion.pageNum,
+        theTargetRegion.bbox
+      )
     }
   }
+
 
   implicit class RicherCharAtom(val charRegion: CharAtom) extends AnyVal {
 

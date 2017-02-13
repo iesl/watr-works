@@ -1,21 +1,20 @@
 package edu.umass.cs.iesl.watr
-package textreflow
+package databasics
 
 import edu.umass.cs.iesl.watr.{geometry => G}
 import edu.umass.cs.iesl.watr.{watrmarks => W}
 import scala.collection.mutable
-import utils.EnrichNumerics._
+// import utils.EnrichNumerics._
 import TypeTags._
+import textreflow._
 import TextReflowF._
-
-import databasics._
-
+import watrmarks.Label
 
 object Model {
 
   case class Document(
-    prKey: Int@@DocumentID,
-    docId: String@@DocumentID
+    prKey   : Int@@DocumentID,
+    stableId: String@@DocumentID
   )
 
   case class Page(
@@ -23,26 +22,30 @@ object Model {
     document : Int@@DocumentID,
     pagenum  : Int@@PageNum,
     pageimg  : Option[Array[Byte]],
-    bleft    : Int,
-    btop     : Int,
-    bwidth   : Int,
-    bheight  : Int
+    bounds   : G.LTBounds
   )
 
   case class TargetRegion(
     prKey    : Int@@RegionID,
     page     : Int@@PageID,
-    bleft    : Int,
-    btop     : Int,
-    bwidth   : Int,
-    bheight  : Int,
+    bounds   : G.LTBounds,
     uri      : String
   )
+  // bleft    : Int,
+  // btop     : Int,
+  // bwidth   : Int,
+  // bheight  : Int,
 
 
   case class Zone(
     prKey    : Int@@ZoneID,
     document : Int@@DocumentID
+  )
+
+  case class TextReflow(
+    prKey    : Int@@TextReflowID,
+    reflow   : String,
+    zone     : Int@@ZoneID
   )
 
   case class Label(
@@ -61,6 +64,7 @@ object Model {
     taskState : String,
     assignee  : String
   )
+
 }
 
 
@@ -68,16 +72,16 @@ class MemDocstore extends ReflowDocstore {
   object tables  {
 
     object documents extends DBRelation[DocumentID, Model.Document] {
-      val stableId = mutable.HashMap[String@@DocumentID, Int@@DocumentID]()
+      val stableIds = mutable.HashMap[String@@DocumentID, Int@@DocumentID]()
 
-      def forStableId(docId: String@@DocumentID): Option[Int@@DocumentID] = {
-        stableId.get(docId)
+      def forStableId(stableId: String@@DocumentID): Option[Int@@DocumentID] = {
+        stableIds.get(stableId)
       }
 
-      def add(docId: String@@DocumentID): Model.Document= {
-        val rec = Model.Document(nextId(), docId)
+      def add(stableId: String@@DocumentID): Model.Document= {
+        val rec = Model.Document(nextId(), stableId)
         insert(rec.prKey, rec)
-        stableId.put(docId, rec.prKey)
+        stableIds.put(stableId, rec.prKey)
         rec
       }
     }
@@ -91,38 +95,31 @@ class MemDocstore extends ReflowDocstore {
       }
 
       def add(docId: Int@@DocumentID, pageNum: Int@@PageNum): Model.Page = {
-        val rec = Model.Page(nextId(), docId, pageNum, None, 0, 0, 0, 0)
+        val rec = Model.Page(nextId(), docId, pageNum, None, G.LTBounds(0, 0, 0, 0))
         insert(rec.prKey, rec)
         documentFKey.put(docId, rec.prKey)
         docIdPageNumKey.put((docId, pageNum), rec.prKey)
         rec
       }
 
-      def updateGeometry(pageId: Int@@PageID, geom:G.LTBounds): Model.Page = {
+      def setGeometry(pageId: Int@@PageID, bbox:G.LTBounds): Model.Page = {
         val curr = unique(pageId)
-        val G.LTBounds(l, t, w, h) = geom
-        val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
-        val up = curr.copy(bleft=bl, btop=bt , bwidth=bw , bheight=bh)
+        val up = curr.copy(bounds=bbox)
         update(pageId, up)
         up
       }
 
-      def getGeometry(pageId: Int@@PageID): Option[G.LTBounds] = {
-        option(pageId).map({page =>
-          val (l, t, w, h) = (page.bleft, page.btop, page.bwidth, page.bheight)
-          val (bl, bt, bw, bh) = (itod(l), itod(t), itod(w), itod(h))
-          G.LTBounds(bl, bt, bw, bh)
-        })
+      def getGeometry(pageId: Int@@PageID): G.LTBounds = {
+        unique(pageId).bounds
       }
     }
 
     object zones extends DBRelation[ZoneID, Model.Zone] with EdgeTableOneToMany[DocumentID, ZoneID]{
       val documentFK = mutable.HashMap[Int@@DocumentID, Int@@ZoneID]()
 
+      object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
+      object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
 
-      def forDocument(docId: Int@@DocumentID): Seq[Int@@ZoneID] = {
-        getEdges(docId)
-      }
 
       def addTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
         zoneToTargetRegion.addEdge(zoneId, regionId)
@@ -168,17 +165,31 @@ class MemDocstore extends ReflowDocstore {
 
     object targetregions extends DBRelation[RegionID, Model.TargetRegion] with EdgeTableOneToMany[ZoneID, RegionID] {
 
-      def forZone(zoneId: Int@@ZoneID): Seq[Int@@RegionID] = {
-        getEdges(zoneId)
-      }
+      object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
 
-      def add(pageId: Int@@PageID, geom: G.LTBounds): Model.TargetRegion = {
-        val G.LTBounds(l, t, w, h) = geom
-        val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
-        val rec = Model.TargetRegion(nextId(), pageId, bl, bt, bw, bh, "")
+      def add(pageId: Int@@PageID, bbox: G.LTBounds): Model.TargetRegion = {
+        // val G.LTBounds(l, t, w, h) = geom
+        // val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+        val rec = Model.TargetRegion(nextId(), pageId, bbox, "")
         insert(rec.prKey, rec)
         rec
       }
+    }
+
+    object textreflows extends DBRelation[TextReflowID, Model.TextReflow] {
+      object forZone extends EdgeTableOneToOne[ZoneID, TextReflowID]
+
+
+      def add(zoneId: Int@@ZoneID, t: TextReflow): Model.TextReflow = {
+        import TextReflowJsonCodecs._
+        import play.api.libs.json
+        val asJson = t.toJson()
+        val asStr = json.Json.stringify(asJson)
+        val rec = Model.TextReflow(nextId(), asStr, zoneId)
+        this.insert(rec.prKey, rec)
+        rec
+      }
+
     }
 
     object labelers extends DBRelation[LabelerID, Model.LabelingWidget] {
@@ -194,16 +205,16 @@ class MemDocstore extends ReflowDocstore {
   import tables._
 
   def getDocuments(): Seq[String@@DocumentID] = {
-    documents.all().map(_.docId)
+    documents.all().map(_.stableId)
   }
 
-  def addDocument(docId: String@@DocumentID): Int@@DocumentID = {
-    documents.add(docId).prKey
+  def addDocument(stableId: String@@DocumentID): Int@@DocumentID = {
+    documents.add(stableId).prKey
   }
   def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID] = {
     documents
       .forStableId(stableId)
-      .map(docId => documents.unique(docId).prKey)
+      .map(stableId => documents.unique(stableId).prKey)
   }
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID = {
@@ -218,15 +229,15 @@ class MemDocstore extends ReflowDocstore {
     pages.forDocAndPage(docId, pageNum)
   }
 
-  def getPageGeometry(pageId: Int@@PageID): Option[G.LTBounds] = {
+  def getPageGeometry(pageId: Int@@PageID): G.LTBounds = {
     pages.getGeometry(pageId)
   }
 
-  def updatePageGeometry(pageId: Int@@PageID, pageBounds: G.LTBounds): Unit = {
-    pages.updateGeometry(pageId, pageBounds)
+  def setPageGeometry(pageId: Int@@PageID, pageBounds: G.LTBounds): Unit = {
+    pages.setGeometry(pageId, pageBounds)
   }
 
-  def updatePageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
+  def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
     sys.error("unsupported operation")
   }
 
@@ -240,14 +251,21 @@ class MemDocstore extends ReflowDocstore {
     val model = targetregions.unique(regionId)
     val modelPage = pages.unique(model.page)
     val mDocument = documents.unique(modelPage.document)
-    val (l, t, w, h) = (modelPage.bleft, modelPage.btop, modelPage.bwidth, modelPage.bheight)
-    val (bl, bt, bw, bh) = (itod(l), itod(t), itod(w), itod(h))
-    val bbox = G.LTBounds(bl, bt, bw, bh)
-    G.TargetRegion(model.prKey, mDocument.docId, modelPage.pagenum, bbox)
+    // val (l, t, w, h) = (modelPage.bleft, modelPage.btop, modelPage.bwidth, modelPage.bheight)
+    // val (bl, bt, bw, bh) = (itod(l), itod(t), itod(w), itod(h))
+    // val bbox = G.LTBounds(bl, bt, bw, bh)
+    G.TargetRegion(model.prKey, mDocument.stableId, modelPage.pagenum, modelPage.bounds)
   }
 
-  def addTargetRegionImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
-    sys.error("unsupported operation")
+  def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
+    ???
+  }
+
+  def getTargetRegionImage(regionId: Int@@RegionID): Array[Byte] = {
+    ???
+  }
+  def deleteTargetRegionImage(regionId: Int@@RegionID): Unit = {
+    ???
   }
 
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID] = {
@@ -286,23 +304,32 @@ class MemDocstore extends ReflowDocstore {
     zones.addLabel(zoneId, label.fqn)
   }
 
-  def getZonesForDocument(docId: Int@@DocumentID): Seq[Int@@ZoneID] = {
-    zones.forDocument(docId)
+  def getZonesForDocument(docId: Int@@DocumentID, labels: Label*): Seq[Int@@ZoneID] = {
+    zones.forDocument.getEdges(docId)
+      ???
   }
 
-  def getZonesForTargetRegion(regionId: Int@@RegionID): Seq[Int@@ZoneID] = {
-    // zones.forT
-    // targetregions.forZone()
-    ???
+  def getZonesForTargetRegion(regionId: Int@@RegionID, labels: Label*): Seq[Int@@ZoneID] = {
+    targetregions.forZone.getEdges(regionId)
+      ???
+  }
+
+  def getZonesForPage(regionId: Int@@PageID, labels: Label*): Seq[Int@@ZoneID] = {
+    // targetregions.forZone.getEdges(regionId)
+      ???
   }
 
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
-    ???
+    textreflows.forZone
+      .getRhs(zoneId)
+      .map({reflowId =>
+        import play.api.libs.json
+        TextReflowJsonCodecs.jsonToTextReflow(
+          json.Json.parse(textreflows.unique(reflowId).reflow)
+        )
+      })
   }
 
-  def mergeZones(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
-    ???
-  }
 
   def deleteZone(zoneId: Int@@ZoneID): Unit = {
     ???

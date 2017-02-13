@@ -303,7 +303,7 @@ object AlignBioArxiv {
   }
 
 
-  def alignPaperWithDB(reflowDB: TextReflowDB, paper: PaperRec, docId: String@@DocumentID): List[AlignmentScores] = {
+  def alignPaperWithDB(reflowDB: TextReflowDB, paper: PaperRec, stableId: String@@DocumentID): List[AlignmentScores] = {
     log.debug("aligning bioarxiv paper")
 
     val titleBoosts = new AlignmentScores(LB.Title)
@@ -313,12 +313,13 @@ object AlignBioArxiv {
 
     val page0 = PageNum(0)
     val r0 = RegionID(0)
+    val docStore = reflowDB.docstorage
 
     val lineReflows = for {
-      (zone, linenum) <- reflowDB.selectZones(docId, page0, LB.VisualLine).zipWithIndex
-      region <- zone.regions
+      (vlineZone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
     } yield {
-      val vlineReflow = reflowDB.getTextReflowForZone(zone)
+
+      val vlineReflow = reflowDB.getTextReflowForZone(vlineZone)
       val reflow = vlineReflow.getOrElse { sys.error(s"no text reflow found for line ${linenum}") }
       (linenum, reflow, reflow.toText)
     }

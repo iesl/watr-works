@@ -18,18 +18,20 @@ import docstore._
 object AuthorNameLabelers extends LabelWidgetUtils {
   private[this] val log = org.log4s.getLogger
 
-  def alignAuthors(reflowDB: TextReflowDB, paper: PaperRec, docId: String@@DocumentID): AlignmentScores = {
+  def alignAuthors(reflowDB: TextReflowDB, paper: PaperRec, stableId: String@@DocumentID): AlignmentScores = {
     log.info(s"aligning authors to bioarxiv paper ${paper.title}")
 
     val authorBoosts = new AlignmentScores(LB.Authors)
 
     val page0 = PageNum(0)
+    val docStore = reflowDB.docstorage
 
     val lineReflows = for {
-      (zone, linenum) <- reflowDB.selectZones(docId, page0, LB.VisualLine).zipWithIndex
-      region <- zone.regions
+      (vlineZone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
     } yield {
-      val vlineReflow = reflowDB.getTextReflowForZone(zone)
+      // val zone = docStore.getZone(vlineZone)
+
+      val vlineReflow = docStore.getTextReflowForZone(vlineZone.id)
       val reflow = vlineReflow.getOrElse { sys.error(s"no text reflow found for line ${linenum}") }
       (linenum, reflow, reflow.toText)
     }

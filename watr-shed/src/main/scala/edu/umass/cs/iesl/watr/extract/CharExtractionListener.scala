@@ -77,7 +77,7 @@ case class GeometryTranslation(
 )
 class CharExtractionListener(
   reader: PdfReader,
-  docId: String@@DocumentID,
+  stableId: String@@DocumentID,
   charsToDebug: Set[Int] = Set(),
   componentIdGen: IdGenerator[RegionID],
   currCharBuffer: mutable.ArrayBuffer[PageAtom], // = mutable.ArrayBuffer[PageAtom]()
@@ -162,7 +162,7 @@ class CharExtractionListener(
           CharAtom(
             TargetRegion(
               componentIdGen.nextId,
-              docId,
+              stableId,
               pageId,
               bnds
             ),

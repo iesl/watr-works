@@ -334,10 +334,10 @@ object Works extends App {
   }
 
 
-  // def runPageSegmentation(docId: String@@DocumentID, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
-  def runPageSegmentation(docId: String@@DocumentID, pdfPath: Path): DocumentSegmenter =  {
+  // def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
+  def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path): DocumentSegmenter =  {
     val segmenter = DocumentSegmenter
-      .createSegmenter(docId, pdfPath)
+      .createSegmenter(stableId, pdfPath)
 
     segmenter.runPageSegmentation()
     segmenter
@@ -382,9 +382,9 @@ object Works extends App {
       pdfPath        <- pdfArtifact.asPath
     } {
 
-      val docId = DocumentID(corpusEntry.entryDescriptor)
+      val stableId = DocumentID(corpusEntry.entryDescriptor)
 
-      val segmenter = runPageSegmentation(docId, pdfPath)
+      val segmenter = runPageSegmentation(stableId, pdfPath)
       val mergedZoneIndex = DocsegMerging.mergePriorDocseg(segmenter.mpageIndex, priorDocseg)
 
       val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex, Seq())
@@ -411,9 +411,9 @@ object Works extends App {
           pdfPath         <- pdfArtifact.asPath
         } {
 
-          val docId = DocumentID(corpusEntry.entryDescriptor)
+          val stableId = DocumentID(corpusEntry.entryDescriptor)
 
-          val segmenter = runPageSegmentation(docId, pdfPath)
+          val segmenter = runPageSegmentation(stableId, pdfPath)
 
           rsegmenter = Some(segmenter)
 

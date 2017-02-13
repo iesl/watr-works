@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package spindex
 
+
+import databasics._
+
 import watrmarks.{StandardLabels => LB}
 
 class ConnectedComponentTest extends ConnectedComponentTestUtil {

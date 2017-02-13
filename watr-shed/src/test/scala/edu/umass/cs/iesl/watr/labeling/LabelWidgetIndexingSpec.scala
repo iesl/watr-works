@@ -10,6 +10,7 @@ import data._
 import utils.EnrichNumerics._
 import TypeTags._
 import docstore._
+import databasics._
 
 class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflow {
   def docStore: ReflowDocstore = new MemDocstore

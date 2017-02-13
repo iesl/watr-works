@@ -360,11 +360,11 @@ object MultiPageIndex {
   import PageComponentImplicits._
 
   def loadTextReflows(
-    docId: String@@DocumentID,
+    stableId: String@@DocumentID,
     textReflows: Seq[TextReflow],
     docstorage: ReflowDocstore
   ): MultiPageIndex = {
-    val mpageIndex = new MultiPageIndex(docId, docstorage)
+    val mpageIndex = new MultiPageIndex(stableId, docstorage)
 
 
     textReflows.zipWithIndex.foreach { case (textReflow, pagenum) =>
@@ -439,11 +439,11 @@ object MultiPageIndex {
   }
 
   def loadSpatialIndices(
-    docId: String@@DocumentID,
+    stableId: String@@DocumentID,
     regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]
   ): MultiPageIndex = {
 
-    val mpageIndex = new MultiPageIndex(docId, new MemDocstore)
+    val mpageIndex = new MultiPageIndex(stableId, new databasics.MemDocstore)
 
     regionsAndGeometry.foreach { case(regions, geom)  =>
       println(s"adding page w/geometry ${geom}")

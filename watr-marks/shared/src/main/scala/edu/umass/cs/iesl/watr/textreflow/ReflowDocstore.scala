@@ -4,37 +4,71 @@ package textreflow
 import geometry._
 import watrmarks._
 import TextReflowF._
+import watrmarks.{StandardLabels => LB}
+
+trait ReflowDocstoreOps extends ReflowDocstore {
+}
 
 trait ReflowDocstore {
   def getDocuments(): Seq[String@@DocumentID]
-  def addDocument(docId: String@@DocumentID): Int@@DocumentID
-  def getDocument(docId: String@@DocumentID): Option[Int@@DocumentID]
+  def addDocument(stableId: String@@DocumentID): Int@@DocumentID
+  def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID]
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
-  def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
   def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID]
-  def getPageGeometry(pageId: Int@@PageID): Option[LTBounds]
-  def updatePageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
-  def updatePageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
+  def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
+  def getPageGeometry(pageId: Int@@PageID): LTBounds
+  def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
+  def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
 
   def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
   def getTargetRegion(regionId: Int@@RegionID): TargetRegion
-  def addTargetRegionImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
+
+  def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit
+  def getTargetRegionImage(regionId: Int@@RegionID): Array[Byte]
+  def deleteTargetRegionImage(regionId: Int@@RegionID): Unit
+
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID]
 
   def createZone(docId: Int@@DocumentID): Int@@ZoneID
   def getZone(zoneId: Int@@ZoneID): Zone
   def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit
   def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit
-  def getZonesForDocument(docId: Int@@DocumentID): Seq[Int@@ZoneID]
-  def getZonesForTargetRegion(regionId: Int@@RegionID): Seq[Int@@ZoneID]
-  def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
-  def mergeZones(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID
   def deleteZone(zoneId: Int@@ZoneID): Unit
 
+  def getZonesForDocument(docId: Int@@DocumentID, labels: Label*): Seq[Int@@ZoneID]
+  def getZonesForTargetRegion(regionId: Int@@RegionID, labels: Label*): Seq[Int@@ZoneID]
+  def getZonesForPage(pageId: Int@@PageID, labels: Label*): Seq[Int@@ZoneID]
 
-  //  def getPageVisualLines(pageId: Int@@PageID): Seq[Component]  = for {
-  //  def getDocumentVisualLines(): Seq[Seq[Component]] = for {
+  def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
+
+
+  ///////////////////////
+  /// Derived operations0
+
+
+
+  def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] = for {
+    docId <- getDocument(stableId).toSeq
+    pageId <- getPage(docId, pageNum).toSeq
+    zoneId <- getZonesForPage(pageId, LB.VisualLine)
+  } yield { getZone(zoneId) }
+
+  // def mergeZones(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
+  //   val existing = zoneIds.map(getZone(_))
+  //   val labels = existing.suml(_.labels)
+  //   val trs = existing.suml(_.targetRegions)
+  //   createZone()
+  //   ???
+  // }
+
+  // def getZonesForPage(): Unit = {
+  //   val vlines = for {
+  //     zoneId <- getZonesForPage(stableId, page0)
+  //     zone = getZone(zoneId)
+  //     region <- zone.regions
+  //   } yield region
+  // }
 
 
 

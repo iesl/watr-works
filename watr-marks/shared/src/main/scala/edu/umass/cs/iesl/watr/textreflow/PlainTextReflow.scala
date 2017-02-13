@@ -62,21 +62,21 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
   }
 
   def textReflowsToAtoms(
-    docId: String@@DocumentID, pages: Seq[TextReflow]
+    stableId: String@@DocumentID, pages: Seq[TextReflow]
   ): Seq[(Seq[PageAtom], PageGeometry)] = for {
     page <- pages
   } yield {
-    val TargetRegion(id, docId, pageNum, bbox@ LTBounds(l, t, w, h) ) =
+    val TargetRegion(id, stableId, pageNum, bbox@ LTBounds(l, t, w, h) ) =
       page.targetRegions.reduce(_ union _)
 
     (page.charAtoms(), PageGeometry(pageNum, bbox))
   }
 
-  def stringsToTextReflows(docId: String@@DocumentID, pages:Seq[String]): Seq[TextReflow] = {
+  def stringsToTextReflows(stableId: String@@DocumentID, pages:Seq[String]): Seq[TextReflow] = {
     for {
       (page, n) <- pages.zipWithIndex
     } yield {
-      stringToTextReflow(page)(docId, PageNum(n))
+      stringToTextReflow(page)(stableId, PageNum(n))
     }
   }
 
@@ -207,7 +207,7 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
     val finalTextReflow = res.rootLabel
     val bbox = finalTextReflow.targetRegion().bbox
 
-    docStore.updatePageGeometry(pageId, bbox)
+    docStore.setPageGeometry(pageId, bbox)
     finalTextReflow
   }
 
@@ -263,11 +263,11 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
     (atoms, pageGeom)
   }
 
-  def stringsToMultiPageAtoms(docId: String@@DocumentID, strs: String*): Seq[(Seq[PageAtom], PageGeometry)] = {
+  def stringsToMultiPageAtoms(stableId: String@@DocumentID, strs: String*): Seq[(Seq[PageAtom], PageGeometry)] = {
     for {
       (pstr, pagenum) <- strs.zipWithIndex
     } yield {
-      stringToPageAtoms(pstr, pagenum, docId)
+      stringToPageAtoms(pstr, pagenum, stableId)
     }
   }
 

@@ -20,27 +20,27 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with ImageTextRe
     // assert each region can select its contained page atoms
     reg.foreach { rc =>
       val patoms = rc.queryInside(LB.PageAtom)
-      assertResult(charAtoms.toSet){
+      assertResult(charAtoms.toSet) {
         patoms.toSet
       }
     }
     reg
   }
 
-  def createMultiPageIndex(docId: String@@DocumentID, strs: String*): MultiPageIndex = {
+  def createMultiPageIndex(stableId: String@@DocumentID, strs: String*): MultiPageIndex = {
     MultiPageIndex.loadSpatialIndices(
-      docId,
-      stringsToMultiPageAtoms(docId, strs:_*)
+      stableId,
+      stringsToMultiPageAtoms(stableId, strs:_*)
     )
   }
 
   import com.sksamuel.scrimage._
-  def createMultiPageIndexWithImages(docId: String@@DocumentID, strs: String*): (MultiPageIndex, Seq[Image]) = {
+  def createMultiPageIndexWithImages(stableId: String@@DocumentID, strs: String*): (MultiPageIndex, Seq[Image]) = {
     val pages =
-      stringsToMultiPageAtomsWithImages(docId, strs:_*)
+      stringsToMultiPageAtomsWithImages(stableId, strs:_*)
         .map({case (atom, geom, img) => ((atom, geom), img)})
 
-    (MultiPageIndex.loadSpatialIndices(docId, pages.map(_._1)), pages.map(_._2))
+    (MultiPageIndex.loadSpatialIndices(stableId, pages.map(_._1)), pages.map(_._2))
   }
 
 }

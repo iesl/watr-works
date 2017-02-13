@@ -65,7 +65,7 @@ class TextReflowDBTables(
         btop          INTEGER,
         bwidth        INTEGER,
         bheight       INTEGER,
-        uri           VARCHAR(256) UNIQUE
+        uri           VARCHAR(256) UNIQUE NOT NULL
       );
       CREATE INDEX targetregion_uri ON targetregion USING hash (uri);
     """.update
@@ -74,7 +74,7 @@ class TextReflowDBTables(
   val createTextReflowTable: Update0 = sql"""
       CREATE TABLE textreflow (
         textreflow  SERIAL PRIMARY KEY,
-        reflow      TEXT,
+        reflow      TEXT NOT NULL,
         zone        INTEGER REFERENCES zone
       )
     """.update
@@ -92,7 +92,7 @@ class TextReflowDBTables(
   val createLabelTable: Update0 = sql"""
       CREATE TABLE label (
         label          SERIAL PRIMARY KEY,
-        key            VARCHAR(50) UNIQUE
+        key            VARCHAR(50) UNIQUE NOT NULL
       );
       CREATE INDEX label_key ON label USING hash (key);
     """.update

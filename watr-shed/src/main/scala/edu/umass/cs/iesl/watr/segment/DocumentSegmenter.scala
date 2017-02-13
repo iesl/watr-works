@@ -116,16 +116,16 @@ object DocumentSegmenter {
   }
 
 
-  def createSegmenter(docId: String@@DocumentID, pdfPath: Path): DocumentSegmenter = {
+  def createSegmenter(stableId: String@@DocumentID, pdfPath: Path): DocumentSegmenter = {
     val pageAtomsAndGeometry = formats.DocumentIO
-      .extractChars(docId, pdfPath, Set())
+      .extractChars(stableId, pdfPath, Set())
 
-    createSegmenter(docId, pageAtomsAndGeometry)
+    createSegmenter(stableId, pageAtomsAndGeometry)
   }
 
 
-  def createSegmenter(docId: String@@DocumentID, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
-      val mpageIndex = MultiPageIndex.loadSpatialIndices(docId, pagedefs)
+  def createSegmenter(stableId: String@@DocumentID, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
+      val mpageIndex = MultiPageIndex.loadSpatialIndices(stableId, pagedefs)
       new DocumentSegmenter(mpageIndex)
   }
 

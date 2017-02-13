@@ -230,9 +230,10 @@ object ShellCommands extends CorpusEnrichments {
         .getOrElse(sys.error(s"Trying to access non-existent page in doc ${stableId} page 0"))
 
       val pageGeometry = docStorage.getPageGeometry(pageId)
-        .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
+        // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
 
-      val pageTargetRegion = TargetRegion(r0, stableId, page0, pageGeometry.bounds)
+      val pageTargetRegion = TargetRegion(r0, stableId, page0, pageGeometry)
+
 
 
       val allPageLines = for {
@@ -325,46 +326,40 @@ object ShellCommands extends CorpusEnrichments {
         .getOrElse(sys.error(s"Trying to access non-existent page in doc ${stableId} page 0"))
 
       val pageGeometry = docStorage.getPageGeometry(pageId)
-        .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
-
-      docStorage.getPageGeometry(pageId)
-        .map({pageGeometry =>
-
-          val pageTargetRegion = TargetRegion(r0, stableId, page0,
-            pageGeometry.bounds.copy(
-              top = pageGeometry.bounds.top,
-              height = pageGeometry.bounds.height / 3.0
-            )
-          )
+      // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
 
 
-          val vlines = for {
-            zoneId <- getZonesForPage(stableId, page0)
-            zone = docStorage.getZone(zoneId)
-            region <- zone.regions
-          } yield region
+      val pageTargetRegion = TargetRegion(r0, stableId, page0,
+        pageGeometry.copy(
+          top = pageGeometry.top,
+          height = pageGeometry.height / 3.0
+        )
+      )
 
-          val titlePreselects = vlines.drop(0).take(2)
 
-          val halfPageWSelects = LW.targetOverlay(
-            pageTargetRegion,
-            titlePreselects.map(LW.labeledTarget(_))
-          )
+      val vlines = for {
+        zoneId <- getZonesForPage(stableId, page0)
+        zone = docStorage.getZone(zoneId)
+        region <- zone.regions
+      } yield region
 
-          // val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)
+      val titlePreselects = vlines.drop(0).take(2)
 
-          val vlineText = for {
-            region <- titlePreselects
-            (zone, reflow) <- theDB.getTextReflowsForTargetRegion(region)
-          } yield  LW.reflow(reflow)
+      val halfPageWSelects = LW.targetOverlay(
+        pageTargetRegion,
+        titlePreselects.map(LW.labeledTarget(_))
+      )
 
-          val textCol = LW.col(vlineText:_*)
+      // val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)
 
-          LW.row(halfPageWSelects, textCol)
-        })
-        .getOrElse(LW.textbox(
-          s"no page 0 found for ${docId}"
-        ))
+      val vlineText = for {
+        region <- titlePreselects
+        (zone, reflow) <- theDB.getTextReflowsForTargetRegion(region)
+      } yield  LW.reflow(reflow)
+
+      val textCol = LW.col(vlineText:_*)
+
+      LW.row(halfPageWSelects, textCol)
 
     }
   }

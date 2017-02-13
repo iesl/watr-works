@@ -39,6 +39,12 @@ trait DoobiePredef {
       docId => docId.unwrap
     )
 
+  implicit val TextReflowIDMeta: Meta[Int @@ TextReflowID] =
+    Meta[Int].xmap(
+      n => TextReflowID(n),
+      tt => tt.unwrap
+    )
+
   implicit val RegionIDMeta: Meta[Int @@ RegionID] =
     Meta[Int].xmap(
       n => RegionID(n),
@@ -84,6 +90,35 @@ trait DoobiePredef {
           zonedRegion.id :: zonedRegion.targetRegion :: HNil
       })
 
+  // implicit val DocumentMeta     : Composite[Model.Document] =
+  //   Composite[(Int@@DocumentID) :: (String@@DocumentID) :: HNil].xmap({
+  //     case f0 :: f1 :: HNil =>
+  //       Model.Document(f0, f1)
+  //     },{ case model =>
+  //         model.prKey :: model.stableId :: HNil
+  //     })
+
+  implicit val PageMeta         : Composite[Model.Page] =
+    Composite[(Int@@PageID) :: (Int@@DocumentID) :: (Int@@PageNum) :: Option[Array[Byte]] :: LTBounds :: HNil].xmap({
+      case f0 :: f1 :: f2 :: f3 :: f4 :: HNil =>
+        Model.Page(f0, f1, f2, f3, f4)
+      },{ case model =>
+          model.prKey :: model.document :: model.pagenum :: Option.empty[Array[Byte]] :: model.bounds :: HNil
+      })
+
+  // implicit val TargetRegionMeta : Composite[Model.TargetRegion] =
+  //   Composite[(Int@@RegionID) :: (Int@@PageID) :: LTBounds :: String :: HNil].xmap({
+  //     case f0 :: f1 :: f2 :: f3 :: HNil =>
+  //       Model.TargetRegion(f0, f1, f2, f3)
+  //     },{ case model =>
+  //         model.prKey :: model.page :: model.bounds :: model.uri :: HNil
+  //     })
+
+  // implicit val ZoneMeta         : Composite[Model.Zone] =
+  // implicit val TextReflowMeta   : Composite[Model.TextReflow]
+  // implicit val LabelMeta        : Composite[Model.Label]
+  // implicit val LabelWidgetMeta  : Composite[Model.LabelWidget]
+  // implicit val LabelingTaskMeta : Composite[Model.LabelingTask]
 
 
 }

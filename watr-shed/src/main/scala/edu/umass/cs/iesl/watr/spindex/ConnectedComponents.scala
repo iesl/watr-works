@@ -73,7 +73,7 @@ sealed trait Component {
   // TODO target region only makes sense for some connected components
   def targetRegion: TargetRegion = {
     targetRegions.headOption
-      .map(tr => TargetRegion(RegionID(0), tr.docId, tr.pageNum, bounds))
+      .map(tr => TargetRegion(RegionID(0), tr.stableId, tr.pageNum, bounds))
       .getOrElse {  sys.error("no target region found in Component}") }
   }
 

@@ -4,6 +4,7 @@ package docstore
 
 import spindex._
 import edu.umass.cs.iesl.watr.{geometry => G}
+import databasics._
 
 import TypeTags._
 
@@ -28,7 +29,7 @@ class DocstoreTest extends ConnectedComponentTestUtil {
 
     val geom = G.LTBounds(0, 1, 2, 3)
 
-    dstore.updatePageGeometry(pageId, geom)
+    dstore.setPageGeometry(pageId, geom)
 
   }
 
