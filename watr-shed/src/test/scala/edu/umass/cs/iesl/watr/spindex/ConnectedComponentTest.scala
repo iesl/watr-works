@@ -11,7 +11,7 @@ class ConnectedComponentTest extends ConnectedComponentTestUtil {
   import TypeTags._
   import textreflow._
 
-  lazy val docStore: ReflowDocstore = new MemDocstore
+  lazy val docStore: DocumentCorpus = new MemDocstore
   behavior of "connected components"
 
 

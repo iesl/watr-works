@@ -1,12 +1,9 @@
 package edu.umass.cs.iesl.watr
-package docstore
-
-import org.scalatest._
+package corpora
 
 import textreflow._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
-import databasics._
 
 object TextPageSamples {
   val samples = List(
@@ -27,12 +24,16 @@ object TextPageSamples {
 
 }
 
-trait DocstoreTestUtil extends FlatSpec with Matchers with PlainTextReflow {
-  var freshDocstore = new MemDocstore
-  def docStore: ReflowDocstore = freshDocstore
+trait CorpusTestingUtil extends PlainTextCorpus {
+  def createEmptyDocumentCorpus(): DocumentCorpus
+
+  var freshDocstore: Option[DocumentCorpus] = None
+
+  def docStore: DocumentCorpus = freshDocstore
+    .getOrElse(sys.error("Uninitialized DocumentCorpus; Use FreshDocstore() class"))
 
   class FreshDocstore(pageCount: Int = 1) {
-    freshDocstore = new MemDocstore
+    freshDocstore = Some(new MemDocstore)
     loadSampleDoc(pageCount)
   }
 

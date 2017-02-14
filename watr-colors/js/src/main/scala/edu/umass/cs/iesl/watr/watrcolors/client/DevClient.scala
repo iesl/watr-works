@@ -8,7 +8,7 @@ import textreflow._
 import textreflow.data._
 import TypeTags._
 
-trait TextReflowExamples extends PlainTextReflow with LabelerRendering {
+trait TextReflowExamples extends PlainTextCorpus with LabelerRendering {
 
   def example1(): TextReflow = {
     stringToTextReflow("""|To be or not to be,

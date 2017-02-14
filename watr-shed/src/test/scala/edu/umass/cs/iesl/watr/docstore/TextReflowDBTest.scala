@@ -11,7 +11,7 @@ import watrmarks.{StandardLabels => LB}
 import textreflow._
 
 class FreshTextReflowDBTables(
-  override val docStore:ReflowDocstore
+  override val docStore:DocumentCorpus
 ) extends ImageTextReflow {
 
   def loadSampleDoc0(): String@@DocumentID = {
@@ -78,7 +78,7 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
   val tables = new TextReflowDBTables(xa)
   val reflowDB = new TextReflowDB(tables)
 
-  lazy val docStore: ReflowDocstore = reflowDB.docstorage
+  lazy val docStore: DocumentCorpus = reflowDB.docstorage
 
   behavior of "database-backed corpus"
 

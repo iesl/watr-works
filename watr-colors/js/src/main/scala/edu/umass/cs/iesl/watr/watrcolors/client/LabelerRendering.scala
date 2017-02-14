@@ -32,7 +32,7 @@ case class LwRenderingAttrs(
   regions: List[(TargetRegion, LTBounds)]
 )
 
-trait LabelerRendering extends PlainTextReflow with FabricCanvasOperations {
+trait LabelerRendering extends PlainTextCorpus with FabricCanvasOperations {
   import TextReflowF._
   import matryoshka._
 

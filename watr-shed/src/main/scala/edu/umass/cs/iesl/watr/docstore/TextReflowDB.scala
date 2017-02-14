@@ -507,7 +507,7 @@ class TextReflowDB(
     ???
   }
 
-  object docstorage extends ReflowDocstore {
+  object docstorage extends DocumentCorpus {
     def getDocuments(): Seq[String@@DocumentID] = {
       selectDocumentStableIds()
     }

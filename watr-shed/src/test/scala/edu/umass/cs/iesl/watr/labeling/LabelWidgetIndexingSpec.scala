@@ -12,8 +12,8 @@ import TypeTags._
 import docstore._
 import databasics._
 
-class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflow {
-  def docStore: ReflowDocstore = new MemDocstore
+class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextCorpus {
+  def docStore: DocumentCorpus = new MemDocstore
   import LabelWidgetIndex._
 
   val bbox = LTBounds(0d, 0d, 10d, 10d)

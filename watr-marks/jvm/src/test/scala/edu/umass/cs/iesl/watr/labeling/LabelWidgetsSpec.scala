@@ -11,7 +11,7 @@ import TypeTags._
 import databasics._
 
 // import watrmarks.{StandardLabels => LB}
-class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with LabelWidgetLayout {
+class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextCorpus with LabelWidgetLayout {
 
   behavior of "label widgets"
 
@@ -26,7 +26,7 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextReflow with 
   def sel1: TargetRegion = tr
 
   var freshDocstore = new MemDocstore
-  def docStore: ReflowDocstore = freshDocstore
+  def docStore: DocumentCorpus = freshDocstore
 
   // it should "specify widget layout" in {
 

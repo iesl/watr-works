@@ -46,7 +46,7 @@ import watrmarks.{StandardLabels => LB}
 
 class MultiPageIndex(
   stableId: String@@DocumentID,
-  storage: ReflowDocstore
+  storage: DocumentCorpus
 ) {
   lazy val docId: Int@@DocumentID =
     storage.getDocument(stableId).getOrElse(sys.error("MultiPageIndex created for non-existent document"))
@@ -362,7 +362,7 @@ object MultiPageIndex {
   def loadTextReflows(
     stableId: String@@DocumentID,
     textReflows: Seq[TextReflow],
-    docstorage: ReflowDocstore
+    docstorage: DocumentCorpus
   ): MultiPageIndex = {
     val mpageIndex = new MultiPageIndex(stableId, docstorage)
 

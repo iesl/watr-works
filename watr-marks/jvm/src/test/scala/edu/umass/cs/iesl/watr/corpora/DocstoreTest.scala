@@ -1,13 +1,16 @@
 package edu.umass.cs.iesl.watr
-package docstore
+package corpora
 
-import spindex._
-import databasics._
-import textreflow._
+import org.scalatest._
+
+// import spindex._
+// import databasics._
+// import textreflow._
+import corpora._
 
 import textboxing.{TextBoxing => TB}, TB._
 
-class DocstoreTest extends DocstoreTestUtil  {
+class DocstoreTest extends FlatSpec with Matchers with DocstoreTestUtil {
 
   behavior of "In-memory Tables"
 

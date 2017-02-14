@@ -5,7 +5,7 @@ import geometry._
 import spindex._
 import docstore._
 import LabelWidgetF._
-import textreflow.ReflowDocstore
+import textreflow.DocumentCorpus
 import rindex._
 
 object LabelWidgetIndex extends LabelWidgetLayout {
@@ -25,7 +25,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     })
 
     new LabelWidgetIndex {
-      def docStore: ReflowDocstore = db.docstorage
+      def docStore: DocumentCorpus = db.docstorage
       def layout: List[PosAttr] = layout0
       def index: SpatialIndex[PosAttr] = lwIndex
     }
@@ -36,7 +36,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 // TODO rename this, it's a general LabelWidget interaction API
 trait LabelWidgetIndex {
 
-  def docStore: ReflowDocstore
+  def docStore: DocumentCorpus
   def layout: List[PosAttr]
   def index: SpatialIndex[PosAttr]
 

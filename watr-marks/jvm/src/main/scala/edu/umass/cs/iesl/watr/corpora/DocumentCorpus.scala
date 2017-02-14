@@ -1,12 +1,13 @@
 package edu.umass.cs.iesl.watr
-package textreflow
+package corpora
 
 import geometry._
 import watrmarks._
 import TextReflowF._
+
 import watrmarks.{StandardLabels => LB}
 
-trait ReflowDocstore {
+trait DocumentCorpus {
   def getDocuments(): Seq[String@@DocumentID]
   def addDocument(stableId: String@@DocumentID): Int@@DocumentID
   def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID]

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package databasics
+package corpora
 
 import scala.collection.mutable
 

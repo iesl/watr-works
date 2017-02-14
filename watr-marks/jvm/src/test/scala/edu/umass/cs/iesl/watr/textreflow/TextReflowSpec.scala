@@ -9,11 +9,11 @@ import TextReflowF._
 import TypeTags._
 import databasics._
 
-class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
+class TextReflowSpec extends FlatSpec with Matchers with PlainTextCorpus {
 
   var freshDocstore = new MemDocstore
 
-  def docStore: ReflowDocstore = freshDocstore
+  def docStore: DocumentCorpus = freshDocstore
 
   def annotateAndPrint(tr: TextReflow): Unit = {
     val ranges = tr.annotateCharRanges()

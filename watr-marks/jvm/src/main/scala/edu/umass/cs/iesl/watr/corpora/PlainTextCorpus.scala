@@ -1,12 +1,14 @@
 package edu.umass.cs.iesl.watr
-package textreflow
+package corpora
 
-// TODO plaintext reflow started as testing util, and still has a mix of testing and production code
+// TODO plaintext corpus is primarily a testing util, but has a mix of testing and production code,
+//   which need to separate
 
+import textreflow._
 import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
-trait PlainTextReflow extends TextReflowSharedFunctions {
+trait PlainTextCorpus extends TextReflowSharedFunctions {
   import scala.collection.mutable
   import scalaz.Tree
   import scalaz.TreeLoc
@@ -16,7 +18,7 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
   import GeometryImplicits._
   import TextReflowF._
 
-  def docStore: ReflowDocstore
+  def docStore: DocumentCorpus
 
   val xscale = 10.0d
   val yscale = 10.0d
@@ -275,4 +277,3 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
   }
 
 }
-

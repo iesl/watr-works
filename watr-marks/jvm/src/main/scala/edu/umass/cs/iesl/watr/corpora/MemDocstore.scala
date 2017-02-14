@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package databasics
+package corpora
 
 import edu.umass.cs.iesl.watr.{geometry => G}
 import edu.umass.cs.iesl.watr.{watrmarks => W}
@@ -67,7 +67,7 @@ object Model {
 }
 
 
-class MemDocstore extends ReflowDocstore {
+class MemDocstore extends DocumentCorpus {
   object tables  {
 
     object documents extends DBRelation[DocumentID, Model.Document] {

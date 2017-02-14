@@ -6,7 +6,7 @@ import textreflow.data._
 import watrmarks.{StandardLabels => LB}
 import PageComponentImplicits._
 
-trait ImageTextReflow extends PlainTextReflow {
+trait ImageTextReflow extends PlainTextCorpus {
   import com.sksamuel.scrimage._
   import com.sksamuel.scrimage.canvas._
 
