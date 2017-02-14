@@ -34,13 +34,13 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with ImageTextRe
     )
   }
 
-  import com.sksamuel.scrimage._
-  def createMultiPageIndexWithImages(stableId: String@@DocumentID, strs: String*): (MultiPageIndex, Seq[Image]) = {
-    val pages =
-      stringsToMultiPageAtomsWithImages(stableId, strs:_*)
-        .map({case (atom, geom, img) => ((atom, geom), img)})
+  // import com.sksamuel.scrimage._
+  // def createMultiPageIndexWithImages(stableId: String@@DocumentID, strs: String*): (MultiPageIndex, Seq[Image]) = {
+  //   val pages =
+  //     stringsToMultiPageAtomsWithImages(stableId, strs:_*)
+  //       .map({case (atom, geom, img) => ((atom, geom), img)})
 
-    (MultiPageIndex.loadSpatialIndices(stableId, pages.map(_._1)), pages.map(_._2))
-  }
+  //   (MultiPageIndex.loadSpatialIndices(stableId, pages.map(_._1)), pages.map(_._2))
+  // }
 
 }

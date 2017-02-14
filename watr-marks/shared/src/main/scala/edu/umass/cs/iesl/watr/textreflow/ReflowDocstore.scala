@@ -6,9 +6,6 @@ import watrmarks._
 import TextReflowF._
 import watrmarks.{StandardLabels => LB}
 
-trait ReflowDocstoreOps extends ReflowDocstore {
-}
-
 trait ReflowDocstore {
   def getDocuments(): Seq[String@@DocumentID]
   def addDocument(stableId: String@@DocumentID): Int@@DocumentID
@@ -20,6 +17,9 @@ trait ReflowDocstore {
   def getPageGeometry(pageId: Int@@PageID): LTBounds
   def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
   def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
+
+  def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit
+  def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom]
 
   def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
   def getTargetRegion(regionId: Int@@RegionID): TargetRegion
@@ -41,6 +41,7 @@ trait ReflowDocstore {
   def getZonesForPage(pageId: Int@@PageID, labels: Label*): Seq[Int@@ZoneID]
 
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
+  def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 
 
   ///////////////////////

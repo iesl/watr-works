@@ -10,14 +10,14 @@ trait ImageTextReflow extends PlainTextReflow {
   import com.sksamuel.scrimage._
   import com.sksamuel.scrimage.canvas._
 
-  def stringsToMultiPageAtomsWithImages(
-    stableId: String@@DocumentID,
-    strs: String*
-  ): Seq[(Seq[PageAtom], PageGeometry, Image)] = {
-    for {
-      ((atoms, geom), pstr) <- stringsToMultiPageAtoms(stableId, strs:_*).zip(strs.toList)
-    } yield (atoms, geom, textToImage(pstr))
-  }
+  // def stringsToMultiPageAtomsWithImages(
+  //   stableId: String@@DocumentID,
+  //   strs: String*
+  // ): Seq[(Seq[PageAtom], PageGeometry, Image)] = {
+  //   for {
+  //     ((atoms, geom), pstr) <- stringsToMultiPageAtoms(stableId, strs:_*).zip(strs.toList)
+  //   } yield (atoms, geom, textToImage(pstr))
+  // }
 
 
   def textToImage(text: String): Image = {

@@ -19,8 +19,8 @@ class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextReflo
   val bbox = LTBounds(0d, 0d, 10d, 10d)
   val tr = TargetRegion(RegionID(0), DocumentID("doc-id-0"), PageNum(23), bbox)
 
-  def stringToReflow(s: String): TextReflow =
-    stringToTextReflow(s)(DocumentID("doc-id-0"), PageNum(23))
+  def stringToReflow(s: String): TextReflow = ???
+    // stringToTextReflow(s)(DocumentID("doc-id-0"), PageNum(23))
 
   "LabelWidgetIndexing" should "have a test" in {
 

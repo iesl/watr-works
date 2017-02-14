@@ -81,6 +81,7 @@ lazy val watrmarksJS = watrmarks.js
 lazy val watrmarksJVM = watrmarks.jvm
   .dependsOn(watrprelude)
   .aggregate(watrmarksJS)
+  .settings(libraryDependencies += "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT")
   .settings((resources in Compile) += (
     (fastOptJS in (watrmarksJS, Compile)).value.data
   ))
@@ -89,7 +90,6 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= DatabaseLibs.doobieDb)
   .settings(libraryDependencies += Lib.scrimageCore)
-  .settings(libraryDependencies += "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT")
   .dependsOn(watrprelude)
   .dependsOn(watrmarksJVM)
 

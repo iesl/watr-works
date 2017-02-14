@@ -20,6 +20,14 @@ case class BioNode(
   pins: mutable.Set[BioPin] =  mutable.Set()
 )
 
+object Component {
+  import rindex._
+  implicit object ComponentIndexable extends SpatialIndexable[Component] {
+    def id(t: Component): Int = t.id.unwrap
+    def ltBounds(t: Component): LTBounds = t.bounds
+  }
+
+}
 sealed trait Component {
   def id: Int@@ComponentID
 

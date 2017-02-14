@@ -51,7 +51,7 @@ class TextReflowDB(
   def selectTargetRegion(regionId: Int@@RegionID): ConnectionIO[Model.TargetRegion] = {
     sql"""
      select * from targetregion
-     where tr.targetregion=${regionId}
+     where targetregion=${regionId}
     """.query[Model.TargetRegion].unique
   }
 
@@ -548,6 +548,14 @@ class TextReflowDB(
       ???
     }
 
+    def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {
+
+    }
+
+    def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom] = {
+      ???
+    }
+
     def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID = {
       runq { insertTargetRegion(pageId, bbox) }
     }
@@ -633,15 +641,15 @@ class TextReflowDB(
       ???
     }
 
+    def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
+      ???
+    }
+
     def deleteZone(zoneId: Int@@ZoneID): Unit = {
       ???
     }
 
   }
-
-
-
-
 
 }
 

@@ -8,14 +8,12 @@ import TypeTags._
 
 trait PlainTextReflow extends TextReflowSharedFunctions {
   import scala.collection.mutable
-  import scalaz.std.string._
   import scalaz.Tree
-  import utils.ScalazTreeImplicits._
+  import scalaz.TreeLoc
   import matryoshka._
   import geometry._
 
   import GeometryImplicits._
-  import PageComponentImplicits._
   import TextReflowF._
 
   def docStore: ReflowDocstore
@@ -27,6 +25,14 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
     str.split("\n")
       .map(_.trim)
   }
+  def linesWithPad(str: String): Seq[(Int, String)] = {
+    str.split("\n")
+      .map({s =>
+             val pre = s.takeWhile(_ == ' ').length
+             val line = s.trim
+             (pre, line)
+           })
+  }
 
   val ffi = 0xFB03.toChar
   val charSubs = Map(
@@ -37,8 +43,69 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
     'Æ' -> "AE"
   )
 
+  class TextReflowBuilder {
+    import utils.ScalazTreeImplicits._
+    type TextReflowV = TextReflowF[Unit]
 
-  def mkTargetRegion(docId: Int@@DocumentID, pageNum: Int@@PageNum, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
+    val reflowStack = mutable.Stack[TreeLoc[TextReflowV]]()
+    val completed = mutable.Queue[TextReflow]()
+
+    def reset(): Unit = {
+      while (reflowStack.nonEmpty) reflowStack.pop()
+    }
+
+    def totalBounds(): LTBounds = {
+      completed
+        .map(_.targetRegion.bbox)
+        .reduce { _ union _ }
+    }
+
+
+    val empty: Tree[TextReflowV] = Tree.Leaf(Flow(List()))
+    def mod(f: TreeLoc[TextReflowV] => TreeLoc[TextReflowV]): Unit = {
+      if (reflowStack.isEmpty) {
+        reflowStack.push(empty.loc)
+      }
+      val top = reflowStack.pop
+
+      reflowStack.push(f(top))
+    }
+
+    import scalaz.std.string._
+    def debug(treeLoc: TreeLoc[TextReflowV]): Unit = {
+      println(treeLoc.toTree.map(_.toString).drawBox)
+    }
+
+    def insertDownLast(tr: TextReflowV): Unit = mod {  _.insertDownLast(Tree.Node(tr, Stream())) }
+    def pop(): Unit = mod { _.parent.get }
+
+    def newline(): Unit = {
+      reflowStack
+        .headOption
+        .map({tloc =>
+          // Construct the Fix(..) version of the tree:
+          val ftree = tloc.toTree
+          val res = ftree.scanr ((reflowNode: TextReflowV, childs: Stream[Tree[TextReflow]]) =>
+            fixf {
+              reflowNode match {
+                case t@ Atom(c)                 => Atom(c)
+                case t@ Insert(value)           => Insert(value)
+                case t@ Rewrite(from, to)       => Rewrite(childs.head.rootLabel, to)
+                case t@ Bracket(pre, post, a)   => Bracket(pre, post, childs.head.rootLabel)
+                case t@ Flow(atoms)             => Flow(childs.toList.map(_.rootLabel))
+                case t@ Labeled(ls, _)          => Labeled(ls, childs.head.rootLabel)
+              }}
+          )
+          val treflow = res.rootLabel
+          completed.enqueue(treflow)
+          reset()
+        })
+
+    }
+  }
+
+
+  def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
     // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
     val width = if (w>0) {
       w*xscale - 0.1
@@ -52,164 +119,100 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
       width, height
     )
 
-    val region = for {
-      pageId <- docStore.getPage(docId, pageNum)
-    } yield {
-      val regionId = docStore.addTargetRegion(pageId, bbox)
-      docStore.getTargetRegion(regionId)
-    }
-    region.get
+    val regionId = docStore.addTargetRegion(pageId, bbox)
+    docStore.getTargetRegion(regionId)
   }
 
-  def textReflowsToAtoms(
-    stableId: String@@DocumentID, pages: Seq[TextReflow]
-  ): Seq[(Seq[PageAtom], PageGeometry)] = for {
-    page <- pages
-  } yield {
-    val TargetRegion(id, stableId, pageNum, bbox@ LTBounds(l, t, w, h) ) =
-      page.targetRegions.reduce(_ union _)
-
-    (page.charAtoms(), PageGeometry(pageNum, bbox))
-  }
-
-  def stringsToTextReflows(stableId: String@@DocumentID, pages:Seq[String]): Seq[TextReflow] = {
+  def createDocumentPagesFromStrings(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
     for {
       (page, n) <- pages.zipWithIndex
     } yield {
-      stringToTextReflow(page)(stableId, PageNum(n))
+      loadPageFromString(stableId, PageNum(n), page)
     }
   }
 
-  def stringToTextReflow(multiLines: String)(
+  def loadPageFromString(
     stableId: String@@DocumentID,
-    pageNum: Int@@PageNum
-  ): TextReflow = {
-    val isMultiline = multiLines.contains("\n")
+    pageNum: Int@@PageNum,
+    pageBlock: String
+  ): Unit = {
     val docId = docStore.addDocument(stableId)
     val pageId = docStore.addPage(docId, pageNum)
 
-    var tloc = if (isMultiline) {
-      val t: Tree[TextReflowF[Int]] =
-        Tree.Node(Labeled(Set(LB.PageLines), 0), Stream(
-          Tree.Node(Flow(List()), Stream(
-            Tree.Node(Labeled(Set(LB.VisualLine), 0), Stream(
-              Tree.Leaf(Flow(List()))
-            ))
-          ))
-        ))
-
-      t.loc.lastChild.get.lastChild.get.lastChild.get
-    } else {
-      val t: Tree[TextReflowF[Int]] =
-        Tree.Leaf(Flow(List()))
-      t.loc
-    }
-
-
-    var linenum:Int = 0
+    var linenum:Int = -1
     var chnum = 0
-    var lineCharAtoms = mutable.ArrayBuffer[CharAtom]()
+    var reflowBuilder = new TextReflowBuilder
 
+    val pageLines = linesWithPad(pageBlock)
 
-    def insertRight(tr: TextReflowF[Int]): Unit    = { tloc = tloc.insertRight(Tree.Leaf(tr)) }
-    def insertLeft(tr: TextReflowF[Int]): Unit     = { tloc = tloc.insertLeft(Tree.Leaf(tr)) }
-    def insertDownLast(tr: TextReflowF[Int]): Unit = { tloc = tloc.insertDownLast(Tree.Node(tr, Stream())) }
-    def pop(): Unit = { tloc = tloc.parent.get }
-    //
-    def debug(): Unit = { println(tloc.toTree.map(_.toString).drawBox) }
+    for {
+      (pad, line) <- pageLines
+    } {
+      linenum += 1
+      chnum = pad
+      reflowBuilder.newline()
 
-    def createUriString(): String = {
-      val z = mkTargetRegion(
-        docId, pageNum,
-        0, linenum, 0, 0
-      )
+      for {
+        chpair <- line.sliding(2)
+      } {
 
-      val accumLineTargetRegion = lineCharAtoms
-        .map(_.targetRegion)
-        .foldLeft(z)(_ union _)
+        chpair match {
+          case "^{" =>
+            reflowBuilder.insertDownLast(Labeled(Set(LB.Sup), ()))
+            reflowBuilder.insertDownLast(Flow(List()))
 
-      lineCharAtoms.clear()
-      accumLineTargetRegion.uriString
+          case "_{" =>
+            reflowBuilder.insertDownLast(Labeled(Set(LB.Sub), ()))
+            reflowBuilder.insertDownLast(Flow(List()))
 
-    }
+          case chs if chs.nonEmpty =>
+            chnum += 1
 
-    for (ch <- lines(multiLines).mkString("\n")) {
-      ch match {
-        case '\n' =>
+            chs(0) match {
+              case '{' =>
+                chnum -= 1
 
-          val uriStr = createUriString()
+              case '}' =>
+                chnum -= 1
+                reflowBuilder.pop()
+                reflowBuilder.pop()
 
-          linenum += 1
-          chnum = 0
-          // update the VisualLine w/exact dimensions
-          pop()
+              case ' ' =>
+                reflowBuilder.insertDownLast(Insert(" "))
+                reflowBuilder.pop()
 
-          tloc = tloc.modifyLabel(_ => Labeled(Set(LB.VisualLine(uriStr)), 0))
-
-          pop()
-          insertDownLast(Labeled(Set(LB.VisualLine), 0))
-          insertDownLast(Flow(List()))
-
-
-        case '^' => insertDownLast(Labeled(Set(LB.Sup), 0))
-        case '_' => insertDownLast(Labeled(Set(LB.Sub), 0))
-        case '{' => insertDownLast(Flow(List()))
-        case '}' => pop(); pop()
-        case ' ' =>
-          insertDownLast(Insert(" "))
-          pop()
-          chnum += 1
-
-        case chx if charSubs.contains(chx) =>
-          insertDownLast(Rewrite(0, charSubs(chx)))
-          val charAtom = CharAtom(
-            mkTargetRegion(docId, pageNum,
-              chnum, linenum, 1, 1),
-            ch.toString
-          )
-          lineCharAtoms += charAtom
-          insertDownLast(Atom(charAtom))
-          pop()
-          pop()
-          chnum += 1
-
-        case _ =>
-          val charAtom = CharAtom(
-            mkTargetRegion(docId, pageNum, chnum, linenum, 1, 1),
-            ch.toString
-          )
-          lineCharAtoms += charAtom
-          insertDownLast(Atom(charAtom))
-          pop()
-          chnum += 1
+              case ch  =>
+                if (charSubs.contains(ch)) {
+                  reflowBuilder.insertDownLast(Rewrite((), charSubs(ch)))
+                }
+                val charAtom = CharAtom(
+                  mkTargetRegion(pageId, x=chnum, y=linenum, w=1, h=1),
+                  ch.toString
+                )
+                reflowBuilder.insertDownLast(Atom(charAtom))
+                docStore.addCharAtom(pageId, charAtom)
+                reflowBuilder.pop()
+            }
+            case x => println(s"error: ${x}")
+        }
       }
     }
 
-    if (!tloc.isRoot) {
-      pop()
-      val uriStr = createUriString()
-      tloc = tloc.modifyLabel(_ => Labeled(Set(LB.VisualLine(uriStr)), 0))
+    reflowBuilder.newline()
+    reflowBuilder.completed.foreach { reflow =>
+      val lineRegion = reflow.targetRegion()
+      val lineZone = docStore.createZone(docId)
+      val regionId = docStore.addTargetRegion(pageId, lineRegion.bbox)
+      val tr = docStore.getTargetRegion(regionId)
+      docStore.setZoneTargetRegions(lineZone, Seq(tr))
+      docStore.setTextReflowForZone(lineZone, reflow)
+      docStore.addZoneLabel(lineZone, LB.VisualLine)
     }
 
-    // Now construct the Fix[] version of the tree:
-    val ftree = tloc.toTree
-    val res = ftree.scanr ((reflowNode: TextReflowF[Int], childs: Stream[Tree[TextReflow]]) => fixf {
-      reflowNode match {
-        case t@ Atom(c)                 => Atom(c)
-        case t@ Insert(value)           => Insert(value)
-        case t@ Rewrite(from, to)       => Rewrite(childs.head.rootLabel, to)
-        case t@ Bracket(pre, post, a)   => Bracket(pre, post, childs.head.rootLabel)
-        case t@ Flow(atoms)             => Flow(childs.toList.map(_.rootLabel))
-        case t@ Labeled(ls, _)          => Labeled(ls, childs.head.rootLabel)
-      }}
-    )
-
-    val finalTextReflow = res.rootLabel
-    val bbox = finalTextReflow.targetRegion().bbox
-
-    docStore.setPageGeometry(pageId, bbox)
-    finalTextReflow
+    docStore.setPageGeometry(pageId, reflowBuilder.totalBounds())
   }
+
+
 
 
 
@@ -272,3 +275,4 @@ trait PlainTextReflow extends TextReflowSharedFunctions {
   }
 
 }
+

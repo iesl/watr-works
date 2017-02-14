@@ -14,6 +14,20 @@ class FreshTextReflowDBTables(
   override val docStore:ReflowDocstore
 ) extends ImageTextReflow {
 
+  def loadSampleDoc0(): String@@DocumentID = {
+
+    val pageStrs = List(
+
+      """|            The Title of the Paper
+         |^{a}Faculty of Engineering, Yamagata University, Yonezawa 992-8510, Japan
+         |""".stripMargin
+
+    )
+    val docId = DocumentID("doc-0")
+    ???
+    // stringsToTextReflows(docId, pageStrs)
+    docId
+  }
 
   def loadSampleDoc(): String@@DocumentID = {
 
@@ -36,18 +50,15 @@ class FreshTextReflowDBTables(
 
     val docId = DocumentID("doc-0")
 
-    val pages = stringsToTextReflows(docId, pageStrs)
+    ???
+    // val pages = stringsToTextReflows(docId, pageStrs)
 
-    val images = pages.map(textReflowToImage(_))
+    // val images = pages.map(textReflowToImage(_))
 
 
-    val mpageIndex = MultiPageIndex.loadTextReflows(
-      docId, pages, docStore
-    )
-
-    val ds = DocumentSegmentation(
-      mpageIndex, PageImages(images)
-    )
+    // val mpageIndex = MultiPageIndex.loadTextReflows(
+    //   docId, pages, docStore
+    // )
 
     docId
   }
@@ -72,6 +83,8 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
   behavior of "database-backed corpus"
 
   it should "add zones" in new FreshTextReflowDBTables(docStore) {
+    try {
+
     tables.dropAndCreate.unsafePerformSync
 
     val stableId = loadSampleDoc()
@@ -91,6 +104,12 @@ class TextReflowDBTest extends ConnectedComponentTestUtil {
     targetRegionsPg1.foreach { regionId =>
       val zones = docStore.getZonesForTargetRegion(regionId)
       println(s"Got zones ${zones}")
+    }
+    } catch {
+      case t: Throwable =>
+        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+        println(s"ERROR: ${message}")
+        t.printStackTrace()
     }
   }
 

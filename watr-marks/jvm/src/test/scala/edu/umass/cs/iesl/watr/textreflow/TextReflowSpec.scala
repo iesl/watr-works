@@ -2,18 +2,17 @@ package edu.umass.cs.iesl.watr
 package textreflow
 
 import org.scalatest._
-// import geometry.GeometryImplicits._
 import utils.ScalazTreeImplicits._
-
 import scalaz._
 import Scalaz._
-
 import TextReflowF._
 import TypeTags._
+import databasics._
 
 class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
 
   var freshDocstore = new MemDocstore
+
   def docStore: ReflowDocstore = freshDocstore
 
   def annotateAndPrint(tr: TextReflow): Unit = {
@@ -40,8 +39,8 @@ class TextReflowSpec extends FlatSpec with Matchers with PlainTextReflow {
 
   behavior of "modifying chars"
 
-  def stringToReflow(s: String): TextReflow =
-    stringToTextReflow(s)(DocumentID("d0"), PageNum(0))
+  def stringToReflow(s: String): TextReflow = ???
+    // stringToTextReflow(s)(DocumentID("d0"), PageNum(0))
 
   it should "mod single char" in {
     freshDocstore = new MemDocstore

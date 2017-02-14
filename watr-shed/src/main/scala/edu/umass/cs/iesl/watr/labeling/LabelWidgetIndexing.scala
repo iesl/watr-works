@@ -6,6 +6,7 @@ import spindex._
 import docstore._
 import LabelWidgetF._
 import textreflow.ReflowDocstore
+import rindex._
 
 object LabelWidgetIndex extends LabelWidgetLayout {
 

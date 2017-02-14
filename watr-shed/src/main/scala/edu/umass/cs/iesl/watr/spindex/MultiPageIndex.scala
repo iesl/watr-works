@@ -14,6 +14,7 @@ import predsynth._
 import textreflow._
 import textreflow.data._
 import TypeTags._
+import rindex._
 
 import watrmarks.{StandardLabels => LB}
 
@@ -80,10 +81,9 @@ class MultiPageIndex(
 
   val vtrace: VisualTracer = new VisualTracer()
 
-  import SpatialIndex._
+  // import SpatialIndex._
 
   val pageIndexes = mutable.HashMap[Int@@PageNum, PageIndex]()
-
 
   def dbgFilterComponents(pg: Int@@PageNum, include: LTBounds): Unit ={
     pageIndexes.get(pg).foreach ({ pageIndex =>

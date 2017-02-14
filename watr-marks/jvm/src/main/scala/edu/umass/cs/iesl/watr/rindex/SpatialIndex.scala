@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package rindex
 
 import net.sf.jsi
 import net.sf.jsi.rtree.RTree
@@ -130,10 +130,6 @@ object jsiRectangle {
 
 object SpatialIndex {
 
-  implicit object ComponentIndexable extends SpatialIndexable[Component] {
-    def id(t: Component): Int = t.id.unwrap
-    def ltBounds(t: Component): LTBounds = t.bounds
-  }
 
   def createSpatialIndex(): jsi.SpatialIndex = {
     val rtree: jsi.SpatialIndex = new RTree()

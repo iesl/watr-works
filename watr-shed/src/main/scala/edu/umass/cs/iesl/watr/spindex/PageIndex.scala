@@ -7,6 +7,7 @@ import watrmarks._
 import geometry._
 
 import watrmarks.{StandardLabels => LB}
+import rindex._
 
 /**
   A PageIndex wraps a SpatialIndex for Components, and adds:
