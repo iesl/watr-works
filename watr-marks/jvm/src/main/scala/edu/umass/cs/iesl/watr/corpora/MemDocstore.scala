@@ -21,7 +21,6 @@ object Model {
     prKey    : Int@@PageID,
     document : Int@@DocumentID,
     pagenum  : Int@@PageNum,
-    pageimg  : Option[Array[Byte]],
     bounds   : G.LTBounds
   )
 
@@ -30,6 +29,11 @@ object Model {
     page     : Int@@PageID,
     bounds   : G.LTBounds,
     uri      : String
+  )
+
+  case class ImageClip(
+    prKey    : Int@@ImageID,
+    image    : Array[Byte]
   )
 
   case class Zone(
@@ -90,7 +94,7 @@ class MemDocstore extends ReflowDocstore {
       }
 
       def add(docId: Int@@DocumentID, pageNum: Int@@PageNum): Model.Page = {
-        val rec = Model.Page(nextId(), docId, pageNum, None, G.LTBounds(0, 0, 0, 0))
+        val rec = Model.Page(nextId(), docId, pageNum, G.LTBounds(0, 0, 0, 0))
         insert(rec.prKey, rec)
         documentFKey.put(docId, rec.prKey)
         docIdPageNumKey.put((docId, pageNum), rec.prKey)
@@ -109,19 +113,22 @@ class MemDocstore extends ReflowDocstore {
       }
     }
 
-    object zones extends DBRelation[ZoneID, Model.Zone] with EdgeTableOneToMany[DocumentID, ZoneID]{
+    object zones extends DBRelation[ZoneID, Model.Zone] {
       val documentFK = mutable.HashMap[Int@@DocumentID, Int@@ZoneID]()
 
       object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
       object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
+      object zoneToLabel extends EdgeTableOneToMany[ZoneID, LabelID]
+
+      // object documentToZone extends EdgeTableOneToMany[DocumentID, ZoneID]
 
 
       def addTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
-        zoneToTargetRegion.addEdge(zoneId, regionId)
+        toTargetRegion.addEdge(zoneId, regionId)
       }
 
       def getTargetRegions(zoneId: Int@@ZoneID): Seq[Model.TargetRegion] = {
-        zoneToTargetRegion
+        toTargetRegion
           .getEdges(zoneId)
           .map(targetregions.unique(_))
       }
@@ -155,10 +162,13 @@ class MemDocstore extends ReflowDocstore {
       }
     }
 
-    object zoneToLabel extends EdgeTableOneToMany[ZoneID, LabelID]
-    object zoneToTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
+    object targetRegionImages extends EdgeTableOneToOne[RegionID, ImageID]
 
-    object targetregions extends DBRelation[RegionID, Model.TargetRegion] with EdgeTableOneToMany[ZoneID, RegionID] {
+    object pageImages extends EdgeTableOneToOne[PageID, ImageID]
+
+    object imageclips extends DBRelation[ImageID, Model.ImageClip]
+
+    object targetregions extends DBRelation[RegionID, Model.TargetRegion]  {
 
       object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
@@ -234,7 +244,14 @@ class MemDocstore extends ReflowDocstore {
   }
 
   def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
-    sys.error("unsupported operation")
+    val rec = imageclips.create(Model.ImageClip(_, bytes))
+    pageImages.addEdge(pageId, rec.prKey)
+  }
+
+  def getPageImage(pageId: Int@@PageID): Option[Array[Byte]] = {
+    pageImages
+      .getRhs(pageId)
+      .map(imageclips.unique(_).image)
   }
 
   def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {
@@ -260,12 +277,16 @@ class MemDocstore extends ReflowDocstore {
   }
 
   def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
-    ???
+    val rec = imageclips.create(Model.ImageClip(_, bytes))
+    targetRegionImages.addEdge(regionId, rec.prKey)
   }
 
-  def getTargetRegionImage(regionId: Int@@RegionID): Array[Byte] = {
-    ???
+  def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]] = {
+    targetRegionImages
+      .getRhs(regionId)
+      .map(imageclips.unique(_).image)
   }
+
   def deleteTargetRegionImage(regionId: Int@@RegionID): Unit = {
     ???
   }

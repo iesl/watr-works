@@ -17,6 +17,7 @@ trait ReflowDocstore {
   def getPageGeometry(pageId: Int@@PageID): LTBounds
   def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
   def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
+  def getPageImage(pageId: Int@@PageID): Option[Array[Byte]]
 
   def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit
   def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom]
@@ -25,7 +26,7 @@ trait ReflowDocstore {
   def getTargetRegion(regionId: Int@@RegionID): TargetRegion
 
   def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit
-  def getTargetRegionImage(regionId: Int@@RegionID): Array[Byte]
+  def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]]
   def deleteTargetRegionImage(regionId: Int@@RegionID): Unit
 
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID]

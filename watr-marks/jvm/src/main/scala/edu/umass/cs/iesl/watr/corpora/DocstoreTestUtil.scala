@@ -4,8 +4,6 @@ package docstore
 import org.scalatest._
 
 import textreflow._
-import watrmarks._
-import geometry._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 import databasics._
@@ -41,7 +39,6 @@ trait DocstoreTestUtil extends FlatSpec with Matchers with PlainTextReflow {
   val stableId = DocumentID("stable-id#23")
 
   def loadSampleDoc(pageCount: Int): Unit = {
-
     val pages = TextPageSamples.samples
       .take(pageCount)
 

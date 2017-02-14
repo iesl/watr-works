@@ -537,6 +537,9 @@ class TextReflowDB(
       runq { selectPage(pageId).map(_.bounds) }
     }
 
+    def getPageImage(pageID: Int@@PageID): Option[Array[Byte]] = {
+      ???
+    }
     def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit = {
       val query = for {
         _ <- updatePage(pageId, geom)
@@ -577,7 +580,7 @@ class TextReflowDB(
       ???
     }
 
-    def getTargetRegionImage(regionId: Int@@RegionID): Array[Byte] = {
+    def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]] = {
       ???
     }
     def deleteTargetRegionImage(regionId: Int@@RegionID): Unit = {

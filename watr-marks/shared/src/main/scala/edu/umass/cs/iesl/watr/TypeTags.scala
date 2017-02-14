@@ -33,6 +33,7 @@ sealed trait LabelerID
 sealed trait LabelingTaskID
 
 sealed trait TextReflowID
+sealed trait ImageID
 
 object TypeTags extends TypeTags
 
@@ -60,6 +61,8 @@ trait TypeTags {
   val Length = Tag.of[Length]
 
   val Percent = Tag.of[Percent]
+
+  val ImageID = Tag.of[ImageID]
 
   val LabelerID = Tag.of[LabelerID]
   val LabelingTaskID = Tag.of[LabelingTaskID]

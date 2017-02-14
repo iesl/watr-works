@@ -99,11 +99,11 @@ trait DoobiePredef {
   //     })
 
   implicit val PageMeta         : Composite[Model.Page] =
-    Composite[(Int@@PageID) :: (Int@@DocumentID) :: (Int@@PageNum) :: Option[Array[Byte]] :: LTBounds :: HNil].xmap({
-      case f0 :: f1 :: f2 :: f3 :: f4 :: HNil =>
-        Model.Page(f0, f1, f2, f3, f4)
+    Composite[(Int@@PageID) :: (Int@@DocumentID) :: (Int@@PageNum) :: LTBounds :: HNil].xmap({
+      case f0 :: f1 :: f2 :: f3 :: HNil =>
+        Model.Page(f0, f1, f2, f3 )
       },{ case model =>
-          model.prKey :: model.document :: model.pagenum :: Option.empty[Array[Byte]] :: model.bounds :: HNil
+          model.prKey :: model.document :: model.pagenum :: model.bounds :: HNil
       })
 
   // implicit val TargetRegionMeta : Composite[Model.TargetRegion] =
