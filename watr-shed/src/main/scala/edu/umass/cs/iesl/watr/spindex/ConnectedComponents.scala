@@ -12,8 +12,6 @@ import scala.collection.mutable
 
 import watrmarks.{StandardLabels => LB}
 
-import TypeTags._
-
 // TODO move and/or delete this
 case class BioNode(
   component: Component,
@@ -76,14 +74,10 @@ sealed trait Component {
   ): Seq[RegionComponent]
 
 
-  def targetRegions: Seq[TargetRegion]
+  // def targetRegions: Seq[TargetRegion]
 
   // TODO target region only makes sense for some connected components
-  def targetRegion: TargetRegion = {
-    targetRegions.headOption
-      .map(tr => TargetRegion(RegionID(0), tr.stableId, tr.pageNum, bounds))
-      .getOrElse {  sys.error("no target region found in Component}") }
-  }
+  def targetRegion: TargetRegion
 
   def chars: String
 
@@ -155,7 +149,6 @@ sealed trait Component {
   }
 
 }
-
 
 
 case class RegionComponent(
@@ -268,7 +261,7 @@ case class RegionComponent(
       })
   }
 
-  def targetRegions: Seq[TargetRegion] = Seq(region)
+  def targetRegion: TargetRegion = region
 
   def bounds: LTBounds = region.bbox
 
@@ -312,7 +305,7 @@ case class AtomicComponent(
 
   def roleLabel: Label = LB.PageAtom
 
-  def targetRegions: Seq[TargetRegion] = Seq(pageAtom.targetRegion)
+  def targetRegion: TargetRegion = pageAtom.targetRegion
 
   def char = pageAtom match {
     case rg: CharAtom => rg.char.toString

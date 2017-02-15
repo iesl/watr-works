@@ -587,11 +587,11 @@ object ComponentOperations {
     }
 
     def setTextReflow(r: TextReflow): Unit = {
-      theComponent.mpageIndex.setTextReflow(theComponent, r)
+      theComponent.mpageIndex.setTextReflowForComponent(theComponent, r)
     }
 
     def getTextReflow(): Option[TextReflow]= {
       theComponent.mpageIndex.getTextReflowForComponent(theComponent.id)
     }
-  } // RicherComponent
+  }
 }

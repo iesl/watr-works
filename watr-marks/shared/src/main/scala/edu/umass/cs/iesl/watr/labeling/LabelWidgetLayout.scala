@@ -17,6 +17,12 @@ import LabelWidgetF._
 import utils.ScalazTreeImplicits._
 import TypeTags._
 
+case class AbsPosAttr(
+  widget: LabelWidgetF[Unit],
+  widgetBounds: LTBounds,
+  id: Int@@RegionID
+)
+
 case class PosAttr(
   widget: LabelWidgetF[Unit],
   widgetBounds: LTBounds,

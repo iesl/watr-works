@@ -2,13 +2,10 @@ package edu.umass.cs.iesl.watr
 package docstore
 
 import doobie.imports._
-import scalaz.concurrent.Task
 
 import databasics._
 
-class TextReflowDBTables(
-  val xa: Transactor[Task]
-) extends DoobiePredef {
+class TextReflowDBTables extends DoobiePredef {
 
   val createDocumentTable: Update0 = sql"""
       CREATE TABLE document (
@@ -160,12 +157,5 @@ class TextReflowDBTables(
     _ <- createAll
   } yield ()
 
-  def dropAndCreate = {
-    val run = for{
-      _ <- dropAll.run
-      _ <- createAll
-    } yield ()
-    run.transact(xa)
-  }
 
 }

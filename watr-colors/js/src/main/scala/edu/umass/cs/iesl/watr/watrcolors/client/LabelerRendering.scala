@@ -5,6 +5,7 @@ package client
 import scala.scalajs.js
 
 import textreflow._
+import textreflow.data._
 import geometry._
 import GeometryImplicits._
 
@@ -32,7 +33,7 @@ case class LwRenderingAttrs(
   regions: List[(TargetRegion, LTBounds)]
 )
 
-trait LabelerRendering extends PlainTextCorpus with FabricCanvasOperations {
+trait LabelerRendering extends FabricCanvasOperations {
   import TextReflowF._
   import matryoshka._
 
@@ -244,12 +245,12 @@ trait LabelerRendering extends PlainTextCorpus with FabricCanvasOperations {
   }
 
 
-  def renderLabelWidget(positions: List[PosAttr]): (LTBounds, Future[List[FabricObject]]) = {
+  def renderLabelWidget(positions: List[AbsPosAttr]): (LTBounds, Future[List[FabricObject]]) = {
 
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
 
-    def visit(p: PosAttr): Unit = {
-      val PosAttr(fa, wbbox, id, selfOffset, childOffsets)  = p
+    def visit(p: AbsPosAttr): Unit = {
+      val AbsPosAttr(fa, wbbox, id)  = p
 
       fa match {
         case TargetOverlay(under, overs) =>

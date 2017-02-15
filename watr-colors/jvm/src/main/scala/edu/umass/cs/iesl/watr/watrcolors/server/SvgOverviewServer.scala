@@ -103,7 +103,7 @@ package server
 //   //     .getArtifact("cermine-zones.json")
 //   //     .asJson
 //   //     .map({ jsvalue =>
-//   //       DocumentExtractor.loadSpatialIndices(jsvalue)
+//   //       DocumentExtractor.initDocument(jsvalue)
 //   //     })
 
 //   //   val overlays = maybeOverlays.recover({ case err =>

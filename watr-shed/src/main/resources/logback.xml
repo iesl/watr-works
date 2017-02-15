@@ -12,7 +12,9 @@
   </appender>
 
   <logger name="akka" level="OFF" />
+
   <logger name="net.sf.jsi.rtree" level="OFF" />
+  <logger name="com.zaxxer.hikari.pool" level="INFO" />
 
   <root level="trace">
     <appender-ref ref="STDOUT" />

@@ -337,7 +337,7 @@ object Works extends App {
   // def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
   def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path): DocumentSegmenter =  {
     val segmenter = DocumentSegmenter
-      .createSegmenter(stableId, pdfPath)
+      .createSegmenter(stableId, pdfPath, new MemDocstore)
 
     segmenter.runPageSegmentation()
     segmenter

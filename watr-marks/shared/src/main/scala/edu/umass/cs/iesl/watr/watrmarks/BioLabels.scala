@@ -70,7 +70,7 @@ case class UPin(
   override val pinChar:Char='U'
 }
 
-object Label {
+object Labels {
   def fromString(s: String): Label = {
     s.split(":") match {
       case Array(ns, keyval) =>

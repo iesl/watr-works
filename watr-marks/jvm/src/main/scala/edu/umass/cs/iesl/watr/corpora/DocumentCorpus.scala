@@ -47,8 +47,7 @@ trait DocumentCorpus {
 
 
   ///////////////////////
-  /// Derived operations0
-
+  /// Derived operations
 
 
   def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] = for {

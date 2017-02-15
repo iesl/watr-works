@@ -29,9 +29,10 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with CorpusTesti
   }
 
   def createMultiPageIndex(stableId: String@@DocumentID, strs: String*): MultiPageIndex = {
-    MultiPageIndex.loadSpatialIndices(
+    MultiPageIndex.initDocument(
       stableId,
-      stringsToMultiPageAtoms(stableId, strs:_*)
+      stringsToMultiPageAtoms(stableId, strs:_*),
+      docStore
     )
   }
 
@@ -41,7 +42,7 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with CorpusTesti
   //     stringsToMultiPageAtomsWithImages(stableId, strs:_*)
   //       .map({case (atom, geom, img) => ((atom, geom), img)})
 
-  //   (MultiPageIndex.loadSpatialIndices(stableId, pages.map(_._1)), pages.map(_._2))
+  //   (MultiPageIndex.initDocument(stableId, pages.map(_._1)), pages.map(_._2))
   // }
   // def textReflowToImage(pageReflow: TextReflow): Image = {
   //   val vlines =  pageReflow.sliceLabels(LB.VisualLine)

@@ -9,6 +9,7 @@ import GeometryImplicits._
 import ammonite.{ops => fs}
 import java.net.URL
 import TypeTags._
+import corpora._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers {
   import DocumentSegmenter._
@@ -103,7 +104,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
 
     val docId = DocumentID("dummy-id")
 
-    val segmenter =  DocumentSegmenter.createSegmenter(docId, path)
+    val segmenter =  DocumentSegmenter.createSegmenter(docId, path, new MemDocstore)
 
     // Assume these example regions are all from one page
     // val pageNum = regions.map(_.pageNum).head

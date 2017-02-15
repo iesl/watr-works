@@ -25,6 +25,7 @@ import EnrichNumerics._
 import SlicingAndDicing._
 import TextReflowConversion._
 import TypeTags._
+import corpora._
 
 import scala.collection.mutable
 
@@ -116,16 +117,16 @@ object DocumentSegmenter {
   }
 
 
-  def createSegmenter(stableId: String@@DocumentID, pdfPath: Path): DocumentSegmenter = {
+  def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentCorpus): DocumentSegmenter = {
     val pageAtomsAndGeometry = formats.DocumentIO
       .extractChars(stableId, pdfPath, Set())
 
-    createSegmenter(stableId, pageAtomsAndGeometry)
+    createSegmenter(stableId, pageAtomsAndGeometry, docStore)
   }
 
 
-  def createSegmenter(stableId: String@@DocumentID, pagedefs: Seq[(Seq[PageAtom], PageGeometry)]): DocumentSegmenter = {
-      val mpageIndex = MultiPageIndex.loadSpatialIndices(stableId, pagedefs)
+  def createSegmenter(stableId: String@@DocumentID, pagedefs: Seq[(Seq[PageAtom], PageGeometry)], docStore: DocumentCorpus): DocumentSegmenter = {
+      val mpageIndex = MultiPageIndex.initDocument(stableId, pagedefs, docStore)
       new DocumentSegmenter(mpageIndex)
   }
 
@@ -555,10 +556,8 @@ class DocumentSegmenter(
     components: Seq[AtomicComponent]
   ): Unit = {
 
-    // gutterDetection(pageId, components)
 
-    def regionIds(cc: Component): Seq[Int@@RegionID] = cc.targetRegions.map(_.id)
-    def minRegionId(ccs: Seq[Component]): Int@@RegionID =  ccs.flatMap(regionIds(_)).min
+    def minRegionId(ccs: Seq[Component]): Int@@RegionID =  ccs.map(_.targetRegion.id).min
 
     val lineSets = new DisjointSets[Component](components)
 

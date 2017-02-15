@@ -17,6 +17,11 @@ object TypeTagPicklers {
     {t => Js.Str(t.unwrap.toString)},
     {case Js.Str(s) => PageID(s.toInt)}
   )
+
+  implicit val Int_PageNum_Pickler: RW[Int @@ PageNum] = RW[Int @@ PageNum](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => PageNum(s.toInt)}
+  )
   implicit val Int_LabelID_Pickler: RW[Int @@ LabelID] = RW[Int @@ LabelID](
     {t => Js.Str(t.unwrap.toString)},
     {case Js.Str(s) => LabelID(s.toInt)}

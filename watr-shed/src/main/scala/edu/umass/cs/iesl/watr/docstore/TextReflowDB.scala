@@ -16,7 +16,7 @@ import scalaz.syntax.traverse._
 
 import textreflow._
 import textreflow.data._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 import watrmarks._
 import utils.EnrichNumerics._
 import TypeTags._
@@ -24,21 +24,46 @@ import PageComponentImplicits._
 
 
 class TextReflowDB(
-  val tables: TextReflowDBTables
+  val tables: TextReflowDBTables,
+  dbname: String, dbuser: String, dbpass: String
 ) extends DoobiePredef {
   self =>
 
-  lazy val xa = tables.xa
+  def time[R](prefix: String)(block: => R): R = {
+    val t0 = System.nanoTime()
+    val result = block    // call-by-name
+    val t1 = System.nanoTime()
+    println(s"${prefix}: " + (t1 - t0)/1000000.0d + "ms")
+    result
+  }
+
+  import scalaz.concurrent.Task
+  import doobie.hikari.imports._
+
+  val xa: Transactor[Task] = (for {
+    xa <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+    _  <- xa.configure(hx => Task.delay( /* do something with hx */ ()))
+  } yield xa).unsafePerformSync
 
 
   def runq[A](query: C.ConnectionIO[A]): A = {
-    query.transact(xa).unsafePerformSync
+    // time("runq") {
+    // ensuring xa.shutdown
+    query.transact(xa)
+      .unsafePerformSync
   }
 
   def updateGetKey[A: Composite](key: String, up: Update0): C.ConnectionIO[A] = {
     up.withUniqueGeneratedKeys(key)
   }
 
+
+  def dropAndRecreate() = runq {
+    for{
+      _ <- tables.dropAll.run
+      _ <- tables.createAll
+    } yield ()
+  }
 
   def selectDocumentStableIds(): List[String@@DocumentID] = {
     runq {
@@ -265,10 +290,9 @@ class TextReflowDB(
   }
 
   def getDocuments(): List[String@@DocumentID] = {
-    sql"select stable_id from document"
-      .query[String@@DocumentID].list
-      .transact(xa)
-      .unsafePerformSync
+    runq{
+      sql"select stable_id from document".query[String@@DocumentID].list
+    }
   }
 
   def selectDocumentID(stableId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
@@ -282,11 +306,11 @@ class TextReflowDB(
   }
 
   def hasDocumentID(stableId: String@@DocumentID): Boolean = {
-    sql"select 1 from document where stable_id=${stableId}"
-      .query[Int].option
-      .transact(xa)
-      .unsafePerformSync
-      .isDefined
+    val zz = runq{
+      sql"select 1 from document where stable_id=${stableId}"
+        .query[Int].option
+    }
+    zz.isDefined
   }
   def getOrInsertDocumentID(stableId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
     sql"""select document from document where stable_id=${stableId}"""
@@ -438,9 +462,9 @@ class TextReflowDB(
   }
 
   def serveImageWithURI(targetRegion: TargetRegion): Array[Byte] = {
-    getOrCreateTargetRegionImage(targetRegion)
-      .transact(xa)
-      .unsafePerformSync
+    runq{
+      getOrCreateTargetRegionImage(targetRegion)
+    }
   }
 
 
@@ -479,10 +503,10 @@ class TextReflowDB(
       ???
     }
     def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit = {
-      val query = for {
-        _ <- updatePage(pageId, geom)
-      } yield ()
-      query.transact(xa).unsafePerformSync
+      runq {
+        updatePage(pageId, geom)
+          // .flatMap(_ => ())
+      }
     }
 
     def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
@@ -531,9 +555,9 @@ class TextReflowDB(
 
 
     def createZone(docId: Int@@DocumentID): Int@@ZoneID = {
-      insertZone(docId)
-        .transact(xa)
-        .unsafePerformSync
+      runq {
+        insertZone(docId)
+      }
     }
 
     def getZone(zoneId: Int@@ZoneID): Zone = runq {
@@ -549,7 +573,7 @@ class TextReflowDB(
         labels  <- {
           selectZoneLabels(zone.prKey)
             .map(_.map(mlabel =>
-              Label.fromString(mlabel.key).copy(
+              Labels.fromString(mlabel.key).copy(
                 id=mlabel.prKey
               )
             ))
@@ -560,7 +584,6 @@ class TextReflowDB(
     }
 
     def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit = {
-      println(s"setZoneTargetRegions: ${zoneId} ${targetRegions}")
       targetRegions.foreach { tr =>
         runq{ linkZoneToTargetRegion(zoneId, tr.id) }
       }

@@ -2,28 +2,22 @@ package edu.umass.cs.iesl.watr
 package docstore
 
 import org.scalatest._
-import scalaz.concurrent.Task
-import doobie.imports._
-import TypeTags._
 import watrmarks.{StandardLabels => LB}
 import corpora._
 
 
 class TextReflowDBTest extends FlatSpec with Matchers with CorpusTestingUtil {
 
-  val doLogging = false
-  val loggingProp = if (doLogging) "?loglevel=2" else ""
-
-  val xa = DriverManagerTransactor[Task](
-    s"org.postgresql.Driver",
-    s"jdbc:postgresql:watrdev${loggingProp}",
-    "watrworker", "watrpasswd"
-  )
-
   def createEmptyDocumentCorpus(): DocumentCorpus = {
-    val tables = new TextReflowDBTables(xa)
-    tables.dropAndCreate.unsafePerformSync
-    val reflowDB = new TextReflowDB(tables)
+    val tables = new TextReflowDBTables()
+
+    val reflowDB = new TextReflowDB(
+      tables,
+      dbname="watrdev",
+      dbuser="watrworker",
+      dbpass="watrpasswd"
+    )
+    reflowDB.dropAndRecreate
     reflowDB.docstorage
   }
 

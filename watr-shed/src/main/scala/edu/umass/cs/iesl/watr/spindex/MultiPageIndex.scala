@@ -11,7 +11,7 @@ import utils.IdGenerator
 
 import tracing.VisualTracer
 import predsynth._
-import textreflow._
+// import textreflow._
 import textreflow.data._
 import TypeTags._
 import rindex._
@@ -58,6 +58,12 @@ class MultiPageIndex(
     )
   }
 
+  def getZones(): Seq[Zone] = {
+    storage
+      .getZonesForDocument(docId)
+      .map(storage.getZone(_))
+  }
+
   def getZone(zoneId: Int@@ZoneID): Zone = {
     storage.getZone(zoneId)
   }
@@ -75,8 +81,6 @@ class MultiPageIndex(
   def getStableId(): String@@DocumentID = stableId
 
   val vtrace: VisualTracer = new VisualTracer()
-
-  // import SpatialIndex._
 
   val pageIndexes = mutable.HashMap[Int@@PageNum, PageIndex]()
 
@@ -99,12 +103,9 @@ class MultiPageIndex(
   // ID generators
   val componentIdGen = IdGenerator[ComponentID]()
   val labelIdGen = IdGenerator[LabelID]()
+  // NB this is only for Components, and it a kludge until Component/DocumentCorpus systems are unified
   val regionIdGen = IdGenerator[RegionID]()
 
-  // Zone-related
-  val zoneMap = mutable.HashMap[Int@@ZoneID, Zone]()
-  val labelToZones: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ZoneID]] = mutable.HashMap()
-  val zoneToTextReflow: mutable.HashMap[Int@@ZoneID, TextReflow] = mutable.HashMap()
 
   // FIXME: remove this kludge
   //   map component to zone when there is a 1-to-1 correspondence and a TextReflow for the Zone involved
@@ -114,22 +115,24 @@ class MultiPageIndex(
     componentIdToZoneId.get(cc)
   }
 
-  def setTextReflow(cc: Component, r: TextReflow): Zone = {
+  def setTextReflowForComponent(cc: Component, r: TextReflow): Unit = {
     val zone = createZone()
-    zoneToTextReflow.put(zone.id, r)
     componentIdToZoneId.put(cc.id, zone.id)
-    zone
+    storage.setTextReflowForZone(zone.id, r)
   }
 
-  // TODO: fix this to make TextReflow assoc with Zones, not Components
   def getTextReflowForComponent(ccId: Int@@ComponentID): Option[TextReflow] = {
-    // kludge: find a zone that has this Component as it's sole member and return its TextReflow
-    componentIdToZoneId.get(ccId)
-      .flatMap(zoneToTextReflow.get(_))
+    // TODO kludge: find a zone that has this Component as it's sole member and return its TextReflow
+    for {
+      zoneId <- componentIdToZoneId.get(ccId)
+      reflow <- storage.getTextReflowForZone(zoneId)
+    } yield {
+      reflow
+    }
   }
 
   def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
-    zoneToTextReflow.get(zoneId)
+    storage.getTextReflowForZone(zoneId)
   }
 
   def getPageVisualLines(pageId: Int@@PageNum): Seq[Component]  = for {
@@ -160,13 +163,7 @@ class MultiPageIndex(
   }
 
 
-  def getZones(): Seq[Zone] = {
-    zoneMap.values.toSeq
-  }
 
-  private def getLabelToZoneBuffer(l: Label): mutable.ArrayBuffer[Int@@ZoneID] = {
-    labelToZones.getOrElseUpdate(l, mutable.ArrayBuffer[Int@@ZoneID]())
-  }
 
   val relations = mutable.ArrayBuffer[Relation.Record]()
   val props = mutable.ArrayBuffer[Prop.PropRec]()
@@ -208,9 +205,7 @@ class MultiPageIndex(
   }
 
   def getPageForComponent(c: Component): Int@@PageNum = {
-    c.targetRegions
-      .headOption.map(_.pageNum)
-      .getOrElse(sys.error("no page specified for component"))
+    c.targetRegion.pageNum
   }
 
 
@@ -254,9 +249,16 @@ class MultiPageIndex(
         sys.error(s"""cannot label connected components from different pages (got pages=${targetPages.mkString(", ")})""")
       }
 
-      val totalRegion = targetRegions.reduce(_ union _)
+      val pageNum =  PageNum(targetPages.head)
+
+      val pageId = storage.getPage(docId, pageNum).get
+      val totalBounds = targetRegions.reduce(_ union _).bbox
+      val regionId = storage.addTargetRegion(pageId, totalBounds)
+      val totalRegion = storage.getTargetRegion(regionId)
 
       val region = createRegionComponent(totalRegion, role)
+
+      println(s"labelRegion: ccRegion: ${region}")
 
       val zone = createZone()
 
@@ -273,7 +275,6 @@ class MultiPageIndex(
     val region = RegionComponent(componentIdGen.nextId, role, tr, this)
     addComponent(region)
 
-    // vtrace.trace("create RegionComponent" withTrace showComponent(region))
     region
   }
 
@@ -301,6 +302,7 @@ class MultiPageIndex(
 
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
+    storage.addPage(docId, pageGeometry.id)
 
     val pageIndex = PageIndex(
       SpatialIndex.createFor[Component](),
@@ -341,104 +343,18 @@ class MultiPageIndex(
 
 object MultiPageIndex {
 
-  import matryoshka._
-  import matryoshka.data._
-  import matryoshka.implicits._
-  // import scala.collection.mutable
-
-
-  import scalaz.std.list._
-  import scalaz.std.map._
-  import scalaz.syntax.monoid._
-
-  import TextReflowF._
   import PageComponentImplicits._
 
-  def loadTextReflows(
+  def initDocument(
     stableId: String@@DocumentID,
-    textReflows: Seq[TextReflow],
-    docstorage: DocumentCorpus
+    regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)],
+    docStore: DocumentCorpus
   ): MultiPageIndex = {
-    val mpageIndex = new MultiPageIndex(stableId, docstorage)
 
-
-    textReflows.zipWithIndex.foreach { case (textReflow, pagenum) =>
-      val pageNum = PageNum(pagenum)
-      val pageTargetRegions = textReflow.targetRegions()
-      val pageTargetRegion = pageTargetRegions.reduce(_ union _)
-
-      val pageGeom = PageGeometry(
-        pageNum, pageTargetRegion.bbox
-      )
-
-      val pageIndex = mpageIndex.addPage(pageGeom)
-
-      type Attr = Map[Label, List[Component]]
-
-      def visit(t: TextReflowF[(TextReflow, Attr)]): Attr = t match {
-        case Atom    (ac)                    =>
-          val atomicComponent = mpageIndex.addPageAtom(ac)
-
-          Map((LB.PageAtom, List(atomicComponent)))
-
-        case Insert  (value)                 => Map()
-        case Rewrite ((from, attr), to)      => attr
-        case Bracket (pre, post, (a, attr))  => attr
-        case Flow    (atomsAndattrs)         =>
-          if (atomsAndattrs.isEmpty) {
-            Map[Label, List[Component]]()
-          } else {
-            atomsAndattrs
-              .map(_._2)
-              .reduce(_ |+| _)
-          }
-
-        case l @ Labeled (labels, (a, attr))     =>
-          val childAtoms = attr.get(LB.PageAtom).getOrElse(List())
-
-          val allLabelMaps = labels.toList.map { label =>
-            if (label == LB.VisualLine || label == LB.PageLines) {
-              mpageIndex
-                .labelRegion(childAtoms,  label)
-                .map({region =>
-
-                  attr.foreach { case (childLabel, comps) =>
-                    region.setChildren(childLabel, comps)
-                  }
-                  if (label == LB.VisualLine) {
-                    // Clip text reflow to region bounds
-                    val clippedTRs = textReflow.clipToTargetRegion(region.targetRegion)
-                    if (clippedTRs.length != 1) {
-                      println("ERROR: VisualLine clipped area is wrong")
-                    }
-                    val clippedTR = clippedTRs.head._1
-                    mpageIndex.setTextReflow(region, clippedTR)
-                  }
-
-                  Map((label -> List[Component](region)))
-                })
-
-            } else {
-              Option(Map((label -> List[Component]())))
-            }
-          }
-          val ms = allLabelMaps.flatten
-
-          ms.foldLeft(attr)(_ |+| _)
-      }
-
-      textReflow.cata(attributePara(visit))
+    val mpageIndex = new MultiPageIndex(stableId, docStore)
+    val docId = docStore.getDocument(stableId).getOrElse {
+      sys.error(s"initDocument: No Document found for ${stableId}")
     }
-
-    mpageIndex
-  }
-
-  def loadSpatialIndices(
-    stableId: String@@DocumentID,
-    regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]
-  ): MultiPageIndex = {
-
-    val mpageIndex = new MultiPageIndex(stableId, new MemDocstore)
 
     regionsAndGeometry.foreach { case(regions, geom)  =>
       println(s"adding page w/geometry ${geom}")

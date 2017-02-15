@@ -21,6 +21,7 @@ class LabelingServer(
   corpus: Corpus
 ) {
 
+  private lazy val docStore = reflowDB.docstorage
 
   def rescale(bbox: LTBounds, page1: LTBounds, page2: LTBounds): LTBounds = {
     val LTBounds(l, t, w, h) = bbox
@@ -47,48 +48,52 @@ class LabelingServer(
   }
 
   def embossTargetRegion(targetRegion: TargetRegion, labels: Seq[Label]): Unit = {
-    val docId = targetRegion.docId
     val pageNum = targetRegion.pageNum
 
-    val Some((pageImage, pageGeometry)) = reflowDB.getPageImageAndGeometry(docId, pageId)
+    // val maybePageId = docStore.getPage(targetRegion.stableId, pageNum)
+    // val maybePageImage = docStore.getPageImage(pageId)
+    // val maybePageGeometry = docStore.getPageGeometry(pageId)
 
-    val (pageW, pageH) = pageImage.dimensions
-    val imageGeometry = LTBounds(0, 0, pageW.toDouble, pageH.toDouble)
+    // (maybePageId |@| maybePageImage |@| maybePageGeometry).apply({
+    //   case (pageId, pageImageBytes, pageBounds) =>
 
-    val maskCanvas = new SC.Canvas(
-      Image.filled(pageW.toInt, pageH.toInt, Color.Transparent)
-    )
+    //   // val (pageW, pageH) = pageImage.dimensions
+    //   // val imageGeometry = LTBounds(0, 0, pageW.toDouble, pageH.toDouble)
 
-    val hardcodeLabel = LB.VisualLine
-    // select all zones w/label on given page
-    val zones = reflowDB.selectZones(docId, pageId, hardcodeLabel)
-    val embossings = for {
-      zone <- zones
-      region <- zone.regions
-    } yield {
-      ltBoundsToDrawables(region.bbox, pageGeometry, imageGeometry)
-    }
+    //   // val maskCanvas = new SC.Canvas(
+    //   //   Image.filled(pageW.toInt, pageH.toInt, Color.Transparent)
+    //   // )
 
-    val embossedCanvas = maskCanvas.draw(embossings.flatten)
-    val overlay = pageImage.overlay(embossedCanvas.image, 0, 0)
+    //   // val hardcodeLabel = LB.VisualLine
+    //   // // select all zones w/label on given page
+    //   // val zones = reflowDB.selectZones(docId, pageId, hardcodeLabel)
+    //   // val embossings = for {
+    //   //   zone <- zones
+    //   //   region <- zone.regions
+    //   // } yield {
+    //   //   ltBoundsToDrawables(region.bbox, pageGeometry, imageGeometry)
+    //   // }
 
-    val imageClipRegion @ LTBounds(clipL, clipT, clipW, clipH) =
-      rescale(targetRegion.bbox, pageGeometry.bounds, imageGeometry)
+    //   // val embossedCanvas = maskCanvas.draw(embossings.flatten)
+    //   // val overlay = pageImage.overlay(embossedCanvas.image, 0, 0)
 
-    // println(s"embossTargetRegion: clipping image to ${imageClipRegion} w/geom ${imageGeometry}")
+    //   // val imageClipRegion @ LTBounds(clipL, clipT, clipW, clipH) =
+    //   //   rescale(targetRegion.bbox, pageGeometry.bounds, imageGeometry)
 
-    val clippedPageImage = overlay.subimage(
-      clipL.toInt,
-      clipT.toInt,
-      clipL.toInt + clipW.toInt,
-      clipT.toInt + clipH.toInt
-    )
+    //   // // println(s"embossTargetRegion: clipping image to ${imageClipRegion} w/geom ${imageGeometry}")
 
-    reflowDB.overwriteTargetRegionImage(targetRegion, clippedPageImage)
+    //   // val clippedPageImage = overlay.subimage(
+    //   //   clipL.toInt,
+    //   //   clipT.toInt,
+    //   //   clipL.toInt + clipW.toInt,
+    //   //   clipT.toInt + clipH.toInt
+    //   // )
+
+    //   // reflowDB.overwriteTargetRegionImage(targetRegion, clippedPageImage)
+    //     ???
+    // )}
+
   }
 
-  // implicit class Labeler_RicherCorpusEntry(val theCorpusEntry: CorpusEntry) extends {
-  //   def text(): Seq[TextReflow] = {
-  //     ???
-  //   }
 }
+

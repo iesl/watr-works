@@ -12,6 +12,7 @@ import HttpHeaders._
 import HttpMethods._
 
 import scala.concurrent.Future
+import concurrent.duration._
 
 import corpora._
 import textreflow.data._
@@ -227,7 +228,7 @@ class EmbeddedServer(
       val lwIndex = LabelWidgetIndex.create(reflowDB, lwidget)
       activeLabelWidgetIndex = Some(lwIndex)
 
-      val layout = lwIndex.layout
+      val layout = lwIndex.layout.map(p => AbsPosAttr(p.widget, p.widgetBounds, p.id))
 
       api.echoLabeler(layout).call()
     }

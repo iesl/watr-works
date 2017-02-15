@@ -40,12 +40,13 @@ object WatrTable {
         |import ammonite.ops._
         |import ammonite.ops.ImplicitWd._
         |import watr._, spindex._, geometry._, table._
-        |import corpora.Corpus
+        |import corpora._
         |import textreflow._
+        |import textreflow.data._
+        |import docstore._
+        |import bioarxiv._, BioArxiv._, BioArxivOps._
         |import watrmarks.StandardLabels._
         |import ShellCommands._
-        |import BioArxiv._
-        |import BioArxivOps._
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox
         |implicit val pp2 = pprintTextReflow
@@ -79,14 +80,19 @@ object ShellCommands extends CorpusEnrichments {
     val doLogging = false
     val loggingProp = if (doLogging) "?loglevel=2" else ""
 
-    val xa = DriverManagerTransactor[Task](
-      "org.postgresql.Driver",
-      s"jdbc:postgresql:${dbname}${loggingProp}",
-      "watrworker", "watrpasswd"
-    )
 
-    val tables = new TextReflowDBTables(xa)
-    new TextReflowDB(tables)
+    // val xa = DriverManagerTransactor[Task](
+    //   "org.postgresql.Driver",
+    //   s"jdbc:postgresql:${dbname}${loggingProp}",
+    //   "watrworker", "watrpasswd"
+    // )
+
+    val tables = new TextReflowDBTables()
+    new TextReflowDB(tables,
+      dbname=dbname,
+      dbuser="watrworker",
+      dbpass="watrpasswd"
+    )
   }
 
   val pprintComponent: PPrinter[Component] = PPrinter({(component, config) =>
@@ -129,7 +135,7 @@ object ShellCommands extends CorpusEnrichments {
     def docStorage = theDB.docstorage
 
     def dropAndCreateTables(): Unit = {
-      theDB.tables.dropAndCreate.unsafePerformSync
+      theDB.dropAndRecreate
     }
 
     def addSegmentation(ds: DocumentSegmentation): Unit = {
@@ -375,41 +381,54 @@ object ShellCommands extends CorpusEnrichments {
       } yield  paperRec
     }
 
-    def addEntryToDatabase(implicit db: TextReflowDB): Unit = {
-      val docId = DocumentID(theCorpusEntry.entryDescriptor)
-      if (!db.hasDocumentID(docId)) {
-        segment.foreach(db.addSegmentation(_))
-      } else {
-        println(s"Skipping ${docId}: already in database")
-      }
-    }
+    // def addEntryToDatabase(implicit db: TextReflowDB): Unit = {
+    //   val docId = DocumentID(theCorpusEntry.entryDescriptor)
+    //   if (!db.hasDocumentID(docId)) {
+    //     segment.foreach(db.addSegmentation(_))
+    //   } else {
+    //     println(s"Skipping ${docId}: already in database")
+    //   }
+    // }
 
-    def segment(): Option[DocumentSegmentation] = {
+    def segment(implicit db: TextReflowDB): Option[DocumentSegmentation] = {
       for {
         pdfArtifact    <- theCorpusEntry.getPdfArtifact
         pdfPath        <- pdfArtifact.asPath.toOption
       } yield {
 
-        val docId = DocumentID(theCorpusEntry.entryDescriptor)
+        val docStore = db.docstorage
+        val stableId = DocumentID(theCorpusEntry.entryDescriptor)
+        docStore.getDocument(stableId)
+          .flatMap({docId =>
+            println(s"segmenting ${stableId} ## ${docId} failed. Already exists.")
+            None
+          })
+          .getOrElse {
+            val docId = docStore.addDocument(stableId)
+            val segmenter = DocumentSegmenter
+              .createSegmenter(stableId, pdfPath, docStore)
 
-        val segmenter = DocumentSegmenter
-          .createSegmenter(docId, pdfPath)
+            segmenter.runPageSegmentation()
 
-        segmenter.runPageSegmentation()
+            val pageImageArtifacts = theCorpusEntry.ensureArtifactGroup("page-images")
 
+            val pageImages = if (pageImageArtifacts.getArtifacts.isEmpty) {
+              ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
+            } else {
+              ExtractImages.load(pageImageArtifacts.rootPath)
+            }
+            pageImages.images.zipWithIndex.foreach {
+              case (image, i) =>
+                val pageId = docStore.getPage(docId, PageNum(i)).get
+                docStore.setPageImage(pageId, image.bytes)
+            }
 
-        val pageImageArtifacts = theCorpusEntry.ensureArtifactGroup("page-images")
+            DocumentSegmentation(
+              segmenter.mpageIndex,
+              pageImages
+            )
+          }
 
-        val pageImages = if (pageImageArtifacts.getArtifacts.isEmpty) {
-          ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
-        } else {
-          ExtractImages.load(pageImageArtifacts.rootPath)
-        }
-
-        DocumentSegmentation(
-          segmenter.mpageIndex,
-          pageImages
-        )
       }
     }
 

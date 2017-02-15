@@ -21,7 +21,7 @@ import labeling._
 import native.mousetrap._
 
 @JSExport
-object WatrColors extends TextReflowExamples {
+object WatrColors extends LabelerRendering {
 
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
     "s" -> ((e: MousetrapEvent) => doSelection())
@@ -122,7 +122,7 @@ object WatrColors extends TextReflowExamples {
     }
 
     @JSExport
-    def echoLabeler(lwidget: List[PosAttr]) = Async.async {
+    override def echoLabeler(lwidget: List[AbsPosAttr]) = Async.async {
       clear()
       val (bbox, fobjs) = renderLabelWidget(lwidget)
       fabricCanvas.setWidth(bbox.width.toInt)

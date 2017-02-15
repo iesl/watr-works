@@ -47,10 +47,10 @@ object TargetRegion {
 // More General version of TargetRegion
 case class TargetFigure(
   id: Int@@RegionID,
-  pageId: Int@@PageNum,
+  pageNum: Int@@PageNum,
   figure: GeometricFigure
 ) {
-  override def toString = s"""<fig.${id} pg.${pageId} ${figure.toString}>"""
+  override def toString = s"""<fig.${id} pg.${pageNum} ${figure.toString}>"""
 }
 
 case class Zone(
