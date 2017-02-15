@@ -4,11 +4,10 @@ package labeling
 import org.scalatest._
 
 import geometry._
-import textreflow._
 import textreflow.data._
 import labeling.data._
 import TypeTags._
-import databasics._
+import corpora._
 
 // import watrmarks.{StandardLabels => LB}
 class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextCorpus with LabelWidgetLayout {

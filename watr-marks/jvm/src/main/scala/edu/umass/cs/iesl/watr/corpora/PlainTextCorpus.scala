@@ -125,7 +125,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     docStore.getTargetRegion(regionId)
   }
 
-  def createDocumentPagesFromStrings(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
+  def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
     for {
       (page, n) <- pages.zipWithIndex
     } yield {
@@ -155,7 +155,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
       reflowBuilder.newline()
 
       for {
-        chpair <- line.sliding(2)
+        chpair <- (line+" ").sliding(2)
       } {
 
         chpair match {
@@ -202,6 +202,12 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
     reflowBuilder.newline()
     reflowBuilder.completed.foreach { reflow =>
+      val tt = reflow.toText
+      println(s"adding textreflow: ${tt}")
+      reflow.charAtoms.foreach{ca =>
+        println(s"    ${ca}")
+      }
+
       val lineRegion = reflow.targetRegion()
       val lineZone = docStore.createZone(docId)
       val regionId = docStore.addTargetRegion(pageId, lineRegion.bbox)

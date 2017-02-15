@@ -21,13 +21,21 @@ class TextReflowDBTables(
   val createPageTable: Update0 = sql"""
       CREATE TABLE page (
         page        SERIAL PRIMARY KEY,
-        document    INTEGER REFERENCES document,
+        document    INTEGER REFERENCES document NOT NULL,
         pagenum     SMALLINT,
+        imageclip   INTEGER REFERENCES imageclips,
         pageimg     BYTEA,
         bleft       INTEGER,
         btop        INTEGER,
         bwidth      INTEGER,
         bheight     INTEGER
+      );
+    """.update
+
+  val createImageClipTable: Update0 = sql"""
+      CREATE TABLE imageclips (
+        imageclip   SERIAL PRIMARY KEY,
+        image       BYTEA
       );
     """.update
 
@@ -42,8 +50,8 @@ class TextReflowDBTables(
   // zone - label :: * - *
   val createZoneToLabelTable: Update0 = sql"""
       CREATE TABLE zone_to_label (
-        zone         INTEGER REFERENCES zone,
-        label        INTEGER REFERENCES label,
+        zone         INTEGER REFERENCES zone NOT NULL,
+        label        INTEGER REFERENCES label NOT NULL,
         PRIMARY KEY (zone, label)
       );
     """.update
@@ -51,8 +59,8 @@ class TextReflowDBTables(
   // zone - targetregion :: * - * (NB not sure if this is the right way to connect these)
   val createZoneToTargetRegion: Update0 = sql"""
       CREATE TABLE zone_to_targetregion (
-        zone          INTEGER REFERENCES zone,
-        targetregion  INTEGER REFERENCES targetregion
+        zone          INTEGER REFERENCES zone NOT NULL,
+        targetregion  INTEGER REFERENCES targetregion NOT NULL
       );
       CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
     """.update
@@ -61,6 +69,7 @@ class TextReflowDBTables(
       CREATE TABLE targetregion (
         targetregion  SERIAL PRIMARY KEY,
         page          INTEGER REFERENCES page,
+        imageclip     INTEGER REFERENCES imageclips,
         bleft         INTEGER,
         btop          INTEGER,
         bwidth        INTEGER,
@@ -80,15 +89,6 @@ class TextReflowDBTables(
     """.update
 
 
-  val createTargetRegionImageTable: Update0 = sql"""
-      CREATE TABLE targetregion_image (
-        targetregion_image     SERIAL PRIMARY KEY,
-        image                  BYTEA,
-        targetregion           INTEGER REFERENCES targetregion
-      )
-    """.update
-
-  // insert into page (document, pagenum, pageimg, bleft, btop, bwidth, bheight)
   val createLabelTable: Update0 = sql"""
       CREATE TABLE label (
         label          SERIAL PRIMARY KEY,
@@ -97,22 +97,27 @@ class TextReflowDBTables(
       CREATE INDEX label_key ON label USING hash (key);
     """.update
 
-  // val createLabelerTable: Update0 = sql"""
-  //     CREATE TABLE labelers (
-  //       labeler     SERIAL PRIMARY KEY,
-  //       widget      TEXT
-  //     );
-  //   """.update
-  // val createLabelingTaskTable: Update0 = sql"""
-  //     CREATE TABLE labelingtasks (
-  //       labelingtask     SERIAL PRIMARY KEY,
-  //       taskname         VARCHAR(128), // title/author
-  //       progress         VARCHAR(64)// created/todo/assigned/skipped/done
-  //       labeler          INTEGER REFERENCES labelers
-  //     );
-  //   """.update
+  val createLabelerTable: Update0 = sql"""
+      CREATE TABLE labelers (
+        labeler     SERIAL PRIMARY KEY,
+        widget      TEXT
+      );
+    """.update
+
+  // title/author
+  // created/todo/assigned/skipped/done
+  val createLabelingTaskTable: Update0 = sql"""
+      CREATE TABLE labelingtasks (
+        labelingtask     SERIAL PRIMARY KEY,
+        taskname         VARCHAR(128),
+        progress         VARCHAR(64),
+        labeler          INTEGER REFERENCES labelers
+      );
+    """.update
 
   def createAll = for {
+    _ <- putStrLn("create imageclips")
+    _ <- createImageClipTable.run
     _ <- putStrLn("create doc")
     _ <- createDocumentTable.run
     _ <- putStrLn("create page")
@@ -129,11 +134,15 @@ class TextReflowDBTables(
     _ <- createZoneToLabelTable.run
     _ <- putStrLn("create textreflow")
     _ <- createTextReflowTable.run
-    _ <- putStrLn("create tr-image")
-    _ <- createTargetRegionImageTable.run
+    _ <- putStrLn("create labelers")
+    _ <- createLabelerTable.run
+    _ <- putStrLn("create labelingtasks")
+    _ <- createLabelingTaskTable.run
   } yield ()
 
   val dropAll: Update0 = sql"""
+    DROP TABLE IF EXISTS labelingtasks;
+    DROP TABLE IF EXISTS labelers;
     DROP TABLE IF EXISTS textreflow;
     DROP TABLE IF EXISTS zone_to_targetregion;
     DROP TABLE IF EXISTS zone_to_label;
@@ -142,6 +151,7 @@ class TextReflowDBTables(
     DROP TABLE IF EXISTS targetregion_image;
     DROP TABLE IF EXISTS targetregion;
     DROP TABLE IF EXISTS page;
+    DROP TABLE IF EXISTS imageclips;
     DROP TABLE IF EXISTS document;
   """.update
 

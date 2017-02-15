@@ -18,17 +18,19 @@ object Model {
   )
 
   case class Page(
-    prKey    : Int@@PageID,
-    document : Int@@DocumentID,
-    pagenum  : Int@@PageNum,
-    bounds   : G.LTBounds
+    prKey      : Int@@PageID,
+    document   : Int@@DocumentID,
+    pagenum    : Int@@PageNum,
+    imageclip  : Option[Int@@ImageID],
+    bounds     : G.LTBounds
   )
 
   case class TargetRegion(
-    prKey    : Int@@RegionID,
-    page     : Int@@PageID,
-    bounds   : G.LTBounds,
-    uri      : String
+    prKey      : Int@@RegionID,
+    page       : Int@@PageID,
+    imageclip  : Option[Int@@ImageID],
+    bounds     : G.LTBounds,
+    uri        : String
   )
 
   case class ImageClip(
@@ -94,7 +96,7 @@ class MemDocstore extends DocumentCorpus {
       }
 
       def add(docId: Int@@DocumentID, pageNum: Int@@PageNum): Model.Page = {
-        val rec = Model.Page(nextId(), docId, pageNum, G.LTBounds(0, 0, 0, 0))
+        val rec = Model.Page(nextId(), docId, pageNum, None, G.LTBounds(0, 0, 0, 0))
         insert(rec.prKey, rec)
         documentFKey.put(docId, rec.prKey)
         docIdPageNumKey.put((docId, pageNum), rec.prKey)
@@ -174,7 +176,7 @@ class MemDocstore extends DocumentCorpus {
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
 
       def add(pageId: Int@@PageID, bbox: G.LTBounds): Model.TargetRegion = {
-        val rec = Model.TargetRegion(nextId(), pageId, bbox, "")
+        val rec = Model.TargetRegion(nextId(), pageId, None, bbox, "")
         insert(rec.prKey, rec)
         forPage.addEdge(pageId, rec.prKey)
         rec
@@ -330,18 +332,14 @@ class MemDocstore extends DocumentCorpus {
     zones.addLabel(zoneId, label.fqn)
   }
 
-  def getZonesForDocument(docId: Int@@DocumentID, labels: Label*): Seq[Int@@ZoneID] = {
+  def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID] = {
     zones.forDocument.getEdges(docId)
   }
 
-  def getZonesForTargetRegion(regionId: Int@@RegionID, labels: Label*): Seq[Int@@ZoneID] = {
-    targetregions.forZone.getEdges(regionId)
+  def getZoneForTargetRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
+    targetregions.forZone.getEdgeOption(regionId)
   }
 
-  def getZonesForPage(pageId: Int@@PageID, labels: Label*): Seq[Int@@ZoneID] = {
-    targetregions.forPage.getEdges(pageId)
-      .flatMap(getZonesForTargetRegion(_))
-  }
 
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
     textreflows.forZone

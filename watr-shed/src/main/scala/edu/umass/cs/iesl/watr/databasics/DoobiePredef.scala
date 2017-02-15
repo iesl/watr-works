@@ -7,6 +7,7 @@ import geometry._
 
 import TypeTags._
 import utils.EnrichNumerics._
+import corpora._
 
 trait DoobiePredef {
 
@@ -56,6 +57,12 @@ trait DoobiePredef {
       tt => tt.unwrap
     )
 
+  implicit val ImageIDMeta: Meta[Int @@ ImageID] =
+    Meta[Int].xmap(
+      n => ImageID(n),
+      tt => tt.unwrap
+    )
+
   implicit val PageNumMeta: Meta[Int @@ PageNum] =
     Meta[Int].xmap(
       n => PageNum(n),
@@ -99,11 +106,11 @@ trait DoobiePredef {
   //     })
 
   implicit val PageMeta         : Composite[Model.Page] =
-    Composite[(Int@@PageID) :: (Int@@DocumentID) :: (Int@@PageNum) :: LTBounds :: HNil].xmap({
-      case f0 :: f1 :: f2 :: f3 :: HNil =>
-        Model.Page(f0, f1, f2, f3 )
+    Composite[(Int@@PageID) :: (Int@@DocumentID) :: (Int@@PageNum) :: Option[Int@@ImageID] :: LTBounds :: HNil].xmap({
+      case f0 :: f1 :: f2 :: f3 :: f4 :: HNil =>
+        Model.Page(f0, f1, f2, f3, f4)
       },{ case model =>
-          model.prKey :: model.document :: model.pagenum :: model.bounds :: HNil
+          model.prKey :: model.document :: model.pagenum :: model.imageclip :: model.bounds :: HNil
       })
 
   // implicit val TargetRegionMeta : Composite[Model.TargetRegion] =

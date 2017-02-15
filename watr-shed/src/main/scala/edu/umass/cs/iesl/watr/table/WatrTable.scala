@@ -194,19 +194,6 @@ object ShellCommands extends CorpusEnrichments {
     }
 
 
-    def getZonesForPage(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Int@@ZoneID] = {
-      val pageZones = for {
-        docId <- docStorage.getDocument(stableId)
-        pageId <- docStorage.getPage(docId, pageNum)
-      } yield for {
-        tr <- docStorage.getTargetRegions(pageId)
-        zoneId <- docStorage.getZonesForTargetRegion(tr)
-      } yield { zoneId }
-
-      pageZones
-        .getOrElse(sys.error(s"getZonesForPage: error getting ${stableId} page ${pageNum}"))
-    }
-
     def bioArxivLabeler(stableId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
       val docStorage = theDB.docstorage
 
@@ -234,11 +221,9 @@ object ShellCommands extends CorpusEnrichments {
 
       val pageTargetRegion = TargetRegion(r0, stableId, page0, pageGeometry)
 
-
-
       val allPageLines = for {
-        (zoneId, linenum) <- getZonesForPage(stableId, page0).zipWithIndex
-        lineReflow <- docStorage.getTextReflowForZone(zoneId)
+        (zone, linenum) <- docStorage.getPageVisualLines(stableId, page0).zipWithIndex
+        lineReflow      <- docStorage.getTextReflowForZone(zone.id)
       } yield {
         val lt = LW.labeledTarget(lineReflow.targetRegion, None, None)
         (linenum, (0d, lt))
@@ -338,10 +323,10 @@ object ShellCommands extends CorpusEnrichments {
 
 
       val vlines = for {
-        zoneId <- getZonesForPage(stableId, page0)
-        zone = docStorage.getZone(zoneId)
+        (zone, linenum) <- docStorage.getPageVisualLines(stableId, page0).zipWithIndex
         region <- zone.regions
-      } yield region
+      } yield { region }
+
 
       val titlePreselects = vlines.drop(0).take(2)
 
@@ -354,7 +339,7 @@ object ShellCommands extends CorpusEnrichments {
 
       val vlineText = for {
         region <- titlePreselects
-        (zone, reflow) <- theDB.getTextReflowsForTargetRegion(region)
+        reflow <- docStorage.getTextReflowForTargetRegion(region.id)
       } yield  LW.reflow(reflow)
 
       val textCol = LW.col(vlineText:_*)

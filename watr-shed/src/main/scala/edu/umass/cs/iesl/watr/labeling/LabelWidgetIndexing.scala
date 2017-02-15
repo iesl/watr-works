@@ -5,8 +5,9 @@ import geometry._
 import spindex._
 import docstore._
 import LabelWidgetF._
-import textreflow.DocumentCorpus
+import corpora._
 import rindex._
+import watrmarks.{StandardLabels => LB}
 
 object LabelWidgetIndex extends LabelWidgetLayout {
 
@@ -82,7 +83,7 @@ trait LabelWidgetIndex {
 
         val existingZones: Seq[Zone] = for {
           (posAttr, target) <- selectedTargets
-          zoneId <- docStore.getZonesForTargetRegion(target.target.id)
+          zoneId <- docStore.getZoneForTargetRegion(target.target.id, LB.VisualLine)
         } yield {
           docStore.getZone(zoneId)
         }

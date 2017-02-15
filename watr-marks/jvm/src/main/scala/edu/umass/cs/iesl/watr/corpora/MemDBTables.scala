@@ -18,6 +18,23 @@ trait EdgeTableOneToMany[LhsIDType, RhsIDType] {
   def getEdges(lhs: Lhs): Seq[Rhs] = {
     table.getOrElse(lhs, Seq()).toSeq
   }
+  def getEdgeUnique(lhs: Lhs): Rhs = {
+    getEdgeOption(lhs)
+      .getOrElse {
+        sys.error(s"Expected unique edge, found none for ${lhs}")
+      }
+  }
+
+  def getEdgeOption(lhs: Lhs): Option[Rhs] = {
+    table.get(lhs)
+      .flatMap({rs =>
+        if (rs.size > 1){
+          sys.error(s"Expected 0 or 1 edge, found ${rs.size} for ${lhs}")
+        } else {
+          rs.headOption
+        }
+      })
+  }
 }
 
 

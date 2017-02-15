@@ -7,13 +7,11 @@ import scalaz._
 import Scalaz._
 import TextReflowF._
 import TypeTags._
-import databasics._
+// import databasics._
+import corpora._
 
-class TextReflowSpec extends FlatSpec with Matchers with PlainTextCorpus {
-
-  var freshDocstore = new MemDocstore
-
-  def docStore: DocumentCorpus = freshDocstore
+class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
+  def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
   def annotateAndPrint(tr: TextReflow): Unit = {
     val ranges = tr.annotateCharRanges()
@@ -42,30 +40,30 @@ class TextReflowSpec extends FlatSpec with Matchers with PlainTextCorpus {
   def stringToReflow(s: String): TextReflow = ???
     // stringToTextReflow(s)(DocumentID("d0"), PageNum(0))
 
-  it should "mod single char" in {
-    freshDocstore = new MemDocstore
-    val pageText = (
+  it should "mod single char" in new FreshDocstore(pageCount=0) {
+    addDocument(DocumentID("d#23"), List(
       """|a q1
          |e ^{ﬂ}
-         |""".stripMargin)
-    val pageLines = lines(pageText)
-    val reflowLines = lines(pageText).map(stringToReflow(_))
-    val reflowPage = stringToReflow(pageText)
-    val reflowPageText = reflowPage.toText
+         |""".stripMargin
+    ))
 
-    annotateAndPrint(reflowPage)
+    // val pageLines = lines(pageText)
+    // val reflowLines = lines(pageText).map(stringToReflow(_))
+    // val reflowPage = stringToReflow(pageText)
+
+    // annotateAndPrint(reflowPage)
 
 
-    for (i <- 0 until reflowPage.length) {
-      println(s"@ $i")
-      val modified = reflowPage
-        .modifyCharAt(i)({(ch, index) =>
-          println(s"mod char ${ch} ($index) ")
+    // for (i <- 0 until reflowPage.length) {
+    //   println(s"@ $i")
+    //   val modified = reflowPage
+    //     .modifyCharAt(i)({(ch, index) =>
+    //       println(s"mod char ${ch} ($index) ")
 
-          Some("")
-        })
-      println(s"=> ${modified.toText()}")
-    }
+    //       Some("")
+    //     })
+    //   println(s"=> ${modified.toText()}")
+    // }
 
   }
 

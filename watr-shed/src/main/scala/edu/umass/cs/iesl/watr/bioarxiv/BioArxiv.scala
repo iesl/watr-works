@@ -319,7 +319,7 @@ object AlignBioArxiv {
       (vlineZone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
     } yield {
 
-      val vlineReflow = reflowDB.getTextReflowForZone(vlineZone)
+      val vlineReflow = docStore.getTextReflowForZone(vlineZone.id)
       val reflow = vlineReflow.getOrElse { sys.error(s"no text reflow found for line ${linenum}") }
       (linenum, reflow, reflow.toText)
     }

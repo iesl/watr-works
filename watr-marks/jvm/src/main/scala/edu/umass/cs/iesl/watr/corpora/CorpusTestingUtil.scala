@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package corpora
 
-import textreflow._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 
@@ -32,9 +31,16 @@ trait CorpusTestingUtil extends PlainTextCorpus {
   def docStore: DocumentCorpus = freshDocstore
     .getOrElse(sys.error("Uninitialized DocumentCorpus; Use FreshDocstore() class"))
 
-  class FreshDocstore(pageCount: Int = 1) {
-    freshDocstore = Some(new MemDocstore)
-    loadSampleDoc(pageCount)
+  class FreshDocstore(pageCount: Int=0) {
+    try {
+      freshDocstore = Some(createEmptyDocumentCorpus())
+      loadSampleDoc(pageCount)
+    } catch {
+      case t: Throwable =>
+        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+        println(s"ERROR: ${message}")
+        t.printStackTrace()
+    }
   }
 
   val stableId = DocumentID("stable-id#23")
@@ -43,7 +49,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
     val pages = TextPageSamples.samples
       .take(pageCount)
 
-    createDocumentPagesFromStrings(stableId, pages)
+    addDocument(stableId, pages)
   }
 
   def reportDocument(stableId: String@@DocumentID): TB.Box = {
@@ -61,21 +67,20 @@ trait CorpusTestingUtil extends PlainTextCorpus {
           val targetRegion = docStore.getTargetRegion(regionId)
           // val imageBytes = getTargetRegionImage(regionId)
 
-          val zoneBox = for {
-            zoneId <- docStore.getZonesForTargetRegion(regionId)
-          } yield {
-            docStore.getZone(zoneId).toString().box
-          }
-
           "t: ".box + targetRegion.toString.box
         }
 
-        val pageZoneBoxes = for {
-          zoneId <- docStore.getZonesForPage(pageId)
-          textReflow <- docStore.getTextReflowForZone(zoneId)
-        } yield {
-          docStore.getZone(zoneId).toString().box
-        }
+        // val pageZoneBoxes = for {
+        //   zoneId <- docStore.getZonesForPage(pageId)
+        //   textReflow <- docStore.getTextReflowForZone(zoneId)
+        // } yield {
+        //   docStore.getZone(zoneId).toString().box
+        // }
+        // val zoneBox = for {
+        //   zoneId <- docStore.getZonesForTargetRegion(regionId)
+        // } yield {
+        //   docStore.getZone(zoneId).toString().box
+        // }
 
         (
           indent(2)("PageGeometry")
@@ -83,7 +88,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
             % indent(2)("TargetRegions + zones/regions")
             % indent(4)(vcat(regionBoxes))
             % indent(2)("Page Zones")
-            % indent(4)(vcat(pageZoneBoxes))
+            // % indent(4)(vcat(pageZoneBoxes))
         )
       }
 

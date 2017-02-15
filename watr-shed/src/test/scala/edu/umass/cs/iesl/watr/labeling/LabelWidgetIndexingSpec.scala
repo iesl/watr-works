@@ -4,16 +4,15 @@ package labeling
 import org.scalatest._
 
 import geometry._
-import textreflow._
 import textreflow.data._
 import data._
 import utils.EnrichNumerics._
 import TypeTags._
-import docstore._
-import databasics._
+import corpora._
 
-class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextCorpus {
-  def docStore: DocumentCorpus = new MemDocstore
+class LabelWidgetIndexingSpec extends FlatSpec with Matchers with CorpusTestingUtil {
+  def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
+
   import LabelWidgetIndex._
 
   val bbox = LTBounds(0d, 0d, 10d, 10d)
@@ -22,7 +21,8 @@ class LabelWidgetIndexingSpec extends FlatSpec with Matchers with PlainTextCorpu
   def stringToReflow(s: String): TextReflow = ???
     // stringToTextReflow(s)(DocumentID("doc-id-0"), PageNum(23))
 
-  "LabelWidgetIndexing" should "have a test" in {
+
+  "LabelWidgetIndexing" should "have a test" in new FreshDocstore() {
 
     def reg0: TargetRegion = tr
     def sel0: TargetRegion = tr

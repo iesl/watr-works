@@ -3,6 +3,7 @@ package extract
 package images
 
 import com.sksamuel.scrimage._
+import com.sksamuel.scrimage.canvas._
 import geometry._
 
 import GeometryImplicits._
@@ -36,6 +37,18 @@ trait ImageManipulation {
     trimmed
       .scale(rescaleFactorX)
   }
+
+  // def textToImage(text: String): Image = {
+  //   val blank = Image.filled(300, 200, X11Colorlist.White)
+  //   val canvas1 = new Canvas(blank)
+
+  //   for {
+  //     (line, n) <- lines(text).zipWithIndex
+  //   } yield {
+  //     canvas1.draw(Drawable(line, 0, n*yscale.toInt))
+  //   }
+  //   canvas1.image
+  // }
 
 }
 

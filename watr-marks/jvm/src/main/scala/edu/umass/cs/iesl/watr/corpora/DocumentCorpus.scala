@@ -3,6 +3,7 @@ package corpora
 
 import geometry._
 import watrmarks._
+import textreflow._
 import TextReflowF._
 
 import watrmarks.{StandardLabels => LB}
@@ -38,9 +39,8 @@ trait DocumentCorpus {
   def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit
   def deleteZone(zoneId: Int@@ZoneID): Unit
 
-  def getZonesForDocument(docId: Int@@DocumentID, labels: Label*): Seq[Int@@ZoneID]
-  def getZonesForTargetRegion(regionId: Int@@RegionID, labels: Label*): Seq[Int@@ZoneID]
-  def getZonesForPage(pageId: Int@@PageID, labels: Label*): Seq[Int@@ZoneID]
+  def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID]
+  def getZoneForTargetRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
 
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
@@ -52,10 +52,16 @@ trait DocumentCorpus {
 
 
   def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] = for {
-    docId <- getDocument(stableId).toSeq
-    pageId <- getPage(docId, pageNum).toSeq
-    zoneId <- getZonesForPage(pageId, LB.VisualLine)
+    docId     <- getDocument(stableId).toSeq
+    pageId    <- getPage(docId, pageNum).toSeq
+    regionId  <- getTargetRegions(pageId)
+    zoneId    <- getZoneForTargetRegion(regionId, LB.VisualLine)
   } yield { getZone(zoneId) }
+
+  def getTextReflowForTargetRegion(regionId: Int@@RegionID): Option[TextReflow] = for {
+    zoneId  <- getZoneForTargetRegion(regionId, LB.VisualLine)
+    reflow <- getTextReflowForZone(zoneId)
+  } yield reflow
 
   // def mergeZones(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
   //   val existing = zoneIds.map(getZone(_))

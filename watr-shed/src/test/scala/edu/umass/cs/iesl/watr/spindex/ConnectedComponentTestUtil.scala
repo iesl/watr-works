@@ -3,14 +3,15 @@ package spindex
 
 import org.scalatest._
 
-import textreflow._
 import watrmarks._
 import geometry._
 
 import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
-trait ConnectedComponentTestUtil extends FlatSpec with Matchers with ImageTextReflow {
+import corpora._
+
+trait ConnectedComponentTestUtil extends FlatSpec with Matchers with CorpusTestingUtil {
 
   def labelRow(mpageIndex: MultiPageIndex, row: Int, l: Label, pageId: Int@@PageNum=PageNum(0)): Option[RegionComponent] = {
     val pageIndex = mpageIndex.getPageIndex(pageId)
@@ -41,6 +42,22 @@ trait ConnectedComponentTestUtil extends FlatSpec with Matchers with ImageTextRe
   //       .map({case (atom, geom, img) => ((atom, geom), img)})
 
   //   (MultiPageIndex.loadSpatialIndices(stableId, pages.map(_._1)), pages.map(_._2))
+  // }
+  // def textReflowToImage(pageReflow: TextReflow): Image = {
+  //   val vlines =  pageReflow.sliceLabels(LB.VisualLine)
+
+  //   // total page target region
+  //   val TargetRegion(id, stableId, pageId, LTBounds(l, t, w, h) ) =
+  //     pageReflow.targetRegions.reduce(_ union _)
+
+  //   val blank = Image.filled((w*10).toInt, (h*10).toInt, X11Colorlist.White)
+  //   val canvas = new Canvas(blank)
+  //   for ((vline, n) <- vlines.zipWithIndex) yield {
+  //     val ltext = vline.toText()
+  //     canvas.draw(Drawable(ltext, 0, 10*n*yscale.toInt))
+  //   }
+
+  //   canvas.image.scale(0.10, ScaleMethod.FastScale)
   // }
 
 }

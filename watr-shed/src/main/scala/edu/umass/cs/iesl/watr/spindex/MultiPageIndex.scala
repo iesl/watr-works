@@ -15,6 +15,7 @@ import textreflow._
 import textreflow.data._
 import TypeTags._
 import rindex._
+import corpora._
 
 import watrmarks.{StandardLabels => LB}
 
@@ -69,12 +70,6 @@ class MultiPageIndex(
   def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
     storage.addZoneLabel(zoneId, label)
     storage.getZone(zoneId)
-  }
-
-  def getDocumentZones(): Seq[Zone] = {
-    storage
-      .getZonesForDocument(docId)
-      .map(storage.getZone(_))
   }
 
   def getStableId(): String@@DocumentID = stableId
@@ -443,7 +438,7 @@ object MultiPageIndex {
     regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)]
   ): MultiPageIndex = {
 
-    val mpageIndex = new MultiPageIndex(stableId, new databasics.MemDocstore)
+    val mpageIndex = new MultiPageIndex(stableId, new MemDocstore)
 
     regionsAndGeometry.foreach { case(regions, geom)  =>
       println(s"adding page w/geometry ${geom}")
