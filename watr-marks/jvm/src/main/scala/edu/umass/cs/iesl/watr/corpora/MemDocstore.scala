@@ -308,7 +308,9 @@ class MemDocstore extends DocumentCorpus {
     } yield {
       val labels = zones
         .getLabels(mzone.prKey)
-        .map(m => W.Label("", m.key, None, m.prKey))
+        .map(m =>
+            W.Label.fromString(m.key).copy(id=m.prKey)
+        )
 
       val targetRegions = zones
         .getTargetRegions(mzone.prKey)

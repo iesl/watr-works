@@ -7,7 +7,6 @@ import geometry._
 
 import TypeTags._
 import utils.EnrichNumerics._
-import corpora._
 
 trait DoobiePredef {
 
@@ -28,104 +27,31 @@ trait DoobiePredef {
       bl :: bt :: bw :: bh :: HNil
     })
 
+
+
   implicit val StrDocumentIDMeta: Meta[String @@ DocumentID] =
     Meta[String].nxmap(
       str => DocumentID(str),
       docId => docId.unwrap
     )
 
-  implicit val DocumentIDMeta: Meta[Int @@ DocumentID] =
-    Meta[Int].xmap(
-      n => DocumentID(n),
-      docId => docId.unwrap
-    )
+  import scala.reflect.runtime.universe._
 
-  implicit val TextReflowIDMeta: Meta[Int @@ TextReflowID] =
-    Meta[Int].xmap(
-      n => TextReflowID(n),
-      tt => tt.unwrap
-    )
 
-  implicit val RegionIDMeta: Meta[Int @@ RegionID] =
-    Meta[Int].xmap(
-      n => RegionID(n),
-      tt => tt.unwrap
-    )
-  implicit val PageIDMeta: Meta[Int @@ PageID] =
-    Meta[Int].xmap(
-      n => PageID(n),
-      tt => tt.unwrap
-    )
+  def TypeTagMeta[T: TypeTag](
+    f: Int => Int@@T)(
+    implicit T: TypeTag[Int@@T]
+  ): Meta[Int@@T] = Meta[Int].xmap(n => f(n), _.unwrap)
 
-  implicit val ImageIDMeta: Meta[Int @@ ImageID] =
-    Meta[Int].xmap(
-      n => ImageID(n),
-      tt => tt.unwrap
-    )
 
-  implicit val PageNumMeta: Meta[Int @@ PageNum] =
-    Meta[Int].xmap(
-      n => PageNum(n),
-      tt => tt.unwrap
-    )
-
-  implicit val ZoneIDMeta: Meta[Int @@ ZoneID] =
-    Meta[Int].xmap(
-      n => ZoneID(n),
-      tt => tt.unwrap
-    )
-
-  implicit val TargetRegionMeta: Composite[TargetRegion] =
-    Composite[(Int@@RegionID) :: (String@@DocumentID) :: (Int@@PageNum) :: LTBounds :: HNil].xmap({
-      case regionId :: docId :: pageNum :: ltb :: HNil =>
-        TargetRegion(regionId, docId, pageNum, ltb)
-    },{targetRegion =>
-      val TargetRegion(regionId, docId, pageNum, ltb@LTBounds(bl, bt, bw, bh)) = targetRegion
-      regionId :: docId :: pageNum :: ltb :: HNil
-    })
-
-  case class ZonedRegion(
-    id: Int@@ZoneID,
-    targetRegion: TargetRegion
-  )
-
-  implicit val ZonedRegionMeta: Composite[ZonedRegion] =
-    Composite[(Int@@ZoneID) :: TargetRegion :: HNil]
-      .xmap({ case zoneId :: tr :: HNil =>
-        ZonedRegion(zoneId, tr)
-      },{case zonedRegion =>
-          zonedRegion.id :: zonedRegion.targetRegion :: HNil
-      })
-
-  // implicit val DocumentMeta     : Composite[Model.Document] =
-  //   Composite[(Int@@DocumentID) :: (String@@DocumentID) :: HNil].xmap({
-  //     case f0 :: f1 :: HNil =>
-  //       Model.Document(f0, f1)
-  //     },{ case model =>
-  //         model.prKey :: model.stableId :: HNil
-  //     })
-
-  implicit val PageMeta         : Composite[Model.Page] =
-    Composite[(Int@@PageID) :: (Int@@DocumentID) :: (Int@@PageNum) :: Option[Int@@ImageID] :: LTBounds :: HNil].xmap({
-      case f0 :: f1 :: f2 :: f3 :: f4 :: HNil =>
-        Model.Page(f0, f1, f2, f3, f4)
-      },{ case model =>
-          model.prKey :: model.document :: model.pagenum :: model.imageclip :: model.bounds :: HNil
-      })
-
-  // implicit val TargetRegionMeta : Composite[Model.TargetRegion] =
-  //   Composite[(Int@@RegionID) :: (Int@@PageID) :: LTBounds :: String :: HNil].xmap({
-  //     case f0 :: f1 :: f2 :: f3 :: HNil =>
-  //       Model.TargetRegion(f0, f1, f2, f3)
-  //     },{ case model =>
-  //         model.prKey :: model.page :: model.bounds :: model.uri :: HNil
-  //     })
-
-  // implicit val ZoneMeta         : Composite[Model.Zone] =
-  // implicit val TextReflowMeta   : Composite[Model.TextReflow]
-  // implicit val LabelMeta        : Composite[Model.Label]
-  // implicit val LabelWidgetMeta  : Composite[Model.LabelWidget]
-  // implicit val LabelingTaskMeta : Composite[Model.LabelingTask]
+  implicit val DocumentIDMeta   : Meta[Int@@DocumentID   ] = TypeTagMeta[DocumentID   ](DocumentID  (_))
+  implicit val TextReflowIDMeta : Meta[Int@@TextReflowID ] = TypeTagMeta[TextReflowID ](TextReflowID(_))
+  implicit val RegionIDMeta     : Meta[Int@@RegionID     ] = TypeTagMeta[RegionID     ](RegionID    (_))
+  implicit val PageIDMeta       : Meta[Int@@PageID       ] = TypeTagMeta[PageID       ](PageID      (_))
+  implicit val ImageIDMeta      : Meta[Int@@ImageID      ] = TypeTagMeta[ImageID      ](ImageID     (_))
+  implicit val PageNumMeta      : Meta[Int@@PageNum      ] = TypeTagMeta[PageNum      ](PageNum     (_))
+  implicit val ZoneIDMeta       : Meta[Int@@ZoneID       ] = TypeTagMeta[ZoneID       ](ZoneID      (_))
+  implicit val LabelIDMeta      : Meta[Int@@LabelID      ] = TypeTagMeta[LabelID      ](LabelID     (_))
 
 
 }

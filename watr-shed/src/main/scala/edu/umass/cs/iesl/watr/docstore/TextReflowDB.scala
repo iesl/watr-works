@@ -3,17 +3,14 @@ package docstore
 
 import doobie.imports._
 import doobie.free.{ connection => C }
-// import doobie.free.{ resultset => RS, preparedstatement => PS, statement => S }
 import scalaz.syntax.applicative._
 
 import geometry._
 
 import com.sksamuel.scrimage.Image
-import shapeless._
 import databasics._
 import corpora._
 
-// import scalaz.Free
 import scalaz.std.list._
 import scalaz.syntax.traverse._
 
@@ -49,25 +46,26 @@ class TextReflowDB(
     }
   }
 
+
   def selectTargetRegion(regionId: Int@@RegionID): ConnectionIO[Model.TargetRegion] = {
     sql""" select * from targetregion where targetregion=${regionId} """
       .query[Model.TargetRegion].unique
   }
 
-  def selectTargetRegionPC(regionId: Int@@RegionID): TargetRegion = {
-    val query = sql"""
-     select
-          tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
-     from
-          targetregion   as tr join
-          page           as pg on (pg.page=tr.page) join
-          document       as d  on (pg.document=d.document)
-     where
-        tr.targetregion=${regionId}
-    """.query[TargetRegion].unique
+  // def selectTargetRegionPC(regionId: Int@@RegionID): TargetRegion = {
+  //   val query = sql"""
+  //    select
+  //         tr.targetregion, d.stable_id, pg.pagenum, tr.bleft, tr.btop, tr.bwidth, tr.bheight
+  //    from
+  //         targetregion   as tr join
+  //         page           as pg on (pg.page=tr.page) join
+  //         document       as d  on (pg.document=d.document)
+  //    where
+  //       tr.targetregion=${regionId}
+  //   """.query[TargetRegion].unique
 
-    query.transact(xa).unsafePerformSync
-  }
+  //   query.transact(xa).unsafePerformSync
+  // }
 
   def selectTargetRegions(pageId: Int@@PageID): ConnectionIO[List[Int@@RegionID]] = {
     sql""" select targetregion from targetregion where page=${pageId} """
@@ -124,8 +122,19 @@ class TextReflowDB(
     """.query[Int@@RegionID].list
   }
 
-  def selectZoneForTargetRegion(regionId: Int@@RegionID, label: Label): ConnectionIO[Option[Int@@ZoneID]] = {
+  def selectZoneLabels(zoneId: Int@@ZoneID): ConnectionIO[List[Model.Label]] = {
+    sql"""
+     select lb.*
+     from
+        zone                      as zn
+        join zone_to_label        as z2l   on (zn.zone=z2l.zone)
+        join label                as lb    on (z2l.label=lb.label)
+     where
+        z2l.zone=${zoneId}
+    """.query[Model.Label].list
+  }
 
+  def selectZoneForTargetRegion(regionId: Int@@RegionID, label: Label): ConnectionIO[Option[Int@@ZoneID]] = {
     val query = sql"""
      select z2tr.zone
      from
@@ -336,10 +345,10 @@ class TextReflowDB(
     } yield ()
   }
 
-  def linkZoneToTargetRegion(zonePk: Int@@ZoneID, targetRegionPk: Int@@RegionID): ConnectionIO[Unit] = {
+  def linkZoneToTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): ConnectionIO[Unit] = {
     sql"""
        insert into zone_to_targetregion (zone, targetregion)
-       values (${zonePk}, ${targetRegionPk})
+       values (${zoneId}, ${regionId})
     """.update.run.map(_ => ())
   }
 
@@ -401,7 +410,7 @@ class TextReflowDB(
   //     .unsafePerformSync
   // }
 
-  import extract.images.ExtractImages
+  // import extract.images.ExtractImages
 
   def getOrCreateTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Array[Byte]] = {
     // val TargetRegion(id, docId, pageId, bbox) = targetRegion
@@ -527,29 +536,34 @@ class TextReflowDB(
         .unsafePerformSync
     }
 
-    def getZone(zoneId: Int@@ZoneID): Zone = {
+    def getZone(zoneId: Int@@ZoneID): Zone = runq {
       // Zone = M.Zone+TargetRegions+Labels
-      val asdf = for {
+      for {
         zone     <- selectZone(zoneId)
         regions  <- {
-
           selectZoneTargetRegions(zone.prKey)
             .flatMap(ts =>
               ts.map(t => selTargetRegion(t)).sequenceU
             )
         }
+        labels  <- {
+          selectZoneLabels(zone.prKey)
+            .map(_.map(mlabel =>
+              Label.fromString(mlabel.key).copy(
+                id=mlabel.prKey
+              )
+            ))
+        }
       } yield {
-        Zone(zone.prKey, regions, List())
+        Zone(zone.prKey, regions, labels)
       }
-
-      runq{ asdf }
     }
 
     def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit = {
+      println(s"setZoneTargetRegions: ${zoneId} ${targetRegions}")
       targetRegions.foreach { tr =>
-        linkZoneToTargetRegion(zoneId, tr.id)
+        runq{ linkZoneToTargetRegion(zoneId, tr.id) }
       }
-      // getZone(zoneId)
     }
 
 

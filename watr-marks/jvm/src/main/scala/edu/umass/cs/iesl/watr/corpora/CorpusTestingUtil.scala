@@ -70,17 +70,6 @@ trait CorpusTestingUtil extends PlainTextCorpus {
           "t: ".box + targetRegion.toString.box
         }
 
-        // val pageZoneBoxes = for {
-        //   zoneId <- docStore.getZonesForPage(pageId)
-        //   textReflow <- docStore.getTextReflowForZone(zoneId)
-        // } yield {
-        //   docStore.getZone(zoneId).toString().box
-        // }
-        // val zoneBox = for {
-        //   zoneId <- docStore.getZonesForTargetRegion(regionId)
-        // } yield {
-        //   docStore.getZone(zoneId).toString().box
-        // }
 
         (
           indent(2)("PageGeometry")
@@ -92,8 +81,17 @@ trait CorpusTestingUtil extends PlainTextCorpus {
         )
       }
 
+      val zoneBoxes = for {
+        zoneId <- docStore.getZonesForDocument(docId)
+        textReflow <- docStore.getTextReflowForZone(zoneId)
+      } yield {
+        (textReflow.toText.box
+          % docStore.getZone(zoneId).toString().box)
+      }
       (s"Document ${docId} (${stableId}) report"
-         % vcat(pagesBox)
+        % indent(4)(vcat(pagesBox))
+        % indent(2)("Zones")
+        % indent(4)(vcat(zoneBoxes))
       )
     }
     vcat(docBoxes)
