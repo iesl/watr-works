@@ -13,6 +13,20 @@ import TypeTags._
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 import extract.fonts._
+import ammonite.{ops => fs}, fs._
+import java.nio.{file => nio}
+
+
+object PdfTextExtractor {
+  def extractChars(stableId: String@@DocumentID, pdfPath: Path): Seq[(Seq[PageAtom], PageGeometry)] = {
+    val charExtractor = new PdfTextExtractor(
+      Set[Int](), IdGenerator[RegionID]()
+    )
+
+    charExtractor.extractCharacters(stableId, pdfPath)
+  }
+
+}
 
 class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),
@@ -97,9 +111,6 @@ class PdfTextExtractor(
       GeometryTranslation(xtrans, ytrans))
 
   }
-
-  import ammonite.{ops => fs}, fs._
-  import java.nio.{file => nio}
 
 
   def extractCharacters(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[PageAtom], PageGeometry)] = {

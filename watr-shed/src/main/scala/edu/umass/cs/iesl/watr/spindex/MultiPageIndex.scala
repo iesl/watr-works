@@ -47,35 +47,35 @@ import watrmarks.{StandardLabels => LB}
 
 class MultiPageIndex(
   stableId: String@@DocumentID,
-  storage: DocumentCorpus
+  val docStore: DocumentCorpus
 ) {
   lazy val docId: Int@@DocumentID =
-    storage.getDocument(stableId).getOrElse(sys.error("MultiPageIndex created for non-existent document"))
+    docStore.getDocument(stableId).getOrElse(sys.error("MultiPageIndex created for non-existent document"))
 
   def createZone(): Zone  = {
-    storage.getZone(
-      storage.createZone(docId)
+    docStore.getZone(
+      docStore.createZone(docId)
     )
   }
 
   def getZones(): Seq[Zone] = {
-    storage
+    docStore
       .getZonesForDocument(docId)
-      .map(storage.getZone(_))
+      .map(docStore.getZone(_))
   }
 
   def getZone(zoneId: Int@@ZoneID): Zone = {
-    storage.getZone(zoneId)
+    docStore.getZone(zoneId)
   }
 
   def addZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Zone = {
-    storage.setZoneTargetRegions(zoneId, targetRegions)
-    storage.getZone(zoneId)
+    docStore.setZoneTargetRegions(zoneId, targetRegions)
+    docStore.getZone(zoneId)
   }
 
   def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
-    storage.addZoneLabel(zoneId, label)
-    storage.getZone(zoneId)
+    docStore.addZoneLabel(zoneId, label)
+    docStore.getZone(zoneId)
   }
 
   def getStableId(): String@@DocumentID = stableId
@@ -118,21 +118,21 @@ class MultiPageIndex(
   def setTextReflowForComponent(cc: Component, r: TextReflow): Unit = {
     val zone = createZone()
     componentIdToZoneId.put(cc.id, zone.id)
-    storage.setTextReflowForZone(zone.id, r)
+    docStore.setTextReflowForZone(zone.id, r)
   }
 
   def getTextReflowForComponent(ccId: Int@@ComponentID): Option[TextReflow] = {
     // TODO kludge: find a zone that has this Component as it's sole member and return its TextReflow
     for {
       zoneId <- componentIdToZoneId.get(ccId)
-      reflow <- storage.getTextReflowForZone(zoneId)
+      reflow <- docStore.getTextReflowForZone(zoneId)
     } yield {
       reflow
     }
   }
 
   def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
-    storage.getTextReflowForZone(zoneId)
+    docStore.getTextReflowForZone(zoneId)
   }
 
   def getPageVisualLines(pageId: Int@@PageNum): Seq[Component]  = for {
@@ -251,14 +251,12 @@ class MultiPageIndex(
 
       val pageNum =  PageNum(targetPages.head)
 
-      val pageId = storage.getPage(docId, pageNum).get
+      val pageId = docStore.getPage(docId, pageNum).get
       val totalBounds = targetRegions.reduce(_ union _).bbox
-      val regionId = storage.addTargetRegion(pageId, totalBounds)
-      val totalRegion = storage.getTargetRegion(regionId)
+      val regionId = docStore.addTargetRegion(pageId, totalBounds)
+      val totalRegion = docStore.getTargetRegion(regionId)
 
       val region = createRegionComponent(totalRegion, role)
-
-      println(s"labelRegion: ccRegion: ${region}")
 
       val zone = createZone()
 
@@ -302,7 +300,6 @@ class MultiPageIndex(
 
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
-    storage.addPage(docId, pageGeometry.id)
 
     val pageIndex = PageIndex(
       SpatialIndex.createFor[Component](),
@@ -341,32 +338,3 @@ class MultiPageIndex(
 }
 
 
-object MultiPageIndex {
-
-  import PageComponentImplicits._
-
-  def initDocument(
-    stableId: String@@DocumentID,
-    regionsAndGeometry: Seq[(Seq[PageAtom], PageGeometry)],
-    docStore: DocumentCorpus
-  ): MultiPageIndex = {
-
-    val mpageIndex = new MultiPageIndex(stableId, docStore)
-    val docId = docStore.getDocument(stableId).getOrElse {
-      sys.error(s"initDocument: No Document found for ${stableId}")
-    }
-
-    regionsAndGeometry.foreach { case(regions, geom)  =>
-      println(s"adding page w/geometry ${geom}")
-      val pageIndex = mpageIndex.addPage(geom)
-
-      regions.foreach {
-        case cb:CharAtom if !cb.isSpace => mpageIndex.addPageAtom(cb)
-        case cb:ImgAtom =>
-        case cb => println(s"error adding ${cb}")
-      }
-    }
-    mpageIndex
-  }
-
-}

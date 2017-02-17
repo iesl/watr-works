@@ -116,12 +116,10 @@ sealed trait Component {
   def orientation: Double = 0.0d // placeholder until this is implemented for real
 
   def addLabel(l: Label): Component = {
-    // vtrace.trace("addLabel" withTrace link(showComponent(this), showLabel(l)))
     mpageIndex.addLabel(this, l)
   }
 
   def removeLabel(l: Label): Component = {
-    // vtrace.trace("removeLabel())" withTrace link(showComponent(this), showLabel(l)))
     mpageIndex.removeLabel(this, l)
   }
 
@@ -149,7 +147,6 @@ sealed trait Component {
   }
 
 }
-
 
 case class RegionComponent(
   id: Int@@ComponentID,

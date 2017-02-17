@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package corpora
 
+
 import edu.umass.cs.iesl.watr.{geometry => G}
 import edu.umass.cs.iesl.watr.{watrmarks => W}
 import scala.collection.mutable
@@ -206,6 +207,16 @@ class MemDocstore extends DocumentCorpus {
     object labelingTasks extends DBRelation[LabelingTaskID, Model.LabelingTask] {
 
     }
+
+    object charatoms extends DBRelation[RegionID, CharAtom] {
+      object forPage extends EdgeTableOneToMany[PageID, RegionID]
+
+      def add(pageId: Int@@PageID, charAtom: CharAtom): Unit = {
+        var regionId = charAtom.targetRegion.id
+        insert(regionId, charAtom)
+        forPage.addEdge(pageId, regionId)
+      }
+    }
   }
 
 
@@ -258,11 +269,12 @@ class MemDocstore extends DocumentCorpus {
   }
 
   def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {
-
+    charatoms.add(pageId, charAtom)
   }
 
   def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom] = {
-    ???
+    charatoms.forPage.getEdges(pageId)
+      .map(charatoms.unique(_))
   }
 
   def addTargetRegion(pageId: Int@@PageID, bbox: G.LTBounds): Int@@RegionID = {

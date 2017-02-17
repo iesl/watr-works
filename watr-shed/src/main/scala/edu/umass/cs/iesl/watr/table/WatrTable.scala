@@ -381,15 +381,6 @@ object ShellCommands extends CorpusEnrichments {
       } yield  paperRec
     }
 
-    // def addEntryToDatabase(implicit db: TextReflowDB): Unit = {
-    //   val docId = DocumentID(theCorpusEntry.entryDescriptor)
-    //   if (!db.hasDocumentID(docId)) {
-    //     segment.foreach(db.addSegmentation(_))
-    //   } else {
-    //     println(s"Skipping ${docId}: already in database")
-    //   }
-    // }
-
     def segment(implicit db: TextReflowDB): Option[DocumentSegmentation] = {
       for {
         pdfArtifact    <- theCorpusEntry.getPdfArtifact

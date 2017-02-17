@@ -2,11 +2,9 @@ package edu.umass.cs.iesl.watr
 package apps
 
 import corpora._
-import extract._
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
-// import edu.umass.cs.iesl.watr.extract.fonts.SplineFont.Dir
 import java.io.{File => JFile}
 import predsynth._
 import segment.DocumentSegmenter
@@ -15,6 +13,7 @@ import TypeTags._
 case class AppConfig(
   runRoot: Option[JFile] = None,
   corpusRoot: Option[JFile] = None,
+  inputFile: Option[JFile] = None,
   inputFileList: Option[JFile] = None,
   inputEntryDescriptor: Option[String] = None,
   action: Option[String] = None,
@@ -24,7 +23,6 @@ case class AppConfig(
   priorDocsegFile: Option[JFile] = None,
   textAlignPredsynth: Boolean = false,
   force: Boolean = false,
-  extractFonts: Boolean = false,
   numToRun: Int = 0,
   numToSkip: Int = 0,
   exec: Option[(AppConfig) => Unit] = None
@@ -90,12 +88,14 @@ object Works extends App {
     opt[Unit]('x', "overwrite") action { (v, conf) =>
       conf.copy(force = true) } text("force overwrite of existing files")
 
-    opt[Unit]("extract-fonts") action { (v, conf) =>
-      conf.copy(extractFonts = true) } text("try to extract font defs from pdf")
 
     opt[JFile]('i', "inputs") action { (v, conf) =>
       conf.copy(inputFileList = Option(v))
     } text("process files listed in specified file. Specify '--' to read from stdin")
+
+    opt[JFile]("file") action { (v, conf) =>
+      conf.copy(inputFile = Option(v))
+    } text("choose single input file")
 
     opt[JFile]('d', "db") action { (v, conf) =>
       conf.copy(dbPath = Option(v))
@@ -127,28 +127,13 @@ object Works extends App {
       .action((v, conf) => setAction(conf, segmentDocument(_)))
       .text ("run document segmentation")
 
+    cmd("totext")
+      .action((v, conf) => setAction(conf, extractText(_)))
+      .text ("run basic text extraction")
+
     cmd("fast-forward-docseg")
       .action((v, conf) => setAction(conf, fastForwardDocsegs(_)))
       .text ("re-run document segmentation while preserving existing annotations")
-
-    cmd("build-fontdb") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        buildFontDB(ac)
-      })
-    } text ("")
-
-    cmd("show-fontdb") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        showFontDB(ac)
-      })
-    } text ("")
-
-    cmd("extract-fonts") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        extractFonts(ac)
-      })
-    } text ("")
-
 
     cmd("images") action { (v, conf) =>
       setAction(conf, {(ac: AppConfig) =>
@@ -281,52 +266,6 @@ object Works extends App {
     }
   }
 
-
-  /////////// Specific Commands
-
-  // import extract.fonts.SplineFont
-
-  // def loadOrExtractFonts(conf: AppConfig, corpusEntry: CorpusEntry): Seq[SplineFont.Dir] = {
-  //   import extract.fonts.SplineFonts
-  //   import ammonite.{ops => fs}
-  //   import fs._
-  //   import fs.ImplicitWd._
-
-  //   if (!corpusEntry.hasArtifact("font.props", "fonts")) {
-  //     for {
-  //       pdf <- corpusEntry.getPdfArtifact
-  //       pdfPath <- pdf.asPath
-  //     } {
-  //       try{
-
-  //       val res = %%("bin/extract-fonts", "-f="+pdfPath.toString())
-  //       log.info(s"ran extract-fonts exit=${res.exitCode}")
-  //       } catch {
-  //         case t: Throwable => log.info(s"Error extracting fonts, skipping")
-  //       }
-  //     }
-  //   }
-
-  //   if (corpusEntry.hasArtifact("fonts")) {
-  //     val fontDirs = for {
-  //       fontDir <- corpusEntry.getArtifact("fonts").toSeq
-  //       pdir <- fontDir.asPath.toOption.toSeq
-  //       sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
-  //       sfdir <- sfdirs
-  //     } yield {
-  //       // log.info(s"loading fonts from ${sfdir}")
-  //       SplineFonts.loadSfdir(sfdir)
-  //     }
-
-  //     fontDirs
-  //   } else {
-  //     log.info(s"no extracted fonts found")
-  //     Seq()
-  //   }
-  // }
-
-
-
   def loadPredsynthUberJson(conf: AppConfig): Option[Map[String, Paper]] = {
     for {
       pfile <- conf.priorPredsynthFile
@@ -335,7 +274,6 @@ object Works extends App {
   }
 
 
-  // def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path, fontDirs: Seq[Dir]): DocumentSegmenter =  {
   def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path): DocumentSegmenter =  {
     val segmenter = DocumentSegmenter
       .createSegmenter(stableId, pdfPath, new MemDocstore)
@@ -442,11 +380,28 @@ object Works extends App {
 
   }
 
+  def extractText(conf: AppConfig): Unit = {
+    println("extracting text")
+    for {
+      pdfFile <- conf.inputFile
+    } {
+      val pdfPath = pwd / RelPath(pdfFile)
+      println(s"file: $pdfPath")
+
+      val stableId = DocumentID(pdfPath.toString())
+      val segmenter = runPageSegmentation(stableId, pdfPath)
+      formats.DocumentIO
+        .documentToPlaintext(segmenter.mpageIndex)
+        .foreach{ line =>
+          println(line)
+        }
+    }
+  }
+
   def extractImages(conf: AppConfig): Unit = {
     import ammonite.{ops => fs}
     import fs._
     import fs.ImplicitWd._
-
 
     processCorpusEntryList(conf, {corpusEntry =>
 
@@ -466,92 +421,5 @@ object Works extends App {
 
     })
   }
-
-  def buildFontDB(conf: AppConfig): Unit = {
-    // import ammonite.{ops => fs}
-    // import fs._
-    // // import fs.ImplicitWd._
-    // import extract.fonts._
-
-    // val dbfile = conf.dbPath.getOrElse {
-    //   sys.error("please specify database path")
-    // }
-
-    // val dbpath = pwd / RelPath(dbfile)
-
-    // val db = new FontDatabaseApi(dbpath)
-
-    // try {
-    //   db.createDBDir()
-
-    //   processCorpusEntryList(conf, {corpusEntry =>
-
-    //     if (corpusEntry.hasArtifact("fonts")) {
-    //       for {
-    //         fontDir <- corpusEntry.getArtifact("fonts")
-    //         pdir <- fontDir.asPath
-    //         sfdirs = fs.ls(pdir).filter(_.ext=="sfdir")
-    //         sfdir <- sfdirs
-    //       } {
-    //         log.info(s"adding fonts from ${sfdir}")
-    //         val sfs = SplineFonts.loadSfdir(sfdir)
-
-    //         db.addFontDir(sfs)
-    //       }
-    //     }
-    //   })
-    // } finally {
-    //   db.shutdown()
-    // }
-  }
-
-
-  def extractFonts(conf: AppConfig): Unit = {
-    import utils.IdGenerator
-
-    processCorpusEntryList(conf, {corpusEntry =>
-
-      val charExtractor = new PdfTextExtractor(Set(), IdGenerator[RegionID]())
-
-      for {
-        pdfArtifact <- corpusEntry.getPdfArtifact
-        pdfIns <- pdfArtifact.asInputStream.toOption
-      } yield {
-
-        val fobjs = FontExtractor.extractFontObjects(pdfIns)
-
-        val fontObjsFile = "fontobjs.txt"
-
-        // processOrSkipOrForce(conf, corpusEntry, fontObjsFile)
-        // processOrSkipOrForce(conf, corpusEntry, fontObjsFile) match {
-        //   case Success(Some(_)) => corpusEntry.putArtifact(fontObjsFile, fobjs)
-        //   case Success(None)    =>
-        //   case Failure(t)       => die(t)
-        // }
-        ???
-      }
-    })
-  }
-
-
-  def showFontDB(conf: AppConfig): Unit = {
-    // import extract.fonts._
-
-    // val dbfile = conf.dbPath.getOrElse {
-    //   sys.error("please specify database path")
-    // }
-
-    // val dbpath = pwd / RelPath(dbfile)
-
-    // val db = new FontDatabaseApi(dbpath)
-
-    // try {
-    //   // db.showFontTrees()
-    //   db.showHashedGlyphs()
-    // } finally {
-    //   db.shutdown()
-    // }
-  }
-
 
 }

@@ -2,24 +2,24 @@ package edu.umass.cs.iesl.watr
 package formats
 
 
-import extract.PdfTextExtractor
-import extract.fonts._
 import spindex._
 import textboxing.{TextBoxing => TB}, TB._
-import utils.IdGenerator
 import predsynth._
-
-import ammonite.{ops => fs}, fs._
 
 import watrmarks._
 import textreflow._
 import textreflow.data._
 import utils.EnrichNumerics._
 
-import geometry._
 import TextReflowJsonCodecs._
 
 object DocumentIO extends DocsegJsonFormats {
+  def documentToPlaintext(mpageIndex: MultiPageIndex): Seq[String]= {
+    mpageIndex.getTextReflows()
+      .map({ blockTextReflow =>
+        blockTextReflow.applyLineFormatting().toText()
+      })
+  }
 
   def richTextSerializeDocument(mpageIndex: MultiPageIndex, alignedGroups: Seq[AlignedGroup]): String = {
     import play.api.libs.json, json._
@@ -227,22 +227,6 @@ object DocumentIO extends DocsegJsonFormats {
     ???
   }
 
-
-  def extractChars(
-    stableId: String@@DocumentID,
-    pdfPath: Path,
-    charsToDebug: Set[Int] = Set(),
-    glyphDefs: Seq[SplineFont.Dir] = Seq()
-  ): Seq[(Seq[PageAtom], PageGeometry)] = {
-
-    val charExtractor = new PdfTextExtractor(
-      charsToDebug,
-      IdGenerator[RegionID](), //, IdGenerator[PageNum]
-      glyphDefs
-    )
-
-    charExtractor.extractCharacters(stableId, pdfPath)
-  }
 
 
 

@@ -5,7 +5,6 @@ import ammonite.{ops => fs}, fs._
 import java.io.InputStream
 import spindex._
 
-
 import scala.collection.JavaConversions._
 
 import textboxing.{TextBoxing => TB}, TB._
@@ -26,6 +25,7 @@ import SlicingAndDicing._
 import TextReflowConversion._
 import TypeTags._
 import corpora._
+import extract.PdfTextExtractor
 
 import scala.collection.mutable
 
@@ -116,19 +116,26 @@ object DocumentSegmenter {
     AngleFilter(direction - t2, direction + t2)
   }
 
-
   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentCorpus): DocumentSegmenter = {
-    val pageAtomsAndGeometry = formats.DocumentIO
-      .extractChars(stableId, pdfPath, Set())
+    val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
+    val mpageIndex = new MultiPageIndex(stableId, docStore)
 
-    createSegmenter(stableId, pageAtomsAndGeometry, docStore)
+    val docId = docStore.addDocument(stableId)
+    pageAtomsAndGeometry.foreach { case(regions, geom)  =>
+      val pageId = docStore.addPage(docId, geom.id)
+      docStore.setPageGeometry(pageId, geom.bounds)
+      mpageIndex.addPage(geom)
+
+      regions.foreach {
+        case cb:CharAtom if !cb.isSpace => docStore.addCharAtom(pageId, cb)
+        case cb:ImgAtom =>
+        case cb => println(s"error adding ${cb}")
+      }
+    }
+
+    new DocumentSegmenter(mpageIndex)
   }
 
-
-  def createSegmenter(stableId: String@@DocumentID, pagedefs: Seq[(Seq[PageAtom], PageGeometry)], docStore: DocumentCorpus): DocumentSegmenter = {
-      val mpageIndex = MultiPageIndex.initDocument(stableId, pagedefs, docStore)
-      new DocumentSegmenter(mpageIndex)
-  }
 
   def candidateCrossesLineBounds(cand: Component, line: Component): Boolean = {
     val slopFactor = 0.31d
@@ -186,6 +193,11 @@ object DocumentSegmenter {
 class DocumentSegmenter(
   val mpageIndex: MultiPageIndex
 ) {
+  val docStore = mpageIndex.docStore
+  val stableId = mpageIndex.getStableId
+
+  val docId = docStore.getDocument(stableId)
+    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
 
   def vtrace = mpageIndex.vtrace
 
@@ -197,12 +209,14 @@ class DocumentSegmenter(
 
   def runLineDetermination(): Unit = {
     val allPageLines = for {
-      pageId <- mpageIndex.getPages
+      (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } yield {
-      val charAtoms = mpageIndex.getPageIndex(pageId).getPageAtoms
+      val charAtoms = docStore.getCharAtoms(pageId)
+
+      val atomicComponents = charAtoms.map(mpageIndex.addPageAtom(_))
       vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${charAtoms.length} char atoms"))
 
-      determineLines(pageId, charAtoms)
+      determineLines(PageNum(pagenum), atomicComponents)
     }
 
   }
@@ -440,12 +454,6 @@ class DocumentSegmenter(
 
 
   def runPageSegmentation(): Unit = {
-    vtrace.trace(
-      begin("SetPageGeometries"),
-      setPageGeometries(mpageIndex.pageIndexes.map(_._2.pageGeometry).toSeq),
-      end("SetPageGeometries")
-    )
-
 
     // Bottom-up connected-component line-finding
     vtrace.trace(begin("runLineDetermination"))
@@ -456,13 +464,6 @@ class DocumentSegmenter(
 
     // this find text blocks per-page, and joins lines within each block
     val textBlocksPerPage = findTextBlocksPerPage()
-    // this joins lines across pages
-    // joinLinesAcrossPages(textBlocksPerPage)
-
-    // labelTitle()
-    // labelAuthors()
-    // labelAbstract()
-    // labelSectionHeadings()
 
 
   }
