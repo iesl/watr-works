@@ -99,7 +99,10 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
               }}
           )
           val treflow = res.rootLabel
-          completed.enqueue(treflow)
+          val txt = treflow.toText().trim
+          if (txt.length>0) {
+            completed.enqueue(treflow)
+          }
           reset()
         })
 

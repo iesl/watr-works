@@ -148,6 +148,7 @@ class MemDocstore extends DocumentCorpus {
       def add(docId: Int@@DocumentID): Model.Zone = {
         val rec = Model.Zone(nextId(), docId)
         insert(rec.prKey, rec)
+        forDocument.addEdge(docId, rec.prKey)
         rec
       }
     }
@@ -271,10 +272,10 @@ class MemDocstore extends DocumentCorpus {
 
 
   def getTargetRegion(regionId: Int@@RegionID): G.TargetRegion = {
+    // println(s"getTargetRegion: ${regionId}, ${modelPage} ${mDocument}")
     val model = targetregions.unique(regionId)
     val modelPage = pages.unique(model.page)
     val mDocument = documents.unique(modelPage.document)
-    // println(s"getTargetRegion: ${model}, ${modelPage} ${mDocument}")
     G.TargetRegion(model.prKey, mDocument.stableId, modelPage.pagenum, model.bounds)
   }
 
@@ -294,7 +295,7 @@ class MemDocstore extends DocumentCorpus {
   }
 
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID] = {
-    targetregions.all().map(_.prKey)
+    targetregions.forPage.getEdges(pageId)
   }
 
   def createZone(docId: Int@@DocumentID): Int@@ZoneID = {
