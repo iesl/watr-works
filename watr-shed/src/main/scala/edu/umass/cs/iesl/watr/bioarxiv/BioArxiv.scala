@@ -14,7 +14,7 @@ import scala.collection.mutable
 import textreflow.data._
 import TypeTags._
 import watrmarks._
-import docstore._
+// import docstore._
 
 object BioArxiv {
 
@@ -250,7 +250,8 @@ object AlignBioArxiv {
   )
 
 
-  def alignPaperWithDB(reflowDB: TextReflowDB, paper: PaperRec, stableId: String@@DocumentID): List[AlignmentScores] = {
+  def alignPaperWithDB(docStore: DocumentCorpus, paper: PaperRec, stableId: String@@DocumentID): List[AlignmentScores] = {
+
     log.debug("aligning bioarxiv paper")
 
     val titleBoosts = new AlignmentScores(LB.Title)
@@ -260,7 +261,6 @@ object AlignBioArxiv {
 
     val page0 = PageNum(0)
     val r0 = RegionID(0)
-    val docStore = reflowDB.docstorage
 
     val lineReflows = for {
       (vlineZone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex

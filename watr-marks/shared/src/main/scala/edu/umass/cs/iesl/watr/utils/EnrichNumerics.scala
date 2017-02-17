@@ -15,7 +15,6 @@ object EnrichNumerics {
   }
 
   def itod(i: Int): Double =  {
-    // s"000${i}"
     (i.toDouble)/100.0d
   }
 
@@ -85,8 +84,6 @@ object EnrichNumerics {
       Percent(theDouble)
     }
 
-
-    // def plusOrMinus(i: Double@@Percent): Ranges.Doubles ={
     def plusOrMinus(i: Double@@Percent): RangeDouble ={
       val half = theDouble * i.unwrap
       Ranging((theDouble-half, theDouble+half))
@@ -110,28 +107,3 @@ object EnrichNumerics {
   }
 
 }
-
-// implicit class RicherDouble_1(val theDouble: Double) extends AnyVal {
-
-//   def prettyPrint:String = fmt(theDouble)
-//   def pp(): String = fmt(theDouble)
-
-//   def eqFuzzy(tolerance: Double)(d2: Double): Boolean =
-//     compareFuzzy(tolerance)(d2) == 0
-
-
-//   def compareFuzzy(tolerance: Double)(d2: Double): Int = {
-//     if (math.abs(theDouble - d2) < tolerance) 0
-//     else if (theDouble < d2) -1
-//     else 1
-//   }
-
-//   def percent: Double@@Percent = {
-//     assert(0.0 <= theDouble && theDouble <= 100.0)
-//     Percent(theDouble)
-//   }
-
-//   def plusOrMinus(i: Double@@Percent): Ranges.Doubles ={
-//     val half = theDouble * i.unwrap
-//     Ranges.Doubles(theDouble-half, theDouble+half)
-//   }

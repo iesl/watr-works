@@ -1,5 +1,4 @@
 package edu.umass.cs.iesl.watr
-package extract
 package images
 
 import com.sksamuel.scrimage._

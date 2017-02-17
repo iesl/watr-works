@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package utils 
+package utils
 
 import java.security.MessageDigest
 

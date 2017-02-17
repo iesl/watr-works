@@ -6,17 +6,13 @@ import java.io.InputStream
 
 import _root_.com.itextpdf
 import itextpdf.kernel.pdf._
-
 import utils.IdGenerator
 import geometry._
 
-//import TypeTags._
+import TypeTags._
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 import extract.fonts._
-
-// import utils.EnrichNumerics._
-
 
 class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),

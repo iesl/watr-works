@@ -107,7 +107,7 @@ object GlyphProp {
       s"""${s.ns.mkString(" ")} ${s.code} ${s.flags}"""
     }).mkString("|")
 
-    Hash.toSHA1String(splineStr)
+    utils.Hashing.toSHA1String(splineStr)
   }
 
 }

@@ -19,6 +19,7 @@ import fonts._
 import utils.IdGenerator
 import utils.EnrichNumerics._
 
+import textboxing.{TextBoxing => TB}, TB._
 
 object PdfPageObjectOutput {
 

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package extract 
+package extract
 
 import java.io.{InputStream, IOException}
 

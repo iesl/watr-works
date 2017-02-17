@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package extract 
+package extract
 
 import java.io.{InputStream, IOException}
 
@@ -8,6 +8,7 @@ import itextpdf.kernel.pdf._
 
 import scala.collection.JavaConversions._
 
+import textboxing.{TextBoxing => TB}
 
 object FontExtractor {
 

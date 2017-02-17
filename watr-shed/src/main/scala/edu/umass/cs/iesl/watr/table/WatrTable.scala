@@ -235,7 +235,7 @@ object ShellCommands extends CorpusEnrichments {
         (linenum, (0d, lt))
       }
 
-      val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(theDB, paperRec, stableId)
+      val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(docStorage, paperRec, stableId)
 
       // linenum -> best-score, label-widget
       val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()

@@ -5,6 +5,8 @@ package images
 
 import com.sksamuel.scrimage._
 
+import edu.umass.cs.iesl.watr.images.ImageManipulation
+
 case class PageImages(
   images: Seq[Image]
 ) {

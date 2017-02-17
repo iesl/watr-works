@@ -18,6 +18,8 @@ import com.itextpdf.kernel.pdf.PdfObject
 import itextpdf.kernel.pdf.canvas.parser.data._
 
 
+import textboxing.{TextBoxing => TB}, TB._
+
 import com.itextpdf.kernel.geom.{Vector => PVector}
 
 import scala.collection.JavaConversions._

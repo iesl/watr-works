@@ -16,16 +16,11 @@ import TextReflowConversion._
 import geometry._
 
 import GeometryImplicits._
-// import TraceLog // , TraceLog._
 
 object ComponentOperations {
   import textreflow.data._
   import utils.EnglishDictionary
 
-  // import tracing.TraceLog._
-  // import VisualTracer._
-  // import textboxing.{TextBoxing => TB}, TB._
-  // import EnrichNumerics._
 
   def vtraceHistogram(hist: Histogram): TraceLog = {
     vtraceHistogram(

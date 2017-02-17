@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package apps 
+package apps
 
 import corpora._
 import extract._
@@ -10,6 +10,7 @@ import ammonite.{ops => fs}, fs._
 import java.io.{File => JFile}
 import predsynth._
 import segment.DocumentSegmenter
+import TypeTags._
 
 case class AppConfig(
   runRoot: Option[JFile] = None,

@@ -1,13 +1,13 @@
 package edu.umass.cs.iesl.watr
 package extract
-package fonts 
+package fonts
 
 import com.itextpdf
 import itextpdf.kernel.pdf._
 import itextpdf.io.font.otf.Glyph
 import itextpdf.kernel.pdf.canvas.parser.data._
 
-import TB._
+import textboxing.{TextBoxing => TB}, TB._
 
 
 
