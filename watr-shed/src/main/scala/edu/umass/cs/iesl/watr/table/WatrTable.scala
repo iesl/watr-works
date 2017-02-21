@@ -53,6 +53,7 @@ object WatrTable {
         |implicit val pp3 = pprintLabelWidget
         |implicit val db0: TextReflowDB = db
         |implicit val corpus0: Corpus = corpus
+        |implicit val docStore: DocumentCorpus = db.docstorage
         |""".stripMargin
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
@@ -74,18 +75,8 @@ object WatrTable {
 object ShellCommands extends CorpusEnrichments {
 
   def initReflowDB(dbname: String): TextReflowDB = {
-    import doobie.imports._
-    import scalaz.concurrent.Task
-
     val doLogging = false
     val loggingProp = if (doLogging) "?loglevel=2" else ""
-
-
-    // val xa = DriverManagerTransactor[Task](
-    //   "org.postgresql.Driver",
-    //   s"jdbc:postgresql:${dbname}${loggingProp}",
-    //   "watrworker", "watrpasswd"
-    // )
 
     val tables = new TextReflowDBTables()
     new TextReflowDB(tables,
@@ -131,20 +122,14 @@ object ShellCommands extends CorpusEnrichments {
 
   }
 
-  implicit class RicherTextReflowDB(val theDB: TextReflowDB) extends AnyVal {
-    def docStorage = theDB.docstorage
+  implicit class RicherDocumentCorpus(val theDocumentCorpus: DocumentCorpus) extends AnyVal {
+    import BioArxiv._
+    import AlignBioArxiv._
+    import scala.collection.mutable
+    import LabelWidgetUtils._
 
-    def dropAndCreateTables(): Unit = {
-      theDB.dropAndRecreate
-    }
-
-    def addSegmentation(ds: DocumentSegmentation): Unit = {
-      theDB.addSegmentation(ds)
-    }
-
-
-    def documents(n: Int=0, skip: Int=0): List[String@@DocumentID] = {
-      val allEntries = theDB.getDocuments()
+    def documents(n: Int=0, skip: Int=0): Seq[String@@DocumentID] = {
+      val allEntries = theDocumentCorpus.getDocuments()
       val skipped = if (skip > 0) allEntries.drop(skip) else allEntries
       val entries = if (n > 0) skipped.take(n) else skipped
       entries
@@ -157,10 +142,18 @@ object ShellCommands extends CorpusEnrichments {
       LW.col(lws:_*)
     }
 
-    import BioArxiv._
-    import AlignBioArxiv._
-    import scala.collection.mutable
-    import LabelWidgetUtils._
+    def printPageLines(stableId: String@@DocumentID, pageNum: Int): Unit = {
+      for {
+        (vlineZone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, PageNum(pageNum)).zipWithIndex
+      }  {
+        val maybeReflow = theDocumentCorpus.getTextReflowForZone(vlineZone.id)
+        maybeReflow match {
+          case Some(reflow) => println(reflow.toText)
+          case None => println(s"no reflow for zone ${vlineZone}")
+        }
+
+      }
+    }
 
     def bioarxivLabelers(n: Int = 0, skip: Int = 0)(implicit corpus: Corpus): LabelWidget = {
       val lws = for {
@@ -189,7 +182,7 @@ object ShellCommands extends CorpusEnrichments {
         rec   <- entry.getBioarxivJsonArtifact
       } yield (docId, rec)
 
-      val nameLabeler  = AuthorNameLabelers.nameLabeler(theDB, docs)
+      val nameLabeler  = AuthorNameLabelers.nameLabeler(theDocumentCorpus, docs)
 
       LW.panel(
         LW.col(
@@ -201,7 +194,6 @@ object ShellCommands extends CorpusEnrichments {
 
 
     def bioArxivLabeler(stableId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
-      val docStorage = theDB.docstorage
 
       val paperRecWidget = LW.textbox(
         TB.vjoin()(
@@ -216,26 +208,26 @@ object ShellCommands extends CorpusEnrichments {
 
       val page0 = PageNum(0)
       val r0 = RegionID(0)
-      val docId = docStorage.getDocument(stableId)
+      val docId = theDocumentCorpus.getDocument(stableId)
         .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
-      val pageId = docStorage.getPage(docId, page0)
+      val pageId = theDocumentCorpus.getPage(docId, page0)
         .getOrElse(sys.error(s"Trying to access non-existent page in doc ${stableId} page 0"))
 
-      val pageGeometry = docStorage.getPageGeometry(pageId)
+      val pageGeometry = theDocumentCorpus.getPageGeometry(pageId)
         // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
 
       val pageTargetRegion = TargetRegion(r0, stableId, page0, pageGeometry)
 
       val allPageLines = for {
-        (zone, linenum) <- docStorage.getPageVisualLines(stableId, page0).zipWithIndex
-        lineReflow      <- docStorage.getTextReflowForZone(zone.id)
+        (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
+        lineReflow      <- theDocumentCorpus.getTextReflowForZone(zone.id)
       } yield {
-        val lt = LW.labeledTarget(lineReflow.targetRegion, None, None)
+        val lt = LW.labeledTarget(lineReflow.bounds(), pageId, None, None)
         (linenum, (0d, lt))
       }
 
-      val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(docStorage, paperRec, stableId)
+      val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(theDocumentCorpus, paperRec, stableId)
 
       // linenum -> best-score, label-widget
       val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()
@@ -250,10 +242,10 @@ object ShellCommands extends CorpusEnrichments {
 
         lineScores.foreach({case (linenum, score) =>
           val lineReflow = alignScores.lineReflows(linenum)
-          val lineTarget = lineReflow.targetRegion
+          val lineBounds = lineReflow.bounds
           val normalScore = score/maxScore
 
-          val lt = LW.labeledTarget(lineTarget, Some(label), Some(normalScore))
+          val lt = LW.labeledTarget(lineBounds, pageId, Some(label), Some(normalScore))
 
           if (allLineScores.contains(linenum)) {
             val Some((currScore, currWidget)) = allLineScores.get(linenum)
@@ -282,7 +274,7 @@ object ShellCommands extends CorpusEnrichments {
       )
 
       val body = LW.row(
-        LW.targetOverlay(pageTargetRegion, lwidgets),
+        LW.targetOverlay(pageTargetRegion.bbox, pageId, lwidgets),
         paperRecWidget
       )
 
@@ -310,13 +302,13 @@ object ShellCommands extends CorpusEnrichments {
 
       val page0 = PageNum(0)
       val r0 = RegionID(0)
-      val docId = docStorage.getDocument(stableId)
+      val docId = theDocumentCorpus.getDocument(stableId)
         .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
-      val pageId = docStorage.getPage(docId, page0)
+      val pageId = theDocumentCorpus.getPage(docId, page0)
         .getOrElse(sys.error(s"Trying to access non-existent page in doc ${stableId} page 0"))
 
-      val pageGeometry = docStorage.getPageGeometry(pageId)
+      val pageGeometry = theDocumentCorpus.getPageGeometry(pageId)
       // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
 
 
@@ -329,7 +321,7 @@ object ShellCommands extends CorpusEnrichments {
 
 
       val vlines = for {
-        (zone, linenum) <- docStorage.getPageVisualLines(stableId, page0).zipWithIndex
+        (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
         region <- zone.regions
       } yield { region }
 
@@ -337,15 +329,16 @@ object ShellCommands extends CorpusEnrichments {
       val titlePreselects = vlines.drop(0).take(2)
 
       val halfPageWSelects = LW.targetOverlay(
-        pageTargetRegion,
-        titlePreselects.map(LW.labeledTarget(_))
+        pageTargetRegion.bbox,
+        pageId,
+        titlePreselects.map(t => LW.labeledTarget(t.bbox, pageId))
       )
 
       // val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)
 
       val vlineText = for {
         region <- titlePreselects
-        reflow <- docStorage.getTextReflowForTargetRegion(region.id)
+        reflow <- theDocumentCorpus.getTextReflowForTargetRegion(region.id)
       } yield  LW.reflow(reflow)
 
       val textCol = LW.col(vlineText:_*)
@@ -381,21 +374,24 @@ object ShellCommands extends CorpusEnrichments {
       } yield  paperRec
     }
 
-    def segment(implicit db: TextReflowDB): Option[DocumentSegmentation] = {
+    def segment(implicit docStore: DocumentCorpus): Unit = {
       for {
         pdfArtifact    <- theCorpusEntry.getPdfArtifact
         pdfPath        <- pdfArtifact.asPath.toOption
       } yield {
 
-        val docStore = db.docstorage
         val stableId = DocumentID(theCorpusEntry.entryDescriptor)
+
         docStore.getDocument(stableId)
           .flatMap({docId =>
             println(s"segmenting ${stableId} ## ${docId} failed. Already exists.")
             None
           })
+
           .getOrElse {
-            val docId = docStore.addDocument(stableId)
+
+            println(s"segmenting ${stableId}")
+
             val segmenter = DocumentSegmenter
               .createSegmenter(stableId, pdfPath, docStore)
 
@@ -410,16 +406,10 @@ object ShellCommands extends CorpusEnrichments {
             }
             pageImages.images.zipWithIndex.foreach {
               case (image, i) =>
-                val pageId = docStore.getPage(docId, PageNum(i)).get
+                val pageId = docStore.getPage(segmenter.docId, PageNum(i)).get
                 docStore.setPageImage(pageId, image.bytes)
             }
-
-            DocumentSegmentation(
-              segmenter.mpageIndex,
-              pageImages
-            )
           }
-
       }
     }
 

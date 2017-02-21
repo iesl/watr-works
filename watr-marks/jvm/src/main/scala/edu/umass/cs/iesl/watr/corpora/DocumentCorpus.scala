@@ -21,8 +21,8 @@ trait DocumentCorpus {
   def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
   def getPageImage(pageId: Int@@PageID): Option[Array[Byte]]
 
-  def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit
-  def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom]
+  // def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit
+  // def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom]
 
   def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
   def getTargetRegion(regionId: Int@@RegionID): TargetRegion
@@ -45,10 +45,8 @@ trait DocumentCorpus {
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 
-
   ///////////////////////
   /// Derived operations
-
 
   def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] = for {
     docId     <- getDocument(stableId).toSeq

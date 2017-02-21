@@ -208,13 +208,12 @@ class MemDocstore extends DocumentCorpus {
 
     }
 
-    object charatoms extends DBRelation[RegionID, CharAtom] {
-      object forPage extends EdgeTableOneToMany[PageID, RegionID]
+    object charatoms extends DBRelation[CharID, CharAtom] {
+      object forPage extends EdgeTableOneToMany[PageID, CharID]
 
       def add(pageId: Int@@PageID, charAtom: CharAtom): Unit = {
-        var regionId = charAtom.targetRegion.id
-        insert(regionId, charAtom)
-        forPage.addEdge(pageId, regionId)
+        insert(charAtom.id, charAtom)
+        forPage.addEdge(pageId, charAtom.id)
       }
     }
   }

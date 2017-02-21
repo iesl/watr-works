@@ -192,54 +192,75 @@ object GeometryImplicits {
     }
   }
 
-  implicit class RicherLTBounds(val tb: LTBounds) extends AnyVal {
-    def area: Double = tb.width*tb.height
+  implicit class RicherLTBounds(val theBbox: LTBounds) extends AnyVal {
+    def area: Double = theBbox.width*theBbox.height
 
-    def right = tb.left+tb.width
-    def bottom = tb.top+tb.height
+    def right = theBbox.left+theBbox.width
+    def bottom = theBbox.top+theBbox.height
 
     def translate(pvec: Point): LTBounds =
       translate(pvec.x, pvec.y)
 
     def translate(x: Double=0d, y: Double=0d): LTBounds = {
-      tb.copy(
-        left=tb.left+x,
-        top=tb.top+y
+      theBbox.copy(
+        left=theBbox.left+x,
+        top=theBbox.top+y
       )
     }
 
     def moveTo(x: Double, y: Double): LTBounds = {
-      tb.copy(left=x, top=y)
+      theBbox.copy(left=x, top=y)
     }
 
     def moveToOrigin(): LTBounds = {
       moveTo(0d,0d)
     }
 
+    def splitHorizontal(bbox: LTBounds): List[LTBounds] = {
+      val leftX = bbox.toWesternPoint.x
+      val rightX = bbox.toEasternPoint.x
+      val trbbox = theBbox
+      val leftRights = if (trbbox.intersectsX(leftX)){
+        val splitLeft = trbbox.splitHorizontal(leftX)
+        if (trbbox.intersectsX(rightX)){
+          val splitRight = trbbox.splitHorizontal(rightX)
+          splitLeft.head :: splitLeft.tail
+        } else {
+          List(splitLeft.head)
+        }
+      } else if (trbbox.intersectsX(rightX)){
+        trbbox.splitHorizontal(rightX).tail
+      } else {
+        List()
+      }
+
+      leftRights
+    }
+
     def splitHorizontal(x: Double): List[LTBounds] = {
       if (intersectsX(x)) {
-        val leftHalf = tb.copy(width=x-tb.left)
-        val rightHalf = tb.copy(left=x, width=tb.width-leftHalf.width)
+        val leftHalf = theBbox.copy(width=x-theBbox.left)
+        val rightHalf = theBbox.copy(left=x, width=theBbox.width-leftHalf.width)
         List(leftHalf, rightHalf)
-      } else List(tb)
+      } else List(theBbox)
     }
 
     def intersectsX(x: Double):Boolean = {
-      tb.left <= x &&  x <= tb.right
+      theBbox.left <= x &&  x <= theBbox.right
     }
 
     def intersects(rhs:LTBounds):Boolean = {
-      !(tb.left > rhs.right
-        || tb.right < rhs.left
-        || tb.top > rhs.bottom
-        || tb.bottom < rhs.top)
+      !(theBbox.left > rhs.right
+        || theBbox.right < rhs.left
+        || theBbox.top > rhs.bottom
+        || theBbox.bottom < rhs.top)
     }
 
     def union(b: LTBounds): LTBounds = {
-      val left   = math.min(tb.left, b.left)
-      val top    = math.min(tb.top, b.top)
-      val right = math.max(tb.right, b.right)
-      val bottom = math.max(tb.bottom, b.bottom)
+      val left   = math.min(theBbox.left, b.left)
+      val top    = math.min(theBbox.top, b.top)
+      val right = math.max(theBbox.right, b.right)
+      val bottom = math.max(theBbox.bottom, b.bottom)
       LTBounds(
         left, top,
         right-left,
@@ -248,32 +269,32 @@ object GeometryImplicits {
     }
 
     // Compass direction point (bbox -> left-center, right-center, top-corner, etc)
-    def toWesternPoint: Point = Point((tb.left), (tb.top+tb.height/2))
-    def toEasternPoint: Point = Point((tb.left+tb.width), (tb.top+tb.height/2))
+    def toWesternPoint: Point = Point((theBbox.left), (theBbox.top+theBbox.height/2))
+    def toEasternPoint: Point = Point((theBbox.left+theBbox.width), (theBbox.top+theBbox.height/2))
 
     import CompassDirection._
 
     def toPoint(cd: CompassDirection): Point ={
-      def centerX = (tb.left+tb.width/2)
-      def centerY = (tb.top+tb.height/2)
+      def centerX = (theBbox.left+theBbox.width/2)
+      def centerY = (theBbox.top+theBbox.height/2)
 
       cd match {
-        case N  => Point(centerX, tb.top)
-        case S  => Point(centerX, tb.bottom)
-        case E  => Point(tb.right, centerY)
-        case W  => Point(tb.left, centerY)
-        case NW => Point(tb.left, tb.top)
-        case SW => Point(tb.left, tb.bottom)
-        case NE => Point(tb.right, tb.top)
-        case SE => Point(tb.right, tb.bottom)
+        case N  => Point(centerX, theBbox.top)
+        case S  => Point(centerX, theBbox.bottom)
+        case E  => Point(theBbox.right, centerY)
+        case W  => Point(theBbox.left, centerY)
+        case NW => Point(theBbox.left, theBbox.top)
+        case SW => Point(theBbox.left, theBbox.bottom)
+        case NE => Point(theBbox.right, theBbox.top)
+        case SE => Point(theBbox.right, theBbox.bottom)
       }
     }
 
     def toLine(cd: CompassDirection): Line = cd match {
-      case N  => Line(tb.toPoint(NW), tb.toPoint(NE))
-      case S  => Line(tb.toPoint(SW), tb.toPoint(SE))
-      case E  => Line(tb.toPoint(NE), tb.toPoint(SE))
-      case W  => Line(tb.toPoint(NW), tb.toPoint(SW))
+      case N  => Line(theBbox.toPoint(NW), theBbox.toPoint(NE))
+      case S  => Line(theBbox.toPoint(SW), theBbox.toPoint(SE))
+      case E  => Line(theBbox.toPoint(NE), theBbox.toPoint(SE))
+      case W  => Line(theBbox.toPoint(NW), theBbox.toPoint(SW))
       case NW => ???
       case SW => ???
       case NE => ???
@@ -281,24 +302,24 @@ object GeometryImplicits {
     }
 
     def xProjection(): Line = Line(
-      Point((tb.left), 0),
-      Point((tb.right), 0)
+      Point((theBbox.left), 0),
+      Point((theBbox.right), 0)
     )
 
     def yProjection(): Line = Line(
-      Point(0, (tb.top)),
-      Point(0, (tb.bottom))
+      Point(0, (theBbox.top)),
+      Point(0, (theBbox.bottom))
     )
 
 
     def toCenterPoint: Point = Point(
-      (tb.left+tb.width/2),
-      (tb.top+tb.height/2)
+      (theBbox.left+theBbox.width/2),
+      (theBbox.top+theBbox.height/2)
     )
 
     def centerDistanceTo(other: LTBounds): Double = {
-      val cx = (tb.left+tb.width/2).toFloat
-      val cy = (tb.top+tb.height/2).toFloat
+      val cx = (theBbox.left+theBbox.width/2).toFloat
+      val cy = (theBbox.top+theBbox.height/2).toFloat
       val cx2 = (other.left+other.width/2).toFloat
       val cy2 = (other.top+other.height/2).toFloat
 
@@ -310,40 +331,40 @@ object GeometryImplicits {
 
     def toLBBounds: LBBounds = {
       LBBounds(
-        left = tb.left,
-        bottom =  tb.top+tb.height,
-        width = tb.width,
-        height = tb.height
+        left = theBbox.left,
+        bottom =  theBbox.top+theBbox.height,
+        width = theBbox.width,
+        height = theBbox.height
       )
     }
 
     def prettyPrint: String = {
-      val left = tb.left
-      val top=  tb.top
-      val width = tb.width
-      val height = tb.height
+      val left = theBbox.left
+      val top=  theBbox.top
+      val width = theBbox.width
+      val height = theBbox.height
       s"""(l:${fmt(left)}, t:${fmt(top)}, w:${fmt(width)}, h:${fmt(height)})"""
     }
 
     def lowLeftCornerPrint: String = {
-      val left = tb.left
-      val bottom = tb.bottom
+      val left = theBbox.left
+      val bottom = theBbox.bottom
       s"""[${left.pp}, ${bottom.pp}]"""
     }
 
     def compactPrint: String = {
-      val left = tb.left
-      val top=  tb.top
-      val width = tb.width
-      val height = tb.height
+      val left = theBbox.left
+      val top=  theBbox.top
+      val width = theBbox.width
+      val height = theBbox.height
       s"""[${left.pp}, ${top.pp}, ${width.pp}, ${height.pp}]"""
     }
 
     def uriString: String = {
-      val left = tb.left
-      val top=  tb.top
-      val width = tb.width
-      val height = tb.height
+      val left = theBbox.left
+      val top=  theBbox.top
+      val width = theBbox.width
+      val height = theBbox.height
       s"""${left.pp}+${top.pp}+${width.pp}+${height.pp}"""
     }
 
@@ -351,26 +372,26 @@ object GeometryImplicits {
     //   TargetRegion(
     //     RegionID(0), // TODO gen region id
     //     docId??,
-    //     page,tb
+    //     page,theBbox
     //   )
     // }
   }
 
-  implicit class RicherLBBounds(val tb: LBBounds) extends AnyVal {
+  implicit class RicherLBBounds(val theBbox: LBBounds) extends AnyVal {
     def toLTBounds: LTBounds = {
       LTBounds(
-        left = tb.left,
-        top =  tb.bottom-tb.height,
-        width = tb.width,
-        height = tb.height
+        left = theBbox.left,
+        top =  theBbox.bottom-theBbox.height,
+        width = theBbox.width,
+        height = theBbox.height
       )
 
     }
     def prettyPrint: String = {
-      val left = tb.left
-      val bottom=  tb.bottom
-      val width = tb.width
-      val height = tb.height
+      val left = theBbox.left
+      val bottom=  theBbox.bottom
+      val width = theBbox.width
+      val height = theBbox.height
       s"""(l:${fmt(left)}, b:${fmt(bottom)}, w:${fmt(width)}, h:${fmt(height)})"""
     }
   }

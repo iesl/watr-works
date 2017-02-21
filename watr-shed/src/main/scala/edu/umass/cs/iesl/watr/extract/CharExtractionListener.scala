@@ -18,6 +18,7 @@ import itextpdf.kernel.pdf.PdfReader
 import fonts._
 import utils.IdGenerator
 import utils.EnrichNumerics._
+import TypeTags._
 
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -80,10 +81,10 @@ class CharExtractionListener(
   reader: PdfReader,
   stableId: String@@DocumentID,
   charsToDebug: Set[Int] = Set(),
-  componentIdGen: IdGenerator[RegionID],
-  currCharBuffer: mutable.ArrayBuffer[PageAtom], // = mutable.ArrayBuffer[PageAtom]()
+  charIdGen: IdGenerator[CharID],
+  currCharBuffer: mutable.ArrayBuffer[CharAtom], // = mutable.ArrayBuffer[CharAtom]()
   pdfPage: PdfPage,
-  pageId: Int@@PageNum,
+  pageNum: Int@@PageNum,
   pageGeometry: PageGeometry,
   geomTranslation:GeometryTranslation,
   glyphMap: Map[(String, Int), String]
@@ -160,16 +161,7 @@ class CharExtractionListener(
         val charBounds = computeTextBounds(charTri)
 
         val charBox = charBounds.map(bnds =>
-          CharAtom(
-            TargetRegion(
-              componentIdGen.nextId,
-              stableId,
-              pageId,
-              bnds
-            ),
-            stringRep,
-            code
-          )
+          CharAtom(charIdGen.nextId, PageID(pageNum.unwrap), bnds, stringRep, code)
         ).getOrElse ({
           val msg = s"ERROR bounds are invalid"
           sys.error(msg)

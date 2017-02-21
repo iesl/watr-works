@@ -117,14 +117,14 @@ object ComponentOperations {
   }
 
 
-  def centerX(cb: PageAtom) = cb.targetRegion.bbox.toCenterPoint.x
-  def centerY(cb: PageAtom) = cb.targetRegion.bbox.toCenterPoint.y
+  def centerX(cb: CharAtom) = cb.bbox.toCenterPoint.x
+  def centerY(cb: CharAtom) = cb.bbox.toCenterPoint.y
 
   def spaceWidths(cs: Seq[CharAtom]): Seq[Double] = {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.targetRegion.bbox.left - c1.targetRegion.bbox.right
+      case Seq(c1, c2)  => c2.bbox.left - c1.bbox.right
       case _  => 0d
     })
 
@@ -492,7 +492,7 @@ object ComponentOperations {
       if (!theComponent.hasLabel(LB.TokenizedLine)) {
         theComponent.addLabel(LB.TokenizedLine)
 
-        vtrace.trace(begin("Tokenize Line"), focusOn(theComponent.targetRegion))
+        // vtrace.trace(begin("Tokenize Line"), focusOn(theComponent.targetRegion))
 
         // vtrace.trace(message(s"Line chars: ${theComponent.chars}"))
 
@@ -552,10 +552,10 @@ object ComponentOperations {
         }
 
 
-        vtrace.trace("Final Tokenization" withInfo
-          maybeReflow.map(_.toText().box).getOrElse("<no text>".box))
+        // vtrace.trace("Final Tokenization" withInfo
+        //   maybeReflow.map(_.toText().box).getOrElse("<no text>".box))
 
-        vtrace.trace(end("Tokenize Line"))
+        // vtrace.trace(end("Tokenize Line"))
       }
     }
 

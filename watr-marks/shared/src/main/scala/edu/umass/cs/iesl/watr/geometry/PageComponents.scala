@@ -64,43 +64,50 @@ case class PageGeometry(
   bounds: LTBounds
 )
 
-sealed trait PageAtom {
-  def targetRegion: TargetRegion
+// sealed trait PageAtom {
+//   def targetRegion: TargetRegion
 
-  implicit val EqualPageAtom: Equal[PageAtom] = Equal.equal((a, b)  => (a, b) match {
-    case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
-      t===t2 && c==c2 && w==w2
-    case (_, _) => false
+//   implicit val EqualPageAtom: Equal[PageAtom] = Equal.equal((a, b)  => (a, b) match {
+//     case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
+//       t===t2 && c==c2 && w==w2
+//     case (_, _) => false
 
-  })
-}
+//   })
+// }
 
 case class CharAtom(
-  targetRegion: TargetRegion,
+  id: Int@@CharID,
+  pageId: Int@@PageID,
+  bbox: LTBounds,
   char: String,
   wonkyCharCode: Option[Int] = None
-) extends PageAtom {
-  override def toString = s"CharAtom($char, $targetRegion)"
-}
+)
 
-object CharAtom {
-  implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
-    case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
-      t===t2 && c==c2 && w==w2
-    case (_, _) => false
-  })
-}
+// case class CharAtom(
+//   targetRegion: TargetRegion,
+//   char: String,
+//   wonkyCharCode: Option[Int] = None
+// ) extends PageAtom {
+//   override def toString = s"CharAtom($char, $targetRegion)"
+// }
+
+// object CharAtom {
+//   implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
+//     case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
+//       t===t2 && c==c2 && w==w2
+//     case (_, _) => false
+//   })
+// }
 
 
-class ImgAtom(
-  val targetRegion: TargetRegion
-) extends PageAtom
+// class ImgAtom(
+//   val targetRegion: TargetRegion
+// ) extends PageAtom
 
-object ImgAtom {
-  def unapply(rg: ImgAtom): Option[(TargetRegion)] = Some(rg.targetRegion)
-  def apply(region: TargetRegion): ImgAtom = new ImgAtom(region)
-
-}
+// object ImgAtom {
+//   def unapply(rg: ImgAtom): Option[(TargetRegion)] = Some(rg.targetRegion)
+//   def apply(region: TargetRegion): ImgAtom = new ImgAtom(region)
+// }
 
 case class GlyphInstance(
   glyphHash: String
@@ -133,29 +140,6 @@ object PageComponentImplicits {
       zone.regions.foldLeft(0d){ case (acc, a) =>
         a.bbox.area
       }
-    }
-
-  }
-  implicit class RicherPageAtom(val pageRegion: PageAtom) extends AnyVal {
-
-    def prettyPrint: String = pageRegion match {
-      case b: CharAtom => b.prettyPrint
-      case b: ImgAtom => "<img>"
-    }
-
-    def bestGuessChar: String = pageRegion match {
-      case b: CharAtom => b.bestGuessChar
-      case b: ImgAtom => ""
-    }
-
-    def isSpace: Boolean = pageRegion match {
-      case b: CharAtom => b.isSpace
-      case b: ImgAtom => false
-    }
-
-    def isChar: Boolean = pageRegion match {
-      case b: CharAtom => true
-      case b: ImgAtom => false
     }
 
   }
@@ -232,7 +216,7 @@ object PageComponentImplicits {
   implicit class RicherCharAtom(val charRegion: CharAtom) extends AnyVal {
 
     def debugPrint: String = {
-      val bbox = charRegion.targetRegion.bbox.prettyPrint
+      val bbox = charRegion.bbox.prettyPrint
 
       val wonk = charRegion.wonkyCharCode
         .map({ code =>

@@ -18,7 +18,8 @@ import watrmarks.Label
 
 trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._
-  import PageComponentImplicits._
+  // import PageComponentImplicits._
+  import GeometryImplicits._
 
   type ReflowRange = RangeInt
   type AtomOrInsertOrGap  = (ReflowRange \/ ReflowRange) \/ ReflowRange
@@ -73,8 +74,8 @@ trait TextReflowClipping extends TextReflowBasics {
 
       fa match {
         case Atom(c) =>
-          val tr = c.targetRegion
-          val intersects = tr.intersects(targetRegion)
+          val tr = c.bbox
+          val intersects = tr.intersects(targetRegion.bbox)
 
           if (intersects) List(anAtom(envRange))
           else            List(aGap(envRange))

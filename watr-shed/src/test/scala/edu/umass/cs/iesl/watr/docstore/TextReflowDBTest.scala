@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package docstore
 
 import org.scalatest._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 import corpora._
 
 
@@ -23,11 +23,9 @@ class TextReflowDBTest extends FlatSpec with Matchers with CorpusTestingUtil {
 
   behavior of "database-backed corpus"
 
-  it should "add zones" in new FreshDocstore(pageCount=1) {
+  it should "add zones" in new FreshDocstore(pageCount=2) {
     try {
-      println(
-        reportDocument(stableId)
-      )
+      println(reportDocument(stableId))
       // val pageNum = PageNum(1)
       // val docId = docStore.getDocument(stableId).get
       // val pageId = docStore.getPage(docId, pageNum).get

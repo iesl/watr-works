@@ -11,7 +11,7 @@ import matryoshka.data._
 import matryoshka.implicits._
 
 import utils.EnrichNumerics._
-import PageComponentImplicits._
+import GeometryImplicits._
 
 
 trait TextReflowSharedFunctions extends TextReflowClipping {
@@ -211,12 +211,17 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
       }
     )
 
-    def targetRegions(): Seq[TargetRegion] = {
-      charAtoms().map(_.targetRegion)
+    def charBounds(): Seq[LTBounds] = {
+      charAtoms().map(_.bbox)
     }
 
-    def targetRegion(): TargetRegion = {
-      targetRegions.reduce(_ union _)
+    def bounds(): LTBounds = {
+      val pageCount = charAtoms.map(_.pageId).toSet.length
+      if (pageCount > 1) {
+        sys.error(s"TextReflow.bounds() called on reflow spanning multiple pages")
+      }
+
+      charBounds().reduce(_ union _)
     }
 
     def visualLinesRegions(): Seq[TargetRegion] = {

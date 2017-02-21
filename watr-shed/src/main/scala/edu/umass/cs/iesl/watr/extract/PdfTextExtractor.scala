@@ -18,9 +18,9 @@ import java.nio.{file => nio}
 
 
 object PdfTextExtractor {
-  def extractChars(stableId: String@@DocumentID, pdfPath: Path): Seq[(Seq[PageAtom], PageGeometry)] = {
+  def extractChars(stableId: String@@DocumentID, pdfPath: Path): Seq[(Seq[CharAtom], PageGeometry)] = {
     val charExtractor = new PdfTextExtractor(
-      Set[Int](), IdGenerator[RegionID]()
+      Set[Int](), IdGenerator[CharID]()
     )
 
     charExtractor.extractCharacters(stableId, pdfPath)
@@ -30,7 +30,7 @@ object PdfTextExtractor {
 
 class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),
-  componentIdGen: IdGenerator[RegionID],
+  charIdGen: IdGenerator[CharID],
   glyphDefs: Seq[SplineFont.Dir] = Seq()
 ) {
   // map font-name,encoding-index -> glyph-hash
@@ -113,7 +113,7 @@ class PdfTextExtractor(
   }
 
 
-  def extractCharacters(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[PageAtom], PageGeometry)] = {
+  def extractCharacters(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[CharAtom], PageGeometry)] = {
     var instr: InputStream = null
     try {
       instr = nio.Files.newInputStream(pdfPath.toNIO)
@@ -130,12 +130,12 @@ class PdfTextExtractor(
 
         val resources = pdfPage.getResources
 
-        val currCharBuffer: mutable.ArrayBuffer[PageAtom] = mutable.ArrayBuffer[PageAtom]()
+        val currCharBuffer: mutable.ArrayBuffer[CharAtom] = mutable.ArrayBuffer[CharAtom]()
         val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage, reader)
 
         val extractor = new CharExtractionListener(
           reader, stableId, charsToDebug,
-          componentIdGen,
+          charIdGen,
           currCharBuffer,
           pdfPage,
           pageId,
@@ -148,7 +148,7 @@ class PdfTextExtractor(
         parser.processPageContent(pdfPage)
 
 
-        val pageAtoms = Seq[PageAtom](currCharBuffer:_*)
+        val pageAtoms = Seq[CharAtom](currCharBuffer:_*)
 
         parser.reset()
 

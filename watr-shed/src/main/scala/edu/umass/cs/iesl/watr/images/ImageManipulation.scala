@@ -2,17 +2,19 @@ package edu.umass.cs.iesl.watr
 package images
 
 import com.sksamuel.scrimage._
-import com.sksamuel.scrimage.canvas._
 import geometry._
 
 import GeometryImplicits._
 
 trait ImageManipulation {
 
-  def cropTo(image: Image, cropBox: LTBounds, pageGeometry: PageGeometry): Image = {
-    println(s"page geometry is ${pageGeometry.bounds.prettyPrint}")
+  def cropTo(imageBytes: Array[Byte], cropBox: LTBounds, pageBounds: LTBounds): Image = {
+    cropTo(Image(imageBytes), cropBox, pageBounds)
+  }
+
+  def cropTo(image: Image, cropBox: LTBounds, pageBounds: LTBounds): Image = {
+    println(s"page geometry is ${pageBounds.prettyPrint}")
     println(s"image geometry is width:${image.width}, height:${image.height}")
-    val pageBounds = pageGeometry.bounds
     val scaled = image.scaleTo(pageBounds.width.toInt, pageBounds.height.toInt)
 
     val left = cropBox.left // - pageBounds.left

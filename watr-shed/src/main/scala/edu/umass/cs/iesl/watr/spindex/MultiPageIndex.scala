@@ -6,8 +6,9 @@ import scala.collection.mutable
 import geometry._
 import watrmarks._
 
-import PageComponentImplicits._
+// import PageComponentImplicits._
 import utils.IdGenerator
+import GeometryImplicits._
 
 import tracing.VisualTracer
 import predsynth._
@@ -119,6 +120,7 @@ class MultiPageIndex(
     val zone = createZone()
     componentIdToZoneId.put(cc.id, zone.id)
     docStore.setTextReflowForZone(zone.id, r)
+    println(s"setTextReflowForZone: ${zone}: ${r.toText}")
   }
 
   def getTextReflowForComponent(ccId: Int@@ComponentID): Option[TextReflow] = {
@@ -241,8 +243,8 @@ class MultiPageIndex(
 
   def labelRegion(components: Seq[Component], role: Label): Option[RegionComponent] = {
     if (components.isEmpty) None else {
-      val targetRegions = components.map(_.targetRegion)
-      val targetPages = targetRegions.map(_.pageNum.unwrap)
+      val charBounds = components.map(_.bounds)
+      val targetPages = components.map(_.pageNum.unwrap)
       val numOfTargetPages =  targetPages.toSet.size
 
       if (numOfTargetPages != 1) {
@@ -252,15 +254,15 @@ class MultiPageIndex(
       val pageNum =  PageNum(targetPages.head)
 
       val pageId = docStore.getPage(docId, pageNum).get
-      val totalBounds = targetRegions.reduce(_ union _).bbox
+      val totalBounds = charBounds.reduce(_ union _)
       val regionId = docStore.addTargetRegion(pageId, totalBounds)
-      val totalRegion = docStore.getTargetRegion(regionId)
+      val targetRegion = docStore.getTargetRegion(regionId)
 
-      val region = createRegionComponent(totalRegion, role)
+      val region = createRegionComponent(targetRegion.bbox, pageNum, role)
 
       val zone = createZone()
 
-      addZoneTargetRegions(zone.id, Seq(region.targetRegion))
+      addZoneTargetRegions(zone.id, Seq(targetRegion))
       addZoneLabel(zone.id, role)
 
       Some(region)
@@ -269,17 +271,21 @@ class MultiPageIndex(
 
 
 
-  def createRegionComponent(tr: TargetRegion, role: Label): RegionComponent = {
-    val region = RegionComponent(componentIdGen.nextId, role, tr, this)
+  def createRegionComponent(bbox: LTBounds, pageNum: Int@@PageNum, role: Label): RegionComponent = {
+    val region = RegionComponent(componentIdGen.nextId, role, bbox, pageNum, this)
     addComponent(region)
 
     region
   }
 
-  def addPageAtom(pageAtom: PageAtom): AtomicComponent = {
+  def addCharAtom(pageAtom: CharAtom): AtomicComponent = {
     val c = AtomicComponent(componentIdGen.nextId, pageAtom, this)
     addComponent(c)
     c
+  }
+
+  def getPageAtoms(pageNum: Int@@PageNum): Seq[AtomicComponent] = {
+    getPageIndex(pageNum).getPageAtoms
   }
 
   def getComponent(id: Int@@ComponentID, pageId: Int@@PageNum): Component = {
@@ -336,5 +342,3 @@ class MultiPageIndex(
   }
 
 }
-
-

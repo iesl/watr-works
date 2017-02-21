@@ -20,6 +20,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
   def docStore: DocumentCorpus
 
+  val charIds = utils.IdGenerator[CharID]()
   val xscale = 10.0d
   val yscale = 10.0d
 
@@ -58,7 +59,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
     def totalBounds(): LTBounds = {
       completed
-        .map(_.targetRegion.bbox)
+        .map(_.bounds)
         .reduce { _ union _ }
     }
 
@@ -190,12 +191,13 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
                 if (charSubs.contains(ch)) {
                   reflowBuilder.insertDownLast(Rewrite((), charSubs(ch)))
                 }
+
                 val charAtom = CharAtom(
-                  mkTargetRegion(pageId, x=chnum, y=linenum, w=1, h=1),
+                  charIds.nextId, pageId,
+                  LTBounds(left=chnum.toDouble, top=linenum.toDouble, width=1d, height=1d),
                   ch.toString
                 )
                 reflowBuilder.insertDownLast(Atom(charAtom))
-                docStore.addCharAtom(pageId, charAtom)
                 reflowBuilder.pop()
             }
             case x => println(s"error: ${x}")
@@ -206,9 +208,9 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     reflowBuilder.newline()
     reflowBuilder.completed.foreach { reflow =>
       val tt = reflow.toText
-      val lineRegion = reflow.targetRegion()
+      val lineBounds = reflow.bounds()
       val lineZone = docStore.createZone(docId)
-      val regionId = docStore.addTargetRegion(pageId, lineRegion.bbox)
+      val regionId = docStore.addTargetRegion(pageId, lineBounds)
       val tr = docStore.getTargetRegion(regionId)
       docStore.setZoneTargetRegions(lineZone, Seq(tr))
       docStore.setTextReflowForZone(lineZone, reflow)
@@ -222,7 +224,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
 
 
-  def stringToPageAtoms(str: String, pageNum: Int, stableId: String@@DocumentID): (Seq[PageAtom], PageGeometry) = {
+  def stringToPageAtoms(str: String, pageNum: Int, stableId: String@@DocumentID): (Seq[CharAtom], PageGeometry) = {
     val docId = docStore.addDocument(stableId)
     val pageId = docStore.addPage(docId, PageNum(pageNum))
 
@@ -234,10 +236,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
         left=chnum*xscale, top=linenum*yscale,
         width=xscale, height=yscale
       )
-
-      val regionId = docStore.addTargetRegion(pageId, bbox)
-      val tr = docStore.getTargetRegion(regionId)
-      CharAtom(tr, ch.toString)
+      CharAtom(charIds.nextId, pageId, bbox, ch.toString)
 
     }
 
@@ -251,15 +250,13 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
               width=xscale, height=yscale
             )
 
-            val regionId = docStore.addTargetRegion(pageId, bbox)
-            val tr = docStore.getTargetRegion(regionId)
-            CharAtom(tr, ch.toString)
+            CharAtom(charIds.nextId, pageId, bbox, ch.toString)
           })
       })
       .flatten.toSeq
 
-    val maxX = atoms.map(_.targetRegion.bbox.right).max
-    val maxY = atoms.map(_.targetRegion.bbox.bottom).max
+    val maxX = atoms.map(_.bbox.right).max
+    val maxY = atoms.map(_.bbox.bottom).max
 
 
     val pageGeom = PageGeometry(
@@ -272,7 +269,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     (atoms, pageGeom)
   }
 
-  def stringsToMultiPageAtoms(stableId: String@@DocumentID, strs: String*): Seq[(Seq[PageAtom], PageGeometry)] = {
+  def stringsToMultiPageAtoms(stableId: String@@DocumentID, strs: String*): Seq[(Seq[CharAtom], PageGeometry)] = {
     for {
       (pstr, pagenum) <- strs.zipWithIndex
     } yield {

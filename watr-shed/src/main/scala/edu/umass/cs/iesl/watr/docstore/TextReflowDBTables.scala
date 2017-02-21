@@ -21,12 +21,12 @@ class TextReflowDBTables extends DoobiePredef {
         document    INTEGER REFERENCES document NOT NULL,
         pagenum     SMALLINT,
         imageclip   INTEGER REFERENCES imageclips,
-        pageimg     BYTEA,
         bleft       INTEGER,
         btop        INTEGER,
         bwidth      INTEGER,
         bheight     INTEGER
       );
+      CREATE UNIQUE INDEX document_pagenum ON page (document, pagenum);
     """.update
 
   val createImageClipTable: Update0 = sql"""
@@ -41,6 +41,7 @@ class TextReflowDBTables extends DoobiePredef {
         zone        SERIAL PRIMARY KEY,
         document    INTEGER REFERENCES document NOT NULL
       );
+      CREATE INDEX zone_idx_document ON zone (document);
     """.update
 
 
@@ -51,6 +52,7 @@ class TextReflowDBTables extends DoobiePredef {
         label        INTEGER REFERENCES label NOT NULL,
         PRIMARY KEY (zone, label)
       );
+      CREATE INDEX zone_to_label_idx0 ON zone_to_label (label);
     """.update
 
   // zone - targetregion :: * - * (NB not sure if this is the right way to connect these)
@@ -60,6 +62,7 @@ class TextReflowDBTables extends DoobiePredef {
         targetregion  INTEGER REFERENCES targetregion NOT NULL
       );
       CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
+      CREATE INDEX zone_to_targetregion_idx2 ON zone_to_targetregion (targetregion);
     """.update
 
   val createTargetRegion: Update0 = sql"""
@@ -74,6 +77,7 @@ class TextReflowDBTables extends DoobiePredef {
         uri           VARCHAR(256) UNIQUE NOT NULL
       );
       CREATE INDEX targetregion_uri ON targetregion USING hash (uri);
+      CREATE INDEX targetregion_idx0 ON targetregion (page);
     """.update
 
 
@@ -82,7 +86,8 @@ class TextReflowDBTables extends DoobiePredef {
         textreflow  SERIAL PRIMARY KEY,
         reflow      TEXT NOT NULL,
         zone        INTEGER REFERENCES zone
-      )
+      );
+      CREATE INDEX textreflow_idx0 ON textreflow (zone);
     """.update
 
 
@@ -145,7 +150,6 @@ class TextReflowDBTables extends DoobiePredef {
     DROP TABLE IF EXISTS zone_to_label;
     DROP TABLE IF EXISTS zone;
     DROP TABLE IF EXISTS label;
-    DROP TABLE IF EXISTS targetregion_image;
     DROP TABLE IF EXISTS targetregion;
     DROP TABLE IF EXISTS page;
     DROP TABLE IF EXISTS imageclips;

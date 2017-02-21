@@ -28,14 +28,15 @@ object LabelWidgetF {
   // LabelWidget w/position attribute
   type LabelWidgetPosAttr = LabelWidgetF[LabelWidgetAttr[PosAttr]]
 
-
   case class TargetOverlay[A](
-    under: TargetRegion,
+    under: LTBounds,
+    pageId: Int@@PageID,
     overs: List[A]
   ) extends LabelWidgetF[A]
 
   case class LabeledTarget(
-    target: TargetRegion,
+    target: LTBounds,
+    pageId: Int@@PageID,
     label: Option[Label],
     score: Option[Double]
   ) extends LabelWidgetF[Nothing]
@@ -80,16 +81,17 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        case l @ TargetOverlay(under, overs)           => overs.traverse(f).map(TargetOverlay(under, _))
-        case l @ LabeledTarget(target, label, score)   => G.point(l.copy())
-        case l @ TextBox(tb)                           => G.point(l.copy())
-        case l @ Reflow(tr)                            => G.point(l.copy())
-        case l @ Button(action)                        => G.point(l.copy())
-        case l @ MouseOverlay(bkplane)                 => f(bkplane).map(a => l.copy(backplane=a))
-        case l @ Panel(content)                        => f(content).map(Panel(_))
-        case l @ Row(as)                               => as.traverse(f).map(Row(_))
-        case l @ Col(as)                               => as.traverse(f).map(Col(_))
-        case l @ Pad(a, padding)                       => f(a).map(Pad(_, padding))
+        // case l @ TargetOverlay(under,pageId, overs)           => overs.traverse(f).map(TargetOverlay(under,pageId,  _))
+        case l : TargetOverlay[A]             => l.overs.traverse(f).map(ft => l.copy(overs=ft))
+        case l : LabeledTarget             => G.point(l.copy())
+        case l @ TextBox(tb)               => G.point(l.copy())
+        case l @ Reflow(tr)                => G.point(l.copy())
+        case l @ Button(action)            => G.point(l.copy())
+        case l @ MouseOverlay(bkplane)     => f(bkplane).map(a => l.copy(backplane=a))
+        case l @ Panel(content)            => f(content).map(Panel(_))
+        case l @ Row(as)                   => as.traverse(f).map(Row(_))
+        case l @ Col(as)                   => as.traverse(f).map(Col(_))
+        case l @ Pad(a, padding)           => f(a).map(Pad(_, padding))
       }
     }
   }
@@ -98,8 +100,8 @@ object LabelWidgetF {
 
   implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
     def apply[A](show: Show[A]) = Show.show {
-      case l @ TargetOverlay(under, overs)           => s"$l"
-      case l @ LabeledTarget(target, label, score)   => s"label-target"
+      case l @ TargetOverlay(under, pageId, overs)           => s"$l"
+      case l @ LabeledTarget(target, pageId, label, score)   => s"label-target"
       case l @ Reflow(tr)                  => s"reflow()"
       case l @ TextBox(tb)                 => s"textbox"
       case l @ Button(action)              => s"$l"
@@ -120,11 +122,11 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
-  def targetOverlay(tr: TargetRegion, overs: Seq[LabelWidget]) =
-    fixlw(TargetOverlay(tr, overs.toList))
+  def targetOverlay(tr: LTBounds, pageId: Int@@PageID, overs: Seq[LabelWidget]) =
+    fixlw(TargetOverlay(tr, pageId, overs.toList))
 
-  def labeledTarget(target: TargetRegion, label: Option[Label]=None, score: Option[Double]=None) =
-    fixlw(LabeledTarget(target, label, score))
+  def labeledTarget(target: LTBounds, pageId: Int@@PageID, label: Option[Label]=None, score: Option[Double]=None) =
+    fixlw(LabeledTarget(target, pageId, label, score))
 
   def reflow(tr: TextReflow) =
     fixlw(Reflow(tr))

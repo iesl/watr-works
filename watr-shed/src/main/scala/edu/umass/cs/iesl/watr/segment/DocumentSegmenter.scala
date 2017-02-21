@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+
 import ammonite.{ops => fs}, fs._
 import java.io.InputStream
 import spindex._
@@ -67,7 +68,7 @@ object DocumentSegmenter {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.targetRegion.bbox.left - c1.targetRegion.bbox.right
+      case Seq(c1, c2)  => c2.bbox.left - c1.bbox.right
       case _  => 0d
     })
 
@@ -127,8 +128,7 @@ object DocumentSegmenter {
       mpageIndex.addPage(geom)
 
       regions.foreach {
-        case cb:CharAtom if !cb.isSpace => docStore.addCharAtom(pageId, cb)
-        case cb:ImgAtom =>
+        case cb:CharAtom if !cb.isSpace => mpageIndex.addCharAtom(cb)
         case cb => println(s"error adding ${cb}")
       }
     }
@@ -208,13 +208,15 @@ class DocumentSegmenter(
   var pageSegAccum: PageSegAccumulator = PageSegAccumulator(Seq())
 
   def runLineDetermination(): Unit = {
-    val allPageLines = for {
+    println(s"runLineDetermination()")
+    for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } yield {
-      val charAtoms = docStore.getCharAtoms(pageId)
+      println(s"  Page ${pagenum}")
+      val atomicComponents = mpageIndex.getPageAtoms(PageNum(pagenum))
 
-      val atomicComponents = charAtoms.map(mpageIndex.addPageAtom(_))
-      vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${charAtoms.length} char atoms"))
+      // val atomicComponents = charAtoms.map(
+      // vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${atomicComponents.length} char atoms"))
 
       determineLines(PageNum(pagenum), atomicComponents)
     }
@@ -456,23 +458,26 @@ class DocumentSegmenter(
   def runPageSegmentation(): Unit = {
 
     // Bottom-up connected-component line-finding
-    vtrace.trace(begin("runLineDetermination"))
     runLineDetermination()
-    vtrace.trace(end("runLineDetermination"))
 
     tokenizeLines()
 
     // this find text blocks per-page, and joins lines within each block
-    val textBlocksPerPage = findTextBlocksPerPage()
-
-
+    // val textBlocksPerPage = findTextBlocksPerPage()
   }
 
   // force tokenization of all visual lines
-  def tokenizeLines(): Unit = for {
-    page <- visualLineOnPageComponents
-    line <- page
-  } line.tokenizeLine
+  def tokenizeLines(): Unit = {
+    print("tokenizing lines")
+    for {
+      page <- visualLineOnPageComponents
+      line <- page
+    } {
+      line.tokenizeLine
+      print(".")
+    }
+    println("")
+  }
 
   def show(c: Component): TB.Box = {
     c.getTextReflow
@@ -557,7 +562,6 @@ class DocumentSegmenter(
     components: Seq[AtomicComponent]
   ): Unit = {
 
-
     def minRegionId(ccs: Seq[Component]): Int@@RegionID =  ccs.map(_.targetRegion.id).min
 
     val lineSets = new DisjointSets[Component](components)
@@ -578,11 +582,11 @@ class DocumentSegmenter(
       .map(_.toSeq.sortBy(c => (c.bounds.left, c.bounds.top)))
       .sortBy(line => minRegionId(line))
 
-    vtrace.trace("Visual Lines" withInfo {
-      vcat(shortLinesFilledIn.map(ccs =>
-        ccs.map(_.chars).mkString.box
-      ))
-    })
+    // vtrace.trace("Visual Lines" withInfo {
+    //   vcat(shortLinesFilledIn.map(ccs =>
+    //     ccs.map(_.chars).mkString.box
+    //   ))
+    // })
 
 
     val longLines = shortLinesFilledIn
@@ -598,11 +602,11 @@ class DocumentSegmenter(
 
         val shouldJoin = leftToRight && overlapped && smallIdGap
 
-        vtrace.traceIf(shouldJoin)("joining line parts" withInfo {
-          val chs1 = linePart1.map(_.chars).mkString
-          val chs2 = linePart2.map(_.chars).mkString
-          s"""$chs1  <->  $chs2 """
-        })
+        // vtrace.traceIf(shouldJoin)("joining line parts" withInfo {
+        //   val chs1 = linePart1.map(_.chars).mkString
+        //   val chs2 = linePart2.map(_.chars).mkString
+        //   s"""$chs1  <->  $chs2 """
+        // })
 
 
         shouldJoin

@@ -132,49 +132,6 @@ object BioArxivOps extends BioArxivJsonFormats {
     }
 
   }
-
-  // import TypeTags._
-  // import segment._
-  // def alignPapers(corpusRoot: Path, n: Int, k: Int): Unit = {
-  //   val corpus = Corpus(corpusRoot)
-  //   var nprocessed = 0
-  //   var nseen = 0
-
-  //   println(s"aligning pdfs from ${corpus}")
-  //   for {
-  //     corpusEntry <- corpus.entries()
-  //     pdfArtifact <- corpusEntry.getPdfArtifact()
-  //     // _ = if (!pdfArtifact.exists()) println(s"no pdf found in ${corpusEntry}")
-  //     if pdfArtifact.exists()
-
-
-  //     // if k >= nseen && nprocessed < n
-  //     if nprocessed < n
-
-  //     _ = nseen +=  1
-  //     _ = nprocessed += 1
-
-  //     _ = println(s"${nprocessed}/${nseen}. ${corpusEntry}")
-
-  //     pdfPath     <- pdfArtifact.asPath
-  //     json        <- corpusEntry.getArtifact("bioarxiv.json")
-  //     asJson      <- json.asJson
-  //     paper       <- asJson.validate[PaperRec]
-  //   } {
-  //     val docId = DocumentID(corpusEntry.entryDescriptor)
-  //     try {
-
-  //       val segmenter = DocumentSegmenter.createSegmenter(docId, pdfPath)
-  //       segmenter.runPageSegmentation()
-
-  //       val alignmentScores = AlignBioArxiv.alignPaper(segmenter.mpageIndex, paper)
-
-  //     } catch {
-  //       // case t: Throwable => println(s"Error: ${t}: ${t.getMessage()}")
-  //       case t: Throwable => println(s"Error:")
-  //     }
-  //   }
-  // }
 }
 
 

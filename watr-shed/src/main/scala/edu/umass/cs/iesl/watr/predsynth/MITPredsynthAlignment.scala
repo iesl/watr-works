@@ -10,7 +10,8 @@ import utils.SlicingAndDicing._
 
 import textreflow.data._
 import watrmarks.{StandardLabels => LB}
-import geometry.GeometryImplicits._
+import geometry._
+import geometry.syntax._
 
 import TypeTags._
 
@@ -21,6 +22,10 @@ object MITAlignPredsynth {
 
   def alignPredSynthPaper(mpageIndex: MultiPageIndex, paper: Paper): Seq[AlignedGroup] = {
     log.debug("aligning predsynth paper ")
+
+    val docStore = mpageIndex.docStore
+    val stableId = mpageIndex.getStableId()
+    val docId = docStore.getDocument(stableId).get
 
     val paperTextReflows = mpageIndex.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
 
@@ -85,16 +90,17 @@ object MITAlignPredsynth {
               log.debug(s"found mention: ${reflowSliceText}")
 
               // TODO The following should be captured by something like textReflow.intersectPages(LB.VisualLine, ..) function
-              val targetRegions = reflowSlice.targetRegions
+              val targetRegions = reflowSlice.bounds
 
-              val intersectedVisualLines  = targetRegions.map{ targetRegion =>
-                val pageIndex = mpageIndex.getPageIndex(targetRegion.pageNum)
+              val intersectedVisualLines  = reflowSlice.charAtoms.map{ case CharAtom(charId, pageId, bbox, char, _) =>
+                val pageNum = docStore.getPage(docId, pageId).get
+                val pageIndex = mpageIndex.getPageIndex(pageNum)
 
                 pageIndex.componentIndex
-                  .queryForIntersects(targetRegion.bbox)
+                  .queryForIntersects(bbox)
                   .filter(_.hasLabel(LB.VisualLine))
                   .headOption
-                  .getOrElse { sys.error(s"no visual line found intersecting ${targetRegion}") }
+                  .getOrElse { sys.error(s"no visual line found intersecting ${bbox}") }
 
               }
 

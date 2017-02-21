@@ -7,6 +7,7 @@ import com.sksamuel.scrimage._
 
 import edu.umass.cs.iesl.watr.images.ImageManipulation
 
+
 case class PageImages(
   images: Seq[Image]
 ) {
@@ -38,6 +39,7 @@ case class PageImages(
 object ExtractImages extends ImageManipulation {
   import ammonite.{ops => fs}, fs._
 
+  implicit val writer = nio.PngWriter.NoCompression
 
   def load(rootPath: Path): PageImages = {
     val images = ls(rootPath)

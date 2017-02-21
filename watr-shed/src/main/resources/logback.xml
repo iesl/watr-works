@@ -16,6 +16,9 @@
   <logger name="net.sf.jsi.rtree" level="OFF" />
   <logger name="com.zaxxer.hikari.pool" level="INFO" />
 
+  // Suppress "rebuilding pdf x-ref table" errors
+  <logger name="com.itextpdf.kernel.pdf" level="OFF" />
+
   <root level="trace">
     <appender-ref ref="STDOUT" />
   </root>

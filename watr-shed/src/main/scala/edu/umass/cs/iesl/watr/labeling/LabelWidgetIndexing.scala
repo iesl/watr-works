@@ -2,12 +2,12 @@ package edu.umass.cs.iesl.watr
 package labeling
 
 import geometry._
-import spindex._
+// import spindex._
 import docstore._
 import LabelWidgetF._
 import corpora._
 import rindex._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 
 object LabelWidgetIndex extends LabelWidgetLayout {
 
@@ -46,15 +46,19 @@ trait LabelWidgetIndex {
   }
 
 
+
   def getWidgetForTargetRegion(targetRegion: TargetRegion): PosAttr = {
+    val stableId = targetRegion.stableId
+    val docId = docStore.getDocument(stableId).get
+    val pageId = docStore.getPage(docId, targetRegion.pageNum).get
     // Map TargetRegion -> PosAttr
     layout
       .collect({
         case p @ PosAttr(
-          LabeledTarget(tr, label, score),
+          LabeledTarget(bbox, pageId, label, score),
           widgetBounds,
           pRegionId, _, _
-        ) if tr.id == targetRegion.id => p
+        ) if targetRegion.id == targetRegion.id => p
       }).headOption
       .getOrElse(sys.error(s"getWidgetForTargetRegion: no entry for ${targetRegion}"))
 
@@ -64,80 +68,81 @@ trait LabelWidgetIndex {
 
   def onSelect(bbox: LTBounds): List[LTBounds] = {
 
-    val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
+    // val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
 
-    val selectedTargets: List[(PosAttr, LabeledTarget)] = positioned.toList
-      .map(p => index.getItem(p.id.unwrap))
-      .filter(_.widget.isInstanceOf[LabeledTarget])
-      .map(p => (p, p.widget.asInstanceOf[LabeledTarget]))
+    // val selectedTargets: List[(PosAttr, LabeledTarget)] = positioned.toList
+    //   .map(p => index.getItem(p.id.unwrap))
+    //   .filter(_.widget.isInstanceOf[LabeledTarget])
+    //   .map(p => (p, p.widget.asInstanceOf[LabeledTarget]))
 
-    val updates: Option[Seq[PosAttr]] = if (selectedTargets.nonEmpty) {
+    // val updates: Option[Seq[PosAttr]] = if (selectedTargets.nonEmpty) {
 
 
-      val targetLabels = selectedTargets.map(_._2.label).toSet
+    //   val targetLabels = selectedTargets.map(_._2.label).toSet
 
-      val updates0: Option[Seq[PosAttr]] = if (targetLabels.size == 1) {
-        // If there is exactly one label present within selected regions..
-        // ... use that label for zone
-        val label = targetLabels.head.get
+    //   val updates0: Option[Seq[PosAttr]] = if (targetLabels.size == 1) {
+    //     // If there is exactly one label present within selected regions..
+    //     // ... use that label for zone
+    //     val label = targetLabels.head.get
 
-        val existingZones: Seq[Zone] = for {
-          (posAttr, target) <- selectedTargets
-          zoneId <- docStore.getZoneForTargetRegion(target.target.id, LB.VisualLine)
-        } yield {
-          docStore.getZone(zoneId)
-        }
+    //     val existingZones: Seq[Zone] = for {
+    //       (posAttr, target) <- selectedTargets
+    //       zoneId <- docStore.getZoneForTargetRegion(target.target, LB.VisualLine)
+    //     } yield {
+    //       docStore.getZone(zoneId)
+    //     }
 
-        // If any selected regions are already part of a zone...
-        val resultZone = if (existingZones.nonEmpty) {
-          // Merge them..
-          val mergedZone: Zone =  ???
-            // docStore.getZone(docStore.mergeZones(existingZones.map(_.id)))
+    //     // If any selected regions are already part of a zone...
+    //     val resultZone = if (existingZones.nonEmpty) {
+    //       // Merge them..
+    //       val mergedZone: Zone =  ???
+    //         // docStore.getZone(docStore.mergeZones(existingZones.map(_.id)))
 
-          // Add all target regions to merged zone
-          selectedTargets.map(tr => docStore.setZoneTargetRegions(
-            mergedZone.id,
-            mergedZone.regions :+ tr._2.target
-          ))
-          Option(mergedZone)
+    //       // Add all target regions to merged zone
+    //       selectedTargets.map(tr => docStore.setZoneTargetRegions(
+    //         mergedZone.id,
+    //         mergedZone.regions :+ tr._2.target
+    //       ))
+    //       Option(mergedZone)
 
-        } else {
-          // Create a new Zone with given label
-          val stableId = selectedTargets.head._2.target.stableId
-          val docId = docStore
-            .getDocument(stableId)
-            .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
+    //     } else {
+    //       // Create a new Zone with given label
+    //       val stableId = selectedTargets.head._2.target.stableId
+    //       val docId = docStore
+    //         .getDocument(stableId)
+    //         .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
 
-          val targetRegions = selectedTargets.map(_._2.target)
-          val newZone = docStore.getZone(
-            docStore.createZone(docId)
-          )
-          docStore.setZoneTargetRegions(newZone.id, targetRegions)
+    //       val targetRegions = selectedTargets.map(_._2.target)
+    //       val newZone = docStore.getZone(
+    //         docStore.createZone(docId)
+    //       )
+    //       docStore.setZoneTargetRegions(newZone.id, targetRegions)
 
-          Option(newZone)
-        }
+    //       Option(newZone)
+    //     }
 
-        resultZone.map({zone =>
-          zone.regions
-            .map(getWidgetForTargetRegion(_))
+    //     resultZone.map({zone =>
+    //       zone.regions
+    //         .map(getWidgetForTargetRegion(_))
 
-        })
-      } else if (targetLabels.nonEmpty) {
-        // Add all selected targets to whatever zone they are presumed to be
-        None
+    //     })
+    //   } else if (targetLabels.nonEmpty) {
+    //     // Add all selected targets to whatever zone they are presumed to be
+    //     None
 
-      } else {
-        // Error: No targets w/labels were selected
-        None
-      }
-      updates0
-    } else {
-      None
-    }
+    //   } else {
+    //     // Error: No targets w/labels were selected
+    //     None
+    //   }
+    //   updates0
+    // } else {
+    //   None
+    // }
 
-    updates
-      .toList.flatten
-      .map(p => p.widgetBounds)
+    // updates
+    //   .toList.flatten
+    //   .map(p => p.widgetBounds)
+    ???
 
   }
 }
