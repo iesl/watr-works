@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
-package table 
+package table
 
 object `package` {
-  
+
 }

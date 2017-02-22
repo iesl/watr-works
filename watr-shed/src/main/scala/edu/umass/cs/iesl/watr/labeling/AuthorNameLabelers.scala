@@ -14,6 +14,7 @@ import corpora._
 import geometry._
 // import geometry.syntax._
 import PageComponentImplicits._
+import scala.collection.mutable
 
 
 

@@ -2,12 +2,8 @@ package edu.umass.cs.iesl.watr
 package labeling
 
 
-// import BioArxiv._
-// import AlignBioArxiv._
-// import display._
 import data._
 import geometry._
-// import PageComponentImplicits._
 
 trait LabelWidgetUtils {
 
@@ -26,6 +22,15 @@ trait LabelWidgetUtils {
     )
   }
 
+  def makePagePanel(body: LabelWidget): LabelWidget = {
+    LW.panel(
+      LW.col(
+        pageControls,
+        body
+      )
+    )
+
+  }
 }
 
 object LabelWidgetUtils extends LabelWidgetUtils

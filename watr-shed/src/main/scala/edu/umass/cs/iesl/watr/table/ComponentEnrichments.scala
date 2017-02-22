@@ -6,8 +6,6 @@ import geometry._
 
 import textreflow.data._
 import textboxing.{TextBoxing => TB}, TB._
-// import watrmarks.{StandardLabels => LB}
-// import TypeTags._
 
 import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import TextReflowConversion._

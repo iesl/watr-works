@@ -283,7 +283,6 @@ class MemDocstore extends DocumentCorpus {
 
 
   def getTargetRegion(regionId: Int@@RegionID): G.TargetRegion = {
-    // println(s"getTargetRegion: ${regionId}, ${modelPage} ${mDocument}")
     val model = targetregions.unique(regionId)
     val modelPage = pages.unique(model.page)
     val mDocument = documents.unique(modelPage.document)

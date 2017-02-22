@@ -120,7 +120,6 @@ class MultiPageIndex(
     val zone = createZone()
     componentIdToZoneId.put(cc.id, zone.id)
     docStore.setTextReflowForZone(zone.id, r)
-    println(s"setTextReflowForZone: ${zone}: ${r.toText}")
   }
 
   def getTextReflowForComponent(ccId: Int@@ComponentID): Option[TextReflow] = {

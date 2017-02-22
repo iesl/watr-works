@@ -150,9 +150,9 @@ class TextReflowDBTables extends DoobiePredef {
     DROP TABLE IF EXISTS zone_to_label;
     DROP TABLE IF EXISTS zone;
     DROP TABLE IF EXISTS label;
+    DROP TABLE IF EXISTS imageclips;
     DROP TABLE IF EXISTS targetregion;
     DROP TABLE IF EXISTS page;
-    DROP TABLE IF EXISTS imageclips;
     DROP TABLE IF EXISTS document;
   """.update
 

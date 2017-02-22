@@ -9,12 +9,10 @@ import watrmarks.{StandardLabels => LB}
 
 import corpora._
 
-// import spindex._
 import scala.collection.mutable
 import textreflow.data._
 import TypeTags._
 import watrmarks._
-// import docstore._
 
 object BioArxiv {
 
@@ -51,6 +49,27 @@ trait BioArxivJsonFormats  {
 
 object BioArxivOps extends BioArxivJsonFormats {
   import BioArxiv._
+
+  def getBioarxivJsonArtifact(corpusEntry: CorpusEntry): Option[PaperRec] = {
+    for {
+      rec      <- corpusEntry.getArtifact("bioarxiv.json")
+      asJson   <- rec.asJson.toOption
+      paperRec <- asJson.validate[PaperRec].fold(
+        (errors: Seq[(JsPath, Seq[ValidationError])]) => {
+          println(s"errors: ${errors.length}")
+
+          errors.take(10).foreach { case (errPath, errs) =>
+            println(s"$errPath")
+            errs.foreach { e =>
+              println(s"> $e")
+            }
+          }
+          None
+
+        }, ps => Option(ps))
+    } yield  paperRec
+  }
+
 
   def loadPaperRecs(path: Path): Option[Map[String, PaperRec]] = {
     val fis = nio.Files.newInputStream(path.toNIO)
@@ -222,10 +241,13 @@ object AlignBioArxiv {
     val lineReflows = for {
       (vlineZone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
     } yield {
+      println(s"${vlineZone}")
 
       val vlineReflow = docStore.getTextReflowForZone(vlineZone.id)
       val reflow = vlineReflow.getOrElse { sys.error(s"no text reflow found for line ${linenum}") }
-      (linenum, reflow, reflow.toText)
+      val text = reflow.toText
+      println(s"  >>${text}<<")
+      (linenum, reflow, text)
     }
 
     val lineTrisAndText = for {
@@ -266,4 +288,7 @@ object AlignBioArxiv {
     )
 
   }
+
+
+
 }
