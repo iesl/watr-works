@@ -258,7 +258,7 @@ class MultiPageIndex(
       val regionId = docStore.addTargetRegion(pageId, totalBounds)
       val targetRegion = docStore.getTargetRegion(regionId)
 
-      val region = createRegionComponent(targetRegion.bbox, pageNum, role)
+      val region = createRegionComponent(targetRegion, role)
 
       val zone = createZone()
 
@@ -271,8 +271,8 @@ class MultiPageIndex(
 
 
 
-  def createRegionComponent(bbox: LTBounds, pageNum: Int@@PageNum, role: Label): RegionComponent = {
-    val region = RegionComponent(componentIdGen.nextId, role, bbox, pageNum, this)
+  def createRegionComponent(targetRegion: TargetRegion, role: Label): RegionComponent = {
+    val region = RegionComponent(componentIdGen.nextId, role, targetRegion, this)
     addComponent(region)
 
     region

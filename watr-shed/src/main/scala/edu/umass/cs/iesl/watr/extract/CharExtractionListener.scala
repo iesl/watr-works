@@ -4,7 +4,6 @@ package extract
 import com.itextpdf.kernel.pdf.PdfPage
 import geometry._
 
-
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 
@@ -160,9 +159,19 @@ class CharExtractionListener(
 
         val charBounds = computeTextBounds(charTri)
 
-        val charBox = charBounds.map(bnds =>
-          CharAtom(charIdGen.nextId, PageID(pageNum.unwrap), bnds, stringRep, code)
-        ).getOrElse ({
+        val charBox = charBounds.map({bnds =>
+          val nextId = charIdGen.nextId
+          CharAtom(nextId,
+            TargetRegion(
+              RegionID(nextId.unwrap),
+              stableId,
+              pageNum,
+              bnds
+            ),
+            stringRep,
+            code
+          )
+        }).getOrElse ({
           val msg = s"ERROR bounds are invalid"
           sys.error(msg)
         })

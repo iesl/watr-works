@@ -34,9 +34,10 @@ trait ArbitraryTextReflows {
   }
 
   implicit def arbCharAtom: Arbitrary[CharAtom] = {
-    (arbTargetRegion |@| arbString |@| arbOption[Int])(
-      CharAtom(_, _, _)
-    )
+    (arbInt |@| arbTargetRegion |@| arbString |@| arbOption[Int])({
+      case (id, tr, cstr, code) =>
+        CharAtom(CharID(id), tr, cstr, code)
+    })
   }
 
 

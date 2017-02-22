@@ -156,14 +156,14 @@ trait GeometryJsonCodecs extends TypeTagFormats {
   implicit val FormatCharAtom: Format[CharAtom] = new Format[CharAtom] {
     override def reads(json: JsValue)= json match {
       case JsObject(fields) => fields.get("c") match {
-        case Some(JsArray(Seq(JsNumber(charId), JsNumber(pageId),  JsString(achar), bboxJs, JsNumber(wonkyCode)))) =>
+        case Some(JsArray(Seq(JsNumber(charId), JsString(achar), targetRegionJs, JsNumber(wonkyCode)))) =>
           JsSuccess(
-            CharAtom(CharID(charId.intValue()), PageID(pageId.intValue()), bboxJs.as[LTBounds], achar, Option(wonkyCode.toInt))
+            CharAtom(CharID(charId.intValue()), targetRegionJs.as[TargetRegion], achar, Option(wonkyCode.toInt))
           )
 
-        case Some(JsArray(Seq(JsNumber(charId), JsNumber(pageId), JsString(achar), bboxJs))) =>
+        case Some(JsArray(Seq(JsNumber(charId), JsString(achar), targetRegionJs))) =>
           JsSuccess(
-            CharAtom(CharID(charId.intValue()), PageID(pageId.intValue()), bboxJs.as[LTBounds], achar, None)
+            CharAtom(CharID(charId.intValue()), targetRegionJs.as[TargetRegion], achar, None)
           )
       }
       case _ => JsError(s"unmatched CharAtom ${json}")
@@ -172,9 +172,9 @@ trait GeometryJsonCodecs extends TypeTagFormats {
     override def writes(o: CharAtom) = o match {
       case a: CharAtom =>
         a.wonkyCharCode.map(ccode =>
-          obj(("c", arr(JsNumber(a.id.unwrap), JsNumber(a.pageId.unwrap), jstr(a.char), toJson(a.bbox), JsNumber(ccode))))
+          obj(("c", arr(JsNumber(a.id.unwrap), jstr(a.char), toJson(a.targetRegion), JsNumber(ccode))))
         ).getOrElse(
-          obj(("c", arr(JsNumber(a.id.unwrap), JsNumber(a.pageId.unwrap), jstr(a.char), toJson(a.bbox))))
+          obj(("c", arr(JsNumber(a.id.unwrap), jstr(a.char), toJson(a.targetRegion))))
         )
     }
   }

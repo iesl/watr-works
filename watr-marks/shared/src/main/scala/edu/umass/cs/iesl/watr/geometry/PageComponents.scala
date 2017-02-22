@@ -75,29 +75,33 @@ case class PageGeometry(
 //   })
 // }
 
-case class CharAtom(
-  id: Int@@CharID,
-  pageId: Int@@PageID,
-  bbox: LTBounds,
-  char: String,
-  wonkyCharCode: Option[Int] = None
-)
-
 // case class CharAtom(
-//   targetRegion: TargetRegion,
+//   id: Int@@CharID,
+//   pageId: Int@@PageID,
+//   bbox: LTBounds,
 //   char: String,
 //   wonkyCharCode: Option[Int] = None
-// ) extends PageAtom {
-//   override def toString = s"CharAtom($char, $targetRegion)"
-// }
+// )
 
-// object CharAtom {
-//   implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
-//     case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
-//       t===t2 && c==c2 && w==w2
-//     case (_, _) => false
-//   })
-// }
+case class CharAtom(
+  id: Int@@CharID,
+  targetRegion: TargetRegion,
+  char: String,
+  wonkyCharCode: Option[Int] = None
+)   {
+  override def toString = s"CharAtom($char, $targetRegion)"
+
+  def bbox: LTBounds = targetRegion.bbox
+}
+
+object CharAtom {
+  implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
+    case (CharAtom(i, t, c, w), CharAtom(i2, t2, c2, w2)) =>
+      i == i2
+      // t===t2 && c==c2 && w==w2
+    case (_, _) => false
+  })
+}
 
 
 // class ImgAtom(

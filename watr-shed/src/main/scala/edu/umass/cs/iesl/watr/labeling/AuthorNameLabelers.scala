@@ -5,7 +5,6 @@ import bioarxiv._
 import BioArxiv._
 import AlignBioArxiv._
 import data._
-// import PageComponentImplicits._
 import textreflow.data._
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}, TB._
@@ -13,7 +12,8 @@ import TypeTags._
 import data._
 import corpora._
 import geometry._
-import geometry.syntax._
+// import geometry.syntax._
+import PageComponentImplicits._
 
 
 
@@ -220,13 +220,15 @@ object AuthorNameLabelers extends LabelWidgetUtils {
 
     val nameLines = highestScoringLines.flatten
 
-
     val allNames = nameLines.map({ case (namesReflow, authorNames) =>
       val namesText = namesReflow.toText()
-      val bbox = namesReflow.bounds()
-      val pageIds = namesReflow.charAtoms.map(_.pageId).toSet
-      val pageId = pageIds.head
-      val namesTarget = LW.targetOverlay(bbox, pageId, List())
+      val target = namesReflow.targetRegion()
+      val namesTarget = LW.targetOverlay(target, List())
+
+      // val bbox = namesReflow.bounds()
+      // val pageIds = namesReflow.charAtoms.map(_.pageId).toSet
+      // val pageId = pageIds.head
+      // val namesTarget = LW.targetOverlay(bbox, pageId, List())
 
       // Try super/subscript split:
       val splitSuperscripts = labelSplit(namesReflow, LB.Sup)
@@ -250,9 +252,12 @@ object AuthorNameLabelers extends LabelWidgetUtils {
           .filter(_._2.isDefined)
           .map(_._1)
 
+
         val candidates = labelTargetRegions
           .foldLeft((namesReflow, List[TextReflow]()))({case ((accReflow, splits), elemReflow) =>
-            val splitTr = accReflow.bounds.splitHorizontal(elemReflow.bounds)
+            // val splitTr = accReflow.bounds.splitHorizontal(elemReflow.bounds)
+            val elemTargetRegion = elemReflow.targetRegion()
+            val splitTr = accReflow.targetRegion().splitHorizontal(elemTargetRegion)
             // val local = elemReflow :: (splitTr.map({tr =>
             //   accReflow.clipToTargetRegion(tr).map(_._1).toList
             // })).flatten
@@ -297,7 +302,7 @@ object AuthorNameLabelers extends LabelWidgetUtils {
       val nameWidgets = nameReflows
         .map({n =>
           LW.pad(
-            LW.targetOverlay(n.bounds(), List()),
+            LW.targetOverlay(n.targetRegion, List()),
             Padding(left=0, top=0, right=0, bottom=2)
           )
         })

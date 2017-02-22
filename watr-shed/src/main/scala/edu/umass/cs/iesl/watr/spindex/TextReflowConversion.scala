@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import watrmarks._
-import geometry.CharAtom
 
 object TextReflowConversion {
   import textboxing.{TextBoxing => TB}

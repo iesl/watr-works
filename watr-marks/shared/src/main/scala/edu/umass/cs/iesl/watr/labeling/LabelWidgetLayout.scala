@@ -111,9 +111,9 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     // Bottom-up first pass evaluator
     def positionAttrs: GAlgebra[(LabelWidget, ?), LabelWidgetF, PosAttr] = fwa => {
       fwa match {
-        case flw @ TargetOverlay(under, pageId, overs)  =>
-          val selfPosition = under.toPoint(CDir.NW)
-          val bbox = under.moveToOrigin
+        case flw @ TargetOverlay(under, overs)  =>
+          val selfPosition = under.bbox.toPoint(CDir.NW)
+          val bbox = under.bbox.moveToOrigin
           val (_, childAdjustVecs) = computeOffsets(overs,
             {(cbbox, overpos) =>
               val childPosition = overpos.selfOffset
@@ -122,9 +122,9 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
           PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
-        case flw @ LabeledTarget(target, pageId, label, score)   =>
-          val bbox = target.moveToOrigin()
-          val positionVec = target.toPoint(CDir.NW)
+        case flw @ LabeledTarget(target, label, score)   =>
+          val bbox = target.bbox.moveToOrigin()
+          val positionVec = target.bbox.toPoint(CDir.NW)
           PosAttr(F.void(flw), bbox, idgen.nextId, positionVec)
 
         case flw @ Col(attrs) =>
@@ -243,4 +243,3 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
   }
 
 }
-

@@ -90,11 +90,13 @@ object MITAlignPredsynth {
               log.debug(s"found mention: ${reflowSliceText}")
 
               // TODO The following should be captured by something like textReflow.intersectPages(LB.VisualLine, ..) function
-              val targetRegions = reflowSlice.bounds
+              val targetRegions = reflowSlice.targetRegions()
 
-              val intersectedVisualLines  = reflowSlice.charAtoms.map{ case CharAtom(charId, pageId, bbox, char, _) =>
-                val pageNum = docStore.getPage(docId, pageId).get
+              val intersectedVisualLines  = reflowSlice.charAtoms.map{ case CharAtom(charId, targetRegion, char, _) =>
+                val pageNum = targetRegion.pageNum
+                val pageId = docStore.getPage(docId, pageNum)
                 val pageIndex = mpageIndex.getPageIndex(pageNum)
+                val bbox = targetRegion.bbox
 
                 pageIndex.componentIndex
                   .queryForIntersects(bbox)

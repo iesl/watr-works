@@ -29,18 +29,15 @@ object LabelWidgetF {
   type LabelWidgetPosAttr = LabelWidgetF[LabelWidgetAttr[PosAttr]]
 
   case class TargetOverlay[A](
-    under: LTBounds,
-    pageId: Int@@PageID,
+    under: TargetRegion,
     overs: List[A]
   ) extends LabelWidgetF[A]
 
   case class LabeledTarget(
-    target: LTBounds,
-    pageId: Int@@PageID,
+    target: TargetRegion,
     label: Option[Label],
     score: Option[Double]
   ) extends LabelWidgetF[Nothing]
-
 
   case class TextBox(
     textBox: TB.Box
@@ -49,10 +46,6 @@ object LabelWidgetF {
   case class Reflow(
     textReflow: TextReflow
   ) extends LabelWidgetF[Nothing]
-
-  // case class RangeSelection(
-  //   range: (Int, Int)
-  // ) extends LabelWidgetF[Nothing]
 
 
   // Overlay that accepts mouse gesture input
@@ -100,8 +93,8 @@ object LabelWidgetF {
 
   implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
     def apply[A](show: Show[A]) = Show.show {
-      case l @ TargetOverlay(under, pageId, overs)           => s"$l"
-      case l @ LabeledTarget(target, pageId, label, score)   => s"label-target"
+      case l @ TargetOverlay(under, overs)           => s"$l"
+      case l @ LabeledTarget(target, label, score)   => s"label-target"
       case l @ Reflow(tr)                  => s"reflow()"
       case l @ TextBox(tb)                 => s"textbox"
       case l @ Button(action)              => s"$l"
@@ -122,11 +115,17 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
-  def targetOverlay(tr: LTBounds, pageId: Int@@PageID, overs: Seq[LabelWidget]) =
-    fixlw(TargetOverlay(tr, pageId, overs.toList))
+  def targetOverlay(tr: TargetRegion, overs: Seq[LabelWidget]) =
+    fixlw(TargetOverlay(tr, overs.toList))
 
-  def labeledTarget(target: LTBounds, pageId: Int@@PageID, label: Option[Label]=None, score: Option[Double]=None) =
-    fixlw(LabeledTarget(target, pageId, label, score))
+  def labeledTarget(target: TargetRegion, label: Option[Label]=None, score: Option[Double]=None) =
+    fixlw(LabeledTarget(target, label, score))
+
+  // def targetOverlay(tr: LTBounds, pageId: Int@@PageID, overs: Seq[LabelWidget]) =
+  //   fixlw(TargetOverlay(tr, pageId, overs.toList))
+
+  // def labeledTarget(target: LTBounds, pageId: Int@@PageID, label: Option[Label]=None, score: Option[Double]=None) =
+  //   fixlw(LabeledTarget(target, pageId, label, score))
 
   def reflow(tr: TextReflow) =
     fixlw(Reflow(tr))

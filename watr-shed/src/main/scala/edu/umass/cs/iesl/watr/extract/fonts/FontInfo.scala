@@ -17,7 +17,6 @@ import com.itextpdf.kernel.pdf.PdfDictionary;
 import com.itextpdf.kernel.pdf.PdfObject
 import itextpdf.kernel.pdf.canvas.parser.data._
 
-
 import textboxing.{TextBoxing => TB}, TB._
 
 import com.itextpdf.kernel.geom.{Vector => PVector}
@@ -28,7 +27,6 @@ import utils.EnrichNumerics._
 
 object DocumentFontInfo {
 
-  import TB._
 
   def getPdfStringInfo(pdfFont: PdfFont, pdfString: PdfString, reader: PdfReader): Box = {
 

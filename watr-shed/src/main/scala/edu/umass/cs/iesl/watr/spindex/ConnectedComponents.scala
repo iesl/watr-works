@@ -11,7 +11,7 @@ import scalaz.Tree
 import scala.collection.mutable
 
 import watrmarks.{StandardLabels => LB}
-import TypeTags._
+// import TypeTags._
 
 // TODO move and/or delete this
 case class BioNode(
@@ -150,9 +150,7 @@ sealed trait Component {
 case class RegionComponent(
   id: Int@@ComponentID,
   override val roleLabel: Label,
-  // var region: TargetRegion,
-  var region: LTBounds,
-  pageNum: Int@@PageNum,
+  initTargetRegion: TargetRegion,
   override val mpageIndex: MultiPageIndex
 ) extends Component {
 
@@ -186,12 +184,14 @@ case class RegionComponent(
 
   private def initRegionFromAtoms(atoms: Seq[AtomicComponent]): RegionComponent = {
     val initRegion = initCloneAs(roleLabel)
-    // val newRegion = initRegion.copy(
-    //   region = initRegion.targetRegion.copy(
-    //     bbox = cbounds(atoms)))
+    // initRegion.targetRegion.copy(left: Double, top: Double, width: Double, height: Double)
 
     val newRegion = initRegion.copy(
-      region = cbounds(atoms))
+      initTargetRegion = initRegion.targetRegion.copy(
+        bbox = cbounds(atoms)))
+
+    // val newRegion = initRegion.copy(
+    //   region = cbounds(atoms))
 
     newRegion.setChildren(LB.PageAtom, atoms)
     mpageIndex.addComponent(newRegion)
@@ -200,12 +200,12 @@ case class RegionComponent(
 
   private def initRegion(newLabel: Label, children: Seq[Component]): RegionComponent = {
     val initRegion = initCloneAs(newLabel)
-    // val newRegion = initRegion.copy(
-    //   region = initRegion.targetRegion.copy(
-    //     bbox = cbounds(children)))
-
     val newRegion = initRegion.copy(
-      region = cbounds(children))
+      initTargetRegion = initRegion.targetRegion.copy(
+        bbox = cbounds(children)))
+
+    // val newRegion = initRegion.copy(
+    //   region = cbounds(children))
 
     newRegion.setChildren(newLabel, children)
     mpageIndex.addComponent(newRegion)
@@ -262,8 +262,8 @@ case class RegionComponent(
       })
   }
 
-  def targetRegion: LTBounds = region
-  def bounds: LTBounds = region
+  def targetRegion: TargetRegion = initTargetRegion 
+  def bounds: LTBounds = targetRegion.bbox
 
   def chars: String = {
     queryAtoms().map(_.char).mkString
@@ -271,10 +271,9 @@ case class RegionComponent(
 
   override def toString(): String = {
     val lls = getLabels.mkString(",")
-    s"<${roleLabel.key}.${id} ${region}${lls}>"
+    s"<${roleLabel.key}.${id} ${targetRegion}${lls}>"
   }
 }
-
 
 case class AtomicComponent(
   id: Int@@ComponentID,
@@ -291,7 +290,8 @@ case class AtomicComponent(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
-    val newRegion = mpageIndex.createRegionComponent(charAtom.bbox, PageNum(charAtom.pageId.unwrap), LB.NullLabel) // FIXME <- nulllabel????
+    val newRegion = mpageIndex.createRegionComponent(charAtom.targetRegion, LB.NullLabel) // FIXME <- nulllabel?
+
     onGrouped(newRegion, 0)
     Seq(newRegion)
   }
@@ -305,12 +305,11 @@ case class AtomicComponent(
 
   def roleLabel: Label = LB.PageAtom
 
-
   def char: String = charAtom.char
 
   val bounds = charAtom.bbox
 
-  def targetRegion: LTBounds = bounds
+  def targetRegion: TargetRegion = charAtom.targetRegion
 
   def chars: String = char
 

@@ -9,7 +9,6 @@ import labeling.data._
 import TypeTags._
 import corpora._
 
-// import watrmarks.{StandardLabels => LB}
 class LabelWidgetsSpec extends FlatSpec with Matchers with PlainTextCorpus with LabelWidgetLayout {
 
   behavior of "label widgets"

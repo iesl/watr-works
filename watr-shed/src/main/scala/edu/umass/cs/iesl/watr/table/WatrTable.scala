@@ -74,6 +74,7 @@ object WatrTable {
 
 object ShellCommands extends CorpusEnrichments {
 
+
   def initReflowDB(dbname: String): TextReflowDB = {
     val doLogging = false
     val loggingProp = if (doLogging) "?loglevel=2" else ""
@@ -223,7 +224,7 @@ object ShellCommands extends CorpusEnrichments {
         (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
         lineReflow      <- theDocumentCorpus.getTextReflowForZone(zone.id)
       } yield {
-        val lt = LW.labeledTarget(lineReflow.bounds(), pageId, None, None)
+        val lt = LW.labeledTarget(lineReflow.targetRegion, None, None)
         (linenum, (0d, lt))
       }
 
@@ -242,10 +243,10 @@ object ShellCommands extends CorpusEnrichments {
 
         lineScores.foreach({case (linenum, score) =>
           val lineReflow = alignScores.lineReflows(linenum)
-          val lineBounds = lineReflow.bounds
+          val lineBounds = lineReflow.targetRegion()
           val normalScore = score/maxScore
 
-          val lt = LW.labeledTarget(lineBounds, pageId, Some(label), Some(normalScore))
+          val lt = LW.labeledTarget(lineBounds, Some(label), Some(normalScore))
 
           if (allLineScores.contains(linenum)) {
             val Some((currScore, currWidget)) = allLineScores.get(linenum)
@@ -274,7 +275,7 @@ object ShellCommands extends CorpusEnrichments {
       )
 
       val body = LW.row(
-        LW.targetOverlay(pageTargetRegion.bbox, pageId, lwidgets),
+        LW.targetOverlay(pageTargetRegion, lwidgets),
         paperRecWidget
       )
 
@@ -329,9 +330,8 @@ object ShellCommands extends CorpusEnrichments {
       val titlePreselects = vlines.drop(0).take(2)
 
       val halfPageWSelects = LW.targetOverlay(
-        pageTargetRegion.bbox,
-        pageId,
-        titlePreselects.map(t => LW.labeledTarget(t.bbox, pageId))
+        pageTargetRegion,
+        titlePreselects.map(t => LW.labeledTarget(t))
       )
 
       // val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)

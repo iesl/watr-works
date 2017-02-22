@@ -1,8 +1,6 @@
 package edu.umass.cs.iesl.watr
 package corpora
 
-// TODO plaintext corpus is primarily a testing util, but has a mix of testing and production code,
-//   which need to separate
 
 import textreflow._
 import watrmarks.{StandardLabels => LB}
@@ -193,10 +191,11 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
                 }
 
                 val charAtom = CharAtom(
-                  charIds.nextId, pageId,
-                  LTBounds(left=chnum.toDouble, top=linenum.toDouble, width=1d, height=1d),
+                  charIds.nextId,
+                  mkTargetRegion(pageId, x=chnum, y=linenum, w=1, h=1),
                   ch.toString
                 )
+
                 reflowBuilder.insertDownLast(Atom(charAtom))
                 reflowBuilder.pop()
             }
@@ -236,7 +235,12 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
         left=chnum*xscale, top=linenum*yscale,
         width=xscale, height=yscale
       )
-      CharAtom(charIds.nextId, pageId, bbox, ch.toString)
+      CharAtom(
+        charIds.nextId,
+        mkTargetRegion(pageId, x=chnum, y=linenum, w=1, h=1),
+        ch.toString
+      )
+      // CharAtom(charIds.nextId, pageId, bbox, ch.toString)
 
     }
 
@@ -250,7 +254,11 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
               width=xscale, height=yscale
             )
 
-            CharAtom(charIds.nextId, pageId, bbox, ch.toString)
+            CharAtom(
+              charIds.nextId,
+              mkTargetRegion(pageId, x=chnum, y=linenum, w=1, h=1),
+              ch.toString
+            )
           })
       })
       .flatten.toSeq

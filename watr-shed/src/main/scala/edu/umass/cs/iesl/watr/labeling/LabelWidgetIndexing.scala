@@ -9,6 +9,7 @@ import corpora._
 import rindex._
 // import watrmarks.{StandardLabels => LB}
 
+
 object LabelWidgetIndex extends LabelWidgetLayout {
 
   implicit object LabelWidgetIndexable extends SpatialIndexable[PosAttr] {
@@ -55,7 +56,7 @@ trait LabelWidgetIndex {
     layout
       .collect({
         case p @ PosAttr(
-          LabeledTarget(bbox, pageId, label, score),
+          LabeledTarget(bbox, label, score),
           widgetBounds,
           pRegionId, _, _
         ) if targetRegion.id == targetRegion.id => p
