@@ -40,11 +40,13 @@ class TextReflowDB(
   import scalaz.concurrent.Task
   import doobie.hikari.imports._
 
-  val xa: Transactor[Task] = (for {
+  val xa: HikariTransactor[Task] = (for {
     xa <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
     _  <- xa.configure(hx => Task.delay( /* do something with hx */ ()))
   } yield xa).unsafePerformSync
 
+
+  def shutdown() = xa.shutdown
 
   def runq[A](query: C.ConnectionIO[A]): A = {
     // time("runq") {
@@ -77,10 +79,20 @@ class TextReflowDB(
       .query[Model.TargetRegion].unique
   }
 
-  def selectTargetRegionForUri(uri: String): ConnectionIO[Option[Model.TargetRegion]] = {
-    sql"""select * from targetregion where uri=${uri}"""
-      .query[Model.TargetRegion].option
+  def selectTargetRegionForBbox(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Option[Model.TargetRegion]] = {
+    val LTBounds(l, t, w, h) = bbox
+    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+
+    sql""" select * from targetregion where
+       bleft=${bl} AND btop=${bt} AND
+       bwidth=${bw} AND bheight=${bt}
+    """.query[Model.TargetRegion].option
   }
+
+  // def selectTargetRegionForUri(uri: String): ConnectionIO[Option[Model.TargetRegion]] = {
+  //   sql"""select * from targetregion where uri=${uri}"""
+  //     .query[Model.TargetRegion].option
+  // }
 
   def selectTargetRegions(pageId: Int@@PageID): ConnectionIO[List[Int@@RegionID]] = {
     sql""" select targetregion from targetregion where page=${pageId} """
@@ -110,11 +122,11 @@ class TextReflowDB(
   }
 
 
-  def insertTextReflow(zonePk: Int@@ZoneID, textReflowJs: String): ConnectionIO[Int] = {
+  def insertTextReflow(zonePk: Int@@ZoneID, textReflowJs: String, asText: String): ConnectionIO[Int] = {
     for {
       pk <- sql"""
-       insert into textreflow (reflow, zone)
-       values (${textReflowJs}, ${zonePk})
+       insert into textreflow (reflow, astext, zone)
+       values (${textReflowJs}, $asText, ${zonePk})
       """.update.withUniqueGeneratedKeys[Int]("textreflow")
     } yield pk
   }
@@ -361,12 +373,10 @@ class TextReflowDB(
 
     for {
       page         <- selectPage(pageId)
-      doc          <- selectDocument(page.document)
-      uri           = createTargetRegionUri(doc.stableId, page.pagenum, bbox)
-      maybeRegion  <- selectTargetRegionForUri(uri)
+      maybeRegion  <- selectTargetRegionForBbox(pageId, bbox)
       regionId     <- maybeRegion.fold(
-          sql"""insert into targetregion (page, imageclip, bleft, btop, bwidth, bheight, uri)
-                 values ($pageId, null, $bl, $bt, $bw, $bh, $uri)
+          sql"""insert into targetregion (page, imageclip, bleft, btop, bwidth, bheight)
+                 values ($pageId, null, $bl, $bt, $bw, $bh)
              """.update.withUniqueGeneratedKeys[Int]("targetregion").map(RegionID(_))
       )(tr => FC.delay(tr.prKey))
     } yield regionId
@@ -549,8 +559,9 @@ class TextReflowDB(
     def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
       import TextReflowJsonCodecs._
       val js = textReflow.toJson()
+      val str = textReflow.toText()
       val jsStr = Json.stringify(js)
-      runq { insertTextReflow(zoneId, jsStr) }
+      runq { insertTextReflow(zoneId, jsStr, str) }
     }
 
     def deleteZone(zoneId: Int@@ZoneID): Unit = {

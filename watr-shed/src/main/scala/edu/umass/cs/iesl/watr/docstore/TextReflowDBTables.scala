@@ -73,21 +73,22 @@ class TextReflowDBTables extends DoobiePredef {
         bleft         INTEGER,
         btop          INTEGER,
         bwidth        INTEGER,
-        bheight       INTEGER,
-        uri           VARCHAR(256) UNIQUE NOT NULL
+        bheight       INTEGER
       );
-      CREATE INDEX targetregion_uri ON targetregion USING hash (uri);
       CREATE INDEX targetregion_idx0 ON targetregion (page);
     """.update
+  // CREATE INDEX targetregion_uri ON targetregion USING hash (uri);
+  // uri           VARCHAR(256) UNIQUE NOT NULL
 
 
   val createTextReflowTable: Update0 = sql"""
       CREATE TABLE textreflow (
         textreflow  SERIAL PRIMARY KEY,
         reflow      TEXT NOT NULL,
+        astext      TEXT NOT NULL,
         zone        INTEGER REFERENCES zone
       );
-      CREATE INDEX textreflow_idx0 ON textreflow (zone);
+      CREATE UNIQUE INDEX textreflow_idx0 ON textreflow (zone);
     """.update
 
 
@@ -150,9 +151,9 @@ class TextReflowDBTables extends DoobiePredef {
     DROP TABLE IF EXISTS zone_to_label;
     DROP TABLE IF EXISTS zone;
     DROP TABLE IF EXISTS label;
-    DROP TABLE IF EXISTS imageclips;
     DROP TABLE IF EXISTS targetregion;
     DROP TABLE IF EXISTS page;
+    DROP TABLE IF EXISTS imageclips;
     DROP TABLE IF EXISTS document;
   """.update
 

@@ -547,8 +547,8 @@ object ComponentOperations {
 
         val maybeReflow = toTextReflow(theComponent)
 
-        maybeReflow.foreach {
-          theComponent.setTextReflow(_)
+        maybeReflow.foreach { r =>
+          theComponent.mpageIndex.setTextReflowForComponent(theComponent, r)
         }
 
 
@@ -579,10 +579,6 @@ object ComponentOperations {
         .foldLeft(theComponent.atoms.head.bounds)( { case (b1, b2) =>
           b1 union b2
         })
-    }
-
-    def setTextReflow(r: TextReflow): Unit = {
-      theComponent.mpageIndex.setTextReflowForComponent(theComponent, r)
     }
 
     def getTextReflow(): Option[TextReflow]= {

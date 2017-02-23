@@ -402,13 +402,14 @@ class DocumentSegmenter(
     } yield textReflow
 
     val joined = visualLines.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
-    textBlockRegion.setTextReflow(joined)
+    // textBlockRegion.setTextReflow(joined)
 
-    vtrace.trace("Text Block TextReflow" withInfo {
-      s"Joining ${visualLines.length} VisualLines".box atop
-      joined.toText().box
-      // (joined.toText().box atop prettyPrintTree(joined))
-    })
+    // vtrace.trace("Text Block TextReflow" withInfo {
+    //   s"Joining ${visualLines.length} VisualLines".box atop
+    //   joined.toText().box
+    //   // (joined.toText().box atop prettyPrintTree(joined))
+    // })
+
   }
 
   def findTextBlocksPerPage(): Seq[RegionComponent] = {
@@ -624,13 +625,15 @@ class DocumentSegmenter(
           visualLine.setChildren(LB.PageAtom, line.sortBy(_.bounds.left))
           visualLine.cloneAndNest(LB.TextSpan)
 
+          // TODO: get rid of uri in VisualLine
           val uriStr = visualLine.targetRegion.uriString
           val vlineLabel = LB.VisualLine(uriStr)
-
           visualLine.removeLabel(LB.VisualLine)
           visualLine.addLabel(vlineLabel)
-
           // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
+          val zoneId = docStore.createZone(docId)
+          docStore.setZoneTargetRegions(zoneId, List(visualLine.targetRegion))
+          docStore.addZoneLabel(zoneId, LB.VisualLine)
 
           visualLine
         })

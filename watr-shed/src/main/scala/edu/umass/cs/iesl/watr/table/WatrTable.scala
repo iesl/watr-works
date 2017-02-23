@@ -22,11 +22,15 @@ object WatrTable {
   def main(args: Array[String]): Unit = {
     val dbname = args(0)
 
+    val db = initReflowDB(dbname)
+
     replMain().run(
       "corpus" -> initCorpus(),
-      "db" -> initReflowDB(dbname),
+      "db" -> db,
       "barx" -> BioArxivOps
     )
+
+    db.shutdown()
   }
 
   val predef =

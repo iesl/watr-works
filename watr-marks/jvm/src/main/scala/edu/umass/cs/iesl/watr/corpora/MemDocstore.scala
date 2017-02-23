@@ -7,6 +7,7 @@ import edu.umass.cs.iesl.watr.{watrmarks => W}
 import scala.collection.mutable
 import TypeTags._
 import textreflow._
+import textreflow.data._
 import TextReflowF._
 import watrmarks.Label
 import geometry._
@@ -30,8 +31,7 @@ object Model {
     prKey      : Int@@RegionID,
     page       : Int@@PageID,
     imageclip  : Option[Int@@ImageID],
-    bounds     : G.LTBounds,
-    uri        : String
+    bounds     : G.LTBounds
   )
 
   case class ImageClip(
@@ -45,9 +45,10 @@ object Model {
   )
 
   case class TextReflow(
-    prKey    : Int@@TextReflowID,
-    reflow   : String,
-    zone     : Int@@ZoneID
+    prKey     : Int@@TextReflowID,
+    reflow    : String,
+    astext    : String,
+    zone      : Int@@ZoneID
   )
 
   case class Label(
@@ -178,7 +179,7 @@ class MemDocstore extends DocumentCorpus {
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
 
       def add(pageId: Int@@PageID, bbox: G.LTBounds): Model.TargetRegion = {
-        val rec = Model.TargetRegion(nextId(), pageId, None, bbox, "")
+        val rec = Model.TargetRegion(nextId(), pageId, None, bbox)
         insert(rec.prKey, rec)
         forPage.addEdge(pageId, rec.prKey)
         rec
@@ -193,8 +194,9 @@ class MemDocstore extends DocumentCorpus {
         import TextReflowJsonCodecs._
         import play.api.libs.json
         val asJson = t.toJson()
-        val asStr = json.Json.stringify(asJson)
-        val rec = Model.TextReflow(nextId(), asStr, zoneId)
+        val asText = t.toText()
+        val jsstr = json.Json.stringify(asJson)
+        val rec = Model.TextReflow(nextId(), jsstr, asText, zoneId)
         this.insert(rec.prKey, rec)
         rec
       }

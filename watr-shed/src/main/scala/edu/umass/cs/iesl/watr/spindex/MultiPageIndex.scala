@@ -110,26 +110,28 @@ class MultiPageIndex(
 
   // FIXME: remove this kludge
   //   map component to zone when there is a 1-to-1 correspondence and a TextReflow for the Zone involved
-  val componentIdToZoneId: mutable.HashMap[Int@@ComponentID, Int@@ZoneID] = mutable.HashMap()
+  // val componentIdToZoneId: mutable.HashMap[Int@@ComponentID, Int@@ZoneID] = mutable.HashMap()
+  val componentIdToRegionId: mutable.HashMap[Int@@ComponentID, Int@@RegionID] = mutable.HashMap()
 
-  def getZoneForComponent(cc: Int@@ComponentID): Option[Int@@ZoneID] = {
-    componentIdToZoneId.get(cc)
+  def getTargetRegionForComponent(cc: Int@@ComponentID): Option[Int@@RegionID] = {
+    componentIdToRegionId.get(cc)
   }
 
   def setTextReflowForComponent(cc: Component, r: TextReflow): Unit = {
-    val zone = createZone()
-    componentIdToZoneId.put(cc.id, zone.id)
-    docStore.setTextReflowForZone(zone.id, r)
+    val zoneId = docStore
+      .getZoneForTargetRegion(cc.targetRegion.id, LB.VisualLine)
+      .getOrElse {  sys.error(s"setTextReflowForComponent: no VisualLine component found ${cc}: ${r}") }
+
+    docStore.setTextReflowForZone(zoneId, r)
   }
 
   def getTextReflowForComponent(ccId: Int@@ComponentID): Option[TextReflow] = {
     // TODO kludge: find a zone that has this Component as it's sole member and return its TextReflow
     for {
-      zoneId <- componentIdToZoneId.get(ccId)
+      regionId <- componentIdToRegionId.get(ccId)
+      zoneId <- docStore.getZoneForTargetRegion(regionId, LB.VisualLine)
       reflow <- docStore.getTextReflowForZone(zoneId)
-    } yield {
-      reflow
-    }
+    } yield { reflow }
   }
 
   def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
@@ -242,7 +244,7 @@ class MultiPageIndex(
 
   def labelRegion(components: Seq[Component], role: Label): Option[RegionComponent] = {
     if (components.isEmpty) None else {
-      val charBounds = components.map(_.bounds)
+      val totalBounds = components.map(_.bounds).reduce(_ union _)
       val targetPages = components.map(_.pageNum.unwrap)
       val numOfTargetPages =  targetPages.toSet.size
 
@@ -253,16 +255,11 @@ class MultiPageIndex(
       val pageNum =  PageNum(targetPages.head)
 
       val pageId = docStore.getPage(docId, pageNum).get
-      val totalBounds = charBounds.reduce(_ union _)
       val regionId = docStore.addTargetRegion(pageId, totalBounds)
       val targetRegion = docStore.getTargetRegion(regionId)
 
       val region = createRegionComponent(targetRegion, role)
-
-      val zone = createZone()
-
-      addZoneTargetRegions(zone.id, Seq(targetRegion))
-      addZoneLabel(zone.id, role)
+      componentIdToRegionId.put(region.id, targetRegion.id)
 
       Some(region)
     }
