@@ -547,7 +547,6 @@ class TextReflowDB(
     }
 
     def getZoneForTargetRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
-      println(s"getZoneForTargetRegion ${regionId} ${label}")
       runq { selectZoneForTargetRegion(regionId, label) }
     }
 
