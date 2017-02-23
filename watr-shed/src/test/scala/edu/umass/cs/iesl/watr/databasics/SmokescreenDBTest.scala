@@ -28,12 +28,12 @@ class Smokescreen extends FlatSpec with Matchers {
     """.update
 
   // ALTER TABLE person DISABLE TRIGGER post_delete_trigger;
-  val setupInsertTriggers = (
+  val enableInsertTriggers = (
     sql"""
        ALTER TABLE person ENABLE TRIGGER post_insert_trigger;
      """.update)
   // ALTER TABLE person ENABLE TRIGGER post_delete_trigger;
-  val setupDeleteTriggers = (
+  val disableInsertTriggers = (
     sql"""
        ALTER TABLE person DISABLE TRIGGER post_insert_trigger;
      """.update)
@@ -80,19 +80,8 @@ class Smokescreen extends FlatSpec with Matchers {
 
       CREATE OR REPLACE FUNCTION delete_row_func() RETURNS TRIGGER AS $$func$$
           BEGIN
-              -- UPDATE person SET rank = rank-1
-              --     WHERE rank = OLD.rank+1 AND age=OLD.age;
               UPDATE person SET rank = rank-1
                   WHERE rank > OLD.rank AND age=OLD.age;
-
-              RETURN OLD;
-          END;
-      $$func$$ LANGUAGE plpgsql;
-
-      CREATE OR REPLACE FUNCTION post_delete_func() RETURNS TRIGGER AS $$func$$
-          BEGIN
-              UPDATE person SET rank = rank-1
-                  WHERE rank = OLD.rank+1 AND age=OLD.age;
 
               RETURN OLD;
           END;
@@ -114,17 +103,10 @@ class Smokescreen extends FlatSpec with Matchers {
           BEFORE UPDATE ON person
           FOR EACH ROW EXECUTE PROCEDURE post_insert_func();
 
-
       CREATE TRIGGER delete_row_trigger
           BEFORE DELETE ON person
           FOR EACH ROW EXECUTE PROCEDURE delete_row_func();
 
-      -- CREATE TRIGGER post_delete_trigger
-          -- BEFORE UPDATE ON person
-          -- FOR EACH ROW EXECUTE PROCEDURE post_delete_func();
-
-      -- ALTER TABLE person DISABLE TRIGGER post_insert_trigger;
-      -- ALTER TABLE person DISABLE TRIGGER post_delete_trigger;
    """.update)
   import xa.yolo._
 
@@ -135,7 +117,6 @@ class Smokescreen extends FlatSpec with Matchers {
 
   def appendPerson(name: String, age: Int): Unit = {
     val query = for {
-      _ <- setupInsertTriggers.run
       x <- sql""" insert into person (name, age) values($name, $age) """.update.run
     } yield x
 
@@ -143,7 +124,6 @@ class Smokescreen extends FlatSpec with Matchers {
   }
   def insertPersonAt(name: String, age: Int, rank: Int): Unit = {
     val query = for {
-      _ <- setupInsertTriggers.run
       x <- sql""" insert into person (name, age, rank) values($name, $age, $rank) """.update.run
     } yield x
 
@@ -151,7 +131,6 @@ class Smokescreen extends FlatSpec with Matchers {
   }
   def prependPerson(name: String, age: Int): Unit = {
     val query = for {
-      _ <- setupInsertTriggers.run
       x <- sql""" insert into person (name, age, rank) values($name, $age, 0) """.update.run
     } yield x
 
@@ -160,8 +139,9 @@ class Smokescreen extends FlatSpec with Matchers {
 
   def removePerson(name: String, age: Int): Unit = {
     val query = for {
-      _ <- setupDeleteTriggers.run
+      _ <- disableInsertTriggers.run
       x <- sql"delete from person where name=$name AND age=$age".update.run
+      _ <- enableInsertTriggers.run
     } yield x
 
     query.quick.unsafePerformSync
