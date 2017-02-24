@@ -8,7 +8,7 @@ import org.scalatest._
 
 import doobie.imports._
 
-class Smokescreen extends FlatSpec with Matchers {
+class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
   val xa = DriverManagerTransactor[Task](
     "org.postgresql.Driver",
     "jdbc:postgresql:watrdev",
@@ -29,80 +29,6 @@ class Smokescreen extends FlatSpec with Matchers {
     """.update
 
 
-  def defineTrigger(tablename: Fragment, name: Fragment, decls: Fragment, body: Fragment, onInsert: Boolean): Update0 = {
-    val funcname = name ++ fr0"_" ++ tablename
-    val triggerName = name ++ fr0"_" ++ tablename ++ fr0"_trigger"
-    val onClause = if (onInsert) fr"INSERT" else fr"DELETE"
-
-    val frag = fr"""
-       CREATE OR REPLACE FUNCTION """ ++ funcname ++ fr0"""() RETURNS TRIGGER AS $$func$$
-         DECLARE """ ++ decls ++ fr""";
-         BEGIN
-         """ ++ body ++ fr"""
-         END;
-       $$func$$ LANGUAGE plpgsql;
-
-       DROP TRIGGER IF EXISTS """ ++ triggerName ++ fr""" ON """ ++ tablename ++ fr""";
-       CREATE TRIGGER """ ++ triggerName ++ fr"""
-         BEFORE """ ++ onClause ++ fr"ON" ++ tablename ++ fr"""
-         FOR EACH ROW EXECUTE PROCEDURE """ ++ funcname ++ fr"""();
-     """
-    println(frag.toString())
-    frag.update
-  }
-
-  def defineOrderingTriggers(table: Fragment, keycol: Fragment): ConnectionIO[Int] = {
-    val aliases = List(
-      fr"maxrank integer",
-      fr"nextrank integer",
-      fr0"rec ALIAS FOR NEW"
-    ).intercalate(fr"; ")
-
-    val keytest =  keycol ++fr0"""=rec.""" ++ keycol
-
-    val insertTrigger = defineTrigger(
-      table,
-      fr0"insert_row_func",
-      aliases,
-      fr"""
-         maxrank := (SELECT MAX(rank) FROM """ ++ table ++ fr""" WHERE """ ++ keytest ++ fr""");
-
-         IF maxrank IS NULL THEN
-             nextrank := 0;
-         ELSE
-             nextrank := maxrank+1;
-         END IF;
-
-         IF rec.rank IS NULL THEN
-             rec.rank := nextrank;
-         ELSEIF rec.rank > nextrank THEN
-             rec.rank := nextrank;
-         ELSEIF rec.rank < 0 THEN
-             rec.rank := 0;
-         END IF;
-
-         UPDATE """ ++ table ++ fr""" SET rank = rank+1 WHERE rank >= rec.rank AND """ ++ keytest ++ fr0""";
-
-         RETURN rec;
-      """, true
-    )
-    val aliases1 = List(
-      fr0"rec ALIAS FOR OLD"
-    ).intercalate(fr"; ")
-
-    val updateTrigger = defineTrigger(
-      table,
-      fr0"delete_row_func",
-      aliases1,
-      fr"""
-        UPDATE """ ++ table ++ fr""" SET rank = rank-1 WHERE rank > rec.rank AND""" ++ keytest ++ fr0""";
-        RETURN rec;
-      """, false
-    )
-
-    (insertTrigger.run *> updateTrigger.run)
-
-  }
 
   import xa.yolo._
 
