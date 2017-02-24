@@ -150,20 +150,19 @@ trait TextReflowClipping extends TextReflowBasics {
       .toPair._1
   }
 
-  def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = for {
-    vline <- labeledSlices(tr, LB.VisualLine)
-    tr    <- extractVisualLineTargetRegion(vline)
-  } yield tr
+  // def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = for {
+  //   vline <- labeledSlices(tr, LB.VisualLine)
+  //   tr    <- extractVisualLineTargetRegion(vline)
+  // } yield tr
+  // def extractVisualLineTargetRegion(vline: TextReflow): Option[TargetRegion] = {
+  //   vline.unFix match {
+  //     case Labeled(labels, _) if labels.contains(LB.VisualLine) =>
+  //       labels
+  //         .filter(_ == LB.VisualLine)
+  //         .head.value
+  //         .map(TargetRegion.fromUri(_))
 
-  def extractVisualLineTargetRegion(vline: TextReflow): Option[TargetRegion] = {
-    vline.unFix match {
-      case Labeled(labels, _) if labels.contains(LB.VisualLine) =>
-        labels
-          .filter(_ == LB.VisualLine)
-          .head.value
-          .map(TargetRegion.fromUri(_))
-
-      case _ => None
-    }
-  }
+  //     case _ => None
+  //   }
+  // }
 }

@@ -7,6 +7,7 @@ import scalaz.concurrent.Task
 import org.scalatest._
 
 import doobie.imports._
+import shapeless._
 
 class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
   val xa = DriverManagerTransactor[Task](
@@ -33,7 +34,7 @@ class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
   import xa.yolo._
 
   def freshTables() = {
-    (drop.quick *> create.quick).unsafePerformSync
+    veryUnsafeDropDatabase().run.transact(xa).unsafePerformSync
     defineOrderingTriggers(
       fr0"person",
       fr0"age"
@@ -70,10 +71,14 @@ class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
     query.quick.unsafePerformSync
   }
 
+  // FIXME: map(_.map(...)) => traverse
   def getAll(): Seq[(String, Int, Int)] = {
     sql"""select name, age, rank from person order by age,rank ASC"""
-      .query[(String, Int, Int)]
+      .query[String :: Int :: Int :: HNil]
       .list
+      .map{ _.map{
+          case a :: b :: c :: HNil => (a, b, c)
+      } }
       .transact(xa)
       .unsafePerformSync
   }

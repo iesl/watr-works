@@ -115,30 +115,32 @@ class EmbeddedServer(
       HttpEntity(MediaTypes.`text/html`, resp)
     }
 
+    import TypeTags._
 
-    def producePageImage(path: List[String]): Array[Byte] = {
-      println(s"producePageImage: ${path}")
-
-      val uriPath = path.headOption.getOrElse { sys.error("producePageImage: no path specified") }
-
-      reflowDB.serveImageWithURI(TargetRegion.fromUri(uriPath))
+    def produceRegionImage(regionId: String): Array[Byte] = {
+      val id = RegionID(regionId.toInt)
+      reflowDB.serveTargetRegionImage(id)
     }
 
-    def pageImageServer = pathPrefix("img")(
-      path(Segments)(pathSegments =>
-        complete(
-          HttpResponse(entity =
-            HttpEntity(MediaTypes.`image/png`, HttpData(producePageImage(pathSegments)))
+    def regionImageServer = pathPrefix("img") {
+      pathPrefix("region") {
+        path(Segment) { regionId =>
+          complete(
+            HttpResponse(entity =
+              HttpEntity(MediaTypes.`image/png`, HttpData(produceRegionImage(regionId)))
+            )
           )
-        )
-      )
-    )
+        }
+      }
+    }
+
 
     def mainFrame = pathPrefix("") (
       extract(_.request.entity.data) ( requestData => ctx =>
         ctx.complete { httpResponse(html.ShellHtml().toString()) }
       )
     )
+
 
     def apiRoute(
       prefix: String,
@@ -163,7 +165,7 @@ class EmbeddedServer(
       startServer(url, port)(
         get( webjarResources
           ~  assets
-          ~  pageImageServer
+          ~  regionImageServer
           ~  mainFrame
         ) ~
           post( path("notifications") (ctx => actors.longPoll ! ctx.responder)

@@ -30,6 +30,7 @@ object Model {
   case class TargetRegion(
     prKey      : Int@@RegionID,
     page       : Int@@PageID,
+    rank       : Int,
     imageclip  : Option[Int@@ImageID],
     bounds     : G.LTBounds
   )
@@ -41,7 +42,8 @@ object Model {
 
   case class Zone(
     prKey    : Int@@ZoneID,
-    document : Int@@DocumentID
+    document : Int@@DocumentID,
+    rank     : Int
   )
 
   case class TextReflow(
@@ -148,7 +150,8 @@ class MemDocstore extends DocumentCorpus {
       }
 
       def add(docId: Int@@DocumentID): Model.Zone = {
-        val rec = Model.Zone(nextId(), docId)
+        // FIXME: correct rank
+        val rec = Model.Zone(nextId(), docId, rank=0)
         insert(rec.prKey, rec)
         forDocument.addEdge(docId, rec.prKey)
         rec
@@ -179,7 +182,8 @@ class MemDocstore extends DocumentCorpus {
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
 
       def add(pageId: Int@@PageID, bbox: G.LTBounds): Model.TargetRegion = {
-        val rec = Model.TargetRegion(nextId(), pageId, None, bbox)
+        // FIXME: correct rank
+        val rec = Model.TargetRegion(nextId(), pageId, rank=0, None, bbox)
         insert(rec.prKey, rec)
         forPage.addEdge(pageId, rec.prKey)
         rec

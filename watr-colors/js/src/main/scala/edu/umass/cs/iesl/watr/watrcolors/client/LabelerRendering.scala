@@ -92,7 +92,6 @@ trait LabelerRendering extends FabricCanvasOperations {
 
 
   def makeImageForTargetRegion(tr: TargetRegion, absPos: LTBounds): Future[FabricObject] = {
-    val targetRegionURI = tr.uriString
 
     val promise = Promise[FabricObject]()
 
@@ -109,14 +108,13 @@ trait LabelerRendering extends FabricCanvasOperations {
         img.strokeWidth = 0
         img.fill        = "rgb(0, 0, 0)"
         noControls(img)
-        println("makeImageForTargetRegion")
         println(img)
 
         promise.success(img)
         ()
       }
 
-    Image.fromURL(s"/img/${targetRegionURI}", callback)
+    Image.fromURL(s"/img/region/${tr.id}", callback)
     promise.future
 
   }

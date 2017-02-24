@@ -7,14 +7,14 @@ import BioArxiv._
 import AlignBioArxiv._
 import data._
 import textreflow.data._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 import data._
 import corpora._
 import geometry._
-  // import geometry.syntax._
-import PageComponentImplicits._
+// import geometry.syntax._
+// import PageComponentImplicits._
 import scala.collection.mutable
 
 
@@ -34,7 +34,6 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     )
 
     val page0 = PageNum(0)
-    val r0 = RegionID(0)
     val docId = theDocumentCorpus.getDocument(stableId)
       .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
@@ -44,7 +43,11 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     val pageGeometry = theDocumentCorpus.getPageGeometry(pageId)
     // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
 
-    val pageTargetRegion = TargetRegion(r0, stableId, page0, pageGeometry)
+    val pageTargetRegionId = theDocumentCorpus.addTargetRegion(pageId, pageGeometry)
+
+    val pageTargetRegion = theDocumentCorpus.getTargetRegion(pageTargetRegionId)
+
+    // val pageTargetRegion = TargetRegion(r0, stableId, page0, pageGeometry)
 
     val allPageLines = for {
       (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
@@ -128,7 +131,6 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     //   - ? maybe show the extracted text w/button to indicate errors
 
     val page0 = PageNum(0)
-    val r0 = RegionID(0)
     val docId = theDocumentCorpus.getDocument(stableId)
       .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
@@ -138,14 +140,14 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     val pageGeometry = theDocumentCorpus.getPageGeometry(pageId)
     // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
 
-
-    val pageTargetRegion = TargetRegion(r0, stableId, page0,
+    val pageTargetRegionId = theDocumentCorpus.addTargetRegion(pageId,
       pageGeometry.copy(
         top = pageGeometry.top,
         height = pageGeometry.height / 3.0
       )
     )
 
+    val pageTargetRegion = theDocumentCorpus.getTargetRegion(pageTargetRegionId)
 
     val vlines = for {
       (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex

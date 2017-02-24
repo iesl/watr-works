@@ -131,4 +131,15 @@ trait DoobiePredef {
 
   }
 
+  /// DANGER!!!!! really drops everything!
+  def veryUnsafeDropDatabase(): Update0 = {
+    // http://stackoverflow.com/questions/3327312/drop-all-tables-in-postgresql
+    sql"""
+        DROP SCHEMA public CASCADE;
+        CREATE SCHEMA public;
+        GRANT ALL ON SCHEMA public TO postgres;
+        GRANT ALL ON SCHEMA public TO public;
+        COMMENT ON SCHEMA public IS 'standard public schema';
+      """.update
+  }
 }

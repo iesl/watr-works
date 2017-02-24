@@ -236,7 +236,6 @@ object AlignBioArxiv {
 
 
     val page0 = PageNum(0)
-    val r0 = RegionID(0)
 
     val lineReflows = for {
       (vlineZone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex

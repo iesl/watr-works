@@ -49,16 +49,21 @@ class TextReflowDB(
   def shutdown() = xa.shutdown
 
   def runq[A](query: C.ConnectionIO[A]): A = {
-    // time("runq") {
-    // ensuring xa.shutdown
-    query.transact(xa)
-      .unsafePerformSync
+    try {
+      query.transact(xa)
+        .unsafePerformSync
+    } catch {
+      case t: Throwable =>
+        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+        println(s"ERROR: ${message}")
+        t.printStackTrace()
+        throw t
+    }
   }
 
   def updateGetKey[A: Composite](key: String, up: Update0): C.ConnectionIO[A] = {
     up.withUniqueGeneratedKeys(key)
   }
-
 
   def dropAndRecreate() = runq {
     for{
@@ -86,6 +91,7 @@ class TextReflowDB(
     sql""" select * from targetregion where
        bleft=${bl} AND btop=${bt} AND
        bwidth=${bw} AND bheight=${bt}
+       order by rank
     """.query[Model.TargetRegion].option
   }
 
@@ -95,7 +101,7 @@ class TextReflowDB(
   // }
 
   def selectTargetRegions(pageId: Int@@PageID): ConnectionIO[List[Int@@RegionID]] = {
-    sql""" select targetregion from targetregion where page=${pageId} """
+    sql""" select targetregion from targetregion where page=${pageId} order by rank"""
       .query[Int@@RegionID].list
   }
 
@@ -106,11 +112,11 @@ class TextReflowDB(
 
 
   def selectZonesForDocument(docId: Int@@DocumentID): ConnectionIO[List[Int@@ZoneID]] = {
-    sql""" select * from  zone where document=${docId} """
+    sql""" select * from  zone where document=${docId} order by rank"""
       .query[Int@@ZoneID].list
   }
   def selectZone(zoneId: Int@@ZoneID): ConnectionIO[Model.Zone] = {
-    sql""" select * from  zone where zone=${zoneId} """
+    sql""" select * from  zone where zone=${zoneId} order by rank """
       .query[Model.Zone].unique
   }
 
@@ -140,6 +146,7 @@ class TextReflowDB(
         join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
      where
         z2tr.zone=${zoneId}
+     order by z2tr.rank
     """.query[Int@@RegionID].list
   }
 
@@ -236,7 +243,7 @@ class TextReflowDB(
   }
 
   def selectPageImage(pageId: Int@@PageID): ConnectionIO[Option[Array[Byte]]] = {
-    sql"""select i.imageclip
+    sql"""select i.image
           from page as p join imageclips as i
                on(p.imageclip=i.imageclip)
           where p.page=${pageId}
@@ -244,7 +251,7 @@ class TextReflowDB(
   }
 
   def selectTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Option[Array[Byte]]] = {
-    sql"""select i.imageclip
+    sql"""select i.image
           from targetregion as tr join imageclips as i
                on(tr.imageclip=i.imageclip)
           where tr.targetregion=${regionId}
@@ -382,15 +389,18 @@ class TextReflowDB(
     } yield regionId
   }
 
-  def createTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Array[Byte]] = {
-    val TargetRegion(regionId, stableId, pageNum, bbox) = targetRegion
+  def createTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Array[Byte]] = {
+    // val TargetRegion(regionId, stableId, pageNum, bbox) = targetRegion
     for {
-      region    <- selectTargetRegion(regionId)
-      page      <- selectPage(region.page)
+      _              <- putStrLn(s"selectTargetRegion(${regionId})")
+      region         <- selectTargetRegion(regionId)
+      _              <- putStrLn(s"selectPage(${region})")
+      page           <- selectPage(region.page)
+      _              <- putStrLn(s"selectPageImage(${page})")
       maybePageImage <- selectPageImage(region.page)
     } yield {
       maybePageImage.map(imageBytes =>
-        images.ImageManipulation.cropTo(imageBytes, page.bounds, bbox).bytes
+        images.ImageManipulation.cropTo(imageBytes, region.bounds, page.bounds).bytes
       ).getOrElse {
         sys.error(s"createTargetRegionImage: no page image found!")
       }
@@ -404,24 +414,30 @@ class TextReflowDB(
     } yield ImageID(clipId)
   }
 
-  def getOrCreateTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Array[Byte]] = {
-    val TargetRegion(regionId, stableId, pageNum, bbox) = targetRegion
+  // def getOrCreateTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Array[Byte]] = {
+  //   val TargetRegion(regionId, stableId, pageNum, bbox) = targetRegion
+  // }
 
+  def getOrCreateTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Array[Byte]] = {
     for {
+      _ <- putStrLn("selectTargetRegionImage()")
       maybeImage <- selectTargetRegionImage(regionId)
+      _ <- putStrLn("maybe createTargetRegionImage()")
       imageBytes <- maybeImage.fold(
-        createTargetRegionImage(targetRegion)
+        createTargetRegionImage(regionId)
       )(_.point[ConnectionIO])
+      _ <- putStrLn("insertTargetRegionImage()")
       clipId <- insertTargetRegionImage(regionId, imageBytes)
     } yield imageBytes
   }
 
-  def serveImageWithURI(targetRegion: TargetRegion): Array[Byte] = {
+
+  def serveTargetRegionImage(regionId: Int@@RegionID): Array[Byte] = {
+    println(s"serveTargetRegionImage(${regionId})")
     runq{
-      getOrCreateTargetRegionImage(targetRegion)
+      getOrCreateTargetRegionImage(regionId)
     }
   }
-
 
 
   object docstorage extends DocumentCorpus {

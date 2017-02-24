@@ -368,13 +368,6 @@ object GeometryImplicits {
       s"""${left.pp}+${top.pp}+${width.pp}+${height.pp}"""
     }
 
-    // def targetRegionTo(page: Int@@PageNum): TargetRegion = {
-    //   TargetRegion(
-    //     RegionID(0), // TODO gen region id
-    //     docId??,
-    //     page,theBbox
-    //   )
-    // }
   }
 
   implicit class RicherLBBounds(val theBbox: LBBounds) extends AnyVal {

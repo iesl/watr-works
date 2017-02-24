@@ -39,7 +39,8 @@ class TextReflowDBTables extends DoobiePredef {
   val createZoneTable: Update0 = sql"""
       CREATE TABLE zone (
         zone        SERIAL PRIMARY KEY,
-        document    INTEGER REFERENCES document NOT NULL
+        document    INTEGER REFERENCES document NOT NULL,
+        rank          INTEGER NOT NULL
       );
       CREATE INDEX zone_idx_document ON zone (document);
     """.update
@@ -59,16 +60,33 @@ class TextReflowDBTables extends DoobiePredef {
   val createZoneToTargetRegion: Update0 = sql"""
       CREATE TABLE zone_to_targetregion (
         zone          INTEGER REFERENCES zone NOT NULL,
-        targetregion  INTEGER REFERENCES targetregion NOT NULL
+        targetregion  INTEGER REFERENCES targetregion NOT NULL,
+        rank          INTEGER NOT NULL
       );
       CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
       CREATE INDEX zone_to_targetregion_idx2 ON zone_to_targetregion (targetregion);
     """.update
 
+  object zonetables {
+    def create(): ConnectionIO[Unit] = {
+      for {
+        _ <- putStrLn("create zone")
+        _ <- createZoneTable.run
+        _ <- defineOrderingTriggers(fr0"zone", fr0"document")
+        _ <- putStrLn("create z-tr")
+        _ <- createZoneToTargetRegion.run
+        _ <- putStrLn("create z-lbl")
+        _ <- createZoneToLabelTable.run
+        _ <- defineOrderingTriggers(fr0"zone_to_targetregion", fr0"zone")
+      } yield ()
+    }
+  }
+
   val createTargetRegion: Update0 = sql"""
       CREATE TABLE targetregion (
         targetregion  SERIAL PRIMARY KEY,
         page          INTEGER REFERENCES page,
+        rank          INTEGER NOT NULL,
         imageclip     INTEGER REFERENCES imageclips,
         bleft         INTEGER,
         btop          INTEGER,
@@ -77,6 +95,25 @@ class TextReflowDBTables extends DoobiePredef {
       );
       CREATE INDEX targetregion_idx0 ON targetregion (page);
     """.update
+
+
+  object targetregions {
+    def create(): ConnectionIO[Unit] = {
+      for {
+        _ <- putStrLn("create targetregion")
+        _ <- createTargetRegion.run
+        _ <- putStrLn("create targetregion triggers")
+        _ <- defineOrderingTriggers(fr0"targetregion", fr0"page")
+      } yield ()
+    }
+
+    // TODO create code that tests table IO
+    // import corpora.Model
+    // sealed trait TableShape[S]
+    // def tableShape[S]: TableShape[S]
+    // def shape = tableShape[Model.TargetRegion]
+
+  }
 
 
   val createTextReflowTable: Update0 = sql"""
@@ -125,14 +162,10 @@ class TextReflowDBTables extends DoobiePredef {
     _ <- createPageTable.run
     _ <- putStrLn("create label")
     _ <- createLabelTable.run
-    _ <- putStrLn("create targetregion")
-    _ <- createTargetRegion.run
-    _ <- putStrLn("create zone")
-    _ <- createZoneTable.run
-    _ <- putStrLn("create z-tr")
-    _ <- createZoneToTargetRegion.run
-    _ <- putStrLn("create z-lbl")
-    _ <- createZoneToLabelTable.run
+
+    _ <- targetregions.create()
+    _ <- zonetables.create()
+
     _ <- putStrLn("create textreflow")
     _ <- createTextReflowTable.run
     _ <- putStrLn("create labelers")
@@ -154,11 +187,5 @@ class TextReflowDBTables extends DoobiePredef {
     DROP TABLE IF EXISTS imageclips;
     DROP TABLE IF EXISTS document;
   """.update
-
-  def dropAndCreateAll = for{
-    _ <- dropAll.run
-    _ <- createAll
-  } yield ()
-
 
 }

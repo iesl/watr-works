@@ -35,13 +35,6 @@ object TargetRegion {
     case (_, _) => false
   })
 
-  def fromUri(uriString: String): TargetRegion = {
-    val Array(stableId, pageId, l, t, w, h) = uriString.split("\\+")
-
-    TargetRegion(RegionID(0), DocumentID(stableId), PageNum(pageId.toInt),
-      LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble)
-    )
-  }
 }
 
 // More General version of TargetRegion

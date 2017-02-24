@@ -5,7 +5,6 @@ import org.scalatest._
 // import watrmarks.{StandardLabels => LB}
 import corpora._
 
-
 class TextReflowDBTest extends FlatSpec with Matchers with CorpusTestingUtil {
 
   def createEmptyDocumentCorpus(): DocumentCorpus = {
@@ -17,6 +16,12 @@ class TextReflowDBTest extends FlatSpec with Matchers with CorpusTestingUtil {
       dbuser="watrworker",
       dbpass="watrpasswd"
     )
+
+
+    reflowDB.runq {
+      reflowDB.veryUnsafeDropDatabase().run
+    }
+
     reflowDB.dropAndRecreate
     reflowDB.docstorage
   }

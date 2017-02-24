@@ -6,6 +6,7 @@ import scalatags.stylesheet._
 import scalatags.Text.all._
 
 object WatrStyles extends CascadingStyleSheet {
+  initStyleSheet()
 //   body {
 //     padding-top: 2rem;
 //     padding-bottom: 2rem;

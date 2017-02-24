@@ -8,7 +8,10 @@ import GeometryImplicits._
 
 trait ImageManipulation {
 
+  // implicit val writer = nio.PngWriter.NoCompression
+
   def cropTo(imageBytes: Array[Byte], cropBox: LTBounds, pageBounds: LTBounds): Image = {
+    println(s"cropTo(len=${imageBytes.length}, cropBox=${cropBox}, pageBounds=${pageBounds})")
     cropTo(Image(imageBytes), cropBox, pageBounds)
   }
 

@@ -39,7 +39,6 @@ case class PageImages(
 object ExtractImages extends ImageManipulation {
   import ammonite.{ops => fs}, fs._
 
-  implicit val writer = nio.PngWriter.NoCompression
 
   def load(rootPath: Path): PageImages = {
     val images = ls(rootPath)
