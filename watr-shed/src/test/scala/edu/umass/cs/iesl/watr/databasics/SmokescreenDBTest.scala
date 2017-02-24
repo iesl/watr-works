@@ -14,6 +14,7 @@ class Smokescreen extends FlatSpec with Matchers {
     "jdbc:postgresql:watrdev",
     "watrworker", "watrpasswd"
   )
+
   val drop: Update0 = sql"""
     DROP TABLE IF EXISTS person;
     """.update
@@ -27,92 +28,90 @@ class Smokescreen extends FlatSpec with Matchers {
     );
     """.update
 
-  // ALTER TABLE person DISABLE TRIGGER post_delete_trigger;
-  val enableInsertTriggers = (
-    sql"""
-       ALTER TABLE person ENABLE TRIGGER post_insert_trigger;
-     """.update)
-  // ALTER TABLE person ENABLE TRIGGER post_delete_trigger;
-  val disableInsertTriggers = (
-    sql"""
-       ALTER TABLE person DISABLE TRIGGER post_insert_trigger;
-     """.update)
-  val reorderTrigger = (
-    sql"""
-      CREATE OR REPLACE FUNCTION insert_row_func() RETURNS TRIGGER AS $$func$$
-          DECLARE
-              maxrank integer;
-              nextrank integer;
-          BEGIN
-              maxrank := (SELECT MAX(rank) FROM person WHERE age=NEW.age);
 
-              IF maxrank IS NULL THEN
-                  nextrank := 0;
-              ELSE
-                  nextrank := maxrank+1;
-              END IF;
+  def defineTrigger(tablename: Fragment, name: Fragment, decls: Fragment, body: Fragment, onInsert: Boolean): Update0 = {
+    val funcname = name ++ fr0"_" ++ tablename
+    val triggerName = name ++ fr0"_" ++ tablename ++ fr0"_trigger"
+    val onClause = if (onInsert) fr"INSERT" else fr"DELETE"
 
-              IF NEW.rank IS NULL THEN
-                  -- null means append
-                  NEW.rank := nextrank;
-              ELSEIF NEW.rank > nextrank THEN
-                  NEW.rank := nextrank;
-              ELSEIF NEW.rank < 0 THEN
-                  -- 0 means prepend, don't allow anything <0
-                  NEW.rank := 0;
-              END IF;
+    val frag = fr"""
+       CREATE OR REPLACE FUNCTION """ ++ funcname ++ fr0"""() RETURNS TRIGGER AS $$func$$
+         DECLARE """ ++ decls ++ fr""";
+         BEGIN
+         """ ++ body ++ fr"""
+         END;
+       $$func$$ LANGUAGE plpgsql;
 
-              UPDATE person SET rank = rank+1
-                  WHERE rank = NEW.rank AND age=NEW.age;
+       DROP TRIGGER IF EXISTS """ ++ triggerName ++ fr""" ON """ ++ tablename ++ fr""";
+       CREATE TRIGGER """ ++ triggerName ++ fr"""
+         BEFORE """ ++ onClause ++ fr"ON" ++ tablename ++ fr"""
+         FOR EACH ROW EXECUTE PROCEDURE """ ++ funcname ++ fr"""();
+     """
+    println(frag.toString())
+    frag.update
+  }
 
-              RETURN NEW;
-          END;
-      $$func$$ LANGUAGE plpgsql;
+  def defineOrderingTriggers(table: Fragment, keycol: Fragment): ConnectionIO[Int] = {
+    val aliases = List(
+      fr"maxrank integer",
+      fr"nextrank integer",
+      fr0"rec ALIAS FOR NEW"
+    ).intercalate(fr"; ")
 
-      CREATE OR REPLACE FUNCTION post_insert_func() RETURNS TRIGGER AS $$func$$
-          BEGIN
-              UPDATE person SET rank = rank+1
-                  WHERE rank = NEW.rank AND age=NEW.age;
+    val keytest =  keycol ++fr0"""=rec.""" ++ keycol
 
-              RETURN NEW;
-          END;
-      $$func$$ LANGUAGE plpgsql;
+    val insertTrigger = defineTrigger(
+      table,
+      fr0"insert_row_func",
+      aliases,
+      fr"""
+         maxrank := (SELECT MAX(rank) FROM """ ++ table ++ fr""" WHERE """ ++ keytest ++ fr""");
 
-      CREATE OR REPLACE FUNCTION delete_row_func() RETURNS TRIGGER AS $$func$$
-          BEGIN
-              UPDATE person SET rank = rank-1
-                  WHERE rank > OLD.rank AND age=OLD.age;
+         IF maxrank IS NULL THEN
+             nextrank := 0;
+         ELSE
+             nextrank := maxrank+1;
+         END IF;
 
-              RETURN OLD;
-          END;
-      $$func$$ LANGUAGE plpgsql;
+         IF rec.rank IS NULL THEN
+             rec.rank := nextrank;
+         ELSEIF rec.rank > nextrank THEN
+             rec.rank := nextrank;
+         ELSEIF rec.rank < 0 THEN
+             rec.rank := 0;
+         END IF;
 
-      DROP TRIGGER IF EXISTS insert_row_trigger ON person;
-      DROP TRIGGER IF EXISTS delete_row_trigger ON person;
-      DROP TRIGGER IF EXISTS post_insert_trigger ON person;
-      DROP TRIGGER IF EXISTS post_delete_trigger ON person;
-      DROP TRIGGER IF EXISTS reorder_row_trigger ON person;
+         UPDATE """ ++ table ++ fr""" SET rank = rank+1 WHERE rank >= rec.rank AND """ ++ keytest ++ fr0""";
 
-      DROP FUNCTION IF EXISTS reorder_row_func();
+         RETURN rec;
+      """, true
+    )
+    val aliases1 = List(
+      fr0"rec ALIAS FOR OLD"
+    ).intercalate(fr"; ")
 
-      CREATE TRIGGER insert_row_trigger
-          BEFORE INSERT ON person
-          FOR EACH ROW EXECUTE PROCEDURE insert_row_func();
+    val updateTrigger = defineTrigger(
+      table,
+      fr0"delete_row_func",
+      aliases1,
+      fr"""
+        UPDATE """ ++ table ++ fr""" SET rank = rank-1 WHERE rank > rec.rank AND""" ++ keytest ++ fr0""";
+        RETURN rec;
+      """, false
+    )
 
-      CREATE TRIGGER post_insert_trigger
-          BEFORE UPDATE ON person
-          FOR EACH ROW EXECUTE PROCEDURE post_insert_func();
+    (insertTrigger.run *> updateTrigger.run)
 
-      CREATE TRIGGER delete_row_trigger
-          BEFORE DELETE ON person
-          FOR EACH ROW EXECUTE PROCEDURE delete_row_func();
+  }
 
-   """.update)
   import xa.yolo._
 
   def freshTables() = {
     (drop.quick *> create.quick).unsafePerformSync
-    reorderTrigger.run.transact(xa).unsafePerformSync
+    defineOrderingTriggers(
+      fr0"person",
+      fr0"age"
+    ).transact(xa).unsafePerformSync
   }
 
   def appendPerson(name: String, age: Int): Unit = {
@@ -139,16 +138,14 @@ class Smokescreen extends FlatSpec with Matchers {
 
   def removePerson(name: String, age: Int): Unit = {
     val query = for {
-      _ <- disableInsertTriggers.run
       x <- sql"delete from person where name=$name AND age=$age".update.run
-      _ <- enableInsertTriggers.run
     } yield x
 
     query.quick.unsafePerformSync
   }
 
   def getAll(): Seq[(String, Int, Int)] = {
-    sql"""select name, age, rank from person order by rank ASC"""
+    sql"""select name, age, rank from person order by age,rank ASC"""
       .query[(String, Int, Int)]
       .list
       .transact(xa)
@@ -180,7 +177,18 @@ class Smokescreen extends FlatSpec with Matchers {
     println(getAll().mkString("{\n  ", "\n  ", "\n}"))
     insertPersonAt("oliver09-ins", 20, 2)
     println(getAll().mkString("{\n  ", "\n  ", "\n}"))
+    removePerson("oliver09-ins", 20)
+    println(getAll().mkString("{\n  ", "\n  ", "\n}"))
 
+    appendPerson("morgan1", 3)
+    prependPerson("morgan01", 3)
+    appendPerson("morgan2", 3)
+
+    println(getAll().mkString("{\n  ", "\n  ", "\n}"))
+
+    removePerson("morgan2", 3)
+
+    println(getAll().mkString("{\n  ", "\n  ", "\n}"))
 
   }
 

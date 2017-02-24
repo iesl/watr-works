@@ -77,8 +77,6 @@ class TextReflowDBTables extends DoobiePredef {
       );
       CREATE INDEX targetregion_idx0 ON targetregion (page);
     """.update
-  // CREATE INDEX targetregion_uri ON targetregion USING hash (uri);
-  // uri           VARCHAR(256) UNIQUE NOT NULL
 
 
   val createTextReflowTable: Update0 = sql"""
