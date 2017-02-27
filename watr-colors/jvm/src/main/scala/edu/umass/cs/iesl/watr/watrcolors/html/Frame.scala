@@ -7,36 +7,15 @@ import scalatags.Text.all._
 
 object WatrStyles extends CascadingStyleSheet {
   initStyleSheet()
-//   body {
-//     padding-top: 2rem;
-//     padding-bottom: 2rem;
-//   }
 
-//   h3 {
-//     margin-top: 2rem;
-//   }
 
-//   .row {
-//     margin-bottom: 1rem;
-//   }
-//     .row .row {
-//     margin-top: 1rem;
-//     margin-bottom: 0;
-//   }
-//     [class*="col-"] {
-//     padding-top: 1rem;
-//     padding-bottom: 1rem;
-//     background-color: rgba(86,61,124,.15);
-//     border: 1px solid rgba(86,61,124,.2);
-//   }
-
-//   hr {
-//     margin-top: 2rem;
-//     margin-bottom: 2rem;
-// }
-
-  def container = cls(
-    width := "100%"
+  def topBar = cls(
+    position         := "fixed",
+    top              := 0,
+    left             := 0,
+    width            := "100%",
+    height           := 60,
+    backgroundColor  := "black"
   )
 
   def colN = cls(
@@ -57,7 +36,13 @@ object WatrStyles extends CascadingStyleSheet {
     )
   )
 
-  def overlayContainer = cls(
+  def container = cls(
+    width := "100%",
+    marginTop := 60,
+    position.relative
+  )
+
+  def canvasContainer = cls(
     padding:="0",
     border:="0",
     margin:="0",
@@ -126,34 +111,43 @@ object ShellHtml {
     )
   }
 
-  def navbar()  = {
-    <.nav(^.`class`:="navbar navbar-fixed-top navbar-dark bg-inverse")(
-      <.a(^.`class`:="navbar-brand", ^.`href`:="#")("Project name"),
-      <.ul(^.`class`:="nav navbar-nav")(
-        <.li(^.`class`:="nav-item active")(
-          <.a(^.`class`:="nav-link", ^.`href`:="#")("Home", <.span(^.`class`:="sr-only")("(current)"))
-        ),
-        <.li(^.`class`:="nav-item")(
-          <.a(^.`class`:="nav-link", ^.`href`:="#")("About")
-        ),
-        <.li(^.`class`:="nav-item")(
-          <.a(^.`class`:="nav-link", ^.`href`:="#")("Contact")
-        )
-      )
+  def statusbar()  = {
+    <.div(WatrStyles.topBar)(
+      "WatrColors Status:"
     )
   }
 
+  // def navbar()  = {
+  //   <.nav(^.`class`:="navbar navbar-fixed-top navbar-dark bg-inverse")(
+  //     <.a(^.`class`:="navbar-brand", ^.`href`:="#")("Project name"),
+  //     <.ul(^.`class`:="nav navbar-nav")(
+  //       <.li(^.`class`:="nav-item active")(
+  //         <.a(^.`class`:="nav-link", ^.`href`:="#")("Home", <.span(^.`class`:="sr-only")("(current)"))
+  //       ),
+  //       <.li(^.`class`:="nav-item")(
+  //         <.a(^.`class`:="nav-link", ^.`href`:="#")("About")
+  //       ),
+  //       <.li(^.`class`:="nav-item")(
+  //         <.a(^.`class`:="nav-link", ^.`href`:="#")("Contact")
+  //       )
+  //     )
+  //   )
+  // }
+
   def bodyContent() = {
-    <.div(^.`class`:="container", WatrStyles.container)(
+    <.div(
+      statusbar(),
+      <.div(WatrStyles.container)(
 
-      <.div(^.id:="overlay-container", WatrStyles.overlayContainer)(
-        <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000")
-      ),
+        <.div(^.id:="canvas-container", WatrStyles.canvasContainer)(
+          <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000")
+        ),
 
-      <.script(`type` := "text/javascript")(
-        raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrColors().main()")
+        <.script(`type` := "text/javascript")(
+          raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrColors().main()")
+        )
+
       )
-
     )
 
   }
@@ -162,33 +156,7 @@ object ShellHtml {
     <.html(
       htmlHead(),
       <.body(WatrStyles.htmlBody)(
-        // navbar(),
         bodyContent()
-      )
-    )
-  }
-
-  def apply2() = {
-    <.html(^.lang := "en")(
-      <.head(
-        ^.lang := "en",
-        <.title("WatrColors"),
-        <.meta(content := "width=device-width, initial-scale=1", name := "viewport"),
-        <.meta(httpEquiv := "Content-Type", content := "text/html; charset=UTF-8"),
-        <.script(`type` := "text/javascript", src := "/assets/watrcolors-fastopt.js"),
-        <.script(`type` := "text/javascript", src := "/webjars/mousetrap/1.6.0/mousetrap.min.js"),
-        <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.4/jquery.min.js"),
-        <.script(`type` := "text/javascript", src := "/webjars/fabric/1.6.2/dist/fabric.js"),
-
-        <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.7/css/bootstrap.min.css"),
-
-        <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
-      ),
-
-      body(margin := 0, WatrStyles.htmlBody)(
-        <.script(`type` := "text/javascript")(
-          raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrColors().main()")
-        )
       )
     )
   }

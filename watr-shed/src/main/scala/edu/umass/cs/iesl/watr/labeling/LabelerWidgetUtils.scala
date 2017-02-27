@@ -22,6 +22,16 @@ trait LabelWidgetUtils {
     )
   }
 
+  def makeRadios(labels: String*): LabelWidget = {
+    val bpad = Padding(4d, 4d, 4d, 4d)
+    LW.row(
+      labels.toList.map(action =>
+        LW.pad(LW.button(action), bpad)
+      ):_*
+    )
+
+  }
+
   def makePagePanel(body: LabelWidget): LabelWidget = {
     LW.panel(
       LW.col(

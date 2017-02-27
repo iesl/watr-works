@@ -102,7 +102,19 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       "Skip",
       "Report Error"
     )
+    val labelSelector = makeButtons(
+      "Auth",
+      "Titl",
+      "Abst",
+      "Aff",
+      "Cit"
+    )
 
+    val selType = makeButtons(
+      "Rect",
+      "Char",
+      "Line"
+    )
     val body = LW.row(
       LW.targetOverlay(pageTargetRegion, lwidgets),
       paperRecWidget

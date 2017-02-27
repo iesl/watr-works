@@ -121,12 +121,6 @@ object LabelWidgets {
   def labeledTarget(target: TargetRegion, label: Option[Label]=None, score: Option[Double]=None) =
     fixlw(LabeledTarget(target, label, score))
 
-  // def targetOverlay(tr: LTBounds, pageId: Int@@PageID, overs: Seq[LabelWidget]) =
-  //   fixlw(TargetOverlay(tr, pageId, overs.toList))
-
-  // def labeledTarget(target: LTBounds, pageId: Int@@PageID, label: Option[Label]=None, score: Option[Double]=None) =
-  //   fixlw(LabeledTarget(target, pageId, label, score))
-
   def reflow(tr: TextReflow) =
     fixlw(Reflow(tr))
 

@@ -52,7 +52,7 @@ object WatrColors extends LabelerRendering {
     for {
       bboxRel <- getUserLTBounds(fabricCanvas)
     } yield {
-      val bbox = alignBboxToDiv("#overlay-container", bboxRel)
+      val bbox = alignBboxToDiv("#canvas-container", bboxRel)
 
       fabricCanvas.defaultCursor = "default"
 

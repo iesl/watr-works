@@ -103,7 +103,7 @@ trait MouseGestures extends HtmlCanvasRendering {
 //   for {
 //     userPath <- getUserPath(self.fabricCanvas)
 //   } yield {
-//     val offset = jQuery("#overlay-container").offset().asInstanceOf[native.JQueryPosition]
+//     val offset = jQuery("#canvas-container").offset().asInstanceOf[native.JQueryPosition]
 //     val pathAbs = translatePath(-offset.left, -offset.top, userPath)
 
 //     server.onDrawPath(artifactId, pathAbs).call().foreach{ applyHtmlUpdates(_) }
@@ -112,7 +112,7 @@ trait MouseGestures extends HtmlCanvasRendering {
 //   true
 // }
 
-// // val jqOverlayContainer = jQuery("#overlay-container")
+// // val jqOverlayContainer = jQuery("#canvas-container")
 
 // val c = new fabric.Canvas("fabric-canvas", fabric.CanvasOptions)
 
