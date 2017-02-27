@@ -93,7 +93,8 @@ class TextReflowDBTables extends DoobiePredef {
         bwidth        INTEGER,
         bheight       INTEGER
       );
-      CREATE INDEX targetregion_idx0 ON targetregion (page);
+      // CREATE INDEX targetregion_idx0 ON targetregion (page);
+      CREATE INDEX targetregion_bbox ON targetregion (page, bleft, btop);
     """.update
 
 

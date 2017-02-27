@@ -6,6 +6,7 @@ import scala.async.Async
 import scala.concurrent.Future
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import org.scalajs.dom.ext._
@@ -121,6 +122,10 @@ object WatrColors extends LabelerRendering {
       }
     }
 
+    import js.Dynamic.{ global => g, newInstance => jsnew }
+
+
+
     @JSExport
     override def echoLabeler(lwidget: List[AbsPosAttr]) = Async.async {
       clear()
@@ -132,7 +137,9 @@ object WatrColors extends LabelerRendering {
         os.foreach(fabricCanvas.add(_))
       }
 
+      fabricCanvas.renderOnAddRemove = false
       fabricCanvas.renderAll()
+      fabricCanvas.renderOnAddRemove = true
     }
 
 

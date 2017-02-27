@@ -97,14 +97,19 @@ lazy val watrshed = (project in file("watr-shed"))
 enablePlugins(ScalaJSPlugin)
 enablePlugins(WorkbenchPlugin)
 
+persistLauncher in Compile := false
+persistLauncher in Test := false
+skip in packageJSDependencies := false
 
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++= Seq(
     Lib.scalaAsync,
-    "com.lihaoyi"  %%% "scalatags"   % LibVersions.scalaTagsVersion,
-    "com.lihaoyi" %%% "upickle" % "0.4.4",
-    "com.lihaoyi" %%% "autowire" % "0.2.6"
+    "com.lihaoyi"       %%% "scalatags"       % LibVersions.scalaTagsVersion,
+    // "com.github.yoeluk" %%% "paper-scala-js"  % "0.5-SNAPSHOT",
+    // "com.lihaoyi"       %%% "scalarx"         % "0.3.2",
+    "com.lihaoyi"       %%% "upickle"         % "0.4.4",
+    "com.lihaoyi"       %%% "autowire"        % "0.2.6"
   ))
   .jsSettings(libraryDependencies ++= Seq(
     "org.querki" %%% "jquery-facade" % "1.0",
@@ -113,7 +118,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .jvmSettings(libraryDependencies ++= Seq(
     "io.spray" %% "spray-can" % "1.3.4",
     "io.spray" %% "spray-routing-shapeless2" % "1.3.3",
-    "com.typesafe.akka" %% "akka-actor" % "2.4.16",
+    "com.typesafe.akka" %% "akka-actor" % "2.4.17",
     "org.webjars.bower" % "fabric" % "1.6.2",
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "2.2.4",

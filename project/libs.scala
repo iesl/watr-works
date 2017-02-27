@@ -3,14 +3,14 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.8"
+  val scalazVersion       = "7.2.9"
   val scalaTagsVersion    = "0.6.3"
   val scalaAsyncVersion   = "0.9.6"
   val scalaModulesVersion = "1.0.4"
-  val akkaVersion         = "2.3.14"
+  val akkaVersion         = "2.4.17"
   val streamsVersion      = "1.0"
   val scalatestVersion    = "3.0.1"
-  val logbackVersion      = "1.7.23"
+  val logbackVersion      = "1.7.24"
   val quasiquotesVersion  = "2.0.1"
   val guavaVersion        = "18.0"
   val specs2Version       = "3.7"
@@ -19,7 +19,7 @@ trait LibVersions {
   val aspectjVersion      = "1.8.9"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.4.1"
-  val matryoshkaCoreV     = "0.16.5"
+  val matryoshkaCoreV     = "0.16.10"
 
 }
 
@@ -46,7 +46,7 @@ object TestLibs extends LibVersions {
 
   val scalacheck = Seq(
     "org.scalaz"     %% "scalaz-scalacheck-binding" % scalazVersion  % "test",
-    "org.scalacheck" %% "scalacheck"                % "1.12.5"       % "test" force()
+    "org.scalacheck" %% "scalacheck"                % "1.13.4"       % "test" force()
   )
 
   val testAndCheck = scalatest ++ scalacheck
@@ -105,3 +105,4 @@ trait CommonLibs extends LibVersions {
 }
 
 object CommonLibs extends CommonLibs
+

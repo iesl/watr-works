@@ -74,9 +74,9 @@ class MultiPageIndex(
     docStore.getZone(zoneId)
   }
 
-  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
+  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit = {
     docStore.addZoneLabel(zoneId, label)
-    docStore.getZone(zoneId)
+    // docStore.getZone(zoneId)
   }
 
   def getStableId(): String@@DocumentID = stableId

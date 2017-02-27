@@ -89,6 +89,7 @@ class TextReflowDB(
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
 
     sql""" select * from targetregion where
+       page=${pageId} AND
        bleft=${bl} AND btop=${bt} AND
        bwidth=${bw} AND bheight=${bt}
        order by rank
@@ -391,19 +392,28 @@ class TextReflowDB(
 
   def createTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Array[Byte]] = {
     // val TargetRegion(regionId, stableId, pageNum, bbox) = targetRegion
+
+    def cropTo(bs: Array[Byte], cbbox: LTBounds, pbbox: LTBounds): ConnectionIO[Array[Byte]] = {
+      images.ImageManipulation.cropTo(bs, cbbox, pbbox)
+        .bytes
+        .point[ConnectionIO]
+    }
+
     for {
-      _              <- putStrLn(s"selectTargetRegion(${regionId})")
+      _              <- putStrLn(s"createTargetRegionImage(${regionId})")
+      _              <- putStrLn(s"  selectTargetRegion(${regionId})")
       region         <- selectTargetRegion(regionId)
-      _              <- putStrLn(s"selectPage(${region})")
+      _              <- putStrLn(s"  selectPage(${region})")
       page           <- selectPage(region.page)
-      _              <- putStrLn(s"selectPageImage(${page})")
+      _              <- putStrLn(s"  selectPageImage(${page})")
       maybePageImage <- selectPageImage(region.page)
+
+      imageBytes     <- maybePageImage.map(cropTo(_, region.bounds, page.bounds)).getOrElse { sys.error(s"  createTargetRegionImage: no page image found!") }
+      // TODO delete old image if exists
+      _              <- putStrLn("  insertTargetRegionImage()")
+      clipId         <- insertTargetRegionImage(regionId, imageBytes)
     } yield {
-      maybePageImage.map(imageBytes =>
-        images.ImageManipulation.cropTo(imageBytes, region.bounds, page.bounds).bytes
-      ).getOrElse {
-        sys.error(s"createTargetRegionImage: no page image found!")
-      }
+      imageBytes
     }
   }
 
@@ -414,20 +424,14 @@ class TextReflowDB(
     } yield ImageID(clipId)
   }
 
-  // def getOrCreateTargetRegionImage(targetRegion: TargetRegion): ConnectionIO[Array[Byte]] = {
-  //   val TargetRegion(regionId, stableId, pageNum, bbox) = targetRegion
-  // }
 
   def getOrCreateTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Array[Byte]] = {
     for {
-      _ <- putStrLn("selectTargetRegionImage()")
+      _          <- putStrLn(s"getOrCreateTargetRegionImage(${regionId})")
+      _          <- putStrLn("  selectTargetRegionImage()")
       maybeImage <- selectTargetRegionImage(regionId)
-      _ <- putStrLn("maybe createTargetRegionImage()")
-      imageBytes <- maybeImage.fold(
-        createTargetRegionImage(regionId)
-      )(_.point[ConnectionIO])
-      _ <- putStrLn("insertTargetRegionImage()")
-      clipId <- insertTargetRegionImage(regionId, imageBytes)
+      _          <- putStrLn("  maybe createTargetRegionImage()")
+      imageBytes <- maybeImage.fold(createTargetRegionImage(regionId))(_.point[ConnectionIO])
     } yield imageBytes
   }
 

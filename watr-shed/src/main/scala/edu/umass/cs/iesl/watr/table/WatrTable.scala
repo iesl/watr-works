@@ -129,8 +129,11 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
 
           pageImages.images.zipWithIndex.foreach {
             case (image, i) =>
-              val pageId = docStore.getPage(segmenter.docId, PageNum(i)).get
-              docStore.setPageImage(pageId, image.bytes)
+              docStore
+                .getPage(segmenter.docId, PageNum(i))
+                .foreach{ pageId =>
+                  docStore.setPageImage(pageId, image.bytes)
+                }
           }
         }
     }
