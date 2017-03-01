@@ -9,8 +9,6 @@ import textreflow.data._
 import geometry._
 import GeometryImplicits._
 
-import PageComponentImplicits._
-
 import native.fabric
 import native.fabric._
 
@@ -33,7 +31,7 @@ case class LwRenderingAttrs(
   regions: List[(TargetRegion, LTBounds)]
 )
 
-trait LabelerRendering extends FabricCanvasOperations {
+trait LabelerRendering extends MouseGestures {
   import TextReflowF._
   import matryoshka._
 
@@ -43,51 +41,13 @@ trait LabelerRendering extends FabricCanvasOperations {
   }
 
 
-
-  def displayBasicCanvasShapes(): Unit = {
-    fabricCanvas.add(createShape(Point(240, 240), "black", "blue", 0.5f))
-    fabricCanvas.add(createShape(LBBounds(240, 240, 100, 200), "red", "black", 0.5f))
-    fabricCanvas.add(createShape(LTBounds(240, 240, 100, 200), "black", "yellow", 0.5f))
-    fabricCanvas.add(createShape(Line(Point(240, 40), Point(340, 440)), "black", "green", 0.5f))
-  }
-
-  def addBorder(width: Double, renderAttr: LwRenderingAttrs): LwRenderingAttrs = {
-    val tbBbox = LTBounds(0, 0,
-      fabricObjectLTBounds(renderAttr.fobj).width,
-      width
-    )
-    val top    =  createShape(tbBbox, "black", "black", 0.5f)
-    val bottom =  createShape(tbBbox, "blue", "blue", 0.5f)
-
-    val tbGroup = vjoinAttrs(List(
-      LwRenderingAttrs(top, List()),
-      renderAttr,
-      LwRenderingAttrs(bottom, List())
-    ))
-
-    val lrBbox = LTBounds(0, 0,
-      width,
-      fabricObjectLTBounds(tbGroup.fobj).height + width*2
-    )
-    val left   = createShape(lrBbox, "red", "red", 0.5f)
-    val right  = createShape(lrBbox, "red", "red", 0.5f)
-
-
-    hjoinAttrs(List(
-      LwRenderingAttrs(left, List()),
-      tbGroup,
-      LwRenderingAttrs(right, List())
-    ))
-  }
-
   def fabricObjectLTBounds(fobj: FabricObject): LTBounds = {
     val t = fobj.top
     val l = fobj.left
     val w = fobj.width
     val h = fobj.height
 
-    LTBounds(l.doubleValue(), t.doubleValue(),
-      w.doubleValue(), h.doubleValue())
+    LTBounds(l.doubleValue(), t.doubleValue(), w.doubleValue(), h.doubleValue())
   }
 
 
@@ -118,34 +78,6 @@ trait LabelerRendering extends FabricCanvasOperations {
     promise.future
 
   }
-
-  // def makePlaceholderImgs(trs: Seq[TargetRegion]): Seq[FabricObject] = {
-  //   val objs = trs.zipWithIndex.map({case (tr, i) =>
-  //     val bbox = tr.bbox.copy(
-  //       left=20, top=((i+1)*20).toDouble
-  //     )
-
-  //     val shape = createShape (bbox , "black", "yellow", 0.5f)
-
-  //     val targetRegionURI = tr.uriString
-  //     val scb = (img:Image) => {
-  //       img.top = bbox.top
-  //       img.left = bbox.left
-  //       img.width = bbox.width
-  //       img.height = bbox.height
-
-  //       fabricCanvas.add(img)
-  //       fabricCanvas.renderAll()
-  //       ()
-  //     }
-  //     val jscb: js.Function1[Image, Unit] = scb
-
-  //     val img = Image.fromURL(s"/img/${targetRegionURI}", jscb)
-
-  //     shape
-  //   })
-  //   objs
-  // }
 
 
   def createButtonWidget(text: String, bbox: LTBounds): FabricObject = {
@@ -193,55 +125,6 @@ trait LabelerRendering extends FabricCanvasOperations {
     ftext
   }
 
-  def hjoinAttrs(attrs: List[LwRenderingAttrs]): LwRenderingAttrs = {
-    var currLeft: Int = 0
-    val objsAndBounds = attrs.map({attr =>
-      val shiftedBounds = attr.regions
-        .map({case (tr, bbox) =>
-          (tr, bbox.moveTo(bbox.left+currLeft, y=bbox.top))
-        })
-
-      attr.fobj.setLeft(currLeft)
-
-      currLeft = (currLeft + attr.fobj.width.intValue())
-      (attr.fobj, shiftedBounds)
-    })
-
-    val fobjs = objsAndBounds.map(_._1)
-    val bounds = objsAndBounds.flatMap(_._2)
-
-    val g = fabric.Group(fobjs)
-    noControls(g)
-
-    LwRenderingAttrs(
-      g, bounds
-    )
-  }
-  def vjoinAttrs(attrs: List[LwRenderingAttrs]): LwRenderingAttrs = {
-    var currTop: Int = 0
-    val objsAndBounds = attrs.map({attr =>
-      val shiftedBounds = attr.regions
-        .map({case (tr, bbox) =>
-          (tr, bbox.moveTo(bbox.left, y=bbox.top+currTop))
-        })
-
-      attr.fobj.setTop(currTop)
-
-      currTop = (currTop + attr.fobj.height.intValue())
-      (attr.fobj, shiftedBounds)
-    })
-
-    val fobjs = objsAndBounds.map(_._1)
-    val bounds = objsAndBounds.flatMap(_._2)
-
-    val g = fabric.Group(fobjs)
-    noControls(g)
-
-    LwRenderingAttrs(
-      g, bounds
-    )
-  }
-
 
   def renderLabelWidget(positions: List[AbsPosAttr]): (LTBounds, Future[List[FabricObject]]) = {
 
@@ -265,6 +148,7 @@ trait LabelerRendering extends FabricCanvasOperations {
             }
             val normalScore = score.getOrElse(0d)
             val opacity = normalScore.toFloat * 0.2f
+            val regionId = target.id
 
             objStack += Future { createShape(wbbox, "", bgColor, opacity) }
           })

@@ -6,7 +6,6 @@ import scala.async.Async
 import scala.concurrent.Future
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import org.scalajs.dom.ext._
@@ -15,16 +14,24 @@ import autowire._
 import upickle.{default => UPickle}
 import UPickle._
 
-import textreflow.data._
 import geometry._
 import labeling._
 
 import native.mousetrap._
 
+import watrmarks.{StandardLabels => LB}
+import watrmarks.Label
+
 @JSExport
 object WatrColors extends LabelerRendering {
 
+  var selectType: Label = LB.Title
+
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
+    "l a" -> ((e: MousetrapEvent) => {selectType = LB.Authors}),
+    "l t" -> ((e: MousetrapEvent) => {selectType = LB.Title}),
+    "l f" -> ((e: MousetrapEvent) => {selectType = LB.Affiliation}),
+    "l s" -> ((e: MousetrapEvent) => {selectType = LB.Abstract}),
     "s" -> ((e: MousetrapEvent) => doSelection())
   )
 
@@ -39,10 +46,12 @@ object WatrColors extends LabelerRendering {
     }
   }
 
+  override def handleClick(canvasPoint: Point): Unit = {
+
+  }
 
   @JSExport
   def doSelection(): Unit = {
-    println("getUserLTBounds")
 
     fabricCanvas.defaultCursor = "crosshair"
     // fabricCanvas.skipTargetFind = true
@@ -56,7 +65,7 @@ object WatrColors extends LabelerRendering {
 
       fabricCanvas.defaultCursor = "default"
 
-      shell.onSelectLTBounds("some-artifact", bbox)
+      shell.onSelectLTBounds(selectType.fqn, bbox)
         .foreach({ bboxes =>
           bboxes.foreach{ bbox =>
             // println(s"got reponse: ${bbox}")
@@ -72,9 +81,9 @@ object WatrColors extends LabelerRendering {
     val Client = new WebsideClient("autowire")
     val api = Client[WatrShellApi]
 
-    @JSExport
-    def hello(msg: String): Unit = {
-      api.helloShell(msg).call()
+
+    def onClick(p: Point): Future[List[LTBounds]] = {
+      api.onClick(p).call()
     }
 
     def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]] = {
@@ -82,15 +91,8 @@ object WatrColors extends LabelerRendering {
     }
   }
 
-
-
-  @JSExport
-  lazy val shadowBody = dom.document.body.cloneNode(deep = true)
-
   @JSExport
   var interval: Double = 1000
-
-
 
   object WatrColorsApiListeners extends WatrColorsApi {
 
@@ -102,11 +104,6 @@ object WatrColors extends LabelerRendering {
     @JSExport
     override def clear(): Unit = {
       fabricCanvas.clear()
-      // dom.document.asInstanceOf[js.Dynamic].body = shadowBody.cloneNode(true)
-      // for(i <- 0 until 100000){
-      //   dom.window.clearTimeout(i)
-      //   dom.window.clearInterval(i)
-      // }
     }
 
     @JSExport
@@ -122,31 +119,25 @@ object WatrColors extends LabelerRendering {
       }
     }
 
-    import js.Dynamic.{ global => g, newInstance => jsnew }
-
-
 
     @JSExport
     override def echoLabeler(lwidget: List[AbsPosAttr]) = Async.async {
+      fabricCanvas.renderOnAddRemove = false
       clear()
       val (bbox, fobjs) = renderLabelWidget(lwidget)
       fabricCanvas.setWidth(bbox.width.toInt)
       fabricCanvas.setHeight(bbox.height.toInt)
 
+
       fobjs.foreach{os =>
         os.foreach(fabricCanvas.add(_))
       }
 
-      fabricCanvas.renderOnAddRemove = false
       fabricCanvas.renderAll()
       fabricCanvas.renderOnAddRemove = true
     }
 
 
-    @JSExport
-    override def echoTextReflows(textReflows: List[TextReflow]): Unit = {
-      // vcatWidgets(textReflows)
-    }
   }
 
   @JSExport
@@ -178,10 +169,8 @@ object WatrColors extends LabelerRendering {
       }
     }
 
-    // Trigger shadowBody to get captured when the page first loads
     dom.window.addEventListener("load", (event: dom.Event) => {
-      dom.console.log("Loading Workbench")
-      shadowBody
+      // defaultMouseHandler()
       rec()
     })
   }

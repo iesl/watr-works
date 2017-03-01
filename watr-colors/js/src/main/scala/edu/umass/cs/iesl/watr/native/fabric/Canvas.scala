@@ -63,8 +63,8 @@ trait CanvasProperties extends StaticCanvasProperties {
 @js.native
 trait JsElement extends js.Object {
 
-  // // def on(event: String, f:(Event) => Boolean): Event = js.native
-  // // def on(event: String, f:js.ThisFunction): Event = js.native
+  // def on(event: String, f:(Event) => Boolean): Event = js.native
+  // def on(event: String, f:js.ThisFunction): Event = js.native
   def on(event: String, f:js.Function): Event = js.native
   def off(event: String, f:js.Function): Event = js.native
 }

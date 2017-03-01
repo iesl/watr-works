@@ -35,7 +35,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 }
 
 
-// TODO rename this, it's a general LabelWidget interaction API
 trait LabelWidgetIndex {
 
   def docStore: DocumentCorpus
@@ -43,7 +42,21 @@ trait LabelWidgetIndex {
   def index: SpatialIndex[PosAttr]
 
   def onClick(clickPoint: Point): List[LTBounds] = {
-    ???
+
+    val query = LTBounds(clickPoint.x, clickPoint.y, 1, 1)
+    val positioned: Seq[PosAttr] = index.queryForIntersects(query)
+    positioned.headOption.map{ p =>
+
+      p.widget match {
+        case Button(s) =>
+        case LabeledTarget(t, label, score) =>
+
+      }
+
+    }
+
+
+    List()
   }
 
 

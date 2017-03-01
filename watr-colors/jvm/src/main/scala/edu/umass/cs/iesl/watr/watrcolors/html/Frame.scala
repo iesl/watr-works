@@ -10,36 +10,34 @@ object WatrStyles extends CascadingStyleSheet {
 
 
   def topBar = cls(
-    position         := "fixed",
-    top              := 0,
-    left             := 0,
-    width            := "100%",
-    height           := 60,
-    backgroundColor  := "black"
+    position.fixed,
+    overflow.hidden,
+    margin          := 0,
+    padding         := 0,
+    top             := 0,
+    left            := 0,
+    width           := "100%",
+    height          := "30px",
+    zIndex          := 9999,
+    backgroundColor := "#112233"
   )
 
-  def colN = cls(
-    paddingTop := "1rem",
-    paddingBottom:= "1rem",
-    backgroundColor:= "rgba(86,61,124,.15)",
-    border:= "1px solid rgba(86,61,124,.2)"
-  )
 
   def htmlBody = cls(
     (html ~ body)(
       height := "100%",
       minHeight := "100%",
       margin := 0,
-      width := "100%",
-      paddingTop := "2em",
-      paddingBottom := "2rem"
+      width := "100%"
+      // paddingTop := "2em",
+      // paddingBottom := "2rem"
     )
   )
 
   def container = cls(
     width := "100%",
-    marginTop := 60,
-    position.relative
+    paddingTop := "30px",
+    marginTop := 16
   )
 
   def canvasContainer = cls(
@@ -59,18 +57,6 @@ object WatrStyles extends CascadingStyleSheet {
     zIndex:=10
   )
 
-  def imgContainer = cls(
-    position.absolute,
-    left:="0",
-    top:="0",
-    padding:="0",
-    margin:="0",
-    border := "1px solid #000",
-    zIndex:=0,
-    backgroundColor := "ivory",
-    display:="inline-block"
-  )
-
   def fabricCanvas = cls(
     position.absolute,
     padding:="0",
@@ -81,15 +67,6 @@ object WatrStyles extends CascadingStyleSheet {
     top:="0"
   )
 
-  def infoPane = cls(
-    position.absolute,
-    padding:="0",
-    margin:="0",
-    borderTop := "2px solid #AAA",
-    borderLeft := "2px solid #AAA",
-    left:="0",
-    top:="0"
-  )
 }
 
 object ShellHtml {
@@ -117,37 +94,18 @@ object ShellHtml {
     )
   }
 
-  // def navbar()  = {
-  //   <.nav(^.`class`:="navbar navbar-fixed-top navbar-dark bg-inverse")(
-  //     <.a(^.`class`:="navbar-brand", ^.`href`:="#")("Project name"),
-  //     <.ul(^.`class`:="nav navbar-nav")(
-  //       <.li(^.`class`:="nav-item active")(
-  //         <.a(^.`class`:="nav-link", ^.`href`:="#")("Home", <.span(^.`class`:="sr-only")("(current)"))
-  //       ),
-  //       <.li(^.`class`:="nav-item")(
-  //         <.a(^.`class`:="nav-link", ^.`href`:="#")("About")
-  //       ),
-  //       <.li(^.`class`:="nav-item")(
-  //         <.a(^.`class`:="nav-link", ^.`href`:="#")("Contact")
-  //       )
-  //     )
-  //   )
-  // }
 
   def bodyContent() = {
-    <.div(
-      statusbar(),
-      <.div(WatrStyles.container)(
+    <.div(WatrStyles.container)(
 
-        <.div(^.id:="canvas-container", WatrStyles.canvasContainer)(
-          <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000")
-        ),
+      <.div(^.id:="canvas-container", WatrStyles.canvasContainer)(
+        <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000")
+      ),
 
-        <.script(`type` := "text/javascript")(
-          raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrColors().main()")
-        )
-
+      <.script(`type` := "text/javascript")(
+        raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrColors().main()")
       )
+
     )
 
   }
@@ -156,6 +114,7 @@ object ShellHtml {
     <.html(
       htmlHead(),
       <.body(WatrStyles.htmlBody)(
+        statusbar(),
         bodyContent()
       )
     )

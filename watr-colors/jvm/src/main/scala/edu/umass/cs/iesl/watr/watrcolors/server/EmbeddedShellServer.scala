@@ -97,7 +97,6 @@ class EmbeddedServer(
           waitingActor = None
       }
     })
-
   }
 
   object httpserver {
@@ -168,9 +167,9 @@ class EmbeddedServer(
           ~  regionImageServer
           ~  mainFrame
         ) ~
-          post( path("notifications") (ctx => actors.longPoll ! ctx.responder)
-            ~   autowireRoute
-          )
+        post( path("notifications") (ctx => actors.longPoll ! ctx.responder)
+            ~ autowireRoute
+        )
       )
 
     }
@@ -187,12 +186,23 @@ class EmbeddedServer(
       println(s"helloShell: $msg")
     }
 
-    def onDrawPath(artifactId: String,path: Seq[Point]): Unit = {
+    def onDrawPath(artifactId: String, path: Seq[Point]): Unit = {
       println(s"onDrawPath: ")
     }
 
-    def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]] = {
-      println(s"onSelectLTBounds: ${bbox}")
+    def onClick(p: Point): Future[List[LTBounds]] = {
+      println(s"onClick: ${p}")
+      activeLabelWidgetIndex.map({ lwIndex =>
+        val bboxes = lwIndex.onClick(p)
+        Future{ bboxes }
+      }).getOrElse{
+        Future{ List[LTBounds]() }
+      }
+
+    }
+
+    def onSelectLTBounds(labelFqn: String, bbox: LTBounds): Future[List[LTBounds]] = {
+      println(s"onSelectLTBounds: ${labelFqn}, ${bbox}")
 
       // determine which visual lines were selected and send back
       //  an updated bounding box
@@ -222,10 +232,6 @@ class EmbeddedServer(
       api.print(level, msg).call()
     }
 
-    def echoTextReflows(textReflows: List[TextReflow]): Unit = {
-      api.echoTextReflows(textReflows).call()
-    }
-
     def echoLabeler(lwidget: LabelWidget): Unit = {
       val lwIndex = LabelWidgetIndex.create(reflowDB, lwidget)
       activeLabelWidgetIndex = Some(lwIndex)
@@ -233,10 +239,6 @@ class EmbeddedServer(
       val layout = lwIndex.layout.map(p => AbsPosAttr(p.widget, p.widgetBounds, p.id))
 
       api.echoLabeler(layout).call()
-    }
-
-    def hello(msg: String): Unit = {
-      api.helloColors(msg).call()
     }
 
   }

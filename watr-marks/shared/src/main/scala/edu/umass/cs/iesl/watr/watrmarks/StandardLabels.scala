@@ -18,6 +18,8 @@ trait DocSegLabels {
   val Author = Label("ds", "author")
   val Authors = Label("ds", "authors")
 
+  val Affiliation = Label("ds", "affiliation")
+
   val AbstractHeading = Label("ds", "abstract-heading")
   val Abstract = Label("ds", "abstract")
 

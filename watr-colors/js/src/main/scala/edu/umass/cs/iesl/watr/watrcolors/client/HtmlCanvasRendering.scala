@@ -3,12 +3,12 @@ package watrcolors
 package client
 
 import geometry._
-
 import native.fabric
 
 trait HtmlCanvasRendering {
   def initFabric(elemId: String): fabric.Canvas = {
     val c = new fabric.Canvas(elemId, fabric.CanvasOptions)
+
     // Store a ref to the fabric js object for future use
     jQuery(s"#$elemId").prop("fabric", c)
     c.uniScaleTransform = true
@@ -124,33 +124,4 @@ trait HtmlCanvasRendering {
     }
   }
 
-
-
-}
-
-trait FabricCanvasOperations extends MouseGestures with HtmlCanvasRendering {
-  def fabricCanvas: fabric.Canvas
-
-  def addShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): fabric.FabricObject = {
-    val cshape = createShape(shape, color, bg, opacity)
-    fabricCanvas.add(cshape)
-
-    cshape
-  }
-
-  def translateLTBounds(x0: Double, y0: Double, bb: LTBounds): LTBounds = {
-    bb.copy(
-      left = bb.left + x0,
-      top = bb.top + y0
-    )
-  }
-
-  def translatePath(x0: Double, y0: Double, ps: Seq[Point]): Seq[Point] = {
-    ps.map(p => Point(p.x + x0, p.y + y0))
-  }
-
-  def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
-    val offset = jQuery(divID).offset().asInstanceOf[native.JQueryPosition]
-    translateLTBounds(-offset.left, -offset.top, bbox)
-  }
 }

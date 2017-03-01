@@ -6,7 +6,7 @@ package client
 // import org.scalajs.dom._
 // import textboxing.{TextBoxing => TB}
 
-// trait VisualTraceOperations extends FabricCanvasOperations {
+// trait VisualTraceOperations extends MouseGestures {
 
 //   import geometry._
 

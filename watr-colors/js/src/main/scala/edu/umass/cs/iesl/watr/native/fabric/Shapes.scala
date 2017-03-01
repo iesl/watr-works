@@ -63,15 +63,11 @@ trait FabricObject extends ObjectProperties {
   def setFlipY(value: Boolean): FabricObject = js.native
 
 
-  //  [: {Object} // options] Options object
   // def initialize(options) {
-
-  // @param [: {Object} // options] Options object
-  // @param [: {Object} // options] Options object
-  // @param [: {Object} // options] Options object
-  // @param [: {Object} // options] Options object
   // def setOptions(options) {
 
+  def get(property: String): js.Object = js.native
+  def set(key: String, value: js.Object): FabricObject = js.native
 
   // @param ctx: {CanvasRenderingContext2D} //  Context
   // @param fromLeft: Boolean //  When true, context is transformed to object's top/left corner. This is used when rendering text on Node
