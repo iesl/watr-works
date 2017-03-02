@@ -17,6 +17,7 @@ import LabelWidgetF._
 import utils.ScalazTreeImplicits._
 import TypeTags._
 
+
 case class AbsPosAttr(
   widget: LabelWidgetF[Unit],
   widgetBounds: LTBounds,
@@ -161,18 +162,18 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
           PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
 
-        case flw @ Button(action) =>
-          val width = (action.length+1) * 6d
-          val height = 18d
-          val bbox: LTBounds = LTBounds(0, 0, width, height)
+        // case flw @ Button(action) =>
+        //   val width = (action.length+1) * 6d
+        //   val height = 18d
+        //   val bbox: LTBounds = LTBounds(0, 0, width, height)
 
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
+        //   PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
 
 
-        case flw @ Panel(p@(content, attr)) =>
-          val (bbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NW)  })
+        // case flw @ Panel(p@(content, attr)) =>
+        //   val (bbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NW)  })
 
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+        //   PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
 
       }
@@ -222,7 +223,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     val relativePositioned: Cofree[LabelWidgetF, PosAttr] =
       lwidget.cata(attributePara(positionAttrs))
 
-    val zero = PosAttr(Button("dummy"), zeroLTBounds, RegionID(0), Point(0, 0), List(Point(0, 0)))
+    val zero = PosAttr(TextBox("dummy"), zeroLTBounds, RegionID(0), Point(0, 0), List(Point(0, 0)))
 
     val adjusted: Cofree[LabelWidgetF, PosAttr] = relativePositioned
       .attributeTopDownM[State[PosAttr, ?], PosAttr](zero)({

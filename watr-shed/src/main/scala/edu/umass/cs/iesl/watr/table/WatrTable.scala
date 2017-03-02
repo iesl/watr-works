@@ -11,8 +11,8 @@ import bioarxiv._
 
 import TypeTags._
 
-import labeling._
-import labeling.data._
+// import labeling._
+// import labeling.data._
 import docstore._
 
 object WatrTable {
@@ -85,17 +85,9 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     )
   }
 
-
   def initCorpus(): Corpus = {
     initCorpus(pwd)
   }
-
-  def titleLabelers(stableIds: Seq[String@@DocumentID])(implicit docStore: DocumentCorpus): LabelWidget = {
-    val lws = stableIds.map(TitleAuthorsLabelers.titleLabeler(_, docStore))
-
-    LW.col(lws:_*)
-  }
-
 
   def segment(corpusEntry: CorpusEntry)(implicit docStore: DocumentCorpus): Unit = {
     for {

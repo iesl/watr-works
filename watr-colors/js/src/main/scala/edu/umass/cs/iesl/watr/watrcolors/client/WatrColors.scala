@@ -19,25 +19,22 @@ import labeling._
 
 import native.mousetrap._
 
-import watrmarks.{StandardLabels => LB}
-import watrmarks.Label
-
 @JSExport
 object WatrColors extends LabelerRendering {
 
-  var selectType: Label = LB.Title
+  var uiState: Option[UIState] = None // UIState()
 
-  def alterSelectionType(l: Label): Unit = {
-    jQuery("#status-text").html(l.fqn)
-    selectType = l
+  // def alterSelectionType(l: Label): Unit = {
+  //   jQuery("#status-text").html(l.fqn)
+  //   selectType = l
 
-  }
+  // }
 
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
-    "l a" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Authors)}),
-    "l t" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Title)}),
-    "l f" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Affiliation)}),
-    "l s" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Abstract)}),
+    // "l a" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Authors)}),
+    // "l t" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Title)}),
+    // "l f" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Affiliation)}),
+    // "l s" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Abstract)}),
     "s" -> ((e: MousetrapEvent) => doSelection())
   )
 
@@ -57,26 +54,27 @@ object WatrColors extends LabelerRendering {
 
   @JSExport
   def doSelection(): Unit = {
+    uiState.map{ state =>
+      fabricCanvas.defaultCursor = "crosshair"
+      // fabricCanvas.skipTargetFind = true
+      // fabricCanvas.isDrawingMode = true
+      fabricCanvas.renderAll()
 
-    fabricCanvas.defaultCursor = "crosshair"
-    // fabricCanvas.skipTargetFind = true
-    // fabricCanvas.isDrawingMode = true
-    fabricCanvas.renderAll()
+      for {
+        bboxRel <- getUserLTBounds(fabricCanvas)
+      } yield {
+        val bbox = alignBboxToDiv("#canvas-container", bboxRel)
 
-    for {
-      bboxRel <- getUserLTBounds(fabricCanvas)
-    } yield {
-      val bbox = alignBboxToDiv("#canvas-container", bboxRel)
-
-      fabricCanvas.defaultCursor = "default"
-
-      shell.onSelectLTBounds(selectType.fqn, bbox)
-        .foreach({ bboxes =>
-          bboxes.foreach{ bbox =>
-            // println(s"got reponse: ${bbox}")
-            addShape(bbox, "black", "", 1f)
+        fabricCanvas.defaultCursor = "default"
+        shell
+          .uiRequest(UIRequest(state, SelectRegion(bbox)))
+          .foreach{ uiResponse =>
+            uiResponse.changes.foreach{
+              case (action, bbox) =>
+                addShape(bbox, "black", "", 1f)
+            }
           }
-        })
+      }
     }
 
   }
@@ -85,9 +83,8 @@ object WatrColors extends LabelerRendering {
     val Client = new WebsideClient("autowire")
     val api = Client[WatrShellApi]
 
-
-    def onClick(p: Point): Future[List[LTBounds]] = {
-      api.onClick(p).call()
+    def uiRequest(r: UIRequest): Future[UIResponse] = {
+      api.uiRequest(r).call()
     }
 
     def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]] = {
@@ -125,7 +122,7 @@ object WatrColors extends LabelerRendering {
 
 
     @JSExport
-    override def echoLabeler(lwidget: List[AbsPosAttr]) = Async.async {
+    override def echoLabeler(lwidget: List[AbsPosAttr], labelOptions: LabelOptions): Unit = Async.async {
       fabricCanvas.renderOnAddRemove = false
       clear()
       val (bbox, fobjs) = renderLabelWidget(lwidget)
@@ -139,6 +136,13 @@ object WatrColors extends LabelerRendering {
 
       fabricCanvas.renderAll()
       fabricCanvas.renderOnAddRemove = true
+      val controls = createLabelerControls(labelOptions)
+      val c = controls.render
+      val statusBar = dom.document.getElementById("status-bar")
+      statusBar.childNodes.foreach(
+        statusBar.removeChild(_)
+      )
+      statusBar.appendChild(c)
     }
 
 

@@ -13,7 +13,18 @@ import textreflow.data._
 import watrmarks.Label
 import textboxing.{TextBoxing => TB}
 
+
 sealed trait LabelWidgetF[+A]
+
+
+case class LabelOptions(
+  labels: List[Label]
+)
+
+case class LabelingPanel(
+  content: LabelWidgetF.LabelWidget,
+  options: LabelOptions
+)
 
 object LabelWidgetF {
 
@@ -47,23 +58,6 @@ object LabelWidgetF {
     textReflow: TextReflow
   ) extends LabelWidgetF[Nothing]
 
-
-  case class Panel[A](
-    content: A
-  ) extends LabelWidgetF[A]
-
-  case class Button(
-    action: String
-  ) extends LabelWidgetF[Nothing]
-
-  case class Radio(
-    buttons: List[Button]
-  ) extends LabelWidgetF[Nothing]
-
-  case class Selection(
-    buttons: List[Button]
-  ) extends LabelWidgetF[Nothing]
-
   case class Row[A](as: List[A]) extends LabelWidgetF[A]
   case class Col[A](as: List[A]) extends LabelWidgetF[A]
   case class Pad[A](a: A, pad: Padding) extends LabelWidgetF[A]
@@ -81,8 +75,6 @@ object LabelWidgetF {
         case l : LabeledTarget             => G.point(l.copy())
         case l @ TextBox(tb)               => G.point(l.copy())
         case l @ Reflow(tr)                => G.point(l.copy())
-        case l @ Button(action)            => G.point(l.copy())
-        case l @ Panel(content)            => f(content).map(Panel(_))
         case l @ Row(as)                   => as.traverse(f).map(Row(_))
         case l @ Col(as)                   => as.traverse(f).map(Col(_))
         case l @ Pad(a, padding)           => f(a).map(Pad(_, padding))
@@ -98,8 +90,6 @@ object LabelWidgetF {
       case l : LabeledTarget          => s"label-target"
       case l @ Reflow(tr)             => s"reflow()"
       case l @ TextBox(tb)            => s"textbox"
-      case l @ Button(action)         => s"$l"
-      case l @ Panel(content)         => s"$l"
       case l @ Row(as)                => s"$l"
       case l @ Col(as)                => s"$l"
       case l @ Pad(a, padding)        => s"$l"
@@ -124,9 +114,6 @@ object LabelWidgets {
   def reflow(tr: TextReflow) =
     fixlw(Reflow(tr))
 
-  def button(a: String) =
-    fixlw(Button(a))
-
   def textbox(tb: TB.Box) =
     fixlw(TextBox(tb))
 
@@ -135,9 +122,6 @@ object LabelWidgets {
 
   def row(lwidgets: LabelWidget*): LabelWidget =
     fixlw(Row(lwidgets.toList))
-
-  def panel(content: LabelWidget): LabelWidget =
-    fixlw(Panel(content))
 
   def pad(content: LabelWidget, pad: Padding): LabelWidget =
     fixlw(Pad(content, pad))

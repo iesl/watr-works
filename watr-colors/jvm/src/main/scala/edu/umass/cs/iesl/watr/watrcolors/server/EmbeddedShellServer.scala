@@ -191,13 +191,11 @@ class EmbeddedServer(
       println(s"onDrawPath: ")
     }
 
-    def onClick(p: Point): Future[List[LTBounds]] = {
-      println(s"onClick: ${p}")
-      activeLabelWidgetIndex.map({ lwIndex =>
-        val bboxes = lwIndex.onClick(p)
-        Future{ bboxes }
-      }).getOrElse{
-        Future{ List[LTBounds]() }
+    def uiRequest(r: UIRequest): Future[UIResponse] = {
+      activeLabelWidgetIndex.map { lwIndex =>
+        Future{ lwIndex.runUIRequest(r) }
+      } getOrElse {
+        Future{ UIResponse(List()) }
       }
     }
 
@@ -234,13 +232,14 @@ class EmbeddedServer(
       api.print(level, msg).call()
     }
 
-    def echoLabeler(lwidget: LabelWidget): Unit = {
-      val lwIndex = LabelWidgetIndex.create(reflowDB, lwidget)
+
+    def echoLabeler(lwidget: LabelingPanel): Unit = {
+      val lwIndex = LabelWidgetIndex.create(reflowDB, lwidget.content)
       activeLabelWidgetIndex = Some(lwIndex)
 
       val layout = lwIndex.layout.map(p => AbsPosAttr(p.widget, p.widgetBounds, p.id))
 
-      api.echoLabeler(layout).call()
+      api.echoLabeler(layout, lwidget.options).call()
     }
 
   }

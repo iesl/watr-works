@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package tracing
 
 // import scala.language.experimental.macros
+import scala.collection.mutable
 
 import geometry._
 import textboxing.{TextBoxing => TB}, TB._
@@ -23,16 +24,11 @@ object VisualTracer {
     )
   }
 
-  // implicit class RicherTraceLog(val trace: TraceLog) extends AnyVal {}
-
   def noop                                              = Noop
   def setPageGeometries(b: Seq[PageGeometry]): TraceLog = {SetPageGeometries(b)}
   def showRegion(s: TargetRegion): TraceLog             = {Show(Seq(s))}
   def showRegions(s: Seq[TargetRegion]): TraceLog       = {Show(s)}
   def showZone(s: Zone): TraceLog                       = {ShowZone(s)}
-  // def showComponent(s: Component): TraceLog             = {ShowComponent(s)}
-  // def showComponents(cs: Seq[Component]): TraceLog      = {all(cs.map(ShowComponent(_)))}
-  // def showLabel(s: Label): TraceLog                     = {ShowLabel(s)}
   def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
   def indicate(s: TargetFigure): TraceLog               = {Indicate(s)}
   def message(s: Box): TraceLog                         = {Message(s)}
@@ -41,7 +37,6 @@ object VisualTracer {
 
   def begin(name: String) = Group(name, Seq())
   def end(name: String) = GroupEnd(name)
-  import scala.collection.mutable
 
 
   // TODO replace this global w/config

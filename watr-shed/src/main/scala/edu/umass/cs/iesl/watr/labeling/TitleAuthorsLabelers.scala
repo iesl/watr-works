@@ -7,20 +7,17 @@ import BioArxiv._
 import AlignBioArxiv._
 import data._
 import textreflow.data._
-// import watrmarks.{StandardLabels => LB}
+import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 import data._
 import corpora._
-import geometry._
-// import geometry.syntax._
-// import PageComponentImplicits._
 import scala.collection.mutable
 
 
 object TitleAuthorsLabelers extends LabelWidgetUtils {
 
-  def bioArxivLabeler(stableId: String@@DocumentID, paperRec: PaperRec, theDocumentCorpus: DocumentCorpus): LabelWidget = {
+  def bioArxivLabeler(stableId: String@@DocumentID, paperRec: PaperRec, theDocumentCorpus: DocumentCorpus): LabelingPanel = {
 
     val paperRecWidget = LW.textbox(
       TB.vjoin()(
@@ -97,93 +94,21 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
         lwidget
       })
 
-    val controls = makeButtons(
-      "Clear Selections",
-      "Skip",
-      "Report Error"
-    )
-    val labelSelector = makeButtons(
-      "Auth",
-      "Titl",
-      "Abst",
-      "Aff",
-      "Cit"
-    )
-
-    val selType = makeButtons(
-      "Rect",
-      "Char",
-      "Line"
-    )
     val body = LW.row(
       LW.targetOverlay(pageTargetRegion, lwidgets),
       paperRecWidget
     )
 
-    LW.pad(
-      LW.panel(LW.col(
-        controls,
-        body
-      )),
-      Padding(2d, 2d, 2d, 4d)
+    LabelingPanel(
+      body,
+      LabelOptions(List(
+        LB.Title,
+        LB.Authors,
+        LB.Abstract,
+        LB.Affiliation
+      ))
     )
 
   }
 
-  def titleLabeler(stableId: String@@DocumentID, theDocumentCorpus: DocumentCorpus): LabelWidget = {
-    // - presumptively label the title lines
-    //    val tallestLines = page0.vlines.filter(_.height == tallest font height)
-    //    val titleZone: List[Zone] = Zone(tallestLines, LB.Title)
-
-    // - display:
-    //   - top half of page 1 w/ title labeling rects and visual line indicators
-    //   - "accept" button
-    //   - clear title label button
-    //   - rectangle select for labeling
-    //   - ? maybe show the extracted text w/button to indicate errors
-
-    val page0 = PageNum(0)
-    val docId = theDocumentCorpus.getDocument(stableId)
-      .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
-
-    val pageId = theDocumentCorpus.getPage(docId, page0)
-      .getOrElse(sys.error(s"Trying to access non-existent page in doc ${stableId} page 0"))
-
-    val pageGeometry = theDocumentCorpus.getPageGeometry(pageId)
-    // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
-
-    val pageTargetRegionId = theDocumentCorpus.addTargetRegion(pageId,
-      pageGeometry.copy(
-        top = pageGeometry.top,
-        height = pageGeometry.height / 3.0
-      )
-    )
-
-    val pageTargetRegion = theDocumentCorpus.getTargetRegion(pageTargetRegionId)
-
-    val vlines = for {
-      (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
-      region <- zone.regions
-    } yield { region }
-
-
-    val titlePreselects = vlines.drop(0).take(2)
-
-    val halfPageWSelects = LW.targetOverlay(
-      pageTargetRegion,
-      titlePreselects.map(t => LW.labeledTarget(t))
-    )
-
-    // val halfPageWSelects = LW.withSelections(halfPage, titlePreselects:_*)
-
-    val vlineText = for {
-      region <- titlePreselects
-      reflow <- theDocumentCorpus.getTextReflowForTargetRegion(region.id)
-    } yield  LW.reflow(reflow)
-
-    val textCol = LW.col(vlineText:_*)
-
-    LW.row(halfPageWSelects, textCol)
-
-  }
 }

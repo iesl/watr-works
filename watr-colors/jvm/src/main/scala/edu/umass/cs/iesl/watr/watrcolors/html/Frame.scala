@@ -89,9 +89,7 @@ object ShellHtml {
   }
 
   def statusbar()  = {
-    <.div(WatrStyles.topBar)(
-      "WatrColors Status:", <.span(^.id:="status-text")
-    )
+    <.div(^.id:="status-bar", WatrStyles.topBar)()
   }
 
 

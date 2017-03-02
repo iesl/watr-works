@@ -11,8 +11,6 @@ object TraceLog {
   case class SetPageGeometries(b: Seq[PageGeometry]) extends TraceLog
   case class Show(s: Seq[TargetRegion])              extends TraceLog { override val toString = s"""${s.map(_.toString).mkString(",")}"""}
   case class ShowZone(s: Zone)                       extends TraceLog { override val toString = s"""${s}"""}
-  // case class ShowComponent(s: Component)             extends TraceLog { override val toString = s"""${s}"""}
-  // case class ShowLabel(l:Label)                      extends TraceLog { override val toString = s"""${l}"""}
   case class FocusOn(s: TargetRegion)                extends TraceLog { override val toString = s"""focus: ${s}"""}
   case class Indicate(figure: TargetFigure)          extends TraceLog { override val toString = s"""indicate: ${figure}"""}
   case class Message(s: TB.Box)                      extends TraceLog { override val toString = s"""${s}""" }

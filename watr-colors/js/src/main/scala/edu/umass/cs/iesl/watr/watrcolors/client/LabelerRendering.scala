@@ -7,7 +7,7 @@ import scala.scalajs.js
 import textreflow._
 import textreflow.data._
 import geometry._
-import GeometryImplicits._
+// import GeometryImplicits._
 
 import native.fabric
 import native.fabric._
@@ -20,20 +20,18 @@ import scala.collection.mutable
 import scala.concurrent.{ Future, Promise }
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import org.scalajs.dom
+// import dom.html
+import scalatags.JsDom.all._
 
 import labeling._
 import LabelWidgetF._
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}
 
-case class LwRenderingAttrs(
-  fobj: FabricObject,
-  regions: List[(TargetRegion, LTBounds)]
-)
 
 trait LabelerRendering extends MouseGestures {
   import TextReflowF._
-  import matryoshka._
 
   override lazy val fabricCanvas =  {
     initFabric("canvas")
@@ -126,6 +124,29 @@ trait LabelerRendering extends MouseGestures {
   }
 
 
+  def createLabelerControls(options: LabelOptions): Tag  = {
+
+    val labelOptions = select(
+      options.labels.map(l => option(l.fqn))
+    ).render
+
+    labelOptions.onselect = (event: dom.Event) => {
+
+    }
+
+    val selectionGranularity = select(
+      option("line"),
+      option("char")
+    ).render
+
+
+
+    div(
+      labelOptions,
+      selectionGranularity
+    )
+  }
+
   def renderLabelWidget(positions: List[AbsPosAttr]): (LTBounds, Future[List[FabricObject]]) = {
 
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
@@ -162,52 +183,13 @@ trait LabelerRendering extends MouseGestures {
         case TextBox(tb) =>
           objStack += Future { createTextboxWidget(tb, wbbox) }
 
-
-        case Panel(content)              =>
-          objStack += Future { createShape(wbbox, "black", "", 0.1f) }
-
-        case Pad(a, padding) =>
-          val leftGutter = wbbox.copy(
-            width=padding.left
-          )
-
-          val rightGutter = wbbox.copy(
-            left=wbbox.right-padding.right,
-            width=padding.right
-          )
-
-          val topGutter = wbbox.copy(
-            left=wbbox.left+padding.left,
-            width=wbbox.width-(padding.right+padding.left),
-            height=padding.top
-          )
-          val bottomGutter = wbbox.copy(
-            left=topGutter.left,
-            top=wbbox.bottom-padding.bottom,
-            width=topGutter.width,
-            height=padding.bottom
-          )
-
-          val g = fabric.Group(Seq(
-            createShape(leftGutter, "", "red", 0.2f),
-            createShape(rightGutter, "", "red", 0.2f),
-            createShape(topGutter, "", "red", 0.2f),
-            createShape(bottomGutter, "", "red", 0.2f)
-          ))
-          noControls(g)
-
-          // objStack += Future { g }
-
-        case Button(action) =>
-          objStack += Future { createButtonWidget(action, wbbox) }
-
         case Row(as)                     =>
-          // objStack += Future { createShape(wbbox, "black", "", 0.0f) }
-
         case Col(as)                     =>
-          // objStack += Future { createShape(wbbox, "blue", "", 0.0f) }
 
         case _ =>
+          // case Pad(a, padding) =>
+          //   val leftGutter = wbbox.copy(
+          //     createShape(leftGutter, "", "red", 0.2f),
       }
 
     }

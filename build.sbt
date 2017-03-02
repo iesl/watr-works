@@ -128,9 +128,8 @@ lazy val watrcolorsJS = watrcolors.js
 
 lazy val watrcolorsJVM = watrcolors.jvm
   .dependsOn(watrshed, watrmarksJVM)
-
-  // .settings((resources in Compile) ++= Seq(
-  //   (fastOptJS in (watrcolorsJS, Compile)).value.data,
-  //   (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value,
-  //   ((classDirectory in (watrcolorsJS, Compile)).value / ".." / "watrcolors-fastopt.js.map").get.head
-  // ))
+  .settings((resources in Compile) ++= Seq(
+    (fastOptJS in (watrcolorsJS, Compile)).value.data,
+    (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value,
+    ((classDirectory in (watrcolorsJS, Compile)).value / ".." / "watrcolors-fastopt.js.map").get.head
+  ))

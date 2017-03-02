@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package table
 
-
 import textreflow.data._
 import corpora._
 
@@ -11,33 +10,31 @@ import BioArxivOps._
 import TypeTags._
 
 import labeling._
-import labeling.data._
 
 trait DocumentCorpusEnrichments extends LabelWidgetUtils {
 
 
-  def bioarxivLabelers(stableIds: Seq[String@@DocumentID])(implicit corpus: Corpus, docStore: DocumentCorpus): LabelWidget = {
+  def bioarxivLabelers(stableIds: Seq[String@@DocumentID])(implicit corpus: Corpus, docStore: DocumentCorpus): Seq[LabelingPanel] = {
     val lws = for {
       stableId <- stableIds
       entry <- corpus.entry(stableId.unwrap)
       rec   <- getBioarxivJsonArtifact(entry)
     } yield { TitleAuthorsLabelers.bioArxivLabeler(stableId, rec, docStore) }
 
-
-    makePagePanel(LW.col(lws:_*))
+    lws
   }
 
-  def nameLabelers(stableIds: Seq[String@@DocumentID])(implicit corpus: Corpus, docStore: DocumentCorpus): LabelWidget = {
-    val docs = for {
-      stableId <- stableIds
-      entry <- corpus.entry(stableId.unwrap)
-      rec   <- getBioarxivJsonArtifact(entry)
-    } yield (stableId, rec)
+  // def nameLabelers(stableIds: Seq[String@@DocumentID])(implicit corpus: Corpus, docStore: DocumentCorpus): Seq[LabelingPanel] = {
+  //   val docs = for {
+  //     stableId <- stableIds
+  //     entry <- corpus.entry(stableId.unwrap)
+  //     rec   <- getBioarxivJsonArtifact(entry)
+  //   } yield (stableId, rec)
 
-    val nameLabeler  = AuthorNameLabelers.nameLabeler(docStore, docs)
+  //   val nameLabeler  = AuthorNameLabelers.nameLabeler(docStore, docs)
 
-    makePagePanel(nameLabeler)
-  }
+  //   makePagePanel(nameLabeler)
+  // }
 
   implicit class RicherDocumentCorpus(val theDocumentCorpus: DocumentCorpus) {
 

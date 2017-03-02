@@ -42,26 +42,6 @@ trait LabelWidgetIndex {
   def layout: List[PosAttr]
   def index: SpatialIndex[PosAttr]
 
-  def onClick(clickPoint: Point): List[LTBounds] = {
-
-    val query = LTBounds(clickPoint.x, clickPoint.y, 1, 1)
-    val positioned: Seq[PosAttr] = index.queryForIntersects(query)
-    positioned.headOption.map{ p =>
-
-      p.widget match {
-        case Button(s) =>
-        case LabeledTarget(t, label, score) =>
-
-      }
-
-    }
-
-
-    List()
-  }
-
-
-
   def getWidgetForTargetRegion(targetRegion: TargetRegion): PosAttr = {
     val stableId = targetRegion.stableId
     val docId = docStore.getDocument(stableId).get
@@ -93,11 +73,15 @@ trait LabelWidgetIndex {
     selectedTargets
   }
 
-  // set zone+label (create new zone, add label)
-  // add target regions to zone,
-  // remove target regions from zone
-  // delete zone
-  // selection constraints: Line, Char, FreeRect
+  def runUIRequest(r: UIRequest): UIResponse = {
+    val UIRequest(uiState, gesture) = r
+
+
+
+    // response: indicate(region, )
+
+    UIResponse(List())
+  }
 
   def onSelect(targetLabel: Label, bbox: LTBounds): List[LTBounds] = {
 
