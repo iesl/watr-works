@@ -162,7 +162,6 @@ trait LabelerRendering extends MouseGestures {
         case TextBox(tb) =>
           objStack += Future { createTextboxWidget(tb, wbbox) }
 
-        case MouseOverlay(bkplane)       =>
 
         case Panel(content)              =>
           objStack += Future { createShape(wbbox, "black", "", 0.1f) }

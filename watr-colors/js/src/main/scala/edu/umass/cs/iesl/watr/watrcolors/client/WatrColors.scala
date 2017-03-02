@@ -27,11 +27,17 @@ object WatrColors extends LabelerRendering {
 
   var selectType: Label = LB.Title
 
+  def alterSelectionType(l: Label): Unit = {
+    jQuery("#status-text").html(l.fqn)
+    selectType = l
+
+  }
+
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
-    "l a" -> ((e: MousetrapEvent) => {selectType = LB.Authors}),
-    "l t" -> ((e: MousetrapEvent) => {selectType = LB.Title}),
-    "l f" -> ((e: MousetrapEvent) => {selectType = LB.Affiliation}),
-    "l s" -> ((e: MousetrapEvent) => {selectType = LB.Abstract}),
+    "l a" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Authors)}),
+    "l t" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Title)}),
+    "l f" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Affiliation)}),
+    "l s" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Abstract)}),
     "s" -> ((e: MousetrapEvent) => doSelection())
   )
 
@@ -46,9 +52,8 @@ object WatrColors extends LabelerRendering {
     }
   }
 
-  override def handleClick(canvasPoint: Point): Unit = {
+  // override def handleClick(canvasPoint: Point): Unit = {}
 
-  }
 
   @JSExport
   def doSelection(): Unit = {
@@ -75,7 +80,6 @@ object WatrColors extends LabelerRendering {
     }
 
   }
-
 
   object shell {
     val Client = new WebsideClient("autowire")

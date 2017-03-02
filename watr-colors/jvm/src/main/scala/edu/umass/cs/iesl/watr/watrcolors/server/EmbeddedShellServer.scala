@@ -15,7 +15,7 @@ import scala.concurrent.Future
 import concurrent.duration._
 
 import corpora._
-import textreflow.data._
+// import textreflow.data._
 import geometry._
 import labeling._
 import labeling.data._
@@ -25,6 +25,7 @@ import autowire._
 import upickle.{default => UPickle}
 import UPickle._
 import TypeTagPicklers._
+import watrmarks._
 
 
 class EmbeddedServer(
@@ -198,7 +199,6 @@ class EmbeddedServer(
       }).getOrElse{
         Future{ List[LTBounds]() }
       }
-
     }
 
     def onSelectLTBounds(labelFqn: String, bbox: LTBounds): Future[List[LTBounds]] = {
@@ -207,7 +207,8 @@ class EmbeddedServer(
       // determine which visual lines were selected and send back
       //  an updated bounding box
       activeLabelWidgetIndex.map({ lwIndex =>
-        val bboxes = lwIndex.onSelect(bbox)
+        val l = Labels.fromString(labelFqn)
+        val bboxes = lwIndex.onSelect(l, bbox)
 
         Future{ bboxes }
       }).getOrElse{
@@ -219,6 +220,7 @@ class EmbeddedServer(
 
 
   object colors {
+
     val ClientSite  = new ShellsideClient(actors.longPoll)
     val api = ClientSite[WatrColorsApi]
 

@@ -30,25 +30,8 @@ class ShellsideClient(pollActor: ActorRef) extends autowire.Client[String, UPick
   override def read[Result: UPickle.Reader](p: String) = UPickle.read[Result](p)
 }
 
-// trait ServerWire {
-//   def wire(incoming: String): Unit
-// }
 
 object ShellsideServer extends autowire.Server[String, UPickle.Reader, UPickle.Writer] {
-  // def routes: autowire.Core.Router[String] =
-  //   route[WatrColorsApi](serverImpl)
-  // def routes = route[WatrShellApi](serverImpl)
-
-  // def wire(incoming: String): Unit = {
-  //   val remoteCalls = UPickle.read[List[RemoteCall]](incoming)
-  //   remoteCalls.foreach { case RemoteCall(callPath, callArgs) =>
-  //     val req = new Request(callPath, callArgs.toMap)
-  //     println(s"Web: WatrTable Call recv'd ${req}")
-  //     // println(s"Web: WatrTable Call complete")
-  //     routes.apply(req)
-  //   }
-  // }
-
   override def read[Result: UPickle.Reader](p: String) = UPickle.read[Result](p)
   override def write[Result: UPickle.Writer](r: Result) = UPickle.write(r)
 }

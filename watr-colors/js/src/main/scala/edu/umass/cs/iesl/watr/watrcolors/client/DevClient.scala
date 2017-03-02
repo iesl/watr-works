@@ -4,22 +4,9 @@ package client
 
 
 import scala.scalajs.js.annotation.JSExport
-// import textreflow._
-// import textreflow.data._
-// import TypeTags._
-
-// trait TextReflowExamples extends PlainTextCorpus with LabelerRendering {
-
-//   def example1(): TextReflow = {
-//     stringToTextReflow("""|To be or not to be,
-//                           |That is the question.
-//                           |""".stripMargin)(DocumentID("d0"), PageNum(0))
-//   }
-// }
-
 
 @JSExport
-class DevClient { // extends TextReflowExamples {
+class DevClient extends LabelerRendering {
 
   @JSExport
   def main(): Unit = {

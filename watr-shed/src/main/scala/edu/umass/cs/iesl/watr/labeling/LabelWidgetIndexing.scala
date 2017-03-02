@@ -8,6 +8,7 @@ import LabelWidgetF._
 import corpora._
 import rindex._
 import watrmarks.{StandardLabels => LB}
+import watrmarks._
 
 
 object LabelWidgetIndex extends LabelWidgetLayout {
@@ -80,22 +81,34 @@ trait LabelWidgetIndex {
 
   }
 
-  def onSelect(bbox: LTBounds): List[LTBounds] = {
+  def querySelected(bbox: LTBounds): Seq[LabeledTarget] = {
+    val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
+
+    // val selectedTargets: List[(PosAttr, LabeledTarget)]
+    val selectedTargets: List[LabeledTarget] = positioned.toList
+      .map(p => index.getItem(p.id.unwrap))
+      .filter(_.widget.isInstanceOf[LabeledTarget])
+      .map(p => p.widget.asInstanceOf[LabeledTarget])
+
+    selectedTargets
+  }
+
+  // set zone+label (create new zone, add label)
+  // add target regions to zone,
+  // remove target regions from zone
+  // delete zone
+  // selection constraints: Line, Char, FreeRect
+
+  def onSelect(targetLabel: Label, bbox: LTBounds): List[LTBounds] = {
 
     val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
 
-    val selectedTargets: List[(PosAttr, LabeledTarget)] = positioned.toList
-      .map(p => index.getItem(p.id.unwrap))
-      .filter(_.widget.isInstanceOf[LabeledTarget])
-      .map(p => (p, p.widget.asInstanceOf[LabeledTarget]))
+    val selectedTargets = querySelected(bbox)
 
     val updates: Option[Seq[PosAttr]] = if (selectedTargets.nonEmpty) {
 
-      // TODO: Target label set by radio button in UI
-      val targetLabel: watrmarks.Label = LB.Authors
-
       val visualLineZones: Seq[Zone] = for {
-        (posAttr, labeledTarget) <- selectedTargets
+        labeledTarget <- selectedTargets
         zoneId <- docStore.getZoneForTargetRegion(labeledTarget.target.id, LB.VisualLine)
       } yield {
         docStore.getZone(zoneId)
@@ -111,18 +124,18 @@ trait LabelWidgetIndex {
         // Add all target regions to merged zone
         selectedTargets.map(tr => docStore.setZoneTargetRegions(
           mergedZone.id,
-          mergedZone.regions :+ tr._2.target
+          mergedZone.regions :+ tr.target
         ))
         Option(mergedZone)
 
       } else {
         // Create a new Zone with given label
-        val stableId = selectedTargets.head._2.target.stableId
+        val stableId = selectedTargets.head.target.stableId
         val docId = docStore
           .getDocument(stableId)
           .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
 
-        val targetRegions = selectedTargets.map(_._2.target)
+        val targetRegions = selectedTargets.map(_.target)
         val newZone = docStore.getZone(
           docStore.createZone(docId)
         )
@@ -132,21 +145,10 @@ trait LabelWidgetIndex {
         Option(newZone)
       }
 
-      //   resultZone.map({zone =>
-      //     zone.regions
-      //       .map(getWidgetForTargetRegion(_))
-
-      //   })
-      // updates0
-
       None
     } else {
       None
     }
-
-    // updates
-    //   .toList.flatten
-    //   .map(p => p.widgetBounds)
     ???
 
   }

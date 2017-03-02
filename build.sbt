@@ -94,20 +94,16 @@ lazy val watrshed = (project in file("watr-shed"))
   .dependsOn(watrmarksJVM)
 
 
-enablePlugins(ScalaJSPlugin)
-enablePlugins(WorkbenchPlugin)
-
-persistLauncher in Compile := false
-persistLauncher in Test := false
-skip in packageJSDependencies := false
+enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
+  .settings(skip in packageJSDependencies := false)
   .settings(libraryDependencies ++= Seq(
     Lib.scalaAsync,
     "com.lihaoyi"       %%% "scalatags"       % LibVersions.scalaTagsVersion,
     // "com.github.yoeluk" %%% "paper-scala-js"  % "0.5-SNAPSHOT",
-    // "com.lihaoyi"       %%% "scalarx"         % "0.3.2",
+    "com.lihaoyi"       %%% "scalarx"         % "0.3.2",
     "com.lihaoyi"       %%% "upickle"         % "0.4.4",
     "com.lihaoyi"       %%% "autowire"        % "0.2.6"
   ))
@@ -120,6 +116,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "io.spray" %% "spray-routing-shapeless2" % "1.3.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.17",
     "org.webjars.bower" % "fabric" % "1.6.2",
+    "org.webjars.bower" % "tether" % "1.4.0",
     "org.webjars" % "bootstrap" % "3.3.7",
     "org.webjars" % "jquery" % "2.2.4",
     "org.webjars" % "mousetrap" % "1.6.0"))
@@ -131,8 +128,9 @@ lazy val watrcolorsJS = watrcolors.js
 
 lazy val watrcolorsJVM = watrcolors.jvm
   .dependsOn(watrshed, watrmarksJVM)
-  .settings((resources in Compile) ++= Seq(
-    (fastOptJS in (watrcolorsJS, Compile)).value.data,
-    (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value,
-    ((classDirectory in (watrcolorsJS, Compile)).value / ".." / "watrcolors-fastopt.js.map").get.head
-  ))
+
+  // .settings((resources in Compile) ++= Seq(
+  //   (fastOptJS in (watrcolorsJS, Compile)).value.data,
+  //   (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value,
+  //   ((classDirectory in (watrcolorsJS, Compile)).value / ".." / "watrcolors-fastopt.js.map").get.head
+  // ))

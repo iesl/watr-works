@@ -6,3 +6,4 @@
 -J-XX:MaxMetaspaceSize=512m
 -J-XX:+CMSClassUnloadingEnabled
 -J-XX:+UseCodeCacheFlushing
+-J-Dakka.loglevel=OFF

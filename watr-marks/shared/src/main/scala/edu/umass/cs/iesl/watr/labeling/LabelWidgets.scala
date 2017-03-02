@@ -48,17 +48,20 @@ object LabelWidgetF {
   ) extends LabelWidgetF[Nothing]
 
 
-  // Overlay that accepts mouse gesture input
-  case class MouseOverlay[A](
-    backplane: A
-  ) extends LabelWidgetF[A]
-
   case class Panel[A](
     content: A
   ) extends LabelWidgetF[A]
 
   case class Button(
     action: String
+  ) extends LabelWidgetF[Nothing]
+
+  case class Radio(
+    buttons: List[Button]
+  ) extends LabelWidgetF[Nothing]
+
+  case class Selection(
+    buttons: List[Button]
   ) extends LabelWidgetF[Nothing]
 
   case class Row[A](as: List[A]) extends LabelWidgetF[A]
@@ -74,13 +77,11 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        // case l @ TargetOverlay(under,pageId, overs)           => overs.traverse(f).map(TargetOverlay(under,pageId,  _))
-        case l : TargetOverlay[A]             => l.overs.traverse(f).map(ft => l.copy(overs=ft))
+        case l : TargetOverlay[A]          => l.overs.traverse(f).map(ft => l.copy(overs=ft))
         case l : LabeledTarget             => G.point(l.copy())
         case l @ TextBox(tb)               => G.point(l.copy())
         case l @ Reflow(tr)                => G.point(l.copy())
         case l @ Button(action)            => G.point(l.copy())
-        case l @ MouseOverlay(bkplane)     => f(bkplane).map(a => l.copy(backplane=a))
         case l @ Panel(content)            => f(content).map(Panel(_))
         case l @ Row(as)                   => as.traverse(f).map(Row(_))
         case l @ Col(as)                   => as.traverse(f).map(Col(_))
@@ -93,16 +94,15 @@ object LabelWidgetF {
 
   implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
     def apply[A](show: Show[A]) = Show.show {
-      case l @ TargetOverlay(under, overs)           => s"$l"
-      case l @ LabeledTarget(target, label, score)   => s"label-target"
-      case l @ Reflow(tr)                  => s"reflow()"
-      case l @ TextBox(tb)                 => s"textbox"
-      case l @ Button(action)              => s"$l"
-      case l @ MouseOverlay(bkplane)       => s"$l"
-      case l @ Panel(content)              => s"$l"
-      case l @ Row(as)                     => s"$l"
-      case l @ Col(as)                     => s"$l"
-      case l @ Pad(a, padding)             => s"$l"
+      case l : TargetOverlay[A]       => s"$l"
+      case l : LabeledTarget          => s"label-target"
+      case l @ Reflow(tr)             => s"reflow()"
+      case l @ TextBox(tb)            => s"textbox"
+      case l @ Button(action)         => s"$l"
+      case l @ Panel(content)         => s"$l"
+      case l @ Row(as)                => s"$l"
+      case l @ Col(as)                => s"$l"
+      case l @ Pad(a, padding)        => s"$l"
     }
   }
 }
@@ -129,9 +129,6 @@ object LabelWidgets {
 
   def textbox(tb: TB.Box) =
     fixlw(TextBox(tb))
-
-  def mouseOverlay(bkplane: LabelWidget) =
-    fixlw(MouseOverlay(bkplane))
 
   def col(lwidgets: LabelWidget*): LabelWidget =
     fixlw(Col(lwidgets.toList))

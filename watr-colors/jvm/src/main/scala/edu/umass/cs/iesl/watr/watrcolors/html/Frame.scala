@@ -19,7 +19,7 @@ object WatrStyles extends CascadingStyleSheet {
     width           := "100%",
     height          := "30px",
     zIndex          := 9999,
-    backgroundColor := "#112233"
+    backgroundColor := "#eebbcc"
   )
 
 
@@ -90,7 +90,7 @@ object ShellHtml {
 
   def statusbar()  = {
     <.div(WatrStyles.topBar)(
-      "WatrColors Status:"
+      "WatrColors Status:", <.span(^.id:="status-text")
     )
   }
 

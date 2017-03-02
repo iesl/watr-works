@@ -174,10 +174,6 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
           PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
-        case flw @ MouseOverlay(p@(bkplane, attr)) =>
-          val (bbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NW)  })
-
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
       }
     }
