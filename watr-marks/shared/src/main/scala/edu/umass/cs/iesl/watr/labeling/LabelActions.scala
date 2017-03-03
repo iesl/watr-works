@@ -18,17 +18,17 @@ sealed trait UIAction
 case object Create extends UIAction
 case object Delete extends UIAction
 
-case class UIState(
+final case class UIState(
   selectionConstraint: Constraint,
   selectedLabel: Option[Label],
   action: UIAction
 )
 
-case class UIRequest(
+final case class UIRequest(
   uiState: UIState,
   gesture: Gesture
 )
 
-case class UIResponse(
-  changes: Seq[(UIAction, LTBounds)]
+final case class UIResponse(
+  changes: List[LTBounds]
 )

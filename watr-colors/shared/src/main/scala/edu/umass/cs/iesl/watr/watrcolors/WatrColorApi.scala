@@ -7,9 +7,7 @@ import scala.concurrent.Future
 
 trait WatrShellApi {
   def helloShell(msg: String): Unit
-  def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]]
   def uiRequest(r: UIRequest): Future[UIResponse]
-  // def onClick(p: Point): Future[List[LTBounds]]
   def onDrawPath(artifactId: String, path: Seq[Point]): Unit
 }
 

@@ -42,24 +42,6 @@ trait LabelWidgetIndex {
   def layout: List[PosAttr]
   def index: SpatialIndex[PosAttr]
 
-  def getWidgetForTargetRegion(targetRegion: TargetRegion): PosAttr = {
-    val stableId = targetRegion.stableId
-    val docId = docStore.getDocument(stableId).get
-    val pageId = docStore.getPage(docId, targetRegion.pageNum).get
-    // Map TargetRegion -> PosAttr
-    layout
-      .collect({
-        case p @ PosAttr(
-          LabeledTarget(bbox, label, score),
-          widgetBounds,
-          pRegionId, _, _
-        ) if targetRegion.id == targetRegion.id => p
-      }).headOption
-      .getOrElse(sys.error(s"getWidgetForTargetRegion: no entry for ${targetRegion}"))
-
-    ???
-
-  }
 
   def querySelected(bbox: LTBounds): Seq[LabeledTarget] = {
     val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
@@ -73,8 +55,87 @@ trait LabelWidgetIndex {
     selectedTargets
   }
 
+  def queryForSelectedLines(bbox: LTBounds): Seq[Zone] = {
+    val visualLineZones: Seq[Zone] = for {
+      selectedTargets <- querySelected(bbox)
+      labeledTarget <- selectedTargets
+      zoneId <- docStore.getZoneForTargetRegion(labeledTarget.target.id, LB.VisualLine)
+    } yield { docStore.getZone(zoneId) }
+    visualLineZones
+  }
+
+  def constrainedClipTargetRegions(bbox: LTBounds, constraint: Constraint, targets: Seq[TargetRegion]): Seq[TargetRegion] = {
+    constraint match {
+      case ByLine =>
+        // apply label to all lines in selected region
+
+
+      case ByChar =>
+      case ByRegion =>
+        // apply label to region w/o regard to line/chars
+    }
+
+    ???
+  }
+
+
+
+
   def runUIRequest(r: UIRequest): UIResponse = {
     val UIRequest(uiState, gesture) = r
+
+    gesture match {
+      case SelectRegion(bbox) =>
+
+        // val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
+
+        val selectedLines = queryForSelectedLines(bbox)
+        val selectedTargetLines = selectedLines.flatMap(_.regions)
+
+        val clippedTargets = constrainedClipTargetRegions(bbox, uiState.selectionConstraint, selectedTargetLines)
+
+        if (selectedLines.nonEmpty) {
+          uiState.action match {
+            case Create =>
+              uiState.selectionConstraint match {
+                case ByLine =>
+                  // apply label to all lines in selected region
+
+
+                case ByChar =>
+                case ByRegion =>
+                  // apply label to region w/o regard to line/chars
+              }
+
+              def mergedZone: Zone =  ???
+
+              // docStore.getZone(docStore.mergeZones(existingZones.map(_.id)))
+
+              // Add all target regions to merged zone
+              selectedTargets.map(tr => docStore.setZoneTargetRegions(
+                mergedZone.id,
+                mergedZone.regions :+ tr.target
+              ))
+              Option(mergedZone)
+
+              // Create a new Zone with given label
+              val stableId = selectedTargets.head.target.stableId
+              val docId = docStore
+                .getDocument(stableId)
+                .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
+
+              val targetRegions = selectedTargets.map(_.target)
+              val newZone = docStore.getZone(
+                docStore.createZone(docId)
+              )
+              docStore.setZoneTargetRegions(newZone.id, targetRegions)
+              docStore.addZoneLabel(newZone.id, targetLabel)
+
+            case Delete =>
+          }
+        }
+
+    }
 
 
 
@@ -83,57 +144,21 @@ trait LabelWidgetIndex {
     UIResponse(List())
   }
 
-  def onSelect(targetLabel: Label, bbox: LTBounds): List[LTBounds] = {
-
-    val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
-
-    val selectedTargets = querySelected(bbox)
-
-    val updates: Option[Seq[PosAttr]] = if (selectedTargets.nonEmpty) {
-
-      val visualLineZones: Seq[Zone] = for {
-        labeledTarget <- selectedTargets
-        zoneId <- docStore.getZoneForTargetRegion(labeledTarget.target.id, LB.VisualLine)
-      } yield {
-        docStore.getZone(zoneId)
-      }
-
-      // If any selected regions are already part of a zone...
-      val resultZone = if (visualLineZones.nonEmpty) {
-        // Merge them..
-        def mergedZone: Zone =  ???
-
-        // docStore.getZone(docStore.mergeZones(existingZones.map(_.id)))
-
-        // Add all target regions to merged zone
-        selectedTargets.map(tr => docStore.setZoneTargetRegions(
-          mergedZone.id,
-          mergedZone.regions :+ tr.target
-        ))
-        Option(mergedZone)
-
-      } else {
-        // Create a new Zone with given label
-        val stableId = selectedTargets.head.target.stableId
-        val docId = docStore
-          .getDocument(stableId)
-          .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
-
-        val targetRegions = selectedTargets.map(_.target)
-        val newZone = docStore.getZone(
-          docStore.createZone(docId)
-        )
-        docStore.setZoneTargetRegions(newZone.id, targetRegions)
-        docStore.addZoneLabel(newZone.id, targetLabel)
-
-        Option(newZone)
-      }
-
-      None
-    } else {
-      None
-    }
-    ???
-
-  }
 }
+
+// def getWidgetForTargetRegion(targetRegion: TargetRegion): PosAttr = {
+//   val stableId = targetRegion.stableId
+//   val docId = docStore.getDocument(stableId).get
+//   val pageId = docStore.getPage(docId, targetRegion.pageNum).get
+//   // Map TargetRegion -> PosAttr
+//   layout
+//     .collect({
+//       case p @ PosAttr(
+//         LabeledTarget(bbox, label, score),
+//         widgetBounds,
+//         pRegionId, _, _
+//       ) if targetRegion.id == targetRegion.id => p
+//     }).headOption
+//     .getOrElse(sys.error(s"getWidgetForTargetRegion: no entry for ${targetRegion}"))
+//   ???
+// }

@@ -199,20 +199,6 @@ class EmbeddedServer(
       }
     }
 
-    def onSelectLTBounds(labelFqn: String, bbox: LTBounds): Future[List[LTBounds]] = {
-      println(s"onSelectLTBounds: ${labelFqn}, ${bbox}")
-
-      // determine which visual lines were selected and send back
-      //  an updated bounding box
-      activeLabelWidgetIndex.map({ lwIndex =>
-        val l = Labels.fromString(labelFqn)
-        val bboxes = lwIndex.onSelect(l, bbox)
-
-        Future{ bboxes }
-      }).getOrElse{
-        Future{ List[LTBounds]() }
-      }
-    }
   }
 
 

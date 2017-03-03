@@ -19,16 +19,12 @@ import labeling._
 
 import native.mousetrap._
 
+import TypeTagPicklers._
+
 @JSExport
 object WatrColors extends LabelerRendering {
 
   var uiState: Option[UIState] = None // UIState()
-
-  // def alterSelectionType(l: Label): Unit = {
-  //   jQuery("#status-text").html(l.fqn)
-  //   selectType = l
-
-  // }
 
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
     // "l a" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Authors)}),
@@ -70,7 +66,8 @@ object WatrColors extends LabelerRendering {
           .uiRequest(UIRequest(state, SelectRegion(bbox)))
           .foreach{ uiResponse =>
             uiResponse.changes.foreach{
-              case (action, bbox) =>
+              // case (action, bbox) =>
+              case bbox =>
                 addShape(bbox, "black", "", 1f)
             }
           }
@@ -87,9 +84,6 @@ object WatrColors extends LabelerRendering {
       api.uiRequest(r).call()
     }
 
-    def onSelectLTBounds(artifactId: String, bbox: LTBounds): Future[List[LTBounds]] = {
-      api.onSelectLTBounds(artifactId, bbox).call()
-    }
   }
 
   @JSExport

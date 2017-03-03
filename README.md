@@ -140,3 +140,4 @@ The following characters are always escaped:
    braces: '{', '}'
 
 Inside of a tex-formatted token, '_', '^' are also escaped.
+
