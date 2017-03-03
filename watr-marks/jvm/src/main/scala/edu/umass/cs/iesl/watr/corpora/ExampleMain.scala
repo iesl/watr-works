@@ -24,7 +24,7 @@ class SampleTextCorpus extends PlainTextCorpus {
   val stableId = DocumentID("stable-id#23")
 
   def loadSampleDoc(pageCount: Int): Unit = {
-    val pages = TextPageSamples.samples
+    val pages = MockPapers.genericTitle
       .take(pageCount)
 
     addDocument(stableId, pages)

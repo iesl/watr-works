@@ -4,25 +4,6 @@ package corpora
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 
-object TextPageSamples {
-  val samples = List(
-    """|            The Title of the Paper
-       |^{a}Faculty of Engineering, Yamagata University, Yonezawa 992-8510, Japan
-       |""".stripMargin,
-
-    """|   EXPERIMENTAL
-       |1. Sample Preparation and Characterization
-       |
-       |   The starting material of NaBiO_{3} ? nH2O (Nacalai Tesque
-       |Inc.) was placed in a Teflon lined autoclave (70 ml) with
-       |LiOH and H2O (30 ml) and was heated at 120–2008C
-       |for 4 days.
-       |
-       |""".stripMargin
-  )
-
-}
-
 trait CorpusTestingUtil extends PlainTextCorpus {
   def createEmptyDocumentCorpus(): DocumentCorpus
 
@@ -46,7 +27,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
   val stableId = DocumentID("stable-id#23")
 
   def loadSampleDoc(pageCount: Int): Unit = {
-    val pages = TextPageSamples.samples
+    val pages = MockPapers.genericTitle
       .take(pageCount)
 
     addDocument(stableId, pages)
