@@ -35,10 +35,11 @@ object MockPapers {
        |16            Correspondence should be addressed to M.S. (stoneking@eva.mpg.de)
        |""".stripMargin,
     """|
-       | 1 Abstract
-       | 2    To investigate in detail the paternal and maternal demographic histories of humans,
-       | 3  we obtained ~500 kb of non-recombining Y chromosome (NRY) sequences and
-       | 4  complete mtDNA genome sequences from 623 males from 51 populations in the
+       | 1   Abstract
+       |
+       | 2      To investigate in detail the paternal and maternal demographic histories of humans,
+       | 3    we obtained ~500 kb of non-recombining Y chromosome (NRY) sequences and
+       | 4    complete mtDNA genome sequences from 623 males from 51 populations in the
        |""".stripMargin
   )
 

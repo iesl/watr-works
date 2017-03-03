@@ -7,8 +7,8 @@ import scalaz._
 import Scalaz._
 import TextReflowF._
 import TypeTags._
-// import databasics._
 import corpora._
+
 
 class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
@@ -33,7 +33,6 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
       }
     }
   }
-
 
   behavior of "modifying chars"
 

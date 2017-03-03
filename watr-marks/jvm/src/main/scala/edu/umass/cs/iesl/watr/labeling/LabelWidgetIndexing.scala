@@ -3,13 +3,12 @@ package labeling
 
 import geometry._
 // import spindex._
-import docstore._
+// import docstore._
 import LabelWidgetF._
 import corpora._
 import rindex._
 import watrmarks.{StandardLabels => LB}
-import watrmarks._
-
+// import watrmarks._
 
 object LabelWidgetIndex extends LabelWidgetLayout {
 
@@ -18,7 +17,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     def ltBounds(t: PosAttr): LTBounds = t.widgetBounds
   }
 
-  def create(db: TextReflowDB, lwidget: LabelWidget): LabelWidgetIndex = {
+  def create(docStore0: DocumentCorpus, lwidget: LabelWidget): LabelWidgetIndex = {
     val lwIndex = SpatialIndex.createFor[PosAttr]()
 
     val layout0 = layoutWidgetPositions(lwidget)
@@ -28,7 +27,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     })
 
     new LabelWidgetIndex {
-      def docStore: DocumentCorpus = db.docstorage
+      def docStore: DocumentCorpus = docStore0
       def layout: List[PosAttr] = layout0
       def index: SpatialIndex[PosAttr] = lwIndex
     }
