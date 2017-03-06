@@ -9,10 +9,8 @@ import textboxing.{TextBoxing => TB}, TB._
 
 object VisualTracer {
   import TraceLog._
-  import scala.language.implicitConversions
 
 
-  implicit def Figure2Trace(f: TargetFigure): TraceLog = indicate(f)
 
   implicit class RicherString(val s: String) extends AnyVal {
     def withTrace(t: TraceLog): TraceLog = link(
@@ -30,7 +28,6 @@ object VisualTracer {
   def showRegions(s: Seq[TargetRegion]): TraceLog       = {Show(s)}
   def showZone(s: Zone): TraceLog                       = {ShowZone(s)}
   def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
-  def indicate(s: TargetFigure): TraceLog               = {Indicate(s)}
   def message(s: Box): TraceLog                         = {Message(s)}
   def all(ts: Seq[TraceLog]): TraceLog                  = {All(ts)}
   def link(ts: TraceLog*): TraceLog                     = {Link(ts)}

@@ -22,10 +22,6 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   val xscale = 10.0d
   val yscale = 10.0d
 
-  def lines(str: String): Seq[String] = {
-    str.split("\n")
-      .map(_.trim)
-  }
   def linesWithPad(str: String): Seq[(Int, String)] = {
     str.split("\n")
       .map({s =>
@@ -108,20 +104,24 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     }
   }
 
-
-  def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
-    // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
+  def getRegionBounds(x: Int, y: Int, w: Int, h: Int): LTBounds = {
     val width = if (w>0) {
       w*xscale - 0.1
     } else 0
+
     val height = if (h>0) {
       h*yscale - 0.1
     } else 0
 
-    val bbox = LTBounds(
+    LTBounds(
       left=x*xscale, top=y*yscale,
       width, height
     )
+  }
+
+  def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
+    // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
+    val bbox = getRegionBounds(x, y, w, h)
 
     val regionId = docStore.addTargetRegion(pageId, bbox)
     docStore.getTargetRegion(regionId)
@@ -218,71 +218,4 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
     docStore.setPageGeometry(pageId, reflowBuilder.totalBounds())
   }
-
-
-
-
-
-  def stringToPageAtoms(str: String, pageNum: Int, stableId: String@@DocumentID): (Seq[CharAtom], PageGeometry) = {
-    val docId = docStore.addDocument(stableId)
-    val pageId = docStore.addPage(docId, PageNum(pageNum))
-
-    for {
-      (line, linenum) <- lines(str).zipWithIndex
-      (ch, chnum)     <- line.zipWithIndex
-    } yield {
-      val bbox = LTBounds(
-        left=chnum*xscale, top=linenum*yscale,
-        width=xscale, height=yscale
-      )
-      CharAtom(
-        charIds.nextId,
-        mkTargetRegion(pageId, x=chnum, y=linenum, w=1, h=1),
-        ch.toString
-      )
-      // CharAtom(charIds.nextId, pageId, bbox, ch.toString)
-
-    }
-
-    val atoms = lines(str).zipWithIndex
-      .map({ case (line, linenum) =>
-        line.zipWithIndex
-          .filterNot(_._1 == ' ')
-          .map({ case (ch, chnum) =>
-            val bbox = LTBounds(
-              left=chnum*xscale, top=linenum*yscale,
-              width=xscale, height=yscale
-            )
-
-            CharAtom(
-              charIds.nextId,
-              mkTargetRegion(pageId, x=chnum, y=linenum, w=1, h=1),
-              ch.toString
-            )
-          })
-      })
-      .flatten.toSeq
-
-    val maxX = atoms.map(_.bbox.right).max
-    val maxY = atoms.map(_.bbox.bottom).max
-
-
-    val pageGeom = PageGeometry(
-      PageNum(pageNum), LTBounds(
-        left=0, top=0,
-        width=maxX, height=maxY
-      )
-    )
-
-    (atoms, pageGeom)
-  }
-
-  def stringsToMultiPageAtoms(stableId: String@@DocumentID, strs: String*): Seq[(Seq[CharAtom], PageGeometry)] = {
-    for {
-      (pstr, pagenum) <- strs.zipWithIndex
-    } yield {
-      stringToPageAtoms(pstr, pagenum, stableId)
-    }
-  }
-
 }

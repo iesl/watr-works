@@ -5,10 +5,30 @@ import scalaz.Equal
 import scalaz.syntax.equal._
 
 import watrmarks._
-
 import TypeTags._
-
 import GeometryImplicits._
+
+/**
+
+  Identifying a rectangular region on a page:
+
+  - Stable Identifier: string that uniquely identfies a particular document (e.g., a filename, SHA1-hash of file content, etc)
+  - Page number: 0-indexed
+  - page geometry: bounding box as taken from PDF (MediaBox, CropBox, or whatever was specified in PDF)
+  - bounding box: left/top/width/height bounds of region
+
+  - DocumentID (as Int): corpus-specific identifier for document (document table primary key)
+  - PageID: documentId + page number + page geometry
+  - RegionID: PageID + bounding box
+
+  */
+
+
+case class PageRegion(
+  pageId: Int@@PageID,
+  bbox: LTBounds,
+  regionId: Option[Int@@RegionID] = None
+)
 
 case class TargetRegion(
   id: Int@@RegionID,
@@ -37,15 +57,6 @@ object TargetRegion {
 
 }
 
-// More General version of TargetRegion
-case class TargetFigure(
-  id: Int@@RegionID,
-  pageNum: Int@@PageNum,
-  figure: GeometricFigure
-) {
-  override def toString = s"""<fig.${id} pg.${pageNum} ${figure.toString}>"""
-}
-
 case class Zone(
   id: Int@@ZoneID,
   regions: Seq[TargetRegion],
@@ -56,25 +67,6 @@ case class PageGeometry(
   id: Int@@PageNum,
   bounds: LTBounds
 )
-
-// sealed trait PageAtom {
-//   def targetRegion: TargetRegion
-
-//   implicit val EqualPageAtom: Equal[PageAtom] = Equal.equal((a, b)  => (a, b) match {
-//     case (CharAtom(t, c, w), CharAtom(t2, c2, w2)) =>
-//       t===t2 && c==c2 && w==w2
-//     case (_, _) => false
-
-//   })
-// }
-
-// case class CharAtom(
-//   id: Int@@CharID,
-//   pageId: Int@@PageID,
-//   bbox: LTBounds,
-//   char: String,
-//   wonkyCharCode: Option[Int] = None
-// )
 
 case class CharAtom(
   id: Int@@CharID,
@@ -95,20 +87,6 @@ object CharAtom {
     case (_, _) => false
   })
 }
-
-
-// class ImgAtom(
-//   val targetRegion: TargetRegion
-// ) extends PageAtom
-
-// object ImgAtom {
-//   def unapply(rg: ImgAtom): Option[(TargetRegion)] = Some(rg.targetRegion)
-//   def apply(region: TargetRegion): ImgAtom = new ImgAtom(region)
-// }
-
-case class GlyphInstance(
-  glyphHash: String
-)
 
 
 case class GlyphClass(

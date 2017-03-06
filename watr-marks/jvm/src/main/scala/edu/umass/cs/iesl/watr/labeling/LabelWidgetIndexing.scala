@@ -7,7 +7,7 @@ import geometry._
 import LabelWidgetF._
 import corpora._
 import rindex._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 // import watrmarks._
 
 object LabelWidgetIndex extends LabelWidgetLayout {
@@ -55,12 +55,13 @@ trait LabelWidgetIndex {
   }
 
   def queryForSelectedLines(bbox: LTBounds): Seq[Zone] = {
-    val visualLineZones: Seq[Zone] = for {
-      selectedTargets <- querySelected(bbox)
-      labeledTarget <- selectedTargets
-      zoneId <- docStore.getZoneForTargetRegion(labeledTarget.target.id, LB.VisualLine)
-    } yield { docStore.getZone(zoneId) }
-    visualLineZones
+    // val visualLineZones: Seq[Zone] = for {
+    //   selectedTargets <- querySelected(bbox)
+    //   labeledTarget <- selectedTargets
+    //   zoneId <- docStore.getZoneForTargetRegion(labeledTarget.target.id, LB.VisualLine)
+    // } yield { docStore.getZone(zoneId) }
+    // visualLineZones
+    ???
   }
 
   def constrainedClipTargetRegions(bbox: LTBounds, constraint: Constraint, targets: Seq[TargetRegion]): Seq[TargetRegion] = {
@@ -111,24 +112,24 @@ trait LabelWidgetIndex {
               // docStore.getZone(docStore.mergeZones(existingZones.map(_.id)))
 
               // Add all target regions to merged zone
-              selectedTargets.map(tr => docStore.setZoneTargetRegions(
-                mergedZone.id,
-                mergedZone.regions :+ tr.target
-              ))
-              Option(mergedZone)
+              // selectedTargets.map(tr => docStore.setZoneTargetRegions(
+              //   mergedZone.id,
+              //   mergedZone.regions :+ tr.target
+              // ))
+              // Option(mergedZone)
 
-              // Create a new Zone with given label
-              val stableId = selectedTargets.head.target.stableId
-              val docId = docStore
-                .getDocument(stableId)
-                .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
+              // // Create a new Zone with given label
+              // val stableId = selectedTargets.head.target.stableId
+              // val docId = docStore
+              //   .getDocument(stableId)
+              //   .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
 
-              val targetRegions = selectedTargets.map(_.target)
-              val newZone = docStore.getZone(
-                docStore.createZone(docId)
-              )
-              docStore.setZoneTargetRegions(newZone.id, targetRegions)
-              docStore.addZoneLabel(newZone.id, targetLabel)
+              // val targetRegions = selectedTargets.map(_.target)
+              // val newZone = docStore.getZone(
+              //   docStore.createZone(docId)
+              // )
+              // docStore.setZoneTargetRegions(newZone.id, targetRegions)
+              // docStore.addZoneLabel(newZone.id, targetLabel)
 
             case Delete =>
           }

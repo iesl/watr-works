@@ -162,20 +162,6 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
           PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
 
-        // case flw @ Button(action) =>
-        //   val width = (action.length+1) * 6d
-        //   val height = 18d
-        //   val bbox: LTBounds = LTBounds(0, 0, width, height)
-
-        //   PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
-
-
-        // case flw @ Panel(p@(content, attr)) =>
-        //   val (bbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NW)  })
-
-        //   PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
-
-
       }
     }
 

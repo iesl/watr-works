@@ -11,14 +11,11 @@ import matryoshka.patterns.EnvT
 import utils.EnrichNumerics._
 import scala.{Range => _}
 
-import watrmarks.{StandardLabels => LB}
-
 import geometry._
 import watrmarks.Label
 
 trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._
-  // import PageComponentImplicits._
   import GeometryImplicits._
 
   type ReflowRange = RangeInt

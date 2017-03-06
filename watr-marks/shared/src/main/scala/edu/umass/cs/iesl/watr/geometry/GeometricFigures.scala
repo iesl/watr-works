@@ -46,6 +46,12 @@ case class Padding(
   bottom: Double
 )
 
+object Padding {
+  def apply(n: Double): Padding = {
+    Padding(n, n, n, n)
+  }
+}
+
 
 object GeometricFigure {
 

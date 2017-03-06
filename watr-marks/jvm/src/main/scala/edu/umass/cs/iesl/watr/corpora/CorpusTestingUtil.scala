@@ -12,6 +12,17 @@ trait CorpusTestingUtil extends PlainTextCorpus {
   def docStore: DocumentCorpus = freshDocstore
     .getOrElse(sys.error("Uninitialized DocumentCorpus; Use FreshDocstore() class"))
 
+  def initEmpty(): Unit = {
+    try {
+      freshDocstore = Some(createEmptyDocumentCorpus())
+    } catch {
+      case t: Throwable =>
+        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+        println(s"ERROR: ${message}")
+        t.printStackTrace()
+    }
+  }
+
   class FreshDocstore(pageCount: Int=0) {
     try {
       freshDocstore = Some(createEmptyDocumentCorpus())

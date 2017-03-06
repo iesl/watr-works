@@ -15,45 +15,22 @@ class LabelWidgetIndexingSpec extends FlatSpec with Matchers with CorpusTestingU
 
   import LabelWidgetIndex._
 
-  val bbox = LTBounds(0d, 0d, 10d, 10d)
-  val tr = TargetRegion(RegionID(0), DocumentID("doc-id-0"), PageNum(23), bbox)
+  behavior of "LabelWidgetIndexing"
 
-  def stringToReflow(s: String): TextReflow = ???
-    // stringToTextReflow(s)(DocumentID("doc-id-0"), PageNum(23))
+  // report the total widget geometry
+  // normalize the added target regions to a common geometry ?? (to prevent text size diffs between pages)
+  // list all of the contained target regions
+  // foreach target region, find page geometry of targeted page
 
+  // Queries: point/box, return all contained or intersected
+  //   Widget query:
+  //     find overlay regions and labeled regions
+  //   Target page queries:
+  //
 
-  "LabelWidgetIndexing" should "have a test" in new FreshDocstore() {
+  // Clipping:
+  //     clip the results of a query, s.t. all target regions are clipped to bbox
 
-    def reg0: TargetRegion = tr
-    def sel0: TargetRegion = tr
-    def sel1: TargetRegion = tr
-
-    val reflow0 = stringToReflow("lime _{^{ﬂ}a}vor")
-    def range0: RangeInt = RangeInt(1, 3)
-
-    val w1 = LW.targetOverlay(reg0, List(
-      LW.labeledTarget(sel0),
-      LW.labeledTarget(sel1)
-    ))
-
-    val w2 = LW.col(
-      LW.reflow(reflow0),
-      LW.reflow(reflow0)
-    )
-
-    val row1 = LW.row(w1, w2)
-
-    val panel1 = row1
-
-    println("layout")
-    println(prettyPrintLabelWidget(panel1))
-
-    println("positioned")
-    val abs0 = layoutWidgetPositions(panel1)
-
-    // println(abs0.printTree())
-
-
-    // val lwIndex = LabelWidgetIndex.create(panel1)
-  }
+  //
+  it should "" in new FreshDocstore() {}
 }

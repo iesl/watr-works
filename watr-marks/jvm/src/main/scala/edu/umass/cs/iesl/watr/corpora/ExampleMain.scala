@@ -5,16 +5,14 @@ import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 
 object ExampleMain extends App {
-  override def main(args: Array[String]): Unit = {
 
-    val corpus = new SampleTextCorpus()
+  val corpus = new SampleTextCorpus()
 
-    corpus.loadSampleDoc(2)
-    println(
-      corpus.reportDocument(corpus.stableId)
-    )
+  corpus.loadSampleDoc(2)
+  println(
+    corpus.reportDocument(corpus.stableId)
+  )
 
-  }
 
 }
 

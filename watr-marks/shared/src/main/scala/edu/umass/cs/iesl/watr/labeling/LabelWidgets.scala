@@ -13,6 +13,13 @@ import textreflow.data._
 import watrmarks.Label
 import textboxing.{TextBoxing => TB}
 
+/**
+  LabelWidgets provide a way to combine 2-d regions (TargetRegions) into
+  a single layout.
+
+
+  */
+
 
 sealed trait LabelWidgetF[+A]
 
