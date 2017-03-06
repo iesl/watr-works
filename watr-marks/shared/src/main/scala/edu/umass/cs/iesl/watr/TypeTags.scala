@@ -12,6 +12,7 @@ sealed trait DocumentID // extends SHA1String
 sealed trait ZoneID
 sealed trait LabelID
 sealed trait RegionID
+sealed trait WidgetID
 
 sealed trait PageID
 sealed trait CharID
@@ -23,7 +24,7 @@ sealed trait RelationID
 
 sealed trait PageNum
 
-sealed trait Ranging
+sealed trait Interval
 sealed trait Offset
 sealed trait Length
 
@@ -45,6 +46,7 @@ trait TypeTags {
 
   val ZoneID = Tag.of[ZoneID]
   val RegionID = Tag.of[RegionID]
+  val WidgetID = Tag.of[WidgetID]
   val PageID = Tag.of[PageID]
   val CharID = Tag.of[CharID]
   val ComponentID = Tag.of[ComponentID]
@@ -56,7 +58,7 @@ trait TypeTags {
   val RelationID = Tag.of[RelationID]
 
   val PageNum = Tag.of[PageNum]
-  val Ranging = Tag.of[Ranging]
+  val Interval = Tag.of[Interval]
   val Offset = Tag.of[Offset]
   val Length = Tag.of[Length]
 

@@ -223,7 +223,7 @@ class EmbeddedServer(
       val lwIndex = LabelWidgetIndex.create(reflowDB, lwidget.content)
       activeLabelWidgetIndex = Some(lwIndex)
 
-      val layout = lwIndex.layout.map(p => AbsPosAttr(p.widget, p.widgetBounds, p.id))
+      val layout = lwIndex.layout.map(p => WidgetPositioning(p.widget, p.widgetBounds, p.id))
 
       api.echoLabeler(layout, lwidget.options).call()
     }

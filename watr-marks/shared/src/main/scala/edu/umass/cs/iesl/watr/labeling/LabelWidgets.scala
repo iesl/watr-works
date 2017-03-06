@@ -14,7 +14,7 @@ import watrmarks.Label
 import textboxing.{TextBoxing => TB}
 
 /**
-  LabelWidgets provide a way to combine 2-d regions (TargetRegions) into
+  LabelWidgets provide a way to combine 2-d regions (PageRegion) into
   a single layout.
 
 
@@ -47,12 +47,12 @@ object LabelWidgetF {
   type LabelWidgetPosAttr = LabelWidgetF[LabelWidgetAttr[PosAttr]]
 
   case class TargetOverlay[A](
-    under: TargetRegion,
+    under: PageRegion,
     overs: List[A]
   ) extends LabelWidgetF[A]
 
   case class LabeledTarget(
-    target: TargetRegion,
+    target: PageRegion,
     label: Option[Label],
     score: Option[Double]
   ) extends LabelWidgetF[Nothing]
@@ -112,10 +112,10 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
-  def targetOverlay(tr: TargetRegion, overs: Seq[LabelWidget]) =
+  def targetOverlay(tr: PageRegion, overs: Seq[LabelWidget]) =
     fixlw(TargetOverlay(tr, overs.toList))
 
-  def labeledTarget(target: TargetRegion, label: Option[Label]=None, score: Option[Double]=None) =
+  def labeledTarget(target: PageRegion, label: Option[Label]=None, score: Option[Double]=None) =
     fixlw(LabeledTarget(target, label, score))
 
   def reflow(tr: TextReflow) =

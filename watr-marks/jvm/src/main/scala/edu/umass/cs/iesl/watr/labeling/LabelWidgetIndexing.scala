@@ -12,24 +12,24 @@ import rindex._
 
 object LabelWidgetIndex extends LabelWidgetLayout {
 
-  implicit object LabelWidgetIndexable extends SpatialIndexable[PosAttr] {
-    def id(t: PosAttr): Int = t.id.unwrap
-    def ltBounds(t: PosAttr): LTBounds = t.widgetBounds
+  implicit object LabelWidgetIndexable extends SpatialIndexable[WidgetPositioning] {
+    def id(t: WidgetPositioning): Int = t.id.unwrap
+    def ltBounds(t: WidgetPositioning): LTBounds = t.widgetBounds
   }
 
   def create(docStore0: DocumentCorpus, lwidget: LabelWidget): LabelWidgetIndex = {
-    val lwIndex = SpatialIndex.createFor[PosAttr]()
+    val lwIndex = SpatialIndex.createFor[WidgetPositioning]()
 
     val layout0 = layoutWidgetPositions(lwidget)
 
-    layout0.foreach({pos =>
+    layout0.positioning.foreach({pos =>
       lwIndex.add(pos)
     })
 
     new LabelWidgetIndex {
       def docStore: DocumentCorpus = docStore0
-      def layout: List[PosAttr] = layout0
-      def index: SpatialIndex[PosAttr] = lwIndex
+      def layout: WidgetLayout = layout0
+      def index: SpatialIndex[WidgetPositioning] = lwIndex
     }
   }
 }
@@ -38,14 +38,14 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 trait LabelWidgetIndex {
 
   def docStore: DocumentCorpus
-  def layout: List[PosAttr]
-  def index: SpatialIndex[PosAttr]
+  def layout: WidgetLayout
+  def index: SpatialIndex[WidgetPositioning]
 
 
   def querySelected(bbox: LTBounds): Seq[LabeledTarget] = {
-    val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
+    val positioned: Seq[WidgetPositioning] = index.queryForIntersects(bbox)
 
-    // val selectedTargets: List[(PosAttr, LabeledTarget)]
+    // val selectedTargets: List[(WidgetPositioning, LabeledTarget)]
     val selectedTargets: List[LabeledTarget] = positioned.toList
       .map(p => index.getItem(p.id.unwrap))
       .filter(_.widget.isInstanceOf[LabeledTarget])
@@ -87,7 +87,7 @@ trait LabelWidgetIndex {
     gesture match {
       case SelectRegion(bbox) =>
 
-        // val positioned: Seq[PosAttr] = index.queryForIntersects(bbox)
+        // val positioned: Seq[WidgetPositioning] = index.queryForIntersects(bbox)
 
         val selectedLines = queryForSelectedLines(bbox)
         val selectedTargetLines = selectedLines.flatMap(_.regions)
@@ -146,14 +146,14 @@ trait LabelWidgetIndex {
 
 }
 
-// def getWidgetForTargetRegion(targetRegion: TargetRegion): PosAttr = {
+// def getWidgetForTargetRegion(targetRegion: TargetRegion): WidgetPositioning = {
 //   val stableId = targetRegion.stableId
 //   val docId = docStore.getDocument(stableId).get
 //   val pageId = docStore.getPage(docId, targetRegion.pageNum).get
-//   // Map TargetRegion -> PosAttr
+//   // Map TargetRegion -> WidgetPositioning
 //   layout
 //     .collect({
-//       case p @ PosAttr(
+//       case p @ WidgetPositioning(
 //         LabeledTarget(bbox, label, score),
 //         widgetBounds,
 //         pRegionId, _, _

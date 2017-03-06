@@ -19,6 +19,19 @@ class EnrichNumericsSpec extends FlatSpec with Matchers {
 
   }
 
+  it should "generate double interval slices" in {
+    val examples = List(
+      DoubleInterval(0d, 100d)
+    )
+
+    examples.foreach{ example =>
+      val slices = intervalSlices(example, 4)
+      val res = slices.map(_.toString).mkString("\n  ", "\n  ", "\n")
+      println(res)
+    }
+
+  }
+
 }
 
 import org.scalacheck._

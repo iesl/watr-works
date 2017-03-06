@@ -18,18 +18,33 @@ import utils.ScalazTreeImplicits._
 import TypeTags._
 
 
-case class AbsPosAttr(
+// Position transform:
+//  capture the absolute positioning of a widget along with the matrix transform
+//    used to get it there. The inverse of the transform matrix is used to transform
+//    selection boxes and clicked points back into the correct geometry to determine
+//    what characters within a document are selected
+case class WidgetPositioning(
   widget: LabelWidgetF[Unit],
   widgetBounds: LTBounds,
-  id: Int@@RegionID
+  translation: PositionVector,
+  scaling: Double = 1.0d,
+  id: Int@@WidgetID
 )
 
+
+case class WidgetLayout(
+  positioning: Seq[WidgetPositioning],
+  layoutBounds: LTBounds
+)
+
+// Accumulator for calculating layout positioning transforms
 case class PosAttr(
   widget: LabelWidgetF[Unit],
   widgetBounds: LTBounds,
-  id: Int@@RegionID,
-  selfOffset: PositionVector, // = Point(0, 0),
-  childOffsets: List[PositionVector] = List()
+  id: Int@@WidgetID,
+  selfOffset: PositionVector,
+  childOffsets: List[PositionVector] = List(),
+  scaling: Double = 1.0d
 ) {
 
   def toStackString = {
@@ -105,8 +120,9 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     (newpositions._1, newpositions._2.reverse)
   }
 
-  def layoutWidgetPositions(lwidget: LabelWidget): List[PosAttr] = {
-    val idgen = utils.IdGenerator[RegionID]()
+  // def layoutWidgetPositions(lwidget: LabelWidget): List[PosAttr] = {
+  def layoutWidgetPositions(lwidget: LabelWidget): WidgetLayout = {
+    val idgen = utils.IdGenerator[WidgetID]()
 
     val F = LabelWidgetFunctor
     // Bottom-up first pass evaluator
@@ -191,12 +207,13 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
         // Adjusted current-node bounding box to Absolute positioning
         newSelf = selfAttr.copy(
-          widgetBounds=selfAttr.widgetBounds.translate(headOffsetVec)
+          widgetBounds=selfAttr.widgetBounds.translate(headOffsetVec),
+          selfOffset = headOffsetVec
         )
 
         // Update State monad to include repositioned offset vectors for current-node's children
         newState = init.copy(
-          childOffsets =  selfAbsOffsetVecs ++ tailOffsetVecs
+          childOffsets = selfAbsOffsetVecs ++ tailOffsetVecs
         )
 
         _      <- State.modify[PosAttr](_ => newState)
@@ -209,7 +226,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     val relativePositioned: Cofree[LabelWidgetF, PosAttr] =
       lwidget.cata(attributePara(positionAttrs))
 
-    val zero = PosAttr(TextBox("dummy"), zeroLTBounds, RegionID(0), Point(0, 0), List(Point(0, 0)))
+    val zero = PosAttr(TextBox("dummy"), zeroLTBounds, WidgetID(0), Point(0, 0), List(Point(0, 0)))
 
     val adjusted: Cofree[LabelWidgetF, PosAttr] = relativePositioned
       .attributeTopDownM[State[PosAttr, ?], PosAttr](zero)({
@@ -219,9 +236,13 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
       .mapBranching(stripLWEnv)
 
 
-      adjusted.universe.map({
-        case cof => cof.head
-      })
+    val positions = adjusted.universe
+        .map(_.head)
+        .map(w => WidgetPositioning(w.widget, w.widgetBounds, w.selfOffset, w.scaling, w.id))
+
+    val root = positions.head
+
+    WidgetLayout(positions, root.widgetBounds)
 
   }
 

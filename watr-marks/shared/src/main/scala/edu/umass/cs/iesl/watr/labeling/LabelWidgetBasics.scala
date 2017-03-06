@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
-
 import scalaz._, Scalaz._
 import matryoshka._
 import matryoshka.implicits._
