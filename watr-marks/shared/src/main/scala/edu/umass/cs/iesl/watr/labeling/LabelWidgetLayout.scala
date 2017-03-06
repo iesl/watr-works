@@ -16,6 +16,7 @@ import LabelWidgetF._
 
 import utils.ScalazTreeImplicits._
 import TypeTags._
+import PageComponentImplicits._
 
 
 // Position transform:
@@ -86,6 +87,22 @@ object LabelWidgetLayoutHelpers {
       pos.map(posAttr => posAttr.toString)
     ).drawBox
   }
+
+  def widgetRegionToPageRegion(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): LTBounds = {
+    widgetSpaceRegion.translate(wpos.translation)
+  }
+
+  def clipPageRegionFromWidgetSpace(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): Option[PageRegion] = {
+    val pageRegion = widgetRegionToPageRegion(wpos, widgetSpaceRegion)
+    wpos.widget match {
+      case l @ TargetOverlay(under, overs) =>
+        under.intersection(pageRegion)
+      case l @ LabeledTarget(target, label, score) =>
+        target.intersection(pageRegion)
+      case _ => None
+    }
+  }
+
 }
 
 

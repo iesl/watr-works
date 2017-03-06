@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package geometry
 
-
 import scalaz.Equal
 
 sealed trait GeometricFigure
@@ -255,12 +254,6 @@ object GeometryImplicits {
       theBbox.left <= x &&  x <= theBbox.right
     }
 
-    def intersects(rhs:LTBounds):Boolean = {
-      !(theBbox.left > rhs.right
-        || theBbox.right < rhs.left
-        || theBbox.top > rhs.bottom
-        || theBbox.bottom < rhs.top)
-    }
 
     def union(b: LTBounds): LTBounds = {
       val left   = math.min(theBbox.left, b.left)
@@ -272,6 +265,23 @@ object GeometryImplicits {
         right-left,
         bottom-top
       )
+    }
+
+    def intersection(b: LTBounds): Option[LTBounds] = {
+      val left   = math.max(theBbox.left, b.left)
+      val top    = math.max(theBbox.top, b.top)
+      val right = math.min(theBbox.right, b.right)
+      val bottom = math.min(theBbox.bottom, b.bottom)
+      if (left <= right && top <= bottom) {
+        Some(LTBounds(left, top,
+            right-left,
+            bottom-top
+          ))
+      } else None
+    }
+
+    def intersects(rhs:LTBounds):Boolean = {
+      intersection(rhs).isDefined
     }
 
     // Compass direction point (bbox -> left-center, right-center, top-corner, etc)

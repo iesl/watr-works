@@ -130,6 +130,30 @@ object PageComponentImplicits {
     }
   }
 
+  implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
+    def union(r: PageRegion): PageRegion = {
+      val samePage = thePageRegion.pageId == r.pageId
+      if (!samePage) {
+        sys.error(s"""cannot union PageRegions from different pages: ${thePageRegion} + ${r}""")
+      }
+      thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
+    }
+
+    def intersects(r: PageRegion): Boolean = {
+      val samePage = thePageRegion.pageId == r.pageId
+      samePage && (thePageRegion.bbox intersects r.bbox)
+    }
+
+
+    def intersection(b: LTBounds): Option[PageRegion] = {
+      thePageRegion.bbox
+        .intersection(b)
+        .map(b => thePageRegion.copy(bbox=b))
+    }
+
+
+  }
+
   implicit class RicherTargetRegion(val theTargetRegion: TargetRegion) extends AnyVal {
     def union(r: TargetRegion): TargetRegion = {
       if (theTargetRegion.pageNum != r.pageNum) {
@@ -141,6 +165,13 @@ object PageComponentImplicits {
     def intersects(r: TargetRegion): Boolean = {
       val samePage = theTargetRegion.pageNum == r.pageNum
       samePage && (theTargetRegion.bbox intersects r.bbox)
+    }
+
+
+    def intersection(b: LTBounds): Option[TargetRegion] = {
+      theTargetRegion.bbox
+        .intersection(b)
+        .map(b => theTargetRegion.copy(bbox=b))
     }
 
     def splitHorizontal(r: TargetRegion): List[TargetRegion] = {

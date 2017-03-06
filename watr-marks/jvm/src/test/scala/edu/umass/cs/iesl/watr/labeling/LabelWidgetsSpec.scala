@@ -12,6 +12,8 @@ import TypeTags._
 import corpora._
 import LabelWidgets._
 
+import LabelWidgetLayoutHelpers._
+
 class LabelWidgetsSpec extends FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   import utils.EnrichNumerics._
 
@@ -87,10 +89,10 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with CorpusTestingUtil wit
     widgetLayout.positioning
       .foreach{ pos =>
         println(s"${pos}")
-        // val borigin = pos.widgetBounds.moveToOrigin()
-        // val bwidget = borigin.translate(pos.translation)
-        // println(s"   borigin: ${borigin}")
-        // println(s"   bwidget: ${bwidget}")
+        val clipTo = LTBounds(1d, 0d, 1d, 100d)
+        val clipped = clipPageRegionFromWidgetSpace(pos, clipTo)
+        println(s"  clipped: ${clipped}")
+
       }
   }
 
@@ -107,13 +109,13 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with CorpusTestingUtil wit
   //   )
   //   val widgetLayout = layoutWidgetPositions(widget0)
 
-  //   // given some arbitrary layout..
+  //   // .sortBy({ p => (p.widgetBounds.width) })
+
   //   widgetLayout.positioning
-  //     .sortBy({ p => (p.widgetBounds.width) })
   //     .foreach{ pos =>
-  //       val borigin = pos.widgetBounds.moveToOrigin()
-  //       val bwidget = borigin.translate(pos.translation)
-  //       // println(s"${pos}")
+  //       println(s"${pos}")
+  //       // val borigin = pos.widgetBounds.moveToOrigin()
+  //       // val bwidget = borigin.translate(pos.translation)
   //       // println(s"   borigin: ${borigin}")
   //       // println(s"   bwidget: ${bwidget}")
   //     }
@@ -124,10 +126,13 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with CorpusTestingUtil wit
 
   it should "create rows" in {
   }
+
   it should "include inserted text (as textbox)" in {
   }
+
   it should "include reflows" in {
   }
+
   it should "include padding" in {
   }
 
