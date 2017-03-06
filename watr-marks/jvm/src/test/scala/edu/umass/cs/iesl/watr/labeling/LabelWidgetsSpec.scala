@@ -39,6 +39,14 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with CorpusTestingUtil wit
     allRegions.flatten
   }
 
+  def printPageRegions(pageRegions: Seq[PageRegion]): Unit = {
+    val res = pageRegions
+    .sortBy({ p => (p.pageId.unwrap, p.bbox.top, p.bbox.height, p.bbox.left, p.bbox.width) })
+      .map(_.toString)
+      .mkString("\n  ", "\n  ", "\n")
+    println(res)
+  }
+
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
   initEmpty()
@@ -64,52 +72,53 @@ class LabelWidgetsSpec extends FlatSpec with Matchers with CorpusTestingUtil wit
 
 
   it should "include labeled targets" in {
-    // docStore.addTargetRegion(pageId: <refinement>[Int, PageID], bbox: LTBounds)
-    // labeledTarget()
-  }
+    val pageRegion = PageRegion(PageID(1), LTBounds(5d, 4d, 3d, 2d) )
+    val pageRegion2 = PageRegion(PageID(1), LTBounds(5.1d, 4.1d, 3.1d, 2.1d) )
 
-  it should "create overlays" in  {
-    val bb00 = getRegionBounds(0, 0, 1, 1)
-    // val w1 = LW.targetOverlay(reg0, List(
-    //   LW.labeledTarget(sel0)
-    // ))
-  }
+    val subRegion = PageRegion(PageID(1), LTBounds(5.5d, 4.5d, 0.5d, 1.5d) )
+    val subRegion2 = PageRegion(PageID(1), LTBounds(5.6d, 3.5d, 0.1d, 2.5d) )
 
-
-  it should "create columns" in {
-    val divs = 3
-    val pageRegions = generatePageRegions(divs)
-
-    // val res = pageRegions
-    // .sortBy({ p => (p.pageId.unwrap, p.bbox.top, p.bbox.height, p.bbox.left, p.bbox.width) })
-    //   .map(_.toString)
-    //   .mkString("\n  ", "\n  ", "\n")
-
-    val column = col(
-      pageRegions.map(targetOverlay(_, List())):_*
+    val widget0 = col(
+      targetOverlay(pageRegion, List(labeledTarget(subRegion), labeledTarget(subRegion2))),
+      targetOverlay(pageRegion2, List(labeledTarget(subRegion), labeledTarget(subRegion2)))
     )
-    val widgetLayout = layoutWidgetPositions(column)
+    val widgetLayout = layoutWidgetPositions(widget0)
 
-
-    val xx = widgetLayout.positioning
-      .map(_.toString)
-      .mkString("\n  ", "\n  ", "\n")
-
-    println(xx)
-
-    // given some arbitrary layout..
     widgetLayout.positioning
-      .sortBy({ p => (p.widgetBounds.width) })
       .foreach{ pos =>
-        val borigin = pos.widgetBounds.moveToOrigin()
-        val bwidget = borigin.translate(pos.translation)
         println(s"${pos}")
-        println(s"   borigin: ${borigin}")
-        println(s"   bwidget: ${bwidget}")
-
+        // val borigin = pos.widgetBounds.moveToOrigin()
+        // val bwidget = borigin.translate(pos.translation)
+        // println(s"   borigin: ${borigin}")
+        // println(s"   bwidget: ${bwidget}")
       }
-
   }
+
+  it should "correctly position overlays" in  {}
+
+
+  // it should "create columns" in {
+  //   val divs = 3
+  //   val pageRegions = generatePageRegions(divs)
+
+
+  //   val widget0 = col(
+  //     pageRegions.map(targetOverlay(_, List())):_*
+  //   )
+  //   val widgetLayout = layoutWidgetPositions(widget0)
+
+  //   // given some arbitrary layout..
+  //   widgetLayout.positioning
+  //     .sortBy({ p => (p.widgetBounds.width) })
+  //     .foreach{ pos =>
+  //       val borigin = pos.widgetBounds.moveToOrigin()
+  //       val bwidget = borigin.translate(pos.translation)
+  //       // println(s"${pos}")
+  //       // println(s"   borigin: ${borigin}")
+  //       // println(s"   bwidget: ${bwidget}")
+  //     }
+
+  // }
 
 
 

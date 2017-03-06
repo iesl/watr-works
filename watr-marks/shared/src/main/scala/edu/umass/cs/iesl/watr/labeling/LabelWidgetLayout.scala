@@ -137,7 +137,8 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
               childPosition - selfPosition
             })
 
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+          // PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, idgen.nextId, selfPosition, childAdjustVecs)
 
         case flw @ LabeledTarget(target, label, score)   =>
           val bbox = target.bbox.moveToOrigin()
@@ -207,8 +208,8 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
         // Adjusted current-node bounding box to Absolute positioning
         newSelf = selfAttr.copy(
-          widgetBounds=selfAttr.widgetBounds.translate(headOffsetVec),
-          selfOffset = headOffsetVec
+          widgetBounds = selfAttr.widgetBounds.translate(headOffsetVec),
+          selfOffset   = selfAttr.selfOffset.translate(-headOffsetVec)
         )
 
         // Update State monad to include repositioned offset vectors for current-node's children
