@@ -42,6 +42,8 @@ trait DocumentCorpus {
   def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID]
   def getZoneForTargetRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
 
+  // TODO this Model.TextReflow shouldn't be exposed, but need to until refactor
+  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Model.TextReflow]
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 
@@ -51,6 +53,10 @@ trait DocumentCorpus {
   def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] = for {
     docId     <- getDocument(stableId).toSeq
     pageId    <- getPage(docId, pageNum).toSeq
+    zone      <- getPageVisualLines(pageId)
+  } yield zone
+
+  def getPageVisualLines(pageId: Int@@PageID): Seq[Zone] = for {
     regionId  <- getTargetRegions(pageId)
     zoneId    <- getZoneForTargetRegion(regionId, LB.VisualLine)
   } yield { getZone(zoneId) }

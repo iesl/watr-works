@@ -49,6 +49,9 @@ trait TextReflowJsonCodecs extends GeometryJsonCodecs with TextReflowBasics {
     case _ => ???
   }
 
+  def jsonStrToTextReflow(jsStr: String): TextReflow = {
+    jsonToTextReflow(Json.parse(jsStr))
+  }
 
   def jsonToTextReflow(jsValue: JsValue): TextReflow = {
     jsValue

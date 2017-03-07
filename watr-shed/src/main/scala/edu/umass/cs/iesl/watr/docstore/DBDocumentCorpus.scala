@@ -116,6 +116,7 @@ class TextReflowDB(
     sql""" select * from  zone where document=${docId} order by rank"""
       .query[Int@@ZoneID].list
   }
+
   def selectZone(zoneId: Int@@ZoneID): ConnectionIO[Model.Zone] = {
     sql""" select * from  zone where zone=${zoneId} order by rank """
       .query[Model.Zone].unique
@@ -175,6 +176,16 @@ class TextReflowDB(
         z2tr.targetregion=${regionId} AND
         lb.key=${label.fqn}
     """.query[Int@@ZoneID].option
+
+    query
+  }
+
+  def selectModelTextReflowForZone(zoneId: Int@@ZoneID): ConnectionIO[Option[Model.TextReflow]] = {
+    val query = sql"""
+     select tr.*
+     from   textreflow as tr join zone as z on (tr.zone=z.zone)
+     where  z.zone=${zoneId}
+    """.query[Model.TextReflow].option
 
     query
   }
@@ -571,6 +582,9 @@ class TextReflowDB(
     }
 
 
+    def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Model.TextReflow] = {
+      runq { selectTextReflowForZone(zoneId) }
+    }
     def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
       runq { selectTextReflowForZone(zoneId) }
     }

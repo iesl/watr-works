@@ -359,6 +359,12 @@ class MemDocstore extends DocumentCorpus {
     targetregions.forZone.getEdgeOption(regionId)
   }
 
+  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Model.TextReflow] = {
+    textreflows.forZone
+      .getRhs(zoneId)
+      .flatMap(id => textreflows.option(id))
+  }
+
 
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
     textreflows.forZone

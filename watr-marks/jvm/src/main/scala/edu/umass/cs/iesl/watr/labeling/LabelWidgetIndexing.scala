@@ -1,21 +1,41 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
+import scala.collection.mutable
+
+import textreflow.data._
 import geometry._
-// import spindex._
-// import docstore._
 import LabelWidgetF._
 import corpora._
 import rindex._
+
+// import TypeTags._
+// import spindex._
+// import docstore._
 // import watrmarks.{StandardLabels => LB}
 // import watrmarks._
 
+// Provide a caching wrapper around TextReflow + precomputed page bbox
+// Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
+case class IndexableTextReflow(
+  id: Int@@TextReflowID,
+  textReflow: TextReflow,
+  pageRegion: PageRegion
+)
+
 object LabelWidgetIndex extends LabelWidgetLayout {
+
+  implicit object TextReflowIndexable extends SpatialIndexable[IndexableTextReflow] {
+    def id(t: IndexableTextReflow): Int = t.id.unwrap
+    def ltBounds(t: IndexableTextReflow): LTBounds = t.pageRegion.bbox
+  }
 
   implicit object LabelWidgetIndexable extends SpatialIndexable[WidgetPositioning] {
     def id(t: WidgetPositioning): Int = t.id.unwrap
     def ltBounds(t: WidgetPositioning): LTBounds = t.widgetBounds
   }
+
+  import textreflow.TextReflowJsonCodecs._
 
   def create(docStore0: DocumentCorpus, lwidget: LabelWidget): LabelWidgetIndex = {
     val lwIndex = SpatialIndex.createFor[WidgetPositioning]()
@@ -26,10 +46,47 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       lwIndex.add(pos)
     })
 
+    val targetPageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
+
+    layout0.positioning.foreach({pos => pos.widget match {
+
+
+      case l @ TargetOverlay(under, overs) =>
+        val pageId = under.pageId
+        // under.regionId
+        // under.bbox
+        if (!targetPageRIndexes.contains(pageId)) {
+          val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
+          targetPageRIndexes.put(pageId, pageIndex)
+
+          for {
+            vline <- docStore0.getPageVisualLines(pageId)
+            reflow <- docStore0.getModelTextReflowForZone(vline.id)
+          } {
+            val textReflow = jsonStrToTextReflow(reflow.reflow)
+            val indexable = IndexableTextReflow(
+              reflow.prKey,
+              textReflow,
+              PageRegion(
+                pageId,
+                textReflow.targetRegion.bbox
+              )
+            )
+            pageIndex.add(indexable)
+          }
+        }
+
+      case _ =>
+
+
+    }})
+
+
     new LabelWidgetIndex {
       def docStore: DocumentCorpus = docStore0
       def layout: WidgetLayout = layout0
       def index: SpatialIndex[WidgetPositioning] = lwIndex
+      def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
     }
   }
 }
@@ -40,6 +97,7 @@ trait LabelWidgetIndex {
   def docStore: DocumentCorpus
   def layout: WidgetLayout
   def index: SpatialIndex[WidgetPositioning]
+  def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
 
 
   def querySelected(bbox: LTBounds): Seq[LabeledTarget] = {
@@ -54,6 +112,19 @@ trait LabelWidgetIndex {
     selectedTargets
   }
 
+  def select(bbox: LTBounds, constraint: Constraint): Seq[Seq[PageRegion]] = {
+    val hits: Seq[WidgetPositioning] =
+      index.queryForIntersects(bbox)
+        .filter(_.widget.isInstanceOf[TargetOverlay[Unit]])
+
+    println(s"hits within ${bbox}")
+    val res = hits.mkString("\n  ", "\n  ", "\n")
+    println(res)
+
+
+    Seq()
+  }
+
   def queryForSelectedLines(bbox: LTBounds): Seq[Zone] = {
     // val visualLineZones: Seq[Zone] = for {
     //   selectedTargets <- querySelected(bbox)
@@ -66,12 +137,12 @@ trait LabelWidgetIndex {
 
   def constrainedClipTargetRegions(bbox: LTBounds, constraint: Constraint, targets: Seq[TargetRegion]): Seq[TargetRegion] = {
     constraint match {
-      case ByLine =>
+      case Constraint.ByLine =>
         // apply label to all lines in selected region
 
 
-      case ByChar =>
-      case ByRegion =>
+      case Constraint.ByChar =>
+      case Constraint.ByRegion =>
         // apply label to region w/o regard to line/chars
     }
 
@@ -98,12 +169,11 @@ trait LabelWidgetIndex {
           uiState.action match {
             case Create =>
               uiState.selectionConstraint match {
-                case ByLine =>
+                case Constraint.ByLine =>
                   // apply label to all lines in selected region
 
-
-                case ByChar =>
-                case ByRegion =>
+                case Constraint.ByChar =>
+                case Constraint.ByRegion =>
                   // apply label to region w/o regard to line/chars
               }
 
