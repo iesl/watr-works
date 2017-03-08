@@ -14,6 +14,8 @@ trait IdGenerator[T]  {
 
   def startingId:Int = 1
 
+  def reset(): Unit = { _nextId = startingId }
+
   var _nextId = startingId
   def nextId: Int @@ T = {
     val id = _nextId

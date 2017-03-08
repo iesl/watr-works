@@ -4,7 +4,9 @@ package labeling
 import scala.collection.mutable
 
 import textreflow.data._
+import textreflow._
 import geometry._
+import geometry.syntax._
 import LabelWidgetF._
 import corpora._
 import rindex._
@@ -14,6 +16,7 @@ import rindex._
 // import docstore._
 // import watrmarks.{StandardLabels => LB}
 // import watrmarks._
+// import PageComponentImplicits._
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
@@ -100,58 +103,148 @@ trait LabelWidgetIndex {
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
 
 
-  def querySelected(bbox: LTBounds): Seq[LabeledTarget] = {
-    val positioned: Seq[WidgetPositioning] = index.queryForIntersects(bbox)
+  def debugPrint(query: Option[LTBounds] = None): Unit = {
 
-    // val selectedTargets: List[(WidgetPositioning, LabeledTarget)]
-    val selectedTargets: List[LabeledTarget] = positioned.toList
-      .map(p => index.getItem(p.id.unwrap))
-      .filter(_.widget.isInstanceOf[LabeledTarget])
-      .map(p => p.widget.asInstanceOf[LabeledTarget])
+    val w: Int = (layout.layoutBounds.width).intValue()+1
+    val h: Int = (layout.layoutBounds.height).intValue()+1
 
-    selectedTargets
+    val cmat = mutable.ArrayBuffer
+      .tabulate(h, w){ case (y, x) =>
+        fansi.Color.Blue(" ")
+      }
+
+    layout.positioning.foreach { pos =>
+      val LTBounds(l, t, w, h) = pos.widgetBounds
+      val il = l.intValue()
+      val it = t.intValue()
+      val iw = w.intValue()
+      val ih = h.intValue()
+      // println(s"pos: ($il, $it, $iw, $ih) (${pos.widgetBounds})")
+      pos.widget match {
+        case TargetOverlay(under, over) =>
+          val regionId = under.regionId.get.unwrap
+          for {
+            y <- it until (it+ih)
+            x <- il until (il+iw)
+          } {
+            val qq = cmat(y)(x)
+            cmat(y)(x) = (regionId + '0'.toInt).toChar.toString()
+          }
+
+        case _ =>
+      }
+    }
+    layout.positioning.foreach { pos =>
+      val LTBounds(l, t, w, h) = pos.widgetBounds
+      val il = l.intValue()
+      val it = t.intValue()
+      val iw = w.intValue()
+      val ih = h.intValue()
+      // println(s"pos: ($il, $it, $iw, $ih) (${pos.widgetBounds})")
+      pos.widget match {
+        case Col(as) =>
+          for {
+            y <- it until (it+ih)
+          } {
+            val x1 = il
+            val x2 = il+iw-1
+            // println(s"  ($x1/$x2, $y) := col")
+            val cur0 = cmat(y)(x1)
+            val cur1 = cmat(y)(x2)
+            val col0 = fansi.Color.Red(cur0)
+            val col1 = fansi.Color.Red(cur1)
+
+            cmat(y)(x1) = col0
+            cmat(y)(x2) = col1
+          }
+        case Row(as) =>
+          for {
+            x <- il until (il+iw)
+          } {
+            val y1 = it
+            val y2 = it+ih-1
+            // println(s"  ($x, $y1/$y2) := row")
+            val cur0 = cmat(y1)(x)
+            val cur1 = cmat(y2)(x)
+            val col0 = fansi.Color.Magenta(cur0)
+            val col1 = fansi.Color.Magenta(cur1)
+            cmat(y1)(x) = col0
+            cmat(y2)(x) = col1
+          }
+        case _ =>
+      }
+    }
+    // val LTBounds(l, t, w, h) = query
+    query foreach {q =>
+      val il = q.left.intValue()
+      val it = q.top.intValue()
+      val iw = q.width.intValue()
+      val ih = q.height.intValue()
+      for {
+        y <- it until (it+ih)
+        x <- il until (il+iw)
+      } {
+        val qq = cmat(y)(x)
+        cmat(y)(x) = fansi.Back.True(10, 20, 200)(qq)
+      }
+
+    }
+
+    val pp = cmat.map(_.mkString).mkString("\n")
+    println(pp)
   }
 
-  def select(bbox: LTBounds, constraint: Constraint): Seq[Seq[PageRegion]] = {
+
+  def select(queryBounds: LTBounds, constraint: Constraint): Seq[Seq[PageRegion]] = {
     val hits: Seq[WidgetPositioning] =
-      index.queryForIntersects(bbox)
-        .filter(_.widget.isInstanceOf[TargetOverlay[Unit]])
+      index.queryForIntersects(queryBounds)
+        .map { pos =>
+          pos.widget match {
+            case TargetOverlay(under, over) =>
+              val maybeIntersect = pos.widgetBounds.intersection(queryBounds)
+              maybeIntersect.map { ibbox =>
+                val pageSpaceBounds = ibbox.translate(pos.translation)
+                println(s"PageRegion ${under.regionId.get}: ${under.bbox} @ ${pos.widgetBounds} w/trans=${pos.translation}")
+                println(s"   sel: ${pageSpaceBounds}  from ${ibbox}")
 
-    println(s"hits within ${bbox}")
-    val res = hits.mkString("\n  ", "\n  ", "\n")
-    println(res)
+                // query pageIndex using pageSpaceBounds
+                val pageIndex = pageIndexes(under.pageId)
+                val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
+                pageHits.foreach { iReflow =>
+                  val clippedReflows = iReflow.textReflow.clipToBoundingRegion(pageSpaceBounds)
+                  val lineText = iReflow.textReflow.toText()
+                  println(s"hit line: ${lineText}")
+                  clippedReflows.foreach { case (cr, interval)  =>
+                    val clippedText = cr.toText()
+                    println(s" clipped: ${clippedText} interval ${interval}")
+                  }
+                }
+              }
 
+            case _ =>
+          }
+          pos
+        }
+
+    debugPrint(Some(queryBounds))
 
     Seq()
   }
 
-  def queryForSelectedLines(bbox: LTBounds): Seq[Zone] = {
-    // val visualLineZones: Seq[Zone] = for {
-    //   selectedTargets <- querySelected(bbox)
-    //   labeledTarget <- selectedTargets
-    //   zoneId <- docStore.getZoneForTargetRegion(labeledTarget.target.id, LB.VisualLine)
-    // } yield { docStore.getZone(zoneId) }
-    // visualLineZones
-    ???
-  }
+  // def querySelected(bbox: LTBounds): Seq[LabeledTarget] = {
+  //   val positioned: Seq[WidgetPositioning] = index.queryForIntersects(bbox)
 
-  def constrainedClipTargetRegions(bbox: LTBounds, constraint: Constraint, targets: Seq[TargetRegion]): Seq[TargetRegion] = {
-    constraint match {
-      case Constraint.ByLine =>
-        // apply label to all lines in selected region
+  //   // val selectedTargets: List[(WidgetPositioning, LabeledTarget)]
+  //   val selectedTargets: List[LabeledTarget] = positioned.toList
+  //     .map(p => index.getItem(p.id.unwrap))
+  //     .filter(_.widget.isInstanceOf[LabeledTarget])
+  //     .map(p => p.widget.asInstanceOf[LabeledTarget])
 
+  //   selectedTargets
+  // }
 
-      case Constraint.ByChar =>
-      case Constraint.ByRegion =>
-        // apply label to region w/o regard to line/chars
-    }
-
-    ???
-  }
-
-
-
-
+  def constrainedClipTargetRegions(bbox: LTBounds, constraint: Constraint, targets: Seq[TargetRegion]): Seq[TargetRegion] = { ??? }
+  def queryForSelectedLines(bbox: LTBounds): Seq[Zone] = { ??? }
   def runUIRequest(r: UIRequest): UIResponse = {
     val UIRequest(uiState, gesture) = r
 

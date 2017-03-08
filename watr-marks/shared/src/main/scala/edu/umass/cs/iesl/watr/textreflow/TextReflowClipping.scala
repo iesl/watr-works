@@ -61,7 +61,7 @@ trait TextReflowClipping extends TextReflowBasics {
 
   import helpers._
 
-  def clipReflowToTargetRegion(textReflow: TextReflow, targetRegion: TargetRegion): Seq[(TextReflow, RangeInt)] = {
+  def clipReflowToBoundingRegion(textReflow: TextReflow, clipBox: LTBounds): Seq[(TextReflow, RangeInt)] = {
 
     def retainAtoms(wfa: EnvT[Offsets, TextReflowF, List[AtomOrInsertOrGap]]): List[AtomOrInsertOrGap] = {
       val Offsets(cbegin, clen, _, _) = wfa.ask
@@ -72,7 +72,7 @@ trait TextReflowClipping extends TextReflowBasics {
       fa match {
         case Atom(c) =>
           val tr = c.bbox
-          val intersects = tr.intersects(targetRegion.bbox)
+          val intersects = tr.intersects(clipBox)
 
           if (intersects) List(anAtom(envRange))
           else            List(aGap(envRange))

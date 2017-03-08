@@ -145,7 +145,7 @@ object DocumentIO extends DocsegJsonFormats {
         val zoneLocationsAndReflows = zone.regions.map({zoneTargetRegion =>
           for {
             (textFlow, lineNum) <- textBlockReflows.zipWithIndex
-            (clipped, range) <- textFlow.clipToTargetRegion(zoneTargetRegion)
+            (clipped, range) <- textFlow.clipToBoundingRegion(zoneTargetRegion)
           } yield {
             ((lineNum, range), clipped)
           }

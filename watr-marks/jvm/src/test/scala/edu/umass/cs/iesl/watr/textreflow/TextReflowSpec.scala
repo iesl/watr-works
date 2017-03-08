@@ -8,10 +8,24 @@ import Scalaz._
 import TextReflowF._
 import TypeTags._
 import corpora._
-
+import data._
+// import geometry.syntax._
 
 class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
+
+  initEmpty()
+
+  val docs = List(
+    List(
+      "abc\ndef\nghi",
+      "012\n345\n678"
+    )
+  )
+
+  for { (doc, i) <- docs.zipWithIndex } {
+    addDocument(DocumentID(s"doc#${i}"), doc)
+  }
 
   def annotateAndPrint(tr: TextReflow): Unit = {
     val ranges = tr.annotateCharRanges()
@@ -34,17 +48,38 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
     }
   }
 
+  it should "clip to target regions" in {
+    val pageLines = docStore.getPageVisualLines(PageID(1))
+
+    for {
+      (line, i)       <- pageLines.zipWithIndex
+      lineReflow       = docStore.getTextReflowForZone(line.id).get
+      lineText         = lineReflow.toText
+      lineTR           = lineReflow.targetRegion
+      x               <- 0 until 3
+      y               <- 0 until 3
+      height          <- 1 to 2
+      width           <- 1 to 2
+    } {
+      // println(s">${lineText} in ${lineTR.bbox}")
+      val bounds = getRegionBounds(x, y, width, height)
+
+      val res = lineReflow.clipToBoundingRegion(bounds)
+      // println(s"  clip to $bounds")
+      res.foreach { case (resReflow, range) =>
+        val resText = resReflow.toText()
+        println(s"   => ${resText}  @${range} query:${bounds}")
+      }
+    }
+  }
   behavior of "modifying chars"
 
-  def stringToReflow(s: String): TextReflow = ???
-    // stringToTextReflow(s)(DocumentID("d0"), PageNum(0))
-
-  it should "mod single char" in new FreshDocstore(pageCount=0) {
-    addDocument(DocumentID("d#23"), List(
-      """|a q1
-         |e ^{ﬂ}
-         |""".stripMargin
-    ))
+  it should "mod single char" in {
+    // addDocument(DocumentID("d#23"), List(
+    //   """|a q1
+    //      |e ^{ﬂ}
+    //      |""".stripMargin
+    // ))
 
     // val pageLines = lines(pageText)
     // val reflowLines = lines(pageText).map(stringToReflow(_))
@@ -67,7 +102,6 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   }
 
   // behavior of "text reflowing"
-
 
   // val Eu1_x = stringToTextReflow("Eu_{1 - x}")
 
@@ -130,35 +164,6 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   //      |""".stripMargin)
 
 
-  // it should "clip to target regions" in {
-  //   val pageText = (
-  //     """|a q1
-  //        |e ^{ﬂ}
-  //        |""".stripMargin)
-  //   val pageLines = lines(pageText)
-  //   val reflow = stringToTextReflow(pageText)
-  //   // annotateAndPrint(reflow)
-
-  //   for {
-  //     (line, y)       <- pageLines.zipWithIndex
-  //     height          <- 1 to pageLines.length
-  //     maxlen           = lines(pageText).map(_.length).max
-  //     x               <- 0 until maxlen
-  //     width           <- 1 until maxlen
-
-  //   } {
-  //     val bounds = s"x:$x, y:$y, w:$width, h:$height"
-  //     val tr = targetRegionForXY(x, y, width, height)
-
-  //     val res = reflow.clipToTargetRegion(tr)
-  //     println(s"[$bounds]  ${tr.bbox.prettyPrint}")
-  //     res.foreach { case (resReflow, range) =>
-  //       val resText = resReflow.toText()
-  //       // println(s"    ${resText}   ${range}")
-  //       // annotateAndPrint(resReflow)
-  //     }
-  //   }
-  // }
 
   //   it should "join/break paragraph" in {}
   //   it should "grep-search virtual lines" in {}

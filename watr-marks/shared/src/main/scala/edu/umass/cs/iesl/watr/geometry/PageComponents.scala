@@ -83,7 +83,6 @@ object CharAtom {
   implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
     case (CharAtom(i, t, c, w), CharAtom(i2, t2, c2, w2)) =>
       i == i2
-      // t===t2 && c==c2 && w==w2
     case (_, _) => false
   })
 }

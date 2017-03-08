@@ -233,14 +233,9 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
       charBounds().reduce(_ union _)
     }
 
-    // def visualLinesRegions(): Seq[TargetRegion] = {
-    //   extractVisualLineTargetRegions(theReflow)
-    // }
 
-    def intersect(other: TextReflow): TextReflow = ???
-
-    def clipToTargetRegion(targetRegion: TargetRegion): Seq[(TextReflow, RangeInt)] = {
-      clipReflowToTargetRegion(theReflow, targetRegion)
+    def clipToBoundingRegion(clipBox: LTBounds): Seq[(TextReflow, RangeInt)] = {
+      clipReflowToBoundingRegion(theReflow, clipBox)
     }
   }
 }

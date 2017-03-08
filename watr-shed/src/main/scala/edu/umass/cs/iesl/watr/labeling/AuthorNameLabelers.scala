@@ -116,10 +116,10 @@ object AuthorNameLabelers extends LabelWidgetUtils {
   //         .foldLeft((namesReflow, List[TextReflow]()))({case ((accReflow, splits), elemReflow) =>
   //           val splitTr = accReflow.bounds.splitHorizontal(elemReflow.bounds)
   //           // val local = elemReflow :: (splitTr.map({tr =>
-  //           //   accReflow.clipToTargetRegion(tr).map(_._1).toList
+  //           //   accReflow.clipToBoundingRegion(tr).map(_._1).toList
   //           // })).flatten
   //           val local =  (splitTr.map({tr =>
-  //             accReflow.clipToTargetRegion(tr).map(_._1).toList
+  //             accReflow.clipToBoundingRegion(tr).map(_._1).toList
   //           })).flatten
   //           (local.last, splits ++ local)
   //         })
@@ -260,10 +260,10 @@ object AuthorNameLabelers extends LabelWidgetUtils {
   //           val elemTargetRegion = elemReflow.targetRegion()
   //           val splitTr = accReflow.targetRegion().splitHorizontal(elemTargetRegion)
   //           // val local = elemReflow :: (splitTr.map({tr =>
-  //           //   accReflow.clipToTargetRegion(tr).map(_._1).toList
+  //           //   accReflow.clipToBoundingRegion(tr).map(_._1).toList
   //           // })).flatten
   //           val local =  (splitTr.map({tr =>
-  //             accReflow.clipToTargetRegion(tr).map(_._1).toList
+  //             accReflow.clipToBoundingRegion(tr).map(_._1).toList
   //           })).flatten
   //           (local.last, splits ++ local)
   //         })

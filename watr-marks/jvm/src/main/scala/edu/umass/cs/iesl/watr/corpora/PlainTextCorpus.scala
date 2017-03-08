@@ -105,13 +105,15 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   }
 
   def getRegionBounds(x: Int, y: Int, w: Int, h: Int): LTBounds = {
-    val width = if (w>0) {
-      w*xscale - 0.1
-    } else 0
+    // val width = if (w>0) {
+    //   w*xscale - 0.1
+    // } else 0
+    // val height = if (h>0) {
+    //   h*yscale - 0.1
+    // } else 0
 
-    val height = if (h>0) {
-      h*yscale - 0.1
-    } else 0
+    val width = w * xscale
+    val height = h*yscale
 
     LTBounds(
       left=x*xscale, top=y*yscale,
@@ -152,8 +154,9 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     for {
       (pad, line) <- pageLines
     } {
+      println(s"loadPageFromString: pad, line: ${pad}, $line")
       linenum += 1
-      chnum = pad
+      chnum = pad - 1
       reflowBuilder.newline()
 
       for {

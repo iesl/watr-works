@@ -272,7 +272,7 @@ object GeometryImplicits {
       val top    = math.max(theBbox.top, b.top)
       val right = math.min(theBbox.right, b.right)
       val bottom = math.min(theBbox.bottom, b.bottom)
-      if (left <= right && top <= bottom) {
+      if (left < right && top < bottom) {
         Some(LTBounds(left, top,
             right-left,
             bottom-top
