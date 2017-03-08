@@ -116,7 +116,7 @@ object WatrColors extends LabelerRendering {
 
 
     @JSExport
-    override def echoLabeler(lwidget: List[WidgetPositioning], labelOptions: LabelOptions): Unit = Async.async {
+    override def echoLabeler(lwidget: Seq[WidgetPositioning], labelOptions: LabelOptions): Unit = Async.async {
       fabricCanvas.renderOnAddRemove = false
       clear()
       val (bbox, fobjs) = renderLabelWidget(lwidget)

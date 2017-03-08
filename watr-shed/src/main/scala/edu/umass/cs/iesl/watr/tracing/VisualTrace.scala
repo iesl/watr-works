@@ -105,7 +105,7 @@ class VisualTracer() extends EnableTrace[TraceLog] {
       case Link(ts)               => hjoins(sep=" ")(ts.map(formatTrace(_)).flatten).some
       case Message(m)             => ("-" besideS m).some
       case FocusOn(targetRegion)  => ("Focus" besideS targetRegion.toString).some
-      case Indicate(targetRegion) => ("Indicate" besideS targetRegion.toString).some
+      // case Indicate(targetRegion) => ("Indicate" besideS targetRegion.toString).some
     }
   }
 

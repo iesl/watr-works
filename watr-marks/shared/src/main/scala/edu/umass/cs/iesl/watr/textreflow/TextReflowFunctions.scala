@@ -224,6 +224,7 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
       targetRegions.reduce(_ union _)
     }
 
+
     def bounds(): LTBounds = {
       val pageCount = charAtoms.map(_.targetRegion.pageNum).toSet.length
       if (pageCount > 1) {

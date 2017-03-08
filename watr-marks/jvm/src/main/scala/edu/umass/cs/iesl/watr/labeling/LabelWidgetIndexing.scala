@@ -4,19 +4,12 @@ package labeling
 import scala.collection.mutable
 
 import textreflow.data._
-import textreflow._
 import geometry._
 import geometry.syntax._
 import LabelWidgetF._
 import corpora._
 import rindex._
 
-// import TypeTags._
-// import spindex._
-// import docstore._
-// import watrmarks.{StandardLabels => LB}
-// import watrmarks._
-// import PageComponentImplicits._
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
@@ -24,6 +17,12 @@ case class IndexableTextReflow(
   id: Int@@TextReflowID,
   textReflow: TextReflow,
   pageRegion: PageRegion
+)
+
+case class QueryHit(
+  positioned: WidgetPositioning,
+  pageSpaceBounds: LTBounds,
+  iTextReflows: Seq[IndexableTextReflow]
 )
 
 object LabelWidgetIndex extends LabelWidgetLayout {
@@ -36,6 +35,28 @@ object LabelWidgetIndex extends LabelWidgetLayout {
   implicit object LabelWidgetIndexable extends SpatialIndexable[WidgetPositioning] {
     def id(t: WidgetPositioning): Int = t.id.unwrap
     def ltBounds(t: WidgetPositioning): LTBounds = t.widgetBounds
+  }
+
+  def applyConstraint(constraint: Constraint, queryHits: Seq[QueryHit]): Seq[QueryHit] = {
+    queryHits.map { qhit =>
+      qhit.iTextReflows.map { iReflow =>
+        constraint match {
+          case Constraint.ByLine =>
+            val clippedReflows = iReflow.textReflow.clipToBoundingRegion(qhit.pageSpaceBounds)
+            clippedReflows.foreach { case (cr, interval)  =>
+              val ctr = cr.targetRegion()
+            }
+          case Constraint.ByChar =>
+            val clippedReflows = iReflow.textReflow.clipToBoundingRegion(qhit.pageSpaceBounds)
+            clippedReflows.foreach { case (cr, interval)  =>
+              val ctr = cr.targetRegion()
+            }
+          case Constraint.ByRegion =>
+        }
+      }
+    }
+
+    ???
   }
 
   import textreflow.TextReflowJsonCodecs._
@@ -195,40 +216,28 @@ trait LabelWidgetIndex {
   }
 
 
-  def select(queryBounds: LTBounds, constraint: Constraint): Seq[Seq[PageRegion]] = {
-    val hits: Seq[WidgetPositioning] =
-      index.queryForIntersects(queryBounds)
-        .map { pos =>
-          pos.widget match {
-            case TargetOverlay(under, over) =>
-              val maybeIntersect = pos.widgetBounds.intersection(queryBounds)
-              maybeIntersect.map { ibbox =>
-                val pageSpaceBounds = ibbox.translate(pos.translation)
-                println(s"PageRegion ${under.regionId.get}: ${under.bbox} @ ${pos.widgetBounds} w/trans=${pos.translation}")
-                println(s"   sel: ${pageSpaceBounds}  from ${ibbox}")
+  def select(queryBounds: LTBounds): Seq[QueryHit] = {
+    val hits = index.queryForIntersects(queryBounds)
+      .map { pos => pos.widget match {
+        case TargetOverlay(under, over) =>
+          val maybeIntersect = pos.widgetBounds.intersection(queryBounds)
+          maybeIntersect.map { ibbox =>
+            val pageSpaceBounds = ibbox.translate(pos.translation)
+            // println(s"PageRegion ${under.regionId.get}: ${under.bbox} @ ${pos.widgetBounds} w/trans=${pos.translation}")
+            // println(s"   sel: ${pageSpaceBounds}  from ${ibbox}")
 
-                // query pageIndex using pageSpaceBounds
-                val pageIndex = pageIndexes(under.pageId)
-                val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
-                pageHits.foreach { iReflow =>
-                  val clippedReflows = iReflow.textReflow.clipToBoundingRegion(pageSpaceBounds)
-                  val lineText = iReflow.textReflow.toText()
-                  println(s"hit line: ${lineText}")
-                  clippedReflows.foreach { case (cr, interval)  =>
-                    val clippedText = cr.toText()
-                    println(s" clipped: ${clippedText} interval ${interval}")
-                  }
-                }
-              }
+            // query pageIndex using pageSpaceBounds
+            val pageIndex = pageIndexes(under.pageId)
+            val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
+            QueryHit(pos, pageSpaceBounds, pageHits)
 
-            case _ =>
           }
-          pos
-        }
 
-    debugPrint(Some(queryBounds))
+        case _ => None
+      }}
 
-    Seq()
+    // debugPrint(Some(queryBounds))
+    hits.flatten
   }
 
   // def querySelected(bbox: LTBounds): Seq[LabeledTarget] = {

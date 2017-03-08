@@ -19,7 +19,7 @@ import textreflow.data._
 import watrmarks._
 import utils.EnrichNumerics._
 import TypeTags._
-import PageComponentImplicits._
+// import PageComponentImplicits._
 import play.api.libs.json, json._
 
 
@@ -583,7 +583,7 @@ class TextReflowDB(
 
 
     def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Model.TextReflow] = {
-      runq { selectTextReflowForZone(zoneId) }
+      runq { selectModelTextReflowForZone(zoneId) }
     }
     def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
       runq { selectTextReflowForZone(zoneId) }

@@ -35,5 +35,9 @@ object TypeTagPicklers {
     {t => Js.Str(t.unwrap)},
     {case Js.Str(s) => DocumentID(s)}
   )
+  implicit val Int_WidgetID_Pickler: RW[Int @@ WidgetID] = RW[Int @@ WidgetID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => WidgetID(s.toInt)}
+  )
 
 }

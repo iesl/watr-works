@@ -103,10 +103,20 @@ class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
 
     val lwindex = LabelWidgetIndex.create(docStore, layout)
 
-    val pageRegions = lwindex.select(getRegionBounds(2, 2, 2, 2), Constraint.ByLine)
+    val queryHits = lwindex.select(getRegionBounds(2, 2, 2, 2))
 
-    // List of PageRegions per overlay PageRegion
-    // val selection: List[List[PageRegion]] = lwindex.select(bbox, ByLine)
+    queryHits.foreach { qhit =>
+      qhit.iTextReflows.foreach { iReflow =>
+        val clippedReflows = iReflow.textReflow.clipToBoundingRegion(qhit.pageSpaceBounds)
+        val lineText = iReflow.textReflow.toText()
+        println(s"hit line: ${lineText}")
+        clippedReflows.foreach { case (cr, interval)  =>
+          val clippedText = cr.toText()
+          val ctr = cr.targetRegion()
+          println(s" clipped: ${clippedText} interval ${interval}, region: $ctr")
+        }
+      }
+    }
 
     // To create a new zone:
     //   add PageRegion to DB (can now be a TargetRegion)

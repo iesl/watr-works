@@ -15,7 +15,7 @@ trait WatrColorsApi {
   def helloColors(msg: String): Unit
   def clear(): Unit
   def print(level: String, msg: String): Unit
-  def echoLabeler(lwidget: List[WidgetPositioning], labelOptions: LabelOptions): Unit
+  def echoLabeler(lwidget: Seq[WidgetPositioning], labelOptions: LabelOptions): Unit
 }
 
 final case class RemoteCall(

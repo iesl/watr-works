@@ -13,6 +13,7 @@ import TypeTags._
 import data._
 import corpora._
 import scala.collection.mutable
+import geometry._
 
 
 object TitleAuthorsLabelers extends LabelWidgetUtils {
@@ -50,7 +51,9 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
       lineReflow      <- theDocumentCorpus.getTextReflowForZone(zone.id)
     } yield {
-      val lt = LW.labeledTarget(lineReflow.targetRegion, None, None)
+      // FIXME: kludge:
+      val pageRegion = PageRegion(pageId, lineReflow.targetRegion.bbox, Option(lineReflow.targetRegion.id))
+      val lt = LW.labeledTarget(pageRegion, None, None)
       (linenum, (0d, lt))
     }
 
@@ -72,7 +75,8 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
         val lineBounds = lineReflow.targetRegion()
         val normalScore = score/maxScore
 
-        val lt = LW.labeledTarget(lineBounds, Some(label), Some(normalScore))
+        val pageRegion = PageRegion(pageId, lineBounds.bbox, Option(lineBounds.id))
+        val lt = LW.labeledTarget(pageRegion, Some(label), Some(normalScore))
 
         if (allLineScores.contains(linenum)) {
           val Some((currScore, currWidget)) = allLineScores.get(linenum)
@@ -94,8 +98,9 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
         lwidget
       })
 
+    val pageRegion = PageRegion(pageId, pageTargetRegion.bbox, Option(pageTargetRegion.id))
     val body = LW.row(
-      LW.targetOverlay(pageTargetRegion, lwidgets),
+      LW.targetOverlay(pageRegion, lwidgets),
       paperRecWidget
     )
 

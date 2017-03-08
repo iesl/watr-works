@@ -49,7 +49,7 @@ trait LabelerRendering extends MouseGestures {
   }
 
 
-  def makeImageForTargetRegion(tr: TargetRegion, absPos: LTBounds): Future[FabricObject] = {
+  def makeImageForPageRegion(pageRegion: PageRegion, absPos: LTBounds): Future[FabricObject] = {
 
     val promise = Promise[FabricObject]()
 
@@ -72,7 +72,9 @@ trait LabelerRendering extends MouseGestures {
         ()
       }
 
-    Image.fromURL(s"/img/region/${tr.id}", callback)
+    val pageRegionId = pageRegion.regionId.getOrElse(sys.error("pageRegion has no regionId"))
+
+    Image.fromURL(s"/img/region/${pageRegionId}", callback)
     promise.future
 
   }
@@ -147,16 +149,16 @@ trait LabelerRendering extends MouseGestures {
     )
   }
 
-  def renderLabelWidget(positions: List[WidgetPositioning]): (LTBounds, Future[List[FabricObject]]) = {
+  def renderLabelWidget(positions: Seq[WidgetPositioning]): (LTBounds, Future[List[FabricObject]]) = {
 
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
 
     def visit(p: WidgetPositioning): Unit = {
-      val WidgetPositioning(fa, wbbox, id)  = p
+      val WidgetPositioning(fa, wbbox, transVec, scaling, id)  = p
 
       fa match {
         case TargetOverlay(under, overs) =>
-          objStack += makeImageForTargetRegion(under, wbbox)
+          objStack += makeImageForPageRegion(under, wbbox)
           // objStack += Future { createShape(wbbox, "green", "", 0.2f) }
 
         case LabeledTarget(target, label, score)   =>
@@ -169,7 +171,6 @@ trait LabelerRendering extends MouseGestures {
             }
             val normalScore = score.getOrElse(0d)
             val opacity = normalScore.toFloat * 0.2f
-            val regionId = target.id
 
             objStack += Future { createShape(wbbox, "", bgColor, opacity) }
           })

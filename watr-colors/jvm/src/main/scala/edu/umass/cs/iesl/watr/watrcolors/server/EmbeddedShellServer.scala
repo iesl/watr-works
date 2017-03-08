@@ -220,10 +220,10 @@ class EmbeddedServer(
 
 
     def echoLabeler(lwidget: LabelingPanel): Unit = {
-      val lwIndex = LabelWidgetIndex.create(reflowDB, lwidget.content)
+      val lwIndex = LabelWidgetIndex.create(reflowDB.docstorage, lwidget.content)
       activeLabelWidgetIndex = Some(lwIndex)
 
-      val layout = lwIndex.layout.map(p => WidgetPositioning(p.widget, p.widgetBounds, p.id))
+      val layout = lwIndex.layout.positioning // .map(p => WidgetPositioning(p.widget, p.widgetBounds, p.id))
 
       api.echoLabeler(layout, lwidget.options).call()
     }

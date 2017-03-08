@@ -154,7 +154,6 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     for {
       (pad, line) <- pageLines
     } {
-      println(s"loadPageFromString: pad, line: ${pad}, $line")
       linenum += 1
       chnum = pad - 1
       reflowBuilder.newline()

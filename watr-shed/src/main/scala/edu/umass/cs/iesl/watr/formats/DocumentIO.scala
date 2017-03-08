@@ -10,7 +10,6 @@ import watrmarks._
 import textreflow._
 import textreflow.data._
 import utils.EnrichNumerics._
-
 import TextReflowJsonCodecs._
 
 object DocumentIO extends DocsegJsonFormats {
@@ -145,7 +144,7 @@ object DocumentIO extends DocsegJsonFormats {
         val zoneLocationsAndReflows = zone.regions.map({zoneTargetRegion =>
           for {
             (textFlow, lineNum) <- textBlockReflows.zipWithIndex
-            (clipped, range) <- textFlow.clipToBoundingRegion(zoneTargetRegion)
+            (clipped, range) <- textFlow.clipToBoundingRegion(zoneTargetRegion.bbox)
           } yield {
             ((lineNum, range), clipped)
           }
