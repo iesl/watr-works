@@ -198,7 +198,6 @@ class EmbeddedServer(
         Future{ UIResponse(List()) }
       }
     }
-
   }
 
 

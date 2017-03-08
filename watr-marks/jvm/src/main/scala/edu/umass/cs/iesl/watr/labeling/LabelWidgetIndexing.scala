@@ -37,20 +37,71 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     def ltBounds(t: WidgetPositioning): LTBounds = t.widgetBounds
   }
 
-  def applyConstraint(constraint: Constraint, queryHits: Seq[QueryHit]): Seq[QueryHit] = {
+  def applyConstraint2(constraint: Constraint, queryHits: Seq[QueryHit]): Seq[PageRegion] = {
+    queryHits.map { qhit =>
+      constraint match {
+        case Constraint.ByLine =>
+
+        case Constraint.ByChar =>
+          qhit.iTextReflows.map { iReflow =>
+            val clippedReflows = iReflow.textReflow
+              .clipToBoundingRegion(qhit.pageSpaceBounds)
+              .map { case (clipped, interval)  => clipped }
+
+            if (clippedReflows.length != 1) {
+              println(s"Error: applyConstraint: clippedReflows produced ${clippedReflows.length} reflows (1 required)")
+            }
+
+            val clipped = clippedReflows.head
+            val tr = clipped.targetRegion()
+            val regionId = tr.id
+            val bbox = tr.bbox
+            val pageRegion = PageRegion(iReflow.pageRegion.pageId, bbox, Some(regionId))
+
+            // val reflow = clippedReflows.map { case (cr, interval)  => cr }
+            // iReflow.copy(
+            //   textReflow = clipped,
+            //   pageRegion = pageRegion
+            // )
+            pageRegion
+          }
+
+        case Constraint.ByRegion =>
+          qhit.pageSpaceBounds
+      }
+    }
+
+    ???
+  }
+  def applyConstraint(constraint: Constraint, queryHits: Seq[QueryHit]): Seq[PageRegion] = {
     queryHits.map { qhit =>
       qhit.iTextReflows.map { iReflow =>
         constraint match {
           case Constraint.ByLine =>
-            val clippedReflows = iReflow.textReflow.clipToBoundingRegion(qhit.pageSpaceBounds)
-            clippedReflows.foreach { case (cr, interval)  =>
-              val ctr = cr.targetRegion()
-            }
+            iReflow.pageRegion
+
           case Constraint.ByChar =>
-            val clippedReflows = iReflow.textReflow.clipToBoundingRegion(qhit.pageSpaceBounds)
-            clippedReflows.foreach { case (cr, interval)  =>
-              val ctr = cr.targetRegion()
+            val clippedReflows = iReflow.textReflow
+              .clipToBoundingRegion(qhit.pageSpaceBounds)
+              .map { case (clipped, interval)  => clipped }
+
+            if (clippedReflows.length != 1) {
+              println(s"Error: applyConstraint: clippedReflows produced ${clippedReflows.length} reflows (1 required)")
             }
+
+            val clipped = clippedReflows.head
+            val tr = clipped.targetRegion()
+            val regionId = tr.id
+            val bbox = tr.bbox
+            val pageRegion = PageRegion(iReflow.pageRegion.pageId, bbox, Some(regionId))
+
+            // val reflow = clippedReflows.map { case (cr, interval)  => cr }
+            // iReflow.copy(
+            //   textReflow = clipped,
+            //   pageRegion = pageRegion
+            // )
+            pageRegion
+
           case Constraint.ByRegion =>
         }
       }
@@ -123,98 +174,40 @@ trait LabelWidgetIndex {
   def index: SpatialIndex[WidgetPositioning]
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
 
-
   def debugPrint(query: Option[LTBounds] = None): Unit = {
-
     val w: Int = (layout.layoutBounds.width).intValue()+1
     val h: Int = (layout.layoutBounds.height).intValue()+1
 
-    val cmat = mutable.ArrayBuffer
-      .tabulate(h, w){ case (y, x) =>
-        fansi.Color.Blue(" ")
-      }
+    val gridPaper = GridPaper.create(w, h)
 
     layout.positioning.foreach { pos =>
-      val LTBounds(l, t, w, h) = pos.widgetBounds
-      val il = l.intValue()
-      val it = t.intValue()
-      val iw = w.intValue()
-      val ih = h.intValue()
-      // println(s"pos: ($il, $it, $iw, $ih) (${pos.widgetBounds})")
+      val gridbox = GridPaper.ltb2box(pos.widgetBounds)
+
       pos.widget match {
         case TargetOverlay(under, over) =>
           val regionId = under.regionId.get.unwrap
-          for {
-            y <- it until (it+ih)
-            x <- il until (il+iw)
-          } {
-            val qq = cmat(y)(x)
-            cmat(y)(x) = (regionId + '0'.toInt).toChar.toString()
-          }
+          val fill = (regionId + '0'.toInt).toChar
+
+          gridPaper.fillFg(fill, gridbox)
 
         case _ =>
       }
     }
     layout.positioning.foreach { pos =>
-      val LTBounds(l, t, w, h) = pos.widgetBounds
-      val il = l.intValue()
-      val it = t.intValue()
-      val iw = w.intValue()
-      val ih = h.intValue()
-      // println(s"pos: ($il, $it, $iw, $ih) (${pos.widgetBounds})")
+      val gridbox = GridPaper.ltb2box(pos.widgetBounds)
       pos.widget match {
-        case Col(as) =>
-          for {
-            y <- it until (it+ih)
-          } {
-            val x1 = il
-            val x2 = il+iw-1
-            // println(s"  ($x1/$x2, $y) := col")
-            val cur0 = cmat(y)(x1)
-            val cur1 = cmat(y)(x2)
-            val col0 = fansi.Color.Red(cur0)
-            val col1 = fansi.Color.Red(cur1)
-
-            cmat(y)(x1) = col0
-            cmat(y)(x2) = col1
-          }
-        case Row(as) =>
-          for {
-            x <- il until (il+iw)
-          } {
-            val y1 = it
-            val y2 = it+ih-1
-            // println(s"  ($x, $y1/$y2) := row")
-            val cur0 = cmat(y1)(x)
-            val cur1 = cmat(y2)(x)
-            val col0 = fansi.Color.Magenta(cur0)
-            val col1 = fansi.Color.Magenta(cur1)
-            cmat(y1)(x) = col0
-            cmat(y2)(x) = col1
-          }
+        case Col(as) => gridPaper.borderLeftRight(gridbox)
+        case Row(as) => gridPaper.borderTopBottom(gridbox)
         case _ =>
       }
     }
-    // val LTBounds(l, t, w, h) = query
     query foreach {q =>
-      val il = q.left.intValue()
-      val it = q.top.intValue()
-      val iw = q.width.intValue()
-      val ih = q.height.intValue()
-      for {
-        y <- it until (it+ih)
-        x <- il until (il+iw)
-      } {
-        val qq = cmat(y)(x)
-        cmat(y)(x) = fansi.Back.True(10, 20, 200)(qq)
-      }
-
+      gridPaper.shadeBackground(GridPaper.ltb2box(q))
     }
 
-    val pp = cmat.map(_.mkString).mkString("\n")
+    val pp = gridPaper.asString()
     println(pp)
   }
-
 
   def select(queryBounds: LTBounds): Seq[QueryHit] = {
     val hits = index.queryForIntersects(queryBounds)
@@ -236,72 +229,56 @@ trait LabelWidgetIndex {
         case _ => None
       }}
 
-    // debugPrint(Some(queryBounds))
+    debugPrint(Some(queryBounds))
     hits.flatten
   }
+  import LabelWidgetIndex._
 
-  // def querySelected(bbox: LTBounds): Seq[LabeledTarget] = {
-  //   val positioned: Seq[WidgetPositioning] = index.queryForIntersects(bbox)
-
-  //   // val selectedTargets: List[(WidgetPositioning, LabeledTarget)]
-  //   val selectedTargets: List[LabeledTarget] = positioned.toList
-  //     .map(p => index.getItem(p.id.unwrap))
-  //     .filter(_.widget.isInstanceOf[LabeledTarget])
-  //     .map(p => p.widget.asInstanceOf[LabeledTarget])
-
-  //   selectedTargets
-  // }
-
-  def constrainedClipTargetRegions(bbox: LTBounds, constraint: Constraint, targets: Seq[TargetRegion]): Seq[TargetRegion] = { ??? }
-  def queryForSelectedLines(bbox: LTBounds): Seq[Zone] = { ??? }
   def runUIRequest(r: UIRequest): UIResponse = {
     val UIRequest(uiState, gesture) = r
 
     gesture match {
       case SelectRegion(bbox) =>
 
-        // val positioned: Seq[WidgetPositioning] = index.queryForIntersects(bbox)
+        val queryHits = select(bbox)
+        val constrainedHits = applyConstraint(uiState.selectionConstraint, queryHits)
+        // Options:
+        // 1. No selected lines are part of a labeled zone
+        // 2. At least one selected line is part of a labeled zone
 
-        val selectedLines = queryForSelectedLines(bbox)
-        val selectedTargetLines = selectedLines.flatMap(_.regions)
+        // a. The selected lines have exactly one guessed label
+        // b. The selected lines have no guessed labels, or more than one
 
-        val clippedTargets = constrainedClipTargetRegions(bbox, uiState.selectionConstraint, selectedTargetLines)
 
-        if (selectedLines.nonEmpty) {
+        if (constrainedHits.nonEmpty) {
           uiState.action match {
             case Create =>
-              uiState.selectionConstraint match {
-                case Constraint.ByLine =>
-                  // apply label to all lines in selected region
+              //====== case 1,b:
 
-                case Constraint.ByChar =>
-                case Constraint.ByRegion =>
-                  // apply label to region w/o regard to line/chars
-              }
+              // val targetRegions = for {
+              //   qhit <- constrainedHits
+              //   iReflow <- qhit.iTextReflows
+              // } yield {
+              //   // ensure this is a db-backed target region
+              //   val pageRegion = iReflow.pageRegion
+              //   val regionId = docStore.addTargetRegion(pageRegion.pageId, pageRegion.bbox)
+              //   docStore.getTargetRegion(regionId)
+              // }
 
-              def mergedZone: Zone =  ???
 
-              // docStore.getZone(docStore.mergeZones(existingZones.map(_.id)))
+              // val docId = docStore.getDocument(targetRegions.head.stableId).get
 
-              // Add all target regions to merged zone
-              // selectedTargets.map(tr => docStore.setZoneTargetRegions(
-              //   mergedZone.id,
-              //   mergedZone.regions :+ tr.target
-              // ))
-              // Option(mergedZone)
+              // val newZone = docStore.createZone(docId)
+              // println(s"newZone: ${newZone}")
 
-              // // Create a new Zone with given label
-              // val stableId = selectedTargets.head.target.stableId
-              // val docId = docStore
-              //   .getDocument(stableId)
-              //   .getOrElse(sys.error(s"onSelect() document ${stableId} not found"))
+              // docStore.setZoneTargetRegions(newZone, targetRegions)
 
-              // val targetRegions = selectedTargets.map(_.target)
-              // val newZone = docStore.getZone(
-              //   docStore.createZone(docId)
-              // )
-              // docStore.setZoneTargetRegions(newZone.id, targetRegions)
-              // docStore.addZoneLabel(newZone.id, targetLabel)
+              // println(s"newZone targetRegions: ${targetRegions}")
+
+              // val label = uiState.selectedLabel.get
+              // docStore.addZoneLabel(newZone, label)
+
+              // println(s"newZone label: ${label}")
 
             case Delete =>
           }
@@ -309,28 +286,9 @@ trait LabelWidgetIndex {
 
     }
 
-
-
     // response: indicate(region, )
 
     UIResponse(List())
   }
 
 }
-
-// def getWidgetForTargetRegion(targetRegion: TargetRegion): WidgetPositioning = {
-//   val stableId = targetRegion.stableId
-//   val docId = docStore.getDocument(stableId).get
-//   val pageId = docStore.getPage(docId, targetRegion.pageNum).get
-//   // Map TargetRegion -> WidgetPositioning
-//   layout
-//     .collect({
-//       case p @ WidgetPositioning(
-//         LabeledTarget(bbox, label, score),
-//         widgetBounds,
-//         pRegionId, _, _
-//       ) if targetRegion.id == targetRegion.id => p
-//     }).headOption
-//     .getOrElse(sys.error(s"getWidgetForTargetRegion: no entry for ${targetRegion}"))
-//   ???
-// }

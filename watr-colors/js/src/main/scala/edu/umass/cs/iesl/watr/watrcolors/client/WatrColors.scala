@@ -14,17 +14,22 @@ import autowire._
 import upickle.{default => UPickle}
 import UPickle._
 
-import geometry._
+// import geometry._
 import labeling._
 
 import native.mousetrap._
 
 import TypeTagPicklers._
+import watrmarks.{StandardLabels => LB}
 
 @JSExport
 object WatrColors extends LabelerRendering {
 
-  var uiState: Option[UIState] = None // UIState()
+  var uiState: Option[UIState] = Option(UIState(
+    Constraint.ByChar,
+    Option(LB.Title),
+    Create
+  ))
 
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
     // "l a" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Authors)}),
@@ -66,7 +71,6 @@ object WatrColors extends LabelerRendering {
           .uiRequest(UIRequest(state, SelectRegion(bbox)))
           .foreach{ uiResponse =>
             uiResponse.changes.foreach{
-              // case (action, bbox) =>
               case bbox =>
                 addShape(bbox, "black", "", 1f)
             }
