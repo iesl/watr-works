@@ -193,7 +193,8 @@ class EmbeddedServer(
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
       activeLabelWidgetIndex.map { lwIndex =>
-        Future{ lwIndex.runUIRequest(r) }
+        // Future{ lwIndex.runUIRequest(r) }
+        ???
       } getOrElse {
         Future{ UIResponse(List()) }
       }

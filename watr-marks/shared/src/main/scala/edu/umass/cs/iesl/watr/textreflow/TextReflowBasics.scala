@@ -22,7 +22,6 @@ case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 trait TextReflowBasics {
   import TextReflowF._
 
-
   // Natural Transformation  from EnvT ~> TextReflow
   def stripEnv = new (EnvT[Offsets, TextReflowF, ?] ~> TextReflowF[?]) {
     def apply[A](env: EnvT[Offsets, TextReflowF, A]): TextReflowF[A] = {

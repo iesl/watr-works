@@ -19,7 +19,9 @@ trait LibVersions {
   val aspectjVersion      = "1.8.9"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.4.1"
-  val matryoshkaCoreV     = "0.17.0"
+  val matryoshkaCoreV     = "0.17.1"
+  val sourcecodeV         = "0.1.3"
+  val fansiV              = "0.2.3"
 
 }
 
@@ -87,7 +89,7 @@ trait CommonLibs extends LibVersions {
   val scalatags        = "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion
   val ammonite         = "com.lihaoyi"              % "ammonite"         % "0.8.2" cross CrossVersion.full
   val fastparse        = "com.lihaoyi"             %% "fastparse"        % "0.4.2"
-  val sourcecode       = "com.lihaoyi"             %% "sourcecode"       % "0.1.3"
+  val sourcecode       = "com.lihaoyi"             %% "sourcecode"       % sourcecodeV
   val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.12"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val machinist        = "org.typelevel"           %% "machinist"        % "0.6.1"
@@ -105,4 +107,3 @@ trait CommonLibs extends LibVersions {
 }
 
 object CommonLibs extends CommonLibs
-

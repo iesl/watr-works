@@ -61,6 +61,7 @@ trait TextReflowClipping extends TextReflowBasics {
 
   import helpers._
 
+
   def clipReflowToBoundingRegion(textReflow: TextReflow, clipBox: LTBounds): Seq[(TextReflow, RangeInt)] = {
 
     def retainAtoms(wfa: EnvT[Offsets, TextReflowF, List[AtomOrInsertOrGap]]): List[AtomOrInsertOrGap] = {

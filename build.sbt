@@ -18,6 +18,7 @@ val commonSettings = (
       libraryDependencies ++= TestLibs.testAndCheck,
       libraryDependencies ++= Seq(
         Lib.scalatags,
+        Lib.sourcecode,
         Lib.ammonite,
         Lib.playJson,
         Lib.shapeless
@@ -49,7 +50,8 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     "com.github.julien-truffaut" %%% "monocle-core"           % Lib.monocleVersion % "compile, test",
     "com.github.mpilquist"       %%% "simulacrum"             % "0.10.0"           % "compile, test",
     "com.lihaoyi"                %%% "scalatags"              % Lib.scalaTagsVersion,
-    "com.lihaoyi"                %%% "fansi"                  % "0.2.3",
+    "com.lihaoyi"                %%% "fansi"                  % Lib.fansiV,
+    "com.lihaoyi"                %%% "sourcecode"             % Lib.sourcecodeV,
     "com.slamdata"               %%% "matryoshka-core"        % Lib.matryoshkaCoreV,
     "com.slamdata"               %%% "matryoshka-scalacheck"  % Lib.matryoshkaCoreV % "compile, test"
   ))

@@ -2,9 +2,6 @@ import scala.util.{ Properties, Try }
 import sbt._
 import Keys._
 
-// import com.github.fedragon.todolist.TodoListPlugin.autoImport._
-// import com.lihaoyi.workbench.Plugin._
-
 object SensibleProject extends CommonLibs {
 
   def noColorIfEmacs = {
@@ -29,36 +26,6 @@ object SensibleProject extends CommonLibs {
   )
 
   lazy val testSettings = Seq(
-    // parallelExecution := true,
-
-    // // one JVM per test suite
-    // // fork := true,
-    // testForkedParallel := true,
-    // // testGrouping <<= (
-    // //   definedTests,
-    // //   baseDirectory,
-    // //   javaOptions,
-    // //   outputStrategy,
-    // //   envVars,
-    // //   javaHome,
-    // //   connectInput
-    // // ).map { (tests, base, options, strategy, env, javaHomeDir, connectIn) =>
-    // //   val opts = ForkOptions(
-    // //     bootJars = Nil,
-    // //     javaHome = javaHomeDir,
-    // //     connectInput = connectIn,
-    // //     outputStrategy = strategy,
-    // //     runJVMOptions = options,
-    // //     workingDirectory = Some(base),
-    // //     envVars = env
-    // //   )
-    // //   tests.map { test =>
-    // //     Tests.Group(test.name, Seq(test), Tests.SubProcess(opts))
-    // //   }
-    // // },
-
-    // testOptions ++= noColorIfEmacs,
-    // testFrameworks := Seq(TestFrameworks.ScalaTest)
     logBuffered in Test := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
     testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
@@ -127,7 +94,6 @@ object SensibleThisBuild {
       "-Xss2m", "-Xms1g", "-Xmx1g", "-Dfile.encoding=UTF8"
     ),
 
-    // 4 x 1GB = 4GB
     concurrentRestrictions in Global := Seq(Tags.limitAll(4))
 
   )

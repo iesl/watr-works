@@ -9,6 +9,7 @@ import geometry.syntax._
 import LabelWidgetF._
 import corpora._
 import rindex._
+import watrmarks._
 
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
@@ -21,11 +22,16 @@ case class IndexableTextReflow(
 
 case class QueryHit(
   positioned: WidgetPositioning,
+  pageId: Int@@PageID,
   pageSpaceBounds: LTBounds,
   iTextReflows: Seq[IndexableTextReflow]
 )
 
 object LabelWidgetIndex extends LabelWidgetLayout {
+
+  def debug[V](value: sourcecode.Text[V])(implicit enclosing: sourcecode.Name) = {
+    println(enclosing.value + " [" + value.source + "]: " + value.value)
+  }
 
   implicit object TextReflowIndexable extends SpatialIndexable[IndexableTextReflow] {
     def id(t: IndexableTextReflow): Int = t.id.unwrap
@@ -37,78 +43,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     def ltBounds(t: WidgetPositioning): LTBounds = t.widgetBounds
   }
 
-  def applyConstraint2(constraint: Constraint, queryHits: Seq[QueryHit]): Seq[PageRegion] = {
-    queryHits.map { qhit =>
-      constraint match {
-        case Constraint.ByLine =>
-
-        case Constraint.ByChar =>
-          qhit.iTextReflows.map { iReflow =>
-            val clippedReflows = iReflow.textReflow
-              .clipToBoundingRegion(qhit.pageSpaceBounds)
-              .map { case (clipped, interval)  => clipped }
-
-            if (clippedReflows.length != 1) {
-              println(s"Error: applyConstraint: clippedReflows produced ${clippedReflows.length} reflows (1 required)")
-            }
-
-            val clipped = clippedReflows.head
-            val tr = clipped.targetRegion()
-            val regionId = tr.id
-            val bbox = tr.bbox
-            val pageRegion = PageRegion(iReflow.pageRegion.pageId, bbox, Some(regionId))
-
-            // val reflow = clippedReflows.map { case (cr, interval)  => cr }
-            // iReflow.copy(
-            //   textReflow = clipped,
-            //   pageRegion = pageRegion
-            // )
-            pageRegion
-          }
-
-        case Constraint.ByRegion =>
-          qhit.pageSpaceBounds
-      }
-    }
-
-    ???
-  }
-  def applyConstraint(constraint: Constraint, queryHits: Seq[QueryHit]): Seq[PageRegion] = {
-    queryHits.map { qhit =>
-      qhit.iTextReflows.map { iReflow =>
-        constraint match {
-          case Constraint.ByLine =>
-            iReflow.pageRegion
-
-          case Constraint.ByChar =>
-            val clippedReflows = iReflow.textReflow
-              .clipToBoundingRegion(qhit.pageSpaceBounds)
-              .map { case (clipped, interval)  => clipped }
-
-            if (clippedReflows.length != 1) {
-              println(s"Error: applyConstraint: clippedReflows produced ${clippedReflows.length} reflows (1 required)")
-            }
-
-            val clipped = clippedReflows.head
-            val tr = clipped.targetRegion()
-            val regionId = tr.id
-            val bbox = tr.bbox
-            val pageRegion = PageRegion(iReflow.pageRegion.pageId, bbox, Some(regionId))
-
-            // val reflow = clippedReflows.map { case (cr, interval)  => cr }
-            // iReflow.copy(
-            //   textReflow = clipped,
-            //   pageRegion = pageRegion
-            // )
-            pageRegion
-
-          case Constraint.ByRegion =>
-        }
-      }
-    }
-
-    ???
-  }
 
   import textreflow.TextReflowJsonCodecs._
 
@@ -173,6 +107,97 @@ trait LabelWidgetIndex {
   def index: SpatialIndex[WidgetPositioning]
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
 
+
+  def select(queryBounds: LTBounds): Seq[QueryHit] = {
+    val hits = index.queryForIntersects(queryBounds)
+      .map { pos => pos.widget match {
+        case TargetOverlay(under, over) =>
+          val maybeIntersect = pos.widgetBounds.intersection(queryBounds)
+          maybeIntersect.map { ibbox =>
+            val pageSpaceBounds = ibbox.translate(pos.translation)
+            // println(s"PageRegion ${under.regionId.get}: ${under.bbox} @ ${pos.widgetBounds} w/trans=${pos.translation}")
+            // println(s"   sel: ${pageSpaceBounds}  from ${ibbox}")
+
+            // query pageIndex using pageSpaceBounds
+            val pageIndex = pageIndexes(under.pageId)
+            val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
+            QueryHit(pos, under.pageId, pageSpaceBounds, pageHits)
+
+          }
+
+        case _ => None
+      }}
+
+    debugPrint(Some(queryBounds))
+    // println(s"hits: ${hits}")
+    hits.flatten
+  }
+
+  import LabelWidgetIndex._
+  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Unit = {
+    val pageRegionsToBeLabeled = for {
+      qhit <- queryHits
+    } yield constraint match {
+      case Constraint.ByLine =>
+        qhit.iTextReflows.map(_.pageRegion)
+
+      case Constraint.ByRegion =>
+        Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
+
+      case Constraint.ByChar =>
+        for {
+          iReflow <- qhit.iTextReflows
+        } yield {
+
+          debug(qhit.pageSpaceBounds)
+          debug(iReflow.textReflow)
+
+          val clippedReflows = iReflow.textReflow
+            .clipToBoundingRegion(qhit.pageSpaceBounds)
+            .map { case (clipped, interval)  => clipped }
+
+          // TODO: def expectExactlyOne(...)
+          if (clippedReflows.length != 1) {
+            println(s"Error: applyConstraint: clippedReflows produced ${clippedReflows.length} reflows (1 required)")
+          }
+
+          val clipped = clippedReflows.head.targetRegion()
+          PageRegion(qhit.pageId, clipped.bbox, None)
+        }
+    }
+
+
+    // Ensure pageRegions are all cataloged in database
+    val targetRegions = for {
+      pageRegion <- pageRegionsToBeLabeled.flatten
+    } yield {
+      // ensure this is a db-backed target region
+      val regionId = docStore.addTargetRegion(pageRegion.pageId, pageRegion.bbox)
+      docStore.getTargetRegion(regionId)
+    }
+
+    val docId = docStore.getDocument(targetRegions.head.stableId).get
+
+    val newZone = docStore.createZone(docId)
+    println(s"newZone: ${newZone}")
+
+    docStore.setZoneTargetRegions(newZone, targetRegions)
+
+    println(s"newZone targetRegions: ${targetRegions}")
+
+    docStore.addZoneLabel(newZone, label)
+
+    println(s"newZone label: ${label}")
+  }
+
+  def addLabel(bbox: LTBounds, constraint: Constraint, label: Label): Unit = {
+    val queryHits = select(bbox)
+    labelConstrained(constraint, queryHits, label)
+  }
+
+  // def extendLabel(bbox: LTBounds, constraint: Constraint, label: Label, zone: Int@@ZoneID)
+  // def removeLabel(label: Label, zone: Int@@ZoneID)
+
   def debugPrint(query: Option[LTBounds] = None): Unit = {
     val w: Int = (layout.layoutBounds.width).intValue()+1
     val h: Int = (layout.layoutBounds.height).intValue()+1
@@ -207,87 +232,4 @@ trait LabelWidgetIndex {
     val pp = gridPaper.asString()
     println(pp)
   }
-
-  def select(queryBounds: LTBounds): Seq[QueryHit] = {
-    val hits = index.queryForIntersects(queryBounds)
-      .map { pos => pos.widget match {
-        case TargetOverlay(under, over) =>
-          val maybeIntersect = pos.widgetBounds.intersection(queryBounds)
-          maybeIntersect.map { ibbox =>
-            val pageSpaceBounds = ibbox.translate(pos.translation)
-            // println(s"PageRegion ${under.regionId.get}: ${under.bbox} @ ${pos.widgetBounds} w/trans=${pos.translation}")
-            // println(s"   sel: ${pageSpaceBounds}  from ${ibbox}")
-
-            // query pageIndex using pageSpaceBounds
-            val pageIndex = pageIndexes(under.pageId)
-            val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
-            QueryHit(pos, pageSpaceBounds, pageHits)
-
-          }
-
-        case _ => None
-      }}
-
-    debugPrint(Some(queryBounds))
-    hits.flatten
-  }
-  import LabelWidgetIndex._
-
-  def runUIRequest(r: UIRequest): UIResponse = {
-    val UIRequest(uiState, gesture) = r
-
-    gesture match {
-      case SelectRegion(bbox) =>
-
-        val queryHits = select(bbox)
-        val constrainedHits = applyConstraint(uiState.selectionConstraint, queryHits)
-        // Options:
-        // 1. No selected lines are part of a labeled zone
-        // 2. At least one selected line is part of a labeled zone
-
-        // a. The selected lines have exactly one guessed label
-        // b. The selected lines have no guessed labels, or more than one
-
-
-        if (constrainedHits.nonEmpty) {
-          uiState.action match {
-            case Create =>
-              //====== case 1,b:
-
-              // val targetRegions = for {
-              //   qhit <- constrainedHits
-              //   iReflow <- qhit.iTextReflows
-              // } yield {
-              //   // ensure this is a db-backed target region
-              //   val pageRegion = iReflow.pageRegion
-              //   val regionId = docStore.addTargetRegion(pageRegion.pageId, pageRegion.bbox)
-              //   docStore.getTargetRegion(regionId)
-              // }
-
-
-              // val docId = docStore.getDocument(targetRegions.head.stableId).get
-
-              // val newZone = docStore.createZone(docId)
-              // println(s"newZone: ${newZone}")
-
-              // docStore.setZoneTargetRegions(newZone, targetRegions)
-
-              // println(s"newZone targetRegions: ${targetRegions}")
-
-              // val label = uiState.selectedLabel.get
-              // docStore.addZoneLabel(newZone, label)
-
-              // println(s"newZone label: ${label}")
-
-            case Delete =>
-          }
-        }
-
-    }
-
-    // response: indicate(region, )
-
-    UIResponse(List())
-  }
-
 }
