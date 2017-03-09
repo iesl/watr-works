@@ -10,20 +10,6 @@ lazy val copyDocs = TaskKey[Unit]("copyDocs")
 autoCompilerPlugins := true
 
 val Lib = CommonLibs
-val commonSettings = (
-    SensibleProject.settings ++ //  SensibleProject.acyclicPlugin ++
-    SensibleProject.testSettings ++ // scalatex.SbtPlugin.projectSettings ++
-    Seq(
-      libraryDependencies ++= LogLibs.logback,
-      libraryDependencies ++= TestLibs.testAndCheck,
-      libraryDependencies ++= Seq(
-        Lib.scalatags,
-        Lib.sourcecode,
-        Lib.ammonite,
-        Lib.playJson,
-        Lib.shapeless
-      )
-    ))
 
 import ReleaseTransformations._
 
@@ -41,7 +27,10 @@ lazy val root = (project in file("."))
 
 
 lazy val watrprelude = (project in file("watr-prelude"))
-  .settings(commonSettings: _*)
+  .settings(SensibleProject.settings: _*)
+  .settings(libraryDependencies ++= Seq(
+    "org.scala-lang" % "scala-reflect" % scalaVersion.value
+  ))
 
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
@@ -55,44 +44,36 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     "com.slamdata"               %%% "matryoshka-core"        % Lib.matryoshkaCoreV,
     "com.slamdata"               %%% "matryoshka-scalacheck"  % Lib.matryoshkaCoreV % "compile, test"
   ))
-  .jvmSettings(commonSettings: _*)
-
-
-
-lazy val watrdocs = scalatex.ScalatexReadme(
-  projectId = "watr-docs",
-  wd = file("watr-docs"),
-  url = "https://github.com/iesl/watr-works/tree/master",
-  source = "Readme")
-  .settings(commonSettings: _*)
-  .settings(copyDocs <<= (baseDirectory, target) map ({ (base, trg) =>
-    println("copying doc files..")
-      (trg / "scalatex").listFiles().foreach({file =>
-        val from = file.toPath
-        val to = base/".."/"docs"/file.getName()
-        println(s"copying files from ${from} to ${to}")
-        if (file.isDirectory) {
-          sbt.IO.copyDirectory(file, to, overwrite = true)
-        } else {
-          Files.copy(from, to.toPath, REPLACE_EXISTING)
-        }
-      })
-  }))
+  .jvmSettings(libraryDependencies ++=
+    LogLibs.logback ++
+    TestLibs.testAndCheck ++ Seq(
+      Lib.ammonite,
+      Lib.playJson,
+      Lib.shapeless,
+      "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT"
+    ))
 
 lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm
   .dependsOn(watrprelude)
-  .aggregate(watrmarksJS)
-  .settings(libraryDependencies += "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT")
-  .settings((resources in Compile) += (
-    (fastOptJS in (watrmarksJS, Compile)).value.data
-  ))
+
+// .aggregate(watrmarksJS)
+// .settings((resources in Compile) += (
+//   (fastOptJS in (watrmarksJS, Compile)).value.data
+// ))
 
 lazy val watrshed = (project in file("watr-shed"))
-  .settings(commonSettings: _*)
-  .settings(libraryDependencies ++= DatabaseLibs.doobieDb)
-  .settings(libraryDependencies += Lib.scrimageCore)
+  .settings(SensibleProject.settings: _*)
+  .settings(libraryDependencies ++=
+    LogLibs.logback ++
+    DatabaseLibs.doobieDb ++
+    TestLibs.testAndCheck ++ Seq(
+      Lib.scrimageCore,
+      Lib.ammonite,
+      Lib.playJson,
+      Lib.shapeless
+    ))
   .dependsOn(watrprelude)
   .dependsOn(watrmarksJVM)
 
@@ -113,16 +94,18 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .jsSettings(libraryDependencies ++= Seq(
     "org.querki" %%% "jquery-facade" % "1.0",
     "org.scala-js" %%% "scalajs-dom" % "0.9.1"),
-    scalacOptions -= "-Ywarn-dead-code") // doesn't play well with ScalaJS native binding declarations
+    scalacOptions -= "-Ywarn-dead-code" // doesn't play well with ScalaJS native binding declarations
+  )
   .jvmSettings(libraryDependencies ++= Seq(
-    "io.spray" %% "spray-can" % "1.3.4",
-    "io.spray" %% "spray-routing-shapeless2" % "1.3.3",
-    "com.typesafe.akka" %% "akka-actor" % "2.4.17",
-    "org.webjars.bower" % "fabric" % "1.6.2",
-    "org.webjars.bower" % "tether" % "1.4.0",
-    "org.webjars" % "bootstrap" % "3.3.7",
-    "org.webjars" % "jquery" % "2.2.4",
-    "org.webjars" % "mousetrap" % "1.6.0"))
+    "io.spray"           %% "spray-can"                 % "1.3.4",
+    "io.spray"           %% "spray-routing-shapeless2"  % "1.3.3",
+    "com.typesafe.akka"  %% "akka-actor"                % "2.4.17",
+    "org.webjars.bower"  %  "fabric"                    % "1.6.2",
+    "org.webjars.bower"  %  "tether"                    % "1.4.0",
+    "org.webjars"        %  "bootstrap"                 % "3.3.7",
+    "org.webjars"        %  "jquery"                    % "2.2.4",
+    "org.webjars"        %  "mousetrap"                 % "1.6.0"
+  ))
   .dependsOn(watrmarks)
 
 lazy val watrcolorsJS = watrcolors.js
@@ -130,9 +113,30 @@ lazy val watrcolorsJS = watrcolors.js
 
 
 lazy val watrcolorsJVM = watrcolors.jvm
-  .dependsOn(watrshed, watrmarksJVM)
+  .dependsOn(watrshed)
   .settings((resources in Compile) ++= Seq(
     (fastOptJS in (watrcolorsJS, Compile)).value.data,
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value,
     ((classDirectory in (watrcolorsJS, Compile)).value / ".." / "watrcolors-fastopt.js.map").get.head
   ))
+
+
+lazy val watrdocs = scalatex.ScalatexReadme(
+  projectId = "watr-docs",
+  wd = file("watr-docs"),
+  url = "https://github.com/iesl/watr-works/tree/master",
+  source = "Readme")
+  .settings(SensibleProject.settings: _*)
+  .settings(copyDocs <<= (baseDirectory, target) map ({ (base, trg) =>
+    println("copying doc files..")
+      (trg / "scalatex").listFiles().foreach({file =>
+        val from = file.toPath
+        val to = base/".."/"docs"/file.getName()
+        println(s"copying files from ${from} to ${to}")
+        if (file.isDirectory) {
+          sbt.IO.copyDirectory(file, to, overwrite = true)
+        } else {
+          Files.copy(from, to.toPath, REPLACE_EXISTING)
+        }
+      })
+  }))
