@@ -123,19 +123,20 @@ trait LabelWidgetIndex {
     // debugPrint(Some(queryBounds))
     hits.flatten
   }
+  // Seq[(DoubleInterval, Label, Add/Remove)]
 
 
-  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Option[Zone] = {
+  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Seq[GeometricGroup] = {
     val pageRegionsToBeLabeled = for {
       qhit <- queryHits
     } yield constraint match {
-      case Constraint.ByLine =>
+      case ByLine =>
         qhit.iTextReflows.map(_.pageRegion)
 
-      case Constraint.ByRegion =>
+      case ByRegion =>
         Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
 
-      case Constraint.ByChar =>
+      case ByChar =>
         val regions = for {
           iReflow <- qhit.iTextReflows
         } yield {
@@ -170,9 +171,11 @@ trait LabelWidgetIndex {
 
       Some(docStore.getZone(newZone))
     }
+
+    ???
   }
 
-  def addLabel(bbox: LTBounds, constraint: Constraint, label: Label): Option[Zone] = {
+  def addLabel(bbox: LTBounds, constraint: Constraint, label: Label): Seq[GeometricGroup] = {
     val queryHits = select(bbox)
     labelConstrained(constraint, queryHits, label)
   }

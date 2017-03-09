@@ -18,14 +18,12 @@ import corpora._
 // import textreflow.data._
 import geometry._
 import labeling._
-import labeling.data._
 import docstore._
 
 import autowire._
 import upickle.{default => UPickle}
 import UPickle._
 import TypeTagPicklers._
-import watrmarks._
 
 
 class EmbeddedServer(
@@ -159,6 +157,7 @@ class EmbeddedServer(
               )
             )}})
 
+
     def autowireRoute = apiRoute("autowire", ShellsideServer.route[WatrShellApi](WatrShellApiListeners))
 
     def run(): Unit = {
@@ -193,8 +192,21 @@ class EmbeddedServer(
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
       activeLabelWidgetIndex.map { lwIndex =>
-        // Future{ lwIndex.runUIRequest(r) }
-        ???
+        val UIRequest(UIState(constraint, maybeLabel, action), gesture) = r
+        println(s"got UIRequest ${r}")
+
+        gesture match {
+          case SelectRegion(bbox) =>
+            maybeLabel.map {label =>
+              println("adding label")
+              lwIndex.addLabel(bbox, constraint, label)
+            }
+
+          case Click(point) =>
+
+        }
+
+        Future{ UIResponse(List()) }
       } getOrElse {
         Future{ UIResponse(List()) }
       }

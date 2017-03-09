@@ -5,6 +5,7 @@ import geometry._
 import labeling._
 import scala.concurrent.Future
 
+
 trait WatrShellApi {
   def helloShell(msg: String): Unit
   def uiRequest(r: UIRequest): Future[UIResponse]

@@ -3,11 +3,48 @@ package watrcolors
 
 import TypeTags._
 
+import watrmarks._
+import labeling._
+import geometry._
+
+import upickle.{default => UPickle}
+import upickle.Js
+import UPickle._
+import Aliases._
+
+sealed trait Gesture
+case class SelectRegion(bbox: LTBounds) extends Gesture
+case class Click(point: Point) extends Gesture
+
+object Gesture {
+  implicit val readWriter: RW[Gesture] =
+    macroRW[SelectRegion].merge(macroRW[Click])
+}
+
+final case class UIState(
+  selectionConstraint: Constraint,
+  selectedLabel: Option[Label],
+  action: UIAction
+)
+
+case class UIRequest(
+  uiState: UIState,
+  gesture: Gesture
+)
+
+case class UIResponse(
+  changes: List[UIChange]
+)
+
 object TypeTagPicklers {
-  import upickle.{default => UPickle}
-  import upickle.Js
-  import UPickle._
-  import Aliases._
+  implicit val GeometricGroup_RW: RW[GeometricGroup] =
+    macroRW[GeometricGroup]
+
+  implicit val UIRequest_RW: RW[UIRequest] =
+    macroRW[UIRequest]
+
+  implicit val UIResponse_RW: RW[UIResponse] =
+    macroRW[UIResponse]
 
   implicit val Int_RegionID_Pickler: RW[Int @@ RegionID] = RW[Int @@ RegionID](
     {t => Js.Str(t.unwrap.toString)},

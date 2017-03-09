@@ -38,6 +38,10 @@ case class Line(
   override def toString: String = this.prettyPrint
 }
 
+case class GeometricGroup(
+  figures: List[GeometricFigure]
+)
+
 case class Padding(
   left: Double,
   top: Double,

@@ -26,7 +26,7 @@ import watrmarks.{StandardLabels => LB}
 object WatrColors extends LabelerRendering {
 
   var uiState: Option[UIState] = Option(UIState(
-    Constraint.ByChar,
+    ByChar,
     Option(LB.Title),
     Create
   ))
@@ -56,9 +56,8 @@ object WatrColors extends LabelerRendering {
   @JSExport
   def doSelection(): Unit = {
     uiState.map{ state =>
+
       fabricCanvas.defaultCursor = "crosshair"
-      // fabricCanvas.skipTargetFind = true
-      // fabricCanvas.isDrawingMode = true
       fabricCanvas.renderAll()
 
       for {
@@ -67,14 +66,16 @@ object WatrColors extends LabelerRendering {
         val bbox = alignBboxToDiv("#canvas-container", bboxRel)
 
         fabricCanvas.defaultCursor = "default"
-        shell
-          .uiRequest(UIRequest(state, SelectRegion(bbox)))
-          .foreach{ uiResponse =>
-            uiResponse.changes.foreach{
-              case bbox =>
-                addShape(bbox, "black", "", 1f)
-            }
-          }
+
+        val req = UIRequest(state, SelectRegion(bbox))
+
+        for {
+          uiResponse <- shell.uiRequest(req)
+          change <- uiResponse.changes
+          figure <- change.visual.figures
+        } {
+          addShape(figure, "black", "", 1f)
+        }
       }
     }
 

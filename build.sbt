@@ -109,7 +109,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .dependsOn(watrmarks)
 
 lazy val watrcolorsJS = watrcolors.js
-  .dependsOn(watrmarksJS)
+  // .dependsOn(watrmarksJS)
 
 
 lazy val watrcolorsJVM = watrcolors.jvm
