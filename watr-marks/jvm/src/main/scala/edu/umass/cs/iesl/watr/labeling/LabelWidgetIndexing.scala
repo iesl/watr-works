@@ -125,7 +125,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
     layout0.positioning.foreach({pos => pos.widget match {
 
-
       case l @ TargetOverlay(under, overs) =>
         val pageId = under.pageId
         // under.regionId
