@@ -22,6 +22,7 @@ case class Offsets(begin: Int, len: Int, total: Int, pad: Int)
 trait TextReflowBasics {
   import TextReflowF._
 
+
   // Natural Transformation  from EnvT ~> TextReflow
   def stripEnv = new (EnvT[Offsets, TextReflowF, ?] ~> TextReflowF[?]) {
     def apply[A](env: EnvT[Offsets, TextReflowF, A]): TextReflowF[A] = {
@@ -188,6 +189,10 @@ trait TextReflowBasics {
     asCofree
   }
 
+  def hasLabel(l: Label): TextReflowT => Boolean = _ match {
+    case Labeled(labels, _) if labels.contains(l) => true
+    case _ => false
+  }
 
 
   def trimFlow[A](b: (A) => Boolean)(fa: TextReflowF[A]): TextReflowF[A] = {
@@ -200,8 +205,8 @@ trait TextReflowBasics {
   //  if (l.hasLabel(LB.Sup)) { Bracket("^{", "}",  a) }
   def escapeLineFormatting: TextReflowT => TextReflowT = {
     case l @ Labeled (labels, a)     =>
-      val esc = if (l.hasLabel(LB.Sup)) Option("^")
-      else if (l.hasLabel(LB.Sub))      Option("_")
+      val esc = if (hasLabel(LB.Sup)(l)) Option("^")
+      else if (hasLabel(LB.Sub)(l))      Option("_")
       else None
 
       esc.map(e =>
@@ -319,7 +324,7 @@ trait TextReflowBasics {
   }
 
 
-  implicit class RicherTextReflowT(val theReflow: TextReflowT)  {
+  implicit class RicherTextReflowT(val theReflow: TextReflowF.TextReflowT)  {
 
     def hasLabel(l: Label): Boolean = theReflow match {
       case Labeled(labels, _) if labels.contains(l) => true

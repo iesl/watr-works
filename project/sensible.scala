@@ -12,6 +12,7 @@ object SensibleProject extends CommonLibs {
 
   lazy val settings =  Seq(
     scalaVersion := "2.11.8",
+    // scalaVersion := "2.12.1",
     organization := "edu.umass.cs.iesl",
     scalacOptions ++= Seq(
       "-deprecation",
@@ -37,23 +38,22 @@ object SensibleProject extends CommonLibs {
       //"-Ywarn-numeric-widen", // noisy
     ),
 
-    javacOptions in (Compile, compile) ++= Seq(
-      "-source", "1.6", "-target", "1.6", "-Xlint:all", "-Werror",
-      "-Xlint:-options", "-Xlint:-path", "-Xlint:-processing"
-    ),
+    // javacOptions in (Compile, compile) ++= Seq(
+    //   "-source", "1.6", "-target", "1.6", "-Xlint:all", "-Werror",
+    //   "-Xlint:-options", "-Xlint:-path", "-Xlint:-processing"
+    // ),
 
-    javacOptions in doc ++= Seq("-source", "1.6"),
+    // javacOptions in doc ++= Seq("-source", "1.6"),
 
-    javaOptions := Seq(
-      "-Xss2m", "-Xms1g", "-Xmx2g", "-Dfile.encoding=UTF8"
-    ),
+    // javaOptions := Seq(
+    //   "-Xss2m", "-Xms1g", "-Xmx2g", "-Dfile.encoding=UTF8"
+    // ),
 
     autoCompilerPlugins  := true,
 
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full),
     addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full),
-
 
     logBuffered in Test := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
@@ -83,6 +83,7 @@ object SensibleThisBuild {
 
     organization in ThisBuild := "edu.umass.cs.iesl",
     scalaVersion in ThisBuild := "2.11.8",
+    // scalaVersion in ThisBuild := "2.12.1",
     // scalaOrganization in ThisBuild := "org.typelevel",
 
     shellPrompt in ThisBuild := colorPrompt,

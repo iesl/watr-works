@@ -10,6 +10,7 @@ import LabelWidgetF._
 import corpora._
 import rindex._
 import watrmarks._
+// import utils.Debugging
 
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
@@ -28,10 +29,6 @@ case class QueryHit(
 )
 
 object LabelWidgetIndex extends LabelWidgetLayout {
-
-  def debug[V](value: sourcecode.Text[V])(implicit enclosing: sourcecode.Name) = {
-    println(enclosing.value + " [" + value.source + "]: " + value.value)
-  }
 
   implicit object TextReflowIndexable extends SpatialIndexable[IndexableTextReflow] {
     def id(t: IndexableTextReflow): Int = t.id.unwrap
@@ -115,26 +112,20 @@ trait LabelWidgetIndex {
           val maybeIntersect = pos.widgetBounds.intersection(queryBounds)
           maybeIntersect.map { ibbox =>
             val pageSpaceBounds = ibbox.translate(pos.translation)
-            // println(s"PageRegion ${under.regionId.get}: ${under.bbox} @ ${pos.widgetBounds} w/trans=${pos.translation}")
-            // println(s"   sel: ${pageSpaceBounds}  from ${ibbox}")
-
-            // query pageIndex using pageSpaceBounds
             val pageIndex = pageIndexes(under.pageId)
             val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
             QueryHit(pos, under.pageId, pageSpaceBounds, pageHits)
-
           }
 
         case _ => None
       }}
 
-    debugPrint(Some(queryBounds))
-    // println(s"hits: ${hits}")
+    // debugPrint(Some(queryBounds))
     hits.flatten
   }
 
-  import LabelWidgetIndex._
-  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Unit = {
+
+  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Option[Zone] = {
     val pageRegionsToBeLabeled = for {
       qhit <- queryHits
     } yield constraint match {
@@ -145,52 +136,43 @@ trait LabelWidgetIndex {
         Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
 
       case Constraint.ByChar =>
-        for {
+        val regions = for {
           iReflow <- qhit.iTextReflows
         } yield {
 
-          debug(qhit.pageSpaceBounds)
-          debug(iReflow.textReflow)
-
-          val clippedReflows = iReflow.textReflow
+          iReflow.textReflow
             .clipToBoundingRegion(qhit.pageSpaceBounds)
-            .map { case (clipped, interval)  => clipped }
+            .map { case (clipped, _) =>
+              val bbox = clipped.targetRegion().bbox
+              PageRegion(qhit.pageId, bbox, None)
+            }
 
-          // TODO: def expectExactlyOne(...)
-          if (clippedReflows.length != 1) {
-            println(s"Error: applyConstraint: clippedReflows produced ${clippedReflows.length} reflows (1 required)")
-          }
-
-          val clipped = clippedReflows.head.targetRegion()
-          PageRegion(qhit.pageId, clipped.bbox, None)
         }
+        regions.flatten
     }
 
+    if (pageRegionsToBeLabeled.isEmpty) None else {
+      // Ensure pageRegions are all cataloged in database
+      val targetRegions = for {
+        pageRegion <- pageRegionsToBeLabeled.flatten
+      } yield {
+        val regionId = docStore.addTargetRegion(pageRegion.pageId, pageRegion.bbox)
+        docStore.getTargetRegion(regionId)
+      }
 
-    // Ensure pageRegions are all cataloged in database
-    val targetRegions = for {
-      pageRegion <- pageRegionsToBeLabeled.flatten
-    } yield {
-      // ensure this is a db-backed target region
-      val regionId = docStore.addTargetRegion(pageRegion.pageId, pageRegion.bbox)
-      docStore.getTargetRegion(regionId)
+      val docId = docStore.getDocument(targetRegions.head.stableId).get
+
+      val newZone = docStore.createZone(docId)
+
+      docStore.setZoneTargetRegions(newZone, targetRegions)
+
+      docStore.addZoneLabel(newZone, label)
+
+      Some(docStore.getZone(newZone))
     }
-
-    val docId = docStore.getDocument(targetRegions.head.stableId).get
-
-    val newZone = docStore.createZone(docId)
-    println(s"newZone: ${newZone}")
-
-    docStore.setZoneTargetRegions(newZone, targetRegions)
-
-    println(s"newZone targetRegions: ${targetRegions}")
-
-    docStore.addZoneLabel(newZone, label)
-
-    println(s"newZone label: ${label}")
   }
 
-  def addLabel(bbox: LTBounds, constraint: Constraint, label: Label): Unit = {
+  def addLabel(bbox: LTBounds, constraint: Constraint, label: Label): Option[Zone] = {
     val queryHits = select(bbox)
     labelConstrained(constraint, queryHits, label)
   }

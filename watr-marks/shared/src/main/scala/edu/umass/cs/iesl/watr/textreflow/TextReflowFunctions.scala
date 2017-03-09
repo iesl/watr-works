@@ -70,11 +70,6 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
     }
   }
 
-  def hasLabel(l: Label): TextReflowT => Boolean = _ match {
-    case Labeled(labels, _) if labels.contains(l) => true
-    case _ => false
-  }
-
 
   def everyLabel(l: Label, r: TextReflow)(f: TextReflow => TextReflow): TextReflow = {
     def ifLabeled(r:TextReflowT): TextReflowT =  {
@@ -117,7 +112,7 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
     }
   }
 
-  implicit class RicherReflow(val theReflow: TextReflow)  {
+  implicit class RicherReflow(val theReflow: TextReflowF.TextReflow)  {
 
     def applyLineFormatting(): TextReflow = {
       theReflow.transCata[TextReflow](escapeLineFormatting)

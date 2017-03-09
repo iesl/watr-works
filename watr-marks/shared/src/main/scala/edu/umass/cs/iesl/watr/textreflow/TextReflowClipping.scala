@@ -92,6 +92,7 @@ trait TextReflowClipping extends TextReflowBasics {
       annotateReflowCharRanges(textReflow)
         .cata(retainAtoms)
 
+
     def splitLoop(aigs: List[AtomOrInsertOrGap]): List[List[AtomOrInsertOrGap]] = {
       val start = aigs.dropWhile(isAGap)
       if (start.isEmpty) Nil else {
@@ -101,6 +102,7 @@ trait TextReflowClipping extends TextReflowBasics {
     }
 
     val nonGaps = splitLoop(res).filter(hasAnAtom)
+
 
     val clippedRanges = nonGaps.map({nonGap =>
       val ranges = toReflowRanges(nonGap.toList)

@@ -74,25 +74,14 @@ class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
   it should "apply a label to selected regions" in {
     regionIdGen.reset()
 
-
     val layout = col(
       row(pageDivs3(1), pageDivs2(2))
     )
     val lwindex = LabelWidgetIndex.create(docStore, layout)
 
-    // val state = UIState(
-    //   Constraint.ByChar,
-    //   Option(LB.Title),
-    //   Create
-    // )
-    // val req = UIRequest(
-    //   state, SelectRegion(bbox)
-    // )
-    // val response = lwindex.runUIRequest(req)
+    val bbox = LTBounds(0, 0, 19.9, 9.9)
 
-    val bbox = getRegionBounds(0, 0, 2, 1)
-
-    lwindex.addLabel(bbox, Constraint.ByChar, LB.Title)
+    lwindex.addLabel(bbox, Constraint.ByLine, LB.Title)
 
   }
 
