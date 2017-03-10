@@ -12,7 +12,6 @@ import rindex._
 import watrmarks._
 // import utils.Debugging
 
-
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
 case class IndexableTextReflow(
@@ -126,18 +125,33 @@ trait LabelWidgetIndex {
   // Seq[(DoubleInterval, Label, Add/Remove)]
 
 
-  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Seq[GeometricGroup] = {
+  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): GeometricGroup = {
+    var change = GeometricGroup(List())
+
     val pageRegionsToBeLabeled = for {
       qhit <- queryHits
     } yield constraint match {
       case ByLine =>
-        qhit.iTextReflows.map(_.pageRegion)
+
+        val regions = qhit.iTextReflows.map(_.pageRegion)
+
+        change = GeometricGroup(
+          regions.map(_.bbox.translate(qhit.positioned.translation)).toList
+        )
+
+        regions
 
       case ByRegion =>
-        Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
+        val regions = Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
+
+        change = GeometricGroup(
+          regions.map(_.bbox.translate(qhit.positioned.translation)).toList
+        )
+
+        regions
 
       case ByChar =>
-        val regions = for {
+        val regionss = for {
           iReflow <- qhit.iTextReflows
         } yield {
 
@@ -149,10 +163,15 @@ trait LabelWidgetIndex {
             }
 
         }
-        regions.flatten
+        val regions = regionss.flatten
+
+        change = GeometricGroup(
+          regions.map(_.bbox.translate(qhit.positioned.translation)).toList
+        )
+        regions
     }
 
-    if (pageRegionsToBeLabeled.isEmpty) None else {
+    if (pageRegionsToBeLabeled.isEmpty) Seq() else {
       // Ensure pageRegions are all cataloged in database
       val targetRegions = for {
         pageRegion <- pageRegionsToBeLabeled.flatten
@@ -172,10 +191,10 @@ trait LabelWidgetIndex {
       Some(docStore.getZone(newZone))
     }
 
-    ???
+    change
   }
 
-  def addLabel(bbox: LTBounds, constraint: Constraint, label: Label): Seq[GeometricGroup] = {
+  def addLabel(bbox: LTBounds, constraint: Constraint, label: Label): GeometricGroup = {
     val queryHits = select(bbox)
     labelConstrained(constraint, queryHits, label)
   }

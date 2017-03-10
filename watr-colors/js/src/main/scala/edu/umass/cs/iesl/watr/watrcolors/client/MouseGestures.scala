@@ -114,8 +114,7 @@ trait MouseGestures extends HtmlCanvasRendering {
     val y = math.min(p1.y, p2.y)
     val w = math.abs(p2.x - p1.x)
     val h = math.abs(p2.y - p1.y)
-    val wh = p2 - p1
-    LTBounds(p1.x, p1.y, wh.x, wh.y)
+    LTBounds(p1.x, p1.y, w, h)
   }
 
   def getUserLTBounds(c: fabric.Canvas): Future[LTBounds] = {

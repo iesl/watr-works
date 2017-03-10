@@ -12,11 +12,11 @@ import geometry._
 import textreflow.data._
 import watrmarks.Label
 import textboxing.{TextBoxing => TB}
+import utils.Color
 
 /**
-  LabelWidgets provide a way to combine 2-d regions (PageRegion) into
+  LabelWidgets provide a way to combine rectangular regions  into
   a single layout.
-
 
   */
 
@@ -67,7 +67,7 @@ object LabelWidgetF {
 
   case class Row[A](as: List[A]) extends LabelWidgetF[A]
   case class Col[A](as: List[A]) extends LabelWidgetF[A]
-  case class Pad[A](a: A, pad: Padding) extends LabelWidgetF[A]
+  case class Pad[A](a: A, pad: Padding, color: Option[Color]) extends LabelWidgetF[A]
 
   type PositionVector = Point
 

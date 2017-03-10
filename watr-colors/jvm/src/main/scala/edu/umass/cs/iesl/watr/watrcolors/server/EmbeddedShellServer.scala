@@ -195,18 +195,22 @@ class EmbeddedServer(
         val UIRequest(UIState(constraint, maybeLabel, action), gesture) = r
         println(s"got UIRequest ${r}")
 
-        gesture match {
-          case SelectRegion(bbox) =>
-            maybeLabel.map {label =>
-              println("adding label")
-              lwIndex.addLabel(bbox, constraint, label)
-            }
+        val changes: Option[UIChange] =
+          gesture match {
+            case SelectRegion(bbox) =>
+              maybeLabel.map {label =>
+                println("adding label")
+                UIChange(
+                  Create,
+                  lwIndex.addLabel(bbox, constraint, label)
+                )
+              }
 
-          case Click(point) =>
+            case Click(point) =>
+              None
+          }
 
-        }
-
-        Future{ UIResponse(List()) }
+        Future{ UIResponse( changes.toList ) }
       } getOrElse {
         Future{ UIResponse(List()) }
       }
