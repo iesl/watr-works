@@ -4,6 +4,8 @@ package labeling
 import textboxing.{TextBoxing => TB}, TB._
 import geometry._
 import LabelWidgets._
+import utils.Colors
+import utils.EnrichNumerics._
 
 object TestLabelers {
 
@@ -28,17 +30,18 @@ object TestLabelers {
 
 
     val r0 = row(
-      pad(sampleText1, Padding(3)),
-      pad(sampleText2, Padding(9))
+      pad(sampleText1, Padding(3), Colors.LightBlue),
+      pad(sampleText2, Padding(9), Colors.Azure)
     )
 
     val col0 = col(
       r0,
-      pad(r0, Padding(2))
+      pad(r0, Padding(2), Colors.Gray(3.percent))
     )
+    val layout = pad(col0, Padding(10), Colors.Red)
 
     LabelingPanel(
-      col0,
+      layout,
       LabelOptions(List())
     )
 

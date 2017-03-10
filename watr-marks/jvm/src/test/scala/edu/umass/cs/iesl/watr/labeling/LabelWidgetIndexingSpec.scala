@@ -81,7 +81,7 @@ class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
 
     val bbox = LTBounds(0, 0, 19.9, 9.9)
 
-    lwindex.addLabel(bbox, Constraint.ByLine, LB.Title)
+    lwindex.addLabel(bbox, ByLine, LB.Title)
 
   }
 

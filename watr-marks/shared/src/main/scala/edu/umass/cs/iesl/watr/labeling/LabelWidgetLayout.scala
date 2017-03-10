@@ -170,8 +170,10 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           val (bbox, childAdjustVecs) = computeOffsets(attrs, {(bbox, childPos)=> bbox.toPoint(CDir.NE)  })
           PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
-        case flw @ Pad(p@(a, attr), padding) =>
-          val (chbbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NE)  })
+        case flw @ Pad(p@(a, attr), padding, color) =>
+          val ulOffset = Point(padding.left, padding.top)
+
+          val (chbbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> ulOffset})
 
           val bbox = LTBounds(
             chbbox.left, chbbox.top,

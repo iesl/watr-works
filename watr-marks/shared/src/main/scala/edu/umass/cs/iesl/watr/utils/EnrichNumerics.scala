@@ -86,6 +86,13 @@ object EnrichNumerics {
 
   }
 
+  // implicit class RicherInt_EnrichNumerics(val theInt: Int) extends AnyVal {
+  //   def percent: Int@@Percent = {
+  //     assert(0 <= theInt && theInt <= 100)
+  //     Percent(theInt)
+  //   }
+  // }
+
   implicit class RicherDouble_EnrichNumerics(val theDouble: Double) extends AnyVal {
 
     def prettyPrint:String = fmt(theDouble)

@@ -4,12 +4,11 @@ package utils
 /**
   Taken from https://github.com/sksamuel/scrimage under Apache 2.0 License
   */
-import scala.language.implicitConversions
 
 /**
  * @author Stephen Samuel
  */
-trait Color {
+sealed trait Color {
 
   /**
    * Returns a conversion of this Color into an RGBColor.

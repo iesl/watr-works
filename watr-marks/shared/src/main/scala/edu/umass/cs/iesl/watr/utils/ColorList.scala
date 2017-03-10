@@ -7,7 +7,7 @@ package utils
 
 
 /** @author Stephen Samuel */
-object X11Colorlist {
+object Colors {
   val Snow                 = RGBColor(255, 250, 250)
   val GhostWhite           = RGBColor(248, 248, 255)
   val WhiteSmoke           = RGBColor(245, 245, 245)
@@ -458,9 +458,10 @@ object X11Colorlist {
   val DarkRed              = RGBColor(139, 0, 0)
   val LightGreen           = RGBColor(144, 238, 144)
 
-  def Gray(n: Int@@Percent) = {
-    val c = (255 * n.unwrap) / 100
-    RGBColor(c, c, c)
+  def Gray(n: Double@@Percent) = {
+    val c: Int = ((255d * n.unwrap) / 100d).toInt
+    val cn = math.min(math.max(0, c.toInt), 255)
+    RGBColor(cn, cn, cn)
   }
 
 }

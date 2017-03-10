@@ -7,7 +7,7 @@ import scala.scalajs.js
 import textreflow._
 import textreflow.data._
 import geometry._
-// import GeometryImplicits._
+import geometry.syntax._
 
 import native.fabric
 import native.fabric._
@@ -28,6 +28,7 @@ import labeling._
 import LabelWidgetF._
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}
+import utils.Color
 
 
 trait LabelerRendering extends MouseGestures {
@@ -187,10 +188,44 @@ trait LabelerRendering extends MouseGestures {
         case Row(as)                     =>
         case Col(as)                     =>
 
+        case Pad(a, padding, maybeColor) =>
+
+          val color = maybeColor.getOrElse(Color.White).toRGB
+          val rgba = s"rgba(${color.red}, ${color.green}, ${color.blue}, ${color.alpha})"
+
+          val leftGutter = wbbox.copy(
+            width=padding.left
+          )
+
+          val rightGutter = wbbox.copy(
+            left=wbbox.right-padding.right,
+            width=padding.right
+          )
+
+          val topGutter = wbbox.copy(
+            left=wbbox.left+padding.left,
+            width=wbbox.width-(padding.right+padding.left),
+            height=padding.top
+          )
+
+          val bottomGutter = wbbox.copy(
+            left=topGutter.left,
+            top=wbbox.bottom-padding.bottom,
+            width=topGutter.width,
+            height=padding.bottom
+          )
+
+          val g = fabric.Group(Seq(
+            createShape(leftGutter,   "", rgba, 1f),
+            createShape(rightGutter,  "", rgba, 1f),
+            createShape(topGutter,    "", rgba, 1f),
+            createShape(bottomGutter, "", rgba, 1f)
+          ))
+          noControls(g)
+
+          objStack += Future { g }
+
         case _ =>
-          // case Pad(a, padding) =>
-          //   val leftGutter = wbbox.copy(
-          //     createShape(leftGutter, "", "red", 0.2f),
       }
 
     }

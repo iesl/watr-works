@@ -84,7 +84,7 @@ object LabelWidgetF {
         case l @ Reflow(tr)                => G.point(l.copy())
         case l @ Row(as)                   => as.traverse(f).map(Row(_))
         case l @ Col(as)                   => as.traverse(f).map(Col(_))
-        case l @ Pad(a, padding)           => f(a).map(Pad(_, padding))
+        case l @ Pad(a, padding, color)    => f(a).map(Pad(_, padding, color))
       }
     }
   }
@@ -99,7 +99,7 @@ object LabelWidgetF {
       case l @ TextBox(tb)            => s"textbox"
       case l @ Row(as)                => s"$l"
       case l @ Col(as)                => s"$l"
-      case l @ Pad(a, padding)        => s"$l"
+      case l @ Pad(a, padding, color) => s"$l"
     }
   }
 }
@@ -131,6 +131,9 @@ object LabelWidgets {
     fixlw(Row(lwidgets.toList))
 
   def pad(content: LabelWidget, pad: Padding): LabelWidget =
-    fixlw(Pad(content, pad))
+    fixlw(Pad(content, pad, None))
+
+  def pad(content: LabelWidget, pad: Padding, color: Color): LabelWidget =
+    fixlw(Pad(content, pad, Option(color)))
 
 }
