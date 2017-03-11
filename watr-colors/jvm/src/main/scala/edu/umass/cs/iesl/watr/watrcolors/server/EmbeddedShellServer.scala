@@ -199,7 +199,7 @@ class EmbeddedServer(
           gesture match {
             case SelectRegion(bbox) =>
               maybeLabel.map {label =>
-                println("adding label")
+                println(s"adding label to bbox ${bbox}")
                 UIChange(
                   Create,
                   lwIndex.addLabel(bbox, constraint, label)

@@ -48,6 +48,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     val layout0 = layoutWidgetPositions(lwidget)
 
     layout0.positioning.foreach({pos =>
+      println(s"adding pos widget ${pos.widget} @ ${pos.widgetBounds}")
       lwIndex.add(pos)
     })
 
@@ -108,11 +109,15 @@ trait LabelWidgetIndex {
     val hits = index.queryForIntersects(queryBounds)
       .map { pos => pos.widget match {
         case TargetOverlay(under, over) =>
+          println(s"select hit ${under}")
           val maybeIntersect = pos.widgetBounds.intersection(queryBounds)
           maybeIntersect.map { ibbox =>
+            println(s"   intersected TargetOverlay @ ${ibbox}")
             val pageSpaceBounds = ibbox.translate(pos.translation)
+            println(s"   translates to ${pageSpaceBounds} as page query")
             val pageIndex = pageIndexes(under.pageId)
             val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
+            println(s"""   page query hit: ${pageHits.map(_.textReflow.toText).mkString("\n      ")}""")
             QueryHit(pos, under.pageId, pageSpaceBounds, pageHits)
           }
 
@@ -136,7 +141,7 @@ trait LabelWidgetIndex {
         val regions = qhit.iTextReflows.map(_.pageRegion)
 
         change = GeometricGroup(
-          regions.map(_.bbox.translate(qhit.positioned.translation)).toList
+          regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
         )
 
         regions
@@ -145,7 +150,7 @@ trait LabelWidgetIndex {
         val regions = Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
 
         change = GeometricGroup(
-          regions.map(_.bbox.translate(qhit.positioned.translation)).toList
+          regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
         )
 
         regions
@@ -164,9 +169,17 @@ trait LabelWidgetIndex {
 
         }
         val regions = regionss.flatten
+        println(s"ByChar labeling")
+        println(s"    widget translation: ${qhit.positioned.translation}")
+        val debugR = regions.map(_.bbox).mkString("\n  ", "\n  ", "\n")
+        val debugTR = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
+        println("orig")
+        println(debugR)
+        println("translated")
+        println(debugTR)
 
         change = GeometricGroup(
-          regions.map(_.bbox.translate(qhit.positioned.translation)).toList
+          regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
         )
         regions
     }
