@@ -32,10 +32,6 @@ object WatrColors extends LabelerRendering {
   ))
 
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
-    // "l a" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Authors)}),
-    // "l t" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Title)}),
-    // "l f" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Affiliation)}),
-    // "l s" -> ((e: MousetrapEvent) => {alterSelectionType(LB.Abstract)}),
     "s" -> ((e: MousetrapEvent) => doSelection())
   )
 
@@ -61,9 +57,8 @@ object WatrColors extends LabelerRendering {
       fabricCanvas.renderAll()
 
       for {
-        bboxRel <- getUserLTBounds(fabricCanvas)
+        bbox <- getUserLTBounds(fabricCanvas)
       } yield {
-        val bbox = alignBboxToDiv("#canvas-container", bboxRel)
 
         fabricCanvas.defaultCursor = "default"
 
@@ -127,7 +122,6 @@ object WatrColors extends LabelerRendering {
       val (bbox, fobjs) = renderLabelWidget(lwidget)
       fabricCanvas.setWidth(bbox.width.toInt)
       fabricCanvas.setHeight(bbox.height.toInt)
-
 
       fobjs.foreach{os =>
         os.foreach(fabricCanvas.add(_))

@@ -4,8 +4,10 @@ package html
 
 import scalatags.stylesheet._
 import scalatags.Text.all._
+import utils.Colors
 
 object WatrStyles extends CascadingStyleSheet {
+  val C = Colors
   initStyleSheet()
 
 
@@ -19,7 +21,7 @@ object WatrStyles extends CascadingStyleSheet {
     width           := "100%",
     height          := "30px",
     zIndex          := 9999,
-    backgroundColor := "#eebbcc"
+    backgroundColor := "#"+C.LightSteelBlue1.toHex
   )
 
 
@@ -34,10 +36,12 @@ object WatrStyles extends CascadingStyleSheet {
     )
   )
 
-  def container = cls(
+  def mainContent = cls(
     width := "100%",
-    paddingTop := "30px",
-    marginTop := 16
+    padding:="0",
+    border:="0",
+    // margin:="0",
+    marginTop := "30px"
   )
 
   def canvasContainer = cls(
@@ -45,16 +49,6 @@ object WatrStyles extends CascadingStyleSheet {
     border:="0",
     margin:="0",
     position.relative
-  )
-
-
-  def pageImg = cls(
-    padding:="0",
-    margin:="0",
-    border := "1px solid #000",
-    width := "100%",
-    display:="block",
-    zIndex:=10
   )
 
   def fabricCanvas = cls(
@@ -94,10 +88,11 @@ object ShellHtml {
 
 
   def bodyContent() = {
-    <.div(WatrStyles.container)(
+    <.div(WatrStyles.mainContent)(
 
       <.div(^.id:="canvas-container", WatrStyles.canvasContainer)(
-        <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000")
+        // <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000", WatrStyles.fabricCanvas)
+        <.canvas(^.id:="canvas", WatrStyles.fabricCanvas)
       ),
 
       <.script(`type` := "text/javascript")(

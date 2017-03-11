@@ -44,13 +44,13 @@ trait MouseGestures extends HtmlCanvasRendering {
     Point(offset.left, offset.top)
   }
 
-  def alignPointToDiv(divID: String, point: Point): Point = {
-    point.translate(-divOffset())
-  }
 
-  def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
-    bbox.translate(-divOffset())
-  }
+  // def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
+  //   val off = divOffset()
+  //   val tr = bbox.translate(-off)
+  //   println(s"alignBboxToDiv: bbox.trans(-${off}) =  $tr")
+  //   tr
+  // }
 
   def getCanvasPoint(pageX: Int, pageY: Int): Point = {
     Point(pageX.doubleValue(), pageY.doubleValue())
@@ -114,7 +114,7 @@ trait MouseGestures extends HtmlCanvasRendering {
     val y = math.min(p1.y, p2.y)
     val w = math.abs(p2.x - p1.x)
     val h = math.abs(p2.y - p1.y)
-    LTBounds(p1.x, p1.y, w, h)
+    LTBounds(x, y, w, h)
   }
 
   def getUserLTBounds(c: fabric.Canvas): Future[LTBounds] = {
@@ -135,6 +135,7 @@ trait MouseGestures extends HtmlCanvasRendering {
         updateShape(sel, bounds(point1, point2))
         res = await(chan.mousemove | chan.mouseup)
       }
+      println(s"getUserLTBounds: ${point1} -> $point2")
 
       fabricCanvas.remove(sel)
 

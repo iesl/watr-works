@@ -160,7 +160,6 @@ trait LabelerRendering extends MouseGestures {
       fa match {
         case TargetOverlay(under, overs) =>
           objStack += makeImageForPageRegion(under, wbbox)
-          // objStack += Future { createShape(wbbox, "green", "", 0.2f) }
 
         case LabeledTarget(target, label, score)   =>
           label.foreach({ l =>
