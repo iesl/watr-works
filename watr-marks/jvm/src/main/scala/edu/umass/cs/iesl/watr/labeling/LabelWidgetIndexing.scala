@@ -169,14 +169,14 @@ trait LabelWidgetIndex {
 
         }
         val regions = regionss.flatten
-        println(s"ByChar labeling")
-        println(s"    widget translation: ${qhit.positioned.translation}")
+        // println(s"ByChar labeling")
+        // println(s"    widget translation: ${qhit.positioned.translation}")
         val debugR = regions.map(_.bbox).mkString("\n  ", "\n  ", "\n")
         val debugTR = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        println("orig")
-        println(debugR)
-        println("translated")
-        println(debugTR)
+        // println("orig")
+        // println(debugR)
+        // println("translated")
+        // println(debugTR)
 
         change = GeometricGroup(
           regions.map(_.bbox.translate(-qhit.positioned.translation)).toList

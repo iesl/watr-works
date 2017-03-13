@@ -46,6 +46,7 @@ object WatrTable {
         |import watrmarks.StandardLabels._
         |import ShellPrettyPrinters._
         |import ShellCommands._
+        |import labeling.TestLabelers
         |implicit val pp0 = pprintComponent
         |implicit val pp1 = pprintBox
         |implicit val pp2 = pprintTextReflow

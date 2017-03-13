@@ -9,7 +9,6 @@ import utils.EnrichNumerics._
 
 object TestLabelers {
 
-
   def dimensionTest(): LabelingPanel = {
     val sampleText1 = textbox(
       vjoin(center1)(
@@ -46,4 +45,76 @@ object TestLabelers {
     )
 
   }
+
+
+  // select page region
+  /*
+
+   Final goal:
+     Indicate one or more selected region corresponding to a zone (e.g., Abstract)
+     Create controls to delete zone
+     Allow selection/de-selection of zone via indicator
+
+
+   Test case sample:
+     Create textbox-backed pages (or PlainText reflow)
+     Make each page clickable to select zone at point (VisualLine no other?)
+     Create a bounding region around lines when clicked
+     Control bar: Delete, add/mod label, deselect
+     Make page respond to SelectRegion
+     Emboss lines w/labels to indicate they are clickable
+
+   val page1 =..
+
+   def button() = panel(figure(ltbbox), Action.Click => {...})
+   def radioButtons() = row(button())
+   val delButton() = button()
+
+   val zoneIndicatorControlBar = panel(
+     row(
+       labelSelectors, currLabel, mergeButton, delButton
+     ),
+     actions=List(
+     )
+   )
+
+   overlay(
+     page1,
+     panel(
+       Action.Click => {chooseGuessedLabel() || selectZoneAtPoint()},
+       Action.SelectRegion => {bbox => val z = createZone(); selectZone(z); }
+     )
+
+   )
+
+
+   button(
+     "delete", 'X',
+     (zoneId) => deleteZone(zoneId))
+   )
+   panel(
+     Action.Click => {selectZoneAtPoint()}
+   )
+   panel(
+     Action.Click => {chooseLabel || selectZoneAtPoint()}
+   )
+   Action.DblClick => {}
+   Action.RightClick => {}
+
+   Action.Select => {bbox => selectZoneAtPoint()}
+
+
+   - Action types
+   - Panel: Mouse interaction region
+   - Button(Toggle/Radio/etc): Panel specialized for clicks/presses
+   - GeometricFigure primitive
+   - Overlay combinator
+
+
+
+
+
+
+   */
+
 }
