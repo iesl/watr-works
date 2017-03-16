@@ -69,6 +69,14 @@ object LabelWidgetF {
   case class Col[A](as: List[A]) extends LabelWidgetF[A]
   case class Pad[A](a: A, pad: Padding, color: Option[Color]) extends LabelWidgetF[A]
 
+  // case class Figure[A](
+  //   figure: GeometricGroup
+  // )
+  // case class Panel[A](
+  //   a: A
+  //     // function: Action => (WidgetTransformFunction, UserFunction: () => {})
+  // ) extends LabelWidgetF[A]
+
   type PositionVector = Point
 
   implicit def LabelWidgetTraverse: Traverse[LabelWidgetF] = new Traverse[LabelWidgetF] {

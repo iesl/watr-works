@@ -58,7 +58,7 @@ object TestLabelers {
 
    Test case sample:
      Create textbox-backed pages (or PlainText reflow)
-     Make each page clickable to select zone at point (VisualLine no other?)
+     Make each page clickable to select zone at point
      Create a bounding region around lines when clicked
      Control bar: Delete, add/mod label, deselect
      Make page respond to SelectRegion
@@ -75,6 +75,7 @@ object TestLabelers {
        labelSelectors, currLabel, mergeButton, delButton
      ),
      actions=List(
+
      )
    )
 

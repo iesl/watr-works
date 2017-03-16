@@ -10,6 +10,7 @@ import LabelWidgetF._
 import corpora._
 import rindex._
 import watrmarks._
+
 // import utils.Debugging
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
