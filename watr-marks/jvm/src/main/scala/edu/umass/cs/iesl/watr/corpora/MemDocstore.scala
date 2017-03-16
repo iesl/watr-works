@@ -255,7 +255,7 @@ class MemDocstore extends DocumentCorpus {
   }
 
   def getPageDef(pageId: Int@@PageID): Option[Model.Page] = {
-    ???
+    pages.option(pageId)
   }
 
   def getPageGeometry(pageId: Int@@PageID): G.LTBounds = {

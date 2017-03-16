@@ -37,6 +37,7 @@ case class UIResponse(
 )
 
 object TypeTagPicklers {
+
   implicit val GeometricGroup_RW: RW[GeometricGroup] =
     macroRW[GeometricGroup]
 

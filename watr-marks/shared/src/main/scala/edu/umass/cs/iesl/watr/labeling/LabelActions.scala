@@ -18,6 +18,6 @@ case object Delete extends UIAction
 
 final case class UIChange(
   action: UIAction,
-  visual: GeometricGroup
+  visual: Option[GeometricGroup]
 )
 

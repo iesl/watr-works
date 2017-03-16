@@ -16,14 +16,7 @@ import watrmarks.{StandardLabels => LB}
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
-  // initEmpty()
-
-  // val docs = List(
-  //   List("01\n23")
-  //     // List("01\n23", "45\n67")
-  //   // List("01\n23", "45\n67")
-  // )
-
+  // val docs = List(//   List("01\n23") // )
   // for { (doc, i) <- docs.zipWithIndex } {
   //   addDocument(DocumentID(s"doc#${i}"), doc)
   // }
@@ -81,46 +74,19 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     docStore.addZoneLabel(newZone, LB.Authors)
 
 
-    // prove that a widget w/ either of those pages includes the labeled overlay
-
     // Create a labeling widget
     val layout = col(
       row(pageDivs3(1), pageDivs2(2))
     )
 
-    // Rewrite the widget to include indicators for the zone we just added:
-    // // Create display for pre-existing zones
-    // val pageDef = docStore0.getPageDef(pageId).getOrElse { sys.error(s"no page def found for page ${under}") }
-    // // docStore0.getZoneForTargetRegion(regionId: <refinement>[Int, RegionID], label: Label)
-    // for {
-    //   zoneId <- docStore0.getZonesForDocument(pageDef.document)
-    // } {
-    //   val zone = docStore0.getZone(zoneId)
+    val layout1 = LabelWidgetTransforms.addZoneIndicators(layout, docStore)
 
-    //   val filteredRegionsToTargetRegion = zone.regions.filter({zoneRegion =>
-    //     val zonePageRegion = PageRegion(
-    //       pageId,
-    //       zoneRegion.bbox
-    //     )
-    //     zonePageRegion.intersects(under)
-    //   })
+    val lwindex = LabelWidgetIndex.create(docStore, layout1)
 
-    //   // clip zone to under's target region
-    //   filteredRegionsToTargetRegion.map {fr =>
-    //     fr.intersection(under.bbox)
-    //   }
-
-    // }
-
-
-
-    val lwindex = LabelWidgetIndex.create(docStore, layout)
-
-
-
-
-
-
+    // prove that a widget w/ either of those pages includes the labeled overlay
+    lwindex.layout.positioning.foreach { pos =>
+      println(s"${pos}")
+    }
   }
 
 

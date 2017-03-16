@@ -135,6 +135,8 @@ object LabelWidgets {
   def textbox(tb: TB.Box) =
     fixlw(TextBox(tb))
 
+  def figure(f: GeometricGroup) = fixlw(Figure(f))
+
   def col(lwidgets: LabelWidget*): LabelWidget =
     fixlw(Col(lwidgets.toList))
 

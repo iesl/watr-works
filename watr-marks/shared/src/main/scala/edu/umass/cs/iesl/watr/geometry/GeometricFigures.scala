@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package geometry
 
 import scalaz.Equal
+// import scalaz.NonEmptyList
+// import scalaz.syntax.all._
 
 sealed trait GeometricFigure
 
@@ -34,13 +36,13 @@ case class Point(
 
 case class Line(
   p1: Point, p2: Point
-) extends GeometricFigure{
+) extends GeometricFigure {
   override def toString: String = this.prettyPrint
 }
 
 case class GeometricGroup(
   figures: List[GeometricFigure]
-)
+) extends GeometricFigure
 
 case class Padding(
   left: Double,
@@ -58,7 +60,16 @@ object Padding {
 
 object GeometricFigure {
 
-  import GeometryImplicits._
+  def totalBounds(fig: GeometricFigure): LTBounds = fig match {
+    case f: LTBounds       => f
+    case f: LBBounds       => f.toLTBounds
+    case f: Point          => LTBounds(f.x, f.y, 0d, 0d)
+    case f: Line           => f.bounds()
+    case f: GeometricGroup =>
+      val subbounds = f.figures.map(totalBounds(_))
+      // subbounds.foldLeft(LTBounds(0, 0, 0, 0))(_ union _)
+      subbounds.reduce(_ union _)
+  }
 
   implicit def EqualGeometricFigure
       : Equal[GeometricFigure] =
@@ -189,6 +200,14 @@ object GeometryImplicits {
       Line(Point(p1x, p1y), Point(p2x, p2y))
     }
 
+    def bounds(): LTBounds = {
+      val nline = normalizeOrder
+      LTBounds(
+        nline.p1.x, nline.p1.y,
+        nline.p2.x - nline.p1.x,
+        nline.p2.y - nline.p1.y
+      )
+    }
 
     def clipTo(b: LTBounds): Line = {
       val lnorm = line.normalizeOrder

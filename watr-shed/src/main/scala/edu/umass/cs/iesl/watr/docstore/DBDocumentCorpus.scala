@@ -490,7 +490,9 @@ class TextReflowDB(
     }
 
     def getPageDef(pageId: Int@@PageID): Option[Model.Page] = {
-      ???
+      Option(
+        runq { selectPage(pageId) }
+      )
     }
 
     def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit = {

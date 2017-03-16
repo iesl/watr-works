@@ -17,6 +17,7 @@ import LabelWidgetF._
 import utils.ScalazTreeImplicits._
 import TypeTags._
 import PageComponentImplicits._
+import GeometricFigure._
 
 
 // Position transform:
@@ -194,6 +195,11 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           val height = lines.length
           val maxwidth = lines.map(_.length).max
           val bbox: LTBounds = LTBounds(0, 0, maxwidth*6d, height*16d)
+
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
+
+        case flw @ Figure(figure) =>
+          val bbox = totalBounds(figure)
 
           PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, List())
 

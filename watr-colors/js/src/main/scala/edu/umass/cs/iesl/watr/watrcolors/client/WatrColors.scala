@@ -85,9 +85,10 @@ object WatrColors extends LabelerRendering {
         val req = UIRequest(state, Click(clickPt))
 
         for {
-          uiResponse <- shell.uiRequest(req)
-          change <- uiResponse.changes
-          figure <- change.visual.figures
+          uiResponse  <- shell.uiRequest(req)
+          change      <- uiResponse.changes
+          changeGroup <- change.visual
+          figure      <- changeGroup.figures
         } {
           addShape(figure, "black", "", 1f)
         }
@@ -111,9 +112,10 @@ object WatrColors extends LabelerRendering {
         val req = UIRequest(state, SelectRegion(bbox))
 
         for {
-          uiResponse <- shell.uiRequest(req)
-          change <- uiResponse.changes
-          figure <- change.visual.figures
+          uiResponse  <- shell.uiRequest(req)
+          change      <- uiResponse.changes
+          changeGroup <- change.visual
+          figure      <- changeGroup.figures
         } {
           addShape(figure, "black", "", 1f)
         }

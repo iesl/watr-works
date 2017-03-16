@@ -65,8 +65,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
           val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
           targetPageRIndexes.put(pageId, pageIndex)
 
-
-
           // Put all visual lines into index
           for {
             vline <- docStore0.getPageVisualLines(pageId)
@@ -86,7 +84,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
         }
 
       case _ =>
-
 
     }})
 
@@ -134,8 +131,9 @@ trait LabelWidgetIndex {
   // Seq[(DoubleInterval, Label, Add/Remove)]
 
 
-  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): GeometricGroup = {
-    var change = GeometricGroup(List())
+  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Option[GeometricGroup] = {
+    // var change = GeometricGroup(List())
+    var changes = List[GeometricFigure]()
 
     val pageRegionsToBeLabeled = for {
       qhit <- queryHits
@@ -144,18 +142,20 @@ trait LabelWidgetIndex {
 
         val regions = qhit.iTextReflows.map(_.pageRegion)
 
-        change = GeometricGroup(
-          regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        )
+        changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
+        // change = GeometricGroup(
+        //   regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
+        // )
 
         regions
 
       case ByRegion =>
         val regions = Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
 
-        change = GeometricGroup(
-          regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        )
+        changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
+        // change = GeometricGroup(
+        //   regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
+        // )
 
         regions
 
@@ -182,9 +182,7 @@ trait LabelWidgetIndex {
         // println("orig"); println(debugR)
         // println("translated"); println(debugTR)
 
-        change = GeometricGroup(
-          regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        )
+        changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
         regions
     }
 
@@ -208,10 +206,12 @@ trait LabelWidgetIndex {
       Some(docStore.getZone(newZone))
     }
 
-    change
+    if (changes.isEmpty) None else {
+      Some(GeometricGroup(changes))
+    }
   }
 
-  def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): GeometricGroup = {
+  def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Option[GeometricGroup] = {
     val queryHits = queryRegion(queryBounds)
     labelConstrained(constraint, queryHits, label)
   }
