@@ -106,7 +106,7 @@ trait LabelWidgetIndex {
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
 
 
-  def select(queryBounds: LTBounds): Seq[QueryHit] = {
+  def queryRegion(queryBounds: LTBounds): Seq[QueryHit] = {
     val hits = index.queryForIntersects(queryBounds)
       .map { pos => pos.widget match {
         case TargetOverlay(under, over) =>
@@ -170,14 +170,13 @@ trait LabelWidgetIndex {
 
         }
         val regions = regionss.flatten
+
         // println(s"ByChar labeling")
         // println(s"    widget translation: ${qhit.positioned.translation}")
-        val debugR = regions.map(_.bbox).mkString("\n  ", "\n  ", "\n")
-        val debugTR = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        // println("orig")
-        // println(debugR)
-        // println("translated")
-        // println(debugTR)
+        // val debugR = regions.map(_.bbox).mkString("\n  ", "\n  ", "\n")
+        // val debugTR = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
+        // println("orig"); println(debugR)
+        // println("translated"); println(debugTR)
 
         change = GeometricGroup(
           regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
@@ -208,8 +207,8 @@ trait LabelWidgetIndex {
     change
   }
 
-  def addLabel(bbox: LTBounds, constraint: Constraint, label: Label): GeometricGroup = {
-    val queryHits = select(bbox)
+  def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): GeometricGroup = {
+    val queryHits = queryRegion(queryBounds)
     labelConstrained(constraint, queryHits, label)
   }
 

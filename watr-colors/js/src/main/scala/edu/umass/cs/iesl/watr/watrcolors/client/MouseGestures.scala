@@ -117,7 +117,7 @@ trait MouseGestures extends HtmlCanvasRendering {
     LTBounds(x, y, w, h)
   }
 
-  def getUserLTBounds(c: fabric.Canvas): Future[LTBounds] = {
+  def getUserSelection(c: fabric.Canvas): Future[LTBounds] = {
 
     val chan = CanvasMouseChannels(c)
 
@@ -135,11 +135,19 @@ trait MouseGestures extends HtmlCanvasRendering {
         updateShape(sel, bounds(point1, point2))
         res = await(chan.mousemove | chan.mouseup)
       }
-      println(s"getUserLTBounds: ${point1} -> $point2")
+      println(s"getUserSelection: ${point1} -> $point2")
 
       fabricCanvas.remove(sel)
 
       bounds(point1, point2)
+    }
+  }
+
+  def getUserClickPoint(c: fabric.Canvas): Future[Point] = {
+    val chan = CanvasMouseChannels(c)
+    async {
+      var res = await(chan.mousedown())
+      getCanvasPoint(res.e.pageX, res.e.pageY)
     }
   }
 

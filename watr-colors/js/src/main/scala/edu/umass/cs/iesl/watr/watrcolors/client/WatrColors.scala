@@ -16,7 +16,7 @@ import UPickle._
 
 // import geometry._
 import labeling._
-
+import watrmarks._
 import native.mousetrap._
 
 import TypeTagPicklers._
@@ -31,8 +31,37 @@ object WatrColors extends LabelerRendering {
     Create
   ))
 
+  def updateStatusText(): Unit = {
+    // Display state in status bar
+    val statusText = uiState.map(_.toString()).getOrElse { "UI State Not Set" }
+    jQuery("#status-text").html(statusText)
+  }
+  object states {
+    def modState(f: UIState => UIState): Unit = {
+      uiState = uiState.map(f)
+      updateStatusText()
+    }
+
+    def selectByChar(): Unit = modState(_.copy(selectionConstraint = ByChar))
+    def selectByLine(): Unit = modState(_.copy(selectionConstraint = ByLine))
+    def selectByRegion(): Unit = modState(_.copy(selectionConstraint = ByRegion))
+    def setLabel(l: Label): Unit = modState(_.copy(selectedLabel=Option(l)))
+
+  }
+
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
-    "s" -> ((e: MousetrapEvent) => doSelection())
+    "l t" -> ((e: MousetrapEvent) => states.setLabel(LB.Title)),
+    "l a" -> ((e: MousetrapEvent) => states.setLabel(LB.Authors)),
+    "l b" -> ((e: MousetrapEvent) => states.setLabel(LB.Abstract)),
+    "l f" -> ((e: MousetrapEvent) => states.setLabel(LB.Affiliation)),
+    "l r" -> ((e: MousetrapEvent) => states.setLabel(LB.References)),
+
+    "s l" -> ((e: MousetrapEvent) => states.selectByLine()),
+    "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
+    "s b" -> ((e: MousetrapEvent) => states.selectByRegion()),
+
+    "s s" -> ((e: MousetrapEvent) => startSelection()),
+    "s a" -> ((e: MousetrapEvent) => startSelectPoint())
   )
 
   def initKeybindings() = {
@@ -46,18 +75,35 @@ object WatrColors extends LabelerRendering {
     }
   }
 
-  // override def handleClick(canvasPoint: Point): Unit = {}
-
 
   @JSExport
-  def doSelection(): Unit = {
+  def startSelectPoint(): Unit = {
+    uiState.map{ state =>
+      for {
+        clickPt <- getUserClickPoint(fabricCanvas)
+      } yield {
+        val req = UIRequest(state, Click(clickPt))
+
+        for {
+          uiResponse <- shell.uiRequest(req)
+          change <- uiResponse.changes
+          figure <- change.visual.figures
+        } {
+          addShape(figure, "black", "", 1f)
+        }
+      }
+    }
+
+  }
+  @JSExport
+  def startSelection(): Unit = {
     uiState.map{ state =>
 
       fabricCanvas.defaultCursor = "crosshair"
       fabricCanvas.renderAll()
 
       for {
-        bbox <- getUserLTBounds(fabricCanvas)
+        bbox <- getUserSelection(fabricCanvas)
       } yield {
 
         fabricCanvas.defaultCursor = "default"
@@ -131,11 +177,10 @@ object WatrColors extends LabelerRendering {
       fabricCanvas.renderOnAddRemove = true
       val controls = createLabelerControls(labelOptions)
       val c = controls.render
-      val statusBar = dom.document.getElementById("status-bar")
-      statusBar.childNodes.foreach(
-        statusBar.removeChild(_)
-      )
+      val statusBar = dom.document.getElementById("status-controls")
+      // statusBar.childNodes.foreach( statusBar.removeChild(_)  )
       statusBar.appendChild(c)
+      updateStatusText()
     }
 
 

@@ -11,17 +11,42 @@ object WatrStyles extends CascadingStyleSheet {
   initStyleSheet()
 
 
-  def topBar = cls(
+  def statusBar = cls(
     position.fixed,
     overflow.hidden,
     margin          := 0,
     padding         := 0,
     top             := 0,
-    left            := 0,
     width           := "100%",
     height          := "30px",
     zIndex          := 9999,
     backgroundColor := "#"+C.LightSteelBlue1.toHex
+  )
+
+  def statusText = cls(
+    position.fixed,
+    overflow.hidden,
+    margin          := 0,
+    padding         := 0,
+    top             := 0,
+    width           := "100%",
+    height          := "30px",
+    zIndex          := 9999,
+    left            := "30%",
+    backgroundColor := "#"+C.LightSteelBlue3.toHex
+  )
+
+  def statusCtrls = cls(
+    position.fixed,
+    overflow.hidden,
+    margin          := 0,
+    padding         := 0,
+    top             := 0,
+    width           := "100%",
+    height          := "30px",
+    zIndex          := 9999,
+    left            := 0,
+    backgroundColor := "#"+C.LightSteelBlue2.toHex
   )
 
 
@@ -83,7 +108,10 @@ object ShellHtml {
   }
 
   def statusbar()  = {
-    <.div(^.id:="status-bar", WatrStyles.topBar)()
+    <.div(^.id:="status-bar", WatrStyles.statusBar)(
+      <.div(^.id:="status-controls", WatrStyles.statusCtrls),
+      <.div(^.id:="status-text", WatrStyles.statusText)
+    )
   }
 
 

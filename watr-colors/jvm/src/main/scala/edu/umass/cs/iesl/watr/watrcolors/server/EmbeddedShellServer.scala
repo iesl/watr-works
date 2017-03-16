@@ -207,6 +207,7 @@ class EmbeddedServer(
               }
 
             case Click(point) =>
+              // click means select labeled zone at the clicked point
               None
           }
 
