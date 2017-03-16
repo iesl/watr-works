@@ -11,8 +11,6 @@ import corpora._
 import rindex._
 import watrmarks._
 
-// import utils.Debugging
-
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
 case class IndexableTextReflow(
@@ -45,6 +43,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   def create(docStore0: DocumentCorpus, lwidget: LabelWidget): LabelWidgetIndex = {
     val lwIndex = SpatialIndex.createFor[WidgetPositioning]()
+    // augment lwidget with pre-existing zone/labels
 
     val layout0 = layoutWidgetPositions(lwidget)
 
@@ -57,14 +56,18 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
     layout0.positioning.foreach({pos => pos.widget match {
 
-      case l @ TargetOverlay(under, overs) =>
+      case l @ RegionOverlay(under, overs) =>
         val pageId = under.pageId
-        // under.regionId
+        // val regionId = under.regionId
         // under.bbox
+        // docStore0.getTargetRegion(under.regionId)
         if (!targetPageRIndexes.contains(pageId)) {
           val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
           targetPageRIndexes.put(pageId, pageIndex)
 
+
+
+          // Put all visual lines into index
           for {
             vline <- docStore0.getPageVisualLines(pageId)
             reflow <- docStore0.getModelTextReflowForZone(vline.id)
@@ -109,11 +112,11 @@ trait LabelWidgetIndex {
   def queryRegion(queryBounds: LTBounds): Seq[QueryHit] = {
     val hits = index.queryForIntersects(queryBounds)
       .map { pos => pos.widget match {
-        case TargetOverlay(under, over) =>
+        case RegionOverlay(under, over) =>
           println(s"select hit ${under}")
           val maybeIntersect = pos.widgetBounds.intersection(queryBounds)
           maybeIntersect.map { ibbox =>
-            println(s"   intersected TargetOverlay @ ${ibbox}")
+            println(s"   intersected RegionOverlay @ ${ibbox}")
             val pageSpaceBounds = ibbox.translate(pos.translation)
             println(s"   translates to ${pageSpaceBounds} as page query")
             val pageIndex = pageIndexes(under.pageId)
@@ -169,6 +172,7 @@ trait LabelWidgetIndex {
             }
 
         }
+
         val regions = regionss.flatten
 
         // println(s"ByChar labeling")
@@ -225,7 +229,7 @@ trait LabelWidgetIndex {
       val gridbox = GridPaper.ltb2box(pos.widgetBounds)
 
       pos.widget match {
-        case TargetOverlay(under, over) =>
+        case RegionOverlay(under, over) =>
           val regionId = under.regionId.get.unwrap
           val fill = (regionId + '0'.toInt).toChar
 

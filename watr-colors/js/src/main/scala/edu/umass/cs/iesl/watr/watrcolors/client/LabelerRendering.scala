@@ -158,7 +158,7 @@ trait LabelerRendering extends MouseGestures {
       val WidgetPositioning(fa, wbbox, transVec, scaling, id)  = p
 
       fa match {
-        case TargetOverlay(under, overs) =>
+        case RegionOverlay(under, overs) =>
           objStack += makeImageForPageRegion(under, wbbox)
 
         case LabeledTarget(target, label, score)   =>

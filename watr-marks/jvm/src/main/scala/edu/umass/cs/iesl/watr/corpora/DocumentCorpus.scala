@@ -15,6 +15,7 @@ trait DocumentCorpus {
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
   def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID]
+  def getPageDef(pageId: Int@@PageID): Option[Model.Page]
   def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
   def getPageGeometry(pageId: Int@@PageID): LTBounds
   def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit

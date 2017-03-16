@@ -6,14 +6,17 @@ import TypeTags._
 
 trait CorpusTestingUtil extends PlainTextCorpus {
   def createEmptyDocumentCorpus(): DocumentCorpus
+  // def regionIdGen: utils.IdGenerator[RegionID]
+  val regionIdGen = utils.IdGenerator[RegionID]()
 
   var freshDocstore: Option[DocumentCorpus] = None
 
   def docStore: DocumentCorpus = freshDocstore
-    .getOrElse(sys.error("Uninitialized DocumentCorpus; Use FreshDocstore() class"))
+    .getOrElse(sys.error("Uninitialized DocumentCorpus; Use CleanDocstore() class"))
 
   def initEmpty(): Unit = {
     try {
+      regionIdGen.reset()
       freshDocstore = Some(createEmptyDocumentCorpus())
     } catch {
       case t: Throwable =>
@@ -23,9 +26,13 @@ trait CorpusTestingUtil extends PlainTextCorpus {
     }
   }
 
+  trait CleanDocstore {
+    initEmpty()
+  }
+
   class FreshDocstore(pageCount: Int=0) {
+    initEmpty()
     try {
-      freshDocstore = Some(createEmptyDocumentCorpus())
       loadSampleDoc(pageCount)
     } catch {
       case t: Throwable =>

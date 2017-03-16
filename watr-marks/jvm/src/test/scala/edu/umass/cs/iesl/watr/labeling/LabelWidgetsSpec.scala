@@ -11,21 +11,22 @@ import TypeTags._
 import corpora._
 import LabelWidgets._
 import LabelWidgetLayoutHelpers._
+import watrmarks.{StandardLabels => LB}
 
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
-  initEmpty()
+  // initEmpty()
 
-  val docs = List(
-    List("01\n23")
-      // List("01\n23", "45\n67")
-    // List("01\n23", "45\n67")
-  )
+  // val docs = List(
+  //   List("01\n23")
+  //     // List("01\n23", "45\n67")
+  //   // List("01\n23", "45\n67")
+  // )
 
-  for { (doc, i) <- docs.zipWithIndex } {
-    addDocument(DocumentID(s"doc#${i}"), doc)
-  }
+  // for { (doc, i) <- docs.zipWithIndex } {
+  //   addDocument(DocumentID(s"doc#${i}"), doc)
+  // }
 
   behavior of "label widgets"
 
@@ -37,7 +38,7 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
 
 
-  it should "include labeled targets" in {
+  it should "include labeled targets as overlays" in new CleanDocstore {
     val pageRegion = PageRegion(PageID(1), LTBounds(5d, 4d, 3d, 2d) )
     val pageRegion2 = PageRegion(PageID(1), LTBounds(5.1d, 4.1d, 3.1d, 2.1d) )
 
@@ -48,6 +49,8 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
       targetOverlay(pageRegion, List(labeledTarget(subRegion), labeledTarget(subRegion2))),
       targetOverlay(pageRegion2, List(labeledTarget(subRegion), labeledTarget(subRegion2)))
     )
+
+
     val widgetLayout = layoutWidgetPositions(widget0)
 
     widgetLayout.positioning
@@ -61,6 +64,64 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   }
 
   it should "correctly position overlays" in  {}
+
+  it should "rewrite widgets to include geometric figure overlays for prior labeling" in new CleanDocstore {
+    add4x3x3SampleDoc()
+    // Create a zone labeling over a few pages
+    val stableId = docStore.getDocuments().head
+    val docId = docStore.getDocument(stableId).get
+
+
+    // Create a zone that spans 2 pages
+    val newZone = docStore.createZone(docId)
+    val page0Lines = docStore.getPageVisualLines(stableId, PageNum(0)).flatMap(_.regions)
+    val page1Lines = docStore.getPageVisualLines(stableId, PageNum(1)).flatMap(_.regions)
+
+    docStore.setZoneTargetRegions(newZone, page0Lines ++ page1Lines)
+    docStore.addZoneLabel(newZone, LB.Authors)
+
+
+    // prove that a widget w/ either of those pages includes the labeled overlay
+
+    // Create a labeling widget
+    val layout = col(
+      row(pageDivs3(1), pageDivs2(2))
+    )
+
+    // Rewrite the widget to include indicators for the zone we just added:
+    // // Create display for pre-existing zones
+    // val pageDef = docStore0.getPageDef(pageId).getOrElse { sys.error(s"no page def found for page ${under}") }
+    // // docStore0.getZoneForTargetRegion(regionId: <refinement>[Int, RegionID], label: Label)
+    // for {
+    //   zoneId <- docStore0.getZonesForDocument(pageDef.document)
+    // } {
+    //   val zone = docStore0.getZone(zoneId)
+
+    //   val filteredRegionsToTargetRegion = zone.regions.filter({zoneRegion =>
+    //     val zonePageRegion = PageRegion(
+    //       pageId,
+    //       zoneRegion.bbox
+    //     )
+    //     zonePageRegion.intersects(under)
+    //   })
+
+    //   // clip zone to under's target region
+    //   filteredRegionsToTargetRegion.map {fr =>
+    //     fr.intersection(under.bbox)
+    //   }
+
+    // }
+
+
+
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
+
+
+
+
+
+
+  }
 
 
   // it should "create columns" in {

@@ -46,7 +46,7 @@ object LabelWidgetF {
   // LabelWidget w/position attribute
   type LabelWidgetPosAttr = LabelWidgetF[LabelWidgetAttr[PosAttr]]
 
-  case class TargetOverlay[A](
+  case class RegionOverlay[A](
     under: PageRegion,
     overs: List[A]
   ) extends LabelWidgetF[A]
@@ -69,9 +69,10 @@ object LabelWidgetF {
   case class Col[A](as: List[A]) extends LabelWidgetF[A]
   case class Pad[A](a: A, pad: Padding, color: Option[Color]) extends LabelWidgetF[A]
 
-  // case class Figure[A](
-  //   figure: GeometricGroup
-  // )
+  case class Figure[A](
+    figure: GeometricGroup
+  ) extends LabelWidgetF[A]
+
   // case class Panel[A](
   //   a: A
   //     // function: Action => (WidgetTransformFunction, UserFunction: () => {})
@@ -86,13 +87,14 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        case l : TargetOverlay[A]          => l.overs.traverse(f).map(ft => l.copy(overs=ft))
+        case l : RegionOverlay[A]          => l.overs.traverse(f).map(ft => l.copy(overs=ft))
         case l : LabeledTarget             => G.point(l.copy())
         case l @ TextBox(tb)               => G.point(l.copy())
         case l @ Reflow(tr)                => G.point(l.copy())
         case l @ Row(as)                   => as.traverse(f).map(Row(_))
         case l @ Col(as)                   => as.traverse(f).map(Col(_))
         case l @ Pad(a, padding, color)    => f(a).map(Pad(_, padding, color))
+        case l @ Figure(f)                 => G.point(l.copy())
       }
     }
   }
@@ -101,13 +103,14 @@ object LabelWidgetF {
 
   implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
     def apply[A](show: Show[A]) = Show.show {
-      case l : TargetOverlay[A]       => s"$l"
+      case l : RegionOverlay[A]       => s"$l"
       case l : LabeledTarget          => s"label-target"
       case l @ Reflow(tr)             => s"reflow()"
       case l @ TextBox(tb)            => s"textbox"
       case l @ Row(as)                => s"$l"
       case l @ Col(as)                => s"$l"
       case l @ Pad(a, padding, color) => s"$l"
+      case l @ Figure(f)              => l.toString
     }
   }
 }
@@ -121,7 +124,7 @@ object LabelWidgets {
   def fixlw = Fix[LabelWidgetF](_)
 
   def targetOverlay(tr: PageRegion, overs: Seq[LabelWidget]) =
-    fixlw(TargetOverlay(tr, overs.toList))
+    fixlw(RegionOverlay(tr, overs.toList))
 
   def labeledTarget(target: PageRegion, label: Option[Label]=None, score: Option[Double]=None) =
     fixlw(LabeledTarget(target, label, score))

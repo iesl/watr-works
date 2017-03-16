@@ -254,6 +254,10 @@ class MemDocstore extends DocumentCorpus {
     pages.forDocAndPage(docId, pageNum)
   }
 
+  def getPageDef(pageId: Int@@PageID): Option[Model.Page] = {
+    ???
+  }
+
   def getPageGeometry(pageId: Int@@PageID): G.LTBounds = {
     pages.getGeometry(pageId)
   }

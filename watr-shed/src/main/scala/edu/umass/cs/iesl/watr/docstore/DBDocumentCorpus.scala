@@ -488,6 +488,11 @@ class TextReflowDB(
     def getPageImage(pageId: Int@@PageID): Option[Array[Byte]] = {
       runq { selectPageImage(pageId) }
     }
+
+    def getPageDef(pageId: Int@@PageID): Option[Model.Page] = {
+      ???
+    }
+
     def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit = {
       runq { updatePage(pageId, geom) }
     }

@@ -8,11 +8,40 @@ import geometry._
 import corpora._
 import utils.EnrichNumerics._
 
-  // import LabelWidgets._
-  // import LabelWidgetLayoutHelpers._
-  // import TypeTags._
+import LabelWidgets._
+import LabelWidgetF._
+import TypeTags._
+
 
 abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
+
+  def add4x3x3SampleDoc(): Unit = {
+    /**
+      *  Test document layout (4 papers, grid layout)
+      *      0123456
+      *    0 abc012|
+      *    1 def345|
+      *    2 ghi678|
+      *    3 jklstu|
+      *    4 mnovwx|
+      *    5 pqryzz|
+
+      *  */
+    val docs = List(
+      List(
+        "abc\ndef\nghi",
+        "012\n345\n678",
+        "jkl\nmno\npqr",
+        "stu\nvwx\nyzz"
+      )
+    )
+
+    for { (doc, i) <- docs.zipWithIndex } {
+      addDocument(DocumentID(s"doc#${i}"), doc)
+    }
+  }
+
+
   def generatePageRegions(divs: Int): Seq[PageRegion] = {
     val allRegions = for {
       stableId <- docStore.getDocuments
@@ -43,6 +72,34 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
       .map(_.toString)
       .mkString("\n  ", "\n  ", "\n")
     println(res)
+  }
+
+  def mkTargetRegion(pageId: Int, bbox: Int*): TargetRegion = {
+    val pgRegion = mkPageRegion(pageId, bbox:_*)
+    val regionId = docStore.addTargetRegion(pgRegion.pageId, pgRegion.bbox)
+    docStore.getTargetRegion(regionId)
+  }
+
+  def mkPageRegion(pageId: Int, bbox: Int*): PageRegion = {
+    val List(x, y, w, h) = bbox.toList
+    // val regionId = regionIdGen.nextId
+    // PageRegion(PageID(pageId), getRegionBounds(x, y, w, h), Some(regionId))
+    PageRegion(PageID(pageId), getRegionBounds(x, y, w, h), None)
+  }
+
+  def pageDivs3(pageId: Int): LabelWidget = {
+    col(
+      targetOverlay(mkPageRegion(pageId, 0, 0, 3, 1), List()),
+      targetOverlay(mkPageRegion(pageId, 0, 1, 3, 1), List()),
+      targetOverlay(mkPageRegion(pageId, 0, 2, 3, 1), List())
+    )
+  }
+
+  def pageDivs2(pageId: Int): LabelWidget = {
+    col(
+      targetOverlay(mkPageRegion(pageId, 0, 0, 3, 2), List()),
+      targetOverlay(mkPageRegion(pageId, 0, 2, 3, 1), List())
+    )
   }
 
 }

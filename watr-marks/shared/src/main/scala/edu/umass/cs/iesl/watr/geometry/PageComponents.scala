@@ -143,6 +143,11 @@ object PageComponentImplicits {
       samePage && (thePageRegion.bbox intersects r.bbox)
     }
 
+    // def intersects(r: TargetRegion): Boolean = {
+    //   val samePage = thePageRegion.pageId == r.pageId
+    //   samePage && (thePageRegion.bbox intersects r.bbox)
+    // }
+
 
     def intersection(b: LTBounds): Option[PageRegion] = {
       thePageRegion.bbox

@@ -95,7 +95,7 @@ object LabelWidgetLayoutHelpers {
   def clipPageRegionFromWidgetSpace(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): Option[PageRegion] = {
     val pageRegion = widgetRegionToPageRegion(wpos, widgetSpaceRegion)
     wpos.widget match {
-      case l @ TargetOverlay(under, overs) =>
+      case l @ RegionOverlay(under, overs) =>
         under.intersection(pageRegion)
       case l @ LabeledTarget(target, label, score) =>
         target.intersection(pageRegion)
@@ -137,7 +137,6 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     (newpositions._1, newpositions._2.reverse)
   }
 
-  // def layoutWidgetPositions(lwidget: LabelWidget): List[PosAttr] = {
   def layoutWidgetPositions(lwidget: LabelWidget): WidgetLayout = {
     val idgen = utils.IdGenerator[WidgetID]()
 
@@ -145,7 +144,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     // Bottom-up first pass evaluator
     def positionAttrs: GAlgebra[(LabelWidget, ?), LabelWidgetF, PosAttr] = fwa => {
       fwa match {
-        case flw @ TargetOverlay(under, overs)  =>
+        case flw @ RegionOverlay(under, overs)  =>
           val selfPosition = under.bbox.toPoint(CDir.NW)
           val bbox = under.bbox.moveToOrigin
           val (_, childAdjustVecs) = computeOffsets(overs,
