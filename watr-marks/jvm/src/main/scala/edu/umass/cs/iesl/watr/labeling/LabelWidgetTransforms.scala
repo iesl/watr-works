@@ -27,6 +27,7 @@ object LabelWidgetTransforms {
             zoneId <- docStore.getZonesForDocument(pageDef.document)
           } yield {
             val zone = docStore.getZone(zoneId)
+
             if (zone.labels.contains(LB.VisualLine)) {
               None
             } else {
@@ -53,10 +54,17 @@ object LabelWidgetTransforms {
             }
           }
 
-          RegionOverlay(
+          val roverlay = RegionOverlay(
             under,
             overlays ++ overlayFigures.flatten
           )
+
+          Panel(
+            fixlw(roverlay),
+            () => {}
+          )
+
+          roverlay
 
         case  _ => lw0
       }

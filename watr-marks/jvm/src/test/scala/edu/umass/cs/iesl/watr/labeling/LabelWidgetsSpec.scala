@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
-
 import geometry._
 // import geometry.syntax._
 // import textreflow.data._
@@ -55,6 +54,7 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
       }
   }
+
 
   it should "correctly position overlays" in  {}
 

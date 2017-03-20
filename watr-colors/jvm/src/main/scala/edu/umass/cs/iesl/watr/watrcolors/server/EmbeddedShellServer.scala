@@ -207,6 +207,13 @@ class EmbeddedServer(
               }
 
             case Click(point) =>
+
+              println(s"Click ${point}")
+              // select the top (selectable) item
+
+              None
+            case DblClick(point) =>
+              println(s"DblClick ${point}")
               // click means select labeled zone at the clicked point
               None
           }

@@ -25,20 +25,21 @@ import watrmarks.{StandardLabels => LB}
 @JSExport
 object WatrColors extends LabelerRendering {
 
-  var uiState: Option[UIState] = Option(UIState(
+  var uiState: UIState = UIState(
     ByChar,
     Option(LB.Title),
     Create
-  ))
+  )
 
   def updateStatusText(): Unit = {
     // Display state in status bar
-    val statusText = uiState.map(_.toString()).getOrElse { "UI State Not Set" }
+    val statusText = uiState.toString()
     jQuery("#status-text").html(statusText)
   }
+
   object states {
     def modState(f: UIState => UIState): Unit = {
-      uiState = uiState.map(f)
+      uiState = f(uiState)
       updateStatusText()
     }
 
@@ -75,51 +76,38 @@ object WatrColors extends LabelerRendering {
     }
   }
 
+  def uiRequestCycle(req: UIRequest) = for {
+    uiResponse  <- shell.uiRequest(req)
+    change      <- uiResponse.changes
+    changeGroup <- change.visual
+    figure      <- changeGroup.figures
+  } {
+    addShape(figure, "black", "", 1f)
+  }
 
   @JSExport
   def startSelectPoint(): Unit = {
-    uiState.map{ state =>
-      for {
-        clickPt <- getUserClickPoint(fabricCanvas)
-      } yield {
-        val req = UIRequest(state, Click(clickPt))
-
-        for {
-          uiResponse  <- shell.uiRequest(req)
-          change      <- uiResponse.changes
-          changeGroup <- change.visual
-          figure      <- changeGroup.figures
-        } {
-          addShape(figure, "black", "", 1f)
-        }
-      }
+    for {
+      clickPt <- getUserClickPoint(fabricCanvas)
+    } yield {
+      val req = UIRequest(uiState, Click(clickPt))
+      uiRequestCycle(req)
     }
-
   }
+
+
   @JSExport
   def startSelection(): Unit = {
-    uiState.map{ state =>
 
-      fabricCanvas.defaultCursor = "crosshair"
-      fabricCanvas.renderAll()
+    fabricCanvas.defaultCursor = "crosshair"
+    fabricCanvas.renderAll()
 
-      for {
-        bbox <- getUserSelection(fabricCanvas)
-      } yield {
-
-        fabricCanvas.defaultCursor = "default"
-
-        val req = UIRequest(state, SelectRegion(bbox))
-
-        for {
-          uiResponse  <- shell.uiRequest(req)
-          change      <- uiResponse.changes
-          changeGroup <- change.visual
-          figure      <- changeGroup.figures
-        } {
-          addShape(figure, "black", "", 1f)
-        }
-      }
+    for {
+      bbox <- getUserSelection(fabricCanvas)
+    } yield {
+      fabricCanvas.defaultCursor = "default"
+      val req = UIRequest(uiState, SelectRegion(bbox))
+      uiRequestCycle(req)
     }
 
   }
@@ -184,8 +172,27 @@ object WatrColors extends LabelerRendering {
       statusBar.appendChild(c)
       updateStatusText()
     }
+  }
 
+  def setupClickCatchers(): Unit = {
+    import org.querki.jquery.JQueryEventObject
+    import org.querki.jquery.EventHandler
 
+    val clickcb: EventHandler = { (event: JQueryEventObject) =>
+      val clickPt = getCanvasPoint(event.pageX, event.pageY)
+      val req = UIRequest(uiState, Click(clickPt))
+      uiRequestCycle(req)
+      true
+    }
+    val dblclickcb: EventHandler = { (event: JQueryEventObject) =>
+      val clickPt = getCanvasPoint(event.pageX, event.pageY)
+      val req = UIRequest(uiState, DblClick(clickPt))
+      uiRequestCycle(req)
+      true
+    }
+
+    jQuery("#canvas-container").click(clickcb)
+    jQuery("#canvas-container").dblclick(dblclickcb)
   }
 
   @JSExport
@@ -218,6 +225,7 @@ object WatrColors extends LabelerRendering {
     }
 
     dom.window.addEventListener("load", (event: dom.Event) => {
+      setupClickCatchers()
       // defaultMouseHandler()
       rec()
     })

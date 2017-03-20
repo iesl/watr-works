@@ -262,8 +262,9 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
 
     val positions = adjusted.universe
-        .map(_.head)
-        .map(w => WidgetPositioning(w.widget, w.widgetBounds, w.selfOffset, w.scaling, w.id))
+      .map(_.head)
+      .map(w => WidgetPositioning(w.widget, w.widgetBounds, w.selfOffset, w.scaling, w.id))
+      .toList
 
     val root = positions.head
 

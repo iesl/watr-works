@@ -16,7 +16,6 @@ trait SpatialIndexable[T] {
 }
 
 class SpatialIndex[T: SpatialIndexable](
-  // bounds: LTBounds,
   spatialIndex: jsi.SpatialIndex,
   items: mutable.LongMap[T]
 ) {

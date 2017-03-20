@@ -10,34 +10,38 @@ object SensibleProject extends CommonLibs {
     libraryDependencies ++= Seq(acyclic)
   )
 
+  val scalaOptionList = Seq(
+    "-deprecation",
+    "-encoding", "UTF-8",
+    "-feature",
+    "-target:jvm-1.6",
+    "-unchecked",
+    "-language:existentials",
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-Ypatmat-exhaust-depth", "40",
+    "-Xlint",
+    "-Yinline-warnings",
+    "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
+    "-Ywarn-inaccessible",
+    "-Ywarn-unused-import", // noisy, but good to run occasionally
+    "-Ywarn-dead-code",
+    "-Xfuture"
+    //
+    // "-Ypartial-unification", // typelevel.org scala specific
+    // "-language:postfixOps",
+    // "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
+    // "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
+    // "-Ywarn-numeric-widen", // noisy
+  )
+
+
+
   lazy val settings =  Seq(
     scalaVersion := "2.11.8",
     // scalaVersion := "2.12.1",
     organization := "edu.umass.cs.iesl",
-    scalacOptions ++= Seq(
-      "-deprecation",
-      "-encoding", "UTF-8",
-      "-feature",
-      "-target:jvm-1.6",
-      "-unchecked",
-      "-language:existentials",
-      "-language:higherKinds",
-      "-language:implicitConversions",
-      // "-Ypartial-unification", // typelevel.org scala specific
-      // "-language:postfixOps",
-      "-Ypatmat-exhaust-depth", "40",
-      "-Xlint",
-      "-Yinline-warnings",
-      "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
-      "-Ywarn-inaccessible",
-      "-Ywarn-unused-import", // noisy, but good to run occasionally
-      "-Ywarn-dead-code",
-      "-Xfuture"
-      // "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
-      // "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
-      //"-Ywarn-numeric-widen", // noisy
-    ),
-
+    scalacOptions ++= scalaOptionList,
     // javacOptions in (Compile, compile) ++= Seq(
     //   "-source", "1.6", "-target", "1.6", "-Xlint:all", "-Werror",
     //   "-Xlint:-options", "-Xlint:-path", "-Xlint:-processing"
@@ -75,7 +79,7 @@ object SensibleThisBuild {
   lazy val settings =  Seq(
 
     resolvers in ThisBuild ++= List(
-      "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
+      // "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public",
       Resolver.sonatypeRepo("snapshots"),
       Resolver.sonatypeRepo("releases"),
       Resolver.jcenterRepo
@@ -85,6 +89,7 @@ object SensibleThisBuild {
     scalaVersion in ThisBuild := "2.11.8",
     // scalaVersion in ThisBuild := "2.12.1",
     // scalaOrganization in ThisBuild := "org.typelevel",
+    scalacOptions in ThisBuild ++= SensibleProject.scalaOptionList,
 
     shellPrompt in ThisBuild := colorPrompt,
     autoCompilerPlugins in ThisBuild := true,

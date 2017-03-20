@@ -71,46 +71,42 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
   }
 
 
-  def everyLabel(l: Label, r: TextReflow)(f: TextReflow => TextReflow): TextReflow = {
-    def ifLabeled(r:TextReflowT): TextReflowT =  {
-      if (hasLabel(l)(r)) holes(r) match {
-        case Labeled(labels, (a, fWhole)) => fWhole(f(a))
-        case _ => r
-      } else r
-    }
+  // def everyLabel(l: Label, r: TextReflow)(f: TextReflow => TextReflow): TextReflow = {
+  //   def ifLabeled(r:TextReflowT): TextReflowT =  {
+  //     if (hasLabel(l)(r)) holes(r) match {
+  //       case Labeled(labels, (a, fWhole)) => fWhole(f(a))
+  //       case _ => r
+  //     } else r
+  //   }
+  //   r.transCata[TextReflow](ifLabeled)
+  // }
 
-    r.transCata[TextReflow](ifLabeled)
-  }
+  // def everywhere(r: TextReflow)(f: TextReflowT => TextReflowT): TextReflow = {
+  //   r.transCata[TextReflow](f)
+  // }
 
-  def everywhere(r: TextReflow)(f: TextReflowT => TextReflowT): TextReflow = {
-    r.transCata[TextReflow](f)
-  }
+  // type TextReflowCR = TextReflowF[Cofree[TextReflowF, Offsets]]
+  // type CharLoc = TreeLoc[Offsets]
+  // type CharLocState = State[CharLoc, CharLoc]
 
+  // def charRangeState[A](
+  //   i: CharLoc, t: TextReflowT
+  // ): CharLocState = {
+  //   State.get[CharLoc] <* State.modify[CharLoc]({
+  //     case r => r.right
+  //         .orElse(r.firstChild)
+  //         .getOrElse(sys.error("char range state out of sync"))
+  //   })
+  // }
 
-
-  type TextReflowCR = TextReflowF[Cofree[TextReflowF, Offsets]]
-
-  type CharLoc = TreeLoc[Offsets]
-  type CharLocState = State[CharLoc, CharLoc]
-
-  def charRangeState[A](
-    i: CharLoc, t: TextReflowT
-  ): CharLocState = {
-    State.get[CharLoc] <* State.modify[CharLoc]({
-      case r => r.right
-          .orElse(r.firstChild)
-          .getOrElse(sys.error("char range state out of sync"))
-    })
-  }
-
-  def hideChar: TextReflow => TextReflow = {tr =>
-    fixf {
-      tr.project match {
-        case a: Atom           => Rewrite(fixf(a), "")
-        case f                 => f
-      }
-    }
-  }
+  // def hideChar: TextReflow => TextReflow = {tr =>
+  //   fixf {
+  //     tr.project match {
+  //       case a: Atom           => Rewrite(fixf(a), "")
+  //       case f                 => f
+  //     }
+  //   }
+  // }
 
   implicit class RicherReflow(val theReflow: TextReflowF.TextReflow)  {
 

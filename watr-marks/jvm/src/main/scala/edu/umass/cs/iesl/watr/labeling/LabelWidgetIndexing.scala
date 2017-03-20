@@ -97,7 +97,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
   }
 }
 
-
 trait LabelWidgetIndex {
 
   def docStore: DocumentCorpus
@@ -128,11 +127,9 @@ trait LabelWidgetIndex {
     // debugPrint(Some(queryBounds))
     hits.flatten
   }
-  // Seq[(DoubleInterval, Label, Add/Remove)]
 
 
   def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Option[GeometricGroup] = {
-    // var change = GeometricGroup(List())
     var changes = List[GeometricFigure]()
 
     val pageRegionsToBeLabeled = for {
@@ -141,22 +138,12 @@ trait LabelWidgetIndex {
       case ByLine =>
 
         val regions = qhit.iTextReflows.map(_.pageRegion)
-
         changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        // change = GeometricGroup(
-        //   regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        // )
-
         regions
 
       case ByRegion =>
         val regions = Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
-
         changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        // change = GeometricGroup(
-        //   regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        // )
-
         regions
 
       case ByChar =>
@@ -174,15 +161,8 @@ trait LabelWidgetIndex {
         }
 
         val regions = regionss.flatten
-
-        // println(s"ByChar labeling")
-        // println(s"    widget translation: ${qhit.positioned.translation}")
-        // val debugR = regions.map(_.bbox).mkString("\n  ", "\n  ", "\n")
-        // val debugTR = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        // println("orig"); println(debugR)
-        // println("translated"); println(debugTR)
-
         changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
+
         regions
     }
 
@@ -216,8 +196,14 @@ trait LabelWidgetIndex {
     labelConstrained(constraint, queryHits, label)
   }
 
-  // def extendLabel(bbox: LTBounds, constraint: Constraint, label: Label, zone: Int@@ZoneID)
-  // def removeLabel(label: Label, zone: Int@@ZoneID)
+  def selectAtPoint(point: Point): Unit = {
+    ???
+  }
+  def sinkAtPoint(point: Point): Unit = {
+    ???
+  }
+
+
 
   def debugPrint(query: Option[LTBounds] = None): Unit = {
     val w: Int = (layout.layoutBounds.width).intValue()+1

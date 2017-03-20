@@ -44,38 +44,10 @@ trait MouseGestures extends HtmlCanvasRendering {
     Point(offset.left, offset.top)
   }
 
-
-  // def alignBboxToDiv(divID: String, bbox: LTBounds): LTBounds = {
-  //   val off = divOffset()
-  //   val tr = bbox.translate(-off)
-  //   println(s"alignBboxToDiv: bbox.trans(-${off}) =  $tr")
-  //   tr
-  // }
-
   def getCanvasPoint(pageX: Int, pageY: Int): Point = {
     Point(pageX.doubleValue(), pageY.doubleValue())
       .translate(-divOffset)
   }
-
-  // def handleClick(canvasPoint: Point): Unit
-
-  // def defaultMouseHandler(): Unit = {
-  //   val callback: (JQueryEventObject, Any) => Any =
-  //     (event: JQueryEventObject, arg1: Any) => {
-  //       dom.console.log(event)
-  //       if (event.shiftKey.exists(_ == true)) {
-  //         handleClick(
-  //           getCanvasPoint(event.pageX, event.pageY)
-  //         )
-  //         false
-  //       } else {
-  //         true
-  //       }
-  //     }
-
-  //   jQuery("#canvas-container").on("click", callback)
-
-  // }
 
   def getUserPath(c: fabric.Canvas): Future[Seq[Point]] = {
 

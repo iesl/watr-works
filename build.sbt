@@ -8,6 +8,9 @@ import java.nio.file.StandardCopyOption._
 lazy val copyDocs = TaskKey[Unit]("copyDocs")
 
 autoCompilerPlugins := true
+addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3")
+addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full)
+addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 
 val Lib = CommonLibs
 
@@ -50,18 +53,15 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
       Lib.ammonite,
       Lib.playJson,
       Lib.shapeless,
-      "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT"
-    ))
 
+      // Needed by jsi
+      "net.sf.trove4j" % "trove4j" % "3.0.3"
+        // "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT" // jar is placed in /lib dir b/c maven info is incorrect
+    ))
 lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm
   .dependsOn(watrprelude)
-
-// .aggregate(watrmarksJS)
-// .settings((resources in Compile) += (
-//   (fastOptJS in (watrmarksJS, Compile)).value.data
-// ))
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(SensibleProject.settings: _*)
@@ -121,22 +121,22 @@ lazy val watrcolorsJVM = watrcolors.jvm
   ))
 
 
-lazy val watrdocs = scalatex.ScalatexReadme(
-  projectId = "watr-docs",
-  wd = file("watr-docs"),
-  url = "https://github.com/iesl/watr-works/tree/master",
-  source = "Readme")
-  .settings(SensibleProject.settings: _*)
-  .settings(copyDocs <<= (baseDirectory, target) map ({ (base, trg) =>
-    println("copying doc files..")
-      (trg / "scalatex").listFiles().foreach({file =>
-        val from = file.toPath
-        val to = base/".."/"docs"/file.getName()
-        println(s"copying files from ${from} to ${to}")
-        if (file.isDirectory) {
-          sbt.IO.copyDirectory(file, to, overwrite = true)
-        } else {
-          Files.copy(from, to.toPath, REPLACE_EXISTING)
-        }
-      })
-  }))
+// lazy val watrdocs = scalatex.ScalatexReadme(
+//   projectId = "watr-docs",
+//   wd = file("watr-docs"),
+//   url = "https://github.com/iesl/watr-works/tree/master",
+//   source = "Readme")
+//   .settings(SensibleProject.settings: _*)
+//   .settings(copyDocs <<= (baseDirectory, target) map ({ (base, trg) =>
+//     println("copying doc files..")
+//       (trg / "scalatex").listFiles().foreach({file =>
+//         val from = file.toPath
+//         val to = base/".."/"docs"/file.getName()
+//         println(s"copying files from ${from} to ${to}")
+//         if (file.isDirectory) {
+//           sbt.IO.copyDirectory(file, to, overwrite = true)
+//         } else {
+//           Files.copy(from, to.toPath, REPLACE_EXISTING)
+//         }
+//       })
+//   }))

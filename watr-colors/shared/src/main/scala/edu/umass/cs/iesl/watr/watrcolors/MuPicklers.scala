@@ -15,6 +15,7 @@ import Aliases._
 sealed trait Gesture
 case class SelectRegion(bbox: LTBounds) extends Gesture
 case class Click(point: Point) extends Gesture
+case class DblClick(point: Point) extends Gesture
 
 object Gesture {
   implicit val readWriter: RW[Gesture] =

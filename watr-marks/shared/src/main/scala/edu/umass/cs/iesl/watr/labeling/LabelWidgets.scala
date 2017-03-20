@@ -69,14 +69,15 @@ object LabelWidgetF {
   case class Col[A](as: List[A]) extends LabelWidgetF[A]
   case class Pad[A](a: A, pad: Padding, color: Option[Color]) extends LabelWidgetF[A]
 
-  case class Figure[A](
+  case class Figure(
     figure: GeometricGroup
-  ) extends LabelWidgetF[A]
+  ) extends LabelWidgetF[Nothing]
 
-  // case class Panel[A](
-  //   a: A
-  //     // function: Action => (WidgetTransformFunction, UserFunction: () => {})
-  // ) extends LabelWidgetF[A]
+  case class Panel[A](
+    a: A,
+    function: () => Unit
+      // function: Action => (WidgetTransformFunction, UserFunction: () => {})
+  ) extends LabelWidgetF[A]
 
   type PositionVector = Point
 
@@ -87,14 +88,14 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        case l : RegionOverlay[A]          => l.overs.traverse(f).map(ft => l.copy(overs=ft))
-        case l : LabeledTarget             => G.point(l.copy())
-        case l @ TextBox(tb)               => G.point(l.copy())
-        case l @ Reflow(tr)                => G.point(l.copy())
-        case l @ Row(as)                   => as.traverse(f).map(Row(_))
-        case l @ Col(as)                   => as.traverse(f).map(Col(_))
-        case l @ Pad(a, padding, color)    => f(a).map(Pad(_, padding, color))
-        case l @ Figure(f)                 => G.point(l.copy())
+        case l : RegionOverlay[A]     => l.overs.traverse(f).map(ft => l.copy(overs=ft))
+        case l @ Row(as)              => as.traverse(f).map(Row(_))
+        case l @ Col(as)              => as.traverse(f).map(Col(_))
+        case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
+        case l : LabeledTarget        => G.point(l.copy())
+        case l : TextBox              => G.point(l.copy())
+        case l : Reflow               => G.point(l.copy())
+        case l : Figure               => G.point(l.copy())
       }
     }
   }
