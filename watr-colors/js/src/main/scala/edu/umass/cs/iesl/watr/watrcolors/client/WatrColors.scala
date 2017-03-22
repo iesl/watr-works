@@ -27,7 +27,8 @@ object WatrColors extends LabelerRendering {
 
   var uiState: UIState = UIState(
     ByChar,
-    Option(LB.Title)
+    Option(LB.Title),
+    Seq()
   )
 
   def updateStatusText(): Unit = {
@@ -77,11 +78,22 @@ object WatrColors extends LabelerRendering {
 
   def uiRequestCycle(req: UIRequest) = for {
     uiResponse  <- shell.uiRequest(req)
-    change      <- uiResponse.changes
-    changeGroup <- change.visual
-    figure      <- changeGroup.figures
   } {
-    addShape(figure, "black", "", 1f)
+    uiState = uiResponse.uiState
+    updateStatusText()
+    val adds = uiResponse.changes
+      .collect {
+        case UIAdd(widget) => widget
+      }
+    val dels = uiResponse.changes
+      .collect {
+        case UIDel(widget) => widget
+      }
+    val (bbox, fobjs) = renderLabelWidget(adds)
+    fabricCanvas.renderOnAddRemove = false
+    fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }
+    fabricCanvas.renderAll()
+    fabricCanvas.renderOnAddRemove = true
   }
 
   @JSExport

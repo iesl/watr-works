@@ -6,6 +6,7 @@ import geometry._
 import LabelWidgets._
 import utils.Colors
 import utils.EnrichNumerics._
+import TypeTags._
 
 object TestLabelers {
 
@@ -27,10 +28,18 @@ object TestLabelers {
       )
     )
 
+    val panel0 = panel(
+      sampleText1,
+      LabelAction.clickToSelectZone(ZoneID(23))
+    )
+    val panel1 = panel(
+      sampleText1,
+      LabelAction.clickToSelectZone(ZoneID(90))
+    )
 
     val r0 = row(
-      pad(sampleText1, Padding(3), Colors.LightBlue),
-      pad(sampleText2, Padding(9), Colors.Azure)
+      pad(panel0, Padding(3), Colors.LightBlue),
+      pad(panel1, Padding(9), Colors.Azure)
     )
 
     val col0 = col(

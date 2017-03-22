@@ -3,59 +3,41 @@ package watrcolors
 
 import TypeTags._
 
-import watrmarks._
 import labeling._
-import geometry._
 
 import upickle.{default => UPickle}
 import upickle.Js
 import UPickle._
 import Aliases._
 
-final case class UIChange(
-  visual: Option[GeometricGroup]
-)
-final case class UIState(
-  selectionConstraint: Constraint,
-  selectedLabel: Option[Label]
-)
-
-case class UIRequest(
-  uiState: UIState,
-  gesture: Gesture
-)
-
-case class UIResponse(
-  changes: List[UIChange]
-)
+import scala.reflect._
 
 object TypeTagPicklers {
+
+  // implicit val UIRequest_RW: RW[UIRequest] =
+  //   macroRW[UIRequest]
+
+
+  // implicit val UIResponse_RW: RW[UIResponse] =
+  //   macroRW[UIResponse]
+
 
   implicit val readWriter: RW[Gesture] =
     macroRW[SelectRegion]
       .merge(macroRW[Click])
       .merge(macroRW[DblClick])
 
-  // implicit val GeometricGroup_RW: RW[GeometricGroup] =
-  //   macroRW[GeometricGroup]
-
   implicit val Interaction_RW: RW[Interaction] = RW[Interaction](
     {value => Js.Null},
     {case Js.Null => InteractNil}
   )
 
-  // implicit def LabelWidget_Panel_RW[A](
-  //   implicit ARW: RW[A]
-  // ): RW[LabelWidgetF.Panel[A]] = RW[LabelWidgetF.Panel[A]](
+
+  // implicit def Int_TagType_Pickler[TagType: ClassTag](
+  // ): RW[Int @@ TagType] = RW[Int @@ TagType](
   //   {t => Js.Str(t.unwrap.toString)},
   //   {case Js.Str(s) => ZoneID(s.toInt)}
   // )
-
-  implicit val UIRequest_RW: RW[UIRequest] =
-    macroRW[UIRequest]
-
-  implicit val UIResponse_RW: RW[UIResponse] =
-    macroRW[UIResponse]
 
   implicit val Int_ZoneID_Pickler: RW[Int @@ ZoneID] = RW[Int @@ ZoneID](
     {t => Js.Str(t.unwrap.toString)},

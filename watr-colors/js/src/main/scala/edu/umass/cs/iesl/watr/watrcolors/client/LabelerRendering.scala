@@ -167,7 +167,7 @@ trait LabelerRendering extends MouseGestures {
               case LB.Title    => "red"
               case LB.Authors  => "blue"
               case LB.Abstract => "yellow"
-              case _ => ""
+              case _ => "green"
             }
             val normalScore = score.getOrElse(0d)
             val opacity = normalScore.toFloat * 0.2f
@@ -232,7 +232,7 @@ trait LabelerRendering extends MouseGestures {
 
           objStack += Future { g }
 
-        case _ =>
+        // case _ =>
       }
 
     }

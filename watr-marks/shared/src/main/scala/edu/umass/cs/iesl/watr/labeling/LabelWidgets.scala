@@ -46,6 +46,9 @@ object LabelWidgetF {
   // LabelWidget w/position attribute
   type LabelWidgetPosAttr = LabelWidgetF[LabelWidgetAttr[PosAttr]]
 
+  // Used for recording positioning offsets during layout
+  type PositionVector = Point
+
   case class RegionOverlay[A](
     under: PageRegion,
     overs: List[A]
@@ -67,10 +70,15 @@ object LabelWidgetF {
 
   case class Row[A](as: List[A]) extends LabelWidgetF[A]
   case class Col[A](as: List[A]) extends LabelWidgetF[A]
-  case class Pad[A](a: A, pad: Padding, color: Option[Color]) extends LabelWidgetF[A]
+
+  case class Pad[A](
+    a: A,
+    pad: Padding,
+    color: Option[Color]
+  ) extends LabelWidgetF[A]
 
   case class Figure(
-    figure: GeometricGroup
+    figure: GeometricFigure
   ) extends LabelWidgetF[Nothing]
 
   case class Panel[A](
@@ -78,7 +86,11 @@ object LabelWidgetF {
     interaction: Interaction
   ) extends LabelWidgetF[A]
 
-  type PositionVector = Point
+  case class Identified[A, IdTag](
+    a: A,
+    id: Int@@IdTag
+  ) extends LabelWidgetF[A]
+
 
   implicit def LabelWidgetTraverse: Traverse[LabelWidgetF] = new Traverse[LabelWidgetF] {
     def traverseImpl[G[_], A, B](
@@ -96,6 +108,7 @@ object LabelWidgetF {
         case l : Reflow               => G.point(l.copy())
         case l : Figure               => G.point(l.copy())
         case l @ Panel(a, i)          => f(a).map(Panel(_, i))
+        case l @ Identified(a, id)    => f(a).map(Identified(_, id))
       }
     }
   }
@@ -113,6 +126,7 @@ object LabelWidgetF {
       case l @ Pad(a, padding, color) => s"$l"
       case l @ Figure(f)              => l.toString
       case l @ Panel(a, i)            => l.toString
+      case l @ Identified(a, id)      => l.toString
     }
   }
 }
@@ -153,5 +167,8 @@ object LabelWidgets {
 
   def panel(content: LabelWidget, interact: Interaction): LabelWidget =
     fixlw(Panel(content, interact))
+
+  def withId[IdTag](id: Int@@IdTag, a: LabelWidget): LabelWidget =
+    fixlw(Identified(a, id))
 
 }

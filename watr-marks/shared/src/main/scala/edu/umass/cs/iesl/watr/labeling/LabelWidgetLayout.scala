@@ -36,7 +36,8 @@ case class WidgetPositioning(
 
 case class WidgetLayout(
   positioning: Seq[WidgetPositioning],
-  layoutBounds: LTBounds
+  layoutBounds: LTBounds,
+  labelWidget: LabelWidget
 )
 
 // Accumulator for calculating layout positioning transforms
@@ -272,7 +273,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
     val root = positions.head
 
-    WidgetLayout(positions, root.widgetBounds)
+    WidgetLayout(positions, root.widgetBounds, lwidget)
 
   }
 

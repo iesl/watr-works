@@ -117,6 +117,10 @@ object GeometryImplicits {
       Point(p0.x-p1.x, p0.y-p1.y)
     }
 
+    def lineTo(p1: Point): Line = {
+      Line(p0, p1)
+    }
+
     def translate(x: Double=0d, y: Double=0d): Point = {
       Point(p0.x+x, p0.y+y)
     }

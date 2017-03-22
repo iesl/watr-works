@@ -191,33 +191,36 @@ class EmbeddedServer(
     }
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
+      val UIRequest(uiState@ UIState(constraint, maybeLabel, selections), gesture) = r
       activeLabelWidgetIndex.map { lwIndex =>
-        val UIRequest(UIState(constraint, maybeLabel), gesture) = r
         println(s"got UIRequest ${r}")
 
-        val changes: Option[UIChange] =
-          gesture match {
-            case SelectRegion(bbox) =>
-              maybeLabel.map {label =>
-                println(s"adding label to bbox ${bbox}")
-                UIChange(
-                  lwIndex.addLabel(bbox, constraint, label)
-                )
-              }
+        val uiResponse = lwIndex.userInteraction(uiState, gesture)
 
-            case Click(point) =>
-              println(s"Click ${point}")
-              // select the top (selectable) item
+        // val changes: Option[UIChange] =
+        //   gesture match {
+        //     case SelectRegion(bbox) =>
+        //       // maybeLabel.map {label =>
+        //       //   println(s"adding label to bbox ${bbox}")
+        //       //   UIAdd(
+        //       //     lwIndex.addLabel(bbox, constraint, label)
+        //       //   )
+        //       // }
 
-              None
-            case DblClick(point) =>
-              println(s"DblClick ${point}")
-              None
-          }
+        //     case gesture@ Click(point) =>
+        //       println(s"Click ${point}")
+        //       // select the top (selectable) item
+        //       lwIndex.userInteraction(uiState, gesture)
 
-        Future{ UIResponse( changes.toList ) }
+        //       None
+        //     case DblClick(point) =>
+        //       println(s"DblClick ${point}")
+        //       None
+        //   }
+
+        Future{ uiResponse }
       } getOrElse {
-        Future{ UIResponse(List()) }
+        Future{ UIResponse(uiState, List()) }
       }
     }
   }

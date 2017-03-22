@@ -62,6 +62,7 @@ lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm
   .dependsOn(watrprelude)
+  .aggregate(watrmarksJS)
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(SensibleProject.settings: _*)

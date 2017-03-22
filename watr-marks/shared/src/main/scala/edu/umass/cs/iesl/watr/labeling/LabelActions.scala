@@ -2,13 +2,10 @@ package edu.umass.cs.iesl.watr
 package labeling
 
 import scalaz.Free
-// import scalaz.~>
-// import scalaz.std.function._
-// import scalaz.syntax.monad._
+import scalaz.~>
 
 import geometry._
 import watrmarks.Label
-
 
 sealed trait Gesture
 case class SelectRegion(bbox: LTBounds) extends Gesture
@@ -24,12 +21,8 @@ case class ByLabel(l: Label) extends Constraint
 
 sealed trait Interaction
 
-case class InteractProg(
-  a: Free[LabelAction, Unit]
-) extends Interaction
-
-case class InteractList(
-  as: Seq[LabelAction[Unit]]
+case class InteractProg[A](
+  a: Free[LabelAction, A]
 ) extends Interaction
 
 case object InteractNil extends Interaction
@@ -38,17 +31,17 @@ sealed trait LabelAction[A]
 
 object LabelAction {
 
-  case class  SelectRegion(g: GeometricRegion)  extends LabelAction[Unit]
-  case class  UnselectRegion(g: GeometricRegion)  extends LabelAction[Unit]
-  case object GetSelectedRegions extends LabelAction[Seq[GeometricRegion]]
+  case class SelectRegion(g: GeometricRegion)     extends LabelAction[Unit]
+  case class UnselectRegion(g: GeometricRegion)   extends LabelAction[Unit]
+  case class SelectZone(g: Int@@ZoneID)           extends LabelAction[Int@@ZoneID]
+  case class UnselectZone(g: Int@@ZoneID)         extends LabelAction[Unit]
+  case class CreateZone(gs: Seq[GeometricRegion]) extends LabelAction[Unit]
+  case class DeleteZone(z: Int@@ZoneID)           extends LabelAction[Unit]
+  case class LabelZone(z: Int@@ZoneID, l: Label)  extends LabelAction[Unit]
 
-  case class  SelectZone(g: Int@@ZoneID)  extends LabelAction[Unit]
-  case class  UnselectZone(g: Int@@ZoneID)  extends LabelAction[Unit]
-  case object GetSelectedZones extends LabelAction[Seq[Int@@ZoneID]]
-
-  case class CreateZone(gs: Seq[GeometricRegion]) extends LabelAction[Int@@ZoneID]
-  case class DeleteZone(z: Int@@ZoneID) extends LabelAction[Unit]
-  case class LabelZone(z: Int@@ZoneID, l: Label) extends LabelAction[Unit]
+  // case object GetSelectedRegions                  extends LabelAction[Seq[GeometricRegion]]
+  // case class CreateZone(gs: Seq[GeometricRegion]) extends LabelAction[Int@@ZoneID]
+  // case object GetSelectedZones                    extends LabelAction[Seq[Int@@ZoneID]]
 
   case class CreateFigure(
     figure: GeometricFigure,
@@ -67,10 +60,10 @@ object LabelAction {
   ) extends LabelAction[Seq[Int@@ZoneID]]
 
 
-  def createFigure(f: GeometricFigure, p: PageIdentifier)            = Free.liftF{ CreateFigure(f, p) }
-  def queryForRegions(q: LTBounds, c: Constraint, t: PageIdentifier) = Free.liftF{ QueryForRegions(q, c, t) }
-  def selectZone(g: Int@@ZoneID)                                            = Free.liftF{ SelectZone(g) }
-  def unselectZone(g: Int@@ZoneID)                                          = Free.liftF{ UnselectZone(g) }
+  def createFigure(f: GeometricFigure, p: PageIdentifier)               = Free.liftF{ CreateFigure(f, p) }
+  def queryForRegions(q: LTBounds, c: Constraint, t: PageIdentifier)    = Free.liftF{ QueryForRegions(q, c, t) }
+  def selectZone(g: Int@@ZoneID)                                        = Free.liftF{ SelectZone(g) }
+  def unselectZone(g: Int@@ZoneID)                                      = Free.liftF{ UnselectZone(g) }
 
   // def q0: LTBounds = ???
   // def p0: PageIdentifier = ???
@@ -87,11 +80,14 @@ object LabelAction {
     } yield ()
   )
 
+
+  val interpLabelAction: LabelAction ~> LabelAction =
+    new (LabelAction ~> LabelAction) {
+      def apply[A](fa: LabelAction[A]) =
+        fa match {
+          case SelectZone(zoneId) =>
+            fa
+          case _ => fa
+        }
+    }
 }
-
-
-// type RandomReader[A] = Random => A
-// val toState: RngOp ~> RandomReader =
-//   new (RngOp ~> RandomReader) {
-//     def apply[A](fa: RngOp[A]) =
-//       fa match {
