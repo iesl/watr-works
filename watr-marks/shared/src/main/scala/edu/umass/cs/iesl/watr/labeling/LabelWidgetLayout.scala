@@ -166,6 +166,10 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           val (bbox, childAdjustVecs) = computeOffsets(attrs, {(bbox, childPos)=> bbox.toPoint(CDir.SW)  })
           PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
+        case flw @ Panel(p@(a, attr), action) =>
+          val (bbox, childAdjustVecs) = computeOffsets(List(p), {(bbox, childPos)=> bbox.toPoint(CDir.NE) })
+          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+
         case flw @ Row(attrs) =>
           val (bbox, childAdjustVecs) = computeOffsets(attrs, {(bbox, childPos)=> bbox.toPoint(CDir.NE)  })
           PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)

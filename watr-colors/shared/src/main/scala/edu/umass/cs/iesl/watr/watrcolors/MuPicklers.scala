@@ -12,20 +12,12 @@ import upickle.Js
 import UPickle._
 import Aliases._
 
-sealed trait Gesture
-case class SelectRegion(bbox: LTBounds) extends Gesture
-case class Click(point: Point) extends Gesture
-case class DblClick(point: Point) extends Gesture
-
-object Gesture {
-  implicit val readWriter: RW[Gesture] =
-    macroRW[SelectRegion].merge(macroRW[Click])
-}
-
+final case class UIChange(
+  visual: Option[GeometricGroup]
+)
 final case class UIState(
   selectionConstraint: Constraint,
-  selectedLabel: Option[Label],
-  action: UIAction
+  selectedLabel: Option[Label]
 )
 
 case class UIRequest(
@@ -39,14 +31,36 @@ case class UIResponse(
 
 object TypeTagPicklers {
 
-  implicit val GeometricGroup_RW: RW[GeometricGroup] =
-    macroRW[GeometricGroup]
+  implicit val readWriter: RW[Gesture] =
+    macroRW[SelectRegion]
+      .merge(macroRW[Click])
+      .merge(macroRW[DblClick])
+
+  // implicit val GeometricGroup_RW: RW[GeometricGroup] =
+  //   macroRW[GeometricGroup]
+
+  implicit val Interaction_RW: RW[Interaction] = RW[Interaction](
+    {value => Js.Null},
+    {case Js.Null => InteractNil}
+  )
+
+  // implicit def LabelWidget_Panel_RW[A](
+  //   implicit ARW: RW[A]
+  // ): RW[LabelWidgetF.Panel[A]] = RW[LabelWidgetF.Panel[A]](
+  //   {t => Js.Str(t.unwrap.toString)},
+  //   {case Js.Str(s) => ZoneID(s.toInt)}
+  // )
 
   implicit val UIRequest_RW: RW[UIRequest] =
     macroRW[UIRequest]
 
   implicit val UIResponse_RW: RW[UIResponse] =
     macroRW[UIResponse]
+
+  implicit val Int_ZoneID_Pickler: RW[Int @@ ZoneID] = RW[Int @@ ZoneID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => ZoneID(s.toInt)}
+  )
 
   implicit val Int_RegionID_Pickler: RW[Int @@ RegionID] = RW[Int @@ RegionID](
     {t => Js.Str(t.unwrap.toString)},

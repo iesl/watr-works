@@ -23,19 +23,34 @@ import GeometryImplicits._
 
   */
 
+sealed trait PageIdentifier
+
+case class StablePageID(
+  stableId: String@@DocumentID,
+  pageNum: Int@@PageNum
+) extends PageIdentifier
+
+case class RecordedPageID(
+  pageId: Int@@PageID,
+  stablePageId: StablePageID
+) extends PageIdentifier
+
+
+sealed trait GeometricRegion
+
 
 case class PageRegion(
   pageId: Int@@PageID,
   bbox: LTBounds,
   regionId: Option[Int@@RegionID] = None
-)
+) extends GeometricRegion
 
 case class TargetRegion(
   id: Int@@RegionID,
   stableId: String@@DocumentID,
   pageNum: Int@@PageNum,
   bbox: LTBounds
-) {
+) extends GeometricRegion {
   lazy val uri = {
     import PageComponentImplicits._
     this.uriString

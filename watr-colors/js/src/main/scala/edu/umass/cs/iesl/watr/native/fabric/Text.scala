@@ -3,7 +3,7 @@ package native
 package fabric
 
 import scala.scalajs.js
-import js.annotation.JSName
+import js.annotation.JSGlobal
 
 object Text{
   def apply(text: String): Text = new Text(
@@ -12,7 +12,7 @@ object Text{
   )
 }
 
-@js.native @JSName("fabric.Text")
+@js.native @JSGlobal("fabric.Text")
 class Text(text:String, options: js.Object) extends FabricObject {
 
   def getText(): String = js.native

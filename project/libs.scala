@@ -19,7 +19,7 @@ trait LibVersions {
   val aspectjVersion      = "1.8.9"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.4.1"
-  val matryoshkaCoreV     = "0.18.2"
+  val matryoshkaCoreV     = "0.18.3"
   val sourcecodeV         = "0.1.3"
   val fansiV              = "0.2.3"
 

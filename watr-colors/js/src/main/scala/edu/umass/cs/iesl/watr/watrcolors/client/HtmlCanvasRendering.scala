@@ -121,6 +121,14 @@ trait HtmlCanvasRendering {
         rect
         // createLTBoundsRect(lt, color, bg, opacity)
 
+      case g @ GeometricGroup(figs) =>
+        val shapes = figs.map(createShape(_, color, bg, opacity))
+        val group = fabric.Group(shapes)
+        noControls(group)
+        group
+
+
+
     }
   }
 

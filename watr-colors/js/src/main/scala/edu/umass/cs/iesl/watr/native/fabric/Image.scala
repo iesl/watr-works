@@ -3,15 +3,15 @@ package native
 package fabric
 
 import scala.scalajs.js
-import js.annotation.JSName
+import js.annotation.JSGlobal
 
 
-@js.native @JSName("fabric.Image")
+@js.native @JSGlobal("fabric.Image")
 class Image(
   options: js.Object
 ) extends FabricObject {}
 
-@js.native @JSName("fabric.Image")
+@js.native @JSGlobal("fabric.Image")
 object Image extends js.Object {
 
   def fromURL(

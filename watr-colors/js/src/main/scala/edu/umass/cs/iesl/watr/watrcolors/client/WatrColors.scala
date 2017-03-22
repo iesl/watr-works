@@ -27,8 +27,7 @@ object WatrColors extends LabelerRendering {
 
   var uiState: UIState = UIState(
     ByChar,
-    Option(LB.Title),
-    Create
+    Option(LB.Title)
   )
 
   def updateStatusText(): Unit = {

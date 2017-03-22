@@ -192,7 +192,7 @@ class EmbeddedServer(
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
       activeLabelWidgetIndex.map { lwIndex =>
-        val UIRequest(UIState(constraint, maybeLabel, action), gesture) = r
+        val UIRequest(UIState(constraint, maybeLabel), gesture) = r
         println(s"got UIRequest ${r}")
 
         val changes: Option[UIChange] =
@@ -201,20 +201,17 @@ class EmbeddedServer(
               maybeLabel.map {label =>
                 println(s"adding label to bbox ${bbox}")
                 UIChange(
-                  Create,
                   lwIndex.addLabel(bbox, constraint, label)
                 )
               }
 
             case Click(point) =>
-
               println(s"Click ${point}")
               // select the top (selectable) item
 
               None
             case DblClick(point) =>
               println(s"DblClick ${point}")
-              // click means select labeled zone at the clicked point
               None
           }
 

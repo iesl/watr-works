@@ -3,7 +3,7 @@ package native
 package fabric
 
 import scala.scalajs.js
-import js.annotation.JSName
+import js.annotation.JSGlobal
 
 @js.native
 trait StaticCanvasProperties extends js.Object {
@@ -70,7 +70,7 @@ trait JsElement extends js.Object {
 }
 
 
-@js.native @JSName("fabric.StaticCanvas")
+@js.native @JSGlobal("fabric.StaticCanvas")
 class StaticCanvas(
   el: String,
   options: StaticCanvasProperties
@@ -345,7 +345,7 @@ class StaticCanvas(
 
 }
 
-@js.native @JSName("fabric.Canvas")
+@js.native @JSGlobal("fabric.Canvas")
 class Canvas(
   el: String,
   options: CanvasProperties
@@ -396,7 +396,7 @@ class Canvas(
   // @return {Boolean} true if the rotation occurred
 
   // @param {String} value Cursor type of the canvas element.
-  def setCursor(value: String)  = js.native
+  def setCursor(value: String): Unit  = js.native
 
 
   // @param {Event} e mouse event
@@ -485,5 +485,5 @@ object Canvas {
 
 }
 
-@js.native
+@js.native @JSGlobal
 object CanvasOptions extends CanvasProperties//  {}

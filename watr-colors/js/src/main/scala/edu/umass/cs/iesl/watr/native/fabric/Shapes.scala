@@ -3,7 +3,7 @@ package native
 package fabric
 
 import scala.scalajs.js
-import js.annotation.JSName
+import js.annotation.JSGlobal
 // import scala.language.dynamics
 
 @js.native
@@ -297,7 +297,7 @@ trait FabricObject extends ObjectProperties {
 
 }
 
-@js.native @JSName("fabric.Line")
+@js.native @JSGlobal("fabric.Line")
 class Line extends FabricObject {
   var     x1: Number = js.native
   var     y1: Number = js.native
@@ -305,7 +305,7 @@ class Line extends FabricObject {
   var     y2: Number = js.native
 }
 
-@js.native @JSName("fabric.Rect")
+@js.native @JSGlobal("fabric.Rect")
 class Rect extends FabricObject {}
 object Rect {
   def apply(): Rect = new Rect()
@@ -313,7 +313,7 @@ object Rect {
 
 
 
-@js.native @JSName("fabric.Circle")
+@js.native @JSGlobal("fabric.Circle")
 class Circle extends FabricObject {
 
   def getRadiusX(): Double = js.native
@@ -381,7 +381,7 @@ class Circle extends FabricObject {
 //     ).asInstanceOf[RectOpts]
 // }
 
-// @js.native @JSName("fabric.Path")
+// @js.native @JSGlobal("fabric.Path")
 // class PathNative(
 //   opts: PathOpts
 // ) extends FabricObject

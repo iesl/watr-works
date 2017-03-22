@@ -135,6 +135,11 @@ trait LabelWidgetIndex {
     val pageRegionsToBeLabeled = for {
       qhit <- queryHits
     } yield constraint match {
+      case ByLabel(l) =>
+        val regions = qhit.iTextReflows.map(_.pageRegion)
+        changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
+        regions
+
       case ByLine =>
 
         val regions = qhit.iTextReflows.map(_.pageRegion)

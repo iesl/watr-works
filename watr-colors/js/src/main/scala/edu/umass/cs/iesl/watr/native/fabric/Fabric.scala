@@ -3,7 +3,7 @@ package native
 package fabric
 
 import scala.scalajs.js
-import js.annotation.JSName
+import js.annotation.JSGlobal
 
 @js.native
 object fabric extends js.Object {
@@ -18,7 +18,7 @@ object fabric extends js.Object {
 
 }
 
-@js.native @JSName("fabric.util")
+@js.native @JSGlobal("fabric.util")
 object util extends js.Object {
   /**
     * Loads image element from given url and passes it to a callback

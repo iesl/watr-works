@@ -15,8 +15,8 @@ import textboxing.{TextBoxing => TB}
 import utils.Color
 
 /**
-  LabelWidgets provide a way to combine rectangular regions  into
-  a single layout.
+  LabelWidgets provide a way to combine rectangular regions into a single layout.
+
 
   */
 
@@ -75,8 +75,7 @@ object LabelWidgetF {
 
   case class Panel[A](
     a: A,
-    function: () => Unit
-      // function: Action => (WidgetTransformFunction, UserFunction: () => {})
+    interaction: Interaction
   ) extends LabelWidgetF[A]
 
   type PositionVector = Point
@@ -96,6 +95,7 @@ object LabelWidgetF {
         case l : TextBox              => G.point(l.copy())
         case l : Reflow               => G.point(l.copy())
         case l : Figure               => G.point(l.copy())
+        case l @ Panel(a, i)          => f(a).map(Panel(_, i))
       }
     }
   }
@@ -112,6 +112,7 @@ object LabelWidgetF {
       case l @ Col(as)                => s"$l"
       case l @ Pad(a, padding, color) => s"$l"
       case l @ Figure(f)              => l.toString
+      case l @ Panel(a, i)            => l.toString
     }
   }
 }
@@ -149,5 +150,8 @@ object LabelWidgets {
 
   def pad(content: LabelWidget, pad: Padding, color: Color): LabelWidget =
     fixlw(Pad(content, pad, Option(color)))
+
+  def panel(content: LabelWidget, interact: Interaction): LabelWidget =
+    fixlw(Panel(content, interact))
 
 }

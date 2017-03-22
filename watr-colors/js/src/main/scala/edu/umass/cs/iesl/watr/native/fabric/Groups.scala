@@ -3,10 +3,10 @@ package native
 package fabric
 
 import scala.scalajs.js
-import js.annotation.JSName
+import js.annotation.JSGlobal
 import js.JSConverters._
 
-@js.native @JSName("fabric.Group")
+@js.native @JSGlobal("fabric.Group")
 class Group(
   objs: js.Array[FabricObject],
   options: js.Object,
