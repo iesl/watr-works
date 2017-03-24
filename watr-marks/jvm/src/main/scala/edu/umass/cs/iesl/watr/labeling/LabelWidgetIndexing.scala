@@ -56,7 +56,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     val layout0 = layoutWidgetPositions(lwidget)
 
     layout0.positioning.foreach({pos =>
-      println(s"adding pos widget ${pos.widget} @ ${pos.widgetBounds}")
+      // println(s"adding pos widget ${pos.widget} @ ${pos.widgetBounds}")
       lwIndex.add(pos)
     })
 
@@ -136,7 +136,7 @@ trait LabelWidgetIndex {
     val queryBox = queryPoint
       .lineTo(queryPoint.translate(1, 1))
       .bounds
-    println(s"queryForPanels: queryPoint = ${queryBox}")
+    // println(s"queryForPanels: queryPoint = ${queryBox}")
 
 
     val ret = index.queryForIntersects(queryBox)
@@ -146,7 +146,7 @@ trait LabelWidgetIndex {
       }})
       .flatten
 
-    println(s"queryForPanels: found = ${ret.mkString('\n'.toString)}")
+    // println(s"queryForPanels: found = ${ret.mkString('\n'.toString)}")
     ret
   }
 
@@ -270,19 +270,15 @@ trait LabelWidgetIndex {
                           composeFigures(makeFringe(fig, Padding(10)), fig)
                         )
 
-                        println(s"match Figure: ${ff}")
+                        // println(s"match Figure: ${ff}")
                         ff
                       case _ => lw
                     }
                   })
 
-                  //  .atEveryId(zoneId, labelWidget){ lw: LabelWidget =>
-
                   // Add a "fringe" bbox around everything Identified as id=zoneId
-                  // Add WidgetPositioning representing new selection rect
-                  // UIAdd()
                   // st.copy(changes = add :: st.changes)
-                  labelWidget
+                  // labelWidget
 
                 }
 
@@ -319,36 +315,37 @@ trait LabelWidgetIndex {
 
   // TODO this part really needs to be confined to WatrColors front end codebase
   // map (UIState, Gesture) => (UIState, UIChanges)
-  def userInteraction(uiState: UIState, gesture: Gesture): UIResponse = {
+  def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidget) = {
     val initResponse = UIResponse(uiState, List())
     gesture match {
 
       case Click(point) =>
 
         queryForPanels(point)
-          .foldLeft(initResponse) {
-            case (accResponse, (panel, qhit))  =>
+          .foldLeft((initResponse, layout.labelWidget)) {
+            case ((accResponse, accWidget), (panel, qhit))  =>
 
               panel.interaction match {
                 case InteractProg(prog) =>
                   println(s"Interpreting ${prog} in panel ${panel}")
 
-                  prog.exec(accResponse, layout.labelWidget)
-                    .uiResponse
+                  val run = prog.exec(accResponse, accWidget)
+
+                  (run.uiResponse, run.labelWidget)
 
                 case _ =>
                   // TODO
-                  accResponse
+                  (accResponse, accWidget)
               }
           }
 
 
 
       case DblClick(point) =>
-        initResponse
+        (initResponse, layout.labelWidget)
 
       case SelectRegion(bbox) =>
-        initResponse
+        (initResponse, layout.labelWidget)
 
     }
 

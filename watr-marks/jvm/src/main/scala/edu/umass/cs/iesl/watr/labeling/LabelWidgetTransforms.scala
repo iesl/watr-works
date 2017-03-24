@@ -91,8 +91,8 @@ object LabelWidgetTransforms {
 
               if (intersectingBboxes.isEmpty) None else {
                 val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
-                println(s"addSelector: zone ${zone}")
-                println(s"    intersects ${groupBbox}")
+                // println(s"addSelector: zone ${zone}")
+                // println(s"    intersects ${groupBbox}")
                 Some(panel(
                   withId(zoneId, figure(GeometricGroup(groupBbox, intersectingBboxes))),
                   LabelAction.clickToSelectZone(zoneId)

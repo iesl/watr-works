@@ -20,33 +20,31 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
 
     add4x3x3SampleDoc()
 
-    debugPrintDocStore()
-
+    // debugPrintDocStore()
 
     val labelWidget = col(
       row(pageDivs3(1), pageDivs2(2))
     )
 
     val withIndicators = LWT.addZoneSelectors(LB.VisualLine, labelWidget, docStore)
-
-    // println(prettyPrintLabelWidget(withIndicators))
+    println(prettyPrintLabelWidget(withIndicators))
 
     val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
+    // lwIndex.debugPrint()
 
-    lwIndex.debugPrint()
-
-    // val layout: Seq[WidgetPositioning] = lwIndex.layout.positioning
 
     val uiState = UIState(ByLine, None, List())
-    // val gesture = Click(Point(0,0))
-    val gesture = Click(Point(10.0d, 3d))
 
-    // activeLabelWidgetIndex.map { lwIndex =>
-    //   println(s"got UIRequest ${r}")
-
-    val UIResponse(finalState, changes) = lwIndex.userInteraction(uiState, gesture)
-    println(s"uiState = ${finalState}")
-
+    // val gesture = Click(Point(10.0d, 3d))
+    {
+      val (UIResponse(finalState, changes), finlw) = lwIndex.userInteraction(uiState, Click(Point(0, 0)))
+      println(prettyPrintLabelWidget(finlw))
+      assertResult(finalState.selections) { List(ZoneID(1)) }
+    }
+    {
+      val (UIResponse(finalState, changes), finlw) = lwIndex.userInteraction(uiState, Click(Point(10, 12)))
+      assertResult(finalState.selections) { List(ZoneID(2)) }
+    }
 
 
   }
