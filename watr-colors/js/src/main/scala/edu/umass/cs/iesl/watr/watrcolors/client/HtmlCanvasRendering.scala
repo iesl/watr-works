@@ -4,6 +4,7 @@ package client
 
 import geometry._
 import native.fabric
+import utils.Color
 
 trait HtmlCanvasRendering {
   def initFabric(elemId: String): fabric.Canvas = {
@@ -121,13 +122,16 @@ trait HtmlCanvasRendering {
         rect
         // createLTBoundsRect(lt, color, bg, opacity)
 
-      case g @ GeometricGroup(figs) =>
+      case g @ GeometricGroup(bounds, figs) =>
         val shapes = figs.map(createShape(_, color, bg, opacity))
         val group = fabric.Group(shapes)
         noControls(group)
         group
 
-
+      case g @ Colorized(fig: GeometricFigure, fg: Color, bg: Color, fgOpacity: Float, bgOpacity: Float) =>
+        val s = createShape(fig, fg.toCSSStr, bg.toCSSStr, fgOpacity)
+        noControls(s)
+        s
 
     }
   }

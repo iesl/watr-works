@@ -65,14 +65,6 @@ object LabelAction {
   def selectZone(g: Int@@ZoneID)                                        = Free.liftF{ SelectZone(g) }
   def unselectZone(g: Int@@ZoneID)                                      = Free.liftF{ UnselectZone(g) }
 
-  // def q0: LTBounds = ???
-  // def p0: PageIdentifier = ???
-  // def regionAtPoint(p: Point) =
-  //   for {
-  //     q <- queryForRegions(q0, ByLine, p0)
-  //   } yield ()
-
-
 
   def clickToSelectZone(zoneId: Int@@ZoneID): Interaction = InteractProg(
     for {

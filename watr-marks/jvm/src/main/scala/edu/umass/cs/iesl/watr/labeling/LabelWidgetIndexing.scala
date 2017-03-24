@@ -17,6 +17,9 @@ import scalaz.~>
 import scalaz.State
 import shapeless._
 
+import matryoshka._
+import matryoshka.implicits._
+
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
 case class IndexableTextReflow(
@@ -49,7 +52,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   def create(docStore0: DocumentCorpus, lwidget: LabelWidget): LabelWidgetIndex = {
     val lwIndex = SpatialIndex.createFor[WidgetPositioning]()
-    // augment lwidget with pre-existing zone/labels
 
     val layout0 = layoutWidgetPositions(lwidget)
 
@@ -107,6 +109,20 @@ case class InterpState(
   uiResponse: UIResponse,
   labelWidget: LabelWidget
 )
+object istate {
+
+  val uiResponseL   = lens[InterpState].uiResponse
+  val uiStateL      = lens[InterpState].uiResponse.uiState
+  val selectionsL   = lens[InterpState].uiResponse.uiState.selections
+  val changesL      = lens[InterpState].uiResponse.changes
+  val labelWidgetL  = lens[InterpState].labelWidget
+
+
+  def addSelection(zoneId: Int@@ZoneID): InterpState => InterpState =
+    st => selectionsL.modify(st) {
+      sels => zoneId +: sels
+    }
+}
 
 
 trait LabelWidgetIndex {
@@ -120,15 +136,18 @@ trait LabelWidgetIndex {
     val queryBox = queryPoint
       .lineTo(queryPoint.translate(1, 1))
       .bounds
+    println(s"queryForPanels: queryPoint = ${queryBox}")
 
 
-    index.queryForIntersects(queryBox)
+    val ret = index.queryForIntersects(queryBox)
       .map ({ pos => pos.widget match {
         case p : Panel[Unit] => Option { (p, pos) }
         case _ => None
       }})
       .flatten
 
+    println(s"queryForPanels: found = ${ret.mkString('\n'.toString)}")
+    ret
   }
 
   def queryRegion(queryBounds: LTBounds): Seq[QueryHit] = {
@@ -217,7 +236,8 @@ trait LabelWidgetIndex {
     }
 
     if (changes.isEmpty) None else {
-      Some(GeometricGroup(changes))
+      val groupBbox = changes.map(totalBounds(_)).reduce(_ union _)
+      Some(GeometricGroup(groupBbox, changes))
     }
   }
 
@@ -226,11 +246,6 @@ trait LabelWidgetIndex {
     labelConstrained(constraint, queryHits, label)
   }
 
-  val uiResponseL   = lens[InterpState].uiResponse
-  val uiStateL      = lens[InterpState].uiResponse.uiState
-  val selectionsL   = lens[InterpState].uiResponse.uiState.selections
-  val changesL      = lens[InterpState].uiResponse.changes
-  val labelWidgetL  = lens[InterpState].labelWidget
 
   val interpLabelAction: LabelAction ~> State[InterpState, ?] =
     new (LabelAction ~> State[InterpState, ?]) {
@@ -240,11 +255,28 @@ trait LabelWidgetIndex {
         fa match {
           case act@ SelectZone(zoneId) =>
 
+            println(s"SelectZone")
             for {
               _ <- State.modify[InterpState] { interpState =>
-                val st0 = selectionsL.modify(interpState) { sels => zoneId +: sels }
+                // Add zoneId to client-side state
+                val st0 = istate.selectionsL.modify(interpState) { sels => zoneId +: sels }
 
-                labelWidgetL.modify(st0) { labelWidget =>
+                // Traverse the widget tree, adding indicators around all of the zone boxes
+                istate.labelWidgetL.modify(st0) { labelWidget =>
+                  LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
+                    lw.project match {
+                      case fa@ Figure(fig) =>
+                        val ff = LabelWidgets.figure(
+                          composeFigures(makeFringe(fig, Padding(10)), fig)
+                        )
+
+                        println(s"match Figure: ${ff}")
+                        ff
+                      case _ => lw
+                    }
+                  })
+
+                  //  .atEveryId(zoneId, labelWidget){ lw: LabelWidget =>
 
                   // Add a "fringe" bbox around everything Identified as id=zoneId
                   // Add WidgetPositioning representing new selection rect
@@ -273,15 +305,14 @@ trait LabelWidgetIndex {
     }
 
 
-  def runLabelAction[A](program: Free[LabelAction, A], uiState: UIState, widget: LabelWidget): InterpState = {
-    val resp = InterpState(UIResponse(uiState, List()), widget)
-    // val zero = State.state[UIResponse, UIResponse](resp)
-    program.foldMap(interpLabelAction).apply(resp)._1
-
+  def runLabelAction[A](program: Free[LabelAction, A], uiResponse: UIResponse, widget: LabelWidget): InterpState = {
+    program.foldMap(interpLabelAction)
+      .apply(InterpState(uiResponse, widget))
+      ._1
   }
 
   implicit class LabelActionOps[A](ma: Free[LabelAction, A]) {
-    def exec(uiState: UIState, widget: LabelWidget): InterpState = runLabelAction(ma, uiState, widget)
+    def exec(uiResponse: UIResponse, widget: LabelWidget): InterpState = runLabelAction(ma, uiResponse, widget)
   }
 
 
@@ -289,31 +320,38 @@ trait LabelWidgetIndex {
   // TODO this part really needs to be confined to WatrColors front end codebase
   // map (UIState, Gesture) => (UIState, UIChanges)
   def userInteraction(uiState: UIState, gesture: Gesture): UIResponse = {
+    val initResponse = UIResponse(uiState, List())
     gesture match {
 
       case Click(point) =>
+
         queryForPanels(point)
-          .map{ case(panel, qhit)  =>
-            panel.interaction match {
-              case InteractProg(prog) =>
-                println(s"Interpreting ${prog} in panel ${panel}")
+          .foldLeft(initResponse) {
+            case (accResponse, (panel, qhit))  =>
 
-                val newInterpState = prog.exec(uiState, layout.labelWidget)
-                //
+              panel.interaction match {
+                case InteractProg(prog) =>
+                  println(s"Interpreting ${prog} in panel ${panel}")
 
-                newInterpState.uiResponse
+                  prog.exec(accResponse, layout.labelWidget)
+                    .uiResponse
 
-              case _ =>
-            }
+                case _ =>
+                  // TODO
+                  accResponse
+              }
           }
 
+
+
       case DblClick(point) =>
+        initResponse
 
       case SelectRegion(bbox) =>
+        initResponse
 
     }
 
-    ???
   }
 
   // def userInteraction(gesture: Gesture): Unit = {
@@ -344,18 +382,28 @@ trait LabelWidgetIndex {
 
 
   def debugPrint(query: Option[LTBounds] = None): Unit = {
+    val fillers = "αßΓπΣσµτΦΘΩδ∞φε∩".toList
+    var _filler = 0
+    def nextFiller(): Char = {
+      _filler = (_filler + 1) % fillers.length
+      fillers(_filler)
+    }
+
     val w: Int = (layout.layoutBounds.width).intValue()+1
     val h: Int = (layout.layoutBounds.height).intValue()+1
 
     val gridPaper = GridPaper.create(w, h)
+    val gridPaper2 = GridPaper.create(w, h)
 
     layout.positioning.foreach { pos =>
       val gridbox = GridPaper.ltb2box(pos.widgetBounds)
 
       pos.widget match {
         case RegionOverlay(under, over) =>
-          val regionId = under.regionId.get.unwrap
-          val fill = (regionId + '0'.toInt).toChar
+          // println(s"RegionOverlay($over, $under)")
+          val fill = under.regionId.map { id =>
+            (id.unwrap + '0'.toInt).toChar
+          }.getOrElse(nextFiller)
 
           gridPaper.fillFg(fill, gridbox)
 
@@ -366,16 +414,58 @@ trait LabelWidgetIndex {
     layout.positioning.foreach { pos =>
       val gridbox = GridPaper.ltb2box(pos.widgetBounds)
       pos.widget match {
-        case Col(as) => gridPaper.borderLeftRight(gridbox)
-        case Row(as) => gridPaper.borderTopBottom(gridbox)
+        // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
+        // case l : TextBox              => G.point(l.copy())
+        // case l : Reflow               => G.point(l.copy())
+        case l : LabeledTarget =>
+          gridPaper2.shadeBackground(gridbox)
+
+        case l : Figure =>
+          // gridPaper2.fillFg(nextFiller(), gridbox)
+
+        case l @ Panel(a, i) =>
+          gridPaper2.fillFg(nextFiller(), gridbox)
+          // gridPaper2.borderTopBottom(gridbox)
+
+        case l @ Identified(a, id, cls)    =>
+          // gridPaper2.fillFg(nextFiller(), gridbox)
+          // gridPaper2.gradientHorizontal(gridbox)
+          // gridPaper2.borderLeftRight(gridbox)
         case _ =>
       }
     }
-    query foreach {q =>
+
+    layout.positioning.foreach { pos =>
+      val gridbox = GridPaper.ltb2box(pos.widgetBounds)
+      pos.widget match {
+        case Col(as) =>
+          gridPaper.borderLeftRight(gridbox)
+        case Row(as) =>
+          gridPaper.borderTopBottom(gridbox)
+
+        // case l : RegionOverlay[A]     => l.overs.traverse(f).map(ft => l.copy(overs=ft))
+        // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
+        // case l : LabeledTarget        => G.point(l.copy())
+        // case l : TextBox              => G.point(l.copy())
+        // case l : Reflow               => G.point(l.copy())
+        // case l : Figure               => G.point(l.copy())
+        // case l @ Panel(a, i)          => f(a).map(Panel(_, i))
+        // case l @ Identified(a, id, cls)    => f(a).map(Identified(_, id, cls))
+        case _ =>
+      }
+    }
+    query foreach { q =>
       gridPaper.shadeBackground(GridPaper.ltb2box(q))
+      gridPaper2.shadeBackground(GridPaper.ltb2box(q))
     }
 
-    val pp = gridPaper.asString()
-    println(pp)
+
+    val grid1 = gridPaper.asString()
+    val grid2 = gridPaper2.asString()
+
+    println(grid1)
+    println
+    println(grid2)
+    println
   }
 }

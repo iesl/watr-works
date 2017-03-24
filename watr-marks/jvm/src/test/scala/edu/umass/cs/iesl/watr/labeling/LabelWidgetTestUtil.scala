@@ -28,7 +28,7 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
 
       *  */
     val docs = List(
-      List(
+      List( // Single 4-page document
         "abc\ndef\nghi",
         "012\n345\n678",
         "jkl\nmno\npqr",
@@ -41,6 +41,21 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
     }
   }
 
+  def putStrLn(s: String): Seq[Unit] = Seq({
+    println(s)
+  })
+
+  def debugPrintDocStore(): Unit = {
+    for {
+      stableId <- docStore.getDocuments
+      docId    <- docStore.getDocument(stableId).toSeq
+      _        <- putStrLn(s"Document $stableId id:${docId}")
+      pageId   <- docStore.getPages(docId)
+      _        <- putStrLn(s"  Page  ${pageId}")
+    }  {
+      // val pageGeometry = docStore.getPageGeometry(pageId)
+    }
+  }
 
   def generatePageRegions(divs: Int): Seq[PageRegion] = {
     val allRegions = for {

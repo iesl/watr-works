@@ -16,7 +16,7 @@ import watrmarks.Label
 
 trait TextReflowClipping extends TextReflowBasics {
   import TextReflowF._
-  import GeometryImplicits._
+  import geometry.syntax._
 
   type ReflowRange = RangeInt
   type AtomOrInsertOrGap  = (ReflowRange \/ ReflowRange) \/ ReflowRange

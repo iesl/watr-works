@@ -11,7 +11,7 @@ import matryoshka.data._
 import matryoshka.implicits._
 
 import utils.EnrichNumerics._
-import GeometryImplicits._
+import geometry.syntax._
 import PageComponentImplicits._
 
 

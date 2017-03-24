@@ -50,13 +50,34 @@ class GridPaper(
     }
   }
 
+  def gradientHorizontal(gridbox: GridPaper.Box): Unit = {
+    var r = 20
+    var g = 20
+    var b = 20
+    val xstep = 256 / gridbox.width
+    val ystep = 256 / gridbox.height
+    for {
+      y <- gridbox.top until (gridbox.top+gridbox.height)
+      _ <- List[Unit]({
+        r = (r + 3) % 256
+        b=0
+      })
+      x <- gridbox.left until (gridbox.left+gridbox.width)
+    } {
+      // g = (g + 3) % 256
+      b = (b + 2) % 256
+      val qq = gridBuffer(y)(x)
+      gridBuffer(y)(x) = fansi.Back.True(r,g, b)(qq)
+    }
+  }
+
   def shadeBackground(gridbox: GridPaper.Box): Unit = {
     for {
       y <- gridbox.top until (gridbox.top+gridbox.height)
       x <- gridbox.left until (gridbox.left+gridbox.width)
     } {
       val qq = gridBuffer(y)(x)
-      gridBuffer(y)(x) = fansi.Back.True(10, 20, 200)(qq)
+      gridBuffer(y)(x) = fansi.Back.True(10, 20, 100)(qq)
     }
   }
 

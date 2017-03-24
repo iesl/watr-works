@@ -53,11 +53,10 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
       Lib.ammonite,
       Lib.playJson,
       Lib.shapeless,
-
       // Needed by jsi
       "net.sf.trove4j" % "trove4j" % "3.0.3"
-        // "net.sf.jsi" % "jsi" % "1.1.0-SNAPSHOT" // jar is placed in /lib dir b/c maven info is incorrect
     ))
+
 lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm

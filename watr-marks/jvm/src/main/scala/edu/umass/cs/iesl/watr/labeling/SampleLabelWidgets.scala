@@ -8,7 +8,7 @@ import utils.Colors
 import utils.EnrichNumerics._
 import TypeTags._
 
-object TestLabelers {
+object SampleLabelWidgets {
 
   def dimensionTest(): LabelingPanel = {
     val sampleText1 = textbox(

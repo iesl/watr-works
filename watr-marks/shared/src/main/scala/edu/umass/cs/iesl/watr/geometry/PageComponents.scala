@@ -6,7 +6,7 @@ import scalaz.syntax.equal._
 
 import watrmarks._
 import TypeTags._
-import GeometryImplicits._
+import geometry.syntax._
 
 /**
 
@@ -103,19 +103,19 @@ object CharAtom {
 }
 
 
-case class GlyphClass(
-  glyphHash: String,
-  char: Char,
-  fontInfo: FontClass
-)
+// case class GlyphClass(
+//   glyphHash: String,
+//   char: Char,
+//   fontInfo: FontClass
+// )
 
-case class FontClass(
-  name: String,
-  familyName: String,
-  vendorName: String,
-  italicAngle: Int, // = rnd(italic angle * 100)
-  weight: String
-)
+// case class FontClass(
+//   name: String,
+//   familyName: String,
+//   vendorName: String,
+//   italicAngle: Int, // = rnd(italic angle * 100)
+//   weight: String
+// )
 
 
 object PageComponentImplicits {

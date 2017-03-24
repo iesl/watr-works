@@ -11,7 +11,7 @@ case class UIDel(widget: WidgetPositioning) extends UIChange
 case class UIState(
   selectionConstraint: Constraint,
   selectedLabel: Option[Label],
-  selections: Seq[Int@@ZoneID]
+  selections: Seq[Int@@ZoneID] // TODO generalize Id type (has to be able to serialize through strings)
 )
 
 case class UIRequest(

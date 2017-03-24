@@ -14,7 +14,7 @@ import watrmarks.{StandardLabels => LB}
 import geometry._
 import textreflow.data._
 
-import GeometryImplicits._
+import geometry.syntax._
 
 import ComponentOperations._
 import PageComponentImplicits._

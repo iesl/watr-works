@@ -7,7 +7,7 @@ import net.sf.jsi.rtree.RTree
 import scala.collection.mutable
 
 import geometry._
-import GeometryImplicits._
+import geometry.syntax._
 
 
 trait SpatialIndexable[T] {

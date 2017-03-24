@@ -9,6 +9,7 @@ import matryoshka._
 import matryoshka.scalacheck.arbitrary._
 
 import geometry._
+import geometry.syntax._
 
 import TextReflowJsonCodecs._
 import TextReflowF._

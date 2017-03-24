@@ -4,7 +4,7 @@ package images
 import com.sksamuel.scrimage._
 import geometry._
 
-import GeometryImplicits._
+import geometry.syntax._
 
 trait ImageManipulation {
 

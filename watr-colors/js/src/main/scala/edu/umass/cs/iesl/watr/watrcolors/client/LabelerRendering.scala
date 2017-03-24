@@ -186,12 +186,13 @@ trait LabelerRendering extends MouseGestures {
 
         case Row(as)                     =>
         case Col(as)                     =>
-        case Figure(fgroup)              =>
+        case Figure(fig)              =>
 
-          val figs = fgroup.figures.map { fig =>
-            createShape(wbbox, "blue", "yellow", 0.1f)
-          }
-          val g = fabric.Group(figs)
+          val g = createShape(wbbox, "blue", "yellow", 0.1f)
+          // val figs = fgroup.figures.map { fig =>
+          //   createShape(wbbox, "blue", "yellow", 0.1f)
+          // }
+          // val g = fabric.Group(figs)
           noControls(g)
           objStack += Future { g }
 
@@ -232,7 +233,9 @@ trait LabelerRendering extends MouseGestures {
 
           objStack += Future { g }
 
-        // case _ =>
+        // case Identified =>
+        // case Panel(_, _) =>
+        case _ =>
       }
 
     }

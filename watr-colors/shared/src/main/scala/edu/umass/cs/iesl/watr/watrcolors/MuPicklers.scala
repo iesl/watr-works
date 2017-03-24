@@ -10,7 +10,6 @@ import upickle.Js
 import UPickle._
 import Aliases._
 
-import scala.reflect._
 
 object TypeTagPicklers {
 

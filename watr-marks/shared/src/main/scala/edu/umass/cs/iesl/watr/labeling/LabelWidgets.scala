@@ -13,16 +13,14 @@ import textreflow.data._
 import watrmarks.Label
 import textboxing.{TextBoxing => TB}
 import utils.Color
+import scala.reflect._
 
 /**
   LabelWidgets provide a way to combine rectangular regions into a single layout.
-
-
   */
 
 
 sealed trait LabelWidgetF[+A]
-
 
 case class LabelOptions(
   labels: List[Label]
@@ -86,9 +84,10 @@ object LabelWidgetF {
     interaction: Interaction
   ) extends LabelWidgetF[A]
 
-  case class Identified[A, IdTag](
+  case class Identified[A](
     a: A,
-    id: Int@@IdTag
+    id: Int,
+    idclass: String
   ) extends LabelWidgetF[A]
 
 
@@ -108,7 +107,7 @@ object LabelWidgetF {
         case l : Reflow               => G.point(l.copy())
         case l : Figure               => G.point(l.copy())
         case l @ Panel(a, i)          => f(a).map(Panel(_, i))
-        case l @ Identified(a, id)    => f(a).map(Identified(_, id))
+        case l @ Identified(a, id, cls)    => f(a).map(Identified(_, id, cls))
       }
     }
   }
@@ -126,7 +125,7 @@ object LabelWidgetF {
       case l @ Pad(a, padding, color) => s"$l"
       case l @ Figure(f)              => l.toString
       case l @ Panel(a, i)            => l.toString
-      case l @ Identified(a, id)      => l.toString
+      case l @ Identified(a, id, cls)      => l.toString
     }
   }
 }
@@ -151,7 +150,7 @@ object LabelWidgets {
   def textbox(tb: TB.Box) =
     fixlw(TextBox(tb))
 
-  def figure(f: GeometricGroup) = fixlw(Figure(f))
+  def figure(f: GeometricFigure) = fixlw(Figure(f))
 
   def col(lwidgets: LabelWidget*): LabelWidget =
     fixlw(Col(lwidgets.toList))
@@ -168,7 +167,9 @@ object LabelWidgets {
   def panel(content: LabelWidget, interact: Interaction): LabelWidget =
     fixlw(Panel(content, interact))
 
-  def withId[IdTag](id: Int@@IdTag, a: LabelWidget): LabelWidget =
-    fixlw(Identified(a, id))
+  def withId[IdTag: ClassTag](id: Int@@IdTag, a: LabelWidget): LabelWidget = {
+    val tagClsname = implicitly[ClassTag[IdTag]].runtimeClass.getSimpleName
+    fixlw(Identified(a, id.unwrap, tagClsname))
+  }
 
 }

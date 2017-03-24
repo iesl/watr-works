@@ -8,7 +8,7 @@ import watrmarks._
 
 // import PageComponentImplicits._
 import utils.IdGenerator
-import GeometryImplicits._
+import geometry.syntax._
 
 import tracing.VisualTracer
 import predsynth._

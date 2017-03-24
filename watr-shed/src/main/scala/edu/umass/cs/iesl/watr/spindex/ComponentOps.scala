@@ -15,7 +15,7 @@ import TextReflowConversion._
 
 import geometry._
 
-import GeometryImplicits._
+import geometry.syntax._
 
 object ComponentOperations {
   import textreflow.data._

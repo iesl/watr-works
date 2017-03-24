@@ -2,12 +2,12 @@ package edu.umass.cs.iesl.watr
 package geometry
 
 import scalaz.Equal
-// import scalaz.NonEmptyList
-// import scalaz.syntax.all._
+
+import utils.Color
 
 sealed trait GeometricFigure
 
-import GeometryImplicits._
+import geometry.syntax._
 
 case class LTBounds(
   left: Double,
@@ -41,7 +41,14 @@ case class Line(
 }
 
 case class GeometricGroup(
+  bounds: LTBounds,
   figures: List[GeometricFigure]
+) extends GeometricFigure
+
+case class Colorized(
+  figure: GeometricFigure,
+  fg: Color, bg: Color,
+  fgOpacity: Float, bgOpacity: Float
 ) extends GeometricFigure
 
 case class Padding(
@@ -58,18 +65,9 @@ object Padding {
 }
 
 
-object GeometricFigure {
-
-  def totalBounds(fig: GeometricFigure): LTBounds = fig match {
-    case f: LTBounds       => f
-    case f: LBBounds       => f.toLTBounds
-    case f: Point          => LTBounds(f.x, f.y, 0d, 0d)
-    case f: Line           => f.bounds()
-    case f: GeometricGroup =>
-      val subbounds = f.figures.map(totalBounds(_))
-      // subbounds.foldLeft(LTBounds(0, 0, 0, 0))(_ union _)
-      subbounds.reduce(_ union _)
-  }
+object GeometryImplicits {
+  import utils.EnrichNumerics._
+  import utils.CompassDirection
 
   implicit def EqualGeometricFigure
       : Equal[GeometricFigure] =
@@ -86,12 +84,60 @@ object GeometricFigure {
   implicit val EqualPoint: Equal[Point] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
-}
+  def composeFigures(fig1: GeometricFigure, fig2: GeometricFigure): GeometricFigure = {
+    val bbox1 = totalBounds(fig1)
+    val bbox2 = totalBounds(fig2)
+    val bbox12 = bbox1 union bbox2
+    GeometricGroup(
+      bbox12,
+      List(fig1, fig2)
+    )
+  }
 
+  def totalBounds(fig: GeometricFigure): LTBounds = fig match {
+    case f: LTBounds       => f
+    case f: LBBounds       => f.toLTBounds
+    case f: Point          => LTBounds(f.x, f.y, 0d, 0d)
+    case f: Line           => f.bounds()
+    case f: GeometricGroup => f.bounds
+      // val subbounds = f.figures.map(totalBounds(_))
+      // subbounds.reduce(_ union _)
+    case f: Colorized => totalBounds(f.figure)
+  }
 
-object GeometryImplicits {
-  import utils.EnrichNumerics._
-  import utils.CompassDirection
+  def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
+
+    val wbbox = totalBounds(fig)
+
+    val leftGutter = wbbox.copy(
+      width=padding.left
+    )
+
+    val rightGutter = wbbox.copy(
+      left=wbbox.right-padding.right,
+      width=padding.right
+    )
+
+    val topGutter = wbbox.copy(
+      left=wbbox.left+padding.left,
+      width=wbbox.width-(padding.right+padding.left),
+      height=padding.top
+    )
+
+    val bottomGutter = wbbox.copy(
+      left=topGutter.left,
+      top=wbbox.bottom-padding.bottom,
+      width=topGutter.width,
+      height=padding.bottom
+    )
+
+    GeometricGroup(
+      wbbox,
+      List(leftGutter, rightGutter, topGutter, bottomGutter)
+    )
+
+  }
+
 
 
   implicit class RicherDouble_2(val d: Double) extends AnyVal {
@@ -317,6 +363,11 @@ object GeometryImplicits {
 
     import CompassDirection._
 
+    def toPointUpLeft(): Point = toPoint(NW)
+    def toPointUpRight(): Point = toPoint(NE)
+    def toPointDownLeft(): Point = toPoint(SW)
+    def toPointDownRight(): Point = toPoint(SE)
+
     def toPoint(cd: CompassDirection): Point ={
       def centerX = (theBbox.left+theBbox.width/2)
       def centerY = (theBbox.top+theBbox.height/2)
@@ -431,18 +482,4 @@ object GeometryImplicits {
       s"""(l:${fmt(left)}, b:${fmt(bottom)}, w:${fmt(width)}, h:${fmt(height)})"""
     }
   }
-
-  // def charBoxesBounds(charBoxes: Seq[AtomicComponent]): LTBounds = {
-  //   if (charBoxes.isEmpty) {
-  //     LTBounds(0, 0, 0, 0)
-  //   } else {
-  //     val cbs = charBoxes.sortBy(_.bounds.left)
-  //     val top = cbs.map(_.bounds.top).min
-  //     val bottom = cbs.map(_.bounds.bottom).max
-  //     val l=cbs.head.bounds.left
-  //     val r=cbs.last.bounds.right
-
-  //     LTBounds(l, top, r-l, bottom-top)
-  //   }
-  // }
 }

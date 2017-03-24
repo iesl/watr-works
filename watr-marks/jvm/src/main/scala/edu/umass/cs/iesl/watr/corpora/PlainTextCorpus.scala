@@ -13,7 +13,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   import matryoshka._
   import geometry._
 
-  import GeometryImplicits._
+  import geometry.syntax._
   import TextReflowF._
 
   def docStore: DocumentCorpus
@@ -130,6 +130,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   }
 
   def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
+    val docId = docStore.addDocument(stableId)
     for {
       (page, n) <- pages.zipWithIndex
     } yield {
@@ -142,7 +143,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     pageNum: Int@@PageNum,
     pageBlock: String
   ): Unit = {
-    val docId = docStore.addDocument(stableId)
+    val docId = docStore.getDocument(stableId).get
     val pageId = docStore.addPage(docId, pageNum)
 
     var linenum:Int = -1

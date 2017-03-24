@@ -1,6 +1,6 @@
 -verbose
--J-Xmx3g
--J-Xss20M
+-J-Xmx2g
+-J-Xss8M
 -J-XX:ReservedCodeCacheSize=128m
 -J-XX:MetaspaceSize=256m
 -J-XX:MaxMetaspaceSize=512m
