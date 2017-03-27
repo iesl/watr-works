@@ -608,6 +608,43 @@ class TextReflowDB(
       ???
     }
 
+
+
+
+    def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
+      ???
+    }
+    def createZoneTree(zoneIds: Seq[Int@@ZoneID]): ZoneTree = {
+      ???
+    }
+    def addZoneTreeLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree = {
+      ???
+    }
+    def deleteZoneTree(zoneId: Int@@ZoneID): Unit = {
+      ???
+    }
+    def getZoneTree(zoneId: Int@@ZoneID): ZoneTree = {
+      ???
+    }
+    def getZoneTreeLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
+      ???
+    }
+    def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree] = {
+      ???
+    }
+    def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree = {
+      ???
+    }
+    def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Model.TextReflow] = {
+      ???
+    }
+    def getTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[TextReflow] = {
+      ???
+    }
+    def setTextReflowForZoneTree(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
+      ???
+    }
+
   }
 
 }

@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package corpora
 
 import geometry._
+import geometry.zones._
 import watrmarks._
 import textreflow._
 import TextReflowF._
@@ -47,6 +48,30 @@ trait DocumentCorpus {
   def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Model.TextReflow]
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
+
+
+
+  //////  ZoneTree alternative impl
+  // Construct
+  def createZoneTree(geoRegion: GeometricRegion): ZoneTree
+  def createZoneTree(zoneIds: Seq[Int@@ZoneID]): ZoneTree
+  def addZoneTreeLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree
+
+  // Destroy
+  def deleteZoneTree(zoneId: Int@@ZoneID): Unit
+
+  // Locate
+  def getZoneTree(zoneId: Int@@ZoneID): ZoneTree
+  def getZoneTreeLabelsForDocument(docId: Int@@DocumentID): Seq[Label]
+  def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree]
+  def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree
+
+  // Get Text
+  def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Model.TextReflow]
+  def getTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[TextReflow]
+  def setTextReflowForZoneTree(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
+
+
 
   ///////////////////////
   /// Derived operations

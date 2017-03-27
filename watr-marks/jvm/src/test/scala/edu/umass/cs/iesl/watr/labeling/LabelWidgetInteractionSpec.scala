@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package labeling
 
 import geometry._
+import geometry.zones._
+
 import LabelWidgets._
 
 import watrmarks.{StandardLabels => LB}
@@ -29,6 +31,23 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
     val newZone = docStore.createZone(docId)
     val page0Lines = docStore.getPageVisualLines(stableId, PageNum(0)).flatMap(_.regions)
     val page1Lines = docStore.getPageVisualLines(stableId, PageNum(1)).flatMap(_.regions)
+    val lines = page0Lines ++ page1Lines
+
+    // val p0Ztree = page0Lines.map(r => docStore.createZoneTree(r))
+
+    // val p0Block = docStore.addZoneTreeLabel(p0Ztree, LB.TextBlock)
+    // docStore
+    // val block1 = ZoneTrees.node(
+    //   LB.TextBlock,
+    //   page0Lines.map(ZoneTrees.leaf(_))
+    // )
+    // val block2 = ZoneTrees.node(
+    //   LB.TextBlock,
+    //   page1Lines.map(ZoneTrees.leaf(_))
+    // )
+
+    // val para0 = ZoneTree.node(LB.Para, Seq(block1, block2))
+
 
     // println(s"page0Lines: ${page0Lines}")
 

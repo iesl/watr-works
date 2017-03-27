@@ -34,9 +34,7 @@ case class RecordedPageID(
   stablePageId: StablePageID
 ) extends PageIdentifier
 
-
 sealed trait GeometricRegion
-
 
 case class PageRegion(
   pageId: Int@@PageID,
