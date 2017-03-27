@@ -59,7 +59,7 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   it should "correctly position overlays" in  {}
 
   it should "rewrite widgets to include geometric figure overlays for prior labeling" in new CleanDocstore {
-    add4x3x3SampleDoc()
+    add4pg_3x3SampleDoc()
     // Create a zone labeling over a few pages
     val stableId = docStore.getDocuments().head
     val docId = docStore.getDocument(stableId).get

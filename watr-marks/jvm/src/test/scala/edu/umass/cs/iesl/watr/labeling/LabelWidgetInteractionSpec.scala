@@ -16,35 +16,51 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
 
   val LWT = LabelWidgetTransforms
 
-  it should "             " in new CleanDocstore {
+  it should "select a zone" in new CleanDocstore {
 
-    add4x3x3SampleDoc()
+    add4pg_3x3SampleDoc()
+    // TODO visualize document
+    // TODO visualize docStore
 
-    // debugPrintDocStore()
+    val stableId = DocumentID(s"doc#0")
+    val docId = docStore.getDocument(stableId).get
+
+    // create a zone that has regions from multiple pages
+    val newZone = docStore.createZone(docId)
+    val page0Lines = docStore.getPageVisualLines(stableId, PageNum(0)).flatMap(_.regions)
+    val page1Lines = docStore.getPageVisualLines(stableId, PageNum(1)).flatMap(_.regions)
+
+    // println(s"page0Lines: ${page0Lines}")
+
+    docStore.setZoneTargetRegions(newZone, page0Lines ++ page1Lines)
+    docStore.addZoneLabel(newZone, LB.Authors)
+
+    // visualizeDocStore()
+    println(
+      visualizeDocument(stableId)
+    )
 
     val labelWidget = col(
       row(pageDivs3(1), pageDivs2(2))
     )
 
-    val withIndicators = LWT.addZoneSelectors(LB.VisualLine, labelWidget, docStore)
+    val withIndicators = LWT.addZoneSelectors(LB.Authors, labelWidget, docStore)
     println(prettyPrintLabelWidget(withIndicators))
 
     val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
-    // lwIndex.debugPrint()
+    // // lwIndex.debugPrint()
 
+    // val uiState = UIState(ByLine, None, List())
 
-    val uiState = UIState(ByLine, None, List())
-
-    // val gesture = Click(Point(10.0d, 3d))
-    {
-      val (UIResponse(finalState, changes), finlw) = lwIndex.userInteraction(uiState, Click(Point(0, 0)))
-      println(prettyPrintLabelWidget(finlw))
-      assertResult(finalState.selections) { List(ZoneID(1)) }
-    }
-    {
-      val (UIResponse(finalState, changes), finlw) = lwIndex.userInteraction(uiState, Click(Point(10, 12)))
-      assertResult(finalState.selections) { List(ZoneID(2)) }
-    }
+    // {
+    //   val (UIResponse(finalState, changes), finlw) = lwIndex.userInteraction(uiState, Click(Point(0, 0)))
+    //   println(prettyPrintLabelWidget(finlw))
+    //   assertResult(finalState.selections) { List(ZoneID(1)) }
+    // }
+    // {
+    //   val (UIResponse(finalState, changes), finlw) = lwIndex.userInteraction(uiState, Click(Point(10, 12)))
+    //   assertResult(finalState.selections) { List(ZoneID(2)) }
+    // }
 
 
   }

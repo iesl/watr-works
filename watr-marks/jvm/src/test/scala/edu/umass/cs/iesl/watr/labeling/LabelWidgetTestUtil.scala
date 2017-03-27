@@ -12,10 +12,11 @@ import LabelWidgets._
 import LabelWidgetF._
 import TypeTags._
 
+import textboxing.{TextBoxing => TB}, TB._
 
 abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
 
-  def add4x3x3SampleDoc(): Unit = {
+  def add4pg_3x3SampleDoc(): Unit = {
     /**
       *  Test document layout (4 papers, grid layout)
       *      0123456
@@ -45,18 +46,62 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
     println(s)
   })
 
-  def debugPrintDocStore(): Unit = {
+  def visualizeDocStore(): Unit = {
     for {
-      stableId <- docStore.getDocuments
-      docId    <- docStore.getDocument(stableId).toSeq
-      _        <- putStrLn(s"Document $stableId id:${docId}")
-      pageId   <- docStore.getPages(docId)
-      _        <- putStrLn(s"  Page  ${pageId}")
+      stableId     <- docStore.getDocuments
+      docId        <- docStore.getDocument(stableId).toSeq
+      _            <- putStrLn(s"Document $stableId id:${docId}")
+      pageId       <- docStore.getPages(docId)
+      pageGeometry  = docStore.getPageGeometry(pageId)
+      _            <- putStrLn(s"  Page  ${pageId}: ${pageGeometry}")
     }  {
-      // val pageGeometry = docStore.getPageGeometry(pageId)
     }
   }
 
+  def visualizeDocument(stableId: String@@DocumentID): TB.Box = {
+    val docBoxes = for {
+      docId <- docStore.getDocument(stableId).toSeq
+    } yield {
+      val pagesBox = for {
+        pageId <- docStore.getPages(docId)
+      } yield {
+        val pageGeometry = docStore.getPageGeometry(pageId)
+
+        val allTargetRegions = docStore.getTargetRegions(pageId)
+
+        val regions = allTargetRegions
+          .map(r => docStore.getTargetRegion(r).toString().box)
+        val pageRegions = indent(4)(vcat(regions))
+
+        val regionCount =  s"TargetRegions for page ${pageId}: ${allTargetRegions.length} ".box
+
+        (
+          indent(2)("PageGeometry")
+            % indent(4)(pageGeometry.toString.box)
+            % indent(2)(regionCount)
+            % indent(2)(pageRegions)
+            % indent(2)("Page Zones")
+        )
+      }
+
+      val zoneBoxes = for {
+        zoneId <- docStore.getZonesForDocument(docId)
+      } yield {
+        val text = docStore.getTextReflowForZone(zoneId).map(
+          _.toText.box
+        ).getOrElse("<no text>".box)
+          (docStore.getZone(zoneId).toString().box %
+            indent(2)(text))
+      }
+
+      (s"Document ${docId} (${stableId}) report"
+        % indent(4)(vcat(pagesBox))
+        % indent(2)("Zones")
+        % indent(4)(vcat(zoneBoxes))
+      )
+    }
+    vcat(docBoxes)
+  }
   def generatePageRegions(divs: Int): Seq[PageRegion] = {
     val allRegions = for {
       stableId <- docStore.getDocuments

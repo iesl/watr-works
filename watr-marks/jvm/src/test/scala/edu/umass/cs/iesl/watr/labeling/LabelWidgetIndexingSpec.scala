@@ -21,7 +21,7 @@ class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
 
   it should "apply a label to selected regions" in new CleanDocstore {
 
-    add4x3x3SampleDoc()
+    add4pg_3x3SampleDoc()
 
     val layout = col(
       row(pageDivs3(1), pageDivs2(2))

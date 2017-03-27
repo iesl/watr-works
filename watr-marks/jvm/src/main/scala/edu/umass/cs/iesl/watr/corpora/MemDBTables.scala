@@ -1,12 +1,15 @@
 package edu.umass.cs.iesl.watr
 package corpora
 
+import scala.reflect._
 import scala.collection.mutable
 
-trait EdgeTableOneToMany[LhsIDType, RhsIDType] {
+abstract class EdgeTableOneToMany[LhsIDType: ClassTag, RhsIDType: ClassTag] {
   type Lhs = Int@@LhsIDType
   type Rhs = Int@@RhsIDType
   type TableImpl = mutable.HashMap[Lhs, mutable.LinkedHashSet[Rhs]]
+
+  val lhsCls = implicitly[ClassTag[LhsIDType]].runtimeClass.getSimpleName
 
   val table: TableImpl = mutable.HashMap[Lhs, mutable.LinkedHashSet[Rhs]]()
 
@@ -29,7 +32,7 @@ trait EdgeTableOneToMany[LhsIDType, RhsIDType] {
     table.get(lhs)
       .flatMap({rs =>
         if (rs.size > 1){
-          sys.error(s"Expected 0 or 1 edge, found ${rs.size} for ${lhs}")
+          sys.error(s"Expected 0 or 1 outgoing edge, found ${rs.size} edges for ${lhs}:${lhsCls}")
         } else {
           rs.headOption
         }
