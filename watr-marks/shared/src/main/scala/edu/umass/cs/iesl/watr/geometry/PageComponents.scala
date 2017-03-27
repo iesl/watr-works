@@ -4,7 +4,6 @@ package geometry
 import scalaz.Equal
 import scalaz.syntax.equal._
 
-import watrmarks._
 import TypeTags._
 import geometry.syntax._
 
@@ -72,11 +71,6 @@ object TargetRegion {
 
 }
 
-case class Zone(
-  id: Int@@ZoneID,
-  regions: Seq[TargetRegion],
-  labels: Seq[Label]
-)
 
 case class PageGeometry(
   id: Int@@PageNum,
@@ -103,34 +97,9 @@ object CharAtom {
 }
 
 
-// case class GlyphClass(
-//   glyphHash: String,
-//   char: Char,
-//   fontInfo: FontClass
-// )
-
-// case class FontClass(
-//   name: String,
-//   familyName: String,
-//   vendorName: String,
-//   italicAngle: Int, // = rnd(italic angle * 100)
-//   weight: String
-// )
-
-
 object PageComponentImplicits {
   def createTargetRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
     s"${stableId}+${pageNum}+${bbox.uriString}"
-  }
-
-  implicit class RicherZone(val zone: Zone) extends AnyVal {
-
-    def area(): Double = {
-      zone.regions.foldLeft(0d){ case (acc, a) =>
-        a.bbox.area
-      }
-    }
-
   }
 
   implicit class RicherPageGeometry(val thePageGeometry: PageGeometry) extends AnyVal {
