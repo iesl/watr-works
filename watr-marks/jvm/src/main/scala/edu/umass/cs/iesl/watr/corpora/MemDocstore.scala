@@ -10,7 +10,8 @@ import textreflow.data._
 import TextReflowF._
 import watrmarks.Label
 import geometry._
-import geometry.zones._
+import geometry.zones.data._
+import geometry.zones.syntax._
 
 
 class MemDocstore extends DocumentCorpus {
@@ -69,27 +70,24 @@ class MemDocstore extends DocumentCorpus {
 
       val ZT = ZoneTrees
 
-      def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
-        // ensure geoRegion is in database
-        val _ = targetregions.ensure(geoRegion)
-
+      def createZone(regionId: Int@@RegionID): Int@@ZoneID = {
         val zoneId = nextId()
-        val rec = ZT.ref(zoneId, ZT.leaf(geoRegion))
+        val rec = ZT.ref(zoneId, ZT.leaf(regionId))
         insert(zoneId, rec)
-        rec
+        zoneId
       }
 
-      def createZoneTree(zoneIds: Seq[Int@@ZoneID]): ZoneTree = {
+      def createZone(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
         val zoneId = nextId()
 
         val rec = ZT.ref(zoneId,
           ZT.node(zoneIds.map(unique(_)))
         )
         insert(zoneId, rec)
-        rec
+        zoneId
       }
 
-      def addZoneTreeLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree = {
+      def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
         val rec = ZT.role(label, unique(zoneId))
         val labelId = labels.ensureLabel(label.fqn)
         zoneToLabel.addEdge(zoneId, labelId)
@@ -97,11 +95,11 @@ class MemDocstore extends DocumentCorpus {
         rec
       }
 
-      def deleteZoneTree(zoneId: Int@@ZoneID): Unit = {
+      def deleteZone(zoneId: Int@@ZoneID): Unit = {
         delete(zoneId)
       }
 
-      def getZoneTreeLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
+      def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
         for {
           zoneId <- forDocument.getEdges(docId)
           labelId <- zoneToLabel.getEdges(zoneId)
@@ -110,7 +108,7 @@ class MemDocstore extends DocumentCorpus {
         }
       }
 
-      def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree] = {
+      def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Zone] = {
         for {
           zoneId <- forDocument.getEdges(docId)
           labelId <- zoneToLabel.getEdges(zoneId)
@@ -121,11 +119,10 @@ class MemDocstore extends DocumentCorpus {
         }
       }
 
-      def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): Option[ZoneTree] = {
-        val region = targetregions.ensure(geoRegion)
+      def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Zone] = {
         zeroOrOne {
           for {
-            zoneId <- regionToZone.getEdges(region.prKey)
+            zoneId <- regionToZone.getEdges(regionId)
             labelId <- zoneToLabel.getEdges(zoneId)
             if labels.getLabel(labelId) == label
           } yield { unique(zoneId) }
@@ -162,10 +159,6 @@ class MemDocstore extends DocumentCorpus {
       object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
 
-      def ensure(geoRegion: GeometricRegion): Rel.TargetRegion = geoRegion match {
-        case r: PageRegion   => r.regionId.map(unique(_)).getOrElse(sys.error(""))
-        case r: TargetRegion => unique(r.id)
-      }
 
       def add(pageId: Int@@PageID, bbox: G.LTBounds): Rel.TargetRegion = {
         // FIXME: correct rank
@@ -282,7 +275,9 @@ class MemDocstore extends DocumentCorpus {
     val model = targetregions.unique(regionId)
     val modelPage = pages.unique(model.page)
     val mDocument = documents.unique(modelPage.document)
-    G.TargetRegion(model.prKey, mDocument.stableId, modelPage.pagenum, model.bounds)
+    val stable = G.StablePageID(mDocument.stableId, modelPage.pagenum)
+    val page = G.RecordedPageID(model.page, stable)
+    G.TargetRegion(model.prKey, page, model.bounds)
   }
 
   def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
@@ -304,49 +299,41 @@ class MemDocstore extends DocumentCorpus {
     targetregions.forPage.getEdges(pageId)
   }
 
-  def createZone(docId: Int@@DocumentID): Int@@ZoneID = {
-    zones.add(docId).prKey
-  }
 
-  def getZone(zoneId: Int@@ZoneID): G.Zone = {
-    val zs = for {
-      mzone   <- zones.option(zoneId)
-      doc   <- documents.option(mzone.document)
-    } yield {
-      val labels = zones
-        .getLabels(mzone.prKey)
-        .map(m =>
-            W.Labels.fromString(m.key).copy(id=m.prKey)
-        )
-
-      val targetRegions = zones
-        .getTargetRegions(mzone.prKey)
-        .map(tr => getTargetRegion(tr.prKey))
-
-      G.Zone(zoneId, targetRegions, labels)
-    }
-
-    zs.getOrElse(sys.error(s"getZone(${zoneId}) error"))
-  }
-
-  def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[G.TargetRegion]): Unit = {
-    targetRegions
-      .foreach { tr =>
-        zones.addTargetRegion(zoneId, tr.id)
-        targetregions.forZone.addEdge(tr.id, zoneId)
-      }
-  }
-
-  def addZoneLabel(zoneId: Int@@ZoneID, label: W.Label): Unit = {
-    zones.addLabel(zoneId, label.fqn)
-  }
-
-  def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID] = {
-    zones.forDocument.getEdges(docId)
-  }
 
   def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
     targetregions.forZone.getEdgeOption(regionId)
+  }
+
+  def createZone(regionId: Int@@RegionID): Int@@ZoneID = {
+    zones.createZone(regionId)
+  }
+
+  def createZone(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
+    zones.createZone(zoneIds)
+  }
+
+  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
+    zones.addZoneLabel(zoneId, label)
+  }
+
+  def deleteZone(zoneId: Int@@ZoneID): Unit = {
+    zones.delete(zoneId)
+  }
+  def getZone(zoneId: Int@@ZoneID): Zone = {
+    zones.unique(zoneId)
+  }
+
+  def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
+    zones.getZoneLabelsForDocument(docId)
+  }
+
+  def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID] = {
+    zones.getZonesForDocument(docId, label) //.flatMap(_.getId)
+  }
+
+  def getZonesForRegion(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {
+    ???
   }
 
   def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
@@ -354,7 +341,6 @@ class MemDocstore extends DocumentCorpus {
       .getRhs(zoneId)
       .flatMap(id => textreflows.option(id))
   }
-
 
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
     textreflows.forZone
@@ -372,86 +358,73 @@ class MemDocstore extends DocumentCorpus {
     textreflows.forZone.addEdge(zoneId, model.prKey)
   }
 
-  def deleteZone(zoneId: Int@@ZoneID): Unit = {
-    ???
-  }
-
-
-  def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
-    zonetrees.createZoneTree(geoRegion)
-  }
-
-  def createZoneTree(zoneIds: Seq[Int@@ZoneID]): ZoneTree = {
-    zonetrees.createZoneTree(zoneIds)
-  }
-
-  def addZoneTreeLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree = {
-    zonetrees.addZoneTreeLabel(zoneId, label)
-  }
-  def deleteZoneTree(zoneId: Int@@ZoneID): Unit = {
-    zonetrees.delete(zoneId)
-  }
-  def getZoneTree(zoneId: Int@@ZoneID): ZoneTree = {
-    zonetrees.unique(zoneId)
-  }
-
-  def getZoneTreeLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
-    zonetrees.getZoneTreeLabelsForDocument(docId)
-  }
-  def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree] = {
-    zonetrees.getZoneTreesForDocument(docId, label)
-  }
-
-  def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree = {
-    ???
-  }
-  def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
-    ???
-  }
-  def getTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[TextReflow] = {
-    ???
-  }
-  def setTextReflowForZoneTree(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
-    ???
-  }
-
 
 
 }
 
-    // object zones extends DBRelation[ZoneID, Rel.Zone] {
-    //   // val documentFK = mutable.HashMap[Int@@DocumentID, Int@@ZoneID]()
+// object zones extends DBRelation[ZoneID, Rel.Zone] {
+//   // val documentFK = mutable.HashMap[Int@@DocumentID, Int@@ZoneID]()
 
-    //   object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
-    //   object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
-    //   object zoneToLabel extends EdgeTableOneToMany[ZoneID, LabelID]
+//   object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
+//   object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
+//   object zoneToLabel extends EdgeTableOneToMany[ZoneID, LabelID]
 
-    //   // object documentToZone extends EdgeTableOneToMany[DocumentID, ZoneID]
+//   // object documentToZone extends EdgeTableOneToMany[DocumentID, ZoneID]
 
 
-    //   def addTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
-    //     toTargetRegion.addEdge(zoneId, regionId)
-    //   }
+//   def addTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
+//     toTargetRegion.addEdge(zoneId, regionId)
+//   }
 
-    //   def getTargetRegions(zoneId: Int@@ZoneID): Seq[Rel.TargetRegion] = {
-    //     toTargetRegion
-    //       .getEdges(zoneId)
-    //       .map(targetregions.unique(_))
-    //   }
+//   def getTargetRegions(zoneId: Int@@ZoneID): Seq[Rel.TargetRegion] = {
+//     toTargetRegion
+//       .getEdges(zoneId)
+//       .map(targetregions.unique(_))
+//   }
 
-    //   def addLabel(zoneId: Int@@ZoneID, labelKey: String): Unit = {
-    //     zoneToLabel.addEdge(zoneId, labels.ensureLabel(labelKey))
-    //   }
+//   def addLabel(zoneId: Int@@ZoneID, labelKey: String): Unit = {
+//     zoneToLabel.addEdge(zoneId, labels.ensureLabel(labelKey))
+//   }
 
-    //   def getLabels(zoneId: Int@@ZoneID): Seq[Rel.Label] = {
-    //     zoneToLabel
-    //       .getEdges(zoneId)
-    //       .map(labels.unique(_))
-    //   }
+//   def getLabels(zoneId: Int@@ZoneID): Seq[Rel.Label] = {
+//     zoneToLabel
+//       .getEdges(zoneId)
+//       .map(labels.unique(_))
+//   }
 
-    //   def add(docId: Int@@DocumentID): Rel.Zone = {
-    //     // FIXME: correct rank
-    //     val rec = Rel.Zone(nextId(), docId, rank=0)
-    //     insert(rec.prKey, rec)
-    //     forDocument.addEdge(docId, rec.prKey)
-    //     rec
+//   def add(docId: Int@@DocumentID): Rel.Zone = {
+//     // FIXME: correct rank
+//     val rec = Rel.Zone(nextId(), docId, rank=0)
+//     insert(rec.prKey, rec)
+//     forDocument.addEdge(docId, rec.prKey)
+//     rec
+
+// def createZone(docId: Int@@DocumentID): Int@@ZoneID = {
+//   zones.add(docId).prKey
+// }
+// def getZone(zoneId: Int@@ZoneID): G.Zone = {
+//   val zs = for {
+//     mzone   <- zones.option(zoneId)
+//     doc   <- documents.option(mzone.document)
+//   } yield {
+//     val labels = zones
+//       .getLabels(mzone.prKey)
+//       .map(m =>
+//           W.Labels.fromString(m.key).copy(id=m.prKey)
+//       )
+//     val targetRegions = zones
+//       .getTargetRegions(mzone.prKey)
+//       .map(tr => getTargetRegion(tr.prKey))
+
+//     G.Zone(zoneId, targetRegions, labels)
+//   }
+//   zs.getOrElse(sys.error(s"getZone(${zoneId}) error"))
+// }
+
+// def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[G.TargetRegion]): Unit = {
+//   targetRegions
+//     .foreach { tr =>
+//       zones.addTargetRegion(zoneId, tr.id)
+//       targetregions.forZone.addEdge(tr.id, zoneId)
+//     }
+// }

@@ -15,19 +15,7 @@ import watrmarks.{StandardLabels => LB}
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
-  // val docs = List(//   List("01\n23") // )
-  // for { (doc, i) <- docs.zipWithIndex } {
-  //   addDocument(DocumentID(s"doc#${i}"), doc)
-  // }
-
   behavior of "label widgets"
-
-  // Our invariant condition states:
-  //  After running any layout algorithm on a given set of layout widgets,
-  //   the intersection of a bbox with any widget, then transformed by that widgets
-  //   positioning transform (inverse), gets us a rectangle in the coordinate space
-  //   of the target region contained in that widget
-
 
 
   it should "include labeled targets as overlays" in new CleanDocstore {

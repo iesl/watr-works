@@ -48,12 +48,12 @@ object LabelWidgetF {
   type PositionVector = Point
 
   case class RegionOverlay[A](
-    under: PageRegion,
+    under: TargetRegion,
     overs: List[A]
   ) extends LabelWidgetF[A]
 
   case class LabeledTarget(
-    target: PageRegion,
+    target: TargetRegion,
     label: Option[Label],
     score: Option[Double]
   ) extends LabelWidgetF[Nothing]
@@ -138,10 +138,10 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
-  def targetOverlay(tr: PageRegion, overs: Seq[LabelWidget]) =
+  def targetOverlay(tr: TargetRegion, overs: Seq[LabelWidget]) =
     fixlw(RegionOverlay(tr, overs.toList))
 
-  def labeledTarget(target: PageRegion, label: Option[Label]=None, score: Option[Double]=None) =
+  def labeledTarget(target: TargetRegion, label: Option[Label]=None, score: Option[Double]=None) =
     fixlw(LabeledTarget(target, label, score))
 
   def reflow(tr: TextReflow) =

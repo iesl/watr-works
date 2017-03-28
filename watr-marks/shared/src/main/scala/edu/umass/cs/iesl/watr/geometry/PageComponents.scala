@@ -27,45 +27,51 @@ sealed trait PageIdentifier
 case class StablePageID(
   stableId: String@@DocumentID,
   pageNum: Int@@PageNum
-) extends PageIdentifier
+) extends PageIdentifier {
+  override def toString = s"""${stableId}/pg${pageNum}"""
+}
 
 case class RecordedPageID(
   pageId: Int@@PageID,
-  stablePageId: StablePageID
-) extends PageIdentifier
+  stable: StablePageID
+) extends PageIdentifier {
+  override def toString = s"""${stable}@${pageId}"""
 
-sealed trait GeometricRegion
+}
 
-case class PageRegion(
-  pageId: Int@@PageID,
-  bbox: LTBounds,
-  regionId: Option[Int@@RegionID] = None
-) extends GeometricRegion
+// sealed trait GeometricRegion
+
+// case class PgeRegion(
+//   pageId: Int@@PageID,
+//   bbox: LTBounds,
+//   regionId: Option[Int@@RegionID] = None
+// )
 
 case class TargetRegion(
   id: Int@@RegionID,
-  stableId: String@@DocumentID,
-  pageNum: Int@@PageNum,
+  page: RecordedPageID,
   bbox: LTBounds
-) extends GeometricRegion {
+) {
   lazy val uri = {
     import PageComponentImplicits._
     this.uriString
   }
-  override def toString = s"""${stableId}/pg${pageNum}/r${id}@${bbox.prettyPrint}"""
+  override def toString = s"""${page}/${id}@${bbox.prettyPrint}"""
 }
+// stableId: String@@DocumentID,
+// pageNum: Int@@PageNum,
 
 object TargetRegion {
 
-  implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
-    case (TargetRegion(id, stableId, targetPage, bbox), TargetRegion(id2, stableId2, targetPage2, bbox2)) =>
-      (id.unwrap==id2.unwrap
-        && stableId.unwrap==stableId.unwrap
-        && targetPage.unwrap==targetPage2.unwrap
-        && (bbox: GeometricFigure) === bbox2
-      )
-    case (_, _) => false
-  })
+  // implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
+  //   case (TargetRegion(id, stableId, targetPage, bbox), TargetRegion(id2, stableId2, targetPage2, bbox2)) =>
+  //     (id.unwrap==id2.unwrap
+  //       && stableId.unwrap==stableId.unwrap
+  //       && targetPage.unwrap==targetPage2.unwrap
+  //       && (bbox: GeometricFigure) === bbox2
+  //     )
+  //   case (_, _) => false
+  // })
 
 }
 
@@ -100,56 +106,50 @@ object PageComponentImplicits {
     s"${stableId}+${pageNum}+${bbox.uriString}"
   }
 
-  implicit class RicherPageGeometry(val thePageGeometry: PageGeometry) extends AnyVal {
-    def toTargetRegion(stableId: String@@DocumentID): TargetRegion = {
-      TargetRegion(
-        RegionID(0),
-        stableId,
-        thePageGeometry.id,
-        thePageGeometry.bounds
-      )
-    }
-  }
+  // implicit class RicherPageGeometry(val thePageGeometry: PageGeometry) extends AnyVal {
+  //   def toTargetRegion(stableId: String@@DocumentID): TargetRegion = {
+  //     TargetRegion(
+  //       RegionID(0),
+  //       stableId,
+  //       thePageGeometry.id,
+  //       thePageGeometry.bounds
+  //     )
+  //   }
+  // }
 
-  implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
-    def union(r: PageRegion): PageRegion = {
-      val samePage = thePageRegion.pageId == r.pageId
-      if (!samePage) {
-        sys.error(s"""cannot union PageRegions from different pages: ${thePageRegion} + ${r}""")
-      }
-      thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
-    }
-
-    def intersects(r: PageRegion): Boolean = {
-      val samePage = thePageRegion.pageId == r.pageId
-      samePage && (thePageRegion.bbox intersects r.bbox)
-    }
-
-    // def intersects(r: TargetRegion): Boolean = {
-    //   val samePage = thePageRegion.pageId == r.pageId
-    //   samePage && (thePageRegion.bbox intersects r.bbox)
-    // }
-
-
-    def intersection(b: LTBounds): Option[PageRegion] = {
-      thePageRegion.bbox
-        .intersection(b)
-        .map(b => thePageRegion.copy(bbox=b))
-    }
-
-
-  }
+  // implicit class RicherPgeRegion(val thePageRegion: PgeRegion) extends AnyVal {
+  //   def union(r: PgeRegion): PgeRegion = {
+  //     val samePage = thePgeRegion.pageId == r.pageId
+  //     if (!samePage) {
+  //       sys.error(s"""cannot union PgeRegions from different pages: ${thePgeRegion} + ${r}""")
+  //     }
+  //     thePgeRegion.copy(bbox = thePgeRegion.bbox union r.bbox)
+  //   }
+  //   def intersects(r: PgeRegion): Boolean = {
+  //     val samePage = thePgeRegion.pageId == r.pageId
+  //     samePage && (thePgeRegion.bbox intersects r.bbox)
+  //   }
+  //   // def intersects(r: TargetRegion): Boolean = {
+  //   //   val samePage = thePgeRegion.pageId == r.pageId
+  //   //   samePage && (thePgeRegion.bbox intersects r.bbox)
+  //   // }
+  //   def intersection(b: LTBounds): Option[PgeRegion] = {
+  //     thePgeRegion.bbox
+  //       .intersection(b)
+  //       .map(b => thePgeRegion.copy(bbox=b))
+  //   }
+  // }
 
   implicit class RicherTargetRegion(val theTargetRegion: TargetRegion) extends AnyVal {
     def union(r: TargetRegion): TargetRegion = {
-      if (theTargetRegion.pageNum != r.pageNum) {
+      if (theTargetRegion.page.pageId != r.page.pageId) {
         sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
       }
       theTargetRegion.copy(bbox = theTargetRegion.bbox union r.bbox)
     }
 
     def intersects(r: TargetRegion): Boolean = {
-      val samePage = theTargetRegion.pageNum == r.pageNum
+      val samePage = theTargetRegion.page.pageId == r.page.pageId
       samePage && (theTargetRegion.bbox intersects r.bbox)
     }
 
@@ -161,7 +161,7 @@ object PageComponentImplicits {
     }
 
     def splitHorizontal(r: TargetRegion): List[TargetRegion] = {
-      if (theTargetRegion.pageNum != r.pageNum) {
+      if (theTargetRegion.page.pageId != r.page.pageId) {
         sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
       }
 
@@ -190,15 +190,13 @@ object PageComponentImplicits {
     }
 
     def prettyPrint(): String = {
-      val pg = theTargetRegion.pageNum
-      val bbox = theTargetRegion.bbox.prettyPrint
-      s"""<target pg:${pg} ${bbox}"""
+      theTargetRegion.toString
     }
 
     def uriString: String = {
       createTargetRegionUri(
-        theTargetRegion.stableId,
-        theTargetRegion.pageNum,
+        theTargetRegion.page.stable.stableId,
+        theTargetRegion.page.stable.pageNum,
         theTargetRegion.bbox
       )
     }

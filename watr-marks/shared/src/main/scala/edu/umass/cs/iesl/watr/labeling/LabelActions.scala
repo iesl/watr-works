@@ -31,28 +31,28 @@ sealed trait LabelAction[A]
 
 object LabelAction {
 
-  case class SelectRegion(g: GeometricRegion)     extends LabelAction[Unit]
-  case class UnselectRegion(g: GeometricRegion)   extends LabelAction[Unit]
+  case class SelectRegion(g: TargetRegion)     extends LabelAction[Unit]
+  case class UnselectRegion(g: TargetRegion)   extends LabelAction[Unit]
   case class SelectZone(g: Int@@ZoneID)           extends LabelAction[Int@@ZoneID]
   case class UnselectZone(g: Int@@ZoneID)         extends LabelAction[Unit]
-  case class CreateZone(gs: Seq[GeometricRegion]) extends LabelAction[Unit]
+  case class CreateZone(gs: Seq[TargetRegion]) extends LabelAction[Unit]
   case class DeleteZone(z: Int@@ZoneID)           extends LabelAction[Unit]
   case class LabelZone(z: Int@@ZoneID, l: Label)  extends LabelAction[Unit]
 
-  // case object GetSelectedRegions                  extends LabelAction[Seq[GeometricRegion]]
-  // case class CreateZone(gs: Seq[GeometricRegion]) extends LabelAction[Int@@ZoneID]
+  // case object GetSelectedRegions                  extends LabelAction[Seq[TargetRegion]]
+  // case class CreateZone(gs: Seq[TargetRegion]) extends LabelAction[Int@@ZoneID]
   // case object GetSelectedZones                    extends LabelAction[Seq[Int@@ZoneID]]
 
   case class CreateFigure(
     figure: GeometricFigure,
     targetPage: PageIdentifier
-  ) extends LabelAction[GeometricRegion]
+  ) extends LabelAction[TargetRegion]
 
   case class QueryForRegions(
     queryRegion: LTBounds,
     constraint: Constraint,
     targetPage: PageIdentifier
-  ) extends LabelAction[Seq[GeometricRegion]]
+  ) extends LabelAction[Seq[TargetRegion]]
 
   case class QueryForZones(
     queryRegion: LTBounds,

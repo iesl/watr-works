@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package corpora
 
 import geometry._
-import geometry.zones._
 import watrmarks._
 import textreflow._
 import TextReflowF._
@@ -25,9 +24,6 @@ trait DocumentCorpus {
   def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
   def getPageImage(pageId: Int@@PageID): Option[Array[Byte]]
 
-  // def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit
-  // def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom]
-
   def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
   def getTargetRegion(regionId: Int@@RegionID): TargetRegion
 
@@ -37,33 +33,17 @@ trait DocumentCorpus {
 
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID]
 
-  // def createZone(docId: Int@@DocumentID): Int@@ZoneID
-  // def getZone(zoneId: Int@@ZoneID): Zone
-  // def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit
-  // def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit
-  // def deleteZone(zoneId: Int@@ZoneID): Unit
 
-  // def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID]
-  // def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
-
-  // // TODO this Rel.TextReflow shouldn't be exposed, but need to until refactor
-  // def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
-  // def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
-  // def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
-
-
-
-  //////  ZoneTree alternative impl
   // Construct
-  def createZone(geoRegion: GeometricRegion): ZoneTree
-  def createZone(zoneIds: Seq[Int@@ZoneID]): ZoneTree
-  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree
+  def createZone(regionId: Int@@RegionID): Int@@ZoneID
+  def createZone(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID
+  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone
 
   // Destroy
   def deleteZone(zoneId: Int@@ZoneID): Unit
 
   // Locate
-  def getZone(zoneId: Int@@ZoneID): ZoneTree
+  def getZone(zoneId: Int@@ZoneID): Zone
   def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label]
   def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID]
   def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
@@ -110,8 +90,6 @@ trait DocumentCorpus {
   //   } yield region
   // }
 
-
-
   //  def dbgFilterComponents(pg: Int@@PageID, include: LTBounds): Unit ={
   //  def dbgFilterPages(pg: Int@@PageID): Unit ={
   //  def getZoneForComponent(cc: Int@@ComponentID): Option[Int@@ZoneID] = {
@@ -139,3 +117,18 @@ trait DocumentCorpus {
   //  def addBioLabels(label: Label, node: BioNode): Unit = {
   //  def addBioLabels(label: Label, nodes: Seq[BioNode]): Unit = {
 }
+
+// def createZone(docId: Int@@DocumentID): Int@@ZoneID
+// def getZone(zoneId: Int@@ZoneID): Zone
+// def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit
+// def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit
+// def deleteZone(zoneId: Int@@ZoneID): Unit
+
+// def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID]
+// def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
+
+// // TODO this Rel.TextReflow shouldn't be exposed, but need to until refactor
+// def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
+// def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
+// def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
+

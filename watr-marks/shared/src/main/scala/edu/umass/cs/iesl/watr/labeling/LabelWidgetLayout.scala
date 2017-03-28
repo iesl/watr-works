@@ -93,7 +93,7 @@ object LabelWidgetLayoutHelpers {
     widgetSpaceRegion.translate(wpos.translation)
   }
 
-  def clipPageRegionFromWidgetSpace(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): Option[PageRegion] = {
+  def clipPageRegionFromWidgetSpace(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): Option[TargetRegion] = {
     val pageRegion = widgetRegionToPageRegion(wpos, widgetSpaceRegion)
     wpos.widget match {
       case l @ RegionOverlay(under, overs) =>

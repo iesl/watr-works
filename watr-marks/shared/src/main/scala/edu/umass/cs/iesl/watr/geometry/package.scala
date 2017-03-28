@@ -4,7 +4,10 @@ package geometry
 object `package` {
 
   val syntax = GeometryImplicits
-  val zones = ZoneTrees
+  object zones {
+    val data = ZoneTrees
+    val syntax = ZoneTreeSyntax
+  }
   type Zone = ZoneTrees.ZoneTree
 
 }

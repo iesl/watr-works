@@ -602,41 +602,38 @@ class TextReflowDB(
       runq { insertTextReflow(zoneId, jsStr, str) }
     }
 
+
+    def createZone(regionId: Int@@RegionID): Int@@ZoneID = {
+      ???
+    }
+    def createZone(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
+      ???
+    }
+    def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
+      ???
+    }
     def deleteZone(zoneId: Int@@ZoneID): Unit = {
       ???
     }
-
-    def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
+    def getZone(zoneId: Int@@ZoneID): Zone = {
       ???
     }
-    def createZoneTree(zoneIds: Seq[Int@@ZoneID]): ZoneTree = {
+    def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
       ???
     }
-    def addZoneTreeLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree = {
+    def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Zone] = {
       ???
     }
-    def deleteZoneTree(zoneId: Int@@ZoneID): Unit = {
+    def getZonesForRegion(geoRegion: GeometricRegion, label: Label): Zone = {
       ???
     }
-    def getZoneTree(zoneId: Int@@ZoneID): ZoneTree = {
+    def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
       ???
     }
-    def getZoneTreeLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
+    def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
       ???
     }
-    def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree] = {
-      ???
-    }
-    def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree = {
-      ???
-    }
-    def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
-      ???
-    }
-    def getTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[TextReflow] = {
-      ???
-    }
-    def setTextReflowForZoneTree(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
+    def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
       ???
     }
 

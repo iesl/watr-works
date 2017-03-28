@@ -14,6 +14,7 @@ import scalaz.{
   Show
 }
 
+import TypeTags._
 
 // // This is going away in favor of the ZoneTree version
 // case class Zone(
@@ -30,15 +31,16 @@ object ZoneTreeF {
   def fixf = Fix[ZoneTreeF](_)
 
   case class ZLeaf(
-    region: GeometricRegion,
+    // region: GeometricRegion,
+    regionId: Int@@RegionID,
     label: Option[Label],
-    zoneId: Option[Int@@ZoneID]
+    zoneId: Int@@ZoneID
   ) extends ZoneTreeF[Nothing]
 
   case class ZNode[A](
     as: List[A],
     label: Option[Label],
-    zoneId: Option[Int@@ZoneID]
+    zoneId: Int@@ZoneID
   ) extends ZoneTreeF[A]
 
 
@@ -65,12 +67,12 @@ object ZoneTrees {
   type Zone = ZoneTree
   type ZoneTreeT = ZoneTreeF[Fix[ZoneTreeF]]
 
-  def leaf(r: GeometricRegion): ZoneTree = {
-    fixf(ZLeaf(r, None, None))
+  def leaf(r: Int@@RegionID): ZoneTree = {
+    fixf(ZLeaf(r, None, ZoneID(0)))
   }
 
   def node(children: Seq[ZoneTree]): ZoneTree =
-    fixf(ZNode(children.toList, None, None))
+    fixf(ZNode(children.toList, None, ZoneID(0)))
 
   def role(label: Label, a: ZoneTree): ZoneTree = fixf {
     a.project match {
@@ -82,9 +84,8 @@ object ZoneTrees {
 
   def ref(zoneId: Int@@ZoneID, a: ZoneTree): ZoneTree = fixf {
     a.project match {
-      case z@ ZLeaf(region, l, optid) if optid.isEmpty => z.copy(zoneId=Option(zoneId))
-      case z@ ZNode(as, l, optid)     if optid.isEmpty => z.copy(zoneId=Option(zoneId))
-      case z => sys.error(s"Cannot assign new zoneId to ${z}")
+      case z@ ZLeaf(region, l, optid) => z.copy(zoneId=zoneId)
+      case z@ ZNode(as, l, optid)     => z.copy(zoneId=zoneId)
     }
   }
 
@@ -94,5 +95,35 @@ object ZoneTrees {
     zoneTree.cata(toTree).drawBox
   }
 
+}
+
+trait ZoneTreeFunctions {
+  import ZoneTreeF._
+  import matryoshka.implicits._
+
+  def getZoneId(zoneTree: Zone): Int@@ZoneID = {
+    zoneTree.project match {
+      case z@ ZLeaf(region, l, optid) => optid
+      case z@ ZNode(as, l, optid)     => optid
+    }
+  }
+
+  def getZoneRegions(zone: Zone): Seq[Int@@RegionID] = {
+    zone.universe.map(_.project).toList.collect {
+      case ZLeaf(region, optl, id) => region
+    }
+  }
+}
+
+object ZoneTreeSyntax extends ZoneTreeFunctions {
+  import ZoneTrees._
+
+  implicit class RicherZoneTree(val theZoneTree: Zone) extends AnyVal {
+
+    def getId(): Int@@ZoneID = getZoneId(theZoneTree)
+
+    def getRegionIds(): Seq[Int@@RegionID] = getZoneRegions(theZoneTree)
+
+  }
 
 }

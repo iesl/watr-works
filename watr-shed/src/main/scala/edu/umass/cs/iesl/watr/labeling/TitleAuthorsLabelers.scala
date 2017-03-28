@@ -56,8 +56,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       //   lineReflow      <- theDocumentCorpus.getTextReflowForZone(zone.id)
       // } yield {
       //   // FIXME: kludge:
-      //   val pageRegion = PageRegion(pageId, lineReflow.targetRegion.bbox, Option(lineReflow.targetRegion.id))
-      //   val lt = LW.labeledTarget(pageRegion, None, None)
+      //   val lt = LW.labeledTarget(pageTargetRegion, None, None)
       //   (linenum, (0d, lt))
       // }
 
@@ -79,8 +78,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       //     val lineBounds = lineReflow.targetRegion()
       //     val normalScore = score/maxScore
 
-      //     val pageRegion = PageRegion(pageId, lineBounds.bbox, Option(lineBounds.id))
-      //     val lt = LW.labeledTarget(pageRegion, Some(label), Some(normalScore))
+      //     val lt = LW.labeledTarget(pageTargetRegion, Some(label), Some(normalScore))
 
       //     if (allLineScores.contains(linenum)) {
       //       val Some((currScore, currWidget)) = allLineScores.get(linenum)
@@ -102,9 +100,8 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       //     lwidget
       //   })
 
-      val pageRegion = PageRegion(pageId, pageTargetRegion.bbox, Option(pageTargetRegion.id))
       LW.pad(
-        LW.targetOverlay(pageRegion, List()),
+        LW.targetOverlay(pageTargetRegion, List()),
         Padding(4),
         Colors.DarkSlateBlue
       )

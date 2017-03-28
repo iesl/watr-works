@@ -5,6 +5,7 @@ import scala.collection.mutable
 
 import textreflow.data._
 import geometry._
+import geometry.zones.syntax._
 import geometry.syntax._
 import LabelWidgetF._
 import corpora._
@@ -26,7 +27,7 @@ import utils.GraphPaper
 case class IndexableTextReflow(
   id: Int@@TextReflowID,
   textReflow: TextReflow,
-  pageRegion: PageRegion
+  targetRegion: TargetRegion
 )
 
 case class QueryHit(
@@ -40,7 +41,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   implicit object TextReflowIndexable extends SpatialIndexable[IndexableTextReflow] {
     def id(t: IndexableTextReflow): Int = t.id.unwrap
-    def ltBounds(t: IndexableTextReflow): LTBounds = t.pageRegion.bbox
+    def ltBounds(t: IndexableTextReflow): LTBounds = t.targetRegion.bbox
   }
 
   implicit object LabelWidgetIndexable extends SpatialIndexable[WidgetPositioning] {
@@ -66,10 +67,8 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     layout0.positioning.foreach({pos => pos.widget match {
 
       case l @ RegionOverlay(under, overs) =>
-        val pageId = under.pageId
-        // val regionId = under.regionId
-        // under.bbox
-        // docStore0.getTargetRegion(under.regionId)
+        val pageId = under.page.pageId
+
         if (!targetPageRIndexes.contains(pageId)) {
           val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
           targetPageRIndexes.put(pageId, pageIndex)
@@ -77,16 +76,13 @@ object LabelWidgetIndex extends LabelWidgetLayout {
           // Put all visual lines into index
           for {
             vline <- docStore0.getPageVisualLines(pageId)
-            reflow <- docStore0.getModelTextReflowForZone(vline.id)
+            reflow <- docStore0.getModelTextReflowForZone(vline.getId)
           } {
             val textReflow = jsonStrToTextReflow(reflow.reflow)
             val indexable = IndexableTextReflow(
               reflow.prKey,
               textReflow,
-              PageRegion(
-                pageId,
-                textReflow.targetRegion.bbox
-              )
+              textReflow.targetRegion
             )
             pageIndex.add(indexable)
           }
@@ -161,9 +157,9 @@ trait LabelWidgetIndex {
             .intersection(queryBounds)
             .map { ibbox =>
               val pageSpaceBounds = ibbox.translate(pos.translation)
-              val pageIndex = pageIndexes(under.pageId)
+              val pageIndex = pageIndexes(under.page.pageId)
               val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
-              QueryHit(pos, under.pageId, pageSpaceBounds, pageHits)
+              QueryHit(pos, under.page.pageId, pageSpaceBounds, pageHits)
             }
 
         case _ =>
@@ -177,22 +173,24 @@ trait LabelWidgetIndex {
   def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Option[GeometricGroup] = {
     var changes = List[GeometricFigure]()
 
-    val pageRegionsToBeLabeled = for {
+    val targetRegionsToBeLabeled = for {
       qhit <- queryHits
     } yield constraint match {
       case ByLabel(l) =>
-        val regions = qhit.iTextReflows.map(_.pageRegion)
+        val regions = qhit.iTextReflows.map(_.targetRegion)
         changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
         regions
 
       case ByLine =>
 
-        val regions = qhit.iTextReflows.map(_.pageRegion)
+        val regions = qhit.iTextReflows.map(_.targetRegion)
         changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
         regions
 
       case ByRegion =>
-        val regions = Seq(PageRegion(qhit.pageId, qhit.pageSpaceBounds, None))
+        val regionId = docStore.addTargetRegion(qhit.pageId, qhit.pageSpaceBounds)
+        val newRegion = docStore.getTargetRegion(regionId)
+        val regions = Seq(newRegion)
         changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
         regions
 
@@ -204,8 +202,9 @@ trait LabelWidgetIndex {
           iReflow.textReflow
             .clipToBoundingRegion(qhit.pageSpaceBounds)
             .map { case (clipped, _) =>
-              val bbox = clipped.targetRegion().bbox
-              PageRegion(qhit.pageId, bbox, None)
+              val tr = clipped.targetRegion
+              val regionId = docStore.addTargetRegion(tr.page.pageId, tr.bbox)
+              docStore.getTargetRegion(regionId)
             }
 
         }
@@ -216,24 +215,15 @@ trait LabelWidgetIndex {
         regions
     }
 
-    if (pageRegionsToBeLabeled.isEmpty) Seq() else {
-      // Ensure pageRegions are all cataloged in database
-      val targetRegions = for {
-        pageRegion <- pageRegionsToBeLabeled.flatten
-      } yield {
-        val regionId = docStore.addTargetRegion(pageRegion.pageId, pageRegion.bbox)
-        docStore.getTargetRegion(regionId)
-      }
+    if (targetRegionsToBeLabeled.isEmpty) Seq() else {
 
-      val docId = docStore.getDocument(targetRegions.head.stableId).get
+      val zoneId = docStore.createZone(
+        targetRegionsToBeLabeled.map(tr => docStore.createZone(tr.id))
+      )
 
-      val newZone = docStore.createZone(docId)
+      docStore.addZoneLabel(zoneId, label)
 
-      docStore.setZoneTargetRegions(newZone, targetRegions)
-
-      docStore.addZoneLabel(newZone, label)
-
-      Some(docStore.getZone(newZone))
+      Some(docStore.getZone(zoneId))
     }
 
     if (changes.isEmpty) None else {
@@ -294,7 +284,7 @@ trait LabelWidgetIndex {
           case act: DeleteZone         => for { init <- State.get[InterpState] } yield ()
           case act: LabelZone          => for { init <- State.get[InterpState] } yield ()
           case act: CreateFigure       => for { init <- State.get[InterpState] } yield ???
-          case act: QueryForRegions    => for { init <- State.get[InterpState] } yield Seq[GeometricRegion]()
+          case act: QueryForRegions    => for { init <- State.get[InterpState] } yield Seq[TargetRegion]()
           case act: QueryForZones      => for { init <- State.get[InterpState] } yield Seq[Int@@ZoneID]()
         }
       }
@@ -399,10 +389,8 @@ trait LabelWidgetIndex {
       pos.widget match {
         case RegionOverlay(under, over) =>
           // println(s"RegionOverlay($over, $under)")
-          val fill = under.regionId.map { id =>
-            (id.unwrap + '0'.toInt).toChar
-          }.getOrElse(nextFiller)
-
+          val id = under.id
+          val fill = (id.unwrap + '0'.toInt).toChar
           graphPaper.fillFg(fill, gridbox)
 
         case _ =>
