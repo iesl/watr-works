@@ -119,7 +119,7 @@ class MultiPageIndex(
 
   def setTextReflowForComponent(cc: Component, r: TextReflow): Unit = {
     val zoneId = docStore
-      .getZoneForTargetRegion(cc.targetRegion.id, LB.VisualLine)
+      .getZoneForRegion(cc.targetRegion.id, LB.VisualLine)
       .getOrElse {  sys.error(s"setTextReflowForComponent: no VisualLine component found ${cc}: ${r}") }
 
     docStore.setTextReflowForZone(zoneId, r)
@@ -129,7 +129,7 @@ class MultiPageIndex(
     // TODO kludge: find a zone that has this Component as it's sole member and return its TextReflow
     for {
       regionId <- componentIdToRegionId.get(ccId)
-      zoneId <- docStore.getZoneForTargetRegion(regionId, LB.VisualLine)
+      zoneId <- docStore.getZoneForRegion(regionId, LB.VisualLine)
       reflow <- docStore.getTextReflowForZone(zoneId)
     } yield { reflow }
   }

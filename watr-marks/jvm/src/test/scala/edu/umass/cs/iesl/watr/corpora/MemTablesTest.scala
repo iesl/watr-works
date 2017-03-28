@@ -38,10 +38,15 @@ class Tables {
 
 class MemTablesTest extends FlatSpec with Matchers {
 
+  // org.scalatest.Assertions
   behavior of "In-memory Tables"
 
-  it should "insert/delete/update" in new Tables {}
-  it should "declare primary key" in new Tables {}
+  it should "insert/delete/update" in new Tables {
+
+
+  }
+  it should "declare primary key" in new Tables {
+  }
   it should "declare foreign key constraint" in new Tables {}
   it should "declare secondary indexes" in new Tables {}
 

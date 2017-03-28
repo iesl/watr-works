@@ -21,16 +21,16 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
   it should "select a zone" in new CleanDocstore {
 
     add4pg_3x3SampleDoc()
-    // TODO visualize document
-    // TODO visualize docStore
 
     val stableId = DocumentID(s"doc#0")
     val docId = docStore.getDocument(stableId).get
 
+    // Restate this in terms of ZoneTrees
     // create a zone that has regions from multiple pages
-    val newZone = docStore.createZone(docId)
-    val page0Lines = docStore.getPageVisualLines(stableId, PageNum(0)).flatMap(_.regions)
-    val page1Lines = docStore.getPageVisualLines(stableId, PageNum(1)).flatMap(_.regions)
+    val page0Lines = docStore.getPageVisualLines(stableId, PageNum(0))// .flatMap(_.regions)
+    val page1Lines = docStore.getPageVisualLines(stableId, PageNum(1))// .flatMap(_.regions)
+
+    // val newZone = docStore.createZoneTree(zoneIds: Seq[<refinement>[Int, ZoneID]])(docId)
     val lines = page0Lines ++ page1Lines
 
     // val p0Ztree = page0Lines.map(r => docStore.createZoneTree(r))
@@ -51,8 +51,8 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
 
     // println(s"page0Lines: ${page0Lines}")
 
-    docStore.setZoneTargetRegions(newZone, page0Lines ++ page1Lines)
-    docStore.addZoneLabel(newZone, LB.Authors)
+    // docStore.setZoneTargetRegions(newZone, page0Lines ++ page1Lines)
+    // docStore.addZoneLabel(newZone, LB.Authors)
 
     // visualizeDocStore()
     println(

@@ -3,22 +3,27 @@ package corpora
 
 import org.scalatest._
 
-// import spindex._
-// import databasics._
-// import textreflow._
-// import corpora._
-// import textboxing.{TextBoxing => TB}, TB._
+import geometry._
+import TypeTags._
 
 class DocstoreTest extends FlatSpec with Matchers with CorpusTestingUtil {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
   behavior of "In-memory Tables"
 
-  it should "insert basic relation types" in new CleanDocstore {
+  val ZT = ZoneTrees
 
-    println(
-      reportDocument(stableId)
-    )
+  it should "handle zones" in new CleanDocstore {
+
+    val stableId = DocumentID("doc0")
+    val docId = docStore.addDocument(stableId)
+    val pageId = docStore.addPage(docId, PageNum(0))
+    val regionId = docStore.addTargetRegion(pageId, LTBounds(5d, 4d, 3d, 2d))
+    val targetRegion = docStore.getTargetRegion(regionId)
+
+    val ztree = docStore.createZoneTree(targetRegion)
+
+    println(ZT.prettyPrintTree(ztree))
 
   }
 

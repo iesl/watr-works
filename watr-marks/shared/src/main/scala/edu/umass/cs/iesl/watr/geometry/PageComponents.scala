@@ -52,7 +52,7 @@ case class TargetRegion(
     import PageComponentImplicits._
     this.uriString
   }
-  override def toString = s"""<${uri}>"""
+  override def toString = s"""${stableId}/pg${pageNum}/r${id}@${bbox.prettyPrint}"""
 }
 
 object TargetRegion {

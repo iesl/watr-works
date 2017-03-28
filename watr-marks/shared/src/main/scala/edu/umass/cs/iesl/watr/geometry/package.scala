@@ -5,5 +5,6 @@ object `package` {
 
   val syntax = GeometryImplicits
   val zones = ZoneTrees
+  type Zone = ZoneTrees.ZoneTree
 
 }

@@ -26,6 +26,7 @@ class TextReflowDB(
   dbname: String, dbuser: String, dbpass: String
 ) extends DoobiePredef { self =>
 
+  val Rel = RelationModel
 
   def time[R](prefix: String)(block: => R): R = {
     val t0 = System.nanoTime()
@@ -75,7 +76,6 @@ class TextReflowDB(
       sql"""select stable_id from document""".query[String@@DocumentID].list
     }
   }
-
 
   def selectTargetRegion(regionId: Int@@RegionID): ConnectionIO[Rel.TargetRegion] = {
     sql""" select * from targetregion where targetregion=${regionId} """
@@ -582,7 +582,7 @@ class TextReflowDB(
       }
     }
 
-    def getZoneForTargetRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
+    def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
       runq { selectZoneForTargetRegion(regionId, label) }
     }
 
@@ -605,7 +605,6 @@ class TextReflowDB(
     def deleteZone(zoneId: Int@@ZoneID): Unit = {
       ???
     }
-
 
     def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
       ???

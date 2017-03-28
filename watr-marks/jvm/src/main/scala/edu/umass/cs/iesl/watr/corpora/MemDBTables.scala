@@ -57,9 +57,12 @@ trait EdgeTableOneToOne[LhsIDType, RhsIDType] {
   }
 }
 
-class DBRelation[IDType, ModelType](
+class DBRelation[IDType: ClassTag, ModelType: ClassTag](
   table: mutable.HashMap[Int@@IDType, ModelType] = mutable.HashMap[Int@@IDType, ModelType]()
 )(implicit O: Ordering[Int@@IDType]) {
+
+  val modelClsStr = implicitly[ClassTag[ModelType]].runtimeClass.getSimpleName
+  val idClsStr = implicitly[ClassTag[IDType]].runtimeClass.getSimpleName
 
   def all(): Seq[ModelType] = {
     val keys = table.keys.toSeq
@@ -99,5 +102,12 @@ class DBRelation[IDType, ModelType](
     assert(table.contains(id))
     table.remove(id)
     assert(!table.contains(id))
+  }
+
+  def zeroOrOne(ms: Seq[ModelType]): Option[ModelType] = {
+    if (ms.length > 1) {
+      sys.error(s"expected zeroOrOne ${modelClsStr}, got ${ms.length}")
+    }
+    ms.headOption
   }
 }

@@ -37,41 +37,41 @@ trait DocumentCorpus {
 
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID]
 
-  def createZone(docId: Int@@DocumentID): Int@@ZoneID
-  def getZone(zoneId: Int@@ZoneID): Zone
-  def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit
-  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit
-  def deleteZone(zoneId: Int@@ZoneID): Unit
+  // def createZone(docId: Int@@DocumentID): Int@@ZoneID
+  // def getZone(zoneId: Int@@ZoneID): Zone
+  // def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit
+  // def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit
+  // def deleteZone(zoneId: Int@@ZoneID): Unit
 
-  def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID]
-  def getZoneForTargetRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
+  // def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID]
+  // def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
 
-  // TODO this Rel.TextReflow shouldn't be exposed, but need to until refactor
-  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
-  def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
-  def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
+  // // TODO this Rel.TextReflow shouldn't be exposed, but need to until refactor
+  // def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
+  // def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
+  // def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 
 
 
   //////  ZoneTree alternative impl
   // Construct
-  def createZoneTree(geoRegion: GeometricRegion): ZoneTree
-  def createZoneTree(zoneIds: Seq[Int@@ZoneID]): ZoneTree
-  def addZoneTreeLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree
+  def createZone(geoRegion: GeometricRegion): ZoneTree
+  def createZone(zoneIds: Seq[Int@@ZoneID]): ZoneTree
+  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree
 
   // Destroy
-  def deleteZoneTree(zoneId: Int@@ZoneID): Unit
+  def deleteZone(zoneId: Int@@ZoneID): Unit
 
   // Locate
-  def getZoneTree(zoneId: Int@@ZoneID): ZoneTree
-  def getZoneTreeLabelsForDocument(docId: Int@@DocumentID): Seq[Label]
-  def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree]
-  def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree
+  def getZone(zoneId: Int@@ZoneID): ZoneTree
+  def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label]
+  def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID]
+  def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
 
   // Get Text
-  def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
-  def getTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[TextReflow]
-  def setTextReflowForZoneTree(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
+  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
+  def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
+  def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 
 
 
@@ -86,11 +86,11 @@ trait DocumentCorpus {
 
   def getPageVisualLines(pageId: Int@@PageID): Seq[Zone] = for {
     regionId  <- getTargetRegions(pageId)
-    zoneId    <- getZoneForTargetRegion(regionId, LB.VisualLine)
+    zoneId    <- getZoneForRegion(regionId, LB.VisualLine)
   } yield { getZone(zoneId) }
 
   def getTextReflowForTargetRegion(regionId: Int@@RegionID): Option[TextReflow] = for {
-    zoneId  <- getZoneForTargetRegion(regionId, LB.VisualLine)
+    zoneId  <- getZoneForRegion(regionId, LB.VisualLine)
     reflow <- getTextReflowForZone(zoneId)
   } yield reflow
 

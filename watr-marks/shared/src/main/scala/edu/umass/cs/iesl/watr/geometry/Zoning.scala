@@ -15,12 +15,12 @@ import scalaz.{
 }
 
 
-// This is going away in favor of the ZoneTree version
-case class Zone(
-  id: Int@@ZoneID,
-  regions: Seq[TargetRegion],
-  labels: Seq[Label]
-)
+// // This is going away in favor of the ZoneTree version
+// case class Zone(
+//   id: Int@@ZoneID,
+//   regions: Seq[TargetRegion],
+//   labels: Seq[Label]
+// )
 
 
 sealed trait ZoneTreeF[+A]
@@ -62,6 +62,7 @@ object ZoneTrees {
   import ZoneTreeF._
 
   type ZoneTree = Fix[ZoneTreeF]
+  type Zone = ZoneTree
   type ZoneTreeT = ZoneTreeF[Fix[ZoneTreeF]]
 
   def leaf(r: GeometricRegion): ZoneTree = {
@@ -87,7 +88,6 @@ object ZoneTrees {
     }
   }
 
-
   import utils.ScalazTreeImplicits._
 
   def prettyPrintTree(zoneTree: ZoneTree): TB.Box = {
@@ -96,4 +96,3 @@ object ZoneTrees {
 
 
 }
-

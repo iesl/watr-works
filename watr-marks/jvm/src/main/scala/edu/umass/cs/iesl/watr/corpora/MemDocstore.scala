@@ -60,15 +60,19 @@ class MemDocstore extends DocumentCorpus {
       }
     }
 
-    object zonetrees extends DBRelation[ZoneID, ZoneTree] {
+    object zones extends DBRelation[ZoneID, ZoneTree] {
 
       // object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
       object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
       object zoneToLabel extends EdgeTableOneToMany[ZoneID, LabelID]
+      object regionToZone extends EdgeTableOneToMany[RegionID, ZoneID]
 
       val ZT = ZoneTrees
 
       def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
+        // ensure geoRegion is in database
+        val _ = targetregions.ensure(geoRegion)
+
         val zoneId = nextId()
         val rec = ZT.ref(zoneId, ZT.leaf(geoRegion))
         insert(zoneId, rec)
@@ -117,47 +121,17 @@ class MemDocstore extends DocumentCorpus {
         }
       }
 
-     def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree = {
-        ???
-      }
-    }
-    object zones extends DBRelation[ZoneID, Rel.Zone] {
-      // val documentFK = mutable.HashMap[Int@@DocumentID, Int@@ZoneID]()
-
-      object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
-      object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
-      object zoneToLabel extends EdgeTableOneToMany[ZoneID, LabelID]
-
-      // object documentToZone extends EdgeTableOneToMany[DocumentID, ZoneID]
-
-
-      def addTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
-        toTargetRegion.addEdge(zoneId, regionId)
+      def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): Option[ZoneTree] = {
+        val region = targetregions.ensure(geoRegion)
+        zeroOrOne {
+          for {
+            zoneId <- regionToZone.getEdges(region.prKey)
+            labelId <- zoneToLabel.getEdges(zoneId)
+            if labels.getLabel(labelId) == label
+          } yield { unique(zoneId) }
+        }
       }
 
-      def getTargetRegions(zoneId: Int@@ZoneID): Seq[Rel.TargetRegion] = {
-        toTargetRegion
-          .getEdges(zoneId)
-          .map(targetregions.unique(_))
-      }
-
-      def addLabel(zoneId: Int@@ZoneID, labelKey: String): Unit = {
-        zoneToLabel.addEdge(zoneId, labels.ensureLabel(labelKey))
-      }
-
-      def getLabels(zoneId: Int@@ZoneID): Seq[Rel.Label] = {
-        zoneToLabel
-          .getEdges(zoneId)
-          .map(labels.unique(_))
-      }
-
-      def add(docId: Int@@DocumentID): Rel.Zone = {
-        // FIXME: correct rank
-        val rec = Rel.Zone(nextId(), docId, rank=0)
-        insert(rec.prKey, rec)
-        forDocument.addEdge(docId, rec.prKey)
-        rec
-      }
     }
 
     object labels extends DBRelation[LabelID, Rel.Label]{
@@ -187,6 +161,11 @@ class MemDocstore extends DocumentCorpus {
 
       object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
+
+      def ensure(geoRegion: GeometricRegion): Rel.TargetRegion = geoRegion match {
+        case r: PageRegion   => r.regionId.map(unique(_)).getOrElse(sys.error(""))
+        case r: TargetRegion => unique(r.id)
+      }
 
       def add(pageId: Int@@PageID, bbox: G.LTBounds): Rel.TargetRegion = {
         // FIXME: correct rank
@@ -366,7 +345,7 @@ class MemDocstore extends DocumentCorpus {
     zones.forDocument.getEdges(docId)
   }
 
-  def getZoneForTargetRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
+  def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
     targetregions.forZone.getEdgeOption(regionId)
   }
 
@@ -422,6 +401,7 @@ class MemDocstore extends DocumentCorpus {
   def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree] = {
     zonetrees.getZoneTreesForDocument(docId, label)
   }
+
   def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree = {
     ???
   }
@@ -438,3 +418,40 @@ class MemDocstore extends DocumentCorpus {
 
 
 }
+
+    // object zones extends DBRelation[ZoneID, Rel.Zone] {
+    //   // val documentFK = mutable.HashMap[Int@@DocumentID, Int@@ZoneID]()
+
+    //   object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
+    //   object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
+    //   object zoneToLabel extends EdgeTableOneToMany[ZoneID, LabelID]
+
+    //   // object documentToZone extends EdgeTableOneToMany[DocumentID, ZoneID]
+
+
+    //   def addTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
+    //     toTargetRegion.addEdge(zoneId, regionId)
+    //   }
+
+    //   def getTargetRegions(zoneId: Int@@ZoneID): Seq[Rel.TargetRegion] = {
+    //     toTargetRegion
+    //       .getEdges(zoneId)
+    //       .map(targetregions.unique(_))
+    //   }
+
+    //   def addLabel(zoneId: Int@@ZoneID, labelKey: String): Unit = {
+    //     zoneToLabel.addEdge(zoneId, labels.ensureLabel(labelKey))
+    //   }
+
+    //   def getLabels(zoneId: Int@@ZoneID): Seq[Rel.Label] = {
+    //     zoneToLabel
+    //       .getEdges(zoneId)
+    //       .map(labels.unique(_))
+    //   }
+
+    //   def add(docId: Int@@DocumentID): Rel.Zone = {
+    //     // FIXME: correct rank
+    //     val rec = Rel.Zone(nextId(), docId, rank=0)
+    //     insert(rec.prKey, rec)
+    //     forDocument.addEdge(docId, rec.prKey)
+    //     rec

@@ -87,11 +87,12 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
       val zoneBoxes = for {
         zoneId <- docStore.getZonesForDocument(docId)
       } yield {
-        val text = docStore.getTextReflowForZone(zoneId).map(
-          _.toText.box
-        ).getOrElse("<no text>".box)
-          (docStore.getZone(zoneId).toString().box %
-            indent(2)(text))
+        val zbox = docStore.getZone(zoneId).toString().box
+        docStore.getTextReflowForZone(zoneId)
+          .map { reflow =>
+            zbox atop indent(2)(reflow.toText.box)
+          }
+          .getOrElse(zbox)
       }
 
       (s"Document ${docId} (${stableId}) report"
