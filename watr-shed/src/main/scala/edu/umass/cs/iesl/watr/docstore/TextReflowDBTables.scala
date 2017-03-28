@@ -7,6 +7,8 @@ import databasics._
 
 class TextReflowDBTables extends DoobiePredef {
 
+  val Rel = RelationModel
+
   val createDocumentTable: Update0 = sql"""
       CREATE TABLE document (
         document      SERIAL PRIMARY KEY,
@@ -112,7 +114,7 @@ class TextReflowDBTables extends DoobiePredef {
     // import corpora.Model
     // sealed trait TableShape[S]
     // def tableShape[S]: TableShape[S]
-    // def shape = tableShape[Model.TargetRegion]
+    // def shape = tableShape[Rel.TargetRegion]
 
   }
 

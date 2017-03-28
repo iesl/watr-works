@@ -1,10 +1,10 @@
 package edu.umass.cs.iesl.watr
-package labeling
+package utils
 
 import geometry._
 import scala.collection.mutable
 
-class GridPaper(
+class GraphPaper(
   width: Int, height: Int
 ) {
 
@@ -14,7 +14,7 @@ class GridPaper(
     }
 
 
-  def fillFg(fill: Char, gridbox: GridPaper.Box): Unit = {
+  def fillFg(fill: Char, gridbox: GraphPaper.Box): Unit = {
     for {
       y <- gridbox.top until (gridbox.top+gridbox.height)
       x <- gridbox.left until (gridbox.left+gridbox.width)
@@ -23,7 +23,7 @@ class GridPaper(
     }
   }
 
-  def borderLeftRight(gridbox: GridPaper.Box): Unit = {
+  def borderLeftRight(gridbox: GraphPaper.Box): Unit = {
     for { y <- gridbox.top until (gridbox.top+gridbox.height) } {
       val x1 = gridbox.left
       val x2 = gridbox.left+gridbox.width-1
@@ -36,7 +36,7 @@ class GridPaper(
     }
   }
 
-  def borderTopBottom(gridbox: GridPaper.Box): Unit = {
+  def borderTopBottom(gridbox: GraphPaper.Box): Unit = {
     for { x <- gridbox.left until (gridbox.left+gridbox.width) } {
       val y1 = gridbox.top
       val y2 = gridbox.top+gridbox.height-1
@@ -50,7 +50,7 @@ class GridPaper(
     }
   }
 
-  def gradientHorizontal(gridbox: GridPaper.Box): Unit = {
+  def gradientHorizontal(gridbox: GraphPaper.Box): Unit = {
     var r = 20
     var g = 20
     var b = 20
@@ -71,7 +71,7 @@ class GridPaper(
     }
   }
 
-  def shadeBackground(gridbox: GridPaper.Box): Unit = {
+  def shadeBackground(gridbox: GraphPaper.Box): Unit = {
     for {
       y <- gridbox.top until (gridbox.top+gridbox.height)
       x <- gridbox.left until (gridbox.left+gridbox.width)
@@ -88,10 +88,10 @@ class GridPaper(
 }
 
 
-object GridPaper {
-  def ltb2box(bbox: LTBounds): GridPaper.Box = {
+object GraphPaper {
+  def ltb2box(bbox: LTBounds): GraphPaper.Box = {
     val LTBounds(l, t, w, h) = bbox
-    GridPaper.Box(
+    GraphPaper.Box(
       l.intValue(), t.intValue(),
       w.intValue(), h.intValue()
     )
@@ -102,7 +102,7 @@ object GridPaper {
   )
 
   def create(w: Int, h: Int) = {
-    new GridPaper(w, h)
+    new GraphPaper(w, h)
   }
 
 }

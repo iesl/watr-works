@@ -14,7 +14,7 @@ class DocstoreTest extends FlatSpec with Matchers with CorpusTestingUtil {
 
   behavior of "In-memory Tables"
 
-  it should "insert basic relation types" in new FreshDocstore(pageCount=1) {
+  it should "insert basic relation types" in new CleanDocstore {
 
     println(
       reportDocument(stableId)

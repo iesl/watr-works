@@ -19,6 +19,7 @@ import shapeless._
 
 import matryoshka._
 import matryoshka.implicits._
+import utils.GraphPaper
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
@@ -389,11 +390,11 @@ trait LabelWidgetIndex {
     val w: Int = (layout.layoutBounds.width).intValue()+1
     val h: Int = (layout.layoutBounds.height).intValue()+1
 
-    val gridPaper = GridPaper.create(w, h)
-    val gridPaper2 = GridPaper.create(w, h)
+    val graphPaper = GraphPaper.create(w, h)
+    val graphPaper2 = GraphPaper.create(w, h)
 
     layout.positioning.foreach { pos =>
-      val gridbox = GridPaper.ltb2box(pos.widgetBounds)
+      val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
 
       pos.widget match {
         case RegionOverlay(under, over) =>
@@ -402,43 +403,43 @@ trait LabelWidgetIndex {
             (id.unwrap + '0'.toInt).toChar
           }.getOrElse(nextFiller)
 
-          gridPaper.fillFg(fill, gridbox)
+          graphPaper.fillFg(fill, gridbox)
 
         case _ =>
       }
     }
 
     layout.positioning.foreach { pos =>
-      val gridbox = GridPaper.ltb2box(pos.widgetBounds)
+      val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
       pos.widget match {
         // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
         // case l : TextBox              => G.point(l.copy())
         // case l : Reflow               => G.point(l.copy())
         case l : LabeledTarget =>
-          gridPaper2.shadeBackground(gridbox)
+          graphPaper2.shadeBackground(gridbox)
 
         case l : Figure =>
-          // gridPaper2.fillFg(nextFiller(), gridbox)
+          // graphPaper2.fillFg(nextFiller(), gridbox)
 
         case l @ Panel(a, i) =>
-          gridPaper2.fillFg(nextFiller(), gridbox)
-          // gridPaper2.borderTopBottom(gridbox)
+          graphPaper2.fillFg(nextFiller(), gridbox)
+          // graphPaper2.borderTopBottom(gridbox)
 
         case l @ Identified(a, id, cls)    =>
-          // gridPaper2.fillFg(nextFiller(), gridbox)
-          // gridPaper2.gradientHorizontal(gridbox)
-          // gridPaper2.borderLeftRight(gridbox)
+          // graphPaper2.fillFg(nextFiller(), gridbox)
+          // graphPaper2.gradientHorizontal(gridbox)
+          // graphPaper2.borderLeftRight(gridbox)
         case _ =>
       }
     }
 
     layout.positioning.foreach { pos =>
-      val gridbox = GridPaper.ltb2box(pos.widgetBounds)
+      val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
       pos.widget match {
         case Col(as) =>
-          gridPaper.borderLeftRight(gridbox)
+          graphPaper.borderLeftRight(gridbox)
         case Row(as) =>
-          gridPaper.borderTopBottom(gridbox)
+          graphPaper.borderTopBottom(gridbox)
 
         // case l : RegionOverlay[A]     => l.overs.traverse(f).map(ft => l.copy(overs=ft))
         // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
@@ -452,13 +453,13 @@ trait LabelWidgetIndex {
       }
     }
     query foreach { q =>
-      gridPaper.shadeBackground(GridPaper.ltb2box(q))
-      gridPaper2.shadeBackground(GridPaper.ltb2box(q))
+      graphPaper.shadeBackground(GraphPaper.ltb2box(q))
+      graphPaper2.shadeBackground(GraphPaper.ltb2box(q))
     }
 
 
-    val grid1 = gridPaper.asString()
-    val grid2 = gridPaper2.asString()
+    val grid1 = graphPaper.asString()
+    val grid2 = graphPaper2.asString()
 
     println(grid1)
     println

@@ -10,13 +10,15 @@ import TextReflowF._
 import watrmarks.{StandardLabels => LB}
 
 trait DocumentCorpus {
+  val Rel = RelationModel
+
   def getDocuments(): Seq[String@@DocumentID]
   def addDocument(stableId: String@@DocumentID): Int@@DocumentID
   def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID]
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
   def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID]
-  def getPageDef(pageId: Int@@PageID): Option[Model.Page]
+  def getPageDef(pageId: Int@@PageID): Option[Rel.Page]
   def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
   def getPageGeometry(pageId: Int@@PageID): LTBounds
   def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
@@ -44,8 +46,8 @@ trait DocumentCorpus {
   def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID]
   def getZoneForTargetRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
 
-  // TODO this Model.TextReflow shouldn't be exposed, but need to until refactor
-  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Model.TextReflow]
+  // TODO this Rel.TextReflow shouldn't be exposed, but need to until refactor
+  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 
@@ -67,7 +69,7 @@ trait DocumentCorpus {
   def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree
 
   // Get Text
-  def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Model.TextReflow]
+  def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
   def getTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[TextReflow]
   def setTextReflowForZoneTree(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 

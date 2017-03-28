@@ -15,19 +15,17 @@ import scalaz.syntax.traverse._
 
 import textreflow._
 import textreflow.data._
-// import watrmarks.{StandardLabels => LB}
 import watrmarks._
 import utils.EnrichNumerics._
 import TypeTags._
-// import PageComponentImplicits._
 import play.api.libs.json, json._
 
 
 class TextReflowDB(
   val tables: TextReflowDBTables,
   dbname: String, dbuser: String, dbpass: String
-) extends DoobiePredef {
-  self =>
+) extends DoobiePredef { self =>
+
 
   def time[R](prefix: String)(block: => R): R = {
     val t0 = System.nanoTime()
@@ -79,12 +77,12 @@ class TextReflowDB(
   }
 
 
-  def selectTargetRegion(regionId: Int@@RegionID): ConnectionIO[Model.TargetRegion] = {
+  def selectTargetRegion(regionId: Int@@RegionID): ConnectionIO[Rel.TargetRegion] = {
     sql""" select * from targetregion where targetregion=${regionId} """
-      .query[Model.TargetRegion].unique
+      .query[Rel.TargetRegion].unique
   }
 
-  def selectTargetRegionForBbox(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Option[Model.TargetRegion]] = {
+  def selectTargetRegionForBbox(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Option[Rel.TargetRegion]] = {
     val LTBounds(l, t, w, h) = bbox
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
 
@@ -93,12 +91,12 @@ class TextReflowDB(
        bleft=${bl} AND btop=${bt} AND
        bwidth=${bw} AND bheight=${bt}
        order by rank
-    """.query[Model.TargetRegion].option
+    """.query[Rel.TargetRegion].option
   }
 
-  // def selectTargetRegionForUri(uri: String): ConnectionIO[Option[Model.TargetRegion]] = {
+  // def selectTargetRegionForUri(uri: String): ConnectionIO[Option[Rel.TargetRegion]] = {
   //   sql"""select * from targetregion where uri=${uri}"""
-  //     .query[Model.TargetRegion].option
+  //     .query[Rel.TargetRegion].option
   // }
 
   def selectTargetRegions(pageId: Int@@PageID): ConnectionIO[List[Int@@RegionID]] = {
@@ -117,16 +115,16 @@ class TextReflowDB(
       .query[Int@@ZoneID].list
   }
 
-  def selectZone(zoneId: Int@@ZoneID): ConnectionIO[Model.Zone] = {
+  def selectZone(zoneId: Int@@ZoneID): ConnectionIO[Rel.Zone] = {
     sql""" select * from  zone where zone=${zoneId} order by rank """
-      .query[Model.Zone].unique
+      .query[Rel.Zone].unique
   }
 
-  def selectTextReflow(textReflowId: Int@@TextReflowID): ConnectionIO[Model.TextReflow] = {
+  def selectTextReflow(textReflowId: Int@@TextReflowID): ConnectionIO[Rel.TextReflow] = {
     sql"""
      select * from  textreflow
      where textreflow=${textReflowId}
-    """.query[Model.TextReflow].unique
+    """.query[Rel.TextReflow].unique
   }
 
 
@@ -152,7 +150,7 @@ class TextReflowDB(
     """.query[Int@@RegionID].list
   }
 
-  def selectZoneLabels(zoneId: Int@@ZoneID): ConnectionIO[List[Model.Label]] = {
+  def selectZoneLabels(zoneId: Int@@ZoneID): ConnectionIO[List[Rel.Label]] = {
     sql"""
      select lb.*
      from
@@ -161,7 +159,7 @@ class TextReflowDB(
         join label                as lb    on (z2l.label=lb.label)
      where
         z2l.zone=${zoneId}
-    """.query[Model.Label].list
+    """.query[Rel.Label].list
   }
 
   def selectZoneForTargetRegion(regionId: Int@@RegionID, label: Label): ConnectionIO[Option[Int@@ZoneID]] = {
@@ -180,12 +178,12 @@ class TextReflowDB(
     query
   }
 
-  def selectModelTextReflowForZone(zoneId: Int@@ZoneID): ConnectionIO[Option[Model.TextReflow]] = {
+  def selectModelTextReflowForZone(zoneId: Int@@ZoneID): ConnectionIO[Option[Rel.TextReflow]] = {
     val query = sql"""
      select tr.*
      from   textreflow as tr join zone as z on (tr.zone=z.zone)
      where  z.zone=${zoneId}
-    """.query[Model.TextReflow].option
+    """.query[Rel.TextReflow].option
 
     query
   }
@@ -246,12 +244,12 @@ class TextReflowDB(
     """.query[Int@@PageID].unique
   }
 
-  def selectPage(pageId: Int@@PageID): ConnectionIO[Model.Page] = {
+  def selectPage(pageId: Int@@PageID): ConnectionIO[Rel.Page] = {
     sql"""
      select pg.page, pg.document, pg.pagenum, imageclip, pg.bleft, pg.btop, pg.bwidth, pg.bheight
      from   page as pg
      where  pg.page=${pageId}
-    """.query[Model.Page].unique
+    """.query[Rel.Page].unique
   }
 
   def selectPageImage(pageId: Int@@PageID): ConnectionIO[Option[Array[Byte]]] = {
@@ -332,9 +330,9 @@ class TextReflowDB(
       .query[Int].unique.map(DocumentID(_))
   }
 
-  def selectDocument(docId: Int@@DocumentID): ConnectionIO[Model.Document] = {
+  def selectDocument(docId: Int@@DocumentID): ConnectionIO[Rel.Document] = {
     sql"select * from document where document=${docId}"
-      .query[Model.Document].unique
+      .query[Rel.Document].unique
   }
 
   def hasDocumentID(stableId: String@@DocumentID): Boolean = {
@@ -489,7 +487,7 @@ class TextReflowDB(
       runq { selectPageImage(pageId) }
     }
 
-    def getPageDef(pageId: Int@@PageID): Option[Model.Page] = {
+    def getPageDef(pageId: Int@@PageID): Option[Rel.Page] = {
       Option(
         runq { selectPage(pageId) }
       )
@@ -589,7 +587,7 @@ class TextReflowDB(
     }
 
 
-    def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Model.TextReflow] = {
+    def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
       runq { selectModelTextReflowForZone(zoneId) }
     }
     def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
@@ -607,8 +605,6 @@ class TextReflowDB(
     def deleteZone(zoneId: Int@@ZoneID): Unit = {
       ???
     }
-
-
 
 
     def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
@@ -635,7 +631,7 @@ class TextReflowDB(
     def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree = {
       ???
     }
-    def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Model.TextReflow] = {
+    def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
       ???
     }
     def getTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[TextReflow] = {

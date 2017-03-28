@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package corpora
 
-
 import edu.umass.cs.iesl.watr.{geometry => G}
 import edu.umass.cs.iesl.watr.{watrmarks => W}
 import scala.collection.mutable
@@ -13,86 +12,27 @@ import watrmarks.Label
 import geometry._
 import geometry.zones._
 
-object Model {
-
-  case class Document(
-    prKey   : Int@@DocumentID,
-    stableId: String@@DocumentID
-  )
-
-  case class Page(
-    prKey      : Int@@PageID,
-    document   : Int@@DocumentID,
-    pagenum    : Int@@PageNum,
-    imageclip  : Option[Int@@ImageID],
-    bounds     : G.LTBounds
-  )
-
-  case class TargetRegion(
-    prKey      : Int@@RegionID,
-    page       : Int@@PageID,
-    rank       : Int,
-    imageclip  : Option[Int@@ImageID],
-    bounds     : G.LTBounds
-  )
-
-  case class ImageClip(
-    prKey    : Int@@ImageID,
-    image    : Array[Byte]
-  )
-
-  case class Zone(
-    prKey    : Int@@ZoneID,
-    document : Int@@DocumentID,
-    rank     : Int
-  )
-
-  case class TextReflow(
-    prKey     : Int@@TextReflowID,
-    reflow    : String,
-    astext    : String,
-    zone      : Int@@ZoneID
-  )
-
-  case class Label(
-    prKey : Int@@LabelID,
-    key   : String
-  )
-
-  case class LabelingWidget(
-    prKey   : Int@@LabelerID,
-    widget  : String
-  )
-
-  case class LabelingTask(
-    prKey     : Int@@LabelingTaskID,
-    taskName  : String,
-    taskState : String,
-    assignee  : String
-  )
-
-}
-
 
 class MemDocstore extends DocumentCorpus {
+
   object tables  {
 
-    object documents extends DBRelation[DocumentID, Model.Document] {
+    object documents extends DBRelation[DocumentID, Rel.Document] {
       val stableIds = mutable.HashMap[String@@DocumentID, Int@@DocumentID]()
 
       def forStableId(stableId: String@@DocumentID): Option[Int@@DocumentID] = {
         stableIds.get(stableId)
       }
 
-      def add(stableId: String@@DocumentID): Model.Document= {
-        val rec = Model.Document(nextId(), stableId)
+      def add(stableId: String@@DocumentID): Rel.Document= {
+        val rec = Rel.Document(nextId(), stableId)
         insert(rec.prKey, rec)
         stableIds.put(stableId, rec.prKey)
         rec
       }
     }
 
-    object pages extends DBRelation[PageID, Model.Page] {
+    object pages extends DBRelation[PageID, Rel.Page] {
       val documentFKey = mutable.HashMap[Int@@DocumentID, Int@@PageID]()
       val docIdPageNumKey = mutable.HashMap[(Int@@DocumentID, Int@@PageNum), Int@@PageID]()
 
@@ -100,15 +40,15 @@ class MemDocstore extends DocumentCorpus {
         docIdPageNumKey.get((docId, pageNum))
       }
 
-      def add(docId: Int@@DocumentID, pageNum: Int@@PageNum): Model.Page = {
-        val rec = Model.Page(nextId(), docId, pageNum, None, G.LTBounds(0, 0, 0, 0))
+      def add(docId: Int@@DocumentID, pageNum: Int@@PageNum): Rel.Page = {
+        val rec = Rel.Page(nextId(), docId, pageNum, None, G.LTBounds(0, 0, 0, 0))
         insert(rec.prKey, rec)
         documentFKey.put(docId, rec.prKey)
         docIdPageNumKey.put((docId, pageNum), rec.prKey)
         rec
       }
 
-      def setGeometry(pageId: Int@@PageID, bbox:G.LTBounds): Model.Page = {
+      def setGeometry(pageId: Int@@PageID, bbox:G.LTBounds): Rel.Page = {
         val curr = unique(pageId)
         val up = curr.copy(bounds=bbox)
         update(pageId, up)
@@ -120,8 +60,69 @@ class MemDocstore extends DocumentCorpus {
       }
     }
 
-    object zones extends DBRelation[ZoneID, Model.Zone] {
-      val documentFK = mutable.HashMap[Int@@DocumentID, Int@@ZoneID]()
+    object zonetrees extends DBRelation[ZoneID, ZoneTree] {
+
+      // object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
+      object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
+      object zoneToLabel extends EdgeTableOneToMany[ZoneID, LabelID]
+
+      val ZT = ZoneTrees
+
+      def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
+        val zoneId = nextId()
+        val rec = ZT.ref(zoneId, ZT.leaf(geoRegion))
+        insert(zoneId, rec)
+        rec
+      }
+
+      def createZoneTree(zoneIds: Seq[Int@@ZoneID]): ZoneTree = {
+        val zoneId = nextId()
+
+        val rec = ZT.ref(zoneId,
+          ZT.node(zoneIds.map(unique(_)))
+        )
+        insert(zoneId, rec)
+        rec
+      }
+
+      def addZoneTreeLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree = {
+        val rec = ZT.role(label, unique(zoneId))
+        val labelId = labels.ensureLabel(label.fqn)
+        zoneToLabel.addEdge(zoneId, labelId)
+        update(zoneId,rec)
+        rec
+      }
+
+      def deleteZoneTree(zoneId: Int@@ZoneID): Unit = {
+        delete(zoneId)
+      }
+
+      def getZoneTreeLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
+        for {
+          zoneId <- forDocument.getEdges(docId)
+          labelId <- zoneToLabel.getEdges(zoneId)
+        } yield {
+          labels.getLabel(labelId)
+        }
+      }
+
+      def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree] = {
+        for {
+          zoneId <- forDocument.getEdges(docId)
+          labelId <- zoneToLabel.getEdges(zoneId)
+          zlabel = labels.getLabel(labelId)
+          if zlabel == label
+        } yield {
+          unique(zoneId)
+        }
+      }
+
+     def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree = {
+        ???
+      }
+    }
+    object zones extends DBRelation[ZoneID, Rel.Zone] {
+      // val documentFK = mutable.HashMap[Int@@DocumentID, Int@@ZoneID]()
 
       object toTargetRegion extends EdgeTableOneToMany[ZoneID, RegionID]
       object forDocument extends EdgeTableOneToMany[DocumentID, ZoneID]
@@ -134,7 +135,7 @@ class MemDocstore extends DocumentCorpus {
         toTargetRegion.addEdge(zoneId, regionId)
       }
 
-      def getTargetRegions(zoneId: Int@@ZoneID): Seq[Model.TargetRegion] = {
+      def getTargetRegions(zoneId: Int@@ZoneID): Seq[Rel.TargetRegion] = {
         toTargetRegion
           .getEdges(zoneId)
           .map(targetregions.unique(_))
@@ -144,27 +145,32 @@ class MemDocstore extends DocumentCorpus {
         zoneToLabel.addEdge(zoneId, labels.ensureLabel(labelKey))
       }
 
-      def getLabels(zoneId: Int@@ZoneID): Seq[Model.Label] = {
+      def getLabels(zoneId: Int@@ZoneID): Seq[Rel.Label] = {
         zoneToLabel
           .getEdges(zoneId)
           .map(labels.unique(_))
       }
 
-      def add(docId: Int@@DocumentID): Model.Zone = {
+      def add(docId: Int@@DocumentID): Rel.Zone = {
         // FIXME: correct rank
-        val rec = Model.Zone(nextId(), docId, rank=0)
+        val rec = Rel.Zone(nextId(), docId, rank=0)
         insert(rec.prKey, rec)
         forDocument.addEdge(docId, rec.prKey)
         rec
       }
     }
 
-    object labels extends DBRelation[LabelID, Model.Label]{
+    object labels extends DBRelation[LabelID, Rel.Label]{
       val forKey = mutable.HashMap[String, Int@@LabelID]()
+
+      def getLabel(labelId: Int@@LabelID): W.Label = {
+        val m = unique(labelId)
+        W.Labels.fromString(m.key).copy(id=m.prKey)
+      }
 
       def ensureLabel(key: String): Int@@LabelID = {
         forKey.get(key).getOrElse({
-          val rec = Model.Label(nextId(), key)
+          val rec = Rel.Label(nextId(), key)
           insert(rec.prKey, rec)
           rec.prKey
         })
@@ -175,43 +181,43 @@ class MemDocstore extends DocumentCorpus {
 
     object pageImages extends EdgeTableOneToOne[PageID, ImageID]
 
-    object imageclips extends DBRelation[ImageID, Model.ImageClip]
+    object imageclips extends DBRelation[ImageID, Rel.ImageClip]
 
-    object targetregions extends DBRelation[RegionID, Model.TargetRegion]  {
+    object targetregions extends DBRelation[RegionID, Rel.TargetRegion]  {
 
       object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
 
-      def add(pageId: Int@@PageID, bbox: G.LTBounds): Model.TargetRegion = {
+      def add(pageId: Int@@PageID, bbox: G.LTBounds): Rel.TargetRegion = {
         // FIXME: correct rank
-        val rec = Model.TargetRegion(nextId(), pageId, rank=0, None, bbox)
+        val rec = Rel.TargetRegion(nextId(), pageId, rank=0, None, bbox)
         insert(rec.prKey, rec)
         forPage.addEdge(pageId, rec.prKey)
         rec
       }
     }
 
-    object textreflows extends DBRelation[TextReflowID, Model.TextReflow] {
+    object textreflows extends DBRelation[TextReflowID, Rel.TextReflow] {
       object forZone extends EdgeTableOneToOne[ZoneID, TextReflowID]
 
 
-      def add(zoneId: Int@@ZoneID, t: TextReflow): Model.TextReflow = {
+      def add(zoneId: Int@@ZoneID, t: TextReflow): Rel.TextReflow = {
         import TextReflowJsonCodecs._
         import play.api.libs.json
         val asJson = t.toJson()
         val asText = t.toText()
         val jsstr = json.Json.stringify(asJson)
-        val rec = Model.TextReflow(nextId(), jsstr, asText, zoneId)
+        val rec = Rel.TextReflow(nextId(), jsstr, asText, zoneId)
         this.insert(rec.prKey, rec)
         rec
       }
 
     }
 
-    object labelers extends DBRelation[LabelerID, Model.LabelingWidget] {
+    object labelers extends DBRelation[LabelerID, Rel.LabelingWidget] {
 
     }
-    object labelingTasks extends DBRelation[LabelingTaskID, Model.LabelingTask] {
+    object labelingTasks extends DBRelation[LabelingTaskID, Rel.LabelingTask] {
 
     }
 
@@ -255,7 +261,7 @@ class MemDocstore extends DocumentCorpus {
     pages.forDocAndPage(docId, pageNum)
   }
 
-  def getPageDef(pageId: Int@@PageID): Option[Model.Page] = {
+  def getPageDef(pageId: Int@@PageID): Option[Rel.Page] = {
     pages.option(pageId)
   }
 
@@ -268,7 +274,7 @@ class MemDocstore extends DocumentCorpus {
   }
 
   def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
-    val rec = imageclips.create(Model.ImageClip(_, bytes))
+    val rec = imageclips.create(Rel.ImageClip(_, bytes))
     pageImages.addEdge(pageId, rec.prKey)
   }
 
@@ -301,7 +307,7 @@ class MemDocstore extends DocumentCorpus {
   }
 
   def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
-    val rec = imageclips.create(Model.ImageClip(_, bytes))
+    val rec = imageclips.create(Rel.ImageClip(_, bytes))
     targetRegionImages.addEdge(regionId, rec.prKey)
   }
 
@@ -364,7 +370,7 @@ class MemDocstore extends DocumentCorpus {
     targetregions.forZone.getEdgeOption(regionId)
   }
 
-  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Model.TextReflow] = {
+  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
     textreflows.forZone
       .getRhs(zoneId)
       .flatMap(id => textreflows.option(id))
@@ -392,35 +398,34 @@ class MemDocstore extends DocumentCorpus {
   }
 
 
-
-
-
-
   def createZoneTree(geoRegion: GeometricRegion): ZoneTree = {
-    ???
+    zonetrees.createZoneTree(geoRegion)
   }
+
   def createZoneTree(zoneIds: Seq[Int@@ZoneID]): ZoneTree = {
-    ???
+    zonetrees.createZoneTree(zoneIds)
   }
+
   def addZoneTreeLabel(zoneId: Int@@ZoneID, label: Label): ZoneTree = {
-    ???
+    zonetrees.addZoneTreeLabel(zoneId, label)
   }
   def deleteZoneTree(zoneId: Int@@ZoneID): Unit = {
-    ???
+    zonetrees.delete(zoneId)
   }
   def getZoneTree(zoneId: Int@@ZoneID): ZoneTree = {
-    ???
+    zonetrees.unique(zoneId)
   }
+
   def getZoneTreeLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
-    ???
+    zonetrees.getZoneTreeLabelsForDocument(docId)
   }
   def getZoneTreesForDocument(docId: Int@@DocumentID, label: Label): Seq[ZoneTree] = {
-    ???
+    zonetrees.getZoneTreesForDocument(docId, label)
   }
   def getZoneTreesForRegion(geoRegion: GeometricRegion, label: Label): ZoneTree = {
     ???
   }
-  def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Model.TextReflow] = {
+  def getModelTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
     ???
   }
   def getTextReflowForZoneTree(zoneId: Int@@ZoneID): Option[TextReflow] = {

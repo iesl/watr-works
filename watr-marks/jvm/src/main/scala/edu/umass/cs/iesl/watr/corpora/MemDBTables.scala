@@ -94,4 +94,10 @@ class DBRelation[IDType, ModelType](
   def update(id: Int@@IDType, m: ModelType): Option[ModelType] = {
     table.put(id, m)
   }
+
+  def delete(id: Int@@IDType): Unit = {
+    assert(table.contains(id))
+    table.remove(id)
+    assert(!table.contains(id))
+  }
 }
