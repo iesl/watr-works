@@ -9,7 +9,7 @@ import TextReflowF._
 import TypeTags._
 import corpora._
 import data._
-// import geometry.syntax._
+import geometry.zones.syntax._
 
 class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
@@ -53,7 +53,7 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
 
     for {
       (line, i)       <- pageLines.zipWithIndex
-      lineReflow       = docStore.getTextReflowForZone(line.id).get
+      lineReflow       = docStore.getTextReflowForZone(line.getId).get
       lineText         = lineReflow.toText
       lineTR           = lineReflow.targetRegion
       x               <- 0 until 3

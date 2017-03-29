@@ -45,23 +45,23 @@ object LabelAction {
 
   case class CreateFigure(
     figure: GeometricFigure,
-    targetPage: PageIdentifier
+    targetPage: RecordedPageID
   ) extends LabelAction[TargetRegion]
 
   case class QueryForRegions(
     queryRegion: LTBounds,
     constraint: Constraint,
-    targetPage: PageIdentifier
+    targetPage: RecordedPageID
   ) extends LabelAction[Seq[TargetRegion]]
 
   case class QueryForZones(
     queryRegion: LTBounds,
-    targetPage: PageIdentifier
+    targetPage: RecordedPageID
   ) extends LabelAction[Seq[Int@@ZoneID]]
 
 
-  def createFigure(f: GeometricFigure, p: PageIdentifier)               = Free.liftF{ CreateFigure(f, p) }
-  def queryForRegions(q: LTBounds, c: Constraint, t: PageIdentifier)    = Free.liftF{ QueryForRegions(q, c, t) }
+  def createFigure(f: GeometricFigure, p: RecordedPageID)               = Free.liftF{ CreateFigure(f, p) }
+  def queryForRegions(q: LTBounds, c: Constraint, t: RecordedPageID)    = Free.liftF{ QueryForRegions(q, c, t) }
   def selectZone(g: Int@@ZoneID)                                        = Free.liftF{ SelectZone(g) }
   def unselectZone(g: Int@@ZoneID)                                      = Free.liftF{ UnselectZone(g) }
 

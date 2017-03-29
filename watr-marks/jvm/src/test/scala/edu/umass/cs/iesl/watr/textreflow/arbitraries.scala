@@ -19,17 +19,30 @@ trait ArbitraryTextReflows {
   import Arbitrary._
 
 
-
   implicit def arbLTBounds: Arbitrary[LTBounds] = {
     (arbDouble |@| arbDouble |@| arbDouble |@| arbDouble)(
       LTBounds.apply
     )
   }
 
+  implicit def arbStablePageID: Arbitrary[StablePageID] = {
+    (arbString |@| arbInt)({
+      case (s, i) =>
+        StablePageID(DocumentID(s), PageNum(i))
+    })
+  }
+
+  implicit def arbRecordedPageID: Arbitrary[RecordedPageID] = {
+    (arbInt |@| arbStablePageID)({
+      case (id, stable) =>
+        RecordedPageID(PageID(id), stable)
+    })
+  }
+
   implicit def arbTargetRegion: Arbitrary[TargetRegion] = {
-    (arbInt |@| arbInt |@| arbLTBounds)({
-      case (id, tr, bbox) =>
-        TargetRegion(RegionID(id), DocumentID(""), PageNum(tr), bbox)
+    (arbInt |@| arbRecordedPageID |@| arbLTBounds)({
+      case (id, rec, bbox) =>
+        TargetRegion(RegionID(id), rec, bbox)
     })
   }
 

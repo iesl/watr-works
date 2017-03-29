@@ -218,7 +218,7 @@ trait LabelWidgetIndex {
     if (targetRegionsToBeLabeled.isEmpty) Seq() else {
 
       val zoneId = docStore.createZone(
-        targetRegionsToBeLabeled.map(tr => docStore.createZone(tr.id))
+        targetRegionsToBeLabeled.flatten.map(tr => docStore.createZone(tr.id))
       )
 
       docStore.addZoneLabel(zoneId, label)

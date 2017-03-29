@@ -19,9 +19,9 @@ class DocstoreTest extends FlatSpec with Matchers with CorpusTestingUtil {
     val docId = docStore.addDocument(stableId)
     val pageId = docStore.addPage(docId, PageNum(0))
     val regionId = docStore.addTargetRegion(pageId, LTBounds(5d, 4d, 3d, 2d))
-    val targetRegion = docStore.getTargetRegion(regionId)
 
-    val ztree = docStore.createZoneTree(targetRegion)
+    val zoneId = docStore.createZone(regionId)
+    val ztree = docStore.getZone(zoneId)
 
     println(ZT.prettyPrintTree(ztree))
 

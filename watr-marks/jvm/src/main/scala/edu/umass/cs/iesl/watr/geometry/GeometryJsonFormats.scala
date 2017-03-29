@@ -11,6 +11,13 @@ trait TypeTagFormats {
   import play.api.libs.json
   import json._
 
+  val ReadDocumentIDI: Reads[Int@@DocumentID]   = __.read[Int].map(i => Tag.of[DocumentID](i))
+  val WriteDocumentIDI: Writes[Int@@DocumentID] = Writes[Int@@DocumentID] { i => JsNumber(i.unwrap) }
+  implicit def FormatDocumentIDI            = Format(ReadDocumentIDI, WriteDocumentIDI)
+
+  val ReadDocumentID: Reads[String@@DocumentID]   = __.read[String].map(i => Tag.of[DocumentID](i))
+  val WriteDocumentID: Writes[String@@DocumentID] = Writes[String@@DocumentID] { i => JsString(i.unwrap) }
+  implicit def FormatDocumentID            = Format(ReadDocumentID, WriteDocumentID)
 
   val ReadPageID: Reads[Int@@PageID]   = __.read[Int].map(i => Tag.of[PageID](i))
   val WritePageID: Writes[Int@@PageID] = Writes[Int@@PageID] { i => JsNumber(i.unwrap) }
@@ -61,10 +68,10 @@ trait TypeTagFormats {
   implicit def FormatChar     = Format(ReadChar, WriteChar)
 
 
-  implicit def FormatSHA1String  = Format(
-    __.read[String].map(i => Tag.of[SHA1String](i)),
-    Writes[String@@SHA1String](i => JsString(i.unwrap))
-  )
+  // implicit def FormatSHA1String  = Format(
+  //   __.read[String].map(i => Tag.of[SHA1String](i)),
+  //   Writes[String@@SHA1String](i => JsString(i.unwrap))
+  // )
 }
 
 
@@ -128,54 +135,47 @@ trait GeometryJsonCodecs extends TypeTagFormats {
     }
 
     override def writes(o: LTBounds) = {
-      // arr(jstr("lt"), jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}"""))
       jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}""")
     }
   }
 
-  implicit val FormatTargetRegion: Format[TargetRegion] = new Format[TargetRegion] {
-    override def reads(json: JsValue)= json match {
-      case JsArray(Seq(
-        id: JsNumber, JsString(stableId), targetPage: JsNumber, ltBounds
-      )) => JsSuccess(
-        TargetRegion(
-          id.as[Int@@RegionID],
-          DocumentID(stableId),
-          targetPage.as[Int@@PageNum],
-          ltBounds.as[LTBounds]
-        ))
-    }
-    override def writes(o: TargetRegion) =
-      arr(toJson(o.id), toJson(o.stableId.unwrap), toJson(o.pageNum), toJson(o.bbox))
-  }
+  implicit val FormatStablePageID: Format[StablePageID] = Json.format[StablePageID]
+  implicit val FormatRecordedPageID: Format[RecordedPageID] = Json.format[RecordedPageID]
+  implicit val FormatTargetRegion: Format[TargetRegion] = Json.format[TargetRegion]
 
   implicit val FormatPageGeometry     = Json.format[PageGeometry]
   implicit val FormatLabel            = Json.format[Label]
-  implicit val FormatZone             = Json.format[Zone]
+  // implicit val FormatZone             = Json.format[Zone]
+  implicit val FormatCharAtom             = Json.format[CharAtom]
 
-  implicit val FormatCharAtom: Format[CharAtom] = new Format[CharAtom] {
-    override def reads(json: JsValue)= json match {
-      case JsObject(fields) => fields.get("c") match {
-        case Some(JsArray(Seq(JsNumber(charId), JsString(achar), targetRegionJs, JsNumber(wonkyCode)))) =>
-          JsSuccess(
-            CharAtom(CharID(charId.intValue()), targetRegionJs.as[TargetRegion], achar, Option(wonkyCode.toInt))
-          )
+  // implicit val FormatCharAtom: Format[CharAtom] = new Format[CharAtom] {
+  //   override def reads(json: JsValue)= json match {
+  //     case JsObject(fields) => fields.get("c") match {
+  //       case Some(JsArray(Seq(JsNumber(charId), JsString(achar), targetRegionJs, JsNumber(wonkyCode)))) =>
+  //         JsSuccess(
+  //           CharAtom(CharID(charId.intValue()), targetRegionJs.as[TargetRegion], achar, Option(wonkyCode.toInt))
+  //         )
 
-        case Some(JsArray(Seq(JsNumber(charId), JsString(achar), targetRegionJs))) =>
-          JsSuccess(
-            CharAtom(CharID(charId.intValue()), targetRegionJs.as[TargetRegion], achar, None)
-          )
-      }
-      case _ => JsError(s"unmatched CharAtom ${json}")
-    }
+  //       case Some(JsArray(Seq(JsNumber(charId), JsString(achar), targetRegionJs))) =>
+  //         JsSuccess(
+  //           CharAtom(CharID(charId.intValue()), targetRegionJs.as[TargetRegion], achar, None)
+  //         )
+  //     }
+  //     case _ => JsError(s"unmatched CharAtom ${json}")
+  //   }
 
-    override def writes(o: CharAtom) = o match {
-      case a: CharAtom =>
-        a.wonkyCharCode.map(ccode =>
-          obj(("c", arr(JsNumber(a.id.unwrap), jstr(a.char), toJson(a.targetRegion), JsNumber(ccode))))
-        ).getOrElse(
-          obj(("c", arr(JsNumber(a.id.unwrap), jstr(a.char), toJson(a.targetRegion))))
-        )
-    }
-  }
+  //   override def writes(o: CharAtom) = o match {
+  //     case a: CharAtom =>
+  //       a.wonkyCharCode.map(ccode =>
+  //         obj(("c", arr(JsNumber(a.id.unwrap), jstr(a.char), toJson(a.targetRegion), JsNumber(ccode))))
+  //       ).getOrElse(
+  //         obj(("c",
+  //           arr(
+  //             JsNumber(a.id.unwrap),
+  //             jstr(a.char),
+  //             toJson(a.targetRegion)
+  //           )))
+  //       )
+  //   }
+  // }
 }

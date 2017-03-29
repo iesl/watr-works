@@ -81,7 +81,8 @@ trait CorpusTestingUtil extends PlainTextCorpus {
       }
 
       val zoneBoxes = for {
-        zoneId <- docStore.getZonesForDocument(docId)
+        label <- docStore.getZoneLabelsForDocument(docId)
+        zoneId <- docStore.getZonesForDocument(docId, label)
         textReflow <- docStore.getTextReflowForZone(zoneId)
       } yield {
         (textReflow.toText.box

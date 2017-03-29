@@ -22,19 +22,18 @@ import geometry.syntax._
 
   */
 
-sealed trait PageIdentifier
 
 case class StablePageID(
   stableId: String@@DocumentID,
   pageNum: Int@@PageNum
-) extends PageIdentifier {
+) {
   override def toString = s"""${stableId}/pg${pageNum}"""
 }
 
 case class RecordedPageID(
   pageId: Int@@PageID,
   stable: StablePageID
-) extends PageIdentifier {
+) {
   override def toString = s"""${stable}@${pageId}"""
 
 }
@@ -63,14 +62,13 @@ case class TargetRegion(
 
 object TargetRegion {
 
-  // implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
-  //   case (TargetRegion(id, stableId, targetPage, bbox), TargetRegion(id2, stableId2, targetPage2, bbox2)) =>
-  //     (id.unwrap==id2.unwrap
-  //       && stableId.unwrap==stableId.unwrap
-  //       && targetPage.unwrap==targetPage2.unwrap
-  //       && (bbox: GeometricFigure) === bbox2
-  //     )
-  //   case (_, _) => false
+  implicit val EqualTargetRegion: Equal[TargetRegion] =
+    Equal.equal((a, b) => a.id==b.id)
+
+    // implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
+    // case (TargetRegion(id, _, _), TargetRegion(id2, _, _)) =>
+    //   id.unwrap==id2.unwrap
+    // case (_, _) => false
   // })
 
 }

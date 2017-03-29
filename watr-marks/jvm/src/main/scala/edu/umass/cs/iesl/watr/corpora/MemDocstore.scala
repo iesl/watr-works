@@ -329,7 +329,7 @@ class MemDocstore extends DocumentCorpus {
   }
 
   def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID] = {
-    zones.getZonesForDocument(docId, label) //.flatMap(_.getId)
+    zones.getZonesForDocument(docId, label).map(_.getId)
   }
 
   def getZonesForRegion(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {

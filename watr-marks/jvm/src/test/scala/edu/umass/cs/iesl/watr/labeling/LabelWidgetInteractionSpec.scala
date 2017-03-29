@@ -1,8 +1,8 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
-import geometry._
-import geometry.zones._
+// import geometry._
+// import geometry.zones._
 
 import LabelWidgets._
 

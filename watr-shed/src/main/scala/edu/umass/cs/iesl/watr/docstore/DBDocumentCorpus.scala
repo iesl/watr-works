@@ -576,7 +576,7 @@ class TextReflowDB(
       runq { linkZoneToLabel(zoneId, label) }
     }
 
-    def getZonesForDocument(docId: Int@@DocumentID, label: Option[Label]=None): Seq[Int@@ZoneID] = {
+    def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID] = {
       runq {
         selectZonesForDocument(docId)
       }

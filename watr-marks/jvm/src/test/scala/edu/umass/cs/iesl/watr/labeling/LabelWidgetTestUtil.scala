@@ -85,7 +85,8 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
       }
 
       val zoneBoxes = for {
-        zoneId <- docStore.getZonesForDocument(docId)
+        label <- docStore.getZoneLabelsForDocument(docId)
+        zoneId <- docStore.getZonesForDocument(docId, label)
       } yield {
         val zbox = docStore.getZone(zoneId).toString().box
         docStore.getTextReflowForZone(zoneId)
@@ -136,11 +137,11 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
   //   println(res)
   // }
 
-  def mkTargetRegion(pageId: Int, bbox: Int*): TargetRegion = {
-    val pgRegion = mkTargetRegion(pageId, bbox:_*)
-    val regionId = docStore.addTargetRegion(pgRegion.pageId, pgRegion.bbox)
-    docStore.getTargetRegion(regionId)
-  }
+  // def mkTargetRegion(pageId: Int, bbox: Int*): TargetRegion = {
+  //   val pgRegion = mkTargetRegion(pageId, bbox:_*)
+  //   val regionId = docStore.addTargetRegion(pgRegion.id, pgRegion.bbox)
+  //   docStore.getTargetRegion(regionId)
+  // }
 
   // def mkPageRegion(pageId: Int, bbox: Int*): PageRegion = {
   //   val List(x, y, w, h) = bbox.toList
@@ -151,16 +152,16 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
 
   def pageDivs3(pageId: Int): LabelWidget = {
     col(
-      targetOverlay(mkTargetRegion(pageId, 0, 0, 3, 1), List()),
-      targetOverlay(mkTargetRegion(pageId, 0, 1, 3, 1), List()),
-      targetOverlay(mkTargetRegion(pageId, 0, 2, 3, 1), List())
+      targetOverlay(mkTargetRegion(PageID(pageId), 0, 0, 3, 1), List()),
+      targetOverlay(mkTargetRegion(PageID(pageId), 0, 1, 3, 1), List()),
+      targetOverlay(mkTargetRegion(PageID(pageId), 0, 2, 3, 1), List())
     )
   }
 
   def pageDivs2(pageId: Int): LabelWidget = {
     col(
-      targetOverlay(mkTargetRegion(pageId, 0, 0, 3, 2), List()),
-      targetOverlay(mkTargetRegion(pageId, 0, 2, 3, 1), List())
+      targetOverlay(mkTargetRegion(PageID(pageId), 0, 0, 3, 2), List()),
+      targetOverlay(mkTargetRegion(PageID(pageId), 0, 2, 3, 1), List())
     )
   }
 

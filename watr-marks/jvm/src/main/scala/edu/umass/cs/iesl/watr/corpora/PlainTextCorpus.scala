@@ -105,13 +105,6 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   }
 
   def getRegionBounds(x: Int, y: Int, w: Int, h: Int): LTBounds = {
-    // val width = if (w>0) {
-    //   w*xscale - 0.1
-    // } else 0
-    // val height = if (h>0) {
-    //   h*yscale - 0.1
-    // } else 0
-
     val width = w * xscale
     val height = h*yscale
 
@@ -121,6 +114,18 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     )
   }
 
+  def mkTargetRegionDbl(pageId: Int@@PageID, x: Double, y: Double, w: Double, h: Double): TargetRegion = {
+    // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
+    val width  = w*xscale
+    val height = h*yscale
+    val bbox = LTBounds(
+      left=x*xscale, top=y*yscale,
+      width, height
+    )
+
+    val regionId = docStore.addTargetRegion(pageId, bbox)
+    docStore.getTargetRegion(regionId)
+  }
   def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
     // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
     val bbox = getRegionBounds(x, y, w, h)
@@ -209,14 +214,14 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
     reflowBuilder.newline()
     reflowBuilder.completed.foreach { reflow =>
-      val tt = reflow.toText
       val lineBounds = reflow.bounds()
-      val lineZone = docStore.createZone(docId)
       val regionId = docStore.addTargetRegion(pageId, lineBounds)
+
+      val lineZoneId = docStore.createZone(regionId)
       val tr = docStore.getTargetRegion(regionId)
-      docStore.setZoneTargetRegions(lineZone, Seq(tr))
-      docStore.setTextReflowForZone(lineZone, reflow)
-      docStore.addZoneLabel(lineZone, LB.VisualLine)
+      docStore.addZoneLabel(lineZoneId, LB.VisualLine)
+
+      docStore.setTextReflowForZone(lineZoneId, reflow)
     }
 
     docStore.setPageGeometry(pageId, reflowBuilder.totalBounds())
