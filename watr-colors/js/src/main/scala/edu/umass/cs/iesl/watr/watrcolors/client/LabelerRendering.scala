@@ -50,7 +50,7 @@ trait LabelerRendering extends MouseGestures {
   }
 
 
-  def makeImageForPageRegion(pageRegion: PageRegion, absPos: LTBounds): Future[FabricObject] = {
+  def makeImageForPageRegion(pageRegion: TargetRegion, absPos: LTBounds): Future[FabricObject] = {
 
     val promise = Promise[FabricObject]()
 
@@ -73,7 +73,7 @@ trait LabelerRendering extends MouseGestures {
         ()
       }
 
-    val pageRegionId = pageRegion.regionId.getOrElse(sys.error("pageRegion has no regionId"))
+    val pageRegionId = pageRegion.id
 
     Image.fromURL(s"/img/region/${pageRegionId}", callback)
     promise.future

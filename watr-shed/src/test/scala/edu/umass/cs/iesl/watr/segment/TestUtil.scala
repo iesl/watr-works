@@ -107,7 +107,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
     val segmenter =  DocumentSegmenter.createSegmenter(docId, path, new MemDocstore)
 
     // Assume these example regions are all from one page
-    // val pageNum = regions.map(_.pageNum).head
+    // val pageNum = regions.map(_.page.stable.pageNum).head
     // val allBboxes = regions.map(_.bbox)
 
     val minX = regions.map(_.left).min

@@ -53,31 +53,31 @@ class MultiPageIndex(
   lazy val docId: Int@@DocumentID =
     docStore.getDocument(stableId).getOrElse(sys.error("MultiPageIndex created for non-existent document"))
 
-  def createZone(): Zone  = {
-    docStore.getZone(
-      docStore.createZone(docId)
-    )
-  }
+  // def createZone(): Zone  = {
+  //   docStore.getZone(
+  //     docStore.createZone(docId)
+  //   )
+  // }
 
-  def getZones(): Seq[Zone] = {
-    docStore
-      .getZonesForDocument(docId)
-      .map(docStore.getZone(_))
-  }
+  // def getZones(): Seq[Zone] = {
+  //   docStore
+  //     .getZonesForDocument(docId)
+  //     .map(docStore.getZone(_))
+  // }
 
-  def getZone(zoneId: Int@@ZoneID): Zone = {
-    docStore.getZone(zoneId)
-  }
+  // def getZone(zoneId: Int@@ZoneID): Zone = {
+  //   docStore.getZone(zoneId)
+  // }
 
-  def addZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Zone = {
-    docStore.setZoneTargetRegions(zoneId, targetRegions)
-    docStore.getZone(zoneId)
-  }
+  // def addZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Zone = {
+  //   docStore.setZoneTargetRegions(zoneId, targetRegions)
+  //   docStore.getZone(zoneId)
+  // }
 
-  def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit = {
-    docStore.addZoneLabel(zoneId, label)
-    // docStore.getZone(zoneId)
-  }
+  // def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit = {
+  //   docStore.addZoneLabel(zoneId, label)
+  //   // docStore.getZone(zoneId)
+  // }
 
   def getStableId(): String@@DocumentID = stableId
 
@@ -208,7 +208,7 @@ class MultiPageIndex(
   }
 
   def getPageForComponent(c: Component): Int@@PageNum = {
-    c.targetRegion.pageNum
+    c.targetRegion.page.stable.pageNum
   }
 
 
@@ -289,7 +289,7 @@ class MultiPageIndex(
   }
 
   def addComponent(c: Component): Component = {
-    val pageNum = c.targetRegion.pageNum
+    val pageNum = c.targetRegion.page.stable.pageNum
     getPageIndex(pageNum)
       .addComponent(c)
   }

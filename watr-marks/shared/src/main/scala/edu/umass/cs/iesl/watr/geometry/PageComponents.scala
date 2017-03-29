@@ -2,9 +2,8 @@ package edu.umass.cs.iesl.watr
 package geometry
 
 import scalaz.Equal
-import scalaz.syntax.equal._
-
-import TypeTags._
+// import scalaz.syntax.equal._
+// import TypeTags._
 import geometry.syntax._
 
 /**
@@ -84,18 +83,17 @@ case class CharAtom(
   targetRegion: TargetRegion,
   char: String,
   wonkyCharCode: Option[Int] = None
-)   {
+)  {
   override def toString = s"CharAtom($char, $targetRegion)"
 
   def bbox: LTBounds = targetRegion.bbox
 }
 
 object CharAtom {
-  implicit val EqualCharAtom: Equal[CharAtom] = Equal.equal((a, b)  => (a, b) match {
-    case (CharAtom(i, t, c, w), CharAtom(i2, t2, c2, w2)) =>
-      i == i2
-    case (_, _) => false
-  })
+
+  implicit val EqualCharAtom: Equal[CharAtom] = 
+    Equal.equal((a, b)  => a.id==b.id )
+
 }
 
 

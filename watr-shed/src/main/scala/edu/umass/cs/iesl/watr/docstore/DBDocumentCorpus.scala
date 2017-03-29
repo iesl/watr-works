@@ -6,12 +6,14 @@ import doobie.free.{ connection => C }
 import scalaz.syntax.applicative._
 
 import geometry._
+// import geometry.zones._
+// import geometry.zones.syntax._
 
 import databasics._
 import corpora._
 
-import scalaz.std.list._
-import scalaz.syntax.traverse._
+// import scalaz.std.list._
+// import scalaz.syntax.traverse._
 
 import textreflow._
 import textreflow.data._
@@ -511,12 +513,16 @@ class TextReflowDB(
     // G.TargetRegion = M.TargetRegion+M.Page+M.Document
     def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[TargetRegion] =
       for {
-        tr <- selectTargetRegion(regionId)
-        page <- selectPage(tr.page)
-        doc <- selectDocument(page.document)
+        mTr <- selectTargetRegion(regionId)
+        mPage <- selectPage(mTr.page)
+        mDocument <- selectDocument(mPage.document)
       } yield {
-        TargetRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
+        val stable = StablePageID(mDocument.stableId, mPage.pagenum)
+        val page = RecordedPageID(mPage.prKey, stable)
+        TargetRegion(mTr.prKey, page, mTr.bounds)
+        // TargetRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
       }
+
 
     def getTargetRegion(regionId: Int@@RegionID): TargetRegion =
       runq { selTargetRegion(regionId) }
@@ -538,54 +544,39 @@ class TextReflowDB(
     }
 
 
-    def createZone(docId: Int@@DocumentID): Int@@ZoneID = {
-      runq { insertZone(docId) }
+
+    def getZone(zoneId: Int@@ZoneID): Zone =  {
+
+      // TODO CTE
+      //   runq {
+      //   // Zone = M.Zone+TargetRegions+Labels
+      //   for {
+      //     zone     <- selectZone(zoneId)
+      //     regions  <- {
+      //       selectZoneTargetRegions(zone.prKey)
+      //         .flatMap(ts =>
+      //           ts.map(t => selTargetRegion(t)).sequenceU
+      //         )
+      //     }
+      //     labels  <- {
+      //       selectZoneLabels(zone.prKey)
+      //         .map(_.map(mlabel =>
+      //           Labels.fromString(mlabel.key).copy(
+      //             id=mlabel.prKey
+      //           )
+      //         ))
+      //     }
+      //   } yield {
+      //     Zone(zone.prKey, regions, labels)
+      //   }
+      // }
+      ???
     }
 
-    def getZone(zoneId: Int@@ZoneID): Zone = runq {
-      // Zone = M.Zone+TargetRegions+Labels
-      for {
-        zone     <- selectZone(zoneId)
-        regions  <- {
-          selectZoneTargetRegions(zone.prKey)
-            .flatMap(ts =>
-              ts.map(t => selTargetRegion(t)).sequenceU
-            )
-        }
-        labels  <- {
-          selectZoneLabels(zone.prKey)
-            .map(_.map(mlabel =>
-              Labels.fromString(mlabel.key).copy(
-                id=mlabel.prKey
-              )
-            ))
-        }
-      } yield {
-        Zone(zone.prKey, regions, labels)
-      }
-    }
-
-    def setZoneTargetRegions(zoneId: Int@@ZoneID, targetRegions: Seq[TargetRegion]): Unit = {
-      targetRegions.foreach { tr =>
-        runq{ linkZoneToTargetRegion(zoneId, tr.id) }
-      }
-    }
-
-
-    def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Unit = {
-      runq { linkZoneToLabel(zoneId, label) }
-    }
-
-    def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID] = {
-      runq {
-        selectZonesForDocument(docId)
-      }
-    }
 
     def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
       runq { selectZoneForTargetRegion(regionId, label) }
     }
-
 
     def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
       runq { selectModelTextReflowForZone(zoneId) }
@@ -603,40 +594,31 @@ class TextReflowDB(
     }
 
 
+    // def createZone(docId: Int@@DocumentID): Int@@ZoneID = {
+    //   runq { insertZone(docId) }
+    // }
     def createZone(regionId: Int@@RegionID): Int@@ZoneID = {
       ???
     }
     def createZone(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
       ???
     }
+
     def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
-      ???
+      runq { linkZoneToLabel(zoneId, label) }
+        ???
     }
     def deleteZone(zoneId: Int@@ZoneID): Unit = {
-      ???
-    }
-    def getZone(zoneId: Int@@ZoneID): Zone = {
       ???
     }
     def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
       ???
     }
-    def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Zone] = {
-      ???
+    def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID] = {
+      runq {
+        selectZonesForDocument(docId)
+      }
     }
-    def getZonesForRegion(geoRegion: GeometricRegion, label: Label): Zone = {
-      ???
-    }
-    def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
-      ???
-    }
-    def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
-      ???
-    }
-    def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
-      ???
-    }
-
   }
 
 }

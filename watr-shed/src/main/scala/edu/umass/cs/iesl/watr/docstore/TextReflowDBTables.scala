@@ -4,6 +4,7 @@ package docstore
 import doobie.imports._
 
 import databasics._
+import corpora._
 
 class TextReflowDBTables extends DoobiePredef {
 

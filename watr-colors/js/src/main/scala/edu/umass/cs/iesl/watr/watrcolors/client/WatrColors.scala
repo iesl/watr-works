@@ -6,7 +6,7 @@ import scala.async.Async
 import scala.concurrent.Future
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation._
 import org.scalajs.dom
 import org.scalajs.dom.ext._
 
@@ -22,7 +22,7 @@ import native.mousetrap._
 import TypeTagPicklers._
 import watrmarks.{StandardLabels => LB}
 
-@JSExport
+@JSExportTopLevel("WatrColors")
 object WatrColors extends LabelerRendering {
 
   var uiState: UIState = UIState(

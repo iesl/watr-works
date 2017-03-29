@@ -24,14 +24,16 @@ import TypeTags._
 // )
 
 
-sealed trait ZoneTreeF[+A]
+sealed trait ZoneTreeF[+A] {
+  def label: Option[Label]
+  def zoneId: Int@@ZoneID
+}
 
 object ZoneTreeF {
 
   def fixf = Fix[ZoneTreeF](_)
 
   case class ZLeaf(
-    // region: GeometricRegion,
     regionId: Int@@RegionID,
     label: Option[Label],
     zoneId: Int@@ZoneID
@@ -107,6 +109,12 @@ trait ZoneTreeFunctions {
       case z@ ZNode(as, l, optid)     => optid
     }
   }
+  def getZoneLabel(zoneTree: Zone): Option[Label] = {
+    zoneTree.project match {
+      case z@ ZLeaf(region, l, optid) => l
+      case z@ ZNode(as, l, optid)     => l
+    }
+  }
 
   def getZoneRegions(zone: Zone): Seq[Int@@RegionID] = {
     zone.universe.map(_.project).toList.collect {
@@ -116,11 +124,15 @@ trait ZoneTreeFunctions {
 }
 
 object ZoneTreeSyntax extends ZoneTreeFunctions {
+  import matryoshka.implicits._
   import ZoneTrees._
 
   implicit class RicherZoneTree(val theZoneTree: Zone) extends AnyVal {
 
-    def getId(): Int@@ZoneID = getZoneId(theZoneTree)
+    // def getId(): Int@@ZoneID = getZoneId(theZoneTree)
+    def getId(): Int@@ZoneID = theZoneTree.project.zoneId
+    def id(): Int@@ZoneID = theZoneTree.project.zoneId
+    def label(): Option[Label] = theZoneTree.project.label
 
     def getRegionIds(): Seq[Int@@RegionID] = getZoneRegions(theZoneTree)
 

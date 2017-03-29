@@ -117,9 +117,13 @@ object DocumentSegmenter {
     AngleFilter(direction - t2, direction + t2)
   }
 
+  import shapeless.lens
+
   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentCorpus): DocumentSegmenter = {
     val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
     val mpageIndex = new MultiPageIndex(stableId, docStore)
+
+    val pageIdL = lens[CharAtom].targetRegion.page.pageId
 
     val docId = docStore.addDocument(stableId)
     pageAtomsAndGeometry.foreach { case(regions, geom)  =>
@@ -128,7 +132,11 @@ object DocumentSegmenter {
       mpageIndex.addPage(geom)
 
       regions.foreach {
-        case cb:CharAtom if !cb.isSpace => mpageIndex.addCharAtom(cb)
+        case cb:CharAtom if !cb.isSpace =>
+          // modify the pageId to match the one assigned by docStore
+          val update = pageIdL.modify(cb){_ => pageId}
+          mpageIndex.addCharAtom(update)
+
         case cb => println(s"error adding ${cb}")
       }
     }
@@ -631,8 +639,8 @@ class DocumentSegmenter(
           visualLine.removeLabel(LB.VisualLine)
           visualLine.addLabel(vlineLabel)
           // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
-          val zoneId = docStore.createZone(docId)
-          docStore.setZoneTargetRegions(zoneId, List(visualLine.targetRegion))
+          val zoneId = docStore.createZone(visualLine.targetRegion.id)
+          // docStore.setZoneTargetRegions(zoneId, List(visualLine.targetRegion))
           docStore.addZoneLabel(zoneId, LB.VisualLine)
 
           visualLine

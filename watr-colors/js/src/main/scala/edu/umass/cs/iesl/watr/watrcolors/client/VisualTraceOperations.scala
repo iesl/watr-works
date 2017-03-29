@@ -31,8 +31,8 @@ package client
 
 //   var xxx = 10
 //   def transformTargetRegion(tr: TargetRegion): TargetRegion = {
-//     val offsetPage = pageOffsets(tr.pageNum.unwrap)
-//     val pageImgGeometry = pageImageGeometries(tr.pageNum.unwrap)
+//     val offsetPage = pageOffsets(tr.page.stable.pageNum.unwrap)
+//     val pageImgGeometry = pageImageGeometries(tr.page.stable.pageNum.unwrap)
 
 //     val s = tr.bbox
 
@@ -55,8 +55,8 @@ package client
 //   }
 
 //   def transformTargetFigure(tr: TargetFigure): TargetFigure = {
-//     val offsetPage = pageOffsets(tr.pageNum.unwrap)
-//     val pageImgGeometry = pageImageGeometries(tr.pageNum.unwrap)
+//     val offsetPage = pageOffsets(tr.page.stable.pageNum.unwrap)
+//     val pageImgGeometry = pageImageGeometries(tr.page.stable.pageNum.unwrap)
 
 //     def transformPoint(p: Point): Point = {
 //       val pageTopTrans = (offsetPage.top * canvasH / totalPagesHeight) + canvasY

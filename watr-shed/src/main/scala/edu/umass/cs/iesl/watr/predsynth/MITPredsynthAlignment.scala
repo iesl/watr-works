@@ -12,6 +12,7 @@ import textreflow.data._
 import watrmarks.{StandardLabels => LB}
 import geometry._
 import geometry.syntax._
+import geometry.zones.syntax._
 
 import TypeTags._
 
@@ -93,7 +94,7 @@ object MITAlignPredsynth {
               val targetRegions = reflowSlice.targetRegions()
 
               val intersectedVisualLines  = reflowSlice.charAtoms.map{ case CharAtom(charId, targetRegion, char, _) =>
-                val pageNum = targetRegion.pageNum
+                val pageNum = targetRegion.page.stable.pageNum
                 val pageId = docStore.getPage(docId, pageNum)
                 val pageIndex = mpageIndex.getPageIndex(pageNum)
                 val bbox = targetRegion.bbox
@@ -114,7 +115,7 @@ object MITAlignPredsynth {
 
               // Compute the intersection of a TextReflow w/ RegionComponent
               val annotationRegions = uniqVisualLines.map{visualLine =>
-                val pageRegions = targetRegions.filter(_.pageNum == visualLine.pageNum)
+                val pageRegions = targetRegions.filter(_.page.stable.pageNum == visualLine.pageNum)
                 // Select the span for each line that corresponds to labeled region
                 val intersectingLineAtoms = visualLine.queryAtoms()
                   .trimLeftRightBy({lineAtom: AtomicComponent =>
@@ -127,7 +128,7 @@ object MITAlignPredsynth {
 
               val annRegions = annotationRegions.flatten.map{_.targetRegion}
 
-              val newZone = mpageIndex.createZone()
+              def newZone: Zone = ??? // mpageIndex.createZone()
 
               // mpageIndex
               // HACK: make zoneId==mentionId TODO document why

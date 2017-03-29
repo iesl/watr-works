@@ -43,7 +43,7 @@ class LabelingServer(
   }
 
   def embossTargetRegion(targetRegion: TargetRegion, labels: Seq[Label]): Unit = {
-    val pageNum = targetRegion.pageNum
+    val pageNum = targetRegion.page.stable.pageNum
 
     // val maybePageId = docStore.getPage(targetRegion.stableId, pageNum)
     // val maybePageImage = docStore.getPageImage(pageId)

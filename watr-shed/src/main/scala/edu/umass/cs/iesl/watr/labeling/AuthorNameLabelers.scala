@@ -13,6 +13,7 @@ import TypeTags._
 import corpora._
 // import geometry._
 // import geometry.syntax._
+import geometry.zones.syntax._
 // import PageComponentImplicits._
 // import scala.collection.mutable
 

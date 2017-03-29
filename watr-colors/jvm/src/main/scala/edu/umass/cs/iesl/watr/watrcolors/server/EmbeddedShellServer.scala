@@ -195,7 +195,7 @@ class EmbeddedServer(
       activeLabelWidgetIndex.map { lwIndex =>
         println(s"got UIRequest ${r}")
 
-        val uiResponse = lwIndex.userInteraction(uiState, gesture)
+        val (uiResponse, modifiedWidget) = lwIndex.userInteraction(uiState, gesture)
 
         // val changes: Option[UIChange] =
         //   gesture match {
@@ -243,17 +243,23 @@ class EmbeddedServer(
     }
 
 
-    def echoLabeler(lwidget: LabelingPanel): Unit = {
+    def echoLabeler(labelingPanel: LabelingPanel): Unit = {
       val docStore = reflowDB.docstorage
 
-      val withIndicators = LabelWidgetTransforms.addZoneIndicators(lwidget.content, docStore)
+      val withIndicators =
+        labelingPanel.options
+          .labels
+          .foldLeft(labelingPanel.content){
+            case (acc, elemLabel) =>
+              LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
+          }
 
       val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
       activeLabelWidgetIndex = Some(lwIndex)
 
-      val layout = lwIndex.layout.positioning // .map(p => WidgetPositioning(p.widget, p.widgetBounds, p.id))
+      val layout = lwIndex.layout.positioning
 
-      api.echoLabeler(layout, lwidget.options).call()
+      api.echoLabeler(layout, labelingPanel.options).call()
     }
 
   }

@@ -157,24 +157,30 @@ class CharExtractionListener(
       if (!stringRep.isEmpty) {
         if (__enable) { charWindow ++= stringRep.toList }
 
-        val charBounds = computeTextBounds(charTri)
+        val maybeBounds = computeTextBounds(charTri)
 
-        val charBox = charBounds.map({bnds =>
+        val charBox = maybeBounds.map({ charBounds =>
           val nextId = charIdGen.nextId
-          CharAtom(nextId,
+
+          CharAtom(
+            nextId,
             TargetRegion(
               RegionID(nextId.unwrap),
-              stableId,
-              pageNum,
-              bnds
+              RecordedPageID(
+                PageID(pageNum.unwrap),
+                StablePageID(stableId, pageNum)
+              ),
+              charBounds
             ),
             stringRep,
             code
           )
+
         }).getOrElse ({
           val msg = s"ERROR bounds are invalid"
           sys.error(msg)
         })
+
         currCharBuffer.append(charBox)
 
         if (__enable) {

@@ -7,6 +7,7 @@ import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
 import watrmarks.{StandardLabels => LB}
 
+import geometry.zones.syntax._
 import corpora._
 
 import scala.collection.mutable
