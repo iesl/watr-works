@@ -102,42 +102,34 @@ object ShellHtml {
       <.script(`type` := "text/javascript", src := "/webjars/fabric/1.6.2/dist/fabric.js"),
 
       <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.7/css/bootstrap.min.css"),
-
+      <.link(rel := "stylesheet", `type` := "text/css", href := "/assets/css/main.css"),
       <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
     )
   }
 
-  def statusbar()  = {
-    <.div(^.id:="status-bar", WatrStyles.statusBar)(
-      <.div(^.id:="status-controls", WatrStyles.statusCtrls),
-      <.div(^.id:="status-text", WatrStyles.statusText)
-    )
-  }
+  // def statusbar()  = {
+  //   <.div(^.id:="status-bar", WatrStyles.statusBar)(
+  //     <.div(^.id:="status-controls", WatrStyles.statusCtrls),
+  //     <.div(^.id:="status-text", WatrStyles.statusText)
+  //   )
+  // }
 
 
-  def bodyContent() = {
-    <.div(WatrStyles.mainContent)(
-
-      <.div(^.id:="canvas-container", WatrStyles.canvasContainer)(
-        // <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000", WatrStyles.fabricCanvas)
-        <.canvas(^.id:="canvas", WatrStyles.fabricCanvas)
-      ),
-
-      <.script(`type` := "text/javascript")(
-        raw("edu.umass.cs.iesl.watr.watrcolors.client.WatrColors().main()")
-      )
-
-    )
-
-  }
+  // def bodyContent() = {
+  //   <.div(WatrStyles.mainContent)(
+  //     <.div(^.id:="canvas-container", WatrStyles.canvasContainer)(
+  //       // <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000", WatrStyles.fabricCanvas)
+  //       <.canvas(^.id:="canvas", WatrStyles.fabricCanvas)
+  //     )
+  //   )
+  // }
 
   def apply() = {
     <.html(
       htmlHead(),
-      <.body(WatrStyles.htmlBody)(
-        statusbar(),
-        bodyContent()
-      )
+      <.body(
+        WatrStyles.htmlBody,
+        ^.onload:="WatrColors.main();")
     )
   }
 }

@@ -1,0 +1,14 @@
+@font-face{
+    font-family:'Glyphicons Halflings';
+    src:url(../fonts/glyphicons-halflings-regular.eot);
+}
+
+
+.popover .close { position: absolute; top: 7px; right: 10px; }
+
+h3 {
+    color: inherit;
+    font-family: inherit;
+    font-weight: 700;
+    line-height: 1.9;
+}

@@ -86,14 +86,14 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(libraryDependencies ++= Seq(
     Lib.scalaAsync,
     "com.lihaoyi"       %%% "scalatags"       % LibVersions.scalaTagsVersion,
-    // "com.github.yoeluk" %%% "paper-scala-js"  % "0.5-SNAPSHOT",
     "com.lihaoyi"       %%% "scalarx"         % "0.3.2",
     "com.lihaoyi"       %%% "upickle"         % "0.4.4",
     "com.lihaoyi"       %%% "autowire"        % "0.2.6"
   ))
   .jsSettings(libraryDependencies ++= Seq(
-    "org.querki" %%% "jquery-facade" % "1.0",
-    "org.scala-js" %%% "scalajs-dom" % "0.9.1"),
+    "fr.iscpif"      %%% "scaladget"       % "0.9.2",
+    "org.querki"     %%% "jquery-facade"   % "1.0",
+    "org.scala-js"   %%% "scalajs-dom"     % "0.9.1"),
     scalacOptions -= "-Ywarn-dead-code" // doesn't play well with ScalaJS native binding declarations
   )
   .jvmSettings(libraryDependencies ++= Seq(
@@ -101,16 +101,14 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "io.spray"           %% "spray-routing-shapeless2"  % "1.3.3",
     "com.typesafe.akka"  %% "akka-actor"                % "2.4.17",
     "org.webjars.bower"  %  "fabric"                    % "1.6.2",
-    "org.webjars.bower"  %  "tether"                    % "1.4.0",
-    "org.webjars"        %  "bootstrap"                 % "3.3.7",
+    // "org.webjars.bower"  %  "tether"                    % "1.4.0",
+    "org.webjars"        %  "bootstrap"                 % "3.3.7", // only used for css (bootstrap native is used instead)
     "org.webjars"        %  "jquery"                    % "2.2.4",
     "org.webjars"        %  "mousetrap"                 % "1.6.0"
   ))
   .dependsOn(watrmarks)
 
 lazy val watrcolorsJS = watrcolors.js
-  // .dependsOn(watrmarksJS)
-
 
 lazy val watrcolorsJVM = watrcolors.jvm
   .dependsOn(watrshed)

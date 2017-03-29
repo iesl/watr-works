@@ -14,7 +14,6 @@ import autowire._
 import upickle.{default => UPickle}
 import UPickle._
 
-// import geometry._
 import labeling._
 import watrmarks._
 import native.mousetrap._
@@ -22,6 +21,15 @@ import native.mousetrap._
 import TypeTagPicklers._
 import watrmarks.{StandardLabels => LB}
 
+import scaladget.stylesheet.{all => sheet}
+import scaladget.api.{BootstrapTags => bs}
+import scalatags.JsDom.all._
+import scalatags.JsDom.{ styles  }
+import sheet._
+import bs._
+
+
+// @JSExport
 @JSExportTopLevel("WatrColors")
 object WatrColors extends LabelerRendering {
 
@@ -34,7 +42,7 @@ object WatrColors extends LabelerRendering {
   def updateStatusText(): Unit = {
     // Display state in status bar
     val statusText = uiState.toString()
-    jQuery("#status-text").html(statusText)
+    // jQuery("#status-text").html(statusText)
   }
 
   object states {
@@ -164,6 +172,7 @@ object WatrColors extends LabelerRendering {
 
     @JSExport
     override def echoLabeler(lwidget: Seq[WidgetPositioning], labelOptions: LabelOptions): Unit = Async.async {
+      println("echoLabeler()")
       fabricCanvas.renderOnAddRemove = false
       clear()
       val (bbox, fobjs) = renderLabelWidget(lwidget)
@@ -213,9 +222,11 @@ object WatrColors extends LabelerRendering {
 
     val websideServer = new WebsideServer(WatrColorsApiListeners)
 
+
     var success = false
 
     def rec(): Unit = {
+      println("rec()")
 
       Ajax.post(s"http://$host:$port/notifications").onComplete {
 
@@ -235,11 +246,22 @@ object WatrColors extends LabelerRendering {
       }
     }
 
-    dom.window.addEventListener("load", (event: dom.Event) => {
+
+    bs.withBootstrapNative {
+      println("main 2")
+
       setupClickCatchers()
+
       // defaultMouseHandler()
+      println("main 3")
       rec()
-    })
+
+      val r = PageLayout.initLabelerPage().render
+      println("main 4")
+      r
+    }
+    println("main 6")
+
   }
 
 
