@@ -23,6 +23,11 @@ object pageStyles {
     svgAttrs.transform := "translate (-50%,-50%)"
   )
 
+  lazy val absoluteFullWidth: sty.ModifierSeq = Seq(
+    sty.absolutePosition,
+    width := "100%"
+  )
+
   lazy val centered: ModifierSeq = Seq(
     styles.left := "50%",
     minWidth := 250,
@@ -30,11 +35,21 @@ object pageStyles {
   )
 
   lazy val navbarStyle: ModifierSeq = Seq(
+    navbar_staticTop,
+    sty.nav,
+    navbar_pills,
+    navbar_inverse,
     height           := 30,
+    fontSize         := 20,
     color            := Colors.GhostWhite.cssHash,
-    backgroundColor  := Colors.DarkSlateBlue.cssHash
-
+    backgroundColor  := Colors.DarkSlateBlue.cssHash,
+    zIndex := 10
   )
+
+  lazy val mainContentStyle: ModifierSeq = Seq(
+    jmarginTop       := 30
+  )
+
   lazy val footerStyle: ModifierSeq = Seq(
     padding         := 0,
     margin          := 0,
@@ -47,9 +62,36 @@ object pageStyles {
 
   )
 
-  lazy val absoluteFullWidth: sty.ModifierSeq = Seq(
-    sty.absolutePosition,
-    width := "100%"
+
+  lazy val fileChevronStyle: ModifierSeq = Seq(
+    lineHeight := "10px",
+    top := 10,
+    left := -30,
+    sty.paddingRight(20)
+  )
+
+
+  lazy val mainNav370: ModifierSeq = Seq(
+    sty.paddingLeft(370),
+    borderColor := "yellow",
+    zIndex := 10
+  )
+
+  lazy val canvasContainer: ModifierSeq = Seq(
+    padding:="0",
+    border:="0",
+    margin:="0",
+    position.relative
+  )
+
+  lazy val fabricCanvas: ModifierSeq = Seq(
+    position.absolute,
+    padding:="0",
+    margin:="0",
+    border := "0",
+    left:="0",
+    zIndex:=100,
+    top:="0"
   )
 
 }

@@ -4,12 +4,13 @@ package watrcolors
 import geometry._
 import labeling._
 import scala.concurrent.Future
+// import TypeTags._
 
 // API for calls made from web client to server
 trait WatrShellApi {
-  def helloShell(msg: String): Unit
   def uiRequest(r: UIRequest): Future[UIResponse]
   def onDrawPath(artifactId: String, path: Seq[Point]): Unit
+  def createDocumentLabeler(stableId: String@@DocumentID, labelerType: String): Future[(Seq[WidgetPositioning], LabelOptions)]
 }
 
 

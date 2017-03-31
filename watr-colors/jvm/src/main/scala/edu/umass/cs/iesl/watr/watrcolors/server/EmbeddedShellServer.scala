@@ -200,13 +200,35 @@ class EmbeddedServer(
 
   object WatrShellApiListeners extends WatrShellApi {
 
-    // Handle incoming messages from WatrColors:
-    def helloShell(msg: String): Unit = {
-      println(s"helloShell: $msg")
-    }
-
     def onDrawPath(artifactId: String, path: Seq[Point]): Unit = {
       println(s"onDrawPath: ")
+    }
+
+    def createDocumentLabeler(
+      stableId: String@@DocumentID,
+      labelerType: String
+    ): Future[(Seq[WidgetPositioning], LabelOptions)] = {
+
+      println("createDocumentLabeleri()")
+      val labelingPanel = SampleLabelWidgets.dimensionTest
+
+      val docStore = reflowDB.docStore
+
+      val withIndicators =
+        labelingPanel.options
+          .labels
+          .foldLeft(labelingPanel.content){
+            case (acc, elemLabel) =>
+              LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
+          }
+
+      val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
+      activeLabelWidgetIndex = Some(lwIndex)
+
+      val layout = lwIndex.layout.positioning
+      Future {
+        (layout, labelingPanel.options)
+      }
     }
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {

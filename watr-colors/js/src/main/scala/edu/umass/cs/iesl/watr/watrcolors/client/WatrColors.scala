@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
+import scala.collection.mutable
+
 import scala.async.Async
 import scala.concurrent.Future
 
@@ -28,10 +30,33 @@ import scalatags.JsDom.{ styles  }
 import sheet._
 import bs._
 
+import rx._
+// import rx.ops._
+import scaladget.tools.JsRxTags._
 
-// @JSExport
+
 @JSExportTopLevel("WatrColors")
 object WatrColors extends LabelerRendering {
+
+
+  def queryParams(): Map[String, String] = {
+    val params = mutable.HashMap[String, String]()
+
+    val href = dom.window.location.href
+    if (href.contains("?")) {
+      val qs = href.split("\\?", 2)(1)
+      for {
+        qparam <- qs.split('&')
+      } {
+        qparam.split('=') match {
+          case Array(k) =>  params(k) = ""
+          case Array(k, v) => params(k) = v
+          case _ =>
+        }
+      }
+    }
+    params.toMap
+  }
 
   var uiState: UIState = UIState(
     ByChar,
@@ -139,54 +164,36 @@ object WatrColors extends LabelerRendering {
       api.uiRequest(r).call()
     }
 
+    def createDocumentLabeler(stableId: String@@DocumentID, labelerType: String): Future[(Seq[WidgetPositioning], LabelOptions)] = {
+      api.createDocumentLabeler(stableId, labelerType).call()
+    }
+
   }
 
-  @JSExport
-  var interval: Double = 1000
+  def clear(): Unit = {
+    fabricCanvas.clear()
+  }
 
-  object WatrColorsApiListeners extends WatrColorsApi {
+  def echoLabeler(lwidget: Seq[WidgetPositioning], labelOptions: LabelOptions): Unit = Async.async {
+    println("echoLabeler()")
+    fabricCanvas.renderOnAddRemove = false
+    clear()
+    val (bbox, fobjs) = renderLabelWidget(lwidget)
+    fabricCanvas.setWidth(bbox.width.toInt)
+    fabricCanvas.setHeight(bbox.height.toInt)
 
-    @JSExport
-    override def clear(): Unit = {
-      fabricCanvas.clear()
+    fobjs.foreach{os =>
+      os.foreach(fabricCanvas.add(_))
     }
 
-    @JSExport
-    override def print(level: String, msg: String): Unit = {
-      jQuery("#main").append(msg+" and more!")
-
-      level match {
-        case "error" => dom.console.error(msg)
-        case "warn" => dom.console.warn(msg)
-        case "info" => dom.console.info(msg)
-        case "log" => dom.console.log(msg)
-        case      _ => dom.console.log(level + ":" + msg)
-      }
-    }
-
-
-    @JSExport
-    override def echoLabeler(lwidget: Seq[WidgetPositioning], labelOptions: LabelOptions): Unit = Async.async {
-      println("echoLabeler()")
-      fabricCanvas.renderOnAddRemove = false
-      clear()
-      val (bbox, fobjs) = renderLabelWidget(lwidget)
-      fabricCanvas.setWidth(bbox.width.toInt)
-      fabricCanvas.setHeight(bbox.height.toInt)
-
-      fobjs.foreach{os =>
-        os.foreach(fabricCanvas.add(_))
-      }
-
-      fabricCanvas.renderAll()
-      fabricCanvas.renderOnAddRemove = true
-      val controls = createLabelerControls(labelOptions)
-      val c = controls.render
-      val statusBar = dom.document.getElementById("status-controls")
-      // statusBar.childNodes.foreach( statusBar.removeChild(_)  )
-      statusBar.appendChild(c)
-      updateStatusText()
-    }
+    fabricCanvas.renderAll()
+    fabricCanvas.renderOnAddRemove = true
+    val controls = createLabelerControls(labelOptions)
+    val c = controls.render
+    val statusBar = dom.document.getElementById("status-controls")
+    // statusBar.childNodes.foreach( statusBar.removeChild(_)  )
+    statusBar.appendChild(c)
+    updateStatusText()
   }
 
   def setupClickCatchers(): Unit = {
@@ -207,77 +214,58 @@ object WatrColors extends LabelerRendering {
     }
 
     jQuery("#canvas-container").click(clickcb)
-    jQuery("#canvas-container").dblclick(dblclickcb)
+    // jQuery("#canvas-container").dblclick(dblclickcb)
   }
 
-  val host: String="localhost"
-  val port: Int=9999
+  def param(k: String):Option[String] = {
+    val params = queryParams()
+    if (params.contains(k)){
+      Option(params(k))
+    } else None
+  }
+
+
+  // val currLabelerType: Var[String] = Var("")
+  val currDocumentId: Var[Option[String]] = Var(None)
+  import TypeTags._
+
+  @JSExport
+  def initCanvas(): Unit = {
+    println(s"initCanvas")
+    currDocumentId() = param("doc")
+  }
 
   @JSExport
   def display(): Unit = {
-
-    initKeybindings()
-
-    val websideServer = new WebsideServer(WatrColorsApiListeners)
-
-
-    var success = false
-
-    def rec(): Unit = {
-
-      Ajax.post(s"http://$host:$port/notifications").onComplete {
-
-        case util.Success(data) =>
-          if (!success) println("WatrTable connected via POST /notifications")
-          success = true
-          interval = 1000
-
-
-          websideServer.wire(data.responseText)
-          rec()
-        case util.Failure(e) =>
-          if (success) println("Workbench disconnected " + e)
-          success = false
-          interval = math.min(interval * 2, 30000)
-          dom.window.setTimeout(() => rec(), interval)
-      }
-    }
-
-    lazy val canvasContainer: ModifierSeq = Seq(
-      padding:="0",
-      border:="0",
-      margin:="0",
-      position.relative
-    )
-
-    lazy val fabricCanvas: ModifierSeq = Seq(
-      position.absolute,
-      padding:="0",
-      margin:="0",
-      border := "0",
-      left:="0",
-      zIndex:=100,
-      top:="0"
-    )
-
+    implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
     bs.withBootstrapNative {
+
+      initKeybindings()
       setupClickCatchers()
-      rec()
 
-      val page = navItem(span("/Labeler").render)
+      val nav = PageLayout.initNavbar(List())
 
-      val nav = PageLayout.initNavbar(List(page))
-
-      val bod = div(
+      val main =
         div(sheet.marginLeft(15), sheet.marginTop(25))(
-          div(^.id:="canvas-container", canvasContainer)(
-            canvas(^.id:="canvas", fabricCanvas)
+          div(^.id:="canvas-container", pageStyles.canvasContainer)(
+            canvas(^.id:="canvas", pageStyles.fabricCanvas, ^.onload:=initCanvas())
           )
         )
-      )
 
-      PageLayout.pageSetup(nav, bod).render
+      currDocumentId.foreach { maybeDocId =>
+        println(s"got ${maybeDocId}")
+        maybeDocId.foreach{docId =>
+          shell.createDocumentLabeler(DocumentID(docId), "")
+            .foreach { case (lwidget, opts) =>
+              println(s"got lwdiget w/opts = ${opts}")
+              echoLabeler(lwidget, opts)
+            }
+        }
+      }
+
+
+      PageLayout.pageSetup(nav, main).render
     }
 
   }

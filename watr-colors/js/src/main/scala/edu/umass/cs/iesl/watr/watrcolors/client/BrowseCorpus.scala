@@ -2,12 +2,17 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import scaladget.stylesheet.{all => sheet}
-import sheet._
-// import scalatags.JsDom.{ styles  }
+import scaladget.stylesheet.{all => sty}
+import sty._
 
+import org.scalajs.dom.raw.{
+  HTMLElement
+}
 import scaladget.api.{BootstrapTags => bs}
 import scalatags.JsDom.all._
+import scalatags.JsDom.{
+  TypedTag
+}
 import bs._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -21,13 +26,18 @@ import upickle.{default => UPickle}
 import UPickle._
 
 import rx._
+  // import rx.ops._
 import scaladget.tools.JsRxTags._
 
 @JSExportTopLevel("BrowseCorpus")
 object BrowseCorpus extends LabelerRendering {
 
+  type HtmlTag = TypedTag[HTMLElement]
+  type RxHtmlTag = Rx.Dynamic[TypedTag[HTMLElement]]
+  type RxHtmlTags = Rx.Dynamic[Seq[TypedTag[HTMLElement]]]
+
   val buttonStyle: ModifierSeq = Seq(
-    sheet.marginAll(right = 5, top = 5)
+    sty.marginAll(right = 5, top = 5)
   )
 
   // List all Labelers
@@ -51,14 +61,11 @@ object BrowseCorpus extends LabelerRendering {
     currDocStart() = currDocStart.now + 20
   }
 
-  // val navButtonStyle = buttonStyle +++ btn_small
-  // bs.button(glyph_chevron_left, navButtonStyle, () => prevPage()),
-  // bs.button(glyph_chevron_right, navButtonStyle, () => nextPage())
-  // glyph_chevron_left
-  val leftGlyph = glyph_chevron_left +++ glyph_chevron_left +++ glyph_chevron_left
-  val rightGlyph = glyph_chevron_right +++ glyph_chevron_right +++ glyph_chevron_right
+  val leftGlyph = glyph_chevron_left
+  val rightGlyph = glyph_chevron_right
 
-  val docNav = Rx {
+
+  def docPagination(implicit c : Ctx.Owner): RxHtmlTag = Rx {
     span(
       span(s"Displaying ${currDocStart()}-${currDocStart()+20} of ${docCount()} "),
       span(btnGroup,
@@ -68,12 +75,16 @@ object BrowseCorpus extends LabelerRendering {
     )
   }
 
-  val docListDisplay = Rx {
+  def documentLister(implicit c: Ctx.Owner): RxHtmlTags = Rx {
     for {entry <- docList()} yield {
+      val docId = entry.urlStr
+      val t = s"/label?doc=${docId}"
       li(
         span(
-          a(entry.urlStr, cursor := "pointer",
-            href := entry.urlStr, target:="_blank"
+          a(
+            entry.urlStr,
+            cursor := "pointer",
+            href := t
           ) (
             entry.id.toString()
           )
@@ -83,25 +94,39 @@ object BrowseCorpus extends LabelerRendering {
   }
 
 
+
   @JSExport
   def display(): Unit = {
+
+    implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
+
     server.documentCount()
       .foreach { c => docCount() = c }
 
+
     bs.withBootstrapNative {
-      val pageName = navItem(span("/Browse").render)
+
+      val pageName = navItem(span("Browse").render)
       // val nav = PageLayout.initNavbar(List(pageName))
-      val nav = PageLayout.sampleNavbar()
+      val nav = PageLayout.initNavbar(List())
 
-      val bod = div("Documents")(
+      val main =
         div(
-          docNav,
-          ul(docListDisplay)
+          sty.marginLeft(5),
+          h2("Documents"),
+          div(
+            sty.marginLeft(5),
+            docPagination
+          ),
+          div(
+            sty.marginLeft(10),
+            ul(documentLister)
+          )
         )
-      )
 
-      PageLayout.pageSetup(nav, bod).render
+      PageLayout.pageSetup(nav, main).render
     }
+
   }
 
   object server extends BrowseCorpusApi {

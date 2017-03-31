@@ -14,25 +14,26 @@ import bs._
 import sty._
 
 
+import rx._
+// import scaladget.tools.JsRxTags._
+
+case class MenuAction(name: String, action: () ⇒ Unit)
 
 object PageLayout {
 
   import pageStyles._
 
 
-  def initNavbar(navItems: Seq[NavItem[HTMLSpanElement]] = Seq()) = {
+  def initNavbar(
+    navItems: Seq[NavItem[HTMLSpanElement]] = Seq()
+  )(implicit rxOwnr: Ctx.Owner)  = {
     val logo = navItem(
       span("WatrColors").render
     )
     val navs = logo :: navItems.toList
 
-    // +++ navbar_inverse
-    val navStyle = (
-      navbar_staticTop ++ navbarStyle
-    )
-
     bs.navBar(
-      navStyle,
+      navbarStyle,
       navs:_*
     )
   }
@@ -40,39 +41,18 @@ object PageLayout {
   def pageSetup(
     nav: TypedTag[HTMLElement],
     bod: TypedTag[HTMLElement]
-  ) = {
+  )(implicit co: Ctx.Owner) = {
     div(
       nav,
-      div(bod),
-      div(footerStyle)(
-        "<<WatrWorks>>"
-      )
+      bod(mainContentStyle),
+      div(footerStyle)
     )
   }
 
-  case class MenuAction(name: String, action: () ⇒ Unit)
 
   def sampleNavbar(): TypedTag[HTMLElement] = {
     import scaladget.api.Selector.Options
 
-    lazy val fileChevronStyle: ModifierSeq = Seq(
-      lineHeight := "10px",
-      top := 10,
-      left := -30,
-      sty.paddingRight(20)
-    )
-
-    lazy val mainNav0: ModifierSeq = Seq(
-      sty.paddingLeft(0),
-      borderColor := "yellow",
-      zIndex := 10
-    )
-
-    lazy val mainNav370: ModifierSeq = Seq(
-      sty.paddingLeft(370),
-      borderColor := "yellow",
-      zIndex := 10
-    )
 
     lazy val importModel = MenuAction("Import your model", () ⇒ {
       // modelWizardPanel.dialog.show
@@ -105,7 +85,7 @@ object PageLayout {
           navbar_pills +++
           navbar_inverse +++
           (fontSize := 20) +++
-          navbar_staticTop +++ { mainNav0 },
+          navbar_staticTop,
         navItem(menuActions.selector),
         execItem,
         docItem
