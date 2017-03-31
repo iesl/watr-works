@@ -6,8 +6,7 @@ import scala.reflect._
 
 sealed trait SHA1String
 
-// Documents are identified by the SHA1 hash of their contents
-sealed trait DocumentID // extends SHA1String
+sealed trait DocumentID
 
 sealed trait ZoneID
 sealed trait LabelID
@@ -35,6 +34,10 @@ sealed trait LabelingTaskID
 
 sealed trait TextReflowID
 sealed trait ImageID
+
+sealed trait Username
+sealed trait Password
+
 
 object TypeTags extends TypeTags
 
@@ -68,6 +71,9 @@ trait TypeTags {
 
   val LabelerID = Tag.of[LabelerID]
   val LabelingTaskID = Tag.of[LabelingTaskID]
+
+  val Username = Tag.of[Username]
+  val Password = Tag.of[Password]
 
   def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
     val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName

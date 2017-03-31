@@ -73,7 +73,7 @@ class TextReflowDB(
     } yield ()
   }
 
-  def selectDocumentStableIds(): List[String@@DocumentID] = {
+  def selectDocumentStableIds(n: Int=0, skip: Int=0): List[String@@DocumentID] = {
     runq {
       sql"""select stable_id from document""".query[String@@DocumentID].list
     }
@@ -321,10 +321,14 @@ class TextReflowDB(
       .map(DocumentID(_))
   }
 
-  def getDocuments(): List[String@@DocumentID] = {
+  def getDocuments(n: Int, skip: Int): List[String@@DocumentID] = {
     runq{
-      sql"select stable_id from document".query[String@@DocumentID].list
+      sql"select stable_id from document limit $n offset $skip".query[String@@DocumentID].list
     }
+  }
+
+  def selectDocumentCount(): Int = {
+    runq{ sql"select count(*) from document".query[Int].unique }
   }
 
   def selectDocumentID(stableId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
@@ -455,9 +459,12 @@ class TextReflowDB(
   }
 
 
-  object docstorage extends DocumentCorpus {
-    def getDocuments(): Seq[String@@DocumentID] = {
-      selectDocumentStableIds()
+  object docStore extends DocumentCorpus {
+    def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {
+      selectDocumentStableIds(n, skip)
+    }
+    def getDocumentCount(): Int = {
+      selectDocumentCount()
     }
     def addDocument(stableId: String@@DocumentID): Int@@DocumentID = runq{
       self.getOrInsertDocumentID(stableId)

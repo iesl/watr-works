@@ -129,7 +129,7 @@ trait HtmlCanvasRendering {
         group
 
       case g @ Colorized(fig: GeometricFigure, fg: Color, bg: Color, fgOpacity: Float, bgOpacity: Float) =>
-        val s = createShape(fig, fg.toCSSStr, bg.toCSSStr, fgOpacity)
+        val s = createShape(fig, fg.cssHash, bg.cssHash, fgOpacity)
         noControls(s)
         s
 

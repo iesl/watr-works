@@ -207,8 +207,11 @@ class MemDocstore extends DocumentCorpus {
 
   import tables._
 
-  def getDocuments(): Seq[String@@DocumentID] = {
+  def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {
     documents.all().map(_.stableId)
+  }
+  def getDocumentCount(): Int =  {
+    documents.all().length
   }
 
   def addDocument(stableId: String@@DocumentID): Int@@DocumentID = {

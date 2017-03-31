@@ -16,7 +16,7 @@ class LabelingServer(
   corpus: Corpus
 ) {
 
-  private lazy val docStore = reflowDB.docstorage
+  private lazy val docStore = reflowDB.docStore
 
   def rescale(bbox: LTBounds, page1: LTBounds, page2: LTBounds): LTBounds = {
     val LTBounds(l, t, w, h) = bbox

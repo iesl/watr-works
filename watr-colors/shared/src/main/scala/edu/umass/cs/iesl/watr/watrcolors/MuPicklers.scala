@@ -13,13 +13,6 @@ import Aliases._
 
 object TypeTagPicklers {
 
-  // implicit val UIRequest_RW: RW[UIRequest] =
-  //   macroRW[UIRequest]
-
-
-  // implicit val UIResponse_RW: RW[UIResponse] =
-  //   macroRW[UIResponse]
-
 
   implicit val readWriter: RW[Gesture] =
     macroRW[SelectRegion]
@@ -31,13 +24,20 @@ object TypeTagPicklers {
     {case Js.Null => InteractNil}
   )
 
+  implicit val String_LabelingTaskID_Pickler: RW[String @@ LabelingTaskID] = RW[String @@ LabelingTaskID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => LabelingTaskID(s.toString)}
+  )
 
-  // implicit def Int_TagType_Pickler[TagType: ClassTag](
-  // ): RW[Int @@ TagType] = RW[Int @@ TagType](
-  //   {t => Js.Str(t.unwrap.toString)},
-  //   {case Js.Str(s) => ZoneID(s.toInt)}
-  // )
+  implicit val Int_LabelerID_Pickler: RW[Int @@ LabelerID] = RW[Int @@ LabelerID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => LabelerID(s.toInt)}
+  )
 
+  implicit val String_Username_Pickler: RW[String @@ Username] = RW[String @@ Username](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => Username(s.toString)}
+  )
   implicit val Int_ZoneID_Pickler: RW[Int @@ ZoneID] = RW[Int @@ ZoneID](
     {t => Js.Str(t.unwrap.toString)},
     {case Js.Str(s) => ZoneID(s.toInt)}

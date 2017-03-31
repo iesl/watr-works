@@ -2,106 +2,115 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import scaladget.stylesheet.{all => sheet}
+import org.scalajs.dom.raw._
+
+import scaladget.stylesheet.{all => sty}
 import scaladget.api.{BootstrapTags => bs}
 import scalatags.JsDom.all._
-// import scalatags.JsDom.{ styles, svgAttrs }
-import scalatags.JsDom.{ styles  }
-import sheet._
+import scalatags.JsDom.{
+  TypedTag
+}
 import bs._
-import utils.Colors
+import sty._
+
 
 
 object PageLayout {
-  lazy val footerStyle: ModifierSeq = Seq(
-    padding:="0",
-    margin:="0",
-    border := "0",
-    backgroundColor := "black",
-    styles.color := Colors.Red.toCSSStr,
-    left:="0"
 
-  )
+  import pageStyles._
 
-  lazy val canvasContainer: ModifierSeq = Seq(
-    padding:="0",
-    border:="0",
-    margin:="0",
-    position.relative
-  )
 
-  lazy val fabricCanvas: ModifierSeq = Seq(
-    position.absolute,
-    padding:="0",
-    margin:="0",
-    border := "0",
-    left:="0",
-    zIndex:=100,
-    top:="0"
-  )
+  def initNavbar(navItems: Seq[NavItem[HTMLSpanElement]] = Seq()) = {
+    val logo = navItem(
+      span("WatrColors").render
+    )
+    val navs = logo :: navItems.toList
 
-  def initLabelerPage() = {
-    // Create nav items
-    val oneItem = stringNavItem("One", () ⇒
-      println("One open")
+    // +++ navbar_inverse
+    val navStyle = (
+      navbar_staticTop ++ navbarStyle
     )
 
-    val twoItem = stringNavItem("Two", () ⇒
-      println("Two open"), true
+    bs.navBar(
+      navStyle,
+      navs:_*
     )
+  }
 
-    val threeItem = navItem(
-      bs.input("")(placeholder := "Name", width := 100).render, () ⇒
-      println("Three open")
-    )
-
-    val fourItem = navItem(
-      div(glyph_fire +++ (color := "#337ab7"), lineHeight := "35px").render, () ⇒
-      println("Four open")
-    )
-
-    val fiveItem = navItem(
-      buttonGroup()(
-        bs.button("OK", btn_primary, ()=> {println("Five open")}),
-        bs.button("Cancel", btn_default, ()=> {println("Five cancel")})
-      ).render
-    )
-
-    //Create the nav bar
-    val navbar = bs.navBar(
-      navbar_staticTop,
-      oneItem,
-      twoItem,
-      threeItem,
-      fourItem,
-      fiveItem
-    )
-    // def statusbar()  = {
-    //   <.div(^.id:="status-bar", WatrStyles.statusBar)(
-    //     <.div(^.id:="status-controls", WatrStyles.statusCtrls),
-    //     <.div(^.id:="status-text", WatrStyles.statusText)
-    //   )
-    // }
-
-
-
-
+  def pageSetup(
+    nav: TypedTag[HTMLElement],
+    bod: TypedTag[HTMLElement]
+  ) = {
     div(
-      navbar,
-      div(
-        div(sheet.marginLeft(15), sheet.marginTop(25))(
-          div(^.id:="canvas-container", canvasContainer)(
-            canvas(^.id:="canvas", fabricCanvas)
-          )
-        )
-      ),
-      footer(footerStyle)(
-        div(row)(
-          div(colMD(12))()
-        )
+      nav,
+      div(bod),
+      div(footerStyle)(
+        "<<WatrWorks>>"
       )
     )
+  }
 
+  case class MenuAction(name: String, action: () ⇒ Unit)
 
+  def sampleNavbar(): TypedTag[HTMLElement] = {
+    import scaladget.api.Selector.Options
+
+    lazy val fileChevronStyle: ModifierSeq = Seq(
+      lineHeight := "10px",
+      top := 10,
+      left := -30,
+      sty.paddingRight(20)
+    )
+
+    lazy val mainNav0: ModifierSeq = Seq(
+      sty.paddingLeft(0),
+      borderColor := "yellow",
+      zIndex := 10
+    )
+
+    lazy val mainNav370: ModifierSeq = Seq(
+      sty.paddingLeft(370),
+      borderColor := "yellow",
+      zIndex := 10
+    )
+
+    lazy val importModel = MenuAction("Import your model", () ⇒ {
+      // modelWizardPanel.dialog.show
+    })
+
+    lazy val elements = Seq(importModel)
+
+    lazy val menuActions: Options[MenuAction] = elements.options(
+      key = btn_danger,
+      naming = (m: MenuAction) ⇒ m.name,
+      onclose = () ⇒ menuActions.content.now.foreach {
+        _.action()
+      },
+      fixedTitle = Some("New project")
+    )
+    val itemStyle = lineHeight := "35px"
+
+    val execItem           = navItem(div(glyph_flash, itemStyle).tooltip("Executions"), () ⇒ {})
+    val authenticationItem = navItem(div(glyph_lock, itemStyle).tooltip("Authentications"), () ⇒ {})
+    val pluginItem         = navItem(div(glyph_plug, itemStyle).tooltip("Plugins"), () ⇒ {})
+    val envItem            = navItem(div(glyph_exclamation, itemStyle).render, () ⇒ {})
+    val docItem            = navItem(div(glyph_file, itemStyle).tooltip("Documentation"), () ⇒ {})
+    // navItem(div(glyph_chevron_left, fileChevronStyle).render, todo = () ⇒ {}),
+
+    val navBar = div(
+      // Rx {
+      bs.navBar(
+        absoluteFullWidth +++
+          sty.nav +++
+          navbar_pills +++
+          navbar_inverse +++
+          (fontSize := 20) +++
+          navbar_staticTop +++ { mainNav0 },
+        navItem(menuActions.selector),
+        execItem,
+        docItem
+      )
+    )
+    navBar
   }
 }

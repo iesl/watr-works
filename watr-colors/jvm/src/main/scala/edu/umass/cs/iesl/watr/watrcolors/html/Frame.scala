@@ -11,43 +11,43 @@ object WatrStyles extends CascadingStyleSheet {
   initStyleSheet()
 
 
-  def statusBar = cls(
-    position.fixed,
-    overflow.hidden,
-    margin          := 0,
-    padding         := 0,
-    top             := 0,
-    width           := "100%",
-    height          := "30px",
-    zIndex          := 9999,
-    backgroundColor := "#"+C.LightSteelBlue1.toHex
-  )
+  // def statusBar = cls(
+  //   position.fixed,
+  //   overflow.hidden,
+  //   margin          := 0,
+  //   padding         := 0,
+  //   top             := 0,
+  //   width           := "100%",
+  //   height          := "30px",
+  //   zIndex          := 9999,
+  //   backgroundColor := "#"+C.LightSteelBlue1.toHex
+  // )
 
-  def statusText = cls(
-    position.fixed,
-    overflow.hidden,
-    margin          := 0,
-    padding         := 0,
-    top             := 0,
-    width           := "100%",
-    height          := "30px",
-    zIndex          := 9999,
-    left            := "30%",
-    backgroundColor := "#"+C.LightSteelBlue3.toHex
-  )
+  // def statusText = cls(
+  //   position.fixed,
+  //   overflow.hidden,
+  //   margin          := 0,
+  //   padding         := 0,
+  //   top             := 0,
+  //   width           := "100%",
+  //   height          := "30px",
+  //   zIndex          := 9999,
+  //   left            := "30%",
+  //   backgroundColor := "#"+C.LightSteelBlue3.toHex
+  // )
 
-  def statusCtrls = cls(
-    position.fixed,
-    overflow.hidden,
-    margin          := 0,
-    padding         := 0,
-    top             := 0,
-    width           := "100%",
-    height          := "30px",
-    zIndex          := 9999,
-    left            := 0,
-    backgroundColor := "#"+C.LightSteelBlue2.toHex
-  )
+  // def statusCtrls = cls(
+  //   position.fixed,
+  //   overflow.hidden,
+  //   margin          := 0,
+  //   padding         := 0,
+  //   top             := 0,
+  //   width           := "100%",
+  //   height          := "30px",
+  //   zIndex          := 9999,
+  //   left            := 0,
+  //   backgroundColor := "#"+C.LightSteelBlue2.toHex
+  // )
 
 
   def htmlBody = cls(
@@ -56,18 +56,16 @@ object WatrStyles extends CascadingStyleSheet {
       minHeight := "100%",
       margin := 0,
       width := "100%"
-      // paddingTop := "2em",
-      // paddingBottom := "2rem"
     )
   )
 
-  def mainContent = cls(
-    width := "100%",
-    padding:="0",
-    border:="0",
-    // margin:="0",
-    marginTop := "30px"
-  )
+  // def mainContent = cls(
+  //   width := "100%",
+  //   padding:="0",
+  //   border:="0",
+  //   // margin:="0",
+  //   marginTop := "30px"
+  // )
 
   def canvasContainer = cls(
     padding:="0",
@@ -107,29 +105,12 @@ object ShellHtml {
     )
   }
 
-  // def statusbar()  = {
-  //   <.div(^.id:="status-bar", WatrStyles.statusBar)(
-  //     <.div(^.id:="status-controls", WatrStyles.statusCtrls),
-  //     <.div(^.id:="status-text", WatrStyles.statusText)
-  //   )
-  // }
-
-
-  // def bodyContent() = {
-  //   <.div(WatrStyles.mainContent)(
-  //     <.div(^.id:="canvas-container", WatrStyles.canvasContainer)(
-  //       // <.canvas(^.style:="display: block", ^.id:="canvas", ^.width:="1000", ^.height:="1000", WatrStyles.fabricCanvas)
-  //       <.canvas(^.id:="canvas", WatrStyles.fabricCanvas)
-  //     )
-  //   )
-  // }
-
-  def apply() = {
+  def apply(pageName: String) = {
     <.html(
       htmlHead(),
       <.body(
         WatrStyles.htmlBody,
-        ^.onload:="WatrColors.main();")
+        ^.onload:=s"${pageName}.display();")
     )
   }
 }

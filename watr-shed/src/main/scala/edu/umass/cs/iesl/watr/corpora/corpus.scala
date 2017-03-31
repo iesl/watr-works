@@ -12,12 +12,11 @@ import scala.util.{Try, Failure, Success}
 
 import ammonite.{ops => fs}, fs._
 
-
-case class CorpusEntryMetadata(
-  pdfSha1: String@@SHA1String,
-  filenames: Seq[String],
-  urls: Seq[String]
-)
+// case class CorpusEntryMetadata(
+//   pdfSha1: String@@SHA1String,
+//   filenames: Seq[String],
+//   urls: Seq[String]
+// )
 
 object Corpus {
 

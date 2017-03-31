@@ -33,8 +33,8 @@ class EmbeddedServer(
   port: Int
 ) extends SimpleRoutingApp {
 
-  import system.dispatcher
   implicit val system = ActorSystem()
+  import system.dispatcher
 
   object actors {
     val corsHeaders: List[ModeledHeader] =
@@ -120,29 +120,36 @@ class EmbeddedServer(
       reflowDB.serveTargetRegionImage(id)
     }
 
-    def regionImageServer = pathPrefix("img") {
-      pathPrefix("region") {
-        path(Segment) { regionId =>
-          complete(
-            HttpResponse(entity =
-              HttpEntity(MediaTypes.`image/png`, HttpData(produceRegionImage(regionId)))
+    def regionImageServer =
+      pathPrefix("img") {
+        pathPrefix("region") {
+          path(Segment) { regionId =>
+            complete(
+              HttpResponse(entity =
+                HttpEntity(MediaTypes.`image/png`, HttpData(produceRegionImage(regionId)))
+              )
             )
-          )
+          }
         }
       }
-    }
 
 
-    def mainFrame = pathPrefix("") (
+    def webPage(pageName: String) =
       extract(_.request.entity.data) ( requestData => ctx =>
-        ctx.complete { httpResponse(html.ShellHtml().toString()) }
+        ctx.complete { httpResponse(html.ShellHtml(pageName).toString()) }
       )
-    )
+
+    def webPages =
+      ( pathPrefix("browse")(webPage("BrowseCorpus")) ~
+        pathPrefix("label") (webPage("WatrColors")) ~
+        pathPrefix("") (redirect("/browse", StatusCodes.PermanentRedirect))
+      )
 
 
     def apiRoute(
       prefix: String,
-      router: autowire.Core.Router[String]) =
+      router: autowire.Core.Router[String]
+    ) = {
       pathPrefix("api")(
         path(prefix / Segments) { segs =>
           extract(_.request.entity.data) { requestData => ctx =>
@@ -157,18 +164,30 @@ class EmbeddedServer(
               )
             )}})
 
+    }
 
-    def autowireRoute = apiRoute("autowire", ShellsideServer.route[WatrShellApi](WatrShellApiListeners))
+    def autowireWatrShell = apiRoute("shell",
+      ShellsideServer.route[WatrShellApi](
+        WatrShellApiListeners
+      ))
+
+    def autowireBrowseCorpus = apiRoute("browse",
+      ShellsideServer.route[BrowseCorpusApi](
+        new BrowseCorpusApiListeners(reflowDB, corpus)
+      ))
 
     def run(): Unit = {
       startServer(url, port)(
-        get( webjarResources
+        get(
+          webjarResources
           ~  assets
           ~  regionImageServer
-          ~  mainFrame
+          ~  webPages
         ) ~
-        post( path("notifications") (ctx => actors.longPoll ! ctx.responder)
-            ~ autowireRoute
+        post(
+          path("notifications") (ctx => actors.longPoll ! ctx.responder)
+          ~ autowireWatrShell
+          ~ autowireBrowseCorpus
         )
       )
 
@@ -244,7 +263,7 @@ class EmbeddedServer(
 
 
     def echoLabeler(labelingPanel: LabelingPanel): Unit = {
-      val docStore = reflowDB.docstorage
+      val docStore = reflowDB.docStore
 
       val withIndicators =
         labelingPanel.options

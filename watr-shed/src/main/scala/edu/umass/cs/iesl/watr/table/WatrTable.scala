@@ -53,7 +53,7 @@ object WatrTable {
         |implicit val pp3 = pprintLabelWidget
         |implicit val db0: TextReflowDB = db
         |implicit val corpus0: Corpus = corpus
-        |implicit val docStore: DocumentCorpus = db.docstorage
+        |implicit val docStore: DocumentCorpus = db.docStore
         |""".stripMargin
 
   val welcomeBanner = s""">> WatrTable Shell <<"""

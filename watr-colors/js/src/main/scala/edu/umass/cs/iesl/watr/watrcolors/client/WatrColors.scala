@@ -132,7 +132,7 @@ object WatrColors extends LabelerRendering {
   }
 
   object shell {
-    val Client = new WebsideClient("autowire")
+    val Client = new WebsideClient("shell")
     val api = Client[WatrShellApi]
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
@@ -145,11 +145,6 @@ object WatrColors extends LabelerRendering {
   var interval: Double = 1000
 
   object WatrColorsApiListeners extends WatrColorsApi {
-
-    @JSExport
-    def helloColors(msg: String): Unit = {
-      println(msg)
-    }
 
     @JSExport
     override def clear(): Unit = {
@@ -215,8 +210,11 @@ object WatrColors extends LabelerRendering {
     jQuery("#canvas-container").dblclick(dblclickcb)
   }
 
+  val host: String="localhost"
+  val port: Int=9999
+
   @JSExport
-  def main(host: String="localhost", port: Int=9999): Unit = {
+  def display(): Unit = {
 
     initKeybindings()
 
@@ -226,7 +224,6 @@ object WatrColors extends LabelerRendering {
     var success = false
 
     def rec(): Unit = {
-      println("rec()")
 
       Ajax.post(s"http://$host:$port/notifications").onComplete {
 
@@ -246,21 +243,42 @@ object WatrColors extends LabelerRendering {
       }
     }
 
+    lazy val canvasContainer: ModifierSeq = Seq(
+      padding:="0",
+      border:="0",
+      margin:="0",
+      position.relative
+    )
+
+    lazy val fabricCanvas: ModifierSeq = Seq(
+      position.absolute,
+      padding:="0",
+      margin:="0",
+      border := "0",
+      left:="0",
+      zIndex:=100,
+      top:="0"
+    )
+
 
     bs.withBootstrapNative {
-      println("main 2")
-
       setupClickCatchers()
-
-      // defaultMouseHandler()
-      println("main 3")
       rec()
 
-      val r = PageLayout.initLabelerPage().render
-      println("main 4")
-      r
+      val page = navItem(span("/Labeler").render)
+
+      val nav = PageLayout.initNavbar(List(page))
+
+      val bod = div(
+        div(sheet.marginLeft(15), sheet.marginTop(25))(
+          div(^.id:="canvas-container", canvasContainer)(
+            canvas(^.id:="canvas", fabricCanvas)
+          )
+        )
+      )
+
+      PageLayout.pageSetup(nav, bod).render
     }
-    println("main 6")
 
   }
 

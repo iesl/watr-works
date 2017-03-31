@@ -23,7 +23,7 @@ class TextReflowDBTest extends FlatSpec with Matchers with CorpusTestingUtil {
     }
 
     reflowDB.dropAndRecreate
-    reflowDB.docstorage
+    reflowDB.docStore
   }
 
   behavior of "database-backed corpus"
