@@ -61,12 +61,19 @@ object VisualTracer {
   }
 }
 
-class VisualTracer() extends EnableTrace[TraceLog] {
+sealed trait VisualTraceLevel
+object VisualTraceLevel {
+  case object Off extends VisualTraceLevel
+  case object Append extends VisualTraceLevel
+  case object Print extends VisualTraceLevel
+}
+
+class VisualTracer() { // extends EnableTrace[TraceLog] {
   import VisualTracer._
   import TraceLog._
 
-  override def traceLevel(): VisualTraceLevel = visualTraceLevel
-  override def tracingEnabled(): Boolean = {
+  def traceLevel(): VisualTraceLevel = visualTraceLevel
+  def tracingEnabled(): Boolean = {
     traceLevel() != VisualTraceLevel.Off && traceIsUnfiltered()
   }
 

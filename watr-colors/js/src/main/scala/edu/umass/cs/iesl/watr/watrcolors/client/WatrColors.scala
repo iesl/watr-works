@@ -34,7 +34,7 @@ import bs._
 
 import rx._
 // import rx.ops._
-import scaladget.tools.JsRxTags._
+// import scaladget.tools.JsRxTags._
 
 
 @JSExportTopLevel("WatrColors")
@@ -233,6 +233,17 @@ object WatrColors extends LabelerRendering {
 
   }
 
+  // def initRx(implicit co: Ctx.Owner): Unit = {
+  def initRx(): Unit = {
+    currDocumentId.foreach { maybeDocId =>
+      maybeDocId.foreach{docId =>
+        shell.createDocumentLabeler(DocumentID(docId), "")
+          .foreach { case (lwidget, opts) =>
+            echoLabeler(lwidget, opts)
+          }
+      }
+    }
+  }
 
 
   @JSExport
@@ -253,17 +264,10 @@ object WatrColors extends LabelerRendering {
           canvas(^.id:="canvas", pageStyles.fabricCanvas)
         )
 
-      currDocumentId.foreach { maybeDocId =>
-        maybeDocId.foreach{docId =>
-          shell.createDocumentLabeler(DocumentID(docId), "")
-            .foreach { case (lwidget, opts) =>
-              echoLabeler(lwidget, opts)
-            }
-        }
-      }
-
       PageLayout.pageSetup(nav, mainContent).render
     }
+
+    initRx()
     val c = fabricCanvas
     setupClickCatchers()
     currDocumentId() = param("doc")

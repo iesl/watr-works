@@ -1,4 +1,6 @@
 import sbt.Keys._
+// import fommil.BigProjectSettings
+// import fommil.BigProjectKeys
 
 SensibleThisBuild.settings
 
@@ -10,7 +12,6 @@ lazy val copyDocs = TaskKey[Unit]("copyDocs")
 autoCompilerPlugins := true
 addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3")
 addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full)
-// addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 
 val Lib = CommonLibs
 
@@ -21,26 +22,22 @@ lazy val jsProjects = Seq[ProjectReference](
 )
 
 lazy val jvmProjects = Seq[ProjectReference](
-  watrprelude, watrmarksJVM, watrshed, watrcolorsJVM
+  watrmarksJVM, watrshed, watrcolorsJVM
 )
 
 lazy val root = (project in file("."))
   .settings(Release.settings :_*)
   .aggregate( (jsProjects++jvmProjects): _*)
+  // .settings(BigProjectSettings.overrideProjectSettings(Compile, Test))
 
-
-lazy val watrprelude = (project in file("watr-prelude"))
-  .settings(SensibleProject.settings: _*)
-  .settings(libraryDependencies ++= Seq(
-    "org.scala-lang" % "scala-reflect" % scalaVersion.value
-  ))
 
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
+  // .settings(BigProjectSettings.overrideProjectSettings(Compile, Test))
   .settings(libraryDependencies ++= Seq(
     "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion,
-    "com.github.julien-truffaut" %%% "monocle-core"           % Lib.monocleVersion % "compile, test",
-    "com.github.mpilquist"       %%% "simulacrum"             % "0.10.0"           % "compile, test",
+    // "com.github.julien-truffaut" %%% "monocle-core"           % Lib.monocleVersion % "compile, test",
+    // "com.github.mpilquist"       %%% "simulacrum"             % "0.10.0"           % "compile, test",
     "com.lihaoyi"                %%% "scalatags"              % Lib.scalaTagsVersion,
     "com.lihaoyi"                %%% "fansi"                  % Lib.fansiV,
     "com.lihaoyi"                %%% "sourcecode"             % Lib.sourcecodeV,
@@ -60,11 +57,11 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
 lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm
-  .dependsOn(watrprelude)
   .aggregate(watrmarksJS)
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(SensibleProject.settings: _*)
+  // .settings(BigProjectSettings.overrideProjectSettings(Compile, Test))
   .settings(libraryDependencies ++=
     LogLibs.logback ++
     DatabaseLibs.doobieDb ++
@@ -74,7 +71,6 @@ lazy val watrshed = (project in file("watr-shed"))
       Lib.playJson,
       Lib.shapeless
     ))
-  .dependsOn(watrprelude)
   .dependsOn(watrmarksJVM)
 
 
@@ -82,6 +78,7 @@ enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
+  // .settings(BigProjectSettings.overrideProjectSettings(Compile, Test))
   .settings(skip in packageJSDependencies := false)
   .settings(libraryDependencies ++= Seq(
     Lib.scalaAsync,

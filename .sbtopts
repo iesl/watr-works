@@ -1,9 +1,0 @@
--verbose
--J-Xmx2g
--J-Xss8M
--J-XX:ReservedCodeCacheSize=128m
--J-XX:MetaspaceSize=256m
--J-XX:MaxMetaspaceSize=512m
--J-XX:+CMSClassUnloadingEnabled
--J-XX:+UseCodeCacheFlushing
--J-Dakka.loglevel=OFF
