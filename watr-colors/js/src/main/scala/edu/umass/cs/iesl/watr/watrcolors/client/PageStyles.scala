@@ -15,6 +15,12 @@ import sty._
 
 
 object pageStyles {
+  lazy val zeroFringe: ModifierSeq = Seq(
+    padding     :=0,
+    border      :=0,
+    margin      :=0
+  )
+
   lazy val absCenterPage: ModifierSeq = Seq(
     position := "fixed",
     top := "45%",
@@ -50,10 +56,8 @@ object pageStyles {
     jmarginTop       := 30
   )
 
-  lazy val footerStyle: ModifierSeq = Seq(
-    padding         := 0,
-    margin          := 0,
-    border          := 0,
+  lazy val footerStyle: ModifierSeq = 
+    zeroFringe ++ Seq(
     height          := 1,
     left            := 0,
     jmarginTop      := "5em",
@@ -77,21 +81,24 @@ object pageStyles {
     zIndex := 10
   )
 
-  lazy val canvasContainer: ModifierSeq = Seq(
-    padding:="0",
-    border:="0",
-    margin:="0",
-    position.relative
-  )
+  lazy val canvasContainer: ModifierSeq =
+    zeroFringe ++ Seq(
+      display.`inline-block`,
+      position.relative
+    )
 
-  lazy val fabricCanvas: ModifierSeq = Seq(
-    position.absolute,
-    padding:="0",
-    margin:="0",
-    border := "0",
-    left:="0",
-    zIndex:=100,
-    top:="0"
-  )
+
+  lazy val canvasOverlay: ModifierSeq =
+    zeroFringe ++ Seq(
+      position.absolute,
+      zIndex      :=100
+    )
+
+  lazy val fabricCanvas: ModifierSeq =
+    zeroFringe ++ Seq(
+      position.absolute,
+      left    := 0,
+      top     := 0
+    )
 
 }

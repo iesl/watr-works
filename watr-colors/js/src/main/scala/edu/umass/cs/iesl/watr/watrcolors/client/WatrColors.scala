@@ -8,6 +8,7 @@ import scala.async.Async
 import scala.concurrent.Future
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js
 import scala.scalajs.js.annotation._
 import org.scalajs.dom
 import org.scalajs.dom.ext._
@@ -19,6 +20,7 @@ import UPickle._
 import labeling._
 import watrmarks._
 import native.mousetrap._
+import native.fabric
 
 import TypeTagPicklers._
 import watrmarks.{StandardLabels => LB}
@@ -182,6 +184,11 @@ object WatrColors extends LabelerRendering {
     fabricCanvas.setWidth(bbox.width.toInt)
     fabricCanvas.setHeight(bbox.height.toInt)
 
+    // val overlay = jQuery("#canvas-overlay")
+    // overlay.height(bbox.height.toInt)
+    // overlay.width(bbox.width.toInt)
+
+
     fobjs.foreach{os =>
       os.foreach(fabricCanvas.add(_))
     }
@@ -190,32 +197,12 @@ object WatrColors extends LabelerRendering {
     fabricCanvas.renderOnAddRemove = true
     val controls = createLabelerControls(labelOptions)
     val c = controls.render
-    val statusBar = dom.document.getElementById("status-controls")
+    // val statusBar = dom.document.getElementById("status-controls")
     // statusBar.childNodes.foreach( statusBar.removeChild(_)  )
-    statusBar.appendChild(c)
-    updateStatusText()
+    // statusBar.appendChild(c)
+    // updateStatusText()
   }
 
-  def setupClickCatchers(): Unit = {
-    import org.querki.jquery.JQueryEventObject
-    import org.querki.jquery.EventHandler
-
-    val clickcb: EventHandler = { (event: JQueryEventObject) =>
-      val clickPt = getCanvasPoint(event.pageX, event.pageY)
-      val req = UIRequest(uiState, Click(clickPt))
-      uiRequestCycle(req)
-      true
-    }
-    val dblclickcb: EventHandler = { (event: JQueryEventObject) =>
-      val clickPt = getCanvasPoint(event.pageX, event.pageY)
-      val req = UIRequest(uiState, DblClick(clickPt))
-      uiRequestCycle(req)
-      true
-    }
-
-    jQuery("#canvas-container").click(clickcb)
-    // jQuery("#canvas-container").dblclick(dblclickcb)
-  }
 
   def param(k: String):Option[String] = {
     val params = queryParams()
@@ -230,43 +217,57 @@ object WatrColors extends LabelerRendering {
   import TypeTags._
 
   @JSExport
-  def initCanvas(): Unit = {
-    println(s"initCanvas")
-    currDocumentId() = param("doc")
+  def setupClickCatchers(): Unit = {
+    import org.querki.jquery.JQueryEventObject
+    import org.querki.jquery.EventHandler
+
+    val clickcb = { (event: JQueryEventObject) =>
+      println("click")
+      val clickPt = getCanvasPoint(event.pageX, event.pageY)
+      val req = UIRequest(uiState, Click(clickPt))
+      uiRequestCycle(req)
+      true
+    }
+
+    dom.document.getElementById("canvas-container").addEventListener("click", clickcb, useCapture=false)
+
   }
+
+
 
   @JSExport
   def display(): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
     bs.withBootstrapNative {
-
       initKeybindings()
-      setupClickCatchers()
 
       val nav = PageLayout.initNavbar(List())
 
-      val main =
-        div(sheet.marginLeft(15), sheet.marginTop(25))(
-          div(^.id:="canvas-container", pageStyles.canvasContainer)(
-            canvas(^.id:="canvas", pageStyles.fabricCanvas, ^.onload:=initCanvas())
-          )
+      val mainContent =
+        div(
+          ^.id:="canvas-container",
+          pageStyles.canvasContainer,
+          sheet.marginLeft(15), sheet.marginTop(25)
+        )(
+          canvas(^.id:="canvas", pageStyles.fabricCanvas)
         )
 
       currDocumentId.foreach { maybeDocId =>
-        println(s"got ${maybeDocId}")
         maybeDocId.foreach{docId =>
           shell.createDocumentLabeler(DocumentID(docId), "")
             .foreach { case (lwidget, opts) =>
-              println(s"got lwdiget w/opts = ${opts}")
               echoLabeler(lwidget, opts)
             }
         }
       }
 
-
-      PageLayout.pageSetup(nav, main).render
+      PageLayout.pageSetup(nav, mainContent).render
     }
+    val c = fabricCanvas
+    setupClickCatchers()
+    currDocumentId() = param("doc")
+
 
   }
 

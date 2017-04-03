@@ -48,7 +48,7 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
 
   def visualizeDocStore(): Unit = {
     for {
-      stableId     <- docStore.getDocuments
+      stableId     <- docStore.getDocuments()
       docId        <- docStore.getDocument(stableId).toSeq
       _            <- putStrLn(s"Document $stableId id:${docId}")
       pageId       <- docStore.getPages(docId)

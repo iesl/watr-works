@@ -10,46 +10,6 @@ object WatrStyles extends CascadingStyleSheet {
   val C = Colors
   initStyleSheet()
 
-
-  // def statusBar = cls(
-  //   position.fixed,
-  //   overflow.hidden,
-  //   margin          := 0,
-  //   padding         := 0,
-  //   top             := 0,
-  //   width           := "100%",
-  //   height          := "30px",
-  //   zIndex          := 9999,
-  //   backgroundColor := "#"+C.LightSteelBlue1.toHex
-  // )
-
-  // def statusText = cls(
-  //   position.fixed,
-  //   overflow.hidden,
-  //   margin          := 0,
-  //   padding         := 0,
-  //   top             := 0,
-  //   width           := "100%",
-  //   height          := "30px",
-  //   zIndex          := 9999,
-  //   left            := "30%",
-  //   backgroundColor := "#"+C.LightSteelBlue3.toHex
-  // )
-
-  // def statusCtrls = cls(
-  //   position.fixed,
-  //   overflow.hidden,
-  //   margin          := 0,
-  //   padding         := 0,
-  //   top             := 0,
-  //   width           := "100%",
-  //   height          := "30px",
-  //   zIndex          := 9999,
-  //   left            := 0,
-  //   backgroundColor := "#"+C.LightSteelBlue2.toHex
-  // )
-
-
   def htmlBody = cls(
     (html ~ body)(
       height := "100%",
@@ -57,31 +17,6 @@ object WatrStyles extends CascadingStyleSheet {
       margin := 0,
       width := "100%"
     )
-  )
-
-  // def mainContent = cls(
-  //   width := "100%",
-  //   padding:="0",
-  //   border:="0",
-  //   // margin:="0",
-  //   marginTop := "30px"
-  // )
-
-  def canvasContainer = cls(
-    padding:="0",
-    border:="0",
-    margin:="0",
-    position.relative
-  )
-
-  def fabricCanvas = cls(
-    position.absolute,
-    padding:="0",
-    margin:="0",
-    border := "0",
-    left:="0",
-    zIndex:=100,
-    top:="0"
   )
 
 }

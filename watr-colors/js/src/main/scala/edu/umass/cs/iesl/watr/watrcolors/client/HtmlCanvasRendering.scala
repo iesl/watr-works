@@ -7,14 +7,14 @@ import native.fabric
 import utils.Color
 
 trait HtmlCanvasRendering {
-  def initFabric(elemId: String): fabric.Canvas = {
+  def initFabric(elemId: String): fabric.StaticCanvas = {
     val c = new fabric.Canvas(elemId, fabric.CanvasOptions)
 
     // Store a ref to the fabric js object for future use
     jQuery(s"#$elemId").prop("fabric", c)
     c.uniScaleTransform = true
-    // c.defaultCursor = "crosshair"
-    c.hoverCursor = "default"
+    c.defaultCursor = "crosshair"
+    // c.hoverCursor = "default"
     c
   }
 

@@ -487,3 +487,6 @@ object Canvas {
 
 @js.native @JSGlobal
 object CanvasOptions extends CanvasProperties//  {}
+
+// @js.native @JSGlobal
+// object StaticCanvasOptions extends CanvasProperties//  {}

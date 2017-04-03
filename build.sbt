@@ -10,7 +10,7 @@ lazy val copyDocs = TaskKey[Unit]("copyDocs")
 autoCompilerPlugins := true
 addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3")
 addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full)
-addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
+// addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full)
 
 val Lib = CommonLibs
 

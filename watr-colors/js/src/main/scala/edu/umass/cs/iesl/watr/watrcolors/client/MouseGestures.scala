@@ -31,7 +31,7 @@ trait MouseGestures extends HtmlCanvasRendering {
     cshape
   }
 
-  def canvasDivOffset() = jQuery(s"#canvas-container")
+  def canvasDivOffset() = jQuery(s"#canvas")
     .offset()
     .asInstanceOf[native.JQueryPosition]
 

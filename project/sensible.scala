@@ -26,9 +26,9 @@ object SensibleProject extends CommonLibs {
     "-Ywarn-inaccessible",
     "-Ywarn-unused-import", // noisy, but good to run occasionally
     "-Ywarn-dead-code",
+    "-Ypartial-unification",
     "-Xfuture"
     //
-    // "-Ypartial-unification", // typelevel.org scala specific
     // "-language:postfixOps",
     // "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)
     // "-Ywarn-value-discard", // Warn when non-Unit expression results are unused
@@ -38,7 +38,7 @@ object SensibleProject extends CommonLibs {
 
 
   lazy val settings =  Seq(
-    scalaVersion := "2.11.8",
+    scalaVersion := "2.11.9",
     // scalaVersion := "2.12.1",
     organization := "edu.umass.cs.iesl",
     scalacOptions ++= scalaOptionList,
@@ -57,7 +57,7 @@ object SensibleProject extends CommonLibs {
 
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full),
-    addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full),
+    // addCompilerPlugin("com.milessabin"  % "si2712fix-plugin" % "1.2.0" cross CrossVersion.full),
 
     logBuffered in Test := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
@@ -87,7 +87,7 @@ object SensibleThisBuild {
     ),
 
     organization in ThisBuild := "edu.umass.cs.iesl",
-    scalaVersion in ThisBuild := "2.11.8",
+    scalaVersion in ThisBuild := "2.11.9",
     // scalaVersion in ThisBuild := "2.12.1",
     // scalaOrganization in ThisBuild := "org.typelevel",
     scalacOptions in ThisBuild ++= SensibleProject.scalaOptionList,
