@@ -20,7 +20,6 @@ import UPickle._
 import labeling._
 import watrmarks._
 import native.mousetrap._
-import native.fabric
 
 import TypeTagPicklers._
 import watrmarks.{StandardLabels => LB}
@@ -28,18 +27,16 @@ import watrmarks.{StandardLabels => LB}
 import scaladget.stylesheet.{all => sheet}
 import scaladget.api.{BootstrapTags => bs}
 import scalatags.JsDom.all._
-import scalatags.JsDom.{ styles  }
 import sheet._
-import bs._
 
 import rx._
-// import rx.ops._
-// import scaladget.tools.JsRxTags._
 
 
 @JSExportTopLevel("WatrColors")
 object WatrColors extends LabelerRendering {
 
+
+  var selectionInProgress = false
 
   def queryParams(): Map[String, String] = {
     val params = mutable.HashMap[String, String]()
@@ -96,8 +93,7 @@ object WatrColors extends LabelerRendering {
     "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
     "s b" -> ((e: MousetrapEvent) => states.selectByRegion()),
 
-    "s s" -> ((e: MousetrapEvent) => startSelection()),
-    "s a" -> ((e: MousetrapEvent) => startSelectPoint())
+    "s s" -> ((e: MousetrapEvent) => startSelection())
   )
 
   def initKeybindings() = {
@@ -131,19 +127,11 @@ object WatrColors extends LabelerRendering {
     fabricCanvas.renderOnAddRemove = true
   }
 
-  @JSExport
-  def startSelectPoint(): Unit = {
-    for {
-      clickPt <- getUserClickPoint(fabricCanvas)
-    } yield {
-      val req = UIRequest(uiState, Click(clickPt))
-      uiRequestCycle(req)
-    }
-  }
-
 
   @JSExport
   def startSelection(): Unit = {
+    selectionInProgress = true
+    println(s"startSelection: setting selectionInProgress=${selectionInProgress}")
 
     fabricCanvas.defaultCursor = "crosshair"
     fabricCanvas.renderAll()
@@ -154,6 +142,8 @@ object WatrColors extends LabelerRendering {
       fabricCanvas.defaultCursor = "default"
       val req = UIRequest(uiState, SelectRegion(bbox))
       uiRequestCycle(req)
+      selectionInProgress = false
+      println(s"end startSelection: setting selectionInProgress=${selectionInProgress}")
     }
 
   }
@@ -215,22 +205,29 @@ object WatrColors extends LabelerRendering {
   // val currLabelerType: Var[String] = Var("")
   val currDocumentId: Var[Option[String]] = Var(None)
   import TypeTags._
+  // import org.querki.jquery.JQueryEventObject
+  import dom.raw.MouseEvent
+
 
   @JSExport
-  def setupClickCatchers(): Unit = {
-    import org.querki.jquery.JQueryEventObject
-    import org.querki.jquery.EventHandler
+  def setupClickCatchers(enable: Boolean): Unit = {
+    val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
+      println(s"clickcb: checking selectionInProgress=${selectionInProgress}")
+      if (!selectionInProgress) {
+        println("click")
 
-    val clickcb = { (event: JQueryEventObject) =>
-      println("click")
-      val clickPt = getCanvasPoint(event.pageX, event.pageY)
-      val req = UIRequest(uiState, Click(clickPt))
-      uiRequestCycle(req)
+        val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
+        val req = UIRequest(uiState, Click(clickPt))
+        uiRequestCycle(req)
+      }
       true
     }
 
-    dom.document.getElementById("canvas-container").addEventListener("click", clickcb, useCapture=false)
 
+    val elem = dom.document
+      .getElementById("canvas-container")
+
+    elem.addEventListener("click", clickcb, useCapture=false)
   }
 
   // def initRx(implicit co: Ctx.Owner): Unit = {
@@ -269,7 +266,7 @@ object WatrColors extends LabelerRendering {
 
     initRx()
     val c = fabricCanvas
-    setupClickCatchers()
+    setupClickCatchers(true)
     currDocumentId() = param("doc")
 
 

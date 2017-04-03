@@ -115,13 +115,5 @@ trait MouseGestures extends HtmlCanvasRendering {
     }
   }
 
-  def getUserClickPoint(c: fabric.Canvas): Future[Point] = {
-    val chan = CanvasMouseChannels(c)
-    async {
-      var res = await(chan.mousedown())
-      getCanvasPoint(res.e.pageX, res.e.pageY)
-    }
-  }
-
 
 }
