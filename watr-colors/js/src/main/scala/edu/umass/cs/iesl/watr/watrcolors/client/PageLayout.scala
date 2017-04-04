@@ -16,10 +16,12 @@ import sty._
 
 import rx._
 // import scaladget.tools.JsRxTags._
+case class MenuAction(
+  name: String,
+  action: () => Unit
+)
 
-case class MenuAction(name: String, action: () ⇒ Unit)
-
-object PageLayout extends SharedTagDefs {
+object PageLayout extends SharedClientDefs {
 
   import pageStyles._
 
@@ -55,7 +57,7 @@ object PageLayout extends SharedTagDefs {
     import scaladget.api.Selector.Options
 
 
-    lazy val importModel = MenuAction("Import your model", () ⇒ {
+    lazy val importModel = MenuAction("Import your model", () => {
       // modelWizardPanel.dialog.show
     })
 
@@ -64,18 +66,18 @@ object PageLayout extends SharedTagDefs {
     lazy val menuActions: Options[MenuAction] = elements.options(
       key = btn_danger,
       naming = (m: MenuAction) ⇒ m.name,
-      onclose = () ⇒ menuActions.content.now.foreach {
+      onclose = () => menuActions.content.now.foreach {
         _.action()
       },
       fixedTitle = Some("New project")
     )
     val itemStyle = lineHeight := "35px"
 
-    val execItem           = navItem(div(glyph_flash, itemStyle).tooltip("Executions"), () ⇒ {})
-    val authenticationItem = navItem(div(glyph_lock, itemStyle).tooltip("Authentications"), () ⇒ {})
-    val pluginItem         = navItem(div(glyph_plug, itemStyle).tooltip("Plugins"), () ⇒ {})
-    val envItem            = navItem(div(glyph_exclamation, itemStyle).render, () ⇒ {})
-    val docItem            = navItem(div(glyph_file, itemStyle).tooltip("Documentation"), () ⇒ {})
+    val execItem           = navItem(div(glyph_flash, itemStyle).tooltip("Executions"),     () => {})
+    val authenticationItem = navItem(div(glyph_lock, itemStyle).tooltip("Authentications"), () => {})
+    val pluginItem         = navItem(div(glyph_plug, itemStyle).tooltip("Plugins"),         () => {})
+    val envItem            = navItem(div(glyph_exclamation, itemStyle).render,              () => {})
+    val docItem            = navItem(div(glyph_file, itemStyle).tooltip("Documentation"),   () => {})
     // navItem(div(glyph_chevron_left, fileChevronStyle).render, todo = () ⇒ {}),
 
     val navBar = div(

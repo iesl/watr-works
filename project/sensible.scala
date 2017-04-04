@@ -18,14 +18,14 @@ object SensibleProject extends CommonLibs {
     "-deprecation",
     "-encoding", "UTF-8",
     "-feature",
-    "-target:jvm-1.6",
+    // "-target:jvm-1.6",
     "-unchecked",
     "-language:existentials",
     "-language:higherKinds",
     "-language:implicitConversions",
-    "-Ypatmat-exhaust-depth", "40",
+    // "-Ypatmat-exhaust-depth", "40",
     "-Xlint",
-    "-Yinline-warnings",
+    // "-Yinline-warnings",
     "-Ywarn-adapted-args", // Warn if an argument list is modified to match the receiver
     "-Ywarn-inaccessible",
     "-Ywarn-unused-import", // noisy, but good to run occasionally
@@ -54,7 +54,6 @@ object SensibleProject extends CommonLibs {
     // ),
 
     // javacOptions in doc ++= Seq("-source", "1.6"),
-
     // javaOptions := Seq(
     //   "-Xss2m", "-Xms1g", "-Xmx2g", "-Dfile.encoding=UTF8"
     // ),

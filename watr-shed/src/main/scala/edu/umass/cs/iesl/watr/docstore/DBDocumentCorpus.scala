@@ -59,6 +59,8 @@ class TextReflowDB(
         println(s"ERROR: ${message}")
         t.printStackTrace()
         throw t
+    } finally{
+      xa.shutdown
     }
   }
 
@@ -601,9 +603,6 @@ class TextReflowDB(
     }
 
 
-    // def createZone(docId: Int@@DocumentID): Int@@ZoneID = {
-    //   runq { insertZone(docId) }
-    // }
     def createZone(regionId: Int@@RegionID): Int@@ZoneID = {
       ???
     }

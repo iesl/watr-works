@@ -16,13 +16,6 @@ import scalaz.{
 
 import TypeTags._
 
-// // This is going away in favor of the ZoneTree version
-// case class Zone(
-//   id: Int@@ZoneID,
-//   regions: Seq[TargetRegion],
-//   labels: Seq[Label]
-// )
-
 
 sealed trait ZoneTreeF[+A] {
   def label: Option[Label]
@@ -48,8 +41,8 @@ object ZoneTreeF {
 
   implicit def ZoneTreeTraverse: Traverse[ZoneTreeF] = new Traverse[ZoneTreeF] {
     def traverseImpl[G[_], A, B](fa: ZoneTreeF[A])(f: A => G[B])(implicit G: Applicative[G]): G[ZoneTreeF[B]] = fa match {
-      case fa: ZLeaf    => G.point(fa.copy())
-      case fa@ ZNode(as, l, id)        => as.traverse(f).map(ZNode(_, l, id))
+      case fa: ZLeaf                => G.point(fa.copy())
+      case fa@ ZNode(as, l, id)     => as.traverse(f).map(ZNode(_, l, id))
     }
   }
 
@@ -129,7 +122,6 @@ object ZoneTreeSyntax extends ZoneTreeFunctions {
 
   implicit class RicherZoneTree(val theZoneTree: Zone) extends AnyVal {
 
-    // def getId(): Int@@ZoneID = getZoneId(theZoneTree)
     def getId(): Int@@ZoneID = theZoneTree.project.zoneId
     def id(): Int@@ZoneID = theZoneTree.project.zoneId
     def label(): Option[Label] = theZoneTree.project.label

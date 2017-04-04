@@ -2,8 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import scala.collection.mutable
-
 import scala.async.Async
 import scala.concurrent.Future
 
@@ -31,31 +29,14 @@ import sheet._
 
 import rx._
 
+import TypeTags._
+import dom.raw.MouseEvent
 
 @JSExportTopLevel("WatrColors")
-object WatrColors extends LabelerRendering {
-
+object WatrColors extends  SharedClientDefs {
 
   var selectionInProgress = false
 
-  def queryParams(): Map[String, String] = {
-    val params = mutable.HashMap[String, String]()
-
-    val href = dom.window.location.href
-    if (href.contains("?")) {
-      val qs = href.split("\\?", 2)(1)
-      for {
-        qparam <- qs.split('&')
-      } {
-        qparam.split('=') match {
-          case Array(k) =>  params(k) = ""
-          case Array(k, v) => params(k) = v
-          case _ =>
-        }
-      }
-    }
-    params.toMap
-  }
 
   var uiState: UIState = UIState(
     ByChar,
@@ -172,10 +153,6 @@ object WatrColors extends LabelerRendering {
     fabricCanvas.setWidth(bbox.width.toInt)
     fabricCanvas.setHeight(bbox.height.toInt)
 
-    // val overlay = jQuery("#canvas-overlay")
-    // overlay.height(bbox.height.toInt)
-    // overlay.width(bbox.width.toInt)
-
 
     fobjs.foreach{os =>
       os.foreach(fabricCanvas.add(_))
@@ -185,25 +162,20 @@ object WatrColors extends LabelerRendering {
     fabricCanvas.renderOnAddRemove = true
     val controls = createLabelerControls(labelOptions)
     val c = controls.render
-    // val statusBar = dom.document.getElementById("status-controls")
-    // statusBar.childNodes.foreach( statusBar.removeChild(_)  )
-    // statusBar.appendChild(c)
-    // updateStatusText()
   }
 
 
-  def param(k: String):Option[String] = {
-    val params = queryParams()
-    if (params.contains(k)){
-      Option(params(k))
-    } else None
-  }
 
-
-  // val currLabelerType: Var[String] = Var("")
+  // val currLabelerId: Var[Option[String]] = Var(None)
+  val currLabelerType: Var[Option[String]] = Var(None)
   val currDocumentId: Var[Option[String]] = Var(None)
-  import TypeTags._
-  import dom.raw.MouseEvent
+
+  def createLabeler(docId: String, lt: String): Unit = {
+    shell.createDocumentLabeler(DocumentID(docId), lt)
+      .foreach { case (lwidget, opts) =>
+        echoLabeler(lwidget, opts)
+      }
+  }
 
 
   @JSExport
@@ -213,7 +185,6 @@ object WatrColors extends LabelerRendering {
         println("click")
 
         val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
-        clickPt
 
         val req = UIRequest(uiState, Click(clickPt))
         uiRequestCycle(req)
@@ -228,14 +199,13 @@ object WatrColors extends LabelerRendering {
     elem.addEventListener("click", clickcb, useCapture=false)
   }
 
-  def initRx(): Unit = {
-    currDocumentId.foreach { maybeDocId =>
-      maybeDocId.foreach{docId =>
-        shell.createDocumentLabeler(DocumentID(docId), "")
-          .foreach { case (lwidget, opts) =>
-            echoLabeler(lwidget, opts)
-          }
-      }
+
+  def initRx(): Unit = Rx {
+    (currDocumentId(), currLabelerType()) match {
+      case (Some(docId), Some(lt)) =>
+        createLabeler(docId, lt)
+
+      case _ => // do nothing
     }
   }
 
@@ -265,12 +235,9 @@ object WatrColors extends LabelerRendering {
     val c = fabricCanvas
     setupClickCatchers(true)
     currDocumentId() = param("doc")
-
+    currLabelerType() = param("lt")
 
   }
-
-
-
 
 
 }

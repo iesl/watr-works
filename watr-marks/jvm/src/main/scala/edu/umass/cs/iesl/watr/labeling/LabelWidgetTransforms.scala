@@ -109,6 +109,7 @@ object LabelWidgetTransforms {
 
     lwidget.transCata[LabelWidget](addSelector)
   }
+
   def addZoneIndicators(label: Label, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
 
     // append rectangular overlays which respond to user clicks to select/deselect zones

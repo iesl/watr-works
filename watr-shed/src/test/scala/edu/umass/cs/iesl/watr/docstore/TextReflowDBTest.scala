@@ -4,6 +4,8 @@ package docstore
 import org.scalatest._
 // import watrmarks.{StandardLabels => LB}
 import corpora._
+import geometry._
+import TypeTags._
 
 class TextReflowDBTest extends FlatSpec with Matchers with CorpusTestingUtil {
 
@@ -28,27 +30,18 @@ class TextReflowDBTest extends FlatSpec with Matchers with CorpusTestingUtil {
 
   behavior of "database-backed corpus"
 
-  it should "add zones" in new FreshDocstore(pageCount=2) {
-    try {
-      println(reportDocument(stableId))
-      // val pageNum = PageNum(1)
-      // val docId = docStore.getDocument(stableId).get
-      // val pageId = docStore.getPage(docId, pageNum).get
-      // val targetRegionsPg1 = docStore.getTargetRegions(pageId)
-      // val newZoneId = docStore.createZone(docId)
-      // docStore.addZoneLabel(newZoneId, LB.PageLines)
-      // val newZone = docStore.getZone(newZoneId)
-      // println(s"newZone: ${newZone}")
-      // targetRegionsPg1.foreach { regionId =>
-      //   val zones = docStore.getZonesForTargetRegion(regionId)
-      //   println(s"Got zones ${zones}")
-      // }
-    } catch {
-      case t: Throwable =>
-        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
-        println(s"ERROR: ${message}")
-        t.printStackTrace()
-    }
+  val ZT = ZoneTrees
+
+  it should "add zones" in new CleanDocstore {
+    val stableId = DocumentID("doc0")
+    val docId = docStore.addDocument(stableId)
+    val pageId = docStore.addPage(docId, PageNum(0))
+    val regionId = docStore.addTargetRegion(pageId, LTBounds(5d, 4d, 3d, 2d))
+
+    val zoneId = docStore.createZone(regionId)
+    val ztree = docStore.getZone(zoneId)
+
+    println(ZT.prettyPrintTree(ztree))
   }
 
 

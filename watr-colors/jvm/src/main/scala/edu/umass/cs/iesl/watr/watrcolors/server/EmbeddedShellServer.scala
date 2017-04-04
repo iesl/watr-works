@@ -198,37 +198,63 @@ class EmbeddedServer(
 
   var activeLabelWidgetIndex: Option[LabelWidgetIndex] = None
 
+
   object WatrShellApiListeners extends WatrShellApi {
 
     def onDrawPath(artifactId: String, path: Seq[Point]): Unit = {
       println(s"onDrawPath: ")
     }
 
+    import bioarxiv._
+
     def createDocumentLabeler(
       stableId: String@@DocumentID,
       labelerType: String
     ): Future[(Seq[WidgetPositioning], LabelOptions)] = {
 
-      println("createDocumentLabeleri()")
-      val labelingPanel = SampleLabelWidgets.dimensionTest
-
+      val hasEntry = corpus.hasEntry(stableId.unwrap)
+      println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
       val docStore = reflowDB.docStore
 
-      val withIndicators =
-        labelingPanel.options
-          .labels
-          .foldLeft(labelingPanel.content){
-            case (acc, elemLabel) =>
-              LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
-          }
+      val maybeLabeler = for {
+        entry <- corpus.entry(stableId.unwrap)
+        rec   <- BioArxivOps.getBioarxivJsonArtifact(entry)
+      } yield {
 
-      val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
-      activeLabelWidgetIndex = Some(lwIndex)
 
-      val layout = lwIndex.layout.positioning
-      Future {
-        (layout, labelingPanel.options)
+        try {
+          println(s"got rec")
+          val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, rec, docStore)
+
+          println(s"1. got rec")
+          val withIndicators = labelingPanel.options
+            .labels
+            .foldLeft(labelingPanel.content){
+              case (acc, elemLabel) =>
+                LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
+            }
+          println(s"2. got rec")
+
+          val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
+
+          println(s"3. got rec")
+          activeLabelWidgetIndex = Some(lwIndex)
+          val layout = lwIndex.layout.positioning
+          println(s"returning labeler $layout")
+          Future { (layout, labelingPanel.options) }
+
+        } catch {
+          case t: Throwable => println(s"error ${t}, ${t.getCause}")
+            t.printStackTrace()
+            throw t
+        }
+
       }
+
+      maybeLabeler.getOrElse {
+        sys.error("createDocumentLabeler: error")
+      }
+
     }
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
