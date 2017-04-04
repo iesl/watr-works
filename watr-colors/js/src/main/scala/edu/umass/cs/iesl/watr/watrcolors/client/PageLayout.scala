@@ -19,14 +19,15 @@ import rx._
 
 case class MenuAction(name: String, action: () ⇒ Unit)
 
-object PageLayout {
+object PageLayout extends SharedTagDefs {
 
   import pageStyles._
 
 
+
   def initNavbar(
     navItems: Seq[NavItem[HTMLSpanElement]] = Seq()
-  )(implicit rxOwnr: Ctx.Owner)  = {
+  )(implicit rxOwnr: Ctx.Owner): HtmlTag = {
     val logo = navItem(
       span("WatrColors").render
     )

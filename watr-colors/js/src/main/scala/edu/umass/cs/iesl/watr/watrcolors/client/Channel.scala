@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
-
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.concurrent.Promise

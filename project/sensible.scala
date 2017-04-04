@@ -10,6 +10,10 @@ object SensibleProject extends CommonLibs {
     libraryDependencies ++= Seq(acyclic)
   )
 
+  // lazy val ensimeImplicitPlugin =  Seq(
+  //   scalacOptions += "-X:plugin=./lib/ensime-plugin-implicits_2.11-0.0.0+13-04cfb436+20170404-1214-SNAPSHOT.jar"
+  // )
+
   val scalaOptionList = Seq(
     "-deprecation",
     "-encoding", "UTF-8",
@@ -27,7 +31,9 @@ object SensibleProject extends CommonLibs {
     "-Ywarn-unused-import", // noisy, but good to run occasionally
     "-Ywarn-dead-code",
     "-Ypartial-unification",
-    "-Xfuture"
+    "-Xfuture",
+    //
+    "-Xplugin:./lib-proj/ensime-plugin-implicits_2.11-0.0.0+13-04cfb436+20170404-1214-SNAPSHOT.jar"
     //
     // "-language:postfixOps",
     // "-Xcheckinit", // runtime error when a val is not initialized due to trait hierarchies (instead of NPE somewhere else)

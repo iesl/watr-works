@@ -29,12 +29,17 @@ import rx._
   // import rx.ops._
 import scaladget.tools.JsRxTags._
 
-@JSExportTopLevel("BrowseCorpus")
-object BrowseCorpus extends LabelerRendering {
-
+trait SharedTagDefs {
   type HtmlTag = TypedTag[HTMLElement]
   type RxHtmlTag = Rx.Dynamic[TypedTag[HTMLElement]]
   type RxHtmlTags = Rx.Dynamic[Seq[TypedTag[HTMLElement]]]
+
+
+}
+
+@JSExportTopLevel("BrowseCorpus")
+object BrowseCorpus extends LabelerRendering with SharedTagDefs {
+
 
   val buttonStyle: ModifierSeq = Seq(
     sty.marginAll(right = 5, top = 5)
@@ -75,7 +80,9 @@ object BrowseCorpus extends LabelerRendering {
     )
   }
 
+
   def documentLister(implicit c: Ctx.Owner): RxHtmlTags = Rx {
+
     for {entry <- docList()} yield {
       val docId = entry.urlStr
       val t = s"/label?doc=${docId}"

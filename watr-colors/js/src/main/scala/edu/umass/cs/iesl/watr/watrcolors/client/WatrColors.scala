@@ -131,7 +131,6 @@ object WatrColors extends LabelerRendering {
   @JSExport
   def startSelection(): Unit = {
     selectionInProgress = true
-    println(s"startSelection: setting selectionInProgress=${selectionInProgress}")
 
     fabricCanvas.defaultCursor = "crosshair"
     fabricCanvas.renderAll()
@@ -143,7 +142,6 @@ object WatrColors extends LabelerRendering {
       val req = UIRequest(uiState, SelectRegion(bbox))
       uiRequestCycle(req)
       selectionInProgress = false
-      println(s"end startSelection: setting selectionInProgress=${selectionInProgress}")
     }
 
   }
@@ -205,18 +203,18 @@ object WatrColors extends LabelerRendering {
   // val currLabelerType: Var[String] = Var("")
   val currDocumentId: Var[Option[String]] = Var(None)
   import TypeTags._
-  // import org.querki.jquery.JQueryEventObject
   import dom.raw.MouseEvent
 
 
   @JSExport
   def setupClickCatchers(enable: Boolean): Unit = {
     val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
-      println(s"clickcb: checking selectionInProgress=${selectionInProgress}")
       if (!selectionInProgress) {
         println("click")
 
         val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
+        clickPt
+
         val req = UIRequest(uiState, Click(clickPt))
         uiRequestCycle(req)
       }
@@ -230,7 +228,6 @@ object WatrColors extends LabelerRendering {
     elem.addEventListener("click", clickcb, useCapture=false)
   }
 
-  // def initRx(implicit co: Ctx.Owner): Unit = {
   def initRx(): Unit = {
     currDocumentId.foreach { maybeDocId =>
       maybeDocId.foreach{docId =>
