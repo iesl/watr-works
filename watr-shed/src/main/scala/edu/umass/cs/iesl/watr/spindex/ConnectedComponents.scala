@@ -76,7 +76,7 @@ sealed trait Component {
 
 
 
-  def targetRegion: TargetRegion
+  def targetRegion: PageRegion
 
   def chars: String
 
@@ -150,7 +150,7 @@ sealed trait Component {
 case class RegionComponent(
   id: Int@@ComponentID,
   override val roleLabel: Label,
-  initTargetRegion: TargetRegion,
+  initPageRegion: PageRegion,
   override val mpageIndex: MultiPageIndex
 ) extends Component {
 
@@ -187,7 +187,7 @@ case class RegionComponent(
     // initRegion.targetRegion.copy(left: Double, top: Double, width: Double, height: Double)
 
     val newRegion = initRegion.copy(
-      initTargetRegion = initRegion.targetRegion.copy(
+      initPageRegion = initRegion.targetRegion.copy(
         bbox = cbounds(atoms)))
 
     // val newRegion = initRegion.copy(
@@ -201,7 +201,7 @@ case class RegionComponent(
   private def initRegion(newLabel: Label, children: Seq[Component]): RegionComponent = {
     val initRegion = initCloneAs(newLabel)
     val newRegion = initRegion.copy(
-      initTargetRegion = initRegion.targetRegion.copy(
+      initPageRegion = initRegion.targetRegion.copy(
         bbox = cbounds(children)))
 
     // val newRegion = initRegion.copy(
@@ -262,7 +262,7 @@ case class RegionComponent(
       })
   }
 
-  def targetRegion: TargetRegion = initTargetRegion 
+  def targetRegion: PageRegion = initPageRegion 
   def bounds: LTBounds = targetRegion.bbox
 
   def chars: String = {
@@ -290,7 +290,7 @@ case class AtomicComponent(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
   ): Seq[RegionComponent] = {
-    val newRegion = mpageIndex.createRegionComponent(charAtom.targetRegion, LB.NullLabel) // FIXME <- nulllabel?
+    val newRegion = mpageIndex.createRegionComponent(charAtom.charRegion, LB.NullLabel) // FIXME <- nulllabel?
 
     onGrouped(newRegion, 0)
     Seq(newRegion)
@@ -309,7 +309,7 @@ case class AtomicComponent(
 
   val bounds = charAtom.bbox
 
-  def targetRegion: TargetRegion = charAtom.targetRegion
+  def targetRegion: PageRegion = charAtom.charRegion
 
   def chars: String = char
 

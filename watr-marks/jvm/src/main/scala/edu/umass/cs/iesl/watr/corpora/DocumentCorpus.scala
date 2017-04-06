@@ -61,16 +61,23 @@ trait DocumentCorpus {
   ///////////////////////
   /// Derived operations
 
-  def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] = for {
+
+  def getPageZones(stableId: String@@DocumentID, pageNum: Int@@PageNum, label: Label): Seq[Zone] = for {
     docId     <- getDocument(stableId).toSeq
     pageId    <- getPage(docId, pageNum).toSeq
-    zone      <- getPageVisualLines(pageId)
+    zone      <- getPageZones(pageId, label)
   } yield zone
 
-  def getPageVisualLines(pageId: Int@@PageID): Seq[Zone] = for {
+  def getPageZones(pageId: Int@@PageID, label: Label): Seq[Zone] = for {
     regionId  <- getTargetRegions(pageId)
-    zoneId    <- getZoneForRegion(regionId, LB.VisualLine)
+    zoneId    <- getZoneForRegion(regionId, label)
   } yield { getZone(zoneId) }
+
+  def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] =
+    getPageZones(stableId, pageNum, LB.VisualLine)
+
+  def getPageVisualLines(pageId: Int@@PageID): Seq[Zone] =
+    getPageZones(pageId, LB.VisualLine)
 
   def getTextReflowForTargetRegion(regionId: Int@@RegionID): Option[TextReflow] = for {
     zoneId  <- getZoneForRegion(regionId, LB.VisualLine)

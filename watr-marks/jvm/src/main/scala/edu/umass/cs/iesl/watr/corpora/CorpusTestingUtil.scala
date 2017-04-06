@@ -161,5 +161,35 @@ trait CorpusTestingUtil extends PlainTextCorpus {
     vcat(docBoxes)
   }
 
+  //// Tests to be run across mem/db docstore
+  import watrmarks.{StandardLabels => LB}
+
+  def addSampleDocs(docs: List[List[String]]): Unit = {
+    for { (doc, i) <- docs.zipWithIndex } {
+      addDocument(DocumentID(s"doc#${i}"), doc)
+    }
+  }
+  def addSampleDoc(doc: List[String]): Unit = {
+    addSampleDocs(List(doc))
+  }
+
+  def test1(): Unit = {
+    addSampleDoc(MockPapers.sample_4pg_3x3_doc)
+
+    val stableId = DocumentID("doc#0")
+    val docId = docStore.getDocument(stableId).get
+    val pageId = docStore.getPage(docId, PageNum(0)).get
+    val lineZones = docStore.getPageZones(pageId, LB.VisualLine)
+    val lineRegions = lineZones.flatMap(_.regions)
+
+    lineRegions.headOption.foreach{ r0 =>
+      val zoneId = docStore.createZone(r0.id, LB.PageLines)
+      lineRegions.tail.foreach{ r1 =>
+        docStore.addZoneRegion(zoneId, r1.id)
+      }
+    }
+  }
+
+
 
 }

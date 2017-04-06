@@ -88,7 +88,7 @@ trait CommonLibs extends LibVersions {
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   val scalatags        = "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion
   // val ammonite         = "com.lihaoyi"              % "ammonite"         % "0.8.2" cross CrossVersion.full
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.8"  % "0.8.2" 
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.8"  % "0.8.2"
   val fastparse        = "com.lihaoyi"             %% "fastparse"        % "0.4.2"
   val sourcecode       = "com.lihaoyi"             %% "sourcecode"       % sourcecodeV
   val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.13"

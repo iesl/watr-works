@@ -90,6 +90,7 @@ class MemDocstore extends DocumentCorpus {
       }
 
       def getZoneForRegion(regionId: Int@@RegionID, label: W.Label): Option[Rel.Zone] = {
+
         zeroOrOne {
           for {
             zoneId <- regionToZone.getEdges(regionId)
@@ -115,6 +116,7 @@ class MemDocstore extends DocumentCorpus {
       }
       def addTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
         toTargetRegion.addEdge(zoneId, regionId)
+        regionToZone.addEdge(regionId, zoneId)
       }
 
       def getTargetRegions(zoneId: Int@@ZoneID): Seq[Rel.TargetRegion] = {

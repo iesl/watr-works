@@ -113,6 +113,13 @@ object PageComponentImplicits {
         .intersection(b)
         .map(b => thePageRegion.copy(bbox=b))
     }
+    def uriString: String = {
+      createTargetRegionUri(
+        thePageRegion.page.stable.stableId,
+        thePageRegion.page.stable.pageNum,
+        thePageRegion.bbox
+      )
+    }
   }
 
   implicit class RicherTargetRegion(val theTargetRegion: TargetRegion) extends AnyVal {

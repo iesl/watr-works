@@ -9,7 +9,6 @@ import textboxing.{TextBoxing => TB}, TB._
 
 import edu.umass.cs.iesl.watr.utils.EnglishDictionary
 import TextReflowConversion._
-import PageComponentImplicits._
 
 trait ComponentEnrichments extends JargonDictionaries {
 
@@ -53,7 +52,7 @@ trait ComponentEnrichments extends JargonDictionaries {
       vjoin()(
         hjoin()(
           b0,
-          vjoin()(line, indent(4)(theComponent.targetRegion.prettyPrint.box))
+          vjoin()(line, indent(4)(theComponent.targetRegion.toString.box))
         ),
         emptyBox(1)(1)
       )

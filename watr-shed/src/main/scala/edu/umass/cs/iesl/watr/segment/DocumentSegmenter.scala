@@ -123,7 +123,7 @@ object DocumentSegmenter {
     val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
     val mpageIndex = new MultiPageIndex(stableId, docStore)
 
-    val pageIdL = lens[CharAtom].targetRegion.page.pageId
+    val pageIdL = lens[CharAtom].charRegion.page.pageId
 
     val docId = docStore.addDocument(stableId)
     pageAtomsAndGeometry.foreach { case(regions, geom)  =>
@@ -195,7 +195,6 @@ object DocumentSegmenter {
       isStrictlyRightToLeft(cand, line)
   }
 }
-
 
 
 class DocumentSegmenter(
@@ -498,7 +497,7 @@ class DocumentSegmenter(
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
-  def fillInMissingChars(pageId: Int@@PageNum, lineBinChars: Seq[AtomicComponent]): Seq[Component] = {
+  def fillInMissingChars(pageId: Int@@PageNum, lineBinChars: Seq[AtomicComponent]): Seq[AtomicComponent] = {
     // val consecutiveCharGroups = lineBinChars.groupByPairs({ (ch1, ch2) =>
     //   ch2.id.unwrap - ch1.id.unwrap == 1
     // })
@@ -509,7 +508,7 @@ class DocumentSegmenter(
     val missingIds = (ids.min to ids.max) diff ids
 
     val missingChars = missingIds.map(id =>
-      mpageIndex.getComponent(ComponentID(id), pageId)
+      mpageIndex.getComponent(ComponentID(id), pageId).asInstanceOf[AtomicComponent]
     )
 
     // vtrace.trace("inserting missing chars" withTrace
@@ -567,13 +566,15 @@ class DocumentSegmenter(
   }
 
   def determineLines(
-    pageId: Int@@PageNum,
+    pageNum: Int@@PageNum,
     components: Seq[AtomicComponent]
   ): Unit = {
+    val pageId = docStore.getPage(docId, pageNum).get
 
-    def minRegionId(ccs: Seq[Component]): Int@@RegionID =  ccs.map(_.targetRegion.id).min
+    // def minRegionId(ccs: Seq[AtomicComponent]): Int@@RegionID =  ccs.map(_.targetRegion.id).min
+    def minRegionId(ccs: Seq[AtomicComponent]): Int@@CharID =  ccs.map(_.charAtom.id).min
 
-    val lineSets = new DisjointSets[Component](components)
+    val lineSets = new DisjointSets[AtomicComponent](components)
 
     // line-bin coarse segmentation
     val lineBinsx = approximateLineBins(components)
@@ -581,7 +582,7 @@ class DocumentSegmenter(
     val shortLines = splitRunOnLines(lineBinsx)
 
     for {
-      line <- shortLines.map(fillInMissingChars(pageId, _))
+      line <- shortLines.map(fillInMissingChars(pageNum, _))
       if !line.isEmpty
       char <- line
     } { lineSets.union(char, line.head) }
@@ -591,19 +592,13 @@ class DocumentSegmenter(
       .map(_.toSeq.sortBy(c => (c.bounds.left, c.bounds.top)))
       .sortBy(line => minRegionId(line))
 
-    // vtrace.trace("Visual Lines" withInfo {
-    //   vcat(shortLinesFilledIn.map(ccs =>
-    //     ccs.map(_.chars).mkString.box
-    //   ))
-    // })
-
 
     val longLines = shortLinesFilledIn
       .groupByPairs({ (linePart1, linePart2) =>
         val l1 = linePart1.last
         val l2 = linePart2.head
-        val l1max = l1.targetRegion.id.unwrap
-        val l2min = l2.targetRegion.id.unwrap
+        val l1max = l1.charAtom.id.unwrap
+        val l2min = l2.charAtom.id.unwrap
         val idgap = l2min - l1max
         val leftToRight = isStrictlyLeftToRight(l1, l2)
         val overlapped = isOverlappedVertically(l1, l2)
@@ -639,7 +634,8 @@ class DocumentSegmenter(
           visualLine.removeLabel(LB.VisualLine)
           visualLine.addLabel(vlineLabel)
           // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
-          val zoneId = docStore.createZone(visualLine.targetRegion.id, vlineLabel)
+          val regionId = docStore.addTargetRegion(pageId, visualLine.targetRegion.bbox)
+          val zoneId = docStore.createZone(regionId, vlineLabel)
 
           visualLine
         })
