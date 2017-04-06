@@ -27,7 +27,7 @@ import utils.GraphPaper
 case class IndexableTextReflow(
   id: Int@@TextReflowID,
   textReflow: TextReflow,
-  targetRegion: TargetRegion
+  targetRegion: PageRegion
 )
 
 case class QueryHit(
@@ -173,7 +173,7 @@ trait LabelWidgetIndex {
   def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Option[GeometricGroup] = {
     var changes = List[GeometricFigure]()
 
-    val targetRegionsToBeLabeled = for {
+    val targetRegionsToBeLabeled: Seq[Seq[PageRegion]] = for {
       qhit <- queryHits
     } yield constraint match {
       case ByLabel(l) =>
@@ -188,9 +188,11 @@ trait LabelWidgetIndex {
         regions
 
       case ByRegion =>
-        val regionId = docStore.addTargetRegion(qhit.pageId, qhit.pageSpaceBounds)
-        val newRegion = docStore.getTargetRegion(regionId)
-        val regions = Seq(newRegion)
+        // val regionId = docStore.addTargetRegion(qhit.pageId, qhit.pageSpaceBounds)
+        // val newRegion = docStore.getTargetRegion(regionId)
+        val pageStableId = docStore.getPageIdentifier(qhit.pageId)
+        val pageRegion = PageRegion(pageStableId, qhit.pageSpaceBounds)
+        val regions = Seq(pageRegion)
         changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
         regions
 
@@ -203,8 +205,9 @@ trait LabelWidgetIndex {
             .clipToBoundingRegion(qhit.pageSpaceBounds)
             .map { case (clipped, _) =>
               val tr = clipped.targetRegion
-              val regionId = docStore.addTargetRegion(tr.page.pageId, tr.bbox)
-              docStore.getTargetRegion(regionId)
+              // val regionId = docStore.addTargetRegion(tr.page.pageId, tr.bbox)
+              // docStore.getTargetRegion(regionId)
+              tr
             }
 
         }
@@ -218,10 +221,12 @@ trait LabelWidgetIndex {
     val maybeLabel = targetRegionsToBeLabeled.flatten
 
     maybeLabel.headOption
-      .map { targetRegion=>
-        val zoneId = docStore.createZone(targetRegion.id, label)
+      .map { pageRegion =>
+        val regionId = docStore.addTargetRegion(pageRegion.page.pageId, pageRegion.bbox)
+        val zoneId = docStore.createZone(regionId, label)
         maybeLabel.tail.map { tr =>
-          docStore.addZoneRegion(zoneId, tr.id)
+          val rid = docStore.addTargetRegion(tr.page.pageId, tr.bbox)
+          docStore.addZoneRegion(zoneId, rid)
         }
         docStore.getZone(zoneId)
       }
@@ -367,7 +372,6 @@ trait LabelWidgetIndex {
 
   //   ???
   // }
-
 
 
   def debugPrint(query: Option[LTBounds] = None): Unit = {

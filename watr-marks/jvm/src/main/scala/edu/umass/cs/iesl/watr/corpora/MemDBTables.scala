@@ -84,6 +84,11 @@ class DBRelation[IDType: ClassTag, ModelType: ClassTag](
     keys.sorted.map(table(_))
   }
 
+  def debugPrint(): Unit = {
+    println(s"Table: $modelClsStr")
+    println(all().mkString("\n  ", "\n  ", "\n"))
+  }
+
   def option(id: Int@@IDType): Option[ModelType] = table.get(id)
 
   def unique(id: Int@@IDType): ModelType = {

@@ -207,17 +207,17 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
       charAtoms().map(_.bbox)
     }
 
-    def targetRegions(): Seq[TargetRegion] = {
-      charAtoms().map(_.targetRegion)
+    def targetRegions(): Seq[PageRegion] = {
+      charAtoms().map(_.charRegion)
     }
 
-    def targetRegion(): TargetRegion = {
+    def targetRegion(): PageRegion = {
       targetRegions.reduce(_ union _)
     }
 
 
     def bounds(): LTBounds = {
-      val pageCount = charAtoms.map(_.targetRegion.page.pageId).toSet.length
+      val pageCount = charAtoms.map(_.charRegion.page.pageId).toSet.length
       if (pageCount > 1) {
         sys.error(s"TextReflow.bounds() called on reflow spanning multiple pages")
       }

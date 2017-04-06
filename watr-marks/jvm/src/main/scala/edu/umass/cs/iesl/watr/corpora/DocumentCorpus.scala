@@ -15,9 +15,11 @@ trait DocumentCorpus {
   def getDocumentCount(): Int
   def addDocument(stableId: String@@DocumentID): Int@@DocumentID
   def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID]
+  // def getDocumentDef(docId: Int@@DocumentID): Rel.Document
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
   def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID]
+  def getPageIdentifier(pageId: Int@@PageID): RecordedPageID
   def getPageDef(pageId: Int@@PageID): Option[Rel.Page]
   def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
   def getPageGeometry(pageId: Int@@PageID): LTBounds

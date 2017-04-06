@@ -39,6 +39,13 @@ trait ArbitraryTextReflows {
     })
   }
 
+  implicit def arbPageRegion: Arbitrary[PageRegion] = {
+    (arbInt |@| arbRecordedPageID |@| arbLTBounds)({
+      case (id, rec, bbox) =>
+        PageRegion(rec, bbox)
+    })
+  }
+
   implicit def arbTargetRegion: Arbitrary[TargetRegion] = {
     (arbInt |@| arbRecordedPageID |@| arbLTBounds)({
       case (id, rec, bbox) =>
@@ -47,7 +54,7 @@ trait ArbitraryTextReflows {
   }
 
   implicit def arbCharAtom: Arbitrary[CharAtom] = {
-    (arbInt |@| arbTargetRegion |@| arbString |@| arbOption[Int])({
+    (arbInt |@| arbPageRegion |@| arbString |@| arbOption[Int])({
       case (id, tr, cstr, code) =>
         CharAtom(CharID(id), tr, cstr, code)
     })

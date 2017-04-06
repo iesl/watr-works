@@ -126,6 +126,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     val regionId = docStore.addTargetRegion(pageId, bbox)
     docStore.getTargetRegion(regionId)
   }
+
   def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
     // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
     val bbox = getRegionBounds(x, y, w, h)
@@ -134,7 +135,13 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     docStore.getTargetRegion(regionId)
   }
 
+  def mkPageRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): PageRegion = {
+    val bbox = getRegionBounds(x, y, w, h)
+    val recPageId = docStore.getPageIdentifier(pageId)
+    PageRegion(recPageId, bbox)
+  }
   def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
+
     val docId = docStore.addDocument(stableId)
     for {
       (page, n) <- pages.zipWithIndex
@@ -200,7 +207,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
                 val charAtom = CharAtom(
                   charIds.nextId,
-                  mkTargetRegion(pageId, x=chnum, y=linenum, w=1, h=1),
+                  mkPageRegion(pageId, x=chnum, y=linenum, w=1, h=1),
                   ch.toString
                 )
 

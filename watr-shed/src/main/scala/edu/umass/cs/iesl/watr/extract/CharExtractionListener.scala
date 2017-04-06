@@ -164,8 +164,7 @@ class CharExtractionListener(
 
           CharAtom(
             nextId,
-            TargetRegion(
-              RegionID(nextId.unwrap),
+            PageRegion(
               RecordedPageID(
                 PageID(pageNum.unwrap),
                 StablePageID(stableId, pageNum)

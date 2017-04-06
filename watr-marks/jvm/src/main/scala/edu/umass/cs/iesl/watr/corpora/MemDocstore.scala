@@ -71,12 +71,13 @@ class MemDocstore extends DocumentCorpus {
       object regionToZone extends EdgeTableOneToMany[RegionID, ZoneID]
 
       def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[W.Label] = {
-        for {
+        val allLabels = for {
           zoneId <- forDocument.getEdges(docId)
           zone    = unique(zoneId)
         } yield {
           labels.getLabel(zone.label)
         }
+        allLabels.toSet.toList
       }
 
       def getZonesForDocument(docId: Int@@DocumentID, label: W.Label): Seq[Int@@ZoneID] = {
@@ -160,9 +161,10 @@ class MemDocstore extends DocumentCorpus {
       }
 
       def ensureLabel(key: String): Int@@LabelID = {
-        forKey.get(key).getOrElse({
+        forKey.getOrElseUpdate(key, {
           val rec = Rel.Label(nextId(), key)
           insert(rec.prKey, rec)
+          forKey.put(key, rec.prKey)
           rec.prKey
         })
       }
@@ -178,7 +180,6 @@ class MemDocstore extends DocumentCorpus {
 
       object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
-
 
       def add(pageId: Int@@PageID, bbox: G.LTBounds): Rel.TargetRegion = {
         // FIXME: correct rank
@@ -242,6 +243,15 @@ class MemDocstore extends DocumentCorpus {
     documents
       .forStableId(stableId)
       .map(stableId => documents.unique(stableId).prKey)
+  }
+
+  def getPageIdentifier(pageId: Int@@PageID): RecordedPageID = {
+    val p = pages.unique(pageId)
+    val d = documents.unique(p.document)
+    RecordedPageID(
+      pageId,
+      StablePageID(d.stableId, p.pagenum)
+    )
   }
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID = {

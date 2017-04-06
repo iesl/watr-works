@@ -4,8 +4,8 @@ package docstore
 import org.scalatest._
 // import watrmarks.{StandardLabels => LB}
 import corpora._
-import geometry._
-import TypeTags._
+// import geometry._
+// import TypeTags._
 
 class DBDocumentCorpusTest extends FlatSpec with Matchers with CorpusTestingUtil {
 

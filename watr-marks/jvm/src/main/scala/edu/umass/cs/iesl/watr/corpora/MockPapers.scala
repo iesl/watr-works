@@ -59,4 +59,13 @@ object MockPapers {
        |""".stripMargin
   )
 
+  def sample_4pg_3x3_doc(): List[String] = {
+    List(
+      "abc\ndef\nghi",
+      "012\n345\n678",
+      "jkl\nmno\npqr",
+      "stu\nvwx\nyzz"
+    )
+  }
+
 }

@@ -4,7 +4,7 @@ package geometry
 import watrmarks._
 import scalaz.Tag
 
-import TypeTags._
+// import TypeTags._
 
 
 trait TypeTagFormats {
@@ -106,7 +106,7 @@ trait ExplicitTypeTagFormats {
 
 trait GeometryJsonCodecs extends TypeTagFormats {
   import play.api.libs.json._
-  import Json._
+  // import Json._
   import utils.EnrichNumerics._
   def jstr(s: String) = JsString(s)
 
@@ -142,6 +142,7 @@ trait GeometryJsonCodecs extends TypeTagFormats {
   implicit val FormatStablePageID: Format[StablePageID] = Json.format[StablePageID]
   implicit val FormatRecordedPageID: Format[RecordedPageID] = Json.format[RecordedPageID]
   implicit val FormatTargetRegion: Format[TargetRegion] = Json.format[TargetRegion]
+  implicit val FormatPageRegion: Format[PageRegion] = Json.format[PageRegion]
 
   implicit val FormatPageGeometry     = Json.format[PageGeometry]
   implicit val FormatLabel            = Json.format[Label]

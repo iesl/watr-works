@@ -2,8 +2,6 @@ package edu.umass.cs.iesl.watr
 package geometry
 
 import scalaz.Equal
-// import scalaz.syntax.equal._
-// import TypeTags._
 import geometry.syntax._
 import watrmarks._
 
@@ -22,7 +20,6 @@ import watrmarks._
 
   */
 
-
 case class StablePageID(
   stableId: String@@DocumentID,
   pageNum: Int@@PageNum
@@ -35,16 +32,13 @@ case class RecordedPageID(
   stable: StablePageID
 ) {
   override def toString = s"""${stable}@${pageId}"""
-
 }
 
-// sealed trait GeometricRegion
 
-// case class PgeRegion(
-//   pageId: Int@@PageID,
-//   bbox: LTBounds,
-//   regionId: Option[Int@@RegionID] = None
-// )
+case class PageRegion(
+  page: RecordedPageID,
+  bbox: LTBounds
+)
 
 case class TargetRegion(
   id: Int@@RegionID,
@@ -57,19 +51,11 @@ case class TargetRegion(
   }
   override def toString = s"""${page}/${id}@${bbox.prettyPrint}"""
 }
-// stableId: String@@DocumentID,
-// pageNum: Int@@PageNum,
 
 object TargetRegion {
 
   implicit val EqualTargetRegion: Equal[TargetRegion] =
     Equal.equal((a, b) => a.id==b.id)
-
-    // implicit val EqualTargetRegion: Equal[TargetRegion] = Equal.equal((a, b) => (a, b) match {
-    // case (TargetRegion(id, _, _), TargetRegion(id2, _, _)) =>
-    //   id.unwrap==id2.unwrap
-    // case (_, _) => false
-  // })
 
 }
 
@@ -81,13 +67,13 @@ case class PageGeometry(
 
 case class CharAtom(
   id: Int@@CharID,
-  targetRegion: TargetRegion,
+  charRegion: PageRegion,
   char: String,
   wonkyCharCode: Option[Int] = None
 )  {
-  override def toString = s"CharAtom($char, $targetRegion)"
+  override def toString = s"CharAtom($char, $charRegion)"
 
-  def bbox: LTBounds = targetRegion.bbox
+  def bbox: LTBounds = charRegion.bbox
 }
 
 object CharAtom {
@@ -109,39 +95,25 @@ object PageComponentImplicits {
     s"${stableId}+${pageNum}+${bbox.uriString}"
   }
 
-  // implicit class RicherPageGeometry(val thePageGeometry: PageGeometry) extends AnyVal {
-  //   def toTargetRegion(stableId: String@@DocumentID): TargetRegion = {
-  //     TargetRegion(
-  //       RegionID(0),
-  //       stableId,
-  //       thePageGeometry.id,
-  //       thePageGeometry.bounds
-  //     )
-  //   }
-  // }
+  implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
+    def union(r: PageRegion): PageRegion = {
+      val samePage = thePageRegion.page.pageId == r.page.pageId
+      if (!samePage) {
+        sys.error(s"""cannot union PageRegions from different pages: ${thePageRegion} + ${r}""")
+      }
+      thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
+    }
+    def intersects(r: PageRegion): Boolean = {
+      val samePage = thePageRegion.page.pageId == r.page.pageId
+      samePage && (thePageRegion.bbox intersects r.bbox)
+    }
 
-  // implicit class RicherPgeRegion(val thePageRegion: PgeRegion) extends AnyVal {
-  //   def union(r: PgeRegion): PgeRegion = {
-  //     val samePage = thePgeRegion.pageId == r.pageId
-  //     if (!samePage) {
-  //       sys.error(s"""cannot union PgeRegions from different pages: ${thePgeRegion} + ${r}""")
-  //     }
-  //     thePgeRegion.copy(bbox = thePgeRegion.bbox union r.bbox)
-  //   }
-  //   def intersects(r: PgeRegion): Boolean = {
-  //     val samePage = thePgeRegion.pageId == r.pageId
-  //     samePage && (thePgeRegion.bbox intersects r.bbox)
-  //   }
-  //   // def intersects(r: TargetRegion): Boolean = {
-  //   //   val samePage = thePgeRegion.pageId == r.pageId
-  //   //   samePage && (thePgeRegion.bbox intersects r.bbox)
-  //   // }
-  //   def intersection(b: LTBounds): Option[PgeRegion] = {
-  //     thePgeRegion.bbox
-  //       .intersection(b)
-  //       .map(b => thePgeRegion.copy(bbox=b))
-  //   }
-  // }
+    def intersection(b: LTBounds): Option[PageRegion] = {
+      thePageRegion.bbox
+        .intersection(b)
+        .map(b => thePageRegion.copy(bbox=b))
+    }
+  }
 
   implicit class RicherTargetRegion(val theTargetRegion: TargetRegion) extends AnyVal {
     def union(r: TargetRegion): TargetRegion = {
