@@ -149,8 +149,9 @@ object DocumentIO extends DocsegJsonFormats {
       val zone = docStore.getZone(zoneId)
 
       // for each target region in each zone, find the (begin, end) bounds of the TextReflow in that zone
-      val zoneLocationsAndReflows = zone.getRegionIds.map({ zoneRegionId =>
-        val zoneTargetRegion = docStore.getTargetRegion(zoneRegionId)
+      val zoneLocationsAndReflows = zone.regions.map({ targetRegion =>
+
+        val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
         for {
           (textFlow, lineNum) <- textBlockReflows.zipWithIndex
           (clipped, range) <- textFlow.clipToBoundingRegion(zoneTargetRegion.bbox)
@@ -177,7 +178,7 @@ object DocumentIO extends DocsegJsonFormats {
           s"""[${l}, ${r.min}, ${r.len}]"""
         }).mkString(",")
 
-      val zoneLabels = zone.label.map(l => '"'.toString + l.toString + '"').getOrElse("")
+      val zoneLabel = zone.label.toString
       val mentionId = zone.id.unwrap
 
       val clustId = mpageIndex.relations.collect({
@@ -189,7 +190,7 @@ object DocumentIO extends DocsegJsonFormats {
       val pad3 = " "*(3 - mentionId.toString.length)
       val pad4 = " "*(3 - clustId.toString.length)
 
-      val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 [$zoneLabels], "${zoneText}", [${zoneTargets}]]""".box
+      val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 ["$zoneLabel"], "${zoneText}", [${zoneTargets}]]""".box
 
       (mentionId, clustId, mentionStr)
     }

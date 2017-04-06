@@ -5,6 +5,7 @@ import scalaz.Equal
 // import scalaz.syntax.equal._
 // import TypeTags._
 import geometry.syntax._
+import watrmarks._
 
 /**
 
@@ -96,11 +97,11 @@ object CharAtom {
 
 }
 
-  // case class Zone(
-  //   id: Int@@ZoneID,
-  //   regions: Seq[TargetRegion],
-  //   role: Label
-  // )
+case class Zone(
+  id: Int@@ZoneID,
+  regions: Seq[TargetRegion],
+  label: Label
+)
 
 
 object PageComponentImplicits {

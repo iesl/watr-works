@@ -1,18 +1,15 @@
 import sbt.Keys._
+import ReleaseTransformations._
 
 SensibleThisBuild.settings
+SensibleProject.settings
 
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption._
+// autoCompilerPlugins := true
+// addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3")
+// addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full)
+// enablePlugins(ScalaJSPlugin)
 
-lazy val copyDocs = TaskKey[Unit]("copyDocs")
-
-autoCompilerPlugins := true
-addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3")
-addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full)
 val Lib = CommonLibs
-
-import ReleaseTransformations._
 
 lazy val jsProjects = Seq[ProjectReference](
   watrmarksJS, watrcolorsJS
@@ -50,7 +47,6 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
 lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm
-  .aggregate(watrmarksJS)
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(SensibleProject.settings: _*)
@@ -66,7 +62,6 @@ lazy val watrshed = (project in file("watr-shed"))
   .dependsOn(watrmarksJVM)
 
 
-enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
@@ -106,6 +101,9 @@ lazy val watrcolorsJVM = watrcolors.jvm
   ))
 
 
+// import java.nio.file.Files
+// import java.nio.file.StandardCopyOption._
+// lazy val copyDocs = TaskKey[Unit]("copyDocs")
 // lazy val watrdocs = scalatex.ScalatexReadme(
 //   projectId = "watr-docs",
 //   wd = file("watr-docs"),

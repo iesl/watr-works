@@ -590,18 +590,19 @@ class TextReflowDB(
       runq { insertTextReflow(zoneId, jsStr, str) }
     }
 
+    def createZone(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {
 
-    def createZone(regionId: Int@@RegionID): Int@@ZoneID = {
       ???
     }
-    def createZone(zoneIds: Seq[Int@@ZoneID]): Int@@ZoneID = {
+    def addZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
+
+      ???
+    }
+    def removeZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Option[Int@@ZoneID] = {
+
       ???
     }
 
-    def addZoneLabel(zoneId: Int@@ZoneID, label: Label): Zone = {
-      runq { linkZoneToLabel(zoneId, label) }
-        ???
-    }
     def deleteZone(zoneId: Int@@ZoneID): Unit = {
       ???
     }

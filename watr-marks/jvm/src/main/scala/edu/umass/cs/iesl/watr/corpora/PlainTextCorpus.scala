@@ -217,9 +217,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
       val lineBounds = reflow.bounds()
       val regionId = docStore.addTargetRegion(pageId, lineBounds)
 
-      val lineZoneId = docStore.createZone(regionId)
-      val tr = docStore.getTargetRegion(regionId)
-      docStore.addZoneLabel(lineZoneId, LB.VisualLine)
+      val lineZoneId = docStore.createZone(regionId, LB.VisualLine)
 
       docStore.setTextReflowForZone(lineZoneId, reflow)
     }

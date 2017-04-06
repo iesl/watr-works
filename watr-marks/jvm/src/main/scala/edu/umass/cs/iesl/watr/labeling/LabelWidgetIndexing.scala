@@ -76,7 +76,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
           // Put all visual lines into index
           for {
             vline <- docStore0.getPageVisualLines(pageId)
-            reflow <- docStore0.getModelTextReflowForZone(vline.getId)
+            reflow <- docStore0.getModelTextReflowForZone(vline.id)
           } {
             val textReflow = jsonStrToTextReflow(reflow.reflow)
             val indexable = IndexableTextReflow(
@@ -215,16 +215,17 @@ trait LabelWidgetIndex {
         regions
     }
 
-    if (targetRegionsToBeLabeled.isEmpty) Seq() else {
+    val maybeLabel = targetRegionsToBeLabeled.flatten
 
-      val zoneId = docStore.createZone(
-        targetRegionsToBeLabeled.flatten.map(tr => docStore.createZone(tr.id))
-      )
+    maybeLabel.headOption
+      .map { targetRegion=>
+        val zoneId = docStore.createZone(targetRegion.id, label)
+        maybeLabel.tail.map { tr =>
+          docStore.addZoneRegion(zoneId, tr.id)
+        }
+        docStore.getZone(zoneId)
+      }
 
-      docStore.addZoneLabel(zoneId, label)
-
-      Some(docStore.getZone(zoneId))
-    }
 
     if (changes.isEmpty) None else {
       val groupBbox = changes.map(totalBounds(_)).reduce(_ union _)

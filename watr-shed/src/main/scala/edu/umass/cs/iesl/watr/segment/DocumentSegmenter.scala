@@ -639,9 +639,7 @@ class DocumentSegmenter(
           visualLine.removeLabel(LB.VisualLine)
           visualLine.addLabel(vlineLabel)
           // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
-          val zoneId = docStore.createZone(visualLine.targetRegion.id)
-          // docStore.setZoneTargetRegions(zoneId, List(visualLine.targetRegion))
-          docStore.addZoneLabel(zoneId, LB.VisualLine)
+          val zoneId = docStore.createZone(visualLine.targetRegion.id, vlineLabel)
 
           visualLine
         })

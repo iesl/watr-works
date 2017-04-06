@@ -74,18 +74,19 @@ object LabelWidgetTransforms {
             val zone = docStore.getZone(zoneId)
 
 
-            val filteredRegionsToTargetRegion = zone.getRegionIds.filter({ zoneRegionId =>
-              val zoneTargetRegion = docStore.getTargetRegion(zoneRegionId)
+            val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
+
+              val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
               zoneTargetRegion.intersects(under)
             })
 
             // clip zone to under's target region
-            val intersectingBboxes:List[GeometricFigure] = filteredRegionsToTargetRegion.flatMap { fregionId =>
-              docStore
-                .getTargetRegion(fregionId)
-                .intersection(under.bbox)
-                .map(_.bbox)
-            }.toList
+            val intersectingBboxes:List[GeometricFigure] = filteredRegionsToTargetRegion
+              .flatMap { targetRegion =>
+                targetRegion
+                  .intersection(under.bbox)
+                  .map(_.bbox)
+              }.toList
 
             if (intersectingBboxes.isEmpty) None else {
               val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
@@ -125,18 +126,21 @@ object LabelWidgetTransforms {
           } yield {
             val zone = docStore.getZone(zoneId)
 
-            val filteredRegionsToTargetRegion = zone.getRegionIds.filter({zoneRegionId =>
-              val zoneTargetRegion = docStore.getTargetRegion(zoneRegionId)
+            val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
+
+              val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
               zoneTargetRegion.intersects(under)
             })
 
             // clip zone to under's target region
-            val intersectingBboxes:List[GeometricFigure] = filteredRegionsToTargetRegion.flatMap { fregionId =>
-              docStore
-                .getTargetRegion(fregionId)
-                .intersection(under.bbox)
-                .map(_.bbox)
-            }.toList
+            val intersectingBboxes:List[GeometricFigure] = filteredRegionsToTargetRegion
+              .flatMap { targetRegion =>
+
+                targetRegion
+                  .intersection(under.bbox)
+                  .map(_.bbox)
+
+              }.toList
 
             if (intersectingBboxes.isEmpty) None else {
               val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)

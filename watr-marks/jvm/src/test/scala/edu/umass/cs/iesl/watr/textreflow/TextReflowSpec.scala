@@ -53,7 +53,7 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
 
     for {
       (line, i)       <- pageLines.zipWithIndex
-      lineReflow       = docStore.getTextReflowForZone(line.getId).get
+      lineReflow       = docStore.getTextReflowForZone(line.id).get
       lineText         = lineReflow.toText
       lineTR           = lineReflow.targetRegion
       x               <- 0 until 3

@@ -5,13 +5,12 @@ import org.scalatest._
 
 import geometry._
 import TypeTags._
+import watrmarks.{StandardLabels => LB}
 
 class DocstoreTest extends FlatSpec with Matchers with CorpusTestingUtil {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
   behavior of "In-memory Tables"
-
-  val ZT = ZoneTrees
 
   it should "handle zones" in new CleanDocstore {
 
@@ -20,10 +19,10 @@ class DocstoreTest extends FlatSpec with Matchers with CorpusTestingUtil {
     val pageId = docStore.addPage(docId, PageNum(0))
     val regionId = docStore.addTargetRegion(pageId, LTBounds(5d, 4d, 3d, 2d))
 
-    val zoneId = docStore.createZone(regionId)
-    val ztree = docStore.getZone(zoneId)
+    val zoneId = docStore.createZone(regionId, LB.VisualLine)
+    val zone = docStore.getZone(zoneId)
 
-    println(ZT.prettyPrintTree(ztree))
+    println(zone)
 
   }
 

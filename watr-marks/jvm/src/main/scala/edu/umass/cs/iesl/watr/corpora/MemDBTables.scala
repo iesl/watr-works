@@ -18,6 +18,21 @@ abstract class EdgeTableOneToMany[LhsIDType: ClassTag, RhsIDType: ClassTag] {
     rights.add(rhs)
   }
 
+  def removeEdgesFrom(lhs: Lhs): Unit = {
+    table.remove(lhs)
+  }
+
+  def removeEdgesTo(rhs: Rhs): Unit = {
+    table.foreach {case (_, rs) =>
+      rs.remove(rhs)
+    }
+  }
+
+  def removeEdge(lhs: Lhs, rhs: Rhs): Unit = {
+    table.get(lhs)
+      .foreach(_.remove(rhs))
+  }
+
   def getEdges(lhs: Lhs): Seq[Rhs] = {
     table.getOrElse(lhs, Seq()).toSeq
   }
