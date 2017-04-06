@@ -3,7 +3,7 @@ package labeling
 
 import geometry._
 import geometry.syntax._
-import geometry.zones.syntax._
+// import geometry.zones.syntax._
 import PageComponentImplicits._
 
 import LabelWidgetF._

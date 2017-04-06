@@ -12,7 +12,7 @@ import textreflow.data._
 import watrmarks.{StandardLabels => LB}
 import geometry._
 import geometry.syntax._
-import geometry.zones.syntax._
+// import geometry.zones.syntax._
 
 import TypeTags._
 

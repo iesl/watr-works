@@ -2,12 +2,9 @@ package edu.umass.cs.iesl.watr
 package docstore
 
 import doobie.imports._
-
-import databasics._
 import corpora._
 
-
-class TextReflowDBTables extends DoobiePredef {
+class TextReflowDBTables extends DoobieImplicits {
 
   val Rel = RelationModel
 
@@ -43,16 +40,24 @@ class TextReflowDBTables extends DoobiePredef {
 
   ////////////////////////////
   /// Zone tables
+  // val createZoneTable: Update0 = sql"""
+  //     CREATE TABLE zone (
+  //       zone          SERIAL PRIMARY KEY,
+  //       role          INTEGER REFERENCES label,
+  //       targetregion  INTEGER REFERENCES targetregion
+  //     );
+  //   """.update
+  // // CREATE INDEX zone_idx_document ON zone (document);
+
   val createZoneTable: Update0 = sql"""
       CREATE TABLE zone (
-        zone          SERIAL PRIMARY KEY,
-        parent        INTEGER REFERENCES zone,
-        rank          INTEGER NOT NULL,
-        role          INTEGER REFERENCES label,
-        targetregion  INTEGER REFERENCES targetregion
+        zone        SERIAL PRIMARY KEY,
+        document    INTEGER REFERENCES document NOT NULL,
+        rank          INTEGER NOT NULL
       );
+      CREATE INDEX zone_idx_document ON zone (document);
     """.update
-  // CREATE INDEX zone_idx_document ON zone (document);
+
 
   // // zone - label :: * - *
   // val createZoneToLabelTable: Update0 = sql"""

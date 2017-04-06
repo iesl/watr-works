@@ -1,133 +1,133 @@
 package edu.umass.cs.iesl.watr
 package geometry
 
-import textboxing.{TextBoxing => TB}
-import watrmarks._
-import scalaz.{@@ => _, _}, Scalaz._
+// import textboxing.{TextBoxing => TB}
+// import watrmarks._
+// import scalaz.{@@ => _, _}, Scalaz._
 
-import matryoshka._
-import matryoshka.data._
+// import matryoshka._
+// import matryoshka.data._
 
-import scalaz.{
-  Traverse,
-  Applicative,
-  Show
-}
+// import scalaz.{
+//   Traverse,
+//   Applicative,
+//   Show
+// }
 
-import TypeTags._
-
-
-sealed trait ZoneTreeF[+A] {
-  def label: Option[Label]
-  def zoneId: Int@@ZoneID
-}
-
-object ZoneTreeF {
-
-  def fixf = Fix[ZoneTreeF](_)
-
-  case class ZLeaf(
-    regionId: Int@@RegionID,
-    label: Option[Label],
-    zoneId: Int@@ZoneID
-  ) extends ZoneTreeF[Nothing]
-
-  case class ZNode[A](
-    as: List[A],
-    label: Option[Label],
-    zoneId: Int@@ZoneID
-  ) extends ZoneTreeF[A]
+// import TypeTags._
 
 
-  implicit def ZoneTreeTraverse: Traverse[ZoneTreeF] = new Traverse[ZoneTreeF] {
-    def traverseImpl[G[_], A, B](fa: ZoneTreeF[A])(f: A => G[B])(implicit G: Applicative[G]): G[ZoneTreeF[B]] = fa match {
-      case fa: ZLeaf                => G.point(fa.copy())
-      case fa@ ZNode(as, l, id)     => as.traverse(f).map(ZNode(_, l, id))
-    }
-  }
+// sealed trait ZoneTreeF[+A] {
+//   def label: Option[Label]
+//   def zoneId: Int@@ZoneID
+// }
 
-  implicit def ZoneTreeShow: Delay[Show, ZoneTreeF] = new Delay[Show, ZoneTreeF] {
-    def apply[A](show: Show[A]) = Show.show {
-      case fa@ ZLeaf(region, l, id)    => fa.toString()
-      case fa@ ZNode(as, l, id)        => fa.toString()
-    }
-  }
-}
+// object ZoneTreeF {
 
-object ZoneTrees {
-  import matryoshka.implicits._
-  import ZoneTreeF._
+//   def fixf = Fix[ZoneTreeF](_)
 
-  type ZoneTree = Fix[ZoneTreeF]
-  type Zone = ZoneTree
-  type ZoneTreeT = ZoneTreeF[Fix[ZoneTreeF]]
+//   case class ZLeaf(
+//     regionId: Int@@RegionID,
+//     label: Option[Label],
+//     zoneId: Int@@ZoneID
+//   ) extends ZoneTreeF[Nothing]
 
-  def leaf(r: Int@@RegionID): ZoneTree = {
-    fixf(ZLeaf(r, None, ZoneID(0)))
-  }
+//   case class ZNode[A](
+//     as: List[A],
+//     label: Option[Label],
+//     zoneId: Int@@ZoneID
+//   ) extends ZoneTreeF[A]
 
-  def node(children: Seq[ZoneTree]): ZoneTree =
-    fixf(ZNode(children.toList, None, ZoneID(0)))
 
-  def role(label: Label, a: ZoneTree): ZoneTree = fixf {
-    a.project match {
-      case z@ ZLeaf(region, optl, id) if optl.isEmpty => z.copy(label=Option(label))
-      case z@ ZNode(as, optl, id)     if optl.isEmpty => z.copy(label=Option(label))
-      case z => sys.error(s"Cannot assign new label to ${z}")
-    }
-  }
+//   implicit def ZoneTreeTraverse: Traverse[ZoneTreeF] = new Traverse[ZoneTreeF] {
+//     def traverseImpl[G[_], A, B](fa: ZoneTreeF[A])(f: A => G[B])(implicit G: Applicative[G]): G[ZoneTreeF[B]] = fa match {
+//       case fa: ZLeaf                => G.point(fa.copy())
+//       case fa@ ZNode(as, l, id)     => as.traverse(f).map(ZNode(_, l, id))
+//     }
+//   }
 
-  def ref(zoneId: Int@@ZoneID, a: ZoneTree): ZoneTree = fixf {
-    a.project match {
-      case z@ ZLeaf(region, l, optid) => z.copy(zoneId=zoneId)
-      case z@ ZNode(as, l, optid)     => z.copy(zoneId=zoneId)
-    }
-  }
+//   implicit def ZoneTreeShow: Delay[Show, ZoneTreeF] = new Delay[Show, ZoneTreeF] {
+//     def apply[A](show: Show[A]) = Show.show {
+//       case fa@ ZLeaf(region, l, id)    => fa.toString()
+//       case fa@ ZNode(as, l, id)        => fa.toString()
+//     }
+//   }
+// }
 
-  import utils.ScalazTreeImplicits._
+// object ZoneTrees {
+//   import matryoshka.implicits._
+//   import ZoneTreeF._
 
-  def prettyPrintTree(zoneTree: ZoneTree): TB.Box = {
-    zoneTree.cata(toTree).drawBox
-  }
+//   type ZoneTree = Fix[ZoneTreeF]
+//   type Zone = ZoneTree
+//   type ZoneTreeT = ZoneTreeF[Fix[ZoneTreeF]]
 
-}
+//   def leaf(r: Int@@RegionID): ZoneTree = {
+//     fixf(ZLeaf(r, None, ZoneID(0)))
+//   }
 
-trait ZoneTreeFunctions {
-  import ZoneTreeF._
-  import matryoshka.implicits._
+//   def node(children: Seq[ZoneTree]): ZoneTree =
+//     fixf(ZNode(children.toList, None, ZoneID(0)))
 
-  def getZoneId(zoneTree: Zone): Int@@ZoneID = {
-    zoneTree.project match {
-      case z@ ZLeaf(region, l, optid) => optid
-      case z@ ZNode(as, l, optid)     => optid
-    }
-  }
-  def getZoneLabel(zoneTree: Zone): Option[Label] = {
-    zoneTree.project match {
-      case z@ ZLeaf(region, l, optid) => l
-      case z@ ZNode(as, l, optid)     => l
-    }
-  }
+//   def role(label: Label, a: ZoneTree): ZoneTree = fixf {
+//     a.project match {
+//       case z@ ZLeaf(region, optl, id) if optl.isEmpty => z.copy(label=Option(label))
+//       case z@ ZNode(as, optl, id)     if optl.isEmpty => z.copy(label=Option(label))
+//       case z => sys.error(s"Cannot assign new label to ${z}")
+//     }
+//   }
 
-  def getZoneRegions(zone: Zone): Seq[Int@@RegionID] = {
-    zone.universe.map(_.project).toList.collect {
-      case ZLeaf(region, optl, id) => region
-    }
-  }
-}
+//   def ref(zoneId: Int@@ZoneID, a: ZoneTree): ZoneTree = fixf {
+//     a.project match {
+//       case z@ ZLeaf(region, l, optid) => z.copy(zoneId=zoneId)
+//       case z@ ZNode(as, l, optid)     => z.copy(zoneId=zoneId)
+//     }
+//   }
 
-object ZoneTreeSyntax extends ZoneTreeFunctions {
-  import matryoshka.implicits._
-  import ZoneTrees._
+//   import utils.ScalazTreeImplicits._
 
-  implicit class RicherZoneTree(val theZoneTree: Zone) extends AnyVal {
+//   def prettyPrintTree(zoneTree: ZoneTree): TB.Box = {
+//     zoneTree.cata(toTree).drawBox
+//   }
 
-    def getId(): Int@@ZoneID = theZoneTree.project.zoneId
-    def id(): Int@@ZoneID = theZoneTree.project.zoneId
-    def label(): Option[Label] = theZoneTree.project.label
+// }
 
-    def getRegionIds(): Seq[Int@@RegionID] = getZoneRegions(theZoneTree)
+// trait ZoneTreeFunctions {
+//   import ZoneTreeF._
+//   import matryoshka.implicits._
 
-  }
+//   def getZoneId(zoneTree: Zone): Int@@ZoneID = {
+//     zoneTree.project match {
+//       case z@ ZLeaf(region, l, optid) => optid
+//       case z@ ZNode(as, l, optid)     => optid
+//     }
+//   }
+//   def getZoneLabel(zoneTree: Zone): Option[Label] = {
+//     zoneTree.project match {
+//       case z@ ZLeaf(region, l, optid) => l
+//       case z@ ZNode(as, l, optid)     => l
+//     }
+//   }
 
-}
+//   def getZoneRegions(zone: Zone): Seq[Int@@RegionID] = {
+//     zone.universe.map(_.project).toList.collect {
+//       case ZLeaf(region, optl, id) => region
+//     }
+//   }
+// }
+
+// object ZoneTreeSyntax extends ZoneTreeFunctions {
+//   import matryoshka.implicits._
+//   import ZoneTrees._
+
+//   implicit class RicherZoneTree(val theZoneTree: Zone) extends AnyVal {
+
+//     def getId(): Int@@ZoneID = theZoneTree.project.zoneId
+//     def id(): Int@@ZoneID = theZoneTree.project.zoneId
+//     def label(): Option[Label] = theZoneTree.project.label
+
+//     def getRegionIds(): Seq[Int@@RegionID] = getZoneRegions(theZoneTree)
+
+//   }
+
+// }

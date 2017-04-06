@@ -210,6 +210,7 @@ object WatrColors extends  SharedClientDefs {
   }
 
 
+
   @JSExport
   def display(): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()

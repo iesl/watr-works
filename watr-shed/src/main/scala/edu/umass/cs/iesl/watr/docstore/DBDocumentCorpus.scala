@@ -6,14 +6,7 @@ import doobie.free.{ connection => C }
 import scalaz.syntax.applicative._
 
 import geometry._
-// import geometry.zones._
-// import geometry.zones.syntax._
-
-import databasics._
 import corpora._
-
-// import scalaz.std.list._
-// import scalaz.syntax.traverse._
 
 import textreflow._
 import textreflow.data._
@@ -26,7 +19,7 @@ import play.api.libs.json, json._
 class TextReflowDB(
   val tables: TextReflowDBTables,
   dbname: String, dbuser: String, dbpass: String
-) extends DoobiePredef { self =>
+) extends DoobieImplicits { self =>
 
   val Rel = RelationModel
 
@@ -46,7 +39,6 @@ class TextReflowDB(
     _  <- xa.configure(hx => Task.delay( /* do something with hx */ ()))
   } yield xa).unsafePerformSync
 
-
   def shutdown() = xa.shutdown
 
   def runq[A](query: C.ConnectionIO[A]): A = {
@@ -60,7 +52,7 @@ class TextReflowDB(
         t.printStackTrace()
         throw t
     } finally{
-      xa.shutdown
+      shutdown()
     }
   }
 
@@ -97,11 +89,6 @@ class TextReflowDB(
        order by rank
     """.query[Rel.TargetRegion].option
   }
-
-  // def selectTargetRegionForUri(uri: String): ConnectionIO[Option[Rel.TargetRegion]] = {
-  //   sql"""select * from targetregion where uri=${uri}"""
-  //     .query[Rel.TargetRegion].option
-  // }
 
   def selectTargetRegions(pageId: Int@@PageID): ConnectionIO[List[Int@@RegionID]] = {
     sql""" select targetregion from targetregion where page=${pageId} order by rank"""
@@ -350,6 +337,7 @@ class TextReflowDB(
     }
     zz.isDefined
   }
+
   def getOrInsertDocumentID(stableId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
     sql"""select document from document where stable_id=${stableId}"""
       .query[Int].option

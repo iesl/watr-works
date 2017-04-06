@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package labeling
 
 import geometry._
-import geometry.zones.syntax._
+// import geometry.zones.syntax._
 // import textreflow.data._
 // import labeling.data._
 

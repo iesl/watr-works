@@ -12,7 +12,7 @@ import textreflow.data._
 import utils.EnrichNumerics._
 import TextReflowJsonCodecs._
 
-import geometry.zones.syntax._
+// import geometry.zones.syntax._
 
 object DocumentIO extends DocsegJsonFormats {
   def documentToPlaintext(mpageIndex: MultiPageIndex): Seq[String]= {

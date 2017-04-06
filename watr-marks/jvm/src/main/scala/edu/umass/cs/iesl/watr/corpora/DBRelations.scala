@@ -31,20 +31,14 @@ object RelationModel {
     image    : Array[Byte]
   )
 
+  // TODO rank ordering should be wrt (document, role)
   case class Zone(
     prKey    : Int@@ZoneID,
     document : Int@@DocumentID,
+    label    : Int@@LabelID,
     rank     : Int
   )
 
-  case class ZoneTree(
-    prKey    : Int@@ZoneID,
-    document : Int@@DocumentID,
-    parent   : Option[Int@@ZoneID],
-    label    : Option[Int@@LabelID],
-    region   : Option[Int@@RegionID],
-    rank     : Int
-  )
 
   case class TextReflow(
     prKey     : Int@@TextReflowID,

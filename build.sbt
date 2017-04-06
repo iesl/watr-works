@@ -1,6 +1,4 @@
 import sbt.Keys._
-// import fommil.BigProjectSettings
-// import fommil.BigProjectKeys
 
 SensibleThisBuild.settings
 
@@ -27,16 +25,12 @@ lazy val jvmProjects = Seq[ProjectReference](
 lazy val root = (project in file("."))
   .settings(Release.settings :_*)
   .aggregate( (jsProjects++jvmProjects): _*)
-  // .settings(BigProjectSettings.overrideProjectSettings(Compile, Test))
 
 
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
-  // .settings(BigProjectSettings.overrideProjectSettings(Compile, Test))
   .settings(libraryDependencies ++= Seq(
     "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion,
-    // "com.github.julien-truffaut" %%% "monocle-core"           % Lib.monocleVersion % "compile, test",
-    // "com.github.mpilquist"       %%% "simulacrum"             % "0.10.0"           % "compile, test",
     "com.lihaoyi"                %%% "scalatags"              % Lib.scalaTagsVersion,
     "com.lihaoyi"                %%% "fansi"                  % Lib.fansiV,
     "com.lihaoyi"                %%% "sourcecode"             % Lib.sourcecodeV,
@@ -60,7 +54,6 @@ lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val watrshed = (project in file("watr-shed"))
   .settings(SensibleProject.settings: _*)
-  // .settings(BigProjectSettings.overrideProjectSettings(Compile, Test))
   .settings(libraryDependencies ++=
     LogLibs.logback ++
     DatabaseLibs.doobieDb ++
@@ -77,7 +70,6 @@ enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
-  // .settings(BigProjectSettings.overrideProjectSettings(Compile, Test))
   .settings(skip in packageJSDependencies := false)
   .settings(libraryDependencies ++= Seq(
     Lib.scalaAsync,
@@ -97,7 +89,6 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "io.spray"           %% "spray-routing-shapeless2"  % "1.3.3",
     "com.typesafe.akka"  %% "akka-actor"                % "2.4.17",
     "org.webjars.bower"  %  "fabric"                    % "1.6.2",
-    // "org.webjars.bower"  %  "tether"                    % "1.4.0",
     "org.webjars"        %  "bootstrap"                 % "3.3.7", // only used for css (bootstrap native is used instead)
     "org.webjars"        %  "jquery"                    % "2.2.4",
     "org.webjars"        %  "mousetrap"                 % "1.6.0"

@@ -9,7 +9,7 @@ import TextReflowF._
 import TypeTags._
 import corpora._
 import data._
-import geometry.zones.syntax._
+// import geometry.zones.syntax._
 
 class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore

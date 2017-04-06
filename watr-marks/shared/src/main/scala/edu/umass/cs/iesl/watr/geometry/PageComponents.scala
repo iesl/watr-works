@@ -96,6 +96,12 @@ object CharAtom {
 
 }
 
+  // case class Zone(
+  //   id: Int@@ZoneID,
+  //   regions: Seq[TargetRegion],
+  //   role: Label
+  // )
+
 
 object PageComponentImplicits {
   def createTargetRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {

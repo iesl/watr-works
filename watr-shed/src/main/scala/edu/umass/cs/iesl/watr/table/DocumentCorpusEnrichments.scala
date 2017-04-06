@@ -10,7 +10,7 @@ import BioArxivOps._
 import TypeTags._
 
 import labeling._
-import geometry.zones.syntax._
+// import geometry.zones.syntax._
 
 trait DocumentCorpusEnrichments extends LabelWidgetUtils {
 

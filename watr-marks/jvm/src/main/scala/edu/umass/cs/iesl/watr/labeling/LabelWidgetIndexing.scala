@@ -5,7 +5,7 @@ import scala.collection.mutable
 
 import textreflow.data._
 import geometry._
-import geometry.zones.syntax._
+// import geometry.zones.syntax._
 import geometry.syntax._
 import LabelWidgetF._
 import corpora._

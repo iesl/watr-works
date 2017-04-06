@@ -7,7 +7,7 @@ import corpora._
 import geometry._
 import TypeTags._
 
-class TextReflowDBTest extends FlatSpec with Matchers with CorpusTestingUtil {
+class DBDocumentCorpusTest extends FlatSpec with Matchers with CorpusTestingUtil {
 
   def createEmptyDocumentCorpus(): DocumentCorpus = {
     val tables = new TextReflowDBTables()
