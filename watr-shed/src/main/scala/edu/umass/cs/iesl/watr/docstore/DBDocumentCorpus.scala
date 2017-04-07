@@ -4,6 +4,8 @@ package docstore
 import doobie.imports._
 import doobie.free.{ connection => C }
 import scalaz.syntax.applicative._
+import scalaz.std.list._
+import scalaz.syntax.traverse._
 
 import geometry._
 import corpora._
@@ -14,7 +16,6 @@ import watrmarks._
 import utils.EnrichNumerics._
 import TypeTags._
 import play.api.libs.json, json._
-
 
 class TextReflowDB(
   val tables: TextReflowDBTables,
@@ -52,7 +53,7 @@ class TextReflowDB(
         t.printStackTrace()
         throw t
     } finally{
-      shutdown()
+      // shutdown()
     }
   }
 
@@ -69,7 +70,7 @@ class TextReflowDB(
 
   def selectDocumentStableIds(n: Int=0, skip: Int=0): List[String@@DocumentID] = {
     runq {
-      sql"""select stable_id from document""".query[String@@DocumentID].list
+      sql"""select stableId from document""".query[String@@DocumentID].list
     }
   }
 
@@ -82,7 +83,7 @@ class TextReflowDB(
     val LTBounds(l, t, w, h) = bbox
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
 
-    sql""" select * from targetregion where
+    sql"""select * from targetregion where
        page=${pageId} AND
        bleft=${bl} AND btop=${bt} AND
        bwidth=${bw} AND bheight=${bt}
@@ -95,14 +96,19 @@ class TextReflowDB(
       .query[Int@@RegionID].list
   }
 
-  def insertZone(docId: Int@@DocumentID): ConnectionIO[Int@@ZoneID] = {
-    sql""" insert into zone (document) values ( ${docId} ) """
+  def insertZone(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[Int@@ZoneID] = {
+    sql""" insert into zone (document, label) values ($docId, $labelId) """
       .update.withUniqueGeneratedKeys[Int]("zone").map(ZoneID(_))
   }
 
+  def selectZoneLabelsForDocument(docId: Int@@DocumentID): ConnectionIO[List[Int@@LabelID]] = {
+    sql""" select distinct label from  zone
+           where document=${docId}
+       """.query[Int@@LabelID].list
+  }
 
-  def selectZonesForDocument(docId: Int@@DocumentID): ConnectionIO[List[Int@@ZoneID]] = {
-    sql""" select * from  zone where document=${docId} order by rank"""
+  def selectZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[List[Int@@ZoneID]] = {
+    sql""" select * from  zone where document=${docId} AND label=${labelId} order by rank"""
       .query[Int@@ZoneID].list
   }
 
@@ -141,25 +147,12 @@ class TextReflowDB(
     """.query[Int@@RegionID].list
   }
 
-  def selectZoneLabels(zoneId: Int@@ZoneID): ConnectionIO[List[Rel.Label]] = {
-    sql"""
-     select lb.*
-     from
-        zone                      as zn
-        join zone_to_label        as z2l   on (zn.zone=z2l.zone)
-        join label                as lb    on (z2l.label=lb.label)
-     where
-        z2l.zone=${zoneId}
-    """.query[Rel.Label].list
-  }
-
   def selectZoneForTargetRegion(regionId: Int@@RegionID, label: Label): ConnectionIO[Option[Int@@ZoneID]] = {
     val query = sql"""
      select z2tr.zone
      from
         zone                      as zn
-        join zone_to_label        as z2l   on (zn.zone=z2l.zone)
-        join label                as lb    on (z2l.label=lb.label)
+        join label                as lb    on (zn.label=lb.label)
         join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
      where
         z2tr.targetregion=${regionId} AND
@@ -237,9 +230,9 @@ class TextReflowDB(
 
   def selectPage(pageId: Int@@PageID): ConnectionIO[Rel.Page] = {
     sql"""
-     select pg.page, pg.document, pg.pagenum, imageclip, pg.bleft, pg.btop, pg.bwidth, pg.bheight
+     select pg.page, pg.document, pg.pagenum, pg.imageclip, pg.bleft, pg.btop, pg.bwidth, pg.bheight
      from   page as pg
-     where  pg.page=${pageId}
+     where  pg.page=${pageId.unwrap}
     """.query[Rel.Page].unique
   }
 
@@ -305,14 +298,14 @@ class TextReflowDB(
 
 
   def insertDocumentID(stableId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
-    sql""" insert into document (stable_id) values (${stableId}) """.update
+    sql""" insert into document (stableId) values (${stableId}) """.update
       .withUniqueGeneratedKeys[Int]("document")
       .map(DocumentID(_))
   }
 
   def getDocuments(n: Int, skip: Int): List[String@@DocumentID] = {
     runq{
-      sql"select stable_id from document limit $n offset $skip".query[String@@DocumentID].list
+      sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list
     }
   }
 
@@ -321,7 +314,7 @@ class TextReflowDB(
   }
 
   def selectDocumentID(stableId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
-    sql"select document from document where stable_id=${stableId}"
+    sql"select document from document where stableId=${stableId}"
       .query[Int].unique.map(DocumentID(_))
   }
 
@@ -332,14 +325,14 @@ class TextReflowDB(
 
   def hasDocumentID(stableId: String@@DocumentID): Boolean = {
     val zz = runq{
-      sql"select 1 from document where stable_id=${stableId}"
+      sql"select 1 from document where stableId=${stableId}"
         .query[Int].option
     }
     zz.isDefined
   }
 
   def getOrInsertDocumentID(stableId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
-    sql"""select document from document where stable_id=${stableId}"""
+    sql"""select document from document where stableId=${stableId}"""
       .query[Int].option
       .flatMap({
         case Some(pk) => FC.delay(DocumentID(pk))
@@ -347,21 +340,20 @@ class TextReflowDB(
       })
   }
 
-  def ensureLabel(label: Label): ConnectionIO[Int] = for {
+  def selectLabel(labelId: Int@@LabelID): ConnectionIO[Rel.Label] = {
+    sql"""select * from label where label=${labelId}""".query[Rel.Label].unique
+  }
+
+  def getOrInsertLabel(label: Label): ConnectionIO[Int@@LabelID] = for {
     maybePk <- sql"""select label from label where key=${label.fqn}""".query[Int].option
     pk      <- maybePk match {
       case Some(id)    => id.point[ConnectionIO]
-      case None        => sql"""insert into label (key) values (${label.fqn})""".update.run
+      case None        =>
+        sql"""insert into label (key) values (${label.fqn})""".update
+          .withUniqueGeneratedKeys[Int]("label")
     }
-  } yield pk
+  } yield LabelID(pk)
 
-
-  def linkZoneToLabel(zonePk: Int@@ZoneID, label: Label): ConnectionIO[Unit] = {
-    for {
-      labelPk <- ensureLabel(label)
-      _       <- sql"""insert into zone_to_label (zone, label) values (${zonePk}, ${labelPk})""".update.run
-    } yield ()
-  }
 
   def linkZoneToTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): ConnectionIO[Unit] = {
     sql"""
@@ -461,7 +453,7 @@ class TextReflowDB(
     }
 
     def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID] = runq {
-      sql"""select document from document where stable_id=${stableId}"""
+      sql"""select document from document where stableId=${stableId}"""
         .query[Int@@DocumentID]
         .option
     }
@@ -484,6 +476,17 @@ class TextReflowDB(
 
     def getPageImage(pageId: Int@@PageID): Option[Array[Byte]] = {
       runq { selectPageImage(pageId) }
+    }
+
+    def getPageIdentifier(pageId: Int@@PageID): RecordedPageID = {
+      val query = for {
+        p <- selectPage(pageId)
+        d <- selectDocument(p.document)
+      } yield RecordedPageID(
+        pageId,
+        StablePageID(d.stableId, p.pagenum)
+      )
+      runq { query }
     }
 
     def getPageDef(pageId: Int@@PageID): Option[Rel.Page] = {
@@ -543,31 +546,19 @@ class TextReflowDB(
 
 
     def getZone(zoneId: Int@@ZoneID): Zone =  {
+      val query = for {
+        zone          <- selectZone(zoneId)
+        regionIds     <- selectZoneTargetRegions(zone.prKey)
+        targetRegions <- regionIds.traverse { regionId =>
+          selTargetRegion(regionId)
+        }
+        l             <- selectLabel(zone.label)
+      } yield {
+        val label = Labels.fromString(l.key).copy(id=l.prKey)
+        Zone(zone.prKey, targetRegions, label)
+      }
 
-      // TODO CTE
-      //   runq {
-      //   // Zone = M.Zone+TargetRegions+Labels
-      //   for {
-      //     zone     <- selectZone(zoneId)
-      //     regions  <- {
-      //       selectZoneTargetRegions(zone.prKey)
-      //         .flatMap(ts =>
-      //           ts.map(t => selTargetRegion(t)).sequenceU
-      //         )
-      //     }
-      //     labels  <- {
-      //       selectZoneLabels(zone.prKey)
-      //         .map(_.map(mlabel =>
-      //           Labels.fromString(mlabel.key).copy(
-      //             id=mlabel.prKey
-      //           )
-      //         ))
-      //     }
-      //   } yield {
-      //     Zone(zone.prKey, regions, labels)
-      //   }
-      // }
-      ???
+      runq { query }
     }
 
 
@@ -590,30 +581,88 @@ class TextReflowDB(
       runq { insertTextReflow(zoneId, jsStr, str) }
     }
 
-    def createZone(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {
+    def ensureLabel(label: Label): Int@@LabelID = {
+      runq{ getOrInsertLabel(label) }
+    }
 
-      ???
+    def createZone(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {
+      println(s"createZone: ${label}")
+      val query = for {
+        region <- selectTargetRegion(regionId)
+        page <- selectPage(region.page)
+        labelId <- getOrInsertLabel(label)
+        _ <- putStrLn(s"    w/labelId ${labelId}")
+        zoneId <- insertZone(page.document, labelId)
+        _ <- linkZoneToTargetRegion(zoneId, regionId)
+      } yield zoneId
+
+      runq{ query }
     }
     def addZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
+      val query = for {
+        _ <- linkZoneToTargetRegion(zoneId, regionId)
+      } yield ()
 
-      ???
+      runq{ query }
     }
-    def removeZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Option[Int@@ZoneID] = {
 
+    def removeZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Option[Int@@ZoneID] = {
       ???
     }
 
     def deleteZone(zoneId: Int@@ZoneID): Unit = {
       ???
     }
-    def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
-      ???
+
+    def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
+      // val query = for {
+      //   zoneIds <- selectZonesForDocument(docId)
+      //   labelIds <- zoneIds.traverseU { zoneId =>
+      //     selectZone(zoneId).map(_.label)
+      //   }
+      //   labels <- labelIds.traverse { labelId =>
+      //     selectLabel(labelId)
+      //   }
+      // } yield labels.map{ l =>
+      //   Labels.fromString(l.key).copy(id=l.prKey)
+      // }
+      runq{ selectZoneLabelsForDocument(docId) }
     }
-    def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID] = {
+
+    def getZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): Seq[Int@@ZoneID] = {
       runq {
-        selectZonesForDocument(docId)
+        selectZonesForDocument(docId, labelId)
       }
     }
   }
 
+}
+
+object TestUtilApp extends CorpusTestingUtil {
+
+  def createEmptyDocumentCorpus(): DocumentCorpus = {
+    val tables = new TextReflowDBTables()
+
+    val reflowDB = new TextReflowDB(
+      tables,
+      dbname="watrdev",
+      dbuser="watrworker",
+      dbpass="watrpasswd"
+    )
+
+
+    reflowDB.runq {
+      reflowDB.veryUnsafeDropDatabase().run
+    }
+
+    reflowDB.dropAndRecreate
+    reflowDB.docStore
+  }
+
+  def main(args: Array[String]): Unit = {
+    new CleanDocstore {
+
+      test1()
+    }
+  }
 }

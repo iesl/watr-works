@@ -60,6 +60,8 @@ object LabelWidgetTransforms {
 
   def addZoneSelectors(label: Label, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
 
+    val labelId = docStore.ensureLabel(label)
+
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addSelector(lw0: LabelWidgetT): LabelWidgetT = {
       lw0 match {
@@ -69,7 +71,7 @@ object LabelWidgetTransforms {
           }
 
           val zoneLineOverlays: Seq[Option[LabelWidget]] = for {
-            zoneId <- docStore.getZonesForDocument(pageDef.document, label)
+            zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
           } yield {
             val zone = docStore.getZone(zoneId)
 
@@ -113,6 +115,8 @@ object LabelWidgetTransforms {
 
   def addZoneIndicators(label: Label, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
 
+    val labelId = docStore.ensureLabel(label)
+
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
       lw0 match {
@@ -122,7 +126,7 @@ object LabelWidgetTransforms {
           }
 
           val zoneLineOverlays: Seq[Option[LabelWidget]] = for {
-            zoneId <- docStore.getZonesForDocument(pageDef.document, label)
+            zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
           } yield {
             val zone = docStore.getZone(zoneId)
 

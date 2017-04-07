@@ -11,9 +11,9 @@ class TextReflowDBTables extends DoobieImplicits {
   val createDocumentTable: Update0 = sql"""
       CREATE TABLE document (
         document      SERIAL PRIMARY KEY,
-        stable_id     VARCHAR(128) UNIQUE
+        stableId      VARCHAR(128) UNIQUE
       );
-      CREATE INDEX document_stable_id ON document USING hash (stable_id);
+      CREATE INDEX document_stable_id ON document USING hash (stableId);
     """.update
 
   val createPageTable: Update0 = sql"""
@@ -39,58 +39,32 @@ class TextReflowDBTables extends DoobieImplicits {
 
 
   ////////////////////////////
-  /// Zone tables
-  // val createZoneTable: Update0 = sql"""
-  //     CREATE TABLE zone (
-  //       zone          SERIAL PRIMARY KEY,
-  //       role          INTEGER REFERENCES label,
-  //       targetregion  INTEGER REFERENCES targetregion
-  //     );
-  //   """.update
-  // // CREATE INDEX zone_idx_document ON zone (document);
 
-  val createZoneTable: Update0 = sql"""
+  val createZoneTables: Update0 = sql"""
       CREATE TABLE zone (
-        zone        SERIAL PRIMARY KEY,
-        document    INTEGER REFERENCES document NOT NULL,
-        rank          INTEGER NOT NULL
+        zone         SERIAL PRIMARY KEY,
+        document     INTEGER REFERENCES document NOT NULL,
+        label        INTEGER REFERENCES label NOT NULL,
+        rank         INTEGER NOT NULL
       );
       CREATE INDEX zone_idx_document ON zone (document);
+
+      CREATE TABLE zone_to_targetregion (
+        zone          INTEGER REFERENCES zone NOT NULL,
+        targetregion  INTEGER REFERENCES targetregion NOT NULL,
+        rank          INTEGER NOT NULL
+      );
+      CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
+      CREATE INDEX zone_to_targetregion_idx2 ON zone_to_targetregion (targetregion);
     """.update
-
-
-  // // zone - label :: * - *
-  // val createZoneToLabelTable: Update0 = sql"""
-  //     CREATE TABLE zone_to_label (
-  //       zone         INTEGER REFERENCES zone NOT NULL,
-  //       label        INTEGER REFERENCES label NOT NULL,
-  //       PRIMARY KEY (zone, label)
-  //     );
-  //     CREATE INDEX zone_to_label_idx0 ON zone_to_label (label);
-  //   """.update
-
-  // // zone - targetregion :: * - * (NB not sure if this is the right way to connect these)
-  // val createZoneToTargetRegion: Update0 = sql"""
-  //     CREATE TABLE zone_to_targetregion (
-  //       zone          INTEGER REFERENCES zone NOT NULL,
-  //       targetregion  INTEGER REFERENCES targetregion NOT NULL,
-  //       rank          INTEGER NOT NULL
-  //     );
-  //     CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
-  //     CREATE INDEX zone_to_targetregion_idx2 ON zone_to_targetregion (targetregion);
-  //   """.update
 
   object zonetables {
     def create(): ConnectionIO[Unit] = {
       for {
         _ <- putStrLn("create zone")
-        _ <- createZoneTable.run
-        _ <- defineOrderingTriggers(fr0"zone", fr0"parent")
-        // _ <- putStrLn("create z-tr")
-        // _ <- createZoneToTargetRegion.run
-        // _ <- putStrLn("create z-lbl")
-        // _ <- createZoneToLabelTable.run
-        // _ <- defineOrderingTriggers(fr0"zone_to_targetregion", fr0"zone")
+        _ <- createZoneTables.run
+        _ <- defineOrderingTriggers(fr0"zone_to_targetregion", fr0"zone")
+        _ <- defineOrderingTriggers(fr0"zone", fr0"document", fr0"label")
       } yield ()
     }
   }
@@ -121,13 +95,6 @@ class TextReflowDBTables extends DoobieImplicits {
         _ <- defineOrderingTriggers(fr0"targetregion", fr0"page")
       } yield ()
     }
-
-    // TODO create code that tests table IO
-    // import corpora.Model
-    // sealed trait TableShape[S]
-    // def tableShape[S]: TableShape[S]
-    // def shape = tableShape[Rel.TargetRegion]
-
   }
 
 

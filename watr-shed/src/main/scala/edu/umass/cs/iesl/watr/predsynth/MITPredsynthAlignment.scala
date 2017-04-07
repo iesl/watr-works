@@ -28,7 +28,12 @@ object MITAlignPredsynth {
     val stableId = mpageIndex.getStableId()
     val docId = docStore.getDocument(stableId).get
 
-    val paperTextReflows = mpageIndex.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
+    val paperTextReflows = for {
+      lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
+      reflow <- docStore.getTextReflowForZone(lineZone.id)
+
+    } yield reflow
+    // val paperTextReflows = mpageIndex.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
 
     log.debug("creating one line from entire paper")
     val oneLineReflow = paperTextReflows.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }

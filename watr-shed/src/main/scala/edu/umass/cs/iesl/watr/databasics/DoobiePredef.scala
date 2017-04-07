@@ -32,18 +32,24 @@ trait DoobiePredef {
          BEFORE """ ++ onClause ++ fr"ON" ++ tablename ++ fr"""
          FOR EACH ROW EXECUTE PROCEDURE """ ++ funcname ++ fr"""();
      """
-    // println(frag.toString())
+    println(frag.toString())
     frag.update
   }
 
-  def defineOrderingTriggers(table: Fragment, keycol: Fragment): ConnectionIO[Int] = {
+  def defineOrderingTriggers(table: Fragment, keycols: Fragment*): ConnectionIO[Int] = {
     val aliases = List(
       fr"maxrank integer",
       fr"nextrank integer",
       fr0"rec ALIAS FOR NEW"
     ).intercalate(fr"; ")
 
-    val keytest =  keycol ++fr0"""=rec.""" ++ keycol
+    // val keycols: List[Fragment] = List()
+    val keytest = keycols
+      .toList.map(col =>
+        col ++fr0"""=rec.""" ++ col
+      ).intercalate(fr" AND")
+
+    // val keytest =  keycol ++fr0"""=rec.""" ++ keycol
 
     val insertTrigger = defineTrigger(
       table,

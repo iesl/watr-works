@@ -11,33 +11,41 @@ import textreflow._
 import textreflow.data._
 import utils.EnrichNumerics._
 import TextReflowJsonCodecs._
+import watrmarks.{StandardLabels => LB}
 
 // import geometry.zones.syntax._
 
 object DocumentIO extends DocsegJsonFormats {
+
   def documentToPlaintext(mpageIndex: MultiPageIndex): Seq[String]= {
-    mpageIndex.getTextReflows()
-      .map({ blockTextReflow =>
-        blockTextReflow.applyLineFormatting().toText()
-      })
+    val docStore = mpageIndex.docStore
+    val stableId = mpageIndex.getStableId()
+    val docId = docStore.getDocument(stableId).get
+
+    for {
+      lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
+      reflow <- docStore.getTextReflowForZone(lineZone.id)
+    } yield {
+      reflow.applyLineFormatting().toText
+    }
   }
 
   def richTextSerializeDocument(mpageIndex: MultiPageIndex, alignedGroups: Seq[AlignedGroup]): String = {
     import play.api.libs.json, json._
+    val docStore = mpageIndex.docStore
+    val stableId = mpageIndex.getStableId()
+    val docId = docStore.getDocument(stableId).get
 
-    val escapedTextReflows = mpageIndex.getTextReflows()
-      .map({ blockTextReflow =>
-        blockTextReflow.applyLineFormatting()
-      })
+    val escapedTextReflows = for {
+      lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
+      reflow <- docStore.getTextReflowForZone(lineZone.id)
+    } yield {
+      reflow.applyLineFormatting()
+    }
 
     val textAndJsons = escapedTextReflows
       .map({ blockTextReflow =>
         val formattedText = blockTextReflow.toText()
-        if (formattedText.contains("analytical")) {
-          // textreflow.doDebugPrinting = true
-          // val _ = blockTextReflow.annotateCharRanges()
-          // textreflow.doDebugPrinting = false
-        }
         val json = blockTextReflow.toJson()
         (formattedText, json)
       })
@@ -143,8 +151,8 @@ object DocumentIO extends DocsegJsonFormats {
     val docId = mpageIndex.docId
 
     val zoneTuple = for {
-      label <- docStore.getZoneLabelsForDocument(docId)
-      zoneId <- docStore.getZonesForDocument(docId, label)
+      labelId <- docStore.getZoneLabelsForDocument(docId)
+      zoneId <- docStore.getZonesForDocument(docId, labelId)
     } yield {
       val zone = docStore.getZone(zoneId)
 

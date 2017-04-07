@@ -487,54 +487,52 @@ object ComponentOperations {
     }
 
     // HOTSPOT: textbox operations in particular
-    def tokenizeLine(): Unit = {
-      if (!theComponent.hasLabel(LB.TokenizedLine)) {
-        theComponent.addLabel(LB.TokenizedLine)
+    def tokenizeLine(): Option[TextReflow] = {
+      theComponent.addLabel(LB.TokenizedLine)
 
-        labelSuperAndSubscripts()
+      labelSuperAndSubscripts()
 
-        // Structure is: VisualLine/TextSpan/[TextSpan[sup/sub/ctr]]
-        // Group each TextSpan w/sup/sub/ctr-script label into tokens
-        theComponent.getChildren(LB.TextSpan)
-          .filter(_.hasAnyLabel(LB.CenterScript, LB.Sub, LB.Sup))
-          .foreach{ _.groupTokens() }
+      // Structure is: VisualLine/TextSpan/[TextSpan[sup/sub/ctr]]
+      // Group each TextSpan w/sup/sub/ctr-script label into tokens
+      theComponent.getChildren(LB.TextSpan)
+        .filter(_.hasAnyLabel(LB.CenterScript, LB.Sub, LB.Sup))
+        .foreach{ _.groupTokens() }
 
-        theComponent.addLabel(LB.Tokenized)
+      theComponent.addLabel(LB.Tokenized)
 
-        // Now figure out how the super/sub/normal text spans should be joined together token-wise
+      // Now figure out how the super/sub/normal text spans should be joined together token-wise
 
-        theComponent.ungroupChildren(LB.TextSpan)({c =>
-          if (c.hasLabel(LB.Sup) || c.hasLabel(LB.Sub)) {
-            c.addLabel(LB.Token)
-          }
-          c.hasLabel(LB.CenterScript)
-        })
-
-        // TODO don't compute this multiple times
-        val splitValue = guessWordbreakWhitespaceThreshold()
-
-        theComponent.groupChildren(withLabel=LB.TextSpan, newLabel=LB.TextSpan)(
-          {(c1, c2, pairIndex) =>
-            val pairwiseDist = c2.bounds.left - c1.bounds.right
-
-            pairwiseDist < splitValue
-          },{(region, regionIndex) =>
-            region.addLabel(LB.Token)
-          }
-        )
-
-        theComponent.ungroupChildren(LB.TextSpan)({c =>
-          c.getChildren(LB.TextSpan).length == 1
-        })
-
-
-        val maybeReflow = toTextReflow(theComponent)
-
-        maybeReflow.foreach { r =>
-          theComponent.mpageIndex.setTextReflowForComponent(theComponent, r)
+      theComponent.ungroupChildren(LB.TextSpan)({c =>
+        if (c.hasLabel(LB.Sup) || c.hasLabel(LB.Sub)) {
+          c.addLabel(LB.Token)
         }
+        c.hasLabel(LB.CenterScript)
+      })
 
-      }
+      // TODO don't compute this multiple times
+      val splitValue = guessWordbreakWhitespaceThreshold()
+
+      theComponent.groupChildren(withLabel=LB.TextSpan, newLabel=LB.TextSpan)(
+        {(c1, c2, pairIndex) =>
+          val pairwiseDist = c2.bounds.left - c1.bounds.right
+
+          pairwiseDist < splitValue
+        },{(region, regionIndex) =>
+          region.addLabel(LB.Token)
+        }
+      )
+
+      theComponent.ungroupChildren(LB.TextSpan)({c =>
+        c.getChildren(LB.TextSpan).length == 1
+      })
+
+
+      toTextReflow(theComponent)
+
+      // maybeReflow.foreach { r =>
+      //   theComponent.mpageIndex.setTextReflowForComponent(theComponent, r)
+      // }
+
     }
 
 
@@ -559,8 +557,8 @@ object ComponentOperations {
         })
     }
 
-    def getTextReflow(): Option[TextReflow]= {
-      theComponent.mpageIndex.getTextReflowForComponent(theComponent.id)
-    }
+    // def getTextReflow(): Option[TextReflow]= {
+    //   theComponent.mpageIndex.getTextReflowForComponent(theComponent.id)
+    // }
   }
 }

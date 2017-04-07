@@ -86,28 +86,12 @@ class MultiPageIndex(
   // FIXME: remove this kludge
   //   map component to zone when there is a 1-to-1 correspondence and a TextReflow for the Zone involved
   // val componentIdToZoneId: mutable.HashMap[Int@@ComponentID, Int@@ZoneID] = mutable.HashMap()
-  val componentIdToRegionId: mutable.HashMap[Int@@ComponentID, Int@@RegionID] = mutable.HashMap()
+  // val componentIdToRegionId: mutable.HashMap[Int@@ComponentID, Int@@RegionID] = mutable.HashMap()
 
-  def getTargetRegionForComponent(cc: Int@@ComponentID): Option[Int@@RegionID] = {
-    componentIdToRegionId.get(cc)
-  }
-
-  // def setTextReflowForComponent(cc: Component, r: TextReflow): Unit = {
-  //   val zoneId = docStore
-  //     .getZoneForRegion(cc.targetRegion.id, LB.VisualLine)
-  //     .getOrElse {  sys.error(s"setTextReflowForComponent: no VisualLine component found ${cc}: ${r}") }
-
-  //   docStore.setTextReflowForZone(zoneId, r)
+  // def getTargetRegionForComponent(cc: Int@@ComponentID): Option[Int@@RegionID] = {
+  //   componentIdToRegionId.get(cc)
   // }
 
-  // def getTextReflowForComponent(ccId: Int@@ComponentID): Option[TextReflow] = {
-  //   // TODO kludge: find a zone that has this Component as it's sole member and return its TextReflow
-  //   for {
-  //     regionId <- componentIdToRegionId.get(ccId)
-  //     zoneId <- docStore.getZoneForRegion(regionId, LB.VisualLine)
-  //     reflow <- docStore.getTextReflowForZone(zoneId)
-  //   } yield { reflow }
-  // }
 
   def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
     docStore.getTextReflowForZone(zoneId)
@@ -121,26 +105,6 @@ class MultiPageIndex(
   def getDocumentVisualLines(): Seq[Seq[Component]] = for {
     pageId <- getPages
   } yield getPageVisualLines(pageId)
-
-  // TODO: merge with other text reflow access function
-  // def getVisualLineTextReflows(): Seq[TextReflow] = for {
-  //   vline  <- getDocumentVisualLines().flatten
-  //   reflow <- getTextReflowForComponent(vline.id)
-  // } yield  reflow
-
-  // TODO: this should become the canonical way to get text reflows within a document
-  def getTextReflows(labels: Label*): Seq[TextReflow]  = {
-    for {
-      pageId <- getPages
-      pageTextBlocks <- getPageIndex(pageId).getComponentsWithLabel(LB.PageTextBlocks)
-      textBlockCC <- pageTextBlocks.getChildren(LB.TextBlock)
-      blockTextReflow <- getTextReflowForComponent(textBlockCC.id)
-    } yield {
-      blockTextReflow
-    }
-  }
-
-
 
 
   val relations = mutable.ArrayBuffer[Relation.Record]()
@@ -232,9 +196,10 @@ class MultiPageIndex(
       val pageId = docStore.getPage(docId, pageNum).get
       val regionId = docStore.addTargetRegion(pageId, totalBounds)
       val targetRegion = docStore.getTargetRegion(regionId)
+      val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
 
-      val region = createRegionComponent(targetRegion, role)
-      componentIdToRegionId.put(region.id, targetRegion.id)
+      val region = createRegionComponent(pageRegion, role)
+      // componentIdToRegionId.put(region.id, targetRegion.id)
 
       Some(region)
     }

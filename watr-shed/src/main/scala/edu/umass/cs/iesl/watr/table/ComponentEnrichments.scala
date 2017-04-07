@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package table
 
 import spindex._
-import geometry._
 
 import textreflow.data._
 import textboxing.{TextBoxing => TB}, TB._

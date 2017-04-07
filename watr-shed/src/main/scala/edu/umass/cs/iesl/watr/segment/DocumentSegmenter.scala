@@ -12,7 +12,6 @@ import textboxing.{TextBoxing => TB}, TB._
 import watrmarks.{StandardLabels => LB}
 
 import geometry._
-import textreflow.data._
 
 import geometry.syntax._
 
@@ -23,7 +22,6 @@ import utils.{CompassDirection => CDir, _}
 import tracing.VisualTracer._
 import EnrichNumerics._
 import SlicingAndDicing._
-import TextReflowConversion._
 import TypeTags._
 import corpora._
 import extract.PdfTextExtractor
@@ -302,17 +300,17 @@ class DocumentSegmenter(
       val sortedBlocks = page
         .sortBy(minAtomId(_))
 
-      vtrace.ifTrace({
-        sortedBlocks.headOption.foreach { line =>
-          lineGrouping = lineGrouping.addRow(
-            "+++",
-            line.left.pp,
-            line.height.pp,
-            " ",
-            line.getTextReflow.map(_.toText.box).getOrElse("?")
-          )
-        }
-      })
+      // vtrace.ifTrace({
+      //   sortedBlocks.headOption.foreach { line =>
+      //     lineGrouping = lineGrouping.addRow(
+      //       "+++",
+      //       line.left.pp,
+      //       line.height.pp,
+      //       " ",
+      //       line.getTextReflow.map(_.toText.box).getOrElse("?")
+      //     )
+      //   }
+      // })
 
       val groupedBlocks = sortedBlocks
         .groupByPairs({ case (line1, line2) =>
@@ -340,14 +338,14 @@ class DocumentSegmenter(
 
           val areGrouped = linesAreClustered && similarLineHeights && !largeVerticalJump
 
-          vtrace.ifTrace({
-            lineGrouping = lineGrouping.addRow(
-              if (areGrouped) "  |" else "+++",
-              line2.left.pp, h2.pp,
-              " ",
-              line2.getTextReflow.map(_.toText.box).getOrElse("?")
-            )
-          })
+          // vtrace.ifTrace({
+          //   lineGrouping = lineGrouping.addRow(
+          //     if (areGrouped) "  |" else "+++",
+          //     line2.left.pp, h2.pp,
+          //     " ",
+          //     line2.getTextReflow.map(_.toText.box).getOrElse("?")
+          //   )
+          // })
 
           areGrouped
         })
@@ -402,22 +400,22 @@ class DocumentSegmenter(
   }
 
 
-  def joinTextblockReflow(textBlockRegion: Component): Unit = {
-    val visualLines = for {
-      vline       <- textBlockRegion.getChildren(LB.VisualLine)
-      textReflow  <- vline.getTextReflow
-    } yield textReflow
+  // def joinTextblockReflow(textBlockRegion: Component): Unit = {
+  //   val visualLines = for {
+  //     vline       <- textBlockRegion.getChildren(LB.VisualLine)
+  //     textReflow  <- vline.getTextReflow
+  //   } yield textReflow
 
-    val joined = visualLines.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
-    // textBlockRegion.setTextReflow(joined)
+  //   val joined = visualLines.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
+  //   // textBlockRegion.setTextReflow(joined)
 
-    // vtrace.trace("Text Block TextReflow" withInfo {
-    //   s"Joining ${visualLines.length} VisualLines".box atop
-    //   joined.toText().box
-    //   // (joined.toText().box atop prettyPrintTree(joined))
-    // })
+  //   // vtrace.trace("Text Block TextReflow" withInfo {
+  //   //   s"Joining ${visualLines.length} VisualLines".box atop
+  //   //   joined.toText().box
+  //   //   // (joined.toText().box atop prettyPrintTree(joined))
+  //   // })
 
-  }
+  // }
 
   def findTextBlocksPerPage(): Seq[RegionComponent] = {
     vtrace.trace(begin("findTextBlocks"))
@@ -439,7 +437,7 @@ class DocumentSegmenter(
         assert(textBlock.forall(_.hasLabel(LB.VisualLine)))
         textBlockRegion.setChildren(LB.VisualLine, textBlock)
 
-        joinTextblockReflow(textBlockRegion)
+        // joinTextblockReflow(textBlockRegion)
         textBlockRegion
       }
 
@@ -487,11 +485,11 @@ class DocumentSegmenter(
     println("")
   }
 
-  def show(c: Component): TB.Box = {
-    c.getTextReflow
-      .orElse { toTextReflow(c) }
-      .map(t => t.toText().box).getOrElse("<could not render>".box)
-  }
+  // def show(c: Component): TB.Box = {
+  //   c.getTextReflow
+  //     .orElse { toTextReflow(c) }
+  //     .map(t => t.toText().box).getOrElse("<could not render>".box)
+  // }
 
 
 
@@ -910,8 +908,8 @@ class DocumentSegmenter(
       if !isTOCLine
     } {
 
-      vtrace.trace("Labeled section heading" withInfo
-        show(lineBioNode.component))
+      // vtrace.trace("Labeled section heading" withInfo
+      //   show(lineBioNode.component))
 
       mpageIndex.addBioLabels(LB.SectionHeadingLine, lineBioNode)
     }

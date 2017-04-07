@@ -48,16 +48,16 @@ trait DoobieImplicits extends DoobiePredef {
   implicit val TextReflowIDMeta : Meta[Int@@TextReflowID ] = TypeTagMeta[TextReflowID ](TextReflowID(_))
   implicit val RegionIDMeta     : Meta[Int@@RegionID     ] = TypeTagMeta[RegionID     ](RegionID    (_))
   implicit val PageIDMeta       : Meta[Int@@PageID       ] = TypeTagMeta[PageID       ](PageID      (_))
+  implicit val CharIDMeta       : Meta[Int@@CharID       ] = TypeTagMeta[CharID       ](CharID      (_))
   implicit val ImageIDMeta      : Meta[Int@@ImageID      ] = TypeTagMeta[ImageID      ](ImageID     (_))
   implicit val PageNumMeta      : Meta[Int@@PageNum      ] = TypeTagMeta[PageNum      ](PageNum     (_))
   implicit val ZoneIDMeta       : Meta[Int@@ZoneID       ] = TypeTagMeta[ZoneID       ](ZoneID      (_))
   implicit val LabelIDMeta      : Meta[Int@@LabelID      ] = TypeTagMeta[LabelID      ](LabelID     (_))
 
-  implicit val TargetRegionMeta: Meta[R.TargetRegion] = implicitly[Meta[R.TargetRegion]]
-  implicit val ZoneMeta: Meta[R.Zone] = implicitly[Meta[R.Zone]]
-  implicit val TextReflowMeta: Meta[R.TextReflow] = implicitly[Meta[R.TextReflow]]
-
-  implicit val LabelMeta: Meta[R.Label] = implicitly[Meta[R.Label]]
-  implicit val PageMeta: Meta[R.Page] = implicitly[Meta[R.Page]]
-  implicit val DocumentMeta: Meta[R.Document] = implicitly[Meta[R.Document]]
+  // implicit def TargetRegionMeta: Meta[R.TargetRegion] = implicitly[Meta[R.TargetRegion]]
+  // implicit def ZoneMeta: Meta[R.Zone] = implicitly[Meta[R.Zone]]
+  // implicit def TextReflowMeta: Meta[R.TextReflow] = implicitly[Meta[R.TextReflow]]
+  // implicit def LabelMeta: Meta[R.Label] = implicitly[Meta[R.Label]]
+  // implicit def PageMeta: Meta[R.Page] = implicitly[Meta[R.Page]]
+  // implicit def DocumentMeta: Meta[R.Document] = implicitly[Meta[R.Document]]
 }

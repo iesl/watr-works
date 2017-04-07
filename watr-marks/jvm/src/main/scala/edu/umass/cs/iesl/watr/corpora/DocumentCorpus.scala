@@ -47,9 +47,11 @@ trait DocumentCorpus {
 
   // Locate
   def getZone(zoneId: Int@@ZoneID): Zone
-  def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label]
-  def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID]
+  def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID]
+  def getZonesForDocument(docId: Int@@DocumentID, label: Int@@LabelID): Seq[Int@@ZoneID]
   def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
+
+  def ensureLabel(label: Label): Int@@LabelID
 
   // Get Text
   def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
@@ -61,6 +63,10 @@ trait DocumentCorpus {
   ///////////////////////
   /// Derived operations
 
+  def getDocumentZones(docId: Int@@DocumentID, label: Label): Seq[Zone] = for {
+    pageId    <- getPages(docId)
+    zone      <- getPageZones(pageId, label)
+  } yield zone
 
   def getPageZones(stableId: String@@DocumentID, pageNum: Int@@PageNum, label: Label): Seq[Zone] = for {
     docId     <- getDocument(stableId).toSeq

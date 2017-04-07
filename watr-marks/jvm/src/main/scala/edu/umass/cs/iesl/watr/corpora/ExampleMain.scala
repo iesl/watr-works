@@ -50,8 +50,8 @@ class SampleTextCorpus extends PlainTextCorpus {
       }
 
       val zoneBoxes = for {
-        label <- docStore.getZoneLabelsForDocument(docId)
-        zoneId <- docStore.getZonesForDocument(docId, label)
+        labelId <- docStore.getZoneLabelsForDocument(docId)
+        zoneId <- docStore.getZonesForDocument(docId, labelId)
         textReflow <- docStore.getTextReflowForZone(zoneId)
       } yield {
         (textReflow.toText.box

@@ -70,17 +70,18 @@ class MemDocstore extends DocumentCorpus {
 
       object regionToZone extends EdgeTableOneToMany[RegionID, ZoneID]
 
-      def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[W.Label] = {
+      def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
         val allLabels = for {
           zoneId <- forDocument.getEdges(docId)
           zone    = unique(zoneId)
         } yield {
-          labels.getLabel(zone.label)
+          // labels.getLabel(zone.label)
+          zone.label
         }
         allLabels.toSet.toList
       }
 
-      def getZonesForDocument(docId: Int@@DocumentID, label: W.Label): Seq[Int@@ZoneID] = {
+      def getZonesForDocument(docId: Int@@DocumentID, label: Int@@LabelID): Seq[Int@@ZoneID] = {
         for {
           zoneId <- forDocument.getEdges(docId)
           zone    = unique(zoneId)
@@ -372,14 +373,17 @@ class MemDocstore extends DocumentCorpus {
     zs.getOrElse(sys.error(s"getZone(${zoneId}) error"))
   }
 
-  def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Label] = {
+  def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
     zones.getZoneLabelsForDocument(docId)
   }
 
-  def getZonesForDocument(docId: Int@@DocumentID, label: Label): Seq[Int@@ZoneID] = {
+  def getZonesForDocument(docId: Int@@DocumentID, label: Int@@LabelID): Seq[Int@@ZoneID] = {
     zones.getZonesForDocument(docId, label)
   }
 
+  def ensureLabel(label: Label): Int@@LabelID = {
+    labels.ensureLabel(label.fqn)
+  }
 
   def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
     textreflows.forZone
