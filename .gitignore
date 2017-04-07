@@ -14,6 +14,7 @@ lib_managed
 
 *.sw?
 .ensime*
+ensime.sbt
 .ensime_cache
 
 
