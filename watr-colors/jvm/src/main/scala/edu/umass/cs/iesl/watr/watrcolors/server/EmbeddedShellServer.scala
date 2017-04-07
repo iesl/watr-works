@@ -226,18 +226,15 @@ class EmbeddedServer(
           println(s"got rec")
           val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, rec, docStore)
 
-          println(s"1. got rec")
           val withIndicators = labelingPanel.options
             .labels
             .foldLeft(labelingPanel.content){
               case (acc, elemLabel) =>
                 LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
             }
-          println(s"2. got rec")
 
           val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
 
-          println(s"3. got rec")
           activeLabelWidgetIndex = Some(lwIndex)
           val layout = lwIndex.layout.positioning
           println(s"returning labeler $layout")
@@ -264,26 +261,26 @@ class EmbeddedServer(
 
         val (uiResponse, modifiedWidget) = lwIndex.userInteraction(uiState, gesture)
 
-        // val changes: Option[UIChange] =
-        //   gesture match {
-        //     case SelectRegion(bbox) =>
-        //       // maybeLabel.map {label =>
-        //       //   println(s"adding label to bbox ${bbox}")
-        //       //   UIAdd(
-        //       //     lwIndex.addLabel(bbox, constraint, label)
-        //       //   )
-        //       // }
+        val changes: Option[UIChange] =
+          gesture match {
+            case SelectRegion(bbox) =>
+              maybeLabel.map {label =>
+                println(s"adding label to bbox ${bbox}")
+                val maybeGeometricGroup = lwIndex.addLabel(bbox, constraint, label)
+                // UIAdd()
+              }
+              None
 
-        //     case gesture@ Click(point) =>
-        //       println(s"Click ${point}")
-        //       // select the top (selectable) item
-        //       lwIndex.userInteraction(uiState, gesture)
+            case gesture@ Click(point) =>
+              println(s"Click ${point}")
+              // select the top (selectable) item
+              lwIndex.userInteraction(uiState, gesture)
 
-        //       None
-        //     case DblClick(point) =>
-        //       println(s"DblClick ${point}")
-        //       None
-        //   }
+              None
+            case DblClick(point) =>
+              println(s"DblClick ${point}")
+              None
+          }
 
         Future{ uiResponse }
       } getOrElse {

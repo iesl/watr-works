@@ -112,7 +112,7 @@ object BrowseCorpus extends SharedClientDefs {
 
     for {entry <- docList()} yield {
       val docId = entry.urlStr
-      val t = s"/label?doc=${docId}"
+      val t = s"/label?doc=${docId}&lt=zzz"
       li(
         span(
           a(

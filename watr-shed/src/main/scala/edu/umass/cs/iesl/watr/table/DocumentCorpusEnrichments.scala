@@ -25,17 +25,6 @@ trait DocumentCorpusEnrichments extends LabelWidgetUtils {
     lws
   }
 
-  // def nameLabelers(stableIds: Seq[String@@DocumentID])(implicit corpus: Corpus, docStore: DocumentCorpus): Seq[LabelingPanel] = {
-  //   val docs = for {
-  //     stableId <- stableIds
-  //     entry <- corpus.entry(stableId.unwrap)
-  //     rec   <- getBioarxivJsonArtifact(entry)
-  //   } yield (stableId, rec)
-
-  //   val nameLabeler  = AuthorNameLabelers.nameLabeler(docStore, docs)
-
-  //   makePagePanel(nameLabeler)
-  // }
 
   implicit class RicherDocumentCorpus(val theDocumentCorpus: DocumentCorpus) {
 

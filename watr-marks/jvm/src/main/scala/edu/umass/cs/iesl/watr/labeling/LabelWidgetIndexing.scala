@@ -200,11 +200,17 @@ trait LabelWidgetIndex {
         val regionss = for {
           iReflow <- qhit.iTextReflows
         } yield {
+          val dbgR = iReflow.textReflow
+          val dbgPr = dbgR.targetRegion()
+          println(s"Clip   : ${dbgR.toText()}")
+          println(s"         : ${dbgPr}  clipTo(")
+          println(s"  ByChar : ${qhit.pageSpaceBounds}")
 
           iReflow.textReflow
             .clipToBoundingRegion(qhit.pageSpaceBounds)
-            .map { case (clipped, _) =>
+            .map { case (clipped, range) =>
               val tr = clipped.targetRegion
+              println(s"  clipped : ${}")
               // val regionId = docStore.addTargetRegion(tr.page.pageId, tr.bbox)
               // docStore.getTargetRegion(regionId)
               tr

@@ -466,31 +466,27 @@ class DocumentSegmenter(
     // Bottom-up connected-component line-finding
     runLineDetermination()
 
-    tokenizeLines()
+    // tokenizeLines()
 
     // this find text blocks per-page, and joins lines within each block
     // val textBlocksPerPage = findTextBlocksPerPage()
   }
 
-  // force tokenization of all visual lines
-  def tokenizeLines(): Unit = {
-    print("tokenizing lines")
-    for {
-      page <- visualLineOnPageComponents
-      line <- page
-    } {
-      line.tokenizeLine
-      print(".")
-    }
-    println("")
-  }
-
-  // def show(c: Component): TB.Box = {
-  //   c.getTextReflow
-  //     .orElse { toTextReflow(c) }
-  //     .map(t => t.toText().box).getOrElse("<could not render>".box)
+  // // force tokenization of all visual lines
+  // def tokenizeLines(): Unit = {
+  //   print("tokenizing lines")
+  //   for {
+  //     page <- visualLineOnPageComponents
+  //     line <- page
+  //   } {
+  //     val maybeReflow = line.tokenizeLine
+  //     // maybeReflow.foreach { textReflow =>
+  //     //   docStore.setTextReflowForZone(zoneId, textReflow)
+  //     // }
+  //     print(".")
+  //   }
+  //   println("")
   // }
-
 
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
@@ -634,6 +630,11 @@ class DocumentSegmenter(
           // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
           val regionId = docStore.addTargetRegion(pageId, visualLine.targetRegion.bbox)
           val zoneId = docStore.createZone(regionId, vlineLabel)
+
+          visualLine.tokenizeLine.foreach { textReflow =>
+            docStore.setTextReflowForZone(zoneId, textReflow)
+            print(".")
+          }
 
           visualLine
         })

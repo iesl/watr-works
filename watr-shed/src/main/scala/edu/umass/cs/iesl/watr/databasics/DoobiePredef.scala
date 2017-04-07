@@ -32,7 +32,7 @@ trait DoobiePredef {
          BEFORE """ ++ onClause ++ fr"ON" ++ tablename ++ fr"""
          FOR EACH ROW EXECUTE PROCEDURE """ ++ funcname ++ fr"""();
      """
-    println(frag.toString())
+    // println(frag.toString())
     frag.update
   }
 

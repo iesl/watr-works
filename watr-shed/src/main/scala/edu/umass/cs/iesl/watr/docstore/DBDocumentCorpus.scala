@@ -586,12 +586,10 @@ class TextReflowDB(
     }
 
     def createZone(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {
-      println(s"createZone: ${label}")
       val query = for {
         region <- selectTargetRegion(regionId)
         page <- selectPage(region.page)
         labelId <- getOrInsertLabel(label)
-        _ <- putStrLn(s"    w/labelId ${labelId}")
         zoneId <- insertZone(page.document, labelId)
         _ <- linkZoneToTargetRegion(zoneId, regionId)
       } yield zoneId
@@ -638,31 +636,24 @@ class TextReflowDB(
 
 }
 
-object TestUtilApp extends CorpusTestingUtil {
-
-  def createEmptyDocumentCorpus(): DocumentCorpus = {
-    val tables = new TextReflowDBTables()
-
-    val reflowDB = new TextReflowDB(
-      tables,
-      dbname="watrdev",
-      dbuser="watrworker",
-      dbpass="watrpasswd"
-    )
-
-
-    reflowDB.runq {
-      reflowDB.veryUnsafeDropDatabase().run
-    }
-
-    reflowDB.dropAndRecreate
-    reflowDB.docStore
-  }
-
-  def main(args: Array[String]): Unit = {
-    new CleanDocstore {
-
-      test1()
-    }
-  }
-}
+// object TestUtilApp extends CorpusTestingUtil {
+//   def createEmptyDocumentCorpus(): DocumentCorpus = {
+//     val tables = new TextReflowDBTables()
+//     val reflowDB = new TextReflowDB(
+//       tables,
+//       dbname="watrdev",
+//       dbuser="watrworker",
+//       dbpass="watrpasswd"
+//     )
+//     reflowDB.runq {
+//       reflowDB.veryUnsafeDropDatabase().run
+//     }
+//     reflowDB.dropAndRecreate
+//     reflowDB.docStore
+//   }
+//   def main(args: Array[String]): Unit = {
+//     new CleanDocstore {
+//       test1()
+//     }
+//   }
+// }

@@ -11,8 +11,6 @@ import bioarxiv._
 
 import TypeTags._
 
-// import labeling._
-// import labeling.data._
 import docstore._
 
 object WatrTable {
@@ -90,7 +88,35 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     initCorpus(pwd)
   }
 
-  def segment(corpusEntry: CorpusEntry)(implicit docStore: DocumentCorpus): Unit = {
+  def setPageImages(corpusEntry: CorpusEntry)(implicit docStore: DocumentCorpus): Unit = {
+    for {
+      pdfArtifact    <- corpusEntry.getPdfArtifact
+      pdfPath        <- pdfArtifact.asPath.toOption
+    } yield {
+
+      val stableId = DocumentID(corpusEntry.entryDescriptor)
+
+      docStore.getDocument(stableId).foreach({docId =>
+        val pageImageArtifacts = corpusEntry.ensureArtifactGroup("page-images")
+        val pageImages = if (pageImageArtifacts.getArtifacts.isEmpty) {
+          ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
+        } else {
+          ExtractImages.load(pageImageArtifacts.rootPath)
+        }
+
+        pageImages.images.zipWithIndex.foreach {
+          case (image, i) =>
+            docStore
+              .getPage(docId, PageNum(i))
+              .foreach{ pageId =>
+                docStore.setPageImage(pageId, image.bytes)
+              }
+        }
+      })
+    }
+  }
+
+  def segment(corpusEntry: CorpusEntry, extractImages: Boolean=true)(implicit docStore: DocumentCorpus): Unit = {
     for {
       pdfArtifact    <- corpusEntry.getPdfArtifact
       pdfPath        <- pdfArtifact.asPath.toOption
@@ -111,23 +137,27 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
             .createSegmenter(stableId, pdfPath, docStore)
 
           segmenter.runPageSegmentation()
+          if (extractImages) {
+            print(s"extracting page images")
+            val pageImageArtifacts = corpusEntry.ensureArtifactGroup("page-images")
+            val pageImages = if (pageImageArtifacts.getArtifacts.isEmpty) {
+              ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
+            } else {
+              ExtractImages.load(pageImageArtifacts.rootPath)
+            }
 
-          val pageImageArtifacts = corpusEntry.ensureArtifactGroup("page-images")
-
-          val pageImages = if (pageImageArtifacts.getArtifacts.isEmpty) {
-            ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
-          } else {
-            ExtractImages.load(pageImageArtifacts.rootPath)
+            pageImages.images.zipWithIndex
+              .foreach {
+                case (image, i) =>
+                  docStore
+                    .getPage(segmenter.docId, PageNum(i))
+                    .foreach{ pageId =>
+                      print(".")
+                      docStore.setPageImage(pageId, image.bytes)
+                    }
+              }
           }
-
-          pageImages.images.zipWithIndex.foreach {
-            case (image, i) =>
-              docStore
-                .getPage(segmenter.docId, PageNum(i))
-                .foreach{ pageId =>
-                  docStore.setPageImage(pageId, image.bytes)
-                }
-          }
+          println()
         }
     }
   }

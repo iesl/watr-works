@@ -61,7 +61,7 @@ object ComponentOperations {
       .takeWhile(_.frequency > 0)
       .map{b=> (b.value, b.frequency)}
 
-    vtrace.trace(vtraceHistogram(hist))
+    // vtrace.trace(vtraceHistogram(hist))
     res
   }
 
@@ -272,7 +272,7 @@ object ComponentOperations {
     def atoms = theComponent.queryInside(LB.PageAtom)
 
     def findCommonToplines(): Seq[Double] = {
-      vtrace.trace(message("findCommonToplines"))
+      // vtrace.trace(message("findCommonToplines"))
       getMostFrequentValues(vtrace)(
         atoms.map({c => c.bounds.top}),
         0.01d
@@ -280,7 +280,7 @@ object ComponentOperations {
     }
 
     def findCommonBaselines(): Seq[Double] = {
-      vtrace.trace(message("findCommonBaselines"))
+      // vtrace.trace(message("findCommonBaselines"))
       getMostFrequentValues(vtrace)(
         atoms.map({c => c.bounds.bottom}),
         0.01d
@@ -301,7 +301,7 @@ object ComponentOperations {
         .reverse
         // .takeWhile(_.frequency > 0d)
 
-      vtrace.trace("determine line/char spacings" withTrace vtraceHistogram(hist))
+      // vtrace.trace("determine line/char spacings" withTrace vtraceHistogram(hist))
 
       spaceDists.map(_.value)
     }
@@ -309,7 +309,7 @@ object ComponentOperations {
 
 
     def labelSuperAndSubscripts(): Unit = {
-      vtrace.trace(begin("labelSuperAndSubscripts()"))
+      // vtrace.trace(begin("labelSuperAndSubscripts()"))
 
       val tops = findCommonToplines()
       val bottoms = findCommonBaselines()
@@ -344,10 +344,10 @@ object ComponentOperations {
           // vtrace.trace(s"checking sup/sub, tol:${supSubTolerance.pp}" withInfo PageAtom.boundsBox(atom))
 
           if (atom.bounds.bottom < superScriptLowerLimit) {
-            vtrace.trace((message(s"sup")))
+            // vtrace.trace((message(s"sup")))
             LB.Sup
           } else if (atom.bounds.top > subScriptUpperLimit) {
-            vtrace.trace((message(s"sub")))
+            // vtrace.trace((message(s"sub")))
             LB.Sub
           } else {
             LB.CenterScript
@@ -374,7 +374,7 @@ object ComponentOperations {
       theComponent.ungroupChildren(LB.TextSpan)(_ => true)
       // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(theComponent))
 
-      vtrace.trace(end("labelSuperAndSubscripts()"))
+      // vtrace.trace(end("labelSuperAndSubscripts()"))
     }
 
     def guessWordbreakWhitespaceThreshold(): Double = {
@@ -426,33 +426,33 @@ object ComponentOperations {
         (modalBigGap*2+modalLittleGap)/3
       }
 
-      vtrace.trace(
-        "guessWordbreakWhitespaceThreshold" withInfo
-          s"""| Char Dists     = ${charDists.map(_.pp).mkString(", ")}
-              | Sane Dists     = ${saneCharDists.map(_.pp).mkString(", ")}
-              | Widest Char    = ${widestChar.pp}
-              | Threshold      = ${threshold.pp}
-              |""".stripMargin.mbox
-      )
+      // vtrace.trace(
+      //   "guessWordbreakWhitespaceThreshold" withInfo
+      //     s"""| Char Dists     = ${charDists.map(_.pp).mkString(", ")}
+      //         | Sane Dists     = ${saneCharDists.map(_.pp).mkString(", ")}
+      //         | Widest Char    = ${widestChar.pp}
+      //         | Threshold      = ${threshold.pp}
+      //         |""".stripMargin.mbox
+      // )
       threshold
     }
 
     def groupTokens(): Unit = {
-      vtrace.trace(begin("Split On Whitespace"))
-      vtrace.trace(message(s"chars: ${theComponent.chars}"))
+      // vtrace.trace(begin("Split On Whitespace"))
+      // vtrace.trace(message(s"chars: ${theComponent.chars}"))
       // TODO assert theComponent roleLabel structure is TextSpan/TextSpan*/PageAtom
 
       val splitValue = guessWordbreakWhitespaceThreshold()
 
       theComponent.addLabel(LB.Tokenized)
 
-      var dbgGrid = Grid.widthAligned(
-        (1, AlignLeft), // join indicator
-        (2, AlignLeft), // char(s)
-        (6, AlignRight), // char.left
-        (1, AlignLeft), // space
-        (5, AlignRight) // char.width
-      )
+      // var dbgGrid = Grid.widthAligned(
+      //   (1, AlignLeft), // join indicator
+      //   (2, AlignLeft), // char(s)
+      //   (6, AlignRight), // char.left
+      //   (1, AlignLeft), // space
+      //   (5, AlignRight) // char.width
+      // )
 
 
       theComponent.groupAtomsIf({ (c1, c2, pairIndex) =>
@@ -460,15 +460,15 @@ object ComponentOperations {
         val pairwiseDist = c2.bounds.left - c1.bounds.right
         val willGroup = pairwiseDist < splitValue
 
-        vtrace.ifTrace({
-          dbgGrid = dbgGrid.addRow(
-            if(willGroup) "_" else "$",
-            c1.chars,
-            c1.bounds.left.pp,
-            "~",
-            c1.bounds.width.pp
-          )
-        })
+        // vtrace.ifTrace({
+        //   dbgGrid = dbgGrid.addRow(
+        //     if(willGroup) "_" else "$",
+        //     c1.chars,
+        //     c1.bounds.left.pp,
+        //     "~",
+        //     c1.bounds.width.pp
+        //   )
+        // })
 
         willGroup
 
@@ -477,18 +477,17 @@ object ComponentOperations {
         theComponent.addChild(LB.TextSpan, newRegion)
       })
 
-      vtrace.trace({
-        "line groups" withInfo dbgGrid.toBox().transpose()
-      })
+      // vtrace.trace({
+      //   "line groups" withInfo dbgGrid.toBox().transpose()
+      // })
 
       // vtrace.trace("Tree after split whitespace" withInfo VisualLine.renderRoleTree(theComponent))
 
-      vtrace.trace(end("Split On Whitespace"))
+      // vtrace.trace(end("Split On Whitespace"))
     }
 
     // HOTSPOT: textbox operations in particular
     def tokenizeLine(): Option[TextReflow] = {
-      theComponent.addLabel(LB.TokenizedLine)
 
       labelSuperAndSubscripts()
 
