@@ -11,7 +11,7 @@ import TypeTags._
 
 abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
 
-  def add4pg_3x3SampleDoc(): Unit = {
+  def add4pg_3x3SampleDoc(): String@@DocumentID = {
     /**
       *  Test document layout (4 pages, grid layout)
       *      0123456
@@ -21,20 +21,18 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
       *    3 jklstu|
       *    4 mnovwx|
       *    5 pqryzz|
+      **/
 
-      *  */
-    val docs = List(
-      List( // Single 4-page document
-        "abc\ndef\nghi",
-        "012\n345\n678",
-        "jkl\nmno\npqr",
-        "stu\nvwx\nyzz"
-      )
+    val doc = List(
+      "abc\ndef\nghi",
+      "012\n345\n678",
+      "jkl\nmno\npqr",
+      "stu\nvwx\nyzz"
     )
 
-    for { (doc, i) <- docs.zipWithIndex } {
-      addDocument(DocumentID(s"doc#${i}"), doc)
-    }
+    val stableId = DocumentID("doc#1")
+    addDocument(stableId, doc)
+    stableId
   }
 
 
@@ -46,13 +44,10 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
   //     pageId   <- docStore.getPages(docId)
   //   }  yield {
   //     val pageGeometry = docStore.getPageGeometry(pageId)
-
   //     for {
   //       yslice <- intervalSlices(DoubleInterval(pageGeometry.top, pageGeometry.height), divs).tails.filterNot(_.isEmpty).map(_.reduce(_ union _))
-  //       // _  =  println(s"yslice ${yslice}")
   //       xslice <- intervalSlices(DoubleInterval(pageGeometry.left, pageGeometry.width), divs).tails.filterNot(_.isEmpty).map(_.reduce(_ union _))
   //     } yield {
-  //       // println(s"   x ${xslice}")
   //       val regionBbox = LTBounds(
   //         xslice.min, yslice.min,
   //         xslice.len, yslice.len
@@ -63,26 +58,6 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
   //   allRegions.flatten
   // }
 
-  // def printPageRegions(pageRegions: Seq[PageRegion]): Unit = {
-  //   val res = pageRegions
-  //   .sortBy({ p => (p.pageId.unwrap, p.bbox.top, p.bbox.height, p.bbox.left, p.bbox.width) })
-  //     .map(_.toString)
-  //     .mkString("\n  ", "\n  ", "\n")
-  //   println(res)
-  // }
-
-  // def mkTargetRegion(pageId: Int, bbox: Int*): TargetRegion = {
-  //   val pgRegion = mkTargetRegion(pageId, bbox:_*)
-  //   val regionId = docStore.addTargetRegion(pgRegion.id, pgRegion.bbox)
-  //   docStore.getTargetRegion(regionId)
-  // }
-
-  // def mkPageRegion(pageId: Int, bbox: Int*): PageRegion = {
-  //   val List(x, y, w, h) = bbox.toList
-  //   // val regionId = regionIdGen.nextId
-  //   // PageRegion(PageID(pageId), getRegionBounds(x, y, w, h), Some(regionId))
-  //   PageRegion(PageID(pageId), getRegionBounds(x, y, w, h), None)
-  // }
 
   def pageDivs3(pageId: Int): LabelWidget = {
     col(

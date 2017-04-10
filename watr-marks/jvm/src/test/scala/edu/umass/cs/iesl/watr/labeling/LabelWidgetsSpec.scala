@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package labeling
 
 import geometry._
-// import geometry.zones.syntax._
 // import textreflow.data._
 // import labeling.data._
 
@@ -10,16 +9,30 @@ import TypeTags._
 import corpora._
 import LabelWidgets._
 import LabelWidgetLayoutHelpers._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
   behavior of "label widgets"
 
+  /**
+
+    I'm not totally sure how to write these tests... So far they are really just
+    glorified REPL interactions in testing blocks, so that I can step-debug and println
+    my way through the results to verify them
+
+
+    - Ideas for testing:
+      - A small visual notation that expresses the desired layout, is easy to visually understand and check against
+
+
+
+    */
+
 
   it should "include labeled targets as overlays" in new CleanDocstore {
-    val stableId = DocumentID("doc0")
+    val stableId = add4pg_3x3SampleDoc()
     val docId = docStore.addDocument(stableId)
     val pageId = docStore.addPage(docId, PageNum(0))
 
@@ -45,10 +58,12 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
         println(s"  clipped: ${clipped}")
 
       }
+
   }
 
 
-  it should "correctly position overlays" in  {}
+  it should "correctly position overlays" in  {
+  }
 
   it should "rewrite widgets to include geometric figure overlays for prior labeling" in new CleanDocstore {
     add4pg_3x3SampleDoc()
@@ -83,30 +98,8 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   }
 
 
-  // it should "create columns" in {
-  //   val divs = 3
-  //   val pageRegions = generatePageRegions(divs)
-
-
-  //   val widget0 = col(
-  //     pageRegions.map(targetOverlay(_, List())):_*
-  //   )
-  //   val widgetLayout = layoutWidgetPositions(widget0)
-
-  //   // .sortBy({ p => (p.widgetBounds.width) })
-
-  //   widgetLayout.positioning
-  //     .foreach{ pos =>
-  //       println(s"${pos}")
-  //       // val borigin = pos.widgetBounds.moveToOrigin()
-  //       // val bwidget = borigin.translate(pos.translation)
-  //       // println(s"   borigin: ${borigin}")
-  //       // println(s"   bwidget: ${bwidget}")
-  //     }
-
-  // }
-
-
+  it should "create columns" in {
+  }
 
   it should "create rows" in {
   }

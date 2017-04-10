@@ -25,7 +25,6 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
     val stableId = DocumentID(s"doc#0")
     val docId = docStore.getDocument(stableId).get
 
-    // Restate this in terms of ZoneTrees
     // create a zone that has regions from multiple pages
     val page0Lines = docStore.getPageVisualLines(stableId, PageNum(0))// .flatMap(_.regions)
     val page1Lines = docStore.getPageVisualLines(stableId, PageNum(1))// .flatMap(_.regions)
@@ -63,7 +62,7 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
       row(pageDivs3(1), pageDivs2(2))
     )
 
-    val withIndicators = LWT.addZoneSelectors(LB.Authors, labelWidget, docStore)
+    val withIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, docStore)
     println(prettyPrintLabelWidget(withIndicators))
 
     val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)

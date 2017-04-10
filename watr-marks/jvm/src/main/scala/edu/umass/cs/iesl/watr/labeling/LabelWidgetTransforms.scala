@@ -3,7 +3,6 @@ package labeling
 
 import geometry._
 import geometry.syntax._
-// import geometry.zones.syntax._
 import PageComponentImplicits._
 
 import LabelWidgetF._
@@ -15,7 +14,6 @@ import matryoshka.implicits._
 
 import scala.reflect._
 
-// import watrmarks.{StandardLabels => LB}
 import watrmarks.Label
 
 object LabelWidgetTransforms {
@@ -26,14 +24,6 @@ object LabelWidgetTransforms {
     case _ => false
   }
 
-  // def atId(id: Int, cls: String, f: LabelWidgetT => LabelWidgetT): LabelWidgetT => Boolean = _ match {
-  //   case Identified(_, id0, cls0)
-  //       if id==id0  && cls==cls0 => true
-  //   case _ => false
-  // }
-  // if (hasId(id.unwrap, tagCls)(lw)) holes(lw) match {
-  //   case Identified((a, fWhole), id0, cls0) => fWhole(f(a))
-  // } else lw
 
   def atEveryId[T: ClassTag](
     id: Int@@T,
@@ -56,61 +46,6 @@ object LabelWidgetTransforms {
 
   def everywhere(r: LabelWidget)(f: LabelWidgetT => LabelWidgetT): LabelWidget = {
     r.transCata[LabelWidget](f)
-  }
-
-  def addZoneSelectors(label: Label, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
-
-    val labelId = docStore.ensureLabel(label)
-
-    // append rectangular overlays which respond to user clicks to select/deselect zones
-    def addSelector(lw0: LabelWidgetT): LabelWidgetT = {
-      lw0 match {
-        case RegionOverlay(under, overlays) =>
-          val pageDef = docStore.getPageDef(under.page.pageId).getOrElse {
-            sys.error(s"addIndicator(): no page found for ${under}")
-          }
-
-          val zoneLineOverlays: Seq[Option[LabelWidget]] = for {
-            zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
-          } yield {
-            val zone = docStore.getZone(zoneId)
-
-
-            val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
-
-              val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
-              zoneTargetRegion.intersects(under)
-            })
-
-            // clip zone to under's target region
-            val intersectingBboxes:List[GeometricFigure] = filteredRegionsToTargetRegion
-              .flatMap { targetRegion =>
-                targetRegion
-                  .intersection(under.bbox)
-                  .map(_.bbox)
-              }.toList
-
-            if (intersectingBboxes.isEmpty) None else {
-              val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
-              // println(s"addSelector: zone ${zone}")
-              // println(s"    intersects ${groupBbox}")
-              Some(panel(
-                withId(zoneId, figure(GeometricGroup(groupBbox, intersectingBboxes))),
-                LabelAction.clickToSelectZone(zoneId)
-              ))
-            }
-          }
-
-          RegionOverlay(
-            under,
-            overlays ++ zoneLineOverlays.flatten
-          )
-
-        case  _ => lw0
-      }
-    }
-
-    lwidget.transCata[LabelWidget](addSelector)
   }
 
   def addZoneIndicators(label: Label, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
@@ -137,14 +72,13 @@ object LabelWidgetTransforms {
             })
 
             // clip zone to under's target region
-            val intersectingBboxes:List[GeometricFigure] = filteredRegionsToTargetRegion
-              .flatMap { targetRegion =>
-
-                targetRegion
-                  .intersection(under.bbox)
-                  .map(_.bbox)
-
-              }.toList
+            val intersectingBboxes:List[GeometricFigure] =
+              filteredRegionsToTargetRegion
+                .flatMap { targetRegion =>
+                  targetRegion
+                    .intersection(under.bbox)
+                    .map(_.bbox)
+                }.toList
 
             if (intersectingBboxes.isEmpty) None else {
               val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)

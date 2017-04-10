@@ -98,16 +98,16 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        case l : RegionOverlay[A]     => l.overs.traverse(f).map(ft => l.copy(overs=ft))
-        case l @ Row(as)              => as.traverse(f).map(Row(_))
-        case l @ Col(as)              => as.traverse(f).map(Col(_))
-        case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
-        case l : LabeledTarget        => G.point(l.copy())
-        case l : TextBox              => G.point(l.copy())
-        case l : Reflow               => G.point(l.copy())
-        case l : Figure               => G.point(l.copy())
-        case l @ Panel(a, i)          => f(a).map(Panel(_, i))
-        case l @ Identified(a, id, cls)    => f(a).map(Identified(_, id, cls))
+        case l : RegionOverlay[A]        => l.overs.traverse(f).map(ft => l.copy(overs=ft))
+        case l @ Row(as)                 => as.traverse(f).map(Row(_))
+        case l @ Col(as)                 => as.traverse(f).map(Col(_))
+        case l @ Pad(a, pd, clr)         => f(a).map(Pad(_, pd, clr))
+        case l : LabeledTarget           => G.point(l.copy())
+        case l : TextBox                 => G.point(l.copy())
+        case l : Reflow                  => G.point(l.copy())
+        case l : Figure                  => G.point(l.copy())
+        case l @ Panel(a, i)             => f(a).map(Panel(_, i))
+        case l @ Identified(a, id, cls)  => f(a).map(Identified(_, id, cls))
       }
     }
   }
@@ -116,16 +116,16 @@ object LabelWidgetF {
 
   implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
     def apply[A](show: Show[A]) = Show.show {
-      case l : RegionOverlay[A]       => s"$l"
-      case l : LabeledTarget          => s"label-target"
-      case l @ Reflow(tr)             => s"reflow()"
-      case l @ TextBox(tb)            => s"textbox"
-      case l @ Row(as)                => s"$l"
-      case l @ Col(as)                => s"$l"
-      case l @ Pad(a, padding, color) => s"$l"
-      case l @ Figure(f)              => l.toString
-      case l @ Panel(a, i)            => l.toString
-      case l @ Identified(a, id, cls)      => l.toString
+      case l : RegionOverlay[A]          => s"$l"
+      case l : LabeledTarget             => s"label-target"
+      case l @ Reflow(tr)                => s"reflow()"
+      case l @ TextBox(tb)               => s"textbox"
+      case l @ Row(as)                   => s"$l"
+      case l @ Col(as)                   => s"$l"
+      case l @ Pad(a, padding, color)    => s"$l"
+      case l @ Figure(f)                 => l.toString
+      case l @ Panel(a, i)               => l.toString
+      case l @ Identified(a, id, cls)    => l.toString
     }
   }
 }

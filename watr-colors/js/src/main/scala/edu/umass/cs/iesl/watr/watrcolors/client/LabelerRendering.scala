@@ -193,16 +193,8 @@ trait LabelerRendering extends MouseGestures {
           g1.top = g1.top.intValue() - transVec.y.toInt
           g1.left = g1.left.intValue() - transVec.x.toInt
 
-          // val g2 = createShape(fig, "blue", "red", 0.1f)
-
-          // val figs = fig.map { fig =>
-          //   createShape(wbbox, "blue", "yellow", 0.1f)
-          // }
-          // val g = fabric.Group(figs)
           noControls(g1)
-          // noControls(g2)
           objStack += Future { g1 }
-          // objStack += Future { g2 }
 
         case Pad(a, padding, maybeColor) =>
 
