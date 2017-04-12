@@ -1,7 +1,13 @@
 package edu.umass.cs.iesl.watr
 package geometry
 
+// import scalaz.{@@ => _, _}, Scalaz._
 import scalaz.Equal
+// import scalaz.syntax.id._
+// import scalaz.syntax.std.list._
+import scalaz.syntax.equal._
+import scalaz.std.list._
+
 
 import utils.Color
 
@@ -76,6 +82,16 @@ object GeometryImplicits {
       case (g1: LBBounds, g2: LBBounds) => g1.prettyPrint == g2.prettyPrint
       case (g1: Point, g2: Point)       => g1.prettyPrint == g2.prettyPrint
       case (g1: Line, g2: Line)         => g1.prettyPrint == g2.prettyPrint
+      case (g1: GeometricGroup, g2: GeometricGroup)    =>
+        g1.bounds === g2.bounds && g1.figures === g2.figures
+
+      case (g1: Colorized, g2: Colorized)         =>
+        g1.fgOpacity.prettyPrint == g2.fgOpacity.prettyPrint &&
+        g1.bgOpacity.prettyPrint == g2.bgOpacity.prettyPrint &&
+          g1.bg.toHex==g2.bg.toHex &&
+          g1.fg.toHex==g2.fg.toHex &&
+          g1.figure === g2.figure
+
       case (_, _)                       => false
     })
 

@@ -59,6 +59,13 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
   // }
 
 
+  def pageDiv1(pageId: Int@@PageID, overlays: List[LabelWidget]=List()): LabelWidget = {
+    val pageRegion = getRegionBounds(0, 0, 3, 3)
+    col(
+      targetOverlay(pageId, pageRegion, None, overlays)
+    )
+  }
+
   def pageDivs3(pageId: Int@@PageID): LabelWidget = {
     val pageRegion = getRegionBounds(0, 0, 3, 3)
     col(

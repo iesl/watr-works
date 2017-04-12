@@ -19,7 +19,7 @@ import watrmarks.Label
 object LabelWidgetTransforms {
 
   def hasId(id: Int, cls: String): LabelWidgetT => Boolean = _ match {
-    case Identified(_, id0, cls0)
+    case Identified(wid, _, id0, cls0)
         if id==id0  && cls==cls0 => true
     case _ => false
   }
@@ -33,9 +33,9 @@ object LabelWidgetTransforms {
     val cls = implicitly[ClassTag[T]].runtimeClass.getSimpleName
 
     def visit(lw: LabelWidgetT): LabelWidgetT = lw match {
-      case Identified(_, id0, cls0) if id==id0  && cls==cls0 =>
+      case Identified(wid, _, id0, cls0) if id==id0  && cls==cls0 =>
         holes(lw) match {
-          case Identified((a, fWhole), id0, cls0) => fWhole(f(a))
+          case Identified(wid, (a, fWhole), id0, cls0) => fWhole(f(a))
           case x => sys.error(s"atEveryId ${lw}: ${x}")
         }
       case _ => lw
@@ -58,7 +58,7 @@ object LabelWidgetTransforms {
 
 
         // case RegionOverlay(under, overlays) =>
-        case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
+        case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
           val pageDef = docStore.getPageDef(pageId).getOrElse {
             sys.error(s"addIndicator(): no page found for ${pageId}")
           }
@@ -94,7 +94,7 @@ object LabelWidgetTransforms {
           }
 
           RegionOverlay(
-            pageId, pGeom, clipTo,
+            wid,pageId, pGeom, clipTo,
             overlays ++ zoneLineOverlays.flatten
           )
 

@@ -46,7 +46,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
   }
 
   implicit object LabelWidgetIndexable extends SpatialIndexable[WidgetPositioning] {
-    def id(t: WidgetPositioning): Int = t.id.unwrap
+    def id(t: WidgetPositioning): Int = t.widget.wid.unwrap
     def ltBounds(t: WidgetPositioning): LTBounds = t.strictBounds
   }
 
@@ -87,7 +87,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
     layout0.positioning.foreach({pos => pos.widget match {
 
-      case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
+      case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
         addPage(pageId)
 
       case _ =>
@@ -165,7 +165,7 @@ trait LabelWidgetIndex {
       .queryForIntersects(queryBounds)
       .map { pos => pos.widget match {
 
-        case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
+        case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
           queryPage(pos, queryBounds, pageId)
 
 
@@ -274,7 +274,7 @@ trait LabelWidgetIndex {
                 istate.labelWidgetL.modify(st0) { labelWidget =>
                   LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
                     lw.project match {
-                      case fa@ Figure(fig) =>
+                      case fa@ Figure(wid, fig) =>
                         val ff = LabelWidgets.figure(
                           composeFigures(makeFringe(fig, Padding(10)), fig)
                         )
@@ -394,8 +394,8 @@ trait LabelWidgetIndex {
       fillers(_filler)
     }
 
-    println(s"Bleed: ${layout.bleedBounds}")
-    println(s"Strict: ${layout.strictBounds}")
+    // println(s"Bleed: ${layout.bleedBounds}")
+    // println(s"Strict: ${layout.strictBounds}")
 
     val w: Int = (layout.bleedBounds.width).intValue()+1
     val h: Int = (layout.bleedBounds.height).intValue()+1
@@ -407,8 +407,8 @@ trait LabelWidgetIndex {
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
 
       pos.widget match {
-        case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
-          println(s"debugPrint: ${l} @ ${gridbox}")
+        case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
+          // println(s"debugPrint: ${l} @ ${gridbox}")
           val id = pageId.unwrap
           val fill = (id + '0'.toInt).toChar
           graphPaper.fillFg(fill, gridbox)
@@ -421,11 +421,11 @@ trait LabelWidgetIndex {
     layout.positioning.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
       pos.widget match {
-        case l @ Panel(a, i) =>
+        case l @ Panel(wid, a, i) =>
           graphPaper2.fillFg(nextFiller(), gridbox)
-        case l @ Figure(fig) =>
+        case l @ Figure(wid, fig) =>
           graphPaper.fillFg(nextFiller(), gridbox)
-        case l @ Identified(a, id, cls)    =>
+        case l @ Identified(wid, a, id, cls)    =>
         case _ =>
       }
     }
@@ -433,8 +433,8 @@ trait LabelWidgetIndex {
     layout.positioning.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
       pos.widget match {
-        case Col(as) => graphPaper.borderLeftRight(gridbox, Colors.Gray)
-        case Row(as) => graphPaper.borderTopBottom(gridbox, Colors.Red)
+        case Col(wid, as) => graphPaper.borderLeftRight(gridbox, Colors.Gray)
+        case Row(wid, as) => graphPaper.borderTopBottom(gridbox, Colors.Red)
 
         // case l : RegionOverlay[A]     => l.overs.traverse(f).map(ft => l.copy(overs=ft))
         // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))

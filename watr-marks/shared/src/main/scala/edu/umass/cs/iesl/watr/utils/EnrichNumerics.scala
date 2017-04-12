@@ -133,6 +133,8 @@ object EnrichNumerics {
   implicit class RicherFloat_EnrichNumerics(val d: Float) extends AnyVal {
     def nan = java.lang.Float.isNaN(d)
     def inf = java.lang.Float.isInfinite(d)
+    def prettyPrint:String = fmt(d.toDouble)
+    def pp(): String = fmt(d.toDouble)
   }
 
 }
