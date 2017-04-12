@@ -3,6 +3,7 @@ package labeling
 
 import scalaz.{@@ => _, _}, Scalaz._
 
+
 import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
@@ -16,7 +17,6 @@ import LabelWidgetF._
 
 import utils.ScalazTreeImplicits._
 import TypeTags._
-import PageComponentImplicits._
 
 
 // Position transform:
@@ -93,16 +93,16 @@ object LabelWidgetLayoutHelpers {
     widgetSpaceRegion.translate(wpos.translation)
   }
 
-  def clipPageRegionFromWidgetSpace(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): Option[TargetRegion] = {
-    val pageRegion = widgetRegionToPageRegion(wpos, widgetSpaceRegion)
-    wpos.widget match {
-      case l @ RegionOverlay(under, overs) =>
-        under.intersection(pageRegion)
-      case l @ LabeledTarget(target, label, score) =>
-        target.intersection(pageRegion)
-      case _ => None
-    }
-  }
+  // def clipPageRegionFromWidgetSpace(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): Option[TargetRegion] = {
+  //   val pageRegion = widgetRegionToPageRegion(wpos, widgetSpaceRegion)
+  //   wpos.widget match {
+  //     case l @ RegionOverlay(under, overs) =>
+  //       under.intersection(pageRegion)
+  //     case l @ LabeledTarget(target, label, score) =>
+  //       target.intersection(pageRegion)
+  //     case _ => None
+  //   }
+  // }
 
 }
 
@@ -166,6 +166,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     PosAttr(fv, bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
   }
 
+
   def layoutWidgetPositions(lwidget: LabelWidget): WidgetLayout = {
     val idgen = IdGenerator[WidgetID]()
 
@@ -173,21 +174,23 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     // Bottom-up first pass evaluator
     def positionAttrs: GAlgebra[(LabelWidget, ?), LabelWidgetF, PosAttr] = fwa => {
       fwa match {
-        case flw @ RegionOverlay(under, overs)  =>
-          val selfPosition = under.bbox.toPoint(CDir.NW)
-          val bbox = under.bbox.moveToOrigin
-          val (_, childAdjustVecs) = repositionChildren(overs.map(_._2),
-            {(cbbox, overpos) =>
-              val childPosition = overpos.selfOffset
-              childPosition - selfPosition
-            })
+
+        case flw @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
+          val clipBox = clipTo.getOrElse { pGeom }
+          val bbox = clipBox.moveToOrigin
+          val selfPosition = clipBox.toPoint(CDir.NW)
+          // clipTo.map(_.toPoint(CDir.NW)).getOrElse{ zeroPosVector}
+
+          val (chbbox, childAdjustVecs) =
+            repositionChildren(
+              overlays.map(_._2), {
+                (totalChildsBbox, childPos) =>
+                val childPosition = childPos.selfOffset
+                childPosition - selfPosition
+              })
 
           PosAttr(F.void(flw), bbox, idgen.nextId, selfPosition, childAdjustVecs)
 
-        case flw @ LabeledTarget(target, label, score)   =>
-          val bbox = target.bbox.moveToOrigin()
-          val positionVec = target.bbox.toPoint(CDir.NW)
-          PosAttr(F.void(flw), bbox, idgen.nextId, positionVec)
 
         case flw @ Col(attrs) =>
           val (bbox, childAdjustVecs) = repositionChildren(

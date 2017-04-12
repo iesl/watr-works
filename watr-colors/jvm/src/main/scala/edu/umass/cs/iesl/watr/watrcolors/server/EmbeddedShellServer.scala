@@ -223,7 +223,6 @@ class EmbeddedServer(
 
 
         try {
-          println(s"got rec")
           val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, rec, docStore)
 
           val withIndicators = labelingPanel.options
@@ -237,11 +236,11 @@ class EmbeddedServer(
 
           activeLabelWidgetIndex = Some(lwIndex)
           val layout = lwIndex.layout.positioning
-          println(s"returning labeler $layout")
           Future { (layout, labelingPanel.options) }
 
         } catch {
-          case t: Throwable => println(s"error ${t}, ${t.getCause}")
+          case t: Throwable =>
+            println(s"error ${t}, ${t.getCause}")
             t.printStackTrace()
             throw t
         }

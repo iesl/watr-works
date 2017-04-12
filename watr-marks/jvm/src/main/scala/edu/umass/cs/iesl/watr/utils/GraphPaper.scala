@@ -23,30 +23,41 @@ class GraphPaper(
     }
   }
 
-  def borderLeftRight(gridbox: GraphPaper.Box): Unit = {
+
+  def applyBgColor(x: Int, y: Int, color: Color): Unit = {
+    val xy = gridBuffer(y)(x)
+    val rgb = color.toRGB
+    val fansiColor = fansi.Back.True(rgb.red, rgb.green, rgb.blue)
+    gridBuffer(y)(x) = fansiColor(xy)
+  }
+
+  def applyColor(x: Int, y: Int, color: Color): Unit = {
+    val xy = gridBuffer(y)(x)
+    val rgb = color.toRGB
+    val fansiColor = fansi.Color.True(rgb.red, rgb.green, rgb.blue)
+    gridBuffer(y)(x) = fansiColor(xy)
+  }
+
+  def border(gridbox: GraphPaper.Box, color: Color): Unit = {
+    borderLeftRight(gridbox, color)
+    borderTopBottom(gridbox, color)
+  }
+
+  def borderLeftRight(gridbox: GraphPaper.Box, color: Color): Unit = {
     for { y <- gridbox.top until (gridbox.top+gridbox.height) } {
       val x1 = gridbox.left
       val x2 = gridbox.left+gridbox.width-1
-      val cur0 = gridBuffer(y)(x1)
-      val cur1 = gridBuffer(y)(x2)
-      val col0 = fansi.Color.Red(cur0)
-      val col1 = fansi.Color.Red(cur1)
-      gridBuffer(y)(x1) = col0
-      gridBuffer(y)(x2) = col1
+      applyBgColor(x1, y, color)
+      applyBgColor(x2, y, color)
     }
   }
 
-  def borderTopBottom(gridbox: GraphPaper.Box): Unit = {
+  def borderTopBottom(gridbox: GraphPaper.Box, color: Color): Unit = {
     for { x <- gridbox.left until (gridbox.left+gridbox.width) } {
       val y1 = gridbox.top
       val y2 = gridbox.top+gridbox.height-1
-      // println(s"  ($x, $y1/$y2) := row")
-      val cur0 = gridBuffer(y1)(x)
-      val cur1 = gridBuffer(y2)(x)
-      val col0 = fansi.Color.Magenta(cur0)
-      val col1 = fansi.Color.Magenta(cur1)
-      gridBuffer(y1)(x) = col0
-      gridBuffer(y2)(x) = col1
+      applyBgColor(x, y1, color)
+      applyBgColor(x, y2, color)
     }
   }
 
@@ -67,17 +78,17 @@ class GraphPaper(
       // g = (g + 3) % 256
       b = (b + 2) % 256
       val qq = gridBuffer(y)(x)
+      // applyColor(x, y, color)
       gridBuffer(y)(x) = fansi.Back.True(r,g, b)(qq)
     }
   }
 
-  def shadeBackground(gridbox: GraphPaper.Box): Unit = {
+  def shadeBackground(gridbox: GraphPaper.Box, color: Color): Unit = {
     for {
       y <- gridbox.top until (gridbox.top+gridbox.height)
       x <- gridbox.left until (gridbox.left+gridbox.width)
     } {
-      val qq = gridBuffer(y)(x)
-      gridBuffer(y)(x) = fansi.Back.True(10, 20, 100)(qq)
+      applyBgColor(x, y, color)
     }
   }
 

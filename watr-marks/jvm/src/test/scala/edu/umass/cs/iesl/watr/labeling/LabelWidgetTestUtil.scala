@@ -30,7 +30,7 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
       "stu\nvwx\nyzz"
     )
 
-    val stableId = DocumentID("doc#1")
+    val stableId = DocumentID("doc#0")
     addDocument(stableId, doc)
     stableId
   }
@@ -59,18 +59,27 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
   // }
 
 
-  def pageDivs3(pageId: Int): LabelWidget = {
+  def pageDivs3(pageId: Int@@PageID): LabelWidget = {
+    val pageRegion = getRegionBounds(0, 0, 3, 3)
     col(
-      targetOverlay(mkTargetRegion(PageID(pageId), 0, 0, 3, 1), List()),
-      targetOverlay(mkTargetRegion(PageID(pageId), 0, 1, 3, 1), List()),
-      targetOverlay(mkTargetRegion(PageID(pageId), 0, 2, 3, 1), List())
+      targetOverlay(pageId, pageRegion, getRegionBounds(0, 0, 3, 1).some, List()),
+      targetOverlay(pageId, pageRegion, getRegionBounds(0, 1, 3, 1).some, List()),
+      targetOverlay(pageId, pageRegion, getRegionBounds(0, 2, 3, 1).some, List())
     )
   }
 
-  def pageDivs2(pageId: Int): LabelWidget = {
+  def pageDivs_1_2(pageId: Int@@PageID): LabelWidget = {
+    val pageRegion = getRegionBounds(0, 0, 3, 3)
     col(
-      targetOverlay(mkTargetRegion(PageID(pageId), 0, 0, 3, 2), List()),
-      targetOverlay(mkTargetRegion(PageID(pageId), 0, 2, 3, 1), List())
+      targetOverlay(pageId, pageRegion, getRegionBounds(0, 0, 3, 1).some, List()),
+      targetOverlay(pageId, pageRegion, getRegionBounds(0, 2, 3, 2).some, List())
+    )
+  }
+  def pageDivs2(pageId: Int@@PageID): LabelWidget = {
+    val pageRegion = getRegionBounds(0, 0, 3, 3)
+    col(
+      targetOverlay(pageId, pageRegion, getRegionBounds(0, 0, 3, 2).some, List()),
+      targetOverlay(pageId, pageRegion, getRegionBounds(0, 2, 3, 1).some, List())
     )
   }
 

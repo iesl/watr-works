@@ -78,7 +78,7 @@ case class CharAtom(
 
 object CharAtom {
 
-  implicit val EqualCharAtom: Equal[CharAtom] = 
+  implicit val EqualCharAtom: Equal[CharAtom] =
     Equal.equal((a, b)  => a.id==b.id )
 
 }
@@ -103,9 +103,13 @@ object PageComponentImplicits {
       }
       thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
     }
+
+    def intersects(pageId: Int@@PageID, bbox: LTBounds): Boolean = {
+      val samePage = thePageRegion.page.pageId == pageId
+      samePage && (thePageRegion.bbox intersects bbox)
+    }
     def intersects(r: PageRegion): Boolean = {
-      val samePage = thePageRegion.page.pageId == r.page.pageId
-      samePage && (thePageRegion.bbox intersects r.bbox)
+      intersects(r.page.pageId, r.bbox)
     }
 
     def intersection(b: LTBounds): Option[PageRegion] = {
@@ -130,9 +134,12 @@ object PageComponentImplicits {
       theTargetRegion.copy(bbox = theTargetRegion.bbox union r.bbox)
     }
 
+    def intersects(pageId: Int@@PageID, bbox: LTBounds): Boolean = {
+      val samePage = theTargetRegion.page.pageId == pageId
+      samePage && (theTargetRegion.bbox intersects bbox)
+    }
     def intersects(r: TargetRegion): Boolean = {
-      val samePage = theTargetRegion.page.pageId == r.page.pageId
-      samePage && (theTargetRegion.bbox intersects r.bbox)
+      intersects(r.page.pageId, r.bbox)
     }
 
 

@@ -55,10 +55,14 @@ object LabelWidgetTransforms {
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
       lw0 match {
-        case RegionOverlay(under, overlays) =>
-          val pageDef = docStore.getPageDef(under.page.pageId).getOrElse {
-            sys.error(s"addIndicator(): no page found for ${under}")
+
+
+        // case RegionOverlay(under, overlays) =>
+        case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
+          val pageDef = docStore.getPageDef(pageId).getOrElse {
+            sys.error(s"addIndicator(): no page found for ${pageId}")
           }
+          val clipBox = clipTo.getOrElse { pGeom }
 
           val zoneLineOverlays: Seq[Option[LabelWidget]] = for {
             zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
@@ -68,7 +72,7 @@ object LabelWidgetTransforms {
             val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
 
               val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
-              zoneTargetRegion.intersects(under)
+              zoneTargetRegion.intersects(pageId, clipBox)
             })
 
             // clip zone to under's target region
@@ -76,7 +80,7 @@ object LabelWidgetTransforms {
               filteredRegionsToTargetRegion
                 .flatMap { targetRegion =>
                   targetRegion
-                    .intersection(under.bbox)
+                    .intersection(clipBox)
                     .map(_.bbox)
                 }.toList
 
@@ -90,7 +94,7 @@ object LabelWidgetTransforms {
           }
 
           RegionOverlay(
-            under,
+            pageId, pGeom, clipTo,
             overlays ++ zoneLineOverlays.flatten
           )
 

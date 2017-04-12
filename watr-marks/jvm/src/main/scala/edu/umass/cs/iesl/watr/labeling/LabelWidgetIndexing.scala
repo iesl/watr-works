@@ -21,6 +21,7 @@ import shapeless._
 import matryoshka._
 import matryoshka.implicits._
 import utils.GraphPaper
+import utils.Colors
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
@@ -58,35 +59,36 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     val layout0 = layoutWidgetPositions(lwidget)
 
     layout0.positioning.foreach({pos =>
-      // println(s"adding pos widget ${pos.widget} @ ${pos.widgetBounds}")
       lwIndex.add(pos)
     })
 
     val targetPageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
 
+    def addPage(pageId: Int@@PageID): Unit= {
+      if (!targetPageRIndexes.contains(pageId)) {
+        val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
+        targetPageRIndexes.put(pageId, pageIndex)
+
+        // Put all visual lines into index
+        for {
+          vline <- docStore0.getPageVisualLines(pageId)
+          reflow <- docStore0.getModelTextReflowForZone(vline.id)
+        } {
+          val textReflow = jsonStrToTextReflow(reflow.reflow)
+          val indexable = IndexableTextReflow(
+            reflow.prKey,
+            textReflow,
+            textReflow.targetRegion
+          )
+          pageIndex.add(indexable)
+        }
+      }
+    }
+
     layout0.positioning.foreach({pos => pos.widget match {
 
-      case l @ RegionOverlay(under, overs) =>
-        val pageId = under.page.pageId
-
-        if (!targetPageRIndexes.contains(pageId)) {
-          val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
-          targetPageRIndexes.put(pageId, pageIndex)
-
-          // Put all visual lines into index
-          for {
-            vline <- docStore0.getPageVisualLines(pageId)
-            reflow <- docStore0.getModelTextReflowForZone(vline.id)
-          } {
-            val textReflow = jsonStrToTextReflow(reflow.reflow)
-            val indexable = IndexableTextReflow(
-              reflow.prKey,
-              textReflow,
-              textReflow.targetRegion
-            )
-            pageIndex.add(indexable)
-          }
-        }
+      case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
+        addPage(pageId)
 
       case _ =>
 
@@ -147,23 +149,27 @@ trait LabelWidgetIndex {
     ret
   }
 
+  def queryPage(pos: WidgetPositioning, queryBounds: LTBounds, pageId: Int@@PageID): Option[QueryHit] = {
+    pos.widgetBounds
+      .intersection(queryBounds)
+      .map { ibbox =>
+        val pageSpaceBounds = ibbox.translate(pos.translation)
+        val pageIndex = pageIndexes(pageId)
+        val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
+        QueryHit(pos, pageId, pageSpaceBounds, pageHits)
+      }
+  }
+
   def queryRegion(queryBounds: LTBounds): Seq[QueryHit] = {
     val hits = index
       .queryForIntersects(queryBounds)
       .map { pos => pos.widget match {
 
-        case RegionOverlay(under, over) =>
-          pos.widgetBounds
-            .intersection(queryBounds)
-            .map { ibbox =>
-              val pageSpaceBounds = ibbox.translate(pos.translation)
-              val pageIndex = pageIndexes(under.page.pageId)
-              val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
-              QueryHit(pos, under.page.pageId, pageSpaceBounds, pageHits)
-            }
+        case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
+          queryPage(pos, queryBounds, pageId)
 
-        case _ =>
-          None
+
+        case _ => None
       }}
 
     hits.flatten
@@ -398,11 +404,12 @@ trait LabelWidgetIndex {
       val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
 
       pos.widget match {
-        case RegionOverlay(under, over) =>
-          // println(s"RegionOverlay($over, $under)")
-          val id = under.id
-          val fill = (id.unwrap + '0'.toInt).toChar
+        case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
+          println(s"debugPrint: ${l} @ ${gridbox}")
+          val id = pageId.unwrap
+          val fill = (id + '0'.toInt).toChar
           graphPaper.fillFg(fill, gridbox)
+          graphPaper.border(gridbox, Colors.Red)
 
         case _ =>
       }
@@ -411,23 +418,9 @@ trait LabelWidgetIndex {
     layout.positioning.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
       pos.widget match {
-        // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
-        // case l : TextBox              => G.point(l.copy())
-        // case l : Reflow               => G.point(l.copy())
-        case l : LabeledTarget =>
-          graphPaper2.shadeBackground(gridbox)
-
+        case l @ Panel(a, i) => graphPaper2.fillFg(nextFiller(), gridbox)
         case l : Figure =>
-          // graphPaper2.fillFg(nextFiller(), gridbox)
-
-        case l @ Panel(a, i) =>
-          graphPaper2.fillFg(nextFiller(), gridbox)
-          // graphPaper2.borderTopBottom(gridbox)
-
         case l @ Identified(a, id, cls)    =>
-          // graphPaper2.fillFg(nextFiller(), gridbox)
-          // graphPaper2.gradientHorizontal(gridbox)
-          // graphPaper2.borderLeftRight(gridbox)
         case _ =>
       }
     }
@@ -435,10 +428,8 @@ trait LabelWidgetIndex {
     layout.positioning.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
       pos.widget match {
-        case Col(as) =>
-          graphPaper.borderLeftRight(gridbox)
-        case Row(as) =>
-          graphPaper.borderTopBottom(gridbox)
+        case Col(as) => graphPaper.borderLeftRight(gridbox, Colors.Gray)
+        case Row(as) => graphPaper.borderTopBottom(gridbox, Colors.Red)
 
         // case l : RegionOverlay[A]     => l.overs.traverse(f).map(ft => l.copy(overs=ft))
         // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
@@ -452,8 +443,8 @@ trait LabelWidgetIndex {
       }
     }
     query foreach { q =>
-      graphPaper.shadeBackground(GraphPaper.ltb2box(q))
-      graphPaper2.shadeBackground(GraphPaper.ltb2box(q))
+      graphPaper.shadeBackground(GraphPaper.ltb2box(q), Colors.Red)
+      graphPaper2.shadeBackground(GraphPaper.ltb2box(q), Colors.White)
     }
 
 

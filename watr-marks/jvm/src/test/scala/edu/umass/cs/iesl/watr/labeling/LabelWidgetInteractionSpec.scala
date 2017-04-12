@@ -59,7 +59,7 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
     )
 
     val labelWidget = col(
-      row(pageDivs3(1), pageDivs2(2))
+      row(pageDivs3(PageID(1)), pageDivs2(PageID(2)))
     )
 
     val withIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, docStore)
