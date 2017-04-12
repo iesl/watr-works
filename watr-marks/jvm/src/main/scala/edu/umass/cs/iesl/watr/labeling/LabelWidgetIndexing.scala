@@ -388,7 +388,7 @@ trait LabelWidgetIndex {
 
   def debugPrint(query: Option[LTBounds] = None): Unit = {
     val fillers = "αßΓπΣσµτΦΘΩδ∞φε∩".toList
-    var _filler = 0
+    var _filler = -1
     def nextFiller(): Char = {
       _filler = (_filler + 1) % fillers.length
       fillers(_filler)
@@ -418,8 +418,10 @@ trait LabelWidgetIndex {
     layout.positioning.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
       pos.widget match {
-        case l @ Panel(a, i) => graphPaper2.fillFg(nextFiller(), gridbox)
-        case l : Figure =>
+        case l @ Panel(a, i) =>
+          graphPaper2.fillFg(nextFiller(), gridbox)
+        case l @ Figure(fig) =>
+          graphPaper.fillFg(nextFiller(), gridbox)
         case l @ Identified(a, id, cls)    =>
         case _ =>
       }
@@ -452,8 +454,8 @@ trait LabelWidgetIndex {
     val grid2 = graphPaper2.asString()
 
     println(grid1)
-    println
-    println(grid2)
-    println
+    // println
+    // println(grid2)
+    // println
   }
 }

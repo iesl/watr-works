@@ -53,9 +53,7 @@ class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
 
     val layout = layout3
 
-    println(
-      prettyPrintLabelWidget(layout)
-    )
+    println(prettyPrintLabelWidget(layout))
 
     val lwindex = LabelWidgetIndex.create(docStore, layout)
 

@@ -31,45 +31,101 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
     */
 
-  import matryoshka._
-  import matryoshka.data._
-  import matryoshka.implicits._
-  import matryoshka.patterns._
+  // import matryoshka._
+  // import matryoshka.data._
+  // import matryoshka.implicits._
+  // import matryoshka.patterns._
 
-  it should "handle diffs" in new CleanDocstore {
+
+  it should "create columns/rows" in new CleanDocstore {
     add4pg_3x3SampleDoc()
 
-    val stableId = DocumentID(s"doc#0")
-    val docId = docStore.getDocument(stableId).get
-
-    // println(visualizeDocument(stableId))
-
-    val labelWidget2 = col(
-      row(pageDivs3(PageID(1)))
+    val layout = col(
+      row(pageDivs3(PageID(1)), pageDivs2(PageID(2))),
+      row(pageDivs2(PageID(3)), pageDivs3(PageID(4)))
     )
+    // println(prettyPrintLabelWidget(layout))
 
-    val labelWidget = col(
-      row(pageDivs_1_2(PageID(1)))
-    )
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
 
-    val wer: Fix[Diff[Fix, LabelWidgetF, ?]] = labelWidget.paraMerga(labelWidget2)(diff)
+    val finalLayout = (
+      """|111222
+         |111
+         |111222
+         |333444
+         |   444
+         |333444
+         |""")
 
-    val treeStr = wer.cata(toTree).drawTree
-    println(treeStr)
+    // lwindex.debugPrint()
+  }
 
-    /// Use of diffs for labeling:
-    // - When a widget is clicked (or selected)
-    //   - run the _.cata(..) via interaction to make changes to the label widget
-    //   - do a diff of the resulting widget against the original
-    //   - reduce the diff to a data structure suitable to send to the UI,
-    //     which contains visual updates and client-state changes
+  it should "correctly position overlays" in new CleanDocstore  {
+    add4pg_3x3SampleDoc()
 
+    val pageId = PageID(3)
+    val pageRegion = getRegionBounds(0, 0, 3, 3)
+    val r0 = getRegionBounds(1, 1, 1, 3)
+    val layout = targetOverlay(pageId, pageRegion, None, List(
+      figure(r0)
+    ))
 
-    // On click, add selection indicator
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
+    val finalLayout = (
+      """|333
+         |3ß3
+         |3ß3
+         |""")
 
-
+    lwindex.debugPrint()
 
   }
+
+  // it should "handle diffs" in new CleanDocstore {
+  //   add4pg_3x3SampleDoc()
+
+  //   val stableId = DocumentID(s"doc#0")
+  //   val docId = docStore.getDocument(stableId).get
+
+  //   // println(visualizeDocument(stableId))
+
+  //   val labelWidget2 = col(
+  //     row(pageDivs3(PageID(1)))
+  //   )
+
+  //   val labelWidget = col(
+  //     row(pageDivs_1_2(PageID(1)))
+  //   )
+
+  //   val wer: Fix[Diff[Fix, LabelWidgetF, ?]] = labelWidget.paraMerga(labelWidget2)(diff)
+
+  //   val treeStr = wer.cata(toTree).drawTree
+  //   println(treeStr)
+
+  //   /// Use of diffs for labeling:
+  //   // - When a widget is clicked (or selected)
+  //   //   - run the _.cata(..) via interaction to make changes to the label widget
+  //   //   - do a diff of the resulting widget against the original
+  //   //   - reduce the diff to a data structure suitable to send to the UI,
+  //   //     which contains visual updates and client-state changes
+
+
+  //   // On click, add selection indicator
+
+
+
+  // }
+
+
+  // it should "include padding" in new CleanDocstore {
+  //   add4pg_3x3SampleDoc()
+  // }
+
+  // it should "include inserted text (as textbox)" in new CleanDocstore {
+  // }
+
+  // it should "include reflows" in new CleanDocstore {
+  // }
 
   // it should "include labeled targets as overlays" in new CleanDocstore {
   //   val stableId = add4pg_3x3SampleDoc()
@@ -102,8 +158,6 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   // }
 
 
-  // it should "correctly position overlays" in  {
-  // }
 
   // it should "rewrite widgets to include geometric figure overlays for prior labeling" in new CleanDocstore {
   //   add4pg_3x3SampleDoc()
@@ -123,7 +177,8 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
 
   //   // // Create a labeling widget
-  //   // val layout = col(
+  //   // val layout = col(246]
+
   //   //   row(pageDivs3(1), pageDivs2(2))
   //   // )
 
@@ -138,19 +193,5 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   // }
 
 
-  // it should "create columns" in {
-  // }
-
-  // it should "create rows" in {
-  // }
-
-  // it should "include inserted text (as textbox)" in {
-  // }
-
-  // it should "include reflows" in {
-  // }
-
-  // it should "include padding" in {
-  // }
 
 }

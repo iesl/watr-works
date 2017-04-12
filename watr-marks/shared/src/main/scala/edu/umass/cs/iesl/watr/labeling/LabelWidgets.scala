@@ -194,7 +194,6 @@ object LabelWidgets {
   // def displayPage(pageId: Int@@PageID, bbox: LTBounds) =
   //   fixlw(PageDisplay(pageId, bbox))
 
-
   def targetOverlay(pageId: Int@@PageID, pageGeometry: LTBounds, clipTo: Option[LTBounds], overs: Seq[LabelWidget]) =
     fixlw(RegionOverlay(pageId, pageGeometry, clipTo, overs.toList))
 
