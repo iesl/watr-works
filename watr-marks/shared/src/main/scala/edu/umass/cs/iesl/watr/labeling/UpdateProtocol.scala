@@ -8,6 +8,10 @@ sealed trait UIChange
 case class UIAdd(widget: WidgetPositioning) extends UIChange
 case class UIDel(widget: WidgetPositioning) extends UIChange
 
+sealed trait Mods
+final case class AddLw(id: Int@@WidgetID) extends Mods
+final case class RmLw(id: Int@@WidgetID) extends Mods
+
 case class UIState(
   selectionConstraint: Constraint,
   selectedLabel: Option[Label],

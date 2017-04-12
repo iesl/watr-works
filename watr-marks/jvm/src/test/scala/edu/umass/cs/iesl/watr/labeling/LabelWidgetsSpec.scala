@@ -3,18 +3,23 @@ package labeling
 
 // import geometry._
 // import textreflow.data._
-import labeling.data._
+// import labeling.data._
+
 
 import TypeTags._
 import corpora._
 import LabelWidgets._
+import LabelWidgetF._
 // import LabelWidgetLayoutHelpers._
 // import watrmarks.{StandardLabels => LB}
-import scalaz.{@@ => _, _}, Scalaz._
 
-sealed trait Mods
-final case class AddLw(id: Int@@WidgetID) extends Mods
-final case class RmLw(id: Int@@WidgetID) extends Mods
+// import LabelWidgetF._
+import matryoshka._
+import matryoshka.implicits._
+
+// import matryoshka.data._
+// import matryoshka.patterns._
+// import matryoshka.patterns.EnvT
 
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
@@ -35,11 +40,6 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
     */
 
-  import matryoshka._
-  import matryoshka.data._
-  import matryoshka.implicits._
-  import matryoshka.patterns._
-  // import matryoshka.patterns.EnvT
 
 
   // it should "create columns/rows" in new CleanDocstore {
@@ -89,7 +89,6 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   val page1 = PageID(1)
   val page2 = PageID(2)
 
-  import LabelWidgetF._
   it should "compute a diff between 2 label widgets" in new CleanDocstore {
     val stableId = add4pg_3x3SampleDoc()
     val docId = docStore.getDocument(stableId).get
@@ -111,56 +110,23 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
         )
       case _ => lw
     }
-    val labelWidget2 = labelWidget1.transCata[LabelWidget](visit)
 
+    val labelWidget2 = labelWidget1.transCata[LabelWidget](visit)
 
     val lwindex1 = LabelWidgetIndex.create(docStore, labelWidget1)
     val lwindex2 = LabelWidgetIndex.create(docStore, labelWidget2)
-    lwindex1.debugPrint()
-    lwindex2.debugPrint()
 
+    // lwindex2.debugPrint()
 
-    val lwDiff: Fix[Diff[Fix, LabelWidgetF, ?]] = labelWidget1.paraMerga(labelWidget2)(diff)
-    val treeStr = lwDiff.cata(toTree).drawTree
-    println(treeStr)
-    // 1. Collect Diffs as Add/Remove
-    import LabelWidgetF._
+    val lwDiff = labelWidgetDiff(labelWidget1, labelWidget2)
 
-    // def positionAttrs: GAlgebra[(LabelWidget, ?), Diff[Fix, LabelWidgetF, ?], Seq[LabelWidget]] = fwa => {
-    //   fwa match {
-    //     case Same             (ident)        => Seq()
-    //     case Similar          (ident)        =>  ident match {
-    //       case Row(aAttrs) => aAttrs.flatMap(_._2)
-    //       case Col(aAttrs) => aAttrs.flatMap(_._2)
-    //       case RegionOverlay(p1, g1, c1, aAttrs) => aAttrs.flatMap(_._2)
-    //     }
-    //     case Different        (left, right)  => Seq()
-    //     case LocallyDifferent (left, right)  => Seq()
-    //     case Inserted         (right)        => Seq()
-    //     case Deleted          (left)         => Seq()
-    //     case Added            (right)        => Seq()
-    //     case Removed          (left)         => Seq()
-    //   }
-    // }
+    println(drawLabelWidgetDiff(lwDiff))
 
+    val allMods = labelWidgetDiffToMods(lwDiff)
 
-    val qwer: Seq[Mods] = lwDiff.universe.toList
-      .flatMap { lwd => lwd.project match {
-        case Same             (ident)        => Seq()
-        case Similar          (ident: LabelWidgetF[Fix[Diff[Fix, LabelWidgetF, ?]]])        => Seq() //  ident
-        case Different        (left: LabelWidget, right: LabelWidget)  =>
-          val toRm = left.universe // map {_.id}
-          val toAdd = right.universe
-          // toRm ++ toAdd
-          Seq()
-        case LocallyDifferent (left, right)  => Seq()
-        case Inserted         (right)        => Seq()
-        case Deleted          (left)         => Seq()
-        case Added            (right)        => Seq()
-        case Removed          (left)         => Seq()
-      }
-        // println(s"d> ${d}")
-      }
+    val str = allMods.mkString("\n  ", "\n  ", "\n")
+    println(str)
+
     // import Diff._
     // val relativePositioned: Cofree[LabelWidgetF, PosAttr] = lwDiff.cata(attributePara(positionAttrs))
     // val asdf = attributePara(positionAttrs)
