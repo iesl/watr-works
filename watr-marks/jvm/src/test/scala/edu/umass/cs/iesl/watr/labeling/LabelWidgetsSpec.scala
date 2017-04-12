@@ -37,28 +37,28 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   // import matryoshka.patterns._
 
 
-  it should "create columns/rows" in new CleanDocstore {
-    add4pg_3x3SampleDoc()
+  // it should "create columns/rows" in new CleanDocstore {
+  //   add4pg_3x3SampleDoc()
 
-    val layout = col(
-      row(pageDivs3(PageID(1)), pageDivs2(PageID(2))),
-      row(pageDivs2(PageID(3)), pageDivs3(PageID(4)))
-    )
-    // println(prettyPrintLabelWidget(layout))
+  //   val layout = col(
+  //     row(pageDivs3(PageID(1)), pageDivs2(PageID(2))),
+  //     row(pageDivs2(PageID(3)), pageDivs3(PageID(4)))
+  //   )
+  //   // println(prettyPrintLabelWidget(layout))
 
-    val lwindex = LabelWidgetIndex.create(docStore, layout)
+  //   val lwindex = LabelWidgetIndex.create(docStore, layout)
 
-    val finalLayout = (
-      """|111222
-         |111
-         |111222
-         |333444
-         |   444
-         |333444
-         |""")
+  //   val finalLayout = (
+  //     """|111222
+  //        |111
+  //        |111222
+  //        |333444
+  //        |   444
+  //        |333444
+  //        |""")
 
-    // lwindex.debugPrint()
-  }
+  //   // lwindex.debugPrint()
+  // }
 
   it should "correctly position overlays" in new CleanDocstore  {
     add4pg_3x3SampleDoc()
@@ -73,12 +73,12 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     val lwindex = LabelWidgetIndex.create(docStore, layout)
     val finalLayout = (
       """|333
-         |3ß3
-         |3ß3
+         |3α3
+         |3α3
+         | α
          |""")
 
-    lwindex.debugPrint()
-
+    // lwindex.debugPrint()
   }
 
   // it should "handle diffs" in new CleanDocstore {

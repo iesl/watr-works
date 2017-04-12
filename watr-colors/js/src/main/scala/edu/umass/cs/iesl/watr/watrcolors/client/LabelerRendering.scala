@@ -250,7 +250,7 @@ trait LabelerRendering extends MouseGestures {
         ff
       })
 
-    val totalBounds = positions.head.widgetBounds
+    val totalBounds = positions.head.strictBounds
     (totalBounds, fobjs)
 
   }

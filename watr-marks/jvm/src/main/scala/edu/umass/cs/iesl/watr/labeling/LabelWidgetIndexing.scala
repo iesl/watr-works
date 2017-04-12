@@ -47,7 +47,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   implicit object LabelWidgetIndexable extends SpatialIndexable[WidgetPositioning] {
     def id(t: WidgetPositioning): Int = t.id.unwrap
-    def ltBounds(t: WidgetPositioning): LTBounds = t.widgetBounds
+    def ltBounds(t: WidgetPositioning): LTBounds = t.strictBounds
   }
 
 
@@ -150,7 +150,7 @@ trait LabelWidgetIndex {
   }
 
   def queryPage(pos: WidgetPositioning, queryBounds: LTBounds, pageId: Int@@PageID): Option[QueryHit] = {
-    pos.widgetBounds
+    pos.strictBounds
       .intersection(queryBounds)
       .map { ibbox =>
         val pageSpaceBounds = ibbox.translate(pos.translation)
@@ -394,14 +394,17 @@ trait LabelWidgetIndex {
       fillers(_filler)
     }
 
-    val w: Int = (layout.layoutBounds.width).intValue()+1
-    val h: Int = (layout.layoutBounds.height).intValue()+1
+    println(s"Bleed: ${layout.bleedBounds}")
+    println(s"Strict: ${layout.strictBounds}")
+
+    val w: Int = (layout.bleedBounds.width).intValue()+1
+    val h: Int = (layout.bleedBounds.height).intValue()+1
 
     val graphPaper = GraphPaper.create(w, h)
     val graphPaper2 = GraphPaper.create(w, h)
 
     layout.positioning.foreach { pos =>
-      val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
+      val gridbox = GraphPaper.ltb2box(pos.strictBounds)
 
       pos.widget match {
         case l @ RegionOverlay(pageId, pGeom, clipTo, overlays) =>
@@ -416,7 +419,7 @@ trait LabelWidgetIndex {
     }
 
     layout.positioning.foreach { pos =>
-      val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
+      val gridbox = GraphPaper.ltb2box(pos.strictBounds)
       pos.widget match {
         case l @ Panel(a, i) =>
           graphPaper2.fillFg(nextFiller(), gridbox)
@@ -428,7 +431,7 @@ trait LabelWidgetIndex {
     }
 
     layout.positioning.foreach { pos =>
-      val gridbox = GraphPaper.ltb2box(pos.widgetBounds)
+      val gridbox = GraphPaper.ltb2box(pos.strictBounds)
       pos.widget match {
         case Col(as) => graphPaper.borderLeftRight(gridbox, Colors.Gray)
         case Row(as) => graphPaper.borderTopBottom(gridbox, Colors.Red)

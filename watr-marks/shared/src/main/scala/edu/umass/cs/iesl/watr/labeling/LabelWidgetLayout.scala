@@ -26,7 +26,8 @@ import TypeTags._
 //    what characters within a document are selected
 case class WidgetPositioning(
   widget: LabelWidgetF[Unit],
-  widgetBounds: LTBounds,
+  strictBounds: LTBounds,
+  bleedBounds: LTBounds,
   translation: PositionVector,
   scaling: Double = 1.0d,
   id: Int@@WidgetID
@@ -35,14 +36,16 @@ case class WidgetPositioning(
 
 case class WidgetLayout(
   positioning: Seq[WidgetPositioning],
-  layoutBounds: LTBounds,
+  strictBounds: LTBounds,
+  bleedBounds: LTBounds,
   labelWidget: LabelWidget
 )
 
 // Accumulator for calculating layout positioning transforms
 case class PosAttr(
   widget: LabelWidgetF[Unit],
-  widgetBounds: LTBounds,
+  strictBounds: LTBounds,
+  bleedBounds: LTBounds,
   id: Int@@WidgetID,
   selfOffset: PositionVector,
   childOffsets: List[PositionVector] = List(),
@@ -56,7 +59,7 @@ case class PosAttr(
   }
 
   override def toString = {
-    val wpp = widgetBounds.prettyPrint
+    val wpp = strictBounds.prettyPrint
     val sstr = toStackString
     val cn = widget.getClass().getName.split("\\$").last
     s"${cn}#${id} bb:${wpp} ${sstr} ]"
@@ -65,7 +68,8 @@ case class PosAttr(
   def translate(pvec: PositionVector): PosAttr = {
     PosAttr(
       widget,
-      widgetBounds.translate(pvec),
+      strictBounds.translate(pvec),
+      bleedBounds.translate(pvec),
       id,
       selfOffset.translate(pvec),
       childOffsets.map(_.translate(pvec))
@@ -108,6 +112,7 @@ object LabelWidgetLayoutHelpers {
 
 
 trait LabelWidgetLayout extends LabelWidgetBasics {
+  import utils.IdGenerator
 
 
   val zeroLTBounds: LTBounds = LTBounds(0, 0, 0, 0)
@@ -120,50 +125,40 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     }
   }
 
-  // def repositionChildren(
-  //   children: List[(LabelWidget, PosAttr)],
-  //   offsetFn: (LTBounds, PosAttr) => PositionVector
-  // ): (LTBounds, List[PositionVector]) = {
-  //   val newpositions = children
-  //     .foldLeft((zeroLTBounds, List[PositionVector]()))({
-  //       case (acc@(currBounds, childVecs), (_, oldpos)) =>
-  //         val newChildVec = offsetFn(currBounds, oldpos)
-  //         val newpos = oldpos.translate(newChildVec)
-  //         val newBounds = currBounds union newpos.widgetBounds
-
-  //         (newBounds, newChildVec :: childVecs)
-  //     })
-
-  //   (newpositions._1, newpositions._2.reverse)
-  // }
 
   def repositionChildren(
     children: List[PosAttr],
     offsetFn: (LTBounds, PosAttr) => PositionVector
-  ): (LTBounds, List[PositionVector]) = {
+  ): (LTBounds, LTBounds, List[PositionVector]) = {
     val newpositions =
-      (children foldLeft (zeroLTBounds, List[PositionVector]())) {
-        case ((currBounds, childVecs), oldpos) =>
-          val newChildVec = offsetFn(currBounds, oldpos)
+      (children foldLeft (zeroLTBounds, zeroLTBounds, List[PositionVector]())) {
+        case ((currStrictBounds, currBleedBounds, childVecs), oldpos) =>
+          val newChildVec = offsetFn(currStrictBounds, oldpos)
           val newpos = oldpos.translate(newChildVec)
-          val newBounds = currBounds union newpos.widgetBounds
+          val newStrictBounds = currStrictBounds union newpos.strictBounds
+          val newBleedBounds = (currBleedBounds union newpos.bleedBounds) union newStrictBounds
+          println(s"repositionChildren:  ${oldpos.widget}")
+          println(s"    : str       ${currStrictBounds}")
+          println(s"    : bleed     ${currBleedBounds}")
+          println(s"    : new str   ${newStrictBounds}")
+          println(s"    : new bleed ${newBleedBounds}")
+          println()
 
-          (newBounds, newChildVec :: childVecs)
+          (newStrictBounds, newBleedBounds, newChildVec :: childVecs)
       }
 
-    (newpositions._1, newpositions._2.reverse)
+    (newpositions._1, newpositions._2, newpositions._3.reverse)
   }
 
-  import utils.IdGenerator
 
-  // case flw @ Identified(p@(a, attr), id, cls) =>
+  // TODO: I don't think I need to run repositionChildren here, just propagate child pos info
   def inheritChildLayout(fv: LabelWidgetF[Unit], childPos: PosAttr, idgen: IdGenerator[WidgetID]): PosAttr = {
-    val (_, childAdjustVecs) = repositionChildren(
+    val (childBBox, chBleed, childAdjustVecs) = repositionChildren(
       List(childPos),
       { (childrenBbox, childPos) => childrenBbox.toPointUpLeft() }
     )
-    val bbox = childPos.widgetBounds
-    PosAttr(fv, bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+    val bbox = childPos.strictBounds
+    PosAttr(fv, bbox, chBleed, idgen.nextId, zeroPosVector, childAdjustVecs)
   }
 
 
@@ -179,9 +174,8 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           val clipBox = clipTo.getOrElse { pGeom }
           val bbox = clipBox.moveToOrigin
           val selfPosition = clipBox.toPoint(CDir.NW)
-          // clipTo.map(_.toPoint(CDir.NW)).getOrElse{ zeroPosVector}
 
-          val (chbbox, childAdjustVecs) =
+          val (childBbox, chBleed, childAdjustVecs) =
             repositionChildren(
               overlays.map(_._2), {
                 (totalChildsBbox, childPos) =>
@@ -189,15 +183,17 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
                 childPosition - selfPosition
               })
 
-          PosAttr(F.void(flw), bbox, idgen.nextId, selfPosition, childAdjustVecs)
+          val totalBleed = bbox union chBleed
+
+          PosAttr(F.void(flw), bbox, totalBleed, idgen.nextId, selfPosition, childAdjustVecs)
 
 
         case flw @ Col(attrs) =>
-          val (bbox, childAdjustVecs) = repositionChildren(
+          val (bbox, chBleed, childAdjustVecs) = repositionChildren(
             attrs.map(_._2),
             {(totalChildsBbox, childPos)=> totalChildsBbox.toPoint(CDir.SW) }
           )
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
 
         case flw @ Panel(p@(a, attr), action) =>
           inheritChildLayout(F.void(flw), attr, idgen)
@@ -206,27 +202,27 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           inheritChildLayout(F.void(flw), attr, idgen)
 
         case flw @ Row(attrs) =>
-          val (bbox, childAdjustVecs) = repositionChildren(attrs.map(_._2), {(totalChildsBbox, childPos)=> totalChildsBbox.toPoint(CDir.NE)  })
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+          val (bbox, chBleed, childAdjustVecs) = repositionChildren(attrs.map(_._2), {(totalChildsBbox, childPos)=> totalChildsBbox.toPoint(CDir.NE)  })
+          PosAttr(F.void(flw), bbox, chBleed, idgen.nextId, zeroPosVector, childAdjustVecs)
 
         case flw @ Pad(p@(a, attr), padding, color) =>
           val ulOffset = Point(padding.left, padding.top)
 
-          val (chbbox, childAdjustVecs) = repositionChildren(List(attr), {(totalChildsBbox, childPos)=> ulOffset})
+          val (childBbox, childBleed, childAdjustVecs) = repositionChildren(List(attr), {(totalChildsBbox, childPos)=> ulOffset})
 
           val bbox = LTBounds(
-            chbbox.left, chbbox.top,
-            chbbox.width + padding.left + padding.right,
-            chbbox.height + padding.top + padding.bottom
+            childBbox.left, childBbox.top,
+            childBbox.width + padding.left + padding.right,
+            childBbox.height + padding.top + padding.bottom
           )
 
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, childBleed, idgen.nextId, zeroPosVector, childAdjustVecs)
 
         case flw @ Reflow(textReflow) =>
           val bounds = textReflow.bounds()
           val bbox = bounds.moveToOrigin
 
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector)
+          PosAttr(F.void(flw), bbox, bbox, idgen.nextId, zeroPosVector)
 
         case flw @ TextBox(box) =>
           val str = box.toString
@@ -235,11 +231,11 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           val maxwidth = lines.map(_.length).max
           val bbox: LTBounds = LTBounds(0, 0, maxwidth*6d, height*16d)
 
-          PosAttr(F.void(flw), bbox, idgen.nextId, zeroPosVector)
+          PosAttr(F.void(flw), bbox, bbox, idgen.nextId, zeroPosVector)
 
         case flw @ Figure(figure) =>
-
-          PosAttr(F.void(flw), totalBounds(figure), idgen.nextId, zeroPosVector)
+          val bbox = totalBounds(figure)
+          PosAttr(F.void(flw), bbox, bbox, idgen.nextId, zeroPosVector)
 
       }
     }
@@ -270,7 +266,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
         // Adjusted current-node bounding box to Absolute positioning
         newSelf = selfAttr.copy(
-          widgetBounds = selfAttr.widgetBounds.translate(headOffsetVec),
+          strictBounds = selfAttr.strictBounds.translate(headOffsetVec),
           selfOffset   = selfAttr.selfOffset.translate(-headOffsetVec)
         )
 
@@ -289,7 +285,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     val relativePositioned: Cofree[LabelWidgetF, PosAttr] =
       lwidget.cata(attributePara(positionAttrs))
 
-    val zero = PosAttr(TextBox("dummy"), zeroLTBounds, WidgetID(0), Point(0, 0), List(Point(0, 0)))
+    val zero = PosAttr(TextBox("dummy"), zeroLTBounds, zeroLTBounds, WidgetID(0), Point(0, 0), List(Point(0, 0)))
 
     val adjusted: Cofree[LabelWidgetF, PosAttr] = relativePositioned
       .attributeTopDownM[State[PosAttr, ?], PosAttr](zero)({
@@ -301,12 +297,12 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
     val positions = adjusted.universe
       .map(_.head)
-      .map(w => WidgetPositioning(w.widget, w.widgetBounds, w.selfOffset, w.scaling, w.id))
+      .map(w => WidgetPositioning(w.widget, w.strictBounds, w.bleedBounds, w.selfOffset, w.scaling, w.id))
       .toList
 
     val root = positions.head
 
-    WidgetLayout(positions, root.widgetBounds, lwidget)
+    WidgetLayout(positions, root.strictBounds, root.bleedBounds, lwidget)
 
   }
 
