@@ -23,7 +23,7 @@ import TypeTags._
 //    used to get it there. The inverse of the transform matrix is used to transform
 //    selection boxes and clicked points back into the correct geometry to determine
 //    what characters within a document are selected
-case class WidgetPositioning(
+case class AbsPosWidget(
   widget: LabelWidgetF[Unit],
   strictBounds: LTBounds,
   bleedBounds: LTBounds,
@@ -33,7 +33,7 @@ case class WidgetPositioning(
 
 
 case class WidgetLayout(
-  positioning: Seq[WidgetPositioning],
+  positioning: Seq[AbsPosWidget],
   strictBounds: LTBounds,
   bleedBounds: LTBounds,
   labelWidget: LabelWidget
@@ -90,11 +90,11 @@ object LabelWidgetLayoutHelpers {
     ).drawBox
   }
 
-  def widgetRegionToPageRegion(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): LTBounds = {
+  def widgetRegionToPageRegion(wpos: AbsPosWidget, widgetSpaceRegion: LTBounds): LTBounds = {
     widgetSpaceRegion.translate(wpos.translation)
   }
 
-  // def clipPageRegionFromWidgetSpace(wpos: WidgetPositioning, widgetSpaceRegion: LTBounds): Option[TargetRegion] = {
+  // def clipPageRegionFromWidgetSpace(wpos: AbsPosWidget, widgetSpaceRegion: LTBounds): Option[TargetRegion] = {
   //   val pageRegion = widgetRegionToPageRegion(wpos, widgetSpaceRegion)
   //   wpos.widget match {
   //     case l @ RegionOverlay(under, overs) =>
@@ -292,7 +292,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
     val positions = adjusted.universe
       .map(_.head)
-      .map(w => WidgetPositioning(w.widget, w.strictBounds, w.bleedBounds, w.selfOffset, w.scaling))
+      .map(w => AbsPosWidget(w.widget, w.strictBounds, w.bleedBounds, w.selfOffset, w.scaling))
       .toList
 
     val root = positions.head

@@ -150,12 +150,12 @@ trait LabelerRendering extends MouseGestures {
     )
   }
 
-  def renderLabelWidget(positions: Seq[WidgetPositioning]): (LTBounds, Future[List[FabricObject]]) = {
+  def renderLabelWidget(positions: Seq[AbsPosWidget]): (LTBounds, Future[List[FabricObject]]) = {
 
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
 
-    def visit(p: WidgetPositioning): Unit = {
-      val WidgetPositioning(fa, wbbox, transVec, scaling, id)  = p
+    def visit(p: AbsPosWidget): Unit = {
+      val AbsPosWidget(fa, wbbox, transVec, scaling, id)  = p
 
       fa match {
         case RegionOverlay(under, overs) =>

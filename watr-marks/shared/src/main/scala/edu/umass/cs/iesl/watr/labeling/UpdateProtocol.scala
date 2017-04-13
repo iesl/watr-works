@@ -5,8 +5,8 @@ import watrmarks._
 
 sealed trait UIChange
 
-case class UIAdd(widget: WidgetPositioning) extends UIChange
-case class UIDel(widget: WidgetPositioning) extends UIChange
+case class UIAdd(widget: AbsPosWidget) extends UIChange
+case class UIDel(widget: AbsPosWidget) extends UIChange
 
 sealed trait Mods
 final case class AddLw(id: Int@@WidgetID) extends Mods

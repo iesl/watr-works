@@ -210,7 +210,7 @@ class EmbeddedServer(
     def createDocumentLabeler(
       stableId: String@@DocumentID,
       labelerType: String
-    ): Future[(Seq[WidgetPositioning], LabelOptions)] = {
+    ): Future[(Seq[AbsPosWidget], LabelOptions)] = {
 
       val hasEntry = corpus.hasEntry(stableId.unwrap)
       println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")

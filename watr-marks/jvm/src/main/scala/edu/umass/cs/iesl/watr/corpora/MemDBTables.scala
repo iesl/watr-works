@@ -10,8 +10,19 @@ abstract class EdgeTableOneToMany[LhsIDType: ClassTag, RhsIDType: ClassTag] {
   type TableImpl = mutable.HashMap[Lhs, mutable.LinkedHashSet[Rhs]]
 
   val lhsCls = implicitly[ClassTag[LhsIDType]].runtimeClass.getSimpleName
+  val rhsCls = implicitly[ClassTag[RhsIDType]].runtimeClass.getSimpleName
 
   val table: TableImpl = mutable.HashMap[Lhs, mutable.LinkedHashSet[Rhs]]()
+
+  def debugPrint(): Unit = {
+    // println(s"Edges: $modelClsStr")
+    val str = table.map{ case (lhs, rhss) =>
+      s"Edges ${lhsCls} => ${rhsCls}\n" +
+        s"    ${lhs} -> " +
+        rhss.mkString("\n      ", "\n      ", "\n")
+    }.mkString("\n  ", "\n  ", "\n---")
+    println(str)
+  }
 
   def addEdge(lhs: Lhs, rhs: Rhs): Unit = {
     val rights = table.getOrElseUpdate(lhs, mutable.LinkedHashSet[Rhs]())

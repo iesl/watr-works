@@ -57,7 +57,7 @@ object TestLibs extends LibVersions {
 object LogLibs extends LibVersions {
   val logback = Seq(
     "org.log4s"      %% "log4s"            % "1.3.4",
-    "ch.qos.logback"  % "logback-classic"  % "1.2.2",
+    "ch.qos.logback"  % "logback-classic"  % "1.2.3",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
     "org.slf4j"       % "jcl-over-slf4j"   % logbackVersion
@@ -91,7 +91,7 @@ trait CommonLibs extends LibVersions {
   val ammonite         = "com.lihaoyi"             % "ammonite_2.11.8"  % "0.8.2"
   val fastparse        = "com.lihaoyi"             %% "fastparse"        % "0.4.2"
   val sourcecode       = "com.lihaoyi"             %% "sourcecode"       % sourcecodeV
-  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.13"
+  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.14"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val machinist        = "org.typelevel"           %% "machinist"        % "0.6.1"
   val shapeless        = "com.chuusai"             %% "shapeless"        % "2.3.2"

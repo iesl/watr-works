@@ -32,7 +32,7 @@ case class IndexableTextReflow(
 )
 
 case class QueryHit(
-  positioned: WidgetPositioning,
+  positioned: AbsPosWidget,
   pageId: Int@@PageID,
   pageSpaceBounds: LTBounds,
   iTextReflows: Seq[IndexableTextReflow]
@@ -45,20 +45,21 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     def ltBounds(t: IndexableTextReflow): LTBounds = t.targetRegion.bbox
   }
 
-  implicit object LabelWidgetIndexable extends SpatialIndexable[WidgetPositioning] {
-    def id(t: WidgetPositioning): Int = t.widget.wid.unwrap
-    def ltBounds(t: WidgetPositioning): LTBounds = t.strictBounds
+  implicit object LabelWidgetIndexable extends SpatialIndexable[AbsPosWidget] {
+    def id(t: AbsPosWidget): Int = t.widget.wid.unwrap
+    def ltBounds(t: AbsPosWidget): LTBounds = t.strictBounds
   }
 
 
   import textreflow.TextReflowJsonCodecs._
 
   def create(docStore0: DocumentCorpus, lwidget: LabelWidget): LabelWidgetIndex = {
-    val lwIndex = SpatialIndex.createFor[WidgetPositioning]()
+    val lwIndex = SpatialIndex.createFor[AbsPosWidget]()
 
     val layout0 = layoutWidgetPositions(lwidget)
 
     layout0.positioning.foreach({pos =>
+      println(s"adding $pos")
       lwIndex.add(pos)
     })
 
@@ -98,7 +99,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     new LabelWidgetIndex {
       def docStore: DocumentCorpus = docStore0
       def layout: WidgetLayout = layout0
-      def index: SpatialIndex[WidgetPositioning] = lwIndex
+      def index: SpatialIndex[AbsPosWidget] = lwIndex
       def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
     }
   }
@@ -128,10 +129,10 @@ trait LabelWidgetIndex {
 
   def docStore: DocumentCorpus
   def layout: WidgetLayout
-  def index: SpatialIndex[WidgetPositioning]
+  def index: SpatialIndex[AbsPosWidget]
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
 
-  def queryForPanels(queryPoint: Point): Seq[(Panel[Unit], WidgetPositioning)] = {
+  def queryForPanels(queryPoint: Point): Seq[(Panel[Unit], AbsPosWidget)] = {
     val queryBox = queryPoint
       .lineTo(queryPoint.translate(1, 1))
       .bounds
@@ -149,7 +150,7 @@ trait LabelWidgetIndex {
     ret
   }
 
-  def queryPage(pos: WidgetPositioning, queryBounds: LTBounds, pageId: Int@@PageID): Option[QueryHit] = {
+  def queryPage(pos: AbsPosWidget, queryBounds: LTBounds, pageId: Int@@PageID): Option[QueryHit] = {
     pos.strictBounds
       .intersection(queryBounds)
       .map { ibbox =>
@@ -161,6 +162,7 @@ trait LabelWidgetIndex {
   }
 
   def queryRegion(queryBounds: LTBounds): Seq[QueryHit] = {
+    println(s"queryRegion")
     val hits = index
       .queryForIntersects(queryBounds)
       .map { pos => pos.widget match {
@@ -240,7 +242,8 @@ trait LabelWidgetIndex {
           val rid = docStore.addTargetRegion(tr.page.pageId, tr.bbox)
           docStore.addZoneRegion(zoneId, rid)
         }
-        docStore.getZone(zoneId)
+        val zone = docStore.getZone(zoneId)
+        println(s"added zone: $zone")
       }
 
 

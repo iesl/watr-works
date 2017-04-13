@@ -74,7 +74,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "com.lihaoyi"       %%% "autowire"        % "0.2.6"
   ))
   .jsSettings(libraryDependencies ++= Seq(
-    "fr.iscpif"      %%% "scaladget"       % "0.9.2",
+    "fr.iscpif"      %%% "scaladget"       % "0.9.3",
     "org.querki"     %%% "jquery-facade"   % "1.0",
     "org.scala-js"   %%% "scalajs-dom"     % "0.9.1"),
     scalacOptions -= "-Ywarn-dead-code" // doesn't play well with ScalaJS native binding declarations

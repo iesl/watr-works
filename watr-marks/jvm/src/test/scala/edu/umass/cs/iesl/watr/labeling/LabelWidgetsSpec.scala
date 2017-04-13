@@ -4,22 +4,22 @@ package labeling
 // import geometry._
 // import textreflow.data._
 // import labeling.data._
+// import LabelWidgetLayoutHelpers._
+// import watrmarks.{StandardLabels => LB}
+// import LabelWidgetF._
+// import matryoshka.data._
+// import matryoshka.patterns._
+// import matryoshka.patterns.EnvT
 
 
 import TypeTags._
 import corpora._
 import LabelWidgets._
 import LabelWidgetF._
-// import LabelWidgetLayoutHelpers._
-// import watrmarks.{StandardLabels => LB}
 
-// import LabelWidgetF._
 import matryoshka._
 import matryoshka.implicits._
 
-// import matryoshka.data._
-// import matryoshka.patterns._
-// import matryoshka.patterns.EnvT
 
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
@@ -41,53 +41,53 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     */
 
 
-
-  // it should "create columns/rows" in new CleanDocstore {
-  //   add4pg_3x3SampleDoc()
-
-  //   val layout = col(
-  //     row(pageDivs3(PageID(1)), pageDivs2(PageID(2))),
-  //     row(pageDivs2(PageID(3)), pageDivs3(PageID(4)))
-  //   )
-  //   // println(prettyPrintLabelWidget(layout))
-
-  //   val lwindex = LabelWidgetIndex.create(docStore, layout)
-
-  //   val finalLayout = (
-  //     """|111222
-  //        |111
-  //        |111222
-  //        |333444
-  //        |   444
-  //        |333444
-  //        |""")
-
-  //   // lwindex.debugPrint()
-  // }
-
-  // it should "correctly position overlays" in new CleanDocstore  {
-  //   add4pg_3x3SampleDoc()
-
-  //   val pageId = PageID(3)
-  //   val pageRegion = getRegionBounds(0, 0, 3, 3)
-  //   val r0 = getRegionBounds(1, 1, 1, 3)
-  //   val layout = targetOverlay(pageId, pageRegion, None, List(
-  //     figure(r0)
-  //   ))
-
-  //   val lwindex = LabelWidgetIndex.create(docStore, layout)
-  //   val finalLayout = (
-  //     """|333
-  //        |3α3
-  //        |3α3
-  //        | α
-  //        |""")
-
-  //   // lwindex.debugPrint()
-  // }
-
   val page1 = PageID(1)
   val page2 = PageID(2)
+
+  it should "create columns/rows" in new CleanDocstore {
+    add4pg_3x3SampleDoc()
+
+    val layout = col(
+      row(pageDivs3(PageID(1)), pageDivs2(PageID(2))),
+      row(pageDivs2(PageID(3)), pageDivs3(PageID(4)))
+    )
+    // println(prettyPrintLabelWidget(layout))
+
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
+
+    val finalLayout = (
+      """|111222
+         |111
+         |111222
+         |333444
+         |   444
+         |333444
+         |""")
+
+    // lwindex.debugPrint()
+  }
+
+  it should "correctly position overlays" in new CleanDocstore  {
+    add4pg_3x3SampleDoc()
+
+    val pageId = PageID(3)
+    val pageRegion = getRegionBounds(0, 0, 3, 3)
+    val r0 = getRegionBounds(1, 1, 1, 3)
+    val layout = targetOverlay(pageId, pageRegion, None, List(
+      figure(r0)
+    ))
+
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
+    val finalLayout = (
+      """|333
+         |3α3
+         |3α3
+         | α
+         |""")
+
+    // lwindex.debugPrint()
+  }
+
 
   it should "compute a diff between 2 label widgets" in new CleanDocstore {
     val stableId = add4pg_3x3SampleDoc()
@@ -125,72 +125,15 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     val allMods = labelWidgetDiffToMods(lwDiff)
 
     val str = allMods.mkString("\n  ", "\n  ", "\n")
-    println(str)
-
-    // import Diff._
-    // val relativePositioned: Cofree[LabelWidgetF, PosAttr] = lwDiff.cata(attributePara(positionAttrs))
-    // val asdf = attributePara(positionAttrs)
-    // lwDiff.cata()
-    // 2. Run layout on new label widget
-    // 3. filter Positioning to add/remove set
-
-    /// Use of diffs for labeling:
-    // - When a widget is clicked (or selected)
-    //   - run the _.cata(..) via interaction to make changes to the label widget
-    //   - do a diff of the resulting widget against the original
-    //   - reduce the diff to a data structure suitable to send to the UI,
-    //     which contains visual updates and client-state changes
-
-
-    // On click, add selection indicator
-
-
+    // println(str)
 
   }
 
 
   // it should "include padding" in new CleanDocstore {
-  //   add4pg_3x3SampleDoc()
-  // }
-
   // it should "include inserted text (as textbox)" in new CleanDocstore {
-  // }
-
   // it should "include reflows" in new CleanDocstore {
-  // }
-
   // it should "include labeled targets as overlays" in new CleanDocstore {
-  //   val stableId = add4pg_3x3SampleDoc()
-  //   val docId = docStore.addDocument(stableId)
-  //   val pageId = docStore.addPage(docId, PageNum(0))
-
-  //   val pageRegion = mkTargetRegionDbl(pageId, 5d, 4d, 3d, 2d)
-  //   val pageRegion2 = mkTargetRegionDbl(pageId, 5.1d, 4.1d, 3.1d, 2.1d)
-
-  //   val subRegion = mkTargetRegionDbl(pageId, 5.5d, 4.5d, 0.5d, 1.5d)
-  //   val subRegion2 = mkTargetRegionDbl(pageId, 5.6d, 3.5d, 0.1d, 2.5d)
-
-  //   val widget0 = col(
-  //     targetOverlay(pageRegion, List(labeledTarget(subRegion), labeledTarget(subRegion2))),
-  //     targetOverlay(pageRegion2, List(labeledTarget(subRegion), labeledTarget(subRegion2)))
-  //   )
-
-
-  //   val widgetLayout = layoutWidgetPositions(widget0)
-
-  //   widgetLayout.positioning
-  //     .foreach{ pos =>
-  //       println(s"${pos}")
-  //       val clipTo = LTBounds(1d, 0d, 1d, 100d)
-  //       val clipped = clipPageRegionFromWidgetSpace(pos, clipTo)
-  //       println(s"  clipped: ${clipped}")
-
-  //     }
-
-  // }
-
-
-
   // it should "rewrite widgets to include geometric figure overlays for prior labeling" in new CleanDocstore {
   //   add4pg_3x3SampleDoc()
 

@@ -10,7 +10,7 @@ import scala.concurrent.Future
 trait WatrShellApi {
   def uiRequest(r: UIRequest): Future[UIResponse]
   def onDrawPath(artifactId: String, path: Seq[Point]): Unit
-  def createDocumentLabeler(stableId: String@@DocumentID, labelerType: String): Future[(Seq[WidgetPositioning], LabelOptions)]
+  def createDocumentLabeler(stableId: String@@DocumentID, labelerType: String): Future[(Seq[AbsPosWidget], LabelOptions)]
 }
 
 
@@ -40,7 +40,7 @@ trait BrowseCorpusApi {
 trait WatrColorsApi {
   def clear(): Unit
   def print(level: String, msg: String): Unit
-  def echoLabeler(lwidget: Seq[WidgetPositioning], labelOptions: LabelOptions): Unit
+  def echoLabeler(lwidget: Seq[AbsPosWidget], labelOptions: LabelOptions): Unit
 }
 
 final case class RemoteCall(

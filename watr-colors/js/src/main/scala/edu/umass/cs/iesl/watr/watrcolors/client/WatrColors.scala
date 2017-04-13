@@ -135,7 +135,7 @@ object WatrColors extends  SharedClientDefs {
       api.uiRequest(r).call()
     }
 
-    def createDocumentLabeler(stableId: String@@DocumentID, labelerType: String): Future[(Seq[WidgetPositioning], LabelOptions)] = {
+    def createDocumentLabeler(stableId: String@@DocumentID, labelerType: String): Future[(Seq[AbsPosWidget], LabelOptions)] = {
       api.createDocumentLabeler(stableId, labelerType).call()
     }
 
@@ -145,7 +145,7 @@ object WatrColors extends  SharedClientDefs {
     fabricCanvas.clear()
   }
 
-  def echoLabeler(lwidget: Seq[WidgetPositioning], labelOptions: LabelOptions): Unit = Async.async {
+  def echoLabeler(lwidget: Seq[AbsPosWidget], labelOptions: LabelOptions): Unit = Async.async {
     println("echoLabeler()")
     fabricCanvas.renderOnAddRemove = false
     clear()

@@ -116,49 +116,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
   }
 
   def reportDocument(stableId: String@@DocumentID): TB.Box = {
-    val docBoxes = for {
-      docId <- docStore.getDocument(stableId).toSeq
-    } yield {
-      val pagesBox = for {
-        pageId <- docStore.getPages(docId)
-      } yield {
-        val pageGeometry = docStore.getPageGeometry(pageId)
-
-        val regionBoxes = for {
-          regionId <- docStore.getTargetRegions(pageId)
-        } yield {
-          val targetRegion = docStore.getTargetRegion(regionId)
-          // val imageBytes = getTargetRegionImage(regionId)
-
-          "t: ".box + targetRegion.toString.box
-        }
-
-
-        (
-          indent(2)("PageGeometry")
-            % indent(4)(pageGeometry.toString.box)
-            % indent(2)("TargetRegions + zones/regions")
-            % indent(4)(vcat(regionBoxes))
-            % indent(2)("Page Zones")
-            // % indent(4)(vcat(pageZoneBoxes))
-        )
-      }
-
-      val zoneBoxes = for {
-        label <- docStore.getZoneLabelsForDocument(docId)
-        zoneId <- docStore.getZonesForDocument(docId, label)
-        textReflow <- docStore.getTextReflowForZone(zoneId)
-      } yield {
-        (textReflow.toText.box
-          % docStore.getZone(zoneId).toString().box)
-      }
-      (s"Document ${docId} (${stableId}) report"
-        % indent(4)(vcat(pagesBox))
-        % indent(2)("Zones")
-        % indent(4)(vcat(zoneBoxes))
-      )
-    }
-    vcat(docBoxes)
+    visualizeDocument(stableId)
   }
 
   //// Tests to be run across mem/db docstore

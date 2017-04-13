@@ -71,21 +71,21 @@ class MemDocstore extends DocumentCorpus {
       object regionToZone extends EdgeTableOneToMany[RegionID, ZoneID]
 
       def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
+        // forDocument.debugPrint()
         val allLabels = for {
           zoneId <- forDocument.getEdges(docId)
-          zone    = unique(zoneId)
         } yield {
-          // labels.getLabel(zone.label)
-          zone.label
+          unique(zoneId).label
         }
         allLabels.toSet.toList
       }
 
-      def getZonesForDocument(docId: Int@@DocumentID, label: Int@@LabelID): Seq[Int@@ZoneID] = {
+      def getZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): Seq[Int@@ZoneID] = {
         for {
           zoneId <- forDocument.getEdges(docId)
           zone    = unique(zoneId)
           zlabel  = labels.getLabel(zone.label)
+          label  = labels.getLabel(labelId)
           if zlabel == label
         } yield { zoneId }
       }
@@ -147,6 +147,7 @@ class MemDocstore extends DocumentCorpus {
         // link target region
         addTargetRegion(zoneId, regionId)
 
+        forDocument
 
         val rec = Rel.Zone(zoneId, docId, labelId, rank)
         insert(zoneId, rec)
