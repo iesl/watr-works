@@ -6,20 +6,17 @@ import geometry._
 // import textreflow.data._
 // import data._
 import utils.EnrichNumerics._
+// import watrmarks._
 
 import LabelWidgets._
 
 import watrmarks.{StandardLabels => LB}
-import TypeTags._
+// import TypeTags._
 import corpora._
 
 class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
-  val page1 = PageID(1)
-  val page2 = PageID(2)
-  val page3 = PageID(3)
-  val page4 = PageID(4)
 
   behavior of "LabelWidgetIndexing"
 
@@ -31,12 +28,25 @@ class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
     val h = bbox.height - (bbox.height*scale)
     bbox.copy(width=w, height=h)
   }
+  def getDocumentZonesWithLabels(stableId: String@@DocumentID): Seq[(Int@@ZoneID, Int@@LabelID)] = {
+    val docId = docStore.getDocument(stableId).get
+    for {
+      labelId <- docStore.getZoneLabelsForDocument(docId)
+      zoneId <- docStore.getZonesForDocument(docId, labelId)
+    } yield {
+      (zoneId, labelId)
+    }
+  }
 
   it should "apply a label to selected regions" in new CleanDocstore {
     val stableId = add4pg_3x3SampleDoc()
 
+    val zoneAndLabel = getDocumentZonesWithLabels(stableId)
+
+    zoneAndLabel.length shouldBe(12)
+
     val layout = col(
-      row(pageDivs3(PageID(1)), pageDivs2(PageID(2)))
+      row(pageDivs3(page(1)), pageDivs2(page(2)))
     )
     val lwindex = LabelWidgetIndex.create(docStore, layout)
 
@@ -63,25 +73,38 @@ class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
 
     println(qstr)
 
+    docStore.getTargetRegions(page(1)).length shouldBe (3)
+
     lwindex.addLabel(queryBbox, ByLine, LB.Title)
 
-    // lwindex.debugPrint()
-    println(
-      visualizeDocument(stableId)
-    )
+    docStore.getTargetRegions(page(1)).length shouldBe (3)
+
+    getDocumentZonesWithLabels(stableId).length shouldBe(13)
+
+    lwindex.debugPrint()
+    // println(visualizeDocument(stableId))
+
   }
 
-  // it should "demonstrate layout" in new CleanDocstore {
+  // TODO addTargetRegion will add duplicates: needs to reuse them
+  //  doc#0/pg0@1/1@(l:0.00, t:0.00, w:30.00, h:10.00)
+  // doc#0/pg0@1/13@(l:0.00, t:0.00, w:30.00, h:10.00)
+
+  //  doc#0/pg0@1/2@(l:0.00, t:10.00, w:30.00, h:10.00)
+  // doc#0/pg0@1/14@(l:0.00, t:10.00, w:30.00, h:10.00)
+
+
+ // it should "demonstrate layout" in new CleanDocstore {
   //   add4pg_3x3SampleDoc()
 
   //   val layout0 = col(
-  //     row(pageDivs3(PageID(1)), pageDivs2(PageID(2))),
-  //     row(pageDivs3(PageID(3)), pageDivs2(PageID(4)))
+  //     row(pageDivs3(page(1)), pageDivs2(page(2))),
+  //     row(pageDivs3(page(3)), pageDivs2(page(4)))
   //   )
 
   //   // val layout1 = row(pageDivs3(1), pageDivs2(2))
   //   // val layout2 = pageDivs3(1)
-  //   val layout3 = pageDivs2(PageID(1))
+  //   val layout3 = pageDivs2(page(1))
 
   //   // val layout4 = col(
   //   //   targetOverlay(mkPageRegion(1, 0, 0, 1, 1), List()),

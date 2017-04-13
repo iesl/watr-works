@@ -36,8 +36,6 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     - Ideas for testing:
       - A small visual notation that expresses the desired layout, is easy to visually understand and check against
 
-
-
     */
 
 

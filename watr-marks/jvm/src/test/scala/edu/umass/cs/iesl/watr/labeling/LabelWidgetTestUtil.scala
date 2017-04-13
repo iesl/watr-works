@@ -11,6 +11,8 @@ import TypeTags._
 
 abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
 
+  def page(n: Int) = PageID(n)
+
   def add4pg_3x3SampleDoc(): String@@DocumentID = {
     /**
       *  Test document layout (4 pages, grid layout)

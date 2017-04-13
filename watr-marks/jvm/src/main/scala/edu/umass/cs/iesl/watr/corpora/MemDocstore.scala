@@ -10,6 +10,7 @@ import textreflow.data._
 import TextReflowF._
 import watrmarks.Label
 import geometry._
+import PageComponentImplicits._
 
 
 class MemDocstore extends DocumentCorpus {
@@ -181,16 +182,27 @@ class MemDocstore extends DocumentCorpus {
     object imageclips extends DBRelation[ImageID, Rel.ImageClip]
 
     object targetregions extends DBRelation[RegionID, Rel.TargetRegion]  {
+      // object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
 
-      object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
       object forPage extends EdgeTableOneToMany[PageID, RegionID]
+      val forUriKey = mutable.HashMap[String, Int@@RegionID]()
 
-      def add(pageId: Int@@PageID, bbox: G.LTBounds): Rel.TargetRegion = {
-        // FIXME: correct rank
-        val rec = Rel.TargetRegion(nextId(), pageId, rank=0, None, bbox)
-        insert(rec.prKey, rec)
-        forPage.addEdge(pageId, rec.prKey)
-        rec
+      def ensure(pageId: Int@@PageID, bbox: G.LTBounds): Int@@RegionID = {
+        val page = pages.unique(pageId)
+        val pageNum = page.pagenum
+        val doc = documents.unique(page.document)
+        val uriKey = createTargetRegionUri(doc.stableId, pageNum, bbox)
+
+        // val uriKey = bbox.uriString
+        forUriKey.getOrElseUpdate(uriKey,{
+          // FIXME: correct rank
+          val rec = Rel.TargetRegion(nextId(), pageId, rank=0, None, bbox)
+          insert(rec.prKey, rec)
+          forUriKey.put(uriKey, rec.prKey)
+          forPage.addEdge(pageId, rec.prKey)
+          rec.prKey
+        })
+
       }
     }
 
@@ -303,8 +315,7 @@ class MemDocstore extends DocumentCorpus {
   }
 
   def addTargetRegion(pageId: Int@@PageID, bbox: G.LTBounds): Int@@RegionID = {
-    val model = targetregions.add(pageId, bbox)
-    model.prKey
+    targetregions.ensure(pageId, bbox)
   }
 
 
@@ -409,4 +420,3 @@ class MemDocstore extends DocumentCorpus {
   }
 
 }
-
