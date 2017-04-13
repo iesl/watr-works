@@ -4,11 +4,6 @@ import ReleaseTransformations._
 SensibleThisBuild.settings
 SensibleProject.settings
 
-// autoCompilerPlugins := true
-// addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3")
-// addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full)
-// enablePlugins(ScalaJSPlugin)
-
 val Lib = CommonLibs
 
 lazy val jsProjects = Seq[ProjectReference](
@@ -28,6 +23,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++= Seq(
     "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion,
+    "com.chuusai"                %%% "shapeless"              % "2.3.2",
     "com.lihaoyi"                %%% "scalatags"              % Lib.scalaTagsVersion,
     "com.lihaoyi"                %%% "fansi"                  % Lib.fansiV,
     "com.lihaoyi"                %%% "sourcecode"             % Lib.sourcecodeV,
@@ -39,7 +35,6 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     TestLibs.testAndCheck ++ Seq(
       Lib.ammonite,
       Lib.playJson,
-      Lib.shapeless,
       // Needed by jsi
       "net.sf.trove4j" % "trove4j" % "3.0.3"
     ))
@@ -62,7 +57,6 @@ lazy val watrshed = (project in file("watr-shed"))
   .dependsOn(watrmarksJVM)
 
 
-
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
   .settings(skip in packageJSDependencies := false)
@@ -82,7 +76,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .jvmSettings(libraryDependencies ++= Seq(
     "io.spray"           %% "spray-can"                 % "1.3.4",
     "io.spray"           %% "spray-routing-shapeless2"  % "1.3.3",
-    "com.typesafe.akka"  %% "akka-actor"                % "2.4.17",
+    "com.typesafe.akka"  %% "akka-actor"                % "2.5.0",
     "org.webjars.bower"  %  "fabric"                    % "1.6.2",
     "org.webjars"        %  "bootstrap"                 % "3.3.7", // only used for css (bootstrap native is used instead)
     "org.webjars"        %  "jquery"                    % "2.2.4",

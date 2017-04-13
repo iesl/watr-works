@@ -22,22 +22,10 @@ trait LibVersions {
   val matryoshkaCoreV     = "0.18.3"
   val sourcecodeV         = "0.1.3"
   val fansiV              = "0.2.3"
+  val shapelessV          = "2.3.2"
 
 }
 
-object SensibleLib extends LibVersions {
-  lazy val settings = Seq(
-    dependencyOverrides ++= Set(
-      "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-      "org.scala-lang" % "scala-library" % scalaVersion.value,
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      "org.scala-lang" % "scalap" % scalaVersion.value,
-      "org.scala-lang.modules" %% "scala-xml" % scalaModulesVersion,
-      "org.scala-lang.modules" %% "scala-parser-combinators" % scalaModulesVersion
-      // "org.scalamacros" %% "quasiquotes" % quasiquotesVersion
-    )
-  )
-}
 
 object LibVersions extends LibVersions
 
@@ -65,13 +53,6 @@ object LogLibs extends LibVersions {
 }
 
 object DatabaseLibs extends LibVersions {
-  val slickDb = Seq(
-    "org.bouncycastle" % "bcprov-jdk15on" % "1.56",
-    "org.bouncycastle" % "bcpkix-jdk15on" % "1.56",
-    "com.h2database" % "h2" % "1.4.193",
-    "com.zaxxer" % "HikariCP" % "2.5.1",
-    "com.typesafe.slick" %% "slick" % "3.1.1"
-  )
 
   val doobieDb = Seq(
     "org.tpolecat" %% "doobie-core"       % doobieVersion,
@@ -87,14 +68,13 @@ trait CommonLibs extends LibVersions {
   val scalazCore       = "org.scalaz"              %% "scalaz-core"      % scalazVersion
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   val scalatags        = "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion
-  // val ammonite         = "com.lihaoyi"              % "ammonite"         % "0.8.2" cross CrossVersion.full
   val ammonite         = "com.lihaoyi"             % "ammonite_2.11.8"  % "0.8.2"
   val fastparse        = "com.lihaoyi"             %% "fastparse"        % "0.4.2"
   val sourcecode       = "com.lihaoyi"             %% "sourcecode"       % sourcecodeV
   val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.14"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val machinist        = "org.typelevel"           %% "machinist"        % "0.6.1"
-  val shapeless        = "com.chuusai"             %% "shapeless"        % "2.3.2"
+  val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val aspectJ          = "org.aspectj"              % "aspectjweaver"    % aspectjVersion
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
   val matryoshkaCore   = "com.slamdata"            %% "matryoshka-core"  % matryoshkaCoreV

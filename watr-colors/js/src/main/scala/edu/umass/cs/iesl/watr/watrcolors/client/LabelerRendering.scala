@@ -26,7 +26,7 @@ import scalatags.JsDom.all._
 
 import labeling._
 import LabelWidgetF._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}
 import utils.Color
 
@@ -155,40 +155,40 @@ trait LabelerRendering extends MouseGestures {
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
 
     def visit(p: AbsPosWidget): Unit = {
-      val AbsPosWidget(fa, wbbox, transVec, scaling, id)  = p
+      val AbsPosWidget(fa, strictBounds, bleedBounds, transVec, scaling)  = p
 
       fa match {
-        case RegionOverlay(under, overs) =>
-          objStack += makeImageForPageRegion(under, wbbox)
+        case RegionOverlay(wid, pageId, geometry, clipTo, overs) =>
+          // objStack += makeImageForPageRegion(under, strictBounds)
 
-        case LabeledTarget(target, label, score)   =>
-          label.foreach({ l =>
-            val bgColor = l match {
-              case LB.Title    => "red"
-              case LB.Authors  => "blue"
-              case LB.Abstract => "yellow"
-              case _ => "green"
-            }
-            val normalScore = score.getOrElse(0d)
-            val opacity = normalScore.toFloat * 0.2f
+        // case LabeledTarget(target, label, score)   =>
+        //   label.foreach({ l =>
+        //     val bgColor = l match {
+        //       case LB.Title    => "red"
+        //       case LB.Authors  => "blue"
+        //       case LB.Abstract => "yellow"
+        //       case _ => "green"
+        //     }
+        //     val normalScore = score.getOrElse(0d)
+        //     val opacity = normalScore.toFloat * 0.2f
 
-            objStack += Future { createShape(wbbox, "", bgColor, opacity) }
-          })
+        //     objStack += Future { createShape(strictBounds, "", bgColor, opacity) }
+        //   })
 
-        case  Reflow(tr) =>
-          val widget = createTextReflowWidget(tr, wbbox)
+        case  Reflow(wid, tr) =>
+          val widget = createTextReflowWidget(tr, strictBounds)
           widget.opacity = 1.0f
           noControls(widget)
           objStack += Future { widget }
 
-        case TextBox(tb) =>
-          objStack += Future { createTextboxWidget(tb, wbbox) }
+        case TextBox(wid, tb) =>
+          objStack += Future { createTextboxWidget(tb, strictBounds) }
 
-        case Row(as)                     =>
-        case Col(as)                     =>
-        case Figure(fig)              =>
+        case Row(wid, as)                     =>
+        case Col(wid, as)                     =>
+        case Figure(wid, fig)              =>
 
-          // val g = createShape(wbbox, "blue", "yellow", 0.1f)
+          // val g = createShape(strictBounds, "blue", "yellow", 0.1f)
           val g1 = createShape(fig, "blue", "yellow", 0.1f)
           g1.top = g1.top.intValue() - transVec.y.toInt
           g1.left = g1.left.intValue() - transVec.x.toInt
@@ -196,29 +196,29 @@ trait LabelerRendering extends MouseGestures {
           noControls(g1)
           objStack += Future { g1 }
 
-        case Pad(a, padding, maybeColor) =>
+        case Pad(wid, a, padding, maybeColor) =>
 
           val color = maybeColor.getOrElse(Color.White).toRGB
           val rgba = s"rgba(${color.red}, ${color.green}, ${color.blue}, ${color.alpha})"
 
-          val leftGutter = wbbox.copy(
+          val leftGutter = strictBounds.copy(
             width=padding.left
           )
 
-          val rightGutter = wbbox.copy(
-            left=wbbox.right-padding.right,
+          val rightGutter = strictBounds.copy(
+            left=strictBounds.right-padding.right,
             width=padding.right
           )
 
-          val topGutter = wbbox.copy(
-            left=wbbox.left+padding.left,
-            width=wbbox.width-(padding.right+padding.left),
+          val topGutter = strictBounds.copy(
+            left=strictBounds.left+padding.left,
+            width=strictBounds.width-(padding.right+padding.left),
             height=padding.top
           )
 
-          val bottomGutter = wbbox.copy(
+          val bottomGutter = strictBounds.copy(
             left=topGutter.left,
-            top=wbbox.bottom-padding.bottom,
+            top=strictBounds.bottom-padding.bottom,
             width=topGutter.width,
             height=padding.bottom
           )
