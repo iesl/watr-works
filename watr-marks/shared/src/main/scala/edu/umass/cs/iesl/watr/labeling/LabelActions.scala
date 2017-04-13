@@ -17,7 +17,6 @@ sealed trait Constraint
 case object ByLine extends Constraint
 case object ByChar extends Constraint
 case object ByRegion extends Constraint
-case class ByLabel(l: Label) extends Constraint
 
 sealed trait Interaction
 

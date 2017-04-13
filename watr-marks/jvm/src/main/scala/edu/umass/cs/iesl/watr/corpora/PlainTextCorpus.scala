@@ -13,6 +13,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   import matryoshka._
   import geometry._
 
+  import utils.EnrichNumerics._
   import geometry.syntax._
   import TextReflowF._
 
@@ -104,33 +105,22 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     }
   }
 
-  def getRegionBounds(x: Int, y: Int, w: Int, h: Int): LTBounds = {
-    val width = w * xscale
-    val height = h*yscale
+  def getRegionBoundsDbl(x: Double, y: Double, w: Double, h: Double): LTBounds = {
+    val left   = x * xscale
+    val top    = y * yscale
+    val width  = w * xscale
+    val height = h * yscale
 
-    LTBounds(
-      left=x*xscale, top=y*yscale,
-      width, height
-    )
+    LTBounds(left, top, width, height)
+  }
+
+  // // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
+  def getRegionBounds(x: Int, y: Int, w: Int, h: Int): LTBounds = {
+    getRegionBoundsDbl(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
   }
 
   def mkTargetRegionDbl(pageId: Int@@PageID, x: Double, y: Double, w: Double, h: Double): TargetRegion = {
-    // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
-    val width  = w*xscale
-    val height = h*yscale
-    val bbox = LTBounds(
-      left=x*xscale, top=y*yscale,
-      width, height
-    )
-
-    val regionId = docStore.addTargetRegion(pageId, bbox)
-    docStore.getTargetRegion(regionId)
-  }
-
-  def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
-    // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
-    val bbox = getRegionBounds(x, y, w, h)
-
+    val bbox  = getRegionBoundsDbl(x, y, w, h)
     val regionId = docStore.addTargetRegion(pageId, bbox)
     docStore.getTargetRegion(regionId)
   }
@@ -140,6 +130,13 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     val recPageId = docStore.getPageIdentifier(pageId)
     PageRegion(recPageId, bbox)
   }
+
+  def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
+    val pageRegion = mkPageRegion(pageId, x, y, w, h)
+    val regionId = docStore.addTargetRegion(pageId, pageRegion.bbox)
+    docStore.getTargetRegion(regionId)
+  }
+
   def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
 
     val docId = docStore.addDocument(stableId)
@@ -205,9 +202,12 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
                   reflowBuilder.insertDownLast(Rewrite((), charSubs(ch)))
                 }
 
+                val pageRegion = mkPageRegion(pageId, x=chnum, y=linenum, w=1, h=1)
+                val adjustedBbox = pageRegion.bbox.shrink(2.percent).translate(0.1, 0.1)
+                val adjRegion = pageRegion.copy(bbox = adjustedBbox)
                 val charAtom = CharAtom(
                   charIds.nextId,
-                  mkPageRegion(pageId, x=chnum, y=linenum, w=1, h=1),
+                  adjRegion,
                   ch.toString
                 )
 

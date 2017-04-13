@@ -90,5 +90,17 @@ trait DocumentCorpus {
     reflow <- getTextReflowForZone(zoneId)
   } yield reflow
 
+  def labelRegions(label: Label, regions: Seq[PageRegion]): Option[Int@@ZoneID] = {
+    regions.headOption
+      .map { pageRegion =>
+        val regionId = addTargetRegion(pageRegion.page.pageId, pageRegion.bbox)
+        val zoneId = createZone(regionId, label)
+        regions.tail.map { tr =>
+          val rid = addTargetRegion(tr.page.pageId, tr.bbox)
+          addZoneRegion(zoneId, rid)
+        }
+        zoneId
+      }
+  }
 
 }

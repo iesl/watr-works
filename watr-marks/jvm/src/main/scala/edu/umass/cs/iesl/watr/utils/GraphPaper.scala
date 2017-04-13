@@ -8,6 +8,9 @@ class GraphPaper(
   width: Int, height: Int
 ) {
 
+  lazy val box = GraphPaper.Box(0, 0, width, height)
+  lazy val bbox = GraphPaper.box2ltb(box)
+
   val gridBuffer = mutable.ArrayBuffer
     .tabulate(height, width){ case (y, x) =>
       fansi.Color.Blue(" ")
@@ -100,6 +103,13 @@ class GraphPaper(
 
 
 object GraphPaper {
+  def box2ltb(box: Box): LTBounds = {
+    val Box(l, t, w, h) = box
+    LTBounds(
+      l.doubleValue(), t.doubleValue(),
+      w.doubleValue(), h.doubleValue()
+    )
+  }
   def ltb2box(bbox: LTBounds): GraphPaper.Box = {
     val LTBounds(l, t, w, h) = bbox
     GraphPaper.Box(

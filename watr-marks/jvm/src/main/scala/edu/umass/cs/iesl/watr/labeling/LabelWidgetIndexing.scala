@@ -34,7 +34,7 @@ case class IndexableTextReflow(
 case class QueryHit(
   positioned: AbsPosWidget,
   pageId: Int@@PageID,
-  pageSpaceBounds: LTBounds,
+  pageQueryBounds: LTBounds, // The query
   iTextReflows: Seq[IndexableTextReflow]
 )
 
@@ -59,7 +59,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     val layout0 = layoutWidgetPositions(lwidget)
 
     layout0.positioning.foreach({pos =>
-      println(s"adding $pos")
       lwIndex.add(pos)
     })
 
@@ -153,16 +152,15 @@ trait LabelWidgetIndex {
   def queryPage(pos: AbsPosWidget, queryBounds: LTBounds, pageId: Int@@PageID): Option[QueryHit] = {
     pos.strictBounds
       .intersection(queryBounds)
-      .map { ibbox =>
-        val pageSpaceBounds = ibbox.translate(pos.translation)
+      .map { clippedQueryBox =>
+        val pageQueryBounds = clippedQueryBox.translate(pos.translation)
         val pageIndex = pageIndexes(pageId)
-        val pageHits = pageIndex.queryForIntersects(pageSpaceBounds)
-        QueryHit(pos, pageId, pageSpaceBounds, pageHits)
+        val pageHits = pageIndex.queryForIntersects(pageQueryBounds)
+        QueryHit(pos, pageId, pageQueryBounds, pageHits)
       }
   }
 
   def queryRegion(queryBounds: LTBounds): Seq[QueryHit] = {
-    println(s"queryRegion")
     val hits = index
       .queryForIntersects(queryBounds)
       .map { pos => pos.widget match {
@@ -178,82 +176,66 @@ trait LabelWidgetIndex {
   }
 
 
-  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Option[GeometricGroup] = {
-    var changes = List[GeometricFigure]()
-
-    val targetRegionsToBeLabeled: Seq[Seq[PageRegion]] = for {
+  def applyConstraint(constraint: Constraint, queryHits: Seq[QueryHit]): Seq[QueryHit] = {
+    for {
       qhit <- queryHits
     } yield constraint match {
-      case ByLabel(l) =>
-        val regions = qhit.iTextReflows.map(_.targetRegion)
-        changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        regions
+
+      case ByLine   => qhit
+      case ByRegion => qhit
+
+      case ByChar =>
+
+        val clippedReflows = for {
+          iReflow <- qhit.iTextReflows
+        } yield {
+
+          val clipped = iReflow.textReflow
+            .clipToBoundingRegion(qhit.pageQueryBounds)
+            .map { case (clipped, range) =>
+              clipped
+            }
+
+          // FIXME: This assumes that clipping the text reflow will result in a single non-empty result
+          iReflow.copy(
+            textReflow=clipped.head
+          )
+
+        }
+
+        qhit.copy(iTextReflows=clippedReflows)
+
+    }
+
+  }
+
+  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Unit = {
+    val constrainedHits = applyConstraint(constraint, queryHits)
+
+    val pageRegionsToBeLabeled = (for {
+      qhit <- constrainedHits
+    } yield constraint match {
 
       case ByLine =>
-
-        val regions = qhit.iTextReflows.map(_.targetRegion)
-        changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        regions
+        qhit.iTextReflows.map(_.targetRegion)
 
       case ByRegion =>
         // val regionId = docStore.addTargetRegion(qhit.pageId, qhit.pageSpaceBounds)
         // val newRegion = docStore.getTargetRegion(regionId)
         val pageStableId = docStore.getPageIdentifier(qhit.pageId)
-        val pageRegion = PageRegion(pageStableId, qhit.pageSpaceBounds)
-        val regions = Seq(pageRegion)
-        changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-        regions
+        val pageRegion = PageRegion(pageStableId, qhit.pageQueryBounds)
+        Seq(pageRegion)
 
       case ByChar =>
-        val regionss = for {
-          iReflow <- qhit.iTextReflows
-        } yield {
-          val dbgR = iReflow.textReflow
-          val dbgPr = dbgR.targetRegion()
-          println(s"Clip   : ${dbgR.toText()}")
-          println(s"         : ${dbgPr}  clipTo(")
-          println(s"  ByChar : ${qhit.pageSpaceBounds}")
+        qhit.iTextReflows.map(_.targetRegion)
 
-          iReflow.textReflow
-            .clipToBoundingRegion(qhit.pageSpaceBounds)
-            .map { case (clipped, range) =>
-              val tr = clipped.targetRegion
-              println(s"  clipped : ${}")
-              // val regionId = docStore.addTargetRegion(tr.page.pageId, tr.bbox)
-              // docStore.getTargetRegion(regionId)
-              tr
-            }
-
-        }
-
-        val regions = regionss.flatten
-        changes = regions.map(_.bbox.translate(-qhit.positioned.translation)).toList
-
-        regions
-    }
-
-    val maybeLabel = targetRegionsToBeLabeled.flatten
-
-    maybeLabel.headOption
-      .map { pageRegion =>
-        val regionId = docStore.addTargetRegion(pageRegion.page.pageId, pageRegion.bbox)
-        val zoneId = docStore.createZone(regionId, label)
-        maybeLabel.tail.map { tr =>
-          val rid = docStore.addTargetRegion(tr.page.pageId, tr.bbox)
-          docStore.addZoneRegion(zoneId, rid)
-        }
-        val zone = docStore.getZone(zoneId)
-        println(s"added zone: $zone")
-      }
+    }).flatten
 
 
-    if (changes.isEmpty) None else {
-      val groupBbox = changes.map(totalBounds(_)).reduce(_ union _)
-      Some(GeometricGroup(groupBbox, changes))
-    }
+    val maybeZoneId = docStore.labelRegions(label, pageRegionsToBeLabeled)
   }
 
-  def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Option[GeometricGroup] = {
+  def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Unit = {
     val queryHits = queryRegion(queryBounds)
     labelConstrained(constraint, queryHits, label)
   }
@@ -397,9 +379,6 @@ trait LabelWidgetIndex {
       fillers(_filler)
     }
 
-    // println(s"Bleed: ${layout.bleedBounds}")
-    // println(s"Strict: ${layout.strictBounds}")
-
     val w: Int = (layout.bleedBounds.width).intValue()+1
     val h: Int = (layout.bleedBounds.height).intValue()+1
 
@@ -451,8 +430,12 @@ trait LabelWidgetIndex {
       }
     }
     query foreach { q =>
-      graphPaper.shadeBackground(GraphPaper.ltb2box(q), Colors.Red)
-      graphPaper2.shadeBackground(GraphPaper.ltb2box(q), Colors.White)
+      println(s"query: $q")
+      q.intersection(graphPaper.bbox).foreach{ clippedQuery =>
+        println(s"clipped query: $clippedQuery")
+        graphPaper.shadeBackground(GraphPaper.ltb2box(clippedQuery), Colors.Blue3)
+        graphPaper2.shadeBackground(GraphPaper.ltb2box(clippedQuery), Colors.White)
+      }
     }
 
 

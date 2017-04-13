@@ -310,6 +310,13 @@ object GeometryImplicits {
       moveTo(0d,0d)
     }
 
+    def shrink(byPercent: Double@@Percent): LTBounds = {
+      val scale = byPercent.unwrap/100d
+      val w = theBbox.width - (theBbox.width*scale)
+      val h = theBbox.height - (theBbox.height*scale)
+      theBbox.copy(width=w, height=h)
+    }
+
     def splitHorizontal(bbox: LTBounds): List[LTBounds] = {
       val leftX = bbox.toWesternPoint.x
       val rightX = bbox.toEasternPoint.x
