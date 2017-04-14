@@ -166,6 +166,7 @@ class EmbeddedServer(
 
     }
 
+
     def autowireWatrShell = apiRoute("shell",
       ShellsideServer.route[WatrShellApi](
         WatrShellApiListeners
@@ -286,45 +287,6 @@ class EmbeddedServer(
         Future{ UIResponse(uiState, List()) }
       }
     }
-  }
-
-
-
-  object colors {
-
-    val ClientSite  = new ShellsideClient(actors.longPoll)
-    val api = ClientSite[WatrColorsApi]
-
-    val labeler = new LabelingServer(reflowDB, corpus)
-
-    def clear(): Unit = {
-      api.clear().call()
-    }
-
-    def print(level: String, msg: String): Unit = {
-      api.print(level, msg).call()
-    }
-
-
-    def echoLabeler(labelingPanel: LabelingPanel): Unit = {
-      val docStore = reflowDB.docStore
-
-      val withIndicators =
-        labelingPanel.options
-          .labels
-          .foldLeft(labelingPanel.content){
-            case (acc, elemLabel) =>
-              LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
-          }
-
-      val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
-      activeLabelWidgetIndex = Some(lwIndex)
-
-      val layout = lwIndex.layout.positioning
-
-      api.echoLabeler(layout, labelingPanel.options).call()
-    }
-
   }
 
 }
