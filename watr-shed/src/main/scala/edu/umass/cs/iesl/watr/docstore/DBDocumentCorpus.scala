@@ -82,11 +82,12 @@ class TextReflowDB(
   def selectTargetRegionForBbox(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Option[Rel.TargetRegion]] = {
     val LTBounds(l, t, w, h) = bbox
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+    println(s"selectTargetRegionForBbox(p=$pageId, $bbox): (bl, bt, bw, bh)= ($bl, $bt, $bw, $bh)")
 
     sql"""select * from targetregion where
        page=${pageId} AND
        bleft=${bl} AND btop=${bt} AND
-       bwidth=${bw} AND bheight=${bt}
+       bwidth=${bw} AND bheight=${bh}
        order by rank
     """.query[Rel.TargetRegion].option
   }

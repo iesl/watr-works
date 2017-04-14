@@ -1,7 +1,7 @@
 -XX:MaxMetaspaceSize=512m
 -Xss2m
 -Xms1g
--Xmx1g
+-Xmx3g
 -Dakka.loglevel=OFF
 -Dorg.ensime.loglevel=TRACE
 -javaagent:/home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/lib-proj/class-monkey-1.7.1-assembly.jar

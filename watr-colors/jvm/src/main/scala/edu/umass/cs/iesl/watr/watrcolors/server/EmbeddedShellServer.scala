@@ -260,12 +260,12 @@ class EmbeddedServer(
 
         val (uiResponse, modifiedWidget) = lwIndex.userInteraction(uiState, gesture)
 
-        val changes: Option[UIChange] =
+        val changes: Option[WidgetMod] =
           gesture match {
             case SelectRegion(bbox) =>
               maybeLabel.map {label =>
                 println(s"adding label to bbox ${bbox}")
-                val maybeGeometricGroup = lwIndex.addLabel(bbox, constraint, label)
+                lwIndex.addLabel(bbox, constraint, label)
                 // UIAdd()
               }
               None

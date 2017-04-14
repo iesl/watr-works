@@ -50,7 +50,7 @@ trait LabelerRendering extends MouseGestures {
   }
 
 
-  def makeImageForPageRegion(pageRegion: TargetRegion, absPos: LTBounds): Future[FabricObject] = {
+  def makeImageForPageRegion(targetRegion: TargetRegion, absPos: LTBounds): Future[FabricObject] = {
 
     val promise = Promise[FabricObject]()
 
@@ -73,9 +73,9 @@ trait LabelerRendering extends MouseGestures {
         ()
       }
 
-    val pageRegionId = pageRegion.id
+    val id = targetRegion.id
 
-    Image.fromURL(s"/img/region/${pageRegionId}", callback)
+    Image.fromURL(s"/img/region/${id}", callback)
     promise.future
 
   }
@@ -158,8 +158,8 @@ trait LabelerRendering extends MouseGestures {
       val AbsPosWidget(fa, strictBounds, bleedBounds, transVec, scaling)  = p
 
       fa match {
-        case RegionOverlay(wid, pageId, geometry, clipTo, overs) =>
-          // objStack += makeImageForPageRegion(under, strictBounds)
+        case RegionOverlay(wid, targetRegion, overlays) =>
+          objStack += makeImageForPageRegion(targetRegion, strictBounds)
 
         // case LabeledTarget(target, label, score)   =>
         //   label.foreach({ l =>

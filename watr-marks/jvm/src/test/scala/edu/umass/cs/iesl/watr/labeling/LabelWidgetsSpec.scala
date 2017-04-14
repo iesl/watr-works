@@ -69,11 +69,15 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     add4pg_3x3SampleDoc()
 
     val pageId = PageID(3)
-    val pageRegion = getRegionBounds(0, 0, 3, 3)
+    val targetRegion = mkTargetRegion(pageId, 0, 0, 3, 3)
+
     val r0 = getRegionBounds(1, 1, 1, 3)
-    val layout = targetOverlay(pageId, pageRegion, None, List(
+    val layout = targetOverlay(targetRegion, List(
       figure(r0)
     ))
+    // val layout = targetOverlay(pageId, pageRegion, None, List(
+    //   figure(r0)
+    // ))
 
     val lwindex = LabelWidgetIndex.create(docStore, layout)
     val finalLayout = (
@@ -102,9 +106,9 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     )
 
     def visit(lw: LabelWidgetT): LabelWidgetT = lw match {
-      case l @ RegionOverlay(wid, p, g, c, os) =>
+      case l @ RegionOverlay(wid, under, overlays) =>
         l.copy(
-          overs = List(os(0), overlayBox2, os(1))
+          overlays = List(overlays(0), overlayBox2, overlays(1))
         )
       case _ => lw
     }

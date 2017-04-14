@@ -53,10 +53,11 @@ object LabelWidgetF {
 
   case class RegionOverlay[A](
     wid: Int@@WidgetID,
-    pageId: Int@@PageID,
-    geometry: LTBounds,
-    clipTo: Option[LTBounds],
-    overs: List[A]
+    // pageId: Int@@PageID,
+    // geometry: LTBounds,
+    // clipTo: Option[LTBounds],
+    under: TargetRegion,
+    overlays: List[A]
   ) extends LabelWidgetF[A]
 
   case class TextBox(
@@ -111,7 +112,7 @@ object LabelWidgetF {
       implicit G: Applicative[G]
     ): G[LabelWidgetF[B]] = {
       fa match {
-        case l : RegionOverlay[A]            => l.overs.traverse(f).map(o => l.copy(overs=o))
+        case l : RegionOverlay[A]            => l.overlays.traverse(f).map(o => l.copy(overlays=o))
         case l @ Row(wid, as)                => as.traverse(f).map(Row(wid, _))
         case l @ Col(wid,as)                 => as.traverse(f).map(Col(wid, _))
         case l @ Pad(wid, a, pd, clr)        => f(a).map(Pad(wid, _, pd, clr))
@@ -144,9 +145,10 @@ object LabelWidgetF {
     def apply[A](eq: Equal[A]) = Equal.equal((a, b) => {
       implicit val ieq = eq;
       (a.wid == b.wid) && ((a, b) match {
-        case (l @ RegionOverlay(wid1, p1, g1, c1, o1), l2 @ RegionOverlay(wid2, p2, g2, c2, o2) ) =>
-          p1==p2 && g1===g2 && c1===c2 && o1===o2
+        // case (l @ RegionOverlay(wid1, p1, g1, c1, o1), l2 @ RegionOverlay(wid2, p2, g2, c2, o2) ) =>
+        //   p1==p2 && g1===g2 && c1===c2 && o1===o2
 
+        case (l @ RegionOverlay(wid1, u1, o1), l2 @ RegionOverlay(wid2, u2, o2)) => u1===u2 && o1===o2
         case (l @ Reflow(wid, tr)                   , l2 : Reflow              ) => false
         case (l @ TextBox(wid, tb)                  , l2 : TextBox             ) => false
         case (l @ Row(wid, as)                      , l2 : Row[A]              ) => as === l2.as
@@ -168,14 +170,15 @@ object LabelWidgetF {
         Option[DiffT[T, LabelWidgetF]] = {
 
       (l.project, r.project) match {
-        case (l @ RegionOverlay(wid1, p1, g1, c1, o1)  , r @ RegionOverlay(wid2, p2, g2, c2, o2))  =>
+        // case (l @ RegionOverlay(wid1, p1, g1, c1, o1)  , r @ RegionOverlay(wid2, p2, g2, c2, o2))  =>
+        case (l @ RegionOverlay(wid1, u1, o1), r @ RegionOverlay(wid2, u2, o2)) =>
           val ldiff = diffTraverse(o1, o2)
 
-          val locallySimilar = p1==p2 && g1===g2 && c1===c2
+          val locallySimilar = u1===u2  // && o1===o2
 
           val recdiff = if (locallySimilar) {
             Similar[T, LabelWidgetF, T[Diff[T, LabelWidgetF, ?]]](
-              RegionOverlay[DiffT[T, LabelWidgetF]](wid1, p1, g1, c1, ldiff)
+              RegionOverlay[DiffT[T, LabelWidgetF]](wid1, u1, ldiff)
             ).embed
           } else {
             Different[T, LabelWidgetF, T[Diff[T, LabelWidgetF, ?]]](
@@ -206,8 +209,8 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
-  def targetOverlay(pageId: Int@@PageID, pageGeometry: LTBounds, clipTo: Option[LTBounds], overs: Seq[LabelWidget]) =
-    fixlw(RegionOverlay(idgen.nextId, pageId, pageGeometry, clipTo, overs.toList))
+  def targetOverlay(targetRegion: TargetRegion, overlays: Seq[LabelWidget]) =
+    fixlw(RegionOverlay(idgen.nextId, targetRegion, overlays.toList))
 
   def reflow(tr: TextReflow) =
     fixlw(Reflow(idgen.nextId, tr))

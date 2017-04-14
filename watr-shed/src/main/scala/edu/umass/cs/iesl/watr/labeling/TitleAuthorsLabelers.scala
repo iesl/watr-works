@@ -46,10 +46,10 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       val pageGeometry = theDocumentCorpus.getPageGeometry(pageId)
       // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
 
-      // val pageTargetRegionId = theDocumentCorpus.addTargetRegion(pageId, pageGeometry)
+      val pageTargetRegionId = theDocumentCorpus.addTargetRegion(pageId, pageGeometry)
 
-      // val pageTargetRegion = theDocumentCorpus.getTargetRegion(pageTargetRegionId)
-      // val pageTargetRegion = TargetRegion(r0, stableId, page0, pageGeometry)
+      val pageTargetRegion = theDocumentCorpus.getTargetRegion(pageTargetRegionId)
+
 
       // val allPageLines = for {
       //   (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
@@ -101,7 +101,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       //   })
 
       LW.pad(
-        LW.targetOverlay(pageId, pageGeometry, None, overs=List()),
+        LW.targetOverlay(pageTargetRegion, overlays=List()),
         Padding(4),
         Colors.DarkSlateBlue
       )

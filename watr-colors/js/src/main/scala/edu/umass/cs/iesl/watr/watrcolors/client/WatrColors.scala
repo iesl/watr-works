@@ -95,12 +95,13 @@ object WatrColors extends  SharedClientDefs {
     updateStatusText()
     val adds = uiResponse.changes
       .collect {
-        case UIAdd(widget) => widget
+        case AddLw(wid, widget) => widget.get
       }
     val dels = uiResponse.changes
       .collect {
-        case UIDel(widget) => widget
+        case RmLw(wid, widget) => widget.get
       }
+
     val (bbox, fobjs) = renderLabelWidget(adds)
     fabricCanvas.renderOnAddRemove = false
     fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }

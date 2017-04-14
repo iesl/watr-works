@@ -64,7 +64,8 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
     val targetPageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
 
-    def addPage(pageId: Int@@PageID): Unit= {
+    def addPage(targetRegion: TargetRegion): Unit= {
+      val pageId = targetRegion.page.pageId
       if (!targetPageRIndexes.contains(pageId)) {
         val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
         targetPageRIndexes.put(pageId, pageIndex)
@@ -87,8 +88,8 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
     layout0.positioning.foreach({pos => pos.widget match {
 
-      case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
-        addPage(pageId)
+      case l @ RegionOverlay(wid, under, overlays) =>
+        addPage(under)
 
       case _ =>
 
@@ -165,7 +166,8 @@ trait LabelWidgetIndex {
       .queryForIntersects(queryBounds)
       .map { pos => pos.widget match {
 
-        case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
+        case l @ RegionOverlay(wid, under, overlays) =>
+          val pageId = under.page.pageId
           queryPage(pos, queryBounds, pageId)
 
 
@@ -210,10 +212,9 @@ trait LabelWidgetIndex {
   }
 
   def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Unit = {
-    val constrainedHits = applyConstraint(constraint, queryHits)
 
     val pageRegionsToBeLabeled = (for {
-      qhit <- constrainedHits
+      qhit <- queryHits
     } yield constraint match {
 
       case ByLine =>
@@ -227,7 +228,7 @@ trait LabelWidgetIndex {
         Seq(pageRegion)
 
       case ByChar =>
-        qhit.iTextReflows.map(_.targetRegion)
+        qhit.iTextReflows.map(_.textReflow.targetRegion)
 
     }).flatten
 
@@ -237,7 +238,8 @@ trait LabelWidgetIndex {
 
   def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Unit = {
     val queryHits = queryRegion(queryBounds)
-    labelConstrained(constraint, queryHits, label)
+    val constrainedHits = applyConstraint(constraint, queryHits)
+    labelConstrained(constraint, constrainedHits, label)
   }
 
 
@@ -389,7 +391,9 @@ trait LabelWidgetIndex {
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
 
       pos.widget match {
-        case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
+        case l @ RegionOverlay(wid, under, overlays) =>
+
+          val pageId = under.page.pageId
           // println(s"debugPrint: ${l} @ ${gridbox}")
           val id = pageId.unwrap
           val fill = (id + '0'.toInt).toChar
@@ -418,7 +422,7 @@ trait LabelWidgetIndex {
         case Col(wid, as) => graphPaper.borderLeftRight(gridbox, Colors.Gray)
         case Row(wid, as) => graphPaper.borderTopBottom(gridbox, Colors.Red)
 
-        // case l : RegionOverlay[A]     => l.overs.traverse(f).map(ft => l.copy(overs=ft))
+        // case l : RegionOverlay[A]     => l.overlays.traverse(f).map(ft => l.copy(overlays=ft))
         // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
         // case l : LabeledTarget        => G.point(l.copy())
         // case l : TextBox              => G.point(l.copy())

@@ -3,14 +3,9 @@ package labeling
 
 import watrmarks._
 
-sealed trait UIChange
-
-case class UIAdd(widget: AbsPosWidget) extends UIChange
-case class UIDel(widget: AbsPosWidget) extends UIChange
-
-sealed trait Mods
-final case class AddLw(id: Int@@WidgetID) extends Mods
-final case class RmLw(id: Int@@WidgetID) extends Mods
+sealed trait WidgetMod
+final case class AddLw(id: Int@@WidgetID, abs: Option[AbsPosWidget]=None) extends WidgetMod
+final case class RmLw(id: Int@@WidgetID, abs: Option[AbsPosWidget]=None) extends WidgetMod
 
 case class UIState(
   selectionConstraint: Constraint,
@@ -25,5 +20,5 @@ case class UIRequest(
 
 case class UIResponse(
   uiState: UIState,
-  changes: List[UIChange]
+  changes: List[WidgetMod]
 )

@@ -35,9 +35,9 @@ trait LabelWidgetBasics {
     lwDiff.cata(toTree).drawTree
   }
 
-  def labelWidgetDiffToMods(lwDiff: LWDiff): Seq[Mods] = {
+  def labelWidgetDiffToMods(lwDiff: LWDiff): Seq[WidgetMod] = {
 
-    val allMods: Seq[Mods] = lwDiff.universe.toList
+    val allWidgetMod: Seq[WidgetMod] = lwDiff.universe.toList
       .flatMap { lwd => lwd.project match {
         case Same             (ident)        => Seq()
         case Similar          (ident: LabelWidgetF[Fix[Diff[Fix, LabelWidgetF, ?]]])        => Seq() //  ident
@@ -50,11 +50,21 @@ trait LabelWidgetBasics {
         case LocallyDifferent (left, right)  =>
           Seq(RmLw(left.wid), AddLw(right.wid))
 
-        case Inserted         (right)        => Seq(AddLw(right.wid))
-        case Deleted          (left)         => Seq(RmLw(left.wid))
-        case Added            (right)        => Seq(AddLw(right.project.wid))
-        case Removed          (left)         => Seq(RmLw(left.project.wid))
+        case Inserted         (right)        =>
+          // Seq(AddLw(right.wid))
+          ???
+
+        case Deleted          (left)         =>
+          // Seq(RmLw(left.wid))
+          ???
+
+        case Added            (right)        =>
+          right.universe.toList.map {w => AddLw(w.project.wid)}
+
+        case Removed          (left)         =>
+          left.universe.toList.map {w => RmLw(w.project.wid)}
+
       }}
-    allMods
+    allWidgetMod
   }
 }

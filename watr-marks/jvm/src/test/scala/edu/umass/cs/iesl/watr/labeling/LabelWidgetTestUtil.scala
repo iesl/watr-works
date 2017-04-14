@@ -8,9 +8,26 @@ import LabelWidgets._
 import LabelWidgetF._
 import TypeTags._
 
+import geometry._
 
 abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
 
+  def reportQueryHits(queryBox: LTBounds, qhits: Seq[QueryHit]): Unit = {
+    println(s"querying: $queryBox")
+    val qstr = qhits.map{qhit =>
+      val wid = qhit.positioned.widget.wid
+      val pid = qhit.pageId
+      val pageQuery = qhit.pageQueryBounds
+
+      s"""widget: $wid page: $pid page-space query: $pageQuery""" +
+        qhit.iTextReflows
+        .map{_.textReflow.toText()}
+        .mkString("{\n  ", "\n  ", "\n  }")
+    }.mkString("[\n  ", "\n  ", "\n]")
+
+    println(qstr)
+
+  }
   def page(n: Int) = PageID(n)
 
   def add4pg_3x3SampleDoc(): String@@DocumentID = {
@@ -62,33 +79,31 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
 
 
   def pageDiv1(pageId: Int@@PageID, overlays: List[LabelWidget]=List()): LabelWidget = {
-    val pageRegion = getRegionBounds(0, 0, 3, 3)
+    val targetRegion = mkTargetRegion(pageId, 0, 0, 3, 3)
     col(
-      targetOverlay(pageId, pageRegion, None, overlays)
+      targetOverlay(targetRegion, overlays)
     )
   }
 
   def pageDivs3(pageId: Int@@PageID): LabelWidget = {
-    val pageRegion = getRegionBounds(0, 0, 3, 3)
     col(
-      targetOverlay(pageId, pageRegion, getRegionBounds(0, 0, 3, 1).some, List()),
-      targetOverlay(pageId, pageRegion, getRegionBounds(0, 1, 3, 1).some, List()),
-      targetOverlay(pageId, pageRegion, getRegionBounds(0, 2, 3, 1).some, List())
+      targetOverlay(mkTargetRegion(pageId, 0, 0, 3, 1), List()),
+      targetOverlay(mkTargetRegion(pageId, 0, 1, 3, 1), List()),
+      targetOverlay(mkTargetRegion(pageId, 0, 2, 3, 1), List())
     )
   }
 
   def pageDivs_1_2(pageId: Int@@PageID): LabelWidget = {
-    val pageRegion = getRegionBounds(0, 0, 3, 3)
     col(
-      targetOverlay(pageId, pageRegion, getRegionBounds(0, 0, 3, 1).some, List()),
-      targetOverlay(pageId, pageRegion, getRegionBounds(0, 2, 3, 2).some, List())
+      targetOverlay(mkTargetRegion(pageId, 0, 0, 3, 1), List()),
+      targetOverlay(mkTargetRegion(pageId, 0, 2, 3, 2), List())
     )
   }
   def pageDivs2(pageId: Int@@PageID): LabelWidget = {
-    val pageRegion = getRegionBounds(0, 0, 3, 3)
+    val targetRegion = mkTargetRegion(pageId, 0, 0, 3, 3)
     col(
-      targetOverlay(pageId, pageRegion, getRegionBounds(0, 0, 3, 2).some, List()),
-      targetOverlay(pageId, pageRegion, getRegionBounds(0, 2, 3, 1).some, List())
+      targetOverlay(mkTargetRegion(pageId, 0, 0, 3, 2), List()),
+      targetOverlay(mkTargetRegion(pageId, 0, 2, 3, 1), List())
     )
   }
 

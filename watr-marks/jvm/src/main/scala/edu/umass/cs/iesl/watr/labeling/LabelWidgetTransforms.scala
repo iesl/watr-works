@@ -24,7 +24,6 @@ object LabelWidgetTransforms {
     case _ => false
   }
 
-
   def atEveryId[T: ClassTag](
     id: Int@@T,
     widget: LabelWidget,
@@ -58,11 +57,14 @@ object LabelWidgetTransforms {
 
 
         // case RegionOverlay(under, overlays) =>
-        case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
+        // case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
+        case l @ RegionOverlay(wid1, under, overlays) =>
+          val pageId = under.page.pageId
           val pageDef = docStore.getPageDef(pageId).getOrElse {
             sys.error(s"addIndicator(): no page found for ${pageId}")
           }
-          val clipBox = clipTo.getOrElse { pGeom }
+
+          val clipBox = under.bbox
 
           val zoneLineOverlays: Seq[Option[LabelWidget]] = for {
             zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
@@ -75,7 +77,7 @@ object LabelWidgetTransforms {
               zoneTargetRegion.intersects(pageId, clipBox)
             })
 
-            // clip zone to under's target region
+            // clip zone target regions to clipped page region
             val intersectingBboxes:List[GeometricFigure] =
               filteredRegionsToTargetRegion
                 .flatMap { targetRegion =>
@@ -93,9 +95,8 @@ object LabelWidgetTransforms {
             }
           }
 
-          RegionOverlay(
-            wid,pageId, pGeom, clipTo,
-            overlays ++ zoneLineOverlays.flatten
+          l.copy(
+            overlays = overlays ++ zoneLineOverlays.flatten
           )
 
         case  _ => lw0
