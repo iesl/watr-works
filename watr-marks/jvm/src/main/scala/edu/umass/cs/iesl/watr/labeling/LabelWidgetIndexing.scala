@@ -310,10 +310,13 @@ trait LabelWidgetIndex {
 
 
   // TODO this part really needs to be confined to WatrColors front end codebase
+  // I think this should be an abstract function, then overridden per labeler type
   // map (UIState, Gesture) => (UIState, UIChanges)
   def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidget) = {
+    val UIState(constraint, maybeLabel, selections) = uiState
     val initResponse = UIResponse(uiState, List())
     gesture match {
+
 
       case Click(point) =>
 
@@ -341,37 +344,16 @@ trait LabelWidgetIndex {
         (initResponse, layout.labelWidget)
 
       case SelectRegion(bbox) =>
+        maybeLabel.map {label =>
+          println(s"adding label to bbox ${bbox}")
+          addLabel(bbox, constraint, label)
+          // UIAdd()
+        }
         (initResponse, layout.labelWidget)
 
     }
 
   }
-
-  // def userInteraction(gesture: Gesture): Unit = {
-  //   gesture match {
-
-  //     case Click(point) =>
-  //       queryForPanels(point)
-  //         .map{ case(panel, qhit)  =>
-  //           panel.interaction match {
-  //             case InteractProg(prog) =>
-  //               println(s"Interpreting ${prog} in panel ${panel}")
-
-  //               prog.exec()
-
-  //             case _ =>
-  //           }
-  //         }
-
-  //     case DblClick(point) =>
-
-  //     case SelectRegion(bbox) =>
-
-  //   }
-
-  //   ???
-  // }
-
 
   def debugPrint(query: Option[LTBounds] = None): Unit = {
     val fillers = "αßΓπΣσµτΦΘΩδ∞φε∩".toList

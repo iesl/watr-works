@@ -158,7 +158,7 @@ object BrowseCorpus extends SharedClientDefs {
           )
         )
 
-      PageLayout.pageSetup(nav, main).render
+      PageLayout.pageSetup(nav, main, div()).render
     }
 
   }

@@ -22,57 +22,75 @@ import native.mousetrap._
 import TypeTagPicklers._
 import watrmarks.{StandardLabels => LB}
 
-import scaladget.stylesheet.{all => sheet}
+import scaladget.stylesheet.{all => sty}
 import scaladget.api.{BootstrapTags => bs}
 import scalatags.JsDom.all._
-import sheet._
+
+
+import scalatags.JsDom.all._
+  // import scalatags.JsDom.{
+  //   TypedTag
+  // }
+import bs._
+import sty._
 
 import rx._
 
 import TypeTags._
 import dom.raw.MouseEvent
 
-@JSExportTopLevel("WatrColors")
-object WatrColors extends  SharedClientDefs {
+class ClientState {
 
   var selectionInProgress = false
 
+  val labelerType: Var[Option[String]] = Var(None)
+  val documentId: Var[Option[String]] = Var(None)
+  val selectionConstraint: Var[Constraint] = Var(ByLine)
+  val selectedLabel: Var[Option[Label]] = Var(None)
+  val selections: Var[Seq[Int@@ZoneID]] = Var(Seq())
+  // case class UIState(
+  //   selectionConstraint: Constraint,
+  //   selectedLabel: Option[Label],
+  //   selections: Seq[Int@@ZoneID] // TODO generalize Id type (has to be able to serialize through strings)
+  // )
 
-  var uiState: UIState = UIState(
-    ByChar,
-    Option(LB.Title),
-    Seq()
-  )
 
-  def updateStatusText(): Unit = {
-    // Display state in status bar
-    val statusText = uiState.toString()
-    // jQuery("#status-text").html(statusText)
-  }
+  // var uiState: UIState = UIState(
+  //   ByChar,
+  //   Option(LB.Title),
+  //   Seq()
+  // )
+
+}
+
+@JSExportTopLevel("WatrColors")
+object WatrColors extends  SharedClientDefs {
+
+  val clientState = new ClientState
+
 
   object states {
-    def modState(f: UIState => UIState): Unit = {
-      uiState = f(uiState)
-      updateStatusText()
-    }
+    // def modState(f: UIState => UIState): Unit = {
+    //   uiState = f(uiState)
+    // }
 
-    def selectByChar(): Unit = modState(_.copy(selectionConstraint = ByChar))
-    def selectByLine(): Unit = modState(_.copy(selectionConstraint = ByLine))
-    def selectByRegion(): Unit = modState(_.copy(selectionConstraint = ByRegion))
-    def setLabel(l: Label): Unit = modState(_.copy(selectedLabel=Option(l)))
+    // def selectByChar(): Unit = modState(_.copy(selectionConstraint = ByChar))
+    // def selectByLine(): Unit = modState(_.copy(selectionConstraint = ByLine))
+    // def selectByRegion(): Unit = modState(_.copy(selectionConstraint = ByRegion))
+    // def setLabel(l: Label): Unit = modState(_.copy(selectedLabel=Option(l)))
 
   }
 
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
-    "l t" -> ((e: MousetrapEvent) => states.setLabel(LB.Title)),
-    "l a" -> ((e: MousetrapEvent) => states.setLabel(LB.Authors)),
-    "l b" -> ((e: MousetrapEvent) => states.setLabel(LB.Abstract)),
-    "l f" -> ((e: MousetrapEvent) => states.setLabel(LB.Affiliation)),
-    "l r" -> ((e: MousetrapEvent) => states.setLabel(LB.References)),
+    // "l t" -> ((e: MousetrapEvent) => states.setLabel(LB.Title)),
+    // "l a" -> ((e: MousetrapEvent) => states.setLabel(LB.Authors)),
+    // "l b" -> ((e: MousetrapEvent) => states.setLabel(LB.Abstract)),
+    // "l f" -> ((e: MousetrapEvent) => states.setLabel(LB.Affiliation)),
+    // "l r" -> ((e: MousetrapEvent) => states.setLabel(LB.References)),
 
-    "s l" -> ((e: MousetrapEvent) => states.selectByLine()),
-    "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
-    "s b" -> ((e: MousetrapEvent) => states.selectByRegion()),
+    // "s l" -> ((e: MousetrapEvent) => states.selectByLine()),
+    // "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
+    // "s b" -> ((e: MousetrapEvent) => states.selectByRegion()),
 
     "s s" -> ((e: MousetrapEvent) => startSelection())
   )
@@ -91,8 +109,7 @@ object WatrColors extends  SharedClientDefs {
   def uiRequestCycle(req: UIRequest) = for {
     uiResponse  <- shell.uiRequest(req)
   } {
-    uiState = uiResponse.uiState
-    updateStatusText()
+    // uiState = uiResponse.uiState
     val adds = uiResponse.changes
       .collect {
         case AddLw(wid, widget) => widget.get
@@ -112,7 +129,7 @@ object WatrColors extends  SharedClientDefs {
 
   @JSExport
   def startSelection(): Unit = {
-    selectionInProgress = true
+    clientState.selectionInProgress = true
 
     fabricCanvas.defaultCursor = "crosshair"
     fabricCanvas.renderAll()
@@ -121,9 +138,15 @@ object WatrColors extends  SharedClientDefs {
       bbox <- getUserSelection(fabricCanvas)
     } yield {
       fabricCanvas.defaultCursor = "default"
-      val req = UIRequest(uiState, SelectRegion(bbox))
+      val st = UIState(
+        clientState.selectionConstraint.now,
+        clientState.selectedLabel.now,
+        clientState.selections.now
+      )
+
+      val req = UIRequest(st, SelectRegion(bbox))
       uiRequestCycle(req)
-      selectionInProgress = false
+      clientState.selectionInProgress = false
     }
 
   }
@@ -166,11 +189,6 @@ object WatrColors extends  SharedClientDefs {
   }
 
 
-
-  // val currLabelerId: Var[Option[String]] = Var(None)
-  val currLabelerType: Var[Option[String]] = Var(None)
-  val currDocumentId: Var[Option[String]] = Var(None)
-
   def createLabeler(docId: String, lt: String): Unit = {
     shell.createDocumentLabeler(DocumentID(docId), lt)
       .foreach { case (lwidget, opts) =>
@@ -182,12 +200,18 @@ object WatrColors extends  SharedClientDefs {
   @JSExport
   def setupClickCatchers(enable: Boolean): Unit = {
     val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
-      if (!selectionInProgress) {
+      if (!clientState.selectionInProgress) {
         println("click")
 
         val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
 
-        val req = UIRequest(uiState, Click(clickPt))
+        val st = UIState(
+          clientState.selectionConstraint.now,
+          clientState.selectedLabel.now,
+          clientState.selections.now
+        )
+
+        val req = UIRequest(st, Click(clickPt))
         uiRequestCycle(req)
       }
       true
@@ -202,7 +226,7 @@ object WatrColors extends  SharedClientDefs {
 
 
   def initRx(): Unit = Rx {
-    (currDocumentId(), currLabelerType()) match {
+    (clientState.documentId(), clientState.labelerType()) match {
       case (Some(docId), Some(lt)) =>
         createLabeler(docId, lt)
 
@@ -225,19 +249,19 @@ object WatrColors extends  SharedClientDefs {
         div(
           ^.id:="canvas-container",
           pageStyles.canvasContainer,
-          sheet.marginLeft(15), sheet.marginTop(25)
+          sty.marginLeft(15), sty.marginTop(25)
         )(
           canvas(^.id:="canvas", pageStyles.fabricCanvas)
         )
 
-      PageLayout.pageSetup(nav, mainContent).render
+      PageLayout.pageSetup(nav, mainContent, div()).render
     }
 
     initRx()
     val c = fabricCanvas
     setupClickCatchers(true)
-    currDocumentId() = param("doc")
-    currLabelerType() = param("lt")
+    clientState.documentId() = param("doc")
+    clientState.labelerType() = param("lt")
 
   }
 

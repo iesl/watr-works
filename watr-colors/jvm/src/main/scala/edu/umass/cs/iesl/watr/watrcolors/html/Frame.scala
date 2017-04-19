@@ -18,7 +18,6 @@ object WatrStyles extends CascadingStyleSheet {
       width := "100%"
     )
   )
-
 }
 
 object ShellHtml {
@@ -36,6 +35,7 @@ object ShellHtml {
 
       <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.7/css/bootstrap.min.css"),
       <.link(rel := "stylesheet", `type` := "text/css", href := "/assets/css/main.css"),
+      <.link(rel := "stylesheet", `type` := "text/css", href := "/assets/css/simple-sidebar.css"),
       <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
     )
   }

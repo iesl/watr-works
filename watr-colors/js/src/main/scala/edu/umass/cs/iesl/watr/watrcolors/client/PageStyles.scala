@@ -22,7 +22,7 @@ object pageStyles {
   )
 
   lazy val absCenterPage: ModifierSeq = Seq(
-    position := "fixed",
+    position.fixed,
     top := "45%",
     styles.left := "50%",
     minWidth := 250,
@@ -40,15 +40,20 @@ object pageStyles {
     svgAttrs.transform := "translate (-50%,-50%)"
   )
 
+  lazy val sidebarStyle: ModifierSeq = Seq(
+    backgroundColor  := Colors.CadetBlue4.cssHash
+  )
   lazy val navbarStyle: ModifierSeq = Seq(
+    padding     :=0,
+    border      :=0,
+    margin      :=0,
     navbar_staticTop,
     sty.nav,
-    navbar_pills,
     navbar_inverse,
-    height           := 30,
-    fontSize         := 20,
-    color            := Colors.GhostWhite.cssHash,
-    backgroundColor  := Colors.DarkSlateBlue.cssHash,
+    height           := "67px",
+    fontSize         := 12,
+    color            := Colors.DarkBlue.cssHash,
+    backgroundColor  := Colors.CadetBlue4.cssHash,
     zIndex := 10
   )
 
@@ -56,7 +61,7 @@ object pageStyles {
     jmarginTop       := 30
   )
 
-  lazy val footerStyle: ModifierSeq = 
+  lazy val footerStyle: ModifierSeq =
     zeroFringe ++ Seq(
     height          := 1,
     left            := 0,
@@ -101,4 +106,25 @@ object pageStyles {
       top     := 0
     )
 
+  lazy val centerpanel: ModifierSeq = Seq(
+    sty.paddingLeft(15),
+    sty.paddingRight(15),
+    relativePosition,
+    height := "89%",
+    top := 30,
+    width := "100%"
+  )
+
+  lazy val leftpanel: ModifierSeq = Seq(
+    sty.paddingLeft(7),
+    absolutePosition,
+    background  := s"gray none repeat scroll 0 0",
+    height      := "100%",
+    // styles.left := -320,
+    opacity     := 1,
+    overflowY   := "auto",
+    // top         := 37,
+    transition  := "all 0.1 s ease - out 0 s",
+    width       := 320
+  )
 }

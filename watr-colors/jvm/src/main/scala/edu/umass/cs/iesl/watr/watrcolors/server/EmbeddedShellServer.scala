@@ -261,27 +261,6 @@ class EmbeddedServer(
 
         val (uiResponse, modifiedWidget) = lwIndex.userInteraction(uiState, gesture)
 
-        val changes: Option[WidgetMod] =
-          gesture match {
-            case SelectRegion(bbox) =>
-              maybeLabel.map {label =>
-                println(s"adding label to bbox ${bbox}")
-                lwIndex.addLabel(bbox, constraint, label)
-                // UIAdd()
-              }
-              None
-
-            case gesture@ Click(point) =>
-              println(s"Click ${point}")
-              // select the top (selectable) item
-              lwIndex.userInteraction(uiState, gesture)
-
-              None
-            case DblClick(point) =>
-              println(s"DblClick ${point}")
-              None
-          }
-
         Future{ uiResponse }
       } getOrElse {
         Future{ UIResponse(uiState, List()) }

@@ -58,6 +58,7 @@ lazy val watrshed = (project in file("watr-shed"))
 
 
 lazy val watrcolors = (crossProject in file("watr-colors"))
+  .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
   .settings(SensibleProject.settings: _*)
   .settings(skip in packageJSDependencies := false)
   .settings(libraryDependencies ++= Seq(

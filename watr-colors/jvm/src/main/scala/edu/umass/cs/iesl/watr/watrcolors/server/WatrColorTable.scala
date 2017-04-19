@@ -19,7 +19,6 @@ object WatrColorTable {
 
     val predef = (
       s"""|${WatrTable.predef}
-          | import server.colors
           |""".stripMargin)
 
     ammonite.Main(
