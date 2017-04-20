@@ -12,3 +12,13 @@ h3 {
     font-weight: 700;
     line-height: 1.9;
 }
+
+#selection-controls label {
+    display: block;
+}
+
+#selection-controls input {
+    display: block;
+    vertical-align: middle;
+    margin: 0px;
+}

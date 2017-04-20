@@ -23,15 +23,10 @@ import TypeTagPicklers._
 import watrmarks.{StandardLabels => LB}
 
 import scaladget.stylesheet.{all => sty}
-import scaladget.api.{BootstrapTags => bs}
 import scalatags.JsDom.all._
 
 
 import scalatags.JsDom.all._
-  // import scalatags.JsDom.{
-  //   TypedTag
-  // }
-import bs._
 import sty._
 
 import rx._
@@ -39,7 +34,7 @@ import rx._
 import TypeTags._
 import dom.raw.MouseEvent
 
-class ClientState {
+class ZoneSelectionRx {
 
   var selectionInProgress = false
 
@@ -48,6 +43,9 @@ class ClientState {
   val selectionConstraint: Var[Constraint] = Var(ByLine)
   val selectedLabel: Var[Option[Label]] = Var(None)
   val selections: Var[Seq[Int@@ZoneID]] = Var(Seq())
+
+  val doMergeZones: Var[Boolean] = Var(false)
+  val doDeleteZone: Var[Boolean] = Var(false)
   // case class UIState(
   //   selectionConstraint: Constraint,
   //   selectedLabel: Option[Label],
@@ -64,9 +62,10 @@ class ClientState {
 }
 
 @JSExportTopLevel("WatrColors")
-object WatrColors extends  SharedClientDefs {
+object WatrColors extends  BaseClientDefs {
+  import BootstrapBits._
 
-  val clientState = new ClientState
+  val zoneSelectionRx = new ZoneSelectionRx
 
 
   object states {
@@ -129,7 +128,7 @@ object WatrColors extends  SharedClientDefs {
 
   @JSExport
   def startSelection(): Unit = {
-    clientState.selectionInProgress = true
+    zoneSelectionRx.selectionInProgress = true
 
     fabricCanvas.defaultCursor = "crosshair"
     fabricCanvas.renderAll()
@@ -139,14 +138,14 @@ object WatrColors extends  SharedClientDefs {
     } yield {
       fabricCanvas.defaultCursor = "default"
       val st = UIState(
-        clientState.selectionConstraint.now,
-        clientState.selectedLabel.now,
-        clientState.selections.now
+        zoneSelectionRx.selectionConstraint.now,
+        zoneSelectionRx.selectedLabel.now,
+        zoneSelectionRx.selections.now
       )
 
       val req = UIRequest(st, SelectRegion(bbox))
       uiRequestCycle(req)
-      clientState.selectionInProgress = false
+      zoneSelectionRx.selectionInProgress = false
     }
 
   }
@@ -200,15 +199,15 @@ object WatrColors extends  SharedClientDefs {
   @JSExport
   def setupClickCatchers(enable: Boolean): Unit = {
     val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
-      if (!clientState.selectionInProgress) {
+      if (!zoneSelectionRx.selectionInProgress) {
         println("click")
 
         val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
 
         val st = UIState(
-          clientState.selectionConstraint.now,
-          clientState.selectedLabel.now,
-          clientState.selections.now
+          zoneSelectionRx.selectionConstraint.now,
+          zoneSelectionRx.selectedLabel.now,
+          zoneSelectionRx.selections.now
         )
 
         val req = UIRequest(st, Click(clickPt))
@@ -226,7 +225,7 @@ object WatrColors extends  SharedClientDefs {
 
 
   def initRx(): Unit = Rx {
-    (clientState.documentId(), clientState.labelerType()) match {
+    (zoneSelectionRx.documentId(), zoneSelectionRx.labelerType()) match {
       case (Some(docId), Some(lt)) =>
         createLabeler(docId, lt)
 
@@ -240,28 +239,46 @@ object WatrColors extends  SharedClientDefs {
   def display(): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
-    bs.withBootstrapNative {
-      initKeybindings()
+    val selectorControls = SharedLayout.zoneSelectorControls(
+      new ZoneSelectionRx(),
+      List(
+        LB.Title,
+        LB.Authors,
+        LB.Abstract,
+        LB.Affiliation,
+        LB.References
+      ))
 
-      val nav = PageLayout.initNavbar(List())
+    val nav = SharedLayout.initNavbar(List(
+      NavSpan(selectorControls)
+    ))
 
-      val mainContent =
-        div(
-          ^.id:="canvas-container",
-          pageStyles.canvasContainer,
-          sty.marginLeft(15), sty.marginTop(25)
-        )(
-          canvas(^.id:="canvas", pageStyles.fabricCanvas)
-        )
 
-      PageLayout.pageSetup(nav, mainContent, div()).render
+    initKeybindings()
+
+    val navContent = SharedLayout.initNavbar(List())
+
+    val bodyContent =
+      div(
+        ^.id:="canvas-container",
+        pageStyles.canvasContainer,
+        sty.marginLeft(15), sty.marginTop(25)
+      )(
+        canvas(^.id:="canvas", pageStyles.fabricCanvas)
+      )
+
+    val sidebarContent =
+      ul(`class`:="sidebar-nav")
+
+    withBootstrapNative {
+      SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render
     }
 
     initRx()
     val c = fabricCanvas
     setupClickCatchers(true)
-    clientState.documentId() = param("doc")
-    clientState.labelerType() = param("lt")
+    zoneSelectionRx.documentId() = param("doc")
+    zoneSelectionRx.labelerType() = param("lt")
 
   }
 

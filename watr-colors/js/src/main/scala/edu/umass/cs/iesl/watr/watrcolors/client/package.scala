@@ -34,9 +34,10 @@ trait ScalatagsDomDefs {
 
 
   implicit class RichString(val s: String)  {
-    def clazz = ^.`class` := s
-    def id = ^.`id` := s
-    def labelName = ^.labelName:=s
+    def clazz      = ^.`class` := s
+    def id         = ^.`id` := s
+    def style      = ^.style := s
+    def labelName  = ^.labelName:=s
     def labelValue = ^.labelValue:=s
   }
 

@@ -21,6 +21,12 @@ object pageStyles {
     margin      :=0
   )
 
+  lazy val logo: ModifierSeq = Seq(
+    // backgroundColor  := Colors.White.cssHash,
+    color            := Colors.Coral.cssHash,
+    fontSize         := "28px"
+  )
+
   lazy val absCenterPage: ModifierSeq = Seq(
     position.fixed,
     top := "45%",
@@ -41,8 +47,9 @@ object pageStyles {
   )
 
   lazy val sidebarStyle: ModifierSeq = Seq(
-    backgroundColor  := Colors.CadetBlue4.cssHash
+    backgroundColor  := Colors.LightBlue.cssHash
   )
+
   lazy val navbarStyle: ModifierSeq = Seq(
     padding     :=0,
     border      :=0,
@@ -53,7 +60,7 @@ object pageStyles {
     height           := "67px",
     fontSize         := 12,
     color            := Colors.DarkBlue.cssHash,
-    backgroundColor  := Colors.CadetBlue4.cssHash,
+    backgroundColor  := Colors.LightBlue.cssHash,
     zIndex := 10
   )
 

@@ -26,7 +26,6 @@ object SensibleProject extends CommonLibs {
       , "-Ywarn-dead-code"
       , "-Ypartial-unification"
       , "-Xfuture"
-      // , "-Xplugin:./lib-proj/ensime-plugin-implicits_2.11-0.0.0+13-04cfb436+20170404-1214-SNAPSHOT.jar"
   )
 
 

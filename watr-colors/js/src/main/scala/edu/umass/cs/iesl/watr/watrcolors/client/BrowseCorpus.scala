@@ -2,19 +2,11 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package client
 
-import scala.collection.mutable
 import scaladget.stylesheet.{all => sty}
 import sty._
 
-import org.scalajs.dom.raw.{
-  HTMLElement
-}
 import scaladget.api.{BootstrapTags => bs}
 import scalatags.JsDom.all._
-import scalatags.JsDom.{
-  TypedTag
-}
-import org.scalajs.dom
 import bs._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -28,44 +20,11 @@ import upickle.{default => UPickle}
 import UPickle._
 
 import rx._
-  // import rx.ops._
 import scaladget.tools.JsRxTags._
 
-trait SharedClientDefs extends LabelerRendering {
-  type HtmlTag = TypedTag[HTMLElement]
-  type RxHtmlTag = Rx.Dynamic[TypedTag[HTMLElement]]
-  type RxHtmlTags = Rx.Dynamic[Seq[TypedTag[HTMLElement]]]
-
-  def queryParams(): Map[String, String] = {
-    val params = mutable.HashMap[String, String]()
-
-    val href = dom.window.location.href
-    if (href.contains("?")) {
-      val qs = href.split("\\?", 2)(1)
-      for {
-        qparam <- qs.split('&')
-      } {
-        qparam.split('=') match {
-          case Array(k) =>  params(k) = ""
-          case Array(k, v) => params(k) = v
-          case _ =>
-        }
-      }
-    }
-    params.toMap
-  }
-
-  def param(k: String):Option[String] = {
-    val params = queryParams()
-    if (params.contains(k)){
-      Option(params(k))
-    } else None
-  }
-
-}
 
 @JSExportTopLevel("BrowseCorpus")
-object BrowseCorpus extends SharedClientDefs {
+object BrowseCorpus extends BaseClientDefs {
 
 
   val buttonStyle: ModifierSeq = Seq(
@@ -141,10 +100,10 @@ object BrowseCorpus extends SharedClientDefs {
     bs.withBootstrapNative {
 
       val pageName = navItem(span("Browse").render)
-      // val nav = PageLayout.initNavbar(List(pageName))
-      val nav = PageLayout.initNavbar(List())
+      // val nav = SharedLayout.initNavbar(List(pageName))
+      val nav = SharedLayout.initNavbar(List())
 
-      val main =
+      val bodyContent =
         div(
           sty.marginLeft(5),
           h2("Documents"),
@@ -158,7 +117,7 @@ object BrowseCorpus extends SharedClientDefs {
           )
         )
 
-      PageLayout.pageSetup(nav, main, div()).render
+      SharedLayout.pageSetup(nav, bodyContent, div()).render
     }
 
   }
