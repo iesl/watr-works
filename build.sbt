@@ -57,8 +57,9 @@ lazy val watrshed = (project in file("watr-shed"))
   .dependsOn(watrmarksJVM)
 
 
+
+// .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 lazy val watrcolors = (crossProject in file("watr-colors"))
-  .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
   .settings(SensibleProject.settings: _*)
   .settings(skip in packageJSDependencies := false)
   .settings(libraryDependencies ++= Seq(
@@ -69,7 +70,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "com.lihaoyi"       %%% "autowire"        % "0.2.6"
   ))
   .jsSettings(libraryDependencies ++= Seq(
-    "fr.iscpif"      %%% "scaladget"       % "0.9.3",
+    "fr.iscpif"      %%% "scaladget"       % LibVersions.scaladgetV,
     "org.querki"     %%% "jquery-facade"   % "1.0",
     "org.scala-js"   %%% "scalajs-dom"     % "0.9.1"),
     scalacOptions -= "-Ywarn-dead-code" // doesn't play well with ScalaJS native binding declarations
@@ -86,6 +87,8 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .dependsOn(watrmarks)
 
 lazy val watrcolorsJS = watrcolors.js
+  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(WorkbenchPlugin)
 
 lazy val watrcolorsJVM = watrcolors.jvm
   .dependsOn(watrshed)

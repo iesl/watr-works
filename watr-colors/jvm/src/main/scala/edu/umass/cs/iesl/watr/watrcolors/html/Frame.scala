@@ -28,7 +28,6 @@ object ShellHtml {
       <.meta(httpEquiv:="X-UA-Compatible", content:="IE=edge"),
       <.meta(^.charset:="utf-8"),
       <.title("WatrColors"),
-      <.script(`type` := "text/javascript", src := "/assets/watrcolors-fastopt.js"),
       <.script(`type` := "text/javascript", src := "/webjars/mousetrap/1.6.0/mousetrap.min.js"),
       <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.4/jquery.min.js"),
       <.script(`type` := "text/javascript", src := "/webjars/fabric/1.6.2/dist/fabric.js"),
@@ -36,6 +35,9 @@ object ShellHtml {
       <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.7/css/bootstrap.min.css"),
       <.link(rel := "stylesheet", `type` := "text/css", href := "/assets/css/main.css"),
       <.link(rel := "stylesheet", `type` := "text/css", href := "/assets/css/simple-sidebar.css"),
+
+      <.script(`type` := "text/javascript", src := "/assets/watrcolors-fastopt.js"),
+
       <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
     )
   }

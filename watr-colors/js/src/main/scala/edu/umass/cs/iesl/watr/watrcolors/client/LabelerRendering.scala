@@ -150,7 +150,7 @@ trait LabelerRendering extends MouseGestures {
     )
   }
 
-  def renderLabelWidget(positions: Seq[AbsPosWidget]): (LTBounds, Future[List[FabricObject]]) = {
+  def renderLabelWidget(positions: Seq[AbsPosWidget]): Option[(LTBounds, Future[List[FabricObject]])] = {
 
     val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
 
@@ -250,8 +250,9 @@ trait LabelerRendering extends MouseGestures {
         ff
       })
 
-    val totalBounds = positions.head.strictBounds
-    (totalBounds, fobjs)
+    positions.headOption.map{
+      case absPos => (absPos.strictBounds, fobjs)
+    }
 
   }
 }

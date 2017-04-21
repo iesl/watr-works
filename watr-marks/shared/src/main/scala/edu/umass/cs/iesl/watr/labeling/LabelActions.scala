@@ -11,6 +11,7 @@ sealed trait Gesture
 case class SelectRegion(bbox: LTBounds) extends Gesture
 case class Click(point: Point) extends Gesture
 case class DblClick(point: Point) extends Gesture
+case class MenuAction(action: Free[LabelAction, Unit]) extends Gesture
 
 sealed trait Constraint
 
@@ -30,40 +31,13 @@ sealed trait LabelAction[A]
 
 object LabelAction {
 
-  case class SelectRegion(g: TargetRegion)     extends LabelAction[Unit]
-  case class UnselectRegion(g: TargetRegion)   extends LabelAction[Unit]
-  case class SelectZone(g: Int@@ZoneID)           extends LabelAction[Int@@ZoneID]
-  case class UnselectZone(g: Int@@ZoneID)         extends LabelAction[Unit]
-  case class CreateZone(gs: Seq[TargetRegion]) extends LabelAction[Unit]
-  case class DeleteZone(z: Int@@ZoneID)           extends LabelAction[Unit]
-  case class LabelZone(z: Int@@ZoneID, l: Label)  extends LabelAction[Unit]
+  case class SelectZone(g: Int@@ZoneID)          extends LabelAction[Int@@ZoneID]
+  case class DeleteZone(z: Int@@ZoneID)          extends LabelAction[Unit]
+  case class MergeZones(zs: Seq[Int@@ZoneID])    extends LabelAction[Unit]
 
-  // case object GetSelectedRegions                  extends LabelAction[Seq[TargetRegion]]
-  // case class CreateZone(gs: Seq[TargetRegion]) extends LabelAction[Int@@ZoneID]
-  // case object GetSelectedZones                    extends LabelAction[Seq[Int@@ZoneID]]
-
-  case class CreateFigure(
-    figure: GeometricFigure,
-    targetPage: RecordedPageID
-  ) extends LabelAction[TargetRegion]
-
-  case class QueryForRegions(
-    queryRegion: LTBounds,
-    constraint: Constraint,
-    targetPage: RecordedPageID
-  ) extends LabelAction[Seq[TargetRegion]]
-
-  case class QueryForZones(
-    queryRegion: LTBounds,
-    targetPage: RecordedPageID
-  ) extends LabelAction[Seq[Int@@ZoneID]]
-
-
-  def createFigure(f: GeometricFigure, p: RecordedPageID)               = Free.liftF{ CreateFigure(f, p) }
-  def queryForRegions(q: LTBounds, c: Constraint, t: RecordedPageID)    = Free.liftF{ QueryForRegions(q, c, t) }
-  def selectZone(g: Int@@ZoneID)                                        = Free.liftF{ SelectZone(g) }
-  def unselectZone(g: Int@@ZoneID)                                      = Free.liftF{ UnselectZone(g) }
-
+  def selectZone(g: Int@@ZoneID)            = Free.liftF{ SelectZone(g) }
+  def deleteZone(g: Int@@ZoneID)            = Free.liftF{ DeleteZone(g) }
+  def mergeZones(zs: Seq[Int@@ZoneID])      = Free.liftF{ MergeZones(zs) }
 
   def clickToSelectZone(zoneId: Int@@ZoneID): Interaction = InteractProg(
     for {
@@ -72,13 +46,12 @@ object LabelAction {
   )
 
 
-  val interpLabelAction: LabelAction ~> LabelAction =
-    new (LabelAction ~> LabelAction) {
-      def apply[A](fa: LabelAction[A]) =
-        fa match {
-          case SelectZone(zoneId) =>
-            fa
-          case _ => fa
-        }
-    }
+  // val interpLabelAction: LabelAction ~> LabelAction =
+  //   new (LabelAction ~> LabelAction) {
+  //     def apply[A](fa: LabelAction[A]) =
+  //       fa match {
+  //         case SelectZone(zoneId) => fa
+  //         case _ => fa
+  //       }
+  //   }
 }

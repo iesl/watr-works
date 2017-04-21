@@ -27,7 +27,6 @@ import scalatags.JsDom.all._
 
 
 import scalatags.JsDom.all._
-import sty._
 
 import rx._
 
@@ -46,18 +45,12 @@ class ZoneSelectionRx {
 
   val doMergeZones: Var[Boolean] = Var(false)
   val doDeleteZone: Var[Boolean] = Var(false)
-  // case class UIState(
-  //   selectionConstraint: Constraint,
-  //   selectedLabel: Option[Label],
-  //   selections: Seq[Int@@ZoneID] // TODO generalize Id type (has to be able to serialize through strings)
-  // )
 
-
-  // var uiState: UIState = UIState(
-  //   ByChar,
-  //   Option(LB.Title),
-  //   Seq()
-  // )
+  def toUIState = UIState(
+    selectionConstraint.now,
+    selectedLabel.now,
+    selections.now
+  )
 
 }
 
@@ -65,7 +58,6 @@ class ZoneSelectionRx {
 object WatrColors extends  BaseClientDefs {
   import BootstrapBits._
 
-  val zoneSelectionRx = new ZoneSelectionRx
 
 
   object states {
@@ -91,7 +83,7 @@ object WatrColors extends  BaseClientDefs {
     // "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
     // "s b" -> ((e: MousetrapEvent) => states.selectByRegion()),
 
-    "s s" -> ((e: MousetrapEvent) => startSelection())
+    // "s s" -> ((e: MousetrapEvent) => startSelection())
   )
 
   def initKeybindings() = {
@@ -118,37 +110,34 @@ object WatrColors extends  BaseClientDefs {
         case RmLw(wid, widget) => widget.get
       }
 
-    val (bbox, fobjs) = renderLabelWidget(adds)
-    fabricCanvas.renderOnAddRemove = false
-    fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }
-    fabricCanvas.renderAll()
-    fabricCanvas.renderOnAddRemove = true
-  }
-
-
-  @JSExport
-  def startSelection(): Unit = {
-    zoneSelectionRx.selectionInProgress = true
-
-    fabricCanvas.defaultCursor = "crosshair"
-    fabricCanvas.renderAll()
-
-    for {
-      bbox <- getUserSelection(fabricCanvas)
-    } yield {
-      fabricCanvas.defaultCursor = "default"
-      val st = UIState(
-        zoneSelectionRx.selectionConstraint.now,
-        zoneSelectionRx.selectedLabel.now,
-        zoneSelectionRx.selections.now
-      )
-
-      val req = UIRequest(st, SelectRegion(bbox))
-      uiRequestCycle(req)
-      zoneSelectionRx.selectionInProgress = false
+    renderLabelWidget(adds).foreach {
+      case (bbox, fobjs) =>
+        fabricCanvas.renderOnAddRemove = false
+        fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }
+        fabricCanvas.renderAll()
+        fabricCanvas.renderOnAddRemove = true
     }
-
   }
+
+
+  // @JSExport
+  // def startSelection(): Unit = {
+  //   zoneSelectionRx.selectionInProgress = true
+
+  //   fabricCanvas.defaultCursor = "crosshair"
+  //   fabricCanvas.renderAll()
+
+  //   for {
+  //     bbox <- getUserSelection(fabricCanvas)
+  //   } yield {
+  //     fabricCanvas.defaultCursor = "default"
+
+  //     val req = UIRequest(zoneSelectionRx.toUIState, SelectRegion(bbox))
+  //     uiRequestCycle(req)
+  //     zoneSelectionRx.selectionInProgress = false
+  //   }
+
+  // }
 
   object shell {
     val Client = new WebsideClient("shell")
@@ -170,21 +159,23 @@ object WatrColors extends  BaseClientDefs {
 
   def echoLabeler(lwidget: Seq[AbsPosWidget], labelOptions: LabelOptions): Unit = Async.async {
     println("echoLabeler()")
-    fabricCanvas.renderOnAddRemove = false
-    clear()
-    val (bbox, fobjs) = renderLabelWidget(lwidget)
-    fabricCanvas.setWidth(bbox.width.toInt)
-    fabricCanvas.setHeight(bbox.height.toInt)
+    renderLabelWidget(lwidget).foreach {
+      case (bbox, fobjs) =>
+        fabricCanvas.renderOnAddRemove = false
+        clear()
+        fabricCanvas.setWidth(bbox.width.toInt)
+        fabricCanvas.setHeight(bbox.height.toInt)
 
+        fabricCanvas.renderOnAddRemove = false
+        fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }
+        fabricCanvas.renderAll()
+        fabricCanvas.renderOnAddRemove = true
 
-    fobjs.foreach{os =>
-      os.foreach(fabricCanvas.add(_))
+        val controls = createLabelerControls(labelOptions)
+        val c = controls.render
     }
 
-    fabricCanvas.renderAll()
-    fabricCanvas.renderOnAddRemove = true
-    val controls = createLabelerControls(labelOptions)
-    val c = controls.render
+
   }
 
 
@@ -196,89 +187,114 @@ object WatrColors extends  BaseClientDefs {
   }
 
 
-  @JSExport
-  def setupClickCatchers(enable: Boolean): Unit = {
-    val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
-      if (!zoneSelectionRx.selectionInProgress) {
-        println("click")
+  // @JSExport
+  // def setupClickCatchers(enable: Boolean): Unit = {
+  //   val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
+  //     if (!zoneSelectionRx.selectionInProgress) {
+  //       println("click")
 
-        val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
+  //       val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
 
-        val st = UIState(
-          zoneSelectionRx.selectionConstraint.now,
-          zoneSelectionRx.selectedLabel.now,
-          zoneSelectionRx.selections.now
-        )
-
-        val req = UIRequest(st, Click(clickPt))
-        uiRequestCycle(req)
-      }
-      true
-    }
+  //       val req = UIRequest(zoneSelectionRx.toUIState, Click(clickPt))
+  //       uiRequestCycle(req)
+  //     }
+  //     true
+  //   }
 
 
-    val elem = dom.document
-      .getElementById("canvas-container")
+  //   val elem = dom.document
+  //     .getElementById("canvas-container")
 
-    elem.addEventListener("click", clickcb, useCapture=false)
-  }
+  //   elem.addEventListener("click", clickcb, useCapture=false)
+  // }
 
 
-  def initRx(): Unit = Rx {
+  def initRx(zoneSelectionRx: ZoneSelectionRx)(implicit co: Ctx.Owner): Unit = Rx {
     (zoneSelectionRx.documentId(), zoneSelectionRx.labelerType()) match {
       case (Some(docId), Some(lt)) =>
         createLabeler(docId, lt)
 
       case _ => // do nothing
     }
+
+    zoneSelectionRx.doDeleteZone.foreach{
+      case doDelete =>
+        println("Delete: uiRequestCycle()")
+        uiRequestCycle(
+          UIRequest(
+            zoneSelectionRx.toUIState,
+            MenuAction(LabelAction.deleteZone(ZoneID(0)))
+          )
+        )
+    }
+
+    zoneSelectionRx.doMergeZones.foreach{
+      case doMerge =>
+        println("Merge: uiRequestCycle()")
+        uiRequestCycle(
+          UIRequest(
+            zoneSelectionRx.toUIState,
+            MenuAction(LabelAction.mergeZones(List()))
+          )
+        )
+    }
   }
 
 
+  var clientState: Option[ZoneSelectionRx] = None
 
   @JSExport
   def display(): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
-    val selectorControls = SharedLayout.zoneSelectorControls(
-      new ZoneSelectionRx(),
-      List(
-        LB.Title,
-        LB.Authors,
-        LB.Abstract,
-        LB.Affiliation,
-        LB.References
-      ))
+    val zoneSelectionRx = new ZoneSelectionRx
+    clientState = Option(zoneSelectionRx)
 
-    val nav = SharedLayout.initNavbar(List(
-      NavSpan(selectorControls)
-    ))
+    Rx {
+
+      withBootstrapNative {
+
+        val selectorControls = SharedLayout.zoneSelectorControls(
+          zoneSelectionRx,
+          List(
+            LB.Title,
+            LB.Authors,
+            LB.Abstract,
+            LB.Affiliation,
+            LB.References
+          ))
 
 
-    initKeybindings()
 
-    val navContent = SharedLayout.initNavbar(List())
+        val navContent = SharedLayout.initNavbar(List(
+          NavSpan(selectorControls)
+        ))
 
-    val bodyContent =
-      div(
-        ^.id:="canvas-container",
-        pageStyles.canvasContainer,
-        sty.marginLeft(15), sty.marginTop(25)
-      )(
-        canvas(^.id:="canvas", pageStyles.fabricCanvas)
-      )
 
-    val sidebarContent =
-      ul(`class`:="sidebar-nav")
+        // initKeybindings()
 
-    withBootstrapNative {
-      SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render
+
+        val bodyContent =
+          div(
+            ^.id:="canvas-container",
+            pageStyles.canvasContainer,
+            sty.marginLeft(15), sty.marginTop(25)
+          )(
+            canvas(^.id:="canvas", pageStyles.fabricCanvas)
+          )
+
+        val sidebarContent =
+          ul(`class`:="sidebar-nav")
+
+        SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render
+      }
+
+      // initRx(zoneSelectionRx)
+      val c = fabricCanvas
+      // setupClickCatchers(true)
+      zoneSelectionRx.documentId() = param("doc")
+      zoneSelectionRx.labelerType() = param("lt")
     }
-
-    initRx()
-    val c = fabricCanvas
-    setupClickCatchers(true)
-    zoneSelectionRx.documentId() = param("doc")
-    zoneSelectionRx.labelerType() = param("lt")
 
   }
 

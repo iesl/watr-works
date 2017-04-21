@@ -4,12 +4,12 @@ import Keys._
 
 trait LibVersions {
   val scalazVersion       = "7.2.11"
-  val scalaTagsVersion    = "0.6.3"
+  val scalaTagsVersion    = "0.6.5"
   val scalaAsyncVersion   = "0.9.6"
   val scalaModulesVersion = "1.0.4"
   val akkaVersion         = "2.4.17"
   val streamsVersion      = "1.0"
-  val scalatestVersion    = "3.0.1"
+  val scalatestVersion    = "3.0.3"
   val logbackVersion      = "1.7.25"
   val quasiquotesVersion  = "2.0.1"
   val guavaVersion        = "18.0"
@@ -19,10 +19,11 @@ trait LibVersions {
   val aspectjVersion      = "1.8.9"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.4.1"
-  val matryoshkaCoreV     = "0.18.3"
+  val matryoshkaCoreV     = "0.19.0"
   val sourcecodeV         = "0.1.3"
   val fansiV              = "0.2.3"
   val shapelessV          = "2.3.2"
+  val scaladgetV          = "0.9.4"
 
 }
 

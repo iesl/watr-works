@@ -249,7 +249,7 @@ trait LabelWidgetIndex {
       def apply[A](fa: LabelAction[A]) =  {
 
         fa match {
-          case act@ SelectZone(zoneId) =>
+          case act@ LabelAction.SelectZone(zoneId) =>
 
             println(s"SelectZone")
             for {
@@ -282,15 +282,17 @@ trait LabelWidgetIndex {
               }
             } yield zoneId
 
-          case act: LabelAction.SelectRegion       => for { init <- State.get[InterpState] } yield ()
-          case act: UnselectRegion     => for { init <- State.get[InterpState] } yield ()
-          case act: UnselectZone       => for { init <- State.get[InterpState] } yield ()
-          case act: CreateZone         => for { init <- State.get[InterpState] } yield ()
-          case act: DeleteZone         => for { init <- State.get[InterpState] } yield ()
-          case act: LabelZone          => for { init <- State.get[InterpState] } yield ()
-          case act: CreateFigure       => for { init <- State.get[InterpState] } yield ???
-          case act: QueryForRegions    => for { init <- State.get[InterpState] } yield Seq[TargetRegion]()
-          case act: QueryForZones      => for { init <- State.get[InterpState] } yield Seq[Int@@ZoneID]()
+          case act: DeleteZone =>
+            println(s"DeleteZone")
+            for {
+              init <- State.get[InterpState]
+            } yield ()
+
+          case act: MergeZones => 
+            println(s"MergeZone")
+            for {
+              init <- State.get[InterpState]
+            } yield ()
         }
       }
 
@@ -316,6 +318,11 @@ trait LabelWidgetIndex {
     val UIState(constraint, maybeLabel, selections) = uiState
     val initResponse = UIResponse(uiState, List())
     gesture match {
+
+      case MenuAction(action) =>
+        val run = action.exec(initResponse, layout.labelWidget)
+
+        (run.uiResponse, run.labelWidget)
 
 
       case Click(point) =>

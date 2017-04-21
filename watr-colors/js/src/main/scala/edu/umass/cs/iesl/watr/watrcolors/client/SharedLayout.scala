@@ -27,8 +27,8 @@ object SharedLayout extends BaseClientDefs {
   import pageStyles._
 
   def initNavbar(
-    navItems: Seq[NavEntry[_ <: HTMLElement]] = Seq()
-  )(implicit rxOwnr: Ctx.Owner): HtmlTag = {
+    navItems: Seq[Rx[NavEntry[_ <: HTMLElement]]] = Seq()
+  )(implicit rxOwnr: Ctx.Owner): RxHtmlTag = {
     val logo = navItem(
       span(pageStyles.logo, "WatrColors").render
     )
@@ -75,7 +75,9 @@ object SharedLayout extends BaseClientDefs {
   }
 
 
-  def zoneSelectorControls(zsRx: ZoneSelectionRx, labels: Seq[Label]): HtmlTag = {
+  def zoneSelectorControls(
+    zsRx: ZoneSelectionRx, labels: Seq[Label]
+  )(implicit ctx: Ctx.Owner): RxHtmlTag = Rx {
 
     val delClrMrgButtons = buttonGroup()(
       button("Merge", sty.btn_small,  () => {zsRx.doMergeZones() = true}),
@@ -91,11 +93,14 @@ object SharedLayout extends BaseClientDefs {
           selectableButton(s,
             defaultActive = b,
             modifierSeq = sty.btn_small,
-            onclick = () => {zsRx.selectionConstraint() = c}
+            onclick = () => {
+              println(s"click? ${s}")
+              zsRx.selectionConstraint() = c
+            }
           )
       }
 
-    val selectConstraint: SelectableButtons = radios(List())(
+    val selectConstraint: SelectableButtons = radios()(
       initSelectConstraint:_*
     )
 
