@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package pages
+
+import parts._
 
 import org.scalajs.dom.raw._
 
@@ -27,8 +30,8 @@ object SharedLayout extends BaseClientDefs {
   import pageStyles._
 
   def initNavbar(
-    navItems: Seq[Rx[NavEntry[_ <: HTMLElement]]] = Seq()
-  )(implicit rxOwnr: Ctx.Owner): RxHtmlTag = {
+    navItems: Seq[NavEntry[_ <: HTMLElement]] = Seq()
+  )(implicit rxOwnr: Ctx.Owner): HtmlTag = {
     val logo = navItem(
       span(pageStyles.logo, "WatrColors").render
     )

@@ -1,6 +1,9 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package parts
+
+import wiring._
 
 import scala.scalajs.js
 

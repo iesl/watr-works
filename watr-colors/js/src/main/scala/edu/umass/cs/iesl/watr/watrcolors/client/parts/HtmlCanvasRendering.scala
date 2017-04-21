@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package parts
 
 import geometry._
 import native.fabric

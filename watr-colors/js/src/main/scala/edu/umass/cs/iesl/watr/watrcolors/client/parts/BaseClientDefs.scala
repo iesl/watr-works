@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
-
+package parts
 
 import scala.collection.mutable
 

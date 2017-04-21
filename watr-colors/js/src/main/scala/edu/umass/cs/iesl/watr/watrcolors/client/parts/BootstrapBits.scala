@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package parts
 
 import scaladget.stylesheet.{all => sty}
 import scaladget.api._
@@ -18,7 +19,7 @@ import sty._
 import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw._
 
-import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.JSExportTopLevel
 import scaladget.tools.JsRxTags._
 import scaladget.stylesheet.{all => sheet}
 import sheet.{ctx => _, _}
@@ -28,7 +29,7 @@ import rx._
 
 import scala.scalajs.js
 
-@JSExport("demo.BootstrapBits")
+@JSExportTopLevel("demo.BootstrapBits")
 object BootstrapBits {
   bstags =>
 
@@ -510,7 +511,7 @@ object BootstrapBits {
 
     def view: HTMLElement = div(sRender).render
 
-    def setScrollMode = {
+    def setScrollMode() = {
       val scrollHeight = sRender.scrollHeight
       val scrollTop = sRender.scrollTop.toInt
       scrollMode() =
@@ -518,7 +519,7 @@ object BootstrapBits {
         else NoScroll(scrollTop)
     }
 
-    def doScroll = scrollMode.now match {
+    def doScroll() = scrollMode.now match {
       case BottomScroll ⇒ sRender.scrollTop = sRender.scrollHeight.toDouble
       case n: NoScroll ⇒ sRender.scrollTop = n.scrollHeight.toDouble
       case _ ⇒
@@ -648,14 +649,14 @@ object BootstrapBits {
     val tag = div(collapseTransition)(innerTagRender).render
 
 
-    private def setHeight = {
+    private def setHeight() = {
       tag.style.height = {
         if (expanded.now) (innerTagRender.clientHeight + 15).toString
         else "0"
       }
     }
 
-    def switch = {
+    def switch() = {
       expanded() = !expanded.now
       setHeight
     }
@@ -733,7 +734,7 @@ object BootstrapBits {
     def title: String
   }
 
-  trait TwoStates extends ExclusiveButton
+  sealed trait TwoStates extends ExclusiveButton
 
   case class TwoStatesGlyphButton(glyph: ModifierSeq,
                                   glyph2: ModifierSeq,
@@ -842,7 +843,7 @@ object BootstrapBits {
     }
 
 
-    def reset = selected() = buttons.head
+    def reset() = selected() = buttons.head
   }
 
 

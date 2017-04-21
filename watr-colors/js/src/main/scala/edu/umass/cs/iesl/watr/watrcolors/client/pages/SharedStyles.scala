@@ -1,7 +1,9 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package pages
 
+import parts._
 
 import scaladget.stylesheet.{all => sty}
 import scalatags.JsDom.all.{marginTop => jmarginTop, _}

@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package wiring
 
 import upickle.{default => UPickle}
 import UPickle._

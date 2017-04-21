@@ -1,7 +1,9 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package pages
 
+import parts._
 
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.scalajs.js.annotation.JSExport
@@ -48,11 +50,11 @@ object DevClient extends BaseClientDefs {
           LB.References
         ))
 
-      val nav = SharedLayout.initNavbar(List(
-        pageName,
-        NavSpan(selectorControls)
-
-      ))
+      val nav = div()
+      // SharedLayout.initNavbar(List(
+      //   pageName,
+      //   NavSpan(selectorControls)
+      // ))
 
       val bodyContent = div(p("Main Body Content"))
 

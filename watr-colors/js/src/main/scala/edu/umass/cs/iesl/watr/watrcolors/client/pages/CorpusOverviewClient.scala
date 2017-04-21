@@ -1,6 +1,10 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package pages
+
+import parts._
+import wiring._
 
 import scaladget.stylesheet.{all => sty}
 import sty._
@@ -101,7 +105,7 @@ object BrowseCorpus extends BaseClientDefs {
 
       val pageName = navItem(span("Browse").render)
       // val nav = SharedLayout.initNavbar(List(pageName))
-      val nav = SharedLayout.initNavbar(List())
+      val nav = div() // SharedLayout.initNavbar(List())
 
       val bodyContent =
         div(

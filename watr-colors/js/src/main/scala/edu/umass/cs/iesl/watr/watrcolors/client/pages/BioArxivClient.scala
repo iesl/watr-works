@@ -1,6 +1,10 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 package client
+package pages
+
+import parts._
+import wiring._
 
 import scala.async.Async
 import scala.concurrent.Future
@@ -266,9 +270,9 @@ object WatrColors extends  BaseClientDefs {
 
 
 
-        val navContent = SharedLayout.initNavbar(List(
-          NavSpan(selectorControls)
-        ))
+        val navContent = div() // SharedLayout.initNavbar(List(
+                               //           NavSpan(selectorControls)
+                               //         ))
 
 
         // initKeybindings()
