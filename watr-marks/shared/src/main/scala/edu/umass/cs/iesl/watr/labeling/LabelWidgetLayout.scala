@@ -158,43 +158,11 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
 
   def layoutWidgetPositions(lwidget: LabelWidget): WidgetLayout = {
-    // val idgen = IdGenerator[WidgetID]()
 
     val F = LabelWidgetFunctor
     // Bottom-up first pass evaluator
     def positionAttrs: GAlgebra[(LabelWidget, ?), LabelWidgetF, PosAttr] = fwa => {
       fwa match {
-        // case flw @ RegionOverlay(wid, under, overlays) =>
-        //   val clipBox = clipTo.getOrElse { pGeom }
-        //   val bbox = clipBox.moveToOrigin
-        //   val selfPosition = clipBox.toPoint(CDir.NW)
-
-        //   val (childBbox, chBleed, childAdjustVecs) =
-        //     repositionChildren(
-        //       overlays.map(_._2), {
-        //         (totalChildsBbox, childPos) =>
-        //         val childPosition = childPos.selfOffset
-        //         childPosition - selfPosition
-        //       })
-
-        //   val totalBleed = bbox union chBleed
-
-        //   PosAttr(F.void(flw), bbox, totalBleed, selfPosition, childAdjustVecs)
-
-
-
-        // case flw @ RegionOverlay(under, overlays)  =>
-        //   val selfPosition = under.bbox.toPoint(CDir.NW)
-        //   val bbox = under.bbox.moveToOrigin
-        //   val (_, childAdjustVecs) = repositionChildren(overlays.map(_._2),
-        //     {(cbbox, overpos) =>
-        //       val childPosition = overpos.selfOffset
-        //       childPosition - selfPosition
-        //     })
-
-        //   PosAttr(F.void(flw), bbox, idgen.nextId, selfPosition, childAdjustVecs)
-
-
 
         case flw @ RegionOverlay(wid, under, overlays)  =>
           val selfPosition = under.bbox.toPoint(CDir.NW)

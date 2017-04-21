@@ -107,20 +107,30 @@ object WatrColors extends  BaseClientDefs {
   def uiRequestCycle(req: UIRequest) = for {
     uiResponse  <- shell.uiRequest(req)
   } {
+    println("complete:uiRequest ")
     // uiState = uiResponse.uiState
     val adds = uiResponse.changes
       .collect {
         case AddLw(wid, widget) => widget.get
       }
+
     val dels = uiResponse.changes
       .collect {
         case RmLw(wid, widget) => widget.get
       }
 
+    // println(s"""adding: ${adds.mkString("\n")}""")
+    // println(s"""rmv: ${dels.mkString("\n")}""")
+
+    println("begin:renderLabelWidget")
     renderLabelWidget(adds).foreach {
       case (bbox, fobjs) =>
+        println(s"adding within $bbox")
         fabricCanvas.renderOnAddRemove = false
-        fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }
+        fobjs.foreach{os => os.foreach{ o =>
+          // println(s"  ++> ${o}")
+          fabricCanvas.add(o)
+        }}
         fabricCanvas.renderAll()
         fabricCanvas.renderOnAddRemove = true
     }
@@ -133,6 +143,7 @@ object WatrColors extends  BaseClientDefs {
     val api = Client[WatrShellApi]
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
+      println("begin:uiRequest ")
       api.uiRequest(r).call()
     }
 

@@ -31,6 +31,7 @@ case class IndexableTextReflow(
   targetRegion: PageRegion
 )
 
+
 case class QueryHit(
   positioned: AbsPosWidget,
   pageId: Int@@PageID,
@@ -53,16 +54,26 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   import textreflow.TextReflowJsonCodecs._
 
-  def create(docStore0: DocumentCorpus, lwidget: LabelWidget): LabelWidgetIndex = {
+  def create(docStore0: DocumentCorpus, lwidget: LabelWidget, priorIndex: Option[LabelWidgetIndex]=None): LabelWidgetIndex = {
     val lwIndex = SpatialIndex.createFor[AbsPosWidget]()
 
+    println(s"LabelWidgetIndex:create(): begin")
     val layout0 = layoutWidgetPositions(lwidget)
+    println(s"      :create(): layoutComplete")
 
     layout0.positioning.foreach({pos =>
       lwIndex.add(pos)
     })
 
-    val targetPageRIndexes = mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
+    println(s"      :create(): index add complete")
+    val targetPageRIndexes: mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]] = 
+      priorIndex.map{ p => 
+        val tmp = mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
+        tmp ++= p.pageIndexes
+        tmp
+      }.getOrElse {
+        mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
+      }
 
     def addPage(targetRegion: TargetRegion): Unit= {
       val pageId = targetRegion.page.pageId
@@ -86,6 +97,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       }
     }
 
+    println(s"      :create(): begin add pages")
     layout0.positioning.foreach({pos => pos.widget match {
 
       case l @ RegionOverlay(wid, under, overlays) =>
@@ -94,6 +106,8 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       case _ =>
 
     }})
+
+    println(s"      :create(): end add pages")
 
 
     new LabelWidgetIndex {
@@ -126,6 +140,7 @@ object istate {
 
 
 trait LabelWidgetIndex {
+  import LabelWidgetIndex._
 
   def docStore: DocumentCorpus
   def layout: WidgetLayout
@@ -242,6 +257,8 @@ trait LabelWidgetIndex {
   }
 
 
+  // TODO this interpreter is specific to a particular labeler type (e.g., BioArxiv Labeler) and should be parameterized
+  //    within this class
   val interpLabelAction: LabelAction ~> State[InterpState, ?] =
     new (LabelAction ~> State[InterpState, ?]) {
 
@@ -261,23 +278,14 @@ trait LabelWidgetIndex {
                   LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
                     lw.project match {
                       case fa@ Figure(wid, fig) =>
-                        val ff = LabelWidgets.figure(
+                        LabelWidgets.figure(
                           composeFigures(makeFringe(fig, Padding(10)), fig)
                         )
 
-                        // println(s"match Figure: ${ff}")
-                        ff
                       case _ => lw
                     }
                   })
-
-                  // Add a "fringe" bbox around everything Identified as id=zoneId
-                  // st.copy(changes = add :: st.changes)
-                  // labelWidget
-
                 }
-
-
               }
             } yield zoneId
 
@@ -287,7 +295,7 @@ trait LabelWidgetIndex {
               init <- State.get[InterpState]
             } yield ()
 
-          case act: MergeZones => 
+          case act: MergeZones =>
             println(s"MergeZone")
             for {
               init <- State.get[InterpState]
@@ -316,6 +324,7 @@ trait LabelWidgetIndex {
   def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidget) = {
     val UIState(constraint, maybeLabel, selections) = uiState
     val initResponse = UIResponse(uiState, List())
+
     gesture match {
 
       case MenuAction(action) =>
@@ -335,9 +344,37 @@ trait LabelWidgetIndex {
                 case InteractProg(prog) =>
                   println(s"Interpreting ${prog} in panel ${panel}")
 
+                  // println(prettyPrintLabelWidget(layout.labelWidget))
                   val run = prog.exec(accResponse, accWidget)
 
-                  (run.uiResponse, run.labelWidget)
+                  println("   ...Ran prog")
+                  // println("Post-click widget/response:")
+                  // println(prettyPrintLabelWidget(run.labelWidget))
+                  // println(run.uiResponse)
+
+                  val lwdiff = labelWidgetDiff(layout.labelWidget, run.labelWidget)
+
+                  println("   ...Diff complete ")
+                  // println(drawLabelWidgetDiff(lwdiff))
+                  val mods = labelWidgetDiffToMods(lwdiff)
+
+                  println("   ...Diff -> Mods ")
+                  val newIndex = LabelWidgetIndex.create(docStore, run.labelWidget, Some(this))
+                  println("   ...New index created")
+                  val absPositioned = layout.positioning ++ newIndex.layout.positioning
+                  val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
+
+                  val updates = mods.map { _ match {
+                    case AddLw(id, _) => AddLw(id, absPosMap.get(id))
+                    case RmLw(id, _) => RmLw(id, absPosMap.get(id))
+                  }}
+                  println("   ... response constructed")
+
+                  val newResponse = run.uiResponse.copy(
+                    changes = updates.toList
+                  )
+
+                  (newResponse, run.labelWidget)
 
                 case _ =>
                   // TODO
@@ -353,10 +390,15 @@ trait LabelWidgetIndex {
       case SelectRegion(bbox) =>
         maybeLabel.map {label =>
           println(s"adding label to bbox ${bbox}")
-          addLabel(bbox, constraint, label)
-          // UIAdd()
+          val maybeZoneId = addLabel(bbox, constraint, label)
+          maybeZoneId.map(zoneId =>
+            (initResponse, LabelWidgetTransforms.addZoneIndicator(zoneId, layout.labelWidget, docStore))
+          ).getOrElse(
+            (initResponse, layout.labelWidget)
+          )
+        } getOrElse {
+          (initResponse, layout.labelWidget)
         }
-        (initResponse, layout.labelWidget)
 
     }
 

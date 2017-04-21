@@ -47,6 +47,59 @@ object LabelWidgetTransforms {
     r.transCata[LabelWidget](f)
   }
 
+  def addZoneIndicator(zoneId: Int@@ZoneID, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
+
+    // append rectangular overlays which respond to user clicks to select/deselect zones
+    def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
+      lw0 match {
+
+        case l @ RegionOverlay(wid1, under, overlays) =>
+          val pageId = under.page.pageId
+          val pageDef = docStore.getPageDef(pageId).getOrElse {
+            sys.error(s"addIndicator(): no page found for ${pageId}")
+          }
+
+          val clipBox = under.bbox
+
+          val zone = docStore.getZone(zoneId)
+
+          // val zoneLineOverlays: Seq[Option[LabelWidget]] = for {
+          //   zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
+          // } yield {
+          //   val zone = docStore.getZone(zoneId)
+
+          val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
+            val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
+            zoneTargetRegion.intersects(pageId, clipBox)
+          })
+
+          // clip zone target regions to clipped page region
+          val intersectingBboxes: List[GeometricFigure] =
+            filteredRegionsToTargetRegion
+              .flatMap { targetRegion =>
+                targetRegion
+                  .intersection(clipBox)
+                  .map(_.bbox)
+              }.toList
+
+          val overlayWidgets = if (intersectingBboxes.isEmpty) None else {
+            val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
+            Some(panel(
+              withId(zoneId, figure(GeometricGroup(groupBbox, intersectingBboxes))),
+              LabelAction.clickToSelectZone(zoneId)
+            ))
+          }
+
+          l.copy(
+            overlays = l.overlays ++ overlayWidgets.toList
+          )
+
+        case  _ => lw0
+      }
+    }
+
+    lwidget.transCata[LabelWidget](addIndicator)
+  }
   def addZoneIndicators(label: Label, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
 
     val labelId = docStore.ensureLabel(label)
