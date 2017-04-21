@@ -29,15 +29,13 @@ import watrmarks.{StandardLabels => LB}
 import scaladget.stylesheet.{all => sty}
 import scalatags.JsDom.all._
 
-
-import scalatags.JsDom.all._
-
 import rx._
+import scaladget.tools.JsRxTags.{ctx => _, _}
 
 import TypeTags._
 import dom.raw.MouseEvent
 
-class ZoneSelectionRx {
+class ClientStateRx {
 
   var selectionInProgress = false
 
@@ -213,7 +211,7 @@ object WatrColors extends  BaseClientDefs {
   // }
 
 
-  def initRx(zoneSelectionRx: ZoneSelectionRx)(implicit co: Ctx.Owner): Unit = Rx {
+  def initRx(zoneSelectionRx: ClientStateRx)(implicit co: Ctx.Owner): Unit = Rx {
     (zoneSelectionRx.documentId(), zoneSelectionRx.labelerType()) match {
       case (Some(docId), Some(lt)) =>
         createLabeler(docId, lt)
@@ -245,62 +243,56 @@ object WatrColors extends  BaseClientDefs {
   }
 
 
-  var clientState: Option[ZoneSelectionRx] = None
+  var clientState: Option[ClientStateRx] = None
 
   @JSExport
   def display(): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
-    val zoneSelectionRx = new ZoneSelectionRx
+    val zoneSelectionRx = new ClientStateRx
     clientState = Option(zoneSelectionRx)
 
-    Rx {
 
-      withBootstrapNative {
+    withBootstrapNative {
 
-        val selectorControls = SharedLayout.zoneSelectorControls(
-          zoneSelectionRx,
-          List(
-            LB.Title,
-            LB.Authors,
-            LB.Abstract,
-            LB.Affiliation,
-            LB.References
-          ))
-
+      val selectorControls = SharedLayout.zoneSelectorControls(
+        zoneSelectionRx,
+        List(
+          LB.Title,
+          LB.Authors,
+          LB.Abstract,
+          LB.Affiliation,
+          LB.References
+        ))
 
 
-        val navContent = div() // SharedLayout.initNavbar(List(
-                               //           NavSpan(selectorControls)
-                               //         ))
+      val navContent =  SharedLayout.initNavbar(List())
 
+      // val sampleRadio = 
 
-        // initKeybindings()
+      // initKeybindings()
 
+      val bodyContent = div(
+        selectorControls,
+        div(
+          ^.id:="canvas-container",
+          pageStyles.canvasContainer
+          // sty.marginLeft(15), sty.marginTop(25)
+        )(canvas(^.id:="canvas", pageStyles.fabricCanvas))
+      )
 
-        val bodyContent =
-          div(
-            ^.id:="canvas-container",
-            pageStyles.canvasContainer,
-            sty.marginLeft(15), sty.marginTop(25)
-          )(
-            canvas(^.id:="canvas", pageStyles.fabricCanvas)
-          )
+      val sidebarContent = ul(`class`:="sidebar-nav")
 
-        val sidebarContent =
-          ul(`class`:="sidebar-nav")
-
-        SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render
-      }
-
-      // initRx(zoneSelectionRx)
-      val c = fabricCanvas
-      // setupClickCatchers(true)
-      zoneSelectionRx.documentId() = param("doc")
-      zoneSelectionRx.labelerType() = param("lt")
+      SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render
     }
 
+    // initRx(zoneSelectionRx)
+    val c = fabricCanvas
+    // setupClickCatchers(true)
+    zoneSelectionRx.documentId() = param("doc")
+    zoneSelectionRx.labelerType() = param("lt")
   }
+
 
 
 }

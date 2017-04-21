@@ -14,10 +14,10 @@ import scalatags.JsDom.all._
 import sty._
 
 import watrmarks.{StandardLabels => LB}
-// import rx._
+import rx._
 import org.scalajs.dom.raw._
 
-// import scaladget.tools.JsRxTags._
+import scaladget.tools.JsRxTags._
 
 @JSExportTopLevel("DevClient")
 object DevClient extends BaseClientDefs {
@@ -34,6 +34,8 @@ object DevClient extends BaseClientDefs {
 
   @JSExport
   def display(): Unit = {
+    implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
+
     println("hello from scalajs")
 
     withBootstrapNative {
@@ -41,7 +43,7 @@ object DevClient extends BaseClientDefs {
       val pageName = navItem(span("Demo").render)
 
       val selectorControls = SharedLayout.zoneSelectorControls(
-        new ZoneSelectionRx(),
+        new ClientStateRx(),
         List(
           LB.Title,
           LB.Authors,
@@ -50,13 +52,14 @@ object DevClient extends BaseClientDefs {
           LB.References
         ))
 
-      val nav = div()
-      // SharedLayout.initNavbar(List(
-      //   pageName,
-      //   NavSpan(selectorControls)
-      // ))
+      val nav = SharedLayout.initNavbar(List(
+        pageName
+      ))
 
-      val bodyContent = div(p("Main Body Content"))
+      val bodyContent = div(
+        selectorControls,
+        p("Main Body Content")
+      )
 
       val sidebarContent =
         ul(`class`:="sidebar-nav")()

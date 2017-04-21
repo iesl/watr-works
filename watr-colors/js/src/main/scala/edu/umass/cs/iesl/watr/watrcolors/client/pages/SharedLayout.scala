@@ -79,7 +79,7 @@ object SharedLayout extends BaseClientDefs {
 
 
   def zoneSelectorControls(
-    zsRx: ZoneSelectionRx, labels: Seq[Label]
+    zsRx: ClientStateRx, labels: Seq[Label]
   )(implicit ctx: Ctx.Owner): RxHtmlTag = Rx {
 
     val delClrMrgButtons = buttonGroup()(
