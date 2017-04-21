@@ -35,9 +35,8 @@ import scaladget.tools.JsRxTags.{ctx => _, _}
 import TypeTags._
 import dom.raw.MouseEvent
 
-class ClientStateRx {
+class ClientStateRx(implicit co: Ctx.Owner) {
 
-  var selectionInProgress = false
 
   val labelerType: Var[Option[String]] = Var(None)
   val documentId: Var[Option[String]] = Var(None)
@@ -53,6 +52,12 @@ class ClientStateRx {
     selectedLabel.now,
     selections.now
   )
+
+  val selectionInProgress: Var[Boolean] = Var(false)
+
+  def startSelection(): Unit = {
+    selectionInProgress() = true
+  }
 
 }
 
@@ -85,7 +90,7 @@ object WatrColors extends  BaseClientDefs {
     // "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
     // "s b" -> ((e: MousetrapEvent) => states.selectByRegion()),
 
-    // "s s" -> ((e: MousetrapEvent) => startSelection())
+    "s s" -> ((e: MousetrapEvent) => clientState.foreach {_.startSelection()})
   )
 
   def initKeybindings() = {
@@ -122,24 +127,6 @@ object WatrColors extends  BaseClientDefs {
   }
 
 
-  // @JSExport
-  // def startSelection(): Unit = {
-  //   zoneSelectionRx.selectionInProgress = true
-
-  //   fabricCanvas.defaultCursor = "crosshair"
-  //   fabricCanvas.renderAll()
-
-  //   for {
-  //     bbox <- getUserSelection(fabricCanvas)
-  //   } yield {
-  //     fabricCanvas.defaultCursor = "default"
-
-  //     val req = UIRequest(zoneSelectionRx.toUIState, SelectRegion(bbox))
-  //     uiRequestCycle(req)
-  //     zoneSelectionRx.selectionInProgress = false
-  //   }
-
-  // }
 
   object shell {
     val Client = new WebsideClient("shell")
@@ -161,23 +148,24 @@ object WatrColors extends  BaseClientDefs {
 
   def echoLabeler(lwidget: Seq[AbsPosWidget], labelOptions: LabelOptions): Unit = Async.async {
     println("echoLabeler()")
-    renderLabelWidget(lwidget).foreach {
-      case (bbox, fobjs) =>
-        fabricCanvas.renderOnAddRemove = false
-        clear()
-        fabricCanvas.setWidth(bbox.width.toInt)
-        fabricCanvas.setHeight(bbox.height.toInt)
+    try {
+      renderLabelWidget(lwidget).foreach {
+        case (bbox, fobjs) =>
+          fabricCanvas.renderOnAddRemove = false
+          clear()
+          fabricCanvas.setWidth(bbox.width.toInt)
+          fabricCanvas.setHeight(bbox.height.toInt)
 
-        fabricCanvas.renderOnAddRemove = false
-        fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }
-        fabricCanvas.renderAll()
-        fabricCanvas.renderOnAddRemove = true
-
-        val controls = createLabelerControls(labelOptions)
-        val c = controls.render
+          fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }
+          fabricCanvas.renderAll()
+          fabricCanvas.renderOnAddRemove = true
+      }
+    } catch {
+      case t: Throwable =>
+        println(s"error ${t}, ${t.getCause}")
+        t.printStackTrace()
+        throw t
     }
-
-
   }
 
 
@@ -189,53 +177,76 @@ object WatrColors extends  BaseClientDefs {
   }
 
 
-  // @JSExport
-  // def setupClickCatchers(enable: Boolean): Unit = {
-  //   val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
-  //     if (!zoneSelectionRx.selectionInProgress) {
-  //       println("click")
+  @JSExport
+  def setupClickCatchers(clientStateRx: ClientStateRx)(implicit co: Ctx.Owner): Unit = {
+    val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
+      if (!clientStateRx.selectionInProgress.now) {
+        println("click")
 
-  //       val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
+        val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
 
-  //       val req = UIRequest(zoneSelectionRx.toUIState, Click(clickPt))
-  //       uiRequestCycle(req)
-  //     }
-  //     true
-  //   }
-
-
-  //   val elem = dom.document
-  //     .getElementById("canvas-container")
-
-  //   elem.addEventListener("click", clickcb, useCapture=false)
-  // }
+        val req = UIRequest(clientStateRx.toUIState, Click(clickPt))
+        uiRequestCycle(req)
+      }
+      true
+    }
 
 
-  def initRx(zoneSelectionRx: ClientStateRx)(implicit co: Ctx.Owner): Unit = Rx {
-    (zoneSelectionRx.documentId(), zoneSelectionRx.labelerType()) match {
+    val elem = dom.document
+      .getElementById("canvas-container")
+
+    elem.addEventListener("click", clickcb, useCapture=false)
+  }
+
+
+  def initRx(clientStateRx: ClientStateRx)(implicit co: Ctx.Owner): Unit = Rx {
+
+    for {
+      b <- clientStateRx.selectionInProgress
+    } yield {
+      if (b) {
+
+        fabricCanvas.defaultCursor = "crosshair"
+        fabricCanvas.renderAll()
+
+        for {
+          bbox <- getUserSelection(fabricCanvas)
+        } yield {
+          fabricCanvas.defaultCursor = "default"
+
+          val req = UIRequest(clientStateRx.toUIState, SelectRegion(bbox))
+          uiRequestCycle(req)
+
+          clientStateRx.selectionInProgress() = false
+
+        }
+      }
+    }
+
+    (clientStateRx.documentId(), clientStateRx.labelerType()) match {
       case (Some(docId), Some(lt)) =>
         createLabeler(docId, lt)
 
       case _ => // do nothing
     }
 
-    zoneSelectionRx.doDeleteZone.foreach{
-      case doDelete =>
+    clientStateRx.doDeleteZone.foreach{
+      case b if b =>
         println("Delete: uiRequestCycle()")
         uiRequestCycle(
           UIRequest(
-            zoneSelectionRx.toUIState,
+            clientStateRx.toUIState,
             MenuAction(LabelAction.deleteZone(ZoneID(0)))
           )
         )
     }
 
-    zoneSelectionRx.doMergeZones.foreach{
-      case doMerge =>
+    clientStateRx.doMergeZones.foreach{
+      case b if b =>
         println("Merge: uiRequestCycle()")
         uiRequestCycle(
           UIRequest(
-            zoneSelectionRx.toUIState,
+            clientStateRx.toUIState,
             MenuAction(LabelAction.mergeZones(List()))
           )
         )
@@ -249,14 +260,14 @@ object WatrColors extends  BaseClientDefs {
   def display(): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
-    val zoneSelectionRx = new ClientStateRx
-    clientState = Option(zoneSelectionRx)
+    val clientStateRx = new ClientStateRx
+    clientState = Option(clientStateRx)
 
 
     withBootstrapNative {
 
       val selectorControls = SharedLayout.zoneSelectorControls(
-        zoneSelectionRx,
+        clientStateRx,
         List(
           LB.Title,
           LB.Authors,
@@ -268,9 +279,7 @@ object WatrColors extends  BaseClientDefs {
 
       val navContent =  SharedLayout.initNavbar(List())
 
-      // val sampleRadio = 
-
-      // initKeybindings()
+      initKeybindings()
 
       val bodyContent = div(
         selectorControls,
@@ -278,7 +287,7 @@ object WatrColors extends  BaseClientDefs {
           ^.id:="canvas-container",
           pageStyles.canvasContainer
           // sty.marginLeft(15), sty.marginTop(25)
-        )(canvas(^.id:="canvas", pageStyles.fabricCanvas))
+        )(canvas(^.id:="canvas", pageStyles.fabricCanvasStyle))
       )
 
       val sidebarContent = ul(`class`:="sidebar-nav")
@@ -286,11 +295,10 @@ object WatrColors extends  BaseClientDefs {
       SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render
     }
 
-    // initRx(zoneSelectionRx)
-    val c = fabricCanvas
-    // setupClickCatchers(true)
-    zoneSelectionRx.documentId() = param("doc")
-    zoneSelectionRx.labelerType() = param("lt")
+    initRx(clientStateRx)
+    setupClickCatchers(clientStateRx)
+    clientStateRx.documentId() = param("doc")
+    clientStateRx.labelerType() = param("lt")
   }
 
 

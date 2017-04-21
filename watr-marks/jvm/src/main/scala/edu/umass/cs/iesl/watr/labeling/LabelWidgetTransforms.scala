@@ -55,9 +55,6 @@ object LabelWidgetTransforms {
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
       lw0 match {
 
-
-        // case RegionOverlay(under, overlays) =>
-        // case l @ RegionOverlay(wid, pageId, pGeom, clipTo, overlays) =>
         case l @ RegionOverlay(wid1, under, overlays) =>
           val pageId = under.page.pageId
           val pageDef = docStore.getPageDef(pageId).getOrElse {

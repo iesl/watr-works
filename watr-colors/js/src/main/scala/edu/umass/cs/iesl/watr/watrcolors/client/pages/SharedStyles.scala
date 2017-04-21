@@ -3,7 +3,6 @@ package watrcolors
 package client
 package pages
 
-import parts._
 
 import scaladget.stylesheet.{all => sty}
 import scalatags.JsDom.all.{marginTop => jmarginTop, _}
@@ -108,7 +107,7 @@ object pageStyles {
       zIndex      :=100
     )
 
-  lazy val fabricCanvas: ModifierSeq =
+  lazy val fabricCanvasStyle: ModifierSeq =
     zeroFringe ++ Seq(
       position.absolute,
       left    := 0,

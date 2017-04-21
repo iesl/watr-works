@@ -19,16 +19,16 @@
 }
 
 #wrapper.toggled {
-    padding-left: 250px;
+    padding-left: 100px;
 }
 
 #sidebar-wrapper {
     z-index: 1000;
     position: fixed;
-    left: 250px;
+    left: 0;
     width: 0;
     height: 100%;
-    margin-left: -250px;
+    margin-left: 0;
     overflow-y: auto;
     background: #000;
     -webkit-transition: all 0.5s ease;

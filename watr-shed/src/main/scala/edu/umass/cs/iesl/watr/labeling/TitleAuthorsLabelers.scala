@@ -122,7 +122,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       LW.pad(
         paperRecWidget,
         Padding(10, 10, 0, 0),
-        Colors.Linen
+        Colors.Blue
       )
     )
 
@@ -132,7 +132,8 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
         LB.Title,
         LB.Authors,
         LB.Abstract,
-        LB.Affiliation
+        LB.Affiliation,
+        LB.References
       ))
     )
 

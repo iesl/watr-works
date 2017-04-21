@@ -130,28 +130,6 @@ trait LabelerRendering extends MouseGestures {
   }
 
 
-  def createLabelerControls(options: LabelOptions): Tag  = {
-
-    val labelOptions = select(
-      options.labels.map(l => option(l.fqn))
-    ).render
-
-    labelOptions.onselect = (event: dom.Event) => {
-
-    }
-
-    val selectionGranularity = select(
-      option("line"),
-      option("char")
-    ).render
-
-
-
-    div(
-      labelOptions,
-      selectionGranularity
-    )
-  }
 
   def renderLabelWidget(positions: Seq[AbsPosWidget]): Option[(LTBounds, Future[List[FabricObject]])] = {
 
@@ -191,10 +169,14 @@ trait LabelerRendering extends MouseGestures {
         case Col(wid, as)                     =>
         case Figure(wid, fig)              =>
 
-          // val g = createShape(strictBounds, "blue", "yellow", 0.1f)
-          val g1 = createShape(fig, "blue", "yellow", 0.1f)
+          // val g = createShape(strictBounds, "black", "red", 0.2f)
+
+          val g1 = createShape(fig, "blue", "yellow", 0.2f)
           g1.top = g1.top.intValue() - transVec.y.toInt
           g1.left = g1.left.intValue() - transVec.x.toInt
+
+          // noControls(g)
+          // objStack += Future { g }
 
           noControls(g1)
           objStack += Future { g1 }
@@ -236,9 +218,8 @@ trait LabelerRendering extends MouseGestures {
 
           objStack += Future { g }
 
-        // case Identified =>
-        // case Panel(_, _) =>
-        case _ =>
+        case Identified(_, _, _, _) =>
+        case Panel(_, _, _) =>
       }
 
     }

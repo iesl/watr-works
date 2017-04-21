@@ -237,6 +237,10 @@ class EmbeddedServer(
 
           activeLabelWidgetIndex = Some(lwIndex)
           val layout = lwIndex.layout.positioning
+          println(s"layout = ")
+          val asdf = layout.map { _.toString } mkString("\n  ", "\n  ", "\n")
+          println(asdf)
+
           Future { (layout, labelingPanel.options) }
 
         } catch {

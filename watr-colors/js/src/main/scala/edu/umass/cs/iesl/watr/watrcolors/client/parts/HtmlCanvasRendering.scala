@@ -6,6 +6,7 @@ package parts
 import geometry._
 import native.fabric
 import utils.Color
+import utils.Colors
 
 trait HtmlCanvasRendering {
   def initFabric(elemId: String): fabric.StaticCanvas = {
@@ -120,11 +121,11 @@ trait HtmlCanvasRendering {
         rect.opacity = opacity
 
         rect
-        // createLTBoundsRect(lt, color, bg, opacity)
 
       case g @ GeometricGroup(bounds, figs) =>
         val shapes = figs.map(createShape(_, color, bg, opacity))
-        val group = fabric.Group(shapes)
+        val bs = createShape(bounds, Colors.Black.cssHash(), Colors.Red.cssHash(), 0.1f)
+        val group = fabric.Group(bs :: shapes)
         noControls(group)
         group
 

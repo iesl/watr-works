@@ -211,7 +211,7 @@ trait LabelWidgetIndex {
 
   }
 
-  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Unit = {
+  def labelConstrained(constraint: Constraint, queryHits: Seq[QueryHit], label: Label): Option[Int@@ZoneID] = {
 
     val pageRegionsToBeLabeled = (for {
       qhit <- queryHits
@@ -232,11 +232,10 @@ trait LabelWidgetIndex {
 
     }).flatten
 
-
-    val maybeZoneId = docStore.labelRegions(label, pageRegionsToBeLabeled)
+    docStore.labelRegions(label, pageRegionsToBeLabeled)
   }
 
-  def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Unit = {
+  def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Option[Int@@ZoneID] = {
     val queryHits = queryRegion(queryBounds)
     val constrainedHits = applyConstraint(constraint, queryHits)
     labelConstrained(constraint, constrainedHits, label)
@@ -320,6 +319,7 @@ trait LabelWidgetIndex {
     gesture match {
 
       case MenuAction(action) =>
+        println(s"MenuAction()")
         val run = action.exec(initResponse, layout.labelWidget)
 
         (run.uiResponse, run.labelWidget)
