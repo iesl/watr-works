@@ -15,7 +15,7 @@ import watrmarks.{StandardLabels => LB}
 // import TypeTags._
 import corpora._
 
-class LabelWidgetIndexingSpec extends LabelWidgetTestUtil {
+class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 
   behavior of "LabelWidgetIndexing"
