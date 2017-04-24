@@ -56,6 +56,14 @@ class ClientStateRx(implicit co: Ctx.Owner) {
     selections.now
   )
 
+  def updateUIState(uiState: UIState): Unit = {
+    selectionConstraint() = uiState.selectionConstraint
+    selections() = uiState.selections
+
+    doMergeZones() = false
+    doDeleteZone() = false
+  }
+
   val selectionInProgress: Var[Boolean] = Var(false)
 
   def startSelection(): Unit = {
@@ -144,6 +152,10 @@ object WatrColors extends  BaseClientDefs {
         }}
         fabricCanvas.renderAll()
         fabricCanvas.renderOnAddRemove = true
+    }
+
+    clientState.foreach { st =>
+      st.updateUIState(uiResponse.uiState)
     }
   }
 
