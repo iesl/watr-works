@@ -131,39 +131,26 @@ trait LabelerRendering extends MouseGestures {
 
 
 
-  def renderLabelWidget(positions: Seq[AbsPosWidget]): Option[(LTBounds, Future[List[FabricObject]])] = {
+  def renderLabelWidget(positions: Seq[AbsPosWidget]): Option[(LTBounds, Future[List[(Int@@WidgetID, FabricObject)]])] = {
 
-    val objStack = mutable.ArrayBuffer[Future[FabricObject]]()
+    val objStack = mutable.ArrayBuffer[Future[(Int@@WidgetID, FabricObject)]]()
 
     def visit(p: AbsPosWidget): Unit = {
       val AbsPosWidget(fa, strictBounds, bleedBounds, transVec, scaling)  = p
 
       fa match {
         case RegionOverlay(wid, targetRegion, overlays) =>
-          objStack += makeImageForPageRegion(targetRegion, strictBounds)
-
-        // case LabeledTarget(target, label, score)   =>
-        //   label.foreach({ l =>
-        //     val bgColor = l match {
-        //       case LB.Title    => "red"
-        //       case LB.Authors  => "blue"
-        //       case LB.Abstract => "yellow"
-        //       case _ => "green"
-        //     }
-        //     val normalScore = score.getOrElse(0d)
-        //     val opacity = normalScore.toFloat * 0.2f
-
-        //     objStack += Future { createShape(strictBounds, "", bgColor, opacity) }
-        //   })
+          objStack +=  makeImageForPageRegion(targetRegion, strictBounds).map(f => (wid, f))
 
         case  Reflow(wid, tr) =>
           val widget = createTextReflowWidget(tr, strictBounds)
           widget.opacity = 1.0f
           noControls(widget)
-          objStack += Future { widget }
+          objStack += Future { (wid, widget) }
 
         case TextBox(wid, tb) =>
-          objStack += Future { createTextboxWidget(tb, strictBounds) }
+          // objStack += Future { createTextboxWidget(tb, strictBounds).map(f => (wid, f)) }
+          objStack += Future { (wid, createTextboxWidget(tb, strictBounds)) }
 
         case Row(wid, as)                     =>
         case Col(wid, as)                     =>
@@ -179,7 +166,7 @@ trait LabelerRendering extends MouseGestures {
           // objStack += Future { g }
 
           noControls(g1)
-          objStack += Future { g1 }
+          objStack += Future { (wid, g1) }
 
         case Pad(wid, a, padding, maybeColor) =>
 
@@ -216,7 +203,7 @@ trait LabelerRendering extends MouseGestures {
           ))
           noControls(g)
 
-          objStack += Future { g }
+          objStack += Future { (wid, g) }
 
         case Identified(_, _, _, _) =>
         case Panel(_, _, _) =>
@@ -230,7 +217,9 @@ trait LabelerRendering extends MouseGestures {
     val fobjs = objStack.toList
       .sequenceU
       .map({ff =>
-        ff.map(noControls(_))
+        ff.foreach{
+          case (_, o) => noControls(o)
+        }
         ff
       })
 

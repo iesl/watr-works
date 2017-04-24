@@ -63,11 +63,6 @@ object LabelWidgetTransforms {
 
           val zone = docStore.getZone(zoneId)
 
-          // val zoneLineOverlays: Seq[Option[LabelWidget]] = for {
-          //   zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
-          // } yield {
-          //   val zone = docStore.getZone(zoneId)
-
           val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
             val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
             zoneTargetRegion.intersects(pageId, clipBox)
@@ -86,7 +81,7 @@ object LabelWidgetTransforms {
             val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
             Some(panel(
               withId(zoneId, figure(GeometricGroup(groupBbox, intersectingBboxes))),
-              LabelAction.clickToSelectZone(zoneId)
+              LabelAction.toggleZoneSelection(zoneId)
             ))
           }
 
@@ -100,6 +95,14 @@ object LabelWidgetTransforms {
 
     lwidget.transCata[LabelWidget](addIndicator)
   }
+
+  def addAllZoneIndicators(labels: Seq[Label], lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
+    labels.foldLeft(lwidget) {
+      case (acc, elemLabel) =>
+          LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
+      }
+  }
+
   def addZoneIndicators(label: Label, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
 
     val labelId = docStore.ensureLabel(label)
@@ -140,7 +143,7 @@ object LabelWidgetTransforms {
               val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
               Some(panel(
                 withId(zoneId, figure(GeometricGroup(groupBbox, intersectingBboxes))),
-                LabelAction.clickToSelectZone(zoneId)
+                LabelAction.toggleZoneSelection(zoneId)
               ))
             }
           }

@@ -4,4 +4,3 @@
 -Xmx4g
 -Dakka.loglevel=OFF
 -Dorg.ensime.loglevel=INFO
--javaagent:/home/saunders/projects/the-livingroom/rexa-text-extractors/watr-works/lib-proj/class-monkey-1.7.1-assembly.jar

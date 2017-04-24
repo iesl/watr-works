@@ -66,8 +66,8 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     })
 
     println(s"      :create(): index add complete")
-    val targetPageRIndexes: mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]] = 
-      priorIndex.map{ p => 
+    val targetPageRIndexes: mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]] =
+      priorIndex.map{ p =>
         val tmp = mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
         tmp ++= p.pageIndexes
         tmp
@@ -123,6 +123,7 @@ case class InterpState(
   uiResponse: UIResponse,
   labelWidget: LabelWidget
 )
+
 object istate {
 
   val uiResponseL   = lens[InterpState].uiResponse
@@ -257,6 +258,8 @@ trait LabelWidgetIndex {
   }
 
 
+
+
   // TODO this interpreter is specific to a particular labeler type (e.g., BioArxiv Labeler) and should be parameterized
   //    within this class
   val interpLabelAction: LabelAction ~> State[InterpState, ?] =
@@ -265,28 +268,60 @@ trait LabelWidgetIndex {
       def apply[A](fa: LabelAction[A]) =  {
 
         fa match {
-          case act@ LabelAction.SelectZone(zoneId) =>
+          case act@ LabelAction.ToggleZoneSelection(zoneId) =>
+            println(s"ToggleZoneSelection")
 
-            println(s"SelectZone")
             for {
+              initSt <- State.get[InterpState]
+              initSelections = initSt.uiResponse.uiState.selections
+
               _ <- State.modify[InterpState] { interpState =>
-                // Add zoneId to client-side state
-                val st0 = istate.selectionsL.modify(interpState) { sels => zoneId +: sels }
+                if (initSelections.contains(zoneId)) {
+                  println("  ..remove fringe")
+                  val st0 = istate.selectionsL.modify(interpState) { sels =>
+                    sels.filterNot(_ == zoneId)
+                  }
 
-                // Traverse the widget tree, adding indicators around all of the zone boxes
-                istate.labelWidgetL.modify(st0) { labelWidget =>
-                  LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
-                    lw.project match {
-                      case fa@ Figure(wid, fig) =>
-                        LabelWidgets.figure(
-                          composeFigures(makeFringe(fig, Padding(10)), fig)
-                        )
+                  istate.labelWidgetL.modify(st0) { labelWidget =>
+                    LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
+                      lw.project match {
+                        case fa@ Figure(wid, fig) =>
+                          val GeometricGroup(grbbox, grfigs) = fig
+                          LabelWidgets.figure(grfigs.last)
 
-                      case _ => lw
-                    }
-                  })
+                        case _ => lw
+                      }
+                    })
+                  }
+
+                } else {
+                  println("  ..add fringe")
+                  val st0 = istate.selectionsL.modify(interpState) { sels =>
+                    zoneId +: sels
+                  }
+
+                  // Traverse the widget tree, adding indicators around all of the zone boxes
+                  istate.labelWidgetL.modify(st0) { labelWidget =>
+                    LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
+                      lw.project match {
+                        case fa@ Figure(wid, fig) =>
+                          LabelWidgets.figure(
+                            composeFigures(makeFringe(fig, Padding(10)), fig)
+                          )
+
+                        case _ => lw
+                      }
+                    })
+                  }
                 }
               }
+            } yield ()
+
+          case act@ LabelAction.SelectZone(zoneId) =>
+            println(s"SelectZone (disabled)")
+
+            for {
+              init <- State.get[InterpState]
             } yield zoneId
 
           case act: DeleteZone =>
@@ -317,15 +352,37 @@ trait LabelWidgetIndex {
   }
 
 
+  def runClickedPanelAction(point: Point, initResponse: UIResponse): (UIResponse, LabelWidget) = {
+    queryForPanels(point)
+      .foldLeft((initResponse, layout.labelWidget)) {
+        case ((accResponse, accWidget), (panel, qhit))  =>
+
+          panel.interaction match {
+            case InteractProg(prog) =>
+
+              val run = prog.exec(accResponse, accWidget)
+
+              (run.uiResponse, run.labelWidget)
+
+            case _ =>
+              // TODO
+              (accResponse, accWidget)
+          }
+      }
+
+  }
 
   // TODO this part really needs to be confined to WatrColors front end codebase
   // I think this should be an abstract function, then overridden per labeler type
   // map (UIState, Gesture) => (UIState, UIChanges)
-  def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidget) = {
+  def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidgetIndex) = {
     val UIState(constraint, maybeLabel, selections) = uiState
     val initResponse = UIResponse(uiState, List())
 
-    gesture match {
+
+    val startingWidget = layout.labelWidget
+
+    val (endingResponse, endingWidget) = gesture match {
 
       case MenuAction(action) =>
         println(s"MenuAction()")
@@ -335,53 +392,7 @@ trait LabelWidgetIndex {
 
 
       case Click(point) =>
-
-        queryForPanels(point)
-          .foldLeft((initResponse, layout.labelWidget)) {
-            case ((accResponse, accWidget), (panel, qhit))  =>
-
-              panel.interaction match {
-                case InteractProg(prog) =>
-                  println(s"Interpreting ${prog} in panel ${panel}")
-
-                  // println(prettyPrintLabelWidget(layout.labelWidget))
-                  val run = prog.exec(accResponse, accWidget)
-
-                  println("   ...Ran prog")
-                  // println("Post-click widget/response:")
-                  // println(prettyPrintLabelWidget(run.labelWidget))
-                  // println(run.uiResponse)
-
-                  val lwdiff = labelWidgetDiff(layout.labelWidget, run.labelWidget)
-
-                  println("   ...Diff complete ")
-                  // println(drawLabelWidgetDiff(lwdiff))
-                  val mods = labelWidgetDiffToMods(lwdiff)
-
-                  println("   ...Diff -> Mods ")
-                  val newIndex = LabelWidgetIndex.create(docStore, run.labelWidget, Some(this))
-                  println("   ...New index created")
-                  val absPositioned = layout.positioning ++ newIndex.layout.positioning
-                  val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
-
-                  val updates = mods.map { _ match {
-                    case AddLw(id, _) => AddLw(id, absPosMap.get(id))
-                    case RmLw(id, _) => RmLw(id, absPosMap.get(id))
-                  }}
-                  println("   ... response constructed")
-
-                  val newResponse = run.uiResponse.copy(
-                    changes = updates.toList
-                  )
-
-                  (newResponse, run.labelWidget)
-
-                case _ =>
-                  // TODO
-                  (accResponse, accWidget)
-              }
-          }
-
+        runClickedPanelAction(point, initResponse)
 
 
       case DblClick(point) =>
@@ -402,6 +413,30 @@ trait LabelWidgetIndex {
 
     }
 
+    val lwdiff = labelWidgetDiff(startingWidget, endingWidget)
+
+    // println("   ...Diff complete ")
+    // println(drawLabelWidgetDiff(lwdiff))
+    val mods = labelWidgetDiffToMods(lwdiff)
+
+    // println("   ...Diff -> Mods ")
+    val newIndex = LabelWidgetIndex.create(docStore, endingWidget, Some(this))
+    // println("   ...New index created")
+
+    val absPositioned = layout.positioning ++ newIndex.layout.positioning
+    val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
+
+    val updates = mods.map { _ match {
+      case AddLw(id, _) => AddLw(id, absPosMap.get(id))
+      case RmLw(id, _) => RmLw(id, absPosMap.get(id))
+    }}
+    println("   ... response constructed")
+
+    val newResponse = endingResponse.copy(
+      changes = updates.toList
+    )
+
+    (newResponse, newIndex)
   }
 
   def debugPrint(query: Option[LTBounds] = None): Unit = {

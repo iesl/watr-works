@@ -22,6 +22,7 @@ import UPickle._
 import labeling._
 import watrmarks._
 import native.mousetrap._
+import native.fabric
 
 import TypeTagPicklers._
 import watrmarks.{StandardLabels => LB}
@@ -34,6 +35,8 @@ import scaladget.tools.JsRxTags.{ctx => _, _}
 
 import TypeTags._
 import dom.raw.MouseEvent
+
+import scala.collection.mutable
 
 class ClientStateRx(implicit co: Ctx.Owner) {
 
@@ -104,11 +107,15 @@ object WatrColors extends  BaseClientDefs {
     }
   }
 
+
+  val activeFabricObjects = mutable.HashMap[Int@@WidgetID, fabric.FabricObject]()
+
   def uiRequestCycle(req: UIRequest) = for {
     uiResponse  <- shell.uiRequest(req)
   } {
     println("complete:uiRequest ")
     // uiState = uiResponse.uiState
+    fabricCanvas.renderOnAddRemove = false
     val adds = uiResponse.changes
       .collect {
         case AddLw(wid, widget) => widget.get
@@ -116,7 +123,11 @@ object WatrColors extends  BaseClientDefs {
 
     val dels = uiResponse.changes
       .collect {
-        case RmLw(wid, widget) => widget.get
+        case RmLw(wid, widget) =>
+          // val wid = widget.get
+          activeFabricObjects.get(wid).map {fobj =>
+            fabricCanvas.remove(fobj)
+          }
       }
 
     // println(s"""adding: ${adds.mkString("\n")}""")
@@ -126,16 +137,15 @@ object WatrColors extends  BaseClientDefs {
     renderLabelWidget(adds).foreach {
       case (bbox, fobjs) =>
         println(s"adding within $bbox")
-        fabricCanvas.renderOnAddRemove = false
-        fobjs.foreach{os => os.foreach{ o =>
+        fobjs.foreach{os => os.foreach{ case (wid, obj)  =>
           // println(s"  ++> ${o}")
-          fabricCanvas.add(o)
+          activeFabricObjects.put(wid, obj)
+          fabricCanvas.add(obj)
         }}
         fabricCanvas.renderAll()
         fabricCanvas.renderOnAddRemove = true
     }
   }
-
 
 
   object shell {
@@ -157,6 +167,7 @@ object WatrColors extends  BaseClientDefs {
     fabricCanvas.clear()
   }
 
+
   def echoLabeler(lwidget: Seq[AbsPosWidget], labelOptions: LabelOptions): Unit = Async.async {
     println("echoLabeler()")
     try {
@@ -167,7 +178,10 @@ object WatrColors extends  BaseClientDefs {
           fabricCanvas.setWidth(bbox.width.toInt)
           fabricCanvas.setHeight(bbox.height.toInt)
 
-          fobjs.foreach{os => os.foreach(fabricCanvas.add(_)) }
+          fobjs.foreach{os => os.foreach{ case (wid, obj)  =>
+            activeFabricObjects.put(wid, obj)
+            fabricCanvas.add(obj)
+          }}
           fabricCanvas.renderAll()
           fabricCanvas.renderOnAddRemove = true
       }

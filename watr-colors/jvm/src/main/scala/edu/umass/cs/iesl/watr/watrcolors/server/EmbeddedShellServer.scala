@@ -201,12 +201,12 @@ class EmbeddedServer(
 
 
   object WatrShellApiListeners extends WatrShellApi {
+    import bioarxiv._
 
     def onDrawPath(artifactId: String, path: Seq[Point]): Unit = {
       println(s"onDrawPath: ")
     }
 
-    import bioarxiv._
 
     def createDocumentLabeler(
       stableId: String@@DocumentID,
@@ -226,21 +226,18 @@ class EmbeddedServer(
         try {
           val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, rec, docStore)
 
-          val withIndicators = labelingPanel.options
-            .labels
-            .foldLeft(labelingPanel.content){
-              case (acc, elemLabel) =>
-                LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
-            }
 
-          val lwIndex = LabelWidgetIndex.create(docStore, withIndicators)
+          val lwIndex = LabelWidgetIndex.create(
+            docStore,
+            LabelWidgetTransforms.addAllZoneIndicators(
+              labelingPanel.options.labels,
+              labelingPanel.content, docStore
+            )
+          )
 
           activeLabelWidgetIndex = Some(lwIndex)
-          val layout = lwIndex.layout.positioning
 
-          // println(s"layout = ")
-          // val asdf = layout.map { _.toString } mkString("\n  ", "\n  ", "\n")
-          // println(asdf)
+          val layout = lwIndex.layout.positioning
 
           Future { (layout, labelingPanel.options) }
 
@@ -264,7 +261,9 @@ class EmbeddedServer(
       activeLabelWidgetIndex.map { lwIndex =>
         println(s"got UIRequest ${r}")
 
-        val (uiResponse, modifiedWidget) = lwIndex.userInteraction(uiState, gesture)
+        val (uiResponse, modifiedWidgetIndex) = lwIndex.userInteraction(uiState, gesture)
+
+        activeLabelWidgetIndex = Some(modifiedWidgetIndex)
 
         Future{ uiResponse }
       } getOrElse {

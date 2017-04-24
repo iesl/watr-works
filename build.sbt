@@ -4,6 +4,8 @@ import ReleaseTransformations._
 SensibleThisBuild.settings
 SensibleProject.settings
 
+enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
+
 val Lib = CommonLibs
 
 lazy val jsProjects = Seq[ProjectReference](
@@ -58,7 +60,6 @@ lazy val watrshed = (project in file("watr-shed"))
 
 
 
-// .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
   .settings(skip in packageJSDependencies := false)
@@ -87,8 +88,8 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .dependsOn(watrmarks)
 
 lazy val watrcolorsJS = watrcolors.js
-  .enablePlugins(ScalaJSPlugin)
-  .enablePlugins(WorkbenchPlugin)
+  // .enablePlugins(ScalaJSPlugin)
+  // .enablePlugins(WorkbenchPlugin)
 
 lazy val watrcolorsJVM = watrcolors.jvm
   .dependsOn(watrshed)
