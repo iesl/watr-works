@@ -82,7 +82,6 @@ class TextReflowDB(
   def selectTargetRegionForBbox(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Option[Rel.TargetRegion]] = {
     val LTBounds(l, t, w, h) = bbox
     val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
-    println(s"selectTargetRegionForBbox(p=$pageId, $bbox): (bl, bt, bw, bh)= ($bl, $bt, $bw, $bh)")
 
     sql"""select * from targetregion where
        page=${pageId} AND
@@ -618,17 +617,6 @@ class TextReflowDB(
     }
 
     def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
-      // val query = for {
-      //   zoneIds <- selectZonesForDocument(docId)
-      //   labelIds <- zoneIds.traverseU { zoneId =>
-      //     selectZone(zoneId).map(_.label)
-      //   }
-      //   labels <- labelIds.traverse { labelId =>
-      //     selectLabel(labelId)
-      //   }
-      // } yield labels.map{ l =>
-      //   Labels.fromString(l.key).copy(id=l.prKey)
-      // }
       runq{ selectZoneLabelsForDocument(docId) }
     }
 
@@ -641,24 +629,3 @@ class TextReflowDB(
 
 }
 
-// object TestUtilApp extends CorpusTestingUtil {
-//   def createEmptyDocumentCorpus(): DocumentCorpus = {
-//     val tables = new TextReflowDBTables()
-//     val reflowDB = new TextReflowDB(
-//       tables,
-//       dbname="watrdev",
-//       dbuser="watrworker",
-//       dbpass="watrpasswd"
-//     )
-//     reflowDB.runq {
-//       reflowDB.veryUnsafeDropDatabase().run
-//     }
-//     reflowDB.dropAndRecreate
-//     reflowDB.docStore
-//   }
-//   def main(args: Array[String]): Unit = {
-//     new CleanDocstore {
-//       test1()
-//     }
-//   }
-// }

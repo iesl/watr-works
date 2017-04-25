@@ -99,7 +99,7 @@ object LabelWidgetTransforms {
   def addAllZoneIndicators(labels: Seq[Label], lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
     labels.foldLeft(lwidget) {
       case (acc, elemLabel) =>
-          LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
+        LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
       }
   }
 

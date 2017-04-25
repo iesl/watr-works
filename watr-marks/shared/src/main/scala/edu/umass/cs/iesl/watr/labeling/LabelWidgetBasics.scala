@@ -42,8 +42,8 @@ trait LabelWidgetBasics {
         case Same             (ident)        => Seq()
         case Similar          (ident: LabelWidgetF[Fix[Diff[Fix, LabelWidgetF, ?]]])        => Seq() //  ident
         case Different        (left: LabelWidget, right: LabelWidget)  =>
-          val toRm = left.universe.toList.map {w => AddLw(w.project.wid)}
-          val toAdd = right.universe.toList.map {w => RmLw(w.project.wid)}
+          val toRm = left.universe.toList.map {w => RmLw(w.project.wid)}
+          val toAdd = right.universe.toList.map {w => AddLw(w.project.wid)}
           toRm ++ toAdd
 
 

@@ -452,7 +452,8 @@ trait LabelWidgetIndex {
       case AddLw(id, _) => AddLw(id, absPosMap.get(id))
       case RmLw(id, _) => RmLw(id, absPosMap.get(id))
     }}
-    println("   ... response constructed")
+    // println("   ... response constructed")
+    // println(updates.mkString("\n  ", "\n  ", "\n"))
 
     val newResponse = endingResponse.copy(
       changes = updates.toList
@@ -522,7 +523,7 @@ trait LabelWidgetIndex {
       }
     }
     query foreach { q =>
-      println(s"query: $q")
+      // println(s"query: $q")
       q.intersection(graphPaper.bbox).foreach{ clippedQuery =>
         println(s"clipped query: $clippedQuery")
         graphPaper.shadeBackground(GraphPaper.ltb2box(clippedQuery), Colors.Blue3)
