@@ -319,14 +319,29 @@ object WatrColors extends  BaseClientDefs {
 
       initKeybindings()
 
-      val bodyContent = div(
-        selectorControls,
-        div(
-          ^.id:="canvas-container",
-          pageStyles.canvasContainer
-        )(canvas(^.id:="canvas", pageStyles.fabricCanvasStyle))
-      )
+      // val bodyContent = div(
+      //   selectorControls,
+      //   div(
+      //     ^.id:="canvas-container",
+      //     pageStyles.canvasContainer
+      //   )(canvas(^.id:="canvas", pageStyles.fabricCanvasStyle))
+      // )
 
+      val bodyContent =
+        div("container-fluid".clazz)(
+          div("row".clazz, pageStyles.controlClusterStyle)(
+            div("col-lg-12".clazz)(
+              selectorControls
+            )
+          ),
+          div("row".clazz, pageStyles.labelerBodyStyle)(
+            div("col-lg-12".clazz)(
+              div(^.id:="canvas-container", pageStyles.canvasContainer)(
+                canvas(^.id:="canvas", pageStyles.fabricCanvasStyle)
+              )
+            )
+          )
+        )
       val sidebarContent = ul(`class`:="sidebar-nav")
 
       SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render

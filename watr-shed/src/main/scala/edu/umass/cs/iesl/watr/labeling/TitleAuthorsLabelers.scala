@@ -35,21 +35,61 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     val docId = theDocumentCorpus.getDocument(stableId)
       .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
-    val pageWidgets = for {
-      pagenum <- 0 to 4
-    } yield {
-      val page = PageNum(pagenum)
 
-      val pageId = theDocumentCorpus.getPage(docId, page)
-        .getOrElse(sys.error(s"Trying to access non-existent page in doc ${stableId} page 0"))
+
+    val pageWidgets = for {
+      pageId <- theDocumentCorpus.getPages(docId).take(4)
+    } yield {
 
       val pageGeometry = theDocumentCorpus.getPageGeometry(pageId)
-      // .getOrElse(sys.error(s"Trying to access non-existent page geometry in doc ${stableId} page ${page0}"))
 
       val pageTargetRegionId = theDocumentCorpus.addTargetRegion(pageId, pageGeometry)
 
       val pageTargetRegion = theDocumentCorpus.getTargetRegion(pageTargetRegionId)
 
+      LW.pad(
+        LW.targetOverlay(pageTargetRegion, overlays=List()),
+        Padding(4),
+        Colors.DarkSlateBlue
+      )
+    }
+
+    val placeholders = Stream.continually(LW.textbox("<empty page>"))
+
+    val widgets = (pageWidgets.toStream ++ placeholders).take(4)
+
+    val body = LW.row(
+      LW.col(
+        LW.row(
+          widgets(0),
+          widgets(1)
+        ),
+        LW.row(
+          widgets(2),
+          widgets(3)
+        )
+      ),
+      LW.pad(
+        paperRecWidget,
+        Padding(10, 10, 0, 0),
+        Colors.Linen
+      )
+    )
+
+    LabelingPanel(
+      body,
+      LabelOptions(Map(
+        (LB.Title, Colors.DarkSlateBlue),
+        (LB.Authors, Colors.Orange),
+        (LB.Abstract, Colors.MediumTurquoise),
+        (LB.Affiliation, Colors.OliveDrab),
+        (LB.References, Colors.Peru)
+      ))
+    )
+
+  }
+
+}
 
       // val allPageLines = for {
       //   (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
@@ -99,44 +139,3 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       //   .map({case (linenum, (score, lwidget)) =>
       //     lwidget
       //   })
-
-      LW.pad(
-        LW.targetOverlay(pageTargetRegion, overlays=List()),
-        Padding(4),
-        Colors.DarkSlateBlue
-      )
-    }
-
-
-    val body = LW.row(
-      LW.col(
-        LW.row(
-          pageWidgets(0),
-          pageWidgets(1)
-        ),
-        LW.row(
-          pageWidgets(2),
-          pageWidgets(3)
-        )
-      ),
-      LW.pad(
-        paperRecWidget,
-        Padding(10, 10, 0, 0),
-        Colors.Linen
-      )
-    )
-
-    LabelingPanel(
-      body,
-      LabelOptions(Map(
-        (LB.Title, Colors.DarkSlateBlue),
-        (LB.Authors, Colors.Orange),
-        (LB.Abstract, Colors.MediumTurquoise),
-        (LB.Affiliation, Colors.OliveDrab),
-        (LB.References, Colors.Peru)
-      ))
-    )
-
-  }
-
-}

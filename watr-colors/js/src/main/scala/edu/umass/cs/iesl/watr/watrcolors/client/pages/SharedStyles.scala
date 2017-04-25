@@ -52,8 +52,8 @@ object pageStyles {
 
   lazy val labelerBodyStyle: ModifierSeq = Seq(
     position.absolute,
-    top := "110px",
-    overflow  := "scroll"
+    top := "80px",
+    overflow  := "auto"
   )
   lazy val controlClusterStyle: ModifierSeq = Seq(
     backgroundColor := Colors.FloralWhite.cssHash(),
