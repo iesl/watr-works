@@ -22,7 +22,9 @@ import watrmarks.Label
 
 import labeling._
 import rx._
+import utils.Color
 
+import scaladget.tools.JsRxTags.{ctx => _, _}
 
 object SharedLayout extends BaseClientDefs {
   import BootstrapBits._
@@ -79,7 +81,8 @@ object SharedLayout extends BaseClientDefs {
 
 
   def zoneSelectorControls(
-    zsRx: ClientStateRx, labels: Seq[Label]
+    zsRx: ClientStateRx,
+    labelSelector: RxModifier
   )(implicit ctx: Ctx.Owner): RxHtmlTag = Rx {
 
     val delClrMrgButtons = buttonGroup()(
@@ -97,7 +100,6 @@ object SharedLayout extends BaseClientDefs {
             defaultActive = b,
             modifierSeq = sty.btn_small,
             onclick = () => {
-              println(s"click? ${s}")
               zsRx.selectionConstraint() = c
             }
           )
@@ -107,15 +109,10 @@ object SharedLayout extends BaseClientDefs {
       initSelectConstraint:_*
     )
 
-    val selectActiveLabel: SelectableButtons = radios()(
-      (labels.map{ l =>
-        selectableButton(l.fqn, false, onclick = () => {zsRx.selectedLabel() = Some(l)})
-      }):_*
-    )
 
     div("selection-controls".id,
       selectConstraint.render,
-      selectActiveLabel.render,
+      labelSelector,
       delClrMrgButtons.render
     )
 

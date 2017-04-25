@@ -230,16 +230,18 @@ class EmbeddedServer(
           val lwIndex = LabelWidgetIndex.create(
             docStore,
             LabelWidgetTransforms.addAllZoneIndicators(
-              labelingPanel.options.labels,
-              labelingPanel.content, docStore
-            )
+              labelingPanel.labelWidget,
+              labelingPanel.labelOptions,
+              docStore
+            ),
+            labelingPanel.labelOptions
           )
 
           activeLabelWidgetIndex = Some(lwIndex)
 
           val layout = lwIndex.layout.positioning
 
-          Future { (layout, labelingPanel.options) }
+          Future { (layout, labelingPanel.labelOptions) }
 
         } catch {
           case t: Throwable =>

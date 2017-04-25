@@ -12,6 +12,7 @@
 
 #wrapper {
     padding-left: 0;
+    padding-top: 65px;
     -webkit-transition: all 0.5s ease;
     -moz-transition: all 0.5s ease;
     -o-transition: all 0.5s ease;
@@ -20,12 +21,14 @@
 
 #wrapper.toggled {
     padding-left: 100px;
+    padding-top: 65px;
 }
 
 #sidebar-wrapper {
-    z-index: 1000;
+    z-index: 10;
     position: fixed;
     left: 0;
+    top: 67;
     width: 0;
     height: 100%;
     margin-left: 0;
@@ -43,12 +46,14 @@
 
 #page-content-wrapper {
     width: 100%;
+    top: 65;
     position: absolute;
     padding: 15px;
 }
 
 #wrapper.toggled #page-content-wrapper {
     position: absolute;
+    top: 65;
     margin-right: -250px;
 }
 
@@ -110,6 +115,7 @@
     }
 
     #sidebar-wrapper {
+        top: 67;
         width: 0;
     }
 
@@ -119,11 +125,13 @@
 
     #page-content-wrapper {
         padding: 20px;
+        top: 65;
         position: relative;
     }
 
     #wrapper.toggled #page-content-wrapper {
         position: relative;
+        top: 65;
         margin-right: 0;
     }
 }

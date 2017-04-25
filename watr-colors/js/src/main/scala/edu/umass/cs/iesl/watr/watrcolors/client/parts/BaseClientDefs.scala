@@ -6,7 +6,8 @@ package parts
 import scala.collection.mutable
 
 import scalatags.JsDom.{
-  TypedTag
+  TypedTag,
+  Modifier
 }
 
 import org.scalajs.dom.raw.{
@@ -22,6 +23,7 @@ import rx._
 trait BaseClientDefs extends LabelerRendering {
   type HtmlTag = TypedTag[HTMLElement]
   type RxHtmlTag = Rx.Dynamic[TypedTag[HTMLElement]]
+  type RxModifier = Rx.Dynamic[Modifier]
   type RxHtmlTags = Rx.Dynamic[Seq[TypedTag[HTMLElement]]]
 
   def queryParams(): Map[String, String] = {

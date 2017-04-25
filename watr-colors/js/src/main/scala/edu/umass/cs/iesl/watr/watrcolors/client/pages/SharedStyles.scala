@@ -23,7 +23,6 @@ object pageStyles {
   )
 
   lazy val logo: ModifierSeq = Seq(
-    // backgroundColor  := Colors.White.cssHash,
     color            := Colors.Coral.cssHash,
     fontSize         := "28px"
   )
@@ -51,18 +50,32 @@ object pageStyles {
     backgroundColor  := Colors.LightBlue.cssHash
   )
 
+  lazy val labelerBodyStyle: ModifierSeq = Seq(
+    position.absolute,
+    top := "110px",
+    overflow  := "scroll"
+  )
+  lazy val controlClusterStyle: ModifierSeq = Seq(
+    backgroundColor := Colors.FloralWhite.cssHash(),
+    position.fixed,
+    top := "70px",
+    zIndex := 90
+  )
+
+  lazy val navbar_FixedTop = "navbar-fixed-top".clazz
+
   lazy val navbarStyle: ModifierSeq = Seq(
     padding     :=0,
     border      :=0,
     margin      :=0,
-    navbar_staticTop,
+    navbar_FixedTop,
     sty.nav,
     navbar_inverse,
     height           := "67px",
     fontSize         := 12,
     color            := Colors.DarkBlue.cssHash,
     backgroundColor  := Colors.LightBlue.cssHash,
-    zIndex := 10
+    zIndex := 100
   )
 
   lazy val mainContentStyle: ModifierSeq = Seq(
@@ -80,19 +93,19 @@ object pageStyles {
   )
 
 
-  lazy val fileChevronStyle: ModifierSeq = Seq(
-    lineHeight := "10px",
-    top := 10,
-    left := -30,
-    sty.paddingRight(20)
-  )
+  // lazy val fileChevronStyle: ModifierSeq = Seq(
+  //   lineHeight := "10px",
+  //   top := 10,
+  //   left := -30,
+  //   sty.paddingRight(20)
+  // )
 
 
-  lazy val mainNav370: ModifierSeq = Seq(
-    sty.paddingLeft(370),
-    borderColor := "yellow",
-    zIndex := 10
-  )
+  // lazy val mainNav370: ModifierSeq = Seq(
+  //   sty.paddingLeft(370),
+  //   borderColor := "yellow",
+  //   zIndex := 10
+  // )
 
   lazy val canvasContainer: ModifierSeq =
     zeroFringe ++ Seq(
@@ -114,25 +127,26 @@ object pageStyles {
       top     := 0
     )
 
-  lazy val centerpanel: ModifierSeq = Seq(
-    sty.paddingLeft(15),
-    sty.paddingRight(15),
-    relativePosition,
-    height := "89%",
-    top := 30,
-    width := "100%"
-  )
+  // lazy val centerpanel: ModifierSeq = Seq(
+  //   sty.paddingLeft(15),
+  //   sty.paddingRight(15),
+  //   relativePosition,
+  //   height := "89%",
+  //   top := 30,
+  //   width := "100%"
+  // )
 
-  lazy val leftpanel: ModifierSeq = Seq(
-    sty.paddingLeft(7),
-    absolutePosition,
-    background  := s"gray none repeat scroll 0 0",
-    height      := "100%",
-    // styles.left := -320,
-    opacity     := 1,
-    overflowY   := "auto",
-    // top         := 37,
-    transition  := "all 0.1 s ease - out 0 s",
-    width       := 320
-  )
+//   lazy val leftpanel: ModifierSeq = Seq(
+//     sty.paddingLeft(7),
+//     absolutePosition,
+//     background  := s"gray none repeat scroll 0 0",
+//     height      := "100%",
+//     // styles.left := -320,
+//     opacity     := 1,
+//     overflowY   := "auto",
+//     // top         := 37,
+//     transition  := "all 0.1 s ease - out 0 s",
+//     width       := 320
+//   )
+
 }

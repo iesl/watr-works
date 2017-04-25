@@ -16,21 +16,20 @@ import sty._
 import watrmarks.{StandardLabels => LB}
 import rx._
 import org.scalajs.dom.raw._
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-import scaladget.tools.JsRxTags._
+import utils.Colors
+import scaladget.api.{
+  SelectableButtons
+}
+import scaladget.tools.JsRxTags.{ctx => _, _}
+import textboxing.{TextBoxing => TB}, TB._
 
 @JSExportTopLevel("DevClient")
 object DevClient extends BaseClientDefs {
   import BootstrapBits._
-  //
 
-  def navEntry(): HTMLElement = {
-    <.li(
-      <.span(
-        <.div("content")
-      )
-    ).render
-  }
 
   @JSExport
   def display(): Unit = {
@@ -41,25 +40,65 @@ object DevClient extends BaseClientDefs {
     withBootstrapNative {
 
       val pageName = navItem(span("Demo").render)
+      val setupLabelChooser: RxModifier = Rx {
+        val selectActiveLabel: SelectableButtons = radios()(
+          (List(
+            (LB.Title, Colors.Lavender),
+            (LB.Authors, Colors.Orange),
+            (LB.Abstract, Colors.Firebrick),
+            (LB.Affiliation, Colors.SkyBlue),
+            (LB.References, Colors.Green3)
+          ).zipWithIndex.map{ case ((lbl, clr), i) =>
+            selectableButton(
+              lbl.fqn,
+              (i==0),
+              modifierSeq = List(backgroundColor:=clr.cssHash()),
+              onclick = () => {println(s"chose ${lbl}")}
+            )
+          }):_*
+        )
+        selectActiveLabel.render
+      }
 
       val selectorControls = SharedLayout.zoneSelectorControls(
-        new ClientStateRx(),
-        List(
-          LB.Title,
-          LB.Authors,
-          LB.Abstract,
-          LB.Affiliation,
-          LB.References
-        ))
+        new ClientStateRx((_) => Future{()}),
+        setupLabelChooser
+      )
 
       val nav = SharedLayout.initNavbar(List(
         pageName
       ))
 
-      val bodyContent = div(
-        selectorControls,
-        p("Main Body Content")
+      def sampleText = vjoin(center1)(
+        tbox("Lorem ipsum dolor sit amet"),
+        tbox("Anyconsectetur adipisicing elit, sed do eiusmod tempor"),
+        tbox("aliqua. Ut enim ad minim veniam, "),
+        tbox("incididunt ut labore et dolore magna "),
+        tbox("aliqua. Ut enim ad minim veniam, ")
       )
+
+      val t0 = hcat(repeat(sampleText).take(5))
+
+      val t1 = vjoins(TB.left)(
+        repeat(t0).take(20)
+          .zipWithIndex.map({case (b, i) =>
+            indent(i)(b)
+          })
+      )
+
+      val bodyContent =
+        div("container-fluid".clazz)(
+          div("row".clazz, pageStyles.controlClusterStyle)(
+            div("col-lg-12".clazz)(
+              selectorControls
+            )
+          ),
+          div("row".clazz, pageStyles.labelerBodyStyle)(
+            div("col-lg-12".clazz)(
+              pre(t1.toString)
+            )
+          )
+        )
 
       val sidebarContent =
         ul(`class`:="sidebar-nav")()

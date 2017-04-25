@@ -84,14 +84,6 @@ trait LabelerRendering extends MouseGestures {
   }
 
 
-  def createButtonWidget(text: String, bbox: LTBounds): FabricObject = {
-    val tw = createTextWidget(text, bbox)
-    val bg = createShape(bbox, "", "blue", 0.1f)
-    val g = fabric.Group(Seq(tw, bg))
-    noControls(g)
-    g
-  }
-
   def createTextWidget(text: String, bbox: LTBounds): FabricObject = {
     val ftext = fabric.Text(text)
     ftext.setFontSize(14)
@@ -149,21 +141,16 @@ trait LabelerRendering extends MouseGestures {
           objStack += Future { (wid, widget) }
 
         case TextBox(wid, tb) =>
-          // objStack += Future { createTextboxWidget(tb, strictBounds).map(f => (wid, f)) }
           objStack += Future { (wid, createTextboxWidget(tb, strictBounds)) }
 
         case Row(wid, as)                     =>
         case Col(wid, as)                     =>
         case Figure(wid, fig)              =>
 
-          // val g = createShape(strictBounds, "black", "red", 0.2f)
-
           val g1 = createShape(fig, "blue", "yellow", 0.2f)
           g1.top = g1.top.intValue() - transVec.y.toInt
           g1.left = g1.left.intValue() - transVec.x.toInt
 
-          // noControls(g)
-          // objStack += Future { g }
 
           noControls(g1)
           objStack += Future { (wid, g1) }

@@ -27,24 +27,50 @@ import native.fabric
 import TypeTagPicklers._
 import watrmarks.{StandardLabels => LB}
 
-import scaladget.stylesheet.{all => sty}
+// import scaladget.stylesheet.{all => sty}
 import scalatags.JsDom.all._
 
 import rx._
+import scaladget.api.{
+  SelectableButtons
+}
 import scaladget.tools.JsRxTags.{ctx => _, _}
 
 import TypeTags._
 import dom.raw.MouseEvent
 
 import scala.collection.mutable
+import utils.Color
+import BootstrapBits._
 
-class ClientStateRx(implicit co: Ctx.Owner) {
+class ClientStateRx(
+  uiRequestCycle: (UIRequest) => Future[Unit]
+)(implicit co: Ctx.Owner) extends BaseClientDefs {
 
+  val labelTypes: Var[Map[Label, Color]] = Var(Map())
+  val selectedLabel: Var[Option[Label]] = Var(None)
+
+  val setupLabelChooser: RxModifier = Rx {
+    val selectActiveLabel: SelectableButtons = radios()(
+      (labelTypes().toList.zipWithIndex.map{ case ((lbl, clr), i) =>
+
+        if(i==0) {
+         selectedLabel() = Some(lbl)
+        }
+
+        selectableButton(
+          lbl.fqn,
+          (i==0),
+          modifierSeq = List(backgroundColor:=clr.cssHash()),
+          onclick = () => {selectedLabel() = Some(lbl)})
+      }):_*
+    )
+    selectActiveLabel.render
+  }
 
   val labelerType: Var[Option[String]] = Var(None)
   val documentId: Var[Option[String]] = Var(None)
   val selectionConstraint: Var[Constraint] = Var(ByLine)
-  val selectedLabel: Var[Option[Label]] = Var(None)
   val selections: Var[Seq[Int@@ZoneID]] = Var(Seq())
 
   val doMergeZones: Var[Boolean] = Var(false)
@@ -68,7 +94,35 @@ class ClientStateRx(implicit co: Ctx.Owner) {
 
   def startSelection(): Unit = {
     selectionInProgress() = true
+    selectionInProgress() = false
   }
+
+  val rx2 = doDeleteZone.triggerLater{
+    if (doDeleteZone.now) {
+      println(s"Delete: uiRequestCycle()")
+      uiRequestCycle(
+        UIRequest(
+          toUIState,
+          MenuAction(LabelAction.DeleteZone(ZoneID(0)))
+        )
+      )
+    }
+    doDeleteZone() = false
+  }
+
+  val rx3 = doMergeZones.triggerLater{
+    if (doMergeZones.now) {
+      println("Merge: uiRequestCycle()")
+      uiRequestCycle(
+        UIRequest(
+          toUIState,
+          MenuAction(LabelAction.MergeZones(List()))
+        )
+      )
+    }
+    doMergeZones() = false
+  }
+
 
 }
 
@@ -118,9 +172,9 @@ object WatrColors extends  BaseClientDefs {
 
   val activeFabricObjects = mutable.HashMap[Int@@WidgetID, fabric.FabricObject]()
 
-  def uiRequestCycle(req: UIRequest) = for {
+  def uiRequestCycle(req: UIRequest): Future[Unit] = for {
     uiResponse  <- shell.uiRequest(req)
-  } {
+  } yield {
     println("complete:uiRequest ")
     // uiState = uiResponse.uiState
     fabricCanvas.renderOnAddRemove = false
@@ -180,9 +234,10 @@ object WatrColors extends  BaseClientDefs {
   }
 
 
-  def echoLabeler(lwidget: Seq[AbsPosWidget], labelOptions: LabelOptions): Unit = Async.async {
+  def echoLabeler(lwidget: Seq[AbsPosWidget]): Future[Unit] = Async.async {
     println("echoLabeler()")
     try {
+
       renderLabelWidget(lwidget).foreach {
         case (bbox, fobjs) =>
           fabricCanvas.renderOnAddRemove = false
@@ -197,6 +252,7 @@ object WatrColors extends  BaseClientDefs {
           fabricCanvas.renderAll()
           fabricCanvas.renderOnAddRemove = true
       }
+
     } catch {
       case t: Throwable =>
         println(s"error ${t}, ${t.getCause}")
@@ -206,11 +262,12 @@ object WatrColors extends  BaseClientDefs {
   }
 
 
-  def createLabeler(docId: String, lt: String): Unit = {
-    shell.createDocumentLabeler(DocumentID(docId), lt)
-      .foreach { case (lwidget, opts) =>
-        echoLabeler(lwidget, opts)
-      }
+
+  def createLabeler(docId: String, lt: String): Future[LabelOptions] = {
+    for {
+      (lwidget, opt) <- shell.createDocumentLabeler(DocumentID(docId), lt)
+      _ <- echoLabeler(lwidget)
+    } yield { opt }
   }
 
 
@@ -247,22 +304,16 @@ object WatrColors extends  BaseClientDefs {
   def display(): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
-    val clientStateRx = new ClientStateRx
+    val clientStateRx = new ClientStateRx(uiRequestCycle(_))
     clientState = Option(clientStateRx)
 
 
     withBootstrapNative {
-
       val selectorControls = SharedLayout.zoneSelectorControls(
         clientStateRx,
-        List(
-          LB.Title,
-          LB.Authors,
-          LB.Abstract,
-          LB.Affiliation,
-          LB.References
-        ))
-
+        clientStateRx.setupLabelChooser
+        // labelOptions.labels
+      )
 
       val navContent =  SharedLayout.initNavbar(List())
 
@@ -273,7 +324,6 @@ object WatrColors extends  BaseClientDefs {
         div(
           ^.id:="canvas-container",
           pageStyles.canvasContainer
-            // sty.marginLeft(15), sty.marginTop(25)
         )(canvas(^.id:="canvas", pageStyles.fabricCanvasStyle))
       )
 
@@ -282,68 +332,32 @@ object WatrColors extends  BaseClientDefs {
       SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render
     }
 
-    val rx2 = clientStateRx.doDeleteZone.triggerLater{
-      if (clientStateRx.doDeleteZone.now) {
-        println(s"Delete: uiRequestCycle()")
-        uiRequestCycle(
-          UIRequest(
-            clientStateRx.toUIState,
-            MenuAction(LabelAction.DeleteZone(ZoneID(0)))
-          )
-        )
-      }
-      clientStateRx.doDeleteZone() = false
+    val docId = param("doc").getOrElse { "" }
+    val lt = param("lt").getOrElse { "" }
+    createLabeler(docId, lt).map{ labelOptions =>
+      clientStateRx.labelTypes() = labelOptions.colorMap
     }
 
-    val rx3 = clientStateRx.doMergeZones.triggerLater{
-      if (clientStateRx.doMergeZones.now) {
-
-        println("Merge: uiRequestCycle()")
-        uiRequestCycle(
-          UIRequest(
-            clientStateRx.toUIState,
-            MenuAction(LabelAction.MergeZones(List()))
-          )
-        )
-      }
-      clientStateRx.doMergeZones() = false
-    }
-
-    val rx0 = Rx { for {
-      b <- clientStateRx.selectionInProgress
-    } yield {
-      if (b) {
-
-        fabricCanvas.defaultCursor = "crosshair"
-        fabricCanvas.renderAll()
+    val rx0 = clientStateRx.selectionInProgress.triggerLater {
+      if (clientStateRx.selectionInProgress.now) {
+        // fabricCanvas.defaultCursor = "crosshair"
 
         for {
           bbox <- getUserSelection(fabricCanvas)
         } yield {
-          fabricCanvas.defaultCursor = "default"
+          // fabricCanvas.defaultCursor = "default"
 
-          val req = UIRequest(clientStateRx.toUIState, SelectRegion(bbox))
-          uiRequestCycle(req)
+          uiRequestCycle(UIRequest(
+            clientStateRx.toUIState,
+            SelectRegion(bbox)))
 
-          clientStateRx.selectionInProgress() = false
 
         }
-      }
-    }}
-
-    val rx1 = Rx{
-      (clientStateRx.documentId(), clientStateRx.labelerType()) match {
-        case (Some(docId), Some(lt)) =>
-          createLabeler(docId, lt)
-
-        case _ => // do nothing
       }
     }
 
 
     setupClickCatchers(clientStateRx)
-    clientStateRx.documentId() = param("doc")
-    clientStateRx.labelerType() = param("lt")
   }
 
 

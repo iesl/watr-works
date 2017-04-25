@@ -47,7 +47,7 @@ object LabelWidgetTransforms {
     r.transCata[LabelWidget](f)
   }
 
-  def addZoneIndicator(zoneId: Int@@ZoneID, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelOptions: LabelOptions, docStore: DocumentCorpus): LabelWidget = {
 
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
@@ -62,6 +62,8 @@ object LabelWidgetTransforms {
           val clipBox = under.bbox
 
           val zone = docStore.getZone(zoneId)
+
+          val zoneColor = labelOptions.colorMap(zone.label)
 
           val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
             val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
@@ -80,7 +82,13 @@ object LabelWidgetTransforms {
           val overlayWidgets = if (intersectingBboxes.isEmpty) None else {
             val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
             Some(panel(
-              withId(zoneId, figure(GeometricGroup(groupBbox, intersectingBboxes))),
+              withId(zoneId, figure(
+                Colorized(
+                  GeometricGroup(groupBbox, intersectingBboxes),
+                  fg=zoneColor, bg=zoneColor,
+                  fgOpacity=0.0f, bgOpacity=0.1f
+                )
+              )),
               LabelAction.toggleZoneSelection(zoneId)
             ))
           }
@@ -93,17 +101,18 @@ object LabelWidgetTransforms {
       }
     }
 
-    lwidget.transCata[LabelWidget](addIndicator)
+    labelWidget.transCata[LabelWidget](addIndicator)
   }
 
-  def addAllZoneIndicators(labels: Seq[Label], lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
-    labels.foldLeft(lwidget) {
-      case (acc, elemLabel) =>
-        LabelWidgetTransforms.addZoneIndicators(elemLabel, acc, docStore)
+  def addAllZoneIndicators(labelWidget: LabelWidget, labelOptions: LabelOptions, docStore: DocumentCorpus): LabelWidget = {
+
+    labelOptions.colorMap.foldLeft(labelWidget) {
+      case (acc, (elemLabel, _)) =>
+        addZoneIndicators(elemLabel, acc, labelOptions, docStore)
       }
   }
 
-  def addZoneIndicators(label: Label, lwidget: LabelWidget, docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelOptions: LabelOptions, docStore: DocumentCorpus): LabelWidget = {
 
     val labelId = docStore.ensureLabel(label)
 
@@ -123,6 +132,7 @@ object LabelWidgetTransforms {
             zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
           } yield {
             val zone = docStore.getZone(zoneId)
+            val zoneColor = labelOptions.colorMap(label)
 
             val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
 
@@ -139,10 +149,17 @@ object LabelWidgetTransforms {
                     .map(_.bbox)
                 }.toList
 
+
             if (intersectingBboxes.isEmpty) None else {
               val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
               Some(panel(
-                withId(zoneId, figure(GeometricGroup(groupBbox, intersectingBboxes))),
+                withId(zoneId, figure(
+                  Colorized(
+                    GeometricGroup(groupBbox, intersectingBboxes),
+                    fg=zoneColor, bg=zoneColor,
+                    fgOpacity=0.3f, bgOpacity=0.2f
+                  )
+                )),
                 LabelAction.toggleZoneSelection(zoneId)
               ))
             }
@@ -156,6 +173,6 @@ object LabelWidgetTransforms {
       }
     }
 
-    lwidget.transCata[LabelWidget](addIndicator)
+    labelWidget.transCata[LabelWidget](addIndicator)
   }
 }

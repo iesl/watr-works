@@ -23,7 +23,7 @@ trait HtmlCanvasRendering {
     jQuery(s"#$elemId").prop("fabric").asInstanceOf[fabric.Canvas]
   }
 
-  def createLTBoundsRect(bbox: LTBounds, color: String, bg: String, opacity: Float): fabric.FabricObject = {
+  def createLTBoundsRect(bbox: LTBounds, color: String, bg: String, fgOpacity: Float): fabric.FabricObject = {
     val rect = fabric.Rect()
     rect.top         = bbox.top
     rect.left        = bbox.left
@@ -35,7 +35,7 @@ trait HtmlCanvasRendering {
     rect.hasControls = false
     rect.hasBorders  = false
     rect.selectable  = false
-    rect.opacity = opacity
+    rect.opacity = fgOpacity
 
     rect
   }
@@ -52,7 +52,7 @@ trait HtmlCanvasRendering {
     shape.selectable  = false
   }
 
-  def createShape(shape: GeometricFigure, color: String, bg: String, opacity: Float): fabric.FabricObject = {
+  def createShape(shape: GeometricFigure, fgColor: String, bgColor: String, fgOpacity: Float=1.0f, bgOpacity: Float=1.0f): fabric.FabricObject = {
     shape match {
       case p: Point =>
         val radius = 4
@@ -65,11 +65,11 @@ trait HtmlCanvasRendering {
         c.radius = radius
         c.startAngle = 0
         c.endAngle = math.Pi * 2
-        c.stroke      = color
+        c.stroke      = fgColor
         c.strokeWidth = 1
-        c.fill        = bg
+        c.fill        = bgColor
         noControls(c)
-        c.opacity = opacity
+        c.opacity = fgOpacity
         c
 
       case Line(p1: Point, p2: Point) =>
@@ -86,10 +86,10 @@ trait HtmlCanvasRendering {
         l.y1 = p1.y
         l.x2 = p2.x
         l.y2 = p2.y
-        l.stroke      = color
+        l.stroke      = fgColor
         l.strokeWidth = 1
-        l.fill        = bg
-        l.opacity = opacity
+        l.fill        = bgColor
+        l.opacity = fgOpacity
 
         l
 
@@ -100,10 +100,10 @@ trait HtmlCanvasRendering {
         rect.left        = bbox.left
         rect.width       = bbox.width
         rect.height      = bbox.height
-        rect.stroke      = color
+        rect.stroke      = fgColor
         rect.strokeWidth = 1
-        rect.fill        = bg
-        rect.opacity = opacity
+        rect.fill        = bgColor
+        rect.opacity = fgOpacity
 
         rect
 
@@ -115,16 +115,16 @@ trait HtmlCanvasRendering {
         rect.left        = bbox.left
         rect.width       = bbox.width
         rect.height      = bbox.height
-        rect.stroke      = color
+        rect.stroke      = fgColor
         rect.strokeWidth = 1
-        rect.fill        = bg
-        rect.opacity = opacity
+        rect.fill        = bgColor
+        rect.opacity = fgOpacity
 
         rect
 
       case g @ GeometricGroup(bounds, figs) =>
-        val shapes = figs.map(createShape(_, color, bg, opacity))
-        val bs = createShape(bounds, Colors.Black.cssHash(), Colors.Red.cssHash(), 0.1f)
+        val shapes = figs.map(createShape(_, Colors.Black.cssHash(), bgColor, 0.2f))
+        val bs = createShape(bounds, Colors.Black.cssHash(), bgColor, 0.08f)
         val group = fabric.Group(bs :: shapes)
         noControls(group)
         group

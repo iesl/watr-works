@@ -54,18 +54,16 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   import textreflow.TextReflowJsonCodecs._
 
-  def create(docStore0: DocumentCorpus, lwidget: LabelWidget, priorIndex: Option[LabelWidgetIndex]=None): LabelWidgetIndex = {
+  def create(docStore0: DocumentCorpus, lwidget: LabelWidget, labelOpts: LabelOptions, priorIndex: Option[LabelWidgetIndex]=None): LabelWidgetIndex = {
     val lwIndex = SpatialIndex.createFor[AbsPosWidget]()
 
-    println(s"LabelWidgetIndex:create(): begin")
     val layout0 = layoutWidgetPositions(lwidget)
-    println(s"      :create(): layoutComplete")
 
     layout0.positioning.foreach({pos =>
       lwIndex.add(pos)
     })
 
-    println(s"      :create(): index add complete")
+    // println(s"      :create(): index add complete")
     val targetPageRIndexes: mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]] =
       priorIndex.map{ p =>
         val tmp = mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
@@ -115,6 +113,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       def layout: WidgetLayout = layout0
       def index: SpatialIndex[AbsPosWidget] = lwIndex
       def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
+      def labelOptions: LabelOptions = labelOpts
     }
   }
 }
@@ -145,6 +144,7 @@ trait LabelWidgetIndex {
 
   def docStore: DocumentCorpus
   def layout: WidgetLayout
+  def labelOptions: LabelOptions
   def index: SpatialIndex[AbsPosWidget]
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
 
@@ -276,7 +276,7 @@ trait LabelWidgetIndex {
 
         fa match {
           case act@ LabelAction.ToggleZoneSelection(zoneId) =>
-            println(s"ToggleZoneSelection")
+            // println(s"ToggleZoneSelection")
 
             for {
               initSt <- State.get[InterpState]
@@ -284,7 +284,7 @@ trait LabelWidgetIndex {
 
               _ <- State.modify[InterpState] { interpState =>
                 if (initSelections.contains(zoneId)) {
-                  println("  ..remove fringe")
+                  // println("  ..remove fringe")
                   val st0 = istate.selectionsL.modify(interpState) { sels =>
                     sels.filterNot(_ == zoneId)
                   }
@@ -302,7 +302,7 @@ trait LabelWidgetIndex {
                   }
 
                 } else {
-                  println("  ..add fringe")
+                  // println("  ..add fringe")
                   val st0 = istate.selectionsL.modify(interpState) { sels =>
                     zoneId +: sels
                   }
@@ -313,7 +313,14 @@ trait LabelWidgetIndex {
                       lw.project match {
                         case fa@ Figure(wid, fig) =>
                           LabelWidgets.figure(
-                            composeFigures(makeFringe(fig, Padding(10)), fig)
+                            composeFigures(
+                              Colorized(
+                                makeFringe(fig, Padding(4)),
+                                fg=Colors.Yellow, bg=Colors.Yellow,
+                                fgOpacity=0.2f, bgOpacity=0.2f
+                              ),
+                              fig
+                            )
                           )
 
                         case _ => lw
@@ -325,22 +332,22 @@ trait LabelWidgetIndex {
             } yield ()
 
           case act@ LabelAction.SelectZone(zoneId) =>
-            println(s"SelectZone (disabled)")
+            // println(s"SelectZone (disabled)")
 
             for {
               init <- State.get[InterpState]
             } yield ()
 
           case act: DeleteZone =>
-            println(s"DeleteZone")
+            // println(s"DeleteZone")
             for {
               newSt <- State.modify[InterpState] { initState =>
                 val initSelections =  initState.uiResponse.uiState.selections
-                println(s"DeleteZone:selections: [${initSelections}]")
+                // println(s"DeleteZone:selections: [${initSelections}]")
 
                 val finalLabelWidget = initSelections
                   .foldLeft(initState.labelWidget)({ case (accLabelWidget, zoneId) =>
-                    println(s"   DeleteZone(zoneId)")
+                    // println(s"   DeleteZone(zoneId)")
                     docStore.deleteZone(zoneId)
                     removeNodesWithID(zoneId, accLabelWidget)
                   })
@@ -352,7 +359,7 @@ trait LabelWidgetIndex {
             } yield ()
 
           case act: MergeZones =>
-            println(s"MergeZone")
+            // println(s"MergeZone")
             for {
               init <- State.get[InterpState]
             } yield ()
@@ -408,7 +415,7 @@ trait LabelWidgetIndex {
       case MenuAction(action) =>
         println(s"MenuAction(${action})")
 
-        val run = LabelAction.lift(action).exec(initResponse, layout.labelWidget)
+        val run = LabelAction.lift(action).exec(initResponse, startingWidget)
 
         (run.uiResponse, run.labelWidget)
 
@@ -418,14 +425,14 @@ trait LabelWidgetIndex {
 
 
       case DblClick(point) =>
-        (initResponse, layout.labelWidget)
+        (initResponse, startingWidget)
 
       case SelectRegion(bbox) =>
         maybeLabel.map {label =>
           println(s"adding label to bbox ${bbox}")
           val maybeZoneId = addLabel(bbox, constraint, label)
           maybeZoneId.map(zoneId =>
-            (initResponse, LabelWidgetTransforms.addZoneIndicator(zoneId, layout.labelWidget, docStore))
+            (initResponse, LabelWidgetTransforms.addZoneIndicator(zoneId, layout.labelWidget, labelOptions, docStore))
           ).getOrElse(
             (initResponse, layout.labelWidget)
           )
@@ -442,7 +449,7 @@ trait LabelWidgetIndex {
     val mods = labelWidgetDiffToMods(lwdiff)
 
     // println("   ...Diff -> Mods ")
-    val newIndex = LabelWidgetIndex.create(docStore, endingWidget, Some(this))
+    val newIndex = LabelWidgetIndex.create(docStore, endingWidget, labelOptions)
     // println("   ...New index created")
 
     val absPositioned = layout.positioning ++ newIndex.layout.positioning

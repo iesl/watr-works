@@ -128,12 +128,12 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
 
     LabelingPanel(
       body,
-      LabelOptions(List(
-        LB.Title,
-        LB.Authors,
-        LB.Abstract,
-        LB.Affiliation,
-        LB.References
+      LabelOptions(Map(
+        (LB.Title, Colors.DarkSlateBlue),
+        (LB.Authors, Colors.Orange),
+        (LB.Abstract, Colors.MediumTurquoise),
+        (LB.Affiliation, Colors.OliveDrab),
+        (LB.References, Colors.Peru)
       ))
     )
 
