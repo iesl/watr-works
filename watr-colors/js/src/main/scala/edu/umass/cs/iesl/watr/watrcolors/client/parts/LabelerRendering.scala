@@ -207,6 +207,7 @@ trait LabelerRendering extends MouseGestures {
 
         case Identified(_, _, _, _) =>
         case Panel(_, _, _) =>
+        case Terminal =>
       }
 
     }

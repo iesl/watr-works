@@ -118,6 +118,10 @@ class TextReflowDB(
       .query[Rel.Zone].unique
   }
 
+  def delZone(zoneId: Int@@ZoneID): ConnectionIO[Int] = {
+    sql""" delete from zone where zone=${zoneId} """.update.run
+   }
+
   def selectTextReflow(textReflowId: Int@@TextReflowID): ConnectionIO[Rel.TextReflow] = {
     sql"""
      select * from  textreflow
@@ -610,7 +614,7 @@ class TextReflowDB(
     }
 
     def deleteZone(zoneId: Int@@ZoneID): Unit = {
-      ???
+      runq{ delZone(zoneId) }
     }
 
     def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {

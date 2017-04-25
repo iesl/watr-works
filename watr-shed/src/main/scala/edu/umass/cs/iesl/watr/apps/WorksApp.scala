@@ -28,6 +28,7 @@ case class AppConfig(
   exec: Option[(AppConfig) => Unit] = None
 )
 
+
 object Works extends App {
   private[this] val log = org.log4s.getLogger
 

@@ -18,6 +18,7 @@ object TypeTagPicklers {
     macroRW[SelectRegion]
       .merge(macroRW[Click])
       .merge(macroRW[DblClick])
+      .merge(macroRW[MenuAction])
 
   implicit val Interaction_RW: RW[Interaction] = RW[Interaction](
     {value => Js.Null},

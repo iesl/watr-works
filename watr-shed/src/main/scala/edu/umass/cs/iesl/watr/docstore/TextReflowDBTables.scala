@@ -50,7 +50,7 @@ class TextReflowDBTables extends DoobieImplicits {
       CREATE INDEX zone_idx_document ON zone (document);
 
       CREATE TABLE zone_to_targetregion (
-        zone          INTEGER REFERENCES zone NOT NULL,
+        zone          INTEGER REFERENCES zone ON DELETE CASCADE NOT NULL,
         targetregion  INTEGER REFERENCES targetregion NOT NULL,
         rank          INTEGER NOT NULL
       );
@@ -103,7 +103,7 @@ class TextReflowDBTables extends DoobieImplicits {
         textreflow  SERIAL PRIMARY KEY,
         reflow      TEXT NOT NULL,
         astext      TEXT NOT NULL,
-        zone        INTEGER REFERENCES zone
+        zone        INTEGER REFERENCES zone ON DELETE CASCADE
       );
       CREATE UNIQUE INDEX textreflow_idx0 ON textreflow (zone);
     """.update

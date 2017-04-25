@@ -259,6 +259,13 @@ trait LabelWidgetIndex {
 
 
 
+  def removeNodesWithID(zoneId: Int@@ZoneID, labelWidget: LabelWidget): LabelWidget = {
+    LabelWidgetTransforms
+      .atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
+        LabelWidgets.terminal
+      })
+  }
+
 
   // TODO this interpreter is specific to a particular labeler type (e.g., BioArxiv Labeler) and should be parameterized
   //    within this class
@@ -322,12 +329,26 @@ trait LabelWidgetIndex {
 
             for {
               init <- State.get[InterpState]
-            } yield zoneId
+            } yield ()
 
           case act: DeleteZone =>
             println(s"DeleteZone")
             for {
-              init <- State.get[InterpState]
+              newSt <- State.modify[InterpState] { initState =>
+                val initSelections =  initState.uiResponse.uiState.selections
+                println(s"DeleteZone:selections: [${initSelections}]")
+
+                val finalLabelWidget = initSelections
+                  .foldLeft(initState.labelWidget)({ case (accLabelWidget, zoneId) =>
+                    println(s"   DeleteZone(zoneId)")
+                    docStore.deleteZone(zoneId)
+                    removeNodesWithID(zoneId, accLabelWidget)
+                  })
+
+                // remove zone indicators
+                val st0 = istate.selectionsL.set(initState) { Seq() }
+                istate.labelWidgetL.set(st0)(finalLabelWidget)
+              }
             } yield ()
 
           case act: MergeZones =>
@@ -385,8 +406,9 @@ trait LabelWidgetIndex {
     val (endingResponse, endingWidget) = gesture match {
 
       case MenuAction(action) =>
-        println(s"MenuAction()")
-        val run = action.exec(initResponse, layout.labelWidget)
+        println(s"MenuAction(${action})")
+
+        val run = LabelAction.lift(action).exec(initResponse, layout.labelWidget)
 
         (run.uiResponse, run.labelWidget)
 

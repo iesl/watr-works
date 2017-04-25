@@ -11,7 +11,7 @@ sealed trait Gesture
 case class SelectRegion(bbox: LTBounds) extends Gesture
 case class Click(point: Point) extends Gesture
 case class DblClick(point: Point) extends Gesture
-case class MenuAction(action: Free[LabelAction, Unit]) extends Gesture
+case class MenuAction(action: LabelAction[Unit]) extends Gesture
 
 sealed trait Constraint
 
@@ -30,8 +30,9 @@ case object InteractNil extends Interaction
 sealed trait LabelAction[A]
 
 object LabelAction {
+  def lift[A](a: LabelAction[A]) = Free.liftF{ a }
 
-  case class SelectZone(g: Int@@ZoneID)            extends LabelAction[Int@@ZoneID]
+  case class SelectZone(g: Int@@ZoneID)            extends LabelAction[Unit]
   case class ToggleZoneSelection(g: Int@@ZoneID)   extends LabelAction[Unit]
   case class DeleteZone(z: Int@@ZoneID)            extends LabelAction[Unit]
   case class MergeZones(zs: Seq[Int@@ZoneID])      extends LabelAction[Unit]

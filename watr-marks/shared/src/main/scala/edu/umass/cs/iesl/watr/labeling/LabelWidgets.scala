@@ -104,6 +104,11 @@ object LabelWidgetF {
     idclass: String
   ) extends LabelWidgetF[A]
 
+  // Kludgy leaf-type to allow for easier deletion of nodes
+  case object Terminal extends LabelWidgetF[Nothing] {
+    val wid: Int@@WidgetID = TypeTags.WidgetID(0)
+  }
+
 
   implicit def LabelWidgetTraverse: Traverse[LabelWidgetF] = new Traverse[LabelWidgetF] {
     def traverseImpl[G[_], A, B](
@@ -121,6 +126,7 @@ object LabelWidgetF {
         case l : Figure                      => G.point(l.copy())
         case l @ Panel(wid, a, i)            => f(a).map(Panel(wid, _, i))
         case l @ Identified(wid, a, id, cls) => f(a).map(Identified(wid, _, id, cls))
+        case l @ Terminal                     => G.point(Terminal)
       }
     }
   }
@@ -129,15 +135,16 @@ object LabelWidgetF {
 
   implicit def LabelWidgetShow: Delay[Show, LabelWidgetF] = new Delay[Show, LabelWidgetF] {
     def apply[A](show: Show[A]) = Show.show {
-      case l : RegionOverlay[A]          => s"$l"
+      case l : RegionOverlay[A]               => s"$l"
       case l @ Reflow(wid, tr)                => s"reflow()"
       case l @ TextBox(wid, tb)               => s"textbox"
       case l @ Row(wid, as)                   => s"$l"
       case l @ Col(wid, as)                   => s"$l"
       case l @ Pad(wid, a, padding, color)    => s"$l"
-      case l @ Figure(wid,f)                 => l.toString
+      case l @ Figure(wid,f)                  => l.toString
       case l @ Panel(wid, a, i)               => l.toString
       case l @ Identified(wid, a, id, cls)    => l.toString
+      case l @ Terminal                       => l.toString
     }
   }
 
@@ -145,18 +152,17 @@ object LabelWidgetF {
     def apply[A](eq: Equal[A]) = Equal.equal((a, b) => {
       implicit val ieq = eq;
       (a.wid == b.wid) && ((a, b) match {
-        // case (l @ RegionOverlay(wid1, p1, g1, c1, o1), l2 @ RegionOverlay(wid2, p2, g2, c2, o2) ) =>
-        //   p1==p2 && g1===g2 && c1===c2 && o1===o2
 
         case (l @ RegionOverlay(wid1, u1, o1), l2 @ RegionOverlay(wid2, u2, o2)) => u1===u2 && o1===o2
         case (l @ Reflow(wid, tr)                   , l2 : Reflow              ) => false
-        case (l @ TextBox(wid, tb)                  , l2 : TextBox             ) => false
+        case (l @ TextBox(wid, tb)                  , l2 : TextBox             ) => tb.toString()==l2.textBox.toString()
         case (l @ Row(wid, as)                      , l2 : Row[A]              ) => as === l2.as
         case (l @ Col(wid, as)                      , l2 : Col[A]              ) => as === l2.as
         case (l @ Pad(wid, a, padding, color)       , l2 : Pad[A]              ) => a === l2.a
         case (l @ Figure(wid, f)                    , l2 : Figure              ) => f === l2.figure
         case (l @ Panel(wid, a, i)                  , l2 : Panel[A]            ) => a === l2.a
         case (l @ Identified(wid, a, id, cls)       , l2 : Identified[A]       ) => a === l2.a && id==l2.id && cls==l2.idclass
+        case (l @ Terminal                          , l2 @ Terminal            ) => true
 
         case (_ , _) => false
 
@@ -239,5 +245,7 @@ object LabelWidgets {
     val tagClsname = implicitly[ClassTag[IdTag]].runtimeClass.getSimpleName
     fixlw(Identified(idgen.nextId, a, id.unwrap, tagClsname))
   }
+
+  lazy val terminal = fixlw(Terminal)
 
 }

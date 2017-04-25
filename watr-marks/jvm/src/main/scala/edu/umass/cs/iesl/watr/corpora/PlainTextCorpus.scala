@@ -138,7 +138,6 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   }
 
   def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
-
     val docId = docStore.addDocument(stableId)
     for {
       (page, n) <- pages.zipWithIndex

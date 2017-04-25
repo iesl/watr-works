@@ -20,7 +20,6 @@ import LabelWidgetF._
 import matryoshka._
 import matryoshka.implicits._
 
-
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
 

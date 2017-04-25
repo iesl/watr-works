@@ -24,6 +24,7 @@ import autowire._
 import upickle.{default => UPickle}
 import UPickle._
 import TypeTagPicklers._
+import utils.{Debugging => Dbg}
 
 
 class EmbeddedServer(
@@ -222,7 +223,6 @@ class EmbeddedServer(
         rec   <- BioArxivOps.getBioarxivJsonArtifact(entry)
       } yield {
 
-
         try {
           val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, rec, docStore)
 
@@ -243,11 +243,9 @@ class EmbeddedServer(
 
         } catch {
           case t: Throwable =>
-            println(s"error ${t}, ${t.getCause}")
-            t.printStackTrace()
+            Dbg.die(t)
             throw t
         }
-
       }
 
       maybeLabeler.getOrElse {
@@ -257,17 +255,23 @@ class EmbeddedServer(
     }
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
-      val UIRequest(uiState@ UIState(constraint, maybeLabel, selections), gesture) = r
-      activeLabelWidgetIndex.map { lwIndex =>
-        println(s"got UIRequest ${r}")
+      try {
+        val UIRequest(uiState@ UIState(constraint, maybeLabel, selections), gesture) = r
+        activeLabelWidgetIndex.map { lwIndex =>
+          println(s"got UIRequest ${r}")
 
-        val (uiResponse, modifiedWidgetIndex) = lwIndex.userInteraction(uiState, gesture)
+          val (uiResponse, modifiedWidgetIndex) = lwIndex.userInteraction(uiState, gesture)
 
-        activeLabelWidgetIndex = Some(modifiedWidgetIndex)
+          activeLabelWidgetIndex = Some(modifiedWidgetIndex)
 
-        Future{ uiResponse }
-      } getOrElse {
-        Future{ UIResponse(uiState, List()) }
+          Future{ uiResponse }
+        } getOrElse {
+          Future{ UIResponse(uiState, List()) }
+        }
+      } catch {
+        case t: Throwable =>
+          Dbg.die(t)
+          throw t
       }
     }
   }

@@ -81,10 +81,8 @@ trait TextReflowClipping extends TextReflowBasics {
         case Insert(value)            => List(anInsert(envRange))
         case Rewrite(aigs, to)        => setRanges(aigs, envRange)
         case Bracket(pre, post, aigs) => setRanges(aigs, envRange)
-        // case Mask(mL, mR, aAttrS)     => ??? // Mask(mL, mR, a.get)
         case Flow(childAIGs)          => childAIGs.flatten
         case Labeled(labels, aigs)    => aigs
-          // case CachedText(aigs, text)   => aigs
       }
     }
 
@@ -150,19 +148,4 @@ trait TextReflowClipping extends TextReflowBasics {
       .toPair._1
   }
 
-  // def extractVisualLineTargetRegions(tr: TextReflow): Seq[TargetRegion] = for {
-  //   vline <- labeledSlices(tr, LB.VisualLine)
-  //   tr    <- extractVisualLineTargetRegion(vline)
-  // } yield tr
-  // def extractVisualLineTargetRegion(vline: TextReflow): Option[TargetRegion] = {
-  //   vline.unFix match {
-  //     case Labeled(labels, _) if labels.contains(LB.VisualLine) =>
-  //       labels
-  //         .filter(_ == LB.VisualLine)
-  //         .head.value
-  //         .map(TargetRegion.fromUri(_))
-
-  //     case _ => None
-  //   }
-  // }
 }

@@ -230,6 +230,10 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           val bbox = totalBounds(figure)
           PosAttr(F.void(flw), bbox, bbox, zeroPosVector)
 
+        case flw @ Terminal =>
+          val bbox: LTBounds = LTBounds(0, 0, 0, 0)
+
+          PosAttr(F.void(flw), bbox, bbox, zeroPosVector)
       }
     }
 

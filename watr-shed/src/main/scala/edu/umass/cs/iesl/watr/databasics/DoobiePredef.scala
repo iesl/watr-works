@@ -17,7 +17,7 @@ trait DoobiePredef {
   def defineTrigger(tablename: Fragment, name: Fragment, decls: Fragment, body: Fragment, onInsert: Boolean): Update0 = {
     val funcname = name ++ fr0"_" ++ tablename
     val triggerName = name ++ fr0"_" ++ tablename ++ fr0"_trigger"
-    val onClause = if (onInsert) fr"INSERT" else fr"DELETE"
+    val onClause = if (onInsert) fr" BEFORE INSERT " else fr" AFTER DELETE "
 
     val frag = fr"""
        CREATE OR REPLACE FUNCTION """ ++ funcname ++ fr0"""() RETURNS TRIGGER AS $$func$$
@@ -28,11 +28,10 @@ trait DoobiePredef {
        $$func$$ LANGUAGE plpgsql;
 
        DROP TRIGGER IF EXISTS """ ++ triggerName ++ fr""" ON """ ++ tablename ++ fr""";
-       CREATE TRIGGER """ ++ triggerName ++ fr"""
-         BEFORE """ ++ onClause ++ fr"ON" ++ tablename ++ fr"""
+       CREATE TRIGGER """ ++ triggerName ++ onClause ++ fr"ON" ++ tablename ++ fr"""
          FOR EACH ROW EXECUTE PROCEDURE """ ++ funcname ++ fr"""();
      """
-    // println(frag.toString())
+    println(frag.toString())
     frag.update
   }
 
