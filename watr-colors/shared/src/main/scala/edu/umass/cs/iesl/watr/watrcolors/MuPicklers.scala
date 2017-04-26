@@ -13,9 +13,9 @@ import Aliases._
 
 object TypeTagPicklers {
 
+  implicit val RemoteCall_RW: RW[RemoteCall] = macroRW[RemoteCall]
 
-  implicit val readWriter: RW[Gesture] =
-    macroRW[SelectRegion]
+  implicit val Gesture_RW: RW[Gesture] = macroRW[SelectRegion]
       .merge(macroRW[Click])
       .merge(macroRW[DblClick])
       .merge(macroRW[MenuAction])

@@ -19,7 +19,7 @@ import utils.Colors
 
 object TitleAuthorsLabelers extends LabelWidgetUtils {
 
-  def bioArxivLabeler(stableId: String@@DocumentID, paperRec: PaperRec, theDocumentCorpus: DocumentCorpus): LabelingPanel = {
+  def bioArxivLabeler(stableId: String@@DocumentID, startingPageWindow: Int, paperRec: PaperRec, docStore: DocumentCorpus): LabelingPanel = {
 
     val paperRecWidget = LW.textbox(
       TB.vjoin()(
@@ -32,24 +32,25 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       )
     )
 
-    val docId = theDocumentCorpus.getDocument(stableId)
+    val docId = docStore.getDocument(stableId)
       .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
+    val allPagesWindows = docStore.getPages(docId).sliding(4, 2)
 
 
     val pageWidgets = for {
-      pageId <- theDocumentCorpus.getPages(docId).take(4)
+      pageId <- docStore.getPages(docId).take(4)
     } yield {
 
-      val pageGeometry = theDocumentCorpus.getPageGeometry(pageId)
+      val pageGeometry = docStore.getPageGeometry(pageId)
 
-      val pageTargetRegionId = theDocumentCorpus.addTargetRegion(pageId, pageGeometry)
+      val pageTargetRegionId = docStore.addTargetRegion(pageId, pageGeometry)
 
-      val pageTargetRegion = theDocumentCorpus.getTargetRegion(pageTargetRegionId)
+      val pageTargetRegion = docStore.getTargetRegion(pageTargetRegionId)
 
       LW.pad(
         LW.targetOverlay(pageTargetRegion, overlays=List()),
-        Padding(4),
+        Padding(2),
         Colors.DarkSlateBlue
       )
     }
@@ -78,8 +79,8 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
 
     LabelingPanel(
       body,
-      LabelOptions(Map(
-        (LB.Title, Colors.DarkSlateBlue),
+      LabelerOptions(Map(
+        (LB.Title, Colors.Wheat),
         (LB.Authors, Colors.Orange),
         (LB.Abstract, Colors.MediumTurquoise),
         (LB.Affiliation, Colors.OliveDrab),
@@ -92,15 +93,15 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
 }
 
       // val allPageLines = for {
-      //   (zone, linenum) <- theDocumentCorpus.getPageVisualLines(stableId, page0).zipWithIndex
-      //   lineReflow      <- theDocumentCorpus.getTextReflowForZone(zone.id)
+      //   (zone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
+      //   lineReflow      <- docStore.getTextReflowForZone(zone.id)
       // } yield {
       //   // FIXME: kludge:
       //   val lt = LW.labeledTarget(pageTargetRegion, None, None)
       //   (linenum, (0d, lt))
       // }
 
-      // val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(theDocumentCorpus, paperRec, stableId)
+      // val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(docStore, paperRec, stableId)
 
       // // linenum -> best-score, label-widget
       // val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()

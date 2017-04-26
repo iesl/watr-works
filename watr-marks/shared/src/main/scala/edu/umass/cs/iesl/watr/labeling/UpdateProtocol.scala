@@ -22,3 +22,18 @@ case class UIResponse(
   uiState: UIState,
   changes: List[WidgetMod]
 )
+
+sealed trait LabelerRequest
+
+case class DocumentLabelerRequest(
+  stableId: String@@DocumentID,
+  labelerType: String,
+  pagination: Int
+) extends LabelerRequest
+
+// TODO request: pre-created labeler, add user id
+
+case class LabelerResponse(
+  absPosWidgets: Seq[AbsPosWidget],
+  labelOption: LabelerOptions
+)

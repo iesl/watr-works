@@ -14,6 +14,7 @@ import textreflow.data._
 import watrmarks.Label
 import textboxing.{TextBoxing => TB}
 import utils.Color
+import utils.Colors
 import scala.reflect._
 
 /**
@@ -25,13 +26,14 @@ sealed trait LabelWidgetF[+A] {
   def wid: Int@@WidgetID
 }
 
-case class LabelOptions(
-  colorMap: Map[Label, Color]
+
+case class LabelerOptions(
+  colorMap: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
 )
 
 case class LabelingPanel(
   labelWidget: LabelWidgetF.LabelWidget,
-  labelOptions: LabelOptions
+  labelOptions: LabelerOptions
 )
 
 object LabelWidgetF {

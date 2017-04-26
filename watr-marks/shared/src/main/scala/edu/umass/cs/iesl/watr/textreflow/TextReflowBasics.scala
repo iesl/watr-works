@@ -7,6 +7,7 @@ import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
 import matryoshka.patterns.EnvT
+// import Birecursive.ops._
 
 import utils.EnrichNumerics._
 import scala.{Range => _}

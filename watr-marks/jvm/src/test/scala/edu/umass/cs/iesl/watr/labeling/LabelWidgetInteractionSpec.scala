@@ -47,7 +47,7 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
 
     println(prettyPrintLabelWidget(labelWidget))
 
-    val labelWidgetWithIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, docStore)
+    val labelWidgetWithIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, LabelerOptions(), docStore)
 
     // println(prettyPrintLabelWidget(labelWidgetWithIndicators))
     val lwdiff = labelWidgetDiff(labelWidget, labelWidgetWithIndicators)

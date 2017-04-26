@@ -54,7 +54,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   import textreflow.TextReflowJsonCodecs._
 
-  def create(docStore0: DocumentCorpus, lwidget: LabelWidget, labelOpts: LabelOptions, priorIndex: Option[LabelWidgetIndex]=None): LabelWidgetIndex = {
+  def create(docStore0: DocumentCorpus, lwidget: LabelWidget, labelOpts: LabelerOptions=LabelerOptions(Map()), priorIndex: Option[LabelWidgetIndex]=None): LabelWidgetIndex = {
     val lwIndex = SpatialIndex.createFor[AbsPosWidget]()
 
     val layout0 = layoutWidgetPositions(lwidget)
@@ -113,7 +113,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       def layout: WidgetLayout = layout0
       def index: SpatialIndex[AbsPosWidget] = lwIndex
       def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
-      def labelOptions: LabelOptions = labelOpts
+      def labelOptions: LabelerOptions = labelOpts
     }
   }
 }
@@ -144,7 +144,7 @@ trait LabelWidgetIndex {
 
   def docStore: DocumentCorpus
   def layout: WidgetLayout
-  def labelOptions: LabelOptions
+  def labelOptions: LabelerOptions
   def index: SpatialIndex[AbsPosWidget]
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
 

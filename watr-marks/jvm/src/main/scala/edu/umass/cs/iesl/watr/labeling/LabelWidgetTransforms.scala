@@ -47,7 +47,7 @@ object LabelWidgetTransforms {
     r.transCata[LabelWidget](f)
   }
 
-  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelOptions: LabelOptions, docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
 
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
@@ -104,7 +104,7 @@ object LabelWidgetTransforms {
     labelWidget.transCata[LabelWidget](addIndicator)
   }
 
-  def addAllZoneIndicators(labelWidget: LabelWidget, labelOptions: LabelOptions, docStore: DocumentCorpus): LabelWidget = {
+  def addAllZoneIndicators(labelWidget: LabelWidget, labelOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
 
     labelOptions.colorMap.foldLeft(labelWidget) {
       case (acc, (elemLabel, _)) =>
@@ -112,7 +112,7 @@ object LabelWidgetTransforms {
       }
   }
 
-  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelOptions: LabelOptions, docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
 
     val labelId = docStore.ensureLabel(label)
 

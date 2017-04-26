@@ -2,29 +2,23 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-import akka.actor.{ActorRef, Actor, ActorSystem}
+import akka.actor.{ActorRef, Actor, ActorSystem, Props}
 import akka.util.ByteString
-import akka.actor.ActorDSL._
 
 import spray.routing.SimpleRoutingApp
 import spray.http._
 import HttpHeaders._
 import HttpMethods._
 
-import scala.concurrent.Future
 import concurrent.duration._
 
 import corpora._
-// import textreflow.data._
-import geometry._
-import labeling._
 import docstore._
 
-import autowire._
+// import autowire._
 import upickle.{default => UPickle}
 import UPickle._
 import TypeTagPicklers._
-import utils.{Debugging => Dbg}
 
 
 class EmbeddedServer(
@@ -50,7 +44,9 @@ class EmbeddedServer(
     /**
       * Actor meant to handle long polling, buffering messages or waiting actors
       */
-    val longPoll = actor(new Actor{
+    val longPoll = system.actorOf(Props[LongPollActor])
+
+    class LongPollActor extends Actor {
       var waitingActor: Option[ActorRef] = None
       var queuedMessages = List[RemoteCall]()
 
@@ -96,7 +92,8 @@ class EmbeddedServer(
           waitingOpt.foreach(respond(_, wr))
           waitingActor = None
       }
-    })
+    }
+
   }
 
   object httpserver {
@@ -170,7 +167,7 @@ class EmbeddedServer(
 
     def autowireWatrShell = apiRoute("shell",
       ShellsideServer.route[WatrShellApi](
-        WatrShellApiListeners
+        new BioArxivServer(reflowDB, corpus)
       ))
 
     def autowireBrowseCorpus = apiRoute("browse",
@@ -198,84 +195,7 @@ class EmbeddedServer(
     def kill() = system.terminate()
   }
 
-  var activeLabelWidgetIndex: Option[LabelWidgetIndex] = None
 
 
-  object WatrShellApiListeners extends WatrShellApi {
-    import bioarxiv._
-
-    def onDrawPath(artifactId: String, path: Seq[Point]): Unit = {
-      println(s"onDrawPath: ")
-    }
-
-
-    def createDocumentLabeler(
-      stableId: String@@DocumentID,
-      labelerType: String
-    ): Future[(Seq[AbsPosWidget], LabelOptions)] = {
-
-      val hasEntry = corpus.hasEntry(stableId.unwrap)
-      println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
-      val docStore = reflowDB.docStore
-
-      val maybeLabeler = for {
-        entry <- corpus.entry(stableId.unwrap)
-        rec   <- BioArxivOps.getBioarxivJsonArtifact(entry)
-      } yield {
-
-        try {
-          val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, rec, docStore)
-
-
-          val lwIndex = LabelWidgetIndex.create(
-            docStore,
-            LabelWidgetTransforms.addAllZoneIndicators(
-              labelingPanel.labelWidget,
-              labelingPanel.labelOptions,
-              docStore
-            ),
-            labelingPanel.labelOptions
-          )
-
-          activeLabelWidgetIndex = Some(lwIndex)
-
-          val layout = lwIndex.layout.positioning
-
-          Future { (layout, labelingPanel.labelOptions) }
-
-        } catch {
-          case t: Throwable =>
-            Dbg.die(t)
-            throw t
-        }
-      }
-
-      maybeLabeler.getOrElse {
-        sys.error("createDocumentLabeler: error")
-      }
-
-    }
-
-    def uiRequest(r: UIRequest): Future[UIResponse] = {
-      try {
-        val UIRequest(uiState@ UIState(constraint, maybeLabel, selections), gesture) = r
-        activeLabelWidgetIndex.map { lwIndex =>
-          println(s"got UIRequest ${r}")
-
-          val (uiResponse, modifiedWidgetIndex) = lwIndex.userInteraction(uiState, gesture)
-
-          activeLabelWidgetIndex = Some(modifiedWidgetIndex)
-
-          Future{ uiResponse }
-        } getOrElse {
-          Future{ UIResponse(uiState, List()) }
-        }
-      } catch {
-        case t: Throwable =>
-          Dbg.die(t)
-          throw t
-      }
-    }
-  }
 
 }

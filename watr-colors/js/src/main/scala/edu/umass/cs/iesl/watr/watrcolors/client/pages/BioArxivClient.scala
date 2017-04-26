@@ -223,8 +223,8 @@ object WatrColors extends  BaseClientDefs {
       api.uiRequest(r).call()
     }
 
-    def createDocumentLabeler(stableId: String@@DocumentID, labelerType: String): Future[(Seq[AbsPosWidget], LabelOptions)] = {
-      api.createDocumentLabeler(stableId, labelerType).call()
+    def createDocumentLabeler(labelerRequest: LabelerRequest): Future[LabelerResponse] = {
+      api.fetchDocumentLabeler(labelerRequest).call()
     }
 
   }
@@ -263,10 +263,10 @@ object WatrColors extends  BaseClientDefs {
 
 
 
-  def createLabeler(docId: String, lt: String): Future[LabelOptions] = {
+  def createLabeler(docId: String, lt: String, paginate: Int): Future[LabelerOptions] = {
     for {
-      (lwidget, opt) <- shell.createDocumentLabeler(DocumentID(docId), lt)
-      _ <- echoLabeler(lwidget)
+      lresp <- shell.createDocumentLabeler(LabelerRequest(DocumentID(docId), lt, paginate))
+      _     <- echoLabeler(lresp.absPosWidgets)
     } yield { opt }
   }
 

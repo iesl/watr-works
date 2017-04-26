@@ -50,7 +50,7 @@ object SampleLabelWidgets {
 
     LabelingPanel(
       layout,
-      LabelOptions(Map())
+      LabelerOptions(Map())
     )
 
   }

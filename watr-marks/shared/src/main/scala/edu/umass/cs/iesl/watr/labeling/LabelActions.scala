@@ -48,13 +48,4 @@ object LabelAction {
     } yield ()
   )
 
-
-  // val interpLabelAction: LabelAction ~> LabelAction =
-  //   new (LabelAction ~> LabelAction) {
-  //     def apply[A](fa: LabelAction[A]) =
-  //       fa match {
-  //         case SelectZone(zoneId) => fa
-  //         case _ => fa
-  //       }
-  //   }
 }

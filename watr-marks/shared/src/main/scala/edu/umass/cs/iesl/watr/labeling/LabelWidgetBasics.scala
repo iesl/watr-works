@@ -35,15 +35,25 @@ trait LabelWidgetBasics {
     lwDiff.cata(toTree).drawTree
   }
 
+  def universeLw(labelWidget: LabelWidget): List[LabelWidget] = {
+    // labelWidget.elgotPara(universe).toList
+    labelWidget.universe.toList
+  }
+
+  def universeLwd(lwDiff: LWDiff): List[LWDiff] = {
+    // lwDiff.elgotPara(universe).toList
+    lwDiff.universe.toList
+  }
+
   def labelWidgetDiffToMods(lwDiff: LWDiff): Seq[WidgetMod] = {
 
-    val allWidgetMod: Seq[WidgetMod] = lwDiff.universe.toList
+    val allWidgetMod: Seq[WidgetMod] = universeLwd(lwDiff)
       .flatMap { lwd => lwd.project match {
         case Same             (ident)        => Seq()
         case Similar          (ident: LabelWidgetF[Fix[Diff[Fix, LabelWidgetF, ?]]])        => Seq() //  ident
         case Different        (left: LabelWidget, right: LabelWidget)  =>
-          val toRm = left.universe.toList.map {w => RmLw(w.project.wid)}
-          val toAdd = right.universe.toList.map {w => AddLw(w.project.wid)}
+          val toRm = universeLw(left).map {w => RmLw(w.project.wid)}
+          val toAdd = universeLw(right).map {w => AddLw(w.project.wid)}
           toRm ++ toAdd
 
 
@@ -59,10 +69,10 @@ trait LabelWidgetBasics {
           ???
 
         case Added            (right)        =>
-          right.universe.toList.map {w => AddLw(w.project.wid)}
+          universeLw(right).map {w => AddLw(w.project.wid)}
 
         case Removed          (left)         =>
-          left.universe.toList.map {w => RmLw(w.project.wid)}
+          universeLw(left).map {w => RmLw(w.project.wid)}
 
       }}
     allWidgetMod

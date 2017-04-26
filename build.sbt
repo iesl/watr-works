@@ -88,8 +88,6 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .dependsOn(watrmarks)
 
 lazy val watrcolorsJS = watrcolors.js
-  // .enablePlugins(ScalaJSPlugin)
-  // .enablePlugins(WorkbenchPlugin)
 
 lazy val watrcolorsJVM = watrcolors.jvm
   .dependsOn(watrshed)
