@@ -47,7 +47,7 @@ object LabelWidgetTransforms {
     r.transCata[LabelWidget](f)
   }
 
-  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelerOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
 
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
@@ -63,7 +63,7 @@ object LabelWidgetTransforms {
 
           val zone = docStore.getZone(zoneId)
 
-          val zoneColor = labelOptions.colorMap(zone.label)
+          val zoneColor = labelerOptions.colorMap(zone.label)
 
           val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
             val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
@@ -104,15 +104,16 @@ object LabelWidgetTransforms {
     labelWidget.transCata[LabelWidget](addIndicator)
   }
 
-  def addAllZoneIndicators(labelWidget: LabelWidget, labelOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
 
-    labelOptions.colorMap.foldLeft(labelWidget) {
+  def addAllZoneIndicators(labelWidget: LabelWidget, labelerOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
+
+    labelerOptions.colorMap.foldLeft(labelWidget) {
       case (acc, (elemLabel, _)) =>
-        addZoneIndicators(elemLabel, acc, labelOptions, docStore)
+        addZoneIndicators(elemLabel, acc, labelerOptions, docStore)
       }
   }
 
-  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelerOptions: LabelerOptions, docStore: DocumentCorpus): LabelWidget = {
 
     val labelId = docStore.ensureLabel(label)
 
@@ -132,7 +133,7 @@ object LabelWidgetTransforms {
             zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
           } yield {
             val zone = docStore.getZone(zoneId)
-            val zoneColor = labelOptions.colorMap(label)
+            val zoneColor = labelerOptions.colorMap(label)
 
             val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
 

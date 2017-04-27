@@ -3,7 +3,6 @@ package watrcolors
 package client
 package parts
 
-import wiring._
 
 import scala.scalajs.js
 
@@ -23,13 +22,10 @@ import scala.collection.mutable
 import scala.concurrent.{ Future, Promise }
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import org.scalajs.dom
-// import dom.html
 import scalatags.JsDom.all._
 
 import labeling._
 import LabelWidgetF._
-// import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}
 import utils.Color
 

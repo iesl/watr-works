@@ -4,17 +4,14 @@ package labeling
 
 import bioarxiv._
 import BioArxiv._
-// import AlignBioArxiv._
 import data._
-// import textreflow.data._
 import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}, TB._
-import TypeTags._
 import data._
 import corpora._
-// import scala.collection.mutable
 import geometry._
 import utils.Colors
+import TypeTags._
 
 
 object TitleAuthorsLabelers extends LabelWidgetUtils {
@@ -35,18 +32,20 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     val docId = docStore.getDocument(stableId)
       .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))
 
-    val allPagesWindows = docStore.getPages(docId).sliding(4, 2)
+    val allPagesWindows = docStore.getPages(docId).sliding(4, 2).toList
+    val numWindows = allPagesWindows.length
+    val displayWindow = math.min(math.max(0, startingPageWindow), numWindows-1)
 
 
     val pageWidgets = for {
-      pageId <- docStore.getPages(docId).take(4)
+      pageId <- allPagesWindows(displayWindow)
     } yield {
 
       val pageGeometry = docStore.getPageGeometry(pageId)
 
-      val pageTargetRegionId = docStore.addTargetRegion(pageId, pageGeometry)
-
-      val pageTargetRegion = docStore.getTargetRegion(pageTargetRegionId)
+      val pageTargetRegion = docStore.getTargetRegion(
+        docStore.addTargetRegion(pageId, pageGeometry)
+      )
 
       LW.pad(
         LW.targetOverlay(pageTargetRegion, overlays=List()),
@@ -79,22 +78,24 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
 
     LabelingPanel(
       body,
-      LabelerOptions(Map(
-        (LB.Title, Colors.Wheat),
-        (LB.Authors, Colors.Orange),
-        (LB.Abstract, Colors.MediumTurquoise),
-        (LB.Affiliation, Colors.OliveDrab),
-        (LB.References, Colors.Peru)
-      ))
+      LabelerOptions(
+        Pagination(numWindows, PageNum(displayWindow), None),
+        Map(
+          (LB.Title, Colors.Wheat),
+          (LB.Authors, Colors.Orange),
+          (LB.Abstract, Colors.MediumTurquoise),
+          (LB.Affiliation, Colors.OliveDrab),
+          (LB.References, Colors.Peru)
+        ))
     )
 
   }
 
 }
 
-      // val allPageLines = for {
-      //   (zone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
-      //   lineReflow      <- docStore.getTextReflowForZone(zone.id)
+// val allPageLines = for {
+//   (zone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
+//   lineReflow      <- docStore.getTextReflowForZone(zone.id)
       // } yield {
       //   // FIXME: kludge:
       //   val lt = LW.labeledTarget(pageTargetRegion, None, None)

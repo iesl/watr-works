@@ -25,11 +25,10 @@ class BioArxivServer(
   }
 
   def fetchDocumentLabeler(
-    labelerRequest: LabelerRequest
+    labelerRequest: LabelerIdentifier
   ): Future[LabelerResponse] = {
 
-
-    val DocumentLabelerRequest(stableId, labelerType, pagination) = labelerRequest
+    val DocumentLabelerIdentifier(stableId, labelerType, pagination) = labelerRequest
 
     val hasEntry = corpus.hasEntry(stableId.unwrap)
     println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
@@ -41,24 +40,29 @@ class BioArxivServer(
     } yield {
 
       try {
-        val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, 0, rec, docStore)
+        val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, pagination, rec, docStore)
+
+        val mkPanel: LabelerOptions => LabelingPanel =
+          labelerOptions => TitleAuthorsLabelers.bioArxivLabeler(stableId, pagination, rec, docStore)
+
 
 
         val lwIndex = LabelWidgetIndex.create(
           docStore,
           LabelWidgetTransforms.addAllZoneIndicators(
             labelingPanel.labelWidget,
-            labelingPanel.labelOptions,
+            labelingPanel.labelerOptions,
             docStore
           ),
-          labelingPanel.labelOptions
+          mkPanel,
+          labelingPanel.labelerOptions
         )
 
         activeLabelWidgetIndex = Some(lwIndex)
 
         val layout = lwIndex.layout.positioning
 
-        Future { LabelerResponse(layout, labelingPanel.labelOptions) }
+        Future { LabelerResponse(layout, labelingPanel.labelerOptions) }
 
       } catch {
         case t: Throwable =>
@@ -75,7 +79,11 @@ class BioArxivServer(
 
   def uiRequest(r: UIRequest): Future[UIResponse] = {
     try {
-      val UIRequest(uiState@ UIState(constraint, maybeLabel, selections), gesture) = r
+      val UIRequest(
+        uiState@ UIState(constraint, maybeLabel, selections, currLabeler, pagination),
+        gesture
+      ) = r
+
       activeLabelWidgetIndex.map { lwIndex =>
         println(s"got UIRequest ${r}")
 

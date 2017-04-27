@@ -18,11 +18,9 @@ import scalatags.JsDom.all._
 import scalatags.JsDom.{
   TypedTag
 }
-import watrmarks.Label
 
 import labeling._
 import rx._
-import utils.Color
 
 import scaladget.tools.JsRxTags.{ctx => _, _}
 

@@ -37,6 +37,9 @@ object LabelAction {
   case class DeleteZone(z: Int@@ZoneID)            extends LabelAction[Unit]
   case class MergeZones(zs: Seq[Int@@ZoneID])      extends LabelAction[Unit]
 
+  // TODO nav should cover all labeler types/ids/pages
+  case class NavigateTo(pageNum: Int)              extends LabelAction[Unit]
+
   def selectZone(g: Int@@ZoneID)            = Free.liftF{ SelectZone(g) }
   def toggleZoneSelection(g: Int@@ZoneID)   = InteractProg(Free.liftF{ ToggleZoneSelection(g) })
   def deleteZone(g: Int@@ZoneID)            = Free.liftF{ DeleteZone(g) }

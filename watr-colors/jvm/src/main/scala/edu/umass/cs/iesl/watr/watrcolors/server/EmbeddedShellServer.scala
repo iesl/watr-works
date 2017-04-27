@@ -165,15 +165,18 @@ class EmbeddedServer(
     }
 
 
+    lazy val bioArxivServer = new BioArxivServer(reflowDB, corpus)
+
     def autowireWatrShell = apiRoute("shell",
-      ShellsideServer.route[WatrShellApi](
-        new BioArxivServer(reflowDB, corpus)
-      ))
+      ShellsideServer.route[WatrShellApi](bioArxivServer)
+    )
+
+    lazy val browseCorpusServer = new BrowseCorpusApiListeners(reflowDB, corpus)
 
     def autowireBrowseCorpus = apiRoute("browse",
-      ShellsideServer.route[BrowseCorpusApi](
-        new BrowseCorpusApiListeners(reflowDB, corpus)
-      ))
+      ShellsideServer.route[BrowseCorpusApi](browseCorpusServer)
+    )
+
 
     def run(): Unit = {
       startServer(url, port)(

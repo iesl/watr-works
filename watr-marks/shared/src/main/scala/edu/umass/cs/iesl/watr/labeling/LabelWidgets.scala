@@ -26,16 +26,6 @@ sealed trait LabelWidgetF[+A] {
   def wid: Int@@WidgetID
 }
 
-
-case class LabelerOptions(
-  colorMap: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
-)
-
-case class LabelingPanel(
-  labelWidget: LabelWidgetF.LabelWidget,
-  labelOptions: LabelerOptions
-)
-
 object LabelWidgetF {
 
   type LabelWidget = Fix[LabelWidgetF]

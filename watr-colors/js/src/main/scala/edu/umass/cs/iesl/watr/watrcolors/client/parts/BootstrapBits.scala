@@ -13,7 +13,7 @@ import Popup._
 import scalatags.JsDom
 import JsDom.{TypedTag, tags}
 import JsDom.all._
-import sty._
+import sty.{ctx => _, _}
 
 
 import org.scalajs.dom.html.Div

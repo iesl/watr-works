@@ -22,6 +22,8 @@ import matryoshka._
 import matryoshka.implicits._
 import utils.GraphPaper
 import utils.Colors
+import TypeTags._
+import LabelWidgetTransforms._
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
@@ -39,6 +41,28 @@ case class QueryHit(
   iTextReflows: Seq[IndexableTextReflow]
 )
 
+case class InterpState(
+  uiResponse: UIResponse,
+  labelWidget: LabelWidget,
+  labelWidgetIndex: Option[LabelWidgetIndex] = None
+)
+
+object istate {
+
+  val uiResponseL       = lens[InterpState].uiResponse
+  val labelWidgetIndexL = lens[InterpState].labelWidgetIndex
+  val uiStateL          = lens[InterpState].uiResponse.uiState
+  val selectionsL       = lens[InterpState].uiResponse.uiState.selections
+  val changesL          = lens[InterpState].uiResponse.changes
+  val labelWidgetL      = lens[InterpState].labelWidget
+
+
+  def addSelection(zoneId: Int@@ZoneID): InterpState => InterpState =
+    st => selectionsL.modify(st) {
+      sels => zoneId +: sels
+    }
+}
+
 object LabelWidgetIndex extends LabelWidgetLayout {
 
   implicit object TextReflowIndexable extends SpatialIndexable[IndexableTextReflow] {
@@ -54,7 +78,22 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   import textreflow.TextReflowJsonCodecs._
 
-  def create(docStore0: DocumentCorpus, lwidget: LabelWidget, labelOpts: LabelerOptions=LabelerOptions(Map()), priorIndex: Option[LabelWidgetIndex]=None): LabelWidgetIndex = {
+  def init(
+    docStore: DocumentCorpus,
+    labelerOpts: LabelerOptions=LabelerOptions(Pagination(0, PageNum(0), None), Map()),
+    mkWidget: LabelerOptions => LabelingPanel
+  ): LabelWidgetIndex = {
+    val newPanel = mkWidget(labelerOpts)
+    create(docStore, newPanel.labelWidget, mkWidget, labelerOpts, None)
+  }
+
+  def create(
+    docStore0: DocumentCorpus,
+    lwidget: LabelWidget,
+    mkWidget0: LabelerOptions => LabelingPanel,
+    labelOpts: LabelerOptions=LabelerOptions(Pagination(0, PageNum(0), None), Map()),
+    priorIndex: Option[LabelWidgetIndex]=None
+  ): LabelWidgetIndex = {
     val lwIndex = SpatialIndex.createFor[AbsPosWidget]()
 
     val layout0 = layoutWidgetPositions(lwidget)
@@ -111,42 +150,35 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     new LabelWidgetIndex {
       def docStore: DocumentCorpus = docStore0
       def layout: WidgetLayout = layout0
+      def mkWidget: LabelerOptions => LabelingPanel = mkWidget0
       def index: SpatialIndex[AbsPosWidget] = lwIndex
       def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
-      def labelOptions: LabelerOptions = labelOpts
+      def labelerOptions: LabelerOptions = labelOpts
     }
   }
 }
 
-case class InterpState(
-  uiResponse: UIResponse,
-  labelWidget: LabelWidget
-)
 
-object istate {
-
-  val uiResponseL   = lens[InterpState].uiResponse
-  val uiStateL      = lens[InterpState].uiResponse.uiState
-  val selectionsL   = lens[InterpState].uiResponse.uiState.selections
-  val changesL      = lens[InterpState].uiResponse.changes
-  val labelWidgetL  = lens[InterpState].labelWidget
-
-
-  def addSelection(zoneId: Int@@ZoneID): InterpState => InterpState =
-    st => selectionsL.modify(st) {
-      sels => zoneId +: sels
-    }
-}
-
-
-trait LabelWidgetIndex {
+trait LabelWidgetIndex { self =>
   import LabelWidgetIndex._
 
   def docStore: DocumentCorpus
   def layout: WidgetLayout
-  def labelOptions: LabelerOptions
+  def mkWidget: LabelerOptions => LabelingPanel
+  def labelerOptions: LabelerOptions
   def index: SpatialIndex[AbsPosWidget]
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
+
+  def update(updatedOptions: LabelerOptions): LabelWidgetIndex = {
+    new LabelWidgetIndex {
+      def docStore: DocumentCorpus                                         = self.docStore
+      def layout: WidgetLayout                                             = self.layout
+      def labelerOptions: LabelerOptions                                   = updatedOptions
+      def mkWidget: LabelerOptions => LabelingPanel                        = self.mkWidget
+      def index: SpatialIndex[AbsPosWidget]                                = self.index
+      def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = self.pageIndexes
+    }
+  }
 
   def queryForPanels(queryPoint: Point): Seq[(Panel[Unit], AbsPosWidget)] = {
     val queryBox = queryPoint
@@ -285,55 +317,53 @@ trait LabelWidgetIndex {
               _ <- State.modify[InterpState] { interpState =>
                 if (initSelections.contains(zoneId)) {
                   // println("  ..remove fringe")
-                  val st0 = istate.selectionsL.modify(interpState) { sels =>
-                    sels.filterNot(_ == zoneId)
+                  (istate.selectionsL ~ istate.labelWidgetL).modify(interpState) {
+                    case (sels, labelWidget) =>
+                      val newSels = sels.filterNot(_ == zoneId)
+                      val newWidget = LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
+                        lw.project match {
+                          case fa@ Figure(wid, fig) =>
+                            val GeometricGroup(grbbox, grfigs) = fig
+                            LabelWidgets.figure(grfigs.last)
+
+                          case _ => lw
+                        }
+                      })
+                      (newSels, newWidget)
                   }
 
-                  istate.labelWidgetL.modify(st0) { labelWidget =>
-                    LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
-                      lw.project match {
-                        case fa@ Figure(wid, fig) =>
-                          val GeometricGroup(grbbox, grfigs) = fig
-                          LabelWidgets.figure(grfigs.last)
-
-                        case _ => lw
-                      }
-                    })
-                  }
 
                 } else {
                   // println("  ..add fringe")
-                  val st0 = istate.selectionsL.modify(interpState) { sels =>
-                    zoneId +: sels
-                  }
-
-                  // Traverse the widget tree, adding indicators around all of the zone boxes
-                  istate.labelWidgetL.modify(st0) { labelWidget =>
-                    LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
-                      lw.project match {
-                        case fa@ Figure(wid, fig) =>
-                          LabelWidgets.figure(
-                            composeFigures(
-                              Colorized(
-                                makeFringe(fig, Padding(4)),
-                                fg=Colors.Yellow, bg=Colors.Yellow,
-                                fgOpacity=0.2f, bgOpacity=0.2f
-                              ),
-                              fig
+                  (istate.selectionsL ~ istate.labelWidgetL).modify(interpState) {
+                    case (sels, labelWidget) =>
+                      val newWidget = LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
+                        lw.project match {
+                          case fa@ Figure(wid, fig) =>
+                            LabelWidgets.figure(
+                              composeFigures(
+                                Colorized(
+                                  makeFringe(fig, Padding(4)),
+                                  fg=Colors.Yellow, bg=Colors.Yellow,
+                                  fgOpacity=0.2f, bgOpacity=0.2f
+                                ),
+                                fig
+                              )
                             )
-                          )
 
-                        case _ => lw
-                      }
-                    })
+                          case _ => lw
+                        }
+                      })
+
+                      (zoneId +: sels, newWidget)
                   }
+
                 }
               }
             } yield ()
 
           case act@ LabelAction.SelectZone(zoneId) =>
             // println(s"SelectZone (disabled)")
-
             for {
               init <- State.get[InterpState]
             } yield ()
@@ -362,6 +392,31 @@ trait LabelWidgetIndex {
             // println(s"MergeZone")
             for {
               init <- State.get[InterpState]
+            } yield ()
+
+          case act@ NavigateTo(pageNum) =>
+            for {
+              newSt <- State.modify[InterpState] { initState =>
+                val newOptions = labelerOptions.copy(
+                  pagination=labelerOptions.pagination.copy(
+                    currentPage = PageNum(pageNum)
+                  )
+                )
+
+                val newPanel = mkWidget(newOptions)
+                val newWidget = newPanel.labelWidget
+
+                val newIndex = LabelWidgetIndex.create(docStore, newWidget, mkWidget, newOptions, Some(self))
+
+                val toAdd = newIndex.layout.positioning.toList.map{ pos =>
+                  AddLw(pos.widget.wid, Option(pos))
+                }
+
+                (istate.changesL ~ istate.labelWidgetIndexL).modify(initState) {
+                  case (uiChanges, lwiOpt) =>
+                    (ClearAllLw :: toAdd, Some(newIndex))
+                }
+              }
             } yield ()
         }
       }
@@ -400,48 +455,8 @@ trait LabelWidgetIndex {
 
   }
 
-  // TODO this part really needs to be confined to WatrColors front end codebase
-  // I think this should be an abstract function, then overridden per labeler type
-  // map (UIState, Gesture) => (UIState, UIChanges)
-  def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidgetIndex) = {
-    val UIState(constraint, maybeLabel, selections) = uiState
-    val initResponse = UIResponse(uiState, List())
 
-
-    val startingWidget = layout.labelWidget
-
-    val (endingResponse, endingWidget) = gesture match {
-
-      case MenuAction(action) =>
-        println(s"MenuAction(${action})")
-
-        val run = LabelAction.lift(action).exec(initResponse, startingWidget)
-
-        (run.uiResponse, run.labelWidget)
-
-
-      case Click(point) =>
-        runClickedPanelAction(point, initResponse)
-
-
-      case DblClick(point) =>
-        (initResponse, startingWidget)
-
-      case SelectRegion(bbox) =>
-        maybeLabel.map {label =>
-          println(s"adding label to bbox ${bbox}")
-          val maybeZoneId = addLabel(bbox, constraint, label)
-          maybeZoneId.map(zoneId =>
-            (initResponse, LabelWidgetTransforms.addZoneIndicator(zoneId, layout.labelWidget, labelOptions, docStore))
-          ).getOrElse(
-            (initResponse, layout.labelWidget)
-          )
-        } getOrElse {
-          (initResponse, layout.labelWidget)
-        }
-
-    }
-
+  def minorChangeUpdates(startingWidget: LabelWidget, endingWidget: LabelWidget, uiResponse: UIResponse): (UIResponse, LabelWidgetIndex) = {
     val lwdiff = labelWidgetDiff(startingWidget, endingWidget)
 
     // println("   ...Diff complete ")
@@ -449,7 +464,7 @@ trait LabelWidgetIndex {
     val mods = labelWidgetDiffToMods(lwdiff)
 
     // println("   ...Diff -> Mods ")
-    val newIndex = LabelWidgetIndex.create(docStore, endingWidget, labelOptions)
+    val newIndex = LabelWidgetIndex.create(docStore, endingWidget, mkWidget, labelerOptions, Some(self))
     // println("   ...New index created")
 
     val absPositioned = layout.positioning ++ newIndex.layout.positioning
@@ -458,15 +473,69 @@ trait LabelWidgetIndex {
     val updates = mods.map { _ match {
       case AddLw(id, _) => AddLw(id, absPosMap.get(id))
       case RmLw(id, _) => RmLw(id, absPosMap.get(id))
+      case ClearAllLw => ClearAllLw
     }}
     // println("   ... response constructed")
     // println(updates.mkString("\n  ", "\n  ", "\n"))
 
-    val newResponse = endingResponse.copy(
+    val newResponse = uiResponse.copy(
       changes = updates.toList
     )
 
     (newResponse, newIndex)
+  }
+
+
+  // TODO this part really needs to be confined to WatrColors front end codebase
+  // I think this should be an abstract function, then overridden per labeler type
+  // map (UIState, Gesture) => (UIState, UIChanges)
+  def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidgetIndex) = {
+    val UIState(constraint, maybeLabel, selections, currLabeler, pagination) = uiState
+    val initResponse = UIResponse(uiState, List())
+
+
+    val startingWidget = layout.labelWidget
+
+    val (endingResponse, endingIndex) = gesture match {
+
+      case MenuAction(action) =>
+        println(s"MenuAction(${action})")
+
+        val run = LabelAction.lift(action).exec(initResponse, startingWidget)
+
+        run.labelWidgetIndex.map{ lwi =>
+          (run.uiResponse, lwi)
+        } getOrElse {
+          minorChangeUpdates(startingWidget, run.labelWidget, run.uiResponse)
+        }
+
+      case Click(point) =>
+
+        val (resp, endingWidget) = runClickedPanelAction(point, initResponse)
+
+        minorChangeUpdates(startingWidget, endingWidget, resp)
+
+      case DblClick(point) =>
+        (initResponse, self)
+
+      case SelectRegion(bbox) =>
+        val resp = for {
+          label <- maybeLabel
+          //   println(s"adding label to bbox ${bbox}")
+          zoneId <- addLabel(bbox, constraint, label)
+        } yield {
+          val newWidget = addZoneIndicator(zoneId, layout.labelWidget, labelerOptions, docStore)
+          minorChangeUpdates(startingWidget, newWidget, initResponse)
+        }
+
+        resp.getOrElse {
+          (initResponse, self)
+        }
+
+    }
+
+
+    (endingResponse, endingIndex)
   }
 
   def debugPrint(query: Option[LTBounds] = None): Unit = {

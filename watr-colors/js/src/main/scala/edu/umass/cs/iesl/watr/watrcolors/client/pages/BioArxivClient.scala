@@ -25,15 +25,14 @@ import native.mousetrap._
 import native.fabric
 
 import TypeTagPicklers._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 
-// import scaladget.stylesheet.{all => sty}
+import scaladget.stylesheet.{all => sty}
+import sty.{ctx => _, _}
 import scalatags.JsDom.all._
 
 import rx._
-import scaladget.api.{
-  SelectableButtons
-}
+import scaladget.api._
 import scaladget.tools.JsRxTags.{ctx => _, _}
 
 import TypeTags._
@@ -43,9 +42,12 @@ import scala.collection.mutable
 import utils.Color
 import BootstrapBits._
 
+
 class ClientStateRx(
   uiRequestCycle: (UIRequest) => Future[Unit]
 )(implicit co: Ctx.Owner) extends BaseClientDefs {
+
+  // val paginationState= new PaginationState(uiRequestCycle)
 
   val labelTypes: Var[Map[Label, Color]] = Var(Map())
   val selectedLabel: Var[Option[Label]] = Var(None)
@@ -61,17 +63,20 @@ class ClientStateRx(
         selectableButton(
           lbl.fqn,
           (i==0),
-          modifierSeq = List(backgroundColor:=clr.cssHash()),
+          modifierSeq = (sty.btn_small +++ (backgroundColor:=clr.cssHash())),
           onclick = () => {selectedLabel() = Some(lbl)})
       }):_*
     )
     selectActiveLabel.render
   }
 
-  val labelerType: Var[Option[String]] = Var(None)
-  val documentId: Var[Option[String]] = Var(None)
+  val labelerIdentifier: Var[Option[LabelerIdentifier]] = Var(None)
+  // val labelerType: Var[Option[String]] = Var(None)
+  // val documentId: Var[Option[String]] = Var(None)
   val selectionConstraint: Var[Constraint] = Var(ByLine)
   val selections: Var[Seq[Int@@ZoneID]] = Var(Seq())
+
+
 
   val doMergeZones: Var[Boolean] = Var(false)
   val doDeleteZone: Var[Boolean] = Var(false)
@@ -79,7 +84,9 @@ class ClientStateRx(
   def toUIState = UIState(
     selectionConstraint.now,
     selectedLabel.now,
-    selections.now
+    selections.now,
+    currentLabeler = ???,
+    pagination = ???
   )
 
   def updateUIState(uiState: UIState): Unit = {
@@ -146,10 +153,6 @@ object WatrColors extends  BaseClientDefs {
 
   val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
     // "l t" -> ((e: MousetrapEvent) => states.setLabel(LB.Title)),
-    // "l a" -> ((e: MousetrapEvent) => states.setLabel(LB.Authors)),
-    // "l b" -> ((e: MousetrapEvent) => states.setLabel(LB.Abstract)),
-    // "l f" -> ((e: MousetrapEvent) => states.setLabel(LB.Affiliation)),
-    // "l r" -> ((e: MousetrapEvent) => states.setLabel(LB.References)),
 
     // "s l" -> ((e: MousetrapEvent) => states.selectByLine()),
     // "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
@@ -185,8 +188,11 @@ object WatrColors extends  BaseClientDefs {
 
     val dels = uiResponse.changes
       .collect {
+        case ClearAllLw =>
+          clear()
+
         case RmLw(wid, widget) =>
-          // val wid = widget.get
+
           activeFabricObjects.get(wid).map {fobj =>
             fabricCanvas.remove(fobj)
           }
@@ -200,7 +206,6 @@ object WatrColors extends  BaseClientDefs {
       case (bbox, fobjs) =>
         println(s"adding within $bbox")
         fobjs.foreach{os => os.foreach{ case (wid, obj)  =>
-          // println(s"  ++> ${o}")
           activeFabricObjects.put(wid, obj)
           fabricCanvas.add(obj)
         }}
@@ -223,13 +228,14 @@ object WatrColors extends  BaseClientDefs {
       api.uiRequest(r).call()
     }
 
-    def createDocumentLabeler(labelerRequest: LabelerRequest): Future[LabelerResponse] = {
+    def createDocumentLabeler(labelerRequest: LabelerIdentifier): Future[LabelerResponse] = {
       api.fetchDocumentLabeler(labelerRequest).call()
     }
 
   }
 
   def clear(): Unit = {
+    activeFabricObjects.clear()
     fabricCanvas.clear()
   }
 
@@ -265,9 +271,9 @@ object WatrColors extends  BaseClientDefs {
 
   def createLabeler(docId: String, lt: String, paginate: Int): Future[LabelerOptions] = {
     for {
-      lresp <- shell.createDocumentLabeler(LabelerRequest(DocumentID(docId), lt, paginate))
+      lresp <- shell.createDocumentLabeler(DocumentLabelerIdentifier(DocumentID(docId), lt, paginate))
       _     <- echoLabeler(lresp.absPosWidgets)
-    } yield { opt }
+    } yield { lresp.labelerOptions }
   }
 
 
@@ -312,26 +318,18 @@ object WatrColors extends  BaseClientDefs {
       val selectorControls = SharedLayout.zoneSelectorControls(
         clientStateRx,
         clientStateRx.setupLabelChooser
-        // labelOptions.labels
       )
 
       val navContent =  SharedLayout.initNavbar(List())
 
       initKeybindings()
 
-      // val bodyContent = div(
-      //   selectorControls,
-      //   div(
-      //     ^.id:="canvas-container",
-      //     pageStyles.canvasContainer
-      //   )(canvas(^.id:="canvas", pageStyles.fabricCanvasStyle))
-      // )
-
       val bodyContent =
         div("container-fluid".clazz)(
           div("row".clazz, pageStyles.controlClusterStyle)(
             div("col-lg-12".clazz)(
-              selectorControls
+              selectorControls,
+              clientStateRx.createPagination
             )
           ),
           div("row".clazz, pageStyles.labelerBodyStyle)(
@@ -349,8 +347,11 @@ object WatrColors extends  BaseClientDefs {
 
     val docId = param("doc").getOrElse { "" }
     val lt = param("lt").getOrElse { "" }
-    createLabeler(docId, lt).map{ labelOptions =>
-      clientStateRx.labelTypes() = labelOptions.colorMap
+    val pg = param("pg").getOrElse("0").toInt
+
+    createLabeler(docId, lt, pg).map{ labelerOptions =>
+      clientStateRx.labelTypes() = labelerOptions.colorMap
+      clientStateRx.pagination() = Some(labelerOptions.pagination)
     }
 
     val rx0 = clientStateRx.selectionInProgress.triggerLater {

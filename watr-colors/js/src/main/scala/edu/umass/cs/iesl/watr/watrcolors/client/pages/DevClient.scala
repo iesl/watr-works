@@ -8,14 +8,14 @@ import parts._
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.scalajs.js.annotation.JSExport
 
-import scaladget.stylesheet.{all => sty}
+// import scaladget.stylesheet.{all => sty}
 
 import scalatags.JsDom.all._
-import sty._
+// import sty.{ctx => _, _}
 
 import watrmarks.{StandardLabels => LB}
 import rx._
-import org.scalajs.dom.raw._
+// import org.scalajs.dom.raw._
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
