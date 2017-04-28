@@ -220,10 +220,9 @@ object WatrColors extends  BaseClientDefs {
 
   object shell {
     import autowire._
-    import TypeTagPicklers._
-
+    // import TypeTagPicklers._
     // import upickle.{default => UPickle}
-    // import UPickle._
+    import UPicklers._
     val Client = new WebsideClient("shell")
     val api = Client[WatrShellApi]
 

@@ -3,7 +3,7 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.11"
+  val scalazVersion       = "7.2.12"
   val scalaTagsVersion    = "0.6.5"
   val scalaAsyncVersion   = "0.9.6"
   val scalaModulesVersion = "1.0.4"

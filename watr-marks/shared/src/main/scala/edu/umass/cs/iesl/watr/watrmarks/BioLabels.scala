@@ -123,13 +123,6 @@ case class Label(
     ns==l.ns && key==l.key
 }
 
-object Label {
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-
-  implicit val Label_RW: RW[Label] = macroRW[Label]
-
-}
 
 import utils.IdGenerator
 class Labeler() {

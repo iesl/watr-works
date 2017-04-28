@@ -15,10 +15,7 @@ import concurrent.duration._
 import corpora._
 import docstore._
 
-// import autowire._
 import upickle.{default => UPickle}
-// import UPickle._
-// import TypeTagPicklers._
 
 
 class EmbeddedServer(
@@ -164,6 +161,8 @@ class EmbeddedServer(
 
     }
 
+    import UPicklers._
+    // import TypeTagPicklers._
 
     lazy val bioArxivServer = new BioArxivServer(reflowDB, corpus)
 

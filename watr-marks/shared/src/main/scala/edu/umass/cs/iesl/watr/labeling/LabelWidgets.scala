@@ -199,40 +199,6 @@ object LabelWidgetF {
 
 
 }
-object LabelWidgetPicklers {
-  import LabelWidgetF._
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-  import textreflow.TextReflowF
-  import TextReflowF._
-
-  implicit val TextReflowFU_RW: RW[TextReflowF[Unit]] =
-    macroRW[Atom]
-      .merge(macroRW[Insert])
-      .merge(macroRW[Rewrite[Unit]])
-      .merge(macroRW[Bracket[Unit]])
-      .merge(macroRW[Flow[Unit]])
-      .merge(macroRW[Labeled[Unit]])
-
-  // implicit val LabelWidgetFN_RW: RW[LabelWidgetF[Nothing]] =
-  //   macroRW[LabelWidgetF[Nothing]]
-  //     .merge(macroRW[LBBounds])
-
-  implicit val InteractionImplicit = Interaction.Interaction_RW
-
-  implicit val LabelWidgetFU_RW: RW[LabelWidgetF[Unit]] =
-    macroRW[RegionOverlay[Unit]]
-      .merge(macroRW[Row[Unit]])
-      .merge(macroRW[Col[Unit]])
-      .merge(macroRW[Pad[Unit]])
-      .merge(macroRW[TextBox])
-      .merge(macroRW[Reflow])
-      .merge(macroRW[Figure])
-      .merge(macroRW[Identified[Unit]])
-      .merge(macroRW[Panel[Unit]])
-      .merge(macroRW[Terminal.type])
-
-}
 
 object LabelWidgets {
 

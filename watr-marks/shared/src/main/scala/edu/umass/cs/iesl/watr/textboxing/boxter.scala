@@ -15,13 +15,6 @@ object Alignment {
   case object AlignCenter1 extends Alignment
   case object AlignCenter2 extends Alignment
 
-  // import upickle.default._, Aliases._
-
-  // implicit val Alignment_RW: RW[Alignment] =
-  //   macroRW[AlignFirst.type]
-  //     .merge(macroRW[AlignLast.type])
-  //     .merge(macroRW[AlignCenter1.type])
-  //     .merge(macroRW[AlignCenter2.type])
 }
 
 
@@ -35,25 +28,9 @@ object Content {
   case class Col(bs:Seq[Box]) extends Content
   case class SubBox(hAlign: Alignment, vAlign: Alignment, b:Box) extends Content
 
-  // import upickle.default._, Aliases._
-
-  // implicit val Content_RW: RW[Content] =
-  //   macroRW[Blank.type]
-  //     .merge(macroRW[Text])
-  //     .merge(macroRW[Row])
-  //     .merge(macroRW[Col])
-  //     .merge(macroRW[SubBox])
-
 }
 
 
-// object Box {
-//   import TextBoxing._
-//   import upickle.default._, Aliases._
-
-//   implicit val Box_RW: RW[Box] =
-//     macroRW[Box]
-// }
 
 
 object TextBoxing extends ToListOps with ToIdOps {

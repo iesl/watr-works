@@ -32,14 +32,6 @@ case class AbsPosWidget(
   scaling: Double = 1.0d
 )
 
-object AbsPosWidget {
-  import upickle.default._, Aliases._
-  import LabelWidgetPicklers._
-
-  implicit val AbsPosWidget_RW: RW[AbsPosWidget] = macroRW[AbsPosWidget]
-
-}
-
 
 case class WidgetLayout(
   positioning: Seq[AbsPosWidget],

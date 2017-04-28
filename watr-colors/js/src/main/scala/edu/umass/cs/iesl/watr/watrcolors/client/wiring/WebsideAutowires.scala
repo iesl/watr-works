@@ -5,6 +5,7 @@ package wiring
 
 import upickle.{default => UPickle}
 import UPickle._
+import UPicklers._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 

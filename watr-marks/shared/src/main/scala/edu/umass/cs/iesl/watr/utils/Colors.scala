@@ -67,17 +67,6 @@ object Color {
   val White = RGBColor(255, 255, 255)
   val Black = RGBColor(0, 0, 0)
 
-
-
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-
-  implicit val Color_RW: RW[Color] =
-    macroRW[RGBColor ]
-      .merge(macroRW[CMYKColor])
-      .merge(macroRW[HSVColor ])
-      .merge(macroRW[HSLColor ])
-      .merge(macroRW[Grayscale])
 }
 
 /**

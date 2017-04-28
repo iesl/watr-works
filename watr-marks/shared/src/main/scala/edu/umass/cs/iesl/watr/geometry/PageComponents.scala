@@ -26,12 +26,7 @@ case class StablePageID(
 ) {
   override def toString = s"""${stableId}/pg${pageNum}"""
 }
-object StablePageID {
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-  implicit val StablePageID_RW: RW[StablePageID] = macroRW[StablePageID]
 
-}
 
 case class RecordedPageID(
   pageId: Int@@PageID,
@@ -40,23 +35,11 @@ case class RecordedPageID(
   override def toString = s"""${stable}@${pageId}"""
 }
 
-object RecordedPageID {
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-  implicit val RecordedPageID_RW: RW[RecordedPageID] = macroRW[RecordedPageID]
-
-}
 
 case class PageRegion(
   page: RecordedPageID,
   bbox: LTBounds
 )
-object PageRegion {
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-  implicit val PageRegion_RW: RW[PageRegion] = macroRW[PageRegion]
-
-}
 
 case class TargetRegion(
   id: Int@@RegionID,
@@ -75,10 +58,6 @@ object TargetRegion {
   implicit val EqualTargetRegion: Equal[TargetRegion] =
     Equal.equal((a, b) => a.id==b.id)
 
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-  implicit val TargetRegion_RW: RW[TargetRegion] = macroRW[TargetRegion]
-
 }
 
 
@@ -86,12 +65,6 @@ case class PageGeometry(
   id: Int@@PageNum,
   bounds: LTBounds
 )
-object PageGeometry {
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-  implicit val PageGeometry_RW: RW[PageGeometry] = macroRW[PageGeometry]
-
-}
 
 case class CharAtom(
   id: Int@@CharID,
@@ -109,9 +82,6 @@ object CharAtom {
   implicit val EqualCharAtom: Equal[CharAtom] =
     Equal.equal((a, b)  => a.id==b.id )
 
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-  implicit val CharAtom_RW: RW[CharAtom] = macroRW[CharAtom]
 
 }
 
@@ -121,12 +91,6 @@ case class Zone(
   label: Label
 )
 
-object Zone {
-  import upickle.default._, Aliases._
-  import TypeTagPicklers._
-  implicit val Zone_RW: RW[Zone] = macroRW[Zone]
-
-}
 
 object PageComponentImplicits {
   def createTargetRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {

@@ -65,25 +65,12 @@ case class Padding(
 )
 
 object GeometricFigure {
-  import upickle.default._, Aliases._
-
-  implicit val GeometricFigure_RW: RW[GeometricFigure] =
-    macroRW[LTBounds]
-      .merge(macroRW[LBBounds])
-      .merge(macroRW[Point])
-      .merge(macroRW[Line])
-      .merge(macroRW[GeometricGroup])
-      .merge(macroRW[Colorized])
 }
 
 object Padding {
-  import upickle.default._, Aliases._
   def apply(n: Double): Padding = {
     Padding(n, n, n, n)
   }
-
-  implicit val Padding_RW: RW[Padding] =
-    macroRW[Padding]
 }
 
 
