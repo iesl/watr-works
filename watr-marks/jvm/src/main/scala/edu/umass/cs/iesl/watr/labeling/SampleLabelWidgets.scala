@@ -4,13 +4,14 @@ package labeling
 import textboxing.{TextBoxing => TB}, TB._
 import geometry._
 import LabelWidgets._
+import LabelWidgetF._
 import utils.Colors
 import utils.EnrichNumerics._
 import TypeTags._
 
 object SampleLabelWidgets {
 
-  def dimensionTest(): LabelingPanel = {
+  def dimensionTest(): LabelWidget = {
     val sampleText1 = textbox(
       vjoin(center1)(
         "aliqua. Ut enim ad minim veniam, ",
@@ -48,10 +49,7 @@ object SampleLabelWidgets {
     )
     val layout = pad(col0, Padding(10), Colors.Red)
 
-    LabelingPanel(
-      layout,
-      LabelerOptions(Pagination(0, PageNum(0), None), Map())
-    )
+    layout
 
   }
 

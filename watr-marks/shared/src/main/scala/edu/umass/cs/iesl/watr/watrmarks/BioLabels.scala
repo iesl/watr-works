@@ -1,16 +1,9 @@
-package edu.umass.cs.iesl.watr.watrmarks
+package edu.umass.cs.iesl.watr
+package watrmarks
 
-import scalaz.@@
-
-import _root_.edu.umass.cs.iesl.watr
-import watr.utils
-
-import watr.LabelID
-import watr.TypeTags
 import TypeTags._
 
-import watr.textboxing.{TextBoxing => TB}
-
+import textboxing.{TextBoxing => TB}, TB._
 
 sealed trait BioPin {
   def label: Label
@@ -130,6 +123,13 @@ case class Label(
     ns==l.ns && key==l.key
 }
 
+object Label {
+  import upickle.default._, Aliases._
+  import TypeTagPicklers._
+
+  implicit val Label_RW: RW[Label] = macroRW[Label]
+
+}
 
 import utils.IdGenerator
 class Labeler() {

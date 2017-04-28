@@ -3,6 +3,7 @@ package watrcolors
 package client
 package pages
 
+
 import parts._
 
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -25,6 +26,8 @@ import scaladget.api.{
 }
 import scaladget.tools.JsRxTags.{ctx => _, _}
 import textboxing.{TextBoxing => TB}, TB._
+import labeling._
+import TypeTags._
 
 @JSExportTopLevel("DevClient")
 object DevClient extends BaseClientDefs {
@@ -60,8 +63,14 @@ object DevClient extends BaseClientDefs {
         selectActiveLabel.render
       }
 
+      val state = UIState(
+        ByLine,
+        None,
+        Seq(),
+        DocumentLabelerIdentifier(DocumentID("doc#XYZ"), "my-lt", Pagination(0, PageNum(3), None))
+      )
       val selectorControls = SharedLayout.zoneSelectorControls(
-        new ClientStateRx((_) => Future{()}),
+        new ClientStateRx(state, (_) => Future{()}),
         setupLabelChooser
       )
 

@@ -5,15 +5,18 @@ import scalaz.Free
 // import scalaz.~>
 
 import geometry._
-// import watrmarks.Label
+import upickle.default._, Aliases._
 
-sealed trait Gesture
-case class SelectRegion(bbox: LTBounds) extends Gesture
-case class Click(point: Point) extends Gesture
-case class DblClick(point: Point) extends Gesture
-case class MenuAction(action: LabelAction[Unit]) extends Gesture
 
 sealed trait Constraint
+
+object Constraint {
+
+  implicit val Constraint_RW: RW[Constraint] = macroRW[Constraint]
+    // macroRW[ByLine]
+    //   .merge(macroRW[ByChar])
+    //   .merge(macroRW[ByRegion])
+}
 
 case object ByLine extends Constraint
 case object ByChar extends Constraint
@@ -21,11 +24,22 @@ case object ByRegion extends Constraint
 
 sealed trait Interaction
 
-case class InteractProg[A](
-  a: Free[LabelAction, A]
-) extends Interaction
+object Interaction {
+  case class InteractProg[A](
+    a: Free[LabelAction, A]
+  ) extends Interaction
 
-case object InteractNil extends Interaction
+  case object InteractNil extends Interaction
+
+
+  import upickle.Js
+
+  implicit def Interaction_RW: RW[Interaction] = RW[Interaction](
+    {value => Js.Null},
+    {case Js.Null => InteractNil}
+  )
+
+}
 
 sealed trait LabelAction[A]
 
@@ -41,14 +55,42 @@ object LabelAction {
   case class NavigateTo(pageNum: Int)              extends LabelAction[Unit]
 
   def selectZone(g: Int@@ZoneID)            = Free.liftF{ SelectZone(g) }
-  def toggleZoneSelection(g: Int@@ZoneID)   = InteractProg(Free.liftF{ ToggleZoneSelection(g) })
+  def toggleZoneSelection(g: Int@@ZoneID)   = Interaction.InteractProg(Free.liftF{ ToggleZoneSelection(g) })
   def deleteZone(g: Int@@ZoneID)            = Free.liftF{ DeleteZone(g) }
   def mergeZones(zs: Seq[Int@@ZoneID])      = Free.liftF{ MergeZones(zs) }
 
-  def clickToSelectZone(zoneId: Int@@ZoneID): Interaction = InteractProg(
+  def clickToSelectZone(zoneId: Int@@ZoneID): Interaction = Interaction.InteractProg(
     for {
       _ <- selectZone(zoneId)
     } yield ()
   )
 
+  import TypeTagPicklers._
+
+  implicit val LabelAction_RW: RW[LabelAction[Unit]] =
+    macroRW[SelectZone]
+      .merge(macroRW[ToggleZoneSelection])
+      .merge(macroRW[DeleteZone])
+      .merge(macroRW[MergeZones])
+      .merge(macroRW[NavigateTo])
+
+  // macroRW[LabelAction[Unit]]
+
+
+}
+
+sealed trait Gesture
+case class SelectRegion(bbox: LTBounds) extends Gesture
+case class Click(point: Point) extends Gesture
+case class DblClick(point: Point) extends Gesture
+case class MenuAction(action: LabelAction[Unit]) extends Gesture
+
+object Gesture {
+  import TypeTagPicklers._
+
+  implicit val Gesture_RW: RW[Gesture] =
+    macroRW[SelectRegion]
+      .merge(macroRW[Click])
+      .merge(macroRW[DblClick])
+      .merge(macroRW[MenuAction])
 }

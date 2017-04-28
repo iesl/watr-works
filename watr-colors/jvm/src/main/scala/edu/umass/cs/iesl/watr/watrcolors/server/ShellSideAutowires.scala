@@ -4,7 +4,7 @@ package server
 
 
 import upickle.{default => UPickle}
-import UPickle._
+// import UPickle._
 
 import scala.concurrent.Future
 

@@ -98,7 +98,8 @@ object SharedLayout extends BaseClientDefs {
             defaultActive = b,
             modifierSeq = sty.btn_small,
             onclick = () => {
-              zsRx.selectionConstraint() = c
+              ???
+              // zsRx.selectionConstraint() = c
             }
           )
       }

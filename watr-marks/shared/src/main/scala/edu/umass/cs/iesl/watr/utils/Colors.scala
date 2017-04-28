@@ -66,13 +66,25 @@ object Color {
 
   val White = RGBColor(255, 255, 255)
   val Black = RGBColor(0, 0, 0)
+
+
+
+  import upickle.default._, Aliases._
+  import TypeTagPicklers._
+
+  implicit val Color_RW: RW[Color] =
+    macroRW[RGBColor ]
+      .merge(macroRW[CMYKColor])
+      .merge(macroRW[HSVColor ])
+      .merge(macroRW[HSLColor ])
+      .merge(macroRW[Grayscale])
 }
 
 /**
- * Red/Green/Blue
- *
- * The red, green, blue, and alpha components should be between [0,255].
- */
+  * Red/Green/Blue
+  *
+  * The red, green, blue, and alpha components should be between [0,255].
+  */
 case class RGBColor(red: Int, green: Int, blue: Int, alpha: Int = 255) extends Color {
   require(0 <= red && red <= 255, "Red component is invalid")
   require(0 <= green && green <= 255, "Green component is invalid")
@@ -273,4 +285,3 @@ case class HSLColor(hue: Float, saturation: Float, lightness: Float, alpha: Floa
 case class Grayscale(grey: Int, alpha: Int = 255) extends Color {
   override def toRGB: RGBColor = RGBColor(grey, grey, grey, alpha)
 }
-

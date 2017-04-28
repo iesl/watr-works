@@ -79,6 +79,7 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     // ))
 
     val lwindex = LabelWidgetIndex.create(docStore, layout)
+
     val finalLayout = (
       """|333
          |3α3

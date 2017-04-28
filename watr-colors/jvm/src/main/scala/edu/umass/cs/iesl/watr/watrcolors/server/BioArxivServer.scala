@@ -7,6 +7,7 @@ import scala.concurrent.Future
 import corpora._
 import geometry._
 import labeling._
+import labeling.data._
 import docstore._
 
 import utils.{Debugging => Dbg}
@@ -25,10 +26,10 @@ class BioArxivServer(
   }
 
   def fetchDocumentLabeler(
-    labelerRequest: LabelerIdentifier
-  ): Future[LabelerResponse] = {
+    labelerRequestx: LabelerIdentifier
+  ): Future[UIResponse] = {
 
-    val DocumentLabelerIdentifier(stableId, labelerType, pagination) = labelerRequest
+    val DocumentLabelerIdentifier(stableId, labelerType, pagination, labelColors) = labelerRequestx
 
     val hasEntry = corpus.hasEntry(stableId.unwrap)
     println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
@@ -40,29 +41,35 @@ class BioArxivServer(
     } yield {
 
       try {
-        val labelingPanel = TitleAuthorsLabelers.bioArxivLabeler(stableId, pagination, rec, docStore)
+        val (labelWidget, updatedLabelId) = TitleAuthorsLabelers.bioArxivLabeler(labelerRequestx, rec, docStore)
 
-        val mkPanel: LabelerOptions => LabelingPanel =
-          labelerOptions => TitleAuthorsLabelers.bioArxivLabeler(stableId, pagination, rec, docStore)
+        val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
+          labelerIdentifier => TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
 
-
-
-        val lwIndex = LabelWidgetIndex.create(
+        val lwIndex = LabelWidgetIndex.init(
           docStore,
-          LabelWidgetTransforms.addAllZoneIndicators(
-            labelingPanel.labelWidget,
-            labelingPanel.labelerOptions,
-            docStore
+          updatedLabelId,
+          mkWidget,
+          Some(
+            LabelWidgetTransforms.addAllZoneIndicators(
+              labelWidget,
+              updatedLabelId,
+              docStore
+            )
           ),
-          mkPanel,
-          labelingPanel.labelerOptions
+          None
         )
 
         activeLabelWidgetIndex = Some(lwIndex)
 
-        val layout = lwIndex.layout.positioning
+        val respState = UIState(
+          ByLine,
+          labelColors.headOption.map(_._1),
+          Seq(),
+          updatedLabelId
+        )
 
-        Future { LabelerResponse(layout, labelingPanel.labelerOptions) }
+        Future { UIResponse(respState, lwIndex.getAllMods()) }
 
       } catch {
         case t: Throwable =>
@@ -80,7 +87,7 @@ class BioArxivServer(
   def uiRequest(r: UIRequest): Future[UIResponse] = {
     try {
       val UIRequest(
-        uiState@ UIState(constraint, maybeLabel, selections, currLabeler, pagination),
+        uiState@ UIState(constraint, maybeLabel, selections, currLabeler),
         gesture
       ) = r
 
@@ -91,6 +98,7 @@ class BioArxivServer(
 
         activeLabelWidgetIndex = Some(modifiedWidgetIndex)
 
+        println(s"  ==> UIResponse ${uiResponse}")
         Future{ uiResponse }
       } getOrElse {
         Future{ UIResponse(uiState, List()) }

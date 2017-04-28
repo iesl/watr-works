@@ -7,10 +7,87 @@ import scalaz.syntax.std.ToListOps
 import scala.language.postfixOps
 import scala.language.implicitConversions
 
-object TextBoxing extends ToListOps with ToIdOps {
+sealed trait Alignment
 
-  // The basic data type.  A box has a specified size and some sort of
-  //   contents.
+object Alignment {
+  case object AlignFirst extends Alignment
+  case object AlignLast extends Alignment
+  case object AlignCenter1 extends Alignment
+  case object AlignCenter2 extends Alignment
+
+  // import upickle.default._, Aliases._
+
+  // implicit val Alignment_RW: RW[Alignment] =
+  //   macroRW[AlignFirst.type]
+  //     .merge(macroRW[AlignLast.type])
+  //     .merge(macroRW[AlignCenter1.type])
+  //     .merge(macroRW[AlignCenter2.type])
+}
+
+
+sealed trait Content
+
+object Content {
+  import TextBoxing._
+  case object Blank extends Content
+  case class Text(s:String) extends Content
+  case class Row(bs:Seq[Box]) extends Content
+  case class Col(bs:Seq[Box]) extends Content
+  case class SubBox(hAlign: Alignment, vAlign: Alignment, b:Box) extends Content
+
+  // import upickle.default._, Aliases._
+
+  // implicit val Content_RW: RW[Content] =
+  //   macroRW[Blank.type]
+  //     .merge(macroRW[Text])
+  //     .merge(macroRW[Row])
+  //     .merge(macroRW[Col])
+  //     .merge(macroRW[SubBox])
+
+}
+
+
+// object Box {
+//   import TextBoxing._
+//   import upickle.default._, Aliases._
+
+//   implicit val Box_RW: RW[Box] =
+//     macroRW[Box]
+// }
+
+
+object TextBoxing extends ToListOps with ToIdOps {
+  // Data type for specifying the alignment of boxes.
+  import Alignment._
+  import Content._
+
+
+  val AlignLeft = AlignFirst
+  val AlignRight = AlignLast
+  val AlignCenter = AlignCenter1
+
+  // Align boxes along their top/bottom/left/right
+  def top = AlignFirst
+  def bottom = AlignLast
+  def left = AlignFirst
+  def right = AlignLast
+
+  // Align boxes centered, but biased to the left/top (center1) or
+  //  right/bottom (center2) in the case of unequal parities.
+  def center1    = AlignCenter1
+  def center2    = AlignCenter2
+
+  // pad box with an empty indentation box
+  def indent(n:Int=4)(b:Box): Box = {
+    emptyBox(1)(n) + b
+  }
+
+  // Implicit to use bare string literals as boxes.
+  implicit def stringToBox(s: String): Box = {
+    linesToBox(scala.io.Source.fromString(s).getLines.toSeq)
+  }
+
+  // The basic data type.  A box has a specified size and some sort of contents.
   case class Box(rows:Int, cols:Int, content: Content) {
     // Paste two boxes together horizontally, using a default (top) alignment.
     def + : Box => Box = beside
@@ -29,8 +106,6 @@ object TextBoxing extends ToListOps with ToIdOps {
     def atop(b: Box): Box = {
       vcat(left)(Seq(this,b))
     }
-
-
     // Paste two boxes together vertically with a single intervening row
     //   of space, using a default (left) alignment.
     def %| : Box => Box = atopS
@@ -50,17 +125,6 @@ object TextBoxing extends ToListOps with ToIdOps {
 
     def takeCols(cols:Int): Box =
       linesToBox(this.lines.map(_.take(cols)))
-  }
-
-
-  // pad box with an empty indentation box
-  def indent(n:Int=4)(b:Box): Box = {
-    emptyBox(1)(n) + b
-  }
-
-  // Implicit to use bare string literals as boxes.
-  implicit def stringToBox(s: String): Box = {
-    linesToBox(scala.io.Source.fromString(s).getLines.toSeq)
   }
 
 
@@ -95,60 +159,6 @@ object TextBoxing extends ToListOps with ToIdOps {
     vjoin()((lines map (tbox(_))):_*)
   }
 
-
-  // sealed trait Align
-  // sealed trait AlignH extends Align
-  // sealed trait AlignV extends Align
-
-  // object Align {
-  //   object H {
-  //     case object Top      extends AlignH
-  //     case object Bottom   extends AlignH
-  //   }
-
-  //   object V {
-  //     case object First   extends AlignV
-  //     case object Last    extends AlignV
-  //     case object Center1 extends AlignV
-  //     case object Center2 extends AlignV
-  //     val Center= Center1
-  //     val Left  = First
-  //     val Right = Last
-  //   }
-  // }
-
-
-  // Data type for specifying the alignment of boxes.
-  sealed trait Alignment
-
-  case object AlignFirst extends Alignment
-  case object AlignLast extends Alignment
-  case object AlignCenter1 extends Alignment
-  case object AlignCenter2 extends Alignment
-
-  val AlignLeft = AlignFirst
-  val AlignRight = AlignLast
-  val AlignCenter = AlignCenter1
-
-  // Align boxes along their top/bottom/left/right
-  def top = AlignFirst
-  def bottom = AlignLast
-  def left = AlignFirst
-  def right = AlignLast
-
-  // Align boxes centered, but biased to the left/top (center1) or
-  //  right/bottom (center2) in the case of unequal parities.
-  def center1    = AlignCenter1
-  def center2    = AlignCenter2
-
-  // Contents of a box.
-  sealed trait Content
-
-  case object Blank extends Content
-  case class Text(s:String) extends Content
-  case class Row(bs:Seq[Box]) extends Content
-  case class Col(bs:Seq[Box]) extends Content
-  case class SubBox(hAlign: Alignment, vAlign: Alignment, b:Box) extends Content
 
 
   case class RowSpec(
@@ -269,7 +279,7 @@ object TextBoxing extends ToListOps with ToIdOps {
   // vsep sep a bs lays out bs vertically with alignment a,
   //   with sep amount of space in between each.
   def vsep(bs: Seq[Box], sep: Int=1, align: Alignment=left): Box =
-     punctuateV(align, emptyBox(sep)(0), bs)
+    punctuateV(align, emptyBox(sep)(0), bs)
 
 
   // punctuateH a p bs horizontally lays out the boxes bs with a
@@ -687,7 +697,6 @@ object TextBoxing extends ToListOps with ToIdOps {
 
 
 }
-
 
 object App extends App {
   import TextBoxing._

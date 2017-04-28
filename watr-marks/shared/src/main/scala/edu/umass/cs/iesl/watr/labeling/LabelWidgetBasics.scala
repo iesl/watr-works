@@ -52,13 +52,13 @@ trait LabelWidgetBasics {
         case Same             (ident)        => Seq()
         case Similar          (ident: LabelWidgetF[Fix[Diff[Fix, LabelWidgetF, ?]]])        => Seq() //  ident
         case Different        (left: LabelWidget, right: LabelWidget)  =>
-          val toRm = universeLw(left).map {w => RmLw(w.project.wid)}
-          val toAdd = universeLw(right).map {w => AddLw(w.project.wid)}
+          val toRm = universeLw(left).map {w => WidgetMod.RmLw(w.project.wid)}
+          val toAdd = universeLw(right).map {w => WidgetMod.AddLw(w.project.wid)}
           toRm ++ toAdd
 
 
         case LocallyDifferent (left, right)  =>
-          Seq(RmLw(left.wid), AddLw(right.wid))
+          Seq(WidgetMod.RmLw(left.wid), WidgetMod.AddLw(right.wid))
 
         case Inserted         (right)        =>
           // Seq(AddLw(right.wid))
@@ -69,10 +69,10 @@ trait LabelWidgetBasics {
           ???
 
         case Added            (right)        =>
-          universeLw(right).map {w => AddLw(w.project.wid)}
+          universeLw(right).map {w => WidgetMod.AddLw(w.project.wid)}
 
         case Removed          (left)         =>
-          universeLw(left).map {w => RmLw(w.project.wid)}
+          universeLw(left).map {w => WidgetMod.RmLw(w.project.wid)}
 
       }}
     allWidgetMod

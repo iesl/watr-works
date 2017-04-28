@@ -118,7 +118,7 @@ object DocumentIO extends DocsegJsonFormats {
 
   }
 
-  def serializeRelation(mpageIndex: MultiPageIndex): Seq[TB.Box] = {
+  def serializeRelation(mpageIndex: MultiPageIndex): Seq[Box] = {
     mpageIndex.relations
       .filter({
         case Relation.Record(_, rel, _)
@@ -144,7 +144,7 @@ object DocumentIO extends DocsegJsonFormats {
   }
 
 
-  def serializeZones(mpageIndex: MultiPageIndex, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): TB.Box = {
+  def serializeZones(mpageIndex: MultiPageIndex, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): Box = {
     // val zones = mpageIndex.getZones.map({ zone =>
 
     val docStore = mpageIndex.docStore
@@ -209,7 +209,7 @@ object DocumentIO extends DocsegJsonFormats {
     vjoinTrailSep(left, ",")(zones.map(_._3):_*)
   }
 
-  def serializeLineLabels(mpageIndex: MultiPageIndex): TB.Box = {
+  def serializeLineLabels(mpageIndex: MultiPageIndex): Box = {
 
     // val serComponents = List(
     //   LB.SectionHeadingLine,

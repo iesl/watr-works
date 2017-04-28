@@ -5,18 +5,25 @@ package labeling
 import bioarxiv._
 import BioArxiv._
 import data._
-import watrmarks.{StandardLabels => LB}
 import textboxing.{TextBoxing => TB}, TB._
 import data._
 import corpora._
 import geometry._
 import utils.Colors
+import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
 
 object TitleAuthorsLabelers extends LabelWidgetUtils {
 
-  def bioArxivLabeler(stableId: String@@DocumentID, startingPageWindow: Int, paperRec: PaperRec, docStore: DocumentCorpus): LabelingPanel = {
+  def bioArxivLabeler(
+    labelerIdentifier: LabelerIdentifier,
+    paperRec: PaperRec,
+    docStore: DocumentCorpus
+  ): (LabelWidget, LabelerIdentifier) = {
+    val DocumentLabelerIdentifier(stableId, labelerType, pagination, labelColors) = labelerIdentifier
+
+    val startingPageWindow: Int = pagination.currentPage.unwrap
 
     val paperRecWidget = LW.textbox(
       TB.vjoin()(
@@ -76,18 +83,19 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       )
     )
 
-    LabelingPanel(
-      body,
-      LabelerOptions(
-        Pagination(numWindows, PageNum(displayWindow), None),
-        Map(
-          (LB.Title, Colors.Wheat),
-          (LB.Authors, Colors.Orange),
-          (LB.Abstract, Colors.MediumTurquoise),
-          (LB.Affiliation, Colors.OliveDrab),
-          (LB.References, Colors.Peru)
-        ))
+    val updatedIdentifier =  DocumentLabelerIdentifier(
+      stableId, labelerType,
+      Pagination(numWindows, PageNum(displayWindow), None),
+      Map(
+        (LB.Title, Colors.Wheat),
+        (LB.Authors, Colors.Orange),
+        (LB.Abstract, Colors.MediumTurquoise),
+        (LB.Affiliation, Colors.OliveDrab),
+        (LB.References, Colors.Peru)
+      )
     )
+
+    (body, updatedIdentifier)
 
   }
 
@@ -96,48 +104,48 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
 // val allPageLines = for {
 //   (zone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
 //   lineReflow      <- docStore.getTextReflowForZone(zone.id)
-      // } yield {
-      //   // FIXME: kludge:
-      //   val lt = LW.labeledTarget(pageTargetRegion, None, None)
-      //   (linenum, (0d, lt))
-      // }
+// } yield {
+//   // FIXME: kludge:
+//   val lt = LW.labeledTarget(pageTargetRegion, None, None)
+//   (linenum, (0d, lt))
+// }
 
-      // val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(docStore, paperRec, stableId)
+// val scores: Seq[AlignmentScores] = AlignBioArxiv.alignPaperWithDB(docStore, paperRec, stableId)
 
-      // // linenum -> best-score, label-widget
-      // val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()
-      // allLineScores ++= allPageLines
+// // linenum -> best-score, label-widget
+// val allLineScores = mutable.HashMap[Int, (Double, LabelWidget)]()
+// allLineScores ++= allPageLines
 
-      // val overlays = scores.map({alignScores =>
-      //   val label = alignScores.alignmentLabel
+// val overlays = scores.map({alignScores =>
+//   val label = alignScores.alignmentLabel
 
-      //   val scoreList = alignScores.lineScores.toList
-      //   val maxScore = scoreList.map(_._2).max
-      //   val lineScores = scoreList.filter(_._2 > maxScore/2)
+//   val scoreList = alignScores.lineScores.toList
+//   val maxScore = scoreList.map(_._2).max
+//   val lineScores = scoreList.filter(_._2 > maxScore/2)
 
-      //   lineScores.foreach({case (linenum, score) =>
-      //     val lineReflow = alignScores.lineReflows(linenum)
-      //     val lineBounds = lineReflow.targetRegion()
-      //     val normalScore = score/maxScore
+//   lineScores.foreach({case (linenum, score) =>
+//     val lineReflow = alignScores.lineReflows(linenum)
+//     val lineBounds = lineReflow.targetRegion()
+//     val normalScore = score/maxScore
 
-      //     val lt = LW.labeledTarget(pageTargetRegion, Some(label), Some(normalScore))
+//     val lt = LW.labeledTarget(pageTargetRegion, Some(label), Some(normalScore))
 
-      //     if (allLineScores.contains(linenum)) {
-      //       val Some((currScore, currWidget)) = allLineScores.get(linenum)
+//     if (allLineScores.contains(linenum)) {
+//       val Some((currScore, currWidget)) = allLineScores.get(linenum)
 
-      //       if (normalScore > currScore) {
-      //         allLineScores.put(linenum, (normalScore, lt))
-      //       }
+//       if (normalScore > currScore) {
+//         allLineScores.put(linenum, (normalScore, lt))
+//       }
 
-      //     } else {
-      //       allLineScores.put(linenum, (normalScore, lt))
-      //     }
+//     } else {
+//       allLineScores.put(linenum, (normalScore, lt))
+//     }
 
-      //   })
-      // })
+//   })
+// })
 
-      // val lwidgets = allLineScores.toList
-      //   .sortBy(_._1)
-      //   .map({case (linenum, (score, lwidget)) =>
-      //     lwidget
-      //   })
+// val lwidgets = allLineScores.toList
+//   .sortBy(_._1)
+//   .map({case (linenum, (score, lwidget)) =>
+//     lwidget
+//   })

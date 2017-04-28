@@ -28,32 +28,19 @@ sealed trait LabelWidgetF[+A] {
 
 object LabelWidgetF {
 
-  type LabelWidget = Fix[LabelWidgetF]
-
-  // unFixed type for LabelWidget
-  type LabelWidgetT = LabelWidgetF[Fix[LabelWidgetF]]
-
-  // LabelWidget w/ Cofree attribute
-  type LabelWidgetAttr[A] = Cofree[LabelWidgetF, A]
-
-  // LabelWidget w/position attribute
-  type LabelWidgetPosAttr = LabelWidgetF[LabelWidgetAttr[PosAttr]]
 
   // Used for recording positioning offsets during layout
   type PositionVector = Point
 
   case class RegionOverlay[A](
     wid: Int@@WidgetID,
-    // pageId: Int@@PageID,
-    // geometry: LTBounds,
-    // clipTo: Option[LTBounds],
     under: TargetRegion,
     overlays: List[A]
   ) extends LabelWidgetF[A]
 
   case class TextBox(
     wid: Int@@WidgetID,
-    textBox: TB.Box
+    textBox: String
   ) extends LabelWidgetF[Nothing]
 
   case class Reflow(
@@ -65,6 +52,7 @@ object LabelWidgetF {
     wid: Int@@WidgetID,
     as: List[A]
   ) extends LabelWidgetF[A]
+
   case class Col[A](
     wid: Int@@WidgetID,
     as: List[A]
@@ -146,7 +134,7 @@ object LabelWidgetF {
 
         case (l @ RegionOverlay(wid1, u1, o1), l2 @ RegionOverlay(wid2, u2, o2)) => u1===u2 && o1===o2
         case (l @ Reflow(wid, tr)                   , l2 : Reflow              ) => false
-        case (l @ TextBox(wid, tb)                  , l2 : TextBox             ) => tb.toString()==l2.textBox.toString()
+        case (l @ TextBox(wid, tb)                  , l2 : TextBox             ) => tb == l2.textBox
         case (l @ Row(wid, as)                      , l2 : Row[A]              ) => as === l2.as
         case (l @ Col(wid, as)                      , l2 : Col[A]              ) => as === l2.as
         case (l @ Pad(wid, a, padding, color)       , l2 : Pad[A]              ) => a === l2.a
@@ -159,6 +147,8 @@ object LabelWidgetF {
 
       })
     })
+
+
   }
 
   implicit val diffable: Diffable[LabelWidgetF] = new Diffable[LabelWidgetF] {
@@ -194,6 +184,54 @@ object LabelWidgetF {
     }
   }
 
+
+
+  type LabelWidget = Fix[LabelWidgetF]
+
+  // unFixed type for LabelWidget
+  type LabelWidgetT = LabelWidgetF[Fix[LabelWidgetF]]
+
+  // LabelWidget w/ Cofree attribute
+  type LabelWidgetAttr[A] = Cofree[LabelWidgetF, A]
+
+  // LabelWidget w/position attribute
+  type LabelWidgetPosAttr = LabelWidgetF[LabelWidgetAttr[PosAttr]]
+
+
+}
+object LabelWidgetPicklers {
+  import LabelWidgetF._
+  import upickle.default._, Aliases._
+  import TypeTagPicklers._
+  import textreflow.TextReflowF
+  import TextReflowF._
+
+  implicit val TextReflowFU_RW: RW[TextReflowF[Unit]] =
+    macroRW[Atom]
+      .merge(macroRW[Insert])
+      .merge(macroRW[Rewrite[Unit]])
+      .merge(macroRW[Bracket[Unit]])
+      .merge(macroRW[Flow[Unit]])
+      .merge(macroRW[Labeled[Unit]])
+
+  // implicit val LabelWidgetFN_RW: RW[LabelWidgetF[Nothing]] =
+  //   macroRW[LabelWidgetF[Nothing]]
+  //     .merge(macroRW[LBBounds])
+
+  implicit val InteractionImplicit = Interaction.Interaction_RW
+
+  implicit val LabelWidgetFU_RW: RW[LabelWidgetF[Unit]] =
+    macroRW[RegionOverlay[Unit]]
+      .merge(macroRW[Row[Unit]])
+      .merge(macroRW[Col[Unit]])
+      .merge(macroRW[Pad[Unit]])
+      .merge(macroRW[TextBox])
+      .merge(macroRW[Reflow])
+      .merge(macroRW[Figure])
+      .merge(macroRW[Identified[Unit]])
+      .merge(macroRW[Panel[Unit]])
+      .merge(macroRW[Terminal.type])
+
 }
 
 object LabelWidgets {
@@ -213,7 +251,7 @@ object LabelWidgets {
     fixlw(Reflow(idgen.nextId, tr))
 
   def textbox(tb: TB.Box) =
-    fixlw(TextBox(idgen.nextId, tb))
+    fixlw(TextBox(idgen.nextId, tb.toString))
 
   def figure(f: GeometricFigure) = fixlw(Figure(idgen.nextId, f))
 

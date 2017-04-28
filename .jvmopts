@@ -1,6 +1,6 @@
--XX:MaxMetaspaceSize=512m
+-XX:MaxMetaspaceSize=725m
 -Xss2m
--Xms1g
--Xmx4g
+-Xms3g
+-Xmx6g
 -Dakka.loglevel=OFF
 -Dorg.ensime.loglevel=INFO

@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
-import geometry._
+// import geometry._
 import geometry.syntax._
 // import textreflow._
 // import textreflow.data._
@@ -41,6 +41,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
     )
 
     val lwindex = LabelWidgetIndex.create(docStore, layout)
+    // val lwindex = LabelWidgetIndex.init(docStore, NilLabelerIdentifier, (_) => {(layout, NilLabelerIdentifier)}, layout)
 
   }
 

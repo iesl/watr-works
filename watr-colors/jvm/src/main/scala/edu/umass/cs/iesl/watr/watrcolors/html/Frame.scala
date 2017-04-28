@@ -45,9 +45,7 @@ object ShellHtml {
   def apply(pageName: String) = {
     <.html(
       htmlHead(),
-      <.body(
-        WatrStyles.htmlBody,
-        ^.onload:=s"${pageName}.display();")
+      <.body(WatrStyles.htmlBody, ^.onload:=s"${pageName}.display();")
     )
   }
 }

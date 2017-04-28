@@ -29,6 +29,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     "com.lihaoyi"                %%% "scalatags"              % Lib.scalaTagsVersion,
     "com.lihaoyi"                %%% "fansi"                  % Lib.fansiV,
     "com.lihaoyi"                %%% "sourcecode"             % Lib.sourcecodeV,
+    "com.lihaoyi"                %%% "upickle"                % "0.4.4",
     "com.slamdata"               %%% "matryoshka-core"        % Lib.matryoshkaCoreV,
     "com.slamdata"               %%% "matryoshka-scalacheck"  % Lib.matryoshkaCoreV % "compile, test"
   ))

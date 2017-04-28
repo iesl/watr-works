@@ -10,8 +10,6 @@ import textboxing.{TextBoxing => TB}, TB._
 object VisualTracer {
   import TraceLog._
 
-
-
   implicit class RicherString(val s: String) extends AnyVal {
     def withTrace(t: TraceLog): TraceLog = link(
       message(s), t
@@ -28,7 +26,7 @@ object VisualTracer {
   def showRegions(s: Seq[TargetRegion]): TraceLog       = {Show(s)}
   // def showZone(s: Zone): TraceLog                       = {ShowZone(s)}
   def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
-  def message(s: Box): TraceLog                         = {Message(s)}
+  def message(s: TB.Box): TraceLog                         = {Message(s)}
   def all(ts: Seq[TraceLog]): TraceLog                  = {All(ts)}
   def link(ts: TraceLog*): TraceLog                     = {Link(ts)}
 
@@ -84,7 +82,7 @@ class VisualTracer() { // extends EnableTrace[TraceLog] {
     val group12 = group2.copy(ts = group2.ts :+ group1)
     vtraceStack.push(group12)
   }
-  def printlnIndent(s: Box, force: Boolean = false) = {
+  def printlnIndent(s: TB.Box, force: Boolean = false) = {
     if (traceIsUnfiltered()) {
       val leftIndent = vtraceStack.length * 4
       val ibox = indent(leftIndent)(s)
@@ -98,7 +96,7 @@ class VisualTracer() { // extends EnableTrace[TraceLog] {
 
   def ifTrace(body: Unit): Unit = () // macro VisualTraceMacros.sideEffectIfEnabled[TraceLog]
 
-  def formatTrace(trace: TraceLog): Option[Box] = {
+  def formatTrace(trace: TraceLog): Option[TB.Box] = {
     trace match {
       case g:Group                => None
       case g:GroupEnd             => None

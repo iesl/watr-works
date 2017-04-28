@@ -17,8 +17,8 @@ import docstore._
 
 // import autowire._
 import upickle.{default => UPickle}
-import UPickle._
-import TypeTagPicklers._
+// import UPickle._
+// import TypeTagPicklers._
 
 
 class EmbeddedServer(
@@ -195,7 +195,10 @@ class EmbeddedServer(
 
     }
 
-    def kill() = system.terminate()
+    def kill() = {
+      system.terminate()
+
+    }
   }
 
 

@@ -16,6 +16,7 @@ import LabelWidgetF._
 
 import utils.ScalazTreeImplicits._
 import TypeTags._
+import textboxing.{TextBoxing => TB}, TB._
 
 
 // Position transform:
@@ -30,6 +31,14 @@ case class AbsPosWidget(
   translation: PositionVector,
   scaling: Double = 1.0d
 )
+
+object AbsPosWidget {
+  import upickle.default._, Aliases._
+  import LabelWidgetPicklers._
+
+  implicit val AbsPosWidget_RW: RW[AbsPosWidget] = macroRW[AbsPosWidget]
+
+}
 
 
 case class WidgetLayout(
@@ -82,7 +91,6 @@ object LabelWidgetLayoutHelpers {
     )
   }
 
-  import textboxing.{TextBoxing => TB}
 
   def printTree(pos: Cofree[LabelWidgetF, PosAttr]): TB.Box = {
     cofreeLWAttrToTree(

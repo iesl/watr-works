@@ -47,7 +47,7 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
 
     println(prettyPrintLabelWidget(labelWidget))
 
-    val labelWidgetWithIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, LabelerOptions(), docStore)
+    val labelWidgetWithIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, NilLabelerIdentifier, docStore)
 
     // println(prettyPrintLabelWidget(labelWidgetWithIndicators))
     val lwdiff = labelWidgetDiff(labelWidget, labelWidgetWithIndicators)
@@ -66,8 +66,8 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
     val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
 
     val updates = mods.map { _ match {
-      case AddLw(id, _) => AddLw(id, absPosMap.get(id))
-      case RmLw(id, _) => RmLw(id, absPosMap.get(id))
+      case WidgetMod.AddLw(id, _) => WidgetMod.AddLw(id, absPosMap.get(id))
+      case WidgetMod.RmLw(id, _) => WidgetMod.RmLw(id, absPosMap.get(id))
     }}
 
 

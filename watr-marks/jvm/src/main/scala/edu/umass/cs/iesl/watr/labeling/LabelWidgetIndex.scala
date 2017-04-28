@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
+
 import scala.collection.mutable
 
 import textreflow.data._
@@ -22,7 +23,6 @@ import matryoshka._
 import matryoshka.implicits._
 import utils.GraphPaper
 import utils.Colors
-import TypeTags._
 import LabelWidgetTransforms._
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
@@ -42,25 +42,23 @@ case class QueryHit(
 )
 
 case class InterpState(
+  uiRequest: UIRequest,
   uiResponse: UIResponse,
   labelWidget: LabelWidget,
   labelWidgetIndex: Option[LabelWidgetIndex] = None
 )
 
+
 object istate {
 
   val uiResponseL       = lens[InterpState].uiResponse
-  val labelWidgetIndexL = lens[InterpState].labelWidgetIndex
   val uiStateL          = lens[InterpState].uiResponse.uiState
   val selectionsL       = lens[InterpState].uiResponse.uiState.selections
   val changesL          = lens[InterpState].uiResponse.changes
+  val labelWidgetIndexL = lens[InterpState].labelWidgetIndex
   val labelWidgetL      = lens[InterpState].labelWidget
 
 
-  def addSelection(zoneId: Int@@ZoneID): InterpState => InterpState =
-    st => selectionsL.modify(st) {
-      sels => zoneId +: sels
-    }
 }
 
 object LabelWidgetIndex extends LabelWidgetLayout {
@@ -78,25 +76,34 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
   import textreflow.TextReflowJsonCodecs._
 
-  def init(
-    docStore: DocumentCorpus,
-    labelerOpts: LabelerOptions=LabelerOptions(Pagination(0, PageNum(0), None), Map()),
-    mkWidget: LabelerOptions => LabelingPanel
-  ): LabelWidgetIndex = {
-    val newPanel = mkWidget(labelerOpts)
-    create(docStore, newPanel.labelWidget, mkWidget, labelerOpts, None)
-  }
-
   def create(
     docStore0: DocumentCorpus,
-    lwidget: LabelWidget,
-    mkWidget0: LabelerOptions => LabelingPanel,
-    labelOpts: LabelerOptions=LabelerOptions(Pagination(0, PageNum(0), None), Map()),
+    initWidget: LabelWidget
+  ): LabelWidgetIndex = {
+    init(
+      docStore0,
+      NilLabelerIdentifier,
+      (_) => {(initWidget, NilLabelerIdentifier)},
+      Some(initWidget)
+    )
+  }
+
+  def init(
+    docStore0: DocumentCorpus,
+    labelerIdentifier0: LabelerIdentifier,
+    mkWidget0: LabelerIdentifier => (LabelWidget, LabelerIdentifier),
+    initWidget: Option[LabelWidget]=None,
     priorIndex: Option[LabelWidgetIndex]=None
   ): LabelWidgetIndex = {
+    val (newWidget, newWidgetId) = initWidget
+      .map(w => (w, labelerIdentifier0))
+      .getOrElse {
+        mkWidget0(labelerIdentifier0)
+      }
+
     val lwIndex = SpatialIndex.createFor[AbsPosWidget]()
 
-    val layout0 = layoutWidgetPositions(lwidget)
+    val layout0 = layoutWidgetPositions(newWidget)
 
     layout0.positioning.foreach({pos =>
       lwIndex.add(pos)
@@ -150,12 +157,13 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     new LabelWidgetIndex {
       def docStore: DocumentCorpus = docStore0
       def layout: WidgetLayout = layout0
-      def mkWidget: LabelerOptions => LabelingPanel = mkWidget0
+      def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) = mkWidget0
       def index: SpatialIndex[AbsPosWidget] = lwIndex
       def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
-      def labelerOptions: LabelerOptions = labelOpts
+      def labelerIdentifier: LabelerIdentifier = labelerIdentifier0
     }
   }
+
 }
 
 
@@ -164,20 +172,21 @@ trait LabelWidgetIndex { self =>
 
   def docStore: DocumentCorpus
   def layout: WidgetLayout
-  def mkWidget: LabelerOptions => LabelingPanel
-  def labelerOptions: LabelerOptions
+  def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier)
   def index: SpatialIndex[AbsPosWidget]
   def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
+  def labelerIdentifier: LabelerIdentifier
 
-  def update(updatedOptions: LabelerOptions): LabelWidgetIndex = {
+  def update(updatedLabeler: LabelerIdentifier): LabelWidgetIndex = {
     new LabelWidgetIndex {
       def docStore: DocumentCorpus                                         = self.docStore
       def layout: WidgetLayout                                             = self.layout
-      def labelerOptions: LabelerOptions                                   = updatedOptions
-      def mkWidget: LabelerOptions => LabelingPanel                        = self.mkWidget
+      def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier)  = self.mkWidget
       def index: SpatialIndex[AbsPosWidget]                                = self.index
       def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = self.pageIndexes
+      def labelerIdentifier: LabelerIdentifier                             = updatedLabeler
     }
+    ???
   }
 
   def queryForPanels(queryPoint: Point): Seq[(Panel[Unit], AbsPosWidget)] = {
@@ -397,24 +406,22 @@ trait LabelWidgetIndex { self =>
           case act@ NavigateTo(pageNum) =>
             for {
               newSt <- State.modify[InterpState] { initState =>
-                val newOptions = labelerOptions.copy(
-                  pagination=labelerOptions.pagination.copy(
-                    currentPage = PageNum(pageNum)
-                  )
-                )
+                val requestedLabeler = initState.uiRequest.uiState.currentLabeler
+                val _ = initState.uiResponse.uiState.currentLabeler
 
-                val newPanel = mkWidget(newOptions)
-                val newWidget = newPanel.labelWidget
+                // For now, navigation is just changing pages, but same document/labeler type. In the future, this might
 
-                val newIndex = LabelWidgetIndex.create(docStore, newWidget, mkWidget, newOptions, Some(self))
+                val (newWidget, newLabelerId) = mkWidget(requestedLabeler)
+
+                val newIndex = LabelWidgetIndex.init(docStore, newLabelerId, mkWidget, Some(newWidget), Some(self))
 
                 val toAdd = newIndex.layout.positioning.toList.map{ pos =>
-                  AddLw(pos.widget.wid, Option(pos))
+                  WidgetMod.AddLw(pos.widget.wid, Option(pos))
                 }
 
                 (istate.changesL ~ istate.labelWidgetIndexL).modify(initState) {
                   case (uiChanges, lwiOpt) =>
-                    (ClearAllLw :: toAdd, Some(newIndex))
+                    (WidgetMod.ClearAllLw() :: toAdd, Some(newIndex))
                 }
               }
             } yield ()
@@ -424,26 +431,27 @@ trait LabelWidgetIndex { self =>
     }
 
 
-  def runLabelAction[A](program: Free[LabelAction, A], uiResponse: UIResponse, widget: LabelWidget): InterpState = {
+  def runLabelAction[A](program: Free[LabelAction, A], uiRequest: UIRequest, uiResponse: UIResponse, widget: LabelWidget): InterpState = {
     program.foldMap(interpLabelAction)
-      .apply(InterpState(uiResponse, widget))
+      .apply(InterpState(uiRequest, uiResponse, widget))
       ._1
   }
 
   implicit class LabelActionOps[A](ma: Free[LabelAction, A]) {
-    def exec(uiResponse: UIResponse, widget: LabelWidget): InterpState = runLabelAction(ma, uiResponse, widget)
+    def exec(uiRequest: UIRequest, uiResponse: UIResponse, widget: LabelWidget): InterpState =
+      runLabelAction(ma, uiRequest, uiResponse, widget)
   }
 
 
-  def runClickedPanelAction(point: Point, initResponse: UIResponse): (UIResponse, LabelWidget) = {
+  def runClickedPanelAction(point: Point, uiRequest: UIRequest, initResponse: UIResponse): (UIResponse, LabelWidget) = {
     queryForPanels(point)
       .foldLeft((initResponse, layout.labelWidget)) {
         case ((accResponse, accWidget), (panel, qhit))  =>
 
           panel.interaction match {
-            case InteractProg(prog) =>
+            case Interaction.InteractProg(prog) =>
 
-              val run = prog.exec(accResponse, accWidget)
+              val run = prog.exec(uiRequest, accResponse, accWidget)
 
               (run.uiResponse, run.labelWidget)
 
@@ -456,6 +464,12 @@ trait LabelWidgetIndex { self =>
   }
 
 
+  def getAllMods(): List[WidgetMod] = {
+    layout.positioning.toList.map{ abs =>
+      WidgetMod.AddLw(abs.widget.wid, Some(abs))
+    }
+  }
+
   def minorChangeUpdates(startingWidget: LabelWidget, endingWidget: LabelWidget, uiResponse: UIResponse): (UIResponse, LabelWidgetIndex) = {
     val lwdiff = labelWidgetDiff(startingWidget, endingWidget)
 
@@ -464,16 +478,16 @@ trait LabelWidgetIndex { self =>
     val mods = labelWidgetDiffToMods(lwdiff)
 
     // println("   ...Diff -> Mods ")
-    val newIndex = LabelWidgetIndex.create(docStore, endingWidget, mkWidget, labelerOptions, Some(self))
+    val newIndex = LabelWidgetIndex.init(docStore, labelerIdentifier, mkWidget, Some(endingWidget), Some(self))
     // println("   ...New index created")
 
     val absPositioned = layout.positioning ++ newIndex.layout.positioning
     val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
 
     val updates = mods.map { _ match {
-      case AddLw(id, _) => AddLw(id, absPosMap.get(id))
-      case RmLw(id, _) => RmLw(id, absPosMap.get(id))
-      case ClearAllLw => ClearAllLw
+      case WidgetMod.AddLw(id, _) => WidgetMod.AddLw(id, absPosMap.get(id))
+      case WidgetMod.RmLw(id, _)  => WidgetMod.RmLw(id, absPosMap.get(id))
+      case a@WidgetMod.ClearAllLw()   => a
     }}
     // println("   ... response constructed")
     // println(updates.mkString("\n  ", "\n  ", "\n"))
@@ -490,8 +504,9 @@ trait LabelWidgetIndex { self =>
   // I think this should be an abstract function, then overridden per labeler type
   // map (UIState, Gesture) => (UIState, UIChanges)
   def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidgetIndex) = {
-    val UIState(constraint, maybeLabel, selections, currLabeler, pagination) = uiState
+    val UIState(constraint, maybeLabel, selections, currLabeler) = uiState
     val initResponse = UIResponse(uiState, List())
+    val uiRequest = UIRequest(uiState, gesture)
 
 
     val startingWidget = layout.labelWidget
@@ -501,7 +516,7 @@ trait LabelWidgetIndex { self =>
       case MenuAction(action) =>
         println(s"MenuAction(${action})")
 
-        val run = LabelAction.lift(action).exec(initResponse, startingWidget)
+        val run = LabelAction.lift(action).exec(uiRequest, initResponse, startingWidget)
 
         run.labelWidgetIndex.map{ lwi =>
           (run.uiResponse, lwi)
@@ -511,7 +526,7 @@ trait LabelWidgetIndex { self =>
 
       case Click(point) =>
 
-        val (resp, endingWidget) = runClickedPanelAction(point, initResponse)
+        val (resp, endingWidget) = runClickedPanelAction(point, uiRequest, initResponse)
 
         minorChangeUpdates(startingWidget, endingWidget, resp)
 
@@ -524,7 +539,7 @@ trait LabelWidgetIndex { self =>
           //   println(s"adding label to bbox ${bbox}")
           zoneId <- addLabel(bbox, constraint, label)
         } yield {
-          val newWidget = addZoneIndicator(zoneId, layout.labelWidget, labelerOptions, docStore)
+          val newWidget = addZoneIndicator(zoneId, layout.labelWidget, uiRequest.uiState.currentLabeler, docStore)
           minorChangeUpdates(startingWidget, newWidget, initResponse)
         }
 
