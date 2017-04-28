@@ -11,10 +11,8 @@ import matryoshka.patterns._
 import geometry._
 import geometry.syntax._
 import textreflow.data._
-import watrmarks.Label
 import textboxing.{TextBoxing => TB}
 import utils.Color
-import utils.Colors
 import scala.reflect._
 
 /**

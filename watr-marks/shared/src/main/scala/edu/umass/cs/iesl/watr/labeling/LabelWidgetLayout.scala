@@ -16,8 +16,7 @@ import LabelWidgetF._
 
 import utils.ScalazTreeImplicits._
 import TypeTags._
-import textboxing.{TextBoxing => TB}, TB._
-
+import textboxing.{TextBoxing => TB}
 
 // Position transform:
 //  capture the absolute positioning of a widget along with the matrix transform

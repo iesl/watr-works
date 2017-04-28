@@ -4,9 +4,67 @@ package watrcolors
 import geometry._
 import utils._
 import labeling._
-import labeling.data._
 import watrmarks._
 import textreflow._
+
+object TypeTagPicklers {
+  import upickle.default._, Aliases._
+  import upickle.Js
+
+  import TypeTags._
+
+
+  implicit val String_LabelingTaskID_Pickler: RW[String @@ LabelingTaskID] = RW[String @@ LabelingTaskID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => LabelingTaskID(s.toString)}
+  )
+
+  implicit val Int_LabelerID_Pickler: RW[Int @@ LabelerID] = RW[Int @@ LabelerID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => LabelerID(s.toInt)}
+  )
+
+  implicit val String_Username_Pickler: RW[String @@ Username] = RW[String @@ Username](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => Username(s.toString)}
+  )
+  implicit val Int_ZoneID_Pickler: RW[Int @@ ZoneID] = RW[Int @@ ZoneID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => ZoneID(s.toInt)}
+  )
+
+  implicit val Int_RegionID_Pickler: RW[Int @@ RegionID] = RW[Int @@ RegionID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => RegionID(s.toInt)}
+  )
+
+  implicit val Int_CharID_Pickler: RW[Int @@ CharID] = RW[Int @@ CharID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => CharID(s.toInt)}
+  )
+  implicit val Int_PageID_Pickler: RW[Int @@ PageID] = RW[Int @@ PageID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => PageID(s.toInt)}
+  )
+
+  implicit val Int_PageNum_Pickler: RW[Int @@ PageNum] = RW[Int @@ PageNum](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => PageNum(s.toInt)}
+  )
+  implicit val Int_LabelID_Pickler: RW[Int @@ LabelID] = RW[Int @@ LabelID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => LabelID(s.toInt)}
+  )
+  implicit val Int_DocumentID_Pickler: RW[String @@ DocumentID] = RW[String @@ DocumentID](
+    {t => Js.Str(t.unwrap)},
+    {case Js.Str(s) => DocumentID(s)}
+  )
+  implicit val Int_WidgetID_Pickler: RW[Int @@ WidgetID] = RW[Int @@ WidgetID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => WidgetID(s.toInt)}
+  )
+
+}
 
 object UPicklers {
   import upickle.default._, Aliases._
@@ -37,10 +95,6 @@ object UPicklers {
 
   implicit val Padding_RW: RW[Padding] =
     macroRW[Padding]
-
-
-  // implicit val Int_WidgetID_Pickler: RW[Int@@WidgetID] = TypeTagPicklers.Int_WidgetID_Pickler
-
 
   implicit val WidgetMod_RW: RW[WidgetMod] =
     macroRW[AddLw]
@@ -122,4 +176,3 @@ object UPicklers {
   implicit val DocumentEntry_RW: RW[DocumentEntry] = macroRW[DocumentEntry]
   implicit val RemoteCall_RW: RW[RemoteCall] = macroRW[RemoteCall]
 }
-

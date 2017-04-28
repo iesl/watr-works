@@ -17,9 +17,6 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation._
 import scala.concurrent.Future
 
-import TypeTagPicklers._
-
-
 import rx._
 import scaladget.tools.JsRxTags._
 
@@ -125,8 +122,8 @@ object BrowseCorpus extends BaseClientDefs {
 
   object server extends BrowseCorpusApi {
     import autowire._
-    // import upickle.{default => UPickle}
-    // import UPickle._
+    import UPicklers._
+
     val Client = new WebsideClient("browse")
     val api = Client[BrowseCorpusApi]
 

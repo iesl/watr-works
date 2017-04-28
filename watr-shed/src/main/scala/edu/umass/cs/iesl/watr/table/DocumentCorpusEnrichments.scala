@@ -3,14 +3,8 @@ package table
 
 import textreflow.data._
 import corpora._
-
-import bioarxiv._
-import BioArxivOps._
-
 import TypeTags._
-
 import labeling._
-// import geometry.zones.syntax._
 
 trait DocumentCorpusEnrichments extends LabelWidgetUtils {
 
