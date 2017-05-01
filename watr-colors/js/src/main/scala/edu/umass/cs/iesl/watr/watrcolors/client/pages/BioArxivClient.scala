@@ -43,64 +43,81 @@ class ClientStateRx(
   uiRequestCycle: (UIRequest) => Future[Unit]
 )(implicit co: Ctx.Owner) extends BaseClientDefs {
 
-  val currentUIState: Var[UIState] = Var(initUIState)
-
-  val DocumentLabelerIdentifier(_, _, initPagination, _) = initUIState.currentLabeler
+  val UIState(uiContraint, activeLabel, selections, activeLabeler) =  initUIState
+  val DocumentLabelerIdentifier(initStableId, initLabelerType, initPagination, initLabelColors) = activeLabeler
 
   val paginator = new Paginator(initPagination)
-  val paginationRx = paginator.getRx
 
-  val triggerRepaginate = currentUIState.trigger {
-    val currLabelerId = currentUIState.now.currentLabeler
-    val DocumentLabelerIdentifier(_, _, p, _) = currLabelerId
-    val Pagination(pgCount, currPage, pgInfo) = p
+  val uiState_constraint: Var[Constraint] = Var(uiContraint)
+  val uiState_selectedLabel: Var[Option[Label]] = Var(activeLabel)
+  val uiState_selections: Var[Seq[Int@@ZoneID]] = Var(selections)
+
+
+  // Active labeler vars
+  val uiLabeler_stableId: Var[String@@DocumentID] = Var(initStableId)
+  val uiLabeler_labelerType: Var[String] = Var(initLabelerType)
+  val uiLabeler_labelColors: Var[Map[Label, utils.Color]] = Var(initLabelColors)
+
+
+  def fromUIState(uiState: UIState): Unit = Rx {
+    // val UIState(uiContraint, activeLabel, selections, activeLabeler) = uiState
+    uiState_constraint() = uiState.selectionConstraint
+    uiState_selectedLabel() = uiState.selectedLabel
+    uiState_selections() = uiState.selections
+
+    val DocumentLabelerIdentifier(id, lt, pg, colMap) = uiState.currentLabeler
+    uiLabeler_stableId() =  id
+    uiLabeler_labelerType() = lt
+    uiLabeler_labelColors() = colMap
+  }
+
+  def toUIState(): UIState = UIState(
+    uiState_constraint.now,
+    uiState_selectedLabel.now,
+    uiState_selections.now,
+    DocumentLabelerIdentifier(
+      uiLabeler_stableId.now,
+      uiLabeler_labelerType.now,
+      paginator.currentPagination,
+      uiLabeler_labelColors.now
+    )
+  )
+
+
+  val triggerRepaginate = paginator.currentPage.trigger {
 
     uiRequestCycle(
       UIRequest(
-        currentUIState.now,
-        MenuAction(LabelAction.NavigateTo(currPage.unwrap))
+        toUIState(),
+        MenuAction(LabelAction.NavigateTo(paginator.currentPage.now))
       )
     )
   }
 
-  val selectedLabel: Var[Option[Label]] = Var(None)
+  def setupLabelChooser: RxModifier = Rx {
+    val selectActiveLabel: SelectableButtons = radios()(
+      (uiLabeler_labelColors().toList.zipWithIndex.map{ case ((lbl, clr), i) =>
 
-  val setupLabelChooser: RxModifier = Rx {
-    // val UIState(_, _, sels, labelerId) = currentUIState()
-    // val DocumentLabelerIdentifier(_, _, _, labelTypes) = initUIState.currentLabeler
+        if(i==0) { uiState_selectedLabel() = Some(lbl) }
 
-    // val selectActiveLabel: SelectableButtons = radios()(
-    //   (labelTypes.toList.zipWithIndex.map{ case ((lbl, clr), i) =>
-
-    //     if(i==0) { selectedLabel() = Some(lbl) }
-
-    //     selectableButton(
-    //       lbl.fqn,
-    //       (i==0),
-    //       modifierSeq = (sty.btn_small +++ (backgroundColor:=clr.cssHash())),
-    //       onclick = () => {selectedLabel() = Some(lbl)})
-    //   }):_*
-    // )
-    // selectActiveLabel.render
-    div()
+        selectableButton(
+          lbl.fqn,
+          (i==0),
+          modifierSeq = (sty.btn_small +++ (backgroundColor:=clr.cssHash())),
+          onclick = () => {uiState_selectedLabel() = Some(lbl)})
+      }):_*
+    )
+    selectActiveLabel.render
   }
 
 
-  // val labelerIdentifier: Var[LabelerIdentifier] = Var(labelerId)
-  // val selectionConstraint: Var[Constraint] = Var(ByLine)
-  // val selections: Var[Seq[Int@@ZoneID]] = Var(Seq())
 
   val doMergeZones: Var[Boolean] = Var(false)
   val doDeleteZone: Var[Boolean] = Var(false)
-
-  // def toUIState = currentUIState.now
-
-
   val selectionInProgress: Var[Boolean] = Var(false)
 
   def startSelection(): Unit = {
     selectionInProgress() = true
-    selectionInProgress() = false
   }
 
   val rx2 = doDeleteZone.triggerLater{
@@ -108,12 +125,13 @@ class ClientStateRx(
       println(s"Delete: uiRequestCycle()")
       uiRequestCycle(
         UIRequest(
-          currentUIState.now,
+          toUIState(),
           MenuAction(LabelAction.DeleteZone(ZoneID(0)))
         )
-      )
+      ).map{ _ =>
+        doDeleteZone() = false
+      }
     }
-    doDeleteZone() = false
   }
 
   val rx3 = doMergeZones.triggerLater{
@@ -121,12 +139,13 @@ class ClientStateRx(
       println("Merge: uiRequestCycle()")
       uiRequestCycle(
         UIRequest(
-          currentUIState.now,
+          toUIState(),
           MenuAction(LabelAction.MergeZones(List()))
         )
-      )
+      ).map{_ =>
+        doMergeZones() = false
+      }
     }
-    doMergeZones() = false
   }
 
 
@@ -212,8 +231,8 @@ object WatrColors extends  BaseClientDefs {
         fabricCanvas.renderOnAddRemove = true
     }
 
-    clientState.foreach { st =>
-      st.currentUIState() = uiResponse.uiState
+    clientState.foreach { c =>
+      c.fromUIState(uiResponse.uiState)
     }
   }
 
@@ -281,7 +300,7 @@ object WatrColors extends  BaseClientDefs {
 
         val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
 
-        val req = UIRequest(clientStateRx.currentUIState.now, Click(clickPt))
+        val req = UIRequest(clientStateRx.toUIState(), Click(clickPt))
         uiRequestCycle(req)
       }
       true
@@ -298,6 +317,13 @@ object WatrColors extends  BaseClientDefs {
 
 
 
+  def parseParams(): LabelerIdentifier = {
+    val docId = param("doc").getOrElse { "" }
+    val lt = param("lt").getOrElse { "" }
+    val pg = param("pg").getOrElse("0").toInt
+    DocumentLabelerIdentifier(DocumentID(docId), lt, Pagination(0, PageNum(pg), None))
+  }
+
 
   var clientState: Option[ClientStateRx] = None
   // var rxExprs: Option[Rx[Unit]] = None
@@ -305,12 +331,7 @@ object WatrColors extends  BaseClientDefs {
   @JSExport
   def display(): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
-
-    val docId = param("doc").getOrElse { "" }
-    val lt = param("lt").getOrElse { "" }
-    val pg = param("pg").getOrElse("0").toInt
-    // def createLabelerIdFromQueryParams: =
-    val labelerId = DocumentLabelerIdentifier(DocumentID(docId), lt, Pagination(0, PageNum(pg), None))
+    val labelerId = parseParams()
 
     shell.createDocumentLabeler(labelerId).foreach{ uiResponse =>
 
@@ -318,9 +339,7 @@ object WatrColors extends  BaseClientDefs {
       val clientStateRx =  new ClientStateRx(uiState, uiRequestCycle(_))
       clientState = Option(clientStateRx)
 
-      // val colorMap = uiState.currentLabeler.labelColors
-      // val DocumentLabelerIdentifier()
-      // clientStateRx.labelTypes() = colorMap
+      println(s"uiResponse: ${uiResponse}")
 
       val selectorControls = SharedLayout.zoneSelectorControls(
         clientStateRx,
@@ -329,14 +348,17 @@ object WatrColors extends  BaseClientDefs {
 
       val navContent =  SharedLayout.initNavbar(List())
 
-      val rx0 = clientStateRx.selectionInProgress.triggerLater {
+      val rx0 = clientStateRx.selectionInProgress.trigger {
         if (clientStateRx.selectionInProgress.now) {
           for {
             bbox <- getUserSelection(fabricCanvas)
           } yield {
             uiRequestCycle(UIRequest(
-              clientStateRx.currentUIState.now,
-              SelectRegion(bbox)))
+              clientStateRx.toUIState(),
+              SelectRegion(bbox))
+            ).map{ _ =>
+              clientStateRx.selectionInProgress() = false
+            }
           }
         }
       }

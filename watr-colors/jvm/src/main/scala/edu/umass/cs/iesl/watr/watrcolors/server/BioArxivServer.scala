@@ -26,10 +26,10 @@ class BioArxivServer(
   }
 
   def fetchDocumentLabeler(
-    labelerRequestx: LabelerIdentifier
+    reqLabelerId: LabelerIdentifier
   ): Future[UIResponse] = {
 
-    val DocumentLabelerIdentifier(stableId, labelerType, pagination, labelColors) = labelerRequestx
+    val DocumentLabelerIdentifier(stableId, labelerType, pagination, labelColors) = reqLabelerId
 
     val hasEntry = corpus.hasEntry(stableId.unwrap)
     println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
@@ -41,23 +41,21 @@ class BioArxivServer(
     } yield {
 
       try {
-        val (labelWidget, updatedLabelId) = TitleAuthorsLabelers.bioArxivLabeler(labelerRequestx, rec, docStore)
+        // val (labelWidget, updatedLabelId) = TitleAuthorsLabelers.bioArxivLabeler(labelerRequestx, rec, docStore)
 
         val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
-          labelerIdentifier => TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
-
-        val lwIndex = LabelWidgetIndex.init(
-          docStore,
-          updatedLabelId,
-          mkWidget,
-          Some(
-            LabelWidgetTransforms.addAllZoneIndicators(
-              labelWidget,
-              updatedLabelId,
+          labelerIdentifier => {
+            val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
+            val widget1 = LabelWidgetTransforms.addAllZoneIndicators(
+              widget0,
+              labelerId0,
               docStore
             )
-          ),
-          None
+            (widget1, labelerId0)
+          }
+
+        val lwIndex = LabelWidgetIndex.init(
+          docStore, reqLabelerId, mkWidget, None, None
         )
 
         activeLabelWidgetIndex = Some(lwIndex)
@@ -66,7 +64,7 @@ class BioArxivServer(
           ByLine,
           labelColors.headOption.map(_._1),
           Seq(),
-          updatedLabelId
+          lwIndex.labelerIdentifier
         )
 
         Future { UIResponse(respState, lwIndex.getAllMods()) }
@@ -81,7 +79,6 @@ class BioArxivServer(
     maybeLabeler.getOrElse {
       sys.error("createDocumentLabeler: error")
     }
-
   }
 
   def uiRequest(r: UIRequest): Future[UIResponse] = {
@@ -94,7 +91,7 @@ class BioArxivServer(
       activeLabelWidgetIndex.map { lwIndex =>
         println(s"got UIRequest ${r}")
 
-        val (uiResponse, modifiedWidgetIndex) = lwIndex.userInteraction(uiState, gesture)
+        val (uiResponse, modifiedWidgetIndex) = lwIndex.userInteraction(r)
 
         activeLabelWidgetIndex = Some(modifiedWidgetIndex)
 

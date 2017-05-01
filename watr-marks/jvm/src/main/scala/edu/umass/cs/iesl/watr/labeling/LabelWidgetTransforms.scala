@@ -13,6 +13,8 @@ import matryoshka._
 import matryoshka.implicits._
 
 import scala.reflect._
+import utils.Colors
+import utils.Color
 
 import watrmarks.Label
 
@@ -47,6 +49,68 @@ object LabelWidgetTransforms {
     r.transCata[LabelWidget](f)
   }
 
+  def selectionFringeInit(
+    zoneId: Int@@ZoneID,
+    intersectingBboxes: List[GeometricFigure],
+    zoneColor: Color
+  ): LabelWidget = {
+    val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
+    panel(
+      withId(zoneId, figure(
+        Colorized(
+          GeometricGroup(groupBbox, intersectingBboxes),
+          fg=zoneColor, bg=zoneColor,
+          fgOpacity=0.0f, bgOpacity=0.1f
+        )
+      )),
+      LabelAction.toggleZoneSelection(zoneId)
+    )
+  }
+
+  def selectionFringeToggle(
+    labelWidget: LabelWidget,
+    toggleOn: Boolean,
+    zoneColor: Color
+  ): LabelWidget = {
+
+    if (toggleOn) {
+      labelWidget.project match {
+        case fa@ Figure(fwid,
+          fig@ Colorized(
+            GeometricGroup(groupBounds, groupFigs),
+            fg, bg, fgOpacity, bgOpacity
+          )
+        ) =>
+          LabelWidgets.figure(
+            composeFigures(
+              fig,
+              Colorized(
+                makeFringe(fig, Padding(4)),
+                fg=Colors.Yellow, bg=Colors.Yellow,
+                fgOpacity=0.1f, bgOpacity=0.1f
+              )
+            )
+          )
+
+        case fa => fa.embed
+      }
+    } else {
+      labelWidget.project match {
+        case fa@ Figure(fwid,
+          Colorized(
+            GeometricGroup(groupBounds, groupFigs),
+            fg, bg, fgOpacity, bgOpacity
+          )
+        ) =>
+          LabelWidgets.figure(
+            groupFigs.head
+          )
+
+        case fa => fa.embed
+      }
+    }
+
+  }
   def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
 
     // append rectangular overlays which respond to user clicks to select/deselect zones
@@ -79,23 +143,13 @@ object LabelWidgetTransforms {
                   .map(_.bbox)
               }.toList
 
-          val overlayWidgets = if (intersectingBboxes.isEmpty) None else {
-            val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
-            Some(panel(
-              withId(zoneId, figure(
-                Colorized(
-                  GeometricGroup(groupBbox, intersectingBboxes),
-                  fg=zoneColor, bg=zoneColor,
-                  fgOpacity=0.0f, bgOpacity=0.1f
-                )
-              )),
-              LabelAction.toggleZoneSelection(zoneId)
-            ))
-          }
 
-          l.copy(
-            overlays = l.overlays ++ overlayWidgets.toList
-          )
+          if (intersectingBboxes.isEmpty) {
+            l
+          } else {
+            val fringeOverlay = selectionFringeInit(zoneId, intersectingBboxes, zoneColor)
+            l.copy(overlays = overlays :+ fringeOverlay)
+          }
 
         case  _ => lw0
       }
@@ -129,7 +183,7 @@ object LabelWidgetTransforms {
 
           val clipBox = under.bbox
 
-          val zoneLineOverlays: Seq[Option[LabelWidget]] = for {
+          val zoneIndicators: Seq[Option[LabelWidget]] = for {
             zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
           } yield {
             val zone = docStore.getZone(zoneId)
@@ -152,23 +206,12 @@ object LabelWidgetTransforms {
 
 
             if (intersectingBboxes.isEmpty) None else {
-              val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
-              Some(panel(
-                withId(zoneId, figure(
-                  Colorized(
-                    GeometricGroup(groupBbox, intersectingBboxes),
-                    fg=zoneColor, bg=zoneColor,
-                    fgOpacity=0.3f, bgOpacity=0.2f
-                  )
-                )),
-                LabelAction.toggleZoneSelection(zoneId)
-              ))
+              Some(selectionFringeInit(zoneId, intersectingBboxes, zoneColor))
             }
           }
 
-          l.copy(
-            overlays = overlays ++ zoneLineOverlays.flatten
-          )
+          l.copy(overlays = overlays ++ zoneIndicators.flatten.toList)
+
 
         case  _ => lw0
       }

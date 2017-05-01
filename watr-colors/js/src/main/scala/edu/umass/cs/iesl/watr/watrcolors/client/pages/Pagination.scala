@@ -17,62 +17,26 @@ class Paginator(
   pagination: Pagination
 )(implicit co: Ctx.Owner) extends BaseClientDefs {
 
-  // val pageCount: Var[Int] = Var(pgCount)
-  // val currentPage: Var[Int] = Var(currPage.unwrap)
-  // val pageInfo: Var[Seq[PaginationInfo]] = Var(pgInfo.get)
+  val Pagination(pgCount0, currPage0, pgInfo0) = pagination
 
-  val paginationRx: Var[Pagination] = Var(pagination)
+  val pageCount: Var[Int] = Var(pgCount0)
+  val currentPage: Var[Int] = Var(currPage0.unwrap)
+  val pageInfo: Var[Option[Seq[PaginationInfo]]] = Var(pgInfo0)
 
-  val pageControls: RxModifier = Rx {
-    val Pagination(pgCount, currPage, pgInfo) = paginationRx.now
+  def currentPagination: Pagination =  {
+    Pagination(pageCount.now, PageNum(currentPage.now), pageInfo.now)
+  }
 
-
-    val pageButtons = (0 until pgCount).map{ pgnum =>
+  def pageControls: RxModifier = Rx {
+    val pageButtons = (0 until pageCount()).map{ pgnum =>
       selectableButton(
         pgnum.toString,
-        (pgnum==currPage),
+        (pgnum==currentPage()),
         modifierSeq = (sty.btn_small),
-        onclick = () => Rx { paginationRx().copy(currentPage=PageNum(pgnum)) }
+        onclick = () => Rx { currentPage() = pgnum }
       )
     }
     radios()(pageButtons:_*).render
   }
 
-  val getRx = paginationRx
 }
-
-// class PaginationState(
-//   uiRequestCycle: (UIRequest) => Future[Unit],
-//   numPages: Int,
-//   currPage: Int,
-//   info: Seq[PaginationInfo]
-// )(implicit co: Ctx.Owner) extends BaseClientDefs {
-
-//   val pageCount: Var[Int] = Var(numPages)
-//   val currentPage: Var[Int] = Var(currPage)
-//   val pageInfo: Var[Seq[PaginationInfo]] = Var(info)
-
-//   val paginationControls: RxModifier = Rx {
-//     val pg = currentPage()
-//     val pgs = pageCount()
-
-//     val pageButtons = (0 until pgs).map{ pgnum =>
-//       selectableButton(
-//         pgnum.toString,
-//         (pgnum==pg),
-//         modifierSeq = (sty.btn_small),
-//         onclick = () => {currentPage() = pgnum})
-//     }
-//     radios()(pageButtons:_*).render
-
-//   }
-
-//   val setCurrentPage = currentPage.triggerLater {
-//     uiRequestCycle(
-//       UIRequest(
-//         toUIState,
-//         MenuAction(LabelAction.NavigateTo(currentPage.now))
-//       )
-//     )
-//   }
-// }

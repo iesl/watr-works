@@ -79,13 +79,13 @@ object SharedLayout extends BaseClientDefs {
 
 
   def zoneSelectorControls(
-    zsRx: ClientStateRx,
+    clientStateRx: ClientStateRx,
     labelSelector: RxModifier
   )(implicit ctx: Ctx.Owner): RxHtmlTag = Rx {
 
     val delClrMrgButtons = buttonGroup()(
-      button("Merge", sty.btn_small,  () => {zsRx.doMergeZones() = true}),
-      button("Delete", sty.btn_danger, () => {zsRx.doDeleteZone() = true})
+      button("Merge", sty.btn_small,  () => {clientStateRx.doMergeZones() = true}),
+      button("Delete", sty.btn_danger, () => {clientStateRx.doDeleteZone() = true})
     )
 
     val initSelectConstraint =
@@ -97,10 +97,7 @@ object SharedLayout extends BaseClientDefs {
           selectableButton(s,
             defaultActive = b,
             modifierSeq = sty.btn_small,
-            onclick = () => {
-              ???
-              // zsRx.selectionConstraint() = c
-            }
+            onclick = () => { clientStateRx.uiState_constraint() = c }
           )
       }
 

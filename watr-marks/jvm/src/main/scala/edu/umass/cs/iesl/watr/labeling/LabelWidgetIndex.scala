@@ -122,6 +122,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     def addPage(targetRegion: TargetRegion): Unit= {
       val pageId = targetRegion.page.pageId
       if (!targetPageRIndexes.contains(pageId)) {
+        println(s"adding page ${targetRegion}")
         val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
         targetPageRIndexes.put(pageId, pageIndex)
 
@@ -160,7 +161,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) = mkWidget0
       def index: SpatialIndex[AbsPosWidget] = lwIndex
       def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
-      def labelerIdentifier: LabelerIdentifier = labelerIdentifier0
+      def labelerIdentifier: LabelerIdentifier = newWidgetId
     }
   }
 
@@ -193,7 +194,8 @@ trait LabelWidgetIndex { self =>
     val queryBox = queryPoint
       .lineTo(queryPoint.translate(1, 1))
       .bounds
-    // println(s"queryForPanels: queryPoint = ${queryBox}")
+
+    println(s"queryForPanels: queryPoint = ${queryBox}")
 
 
     val ret = index.queryForIntersects(queryBox)
@@ -203,7 +205,7 @@ trait LabelWidgetIndex { self =>
       }})
       .flatten
 
-    // println(s"queryForPanels: found = ${ret.mkString('\n'.toString)}")
+    println(s"queryForPanels: found = ${ret.mkString('\n'.toString)}")
     ret
   }
 
@@ -308,60 +310,70 @@ trait LabelWidgetIndex { self =>
   }
 
 
+  def toggleFringe(toggleOn: Boolean, labelWidget: LabelWidget): LabelWidget = {
+    if (toggleOn) {
+      labelWidget.project match {
+        case fa@ Figure(wid, fig) =>
+          LabelWidgets.figure(
+            composeFigures(
+              Colorized(
+                makeFringe(fig, Padding(4)),
+                fg=Colors.Yellow, bg=Colors.Yellow,
+                fgOpacity=0.2f, bgOpacity=0.2f
+              ),
+              fig
+            )
+          )
+
+        case fa => fa.embed
+      }
+    } else {
+      labelWidget.project match {
+        case fa@ Figure(wid, fig) =>
+          val GeometricGroup(grbbox, grfigs) = fig
+          LabelWidgets.figure(grfigs.last)
+
+        case fa => fa.embed
+      }
+    }
+  }
+
   // TODO this interpreter is specific to a particular labeler type (e.g., BioArxiv Labeler) and should be parameterized
   //    within this class
   val interpLabelAction: LabelAction ~> State[InterpState, ?] =
     new (LabelAction ~> State[InterpState, ?]) {
 
       def apply[A](fa: LabelAction[A]) =  {
+        println(s"interpLabelAction: ${fa}")
 
         fa match {
           case act@ LabelAction.ToggleZoneSelection(zoneId) =>
-            // println(s"ToggleZoneSelection")
+            println(s"ToggleZoneSelection")
 
             for {
-              initSt <- State.get[InterpState]
-              initSelections = initSt.uiResponse.uiState.selections
 
               _ <- State.modify[InterpState] { interpState =>
+
+                val initSelections = interpState.uiResponse.uiState.selections
+
                 if (initSelections.contains(zoneId)) {
-                  // println("  ..remove fringe")
+                  println("  ..remove fringe")
                   (istate.selectionsL ~ istate.labelWidgetL).modify(interpState) {
                     case (sels, labelWidget) =>
                       val newSels = sels.filterNot(_ == zoneId)
                       val newWidget = LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
-                        lw.project match {
-                          case fa@ Figure(wid, fig) =>
-                            val GeometricGroup(grbbox, grfigs) = fig
-                            LabelWidgets.figure(grfigs.last)
-
-                          case _ => lw
-                        }
+                        toggleFringe(false, lw)
                       })
                       (newSels, newWidget)
                   }
 
 
                 } else {
-                  // println("  ..add fringe")
+                  println("  ..add fringe")
                   (istate.selectionsL ~ istate.labelWidgetL).modify(interpState) {
                     case (sels, labelWidget) =>
                       val newWidget = LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
-                        lw.project match {
-                          case fa@ Figure(wid, fig) =>
-                            LabelWidgets.figure(
-                              composeFigures(
-                                Colorized(
-                                  makeFringe(fig, Padding(4)),
-                                  fg=Colors.Yellow, bg=Colors.Yellow,
-                                  fgOpacity=0.2f, bgOpacity=0.2f
-                                ),
-                                fig
-                              )
-                            )
-
-                          case _ => lw
-                        }
+                        toggleFringe(true, lw)
                       })
 
                       (zoneId +: sels, newWidget)
@@ -450,6 +462,7 @@ trait LabelWidgetIndex { self =>
 
           panel.interaction match {
             case Interaction.InteractProg(prog) =>
+              println(s" running panel action ${prog}")
 
               val run = prog.exec(uiRequest, accResponse, accWidget)
 
@@ -503,15 +516,16 @@ trait LabelWidgetIndex { self =>
   // TODO this part really needs to be confined to WatrColors front end codebase
   // I think this should be an abstract function, then overridden per labeler type
   // map (UIState, Gesture) => (UIState, UIChanges)
-  def userInteraction(uiState: UIState, gesture: Gesture): (UIResponse, LabelWidgetIndex) = {
-    val UIState(constraint, maybeLabel, selections, currLabeler) = uiState
-    val initResponse = UIResponse(uiState, List())
-    val uiRequest = UIRequest(uiState, gesture)
+  def userInteraction(uiRequest: UIRequest): (UIResponse, LabelWidgetIndex) = {
+
+    val UIState(uiContraint, activeLabel, selections, activeLabeler) = uiRequest.uiState
+    val initResponse = UIResponse(uiRequest.uiState, List())
+    // val uiRequest = UIRequest(uiState, gesture)
 
 
     val startingWidget = layout.labelWidget
 
-    val (endingResponse, endingIndex) = gesture match {
+    val (endingResponse, endingIndex) = uiRequest.gesture match {
 
       case MenuAction(action) =>
         println(s"MenuAction(${action})")
@@ -525,6 +539,7 @@ trait LabelWidgetIndex { self =>
         }
 
       case Click(point) =>
+        println(s"Click ${point}")
 
         val (resp, endingWidget) = runClickedPanelAction(point, uiRequest, initResponse)
 
@@ -533,13 +548,13 @@ trait LabelWidgetIndex { self =>
       case DblClick(point) =>
         (initResponse, self)
 
+
       case SelectRegion(bbox) =>
         val resp = for {
-          label <- maybeLabel
-          //   println(s"adding label to bbox ${bbox}")
-          zoneId <- addLabel(bbox, constraint, label)
+          label <- activeLabel
+          zoneId <- addLabel(bbox, uiContraint, label)
         } yield {
-          val newWidget = addZoneIndicator(zoneId, layout.labelWidget, uiRequest.uiState.currentLabeler, docStore)
+          val newWidget = addZoneIndicator(zoneId, layout.labelWidget, activeLabeler, docStore)
           minorChangeUpdates(startingWidget, newWidget, initResponse)
         }
 
