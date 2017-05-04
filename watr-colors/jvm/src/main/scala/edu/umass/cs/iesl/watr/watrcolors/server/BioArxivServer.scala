@@ -14,6 +14,7 @@ import utils.{Debugging => Dbg}
 import scala.concurrent.ExecutionContext
 
 class BioArxivServer(
+  user: UserData,
   reflowDB: TextReflowDB,
   corpus: Corpus
 )(implicit ec: ExecutionContext) extends WatrShellApi {
@@ -89,13 +90,13 @@ class BioArxivServer(
       ) = r
 
       activeLabelWidgetIndex.map { lwIndex =>
-        println(s"got UIRequest ${r}")
+        // println(s"got UIRequest ${r}")
 
         val (uiResponse, modifiedWidgetIndex) = lwIndex.userInteraction(r)
 
         activeLabelWidgetIndex = Some(modifiedWidgetIndex)
 
-        println(s"  ==> UIResponse ${uiResponse}")
+        // println(s"  ==> UIResponse ${uiResponse}")
         Future{ uiResponse }
       } getOrElse {
         Future{ UIResponse(uiState, List()) }

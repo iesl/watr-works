@@ -24,6 +24,7 @@ trait LibVersions {
   val fansiV              = "0.2.3"
   val shapelessV          = "2.3.2"
   val scaladgetV          = "0.9.4"
+  val http4sVersion       = "0.15.11a"
 
 }
 
@@ -86,6 +87,14 @@ trait CommonLibs extends LibVersions {
     scrimageCore,
     "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion,
     "com.sksamuel.scrimage" %% "scrimage-filters"  % scrimageVersion
+  )
+
+  val http4s = Seq(
+    // "org.http4s" %% "http4s-circe" % http4sVersion,
+    "org.reactormonk" %% "cryptobits" % "1.1",
+    "org.http4s" %% "http4s-dsl" % http4sVersion,
+    "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+    "org.http4s" %% "http4s-blaze-client" % http4sVersion
   )
 }
 

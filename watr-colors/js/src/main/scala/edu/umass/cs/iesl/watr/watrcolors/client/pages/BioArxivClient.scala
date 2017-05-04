@@ -326,7 +326,6 @@ object WatrColors extends  BaseClientDefs {
 
 
   var clientState: Option[ClientStateRx] = None
-  // var rxExprs: Option[Rx[Unit]] = None
 
   @JSExport
   def display(): Unit = {

@@ -348,7 +348,6 @@ trait LabelWidgetIndex { self =>
 
         fa match {
           case act@ LabelAction.ToggleZoneSelection(zoneId) =>
-            println(s"ToggleZoneSelection")
 
             for {
 
@@ -357,7 +356,6 @@ trait LabelWidgetIndex { self =>
                 val initSelections = interpState.uiResponse.uiState.selections
 
                 if (initSelections.contains(zoneId)) {
-                  println("  ..remove fringe")
                   (istate.selectionsL ~ istate.labelWidgetL).modify(interpState) {
                     case (sels, labelWidget) =>
                       val newSels = sels.filterNot(_ == zoneId)
@@ -369,7 +367,6 @@ trait LabelWidgetIndex { self =>
 
 
                 } else {
-                  println("  ..add fringe")
                   (istate.selectionsL ~ istate.labelWidgetL).modify(interpState) {
                     case (sels, labelWidget) =>
                       val newWidget = LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
@@ -384,21 +381,17 @@ trait LabelWidgetIndex { self =>
             } yield ()
 
           case act@ LabelAction.SelectZone(zoneId) =>
-            // println(s"SelectZone (disabled)")
             for {
               init <- State.get[InterpState]
             } yield ()
 
           case act: DeleteZone =>
-            // println(s"DeleteZone")
             for {
               newSt <- State.modify[InterpState] { initState =>
                 val initSelections =  initState.uiResponse.uiState.selections
-                // println(s"DeleteZone:selections: [${initSelections}]")
 
                 val finalLabelWidget = initSelections
                   .foldLeft(initState.labelWidget)({ case (accLabelWidget, zoneId) =>
-                    // println(s"   DeleteZone(zoneId)")
                     docStore.deleteZone(zoneId)
                     removeNodesWithID(zoneId, accLabelWidget)
                   })
@@ -410,7 +403,6 @@ trait LabelWidgetIndex { self =>
             } yield ()
 
           case act: MergeZones =>
-            // println(s"MergeZone")
             for {
               init <- State.get[InterpState]
             } yield ()

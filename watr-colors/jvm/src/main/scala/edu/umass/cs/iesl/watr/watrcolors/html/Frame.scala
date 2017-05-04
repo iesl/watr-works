@@ -48,4 +48,13 @@ object ShellHtml {
       <.body(WatrStyles.htmlBody, ^.onload:=s"${pageName}.display();")
     )
   }
+
+
+  def register() = {
+    <.html(
+      htmlHead(),
+      <.body(WatrStyles.htmlBody, ^.onload:=s"Registration.display();")
+    )
+
+  }
 }

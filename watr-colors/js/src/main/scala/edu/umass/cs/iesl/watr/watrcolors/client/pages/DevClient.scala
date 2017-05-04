@@ -9,10 +9,10 @@ import parts._
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.scalajs.js.annotation.JSExport
 
-// import scaladget.stylesheet.{all => sty}
+import scaladget.stylesheet.{all => sty}
 
 import scalatags.JsDom.all._
-// import sty.{ctx => _, _}
+import sty.{ctx => _, _}
 
 import watrmarks.{StandardLabels => LB}
 import rx._
@@ -32,6 +32,7 @@ import TypeTags._
 @JSExportTopLevel("DevClient")
 object DevClient extends BaseClientDefs {
   import BootstrapBits._
+
 
 
   @JSExport
@@ -77,6 +78,7 @@ object DevClient extends BaseClientDefs {
       val nav = SharedLayout.initNavbar(List(
         pageName
       ))
+
 
       def sampleText = vjoin(center1)(
         tbox("Lorem ipsum dolor sit amet"),

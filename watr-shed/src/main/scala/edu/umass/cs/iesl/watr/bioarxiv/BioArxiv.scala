@@ -122,7 +122,7 @@ object BioArxivOps extends BioArxivJsonFormats {
     val corpus = Corpus(corpusRoot)
     println(s"downloading pdf from ${corpus}")
     for {
-      entry  <- corpus.entries().take(1000)
+      entry  <- corpus.entries()
       json   <- entry.getArtifact("bioarxiv.json")
       asJson <- json.asJson
       paper  <- asJson.validate[PaperRec]

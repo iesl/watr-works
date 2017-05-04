@@ -32,8 +32,8 @@ object WatrTable {
   }
 
   val predef =
-    s"""|import edu.umass.cs.iesl.watr
-        |import ammonite.ops._
+    s"""| import edu.umass.cs.iesl.watr
+        | import ammonite.ops._
         |import ammonite.ops.ImplicitWd._
         |import watr._, spindex._, geometry._, table._
         |import corpora._

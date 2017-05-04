@@ -11,6 +11,8 @@ import scaladget.stylesheet.{
   all => sty
 }
 
+// import sty.{ctx => _, _}
+
 import scaladget.api.{
   SelectableButtons
 }
@@ -23,24 +25,53 @@ import labeling._
 import rx._
 
 import scaladget.tools.JsRxTags.{ctx => _, _}
+import scalatags.JsDom.tags
 
 object SharedLayout extends BaseClientDefs {
   import BootstrapBits._
 
   import pageStyles._
 
+  // User/passwd input forms
+
+  val usernameInput = input("")(
+    placeholder := "username",
+    `type` := "username",
+    width := "300px",
+    sty.marginBottom(15),
+    name := "username",
+    autofocus := true
+  ).render
+
+  def setPasswordForm(): HtmlTag =
+    tags.form(
+      action := "/login",
+      method := "post",
+      usernameInput
+    )
+
+
+  def loginPanel(implicit co: Ctx.Owner): HtmlTag =  {
+
+    setPasswordForm()
+
+  }
+
   def initNavbar(
     navItems: Seq[NavEntry[_ <: HTMLElement]] = Seq()
-  )(implicit rxOwnr: Ctx.Owner): HtmlTag = {
+  )(implicit co: Ctx.Owner): HtmlTag = {
     val logo = navItem(
       span(pageStyles.logo, "WatrColors").render
     )
-    val navs = logo :: navItems.toList
 
-    navBar(
-      navbarStyle,
-      navs:_*
-    )
+    val login = navItem(loginPanel(co).render)
+    val navs = logo :: login :: navItems.toList
+
+      navBar(
+        navbarStyle,
+        navs:_*
+      )
+
   }
 
   def pageSetup(
