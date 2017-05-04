@@ -19,7 +19,6 @@ import docstore._
 
 import upickle.{default => UPickle}
 
-
 case class UserData(user: String, pass: String, session: String)
 
 class EmbeddedServer(

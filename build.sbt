@@ -79,7 +79,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
   .jvmSettings(libraryDependencies ++= Lib.http4s ++ Seq(
     "io.spray"           %% "spray-can"                 % "1.3.4",
     "io.spray"           %% "spray-routing-shapeless2"  % "1.3.3",
-    "com.typesafe.akka"  %% "akka-actor"                % "2.5.0",
+    "com.typesafe.akka"  %% "akka-actor"                % "2.5.1",
     "org.webjars.bower"  %  "fabric"                    % "1.6.2",
     "org.webjars"        %  "bootstrap"                 % "3.3.7", // only used for css (bootstrap native is used instead)
     "org.webjars"        %  "jquery"                    % "2.2.4",

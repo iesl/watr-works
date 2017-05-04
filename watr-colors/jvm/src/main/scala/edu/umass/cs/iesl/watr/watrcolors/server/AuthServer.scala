@@ -24,8 +24,6 @@ import org.http4s.headers.Authorization
 
 case class User(id: Long, name: String)
 
-
-
 class AuthServer(
   reflowDB: TextReflowDB,
   corpus: Corpus,
@@ -50,8 +48,13 @@ class AuthServer(
     message.traverse(retrieveUser)
   })
 
+  // type AuthedService[T] = Service[AuthedRequest[T], Response]
+  // case class AuthedRequest[A](authInfo: A, req: Request)
+
+  // val onFailure: AuthedService[String] = Kleisli(req => Task.delay(Forbidden(req.authInfo)))
   val onFailure: AuthedService[String] = Kleisli(req => Forbidden(req.authInfo))
 
+  // def apply[Err, T](authUser: Service[Request, Err \/ T], onFailure: Kleisli[Task, AuthedRequest[Err], Response]): AuthMiddleware[T] = { service =>
   val middleware = AuthMiddleware(authUser, onFailure)
 
   val authedService: AuthedService[User] =

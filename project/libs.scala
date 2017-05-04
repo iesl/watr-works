@@ -24,7 +24,8 @@ trait LibVersions {
   val fansiV              = "0.2.3"
   val shapelessV          = "2.3.2"
   val scaladgetV          = "0.9.4"
-  val http4sVersion       = "0.15.11a"
+  // val http4sVersion       = "0.15.11a"
+  val http4sVersion       = "0.16.0a-M2"
 
 }
 

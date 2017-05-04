@@ -13,9 +13,11 @@ object WatrColorTable {
     val corpus = ShellCommands.initCorpus()
     val reflowDB = ShellCommands.initReflowDB(dbname)
 
-    val server =  new EmbeddedServer(reflowDB, corpus, "localhost", 9999)
+    // val server =  new EmbeddedServer(reflowDB, corpus, "localhost", 9999)
+    val httpService =  new Http4sService(reflowDB, corpus, "localhost", 9999)
 
-    server.httpserver.run()
+    // server.httpserver.run()
+    val httpServer = httpService.run()
 
     val predef = (
       s"""|${WatrTable.predef}
@@ -32,12 +34,12 @@ object WatrColorTable {
       errorStream = System.err,
       verboseOutput = false
     ).run(
-      "server" -> server,
       "corpus" -> corpus,
       "db" -> reflowDB
     )
 
-    server.httpserver.kill()
+    // server.httpserver.kill()
+    httpServer.shutdownNow()
     reflowDB.shutdown()
   }
 }

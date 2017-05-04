@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-
 import scala.concurrent.Future
 import corpora._
 import docstore._

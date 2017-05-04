@@ -16,7 +16,7 @@ import org.scalajs.dom
 class WebsideClient(prefix: String) extends autowire.Client[String, UPickle.Reader, UPickle.Writer] {
   override def doCall(req: Request): Future[String] = {
     dom.ext.Ajax
-      .post(url = s"""/api/${prefix}/${req.path.mkString("/")}""",
+      .post(url = s"""/autowire/api/${prefix}/${req.path.mkString("/")}""",
         data = write(req.args),
         headers = Map("Content-Type" -> "text/plain"))
       .map(_.responseText)
