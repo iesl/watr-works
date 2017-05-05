@@ -49,12 +49,4 @@ object ShellHtml {
     )
   }
 
-
-  def register() = {
-    <.html(
-      htmlHead(),
-      <.body(WatrStyles.htmlBody, ^.onload:=s"Registration.display();")
-    )
-
-  }
 }

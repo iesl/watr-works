@@ -76,9 +76,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "org.scala-js"   %%% "scalajs-dom"     % "0.9.1"),
     scalacOptions -= "-Ywarn-dead-code" // doesn't play well with ScalaJS native binding declarations
   )
-  .jvmSettings(libraryDependencies ++= Lib.http4s ++ Seq(
-    "io.spray"           %% "spray-can"                 % "1.3.4",
-    "io.spray"           %% "spray-routing-shapeless2"  % "1.3.3",
+  .jvmSettings(libraryDependencies ++= Lib.http4s ++ TestLibs.testAndCheck ++ Seq(
     "com.typesafe.akka"  %% "akka-actor"                % "2.5.1",
     "org.webjars.bower"  %  "fabric"                    % "1.6.2",
     "org.webjars"        %  "bootstrap"                 % "3.3.7", // only used for css (bootstrap native is used instead)

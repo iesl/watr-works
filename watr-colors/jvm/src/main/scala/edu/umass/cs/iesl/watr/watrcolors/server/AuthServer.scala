@@ -2,8 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-import corpora._
-import docstore._
 
 import scalaz._
 // import Scalaz._
@@ -22,59 +20,59 @@ import java.time._
 
 import org.http4s.headers.Authorization
 
-case class User(id: Long, name: String)
 
-class AuthServer(
-  reflowDB: TextReflowDB,
-  corpus: Corpus,
-  url: String,
-  port: Int
-) {
+case class UserData(username: String, pass: String, session: String)
+
+
+trait AuthServer {
+
   val key = PrivateKey(scala.io.Codec.toUTF8(scala.util.Random.alphanumeric.take(20).mkString("")))
 
   val crypto = CryptoBits(key)
 
   val clock = Clock.systemUTC
 
-  def retrieveUser: Service[Long, User] = Kleisli(id => Task.delay(???))
+  def retrieveUser: Service[Long, UserData] = Kleisli(id => Task.delay(???))
 
-
-  val authUser: Service[Request, String \/ User] = Kleisli({ request =>
+  val authUser: Service[Request, String \/ UserData] = Kleisli({ request =>
     val message = for {
-      header <- request.headers.get(Authorization).toRightDisjunction("Couldn't find an Authorization header")
-      token <- crypto.validateSignedToken(header.value).toRightDisjunction("Cookie invalid")
-      message <- \/.fromTryCatchNonFatal(token.toLong).leftMap(_.toString)
+      header    <- request.headers.get(Authorization).toRightDisjunction("Couldn't find an Authorization header")
+      token     <- crypto.validateSignedToken(header.value).toRightDisjunction("Cookie invalid")
+      message   <- \/.fromTryCatchNonFatal(token.toLong).leftMap(_.toString)
     } yield message
     message.traverse(retrieveUser)
   })
 
-  // type AuthedService[T] = Service[AuthedRequest[T], Response]
-  // case class AuthedRequest[A](authInfo: A, req: Request)
 
-  // val onFailure: AuthedService[String] = Kleisli(req => Task.delay(Forbidden(req.authInfo)))
   val onFailure: AuthedService[String] = Kleisli(req => Forbidden(req.authInfo))
 
-  // def apply[Err, T](authUser: Service[Request, Err \/ T], onFailure: Kleisli[Task, AuthedRequest[Err], Response]): AuthMiddleware[T] = { service =>
-  val middleware = AuthMiddleware(authUser, onFailure)
+  val authedService: AuthedService[UserData] = AuthedService {
+    case GET -> Root / "status" as user =>
+      Ok(s"User ${user.username} is logged in.")
 
-  val authedService: AuthedService[User] =
-    AuthedService {
-      case GET -> Root / "welcome" as user => Ok(s"Welcome, ${user.name}")
-    }
+    case GET -> Root / "logout" as user =>
+      Ok(s"Logged out ${user.username}")
+        .removeCookie("authcookie")
+  }
+
+  val authMiddleware = AuthMiddleware(authUser, onFailure)
+
+  val loginHttpMiddleware: HttpService = authMiddleware(authedService)
 
 
-  val service: HttpService = middleware(authedService)
+  def verifyLogin(request: Request): Task[String \/ UserData] = ??? // gotta figure out how to do the form
 
-
-  def verifyLogin(request: Request): Task[String \/ User] = ??? // gotta figure out how to do the form
-
-  val logIn: Service[Request, Response] = Kleisli({ request =>
-    verifyLogin(request: Request).flatMap(_ match {
+  val logInService: Service[Request, Response] = Kleisli({ request =>
+    verifyLogin(request).flatMap(_ match {
       case -\/(error) =>
         Forbidden(error)
       case \/-(user) => {
-        val message = crypto.signToken(user.id.toString, clock.millis.toString)
-        Ok("Logged in!").addCookie(Cookie("authcookie", message))
+        val message = crypto.signToken(user.username, clock.millis.toString)
+
+        Ok("Logged in!")
+          .addCookie(Cookie("authcookie", message))
+
+
       }
     })
   })

@@ -6,7 +6,6 @@ logLevel := Level.Warn
 addSbtPlugin("org.scala-js"         % "sbt-scalajs"         % "0.6.16")
 addSbtPlugin("com.lihaoyi"          % "workbench"           % "0.3.0")
 addSbtPlugin("com.lihaoyi"          % "scalatex-sbt-plugin" % "0.3.7")
-addSbtPlugin("io.spray"             % "sbt-revolver"        % "0.8.0")
 addSbtPlugin("me.lessis"            % "bintray-sbt"         % "0.3.0")
 addSbtPlugin("com.github.gseitz"    % "sbt-release"         % "1.0.3")
 

@@ -41,5 +41,6 @@ object WatrColorTable {
     // server.httpserver.kill()
     httpServer.shutdownNow()
     reflowDB.shutdown()
+    httpService.shutdown()
   }
 }
