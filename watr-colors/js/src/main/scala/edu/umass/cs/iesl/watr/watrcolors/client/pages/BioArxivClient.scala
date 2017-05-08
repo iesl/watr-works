@@ -153,7 +153,7 @@ class ClientStateRx(
 
 @JSExportTopLevel("WatrColors")
 object WatrColors extends  BaseClientDefs {
-  import BootstrapBits._
+  // import BootstrapBits._
 
 
 
@@ -328,7 +328,7 @@ object WatrColors extends  BaseClientDefs {
   var clientState: Option[ClientStateRx] = None
 
   @JSExport
-  def display(): Unit = {
+  def display(user: String): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
     val labelerId = parseParams()
 
@@ -345,7 +345,9 @@ object WatrColors extends  BaseClientDefs {
         clientStateRx.setupLabelChooser
       )
 
-      val navContent =  SharedLayout.initNavbar(List())
+      val userNav = stringNavItem(user, () => {}, activeDefault=false)
+
+      val navContent =  SharedLayout.initNavbar(List(userNav))
 
       val rx0 = clientStateRx.selectionInProgress.trigger {
         if (clientStateRx.selectionInProgress.now) {

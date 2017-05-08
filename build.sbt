@@ -46,6 +46,7 @@ lazy val watrmarksJS = watrmarks.js
 lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val watrshed = (project in file("watr-shed"))
+  .enablePlugins(JavaAppPackaging)
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++

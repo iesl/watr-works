@@ -64,8 +64,7 @@ object SharedLayout extends BaseClientDefs {
       span(pageStyles.logo, "WatrColors").render
     )
 
-    val login = navItem(loginPanel(co).render)
-    val navs = logo :: login :: navItems.toList
+    val navs = logo :: navItems.toList
 
       navBar(
         navbarStyle,

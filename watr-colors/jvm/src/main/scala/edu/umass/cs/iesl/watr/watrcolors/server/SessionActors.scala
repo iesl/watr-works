@@ -70,8 +70,10 @@ class SessionsActor(
     case req@ RoutingRequest(user, path, body) =>
 
       val userSessionActor = context.child(user.username).getOrElse {
+        println(s"Sessions: creating new actor for ${user.username}")
         context.actorOf(UserSessionActor.props(user, new BioArxivServer(user, reflowDB, corpus)), user.username)
       }
+      println(s"Sessions: using actor for ${user.username}")
 
       val resp = userSessionActor ? req
 

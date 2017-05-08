@@ -42,10 +42,10 @@ object ShellHtml {
     )
   }
 
-  def apply(pageName: String) = {
+  def apply(pageName: String, user: Option[String]) = {
     <.html(
       htmlHead(),
-      <.body(WatrStyles.htmlBody, ^.onload:=s"${pageName}.display();")
+      <.body(WatrStyles.htmlBody, ^.onload:=s"""${pageName}.display("${user.getOrElse("")}");""")
     )
   }
 

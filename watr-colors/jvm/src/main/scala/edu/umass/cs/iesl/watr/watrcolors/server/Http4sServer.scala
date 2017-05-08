@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-// import scalaz.Kleisli
+import scalaz.Kleisli
 import scalaz.concurrent.Task
 
 import akka.actor._
@@ -53,8 +53,8 @@ class Http4sService(
       )
   }
 
-  def htmlPage(pageName: String): Task[Response]= {
-    Ok(html.ShellHtml(pageName).toString())
+  def htmlPage(pageName: String, user: Option[String]): Task[Response]= {
+    Ok(html.ShellHtml(pageName, user).toString())
       .putHeaders(
         H.`Content-Type`(MediaType.`text/html`)
       )
@@ -63,7 +63,7 @@ class Http4sService(
   // Pages
   val userRegistration = HttpService {
     case req @ GET -> Root / "register" =>
-      htmlPage("Registration")
+      htmlPage("Registration", None)
 
     case req @ POST -> Root / "login" =>
       logInService(req)
@@ -74,20 +74,20 @@ class Http4sService(
 
     case request @ GET -> Root / pageName as user =>
       pageName match {
-        case "browse"    => htmlPage("BrowseCorpus")
-        case "label"     => htmlPage("WatrColors")
+        case "browse"    => htmlPage("BrowseCorpus", Some(user.username))
+        case "label"     => htmlPage("WatrColors", Some(user.username))
       }
 
     case request @ GET -> Root  as user =>
       SeeOther(uri("/browse"))
   }
 
+  val redirectOnFailure: AuthedService[String] = Kleisli(req => SeeOther(uri("/user/register")))
 
   val serveAuthorizedPages = AuthMiddleware(
     authUser,
-    forbidOnFailure
+    redirectOnFailure
   )( userStatusAndLogout orElse authedPages )
-  // val serveAuthorizedPages = AuthMiddleware(authUser)(authedPages)
 
 
   val actorSystem = ActorSystem()
@@ -118,7 +118,6 @@ class Http4sService(
           }
 
         case Some("shell") =>
-
 
           implicit val timeout = Timeout(20.seconds)
 

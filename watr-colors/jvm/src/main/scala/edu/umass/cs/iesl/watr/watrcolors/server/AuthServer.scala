@@ -4,23 +4,16 @@ package server
 
 
 import scalaz._
-// import Scalaz._
 import scalaz.concurrent.Task
-// import scalaz.syntax.std.option._
-// import scalaz.syntax.all._
 
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server._
-// import org.http4s.syntax.string._
-// import org.http4s.server.middleware.authentication._
-// import org.http4s.util.string._
+
 
 
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time._
-
-// import org.http4s.headers.Authorization
 
 
 case class UserData(username: String, pass: String, session: String)
@@ -50,6 +43,7 @@ trait AuthServer {
 
 
   val forbidOnFailure: AuthedService[String] = Kleisli(req => Forbidden(req.authInfo))
+  // def redirectOnFailure(urlstr: String): AuthedService[String] = Kleisli(req => SeeOther(Uri.fromString(urlstr)))
 
   val userStatusAndLogout: AuthedService[UserData] = AuthedService {
     case GET -> Root / "status" as user =>
@@ -93,14 +87,5 @@ trait AuthServer {
       }
     })
   })
-
-  // // val userLoginService
-  // val realm = "UserRealm"
-  // val username = "Test User"
-  // val password = "Test Password"
-  // val basicAuthedService = BasicAuth(realm, validatePassword _)(service)
-
-
-
 
 }

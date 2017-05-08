@@ -13,11 +13,11 @@ import TypeTags._
 
 import docstore._
 
-object WatrTable {
+object WatrTable extends App {
 
   import ShellCommands._
 
-  def main(args: Array[String]): Unit = {
+  def run(args: Array[String]): Unit = {
     val dbname = args(0)
 
     val db = initReflowDB(dbname)
@@ -67,6 +67,9 @@ object WatrTable {
     errorStream = System.err,
     verboseOutput = false
   )
+
+
+  run(args)
 
 }
 

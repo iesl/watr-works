@@ -9,9 +9,7 @@ import wiring._
 import scaladget.stylesheet.{all => sty}
 import sty._
 
-import scaladget.api.{BootstrapTags => bs}
 import scalatags.JsDom.all._
-import bs._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation._
@@ -23,6 +21,7 @@ import scaladget.tools.JsRxTags._
 
 @JSExportTopLevel("BrowseCorpus")
 object BrowseCorpus extends BaseClientDefs {
+  import BootstrapBits._
 
 
   val buttonStyle: ModifierSeq = Seq(
@@ -58,8 +57,8 @@ object BrowseCorpus extends BaseClientDefs {
     span(
       span(s"Displaying ${currDocStart()}-${currDocStart()+20} of ${docCount()} "),
       span(btnGroup,
-        bs.glyphSpan(leftGlyph, () => prevPage()),
-        bs.glyphSpan(rightGlyph, () => nextPage())
+        glyphSpan(leftGlyph, () => prevPage()),
+        glyphSpan(rightGlyph, () => nextPage())
       )
     )
   }
@@ -87,19 +86,20 @@ object BrowseCorpus extends BaseClientDefs {
 
 
   @JSExport
-  def display(): Unit = {
+  def display(user: String): Unit = {
 
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
     server.documentCount()
       .foreach { c => docCount() = c }
 
+    val userNav = stringNavItem(user, () => {}, activeDefault=false)
 
-    bs.withBootstrapNative {
+    val navContent =  SharedLayout.initNavbar(List(userNav))
+
+    withBootstrapNative {
 
       val pageName = navItem(span("Browse").render)
-      // val nav = SharedLayout.initNavbar(List(pageName))
-      val nav = div() // SharedLayout.initNavbar(List())
 
       val bodyContent =
         div(
@@ -115,7 +115,7 @@ object BrowseCorpus extends BaseClientDefs {
           )
         )
 
-      SharedLayout.pageSetup(nav, bodyContent, div()).render
+      SharedLayout.pageSetup(navContent, bodyContent, div()).render
     }
 
   }
