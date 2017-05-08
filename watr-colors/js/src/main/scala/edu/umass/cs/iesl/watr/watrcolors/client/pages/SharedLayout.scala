@@ -45,7 +45,7 @@ object SharedLayout extends BaseClientDefs {
 
   def setPasswordForm(): HtmlTag =
     tags.form(
-      action := "/login",
+      action := "/user/login",
       method := "post",
       usernameInput
     )

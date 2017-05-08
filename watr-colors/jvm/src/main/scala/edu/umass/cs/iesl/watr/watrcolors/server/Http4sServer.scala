@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-
+// import scalaz.Kleisli
 import scalaz.concurrent.Task
 
 import akka.actor._
@@ -18,14 +18,13 @@ import org.http4s._
 import org.http4s.{headers => H}
 import org.http4s.dsl._
 import org.http4s.server._
+import org.http4s.server.syntax._
 import org.http4s.server.staticcontent._
 import org.http4s.server.blaze._
 import TypeTags._
 import upickle.{default => UPickle}
 
 import scala.concurrent._
-// import scala.concurrent.ExecutionContext.Implicits.global
-// import scala.collection.mutable
 
 
 class Http4sService(
@@ -62,22 +61,34 @@ class Http4sService(
   }
 
   // Pages
-  val service1 = HttpService {
-    case request @ GET -> Root / pageName =>
-      pageName match {
-        case "register"  => htmlPage("Registration")
-        case _           => TemporaryRedirect(uri("/register/"))
-      }
+  val userRegistration = HttpService {
+    case req @ GET -> Root / "register" =>
+      htmlPage("Registration")
+
+    case req @ POST -> Root / "login" =>
+      logInService(req)
   }
 
-  val webPageService = AuthedService[UserData] {
+
+  val authedPages = AuthedService[UserData] {
+
     case request @ GET -> Root / pageName as user =>
       pageName match {
         case "browse"    => htmlPage("BrowseCorpus")
         case "label"     => htmlPage("WatrColors")
-        case _           => TemporaryRedirect(uri("/"))
       }
+
+    case request @ GET -> Root  as user =>
+      SeeOther(uri("/browse"))
   }
+
+
+  val serveAuthorizedPages = AuthMiddleware(
+    authUser,
+    forbidOnFailure
+  )( userStatusAndLogout orElse authedPages )
+  // val serveAuthorizedPages = AuthMiddleware(authUser)(authedPages)
+
 
   val actorSystem = ActorSystem()
   import actorSystem.dispatcher
@@ -108,6 +119,7 @@ class Http4sService(
 
         case Some("shell") =>
 
+
           implicit val timeout = Timeout(20.seconds)
 
           Ok {
@@ -129,17 +141,20 @@ class Http4sService(
       }
   }
 
-  val autowireService  = authMiddleware(authedAutowire)
+  val autowireService = authOrForbid(authedAutowire)
 
 
+  // val aggregateService = (
+  //   serveAuthorizedPages
+  // ) // orElse authStatusLogoutService
 
   val builder = BlazeBuilder.bindHttp(9999, "localhost")
+    .mountService(serveAuthorizedPages)
     .mountService(webJarService)
     .mountService(assetService)
     .mountService(regionImageService, "/img")
     .mountService(autowireService, "/autowire")
-    .mountService(loginHttpMiddleware, "/login")
-    .mountService(webPageService, "/")
+    .mountService(userRegistration, "/user")
 
   def run(): Server = {
     builder.run
@@ -152,46 +167,3 @@ class Http4sService(
     )
   }
 }
-
-  // val autowireRoutes = HttpService {
-  //   case req @ POST -> "api" /: path =>
-  //     path.toList.headOption match {
-  //       case Some("browse") =>
-
-  //         import UPicklers._
-  //         val router = ShellsideServer.route[BrowseCorpusApi](browseCorpusServer)
-  //         Ok {
-  //           req.bodyAsText().map{ body =>
-  //             router(
-  //               autowire.Core.Request(
-  //                 path.toList.tail,
-  //                 UPickle.read[Map[String, String]](body)
-  //               )
-  //             ).map{ responseData =>
-  //               responseData.getBytes
-  //             }
-  //           }
-  //         }
-
-  //       case Some("shell") =>
-
-  //         implicit val timeout = Timeout(20.seconds)
-
-  //         Ok {
-  //           req.bodyAsText().map{ body =>
-  //             for {
-  //               resp <- ask(userSessions, RoutingRequest(
-  //                 UserData("anon", "", ""),
-  //                 path.toList.tail,
-  //                 body
-  //               )).mapTo[RoutingResponse]
-  //               respData <- resp.response
-
-  //             } yield respData.getBytes()
-  //           }
-  //         }
-
-  //       case None =>
-  //         ???
-  //     }
-  // }

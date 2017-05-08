@@ -12,13 +12,15 @@ import scalaz.concurrent.Task
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server._
+// import org.http4s.syntax.string._
+// import org.http4s.server.middleware.authentication._
 // import org.http4s.util.string._
 
 
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time._
 
-import org.http4s.headers.Authorization
+// import org.http4s.headers.Authorization
 
 
 case class UserData(username: String, pass: String, session: String)
@@ -32,35 +34,52 @@ trait AuthServer {
 
   val clock = Clock.systemUTC
 
-  def retrieveUser: Service[Long, UserData] = Kleisli(id => Task.delay(???))
+  def retrieveUser: Service[String, UserData] = Kleisli(id => Task.delay(
+    UserData(id, "", "")
+  ))
 
   val authUser: Service[Request, String \/ UserData] = Kleisli({ request =>
     val message = for {
-      header    <- request.headers.get(Authorization).toRightDisjunction("Couldn't find an Authorization header")
-      token     <- crypto.validateSignedToken(header.value).toRightDisjunction("Cookie invalid")
-      message   <- \/.fromTryCatchNonFatal(token.toLong).leftMap(_.toString)
+      header <- headers.Cookie.from(request.headers).toRightDisjunction("Cookie parsing error")
+      cookie <- header.values.list.find(_.name == "authcookie").toRightDisjunction("Couldn't find the authcookie")
+      token     <- crypto.validateSignedToken(cookie.content).toRightDisjunction("Cookie invalid")
+      message   <- \/.fromTryCatchNonFatal(token).leftMap(_.toString)
     } yield message
     message.traverse(retrieveUser)
   })
 
 
-  val onFailure: AuthedService[String] = Kleisli(req => Forbidden(req.authInfo))
+  val forbidOnFailure: AuthedService[String] = Kleisli(req => Forbidden(req.authInfo))
 
-  val authedService: AuthedService[UserData] = AuthedService {
+  val userStatusAndLogout: AuthedService[UserData] = AuthedService {
     case GET -> Root / "status" as user =>
       Ok(s"User ${user.username} is logged in.")
 
     case GET -> Root / "logout" as user =>
-      Ok(s"Logged out ${user.username}")
+      TemporaryRedirect(uri("/"))
         .removeCookie("authcookie")
   }
 
-  val authMiddleware = AuthMiddleware(authUser, onFailure)
+  val authOrForbid = AuthMiddleware(authUser, forbidOnFailure)
 
-  val loginHttpMiddleware: HttpService = authMiddleware(authedService)
+  // val authStatusLogoutService: HttpService = authOrForbid(authedService)
+
+  def verifyLogin(request: Request): Task[String \/ UserData] =  {
+
+    request.as[UrlForm].map{ formData =>
+      println(s"verifyLogin: ${formData}")
+      val maybeName = for {
+        username <- formData.get("username")
+      } yield {
+        \/-{ UserData(username, "", "") }
+      }
+      maybeName.headOption getOrElse {
+        -\/{"Invalid login form"}
+      }
+    }
 
 
-  def verifyLogin(request: Request): Task[String \/ UserData] = ??? // gotta figure out how to do the form
+  }
 
   val logInService: Service[Request, Response] = Kleisli({ request =>
     verifyLogin(request).flatMap(_ match {
@@ -69,13 +88,18 @@ trait AuthServer {
       case \/-(user) => {
         val message = crypto.signToken(user.username, clock.millis.toString)
 
-        Ok("Logged in!")
-          .addCookie(Cookie("authcookie", message))
-
-
+        SeeOther(uri("/"))
+          .addCookie(Cookie("authcookie", message, path=Some("/")))
       }
     })
   })
+
+  // // val userLoginService
+  // val realm = "UserRealm"
+  // val username = "Test User"
+  // val password = "Test Password"
+  // val basicAuthedService = BasicAuth(realm, validatePassword _)(service)
+
 
 
 
