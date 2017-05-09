@@ -12,25 +12,7 @@ import bioarxiv._
 import TypeTags._
 
 import docstore._
-
-object WatrTable extends App {
-
-  import ShellCommands._
-
-  def run(args: Array[String]): Unit = {
-    val dbname = args(0)
-
-    val db = initReflowDB(dbname)
-
-    replMain().run(
-      "corpus" -> initCorpus(),
-      "db" -> db,
-      "barx" -> BioArxivOps
-    )
-
-    db.shutdown()
-  }
-
+object SharedInit {
   val predef =
     s"""| import edu.umass.cs.iesl.watr
         | import ammonite.ops._
@@ -56,12 +38,35 @@ object WatrTable extends App {
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
 
+}
+
+
+object WatrTable extends App {
+  import SharedInit._
+
+  import ShellCommands._
+
+  def run(args: Array[String]): Unit = {
+    val dbname = args(0)
+
+    val db = initReflowDB(dbname)
+
+    replMain().run(
+      "corpus" -> initCorpus(),
+      "db" -> db,
+      "barx" -> BioArxivOps
+    )
+
+    db.shutdown()
+  }
+
+
   def replMain() = ammonite.Main(
     // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
     predef = predef,
     defaultPredef = true,
     wd = pwd,
-    welcomeBanner = Some(welcomeBanner),
+    welcomeBanner = Some(SharedInit.welcomeBanner),
     inputStream = System.in,
     outputStream  = System.out,
     errorStream = System.err,

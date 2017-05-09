@@ -81,7 +81,7 @@ trait MouseGestures extends HtmlCanvasRendering {
     fobj.top=bbox.top
     fobj.width=bbox.width
     fobj.height=bbox.height
-    fabricCanvas.renderAll()
+    fabricCanvas.renderAll(false)
   }
 
   def bounds(p1: Point, p2: Point): LTBounds = {
@@ -90,6 +90,42 @@ trait MouseGestures extends HtmlCanvasRendering {
     val w = math.abs(p2.x - p1.x)
     val h = math.abs(p2.y - p1.y)
     LTBounds(x, y, w, h)
+  }
+
+
+  def getUserInteraction(initPoint: Point): Future[GeometricFigure] = {
+
+    val chan = CanvasMouseChannels(fabricCanvas)
+
+    async {
+
+      // var res = await(chan.mousedown())
+      // val point1 = getCanvasPoint(res.e.pageX, res.e.pageY)
+
+      var res = await(chan.mousemove | chan.mouseup)
+
+      if(res.e.`type` == "mouseup"){
+        println(s"getUserInteraction: Point: ${initPoint}")
+        initPoint
+      } else {
+        var point2 = getCanvasPoint(res.e.pageX, res.e.pageY)
+        var selectionShape: FabricObject =  createShape(bounds(initPoint, point2), "blue", "blue", 0.1f)
+        fabricCanvas.add(selectionShape)
+
+        while(res.e.`type` == "mousemove"){
+          point2 = getCanvasPoint(res.e.pageX, res.e.pageY)
+          updateShape(selectionShape, bounds(initPoint, point2))
+          res = await(chan.mousemove | chan.mouseup)
+        }
+
+        fabricCanvas.remove(selectionShape)
+        // fabricCanvas.renderAll()
+        fabricCanvas.renderAll(false)
+        val r = bounds(initPoint, point2)
+        println(s"getUserInteraction: Rect: ${r}")
+        r
+      }
+    }
   }
 
   def getUserSelection(c: fabric.Canvas): Future[LTBounds] = {

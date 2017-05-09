@@ -28,8 +28,6 @@ object BrowseCorpus extends BaseClientDefs {
     sty.marginAll(right = 5, top = 5)
   )
 
-  // List all Labelers
-  // List all Documents
   val docList: Var[Seq[DocumentEntry]] = Var(List())
   var currDocStart = Var(0)
   var docCount = Var(0)
@@ -86,36 +84,29 @@ object BrowseCorpus extends BaseClientDefs {
 
 
   @JSExport
-  def display(user: String): Unit = {
+  def display(userName: String): Unit = {
 
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
     server.documentCount()
       .foreach { c => docCount() = c }
 
-    val userNav = stringNavItem(user, () => {}, activeDefault=false)
-
-    val navContent =  SharedLayout.initNavbar(List(userNav))
-
-    withBootstrapNative {
-
-      val pageName = navItem(span("Browse").render)
-
-      val bodyContent =
-        div(
-          sty.marginLeft(5),
-          h2("Documents"),
-          div(
-            sty.marginLeft(5),
+    val bodyContent =
+      div("container-fluid".clazz)(
+        div("row".clazz, pageStyles.controlClusterStyle)(
+          div("col-lg-12".clazz)(
             docPagination
-          ),
-          div(
-            sty.marginLeft(10),
+          )
+        ),
+        div("row".clazz)(
+          div("col-lg-12".clazz)(
             ul(documentLister)
           )
         )
+      )
 
-      SharedLayout.pageSetup(navContent, bodyContent, div()).render
+    withBootstrapNative {
+      SharedLayout.pageSetup(Option(userName), bodyContent).render
     }
 
   }

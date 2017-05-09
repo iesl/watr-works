@@ -41,43 +41,72 @@ trait CanvasMouseChannels {
 
   def canvas: fabric.Canvas
 
-
   val mousemove = new Channel[ME](canvas.on("mouse:move", _))
   val mouseup = new Channel[ME](canvas.on("mouse:up", _))
   val mousedown = new Channel[ME](canvas.on("mouse:down", _))
-  val mouseover = new Channel[ME](canvas.on("mouse:over", _))
-  val mouseout = new Channel[ME](canvas.on("mouse:out", _))
-
-
-  def teardown(): Unit = {
-    // TODO remove listeners when no longer needed
-    // not sure if this is leaking resources
-
-  }
-
+  // val mouseover = new Channel[ME](canvas.on("mouse:over", _))
+  // val mouseout = new Channel[ME](canvas.on("mouse:out", _))
 }
 
 
 object CanvasMouseChannels {
   def apply(c: fabric.Canvas) = new CanvasMouseChannels {
     override def canvas = c
-
   }
 
-
-  // def handlerTemlate(c: fabric.Canvas): Unit = {
-  //   val _ = async {
-  //     val chan = CanvasMouseChannels(c)
-
-  //     while(true){
-  //       val start = await(chan.mousedown())
-  //       var res = await(chan.mousemove | chan.mouseup)
-  //       while(res.`type` == "mousemove"){
-  //         res = await(chan.mousemove | chan.mouseup)
-  //       }
-  //       await(chan.mouseup())
-  //     }
-  //   }
-  // }
 }
 
+
+// import org.scalajs.dom
+// import org.scalajs.dom.html
+
+// trait ElemMouseChannels {
+//   type ME = dom.MouseEvent
+
+//   def elem: html.Element
+
+//   val mousemove = new Channel[ME](elem.onmousemove = _)
+//   val mouseup = new Channel[ME](elem.onmouseup = _)
+//   val mousedown = new Channel[ME](elem.onmousedown = _)
+
+
+// }
+
+// object ElemMouseChannels {
+
+
+//   def apply(elem: html.Element) = new ElemMouseChannels {
+//     override def elem = elem
+//   }
+
+//   // async
+//   // def rect = canvas.getBoundingClientRect()
+
+
+//   // // Disabled due to scala-js#1469
+//   // async{
+//   //   while(true){
+//   //     val start = await(mousedown())
+//   //     renderer.beginPath()
+//   //     renderer.moveTo(
+//   //       start.clientX - rect.left,
+//   //       start.clientY - rect.top
+//   //     )
+
+//   //     var res = await(mousemove | mouseup)
+//   //     while(res.`type` == "mousemove"){
+//   //       renderer.lineTo(
+//   //         res.clientX - rect.left,
+//   //         res.clientY - rect.top
+//   //       )
+//   //       renderer.stroke()
+//   //       res = await(mousemove | mouseup)
+//   //     }
+
+//   //     renderer.fill()
+//   //     await(mouseup())
+//   //     renderer.clearRect(0, 0, 1000, 1000)
+//   //   }
+//   // }
+
+// }

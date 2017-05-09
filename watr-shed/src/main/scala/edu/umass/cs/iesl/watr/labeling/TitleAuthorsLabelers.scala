@@ -43,22 +43,25 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     val numWindows = allPagesWindows.length
     val displayWindow = math.min(math.max(0, startingPageWindow), numWindows-1)
 
+    val pageWidgets = if (displayWindow < 0) {
+      List[LabelWidget]()
+    } else {
+      for {
+        pageId <- allPagesWindows(displayWindow)
+      } yield {
 
-    val pageWidgets = for {
-      pageId <- allPagesWindows(displayWindow)
-    } yield {
+        val pageGeometry = docStore.getPageGeometry(pageId)
 
-      val pageGeometry = docStore.getPageGeometry(pageId)
+        val pageTargetRegion = docStore.getTargetRegion(
+          docStore.addTargetRegion(pageId, pageGeometry)
+        )
 
-      val pageTargetRegion = docStore.getTargetRegion(
-        docStore.addTargetRegion(pageId, pageGeometry)
-      )
-
-      LW.pad(
-        LW.targetOverlay(pageTargetRegion, overlays=List()),
-        Padding(2),
-        Colors.DarkSlateBlue
-      )
+        LW.pad(
+          LW.targetOverlay(pageTargetRegion, overlays=List()),
+          Padding(2),
+          Colors.DarkSlateBlue
+        )
+      }
     }
 
     val placeholders = Stream.continually(LW.textbox("<empty page>"))

@@ -5,9 +5,9 @@ package server
 import ammonite.ops._
 import edu.umass.cs.iesl.watr.table._
 
-object WatrColorTable {
+object WatrColorTable extends App {
 
-  def main(args: Array[String]): Unit = {
+  def run(args: Array[String]): Unit = {
     val dbname = args(0)
 
     val corpus = ShellCommands.initCorpus()
@@ -19,13 +19,9 @@ object WatrColorTable {
     // server.httpserver.run()
     val httpServer = httpService.run()
 
-    val predef = (
-      s"""|${WatrTable.predef}
-          |""".stripMargin)
-
     ammonite.Main(
       // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
-      predef = predef,
+      predef = SharedInit.predef,
       defaultPredef = true,
       wd = pwd,
       welcomeBanner = Some(s""">> WatrTable+WatrColors @ http://localhost:9999/  <<"""),
@@ -43,4 +39,6 @@ object WatrColorTable {
     reflowDB.shutdown()
     httpService.shutdown()
   }
+
+  run(args)
 }

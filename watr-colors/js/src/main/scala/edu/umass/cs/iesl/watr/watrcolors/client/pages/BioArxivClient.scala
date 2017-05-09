@@ -17,6 +17,7 @@ import org.scalajs.dom.ext._
 
 
 import labeling._
+import geometry._
 import watrmarks._
 import native.mousetrap._
 import native.fabric
@@ -116,9 +117,9 @@ class ClientStateRx(
   val doDeleteZone: Var[Boolean] = Var(false)
   val selectionInProgress: Var[Boolean] = Var(false)
 
-  def startSelection(): Unit = {
-    selectionInProgress() = true
-  }
+  // def startSelection(): Unit = {
+  //   selectionInProgress() = true
+  // }
 
   val rx2 = doDeleteZone.triggerLater{
     if (doDeleteZone.now) {
@@ -176,7 +177,7 @@ object WatrColors extends  BaseClientDefs {
     // "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
     // "s b" -> ((e: MousetrapEvent) => states.selectByRegion()),
 
-    "s s" -> ((e: MousetrapEvent) => clientState.foreach {_.startSelection()})
+    // "s s" -> ((e: MousetrapEvent) => clientState.foreach {_.startSelection()})
   )
 
   def initKeybindings() = {
@@ -291,30 +292,37 @@ object WatrColors extends  BaseClientDefs {
 
 
 
-
   @JSExport
   def setupClickCatchers(clientStateRx: ClientStateRx)(implicit co: Ctx.Owner): Unit = {
     val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
       if (!clientStateRx.selectionInProgress.now) {
-        println("click")
+        clientStateRx.selectionInProgress() = true
 
-        val clickPt = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
+        val initClickPt: Point = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
 
-        val req = UIRequest(clientStateRx.toUIState(), Click(clickPt))
-        uiRequestCycle(req)
+        getUserInteraction(initClickPt).foreach { interact =>
+
+          val shape = interact match {
+            case p: Point    => Click(p)
+            case p: LTBounds => SelectRegion(p)
+            case p           => sys.error(s"getUserInteraction: invalid shape ${p}")
+          }
+
+          uiRequestCycle(UIRequest(
+            clientStateRx.toUIState(), shape
+          )).map{ _ =>
+            clientStateRx.selectionInProgress() = false
+          }
+        }
+
       }
       true
     }
 
+    val elem = dom.document.getElementById("canvas-container")
 
-    val elem = dom.document
-      .getElementById("canvas-container")
-
-    elem.addEventListener("click", clickcb, useCapture=false)
+    elem.addEventListener("mousedown", clickcb, useCapture=false)
   }
-
-
-
 
 
   def parseParams(): LabelerIdentifier = {
@@ -328,7 +336,7 @@ object WatrColors extends  BaseClientDefs {
   var clientState: Option[ClientStateRx] = None
 
   @JSExport
-  def display(user: String): Unit = {
+  def display(userName: String): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
     val labelerId = parseParams()
 
@@ -338,31 +346,27 @@ object WatrColors extends  BaseClientDefs {
       val clientStateRx =  new ClientStateRx(uiState, uiRequestCycle(_))
       clientState = Option(clientStateRx)
 
-      println(s"uiResponse: ${uiResponse}")
 
       val selectorControls = SharedLayout.zoneSelectorControls(
         clientStateRx,
         clientStateRx.setupLabelChooser
       )
 
-      val userNav = stringNavItem(user, () => {}, activeDefault=false)
 
-      val navContent =  SharedLayout.initNavbar(List(userNav))
-
-      val rx0 = clientStateRx.selectionInProgress.trigger {
-        if (clientStateRx.selectionInProgress.now) {
-          for {
-            bbox <- getUserSelection(fabricCanvas)
-          } yield {
-            uiRequestCycle(UIRequest(
-              clientStateRx.toUIState(),
-              SelectRegion(bbox))
-            ).map{ _ =>
-              clientStateRx.selectionInProgress() = false
-            }
-          }
-        }
-      }
+      // val rx0 = clientStateRx.selectionInProgress.trigger {
+      //   if (clientStateRx.selectionInProgress.now) {
+      //     for {
+      //       bbox <- getUserSelection(fabricCanvas)
+      //     } yield {
+      //       uiRequestCycle(UIRequest(
+      //         clientStateRx.toUIState(),
+      //         SelectRegion(bbox))
+      //       ).map{ _ =>
+      //         clientStateRx.selectionInProgress() = false
+      //       }
+      //     }
+      //   }
+      // }
 
 
 
@@ -383,10 +387,9 @@ object WatrColors extends  BaseClientDefs {
           )
         )
 
-      val sidebarContent = ul(`class`:="sidebar-nav")
 
       withBootstrapNative {
-        SharedLayout.pageSetup(navContent, bodyContent, sidebarContent).render
+        SharedLayout.pageSetup(Option(userName), bodyContent).render
       }
 
       setupClickCatchers(clientStateRx)

@@ -256,6 +256,50 @@ object BootstrapBits {
       )
   }
 
+  class NavInfo[T <: HTMLElement](
+    contentDiv: T,
+    extraRenderPair: Seq[Modifier] = Seq()
+  ) extends NavEntry[T] {
+
+
+    override val render = li(
+      tags.span(
+        lineHeight := "35px",
+        contentDiv
+      )
+    )(extraRenderPair: _*)
+  }
+
+  def navInfo[T <: HTMLElement](
+    content: T,
+    extraRenderPair: Seq[Modifier] = Seq()
+  ) = { new NavInfo(content, extraRenderPair) }
+
+  def navInfoString(
+    content: String,
+    extraRenderPair: Seq[Modifier] = Seq()
+  ) = { navInfo(span(content).render, extraRenderPair) }
+
+
+  // class NavLink[T <: HTMLElement](
+  //   anchorElem: T,
+  //   extraRenderPair: Seq[Modifier] = Seq()
+  // ) extends NavEntry[T] {
+  //   override val render = li(
+  //     anchorElem(lineHeight := "35px"))
+  //   )(extraRenderPair: _*)
+  // }
+
+  // def navLink[T0 <: HTMLElement, T <: HTMLAnchorElement](
+  //   label: T0,
+  //   uri: String,
+  //   extraRenderPair: Seq[Modifier] = Seq()
+  // ): NavLink[T] = { new NavLink(uri, extraRenderPair) }
+
+  // def navAnchor(uri: String): HTMLAnchorElement = {
+  //   tags.a(href := uri)(label)
+  // }
+
   class NavItem[T <: HTMLElement](
     contentDiv: T,
     val todo: () ⇒ Unit = () ⇒ {},
@@ -285,17 +329,19 @@ object BootstrapBits {
     )(extraRenderPair: _*)
   }
 
-  def navItem[T <: HTMLElement](content: T,
-                             todo: () => Unit = () => {},
-                             extraRenderPair: Seq[Modifier] = Seq(),
-                             activeDefault: Boolean = false) = {
+
+
+  def navItem[T <: HTMLElement](
+    content: T,
+    todo: () => Unit = () => {},
+    extraRenderPair: Seq[Modifier] = Seq(),
+    activeDefault: Boolean = false) = {
     new NavItem(content, todo, extraRenderPair, activeDefault)
   }
 
   def stringNavItem(content: String, todo: () ⇒ Unit = () ⇒ {}, activeDefault: Boolean = false): NavItem[HTMLElement] =
     navItem(span(content).render, todo, activeDefault = activeDefault)
 
-  // def navBar(classPair: ModifierSeq, contents: NavItem[_ <: HTMLElement]*): TypedTag[HTMLElement] = {
   def navBar(classPair: ModifierSeq, contents: NavEntry[_ <: HTMLElement]*): TypedTag[HTMLElement] = {
 
     <.nav(navbar +++ navbar_default +++ classPair)(
@@ -319,6 +365,56 @@ object BootstrapBits {
       )
     )
   }
+  def navBarLeftRight(
+    classPair: ModifierSeq,
+    contents: Seq[NavEntry[_ <: HTMLElement]],
+    contentsR: Seq[NavEntry[_ <: HTMLElement]]
+  ): TypedTag[HTMLElement] = {
+
+    <.nav(navbar +++ navbar_default +++ classPair)(
+      div(toClass("container-fluid"))(
+        div(toClass("collapse") +++ navbar_collapse)(
+          ul(nav +++ navbar_nav)(
+            contents.map {
+
+              case c: NavActive =>
+                c.render(scalatags.JsDom.attrs.onclick := { () ⇒
+                  contents.collect {
+                    case n: NavActive => n.active() = false
+                  }
+                  c.active() = true
+                })
+
+              case c  =>
+                c.render
+            }: _*
+          ),
+          ul(nav +++ navbar_nav +++ navbar_right)(
+            contentsR.map {
+
+              case c: NavActive =>
+                c.render(scalatags.JsDom.attrs.onclick := { () ⇒
+                  contents.collect {
+                    case n: NavActive => n.active() = false
+                  }
+                  c.active() = true
+                })
+
+              case c  =>
+                c.render
+            }: _*)
+        )
+      )
+    )
+  }
+
+  // def navbarLeft(classPair: ModifierSeq, contents: NavEntry[_ <: HTMLElement]*): TypedTag[HTMLElement] = {
+  //   navbar(classPair, contents:_*)
+  // }
+
+  // def navbarRight(classPair: ModifierSeq, contents: NavEntry[_ <: HTMLElement]*): TypedTag[HTMLElement] = {
+  //   navbar(classPair +++ navbar_right, contents:_*)
+  // }
 
 
   // Nav pills
@@ -327,11 +423,11 @@ object BootstrapBits {
 
   // POUPUS, TOOLTIPS
   class Popover(element: TypedTag[org.scalajs.dom.raw.HTMLElement],
-                text: String,
-                position: PopupPosition = Bottom,
-                trigger: PopupType = HoverPopup,
-                title: Option[String] = None,
-                dismissible: Boolean = false) {
+    text: String,
+    position: PopupPosition = Bottom,
+    trigger: PopupType = HoverPopup,
+    title: Option[String] = None,
+    dismissible: Boolean = false) {
 
     lazy val render = {
       val p = element(

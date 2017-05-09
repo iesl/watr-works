@@ -9,10 +9,10 @@ import parts._
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.scalajs.js.annotation.JSExport
 
-import scaladget.stylesheet.{all => sty}
+// import scaladget.stylesheet.{all => sty}
 
 import scalatags.JsDom.all._
-import sty.{ctx => _, _}
+// import sty.{ctx => _, _}
 
 import watrmarks.{StandardLabels => LB}
 import rx._
@@ -75,9 +75,9 @@ object DevClient extends BaseClientDefs {
         setupLabelChooser
       )
 
-      val nav = SharedLayout.initNavbar(List(
-        pageName
-      ))
+      // val nav = SharedLayout.initNavbar(List(
+      //   pageName
+      // ))
 
 
       def sampleText = vjoin(center1)(
@@ -111,10 +111,7 @@ object DevClient extends BaseClientDefs {
           )
         )
 
-      val sidebarContent =
-        ul(`class`:="sidebar-nav")()
-
-      SharedLayout.pageSetup(nav, bodyContent, sidebarContent).render
+      SharedLayout.pageSetup(Some("A.T.User"), bodyContent).render
     }
 
   }

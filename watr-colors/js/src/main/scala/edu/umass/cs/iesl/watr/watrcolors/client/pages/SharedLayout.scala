@@ -11,12 +11,12 @@ import scaladget.stylesheet.{
   all => sty
 }
 
-// import sty.{ctx => _, _}
 
 import scaladget.api.{
   SelectableButtons
 }
 import scalatags.JsDom.all._
+import scalatags.JsDom.tags
 import scalatags.JsDom.{
   TypedTag
 }
@@ -25,17 +25,16 @@ import labeling._
 import rx._
 
 import scaladget.tools.JsRxTags.{ctx => _, _}
-import scalatags.JsDom.tags
 
 object SharedLayout extends BaseClientDefs {
   import BootstrapBits._
 
-  import pageStyles._
+  // import pageStyles._
 
   // User/passwd input forms
 
   val usernameInput = input("")(
-    placeholder := "username",
+    placeholder := "user@email.edu",
     `type` := "username",
     width := "300px",
     sty.marginBottom(15),
@@ -52,34 +51,67 @@ object SharedLayout extends BaseClientDefs {
 
 
   def loginPanel(implicit co: Ctx.Owner): HtmlTag =  {
-
     setPasswordForm()
-
   }
 
-  def initNavbar(
+
+  def initNavbarLeft(
     navItems: Seq[NavEntry[_ <: HTMLElement]] = Seq()
   )(implicit co: Ctx.Owner): HtmlTag = {
-    val logo = navItem(
-      span(pageStyles.logo, "WatrColors").render
+    val logo = navInfo(
+      div("navbar-header".clazz,
+        a("navbar-brand".clazz,
+          href:="/",
+          span(pageStyles.logo, "WatrColors").render
+        ).render
+      ).render
     )
 
     val navs = logo :: navItems.toList
 
-      navBar(
-        navbarStyle,
-        navs:_*
-      )
+    navBar(
+      pageStyles.navbarStyle,
+      navs:_*
+    )
+  }
 
+  def initNavbarRight(
+    navItems: Seq[NavEntry[_ <: HTMLElement]] = Seq(),
+    navItemsRight: Seq[NavEntry[_ <: HTMLElement]] = Seq()
+  )(implicit co: Ctx.Owner): HtmlTag = {
+    val logo = navInfo(
+      a("navbar-brand".clazz,
+        href:="/",
+        span(pageStyles.logo, "WatrColors").render
+      ).render
+    )
+
+    val navsL = logo :: navItems.toList
+    val navsR = navItemsRight.toList
+
+    navBarLeftRight(
+      pageStyles.navbarStyle,
+      navsL, navsR
+    )
   }
 
   def pageSetup(
-    nav: TypedTag[HTMLElement],
+    userName: Option[String],
     bodyContent: TypedTag[HTMLElement],
-    sidebarContent: TypedTag[HTMLElement]
+    navLeft: Option[TypedTag[HTMLElement]] = None,
+    navRight: Option[TypedTag[HTMLElement]] = None,
+    sidebarContent: TypedTag[HTMLElement] = ul(`class`:="sidebar-nav")
   )(implicit co: Ctx.Owner) = {
+    val userNav = userName.map(n =>
+      stringNavItem(n, () => {}, activeDefault=false)
+    ).toList
+
+    val nb = initNavbarRight(
+      Seq(), userNav
+    )
+
     div(
-      nav,
+      nb,
       sidebarLayout(bodyContent, sidebarContent)
     )
   }
