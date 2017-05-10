@@ -135,48 +135,16 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
   val T = implicitly[Async[Task]]
 
   def segmentAll()(implicit docStore: DocumentCorpus, corpus: Corpus): Unit = {
+    val prog0 = corpus.entryStream()
+      .take(1)
+      .map { corpusEntry =>
+        println(s"processing first entry ")
+        segment(corpusEntry, extractImages=false)
+      }
 
-    // val t2 = for {
-    //   e <- corpus.entryStream()
-    //   f <- Stream.emit(Task.start( Task.delay {
-    //     println(s"segmenting ${e}")
-    //     segment(e, extractImages=false)
-    //   }))
-    //   // g <- f
-    // } yield ()
 
-    // t2.run.unsafeRun()
-
-    // corpus.entryStream().parallelTraverse{ e =>
-    //     Task.start {
-    //       // Task.delay{
-    //         segment(e, extractImages=false)
-    //       // }
-    //     }
-    // }
-
-    // corpus.entryStream().flatMap{ e =>
-    //   Stream.emit(
-    //     Task.start({
-    //       Task.delay{
-    //         segment(e, extractImages=false)
-    //       }
-    //     })
-    //   )
-    // }
-
-    // val qwer = corpus.entryStream()
-    //   .through(pipe.take(10))
-    //   .through(pipe.zipWithIndex)
-    //   .through(pipe.split(_._2 % 3 == 0))
-    //   .map { v =>
-    //     Stream.emits(v).covary[Task].map { case (corpusEntry, i) =>
-    //       println(s"running # $i")
-    //       segment(corpusEntry, extractImages=false)
-    //     }
-    //   }
-    val qwer = corpus.entryStream()
-      .through(pipe.take(6))
+    val chunked = corpus.entryStream()
+      .drop(1)
       .through(pipe.zipWithIndex)
       .chunkN(5, allowFewer=true)
       .map { chunks =>
@@ -189,31 +157,16 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
           }
       }
 
-    val asdf = concurrent.join(3)(qwer)
+    val prog = concurrent.join(12)(chunked)
+    println(s"constructed program")
 
-    // asdf.runLog.unsafeRunAsync { case e =>
-    //   println(s"callback? $e")
-    // }
+    println(s"running first entry")
+    prog0.run.unsafeRun()
 
-    val retval = asdf.runLog.unsafeRun
-
-    println(s"got: $retval")
-
-    // // // corpus.entryStream.flatMap{ a => Stream.eval{ Task.delay{ segment(a, false) } } }
-    // val wer = corpus.entryStream().flatMap { corpusEntry =>
-    //   val t = Task.start{
-    //     Task.now{
-    //       println(s"segmenting ${corpusEntry}")
-    //       segment(corpusEntry, extractImages=false)
-    //     }
-    //   }
-    //   Stream.eval_(t)
-    // }
-
-    // wer.take(3).run.unsafeRun()
-
-
+    println(s"running remaining entries")
+    val retval = prog.run.unsafeRun
   }
+
 
   def segment(corpusEntry: CorpusEntry, extractImages: Boolean=true)(implicit docStore: DocumentCorpus): Unit = {
     for {

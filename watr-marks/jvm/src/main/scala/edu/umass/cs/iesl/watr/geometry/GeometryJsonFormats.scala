@@ -106,7 +106,6 @@ trait ExplicitTypeTagFormats {
 
 trait GeometryJsonCodecs extends TypeTagFormats {
   import play.api.libs.json._
-  // import Json._
   import utils.EnrichNumerics._
   def jstr(s: String) = JsString(s)
 
