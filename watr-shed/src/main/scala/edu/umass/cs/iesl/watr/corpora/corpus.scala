@@ -12,13 +12,21 @@ import scala.util.{Try, Failure, Success}
 
 import ammonite.{ops => fs}, fs._
 
-// case class CorpusEntryMetadata(
-//   pdfSha1: String@@SHA1String,
-//   filenames: Seq[String],
-//   urls: Seq[String]
-// )
+import fs2.Task
+import fs2.Stream
+// import fs2.util.{Effect, Async}
+// import nio.Paths
 
 object Corpus {
+
+
+  // implicit val S = Strategy.fromCachedDaemonPool("test")
+  // val dir = Paths.get("/home/eike/workspace/projects/sharry/modules/webapp/src")
+  // val out = Paths.get("/home/eike/workspace/projects/sharry/test.zip")
+  // zip.zipDir[Task](dir, 8192)
+  //   .through(io.file.writeAll(out))
+  //   .run
+  //   .unsafeRun
 
   def apply(appRoot: nio.Path): Corpus = {
     new Corpus(Path(appRoot))
@@ -60,11 +68,6 @@ class Corpus(
   }
 
 
-  // def artifactExists(entryDescriptor: String, artifactDescriptor: String): Boolean = {
-  //   val artifa = corpusRoot / RelPath(entryDescriptor) / artifactDescriptor
-  //   entryExists(corpusRoot, entryDescriptor) && ammonite.ops.exists(artifactPath)
-  // }
-
   // e.g., 3245.pf, or sha1:afe23s...
   def entry(entryDescriptor: String): Option[CorpusEntry]= {
     Option(new CorpusEntry(entryDescriptor, this))
@@ -78,6 +81,21 @@ class Corpus(
 
     entry
   }
+
+
+  def entryStream(): Stream[Task, CorpusEntry] = {
+
+    zip.dirEntriesRecursive[Task](corpusRoot.toNIO)
+      .filter{ p =>
+        val f = Path(p)
+        f.ext == "d" && f.isDir
+      }
+      .flatMap { p =>
+        val e = new CorpusEntry(p.toFile().getName, this)
+        Stream.emit(e)
+      }
+  }
+
 
   def entries(): Seq[CorpusEntry] = {
     val artifacts = (ls! corpusRoot)
@@ -177,11 +195,6 @@ class CorpusEntry(
       .map({ name =>
         new CorpusArtifact(name, new CorpusArtifactGroup(".", this))
       })
-    // val artifact = new CorpusArtifact(s"${entryDescriptorRoot}",
-    //   new CorpusArtifactGroup(".", this)
-    // )
-
-    // artifact.some
   }
 
   def getSvgArtifact(): CorpusArtifact = {

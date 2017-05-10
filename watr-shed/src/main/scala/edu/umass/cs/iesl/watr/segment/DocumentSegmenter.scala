@@ -633,7 +633,7 @@ class DocumentSegmenter(
 
           visualLine.tokenizeLine.foreach { textReflow =>
             docStore.setTextReflowForZone(zoneId, textReflow)
-            print(".")
+            // print(".")
           }
 
           visualLine

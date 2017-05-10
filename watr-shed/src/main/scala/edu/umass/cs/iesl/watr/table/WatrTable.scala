@@ -102,6 +102,7 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
       pdfPath        <- pdfArtifact.asPath.toOption
     } yield {
 
+      print(s"extracting page images")
       val stableId = DocumentID(corpusEntry.entryDescriptor)
 
       docStore.getDocument(stableId).foreach({docId =>
@@ -122,6 +123,96 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
         }
       })
     }
+  }
+
+  import fs2._
+  import fs2.util.Async
+  // import fs2.util.syntax._
+  // import fs2.async._
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  implicit val S = Strategy.fromExecutor(global)
+  val T = implicitly[Async[Task]]
+
+  def segmentAll()(implicit docStore: DocumentCorpus, corpus: Corpus): Unit = {
+
+    // val t2 = for {
+    //   e <- corpus.entryStream()
+    //   f <- Stream.emit(Task.start( Task.delay {
+    //     println(s"segmenting ${e}")
+    //     segment(e, extractImages=false)
+    //   }))
+    //   // g <- f
+    // } yield ()
+
+    // t2.run.unsafeRun()
+
+    // corpus.entryStream().parallelTraverse{ e =>
+    //     Task.start {
+    //       // Task.delay{
+    //         segment(e, extractImages=false)
+    //       // }
+    //     }
+    // }
+
+    // corpus.entryStream().flatMap{ e =>
+    //   Stream.emit(
+    //     Task.start({
+    //       Task.delay{
+    //         segment(e, extractImages=false)
+    //       }
+    //     })
+    //   )
+    // }
+
+    // val qwer = corpus.entryStream()
+    //   .through(pipe.take(10))
+    //   .through(pipe.zipWithIndex)
+    //   .through(pipe.split(_._2 % 3 == 0))
+    //   .map { v =>
+    //     Stream.emits(v).covary[Task].map { case (corpusEntry, i) =>
+    //       println(s"running # $i")
+    //       segment(corpusEntry, extractImages=false)
+    //     }
+    //   }
+    val qwer = corpus.entryStream()
+      .through(pipe.take(6))
+      .through(pipe.zipWithIndex)
+      .chunkN(5, allowFewer=true)
+      .map { chunks =>
+        chunks.map(Stream.chunk)
+          .reduce(_ ++ _)
+          .covary[Task]
+          .map { case (corpusEntry, i) =>
+            println(s"processing entry ${i}")
+            segment(corpusEntry, extractImages=false)
+          }
+      }
+
+    val asdf = concurrent.join(3)(qwer)
+
+    // asdf.runLog.unsafeRunAsync { case e =>
+    //   println(s"callback? $e")
+    // }
+
+    val retval = asdf.runLog.unsafeRun
+
+    println(s"got: $retval")
+
+    // // // corpus.entryStream.flatMap{ a => Stream.eval{ Task.delay{ segment(a, false) } } }
+    // val wer = corpus.entryStream().flatMap { corpusEntry =>
+    //   val t = Task.start{
+    //     Task.now{
+    //       println(s"segmenting ${corpusEntry}")
+    //       segment(corpusEntry, extractImages=false)
+    //     }
+    //   }
+    //   Stream.eval_(t)
+    // }
+
+    // wer.take(3).run.unsafeRun()
+
+
   }
 
   def segment(corpusEntry: CorpusEntry, extractImages: Boolean=true)(implicit docStore: DocumentCorpus): Unit = {
@@ -146,24 +237,7 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
 
           segmenter.runPageSegmentation()
           if (extractImages) {
-            print(s"extracting page images")
-            val pageImageArtifacts = corpusEntry.ensureArtifactGroup("page-images")
-            val pageImages = if (pageImageArtifacts.getArtifacts.isEmpty) {
-              ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
-            } else {
-              ExtractImages.load(pageImageArtifacts.rootPath)
-            }
-
-            pageImages.images.zipWithIndex
-              .foreach {
-                case (image, i) =>
-                  docStore
-                    .getPage(segmenter.docId, PageNum(i))
-                    .foreach{ pageId =>
-                      print(".")
-                      docStore.setPageImage(pageId, image.bytes)
-                    }
-              }
+            setPageImages(corpusEntry)
           }
           println()
         }

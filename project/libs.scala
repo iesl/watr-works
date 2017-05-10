@@ -24,8 +24,9 @@ trait LibVersions {
   val fansiV              = "0.2.3"
   val shapelessV          = "2.3.2"
   val scaladgetV          = "0.9.4"
-  // val http4sVersion       = "0.15.11a"
   val http4sVersion       = "0.16.0a-M2"
+  val fs2Version          = "0.9.5"
+
 
 }
 
@@ -71,8 +72,7 @@ trait CommonLibs extends LibVersions {
   val scalazCore       = "org.scalaz"              %% "scalaz-core"      % scalazVersion
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   val scalatags        = "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.8.3"
-  // val ammonite         = "com.lihaoyi"             %% "ammonite"         % "0.8.3"
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.8.4"
   val fastparse        = "com.lihaoyi"             %% "fastparse"        % "0.4.2"
   val sourcecode       = "com.lihaoyi"             %% "sourcecode"       % sourcecodeV
   val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.14"
@@ -83,6 +83,11 @@ trait CommonLibs extends LibVersions {
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
   val matryoshkaCore   = "com.slamdata"            %% "matryoshka-core"  % matryoshkaCoreV
   val scrimageCore     = "com.sksamuel.scrimage"   %% "scrimage-core"    % scrimageVersion
+
+  val fs2 = Seq(
+    "co.fs2" %% "fs2-core" % fs2Version,
+    "co.fs2" %% "fs2-io" % fs2Version
+  )
 
   val scrimage = Seq(
     scrimageCore,

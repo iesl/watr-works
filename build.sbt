@@ -51,7 +51,8 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++=
     LogLibs.logback ++
     DatabaseLibs.doobieDb ++
-    TestLibs.testAndCheck ++ Seq(
+    TestLibs.testAndCheck ++
+    Lib.fs2 ++ Seq(
       Lib.scrimageCore,
       Lib.ammonite,
       Lib.playJson,
