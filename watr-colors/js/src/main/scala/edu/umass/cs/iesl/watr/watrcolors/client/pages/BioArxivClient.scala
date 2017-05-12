@@ -353,23 +353,6 @@ object WatrColors extends  BaseClientDefs {
       )
 
 
-      // val rx0 = clientStateRx.selectionInProgress.trigger {
-      //   if (clientStateRx.selectionInProgress.now) {
-      //     for {
-      //       bbox <- getUserSelection(fabricCanvas)
-      //     } yield {
-      //       uiRequestCycle(UIRequest(
-      //         clientStateRx.toUIState(),
-      //         SelectRegion(bbox))
-      //       ).map{ _ =>
-      //         clientStateRx.selectionInProgress() = false
-      //       }
-      //     }
-      //   }
-      // }
-
-
-
       val bodyContent =
         div("container-fluid".clazz)(
           div("row".clazz, pageStyles.controlClusterStyle)(

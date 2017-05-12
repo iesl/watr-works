@@ -51,18 +51,23 @@ object LabelWidgetTransforms {
 
   def selectionFringeInit(
     zoneId: Int@@ZoneID,
+    label: Label,
     intersectingBboxes: List[GeometricFigure],
     zoneColor: Color
   ): LabelWidget = {
     val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
     panel(
-      withId(zoneId, figure(
-        Colorized(
-          GeometricGroup(groupBbox, intersectingBboxes),
-          fg=zoneColor, bg=zoneColor,
-          fgOpacity=0.0f, bgOpacity=0.1f
+      withLabel("tooltip", label.key,
+        withId(zoneId,
+          figure(
+            Colorized(
+              GeometricGroup(groupBbox, intersectingBboxes),
+              fg=zoneColor, bg=zoneColor,
+              fgOpacity=0.0f, bgOpacity=0.1f
+            )
+          )
         )
-      )),
+      ),
       LabelAction.toggleZoneSelection(zoneId)
     )
   }
@@ -147,7 +152,7 @@ object LabelWidgetTransforms {
           if (intersectingBboxes.isEmpty) {
             l
           } else {
-            val fringeOverlay = selectionFringeInit(zoneId, intersectingBboxes, zoneColor)
+            val fringeOverlay = selectionFringeInit(zoneId, zone.label, intersectingBboxes, zoneColor)
             l.copy(overlays = overlays :+ fringeOverlay)
           }
 
@@ -206,7 +211,7 @@ object LabelWidgetTransforms {
 
 
             if (intersectingBboxes.isEmpty) None else {
-              Some(selectionFringeInit(zoneId, intersectingBboxes, zoneColor))
+              Some(selectionFringeInit(zoneId, zone.label, intersectingBboxes, zoneColor))
             }
           }
 

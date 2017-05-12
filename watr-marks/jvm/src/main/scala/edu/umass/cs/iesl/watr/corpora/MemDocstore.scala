@@ -385,6 +385,10 @@ class MemDocstore extends DocumentCorpus {
     zs.getOrElse(sys.error(s"getZone(${zoneId}) error"))
   }
 
+  def getLabel(labelId: Int@@LabelID): Label = {
+    labels.getLabel(labelId)
+  }
+
   def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
     zones.getZoneLabelsForDocument(docId)
   }

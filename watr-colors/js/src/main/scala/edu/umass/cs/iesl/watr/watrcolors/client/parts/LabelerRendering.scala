@@ -79,6 +79,23 @@ trait LabelerRendering extends MouseGestures {
 
   }
 
+  def createTooltip(text: String, bbox: LTBounds): FabricObject = {
+    val hoverArea = createShape(bbox, "", "", 0.0f)
+
+    val ftext = fabric.Text(text)
+    hoverArea.evented = true
+
+    ftext.setFontSize(14)
+    ftext.fill = "black"
+    ftext.stroke = "black"
+    ftext.top     = bbox.top.toInt
+    ftext.left    = bbox.right.toInt
+    noControls(ftext)
+
+    hoverArea.set("tooltip", ftext)
+
+    hoverArea
+  }
 
   def createTextWidget(text: String, bbox: LTBounds): FabricObject = {
     val ftext = fabric.Text(text)
@@ -149,6 +166,12 @@ trait LabelerRendering extends MouseGestures {
 
 
           noControls(g1)
+          objStack += Future { (wid, g1) }
+
+        case LabelWidgetF.Labeled(wid, a, key, value) =>
+          println(s"creating labeled at strict:${strictBounds} / bleed:${bleedBounds}")
+          val g1 = createTooltip(value, strictBounds)
+
           objStack += Future { (wid, g1) }
 
         case Pad(wid, a, padding, maybeColor) =>

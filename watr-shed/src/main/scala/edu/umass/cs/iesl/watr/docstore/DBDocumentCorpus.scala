@@ -547,6 +547,12 @@ class TextReflowDB(
       runq { selectTargetRegions(pageId) }
     }
 
+    // select count(zone), document from zone where label = 1 group by document;
+    def getLabel(labelId: Int@@LabelID): Label = {
+      val query = selectLabel(labelId)
+        .map(l => Labels.fromString(l.key).copy(id=l.prKey))
+      runq{ query }
+    }
 
 
     def getZone(zoneId: Int@@ZoneID): Zone =  {
@@ -628,4 +634,3 @@ class TextReflowDB(
   }
 
 }
-

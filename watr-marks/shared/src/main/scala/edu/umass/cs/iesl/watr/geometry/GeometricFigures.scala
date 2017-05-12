@@ -64,8 +64,6 @@ case class Padding(
   bottom: Double
 )
 
-object GeometricFigure {
-}
 
 object Padding {
   def apply(n: Double): Padding = {

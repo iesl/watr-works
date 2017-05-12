@@ -28,23 +28,37 @@ object BrowseCorpus extends BaseClientDefs {
     sty.marginAll(right = 5, top = 5)
   )
 
+  val pageLength = 40
+
   val docList: Var[Seq[DocumentEntry]] = Var(List())
   var currDocStart = Var(0)
   var docCount = Var(0)
 
   def prevPage() = {
-    currDocStart() = currDocStart.now - 20
+    currDocStart() = currDocStart.now - pageLength
     currDocStart() = math.max(0, currDocStart.now)
 
-    server.listDocuments(20, currDocStart.now).foreach { docs =>
+    server.listDocuments(pageLength, currDocStart.now).foreach { docs =>
       docList() = docs
     }
   }
-  def nextPage() = {
-    server.listDocuments(20, currDocStart.now).foreach { docs =>
+
+  def firstPage() = {
+    server.listDocuments(pageLength, 0).foreach { docs =>
       docList() = docs
     }
-    currDocStart() = currDocStart.now + 20
+    currDocStart() = 0
+  }
+
+  def nextPage() = {
+    val currDocEndIndex = math.min(currDocStart.now + pageLength, docCount.now)
+    val haveMorePages = currDocEndIndex < docCount.now
+    if (haveMorePages) {
+      server.listDocuments(pageLength, currDocStart.now).foreach { docs =>
+        docList() = docs
+      }
+      currDocStart() = currDocStart.now + pageLength
+    }
   }
 
   val leftGlyph = glyph_chevron_left
@@ -53,7 +67,7 @@ object BrowseCorpus extends BaseClientDefs {
 
   def docPagination(implicit c : Ctx.Owner): RxHtmlTag = Rx {
     span(
-      span(s"Displaying ${currDocStart()}-${currDocStart()+20} of ${docCount()} "),
+      span(s"Displaying ${currDocStart()}-${currDocStart()+pageLength} of ${docCount()} "),
       span(btnGroup,
         glyphSpan(leftGlyph, () => prevPage()),
         glyphSpan(rightGlyph, () => nextPage())
@@ -61,21 +75,23 @@ object BrowseCorpus extends BaseClientDefs {
     )
   }
 
-
   def documentLister(implicit c: Ctx.Owner): RxHtmlTags = Rx {
 
     for {entry <- docList()} yield {
       val docId = entry.urlStr
       val t = s"/label?doc=${docId}&lt=zzz"
+      val zoneInfo = entry.zoneCounts.map{ case (label, count) =>
+        li(pageStyles.inlineULI:_*)(b(label.key), ":", <.nbsp, i(count.toString))
+      }
+
       li(
         span(
           a(
             entry.urlStr,
             cursor := "pointer",
             href := t
-          ) (
-            entry.id.toString()
-          )
+          ) (entry.id.toString()),
+          ul(pageStyles.inlineUList:_*)(zoneInfo)
         )
       )
     }
@@ -109,6 +125,7 @@ object BrowseCorpus extends BaseClientDefs {
       SharedLayout.pageSetup(Option(userName), bodyContent).render
     }
 
+    firstPage()
   }
 
   object server extends BrowseCorpusApi {

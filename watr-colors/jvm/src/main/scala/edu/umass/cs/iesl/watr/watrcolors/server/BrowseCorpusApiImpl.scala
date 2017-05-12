@@ -22,9 +22,24 @@ class BrowseCorpusApiListeners(
   }
   def listDocuments(n: Int, skip: Int): Future[Seq[DocumentEntry]] = {
     println(s"listDocuments $n, $skip")
+
+
     Future {
       docStore.getDocuments(n, skip)
-        .map(stableId => DocumentEntry(stableId, stableId.unwrap))
+        .map{ stableId =>
+
+          val zoneToLableTuples = for {
+            docId <- docStore.getDocument(stableId).toList
+          } yield for {
+            labelId <- docStore.getZoneLabelsForDocument(docId)
+          } yield {
+            val label = docStore.getLabel(labelId)
+            val nZones =  docStore.getZonesForDocument(docId, labelId).length
+            (label, nZones)
+          }
+
+          DocumentEntry(stableId, stableId.unwrap, zoneToLableTuples.flatten)
+        }
     }
 
   }

@@ -117,13 +117,8 @@ object UPicklers {
       .merge(macroRW[Rewrite[Unit]])
       .merge(macroRW[Bracket[Unit]])
       .merge(macroRW[Flow[Unit]])
-      .merge(macroRW[Labeled[Unit]])
+      .merge(macroRW[TextReflowF.Labeled[Unit]])
 
-  // implicit val LabelWidgetFN_RW: RW[LabelWidgetF[Nothing]] =
-  //   macroRW[LabelWidgetF[Nothing]]
-  //     .merge(macroRW[LBBounds])
-
-  // implicit val InteractionImplicit = Interaction.Interaction_RW
 
   implicit val LabelWidgetFU_RW: RW[LabelWidgetF[Unit]] =
     macroRW[RegionOverlay[Unit]]
@@ -133,6 +128,7 @@ object UPicklers {
       .merge(macroRW[TextBox])
       .merge(macroRW[Reflow])
       .merge(macroRW[Figure])
+      .merge(macroRW[LabelWidgetF.Labeled[Unit]])
       .merge(macroRW[Identified[Unit]])
       .merge(macroRW[Panel[Unit]])
       .merge(macroRW[Terminal.type])
@@ -141,7 +137,6 @@ object UPicklers {
   import upickle.Js
 
   implicit val Constraint_RW: RW[Constraint] = macroRW[Constraint]
-
 
   implicit def Interaction_RW: RW[Interaction] = RW[Interaction](
     {value => Js.Null},

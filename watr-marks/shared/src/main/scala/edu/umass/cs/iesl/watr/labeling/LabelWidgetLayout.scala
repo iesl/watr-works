@@ -93,16 +93,6 @@ object LabelWidgetLayoutHelpers {
     widgetSpaceRegion.translate(wpos.translation)
   }
 
-  // def clipPageRegionFromWidgetSpace(wpos: AbsPosWidget, widgetSpaceRegion: LTBounds): Option[TargetRegion] = {
-  //   val pageRegion = widgetRegionToPageRegion(wpos, widgetSpaceRegion)
-  //   wpos.widget match {
-  //     case l @ RegionOverlay(under, overlays) =>
-  //       under.intersection(pageRegion)
-  //     case l @ LabeledTarget(target, label, score) =>
-  //       target.intersection(pageRegion)
-  //     case _ => None
-  //   }
-  // }
 
 }
 
@@ -188,6 +178,9 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           PosAttr(F.void(flw), bbox, bbox, zeroPosVector, childAdjustVecs)
 
         case flw @ Panel(wid, p@(a, attr), action) =>
+          inheritChildLayout(F.void(flw), attr)
+
+        case flw @ Labeled(wid, p@(a, attr), k, v) =>
           inheritChildLayout(F.void(flw), attr)
 
         case flw @ Identified(wid, p@(a, attr), id, cls) =>

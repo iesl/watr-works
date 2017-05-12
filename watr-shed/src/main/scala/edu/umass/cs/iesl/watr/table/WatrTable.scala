@@ -134,16 +134,19 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
   implicit val S = Strategy.fromExecutor(global)
   val T = implicitly[Async[Task]]
 
-  def segmentAll()(implicit docStore: DocumentCorpus, corpus: Corpus): Unit = {
-    val prog0 = corpus.entryStream()
-      .take(1)
+  def segmentAll(n: Int=0, skip: Int=0, extractImages: Boolean=false)(implicit docStore: DocumentCorpus, corpus: Corpus): Unit = {
+
+    val allEntries = corpus.entryStream()
+    val skipped = if (skip > 0) allEntries.drop(skip) else allEntries
+    val entries = if (n > 0) skipped.take(n) else skipped
+
+    val prog0 = entries.take(1)
       .map { corpusEntry =>
         println(s"processing first entry ")
         segment(corpusEntry, extractImages=false)
       }
 
-
-    val chunked = corpus.entryStream()
+    val chunked = entries
       .drop(1)
       .through(pipe.zipWithIndex)
       .chunkN(5, allowFewer=true)
@@ -153,7 +156,7 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
           .covary[Task]
           .map { case (corpusEntry, i) =>
             println(s"processing entry ${i}")
-            segment(corpusEntry, extractImages=false)
+            segment(corpusEntry, extractImages)
           }
       }
 

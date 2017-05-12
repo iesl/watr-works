@@ -16,6 +16,18 @@ import sty._
 
 
 object pageStyles {
+  lazy val inlineUList = Seq(
+    display.inline,
+    margin  := 0,
+    padding  := 0,
+    listStyleType.none,
+    overflow.hidden
+  )
+  lazy val inlineULI = Seq(
+    display.inline,
+    padding  := "8px"
+  )
+
   lazy val zeroFringe: ModifierSeq = Seq(
     padding     :=0,
     border      :=0,

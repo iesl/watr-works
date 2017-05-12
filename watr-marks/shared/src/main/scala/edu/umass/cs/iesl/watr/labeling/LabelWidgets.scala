@@ -74,6 +74,12 @@ object LabelWidgetF {
     interaction: Interaction
   ) extends LabelWidgetF[A]
 
+  case class Labeled[A](
+    wid: Int@@WidgetID,
+    a: A,
+    key: String, value: String
+  ) extends LabelWidgetF[A]
+
   case class Identified[A](
     wid: Int@@WidgetID,
     a: A,
@@ -102,6 +108,7 @@ object LabelWidgetF {
         case l : Reflow                      => G.point(l.copy())
         case l : Figure                      => G.point(l.copy())
         case l @ Panel(wid, a, i)            => f(a).map(Panel(wid, _, i))
+        case l @ Labeled(wid, a, k, v)       => f(a).map(Labeled(wid, _, k, v))
         case l @ Identified(wid, a, id, cls) => f(a).map(Identified(wid, _, id, cls))
         case l @ Terminal                     => G.point(Terminal)
       }
@@ -120,6 +127,7 @@ object LabelWidgetF {
       case l @ Pad(wid, a, padding, color)    => s"$l"
       case l @ Figure(wid,f)                  => l.toString
       case l @ Panel(wid, a, i)               => l.toString
+      case l @ Labeled(wid, a, k, v)          => l.toString
       case l @ Identified(wid, a, id, cls)    => l.toString
       case l @ Terminal                       => l.toString
     }
@@ -138,6 +146,7 @@ object LabelWidgetF {
         case (l @ Pad(wid, a, padding, color)       , l2 : Pad[A]              ) => a === l2.a
         case (l @ Figure(wid, f)                    , l2 : Figure              ) => f === l2.figure
         case (l @ Panel(wid, a, i)                  , l2 : Panel[A]            ) => a === l2.a
+        case (l @ Labeled(wid, a, k, v)             , l2 : Labeled[A]          ) => true
         case (l @ Identified(wid, a, id, cls)       , l2 : Identified[A]       ) => a === l2.a && id==l2.id && cls==l2.idclass
         case (l @ Terminal                          , l2 @ Terminal            ) => true
 
@@ -233,6 +242,10 @@ object LabelWidgets {
 
   def panel(content: LabelWidget, interact: Interaction): LabelWidget =
     fixlw(Panel(idgen.nextId, content, interact))
+
+  def withLabel(key: String, value: String, a: LabelWidget): LabelWidget = {
+    fixlw(Labeled(idgen.nextId, a, key, value))
+  }
 
   def withId[IdTag: ClassTag](id: Int@@IdTag, a: LabelWidget): LabelWidget = {
     val tagClsname = implicitly[ClassTag[IdTag]].runtimeClass.getSimpleName

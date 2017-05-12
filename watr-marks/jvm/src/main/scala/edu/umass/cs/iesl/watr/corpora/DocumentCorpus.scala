@@ -52,6 +52,7 @@ trait DocumentCorpus {
   def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID]
 
   def ensureLabel(label: Label): Int@@LabelID
+  def getLabel(labelId: Int@@LabelID): Label
 
   // Get Text
   def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]

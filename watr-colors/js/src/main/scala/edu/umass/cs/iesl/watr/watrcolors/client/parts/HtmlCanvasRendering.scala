@@ -7,6 +7,7 @@ import geometry._
 import native.fabric
 import utils.Color
 import utils.Colors
+import scala.scalajs.js
 
 trait HtmlCanvasRendering {
   def initFabric(elemId: String): fabric.StaticCanvas = {
@@ -16,6 +17,53 @@ trait HtmlCanvasRendering {
     c.uniScaleTransform = true
     c.defaultCursor = "crosshair"
     c.hoverCursor = "crosshair"
+
+
+    // def maybeTooltip(event: fabric.Options): Option[fabric.FabricObject]  = {
+    //   val hasTarget = event.hasOwnProperty("target")
+    //   if (hasTarget) {
+    //     val target = event.target
+    //     val hasATarget = target != null
+    //     val asdf = js.undefined
+    //     if (hasATarget) {
+    //       val hasTooltip = event.target.hasOwnProperty("tooltip")
+    //       if (hasTooltip) {
+    //         val tooltip = target.get("tooltip")
+    //         Some( tooltip.asInstanceOf[fabric.FabricObject])
+    //       } else None
+    //     } else None
+    //   } else None
+    // }
+    def maybeTooltip(event: fabric.Options): Option[fabric.FabricObject]  = {
+      val target: js.UndefOr[fabric.FabricObject] = event.target
+      if (target.isDefined && target!=null) {
+        println(s"maybeTooltip: target is defined")
+        val fobj = target.get
+        val tooltip = fobj.get("tooltip")
+        if (tooltip != null) {
+          println(s"maybeTooltip: hasTooltip")
+          // val tooltip = fobj.get("tooltip")
+          Some(tooltip.asInstanceOf[fabric.FabricObject])
+        } else None
+      } else None
+    }
+
+    val hoverInF: js.Function1[fabric.Options, Unit] = (event: fabric.Options) => {
+      maybeTooltip(event).foreach { fobj =>
+        println(s"hover-in: tooltip=${fobj}: ${fobj.getTop}, ${fobj.getLeft}, ${fobj.width}, ${fobj.height}")
+        c.add(fobj)
+      }
+    }
+    val hoverOutF: js.Function1[fabric.Options, Unit] = (event: fabric.Options) => {
+      maybeTooltip(event).foreach { fobj =>
+        println(s"hover-out: tooltip=${fobj}")
+        c.remove(fobj)
+      }
+
+    }
+    c.on("mouse:over", hoverInF)
+    c.on("mouse:out", hoverOutF)
+
     c
   }
 
@@ -44,12 +92,14 @@ trait HtmlCanvasRendering {
     shape.hasControls = true
     shape.hasBorders  = true
     shape.selectable  = true
+    shape.evented     = true
   }
 
   def noControls(shape: fabric.FabricObject): Unit = {
     shape.hasControls = false
     shape.hasBorders  = false
     shape.selectable  = false
+    shape.evented     = false
   }
 
   def createShape(shape: GeometricFigure, fgColor: String, bgColor: String, fgOpacity: Float=1.0f, bgOpacity: Float=1.0f): fabric.FabricObject = {
