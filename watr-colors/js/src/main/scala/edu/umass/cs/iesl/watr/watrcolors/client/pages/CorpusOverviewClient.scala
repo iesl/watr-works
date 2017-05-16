@@ -20,7 +20,7 @@ import scaladget.tools.JsRxTags._
 
 
 @JSExportTopLevel("BrowseCorpus")
-object BrowseCorpus extends BaseClientDefs {
+object BrowseCorpus extends BasicClientDefs {
   import BootstrapBits._
 
 

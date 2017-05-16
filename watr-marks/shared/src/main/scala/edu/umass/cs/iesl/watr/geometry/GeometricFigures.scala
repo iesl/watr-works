@@ -122,7 +122,7 @@ object GeometryImplicits {
     case f: Colorized => totalBounds(f.figure)
   }
 
-  def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
+  def makeFringeParts(fig: GeometricFigure, padding: Padding): List[GeometricFigure] = {
 
     val wbbox = totalBounds(fig)
 
@@ -148,9 +148,17 @@ object GeometryImplicits {
       height=padding.bottom
     )
 
+    List(leftGutter, rightGutter, topGutter, bottomGutter)
+  }
+
+  def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
+    val fringe = makeFringeParts(fig, padding)
+    val wbbox = totalBounds(fig)
+
+
     GeometricGroup(
       wbbox,
-      List(leftGutter, rightGutter, topGutter, bottomGutter)
+      fringe
     )
 
   }

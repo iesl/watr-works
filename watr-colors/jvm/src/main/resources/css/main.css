@@ -22,3 +22,15 @@ h3 {
     vertical-align: middle;
     margin: 0px;
 }
+div.tooltip {
+    position: absolute;
+    text-align: center;
+    height: 28px;
+    padding: 2px;
+    opacity: 0.8;
+    /* font: 12px ; */
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 1px;
+    pointer-events: none;
+}

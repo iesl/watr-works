@@ -12,7 +12,7 @@ import rx._
 import BootstrapBits._
 
 @JSExportTopLevel("Registration")
-object Registration extends  BaseClientDefs {
+object Registration extends BasicClientDefs {
 
 
 

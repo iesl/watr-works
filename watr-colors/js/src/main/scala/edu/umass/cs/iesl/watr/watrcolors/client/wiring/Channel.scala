@@ -34,27 +34,26 @@ class Channel[T](init: (T => Unit) => Unit){
   }
 }
 
-import native.fabric
 
-trait CanvasMouseChannels {
-  type ME = fabric.Options
+// trait CanvasMouseChannels {
+//   type ME = fabric.Options
 
-  def canvas: fabric.Canvas
+//   def canvas: fabric.Canvas
 
-  val mousemove = new Channel[ME](canvas.on("mouse:move", _))
-  val mouseup = new Channel[ME](canvas.on("mouse:up", _))
-  val mousedown = new Channel[ME](canvas.on("mouse:down", _))
-  // val mouseover = new Channel[ME](canvas.on("mouse:over", _))
-  // val mouseout = new Channel[ME](canvas.on("mouse:out", _))
-}
+//   val mousemove = new Channel[ME](canvas.on("mouse:move", _))
+//   val mouseup = new Channel[ME](canvas.on("mouse:up", _))
+//   val mousedown = new Channel[ME](canvas.on("mouse:down", _))
+//   // val mouseover = new Channel[ME](canvas.on("mouse:over", _))
+//   // val mouseout = new Channel[ME](canvas.on("mouse:out", _))
+// }
 
 
-object CanvasMouseChannels {
-  def apply(c: fabric.Canvas) = new CanvasMouseChannels {
-    override def canvas = c
-  }
+// object CanvasMouseChannels {
+//   def apply(c: fabric.Canvas) = new CanvasMouseChannels {
+//     override def canvas = c
+//   }
 
-}
+// }
 
 
 // import org.scalajs.dom

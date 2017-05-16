@@ -63,7 +63,7 @@ object LabelWidgetTransforms {
             Colorized(
               GeometricGroup(groupBbox, intersectingBboxes),
               fg=zoneColor, bg=zoneColor,
-              fgOpacity=0.0f, bgOpacity=0.1f
+              fgOpacity=0.0f, bgOpacity=0.2f
             )
           )
         )

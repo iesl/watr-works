@@ -3,7 +3,6 @@ package watrcolors
 package client
 package pages
 
-
 import parts._
 
 import scala.scalajs.js.annotation.JSExportTopLevel
@@ -30,7 +29,7 @@ import labeling._
 import TypeTags._
 
 @JSExportTopLevel("DevClient")
-object DevClient extends BaseClientDefs {
+object DevClient extends BasicClientDefs {
   import BootstrapBits._
 
 

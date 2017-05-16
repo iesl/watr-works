@@ -26,7 +26,7 @@ import rx._
 
 import scaladget.tools.JsRxTags.{ctx => _, _}
 
-object SharedLayout extends BaseClientDefs {
+object SharedLayout extends BasicClientDefs {
   import BootstrapBits._
 
   // import pageStyles._

@@ -15,7 +15,7 @@ import TypeTags._
 
 class Paginator(
   pagination: Pagination
-)(implicit co: Ctx.Owner) extends BaseClientDefs {
+)(implicit co: Ctx.Owner) extends BasicClientDefs {
 
   val Pagination(pgCount0, currPage0, pgInfo0) = pagination
 

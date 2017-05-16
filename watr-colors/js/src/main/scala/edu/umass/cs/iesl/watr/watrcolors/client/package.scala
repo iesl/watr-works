@@ -19,19 +19,25 @@ trait ScalatagsDomDefs {
 
   }
 
-  object ^ extends JsDom.Cap with JsDom.Attrs {
-    lazy val x = attr("x")
-    lazy val y = attr("y")
-    lazy val width = attr("width")
-    lazy val height =     attr("height")
-    lazy val labelName =  attr("label-name")
-    lazy val labelValue = attr("label-value")
+  object svgattr extends JsDom.Cap with JsDom.SvgAttrs
+
+  object ^ extends JsDom.Cap with JsDom.Attrs with JsDom.SvgAttrs {
+    // Override conflicting members in jsdom/svg attrs
+    override lazy val `class` = svgattr.`class`
+    override lazy val id      = svgattr.id
+    override lazy val max     = svgattr.max
+    override lazy val min     = svgattr.min
+    override lazy val style   = svgattr.style
+    override lazy val `type`  = svgattr.`type`
+    override lazy val xmlns   = svgattr.xmlns
+
+    lazy val labelName        = attr("label-name")
+    lazy val labelValue       = attr("label-value")
   }
 
   object $ extends JsDom.Cap with JsDom.Styles with JsDom.Styles2
 
   import domtags._
-
 
   implicit class RichString(val s: String)  {
     def clazz      = ^.`class` := s
@@ -53,9 +59,15 @@ trait ScalatagsDomDefs {
 }
 
 
-import org.querki.jquery
 
 package object client extends ScalatagsDomDefs {
+  import org.querki.jquery
+  import org.scalajs.dom
+
   val jQuery = jquery.$
+
+
+  type ElementTag = JsDom.TypedTag[_ <: dom.Element]
+
 
 }

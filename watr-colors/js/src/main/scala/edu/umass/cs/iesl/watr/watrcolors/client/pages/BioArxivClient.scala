@@ -6,7 +6,6 @@ package pages
 import parts._
 import wiring._
 
-import scala.async.Async
 import scala.concurrent.Future
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -19,10 +18,6 @@ import org.scalajs.dom.ext._
 import labeling._
 import geometry._
 import watrmarks._
-import native.mousetrap._
-import native.fabric
-
-// import watrmarks.{StandardLabels => LB}
 
 import scaladget.stylesheet.{all => sty}
 import sty.{ctx => _, _}
@@ -35,14 +30,13 @@ import scaladget.tools.JsRxTags.{ctx => _, _}
 import TypeTags._
 import dom.raw.MouseEvent
 
-import scala.collection.mutable
-// import utils.Color
 import BootstrapBits._
+import org.singlespaced.d3js.d3
 
 class ClientStateRx(
   initUIState: UIState,
   uiRequestCycle: (UIRequest) => Future[Unit]
-)(implicit co: Ctx.Owner) extends BaseClientDefs {
+)(implicit co: Ctx.Owner) extends BasicClientDefs {
 
   val UIState(uiContraint, activeLabel, selections, activeLabeler) =  initUIState
   val DocumentLabelerIdentifier(initStableId, initLabelerType, initPagination, initLabelColors) = activeLabeler
@@ -117,10 +111,6 @@ class ClientStateRx(
   val doDeleteZone: Var[Boolean] = Var(false)
   val selectionInProgress: Var[Boolean] = Var(false)
 
-  // def startSelection(): Unit = {
-  //   selectionInProgress() = true
-  // }
-
   val rx2 = doDeleteZone.triggerLater{
     if (doDeleteZone.now) {
       println(s"Delete: uiRequestCycle()")
@@ -153,90 +143,9 @@ class ClientStateRx(
 }
 
 @JSExportTopLevel("WatrColors")
-object WatrColors extends  BaseClientDefs {
-  // import BootstrapBits._
+object WatrColors extends BasicClientDefs with UIUpdateCycle {
 
-
-
-  object states {
-    // def modState(f: UIState => UIState): Unit = {
-    //   uiState = f(uiState)
-    // }
-
-    // def selectByChar(): Unit = modState(_.copy(selectionConstraint = ByChar))
-    // def selectByLine(): Unit = modState(_.copy(selectionConstraint = ByLine))
-    // def selectByRegion(): Unit = modState(_.copy(selectionConstraint = ByRegion))
-    // def setLabel(l: Label): Unit = modState(_.copy(selectedLabel=Option(l)))
-
-  }
-
-  val keybindings: List[(String, (MousetrapEvent) => Unit)] = List(
-    // "l t" -> ((e: MousetrapEvent) => states.setLabel(LB.Title)),
-
-    // "s l" -> ((e: MousetrapEvent) => states.selectByLine()),
-    // "s c" -> ((e: MousetrapEvent) => states.selectByChar()),
-    // "s b" -> ((e: MousetrapEvent) => states.selectByRegion()),
-
-    // "s s" -> ((e: MousetrapEvent) => clientState.foreach {_.startSelection()})
-  )
-
-  def initKeybindings() = {
-    Mousetrap.reset()
-    keybindings.foreach { case (str, fn) =>
-      val bindFunc: MousetrapEvent => Boolean = e => {
-        fn(e); true
-      }
-
-      Mousetrap.bind(str, bindFunc, "keypress")
-    }
-  }
-
-
-  val activeFabricObjects = mutable.HashMap[Int@@WidgetID, fabric.FabricObject]()
-
-  def uiRequestCycle(req: UIRequest)(implicit ctx: Ctx.Owner): Future[Unit] = for {
-    uiResponse  <- shell.uiRequest(req)
-  } yield {
-    println("complete:uiRequest ")
-    // uiState = uiResponse.uiState
-    fabricCanvas.renderOnAddRemove = false
-    val adds = uiResponse.changes
-      .collect {
-        case WidgetMod.AddLw(wid, widget) => widget.get
-      }
-
-    val dels = uiResponse.changes
-      .collect {
-        case WidgetMod.ClearAllLw() =>
-          clear()
-
-        case WidgetMod.RmLw(wid, widget) =>
-
-          activeFabricObjects.get(wid).map {fobj =>
-            fabricCanvas.remove(fobj)
-          }
-      }
-
-    // println(s"""adding: ${adds.mkString("\n")}""")
-    // println(s"""rmv: ${dels.mkString("\n")}""")
-
-    println("begin:renderLabelWidget")
-    renderLabelWidget(adds).foreach {
-      case (bbox, fobjs) =>
-        println(s"adding within $bbox")
-        fobjs.foreach{os => os.foreach{ case (wid, obj)  =>
-          activeFabricObjects.put(wid, obj)
-          fabricCanvas.add(obj)
-        }}
-        fabricCanvas.renderAll()
-        fabricCanvas.renderOnAddRemove = true
-    }
-
-    clientState.foreach { c =>
-      c.fromUIState(uiResponse.uiState)
-    }
-  }
-
+  def doUIUpdateCycle(r: UIRequest): Future[UIResponse] = shell.uiRequest(r)
 
   object shell {
     import autowire._
@@ -256,73 +165,37 @@ object WatrColors extends  BaseClientDefs {
 
   }
 
-  def clear(): Unit = {
-    activeFabricObjects.clear()
-    fabricCanvas.clear()
-  }
+  // @JSExport
+  // def setupClickCatchers(clientStateRx: ClientStateRx)(implicit co: Ctx.Owner): Unit = {
+  //   val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
+  //     if (!clientStateRx.selectionInProgress.now) {
+  //       clientStateRx.selectionInProgress() = true
 
+  //       val initClickPt: Point = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
 
-  def echoLabeler(lwidget: Seq[AbsPosWidget]): Future[Unit] = Async.async {
-    println("echoLabeler()")
-    try {
+  //       getUserInteraction(initClickPt).foreach { interact =>
 
-      renderLabelWidget(lwidget).foreach {
-        case (bbox, fobjs) =>
-          fabricCanvas.renderOnAddRemove = false
-          clear()
-          fabricCanvas.setWidth(bbox.width.toInt)
-          fabricCanvas.setHeight(bbox.height.toInt)
+  //         val shape = interact match {
+  //           case p: Point    => Click(p)
+  //           case p: LTBounds => SelectRegion(p)
+  //           case p           => sys.error(s"getUserInteraction: invalid shape ${p}")
+  //         }
 
-          fobjs.foreach{os => os.foreach{ case (wid, obj)  =>
-            activeFabricObjects.put(wid, obj)
-            fabricCanvas.add(obj)
-          }}
-          fabricCanvas.renderAll()
-          fabricCanvas.renderOnAddRemove = true
-      }
+  //         uiRequestCycle(UIRequest(
+  //           clientStateRx.toUIState(), shape
+  //         )).map{ _ =>
+  //           clientStateRx.selectionInProgress() = false
+  //         }
+  //       }
 
-    } catch {
-      case t: Throwable =>
-        println(s"error ${t}, ${t.getCause}")
-        t.printStackTrace()
-        throw t
-    }
-  }
+  //     }
+  //     true
+  //   }
 
+  //   val elem = dom.document.getElementById("canvas-container")
 
-
-
-  @JSExport
-  def setupClickCatchers(clientStateRx: ClientStateRx)(implicit co: Ctx.Owner): Unit = {
-    val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
-      if (!clientStateRx.selectionInProgress.now) {
-        clientStateRx.selectionInProgress() = true
-
-        val initClickPt: Point = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
-
-        getUserInteraction(initClickPt).foreach { interact =>
-
-          val shape = interact match {
-            case p: Point    => Click(p)
-            case p: LTBounds => SelectRegion(p)
-            case p           => sys.error(s"getUserInteraction: invalid shape ${p}")
-          }
-
-          uiRequestCycle(UIRequest(
-            clientStateRx.toUIState(), shape
-          )).map{ _ =>
-            clientStateRx.selectionInProgress() = false
-          }
-        }
-
-      }
-      true
-    }
-
-    val elem = dom.document.getElementById("canvas-container")
-
-    elem.addEventListener("mousedown", clickcb, useCapture=false)
-  }
+  //   elem.addEventListener("mousedown", clickcb, useCapture=false)
+  // }
 
 
   def parseParams(): LabelerIdentifier = {
@@ -339,6 +212,7 @@ object WatrColors extends  BaseClientDefs {
   def display(userName: String): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
     val labelerId = parseParams()
+
 
     shell.createDocumentLabeler(labelerId).foreach{ uiResponse =>
 
@@ -363,27 +237,24 @@ object WatrColors extends  BaseClientDefs {
           ),
           div("row".clazz, pageStyles.labelerBodyStyle)(
             div("col-lg-12".clazz)(
-              div(^.id:="canvas-container", pageStyles.canvasContainer)(
-                canvas(^.id:="canvas", pageStyles.fabricCanvasStyle)
-              )
+              div(^.id:="d3-svg-container", pageStyles.canvasContainer)
             )
           )
         )
-
 
       withBootstrapNative {
         SharedLayout.pageSetup(Option(userName), bodyContent).render
       }
 
-      setupClickCatchers(clientStateRx)
+      d3.select("#d3-svg-container").append("svg")
+      // setupClickCatchers(clientStateRx)
 
-      initKeybindings()
+      // initKeybindings()
+      joinResponseData(uiResponse.changes)
 
-      echoLabeler(uiResponse.changes.collect {
-        case WidgetMod.AddLw(wid, Some(abs)) => abs
-      })
-
-
+      // echoLabeler(uiResponse.changes.collect {
+      //   case WidgetMod.AddLw(wid, Some(abs)) => abs
+      // })
 
     }
 

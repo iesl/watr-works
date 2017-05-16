@@ -62,6 +62,7 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
          |""")
 
     // lwindex.debugPrint()
+    // lwindex.layout.positioning
   }
 
   it should "correctly position overlays" in new CleanDocstore  {
