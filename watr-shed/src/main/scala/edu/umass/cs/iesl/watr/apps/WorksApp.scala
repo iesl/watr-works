@@ -416,7 +416,7 @@ object Works extends App {
         }
         val pageImageFilespec = pageImagePath / "page-%d.png"
 
-        val res = %%("mudraw", "-r", "128", "-o", pageImageFilespec, pdfPath)
+        val res = %%("mudraw", "-r", "110", "-o", pageImageFilespec, pdfPath)
 
       }
 

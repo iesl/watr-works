@@ -58,7 +58,7 @@ object ExtractImages extends ImageManipulation {
 
     try {
       val res: CommandResult =
-        %%("mudraw", "-r", "128", "-o", out, pdfPath)
+        %%("mudraw", "-r", "110", "-o", out, pdfPath)
       Right((): Unit)
     } catch {
       case t: ShelloutException =>
