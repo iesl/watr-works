@@ -97,9 +97,7 @@ object UPicklers {
     macroRW[Padding]
 
   implicit val WidgetMod_RW: RW[WidgetMod] =
-    macroRW[AddLw]
-      .merge(macroRW[RmLw])
-      .merge(macroRW[ClearAllLw])
+    macroRW[Added].merge(macroRW[Removed]).merge(macroRW[Unmodified])
 
   implicit val UIState_RW: RW[UIState] = macroRW[UIState]
   implicit val UIRequest_RW: RW[UIRequest] = macroRW[UIRequest]
@@ -125,6 +123,7 @@ object UPicklers {
       .merge(macroRW[Row[Unit]])
       .merge(macroRW[Col[Unit]])
       .merge(macroRW[Pad[Unit]])
+      .merge(macroRW[ZStack[Unit]])
       .merge(macroRW[TextBox])
       .merge(macroRW[Reflow])
       .merge(macroRW[Figure])

@@ -16,6 +16,7 @@ trait ScalatagsDomDefs {
     import domtags._
 
     def nbsp = raw("&nbsp;")
+    // def empty = raw("")
 
   }
 

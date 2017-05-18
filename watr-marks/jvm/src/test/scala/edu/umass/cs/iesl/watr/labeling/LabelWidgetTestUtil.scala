@@ -92,6 +92,13 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
       targetOverlay(mkTargetRegion(pageId, 0, 2, 3, 1), List())
     )
   }
+  def pageDivs3Stacked(pageId: Int@@PageID): LabelWidget = {
+    zstack(
+      targetOverlay(mkTargetRegion(pageId, 0, 0, 3, 1), List()),
+      targetOverlay(mkTargetRegion(pageId, 0, 1, 3, 1), List()),
+      targetOverlay(mkTargetRegion(pageId, 0, 2, 3, 1), List())
+    )
+  }
 
   def pageDivs_1_2(pageId: Int@@PageID): LabelWidget = {
     col(

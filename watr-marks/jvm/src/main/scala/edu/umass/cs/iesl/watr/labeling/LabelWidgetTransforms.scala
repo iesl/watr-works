@@ -49,7 +49,30 @@ object LabelWidgetTransforms {
     r.transCata[LabelWidget](f)
   }
 
-  def selectionFringeInit(
+  def regenerateIds(lw: LabelWidget): LabelWidget = {
+    everywhere(lw){ fa =>
+      regenerateId(fa)
+    }
+  }
+
+  def makeZoneHighlightFigure(
+    label: Label,
+    intersectingBboxes: List[GeometricFigure],
+    zoneColor: Color
+  ): LabelWidget = {
+    val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
+    withLabel("tooltip", label.key,
+      figure(
+        Colorized(
+          GeometricGroup(groupBbox, intersectingBboxes),
+          fg=zoneColor, bg=zoneColor,
+          fgOpacity=0.1f, bgOpacity=0.2f
+        )
+      )
+    )
+  }
+
+  def makeZoneHighlight(
     zoneId: Int@@ZoneID,
     label: Label,
     intersectingBboxes: List[GeometricFigure],
@@ -57,16 +80,8 @@ object LabelWidgetTransforms {
   ): LabelWidget = {
     val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
     panel(
-      withLabel("tooltip", label.key,
-        withId(zoneId,
-          figure(
-            Colorized(
-              GeometricGroup(groupBbox, intersectingBboxes),
-              fg=zoneColor, bg=zoneColor,
-              fgOpacity=0.0f, bgOpacity=0.2f
-            )
-          )
-        )
+      withId(zoneId,
+        makeZoneHighlightFigure(label, intersectingBboxes, zoneColor)
       ),
       LabelAction.toggleZoneSelection(zoneId)
     )
@@ -74,48 +89,42 @@ object LabelWidgetTransforms {
 
   def selectionFringeToggle(
     labelWidget: LabelWidget,
-    toggleOn: Boolean,
-    zoneColor: Color
+    toggleOn: Boolean
   ): LabelWidget = {
+    println(s"selectionFringeToggle(toggleOn = ${toggleOn})")
 
     if (toggleOn) {
-      labelWidget.project match {
-        case fa@ Figure(fwid,
-          fig@ Colorized(
-            GeometricGroup(groupBounds, groupFigs),
-            fg, bg, fgOpacity, bgOpacity
-          )
+      labelWidget match {
+        case PatLabeled(lid,
+          Embed(Figure(fid, fig)),
+          key, value
         ) =>
-          LabelWidgets.figure(
-            composeFigures(
-              fig,
-              Colorized(
-                makeFringe(fig, Padding(4)),
-                fg=Colors.Yellow, bg=Colors.Yellow,
-                fgOpacity=0.1f, bgOpacity=0.1f
-              )
-            )
-          )
+          val fringe = figure(
+            Colorized(
+              makeFringe(fig, Padding(4)),
+              fg=Colors.Yellow, bg=Colors.Yellow,
+              fgOpacity=0.0f, bgOpacity=0.1f
+            ))
 
-        case fa => fa.embed
+          zstack(regenerateIds(labelWidget), fringe)
+
+        case x =>
+          println(s"selectionFringeToggle: match error ${x}")
+          x
+
       }
     } else {
-      labelWidget.project match {
-        case fa@ Figure(fwid,
-          Colorized(
-            GeometricGroup(groupBounds, groupFigs),
-            fg, bg, fgOpacity, bgOpacity
-          )
-        ) =>
-          LabelWidgets.figure(
-            groupFigs.head
-          )
+      labelWidget match {
+        case PatZStack(lid, as) =>
+          regenerateIds(as.head)
 
-        case fa => fa.embed
+        case x =>
+          println(s"selectionFringeToggle: match error ${x}")
+          x
       }
     }
-
   }
+
   def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
 
     // append rectangular overlays which respond to user clicks to select/deselect zones
@@ -152,7 +161,7 @@ object LabelWidgetTransforms {
           if (intersectingBboxes.isEmpty) {
             l
           } else {
-            val fringeOverlay = selectionFringeInit(zoneId, zone.label, intersectingBboxes, zoneColor)
+            val fringeOverlay = makeZoneHighlight(zoneId, zone.label, intersectingBboxes, zoneColor)
             l.copy(overlays = overlays :+ fringeOverlay)
           }
 
@@ -211,7 +220,7 @@ object LabelWidgetTransforms {
 
 
             if (intersectingBboxes.isEmpty) None else {
-              Some(selectionFringeInit(zoneId, zone.label, intersectingBboxes, zoneColor))
+              Some(makeZoneHighlight(zoneId, zone.label, intersectingBboxes, zoneColor))
             }
           }
 

@@ -34,50 +34,44 @@ class Channel[T](init: (T => Unit) => Unit){
   }
 }
 
-
-// trait CanvasMouseChannels {
-//   type ME = fabric.Options
-
-//   def canvas: fabric.Canvas
-
-//   val mousemove = new Channel[ME](canvas.on("mouse:move", _))
-//   val mouseup = new Channel[ME](canvas.on("mouse:up", _))
-//   val mousedown = new Channel[ME](canvas.on("mouse:down", _))
-//   // val mouseover = new Channel[ME](canvas.on("mouse:over", _))
-//   // val mouseout = new Channel[ME](canvas.on("mouse:out", _))
-// }
+// import scala.scalajs.js
+// import scala.scalajs.js.`|`
+import org.scalajs.dom
+// import org.singlespaced.d3js.d3
 
 
-// object CanvasMouseChannels {
-//   def apply(c: fabric.Canvas) = new CanvasMouseChannels {
-//     override def canvas = c
-//   }
+trait D3MouseChannels {
+  type ME = dom.MouseEvent
 
-// }
+  def elem: dom.html.Element
 
+  val mousemove = new Channel[ME](elem.onmousemove = _)
+  val mouseup = new Channel[ME](elem.onmouseup = _)
+  val mousedown = new Channel[ME](elem.onmousedown = _)
+
+
+  // get coords relative to target
+  // d3.mouse(container: EventTarget)
+  // val mousemove = new Channel[ME](canvas.on("mouse:move", _))
+  // val mouseup = new Channel[ME](canvas.on("mouse:up", _))
+  // val mousedown = new Channel[ME](canvas.on("mouse:down", _))
+  // val mouseover = new Channel[ME](canvas.on("mouse:over", _))
+  // val mouseout = new Channel[ME](canvas.on("mouse:out", _))
+}
+
+object D3MouseChannels {
+  def apply(elem0: dom.html.Element) = new D3MouseChannels {
+    override def elem = elem0
+  }
+}
 
 // import org.scalajs.dom
 // import org.scalajs.dom.html
 
-// trait ElemMouseChannels {
-//   type ME = dom.MouseEvent
-
-//   def elem: html.Element
-
-//   val mousemove = new Channel[ME](elem.onmousemove = _)
-//   val mouseup = new Channel[ME](elem.onmouseup = _)
-//   val mousedown = new Channel[ME](elem.onmousedown = _)
-
-
-// }
-
 // object ElemMouseChannels {
-
-
 //   def apply(elem: html.Element) = new ElemMouseChannels {
 //     override def elem = elem
 //   }
-
 //   // async
 //   // def rect = canvas.getBoundingClientRect()
 

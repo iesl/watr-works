@@ -6,13 +6,20 @@ import watrmarks._
 import utils.Color
 import utils.Colors
 
-sealed trait WidgetMod
+sealed trait WidgetLayoutMod
+
+sealed trait WidgetMod extends WidgetLayoutMod {
+  def id: Int@@WidgetID
+}
 
 object WidgetMod {
 
-  case class AddLw(id: Int@@WidgetID, abs: Option[AbsPosWidget]=None) extends WidgetMod
-  case class RmLw(id: Int@@WidgetID, abs: Option[AbsPosWidget]=None) extends WidgetMod
-  case class ClearAllLw() extends WidgetMod
+  case class Added(id: Int@@WidgetID, abs: Option[AbsPosWidget]=None) extends WidgetMod
+  case class Removed(id: Int@@WidgetID) extends WidgetMod
+  case class Unmodified(id: Int@@WidgetID) extends WidgetMod
+  case object AllUnmodified  extends WidgetLayoutMod {
+    def id: Int@@WidgetID = sys.error("should never reach here")
+  }
 
 }
 
@@ -60,5 +67,3 @@ case class DocumentLabelerIdentifier(
   pagination: Pagination,
   labelColors: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
 ) extends LabelerIdentifier
-
-

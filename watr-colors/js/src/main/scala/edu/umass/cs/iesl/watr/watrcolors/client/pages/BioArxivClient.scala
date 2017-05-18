@@ -11,12 +11,13 @@ import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation._
-import org.scalajs.dom
+// import org.scalajs.dom
 import org.scalajs.dom.ext._
 
 
 import labeling._
 import geometry._
+import geometry.syntax._
 import watrmarks._
 
 import scaladget.stylesheet.{all => sty}
@@ -28,7 +29,7 @@ import scaladget.api._
 import scaladget.tools.JsRxTags.{ctx => _, _}
 
 import TypeTags._
-import dom.raw.MouseEvent
+// import dom.raw.MouseEvent
 
 import BootstrapBits._
 import org.singlespaced.d3js.d3
@@ -78,8 +79,15 @@ class ClientStateRx(
     )
   )
 
+  uiState_selections.trigger {
+    println(s"Current Selections: ${uiState_selections.now}")
+  }
 
-  val triggerRepaginate = paginator.currentPage.trigger {
+  uiState_selectedLabel.trigger {
+    println(s"Active Label: ${uiState_selectedLabel.now}")
+  }
+
+  val triggerRepaginate = paginator.currentPage.triggerLater {
 
     uiRequestCycle(
       UIRequest(
@@ -109,7 +117,6 @@ class ClientStateRx(
 
   val doMergeZones: Var[Boolean] = Var(false)
   val doDeleteZone: Var[Boolean] = Var(false)
-  val selectionInProgress: Var[Boolean] = Var(false)
 
   val rx2 = doDeleteZone.triggerLater{
     if (doDeleteZone.now) {
@@ -143,7 +150,7 @@ class ClientStateRx(
 }
 
 @JSExportTopLevel("WatrColors")
-object WatrColors extends BasicClientDefs with UIUpdateCycle {
+object WatrColors extends BasicClientDefs with UIUpdateCycle with MouseGestures {
 
   def doUIUpdateCycle(r: UIRequest): Future[UIResponse] = shell.uiRequest(r)
 
@@ -155,7 +162,6 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle {
     val api = Client[WatrShellApi]
 
     def uiRequest(r: UIRequest): Future[UIResponse] = {
-      println("begin:uiRequest ")
       api.uiRequest(r).call()
     }
 
@@ -164,39 +170,6 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle {
     }
 
   }
-
-  // @JSExport
-  // def setupClickCatchers(clientStateRx: ClientStateRx)(implicit co: Ctx.Owner): Unit = {
-  //   val clickcb: js.Function1[MouseEvent, Boolean] = { (event: MouseEvent) =>
-  //     if (!clientStateRx.selectionInProgress.now) {
-  //       clientStateRx.selectionInProgress() = true
-
-  //       val initClickPt: Point = getCanvasPoint(event.pageX.toInt, event.pageY.toInt)
-
-  //       getUserInteraction(initClickPt).foreach { interact =>
-
-  //         val shape = interact match {
-  //           case p: Point    => Click(p)
-  //           case p: LTBounds => SelectRegion(p)
-  //           case p           => sys.error(s"getUserInteraction: invalid shape ${p}")
-  //         }
-
-  //         uiRequestCycle(UIRequest(
-  //           clientStateRx.toUIState(), shape
-  //         )).map{ _ =>
-  //           clientStateRx.selectionInProgress() = false
-  //         }
-  //       }
-
-  //     }
-  //     true
-  //   }
-
-  //   val elem = dom.document.getElementById("canvas-container")
-
-  //   elem.addEventListener("mousedown", clickcb, useCapture=false)
-  // }
-
 
   def parseParams(): LabelerIdentifier = {
     val docId = param("doc").getOrElse { "" }
@@ -207,6 +180,21 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle {
 
 
   var clientState: Option[ClientStateRx] = None
+
+  def updateUIState(state: UIState): Unit = {
+    clientState.foreach { currState =>
+      currState.fromUIState(state)
+    }
+  }
+
+  val selectionRect: Var[Option[LTBounds]] = Var(None)
+
+  def selectionIndicator()(implicit co: Ctx.Owner): RxModifier = Rx {
+    val curr = selectionRect()
+    curr.map{ bbox =>
+      <.span(bbox.prettyPrint)
+    } getOrElse { <.span("<no-sel>") }
+  }
 
   @JSExport
   def display(userName: String): Unit = {
@@ -232,7 +220,8 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle {
           div("row".clazz, pageStyles.controlClusterStyle)(
             div("col-lg-12".clazz)(
               selectorControls,
-              clientStateRx.paginator.pageControls
+              clientStateRx.paginator.pageControls,
+              selectionIndicator
             )
           ),
           div("row".clazz, pageStyles.labelerBodyStyle)(
@@ -247,14 +236,44 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle {
       }
 
       d3.select("#d3-svg-container").append("svg")
-      // setupClickCatchers(clientStateRx)
 
-      // initKeybindings()
+      import native._
+
+      val dragSelectCallback: js.Function1[DragSelectEvent, Unit] = (event: DragSelectEvent) => {
+        event.rect.foreach { rect =>
+          val l = rect.x1
+          val t = rect.y1
+          val w = rect.x2-rect.x1
+          val h = rect.y2-rect.y1
+          uiRequestCycle(UIRequest(
+            clientStateRx.toUIState(),
+            SelectRegion(LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble))
+          ))
+        }
+
+        event.point.foreach { point =>
+          val x = point.x
+          val y = point.y
+          uiRequestCycle(UIRequest(
+            clientStateRx.toUIState(),
+            Click(Point(x.toDouble, y.toDouble))
+          ))
+        }
+
+        event.move.foreach { rect =>
+          val l = rect.x1
+          val t = rect.y1
+          val w = rect.x2-rect.x1
+          val h = rect.y2-rect.y1
+          selectionRect() = Some(LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble))
+        }
+
+        ()
+
+      }
+      DOMGlobalScope.initD3DragSelect(dragSelectCallback)
+
       joinResponseData(uiResponse.changes)
-
-      // echoLabeler(uiResponse.changes.collect {
-      //   case WidgetMod.AddLw(wid, Some(abs)) => abs
-      // })
 
     }
 

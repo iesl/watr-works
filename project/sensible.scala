@@ -39,6 +39,12 @@ object SensibleProject extends CommonLibs {
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.3"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full),
 
+    // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the
+    //   scala library get loaded
+    excludeDependencies ++= Seq(
+      "org.typelevel" % "scala-library"
+    ),
+
 
     logBuffered in Test := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),

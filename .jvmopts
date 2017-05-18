@@ -1,4 +1,5 @@
--XX:MaxMetaspaceSize=725m
+-XX:MaxMetaspaceSize=1g
+-XX:MaxDirectMemorySize=12g
 -Xss2m
 -Xms3g
 -Xmx6g

@@ -20,7 +20,6 @@ lazy val root = (project in file("."))
   .settings(Release.settings :_*)
   .aggregate( (jsProjects++jvmProjects): _*)
 
-
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++= Seq(

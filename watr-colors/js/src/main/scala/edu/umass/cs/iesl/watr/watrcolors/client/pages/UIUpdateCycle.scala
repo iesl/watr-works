@@ -40,8 +40,9 @@ trait D3BasicShapes {
     d3.select("#d3-svg-container")
       .select("svg")
 
-  def uiShapeClass = ".ui-shape".clazz
-
+  def uiShapeClass(wid: Int@@WidgetID, cs: String*) = {
+    ("ui-shape" :: ("wid-"+wid.unwrap.toString()) :: cs.toList).mkString(" ").clazz
+  }
 
 
   // def renderPosWidget(p: AbsPosWidget): Option[ElementTag] = {
@@ -53,7 +54,7 @@ trait D3BasicShapes {
 
         Some(
           <.image(
-            uiShapeClass,
+            uiShapeClass(wid, "reg-overlay"),
             ^.xLinkHref := s"/img/region/${targetRegion.id}",
             ^.x         := strictBounds.left,
             ^.y         := strictBounds.top,
@@ -63,98 +64,68 @@ trait D3BasicShapes {
         )
 
       case  Reflow(wid, tr) =>
-        Some(createTextWidget(tr.toString, strictBounds).render)
+        Some(createTextWidget(tr.toString, strictBounds)(
+          uiShapeClass(wid, "reflow")
+        ).render)
 
       case TextBox(wid, tb) =>
-        Some(createTextWidget(tb, strictBounds).render)
+        Some(createTextWidget(tb.toString, strictBounds)(
+          uiShapeClass(wid, "textbox")
+        ).render)
 
-      case Row(wid, as)                     =>
-        // Some(
-        //   <.rect(
-        //     uiShapeClass,
-        //     ^.x         := strictBounds.left,
-        //     ^.y         := strictBounds.top,
-        //     ^.width     := strictBounds.width,
-        //     ^.height    := strictBounds.height
-        //   ).render
-        // )
-        None
-
-      case Col(wid, as)                     =>
-        // Some(
-        //   <.rect(
-        //     uiShapeClass,
-        //     ^.x         := strictBounds.left,
-        //     ^.y         := strictBounds.top,
-        //     ^.width     := strictBounds.width,
-        //     ^.height    := strictBounds.height
-        //   ).render
-        // )
-        None
-
-      case Figure(wid, fig)              =>
+      case Figure(wid, fig) =>
         val g1 = createShape(fig)
         val tx =  -transVec.x.toInt
         val ty =  -transVec.y.toInt
         Some(
           <.g(
             ^.transform := s"translate($tx $ty)",
-            uiShapeClass,
-            "ui-fig".clazz,
+            uiShapeClass(wid, "ui-fig"),
+            wid.toString.id,
             g1
           ).render
         )
 
       case LabelWidgetF.Labeled(wid, a, key, value) =>
-        // println(s"creating labeled at strict:${strictBounds} / bleed:${bleedBounds}")
-        // val g1 = createTooltip(value, strictBounds)
-        // val showRegion = Colorized(
-        //   strictBounds,
-        //   fg=Colors.Black, bg=Colors.Yellow,
-        //   fgOpacity=0.3f, bgOpacity=0.3f
-        // )
 
-        // Define the div for the tooltip
-        val tooltipdiv = d3.select("body").append("div")
-          .attr("class", "tooltip")
-          .style("opacity", 0)
+        // // Define the div for the tooltip
+        // val tooltipdiv = d3.select("body").append("div")
+        //   .attr("class", "tooltip")
+        //   .style("opacity", 0)
+        // val hoverIn: js.Function1[dom.MouseEvent, Unit] =
+        //   (event: dom.MouseEvent) => {
+        //     tooltipdiv.transition()
+        //       .duration(200)
+        //       .style("opacity", .9)
+        //     tooltipdiv.html(value)
+        //       .style("left", (event.pageX) + "px")
+        //       .style("top", (event.pageY - 28) + "px");
 
+        //     ()
+        //   }
+        // val hoverOut: js.Function1[dom.MouseEvent, Unit] =
+        //   (event: dom.Event) => {
+        //     tooltipdiv.transition()
+        //       .duration(500)
+        //       .style("opacity", 0);
 
-        // val hoverArea = createShape(strictBounds).asInstanceOf[JsDom.TypedTag[dom.svg.RectElement]]
-        val hoverArea = createShape(strictBounds).asInstanceOf[JsDom.TypedTag[dom.svg.RectElement]]
+        //     ()
+        //   }
 
+        // val hr = hoverArea(uiShapeClass(wid, "label-hover")).render
 
-        val hoverIn: js.Function1[dom.MouseEvent, Unit] =
-          (event: dom.MouseEvent) => {
+        // hr.onmouseover = hoverIn
+        // hr.onmouseout = hoverOut
 
-            tooltipdiv.transition()
-              .duration(200)
-              .style("opacity", .9)
+        // Some(hr)
 
+        import parts.BootstrapBits._
+        val hoverArea = createShape(strictBounds)(
+          uiShapeClass(wid, "ui-labeled", value)
+        ).asInstanceOf[JsDom.TypedTag[dom.html.Element]]
 
-            tooltipdiv.html(value)
-              .style("left", (event.pageX) + "px")
-              .style("top", (event.pageY - 28) + "px");
+        Some(hoverArea.tooltip(value))
 
-            ()
-          }
-        val hoverOut: js.Function1[dom.MouseEvent, Unit] =
-          (event: dom.Event) => {
-            tooltipdiv.transition()
-              .duration(500)
-              .style("opacity", 0);
-
-            ()
-          }
-
-        val hr = hoverArea(
-          uiShapeClass
-        ).render
-
-        hr.onmouseover = hoverIn
-        hr.onmouseout = hoverOut
-
-        Some(hr)
 
       case Pad(wid, a, padding, maybeColor) =>
 
@@ -174,15 +145,18 @@ trait D3BasicShapes {
 
         Some(
           <.g(
-            uiShapeClass,
-            "ui-pad".clazz,
+            uiShapeClass(wid, "ui-pad"),
             ^.style:=colorStyle
           )(fs:_*).render
         )
 
+
+      case Row(wid, as)           => None
+      case Col(wid, as)           => None
+      case ZStack(wid, as)        => None
       case Identified(_, _, _, _) => None
-      case Panel(_, _, _) => None
-      case Terminal => None
+      case Panel(_, _, _)         => None
+      case Terminal               => None
     }
   }
 
@@ -203,12 +177,11 @@ trait D3BasicShapes {
     val style =
       s"""|style="font-family: Times New Roman;
           |font-size: 20px;
-          |stroke: #00ffff;
-          |fill: #00ffff;"
+          |stroke: #020202;
+          |fill: #020202;"
           |""".stripMargin
 
     <.text(
-      uiShapeClass,
       ^.style     := style,
       ^.x         := bbox.left,
       ^.y         := bbox.top,
@@ -278,53 +251,80 @@ trait D3BasicShapes {
 }
 
 
-// class TData(val i: Int, w: AbsPosWidget)
-class JoinElem(val id: Int, val elem: ElementTag)
-
 trait UIUpdateCycle extends D3BasicShapes {
 
   def doUIUpdateCycle(r: UIRequest): Future[UIResponse]
+  def updateUIState(state: UIState): Unit
 
   def uiRequestCycle(req: UIRequest)(implicit ctx: Ctx.Owner): Future[Unit] = for {
     uiResponse  <- doUIUpdateCycle(req)
   } yield {
     println("complete:uiRequest ")
-
     joinResponseData(uiResponse.changes)
+    updateUIState(uiResponse.uiState)
   }
 
   def setD3SvgDimensions(changes: Seq[WidgetMod]): Unit = {
-    changes.collect({
-      case WidgetMod.AddLw(wid, widget) => widget.get
-    }).headOption.foreach { firstWidget =>
-      d3SvgSelection
-        .attr("width", firstWidget.strictBounds.width)
-        .attr("height", firstWidget.strictBounds.height)
-    }
+    changes.headOption.foreach { _ match {
+      case WidgetMod.Added(wid, widget) =>
+        val bbox = widget.get.strictBounds
+        d3SvgSelection
+          .attr("width", bbox.width)
+          .attr("height", bbox.height)
+      case _ =>
+    }}
   }
 
+  type KeyFunction = js.ThisFunction2[dom.Node|js.Array[WidgetMod],js.UndefOr[WidgetMod], Int, String]
+  type MyDatumFunction = js.Function3[WidgetMod, Int, js.UndefOr[Int], dom.EventTarget]
+
   def joinResponseData(changes: Seq[WidgetMod]): Unit = {
-    setD3SvgDimensions(changes)
-
-
-    val incomingData: js.Array[AbsPosWidget] = changes.collect({
-      case WidgetMod.AddLw(wid, widget) => widget
-    }).flatten.toJSArray
-
-    val keyFunc = (t: dom.Node | js.Array[AbsPosWidget], d:js.UndefOr[AbsPosWidget], i:Int) => {
-      d.map(_.widget.wid.toString).getOrElse("0")
+    changes.foreach { mod =>
+      mod match {
+        case WidgetMod.Added(wid, widget) =>
+          println(s"${mod}")
+        case WidgetMod.Removed(wid) =>
+          println(s"${mod}")
+        case _ =>
+      }
     }
 
-    val dataFunc: js.Function3[AbsPosWidget, Double, Double, dom.EventTarget] =
-      (joinElem:AbsPosWidget, a: Double, b: Double) => {
-        renderPosWidget(joinElem)
-          .getOrElse(<.g().render)
+    setD3SvgDimensions(changes)
+
+    val incomingData: js.Array[WidgetMod] =
+      changes.collect({
+        case w: WidgetMod.Unmodified  => w
+        case w: WidgetMod.Added       => w
+      }).map(_.asInstanceOf[WidgetMod])
+        .toJSArray
+
+
+    val keyFunc: KeyFunction = (t: dom.Node|js.Array[WidgetMod], d:js.UndefOr[WidgetMod], i:Int) => {
+      d.map(_.id.toString).getOrElse(sys.error(s"keyFunc error on t:${t} d:${d}, i:${i}"))
+    }
+
+    val emptyTarget = <.g(".empty".clazz).render
+
+    val dataFunc: js.Function3[WidgetMod, Double, Double, dom.EventTarget] =
+      (mod:WidgetMod, a: Double, b: Double) => {
+        mod match {
+          case WidgetMod.Added(wid, widget) =>
+            val maybeElem = for {
+              w <- widget
+              e <- renderPosWidget(w)
+            } yield e
+
+            maybeElem.getOrElse(emptyTarget)
+
+          case _ =>
+            emptyTarget
+        }
       }
 
 
     val select0 = d3SvgSelection
       .selectAll[dom.EventTarget](".ui-shape")
-      .data[AbsPosWidget](incomingData, keyFunc)
+      .data[WidgetMod](incomingData, keyFunc)
 
     select0
       .enter()

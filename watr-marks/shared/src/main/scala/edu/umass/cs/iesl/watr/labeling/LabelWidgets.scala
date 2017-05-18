@@ -56,6 +56,11 @@ object LabelWidgetF {
     as: List[A]
   ) extends LabelWidgetF[A]
 
+  case class ZStack[A](
+    wid: Int@@WidgetID,
+    as: List[A]
+  ) extends LabelWidgetF[A]
+
   case class Pad[A](
     wid: Int@@WidgetID,
     a: A,
@@ -103,6 +108,7 @@ object LabelWidgetF {
         case l : RegionOverlay[A]            => l.overlays.traverse(f).map(o => l.copy(overlays=o))
         case l @ Row(wid, as)                => as.traverse(f).map(Row(wid, _))
         case l @ Col(wid,as)                 => as.traverse(f).map(Col(wid, _))
+        case l @ ZStack(wid,as)              => as.traverse(f).map(ZStack(wid, _))
         case l @ Pad(wid, a, pd, clr)        => f(a).map(Pad(wid, _, pd, clr))
         case l : TextBox                     => G.point(l.copy())
         case l : Reflow                      => G.point(l.copy())
@@ -110,7 +116,7 @@ object LabelWidgetF {
         case l @ Panel(wid, a, i)            => f(a).map(Panel(wid, _, i))
         case l @ Labeled(wid, a, k, v)       => f(a).map(Labeled(wid, _, k, v))
         case l @ Identified(wid, a, id, cls) => f(a).map(Identified(wid, _, id, cls))
-        case l @ Terminal                     => G.point(Terminal)
+        case l @ Terminal                    => G.point(Terminal)
       }
     }
   }
@@ -124,6 +130,7 @@ object LabelWidgetF {
       case l @ TextBox(wid, tb)               => s"textbox"
       case l @ Row(wid, as)                   => s"$l"
       case l @ Col(wid, as)                   => s"$l"
+      case l @ ZStack(wid, as)                => s"$l"
       case l @ Pad(wid, a, padding, color)    => s"$l"
       case l @ Figure(wid,f)                  => l.toString
       case l @ Panel(wid, a, i)               => l.toString
@@ -143,6 +150,7 @@ object LabelWidgetF {
         case (l @ TextBox(wid, tb)                  , l2 : TextBox             ) => tb == l2.textBox
         case (l @ Row(wid, as)                      , l2 : Row[A]              ) => as === l2.as
         case (l @ Col(wid, as)                      , l2 : Col[A]              ) => as === l2.as
+        case (l @ ZStack(wid, as)                   , l2 : ZStack[A]           ) => as === l2.as
         case (l @ Pad(wid, a, padding, color)       , l2 : Pad[A]              ) => a === l2.a
         case (l @ Figure(wid, f)                    , l2 : Figure              ) => f === l2.figure
         case (l @ Panel(wid, a, i)                  , l2 : Panel[A]            ) => a === l2.a
@@ -182,10 +190,11 @@ object LabelWidgetF {
 
           Some(recdiff)
 
-        case (l : Figure      , r : Figure) => Some(localDiff(l, r))
-        case (l : Col[_]      , r : Col[_]) => Some(localDiff(l, r))
-        case (l : Row[_]      , r : Row[_]) => Some(localDiff(l, r))
-        case (_               , _)          => None
+        case (l : Figure      , r : Figure)     => Some(localDiff(l, r))
+        case (l : Col[_]      , r : Col[_])     => Some(localDiff(l, r))
+        case (l : Row[_]      , r : Row[_])     => Some(localDiff(l, r))
+        case (l : ZStack[_]   , r : ZStack[_])  => Some(localDiff(l, r))
+        case (_               , _)              => None
       }
 
     }
@@ -252,6 +261,40 @@ object LabelWidgets {
     fixlw(Identified(idgen.nextId, a, id.unwrap, tagClsname))
   }
 
+  def zstack(lws: LabelWidget*): LabelWidget =
+    fixlw(ZStack(idgen.nextId, lws.toList))
+
+  def regenerateId(lwt: LabelWidgetT): LabelWidgetT = { lwt match {
+    case l @ RegionOverlay(wid, u, os)   => l.copy(wid=idgen.nextId)
+    case l @ Row(wid, as)                => l.copy(wid=idgen.nextId)
+    case l @ Col(wid,as)                 => l.copy(wid=idgen.nextId)
+    case l @ ZStack(wid,as)              => l.copy(wid=idgen.nextId)
+    case l @ Pad(wid, a, pd, clr)        => l.copy(wid=idgen.nextId)
+    case l : TextBox                     => l.copy(wid=idgen.nextId)
+    case l : Reflow                      => l.copy(wid=idgen.nextId)
+    case l : Figure                      => l.copy(wid=idgen.nextId)
+    case l @ Panel(wid, a, i)            => l.copy(wid=idgen.nextId)
+    case l @ Labeled(wid, a, k, v)       => l.copy(wid=idgen.nextId)
+    case l @ Identified(wid, a, id, cls) => l.copy(wid=idgen.nextId)
+    case l @ Terminal                    => l
+
+  } }
+
   lazy val terminal = fixlw(Terminal)
+
+  import utils.UnFixable._
+
+   val PatRegionOverlay = RecursiveExtractor[LabelWidget, RegionOverlay     , LabelWidgetF].tuple
+   // val PatTextBox       = RecursiveExtractor[LabelWidget, TextBox           , LabelWidgetF].sin
+   // val PatReflow        = RecursiveExtractor[LabelWidget, Reflow            , LabelWidgetF].tuple
+   val PatRow           = RecursiveExtractor[LabelWidget, Row               , LabelWidgetF].tuple
+   val PatCol           = RecursiveExtractor[LabelWidget, Col               , LabelWidgetF].tuple
+   val PatZStack         = RecursiveExtractor[LabelWidget, ZStack             , LabelWidgetF].tuple
+   val PatPad           = RecursiveExtractor[LabelWidget, Pad               , LabelWidgetF].tuple
+   // val PatFigure        = RecursiveExtractor[LabelWidget, Figure            , LabelWidgetF].tuple
+   val PatPanel         = RecursiveExtractor[LabelWidget, Panel             , LabelWidgetF].tuple
+   val PatLabeled       = RecursiveExtractor[LabelWidget, Labeled           , LabelWidgetF].tuple
+   val PatIdentified    = RecursiveExtractor[LabelWidget, Identified        , LabelWidgetF].tuple
+
 
 }

@@ -39,6 +39,7 @@ object ShellHtml {
       <.link(rel := "stylesheet", `type` := "text/css", href := "/assets/css/simple-sidebar.css"),
 
       // <.script(`type` := "text/javascript", src := "/assets/js/d3.js"),
+      <.script(`type` := "text/javascript", src := "/assets/js/d3-drag-select.js"),
       <.script(`type` := "text/javascript", src := "/assets/watrcolors-fastopt.js"),
 
       <.style(^.`type` := "text/css", WatrStyles.styleSheetText)

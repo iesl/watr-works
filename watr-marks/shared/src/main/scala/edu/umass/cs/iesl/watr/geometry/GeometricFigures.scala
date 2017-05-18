@@ -151,6 +151,7 @@ object GeometryImplicits {
     List(leftGutter, rightGutter, topGutter, bottomGutter)
   }
 
+
   def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
     val fringe = makeFringeParts(fig, padding)
     val wbbox = totalBounds(fig)

@@ -197,7 +197,6 @@ trait LabelWidgetIndex { self =>
 
     println(s"queryForPanels: queryPoint = ${queryBox}")
 
-
     val ret = index.queryForIntersects(queryBox)
       .map ({ pos => pos.widget match {
         case p : Panel[Unit] => Option { (p, pos) }
@@ -310,33 +309,33 @@ trait LabelWidgetIndex { self =>
   }
 
 
-  def toggleFringe(toggleOn: Boolean, labelWidget: LabelWidget): LabelWidget = {
-    if (toggleOn) {
-      labelWidget.project match {
-        case fa@ Figure(wid, fig) =>
-          LabelWidgets.figure(
-            composeFigures(
-              Colorized(
-                makeFringe(fig, Padding(4)),
-                fg=Colors.Yellow, bg=Colors.Yellow,
-                fgOpacity=0.2f, bgOpacity=0.2f
-              ),
-              fig
-            )
-          )
+  // def toggleFringe(toggleOn: Boolean, labelWidget: LabelWidget): LabelWidget = {
+  //   if (toggleOn) {
+  //     labelWidget.project match {
+  //       case fa@ Figure(wid, fig) =>
+  //         LabelWidgets.figure(
+  //           composeFigures(
+  //             Colorized(
+  //               makeFringe(fig, Padding(4)),
+  //               fg=Colors.Yellow, bg=Colors.Yellow,
+  //               fgOpacity=0.2f, bgOpacity=0.2f
+  //             ),
+  //             fig
+  //           )
+  //         )
 
-        case fa => fa.embed
-      }
-    } else {
-      labelWidget.project match {
-        case fa@ Figure(wid, fig) =>
-          val GeometricGroup(grbbox, grfigs) = fig
-          LabelWidgets.figure(grfigs.last)
+  //       case fa => fa.embed
+  //     }
+  //   } else {
+  //     labelWidget.project match {
+  //       case fa@ Figure(wid, fig) =>
+  //         val GeometricGroup(grbbox, grfigs) = fig
+  //         LabelWidgets.figure(grfigs.last)
 
-        case fa => fa.embed
-      }
-    }
-  }
+  //       case fa => fa.embed
+  //     }
+  //   }
+  // }
 
   // TODO this interpreter is specific to a particular labeler type (e.g., BioArxiv Labeler) and should be parameterized
   //    within this class
@@ -360,7 +359,7 @@ trait LabelWidgetIndex { self =>
                     case (sels, labelWidget) =>
                       val newSels = sels.filterNot(_ == zoneId)
                       val newWidget = LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
-                        toggleFringe(false, lw)
+                        LabelWidgetTransforms.selectionFringeToggle(lw, false)
                       })
                       (newSels, newWidget)
                   }
@@ -370,7 +369,7 @@ trait LabelWidgetIndex { self =>
                   (istate.selectionsL ~ istate.labelWidgetL).modify(interpState) {
                     case (sels, labelWidget) =>
                       val newWidget = LabelWidgetTransforms.atEveryId(zoneId, labelWidget, { lw: LabelWidget =>
-                        toggleFringe(true, lw)
+                        LabelWidgetTransforms.selectionFringeToggle(lw, true)
                       })
 
                       (zoneId +: sels, newWidget)
@@ -420,12 +419,12 @@ trait LabelWidgetIndex { self =>
                 val newIndex = LabelWidgetIndex.init(docStore, newLabelerId, mkWidget, Some(newWidget), Some(self))
 
                 val toAdd = newIndex.layout.positioning.toList.map{ pos =>
-                  WidgetMod.AddLw(pos.widget.wid, Option(pos))
+                  WidgetMod.Added(pos.widget.wid, Option(pos))
                 }
 
                 (istate.changesL ~ istate.labelWidgetIndexL).modify(initState) {
                   case (uiChanges, lwiOpt) =>
-                    (WidgetMod.ClearAllLw() :: toAdd, Some(newIndex))
+                    (toAdd, Some(newIndex))
                 }
               }
             } yield ()
@@ -471,7 +470,7 @@ trait LabelWidgetIndex { self =>
 
   def getAllMods(): List[WidgetMod] = {
     layout.positioning.toList.map{ abs =>
-      WidgetMod.AddLw(abs.widget.wid, Some(abs))
+      WidgetMod.Added(abs.widget.wid, Some(abs))
     }
   }
 
@@ -490,9 +489,8 @@ trait LabelWidgetIndex { self =>
     val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
 
     val updates = mods.map { _ match {
-      case WidgetMod.AddLw(id, _) => WidgetMod.AddLw(id, absPosMap.get(id))
-      case WidgetMod.RmLw(id, _)  => WidgetMod.RmLw(id, absPosMap.get(id))
-      case a@WidgetMod.ClearAllLw()   => a
+      case WidgetMod.Added(id, _) => WidgetMod.Added(id, absPosMap.get(id))
+      case m => m
     }}
     // println("   ... response constructed")
     // println(updates.mkString("\n  ", "\n  ", "\n"))
@@ -512,8 +510,6 @@ trait LabelWidgetIndex { self =>
 
     val UIState(uiContraint, activeLabel, selections, activeLabeler) = uiRequest.uiState
     val initResponse = UIResponse(uiRequest.uiState, List())
-    // val uiRequest = UIRequest(uiState, gesture)
-
 
     val startingWidget = layout.labelWidget
 
@@ -531,7 +527,6 @@ trait LabelWidgetIndex { self =>
         }
 
       case Click(point) =>
-        println(s"Click ${point}")
 
         val (resp, endingWidget) = runClickedPanelAction(point, uiRequest, initResponse)
 
@@ -551,7 +546,7 @@ trait LabelWidgetIndex { self =>
         }
 
         resp.getOrElse {
-          (initResponse, self)
+          minorChangeUpdates(startingWidget, startingWidget, initResponse)
         }
 
     }

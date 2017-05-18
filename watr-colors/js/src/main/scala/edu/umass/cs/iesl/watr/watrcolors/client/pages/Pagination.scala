@@ -12,7 +12,6 @@ import rx._
 import BootstrapBits._
 import TypeTags._
 
-
 class Paginator(
   pagination: Pagination
 )(implicit co: Ctx.Owner) extends BasicClientDefs {

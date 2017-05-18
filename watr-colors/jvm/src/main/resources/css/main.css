@@ -34,3 +34,33 @@ div.tooltip {
     border-radius: 1px;
     pointer-events: none;
 }
+
+/* drag selection */
+rect.selection {
+    cursor: move !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -khtml-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    stroke: #545454;
+    stroke-width: 2px;
+    stroke-opacity: 1;
+    fill: white;
+    fill-opacity: 0.5;
+}
+
+svg image {
+    pointer-events: none;
+}
+
+img {
+    pointer-events: none;
+    user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}

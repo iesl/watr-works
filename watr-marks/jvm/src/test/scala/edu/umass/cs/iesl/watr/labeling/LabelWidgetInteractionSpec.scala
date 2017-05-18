@@ -65,10 +65,7 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
     val absPosMapx = absPositioned.groupBy(_.widget.wid)
     val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
 
-    val updates = mods.map { _ match {
-      case WidgetMod.AddLw(id, _) => WidgetMod.AddLw(id, absPosMap.get(id))
-      case WidgetMod.RmLw(id, _) => WidgetMod.RmLw(id, absPosMap.get(id))
-    }}
+    val updates = mods
 
 
     val str = updates.mkString("\n  ", "\n  ", "\n")

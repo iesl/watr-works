@@ -177,11 +177,27 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
           PosAttr(F.void(flw), bbox, totalBleed, childMaxZ+1, selfPosition, childAdjustVecs)
 
+        case flw @ Row(wid, attrs) =>
+          val (bbox, chBleed, childAdjustVecs) = repositionChildren(
+            attrs.map(_._2),
+            {(totalChildsBbox, childPos)=> totalChildsBbox.toPoint(CDir.NE) }
+          )
+          val childMaxZ = childMaxZIndex(attrs.map(_._2))
+          PosAttr(F.void(flw), bbox, chBleed, childMaxZ+1, zeroPosVector, childAdjustVecs)
 
         case flw @ Col(wid, attrs) =>
           val (bbox, chBleed, childAdjustVecs) = repositionChildren(
             attrs.map(_._2),
             {(totalChildsBbox, childPos)=> totalChildsBbox.toPoint(CDir.SW) }
+          )
+          val childMaxZ = childMaxZIndex(attrs.map(_._2))
+
+          PosAttr(F.void(flw), bbox, bbox, childMaxZ+1, zeroPosVector, childAdjustVecs)
+
+        case flw @ ZStack(wid, attrs) =>
+          val (bbox, chBleed, childAdjustVecs) = repositionChildren(
+            attrs.map(_._2),
+            {(totalChildsBbox, childPos) => zeroPosVector }
           )
           val childMaxZ = childMaxZIndex(attrs.map(_._2))
 
@@ -196,10 +212,6 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
         case flw @ Identified(wid, p@(a, attr), id, cls) =>
           inheritChildLayout(F.void(flw), attr)
 
-        case flw @ Row(wid, attrs) =>
-          val (bbox, chBleed, childAdjustVecs) = repositionChildren(attrs.map(_._2), {(totalChildsBbox, childPos)=> totalChildsBbox.toPoint(CDir.NE)  })
-          val childMaxZ = childMaxZIndex(attrs.map(_._2))
-          PosAttr(F.void(flw), bbox, chBleed, childMaxZ+1, zeroPosVector, childAdjustVecs)
 
         case flw @ Pad(wid, p@(a, attr), padding, color) =>
           val ulOffset = Point(padding.left, padding.top)
@@ -305,8 +317,10 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
     val (tops, bottoms) = positions.partition { _.widget match {
       case l: Labeled[Unit]       => true
+
       case t: RegionOverlay[Unit] => false
       case t: Col[Unit]           => false
+      case t: ZStack[Unit]        => false
       case t: Panel[Unit]         => false
       case t: Identified[Unit]    => false
       case t: Row[Unit]           => false
