@@ -6,7 +6,6 @@ import scala.collection.mutable
 
 import textreflow.data._
 import geometry._
-// import geometry.zones.syntax._
 import geometry.syntax._
 import LabelWidgetF._
 import corpora._
@@ -20,7 +19,6 @@ import scalaz.State
 import shapeless._
 
 import matryoshka._
-import matryoshka.implicits._
 import utils.GraphPaper
 import utils.Colors
 import LabelWidgetTransforms._
@@ -205,6 +203,7 @@ trait LabelWidgetIndex { self =>
       .flatten
 
     println(s"queryForPanels: found = ${ret.mkString('\n'.toString)}")
+
     ret
   }
 

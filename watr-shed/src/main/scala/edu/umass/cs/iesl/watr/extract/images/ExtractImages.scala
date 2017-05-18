@@ -50,15 +50,22 @@ object ExtractImages extends ImageManipulation {
   }
 
   // HOTSPOT
-  def extract(pdfPath: Path, outputPath: Path): PageImages = {
+  def extract(pdfPath: Path, outputPath: Path): Either[String, Unit] = {
     import fs.ImplicitWd._
+
     val out = outputPath / "page-%d.png"
+    val errlog = outputPath / "page-err.log"
 
-    val res = %%("mudraw", "-r", "128", "-o", out, pdfPath)
-
-    load(outputPath)
+    try {
+      val res: CommandResult =
+        %%("mudraw", "-r", "128", "-o", out, pdfPath)
+      Right((): Unit)
+    } catch {
+      case t: ShelloutException =>
+        val message = s"""error ${t}: ${t.getCause}: ${t.getMessage} """
+        write(errlog, message)
+        Left(message)
+    }
   }
-
-
 
 }

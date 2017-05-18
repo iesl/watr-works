@@ -96,39 +96,51 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     initCorpus(pwd)
   }
 
+
+
+  def extractPageImages(corpusEntry: CorpusEntry): Either[String, Path] = {
+    println(s"extracting ${corpusEntry}")
+    for {
+      pdfArtifact    <- corpusEntry.getPdfArtifact.toRight[String](s"pdf file not found ${corpusEntry}").right
+      pdfPath        <- pdfArtifact.asPath.toOption.toRight(s"pdf path invalid ${pdfArtifact}").right
+
+      pageImageArtifacts <- Right(corpusEntry.ensureArtifactGroup("page-images")).right
+
+      res <- if (pageImageArtifacts.getArtifacts.isEmpty) {
+        ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
+          .left.map{ err => s"Error: ${err}" }
+          .right.map{ succ => pageImageArtifacts.rootPath }
+          .right
+
+      } else {
+        println(s"Images already extracted")
+        Right(pageImageArtifacts.rootPath).right
+      }
+
+    } yield { res }
+  }
+
   def setPageImages(corpusEntry: CorpusEntry)(implicit docStore: DocumentCorpus): Unit = {
     for {
-      pdfArtifact    <- corpusEntry.getPdfArtifact
-      pdfPath        <- pdfArtifact.asPath.toOption
+      imagesPath <-  extractPageImages(corpusEntry).right
+      stableId <- Right(DocumentID(corpusEntry.entryDescriptor)).right
+      docId <- docStore.getDocument(stableId).toRight(s"no docStore document found for ${stableId}").right
     } yield {
 
-      print(s"extracting page images")
-      val stableId = DocumentID(corpusEntry.entryDescriptor)
+      val pageImages = ExtractImages.load(imagesPath)
 
-      docStore.getDocument(stableId).foreach({docId =>
-        val pageImageArtifacts = corpusEntry.ensureArtifactGroup("page-images")
-        val pageImages = if (pageImageArtifacts.getArtifacts.isEmpty) {
-          ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
-        } else {
-          ExtractImages.load(pageImageArtifacts.rootPath)
+      pageImages.images.zipWithIndex
+        .foreach { case (image, i) =>
+          docStore.getPage(docId, PageNum(i))
+            .foreach{ pageId =>
+              docStore.setPageImage(pageId, image.bytes)
+            }
         }
-
-        pageImages.images.zipWithIndex.foreach {
-          case (image, i) =>
-            docStore
-              .getPage(docId, PageNum(i))
-              .foreach{ pageId =>
-                docStore.setPageImage(pageId, image.bytes)
-              }
-        }
-      })
     }
   }
 
   import fs2._
   import fs2.util.Async
-  // import fs2.util.syntax._
-  // import fs2.async._
   import scala.concurrent.ExecutionContext.Implicits.global
 
   implicit val S = Strategy.fromExecutor(global)
@@ -137,8 +149,8 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
   def segmentAll(n: Int=0, skip: Int=0, extractImages: Boolean=false)(implicit docStore: DocumentCorpus, corpus: Corpus): Unit = {
 
     val allEntries = corpus.entryStream()
-    val skipped = if (skip > 0) allEntries.drop(skip) else allEntries
-    val entries = if (n > 0) skipped.take(n) else skipped
+    val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
+    val entries = if (n > 0) skipped.take(n.toLong) else skipped
 
     val prog0 = entries.take(1)
       .map { corpusEntry =>
@@ -167,6 +179,30 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     prog0.run.unsafeRun()
 
     println(s"running remaining entries")
+    val retval = prog.run.unsafeRun
+  }
+
+  def extractAllPageImages(n: Int=0, skip: Int=0)(implicit corpus: Corpus): Unit = {
+
+    val allEntries = corpus.entryStream()
+    val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
+    val entries = if (n > 0) skipped.take(n.toLong) else skipped
+
+
+    val chunked = entries
+      .through(pipe.zipWithIndex)
+      .chunkN(5, allowFewer=true)
+      .map { chunks =>
+        chunks.map(Stream.chunk)
+          .reduce(_ ++ _)
+          .covary[Task]
+          .map { case (corpusEntry, i) =>
+            println(s"processing entry ${i}")
+            extractPageImages(corpusEntry)
+          }
+      }
+
+    val prog = concurrent.join(12)(chunked)
     val retval = prog.run.unsafeRun
   }
 
