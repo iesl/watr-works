@@ -2,24 +2,13 @@ package edu.umass.cs.iesl.watr
 package corpora
 
 import org.scalatest._
-import TypeTags._
+// import TypeTags._
 
-object Relations {
-  case class Document(
-    prKey   : Int@@DocumentID,
-    stableId: String@@DocumentID
-  )
-
-  case class Page(
-    prKey      : Int@@PageID,
-    document   : Int@@DocumentID
-  )
-}
 
 class Tables {
-  val Rel = Relations
+  // val Rel = Relations
 
-  object documents extends DBRelation[DocumentID, Rel.Document] {
+  // object documents extends DBRelation[DocumentID, Rel.Document] {
     // val stableIds = mutable.HashMap[String@@DocumentID, Int@@DocumentID]()
 
     // def forStableId(stableId: String@@DocumentID): Option[Int@@DocumentID] = {
@@ -32,7 +21,7 @@ class Tables {
     //   stableIds.put(stableId, rec.prKey)
     //   rec
     // }
-  }
+  
 
 }
 

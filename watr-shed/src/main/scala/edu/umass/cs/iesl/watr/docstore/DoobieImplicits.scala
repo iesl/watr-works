@@ -36,8 +36,6 @@ trait DoobieImplicits extends DoobiePredef {
       docId => docId.unwrap
     )
 
-
-
   def TypeTagMeta[T: TypeTag](
     f: Int => Int@@T)(
     implicit T: TypeTag[Int@@T]

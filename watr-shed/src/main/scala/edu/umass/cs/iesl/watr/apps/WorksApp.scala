@@ -136,12 +136,6 @@ object Works extends App {
       .action((v, conf) => setAction(conf, fastForwardDocsegs(_)))
       .text ("re-run document segmentation while preserving existing annotations")
 
-    cmd("images") action { (v, conf) =>
-      setAction(conf, {(ac: AppConfig) =>
-        extractImages(ac)
-      })
-    } text ("extract pdf pages as images")
-
   }
 
 
@@ -397,30 +391,6 @@ object Works extends App {
           println(line)
         }
     }
-  }
-
-  def extractImages(conf: AppConfig): Unit = {
-    import ammonite.{ops => fs}
-    import fs._
-    import fs.ImplicitWd._
-
-    processCorpusEntryList(conf, {corpusEntry =>
-
-      for {
-        pdf <- corpusEntry.getPdfArtifact
-        pdfPath <- pdf.asPath
-      } {
-        val pageImagePath = corpusEntry.artifactsRoot / "page-images"
-        if (! exists(pageImagePath)) {
-          mkdir(pageImagePath)
-        }
-        val pageImageFilespec = pageImagePath / "page-%d.png"
-
-        val res = %%("mudraw", "-r", "110", "-o", pageImageFilespec, pdfPath)
-
-      }
-
-    })
   }
 
 }

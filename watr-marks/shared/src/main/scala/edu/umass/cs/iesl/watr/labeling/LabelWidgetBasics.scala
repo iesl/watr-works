@@ -18,7 +18,7 @@ trait LabelWidgetBasics {
   def prettyPrintLabelWidget(lwidget: LabelWidget): TB.Box = {
     lwidget.cata(toTree).drawBox
   }
-  
+
   type LWDiff = Fix[Diff[Fix, LabelWidgetF, ?]]
 
   def labelWidgetDiff(w1: LabelWidget, w2: LabelWidget): LWDiff = {

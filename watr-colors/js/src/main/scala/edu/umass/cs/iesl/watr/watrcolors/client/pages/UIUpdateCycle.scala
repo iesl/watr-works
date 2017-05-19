@@ -260,7 +260,9 @@ trait UIUpdateCycle extends D3BasicShapes {
     uiResponse  <- doUIUpdateCycle(req)
   } yield {
     println("complete:uiRequest ")
-    joinResponseData(uiResponse.changes)
+    uiResponse.changes.foreach { mods =>
+      joinResponseData(mods)
+    }
     updateUIState(uiResponse.uiState)
   }
 

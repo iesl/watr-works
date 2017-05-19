@@ -96,8 +96,9 @@ object UPicklers {
   implicit val Padding_RW: RW[Padding] =
     macroRW[Padding]
 
-  implicit val WidgetMod_RW: RW[WidgetMod] =
-    macroRW[Added].merge(macroRW[Removed]).merge(macroRW[Unmodified])
+  implicit val WidgetMod_RW: RW[WidgetMod] = macroRW[Added]
+      .merge(macroRW[Removed])
+      .merge(macroRW[Unmodified])
 
   implicit val UIState_RW: RW[UIState] = macroRW[UIState]
   implicit val UIRequest_RW: RW[UIRequest] = macroRW[UIRequest]

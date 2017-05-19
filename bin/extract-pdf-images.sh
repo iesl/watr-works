@@ -19,14 +19,9 @@ showhelp() {
 # default arg vals
 pdffile=
 
-
-# rm -r $OUTPUT_PATH
-# mkdir $OUTPUT_PATH
-
-while getopts "f:hm" name; do
+while getopts "f:h" name; do
     case $name in
         f)    pdffile=$OPTARG;;
-        m)    showhelp $0;;
         h)    showhelp $0;;
         [?])  showhelp $0;;
     esac
@@ -41,7 +36,6 @@ pdfdir=$( dirname "$pdffile" )
 pageimagedir="$pdfdir/page-images"
 thumbdir=$pdfdir/page-thumbs
 
-
 rm -rf $pageimagedir
 mkdir $pageimagedir
 rm -rf $thumbdir
@@ -49,8 +43,24 @@ mkdir $thumbdir
 
 echo "Extracting page images"
 
-mutool draw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
-# mudraw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
+mudraw_exists=$(hash mudraw 2>/dev/null && echo 1)
+mutool_exists=$(hash mutool 2>/dev/null && echo 1)
+
+# if [ -n $mudraw_exists ]; then
+#     echo "mudraw exists; "
+# fi
+# if [ -n $mudraw_exists ]; then
+#     echo "mutool exists;"
+# fi
+
+if [ -n $mudraw_exists ]; then
+    # echo "using mudraw "
+    mudraw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
+elif [ -n $mudraw_exists ]; then
+    # echo "using mutool"
+    mutool draw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
+fi
+
 
 echo "Generating thumbnails"
 

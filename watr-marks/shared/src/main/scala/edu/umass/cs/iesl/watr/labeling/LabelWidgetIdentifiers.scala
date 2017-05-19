@@ -6,9 +6,7 @@ import watrmarks._
 import utils.Color
 import utils.Colors
 
-sealed trait WidgetLayoutMod
-
-sealed trait WidgetMod extends WidgetLayoutMod {
+sealed trait WidgetMod {
   def id: Int@@WidgetID
 }
 
@@ -17,12 +15,8 @@ object WidgetMod {
   case class Added(id: Int@@WidgetID, abs: Option[AbsPosWidget]=None) extends WidgetMod
   case class Removed(id: Int@@WidgetID) extends WidgetMod
   case class Unmodified(id: Int@@WidgetID) extends WidgetMod
-  case object AllUnmodified  extends WidgetLayoutMod {
-    def id: Int@@WidgetID = sys.error("should never reach here")
-  }
 
 }
-
 
 case class UIState(
   selectionConstraint: Constraint,
@@ -38,7 +32,7 @@ case class UIRequest(
 
 case class UIResponse(
   uiState: UIState,
-  changes: List[WidgetMod]
+  changes: Option[List[WidgetMod]]
 )
 
 case class PaginationInfo(

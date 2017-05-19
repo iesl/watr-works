@@ -24,7 +24,10 @@ import org.http4s.server.blaze._
 import TypeTags._
 import upickle.{default => UPickle}
 
+// import java.util.concurrent.ExecutorService
 import scala.concurrent._
+import java.io.File
+import FileService.Config
 
 
 class Http4sService(
@@ -46,12 +49,58 @@ class Http4sService(
 
 
   val regionImageService = HttpService {
-    case request @ GET -> Root / "region" / regionId =>
-      val bytes = reflowDB.serveTargetRegionImage(RegionID(regionId.toInt))
+    case request @ GET -> Root / "region" / IntVar(regionId) =>
+      val bytes = reflowDB.serveTargetRegionImage(RegionID(regionId))
       Ok(bytes).putHeaders(
         H.`Content-Type`(MediaType.`image/png`)
       )
   }
+
+
+  def pathCollector(f:File, config: Config, req:Request): Task[Option[Response]] = {
+    val Rel = RelationModel
+    val corpusRoot = corpus.corpusRoot.toNIO
+
+    req match {
+      case GET -> Root / "page-image" / IntVar(pageId) =>
+        val (rPage, rDoc) = reflowDB.getPageAndDocument(PageID(pageId))
+        val entryPath = rDoc.stableId.unwrap
+        val imagePath = corpusRoot
+          .resolve(entryPath)
+          .resolve("page-images")
+          .resolve(s"page-${rPage.pagenum.unwrap}.opt.png")
+
+        println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
+
+        Task.now{
+          StaticFile.fromFile(imagePath.toFile(), Some(req))
+        }
+
+      case GET -> Root / "page-thumb" / IntVar(pageId) =>
+        val (rPage, rDoc) = reflowDB.getPageAndDocument(PageID(pageId))
+        val entryPath = rDoc.stableId.unwrap
+        val imagePath = corpusRoot
+          .resolve(entryPath)
+          .resolve("page-thumbs")
+          .resolve(s"page-${rPage.pagenum.unwrap}.png")
+
+        println(s"pageImageService:/page-thumbs pageId:${pageId}; imagePath: ${imagePath}")
+
+        Task.now{
+          StaticFile.fromFile(imagePath.toFile(), Some(req))
+          //     .map { resp =>
+          //       resp.putHeaders(
+          //         H.`Content-Type`(MediaType.`image/png`)
+          //       )
+        }
+    }
+  }
+
+  val pageImageService = fileService(FileService.Config(
+    corpus.corpusRoot.toIO.toString(),
+    pathCollector = pathCollector
+  ))
+
 
   def htmlPage(pageName: String, user: Option[String]): Task[Response]= {
     Ok(html.ShellHtml(pageName, user).toString())
@@ -152,6 +201,7 @@ class Http4sService(
     .mountService(webJarService)
     .mountService(assetService)
     .mountService(regionImageService, "/img")
+    .mountService(pageImageService, "/img")
     .mountService(autowireService, "/autowire")
     .mountService(userRegistration, "/user")
 

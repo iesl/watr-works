@@ -3,6 +3,8 @@ package docstore
 
 import doobie.imports._
 import doobie.free.{ connection => C }
+import java.nio.file.Path
+import java.nio.file.Paths
 import scalaz.syntax.applicative._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
@@ -222,6 +224,14 @@ class TextReflowDB(
     """.query[Int]
       .map(PageID(_))
       .list
+  }
+
+  def selectPageAndDocument(pageId: Int@@PageID): ConnectionIO[(Rel.Page, Rel.Document)] = {
+    sql"""
+     select pg.*, d.*
+     from   page as pg join document as d on (pg.document=d.document)
+     where  d.document=pg.document AND pg.page=${pageId}
+    """.query[(Rel.Page, Rel.Document)].unique
   }
 
   def selectPageForDocument(docId: Int@@DocumentID, pageNum: Int@@PageNum): ConnectionIO[Int@@PageID] = {
@@ -444,6 +454,25 @@ class TextReflowDB(
     }
   }
 
+  def getPageAndDocument(pageId: Int@@PageID): (Rel.Page, Rel.Document) = {
+    runq{ selectPageAndDocument(pageId) }
+  }
+
+  def getCorpusEntryPath(pageId: Int@@PageID): Path = {
+    val query = sql"""
+       select
+          d.stableId
+       from
+          page as pg
+          join document as d on (pg.document=d.document)
+       where
+          pg.page = ${pageId}
+    """.query[String]
+      .map(str => Paths.get(str))
+      .unique
+
+    runq { query }
+  }
 
   object docStore extends DocumentCorpus {
     def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {

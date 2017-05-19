@@ -26,7 +26,6 @@ sealed trait LabelWidgetF[+A] {
 
 object LabelWidgetF {
 
-
   // Used for recording positioning offsets during layout
   type PositionVector = Point
 

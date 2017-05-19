@@ -4,7 +4,7 @@ package table
 import ammonite.ops._
 
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
-import extract.images._
+// import extract.images._
 import corpora._
 import segment._
 import bioarxiv._
@@ -98,46 +98,46 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
 
 
 
-  def extractPageImages(corpusEntry: CorpusEntry): Either[String, Path] = {
-    println(s"extracting ${corpusEntry}")
-    for {
-      pdfArtifact    <- corpusEntry.getPdfArtifact.toRight[String](s"pdf file not found ${corpusEntry}").right
-      pdfPath        <- pdfArtifact.asPath.toOption.toRight(s"pdf path invalid ${pdfArtifact}").right
+  // def extractPageImages(corpusEntry: CorpusEntry): Either[String, Path] = {
+  //   println(s"extracting ${corpusEntry}")
+  //   for {
+  //     pdfArtifact    <- corpusEntry.getPdfArtifact.toRight[String](s"pdf file not found ${corpusEntry}").right
+  //     pdfPath        <- pdfArtifact.asPath.toOption.toRight(s"pdf path invalid ${pdfArtifact}").right
 
-      pageImageArtifacts <- Right(corpusEntry.ensureArtifactGroup("page-images")).right
+  //     pageImageArtifacts <- Right(corpusEntry.ensureArtifactGroup("page-images")).right
 
-      res <- if (pageImageArtifacts.getArtifacts.isEmpty) {
-        ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
-          .left.map{ err => s"Error: ${err}" }
-          .right.map{ succ => pageImageArtifacts.rootPath }
-          .right
+  //     res <- if (pageImageArtifacts.getArtifacts.isEmpty) {
+  //       ExtractImages.extract(pdfPath, pageImageArtifacts.rootPath)
+  //         .left.map{ err => s"Error: ${err}" }
+  //         .right.map{ succ => pageImageArtifacts.rootPath }
+  //         .right
 
-      } else {
-        println(s"Images already extracted")
-        Right(pageImageArtifacts.rootPath).right
-      }
+  //     } else {
+  //       println(s"Images already extracted")
+  //       Right(pageImageArtifacts.rootPath).right
+  //     }
 
-    } yield { res }
-  }
+  //   } yield { res }
+  // }
 
-  def setPageImages(corpusEntry: CorpusEntry)(implicit docStore: DocumentCorpus): Unit = {
-    for {
-      imagesPath <-  extractPageImages(corpusEntry).right
-      stableId <- Right(DocumentID(corpusEntry.entryDescriptor)).right
-      docId <- docStore.getDocument(stableId).toRight(s"no docStore document found for ${stableId}").right
-    } yield {
+  // def setPageImages(corpusEntry: CorpusEntry)(implicit docStore: DocumentCorpus): Unit = {
+  //   for {
+  //     imagesPath <-  extractPageImages(corpusEntry).right
+  //     stableId <- Right(DocumentID(corpusEntry.entryDescriptor)).right
+  //     docId <- docStore.getDocument(stableId).toRight(s"no docStore document found for ${stableId}").right
+  //   } yield {
 
-      val pageImages = ExtractImages.load(imagesPath)
+  //     val pageImages = ExtractImages.load(imagesPath)
 
-      pageImages.images.zipWithIndex
-        .foreach { case (image, i) =>
-          docStore.getPage(docId, PageNum(i))
-            .foreach{ pageId =>
-              docStore.setPageImage(pageId, image.bytes)
-            }
-        }
-    }
-  }
+  //     pageImages.images.zipWithIndex
+  //       .foreach { case (image, i) =>
+  //         docStore.getPage(docId, PageNum(i))
+  //           .foreach{ pageId =>
+  //             docStore.setPageImage(pageId, image.bytes)
+  //           }
+  //       }
+  //   }
+  // }
 
   import fs2._
   import fs2.util.Async
@@ -182,29 +182,29 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     val retval = prog.run.unsafeRun
   }
 
-  def extractAllPageImages(n: Int=0, skip: Int=0)(implicit corpus: Corpus): Unit = {
+  // def extractAllPageImages(n: Int=0, skip: Int=0)(implicit corpus: Corpus): Unit = {
 
-    val allEntries = corpus.entryStream()
-    val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
-    val entries = if (n > 0) skipped.take(n.toLong) else skipped
+  //   val allEntries = corpus.entryStream()
+  //   val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
+  //   val entries = if (n > 0) skipped.take(n.toLong) else skipped
 
 
-    val chunked = entries
-      .through(pipe.zipWithIndex)
-      .chunkN(5, allowFewer=true)
-      .map { chunks =>
-        chunks.map(Stream.chunk)
-          .reduce(_ ++ _)
-          .covary[Task]
-          .map { case (corpusEntry, i) =>
-            println(s"processing entry ${i}")
-            extractPageImages(corpusEntry)
-          }
-      }
+  //   val chunked = entries
+  //     .through(pipe.zipWithIndex)
+  //     .chunkN(5, allowFewer=true)
+  //     .map { chunks =>
+  //       chunks.map(Stream.chunk)
+  //         .reduce(_ ++ _)
+  //         .covary[Task]
+  //         .map { case (corpusEntry, i) =>
+  //           println(s"processing entry ${i}")
+  //           extractPageImages(corpusEntry)
+  //         }
+  //     }
 
-    val prog = concurrent.join(12)(chunked)
-    val retval = prog.run.unsafeRun
-  }
+  //   val prog = concurrent.join(12)(chunked)
+  //   val retval = prog.run.unsafeRun
+  // }
 
 
   def segment(corpusEntry: CorpusEntry, extractImages: Boolean=true)(implicit docStore: DocumentCorpus): Unit = {
@@ -228,9 +228,9 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
             .createSegmenter(stableId, pdfPath, docStore)
 
           segmenter.runPageSegmentation()
-          if (extractImages) {
-            setPageImages(corpusEntry)
-          }
+          // if (extractImages) {
+          //   setPageImages(corpusEntry)
+          // }
           println()
         }
     }

@@ -68,7 +68,7 @@ class BioArxivServer(
           lwIndex.labelerIdentifier
         )
 
-        Future { UIResponse(respState, lwIndex.getAllMods()) }
+        Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
 
       } catch {
         case t: Throwable =>
@@ -99,7 +99,7 @@ class BioArxivServer(
         // println(s"  ==> UIResponse ${uiResponse}")
         Future{ uiResponse }
       } getOrElse {
-        Future{ UIResponse(uiState, List()) }
+        Future{ UIResponse(uiState, None) }
       }
     } catch {
       case t: Throwable =>

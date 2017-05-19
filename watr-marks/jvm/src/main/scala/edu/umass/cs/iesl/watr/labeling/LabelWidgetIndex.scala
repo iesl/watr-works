@@ -423,7 +423,7 @@ trait LabelWidgetIndex { self =>
 
                 (istate.changesL ~ istate.labelWidgetIndexL).modify(initState) {
                   case (uiChanges, lwiOpt) =>
-                    (toAdd, Some(newIndex))
+                    (Some(toAdd), Some(newIndex))
                 }
               }
             } yield ()
@@ -494,9 +494,13 @@ trait LabelWidgetIndex { self =>
     // println("   ... response constructed")
     // println(updates.mkString("\n  ", "\n  ", "\n"))
 
-    val newResponse = uiResponse.copy(
-      changes = updates.toList
-    )
+    val newResponse = if (updates.isEmpty){
+      uiResponse
+    } else {
+      uiResponse.copy(
+        changes = Some(updates.toList)
+      )
+    }
 
     (newResponse, newIndex)
   }
@@ -508,7 +512,7 @@ trait LabelWidgetIndex { self =>
   def userInteraction(uiRequest: UIRequest): (UIResponse, LabelWidgetIndex) = {
 
     val UIState(uiContraint, activeLabel, selections, activeLabeler) = uiRequest.uiState
-    val initResponse = UIResponse(uiRequest.uiState, List())
+    val initResponse = UIResponse(uiRequest.uiState, None)
 
     val startingWidget = layout.labelWidget
 

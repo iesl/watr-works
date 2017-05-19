@@ -201,7 +201,7 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle with MouseGestures 
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
     val labelerId = parseParams()
 
-
+    // TODO combine createDocumentLabeler with uiRequestCycle function
     shell.createDocumentLabeler(labelerId).foreach{ uiResponse =>
 
       val uiState = uiResponse.uiState
@@ -273,7 +273,9 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle with MouseGestures 
       }
       DOMGlobalScope.initD3DragSelect(dragSelectCallback)
 
-      joinResponseData(uiResponse.changes)
+      uiResponse.changes.foreach { mods =>
+        joinResponseData(mods)
+      }
 
     }
 

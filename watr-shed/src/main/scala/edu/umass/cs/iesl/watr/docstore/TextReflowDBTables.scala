@@ -8,6 +8,7 @@ class TextReflowDBTables extends DoobieImplicits {
 
   val Rel = RelationModel
 
+  // artifactRoot  VARCHAR(256)
   val createDocumentTable: Update0 = sql"""
       CREATE TABLE document (
         document      SERIAL PRIMARY KEY,

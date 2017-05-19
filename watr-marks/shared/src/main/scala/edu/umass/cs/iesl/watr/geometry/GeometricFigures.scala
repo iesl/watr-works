@@ -1,19 +1,15 @@
 package edu.umass.cs.iesl.watr
 package geometry
 
-// import scalaz.{@@ => _, _}, Scalaz._
 import scalaz.Equal
-// import scalaz.syntax.id._
-// import scalaz.syntax.std.list._
 import scalaz.syntax.equal._
 import scalaz.std.list._
-
+import geometry.syntax._
 
 import utils.Color
 
 sealed trait GeometricFigure
 
-import geometry.syntax._
 
 case class LTBounds(
   left: Double,
