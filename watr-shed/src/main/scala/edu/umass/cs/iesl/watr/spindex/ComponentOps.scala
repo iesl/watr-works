@@ -12,6 +12,7 @@ import tracing.VisualTracer, VisualTracer._
 import scala.collection.mutable
 import utils.EnrichNumerics._
 import TextReflowConversion._
+// import TypeTags._
 
 import geometry._
 
@@ -124,7 +125,7 @@ object ComponentOperations {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.bbox.left - c1.bbox.right
+      case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right).asDouble()
       case _  => 0d
     })
 
@@ -135,7 +136,7 @@ object ComponentOperations {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.bounds.left - c1.bounds.right
+      case Seq(c1, c2)  => (c2.bounds.left - c1.bounds.right).asDouble
       case _  => 0d
     })
 
@@ -167,10 +168,10 @@ object ComponentOperations {
     def mpageIndex = theComponent.mpageIndex
     def vtrace = theComponent.mpageIndex.vtrace
 
-    def left: Double  = theComponent.bounds.left
-    def top: Double  = theComponent.bounds.top
-    def height: Double  = theComponent.bounds.height
-    def width: Double  = theComponent.bounds.width
+    def left: Double  = theComponent.bounds.left.asDouble
+    def top: Double  = theComponent.bounds.top.asDouble
+    def height: Double  = theComponent.bounds.height.asDouble
+    def width: Double  = theComponent.bounds.width.asDouble
 
     def hasLabel(l: Label): Boolean = theComponent.getLabels.contains(l)
 
@@ -178,12 +179,9 @@ object ComponentOperations {
       ls.exists(theComponent.hasLabel(_))
     }
 
-    def vdist(other: Component): Double = {
-      other.bounds.bottom - theComponent.bounds.bottom
 
-      // theComponent.bounds.toPoint(Compass.S).vdist(
-      //   other.bounds.toPoint(Compass.S)
-      // )
+    def vdist(other: Component): Double = {
+      (other.bounds.bottom - theComponent.bounds.bottom).asDouble
     }
 
     def columnContains(other: Component): Boolean = {
@@ -263,7 +261,7 @@ object ComponentOperations {
       theComponent.bounds.toCenterPoint.x.eqFuzzy(tolerance)(other.bounds.toCenterPoint.x)
 
     def hasSameLeftEdge(tolerance: Double=0.3)(other: Component) =
-      theComponent.bounds.toPoint(Compass.W).x.eqFuzzy(tolerance)(other.bounds.toPoint(Compass.W).x)
+      theComponent.bounds.toPoint(Compass.W).x.asDouble.eqFuzzy(tolerance)(other.bounds.toPoint(Compass.W).x.asDouble)
 
     def isEqualWidth(tolerance: Double=0.1)(other: Component) =
       theComponent.bounds.width.eqFuzzy(tolerance)(other.bounds.width)
@@ -274,7 +272,7 @@ object ComponentOperations {
     def findCommonToplines(): Seq[Double] = {
       // vtrace.trace(message("findCommonToplines"))
       getMostFrequentValues(vtrace)(
-        atoms.map({c => c.bounds.top}),
+        atoms.map({c => c.bounds.top.asDouble}),
         0.01d
       )
     }
@@ -282,7 +280,7 @@ object ComponentOperations {
     def findCommonBaselines(): Seq[Double] = {
       // vtrace.trace(message("findCommonBaselines"))
       getMostFrequentValues(vtrace)(
-        atoms.map({c => c.bounds.bottom}),
+        atoms.map({c => c.bounds.bottom.asDouble}),
         0.01d
       )
     }
@@ -380,7 +378,7 @@ object ComponentOperations {
     def guessWordbreakWhitespaceThreshold(): Double = {
       val charDists = determineSpacings()
 
-      val charWidths = theComponent.atoms.map(_.bounds.width)
+      val charWidths = theComponent.atoms.map(_.bounds.width.asDouble)
       val widestChar = charWidths.max
 
       // Don't  accept a space wider than (some magic number)*the widest char?
@@ -536,8 +534,8 @@ object ComponentOperations {
 
 
     def determineNormalTextBounds: LTBounds = {
-      val mfHeights = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.height), 0.1d)
-      val mfTops = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.top), 0.1d)
+      val mfHeights = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.height.asDouble), 0.1d)
+      val mfTops = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.top.asDouble), 0.1d)
 
 
       val mfHeight= mfHeights.headOption.getOrElse(0d)
@@ -546,9 +544,9 @@ object ComponentOperations {
       theComponent.atoms
         .map({ c =>
           val cb = c.bounds
-          LTBounds(
-            left=cb.left, top=mfTop,
-            width=cb.width, height=mfHeight
+          LTBounds.Doubles(
+            left=cb.left.asDouble, top=mfTop,
+            width=cb.width.asDouble, height=mfHeight
           )
         })
         .foldLeft(theComponent.atoms.head.bounds)( { case (b1, b2) =>

@@ -100,11 +100,11 @@ class PdfTextExtractor(
     val right = xtrans(rval)
     val bottom = ytrans(bval)
 
-    val bounds = LTBounds(
-      left = left.toDouble,
-      top = top.toDouble,
-      width = right.toDouble,
-      height = bottom.toDouble
+    val bounds = LTBounds.Doubles(
+      left = left,
+      top = top,
+      width = right,
+      height = bottom
     )
 
     (PageGeometry(pageId, bounds),

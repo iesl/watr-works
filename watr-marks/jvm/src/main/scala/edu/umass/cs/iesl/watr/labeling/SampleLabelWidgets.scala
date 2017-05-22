@@ -39,15 +39,15 @@ object SampleLabelWidgets {
     )
 
     val r0 = row(
-      pad(panel0, Padding(3), Colors.LightBlue),
-      pad(panel1, Padding(9), Colors.Azure)
+      pad(panel0, Padding.Ints(3), Colors.LightBlue),
+      pad(panel1, Padding.Ints(9), Colors.Azure)
     )
 
     val col0 = col(
       r0,
-      pad(r0, Padding(2), Colors.Gray(3.percent))
+      pad(r0, Padding.Ints(2), Colors.Gray(3.percent))
     )
-    val layout = pad(col0, Padding(10), Colors.Red)
+    val layout = pad(col0, Padding.Ints(10), Colors.Red)
 
     layout
 

@@ -41,17 +41,4 @@ object EnrichNumericsCheck extends Properties("EnrichNumericsCheck")  {
 
   val smallishDouble = Gen.choose(0d, 10000d)
 
-  property("double <--> string rep") = forAll(smallishDouble){ (d: Double) =>
-    // println(s"start: ${d}")
-    val ival = dtoi(d)
-    // println(s"   ival: ${ival}")
-    val dval = itod(ival)
-    // println(s"   dval: ${dval}")
-    // itod(dtoi(d))
-    // TODO assert that decimal/fractional parts are preserved
-
-    true
-
-  }
-
 }

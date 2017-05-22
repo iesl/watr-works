@@ -58,7 +58,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
 
         LW.pad(
           LW.targetOverlay(pageTargetRegion, overlays=List()),
-          Padding(2),
+          Padding.Ints(2),
           Colors.DarkSlateBlue
         )
       }
@@ -81,7 +81,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       ),
       LW.pad(
         paperRecWidget,
-        Padding(10, 10, 0, 0),
+        Padding.Ints(10, 10, 0, 0),
         Colors.Linen
       )
     )

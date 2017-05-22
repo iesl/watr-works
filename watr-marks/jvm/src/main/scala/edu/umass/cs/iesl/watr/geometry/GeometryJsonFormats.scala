@@ -63,6 +63,10 @@ trait TypeTagFormats {
   val WriteComponentID: Writes[Int@@ComponentID] = Writes[Int@@ComponentID] { i => JsNumber(i.unwrap) }
   implicit def FormatComponentID            = Format(ReadComponentID, WriteComponentID)
 
+  val ReadFloatRep: Reads[Int@@FloatRep]   = __.read[Int].map(i => Tag.of[FloatRep](i))
+  val WriteFloatRep: Writes[Int@@FloatRep] = Writes[Int@@FloatRep] { i => JsNumber(i.unwrap) }
+  implicit def FormatFloatRep            = Format(ReadFloatRep, WriteFloatRep)
+
   val ReadChar: Reads[Char]   = __.read[String].map(c => c(0))
   val WriteChar: Writes[Char] = Writes[Char] { c => JsString(c.toString()) }
   implicit def FormatChar     = Format(ReadChar, WriteChar)
@@ -106,8 +110,10 @@ trait ExplicitTypeTagFormats {
 
 trait GeometryJsonCodecs extends TypeTagFormats {
   import play.api.libs.json._
-  import utils.EnrichNumerics._
+  // import play.api.libs.json
+  // import utils.EnrichNumerics._
   def jstr(s: String) = JsString(s)
+  def num(s: Int) = JsNumber(s)
 
   implicit def optionalFormat[T](implicit jsFmt: Format[T]): Format[Option[T]] =
     new Format[Option[T]] {
@@ -125,16 +131,17 @@ trait GeometryJsonCodecs extends TypeTagFormats {
 
   implicit val FormatLTBounds: Format[LTBounds] = new Format[LTBounds] {
     override def reads(json: JsValue) = json match {
-      // case JsArray(Seq(JsString("lt"), JsString(bounds))) =>
-      case JsString(bounds) =>
-        val Array(l, t, w, h) = bounds.trim.split(" ").map(_.toDouble)
-        JsSuccess(LTBounds(l, t, w, h))
+      case JsArray(Seq(
+        JsNumber(l), JsNumber(t), JsNumber(w), JsNumber(h)
+      )) =>
+        JsSuccess(LTBounds.IntReps(l.intValue(), t.intValue(), w.intValue(), h.intValue()))
 
       case _ => JsError("LTBounds")
     }
 
     override def writes(o: LTBounds) = {
-      jstr(s"""${o.left.pp} ${o.top.pp} ${o.width.pp} ${o.height.pp}""")
+      val LTBounds.IntReps(l, t, w, h) = o
+      Json.arr(num(l), num(t), num(w), num(h))
     }
   }
 

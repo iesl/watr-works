@@ -102,10 +102,6 @@ object LabelWidgetLayoutHelpers {
 
 trait LabelWidgetLayout extends LabelWidgetBasics {
 
-
-  val zeroLTBounds: LTBounds = LTBounds(0, 0, 0, 0)
-  val zeroPosVector: PositionVector = Point(0, 0)
-
   // Natural Transformation  from EnvT ~> LabelWidget
   def stripLWEnv = new (EnvT[PosAttr, LabelWidgetF, ?] ~> LabelWidgetF[?]) {
     def apply[A](env: EnvT[PosAttr, LabelWidgetF, A]): LabelWidgetF[A] = {
@@ -119,7 +115,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     offsetFn: (LTBounds, PosAttr) => PositionVector
   ): (LTBounds, LTBounds, List[PositionVector]) = {
     val newpositions =
-      (children foldLeft (zeroLTBounds, zeroLTBounds, List[PositionVector]())) {
+      (children foldLeft (LTBounds.empty, LTBounds.empty, List[PositionVector]())) {
         case ((currStrictBounds, currBleedBounds, childVecs), oldpos) =>
           val newChildVec = offsetFn(currStrictBounds, oldpos)
           val newpos = oldpos.translate(newChildVec)
@@ -145,7 +141,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
       { (childrenBbox, childPos) => childrenBbox.toPointUpLeft() }
     )
     val bbox = childPos.strictBounds
-    PosAttr(fv, bbox, chBleed, zOrder.getOrElse(0), zeroPosVector,  childAdjustVecs)
+    PosAttr(fv, bbox, chBleed, zOrder.getOrElse(0), Point.zero,  childAdjustVecs)
   }
 
   def childMaxZIndex(posAttrs: List[PosAttr]): Int = {
@@ -183,7 +179,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
             {(totalChildsBbox, childPos)=> totalChildsBbox.toPoint(CDir.NE) }
           )
           val childMaxZ = childMaxZIndex(attrs.map(_._2))
-          PosAttr(F.void(flw), bbox, chBleed, childMaxZ+1, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, chBleed, childMaxZ+1, Point.zero, childAdjustVecs)
 
         case flw @ Col(wid, attrs) =>
           val (bbox, chBleed, childAdjustVecs) = repositionChildren(
@@ -192,16 +188,16 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           )
           val childMaxZ = childMaxZIndex(attrs.map(_._2))
 
-          PosAttr(F.void(flw), bbox, bbox, childMaxZ+1, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, bbox, childMaxZ+1, Point.zero, childAdjustVecs)
 
         case flw @ ZStack(wid, attrs) =>
           val (bbox, chBleed, childAdjustVecs) = repositionChildren(
             attrs.map(_._2),
-            {(totalChildsBbox, childPos) => zeroPosVector }
+            {(totalChildsBbox, childPos) => Point.zero }
           )
           val childMaxZ = childMaxZIndex(attrs.map(_._2))
 
-          PosAttr(F.void(flw), bbox, bbox, childMaxZ+1, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, bbox, childMaxZ+1, Point.zero, childAdjustVecs)
 
         case flw @ Panel(wid, p@(a, attr), action) =>
           inheritChildLayout(F.void(flw), attr, Some(-attr.zOrder))
@@ -224,31 +220,31 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
             childBbox.height + padding.top + padding.bottom
           )
 
-          PosAttr(F.void(flw), bbox, childBleed, attr.zOrder+1, zeroPosVector, childAdjustVecs)
+          PosAttr(F.void(flw), bbox, childBleed, attr.zOrder+1, Point.zero, childAdjustVecs)
 
         case flw @ Reflow(wid, textReflow) =>
           val bounds = textReflow.bounds()
           val bbox = bounds.moveToOrigin
 
-          PosAttr(F.void(flw), bbox, bbox, 0, zeroPosVector)
+          PosAttr(F.void(flw), bbox, bbox, 0, Point.zero)
 
         case flw @ TextBox(wid, box) =>
           val str = box.toString
           val lines = str.split("\n")
           val height = lines.length
           val maxwidth = lines.map(_.length).max
-          val bbox: LTBounds = LTBounds(0, 0, maxwidth*6d, height*16d)
+          val bbox: LTBounds = LTBounds.Doubles(0, 0, maxwidth*6d, height*16d)
 
-          PosAttr(F.void(flw), bbox, bbox, 0, zeroPosVector)
+          PosAttr(F.void(flw), bbox, bbox, 0, Point.zero)
 
         case flw @ Figure(wid, figure) =>
           val bbox = totalBounds(figure)
-          PosAttr(F.void(flw), bbox, bbox, 10, zeroPosVector)
+          PosAttr(F.void(flw), bbox, bbox, 10, Point.zero)
 
         case flw @ Terminal =>
-          val bbox: LTBounds = LTBounds(0, 0, 0, 0)
+          val bbox: LTBounds = LTBounds.zero
 
-          PosAttr(F.void(flw), bbox, bbox, 0, zeroPosVector)
+          PosAttr(F.void(flw), bbox, bbox, 0, Point.zero)
       }
     }
 
@@ -299,7 +295,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     val relativePositioned: Cofree[LabelWidgetF, PosAttr] =
       lwidget.cata(attributePara(positionAttrs))
 
-    val zero = PosAttr(TextBox(WidgetID(0), "dummy"), zeroLTBounds, zeroLTBounds, 0, Point(0, 0), List(Point(0, 0)))
+    val zero = PosAttr(TextBox(WidgetID(0), "dummy"), LTBounds.empty, LTBounds.empty, 0, Point.zero, List(Point.zero))
 
     val adjusted: Cofree[LabelWidgetF, PosAttr] = relativePositioned
       .attributeTopDownM[State[PosAttr, ?], PosAttr](zero)({

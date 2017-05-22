@@ -18,7 +18,7 @@ trait ImageManipulation {
   def cropTo(image: Image, cropBox: LTBounds, pageBounds: LTBounds): Image = {
     println(s"page geometry is ${pageBounds.prettyPrint}")
     println(s"image geometry is width:${image.width}, height:${image.height}")
-    val scaled = image.scaleTo(pageBounds.width.toInt, pageBounds.height.toInt)
+    val scaled = image.scaleTo(pageBounds.width.asInt, pageBounds.height.asInt)
 
     val left = cropBox.left // - pageBounds.left
     val top = cropBox.top // - pageBounds.left
@@ -26,14 +26,14 @@ trait ImageManipulation {
     val bottom = pageBounds.bottom - cropBox.bottom
 
     val trimmed = scaled.trim(
-      left   = left.toInt,
-      top    = top.toInt,
-      right  = right.toInt,
-      bottom = bottom.toInt
+      left   = left.asInt,
+      top    = top.asInt,
+      right  = right.asInt,
+      bottom = bottom.asInt
     )
 
-    val rescaleFactorX: Double = image.width.toDouble / pageBounds.width
-    val rescaleFactorY: Double = image.height.toDouble / pageBounds.height
+    val rescaleFactorX: Double = image.width.toDouble / pageBounds.width.asDouble()
+    val rescaleFactorY: Double = image.height.toDouble / pageBounds.height.asDouble()
 
     println(s"scaling factors are  scaleX: ${rescaleFactorX}, scaleY: ${rescaleFactorY}")
 
@@ -49,7 +49,7 @@ trait ImageManipulation {
   //   for {
   //     (line, n) <- lines(text).zipWithIndex
   //   } yield {
-  //     canvas1.draw(Drawable(line, 0, n*yscale.toInt))
+  //     canvas1.draw(Drawable(line, 0, n*yscale.asInt))
   //   }
   //   canvas1.image
   // }

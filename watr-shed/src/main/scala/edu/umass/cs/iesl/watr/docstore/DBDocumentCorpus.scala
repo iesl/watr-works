@@ -82,13 +82,12 @@ class TextReflowDB(
   }
 
   def selectTargetRegionForBbox(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Option[Rel.TargetRegion]] = {
-    val LTBounds(l, t, w, h) = bbox
-    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+    val LTBounds.IntReps(l, t, w, h) = bbox
 
     sql"""select * from targetregion where
        page=${pageId} AND
-       bleft=${bl} AND btop=${bt} AND
-       bwidth=${bw} AND bheight=${bh}
+       bleft=${l} AND btop=${t} AND
+       bwidth=${w} AND bheight=${h}
        order by rank
     """.query[Rel.TargetRegion].option
   }
@@ -198,11 +197,10 @@ class TextReflowDB(
   }
 
   def updatePage(pageId: Int@@PageID, geom: LTBounds): ConnectionIO[Int] = {
-    val LTBounds(l, t, w, h) = geom
-    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+    val LTBounds.IntReps(l, t, w, h) = geom
 
     sql"""
-       update page set bleft=$bl, btop=$bt, bwidth=$bw, bheight=$bh where page=${pageId}
+       update page set bleft=$l, btop=$t, bwidth=$w, bheight=$h where page=${pageId}
     """.update.run
   }
 
@@ -302,8 +300,7 @@ class TextReflowDB(
   }
 
   def updatePageGeometry(pageId: Int@@PageID, pageBounds: LTBounds): Update0 = {
-    val LTBounds(l, t, w, h) = pageBounds
-    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+    val LTBounds.IntReps(bl, bt, bw, bh) = pageBounds
 
     sql"""
        update page set bleft=${bl}, btop=${bt}, bwidth=${bw}, bheight=${bh} where page = ${pageId}
@@ -387,8 +384,7 @@ class TextReflowDB(
 
 
   def ensureTargetRegion(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Int@@RegionID] = {
-    val LTBounds(l, t, w, h) = bbox
-    val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
+    val LTBounds.IntReps(bl, bt, bw, bh) = bbox
 
     for {
       page         <- selectPage(pageId)

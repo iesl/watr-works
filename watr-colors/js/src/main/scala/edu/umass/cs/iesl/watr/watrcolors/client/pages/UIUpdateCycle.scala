@@ -75,8 +75,8 @@ trait D3BasicShapes {
 
       case Figure(wid, fig) =>
         val g1 = createShape(fig)
-        val tx =  -transVec.x.toInt
-        val ty =  -transVec.y.toInt
+        val tx =  -transVec.x.asInt
+        val ty =  -transVec.y.asInt
         Some(
           <.g(
             ^.transform := s"translate($tx $ty)",
@@ -271,8 +271,8 @@ trait UIUpdateCycle extends D3BasicShapes {
       case WidgetMod.Added(wid, widget) =>
         val bbox = widget.get.strictBounds
         d3SvgSelection
-          .attr("width", bbox.width)
-          .attr("height", bbox.height)
+          .attr("width", bbox.width.asDouble())
+          .attr("height", bbox.height.asDouble())
       case _ =>
     }}
   }

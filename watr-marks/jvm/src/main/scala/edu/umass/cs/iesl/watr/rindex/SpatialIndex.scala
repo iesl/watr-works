@@ -20,13 +20,14 @@ class SpatialIndex[T: SpatialIndexable](
   items: mutable.LongMap[T]
 ) {
   def toJsiRectangle(tb: LTBounds): jsi.Rectangle = {
-    jsiRectangle(tb.left, tb.top, tb.width, tb.height)
+    val LTBounds.Floats(l, t, w, h) = tb
+    jsiRectangle(l, t, w, h)
   }
 
   def jsiCenterPoint(tb: LTBounds): jsi.Point = {
     new jsi.Point(
-      (tb.left+tb.width/2).toFloat,
-      (tb.top+tb.height/2).toFloat
+      (tb.left+tb.width/2).asFloat,
+      (tb.top+tb.height/2).asFloat
     )
   }
 
@@ -89,11 +90,12 @@ class SpatialIndex[T: SpatialIndexable](
 
     val ctr = si.ltBounds(fromItem).toCenterPoint
 
+
     val searchRect = LTBounds(
       left   = ctr.x - radius,
       top    = ctr.y - radius,
-      width  = (radius*2.0).toDouble,
-      height = (radius*2.0).toDouble
+      width  = (radius*2.0).toFloatRep(),
+      height = (radius*2.0).toFloatRep()
     )
 
     queryForIntersects(searchRect)
@@ -119,10 +121,10 @@ object jsiRectangle {
 
   def toLTBounds(r: jsi.Rectangle): LTBounds = {
     LTBounds(
-      left = r.minX.toDouble,
-      top =  r.minY.toDouble,
-      width = (r.maxX - r.minX).toDouble,
-      height = (r.maxY - r.minY).toDouble
+      left = r.minX.toFloatRep,
+      top =  r.minY.toFloatRep,
+      width = (r.maxX - r.minX).toFloatRep,
+      height = (r.maxY - r.minY).toFloatRep
     )
   }
 }

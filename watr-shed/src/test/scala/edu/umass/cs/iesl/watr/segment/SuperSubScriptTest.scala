@@ -27,9 +27,9 @@ class SuperSubScriptTest extends DocsegTestUtil {
       //   """to be 431 K and 2.6 {10^{−2}} {GPa^{−1}} for {Rh_{2}MnSn,} and 471 K and 1.7 {10^{−2}} for {GPa^{−1}} {Rh_{2}MnGe,} respectively"""
       // ),
 
-      Example(TestRegion(papers.paperUrl("bongard2005.pdf"), page(0), LTBounds(145.95, 150.21, 310.0, 8.06)),
-        """by Dirk {Bongard^{a}),} Martin {Möller^{a})^{b}),} S. Nagaraja Rao, David {Corr^{b}),} and Lorenz {Walder*^{a})}"""
-      )
+      // Example(TestRegion(papers.paperUrl("bongard2005.pdf"), page(0), LTBounds(145.95, 150.21, 310.0, 8.06)),
+      //   """by Dirk {Bongard^{a}),} Martin {Möller^{a})^{b}),} S. Nagaraja Rao, David {Corr^{b}),} and Lorenz {Walder*^{a})}"""
+      // )
 
 
       // Example(TestRegion(papers.`bongard2005.pdf`, page(1), LTBounds(30.33d, 240.0, 453.2, 15.2)),
@@ -46,30 +46,30 @@ class SuperSubScriptTest extends DocsegTestUtil {
       // )
     )
 
-    import TextReflowConversion.toTextReflow
-    examples.foreach { example =>
-      val pdfIns = example.region.pdfUrl
-      val pageId = example.region.page
-      val bounds = example.region.bbox
+  //   import TextReflowConversion.toTextReflow
+  //   examples.foreach { example =>
+  //     val pdfIns = example.region.pdfUrl
+  //     val pageId = example.region.page
+  //     val bounds = example.region.bbox
 
-      val segmenter = createFilteredMultiPageIndex(pdfIns, pageId, Seq(bounds))
-      val pageIndex = segmenter.mpageIndex.getPageIndex(pageId)
+  //     val segmenter = createFilteredMultiPageIndex(pdfIns, pageId, Seq(bounds))
+  //     val pageIndex = segmenter.mpageIndex.getPageIndex(pageId)
 
-      // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
-      tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+  //     // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
+  //     tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
-      segmenter.runLineDetermination()
+  //     segmenter.runLineDetermination()
 
-      val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
+  //     val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
 
-      val tokenizedLines = lineComponents.map { lineComponent =>
-        lineComponent.tokenizeLine()
-        toTextReflow(lineComponent).get.toString()
-      }
+  //     val tokenizedLines = lineComponents.map { lineComponent =>
+  //       lineComponent.tokenizeLine()
+  //       toTextReflow(lineComponent).get.toString()
+  //     }
 
-      // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")
+  //     // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")
 
-    }
+  //   }
   }
 
 }

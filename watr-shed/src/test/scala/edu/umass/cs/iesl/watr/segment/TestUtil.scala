@@ -32,7 +32,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
 
 
   def attrsToBounds(text: String): LTBounds = {
-    LTBounds(
+    LTBounds.Doubles(
       getAttrVal("x", text).toDouble,
       getAttrVal("y", text).toDouble,
       getAttrVal("width", text).toDouble,
@@ -89,7 +89,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
         .split(", ")
         .map(_.toDouble)
 
-      (foundText, PageNum(pageNumber), LTBounds(bounds(0), bounds(1), bounds(2), bounds(3)))
+      (foundText, PageNum(pageNumber), LTBounds.Doubles(bounds(0), bounds(1), bounds(2), bounds(3)))
     }
 
     ParsedExample(

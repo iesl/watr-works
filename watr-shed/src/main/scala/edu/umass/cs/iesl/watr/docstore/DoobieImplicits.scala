@@ -9,7 +9,6 @@ import geometry._
 import corpora.RelationModel
 import databasics.DoobiePredef
 import TypeTags._
-import utils.EnrichNumerics._
 import scala.reflect.runtime.universe._
 
 trait DoobieImplicits extends DoobiePredef {
@@ -20,12 +19,10 @@ trait DoobieImplicits extends DoobiePredef {
   implicit val LTBoundsMeta: Composite[LTBounds] =
     Composite[Int4].xmap({
       case l :: t :: w :: h :: HNil =>
-        val (bl, bt, bw, bh) = (itod(l), itod(t), itod(w), itod(h))
-        LTBounds(bl, bt, bw, bh)
+        LTBounds.IntReps(l, t, w, h)
     },{ltb =>
-      val LTBounds(l, t, w, h) = ltb
-      val (bl, bt, bw, bh) = (dtoi(l), dtoi(t), dtoi(w), dtoi(h))
-      bl :: bt :: bw :: bh :: HNil
+      val LTBounds.IntReps(l, t, w, h) = ltb
+      l :: t :: w :: h :: HNil
     })
 
 

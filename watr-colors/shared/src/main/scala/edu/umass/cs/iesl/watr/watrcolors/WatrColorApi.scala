@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
-import geometry._
 import labeling._
 import scala.concurrent.Future
 import watrmarks.Label
@@ -9,7 +8,6 @@ import watrmarks.Label
 // API for calls made from web client to server
 trait WatrShellApi {
   def uiRequest(r: UIRequest): Future[UIResponse]
-  def onDrawPath(artifactId: String, path: Seq[Point]): Unit
   def fetchDocumentLabeler(labelerRequest: LabelerIdentifier): Future[UIResponse]
 }
 

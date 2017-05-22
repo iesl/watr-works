@@ -21,7 +21,7 @@ trait ArbitraryTextReflows {
 
   implicit def arbLTBounds: Arbitrary[LTBounds] = {
     (arbDouble |@| arbDouble |@| arbDouble |@| arbDouble)(
-      LTBounds.apply
+      LTBounds.Doubles.apply
     )
   }
 

@@ -266,13 +266,13 @@ class CharExtractionListener(
     if (charWidth.nan || charWidth.inf || charWidth.toInt==0) {
       // println(s"warning: char width is 0, NaN, or Inf")
       charWidth = 0
-      }
+    }
 
 
-      val charTop = charBottom - charHeight
+    val charTop = charBottom - charHeight
 
-      Some(LTBounds(
-        left=charLeft,
+    Some(LTBounds.Doubles(
+      left=charLeft,
       top=charTop,
       width=charWidth,
       height=charHeight

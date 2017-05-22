@@ -5,18 +5,11 @@ import TypeTags._
 
 object EnrichNumerics {
   def fmt = (d: Double) => {
-    f"${d}%1.2f"
+    // f"${d}%1.2f"
+    ???
   }
 
-  def dtoi(d: Double): Int = {
-    // TODO: this conversion is critical code, document it!
-    val dfmt = fmt(d)
-    dfmt.filter(_.isDigit).mkString.toInt
-  }
 
-  def itod(i: Int): Double =  {
-    (i.toDouble)/100.0d
-  }
 
   type DoubleInterval = (Double, Double)@@Interval
   type RangeInt = (Int, Int)@@Interval
@@ -95,7 +88,7 @@ object EnrichNumerics {
 
   implicit class RicherDouble_EnrichNumerics(val theDouble: Double) extends AnyVal {
 
-    def prettyPrint:String = fmt(theDouble)
+    // def prettyPrint:String = fmt(theDouble)
     def pp(): String = fmt(theDouble)
 
     def eqFuzzy(tolerance: Double)(d2: Double): Boolean =
@@ -133,8 +126,8 @@ object EnrichNumerics {
   implicit class RicherFloat_EnrichNumerics(val d: Float) extends AnyVal {
     def nan = java.lang.Float.isNaN(d)
     def inf = java.lang.Float.isInfinite(d)
-    def prettyPrint:String = fmt(d.toDouble)
-    def pp(): String = fmt(d.toDouble)
+    // def prettyPrint:String = fmt(d.toDouble)
+    // def pp(): String = fmt(d.toDouble)
   }
 
 }

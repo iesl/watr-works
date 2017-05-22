@@ -5,7 +5,6 @@ package server
 import scala.concurrent.Future
 
 import corpora._
-import geometry._
 import labeling._
 import labeling.data._
 import docstore._
@@ -22,9 +21,6 @@ class BioArxivServer(
 
   import bioarxiv._
 
-  def onDrawPath(artifactId: String, path: Seq[Point]): Unit = {
-    println(s"onDrawPath: ")
-  }
 
   def fetchDocumentLabeler(
     reqLabelerId: LabelerIdentifier

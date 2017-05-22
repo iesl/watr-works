@@ -111,7 +111,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     val width  = w * xscale
     val height = h * yscale
 
-    LTBounds(left, top, width, height)
+    LTBounds.Doubles(left, top, width, height)
   }
 
   // // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area

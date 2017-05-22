@@ -150,7 +150,7 @@ class ClientStateRx(
 }
 
 @JSExportTopLevel("WatrColors")
-object WatrColors extends BasicClientDefs with UIUpdateCycle with MouseGestures {
+object WatrColors extends BasicClientDefs with UIUpdateCycle  {
 
   def doUIUpdateCycle(r: UIRequest): Future[UIResponse] = shell.uiRequest(r)
 
@@ -247,7 +247,7 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle with MouseGestures 
           val h = rect.y2-rect.y1
           uiRequestCycle(UIRequest(
             clientStateRx.toUIState(),
-            SelectRegion(LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble))
+            SelectRegion(LTBounds.Doubles(l.toDouble, t.toDouble, w.toDouble, h.toDouble))
           ))
         }
 
@@ -256,7 +256,7 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle with MouseGestures 
           val y = point.y
           uiRequestCycle(UIRequest(
             clientStateRx.toUIState(),
-            Click(Point(x.toDouble, y.toDouble))
+            Click(Point.Doubles(x.toDouble, y.toDouble))
           ))
         }
 
@@ -265,7 +265,7 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle with MouseGestures 
           val t = rect.y1
           val w = rect.x2-rect.x1
           val h = rect.y2-rect.y1
-          selectionRect() = Some(LTBounds(l.toDouble, t.toDouble, w.toDouble, h.toDouble))
+          selectionRect() = Some(LTBounds.Doubles(l.toDouble, t.toDouble, w.toDouble, h.toDouble))
         }
 
         ()

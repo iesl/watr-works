@@ -41,7 +41,7 @@ class MemDocstore extends DocumentCorpus {
       }
 
       def add(docId: Int@@DocumentID, pageNum: Int@@PageNum): Rel.Page = {
-        val rec = Rel.Page(nextId(), docId, pageNum, None, G.LTBounds(0, 0, 0, 0))
+        val rec = Rel.Page(nextId(), docId, pageNum, None, G.LTBounds.zero)
         insert(rec.prKey, rec)
         documentFKey.put(docId, rec.prKey)
         docIdPageNumKey.put((docId, pageNum), rec.prKey)

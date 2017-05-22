@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 
 import scalaz.Tag
+import scalaz.Equal
 import scala.reflect._
 
 
@@ -39,6 +40,8 @@ sealed trait Username
 sealed trait Password
 
 
+sealed trait FloatRep
+
 object TypeTags extends TypeTags
 
 
@@ -75,16 +78,24 @@ trait TypeTags {
   val Username = Tag.of[Username]
   val Password = Tag.of[Password]
 
+  val FloatRep = Tag.of[FloatRep]
+  def toFloatRep(i: Int): Int@@FloatRep = {
+    FloatRep(i*100)
+  }
+
   def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
     val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
     s"${tagClsname}:${tt.unwrap}"
   }
-
 
   import scala.math.Ordering.Implicits._
 
   implicit def TypeTagOrdering[T]: Ordering[Int@@T] = {
     Ordering.by(_.unwrap)
   }
+
+  import scalaz.syntax.equal._
+  implicit def EqualTypeTag[A: Equal, T]: Equal[A@@T] =
+    Equal.equal((a, b)  => a.unwrap===b.unwrap)
 }
 

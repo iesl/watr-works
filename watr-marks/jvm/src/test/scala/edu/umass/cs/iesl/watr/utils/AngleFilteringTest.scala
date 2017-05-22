@@ -4,6 +4,7 @@ package utils
 import org.scalatest._
 
 import geometry._
+import geometry.syntax._
 
 
 class AngleFilteringTest extends FlatSpec with Matchers {
@@ -13,14 +14,14 @@ class AngleFilteringTest extends FlatSpec with Matchers {
   it should "make sure I compute angles correctly" in {
     import math._
 
-    val ctr = Point(0, 0)
+    val ctr = Point.origin
 
     val pointsOnUnitCircle = (0.0 to Pi*2 by 0.3).map{ r =>
-      (Point(cos(r),  sin(r)), r)
+      (Point.Doubles(cos(r),  sin(r)), r)
     }
 
     pointsOnUnitCircle.foreach { case(point, r) =>
-      val atan = math.atan2(point.y, point.x)
+      val atan = math.atan2(point.y.asDouble, point.x.asDouble)
       // println(s"r:${r.pp} (${(r/Pi).pp})  = ${point.prettyPrint}, atan: ${atan.pp} p1 angleto p2: ${ctr.angleTo(point)}")
     }
 

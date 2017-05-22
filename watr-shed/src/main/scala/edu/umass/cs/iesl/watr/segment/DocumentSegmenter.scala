@@ -66,7 +66,7 @@ object DocumentSegmenter {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => c2.bbox.left - c1.bbox.right
+      case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right).asDouble
       case _  => 0d
     })
 
@@ -237,8 +237,8 @@ class DocumentSegmenter(
         .sliding(2).toSeq
         .map({
           case Seq(a1, a2) =>
-            val upperLowerLeft = a1.bounds.toPoint(CDir.SW).y
-            val lowerTopLeft = a2.bounds.toPoint(CDir.NW).y
+            val upperLowerLeft = a1.bounds.toPoint(CDir.SW).y.asDouble
+            val lowerTopLeft = a2.bounds.toPoint(CDir.NW).y.asDouble
             val vdist = math.abs(lowerTopLeft-upperLowerLeft)
             vdist
 
@@ -272,7 +272,7 @@ class DocumentSegmenter(
     } yield {
 
       val lefts = page.zipWithIndex
-        .map({case (l, i) => (l.bounds.left, i)})
+        .map({case (l, i) => (l.bounds.left.asDouble, i)})
 
       vtrace.trace(message(s"Most frequent left-edge text alignment"))
       val leftsAndFreqs = getMostFrequentValuesAndFreqs(vtrace)(lefts.map(_._1), leftBinHistResolution)
@@ -656,7 +656,7 @@ class DocumentSegmenter(
   }
 
   def lineDimensionsMatch(line: Component, hw: Point): Boolean = {
-    lineWidthMatches(line, hw.x) && lineHeightMatches(line, hw.y)
+    lineWidthMatches(line, hw.x.asDouble) && lineHeightMatches(line, hw.y.asDouble)
   }
 
 
@@ -760,7 +760,7 @@ class DocumentSegmenter(
       p <- visualLineOnPageComponents; l <- p
     } yield l
 
-    val allDocumentWidths = allPageLines.map(_.bounds.width)
+    val allDocumentWidths = allPageLines.map(_.bounds.width.asDouble)
 
     val topWidths = getMostFrequentValuesAndFreqs(vtrace)(allDocumentWidths, 0.2d).toList
     val topNWidths = topWidths.takeWhile(_._2 > 1.0)

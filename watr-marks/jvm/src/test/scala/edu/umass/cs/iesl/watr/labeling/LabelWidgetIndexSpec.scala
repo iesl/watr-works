@@ -65,7 +65,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
     getDocumentZonesWithLabels(stableId).length shouldBe(13)
 
-    lwindex.debugPrint(Some(queryBox))
+    // lwindex.debugPrint(Some(queryBox))
     println(visualizeDocument(stableId))
 
   }

@@ -558,7 +558,16 @@ trait LabelWidgetIndex { self =>
     (endingResponse, endingIndex)
   }
 
-  def debugPrint(query: Option[LTBounds] = None): Unit = {
+}
+
+object DebugLayout {
+
+  def debugPrint(
+    strictBounds: LTBounds,
+    bleedBounds: LTBounds,
+    positioned: Seq[AbsPosWidget],
+    query: Option[LTBounds] = None
+  ): Unit = {
     val fillers = "αßΓπΣσµτΦΘΩδ∞φε∩".toList
     var _filler = -1
     def nextFiller(): Char = {
@@ -566,13 +575,16 @@ trait LabelWidgetIndex { self =>
       fillers(_filler)
     }
 
-    val w: Int = (layout.bleedBounds.width).intValue()+1
-    val h: Int = (layout.bleedBounds.height).intValue()+1
+    val w: Int = (bleedBounds.width).asInt()+1
+    val h: Int = (bleedBounds.height).asInt()+1
+    println(s"layout strict: ${strictBounds}")
+    println(s"layout bleedbounds: ${bleedBounds}")
+    println(s"w: ${w}, h:${h}")
 
     val graphPaper = GraphPaper.create(w, h)
     val graphPaper2 = GraphPaper.create(w, h)
 
-    layout.positioning.foreach { pos =>
+    positioned.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
 
       pos.widget match {
@@ -589,7 +601,7 @@ trait LabelWidgetIndex { self =>
       }
     }
 
-    layout.positioning.foreach { pos =>
+    positioned.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
       pos.widget match {
         case l @ Panel(wid, a, i) =>
@@ -601,7 +613,7 @@ trait LabelWidgetIndex { self =>
       }
     }
 
-    layout.positioning.foreach { pos =>
+    positioned.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
       pos.widget match {
         case Col(wid, as) => graphPaper.borderLeftRight(gridbox, Colors.Gray)

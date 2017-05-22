@@ -201,9 +201,9 @@ trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats
             charId.value.toIntExact,
             TargetPosition(
               PageID(pageNumber.value.toIntExact),
-              Point(
-                llX.value.toDouble,
-                llY.value.toDouble
+              Point.IntReps(
+                llX.value.intValue(),
+                llY.value.intValue()
               ))))
       case _ => JsError(s"format error in id definition: ${json}")
     }

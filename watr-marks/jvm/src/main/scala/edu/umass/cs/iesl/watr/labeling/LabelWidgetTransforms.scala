@@ -101,7 +101,7 @@ object LabelWidgetTransforms {
         ) =>
           val fringe = figure(
             Colorized(
-              makeFringe(fig, Padding(4)),
+              makeFringe(fig, Padding.Ints(4)),
               fg=Colors.Yellow, bg=Colors.Yellow,
               fgOpacity=0.0f, bgOpacity=0.1f
             ))

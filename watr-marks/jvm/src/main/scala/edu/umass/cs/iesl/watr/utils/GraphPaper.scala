@@ -105,17 +105,12 @@ class GraphPaper(
 object GraphPaper {
   def box2ltb(box: Box): LTBounds = {
     val Box(l, t, w, h) = box
-    LTBounds(
-      l.doubleValue(), t.doubleValue(),
-      w.doubleValue(), h.doubleValue()
-    )
+    LTBounds.Ints(l, t, w, h)
   }
+
   def ltb2box(bbox: LTBounds): GraphPaper.Box = {
-    val LTBounds(l, t, w, h) = bbox
-    GraphPaper.Box(
-      l.intValue(), t.intValue(),
-      w.intValue(), h.intValue()
-    )
+    val LTBounds.Ints(l, t, w, h) = bbox
+    GraphPaper.Box(l, t, w, h)
   }
 
   case class Box(

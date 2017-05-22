@@ -64,6 +64,16 @@ object TypeTagPicklers {
     {case Js.Str(s) => WidgetID(s.toInt)}
   )
 
+  implicit val Int_FloatRep_Pickler: RW[Int @@ FloatRep] = RW[Int @@ FloatRep](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => FloatRep(s.toInt)}
+  )
+
+  // implicit val Int_FloatRep_Pickler: RW[Int @@ FloatRep] = RW[Int @@ FloatRep](
+  //   {t => Js.Num(t.unwrap)},
+  //   {case Js.Num(s) => FloatRep(s.toInt)}
+  // )
+
 }
 
 object UPicklers {
