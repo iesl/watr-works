@@ -8,8 +8,71 @@ import matryoshka.patterns._
 import matryoshka.implicits._
 import textboxing.{TextBoxing => TB}
 import scalaz.syntax.foldable._
+import geometry._
+import geometry.syntax._
 
 import LabelWidgetF._
+
+// Position transform:
+//  capture the absolute positioning of a widget along with the matrix transform
+//    used to get it there. The inverse of the transform matrix is used to transform
+//    selection boxes and clicked points back into the correct geometry to determine
+//    what characters within a document are selected
+case class AbsPosWidget(
+  widget: LabelWidgetF[Unit],
+  strictBounds: LTBounds,
+  bleedBounds: LTBounds,
+  translation: PositionVector,
+  zOrder: Int, // not used
+  scaling: Double = 1.0d
+)
+
+case class WidgetLayout(
+  positioning: Seq[AbsPosWidget],
+  strictBounds: LTBounds,
+  bleedBounds: LTBounds,
+  labelWidget: LabelWidget
+)
+
+// Accumulator for calculating layout positioning transforms
+case class PosAttr(
+  widget: LabelWidgetF[Unit],
+  strictBounds: LTBounds,
+  bleedBounds: LTBounds,
+  zOrder: Int, // not used
+  selfOffset: PositionVector,
+  childOffsets: List[PositionVector] = List(),
+  scaling: Double = 1.0d
+) {
+    def toAbsPosWidget: AbsPosWidget = {
+      AbsPosWidget(widget, strictBounds, bleedBounds, selfOffset, zOrder, scaling)
+    }
+
+  def toStackString = {
+    val soff = selfOffset.prettyPrint
+    val ch = childOffsets.map(_.prettyPrint).mkString(", ")
+    s"curVec:${soff}   st:[ ${ch} ]"
+  }
+
+  lazy val id = widget.wid
+  override def toString = {
+    val wpp = strictBounds.prettyPrint
+    val sstr = toStackString
+    val cn = widget.getClass().getName.split("\\$").last
+    s"${cn}#${id} bb:${wpp} ${sstr} ]"
+  }
+
+  def translate(pvec: PositionVector): PosAttr = {
+    PosAttr(
+      widget,
+      strictBounds.translate(pvec),
+      bleedBounds.translate(pvec),
+      zOrder,
+      selfOffset.translate(pvec),
+      childOffsets.map(_.translate(pvec))
+    )
+  }
+}
 
 trait LabelWidgetBasics {
 

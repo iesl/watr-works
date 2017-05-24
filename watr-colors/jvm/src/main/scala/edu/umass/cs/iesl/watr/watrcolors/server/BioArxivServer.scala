@@ -21,7 +21,6 @@ class BioArxivServer(
 
   import bioarxiv._
 
-
   def fetchDocumentLabeler(
     reqLabelerId: LabelerIdentifier
   ): Future[UIResponse] = {
@@ -38,8 +37,6 @@ class BioArxivServer(
     } yield {
 
       try {
-        // val (labelWidget, updatedLabelId) = TitleAuthorsLabelers.bioArxivLabeler(labelerRequestx, rec, docStore)
-
         val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
           labelerIdentifier => {
             val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)

@@ -5,6 +5,7 @@ import doobie.imports._
 import doobie.free.{ connection => C }
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.Properties
 import scalaz.syntax.applicative._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
@@ -37,25 +38,65 @@ class TextReflowDB(
   import scalaz.concurrent.Task
   import doobie.hikari.imports._
 
-  val xa: HikariTransactor[Task] = (for {
-    xa <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
-    _  <- xa.configure(hx => Task.delay( /* do something with hx */ ()))
-  } yield xa).unsafePerformSync
 
-  def shutdown() = xa.shutdown
+  val props = new Properties()
+  // props.setProperty("sendBufferSize", "-1")
+  // props.setProperty("receiveBufferSize","-1")
+  props.setProperty("housekeeper","false")
+
+  val xa: HikariTransactor[Task] = (for {
+    // xa <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+    xa <- HikariTransactor[Task]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
+    _  <- xa.configure(hx => Task.delay{
+      hx.setDataSourceProperties(props)
+      // hx.setMaximumPoolSize(10)
+      // hx.setPoolName("my-poolname")
+      hx.setAutoCommit(false)
+      ()
+    })
+  } yield {
+    xa
+  }).unsafePerformSync
+
+  // val xat: Task[HikariTransactor[Task]] = for {
+  //   xa <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+  //   _  <- xa.configure(hx => Task.delay{
+  //     hx.setMaximumPoolSize(10)
+  //     hx.setPoolName("my-poolname")
+  //     hx.setAutoCommit(false)
+  //     ()
+  //   })
+  // } yield { xa }
+
+  def shutdown() = (for {
+      r <- sql"select 1".query[Int].unique.transact(xa) ensuring xa.shutdown
+    } yield r).unsafePerformSync
 
   def runq[A](query: C.ConnectionIO[A]): A = {
     try {
-      query.transact(xa)
-        .unsafePerformSync
+      (for {
+        r <- query.transact(xa)
+      } yield r).unsafePerformSync
     } catch {
       case t: Throwable =>
         val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
         println(s"ERROR: ${message}")
         t.printStackTrace()
         throw t
-    } finally{
-      // shutdown()
+    }
+  }
+  def runqOnce[A](query: C.ConnectionIO[A]): A = {
+    try {
+      (for {
+        xa0 <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+        r <- query.transact(xa0) ensuring xa0.shutdown
+      } yield r).unsafePerformSync
+    } catch {
+      case t: Throwable =>
+        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+        println(s"ERROR: ${message}")
+        t.printStackTrace()
+        throw t
     }
   }
 
@@ -63,9 +104,10 @@ class TextReflowDB(
     up.withUniqueGeneratedKeys(key)
   }
 
-  def dropAndRecreate() = runq {
+
+  def dropAndRecreate() = runqOnce {
     for{
-      _ <- tables.dropAll.run
+      _ <- tables.dropAll
       _ <- tables.createAll
     } yield ()
   }
@@ -140,21 +182,32 @@ class TextReflowDB(
   }
 
 
+  // def selectZoneTargetRegions(zoneId: Int@@ZoneID): ConnectionIO[List[Int@@RegionID]] = {
+  //   sql"""
+  //    select z2tr.targetregion
+  //    from
+  //       zone                      as zn
+  //       join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
+  //    where
+  //       z2tr.zone=${zoneId}
+  //    order by z2tr.rank
+  //   """.query[Int@@RegionID].list
+  // }
   def selectZoneTargetRegions(zoneId: Int@@ZoneID): ConnectionIO[List[Int@@RegionID]] = {
     sql"""
-     select z2tr.targetregion
+     select targetregion
      from
-        zone                      as zn
-        join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
+        zone_to_targetregion
      where
-        z2tr.zone=${zoneId}
-     order by z2tr.rank
+        zone=${zoneId}
+     order by rank
     """.query[Int@@RegionID].list
   }
 
   def selectZoneForTargetRegion(regionId: Int@@RegionID, label: Label): ConnectionIO[Option[Int@@ZoneID]] = {
+    // println(s"selectZoneForTargetRegion(${regionId}, ${label})")
     val query = sql"""
-     select z2tr.zone
+     select zn.zone
      from
         zone                      as zn
         join label                as lb    on (zn.label=lb.label)
@@ -620,7 +673,35 @@ class TextReflowDB(
       runq{ getOrInsertLabel(label) }
     }
 
-    def createZone(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {
+    def createZone(regionId: Int@@RegionID, labelId: Int@@LabelID): Int@@ZoneID = {
+      val queryf = sql"""
+           with pageid as (
+             select page, targetregion from targetregion where targetregion=${regionId}
+           ),
+           docid as (
+             select document from page where page=(select page from pageid)
+           ),
+           zoneid as (
+             insert into zone (document, label) values ((select document from docid), ${labelId}) returning zone
+           ),
+           ztr as (
+             insert into zone_to_targetregion (zone, targetregion)
+                 values ((select zone from zoneid),
+                         (select targetregion from pageid)) returning 0
+           )
+           select zone from zoneid
+       """
+
+      val query = queryf.query[Int@@ZoneID]
+
+      // val theSql = query.sql
+      // println(s"sql = ${theSql}")
+
+      runq{ query.unique }
+    }
+
+    def createZone0(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {
+
       val query = for {
         region <- selectTargetRegion(regionId)
         page <- selectPage(region.page)

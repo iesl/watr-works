@@ -44,7 +44,7 @@ object LTBounds {
 
   object Ints {
     def apply(left: Int, top: Int, width: Int, height: Int): LTBounds =
-      LTBounds(toFloatRep(left), toFloatRep(top), toFloatRep(width), toFloatRep(height))
+      LTBounds(FloatRep(left), FloatRep(top), FloatRep(width), FloatRep(height))
 
     def unapply(bbox: LTBounds): Option[(Int, Int, Int, Int)] = Some((
       bbox.left.asInt,
@@ -114,7 +114,7 @@ object Point {
 
   object Ints {
     def apply(x: Int, y: Int): Point =
-      Point(toFloatRep(x), toFloatRep(y))
+      Point(FloatRep(x), FloatRep(y))
 
     def unapply(p: Point): Option[(Int, Int)] =
       Some((p.x.asInt, p.y.asInt))
@@ -163,21 +163,35 @@ case class Padding(
 object Padding {
 
   object Ints {
-    def apply(left: Int, top: Int, width: Int, height: Int): Padding =
-      Padding(FloatRep(left), FloatRep(top), FloatRep(width), FloatRep(height))
+    def apply(left: Int, top: Int, right: Int, bottom: Int): Padding =
+      Padding(left.toFloatRep, top.toFloatRep, right.toFloatRep, bottom.toFloatRep)
 
-    def apply(p: Int): Padding =
-      Padding(FloatRep(p), FloatRep(p), FloatRep(p), FloatRep(p))
+    def apply(p: Int): Padding = apply(p, p, p, p)
 
-    // def unapply(bbox: LTBounds): Option[(Int, Int, Int, Int)] = {
-    //   Some((
-    //     bbox.left.unwrap,
-    //     bbox.top.unwrap,
-    //     bbox.width.unwrap,
-    //     bbox.height.unwrap
-    //   ))
-    // }
+    def unapply(pad: Padding): Option[(Int, Int, Int, Int)] = {
+      Some((
+        pad.left.asInt,
+        pad.top.asInt,
+        pad.bottom.asInt,
+        pad.right.asInt
+      ))
+    }
+  }
 
+  object Doubles {
+    def apply(left: Double, top: Double, right: Double, bottom: Double): Padding =
+      Padding(left.toFloatRep, top.toFloatRep, right.toFloatRep, bottom.toFloatRep)
+
+    def apply(p: Double): Padding = apply(p, p, p, p)
+
+    def unapply(pad: Padding): Option[(Double, Double, Double, Double)] = {
+      Some((
+        pad.left.asDouble,
+        pad.top.asDouble,
+        pad.bottom.asDouble,
+        pad.right.asDouble
+      ))
+    }
   }
 }
 
@@ -231,7 +245,7 @@ object GeometryImplicits {
   def totalBounds(fig: GeometricFigure): LTBounds = fig match {
     case f: LTBounds       => f
     case f: LBBounds       => f.toLTBounds
-    case f: Point          => LTBounds(f.x, f.y, toFloatRep(0), toFloatRep(0))
+    case f: Point          => LTBounds(f.x, f.y, FloatRep(0), FloatRep(0))
     case f: Line           => f.bounds()
     case f: GeometricGroup => f.bounds
     case f: Colorized => totalBounds(f.figure)
@@ -282,25 +296,24 @@ object GeometryImplicits {
   // }
 
   implicit class RicherFloatPrec2(val self: Int@@FloatRep) extends AnyVal {
-    def +(r: Int@@FloatRep): Int@@FloatRep = toFloatRep(self.unwrap+r.unwrap)
-    def -(r: Int@@FloatRep): Int@@FloatRep = toFloatRep(self.unwrap-r.unwrap)
-    def *(r: Int@@FloatRep): Int@@FloatRep = toFloatRep(self.unwrap*r.unwrap)
-    def /(r: Int@@FloatRep): Int@@FloatRep = toFloatRep(self.unwrap/r.unwrap)
-    def unary_-(): Int@@FloatRep = toFloatRep(-self.unwrap)
+    def +(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap+r.unwrap)
+    def -(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap-r.unwrap)
+    // def *(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap*r.unwrap)
+    def *(r: Int@@FloatRep): Int@@FloatRep = (self.asDouble*r.asDouble).toFloatRep
+    def /(r: Int@@FloatRep): Int@@FloatRep = (self.asDouble/r.asDouble).toFloatRep
+    def unary_-(): Int@@FloatRep = FloatRep(-self.unwrap)
 
     def <(r: Int@@FloatRep): Boolean = self.unwrap<r.unwrap
     def <=(r: Int@@FloatRep): Boolean = self.unwrap<=r.unwrap
     def >=(r: Int@@FloatRep): Boolean = self.unwrap>=r.unwrap
     def >(r: Int@@FloatRep): Boolean = self.unwrap>r.unwrap
 
-    // def ==(r: Int@@FloatRep): Boolean = self.unwrap==r.unwrap
-    // def !=(r: Int@@FloatRep): Boolean = self.unwrap!=r.unwrap
-
 
     def +(r: Double): Int@@FloatRep = self + dbl2fp2(r)
     def -(r: Double): Int@@FloatRep = self - dbl2fp2(r)
-    def *(r: Double): Int@@FloatRep = self * dbl2fp2(r)
-    def /(r: Double): Int@@FloatRep = self / dbl2fp2(r)
+    def *(r: Double): Int@@FloatRep = (self.asDouble * r).toFloatRep
+    def /(r: Double): Int@@FloatRep = (self.asDouble / r).toFloatRep
+
     def <(r:  Double): Boolean = self.unwrap<r
     def <=(r: Double): Boolean = self.unwrap<=r
     def >=(r: Double): Boolean = self.unwrap>=r
@@ -308,8 +321,8 @@ object GeometryImplicits {
 
     def +(r: Float): Int@@FloatRep = self + float2fp2(r)
     def -(r: Float): Int@@FloatRep = self - float2fp2(r)
-    def *(r: Float): Int@@FloatRep = self * float2fp2(r)
-    def /(r: Float): Int@@FloatRep = self / float2fp2(r)
+    def *(r: Float): Int@@FloatRep = (self.asFloat * r).toFloatRep
+    def /(r: Float): Int@@FloatRep = (self.asFloat / r).toFloatRep
 
 
     def asFloat(): Float = { self.unwrap/100.0f }
@@ -318,10 +331,11 @@ object GeometryImplicits {
 
     def dblFormat(): String = {
       val digits = self.unwrap.toString.toList
-      val padded = List('0', '0') ++ digits
-      val(decR, wholeR) = padded.reverse.splitAt(2)
-      val dec = decR.reverse.mkString
-      val whole = wholeR.reverse.mkString
+      val(decR, wholeR) = digits.reverse.splitAt(2)
+      val decPad = decR ++ List.fill(2-decR.length)('0')
+      val dec = decPad.reverse.mkString
+      val whole = if (wholeR.isEmpty) "0" else wholeR.reverse.mkString
+
       whole+"."+dec
     }
     def pp(): String = dblFormat()
@@ -351,20 +365,16 @@ object GeometryImplicits {
     )
   }
 
+  implicit class RicherInt_2(val d: Int) extends AnyVal {
+    def toFloatRep() = d.toFloat.toFloatRep()
+  }
+
   implicit class RicherFloat_2(val d: Float) extends AnyVal {
     def toFloatRep() = float2fp2(d)
   }
 
   implicit class RicherDouble_2(val d: Double) extends AnyVal {
     def toFloatRep() = dbl2fp2(d)
-
-    // def toHLine: Line = Line(
-    //   Point(Double.MinValue, d),
-    //   Point(Double.MaxValue, d))
-
-    // def toVLine: Line = Line(
-    //   Point(d, Double.MinValue),
-    //   Point(d, Double.MaxValue))
 
   }
 
@@ -480,8 +490,8 @@ object GeometryImplicits {
     }
   }
 
-  def max(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = toFloatRep(math.max(d1.unwrap, d2.unwrap))
-  def min(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = toFloatRep(math.min(d1.unwrap, d2.unwrap))
+  def max(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.max(d1.unwrap, d2.unwrap))
+  def min(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.min(d1.unwrap, d2.unwrap))
 
   implicit class RicherLTBounds(val theBbox: LTBounds) extends AnyVal {
     def area: Double = (theBbox.width*theBbox.height).asDouble
@@ -516,7 +526,7 @@ object GeometryImplicits {
     // }
 
     def moveToOrigin(): LTBounds = {
-      moveTo(toFloatRep(0), toFloatRep(0))
+      moveTo(FloatRep(0), FloatRep(0))
     }
 
     def shrink(byPercent: Double@@Percent): LTBounds = {
@@ -628,13 +638,13 @@ object GeometryImplicits {
     }
 
     def xProjection(): Line = Line(
-      Point((theBbox.left), toFloatRep(0)),
-      Point((theBbox.right), toFloatRep(0))
+      Point((theBbox.left), FloatRep(0)),
+      Point((theBbox.right), FloatRep(0))
     )
 
     def yProjection(): Line = Line(
-      Point(toFloatRep(0), (theBbox.top)),
-      Point(toFloatRep(0), (theBbox.bottom))
+      Point(FloatRep(0), (theBbox.top)),
+      Point(FloatRep(0), (theBbox.bottom))
     )
 
 

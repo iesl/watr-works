@@ -18,64 +18,6 @@ import utils.ScalazTreeImplicits._
 import TypeTags._
 import textboxing.{TextBoxing => TB}
 
-// Position transform:
-//  capture the absolute positioning of a widget along with the matrix transform
-//    used to get it there. The inverse of the transform matrix is used to transform
-//    selection boxes and clicked points back into the correct geometry to determine
-//    what characters within a document are selected
-case class AbsPosWidget(
-  widget: LabelWidgetF[Unit],
-  strictBounds: LTBounds,
-  bleedBounds: LTBounds,
-  translation: PositionVector,
-  zOrder: Int, // not used
-  scaling: Double = 1.0d
-)
-
-
-case class WidgetLayout(
-  positioning: Seq[AbsPosWidget],
-  strictBounds: LTBounds,
-  bleedBounds: LTBounds,
-  labelWidget: LabelWidget
-)
-
-// Accumulator for calculating layout positioning transforms
-case class PosAttr(
-  widget: LabelWidgetF[Unit],
-  strictBounds: LTBounds,
-  bleedBounds: LTBounds,
-  zOrder: Int, // not used
-  selfOffset: PositionVector,
-  childOffsets: List[PositionVector] = List(),
-  scaling: Double = 1.0d
-) {
-
-  def toStackString = {
-    val soff = selfOffset.prettyPrint
-    val ch = childOffsets.map(_.prettyPrint).mkString(", ")
-    s"curVec:${soff}   st:[ ${ch} ]"
-  }
-
-  lazy val id = widget.wid
-  override def toString = {
-    val wpp = strictBounds.prettyPrint
-    val sstr = toStackString
-    val cn = widget.getClass().getName.split("\\$").last
-    s"${cn}#${id} bb:${wpp} ${sstr} ]"
-  }
-
-  def translate(pvec: PositionVector): PosAttr = {
-    PosAttr(
-      widget,
-      strictBounds.translate(pvec),
-      bleedBounds.translate(pvec),
-      zOrder,
-      selfOffset.translate(pvec),
-      childOffsets.map(_.translate(pvec))
-    )
-  }
-}
 
 object LabelWidgetLayoutHelpers {
   def cofreeLWAttrToTree[A](c: Cofree[LabelWidgetF, A]): Tree[A] = {
@@ -84,6 +26,7 @@ object LabelWidgetLayoutHelpers {
       c.tail.toStream.map(cofreeLWAttrToTree(_))
     )
   }
+
 
 
   def printTree(pos: Cofree[LabelWidgetF, PosAttr]): TB.Box = {
@@ -127,6 +70,11 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           // println(s"    : new str   ${newStrictBounds}")
           // println(s"    : new bleed ${newBleedBounds}")
           // println()
+          // DebugLayout.debugPrint(
+          //   newStrictBounds,
+          //   newBleedBounds,
+          //   List(newpos)
+          // )
 
           (newStrictBounds, newBleedBounds, newChildVec :: childVecs)
       }
@@ -147,6 +95,8 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
   def childMaxZIndex(posAttrs: List[PosAttr]): Int = {
     (0 :: posAttrs.map(_.zOrder)).max
   }
+
+
 
   def layoutWidgetPositions(lwidget: LabelWidget): WidgetLayout = {
 

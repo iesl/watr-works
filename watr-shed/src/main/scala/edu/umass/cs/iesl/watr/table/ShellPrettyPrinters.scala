@@ -1,31 +1,29 @@
 package edu.umass.cs.iesl.watr
 package table
 
-import pprint.PPrinter
+import pprint._
 import spindex._
-import textreflow.data._
+// import textreflow.data._
 import textboxing.{TextBoxing => TB}
-import labeling._
-import labeling.data._
+// import labeling._
+// import labeling.data._
+// import scala.{Iterator => Iter}
 
 object ShellPrettyPrinters extends ComponentEnrichments {
 
-  val pprintComponent: PPrinter[Component] = PPrinter({(component, config) =>
-    val box = component.show
-    Iterator(box.toString())
-  })
 
-  val pprintBox: PPrinter[TB.Box] = PPrinter({(box, config) =>
-    Iterator(box.toString())
-  })
+  def additionalHandlers: PartialFunction[Any, Tree] = {
+    case c: Component => Tree.Literal(c.show.toString())
+    case c: TB.Box    => Tree.Literal(c.toString())
+  }
 
-  val pprintTextReflow: PPrinter[TextReflow] = PPrinter({(textReflow, config) =>
-    val text = textReflow.toText()
-    Iterator(text)
-  })
+  // val pprintTextReflow: PPrinter = PPrinter.apply[TextReflow]({(textReflow, config) =>
+  //   val text = textReflow.toText()
+  //   Iterator(text)
+  // })
 
-  val pprintLabelWidget: PPrinter[LabelWidget] = PPrinter({(lwidget, config) =>
-    val pp = LabelWidgetIndex.prettyPrintLabelWidget(lwidget)
-    Iterator(pp.toString)
-  })
+  // val pprintLabelWidget: PPrinter = PPrinter.apply[LabelWidget]({(lwidget, config) =>
+  //   val pp = LabelWidgetIndex.prettyPrintLabelWidget(lwidget)
+  //   Iterator(pp.toString)
+  // })
 }

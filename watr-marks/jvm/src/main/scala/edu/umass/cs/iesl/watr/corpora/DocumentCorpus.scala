@@ -38,7 +38,7 @@ trait DocumentCorpus {
 
 
   // Construct
-  def createZone(regionId: Int@@RegionID, label: Label): Int@@ZoneID
+  def createZone(regionId: Int@@RegionID, label: Int@@LabelID): Int@@ZoneID
   def addZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit
   def removeZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Option[Int@@ZoneID]
 
@@ -95,7 +95,8 @@ trait DocumentCorpus {
     regions.headOption
       .map { pageRegion =>
         val regionId = addTargetRegion(pageRegion.page.pageId, pageRegion.bbox)
-        val zoneId = createZone(regionId, label)
+        val labelId = ensureLabel(label)
+        val zoneId = createZone(regionId, labelId)
         regions.tail.map { tr =>
           val rid = addTargetRegion(tr.page.pageId, tr.bbox)
           addZoneRegion(zoneId, rid)

@@ -51,15 +51,14 @@ trait D3BasicShapes {
 
     fa match {
       case RegionOverlay(wid, targetRegion, overlays) =>
-
         Some(
           <.image(
             uiShapeClass(wid, "reg-overlay"),
             ^.xLinkHref := s"/img/region/${targetRegion.id}",
-            ^.x         := strictBounds.left,
-            ^.y         := strictBounds.top,
-            ^.width     := strictBounds.width,
-            ^.height    := strictBounds.height
+            ^.x         := strictBounds.left.asInt,
+            ^.y         := strictBounds.top.asInt,
+            ^.width     := strictBounds.width.asInt,
+            ^.height    := strictBounds.height.asInt
           ).render
         )
 
@@ -130,8 +129,6 @@ trait D3BasicShapes {
       case Pad(wid, a, padding, maybeColor) =>
 
         val color = maybeColor.getOrElse(Color.White).toRGB
-        // val fillColor = s"rgba(${color.red}, ${color.green}, ${color.blue}, ${color.alpha})"
-        // val fillOpacit = s"rgba(${color.red}, ${color.green}, ${color.blue}, ${color.alpha})"
 
         val colorStyle =
           s"""|fill: ${color.cssHash};
@@ -167,10 +164,11 @@ trait D3BasicShapes {
       .zipWithIndex
       .map{ case (line, i) =>
         val leadingSpaces = line.takeWhile(_==' ').length()
-        val padl = leadingSpaces*4
-        <.tspan(
-          ^.x   := (bbox.left+padl),
-          ^.y   := (bbox.top+(i*20)),
+        val padl = leadingSpaces*4d
+
+        <.text(
+          ^.x   := (bbox.left+padl).asInt,
+          ^.y   := (bbox.top+(i*20d)).asInt,
           line
         )
       }
@@ -181,12 +179,12 @@ trait D3BasicShapes {
           |fill: #020202;"
           |""".stripMargin
 
-    <.text(
+    <.g(
       ^.style     := style,
-      ^.x         := bbox.left,
-      ^.y         := bbox.top,
-      ^.width     := bbox.width,
-      ^.height    := bbox.height
+      ^.x         := bbox.left.asInt,
+      ^.y         := bbox.top.asInt,
+      ^.width     := bbox.width.asInt,
+      ^.height    := bbox.height.asInt
     )(spans)
 
 
@@ -204,49 +202,48 @@ trait D3BasicShapes {
   }
 
   def createShape(shape: GeometricFigure): ElementTag = {
-
-    def go(shape0: GeometricFigure, fgColor: String, bgColor: String, fgOpacity: Float, bgOpacity: Float): ElementTag = {
-      shape0 match {
+    def go(shape0: GeometricFigure, fgColor: Option[String], bgColor: Option[String], fgOpacity: Option[Float], bgOpacity: Option[Float]): ElementTag = {
+      val svg0 = shape0 match {
         case p: Point =>
           <.circle(
-            ^.x := p.x, ^.y := p.y
+            ^.x := p.x.asInt, ^.y := p.y.asInt
           )
-
         case l@ Line(p1: Point, p2: Point) =>
           <.line(
-            ^.x1:=p1.x, ^.y1:=p1.y,
-            ^.x2:=p2.x, ^.y2:=p2.y,
-            ^.stroke        := fgColor,
-            ^.fill          := bgColor,
-            ^.strokeOpacity := fgOpacity,
-            ^.fillOpacity   := bgOpacity
+            ^.x1:=p1.x.asInt,     ^.y1:=p1.y.asInt,
+            ^.x2:=p2.x.asInt,     ^.y2:=p2.y.asInt
           )
 
         case bbox:LTBounds =>
           <.rect(
-            ^.x             := bbox.left,
-            ^.y             := bbox.top,
-            ^.width         := bbox.width,
-            ^.height        := bbox.height,
-            ^.stroke        := fgColor,
-            ^.fill          := bgColor,
-            ^.strokeOpacity := fgOpacity,
-            ^.fillOpacity   := bgOpacity
+            ^.x := bbox.left.asInt,  ^.y := bbox.top.asInt,
+            ^.width := bbox.width.asInt, ^.height := bbox.height.asInt
           )
 
         case b:LBBounds =>
           go(b.toLTBounds, fgColor, bgColor, fgOpacity, bgOpacity)
 
         case g @ GeometricGroup(bounds, figs) =>
-          val shapes = figs.map(go(_, Colors.Black.cssHash(), bgColor, 0.2f, 0.2f))
-            <.g(shapes:_*)
+          val shapes = figs.map(go(_, Option(Colors.Black.cssHash()), bgColor, Some(0.2f), Some(0.2f)))
+
+          <.g(shapes:_*)
 
         case g @ Colorized(fig: GeometricFigure, fg: Color, bg: Color, fgOpacity: Float, bgOpacity: Float) =>
-          go(fig, fg.cssHash(), bg.cssHash(), fgOpacity, bgOpacity)
+          go(fig, Some(fg.cssHash()), Some(bg.cssHash()), Some(fgOpacity), Some(bgOpacity))
+
       }
+
+      val extraAttrs = List(
+        fgColor.map(^.stroke := _),
+        bgColor.map(^.fill := _),
+        fgOpacity.map(^.strokeOpacity := _),
+        bgOpacity.map(^.fillOpacity := _)
+      ).flatten
+
+      svg0(extraAttrs)
     }
 
-    go(shape, "", "", 0f, 0f)
+    go(shape, None, None, None, None)
   }
 }
 
@@ -271,8 +268,8 @@ trait UIUpdateCycle extends D3BasicShapes {
       case WidgetMod.Added(wid, widget) =>
         val bbox = widget.get.strictBounds
         d3SvgSelection
-          .attr("width", bbox.width.asDouble())
-          .attr("height", bbox.height.asDouble())
+          .attr("width", bbox.width.asInt)
+          .attr("height", bbox.height.asInt)
       case _ =>
     }}
   }
@@ -281,15 +278,13 @@ trait UIUpdateCycle extends D3BasicShapes {
   type MyDatumFunction = js.Function3[WidgetMod, Int, js.UndefOr[Int], dom.EventTarget]
 
   def joinResponseData(changes: Seq[WidgetMod]): Unit = {
-    changes.foreach { mod =>
-      mod match {
-        case WidgetMod.Added(wid, widget) =>
-          println(s"${mod}")
-        case WidgetMod.Removed(wid) =>
-          println(s"${mod}")
-        case _ =>
-      }
-    }
+    // changes.foreach { mod =>
+    //   mod match {
+    //     case WidgetMod.Added(wid, widget) => println(s"${mod}")
+    //     case WidgetMod.Removed(wid) => println(s"${mod}")
+    //     case _ =>
+    //   }
+    // }
 
     setD3SvgDimensions(changes)
 

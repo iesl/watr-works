@@ -79,9 +79,6 @@ trait TypeTags {
   val Password = Tag.of[Password]
 
   val FloatRep = Tag.of[FloatRep]
-  def toFloatRep(i: Int): Int@@FloatRep = {
-    FloatRep(i*100)
-  }
 
   def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
     val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName

@@ -432,13 +432,13 @@ class DocumentSegmenter(
 
       val pageTextBlockCCs = for {
         textBlock <- pageBlocks
-        textBlockRegion <- mpageIndex.labelRegion(textBlock, LB.TextBlock)
+        (textBlockRegionCC, textBlockTargeetRegion) <- mpageIndex.labelRegion(textBlock, LB.TextBlock)
       } yield {
         assert(textBlock.forall(_.hasLabel(LB.VisualLine)))
-        textBlockRegion.setChildren(LB.VisualLine, textBlock)
+        textBlockRegionCC.setChildren(LB.VisualLine, textBlock)
 
         // joinTextblockReflow(textBlockRegion)
-        textBlockRegion
+        textBlockRegionCC
       }
 
       sortPageTextBlocks(pageTextBlockCCs)
@@ -453,7 +453,7 @@ class DocumentSegmenter(
     // TODO: actually sort these?
     mpageIndex
       .labelRegion(pageTextBlocks, LB.PageTextBlocks)
-      .map({page =>
+      .map({ case (page, pageTargetRegionn) =>
         page.setChildren(LB.TextBlock, pageTextBlocks)
         page
       })
@@ -463,41 +463,13 @@ class DocumentSegmenter(
 
   def runPageSegmentation(): Unit = {
 
-    // Bottom-up connected-component line-finding
     runLineDetermination()
-
-    // tokenizeLines()
-
-    // this find text blocks per-page, and joins lines within each block
-    // val textBlocksPerPage = findTextBlocksPerPage()
   }
-
-  // // force tokenization of all visual lines
-  // def tokenizeLines(): Unit = {
-  //   print("tokenizing lines")
-  //   for {
-  //     page <- visualLineOnPageComponents
-  //     line <- page
-  //   } {
-  //     val maybeReflow = line.tokenizeLine
-  //     // maybeReflow.foreach { textReflow =>
-  //     //   docStore.setTextReflowForZone(zoneId, textReflow)
-  //     // }
-  //     print(".")
-  //   }
-  //   println("")
-  // }
-
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
   def fillInMissingChars(pageId: Int@@PageNum, lineBinChars: Seq[AtomicComponent]): Seq[AtomicComponent] = {
-    // val consecutiveCharGroups = lineBinChars.groupByPairs({ (ch1, ch2) =>
-    //   ch2.id.unwrap - ch1.id.unwrap == 1
-    // })
     val ids = lineBinChars.map(_.id.unwrap)
-    val minId = ids.min
-    val maxId = ids.max
 
     val missingIds = (ids.min to ids.max) diff ids
 
@@ -505,10 +477,10 @@ class DocumentSegmenter(
       mpageIndex.getComponent(ComponentID(id), pageId).asInstanceOf[AtomicComponent]
     )
 
-    // vtrace.trace("inserting missing chars" withTrace
-    //   all(missingChars.map(showComponent(_))))
-
-    (lineBinChars ++ missingChars).sortBy(_.bounds.left)
+    (lineBinChars ++ missingChars)
+      .map(x => (x.bounds.left.unwrap, x))
+      .sortBy(_._1)
+      .map(_._2)
   }
 
 
@@ -559,21 +531,45 @@ class DocumentSegmenter(
     vtrace.trace(end("GutterDetection"))
   }
 
+  // import utils.{Debugging => Dbg}
+
   def determineLines(
     pageNum: Int@@PageNum,
     components: Seq[AtomicComponent]
   ): Unit = {
     val pageId = docStore.getPage(docId, pageNum).get
 
-    // def minRegionId(ccs: Seq[AtomicComponent]): Int@@RegionID =  ccs.map(_.targetRegion.id).min
+    // var dbgmode = false
+    // // 10.1101-004465.d/pg30@104/5522@(
+    // if (stableId.unwrap == "10.1101-004465.d" && pageNum.unwrap==30) {
+    //   println(s"We're looking at the right page")
+    //   dbgmode = true
+    // } else dbgmode = false
+
     def minRegionId(ccs: Seq[AtomicComponent]): Int@@CharID =  ccs.map(_.charAtom.id).min
+
 
     val lineSets = new DisjointSets[AtomicComponent](components)
 
     // line-bin coarse segmentation
     val lineBinsx = approximateLineBins(components)
+    // if (dbgmode) {
 
+    //   println("line binsx")
+    //   println(
+    //     lineBinsx.map(_.map(_.char).mkString)
+    //       .mkString("\n  ", "\n  ", "\n")
+    //   )
+    // }
     val shortLines = splitRunOnLines(lineBinsx)
+
+    // if (dbgmode) {
+    //   println("short lines")
+    //   println(
+    //     shortLines.map(_.map(_.char).mkString)
+    //       .mkString("\n  ", "\n  ", "\n")
+    //   )
+    // }
 
     for {
       line <- shortLines.map(fillInMissingChars(pageNum, _))
@@ -585,6 +581,14 @@ class DocumentSegmenter(
     val shortLinesFilledIn = lineSets.iterator().toSeq
       .map(_.toSeq.sortBy(c => (c.bounds.left, c.bounds.top)))
       .sortBy(line => minRegionId(line))
+
+    // if (dbgmode) {
+    //   println("short lines filled in")
+    //   println(
+    //     shortLinesFilledIn.map(_.map(_.char).mkString)
+    //       .mkString("\n  ", "\n  ", "\n")
+    //   )
+    // }
 
 
     val longLines = shortLinesFilledIn
@@ -610,6 +614,8 @@ class DocumentSegmenter(
         shouldJoin
       })
 
+
+    val visualLineLabelId = docStore.ensureLabel(LB.VisualLine)
     val pageLines = longLines.map({ lineGroups =>
 
       val line = lineGroups.reduce(_ ++ _)
@@ -618,7 +624,7 @@ class DocumentSegmenter(
 
       // Glue together page atoms into a VisualLine/TextSpan
       mpageIndex.labelRegion(line, LB.VisualLine)
-        .map ({ visualLine =>
+        .map ({ case (visualLine, targetRegion) =>
           visualLine.setChildren(LB.PageAtom, line.sortBy(_.bounds.left))
           visualLine.cloneAndNest(LB.TextSpan)
 
@@ -628,21 +634,31 @@ class DocumentSegmenter(
           visualLine.removeLabel(LB.VisualLine)
           visualLine.addLabel(vlineLabel)
           // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
-          val regionId = docStore.addTargetRegion(pageId, visualLine.targetRegion.bbox)
-          val zoneId = docStore.createZone(regionId, vlineLabel)
+          // val regionId = docStore.addTargetRegion(pageId, visualLine.targetRegion.bbox)
+          val regionId = targetRegion.id
 
-          visualLine.tokenizeLine.foreach { textReflow =>
-            docStore.setTextReflowForZone(zoneId, textReflow)
-            // print(".")
+          val alreadyZoned = docStore.getZoneForRegion(regionId, LB.VisualLine).isDefined
+
+          if (alreadyZoned) {
+            println(s"VisualLine Zone already exists for target region ${targetRegion}, skipping")
+            None
+          } else {
+            val zoneId = docStore.createZone(regionId, visualLineLabelId)
+
+            visualLine.tokenizeLine.foreach { textReflow =>
+              docStore.setTextReflowForZone(zoneId, textReflow)
+            }
+
+            Some(visualLine)
           }
-
-          visualLine
         })
-    }).flatten
+    }).flatten.flatten
 
     mpageIndex
       .labelRegion(pageLines, LB.PageLines)
-      .map(_.setChildren(LB.VisualLine, pageLines))
+      .map{ case (comp, targetRegion) =>
+        comp.setChildren(LB.VisualLine, pageLines)
+      }
   }
 
 

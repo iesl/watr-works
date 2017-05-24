@@ -131,7 +131,10 @@ object MITAlignPredsynth {
                 mpageIndex.labelRegion(intersectingLineAtoms, ann)
               }
 
-              val annRegions = annotationRegions.flatten.map{_.targetRegion}
+              val annRegions = annotationRegions
+                .flatten.map{ case (cc, targetRegion) =>
+                  cc.targetRegion
+                }
 
               def newZone: Zone = ??? // mpageIndex.createZone()
 

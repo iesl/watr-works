@@ -4,6 +4,7 @@ package server
 
 import scalaz.Kleisli
 import scalaz.concurrent.Task
+import scalaz.syntax.equal._
 
 import akka.actor._
 import akka.util.Timeout
@@ -13,7 +14,9 @@ import concurrent.duration._
 
 import corpora._
 import docstore._
+import geometry.syntax._
 
+import org.http4s
 import org.http4s._
 import org.http4s.{headers => H}
 import org.http4s.dsl._
@@ -36,6 +39,7 @@ class Http4sService(
   url: String,
   port: Int
 ) extends AuthServer {
+  lazy private val docStore = reflowDB.docStore
 
   val assetService = resourceService(ResourceService.Config(
     basePath = "",
@@ -47,21 +51,73 @@ class Http4sService(
     pathPrefix = "/webjars"
   ))
 
+  val corpusRoot = corpus.corpusRoot.toNIO
 
   val regionImageService = HttpService {
-    case request @ GET -> Root / "region" / IntVar(regionId) =>
-      val bytes = reflowDB.serveTargetRegionImage(RegionID(regionId))
-      Ok(bytes).putHeaders(
-        H.`Content-Type`(MediaType.`image/png`)
-      )
+    case req @ GET -> Root / "region" / IntVar(regionId0) =>
+      val regionId = RegionID(regionId0)
+      val targetRegion = docStore.getTargetRegion(regionId)
+      val pageId = targetRegion.page.pageId
+      val (rPage, rDoc) = reflowDB.getPageAndDocument(pageId)
+      val tbbox = targetRegion.bbox
+      val pbbox = rPage.bounds
+      if (tbbox === pbbox) {
+        val entryPath = rDoc.stableId.unwrap
+        val imagePath = corpusRoot
+          .resolve(entryPath)
+          .resolve("page-images")
+          .resolve(s"page-${rPage.pagenum.unwrap+1}.opt.png")
+
+        println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
+
+        Task.now{
+          StaticFile.fromFile(imagePath.toFile(), Some(req))
+            .getOrElse { Response(http4s.Status(500)(s"could not serve image ${regionId}")) }
+        }
+
+      } else {
+        println(s"Shouldn't get here yet....")
+        val bytes = reflowDB.serveTargetRegionImage(regionId)
+        Ok(bytes).putHeaders(
+          H.`Content-Type`(MediaType.`image/png`)
+        )
+      }
   }
 
-
-  def pathCollector(f:File, config: Config, req:Request): Task[Option[Response]] = {
+  def imagePathCollector(f:File, config: Config, req:Request): Task[Option[Response]] = {
     val Rel = RelationModel
-    val corpusRoot = corpus.corpusRoot.toNIO
+    println(s"imagePathCollector(f:${f}, conf:${config})")
+    println(s"                  (req:${req})")
 
     req match {
+      case request @ GET -> Root / "region" / IntVar(regionId0) =>
+        val regionId = RegionID(regionId0)
+        val targetRegion = docStore.getTargetRegion(regionId)
+        val pageId = targetRegion.page.pageId
+        val (rPage, rDoc) = reflowDB.getPageAndDocument(pageId)
+        val tbbox = targetRegion.bbox
+        val pbbox = rPage.bounds
+        if (tbbox === pbbox) {
+          val entryPath = rDoc.stableId.unwrap
+          val imagePath = corpusRoot
+            .resolve(entryPath)
+            .resolve("page-images")
+            .resolve(s"page-${rPage.pagenum.unwrap}.opt.png")
+
+          println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
+
+          Task.now{
+            StaticFile.fromFile(imagePath.toFile(), Some(req))
+          }
+
+        } else {
+          println(s"Shouldn't get here yet....")
+          val bytes = reflowDB.serveTargetRegionImage(regionId)
+          Ok(bytes).putHeaders(
+            H.`Content-Type`(MediaType.`image/png`)
+          ).map(Some(_))
+        }
+
       case GET -> Root / "page-image" / IntVar(pageId) =>
         val (rPage, rDoc) = reflowDB.getPageAndDocument(PageID(pageId))
         val entryPath = rDoc.stableId.unwrap
@@ -98,7 +154,8 @@ class Http4sService(
 
   val pageImageService = fileService(FileService.Config(
     corpus.corpusRoot.toIO.toString(),
-    pathCollector = pathCollector
+    pathPrefix = "/img",
+    pathCollector = imagePathCollector
   ))
 
 
@@ -201,7 +258,7 @@ class Http4sService(
     .mountService(webJarService)
     .mountService(assetService)
     .mountService(regionImageService, "/img")
-    .mountService(pageImageService, "/img")
+    // .mountService(pageImageService, "/img")
     .mountService(autowireService, "/autowire")
     .mountService(userRegistration, "/user")
 

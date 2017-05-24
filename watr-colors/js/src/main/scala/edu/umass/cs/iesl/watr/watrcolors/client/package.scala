@@ -57,8 +57,8 @@ trait ScalatagsDomDefs {
     def attrHeight = ^.height := fmt(v)
   }
 
-  import scalatags.JsDom.GenericAttr
-  implicit def FloatRepAttr = new GenericAttr[Int@@FloatRep]
+  // import scalatags.JsDom.GenericAttr
+  // implicit def FloatRepAttr = new GenericAttr[Int@@FloatRep]
 
 }
 

@@ -558,9 +558,27 @@ trait LabelWidgetIndex { self =>
     (endingResponse, endingIndex)
   }
 
+  def debugPrint(
+    query: Option[LTBounds] = None
+  ): Unit = {
+    DebugLayout.debugPrint(layout.strictBounds, layout.bleedBounds, layout.positioning, query)
+  }
+
 }
 
 object DebugLayout {
+
+  def debugPrint(
+    strictBounds: LTBounds,
+    bleedBounds: LTBounds,
+    positioned: Seq[PosAttr]
+  ): Unit = {
+    debugPrint(
+      strictBounds,
+      bleedBounds,
+      positioned.map(_.toAbsPosWidget)
+    )
+  }
 
   def debugPrint(
     strictBounds: LTBounds,

@@ -128,7 +128,7 @@ class MemDocstore extends DocumentCorpus {
       }
 
 
-      def createZone(regionId: Int@@RegionID, label: Label): Rel.Zone = {
+      def createZone(regionId: Int@@RegionID, labelId: Int@@LabelID): Rel.Zone = {
         val zoneId = nextId()
 
         // link zone -> document
@@ -137,7 +137,7 @@ class MemDocstore extends DocumentCorpus {
         forDocument.addEdge(docId, zoneId)
 
         // add label
-        val labelId = labels.ensureLabel(label.fqn)
+        // val labelId = labels.ensureLabel(label.fqn)
 
         // ensure ordering
         val orderedZones = zoneOrdering.getOrElseUpdate((docId, labelId), mutable.ArrayBuffer[Int@@ZoneID]())
@@ -353,7 +353,7 @@ class MemDocstore extends DocumentCorpus {
     zones.getZoneForRegion(regionId, label).map(_.prKey)
   }
 
-  def createZone(regionId: Int@@RegionID, role: Label): Int@@ZoneID = {
+  def createZone(regionId: Int@@RegionID, role: Int@@LabelID): Int@@ZoneID = {
     zones.createZone(regionId, role).prKey
   }
 

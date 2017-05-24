@@ -8,18 +8,6 @@ import labeling._
 
 trait DocumentCorpusEnrichments extends LabelWidgetUtils {
 
-
-  // def bioArxivLabelers(stableIds: Seq[String@@DocumentID])(implicit corpus: Corpus, docStore: DocumentCorpus): Seq[LabelingPanel] = {
-  //   val lws = for {
-  //     stableId <- stableIds
-  //     entry <- corpus.entry(stableId.unwrap)
-  //     rec   <- getBioarxivJsonArtifact(entry)
-  //   } yield { TitleAuthorsLabelers.bioArxivLabeler(stableId, 0, rec, docStore) }
-
-  //   lws
-  // }
-
-
   implicit class RicherDocumentCorpus(val theDocumentCorpus: DocumentCorpus) {
 
     def documents(n: Int=0, skip: Int=0): Seq[String@@DocumentID] = {

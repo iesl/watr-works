@@ -181,7 +181,7 @@ class MultiPageIndex(
     // FIXME also delete label maps, etc.
   }
 
-  def labelRegion(components: Seq[Component], role: Label): Option[RegionComponent] = {
+  def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, TargetRegion)] = {
     if (components.isEmpty) None else {
       val totalBounds = components.map(_.bounds).reduce(_ union _)
       val targetPages = components.map(_.pageNum.unwrap)
@@ -201,7 +201,7 @@ class MultiPageIndex(
       val region = createRegionComponent(pageRegion, role)
       // componentIdToRegionId.put(region.id, targetRegion.id)
 
-      Some(region)
+      Some((region, targetRegion))
     }
   }
 

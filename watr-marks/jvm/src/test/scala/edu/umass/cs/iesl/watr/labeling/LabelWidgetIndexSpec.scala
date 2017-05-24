@@ -55,7 +55,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
     val qres = lwindex.queryRegion(queryBox)
 
-    // reportQueryHits(queryBox, qres)
+    reportQueryHits(queryBox, qres)
 
     docStore.getTargetRegions(page(1)).length shouldBe (6)
 
@@ -65,7 +65,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
     getDocumentZonesWithLabels(stableId).length shouldBe(13)
 
-    // lwindex.debugPrint(Some(queryBox))
+    lwindex.debugPrint(Some(queryBox))
     println(visualizeDocument(stableId))
 
   }

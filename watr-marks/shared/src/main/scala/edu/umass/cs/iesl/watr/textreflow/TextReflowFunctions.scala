@@ -24,10 +24,7 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
   private def mkPad(s: String): TextReflow = insert(s)
 
   def addLabel(l: Label): TextReflow => TextReflow = tr => fixf(tr.unFix match {
-    case f @ Labeled(ls, s)  =>
-
-      println(s"adding label ${l}")
-      f.copy(labels = ls + l)
+    case f @ Labeled(ls, s)  => f.copy(labels = ls + l)
     case r                   => labeled(l, fixf(r)).unFix
   })
 

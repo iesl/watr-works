@@ -219,11 +219,13 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     }
 
     reflowBuilder.newline()
+    val labelId = docStore.ensureLabel(LB.VisualLine)
+
     reflowBuilder.completed.foreach { reflow =>
       val lineBounds = reflow.bounds()
       val regionId = docStore.addTargetRegion(pageId, lineBounds)
 
-      val lineZoneId = docStore.createZone(regionId, LB.VisualLine)
+      val lineZoneId = docStore.createZone(regionId, labelId)
 
       docStore.setTextReflowForZone(lineZoneId, reflow)
     }

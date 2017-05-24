@@ -21,11 +21,11 @@ trait LibVersions {
   val doobieVersion       = "0.4.1"
   val matryoshkaCoreV     = "0.19.0"
   val sourcecodeV         = "0.1.3"
-  val fansiV              = "0.2.3"
+  val fansiV              = "0.2.4"
   val shapelessV          = "2.3.2"
   val scaladgetV          = "0.9.4"
   val http4sVersion       = "0.16.0a-M2"
-  val fs2Version          = "0.9.5"
+  val fs2Version          = "0.9.6"
 
 
 }
@@ -62,7 +62,10 @@ object DatabaseLibs extends LibVersions {
     "org.tpolecat" %% "doobie-core"       % doobieVersion,
     "org.tpolecat" %% "doobie-postgres"   % doobieVersion,
     "org.tpolecat" %% "doobie-hikari"     % doobieVersion,
-    "org.tpolecat" %% "doobie-specs2"     % doobieVersion
+    "org.tpolecat" %% "doobie-specs2"     % doobieVersion,
+    "org.postgresql"          % "postgresql" % "42.1.1",
+    "org.javassist" % "javassist" % "3.21.0-GA",
+    "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7"
   )
 
 }
@@ -72,10 +75,10 @@ trait CommonLibs extends LibVersions {
   val scalazCore       = "org.scalaz"              %% "scalaz-core"      % scalazVersion
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   val scalatags        = "com.lihaoyi"             %% "scalatags"        % scalaTagsVersion
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.8.4"
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.1"
   val fastparse        = "com.lihaoyi"             %% "fastparse"        % "0.4.2"
   val sourcecode       = "com.lihaoyi"             %% "sourcecode"       % sourcecodeV
-  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.14"
+  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.15"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val machinist        = "org.typelevel"           %% "machinist"        % "0.6.1"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV

@@ -42,40 +42,40 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
     lwindex.addLabel(queryBox, ByChar, LB.Authors)
 
     // println(visualizeDocument(stableId))
-    DebugLayout.debugPrint(
-      lwindex.layout.strictBounds,
-      lwindex.layout.bleedBounds,
-      lwindex.layout.positioning,
-      Some(queryBox)
-    )
+    // DebugLayout.debugPrint(
+    //   lwindex.layout.strictBounds,
+    //   lwindex.layout.bleedBounds,
+    //   lwindex.layout.positioning,
+    //   Some(queryBox)
+    // )
     // lwindex.debugPrint(Some(queryBox))
 
 
-    // println(prettyPrintLabelWidget(labelWidget))
+    println(prettyPrintLabelWidget(labelWidget))
 
-    // val labelWidgetWithIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, NilLabelerIdentifier, docStore)
+    val labelWidgetWithIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, NilLabelerIdentifier, docStore)
 
-    // // println(prettyPrintLabelWidget(labelWidgetWithIndicators))
-    // val lwdiff = labelWidgetDiff(labelWidget, labelWidgetWithIndicators)
+    // println(prettyPrintLabelWidget(labelWidgetWithIndicators))
+    val lwdiff = labelWidgetDiff(labelWidget, labelWidgetWithIndicators)
 
-    // println(drawLabelWidgetDiff(lwdiff))
-    // val mods = labelWidgetDiffToMods(lwdiff)
-    // // mods.groupBy(_.id)
-    // // val str = mods.mkString("\n  ", "\n  ", "\n")
-    // // println(str)
-
-    // val lwindexWithIndicators = LabelWidgetIndex.create(docStore, labelWidgetWithIndicators)
-    // lwindexWithIndicators.debugPrint(Some(queryBox))
-
-    // val absPositioned = lwindexWithIndicators.layout.positioning
-    // val absPosMapx = absPositioned.groupBy(_.widget.wid)
-    // val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
-
-    // val updates = mods
-
-
-    // val str = updates.mkString("\n  ", "\n  ", "\n")
+    println(drawLabelWidgetDiff(lwdiff))
+    val mods = labelWidgetDiffToMods(lwdiff)
+    // mods.groupBy(_.id)
+    // val str = mods.mkString("\n  ", "\n  ", "\n")
     // println(str)
+
+    val lwindexWithIndicators = LabelWidgetIndex.create(docStore, labelWidgetWithIndicators)
+    lwindexWithIndicators.debugPrint(Some(queryBox))
+
+    val absPositioned = lwindexWithIndicators.layout.positioning
+    val absPosMapx = absPositioned.groupBy(_.widget.wid)
+    val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
+
+    val updates = mods
+
+
+    val str = updates.mkString("\n  ", "\n  ", "\n")
+    println(str)
 
   }
 }
