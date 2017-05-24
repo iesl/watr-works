@@ -72,15 +72,14 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "com.lihaoyi"       %%% "autowire"        % "0.2.6"
   ))
   .jsSettings(libraryDependencies ++= Seq(
-    "fr.iscpif"      %%% "scaladget"       % LibVersions.scaladgetV,
-    "org.singlespaced"  %%% "scalajs-d3"   % "0.3.4",
-    "org.querki"     %%% "jquery-facade"   % "1.0",
-    "org.scala-js"   %%% "scalajs-dom"     % "0.9.1"),
+    "fr.iscpif"         %%% "scaladget"       % LibVersions.scaladgetV,
+    "org.singlespaced"  %%% "scalajs-d3"      % "0.3.4",
+    "org.querki"        %%% "jquery-facade"   % "1.0",
+    "org.scala-js"      %%% "scalajs-dom"     % "0.9.2"),
     scalacOptions -= "-Ywarn-dead-code" // doesn't play well with ScalaJS native binding declarations
   )
   .jvmSettings(libraryDependencies ++= Lib.http4s ++ TestLibs.testAndCheck ++ Seq(
-    "com.typesafe.akka"  %% "akka-actor"                % "2.5.1",
-    // "org.webjars.bower"  %  "fabric"                    % "1.6.2",
+    "com.typesafe.akka"  %% "akka-actor"                % "2.5.2",
     "org.webjars"        %  "bootstrap"                 % "3.3.7", // only used for css (bootstrap native is used instead)
     "org.webjars"        %  "jquery"                    % "2.2.4",
     "org.webjars"        %  "d3js"                      % "3.5.17",

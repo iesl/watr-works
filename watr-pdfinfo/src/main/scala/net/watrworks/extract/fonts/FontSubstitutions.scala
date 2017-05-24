@@ -206,7 +206,7 @@ object GlyphHashLookup {
 
   def apply(): GlyphHashLookup = {
     val inputStream = new GZIPInputStream(new BufferedInputStream(this.getClass.getResourceAsStream("/glyph-hash.tsv.gz")))
-    val sourceFile = io.Source.fromInputStream(inputStream)
+    val sourceFile = scala.io.Source.fromInputStream(inputStream)
 
     val mappings = sourceFile.getLines
       .map({line =>

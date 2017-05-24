@@ -85,7 +85,8 @@ class CharExtractionListener(
   pdfPage: PdfPage,
   pageNum: Int@@PageNum,
   pageGeometry: PageGeometry,
-  geomTranslation:GeometryTranslation
+  geomTranslation:GeometryTranslation,
+  glyphMap: Map[(String, Int), String]
 ) extends IEventListener {
 
   override def getSupportedEvents(): java.util.Set[EventType] ={
@@ -97,6 +98,27 @@ class CharExtractionListener(
       val tri = data.asInstanceOf[TextRenderInfo]
       renderText(tri)
     }
+  }
+
+  def lookupGlyphHash(charTri: TextRenderInfo): Seq[Char] = {
+    // Get glyphHash for this char
+    val pdfString = charTri.getPdfString
+    val font = charTri.getFont
+    val fprogram = font.getFontProgram
+    val fontNames = fprogram.getFontNames
+    val fontName = fontNames.getFontName
+
+    val valueBytes = pdfString.getValueBytes.map(Byte.byte2int(_))
+
+    val chars = for {
+      vb <- valueBytes
+      glHash <- glyphMap.get((fontName, vb))
+      glChar <- GlyphHashLookup.global.lookup(glHash)
+    } yield {
+      glChar
+    }
+
+    chars
   }
 
   def fallbackRep(charTri: TextRenderInfo): (String, Option[Int]) = {

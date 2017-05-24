@@ -152,7 +152,7 @@ object Works extends App {
       .map({ inputs =>
         // User specifed input file on command line:
         val inputLines = if (inputs.toString == "--") {
-          io.Source.stdin.getLines.toList
+          _root_.scala.io.Source.stdin.getLines.toList
         } else {
           val inputFiles =  RelPath(inputs)
           val lines = read(pwd/inputFiles)

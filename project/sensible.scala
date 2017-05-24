@@ -73,13 +73,6 @@ object SensibleThisBuild {
     ),
 
     shellPrompt in ThisBuild := colorPrompt
-
-    // organization in ThisBuild := "edu.umass.cs.iesl",
-    // scalaVersion in ThisBuild := "2.11.9",
-    // scalacOptions in ThisBuild ++= SensibleProject.scalaOptionList,
-
-    // autoCompilerPlugins in ThisBuild := true,
-    // ivyLoggingLevel in ThisBuild := UpdateLogging.Quiet
   )
 
 

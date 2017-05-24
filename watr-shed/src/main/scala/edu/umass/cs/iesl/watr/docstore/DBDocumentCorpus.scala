@@ -16,7 +16,6 @@ import corpora._
 import textreflow._
 import textreflow.data._
 import watrmarks._
-import utils.EnrichNumerics._
 import TypeTags._
 import play.api.libs.json, json._
 

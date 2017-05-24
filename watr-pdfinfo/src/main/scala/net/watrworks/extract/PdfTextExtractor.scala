@@ -12,6 +12,7 @@ import geometry._
 import TypeTags._
 import scala.collection.mutable
 import scala.collection.JavaConversions._
+import extract.fonts._
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
 
@@ -29,8 +30,27 @@ object PdfTextExtractor {
 
 class PdfTextExtractor(
   charsToDebug: Set[Int] = Set(),
-  charIdGen: IdGenerator[CharID]
+  charIdGen: IdGenerator[CharID],
+  glyphDefs: Seq[SplineFont.Dir] = Seq()
 ) {
+  // map font-name,encoding-index -> glyph-hash
+  // map glyph-hash -> unicode/bbox
+
+  val glyphList = glyphDefs.map({sdir =>
+    val fontName = sdir.prop[FontProp.FontName]
+    sdir.glyphs.flatMap({glyph =>
+      val splines = glyph.get[GlyphProp.SplineSet]
+      val enc = glyph.prop[GlyphProp.Encoding]
+      val encNums = enc.v.trim.split(" ").map(_.toInt)
+      val encIndex = encNums(2)
+      splines.map(sp =>
+        ((fontName.v.trim, encIndex), GlyphProp.splineSetHash(sp).unwrap)
+      )
+    })
+  })
+
+  val glyphMap = glyphList.flatten.toMap
+
 
   val bboxNames = List[PdfName](
     PdfName.CropBox,
@@ -119,7 +139,8 @@ class PdfTextExtractor(
           pdfPage,
           pageId,
           pageGeometry,
-          geomTrans
+          geomTrans,
+          glyphMap
         )
 
         val parser = new PdfCanvasProcessor(extractor);
