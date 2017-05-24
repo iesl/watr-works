@@ -4,7 +4,7 @@ package geometry
 import watrmarks._
 import scalaz.Tag
 
-// import TypeTags._
+import TypeTags._
 
 
 trait TypeTagFormats {
@@ -148,41 +148,89 @@ trait GeometryJsonCodecs extends TypeTagFormats {
   implicit val FormatStablePageID: Format[StablePageID] = Json.format[StablePageID]
   implicit val FormatRecordedPageID: Format[RecordedPageID] = Json.format[RecordedPageID]
   implicit val FormatTargetRegion: Format[TargetRegion] = Json.format[TargetRegion]
-  implicit val FormatPageRegion: Format[PageRegion] = Json.format[PageRegion]
+
+  implicit val FormatPageRegion: Format[PageRegion] = new Format[PageRegion] {
+    override def reads(json: JsValue)= json match {
+      case JsArray(Seq(JsNumber(pageId), JsString(stableId), JsNumber(pageNum), bboxJs)) =>
+        JsSuccess(PageRegion(
+          RecordedPageID(PageID(pageId.intValue()), StablePageID(DocumentID(stableId), PageNum(pageNum.intValue()))),
+          bboxJs.as[LTBounds]
+        ))
+      case _ => JsError(s"unmatched PageRegion ${json}")
+    }
+
+    override def writes(o: PageRegion) = o match {
+      case c@ PageRegion(
+        RecordedPageID(
+          PageID(pageId),
+          StablePageID(DocumentID(stableId), PageNum(pageNum))
+        ),
+        bbox
+      ) =>
+
+        Json.arr(num(pageId), jstr(stableId), num(pageNum), Json.toJson(bbox))
+    }
+  }
 
   implicit val FormatPageGeometry     = Json.format[PageGeometry]
   implicit val FormatLabel            = Json.format[Label]
-  // implicit val FormatZone             = Json.format[Zone]
-  implicit val FormatCharAtom             = Json.format[CharAtom]
 
-  // implicit val FormatCharAtom: Format[CharAtom] = new Format[CharAtom] {
-  //   override def reads(json: JsValue)= json match {
-  //     case JsObject(fields) => fields.get("c") match {
-  //       case Some(JsArray(Seq(JsNumber(charId), JsString(achar), targetRegionJs, JsNumber(wonkyCode)))) =>
-  //         JsSuccess(
-  //           CharAtom(CharID(charId.intValue()), targetRegionJs.as[TargetRegion], achar, Option(wonkyCode.toInt))
-  //         )
+  // [17, [1, "10.1101-090498.d", 0, [24989,7264,1319,1753]], "m"]
+  implicit val FormatCharAtom: Format[CharAtom] = new Format[CharAtom] {
+    override def reads(json: JsValue)= json match {
+      case JsArray(Seq(
+        JsNumber(charId),
+        pageRegionJs,
+        JsString(achar),
+        JsNumber(wonkyCode)
+      )) =>
+        JsSuccess(
+          CharAtom(
+            CharID(charId.intValue()),
+            pageRegionJs.as[PageRegion],
+            achar,
+            Option(wonkyCode.toInt)
+          )
+        )
 
-  //       case Some(JsArray(Seq(JsNumber(charId), JsString(achar), targetRegionJs))) =>
-  //         JsSuccess(
-  //           CharAtom(CharID(charId.intValue()), targetRegionJs.as[TargetRegion], achar, None)
-  //         )
-  //     }
-  //     case _ => JsError(s"unmatched CharAtom ${json}")
-  //   }
+      case JsArray(Seq(
+        JsNumber(charId),
+        pageRegionJs,
+        JsString(achar)
+      )) =>
+        JsSuccess(
+          CharAtom(
+            CharID(charId.intValue()),
+            pageRegionJs.as[PageRegion],
+            achar,
+            None
+          )
+        )
 
-  //   override def writes(o: CharAtom) = o match {
-  //     case a: CharAtom =>
-  //       a.wonkyCharCode.map(ccode =>
-  //         obj(("c", arr(JsNumber(a.id.unwrap), jstr(a.char), toJson(a.targetRegion), JsNumber(ccode))))
-  //       ).getOrElse(
-  //         obj(("c",
-  //           arr(
-  //             JsNumber(a.id.unwrap),
-  //             jstr(a.char),
-  //             toJson(a.targetRegion)
-  //           )))
-  //       )
-  //   }
-  // }
+      case _ => JsError(s"unmatched CharAtom ${json}")
+    }
+
+    override def writes(o: CharAtom) = o match {
+      case c@ CharAtom(
+        CharID(charId),
+        pageRegion,
+        char,
+        wonkyCharCode
+      ) =>
+        wonkyCharCode.map{ ccode =>
+          Json.arr(
+            num(charId),
+            Json.toJson(pageRegion),
+            jstr(char),
+            num(ccode)
+          )
+        } getOrElse {
+          Json.arr(
+            num(charId),
+            Json.toJson(pageRegion),
+            jstr(char)
+          )
+        }
+    }
+  }
 }

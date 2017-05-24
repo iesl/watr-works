@@ -51,7 +51,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
     zoneAndLabel.length shouldBe(12)
 
-    val queryBox = getRegionBounds(0, 0, 1, 2).shrink(3.percent)
+    val queryBox = getRegionBounds(0, 0, 1, 2).scale(-3.percent)
 
     val qres = lwindex.queryRegion(queryBox)
 
@@ -74,7 +74,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
   it should "select region(s) by line" in new CommonSetup {
 
-    val queryBox = getRegionBounds(2, 1, 2, 4).shrink(3.percent)
+    val queryBox = getRegionBounds(2, 1, 2, 4).scale(-3.percent)
 
     val qres = lwindex.queryRegion(queryBox)
 
@@ -84,7 +84,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
   it should "select region(s) by char" in new CommonSetup {
 
-    val queryBox = getRegionBounds(1, 1, 4, 4).shrink(3.percent)
+    val queryBox = getRegionBounds(1, 1, 4, 4).scale(-3.percent)
 
     val queryHits = lwindex.queryRegion(queryBox)
 
@@ -99,7 +99,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
   it should "select and label region by unconstrained rect" in new CommonSetup {
 
-    val queryBox = getRegionBounds(4, 0, 1, 2).shrink(3.percent)
+    val queryBox = getRegionBounds(4, 0, 1, 2).scale(-3.percent)
     lwindex.addLabel(queryBox, ByRegion, LB.Title)
 
     getDocumentZonesWithLabels(stableId).length shouldBe(13)

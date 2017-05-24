@@ -96,9 +96,8 @@ class ClientStateRx(
       )
     )
   }
-
   def setupLabelChooser: RxModifier = Rx {
-    val selectActiveLabel: SelectableButtons = radios()(
+    val selectActiveLabel: SelectableButtons = radios("label-chooser".clazz)(
       (uiLabeler_labelColors().toList.zipWithIndex.map{ case ((lbl, clr), i) =>
 
         if(i==0) { uiState_selectedLabel() = Some(lbl) }

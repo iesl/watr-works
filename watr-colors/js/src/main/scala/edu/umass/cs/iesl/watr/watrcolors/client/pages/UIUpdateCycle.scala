@@ -45,7 +45,6 @@ trait D3BasicShapes {
   }
 
 
-  // def renderPosWidget(p: AbsPosWidget): Option[ElementTag] = {
   def renderPosWidget(p: AbsPosWidget): Option[dom.Element] = {
     val AbsPosWidget(fa, strictBounds, bleedBounds, transVec, zOrder, scaling)  = p
 
@@ -87,65 +86,80 @@ trait D3BasicShapes {
 
       case LabelWidgetF.Labeled(wid, a, key, value) =>
 
-        // // Define the div for the tooltip
-        // val tooltipdiv = d3.select("body").append("div")
-        //   .attr("class", "tooltip")
-        //   .style("opacity", 0)
-        // val hoverIn: js.Function1[dom.MouseEvent, Unit] =
-        //   (event: dom.MouseEvent) => {
-        //     tooltipdiv.transition()
-        //       .duration(200)
-        //       .style("opacity", .9)
-        //     tooltipdiv.html(value)
-        //       .style("left", (event.pageX) + "px")
-        //       .style("top", (event.pageY - 28) + "px");
+        val hoverIn: js.Function1[dom.MouseEvent, Unit] =
+          (event: dom.MouseEvent) => {
+            // Remove any old tooltips
+            d3.select(s"#tooltip-${wid}").remove()
 
-        //     ()
-        //   }
-        // val hoverOut: js.Function1[dom.MouseEvent, Unit] =
-        //   (event: dom.Event) => {
-        //     tooltipdiv.transition()
-        //       .duration(500)
-        //       .style("opacity", 0);
+            d3.select("body").append("div")
+              .attr("class", s"tooltip ${value}")
+              .attr("id", s"tooltip-${wid}")
+              .html(value)
+              .style("left", (event.pageX) + "px")
+              .style("top", (event.pageY - 28) + "px")
+              .transition()
+                .duration(200)
+                .style("opacity", .9)
+              .transition()
+                .duration(4000)
+              .transition()
+                .duration(200)
+                .style("opacity", 0)
+              .transition()
+                .remove()
 
-        //     ()
-        //   }
 
-        // val hr = hoverArea(uiShapeClass(wid, "label-hover")).render
+            ()
+          }
+        val hoverOut: js.Function1[dom.MouseEvent, Unit] =
+          (event: dom.Event) => {
+            d3.select(s"#tooltip-${wid}")
+              .transition()
+              .duration(200)
+              .style("opacity", 0)
+              .transition()
+              .remove()
 
-        // hr.onmouseover = hoverIn
-        // hr.onmouseout = hoverOut
+            ()
+          }
 
-        // Some(hr)
-
-        import parts.BootstrapBits._
-        val hoverArea = createShape(strictBounds)(
+        val hoverArea = createShape(makeTransparent(strictBounds))(
           uiShapeClass(wid, "ui-labeled", value)
-        ).asInstanceOf[JsDom.TypedTag[dom.html.Element]]
+        ).asInstanceOf[JsDom.TypedTag[dom.html.Element]].render
 
-        Some(hoverArea.tooltip(value))
+
+        hoverArea.onmouseover = hoverIn
+        hoverArea.onmouseout = hoverOut
+
+        Some(hoverArea)
 
 
       case Pad(wid, a, padding, maybeColor) =>
 
-        val color = maybeColor.getOrElse(Color.White).toRGB
 
-        val colorStyle =
-          s"""|fill: ${color.cssHash};
-              |fill-opacity: 0.2;
-              |stroke: ${color.cssHash};
-              |stroke-opacity: 1.0;
-              |""".stripMargin
-
-        val fringe = makeFringeParts(strictBounds, padding)
-        val fs = fringe.map(createShape(_))
+        val fringe = makeFringe(strictBounds, padding)
+        val fringeColored = maybeColor.map{ color =>
+          Colorized(
+            fringe,
+            fg=color, bg=color,
+            fgOpacity=1f, bgOpacity=1f
+          )
+        } getOrElse {
+          fringe
+        }
 
         Some(
-          <.g(
-            uiShapeClass(wid, "ui-pad"),
-            ^.style:=colorStyle
-          )(fs:_*).render
+          createShape(fringeColored)(
+            uiShapeClass(wid, "ui-pad")
+          ).render
         )
+
+        // Some(
+        //   <.g(
+        //     uiShapeClass(wid, "ui-pad"),
+        //     ^.style:=colorStyle
+        //   )(fs:_*).render
+        // )
 
 
       case Row(wid, as)           => None
@@ -155,6 +169,13 @@ trait D3BasicShapes {
       case Panel(_, _, _)         => None
       case Terminal               => None
     }
+  }
+
+  def makeTransparent(g: GeometricFigure): GeometricFigure = {
+    Colorized(
+      g, fg=Color.White, bg=Color.White,
+      fgOpacity=0f, bgOpacity=0f
+    )
   }
 
 
@@ -232,6 +253,12 @@ trait D3BasicShapes {
           go(fig, Some(fg.cssHash()), Some(bg.cssHash()), Some(fgOpacity), Some(bgOpacity))
 
       }
+      // val extraAttrs = List(
+      //   ^.stroke        := fgColor.getOrElse(""),
+      //   ^.fill          := bgColor.getOrElse(""),
+      //   ^.strokeOpacity := fgOpacity.getOrElse(0f),
+      //   ^.fillOpacity   := bgOpacity.getOrElse(0f)
+      // )
 
       val extraAttrs = List(
         fgColor.map(^.stroke := _),

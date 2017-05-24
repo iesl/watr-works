@@ -32,7 +32,7 @@ trait TextReflowJsonCodecs extends GeometryJsonCodecs with TextReflowBasics {
   }
 
   def serializeTextReflow(t: TextReflowF[(TextReflow, JsValue)]): JsValue = t match {
-    case Atom(c)                          => obj("a" -> toJson(c.asInstanceOf[CharAtom]))
+    case Atom(c)                          => obj("a" -> toJson(c))
     case Insert (value)                   => jstr(value)
     case Rewrite ((from, attrJs), to)     => obj("s" -> arr(attrJs, JsString(to.toString)))
     case Bracket (pre, post, (a, attrJs)) => obj("b" -> arr(jstr(pre), attrJs, jstr(post)))

@@ -85,46 +85,54 @@ function initD3DragSelect(callback) {
     function dragStart() {
         // console.log("dragStart");
         var mouseEvent = d3.event.sourceEvent;
-        console.log("mouse event:");
-        console.dir(mouseEvent);
+        // console.log("mouse event:");
+        // console.dir(mouseEvent);
 
-        var p = d3.mouse(this);
-        selectionRect.init(p[0], p[1]);
-        selectionRect.removePrevious();
-        d3.event.sourceEvent.stopPropagation(); // silence other listeners
+        // 0=left, 1=middle, 2=right
+        var b = mouseEvent.button;
+        if (b==0) {
+            var p = d3.mouse(this);
+            selectionRect.init(p[0], p[1]);
+            selectionRect.removePrevious();
+            d3.event.sourceEvent.stopPropagation(); // silence other listeners
+        }
     }
 
     function dragMove() {
-        // console.log("dragMove");
-        var p = d3.mouse(this);
-        selectionRect.update(p[0], p[1]);
-        var currAttrs = selectionRect.getCurrentAttributes();
-        callback({
-            move : currAttrs
-        });
+        if (selectionRect.element != null) {
+            // console.log("dragMove");
+            var p = d3.mouse(this);
+            selectionRect.update(p[0], p[1]);
+            var currAttrs = selectionRect.getCurrentAttributes();
+            callback({
+                move : currAttrs
+            });
+        }
     }
 
     function dragEnd() {
-        // console.log("dragEnd");
-        var finalAttributes = selectionRect.getCurrentAttributes();
-        // console.dir(finalAttributes);
-        if(finalAttributes.x2 - finalAttributes.x1 > 1 && finalAttributes.y2 - finalAttributes.y1 > 1){
-            // console.log("range selected");
-            d3.event.sourceEvent.preventDefault();
-            // selectionRect.focus();
-            selectionRect.remove();
-            callback({
-                rect : finalAttributes
-            });
-        } else {
-            // console.log("single point");
-            selectionRect.remove();
-            callback({
-                point : {
-                    x: finalAttributes.x1,
-                    y: finalAttributes.y1
-                }
-            });
+        if (selectionRect.element != null) {
+            // console.log("dragEnd");
+            var finalAttributes = selectionRect.getCurrentAttributes();
+            // console.dir(finalAttributes);
+            if(finalAttributes.x2 - finalAttributes.x1 > 1 && finalAttributes.y2 - finalAttributes.y1 > 1){
+                // console.log("range selected");
+                d3.event.sourceEvent.preventDefault();
+                // selectionRect.focus();
+                selectionRect.remove();
+                callback({
+                    rect : finalAttributes
+                });
+            } else {
+                // console.log("single point");
+                selectionRect.remove();
+                callback({
+                    point : {
+                        x: finalAttributes.x1,
+                        y: finalAttributes.y1
+                    }
+                });
+            }
         }
     }
 

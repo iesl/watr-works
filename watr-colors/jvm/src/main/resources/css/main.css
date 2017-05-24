@@ -55,6 +55,18 @@ svg image {
     pointer-events: none;
 }
 
+.label-chooser .btn.active {
+    -moz-box-shadow:    inset 0 0 10px #234;
+    -webkit-box-shadow: inset 0 0 10px #234;
+    box-shadow:         inset 0 0 10px #234;
+}
+
+.btn.active {
+    -moz-box-shadow:    inset 0 0 10px #234;
+    -webkit-box-shadow: inset 0 0 10px #234;
+    box-shadow:         inset 0 0 10px #234;
+}
+
 img {
     pointer-events: none;
     user-drag: none;

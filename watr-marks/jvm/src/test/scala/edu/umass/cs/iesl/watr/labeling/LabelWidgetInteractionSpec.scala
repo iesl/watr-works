@@ -33,7 +33,7 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
 
   it should "select a zone" in new CommonSetup {
 
-    val queryBox = getRegionBounds(2, 1, 2, 2).shrink(3.percent)
+    val queryBox = getRegionBounds(2, 1, 2, 2).scale(-3.percent)
 
     // val queryHits = lwindex.queryRegion(queryBox)
     // val constrainedHits = lwindex.applyConstraint(ByChar, queryHits)

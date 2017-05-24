@@ -33,6 +33,9 @@ object pageStyles {
     border      :=0,
     margin      :=0
   )
+  lazy val labelTypeRadio: ModifierSeq = Seq(
+    boxShadow := "0 5px #444"
+  )
 
   lazy val logo: ModifierSeq = Seq(
     color            := Colors.Coral.cssHash,

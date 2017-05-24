@@ -202,7 +202,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
                 }
 
                 val pageRegion = mkPageRegion(pageId, x=chnum, y=linenum, w=1, h=1)
-                val adjustedBbox = pageRegion.bbox.shrink(2.percent).translate(0.1, 0.1)
+                val adjustedBbox = pageRegion.bbox.scale(-2.percent).translate(0.1, 0.1)
                 val adjRegion = pageRegion.copy(bbox = adjustedBbox)
                 val charAtom = CharAtom(
                   charIds.nextId,

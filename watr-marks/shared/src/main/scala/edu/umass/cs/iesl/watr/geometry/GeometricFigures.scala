@@ -521,18 +521,14 @@ object GeometryImplicits {
       theBbox.copy(left=x, top=y)
     }
 
-    // def moveTo(x: Double, y: Double): LTBounds = {
-    //   theBbox.copy(left=x, top=y)
-    // }
-
     def moveToOrigin(): LTBounds = {
       moveTo(FloatRep(0), FloatRep(0))
     }
 
-    def shrink(byPercent: Double@@Percent): LTBounds = {
+    def scale(byPercent: Double@@Percent): LTBounds = {
       val scale = byPercent.unwrap/100d
-      val w = theBbox.width - (theBbox.width*scale)
-      val h = theBbox.height - (theBbox.height*scale)
+      val w = theBbox.width*scale
+      val h = theBbox.height*scale
       theBbox.copy(width=w, height=h)
     }
 
