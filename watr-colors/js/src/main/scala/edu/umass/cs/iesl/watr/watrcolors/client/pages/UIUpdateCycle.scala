@@ -71,10 +71,19 @@ trait D3BasicShapes {
           uiShapeClass(wid, "textbox")
         ).render)
 
+
       case Figure(wid, fig) =>
+        // TODO use radial gradient for
+        // <defs>
+        //   <radialGradient id="exampleGradient">
+        //   <stop offset="70%" stop-color="yellow" stop-opacity="0.1"/>
+        //   <stop offset="95%" stop-color="black" stop-opacity="0.3"/>
+        //   </radialGradient>
+        //  </defs>
         val g1 = createShape(fig)
-        val tx =  -transVec.x.asInt
-        val ty =  -transVec.y.asInt
+        val Point.Doubles(tx, ty) = transVec
+        // val tx =  transVec.x.asInt
+        // val ty =  transVec.y.asInt
         Some(
           <.g(
             ^.transform := s"translate($tx $ty)",

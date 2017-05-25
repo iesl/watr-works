@@ -120,11 +120,11 @@ object jsiRectangle {
   )
 
   def toLTBounds(r: jsi.Rectangle): LTBounds = {
-    LTBounds(
-      left = r.minX.toFloatRep,
-      top =  r.minY.toFloatRep,
-      width = (r.maxX - r.minX).toFloatRep,
-      height = (r.maxY - r.minY).toFloatRep
+    LTBounds.Floats(
+      left = r.minX,
+      top =  r.minY,
+      width = (r.maxX - r.minX),
+      height = (r.maxY - r.minY)
     )
   }
 }

@@ -81,7 +81,6 @@ object EnrichNumerics {
 
   implicit class RicherInt_EnrichNumerics(val theInt: Int) extends AnyVal {
     def percent: Double@@Percent = {
-      assert(0 <= theInt && theInt <= 100)
       Percent(theInt.toDouble)
     }
   }

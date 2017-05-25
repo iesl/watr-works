@@ -3,5 +3,5 @@
 -Xss2m
 -Xms3g
 -Xmx6g
--Dakka.loglevel=OFF
--Dorg.ensime.loglevel=INFO
+-Dakka.loglevel=INFO
+-Dorg.ensime.loglevel=DEBUG

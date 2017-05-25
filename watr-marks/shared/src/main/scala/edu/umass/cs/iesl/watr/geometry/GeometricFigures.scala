@@ -44,7 +44,7 @@ object LTBounds {
 
   object Ints {
     def apply(left: Int, top: Int, width: Int, height: Int): LTBounds =
-      LTBounds(FloatRep(left), FloatRep(top), FloatRep(width), FloatRep(height))
+      LTBounds(left.toFloatRep(), top.toFloatRep, width.toFloatRep, height.toFloatRep)
 
     def unapply(bbox: LTBounds): Option[(Int, Int, Int, Int)] = Some((
       bbox.left.asInt,
@@ -68,7 +68,7 @@ object LTBounds {
 
   object Floats {
     def apply(left: Float, top: Float, width: Float, height: Float): LTBounds =
-      LTBounds(float2fp2(left), float2fp2(top), float2fp2(width), float2fp2(height))
+      LTBounds(left.toFloatRep(), top.toFloatRep, width.toFloatRep, height.toFloatRep)
 
     def unapply(bbox: LTBounds): Option[(Float, Float, Float, Float)] = Some((
       bbox.left.asFloat(),
@@ -114,7 +114,7 @@ object Point {
 
   object Ints {
     def apply(x: Int, y: Int): Point =
-      Point(FloatRep(x), FloatRep(y))
+      Point(x.toFloatRep(), y.toFloatRep())
 
     def unapply(p: Point): Option[(Int, Int)] =
       Some((p.x.asInt, p.y.asInt))
@@ -156,11 +156,31 @@ case class Padding(
   top: Int@@FloatRep,
   right: Int@@FloatRep,
   bottom: Int@@FloatRep
-)
+) {
+
+  override def toString: String = {
+    s"""pad[l:${left.pp}, t:${top.pp}, r:${right.pp}, b:${bottom.pp}]"""
+  }
+}
 
 
 
 object Padding {
+  object IntReps {
+    def apply(left: Int, top: Int, right: Int, bottom: Int): Padding =
+      Padding(FloatRep(left), FloatRep(top), FloatRep(right), FloatRep(bottom))
+
+    def apply(p: Int): Padding = apply(p, p, p, p)
+
+    def unapply(pad: Padding): Option[(Int, Int, Int, Int)] = {
+      Some((
+        pad.left.unwrap,
+        pad.top.unwrap,
+        pad.right.unwrap,
+        pad.bottom.unwrap
+      ))
+    }
+  }
 
   object Ints {
     def apply(left: Int, top: Int, right: Int, bottom: Int): Padding =
@@ -172,8 +192,8 @@ object Padding {
       Some((
         pad.left.asInt,
         pad.top.asInt,
-        pad.bottom.asInt,
-        pad.right.asInt
+        pad.right.asInt,
+        pad.bottom.asInt
       ))
     }
   }
@@ -188,8 +208,8 @@ object Padding {
       Some((
         pad.left.asDouble,
         pad.top.asDouble,
-        pad.bottom.asDouble,
-        pad.right.asDouble
+        pad.right.asDouble,
+        pad.bottom.asDouble
       ))
     }
   }
@@ -197,7 +217,6 @@ object Padding {
 
 
 object GeometryImplicits {
-  // import utils.EnrichNumerics._
   import utils.CompassDirection
 
   implicit def EqualGeometricFigure
@@ -213,16 +232,6 @@ object GeometryImplicits {
       case (g1: LTBounds, g2: LBBounds) => g1 === g2.toLTBounds
       case (g1: Point, g2: Point)       => g1.x===g2.x && g1.y===g2.y
       case (g1: Line, g2: Line)         => g1.p1===g2.p1 && g1.p2===g2.p2
-
-      // case (g1: GeometricGroup, g2: GeometricGroup)    =>
-      //   g1.bounds === g2.bounds && g1.figures === g2.figures
-
-      // case (g1: Colorized, g2: Colorized)         =>
-      //   g1.fgOpacity.prettyPrint == g2.fgOpacity.prettyPrint &&
-      //     g1.bgOpacity.prettyPrint == g2.bgOpacity.prettyPrint &&
-      //     g1.bg.toHex==g2.bg.toHex &&
-      //     g1.fg.toHex==g2.fg.toHex &&
-      //     g1.figure === g2.figure
 
       case (_, _)                       => false
     })
@@ -298,7 +307,6 @@ object GeometryImplicits {
   implicit class RicherFloatPrec2(val self: Int@@FloatRep) extends AnyVal {
     def +(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap+r.unwrap)
     def -(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap-r.unwrap)
-    // def *(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap*r.unwrap)
     def *(r: Int@@FloatRep): Int@@FloatRep = (self.asDouble*r.asDouble).toFloatRep
     def /(r: Int@@FloatRep): Int@@FloatRep = (self.asDouble/r.asDouble).toFloatRep
     def unary_-(): Int@@FloatRep = FloatRep(-self.unwrap)
@@ -309,8 +317,8 @@ object GeometryImplicits {
     def >(r: Int@@FloatRep): Boolean = self.unwrap>r.unwrap
 
 
-    def +(r: Double): Int@@FloatRep = self + dbl2fp2(r)
-    def -(r: Double): Int@@FloatRep = self - dbl2fp2(r)
+    def +(r: Double): Int@@FloatRep = self + r.toFloatRep()
+    def -(r: Double): Int@@FloatRep = self - r.toFloatRep()
     def *(r: Double): Int@@FloatRep = (self.asDouble * r).toFloatRep
     def /(r: Double): Int@@FloatRep = (self.asDouble / r).toFloatRep
 
@@ -319,8 +327,8 @@ object GeometryImplicits {
     def >=(r: Double): Boolean = self.unwrap>=r
     def >(r: Double): Boolean  = self.unwrap>r
 
-    def +(r: Float): Int@@FloatRep = self + float2fp2(r)
-    def -(r: Float): Int@@FloatRep = self - float2fp2(r)
+    def +(r: Float): Int@@FloatRep = self + r.toFloatRep
+    def -(r: Float): Int@@FloatRep = self - r.toFloatRep
     def *(r: Float): Int@@FloatRep = (self.asFloat * r).toFloatRep
     def /(r: Float): Int@@FloatRep = (self.asFloat / r).toFloatRep
 
@@ -354,74 +362,79 @@ object GeometryImplicits {
 
   }
 
-  def dbl2fp2(d: Double): Int@@FloatRep = {
-    FloatRep(
-      (d*100.0d).toInt
-    )
-  }
-  def float2fp2(d: Float): Int@@FloatRep = {
-    FloatRep(
-      (d*100.0d).toInt
-    )
-  }
 
   implicit class RicherInt_2(val d: Int) extends AnyVal {
     def toFloatRep() = d.toFloat.toFloatRep()
   }
 
   implicit class RicherFloat_2(val d: Float) extends AnyVal {
+    def float2fp2(d: Float): Int@@FloatRep = {
+      FloatRep(
+        (d*100.0d).toInt
+      )
+    }
     def toFloatRep() = float2fp2(d)
   }
 
   implicit class RicherDouble_2(val d: Double) extends AnyVal {
+    def dbl2fp2(d: Double): Int@@FloatRep = {
+      FloatRep(
+        (d*100.0d).toInt
+      )
+    }
     def toFloatRep() = dbl2fp2(d)
 
   }
 
 
 
-  implicit class RicherPoint(val p0: Point) extends AnyVal {
+  implicit class RicherPoint(val self: Point) extends AnyVal {
+    // def +(r: Double): Int@@FloatRep = self + r.toFloatRep()
+    // def -(r: Double): Int@@FloatRep = self - r.toFloatRep()
+    // def *(r: Double): Int@@FloatRep = (self.asDouble * r).toFloatRep
+    // def /(r: Double): Int@@FloatRep = (self.asDouble / r).toFloatRep
+
+    def +(p: Point): Point = translate(p)
+    def -(p: Point): Point = translate(-p)
+    // def *(r: Double): Int@@FloatRep = (self.asDouble * r).toFloatRep
+    // def /(r: Double): Int@@FloatRep = (self.asDouble / r).toFloatRep
 
     def unary_-(): Point = {
-      Point(-p0.x, -p0.y)
-    }
-
-    def -(p1:Point): Point = {
-      Point(p0.x-p1.x, p0.y-p1.y)
+      Point(-self.x, -self.y)
     }
 
     def lineTo(p1: Point): Line = {
-      Line(p0, p1)
+      Line(self, p1)
     }
 
     def translate(x: Double=0d, y: Double=0d): Point = {
-      Point(p0.x+x, p0.y+y)
+      Point(self.x+x, self.y+y)
     }
     def translate(p: Point): Point = {
-      Point(p0.x+p.x, p0.y+p.y)
+      Point(self.x+p.x, self.y+p.y)
     }
 
-    def hdist(p1: Point): Double = (p1.x - p0.x).asDouble()
+    def hdist(p1: Point): Double = (p1.x - self.x).asDouble()
     def hdistAbs(p1: Point): Double = math.abs(hdist(p1))
 
-    def vdist(p1: Point): Double = (p1.y - p0.y).asDouble()
+    def vdist(p1: Point): Double = (p1.y - self.y).asDouble()
     def vdistAbs(p1: Point): Double = math.abs(vdist(p1))
 
     def dist(p1: Point): Double = {
-      val x = (p0 hdist p1)
-      val y = (p0 vdist p1)
+      val x = (self hdist p1)
+      val y = (self vdist p1)
       math.sqrt(x*x + y*y)
     }
 
     def angleTo(p1: Point): Double = {
-      if (p0.x > p1.x) {
-        math.atan2((p0.y - p1.y).asDouble, (p0.x - p1.x).asDouble)
+      if (self.x > p1.x) {
+        math.atan2((self.y - p1.y).asDouble, (self.x - p1.x).asDouble)
       } else {
-        math.atan2((p1.y - p0.y).asDouble, (p1.x - p0.x).asDouble)
+        math.atan2((p1.y - self.y).asDouble, (p1.x - self.x).asDouble)
       }
     }
     def prettyPrint: String = {
-      s"""(${p0.x.pp}, ${p0.y.pp})"""
+      s"""(${self.x.pp}, ${self.y.pp})"""
     }
 
   }

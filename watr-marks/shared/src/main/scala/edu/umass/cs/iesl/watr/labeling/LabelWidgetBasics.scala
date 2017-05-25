@@ -40,17 +40,17 @@ case class PosAttr(
   strictBounds: LTBounds,
   bleedBounds: LTBounds,
   zOrder: Int, // not used
-  selfOffset: PositionVector,
-  childOffsets: List[PositionVector] = List(),
+  selfTranslation: PositionVector,
+  childTranslations: List[PositionVector] = List(),
   scaling: Double = 1.0d
 ) {
     def toAbsPosWidget: AbsPosWidget = {
-      AbsPosWidget(widget, strictBounds, bleedBounds, selfOffset, zOrder, scaling)
+      AbsPosWidget(widget, strictBounds, bleedBounds, selfTranslation, zOrder, scaling)
     }
 
   def toStackString = {
-    val soff = selfOffset.prettyPrint
-    val ch = childOffsets.map(_.prettyPrint).mkString(", ")
+    val soff = selfTranslation.prettyPrint
+    val ch = childTranslations.map(_.prettyPrint).mkString(", ")
     s"curVec:${soff}   st:[ ${ch} ]"
   }
 
@@ -68,8 +68,8 @@ case class PosAttr(
       strictBounds.translate(pvec),
       bleedBounds.translate(pvec),
       zOrder,
-      selfOffset.translate(pvec),
-      childOffsets.map(_.translate(pvec))
+      selfTranslation.translate(pvec),
+      childTranslations.map(_.translate(pvec))
     )
   }
 }

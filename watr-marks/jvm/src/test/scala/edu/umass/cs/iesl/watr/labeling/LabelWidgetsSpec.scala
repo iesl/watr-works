@@ -1,16 +1,7 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
-// import geometry._
-// import textreflow.data._
-// import labeling.data._
-// import LabelWidgetLayoutHelpers._
-// import watrmarks.{StandardLabels => LB}
-// import LabelWidgetF._
-// import matryoshka.data._
-// import matryoshka.patterns._
-// import matryoshka.patterns.EnvT
-
+import geometry._
 
 import TypeTags._
 import corpora._
@@ -32,7 +23,7 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     my way through the results to verify them
 
 
-    - Ideas for testing:
+    Possible ideas for testing:
       - A small visual notation that expresses the desired layout, is easy to visually understand and check against
 
     */
@@ -41,19 +32,63 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   val page1 = PageID(1)
   val page2 = PageID(2)
 
-  it should "create overlay zstacks" in new CleanDocstore {
+  behavior of "figures"
+
+  it should "adjust figure positions" in new CleanDocstore {
     add4pg_3x3SampleDoc()
-    val layout = row(
-      row(pageDivs3(PageID(1)), pageDivs2(PageID(2))),
-      pageDivs3Stacked(PageID(3))
-    )
+    // val bbox2 = LTBounds.Ints(1, 1, 8, 8)
+    // val layout =
+    //   row(
+    //     figure(bbox),
+    //     figure(bbox2)
+    //   )
+
+    val bbox = LTBounds.Ints(1, 1, 22, 8)
+    val layout =
+      col(
+        row(
+
+          targetOverlays(
+            mkTargetRegion(page1, 0, 0, 3, 3),
+            figure(bbox)
+          ),
+          targetOverlays(
+            mkTargetRegion(page1, 0, 0, 3, 3),
+            figure(LTBounds.Ints(0, 10, 10, 15))
+          )
+        ),
+        row(
+          pad(
+            targetOverlays(
+              mkTargetRegion(page1, 0, 0, 3, 3),
+              figure(bbox)
+            ),
+            Padding.Ints(5)
+          ),
+          targetOverlays(
+            mkTargetRegion(page1, 0, 0, 3, 3),
+            figure(LTBounds.Ints(0, 10, 10, 15))
+          )
+        )
+      )
+
+    // val layout =
+    //   pad(
+    //     figure(bbox),
+    //     Padding.Ints(2)
+    //   )
 
     val lwindex = LabelWidgetIndex.create(docStore, layout)
-    // lwindex.debugPrint()
-    // lwindex.layout.positioning.foreach { absPos =>
-    //   println(s"${absPos}")
-    // }
+
+    println(prettyPrintLabelWidget(layout))
+    lwindex.debugPrint()
+    lwindex.layout.positioning.foreach { pos =>
+      val sb = pos.strictBounds
+      val f = pos.widget
+      println(s"${sb}: $f")
+    }
   }
+
 
   // it should "create columns/rows" in new CleanDocstore {
   //   add4pg_3x3SampleDoc()
@@ -79,6 +114,19 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   //   // lwindex.layout.positioning
   // }
 
+  // it should "create overlay zstacks" in new CleanDocstore {
+  //   add4pg_3x3SampleDoc()
+  //   val layout = row(
+  //     row(pageDivs3(PageID(1)), pageDivs2(PageID(2))),
+  //     pageDivs3Stacked(PageID(3))
+  //   )
+
+  //   val lwindex = LabelWidgetIndex.create(docStore, layout)
+  //   // lwindex.debugPrint()
+  //   // lwindex.layout.positioning.foreach { absPos =>
+  //   //   println(s"${absPos}")
+  //   // }
+  // }
   // it should "correctly position overlays" in new CleanDocstore  {
   //   add4pg_3x3SampleDoc()
 
@@ -147,10 +195,6 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   // }
 
 
-  // it should "include padding" in new CleanDocstore {
-  // it should "include inserted text (as textbox)" in new CleanDocstore {
-  // it should "include reflows" in new CleanDocstore {
-  // it should "include labeled targets as overlays" in new CleanDocstore {
   // it should "rewrite widgets to include geometric figure overlays for prior labeling" in new CleanDocstore {
   //   add4pg_3x3SampleDoc()
 
@@ -184,6 +228,9 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   //   // }
   // }
 
-
+  // it should "include padding" in new CleanDocstore {
+  // it should "include inserted text (as textbox)" in new CleanDocstore {
+  // it should "include reflows" in new CleanDocstore {
+  // it should "include labeled targets as overlays" in new CleanDocstore {
 
 }

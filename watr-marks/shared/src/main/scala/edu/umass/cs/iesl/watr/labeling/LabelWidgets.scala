@@ -228,6 +228,9 @@ object LabelWidgets {
   def targetOverlay(targetRegion: TargetRegion, overlays: Seq[LabelWidget]) =
     fixlw(RegionOverlay(idgen.nextId, targetRegion, overlays.toList))
 
+  def targetOverlays(targetRegion: TargetRegion, overlays: LabelWidget*) =
+    fixlw(RegionOverlay(idgen.nextId, targetRegion, overlays.toList))
+
   def reflow(tr: TextReflow) =
     fixlw(Reflow(idgen.nextId, tr))
 
