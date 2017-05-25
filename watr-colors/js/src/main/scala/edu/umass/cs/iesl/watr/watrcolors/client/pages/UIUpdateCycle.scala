@@ -63,27 +63,27 @@ trait D3BasicShapes {
 
       case  Reflow(wid, tr) =>
         Some(createTextWidget(tr.toString, strictBounds)(
-          uiShapeClass(wid, "reflow")
+          uiShapeClass(wid, "ui-reflow")
         ).render)
 
       case TextBox(wid, tb) =>
         Some(createTextWidget(tb.toString, strictBounds)(
-          uiShapeClass(wid, "textbox")
+          uiShapeClass(wid, "ui-textbox")
         ).render)
 
 
       case Figure(wid, fig) =>
-        // TODO use radial gradient for
-        // <defs>
-        //   <radialGradient id="exampleGradient">
-        //   <stop offset="70%" stop-color="yellow" stop-opacity="0.1"/>
-        //   <stop offset="95%" stop-color="black" stop-opacity="0.3"/>
-        //   </radialGradient>
-        //  </defs>
+        // TODO use radial gradient for highlighting
+        // <.defs(
+        //   <.radialGradient(
+        //     "exampleGradient".id,
+        //     <.stop(^.offset:="70%", ^.stopColor:="yellow", ^.stopOpacity:="0.1")
+        //   )
+        // )
+
         val g1 = createShape(fig)
         val Point.Doubles(tx, ty) = transVec
-        // val tx =  transVec.x.asInt
-        // val ty =  transVec.y.asInt
+
         Some(
           <.g(
             ^.transform := s"translate($tx $ty)",
@@ -145,13 +145,12 @@ trait D3BasicShapes {
 
       case Pad(wid, a, padding, maybeColor) =>
 
-
         val fringe = makeFringe(strictBounds, padding)
         val fringeColored = maybeColor.map{ color =>
           Colorized(
             fringe,
             fg=color, bg=color,
-            fgOpacity=1f, bgOpacity=1f
+            fgOpacity=0f, bgOpacity=1f
           )
         } getOrElse {
           fringe
@@ -162,13 +161,6 @@ trait D3BasicShapes {
             uiShapeClass(wid, "ui-pad")
           ).render
         )
-
-        // Some(
-        //   <.g(
-        //     uiShapeClass(wid, "ui-pad"),
-        //     ^.style:=colorStyle
-        //   )(fs:_*).render
-        // )
 
 
       case Row(wid, as)           => None
@@ -189,6 +181,9 @@ trait D3BasicShapes {
 
 
   def createTextWidget(text: String, bbox: LTBounds): ElementTag = {
+    val LTBounds.Doubles(l, t0, w, h) = bbox
+    val textHeight = 14
+    val t = t0 + textHeight
 
     val spans = text.split("\n").toList
       .zipWithIndex
@@ -197,38 +192,24 @@ trait D3BasicShapes {
         val padl = leadingSpaces*4d
 
         <.text(
-          ^.x   := (bbox.left+padl).asInt,
-          ^.y   := (bbox.top+(i*20d)).asInt,
+          ^.x   := (l+padl),
+          ^.y   := (t+(i*(textHeight+2))),
           line
         )
       }
-    val style =
-      s"""|style="font-family: Times New Roman;
-          |font-size: 20px;
-          |stroke: #020202;
-          |fill: #020202;"
-          |""".stripMargin
+
 
     <.g(
-      ^.style     := style,
-      ^.x         := bbox.left.asInt,
-      ^.y         := bbox.top.asInt,
-      ^.width     := bbox.width.asInt,
-      ^.height    := bbox.height.asInt
+      ^.fontFamily := "courier",
+      ^.fontSize   := s"${textHeight}px",
+      ^.stroke     := "#020202",
+      ^.fill       := "#020202",
+      ^.x          := l,
+      ^.y          := t,
+      ^.width      := w,
+      ^.height     := h
     )(spans)
 
-
-    // val ftext = fabric.Text(text)
-    // ftext.setFontSize(14)
-    // ftext.top     = bbox.top
-    // ftext.left    = bbox.left
-    // val scaleX = bbox.width  / ftext.width.doubleValue
-    // val scaleY = bbox.height / ftext.height.doubleValue
-    // ftext.setScaleX(scaleX)
-    // ftext.setScaleY(scaleY)
-    // noControls(ftext)
-
-    // ftext
   }
 
   def createShape(shape: GeometricFigure): ElementTag = {

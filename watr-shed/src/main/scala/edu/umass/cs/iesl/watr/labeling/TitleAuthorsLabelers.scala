@@ -81,8 +81,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       ),
       LW.pad(
         paperRecWidget,
-        Padding.Ints(10, 10, 0, 0),
-        Colors.Linen
+        Padding.Ints(20, 10, 1, 1)
       )
     )
 

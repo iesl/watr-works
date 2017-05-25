@@ -103,9 +103,12 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
     val layout0 = layoutWidgetPositions(newWidget)
 
-    layout0.positioning.foreach({pos =>
-      lwIndex.add(pos)
-    })
+    layout0.positioning
+      .collect(a => a.widget match {
+        case w: RegionOverlay[Unit]  => a
+        case w: Panel[Unit]  => a
+      })
+      .foreach(lwIndex.add)
 
     // println(s"      :create(): index add complete")
     val targetPageRIndexes: mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]] =
@@ -193,7 +196,7 @@ trait LabelWidgetIndex { self =>
       .lineTo(queryPoint.translate(1, 1))
       .bounds
 
-    println(s"queryForPanels: queryPoint = ${queryBox}")
+    // println(s"queryForPanels: queryPoint = ${queryBox}")
 
     val ret = index.queryForIntersects(queryBox)
       .map ({ pos => pos.widget match {
@@ -211,7 +214,7 @@ trait LabelWidgetIndex { self =>
     pos.strictBounds
       .intersection(queryBounds)
       .map { clippedQueryBox =>
-        val pageQueryBounds = clippedQueryBox.translate(pos.translation)
+        val pageQueryBounds = clippedQueryBox.translate(-pos.translation)
         val pageIndex = pageIndexes(pageId)
         val pageHits = pageIndex.queryForIntersects(pageQueryBounds)
         QueryHit(pos, pageId, pageQueryBounds, pageHits)
@@ -278,8 +281,6 @@ trait LabelWidgetIndex { self =>
         qhit.iTextReflows.map(_.targetRegion)
 
       case ByRegion =>
-        // val regionId = docStore.addTargetRegion(qhit.pageId, qhit.pageSpaceBounds)
-        // val newRegion = docStore.getTargetRegion(regionId)
         val pageStableId = docStore.getPageIdentifier(qhit.pageId)
         val pageRegion = PageRegion(pageStableId, qhit.pageQueryBounds)
         Seq(pageRegion)
