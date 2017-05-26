@@ -51,6 +51,11 @@ case class TargetRegion(
     this.uriString
   }
   override def toString = s"""${page}/${id}@${bbox.prettyPrint}"""
+
+  def toPageRegion(): PageRegion = {
+    PageRegion(page, bbox)
+
+  }
 }
 
 object TargetRegion {

@@ -15,6 +15,54 @@ import TypeTags._
 
 
 object TitleAuthorsLabelers extends LabelWidgetUtils {
+  def singlePageLabeler(
+    // labelerIdentifier: LabelerIdentifier,
+    docStore: DocumentCorpus
+  ): (LabelWidget, LabelerIdentifier) = {
+
+    val pageOnes = for {
+      stableId <- docStore.getDocuments(10, 0)
+      docId <- docStore.getDocument(stableId)
+      pageId <- docStore.getPages(docId).headOption
+    } yield {
+      val pageGeometry = docStore.getPageGeometry(pageId)
+
+      val pageTargetRegion = docStore.getTargetRegion(
+        docStore.addTargetRegion(pageId, pageGeometry)
+      )
+
+      LW.pad(
+        LW.targetOverlay(pageTargetRegion, overlays=List()),
+        Padding.Ints(2),
+        Colors.DarkSlateBlue
+      )
+    }
+    val placeholders = Stream.continually(LW.textbox("<empty page>"))
+    val widgets = (pageOnes.toStream ++ placeholders).take(10)
+
+    val body = LW.row(
+      LW.col(
+        LW.row(
+          widgets.take(5):_*
+        ),
+        LW.row(
+          widgets.take(5):_*
+        )
+      )
+    )
+    val updatedIdentifier =  DocumentLabelerIdentifier(
+      DocumentID("???"), "single-page",
+      Pagination(0, PageNum(0), None),
+      Map(
+        (LB.Title, Colors.Wheat),
+        (LB.Authors, Colors.Orange),
+        (LB.Abstract, Colors.MediumTurquoise),
+        (LB.Affiliation, Colors.OliveDrab)
+      )
+    )
+
+    (body, updatedIdentifier)
+  }
 
   def bioArxivLabeler(
     labelerIdentifier: LabelerIdentifier,

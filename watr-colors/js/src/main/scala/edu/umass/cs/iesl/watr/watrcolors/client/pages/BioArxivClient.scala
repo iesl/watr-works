@@ -246,7 +246,7 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
           val h = rect.y2-rect.y1
           uiRequestCycle(UIRequest(
             clientStateRx.toUIState(),
-            SelectRegion(LTBounds.Doubles(l.toDouble, t.toDouble, w.toDouble, h.toDouble))
+            SelectRegion(LTBounds.Doubles(l, t, w, h))
           ))
         }
 
@@ -255,7 +255,7 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
           val y = point.y
           uiRequestCycle(UIRequest(
             clientStateRx.toUIState(),
-            Click(Point.Doubles(x.toDouble, y.toDouble))
+            Click(Point.Doubles(x, y))
           ))
         }
 
@@ -264,7 +264,7 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
           val t = rect.y1
           val w = rect.x2-rect.x1
           val h = rect.y2-rect.y1
-          selectionRect() = Some(LTBounds.Doubles(l.toDouble, t.toDouble, w.toDouble, h.toDouble))
+          selectionRect() = Some(LTBounds.Doubles(l, t, w, h))
         }
 
         ()

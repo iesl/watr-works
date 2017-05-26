@@ -22,14 +22,29 @@ import matryoshka._
 import utils.GraphPaper
 import utils.Colors
 import LabelWidgetTransforms._
+import textreflow.TextReflowJsonCodecs._
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)
-case class IndexableTextReflow(
+trait IndexableTextReflow {
+  def id: Int@@TextReflowID
+  def textReflow: TextReflow
+  def targetRegion: PageRegion
+}
+
+case class IndexableTextReflowLazy(
+  id: Int@@TextReflowID,
+  reflowJson: String,
+  targetRegion: PageRegion
+) extends IndexableTextReflow {
+  lazy val textReflow = jsonStrToTextReflow(reflowJson)
+}
+
+case class IndexableTextReflowStrict(
   id: Int@@TextReflowID,
   textReflow: TextReflow,
   targetRegion: PageRegion
-)
+) extends IndexableTextReflow
 
 
 case class QueryHit(
@@ -72,7 +87,6 @@ object LabelWidgetIndex extends LabelWidgetLayout {
   }
 
 
-  import textreflow.TextReflowJsonCodecs._
 
   def create(
     docStore0: DocumentCorpus,
@@ -132,13 +146,16 @@ object LabelWidgetIndex extends LabelWidgetLayout {
           vline <- docStore0.getPageVisualLines(pageId)
           reflow <- docStore0.getModelTextReflowForZone(vline.id)
         } {
-          val textReflow = jsonStrToTextReflow(reflow.reflow)
-          val indexable = IndexableTextReflow(
-            reflow.prKey,
-            textReflow,
-            textReflow.targetRegion
-          )
-          pageIndex.add(indexable)
+          val zone = docStore0.getZone(reflow.zone)
+          zone.regions.headOption.map{ lineTargetRegion =>
+            val reflowJson = reflow.reflow
+            val indexable = IndexableTextReflowLazy(
+              reflow.prKey,
+              reflowJson,
+              lineTargetRegion.toPageRegion
+            )
+            pageIndex.add(indexable)
+          }
         }
       }
     }
@@ -259,8 +276,8 @@ trait LabelWidgetIndex { self =>
             }
 
           // FIXME: This assumes that clipping the text reflow will result in a single non-empty result
-          iReflow.copy(
-            textReflow=clipped.head
+          IndexableTextReflowStrict(
+            iReflow.id, clipped.head, clipped.head.targetRegion
           )
 
         }
@@ -277,7 +294,7 @@ trait LabelWidgetIndex { self =>
       qhit <- queryHits
     } yield constraint match {
 
-      case ByLine =>
+      case ByLine | ByChar =>
         qhit.iTextReflows.map(_.targetRegion)
 
       case ByRegion =>
@@ -285,8 +302,6 @@ trait LabelWidgetIndex { self =>
         val pageRegion = PageRegion(pageStableId, qhit.pageQueryBounds)
         Seq(pageRegion)
 
-      case ByChar =>
-        qhit.iTextReflows.map(_.textReflow.targetRegion)
 
     }).flatten
 

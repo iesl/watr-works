@@ -15,16 +15,16 @@ trait JQueryPosition extends js.Object {
 
 @ScalaJSDefined
 trait SelectionRect extends js.Object {
-  def x1: Int
-  def x2: Int
-  def y1: Int
-  def y2: Int
+  def x1: Double
+  def x2: Double
+  def y1: Double
+  def y2: Double
 }
 
 @ScalaJSDefined
 trait ClickPoint extends js.Object {
-  def x: Int
-  def y: Int
+  def x: Double
+  def y: Double
 }
 
 @ScalaJSDefined

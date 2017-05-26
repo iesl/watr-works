@@ -21,7 +21,7 @@ object WidgetMod {
 case class UIState(
   selectionConstraint: Constraint,
   selectedLabel: Option[Label],
-  selections: Seq[Int@@ZoneID], // TODO generalize Id type (has to be able to serialize through strings)
+  selections: Seq[Int@@ZoneID],
   currentLabeler: LabelerIdentifier
 )
 

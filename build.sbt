@@ -1,5 +1,8 @@
+// import sbt._
 import sbt.Keys._
 import ReleaseTransformations._
+// import com.typesafe.sbt.SbtNativePackager.autoImport._
+// import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 SensibleThisBuild.settings
 SensibleProject.settings
@@ -60,7 +63,6 @@ lazy val watrshed = (project in file("watr-shed"))
   .dependsOn(watrmarksJVM)
 
 
-
 lazy val watrcolors = (crossProject in file("watr-colors"))
   .settings(SensibleProject.settings: _*)
   .settings(skip in packageJSDependencies := false)
@@ -90,12 +92,17 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
 lazy val watrcolorsJS = watrcolors.js
 
 lazy val watrcolorsJVM = watrcolors.jvm
+  .enablePlugins(JavaAppPackaging)
   .dependsOn(watrshed)
+  .settings(mainClass := Some("edu.umass.cs.iesl.watr.watrcolors.server.WatrColorTable"))
   .settings((resources in Compile) ++= Seq(
     (fastOptJS in (watrcolorsJS, Compile)).value.data,
     (artifactPath in (watrcolorsJS, Compile, fastOptJS)).value,
     ((classDirectory in (watrcolorsJS, Compile)).value / ".." / "watrcolors-fastopt.js.map").get.head
   ))
+
+
+
 
 
 // import java.nio.file.Files

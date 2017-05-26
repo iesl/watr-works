@@ -21,59 +21,72 @@ class BioArxivServer(
 
   import bioarxiv._
 
+  def doOrDie[T](body: => T): T = {
+    try {
+      body
+    } catch {
+      case t: Throwable => Dbg.die(t)
+        sys.error("")
+    }
+  }
+
+  lazy private val docStore = reflowDB.docStore
+
+  type MakeWidget = LabelerIdentifier => (LabelWidget, LabelerIdentifier)
+
   def fetchDocumentLabeler(
     reqLabelerId: LabelerIdentifier
   ): Future[UIResponse] = {
 
     val DocumentLabelerIdentifier(stableId, labelerType, pagination, labelColors) = reqLabelerId
 
-    val hasEntry = corpus.hasEntry(stableId.unwrap)
-    println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
-    val docStore = reflowDB.docStore
-
-    val maybeLabeler = for {
-      entry <- corpus.entry(stableId.unwrap)
-      rec   <- BioArxivOps.getBioarxivJsonArtifact(entry)
-    } yield {
-
-      try {
+    val mkWidgetOpt: Option[MakeWidget] = labelerType match {
+      case "1pg" => doOrDie {
         val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
           labelerIdentifier => {
-            val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
-            val widget1 = LabelWidgetTransforms.addAllZoneIndicators(
-              widget0,
-              labelerId0,
-              docStore
-            )
+            val (widget0, labelerId0) = TitleAuthorsLabelers.singlePageLabeler(docStore)
+            val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelerId0, docStore)
             (widget1, labelerId0)
           }
-
-        val lwIndex = LabelWidgetIndex.init(
-          docStore, reqLabelerId, mkWidget, None, None
-        )
-
-        activeLabelWidgetIndex = Some(lwIndex)
-
-        val respState = UIState(
-          ByLine,
-          labelColors.headOption.map(_._1),
-          Seq(),
-          lwIndex.labelerIdentifier
-        )
-
-        Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
-
-      } catch {
-        case t: Throwable =>
-          Dbg.die(t)
-          throw t
+        Some(mkWidget)
       }
-    }
 
-    maybeLabeler.getOrElse {
-      sys.error("createDocumentLabeler: error")
+      case _ =>
+        val hasEntry = corpus.hasEntry(stableId.unwrap)
+        println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
+
+        for {
+          entry <- corpus.entry(stableId.unwrap)
+          rec   <- BioArxivOps.getBioarxivJsonArtifact(entry)
+        } yield doOrDie {
+
+          val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
+            labelerIdentifier => {
+              val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
+              val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelerId0, docStore)
+              (widget1, labelerId0)
+            }
+          mkWidget
+        }
+
+    }
+    mkWidgetOpt.map { mkWidget =>
+      val lwIndex = LabelWidgetIndex.init(
+        docStore, reqLabelerId, mkWidget, None, None
+      )
+      activeLabelWidgetIndex = Some(lwIndex)
+      val respState = UIState(
+        ByLine,
+        labelColors.headOption.map(_._1),
+        Seq(),
+        lwIndex.labelerIdentifier
+      )
+      Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
+    } getOrElse {
+      sys.error("TODO unimplemented")
     }
   }
+
 
   def uiRequest(r: UIRequest): Future[UIResponse] = {
     try {
