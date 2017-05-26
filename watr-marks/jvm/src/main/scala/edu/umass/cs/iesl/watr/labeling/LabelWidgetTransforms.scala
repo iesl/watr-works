@@ -17,6 +17,7 @@ import utils.Colors
 import utils.Color
 
 import watrmarks.Label
+// import scalaz.std.list._
 
 object LabelWidgetTransforms {
 
@@ -126,37 +127,25 @@ object LabelWidgetTransforms {
   }
 
   def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
-
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
       lw0 match {
 
         case l @ RegionOverlay(wid1, under, overlays) =>
           val pageId = under.page.pageId
-          val pageDef = docStore.getPageDef(pageId).getOrElse {
-            sys.error(s"addIndicator(): no page found for ${pageId}")
-          }
-
           val clipBox = under.bbox
 
           val zone = docStore.getZone(zoneId)
-
           val zoneColor = labelerIdentifier.labelColors(zone.label)
 
-          val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
-            val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
-            zoneTargetRegion.intersects(pageId, clipBox)
-          })
-
           // clip zone target regions to clipped page region
-          val intersectingBboxes: List[GeometricFigure] =
-            filteredRegionsToTargetRegion
-              .flatMap { targetRegion =>
-                targetRegion
-                  .intersection(clipBox)
-                  .map(_.bbox)
-              }.toList
+          val intersectingBboxes = for {
+            region <- zone.regions.toList
+            if region.intersects(pageId, clipBox)
 
+            intersect <- region.intersection(clipBox)
+
+          } yield intersect.bbox
 
           if (intersectingBboxes.isEmpty) {
             l
@@ -181,9 +170,45 @@ object LabelWidgetTransforms {
       }
   }
 
+
   def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
 
+    println(s"0---")
     val labelId = docStore.ensureLabel(label)
+
+    val pageIds = labelWidget.universe.list
+      .toList.collect{
+        case l @ Embed(RegionOverlay(wid1, under, overlays)) => under.page.pageId
+      }.toSet.toList
+
+    val documentIds: Map[Int@@PageID, Int@@DocumentID] =
+      pageIds.foldLeft(Map[Int@@PageID, Int@@DocumentID]()){
+        case (docIds, pageId) =>
+          if (docIds.contains(pageId)){
+            docIds
+          } else {
+            val pageDef = docStore.getPageDef(pageId).getOrElse {
+              sys.error(s"addIndicator(): no page found for ${pageId}")
+            }
+            docIds + (pageId -> pageDef.document)
+          }
+      }
+
+    val documentZoneMap = documentIds.values.toSet
+      .foldLeft(Map[Int@@DocumentID, List[Zone]]()){
+        case (acc, docId)  =>
+
+          if (acc.contains(docId)) {
+            acc
+          } else {
+            val zones = docStore.getZonesForDocument(docId,labelId)
+              .map(docStore.getZone(_))
+              .toList
+
+            acc + (docId -> zones)
+          }
+      }
+
 
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
@@ -191,36 +216,25 @@ object LabelWidgetTransforms {
 
         case l @ RegionOverlay(wid1, under, overlays) =>
           val pageId = under.page.pageId
-          val pageDef = docStore.getPageDef(pageId).getOrElse {
-            sys.error(s"addIndicator(): no page found for ${pageId}")
-          }
-
+          val docId = documentIds(pageId)
           val clipBox = under.bbox
 
           val zoneIndicators: Seq[Option[LabelWidget]] = for {
-            zoneId <- docStore.getZonesForDocument(pageDef.document, labelId)
+            zone <- documentZoneMap(docId)
           } yield {
-            val zone = docStore.getZone(zoneId)
             val zoneColor = labelerIdentifier.labelColors(label)
 
-            val filteredRegionsToTargetRegion = zone.regions.filter({ targetRegion =>
+            val intersectingBboxes = for {
+              region <- zone.regions.toList
+              if region.intersects(pageId, clipBox)
 
-              val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
-              zoneTargetRegion.intersects(pageId, clipBox)
-            })
+              intersect <- region.intersection(clipBox)
 
-            // clip zone target regions to clipped page region
-            val intersectingBboxes:List[GeometricFigure] =
-              filteredRegionsToTargetRegion
-                .flatMap { targetRegion =>
-                  targetRegion
-                    .intersection(clipBox)
-                    .map(_.bbox)
-                }.toList
+            } yield intersect.bbox
 
 
             if (intersectingBboxes.isEmpty) None else {
-              Some(makeZoneHighlight(zoneId, zone.label, intersectingBboxes, zoneColor))
+              Some(makeZoneHighlight(zone.id, zone.label, intersectingBboxes, zoneColor))
             }
           }
 

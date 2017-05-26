@@ -268,6 +268,7 @@ trait D3BasicShapes {
 trait UIUpdateCycle extends D3BasicShapes {
 
   def doUIUpdateCycle(r: UIRequest): Future[UIResponse]
+  def getUIState(): UIState
   def updateUIState(state: UIState): Unit
 
   def uiRequestCycle(req: UIRequest)(implicit ctx: Ctx.Owner): Future[Unit] = for {
@@ -348,5 +349,18 @@ trait UIUpdateCycle extends D3BasicShapes {
       .remove()
 
   }
+
+
+  def initDragSelectHandlers(
+    mouseDragHandler: LTBounds => Unit,
+    mouseMoveHandler: Point => Unit = p => ()
+  )(implicit co: Ctx.Owner): Unit = {
+    parts.DragSelectHandlers({
+      case g: SelectRegion => uiRequestCycle(UIRequest(getUIState(), g))
+      case g: Click        => uiRequestCycle(UIRequest(getUIState(), g))
+      case g: DblClick =>
+    }, mouseDragHandler)
+  }
+
 
 }

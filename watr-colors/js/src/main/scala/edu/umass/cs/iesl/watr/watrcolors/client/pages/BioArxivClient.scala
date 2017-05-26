@@ -9,9 +9,7 @@ import wiring._
 import scala.concurrent.Future
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scala.scalajs.js
 import scala.scalajs.js.annotation._
-// import org.scalajs.dom
 import org.scalajs.dom.ext._
 
 
@@ -186,13 +184,20 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
     }
   }
 
+  def getUIState(): UIState = clientState.map(_.toUIState())
+    .getOrElse { sys.error("ui state not set") }
+
   val selectionRect: Var[Option[LTBounds]] = Var(None)
+  // val mousePos: Var[Point] = Var(Point.zero)
 
   def selectionIndicator()(implicit co: Ctx.Owner): RxModifier = Rx {
     val curr = selectionRect()
+    // val pt = mousePos()
     curr.map{ bbox =>
       <.span(bbox.prettyPrint)
-    } getOrElse { <.span("<no-sel>") }
+    } getOrElse {
+      <.span("<no-sel>")
+    }
   }
 
   @JSExport
@@ -236,41 +241,10 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
 
       d3.select("#d3-svg-container").append("svg")
 
-      import native._
-
-      val dragSelectCallback: js.Function1[DragSelectEvent, Unit] = (event: DragSelectEvent) => {
-        event.rect.foreach { rect =>
-          val l = rect.x1
-          val t = rect.y1
-          val w = rect.x2-rect.x1
-          val h = rect.y2-rect.y1
-          uiRequestCycle(UIRequest(
-            clientStateRx.toUIState(),
-            SelectRegion(LTBounds.Doubles(l, t, w, h))
-          ))
-        }
-
-        event.point.foreach { point =>
-          val x = point.x
-          val y = point.y
-          uiRequestCycle(UIRequest(
-            clientStateRx.toUIState(),
-            Click(Point.Doubles(x, y))
-          ))
-        }
-
-        event.move.foreach { rect =>
-          val l = rect.x1
-          val t = rect.y1
-          val w = rect.x2-rect.x1
-          val h = rect.y2-rect.y1
-          selectionRect() = Some(LTBounds.Doubles(l, t, w, h))
-        }
-
-        ()
-
-      }
-      DOMGlobalScope.initD3DragSelect(dragSelectCallback)
+      initDragSelectHandlers(
+        bbox => selectionRect() = Some(bbox)
+        // pt => mousePos() = pt
+      )
 
       uiResponse.changes.foreach { mods =>
         joinResponseData(mods)
@@ -282,3 +256,4 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
 
 
 }
+
