@@ -41,7 +41,7 @@ class BioArxivServer(
     val DocumentLabelerIdentifier(stableId, labelerType, pagination, labelColors) = reqLabelerId
 
     val mkWidgetOpt: Option[MakeWidget] = labelerType match {
-      case "1pg" => doOrDie {
+      case "n-page" => doOrDie {
         val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
           labelerIdentifier => {
             val (widget0, labelerId0) = TitleAuthorsLabelers.singlePageLabeler(docStore)

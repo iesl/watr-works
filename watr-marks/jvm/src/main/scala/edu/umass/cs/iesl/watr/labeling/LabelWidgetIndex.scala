@@ -310,7 +310,9 @@ trait LabelWidgetIndex { self =>
 
   def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Option[Int@@ZoneID] = {
     val queryHits = queryRegion(queryBounds)
+    // println(s"addLabel: queryHits = ${queryHits}")
     val constrainedHits = applyConstraint(constraint, queryHits)
+    // println(s"addLabel: constrained = ${constrainedHits}")
     labelConstrained(constraint, constrainedHits, label)
   }
 

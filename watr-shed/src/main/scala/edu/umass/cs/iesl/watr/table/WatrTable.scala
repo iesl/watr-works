@@ -94,9 +94,14 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
 
   import fs2._
   import fs2.util.Async
-  import scala.concurrent.ExecutionContext.Implicits.global
+  // import scala.concurrent.ExecutionContext.Implicits.global
+  // import scala.concurrent.duration._
+  // import fs2.util.syntax._
 
-  implicit val S = Strategy.fromExecutor(global)
+  // implicit val S = Strategy.fromExecutor(global)
+  implicit val S = Strategy.fromCachedDaemonPool()
+  // implicit val Sch = Scheduler.fromFixedDaemonPool(3, "timeouts")
+  // implicit val Sch = Scheduler.fromScheduledExecutorService(S)
   val T = implicitly[Async[Task]]
 
   def segmentAll(n: Int=0, skip: Int=0)(implicit docStore: DocumentCorpus, corpus: Corpus): Unit = {
@@ -111,21 +116,41 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
         segment(corpusEntry)
       }
 
+    // val chunked0 = entries
+    //   .drop(1)
+    //   .through(pipe.zipWithIndex)
+    //   .chunkN(1, allowFewer=true)
+    //   .map { chunks =>
+    //     chunks.map(Stream.chunk)
+    //       .reduce(_ ++ _)
+    //       .covary[Task]
+    //       .map { case (corpusEntry, i) =>
+    //         println(s"processing entry ${i}")
+    //         segment(corpusEntry)
+    //       }
+    //   }
+
     val chunked = entries
       .drop(1)
       .through(pipe.zipWithIndex)
-      .chunkN(5, allowFewer=true)
+      .chunkN(1, allowFewer=true)
       .map { chunks =>
         chunks.map(Stream.chunk)
           .reduce(_ ++ _)
           .covary[Task]
-          .map { case (corpusEntry, i) =>
-            println(s"processing entry ${i}")
-            segment(corpusEntry)
+          .evalMap { case (corpusEntry, i) =>
+            val t = Task.delay {
+              println(s"processing entry ${i}")
+              segment(corpusEntry)
+              println(s"done entry ${i}")
+            }
+            t
           }
       }
 
-    val prog = concurrent.join(12)(chunked)
+
+
+    val prog = concurrent.join(10)(chunked)
     println(s"constructed program")
 
     println(s"running first entry")
@@ -140,25 +165,21 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     for {
       pdfArtifact    <- corpusEntry.getPdfArtifact
       pdfPath        <- pdfArtifact.asPath.toOption
+      stableId = DocumentID(corpusEntry.entryDescriptor)
     } yield {
 
-      val stableId = DocumentID(corpusEntry.entryDescriptor)
+      if (docStore.getDocument(stableId).isDefined) {
+        println(s"segmenting ${stableId} failed. Already exists.")
 
-      docStore.getDocument(stableId)
-        .flatMap({docId =>
-          println(s"segmenting ${stableId} ## ${docId} failed. Already exists.")
-          None
-        })
-        .getOrElse {
+      } else {
+        println(s"segmenting ${stableId}")
 
-          println(s"segmenting ${stableId}")
+        val segmenter = DocumentSegmenter
+          .createSegmenter(stableId, pdfPath, docStore)
 
-          val segmenter = DocumentSegmenter
-            .createSegmenter(stableId, pdfPath, docStore)
-
-          segmenter.runPageSegmentation()
-          println()
-        }
+        segmenter.runPageSegmentation()
+        println()
+      }
     }
   }
 

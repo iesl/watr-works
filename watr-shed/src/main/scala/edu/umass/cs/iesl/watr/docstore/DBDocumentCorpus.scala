@@ -104,6 +104,12 @@ class TextReflowDB(
   }
 
 
+  def dropTables() = runqOnce {
+    for{
+      _ <- tables.dropAll
+    } yield ()
+  }
+
   def dropAndRecreate() = runqOnce {
     for{
       _ <- tables.dropAll

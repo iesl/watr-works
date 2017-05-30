@@ -217,7 +217,7 @@ class DocumentSegmenter(
     for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } yield {
-      println(s"  Page ${pagenum}")
+      // println(s"  Page ${pagenum}")
       val atomicComponents = mpageIndex.getPageAtoms(PageNum(pagenum))
 
       // val atomicComponents = charAtoms.map(
@@ -691,7 +691,7 @@ class DocumentSegmenter(
 
   def printCommonLineBins(lineBins: Seq[LineDimensionBins]): Unit = {
     lineBins.zipWithIndex.toList.foreach{ case (bin, pnum) =>
-      println(s"Page $pnum")
+      // println(s"Page $pnum")
       printPageLineBins(bin, 2)
     }
   }

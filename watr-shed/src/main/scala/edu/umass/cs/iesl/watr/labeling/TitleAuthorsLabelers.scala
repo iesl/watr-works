@@ -46,7 +46,10 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
           widgets.take(5):_*
         ),
         LW.row(
-          widgets.take(5):_*
+          widgets.drop(5).take(5):_*
+        ),
+        LW.row(
+          widgets.drop(10).take(5):_*
         )
       )
     )
