@@ -3,7 +3,7 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.12"
+  val scalazVersion       = "7.2.13"
   val scalaTagsVersion    = "0.6.5"
   val scalaAsyncVersion   = "0.9.6"
   // val akkaVersion         = "2.4.17"
@@ -65,7 +65,7 @@ object DatabaseLibs extends LibVersions {
 trait CommonLibs extends LibVersions {
 
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.3"
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.4"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
@@ -94,3 +94,4 @@ trait CommonLibs extends LibVersions {
 }
 
 object CommonLibs extends CommonLibs
+
