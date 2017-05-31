@@ -14,19 +14,23 @@ import ammonite.{ops => fs}, fs._
 
 import fs2.Task
 import fs2.Stream
-// import fs2.util.{Effect, Async}
-// import nio.Paths
 
 object Corpus {
 
+  def initCorpus(corpusRoot: String): Unit = {
+    val fullPath = pwd/RelPath(corpusRoot)
+    val validPath = exists(fullPath)
 
-  // implicit val S = Strategy.fromCachedDaemonPool("test")
-  // val dir = Paths.get("/home/eike/workspace/projects/sharry/modules/webapp/src")
-  // val out = Paths.get("/home/eike/workspace/projects/sharry/test.zip")
-  // zip.zipDir[Task](dir, 8192)
-  //   .through(io.file.writeAll(out))
-  //   .run
-  //   .unsafeRun
+    if (!validPath) {
+      sys.error(s"init: invalid corpus root specified ${fullPath}")
+    }
+    val corpus = Corpus(fullPath)
+    if (corpus.sentinelExists()) {
+      sys.error(s"init: corpus seems to already be initialized ${fullPath}")
+    }
+    corpus.touchSentinel()
+    corpus.normalizeCorpusEntries()
+  }
 
   def apply(appRoot: nio.Path): Corpus = {
     new Corpus(Path(appRoot))
@@ -40,6 +44,35 @@ object Corpus {
 class Corpus(
   val corpusRoot: Path
 ) {
+  private[this] val log = org.log4s.getLogger
+
+  def normalizeCorpusEntry(pdf: Path): Unit = {
+    val artifactPath = corpusRoot / s"${pdf.name}.d"
+    if (pdf.isFile && !(exists! artifactPath)) {
+      log.info(s" creating artifact dir ${pdf}")
+      mkdir! artifactPath
+    }
+    if (pdf.isFile) {
+      val dest = artifactPath / pdf.name
+
+      if (exists(dest)) {
+        log.info(s"corpus already contains file ${dest}, skipping...")
+      } else {
+        log.info(s" stashing ${pdf}")
+        mv.into(pdf, artifactPath)
+      }
+    }
+  }
+  def normalizeCorpusEntries(): Unit = {
+
+    log.info(s"normalizing corpus at ${corpusRoot}")
+
+    ls(corpusRoot)
+      .filter(p=> p.isFile && (p.ext=="pdf" || p.ext=="ps"))
+      .foreach { pdf =>
+        normalizeCorpusEntry(pdf)
+      }
+  }
 
   override val toString = {
     s"corpus:${corpusRoot}"
