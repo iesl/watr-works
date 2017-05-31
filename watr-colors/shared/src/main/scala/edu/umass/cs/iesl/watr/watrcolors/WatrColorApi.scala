@@ -18,15 +18,6 @@ case class LabelerEntry(
   status: String
 )
 
-// Search for docs w/labels like
-//  Find doc with all labels present:  '(authors & title & abstract)'
-//  Find doc with any label present:  '(authors | title | abstract)'
-//  Find doc with at least on missing label:  '!(authors & title & abstract)'
-//  Find doc with at least on missing label:  '!(authors | title | abstract)'
-
-// Show labeling info for a given document
-//   select count(zone), document from zone where label = 1 group by document;
-
 case class DocumentEntry(
   id: String@@DocumentID,
   urlStr: String,

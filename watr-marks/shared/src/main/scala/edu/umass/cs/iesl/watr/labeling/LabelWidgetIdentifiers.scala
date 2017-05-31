@@ -46,7 +46,7 @@ case class Pagination(
   pageInfo: Option[Seq[PaginationInfo]]
 )
 
-// TODO this labeler identifier heirarchy is pretty bad
+
 sealed trait LabelerIdentifier {
   def labelColors: Map[Label, Color]
 }

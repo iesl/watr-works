@@ -21,7 +21,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
   ): (LabelWidget, LabelerIdentifier) = {
 
     val pageOnes = for {
-      stableId <- docStore.getDocuments(10, 0)
+      stableId <- docStore.getDocuments(15, 0)
       docId <- docStore.getDocument(stableId)
       pageId <- docStore.getPages(docId).headOption
     } yield {
