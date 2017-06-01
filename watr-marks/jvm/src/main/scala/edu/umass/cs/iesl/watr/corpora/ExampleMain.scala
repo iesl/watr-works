@@ -28,6 +28,7 @@ class SampleTextCorpus extends PlainTextCorpus {
     addDocument(stableId, pages)
   }
 
+
   def reportDocument(stableId: String@@DocumentID): TB.Box = {
     val docBoxes = for {
       docId <- docStore.getDocument(stableId).toSeq

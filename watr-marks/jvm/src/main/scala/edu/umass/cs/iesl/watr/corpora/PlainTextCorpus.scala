@@ -138,7 +138,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   }
 
   def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
-    val docId = docStore.addDocument(stableId)
+    docStore.addDocument(stableId)
     for {
       (page, n) <- pages.zipWithIndex
     } yield {
@@ -156,7 +156,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
     var linenum:Int = -1
     var chnum = 0
-    var reflowBuilder = new TextReflowBuilder
+    val reflowBuilder = new TextReflowBuilder
 
     val pageLines = linesWithPad(pageBlock)
 

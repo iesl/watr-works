@@ -223,12 +223,8 @@ class MemDocstore extends DocumentCorpus {
 
     }
 
-    object labelers extends DBRelation[LabelerID, Rel.LabelingWidget] {
-
-    }
-    object labelingTasks extends DBRelation[LabelingTaskID, Rel.LabelingTask] {
-
-    }
+    // object labelers extends DBRelation[LabelerID, Rel.LabelingWidget] {}
+    // object labelingTasks extends DBRelation[LabelingTaskID, Rel.LabelingTask] {}
 
     object charatoms extends DBRelation[CharID, CharAtom] {
       object forPage extends EdgeTableOneToMany[PageID, CharID]

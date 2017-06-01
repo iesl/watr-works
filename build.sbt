@@ -1,8 +1,5 @@
-// import sbt._
 import sbt.Keys._
 import ReleaseTransformations._
-// import com.typesafe.sbt.SbtNativePackager.autoImport._
-// import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 SensibleThisBuild.settings
 SensibleProject.settings

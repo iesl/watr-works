@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package databasics
 
-import scalaz._, Scalaz._
 import scalaz.concurrent.Task
 
 import org.scalatest._

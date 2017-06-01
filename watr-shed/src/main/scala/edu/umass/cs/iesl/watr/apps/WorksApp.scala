@@ -210,56 +210,12 @@ object Works extends App {
   }
 
 
-
-  ///////////////////////
-  // Initialize/normalize corpus entries
-
-  def normalizeCorpusEntry(corpus: Corpus, pdf: Path): Unit = {
-    val artifactPath = corpus.corpusRoot / s"${pdf.name}.d"
-    if (pdf.isFile && !(exists! artifactPath)) {
-      log.info(s" creating artifact dir ${pdf}")
-      mkdir! artifactPath
-    }
-    if (pdf.isFile) {
-      val dest = artifactPath / pdf.name
-
-      if (exists(dest)) {
-        log.info(s"corpus already contains file ${dest}, skipping...")
-      } else {
-        log.info(s" stashing ${pdf}")
-        mv.into(pdf, artifactPath)
-      }
-    }
-  }
-
   def initCorpus(conf: AppConfig): Unit = {
-      conf.corpusRoot
-      .map({croot =>
-        val fullPath = pwd/RelPath(croot)
-        val validPath = exists(fullPath)
-
-        if (!validPath) {
-          sys.error(s"init: invalid corpus root specified ${fullPath}")
-        } else {
-          Corpus(fullPath).touchSentinel()
-        }
-      }).getOrElse(sys.error("no corpus root specified"))
-
-
-    normalizeCorpusEntries(conf)
+    val croot = conf.corpusRoot.getOrElse(sys.error("no corpus root specified"))
+    val fullPath = pwd/RelPath(croot)
+    Corpus.initCorpus(fullPath.toIO.getPath)
   }
 
-  def normalizeCorpusEntries(conf: AppConfig): Unit = {
-    val corpus = Corpus(corpusRootOrDie(conf))
-
-    log.info(s"normalizing corpus at ${corpus.corpusRoot}")
-
-    ls(corpus.corpusRoot)
-    .filter(p=> p.isFile && (p.ext=="pdf" || p.ext=="ps"))
-    .foreach { pdf =>
-      normalizeCorpusEntry(corpus, pdf)
-    }
-  }
 
   def loadPredsynthUberJson(conf: AppConfig): Option[Map[String, Paper]] = {
     for {

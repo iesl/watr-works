@@ -39,7 +39,6 @@ object RelationModel {
     rank     : Int
   )
 
-
   case class TextReflow(
     prKey     : Int@@TextReflowID,
     reflow    : String,
@@ -55,13 +54,6 @@ object RelationModel {
   case class LabelingWidget(
     prKey   : Int@@LabelerID,
     widget  : String
-  )
-
-  case class LabelingTask(
-    prKey     : Int@@LabelingTaskID,
-    taskName  : String,
-    taskState : String,
-    assignee  : String
   )
 
 }

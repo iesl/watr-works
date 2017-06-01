@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package utils 
+package utils
 
 import java.util._
 import DisjointSets._
@@ -77,7 +77,7 @@ object DisjointSets {
 
 class DisjointSets[E](c: Collection[_ <: E]) extends java.lang.Iterable[Set[E]] {
 
-  private var map: Map[E, Entry[E]] = new HashMap[E, Entry[E]]()
+  private val map: Map[E, Entry[E]] = new HashMap[E, Entry[E]]()
 
   for (element <- c) {
     map.put(element, new Entry[E](element))
@@ -102,7 +102,7 @@ class DisjointSets[E](c: Collection[_ <: E]) extends java.lang.Iterable[Set[E]] 
   override def iterator(): Iterator[Set[E]] = {
     new Iterator[Set[E]]() {
 
-      private var iterator: Iterator[Entry[E]] = map.values.iterator()
+      private val iterator: Iterator[Entry[E]] = map.values.iterator()
 
       private var nextRepresentative: Entry[E] = _
 

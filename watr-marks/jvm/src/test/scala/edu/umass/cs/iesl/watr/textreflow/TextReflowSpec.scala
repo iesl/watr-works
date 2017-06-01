@@ -61,6 +61,7 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
       height          <- 1 to 2
       width           <- 1 to 2
     } {
+      annotateAndPrint(lineReflow)
       // println(s">${lineText} in ${lineTR.bbox}")
       val bounds = getRegionBounds(x, y, width, height)
 
@@ -104,6 +105,12 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   // behavior of "text reflowing"
 
   // val Eu1_x = stringToTextReflow("Eu_{1 - x}")
+  val _ = """
+scanning{ }of the...
+
+    ﬂ
+    fl
+"""
 
   // it should "count atoms correctly" in {
   //   Eu1_x.charCount shouldBe 7

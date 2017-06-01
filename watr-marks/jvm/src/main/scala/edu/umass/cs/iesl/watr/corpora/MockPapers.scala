@@ -15,7 +15,7 @@ object MockPapers {
        |
        |4   Sebastian Lippold1, Hongyang Xu 1,2, Albert Ko1 , Mingkun Li 1,3 , Gabriel Renaud1,
        |
-       |5                Anne Butthof 1,4 , Roland Schröder 1 , Mark Stoneking 1
+       |5                Anne Butthof ^{1,4} , Roland Schröder 1 , Mark Stoneking 1
        |6
        |7     1 Department of Evolutionary Genetics, Max Planck Institute for Evolutionary
        |

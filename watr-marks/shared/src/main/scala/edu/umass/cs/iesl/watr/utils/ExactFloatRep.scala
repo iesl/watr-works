@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package utils
 
-import TypeTags._
+// import TypeTags._
 
 
 

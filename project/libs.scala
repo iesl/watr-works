@@ -65,7 +65,7 @@ object DatabaseLibs extends LibVersions {
 trait CommonLibs extends LibVersions {
 
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.4"
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.5"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"

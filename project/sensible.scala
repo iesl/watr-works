@@ -1,6 +1,7 @@
 import scala.util.{ Properties, Try }
 import sbt._
 import Keys._
+// import wartremover._
 
 object SensibleProject extends CommonLibs {
 
@@ -23,11 +24,18 @@ object SensibleProject extends CommonLibs {
       , "-Ywarn-adapted-args"
       , "-Ywarn-inaccessible"
       , "-Ywarn-unused-import"
+      , "-Ywarn-unused"
       , "-Ywarn-dead-code"
       , "-Ypartial-unification"
       , "-Xfuture"
   )
 
+  lazy val wartremoverSettings = Seq(
+    // wartremoverWarnings in (Compile, compile) ++= Warts.all
+    // wartremoverWarnings ++= Warts.unsafe
+    // addCompilerPlugin("org.wartremover" %% "wartremover" % "2.1.0"),
+    // scalacOptions += "-P:wartremover:only-warn-traverser:org.brianmckenna.wartremover.warts.Unsafe"
+  )
 
 
   lazy val settings =  Seq(
@@ -38,6 +46,7 @@ object SensibleProject extends CommonLibs {
     autoCompilerPlugins  := true,
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.4"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full),
+
 
     // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the
     //   scala library get loaded
@@ -50,7 +59,7 @@ object SensibleProject extends CommonLibs {
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
-  )
+  ) ++ wartremoverSettings
 
 }
 
@@ -65,6 +74,7 @@ object SensibleThisBuild {
   }
 
   lazy val settings =  Seq(
+
 
     resolvers in ThisBuild ++= List(
       Resolver.sonatypeRepo("snapshots"),

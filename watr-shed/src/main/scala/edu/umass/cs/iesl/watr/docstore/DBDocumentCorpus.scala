@@ -19,6 +19,7 @@ import watrmarks._
 import TypeTags._
 import play.api.libs.json, json._
 
+
 class TextReflowDB(
   val tables: TextReflowDBTables,
   dbname: String, dbuser: String, dbpass: String

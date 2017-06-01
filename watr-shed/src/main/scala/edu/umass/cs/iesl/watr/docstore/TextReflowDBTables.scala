@@ -155,14 +155,14 @@ class TextReflowDBTables extends DoobieImplicits {
 
   // title/author
   // created/todo/assigned/skipped/done
-  val createLabelingTaskTable: Update0 = sql"""
-      CREATE TABLE labelingtasks (
-        labelingtask     SERIAL PRIMARY KEY,
-        taskname         VARCHAR(128),
-        progress         VARCHAR(64),
-        labeler          INTEGER REFERENCES labelers
-      );
-    """.update
+  // val createLabelingTaskTable: Update0 = sql"""
+  //     CREATE TABLE labelingtasks (
+  //       labelingtask     SERIAL PRIMARY KEY,
+  //       taskname         VARCHAR(128),
+  //       progress         VARCHAR(64),
+  //       labeler          INTEGER REFERENCES labelers
+  //     );
+  //   """.update
 
   def createAll = for {
     _ <- putStrLn("create imageclips")
@@ -181,8 +181,8 @@ class TextReflowDBTables extends DoobieImplicits {
     _ <- createTextReflowTable.run
     _ <- putStrLn("create labelers")
     _ <- createLabelerTable.run
-    _ <- putStrLn("create labelingtasks")
-    _ <- createLabelingTaskTable.run
+    // _ <- putStrLn("create labelingtasks")
+    // _ <- createLabelingTaskTable.run
   } yield ()
 
   val dropAll0: Update0 = sql"""

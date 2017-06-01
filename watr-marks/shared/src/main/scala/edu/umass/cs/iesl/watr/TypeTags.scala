@@ -30,12 +30,14 @@ sealed trait Length
 
 sealed trait Percent
 
+sealed trait StatusCode
 sealed trait LabelerID
-sealed trait LabelingTaskID
+sealed trait WorkflowID
 
 sealed trait TextReflowID
 sealed trait ImageID
 
+sealed trait UserID
 sealed trait Username
 sealed trait Password
 
@@ -72,9 +74,11 @@ trait TypeTags {
 
   val ImageID = Tag.of[ImageID]
 
+  val StatusCode = Tag.of[StatusCode]
   val LabelerID = Tag.of[LabelerID]
-  val LabelingTaskID = Tag.of[LabelingTaskID]
+  val WorkflowID = Tag.of[WorkflowID]
 
+  val UserID = Tag.of[UserID]
   val Username = Tag.of[Username]
   val Password = Tag.of[Password]
 
@@ -95,4 +99,3 @@ trait TypeTags {
   implicit def EqualTypeTag[A: Equal, T]: Equal[A@@T] =
     Equal.equal((a, b)  => a.unwrap===b.unwrap)
 }
-

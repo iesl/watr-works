@@ -46,17 +46,10 @@ echo "Extracting page images"
 mudraw_exists=$(hash mudraw 2>/dev/null && echo 1)
 mutool_exists=$(hash mutool 2>/dev/null && echo 1)
 
-# if [ -n $mudraw_exists ]; then
-#     echo "mudraw exists; "
-# fi
-# if [ -n $mudraw_exists ]; then
-#     echo "mutool exists;"
-# fi
-
 if [ -n $mudraw_exists ]; then
     # echo "using mudraw "
     mudraw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
-elif [ -n $mudraw_exists ]; then
+elif [ -n $mutool_exists ]; then
     # echo "using mutool"
     mutool draw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
 fi
