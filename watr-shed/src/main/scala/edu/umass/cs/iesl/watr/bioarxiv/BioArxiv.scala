@@ -7,7 +7,6 @@ import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
 import watrmarks.{StandardLabels => LB}
 
-// import geometry.zones.syntax._
 import corpora._
 
 import scala.collection.mutable
@@ -49,6 +48,7 @@ trait BioArxivJsonFormats  {
 
 
 object BioArxivOps extends BioArxivJsonFormats {
+  private[this] val log = org.log4s.getLogger
   import BioArxiv._
 
   def getBioarxivJsonArtifact(corpusEntry: CorpusEntry): Option[PaperRec] = {
@@ -110,6 +110,8 @@ object BioArxivOps extends BioArxivJsonFormats {
       val pjson = Json.toJson(rec)
       val jsOut = Json.prettyPrint(pjson)
       val artifact = entry.putArtifact("bioarxiv.json", jsOut)
+      val path = artifact.rootPath
+      log.info(s"entry $key created in $path")
     }
   }
 
@@ -172,8 +174,8 @@ object AlignBioArxiv {
     val consecutiveTriBoosts  = mutable.HashMap[Int, Int]()
 
     def boostTrigram(lineInfo: ReflowSliceInfo, triInfo: ReflowSliceInfo): Unit = {
-      val ReflowSliceInfo(linenum, lineReflow, lineText) = lineInfo
-      val ReflowSliceInfo(trinum, triReflow, triText) = triInfo
+      val ReflowSliceInfo(linenum, lineReflow, _/*lineText*/) = lineInfo
+      val ReflowSliceInfo(trinum, triReflow, _/*triText*/) = triInfo
       val triBoostRun = consecutiveTriBoosts.getOrElseUpdate(trinum-1, 0)+1
       consecutiveTriBoosts.put(trinum, triBoostRun)
 

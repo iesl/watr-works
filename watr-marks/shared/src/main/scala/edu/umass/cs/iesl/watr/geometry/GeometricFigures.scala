@@ -545,26 +545,42 @@ object GeometryImplicits {
       theBbox.copy(width=w, height=h)
     }
 
-    def splitHorizontal(bbox: LTBounds): List[LTBounds] = {
-      val leftX = bbox.toWesternPoint.x
-      val rightX = bbox.toEasternPoint.x
-      val trbbox = theBbox
-      val leftRights = if (trbbox.intersectsX(leftX)){
-        val splitLeft = trbbox.splitHorizontal(leftX)
-        if (trbbox.intersectsX(rightX)){
-          val splitRight = trbbox.splitHorizontal(rightX)
-          splitLeft.head :: splitLeft.tail
-        } else {
-          List(splitLeft.head)
-        }
-      } else if (trbbox.intersectsX(rightX)){
-        trbbox.splitHorizontal(rightX).tail
-      } else {
-        List()
-      }
+    // /* TODO this rectangle split function is useful but has bugs.
+    //  Split this rectangle into 0-3 parts, depending on overlap, like so:
+    //                    +-------------+
+    //                    |             |  <- splitter bbox
+    //    +---------------+-------------+-----------------+
+    //    |               |             |                 |    <-- self bbox
+    //    |               |             |                 |
+    //    |     left      |     mid     |      right      |
+    //    |     bbox      |    bbox     |       bbox      |
+    //    |               |             |                 |
+    //    +---------------+-------------+-----------------+
+    //                    |             |
+    //                    |             |
+    //                    +-------------+
 
-      leftRights
-    }
+    //  */
+    // def splitHorizontal(splitter: LTBounds): List[LTBounds] = {
+    //   val leftX = splitter.toPoint(CDir.W).x
+    //   val rightX = splitter.toPoint(CDir.E).x
+    //   val self = theBbox
+    //   val leftRights = if (self.intersectsX(leftX)){
+    //     val splitLeft = self.splitHorizontal(leftX)
+    //     if (self.intersectsX(rightX)){
+    //       val splitRight = self.splitHorizontal(rightX)
+    //       splitLeft.head :: splitLeft.tail
+    //     } else {
+    //       List(splitLeft.head)
+    //     }
+    //   } else if (self.intersectsX(rightX)){
+    //     self.splitHorizontal(rightX).tail
+    //   } else {
+    //     List()
+    //   }
+
+    //   leftRights
+    // }
 
     def splitHorizontal(x: Int@@FloatRep): List[LTBounds] = {
       if (intersectsX(x)) {

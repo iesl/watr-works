@@ -33,6 +33,7 @@ sealed trait Percent
 sealed trait StatusCode
 sealed trait LabelerID
 sealed trait WorkflowID
+sealed trait WorkItemID
 
 sealed trait TextReflowID
 sealed trait ImageID
@@ -77,6 +78,7 @@ trait TypeTags {
   val StatusCode = Tag.of[StatusCode]
   val LabelerID = Tag.of[LabelerID]
   val WorkflowID = Tag.of[WorkflowID]
+  val WorkItemID = Tag.of[WorkItemID]
 
   val UserID = Tag.of[UserID]
   val Username = Tag.of[Username]

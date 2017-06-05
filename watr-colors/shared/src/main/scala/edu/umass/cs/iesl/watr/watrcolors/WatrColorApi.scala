@@ -13,7 +13,7 @@ trait WatrShellApi {
 
 // TODO this can just be LabelerIdentifier, remove it when ready
 case class LabelerEntry(
-  name: String@@LabelingTaskID,
+  name: String@@LabelerID,
   assignee: Option[String@@Username],
   status: String
 )

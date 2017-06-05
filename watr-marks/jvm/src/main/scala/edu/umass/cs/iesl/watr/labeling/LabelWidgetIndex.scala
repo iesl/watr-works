@@ -326,34 +326,6 @@ trait LabelWidgetIndex { self =>
   }
 
 
-  // def toggleFringe(toggleOn: Boolean, labelWidget: LabelWidget): LabelWidget = {
-  //   if (toggleOn) {
-  //     labelWidget.project match {
-  //       case fa@ Figure(wid, fig) =>
-  //         LabelWidgets.figure(
-  //           composeFigures(
-  //             Colorized(
-  //               makeFringe(fig, Padding(4)),
-  //               fg=Colors.Yellow, bg=Colors.Yellow,
-  //               fgOpacity=0.2f, bgOpacity=0.2f
-  //             ),
-  //             fig
-  //           )
-  //         )
-
-  //       case fa => fa.embed
-  //     }
-  //   } else {
-  //     labelWidget.project match {
-  //       case fa@ Figure(wid, fig) =>
-  //         val GeometricGroup(grbbox, grfigs) = fig
-  //         LabelWidgets.figure(grfigs.last)
-
-  //       case fa => fa.embed
-  //     }
-  //   }
-  // }
-
   // TODO this interpreter is specific to a particular labeler type (e.g., BioArxiv Labeler) and should be parameterized
   //    within this class
   val interpLabelAction: LabelAction ~> State[InterpState, ?] =
@@ -424,12 +396,13 @@ trait LabelWidgetIndex { self =>
             } yield ()
 
           case act@ NavigateTo(pageNum) =>
+            //  Switch to different pages within same document/labeler type
+
             for {
               newSt <- State.modify[InterpState] { initState =>
                 val requestedLabeler = initState.uiRequest.uiState.currentLabeler
                 val _ = initState.uiResponse.uiState.currentLabeler
 
-                // For now, navigation is just changing pages, but same document/labeler type. In the future, this might
 
                 val (newWidget, newLabelerId) = mkWidget(requestedLabeler)
 
@@ -529,7 +502,7 @@ trait LabelWidgetIndex { self =>
   // map (UIState, Gesture) => (UIState, UIChanges)
   def userInteraction(uiRequest: UIRequest): (UIResponse, LabelWidgetIndex) = {
 
-    val UIState(uiContraint, activeLabel, selections, activeLabeler) = uiRequest.uiState
+    val UIState(uiContraint, activeLabel, _ /*selections*/, activeLabeler) = uiRequest.uiState
     val initResponse = UIResponse(uiRequest.uiState, None)
 
     val startingWidget = layout.labelWidget
@@ -677,7 +650,7 @@ object DebugLayout {
 
 
     val grid1 = graphPaper.asString()
-    val grid2 = graphPaper2.asString()
+    // val grid2 = graphPaper2.asString()
 
     println(grid1)
     // println

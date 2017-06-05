@@ -19,7 +19,7 @@ import TypeTags._
 object MITAlignPredsynth {
   private[this] val log = org.log4s.getLogger
 
-  import utils.IdGenerator
+  // import utils.IdGenerator
 
   def alignPredSynthPaper(mpageIndex: MultiPageIndex, paper: Paper): Seq[AlignedGroup] = {
     log.debug("aligning predsynth paper ")
@@ -49,7 +49,7 @@ object MITAlignPredsynth {
     val relations = mutable.ArrayBuffer[Relation.Record]()
     val props = mutable.ArrayBuffer[Prop.PropRec]()
 
-    val relationIds = IdGenerator[RelationID]()
+    // val relationIds = IdGenerator[RelationID]()
     // val clusterIds = IdGenerator[ClusterID]()
 
 
@@ -87,7 +87,7 @@ object MITAlignPredsynth {
       alignedGroup.alignedContexts.foreach {
         case AlignSuccess(rtc, (begin, end)) =>
 
-          val len = oneLineText.length
+          // val len = oneLineText.length
           val reflowSliceOpt = oneLineReflow.slice(begin, end)
 
           reflowSliceOpt match {
@@ -100,7 +100,7 @@ object MITAlignPredsynth {
 
               val intersectedVisualLines  = reflowSlice.charAtoms.map{ case CharAtom(charId, targetRegion, char, _) =>
                 val pageNum = targetRegion.page.stable.pageNum
-                val pageId = docStore.getPage(docId, pageNum)
+                // val pageId = docStore.getPage(docId, pageNum)
                 val pageIndex = mpageIndex.getPageIndex(pageNum)
                 val bbox = targetRegion.bbox
 
@@ -131,7 +131,7 @@ object MITAlignPredsynth {
                 mpageIndex.labelRegion(intersectingLineAtoms, ann)
               }
 
-              val annRegions = annotationRegions
+              val _ = annotationRegions
                 .flatten.map{ case (cc, targetRegion) =>
                   cc.targetRegion
                 }

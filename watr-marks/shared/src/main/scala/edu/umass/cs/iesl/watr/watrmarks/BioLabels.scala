@@ -85,6 +85,10 @@ object Labels {
 }
 
 
+object Label {
+  def apply(key: String): Label = Label("", key)
+}
+
 case class Label(
   ns: String, key: String,
   value: Option[String]=None,
@@ -109,7 +113,7 @@ case class Label(
 
   override def toString = {
     val v = value.map(x => s"=$x").getOrElse("")
-    s"${ns}:${key}$v"
+    s"${fqn}$v"
   }
 
   override def hashCode = (ns, key).##

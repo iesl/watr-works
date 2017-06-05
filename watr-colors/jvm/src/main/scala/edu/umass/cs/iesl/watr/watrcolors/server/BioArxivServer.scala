@@ -38,7 +38,7 @@ class BioArxivServer(
     reqLabelerId: LabelerIdentifier
   ): Future[UIResponse] = {
 
-    val DocumentLabelerIdentifier(stableId, labelerType, pagination, labelColors) = reqLabelerId
+    val DocumentLabelerIdentifier(stableId, labelerType, _, labelColors) = reqLabelerId
 
     val mkWidgetOpt: Option[MakeWidget] = labelerType match {
       case "n-page" => doOrDie {
@@ -91,8 +91,8 @@ class BioArxivServer(
   def uiRequest(r: UIRequest): Future[UIResponse] = {
     try {
       val UIRequest(
-        uiState@ UIState(constraint, maybeLabel, selections, currLabeler),
-        gesture
+        uiState, //@ UIState(constraint, maybeLabel, selections, currLabeler),
+        _
       ) = r
 
       activeLabelWidgetIndex.map { lwIndex =>

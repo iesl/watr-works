@@ -4,6 +4,7 @@ package labeling
 import watrmarks.Label
 import TypeTags._
 
+
 // This is a replacement for document labeler identifier
 case class LabelWidgetConfig(
   zone: Int@@ZoneID,
@@ -13,36 +14,37 @@ case class LabelWidgetConfig(
   paginationIncrement: Int
 )
 
-
-
 case class WorkflowDef(
   workflow     : Int@@WorkflowID,
   description  : String,
   slug         : String,
+  sourcelabel  : Int@@LabelID,
   targetlabels : List[Int@@LabelID],
   status       : Int@@StatusCode
 )
-
-case class WorkflowEntry(
-  workflow       : Int@@WorkflowID,
-  zone           : Int@@ZoneID,
-  targetregion   : Option[Int@@RegionID], //if None then status applies to entire zone
-  label          : Option[Int@@LabelID], // if None then status applies to every target label
-  status         : Int@@StatusCode,
-  user           : Option[Int@@UserID]
-)
-
-object Workflow {
-  object WorkflowStatus {
+object WorkflowDef {
+  object Status {
     val New       = StatusCode(1)
     val Ready     = StatusCode(2)
     val Paused    = StatusCode(3)
     val Active    = StatusCode(4)
     val Complete  = StatusCode(5)
   }
+}
 
-  object EntryStatus {
-    val Unexamined = StatusCode(1)
+// This determines the granularity of locking labeling targets wrt a user/labeler
+case class WorkItem(
+  entry          : Int@@WorkItemID,
+  workflow       : Int@@WorkflowID,
+  zone           : Int@@ZoneID,
+  targetregion   : Int@@RegionID,
+  label          : Int@@LabelID,
+  status         : Int@@StatusCode,
+  user           : Option[Int@@UserID]
+)
+object WorkItem {
+  object Status {
+    val Acquired   = StatusCode(1)
     val Examined   = StatusCode(2)
     val Specified  = StatusCode(3)
     val Complete   = StatusCode(4)
@@ -50,18 +52,16 @@ object Workflow {
   }
 }
 
+case class WorkflowBatch(
+  entries: Seq[WorkItem]
+)
+
+
 trait WorkflowApi {
-  // Define the workflow, but don't init any items
-  def createWorkflow(slug: String, desc: String, labels: Seq[Label]): Int@@WorkflowID
-
-  // Move workflows through various states
-  // Create initial Workflow Entries from documents/zone in db
-  def initWorkflow(workflowId:Int@@WorkflowID): Unit
-
-  // Status setters
-  def activateWorkflow(workflowId:Int@@WorkflowID): Unit
-  def pauseWorkflow(workflowId:Int@@WorkflowID): Unit
-  def completeWorkflow(workflowId:Int@@WorkflowID): Unit
+  def defineWorkflow(slug: String, desc: String, srcLabel: Label, targetLabels: Seq[Label]): Int@@WorkflowID
+  def activateWorkflow(workflowId:Int@@WorkflowID): Either[String, Unit]
+  def deactivateWorkflow(workflowId:Int@@WorkflowID): Either[String, Unit]
+  def deleteWorkflow(workflowId:Int@@WorkflowID): Either[String, Unit]
 
 
   def getWorkflow(workflowId:Int@@WorkflowID): WorkflowDef
@@ -69,6 +69,12 @@ trait WorkflowApi {
   def getWorkflows(): Seq[WorkflowDef]
   def getWorkflows(status: Int@@StatusCode): Seq[WorkflowDef]
 
-  def getEntries(workflowId: Int@@WorkflowID): Seq[WorkflowEntry]
+  def getEntries(workflowId: Int@@WorkflowID): Seq[WorkItem]
+
+  def assignWork(workflowId: Int@@WorkflowID, user: Int@@UserID, batchSize: Int): WorkflowBatch
+  def getAssignedWork(user: Int@@UserID): WorkflowBatch
+  def commitWork(workItemId: Int@@WorkItemID, status: Int@@StatusCode): WorkflowBatch
+
+
 
 }

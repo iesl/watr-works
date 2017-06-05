@@ -60,7 +60,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
         (LB.Title, Colors.Wheat),
         (LB.Authors, Colors.Orange),
         (LB.Abstract, Colors.MediumTurquoise),
-        (LB.Affiliation, Colors.OliveDrab)
+        (LB.Affiliations, Colors.OliveDrab)
       )
     )
 
@@ -72,7 +72,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     paperRec: PaperRec,
     docStore: DocumentCorpus
   ): (LabelWidget, LabelerIdentifier) = {
-    val DocumentLabelerIdentifier(stableId, labelerType, pagination, labelColors) = labelerIdentifier
+    val DocumentLabelerIdentifier(stableId, labelerType, pagination, _) = labelerIdentifier
 
     val startingPageWindow: Int = pagination.currentPage.unwrap
 
@@ -143,7 +143,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
         (LB.Title, Colors.Wheat),
         (LB.Authors, Colors.Orange),
         (LB.Abstract, Colors.MediumTurquoise),
-        (LB.Affiliation, Colors.OliveDrab),
+        (LB.Affiliations, Colors.OliveDrab),
         (LB.References, Colors.Peru)
       )
     )

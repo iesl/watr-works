@@ -118,11 +118,6 @@ class TextReflowDB(
     } yield ()
   }
 
-  def selectDocumentStableIds(n: Int=0, skip: Int=0): List[String@@DocumentID] = {
-    runq {
-      sql"""select stableId from document""".query[String@@DocumentID].list
-    }
-  }
 
   def selectTargetRegion(regionId: Int@@RegionID): ConnectionIO[Rel.TargetRegion] = {
     sql""" select * from targetregion where targetregion=${regionId} """
@@ -373,11 +368,6 @@ class TextReflowDB(
       .map(DocumentID(_))
   }
 
-  def getDocuments(n: Int, skip: Int): List[String@@DocumentID] = {
-    runq{
-      sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list
-    }
-  }
 
   def selectDocumentCount(): Int = {
     runq{ sql"select count(*) from document".query[Int].unique }
@@ -531,8 +521,11 @@ class TextReflowDB(
 
   object docStore extends DocumentCorpus {
     def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {
-      selectDocumentStableIds(n, skip)
+      runq {
+        sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list
+      }
     }
+
     def getDocumentCount(): Int = {
       selectDocumentCount()
     }

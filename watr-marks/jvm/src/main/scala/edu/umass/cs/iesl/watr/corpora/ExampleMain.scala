@@ -13,7 +13,6 @@ object ExampleMain extends App {
     corpus.reportDocument(corpus.stableId)
   )
 
-
 }
 
 class SampleTextCorpus extends PlainTextCorpus {

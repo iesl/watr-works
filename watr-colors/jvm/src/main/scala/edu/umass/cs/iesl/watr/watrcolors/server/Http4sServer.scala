@@ -85,7 +85,7 @@ class Http4sService(
   }
 
   def imagePathCollector(f:File, config: Config, req:Request): Task[Option[Response]] = {
-    val Rel = RelationModel
+    // val Rel = RelationModel
     println(s"imagePathCollector(f:${f}, conf:${config})")
     println(s"                  (req:${req})")
 
@@ -241,10 +241,14 @@ class Http4sService(
             }
           }
 
+        case Some(path) =>
+          sys.error(s"autowire request to unknown url ${path}")
+
         case None =>
-          ???
+          sys.error(s"autowire request to empty path")
       }
   }
+
 
   val autowireService = authOrForbid(authedAutowire)
 

@@ -13,16 +13,26 @@ object TypeTagPicklers {
 
   import TypeTags._
 
-
-  implicit val String_LabelingTaskID_Pickler: RW[String @@ LabelingTaskID] = RW[String @@ LabelingTaskID](
+  implicit val Int_WorkflowID_Pickler: RW[Int @@ WorkflowID] = RW[Int @@ WorkflowID](
     {t => Js.Str(t.unwrap.toString)},
-    {case Js.Str(s) => LabelingTaskID(s.toString)}
+    {case Js.Str(s) => WorkflowID(s.toInt)}
+  )
+  implicit val Int_WorkItemID_Pickler: RW[Int @@ WorkItemID] = RW[Int @@ WorkItemID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => WorkItemID(s.toInt)}
   )
 
-  implicit val Int_LabelerID_Pickler: RW[Int @@ LabelerID] = RW[Int @@ LabelerID](
+  implicit val Int_StatusCode_Pickler: RW[Int @@ StatusCode] = RW[Int @@ StatusCode](
     {t => Js.Str(t.unwrap.toString)},
-    {case Js.Str(s) => LabelerID(s.toInt)}
+    {case Js.Str(s) => StatusCode(s.toInt)}
   )
+
+
+  implicit val String_LabelerID_Pickler: RW[String @@ LabelerID] = RW[String @@ LabelerID](
+    {t => Js.Str(t.unwrap.toString)},
+    {case Js.Str(s) => LabelerID(s.toString)}
+  )
+
 
   implicit val String_Username_Pickler: RW[String @@ Username] = RW[String @@ Username](
     {t => Js.Str(t.unwrap.toString)},

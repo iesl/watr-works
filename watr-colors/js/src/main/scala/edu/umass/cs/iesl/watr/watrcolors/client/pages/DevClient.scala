@@ -42,14 +42,14 @@ object DevClient extends BasicClientDefs {
 
     withBootstrapNative {
 
-      val pageName = navItem(span("Demo").render)
+      // val pageName = navItem(span("Demo").render)
       val setupLabelChooser: RxModifier = Rx {
         val selectActiveLabel: SelectableButtons = radios()(
           (List(
             (LB.Title, Colors.Lavender),
             (LB.Authors, Colors.Orange),
             (LB.Abstract, Colors.Firebrick),
-            (LB.Affiliation, Colors.SkyBlue),
+            (LB.Affiliations, Colors.SkyBlue),
             (LB.References, Colors.Green3)
           ).zipWithIndex.map{ case ((lbl, clr), i) =>
             selectableButton(

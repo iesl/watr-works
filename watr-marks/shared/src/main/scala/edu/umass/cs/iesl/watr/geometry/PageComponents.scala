@@ -156,34 +156,19 @@ object PageComponentImplicits {
         .map(b => theTargetRegion.copy(bbox=b))
     }
 
-    def splitHorizontal(r: TargetRegion): List[TargetRegion] = {
-      if (theTargetRegion.page.pageId != r.page.pageId) {
-        sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
-      }
+    // def splitHorizontal(r: TargetRegion): List[TargetRegion] = {
+    //   if (theTargetRegion.page.pageId != r.page.pageId) {
+    //     sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
+    //   }
 
-      val leftX = r.bbox.toWesternPoint.x
-      val rightX = r.bbox.toEasternPoint.x
-      val trbbox = theTargetRegion.bbox
-      val leftRights = if (trbbox.intersectsX(leftX)){
-        val splitLeft = trbbox.splitHorizontal(leftX)
-        if (trbbox.intersectsX(rightX)){
-          val splitRight = trbbox.splitHorizontal(rightX)
-          splitLeft.head :: splitLeft.tail
-        } else {
-          List(splitLeft.head)
-        }
-      } else if (trbbox.intersectsX(rightX)){
-        trbbox.splitHorizontal(rightX).tail
-      } else {
-        List()
-      }
+    //   val splitBoxes = r.bbox.splitHorizontal
 
-      leftRights.map({ltb=>
-        theTargetRegion.copy(
-          bbox = ltb
-        )
-      })
-    }
+    //   splitBoxes.map { ltb =>
+    //     theTargetRegion.copy(
+    //       bbox = ltb
+    //     )
+    //   }
+    // }
 
     def prettyPrint(): String = {
       theTargetRegion.toString

@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
+
 // import scalaz._, Scalaz._
 // import scalaz.concurrent.Task
 
@@ -13,41 +14,34 @@ class LabelingWorkflowSpec extends FlatSpec with Matchers {
   behavior of "Workflow"
   // Create a list of known Workflows
   def workflowApi: WorkflowApi = ???
-  import Workflow.WorkflowStatus
-  import Workflow.EntryStatus
+  // import Workflow.WorkflowStatus
+  def someUser: Int@@UserID = ???
+  // import Workflow.EntryStatus
 
 
-  sealed trait WeekDay
-  object WeekDay {
-    val Mon, Tue, Wed, Thu, Fri, Sat, Sun = new WeekDay {}
-    val values: Set[WeekDay] = utils.EnumVals
-  }
-
-
-  WeekDay.values
 
   it should "walk through basic functionality" in {
-    workflowApi.getWorkflows().length shouldBe 0
 
-    val workflowId = workflowApi.createWorkflow(
+    val workflowId = workflowApi.defineWorkflow(
       "meta5",
       "Coarse-grained labeling for headers+reference section blocks",
-      Seq(LB.Authors, LB.Affiliation)
+      LB.Pages,
+      Seq(LB.Authors, LB.Affiliations)
     )
 
-    workflowApi.getWorkflows(WorkflowStatus.New).length shouldBe 1
-    workflowApi.getWorkflows(WorkflowStatus.Ready).length shouldBe 0
+    // val workflowDef = workflowApi.getWorkflow(workflowId)
 
-    val workflowDef = workflowApi.getWorkflow(workflowId)
+    // Initialize workflow entries to zone:Unexamined, workflow to Ready
+    workflowApi.activateWorkflow(workflowId)
 
-    workflowApi.initWorkflow(workflowId)
+    val workBatch = workflowApi.assignWork(workflowId, someUser, 10)
+
+
+
 
   }
+  it should "lock a set of zones for a user to annotate" in {
 
-  // List Workflows with outstanding items
-
-  // Select next set of labeling targets for user
-
-  // Assign workflow task to user
+  }
 
 }
