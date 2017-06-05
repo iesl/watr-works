@@ -1,0 +1,21 @@
+1) Clone project
+2) Download SBT 0.13.15
+3) Download pdf files (with json), and place them in some folder
+4) Create symlink for pdf folder inside watr-works code folder, with name corpus-test
+5) run sbt on code's root folder
+6) compile
+
+SegmentAll: Extracts the text and geometric information from the pdf documents, and stores them in postgresql db tables
+1) project watrshed
+2) runMain edu.umass.cs.iesl.watr.table.WatrTable
+3) Corpus.initCorpus("path_to_corpus_test")
+4) corpus.entries()
+5) segmentAll()
+
+Annotation UI: Annotate the pdf file by drawing boxes around the required region, with the required granularity
+1) project watrcolorsJVM
+2) runMain edu.umass.cs.iesl.watr.watrcolors.server.WatrColorTable watr_works_db
+
+Heuristics:
+1) Get familiar with ExampleMain code
+2) Getting PDF data for required labels: document -> label -> zone -> targetRegion -> visualLineZone -> textReflow
