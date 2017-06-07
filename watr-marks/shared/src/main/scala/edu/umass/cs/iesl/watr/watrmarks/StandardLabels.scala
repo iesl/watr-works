@@ -7,7 +7,8 @@ trait DocSegLabels {
   // FIXME <- nulllabel????
   val NullLabel = Label("null")
 
-  val Pages = Label("pages")
+  val DocumentPages = Label("document-pages")
+  val DocumentPage = Label("document-page")
   val PageLines = Label("ds", "page-lines")
   val PageTextBlocks = Label("ds", "page-textblocks")
   val Column = Label("ds", "column")
@@ -48,8 +49,8 @@ trait DocSegLabels {
   // val Marker = Label("ds", "marker")
   val PageAtom = Label("ds", "atom")
 
-  val First = Label("", "first")
-  val Last = Label("", "last")
+  val First = Label("first")
+  val Last = Label("last")
 
   val Annotation = Label("ds", "annotation")
 

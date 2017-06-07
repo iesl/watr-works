@@ -12,6 +12,7 @@ import docstore._
 import utils.{Debugging => Dbg}
 import scala.concurrent.ExecutionContext
 
+
 class BioArxivServer(
   user: UserData,
   reflowDB: TextReflowDB,
@@ -54,6 +55,7 @@ class BioArxivServer(
       case _ =>
         val hasEntry = corpus.hasEntry(stableId.unwrap)
         println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
+
 
         for {
           entry <- corpus.entry(stableId.unwrap)
@@ -113,4 +115,61 @@ class BioArxivServer(
         throw t
     }
   }
+
+
+  def browseWorkflow(
+    workflowDef: WorkflowDef
+  ): Future[UIResponse] = {
+
+
+    ???
+  }
+
+  def getNextWorkflowLabeler(
+    workflowId: String@@WorkflowID
+  ): Future[UIResponse] = {
+
+    def workflowApi: WorkflowApi = ???
+
+    // Hardcoded map keyed off strings
+    val labelerBuilder: LabelerBuilder =
+      WorkflowServers.servers.get(workflowId)
+        .map(_.apply(docStore, user.id))
+        .getOrElse { sys.error("todo") }
+
+    def workflowDef: WorkflowDef = workflowApi.getWorkflow(workflowId)
+
+
+    // Deal w/ previous labeler task labeled by this user (completed? Error?)
+
+    val (labelWidget, lwId) = labelerBuilder.createLabeler()
+
+    // val mkWidgetOpt: Option[MakeWidget] = labelerType match {
+    //  val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
+    //    labelerIdentifier => {
+    //      val (widget0, labelerId0) = TitleAuthorsLabelers.singlePageLabeler(docStore)
+    //      val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelerId0, docStore)
+    //      (widget1, labelerId0)
+    //    }
+    //  Some(mkWidget)
+    //}
+
+    // mkWidgetOpt.map { mkWidget =>
+    //   val lwIndex = LabelWidgetIndex.init(
+    //     docStore, reqLabelerId, mkWidget, None, None
+    //   )
+    //   activeLabelWidgetIndex = Some(lwIndex)
+    //   val respState = UIState(
+    //     ByLine,
+    //     labelColors.headOption.map(_._1),
+    //     Seq(),
+    //     lwIndex.labelerIdentifier
+    //   )
+    //   Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
+    // } getOrElse {
+    //   sys.error("TODO unimplemented")
+    // }
+    ???
+  }
+
 }

@@ -17,15 +17,21 @@ object TypeTagPicklers {
     {t => Js.Str(t.unwrap.toString)},
     {case Js.Str(s) => WorkflowID(s.toInt)}
   )
-  implicit val Int_WorkItemID_Pickler: RW[Int @@ WorkItemID] = RW[Int @@ WorkItemID](
-    {t => Js.Str(t.unwrap.toString)},
-    {case Js.Str(s) => WorkItemID(s.toInt)}
-  )
 
-  implicit val Int_StatusCode_Pickler: RW[Int @@ StatusCode] = RW[Int @@ StatusCode](
-    {t => Js.Str(t.unwrap.toString)},
-    {case Js.Str(s) => StatusCode(s.toInt)}
-  )
+  // implicit val Int_ZoneLockID_Pickler: RW[Int @@ ZoneLockID] = RW[Int @@ ZoneLockID](
+  //   {t => Js.Str(t.unwrap.toString)},
+  //   {case Js.Str(s) => ZoneLockID(s.toInt)}
+  // )
+
+  // implicit val Int_ZoneLock_StatusCode_Pickler: RW[Int @@ ZoneLock.StatusCode] = RW[Int @@ ZoneLock.StatusCode](
+  //   {t => Js.Str(t.unwrap.toString)},
+  //   {case Js.Str(s) => ZoneLock.StatusCode(s.toInt)}
+  // )
+
+  // implicit val Int_WorkflowDef_StatusCode_Pickler: RW[Int @@ WorkflowDef.StatusCode] = RW[Int @@ WorkflowDef.StatusCode](
+  //   {t => Js.Str(t.unwrap.toString)},
+  //   {case Js.Str(s) => WorkflowDef.StatusCode(s.toInt)}
+  // )
 
 
   implicit val String_LabelerID_Pickler: RW[String @@ LabelerID] = RW[String @@ LabelerID](

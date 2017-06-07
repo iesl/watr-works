@@ -3,12 +3,16 @@ package watrcolors
 package server
 
 
-import scalaz._
+import scalaz.Kleisli
+import scalaz.{
+  \/, -\/, \/-
+}
 import scalaz.concurrent.Task
 
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server._
+import TypeTags._
 
 
 
@@ -16,7 +20,12 @@ import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time._
 
 
-case class UserData(username: String, pass: String, session: String)
+case class UserData(
+  id: Int@@UserID,
+  username: String,
+  pass: String,
+  session: String
+)
 
 
 trait AuthServer {
@@ -28,7 +37,7 @@ trait AuthServer {
   val clock = Clock.systemUTC
 
   def retrieveUser: Service[String, UserData] = Kleisli(id => Task.delay(
-    UserData(id, "", "")
+    UserData(UserID(0), "name", "", "")
   ))
 
   val authUser: Service[Request, String \/ UserData] = Kleisli({ request =>
@@ -65,7 +74,7 @@ trait AuthServer {
       val maybeName = for {
         username <- formData.get("username")
       } yield {
-        \/-{ UserData(username, "", "") }
+        \/-{ UserData(UserID(0), username, "", "") }
       }
       maybeName.headOption getOrElse {
         -\/{"Invalid login form"}

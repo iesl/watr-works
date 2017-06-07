@@ -12,6 +12,7 @@ import scalaz.syntax.traverse._
 
 import geometry._
 import corpora._
+import labeling._
 
 import textreflow._
 import textreflow.data._
@@ -518,6 +519,10 @@ class TextReflowDB(
 
     runq { query }
   }
+
+  // object workflowApi extends WorkflowApi {
+
+  // }
 
   object docStore extends DocumentCorpus {
     def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {

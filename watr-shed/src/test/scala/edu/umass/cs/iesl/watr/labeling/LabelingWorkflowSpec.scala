@@ -7,6 +7,7 @@ package labeling
 
 import org.scalatest._
 import watrmarks.{StandardLabels => LB}
+import corpora._
 
 
 class LabelingWorkflowSpec extends FlatSpec with Matchers {
@@ -25,23 +26,15 @@ class LabelingWorkflowSpec extends FlatSpec with Matchers {
     val workflowId = workflowApi.defineWorkflow(
       "meta5",
       "Coarse-grained labeling for headers+reference section blocks",
-      LB.Pages,
+      LB.DocumentPages,
       Seq(LB.Authors, LB.Affiliations)
     )
 
     // val workflowDef = workflowApi.getWorkflow(workflowId)
-
     // Initialize workflow entries to zone:Unexamined, workflow to Ready
-    workflowApi.activateWorkflow(workflowId)
-
-    val workBatch = workflowApi.assignWork(workflowId, someUser, 10)
-
-
-
+    // workflowApi.activateWorkflow(workflowId)
 
   }
-  it should "lock a set of zones for a user to annotate" in {
-
-  }
+  // it should "lock a set of zones for a user to annotate" in {}
 
 }

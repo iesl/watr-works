@@ -84,13 +84,13 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "org.webjars"        %  "d3js"                      % "3.5.17",
     "org.webjars"        %  "mousetrap"                 % "1.6.0"
   ))
-  .dependsOn(watrmarks)
 
 lazy val watrcolorsJS = watrcolors.js
+  .dependsOn(watrmarksJS)
 
 lazy val watrcolorsJVM = watrcolors.jvm
   .enablePlugins(JavaAppPackaging)
-  .dependsOn(watrshed)
+  .dependsOn(watrmarksJVM, watrshed)
   .settings(mainClass := Some("edu.umass.cs.iesl.watr.watrcolors.server.WatrColorTable"))
   .settings((resources in Compile) ++= Seq(
     (fastOptJS in (watrcolorsJS, Compile)).value.data,

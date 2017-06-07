@@ -30,10 +30,10 @@ sealed trait Length
 
 sealed trait Percent
 
-sealed trait StatusCode
+sealed trait LockGroupID
+sealed trait ZoneLockID
 sealed trait LabelerID
 sealed trait WorkflowID
-sealed trait WorkItemID
 
 sealed trait TextReflowID
 sealed trait ImageID
@@ -75,10 +75,10 @@ trait TypeTags {
 
   val ImageID = Tag.of[ImageID]
 
-  val StatusCode = Tag.of[StatusCode]
+  val LockGroupID = Tag.of[LockGroupID]
+  val ZoneLockID = Tag.of[ZoneLockID]
   val LabelerID = Tag.of[LabelerID]
   val WorkflowID = Tag.of[WorkflowID]
-  val WorkItemID = Tag.of[WorkItemID]
 
   val UserID = Tag.of[UserID]
   val Username = Tag.of[Username]

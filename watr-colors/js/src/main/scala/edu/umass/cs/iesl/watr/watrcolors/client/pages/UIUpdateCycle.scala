@@ -46,7 +46,8 @@ trait D3BasicShapes {
 
 
   def renderPosWidget(p: AbsPosWidget): Option[dom.Element] = {
-    val AbsPosWidget(fa, strictBounds, bleedBounds, transVec, zOrder, scaling)  = p
+    // val AbsPosWidget(fa, strictBounds, bleedBounds, transVec, zOrder, scaling)  = p
+    val AbsPosWidget(fa, strictBounds, _, transVec, _, _)  = p
 
     fa match {
       case RegionOverlay(wid, targetRegion, overlays) =>

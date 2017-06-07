@@ -4,7 +4,6 @@ package labeling
 
 import bioarxiv._
 import BioArxiv._
-import data._
 import textboxing.{TextBoxing => TB}, TB._
 import data._
 import corpora._
@@ -16,7 +15,6 @@ import TypeTags._
 
 object TitleAuthorsLabelers extends LabelWidgetUtils {
   def singlePageLabeler(
-    // labelerIdentifier: LabelerIdentifier,
     docStore: DocumentCorpus
   ): (LabelWidget, LabelerIdentifier) = {
 
