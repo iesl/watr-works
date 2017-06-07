@@ -105,7 +105,97 @@ object AuthorNameHeuristics {
         separateAuthorNames
     }
 
-    def getSeparateAuthorNamesByGeometry(authorNamesTokens: ListBuffer[String]): ListBuffer[String] ={
+    def getSeparateAuthorNamesByGeometry(authorNamesSeparatedByText: ListBuffer[String], authorTextReflow: TextReflow): ListBuffer[String] ={
 
+        val separateAuthorNames : ListBuffer[String] = ListBuffer[String]()
+        val separateAuthorName : ListBuffer[String] = ListBuffer[String]()
+
+        var currentAuthorNameIndex: Int = 0
+        var currentAuthorName: String = authorNamesSeparatedByText(currentAuthorNameIndex)
+        var currentAuthorNameComponentIndex: Int = 0
+        var currentAuthorNameComponent: String = currentAuthorName.split(" ")(currentAuthorNameComponentIndex)
+        var prevCharPosition: Int = -1
+        var usualSpaceWidth: Int = 0
+        var processingComplete: Boolean = false
+
+        breakable {
+            for (charAtom <- authorTextReflow.charAtoms()) {
+                breakable {
+                    val currentCharacter = charAtom.char.toCharArray.head
+                    if (!currentCharacter.equals(currentAuthorNameComponent.head)) {
+                        break
+                    }
+                    else {
+                        if (prevCharPosition < 0) {
+                            separateAuthorName += currentAuthorNameComponent
+                            currentAuthorNameComponentIndex += 1
+                            if (currentAuthorNameComponentIndex == currentAuthorName.split(" ").length) {
+                                currentAuthorNameIndex += 1
+                                if (currentAuthorNameIndex == authorNamesSeparatedByText.length) {
+                                    processingComplete = true
+                                    break
+                                }
+                                else {
+                                    currentAuthorName = authorNamesSeparatedByText(currentAuthorNameIndex)
+                                }
+                                currentAuthorNameComponentIndex = 0
+                            }
+                            currentAuthorNameComponent = currentAuthorName.split(" ")(currentAuthorNameComponentIndex)
+                            break
+                        }
+                        else {
+                            if (usualSpaceWidth == 0) {
+                                usualSpaceWidth = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
+                            }
+                            else {
+                                if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth) {
+                                    separateAuthorNames += separateAuthorName.mkString(" ")
+                                    separateAuthorName.clear()
+                                    separateAuthorName += currentAuthorNameComponent
+                                    currentAuthorNameComponentIndex += 1
+                                    if (currentAuthorNameComponentIndex == currentAuthorName.split(" ").length) {
+                                        currentAuthorNameIndex += 1
+                                        if (currentAuthorNameIndex == authorNamesSeparatedByText.length) {
+                                            processingComplete = true
+                                            break
+                                        }
+                                        else {
+                                            currentAuthorName = authorNamesSeparatedByText(currentAuthorNameIndex)
+                                        }
+                                        currentAuthorNameComponentIndex = 0
+                                    }
+                                    currentAuthorNameComponent = currentAuthorName.split(" ")(currentAuthorNameComponentIndex)
+                                }
+                            }
+                            separateAuthorName += currentAuthorNameComponent
+                            currentAuthorNameComponentIndex += 1
+                            if (currentAuthorNameComponentIndex == currentAuthorName.split(" ").length) {
+                                separateAuthorNames += separateAuthorName.mkString(" ")
+                                separateAuthorName.clear()
+                                currentAuthorNameIndex += 1
+                                if (currentAuthorNameIndex == authorNamesSeparatedByText.length) {
+                                    processingComplete = true
+                                    break
+                                }
+                                else {
+                                    currentAuthorName = authorNamesSeparatedByText(currentAuthorNameIndex)
+                                }
+                                currentAuthorNameComponentIndex = 0
+                            }
+                            currentAuthorNameComponent = currentAuthorName.split(" ")(currentAuthorNameComponentIndex)
+                        }
+                    }
+                }
+                prevCharPosition = charAtom.bbox.left.asInstanceOf[Int] + charAtom.bbox.width.asInstanceOf[Int]
+                if (processingComplete) {
+                    break
+                }
+            }
+        }
+
+        if(separateAuthorNames.nonEmpty){
+            return separateAuthorNames
+        }
+        authorNamesSeparatedByText
     }
 }
