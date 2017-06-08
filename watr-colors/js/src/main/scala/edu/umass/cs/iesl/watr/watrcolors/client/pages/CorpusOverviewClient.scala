@@ -135,10 +135,6 @@ object BrowseCorpus extends BasicClientDefs {
     val Client = new WebsideClient("browse")
     val api = Client[BrowseCorpusApi]
 
-    def listLabelers(n: Int, skip: Int): Future[Seq[LabelerEntry]] = {
-      api.listLabelers(n, skip).call()
-    }
-
     def listDocuments(n: Int, skip: Int): Future[Seq[DocumentEntry]] = {
       println(s"BrowseCorpus: listDocuments()")
       api.listDocuments(n, skip).call()

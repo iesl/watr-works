@@ -46,6 +46,7 @@ object WatrTable extends App {
 
     val db = initReflowDB(dbname)
 
+    // replMain().run(replArgs: Bind[Any]*)
     replMain().run(
       "corpus" -> initCorpus(),
       "db" -> db,

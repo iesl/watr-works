@@ -27,7 +27,6 @@ import org.http4s.server.blaze._
 import TypeTags._
 import upickle.{default => UPickle}
 
-// import java.util.concurrent.ExecutorService
 import scala.concurrent._
 import java.io.File
 import FileService.Config
@@ -40,6 +39,8 @@ class Http4sService(
   port: Int
 ) extends AuthServer {
   lazy private val docStore = reflowDB.docStore
+  override def userbaseApi: UserbaseApi = docStore.userbaseApi
+
 
   val assetService = resourceService(ResourceService.Config(
     basePath = "",
@@ -144,10 +145,6 @@ class Http4sService(
 
         Task.now{
           StaticFile.fromFile(imagePath.toFile(), Some(req))
-          //     .map { resp =>
-          //       resp.putHeaders(
-          //         H.`Content-Type`(MediaType.`image/png`)
-          //       )
         }
     }
   }
@@ -180,8 +177,8 @@ class Http4sService(
 
     case request @ GET -> Root / pageName as user =>
       pageName match {
-        case "browse"    => htmlPage("BrowseCorpus", Some(user.username))
-        case "label"     => htmlPage("WatrColors", Some(user.username))
+        case "browse"    => htmlPage("BrowseCorpus", Some(user.emailAddr.unwrap))
+        case "label"     => htmlPage("WatrColors", Some(user.emailAddr.unwrap))
       }
 
     case request @ GET -> Root  as user =>
@@ -253,16 +250,11 @@ class Http4sService(
   val autowireService = authOrForbid(authedAutowire)
 
 
-  // val aggregateService = (
-  //   serveAuthorizedPages
-  // ) // orElse authStatusLogoutService
-
   val builder = BlazeBuilder.bindHttp(9999, "localhost")
     .mountService(serveAuthorizedPages)
     .mountService(webJarService)
     .mountService(assetService)
     .mountService(regionImageService, "/img")
-    // .mountService(pageImageService, "/img")
     .mountService(autowireService, "/autowire")
     .mountService(userRegistration, "/user")
 

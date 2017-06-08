@@ -658,6 +658,9 @@ class TextReflowDB(
   }
 
   object docStore extends DocumentCorpus {
+    def workflowApi: WorkflowApi = self.workflowApi
+    def userbaseApi: UserbaseApi = self.userbaseApi
+
     def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {
       runq {
         sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list

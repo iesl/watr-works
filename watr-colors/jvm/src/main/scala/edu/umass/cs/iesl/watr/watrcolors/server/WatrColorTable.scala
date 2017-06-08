@@ -13,10 +13,7 @@ object WatrColorTable extends App {
     val corpus = ShellCommands.initCorpus()
     val reflowDB = ShellCommands.initReflowDB(dbname)
 
-    // val server =  new EmbeddedServer(reflowDB, corpus, "localhost", 9999)
     val httpService =  new Http4sService(reflowDB, corpus, "localhost", 9999)
-
-    // server.httpserver.run()
     val httpServer = httpService.run()
 
     ammonite.Main(

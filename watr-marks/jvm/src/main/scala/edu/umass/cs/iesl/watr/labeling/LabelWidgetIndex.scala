@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package labeling
 
-
 import scala.collection.mutable
 
 import textreflow.data._
@@ -73,6 +72,7 @@ object istate {
 
 
 }
+
 
 object LabelWidgetIndex extends LabelWidgetLayout {
 
@@ -502,7 +502,7 @@ trait LabelWidgetIndex { self =>
   // map (UIState, Gesture) => (UIState, UIChanges)
   def userInteraction(uiRequest: UIRequest): (UIResponse, LabelWidgetIndex) = {
 
-    val UIState(uiContraint, activeLabel, _ /*selections*/, activeLabeler) = uiRequest.uiState
+    val UIState(uiContraint, activeLabel, _ /*selections*/, activeLabeler, initLabelColors) = uiRequest.uiState
     val initResponse = UIResponse(uiRequest.uiState, None)
 
     val startingWidget = layout.labelWidget
@@ -535,7 +535,7 @@ trait LabelWidgetIndex { self =>
           label <- activeLabel
           zoneId <- addLabel(bbox, uiContraint, label)
         } yield {
-          val newWidget = addZoneIndicator(zoneId, layout.labelWidget, activeLabeler, docStore)
+          val newWidget = addZoneIndicator(zoneId, layout.labelWidget, initLabelColors, docStore)
           minorChangeUpdates(startingWidget, newWidget, initResponse)
         }
 

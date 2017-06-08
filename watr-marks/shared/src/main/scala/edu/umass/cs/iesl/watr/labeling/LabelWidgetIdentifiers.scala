@@ -5,7 +5,7 @@ import watrmarks._
 import data._
 
 import utils.Color
-import utils.Colors
+import TypeTags._
 
 sealed trait WidgetMod {
   def id: Int@@WidgetID
@@ -23,7 +23,8 @@ case class UIState(
   selectionConstraint: Constraint,
   selectedLabel: Option[Label],
   selections: Seq[Int@@ZoneID],
-  currentLabeler: LabelerIdentifier
+  currentLabeler: LabelerIdentifier,
+  labelColors: Map[Label, Color] //  = Map().withDefaultValue(Colors.Black)
 )
 
 case class UIRequest(
@@ -49,26 +50,29 @@ case class Pagination(
 
 
 sealed trait LabelerIdentifier {
-  def labelColors: Map[Label, Color]
+  def pagination: Pagination = {
+    Pagination(0, PageNum(0), None)
+  }
+  def setPagination(p: Pagination): LabelerIdentifier = {
+    this
+  }
 }
 
-case object NilLabelerIdentifier extends LabelerIdentifier {
-  // TODO move label color map into UIState
-  def labelColors: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
-}
+case object NilLabelerIdentifier extends LabelerIdentifier
 
 case class DocumentLabelerIdentifier(
   stableId: String@@DocumentID,
   labelerType: String,
-  pagination: Pagination,
-  // TODO move label color map into UIState
-  labelColors: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
-) extends LabelerIdentifier
+  override val pagination: Pagination
+) extends LabelerIdentifier {
+  override def setPagination(p: Pagination): LabelerIdentifier = {
+    copy(pagination = p)
+  }
+
+}
 
 case class WorkflowLabelerIdentifier(
-  workflowId: String@@WorkflowID,
-  // TODO move label color map into UIState
-  labelColors: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
+  workflowId: String@@WorkflowID
 ) extends LabelerIdentifier
 
 case class LabelWidgetConfig(
@@ -77,5 +81,6 @@ case class LabelWidgetConfig(
 )
 
 trait LabelerBuilder {
-  def createLabeler(): LabelWidgetConfig
+  def createLabeler(userId: Int@@UserID): LabelWidgetConfig
+  def targetLabels(): Map[Label, Color]
 }

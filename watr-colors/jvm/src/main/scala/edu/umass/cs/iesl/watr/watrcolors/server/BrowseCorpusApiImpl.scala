@@ -14,12 +14,6 @@ class BrowseCorpusApiListeners(
 
   private def docStore = reflowDB.docStore
 
-
-  def listLabelers(n: Int, skip: Int): Future[Seq[LabelerEntry]] = {
-    Future {
-      List()
-    }
-  }
   def listDocuments(n: Int, skip: Int): Future[Seq[DocumentEntry]] = {
     println(s"listDocuments $n, $skip")
 

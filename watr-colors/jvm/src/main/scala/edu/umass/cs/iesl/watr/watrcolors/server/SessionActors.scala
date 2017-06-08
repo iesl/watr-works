@@ -35,6 +35,7 @@ class UserSessionActor(
 ) extends Actor {
   val log = Logging(context.system, this)
 
+  import TypeTagPicklers._
   val router = ShellsideServer.route[WatrShellApi](bioArxivServer)
 
   def route(path: List[String], msgBody: String): Future[String] = {
@@ -61,6 +62,7 @@ object SessionsActor {
 class SessionsActor(
   reflowDB: TextReflowDB,
   corpus: Corpus
+    // Add ref to workflows here??
 ) extends Actor {
   val log = Logging(context.system, this)
 
@@ -69,11 +71,11 @@ class SessionsActor(
   def receive = {
     case req@ RoutingRequest(user, path, body) =>
 
-      val userSessionActor = context.child(user.username).getOrElse {
-        println(s"Sessions: creating new actor for ${user.username}")
-        context.actorOf(UserSessionActor.props(user, new BioArxivServer(user, reflowDB, corpus)), user.username)
+      val userSessionActor = context.child(user.emailAddr.unwrap).getOrElse {
+        println(s"Sessions: creating new actor for ${user.emailAddr}")
+        context.actorOf(UserSessionActor.props(user, new BioArxivServer(user, reflowDB, corpus)), user.emailAddr.unwrap)
       }
-      println(s"Sessions: using actor for ${user.username}")
+      println(s"Sessions: using actor for ${user.emailAddr}")
 
       val resp = userSessionActor ? req
 

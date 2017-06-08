@@ -37,20 +37,20 @@ class ClientStateRx(
   uiRequestCycle: (UIRequest) => Future[Unit]
 )(implicit co: Ctx.Owner) extends BasicClientDefs {
 
-  val UIState(uiContraint, activeLabel, selections, activeLabeler) =  initUIState
-  val DocumentLabelerIdentifier(initStableId, initLabelerType, initPagination, initLabelColors) = activeLabeler
+  val UIState(uiContraint, activeLabel, selections, activeLabeler, initLabelColors) =  initUIState
+  // val DocumentLabelerIdentifier(initStableId, initLabelerType, initPagination) = activeLabeler
 
-  val paginator = new Paginator(initPagination)
+  val paginator = new Paginator(activeLabeler.pagination)
 
   val uiState_constraint: Var[Constraint] = Var(uiContraint)
   val uiState_selectedLabel: Var[Option[Label]] = Var(activeLabel)
   val uiState_selections: Var[Seq[Int@@ZoneID]] = Var(selections)
+  val uiState_labelColors: Var[Map[Label, utils.Color]] = Var(initLabelColors)
 
 
   // Active labeler vars
-  val uiLabeler_stableId: Var[String@@DocumentID] = Var(initStableId)
-  val uiLabeler_labelerType: Var[String] = Var(initLabelerType)
-  val uiLabeler_labelColors: Var[Map[Label, utils.Color]] = Var(initLabelColors)
+  // val uiLabeler_stableId: Var[String@@DocumentID] = Var(initStableId)
+  // val uiLabeler_labelerType: Var[String] = Var(initLabelerType)
 
 
   def fromUIState(uiState: UIState): Unit = Rx {
@@ -58,23 +58,19 @@ class ClientStateRx(
     uiState_constraint() = uiState.selectionConstraint
     uiState_selectedLabel() = uiState.selectedLabel
     uiState_selections() = uiState.selections
+    uiState_labelColors() = uiState.labelColors
 
-    val DocumentLabelerIdentifier(id, lt, pg, colMap) = uiState.currentLabeler
-    uiLabeler_stableId() =  id
-    uiLabeler_labelerType() = lt
-    uiLabeler_labelColors() = colMap
+    // val DocumentLabelerIdentifier(id, lt, _) = uiState.currentLabeler
+    // uiLabeler_stableId() =  id
+    // uiLabeler_labelerType() = lt
   }
 
   def toUIState(): UIState = UIState(
     uiState_constraint.now,
     uiState_selectedLabel.now,
     uiState_selections.now,
-    DocumentLabelerIdentifier(
-      uiLabeler_stableId.now,
-      uiLabeler_labelerType.now,
-      paginator.currentPagination,
-      uiLabeler_labelColors.now
-    )
+    activeLabeler.setPagination(paginator.currentPagination),
+    uiState_labelColors.now
   )
 
   uiState_selections.trigger {
@@ -94,9 +90,10 @@ class ClientStateRx(
       )
     )
   }
+
   def setupLabelChooser: RxModifier = Rx {
     val selectActiveLabel: SelectableButtons = radios("label-chooser".clazz)(
-      (uiLabeler_labelColors().toList.zipWithIndex.map{ case ((lbl, clr), i) =>
+      (uiState_labelColors().toList.zipWithIndex.map{ case ((lbl, clr), i) =>
 
         if(i==0) { uiState_selectedLabel() = Some(lbl) }
 
@@ -162,17 +159,28 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
       api.uiRequest(r).call()
     }
 
-    def createDocumentLabeler(labelerRequest: LabelerIdentifier): Future[UIResponse] = {
+    def fetchDocumentLabeler(labelerRequest: LabelerIdentifier): Future[UIResponse] = {
       api.fetchDocumentLabeler(labelerRequest).call()
     }
 
   }
 
   def parseParams(): LabelerIdentifier = {
-    val docId = param("doc").getOrElse { "" }
-    val lt = param("lt").getOrElse { "" }
-    val pg = param("pg").getOrElse("0").toInt
-    DocumentLabelerIdentifier(DocumentID(docId), lt, Pagination(0, PageNum(pg), None))
+    val workflowId = param("wfid")
+    val docId = param("doc")
+    if (workflowId.isDefined) {
+      // val status  = param("wfst").getOrElse { "" }
+      WorkflowLabelerIdentifier(WorkflowID(workflowId.get))
+
+    } else if (docId.isDefined) {
+      val lt = param("lt").getOrElse { "" }
+      val pg = param("pg").getOrElse("0").toInt
+
+      DocumentLabelerIdentifier(DocumentID(docId.get), lt, Pagination(0, PageNum(pg), None))
+
+    } else {
+      sys.error("")
+    }
   }
 
 
@@ -203,10 +211,10 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
   @JSExport
   def display(userName: String): Unit = {
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
-    val labelerId = parseParams()
 
-    // TODO combine createDocumentLabeler with uiRequestCycle function
-    shell.createDocumentLabeler(labelerId).foreach{ uiResponse =>
+    val labelerId = parseParams()
+    // TODO maybe combine fetchDocumentLabeler with uiRequestCycle function?
+    shell.fetchDocumentLabeler(labelerId).foreach{ uiResponse =>
 
       val uiState = uiResponse.uiState
       val clientStateRx =  new ClientStateRx(uiState, uiRequestCycle(_))
@@ -217,7 +225,6 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
         clientStateRx,
         clientStateRx.setupLabelChooser
       )
-
 
       val bodyContent =
         div("container-fluid".clazz)(
@@ -243,7 +250,7 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
 
       initDragSelectHandlers(
         bbox => selectionRect() = Some(bbox)
-        // pt => mousePos() = pt
+          // pt => mousePos() = pt
       )
 
       uiResponse.changes.foreach { mods =>
@@ -252,8 +259,8 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
 
     }
 
+
   }
 
 
 }
-

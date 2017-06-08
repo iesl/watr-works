@@ -9,13 +9,12 @@ import watrmarks.Label
 trait WatrShellApi {
   def uiRequest(r: UIRequest): Future[UIResponse]
   def fetchDocumentLabeler(labelerRequest: LabelerIdentifier): Future[UIResponse]
+  def listWorkflows(): Future[Seq[WorkflowTask]]
 }
 
-// TODO this can just be LabelerIdentifier, remove it when ready
-case class LabelerEntry(
-  name: String@@LabelerID,
-  assignee: Option[String@@Username],
-  status: String
+case class WorkflowTask(
+  workflowId: String@@WorkflowID,
+  description: String
 )
 
 case class DocumentEntry(
@@ -25,11 +24,9 @@ case class DocumentEntry(
 )
 
 trait BrowseCorpusApi {
-  def listLabelers(n: Int, skip: Int): Future[Seq[LabelerEntry]]
   def listDocuments(n: Int, skip: Int): Future[Seq[DocumentEntry]]
   def documentCount(): Future[Int]
 }
-
 
 sealed trait ApiCall
 

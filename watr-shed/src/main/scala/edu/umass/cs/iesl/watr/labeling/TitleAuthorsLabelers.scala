@@ -8,8 +8,9 @@ import textboxing.{TextBoxing => TB}, TB._
 import data._
 import corpora._
 import geometry._
+import utils.Color
 import utils.Colors
-import watrmarks.{StandardLabels => LB}
+import watrmarks.{StandardLabels => LB, Label}
 import TypeTags._
 
 
@@ -53,24 +54,26 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
     )
     val updatedIdentifier =  DocumentLabelerIdentifier(
       DocumentID("???"), "single-page",
-      Pagination(0, PageNum(0), None),
-      Map(
-        (LB.Title, Colors.Wheat),
-        (LB.Authors, Colors.Orange),
-        (LB.Abstract, Colors.MediumTurquoise),
-        (LB.Affiliations, Colors.OliveDrab)
-      )
+      Pagination(0, PageNum(0), None)
     )
 
     (body, updatedIdentifier)
   }
 
+  def labelerColors(): Map[Label, Color] = {
+    Map(
+      (LB.Title, Colors.Wheat),
+      (LB.Authors, Colors.Orange),
+      (LB.Abstract, Colors.MediumTurquoise),
+      (LB.Affiliations, Colors.OliveDrab)
+    )
+  }
   def bioArxivLabeler(
     labelerIdentifier: LabelerIdentifier,
     paperRec: PaperRec,
     docStore: DocumentCorpus
   ): (LabelWidget, LabelerIdentifier) = {
-    val DocumentLabelerIdentifier(stableId, labelerType, pagination, _) = labelerIdentifier
+    val DocumentLabelerIdentifier(stableId, labelerType, pagination) = labelerIdentifier
 
     val startingPageWindow: Int = pagination.currentPage.unwrap
 
@@ -136,14 +139,14 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
 
     val updatedIdentifier =  DocumentLabelerIdentifier(
       stableId, labelerType,
-      Pagination(numWindows, PageNum(displayWindow), None),
-      Map(
-        (LB.Title, Colors.Wheat),
-        (LB.Authors, Colors.Orange),
-        (LB.Abstract, Colors.MediumTurquoise),
-        (LB.Affiliations, Colors.OliveDrab),
-        (LB.References, Colors.Peru)
-      )
+      Pagination(numWindows, PageNum(displayWindow), None)
+      // Map(
+      //   (LB.Title, Colors.Wheat),
+      //   (LB.Authors, Colors.Orange),
+      //   (LB.Abstract, Colors.MediumTurquoise),
+      //   (LB.Affiliations, Colors.OliveDrab),
+      //   (LB.References, Colors.Peru)
+      // )
     )
 
     (body, updatedIdentifier)

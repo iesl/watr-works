@@ -79,7 +79,7 @@ object LabelWidgetTransforms {
     intersectingBboxes: List[GeometricFigure],
     zoneColor: Color
   ): LabelWidget = {
-    val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
+    // val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
     panel(
       withId(zoneId,
         makeZoneHighlightFigure(label, intersectingBboxes, zoneColor)
@@ -126,7 +126,7 @@ object LabelWidgetTransforms {
     }
   }
 
-  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentCorpus): LabelWidget = {
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
       lw0 match {
@@ -136,7 +136,7 @@ object LabelWidgetTransforms {
           val clipBox = under.bbox
 
           val zone = docStore.getZone(zoneId)
-          val zoneColor = labelerIdentifier.labelColors(zone.label)
+          val zoneColor = labelColors(zone.label)
 
           // clip zone target regions to clipped page region
           val intersectingBboxes = for {
@@ -162,16 +162,17 @@ object LabelWidgetTransforms {
   }
 
 
-  def addAllZoneIndicators(labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
+  // def addAllZoneIndicators(labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
+  def addAllZoneIndicators(labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentCorpus): LabelWidget = {
 
-    labelerIdentifier.labelColors.foldLeft(labelWidget) {
+    labelColors.toList.foldLeft(labelWidget) {
       case (acc, (elemLabel, _)) =>
-        addZoneIndicators(elemLabel, acc, labelerIdentifier, docStore)
+        addZoneIndicators(elemLabel, acc, labelColors, docStore)
       }
   }
 
 
-  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentCorpus): LabelWidget = {
 
     println(s"0---")
     val labelId = docStore.ensureLabel(label)
@@ -222,7 +223,7 @@ object LabelWidgetTransforms {
           val zoneIndicators: Seq[Option[LabelWidget]] = for {
             zone <- documentZoneMap(docId)
           } yield {
-            val zoneColor = labelerIdentifier.labelColors(label)
+            val zoneColor = labelColors(label)
 
             val intersectingBboxes = for {
               region <- zone.regions.toList

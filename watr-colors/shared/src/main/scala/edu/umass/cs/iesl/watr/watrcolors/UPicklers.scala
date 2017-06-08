@@ -13,32 +13,10 @@ object TypeTagPicklers {
 
   import TypeTags._
 
-  implicit val Int_WorkflowID_Pickler: RW[Int @@ WorkflowID] = RW[Int @@ WorkflowID](
-    {t => Js.Str(t.unwrap.toString)},
-    {case Js.Str(s) => WorkflowID(s.toInt)}
+  implicit val Int_WorkflowID_Pickler: RW[String @@ WorkflowID] = RW[String @@ WorkflowID](
+    {t => Js.Str(t.unwrap)},
+    {case Js.Str(s) => WorkflowID(s)}
   )
-
-  // implicit val Int_ZoneLockID_Pickler: RW[Int @@ ZoneLockID] = RW[Int @@ ZoneLockID](
-  //   {t => Js.Str(t.unwrap.toString)},
-  //   {case Js.Str(s) => ZoneLockID(s.toInt)}
-  // )
-
-  // implicit val Int_ZoneLock_StatusCode_Pickler: RW[Int@@ZoneLock.StatusCode] = RW[Int @@ ZoneLock.StatusCode](
-  //   {t => Js.Str(t.unwrap.toString)},
-  //   {case Js.Str(s) => ZoneLock.StatusCode(s.toInt)}
-  // )
-
-  // implicit val Int_WorkflowDef_StatusCode_Pickler: RW[Int@@WorkflowDef.StatusCode] = RW[Int @@ WorkflowDef.StatusCode](
-  //   {t => Js.Str(t.unwrap.toString)},
-  //   {case Js.Str(s) => WorkflowDef.StatusCode(s.toInt)}
-  // )
-
-
-  implicit val String_LabelerID_Pickler: RW[String @@ LabelerID] = RW[String @@ LabelerID](
-    {t => Js.Str(t.unwrap.toString)},
-    {case Js.Str(s) => LabelerID(s.toString)}
-  )
-
 
   implicit val String_Username_Pickler: RW[String @@ Username] = RW[String @@ Username](
     {t => Js.Str(t.unwrap.toString)},
@@ -134,6 +112,7 @@ object UPicklers {
 
   implicit val LabelerIdentifier_RW: RW[LabelerIdentifier] =
     macroRW[DocumentLabelerIdentifier]
+      .merge(macroRW[WorkflowLabelerIdentifier])
       .merge(macroRW[NilLabelerIdentifier.type])
 
   implicit val TextReflowFU_RW: RW[TextReflowF[Unit]] =
@@ -193,7 +172,7 @@ object UPicklers {
 
   implicit val AbsPosWidget_RW: RW[AbsPosWidget] = macroRW[AbsPosWidget]
 
-  implicit val LabelerEntry_RW: RW[LabelerEntry] = macroRW[LabelerEntry]
+  implicit val WorkflowTask_RW: RW[WorkflowTask] = macroRW[WorkflowTask]
   implicit val DocumentEntry_RW: RW[DocumentEntry] = macroRW[DocumentEntry]
   implicit val RemoteCall_RW: RW[RemoteCall] = macroRW[RemoteCall]
 }

@@ -27,6 +27,7 @@ trait UserbaseApi {
 }
 
 trait WorkflowApi {
+  // def defineWorkflow(slug: String, desc: String, labelerBuilder: LabelerBuilder): String@@WorkflowID
   def defineWorkflow(slug: String, desc: String): String@@WorkflowID
   def activateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
   def deactivateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]

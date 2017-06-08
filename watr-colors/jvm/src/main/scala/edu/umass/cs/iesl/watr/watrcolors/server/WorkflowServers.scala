@@ -13,45 +13,50 @@ import geometry._
 import corpora._
 import labeling._
 import labeling.data._
-
 import utils.Colors
+// import corpora.{RelationModel => Rel}
+import TypeTags._
 
 object WorkflowServers {
-  val servers = mutable.Map[String@@WorkflowID, (DocumentCorpus, Int@@UserID) => LabelerBuilder]()
+  val servers = mutable.Map[String@@WorkflowID, (DocumentCorpus, String@@WorkflowID) => LabelerBuilder]()
 
-  // def init(): Unit = {
-  //   servers.put(WorkflowID("1-page"), (c, u) => new PageOneLabeler(c, u))
-  // }
-  // init()
+  servers.put(WorkflowID("1-page"), (c, wid) => new PageOneLabeler(c, wid))
 }
 
 
 class PageOneLabeler(
   docStore: DocumentCorpus,
-  workflowDef: WorkflowDef,
-  userId: Int@@UserID
+  workflowId: String@@WorkflowID
 ) extends LabelerBuilder {
 
-  def workflowApi: WorkflowApi = ???
+  val workflowApi: WorkflowApi = docStore.workflowApi
+  val userbaseApi: UserbaseApi = docStore.userbaseApi
 
-  def createLabeler(): LabelWidgetConfig = {
+  def createLabeler(userId: Int@@UserID): LabelWidgetConfig = {
     // Release any prior locks held by this user
-    workflowApi.getUserLocks(userId).foreach { lockGroupId =>
+    println(s"createLabeler for ${userId}")
+
+    workflowApi.getUserLockGroup(userId).foreach { lockGroupId =>
+      println(s"createLabeler: releasing old lock for ${lockGroupId}")
       workflowApi.releaseZoneLocks(lockGroupId)
     }
 
     val lockGroupId = workflowApi.makeLockGroup(userId)
+    println(s"createLabeler: makeLockGroup ${lockGroupId}")
 
+    println(s"createLabeler: acquiring zone locks ")
     val zoneLocks = workflowApi.aquireZoneLocks(
       lockGroupId,
-      ZoneLock.Status.Unexamined,
       docStore.ensureLabel(LB.DocumentPages),
       10
     )
+    println(s"createLabeler: acquired zone locks ${zoneLocks} ")
 
-    val pageOnes = zoneLocks.map{ zoneLock =>
-      docStore.getZone(zoneLock.zone).regions.headOption
-    }.flatten
+    val pageOnes = for {
+      zoneLockId <- zoneLocks
+      zoneLock <- workflowApi.getZoneLock(zoneLockId)
+      region <- docStore.getZone(zoneLock.zone).regions.headOption
+    } yield region
 
 
     singlePageLabeler(pageOnes)
@@ -78,7 +83,7 @@ class PageOneLabeler(
     val widget = LW.col(rows:_*)
 
     LabelWidgetConfig(
-      workflowDef.workflow,
+      workflowId,
       widget
     )
   }

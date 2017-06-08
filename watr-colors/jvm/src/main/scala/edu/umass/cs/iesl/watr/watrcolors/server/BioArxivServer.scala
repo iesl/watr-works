@@ -11,6 +11,7 @@ import docstore._
 
 import utils.{Debugging => Dbg}
 import scala.concurrent.ExecutionContext
+import corpora.{RelationModel => Rel}
 
 
 class BioArxivServer(
@@ -38,26 +39,12 @@ class BioArxivServer(
   def fetchDocumentLabeler(
     reqLabelerId: LabelerIdentifier
   ): Future[UIResponse] = {
+    reqLabelerId match {
+      case DocumentLabelerIdentifier(stableId, labelerType, _) =>
 
-    val DocumentLabelerIdentifier(stableId, labelerType, _, labelColors) = reqLabelerId
+        val labelColors = TitleAuthorsLabelers.labelerColors()
 
-    val mkWidgetOpt: Option[MakeWidget] = labelerType match {
-      case "n-page" => doOrDie {
-        val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
-          labelerIdentifier => {
-            val (widget0, labelerId0) = TitleAuthorsLabelers.singlePageLabeler(docStore)
-            val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelerId0, docStore)
-            (widget1, labelerId0)
-          }
-        Some(mkWidget)
-      }
-
-      case _ =>
-        val hasEntry = corpus.hasEntry(stableId.unwrap)
-        println(s"createDocumentLabeler($stableId, ${labelerType}): hasEntry=$hasEntry")
-
-
-        for {
+        val mkWidgetOpt: Option[MakeWidget] = for {
           entry <- corpus.entry(stableId.unwrap)
           rec   <- BioArxivOps.getBioarxivJsonArtifact(entry)
         } yield doOrDie {
@@ -65,35 +52,79 @@ class BioArxivServer(
           val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
             labelerIdentifier => {
               val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
-              val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelerId0, docStore)
+
+              val widget1 = LabelWidgetTransforms.addAllZoneIndicators(
+                widget0,
+                labelColors,
+                docStore
+              )
+
               (widget1, labelerId0)
             }
           mkWidget
         }
 
+        mkWidgetOpt.map { mkWidget =>
+          val lwIndex = LabelWidgetIndex.init(
+            docStore, reqLabelerId, mkWidget, None, None
+          )
+          activeLabelWidgetIndex = Some(lwIndex)
+          val respState = UIState(
+            ByLine,
+            labelColors.headOption.map(_._1),
+            Seq(),
+            lwIndex.labelerIdentifier,
+            labelColors
+          )
+          Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
+        } getOrElse {
+          sys.error("TODO unimplemented")
+        }
+
+      case  labelerId @  WorkflowLabelerIdentifier(workflowId) =>
+        def workflowApi: WorkflowApi = docStore.workflowApi
+
+        // Hardcoded map keyed off strings
+        val labelerBuilder: LabelerBuilder =
+          WorkflowServers.servers.get(workflowId)
+            .map(_.apply(docStore, workflowId))
+            .getOrElse { sys.error("todo") }
+
+        // def workflowDef: Rel.WorkflowDef = workflowApi.getWorkflow(workflowId)
+
+        val labelColors = labelerBuilder.targetLabels()
+
+        val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
+          labelerIdentifier => {
+            // val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
+            val LabelWidgetConfig(workflowId, widget0) = labelerBuilder.createLabeler(user.id)
+            val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelColors, docStore)
+            (widget1, labelerIdentifier)
+          }
+        val lwIndex = LabelWidgetIndex.init(
+          docStore, reqLabelerId, mkWidget, None, None
+        )
+        activeLabelWidgetIndex = Some(lwIndex)
+        val respState = UIState(
+          ByLine,
+          labelColors.headOption.map(_._1),
+          Seq(),
+          lwIndex.labelerIdentifier,
+          labelColors
+        )
+        Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
+
+      case labelerId =>
+        sys.error(s"got some unknown labelerId ${labelerId}")
     }
-    mkWidgetOpt.map { mkWidget =>
-      val lwIndex = LabelWidgetIndex.init(
-        docStore, reqLabelerId, mkWidget, None, None
-      )
-      activeLabelWidgetIndex = Some(lwIndex)
-      val respState = UIState(
-        ByLine,
-        labelColors.headOption.map(_._1),
-        Seq(),
-        lwIndex.labelerIdentifier
-      )
-      Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
-    } getOrElse {
-      sys.error("TODO unimplemented")
-    }
+
   }
 
 
   def uiRequest(r: UIRequest): Future[UIResponse] = {
     try {
       val UIRequest(
-        uiState, //@ UIState(constraint, maybeLabel, selections, currLabeler),
+        uiState, //@ UIState(constraint, maybeLabel, selections, currLabeler, labelColors),
         _
       ) = r
 
@@ -117,59 +148,11 @@ class BioArxivServer(
   }
 
 
-  def browseWorkflow(
-    workflowDef: WorkflowDef
-  ): Future[UIResponse] = {
 
-
-    ???
-  }
-
-  def getNextWorkflowLabeler(
-    workflowId: String@@WorkflowID
-  ): Future[UIResponse] = {
-
-    def workflowApi: WorkflowApi = ???
-
-    // Hardcoded map keyed off strings
-    val labelerBuilder: LabelerBuilder =
-      WorkflowServers.servers.get(workflowId)
-        .map(_.apply(docStore, user.id))
-        .getOrElse { sys.error("todo") }
-
-    def workflowDef: WorkflowDef = workflowApi.getWorkflow(workflowId)
-
-
-    // Deal w/ previous labeler task labeled by this user (completed? Error?)
-
-    val labelWidgetConfig = labelerBuilder.createLabeler()
-
-    // val mkWidgetOpt: Option[MakeWidget] = labelerType match {
-    //  val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
-    //    labelerIdentifier => {
-    //      val (widget0, labelerId0) = TitleAuthorsLabelers.singlePageLabeler(docStore)
-    //      val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelerId0, docStore)
-    //      (widget1, labelerId0)
-    //    }
-    //  Some(mkWidget)
-    //}
-
-    // mkWidgetOpt.map { mkWidget =>
-    //   val lwIndex = LabelWidgetIndex.init(
-    //     docStore, reqLabelerId, mkWidget, None, None
-    //   )
-    //   activeLabelWidgetIndex = Some(lwIndex)
-    //   val respState = UIState(
-    //     ByLine,
-    //     labelColors.headOption.map(_._1),
-    //     Seq(),
-    //     lwIndex.labelerIdentifier
-    //   )
-    //   Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
-    // } getOrElse {
-    //   sys.error("TODO unimplemented")
-    // }
-    ???
+  def listWorkflows(): Future[Seq[WorkflowTask]] = {
+    Future {
+      List()
+    }
   }
 
 }

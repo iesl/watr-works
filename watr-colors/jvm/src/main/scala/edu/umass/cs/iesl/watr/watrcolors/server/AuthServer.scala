@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-
 import scalaz.Kleisli
 import scalaz.{
   \/, -\/, \/-
@@ -12,7 +11,8 @@ import scalaz.concurrent.Task
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server._
-import TypeTags._
+// import TypeTags._
+import corpora.UserbaseApi
 
 
 
@@ -22,13 +22,14 @@ import java.time._
 
 case class UserData(
   id: Int@@UserID,
-  username: String,
+  emailAddr: String@@EmailAddr,
   pass: String,
   session: String
 )
 
 
 trait AuthServer {
+  def userbaseApi: UserbaseApi
 
   val key = PrivateKey(scala.io.Codec.toUTF8(scala.util.Random.alphanumeric.take(20).mkString("")))
 
@@ -36,8 +37,13 @@ trait AuthServer {
 
   val clock = Clock.systemUTC
 
-  def retrieveUser: Service[String, UserData] = Kleisli(id => Task.delay(
-    UserData(UserID(0), "name", "", "")
+  def retrieveUser: Service[String, UserData] = Kleisli(emailAddr => Task.delay(
+    (for {
+      userId <- userbaseApi.getUserByEmail(emailAddr)
+      person <- userbaseApi.getUser(userId)
+    } yield {
+      UserData(person.prKey, person.email, "", "")
+    }).get
   ))
 
   val authUser: Service[Request, String \/ UserData] = Kleisli({ request =>
@@ -56,7 +62,7 @@ trait AuthServer {
 
   val userStatusAndLogout: AuthedService[UserData] = AuthedService {
     case GET -> Root / "status" as user =>
-      Ok(s"User ${user.username} is logged in.")
+      Ok(s"User ${user.emailAddr} is logged in.")
 
     case GET -> Root / "logout" as user =>
       TemporaryRedirect(uri("/"))
@@ -72,9 +78,13 @@ trait AuthServer {
     request.as[UrlForm].map{ formData =>
       println(s"verifyLogin: ${formData}")
       val maybeName = for {
-        username <- formData.get("username")
+        emailAddr <- formData.get("username")
+        userId <- userbaseApi.getUserByEmail(emailAddr) orElse {
+          Some(userbaseApi.addUser(emailAddr))
+        }
+        person <- userbaseApi.getUser(userId)
       } yield {
-        \/-{ UserData(UserID(0), username, "", "") }
+        \/-{ UserData(person.prKey, person.email, "", "") }
       }
       maybeName.headOption getOrElse {
         -\/{"Invalid login form"}
@@ -89,7 +99,7 @@ trait AuthServer {
       case -\/(error) =>
         Forbidden(error)
       case \/-(user) => {
-        val message = crypto.signToken(user.username, clock.millis.toString)
+        val message = crypto.signToken(user.emailAddr.unwrap, clock.millis.toString)
 
         SeeOther(uri("/"))
           .addCookie(Cookie("authcookie", message, path=Some("/")))

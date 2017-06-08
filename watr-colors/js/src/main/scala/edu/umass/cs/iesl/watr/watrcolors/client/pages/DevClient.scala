@@ -67,7 +67,8 @@ object DevClient extends BasicClientDefs {
         ByLine,
         None,
         Seq(),
-        DocumentLabelerIdentifier(DocumentID("doc#XYZ"), "my-lt", Pagination(0, PageNum(3), None))
+        DocumentLabelerIdentifier(DocumentID("doc#XYZ"), "my-lt", Pagination(0, PageNum(3), None)),
+        Map()
       )
       val selectorControls = SharedLayout.zoneSelectorControls(
         new ClientStateRx(state, (_) => Future{()}),

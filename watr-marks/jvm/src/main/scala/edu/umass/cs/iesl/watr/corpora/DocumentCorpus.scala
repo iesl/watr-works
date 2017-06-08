@@ -60,6 +60,9 @@ trait DocumentCorpus {
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 
 
+  def workflowApi: WorkflowApi
+  def userbaseApi: UserbaseApi
+
 
   ///////////////////////
   /// Derived operations

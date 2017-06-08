@@ -15,6 +15,9 @@ import PageComponentImplicits._
 
 class MemDocstore extends DocumentCorpus {
 
+  def workflowApi: WorkflowApi = ???
+  def userbaseApi: UserbaseApi = ???
+
   object tables  {
 
     object documents extends DBRelation[DocumentID, Rel.Document] {
