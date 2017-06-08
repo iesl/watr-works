@@ -1,3 +1,4 @@
+
 <configuration scan="true" debug="false">
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -12,10 +13,15 @@
   </appender>
 
   <logger name="akka" level="OFF" />
+
   <logger name="net.sf.jsi.rtree" level="OFF" />
   <logger name="com.zaxxer.hikari" level="OFF" />
+  <logger name="io.netty" level="INFO" />
 
-  <root level="DEBUG">
+  // Suppress "rebuilding pdf x-ref table" errors
+  <logger name="com.itextpdf.kernel.pdf" level="OFF" />
+
+  <root level="trace">
     <appender-ref ref="STDOUT" />
   </root>
 

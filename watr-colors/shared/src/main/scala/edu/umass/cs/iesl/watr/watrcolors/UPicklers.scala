@@ -23,12 +23,12 @@ object TypeTagPicklers {
   //   {case Js.Str(s) => ZoneLockID(s.toInt)}
   // )
 
-  // implicit val Int_ZoneLock_StatusCode_Pickler: RW[Int @@ ZoneLock.StatusCode] = RW[Int @@ ZoneLock.StatusCode](
+  // implicit val Int_ZoneLock_StatusCode_Pickler: RW[Int@@ZoneLock.StatusCode] = RW[Int @@ ZoneLock.StatusCode](
   //   {t => Js.Str(t.unwrap.toString)},
   //   {case Js.Str(s) => ZoneLock.StatusCode(s.toInt)}
   // )
 
-  // implicit val Int_WorkflowDef_StatusCode_Pickler: RW[Int @@ WorkflowDef.StatusCode] = RW[Int @@ WorkflowDef.StatusCode](
+  // implicit val Int_WorkflowDef_StatusCode_Pickler: RW[Int@@WorkflowDef.StatusCode] = RW[Int @@ WorkflowDef.StatusCode](
   //   {t => Js.Str(t.unwrap.toString)},
   //   {case Js.Str(s) => WorkflowDef.StatusCode(s.toInt)}
   // )

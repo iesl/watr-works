@@ -8,7 +8,6 @@ class TextReflowDBTables extends DoobieImplicits {
 
   val Rel = RelationModel
 
-  // artifactRoot  VARCHAR(256)
   val createDocumentTable  = (for {
     _ <- sql""" CREATE TABLE document (
                    document      SERIAL PRIMARY KEY,
@@ -146,23 +145,45 @@ class TextReflowDBTables extends DoobieImplicits {
       CREATE INDEX label_key ON label USING hash (key);
     """.update
 
-  val createLabelerTable: Update0 = sql"""
-      CREATE TABLE labelers (
-        labeler     SERIAL PRIMARY KEY,
-        widget      TEXT
+
+
+  object workflowTables {
+    val create: Update0 = sql"""
+      CREATE TABLE workflows (
+        workflow          VARCHAR(32) PRIMARY KEY,
+        description       TEXT
+      );
+
+      CREATE TABLE lockgroups (
+        lockgroup      SERIAL PRIMARY KEY,
+        person         INTEGER REFERENCES persons NOT NULL
+      );
+      CREATE UNIQUE INDEX lockgroups_person ON lockgroups (person);
+
+      CREATE TABLE zonelocks (
+        zonelock       SERIAL PRIMARY KEY,
+        lockgroup      INTEGER REFERENCES lockgroups ON DELETE SET NULL,
+        zone           INTEGER REFERENCES zone,
+        status         VARCHAR(32) NOT NULL
       );
     """.update
 
-  // title/author
-  // created/todo/assigned/skipped/done
-  // val createLabelingTaskTable: Update0 = sql"""
-  //     CREATE TABLE labelingtasks (
-  //       labelingtask     SERIAL PRIMARY KEY,
-  //       taskname         VARCHAR(128),
-  //       progress         VARCHAR(64),
-  //       labeler          INTEGER REFERENCES labelers
-  //     );
-  //   """.update
+  }
+
+  object UserTables {
+    val create: Update0 = sql"""
+      CREATE TABLE persons (
+        person      SERIAL PRIMARY KEY,
+        email       VARCHAR(128) NOT NULL
+      );
+      CREATE UNIQUE INDEX persons_email ON persons (email);
+    """.update
+
+    val drop = sql"""
+        DROP TABLE IF EXISTS persons;
+    """.update.run
+  }
+
 
   def createAll = for {
     _ <- putStrLn("create imageclips")
@@ -179,14 +200,13 @@ class TextReflowDBTables extends DoobieImplicits {
 
     _ <- putStrLn("create textreflow")
     _ <- createTextReflowTable.run
-    _ <- putStrLn("create labelers")
-    _ <- createLabelerTable.run
-    // _ <- putStrLn("create labelingtasks")
-    // _ <- createLabelingTaskTable.run
+    _ <- putStrLn("create user tables")
+    _ <- UserTables.create.run
+    _ <- putStrLn("create workflow tables")
+    _ <- workflowTables.create.run
   } yield ()
 
-  val dropAll0: Update0 = sql"""
-    DROP TABLE IF EXISTS labelingtasks;
+  val dropAll = sql"""
     DROP TABLE IF EXISTS labelers;
     DROP TABLE IF EXISTS textreflow;
     DROP TABLE IF EXISTS zone_to_targetregion;
@@ -197,19 +217,10 @@ class TextReflowDBTables extends DoobieImplicits {
     DROP TABLE IF EXISTS page;
     DROP TABLE IF EXISTS imageclips;
     DROP TABLE IF EXISTS document;
-  """.update
+    DROP TABLE IF EXISTS workflows;
+    DROP TABLE IF EXISTS lockgroups;
+    DROP TABLE IF EXISTS zonelocks;
+    DROP TABLE IF EXISTS persons;
+  """.update.run
 
-  val dropAll = for {
-    _ <- sql"""DROP TABLE IF EXISTS labelingtasks""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS labelers""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS textreflow""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS zone_to_targetregion""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS zone_to_label""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS zone""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS label""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS targetregion""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS page""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS imageclips""".update.run
-    _ <- sql"""DROP TABLE IF EXISTS document""".update.run
-  } yield ()
 }

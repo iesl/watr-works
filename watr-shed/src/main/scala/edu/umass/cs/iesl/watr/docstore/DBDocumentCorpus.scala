@@ -41,17 +41,12 @@ class TextReflowDB(
 
 
   val props = new Properties()
-  // props.setProperty("sendBufferSize", "-1")
-  // props.setProperty("receiveBufferSize","-1")
   props.setProperty("housekeeper","false")
 
-  val xa: HikariTransactor[Task] = (for {
-    // xa <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+  def xa0: HikariTransactor[Task] = (for {
     xa <- HikariTransactor[Task]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
     _  <- xa.configure(hx => Task.delay{
       hx.setDataSourceProperties(props)
-      // hx.setMaximumPoolSize(10)
-      // hx.setPoolName("my-poolname")
       hx.setAutoCommit(false)
       ()
     })
@@ -59,19 +54,15 @@ class TextReflowDB(
     xa
   }).unsafePerformSync
 
-  // val xat: Task[HikariTransactor[Task]] = for {
-  //   xa <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
-  //   _  <- xa.configure(hx => Task.delay{
-  //     hx.setMaximumPoolSize(10)
-  //     hx.setPoolName("my-poolname")
-  //     hx.setAutoCommit(false)
-  //     ()
-  //   })
-  // } yield { xa }
+  var xa: HikariTransactor[Task] = xa0
+
+  def reinit() = {
+    xa = xa0
+  }
 
   def shutdown() = (for {
-      r <- sql"select 1".query[Int].unique.transact(xa) ensuring xa.shutdown
-    } yield r).unsafePerformSync
+    r <- sql"select 1".query[Int].unique.transact(xa) ensuring xa.shutdown
+  } yield r).unsafePerformSync
 
   def runq[A](query: C.ConnectionIO[A]): A = {
     try {
@@ -107,9 +98,7 @@ class TextReflowDB(
 
 
   def dropTables() = runqOnce {
-    for{
-      _ <- tables.dropAll
-    } yield ()
+    tables.dropAll
   }
 
   def dropAndRecreate() = runqOnce {
@@ -164,7 +153,7 @@ class TextReflowDB(
 
   def delZone(zoneId: Int@@ZoneID): ConnectionIO[Int] = {
     sql""" delete from zone where zone=${zoneId} """.update.run
-   }
+  }
 
   def selectTextReflow(textReflowId: Int@@TextReflowID): ConnectionIO[Rel.TextReflow] = {
     sql"""
@@ -440,7 +429,7 @@ class TextReflowDB(
       page         <- selectPage(pageId)
       maybeRegion  <- selectTargetRegionForBbox(pageId, bbox)
       regionId     <- maybeRegion.fold(
-          sql"""insert into targetregion (page, imageclip, bleft, btop, bwidth, bheight)
+        sql"""insert into targetregion (page, imageclip, bleft, btop, bwidth, bheight)
                  values ($pageId, null, $bl, $bt, $bw, $bh)
              """.update.withUniqueGeneratedKeys[Int]("targetregion").map(RegionID(_))
       )(tr => FC.delay(tr.prKey))
@@ -520,9 +509,153 @@ class TextReflowDB(
     runq { query }
   }
 
-  // object workflowApi extends WorkflowApi {
+  object userbaseApi extends UserbaseApi {
+    def addUser(email: String): Int@@UserID = {
+      runq { sql"""
+        insert into persons (email) values (${email})
+        """.update
+        .withUniqueGeneratedKeys[Int]("person")
+        .map(UserID(_))
+      }
+    }
 
-  // }
+    def getUser(userId: Int@@UserID): Option[Rel.Person] = {
+      runq { sql"""
+        select person, email from persons where person=${userId}
+        """.query[Rel.Person].option
+      }
+    }
+
+    def getUserByEmail(email: String): Option[Int@@UserID] = {
+      runq { sql"""
+        select person from persons where email=${email}
+        """.query[Int@@UserID].option
+      }
+    }
+  }
+  object workflowApi extends WorkflowApi {
+    def defineWorkflow(slug: String, desc: String): String@@WorkflowID = {
+      // select workflow from workflows where workflow=${slug}
+      val query = sql"""
+         insert into workflows (workflow, description) values (${slug}, ${desc})
+         returning workflow
+      """.query[String@@WorkflowID].unique
+      runq{ query }
+    }
+
+    def activateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit] = {
+      ???
+    }
+
+    def deactivateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit] = {
+      ???
+    }
+
+    def deleteWorkflow(workflowId:String@@WorkflowID): Either[String, Unit] = {
+      ???
+    }
+
+    def getWorkflows(): Seq[String@@WorkflowID] = {
+      val query = sql"""
+          select workflow from workflows
+      """.query[String@@WorkflowID].list
+      runq{ query }
+    }
+
+    def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
+      runq { sql"""
+        select workflow, description from workflows
+        """.query[Rel.WorkflowDef].unique
+      }
+    }
+
+    def makeLockGroup(user: Int@@UserID): Int@@LockGroupID = {
+      runq { sql"""
+        insert into lockgroups (person) values (${user})
+        """.update.withUniqueGeneratedKeys[Int]("lockgroup").map(LockGroupID(_))
+      }
+    }
+
+    def aquireZoneLocks(lockGroup: Int@@LockGroupID, labelId: Int@@LabelID, count: Int): Seq[Int@@ZoneLockID] = {
+      runq {
+        for {
+          q1 <- sql"""
+              insert into zonelocks (lockgroup, zone, status)
+                select ${lockGroup.unwrap}, z.zone, ${ZoneLockStatus.Unexamined}
+                  from      zone as z
+                  left join zonelocks as lk using (zone)
+                  where  z.label=${labelId}
+                    AND  lk.zone is null
+                  limit ${count}
+             """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog
+
+        } yield q1
+      }
+    }
+
+    def aquireZoneLocksWithStatus(lockGroupId: Int@@LockGroupID, withStatus: String@@StatusCode, count: Int): Seq[Int@@ZoneLockID] = {
+      runq { for {
+        q1 <- sql"""
+          update zonelocks SET lockgroup=${lockGroupId}
+              where zonelock IN (
+               select zonelock from zonelocks
+                 where lockgroup IS NULL AND status=${withStatus}
+                 limit ${count}
+              )
+          """.update.run
+
+        q2 <- sql"""
+          select zonelock from zonelocks where lockgroup = ${lockGroupId} AND status=${withStatus}
+          """.query[Int@@ZoneLockID].list
+
+        } yield q2
+      }
+    }
+
+    def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit = {
+      runq { sql"""
+        update zonelocks SET status=${newStatus}
+            where zonelock=${zoneLockId}
+        """.update.run
+      }
+    }
+
+    def releaseZoneLocks(lockGroupId: Int@@LockGroupID): Unit = {
+      runq { sql"""
+        delete from lockgroups where lockgroup=${lockGroupId}
+        """.update.run
+      }
+    }
+
+    def getLockForZone(zoneId: Int@@ZoneID): Option[Rel.ZoneLock] = {
+      runq { sql"""
+        select * from zonelocks where zone=${zoneId}
+        """.query[Rel.ZoneLock].option
+      }
+    }
+
+    def getZoneLock(zoneLockId: Int@@ZoneLockID): Option[Rel.ZoneLock] = {
+      runq { sql"""
+        select * from zonelocks where zonelock=${zoneLockId}
+        """.query[Rel.ZoneLock].option
+      }
+    }
+
+    def getUserLockGroup(userId: Int@@UserID): Option[Int@@LockGroupID] = {
+      runq { sql"""
+        select lockgroup from lockgroups where person=${userId}
+        """.query[Int@@LockGroupID].option
+      }
+    }
+
+    def getLockedZones(lockGroupId: Int@@LockGroupID): Seq[Int@@ZoneLockID] = {
+      runq { sql"""
+        select zone from zonelocks where lockgroup=${lockGroupId}
+        """.query[Int@@ZoneLockID].list
+      }
+    }
+
+  }
 
   object docStore extends DocumentCorpus {
     def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {
@@ -589,12 +722,12 @@ class TextReflowDB(
       runq { updatePageImage(pageId, bytes) }
     }
 
-    // def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {}
-    // def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom] = {}
+  // def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {}
+  // def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom] = {}
 
-    def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID = {
-      runq { ensureTargetRegion(pageId, bbox) }
-    }
+  def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID = {
+    runq { ensureTargetRegion(pageId, bbox) }
+  }
 
     // G.TargetRegion = M.TargetRegion+M.Page+M.Document
     def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[TargetRegion] =

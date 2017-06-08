@@ -23,12 +23,12 @@ class LabelingWorkflowSpec extends FlatSpec with Matchers {
 
   it should "walk through basic functionality" in {
 
-    val workflowId = workflowApi.defineWorkflow(
-      "meta5",
-      "Coarse-grained labeling for headers+reference section blocks",
-      LB.DocumentPages,
-      Seq(LB.Authors, LB.Affiliations)
-    )
+    // val workflowId = workflowApi.defineWorkflow(
+    //   "meta5",
+    //   "Coarse-grained labeling for headers+reference section blocks",
+    //   LB.DocumentPages,
+    //   Seq(LB.Authors, LB.Affiliations)
+    // )
 
     // val workflowDef = workflowApi.getWorkflow(workflowId)
     // Initialize workflow entries to zone:Unexamined, workflow to Ready

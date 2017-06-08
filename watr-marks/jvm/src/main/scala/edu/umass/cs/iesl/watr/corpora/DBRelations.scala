@@ -56,4 +56,28 @@ object RelationModel {
     widget  : String
   )
 
+
+  case class Person(
+    prKey   : Int@@UserID,
+    email   : String@@EmailAddr
+  )
+
+  case class WorkflowDef(
+    workflow     : String@@WorkflowID,
+    description  : String
+  )
+
+  case class LockGroup(
+    id: Int@@LockGroupID,
+    user: Int@@UserID
+  )
+
+  case class ZoneLock(
+    id         : Int@@ZoneLockID,
+    group      : Option[Int@@LockGroupID],
+    zone       : Int@@ZoneID,
+    status     : String@@StatusCode
+  )
+
+
 }

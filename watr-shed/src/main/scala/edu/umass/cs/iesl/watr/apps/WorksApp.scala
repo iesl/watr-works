@@ -50,7 +50,7 @@ object Works extends App {
 
       val fullPath = if (croot.isAbsolute()) Path(croot) else pwd/RelPath(croot)
 
-      val corpusSentinel =  fullPath / ".corpus-root"
+      // val corpusSentinel =  fullPath / ".corpus-root"
       val validPath = exists(fullPath)
       val validSentinel = exists(fullPath/".corpus-root")
 
@@ -294,7 +294,7 @@ object Works extends App {
 
     processCorpusEntryList(conf, {corpusEntry =>
       try {
-        val processResults = for {
+        for {
           output          <- processOrSkipOrForce(conf, corpusEntry, artifactOutputName)
           predsynthOutput <- processOrSkipOrForce(conf, corpusEntry, "predsynth.json")
           pdfArtifact     <- corpusEntry.getPdfArtifact

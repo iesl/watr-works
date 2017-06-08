@@ -6,10 +6,9 @@ import geometry._
 import TypeTags._
 import corpora._
 import LabelWidgets._
-import LabelWidgetF._
-
-import matryoshka._
-import matryoshka.implicits._
+// import LabelWidgetF._
+// import matryoshka._
+// import matryoshka.implicits._
 
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore

@@ -13,7 +13,6 @@ import geometry._
 import corpora._
 import labeling._
 import labeling.data._
-import TypeTags._
 
 import utils.Colors
 
@@ -35,7 +34,7 @@ class PageOneLabeler(
 
   def workflowApi: WorkflowApi = ???
 
-  def createLabeler(): (LabelWidget, LabelerIdentifier) = {
+  def createLabeler(): LabelWidgetConfig = {
     // Release any prior locks held by this user
     workflowApi.getUserLocks(userId).foreach { lockGroupId =>
       workflowApi.releaseZoneLocks(lockGroupId)
@@ -55,12 +54,11 @@ class PageOneLabeler(
     }.flatten
 
 
-    val (widget0, labelerId0) = singlePageLabeler(pageOnes)
+    singlePageLabeler(pageOnes)
 
-    (widget0, labelerId0)
   }
 
-  def singlePageLabeler(targetRegions: Seq[TargetRegion]): (LabelWidget, LabelWidgetConfig) = {
+  def singlePageLabeler(targetRegions: Seq[TargetRegion]): LabelWidgetConfig = {
 
     val pageOnes = targetRegions.map{ pageTargetRegion =>
       LW.pad(
@@ -77,19 +75,12 @@ class PageOneLabeler(
       LW.row(ws:_*)
     }
 
-    val body = LW.col(rows:_*)
+    val widget = LW.col(rows:_*)
 
-    val config = LabelWidgetConfig(
-      workflowDef.workflow
+    LabelWidgetConfig(
+      workflowDef.workflow,
+      widget
     )
-
-    val updatedIdentifier =  DocumentLabelerIdentifier(
-      DocumentID("???"), "single-page",
-      Pagination(0, PageNum(0), None),
-      targetLabels()
-    )
-
-    (body, config)
   }
 
   def targetLabels(): Map[Label, Color] = Map(

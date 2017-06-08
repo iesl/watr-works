@@ -41,6 +41,8 @@ sealed trait ImageID
 sealed trait UserID
 sealed trait Username
 sealed trait Password
+sealed trait EmailAddr
+sealed trait StatusCode
 
 
 sealed trait FloatRep
@@ -81,8 +83,11 @@ trait TypeTags {
   val WorkflowID = Tag.of[WorkflowID]
 
   val UserID = Tag.of[UserID]
+  val EmailAddr = Tag.of[EmailAddr]
   val Username = Tag.of[Username]
   val Password = Tag.of[Password]
+
+  val StatusCode = Tag.of[StatusCode]
 
   val FloatRep = Tag.of[FloatRep]
 

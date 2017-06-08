@@ -142,7 +142,7 @@ class BioArxivServer(
 
     // Deal w/ previous labeler task labeled by this user (completed? Error?)
 
-    val (labelWidget, lwId) = labelerBuilder.createLabeler()
+    val labelWidgetConfig = labelerBuilder.createLabeler()
 
     // val mkWidgetOpt: Option[MakeWidget] = labelerType match {
     //  val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =

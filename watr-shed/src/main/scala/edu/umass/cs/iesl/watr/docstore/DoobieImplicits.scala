@@ -5,8 +5,7 @@ package docstore
 import doobie.imports._
 import shapeless._
 import geometry._
-
-import corpora.RelationModel
+import corpora._
 import databasics.DoobiePredef
 import TypeTags._
 import scala.reflect.runtime.universe._
@@ -33,21 +32,34 @@ trait DoobieImplicits extends DoobiePredef {
       docId => docId.unwrap
     )
 
-  def TypeTagMeta[T: TypeTag](
+  private implicit def TypeTagMeta[T: TypeTag](
     f: Int => Int@@T)(
     implicit T: TypeTag[Int@@T]
   ): Meta[Int@@T] = Meta[Int].xmap(n => f(n), _.unwrap)
 
+  private implicit def StrTypeTagMeta[T: TypeTag](
+    f: String => String@@T)(
+    implicit T: TypeTag[String@@T]
+  ): Meta[String@@T] = Meta[String].nxmap(n => f(n), _.unwrap)
 
-  implicit val DocumentIDMeta   : Meta[Int@@DocumentID   ] = TypeTagMeta[DocumentID   ](DocumentID  (_))
-  implicit val TextReflowIDMeta : Meta[Int@@TextReflowID ] = TypeTagMeta[TextReflowID ](TextReflowID(_))
-  implicit val RegionIDMeta     : Meta[Int@@RegionID     ] = TypeTagMeta[RegionID     ](RegionID    (_))
-  implicit val PageIDMeta       : Meta[Int@@PageID       ] = TypeTagMeta[PageID       ](PageID      (_))
-  implicit val CharIDMeta       : Meta[Int@@CharID       ] = TypeTagMeta[CharID       ](CharID      (_))
-  implicit val ImageIDMeta      : Meta[Int@@ImageID      ] = TypeTagMeta[ImageID      ](ImageID     (_))
-  implicit val PageNumMeta      : Meta[Int@@PageNum      ] = TypeTagMeta[PageNum      ](PageNum     (_))
-  implicit val ZoneIDMeta       : Meta[Int@@ZoneID       ] = TypeTagMeta[ZoneID       ](ZoneID      (_))
-  implicit val LabelIDMeta      : Meta[Int@@LabelID      ] = TypeTagMeta[LabelID      ](LabelID     (_))
+  implicit val DocumentIDMeta   : Meta[Int@@DocumentID   ] = TypeTagMeta[DocumentID   ](DocumentID   (_))
+  implicit val TextReflowIDMeta : Meta[Int@@TextReflowID ] = TypeTagMeta[TextReflowID ](TextReflowID (_))
+  implicit val RegionIDMeta     : Meta[Int@@RegionID     ] = TypeTagMeta[RegionID     ](RegionID     (_))
+  implicit val PageIDMeta       : Meta[Int@@PageID       ] = TypeTagMeta[PageID       ](PageID       (_))
+  implicit val CharIDMeta       : Meta[Int@@CharID       ] = TypeTagMeta[CharID       ](CharID       (_))
+  implicit val ImageIDMeta      : Meta[Int@@ImageID      ] = TypeTagMeta[ImageID      ](ImageID      (_))
+  implicit val PageNumMeta      : Meta[Int@@PageNum      ] = TypeTagMeta[PageNum      ](PageNum      (_))
+  implicit val ZoneIDMeta       : Meta[Int@@ZoneID       ] = TypeTagMeta[ZoneID       ](ZoneID       (_))
+  implicit val LabelIDMeta      : Meta[Int@@LabelID      ] = TypeTagMeta[LabelID      ](LabelID      (_))
+  implicit def UserIDMeta       : Meta[Int@@UserID       ] = TypeTagMeta[UserID       ](UserID       (_))
+  // implicit lazy val UserIDMeta       : Meta[Int@@UserID       ] = cachedImplicit
+  implicit val LockGroupIDMeta  : Meta[Int@@LockGroupID  ] = TypeTagMeta[LockGroupID  ](LockGroupID  (_))
+  implicit val ZoneLockIDMeta   : Meta[Int@@ZoneLockID   ] = TypeTagMeta[ZoneLockID   ](ZoneLockID   (_))
+
+  implicit val WorkflowIDMeta   : Meta[String@@WorkflowID] = StrTypeTagMeta[WorkflowID   ](WorkflowID  (_))
+  implicit val StatusCodeMeta   : Meta[String@@StatusCode] = StrTypeTagMeta[StatusCode   ](StatusCode (_))
+
+  implicit val EmailAddrMeta   : Meta[String@@EmailAddr] = StrTypeTagMeta[EmailAddr   ](EmailAddr  (_))
 
   // implicit def TargetRegionMeta: Meta[R.TargetRegion] = implicitly[Meta[R.TargetRegion]]
   // implicit def ZoneMeta: Meta[R.Zone] = implicitly[Meta[R.Zone]]

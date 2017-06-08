@@ -1,54 +1,33 @@
 package edu.umass.cs.iesl.watr
 package corpora
 
-//
-import watrmarks.Label
-import scalaz.Tag
+import TypeTags._
 
-case class WorkflowDef(
-  workflow     : String@@WorkflowID,
-  description  : String,
-  sourcelabel  : Int@@LabelID,
-  targetlabels : List[Int@@LabelID],
-  status       : Int@@WorkflowDef.StatusCode
-)
-object WorkflowDef {
-  sealed trait StatusCode
-  val StatusCode = Tag.of[StatusCode]
-  object Status {
-    val OnHold    = StatusCode(1)
-    val Active    = StatusCode(2)
-    val Complete  = StatusCode(3)
-  }
+import RelationModel._
+
+object WorkflowStatus {
+  val OnHold    = StatusCode("OnHold")
+  val Active    = StatusCode("Active")
+  val Complete  = StatusCode("Complete")
 }
 
-case class LockGroup(
-  id: Int@@LockGroupID,
-  user: Int@@UserID
-)
-
-case class ZoneLock(
-  id         : Int@@ZoneLockID,
-  group      : Option[Int@@LockGroupID],
-  zone       : Int@@ZoneID,
-  status     : Int@@ZoneLock.StatusCode
-)
-
-object ZoneLock {
-  sealed trait StatusCode
-  val StatusCode = Tag.of[StatusCode]
-  object Status {
-    val Unexamined = StatusCode(1)
-    val Examined   = StatusCode(2)
-    val Specified  = StatusCode(3)
-    val Complete   = StatusCode(4)
-    val Error      = StatusCode(5)
-  }
+object ZoneLockStatus {
+  val Unexamined = StatusCode("Unexamined")
+  val Examined   = StatusCode("Examined")
+  val Specified  = StatusCode("Specified")
+  val Complete   = StatusCode("Complete")
+  val Error      = StatusCode("Error")
 }
 
+
+trait UserbaseApi {
+  def addUser(email: String): Int@@UserID
+  def getUser(userId: Int@@UserID): Option[Person]
+  def getUserByEmail(email: String): Option[Int@@UserID]
+}
 
 trait WorkflowApi {
-  def defineWorkflow(slug: String, desc: String, srcLabel: Label, targetLabels: Seq[Label]): String@@WorkflowID
+  def defineWorkflow(slug: String, desc: String): String@@WorkflowID
   def activateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
   def deactivateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
   def deleteWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
@@ -58,10 +37,14 @@ trait WorkflowApi {
 
   // Zone-level locking/status
   def makeLockGroup(user: Int@@UserID): Int@@LockGroupID
-  def aquireZoneLocks(lockGroup: Int@@LockGroupID, withStatus: Int@@ZoneLock.StatusCode, labelId: Int@@LabelID, count: Int): Seq[ZoneLock]
-  def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: Int@@ZoneLock.StatusCode): Unit
+  def aquireZoneLocks(lockGroup: Int@@LockGroupID, labelId: Int@@LabelID, count: Int): Seq[Int@@ZoneLockID]
+  def aquireZoneLocksWithStatus(lockGroupId: Int@@LockGroupID, withStatus: String@@StatusCode, count: Int): Seq[Int@@ZoneLockID]
+  def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit
   def releaseZoneLocks(lockGroupId: Int@@LockGroupID): Unit
 
-  def getZoneLock(zoneId: Int@@ZoneID): Option[ZoneLock]
-  def getUserLocks(userId: Int@@UserID): Seq[Int@@LockGroupID]
+  def getZoneLock(zoneLockId: Int@@ZoneLockID): Option[ZoneLock]
+  def getUserLockGroup(userId: Int@@UserID): Option[Int@@LockGroupID]
+  def getLockForZone(zoneId: Int@@ZoneID): Option[ZoneLock]
+  def getLockedZones(lockGroupId: Int@@LockGroupID): Seq[Int@@ZoneLockID]
+
 }

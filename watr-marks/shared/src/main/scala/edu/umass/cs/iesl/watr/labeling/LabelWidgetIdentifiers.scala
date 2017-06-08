@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package labeling
 
 import watrmarks._
+import data._
 
 import utils.Color
 import utils.Colors
@@ -52,6 +53,7 @@ sealed trait LabelerIdentifier {
 }
 
 case object NilLabelerIdentifier extends LabelerIdentifier {
+  // TODO move label color map into UIState
   def labelColors: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
 }
 
@@ -59,5 +61,21 @@ case class DocumentLabelerIdentifier(
   stableId: String@@DocumentID,
   labelerType: String,
   pagination: Pagination,
+  // TODO move label color map into UIState
   labelColors: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
 ) extends LabelerIdentifier
+
+case class WorkflowLabelerIdentifier(
+  workflowId: String@@WorkflowID,
+  // TODO move label color map into UIState
+  labelColors: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
+) extends LabelerIdentifier
+
+case class LabelWidgetConfig(
+  workflowId: String@@WorkflowID,
+  labelWidget: LabelWidget
+)
+
+trait LabelerBuilder {
+  def createLabeler(): LabelWidgetConfig
+}
