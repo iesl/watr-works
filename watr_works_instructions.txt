@@ -22,3 +22,14 @@ Annotation UI: Annotate the pdf file by drawing boxes around the required region
 Heuristics:
 1) Get familiar with ExampleMain code
 2) Getting PDF data for required labels: document -> label -> zone -> targetRegion -> visualLineZone -> textReflow
+
+
+Scripts:
+1) Place all the pdfs in their namesake directories
+for file in *; do
+mkdir "${file}".d
+mv "${file}" "${file}".d
+done
+
+2) Pdf to image on all the pdfs in the directory:
+for file in  *; <path_to_watrworks>/bin/extract-pdf-images.sh -f "${file}"/*.pdf
