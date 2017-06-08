@@ -4,6 +4,7 @@ package table
 import ammonite.ops._
 
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
+import watrmarks.{StandardLabels => LB}
 // import extract.images._
 import corpora._
 import segment._
@@ -77,8 +78,8 @@ object WatrTable extends App {
 object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
 
   def initReflowDB(dbname: String): TextReflowDB = {
-    val doLogging = false
-    val loggingProp = if (doLogging) "?loglevel=2" else ""
+    // val doLogging = false
+    // val loggingProp = if (doLogging) "?loglevel=2" else ""
 
     val tables = new TextReflowDBTables()
     new TextReflowDB(tables,
@@ -158,7 +159,7 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     prog0.run.unsafeRun()
 
     println(s"running remaining entries")
-    val retval = prog.run.unsafeRun
+    val _ = prog.run.unsafeRun
   }
 
 
@@ -184,5 +185,26 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     }
   }
 
+  def addUserAndLockTables(db: TextReflowDB)(): Unit = {
+    db.runqOnce{ db.tables.UserTables.create.run }
+    db.runqOnce{ db.tables.workflowTables.create.run }
+  }
+
+  def createDocumentPagesLabels()(implicit docStore: DocumentCorpus): Unit = {
+    for {
+      stableId <- docStore.getDocuments()
+      docId <- docStore.getDocument(stableId)
+    } {
+      val regions = docStore.getPages(docId)
+        .map{ pageId =>
+          val pageGeometry = docStore.getPageGeometry(pageId)
+          docStore.getTargetRegion(
+            docStore.addTargetRegion(pageId, pageGeometry)
+          ).toPageRegion()
+        }
+      docStore.labelRegions(LB.DocumentPages, regions)
+    }
+
+  }
 
 }
