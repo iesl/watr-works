@@ -443,7 +443,7 @@ trait LabelWidgetIndex { self =>
 
           panel.interaction match {
             case Interaction.InteractProg(prog) =>
-              println(s" running panel action ${prog}")
+              // println(s" running panel action ${prog}")
 
               val run = prog.exec(uiRequest, accResponse, accWidget)
 

@@ -8,16 +8,15 @@ import geometry.syntax._
 
 trait ImageManipulation {
 
-  // implicit val writer = nio.PngWriter.NoCompression
 
   def cropTo(imageBytes: Array[Byte], cropBox: LTBounds, pageBounds: LTBounds): Image = {
-    println(s"cropTo(len=${imageBytes.length}, cropBox=${cropBox}, pageBounds=${pageBounds})")
+    // println(s"cropTo(len=${imageBytes.length}, cropBox=${cropBox}, pageBounds=${pageBounds})")
     cropTo(Image(imageBytes), cropBox, pageBounds)
   }
 
   def cropTo(image: Image, cropBox: LTBounds, pageBounds: LTBounds): Image = {
-    println(s"page geometry is ${pageBounds.prettyPrint}")
-    println(s"image geometry is width:${image.width}, height:${image.height}")
+    // println(s"page geometry is ${pageBounds.prettyPrint}")
+    // println(s"image geometry is width:${image.width}, height:${image.height}")
     val scaled = image.scaleTo(pageBounds.width.asInt, pageBounds.height.asInt)
 
     val left = cropBox.left // - pageBounds.left
@@ -33,26 +32,11 @@ trait ImageManipulation {
     )
 
     val rescaleFactorX: Double = image.width.toDouble / pageBounds.width.asDouble()
-    val rescaleFactorY: Double = image.height.toDouble / pageBounds.height.asDouble()
+    // val rescaleFactorY: Double = image.height.toDouble / pageBounds.height.asDouble()
+    // println(s"scaling factors are  scaleX: ${rescaleFactorX}, scaleY: ${rescaleFactorY}")
 
-    println(s"scaling factors are  scaleX: ${rescaleFactorX}, scaleY: ${rescaleFactorY}")
-
-    // .pad(3, Color.Transparent)
-    trimmed
-      .scale(rescaleFactorX)
+    trimmed.scale(rescaleFactorX)
   }
-
-  // def textToImage(text: String): Image = {
-  //   val blank = Image.filled(300, 200, X11Colorlist.White)
-  //   val canvas1 = new Canvas(blank)
-
-  //   for {
-  //     (line, n) <- lines(text).zipWithIndex
-  //   } yield {
-  //     canvas1.draw(Drawable(line, 0, n*yscale.asInt))
-  //   }
-  //   canvas1.image
-  // }
 
 }
 

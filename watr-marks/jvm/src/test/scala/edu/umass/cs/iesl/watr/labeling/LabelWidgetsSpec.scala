@@ -46,60 +46,60 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
   behavior of "figures"
 
-  it should "adjust figure positions" in new CleanDocstore {
-    add4pg_3x3SampleDoc()
-    // val bbox2 = LTBounds.Ints(1, 1, 8, 8)
-    // val layout =
-    //   row(
-    //     figure(bbox),
-    //     figure(bbox2)
-    //   )
+  // it should "adjust figure positions" in new CleanDocstore {
+  //   add4pg_3x3SampleDoc()
+  //   // val bbox2 = LTBounds.Ints(1, 1, 8, 8)
+  //   // val layout =
+  //   //   row(
+  //   //     figure(bbox),
+  //   //     figure(bbox2)
+  //   //   )
 
-    val bbox = LTBounds.Ints(1, 1, 22, 8)
-    val layout =
-      col(
-        row(
+  //   val bbox = LTBounds.Ints(1, 1, 22, 8)
+  //   val layout =
+  //     col(
+  //       row(
 
-          targetOverlays(
-            mkTargetRegion(page1, 0, 0, 3, 3),
-            figure(bbox)
-          ),
-          targetOverlays(
-            mkTargetRegion(page1, 0, 0, 3, 3),
-            figure(LTBounds.Ints(0, 10, 10, 15))
-          )
-        ),
-        row(
-          pad(
-            targetOverlays(
-              mkTargetRegion(page1, 0, 0, 3, 3),
-              figure(bbox)
-            ),
-            Padding.Ints(5)
-          ),
-          targetOverlays(
-            mkTargetRegion(page1, 0, 0, 3, 3),
-            figure(LTBounds.Ints(0, 10, 10, 15))
-          )
-        )
-      )
+  //         targetOverlays(
+  //           mkTargetRegion(page1, 0, 0, 3, 3),
+  //           figure(bbox)
+  //         ),
+  //         targetOverlays(
+  //           mkTargetRegion(page1, 0, 0, 3, 3),
+  //           figure(LTBounds.Ints(0, 10, 10, 15))
+  //         )
+  //       ),
+  //       row(
+  //         pad(
+  //           targetOverlays(
+  //             mkTargetRegion(page1, 0, 0, 3, 3),
+  //             figure(bbox)
+  //           ),
+  //           Padding.Ints(5)
+  //         ),
+  //         targetOverlays(
+  //           mkTargetRegion(page1, 0, 0, 3, 3),
+  //           figure(LTBounds.Ints(0, 10, 10, 15))
+  //         )
+  //       )
+  //     )
 
-    // val layout =
-    //   pad(
-    //     figure(bbox),
-    //     Padding.Ints(2)
-    //   )
+  //   // val layout =
+  //   //   pad(
+  //   //     figure(bbox),
+  //   //     Padding.Ints(2)
+  //   //   )
 
-    val lwindex = LabelWidgetIndex.create(docStore, layout)
+  //   val lwindex = LabelWidgetIndex.create(docStore, layout)
 
-    // println(prettyPrintLabelWidget(layout))
-    // lwindex.debugPrint()
-    // lwindex.layout.positioning.foreach { pos =>
-    //   val sb = pos.strictBounds
-    //   val f = pos.widget
-    //   println(s"${sb}: $f")
-    // }
-  }
+  //   // println(prettyPrintLabelWidget(layout))
+  //   // lwindex.debugPrint()
+  //   // lwindex.layout.positioning.foreach { pos =>
+  //   //   val sb = pos.strictBounds
+  //   //   val f = pos.widget
+  //   //   println(s"${sb}: $f")
+  //   // }
+  // }
 
   it should "correctly position target regions" in new CleanDocstore  {
     add4pg_3x3SampleDoc()
@@ -143,6 +143,7 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
     )
   }
 
+
   it should "correctly position target regions with figure overlays" in new CleanDocstore  {
     add4pg_3x3SampleDoc()
 
@@ -178,8 +179,63 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
     val graphPaper = lwindex.toGraphPaper()
     val actual = graphPaper.asMonocolorString()
+    // println(actual)
     assertExpectedText(expectedOutput, actual)
   }
+
+  it should "correctly position padded regions" in new CleanDocstore  {
+    add4pg_3x3SampleDoc()
+
+    val layout = row(
+      pad(
+        targetOverlay(mkTargetRegion(page2, 1, 2, 2, 1) , List( figure(getRegionBounds(1, 2, 1, 1) ))),
+        Padding.Ints(2)
+      ),
+      pad(
+        targetOverlay(mkTargetRegion(page3, 2, 1, 1, 2) , List( figure(getRegionBounds(2, 2, 1, 1) ))),
+        Padding.Ints(3)
+      )
+    )
+
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
+    val expectedOutput = {
+      """|
+         |
+         |  αααααααααα2222222222
+         |  αααααααααα2222222222       3333333333
+         |  αααααααααα2222222222       3333333333
+         |  αααααααααα2222222222       3333333333
+         |  αααααααααα2222222222       3333333333
+         |  αααααααααα2222222222       3333333333
+         |  αααααααααα2222222222       3333333333
+         |  αααααααααα2222222222       3333333333
+         |  αααααααααα2222222222       3333333333
+         |  αααααααααα2222222222       3333333333
+         |                             3333333333
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |                             ßßßßßßßßßß
+         |
+         |
+         |
+         |""".stripMargin
+    }
+
+    val graphPaper = lwindex.toGraphPaper()
+    val actual = graphPaper.asMonocolorString()
+    assertExpectedText(expectedOutput, actual)
+  }
+
+
+  // it should "adjust query bounds to correct page bounds for each target region" in new CleanDocstore  {
+  // }
 
 
 
