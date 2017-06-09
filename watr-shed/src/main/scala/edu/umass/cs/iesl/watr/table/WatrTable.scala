@@ -5,14 +5,14 @@ import ammonite.ops._
 
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import watrmarks.{StandardLabels => LB}
-// import extract.images._
 import corpora._
+import corpora.filesys._
+import corpora.database._
 import segment._
 import bioarxiv._
 
 import TypeTags._
 
-import docstore._
 object SharedInit {
   val predef =
     s"""|import edu.umass.cs.iesl.watr
@@ -20,16 +20,17 @@ object SharedInit {
         |import ammonite.ops.ImplicitWd._
         |import watr._, spindex._, geometry._, table._
         |import corpora._
+        |import corpora.filesys._
+        |import corpora.database._
         |import textreflow._
         |import textreflow.data._
-        |import docstore._
         |import bioarxiv._, BioArxiv._, BioArxivOps._
         |import watrmarks.StandardLabels._
         |import ShellCommands._
         |import labeling.SampleLabelWidgets
-        |implicit val db0: TextReflowDB = db
+        |implicit val db0: CorpusAccessDB = db
         |implicit val corpus0: Corpus = corpus
-        |implicit val docStore: DocumentCorpus = db.docStore
+        |implicit val docStore: DocumentZoningApi = db.docStore
         |""".stripMargin
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
@@ -47,9 +48,12 @@ object WatrTable extends App {
 
     val db = initReflowDB(dbname)
 
-    // replMain().run(replArgs: Bind[Any]*)
+    val corpus = initCorpus()
+    val corpusAccessApi = CorpusAccessApi(db, corpus)
+
     replMain().run(
-      "corpus" -> initCorpus(),
+      "corpusAccessApi" -> corpusAccessApi,
+      "corpus" -> corpus,
       "db" -> db,
       "barx" -> BioArxivOps
     )
@@ -75,14 +79,13 @@ object WatrTable extends App {
 
 }
 
-object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
+object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments {
 
-  def initReflowDB(dbname: String): TextReflowDB = {
+  def initReflowDB(dbname: String): CorpusAccessDB = {
     // val doLogging = false
     // val loggingProp = if (doLogging) "?loglevel=2" else ""
-
-    val tables = new TextReflowDBTables()
-    new TextReflowDB(tables,
+    val tables = new CorpusAccessDBTables()
+    new CorpusAccessDB(tables,
       dbname=dbname,
       dbuser="watrworker",
       dbpass="watrpasswd"
@@ -106,7 +109,7 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
   // implicit val Sch = Scheduler.fromScheduledExecutorService(S)
   val T = implicitly[Async[Task]]
 
-  def segmentAll(n: Int=0, skip: Int=0)(implicit docStore: DocumentCorpus, corpus: Corpus): Unit = {
+  def segmentAll(n: Int=0, skip: Int=0)(implicit docStore: DocumentZoningApi, corpus: Corpus): Unit = {
 
     val allEntries = corpus.entryStream()
     val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
@@ -163,7 +166,7 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
   }
 
 
-  def segment(corpusEntry: CorpusEntry)(implicit docStore: DocumentCorpus): Unit = {
+  def segment(corpusEntry: CorpusEntry)(implicit docStore: DocumentZoningApi): Unit = {
     for {
       pdfArtifact    <- corpusEntry.getPdfArtifact
       pdfPath        <- pdfArtifact.asPath.toOption
@@ -185,12 +188,12 @@ object ShellCommands extends CorpusEnrichments with DocumentCorpusEnrichments {
     }
   }
 
-  def addUserAndLockTables(db: TextReflowDB)(): Unit = {
+  def addUserAndLockTables(db: CorpusAccessDB)(): Unit = {
     db.runqOnce{ db.tables.UserTables.create.run }
     db.runqOnce{ db.tables.workflowTables.create.run }
   }
 
-  def createDocumentPagesLabels()(implicit docStore: DocumentCorpus): Unit = {
+  def createDocumentPagesLabels()(implicit docStore: DocumentZoningApi): Unit = {
     for {
       stableId <- docStore.getDocuments()
       docId <- docStore.getDocument(stableId)

@@ -5,7 +5,7 @@ import geometry._
 import scala.collection.mutable
 
 class GraphPaper(
-  width: Int, height: Int
+  width: Int, height: Int, useColor: Boolean=true
 ) {
 
   lazy val box = GraphPaper.Box(0, 0, width, height)
@@ -13,7 +13,8 @@ class GraphPaper(
 
   val gridBuffer = mutable.ArrayBuffer
     .tabulate(height, width){ case (y, x) =>
-      fansi.Color.Blue(" ")
+      val fcolor = fansi.Color.Blue(" ")
+      fcolor
     }
 
 
@@ -66,10 +67,10 @@ class GraphPaper(
 
   def gradientHorizontal(gridbox: GraphPaper.Box): Unit = {
     var r = 20
-    var g = 20
+    val g = 20
     var b = 20
-    val xstep = 256 / gridbox.width
-    val ystep = 256 / gridbox.height
+    // val xstep = 256 / gridbox.width
+    // val ystep = 256 / gridbox.height
     for {
       y <- gridbox.top until (gridbox.top+gridbox.height)
       _ <- List[Unit]({
@@ -97,6 +98,11 @@ class GraphPaper(
 
   def asString(): String = {
     gridBuffer.map(_.mkString).mkString("\n")
+  }
+  def asMonocolorString(): String = {
+    gridBuffer
+      .map(_.map(_.plainText).mkString)
+      .mkString("\n")
   }
 
 }

@@ -8,16 +8,13 @@ package labeling
 import org.scalatest._
 import watrmarks.{StandardLabels => LB}
 import corpora._
+import workflow._
 
 
 class LabelingWorkflowSpec extends FlatSpec with Matchers {
-  // Walkthrough..
   behavior of "Workflow"
-  // Create a list of known Workflows
   def workflowApi: WorkflowApi = ???
-  // import Workflow.WorkflowStatus
   def someUser: Int@@UserID = ???
-  // import Workflow.EntryStatus
 
 
 
@@ -35,6 +32,5 @@ class LabelingWorkflowSpec extends FlatSpec with Matchers {
     // workflowApi.activateWorkflow(workflowId)
 
   }
-  // it should "lock a set of zones for a user to annotate" in {}
 
 }

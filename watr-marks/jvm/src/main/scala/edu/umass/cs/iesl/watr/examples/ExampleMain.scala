@@ -1,8 +1,9 @@
 package edu.umass.cs.iesl.watr
-package corpora
+package examples
 
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
+import corpora._
 
 object ExampleMain extends App {
 
@@ -16,7 +17,7 @@ object ExampleMain extends App {
 }
 
 class SampleTextCorpus extends PlainTextCorpus {
-  override val docStore: DocumentCorpus = new MemDocstore
+  override val docStore: DocumentZoningApi = new MemDocZoningApi
 
   val stableId = DocumentID("stable-id#23")
 

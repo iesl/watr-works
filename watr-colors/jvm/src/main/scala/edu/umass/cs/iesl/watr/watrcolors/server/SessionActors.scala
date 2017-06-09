@@ -12,7 +12,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import corpora._
-import docstore._
 
 import upickle.{default => UPickle}
 import UPicklers._
@@ -35,7 +34,6 @@ class UserSessionActor(
 ) extends Actor {
   val log = Logging(context.system, this)
 
-  import TypeTagPicklers._
   val router = ShellsideServer.route[WatrShellApi](bioArxivServer)
 
   def route(path: List[String], msgBody: String): Future[String] = {
@@ -54,15 +52,13 @@ class UserSessionActor(
   }
 }
 object SessionsActor {
-  def props(reflowDB: TextReflowDB, corpus: Corpus): Props =
-    Props(new SessionsActor(reflowDB, corpus))
+  def props(corpusAccessApi: CorpusAccessApi): Props =
+    Props(new SessionsActor(corpusAccessApi))
 }
 
 
 class SessionsActor(
-  reflowDB: TextReflowDB,
-  corpus: Corpus
-    // Add ref to workflows here??
+  corpusAccessApi: CorpusAccessApi
 ) extends Actor {
   val log = Logging(context.system, this)
 
@@ -73,7 +69,7 @@ class SessionsActor(
 
       val userSessionActor = context.child(user.emailAddr.unwrap).getOrElse {
         println(s"Sessions: creating new actor for ${user.emailAddr}")
-        context.actorOf(UserSessionActor.props(user, new BioArxivServer(user, reflowDB, corpus)), user.emailAddr.unwrap)
+        context.actorOf(UserSessionActor.props(user, new BioArxivServer(user, corpusAccessApi)), user.emailAddr.unwrap)
       }
       println(s"Sessions: using actor for ${user.emailAddr}")
 

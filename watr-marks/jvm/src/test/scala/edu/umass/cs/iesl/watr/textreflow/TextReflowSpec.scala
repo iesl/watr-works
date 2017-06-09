@@ -12,7 +12,7 @@ import data._
 // import geometry.zones.syntax._
 
 class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
-  def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
+  def createEmptyDocumentZoningApi(): DocumentZoningApi = new MemDocZoningApi
 
   initEmpty()
 

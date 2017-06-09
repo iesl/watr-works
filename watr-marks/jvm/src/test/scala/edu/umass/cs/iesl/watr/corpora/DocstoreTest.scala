@@ -4,7 +4,7 @@ package corpora
 import org.scalatest._
 
 class DocstoreTest extends FlatSpec with Matchers with CorpusTestingUtil {
-  def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
+  def createEmptyDocumentZoningApi(): DocumentZoningApi = new MemDocZoningApi
 
   behavior of "Document storage"
 

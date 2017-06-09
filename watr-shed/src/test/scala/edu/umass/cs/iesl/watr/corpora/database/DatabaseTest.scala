@@ -1,13 +1,14 @@
 package edu.umass.cs.iesl.watr
-package docstore
+package corpora
+package database
 
 import org.scalatest._
-import corpora._
+import workflow._
 
 trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil with BeforeAndAfterEach {
-  lazy val tables = new TextReflowDBTables()
+  lazy val tables = new CorpusAccessDBTables()
 
-  lazy val reflowDB = new TextReflowDB(
+  lazy val reflowDB = new CorpusAccessDB(
     tables,
     dbname="watrdev",
     dbuser="watrworker",
@@ -17,7 +18,7 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil with Be
   def workflowApi: WorkflowApi = reflowDB.workflowApi
   def userbaseApi: UserbaseApi = reflowDB.userbaseApi
 
-  def createEmptyDocumentCorpus(): DocumentCorpus = {
+  def createEmptyDocumentZoningApi(): DocumentZoningApi = {
     reflowDB.runqOnce {
       reflowDB.veryUnsafeDropDatabase().run
     }

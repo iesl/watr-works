@@ -1,12 +1,12 @@
 package edu.umass.cs.iesl.watr
-package docstore
+package corpora
+package database
 
 
 import doobie.imports._
 import shapeless._
 import geometry._
 import corpora._
-import databasics.DoobiePredef
 import TypeTags._
 import scala.reflect.runtime.universe._
 
@@ -23,7 +23,6 @@ trait DoobieImplicits extends DoobiePredef {
       val LTBounds.IntReps(l, t, w, h) = ltb
       l :: t :: w :: h :: HNil
     })
-
 
 
   implicit val StrDocumentIDMeta: Meta[String @@ DocumentID] =
@@ -51,20 +50,22 @@ trait DoobieImplicits extends DoobiePredef {
   implicit val PageNumMeta      : Meta[Int@@PageNum      ] = TypeTagMeta[PageNum      ](PageNum      (_))
   implicit val ZoneIDMeta       : Meta[Int@@ZoneID       ] = TypeTagMeta[ZoneID       ](ZoneID       (_))
   implicit val LabelIDMeta      : Meta[Int@@LabelID      ] = TypeTagMeta[LabelID      ](LabelID      (_))
-  implicit def UserIDMeta       : Meta[Int@@UserID       ] = TypeTagMeta[UserID       ](UserID       (_))
-  // implicit lazy val UserIDMeta       : Meta[Int@@UserID       ] = cachedImplicit
+  implicit val UserIDMeta       : Meta[Int@@UserID       ] = TypeTagMeta[UserID       ](UserID       (_))
   implicit val LockGroupIDMeta  : Meta[Int@@LockGroupID  ] = TypeTagMeta[LockGroupID  ](LockGroupID  (_))
   implicit val ZoneLockIDMeta   : Meta[Int@@ZoneLockID   ] = TypeTagMeta[ZoneLockID   ](ZoneLockID   (_))
 
-  implicit val WorkflowIDMeta   : Meta[String@@WorkflowID] = StrTypeTagMeta[WorkflowID   ](WorkflowID  (_))
+  implicit val WorkflowIDMeta   : Meta[String@@WorkflowID] = StrTypeTagMeta[WorkflowID   ](WorkflowID (_))
   implicit val StatusCodeMeta   : Meta[String@@StatusCode] = StrTypeTagMeta[StatusCode   ](StatusCode (_))
+  implicit val EmailAddrMeta    : Meta[String@@EmailAddr]  = StrTypeTagMeta[EmailAddr    ](EmailAddr  (_))
 
-  implicit val EmailAddrMeta   : Meta[String@@EmailAddr] = StrTypeTagMeta[EmailAddr   ](EmailAddr  (_))
+  // implicit def TargetRegionMeta : Meta[R.TargetRegion] = implicitly[Meta[R.TargetRegion]]
+  // implicit def ZoneMeta         : Meta[R.Zone]         = implicitly[Meta[R.Zone]]
+  // implicit def TextReflowMeta   : Meta[R.TextReflow]   = implicitly[Meta[R.TextReflow]]
+  // implicit def LabelMeta        : Meta[R.Label]        = implicitly[Meta[R.Label]]
+  // implicit def PageMeta         : Meta[R.Page]         = implicitly[Meta[R.Page]]
+  // implicit def DocumentMeta     : Meta[R.Document]     = implicitly[Meta[R.Document]]
+  // implicit def PersonMeta       : Meta[R.Person]       = implicitly[Meta[R.Person]]
+  // implicit def ZoneLockMeta     : Meta[R.ZoneLock]     = implicitly[Meta[R.ZoneLock]]
+  // implicit def WorkflowDefMeta  : Meta[R.WorkflowDef]  = implicitly[Meta[R.WorkflowDef]]
 
-  // implicit def TargetRegionMeta: Meta[R.TargetRegion] = implicitly[Meta[R.TargetRegion]]
-  // implicit def ZoneMeta: Meta[R.Zone] = implicitly[Meta[R.Zone]]
-  // implicit def TextReflowMeta: Meta[R.TextReflow] = implicitly[Meta[R.TextReflow]]
-  // implicit def LabelMeta: Meta[R.Label] = implicitly[Meta[R.Label]]
-  // implicit def PageMeta: Meta[R.Page] = implicitly[Meta[R.Page]]
-  // implicit def DocumentMeta: Meta[R.Document] = implicitly[Meta[R.Document]]
 }

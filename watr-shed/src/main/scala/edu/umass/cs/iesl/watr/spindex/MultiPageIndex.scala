@@ -48,7 +48,7 @@ import watrmarks.{StandardLabels => LB}
 
 class MultiPageIndex(
   stableId: String@@DocumentID,
-  val docStore: DocumentCorpus
+  val docStore: DocumentZoningApi
 ) {
   lazy val docId: Int@@DocumentID =
     docStore.getDocument(stableId).getOrElse(sys.error("MultiPageIndex created for non-existent document"))
@@ -79,7 +79,7 @@ class MultiPageIndex(
   // ID generators
   val componentIdGen = IdGenerator[ComponentID]()
   val labelIdGen = IdGenerator[LabelID]()
-  // NB this is only for Components, and it a kludge until Component/DocumentCorpus systems are unified
+  // NB this is only for Components, and it a kludge until Component/DocumentZoningApi systems are unified
   val regionIdGen = IdGenerator[RegionID]()
 
 

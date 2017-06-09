@@ -4,15 +4,16 @@ package server
 
 import scala.concurrent.Future
 import corpora._
-import docstore._
+import workflow._
 import scala.concurrent.ExecutionContext
 
 class BrowseCorpusApiListeners(
-  reflowDB: TextReflowDB,
-  corpus: Corpus
+  corpusAccessApi: CorpusAccessApi
 )(implicit ec: ExecutionContext) extends BrowseCorpusApi {
 
-  private def docStore = reflowDB.docStore
+  val docStore: DocumentZoningApi = corpusAccessApi.docStore
+  val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
+  val userbaseApi: UserbaseApi = corpusAccessApi.userbaseApi
 
   def listDocuments(n: Int, skip: Int): Future[Seq[DocumentEntry]] = {
     println(s"listDocuments $n, $skip")

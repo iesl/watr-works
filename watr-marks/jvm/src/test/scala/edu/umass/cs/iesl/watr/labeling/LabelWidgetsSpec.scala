@@ -11,7 +11,7 @@ import LabelWidgets._
 // import matryoshka.implicits._
 
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
-  def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
+  def createEmptyDocumentZoningApi(): DocumentZoningApi = new MemDocZoningApi
 
   behavior of "label widgets"
 
@@ -30,6 +30,19 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
   val page1 = PageID(1)
   val page2 = PageID(2)
+  val page3 = PageID(3)
+  val page4 = PageID(4)
+
+  def assertExpectedText(expected: String, actual: String): Unit = {
+    val l1s = actual.split("\n").map(_.trim())
+    val l2s = expected.split("\n").map(_.trim())
+    val zipped = l1s.zip(l2s)
+    zipped.foreach { case (l1, l2) =>
+      // println(s"1>$l1")
+      // println(s"2>$l2")
+      assertResult(l1)(l2)
+    }
+  }
 
   behavior of "figures"
 
@@ -79,14 +92,95 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
     val lwindex = LabelWidgetIndex.create(docStore, layout)
 
-    println(prettyPrintLabelWidget(layout))
-    lwindex.debugPrint()
-    lwindex.layout.positioning.foreach { pos =>
-      val sb = pos.strictBounds
-      val f = pos.widget
-      println(s"${sb}: $f")
-    }
+    // println(prettyPrintLabelWidget(layout))
+    // lwindex.debugPrint()
+    // lwindex.layout.positioning.foreach { pos =>
+    //   val sb = pos.strictBounds
+    //   val f = pos.widget
+    //   println(s"${sb}: $f")
+    // }
   }
+
+  it should "correctly position target regions" in new CleanDocstore  {
+    add4pg_3x3SampleDoc()
+
+    val layout = row(
+      targetOverlay(mkTargetRegion(page2, 1, 2, 2, 1) , List()),
+      targetOverlay(mkTargetRegion(page3, 2, 1, 1, 2) , List())
+    )
+
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
+
+    val expectedOutput = {
+      """|222222222222222222223333333333
+         |222222222222222222223333333333
+         |222222222222222222223333333333
+         |222222222222222222223333333333
+         |222222222222222222223333333333
+         |222222222222222222223333333333
+         |222222222222222222223333333333
+         |222222222222222222223333333333
+         |222222222222222222223333333333
+         |222222222222222222223333333333
+         |                    3333333333
+         |                    3333333333
+         |                    3333333333
+         |                    3333333333
+         |                    3333333333
+         |                    3333333333
+         |                    3333333333
+         |                    3333333333
+         |                    3333333333
+         |                    3333333333
+         |""".stripMargin
+    }
+
+    val graphPaper = lwindex.toGraphPaper()
+
+    assertExpectedText(
+      expectedOutput,
+      graphPaper.asMonocolorString()
+    )
+  }
+
+  it should "correctly position target regions with figure overlays" in new CleanDocstore  {
+    add4pg_3x3SampleDoc()
+
+    val layout = row(
+      targetOverlay(mkTargetRegion(page2, 1, 2, 2, 1) , List( figure(getRegionBounds(1, 2, 1, 1) ))),
+      targetOverlay(mkTargetRegion(page3, 2, 1, 1, 2) , List( figure(getRegionBounds(2, 2, 1, 1) )))
+    )
+
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
+    val expectedOutput = {
+      """|αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |αααααααααα22222222223333333333
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |                    ßßßßßßßßßß
+         |""".stripMargin
+    }
+
+    val graphPaper = lwindex.toGraphPaper()
+    val actual = graphPaper.asMonocolorString()
+    assertExpectedText(expectedOutput, actual)
+  }
+
 
 
   // it should "create columns/rows" in new CleanDocstore {
@@ -125,31 +219,6 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   //   // lwindex.layout.positioning.foreach { absPos =>
   //   //   println(s"${absPos}")
   //   // }
-  // }
-  // it should "correctly position overlays" in new CleanDocstore  {
-  //   add4pg_3x3SampleDoc()
-
-  //   val pageId = PageID(3)
-  //   val targetRegion = mkTargetRegion(pageId, 0, 0, 3, 3)
-
-  //   val r0 = getRegionBounds(1, 1, 1, 3)
-  //   val layout = targetOverlay(targetRegion, List(
-  //     figure(r0)
-  //   ))
-  //   // val layout = targetOverlay(pageId, pageRegion, None, List(
-  //   //   figure(r0)
-  //   // ))
-
-  //   val lwindex = LabelWidgetIndex.create(docStore, layout)
-
-  //   val finalLayout = (
-  //     """|333
-  //        |3α3
-  //        |3α3
-  //        | α
-  //        |""")
-
-  //   // lwindex.debugPrint()
   // }
 
 

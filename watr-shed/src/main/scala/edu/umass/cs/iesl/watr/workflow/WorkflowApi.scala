@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
-package corpora
+package workflow
 
+import corpora._
 import TypeTags._
 
 import RelationModel._
@@ -26,8 +27,9 @@ trait UserbaseApi {
   def getUserByEmail(email: String): Option[Int@@UserID]
 }
 
+// trait WorkflowApi extends UserbaseApi with DocumentZoningApi {
 trait WorkflowApi {
-  // def defineWorkflow(slug: String, desc: String, labelerBuilder: LabelerBuilder): String@@WorkflowID
+
   def defineWorkflow(slug: String, desc: String): String@@WorkflowID
   def activateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
   def deactivateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]

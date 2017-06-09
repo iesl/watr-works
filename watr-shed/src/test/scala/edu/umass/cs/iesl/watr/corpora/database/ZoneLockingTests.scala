@@ -1,7 +1,8 @@
 package edu.umass.cs.iesl.watr
-package docstore
+package corpora
+package database
 
-import corpora._
+import workflow._
 import watrmarks.{StandardLabels => LB}
 import TypeTags._
 

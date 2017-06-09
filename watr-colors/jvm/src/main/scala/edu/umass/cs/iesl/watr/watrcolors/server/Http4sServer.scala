@@ -4,17 +4,15 @@ package server
 
 import scalaz.Kleisli
 import scalaz.concurrent.Task
-import scalaz.syntax.equal._
 
 import akka.actor._
 import akka.util.Timeout
 import akka.pattern.{ ask }
-// import akka.event.Logging
 import concurrent.duration._
 
 import corpora._
-import docstore._
-import geometry.syntax._
+import corpora.filesys._
+import workflow._
 
 import org.http4s
 import org.http4s._
@@ -28,18 +26,18 @@ import TypeTags._
 import upickle.{default => UPickle}
 
 import scala.concurrent._
-import java.io.File
-import FileService.Config
 
 
 class Http4sService(
-  reflowDB: TextReflowDB,
-  corpus: Corpus,
+  corpusAccessApi: CorpusAccessApi,
   url: String,
   port: Int
 ) extends AuthServer {
-  lazy private val docStore = reflowDB.docStore
-  override def userbaseApi: UserbaseApi = docStore.userbaseApi
+
+  val docStore: DocumentZoningApi = corpusAccessApi.docStore
+  val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
+  override val userbaseApi: UserbaseApi = corpusAccessApi.userbaseApi
+  val corpus: Corpus = corpusAccessApi.corpus
 
 
   val assetService = resourceService(ResourceService.Config(
@@ -57,104 +55,24 @@ class Http4sService(
   val regionImageService = HttpService {
     case req @ GET -> Root / "region" / IntVar(regionId0) =>
       val regionId = RegionID(regionId0)
-      val targetRegion = docStore.getTargetRegion(regionId)
-      val pageId = targetRegion.page.pageId
-      val (rPage, rDoc) = reflowDB.getPageAndDocument(pageId)
-      val tbbox = targetRegion.bbox
-      val pbbox = rPage.bounds
-      if (tbbox === pbbox) {
-        val entryPath = rDoc.stableId.unwrap
-        val imagePath = corpusRoot
-          .resolve(entryPath)
-          .resolve("page-images")
-          .resolve(s"page-${rPage.pagenum.unwrap+1}.opt.png")
-
-        println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
-
-        Task.now{
-          StaticFile.fromFile(imagePath.toFile(), Some(req))
-            .getOrElse { Response(http4s.Status(500)(s"could not serve image ${regionId}")) }
-        }
-
-      } else {
-        println(s"Shouldn't get here yet....")
-        val bytes = reflowDB.serveTargetRegionImage(regionId)
-        Ok(bytes).putHeaders(
-          H.`Content-Type`(MediaType.`image/png`)
-        )
-      }
-  }
-
-  def imagePathCollector(f:File, config: Config, req:Request): Task[Option[Response]] = {
-    // val Rel = RelationModel
-    println(s"imagePathCollector(f:${f}, conf:${config})")
-    println(s"                  (req:${req})")
-
-    req match {
-      case request @ GET -> Root / "region" / IntVar(regionId0) =>
-        val regionId = RegionID(regionId0)
-        val targetRegion = docStore.getTargetRegion(regionId)
-        val pageId = targetRegion.page.pageId
-        val (rPage, rDoc) = reflowDB.getPageAndDocument(pageId)
-        val tbbox = targetRegion.bbox
-        val pbbox = rPage.bounds
-        if (tbbox === pbbox) {
-          val entryPath = rDoc.stableId.unwrap
-          val imagePath = corpusRoot
-            .resolve(entryPath)
-            .resolve("page-images")
-            .resolve(s"page-${rPage.pagenum.unwrap}.opt.png")
-
-          println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
-
-          Task.now{
-            StaticFile.fromFile(imagePath.toFile(), Some(req))
-          }
-
-        } else {
-          println(s"Shouldn't get here yet....")
-          val bytes = reflowDB.serveTargetRegionImage(regionId)
+      val resp = corpusAccessApi.serveTargetRegionImageUpdate(regionId)
+      RegionImageResponse.fold(resp)(
+        err => {
+          Ok(err)
+        },
+        bytes => {
           Ok(bytes).putHeaders(
             H.`Content-Type`(MediaType.`image/png`)
-          ).map(Some(_))
+          )
+        },
+        path => {
+          Task.now{
+            StaticFile.fromFile(path.toFile(), Some(req))
+              .getOrElse { Response(http4s.Status(500)(s"could not serve image ${regionId}")) }
+          }
         }
-
-      case GET -> Root / "page-image" / IntVar(pageId) =>
-        val (rPage, rDoc) = reflowDB.getPageAndDocument(PageID(pageId))
-        val entryPath = rDoc.stableId.unwrap
-        val imagePath = corpusRoot
-          .resolve(entryPath)
-          .resolve("page-images")
-          .resolve(s"page-${rPage.pagenum.unwrap}.opt.png")
-
-        println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
-
-        Task.now{
-          StaticFile.fromFile(imagePath.toFile(), Some(req))
-        }
-
-      case GET -> Root / "page-thumb" / IntVar(pageId) =>
-        val (rPage, rDoc) = reflowDB.getPageAndDocument(PageID(pageId))
-        val entryPath = rDoc.stableId.unwrap
-        val imagePath = corpusRoot
-          .resolve(entryPath)
-          .resolve("page-thumbs")
-          .resolve(s"page-${rPage.pagenum.unwrap}.png")
-
-        println(s"pageImageService:/page-thumbs pageId:${pageId}; imagePath: ${imagePath}")
-
-        Task.now{
-          StaticFile.fromFile(imagePath.toFile(), Some(req))
-        }
-    }
+      )
   }
-
-  val pageImageService = fileService(FileService.Config(
-    corpus.corpusRoot.toIO.toString(),
-    pathPrefix = "/img",
-    pathCollector = imagePathCollector
-  ))
-
 
   def htmlPage(pageName: String, user: Option[String]): Task[Response]= {
     Ok(html.ShellHtml(pageName, user).toString())
@@ -196,9 +114,9 @@ class Http4sService(
   val actorSystem = ActorSystem()
   import actorSystem.dispatcher
 
-  lazy val browseCorpusServer = new BrowseCorpusApiListeners(reflowDB, corpus)
+  lazy val browseCorpusServer = new BrowseCorpusApiListeners(corpusAccessApi)
 
-  val userSessions = actorSystem.actorOf(SessionsActor.props(reflowDB, corpus), "sessionsActor")
+  val userSessions = actorSystem.actorOf(SessionsActor.props(corpusAccessApi), "sessionsActor")
 
   val authedAutowire = AuthedService[UserData] {
     case req @ POST -> "api" /: path as user =>
@@ -269,3 +187,111 @@ class Http4sService(
     )
   }
 }
+
+
+
+
+
+
+
+
+
+
+  // def imagePathCollector(f:File, config: Config, req:Request): Task[Option[Response]] = {
+  //   // val Rel = RelationModel
+  //   println(s"imagePathCollector(f:${f}, conf:${config})")
+  //   println(s"                  (req:${req})")
+
+  //   req match {
+  //     case request @ GET -> Root / "region" / IntVar(regionId0) =>
+  //       val regionId = RegionID(regionId0)
+  //       val targetRegion = docStore.getTargetRegion(regionId)
+  //       val pageId = targetRegion.page.pageId
+  //       val (rPage, rDoc) = corpusAccessApi.getPageAndDocument(pageId)
+  //       val tbbox = targetRegion.bbox
+  //       val pbbox = rPage.bounds
+  //       if (tbbox === pbbox) {
+  //         val entryPath = rDoc.stableId.unwrap
+  //         val imagePath = corpusRoot
+  //           .resolve(entryPath)
+  //           .resolve("page-images")
+  //           .resolve(s"page-${rPage.pagenum.unwrap}.opt.png")
+
+  //         println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
+
+  //         Task.now{
+  //           StaticFile.fromFile(imagePath.toFile(), Some(req))
+  //         }
+
+  //       } else {
+  //         println(s"Shouldn't get here yet....")
+  //         val bytes = corpusAccessApi.serveTargetRegionImage(regionId)
+  //         Ok(bytes).putHeaders(
+  //           H.`Content-Type`(MediaType.`image/png`)
+  //         ).map(Some(_))
+  //       }
+
+  //     case GET -> Root / "page-image" / IntVar(pageId) =>
+  //       val (rPage, rDoc) = corpusAccessApi.getPageAndDocument(PageID(pageId))
+  //       val entryPath = rDoc.stableId.unwrap
+  //       val imagePath = corpusRoot
+  //         .resolve(entryPath)
+  //         .resolve("page-images")
+  //         .resolve(s"page-${rPage.pagenum.unwrap}.opt.png")
+
+  //       println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
+
+  //       Task.now{
+  //         StaticFile.fromFile(imagePath.toFile(), Some(req))
+  //       }
+
+  //     case GET -> Root / "page-thumb" / IntVar(pageId) =>
+  //       val (rPage, rDoc) = corpusAccessApi.getPageAndDocument(PageID(pageId))
+  //       val entryPath = rDoc.stableId.unwrap
+  //       val imagePath = corpusRoot
+  //         .resolve(entryPath)
+  //         .resolve("page-thumbs")
+  //         .resolve(s"page-${rPage.pagenum.unwrap}.png")
+
+  //       println(s"pageImageService:/page-thumbs pageId:${pageId}; imagePath: ${imagePath}")
+
+  //       Task.now{
+  //         StaticFile.fromFile(imagePath.toFile(), Some(req))
+  //       }
+  //   }
+  // }
+
+  // val pageImageService = fileService(FileService.Config(
+  //   corpus.corpusRoot.toIO.toString(),
+  //   pathPrefix = "/img",
+  //   pathCollector = imagePathCollector
+  // ))
+
+
+      // val targetRegion = docStore.getTargetRegion(regionId)
+      // val pageId = targetRegion.page.pageId
+      // val (rPage, rDoc) = corpusAccessApi.getPageAndDocument(pageId)
+      // val tbbox = targetRegion.bbox
+      // val pbbox = rPage.bounds
+      // if (tbbox === pbbox) {
+      //   // Client is requesting the entire page
+      //   val entryPath = rDoc.stableId.unwrap
+      //   val imagePath = corpusRoot
+      //     .resolve(entryPath)
+      //     .resolve("page-images")
+      //     .resolve(s"page-${rPage.pagenum.unwrap+1}.opt.png")
+
+      //   println(s"pageImageService:/page-images pageId:${pageId}; imagePath: ${imagePath}")
+
+      //   Task.now{
+      //     StaticFile.fromFile(imagePath.toFile(), Some(req))
+      //       .getOrElse { Response(http4s.Status(500)(s"could not serve image ${regionId}")) }
+      //   }
+
+      // } else {
+      //   // Client is requesting a clipped page region
+      //   val bytes = corpusAccessApi.serveTargetRegionImage(regionId)
+      //   Ok(bytes).putHeaders(
+      //     H.`Content-Type`(MediaType.`image/png`)
+      //   )
+      // }

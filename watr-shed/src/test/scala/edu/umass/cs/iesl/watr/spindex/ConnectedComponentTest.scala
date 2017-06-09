@@ -11,7 +11,7 @@ package spindex
 
 // class ConnectedComponentTest extends ConnectedComponentTestUtil {
 
-//   def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
+//   def createEmptyDocumentZoningApi(): DocumentZoningApi = new MemDocZoningApi
 
 //   behavior of "connected components"
 

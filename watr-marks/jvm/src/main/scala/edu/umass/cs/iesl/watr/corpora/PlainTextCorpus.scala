@@ -17,7 +17,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   import geometry.syntax._
   import TextReflowF._
 
-  def docStore: DocumentCorpus
+  def docStore: DocumentZoningApi
 
   val charIds = utils.IdGenerator[CharID]()
   val xscale = 10.0d

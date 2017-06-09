@@ -117,7 +117,7 @@ object DocumentSegmenter {
 
   import shapeless.lens
 
-  def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentCorpus): DocumentSegmenter = {
+  def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
     val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
     val mpageIndex = new MultiPageIndex(stableId, docStore)
 

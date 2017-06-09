@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package corpora
+package filesys
 
 
 import java.io.{ InputStream }

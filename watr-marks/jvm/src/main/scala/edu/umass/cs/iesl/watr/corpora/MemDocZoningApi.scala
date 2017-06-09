@@ -13,10 +13,10 @@ import geometry._
 import PageComponentImplicits._
 
 
-class MemDocstore extends DocumentCorpus {
+class MemDocZoningApi extends DocumentZoningApi {
 
-  def workflowApi: WorkflowApi = ???
-  def userbaseApi: UserbaseApi = ???
+  // def workflowApi: WorkflowApi = ???
+  // def userbaseApi: UserbaseApi = ???
 
   object tables  {
 

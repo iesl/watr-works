@@ -5,19 +5,19 @@ import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 
 trait CorpusTestingUtil extends PlainTextCorpus {
-  def createEmptyDocumentCorpus(): DocumentCorpus
+  def createEmptyDocumentZoningApi(): DocumentZoningApi
   // def regionIdGen: utils.IdGenerator[RegionID]
   val regionIdGen = utils.IdGenerator[RegionID]()
 
-  var freshDocstore: Option[DocumentCorpus] = None
+  var freshDocstore: Option[DocumentZoningApi] = None
 
-  def docStore: DocumentCorpus = freshDocstore
-    .getOrElse(sys.error("Uninitialized DocumentCorpus; Use CleanDocstore() class"))
+  def docStore: DocumentZoningApi = freshDocstore
+    .getOrElse(sys.error("Uninitialized DocumentZoningApi; Use CleanDocstore() class"))
 
   def initEmpty(): Unit = {
     try {
       regionIdGen.reset()
-      freshDocstore = Some(createEmptyDocumentCorpus())
+      freshDocstore = Some(createEmptyDocumentZoningApi())
     } catch {
       case t: Throwable =>
         val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """

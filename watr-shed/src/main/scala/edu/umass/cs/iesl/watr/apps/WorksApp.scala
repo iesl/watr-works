@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package apps
 
 import corpora._
+import corpora.filesys._
 import predsynth._
 
 import ammonite.{ops => fs}, fs._
@@ -227,7 +228,7 @@ object Works extends App {
 
   def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path): DocumentSegmenter =  {
     val segmenter = DocumentSegmenter
-      .createSegmenter(stableId, pdfPath, new MemDocstore)
+      .createSegmenter(stableId, pdfPath, new MemDocZoningApi)
 
     segmenter.runPageSegmentation()
     segmenter

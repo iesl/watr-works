@@ -4,6 +4,7 @@ package server
 
 import ammonite.ops._
 import edu.umass.cs.iesl.watr.table._
+import corpora._
 
 object WatrColorTable extends App {
 
@@ -12,8 +13,9 @@ object WatrColorTable extends App {
 
     val corpus = ShellCommands.initCorpus()
     val reflowDB = ShellCommands.initReflowDB(dbname)
+    val corpusAccessApi = CorpusAccessApi(reflowDB, corpus)
 
-    val httpService =  new Http4sService(reflowDB, corpus, "localhost", 9999)
+    val httpService =  new Http4sService(corpusAccessApi, "localhost", 9999)
     val httpServer = httpService.run()
 
     ammonite.Main(

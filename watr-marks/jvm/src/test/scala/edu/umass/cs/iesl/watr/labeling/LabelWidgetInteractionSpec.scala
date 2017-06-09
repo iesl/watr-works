@@ -4,6 +4,9 @@ package labeling
 // import geometry._
 import geometry.syntax._
 // import geometry.zones._
+import watrmarks._
+import utils.Color
+import utils.Colors
 
 import utils.EnrichNumerics._
 import LabelWidgets._
@@ -13,7 +16,7 @@ import corpora._
 
 
 class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
-  def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
+  def createEmptyDocumentZoningApi(): DocumentZoningApi = new MemDocZoningApi
 
   behavior of "widget interactions: click,select, keypress, etc."
 
@@ -53,7 +56,8 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
 
     println(prettyPrintLabelWidget(labelWidget))
 
-    val labelWidgetWithIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, NilLabelerIdentifier, docStore)
+    val labelColors: Map[Label, Color] = Map().withDefaultValue(Colors.Black)
+    val labelWidgetWithIndicators = LWT.addZoneIndicators(LB.Authors, labelWidget, labelColors, docStore)
 
     // println(prettyPrintLabelWidget(labelWidgetWithIndicators))
     val lwdiff = labelWidgetDiff(labelWidget, labelWidgetWithIndicators)

@@ -8,6 +8,7 @@ import play.api.data.validation.ValidationError
 import watrmarks.{StandardLabels => LB}
 
 import corpora._
+import corpora.filesys._
 
 import scala.collection.mutable
 import textreflow.data._
@@ -229,7 +230,7 @@ object AlignBioArxiv {
   )
 
 
-  def alignPaperWithDB(docStore: DocumentCorpus, paper: PaperRec, stableId: String@@DocumentID): List[AlignmentScores] = {
+  def alignPaperWithDB(docStore: DocumentZoningApi, paper: PaperRec, stableId: String@@DocumentID): List[AlignmentScores] = {
 
     log.debug("aligning bioarxiv paper")
 

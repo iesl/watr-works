@@ -16,7 +16,7 @@ import watrmarks.{StandardLabels => LB}
 import corpora._
 
 class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
-  def createEmptyDocumentCorpus(): DocumentCorpus = new MemDocstore
+  def createEmptyDocumentZoningApi(): DocumentZoningApi = new MemDocZoningApi
 
   behavior of "LabelWidgetIndexing"
 

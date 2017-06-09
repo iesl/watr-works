@@ -104,7 +104,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
 
     val docId = DocumentID("dummy-id")
 
-    val segmenter =  DocumentSegmenter.createSegmenter(docId, path, new MemDocstore)
+    val segmenter =  DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
     // Assume these example regions are all from one page
     // val pageNum = regions.map(_.page.stable.pageNum).head

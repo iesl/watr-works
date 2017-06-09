@@ -28,6 +28,7 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
     println(qstr)
 
   }
+
   def page(n: Int) = PageID(n)
 
   def add4pg_3x3SampleDoc(): String@@DocumentID = {

@@ -4,21 +4,26 @@ package server
 
 import scala.concurrent.Future
 
-import corpora._
 import labeling._
 import labeling.data._
-import docstore._
+
+import corpora._
+import corpora.filesys._
+import workflow._
 
 import utils.{Debugging => Dbg}
 import scala.concurrent.ExecutionContext
-import corpora.{RelationModel => Rel}
-
 
 class BioArxivServer(
   user: UserData,
-  reflowDB: TextReflowDB,
-  corpus: Corpus
+  corpusAccessApi: CorpusAccessApi
 )(implicit ec: ExecutionContext) extends WatrShellApi {
+
+  val docStore: DocumentZoningApi = corpusAccessApi.docStore
+  val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
+  val userbaseApi: UserbaseApi = corpusAccessApi.userbaseApi
+  val corpus: Corpus = corpusAccessApi.corpus
+
   var activeLabelWidgetIndex: Option[LabelWidgetIndex] = None
 
   import bioarxiv._
@@ -31,8 +36,6 @@ class BioArxivServer(
         sys.error("")
     }
   }
-
-  lazy private val docStore = reflowDB.docStore
 
   type MakeWidget = LabelerIdentifier => (LabelWidget, LabelerIdentifier)
 
@@ -82,12 +85,11 @@ class BioArxivServer(
         }
 
       case  labelerId @  WorkflowLabelerIdentifier(workflowId) =>
-        def workflowApi: WorkflowApi = docStore.workflowApi
 
         // Hardcoded map keyed off strings
         val labelerBuilder: LabelerBuilder =
           WorkflowServers.servers.get(workflowId)
-            .map(_.apply(docStore, workflowId))
+            .map(_.apply(corpusAccessApi, workflowId))
             .getOrElse { sys.error("todo") }
 
         // def workflowDef: Rel.WorkflowDef = workflowApi.getWorkflow(workflowId)
@@ -97,7 +99,7 @@ class BioArxivServer(
         val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
           labelerIdentifier => {
             // val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
-            val LabelWidgetConfig(workflowId, widget0) = labelerBuilder.createLabeler(user.id)
+            val LabelWidgetConfig(_, widget0) = labelerBuilder.createLabeler(user.id)
             val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelColors, docStore)
             (widget1, labelerIdentifier)
           }

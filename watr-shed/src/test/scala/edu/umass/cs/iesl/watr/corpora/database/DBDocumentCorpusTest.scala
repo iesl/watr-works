@@ -1,9 +1,9 @@
 package edu.umass.cs.iesl.watr
-package docstore
+package corpora
+package database
 
-import corpora._
 
-class DBDocumentCorpusTest extends DatabaseTest {
+class DBDocumentZoningApiTest extends DatabaseTest {
 
   behavior of "database-backed corpus"
 

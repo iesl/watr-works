@@ -8,7 +8,7 @@ import TextReflowF._
 
 import watrmarks.{StandardLabels => LB}
 
-trait DocumentCorpus {
+trait DocumentZoningApi {
   val Rel = RelationModel
 
   def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID]
@@ -58,11 +58,6 @@ trait DocumentCorpus {
   def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
-
-
-  def workflowApi: WorkflowApi
-  def userbaseApi: UserbaseApi
-
 
   ///////////////////////
   /// Derived operations

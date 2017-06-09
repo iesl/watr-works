@@ -1,10 +1,11 @@
 package edu.umass.cs.iesl.watr
-package docstore
+package corpora
+package database
 
 import doobie.imports._
 import corpora._
 
-class TextReflowDBTables extends DoobieImplicits {
+class CorpusAccessDBTables extends DoobieImplicits {
 
   val Rel = RelationModel
 

@@ -1,7 +1,8 @@
 -XX:MaxMetaspaceSize=1g
--XX:MaxDirectMemorySize=12g
+-XX:MaxDirectMemorySize=8g
+-XX:ReservedCodeCacheSize=300m
+-Xms1g
+-Xmx4g
 -Xss2m
--Xms3g
--Xmx6g
 -Dakka.loglevel=OFF
 -Dorg.ensime.loglevel=DEBUG

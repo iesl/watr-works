@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package table
 
 import corpora._
+import corpora.filesys._
 
 trait CorpusEnrichments extends
     ComponentEnrichments with

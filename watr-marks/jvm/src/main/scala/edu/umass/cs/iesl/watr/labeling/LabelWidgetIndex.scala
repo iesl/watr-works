@@ -89,7 +89,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
 
   def create(
-    docStore0: DocumentCorpus,
+    docStore0: DocumentZoningApi,
     initWidget: LabelWidget
   ): LabelWidgetIndex = {
     init(
@@ -101,7 +101,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
   }
 
   def init(
-    docStore0: DocumentCorpus,
+    docStore0: DocumentZoningApi,
     labelerIdentifier0: LabelerIdentifier,
     mkWidget0: LabelerIdentifier => (LabelWidget, LabelerIdentifier),
     initWidget: Option[LabelWidget]=None,
@@ -174,7 +174,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
 
     new LabelWidgetIndex {
-      def docStore: DocumentCorpus = docStore0
+      def docStore: DocumentZoningApi = docStore0
       def layout: WidgetLayout = layout0
       def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) = mkWidget0
       def index: SpatialIndex[AbsPosWidget] = lwIndex
@@ -189,7 +189,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 trait LabelWidgetIndex { self =>
   import LabelWidgetIndex._
 
-  def docStore: DocumentCorpus
+  def docStore: DocumentZoningApi
   def layout: WidgetLayout
   def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier)
   def index: SpatialIndex[AbsPosWidget]
@@ -198,7 +198,7 @@ trait LabelWidgetIndex { self =>
 
   def update(updatedLabeler: LabelerIdentifier): LabelWidgetIndex = {
     new LabelWidgetIndex {
-      def docStore: DocumentCorpus                                         = self.docStore
+      def docStore: DocumentZoningApi                                         = self.docStore
       def layout: WidgetLayout                                             = self.layout
       def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier)  = self.mkWidget
       def index: SpatialIndex[AbsPosWidget]                                = self.index
@@ -552,8 +552,17 @@ trait LabelWidgetIndex { self =>
   def debugPrint(
     query: Option[LTBounds] = None
   ): Unit = {
-    DebugLayout.debugPrint(layout.strictBounds, layout.bleedBounds, layout.positioning, query)
+    val g = toGraphPaper(query)
+    println(g.asString())
   }
+
+  def toGraphPaper(
+    query: Option[LTBounds] = None
+  ): GraphPaper = DebugLayout.makeGraphPaper(
+    layout.strictBounds,
+    layout.bleedBounds,
+    layout.positioning, query
+  )._1
 
 }
 
@@ -577,6 +586,17 @@ object DebugLayout {
     positioned: Seq[AbsPosWidget],
     query: Option[LTBounds] = None
   ): Unit = {
+    val (graph1, _) = makeGraphPaper(strictBounds, bleedBounds, positioned, query)
+    val grid1 = graph1.asString()
+    println(grid1)
+  }
+
+  def makeGraphPaper(
+    strictBounds: LTBounds,
+    bleedBounds: LTBounds,
+    positioned: Seq[AbsPosWidget],
+    query: Option[LTBounds] = None
+  ): (GraphPaper, GraphPaper) = {
     val fillers = "αßΓπΣσµτΦΘΩδ∞φε∩".toList
     var _filler = -1
     def nextFiller(): Char = {
@@ -586,9 +606,10 @@ object DebugLayout {
 
     val w: Int = (bleedBounds.width).asInt()+1
     val h: Int = (bleedBounds.height).asInt()+1
-    println(s"layout strict: ${strictBounds}")
-    println(s"layout bleedbounds: ${bleedBounds}")
-    println(s"w: ${w}, h:${h}")
+
+    // println(s"layout strict: ${strictBounds}")
+    // println(s"layout bleedbounds: ${bleedBounds}")
+    // println(s"w: ${w}, h:${h}")
 
     val graphPaper = GraphPaper.create(w, h)
     val graphPaper2 = GraphPaper.create(w, h)
@@ -648,13 +669,7 @@ object DebugLayout {
       }
     }
 
+    (graphPaper, graphPaper2)
 
-    val grid1 = graphPaper.asString()
-    // val grid2 = graphPaper2.asString()
-
-    println(grid1)
-    // println
-    // println(grid2)
-    // println
   }
 }

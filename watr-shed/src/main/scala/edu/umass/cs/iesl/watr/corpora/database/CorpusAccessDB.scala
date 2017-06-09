@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
-package docstore
+package corpora
+package database
 
 import doobie.imports._
 import doobie.free.{ connection => C }
@@ -12,17 +13,18 @@ import scalaz.syntax.traverse._
 
 import geometry._
 import corpora._
-import labeling._
+import workflow._
+// import labeling._
 
 import textreflow._
 import textreflow.data._
 import watrmarks._
 import TypeTags._
 import play.api.libs.json, json._
+import shapeless._
 
-
-class TextReflowDB(
-  val tables: TextReflowDBTables,
+class CorpusAccessDB(
+  val tables: CorpusAccessDBTables,
   dbname: String, dbuser: String, dbpass: String
 ) extends DoobieImplicits { self =>
 
@@ -269,11 +271,13 @@ class TextReflowDB(
   }
 
   def selectPageAndDocument(pageId: Int@@PageID): ConnectionIO[(Rel.Page, Rel.Document)] = {
+    // type Ret = Rel.Page :: Rel.Document :: HNil
     sql"""
      select pg.*, d.*
      from   page as pg join document as d on (pg.document=d.document)
      where  d.document=pg.document AND pg.page=${pageId}
-    """.query[(Rel.Page, Rel.Document)].unique
+    """.query[(Rel.Page, Rel.Document)]
+      .unique
   }
 
   def selectPageForDocument(docId: Int@@DocumentID, pageNum: Int@@PageNum): ConnectionIO[Int@@PageID] = {
@@ -452,6 +456,8 @@ class TextReflowDB(
       _              <- putStrLn(s"  selectPage(${region})")
       page           <- selectPage(region.page)
       _              <- putStrLn(s"  selectPageImage(${page})")
+
+      // Get page image from filesystem
       maybePageImage <- selectPageImage(region.page)
 
       imageBytes     <- maybePageImage.map(cropTo(_, region.bounds, page.bounds)).getOrElse { sys.error(s"  createTargetRegionImage: no page image found!") }
@@ -657,7 +663,7 @@ class TextReflowDB(
 
   }
 
-  object docStore extends DocumentCorpus {
+  object docStore extends DocumentZoningApi {
     def workflowApi: WorkflowApi = self.workflowApi
     def userbaseApi: UserbaseApi = self.userbaseApi
 

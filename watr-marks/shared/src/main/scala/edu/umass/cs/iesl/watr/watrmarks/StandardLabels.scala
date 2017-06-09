@@ -46,7 +46,9 @@ trait DocSegLabels {
   val Sub = Label("ds", "sub-script")
   val CenterScript = Label("ds", "ctr-script")
 
-  // val Marker = Label("ds", "marker")
+  val NoteMarkers = Label("note-markers")
+  val NoteMarker = Label("note-marker")
+
   val PageAtom = Label("ds", "atom")
 
   val First = Label("first")

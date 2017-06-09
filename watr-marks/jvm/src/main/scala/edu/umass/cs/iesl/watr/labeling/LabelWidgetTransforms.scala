@@ -126,7 +126,7 @@ object LabelWidgetTransforms {
     }
   }
 
-  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicator(zoneId: Int@@ZoneID, labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentZoningApi): LabelWidget = {
     // append rectangular overlays which respond to user clicks to select/deselect zones
     def addIndicator(lw0: LabelWidgetT): LabelWidgetT = {
       lw0 match {
@@ -162,8 +162,8 @@ object LabelWidgetTransforms {
   }
 
 
-  // def addAllZoneIndicators(labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentCorpus): LabelWidget = {
-  def addAllZoneIndicators(labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentCorpus): LabelWidget = {
+  // def addAllZoneIndicators(labelWidget: LabelWidget, labelerIdentifier: LabelerIdentifier, docStore: DocumentZoningApi): LabelWidget = {
+  def addAllZoneIndicators(labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentZoningApi): LabelWidget = {
 
     labelColors.toList.foldLeft(labelWidget) {
       case (acc, (elemLabel, _)) =>
@@ -172,7 +172,7 @@ object LabelWidgetTransforms {
   }
 
 
-  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentCorpus): LabelWidget = {
+  def addZoneIndicators(label: Label, labelWidget: LabelWidget, labelColors: Map[Label, Color], docStore: DocumentZoningApi): LabelWidget = {
 
     println(s"0---")
     val labelId = docStore.ensureLabel(label)

@@ -22,7 +22,7 @@ import corpora._
 object AuthorNameLabelers extends LabelWidgetUtils {
   private[this] val log = org.log4s.getLogger
 
-  def alignAuthors(docStore: DocumentCorpus, paper: PaperRec, stableId: String@@DocumentID): AlignmentScores = {
+  def alignAuthors(docStore: DocumentZoningApi, paper: PaperRec, stableId: String@@DocumentID): AlignmentScores = {
     log.info(s"aligning authors to bioarxiv paper ${paper.title}")
 
     val authorBoosts = new AlignmentScores(LB.Authors)
@@ -61,7 +61,7 @@ object AuthorNameLabelers extends LabelWidgetUtils {
     authorBoosts
   }
 
-  // def nameLabeler1(docStore: DocumentCorpus, stableId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
+  // def nameLabeler1(docStore: DocumentZoningApi, stableId: String@@DocumentID, paperRec: PaperRec): LabelWidget = {
   //   // val highestScoringLines =
   //   //   docs.map({case (docId, paperRec) =>
 
@@ -198,7 +198,7 @@ object AuthorNameLabelers extends LabelWidgetUtils {
   //   LW.col(allNames:_*)
 
   // }
-  // def nameLabeler(docStore: DocumentCorpus, docs: Seq[(String@@DocumentID, PaperRec)]): LabelWidget = {
+  // def nameLabeler(docStore: DocumentZoningApi, docs: Seq[(String@@DocumentID, PaperRec)]): LabelWidget = {
   //   val highestScoringLines =
   //     docs.map({case (docId, paperRec) =>
   //       val scores = alignAuthors(docStore, paperRec, docId)

@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
-package databasics
+package corpora
+package database
 
 import doobie.imports._
 

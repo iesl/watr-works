@@ -17,7 +17,6 @@ import LabelWidgetF._
 import utils.ScalazTreeImplicits._
 import textboxing.{TextBoxing => TB}
 
-
 object LabelWidgetLayoutHelpers {
   def cofreeLWAttrToTree[A](c: Cofree[LabelWidgetF, A]): Tree[A] = {
     Tree.Node(
@@ -83,18 +82,19 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
   // TODO: I don't think I need to run repositionChildren here, just propagate child pos info
   def inheritChildLayout(fv: LabelWidgetF[Unit], childPos: PosAttr, zOrder:Option[Int]=None): PosAttr = {
-    val (childBBox, chBleed, childAdjustVecs) = repositionChildren(
-      List(childPos),
-      { (childrenBbox, childPos) => childrenBbox.toPointUpLeft() }
-    )
+    // val (childBBox, chBleed, childAdjustVecs) = repositionChildren(
+    //   List(childPos),
+    //   { (childrenBbox, childPos) => childrenBbox.toPointUpLeft() }
+    // )
     val bbox = childPos.strictBounds
+    val chBleed = childPos.bleedBounds
+    val childAdjustVecs = childPos.childTranslations
     PosAttr(fv, bbox, chBleed, zOrder.getOrElse(0), Point.zero,  childAdjustVecs)
   }
 
   def childMaxZIndex(posAttrs: List[PosAttr]): Int = {
     (0 :: posAttrs.map(_.zOrder)).max
   }
-
 
 
   def layoutWidgetPositions(lwidget: LabelWidget): WidgetLayout = {
@@ -110,7 +110,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
           val childMaxZ = childMaxZIndex(overlays.map(_._2))
 
-          val (childBbox, chBleed, childTranslations) =
+          val (_, chBleed, childTranslations) =
             repositionChildren(
               overlays.map(_._2), {
                 (totalChildsBbox, childNode) =>
@@ -119,7 +119,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
           val totalBleed = bbox union chBleed
 
-          PosAttr(F.void(flw), bbox, totalBleed, childMaxZ+1, selfTranslation, childTranslations)
+          PosAttr(F.void(flw), bbox, totalBleed, childMaxZ+1, Point.zero, childTranslations)
 
         case flw @ Row(wid, attrs) =>
           val (bbox, chBleed, childTranslations) =
@@ -134,7 +134,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           PosAttr(F.void(flw), bbox, chBleed, childMaxZ+1, Point.zero, childTranslations)
 
         case flw @ Col(wid, attrs) =>
-          val (bbox, chBleed, childTranslations) =
+          val (bbox, _, childTranslations) =
             repositionChildren(
             attrs.map(_._2), {
               (totalChildsBbox, childNode)=>
@@ -146,7 +146,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           PosAttr(F.void(flw), bbox, bbox, childMaxZ+1, Point.zero, childTranslations)
 
         case flw @ ZStack(wid, attrs) =>
-          val (bbox, chBleed, childTranslations) = repositionChildren(
+          val (bbox, _, childTranslations) = repositionChildren(
             attrs.map(_._2),
             {(totalChildsBbox, childNode) => Point.zero }
           )
@@ -209,9 +209,8 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
       }
     }
 
-
-    def putStrLn[S](str: => String): State[S, Unit] =
-      State.state[S, Unit]( println(str) )
+    // def putStrLn[S](str: => String): State[S, Unit] =
+    //   State.state[S, Unit]( println(str) )
 
     def adjustPositions(
       selfAttr: PosAttr, ft:LabelWidgetF[_]

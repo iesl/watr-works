@@ -3,15 +3,16 @@ package table
 
 import textreflow.data._
 import corpora._
+import corpora.filesys._
 import TypeTags._
 import labeling._
 
-trait DocumentCorpusEnrichments extends LabelWidgetUtils {
+trait DocumentZoningApiEnrichments extends LabelWidgetUtils {
 
-  implicit class RicherDocumentCorpus(val theDocumentCorpus: DocumentCorpus) {
+  implicit class RicherDocumentZoningApi(val theDocumentZoningApi: DocumentZoningApi) {
 
     def documents(n: Int=0, skip: Int=0): Seq[String@@DocumentID] = {
-      val allEntries = theDocumentCorpus.getDocuments()
+      val allEntries = theDocumentZoningApi.getDocuments()
       val skipped = if (skip > 0) allEntries.drop(skip) else allEntries
       val entries = if (n > 0) skipped.take(n) else skipped
       entries
@@ -19,16 +20,16 @@ trait DocumentCorpusEnrichments extends LabelWidgetUtils {
   }
 
   implicit class RicherStableID(val thisStableId: String@@DocumentID) {
-    def getDocument()(implicit docStore: DocumentCorpus): Int@@DocumentID = {
+    def getDocument()(implicit docStore: DocumentZoningApi): Int@@DocumentID = {
       docStore.getDocument(thisStableId).getOrElse { sys.error(s"no document ${thisStableId}") }
     }
 
-    def getPages()(implicit docStore: DocumentCorpus): Seq[Int@@PageID] = {
+    def getPages()(implicit docStore: DocumentZoningApi): Seq[Int@@PageID] = {
       docStore.getDocument(thisStableId).toSeq
         .flatMap(docId => docStore.getPages(docId))
     }
 
-    def printPageLines(pageNum: Int)(implicit docStore: DocumentCorpus): Unit = {
+    def printPageLines(pageNum: Int)(implicit docStore: DocumentZoningApi): Unit = {
       for {
         (vlineZone, linenum) <- docStore.getPageVisualLines(thisStableId, PageNum(pageNum)).zipWithIndex
       }  {
