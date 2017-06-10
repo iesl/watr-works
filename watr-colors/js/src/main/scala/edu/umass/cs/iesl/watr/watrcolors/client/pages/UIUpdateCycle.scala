@@ -154,7 +154,11 @@ trait D3BasicShapes {
             fgOpacity=0f, bgOpacity=1f
           )
         } getOrElse {
-          fringe
+          Colorized(
+            fringe,
+            fg=Color.Transparent, bg=Color.Transparent,
+            fgOpacity=0f, bgOpacity=0f
+          )
         }
 
         Some(
@@ -236,7 +240,8 @@ trait D3BasicShapes {
           go(b.toLTBounds, fgColor, bgColor, fgOpacity, bgOpacity)
 
         case g @ GeometricGroup(bounds, figs) =>
-          val shapes = figs.map(go(_, Option(Colors.Black.cssHash()), bgColor, Some(0.2f), Some(0.2f)))
+          // val shapes = figs.map(go(_, Option(Colors.Black.cssHash()), bgColor, Some(0.2f), Some(0.2f)))
+          val shapes = figs.map(go(_, fgColor, bgColor, fgOpacity, bgOpacity))
 
           <.g(shapes:_*)
 

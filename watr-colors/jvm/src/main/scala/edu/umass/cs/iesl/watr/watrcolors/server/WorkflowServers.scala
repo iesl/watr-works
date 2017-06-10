@@ -35,7 +35,7 @@ class AuthorNamesLabeler1(
   val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
   val userbaseApi: UserbaseApi = corpusAccessApi.userbaseApi
 
-  val BATCH_SIZE = 12
+  val BATCH_SIZE = 20
   def createLabeler(userId: Int@@UserID): LabelWidgetConfig = {
     println(s"createLabeler for ${userId}")
 
@@ -55,28 +55,35 @@ class AuthorNamesLabeler1(
     )
     println(s"createLabeler: acquired zone locks ${zoneLocks} ")
 
-    val targetRegions = for {
+    val zoneRegions = for {
       zoneLockId <- zoneLocks.toSeq
       zoneLock <- workflowApi.getZoneLock(zoneLockId).toSeq
-      region <- docStore.getZone(zoneLock.zone).regions
-    } yield region
+    } yield {
+      val authorRegions = docStore.getZone(zoneLock.zone).regions
 
-    val pageOnes = targetRegions.map{ pageTargetRegion =>
+      val authorBlock = authorRegions.map{ region =>
+        LW.pad(
+          LW.targetOverlay(region, overlays=List()),
+          Padding.Ints(left=0, top=0, right=2, bottom=2),
+          Color.Transparent
+        )
+      }
+      LW.row(authorBlock:_*)
+    }
+
+    val allAuthorBlocks = zoneRegions.map{ block =>
       LW.pad(
-        LW.targetOverlay(pageTargetRegion, overlays=List()),
-        Padding.Ints(2),
-        Colors.DarkSlateBlue
+        LW.pad(
+          block,
+          Padding.Ints(left=0, top=5, right=5, bottom=12),
+          Color.Transparent
+        ),
+        Padding.Ints(left=0, top=1, right=0, bottom=0),
+        Colors.Blue
       )
     }
 
-    val placeholders = Stream.continually(LW.textbox("<empty page>"))
-    val widgets = (pageOnes.toStream ++ placeholders).take(BATCH_SIZE)
-
-    val rows = widgets.grouped(4).toList.map{ws =>
-      LW.row(ws:_*)
-    }
-
-    val widget = LW.col(rows:_*)
+    val widget = LW.col(allAuthorBlocks:_*)
 
     LabelWidgetConfig(
       workflowId,

@@ -137,7 +137,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
     def addPage(targetRegion: TargetRegion): Unit= {
       val pageId = targetRegion.page.pageId
       if (!targetPageRIndexes.contains(pageId)) {
-        println(s"adding page ${targetRegion}")
+        // println(s"adding page ${targetRegion}")
         val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
         targetPageRIndexes.put(pageId, pageIndex)
 
@@ -160,7 +160,8 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       }
     }
 
-    println(s"      :create(): begin add pages")
+    // println(s"      :create(): begin add pages")
+
     layout0.positioning.foreach({pos => pos.widget match {
 
       case l @ RegionOverlay(wid, under, overlays) =>
@@ -170,7 +171,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
     }})
 
-    println(s"      :create(): end add pages")
+    // println(s"      :create(): end add pages")
 
 
     new LabelWidgetIndex {
@@ -603,13 +604,14 @@ object DebugLayout {
       _filler = (_filler + 1) % fillers.length
       fillers(_filler)
     }
+    val totalBounds = LTBounds.empty union bleedBounds
 
-    val w: Int = (bleedBounds.width).asInt()+1
-    val h: Int = (bleedBounds.height).asInt()+1
+    val w: Int = (totalBounds.width).asInt()+1
+    val h: Int = (totalBounds.height).asInt()+1
 
-    // println(s"layout strict: ${strictBounds}")
-    // println(s"layout bleedbounds: ${bleedBounds}")
-    // println(s"w: ${w}, h:${h}")
+    println(s"layout strict: ${strictBounds}")
+    println(s"layout bleedbounds: ${bleedBounds}")
+    println(s"w: ${w}, h:${h}")
 
     val graphPaper = GraphPaper.create(w, h)
     val graphPaper2 = GraphPaper.create(w, h)
@@ -619,9 +621,7 @@ object DebugLayout {
 
       pos.widget match {
         case l @ RegionOverlay(wid, under, overlays) =>
-
           val pageId = under.page.pageId
-          // println(s"debugPrint: ${l} @ ${gridbox}")
           val id = pageId.unwrap
           val fill = (id + '0'.toInt).toChar
           graphPaper.fillFg(fill, gridbox)
@@ -634,11 +634,7 @@ object DebugLayout {
     positioned.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
       pos.widget match {
-        case l @ Panel(wid, a, i) =>
-          graphPaper2.fillFg(nextFiller(), gridbox)
-        case l @ Figure(wid, fig) =>
-          graphPaper.fillFg(nextFiller(), gridbox)
-        case l @ Identified(wid, a, id, cls)    =>
+        case l @ Figure(wid, fig)            => graphPaper.fillFg(nextFiller(), gridbox)
         case _ =>
       }
     }
@@ -646,17 +642,18 @@ object DebugLayout {
     positioned.foreach { pos =>
       val gridbox = GraphPaper.ltb2box(pos.strictBounds)
       pos.widget match {
+        case l @ Panel(wid, a, i)            => graphPaper.bottomRightFrame('p', gridbox)
+        case l @ Labeled(wid, a, key, value) => graphPaper.topLeftFrame('l', gridbox)
+        case l @ Identified(wid, a, id, cls) => graphPaper.bottomRightFrame('i', gridbox)
+        case _ =>
+      }
+    }
+    positioned.foreach { pos =>
+      val gridbox = GraphPaper.ltb2box(pos.strictBounds)
+      pos.widget match {
         case Col(wid, as) => graphPaper.borderLeftRight(gridbox, Colors.Gray)
         case Row(wid, as) => graphPaper.borderTopBottom(gridbox, Colors.Red)
 
-        // case l : RegionOverlay[A]     => l.overlays.traverse(f).map(ft => l.copy(overlays=ft))
-        // case l @ Pad(a, pd, clr)      => f(a).map(Pad(_, pd, clr))
-        // case l : LabeledTarget        => G.point(l.copy())
-        // case l : TextBox              => G.point(l.copy())
-        // case l : Reflow               => G.point(l.copy())
-        // case l : Figure               => G.point(l.copy())
-        // case l @ Panel(a, i)          => f(a).map(Panel(_, i))
-        // case l @ Identified(a, id, cls)    => f(a).map(Identified(_, id, cls))
         case _ =>
       }
     }

@@ -6,26 +6,14 @@ import geometry._
 import TypeTags._
 import corpora._
 import LabelWidgets._
-// import LabelWidgetF._
-// import matryoshka._
-// import matryoshka.implicits._
+  // import LabelWidgetF._
+  // import matryoshka._
+  // import matryoshka.implicits._
 
 class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
   def createEmptyDocumentZoningApi(): DocumentZoningApi = new MemDocZoningApi
 
   behavior of "label widgets"
-
-  /**
-
-    I'm not totally sure how to write these tests... So far they are really just
-    glorified REPL interactions in testing blocks, so that I can step-debug and println
-    my way through the results to verify them
-
-
-    Possible ideas for testing:
-      - A small visual notation that expresses the desired layout, is easy to visually understand and check against
-
-    */
 
 
   val page1 = PageID(1)
@@ -46,61 +34,57 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
   behavior of "figures"
 
-  // it should "adjust figure positions" in new CleanDocstore {
-  //   add4pg_3x3SampleDoc()
-  //   // val bbox2 = LTBounds.Ints(1, 1, 8, 8)
-  //   // val layout =
-  //   //   row(
-  //   //     figure(bbox),
-  //   //     figure(bbox2)
-  //   //   )
+  it should "include properly handle inherited layout (Panel, Labeled, Identified)" in new CleanDocstore {
+    add4pg_3x3SampleDoc()
 
-  //   val bbox = LTBounds.Ints(1, 1, 22, 8)
-  //   val layout =
-  //     col(
-  //       row(
+    val layout = row(
+      targetOverlay(mkTargetRegion(page2, 1, 2, 2, 1) , List(
+        withId(ZoneID(1),
+          figure(getRegionBounds(2, 2, 1, 1))
+        )
+      )),
+      targetOverlay(mkTargetRegion(page3, 2, 1, 1, 2) , List(
+        panel(
+          withLabel("key", "value",
+            figure(getRegionBounds(2, 2, 1, 1))
+          ) ,
+          Interaction.InteractNil
+        )
+      ))
+    )
 
-  //         targetOverlays(
-  //           mkTargetRegion(page1, 0, 0, 3, 3),
-  //           figure(bbox)
-  //         ),
-  //         targetOverlays(
-  //           mkTargetRegion(page1, 0, 0, 3, 3),
-  //           figure(LTBounds.Ints(0, 10, 10, 15))
-  //         )
-  //       ),
-  //       row(
-  //         pad(
-  //           targetOverlays(
-  //             mkTargetRegion(page1, 0, 0, 3, 3),
-  //             figure(bbox)
-  //           ),
-  //           Padding.Ints(5)
-  //         ),
-  //         targetOverlays(
-  //           mkTargetRegion(page1, 0, 0, 3, 3),
-  //           figure(LTBounds.Ints(0, 10, 10, 15))
-  //         )
-  //       )
-  //     )
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
 
-  //   // val layout =
-  //   //   pad(
-  //   //     figure(bbox),
-  //   //     Padding.Ints(2)
-  //   //   )
+    val expectedOutput = {
+      """|2222222222αααααααα│α3333333333
+         |2222222222αααααααα│α3333333333
+         |2222222222αααααααα│α3333333333
+         |2222222222αααααααα│α3333333333
+         |2222222222αααααααα│α3333333333
+         |2222222222αααααααα│α3333333333
+         |2222222222αααααααα│α3333333333
+         |2222222222αααααααα│α3333333333
+         |2222222222────────iα3333333333
+         |2222222222αααααααααα3333333333
+         |                    ßßßßßßßß│ß
+         |                    ßl┄┄┄┄┄┄┄┄
+         |                    ß┊ßßßßßß│ß
+         |                    ß┊ßßßßßß│ß
+         |                    ß┊ßßßßßß│ß
+         |                    ß┊ßßßßßß│ß
+         |                    ß┊ßßßßßß│ß
+         |                    ß┊ßßßßßß│ß
+         |                    ─┊──────pß
+         |                    ß┊ßßßßßßßß
+         |""".stripMargin
+    }
 
-  //   val lwindex = LabelWidgetIndex.create(docStore, layout)
 
-  //   // println(prettyPrintLabelWidget(layout))
-  //   // lwindex.debugPrint()
-  //   // lwindex.layout.positioning.foreach { pos =>
-  //   //   val sb = pos.strictBounds
-  //   //   val f = pos.widget
-  //   //   println(s"${sb}: $f")
-  //   // }
-  // }
-
+    val graphPaper = lwindex.toGraphPaper()
+    val actual = graphPaper.asMonocolorString()
+    // println(actual)
+    assertExpectedText(expectedOutput, actual)
+  }
   it should "correctly position target regions" in new CleanDocstore  {
     add4pg_3x3SampleDoc()
 
@@ -202,26 +186,26 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
       """|
          |
          |  αααααααααα2222222222
-         |  αααααααααα2222222222       3333333333
-         |  αααααααααα2222222222       3333333333
-         |  αααααααααα2222222222       3333333333
-         |  αααααααααα2222222222       3333333333
-         |  αααααααααα2222222222       3333333333
-         |  αααααααααα2222222222       3333333333
-         |  αααααααααα2222222222       3333333333
-         |  αααααααααα2222222222       3333333333
-         |  αααααααααα2222222222       3333333333
-         |                             3333333333
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
-         |                             ßßßßßßßßßß
+         |  αααααααααα2222222222     3333333333
+         |  αααααααααα2222222222     3333333333
+         |  αααααααααα2222222222     3333333333
+         |  αααααααααα2222222222     3333333333
+         |  αααααααααα2222222222     3333333333
+         |  αααααααααα2222222222     3333333333
+         |  αααααααααα2222222222     3333333333
+         |  αααααααααα2222222222     3333333333
+         |  αααααααααα2222222222     3333333333
+         |                           3333333333
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
+         |                           ßßßßßßßßßß
          |
          |
          |
@@ -230,8 +214,20 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
 
     val graphPaper = lwindex.toGraphPaper()
     val actual = graphPaper.asMonocolorString()
+    // println(actual)
     assertExpectedText(expectedOutput, actual)
   }
+
+
+
+
+
+
+
+
+
+
+
 
 
   // it should "adjust query bounds to correct page bounds for each target region" in new CleanDocstore  {
@@ -355,6 +351,60 @@ class LabelWidgetsSpec extends LabelWidgetTestUtil { // FlatSpec with Matchers w
   // it should "include padding" in new CleanDocstore {
   // it should "include inserted text (as textbox)" in new CleanDocstore {
   // it should "include reflows" in new CleanDocstore {
-  // it should "include labeled targets as overlays" in new CleanDocstore {
 
+
+  // it should "adjust figure positions" in new CleanDocstore {
+  //   add4pg_3x3SampleDoc()
+  //   // val bbox2 = LTBounds.Ints(1, 1, 8, 8)
+  //   // val layout =
+  //   //   row(
+  //   //     figure(bbox),
+  //   //     figure(bbox2)
+  //   //   )
+
+  //   val bbox = LTBounds.Ints(1, 1, 22, 8)
+  //   val layout =
+  //     col(
+  //       row(
+
+  //         targetOverlays(
+  //           mkTargetRegion(page1, 0, 0, 3, 3),
+  //           figure(bbox)
+  //         ),
+  //         targetOverlays(
+  //           mkTargetRegion(page1, 0, 0, 3, 3),
+  //           figure(LTBounds.Ints(0, 10, 10, 15))
+  //         )
+  //       ),
+  //       row(
+  //         pad(
+  //           targetOverlays(
+  //             mkTargetRegion(page1, 0, 0, 3, 3),
+  //             figure(bbox)
+  //           ),
+  //           Padding.Ints(5)
+  //         ),
+  //         targetOverlays(
+  //           mkTargetRegion(page1, 0, 0, 3, 3),
+  //           figure(LTBounds.Ints(0, 10, 10, 15))
+  //         )
+  //       )
+  //     )
+
+  //   // val layout =
+  //   //   pad(
+  //   //     figure(bbox),
+  //   //     Padding.Ints(2)
+  //   //   )
+
+  //   val lwindex = LabelWidgetIndex.create(docStore, layout)
+
+  //   // println(prettyPrintLabelWidget(layout))
+  //   // lwindex.debugPrint()
+  //   // lwindex.layout.positioning.foreach { pos =>
+  //   //   val sb = pos.strictBounds
+  //   //   val f = pos.widget
+  //   //   println(s"${sb}: $f")
+  //   // }
+  // }
 }

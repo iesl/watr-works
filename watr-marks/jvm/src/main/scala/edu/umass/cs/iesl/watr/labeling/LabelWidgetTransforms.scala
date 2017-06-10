@@ -102,9 +102,12 @@ object LabelWidgetTransforms {
         ) =>
           val fringe = figure(
             Colorized(
-              makeFringe(fig, Padding.Ints(4)),
-              fg=Colors.Yellow, bg=Colors.Yellow,
-              fgOpacity=0.0f, bgOpacity=0.1f
+              makeFringe(
+                fig,
+                Padding.Ints(left=1, top=1, right=2, bottom=2)
+              ),
+              fg=Colors.Black, bg=Colors.Black,
+              fgOpacity=0.4f, bgOpacity=0.1f
             ))
 
           zstack(regenerateIds(labelWidget), fringe)

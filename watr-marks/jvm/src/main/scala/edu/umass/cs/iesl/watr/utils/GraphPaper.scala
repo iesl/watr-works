@@ -27,6 +27,38 @@ class GraphPaper(
     }
   }
 
+  def topLeftFrame(fill: Char, gridbox: GraphPaper.Box): Unit = {
+    val y0 = gridbox.top+1
+    val x = gridbox.left+1
+
+    // Left
+    for { y <- gridbox.top+2 until (gridbox.top+gridbox.height) } {
+      gridBuffer(y)(x) = '┊'.toString()
+    }
+    gridBuffer(y0)(x) = fill.toString()
+
+    // Top
+    for { x <- gridbox.left+2 until (gridbox.left+gridbox.width) } {
+      val y = gridbox.top+1
+      gridBuffer(y)(x) = '┄'.toString()
+    }
+  }
+
+  def bottomRightFrame(fill: Char, gridbox: GraphPaper.Box): Unit = {
+    val y0 = gridbox.top+gridbox.height-2
+    val x = gridbox.left+gridbox.width-2
+
+    // Right
+    for { y <- gridbox.top until (gridbox.top+gridbox.height-2) } {
+      gridBuffer(y)(x) = '│'.toString()
+    }
+    gridBuffer(y0)(x) = fill.toString()
+
+    for { x <- gridbox.left until (gridbox.left+gridbox.width-2) } {
+      gridBuffer(y0)(x) = '─'.toString()
+    }
+  }
+
 
   def applyBgColor(x: Int, y: Int, color: Color): Unit = {
     val xy = gridBuffer(y)(x)
