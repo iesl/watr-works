@@ -12,7 +12,7 @@ import scala.collection.mutable.ListBuffer
 
 object AuthorNameHeuristics {
 
-    def tokenizeAuthorNames(authorTextReflow: TextReflow): ListBuffer[String] = {
+    def tokenizeAuthorNamesFromTextReflow(authorTextReflow: TextReflow): ListBuffer[String] = {
         val authorNamesTokens: ListBuffer[String] = ListBuffer[String]()
         val authorName: ListBuffer[Char] = ListBuffer[Char]()
 
@@ -20,39 +20,34 @@ object AuthorNameHeuristics {
         var yPosition: Int = -1
 
         for (charAtom <- authorTextReflow.charAtoms()) {
-            breakable{
-//                if(charAtom.bbox.left.asInstanceOf[Int] + charAtom.bbox.width.asInstanceOf[Int] < prevCharPosition){
-//                    break
-//                }
-                val currentCharacter = charAtom.char.toCharArray.head
-                if (currentCharacter.isLetter && yPosition.==(-1)) {
-                    yPosition = charAtom.bbox.top.asInstanceOf[Int]
-                    if (prevCharPosition.==(-1)) {
+            val currentCharacter = charAtom.char.toCharArray.head
+            if (currentCharacter.isLetter && yPosition.==(-1)) {
+                yPosition = charAtom.bbox.top.asInstanceOf[Int]
+                if (prevCharPosition.==(-1)) {
+                    authorName += currentCharacter
+                }
+            }
+            if (prevCharPosition > 0) {
+                val spaceBetweenChars = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
+                if (spaceBetweenChars < SPACE_BETWEEN_WORDS_THRESHOLD) {
+                    if (charAtom.bbox.top.==(yPosition)) {
+                        authorName += currentCharacter
+                    }
+                    else {
+                        authorNamesTokens += authorName.mkString
+                        authorName.clear()
+                    }
+                }
+                else if (spaceBetweenChars >= SPACE_BETWEEN_WORDS_THRESHOLD) {
+                    authorNamesTokens += authorName.mkString
+                    authorName.clear()
+                    if (charAtom.bbox.top.==(yPosition)) {
                         authorName += currentCharacter
                     }
                 }
-                if (prevCharPosition > 0) {
-                    val spaceBetweenChars = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
-                    if (spaceBetweenChars < SPACE_BETWEEN_WORDS_THRESHOLD){
-                        if(charAtom.bbox.top.==(yPosition)) {
-                            authorName += currentCharacter
-                        }
-                        else{
-                            authorNamesTokens += authorName.mkString
-                            authorName.clear()
-                        }
-                    }
-                    else if (spaceBetweenChars >= SPACE_BETWEEN_WORDS_THRESHOLD) {
-                        authorNamesTokens += authorName.mkString
-                        authorName.clear()
-                        if (charAtom.bbox.top.==(yPosition)) {
-                            authorName += currentCharacter
-                        }
-                    }
-                }
-                if(charAtom.bbox.top.asInstanceOf[Int].==(yPosition)){
-                    prevCharPosition = charAtom.bbox.left.asInstanceOf[Int] + charAtom.bbox.width.asInstanceOf[Int]
-                }
+            }
+            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
+                prevCharPosition = charAtom.bbox.left.asInstanceOf[Int] + charAtom.bbox.width.asInstanceOf[Int]
             }
         }
 
@@ -133,7 +128,7 @@ object AuthorNameHeuristics {
             currentAuthorName = authorNamesSeparatedByText(currentAuthorNameIndex)
             val currentCharacter = charAtom.char.toCharArray.head
             if (currentCharacter.equals(currentAuthorNameComponent.head)) {
-                if(yPosition.==(0)){
+                if (yPosition.==(0)) {
                     yPosition = charAtom.bbox.top.asInstanceOf[Int]
                 }
                 if (prevCharPosition < 0) {
@@ -164,7 +159,7 @@ object AuthorNameHeuristics {
             }
             charAtom = authorTextReflow.charAtoms()(currentCharAtomIndex)
             currentCharAtomIndex += 1
-            if(charAtom.bbox.top.asInstanceOf[Int].==(yPosition)){
+            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
                 prevCharPosition = charAtom.bbox.left.asInstanceOf[Int] + charAtom.bbox.width.asInstanceOf[Int]
             }
         }
