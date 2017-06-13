@@ -1,4 +1,6 @@
-package edu.umass.cs.iesl.watr.heuristics
+package edu.umass.cs.iesl.watr
+
+package heuristics
 
 import edu.umass.cs.iesl.watr.textreflow.data.TextReflow
 import edu.umass.cs.iesl.watr.textreflow.data._
@@ -33,10 +35,16 @@ object AuthorNameHeuristics {
                     if (charAtom.bbox.top.==(yPosition)) {
                         authorName += currentCharacter
                     }
-                    else {
-                        authorNamesTokens += authorName.mkString
-                        authorName.clear()
+                    else{
+                        if(charAtom.bbox.right.asInstanceOf[Int] > prevCharPosition){
+                            authorNamesTokens += authorName.mkString
+                            authorName.clear()
+                        }
+                        else{
+                            authorName += currentCharacter
+                        }
                     }
+
                 }
                 else if (spaceBetweenChars >= SPACE_BETWEEN_WORDS_THRESHOLD) {
                     authorNamesTokens += authorName.mkString
@@ -47,7 +55,7 @@ object AuthorNameHeuristics {
                 }
             }
             if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
-                prevCharPosition = charAtom.bbox.left.asInstanceOf[Int] + charAtom.bbox.width.asInstanceOf[Int]
+                prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
             }
         }
 
@@ -170,4 +178,5 @@ object AuthorNameHeuristics {
         }
         authorNamesSeparatedByText
     }
+
 }
