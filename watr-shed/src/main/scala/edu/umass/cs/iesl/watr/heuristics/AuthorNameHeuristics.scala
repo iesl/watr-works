@@ -179,4 +179,44 @@ object AuthorNameHeuristics {
         authorNamesSeparatedByText
     }
 
+
+    def getSeparateAuthorNameComponents(authorName: String): scala.collection.mutable.Map[String, String] = {
+
+        val separateNameComponents = scala.collection.mutable.Map[String, String]()
+        val authorNameComponents = authorName.split(NAME_SEPARATOR)
+        var lastName = None: Option[String]
+        var firstName = None: Option[String]
+        var middleName = None: Option[String]
+
+        if(! authorName.contains(COMMA)){
+            lastName = Some(authorNameComponents(authorNameComponents.length-1))
+            if(authorNameComponents.length.>(1)){
+                firstName = Some(authorNameComponents(0))
+                if(authorNameComponents.length.>(2)){
+                    middleName = Some(authorNameComponents.slice(1, authorNameComponents.length-1).mkString(NAME_SEPARATOR))
+                    if(VALID_SURNAME_PARTICLES.contains(authorNameComponents(authorNameComponents.length-2).toLowerCase)){
+                        lastName = Some(authorNameComponents.slice(authorNameComponents.length-2, authorNameComponents.length).mkString(NAME_SEPARATOR))
+                        middleName = Some(authorNameComponents.slice(1, authorNameComponents.length-2).mkString(NAME_SEPARATOR))
+                    }
+                }
+            }
+
+
+        }
+        else{
+            lastName = Some(authorName.toCharArray.slice(0, authorName.indexOf(COMMA)).mkString)
+            val remainingNameComponents = authorName.toCharArray.slice(getStartIndexAfterComma(authorName), authorName.length).mkString.split(NAME_SEPARATOR)
+            firstName = Some(remainingNameComponents(0))
+            if(remainingNameComponents.length.>(1)){
+                middleName = Some(remainingNameComponents.slice(1, remainingNameComponents.length).mkString(NAME_SEPARATOR))
+            }
+
+        }
+
+        separateNameComponents += (LAST_NAME -> lastName.getOrElse(BLANK))
+        separateNameComponents += (FIRST_NAME -> firstName.getOrElse(BLANK))
+        separateNameComponents += (MIDDLE_NAME -> middleName.getOrElse(BLANK))
+
+        separateNameComponents
+    }
 }
