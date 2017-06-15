@@ -7,11 +7,15 @@ import edu.umass.cs.iesl.watr.heuristics.Constants._
 import edu.umass.cs.iesl.watr.textreflow.TextReflowF.TextReflow
 import edu.umass.cs.iesl.watr.textreflow.data._
 
+import scala.util.matching.Regex
+
 object Utils {
 
     def isOfFirstNameInitialFormat(authorNameComponent: String): Boolean = {
 
-        if (authorNameComponent.length == 3 && authorNameComponent.head.isUpper && authorNameComponent.charAt(1).==(DOT) && authorNameComponent.charAt(2).==(COMMA_CHARACTER)) {
+        val nameInitialPattern: Regex = """^[A-Z\.]+$""".r
+        val namePatternMatch = nameInitialPattern.findFirstIn(authorNameComponent)
+        if(namePatternMatch.isDefined && namePatternMatch.get.length.==(authorNameComponent.length)){
             return true
         }
         false
