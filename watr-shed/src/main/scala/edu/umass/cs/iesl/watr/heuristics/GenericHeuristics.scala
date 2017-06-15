@@ -16,158 +16,128 @@ import scala.collection.mutable.ListBuffer
 object GenericHeuristics {
 
     def tokenizeTextReflow(textReflow: TextReflow): ListBuffer[String] = {
-        val authorNamesTokens: ListBuffer[String] = ListBuffer[String]()
-        val authorName: ListBuffer[String] = ListBuffer[String]()
+        val tokens: ListBuffer[String] = ListBuffer[String]()
+        val currentToken: ListBuffer[String] = ListBuffer[String]()
 
         var prevCharPosition: Int = -1
-        var yPosition: Int = -1
+        val yPosition: Int = getYPosition(textReflow = textReflow)
 
         for (charAtom <- textReflow.charAtoms()) {
             val currentCharacter = charAtom.char
-            if (isLetterString(currentCharacter) && yPosition.==(-1)) {
-                yPosition = charAtom.bbox.top.asInstanceOf[Int]
-                if (prevCharPosition.==(-1)) {
-                    authorName += currentCharacter
-                }
-            }
-            if (prevCharPosition > 0) {
-                val spaceBetweenChars = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
-                if (spaceBetweenChars < SPACE_BETWEEN_WORDS_THRESHOLD) {
-                    if (charAtom.bbox.top.==(yPosition)) {
-                        authorName += currentCharacter
-                    }
-                    else {
-                        if (charAtom.bbox.right.asInstanceOf[Int] > prevCharPosition) {
-                            authorNamesTokens += authorName.mkString
-                            authorName.clear()
+            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)){
+                if (prevCharPosition > 0) {
+                    val spaceBetweenChars = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
+                    if (spaceBetweenChars < SPACE_BETWEEN_WORDS_THRESHOLD) {
+                        if (charAtom.bbox.top.==(yPosition)) {
+                            currentToken += currentCharacter
                         }
                         else {
-                            authorName += currentCharacter
+                            if (charAtom.bbox.right.asInstanceOf[Int] > prevCharPosition) {
+                                tokens += currentToken.mkString
+                                currentToken.clear()
+                            }
+                            else {
+                                currentToken += currentCharacter
+                            }
+                        }
+
+                    }
+                    else if (spaceBetweenChars >= SPACE_BETWEEN_WORDS_THRESHOLD) {
+                        tokens += currentToken.mkString
+                        currentToken.clear()
+                        if (charAtom.bbox.top.==(yPosition)) {
+                            currentToken += currentCharacter
                         }
                     }
-
                 }
-                else if (spaceBetweenChars >= SPACE_BETWEEN_WORDS_THRESHOLD) {
-                    authorNamesTokens += authorName.mkString
-                    authorName.clear()
-                    if (charAtom.bbox.top.==(yPosition)) {
-                        authorName += currentCharacter
-                    }
+                if(prevCharPosition.==(-1)){
+                    currentToken += currentCharacter
                 }
-            }
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
                 prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
             }
+            else if (charAtom.bbox.right.asInstanceOf[Int] < prevCharPosition){
+                currentToken += currentCharacter
+            }
         }
 
-        if (authorName.nonEmpty) {
-            authorNamesTokens += authorName.mkString
-            authorName.clear()
+        if (currentToken.nonEmpty) {
+            tokens += currentToken.mkString
+            currentToken.clear()
         }
 
-        authorNamesTokens.filter(_.nonEmpty)
+        tokens.filter(_.nonEmpty)
     }
 
     def getSeparateComponentsByText(tokenizedTextReflow: ListBuffer[String]): ListBuffer[String] = {
 
-        val separateAuthorNames: ListBuffer[String] = ListBuffer[String]()
-        val separateAuthorName: ListBuffer[String] = ListBuffer[String]()
+        val separateComponents: ListBuffer[String] = ListBuffer[String]()
+        val separateComponent: ListBuffer[String] = ListBuffer[String]()
 
-        var checkNextFlag: Boolean = false
-
-        for (authorNameToken <- tokenizedTextReflow) {
+        for (textReflowToken <- tokenizedTextReflow) {
             breakable {
-                if (WORD_SEPARATORS.contains(authorNameToken.toLowerCase)) {
-                    separateAuthorNames += separateAuthorName.mkString(NAME_SEPARATOR)
-                    separateAuthorName.clear()
-                    if (checkNextFlag) {
-                        checkNextFlag = false
-                    }
+                if (WORD_SEPARATORS.contains(textReflowToken.toLowerCase)) {
+                    separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
+                    separateComponent.clear()
                 }
-                else if (!checkNextFlag && PUNCTUATION_SEPARATORS.contains(authorNameToken.takeRight(n = 1))) {
-                    separateAuthorName += authorNameToken.replace(authorNameToken.takeRight(n = 1), BLANK)
-                    checkNextFlag = true
-                    break
-                }
-                else if (checkNextFlag) {
-                    if (isOfFirstNameInitialFormat(authorNameToken) && separateAuthorName.length.==(1)) {
-                        separateAuthorName += authorNameToken.replace(COMMA, BLANK)
-                        separateAuthorNames += separateAuthorName.mkString(NAME_SEPARATOR)
-                        separateAuthorName.clear()
-                    }
-                    else {
-                        separateAuthorNames += separateAuthorName.mkString(NAME_SEPARATOR)
-                        separateAuthorName.clear()
-                        if(authorNameToken.takeRight(1).equals(PERIOD)){
-                            authorNameToken.dropRight(1)
-                        }
-                        separateAuthorName += authorNameToken
-                    }
-                    checkNextFlag = false
+                else if( PUNCTUATION_SEPARATORS.contains(textReflowToken.takeRight(n = 1))){
+                    separateComponent += textReflowToken.dropRight(n = 1)
+                    separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
+                    separateComponent.clear()
                 }
                 else {
-                    if(authorNameToken.takeRight(1).equals(PERIOD)){
-                        authorNameToken.dropRight(1)
-                    }
-                    separateAuthorName += authorNameToken
+                    separateComponent += textReflowToken
                 }
             }
         }
 
-        if (separateAuthorName.nonEmpty) {
-            separateAuthorNames += separateAuthorName.mkString(NAME_SEPARATOR)
+        if (separateComponent.nonEmpty) {
+            separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
         }
-        separateAuthorNames.filter(_.nonEmpty)
+        separateComponents.filter(_.nonEmpty)
     }
 
     def getSeparateComponentsByGeometry(componentsSeparatedByText: ListBuffer[String], textReflow: TextReflow): ListBuffer[String] = {
 
-        val separateAuthorNames: ListBuffer[String] = ListBuffer[String]()
-        val separateAuthorName: ListBuffer[String] = ListBuffer[String]()
+        val separateComponents: ListBuffer[String] = ListBuffer[String]()
+        val separateComponent: ListBuffer[String] = ListBuffer[String]()
 
-        var currentAuthorNameIndex: Int = 0
-        var currentAuthorName: String = componentsSeparatedByText(currentAuthorNameIndex)
-        var currentAuthorNameComponentIndex: Int = 0
-        var currentAuthorNameComponent: String = currentAuthorName.split(NAME_SEPARATOR)(currentAuthorNameComponentIndex)
+        var currentComponentIndex: Int = 0
+        var currentComponent: String = componentsSeparatedByText(currentComponentIndex)
+        var currentSeparateComponentIndex: Int = 0
+        var currentSeparateComponent: String = currentComponent.split(SPACE_SEPARATOR)(currentSeparateComponentIndex)
+
         var prevCharPosition: Int = -1
         var usualSpaceWidth: Int = 0
-        var processingComplete: Boolean = false
         var currentCharAtomIndex: Int = 0
-        var yPosition: Int = 0
+        val yPosition: Int = getYPosition(textReflow = textReflow)
 
-        while (currentCharAtomIndex < textReflow.charAtoms().length && currentAuthorNameIndex < componentsSeparatedByText.length) {
+        while (currentCharAtomIndex < textReflow.charAtoms().length && currentComponentIndex < componentsSeparatedByText.length) {
             var charAtom: CharAtom = textReflow.charAtoms()(currentCharAtomIndex)
-            currentAuthorName = componentsSeparatedByText(currentAuthorNameIndex)
-            currentAuthorNameComponent = currentAuthorName.split(NAME_SEPARATOR)(currentAuthorNameComponentIndex)
+            currentComponent = componentsSeparatedByText(currentComponentIndex)
+            currentSeparateComponent = currentComponent.split(SPACE_SEPARATOR)(currentSeparateComponentIndex)
             val currentCharacter = charAtom.char.toCharArray.head
-            if (currentCharacter.equals(currentAuthorNameComponent.head)) {
-                if (yPosition.==(0)) {
-                    yPosition = charAtom.bbox.top.asInstanceOf[Int]
-                }
+            if (currentCharacter.equals(currentSeparateComponent.head)) {
                 if (prevCharPosition < 0) {
-                    separateAuthorName += currentAuthorNameComponent
+                    separateComponent += currentSeparateComponent
                 }
                 else {
                     if (usualSpaceWidth == 0) {
                         usualSpaceWidth = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
                     }
-                    else {
-                        if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth) {
-                            separateAuthorNames += separateAuthorName.mkString(NAME_SEPARATOR)
-                            separateAuthorName.clear()
-                        }
+                    else if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth) {
+                        separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
+                        separateComponent.clear()
                     }
-                    separateAuthorName += currentAuthorNameComponent
-                    if (currentAuthorNameComponentIndex + 1 == currentAuthorName.split(NAME_SEPARATOR).length) {
-                        separateAuthorNames += separateAuthorName.mkString(NAME_SEPARATOR)
-                        separateAuthorName.clear()
+                    separateComponent += currentSeparateComponent
+                    if (currentSeparateComponentIndex + 1 == currentComponent.split(SPACE_SEPARATOR).length) {
+                        separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
+                        separateComponent.clear()
                     }
                 }
 
-                currentCharAtomIndex += currentAuthorNameComponent.length - 1
-                val indices = getNextNameAndComponentIndices(currentAuthorNameComponentIndex, currentAuthorNameIndex, currentAuthorName)
-                currentAuthorNameComponentIndex = indices._1
-                currentAuthorNameIndex = indices._2
+                val indices = getNextComponentIndices(currentSeparateComponentIndex, currentComponentIndex, currentComponent)
+                currentSeparateComponentIndex = indices._1
+                currentComponentIndex = indices._2
 
             }
             charAtom = textReflow.charAtoms()(currentCharAtomIndex)
@@ -180,8 +150,8 @@ object GenericHeuristics {
         }
 
 
-        if (separateAuthorNames.nonEmpty) {
-            return separateAuthorNames.filter(_.nonEmpty)
+        if (separateComponents.nonEmpty) {
+            return separateComponents.filter(_.nonEmpty)
         }
         componentsSeparatedByText
     }
