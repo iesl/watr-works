@@ -21,19 +21,19 @@ object Utils {
         false
     }
 
-    def getNextNameAndComponentIndices(currentAuthorNameComponentIndex: Int, currentAuthorNameIndex: Int, currentAuthorName: String): (Int, Int) = {
+    def getNextComponentIndices(currentSeparateComponentIndex: Int, currentComponentIndex: Int, currentComponent: String): (Int, Int) = {
 
-        if (currentAuthorNameComponentIndex + 1 == currentAuthorName.split(NAME_SEPARATOR).length) {
-            return (0, currentAuthorNameIndex + 1)
+        if (currentSeparateComponentIndex + 1 == currentComponent.split(SPACE_SEPARATOR).length) {
+            return (0, currentComponentIndex + 1)
         }
-        (currentAuthorNameComponentIndex + 1, currentAuthorNameIndex)
+        (currentSeparateComponentIndex + 1, currentComponentIndex)
     }
 
-    def getStartIndexAfterComma(authorName: String): Int = {
+    def getStartIndexAfterComma(currentComponent: String): Int = {
 
-        var indexAfterComma: Int = authorName.indexOf(COMMA)
+        var indexAfterComma: Int = currentComponent.indexOf(COMMA)
 
-        while (!authorName.charAt(indexAfterComma).isLetter) {
+        while (!currentComponent.charAt(indexAfterComma).isLetter) {
             indexAfterComma += 1
         }
 
@@ -81,18 +81,18 @@ object Utils {
 
     def getBoundingBoxesForComponents(name: NameWithBBox, geometricallySeparatedName: String, textReflow: TextReflow): NameWithBBox = {
 
-        val (nameStartIndex, nameEndIndex) = getIndexesForComponents(component = geometricallySeparatedName.replace(NAME_SEPARATOR, BLANK), textReflow = textReflow, (0, textReflow.charAtoms().length))
+        val (nameStartIndex, nameEndIndex) = getIndexesForComponents(component = geometricallySeparatedName.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (0, textReflow.charAtoms().length))
         name.bbox = getBoundingBoxesWithIndexesFromReflow((nameStartIndex, nameEndIndex), textReflow)
         if (name.firstName.nameText.nonEmpty) {
-            val (firstNameStartIndex, firstNameEndIndex) = getIndexesForComponents(component = name.firstName.nameText.replace(NAME_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            val (firstNameStartIndex, firstNameEndIndex) = getIndexesForComponents(component = name.firstName.nameText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
             name.firstName.bbox = getBoundingBoxesWithIndexesFromReflow((firstNameStartIndex, firstNameEndIndex), textReflow)
         }
         if (name.middleName.nameText.nonEmpty) {
-            val (middleNameStartIndex, middleNameEndIndex) = getIndexesForComponents(component = name.middleName.nameText.replace(NAME_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            val (middleNameStartIndex, middleNameEndIndex) = getIndexesForComponents(component = name.middleName.nameText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
             name.middleName.bbox = getBoundingBoxesWithIndexesFromReflow((middleNameStartIndex, middleNameEndIndex), textReflow)
         }
         if (name.lastName.nameText.nonEmpty) {
-            val (lastNameStartIndex, lastNameEndIndex) = getIndexesForComponents(component = name.lastName.nameText.replace(NAME_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            val (lastNameStartIndex, lastNameEndIndex) = getIndexesForComponents(component = name.lastName.nameText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
             name.lastName.bbox = getBoundingBoxesWithIndexesFromReflow((lastNameStartIndex, lastNameEndIndex), textReflow)
         }
         name
@@ -105,5 +105,32 @@ object Utils {
             }
         }
         true
+    }
+
+    def isNumberString(charSequence: String): Boolean = {
+        charSequence.foreach {
+            character => {
+                if (!character.isDigit) return false
+            }
+        }
+        true
+    }
+
+    def getYPosition(textReflow: TextReflow): Int = {
+
+        val yPositionCounts: scala.collection.mutable.Map[Int, Int] = scala.collection.mutable.Map[Int, Int]()
+
+        for(charAtom <- textReflow.charAtoms()){
+            if(yPositionCounts.get(charAtom.bbox.top.asInstanceOf[Int]).isEmpty){
+                yPositionCounts += (charAtom.bbox.top.asInstanceOf[Int] -> 0)
+            }
+            yPositionCounts.update(charAtom.bbox.top.asInstanceOf[Int], yPositionCounts(charAtom.bbox.top.asInstanceOf[Int])+1)
+
+        }
+
+        if(yPositionCounts(yPositionCounts.maxBy(_._2)._1) > 1){
+            return yPositionCounts.maxBy(_._2)._1
+        }
+        -1
     }
 }
