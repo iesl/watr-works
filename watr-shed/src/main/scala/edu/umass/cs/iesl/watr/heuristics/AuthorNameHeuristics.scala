@@ -8,7 +8,8 @@ import edu.umass.cs.iesl.watr.textreflow.data._
 import util.control.Breaks._
 import Constants._
 import Utils._
-import edu.umass.cs.iesl.watr.geometry.CharAtom
+import TypeTags._
+import edu.umass.cs.iesl.watr.geometry.{CharAtom, LTBounds}
 
 import scala.collection.mutable.ListBuffer
 
@@ -16,14 +17,14 @@ object AuthorNameHeuristics {
 
     def tokenizeAuthorNamesFromTextReflow(authorTextReflow: TextReflow): ListBuffer[String] = {
         val authorNamesTokens: ListBuffer[String] = ListBuffer[String]()
-        val authorName: ListBuffer[Char] = ListBuffer[Char]()
+        val authorName: ListBuffer[String] = ListBuffer[String]()
 
         var prevCharPosition: Int = -1
         var yPosition: Int = -1
 
         for (charAtom <- authorTextReflow.charAtoms()) {
-            val currentCharacter = charAtom.char.toCharArray.head
-            if (currentCharacter.isLetter && yPosition.==(-1)) {
+            val currentCharacter = charAtom.char
+            if (isLetterString(currentCharacter) && yPosition.==(-1)) {
                 yPosition = charAtom.bbox.top.asInstanceOf[Int]
                 if (prevCharPosition.==(-1)) {
                     authorName += currentCharacter
@@ -35,12 +36,12 @@ object AuthorNameHeuristics {
                     if (charAtom.bbox.top.==(yPosition)) {
                         authorName += currentCharacter
                     }
-                    else{
-                        if(charAtom.bbox.right.asInstanceOf[Int] > prevCharPosition){
+                    else {
+                        if (charAtom.bbox.right.asInstanceOf[Int] > prevCharPosition) {
                             authorNamesTokens += authorName.mkString
                             authorName.clear()
                         }
-                        else{
+                        else {
                             authorName += currentCharacter
                         }
                     }
@@ -64,7 +65,7 @@ object AuthorNameHeuristics {
             authorName.clear()
         }
 
-        mergeConsecutiveNameTokens(authorNamesTokens.filter(_.nonEmpty))
+        authorNamesTokens.filter(_.nonEmpty)
     }
 
     def getSeparateAuthorNamesByText(authorNamesTokens: ListBuffer[String]): ListBuffer[String] = {
@@ -89,7 +90,7 @@ object AuthorNameHeuristics {
                     break
                 }
                 else if (checkNextFlag) {
-                    if (isOfFirstNameInitialFormat(authorNameToken)) {
+                    if (isOfFirstNameInitialFormat(authorNameToken) && separateAuthorName.length.==(1)) {
                         separateAuthorName += authorNameToken.replace(COMMA, BLANK)
                         separateAuthorNames += separateAuthorName.mkString(NAME_SEPARATOR)
                         separateAuthorName.clear()
@@ -97,16 +98,20 @@ object AuthorNameHeuristics {
                     else {
                         separateAuthorNames += separateAuthorName.mkString(NAME_SEPARATOR)
                         separateAuthorName.clear()
+                        if(authorNameToken.takeRight(1).equals(PERIOD)){
+                            authorNameToken.dropRight(1)
+                        }
                         separateAuthorName += authorNameToken
                     }
                     checkNextFlag = false
                 }
                 else {
+                    if(authorNameToken.takeRight(1).equals(PERIOD)){
+                        authorNameToken.dropRight(1)
+                    }
                     separateAuthorName += authorNameToken
                 }
-
             }
-
         }
 
         if (separateAuthorName.nonEmpty) {
@@ -132,8 +137,8 @@ object AuthorNameHeuristics {
 
         while (currentCharAtomIndex < authorTextReflow.charAtoms().length && currentAuthorNameIndex < authorNamesSeparatedByText.length) {
             var charAtom: CharAtom = authorTextReflow.charAtoms()(currentCharAtomIndex)
-            currentAuthorNameComponent = currentAuthorName.split(NAME_SEPARATOR)(currentAuthorNameComponentIndex)
             currentAuthorName = authorNamesSeparatedByText(currentAuthorNameIndex)
+            currentAuthorNameComponent = currentAuthorName.split(NAME_SEPARATOR)(currentAuthorNameComponentIndex)
             val currentCharacter = charAtom.char.toCharArray.head
             if (currentCharacter.equals(currentAuthorNameComponent.head)) {
                 if (yPosition.==(0)) {
@@ -166,10 +171,12 @@ object AuthorNameHeuristics {
 
             }
             charAtom = authorTextReflow.charAtoms()(currentCharAtomIndex)
-            currentCharAtomIndex += 1
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
-                prevCharPosition = charAtom.bbox.left.asInstanceOf[Int] + charAtom.bbox.width.asInstanceOf[Int]
+            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition) || (charAtom.bbox.right.asInstanceOf[Int] < authorTextReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right.asInstanceOf[Int]
+                                                                        && authorTextReflow.charAtoms()(currentCharAtomIndex - 1).bbox.top.asInstanceOf[Int].==(yPosition))) {
+                prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
             }
+            currentCharAtomIndex += 1
+
         }
 
 
@@ -180,43 +187,43 @@ object AuthorNameHeuristics {
     }
 
 
-    def getSeparateAuthorNameComponents(authorName: String): scala.collection.mutable.Map[String, String] = {
+    def getSeparateAuthorNameComponents(authorName: String): NameWithBBox = {
 
-        val separateNameComponents = scala.collection.mutable.Map[String, String]()
         val authorNameComponents = authorName.split(NAME_SEPARATOR)
         var lastName = None: Option[String]
         var firstName = None: Option[String]
         var middleName = None: Option[String]
 
-        if(! authorName.contains(COMMA)){
-            lastName = Some(authorNameComponents(authorNameComponents.length-1))
-            if(authorNameComponents.length.>(1)){
+        if (!authorName.contains(COMMA)) {
+            lastName = Some(authorNameComponents(authorNameComponents.length - 1))
+            if (authorNameComponents.length.>(1)) {
                 firstName = Some(authorNameComponents(0))
-                if(authorNameComponents.length.>(2)){
-                    middleName = Some(authorNameComponents.slice(1, authorNameComponents.length-1).mkString(NAME_SEPARATOR))
-                    if(VALID_SURNAME_PARTICLES.contains(authorNameComponents(authorNameComponents.length-2).toLowerCase)){
-                        lastName = Some(authorNameComponents.slice(authorNameComponents.length-2, authorNameComponents.length).mkString(NAME_SEPARATOR))
-                        middleName = Some(authorNameComponents.slice(1, authorNameComponents.length-2).mkString(NAME_SEPARATOR))
+                if (authorNameComponents.length.>(2)) {
+                    middleName = Some(authorNameComponents.slice(1, authorNameComponents.length - 1).mkString(NAME_SEPARATOR))
+                    if (VALID_SURNAME_PARTICLES.contains(authorNameComponents(authorNameComponents.length - 2).toLowerCase)) {
+                        lastName = Some(authorNameComponents.slice(authorNameComponents.length - 2, authorNameComponents.length).mkString(NAME_SEPARATOR))
+                        middleName = Some(authorNameComponents.slice(1, authorNameComponents.length - 2).mkString(NAME_SEPARATOR))
                     }
                 }
             }
 
 
         }
-        else{
+        else {
             lastName = Some(authorName.toCharArray.slice(0, authorName.indexOf(COMMA)).mkString)
             val remainingNameComponents = authorName.toCharArray.slice(getStartIndexAfterComma(authorName), authorName.length).mkString.split(NAME_SEPARATOR)
             firstName = Some(remainingNameComponents(0))
-            if(remainingNameComponents.length.>(1)){
+            if (remainingNameComponents.length.>(1)) {
                 middleName = Some(remainingNameComponents.slice(1, remainingNameComponents.length).mkString(NAME_SEPARATOR))
             }
 
         }
 
-        separateNameComponents += (LAST_NAME -> lastName.getOrElse(BLANK))
-        separateNameComponents += (FIRST_NAME -> firstName.getOrElse(BLANK))
-        separateNameComponents += (MIDDLE_NAME -> middleName.getOrElse(BLANK))
+        val firstNameRepresentation: NameRepresentation = NameRepresentation(nameText = firstName.getOrElse(BLANK), bbox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
+        val middleNameRepresentation: NameRepresentation = NameRepresentation(nameText = middleName.getOrElse(BLANK), bbox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
+        val lastNameRepresentation: NameRepresentation = NameRepresentation(nameText = lastName.getOrElse(BLANK), bbox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
 
-        separateNameComponents
+        NameWithBBox(firstName = firstNameRepresentation, middleName = middleNameRepresentation, lastName = lastNameRepresentation, bbox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
     }
+
 }
