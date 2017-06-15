@@ -210,8 +210,8 @@ Bounding Box info: 			NameWithBBox(NameRepresentation(J.,(l:313.66, t:168.30, w:
 ------------------------------------------------------------------------------------------------
 Document: 					0101019.pdf.d
 Text Reflow: 				C . C a r t i er ∗, E . J. C o p el a nd
-Tokenized: 					ListBuffer(C., Cartier, ,, E.J., Copeland)
-Text Separated: 			ListBuffer(C. Cartier , E.J. Copeland)
+Tokenized: 					ListBuffer(C., Cartier,, E.J., Copeland)
+Text Separated: 			ListBuffer(C. Cartier, E.J. Copeland)
 Geometrically Separated: 	ListBuffer(C. Cartier, E.J. Copeland)
 Bounding Box info: 			NameWithBBox(NameRepresentation(C.,(l:219.72, t:225.16, w:14.09, h:14.36)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Cartier,(l:238.43, t:225.16, w:43.99, h:14.36)),(l:219.72, t:225.16, w:62.70, h:14.36))
 Bounding Box info: 			NameWithBBox(NameRepresentation(E.J.,(l:297.72, t:225.16, w:24.65, h:14.36)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Copeland,(l:326.99, t:225.16, w:58.33, h:14.36)),(l:297.72, t:225.16, w:87.60, h:14.36))
@@ -476,9 +476,10 @@ Document: 					0101047.pdf.d
 Text Reflow: 				S A S CH A H U S A 1,2 , JEFFR EY WI N I CO U R 1,2
 Tokenized: 					ListBuffer(SASCHA, HUSA, ,, JEFFREY, WINICOUR)
 Text Separated: 			ListBuffer(SASCHA HUSA , JEFFREY WINICOUR)
-Geometrically Separated: 	ListBuffer(SASCHA HUSA, JEFFREY WINICOUR)
+Geometrically Separated: 	ListBuffer(SASCHA HUSA, JEFFREY, WINICOUR)
 Bounding Box info: 			NameWithBBox(NameRepresentation(SASCHA,(l:216.60, t:169.86, w:37.75, h:8.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(HUSA,(l:257.28, t:169.86, w:26.00, h:8.15)),(l:216.60, t:169.86, w:66.68, h:8.15))
-Bounding Box info: 			NameWithBBox(NameRepresentation(JEFFREY,(l:298.91, t:169.86, w:42.90, h:8.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(WINICOUR,(l:344.99, t:169.86, w:50.68, h:8.15)),(l:298.91, t:169.86, w:96.76, h:8.15))
+Bounding Box info: 			NameWithBBox(NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(JEFFREY,(l:298.91, t:169.86, w:42.90, h:8.15)),(l:298.91, t:169.86, w:42.90, h:8.15))
+Bounding Box info: 			NameWithBBox(NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(WINICOUR,(l:344.99, t:169.86, w:50.68, h:8.15)),(l:344.99, t:169.86, w:50.68, h:8.15))
 ------------------------------------------------------------------------------------------------
 Document: 					0101047.pdf.d
 Text Reflow: 				RO BERTO GO MEZ
@@ -930,4 +931,404 @@ Text Separated: 			ListBuffer(L. E. Jones, A. S. Perelson)
 Geometrically Separated: 	ListBuffer(L. E. Jones, A. S. Perelson)
 Bounding Box info: 			NameWithBBox(NameRepresentation(L.,(l:227.52, t:117.87, w:10.57, h:11.96)),NameRepresentation(E.,(l:242.04, t:117.87, w:11.17, h:11.96)),NameRepresentation(Jones,(l:257.16, t:117.87, w:28.13, h:11.96)),(l:227.52, t:117.87, w:57.77, h:11.96))
 Bounding Box info: 			NameWithBBox(NameRepresentation(A.,(l:312.00, t:117.87, w:12.01, h:11.96)),NameRepresentation(S.,(l:327.96, t:117.87, w:9.73, h:11.96)),NameRepresentation(Perelson,(l:341.64, t:117.87, w:42.62, h:11.96)),(l:312.00, t:117.87, w:72.26, h:11.96))
+------------------------------------------------------------------------------------------------
+Document: 					1406.2661v1.pdf.d
+Text Reflow: 				Ian J. Goodfellow, Jean Pouget-Abadie¿3;, Mehdi Mirza, Bing Xu, David Warde-Farley,
+Tokenized: 					ListBuffer(Ian, J., Goodfellow,, Jean, Pouget-Abadie,, Mehdi, Mirza,, Bing, Xu,, David, Warde-Farley,)
+Text Separated: 			ListBuffer(Ian J. Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley)
+Geometrically Separated: 	ListBuffer(Ian J. Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Ian,(l:120.92, t:168.61, w:14.39, h:8.95)),NameRepresentation(J.,(l:137.81, t:168.61, w:7.27, h:8.95)),NameRepresentation(Goodfellow,(l:147.57, t:168.61, w:48.60, h:8.95)),(l:120.92, t:168.61, w:75.25, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jean,(l:205.59, t:168.61, w:19.77, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Pouget-Abadie,(l:227.86, t:168.61, w:62.89, h:8.95)),(l:205.59, t:168.61, w:85.16, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Mehdi,(l:298.22, t:168.61, w:27.67, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Mirza,(l:328.39, t:168.61, w:26.00, h:8.95)),(l:298.22, t:168.61, w:56.17, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Bing,(l:361.87, t:168.61, w:19.93, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Xu,(l:384.29, t:168.61, w:12.72, h:8.95)),(l:361.87, t:168.61, w:35.14, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(David,(l:404.50, t:168.61, w:25.20, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Warde-Farley,(l:432.20, t:168.61, w:59.42, h:8.95)),(l:404.50, t:168.61, w:87.12, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1406.2661v1.pdf.d
+Text Reflow: 				Sherjil Ozairy, Aaron Courville, Yoshua Bengio
+Tokenized: 					ListBuffer(Sherjil, Ozair,, Aaron, Courville,, Yoshua, Bengio)
+Text Separated: 			ListBuffer(Sherjil Ozair, Aaron Courville, Yoshua Bengio)
+Geometrically Separated: 	ListBuffer(Sherjil Ozair, Aaron Courville, Yoshua Bengio)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Sherjil,(l:204.71, t:180.36, w:28.77, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Ozair,(l:235.98, t:180.36, w:24.34, h:8.95)),(l:204.71, t:180.36, w:55.61, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Aaron,(l:267.80, t:180.36, w:26.93, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Courville,(l:297.23, t:180.36, w:39.74, h:8.95)),(l:267.80, t:180.36, w:69.17, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Yoshua,(l:344.45, t:180.36, w:31.00, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Bengio,(l:377.94, t:180.36, w:29.34, h:8.95)),(l:344.45, t:180.36, w:62.83, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1506.07285v5.pdf.d
+Text Reflow: 				Ankit Kumar, Peter Ondruska, Mohit Iyyer, James Bradbury, Ishaan Gulrajani, Victor Zhong,
+Tokenized: 					ListBuffer(Ankit, Kumar,, Peter, Ondruska,, Mohit, Iyyer,, James, Bradbury,, Ishaan, Gulrajani,, Victor, Zhong,)
+Text Separated: 			ListBuffer(Ankit Kumar, Peter Ondruska, Mohit Iyyer, James Bradbury, Ishaan Gulrajani, Victor Zhong)
+Geometrically Separated: 	ListBuffer(Ankit Kumar, Peter Ondruska, Mohit Iyyer, James Bradbury, Ishaan Gulrajani, Victor Zhong)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Ankit,(l:55.43, t:160.20, w:24.36, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kumar,(l:82.28, t:160.20, w:30.85, h:8.95)),(l:55.43, t:160.20, w:57.70, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Peter,(l:117.19, t:160.20, w:22.48, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Ondruska,(l:142.16, t:160.20, w:43.19, h:8.95)),(l:117.19, t:160.20, w:68.16, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Mohit,(l:190.33, t:160.20, w:26.00, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Iyyer,(l:218.83, t:160.20, w:22.58, h:8.95)),(l:190.33, t:160.20, w:51.08, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(James,(l:245.48, t:160.20, w:26.41, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Bradbury,(l:274.38, t:160.20, w:41.87, h:8.95)),(l:245.48, t:160.20, w:70.77, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Ishaan,(l:320.69, t:160.20, w:28.78, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Gulrajani,(l:351.97, t:160.20, w:42.06, h:8.95)),(l:320.69, t:160.20, w:73.34, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Victor,(l:399.03, t:160.20, w:26.73, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Zhong,(l:428.26, t:160.20, w:27.68, h:8.95)),(l:399.03, t:160.20, w:56.91, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1506.07285v5.pdf.d
+Text Reflow: 				Romain Paulus, Richard Socher
+Tokenized: 					ListBuffer(Romain, Paulus,, Richard, Socher)
+Text Separated: 			ListBuffer(Romain Paulus, Richard Socher)
+Geometrically Separated: 	ListBuffer(Romain Paulus, Richard Socher)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Romain,(l:55.43, t:172.15, w:33.76, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Paulus,(l:91.69, t:172.15, w:28.69, h:8.95)),(l:55.43, t:172.15, w:64.95, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Richard,(l:125.36, t:172.15, w:34.86, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Socher,(l:162.72, t:172.15, w:29.33, h:8.95)),(l:125.36, t:172.15, w:66.69, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1511.07122.pdf.d
+Text Reflow: 				Fisher Yu
+Tokenized: 					ListBuffer(Fisher, Yu)
+Text Separated: 			ListBuffer(Fisher Yu)
+Geometrically Separated: 	ListBuffer(Fisher Yu)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Fisher,(l:113.97, t:137.70, w:27.12, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Yu,(l:143.58, t:137.70, w:11.81, h:8.95)),(l:113.97, t:137.70, w:41.42, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1511.07122.pdf.d
+Text Reflow: 				Vladlen Koltun
+Tokenized: 					ListBuffer(Vladlen, Koltun)
+Text Separated: 			ListBuffer(Vladlen Koltun)
+Geometrically Separated: 	ListBuffer(Vladlen Koltun)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Vladlen,(l:113.97, t:176.85, w:33.21, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Koltun,(l:149.68, t:176.85, w:29.64, h:8.95)),(l:113.97, t:176.85, w:65.35, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1606.01323v2.pdf.d
+Text Reflow: 				Kevin Clark
+Tokenized: 					ListBuffer(Kevin, Clark)
+Text Separated: 			ListBuffer(Kevin Clark)
+Geometrically Separated: 	ListBuffer(Kevin Clark)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Kevin,(l:170.69, t:127.10, w:30.07, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Clark,(l:203.76, t:127.10, w:29.88, h:10.74)),(l:170.69, t:127.10, w:62.95, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1606.01323v2.pdf.d
+Text Reflow: 				Christopher D. Manning
+Tokenized: 					ListBuffer(Christopher, D., Manning)
+Text Separated: 			ListBuffer(Christopher D. Manning)
+Geometrically Separated: 	ListBuffer(Christopher D. Manning)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Christopher,(l:335.21, t:127.10, w:62.42, h:10.74)),NameRepresentation(D.,(l:400.63, t:127.10, w:11.37, h:10.74)),NameRepresentation(Manning,(l:415.00, t:127.10, w:46.50, h:10.74)),(l:335.21, t:127.10, w:126.29, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1609.05473v4.pdf.d
+Text Reflow: 				Lantao Yuy , Weinan Zhangy , Jun Wangz , Yong Yuy
+Tokenized: 					ListBuffer(Lantao, Yu, ,, Weinan, Zhang, ,, Jun, Wang, ,, Yong, Yu)
+Text Separated: 			ListBuffer(Lantao Yu , Weinan Zhang , Jun Wang , Yong Yu)
+Geometrically Separated: 	ListBuffer(Lantao Yu, Weinan Zhang, Jun Wang, Yong Yu)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Lantao,(l:178.03, t:139.49, w:36.53, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Yu,(l:217.56, t:139.49, w:14.17, h:10.74)),(l:178.03, t:139.49, w:53.70, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Weinan,(l:241.98, t:139.49, w:39.07, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Zhang,(l:284.05, t:139.49, w:33.21, h:10.74)),(l:241.98, t:139.49, w:75.28, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jun,(l:327.51, t:139.49, w:19.08, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Wang,(l:349.59, t:139.49, w:29.77, h:10.74)),(l:327.51, t:139.49, w:51.85, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Yong,(l:389.61, t:139.49, w:25.90, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Yu,(l:418.50, t:139.49, w:14.18, h:10.74)),(l:389.61, t:139.49, w:43.07, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1606.01541v3.pdf.d
+Text Reflow: 				Jiwei Li1 , Will Monroe1 , Alan Ritter3 , Michel Galley2 , Jianfeng Gao2 and Dan Jurafsky1
+Tokenized: 					ListBuffer(Jiwei, Li, ,, Will, Monroe, ,, Alan, Ritter, ,, Michel, Galley, ,, Jianfeng, Gao, and, Dan, Jurafsky)
+Text Separated: 			ListBuffer(Jiwei Li , Will Monroe , Alan Ritter , Michel Galley , Jianfeng Gao, Dan Jurafsky)
+Geometrically Separated: 	ListBuffer(Jiwei Li, Will Monroe, Alan Ritter, Michel Galley, Jianfeng Gao, Dan Jurafsky)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jiwei,(l:80.98, t:110.53, w:26.56, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Li,(l:110.54, t:110.53, w:11.29, h:10.74)),(l:80.98, t:110.53, w:40.85, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Will,(l:132.54, t:110.53, w:21.71, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Monroe,(l:157.24, t:110.53, w:40.28, h:10.74)),(l:132.54, t:110.53, w:64.98, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Alan,(l:208.24, t:110.53, w:24.57, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Ritter,(l:235.81, t:110.53, w:30.52, h:10.74)),(l:208.24, t:110.53, w:58.09, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Michel,(l:277.05, t:110.53, w:35.19, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Galley,(l:315.24, t:110.53, w:33.20, h:10.74)),(l:277.05, t:110.53, w:71.39, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jianfeng,(l:359.16, t:110.53, w:43.83, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Gao,(l:405.99, t:110.53, w:21.24, h:10.74)),(l:359.16, t:110.53, w:68.07, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Dan,(l:457.22, t:110.53, w:21.25, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Jurafsky,(l:481.47, t:110.53, w:44.80, h:10.74)),(l:457.22, t:110.53, w:69.05, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1503.08895v5.pdf.d
+Text Reflow: 				Sainbayar Sukhbaatar
+Tokenized: 					ListBuffer(Sainbayar, Sukhbaatar)
+Text Separated: 			ListBuffer(Sainbayar Sukhbaatar)
+Geometrically Separated: 	ListBuffer(Sainbayar Sukhbaatar)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Sainbayar,(l:149.48, t:171.51, w:43.73, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Sukhbaatar,(l:195.71, t:171.51, w:50.37, h:8.95)),(l:149.48, t:171.51, w:96.60, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1503.08895v5.pdf.d
+Text Reflow: 				Arthur Szlam Jason Weston Rob Fergus
+Tokenized: 					ListBuffer(Arthur, Szlam, Jason, Weston, Rob, Fergus)
+Text Separated: 			ListBuffer(Arthur Szlam Jason Weston Rob Fergus)
+Geometrically Separated: 	ListBuffer(Arthur Szlam, Jason Weston, Rob Fergus)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Arthur,(l:291.06, t:171.51, w:30.43, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Szlam,(l:323.98, t:171.51, w:26.01, h:8.95)),(l:291.06, t:171.51, w:58.93, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jason,(l:368.26, t:171.51, w:24.20, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Weston,(l:394.96, t:171.51, w:31.44, h:8.95)),(l:368.26, t:171.51, w:58.14, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Rob,(l:444.67, t:171.51, w:17.70, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Fergus,(l:464.87, t:171.51, w:28.98, h:8.95)),(l:444.67, t:171.51, w:49.18, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1609.03499.pdf.d
+Text Reflow: 				Aä ron van den Oord Sander Dieleman Heiga Zeny
+Tokenized: 					ListBuffer(Aäron, van, den, Oord, Sander, Dieleman, Heiga, Zen)
+Text Separated: 			ListBuffer(Aäron van den Oord Sander Dieleman Heiga Zen)
+Geometrically Separated: 	ListBuffer(Aäron van den Oord, Sander Dieleman, Heiga Zen)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Aäron,(l:113.97, t:117.77, w:26.93, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(van den Oord,(l:143.40, t:117.77, w:58.57, h:8.95)),(l:113.97, t:117.77, w:88.00, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Sander,(l:282.17, t:117.77, w:30.44, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Dieleman,(l:315.11, t:117.77, w:40.39, h:8.95)),(l:282.17, t:117.77, w:73.33, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Heiga,(l:449.86, t:117.77, w:24.91, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Zen,(l:477.26, t:117.77, w:16.60, h:8.95)),(l:449.86, t:117.77, w:44.00, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1609.03499.pdf.d
+Text Reflow: 				Karen Simonyan Oriol Vinyals Alex Graves
+Tokenized: 					ListBuffer(Karen, Simonyan, Oriol, Vinyals, Alex, Graves)
+Text Separated: 			ListBuffer(Karen Simonyan Oriol Vinyals Alex Graves)
+Geometrically Separated: 	ListBuffer(Karen Simonyan, Oriol Vinyals, Alex Graves)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Karen,(l:113.97, t:145.97, w:26.93, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Simonyan,(l:143.40, t:145.97, w:42.62, h:8.95)),(l:113.97, t:145.97, w:72.05, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Oriol,(l:287.59, t:145.97, w:22.69, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Vinyals,(l:312.78, t:145.97, w:31.73, h:8.95)),(l:287.59, t:145.97, w:56.92, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Alex,(l:446.08, t:145.97, w:19.36, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Graves,(l:467.93, t:145.97, w:30.09, h:8.95)),(l:446.08, t:145.97, w:51.94, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1609.03499.pdf.d
+Text Reflow: 				Nal Kalchbrenner Andrew Senior Koray Kavukcuoglu
+Tokenized: 					ListBuffer(Nal, Kalchbrenner, Andrew, Senior, Koray, Kavukcuoglu)
+Text Separated: 			ListBuffer(Nal Kalchbrenner Andrew Senior Koray Kavukcuoglu)
+Geometrically Separated: 	ListBuffer(Nal Kalchbrenner, Andrew Senior, Koray Kavukcuoglu)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Nal,(l:113.97, t:174.16, w:14.94, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kalchbrenner,(l:131.41, t:174.16, w:59.59, h:8.95)),(l:113.97, t:174.16, w:77.03, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Andrew,(l:283.47, t:174.16, w:34.13, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Senior,(l:320.09, t:174.16, w:27.67, h:8.95)),(l:283.47, t:174.16, w:64.29, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Koray,(l:411.88, t:174.16, w:26.87, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kavukcuoglu,(l:441.24, t:174.16, w:56.77, h:8.95)),(l:411.88, t:174.16, w:86.13, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1410.5401.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					1410.5401.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					1410.5401.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					1609.07772.pdf.d
+Text Reflow: 				J Gerard Wol¿11; ¿3;
+Tokenized: 					ListBuffer(J, Gerard, Wol¿11;)
+Text Separated: 			ListBuffer(J Gerard Wol¿11;)
+Geometrically Separated: 	ListBuffer(J Gerard Wol¿11;)
+Bounding Box info: 			NameWithBBox(NameRepresentation(J,(l:251.64, t:219.57, w:7.21, h:12.73)),NameRepresentation(Gerard,(l:263.53, t:219.57, w:42.98, h:12.73)),NameRepresentation(Wol¿11;,(l:311.21, t:219.57, w:32.36, h:12.73)),(l:251.64, t:219.57, w:91.93, h:12.73))
+------------------------------------------------------------------------------------------------
+Document: 					1609.07772.pdf.d
+Text Reflow: 				Commonsense reasoning, commonsense
+Tokenized: 					ListBuffer(Commonsense, reasoning,, commonsense)
+Text Separated: 			ListBuffer(Commonsense reasoning, commonsense)
+Geometrically Separated: 	ListBuffer(Commonsense reasoning, commonsense)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Commonsense,(l:135.19, t:154.79, w:117.29, h:18.36)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(reasoning,(l:258.73, t:154.79, w:77.73, h:18.36)),(l:135.19, t:154.79, w:201.27, h:18.36))
+Bounding Box info: 			NameWithBBox(NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(commonsense,(l:347.85, t:154.79, w:111.87, h:18.36)),(l:347.85, t:154.79, w:111.87, h:18.36))
+------------------------------------------------------------------------------------------------
+Document: 					1609.08667v1.pdf.d
+Text Reflow: 				Kevin Clark
+Tokenized: 					ListBuffer(Kevin, Clark)
+Text Separated: 			ListBuffer(Kevin Clark)
+Geometrically Separated: 	ListBuffer(Kevin Clark)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Kevin,(l:175.51, t:132.43, w:30.07, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Clark,(l:208.57, t:132.43, w:29.89, h:10.74)),(l:175.51, t:132.43, w:62.95, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1609.08667v1.pdf.d
+Text Reflow: 				Christopher D. Manning
+Tokenized: 					ListBuffer(Christopher, D., Manning)
+Text Separated: 			ListBuffer(Christopher D. Manning)
+Geometrically Separated: 	ListBuffer(Christopher D. Manning)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Christopher,(l:344.85, t:132.43, w:62.42, h:10.74)),NameRepresentation(D.,(l:410.27, t:132.43, w:11.37, h:10.74)),NameRepresentation(Manning,(l:424.64, t:132.43, w:46.50, h:10.74)),(l:344.85, t:132.43, w:126.29, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1609.08144.pdf.d
+Text Reflow: 				Yonghui Wu, Mike Schuster, Zhifeng Chen, Quo c V. Le, Mohammad Norouzi
+Tokenized: 					ListBuffer(Yonghui, Wu,, Mike, Schuster,, Zhifeng, Chen,, Quoc, V., Le,, Mohammad, Norouzi)
+Text Separated: 			ListBuffer(Yonghui Wu, Mike Schuster, Zhifeng Chen, Quoc V. Le, Mohammad Norouzi)
+Geometrically Separated: 	ListBuffer(Yonghui Wu, Mike Schuster, Zhifeng Chen, Quoc V. Le, Mohammad Norouzi)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Yonghui,(l:107.70, t:166.37, w:41.93, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Wu,(l:153.54, t:166.37, w:17.55, h:10.55)),(l:107.70, t:166.37, w:63.39, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Mike,(l:178.24, t:166.37, w:25.02, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Schuster,(l:207.17, t:166.37, w:42.95, h:10.55)),(l:178.24, t:166.37, w:71.88, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Zhifeng,(l:257.27, t:166.37, w:38.03, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Chen,(l:299.21, t:166.37, w:26.66, h:10.55)),(l:257.27, t:166.37, w:68.60, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Quoc,(l:333.02, t:166.37, w:26.97, h:10.55)),NameRepresentation(V.,(l:363.90, t:166.37, w:12.03, h:10.55)),NameRepresentation(Le,(l:379.83, t:166.37, w:12.50, h:10.55)),(l:333.02, t:166.37, w:59.31, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Mohammad,(l:399.48, t:166.37, w:60.78, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Norouzi,(l:464.17, t:166.37, w:39.95, h:10.55)),(l:399.48, t:166.37, w:104.64, h:10.55))
+------------------------------------------------------------------------------------------------
+Document: 					1609.08144.pdf.d
+Text Reflow: 				Wolfgang Macherey, Maxim Krikun, Yuan Cao, Qin Gao, Klaus Macherey,
+Tokenized: 					ListBuffer(Wolfgang, Macherey,, Maxim, Krikun,, Yuan, Cao,, Qin, Gao,, Klaus, Macherey,)
+Text Separated: 			ListBuffer(Wolfgang Macherey, Maxim Krikun, Yuan Cao, Qin Gao, Klaus Macherey)
+Geometrically Separated: 	ListBuffer(Wolfgang Macherey, Maxim Krikun, Yuan Cao, Qin Gao, Klaus Macherey)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Wolfgang,(l:114.41, t:200.12, w:47.76, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Macherey,(l:166.08, t:200.12, w:49.04, h:10.55)),(l:114.41, t:200.12, w:100.71, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Maxim,(l:221.31, t:200.12, w:35.75, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Krikun,(l:260.97, t:200.12, w:36.07, h:10.55)),(l:221.31, t:200.12, w:75.73, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Yuan,(l:304.19, t:200.12, w:26.64, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Cao,(l:334.75, t:200.12, w:20.13, h:10.55)),(l:304.19, t:200.12, w:50.69, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Qin,(l:362.04, t:200.12, w:18.85, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Gao,(l:384.79, t:200.12, w:20.87, h:10.55)),(l:362.04, t:200.12, w:43.62, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Klaus,(l:412.82, t:200.12, w:29.31, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Macherey,(l:446.04, t:200.12, w:49.05, h:10.55)),(l:412.82, t:200.12, w:82.27, h:10.55))
+------------------------------------------------------------------------------------------------
+Document: 					1609.08144.pdf.d
+Text Reflow: 				Jeff Klingner, Apurva Shah, Melvin Johnson, Xiaobing Liu, Łukasz Kaiser,
+Tokenized: 					ListBuffer(Jeff, Klingner,, Apurva, Shah,, Melvin, Johnson,, Xiaobing, Liu,, Łukasz, Kaiser,)
+Text Separated: 			ListBuffer(Jeff Klingner, Apurva Shah, Melvin Johnson, Xiaobing Liu, Łukasz Kaiser)
+Geometrically Separated: 	ListBuffer(Jeff Klingner, Apurva Shah, Melvin Johnson, Xiaobing Liu, Łukasz Kaiser)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jeff,(l:113.57, t:214.07, w:18.04, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Klingner,(l:135.51, t:214.07, w:44.20, h:10.55)),(l:113.57, t:214.07, w:66.14, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Apurva,(l:186.87, t:214.07, w:37.68, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Shah,(l:228.46, t:214.07, w:25.36, h:10.55)),(l:186.87, t:214.07, w:66.95, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Melvin,(l:260.97, t:214.07, w:35.10, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Johnson,(l:299.97, t:214.07, w:41.82, h:10.55)),(l:260.97, t:214.07, w:80.82, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Xiaobing,(l:348.96, t:214.07, w:45.82, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Liu,(l:398.68, t:214.07, w:17.06, h:10.55)),(l:348.96, t:214.07, w:66.78, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Łukasz,(l:422.89, t:214.07, w:35.64, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kaiser,(l:462.44, t:214.07, w:32.55, h:10.55)),(l:422.89, t:214.07, w:72.10, h:10.55))
+------------------------------------------------------------------------------------------------
+Document: 					1609.08144.pdf.d
+Text Reflow: 				Stephan Gouws, Yoshikiyo Kato, Taku Kudo, Hideto Kazawa, Keith Stevens,
+Tokenized: 					ListBuffer(Stephan, Gouws,, Yoshikiyo, Kato,, Taku, Kudo,, Hideto, Kazawa,, Keith, Stevens,)
+Text Separated: 			ListBuffer(Stephan Gouws, Yoshikiyo Kato, Taku Kudo, Hideto Kazawa, Keith Stevens)
+Geometrically Separated: 	ListBuffer(Stephan Gouws, Yoshikiyo Kato, Taku Kudo, Hideto Kazawa, Keith Stevens)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Stephan,(l:107.68, t:228.02, w:41.60, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Gouws,(l:153.18, t:228.02, w:34.27, h:10.55)),(l:107.68, t:228.02, w:79.77, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Yoshikiyo,(l:194.61, t:228.02, w:49.13, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kato,(l:247.64, t:228.02, w:25.33, h:10.55)),(l:194.61, t:228.02, w:78.36, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Taku,(l:280.12, t:228.02, w:26.00, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kudo,(l:310.02, t:228.02, w:27.95, h:10.55)),(l:280.12, t:228.02, w:57.85, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Hideto,(l:345.12, t:228.02, w:34.12, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kazawa,(l:383.15, t:228.02, w:39.63, h:10.55)),(l:345.12, t:228.02, w:77.66, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Keith,(l:429.94, t:228.02, w:28.60, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Stevens,(l:462.44, t:228.02, w:38.41, h:10.55)),(l:429.94, t:228.02, w:70.91, h:10.55))
+------------------------------------------------------------------------------------------------
+Document: 					1609.08144.pdf.d
+Text Reflow: 				George Kurian, Nishant Patil, Wei Wang, Cliff Young, Jason Smith, Jason Riesa,
+Tokenized: 					ListBuffer(George, Kurian,, Nishant, Patil,, Wei, Wang,, Cliff, Young,, Jason, Smith,, Jason, Riesa,)
+Text Separated: 			ListBuffer(George Kurian, Nishant Patil, Wei Wang, Cliff Young, Jason Smith, Jason Riesa)
+Geometrically Separated: 	ListBuffer(George Kurian, Nishant Patil, Wei Wang, Cliff Young, Jason Smith, Jason Riesa)
+Bounding Box info: 			NameWithBBox(NameRepresentation(George,(l:97.41, t:241.96, w:35.81, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kurian,(l:137.12, t:241.96, w:35.74, h:10.55)),(l:97.41, t:241.96, w:75.45, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Nishant,(l:180.03, t:241.96, w:39.70, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Patil,(l:223.64, t:241.96, w:24.53, h:10.55)),(l:180.03, t:241.96, w:68.14, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Wei,(l:255.32, t:241.96, w:19.50, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Wang,(l:278.73, t:241.96, w:29.24, h:10.55)),(l:255.32, t:241.96, w:52.65, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Cliff,(l:315.12, t:241.96, w:21.78, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Young,(l:340.81, t:241.96, w:32.49, h:10.55)),(l:315.12, t:241.96, w:58.18, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jason,(l:380.47, t:241.96, w:28.81, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Smith,(l:413.19, t:241.96, w:30.55, h:10.55)),(l:380.47, t:241.96, w:63.27, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jason,(l:450.90, t:241.96, w:28.82, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Riesa,(l:483.63, t:241.96, w:27.52, h:10.55)),(l:450.90, t:241.96, w:60.25, h:10.55))
+------------------------------------------------------------------------------------------------
+Document: 					1609.08144.pdf.d
+Text Reflow: 				Alex Rudnick, Oriol Vinyals, Greg Corrado, Macduff Hughes, Jeffrey Dean
+Tokenized: 					ListBuffer(Alex, Rudnick,, Oriol, Vinyals,, Greg, Corrado,, Macduff, Hughes,, Jeffrey, Dean)
+Text Separated: 			ListBuffer(Alex Rudnick, Oriol Vinyals, Greg Corrado, Macduff Hughes, Jeffrey Dean)
+Geometrically Separated: 	ListBuffer(Alex Rudnick, Oriol Vinyals, Greg Corrado, Macduff Hughes, Jeffrey Dean)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Alex,(l:114.30, t:255.91, w:23.38, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Rudnick,(l:141.59, t:255.91, w:42.09, h:10.55)),(l:114.30, t:255.91, w:69.38, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Oriol,(l:190.83, t:255.91, w:25.99, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Vinyals,(l:220.73, t:255.91, w:37.75, h:10.55)),(l:190.83, t:255.91, w:67.65, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Greg,(l:265.65, t:255.91, w:24.76, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Corrado,(l:294.32, t:255.91, w:41.57, h:10.55)),(l:265.65, t:255.91, w:70.24, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Macduff,(l:343.05, t:255.91, w:41.59, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Hughes,(l:388.55, t:255.91, w:37.44, h:10.55)),(l:343.05, t:255.91, w:82.94, h:10.55))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jeffrey,(l:433.15, t:255.91, w:33.95, h:10.55)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Dean,(l:471.00, t:255.91, w:26.48, h:10.55)),(l:433.15, t:255.91, w:64.33, h:10.55))
+------------------------------------------------------------------------------------------------
+Document: 					1611.08408.pdf.d
+Text Reflow: 				Pauline Luc
+Tokenized: 					ListBuffer(Pauline, Luc)
+Text Separated: 			ListBuffer(Pauline Luc)
+Geometrically Separated: 	ListBuffer(Pauline Luc)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Pauline,(l:152.69, t:190.54, w:31.15, h:12.61)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Luc,(l:186.26, t:190.54, w:16.16, h:12.61)),(l:152.69, t:190.54, w:49.73, h:12.61))
+------------------------------------------------------------------------------------------------
+Document: 					1611.08408.pdf.d
+Text Reflow: 				Camille Couprie
+Tokenized: 					ListBuffer(Camille, Couprie)
+Text Separated: 			ListBuffer(Camille Couprie)
+Geometrically Separated: 	ListBuffer(Camille Couprie)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Camille,(l:263.30, t:190.54, w:32.31, h:12.61)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Couprie,(l:298.04, t:190.54, w:33.92, h:12.61)),(l:263.30, t:190.54, w:68.66, h:12.61))
+------------------------------------------------------------------------------------------------
+Document: 					1611.08408.pdf.d
+Text Reflow: 				Soumith Chintala
+Tokenized: 					ListBuffer(Soumith, Chintala)
+Text Separated: 			ListBuffer(Soumith Chintala)
+Geometrically Separated: 	ListBuffer(Soumith Chintala)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Soumith,(l:382.15, t:190.54, w:35.02, h:12.61)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Chintala,(l:419.59, t:190.54, w:36.09, h:12.61)),(l:382.15, t:190.54, w:73.53, h:12.61))
+------------------------------------------------------------------------------------------------
+Document: 					1611.08408.pdf.d
+Text Reflow: 				Jakob Verbeek
+Tokenized: 					ListBuffer(Jakob, Verbeek)
+Text Separated: 			ListBuffer(Jakob Verbeek)
+Geometrically Separated: 	ListBuffer(Jakob Verbeek)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jakob,(l:266.89, t:256.82, w:25.03, h:12.61)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Verbeek,(l:294.35, t:256.82, w:34.03, h:12.61)),(l:266.89, t:256.82, w:61.49, h:12.61))
+------------------------------------------------------------------------------------------------
+Document: 					1612.08083.pdf.d
+Text Reflow: 				Yann N. Dauphin 1 Angela Fan 1 Michael Auli 1 David Grangier 1
+Tokenized: 					ListBuffer(Yann, N., Dauphin, Angela, Fan, Michael, Auli, David, Grangier)
+Text Separated: 			ListBuffer(Yann N. Dauphin Angela Fan Michael Auli David Grangier)
+Geometrically Separated: 	ListBuffer(Yann N. Dauphin, Angela Fan, Michael Auli, David Grangier)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Yann,(l:155.11, t:143.77, w:22.39, h:8.95)),NameRepresentation(N.,(l:180.00, t:143.77, w:9.69, h:8.95)),NameRepresentation(Dauphin,(l:192.18, t:143.77, w:37.09, h:8.95)),(l:155.11, t:143.77, w:74.16, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Angela,(l:241.07, t:143.77, w:29.88, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Fan,(l:273.45, t:143.77, w:16.34, h:8.95)),(l:241.07, t:143.77, w:48.72, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Michael,(l:301.59, t:143.77, w:34.31, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Auli,(l:338.40, t:143.77, w:17.76, h:8.95)),(l:301.59, t:143.77, w:54.57, h:8.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(David,(l:367.96, t:143.77, w:25.20, h:8.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Grangier,(l:395.66, t:143.77, w:39.29, h:8.95)),(l:367.96, t:143.77, w:66.99, h:8.95))
+------------------------------------------------------------------------------------------------
+Document: 					1702.02098.pdf.d
+Text Reflow: 				Emma Strubell Patrick Verga David Belanger Andrew McCallum
+Tokenized: 					ListBuffer(Emma, Strubell, Patrick, Verga, David, Belanger, Andrew, McCallum)
+Text Separated: 			ListBuffer(Emma Strubell Patrick Verga David Belanger Andrew McCallum)
+Geometrically Separated: 	ListBuffer(Emma Strubell, Patrick Verga, David Belanger, Andrew McCallum)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Emma,(l:96.85, t:116.48, w:33.86, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Strubell,(l:133.71, t:116.48, w:41.18, h:10.74)),(l:96.85, t:116.48, w:78.04, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Patrick,(l:201.79, t:116.48, w:37.73, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Verga,(l:242.51, t:116.48, w:29.88, h:10.74)),(l:201.79, t:116.48, w:70.60, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(David,(l:299.30, t:116.48, w:30.25, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Belanger,(l:332.55, t:116.48, w:45.81, h:10.74)),(l:299.30, t:116.48, w:79.06, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Andrew,(l:405.27, t:116.48, w:40.96, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(McCallum,(l:449.22, t:116.48, w:54.45, h:10.74)),(l:405.27, t:116.48, w:98.40, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1705.10929.pdf.d
+Text Reflow: 				Sai Rajeswar ¿3; Sandeep Subramanian ¿3; Francis Dutil
+Tokenized: 					ListBuffer(Sai, Rajeswar, Sandeep, Subramanian, Francis, Dutil)
+Text Separated: 			ListBuffer(Sai Rajeswar Sandeep Subramanian Francis Dutil)
+Geometrically Separated: 	ListBuffer(Sai Rajeswar, Sandeep Subramanian, Francis Dutil)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Sai,(l:155.30, t:111.46, w:15.94, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Rajeswar,(l:174.23, t:111.46, w:48.46, h:10.74)),(l:155.30, t:111.46, w:67.39, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Sandeep,(l:238.75, t:111.46, w:43.17, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Subramanian,(l:284.92, t:111.46, w:69.75, h:10.74)),(l:238.75, t:111.46, w:115.92, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Francis,(l:370.73, t:111.46, w:38.52, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Dutil,(l:412.24, t:111.46, w:25.90, h:10.74)),(l:370.73, t:111.46, w:67.41, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1705.10929.pdf.d
+Text Reflow: 				Christopher Pal | Aaron Courville
+Tokenized: 					ListBuffer(Christopher, Pal, Aaron, Courville)
+Text Separated: 			ListBuffer(Christopher Pal Aaron Courville)
+Geometrically Separated: 	ListBuffer(Christopher Pal, Aaron Courville)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Christopher,(l:201.78, t:125.52, w:62.42, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Pal,(l:267.20, t:125.52, w:16.48, h:10.74)),(l:201.78, t:125.52, w:81.90, h:10.74))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Aaron,(l:309.31, t:125.52, w:32.32, h:10.74)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Courville,(l:344.62, t:125.52, w:47.70, h:10.74)),(l:309.31, t:125.52, w:83.01, h:10.74))
+------------------------------------------------------------------------------------------------
+Document: 					1705.10929.pdf.d
+Text Reflow: 				 y
+------------------------------------------------------------------------------------------------
+Document: 					3565dc8d1eeee372058a2e4cd29c82d99c90.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf.d
+Text Reflow: 				To ma s Miko lov
+Tokenized: 					ListBuffer(Tomas, Mikolov)
+Text Separated: 			ListBuffer(Tomas Mikolov)
+Geometrically Separated: 	ListBuffer(Tomas Mikolov)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Tomas,(l:153.11, t:191.79, w:27.87, h:8.96)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Mikolov,(l:183.35, t:191.79, w:35.22, h:8.96)),(l:153.11, t:191.79, w:65.46, h:8.96))
+------------------------------------------------------------------------------------------------
+Document: 					5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf.d
+Text Reflow: 				Ily a Sut skeve r
+Tokenized: 					ListBuffer(Ilya, Sutskever)
+Text Separated: 			ListBuffer(Ilya Sutskever)
+Geometrically Separated: 	ListBuffer(Ilya Sutskever)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Ilya,(l:287.52, t:191.79, w:16.62, h:8.96)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Sutskever,(l:306.60, t:191.79, w:41.73, h:8.96)),(l:287.52, t:191.79, w:60.81, h:8.96))
+------------------------------------------------------------------------------------------------
+Document: 					5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf.d
+Text Reflow: 				K a i Che n
+Tokenized: 					ListBuffer(Kai, Chen)
+Text Separated: 			ListBuffer(Kai Chen)
+Geometrically Separated: 	ListBuffer(Kai Chen)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Kai,(l:419.04, t:191.79, w:15.60, h:8.96)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Chen,(l:437.04, t:191.79, w:22.69, h:8.96)),(l:419.04, t:191.79, w:40.69, h:8.96))
+------------------------------------------------------------------------------------------------
+Document: 					5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf.d
+Text Reflow: 				G re g Co r r a do
+Tokenized: 					ListBuffer(Greg, Corrado)
+Text Separated: 			ListBuffer(Greg Corrado)
+Geometrically Separated: 	ListBuffer(Greg Corrado)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Greg,(l:196.80, t:252.87, w:21.54, h:8.96)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Corrado,(l:220.68, t:252.87, w:36.66, h:8.96)),(l:196.80, t:252.87, w:60.54, h:8.96))
+------------------------------------------------------------------------------------------------
+Document: 					5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf.d
+Text Reflow: 				Je f f re y De a n
+Tokenized: 					ListBuffer(Jeffrey, Dean)
+Text Separated: 			ListBuffer(Jeffrey Dean)
+Geometrically Separated: 	ListBuffer(Jeffrey Dean)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jeffrey,(l:369.84, t:252.87, w:29.82, h:8.96)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Dean,(l:401.88, t:252.87, w:22.21, h:8.96)),(l:369.84, t:252.87, w:54.25, h:8.96))
+------------------------------------------------------------------------------------------------
+Document: 					bengio03a.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					bengio03a.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					bengio03a.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					bengio03a.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					CMU-CALD-02-107.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					commai.pdf.d
+Text Reflow: 				Ma rc o Ba ro ni, Ar ma nd Jo ulin, Alla n Ja br i, G e rmá n K r usz e w ski, Ang e liki La z a r ido u, ∗
+Tokenized: 					ListBuffer(Marco, Baroni,, Armand, Joulin,, Allan, Jabri,, Germán, Kruszewski,, Angeliki, Lazaridou,)
+Text Separated: 			ListBuffer(Marco Baroni, Armand Joulin, Allan Jabri, Germán Kruszewski, Angeliki Lazaridou)
+Geometrically Separated: 	ListBuffer(Marco Baroni, Armand Joulin, Allan Jabri, Germán Kruszewski, Angeliki Lazaridou)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Marco,(l:114.00, t:137.49, w:28.13, h:9.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Baroni,(l:144.47, t:137.49, w:29.27, h:9.15)),(l:114.00, t:137.49, w:59.74, h:9.15))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Armand,(l:178.66, t:137.49, w:36.01, h:9.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Joulin,(l:217.07, t:137.49, w:26.53, h:9.15)),(l:178.66, t:137.49, w:64.94, h:9.15))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Allan,(l:248.52, t:137.49, w:23.29, h:9.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Jabri,(l:274.32, t:137.49, w:22.68, h:9.15)),(l:248.52, t:137.49, w:48.48, h:9.15))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Germán,(l:301.80, t:137.49, w:35.53, h:9.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kruszewski,(l:339.71, t:137.49, w:49.80, h:9.15)),(l:301.80, t:137.49, w:87.71, h:9.15))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Angeliki,(l:394.43, t:137.49, w:36.00, h:9.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Lazaridou,(l:432.95, t:137.49, w:44.41, h:9.15)),(l:394.43, t:137.49, w:82.93, h:9.15))
+------------------------------------------------------------------------------------------------
+Document: 					commai.pdf.d
+Text Reflow: 				K le me n Simo nic & To ma s Miko lov
+Tokenized: 					ListBuffer(Klemen, Simonic, &, Tomas, Mikolov)
+Text Separated: 			ListBuffer(Klemen Simonic, Tomas Mikolov)
+Geometrically Separated: 	ListBuffer(Klemen Simonic, Tomas Mikolov)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Klemen,(l:114.00, t:148.41, w:33.25, h:9.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Simonic,(l:149.64, t:148.41, w:34.29, h:9.15)),(l:114.00, t:148.41, w:69.93, h:9.15))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Tomas,(l:197.27, t:148.41, w:27.86, h:9.15)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Mikolov,(l:227.63, t:148.41, w:35.22, h:9.15)),(l:197.27, t:148.41, w:65.58, h:9.15))
+------------------------------------------------------------------------------------------------
+Document: 					document.pdf.d
+Text Reflow: 				Minh-Thang Luong Hieu Pham Christopher D. Manning
+Tokenized: 					ListBuffer(Minh-Thang, Luong, Hieu, Pham, Christopher, D., Manning)
+Text Separated: 			ListBuffer(Minh-Thang Luong Hieu Pham Christopher D. Manning)
+Geometrically Separated: 	ListBuffer(Minh-Thang Luong, Hieu Pham, Christopher D. Manning)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Minh-Thang,(l:135.49, t:113.84, w:64.89, h:11.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Luong,(l:203.53, t:113.84, w:33.09, h:11.95)),(l:135.49, t:113.84, w:101.13, h:11.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Hieu,(l:257.65, t:113.84, w:24.64, h:11.95)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Pham,(l:285.25, t:113.84, w:29.87, h:11.95)),(l:257.65, t:113.84, w:57.47, h:11.95))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Christopher,(l:336.01, t:113.84, w:62.30, h:11.95)),NameRepresentation(D.,(l:401.53, t:113.84, w:11.38, h:11.95)),NameRepresentation(Manning,(l:415.81, t:113.84, w:46.41, h:11.95)),(l:336.01, t:113.84, w:126.21, h:11.95))
+------------------------------------------------------------------------------------------------
+Document: 					mikolov_icassp2011_5528.pdf.d
+Text Reflow: 				To m á sˇ M i ko l ov1, 2 , S t ef a n Ko m b r i n k1 , Lu ká sˇ B u rget 1 , Ja n “Ho n z a ” Cˇ er n o cký 1 , S a n j e ev K h u d a n p u r
+Tokenized: 					ListBuffer(Tomásˇ, Mikolov, ,, Stefan, Kombrink, ,, Lukásˇ, Burget, ,, Jan, “Honza”, Cˇernocký, ,, Sanjeev, Khudanpur)
+Text Separated: 			ListBuffer(Tomásˇ Mikolov , Stefan Kombrink , Lukásˇ Burget , Jan “Honza” Cˇernocký , Sanjeev Khudanpur)
+Geometrically Separated: 	ListBuffer(Tomásˇ Mikolov, Stefan Kombrink, Lukásˇ Burget, Jan “Honza” Cˇernocký, Sanjeev Khudanpur)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Tomásˇ,(l:73.13, t:94.80, w:30.02, h:13.02)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Mikolov,(l:106.44, t:94.80, w:38.48, h:13.02)),(l:73.13, t:94.80, w:71.79, h:13.02))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Stefan,(l:161.73, t:94.80, w:29.49, h:13.02)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Kombrink,(l:194.08, t:94.80, w:46.89, h:13.02)),(l:161.73, t:94.80, w:79.24, h:13.02))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Lukásˇ,(l:251.27, t:94.80, w:27.77, h:13.02)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Burget,(l:282.33, t:94.80, w:31.51, h:13.02)),(l:251.27, t:94.80, w:62.57, h:13.02))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Jan,(l:324.39, t:94.80, w:16.63, h:13.02)),NameRepresentation(“Honza”,(l:343.88, t:94.80, w:43.87, h:13.02)),NameRepresentation(Cˇernocký,(l:390.66, t:94.80, w:44.07, h:13.02)),(l:324.39, t:94.80, w:110.34, h:13.02))
+Bounding Box info: 			NameWithBBox(NameRepresentation(Sanjeev,(l:446.06, t:94.80, w:36.54, h:13.02)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Khudanpur,(l:485.41, t:94.80, w:53.85, h:13.02)),(l:446.06, t:94.80, w:93.20, h:13.02))
+------------------------------------------------------------------------------------------------
+Document: 					paragraph_vector.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					paragraph_vector.pdf.d
+------------------------------------------------------------------------------------------------
+Document: 					tr-2006-62.pdf.d
+Text Reflow: 				Ti m Pa e k
+Tokenized: 					ListBuffer(Tim, Paek)
+Text Separated: 			ListBuffer(Tim Paek)
+Geometrically Separated: 	ListBuffer(Tim Paek)
+Bounding Box info: 			NameWithBBox(NameRepresentation(Tim,(l:275.77, t:134.73, w:17.94, h:10.30)),NameRepresentation(,(l:0.-1, t:0.-1, w:0.-1, h:0.-1)),NameRepresentation(Paek,(l:296.70, t:134.73, w:22.94, h:10.30)),(l:275.77, t:134.73, w:43.87, h:10.30))
 ------------------------------------------------------------------------------------------------
