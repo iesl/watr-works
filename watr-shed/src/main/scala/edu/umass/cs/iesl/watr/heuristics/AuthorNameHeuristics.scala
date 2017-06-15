@@ -6,10 +6,66 @@ import geometry.LTBounds
 import Constants._
 import Utils._
 
+import scala.collection.mutable.ListBuffer
+import scala.util.control.Breaks._
+
 object AuthorNameHeuristics {
+
+    def getSeparateAuthorNamesByText(tokenizedTextReflow: ListBuffer[String]): ListBuffer[String] = {
+
+        val separateAuthorNames: ListBuffer[String] = ListBuffer[String]()
+        val separateAuthorName: ListBuffer[String] = ListBuffer[String]()
+
+        var checkNextFlag: Boolean = false
+
+        for (textReflowToken <- tokenizedTextReflow) {
+            breakable {
+                if (WORD_SEPARATORS.contains(textReflowToken.toLowerCase)) {
+                    separateAuthorNames += separateAuthorName.mkString(SPACE_SEPARATOR)
+                    separateAuthorName.clear()
+                    if (checkNextFlag) {
+                        checkNextFlag = false
+                    }
+                }
+                else if (!checkNextFlag && PUNCTUATION_SEPARATORS.contains(textReflowToken.takeRight(n = 1))) {
+                    separateAuthorName += textReflowToken.replace(textReflowToken.takeRight(n = 1), BLANK)
+                    checkNextFlag = true
+                    break
+                }
+                else if (checkNextFlag) {
+                    if (isOfFirstNameInitialFormat(textReflowToken) && separateAuthorName.length.==(1)) {
+                        separateAuthorName += textReflowToken.replace(COMMA, BLANK)
+                        separateAuthorNames += separateAuthorName.mkString(SPACE_SEPARATOR)
+                        separateAuthorName.clear()
+                    }
+                    else {
+                        separateAuthorNames += separateAuthorName.mkString(SPACE_SEPARATOR)
+                        separateAuthorName.clear()
+                        if(textReflowToken.takeRight(1).equals(PERIOD)){
+                            textReflowToken.dropRight(1)
+                        }
+                        separateAuthorName += textReflowToken
+                    }
+                    checkNextFlag = false
+                }
+                else {
+                    if(textReflowToken.takeRight(1).equals(PERIOD)){
+                        textReflowToken.dropRight(1)
+                    }
+                    separateAuthorName += textReflowToken
+                }
+            }
+        }
+
+        if (separateAuthorName.nonEmpty) {
+            separateAuthorNames += separateAuthorName.mkString(SPACE_SEPARATOR)
+        }
+        separateAuthorNames.filter(_.nonEmpty)
+    }
+
     def getSeparateAuthorNameComponents(authorName: String): NameWithBBox = {
 
-        val authorNameComponents = authorName.split(NAME_SEPARATOR)
+        val authorNameComponents = authorName.split(SPACE_SEPARATOR)
         var lastName = None: Option[String]
         var firstName = None: Option[String]
         var middleName = None: Option[String]
@@ -19,11 +75,13 @@ object AuthorNameHeuristics {
             if (authorNameComponents.length.>(1)) {
                 firstName = Some(authorNameComponents(0))
                 if (authorNameComponents.length.>(2)) {
-                    middleName = Some(authorNameComponents.slice(1, authorNameComponents.length - 1).mkString(NAME_SEPARATOR))
-                    if (VALID_SURNAME_PARTICLES.contains(authorNameComponents(authorNameComponents.length - 2).toLowerCase)) {
-                        lastName = Some(authorNameComponents.slice(authorNameComponents.length - 2, authorNameComponents.length).mkString(NAME_SEPARATOR))
-                        middleName = Some(authorNameComponents.slice(1, authorNameComponents.length - 2).mkString(NAME_SEPARATOR))
+                    middleName = Some(authorNameComponents.slice(1, authorNameComponents.length - 1).mkString(SPACE_SEPARATOR))
+                    var lastNameIndex: Int = authorNameComponents.length - 1
+                    while(VALID_SURNAME_PARTICLES.contains(authorNameComponents(lastNameIndex-1).toLowerCase)){
+                        lastNameIndex -= 1
                     }
+                    lastName = Some(authorNameComponents.slice(lastNameIndex, authorNameComponents.length).mkString(SPACE_SEPARATOR))
+                    middleName = Some(authorNameComponents.slice(1, lastNameIndex).mkString(SPACE_SEPARATOR))
                 }
             }
 
@@ -31,10 +89,10 @@ object AuthorNameHeuristics {
         }
         else {
             lastName = Some(authorName.toCharArray.slice(0, authorName.indexOf(COMMA)).mkString)
-            val remainingNameComponents = authorName.toCharArray.slice(getStartIndexAfterComma(authorName), authorName.length).mkString.split(NAME_SEPARATOR)
+            val remainingNameComponents = authorName.toCharArray.slice(getStartIndexAfterComma(authorName), authorName.length).mkString.split(SPACE_SEPARATOR)
             firstName = Some(remainingNameComponents(0))
             if (remainingNameComponents.length.>(1)) {
-                middleName = Some(remainingNameComponents.slice(1, remainingNameComponents.length).mkString(NAME_SEPARATOR))
+                middleName = Some(remainingNameComponents.slice(1, remainingNameComponents.length).mkString(SPACE_SEPARATOR))
             }
 
         }
