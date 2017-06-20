@@ -97,9 +97,9 @@ object AuthorNameHeuristics {
 
         }
 
-        val firstNameRepresentation: NameRepresentation = NameRepresentation(nameText = firstName.getOrElse(BLANK), bbox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
-        val middleNameRepresentation: NameRepresentation = NameRepresentation(nameText = middleName.getOrElse(BLANK), bbox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
-        val lastNameRepresentation: NameRepresentation = NameRepresentation(nameText = lastName.getOrElse(BLANK), bbox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
+        val firstNameRepresentation: ComponentRepresentation = ComponentRepresentation(componentText = firstName.getOrElse(BLANK), componentBBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
+        val middleNameRepresentation: ComponentRepresentation = ComponentRepresentation(componentText = middleName.getOrElse(BLANK), componentBBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
+        val lastNameRepresentation: ComponentRepresentation = ComponentRepresentation(componentText = lastName.getOrElse(BLANK), componentBBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
 
         NameWithBBox(firstName = firstNameRepresentation, middleName = middleNameRepresentation, lastName = lastNameRepresentation, bbox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
     }
