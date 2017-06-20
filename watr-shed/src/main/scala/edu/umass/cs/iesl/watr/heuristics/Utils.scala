@@ -83,17 +83,17 @@ object Utils {
 
         val (nameStartIndex, nameEndIndex) = getIndexesForComponents(component = geometricallySeparatedName.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (0, textReflow.charAtoms().length))
         name.bbox = getBoundingBoxesWithIndexesFromReflow((nameStartIndex, nameEndIndex), textReflow)
-        if (name.firstName.nameText.nonEmpty) {
-            val (firstNameStartIndex, firstNameEndIndex) = getIndexesForComponents(component = name.firstName.nameText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.firstName.bbox = getBoundingBoxesWithIndexesFromReflow((firstNameStartIndex, firstNameEndIndex), textReflow)
+        if (name.firstName.componentText.nonEmpty) {
+            val (firstNameStartIndex, firstNameEndIndex) = getIndexesForComponents(component = name.firstName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            name.firstName.componentBBox = getBoundingBoxesWithIndexesFromReflow((firstNameStartIndex, firstNameEndIndex), textReflow)
         }
-        if (name.middleName.nameText.nonEmpty) {
-            val (middleNameStartIndex, middleNameEndIndex) = getIndexesForComponents(component = name.middleName.nameText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.middleName.bbox = getBoundingBoxesWithIndexesFromReflow((middleNameStartIndex, middleNameEndIndex), textReflow)
+        if (name.middleName.componentText.nonEmpty) {
+            val (middleNameStartIndex, middleNameEndIndex) = getIndexesForComponents(component = name.middleName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            name.middleName.componentBBox = getBoundingBoxesWithIndexesFromReflow((middleNameStartIndex, middleNameEndIndex), textReflow)
         }
-        if (name.lastName.nameText.nonEmpty) {
-            val (lastNameStartIndex, lastNameEndIndex) = getIndexesForComponents(component = name.lastName.nameText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.lastName.bbox = getBoundingBoxesWithIndexesFromReflow((lastNameStartIndex, lastNameEndIndex), textReflow)
+        if (name.lastName.componentText.nonEmpty) {
+            val (lastNameStartIndex, lastNameEndIndex) = getIndexesForComponents(component = name.lastName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            name.lastName.componentBBox = getBoundingBoxesWithIndexesFromReflow((lastNameStartIndex, lastNameEndIndex), textReflow)
         }
         name
     }
