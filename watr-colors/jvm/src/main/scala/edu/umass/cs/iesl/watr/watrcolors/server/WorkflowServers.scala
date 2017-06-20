@@ -169,7 +169,7 @@ class PageOneLabeler(
   }
 
   def targetLabels(): Map[Label, Color] = Map(
-    (LB.Title, Colors.Wheat),
+    (LB.Title, Colors.Firebrick3),
     (LB.Authors, Colors.Orange),
     (LB.Abstract, Colors.MediumTurquoise),
     (LB.Affiliations, Colors.OliveDrab)

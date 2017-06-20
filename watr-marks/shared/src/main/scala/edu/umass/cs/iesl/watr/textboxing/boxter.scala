@@ -113,7 +113,7 @@ object TextBoxing extends ToListOps with ToIdOps {
       val trim = theString.trim()
       val padTo = width - trim.length()
       if (padTo > 0) {
-        val (pre, post) = trim.splitAt(centerIndex)
+        val (pre, /*post=*/_) = trim.splitAt(centerIndex)
         val prePadLen = (width/2) - pre.length
         val postPadLen = width - (prePadLen + trim.length)
 

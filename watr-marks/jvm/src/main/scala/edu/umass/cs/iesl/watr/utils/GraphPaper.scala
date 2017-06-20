@@ -13,8 +13,10 @@ class GraphPaper(
 
   val gridBuffer = mutable.ArrayBuffer
     .tabulate(height, width){ case (y, x) =>
-      // val fcolor = fansi.Color.Blue("╌")
-      fansi.Color.Blue(" ")
+      // val fcolor = fansi.Color.White("╌")
+      // val fcolor = fansi.Color.Blue(" ")
+      val fcolor = fansi.Color.White("░")
+      fcolor
     }
 
 

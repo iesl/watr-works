@@ -12,6 +12,32 @@ import geometry._
 
 abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTestingUtil with LabelWidgetLayout {
 
+  def assertExpectedLayout(layout: LabelWidget, expectedLayout: String): Unit = {
+    val lwindex = LabelWidgetIndex.create(docStore, layout)
+    val graphPaper = lwindex.toGraphPaper()
+    // val strictBounds = lwindex.layout.strictBounds
+    // val bleedBounds = lwindex.layout.bleedBounds
+    // println(s"strictBounds: ${strictBounds}")
+    // println(s"bleedBounds: ${bleedBounds}")
+    // println(prettyPrintLabelWidget(layout))
+    // println(graphPaper.asString())
+    // println(graphPaper.asMonocolorString())
+
+    assertExpectedText(
+      expectedLayout,
+      graphPaper.asMonocolorString()
+    )
+  }
+
+  def assertExpectedText(expected: String, actual: String): Unit = {
+    val l1s = actual.split("\n").map(_.trim())
+    val l2s = expected.split("\n").map(_.trim())
+    val zipped = l1s.zip(l2s)
+    zipped.foreach { case (l1, l2) =>
+      assertResult(l1)(l2)
+    }
+  }
+
   def reportQueryHits(queryBox: LTBounds, qhits: Seq[QueryHit]): Unit = {
     println(s"querying: $queryBox")
     val qstr = qhits.map{qhit =>
@@ -108,7 +134,7 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
     )
   }
   def pageDivs2(pageId: Int@@PageID): LabelWidget = {
-    val targetRegion = mkTargetRegion(pageId, 0, 0, 3, 3)
+    // val targetRegion = mkTargetRegion(pageId, 0, 0, 3, 3)
     col(
       targetOverlay(mkTargetRegion(pageId, 0, 0, 3, 2), List()),
       targetOverlay(mkTargetRegion(pageId, 0, 2, 3, 1), List())

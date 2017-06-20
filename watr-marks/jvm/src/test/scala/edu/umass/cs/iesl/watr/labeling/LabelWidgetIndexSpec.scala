@@ -45,6 +45,8 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
   }
 
+  override def xscale = 4.0d
+  override def yscale = 4.0d
   it should "apply a label to selected regions" in new CommonSetup {
 
     val zoneAndLabel = getDocumentZonesWithLabels(stableId)
@@ -52,6 +54,7 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
     zoneAndLabel.length shouldBe(12)
 
     val queryBox = getRegionBounds(0, 0, 1, 2).scale(-3.percent)
+    // println("query box: " + queryBox)
 
     val qres = lwindex.queryRegion(queryBox)
 
@@ -72,41 +75,41 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
 
 
-  it should "select region(s) by line" in new CommonSetup {
+  // it should "select region(s) by line" in new CommonSetup {
 
-    val queryBox = getRegionBounds(2, 1, 2, 4).scale(-3.percent)
+  //   // val queryBox = getRegionBounds(2, 1, 2, 4).scale(-3.percent)
 
-    val qres = lwindex.queryRegion(queryBox)
+  //   // val qres = lwindex.queryRegion(queryBox)
 
-    // lwindex.debugPrint(Some(queryBox))
-    // reportQueryHits(queryBox, qres)
-  }
+  //   // lwindex.debugPrint(Some(queryBox))
+  //   // reportQueryHits(queryBox, qres)
+  // }
 
-  it should "select region(s) by char" in new CommonSetup {
+  // it should "select region(s) by char" in new CommonSetup {
 
-    val queryBox = getRegionBounds(1, 1, 4, 4).scale(-3.percent)
+  //   val queryBox = getRegionBounds(1, 1, 4, 4).scale(-3.percent)
 
-    val queryHits = lwindex.queryRegion(queryBox)
+  //   val queryHits = lwindex.queryRegion(queryBox)
 
-    // lwindex.debugPrint(Some(queryBox))
+  //   // lwindex.debugPrint(Some(queryBox))
 
-    val constrainedHits = lwindex.applyConstraint(ByChar, queryHits)
+  //   // val constrainedHits = lwindex.applyConstraint(ByChar, queryHits)
 
-    // reportQueryHits(queryBox, queryHits)
-    // reportQueryHits(queryBox, constrainedHits)
-  }
+  //   // reportQueryHits(queryBox, queryHits)
+  //   // reportQueryHits(queryBox, constrainedHits)
+  // }
 
 
-  it should "select and label region by unconstrained rect" in new CommonSetup {
+  // it should "select and label region by unconstrained rect" in new CommonSetup {
 
-    val queryBox = getRegionBounds(4, 0, 1, 2).scale(-3.percent)
-    lwindex.addLabel(queryBox, ByRegion, LB.Title)
+  //   val queryBox = getRegionBounds(4, 0, 1, 2).scale(-3.percent)
+  //   lwindex.addLabel(queryBox, ByRegion, LB.Title)
 
-    getDocumentZonesWithLabels(stableId).length shouldBe(13)
+  //   getDocumentZonesWithLabels(stableId).length shouldBe(13)
 
-    // lwindex.debugPrint(Some(queryBox))
-    // println(visualizeDocument(stableId))
-  }
+  //   // lwindex.debugPrint(Some(queryBox))
+  //   // println(visualizeDocument(stableId))
+  // }
 
 
 

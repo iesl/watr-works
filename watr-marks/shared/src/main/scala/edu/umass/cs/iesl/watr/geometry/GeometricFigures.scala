@@ -540,8 +540,8 @@ object GeometryImplicits {
 
     def scale(byPercent: Double@@Percent): LTBounds = {
       val scale = byPercent.unwrap/100d
-      val w = theBbox.width*scale
-      val h = theBbox.height*scale
+      val w = theBbox.width + theBbox.width*scale
+      val h = theBbox.height + theBbox.height*scale
       theBbox.copy(width=w, height=h)
     }
 

@@ -20,8 +20,8 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
   def docStore: DocumentZoningApi
 
   val charIds = utils.IdGenerator[CharID]()
-  val xscale = 10.0d
-  val yscale = 10.0d
+  def xscale = 10.0d
+  def yscale = 10.0d
 
   def linesWithPad(str: String): Seq[(Int, String)] = {
     str.split("\n")

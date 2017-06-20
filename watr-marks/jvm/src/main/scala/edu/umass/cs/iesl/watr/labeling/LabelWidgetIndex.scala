@@ -115,6 +115,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
 
     val lwIndex = SpatialIndex.createFor[AbsPosWidget]()
 
+
     val layout0 = layoutWidgetPositions(newWidget)
 
     layout0.positioning
@@ -606,8 +607,8 @@ object DebugLayout {
     }
     val totalBounds = LTBounds.empty union bleedBounds
 
-    val w: Int = (totalBounds.width).asInt()+1
-    val h: Int = (totalBounds.height).asInt()+1
+    val w: Int = (totalBounds.width).asInt() // +1
+    val h: Int = (totalBounds.height).asInt() // +1
 
     println(s"layout strict: ${strictBounds}")
     println(s"layout bleedbounds: ${bleedBounds}")
