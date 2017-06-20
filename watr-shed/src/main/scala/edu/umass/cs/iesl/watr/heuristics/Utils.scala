@@ -128,8 +128,9 @@ object Utils {
 
         }
 
-        if(yPositionCounts(yPositionCounts.maxBy(_._2)._1) > 1){
-            return yPositionCounts.maxBy(_._2)._1
+        val maxRecord: (Int, Int) = yPositionCounts.maxBy(_._2)
+        if(maxRecord._2 > 1){
+            return maxRecord._1
         }
         -1
     }

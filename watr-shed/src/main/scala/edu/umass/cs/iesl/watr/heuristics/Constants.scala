@@ -17,4 +17,5 @@ object Constants {
     final val MIDDLE_NAME: String = "middle_name"
     final val LAST_NAME: String = "last_name"
 
+
 }
