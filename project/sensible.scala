@@ -45,7 +45,7 @@ object SensibleProject extends CommonLibs {
 
     autoCompilerPlugins  := true,
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.4"),
-    addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.0" cross CrossVersion.full),
+    addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.1" cross CrossVersion.full),
 
 
     // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the
