@@ -2,14 +2,10 @@ package edu.umass.cs.iesl.watr
 
 package heuristics
 
-import edu.umass.cs.iesl.watr.textreflow.data.TextReflow
+import edu.umass.cs.iesl.watr.geometry.CharAtom
+import edu.umass.cs.iesl.watr.heuristics.Constants._
+import edu.umass.cs.iesl.watr.heuristics.Utils._
 import edu.umass.cs.iesl.watr.textreflow.data._
-
-import util.control.Breaks._
-import Constants._
-import Utils._
-import TypeTags._
-import edu.umass.cs.iesl.watr.geometry.{CharAtom, LTBounds}
 
 import scala.collection.mutable.ListBuffer
 
@@ -24,7 +20,7 @@ object GenericHeuristics {
 
         for (charAtom <- textReflow.charAtoms()) {
             val currentCharacter = charAtom.char
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)){
+            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
                 if (prevCharPosition > 0) {
                     val spaceBetweenChars = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
                     if (spaceBetweenChars < SPACE_BETWEEN_WORDS_THRESHOLD) {
@@ -50,12 +46,12 @@ object GenericHeuristics {
                         }
                     }
                 }
-                if(prevCharPosition.==(-1)){
+                if (prevCharPosition.==(-1)) {
                     currentToken += currentCharacter
                 }
                 prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
             }
-            else if (charAtom.bbox.right.asInstanceOf[Int] < prevCharPosition){
+            else if (charAtom.bbox.right.asInstanceOf[Int] < prevCharPosition) {
                 currentToken += currentCharacter
             }
         }
@@ -74,19 +70,17 @@ object GenericHeuristics {
         val separateComponent: ListBuffer[String] = ListBuffer[String]()
 
         for (textReflowToken <- tokenizedTextReflow) {
-            breakable {
-                if (WORD_SEPARATORS.contains(textReflowToken.toLowerCase)) {
-                    separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
-                    separateComponent.clear()
-                }
-                else if( PUNCTUATION_SEPARATORS.contains(textReflowToken.takeRight(n = 1))){
-                    separateComponent += textReflowToken.dropRight(n = 1)
-                    separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
-                    separateComponent.clear()
-                }
-                else {
-                    separateComponent += textReflowToken
-                }
+            if (WORD_SEPARATORS.contains(textReflowToken.toLowerCase)) {
+                separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
+                separateComponent.clear()
+            }
+            else if (PUNCTUATION_SEPARATORS.contains(textReflowToken.takeRight(n = 1))) {
+                separateComponent += textReflowToken.dropRight(n = 1)
+                separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
+                separateComponent.clear()
+            }
+            else {
+                separateComponent += textReflowToken
             }
         }
 
@@ -112,9 +106,10 @@ object GenericHeuristics {
         val yPosition: Int = getYPosition(textReflow = textReflow)
 
         while (currentCharAtomIndex < textReflow.charAtoms().length && currentComponentIndex < componentsSeparatedByText.length) {
-            var charAtom: CharAtom = textReflow.charAtoms()(currentCharAtomIndex)
             currentComponent = componentsSeparatedByText(currentComponentIndex)
             currentSeparateComponent = currentComponent.split(SPACE_SEPARATOR)(currentSeparateComponentIndex)
+            val (_, currentSeparateComponentEndIndex) = getIndexesForComponents(component = currentSeparateComponent, textReflow = textReflow, (currentCharAtomIndex, textReflow.charAtoms().length))
+            var charAtom: CharAtom = textReflow.charAtoms()(currentCharAtomIndex)
             val currentCharacter = charAtom.char.toCharArray.head
             if (currentCharacter.equals(currentSeparateComponent.head)) {
                 if (prevCharPosition < 0) {
@@ -129,20 +124,21 @@ object GenericHeuristics {
                         separateComponent.clear()
                     }
                     separateComponent += currentSeparateComponent
-                    if (currentSeparateComponentIndex + 1 == currentComponent.split(SPACE_SEPARATOR).length) {
-                        separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
-                        separateComponent.clear()
-                    }
-                }
 
+                }
+                currentCharAtomIndex = currentSeparateComponentEndIndex - 1
                 val indices = getNextComponentIndices(currentSeparateComponentIndex, currentComponentIndex, currentComponent)
                 currentSeparateComponentIndex = indices._1
                 currentComponentIndex = indices._2
+                if (currentSeparateComponentIndex.==(0)) {
+                    separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
+                    separateComponent.clear()
+                }
 
             }
             charAtom = textReflow.charAtoms()(currentCharAtomIndex)
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition) || (charAtom.bbox.right.asInstanceOf[Int] < textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right.asInstanceOf[Int]
-                                                                        && textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.top.asInstanceOf[Int].==(yPosition))) {
+            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition) || (currentCharAtomIndex > 0 && charAtom.bbox.right.asInstanceOf[Int] < textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right.asInstanceOf[Int]
+                && textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.top.asInstanceOf[Int].==(yPosition))) {
                 prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
             }
             currentCharAtomIndex += 1
