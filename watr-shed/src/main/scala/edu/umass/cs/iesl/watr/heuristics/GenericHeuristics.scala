@@ -15,44 +15,20 @@ object GenericHeuristics {
         val tokens: ListBuffer[String] = ListBuffer[String]()
         val currentToken: ListBuffer[String] = ListBuffer[String]()
 
-        var prevCharPosition: Int = -1
+        var prevCharPosition: Int = -1 * SPACE_BETWEEN_WORDS_THRESHOLD
         val yPosition: Int = getYPosition(textReflow = textReflow)
 
         for (charAtom <- textReflow.charAtoms()) {
-            val currentCharacter = charAtom.char
             if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
-                if (prevCharPosition > 0) {
-                    val spaceBetweenChars = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
-                    if (spaceBetweenChars < SPACE_BETWEEN_WORDS_THRESHOLD) {
-                        if (charAtom.bbox.top.==(yPosition)) {
-                            currentToken += currentCharacter
-                        }
-                        else {
-                            if (charAtom.bbox.right.asInstanceOf[Int] > prevCharPosition) {
-                                tokens += currentToken.mkString
-                                currentToken.clear()
-                            }
-                            else {
-                                currentToken += currentCharacter
-                            }
-                        }
-
-                    }
-                    else if (spaceBetweenChars >= SPACE_BETWEEN_WORDS_THRESHOLD) {
-                        tokens += currentToken.mkString
-                        currentToken.clear()
-                        if (charAtom.bbox.top.==(yPosition)) {
-                            currentToken += currentCharacter
-                        }
-                    }
+                if (charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition >= SPACE_BETWEEN_WORDS_THRESHOLD) {
+                    tokens += currentToken.mkString
+                    currentToken.clear()
                 }
-                if (prevCharPosition.==(-1)) {
-                    currentToken += currentCharacter
-                }
+                currentToken += charAtom.char
                 prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
             }
             else if (charAtom.bbox.right.asInstanceOf[Int] < prevCharPosition) {
-                currentToken += currentCharacter
+                currentToken += charAtom.char
             }
         }
 
@@ -112,20 +88,15 @@ object GenericHeuristics {
             var charAtom: CharAtom = textReflow.charAtoms()(currentCharAtomIndex)
             val currentCharacter = charAtom.char.toCharArray.head
             if (currentCharacter.equals(currentSeparateComponent.head)) {
-                if (prevCharPosition < 0) {
-                    separateComponent += currentSeparateComponent
+                if (usualSpaceWidth == 0) {
+                    usualSpaceWidth = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
                 }
-                else {
-                    if (usualSpaceWidth == 0) {
-                        usualSpaceWidth = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
-                    }
-                    else if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth) {
-                        separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
-                        separateComponent.clear()
-                    }
-                    separateComponent += currentSeparateComponent
+                else if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth) {
+                    separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
+                    separateComponent.clear()
+                }
 
-                }
+                separateComponent += currentSeparateComponent
                 currentCharAtomIndex = currentSeparateComponentEndIndex - 1
                 val indices = getNextComponentIndices(currentSeparateComponentIndex, currentComponentIndex, currentComponent)
                 currentSeparateComponentIndex = indices._1
@@ -137,7 +108,8 @@ object GenericHeuristics {
 
             }
             charAtom = textReflow.charAtoms()(currentCharAtomIndex)
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition) || (currentCharAtomIndex > 0 && charAtom.bbox.right.asInstanceOf[Int] < textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right.asInstanceOf[Int]
+            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition) || (currentCharAtomIndex > 0
+                && charAtom.bbox.right.asInstanceOf[Int] < textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right.asInstanceOf[Int]
                 && textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.top.asInstanceOf[Int].==(yPosition))) {
                 prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
             }
