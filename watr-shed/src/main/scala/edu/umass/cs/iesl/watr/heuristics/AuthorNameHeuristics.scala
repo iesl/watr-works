@@ -21,7 +21,7 @@ object AuthorNameHeuristics {
         for (textReflowToken <- tokenizedTextReflow) {
             breakable {
                 if (WORD_SEPARATORS.contains(textReflowToken.toLowerCase)) {
-                    separateAuthorNames += separateAuthorName.mkString(SPACE_SEPARATOR)
+                    separateAuthorNames += separateAuthorName.filter(_.nonEmpty).mkString(SPACE_SEPARATOR)
                     separateAuthorName.clear()
                     if (checkNextFlag) {
                         checkNextFlag = false
@@ -35,11 +35,11 @@ object AuthorNameHeuristics {
                 else if (checkNextFlag) {
                     if (isOfFirstNameInitialFormat(textReflowToken) && separateAuthorName.length.==(1)) {
                         separateAuthorName += textReflowToken.replace(COMMA, BLANK)
-                        separateAuthorNames += separateAuthorName.mkString(SPACE_SEPARATOR)
+                        separateAuthorNames += separateAuthorName.filter(_.nonEmpty).mkString(SPACE_SEPARATOR)
                         separateAuthorName.clear()
                     }
                     else {
-                        separateAuthorNames += separateAuthorName.mkString(SPACE_SEPARATOR)
+                        separateAuthorNames += separateAuthorName.filter(_.nonEmpty).mkString(SPACE_SEPARATOR)
                         separateAuthorName.clear()
                         if(textReflowToken.takeRight(1).equals(PERIOD)){
                             textReflowToken.dropRight(1)
@@ -58,7 +58,7 @@ object AuthorNameHeuristics {
         }
 
         if (separateAuthorName.nonEmpty) {
-            separateAuthorNames += separateAuthorName.mkString(SPACE_SEPARATOR)
+            separateAuthorNames += separateAuthorName.filter(_.nonEmpty).mkString(SPACE_SEPARATOR)
         }
         separateAuthorNames.filter(_.nonEmpty)
     }
@@ -75,13 +75,13 @@ object AuthorNameHeuristics {
             if (authorNameComponents.length.>(1)) {
                 firstName = Some(authorNameComponents(0))
                 if (authorNameComponents.length.>(2)) {
-                    middleName = Some(authorNameComponents.slice(1, authorNameComponents.length - 1).mkString(SPACE_SEPARATOR))
+                    middleName = Some(authorNameComponents.slice(1, authorNameComponents.length - 1).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
                     var lastNameIndex: Int = authorNameComponents.length - 1
                     while(VALID_SURNAME_PARTICLES.contains(authorNameComponents(lastNameIndex-1).toLowerCase)){
                         lastNameIndex -= 1
                     }
-                    lastName = Some(authorNameComponents.slice(lastNameIndex, authorNameComponents.length).mkString(SPACE_SEPARATOR))
-                    middleName = Some(authorNameComponents.slice(1, lastNameIndex).mkString(SPACE_SEPARATOR))
+                    lastName = Some(authorNameComponents.slice(lastNameIndex, authorNameComponents.length).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
+                    middleName = Some(authorNameComponents.slice(1, lastNameIndex).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
                 }
             }
 
@@ -92,7 +92,7 @@ object AuthorNameHeuristics {
             val remainingNameComponents = authorName.toCharArray.slice(getStartIndexAfterComma(authorName), authorName.length).mkString.split(SPACE_SEPARATOR)
             firstName = Some(remainingNameComponents(0))
             if (remainingNameComponents.length.>(1)) {
-                middleName = Some(remainingNameComponents.slice(1, remainingNameComponents.length).mkString(SPACE_SEPARATOR))
+                middleName = Some(remainingNameComponents.slice(1, remainingNameComponents.length).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
             }
 
         }
