@@ -915,11 +915,12 @@ class CorpusAccessDB(
             transDocumentID.put(rec.prKey, key)
           }
 
-        println(s"document updates ${keys}")
+        println(s"document updates ${keys.length}")
       } // END BLOCK
 
       {
         val allRecs =  otherZoningApi.tables.pages.all().toList
+        println(s"pages insert ${allRecs.length}")
 
         val allEntries = allRecs.map{rec =>
             (
@@ -953,29 +954,29 @@ class CorpusAccessDB(
             transPageID.put(rec.prKey, key)
           }
 
-        println(s"pages updates ${keys}")
+        println(s"pages updates ${keys.length}")
       }
 
       {
         val allRecs =  otherZoningApi.tables.targetregions.all().toList
+        println(s"targetregions insert ${allRecs.length}")
         val allEntries = allRecs.map{rec =>
           (
             transPageID(rec.page),
-            rec.rank,
             rec.imageclip,
             rec.bounds
           )
         }
 
+        // TODO decide whether to disable rank trigger on import or trust db 
         val sqlStr = (
           """|insert into targetregion
-             |  (page, rank, imageclip, bleft, btop, bwidth, bheight)
-             |values (?, ?, ?, ?, ?, ?, ?)
+             |  (page, imageclip, bleft, btop, bwidth, bheight)
+             |values (?, ?, ?, ?, ?, ?)
              |""".stripMargin)
 
         val up =  Update[(
           Int@@PageID,
-          Int,
           Option[Int@@ImageID],
           LTBounds
         )](sqlStr)
@@ -990,7 +991,7 @@ class CorpusAccessDB(
             transRegionID.put(rec.prKey, key)
           }
 
-        println(s"targetregion updates ${keys}")
+        println(s"targetregion updates ${keys.length}")
 
       }
 
@@ -1002,12 +1003,13 @@ class CorpusAccessDB(
             transLabelID.put(rec.prKey, labelId)
           }
 
-        println(s"label updates ")
+        println(s"label updates")
 
       }// END Block
 
       {// BLOCK
         val allRecs =  otherZoningApi.tables.zones.all().toList
+        println(s"zones insert ${allRecs.length}")
         val allEntries = allRecs.map{rec =>
           (
             transDocumentID(rec.document),
@@ -1039,7 +1041,7 @@ class CorpusAccessDB(
             transZoneID.put(rec.prKey, key)
           }
 
-        println(s"zone updates ${keys}")
+        println(s"zone updates ${keys.length}")
 
       }// END Block
 
@@ -1076,7 +1078,7 @@ class CorpusAccessDB(
             transReflowID.put(rec.prKey, key)
           }
 
-        println(s"textreflow updates ${keys}")
+        println(s"textreflow updates ${keys.length}")
 
       }// END Block
 

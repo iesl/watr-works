@@ -20,17 +20,17 @@ object WatrColorTable extends App {
 
     ammonite.Main(
       // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
-      predef = SharedInit.predef,
+      predefCode = SharedInit.predef,
       defaultPredef = true,
       wd = pwd,
       welcomeBanner = Some(s""">> WatrTable+WatrColors @ http://localhost:9999/  <<"""),
       inputStream = System.in,
       outputStream  = System.out,
       errorStream = System.err,
-      verboseOutput = false
+      verboseOutput = false,
+      colors = SharedInit.replColors
     ).run(
-      "corpus" -> corpus,
-      "db" -> reflowDB
+      "corpusAccessApi" -> corpusAccessApi
     )
 
     // server.httpserver.kill()

@@ -164,7 +164,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
       CREATE TABLE zonelocks (
         zonelock       SERIAL PRIMARY KEY,
         lockgroup      INTEGER REFERENCES lockgroups ON DELETE SET NULL,
-        zone           INTEGER REFERENCES zone,
+        zone           INTEGER REFERENCES zone ON DELETE CASCADE,
         status         VARCHAR(32) NOT NULL
       );
     """.update
@@ -208,7 +208,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
   } yield ()
 
   val dropAll = sql"""
-    DROP TABLE IF EXISTS labelers;
     DROP TABLE IF EXISTS textreflow;
     DROP TABLE IF EXISTS zone_to_targetregion;
     DROP TABLE IF EXISTS zone_to_label;

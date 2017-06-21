@@ -14,10 +14,10 @@ import bioarxiv._
 import TypeTags._
 
 object SharedInit {
+  // |import ammonite.ops._
+  //   |import ammonite.ops.ImplicitWd._
   val predef =
     s"""|import edu.umass.cs.iesl.watr
-        |import ammonite.ops._
-        |import ammonite.ops.ImplicitWd._
         |import watr._, spindex._, geometry._, table._
         |import corpora._
         |import corpora.filesys._
@@ -28,12 +28,24 @@ object SharedInit {
         |import watrmarks.StandardLabels._
         |import ShellCommands._
         |import labeling.SampleLabelWidgets
-        |implicit val db0: CorpusAccessDB = db
-        |implicit val corpus0: Corpus = corpus
-        |implicit val docStore: DocumentZoningApi = db.docStore
+        |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi
         |""".stripMargin
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
+
+  val replColors = ammonite.util.Colors(
+    prompt   = fansi.Color.Magenta,
+    ident    = fansi.Color.Cyan,
+    `type`   = fansi.Color.Green,
+    literal  = fansi.Color.Green,
+    prefix   = fansi.Color.Yellow,
+    comment  = fansi.Color.LightGreen,
+    keyword  = fansi.Color.Yellow,
+    selected = fansi.Reversed.On,
+    error    = fansi.Color.Red,
+    warning  = fansi.Color.Yellow,
+    info     = fansi.Color.LightGray
+  )
 
 }
 
@@ -53,8 +65,6 @@ object WatrTable extends App {
 
     replMain().run(
       "corpusAccessApi" -> corpusAccessApi,
-      "corpus" -> corpus,
-      "db" -> db,
       "barx" -> BioArxivOps
     )
 
@@ -64,14 +74,15 @@ object WatrTable extends App {
 
   def replMain() = ammonite.Main(
     // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
-    predef = predef,
+    predefCode = predef,
     defaultPredef = true,
     wd = pwd,
     welcomeBanner = Some(SharedInit.welcomeBanner),
     inputStream = System.in,
     outputStream  = System.out,
     errorStream = System.err,
-    verboseOutput = false
+    verboseOutput = false,
+    colors = replColors
   )
 
 
@@ -99,19 +110,12 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
 
   import fs2._
   import fs2.util.Async
-  // import scala.concurrent.ExecutionContext.Implicits.global
-  // import scala.concurrent.duration._
-  // import fs2.util.syntax._
-
-  // implicit val S = Strategy.fromExecutor(global)
   implicit val S = Strategy.fromCachedDaemonPool()
-  // implicit val Sch = Scheduler.fromFixedDaemonPool(3, "timeouts")
-  // implicit val Sch = Scheduler.fromScheduledExecutorService(S)
   val T = implicitly[Async[Task]]
 
 
-
-  def segmentAll(n: Int=0, skip: Int=0)(implicit docStore: DocumentZoningApi, corpus: Corpus): Unit = {
+  def segmentAll(n: Int=0, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val corpus = corpusAccessApi.corpus
     val allEntries = corpus.entryStream()
     val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
     val entries = if (n > 0) skipped.take(n.toLong) else skipped
@@ -129,7 +133,8 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
     val _ = prog.run.unsafeRun
   }
 
-  def segmentAllParallel(n: Int=0, skip: Int=0)(implicit docStore: DocumentZoningApi, corpus: Corpus): Unit = {
+  def segmentAllParallel(n: Int=0, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val corpus = corpusAccessApi.corpus
 
     val allEntries = corpus.entryStream()
     val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
@@ -173,7 +178,9 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
   }
 
 
-  def segment(corpusEntry: CorpusEntry)(implicit docStore: DocumentZoningApi): Unit = {
+  def segment(corpusEntry: CorpusEntry)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val docStore = corpusAccessApi.docStore
+
     for {
       pdfArtifact    <- corpusEntry.getPdfArtifact
       pdfPath        <- pdfArtifact.asPath.toOption
@@ -181,15 +188,21 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
     } yield {
 
       if (docStore.getDocument(stableId).isDefined) {
-        println(s"segmenting ${stableId} failed. Already exists.")
+        println(s"document ${stableId} already exists in database, skipping.")
 
       } else {
         println(s"segmenting ${stableId}")
 
+        val memZoneApi = new MemDocZoningApi
+
         val segmenter = DocumentSegmenter
-          .createSegmenter(stableId, pdfPath, docStore)
+          .createSegmenter(stableId, pdfPath, memZoneApi)
 
         segmenter.runPageSegmentation()
+
+        println(s"Importing ${stableId} into database.")
+        corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoneApi)
+        println(s"Done importing ${stableId}")
         println()
       }
     }

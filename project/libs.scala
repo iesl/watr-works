@@ -56,7 +56,7 @@ object DatabaseLibs extends LibVersions {
     "org.tpolecat" %% "doobie-specs2"     % doobieVersion,
     "org.postgresql"          % "postgresql" % "42.1.1",
     // "org.javassist" % "javassist" % "3.22.0-GA",
-    "org.javassist" % "javassist" % "3.22.0-CR1",
+    "org.javassist" % "javassist" % "3.22.0-CR2",
     "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7.1"
   )
 
@@ -66,7 +66,7 @@ trait CommonLibs extends LibVersions {
 
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   // val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.9"
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.8"
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "1.0.0-RC9"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
@@ -95,4 +95,3 @@ trait CommonLibs extends LibVersions {
 }
 
 object CommonLibs extends CommonLibs
-

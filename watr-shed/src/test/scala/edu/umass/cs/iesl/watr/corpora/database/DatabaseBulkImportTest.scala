@@ -57,6 +57,7 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
     reflowDB.docStore.batchImport(memZoneApi)
   }
 
+
   it should "properly translate mem-based db key into postgres keys" in new CleanDocstore {
     memZoneApi = new MemDocZoningApi
     freshDocstore = Some(memZoneApi)
