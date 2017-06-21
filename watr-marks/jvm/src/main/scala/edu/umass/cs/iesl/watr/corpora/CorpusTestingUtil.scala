@@ -6,7 +6,6 @@ import TypeTags._
 
 trait CorpusTestingUtil extends PlainTextCorpus {
   def createEmptyDocumentZoningApi(): DocumentZoningApi
-  // def regionIdGen: utils.IdGenerator[RegionID]
   val regionIdGen = utils.IdGenerator[RegionID]()
 
   var freshDocstore: Option[DocumentZoningApi] = None
@@ -29,6 +28,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
   trait CleanDocstore {
     initEmpty()
   }
+
 
   class FreshDocstore(pageCount: Int=0) {
     initEmpty()

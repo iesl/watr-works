@@ -12,11 +12,7 @@ import watrmarks.Label
 import geometry._
 import PageComponentImplicits._
 
-
 class MemDocZoningApi extends DocumentZoningApi {
-
-  // def workflowApi: WorkflowApi = ???
-  // def userbaseApi: UserbaseApi = ???
 
   object tables  {
 
@@ -226,9 +222,6 @@ class MemDocZoningApi extends DocumentZoningApi {
 
     }
 
-    // object labelers extends DBRelation[LabelerID, Rel.LabelingWidget] {}
-    // object labelingTasks extends DBRelation[LabelingTaskID, Rel.LabelingTask] {}
-
     object charatoms extends DBRelation[CharID, CharAtom] {
       object forPage extends EdgeTableOneToMany[PageID, CharID]
 
@@ -268,6 +261,7 @@ class MemDocZoningApi extends DocumentZoningApi {
       StablePageID(d.stableId, p.pagenum)
     )
   }
+
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID = {
     pages.add(docId, pageNum).prKey
@@ -316,7 +310,6 @@ class MemDocZoningApi extends DocumentZoningApi {
   def addTargetRegion(pageId: Int@@PageID, bbox: G.LTBounds): Int@@RegionID = {
     targetregions.ensure(pageId, bbox)
   }
-
 
   def getTargetRegion(regionId: Int@@RegionID): G.TargetRegion = {
     val model = targetregions.unique(regionId)

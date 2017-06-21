@@ -125,7 +125,6 @@ class TreeShaperTests extends FlatSpec with Matchers {
 
     val trees = ts.makeTreeFromPairs(input)
 
-    // val tree = makeTreeFromPairs(input)
     trees.head.flatten.toList shouldEqual 41.node(
       42.node(
         43.node(

@@ -109,7 +109,27 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
   // implicit val Sch = Scheduler.fromScheduledExecutorService(S)
   val T = implicitly[Async[Task]]
 
+
+
   def segmentAll(n: Int=0, skip: Int=0)(implicit docStore: DocumentZoningApi, corpus: Corpus): Unit = {
+    val allEntries = corpus.entryStream()
+    val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
+    val entries = if (n > 0) skipped.take(n.toLong) else skipped
+
+    val prog = entries
+      .through(pipe.zipWithIndex)
+      .evalMap { case (corpusEntry, i) =>
+        Task.delay {
+          println(s"processing entry ${i}")
+          segment(corpusEntry)
+          println(s"done entry ${i}")
+        }
+      }
+
+    val _ = prog.run.unsafeRun
+  }
+
+  def segmentAllParallel(n: Int=0, skip: Int=0)(implicit docStore: DocumentZoningApi, corpus: Corpus): Unit = {
 
     val allEntries = corpus.entryStream()
     val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
@@ -121,19 +141,6 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
         segment(corpusEntry)
       }
 
-    // val chunked0 = entries
-    //   .drop(1)
-    //   .through(pipe.zipWithIndex)
-    //   .chunkN(1, allowFewer=true)
-    //   .map { chunks =>
-    //     chunks.map(Stream.chunk)
-    //       .reduce(_ ++ _)
-    //       .covary[Task]
-    //       .map { case (corpusEntry, i) =>
-    //         println(s"processing entry ${i}")
-    //         segment(corpusEntry)
-    //       }
-    //   }
 
     val chunked = entries
       .drop(1)

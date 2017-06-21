@@ -3,7 +3,7 @@ package segment
 
 
 import ammonite.{ops => fs}, fs._
-import java.io.InputStream
+// import java.io.InputStream
 import spindex._
 
 import scala.collection.JavaConversions._
@@ -217,7 +217,7 @@ class DocumentSegmenter(
     for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } yield {
-      // println(s"  Page ${pagenum}")
+      println(s"  Page ${pagenum}")
       val atomicComponents = mpageIndex.getPageAtoms(PageNum(pagenum))
 
       // val atomicComponents = charAtoms.map(
@@ -289,13 +289,13 @@ class DocumentSegmenter(
         c.atoms.map(_.id.unwrap).min
       }
 
-      var lineGrouping = Grid.widthAligned(
-        (4, AlignLeft),  // join indicator
-        (7, AlignRight), // left
-        (7, AlignRight), // height
-        (1, AlignRight), // spacing
-        (80, AlignLeft)  // text
-      )
+      // var lineGrouping = Grid.widthAligned(
+      //   (4, AlignLeft),  // join indicator
+      //   (7, AlignRight), // left
+      //   (7, AlignRight), // height
+      //   (1, AlignRight), // spacing
+      //   (80, AlignLeft)  // text
+      // )
 
       val sortedBlocks = page
         .sortBy(minAtomId(_))
@@ -350,9 +350,9 @@ class DocumentSegmenter(
           areGrouped
         })
 
-      vtrace.trace({
-        "block structure" withInfo lineGrouping.toBox()
-      })
+      // vtrace.trace({
+      //   "block structure" withInfo lineGrouping.toBox()
+      // })
 
       groupedBlocks
     }
@@ -516,11 +516,9 @@ class DocumentSegmenter(
 
     vtrace.trace(vtraceHistogram(hist))
 
-    val epsilon = 0.01d
+    // val epsilon = 0.01d
     freqLefts.foreach({leftXBin =>
-      val leftX = leftXBin.value
-
-
+      // val leftX = leftXBin.value
       // LTBounds(
       //   left=leftX-epsilon,
       //   top=pageMin,
@@ -537,7 +535,7 @@ class DocumentSegmenter(
     pageNum: Int@@PageNum,
     components: Seq[AtomicComponent]
   ): Unit = {
-    val pageId = docStore.getPage(docId, pageNum).get
+    // val pageId = docStore.getPage(docId, pageNum).get
 
     // var dbgmode = false
     // // 10.1101-004465.d/pg30@104/5522@(
@@ -758,8 +756,8 @@ class DocumentSegmenter(
       .groupBy(_._1)
       .map({case (k, v) => (k.pp, v.map(_._2.pp))})
 
-    val jstr = focalJumps.map({case (k, v) => s"""w:${k} = [${v.mkString(", ")}]"""})
-    val jcol = jstr.mkString("\n   ", "\n   ",  "\n")
+    // val jstr = focalJumps.map({case (k, v) => s"""w:${k} = [${v.mkString(", ")}]"""})
+    // val jcol = jstr.mkString("\n   ", "\n   ",  "\n")
 
     // println(s""" focalJumps: ${jcol} """)
 
@@ -962,50 +960,50 @@ class DocumentSegmenter(
   }
 
 
-  def labelAuthors(): Unit = {
-    val fnStream: InputStream = getClass().getClassLoader.getResourceAsStream("first_names.txt")
-    val firstNames = scala.io.Source.fromInputStream(fnStream).getLines()
-    val lnStream: InputStream = getClass.getClassLoader.getResourceAsStream("last_names.txt")
-    val lastNames = scala.io.Source.fromInputStream(lnStream).getLines()
+  // def labelAuthors(): Unit = {
+  //   val fnStream: InputStream = getClass().getClassLoader.getResourceAsStream("first_names.txt")
+  //   val firstNames = scala.io.Source.fromInputStream(fnStream).getLines()
+  //   val lnStream: InputStream = getClass.getClassLoader.getResourceAsStream("last_names.txt")
+  //   val lastNames = scala.io.Source.fromInputStream(lnStream).getLines()
 
-    val firstNameSet = firstNames.toSet
-    val lastNameSet = lastNames.toSet
+  //   val firstNameSet = firstNames.toSet
+  //   val lastNameSet = lastNames.toSet
 
-    val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
+  //   val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
 
-    val firstLines = lineBioLabels.filter(_.component.chars.length() > 5).take(8)
+  //   val firstLines = lineBioLabels.filter(_.component.chars.length() > 5).take(8)
 
-    // FIXME: integrate w/textreflow and reinstate this block
-    // for(lineNode <- firstLines) {
-    //   val lineText = ComponentRendering.VisualLine.toTextReflow(lineNode.component)
-    //   if(!lineText.isEmpty) {
-    //     val lines = lineText.get.lines.mkString(" ")
-    //     val words = lines.split(" ")
-    //     //words.foreach(println)
-    //     //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
-    //     val lowerLines = lines.toLowerCase()
-    //     if(!lowerLines.contains("university") && !lowerLines.contains("department")
-    //       && !lowerLines.contains("school") && !lowerLines.contains("college") && !lowerLines.contains("center")) {
-    //       // first check for word in set of known names
-    //       for (word <- words) {
-    //         if ((firstNameSet.contains(word) || lastNameSet.contains(word))&& word.length > 1) {
-    //           println("found " + word + " in the names corpus")
-    //           mpageIndex.addBioLabels(LB.Author, lineNode)
-    //           println("labeling " + lines + " as author ")
-    //         }
-    //       }
-    //     }
-    //     // todo: use pattern matching to look for things like initials, etc. (figure how why this isn't working)
-    //     val initial = """[A-Z]+\.+\s""".r
-    //     if((initial findAllIn lines).length > 0) {
-    //       println("found a possible initial in line " + lines)
-    //       mpageIndex.addBioLabels(LB.Author, lineNode)
-    //       println("labeling " + lines + " as author ")
-    //     }
-    //   }
-    // }
-    // println()
-  }
+  //   // FIXME: integrate w/textreflow and reinstate this block
+  //   // for(lineNode <- firstLines) {
+  //   //   val lineText = ComponentRendering.VisualLine.toTextReflow(lineNode.component)
+  //   //   if(!lineText.isEmpty) {
+  //   //     val lines = lineText.get.lines.mkString(" ")
+  //   //     val words = lines.split(" ")
+  //   //     //words.foreach(println)
+  //   //     //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
+  //   //     val lowerLines = lines.toLowerCase()
+  //   //     if(!lowerLines.contains("university") && !lowerLines.contains("department")
+  //   //       && !lowerLines.contains("school") && !lowerLines.contains("college") && !lowerLines.contains("center")) {
+  //   //       // first check for word in set of known names
+  //   //       for (word <- words) {
+  //   //         if ((firstNameSet.contains(word) || lastNameSet.contains(word))&& word.length > 1) {
+  //   //           println("found " + word + " in the names corpus")
+  //   //           mpageIndex.addBioLabels(LB.Author, lineNode)
+  //   //           println("labeling " + lines + " as author ")
+  //   //         }
+  //   //       }
+  //   //     }
+  //   //     // todo: use pattern matching to look for things like initials, etc. (figure how why this isn't working)
+  //   //     val initial = """[A-Z]+\.+\s""".r
+  //   //     if((initial findAllIn lines).length > 0) {
+  //   //       println("found a possible initial in line " + lines)
+  //   //       mpageIndex.addBioLabels(LB.Author, lineNode)
+  //   //       println("labeling " + lines + " as author ")
+  //   //     }
+  //   //   }
+  //   // }
+  //   // println()
+  // }
 
 
 

@@ -10,6 +10,7 @@ import java.util.Properties
 import scalaz.syntax.applicative._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
+// import scalaz.syntax.apply._
 
 import geometry._
 import corpora._
@@ -134,7 +135,8 @@ class CorpusAccessDB(
 
   def insertZone(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[Int@@ZoneID] = {
     sql""" insert into zone (document, label) values ($docId, $labelId) """
-      .update.withUniqueGeneratedKeys[Int]("zone").map(ZoneID(_))
+      .update.withUniqueGeneratedKeys[Int]("zone")
+      .map(ZoneID(_))
   }
 
   def selectZoneLabelsForDocument(docId: Int@@DocumentID): ConnectionIO[List[Int@@LabelID]] = {
@@ -731,12 +733,10 @@ class CorpusAccessDB(
       runq { updatePageImage(pageId, bytes) }
     }
 
-  // def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {}
-  // def getCharAtoms(pageId: Int@@PageID): Seq[CharAtom] = {}
 
-  def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID = {
-    runq { ensureTargetRegion(pageId, bbox) }
-  }
+    def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID = {
+      runq { ensureTargetRegion(pageId, bbox) }
+    }
 
     // G.TargetRegion = M.TargetRegion+M.Page+M.Document
     def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[TargetRegion] =
@@ -883,6 +883,231 @@ class CorpusAccessDB(
         selectZonesForDocument(docId, labelId)
       }
     }
-  }
 
+    import scala.collection.mutable
+
+    def batchImport(otherZoningApi: MemDocZoningApi): Unit = {
+      // id translation
+
+      val transDocumentID = mutable.HashMap[Int@@DocumentID    , Int@@DocumentID]()
+      val transPageID     = mutable.HashMap[Int@@PageID        , Int@@PageID]()
+      val transRegionID   = mutable.HashMap[Int@@RegionID      , Int@@RegionID]()
+      val transZoneID     = mutable.HashMap[Int@@ZoneID        , Int@@ZoneID]()
+      val transLabelID    = mutable.HashMap[Int@@LabelID       , Int@@LabelID]()
+      val transReflowID   = mutable.HashMap[Int@@TextReflowID  , Int@@TextReflowID]()
+
+      {// BLOCK
+        val d0 =  otherZoningApi.tables.documents
+        val allRecs = d0.all().toList
+        val allStableIds = allRecs.map{_.stableId}
+
+        val ins = "insert into document (stableId) values (?)"
+        val up =  Update[String@@DocumentID](ins)
+          .updateManyWithGeneratedKeys[Int@@DocumentID]("document")(allStableIds)
+
+
+        val keys = runq{
+          up.runLog
+        }
+
+        allRecs.zip(keys)
+          .foreach{ case (rec, key) =>
+            transDocumentID.put(rec.prKey, key)
+          }
+
+        println(s"document updates ${keys}")
+      } // END BLOCK
+
+      {
+        val allRecs =  otherZoningApi.tables.pages.all().toList
+
+        val allEntries = allRecs.map{rec =>
+            (
+              transDocumentID(rec.document),
+              rec.pagenum,
+              rec.imageclip,
+              rec.bounds
+            )
+          }
+
+        val sqlStr = (
+          """|insert into page
+             |  (document, pagenum, imageclip, bleft, btop, bwidth, bheight)
+             |values (?, ?, ?, ?, ?, ?, ?)
+             |""".stripMargin)
+
+        val up =  Update[(
+          Int@@DocumentID,
+          Int@@PageNum,
+          Option[Int@@ImageID],
+          LTBounds
+        )](sqlStr)
+          .updateManyWithGeneratedKeys[Int@@PageID]("page")(allEntries)
+
+
+        val keys = runq{
+          up.runLog
+        }
+        allRecs.zip(keys)
+          .foreach{ case (rec, key) =>
+            transPageID.put(rec.prKey, key)
+          }
+
+        println(s"pages updates ${keys}")
+      }
+
+      {
+        val allRecs =  otherZoningApi.tables.targetregions.all().toList
+        val allEntries = allRecs.map{rec =>
+          (
+            transPageID(rec.page),
+            rec.rank,
+            rec.imageclip,
+            rec.bounds
+          )
+        }
+
+        val sqlStr = (
+          """|insert into targetregion
+             |  (page, rank, imageclip, bleft, btop, bwidth, bheight)
+             |values (?, ?, ?, ?, ?, ?, ?)
+             |""".stripMargin)
+
+        val up =  Update[(
+          Int@@PageID,
+          Int,
+          Option[Int@@ImageID],
+          LTBounds
+        )](sqlStr)
+          .updateManyWithGeneratedKeys[Int@@RegionID]("targetregion")(allEntries)
+
+
+        val keys = runq{
+          up.runLog
+        }
+        allRecs.zip(keys)
+          .foreach{ case (rec, key) =>
+            transRegionID.put(rec.prKey, key)
+          }
+
+        println(s"targetregion updates ${keys}")
+
+      }
+
+      {// BLOCK
+        val allRecs =  otherZoningApi.tables.labels.all().toList
+        allRecs
+          .toList.foreach{rec =>
+            val labelId = ensureLabel(Labels.fromString(rec.key))
+            transLabelID.put(rec.prKey, labelId)
+          }
+
+        println(s"label updates ")
+
+      }// END Block
+
+      {// BLOCK
+        val allRecs =  otherZoningApi.tables.zones.all().toList
+        val allEntries = allRecs.map{rec =>
+          (
+            transDocumentID(rec.document),
+            transLabelID(rec.label),
+            rec.rank
+          )
+        }
+
+        val sqlStr = (
+          """|insert into zone
+             |  (document, label, rank)
+             |values (?, ?, ?)
+             |""".stripMargin)
+
+        val up =  Update[(
+          Int@@DocumentID,
+          Int@@LabelID,
+          Int
+        )](sqlStr)
+          .updateManyWithGeneratedKeys[Int@@ZoneID]("zone")(allEntries)
+
+
+        val keys = runq{
+          up.runLog
+        }
+
+        allRecs.zip(keys)
+          .foreach{ case (rec, key) =>
+            transZoneID.put(rec.prKey, key)
+          }
+
+        println(s"zone updates ${keys}")
+
+      }// END Block
+
+      {// BLOCK
+        val allRecs =  otherZoningApi.tables.textreflows.all().toList
+        val allEntries = allRecs.map{rec =>
+          (
+            rec.reflow,
+            rec.astext,
+            transZoneID(rec.zone)
+          )
+        }
+
+        val sqlStr = (
+          """|insert into textreflow
+             |  (reflow, astext, zone)
+             |values (?, ?, ?)
+             |""".stripMargin)
+
+        val up =  Update[(
+          String,
+          String,
+          Int@@ZoneID
+        )](sqlStr)
+          .updateManyWithGeneratedKeys[Int@@TextReflowID]("textreflow")(allEntries)
+
+
+        val keys = runq{
+          up.runLog
+        }
+
+        allRecs.zip(keys)
+          .foreach{ case (rec, key) =>
+            transReflowID.put(rec.prKey, key)
+          }
+
+        println(s"textreflow updates ${keys}")
+
+      }// END Block
+
+      {// BLOCK
+        val allEntries =  otherZoningApi.tables.zones.toTargetRegion.getEdges()
+          .toList.map{ case (lhs, rhs) =>
+            (transZoneID(lhs), transRegionID(rhs))
+          }
+
+        val sqlStr = (
+          """|insert into zone_to_targetregion
+             |  (zone, targetregion)
+             |values (?, ?)
+             |""".stripMargin)
+
+        val up =  Update[(
+          Int@@ZoneID,
+          Int@@RegionID
+        )](sqlStr)
+          .updateMany(allEntries)
+
+
+        val keys = runq{
+          up
+        }
+
+        println(s"zone_to_targetregion updates ${keys}")
+
+      }// END Block
+
+    }
+
+  }
 }

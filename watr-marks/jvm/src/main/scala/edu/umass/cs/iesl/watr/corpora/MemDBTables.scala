@@ -44,6 +44,15 @@ abstract class EdgeTableOneToMany[LhsIDType: ClassTag, RhsIDType: ClassTag] {
       .foreach(_.remove(rhs))
   }
 
+  def getEdges(): Seq[(Lhs, Rhs)] = {
+    for {
+      lhs <- table.keys.toSeq
+      rhs <- getEdges(lhs)
+    } yield {
+      (lhs, rhs)
+    }
+  }
+
   def getEdges(lhs: Lhs): Seq[Rhs] = {
     table.getOrElse(lhs, Seq()).toSeq
   }
@@ -140,5 +149,9 @@ class DBRelation[IDType: ClassTag, ModelType: ClassTag](
       sys.error(s"expected zeroOrOne ${modelClsStr}, got ${ms.length}")
     }
     ms.headOption
+  }
+
+  def batchCommit(): Unit = {
+
   }
 }
