@@ -107,7 +107,7 @@ class PdfTextExtractor(
 
         val pdfPage = document.getPage(pageNumber)
 
-        val resources = pdfPage.getResources
+        // val resources = pdfPage.getResources
 
         val currCharBuffer: mutable.ArrayBuffer[CharAtom] = mutable.ArrayBuffer[CharAtom]()
         val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage, reader)

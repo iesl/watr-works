@@ -224,6 +224,8 @@ object PageComponentImplicits {
     def isWonky: Boolean = charRegion.wonkyCharCode.isDefined
 
     def isSpace: Boolean = charRegion.wonkyCharCode.exists(_==32)
+    def isControl: Boolean = charRegion.wonkyCharCode.exists(_<32)
+    def isNonPrintable: Boolean = charRegion.wonkyCharCode.exists(_<=32)
 
   }
 }

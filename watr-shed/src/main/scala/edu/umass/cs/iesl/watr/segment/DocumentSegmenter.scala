@@ -76,13 +76,18 @@ object DocumentSegmenter {
   // (charBoxesBounds(sortedXLine), sortedXLine)
   def approximateLineBins(charBoxes: Seq[AtomicComponent]): Seq[Seq[AtomicComponent]] = {
     val sortedYPage = charBoxes
-      .groupBy(_.bounds.bottom.pp)
+      .groupBy{ charCC =>
+        charCC.bounds.bottom.unwrap
+      }
       .toSeq
-      .sortBy(_._1.toDouble)
+      .sortBy{ case (bottomY, atomCcs) =>
+        bottomY
+      }
 
     sortedYPage
       .map({case (bottomY, charBoxes) =>
-        charBoxes.sortBy(_.bounds.left)
+        // charBoxes.sortBy(_.bounds.left)
+        charBoxes.sortBy(_.id)
       })
 
   }
@@ -130,7 +135,7 @@ object DocumentSegmenter {
       mpageIndex.addPage(geom)
 
       regions.foreach {
-        case cb:CharAtom if !cb.isSpace =>
+        case cb:CharAtom if !cb.isNonPrintable =>
           // modify the pageId to match the one assigned by docStore
           val update = pageIdL.modify(cb){_ => pageId}
           mpageIndex.addCharAtom(update)
@@ -216,15 +221,16 @@ class DocumentSegmenter(
     println(s"runLineDetermination()")
     for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
-    } yield {
+    } {
       println(s"  Page ${pagenum}")
       val atomicComponents = mpageIndex.getPageAtoms(PageNum(pagenum))
 
       // val atomicComponents = charAtoms.map(
       // vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${atomicComponents.length} char atoms"))
 
-      determineLines(PageNum(pagenum), atomicComponents)
+      determineLines(pageId, PageNum(pagenum), atomicComponents)
     }
+    println(s"done runLineDetermination()")
 
   }
 
@@ -468,19 +474,38 @@ class DocumentSegmenter(
 
   val withinAngle = filterAngle(docOrientation, math.Pi / 3)
 
-  def fillInMissingChars(pageId: Int@@PageNum, lineBinChars: Seq[AtomicComponent]): Seq[AtomicComponent] = {
+  def fillInMissingChars(pageNum: Int@@PageNum, lineBinChars: Seq[AtomicComponent]): Seq[AtomicComponent] = {
+    // try to fill in short gaps in char id sequences, as a rough stop-gap (no pun intended)
+    //  to compensate for missing
     val ids = lineBinChars.map(_.id.unwrap)
+    // println(s"""fillInMissingChars: ${ids.mkString(",")}""")
 
-    val missingIds = (ids.min to ids.max) diff ids
+    val maybeFilledInPairs = for {
+      idpair <- ids.sorted.sliding(2)
+    } yield {
+      val min = idpair.min
+      val max = idpair.max
+      if (max-min > 5) {
+        Seq(min, max)
+      } else {
+        (min to max)
+      }
+    }
 
-    val missingChars = missingIds.map(id =>
-      mpageIndex.getComponent(ComponentID(id), pageId).asInstanceOf[AtomicComponent]
-    )
-
-    (lineBinChars ++ missingChars)
+    val res = maybeFilledInPairs
+      .toList
+      .flatten
+      .toSet
+      .toList
+      .map{ id: Int =>
+        mpageIndex.getComponent(ComponentID(id), pageNum).asInstanceOf[AtomicComponent]
+      }
       .map(x => (x.bounds.left.unwrap, x))
       .sortBy(_._1)
       .map(_._2)
+
+
+    res
   }
 
 
@@ -488,11 +513,7 @@ class DocumentSegmenter(
     for {
       lineBin <- lineBins
       shortLine <- lineBin.splitOnPairs({ (ch1, ch2) =>
-        val largeIdGap = ch2.id.unwrap - ch1.id.unwrap > 10
-        if (largeIdGap) {
-          // vtrace.trace("splitting chars" withTrace link(showComponent(ch1), showComponent(ch2)))
-        }
-        largeIdGap
+        ch2.id.unwrap - ch1.id.unwrap > 10
       })
     } yield shortLine
   }
@@ -532,62 +553,67 @@ class DocumentSegmenter(
   // import utils.{Debugging => Dbg}
 
   def determineLines(
+    pageId: Int@@PageID,
     pageNum: Int@@PageNum,
     components: Seq[AtomicComponent]
   ): Unit = {
-    // val pageId = docStore.getPage(docId, pageNum).get
 
-    // var dbgmode = false
-    // // 10.1101-004465.d/pg30@104/5522@(
-    // if (stableId.unwrap == "10.1101-004465.d" && pageNum.unwrap==30) {
-    //   println(s"We're looking at the right page")
-    //   dbgmode = true
-    // } else dbgmode = false
+    val dbgmode = false //  pageNum.unwrap >= 13
 
     def minRegionId(ccs: Seq[AtomicComponent]): Int@@CharID =  ccs.map(_.charAtom.id).min
 
 
-    val lineSets = new DisjointSets[AtomicComponent](components)
-
     // line-bin coarse segmentation
     val lineBinsx = approximateLineBins(components)
-    // if (dbgmode) {
 
-    //   println("line binsx")
-    //   println(
-    //     lineBinsx.map(_.map(_.char).mkString)
-    //       .mkString("\n  ", "\n  ", "\n")
-    //   )
-    // }
+    if (dbgmode) {
+      println("line binsx")
+      println(
+        lineBinsx.map(_.map(_.char).mkString)
+          .mkString("\n  ", "\n  ", "\n")
+      )
+    }
+
     val shortLines = splitRunOnLines(lineBinsx)
 
-    // if (dbgmode) {
-    //   println("short lines")
-    //   println(
-    //     shortLines.map(_.map(_.char).mkString)
-    //       .mkString("\n  ", "\n  ", "\n")
-    //   )
-    // }
+    if (dbgmode) {
+      println("short lines")
+      println(
+        shortLines.map(_.map(_.char).mkString)
+          .mkString("\n  ", "\n  ", "\n")
+      )
+    }
 
+    val lineIdSets = new DisjointSets[Int](components.map(_.id.unwrap))
     for {
       line <- shortLines.map(fillInMissingChars(pageNum, _))
       if !line.isEmpty
-      char <- line
-    } { lineSets.union(char, line.head) }
+      firstChar = line.head.id.unwrap
+      char <- line.tail
+    } {
+      lineIdSets.union(char.id.unwrap, firstChar)
+    }
 
-
-    val shortLinesFilledIn = lineSets.iterator().toSeq
+    val shortLinesFilledIn = lineIdSets.iterator().toSeq
+      .map{  line =>
+        line.map{ id =>
+          mpageIndex.getComponent(ComponentID(id), pageNum).asInstanceOf[AtomicComponent]
+        }
+      }
       .map(_.toSeq.sortBy(c => (c.bounds.left, c.bounds.top)))
       .sortBy(line => minRegionId(line))
 
-    // if (dbgmode) {
-    //   println("short lines filled in")
-    //   println(
-    //     shortLinesFilledIn.map(_.map(_.char).mkString)
-    //       .mkString("\n  ", "\n  ", "\n")
-    //   )
-    // }
 
+    if (dbgmode) {
+      println("short lines filled in")
+      println(
+        shortLinesFilledIn.map(_.map(_.char).mkString)
+          .mkString("\n  ", "\n  ", "\n")
+      )
+    }
+
+
+    SlicingAndDicing.debug = dbgmode
 
     val longLines = shortLinesFilledIn
       .groupByPairs({ (linePart1, linePart2) =>
@@ -611,9 +637,14 @@ class DocumentSegmenter(
 
         shouldJoin
       })
+    SlicingAndDicing.debug = false
 
+    if (dbgmode) {
+      println("long lines computed")
+    }
 
     val visualLineLabelId = docStore.ensureLabel(LB.VisualLine)
+
     val pageLines = longLines.map({ lineGroups =>
 
       val line = lineGroups.reduce(_ ++ _)
@@ -638,7 +669,7 @@ class DocumentSegmenter(
           val alreadyZoned = docStore.getZoneForRegion(regionId, LB.VisualLine).isDefined
 
           if (alreadyZoned) {
-            println(s"VisualLine Zone already exists for target region ${targetRegion}, skipping")
+            // println(s"VisualLine Zone already exists for target region ${targetRegion}, skipping")
             None
           } else {
             val zoneId = docStore.createZone(regionId, visualLineLabelId)
@@ -652,11 +683,15 @@ class DocumentSegmenter(
         })
     }).flatten.flatten
 
+    // println("page lines grouped")
+
     mpageIndex
       .labelRegion(pageLines, LB.PageLines)
       .map{ case (comp, targetRegion) =>
         comp.setChildren(LB.VisualLine, pageLines)
       }
+
+    // println("finished determine lines")
   }
 
 
@@ -675,8 +710,7 @@ class DocumentSegmenter(
 
 
   def printPageLineBins(bin: LineDimensionBins, indent: Int=0): Unit = {
-    bin
-      .widthBin
+    bin.widthBin
       .sortBy(_._1)
       .filter({ case (width, lines) => !lines.isEmpty })
       .foreach({ case (width, lines) =>

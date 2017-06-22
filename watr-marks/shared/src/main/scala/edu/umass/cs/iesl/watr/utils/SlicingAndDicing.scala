@@ -1,5 +1,9 @@
 package edu.umass.cs.iesl.watr
-package utils 
+package utils
+
+// import scala.annotation.tailrec
+import scala.collection.mutable
+
 
 object SlicingAndDicing {
 
@@ -10,12 +14,37 @@ object SlicingAndDicing {
     }
   }
 
+  var debug = false
+
   private def groupByStartIndexes[A](lengths: Seq[Int], cs: Seq[A]): Seq[Seq[A]] = {
-    if (lengths.isEmpty) Seq() else {
-      val (group, post) = cs.splitAt(lengths.head)
-      group +: groupByStartIndexes(lengths.tail, post)
+    val groups = mutable.ListBuffer[Seq[A]]()
+    var _cs = cs
+
+    for {
+     len <- lengths
+    } {
+      val (group, post) = _cs.splitAt(len)
+      groups.prepend(group)
+      _cs = post
     }
+
+    // if (!lengths.isEmpty) {
+    //   val (group, post) = cs.splitAt(lengths.head)
+    //   group +: groupByStartIndexes(lengths.tail, post)
+    // }
+    groups
   }
+
+
+  // private def groupByStartIndexesNTR[A](lengths: Seq[Int], cs: Seq[A]): Seq[Seq[A]] = {
+  //   if(debug) {
+  //     println(s"groupByStartIndexes(${lengths.length}, ${cs.length})")
+  //   }
+  //   if (lengths.isEmpty) Seq() else {
+  //     val (group, post) = cs.splitAt(lengths.head)
+  //     group +: groupByStartIndexes(lengths.tail, post)
+  //   }
+  // }
 
   implicit class RicherSeq[A](val thisSeq: Seq[A]) extends AnyVal {
 
@@ -28,7 +57,6 @@ object SlicingAndDicing {
     }
 
     def groupByPairsWithIndex(f: (A, A, Int) => Boolean): Seq[Seq[A]] = {
-      // Queue[(start, len)*]
       if (thisSeq.isEmpty) Seq() else {
 
         val groupSpans = mutable.Stack[(Int, Int)]((0, 1))

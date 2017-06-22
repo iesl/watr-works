@@ -108,8 +108,8 @@ class CharExtractionListener(
   }
 
 
-  val charWindow = mutable.MutableList[Char]()
-  var __triggerText = "" // "ansferredinto100" // Start debug logging when this text is found
+  val charWindow = mutable.MutableList[String]()
+  var __triggerText = "pathways" // "ansferredinto100" // Start debug logging when this text is found
   var (__curr: Int, __start:Int, __enable:Boolean) = (0, 150, false)
   var __verbose:Boolean = false
 
@@ -120,11 +120,22 @@ class CharExtractionListener(
 
     for (charTri <- charTris.getCharacterRenderInfos) {
 
-      val mcid = charTri.getMcid
+      if (__verbose) {
+        println(s"renderText:charTri.mcid=${charTri.getMcid}")
+      }
 
       val (stringRep: String, code: Option[Int]) = if (!charTri.getText.isEmpty) {
+        if (__verbose) {
+          println(s"   for text(): ${charTri.getText}")
+        }
         val t = charTri.getText()
-          .map(c => UnicodeUtil.maybeSubChar(c).filterNot(_ == ' ').mkString)
+          .map{ c =>
+            if (__verbose) {
+              val maybsub = UnicodeUtil.maybeSubChar(c)
+              println(s"    c=${c}, asint=${c.toInt}, maybeSub: ${maybsub.map(_.toInt)}")
+            }
+            UnicodeUtil.maybeSubChar(c).filter(_ > ' ').mkString
+          }
           .mkString
         (t, None)
       } else {
@@ -132,15 +143,14 @@ class CharExtractionListener(
         fallbackRep(charTri)
       }
 
-      if (!stringRep.isEmpty) {
-        if (__enable) { charWindow ++= stringRep.toList }
+      if (__enable) { charWindow += stringRep }
 
-        val maybeBounds = computeTextBounds(charTri)
+      if (!stringRep.isEmpty && !code.exists(_ <= 32)) {
 
-        val charBox = maybeBounds.map({ charBounds =>
+        computeTextBounds(charTri).map { charBounds =>
           val nextId = charIdGen.nextId
 
-          CharAtom(
+          val charAtom = CharAtom(
             nextId,
             PageRegion(
               RecordedPageID(
@@ -153,33 +163,28 @@ class CharExtractionListener(
             code
           )
 
-        }).getOrElse ({
-          val msg = s"ERROR bounds are invalid"
-          sys.error(msg)
-        })
+          currCharBuffer.append(charAtom)
 
-        currCharBuffer.append(charBox)
+          if (__enable) {
+            if (!__triggerText.isEmpty()) {
+              val currCharWindow = charWindow.takeRight(20).mkString
+              if (currCharWindow.endsWith(__triggerText)) {
+                __start = __curr
+                __verbose = true
+              }
 
-        if (__enable) {
-          if (!__triggerText.isEmpty()) {
-            val currCharWindow = charWindow.takeRight(20).mkString
-            if (currCharWindow.endsWith(__triggerText)) {
-              __start = __curr
-              __verbose = true
+            }
+            if (__start <= __curr &&  __curr < __start + __len) {
+              if (__verbose) {
+                println(s"@${__curr}: ${charAtom}: wonky=${charAtom.wonkyCharCode}")
+                println(s"""text near: ${charWindow.takeRight(20).mkString}""")
+              }
+            } else {
+              __verbose = false
             }
 
           }
-          if (__start <= __curr &&  __curr < __start + __len) {
-            if (__verbose) {
-              println(s"@${__curr}: ${charBox}")
-              println(s"""text near: ${charWindow.takeRight(20).mkString}""")
-            }
-          } else {
-            __verbose = false
-          }
-
         }
-
       }
     }
   }
@@ -200,7 +205,7 @@ class CharExtractionListener(
     val charLeft = geomTranslation.transX(absoluteCharLeft)
     val charBottom = geomTranslation.transY(absoluteCharBottom)
 
-    var charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
+    val charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
     var charWidth = charTri.getDescentLine().getLength().toDouble
 
     if (charWidth.toInt == 0) {
@@ -208,7 +213,7 @@ class CharExtractionListener(
       // In glyph space:
 
       val pdfString = charTri.getPdfString
-      val decoded = charTri.getFont.decode(pdfString)
+      // val decoded = charTri.getFont.decode(pdfString)
       val bs = pdfString.getValueBytes.map(Byte.byte2int(_) & 0xFF)
       val glyphCode = bs(0)
 
@@ -219,7 +224,7 @@ class CharExtractionListener(
         // println(getCharTriInfo(charTri, reader))
 
       }
-      val charBBox = fontProgram.getCharBBox(glyphCode)
+      // val charBBox = fontProgram.getCharBBox(glyphCode)
       val fontBbox = fontMetrics.getBbox
       val glyphWidths = fontMetrics.getGlyphWidths
 
@@ -236,25 +241,19 @@ class CharExtractionListener(
 
 
     if (charHeight.nan || charHeight.inf || charHeight.toInt==0) {
-      // println(s"warning: char height is 0, NaN, or Inf")
-      charHeight = 0
-      // println(DocumentFontInfo.getCharTriInfo(charTri, reader))
+      None
+    } else if (charWidth.nan || charWidth.inf || charWidth.toInt==0) {
+      None
+    } else {
+      val charTop = charBottom - charHeight
+
+      Some(LTBounds.Doubles(
+        left=charLeft,
+        top=charTop,
+        width=charWidth,
+        height=charHeight
+      ))
     }
-
-    if (charWidth.nan || charWidth.inf || charWidth.toInt==0) {
-      // println(s"warning: char width is 0, NaN, or Inf")
-      charWidth = 0
-    }
-
-
-    val charTop = charBottom - charHeight
-
-    Some(LTBounds.Doubles(
-      left=charLeft,
-      top=charTop,
-      width=charWidth,
-      height=charHeight
-    ))
   }
 
 
