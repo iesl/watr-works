@@ -333,13 +333,13 @@ trait LabelWidgetIndex { self =>
 
   def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Option[Int@@ZoneID] = {
     val queryHits = queryRegion(queryBounds)
-    println(s"addLabel: query hits")
-    debugPrintQueryHits(queryHits)
+    // println(s"addLabel: query hits")
+    // debugPrintQueryHits(queryHits)
 
     val constrainedHits = applyConstraint(constraint, queryHits)
 
-    println(s"addLabel: constrained hits")
-    debugPrintQueryHits(constrainedHits)
+    // println(s"addLabel: constrained hits")
+    // debugPrintQueryHits(constrainedHits)
 
     labelConstrained(constraint, constrainedHits, label)
   }
@@ -539,7 +539,7 @@ trait LabelWidgetIndex { self =>
     val (endingResponse, endingIndex) = uiRequest.gesture match {
 
       case MenuAction(action) =>
-        println(s"MenuAction(${action})")
+        // println(s"MenuAction(${action})")
 
         val run = LabelAction.lift(action).exec(uiRequest, initResponse, startingWidget)
 

@@ -520,7 +520,7 @@ object ComponentOperations {
 
     // HOTSPOT: textbox operations in particular
     def tokenizeLine(): Option[TextReflow] = {
-      tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+      // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
       vtrace.trace("tokenizeLine: " withInfo theComponent.chars.mkString)
 
       // val __debug = true
@@ -573,7 +573,7 @@ object ComponentOperations {
 
       val asReflow = toTextReflow(theComponent)
 
-      tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
+      // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
 
       asReflow
 

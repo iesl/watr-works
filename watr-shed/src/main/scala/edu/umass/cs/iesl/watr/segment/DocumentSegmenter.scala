@@ -219,20 +219,24 @@ class DocumentSegmenter(
   var pageSegAccum: PageSegAccumulator = PageSegAccumulator(Seq())
 
   def runLineDetermination(): Unit = {
-    println(s"runLineDetermination()")
-    for {
+    val pageRegions = for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
-    } {
-      println(s"  Page ${pagenum}")
+    } yield {
+      // println(s"Page ${pagenum}")
+      print(s"<p${pagenum}:id${pageId}>")
       val atomicComponents = mpageIndex.getPageAtoms(PageNum(pagenum))
 
-      // val atomicComponents = charAtoms.map(
-      // vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${atomicComponents.length} char atoms"))
+      vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${atomicComponents.length} char atoms"))
 
       determineLines(pageId, PageNum(pagenum), atomicComponents)
-    }
-    println(s"done runLineDetermination()")
 
+      val pageGeometry = docStore.getPageGeometry(pageId)
+      docStore.getTargetRegion(
+        docStore.addTargetRegion(pageId, pageGeometry)
+      ).toPageRegion()
+    }
+    docStore.labelRegions(LB.DocumentPages, pageRegions)
+    println()
   }
 
   def findDocWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Unit = {
@@ -480,7 +484,7 @@ class DocumentSegmenter(
     //  to compensate for any obvious missing
     val ids = lineBinChars.map(_.id.unwrap)
 
-    val __debug = true
+    val __debug = false
     var __num_filled_in = 0
     val maybeFilledInPairs = for {
       idpair <- ids.sorted.sliding(2)
@@ -578,7 +582,6 @@ class DocumentSegmenter(
     components: Seq[AtomicComponent]
   ): Unit = {
 
-    val dbgmode = true //  pageNum.unwrap >= 13
 
     def minRegionId(ccs: Seq[AtomicComponent]): Int@@CharID =  ccs.map(_.charAtom.id).min
 
@@ -586,23 +589,16 @@ class DocumentSegmenter(
     // line-bin coarse segmentation
     val lineBinsx = approximateLineBins(components)
 
-    if (dbgmode) {
-      println("line binsx")
-      println(
-        lineBinsx.map(_.map(_.char).mkString)
-          .mkString("\n  ", "\n  ", "\n")
-      )
-    }
 
     val shortLines = splitRunOnLines(lineBinsx)
 
-    if (dbgmode) {
-      println("short lines")
-      println(
-        shortLines.map(_.map(_.char).mkString)
-          .mkString("\n  ", "\n  ", "\n")
-      )
-    }
+    // if (dbgmode) {
+    //   println("short lines")
+    //   println(
+    //     shortLines.map(_.map(_.char).mkString)
+    //       .mkString("\n  ", "\n  ", "\n")
+    //   )
+    // }
 
     val lineIdSets = new DisjointSets[Int](components.map(_.id.unwrap))
     for {
@@ -624,13 +620,13 @@ class DocumentSegmenter(
       .sortBy(line => minRegionId(line))
 
 
-    if (dbgmode) {
-      println("short lines filled in")
-      println(
-        shortLinesFilledIn.map(_.map(_.char).mkString)
-          .mkString("\n  ", "\n  ", "\n")
-      )
-    }
+    // if (dbgmode) {
+    //   println("short lines filled in")
+    //   println(
+    //     shortLinesFilledIn.map(_.map(_.char).mkString)
+    //       .mkString("\n  ", "\n  ", "\n")
+    //   )
+    // }
 
 
     val longLines = shortLinesFilledIn
@@ -646,27 +642,21 @@ class DocumentSegmenter(
 
         val shouldJoin = leftToRight && overlapped && smallIdGap
 
-        // vtrace.traceIf(shouldJoin)("joining line parts" withInfo {
-        //   val chs1 = linePart1.map(_.chars).mkString
-        //   val chs2 = linePart2.map(_.chars).mkString
-        //   s"""$chs1  <->  $chs2 """
-        // })
+        vtrace.traceIf(shouldJoin)("joining line parts" withInfo {
+          val chs1 = linePart1.map(_.chars).mkString
+          val chs2 = linePart2.map(_.chars).mkString
+          s"""$chs1  <->  $chs2 """
+        })
 
 
         shouldJoin
       })
-
-    if (dbgmode) {
-      println("long lines computed")
-    }
 
     val visualLineLabelId = docStore.ensureLabel(LB.VisualLine)
 
     val pageLines = longLines.map({ lineGroups =>
 
       val line = lineGroups.reduce(_ ++ _)
-
-      // Construct a string repr for line bounding box
 
       // Glue together page atoms into a VisualLine/TextSpan
       mpageIndex.labelRegion(line, LB.VisualLine)
@@ -686,15 +676,14 @@ class DocumentSegmenter(
           val alreadyZoned = docStore.getZoneForRegion(regionId, LB.VisualLine).isDefined
 
           if (alreadyZoned) {
-            // println(s"VisualLine Zone already exists for target region ${targetRegion}, skipping")
+            vtrace.trace("WARNING" withInfo s"VisualLine Zone already exists for ${targetRegion}, skipping")
             None
           } else {
             val zoneId = docStore.createZone(regionId, visualLineLabelId)
 
             visualLine.tokenizeLine.foreach { textReflow =>
-              if (dbgmode) {
-                println(s"toText()=> ${textReflow.toText}")
-              }
+              vtrace.trace{ "Final Tokenization" withInfo textReflow.toText }
+
               docStore.setTextReflowForZone(zoneId, textReflow)
             }
 
@@ -703,7 +692,6 @@ class DocumentSegmenter(
         })
     }).flatten.flatten
 
-    // println("page lines grouped")
 
     mpageIndex
       .labelRegion(pageLines, LB.PageLines)
@@ -711,7 +699,6 @@ class DocumentSegmenter(
         comp.setChildren(LB.VisualLine, pageLines)
       }
 
-    // println("finished determine lines")
   }
 
 
