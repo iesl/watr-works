@@ -13,12 +13,18 @@ lazy val jsProjects = Seq[ProjectReference](
 )
 
 lazy val jvmProjects = Seq[ProjectReference](
-  watrmarksJVM, watrshed, watrcolorsJVM
+  prelude, watrmarksJVM, watrshed, watrcolorsJVM
 )
 
 lazy val root = (project in file("."))
   .settings(Release.settings :_*)
   .aggregate( (jsProjects++jvmProjects): _*)
+
+lazy val prelude = (project in file("watr-prelude"))
+  .settings(SensibleProject.settings: _*)
+  .settings(libraryDependencies ++= Seq(
+    "org.scala-lang" % "scala-reflect" % scalaVersion.value
+  ))
 
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
@@ -57,7 +63,7 @@ lazy val watrshed = (project in file("watr-shed"))
       Lib.playJson,
       Lib.shapeless
     ))
-  .dependsOn(watrmarksJVM)
+  .dependsOn(prelude, watrmarksJVM)
 
 
 lazy val watrcolors = (crossProject in file("watr-colors"))

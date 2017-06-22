@@ -27,15 +27,21 @@ class Paginator(
   }
 
   def pageControls: RxModifier = Rx {
-    val pageButtons = (0 until pageCount()).map{ pgnum =>
+    val pCount = pageCount()
+    val pageButtons = (0 until pCount).map{ pgnum =>
+      val pageStart = pgnum*2 + 1
+      val pageEnd = pageStart+3
       selectableButton(
-        pgnum.toString,
+        s"${pageStart}-${pageEnd}",
         (pgnum==currentPage()),
         modifierSeq = (sty.btn_small),
         onclick = () => Rx { currentPage() = pgnum }
       )
     }
-    radios()(pageButtons:_*).render
+    span(
+      "Pages:", <.nbsp,
+      radios()(pageButtons:_*).render
+    )
   }
 
 }

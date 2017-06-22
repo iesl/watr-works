@@ -5,11 +5,8 @@ import TypeTags._
 
 object EnrichNumerics {
   def fmt = (d: Double) => {
-    // f"${d}%1.2f"
-    ???
+    f"${d}%1.2f"
   }
-
-
 
   type DoubleInterval = (Double, Double)@@Interval
   type RangeInt = (Int, Int)@@Interval
@@ -87,7 +84,6 @@ object EnrichNumerics {
 
   implicit class RicherDouble_EnrichNumerics(val theDouble: Double) extends AnyVal {
 
-    // def prettyPrint:String = fmt(theDouble)
     def pp(): String = fmt(theDouble)
 
     def eqFuzzy(tolerance: Double)(d2: Double): Boolean =

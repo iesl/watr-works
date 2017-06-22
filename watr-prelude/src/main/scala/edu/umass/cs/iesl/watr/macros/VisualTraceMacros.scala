@@ -20,7 +20,7 @@ trait EnableTrace[T] {
   def runTrace(level: VisualTraceLevel, ts: T*): Unit
 }
 
-private object VisualTraceMacros {
+object VisualTraceMacros {
   type VTraceContext[S] = Context { type PrefixType = EnableTrace[S] }
 
   def runIfEnabledWithCondition[T](c: VTraceContext[T])(cond: c.Expr[Boolean])(exprs: c.Expr[T]*) = {

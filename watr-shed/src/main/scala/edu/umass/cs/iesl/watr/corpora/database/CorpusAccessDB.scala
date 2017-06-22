@@ -735,7 +735,7 @@ class CorpusAccessDB(
 
 
     def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID = {
-      runq { ensureTargetRegion(pageId, bbox) }
+      runq { self.ensureTargetRegion(pageId, bbox) }
     }
 
     // G.TargetRegion = M.TargetRegion+M.Page+M.Document

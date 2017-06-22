@@ -89,18 +89,49 @@ trait DocumentZoningApi {
     reflow <- getTextReflowForZone(zoneId)
   } yield reflow
 
+  def ensurePageRegion(pageRegion: PageRegion): Option[Int@@RegionID] = {
+    val stableId = pageRegion.page.stable.stableId
+    val pageNum =  pageRegion.page.stable.pageNum
+    ensureTargetRegion(stableId, pageNum, pageRegion.bbox)
+  }
+
+  def ensureTargetRegion(stableId: String@@DocumentID, pageNum: Int@@PageNum, bbox:LTBounds): Option[Int@@RegionID] = {
+    for {
+      docId     <- getDocument(stableId)
+      pageId    <- getPage(docId, pageNum)
+    } yield {
+      addTargetRegion(pageId, bbox)
+    }
+  }
+
   def labelRegions(label: Label, regions: Seq[PageRegion]): Option[Int@@ZoneID] = {
-    regions.headOption
-      .map { pageRegion =>
-        val regionId = addTargetRegion(pageRegion.page.pageId, pageRegion.bbox)
-        val labelId = ensureLabel(label)
-        val zoneId = createZone(regionId, labelId)
-        regions.tail.map { tr =>
-          val rid = addTargetRegion(tr.page.pageId, tr.bbox)
-          addZoneRegion(zoneId, rid)
-        }
-        zoneId
+    val labelId = ensureLabel(label)
+
+    for {
+      pageRegion <- regions.headOption
+      headRegion <- ensurePageRegion(pageRegion)
+    } yield {
+      val zoneId = createZone(headRegion, labelId)
+      for {
+        tailRegion <- regions.tail
+        tailRegionId <- ensurePageRegion(tailRegion)
+      }  {
+        addZoneRegion(zoneId, tailRegionId)
       }
+      zoneId
+    }
+
+    // regions.headOption
+    //   .map { pageRegion =>
+    //     val regionId = addTargetRegion(pageRegion.page.pageId, pageRegion.bbox)
+    //     val labelId = ensureLabel(label)
+    //     val zoneId = createZone(regionId, labelId)
+    //     regions.tail.map { tr =>
+    //       val rid = addTargetRegion(tr.page.pageId, tr.bbox)
+    //       addZoneRegion(zoneId, rid)
+    //     }
+    //     zoneId
+    //   }
   }
 
 }

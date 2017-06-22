@@ -136,6 +136,7 @@ sealed trait Component {
   }
 
   def toRoleTree(roles: Label*): Tree[Component] = {
+
     roles.map(getChildren(_))
       .filterNot(_.isEmpty)
       .headOption

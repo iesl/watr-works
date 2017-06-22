@@ -34,31 +34,24 @@ object BrowseCorpus extends BasicClientDefs {
   var currDocStart = Var(0)
   var docCount = Var(0)
 
-  def prevPage() = {
-    currDocStart() = currDocStart.now - pageLength
-    currDocStart() = math.max(0, currDocStart.now)
+  docCount.triggerLater {
+    currDocStart() = 0
+  }
 
+  currDocStart.trigger {
     server.listDocuments(pageLength, currDocStart.now).foreach { docs =>
       docList() = docs
     }
   }
 
-  def firstPage() = {
-    server.listDocuments(pageLength, 0).foreach { docs =>
-      docList() = docs
-    }
-    currDocStart() = 0
+  def prevPage() = {
+    val newStart = math.max(currDocStart.now - pageLength, 0)
+    currDocStart() = newStart
   }
 
   def nextPage() = {
-    val currDocEndIndex = math.min(currDocStart.now + pageLength, docCount.now)
-    val haveMorePages = currDocEndIndex < docCount.now
-    if (haveMorePages) {
-      server.listDocuments(pageLength, currDocStart.now).foreach { docs =>
-        docList() = docs
-      }
-      currDocStart() = currDocStart.now + pageLength
-    }
+    val newStart = math.min(currDocStart.now + pageLength, docCount.now-pageLength)
+    currDocStart() = newStart
   }
 
   val leftGlyph = glyph_chevron_left
@@ -66,8 +59,9 @@ object BrowseCorpus extends BasicClientDefs {
 
 
   def docPagination(implicit c : Ctx.Owner): RxHtmlTag = Rx {
+    val currStart = currDocStart()
     span(
-      span(s"Displaying ${currDocStart()}-${currDocStart()+pageLength} of ${docCount()} "),
+      span(s"Displaying ${currStart}-${currStart+pageLength} of ${docCount.now} "),
       span(btnGroup,
         glyphSpan(leftGlyph, () => prevPage()),
         glyphSpan(rightGlyph, () => nextPage())
@@ -104,8 +98,6 @@ object BrowseCorpus extends BasicClientDefs {
 
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
-    server.documentCount()
-      .foreach { c => docCount() = c }
 
     val bodyContent =
       div("container-fluid".clazz)(
@@ -125,7 +117,8 @@ object BrowseCorpus extends BasicClientDefs {
       SharedLayout.pageSetup(Option(userName), bodyContent).render
     }
 
-    firstPage()
+    server.documentCount()
+      .foreach { c => docCount() = c }
   }
 
   object server extends BrowseCorpusApi {

@@ -13,6 +13,7 @@ import watrmarks.{StandardLabels => LB}
 
 import geometry._
 
+import textreflow.data._
 import geometry.syntax._
 
 import ComponentOperations._
@@ -84,10 +85,10 @@ object DocumentSegmenter {
         bottomY
       }
 
+    // charBoxes.sortBy(_.id)
     sortedYPage
       .map({case (bottomY, charBoxes) =>
-        // charBoxes.sortBy(_.bounds.left)
-        charBoxes.sortBy(_.id)
+        charBoxes.sortBy(_.bounds.left)
       })
 
   }
@@ -476,10 +477,11 @@ class DocumentSegmenter(
 
   def fillInMissingChars(pageNum: Int@@PageNum, lineBinChars: Seq[AtomicComponent]): Seq[AtomicComponent] = {
     // try to fill in short gaps in char id sequences, as a rough stop-gap (no pun intended)
-    //  to compensate for missing
+    //  to compensate for any obvious missing
     val ids = lineBinChars.map(_.id.unwrap)
-    // println(s"""fillInMissingChars: ${ids.mkString(",")}""")
 
+    val __debug = true
+    var __num_filled_in = 0
     val maybeFilledInPairs = for {
       idpair <- ids.sorted.sliding(2)
     } yield {
@@ -488,6 +490,9 @@ class DocumentSegmenter(
       if (max-min > 5) {
         Seq(min, max)
       } else {
+        if (__debug) {
+          __num_filled_in += math.min(0, (min to max).length-2)
+        }
         (min to max)
       }
     }
@@ -503,6 +508,21 @@ class DocumentSegmenter(
       .map(x => (x.bounds.left.unwrap, x))
       .sortBy(_._1)
       .map(_._2)
+
+
+    if (__debug) {
+      if (ids.length != res.length) {
+        println(s"""fillInMissingChars: starting char count=${ids.length}""")
+        println(s"""                   > added              + ${__num_filled_in}""")
+        println(s"""                   > final count        ${res.length} """)
+
+        val startingLine = lineBinChars.map(_.char).mkString
+        val endingLine = res.map(_.char).mkString
+
+        println(s""" >>>${startingLine}<<""")
+        println(s""" >>>${endingLine}<<""")
+      }
+    }
 
 
     res
@@ -558,7 +578,7 @@ class DocumentSegmenter(
     components: Seq[AtomicComponent]
   ): Unit = {
 
-    val dbgmode = false //  pageNum.unwrap >= 13
+    val dbgmode = true //  pageNum.unwrap >= 13
 
     def minRegionId(ccs: Seq[AtomicComponent]): Int@@CharID =  ccs.map(_.charAtom.id).min
 
@@ -613,8 +633,6 @@ class DocumentSegmenter(
     }
 
 
-    SlicingAndDicing.debug = dbgmode
-
     val longLines = shortLinesFilledIn
       .groupByPairs({ (linePart1, linePart2) =>
         val l1 = linePart1.last
@@ -637,7 +655,6 @@ class DocumentSegmenter(
 
         shouldJoin
       })
-    SlicingAndDicing.debug = false
 
     if (dbgmode) {
       println("long lines computed")
@@ -675,6 +692,9 @@ class DocumentSegmenter(
             val zoneId = docStore.createZone(regionId, visualLineLabelId)
 
             visualLine.tokenizeLine.foreach { textReflow =>
+              if (dbgmode) {
+                println(s"toText()=> ${textReflow.toText}")
+              }
               docStore.setTextReflowForZone(zoneId, textReflow)
             }
 

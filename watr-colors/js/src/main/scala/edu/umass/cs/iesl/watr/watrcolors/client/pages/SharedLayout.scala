@@ -167,12 +167,18 @@ object SharedLayout extends BasicClientDefs {
       initSelectConstraint:_*
     )
 
-
     div("selection-controls".id,
-      selectConstraint.render,
-      labelSelector,
+      <.span("Select:", <.nbsp,
+        selectConstraint.render
+      ),
+      <.nbsp, <.nbsp, <.nbsp, <.nbsp,
+      <.span("Label:", <.nbsp,
+        labelSelector
+      ),
+      <.nbsp, <.nbsp, <.nbsp, <.nbsp,
       delClrMrgButtons.render
     )
+
 
   }
 

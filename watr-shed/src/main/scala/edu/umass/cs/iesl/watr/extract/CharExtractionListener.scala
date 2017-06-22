@@ -154,7 +154,7 @@ class CharExtractionListener(
             nextId,
             PageRegion(
               RecordedPageID(
-                PageID(pageNum.unwrap),
+                PageID(-(1+pageNum.unwrap)), // This is just  hacky way to set an invalid PageID (which will be later changed when added to db)
                 StablePageID(stableId, pageNum)
               ),
               charBounds

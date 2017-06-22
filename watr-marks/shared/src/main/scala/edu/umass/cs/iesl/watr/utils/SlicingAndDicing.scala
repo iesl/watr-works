@@ -14,8 +14,6 @@ object SlicingAndDicing {
     }
   }
 
-  var debug = false
-
   private def groupByStartIndexes[A](lengths: Seq[Int], cs: Seq[A]): Seq[Seq[A]] = {
     val groups = mutable.ListBuffer[Seq[A]]()
     var _cs = cs
@@ -24,27 +22,11 @@ object SlicingAndDicing {
      len <- lengths
     } {
       val (group, post) = _cs.splitAt(len)
-      groups.prepend(group)
+      groups.append(group)
       _cs = post
     }
-
-    // if (!lengths.isEmpty) {
-    //   val (group, post) = cs.splitAt(lengths.head)
-    //   group +: groupByStartIndexes(lengths.tail, post)
-    // }
     groups
   }
-
-
-  // private def groupByStartIndexesNTR[A](lengths: Seq[Int], cs: Seq[A]): Seq[Seq[A]] = {
-  //   if(debug) {
-  //     println(s"groupByStartIndexes(${lengths.length}, ${cs.length})")
-  //   }
-  //   if (lengths.isEmpty) Seq() else {
-  //     val (group, post) = cs.splitAt(lengths.head)
-  //     group +: groupByStartIndexes(lengths.tail, post)
-  //   }
-  // }
 
   implicit class RicherSeq[A](val thisSeq: Seq[A]) extends AnyVal {
 

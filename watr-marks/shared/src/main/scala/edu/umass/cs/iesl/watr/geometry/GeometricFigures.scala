@@ -21,10 +21,6 @@ case class LTBounds(
   height : Int@@FloatRep
 ) extends GeometricFigure  {
   override def toString: String = this.prettyPrint
-  // def left   : Double = left0.asDouble()
-  // def top    : Double = top0.asDouble()
-  // def width  : Double = width0.asDouble()
-  // def height : Double = height0.asDouble()
   def right = left+width
   def bottom = top+height
 }
@@ -300,10 +296,6 @@ object GeometryImplicits {
   }
 
 
-  // implicit def FloatRepToDouble(floatRep: Int@@FloatRep): Double = {
-  //   floatRep.unwrap/100d
-  // }
-
   implicit class RicherFloatPrec2(val self: Int@@FloatRep) extends AnyVal {
     def +(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap+r.unwrap)
     def -(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap-r.unwrap)
@@ -322,10 +314,10 @@ object GeometryImplicits {
     def *(r: Double): Int@@FloatRep = (self.asDouble * r).toFloatRep
     def /(r: Double): Int@@FloatRep = (self.asDouble / r).toFloatRep
 
-    def <(r:  Double): Boolean = self.unwrap<r
-    def <=(r: Double): Boolean = self.unwrap<=r
-    def >=(r: Double): Boolean = self.unwrap>=r
-    def >(r: Double): Boolean  = self.unwrap>r
+    def <(r:  Double): Boolean = self.asFloat<r
+    def <=(r: Double): Boolean = self.asFloat<=r
+    def >=(r: Double): Boolean = self.asFloat>=r
+    def >(r: Double): Boolean  = self.asFloat>r
 
     def +(r: Float): Int@@FloatRep = self + r.toFloatRep
     def -(r: Float): Int@@FloatRep = self - r.toFloatRep

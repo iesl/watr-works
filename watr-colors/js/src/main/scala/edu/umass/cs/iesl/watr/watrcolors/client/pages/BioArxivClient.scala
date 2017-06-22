@@ -98,7 +98,7 @@ class ClientStateRx(
         if(i==0) { uiState_selectedLabel() = Some(lbl) }
 
         selectableButton(
-          lbl.fqn,
+          lbl.key,
           (i==0),
           modifierSeq = (sty.btn_small +++ (backgroundColor:=clr.cssHash())),
           onclick = () => {uiState_selectedLabel() = Some(lbl)})
@@ -200,11 +200,10 @@ object WatrColors extends BasicClientDefs with UIUpdateCycle  {
 
   def selectionIndicator()(implicit co: Ctx.Owner): RxModifier = Rx {
     val curr = selectionRect()
-    // val pt = mousePos()
     curr.map{ bbox =>
       <.span(bbox.prettyPrint)
     } getOrElse {
-      <.span("<no-sel>")
+      <.span("")
     }
   }
 

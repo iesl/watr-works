@@ -43,7 +43,7 @@ case class PageIndex(
 
   def setChildrenWithLabel(cid: Int@@ComponentID, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
     val lmap = componentToChildren.getOrElse(cid, mutable.HashMap())
-    val l0 = lmap.put(l, tree)
+    lmap.put(l, tree)
     componentToChildren.put(cid, lmap)
   }
 

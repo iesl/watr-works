@@ -135,7 +135,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
         mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
       }
 
-    def addPage(targetRegion: TargetRegion): Unit= {
+    def addPage(targetRegion: TargetRegion): Unit = {
       val pageId = targetRegion.page.pageId
       if (!targetPageRIndexes.contains(pageId)) {
         // println(s"adding page ${targetRegion}")
@@ -236,8 +236,10 @@ trait LabelWidgetIndex { self =>
         val pageQueryBounds = clippedQueryBox.translate(-pos.translation)
         val pageIndex = pageIndexes(pageId)
         val pageHits = pageIndex.queryForIntersects(pageQueryBounds)
-        QueryHit(pos, pageId, pageQueryBounds, pageHits)
+        val sortedHits = pageHits.sortBy { _.targetRegion.bbox.bottom.unwrap }
+        QueryHit(pos, pageId, pageQueryBounds, sortedHits)
       }
+
   }
 
   def queryRegion(queryBounds: LTBounds): Seq[QueryHit] = {
@@ -248,6 +250,7 @@ trait LabelWidgetIndex { self =>
         case l @ RegionOverlay(wid, under, overlays) =>
           val pageId = under.page.pageId
           queryPage(pos, queryBounds, pageId)
+
 
 
         case _ => None
@@ -266,6 +269,7 @@ trait LabelWidgetIndex { self =>
       case ByRegion => qhit
 
       case ByChar =>
+        println(s"applyConstraint:ByChar; ")
 
         val clippedReflows = for {
           iReflow <- qhit.iTextReflows
@@ -310,11 +314,33 @@ trait LabelWidgetIndex { self =>
     docStore.labelRegions(label, pageRegionsToBeLabeled)
   }
 
+  def debugPrintQueryHits(hits: Seq[QueryHit]): Unit = {
+    val hitDebugText = hits
+      .map{ hit =>
+        val bounds = hit.pageQueryBounds.prettyPrint
+        val hitText = hit.iTextReflows
+          .map {reflow =>
+            val tr0 = reflow.targetRegion
+            val tr1 = reflow.textReflow.targetRegion()
+            val text = reflow.textReflow.toText()
+            s"""$text  ${tr0} (cached), $tr1 (computed)"""
+          }.mkString("\n    ", "\n    ", "\n")
+        s"""Within query rect: $bounds $hitText"""
+      }.mkString("\n  ", "\n  ", "\n")
+
+    println(hitDebugText)
+  }
+
   def addLabel(queryBounds: LTBounds, constraint: Constraint, label: Label): Option[Int@@ZoneID] = {
     val queryHits = queryRegion(queryBounds)
-    // println(s"addLabel: queryHits = ${queryHits}")
+    println(s"addLabel: query hits")
+    debugPrintQueryHits(queryHits)
+
     val constrainedHits = applyConstraint(constraint, queryHits)
-    // println(s"addLabel: constrained = ${constrainedHits}")
+
+    println(s"addLabel: constrained hits")
+    debugPrintQueryHits(constrainedHits)
+
     labelConstrained(constraint, constrainedHits, label)
   }
 
@@ -504,7 +530,8 @@ trait LabelWidgetIndex { self =>
   // map (UIState, Gesture) => (UIState, UIChanges)
   def userInteraction(uiRequest: UIRequest): (UIResponse, LabelWidgetIndex) = {
 
-    val UIState(uiContraint, activeLabel, _ /*selections*/, activeLabeler, initLabelColors) = uiRequest.uiState
+    val UIState(uiContraint, activeLabel, /*selections=*/_, /*activeLabeler=*/_, initLabelColors) = uiRequest.uiState
+
     val initResponse = UIResponse(uiRequest.uiState, None)
 
     val startingWidget = layout.labelWidget
