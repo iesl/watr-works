@@ -2,6 +2,8 @@ package edu.umass.cs.iesl.watr
 package heuristics
 
 import Constants._
+import Utils._
+
 
 import scala.collection.mutable.ListBuffer
 
@@ -42,6 +44,17 @@ object AffiliationsHeuristics {
             currentComponentIndex += 1
         }
         separateComponents
+    }
+
+    def getCategoryForSeparateAffiliationComponents(separatedAffiliationComponents: ListBuffer[String]): scala.collection.mutable.Map[String, ListBuffer[String]] = {
+
+        val affiliationComponentKeywords: scala.collection.mutable.Map[String, ListBuffer[String]] = scala.collection.mutable.Map[String, ListBuffer[String]]()
+
+        for(separatedAffiliationComponent <- separatedAffiliationComponents){
+            affiliationComponentKeywords += (separatedAffiliationComponent -> getMatchedKeywordsForAffiliationComponent(separatedAffiliationComponent.toLowerCase))
+        }
+
+        affiliationComponentKeywords
     }
 
 
