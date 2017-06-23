@@ -14,8 +14,7 @@ import bioarxiv._
 import TypeTags._
 
 object SharedInit {
-  // |import ammonite.ops._
-  //   |import ammonite.ops.ImplicitWd._
+
   val predef =
     s"""|import edu.umass.cs.iesl.watr
         |import watr._, spindex._, geometry._, table._
@@ -26,6 +25,7 @@ object SharedInit {
         |import textreflow.data._
         |import bioarxiv._, BioArxiv._, BioArxivOps._
         |import watrmarks.StandardLabels._
+        |import TypeTags._
         |import ShellCommands._
         |import labeling.SampleLabelWidgets
         |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi
@@ -113,14 +113,17 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
   implicit val S = Strategy.fromCachedDaemonPool()
   val T = implicitly[Async[Task]]
 
-
-  def segmentAll(n: Int=0, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+  def chooseEntries(n: Int, skip: Int)(implicit corpusAccessApi: CorpusAccessApi): Stream[Task, CorpusEntry] = {
     val corpus = corpusAccessApi.corpus
     val allEntries = corpus.entryStream()
     val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
     val entries = if (n > 0) skipped.take(n.toLong) else skipped
+    entries
+  }
 
-    val prog = entries
+  def segmentAll(n: Int=0, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+
+    val prog = chooseEntries(n, skip)
       .through(pipe.zipWithIndex)
       .evalMap { case (corpusEntry, i) =>
         Task.delay {
@@ -134,21 +137,19 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
   }
 
   def segmentAllParallel(n: Int=0, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-    val corpus = corpusAccessApi.corpus
-
-    val allEntries = corpus.entryStream()
-    val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
-    val entries = if (n > 0) skipped.take(n.toLong) else skipped
+    val entries = chooseEntries(n, skip)
 
     val prog0 = entries.take(1)
       .map { corpusEntry =>
         println(s"processing first entry ")
         segment(corpusEntry)
       }
+    println(s"running first entry")
+    prog0.run.unsafeRun()
 
 
-    val chunked = entries
-      .drop(1)
+    println(s"running remaining entries")
+    val chunked = entries.drop(1)
       .through(pipe.zipWithIndex)
       .chunkN(1, allowFewer=true)
       .map { chunks =>
@@ -156,27 +157,106 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
           .reduce(_ ++ _)
           .covary[Task]
           .evalMap { case (corpusEntry, i) =>
-            val t = Task.delay {
+            Task.delay {
               println(s"processing entry ${i}")
               segment(corpusEntry)
               println(s"done entry ${i}")
             }
-            t
           }
       }
 
-
-
-    val prog = concurrent.join(10)(chunked)
-    println(s"constructed program")
-
-    println(s"running first entry")
-    prog0.run.unsafeRun()
-
-    println(s"running remaining entries")
-    val _ = prog.run.unsafeRun
+    concurrent.join(10)(chunked)
+      .run.unsafeRun
   }
 
+  val tmpSampleDocs = Seq(
+    // processed 3 times??
+    "10.1101-021006.d",
+    // Started and finished
+    "10.1101-095851.d",
+    "10.1101-093740.d",
+    "10.1101-093492.d",
+    "10.1101-093138.d",
+    "10.1101-091470.d",
+    "10.1101-090910.d",
+    "10.1101-089359.d",
+    "10.1101-086165.d",
+    "10.1101-085670.d",
+    "10.1101-084780.d",
+    "10.1101-082461.d",
+    "10.1101-080903.d",
+    "10.1101-080028.d",
+    "10.1101-075721.d",
+    "10.1101-075465.d",
+    "10.1101-074880.d",
+    "10.1101-074864.d",
+    "10.1101-065680.d",
+    "10.1101-064873.d",
+    "10.1101-057828.d",
+    "10.1101-056457.d",
+    "10.1101-056143.d",
+    "10.1101-053629.d",
+    "10.1101-050096.d",
+    "10.1101-049114.d",
+    "10.1101-048892.d",
+    "10.1101-035667.d",
+    "10.1101-034843.d",
+    "10.1101-034066.d",
+    "10.1101-032458.d",
+    "10.1101-031443.d",
+    "10.1101-029207.d",
+    "10.1101-028597.d",
+    "10.1101-026252.d",
+    "10.1101-022889.d",
+    "10.1101-022111.d",
+    "10.1101-021691.d",
+    "10.1101-019901.d",
+    "10.1101-014985.d",
+    "10.1101-014233.d",
+    "10.1101-009670.d",
+    "10.1101-007310.d",
+    "10.1101-005611.d",
+    "10.1101-003889.d",
+    "10.1101-001750.d",
+    "10.1101-097840.d",
+    "10.1101-094904.d",
+    "10.1101-075275.d",
+    "10.1101-054015.d",
+    "10.1101-025221.d",
+    "10.1101-006098.d",
+    "10.1101-006080.d"
+  )
+
+  def segmentEntry(stableId: String@@DocumentID, commitToDb: Boolean=false)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val docStore = corpusAccessApi.docStore
+
+    if (commitToDb && docStore.getDocument(stableId).isDefined) {
+      println(s"document ${stableId} already exists in database, skipping.")
+    } else if (corpusAccessApi.corpus.hasEntry(stableId.unwrap)) {
+
+      println(s"segmenting ${stableId}")
+
+
+      for {
+        corpusEntry    <- corpusAccessApi.corpus.entry(stableId.unwrap)
+        pdfArtifact    <- corpusEntry.getPdfArtifact
+        pdfPath        <- pdfArtifact.asPath.toOption
+      } {
+        val memZoneApi = new MemDocZoningApi
+        val segmenter = DocumentSegmenter
+          .createSegmenter(stableId, pdfPath, memZoneApi)
+
+        segmenter.runPageSegmentation()
+
+        if (commitToDb) {
+          println(s"Importing ${stableId} into database.")
+          corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoneApi)
+          println(s"Done importing ${stableId}")
+        }
+
+      }
+    }
+  }
 
   def segment(corpusEntry: CorpusEntry)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val docStore = corpusAccessApi.docStore
@@ -185,7 +265,7 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
       pdfArtifact    <- corpusEntry.getPdfArtifact
       pdfPath        <- pdfArtifact.asPath.toOption
       stableId = DocumentID(corpusEntry.entryDescriptor)
-    } yield {
+    } {
 
       if (docStore.getDocument(stableId).isDefined) {
         println(s"document ${stableId} already exists in database, skipping.")

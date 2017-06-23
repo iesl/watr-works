@@ -223,7 +223,7 @@ class DocumentSegmenter(
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } yield {
       // println(s"Page ${pagenum}")
-      print(s"<p${pagenum}:id${pageId}>")
+      print(s".")
       val atomicComponents = mpageIndex.getPageAtoms(PageNum(pagenum))
 
       vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${atomicComponents.length} char atoms"))
@@ -236,7 +236,6 @@ class DocumentSegmenter(
       ).toPageRegion()
     }
     docStore.labelRegions(LB.DocumentPages, pageRegions)
-    println()
   }
 
   def findDocWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Unit = {

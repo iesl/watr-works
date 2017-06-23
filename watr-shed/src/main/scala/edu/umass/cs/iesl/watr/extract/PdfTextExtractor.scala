@@ -95,19 +95,18 @@ class PdfTextExtractor(
 
   def extractCharacters(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[CharAtom], PageGeometry)] = {
     var instr: InputStream = null
+    val pages = mutable.ListBuffer[(Seq[CharAtom], PageGeometry)]()
     try {
       instr = nio.Files.newInputStream(pdfPath.toNIO)
       val reader = new PdfReader(instr)
       val document = new PdfDocument(reader)
 
-      val pageIndexes = for (pageNumber <- 1 to document.getNumberOfPages) yield {
-        // val tagStructureContext = pdfPage.getDocument.getTagStructureContext
+
+      for (pageNumber <- 1 to document.getNumberOfPages) {
 
         val pageId = PageNum(pageNumber-1)
 
         val pdfPage = document.getPage(pageNumber)
-
-        // val resources = pdfPage.getResources
 
         val currCharBuffer: mutable.ArrayBuffer[CharAtom] = mutable.ArrayBuffer[CharAtom]()
         val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage, reader)
@@ -122,24 +121,47 @@ class PdfTextExtractor(
           geomTrans
         )
 
-        val parser = new PdfCanvasProcessor(extractor);
-        parser.processPageContent(pdfPage)
+        val pageAtoms = try {
+          val parser = new PdfCanvasProcessor(extractor);
+          parser.processPageContent(pdfPage)
 
 
-        val pageAtoms = Seq[CharAtom](currCharBuffer:_*)
+          val pageAtoms = Seq[CharAtom](currCharBuffer:_*)
 
-        parser.reset()
+          val charCount = extractor.totalCharCount
+          val maxExceeded = charCount > extractor.MAX_EXTRACTED_CHARS_PER_PAGE
 
-        (pageAtoms, pageGeometry)
+          if (maxExceeded) {
+            println(s"Max chars per page limit exceeded: extracted only ${pageAtoms.length} of ${charCount} chars")
+          } else {
+            println(s"Extracted ${pageAtoms.length} chars out of ${charCount} glyphs")
+
+          }
+
+          parser.reset()
+
+          (pageAtoms, pageGeometry)
+        } catch {
+          case f: Throwable => println(s"ERROR extractCharacters(page: ${pageNumber}): ${f}: ${f.getMessage} ${f.getCause()}")
+
+            (List(), pageGeometry)
+        } finally {
+          if (instr != null) instr.close()
+        }
+
+        pages.append(pageAtoms)
       }
-      pageIndexes.toList
+
     } catch {
       case f: Throwable =>
         println(s"ERROR extractCharacters(): ${f}: ${f.getMessage} ${f.getCause()}")
+        f.printStackTrace()
         List()
     } finally {
       if (instr != null) instr.close()
     }
+
+    pages.toList
   }
 
 }

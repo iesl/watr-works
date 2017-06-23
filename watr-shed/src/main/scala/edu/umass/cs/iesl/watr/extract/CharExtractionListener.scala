@@ -115,74 +115,82 @@ class CharExtractionListener(
 
   var (__len: Int, __skip:Int) = (100, 20)
 
+  // Limit the # of chars that can be extracted per page to prevent pathological cases (e.g., embedded charts using symbol font-based dots)
+  val MAX_EXTRACTED_CHARS_PER_PAGE = 10000
+  var totalCharCount = 0
+
   def renderText(charTris: TextRenderInfo): Unit = {
+
     if (__enable) { __curr += 1 }
 
     for (charTri <- charTris.getCharacterRenderInfos) {
+      totalCharCount += 1
 
-      if (__verbose) {
-        println(s"renderText:charTri.mcid=${charTri.getMcid}")
-      }
-
-      val (stringRep: String, code: Option[Int]) = if (!charTri.getText.isEmpty) {
+      if (totalCharCount < MAX_EXTRACTED_CHARS_PER_PAGE) {
         if (__verbose) {
-          println(s"   for text(): ${charTri.getText}")
+          println(s"renderText:charTri.mcid=${charTri.getMcid}")
         }
-        val t = charTri.getText()
-          .map{ c =>
-            if (__verbose) {
-              val maybsub = UnicodeUtil.maybeSubChar(c)
-              println(s"    c=${c}, asint=${c.toInt}, maybeSub: ${maybsub.map(_.toInt)}")
-            }
-            UnicodeUtil.maybeSubChar(c).filter(_ > ' ').mkString
+
+        val (stringRep: String, code: Option[Int]) = if (!charTri.getText.isEmpty) {
+          if (__verbose) {
+            println(s"   for text(): ${charTri.getText}")
           }
-          .mkString
-        (t, None)
-      } else {
-        // TODO reinstate glyph hash lookups
-        fallbackRep(charTri)
-      }
-
-      if (__enable) { charWindow += stringRep }
-
-      if (!stringRep.isEmpty && !code.exists(_ <= 32)) {
-
-        computeTextBounds(charTri).map { charBounds =>
-          val nextId = charIdGen.nextId
-
-          val charAtom = CharAtom(
-            nextId,
-            PageRegion(
-              RecordedPageID(
-                PageID(-(1+pageNum.unwrap)), // This is just  hacky way to set an invalid PageID (which will be later changed when added to db)
-                StablePageID(stableId, pageNum)
-              ),
-              charBounds
-            ),
-            stringRep,
-            code
-          )
-
-          currCharBuffer.append(charAtom)
-
-          if (__enable) {
-            if (!__triggerText.isEmpty()) {
-              val currCharWindow = charWindow.takeRight(20).mkString
-              if (currCharWindow.endsWith(__triggerText)) {
-                __start = __curr
-                __verbose = true
-              }
-
-            }
-            if (__start <= __curr &&  __curr < __start + __len) {
+          val t = charTri.getText()
+            .map{ c =>
               if (__verbose) {
-                println(s"@${__curr}: ${charAtom}: wonky=${charAtom.wonkyCharCode}")
-                println(s"""text near: ${charWindow.takeRight(20).mkString}""")
+                val maybsub = UnicodeUtil.maybeSubChar(c)
+                println(s"    c=${c}, asint=${c.toInt}, maybeSub: ${maybsub.map(_.toInt)}")
               }
-            } else {
-              __verbose = false
+              UnicodeUtil.maybeSubChar(c).filter(_ > ' ').mkString
             }
+            .mkString
+          (t, None)
+        } else {
+          // TODO reinstate glyph hash lookups
+          fallbackRep(charTri)
+        }
 
+        if (__enable) { charWindow += stringRep }
+
+        if (!stringRep.isEmpty && !code.exists(_ <= 32)) {
+
+          computeTextBounds(charTri).map { charBounds =>
+            val nextId = charIdGen.nextId
+
+            val charAtom = CharAtom(
+              nextId,
+              PageRegion(
+                RecordedPageID(
+                  PageID(-(1+pageNum.unwrap)), // This is just  hacky way to set an invalid PageID (which will be later changed when added to db)
+                  StablePageID(stableId, pageNum)
+                ),
+                charBounds
+              ),
+              stringRep,
+              code
+            )
+
+            currCharBuffer.append(charAtom)
+
+            if (__enable) {
+              if (!__triggerText.isEmpty()) {
+                val currCharWindow = charWindow.takeRight(20).mkString
+                if (currCharWindow.endsWith(__triggerText)) {
+                  __start = __curr
+                  __verbose = true
+                }
+
+              }
+              if (__start <= __curr &&  __curr < __start + __len) {
+                if (__verbose) {
+                  println(s"@${__curr}: ${charAtom}: wonky=${charAtom.wonkyCharCode}")
+                  println(s"""text near: ${charWindow.takeRight(20).mkString}""")
+                }
+              } else {
+                __verbose = false
+              }
+
+            }
           }
         }
       }
@@ -306,36 +314,3 @@ class CharExtractionListener(
   }
 }
 
-      // val rawChars = if (charTri.getText.isEmpty && charTri.hasMcid(mcid, false)) {
-      //   val gl = lookupGlyph(charTri: TextRenderInfo)
-      //   if (gl.isEmpty) {
-      //     val pdfString = charTri.getPdfString
-      //     val bs = pdfString.getValueBytes.map(Byte.byte2int(_).toString.toSeq).mkString(",").toSeq
-      //     // Seq('?', '{') ++ bs ++ Seq('}')
-      //     '¿' +: bs
-      //   } else gl
-      // } else if (charTri.getText.isEmpty) {
-      //   if (1455 <= index && index <= 1470) {
-      //     println("here 2")
-      //   }
-      //   lookupGlyph(charTri: TextRenderInfo)
-      // } else {
-      //   if (1455 <= index && index <= 1470) {
-      //     println("here 3")
-      //   }
-      //   val txt = charTri.getText().toCharArray().toSeq
-      //   if (txt.isEmpty) {
-      //     val pdfString = charTri.getPdfString
-      //     val bs = pdfString.getValueBytes.map(Byte.byte2int(_).toString.toSeq).mkString(",").toSeq
-      //     // Seq('¿', '{') ++ bs ++ Seq('}')
-      //     '¿' +: bs
-      //   } else txt
-      // }
-
-// if (index > 0)  {
-//   println(s"""chars: raw:${rawCharX} subs: [${subChars.mkString(", ")}] / ${subChars.map(_.toInt).mkString(", ")}""")
-//   // GlyphPositioning.traceGlyphPositioning(charTri, reader)
-//   // println(fonts.DocumentFontInfo.getCharTriInfo(charTri, reader))
-//   println("=======================\n\n")
-//   index -= 1
-// }
