@@ -145,9 +145,6 @@ object Utils {
             if(CountryKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
                 matchedKeywords += COUNTRY_KEYWORD
             }
-//            if(FacultyKeywords.keywords.get(affiliationComponentWord, 0.9, Jaccard).isDefined){
-//                matchedKeywords += FACULTY_KEYWORDS
-//            }
             if(DepartmentKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
                 matchedKeywords += DEPARTMENT_KEYWORD
             }
@@ -165,11 +162,6 @@ object Utils {
             }
         }
 
-        if(USA_STATE_ZIP_CODE_PATTERN.findFirstIn(affiliationComponent.toUpperCase).getOrElse(BLANK).length.!=(0)){
-            matchedKeywords += USA_STATE_REGION_KEYWORD
-        }
-
-
         matchedKeywords
 
     }
@@ -183,8 +175,32 @@ object Utils {
         if(separatedComponent.takeRight(1).equals(PERIOD)){
             cleanedComponent = separatedComponent.dropRight(1)
         }
+        if(cleanedComponent.head.==(DOT)){
+            cleanedComponent = separatedComponent.tail
+        }
 
-        cleanedComponent
+        cleanedComponent.trim
 
     }
+
+    def getMatchedZipCodePatterns(affiliationComponent: String): ListBuffer[String] = {
+
+        val matchedZipCodePatterns: ListBuffer[String] = new ListBuffer[String]()
+
+        ZIP_CODE_PATTERNS.foreach{
+            zipCodePattern => {
+                zipCodePattern._2.foreach{
+                    zipCodeRegex => {
+                        if (zipCodeRegex.findFirstIn(affiliationComponent).getOrElse(BLANK).nonEmpty){
+                            matchedZipCodePatterns += zipCodePattern._1
+                        }
+                    }
+                }
+            }
+        }
+
+        matchedZipCodePatterns
+
+    }
+
 }
