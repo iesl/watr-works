@@ -1,0 +1,17 @@
+AUTHORS:
+
+Separating authors into individuals' complete names:
+    0) Strip away the numbers, *, and other symbols ???
+    1) Create a data structure to make tokens based:
+     i) Geometric distance between 2 consecutive characters: (StartPos_of_current_char - EndPos_of_previous_char) > 250 [might change based on different paper formats]
+     ii) Case of the character
+     iii) y position to remove the superscripts, in case 0 is not followed
+    2) Use stop words (and), and punctuations (,) to separate the words into separate names
+    3) Build a data structure of the names from reference section, and compare the last names obtained from the authors to the ones in reference for verification
+
+Split the textReflow into the component name strings, and then parse till there is an element of (2) found
+
+
+Separating an individual name into separate components:
+1) Separate into different components when case changes
+2) If case same, then with the space between 2 consecutive CharAtoms

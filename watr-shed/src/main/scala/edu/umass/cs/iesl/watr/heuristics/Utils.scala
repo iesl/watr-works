@@ -1,21 +1,20 @@
 package edu.umass.cs.iesl.watr
 package heuristics
 
-import edu.umass.cs.iesl.watr.TypeTags._
-import edu.umass.cs.iesl.watr.geometry.LTBounds
-import edu.umass.cs.iesl.watr.heuristics.Constants._
-import edu.umass.cs.iesl.watr.textreflow.TextReflowF.TextReflow
-import edu.umass.cs.iesl.watr.textreflow.data._
+import TypeTags._
+import geometry.LTBounds
+import Constants._
+import textreflow.TextReflowF.TextReflow
+import textreflow.data._
+import simstring._
 
-import scala.util.matching.Regex
+import scala.collection.mutable.ListBuffer
 
 object Utils {
 
     def isOfFirstNameInitialFormat(authorNameComponent: String): Boolean = {
 
-        val nameInitialPattern: Regex = """^[A-Z\.]+$""".r
-        val namePatternMatch = nameInitialPattern.findFirstIn(authorNameComponent)
-        if(namePatternMatch.isDefined && namePatternMatch.get.length.==(authorNameComponent.length)){
+        if(NAME_INITIAL_FORMAT_PATTERN.findFirstIn(authorNameComponent).getOrElse(BLANK).length.==(authorNameComponent.length)){
             return true
         }
         false
@@ -134,4 +133,74 @@ object Utils {
         }
         -1
     }
+
+    def getMatchedKeywordsForAffiliationComponent(affiliationComponent: String): ListBuffer[String] = {
+
+        val matchedKeywords: ListBuffer[String] = new ListBuffer[String]()
+
+        for(affiliationComponentWord <- affiliationComponent.split(SPACE_SEPARATOR)){
+//            if(CityKeywords.keywords.get(affiliationComponentWord, 0.9, Jaccard).isDefined){
+//                matchedKeywords += CITY_KEYWORDS
+//            }
+            if(CountryKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
+                matchedKeywords += COUNTRY_KEYWORD
+            }
+            if(DepartmentKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
+                matchedKeywords += DEPARTMENT_KEYWORD
+            }
+            if(InstitutionKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
+                matchedKeywords += INSTITUTION_KEYWORD
+            }
+            if(CompanyKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
+                matchedKeywords += COMPANY_KEYWORD
+            }
+            if(UniversityKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
+                matchedKeywords += UNIVERSITY_KEYWORD
+            }
+            if(EMAIL_PATTERN.findFirstIn(affiliationComponentWord).getOrElse(BLANK).length.!=(0)){
+                matchedKeywords += EMAIL_KEYWORD
+            }
+        }
+
+        matchedKeywords
+
+    }
+
+    def cleanSeparatedComponent(separatedComponent: String): String = {
+
+        var cleanedComponent: String = separatedComponent
+
+        cleanedComponent = separatedComponent.substring(CLEANUP_PATTERN.findFirstIn(separatedComponent).getOrElse(BLANK).length, separatedComponent.length)
+
+        if(separatedComponent.takeRight(1).equals(PERIOD)){
+            cleanedComponent = separatedComponent.dropRight(1)
+        }
+        if(cleanedComponent.head.==(DOT)){
+            cleanedComponent = separatedComponent.tail
+        }
+
+        cleanedComponent.trim
+
+    }
+
+    def getMatchedZipCodePatterns(affiliationComponent: String): ListBuffer[String] = {
+
+        val matchedZipCodePatterns: ListBuffer[String] = new ListBuffer[String]()
+
+        ZIP_CODE_PATTERNS.foreach{
+            zipCodePattern => {
+                zipCodePattern._2.foreach{
+                    zipCodeRegex => {
+                        if (zipCodeRegex.findFirstIn(affiliationComponent).getOrElse(BLANK).nonEmpty){
+                            matchedZipCodePatterns += zipCodePattern._1
+                        }
+                    }
+                }
+            }
+        }
+
+        matchedZipCodePatterns
+
+    }
+
 }
