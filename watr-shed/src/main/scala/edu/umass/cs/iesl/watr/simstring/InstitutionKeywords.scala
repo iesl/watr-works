@@ -1,0 +1,58 @@
+package edu.umass.cs.iesl.watr
+package simstring
+
+import heuristics.Constants._
+
+object InstitutionKeywords {
+
+    final val keywords = FuzzyMap(List(("karlsruher", INSTITUTION_KEYWORD),
+        ("itt", INSTITUTION_KEYWORD),
+//        ("research", INSTITUTION_KEYWORDS),
+        ("estudios", INSTITUTION_KEYWORD),
+        ("angewandte", INSTITUTION_KEYWORD),
+        ("max-planck-institut", INSTITUTION_KEYWORD),
+//        ("association", INSTITUTION_KEYWORDS),
+//        ("program", INSTITUTION_KEYWORD),
+//        ("programme", INSTITUTION_KEYWORD),
+//        ("agency", INSTITUTION_KEYWORDS),
+//        ("organisation", INSTITUTION_KEYWORDS),
+//        ("organization", INSTITUTION_KEYWORDS),
+        ("istituto", INSTITUTION_KEYWORD),
+        ("foundation", INSTITUTION_KEYWORD),
+        ("trust", INSTITUTION_KEYWORD),
+        ("partnership", INSTITUTION_KEYWORD),
+        ("etudes", INSTITUTION_KEYWORD),
+        ("educacao", INSTITUTION_KEYWORD),
+        ("institutes", INSTITUTION_KEYWORD),
+        ("institutet", INSTITUTION_KEYWORD),
+        ("instituto", INSTITUTION_KEYWORD),
+        ("institute", INSTITUTION_KEYWORD),
+        ("technologie", INSTITUTION_KEYWORD),
+        ("institutt", INSTITUTION_KEYWORD),
+        ("institut", INSTITUTION_KEYWORD),
+        ("institutul", INSTITUTION_KEYWORD),
+        ("fraunhofer-institut", INSTITUTION_KEYWORD),
+        ("institutionen", INSTITUTION_KEYWORD),
+        ("center", INSTITUTION_KEYWORD),
+        ("centre", INSTITUTION_KEYWORD),
+        ("institutions", INSTITUTION_KEYWORD),
+        ("school", INSTITUTION_KEYWORD),
+        ("college", INSTITUTION_KEYWORD),
+        ("coll.", INSTITUTION_KEYWORD),
+        ("fakultät", INSTITUTION_KEYWORD),
+        ("facultad", INSTITUTION_KEYWORD),
+        ("ecole", INSTITUTION_KEYWORD),
+        ("faculte", INSTITUTION_KEYWORD),
+        ("escuela", INSTITUTION_KEYWORD),
+        ("schools", INSTITUTION_KEYWORD),
+        ("faculdade", INSTITUTION_KEYWORD),
+        ("escola", INSTITUTION_KEYWORD),
+        ("facolta", INSTITUTION_KEYWORD),
+        ("colegio", INSTITUTION_KEYWORD),
+        ("fachhochschule", INSTITUTION_KEYWORD),
+        ("Instituto", INSTITUTION_KEYWORD),
+        ("Institute", INSTITUTION_KEYWORD),
+        ("Institut", INSTITUTION_KEYWORD),
+        ("Instituto", INSTITUTION_KEYWORD)))
+
+}
