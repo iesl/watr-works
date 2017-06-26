@@ -46,15 +46,15 @@ object AffiliationsHeuristics {
         separateComponents
     }
 
-    def getCategoryForSeparateAffiliationComponents(separatedAffiliationComponents: ListBuffer[String]): scala.collection.mutable.Map[String, ListBuffer[String]] = {
+    def getCategoryForSeparateAffiliationComponents(separatedAffiliationComponents: ListBuffer[String]): ListBuffer[(String, ListBuffer[String])] = {
 
-        val affiliationComponentKeywords: scala.collection.mutable.Map[String, ListBuffer[String]] = scala.collection.mutable.Map[String, ListBuffer[String]]()
+        val separatedComponentsWithClasses: ListBuffer[(String, ListBuffer[String])] = new ListBuffer[(String, ListBuffer[String])]()
 
         for(separatedAffiliationComponent <- separatedAffiliationComponents){
-            affiliationComponentKeywords += (separatedAffiliationComponent -> getMatchedKeywordsForAffiliationComponent(separatedAffiliationComponent.toLowerCase))
+            separatedComponentsWithClasses.+=((separatedAffiliationComponent, getMatchedKeywordsForAffiliationComponent(separatedAffiliationComponent.toLowerCase)))
         }
 
-        affiliationComponentKeywords
+        separatedComponentsWithClasses
     }
 
 
