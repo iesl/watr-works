@@ -29,11 +29,19 @@ object Constants {
     final val COMPANY_KEYWORD = "COMPANY"
     final val CITY_KEYWORD = "CITY"
     final val EMAIL_KEYWORD = "EMAIL"
-    final val USA_STATE_REGION_KEYWORD = "USA_STATE_REGION"
 
-    final val CLEANUP_PATTERN: Regex = """^[‡†]|\(\d+\)""".r
+    final val CLEANUP_PATTERN: Regex = """^[‡†\d]|\(\d+\)""".r
     final val NAME_INITIAL_FORMAT_PATTERN: Regex = """^[A-Z\.]+$""".r
     final val EMAIL_PATTERN: Regex = """[^@]+@[^@]+\.[^@]+""".r
-    final val USA_STATE_ZIP_CODE_PATTERN: Regex = """^[A-Z][A-Z]\ \d\d\d\d\d$""".r
+
+    final val USA_ZIP_CODE_KEYWORD = "USA_STATE"
+    final val EUR_ZIP_CODE_KEYWORD = "EUR_CITY"
+    final val ASIA_ZIP_CODE_KEYWORD = "ASIA_CITY"
+    final val AUS_ZIP_CODE_KEYWORD = "AUS_CITY"
+    final val USA_ZIP_CODE_PATTERN: Seq[Regex] = Seq("""\b([A-Z][a-z]+(\ [A-Z][a-z]+)*|[A-Z][A-Z])\ \d{5}(\-\d{4})?\b""".r)
+    final val EUR_ZIP_CODE_PATTERN: Seq[Regex] = Seq("""\b([A-Z][-–])?\d{4,5} [A-Z][a-z]+\b""".r, """\b\d{2}-\d{3} [A-Z][a-z]+\b""".r, """\b\d{3}\ \d{2}\b""".r)
+    final val ASIA_ZIP_CODE_PATTERN: Seq[Regex] = Seq("""\b\d{3}-\d{3,4}\b""".r)
+    final val AUS_ZIP_CODE_PATTERN: Seq[Regex] = Seq("""\b.*[A-Z]\. \d{4}\b""".r)
+    final val ZIP_CODE_PATTERNS: Map[String, Seq[Regex]] = Map(USA_ZIP_CODE_KEYWORD -> USA_ZIP_CODE_PATTERN, EUR_ZIP_CODE_KEYWORD -> EUR_ZIP_CODE_PATTERN, ASIA_ZIP_CODE_KEYWORD -> ASIA_ZIP_CODE_PATTERN, AUS_ZIP_CODE_KEYWORD -> AUS_ZIP_CODE_PATTERN)
 
 }
