@@ -367,6 +367,7 @@ object CountryKeywords {
         ("romania", COUNTRY_KEYWORD),
         ("rou", COUNTRY_KEYWORD),
         ("russian federation", COUNTRY_KEYWORD),
+        ("russia", COUNTRY_KEYWORD),
         ("rus", COUNTRY_KEYWORD),
         ("rwanda", COUNTRY_KEYWORD),
         ("rwa", COUNTRY_KEYWORD),

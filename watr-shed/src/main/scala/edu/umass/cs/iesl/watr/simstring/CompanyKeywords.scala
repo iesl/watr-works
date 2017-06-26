@@ -65,6 +65,7 @@ object CompanyKeywords {
         ("pty", COMPANY_KEYWORD),
         ("products", COMPANY_KEYWORD),
         ("ag", COMPANY_KEYWORD),
+        ("Unicredito", COMPANY_KEYWORD),
         ("novartis", COMPANY_KEYWORD),
         ("chemicals", COMPANY_KEYWORD),
         ("biotechnologies", COMPANY_KEYWORD),

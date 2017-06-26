@@ -7,8 +7,7 @@ import heuristics.Constants._
 object UniversityKeywords {
 
     final val keywords = FuzzyMap(List(("university", UNIVERSITY_KEYWORD),
-        ("college", UNIVERSITY_KEYWORD),
-        ("academy", UNIVERSITY_KEYWORD),
+        ("univ.", UNIVERSITY_KEYWORD),
         ("universidad", UNIVERSITY_KEYWORD),
         ("universitat", UNIVERSITY_KEYWORD),
         ("universite", UNIVERSITY_KEYWORD),
@@ -37,6 +36,7 @@ object UniversityKeywords {
         ("universit", UNIVERSITY_KEYWORD),
         ("universität", UNIVERSITY_KEYWORD),
         ("universit́a", UNIVERSITY_KEYWORD),
+        ("universita`", UNIVERSITY_KEYWORD),
         ("universitatsmedizin", UNIVERSITY_KEYWORD)))
 
 }

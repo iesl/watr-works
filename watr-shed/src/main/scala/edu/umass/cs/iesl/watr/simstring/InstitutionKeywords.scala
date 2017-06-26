@@ -37,6 +37,8 @@ object InstitutionKeywords {
         ("institutions", INSTITUTION_KEYWORD),
         ("school", INSTITUTION_KEYWORD),
         ("college", INSTITUTION_KEYWORD),
+        ("coll.", INSTITUTION_KEYWORD),
+        ("fakultät", INSTITUTION_KEYWORD),
         ("facultad", INSTITUTION_KEYWORD),
         ("ecole", INSTITUTION_KEYWORD),
         ("faculte", INSTITUTION_KEYWORD),
