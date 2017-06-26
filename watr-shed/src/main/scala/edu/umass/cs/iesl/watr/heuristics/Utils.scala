@@ -6,9 +6,9 @@ import geometry.LTBounds
 import Constants._
 import textreflow.TextReflowF.TextReflow
 import textreflow.data._
-import simstring._
 
 import scala.collection.mutable.ListBuffer
+import scala.io.Source
 
 object Utils {
 
@@ -139,26 +139,19 @@ object Utils {
         val matchedKeywords: ListBuffer[String] = new ListBuffer[String]()
 
         for(affiliationComponentWord <- affiliationComponent.split(SPACE_SEPARATOR)){
-//            if(CityKeywords.keywords.get(affiliationComponentWord, 0.9, Jaccard).isDefined){
-//                matchedKeywords += CITY_KEYWORDS
-//            }
-            if(CountryKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += COUNTRY_KEYWORD
-            }
-            if(DepartmentKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += DEPARTMENT_KEYWORD
-            }
-            if(InstitutionKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += INSTITUTION_KEYWORD
-            }
-            if(CompanyKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += COMPANY_KEYWORD
-            }
-            if(UniversityKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += UNIVERSITY_KEYWORD
-            }
+
             if(EMAIL_PATTERN.findFirstIn(affiliationComponentWord).getOrElse(BLANK).length.!=(0)){
                 matchedKeywords += EMAIL_KEYWORD
+            }
+
+            RESOURCE_KEYWORDS.foreach{
+                resource => {
+                    for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines){
+                        if (line.equals(affiliationComponentWord)){
+                            matchedKeywords += resource._1
+                        }
+                    }
+                }
             }
         }
 
