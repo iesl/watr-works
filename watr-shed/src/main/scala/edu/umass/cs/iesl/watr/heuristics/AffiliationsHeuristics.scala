@@ -4,7 +4,6 @@ package heuristics
 import Constants._
 import Utils._
 
-
 import scala.collection.mutable.ListBuffer
 
 object AffiliationsHeuristics {
@@ -56,6 +55,5 @@ object AffiliationsHeuristics {
 
         separatedComponentsWithClasses
     }
-
 
 }
