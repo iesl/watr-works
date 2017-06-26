@@ -11,9 +11,10 @@ Preprocessing: Generate thumbnails of each page of each pdf file and store them 
 SegmentAll: Extracts the text and geometric information from the pdf documents, and stores them in postgresql db tables
 1) project watrshed //change project
 2) runMain edu.umass.cs.iesl.watr.table.WatrTable watr_works_db
-3) Corpus.initCorpus("path_to_corpus_test")
+3) Corpus.initCorpus("path_to_corpus_test") //normalizedCorpusEntries for additional pdfs
 4) corpus.entries()
-5) segmentAll() // populate the database with the entries wrt the newly pre-processed pdf files
+5) new docstore.TextReflowDB(new docstore.TextReflowDBTables(), "watr_works_test_1", "watrworker", "watrpasswd").dropAndRecreate()
+6) segmentAll() // populate the database with the entries wrt the newly pre-processed pdf files
 
 Annotation UI: Annotate the pdf file by drawing boxes around the required region, with the required granularity
 1) project watrcolorsJVM
