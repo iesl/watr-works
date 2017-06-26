@@ -74,11 +74,24 @@ object BootstrapBits {
   }
 
 
+  object RadioMultiSelection extends SelectableButtons.SelectionButtonType {
+    def cssStyle = "radio"
+    def onselection =  (sb: SelectableButton, all: Seq[SelectableButton])=> {
+      sb.active() = !sb.active.now
+    }
+  }
+
+
+
   // CHECKBOX
   def checkbox(default: Boolean) = tags.input(`type` := "checkbox", if (default) checked)
 
   def checkboxes(modifierSeq: ModifierSeq = emptyMod)(checkBoxes: SelectableButton*): SelectableButtons =
     new SelectableButtons(modifierSeq, CheckBoxSelection, checkBoxes)
+
+  def radiosMultiSelect(modifierSeq: ModifierSeq = emptyMod)(radioButtons: SelectableButton*): SelectableButtons = {
+    new SelectableButtons(modifierSeq, RadioMultiSelection, radioButtons)
+  }
 
   def radios(modifierSeq: ModifierSeq = emptyMod)(radioButtons: SelectableButton*): SelectableButtons = {
 
@@ -1004,7 +1017,7 @@ object BootstrapBits {
   def accordion(accordionItems: AccordionItem*): TypedTag[HTMLDivElement] = accordion(emptyMod)(emptyMod)(accordionItems.toSeq: _*)
 
   def accordion(modifierSeq: ModifierSeq)(titleModifierSeq: ModifierSeq)(accordionItems: AccordionItem*): TypedTag[HTMLDivElement] = {
-    val accordionID = uuID
+    // val accordionID = uuID
     div(
       modifierSeq,
      // id := accordionID,

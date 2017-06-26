@@ -7,16 +7,19 @@ import parts._
 import wiring._
 
 import scaladget.stylesheet.{all => sty}
-import sty._
+import sty.{ctx => _, _}
+import scalatags.JsDom.all._
+import rx._
+import scaladget.api._
+import scaladget.tools.JsRxTags.{ctx => _, _}
 
 import scalatags.JsDom.all._
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation._
 import scala.concurrent.Future
+import watrmarks.{StandardLabels => LB}
 
-import rx._
-import scaladget.tools.JsRxTags._
 
 
 @JSExportTopLevel("BrowseCorpus")
@@ -31,37 +34,49 @@ object BrowseCorpus extends BasicClientDefs {
   val pageLength = 40
 
   val docList: Var[Seq[DocumentEntry]] = Var(List())
-  var currDocStart = Var(0)
-  var docCount = Var(0)
+  val currDocStart = Var(0)
+  val docCount = Var(0)
 
-  docCount.triggerLater {
-    currDocStart() = 0
+  val allLabelsRx: Var[List[watrmarks.Label]] = Var(List(
+    LB.Title        ,
+    LB.Authors      ,
+    LB.Abstract     ,
+    LB.Affiliations ,
+    LB.References
+  ))
+
+  val labelFiltersRx: Var[List[watrmarks.Label]] = Var(List())
+
+
+  def constrain(min: Int, n: Int, max: Int): Int = {
+    math.min(math.max(min, n), max)
   }
 
-  currDocStart.trigger {
-    server.listDocuments(pageLength, currDocStart.now).foreach { docs =>
-      docList() = docs
-    }
+  def constrainStart(start: Int): Int = {
+    constrain(0, start,
+      constrain(
+        0, docCount.now-pageLength, docCount.now)
+    )
   }
 
-  def prevPage() = {
-    val newStart = math.max(currDocStart.now - pageLength, 0)
+  def prevPage()(implicit c : Ctx.Owner) = Rx {
+    val newStart = constrainStart(currDocStart.now-pageLength)
     currDocStart() = newStart
   }
 
-  def nextPage() = {
-    val newStart = math.min(currDocStart.now + pageLength, docCount.now-pageLength)
+  def nextPage()(implicit c : Ctx.Owner)= Rx {
+    val newStart = constrainStart(currDocStart.now+pageLength)
     currDocStart() = newStart
   }
 
   val leftGlyph = glyph_chevron_left
   val rightGlyph = glyph_chevron_right
 
-
-  def docPagination(implicit c : Ctx.Owner): RxHtmlTag = Rx {
+  def docPagination()(implicit c : Ctx.Owner): RxHtmlTag = Rx {
     val currStart = currDocStart()
+    val currDocCount = docCount()
     span(
-      span(s"Displaying ${currStart}-${currStart+pageLength} of ${docCount.now} "),
+      span(s"Displaying ${currStart}-${currStart+pageLength} of ${currDocCount} "),
       span(btnGroup,
         glyphSpan(leftGlyph, () => prevPage()),
         glyphSpan(rightGlyph, () => nextPage())
@@ -93,17 +108,50 @@ object BrowseCorpus extends BasicClientDefs {
 
 
 
+  def setupLabelFilters()(implicit co: Ctx.Owner): RxModifier = Rx {
+    val allLabels = allLabelsRx()
+    val labelFilters = labelFiltersRx()
+
+    val selectActiveLabel: SelectableButtons = radiosMultiSelect("label-filter".clazz)(
+      (allLabels.zipWithIndex.map{ case (lbl, i) =>
+        val labelSelected = labelFilters.contains(lbl)
+        selectableButton(
+          lbl.key,
+          labelSelected,
+          modifierSeq = (sty.btn_small
+            +++ (^.name  :="label-filter")
+            +++ (^.id    :=s"${lbl.key}-filter")
+            +++ (^.value :=s"${lbl.key}-filter")
+          ),
+          onclick = () => {
+            if(labelSelected) {
+              labelFiltersRx() = labelFilters.filterNot(_==lbl)
+            } else {
+              labelFiltersRx() = lbl :: labelFilters
+            }
+          }
+        )
+      }):_*
+    )
+    selectActiveLabel.render
+  }
+
+
   @JSExport
   def display(userName: String): Unit = {
 
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
+    val labelFilters = setupLabelFilters()
 
     val bodyContent =
       div("container-fluid".clazz)(
         div("row".clazz, pageStyles.controlClusterStyle)(
           div("col-lg-12".clazz)(
-            docPagination
+            docPagination,
+            <.nbsp, <.nbsp, <.nbsp,
+            <.span("Label Filters:"), <.nbsp,
+            labelFilters
           )
         ),
         div("row".clazz)(
@@ -117,24 +165,45 @@ object BrowseCorpus extends BasicClientDefs {
       SharedLayout.pageSetup(Option(userName), bodyContent).render
     }
 
-    server.documentCount()
+
+    labelFiltersRx.trigger {
+      server.documentCount(labelFiltersRx.now)
+        .foreach { c =>
+          docCount() = c
+          server.listDocuments(pageLength, currDocStart.now, labelFiltersRx.now).foreach { docs =>
+            println(s"listing docs ${currDocStart.now}, ${labelFiltersRx.now}")
+            docList() = docs
+            currDocStart() = 0
+          }
+        }
+    }
+
+    currDocStart.triggerLater {
+      server.listDocuments(pageLength, currDocStart.now, labelFiltersRx.now).foreach { docs =>
+        println(s"listing docs ${currDocStart.now}, ${labelFiltersRx.now}")
+        docList() = docs
+      }
+    }
+
+    server.documentCount(labelFiltersRx.now)
       .foreach { c => docCount() = c }
+
   }
 
   object server extends BrowseCorpusApi {
     import autowire._
     import UPicklers._
+    import watrmarks.Label
 
     val Client = new WebsideClient("browse")
     val api = Client[BrowseCorpusApi]
 
-    def listDocuments(n: Int, skip: Int): Future[Seq[DocumentEntry]] = {
-      println(s"BrowseCorpus: listDocuments()")
-      api.listDocuments(n, skip).call()
+    def listDocuments(n: Int, skip: Int, labelFilters: Seq[Label]): Future[Seq[DocumentEntry]] = {
+      api.listDocuments(n, skip, labelFilters).call()
     }
 
-    def documentCount(): Future[Int] = {
-      api.documentCount().call()
+    def documentCount(labelFilters: Seq[Label]): Future[Int] = {
+      api.documentCount(labelFilters).call()
     }
 
   }

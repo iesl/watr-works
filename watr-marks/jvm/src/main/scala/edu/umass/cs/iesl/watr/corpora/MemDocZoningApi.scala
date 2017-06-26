@@ -236,10 +236,11 @@ class MemDocZoningApi extends DocumentZoningApi {
 
   import tables._
 
-  def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {
+  def getDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[String@@DocumentID] = {
     documents.all().map(_.stableId)
   }
-  def getDocumentCount(): Int =  {
+
+  def getDocumentCount(labelFilters: Seq[Label]): Int = {
     documents.all().length
   }
 

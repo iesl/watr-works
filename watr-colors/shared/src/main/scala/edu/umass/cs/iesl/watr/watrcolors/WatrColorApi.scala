@@ -24,8 +24,8 @@ case class DocumentEntry(
 )
 
 trait BrowseCorpusApi {
-  def listDocuments(n: Int, skip: Int): Future[Seq[DocumentEntry]]
-  def documentCount(): Future[Int]
+  def listDocuments(n: Int, skip: Int, labelFilters: Seq[Label]): Future[Seq[DocumentEntry]]
+  def documentCount(labelFilters: Seq[Label]): Future[Int]
 }
 
 sealed trait ApiCall

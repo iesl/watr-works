@@ -134,8 +134,7 @@ class PdfTextExtractor(
           if (maxExceeded) {
             println(s"Max chars per page limit exceeded: extracted only ${pageAtoms.length} of ${charCount} chars")
           } else {
-            println(s"Extracted ${pageAtoms.length} chars out of ${charCount} glyphs")
-
+            // println(s"Extracted ${pageAtoms.length} chars out of ${charCount} glyphs")
           }
 
           parser.reset()

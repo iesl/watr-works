@@ -6,6 +6,7 @@ import scala.concurrent.Future
 import corpora._
 import workflow._
 import scala.concurrent.ExecutionContext
+import watrmarks.Label
 
 class BrowseCorpusApiListeners(
   corpusAccessApi: CorpusAccessApi
@@ -15,12 +16,11 @@ class BrowseCorpusApiListeners(
   val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
   val userbaseApi: UserbaseApi = corpusAccessApi.userbaseApi
 
-  def listDocuments(n: Int, skip: Int): Future[Seq[DocumentEntry]] = {
+  def listDocuments(n: Int, skip: Int, labelFilter: Seq[Label]): Future[Seq[DocumentEntry]] = {
     println(s"listDocuments $n, $skip")
 
-
     Future {
-      docStore.getDocuments(n, skip)
+      docStore.getDocuments(n, skip, labelFilter)
         .map{ stableId =>
 
           val zoneToLableTuples = for {
@@ -36,12 +36,11 @@ class BrowseCorpusApiListeners(
           DocumentEntry(stableId, stableId.unwrap, zoneToLableTuples.flatten)
         }
     }
-
   }
 
-  def documentCount(): Future[Int] = {
+  def documentCount(labelFilter: Seq[Label]): Future[Int] = {
     Future {
-      docStore.getDocumentCount()
+      docStore.getDocumentCount(labelFilter)
     }
   }
 }

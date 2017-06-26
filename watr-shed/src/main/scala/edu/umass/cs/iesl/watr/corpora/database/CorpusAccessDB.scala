@@ -10,7 +10,7 @@ import java.util.Properties
 import scalaz.syntax.applicative._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
-// import scalaz.syntax.apply._
+import scalaz.syntax.apply._
 
 import geometry._
 import corpora._
@@ -365,9 +365,6 @@ class CorpusAccessDB(
   }
 
 
-  def selectDocumentCount(): Int = {
-    runq{ sql"select count(*) from document".query[Int].unique }
-  }
 
   def selectDocumentID(stableId: String@@DocumentID): ConnectionIO[Int@@DocumentID] = {
     sql"select document from document where stableId=${stableId}"
@@ -669,15 +666,54 @@ class CorpusAccessDB(
     def workflowApi: WorkflowApi = self.workflowApi
     def userbaseApi: UserbaseApi = self.userbaseApi
 
-    def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID] = {
-      runq {
+    def getDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[String@@DocumentID] = {
+      val query = if (labelFilters.isEmpty) {
         sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list
+      } else {
+        val filters = labelFilters.toList.map{ l =>
+          s""" l.key='${l.fqn}' """
+        }.mkString(" OR ")
+
+        val qstr = {
+          s"""| select distinct(d.stableId)
+              | from document as d
+              |   join zone as z on (d.document=z.document)
+              |   join label as l on (z.label=l.label)
+              | where ${filters}
+              | limit $n offset $skip
+              |""".stripMargin
+        }
+
+        Query0[String@@DocumentID](qstr).list
       }
+
+      runq { query }
     }
 
-    def getDocumentCount(): Int = {
-      selectDocumentCount()
+    def getDocumentCount(labelFilters: Seq[Label]): Int = {
+      val query = if (labelFilters.isEmpty) {
+        sql"select count(*) from document".query[Int].unique
+      } else {
+        val filters = labelFilters.toList.map{ l =>
+          s""" l.key='${l.fqn}' """
+        }.mkString(" OR ")
+
+        val qstr = {
+          s"""| select count(distinct(d))
+              | from document as d
+              |   join zone as z on (d.document=z.document)
+              |   join label as l on (z.label=l.label)
+              | where ${filters}
+              |""".stripMargin
+        }
+
+        Query0[Int](qstr).unique
+      }
+
+      runq{ query }
     }
+
+
     def addDocument(stableId: String@@DocumentID): Int@@DocumentID = runq{
       self.getOrInsertDocumentID(stableId)
     }
@@ -896,6 +932,9 @@ class CorpusAccessDB(
       val transLabelID    = mutable.HashMap[Int@@LabelID       , Int@@LabelID]()
       val transReflowID   = mutable.HashMap[Int@@TextReflowID  , Int@@TextReflowID]()
 
+      val insertLog = mutable.ArrayBuffer[String]()
+
+
       {// BLOCK
         val d0 =  otherZoningApi.tables.documents
         val allRecs = d0.all().toList
@@ -915,12 +954,11 @@ class CorpusAccessDB(
             transDocumentID.put(rec.prKey, key)
           }
 
-        println(s"document updates ${keys.length}")
       } // END BLOCK
 
       {
         val allRecs =  otherZoningApi.tables.pages.all().toList
-        println(s"pages insert ${allRecs.length}")
+        insertLog.append(s"pages:${allRecs.length}")
 
         val allEntries = allRecs.map{rec =>
             (
@@ -954,12 +992,11 @@ class CorpusAccessDB(
             transPageID.put(rec.prKey, key)
           }
 
-        println(s"pages updates ${keys.length}")
       }
 
       {
         val allRecs =  otherZoningApi.tables.targetregions.all().toList
-        println(s"targetregions insert ${allRecs.length}")
+        insertLog.append(s"targetregions: ${allRecs.length}")
         val allEntries = allRecs.map{rec =>
           (
             transPageID(rec.page),
@@ -968,7 +1005,7 @@ class CorpusAccessDB(
           )
         }
 
-        // TODO decide whether to disable rank trigger on import or trust db 
+        // TODO decide whether to disable rank trigger on import or trust db
         val sqlStr = (
           """|insert into targetregion
              |  (page, imageclip, bleft, btop, bwidth, bheight)
@@ -990,9 +1027,6 @@ class CorpusAccessDB(
           .foreach{ case (rec, key) =>
             transRegionID.put(rec.prKey, key)
           }
-
-        println(s"targetregion updates ${keys.length}")
-
       }
 
       {// BLOCK
@@ -1003,13 +1037,11 @@ class CorpusAccessDB(
             transLabelID.put(rec.prKey, labelId)
           }
 
-        println(s"label updates")
-
       }// END Block
 
       {// BLOCK
         val allRecs =  otherZoningApi.tables.zones.all().toList
-        println(s"zones insert ${allRecs.length}")
+        insertLog.append(s"zones: ${allRecs.length}")
         val allEntries = allRecs.map{rec =>
           (
             transDocumentID(rec.document),
@@ -1040,8 +1072,6 @@ class CorpusAccessDB(
           .foreach{ case (rec, key) =>
             transZoneID.put(rec.prKey, key)
           }
-
-        println(s"zone updates ${keys.length}")
 
       }// END Block
 
@@ -1078,7 +1108,7 @@ class CorpusAccessDB(
             transReflowID.put(rec.prKey, key)
           }
 
-        println(s"textreflow updates ${keys.length}")
+        insertLog.append(s"textreflows:${keys.length}")
 
       }// END Block
 
@@ -1105,9 +1135,12 @@ class CorpusAccessDB(
           up
         }
 
-        println(s"zone_to_targetregion updates ${keys}")
+        insertLog.append(s"zone_to_targetregion: ${keys}")
 
       }// END Block
+
+      val logmsg = insertLog.mkString(";; ")
+      println(logmsg)
 
     }
 
