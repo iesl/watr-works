@@ -4,7 +4,7 @@ import ReleaseTransformations._
 SensibleThisBuild.settings
 SensibleProject.settings
 
-enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
+//enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 
 val Lib = CommonLibs
 
@@ -17,6 +17,7 @@ lazy val jvmProjects = Seq[ProjectReference](
 )
 
 lazy val root = (project in file("."))
+    .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
   .settings(Release.settings :_*)
   .aggregate( (jsProjects++jvmProjects): _*)
 
