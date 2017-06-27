@@ -666,6 +666,30 @@ class CorpusAccessDB(
     def workflowApi: WorkflowApi = self.workflowApi
     def userbaseApi: UserbaseApi = self.userbaseApi
 
+    // def listDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[(String@@DocumentID, Seq[(Label, Int)])] = {
+    //   val query = if (labelFilters.isEmpty) {
+    //     sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list
+    //   } else {
+    //     val filters = labelFilters.toList.map{ l =>
+    //       s""" l.key='${l.fqn}' """
+    //     }.mkString(" OR ")
+
+    //     val qstr = {
+    //       s"""| select distinct d.stableId, group(l.key)
+    //           | from document as d
+    //           |   join zone as z on (d.document=z.document)
+    //           |   join label as l on (z.label=l.label)
+    //           | where ${filters}
+    //           | limit $n offset $skip
+    //           |""".stripMargin
+    //     }
+
+    //     Query0[(String@@DocumentID, Seq[(Label, Int)])](qstr).list
+    //   }
+
+    //   runq { query }
+    // }
+
     def getDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[String@@DocumentID] = {
       val query = if (labelFilters.isEmpty) {
         sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list
@@ -675,7 +699,7 @@ class CorpusAccessDB(
         }.mkString(" OR ")
 
         val qstr = {
-          s"""| select distinct(d.stableId)
+          s"""| select distinct d.stableId
               | from document as d
               |   join zone as z on (d.document=z.document)
               |   join label as l on (z.label=l.label)

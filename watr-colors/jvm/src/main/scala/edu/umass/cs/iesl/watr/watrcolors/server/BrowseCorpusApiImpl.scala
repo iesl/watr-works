@@ -23,14 +23,19 @@ class BrowseCorpusApiListeners(
       docStore.getDocuments(n, skip, labelFilter)
         .map{ stableId =>
 
-          val zoneToLableTuples = for {
+          // println(s"  listDocuments: ${stableId}")
+
+          val zoneToLableTuples: Seq[Seq[(Label, Int)]] = for {
             docId <- docStore.getDocument(stableId).toList
           } yield for {
             labelId <- docStore.getZoneLabelsForDocument(docId)
           } yield {
+            // println(s"  listDocuments: labelId:${labelId}")
             val label = docStore.getLabel(labelId)
-            val nZones =  docStore.getZonesForDocument(docId, labelId).length
-            (label, nZones)
+            // println(s"  listDocuments: label:${label}")
+            // val nZones =  docStore.getZonesForDocument(docId, labelId).length
+            // println(s"  listDocuments: nZones:${nZones}")
+            (label, 1)
           }
 
           DocumentEntry(stableId, stableId.unwrap, zoneToLableTuples.flatten)

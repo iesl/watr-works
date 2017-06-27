@@ -74,6 +74,7 @@ object pageStyles {
     backgroundColor := Colors.FloralWhite.cssHash(),
     position.fixed,
     top := "70px",
+    width := "100%",
     zIndex := 90
   )
 

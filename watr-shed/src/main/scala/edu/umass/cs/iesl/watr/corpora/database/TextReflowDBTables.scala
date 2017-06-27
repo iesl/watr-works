@@ -47,40 +47,36 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
 
   ////////////////////////////
-  val createZoneTables = (for {
-    _ <- sql"""
+
+
+  // CREATE INDEX zone_idx_label ON zone (label, document, zone);
+  // CREATE INDEX zone_idx_label ON zone (label);
+  object zonetables {
+    val createZoneTables = (for {
+      _ <- sql"""
       CREATE TABLE zone (
         zone         SERIAL PRIMARY KEY,
         document     INTEGER REFERENCES document NOT NULL,
         label        INTEGER REFERENCES label NOT NULL,
         rank         INTEGER NOT NULL
       );
-      """.update.run
 
-    _ <- sql"""
       CREATE INDEX zone_idx_document ON zone (document, label, rank);
-      """.update.run
+      CREATE INDEX zone_idx_label ON zone (label, document);
 
-    _ <- sql"""
-      CREATE INDEX zone_idx_label ON zone (label);
-      """.update.run
-    _ <- sql"""
       CREATE TABLE zone_to_targetregion (
         zone          INTEGER REFERENCES zone ON DELETE CASCADE NOT NULL,
         targetregion  INTEGER REFERENCES targetregion NOT NULL,
         rank          INTEGER NOT NULL
       );
-    """.update.run
-    _ <- sql"""
+
       CREATE INDEX zone_to_targetregion_idx2 ON zone_to_targetregion (targetregion, rank);
-    """.update.run
-    _ <- sql"""
+
       CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
-    """.update.run
-  } yield ())
+      """.update.run
 
+    } yield ())
 
-  object zonetables {
     def create(): ConnectionIO[Unit] = {
       for {
         _ <- putStrLn("create zone")

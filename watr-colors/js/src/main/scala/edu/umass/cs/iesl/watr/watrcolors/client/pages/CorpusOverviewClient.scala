@@ -147,10 +147,13 @@ object BrowseCorpus extends BasicClientDefs {
     val bodyContent =
       div("container-fluid".clazz)(
         div("row".clazz, pageStyles.controlClusterStyle)(
-          div("col-lg-12".clazz)(
-            docPagination,
-            <.nbsp, <.nbsp, <.nbsp,
-            <.span("Label Filters:"), <.nbsp,
+          div("col-lg-2".clazz)(
+            docPagination
+          ),
+          div("col-lg-10".clazz)(
+            <.nbsp,
+            <.span("Label Filters:"),
+            <.nbsp,
             labelFilters
           )
         ),
