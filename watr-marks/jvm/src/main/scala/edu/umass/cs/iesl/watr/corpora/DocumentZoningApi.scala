@@ -120,18 +120,6 @@ trait DocumentZoningApi {
       }
       zoneId
     }
-
-    // regions.headOption
-    //   .map { pageRegion =>
-    //     val regionId = addTargetRegion(pageRegion.page.pageId, pageRegion.bbox)
-    //     val labelId = ensureLabel(label)
-    //     val zoneId = createZone(regionId, labelId)
-    //     regions.tail.map { tr =>
-    //       val rid = addTargetRegion(tr.page.pageId, tr.bbox)
-    //       addZoneRegion(zoneId, rid)
-    //     }
-    //     zoneId
-    //   }
   }
 
 }

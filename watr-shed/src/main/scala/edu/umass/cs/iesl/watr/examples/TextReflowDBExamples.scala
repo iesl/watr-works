@@ -3,8 +3,9 @@ package examples
 
 import java.io.{BufferedWriter, FileOutputStream, OutputStreamWriter}
 
-import corpora.DocumentCorpus
-import docstore.{TextReflowDB, TextReflowDBTables}
+import corpora._
+import corpora.database.CorpusAccessDB
+import corpora.database.CorpusAccessDBTables
 import watrmarks.{Label, StandardLabels => LB}
 import heuristics.GenericHeuristics._
 import heuristics.AuthorNameHeuristics._
@@ -19,10 +20,10 @@ class SampleDbCorpus {
 
 
     def authorNameSegmentation(targetDocumentStableId: String, targetLabel: Label) = {
-        val textReflowDBTables = new TextReflowDBTables
+        val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new TextReflowDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
-        val docStore: DocumentCorpus = textReflowDB.docStore
+        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+        val docStore: DocumentZoningApi = textReflowDB.docStore
 
         val outputFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/author_segmentation.txt"
         val outputFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFileName)))
@@ -65,10 +66,10 @@ class SampleDbCorpus {
     }
 
     def exampleFunction1(targetDocumentStableId: String, targetLabel: Label) = {
-        val textReflowDBTables = new TextReflowDBTables
+        val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new TextReflowDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
-        val docStore: DocumentCorpus = textReflowDB.docStore
+        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+        val docStore: DocumentZoningApi = textReflowDB.docStore
 
         for {
             docStableId <- docStore.getDocuments(n = 1) if (targetDocumentStableId.equals("") || docStableId.asInstanceOf[String].equals(targetDocumentStableId)) && !docStableId.asInstanceOf[String].equals("1609.07772.pdf.d")
@@ -106,10 +107,10 @@ class SampleDbCorpus {
     }
 
     def exampleFunction2(targetDocumentStableIds: Seq[String], targetLabel: Label) = {
-        val textReflowDBTables = new TextReflowDBTables
+        val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new TextReflowDB(tables = textReflowDBTables, dbname = "watr_works_test_1", dbuser = "watrworker", dbpass = "watrpasswd")
-        val docStore: DocumentCorpus = textReflowDB.docStore
+        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_test_1", dbuser = "watrworker", dbpass = "watrpasswd")
+        val docStore: DocumentZoningApi = textReflowDB.docStore
 
         for {
             docStableId <- docStore.getDocuments(n = 1) if targetDocumentStableIds.isEmpty || targetDocumentStableIds.contains(docStableId.asInstanceOf[String])
@@ -161,10 +162,10 @@ class SampleDbCorpus {
     }
 
     def removeDocuments() = {
-        val textReflowDBTables = new TextReflowDBTables
+        val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new TextReflowDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
-        val docStore: DocumentCorpus = textReflowDB.docStore
+        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+        val docStore: DocumentZoningApi = textReflowDB.docStore
 
         for {
             docStableId <- docStore.getDocuments(n = 1)

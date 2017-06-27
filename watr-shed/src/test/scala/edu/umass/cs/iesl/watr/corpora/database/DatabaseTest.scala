@@ -10,28 +10,34 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil with Be
 
   lazy val reflowDB = new CorpusAccessDB(
     tables,
-    dbname="watrdev",
+    dbname="bioarxiv",
     dbuser="watrworker",
     dbpass="watrpasswd"
   )
+  // lazy val reflowDB = new CorpusAccessDB(
+  //   tables,
+  //   dbname="watrdev",
+  //   dbuser="watrworker",
+  //   dbpass="watrpasswd"
+  // )
 
   def workflowApi: WorkflowApi = reflowDB.workflowApi
   def userbaseApi: UserbaseApi = reflowDB.userbaseApi
 
   def createEmptyDocumentZoningApi(): DocumentZoningApi = {
-    reflowDB.runqOnce {
-      reflowDB.veryUnsafeDropDatabase().run
-    }
+    // reflowDB.runqOnce {
+    //   reflowDB.veryUnsafeDropDatabase().run
+    // }
 
-    reflowDB.dropAndRecreate
+    // reflowDB.dropAndRecreate
     reflowDB.docStore
   }
   override def beforeEach(): Unit = {
     println("re-initing db connections")
-    reflowDB.reinit()
+    // reflowDB.reinit()
   }
   override def afterEach(): Unit = {
     println("closing db connections")
-    reflowDB.shutdown()
+    // reflowDB.shutdown()
   }
 }

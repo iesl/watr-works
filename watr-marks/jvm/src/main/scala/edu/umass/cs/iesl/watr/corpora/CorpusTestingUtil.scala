@@ -140,6 +140,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
     val lineZones = docStore.getPageZones(pageId, LB.VisualLine)
     val lineRegions = lineZones.flatMap(_.regions)
 
+    // docStore.labelRegions(LB.VisualLine,regions: Seq[PageRegion])
     val labelId = docStore.ensureLabel(LB.VisualLine)
     lineRegions.headOption.foreach{ r0 =>
       val zoneId = docStore.createZone(r0.id, labelId)
@@ -147,6 +148,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
         docStore.addZoneRegion(zoneId, r1.id)
       }
     }
+
   }
 
 
