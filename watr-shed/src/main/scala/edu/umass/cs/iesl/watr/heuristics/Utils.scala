@@ -9,6 +9,7 @@ import textreflow.data._
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
+import scala.util.control.Breaks._
 
 object Utils {
 
@@ -138,17 +139,34 @@ object Utils {
 
         val matchedKeywords: ListBuffer[String] = new ListBuffer[String]()
 
-        for(affiliationComponentWord <- affiliationComponent.split(SPACE_SEPARATOR)){
+        if (EMAIL_PATTERN.findFirstIn(affiliationComponent).getOrElse(BLANK).length.!=(0)){
+            matchedKeywords += EMAIL_KEYWORD
+        }
 
-            if(EMAIL_PATTERN.findFirstIn(affiliationComponentWord).getOrElse(BLANK).length.!=(0)){
-                matchedKeywords += EMAIL_KEYWORD
+        if (matchedKeywords.isEmpty){
+            breakable{
+                RESOURCE_KEYWORDS.foreach{
+                    resource => {
+                        for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines){
+                            if ("\\b".concat(line).concat("\\b").r.findFirstIn(affiliationComponent).isDefined){
+                                matchedKeywords += resource._1
+                                break
+                            }
+                        }
+                    }
+                }
             }
+        }
 
-            RESOURCE_KEYWORDS.foreach{
-                resource => {
-                    for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines){
-                        if (line.equals(affiliationComponentWord)){
-                            matchedKeywords += resource._1
+        if (matchedKeywords.isEmpty){
+            breakable{
+                ZIP_CODE_PATTERNS.foreach{
+                    zipCodePattern => {
+                        for (zipCodeRegex <- zipCodePattern._2){
+                            if (zipCodeRegex.findFirstIn(affiliationComponent).isDefined){
+                                matchedKeywords += zipCodePattern._1
+                                break
+                            }
                         }
                     }
                 }
