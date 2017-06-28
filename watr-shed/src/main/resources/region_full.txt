@@ -1,3 +1,4 @@
+sezione
 ab
 aberdeenshire
 abia
@@ -680,8 +681,7 @@ mem
 meu
 meurthe-et-moselle
 meuse
-mexico
-méxico
+michoacan
 mg
 mi
 mich
@@ -900,6 +900,8 @@ qld
 qom
 que
 quebec
+québec
+québec
 queensland
 quintana roo
 rajasthan

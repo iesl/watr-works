@@ -283,6 +283,8 @@ mus
 mayotte
 myt
 mexico
+méxico
+ḿexico
 mex
 micronesia, federated states of
 micronesia
@@ -361,6 +363,7 @@ romania
 rou
 russian federation
 rus
+russia
 rwanda
 rwa
 saint helena, ascension and tristan da cunha
@@ -469,9 +472,11 @@ are
 united kingdom
 gbr
 uk
+u. k
 united states
 united states of america
 usa
+u s a
 us
 united states minor outlying islands
 umi
@@ -502,6 +507,7 @@ zimbabwe
 zwe
 british antarctic territory
 atb
+britain
 burma, socialist republic of the union of
 bur
 byelorussian ssr soviet socialist republic
