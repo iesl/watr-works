@@ -1882,7 +1882,6 @@ chilliwack
 chilpancingo
 chilton
 chimacum
-china
 china grove
 chinchilla
 chinhoyi
@@ -3681,7 +3680,7 @@ gosnells
 gosport
 gosselies
 goteborg
-göteborg
+g̈oteborg
 gotenba
 gothenburg
 gottingen
@@ -6566,6 +6565,8 @@ montoursville
 montpelier
 montpellier
 montreal
+montréal
+montréal
 montreuil
 montreux
 montrose
@@ -10482,7 +10483,6 @@ volos
 voorburg
 voorhees
 voronezh
-wa
 waalwijk
 wabasca
 wabash
