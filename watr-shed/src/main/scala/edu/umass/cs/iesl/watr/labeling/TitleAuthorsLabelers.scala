@@ -14,10 +14,10 @@ import watrmarks.{StandardLabels => LB, Label}
 import TypeTags._
 
 
-object TitleAuthorsLabelers extends LabelWidgetUtils {
+object TitleAuthorsLabelers {
 
-  def labelerColors(): Map[Label, Color] = {
-    Map(
+  def labelerColors(): Seq[(Label, Color)] = {
+    List(
       (LB.Title, Colors.Firebrick3),
       (LB.Authors, Colors.Orange),
       (LB.Abstract, Colors.MediumTurquoise),
@@ -25,6 +25,7 @@ object TitleAuthorsLabelers extends LabelWidgetUtils {
       (LB.References, Colors.Peru)
     )
   }
+
   def bioArxivLabeler(
     labelerIdentifier: LabelerIdentifier,
     paperRec: PaperRec,
