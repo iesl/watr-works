@@ -106,87 +106,94 @@ class SampleDbCorpus {
         }
     }
 
-    def exampleFunction2(targetDocumentStableIds: Seq[String], targetLabel: Label) = {
-        val textReflowDBTables = new CorpusAccessDBTables
+  def exampleFunction2(targetDocumentStableIds: Seq[String], targetLabel: Label) = {
+    val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_test_1", dbuser = "watrworker", dbpass = "watrpasswd")
-        val docStore: DocumentZoningApi = textReflowDB.docStore
+    val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_test_1", dbuser = "watrworker", dbpass = "watrpasswd")
+    val docStore: DocumentZoningApi = textReflowDB.docStore
 
-        for {
-            docStableId <- docStore.getDocuments(n = 1) if targetDocumentStableIds.isEmpty || targetDocumentStableIds.contains(docStableId.asInstanceOf[String])
-        } {
-            for (docId <- docStore.getDocument(stableId = docStableId)) {
+    for {
+      docStableId <- docStore.getDocuments(n = 1) if targetDocumentStableIds.isEmpty || targetDocumentStableIds.contains(docStableId.asInstanceOf[String])
+    } {
+      println(s"docStableId=${docStableId}")
+      for (docId <- docStore.getDocument(stableId = docStableId)) {
 
-                val separatedComponentsWithClasses: ListBuffer[(String, ListBuffer[String])] = new ListBuffer[(String, ListBuffer[String])]()
+        println(s"  docId=${docId}")
+        val separatedComponentsWithClasses: ListBuffer[(String, ListBuffer[String])] = new ListBuffer[(String, ListBuffer[String])]()
 
-                for (zone <- docStore.getDocumentZones(docId = docId, label = targetLabel)) {
-                    for (targetRegion <- zone.regions) {
-                        println("Document: \t\t\t\t\t" + docStableId)
-                        val targetRegionTextReflow = docStore.getTextReflowForTargetRegion(regionId = targetRegion.id)
-                        if (targetRegionTextReflow.isDefined) {
-                            print("Text Reflow: \t\t\t\t" + targetRegionTextReflow.get.toText() + "\n")
-                            val tokenizedReflow = tokenizeTextReflow(targetRegionTextReflow.get)
-                            if (tokenizedReflow.nonEmpty) {
-                                print("Tokenized: \t\t\t\t\t" + tokenizedReflow.mkString("||") + "\n")
-                                val affiliationsSeparatedByText = getSeparateAffiliationComponentsByText(tokenizedTextReflow = tokenizedReflow)
-                                if (affiliationsSeparatedByText.nonEmpty) {
-                                    print("Text Separated: \t\t\t" + affiliationsSeparatedByText.mkString("||") + "\n")
-                                    val affiliationsSeparatedByGeometry = getSeparateComponentsByGeometry(componentsSeparatedByText = affiliationsSeparatedByText, textReflow = targetRegionTextReflow.get).map {
-                                        separateComponent => cleanSeparatedComponent(separateComponent)
-                                    }
-                                    if (affiliationsSeparatedByGeometry.nonEmpty) {
+        for (zone <- docStore.getDocumentZones(docId = docId, label = targetLabel)) {
+          println(s"   zone=${zone}")
 
-                                        print("Geometrically Separated: \t" + affiliationsSeparatedByGeometry.mkString("||") + "\n")
-                                        println("Keywords matched for affiliations: ")
-                                        separatedComponentsWithClasses.++=(getCategoryForSeparateAffiliationComponents(affiliationsSeparatedByGeometry))
-                                        //                                        println(getCategoryForSeparateAffiliationComponents(affiliationsSeparatedByGeometry))
-                                    }
-                                }
-                            }
-                        }
-                        print("------------------------------------------------------------------------------------------------\n")
-                    }
+          for (targetRegion <- zone.regions) {
+            println(s"    region=${targetRegion}")
+            println("Document: \t\t\t\t\t" + docStableId)
+            val targetRegionTextReflow = docStore.getTextReflowForTargetRegion(regionId = targetRegion.id)
+            if (targetRegionTextReflow.isDefined) {
+              print("Text Reflow: \t\t\t\t" + targetRegionTextReflow.get.toText() + "\n")
+              val tokenizedReflow = tokenizeTextReflow(targetRegionTextReflow.get)
+              if (tokenizedReflow.nonEmpty) {
+                print("Tokenized: \t\t\t\t\t" + tokenizedReflow.mkString("||") + "\n")
+                val affiliationsSeparatedByText = getSeparateAffiliationComponentsByText(tokenizedTextReflow = tokenizedReflow)
+                if (affiliationsSeparatedByText.nonEmpty) {
+                  print("Text Separated: \t\t\t" + affiliationsSeparatedByText.mkString("||") + "\n")
+                  val affiliationsSeparatedByGeometry = getSeparateComponentsByGeometry(componentsSeparatedByText = affiliationsSeparatedByText, textReflow = targetRegionTextReflow.get).map {
+                    separateComponent => cleanSeparatedComponent(separateComponent)
+                  }
+                  if (affiliationsSeparatedByGeometry.nonEmpty) {
+
+                    print("Geometrically Separated: \t" + affiliationsSeparatedByGeometry.mkString("||") + "\n")
+                    println("Keywords matched for affiliations: ")
+                    separatedComponentsWithClasses.++=(getCategoryForSeparateAffiliationComponents(affiliationsSeparatedByGeometry))
+                    //                                        println(getCategoryForSeparateAffiliationComponents(affiliationsSeparatedByGeometry))
+                  }
                 }
-
-                var separatedComponentIndex: Int = 0
-                while (separatedComponentIndex < separatedComponentsWithClasses.length) {
-                    if (separatedComponentsWithClasses(separatedComponentIndex)._2.isEmpty) {
-                        separatedComponentsWithClasses.update(n = separatedComponentIndex, (separatedComponentsWithClasses(separatedComponentIndex)._1, getMatchedZipCodePatterns(separatedComponentsWithClasses(separatedComponentIndex)._1)))
-                    }
-                    separatedComponentIndex += 1
-                }
-                println(separatedComponentsWithClasses)
-
+              }
             }
+            print("------------------------------------------------------------------------------------------------\n")
+          }
         }
-    }
 
-    def removeDocuments() = {
-        val textReflowDBTables = new CorpusAccessDBTables
-
-        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
-        val docStore: DocumentZoningApi = textReflowDB.docStore
-
-        for {
-            docStableId <- docStore.getDocuments(n = 1)
-        } {
-
+        var separatedComponentIndex: Int = 0
+        while (separatedComponentIndex < separatedComponentsWithClasses.length) {
+          if (separatedComponentsWithClasses(separatedComponentIndex)._2.isEmpty) {
+            separatedComponentsWithClasses.update(n = separatedComponentIndex, (separatedComponentsWithClasses(separatedComponentIndex)._1, getMatchedZipCodePatterns(separatedComponentsWithClasses(separatedComponentIndex)._1)))
+          }
+          separatedComponentIndex += 1
         }
+        println(separatedComponentsWithClasses)
+
+      }
     }
+  }
 
-    def exampleFunction3() = {
+  def removeDocuments() = {
+    val textReflowDBTables = new CorpusAccessDBTables
 
-        print(cleanSeparatedComponent("‡Instituto de mateḿaticas y f́ısica fundamental"))
+    val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+    val docStore: DocumentZoningApi = textReflowDB.docStore
+
+    for {
+      docStableId <- docStore.getDocuments(n = 1)
+    } {
 
     }
+  }
+
+  def exampleFunction3() = {
+
+    print(cleanSeparatedComponent("‡Instituto de mateḿaticas y f́ısica fundamental"))
+
+  }
 }
 
 object TextReflowDBExamples extends App {
+  val stableId = "10.1101-090498.d"
 
-    val dbCorpus = new SampleDbCorpus()
-    //    dbCorpus.authorNameSegmentation("", LB.Authors)
-    //    dbCorpus.exampleFunction1("0101047.pdf.d", LB.Authors)
-    dbCorpus.exampleFunction2(Seq("0101029.pdf.d"), LB.Affiliation)
-    //"0101047.pdf.d", "commai.pdf.d", "bengio03a.pdf.d"
-    //    dbCorpus.exampleFunction3()
+  val dbCorpus = new SampleDbCorpus()
+  //    dbCorpus.authorNameSegmentation("", LB.Authors)
+  //    dbCorpus.exampleFunction1("0101047.pdf.d", LB.Authors)
+  // dbCorpus.exampleFunction2(Seq("0101029.pdf.d"), LB.Affiliation)
+  dbCorpus.exampleFunction2(Seq(stableId), LB.Affiliations)
+  //"0101047.pdf.d", "commai.pdf.d", "bengio03a.pdf.d"
+  //    dbCorpus.exampleFunction3()
 }

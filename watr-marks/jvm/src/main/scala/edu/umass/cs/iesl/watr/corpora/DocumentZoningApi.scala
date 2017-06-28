@@ -62,10 +62,8 @@ trait DocumentZoningApi {
   ///////////////////////
   /// Derived operations
 
-  def getDocumentZones(docId: Int@@DocumentID, label: Label): Seq[Zone] = for {
-    pageId    <- getPages(docId)
-    zone      <- getPageZones(pageId, label)
-  } yield zone
+  def getDocumentZones(docId: Int@@DocumentID, label: Label): Seq[Zone] =
+    getZonesForDocument(docId, ensureLabel(label)).map(getZone(_))
 
   def getPageZones(stableId: String@@DocumentID, pageNum: Int@@PageNum, label: Label): Seq[Zone] = for {
     docId     <- getDocument(stableId).toSeq
@@ -73,10 +71,14 @@ trait DocumentZoningApi {
     zone      <- getPageZones(pageId, label)
   } yield zone
 
-  def getPageZones(pageId: Int@@PageID, label: Label): Seq[Zone] = for {
+  def getPageZones(pageId: Int@@PageID, label: Label): Seq[Zone] = (for {
     regionId  <- getTargetRegions(pageId)
     zoneId    <- getZoneForRegion(regionId, label)
-  } yield { getZone(zoneId) }
+  } yield { getZone(zoneId) })
+    .foldLeft(Seq[Zone]()){ case (acc, e) =>
+      if (acc.exists(_.id==e.id)) acc
+      else acc :+ e
+    }
 
   def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] =
     getPageZones(stableId, pageNum, LB.VisualLine)
