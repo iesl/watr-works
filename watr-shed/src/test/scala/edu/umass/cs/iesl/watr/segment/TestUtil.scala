@@ -99,7 +99,7 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
     )
   }
 
-  def createFilteredMultiPageIndex(pdfIns: URL, pageId: Int@@PageNum, regions: Seq[LTBounds]): DocumentSegmenter = {
+  def createFilteredMultiPageIndex(pdfIns: URL, pageNum: Int@@PageNum, regions: Seq[LTBounds]): DocumentSegmenter = {
     val path = fs.Path(pdfIns.getPath)
 
     val docId = DocumentID("dummy-id")
@@ -120,11 +120,11 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
       maxX-minX,
       maxY-minY
     )
-    segmenter.mpageIndex.dbgFilterPages(pageId)
-    segmenter.mpageIndex.dbgFilterComponents(pageId, totalBounds)
+    segmenter.mpageIndex.dbgFilterPages(pageNum)
+    segmenter.mpageIndex.dbgFilterComponents(pageNum, totalBounds)
 
     val interestingChars = segmenter.mpageIndex
-      .getPageIndex(pageId)
+      .getPageIndex(pageNum)
       .componentIndex
       .queryForIntersects(totalBounds)
 

@@ -132,6 +132,7 @@ object DocumentSegmenter {
     val docId = docStore.addDocument(stableId)
     pageAtomsAndGeometry.foreach { case(regions, geom)  =>
       val pageId = docStore.addPage(docId, geom.id)
+      println(s"added page ${pageId}")
       docStore.setPageGeometry(pageId, geom.bounds)
       mpageIndex.addPage(geom)
 
@@ -222,8 +223,8 @@ class DocumentSegmenter(
     val pageRegions = for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } yield {
-      // println(s"Page ${pagenum}")
-      print(s".")
+      println(s"Page ${pagenum} id=${pageId}")
+      // print(s".")
       val atomicComponents = mpageIndex.getPageAtoms(PageNum(pagenum))
 
       vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${atomicComponents.length} char atoms"))
@@ -472,7 +473,6 @@ class DocumentSegmenter(
 
 
   def runPageSegmentation(): Unit = {
-
     runLineDetermination()
   }
 

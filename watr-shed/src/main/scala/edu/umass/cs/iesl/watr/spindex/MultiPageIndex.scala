@@ -62,16 +62,18 @@ class MultiPageIndex(
 
   def dbgFilterComponents(pg: Int@@PageNum, include: LTBounds): Unit ={
     pageIndexes.get(pg).foreach ({ pageIndex =>
-      val keep = pageIndex.componentIndex.queryForIntersects(include).map(_.id)
+      val keep = pageIndex.componentIndex.queryForIntersects(include).map(_.id.unwrap)
       pageIndex.componentIndex.getItems
-        .filterNot(c => keep.contains(c.id))
+        .filterNot(c => keep.contains(c.id.unwrap))
         .foreach(c => pageIndex.componentIndex.remove(c))
     })
   }
   def dbgFilterPages(pg: Int@@PageNum): Unit ={
+    println(s"dbgFilterPages: $pg")
     getPages
-      .filterNot(_ == pg)
+      .filterNot(_.unwrap == pg.unwrap)
       .foreach ({ p =>
+        println(s"removing page num $p")
         pageIndexes.remove(p)
       })
   }
@@ -171,7 +173,7 @@ class MultiPageIndex(
     pinfo.getLabels(c)
   }
 
-  def getPageIndex(pageId: Int@@PageNum) = pageIndexes(pageId)
+  def getPageIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
 
   def removeComponent(c: Component): Unit = {
     // vtrace.trace("removeComponent" withTrace showComponent(c))
@@ -241,7 +243,6 @@ class MultiPageIndex(
 
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
-
     val pageIndex = PageIndex(
       SpatialIndex.createFor[Component](),
       pageGeometry

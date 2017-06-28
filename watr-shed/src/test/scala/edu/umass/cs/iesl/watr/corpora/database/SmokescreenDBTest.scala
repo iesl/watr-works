@@ -2,23 +2,12 @@ package edu.umass.cs.iesl.watr
 package corpora
 package database
 
-import scalaz.concurrent.Task
-
-import org.scalatest._
 
 import doobie.imports._
 import shapeless._
 
-class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
-  val xa = DriverManagerTransactor[Task](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:watrdev",
-    "watrworker", "watrpasswd"
-  )
-
-  val drop: Update0 = sql"""
-    DROP TABLE IF EXISTS person;
-    """.update
+// class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
+class Smokescreen extends DatabaseTest with DoobiePredef {
 
   val create: Update0 = sql"""
     CREATE TABLE person (
@@ -30,15 +19,29 @@ class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
     """.update
 
 
+  override def createEmptyDocumentZoningApi(): DocumentZoningApi = {
+    reflowDB.docStore
+  }
 
-  import xa.yolo._
+  override def beforeEach(): Unit = {
+    reflowDB.reinit()
+    reflowDB.runqOnce {
+      reflowDB.veryUnsafeDropDatabase().run
+    }
+    reflowDB.runqOnce(create.run)
+    reflowDB.runqOnce(
+      defineOrderingTriggers(
+        fr0"person",
+        fr0"age"
+      )
+    )
+  }
+  override def afterEach(): Unit = {
+    reflowDB.shutdown()
+  }
 
   def freshTables() = {
-    veryUnsafeDropDatabase().run.transact(xa).unsafePerformSync
-    defineOrderingTriggers(
-      fr0"person",
-      fr0"age"
-    ).transact(xa).unsafePerformSync
+    // veryUnsafeDropDatabase().run.transact(xa).unsafePerformSync
   }
 
   def appendPerson(name: String, age: Int): Unit = {
@@ -46,21 +49,27 @@ class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
       x <- sql""" insert into person (name, age) values($name, $age) """.update.run
     } yield x
 
-    query.quick.unsafePerformSync
+    reflowDB.runq{
+      query
+    }
   }
   def insertPersonAt(name: String, age: Int, rank: Int): Unit = {
     val query = for {
       x <- sql""" insert into person (name, age, rank) values($name, $age, $rank) """.update.run
     } yield x
 
-    query.quick.unsafePerformSync
+    reflowDB.runq{
+      query
+    }
   }
   def prependPerson(name: String, age: Int): Unit = {
     val query = for {
       x <- sql""" insert into person (name, age, rank) values($name, $age, 0) """.update.run
     } yield x
 
-    query.quick.unsafePerformSync
+    reflowDB.runq{
+      query
+    }
   }
 
   def removePerson(name: String, age: Int): Unit = {
@@ -68,24 +77,24 @@ class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
       x <- sql"delete from person where name=$name AND age=$age".update.run
     } yield x
 
-    query.quick.unsafePerformSync
+    reflowDB.runq{
+      query
+    }
   }
 
   // FIXME: map(_.map(...)) => traverse
   def getAll(): Seq[(String, Int, Int)] = {
-    sql"""select name, age, rank from person order by age,rank ASC"""
-      .query[String :: Int :: Int :: HNil]
-      .list
-      .map{ _.map{
+    reflowDB.runq{
+      sql"""select name, age, rank from person order by age,rank ASC"""
+        .query[String :: Int :: Int :: HNil]
+        .list
+        .map{ _.map{
           case a :: b :: c :: HNil => (a, b, c)
-      } }
-      .transact(xa)
-      .unsafePerformSync
+        } }
+    }
   }
 
   behavior of "ordering data"
-
-  // SECURITY DEFINER LANGUAGE PLPGSQL;
 
 
   it should "maintain ordering" in {

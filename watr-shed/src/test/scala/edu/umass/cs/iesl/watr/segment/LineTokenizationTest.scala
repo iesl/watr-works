@@ -144,9 +144,11 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
     println0(s"\ntesting ${example.source}")
 
     val pdfIns = papers.paperUrl(example.source)
+    println(s"pdfIns = ${pdfIns}")
     // Assume these example regions are all from one page
-    val pageId = example.targetRegions.map(_._2).head
-    val segmenter = createFilteredMultiPageIndex(pdfIns, pageId, example.targetRegions.map(_._3))
+    val pageNum = example.targetRegions.map(_._2).head
+    println(s"testExample pageNum = ${pageNum}")
+    val segmenter = createFilteredMultiPageIndex(pdfIns, pageNum, example.targetRegions.map(_._3))
 
 
     // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
@@ -154,7 +156,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
     segmenter.runLineDetermination()
 
-    val pageIndex = segmenter.mpageIndex.getPageIndex(pageId)
+    val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
     val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
 
     val tokenizedLines = lineComponents.map { lineComponent =>
