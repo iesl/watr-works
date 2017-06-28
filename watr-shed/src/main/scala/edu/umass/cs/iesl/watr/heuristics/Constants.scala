@@ -22,7 +22,7 @@ object Constants {
     final val LAST_NAME: String = "last_name"
 
 
-    final val CLEANUP_PATTERN: Regex = """^[‡†]|\(\d+\)""".r
+    final val CLEANUP_PATTERN: Regex = """^[‡†]|\(\d+\)|\d\.""".r
     final val NAME_INITIAL_FORMAT_PATTERN: Regex = """^[A-Z\.]+$""".r
     final val EMAIL_PATTERN: Regex = """[^@]+@[^@]+\.[^@]+""".r
 
@@ -30,12 +30,33 @@ object Constants {
     final val EUR_ZIP_CODE_KEYWORD = "EUR_CITY"
     final val ASIA_ZIP_CODE_KEYWORD = "ASIA_CITY"
     final val AUS_ZIP_CODE_KEYWORD = "AUS_CITY"
-    final val USA_ZIP_CODE_PATTERN: Seq[Regex] = Seq("""\b([A-Z][a-z]+(\ [A-Z][a-z]+)*|[A-Z][A-Z])\ \d{5}(\-\d{4})?\b""".r)
-    final val EUR_ZIP_CODE_PATTERN: Seq[Regex] = Seq("""\b([A-Z][-–])?\d{4,5} [A-Z][a-z]+\b""".r, """\b\d{2}-\d{3} [A-Z][a-z]+\b""".r, """\b\d{3}\ \d{2}\b""".r)
-    final val ASIA_ZIP_CODE_PATTERN: Seq[Regex] = Seq("""\b\d{3}-\d{3,4}\b""".r)
-    final val AUS_ZIP_CODE_PATTERN: Seq[Regex] = Seq("""\b.*[A-Z]\. \d{4}\b""".r)
-    final val ZIP_CODE_PATTERNS: Map[String, Seq[Regex]] = Map(USA_ZIP_CODE_KEYWORD -> USA_ZIP_CODE_PATTERN, EUR_ZIP_CODE_KEYWORD -> EUR_ZIP_CODE_PATTERN, ASIA_ZIP_CODE_KEYWORD -> ASIA_ZIP_CODE_PATTERN, AUS_ZIP_CODE_KEYWORD -> AUS_ZIP_CODE_PATTERN)
+    final val GENERIC_ZIP_CODE_KEYWORD = "ZIP_CODE"
+    final val USA_ZIP_CODE_PATTERN: Seq[Regex] = Seq(
+        """\b([a-z]+(\ [a-z]+)*|[a-z][a-z])\ \d{5}(\-\d{4})?\b""".r
+    )
+    final val EUR_ZIP_CODE_PATTERN: Seq[Regex] = Seq(
+        """\b([a-z][-–])?\d{5} [a-z]+\b""".r,
+        """\b\d{2}-\d{3} [a-z]+\b""".r,
+        """\b\d{3}\ \d{2}\b""".r
+    )
+    final val ASIA_ZIP_CODE_PATTERN: Seq[Regex] = Seq(
+        """\b\d{3}-\d{3,4}\b""".r
+    )
+    final val AUS_ZIP_CODE_PATTERN: Seq[Regex] = Seq(
+        """\b.*[a-z]\. \d{4}\b""".r
+    )
+    final val GENERIC_ZIP_CODE_PATTERN: Seq[Regex] = Seq(
+        """\b\d{4,}\b""".r
+    )
+    final val ZIP_CODE_PATTERNS: Seq[(String, Seq[Regex])] = Seq(
+        (USA_ZIP_CODE_KEYWORD, USA_ZIP_CODE_PATTERN),
+        (EUR_ZIP_CODE_KEYWORD, EUR_ZIP_CODE_PATTERN),
+        (ASIA_ZIP_CODE_KEYWORD, ASIA_ZIP_CODE_PATTERN),
+        (AUS_ZIP_CODE_KEYWORD, AUS_ZIP_CODE_PATTERN),
+        (GENERIC_ZIP_CODE_KEYWORD, GENERIC_ZIP_CODE_PATTERN)
+    )
 
+    final val ADDRESS_KEYWORD = "ADDRESS"
     final val UNIVERSITY_KEYWORD = "UNIVERSITY"
     final val INSTITUTION_KEYWORD = "INSTITUTION"
     final val DEPARTMENT_KEYWORD = "DEPARTMENT"
@@ -45,6 +66,7 @@ object Constants {
     final val CITY_KEYWORD = "CITY"
     final val EMAIL_KEYWORD = "EMAIL"
     final val REGION_KEYWORD = "REGION"
+    final val TEST_KEYWORD = "TEST"
     final val CITY_RESOURCE_FILE = "/city_full.txt"
     final val COMPANY_RESOURCE_FILE = "/company_keywords.txt"
     final val COUNTRY_RESOURCE_FILE = "/country_full.txt"
@@ -53,7 +75,22 @@ object Constants {
     final val INSTITUTION_RESOURCE_FILE = "/institution_keywords.txt"
     final val REGION_RESOURCE_FILE = "/region_full.txt"
     final val UNIVERSITY_RESOURCE_FILE = "/university_keywords.txt"
-    final val RESOURCE_KEYWORDS: Map[String, String] = Map(CITY_KEYWORD -> CITY_RESOURCE_FILE, COMPANY_KEYWORD -> COMPANY_RESOURCE_FILE, COUNTRY_KEYWORD -> COUNTRY_RESOURCE_FILE, DEPARTMENT_KEYWORD -> DEPARTMENT_RESOURCE_FILE,
-        FACULTY_KEYWORD -> FACULTY_RESOURCE_FILE, INSTITUTION_KEYWORD -> INSTITUTION_RESOURCE_FILE, REGION_KEYWORD -> REGION_RESOURCE_FILE, UNIVERSITY_KEYWORD -> UNIVERSITY_RESOURCE_FILE)
+    final val TEST_RESOURCE_FILE = "/test.txt"
+    final val RESOURCE_KEYWORDS: Seq[(String, String)] = Seq(
+        (DEPARTMENT_KEYWORD, DEPARTMENT_RESOURCE_FILE),
+        (INSTITUTION_KEYWORD, INSTITUTION_RESOURCE_FILE),
+        (UNIVERSITY_KEYWORD, UNIVERSITY_RESOURCE_FILE),
+        (COMPANY_KEYWORD, COMPANY_RESOURCE_FILE),
+        (CITY_KEYWORD, CITY_RESOURCE_FILE),
+        (REGION_KEYWORD, REGION_RESOURCE_FILE),
+        (COUNTRY_KEYWORD, COUNTRY_RESOURCE_FILE)
+    )
+
+    final val ACADEMIA_KEYWORDS: Seq[String] = Seq(DEPARTMENT_KEYWORD, INSTITUTION_KEYWORD, UNIVERSITY_KEYWORD)
+    final val LOCATION_KEYWORDS: Seq[String] = Seq(CITY_KEYWORD, REGION_KEYWORD, COUNTRY_KEYWORD)
+
+    final val AFFILIATION_LABELS: Seq[String] = Seq(DEPARTMENT_KEYWORD, INSTITUTION_KEYWORD, UNIVERSITY_KEYWORD, COMPANY_KEYWORD, CITY_KEYWORD, REGION_KEYWORD, COUNTRY_KEYWORD)
+
+
 
 }
