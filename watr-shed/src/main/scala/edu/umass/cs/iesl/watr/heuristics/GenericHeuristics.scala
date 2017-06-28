@@ -88,10 +88,10 @@ object GenericHeuristics {
             var charAtom: CharAtom = textReflow.charAtoms()(currentCharAtomIndex)
             val currentCharacter = charAtom.char.toCharArray.head
             if (currentCharacter.equals(currentSeparateComponent.head)) {
-                if (usualSpaceWidth == 0) {
+                if (usualSpaceWidth == 0 && prevCharPosition.!=(-1)) {
                     usualSpaceWidth = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
                 }
-                else if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth) {
+                else if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth && usualSpaceWidth.!=(0)) {
                     separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
                     separateComponent.clear()
                 }
