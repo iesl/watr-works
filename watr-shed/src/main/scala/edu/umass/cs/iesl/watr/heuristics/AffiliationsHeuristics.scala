@@ -3,6 +3,7 @@ package heuristics
 
 import Constants._
 import Utils._
+import java.text.Normalizer
 
 import scala.collection.mutable.ListBuffer
 
@@ -50,10 +51,40 @@ object AffiliationsHeuristics {
         val separatedComponentsWithClasses: ListBuffer[(String, ListBuffer[String])] = new ListBuffer[(String, ListBuffer[String])]()
 
         for(separatedAffiliationComponent <- separatedAffiliationComponents){
-            separatedComponentsWithClasses.+=((separatedAffiliationComponent, getMatchedKeywordsForAffiliationComponent(separatedAffiliationComponent.toLowerCase)))
+            separatedComponentsWithClasses.+=((separatedAffiliationComponent, getMatchedKeywordsForAffiliationComponent(Normalizer.normalize(separatedAffiliationComponent, Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase)))
         }
 
         separatedComponentsWithClasses
+    }
+
+    def getUpdatedCategoriesForAffiliationComponents(affiliationComponentsWithClasses: ListBuffer[(String, ListBuffer[String])]): ListBuffer[(String, ListBuffer[String])] = {
+
+        var affiliationComponentIndex: Int = 0
+        var academicKeywordFound: Boolean = false
+//        var locationKeywordFound: Boolean = false
+
+
+        affiliationComponentsWithClasses.foreach{
+            affiliationComponentWithClass => {
+                if (!academicKeywordFound && affiliationComponentWithClass._2.isEmpty){
+                    affiliationComponentWithClass._2 += DEPARTMENT_KEYWORD
+                }
+                else if (academicKeywordFound && affiliationComponentWithClass._2.isEmpty){
+                    affiliationComponentWithClass._2 += ADDRESS_KEYWORD
+                }
+                else if (!academicKeywordFound && affiliationComponentWithClass._2.nonEmpty){
+                    for (category <- affiliationComponentWithClass._2){
+                        if (ACADEMIA_KEYWORDS.contains(category) || COMPANY_KEYWORD.equals(category)){
+                            academicKeywordFound = true
+                        }
+                    }
+                }
+
+            }
+        }
+
+
+        affiliationComponentsWithClasses
     }
 
 }

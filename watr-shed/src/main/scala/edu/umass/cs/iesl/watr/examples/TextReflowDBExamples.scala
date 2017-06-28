@@ -72,7 +72,7 @@ class SampleDbCorpus {
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
         for {
-            docStableId <- docStore.getDocuments(n = 1) if (targetDocumentStableId.equals("") || docStableId.asInstanceOf[String].equals(targetDocumentStableId)) && !docStableId.asInstanceOf[String].equals("1609.07772.pdf.d")
+            docStableId <- docStore.getDocuments(n = 25) if (targetDocumentStableId.equals("") || docStableId.asInstanceOf[String].equals(targetDocumentStableId)) && !docStableId.asInstanceOf[String].equals("1609.07772.pdf.d")
             docId <- docStore.getDocument(stableId = docStableId)
             zone <- docStore.getDocumentZones(docId = docId, label = targetLabel)
             targetRegion <- zone.regions
@@ -89,16 +89,16 @@ class SampleDbCorpus {
                         print("Text Separated: \t\t\t" + separateAuthorNamesByText.mkString("||") + "\n")
                         val separateAuthorNamesByGeometry = getSeparateComponentsByGeometry(separateAuthorNamesByText, targetRegionTextReflow.get)
                         print("Geometrically Separated: \t" + separateAuthorNamesByGeometry.mkString("||") + "\n")
-                        //                        val separateAuthorNameComponents = separateAuthorNamesByGeometry.map{
-                        //                            authorName => {
-                        //                                getSeparateAuthorNameComponents(authorName)
-                        //                            }
-                        //                        }
-                        //                        var nameIndex = 0
-                        //                        while(nameIndex < separateAuthorNamesByGeometry.length){
-                        //                            print("Bounding Box info: \t\t\t" + getBoundingBoxesForComponents(separateAuthorNameComponents(nameIndex), separateAuthorNamesByGeometry(nameIndex), textReflow = targetRegionTextReflow.get).toString + "\n")
-                        //                            nameIndex += 1
-                        //                        }
+                        val separateAuthorNameComponents = separateAuthorNamesByGeometry.map {
+                            authorName => {
+                                getSeparateAuthorNameComponents(authorName)
+                            }
+                        }
+                        var nameIndex = 0
+                        while (nameIndex < separateAuthorNamesByGeometry.length) {
+                            print("Bounding Box info: \t\t\t" + getBoundingBoxesForComponents(separateAuthorNameComponents(nameIndex), separateAuthorNamesByGeometry(nameIndex), textReflow = targetRegionTextReflow.get).toString + "\n")
+                            nameIndex += 1
+                        }
                     }
                 }
             }
@@ -109,11 +109,11 @@ class SampleDbCorpus {
     def exampleFunction2(targetDocumentStableIds: Seq[String], targetLabel: Label) = {
         val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_test_1", dbuser = "watrworker", dbpass = "watrpasswd")
+        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
         for {
-            docStableId <- docStore.getDocuments(n = 1) if targetDocumentStableIds.isEmpty || targetDocumentStableIds.contains(docStableId.asInstanceOf[String])
+            docStableId <- docStore.getDocuments(n = 25) if targetDocumentStableIds.isEmpty || targetDocumentStableIds.contains(docStableId.asInstanceOf[String])
         } {
             for (docId <- docStore.getDocument(stableId = docStableId)) {
 
@@ -139,7 +139,6 @@ class SampleDbCorpus {
                                         print("Geometrically Separated: \t" + affiliationsSeparatedByGeometry.mkString("||") + "\n")
                                         println("Keywords matched for affiliations: ")
                                         separatedComponentsWithClasses.++=(getCategoryForSeparateAffiliationComponents(affiliationsSeparatedByGeometry))
-                                        //                                        println(getCategoryForSeparateAffiliationComponents(affiliationsSeparatedByGeometry))
                                     }
                                 }
                             }
@@ -148,14 +147,11 @@ class SampleDbCorpus {
                     }
                 }
 
-                var separatedComponentIndex: Int = 0
-                while (separatedComponentIndex < separatedComponentsWithClasses.length) {
-                    if (separatedComponentsWithClasses(separatedComponentIndex)._2.isEmpty) {
-                        separatedComponentsWithClasses.update(n = separatedComponentIndex, (separatedComponentsWithClasses(separatedComponentIndex)._1, getMatchedZipCodePatterns(separatedComponentsWithClasses(separatedComponentIndex)._1)))
+                getUpdatedCategoriesForAffiliationComponents(separatedComponentsWithClasses).foreach {
+                    separateComponentWithClass => {
+                        println(separateComponentWithClass._1 + " : " + separateComponentWithClass._2)
                     }
-                    separatedComponentIndex += 1
                 }
-                println(separatedComponentsWithClasses)
 
             }
         }
@@ -185,8 +181,8 @@ object TextReflowDBExamples extends App {
 
     val dbCorpus = new SampleDbCorpus()
     //    dbCorpus.authorNameSegmentation("", LB.Authors)
-    //    dbCorpus.exampleFunction1("0101047.pdf.d", LB.Authors)
-    dbCorpus.exampleFunction2(Seq("0101029.pdf.d"), LB.Affiliation)
+    dbCorpus.exampleFunction1("", LB.Authors)
+    //    dbCorpus.exampleFunction2(Seq("0101029.pdf.d"), LB.Affiliation)
     //"0101047.pdf.d", "commai.pdf.d", "bengio03a.pdf.d"
     //    dbCorpus.exampleFunction3()
 }
