@@ -152,7 +152,6 @@ class SampleDbCorpus {
                         println(separateComponentWithClass._1 + " : " + separateComponentWithClass._2)
                     }
                 }
-
             }
         }
     }
@@ -185,4 +184,5 @@ object TextReflowDBExamples extends App {
     //    dbCorpus.exampleFunction2(Seq("0101029.pdf.d"), LB.Affiliation)
     //"0101047.pdf.d", "commai.pdf.d", "bengio03a.pdf.d"
     //    dbCorpus.exampleFunction3()
+
 }
