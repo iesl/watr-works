@@ -158,21 +158,6 @@ object Utils {
             }
         }
 
-        if (matchedKeywords.isEmpty){
-            breakable{
-                ZIP_CODE_PATTERNS.foreach{
-                    zipCodePattern => {
-                        for (zipCodeRegex <- zipCodePattern._2){
-                            if (zipCodeRegex.findFirstIn(affiliationComponent).isDefined){
-                                matchedKeywords += zipCodePattern._1
-                                break
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         matchedKeywords
 
     }
@@ -212,6 +197,16 @@ object Utils {
 
         matchedZipCodePatterns
 
+    }
+
+    def isPresentInAuthors(component: String, authorNames: ListBuffer[NameWithBBox]): Boolean = {
+
+        for (authorName <- authorNames) {
+            if (component.contains(authorName.lastName.componentText.toLowerCase) || component.contains(authorName.middleName.componentText.toLowerCase) || component.contains(authorName.firstName.componentText.toLowerCase)){
+                return true
+            }
+        }
+        false
     }
 
 }
