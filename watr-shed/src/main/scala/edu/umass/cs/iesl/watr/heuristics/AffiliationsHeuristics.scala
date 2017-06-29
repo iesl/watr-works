@@ -82,17 +82,23 @@ object AffiliationsHeuristics {
             }
         }
         affiliationComponentIndex -= 1
-        while (affiliationComponentIndex > 0) {
-            if (affiliationComponentsWithClasses(affiliationComponentIndex)._2.isEmpty && isPresentInAuthors(affiliationComponentsWithClasses(affiliationComponentIndex)._1, authorNames)) {
-                emailStrings.prepend(affiliationComponentsWithClasses(affiliationComponentIndex)._1)
-                affiliationComponentsWithClasses -= affiliationComponentsWithClasses(affiliationComponentIndex)
+        breakable{
+            while (affiliationComponentIndex > 0) {
+                if (affiliationComponentsWithClasses(affiliationComponentIndex)._2.isEmpty && isPresentInAuthors(affiliationComponentsWithClasses(affiliationComponentIndex)._1, authorNames)) {
+                    emailStrings.prepend(affiliationComponentsWithClasses(affiliationComponentIndex)._1)
+                    affiliationComponentsWithClasses -= affiliationComponentsWithClasses(affiliationComponentIndex)
+                }
+                else {
+                    break
+                }
+                affiliationComponentIndex -= 1
             }
 
-            affiliationComponentIndex -= 1
         }
 
         if(emailStrings.nonEmpty){
-            affiliationComponentsWithClasses += ((emailStrings.mkString(COMMA), ListBuffer[String](EMAIL_KEYWORD)))
+            affiliationComponentsWithClasses.insert(affiliationComponentIndex+1, (emailStrings.mkString(COMMA), ListBuffer[String](EMAIL_KEYWORD)))
+//            affiliationComponentsWithClasses += ((emailStrings.mkString(COMMA), ListBuffer[String](EMAIL_KEYWORD)))
         }
 
         affiliationComponentsWithClasses.foreach {
@@ -133,23 +139,41 @@ object AffiliationsHeuristics {
 
         val affiliations: ListBuffer[(String, ListBuffer[String], LTBounds)] = new ListBuffer[(String, ListBuffer[String], LTBounds)]
 
-        for (affiliationWithClass <- affiliationsWithClasses) {
-            for (textReflow <- textReflows) {
-                if (affiliationWithClass._2.contains(EMAIL_KEYWORD)){
-                    val (userNameStartIndex, userNameEndIndex) =  getIndexesForComponents(affiliationWithClass._1.split(AT_THE_RATE).head.replace(SPACE_SEPARATOR, BLANK), textReflow, (0, textReflow.charAtoms().length))
-                    val (emailSuffixStartIndex, emailSuffixEndIndex) = getIndexesForComponents(AT_THE_RATE.concat(affiliationWithClass._1.split(AT_THE_RATE)(1)).replace(SPACE_SEPARATOR, BLANK), textReflow, (0, textReflow.charAtoms().length))
+        var affiliationIndex: Int = 0
+        var textReflowIndex: Int = 0
+        var startIndex: Int = 0
 
-                    if (userNameStartIndex.!=(-1) && emailSuffixStartIndex.!=(-1) && emailSuffixStartIndex > userNameEndIndex && (userNameEndIndex - userNameStartIndex + emailSuffixEndIndex - emailSuffixStartIndex).==(affiliationWithClass._1.replace(SPACE_SEPARATOR, BLANK).length)){
-                        affiliations += ((affiliationWithClass._1, affiliationWithClass._2, getBoundingBoxesWithIndexesFromReflow((userNameStartIndex, emailSuffixEndIndex), textReflow)))
-                    }
-                }
-                else{
-                    val (componentStartIndex, componentEndIndex) = getIndexesForComponents(affiliationWithClass._1.replace(SPACE_SEPARATOR, BLANK), textReflow, (0, textReflow.charAtoms().length))
-                    if (componentStartIndex.!=(-1) && (componentEndIndex - componentStartIndex).==(affiliationWithClass._1.replace(SPACE_SEPARATOR, BLANK).length)){
-                        affiliations += ((affiliationWithClass._1, affiliationWithClass._2, getBoundingBoxesWithIndexesFromReflow((componentStartIndex, componentEndIndex), textReflow)))
-                    }
+
+        while (textReflowIndex < textReflows.length && affiliationIndex < affiliationsWithClasses.length){
+
+            if (affiliationsWithClasses(affiliationIndex)._2.contains(EMAIL_KEYWORD)){
+                val (userNameStartIndex, userNameEndIndex) =  getIndexesForComponents(affiliationsWithClasses(affiliationIndex)._1.split(AT_THE_RATE).head.replace(SPACE_SEPARATOR, BLANK), textReflows(textReflowIndex), (startIndex, textReflows(textReflowIndex).charAtoms().length))
+                val (emailSuffixStartIndex, emailSuffixEndIndex) = getIndexesForComponents(AT_THE_RATE.concat(affiliationsWithClasses(affiliationIndex)._1.split(AT_THE_RATE)(1)).replace(SPACE_SEPARATOR, BLANK), textReflows(textReflowIndex), (0, textReflows(textReflowIndex).charAtoms().length))
+
+                if (userNameStartIndex.!=(-1) && emailSuffixStartIndex.!=(-1) && emailSuffixStartIndex >= userNameEndIndex && (userNameEndIndex - userNameStartIndex + emailSuffixEndIndex - emailSuffixStartIndex).==(affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK).length)){
+                    affiliations += ((affiliationsWithClasses(affiliationIndex)._1, affiliationsWithClasses(affiliationIndex)._2, getBoundingBoxesWithIndexesFromReflow((userNameStartIndex, emailSuffixEndIndex), textReflows(textReflowIndex))))
+                    startIndex = emailSuffixEndIndex
+                    println(affiliationsWithClasses(affiliationIndex)._1 + ", " + userNameStartIndex + ", " + emailSuffixEndIndex)
+                    println(textReflows(textReflowIndex).charAtoms().length)
+                    affiliationIndex += 1
                 }
             }
+            else{
+                val (componentStartIndex, componentEndIndex) = getIndexesForComponents(affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK), textReflows(textReflowIndex), (startIndex, textReflows(textReflowIndex).charAtoms().length))
+                if (componentStartIndex.!=(-1) && (componentEndIndex - componentStartIndex).==(affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK).length)){
+                    affiliations += ((affiliationsWithClasses(affiliationIndex)._1, affiliationsWithClasses(affiliationIndex)._2, getBoundingBoxesWithIndexesFromReflow((componentStartIndex, componentEndIndex), textReflows(textReflowIndex))))
+                    startIndex = componentEndIndex
+                    println(affiliationsWithClasses(affiliationIndex)._1 + ", " + componentStartIndex + ", " + componentEndIndex)
+                    println(textReflows(textReflowIndex).charAtoms().length)
+                    affiliationIndex += 1
+                }
+            }
+
+            if (textReflowIndex < textReflows.length && startIndex.==(textReflows(textReflowIndex).charAtoms().length) || textReflows(textReflowIndex).charAtoms().length.==(1)){
+                textReflowIndex += 1
+                startIndex = 0
+            }
+
         }
 
         affiliations
