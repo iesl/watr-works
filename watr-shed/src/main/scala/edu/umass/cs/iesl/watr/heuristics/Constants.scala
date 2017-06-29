@@ -8,7 +8,7 @@ object Constants {
     final val WORD_SEPARATORS: Seq[String] = Seq("and", "&")
     final val PUNCTUATION_SEPARATORS: Seq[String] = Seq(",")
     final val SPACE_SEPARATOR: String = " "
-    final val SPACE_BETWEEN_WORDS_THRESHOLD: Int = 200
+    final val SPACE_BETWEEN_WORDS_THRESHOLD: Int = 2
     final val COMMA: String = ","
     final val COMMA_CHARACTER: Char = ','
     final val DOT: Char = '.'

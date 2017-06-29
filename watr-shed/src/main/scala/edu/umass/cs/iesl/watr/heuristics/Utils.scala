@@ -3,6 +3,7 @@ package heuristics
 
 import TypeTags._
 import geometry.LTBounds
+import geometry.syntax._
 import Constants._
 import textreflow.TextReflowF.TextReflow
 import textreflow.data._
@@ -15,7 +16,7 @@ object Utils {
 
     def isOfFirstNameInitialFormat(authorNameComponent: String): Boolean = {
 
-        if(NAME_INITIAL_FORMAT_PATTERN.findFirstIn(authorNameComponent).getOrElse(BLANK).length.==(authorNameComponent.length)){
+        if (NAME_INITIAL_FORMAT_PATTERN.findFirstIn(authorNameComponent).getOrElse(BLANK).length.==(authorNameComponent.length)) {
             return true
         }
         false
@@ -75,27 +76,8 @@ object Utils {
     }
 
     def getBoundingBoxesWithIndexesFromReflow(indexes: (Int, Int), textReflow: TextReflow): LTBounds = {
-        LTBounds(FloatRep(textReflow.charAtoms()(indexes._1).bbox.left.asInstanceOf[Int]), FloatRep(textReflow.charAtoms()(indexes._1).bbox.top.asInstanceOf[Int]),
-            FloatRep(textReflow.charAtoms()(indexes._2 - 1).bbox.right.asInstanceOf[Int] - textReflow.charAtoms()(indexes._1).bbox.left.asInstanceOf[Int]), FloatRep(textReflow.charAtoms()(indexes._1).bbox.height.asInstanceOf[Int]))
-    }
-
-    def getBoundingBoxesForComponents(name: NameWithBBox, geometricallySeparatedName: String, textReflow: TextReflow): NameWithBBox = {
-
-        val (nameStartIndex, nameEndIndex) = getIndexesForComponents(component = geometricallySeparatedName.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (0, textReflow.charAtoms().length))
-        name.bbox = getBoundingBoxesWithIndexesFromReflow((nameStartIndex, nameEndIndex), textReflow)
-        if (name.firstName.componentText.nonEmpty) {
-            val (firstNameStartIndex, firstNameEndIndex) = getIndexesForComponents(component = name.firstName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.firstName.componentBBox = getBoundingBoxesWithIndexesFromReflow((firstNameStartIndex, firstNameEndIndex), textReflow)
-        }
-        if (name.middleName.componentText.nonEmpty) {
-            val (middleNameStartIndex, middleNameEndIndex) = getIndexesForComponents(component = name.middleName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.middleName.componentBBox = getBoundingBoxesWithIndexesFromReflow((middleNameStartIndex, middleNameEndIndex), textReflow)
-        }
-        if (name.lastName.componentText.nonEmpty) {
-            val (lastNameStartIndex, lastNameEndIndex) = getIndexesForComponents(component = name.lastName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.lastName.componentBBox = getBoundingBoxesWithIndexesFromReflow((lastNameStartIndex, lastNameEndIndex), textReflow)
-        }
-        name
+        LTBounds(textReflow.charAtoms()(indexes._1).bbox.left, textReflow.charAtoms()(indexes._1).bbox.top,
+            textReflow.charAtoms()(indexes._2 - 1).bbox.right - textReflow.charAtoms()(indexes._1).bbox.left, textReflow.charAtoms()(indexes._1).bbox.height)
     }
 
     def isLetterString(charSequence: String): Boolean = {
@@ -120,16 +102,16 @@ object Utils {
 
         val yPositionCounts: scala.collection.mutable.Map[Int, Int] = scala.collection.mutable.Map[Int, Int]()
 
-        for(charAtom <- textReflow.charAtoms()){
-            if(yPositionCounts.get(charAtom.bbox.top.asInstanceOf[Int]).isEmpty){
-                yPositionCounts += (charAtom.bbox.top.asInstanceOf[Int] -> 0)
+        for (charAtom <- textReflow.charAtoms()) {
+            if (yPositionCounts.get(charAtom.bbox.top.asInt()).isEmpty) {
+                yPositionCounts += (charAtom.bbox.top.asInt() -> 0)
             }
-            yPositionCounts.update(charAtom.bbox.top.asInstanceOf[Int], yPositionCounts(charAtom.bbox.top.asInstanceOf[Int])+1)
+            yPositionCounts.update(charAtom.bbox.top.asInt(), yPositionCounts(charAtom.bbox.top.asInt()) + 1)
 
         }
 
         val maxRecord: (Int, Int) = yPositionCounts.maxBy(_._2)
-        if(maxRecord._2 > 1){
+        if (maxRecord._2 > 1) {
             return maxRecord._1
         }
         -1
@@ -139,16 +121,16 @@ object Utils {
 
         val matchedKeywords: ListBuffer[String] = new ListBuffer[String]()
 
-        if (EMAIL_PATTERN.findFirstIn(affiliationComponent).getOrElse(BLANK).length.!=(0)){
+        if (EMAIL_PATTERN.findFirstIn(affiliationComponent).getOrElse(BLANK).length.!=(0)) {
             matchedKeywords += EMAIL_KEYWORD
         }
 
-        if (matchedKeywords.isEmpty){
-            breakable{
-                RESOURCE_KEYWORDS.foreach{
+        if (matchedKeywords.isEmpty) {
+            breakable {
+                RESOURCE_KEYWORDS.foreach {
                     resource => {
-                        for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines){
-                            if ("\\b".concat(line).concat("\\b").r.findFirstIn(affiliationComponent).isDefined){
+                        for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines) {
+                            if ("\\b".concat(line).concat("\\b").r.findFirstIn(affiliationComponent).isDefined) {
                                 matchedKeywords += resource._1
                                 break
                             }
@@ -168,10 +150,10 @@ object Utils {
 
         cleanedComponent = separatedComponent.substring(CLEANUP_PATTERN.findFirstIn(separatedComponent).getOrElse(BLANK).length, separatedComponent.length)
 
-        if(separatedComponent.takeRight(1).equals(PERIOD)){
+        if (separatedComponent.takeRight(1).equals(PERIOD)) {
             cleanedComponent = separatedComponent.dropRight(1)
         }
-        if(cleanedComponent.head.==(DOT)){
+        if (cleanedComponent.head.==(DOT)) {
             cleanedComponent = separatedComponent.tail
         }
 
@@ -183,11 +165,11 @@ object Utils {
 
         val matchedZipCodePatterns: ListBuffer[String] = new ListBuffer[String]()
 
-        ZIP_CODE_PATTERNS.foreach{
+        ZIP_CODE_PATTERNS.foreach {
             zipCodePattern => {
-                zipCodePattern._2.foreach{
+                zipCodePattern._2.foreach {
                     zipCodeRegex => {
-                        if (zipCodeRegex.findFirstIn(affiliationComponent).getOrElse(BLANK).nonEmpty){
+                        if (zipCodeRegex.findFirstIn(affiliationComponent).getOrElse(BLANK).nonEmpty) {
                             matchedZipCodePatterns += zipCodePattern._1
                         }
                     }
@@ -202,7 +184,7 @@ object Utils {
     def isPresentInAuthors(component: String, authorNames: ListBuffer[NameWithBBox]): Boolean = {
 
         for (authorName <- authorNames) {
-            if (component.contains(authorName.lastName.componentText.toLowerCase) || component.contains(authorName.middleName.componentText.toLowerCase) || component.contains(authorName.firstName.componentText.toLowerCase)){
+            if (component.contains(authorName.lastName.componentText.toLowerCase) || component.contains(authorName.middleName.componentText.toLowerCase) || component.contains(authorName.firstName.componentText.toLowerCase)) {
                 return true
             }
         }
