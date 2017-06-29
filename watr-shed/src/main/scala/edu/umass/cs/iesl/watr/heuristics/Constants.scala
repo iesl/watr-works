@@ -25,6 +25,7 @@ object Constants {
     final val CLEANUP_PATTERN: Regex = """^[‡†]|\(\d+\)|\d\.""".r
     final val NAME_INITIAL_FORMAT_PATTERN: Regex = """^[A-Z\.]+$""".r
     final val EMAIL_PATTERN: Regex = """[^@]+@[^@]+\.[^@]+""".r
+    final val EMAIL_SUFFIX_PATTERN: Regex = """@[^@]+\.[^@]+""".r
 
     final val USA_ZIP_CODE_KEYWORD = "USA_STATE"
     final val EUR_ZIP_CODE_KEYWORD = "EUR_CITY"
