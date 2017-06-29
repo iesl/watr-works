@@ -2,10 +2,11 @@ package edu.umass.cs.iesl.watr
 
 package heuristics
 
-import edu.umass.cs.iesl.watr.geometry.CharAtom
-import edu.umass.cs.iesl.watr.heuristics.Constants._
-import edu.umass.cs.iesl.watr.heuristics.Utils._
-import edu.umass.cs.iesl.watr.textreflow.data._
+import geometry.CharAtom
+import geometry.syntax._
+import Constants._
+import Utils._
+import textreflow.data._
 
 import scala.collection.mutable.ListBuffer
 
@@ -19,15 +20,15 @@ object GenericHeuristics {
         val yPosition: Int = getYPosition(textReflow = textReflow)
 
         for (charAtom <- textReflow.charAtoms()) {
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
-                if (charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition >= SPACE_BETWEEN_WORDS_THRESHOLD) {
+            if (charAtom.bbox.top.asInt().==(yPosition)) {
+                if (charAtom.bbox.left.asInt() - prevCharPosition >= SPACE_BETWEEN_WORDS_THRESHOLD) {
                     tokens += currentToken.mkString
                     currentToken.clear()
                 }
                 currentToken += charAtom.char
-                prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
+                prevCharPosition = charAtom.bbox.right.asInt()
             }
-            else if (charAtom.bbox.right.asInstanceOf[Int] < prevCharPosition) {
+            else if (charAtom.bbox.right.asInt() < prevCharPosition) {
                 currentToken += charAtom.char
             }
         }
@@ -89,9 +90,9 @@ object GenericHeuristics {
             val currentCharacter = charAtom.char.toCharArray.head
             if (currentCharacter.equals(currentSeparateComponent.head)) {
                 if (usualSpaceWidth == 0 && prevCharPosition.!=(-1)) {
-                    usualSpaceWidth = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
+                    usualSpaceWidth = charAtom.bbox.left.asInt - prevCharPosition
                 }
-                else if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth && usualSpaceWidth.!=(0)) {
+                else if ((charAtom.bbox.left.asInt - prevCharPosition) > 2 * usualSpaceWidth && usualSpaceWidth.!=(0)) {
                     separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
                     separateComponent.clear()
                 }
@@ -108,10 +109,10 @@ object GenericHeuristics {
 
             }
             charAtom = textReflow.charAtoms()(currentCharAtomIndex)
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition) || (currentCharAtomIndex > 0
-                && charAtom.bbox.right.asInstanceOf[Int] < textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right.asInstanceOf[Int]
-                && textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.top.asInstanceOf[Int].==(yPosition))) {
-                prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
+            if (charAtom.bbox.top.asInt().==(yPosition) || (currentCharAtomIndex > 0
+                && charAtom.bbox.right < textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right
+                && textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.top.asInt().==(yPosition))) {
+                prevCharPosition = charAtom.bbox.right.asInt()
             }
             currentCharAtomIndex += 1
 
