@@ -3,4 +3,4 @@ package heuristics
 
 import geometry.LTBounds
 
-case class NameWithBBox(firstName: ComponentRepresentation, middleName: ComponentRepresentation, lastName: ComponentRepresentation, var bbox: LTBounds)
+case class NameWithBBox(firstName: ComponentRepresentation, middleName: ComponentRepresentation, lastName: ComponentRepresentation, var bBox: LTBounds)

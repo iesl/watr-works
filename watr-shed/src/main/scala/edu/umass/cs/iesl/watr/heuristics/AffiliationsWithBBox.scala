@@ -3,6 +3,17 @@ package heuristics
 
 import geometry.LTBounds
 
-case class AffiliationsWithBBox(labName: ComponentRepresentation, departmentName: ComponentRepresentation, collegeName: ComponentRepresentation, institutionName: ComponentRepresentation,
-                                institutionAddress: ComponentRepresentation, cityName: ComponentRepresentation, stateName: ComponentRepresentation, countryName: ComponentRepresentation,
-                                zipcode: ComponentRepresentation, var bbox: LTBounds)
+import scala.collection.mutable.ListBuffer
+
+case class AffiliationsWithBBox(
+                                   var departments: ListBuffer[ComponentRepresentation],
+                                   var institutions: ListBuffer[ComponentRepresentation],
+                                   var university: ComponentRepresentation,
+                                   var company: ComponentRepresentation,
+                                   var addresses: ListBuffer[ComponentRepresentation],
+                                   var city: ComponentRepresentation,
+                                   var regions: ListBuffer[ComponentRepresentation],
+                                   var country: ComponentRepresentation,
+                                   var zipCode: ComponentRepresentation,
+                                   var bBoxes: ListBuffer[LTBounds]
+                               )
