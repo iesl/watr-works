@@ -5,6 +5,7 @@ import Constants._
 import Utils._
 import java.text.Normalizer
 
+import scala.util.control.Breaks._
 import scala.collection.mutable.ListBuffer
 
 object AffiliationsHeuristics {
@@ -15,7 +16,7 @@ object AffiliationsHeuristics {
         val separateComponent: ListBuffer[String] = ListBuffer[String]()
 
         for (textReflowToken <- tokenizedTextReflow) {
-            if( PUNCTUATION_SEPARATORS.contains(textReflowToken.takeRight(n = 1))){
+            if (PUNCTUATION_SEPARATORS.contains(textReflowToken.takeRight(n = 1))) {
                 separateComponent += textReflowToken.dropRight(n = 1)
                 separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
                 separateComponent.clear()
@@ -29,16 +30,16 @@ object AffiliationsHeuristics {
             separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
         }
 
-        for(separateComponent <- separateComponents if separateComponent.length.==(0)){
+        for (separateComponent <- separateComponents if separateComponent.length.==(0)) {
             separateComponents -= separateComponent
         }
 
         var currentComponentIndex: Int = 0
 
-        while(currentComponentIndex < separateComponents.length){
+        while (currentComponentIndex < separateComponents.length) {
             val currentComponent = separateComponents(currentComponentIndex)
-            for(conjunction <- WORD_SEPARATORS if currentComponent.split(SPACE_SEPARATOR).length.==(3) && currentComponent.split(conjunction).length.==(2)){
-                separateComponents(currentComponentIndex - 1) = separateComponents.slice(currentComponentIndex-1, currentComponentIndex+1).mkString(COMMA.concat(SPACE_SEPARATOR))
+            for (conjunction <- WORD_SEPARATORS if currentComponent.split(SPACE_SEPARATOR).length.==(3) && currentComponent.split(conjunction).length.==(2)) {
+                separateComponents(currentComponentIndex - 1) = separateComponents.slice(currentComponentIndex - 1, currentComponentIndex + 1).mkString(COMMA.concat(SPACE_SEPARATOR))
                 separateComponents -= currentComponent
             }
             currentComponentIndex += 1
@@ -50,32 +51,69 @@ object AffiliationsHeuristics {
 
         val separatedComponentsWithClasses: ListBuffer[(String, ListBuffer[String])] = new ListBuffer[(String, ListBuffer[String])]()
 
-        for(separatedAffiliationComponent <- separatedAffiliationComponents){
+        for (separatedAffiliationComponent <- separatedAffiliationComponents) {
             separatedComponentsWithClasses.+=((separatedAffiliationComponent, getMatchedKeywordsForAffiliationComponent(Normalizer.normalize(separatedAffiliationComponent, Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase)))
         }
 
         separatedComponentsWithClasses
     }
 
-    def getUpdatedCategoriesForAffiliationComponents(affiliationComponentsWithClasses: ListBuffer[(String, ListBuffer[String])]): ListBuffer[(String, ListBuffer[String])] = {
+    def getUpdatedCategoriesForAffiliationComponents(authorNames: ListBuffer[NameWithBBox], affiliationComponentsWithClasses: ListBuffer[(String, ListBuffer[String])]): ListBuffer[(String, ListBuffer[String])] = {
 
-        var affiliationComponentIndex: Int = 0
+        val emailStrings: ListBuffer[String] = new ListBuffer[String]()
         var academicKeywordFound: Boolean = false
-//        var locationKeywordFound: Boolean = false
+        var locationKeywordFound: Boolean = true
+        var affiliationComponentIndex: Int = affiliationComponentsWithClasses.length - 1
 
+        breakable {
+            while (affiliationComponentIndex > 0) {
+                if (EMAIL_SUFFIX_PATTERN.findFirstIn(affiliationComponentsWithClasses(affiliationComponentIndex)._1).getOrElse(BLANK).length.==(0)) {
+                    affiliationComponentIndex -= 1
+                }
+                else {
+                    emailStrings += affiliationComponentsWithClasses(affiliationComponentIndex)._1
+                    affiliationComponentsWithClasses -= affiliationComponentsWithClasses(affiliationComponentIndex)
+                    break
+                }
+            }
+        }
+        affiliationComponentIndex -= 1
+        while (affiliationComponentIndex > 0) {
+            if (affiliationComponentsWithClasses(affiliationComponentIndex)._2.isEmpty && isPresentInAuthors(affiliationComponentsWithClasses(affiliationComponentIndex)._1, authorNames)) {
+                emailStrings.prepend(affiliationComponentsWithClasses(affiliationComponentIndex)._1)
+                affiliationComponentsWithClasses -= affiliationComponentsWithClasses(affiliationComponentIndex)
+            }
 
-        affiliationComponentsWithClasses.foreach{
+            affiliationComponentIndex -= 1
+        }
+
+        if(emailStrings.nonEmpty){
+            affiliationComponentsWithClasses += ((emailStrings.mkString(COMMA), ListBuffer[String](EMAIL_KEYWORD)))
+        }
+
+        affiliationComponentsWithClasses.foreach {
             affiliationComponentWithClass => {
-                if (!academicKeywordFound && affiliationComponentWithClass._2.isEmpty){
+                if (!academicKeywordFound && locationKeywordFound && affiliationComponentWithClass._2.isEmpty) {
                     affiliationComponentWithClass._2 += DEPARTMENT_KEYWORD
                 }
-                else if (academicKeywordFound && affiliationComponentWithClass._2.isEmpty){
+                else if (academicKeywordFound && !locationKeywordFound && affiliationComponentWithClass._2.isEmpty) {
                     affiliationComponentWithClass._2 += ADDRESS_KEYWORD
                 }
-                else if (!academicKeywordFound && affiliationComponentWithClass._2.nonEmpty){
-                    for (category <- affiliationComponentWithClass._2){
-                        if (ACADEMIA_KEYWORDS.contains(category) || COMPANY_KEYWORD.equals(category)){
+
+                else if (!academicKeywordFound && locationKeywordFound && affiliationComponentWithClass._2.nonEmpty) {
+                    for (affiliationClass <- affiliationComponentWithClass._2) {
+                        if (ACADEMIA_KEYWORDS.contains(affiliationClass) || COMPANY_KEYWORD.equals(affiliationClass)) {
                             academicKeywordFound = true
+                            locationKeywordFound = false
+                        }
+                    }
+                }
+
+                else if (academicKeywordFound && !locationKeywordFound && affiliationComponentWithClass._2.nonEmpty) {
+                    for (affiliationClass <- affiliationComponentWithClass._2) {
+                        if (LOCATION_KEYWORDS.contains(affiliationClass) || EMAIL_KEYWORD.equals(affiliationClass)) {
+                            locationKeywordFound = true
+                            academicKeywordFound = false
                         }
                     }
                 }
