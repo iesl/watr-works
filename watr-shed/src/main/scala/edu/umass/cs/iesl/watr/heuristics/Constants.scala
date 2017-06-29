@@ -14,6 +14,7 @@ object Constants {
     final val DOT: Char = '.'
     final val PERIOD: String = "."
     final val BLANK: String = ""
+    final val AT_THE_RATE: String = "@"
 
     final val VALID_HEREDITY_SUFFIXES: Seq[String] = Seq("Jr.", "Sr.", "II", "III", "IV")
     final val VALID_SURNAME_PARTICLES: Seq[String] = Seq("van", "von", "der", "de", "du", "da", "di", "do", "la", "del", "della", "ter", "bin", "ben", "den")

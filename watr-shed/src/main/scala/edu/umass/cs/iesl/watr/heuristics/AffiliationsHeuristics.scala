@@ -5,8 +5,12 @@ import Constants._
 import Utils._
 import java.text.Normalizer
 
+import edu.umass.cs.iesl.watr.geometry.LTBounds
+
 import scala.util.control.Breaks._
 import scala.collection.mutable.ListBuffer
+import textreflow.TextReflowF.TextReflow
+import textreflow.data._
 
 object AffiliationsHeuristics {
 
@@ -124,5 +128,32 @@ object AffiliationsHeuristics {
 
         affiliationComponentsWithClasses
     }
+
+    def getBoundingBoxesForAffiliations(affiliationsWithClasses: ListBuffer[(String, ListBuffer[String])], textReflows: ListBuffer[TextReflow]): ListBuffer[(String, ListBuffer[String], LTBounds)] = {
+
+        val affiliations: ListBuffer[(String, ListBuffer[String], LTBounds)] = new ListBuffer[(String, ListBuffer[String], LTBounds)]
+
+        for (affiliationWithClass <- affiliationsWithClasses) {
+            for (textReflow <- textReflows) {
+                if (affiliationWithClass._2.contains(EMAIL_KEYWORD)){
+                    val (userNameStartIndex, userNameEndIndex) =  getIndexesForComponents(affiliationWithClass._1.split(AT_THE_RATE).head.replace(SPACE_SEPARATOR, BLANK), textReflow, (0, textReflow.charAtoms().length))
+                    val (emailSuffixStartIndex, emailSuffixEndIndex) = getIndexesForComponents(AT_THE_RATE.concat(affiliationWithClass._1.split(AT_THE_RATE)(1)).replace(SPACE_SEPARATOR, BLANK), textReflow, (0, textReflow.charAtoms().length))
+
+                    if (userNameStartIndex.!=(-1) && emailSuffixStartIndex.!=(-1) && emailSuffixStartIndex > userNameEndIndex && (userNameEndIndex - userNameStartIndex + emailSuffixEndIndex - emailSuffixStartIndex).==(affiliationWithClass._1.replace(SPACE_SEPARATOR, BLANK).length)){
+                        affiliations += ((affiliationWithClass._1, affiliationWithClass._2, getBoundingBoxesWithIndexesFromReflow((userNameStartIndex, emailSuffixEndIndex), textReflow)))
+                    }
+                }
+                else{
+                    val (componentStartIndex, componentEndIndex) = getIndexesForComponents(affiliationWithClass._1.replace(SPACE_SEPARATOR, BLANK), textReflow, (0, textReflow.charAtoms().length))
+                    if (componentStartIndex.!=(-1) && (componentEndIndex - componentStartIndex).==(affiliationWithClass._1.replace(SPACE_SEPARATOR, BLANK).length)){
+                        affiliations += ((affiliationWithClass._1, affiliationWithClass._2, getBoundingBoxesWithIndexesFromReflow((componentStartIndex, componentEndIndex), textReflow)))
+                    }
+                }
+            }
+        }
+
+        affiliations
+    }
+
 
 }
