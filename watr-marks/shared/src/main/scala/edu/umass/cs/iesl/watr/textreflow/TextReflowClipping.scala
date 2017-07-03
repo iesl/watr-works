@@ -148,4 +148,19 @@ trait TextReflowClipping extends TextReflowBasics {
       .toPair._1
   }
 
+  def topLevelLabeledSlices(tr: TextReflow, label: Label): Seq[TextReflow] = {
+    import scalaz.std.list._
+
+    def visit(t: TextReflowF[(TextReflow, List[TextReflow])]): List[TextReflow] =
+      orBubblePara[List[TextReflow]](t) {
+        case l @ Labeled (labels, (a, attr))
+            if (labels.exists(_ == label)) =>
+
+          labeled(labels, a) :: Nil
+      }
+
+    tr.cata(attributePara(visit))
+      .toPair._1
+  }
+
 }

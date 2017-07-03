@@ -61,12 +61,12 @@ sealed trait Component {
   }
   def groupChildren(withLabel: Label, newLabel: Label)(
     groupf: (Component, Component, Int) => Boolean,
-    onCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
+    onCreate: (RegionComponent, Int, Int) => Unit = ((_, _, _) => ())
   ): Seq[RegionComponent]
 
   def groupAtomsIf(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
-    onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
+    onGrouped: (RegionComponent, Int, Int) => Unit = ((_, _, _) => ())
   ): Seq[RegionComponent]
 
   def splitAtomsIf(
@@ -215,35 +215,41 @@ case class RegionComponent(
 
   def groupChildren(withLabel: Label, newLabel: Label)(
     groupf: (Component, Component, Int) => Boolean,
-    onCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
+    onCreate: (RegionComponent, Int, Int) => Unit = ((_, _, _) => ())
   ): Seq[RegionComponent] = {
 
     val oldChildren = getChildren(withLabel)
     // Reset children to Nil
     setChildren(withLabel, Seq())
 
-    oldChildren
+    val newGroups = oldChildren
       .groupByPairsWithIndex(groupf)
-      .zipWithIndex
+
+    val grpCount = newGroups.length
+
+    newGroups.zipWithIndex
       .map({case (childGrp, regionIndex) =>
         val newRegion = initRegion(newLabel, childGrp)
         addChild(newLabel, newRegion)
-        onCreate(newRegion, regionIndex)
+        onCreate(newRegion, regionIndex, grpCount)
         newRegion
       })
   }
 
   def groupAtomsIf(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
-    onRegionCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
+    onRegionCreate: (RegionComponent, Int, Int) => Unit = ((_, _, _) => ())
   ): Seq[RegionComponent] = {
 
-    queryAtoms()
-      .groupByPairsWithIndex(groupf)
+    val grouped = queryAtoms().groupByPairsWithIndex(groupf)
+
+    val groupCount = grouped.length
+
+    grouped
       .zipWithIndex
       .map({case (atoms, regionIndex) =>
         val newRegion = initRegionFromAtoms(atoms)
-        onRegionCreate(newRegion, regionIndex)
+        onRegionCreate(newRegion, regionIndex, groupCount)
         newRegion
       })
   }
@@ -263,7 +269,7 @@ case class RegionComponent(
       })
   }
 
-  def targetRegion: PageRegion = initPageRegion 
+  def targetRegion: PageRegion = initPageRegion
   def bounds: LTBounds = targetRegion.bbox
 
   def chars: String = {
@@ -289,17 +295,17 @@ case class AtomicComponent(
 
   def groupAtomsIf(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
-    onGrouped: (RegionComponent, Int) => Unit = ((_, _) => ())
+    onGrouped: (RegionComponent, Int, Int) => Unit = ((_, _, _) => ())
   ): Seq[RegionComponent] = {
     val newRegion = mpageIndex.createRegionComponent(charAtom.charRegion, LB.NullLabel) // FIXME <- nulllabel?
 
-    onGrouped(newRegion, 0)
+    onGrouped(newRegion, 0, 1)
     Seq(newRegion)
   }
 
   def groupChildren(withLabel: Label, newLabel: Label)(
     groupf: (Component, Component, Int) => Boolean,
-    onCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
+    onCreate: (RegionComponent, Int, Int) => Unit = ((_, _, _) => ())
   ): Seq[RegionComponent] = { Seq() }
 
 
@@ -319,3 +325,38 @@ case class AtomicComponent(
     s"<`${chars}`${id} ${charAtom.bbox.prettyPrint}$lls>"
   }
 }
+
+// case object WhitespaceComponent extends Component {
+
+//   def splitAtomsIf(
+//     splitf: (AtomicComponent, AtomicComponent, Int) => Boolean,
+//     onSplit: (RegionComponent, Int) => Unit = ((_, _) => ())
+//   ): Seq[RegionComponent] = { sys.error("trying to split whitespace") }
+
+//   def groupAtomsIf(
+//     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
+//     onGrouped: (RegionComponent, Int, Int) => Unit = ((_, _, _) => ())
+//   ): Seq[RegionComponent] = { sys.error("trying to split whitespace") }
+
+//   def groupChildren(withLabel: Label, newLabel: Label)(
+//     groupf: (Component, Component, Int) => Boolean,
+//     onCreate: (RegionComponent, Int) => Unit = ((_, _) => ())
+//   ): Seq[RegionComponent] = { sys.error("trying to split whitespace") }
+
+
+//   def roleLabel: Label = LB.WhitespaceSep
+
+//   def char: String = " "
+
+//   def bounds: LTBounds =
+//     sys.error("invalid op onwhitespace")
+
+//   def targetRegion: PageRegion =
+//     sys.error("invalid op onwhitespace")
+
+//   def chars: String = char
+
+//   override def toString(): String = {
+//     s"` `"
+//   }
+// }

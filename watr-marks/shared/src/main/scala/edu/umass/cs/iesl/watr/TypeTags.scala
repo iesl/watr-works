@@ -44,9 +44,6 @@ sealed trait Password
 sealed trait EmailAddr
 sealed trait StatusCode
 
-
-sealed trait FloatRep
-
 object TypeTags extends TypeTags
 
 
@@ -89,7 +86,6 @@ trait TypeTags {
 
   val StatusCode = Tag.of[StatusCode]
 
-  val FloatRep = Tag.of[FloatRep]
 
   def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
     val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName

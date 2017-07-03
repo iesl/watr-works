@@ -34,6 +34,7 @@ import org.singlespaced.d3js.d3
 import scala.scalajs.js
   // import scala.collection.mutable
 import js.JSConverters._
+import utils.ExactFloats._
 
 trait D3BasicShapes {
   def d3SvgSelection =

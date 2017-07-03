@@ -26,6 +26,8 @@ import SlicingAndDicing._
 import TypeTags._
 import corpora._
 import extract.PdfTextExtractor
+import utils.ExactFloats._
+
 
 import scala.collection.mutable
 
@@ -34,8 +36,7 @@ import Histogram._
 
 case class LineDimensionBins(
   pageNum: Int@@PageNum,
-  // Seq[(width, widthFrequency), Seq[lines w/width]]
-  widthBin: Seq[((Double, Double), Seq[Component])],
+  widthBin: Seq[((FloatExact, Double), Seq[Component])],
   unBinned: Seq[Component]
 )
 
@@ -43,7 +44,7 @@ case class PageSegAccumulator(
   commonLineDimensions: Seq[Point] = Seq(),
   lineDimensionBins: Seq[LineDimensionBins] = Seq(),
   commonFocalJumps: Map[String, Seq[String]] = Map(),
-  docWideModalVerticalLineDist: Double = 0.0
+  docWideModalVerticalLineDist: FloatExact = 0.0.toFloatExact
 )
 
 
@@ -223,13 +224,10 @@ class DocumentSegmenter(
     val pageRegions = for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } yield {
+
       println(s"Page ${pagenum} id=${pageId}")
       // print(s".")
-      val atomicComponents = mpageIndex.getPageAtoms(PageNum(pagenum))
-
-      vtrace.trace(message(s"runLineDetermination() on page ${pageId} w/ ${atomicComponents.length} char atoms"))
-
-      determineLines(pageId, PageNum(pagenum), atomicComponents)
+      runLineDeterminationOnPage(pageId, PageNum(pagenum))
 
       val pageGeometry = docStore.getPageGeometry(pageId)
       docStore.getTargetRegion(
@@ -239,139 +237,146 @@ class DocumentSegmenter(
     docStore.labelRegions(LB.DocumentPages, pageRegions)
   }
 
-  def findDocWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Unit = {
-    val allVDists = for {
-      groupedBlocks <- alignedBlocksPerPage
-      block <- groupedBlocks
-    } yield {
-      block
-        .sliding(2).toSeq
-        .map({
-          case Seq(a1, a2) =>
-            val upperLowerLeft = a1.bounds.toPoint(CDir.SW).y.asDouble
-            val lowerTopLeft = a2.bounds.toPoint(CDir.NW).y.asDouble
-            val vdist = math.abs(lowerTopLeft-upperLowerLeft)
-            vdist
+  def runLineDeterminationOnPage(pageId: Int@@PageID, pageNum: Int@@PageNum): Unit = {
+    val atomicComponents = mpageIndex.getPageAtoms(pageNum)
+    vtrace.trace(message(s"runLineDetermination() on page ${pageNum} w/ ${atomicComponents.length} char atoms"))
 
-          case Seq(a1) => -1
-          case Seq() => -1
-        }).filter(_ > 1.0d)
-    }
-    val vdists = allVDists.flatten
-
-    val modalVDist = if (!vdists.isEmpty) {
-      vtrace.trace(message("Compute docWideModalLineVSpacing"))
-      getMostFrequentValues(vtrace)(vdists, leftBinHistResolution)
-        .headOption
-        .getOrElse(12.0)
-    } else {
-      0d
-    }
-
-
-    pageSegAccum = pageSegAccum.copy(docWideModalVerticalLineDist = modalVDist)
+    determineLines(pageId, pageNum, atomicComponents)
   }
+
+  // def findDocWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Unit = {
+  //   val allVDists = for {
+  //     groupedBlocks <- alignedBlocksPerPage
+  //     block <- groupedBlocks
+  //   } yield {
+  //     block
+  //       .sliding(2).toSeq
+  //       .map({
+  //         case Seq(a1, a2) =>
+  //           val upperLowerLeft = a1.bounds.toPoint(CDir.SW).y
+  //           val lowerTopLeft = a2.bounds.toPoint(CDir.NW).y
+  //           val vdist = math.abs((lowerTopLeft-upperLowerLeft).asDouble()).toFloatExact
+  //           vdist
+
+  //         case Seq(a1) => -1.toFloatExact
+  //         case Seq() => -1.toFloatExact()
+  //       }).filter(_ > 1.0d.toFloatExact())
+  //   }
+  //   val vdists = allVDists.flatten
+
+  //   val modalVDist = if (!vdists.isEmpty) {
+  //     vtrace.trace(message("Compute docWideModalLineVSpacing"))
+  //     getMostFrequentValues(vtrace)(vdists, leftBinHistResolution)
+  //       .headOption
+  //       .getOrElse(12.0.toFloatExact())
+  //   } else {
+  //     0d.toFloatExact()
+  //   }
+
+
+  //   pageSegAccum = pageSegAccum.copy(docWideModalVerticalLineDist = modalVDist)
+  // }
 
   val leftBinHistResolution = 1.0d
 
 
-  def findLeftAlignedBlocksPerPage(): Seq[Seq[Seq[Component]]] = {
-    vtrace.trace(begin("findLeftAlignedBlocksPerPage"))
+  // def findLeftAlignedBlocksPerPage(): Seq[Seq[Seq[Component]]] = {
+  //   vtrace.trace(begin("findLeftAlignedBlocksPerPage"))
 
-    val alignedBlocksPerPage = for {
-      page <- visualLineOnPageComponents
-    } yield {
+  //   val alignedBlocksPerPage = for {
+  //     page <- visualLineOnPageComponents
+  //   } yield {
 
-      val lefts = page.zipWithIndex
-        .map({case (l, i) => (l.bounds.left.asDouble, i)})
+  //     val lefts = page.zipWithIndex
+  //       .map({case (l, i) => (l.bounds.left, i)})
 
-      vtrace.trace(message(s"Most frequent left-edge text alignment"))
-      val leftsAndFreqs = getMostFrequentValuesAndFreqs(vtrace)(lefts.map(_._1), leftBinHistResolution)
+  //     vtrace.trace(message(s"Most frequent left-edge text alignment"))
+  //     val leftsAndFreqs = getMostFrequentValuesAndFreqs(vtrace)(lefts.map(_._1), leftBinHistResolution)
 
-      val commonLeftEdges = leftsAndFreqs.takeWhile(_._2 > 1.0)
-
-
-      def valueIsWithinHistBin(bin: Double, res: Double)(value: Double): Boolean = {
-        bin-res <= value && value <= bin+res
-      }
+  //     val commonLeftEdges = leftsAndFreqs.takeWhile(_._2 > 1.0)
 
 
-      def minAtomId(c: Component): Int = {
-        c.atoms.map(_.id.unwrap).min
-      }
-
-      // var lineGrouping = Grid.widthAligned(
-      //   (4, AlignLeft),  // join indicator
-      //   (7, AlignRight), // left
-      //   (7, AlignRight), // height
-      //   (1, AlignRight), // spacing
-      //   (80, AlignLeft)  // text
-      // )
-
-      val sortedBlocks = page
-        .sortBy(minAtomId(_))
-
-      // vtrace.ifTrace({
-      //   sortedBlocks.headOption.foreach { line =>
-      //     lineGrouping = lineGrouping.addRow(
-      //       "+++",
-      //       line.left.pp,
-      //       line.height.pp,
-      //       " ",
-      //       line.getTextReflow.map(_.toText.box).getOrElse("?")
-      //     )
-      //   }
-      // })
-
-      val groupedBlocks = sortedBlocks
-        .groupByPairs({ case (line1, line2) =>
+  //     def valueIsWithinHistBin(bin: FloatExact, res: Double)(value: FloatExact): Boolean = {
+  //       bin-res <= value && value <= bin+res
+  //     }
 
 
-          val linesAreClustered = commonLeftEdges.exists({ case (leftBin, _) =>
-            val line1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(line1.left)
-            val line2InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(line2.left)
+  //     def minAtomId(c: Component): Int = {
+  //       c.atoms.map(_.id.unwrap).min
+  //     }
 
-            line1InBin && line2InBin
-          })
+  //     // var lineGrouping = Grid.widthAligned(
+  //     //   (4, AlignLeft),  // join indicator
+  //     //   (7, AlignRight), // left
+  //     //   (7, AlignRight), // height
+  //     //   (1, AlignRight), // spacing
+  //     //   (80, AlignLeft)  // text
+  //     // )
 
-          val h1 = line1.height
-          val h2 = line2.height
+  //     val sortedBlocks = page
+  //       .sortBy(minAtomId(_))
 
-          val similarLineHeights = h2.withinRange(
-            h1.plusOrMinus(3.percent)
-          )
+  //     // vtrace.ifTrace({
+  //     //   sortedBlocks.headOption.foreach { line =>
+  //     //     lineGrouping = lineGrouping.addRow(
+  //     //       "+++",
+  //     //       line.left.pp,
+  //     //       line.height.pp,
+  //     //       " ",
+  //     //       line.getTextReflow.map(_.toText.box).getOrElse("?")
+  //     //     )
+  //     //   }
+  //     // })
 
-          val verticalJump = line2.bounds.bottom - line1.bounds.bottom
-          val largeVerticalJump = verticalJump > line1.bounds.height*2.0
-          // val largeVerticalJump = line2.bounds.bottom.withinRange(
-          //   line1.bounds
-          // )
+  //     val groupedBlocks = sortedBlocks
+  //       .groupByPairs({ case (line1, line2) =>
 
-          val areGrouped = linesAreClustered && similarLineHeights && !largeVerticalJump
 
-          // vtrace.ifTrace({
-          //   lineGrouping = lineGrouping.addRow(
-          //     if (areGrouped) "  |" else "+++",
-          //     line2.left.pp, h2.pp,
-          //     " ",
-          //     line2.getTextReflow.map(_.toText.box).getOrElse("?")
-          //   )
-          // })
+  //         val linesAreClustered = commonLeftEdges.exists({ case (leftBin, _) =>
+  //           val line1InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(line1.left)
+  //           val line2InBin = valueIsWithinHistBin(leftBin, leftBinHistResolution)(line2.left)
 
-          areGrouped
-        })
+  //           line1InBin && line2InBin
+  //         })
 
-      // vtrace.trace({
-      //   "block structure" withInfo lineGrouping.toBox()
-      // })
+  //         val h1 = line1.height
+  //         val h2 = line2.height
 
-      groupedBlocks
-    }
+  //         val similarLineHeights = h2.withinRange(
+  //           h1.plusOrMinus(3.percent)
+  //         )
 
-    vtrace.trace(end("findLeftAlignedBlocksPerPage"))
+  //         val verticalJump = line2.bounds.bottom - line1.bounds.bottom
+  //         val largeVerticalJump = verticalJump > line1.bounds.height*2.0
+  //         // val largeVerticalJump = line2.bounds.bottom.withinRange(
+  //         //   line1.bounds
+  //         // )
 
-    alignedBlocksPerPage
-  }
+  //         val areGrouped = linesAreClustered && similarLineHeights && !largeVerticalJump
+
+  //         // vtrace.ifTrace({
+  //         //   lineGrouping = lineGrouping.addRow(
+  //         //     if (areGrouped) "  |" else "+++",
+  //         //     line2.left.pp, h2.pp,
+  //         //     " ",
+  //         //     line2.getTextReflow.map(_.toText.box).getOrElse("?")
+  //         //   )
+  //         // })
+
+  //         areGrouped
+  //       })
+
+  //     // vtrace.trace({
+  //     //   "block structure" withInfo lineGrouping.toBox()
+  //     // })
+
+  //     groupedBlocks
+  //   }
+
+  //   vtrace.trace(end("findLeftAlignedBlocksPerPage"))
+
+  //   alignedBlocksPerPage
+  // }
 
   def splitBlocksWithLargeVGaps(
     alignedBlocksPerPage: Seq[Seq[Seq[Component]]]
@@ -428,37 +433,37 @@ class DocumentSegmenter(
 
   // }
 
-  def findTextBlocksPerPage(): Seq[RegionComponent] = {
-    vtrace.trace(begin("findTextBlocks"))
+  // def findTextBlocksPerPage(): Seq[RegionComponent] = {
+  //   vtrace.trace(begin("findTextBlocks"))
 
-    val alignedBlocksPerPage = findLeftAlignedBlocksPerPage()
+  //   val alignedBlocksPerPage = findLeftAlignedBlocksPerPage()
 
-    findDocWideModalLineVSpacing(alignedBlocksPerPage)
+  //   findDocWideModalLineVSpacing(alignedBlocksPerPage)
 
-    val finalBlockStructure = splitBlocksWithLargeVGaps(alignedBlocksPerPage)
+  //   val finalBlockStructure = splitBlocksWithLargeVGaps(alignedBlocksPerPage)
 
-    val pages = for {
-      pageBlocks <- finalBlockStructure
-    } yield{
+  //   val pages = for {
+  //     pageBlocks <- finalBlockStructure
+  //   } yield{
 
-      val pageTextBlockCCs = for {
-        textBlock <- pageBlocks
-        (textBlockRegionCC, textBlockTargeetRegion) <- mpageIndex.labelRegion(textBlock, LB.TextBlock)
-      } yield {
-        assert(textBlock.forall(_.hasLabel(LB.VisualLine)))
-        textBlockRegionCC.setChildren(LB.VisualLine, textBlock)
+  //     val pageTextBlockCCs = for {
+  //       textBlock <- pageBlocks
+  //       (textBlockRegionCC, textBlockTargeetRegion) <- mpageIndex.labelRegion(textBlock, LB.TextBlock)
+  //     } yield {
+  //       assert(textBlock.forall(_.hasLabel(LB.VisualLine)))
+  //       textBlockRegionCC.setChildren(LB.VisualLine, textBlock)
 
-        // joinTextblockReflow(textBlockRegion)
-        textBlockRegionCC
-      }
+  //       // joinTextblockReflow(textBlockRegion)
+  //       textBlockRegionCC
+  //     }
 
-      sortPageTextBlocks(pageTextBlockCCs)
-    }
+  //     sortPageTextBlocks(pageTextBlockCCs)
+  //   }
 
 
-    vtrace.trace(end("findTextBlocks"))
-    pages.flatten
-  }
+  //   vtrace.trace(end("findTextBlocks"))
+  //   pages.flatten
+  // }
 
   def sortPageTextBlocks(pageTextBlocks: Seq[Component]): Option[RegionComponent] = {
     // TODO: actually sort these?
@@ -541,37 +546,37 @@ class DocumentSegmenter(
     } yield shortLine
   }
 
-  def gutterDetection(
-    pageId: Int@@PageNum,
-    components: Seq[AtomicComponent]
-  ): Unit = {
-    vtrace.trace(begin("GutterDetection"))
-    vtrace.trace(message(s"page ${pageId}"))
-    // Find most common left Xs
-    // starting w/most frequent left-x (lx0), try to construct the largest whitespace boxes
-    // with right-x=lx0-epsilon, left=?
-    // line-bin coarse segmentation
-    val lefts = components.map(_.left)
-    val hist = histogram(lefts, 0.1d)
-    val freqLefts = hist.getFrequencies
-      .sortBy(_.frequency)
-      .reverse
-      .takeWhile(_.frequency > 2.0)
+  // def gutterDetection(
+  //   pageId: Int@@PageNum,
+  //   components: Seq[AtomicComponent]
+  // ): Unit = {
+  //   vtrace.trace(begin("GutterDetection"))
+  //   vtrace.trace(message(s"page ${pageId}"))
+  //   // Find most common left Xs
+  //   // starting w/most frequent left-x (lx0), try to construct the largest whitespace boxes
+  //   // with right-x=lx0-epsilon, left=?
+  //   // line-bin coarse segmentation
+  //   val lefts = components.map(_.left)
+  //   val hist = histogram(lefts, 0.1d)
+  //   val freqLefts = hist.getFrequencies
+  //     .sortBy(_.frequency)
+  //     .reverse
+  //     .takeWhile(_.frequency > 2.0)
 
-    vtrace.trace(vtraceHistogram(hist))
+  //   vtrace.trace(vtraceHistogram(hist))
 
-    // val epsilon = 0.01d
-    freqLefts.foreach({leftXBin =>
-      // val leftX = leftXBin.value
-      // LTBounds(
-      //   left=leftX-epsilon,
-      //   top=pageMin,
-      //   width=
-      // )
-    })
+  //   // val epsilon = 0.01d
+  //   freqLefts.foreach({leftXBin =>
+  //     // val leftX = leftXBin.value
+  //     // LTBounds(
+  //     //   left=leftX-epsilon,
+  //     //   top=pageMin,
+  //     //   width=
+  //     // )
+  //   })
 
-    vtrace.trace(end("GutterDetection"))
-  }
+  //   vtrace.trace(end("GutterDetection"))
+  // }
 
   // import utils.{Debugging => Dbg}
 
@@ -701,17 +706,17 @@ class DocumentSegmenter(
   }
 
 
-  def lineWidthMatches(line: Component, width: Double): Boolean  = {
+  def lineWidthMatches(line: Component, width: FloatExact): Boolean  = {
     // line.determineNormalTextBounds.width.eqFuzzy(0.5d)(width)
     line.width.eqFuzzy(0.5d)(width)
   }
-  def lineHeightMatches(line: Component, height: Double): Boolean  = {
+  def lineHeightMatches(line: Component, height: FloatExact): Boolean  = {
     // line.determineNormalTextBounds.height.eqFuzzy(0.5d)(height)
     line.height.eqFuzzy(0.5d)(height)
   }
 
   def lineDimensionsMatch(line: Component, hw: Point): Boolean = {
-    lineWidthMatches(line, hw.x.asDouble) && lineHeightMatches(line, hw.y.asDouble)
+    lineWidthMatches(line, hw.x) && lineHeightMatches(line, hw.y)
   }
 
 
@@ -763,7 +768,7 @@ class DocumentSegmenter(
 
     } yield {
 
-      val sameCenterGroups = linesWithFreq.clusterBy((a, b) => a.hasSameLeftEdge()(b))
+      val sameCenterGroups = linesWithFreq.clusterBy((a, b) => a.hasSameLeftEdge(0.01d)(b))
       /// print out a list of components
       // val grouped = sameCenterGroups.map({ group =>
       //   group.map({comp =>
@@ -808,45 +813,45 @@ class DocumentSegmenter(
 
 
 
-  def findMostFrequentLineDimensions():  Unit = {
+  // def findMostFrequentLineDimensions():  Unit = {
 
-    val allPageLines = for {
-      p <- visualLineOnPageComponents; l <- p
-    } yield l
+  //   val allPageLines = for {
+  //     p <- visualLineOnPageComponents; l <- p
+  //   } yield l
 
-    val allDocumentWidths = allPageLines.map(_.bounds.width.asDouble)
+  //   val allDocumentWidths = allPageLines.map(_.bounds.width)
 
-    val topWidths = getMostFrequentValuesAndFreqs(vtrace)(allDocumentWidths, 0.2d).toList
-    val topNWidths = topWidths.takeWhile(_._2 > 1.0)
-    // Common width meaning from largest->smallest:
-    //    left/right justified line width
-    //    paragraph-starting indented line width
-    //    reference width(s), for hanging-indent first line, remaining lines
-    //    other l/r justified blocks (abstract, e.g)
+  //   val topWidths = getMostFrequentValuesAndFreqs(vtrace)(allDocumentWidths, 0.2d).toList
+  //   val topNWidths = topWidths.takeWhile(_._2 > 1.0)
+  //   // Common width meaning from largest->smallest:
+  //   //    left/right justified line width
+  //   //    paragraph-starting indented line width
+  //   //    reference width(s), for hanging-indent first line, remaining lines
+  //   //    other l/r justified blocks (abstract, e.g)
 
-    // println(s"""common widths = ${topNWidths.mkString(", ")}""")
+  //   // println(s"""common widths = ${topNWidths.mkString(", ")}""")
 
-    // bin each page by line widths
-    val commonLineBins = for {
-      (plines, pagenum) <- visualLineOnPageComponents.zipWithIndex
-    } yield {
+  //   // bin each page by line widths
+  //   val commonLineBins = for {
+  //     (plines, pagenum) <- visualLineOnPageComponents.zipWithIndex
+  //   } yield {
 
-      val remainingLines = mutable.ListBuffer[Component](plines:_*)
-      val widthBins = mutable.ArrayBuffer[((Double, Double), Seq[Component])]()
+  //     val remainingLines = mutable.ListBuffer[Component](plines:_*)
+  //     val widthBins = mutable.ArrayBuffer[((FloatExact, Double), Seq[Component])]()
 
-      topNWidths.foreach{ case (width, wfreq) =>
-        val mws = remainingLines.filter(lineWidthMatches(_, width))
-        widthBins.append(((width -> wfreq), mws))
-        remainingLines --= mws
-      }
+  //     topNWidths.foreach{ case (width, wfreq) =>
+  //       val mws = remainingLines.filter(lineWidthMatches(_, width))
+  //       widthBins.append(((width -> wfreq), mws))
+  //       remainingLines --= mws
+  //     }
 
-      LineDimensionBins(PageNum(pagenum), widthBins, remainingLines)
-    }
-    printCommonLineBins(commonLineBins)
-    pageSegAccum = pageSegAccum.copy(
-      lineDimensionBins = commonLineBins
-    )
-  }
+  //     LineDimensionBins(PageNum(pagenum), widthBins, remainingLines)
+  //   }
+  //   printCommonLineBins(commonLineBins)
+  //   pageSegAccum = pageSegAccum.copy(
+  //     lineDimensionBins = commonLineBins
+  //   )
+  // }
 
   def labelAbstract(): Unit = {
     vtrace.trace(begin("LabelAbstract"))
@@ -999,51 +1004,6 @@ class DocumentSegmenter(
     }
   }
 
-
-  // def labelAuthors(): Unit = {
-  //   val fnStream: InputStream = getClass().getClassLoader.getResourceAsStream("first_names.txt")
-  //   val firstNames = scala.io.Source.fromInputStream(fnStream).getLines()
-  //   val lnStream: InputStream = getClass.getClassLoader.getResourceAsStream("last_names.txt")
-  //   val lastNames = scala.io.Source.fromInputStream(lnStream).getLines()
-
-  //   val firstNameSet = firstNames.toSet
-  //   val lastNameSet = lastNames.toSet
-
-  //   val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
-
-  //   val firstLines = lineBioLabels.filter(_.component.chars.length() > 5).take(8)
-
-  //   // FIXME: integrate w/textreflow and reinstate this block
-  //   // for(lineNode <- firstLines) {
-  //   //   val lineText = ComponentRendering.VisualLine.toTextReflow(lineNode.component)
-  //   //   if(!lineText.isEmpty) {
-  //   //     val lines = lineText.get.lines.mkString(" ")
-  //   //     val words = lines.split(" ")
-  //   //     //words.foreach(println)
-  //   //     //TODO: remove weird punctuation and super/subscripts for matching purpose (but keep them for later pattern matching?)
-  //   //     val lowerLines = lines.toLowerCase()
-  //   //     if(!lowerLines.contains("university") && !lowerLines.contains("department")
-  //   //       && !lowerLines.contains("school") && !lowerLines.contains("college") && !lowerLines.contains("center")) {
-  //   //       // first check for word in set of known names
-  //   //       for (word <- words) {
-  //   //         if ((firstNameSet.contains(word) || lastNameSet.contains(word))&& word.length > 1) {
-  //   //           println("found " + word + " in the names corpus")
-  //   //           mpageIndex.addBioLabels(LB.Author, lineNode)
-  //   //           println("labeling " + lines + " as author ")
-  //   //         }
-  //   //       }
-  //   //     }
-  //   //     // todo: use pattern matching to look for things like initials, etc. (figure how why this isn't working)
-  //   //     val initial = """[A-Z]+\.+\s""".r
-  //   //     if((initial findAllIn lines).length > 0) {
-  //   //       println("found a possible initial in line " + lines)
-  //   //       mpageIndex.addBioLabels(LB.Author, lineNode)
-  //   //       println("labeling " + lines + " as author ")
-  //   //     }
-  //   //   }
-  //   // }
-  //   // println()
-  // }
 
 
 

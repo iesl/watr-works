@@ -82,5 +82,5 @@ case class LabelWidgetConfig(
 
 trait LabelerBuilder {
   def createLabeler(userId: Int@@UserID): LabelWidgetConfig
-  def targetLabels(): Map[Label, Color]
+  def targetLabels(): Seq[(Label, Color)]
 }

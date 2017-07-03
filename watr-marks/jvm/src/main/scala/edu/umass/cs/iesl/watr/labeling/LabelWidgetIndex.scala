@@ -22,6 +22,8 @@ import utils.GraphPaper
 import utils.Colors
 import LabelWidgetTransforms._
 import textreflow.TextReflowJsonCodecs._
+import utils.ExactFloats._
+
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
 // Only valid for TextReflow that occupy a single Bbox (e.g., VisualLine)

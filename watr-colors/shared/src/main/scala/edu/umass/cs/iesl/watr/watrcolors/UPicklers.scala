@@ -6,6 +6,7 @@ import utils._
 import labeling._
 import watrmarks._
 import textreflow._
+import utils.ExactFloats._
 
 object TypeTagPicklers {
   import upickle.default._, Aliases._

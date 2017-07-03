@@ -12,20 +12,28 @@ import heuristics.AuthorNameHeuristics._
 import heuristics.AffiliationsHeuristics._
 import heuristics.Utils._
 import textreflow.data._
+import corpora.filesys._
+import ammonite.{ops => fs}, fs._
 
 import scala.collection.mutable.ListBuffer
-
 
 class SampleDbCorpus(dbName: String) {
   val textReflowDBTables = new CorpusAccessDBTables
 
   lazy val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = dbName, dbuser = "watrworker", dbpass = "watrpasswd")
   lazy val docStore: DocumentZoningApi = textReflowDB.docStore
+  lazy val corpus = Corpus(pwd / "corpus-test")
+
 
   def authorNameSegmentation(targetDocumentStableId: String, targetLabel: Label) = {
 
     val outputFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/author_segmentation.txt"
-    val outputFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFileName)))
+    // lazy val outputFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFileName)))
+    def write(s: String): Unit = {
+      // outputFileWriter.write(s)
+      println(s)
+    }
+
     for {
       docStableId <- docStore.getDocuments(n = 1) if targetDocumentStableId.equals("") || docStableId.asInstanceOf[String].equals(targetDocumentStableId)
       docId <- docStore.getDocument(stableId = docStableId)
@@ -34,18 +42,18 @@ class SampleDbCorpus(dbName: String) {
       targetRegion <- docStore.getZone(zoneId = zoneId).regions
     } {
       println("Document: \t\t\t\t\t" + docStableId)
-      outputFileWriter.write("Document: \t\t\t\t\t" + docStableId + "\n")
+      write("Document: \t\t\t\t\t" + docStableId + "\n")
       val targetRegionTextReflow = docStore.getTextReflowForTargetRegion(regionId = targetRegion.id)
       if (targetRegionTextReflow.isDefined) {
-        outputFileWriter.write("Text Reflow: \t\t\t\t" + targetRegionTextReflow.get.toText() + "\n")
+        write("Text Reflow: \t\t\t\t" + targetRegionTextReflow.get.toText() + "\n")
         val tokenizedNames = tokenizeTextReflow(targetRegionTextReflow.get)
         if (tokenizedNames.nonEmpty) {
-          outputFileWriter.write("Tokenized: \t\t\t\t\t" + tokenizedNames + "\n")
+          write("Tokenized: \t\t\t\t\t" + tokenizedNames + "\n")
           val separateAuthorNamesByText = getSeparateAuthorNamesByText(tokenizedNames)
           if (separateAuthorNamesByText.nonEmpty) {
-            outputFileWriter.write("Text Separated: \t\t\t" + separateAuthorNamesByText + "\n")
+            write("Text Separated: \t\t\t" + separateAuthorNamesByText + "\n")
             val separateAuthorNamesByGeometry = getSeparateComponentsByGeometry(separateAuthorNamesByText, targetRegionTextReflow.get)
-            outputFileWriter.write("Geometrically Separated: \t" + separateAuthorNamesByGeometry + "\n")
+            write("Geometrically Separated: \t" + separateAuthorNamesByGeometry + "\n")
             val separateAuthorNameComponents = separateAuthorNamesByGeometry.map {
               authorName => {
                 getSeparateAuthorNameComponents(authorName)
@@ -53,15 +61,15 @@ class SampleDbCorpus(dbName: String) {
             }
             var nameIndex = 0
             while (nameIndex < separateAuthorNamesByGeometry.length) {
-              outputFileWriter.write("Bounding Box info: \t\t\t" + getBoundingBoxesForComponents(separateAuthorNameComponents(nameIndex), separateAuthorNamesByGeometry(nameIndex), textReflow = targetRegionTextReflow.get).toString + "\n")
+              write("Bounding Box info: \t\t\t" + getBoundingBoxesForComponents(separateAuthorNameComponents(nameIndex), separateAuthorNamesByGeometry(nameIndex), textReflow = targetRegionTextReflow.get).toString + "\n")
               nameIndex += 1
             }
           }
         }
       }
-      outputFileWriter.write("------------------------------------------------------------------------------------------------\n")
+      write("------------------------------------------------------------------------------------------------\n")
     }
-    outputFileWriter.close()
+    // outputFileWriter.close()
   }
 
   def exampleFunction1(targetDocumentStableId: String, targetLabel: Label) = {
@@ -170,21 +178,7 @@ class SampleDbCorpus(dbName: String) {
   }
 }
 
-object TextReflowDBExamples extends App {
-  def argsToMap(args: Array[String]): Map[String, List[String]] = {
-    import scala.collection.mutable.{ListMap => LMap}
-    val argmap = LMap[String, List[String]]()
-    args.foldLeft(argmap)({(m, k:String) => {
-      val ss:Seq[Char] = k
-      ss match {
-        case Seq('-', '-', opt @ _*) => m.put(opt.toString, List[String]())
-        case Seq('-', opt @ _*) => m.put(opt.toString, List[String]())
-        case opt @ _ => m.put(m.head._1, m.head._2 ++ List[String](opt.toString))
-      }
-      m
-    }})
-    Map[String, List[String]](argmap.toList.reverse: _*)
-  }
+object TextReflowDBExamples extends App with utils.AppMainBasics {
 
   val argMap = argsToMap(args)
   println(argMap)
@@ -197,7 +191,7 @@ object TextReflowDBExamples extends App {
     .getOrElse(stableId)
 
   val dbCorpus = new SampleDbCorpus(dbname)
-  //    dbCorpus.authorNameSegmentation("", LB.Authors)
+  // dbCorpus.authorNameSegmentationVariation(entry, LB.Authors)
   //    dbCorpus.exampleFunction1("0101047.pdf.d", LB.Authors)
   // dbCorpus.exampleFunction2(Seq("0101029.pdf.d"), LB.Affiliation)
 

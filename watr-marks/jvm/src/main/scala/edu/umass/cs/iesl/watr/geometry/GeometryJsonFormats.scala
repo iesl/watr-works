@@ -6,6 +6,7 @@ import scalaz.Tag
 
 import TypeTags._
 
+import utils.ExactFloats._
 
 trait TypeTagFormats {
   import play.api.libs.json

@@ -4,7 +4,8 @@ package images
 import com.sksamuel.scrimage._
 import geometry._
 
-import geometry.syntax._
+// import geometry.syntax._
+import utils.ExactFloats._
 
 trait ImageManipulation {
 

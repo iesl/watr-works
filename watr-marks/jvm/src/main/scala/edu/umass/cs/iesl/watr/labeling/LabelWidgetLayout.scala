@@ -10,6 +10,7 @@ import matryoshka.patterns.EnvT
 
 import textreflow.data._
 import utils.{CompassDirection => CDir}
+import utils.ExactFloats._
 import geometry._
 import geometry.syntax._
 import LabelWidgetF._
@@ -24,7 +25,6 @@ object LabelWidgetLayoutHelpers {
       c.tail.toStream.map(cofreeLWAttrToTree(_))
     )
   }
-
 
 
   def printTree(pos: Cofree[LabelWidgetF, PosAttr]): TB.Box = {
@@ -121,7 +121,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
               LTBounds.empty,
               attrs.map(_._2), {
                 (totalChildsBbox, childNode) =>
-                totalChildsBbox.toPoint(CDir.NE).copy(y=TypeTags.FloatRep(0))
+                totalChildsBbox.toPoint(CDir.NE).copy(y=0.toFloatExact)
               })
 
           val childMaxZ = childMaxZIndex(attrs.map(_._2))
@@ -136,7 +136,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
               LTBounds.empty,
               attrs.map(_._2), {
                 (totalChildsBbox, childNode)=>
-                totalChildsBbox.toPoint(CDir.SW).copy(x=TypeTags.FloatRep(0))
+                totalChildsBbox.toPoint(CDir.SW).copy(x=0.toFloatExact)
               })
 
           val childMaxZ = childMaxZIndex(attrs.map(_._2))
@@ -181,7 +181,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
               })
 
           val selfStrictBounds = LTBounds(
-            0.toFloatRep, 0.toFloatRep,
+            0.toFloatExact, 0.toFloatExact,
             childBbox.width + padding.left + padding.right,
             childBbox.height + padding.top + padding.bottom
           )
@@ -283,7 +283,6 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
       lwidget.cata(attributePara(positionAttrs))
 
 
-    import LabelWidgetLayoutHelpers._
     // println("relative")
     // println(printTree(relativePositioned))
 

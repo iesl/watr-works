@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import watrmarks.Label
-import utils.Histogram, Histogram._
+// import utils.Histogram, Histogram._
 import textboxing.{TextBoxing => TB}, TB._
 import watrmarks.{StandardLabels => LB}
 
@@ -10,66 +10,76 @@ import utils.SlicingAndDicing._
 import utils.{CompassDirection => Compass}
 import tracing.VisualTracer, VisualTracer._
 import scala.collection.mutable
-import utils.EnrichNumerics._
+// import utils.EnrichNumerics._
 import TextReflowConversion._
 // import TypeTags._
 
 import geometry._
 
 import geometry.syntax._
+import utils.ExactFloats._
 
 object ComponentOperations {
   import textreflow.data._
   import utils.EnglishDictionary
 
+  import utils.ScalazTreeImplicits._
+  import scalaz._, Scalaz._
 
-  def vtraceHistogram(hist: Histogram): TraceLog = {
-    vtraceHistogram(
-      hist.getFrequencies
-        .sortBy(_.frequency)
-        .reverse
-        .takeWhile(_.frequency > 0)
-        .map{b=>(b.value, b.frequency)},
-      hist.getStartingResolution, hist.getComputedResolution
-    )
-  }
-
-  def vtraceHistogram(vfs: Seq[(Double, Double)], resStart: Double, resComputed: Double): TraceLog = {
-    message(
-      vjoin()(
-        s"histogram: resolution(in)=${resStart.pp}, resolution(computed):${resComputed.pp}", indent(2)(
-          vjoin(AlignLeft)(
-            "Val:",
-            "Freq:"
-          ) + hjoins(sep=" ")(
-            vfs.map({case d =>
-              vjoin(AlignRight)(
-                d._1.pp,
-                d._2.pp
-              )
-            })
-          ))
-      )
-    )
-  }
-
-  def getMostFrequentValuesAndFreqs(vtrace: VisualTracer)(in: Seq[Double], resolution: Double): Seq[(Double, Double)] = {
-    val hist = histogram(in, resolution)
-
-    val res = hist.getFrequencies
-      .sortBy(_.frequency)
-      .reverse
-      .takeWhile(_.frequency > 0)
-      .map{b=> (b.value, b.frequency)}
-
-    vtrace.trace(vtraceHistogram(hist))
-    res
+  def renderRoleTree(c: Component): TB.Box = {
+    c.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
+      .map(_.toString())
+      .drawBox
   }
 
 
-  def getMostFrequentValues(vtrace: VisualTracer)(in: Seq[Double], resolution: Double): Seq[Double] = {
-    getMostFrequentValuesAndFreqs(vtrace)(in, resolution).map(_._1)
-  }
+  // def vtraceHistogram(hist: Histogram): TraceLog = {
+  //   vtraceHistogram(
+  //     hist.getFrequencies
+  //       .sortBy(_.frequency)
+  //       .reverse
+  //       .takeWhile(_.frequency > 0)
+  //       .map{b=>(b.value, b.frequency)},
+  //     hist.getStartingResolution, hist.getComputedResolution
+  //   )
+  // }
+
+  // def vtraceHistogram(vfs: Seq[(FloatExact, Double)], resStart: Double, resComputed: Double): TraceLog = {
+  //   message(
+  //     vjoin()(
+  //       s"histogram: resolution(in)=${resStart.pp}, resolution(computed):${resComputed.pp}", indent(2)(
+  //         vjoin(AlignLeft)(
+  //           "Val:",
+  //           "Freq:"
+  //         ) + hjoins(sep=" ")(
+  //           vfs.map({case d =>
+  //             vjoin(AlignRight)(
+  //               d._1.pp,
+  //               d._2.pp
+  //             )
+  //           })
+  //         ))
+  //     )
+  //   )
+  // }
+
+  // def getMostFrequentValuesAndFreqs(vtrace: VisualTracer)(in: Seq[FloatExact], resolution: Double): Seq[(FloatExact, Double)] = {
+  //   val hist = histogram(in, resolution)
+
+  //   val res = hist.getFrequencies
+  //     .sortBy(_.frequency)
+  //     .reverse
+  //     .takeWhile(_.frequency > 0)
+  //     .map{b=> (b.value, b.frequency)}
+
+  //   // vtrace.trace(vtraceHistogram(hist))
+  //   res
+  // }
+
+
+  // def getMostFrequentValues(vtrace: VisualTracer)(in: Seq[FloatExact], resolution: Double): Seq[FloatExact] = {
+  //   getMostFrequentValuesAndFreqs(vtrace)(in, resolution).map(_._1)
+  // }
 
   def joinTextLines(line1: TextReflow, line2: TextReflow, force: Boolean=false)(dict: EnglishDictionary): TextReflow = {
 
@@ -121,26 +131,26 @@ object ComponentOperations {
   def centerX(cb: CharAtom) = cb.bbox.toCenterPoint.x
   def centerY(cb: CharAtom) = cb.bbox.toCenterPoint.y
 
-  def spaceWidths(cs: Seq[CharAtom]): Seq[Double] = {
+  def spaceWidths(cs: Seq[CharAtom]): Seq[FloatExact] = {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right).asDouble()
-      case _  => 0d
+      case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
+      case _  => 0.toFloatExact()
     })
 
-    dists :+ 0d
+    dists :+ 0d.toFloatExact()
   }
 
-  def pairwiseSpaceWidths(cs: Seq[Component]): Seq[Double] = {
+  def pairwiseSpaceWidths(cs: Seq[Component]): Seq[FloatExact] = {
     val cpairs = cs.sliding(2).toList
 
     val dists = cpairs.map({
-      case Seq(c1, c2)  => (c2.bounds.left - c1.bounds.right).asDouble
-      case _  => 0d
+      case Seq(c1, c2)  => (c2.bounds.left - c1.bounds.right)
+      case _  => 0d.toFloatExact()
     })
 
-    dists :+ 0d
+    dists :+ 0d.toFloatExact()
   }
 
 
@@ -168,10 +178,10 @@ object ComponentOperations {
     def mpageIndex = theComponent.mpageIndex
     def vtrace = theComponent.mpageIndex.vtrace
 
-    def left: Double  = theComponent.bounds.left.asDouble
-    def top: Double  = theComponent.bounds.top.asDouble
-    def height: Double  = theComponent.bounds.height.asDouble
-    def width: Double  = theComponent.bounds.width.asDouble
+    def left: FloatExact  = theComponent.bounds.left
+    def top: FloatExact  = theComponent.bounds.top
+    def height: FloatExact  = theComponent.bounds.height
+    def width: FloatExact  = theComponent.bounds.width
 
     def hasLabel(l: Label): Boolean = theComponent.getLabels.contains(l)
 
@@ -180,12 +190,12 @@ object ComponentOperations {
     }
 
 
-    def vdist(other: Component): Double = {
-      (other.bounds.bottom - theComponent.bounds.bottom).asDouble
+    def vdist(other: Component): FloatExact = {
+      (other.bounds.bottom - theComponent.bounds.bottom)
     }
 
     def columnContains(other: Component): Boolean = {
-      val slopFactor = 4.5d // XXX test this magic number?
+      val slopFactor = 4.5d // TODO test this magic number?
 
       val left = theComponent.bounds.toWesternPoint.x
       val right = theComponent.bounds.toEasternPoint.x
@@ -252,70 +262,74 @@ object ComponentOperations {
     }
 
 
-
-
     def isBelow(other: Component) = theComponent.bounds.top > other.bounds.top
     def isAbove(other: Component) = theComponent.bounds.top < other.bounds.top
 
-    def hasSameVCenterPoint(tolerance: Double=0.1)(other: Component) =
+    def hasSameVCenterPoint(tolerance: Double)(other: Component) =
       theComponent.bounds.toCenterPoint.x.eqFuzzy(tolerance)(other.bounds.toCenterPoint.x)
 
-    def hasSameLeftEdge(tolerance: Double=0.3)(other: Component) =
-      theComponent.bounds.toPoint(Compass.W).x.asDouble.eqFuzzy(tolerance)(other.bounds.toPoint(Compass.W).x.asDouble)
+    def hasSameLeftEdge(tolerance: Double)(other: Component) =
+      theComponent.bounds.toPoint(Compass.W).x.eqFuzzy(tolerance)(other.bounds.toPoint(Compass.W).x)
 
-    def isEqualWidth(tolerance: Double=0.1)(other: Component) =
+    def isEqualWidth(tolerance: Double)(other: Component) =
       theComponent.bounds.width.eqFuzzy(tolerance)(other.bounds.width)
 
 
     def atoms = theComponent.queryInside(LB.PageAtom)
 
-    def findCommonToplines(): Seq[Double] = {
+    def orderPageAtomsByFrequency(orderf: (Component) => FloatExact): Seq[(FloatExact, Int)] = {
+      val countedAtoms: Map[FloatExact, Int] =
+        atoms
+          .groupBy(orderf(_))
+          .mapValues { _.length }
+
+      countedAtoms.toList
+        .sortBy(_._2).reverse
+    }
+
+    def getPageAtomTopsByFrequence(): Option[FloatExact] = {
+      orderPageAtomsByFrequency(_.bounds.top)
+        .headOption.map(_._1)
+    }
+
+    def findCommonToplines(): Seq[FloatExact] = {
       vtrace.trace(message("findCommonToplines"))
-      getMostFrequentValues(vtrace)(
-        atoms.map({c => c.bounds.top.asDouble}),
-        0.01d
-      )
+      orderPageAtomsByFrequency(_.bounds.top)
+        .map(_._1)
     }
 
-    def findCommonBaselines(): Seq[Double] = {
+    def findCommonBaselines(): Seq[FloatExact] = {
       vtrace.trace(message("findCommonBaselines"))
-      getMostFrequentValues(vtrace)(
-        atoms.map({c => c.bounds.bottom.asDouble}),
-        0.01d
-      )
+      orderPageAtomsByFrequency(_.bounds.bottom)
+        .map(_._1)
     }
 
-    def determineSpacingsHistResolution =  0.3d
+
 
     // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
-    def determineSpacings(): Seq[Double] = {
+    // def determineSpacings(): Seq[Double] = {
+    def determineSpacings(): Seq[FloatExact] = {
+
       val dists = pairwiseSpaceWidths(atoms)
-      val resolution = determineSpacingsHistResolution
+      // val resolution = determineSpacingsHistResolution
 
-      val hist = Histogram.histogram(dists, resolution)
+      // val hist = Histogram.histogram(dists, resolution)
+      val mostFrequentDists = dists.groupBy(x => x)
+        .mapValues { _.length }
+        .toList
+        .sortBy(_._2).reverse
 
-      val spaceDists = hist.getFrequencies
-        .sortBy(_.frequency)
-        .reverse
-        // .takeWhile(_.frequency > 0d)
 
       // vtrace.trace("determine line/char spacings" withTrace vtraceHistogram(hist))
 
-      spaceDists.map(_.value)
+      mostFrequentDists.map(_._1)
     }
 
 
-    import utils.ScalazTreeImplicits._
-    import scalaz._, Scalaz._
-
-    def renderRoleTree(c: Component): TB.Box = {
-      c.toRoleTree(LB.VisualLine, LB.TextSpan, LB.PageAtom)
-        .map(_.toString())
-        .drawBox
-    }
 
     def labelSuperAndSubscripts(): Unit = {
       vtrace.trace(begin("labelSuperAndSubscripts()"))
+      // println(s"pageAtoms = ${atoms}")
 
 
       // val tops = findCommonToplines()
@@ -346,14 +360,16 @@ object ComponentOperations {
         val supOrSubList = textSpan.atoms.map { atom =>
           // val cctr = atom.bounds.toCenterPoint
           // val cbottom = atom.bounds.bottom
-          val supSubTolerance = theComponent.bounds.height / 20.0
+          // val supSubTolerance = theComponent.bounds.height / 20.0
 
-          lazy val atomBottom =  atom.bounds.bottom.asDouble
-          vtrace.trace(s" sup/sub, atom.bottom=${atomBottom}, modalBottom=${modalBottom} tol:${supSubTolerance.pp}" withInfo atom.bounds.prettyPrint)
+          lazy val atomBottom =  atom.bounds.bottom
 
-          if (atom.bounds.bottom.asDouble.eqFuzzy(0.01d)(modalBottom)) {
+          // vtrace.trace(s" sup/sub, atom.bottom=${atomBottom}, modalBottom=${modalBottom} tol:${supSubTolerance.pp}" withInfo atom.bounds.prettyPrint)
+          if (atomBottom.eqFuzzy(0.07d)(modalBottom)) {
             LB.CenterScript
-          } else if (atom.bounds.bottom < modalBottom) {
+          } else if (atomBottom < modalBottom) {
+            // println(s" sup ${atom} ")
+            // println(s"    atom.bottom=${atomBottom}, modalBottom=${modalBottom} tol:${supSubTolerance.pp}" withInfo atom.bounds.prettyPrint)
             LB.Sup
           } else {
             LB.Sub
@@ -369,7 +385,7 @@ object ComponentOperations {
             val shouldGroup = supOrSubList(pairIndex) == supOrSubList(pairIndex+1)
             // vtrace.trace(message(s"groupIf ${supOrSubList.toList(pairIndex)} == ${supOrSubList.toList(pairIndex+1)}"))
             shouldGroup
-          }, {(region, regionIndex) =>
+          }, {(region, regionIndex, regionCount) =>
             // vtrace.trace(message(s"groupIf (true) r:${region}, i:${regionIndex}"))
             region.addLabel(labelSpans(regionIndex))
           })
@@ -383,27 +399,30 @@ object ComponentOperations {
       vtrace.trace(end("labelSuperAndSubscripts()"))
     }
 
-    def guessWordbreakWhitespaceThreshold(): Double = {
+    def guessWordbreakWhitespaceThreshold(): FloatExact = {
       val charDists = determineSpacings()
 
-      val charWidths = theComponent.atoms.map(_.bounds.width.asDouble)
+      val charWidths = theComponent.atoms.map(_.bounds.width)
       val widestChar = charWidths.max
 
       // Don't  accept a space wider than (some magic number)*the widest char?
-      val saneCharDists = charDists.filter(_ < widestChar*2)
-      val resolution = determineSpacingsHistResolution
+      val saneCharDists = charDists
+        .filter(_ < widestChar*2 )
+        .filter(_ == 0)
+
+      def resolution =  0.3d
 
       // Try to divide the list of char dists into 2 groups, small gap and large gap:
 
       // See if we can divide our histogram values by some value > 2*histResolution
       val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
-        math.abs(c2 - c1) < resolution*1.1
+        math.abs((c2 - c1).asDouble()) < resolution
       })
 
 
       val threshold = if (saneCharDists.length == 1) {
         // If there is only 1 distance, the line is only 1 word (no word breaks)
-        1.0d
+        1.0d.toFloatExact()
       } else if (distGroups.length >= 2) {
         // vtrace.trace(message(""))
         val d1 = distGroups(0).last
@@ -501,8 +520,11 @@ object ComponentOperations {
 
         willGroup
 
-      }, { (newRegion, regionIndex) =>
+      }, { (newRegion, regionIndex, regionCount) =>
         newRegion.addLabel(LB.Token)
+        if (regionCount > 1 && regionIndex < regionCount-1) {
+          newRegion.addLabel(LB.WhitespaceAfter)
+        }
 
         vtrace.trace { "appending token" withInfo s"${newRegion.chars}, index ${regionIndex} " }
 
@@ -538,21 +560,15 @@ object ComponentOperations {
         .filter(_.hasAnyLabel(LB.CenterScript, LB.Sub, LB.Sup))
         .foreach{ _.groupTokens() }
 
-      theComponent.addLabel(LB.Tokenized)
-
       // Now figure out how the super/sub/normal text spans should be joined together token-wise
 
       theComponent.ungroupChildren(LB.TextSpan)({c =>
-        if (c.hasLabel(LB.Sup) || c.hasLabel(LB.Sub)) {
-          c.addLabel(LB.Token)
-        }
         c.hasLabel(LB.CenterScript)
       })
 
-      // if (__debug) {
+
       //   println("after ungroup")
       //   println(renderRoleTree(theComponent))
-      // }
 
       // TODO don't compute this multiple times
       val splitValue = guessWordbreakWhitespaceThreshold()
@@ -562,7 +578,10 @@ object ComponentOperations {
           val pairwiseDist = c2.bounds.left - c1.bounds.right
 
           pairwiseDist < splitValue
-        },{(region, regionIndex) =>
+        },{(region, regionIndex, regionCount) =>
+          if (regionCount > 1 && regionIndex < regionCount) {
+            region.addLabel(LB.WhitespaceAfter)
+          }
           region.addLabel(LB.Token)
         }
       )
@@ -580,29 +599,26 @@ object ComponentOperations {
     }
 
 
-    def determineNormalTextBounds: LTBounds = {
-      val mfHeights = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.height.asDouble), 0.1d)
-      val mfTops = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.top.asDouble), 0.1d)
+  //   def determineNormalTextBounds: LTBounds = {
+  //     val mfHeights = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.height), 0.1d)
+  //     val mfTops = getMostFrequentValues(vtrace)(theComponent.atoms.map(_.bounds.top), 0.1d)
 
 
-      val mfHeight= mfHeights.headOption.getOrElse(0d)
-      val mfTop = mfTops.headOption.getOrElse(0d)
+  //     val mfHeight= mfHeights.headOption.getOrElse(0.toFloatExact)
+  //     val mfTop = mfTops.headOption.getOrElse(0.toFloatExact)
 
-      theComponent.atoms
-        .map({ c =>
-          val cb = c.bounds
-          LTBounds.Doubles(
-            left=cb.left.asDouble, top=mfTop,
-            width=cb.width.asDouble, height=mfHeight
-          )
-        })
-        .foldLeft(theComponent.atoms.head.bounds)( { case (b1, b2) =>
-          b1 union b2
-        })
-    }
+  //     theComponent.atoms
+  //       .map({ c =>
+  //         val cb = c.bounds
+  //         LTBounds(
+  //           left=cb.left, top=mfTop,
+  //           width=cb.width, height=mfHeight
+  //         )
+  //       })
+  //       .foldLeft(theComponent.atoms.head.bounds)( { case (b1, b2) =>
+  //         b1 union b2
+  //       })
+  //   }
 
-    // def getTextReflow(): Option[TextReflow]= {
-    //   theComponent.mpageIndex.getTextReflowForComponent(theComponent.id)
-    // }
   }
 }

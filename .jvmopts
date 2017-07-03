@@ -1,5 +1,5 @@
 -XX:MaxMetaspaceSize=1g
--XX:MaxDirectMemorySize=8g
+-XX:MaxDirectMemorySize=2g
 -XX:ReservedCodeCacheSize=300m
 -Xms1g
 -Xmx4g

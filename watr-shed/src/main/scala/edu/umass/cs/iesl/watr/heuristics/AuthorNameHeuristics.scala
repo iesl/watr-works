@@ -1,13 +1,13 @@
 package edu.umass.cs.iesl.watr
 package heuristics
 
-import TypeTags._
 import geometry.LTBounds
 import Constants._
 import Utils._
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.Breaks._
+import utils.ExactFloats._
 
 object AuthorNameHeuristics {
 

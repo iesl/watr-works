@@ -8,6 +8,7 @@ import scala.collection.mutable
 
 import geometry._
 import geometry.syntax._
+import utils.ExactFloats._
 
 
 trait SpatialIndexable[T] {
@@ -94,8 +95,8 @@ class SpatialIndex[T: SpatialIndexable](
     val searchRect = LTBounds(
       left   = ctr.x - radius,
       top    = ctr.y - radius,
-      width  = (radius*2.0).toFloatRep(),
-      height = (radius*2.0).toFloatRep()
+      width  = (radius*2.0).toFloatExact(),
+      height = (radius*2.0).toFloatExact()
     )
 
     queryForIntersects(searchRect)

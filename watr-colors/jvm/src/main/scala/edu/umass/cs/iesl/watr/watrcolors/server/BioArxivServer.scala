@@ -11,6 +11,7 @@ import corpora._
 import corpora.filesys._
 import workflow._
 
+import annotate._
 import utils.{Debugging => Dbg}
 import scala.concurrent.ExecutionContext
 
@@ -58,7 +59,7 @@ class BioArxivServer(
 
               val widget1 = LabelWidgetTransforms.addAllZoneIndicators(
                 widget0,
-                labelColors,
+                labelColors.toMap,
                 docStore
               )
 
@@ -77,7 +78,7 @@ class BioArxivServer(
             labelColors.headOption.map(_._1),
             Seq(),
             lwIndex.labelerIdentifier,
-            labelColors
+            labelColors.toMap
           )
           Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
         } getOrElse {
@@ -98,9 +99,8 @@ class BioArxivServer(
 
         val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
           labelerIdentifier => {
-            // val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
             val LabelWidgetConfig(_, widget0) = labelerBuilder.createLabeler(user.id)
-            val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelColors, docStore)
+            val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelColors.toMap, docStore)
             (widget1, labelerIdentifier)
           }
         val lwIndex = LabelWidgetIndex.init(
@@ -112,7 +112,7 @@ class BioArxivServer(
           labelColors.headOption.map(_._1),
           Seq(),
           lwIndex.labelerIdentifier,
-          labelColors
+          labelColors.toMap
         )
         Future { UIResponse(respState, Some(lwIndex.getAllMods())) }
 

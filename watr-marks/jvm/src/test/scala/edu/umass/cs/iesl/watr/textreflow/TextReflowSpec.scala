@@ -9,7 +9,7 @@ import TextReflowF._
 import TypeTags._
 import corpora._
 import data._
-// import geometry.zones.syntax._
+import textboxing.{TextBoxing => TB}, TB._
 
 class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   def createEmptyDocumentZoningApi(): DocumentZoningApi = new MemDocZoningApi
@@ -48,31 +48,101 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
     }
   }
 
-  it should "clip to target regions" in {
+
+  it should "clip single-line reflow to target region" in {
     val pageLines = docStore.getPageVisualLines(PageID(1))
+
+    def createDebugGrid() = Grid.widthAligned(
+      (2, AlignLeft),
+      (5, AlignLeft),
+      (10, AlignLeft),
+      (20, AlignLeft)
+    )
+    var dbgGrid = createDebugGrid()
 
     for {
       (line, i)       <- pageLines.zipWithIndex
       lineReflow       = docStore.getTextReflowForZone(line.id).get
       lineText         = lineReflow.toText
       lineTR           = lineReflow.targetRegion
+      _                = annotateAndPrint(lineReflow)
+
+      _  <-  Seq[Unit]({
+        dbgGrid = dbgGrid.addRow(">".box, lineText.box, s"".box, s"".box)
+      })
+
       x               <- 0 until 3
       y               <- 0 until 3
-      height          <- 1 to 2
-      width           <- 1 to 2
+      height          <- 1 to 3
+      width           <- 1 to 3
     } {
-      annotateAndPrint(lineReflow)
-      // println(s">${lineText} in ${lineTR.bbox}")
       val bounds = getRegionBounds(x, y, width, height)
-
       val res = lineReflow.clipToBoundingRegion(bounds)
-      // println(s"  clip to $bounds")
-      res.foreach { case (resReflow, range) =>
-        val resText = resReflow.toText()
-        println(s"   => ${resText}  @${range} query:${bounds}")
+      if (res.nonEmpty) {
+
+
+        res.foreach { case (resReflow, range) =>
+          val resText = resReflow.toText()
+          dbgGrid = dbgGrid.addRow(
+            " ",
+            resText,
+            s"@${range}",
+            s"query:${bounds}"
+          )
+        }
+
       }
     }
+    println(dbgGrid.toBox())
   }
+
+  it should "clip mulit-line reflows to target regions" in {
+    val pageLines = docStore.getPageVisualLines(PageID(1))
+    val page1Lines = for {
+      line            <- pageLines
+      lineReflow      <- docStore.getTextReflowForZone(line.id)
+    } yield lineReflow
+
+    val joinedTextReflow = joins("")(page1Lines)
+
+    var dbgGrid = Grid.widthAligned(
+      (2, AlignLeft),
+      (10, AlignLeft),
+      (20, AlignLeft)
+    )
+
+    for {
+      x               <- 0 to 3
+      y               <- 0 to 3
+      height          <- 1 to 3
+      width           <- 1 to 3
+    } {
+      val bounds = getRegionBounds(x, y, width, height)
+      val res = joinedTextReflow.clipToBoundingRegion(bounds)
+
+      dbgGrid = dbgGrid.addRow(">", s"query:${bounds}")
+
+      if (res.nonEmpty) {
+        res.foreach { case (resReflow, range) =>
+          val resText = resReflow.toText()
+          dbgGrid = dbgGrid.addRow(
+            "",
+            resText,
+            s"@${range}".box
+          )
+        }
+      } else {
+        dbgGrid = dbgGrid.addRow(
+          "<empty>", "", ""
+        )
+      }
+    }
+    println(dbgGrid.toBox())
+  }
+
+
+
+
   behavior of "modifying chars"
 
   it should "mod single char" in {
@@ -104,13 +174,13 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
 
   // behavior of "text reflowing"
 
-  // val Eu1_x = stringToTextReflow("Eu_{1 - x}")
-  val _ = """
-scanning{ }of the...
+  //   // val Eu1_x = stringToTextReflow("Eu_{1 - x}")
+  //   val _ = """
+  // scanning{ }of the...
 
-    ﬂ
-    fl
-"""
+  //     ﬂ
+  //     fl
+  // """
 
   // it should "count atoms correctly" in {
   //   Eu1_x.charCount shouldBe 7

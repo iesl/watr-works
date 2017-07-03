@@ -5,11 +5,11 @@ import org.scalatest._
 
 import geometry._
 
-import geometry.syntax._
 import ammonite.{ops => fs}
 import java.net.URL
 import TypeTags._
 import corpora._
+import utils.ExactFloats._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers {
   import DocumentSegmenter._
@@ -120,8 +120,8 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
       maxX-minX,
       maxY-minY
     )
-    segmenter.mpageIndex.dbgFilterPages(pageNum)
-    segmenter.mpageIndex.dbgFilterComponents(pageNum, totalBounds)
+    // segmenter.mpageIndex.dbgFilterPages(pageNum)
+    // segmenter.mpageIndex.dbgFilterComponents(pageNum, totalBounds)
 
     val interestingChars = segmenter.mpageIndex
       .getPageIndex(pageNum)

@@ -8,12 +8,19 @@ import spindex._
 import ComponentOperations._
 import TextReflowConversion.toTextReflow
 import watrmarks.{StandardLabels => LB}
+import TypeTags._
+import textreflow.data._
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
   //   """Page:0 file:///Schauer-1987.pdf""",
   behavior of "text line identification"
   val testExamples = List(
+    TextExample(
+      """Page:0 /10.1101-090498.d-pg_0001.pdf""",
+      """Daniel A. Skelly^{1,3}, Paul M. Magwene1 , Brianna Meeks^{2} , Helen A. Murphy^{2} (0.0, 160.0, 900.0, 50.0)""",
+      """Daniel A. Skelly^{1,3}, Paul M. Magwene1 , Brianna Meeks^{2} , Helen A. Murphy^{2}"""
+    ),
     TextExample(
       """Page:7 /101016jactamat201501032.pdf""",
       """and 10 ^{5} s ^{1}. In general, the three curves exhibit a plateau  (305.52, 172.83, 245.0, 10.0)""",
@@ -147,14 +154,28 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
     println(s"pdfIns = ${pdfIns}")
     // Assume these example regions are all from one page
     val pageNum = example.targetRegions.map(_._2).head
+    val pageId = PageID(pageNum.unwrap+1)
     println(s"testExample pageNum = ${pageNum}")
     val segmenter = createFilteredMultiPageIndex(pdfIns, pageNum, example.targetRegions.map(_._3))
 
 
     // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
-    tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+    // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
-    segmenter.runLineDetermination()
+    segmenter.runLineDeterminationOnPage(pageId, pageNum)
+
+    val docStore = segmenter.docStore
+
+    for {
+      docId <- docStore.getDocument(DocumentID("dummy-id"))
+      _ <- Option[Unit]({ println(s"doc: ${docId}")})
+      pageId <- docStore.getPages(docId)
+      _ <- Option[Unit]({ println(s"page: ${pageId}")})
+      lineZone <- docStore.getPageVisualLines(pageId)
+      reflow <- docStore.getTextReflowForZone(lineZone.id)
+    }  {
+      println(reflow.toFormattedText())
+    }
 
     val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
     val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
@@ -172,12 +193,12 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
     example.expectedOutput.zip(tokenizedLines)
       .foreach({case (expect, actual) =>
         if (!expect.isEmpty && expect == actual) {
-          println0(s"ok> ${actual}")
+          // println0(s"ok> ${actual}")
         } else if (!expect.isEmpty && expect != actual) {
-          println0(s"want> $expect")
-          println0(s"got> ${actual}")
+          // println0(s"want> $expect")
+          // println0(s"got> ${actual}")
         } else  if (expect.isEmpty) {
-          println0(s"got> ${actual}")
+          // println0(s"got> ${actual}")
         }
 
         // if (!expect.isEmpty()) {

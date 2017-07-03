@@ -1,15 +1,47 @@
 package edu.umass.cs.iesl.watr
-
 package heuristics
 
-import edu.umass.cs.iesl.watr.geometry.CharAtom
-import edu.umass.cs.iesl.watr.heuristics.Constants._
-import edu.umass.cs.iesl.watr.heuristics.Utils._
-import edu.umass.cs.iesl.watr.textreflow.data._
-
+import geometry.CharAtom
+import Constants._
+import Utils._
+// import textreflow._
+import textreflow.data._
+import geometry._
+// import geometry.syntax._
+// import TypeTags._
 import scala.collection.mutable.ListBuffer
+// import scalaz.syntax.equal._
+// import scalaz.std.anyVal._
+
+import watrmarks.{StandardLabels => LB}
+
+object GenHeuristics {
+
+  def orderCharAtomsByFrequency(textReflow: TextReflow, orderf: (CharAtom) => FloatExact): Seq[(FloatExact, Int)] = {
+    val countedAtoms: Map[FloatExact, Int] =
+      textReflow.charAtoms()
+        .groupBy(orderf(_))
+        .mapValues { _.length }
+
+    countedAtoms.toList
+      .filter{case (_, count) => count > 1 }
+      .sortBy(_._2).reverse
+  }
+
+  // ACS if there is more than 1 value with a max frequency, this will arbitrarily pick one as the max
+  def getMostCommonTopPosition(textReflow: TextReflow): Option[FloatExact] = {
+    orderCharAtomsByFrequency(textReflow, _.bbox.top)
+      .headOption.map(_._1)
+  }
+
+  def tokenizeTextReflow(textReflow: TextReflow): Seq[TextReflow] = {
+    topLevelLabeledSlices(textReflow, LB.Token)
+  }
+}
+
 
 object GenericHeuristics {
+
 
     def tokenizeTextReflow(textReflow: TextReflow): ListBuffer[String] = {
         val tokens: ListBuffer[String] = ListBuffer[String]()

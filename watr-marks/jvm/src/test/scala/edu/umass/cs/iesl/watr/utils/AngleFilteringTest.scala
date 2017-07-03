@@ -4,7 +4,7 @@ package utils
 import org.scalatest._
 
 import geometry._
-import geometry.syntax._
+import utils.ExactFloats._
 
 
 class AngleFilteringTest extends FlatSpec with Matchers {
@@ -14,7 +14,7 @@ class AngleFilteringTest extends FlatSpec with Matchers {
   it should "make sure I compute angles correctly" in {
     import math._
 
-    val ctr = Point.origin
+    // val ctr = Point.origin
 
     val pointsOnUnitCircle = (0.0 to Pi*2 by 0.3).map{ r =>
       (Point.Doubles(cos(r),  sin(r)), r)

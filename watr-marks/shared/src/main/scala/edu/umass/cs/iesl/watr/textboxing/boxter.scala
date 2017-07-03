@@ -188,10 +188,6 @@ object TextBoxing extends ToListOps with ToIdOps {
         vcat(bx.reverse)
       }
     }
-
-    def transpose(): Grid = {
-      ???
-    }
   }
 
 

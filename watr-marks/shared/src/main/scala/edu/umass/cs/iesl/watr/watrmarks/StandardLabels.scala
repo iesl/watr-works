@@ -38,7 +38,12 @@ trait DocSegLabels {
   val SemanticLine = Label("ds", "semantic-line")
 
   val TokenizedLine = Label("ds", "tline")
+
   val Token = Label("ds", "token")
+  // val WhitespaceSep = Label("ws-sep")
+  val WhitespaceAfter = Label("ws-after")
+  val WhitespaceBefore = Label("ws-before")
+
   val Tokenized = Label("ds", "tokenized")
   val LineBreakToken = Label("ds", "lb-token")
   val Invisible = Label("ds", "invisible")

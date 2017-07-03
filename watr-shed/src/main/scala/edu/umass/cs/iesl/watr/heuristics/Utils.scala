@@ -1,12 +1,12 @@
 package edu.umass.cs.iesl.watr
 package heuristics
 
-import TypeTags._
 import geometry.LTBounds
 import Constants._
 import textreflow.TextReflowF.TextReflow
 import textreflow.data._
 import simstring._
+import utils.ExactFloats._
 
 import scala.collection.mutable.ListBuffer
 
