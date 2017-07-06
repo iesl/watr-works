@@ -39,7 +39,7 @@ object TestLibs extends LibVersions {
 
 object LogLibs extends LibVersions {
   val logback = Seq(
-    "org.log4s"      %% "log4s"            % "1.3.5",
+    "org.log4s"      %% "log4s"            % "1.3.6",
     "ch.qos.logback"  % "logback-classic"  % "1.2.3",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
@@ -66,7 +66,7 @@ trait CommonLibs extends LibVersions {
 
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   // val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.9"
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "1.0.0-RC9"
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "1.0.0"
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"

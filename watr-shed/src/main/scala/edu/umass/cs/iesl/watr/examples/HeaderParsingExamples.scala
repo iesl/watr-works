@@ -72,25 +72,25 @@ class HeaderParsingExamples(dbName: String) {
           println(s"Name: ${n.toText}")
         }
 
-        //   if (tokenizedNames.nonEmpty) {
-        //     write("Tokenized: \t\t\t\t\t" + tokenizedNames + "\n")
-        //     val separateAuthorNamesByText = getSeparateAuthorNamesByText(tokenizedNames)
-        //     if (separateAuthorNamesByText.nonEmpty) {
-        //       write("Text Separated: \t\t\t" + separateAuthorNamesByText + "\n")
-        //       val separateAuthorNamesByGeometry = getSeparateComponentsByGeometry(separateAuthorNamesByText, targetRegionTextReflow.get)
-        //       write("Geometrically Separated: \t" + separateAuthorNamesByGeometry + "\n")
-        //       val separateAuthorNameComponents = separateAuthorNamesByGeometry.map {
-        //         authorName => {
-        //           getSeparateAuthorNameComponents(authorName)
-        //         }
-        //       }
-        //       var nameIndex = 0
-        //       while (nameIndex < separateAuthorNamesByGeometry.length) {
-        //         write("Bounding Box info: \t\t\t" + getBoundingBoxesForComponents(separateAuthorNameComponents(nameIndex), separateAuthorNamesByGeometry(nameIndex), textReflow = targetRegionTextReflow.get).toString + "\n")
-        //         nameIndex += 1
+        // if (tokenizedNames.nonEmpty) {
+        //   write("Tokenized: \t\t\t\t\t" + tokenizedNames + "\n")
+        //   val separateAuthorNamesByText = getSeparateAuthorNamesByText(tokenizedNames)
+        //   if (separateAuthorNamesByText.nonEmpty) {
+        //     write("Text Separated: \t\t\t" + separateAuthorNamesByText + "\n")
+        //     val separateAuthorNamesByGeometry = getSeparateComponentsByGeometry(separateAuthorNamesByText, targetRegionTextReflow.get)
+        //     write("Geometrically Separated: \t" + separateAuthorNamesByGeometry + "\n")
+        //     val separateAuthorNameComponents = separateAuthorNamesByGeometry.map {
+        //       authorName => {
+        //         getSeparateAuthorNameComponents(authorName)
         //       }
         //     }
+        //     var nameIndex = 0
+        //     while (nameIndex < separateAuthorNamesByGeometry.length) {
+        //       write("Bounding Box info: \t\t\t" + getBoundingBoxesForComponents(separateAuthorNameComponents(nameIndex), separateAuthorNamesByGeometry(nameIndex), textReflow = targetRegionTextReflow.get).toString + "\n")
+        //       nameIndex += 1
+        //     }
         //   }
+        // }
 
       }
       write("------------------------------------------------------------------------------------------------\n")

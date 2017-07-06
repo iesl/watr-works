@@ -16,44 +16,24 @@ class AffiliationsFineGrainedLabeler(
   workflowId: String@@WorkflowID
 ) extends ServerLabelerBuilder {
 
-  // import heuristics._
   import heuristics.GenericHeuristics._
-  // import heuristics.AuthorNameHeuristics._
   import heuristics.AffiliationsHeuristics._
   import heuristics.Utils._
 
+  override def queryLabel: Label = LB.Affiliations
+  override def batchSize: Int = 5
 
-  val BATCH_SIZE = 5
-
-  def createLabeler(userId: Int@@UserID): LabelWidgetConfig = {
-    println(s"createLabeler for ${userId}")
-
-    workflowApi.getUserLockGroup(userId).foreach { lockGroupId =>
-      println(s"createLabeler: releasing old lock for ${lockGroupId}")
-      workflowApi.releaseZoneLocks(lockGroupId)
-    }
-
-    val lockGroupId = workflowApi.makeLockGroup(userId)
-    println(s"createLabeler: makeLockGroup ${lockGroupId}")
-
-    println(s"createLabeler: acquiring zone locks ")
-    val zoneLocks = workflowApi.aquireZoneLocks(
-      lockGroupId,
-      docStore.ensureLabel(LB.Affiliations),
-      BATCH_SIZE
-    )
-    println(s"createLabeler: acquired zone locks ${zoneLocks} ")
+  override def createLabeler(zones: Seq[Zone]): LabelWidgetConfig = {
 
     val separatedComponentsWithClasses: mutable.ListBuffer[(String, mutable.ListBuffer[String])] = mutable.ListBuffer()
 
-    val zoneRegions = for {
-      zoneLockId <- zoneLocks.toSeq
-      zoneLock <- workflowApi.getZoneLock(zoneLockId).toSeq
+    val zoneWidgets = for {
+      zone <- zones
     } yield {
-      val affilationZone = docStore.getZone(zoneLock.zone)
+
       // val zoneRegions = affilationZone.regions
       for {
-        targetRegion   <- affilationZone.regions
+        targetRegion   <- zone.regions
         targetRegionTextReflow <- docStore.getTextReflowForTargetRegion(targetRegion.id)
       } yield {
 
@@ -85,7 +65,6 @@ class AffiliationsFineGrainedLabeler(
         }
 
       }
-
       // val authorBlock = authorRegions.map{ region =>
       //   LW.pad(
       //     LW.targetOverlay(region, overlays=List()),
@@ -97,7 +76,8 @@ class AffiliationsFineGrainedLabeler(
       LW.row()
     }
 
-    val allBlocks = zoneRegions.map{ block =>
+
+    val allBlocks = zoneWidgets.map{ block =>
       LW.pad(
         LW.pad(
           block,

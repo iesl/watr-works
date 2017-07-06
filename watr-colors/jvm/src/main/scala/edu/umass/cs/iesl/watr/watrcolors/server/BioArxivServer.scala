@@ -46,7 +46,7 @@ class BioArxivServer(
     reqLabelerId match {
       case DocumentLabelerIdentifier(stableId, labelerType, _) =>
 
-        val labelColors = TitleAuthorsLabelers.labelerColors()
+        val labelColors = HeaderCoarseLabelers.labelerColors()
 
         val mkWidgetOpt: Option[MakeWidget] = for {
           entry <- corpus.entry(stableId.unwrap)
@@ -55,7 +55,7 @@ class BioArxivServer(
 
           val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
             labelerIdentifier => {
-              val (widget0, labelerId0) = TitleAuthorsLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
+              val (widget0, labelerId0) = HeaderCoarseLabelers.bioArxivLabeler(labelerIdentifier, rec, docStore)
 
               val widget1 = LabelWidgetTransforms.addAllZoneIndicators(
                 widget0,
@@ -88,18 +88,16 @@ class BioArxivServer(
       case  labelerId @  WorkflowLabelerIdentifier(workflowId) =>
 
         // Hardcoded map keyed off strings
-        val labelerBuilder: LabelerBuilder =
+        val labelerBuilder: ServerLabelerBuilder =
           WorkflowServers.servers.get(workflowId)
             .map(_.apply(corpusAccessApi, workflowId))
             .getOrElse { sys.error("todo") }
-
-        // def workflowDef: Rel.WorkflowDef = workflowApi.getWorkflow(workflowId)
 
         val labelColors = labelerBuilder.targetLabels()
 
         val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
           labelerIdentifier => {
-            val LabelWidgetConfig(_, widget0) = labelerBuilder.createLabeler(user.id)
+            val LabelWidgetConfig(_, widget0) = labelerBuilder.createLabelerForUser(user.id)
             val widget1 = LabelWidgetTransforms.addAllZoneIndicators(widget0, labelColors.toMap, docStore)
             (widget1, labelerIdentifier)
           }

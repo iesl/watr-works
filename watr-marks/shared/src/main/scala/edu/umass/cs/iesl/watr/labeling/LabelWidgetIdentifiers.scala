@@ -3,6 +3,7 @@ package labeling
 
 import watrmarks._
 import data._
+import geometry._
 
 import utils.Color
 import TypeTags._
@@ -81,6 +82,7 @@ case class LabelWidgetConfig(
 )
 
 trait LabelerBuilder {
-  def createLabeler(userId: Int@@UserID): LabelWidgetConfig
+  def createLabeler(zones: Seq[Zone]): LabelWidgetConfig
+  def createLabelerForUser(userId: Int@@UserID): LabelWidgetConfig
   def targetLabels(): Seq[(Label, Color)]
 }

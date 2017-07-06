@@ -14,7 +14,7 @@ import watrmarks.{StandardLabels => LB, Label}
 import TypeTags._
 
 
-object TitleAuthorsLabelers {
+object HeaderCoarseLabelers {
 
   def labelerColors(): Seq[(Label, Color)] = {
     List(

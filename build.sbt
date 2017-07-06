@@ -81,7 +81,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     "fr.iscpif"         %%% "scaladget"       % LibVersions.scaladgetV,
     "org.singlespaced"  %%% "scalajs-d3"      % "0.3.4",
     "org.querki"        %%% "jquery-facade"   % "1.0",
-    "org.scala-js"      %%% "scalajs-dom"     % "0.9.2"),
+    "org.scala-js"      %%% "scalajs-dom"     % "0.9.3"),
     scalacOptions -= "-Ywarn-dead-code" // doesn't play well with ScalaJS native binding declarations
   )
   .jvmSettings(libraryDependencies ++= Lib.http4s ++ TestLibs.testAndCheck ++ Seq(
