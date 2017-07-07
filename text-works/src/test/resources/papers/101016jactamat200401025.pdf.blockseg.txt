@@ -1,0 +1,95 @@
+>Block:
+>     :          |  Acta Materialia 52 (     (l:182.44, t:100.34, w:127.31, h:7.97)
+>
+>Block:
+>r    :          |  www.actamat-journals     (l:451.33, t:114.06, w:93.29, h:7.97)
+>
+>Block: 
+>c    :          |  Austenite to bainite     (l:48.30, t:153.48, w:490.48, h:16.94)
+>c    :          |  of a high strength l     (l:172.97, t:173.43, w:241.18, h:16.94)
+>
+>Block: 
+>c    :          |  A. Lambert-Perlade ^     (l:142.19, t:202.91, w:302.77, h:15.44)
+>
+>Block: 
+>c    :          |  ^a^ IRSID, Arcelor R     (l:121.61, t:226.88, w:343.98, h:9.55)
+>c    :          |  ^b^ Ecole des Mines      (l:113.50, t:236.86, w:360.19, h:9.55)
+>
+>Block: 
+>c    :          |  Received 29 Septembe     (l:124.84, t:254.37, w:337.49, h:7.97)
+>
+>Block:
+>l    :          |  Abstract                 (l:42.52, t:294.50, w:32.20, h:8.97)
+>
+>Block:
+>r    :          |  The austenite to bai     (l:54.31, t:316.55, w:490.33, h:8.97)
+>clr  :          |  treatment, by means      (l:42.52, t:327.49, w:502.11, h:8.97)
+>clr  :          |  packets result from      (l:42.52, t:338.43, w:502.06, h:8.97)
+>clr  :          |  Self-accommodation o     (l:42.52, t:349.43, w:502.03, h:8.97)
+>clr  :          |  model. The observed      (l:42.52, t:360.37, w:502.11, h:8.97)
+>l    :          |  phase during cooling     (l:42.52, t:371.32, w:83.46, h:8.97)
+>l    :          |  2004 Acta Materialia     (l:52.61, t:382.31, w:281.59, h:8.97)
+>
+>Block:
+>l    :          |  Keywords: Bainitic s     (l:42.52, t:404.21, w:390.47, h:7.97)
+>
+>Column:
+>  Block:
+>    l    :          |  1. Introduction          (l:42.52, t:452.43, w:62.31, h:9.96)
+>
+>  Block:
+>         :          |     High strength low al  (l:54.14, t:476.36, w:227.38, h:9.96)
+>    l    :          |  for many years and a     (l:42.52, t:488.32, w:239.06, h:9.96)
+>    l    :          |  and good toughness,      (l:42.52, t:500.28, w:239.10, h:9.96)
+>    l    :          |  the microstructure a     (l:42.52, t:512.24, w:239.09, h:9.96)
+>    l    :          |  conditions character     (l:42.52, t:524.21, w:239.05, h:9.96)
+>    l    :          |  signiﬁcant austenite     (l:42.52, t:536.17, w:239.05, h:9.96)
+>    l    :          |  aﬀected zone of weld    (l:42.52, t:548.07, w:239.05, h:9.96)
+>    l    :          |  microstructures afte     (l:42.52, t:560.04, w:239.03, h:9.96)
+>    l    :          |  microstructures are      (l:42.52, t:572.00, w:239.10, h:9.96)
+>    l    :          |  cleavage cracking, e     (l:42.52, t:583.96, w:239.07, h:9.96)
+>    l    :          |  tained after the bai     (l:42.52, t:595.92, w:239.04, h:9.96)
+>    l    :          |  tensite–austenite (M     (l:42.52, t:607.88, w:239.07, h:9.96)
+>    l    :          |  constituents may be      (l:42.52, t:619.85, w:239.10, h:9.96)
+>    l    :          |  well as at prior aus     (l:42.52, t:631.81, w:239.09, h:9.96)
+>    l    :          |  intimately related t     (l:42.52, t:643.71, w:239.11, h:9.96)
+>    l    :          |  phase transformation     (l:42.52, t:655.68, w:153.55, h:9.96)
+>
+>Block:
+>     :          |  ^*^Corresponding aut     (l:49.66, t:697.38, w:231.99, h:9.66)
+>     :          |  31-50.                   (l:42.52, t:708.99, w:20.75, h:7.97)
+>     :          |  E-mail address: anne     (l:54.43, t:718.97, w:227.27, h:7.97)
+>     :          |  gues).                   (l:42.52, t:728.95, w:19.74, h:7.97)
+>
+>
+>Column:
+>  Block:
+>    r    :          |     To combine at best e  (l:317.14, t:452.43, w:227.50, h:9.96)
+>    r    :          |  against brittle fail     (l:305.52, t:464.40, w:239.09, h:9.96)
+>    r    :          |  mechanism of phase t     (l:305.52, t:476.36, w:239.06, h:9.96)
+>    r    :          |  zone and the key eﬀe     (l:305.52, t:488.32, w:239.09, h:9.96)
+>    r    :          |  resistance to brittl     (l:305.52, t:500.28, w:239.07, h:9.96)
+>    r    :          |  sistance of bainitic     (l:305.52, t:512.24, w:239.10, h:9.96)
+>    r    :          |  both prior austenite     (l:305.52, t:524.21, w:239.07, h:9.96)
+>    r    :          |  The deﬁnition of bai     (l:305.52, t:536.17, w:239.13, h:9.96)
+>    r    :          |  optical microscopy m     (l:305.52, t:548.07, w:239.13, h:9.96)
+>    r    :          |  so that sophisticate     (l:305.52, t:560.04, w:239.03, h:9.96)
+>    r    :          |  results obtained usi     (l:305.52, t:572.00, w:239.03, h:9.96)
+>    r    :          |  tion (EBSD) techniqu     (l:305.52, t:583.96, w:239.10, h:9.96)
+>    r    :          |  ‘‘morphological’’ pa     (l:305.52, t:595.92, w:239.05, h:9.96)
+>    r    :          |  and ‘‘crystallograph     (l:305.52, t:607.88, w:239.11, h:9.96)
+>    r    :          |  by high-angle bounda     (l:305.52, t:619.85, w:239.09, h:9.96)
+>    r    :          |  tural unit controlli     (l:305.52, t:631.81, w:239.09, h:9.96)
+>    r    :          |  crystallographic pac     (l:305.52, t:643.71, w:239.08, h:9.96)
+>    r    :          |  (misorientation>40 )     (l:305.52, t:655.59, w:239.12, h:10.04)
+>    r    :          |  eﬃciently stop the p    (l:305.52, t:667.64, w:239.10, h:9.96)
+>    r    :          |  crocracks. The cryst     (l:305.52, t:679.60, w:239.09, h:9.96)
+>    r    :          |  depends on the chara     (l:305.52, t:691.56, w:239.08, h:9.96)
+>    r    :          |  phase transformation     (l:305.52, t:703.52, w:239.10, h:9.96)
+>    r    :          |  bainite formation in     (l:305.52, t:715.49, w:239.09, h:9.96)
+>    r    :          |  conditions has only      (l:305.52, t:727.45, w:239.09, h:9.96)
+>
+>  Block:
+>l    :          |  1359-6454/$30.00         (l:42.52, t:750.72, w:58.73, h:7.97)
+>     :          |  2004 Acta Materialia     (l:112.82, t:750.72, w:249.81, h:7.97)
+>l    :          |  doi:10.1016/j.actama     (l:42.52, t:760.69, w:115.14, h:7.97)

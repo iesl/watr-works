@@ -13,13 +13,13 @@ lazy val jsProjects = Seq[ProjectReference](
 )
 
 lazy val jvmProjects = Seq[ProjectReference](
-  prelude, watrmarksJVM, watrshed, watrcolorsJVM
+  prelude, watrmarksJVM, textworks, watrshed, watrcolorsJVM
 )
 
 lazy val root = (project in file("."))
     .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
   .settings(Release.settings :_*)
-  .aggregate( (jsProjects++jvmProjects): _*)
+  .aggregate( (jsProjects ++ jvmProjects): _*)
 
 lazy val prelude = (project in file("watr-prelude"))
   .settings(SensibleProject.settings: _*)
@@ -41,7 +41,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
   .jvmSettings(libraryDependencies ++=
     LogLibs.logback ++
     TestLibs.testAndCheck ++ Seq(
-      Lib.ammonite,
+      Lib.ammoniteOps,
       Lib.playJson,
       // Needed by jsi
       "net.sf.trove4j" % "trove4j" % "3.0.3"
@@ -51,8 +51,25 @@ lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm
 
+lazy val textworks = (project in file("text-works"))
+  .enablePlugins(JavaAppPackaging)
+  .settings(mappings in (Compile, packageDoc) := Seq())
+  .settings(SensibleProject.settings: _*)
+  .settings(libraryDependencies ++=
+    LogLibs.logback ++
+    TestLibs.testAndCheck ++
+    Lib.fs2 ++ Seq(
+      Lib.scopt,
+      Lib.scrimageCore,
+      Lib.ammoniteOps,
+      Lib.playJson,
+      Lib.shapeless
+    ))
+  .dependsOn(prelude, watrmarksJVM)
+
 lazy val watrshed = (project in file("watr-shed"))
   .enablePlugins(JavaAppPackaging)
+  .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++
@@ -65,7 +82,7 @@ lazy val watrshed = (project in file("watr-shed"))
       Lib.playJson,
       Lib.shapeless
     ))
-  .dependsOn(prelude, watrmarksJVM)
+  .dependsOn(prelude, watrmarksJVM, textworks)
 
 
 lazy val watrcolors = (crossProject in file("watr-colors"))

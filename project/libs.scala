@@ -19,6 +19,7 @@ trait LibVersions {
   val scaladgetV          = "0.9.4"
   val http4sVersion       = "0.16.0a-M2"
   val fs2Version          = "0.9.7"
+  val ammoniteVersion     = "1.0.0"
 }
 
 
@@ -53,9 +54,8 @@ object DatabaseLibs extends LibVersions {
     "org.tpolecat" %% "doobie-core"       % doobieVersion,
     "org.tpolecat" %% "doobie-postgres"   % doobieVersion,
     "org.tpolecat" %% "doobie-hikari"     % doobieVersion,
-    "org.tpolecat" %% "doobie-specs2"     % doobieVersion,
+    "org.tpolecat" %% "doobie-specs2"     % doobieVersion % "test",
     "org.postgresql"          % "postgresql" % "42.1.1",
-    // "org.javassist" % "javassist" % "3.22.0-GA",
     "org.javassist" % "javassist" % "3.22.0-CR2",
     "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7.1"
   )
@@ -65,8 +65,9 @@ object DatabaseLibs extends LibVersions {
 trait CommonLibs extends LibVersions {
 
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
-  // val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.9"
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "1.0.0"
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % ammoniteVersion
+  // val ammoniteOps      = "com.lihaoyi"             % "ammonite-ops_2.11.11"  % ammoniteVersion
+  val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"  % ammoniteVersion
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.6.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"

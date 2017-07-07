@@ -9,16 +9,19 @@ import matryoshka._
 import matryoshka.scalacheck.arbitrary._
 
 import TextReflowF._
-import TextReflowJsonCodecs._
 
 object TextRenderChecks extends Properties("TextRenderChecks") with ArbitraryTextReflows {
 
-  property("split/join is identity") = forAll{ (textReflowEx: TextReflow) =>
-    val asJson = textReflowEx.toJson()
-    val textReflow = jsonToTextReflow(asJson)
-    textReflowEx === textReflow
+  new corpora.MemDocZoningApi {
+
+    property("split/join is identity") = forAll{ (textReflowEx: TextReflow) =>
+      val asJson = textReflowToJson(textReflowEx)
+      val textReflow = jsonToTextReflow(asJson)
+      textReflowEx === textReflow
+    }
+
+
+    property("mask/unmask...") = forAll{ (textReflowEx: TextReflow) => true }
+
   }
-
-
-  property("mask/unmask...") = forAll{ (textReflowEx: TextReflow) => true }
 }
