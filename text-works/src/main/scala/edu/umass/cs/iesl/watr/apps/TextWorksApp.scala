@@ -136,7 +136,7 @@ object TextWorks extends App {
 
       conf.ioConfig.outputMode.foreach{ _ match {
         case OutputMode.ToFile(f) =>
-          val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex, Seq())
+          val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
           val p = fs.Path(f, pwd)
           write(p, content)
       }}

@@ -6,6 +6,7 @@ import java.nio.{file => nio}
 import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
 
+import spindex._
 import Prop._
 
 trait PredsynthJsonFormats  {

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package formats
+package predsynth
 
 import spindex._
 import textboxing.{TextBoxing => TB}, TB._
@@ -10,7 +10,7 @@ import textreflow.data._
 import utils.EnrichNumerics._
 import watrmarks.{StandardLabels => LB}
 
-object DocumentIO  {
+object PredsynthIO extends DocsegJsonFormats {
 
   def documentToPlaintext(mpageIndex: MultiPageIndex): Seq[String]= {
     val docStore = mpageIndex.docStore
@@ -25,7 +25,7 @@ object DocumentIO  {
     }
   }
 
-  def richTextSerializeDocument(mpageIndex: MultiPageIndex): String = {
+  def richTextSerializeDocument(mpageIndex: MultiPageIndex, alignedGroups: Seq[AlignedGroup]): String = {
     import play.api.libs.json, json._
     val docStore = mpageIndex.docStore
     val stableId = mpageIndex.getStableId()
@@ -45,6 +45,23 @@ object DocumentIO  {
         (formattedText, json)
       })
 
+    // Record any misalignments as errors
+    val misalignments = for {
+      group <- alignedGroups
+      if group.alignedContexts.exists(_.isInstanceOf[AlignFailure])
+    } yield {
+      val clusterID = group.textMentionGroup.groupNumber
+      group.alignedContexts.collect({
+        case AlignFailure(rawTextContext, msg) =>
+          s"ClusterID:${clusterID}: ${rawTextContext}"
+      })
+    }
+
+    val alignmentErrors = indent(4)(vjoinTrailSep(left, ",")(
+      misalignments.flatten.map({msg =>
+        Json.stringify(JsString(msg)).box
+      }):_*
+    ))
 
     val textLines = textAndJsons.map(_._1)
     val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(   textLines.map(t => Json.stringify(JsString(t)).box):_*))
@@ -75,6 +92,7 @@ object DocumentIO  {
           |{relationBlock}
           |  ],
           |  "errors": [
+          |${alignmentErrors}
           |  ],
           |  "properties": [
           |{indent(4)(propertyBlock)}

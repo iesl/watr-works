@@ -11,7 +11,6 @@ import utils.IdGenerator
 import geometry.syntax._
 
 import tracing.VisualTracer
-import predsynth._
 // import textreflow._
 import textreflow.data._
 import TypeTags._

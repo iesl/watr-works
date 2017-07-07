@@ -7,6 +7,7 @@ import play.api.libs.json, json._
 import play.api.data.validation.ValidationError
 import geometry._
 
+import spindex._
 import TypeTags._
 
 trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats {

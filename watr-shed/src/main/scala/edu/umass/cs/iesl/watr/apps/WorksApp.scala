@@ -278,7 +278,7 @@ object Works extends App {
       val segmenter = runPageSegmentation(stableId, pdfPath)
       val mergedZoneIndex = DocsegMerging.mergePriorDocseg(segmenter.mpageIndex, priorDocseg)
 
-      val output = formats.DocumentIO.richTextSerializeDocument(mergedZoneIndex, Seq())
+      val output = PredsynthIO.richTextSerializeDocument(mergedZoneIndex, Seq())
       corpusEntry.putArtifact(docsegFile, output)
     }
 
@@ -316,9 +316,9 @@ object Works extends App {
             val alignedGroups =
               MITAlignPredsynth.alignPredSynthPaper(segmenter.mpageIndex, p)
             writePredsynthJson(p, corpusEntry)
-            formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex, alignedGroups)
+            PredsynthIO.richTextSerializeDocument(segmenter.mpageIndex, alignedGroups)
           }).getOrElse(
-            formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex, Seq())
+            PredsynthIO.richTextSerializeDocument(segmenter.mpageIndex, Seq())
           )
 
           corpusEntry.putArtifact(artifactOutputName, output)
@@ -342,7 +342,7 @@ object Works extends App {
 
       val stableId = DocumentID(pdfPath.toString())
       val segmenter = runPageSegmentation(stableId, pdfPath)
-      formats.DocumentIO
+      PredsynthIO
         .documentToPlaintext(segmenter.mpageIndex)
         .foreach{ line =>
           println(line)

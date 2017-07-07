@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package predsynth
+package spindex
 
 import TypeTags._
 import utils.{StringUtils => SU}
