@@ -3,7 +3,6 @@ import ReleaseTransformations._
 
 SensibleThisBuild.settings
 SensibleProject.settings
-Release.settings
 
 //enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 
@@ -18,8 +17,7 @@ lazy val jvmProjects = Seq[ProjectReference](
 )
 
 lazy val root = (project in file("."))
-    .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
-  .settings(Release.settings :_*)
+  .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
   .aggregate( (jsProjects ++ jvmProjects): _*)
 
 lazy val prelude = (project in file("watr-prelude"))
@@ -30,6 +28,7 @@ lazy val prelude = (project in file("watr-prelude"))
 
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
+  .settings(Release.settings :_*)
   .settings(libraryDependencies ++= Seq(
     "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion,
     "com.chuusai"                %%% "shapeless"              % "2.3.2",
@@ -56,6 +55,7 @@ lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)
   .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
+  .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++
     TestLibs.testAndCheck ++
