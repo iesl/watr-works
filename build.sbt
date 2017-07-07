@@ -3,6 +3,7 @@ import ReleaseTransformations._
 
 SensibleThisBuild.settings
 SensibleProject.settings
+Release.settings
 
 //enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
 
