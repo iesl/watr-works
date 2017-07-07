@@ -210,9 +210,9 @@ class MemDocZoningApi extends DocumentZoningApi {
 
 
       def add(zoneId: Int@@ZoneID, t: TextReflow): Rel.TextReflow = {
-        import TextReflowJsonCodecs._
+        // import TextReflowJsonCodecs._
         import play.api.libs.json
-        val asJson = t.toJson()
+        val asJson = textReflowToJson(t)
         val asText = t.toText()
         val jsstr = json.Json.stringify(asJson)
         val rec = Rel.TextReflow(nextId(), jsstr, asText, zoneId)
@@ -252,6 +252,10 @@ class MemDocZoningApi extends DocumentZoningApi {
     documents
       .forStableId(stableId)
       .map(stableId => documents.unique(stableId).prKey)
+  }
+
+  def getDocumentStableId(docId: Int@@DocumentID): String@@DocumentID = {
+    documents.unique(docId).stableId
   }
 
   def getPageIdentifier(pageId: Int@@PageID): RecordedPageID = {
@@ -405,7 +409,7 @@ class MemDocZoningApi extends DocumentZoningApi {
       .getRhs(zoneId)
       .map({reflowId =>
         import play.api.libs.json
-        TextReflowJsonCodecs.jsonToTextReflow(
+        jsonToTextReflow(
           json.Json.parse(textreflows.unique(reflowId).reflow)
         )
       })

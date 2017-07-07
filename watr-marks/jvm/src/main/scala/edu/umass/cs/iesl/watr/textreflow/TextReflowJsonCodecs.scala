@@ -8,17 +8,6 @@ import watrmarks.Label
 
 import TextReflowF._
 
-object TextReflowJsonCodecs extends TextReflowJsonCodecs {
-
-  implicit class JsonCodecs_RicherTextReflow(val theReflow: TextReflow) extends TextReflowJsonCodecs {
-    import play.api.libs.json._
-
-    def toJson(): JsValue = {
-      textReflowToJson(theReflow)
-    }
-  }
-}
-
 
 trait TextReflowJsonCodecs extends GeometryJsonCodecs with TextReflowBasics {
   import play.api.libs.json._
@@ -87,5 +76,3 @@ trait TextReflowJsonCodecs extends GeometryJsonCodecs with TextReflowBasics {
   })
 
 }
-
-object TextReflowTransforms extends TextReflowJsonCodecs {}

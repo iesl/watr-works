@@ -10,7 +10,7 @@ import java.util.Properties
 import scalaz.syntax.applicative._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
-import scalaz.syntax.apply._
+// import scalaz.syntax.apply._
 
 import geometry._
 import corpora._
@@ -27,7 +27,7 @@ import shapeless._
 class CorpusAccessDB(
   val tables: CorpusAccessDBTables,
   dbname: String, dbuser: String, dbpass: String
-) extends DoobieImplicits { self =>
+) extends DoobieImplicits  { self =>
 
   val Rel = RelationModel
 
@@ -226,7 +226,6 @@ class CorpusAccessDB(
   }
 
   def selectTextReflowForZone(zoneId: Int@@ZoneID): ConnectionIO[Option[TextReflow]] = {
-    import TextReflowJsonCodecs._
     import play.api.libs.json, json._
 
     val query = sql"""
@@ -237,7 +236,7 @@ class CorpusAccessDB(
       .option
       .map({maybeStr =>
         maybeStr.map({str =>
-          jsonToTextReflow(Json.parse(str))
+          docStore.jsonToTextReflow(Json.parse(str))
         })
       })
 
@@ -748,6 +747,14 @@ class CorpusAccessDB(
         .option
     }
 
+    def getDocumentStableId(docId: Int@@DocumentID): String@@DocumentID = {
+      runq{
+        sql"""select stableId from document where document=${docId}"""
+          .query[String@@DocumentID]
+          .unique
+      }
+    }
+
     def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID = {
       runq { insertPage(docId, pageNum) }
     }
@@ -868,8 +875,7 @@ class CorpusAccessDB(
     }
 
     def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
-      import TextReflowJsonCodecs._
-      val js = textReflow.toJson()
+      val js = textReflowToJson(textReflow)
       val str = textReflow.toText()
       val jsStr = Json.stringify(js)
       runq { insertTextReflow(zoneId, jsStr, str) }

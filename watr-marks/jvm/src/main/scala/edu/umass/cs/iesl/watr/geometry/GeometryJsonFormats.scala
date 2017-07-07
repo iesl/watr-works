@@ -109,12 +109,8 @@ trait ExplicitTypeTagFormats {
   )
 }
 
-trait GeometryJsonCodecs extends TypeTagFormats {
+trait OptionFormatting {
   import play.api.libs.json._
-  // import play.api.libs.json
-  // import utils.EnrichNumerics._
-  def jstr(s: String) = JsString(s)
-  def num(s: Int) = JsNumber(s)
 
   implicit def optionalFormat[T](implicit jsFmt: Format[T]): Format[Option[T]] =
     new Format[Option[T]] {
@@ -127,6 +123,24 @@ trait GeometryJsonCodecs extends TypeTagFormats {
         case Some(t) => jsFmt.writes(t)
       }
     }
+
+}
+
+trait GeometryJsonCodecs extends TypeTagFormats {
+  import play.api.libs.json._
+
+  trait SerializationDefs {
+    // def stableDocumentIds(): Seq[String@@DocumentID]
+    // def stablePageIds(): Seq[StablePageID]
+    // def stableIdToPageId(x: String@@DocumentID, p:Int@@PageNum): Int@@PageID
+    def pageIdToStableID(pageId: Int@@PageID): Option[StablePageID]
+
+  }
+
+  def serializationDefs: SerializationDefs
+
+  def jstr(s: String) = JsString(s)
+  def num(s: Int) = JsNumber(s)
 
   implicit val FormatLBBounds         = Json.format[LBBounds]
 
@@ -146,15 +160,22 @@ trait GeometryJsonCodecs extends TypeTagFormats {
     }
   }
 
+
   implicit val FormatStablePageID: Format[StablePageID] = Json.format[StablePageID]
   implicit val FormatRecordedPageID: Format[RecordedPageID] = Json.format[RecordedPageID]
   implicit val FormatTargetRegion: Format[TargetRegion] = Json.format[TargetRegion]
 
   implicit val FormatPageRegion: Format[PageRegion] = new Format[PageRegion] {
     override def reads(json: JsValue)= json match {
-      case JsArray(Seq(JsNumber(pageId), JsString(stableId), JsNumber(pageNum), bboxJs)) =>
+      case JsArray(Seq(JsNumber(pageIdNum), bboxJs)) =>
+        val pageId = PageID(pageIdNum.intValue())
+        val stableId = serializationDefs
+          .pageIdToStableID(pageId)
+          .getOrElse { sys.error(s"no page found for pageId=${pageId}")}
+          // .getOrElse { StablePageID(DocumentID(""), PageNum(0)) }
+
         JsSuccess(PageRegion(
-          RecordedPageID(PageID(pageId.intValue()), StablePageID(DocumentID(stableId), PageNum(pageNum.intValue()))),
+          RecordedPageID(pageId, stableId),
           bboxJs.as[LTBounds]
         ))
       case _ => JsError(s"unmatched PageRegion ${json}")
@@ -168,13 +189,14 @@ trait GeometryJsonCodecs extends TypeTagFormats {
         ),
         bbox
       ) =>
-
-        Json.arr(num(pageId), jstr(stableId), num(pageNum), Json.toJson(bbox))
+        Json.arr(num(pageId), Json.toJson(bbox))
     }
   }
 
   implicit val FormatPageGeometry     = Json.format[PageGeometry]
   implicit val FormatLabel            = Json.format[Label]
+
+
 
   // [17, [1, "10.1101-090498.d", 0, [24989,7264,1319,1753]], "m"]
   implicit val FormatCharAtom: Format[CharAtom] = new Format[CharAtom] {

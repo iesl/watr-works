@@ -8,14 +8,14 @@ import TextReflowF._
 
 import watrmarks.{StandardLabels => LB}
 
-trait DocumentZoningApi {
+trait DocumentZoningApi extends TextReflowJsonCodecs {
   val Rel = RelationModel
 
   def getDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]=List()): Seq[String@@DocumentID]
   def getDocumentCount(labelFilters: Seq[Label]=List()): Int
   def addDocument(stableId: String@@DocumentID): Int@@DocumentID
   def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID]
-  // def getDocumentDef(docId: Int@@DocumentID): Rel.Document
+  def getDocumentStableId(docId: Int@@DocumentID): String@@DocumentID
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
   def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID]
@@ -124,4 +124,11 @@ trait DocumentZoningApi {
     }
   }
 
+  override def serializationDefs: SerializationDefs  = new SerializationDefs {
+    def pageIdToStableID(pageId: Int@@PageID): Option[StablePageID] = {
+      for { pageDef <- getPageDef(pageId) } yield {
+        StablePageID(getDocumentStableId(pageDef.document), pageDef.pagenum)
+      }
+    }
+  }
 }

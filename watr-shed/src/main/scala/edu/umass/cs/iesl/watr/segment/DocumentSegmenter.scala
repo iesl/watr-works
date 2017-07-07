@@ -28,12 +28,6 @@ import corpora._
 import extract.PdfTextExtractor
 import utils.ExactFloats._
 
-
-import scala.collection.mutable
-
-import utils.{Histogram, AngleFilter, DisjointSets}
-import Histogram._
-
 case class LineDimensionBins(
   pageNum: Int@@PageNum,
   widthBin: Seq[((FloatExact, Double), Seq[Component])],
@@ -669,10 +663,10 @@ class DocumentSegmenter(
           visualLine.cloneAndNest(LB.TextSpan)
 
           // TODO: get rid of uri in VisualLine
-          val uriStr = visualLine.targetRegion.uriString
-          val vlineLabel = LB.VisualLine(uriStr)
-          visualLine.removeLabel(LB.VisualLine)
-          visualLine.addLabel(vlineLabel)
+          // val uriStr = visualLine.targetRegion.uriString
+          // val vlineLabel = LB.VisualLine(uriStr)
+          // visualLine.removeLabel(LB.VisualLine)
+          // visualLine.addLabel(vlineLabel)
           // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
           // val regionId = docStore.addTargetRegion(pageId, visualLine.targetRegion.bbox)
           val regionId = targetRegion.id

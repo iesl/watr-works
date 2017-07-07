@@ -10,7 +10,6 @@ import watrmarks._
 import textreflow._
 import textreflow.data._
 import utils.EnrichNumerics._
-import TextReflowJsonCodecs._
 import watrmarks.{StandardLabels => LB}
 
 // import geometry.zones.syntax._
@@ -46,7 +45,7 @@ object DocumentIO extends DocsegJsonFormats {
     val textAndJsons = escapedTextReflows
       .map({ blockTextReflow =>
         val formattedText = blockTextReflow.toText()
-        val json = blockTextReflow.toJson()
+        val json = docStore.textReflowToJson(blockTextReflow)
         (formattedText, json)
       })
 
@@ -72,18 +71,23 @@ object DocumentIO extends DocsegJsonFormats {
     val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(   textLines.map(t => Json.stringify(JsString(t)).box):_*))
     val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
 
-    val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
+    print("G")
+    // val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
 
-    val relations = serializeRelation(mpageIndex)
+    // print("H")
+    // val relations = serializeRelation(mpageIndex)
 
-    val relationBlock = indent(4)(vjoinTrailSep(left, ",")(relations:_*))
+    // print("I")
+    // val relationBlock = indent(4)(vjoinTrailSep(left, ",")(relations:_*))
 
-    val propertyBlock = indent(4)(vjoinTrailSep(left, ",")(
-      mpageIndex.props.map({ prop =>
-        Json.stringify(Json.toJson(prop)).box
-      }):_*
-    ))
+    // print("J")
+    // val propertyBlock = indent(4)(vjoinTrailSep(left, ",")(
+    //   mpageIndex.props.map({ prop =>
+    //     Json.stringify(Json.toJson(prop)).box
+    //   }):_*
+    // ))
 
+    print("K")
     // val lineLabelBlock = serializeLineLabels(mpageIndex)
 
     val finalDocument = (
@@ -91,16 +95,16 @@ object DocumentIO extends DocsegJsonFormats {
           |${textLinesBlock}
           |  ],
           |  "mentions": [
-          |${serializedZones}
+          |{serializedZones}
           |  ],
           |  "relations": [
-          |${relationBlock}
+          |{relationBlock}
           |  ],
           |  "errors": [
           |${alignmentErrors}
           |  ],
           |  "properties": [
-          |${indent(4)(propertyBlock)}
+          |{indent(4)(propertyBlock)}
           |  ],
           |  "labels": [
           |  ],
@@ -110,12 +114,11 @@ object DocumentIO extends DocsegJsonFormats {
           |}
           |""".stripMargin)
 
+    print("L")
+
     finalDocument.split("\n")
       .map(_.reverse.dropWhile(_==' ').reverse)
       .mkString("\n")
-
-
-
   }
 
   def serializeRelation(mpageIndex: MultiPageIndex): Seq[Box] = {

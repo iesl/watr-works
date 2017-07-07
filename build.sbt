@@ -59,6 +59,7 @@ lazy val watrshed = (project in file("watr-shed"))
     DatabaseLibs.doobieDb ++
     TestLibs.testAndCheck ++
     Lib.fs2 ++ Seq(
+      Lib.scopt,
       Lib.scrimageCore,
       Lib.ammonite,
       Lib.playJson,

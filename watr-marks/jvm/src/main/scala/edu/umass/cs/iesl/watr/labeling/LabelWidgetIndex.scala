@@ -3,6 +3,7 @@ package labeling
 
 import scala.collection.mutable
 
+import textreflow._
 import textreflow.data._
 import geometry._
 import geometry.syntax._
@@ -21,7 +22,6 @@ import matryoshka._
 import utils.GraphPaper
 import utils.Colors
 import LabelWidgetTransforms._
-import textreflow.TextReflowJsonCodecs._
 import utils.ExactFloats._
 
 
@@ -36,9 +36,10 @@ trait IndexableTextReflow {
 case class IndexableTextReflowLazy(
   id: Int@@TextReflowID,
   reflowJson: String,
-  targetRegion: PageRegion
+  targetRegion: PageRegion,
+  mkTextReflow: () => TextReflow
 ) extends IndexableTextReflow {
-  lazy val textReflow = jsonStrToTextReflow(reflowJson)
+  lazy val textReflow = mkTextReflow()
 }
 
 case class IndexableTextReflowStrict(
@@ -76,6 +77,7 @@ object istate {
 }
 
 
+// object LabelWidgetIndex extends LabelWidgetLayout with TextReflowJsonCodecs {
 object LabelWidgetIndex extends LabelWidgetLayout {
 
   implicit object TextReflowIndexable extends SpatialIndexable[IndexableTextReflow] {
@@ -155,7 +157,10 @@ object LabelWidgetIndex extends LabelWidgetLayout {
             val indexable = IndexableTextReflowLazy(
               reflow.prKey,
               reflowJson,
-              lineTargetRegion.toPageRegion
+              lineTargetRegion.toPageRegion,
+              () => {
+                docStore0.jsonStrToTextReflow(reflowJson)
+              }
             )
             pageIndex.add(indexable)
           }

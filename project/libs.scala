@@ -67,7 +67,7 @@ trait CommonLibs extends LibVersions {
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   // val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "0.9.9"
   val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % "1.0.0"
-  val scopt            = "com.github.scopt"        %% "scopt"            % "3.5.0"
+  val scopt            = "com.github.scopt"        %% "scopt"            % "3.6.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
   val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.15"
