@@ -110,7 +110,7 @@ class MemDocZoningApi extends DocumentZoningApi {
           case None =>
             // zone is effectively deleted by removing the last region
             forDocument.removeEdgesTo(zoneId)
-            ??? // delete zoneId
+            // ??? // delete zoneId
             None
         }
 

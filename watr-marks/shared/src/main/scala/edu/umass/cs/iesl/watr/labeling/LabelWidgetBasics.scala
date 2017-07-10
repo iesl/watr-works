@@ -94,11 +94,13 @@ trait LabelWidgetBasics {
   }
 
   def universeLw(labelWidget: LabelWidget): List[LabelWidget] = {
-    labelWidget.universe.toList
+    labelWidget.elgotPara(universe).toList
+    // labelWidget.universe.toList
   }
 
   def universeLwd(lwDiff: LWDiff): List[LWDiff] = {
-    lwDiff.universe.toList
+    lwDiff.elgotPara(universe).toList
+    // lwDiff.universe.toList
   }
 
   def labelWidgetDiffToMods(lwDiff: LWDiff): Seq[WidgetMod] = {

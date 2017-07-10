@@ -288,9 +288,10 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
     val zero = PosAttr(Terminal, LTBounds.empty, LTBounds.empty, 0, Point.zero, List(Point.zero))
 
+
     val adjusted: Cofree[LabelWidgetF, PosAttr] =
       relativePositioned
-        .attributeTopDownM[State[PosAttr, ?], PosAttr](zero)({
+        .attributeTopDownM[State[PosAttr, ?], Cofree[EnvT[PosAttr, LabelWidgetF, ?], PosAttr], PosAttr](zero)({
           case e => adjustPositions(e._2.ask, e._2.lower)
         })
         .eval(zero)
@@ -299,8 +300,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     // println("absolute")
     // println(printTree(adjusted))
 
-
-    val positions = adjusted.universe
+    val positions = adjusted.elgotPara(universe)
       .map(_.head)
       .map(w => AbsPosWidget(w.widget, w.strictBounds, w.bleedBounds, w.selfTranslation, w.zOrder, w.scaling))
       .toList
@@ -325,6 +325,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     val root = positions.head
     val strictBounds = LTBounds.empty union root.strictBounds
     val bleedBounds = LTBounds.empty union root.bleedBounds
+
     // println(s"Root: ${root}")
     // println(s"strictBounds: ${strictBounds}")
     // println(s"bleedBounds: ${bleedBounds}")
@@ -334,21 +335,3 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
   }
 
 }
-
-// // TODO: I don't think I need to run repositionChildren here, just propagate child pos info
-// def inheritChildLayout(fv: LabelWidgetF[Unit], childPos: PosAttr, zOrder:Option[Int]=None): PosAttr = {
-//   // println(s"inherit layout :  ${fv}")
-//   // println(s"   from        :  ${childPos}")
-//   // println(s"    : str      : ${childPos.strictBounds}")
-//   // println(s"    : bleed    : ${childPos.bleedBounds}")
-//   // println(s"    : trans vec: ${childPos.selfTranslation}")
-//   // println()
-//   // val (selfStrictBounds, chBleed, childAdjustVecs) = repositionChildren(
-//   //   fv,
-//   //   childPos.strictBounds,
-//   //   List(childPos),
-//   //   { (childrenBbox, childPos) => childrenBbox.toPointUpLeft() }
-//   // )
-//   // PosAttr(fv, selfStrictBounds, chBleed, zOrder.getOrElse(0), Point.zero,  childAdjustVecs)
-//   PosAttr(fv, childPos.strictBounds, childPos.bleedBounds, zOrder.getOrElse(0), Point.zero,  List(Point.zero))
-// }

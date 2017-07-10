@@ -135,13 +135,14 @@ trait TextReflowSharedFunctions extends TextReflowClipping {
         }
       }
 
-      val trans = liftTM(
-        attributeElgotM[(Offsets, ?), Option](transChars)
-      )
+      // val attrElgot = attributeElgotM[(Offsets, ?), Option, Cofree[TextReflowF, TextReflow]].apply(transChars)
+
+      // val trans = liftTM(attrElgot)
+      val trans = liftTM(transChars)
 
       val res = theReflow.annotateCharRanges.cataM(trans)
 
-      res.get.head
+      res.get
     }
 
     def charCount: Int = theReflow.para(countChars)

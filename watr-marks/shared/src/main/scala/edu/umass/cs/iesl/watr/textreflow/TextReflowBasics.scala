@@ -6,8 +6,10 @@ import scalaz._, Scalaz._
 import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
+import matryoshka.patterns._
 import matryoshka.patterns.EnvT
-// import Birecursive.ops._
+// import matryoshka.patterns.EnvT._
+// import Birecursive.nonInheritedOps._
 
 import utils.EnrichNumerics._
 import scala.{Range => _}
@@ -149,10 +151,8 @@ trait TextReflowBasics {
         case Insert(value)         => incTotalLen()
         case Rewrite(from, to)     => incTotalLen()
         case Bracket(pre, post, a) => incTotalLen()
-        // case Mask(mL, mR, a)       => incTotalLen()
         case Flow(atoms)           => setTotalLen()
         case Labeled(ls, a)        => setTotalLen()
-          // case CachedText(a, text)   => setTotalLen()
       }
       sfin <- State.get[Offsets]
 
@@ -163,6 +163,7 @@ trait TextReflowBasics {
 
   var doDebugPrinting = false
 
+
   def annotateReflowCharRanges(textReflow: TextReflow): Cofree[TextReflowF, Offsets] = {
     // bottom-up, fully annotate w/(0, ch-len)
     val charCountAttr:Cofree[TextReflowF, Offsets] =
@@ -170,9 +171,14 @@ trait TextReflowBasics {
 
     // Top down adjustment of attributes:
     val adjustBegins = charCountAttr
-      .attributeTopDownM[State[Offsets, ?], Offsets](OffsetsInst.zero)({
+      .attributeTopDownM[
+        State[Offsets, ?],
+        Cofree[EnvT[Offsets, TextReflowF, ?], Offsets],
+        Offsets
+      ](OffsetsInst.zero)({
         case e => adjustOffsets(e._2.ask, e._2.lower)
       })
+
 
     val asCofree:Cofree[TextReflowF, Offsets] = adjustBegins
       .eval(OffsetsInst.zero)
@@ -207,8 +213,8 @@ trait TextReflowBasics {
   def escapeLineFormatting: TextReflowT => TextReflowT = {
     case l @ Labeled (labels, a)     =>
       val esc = if (hasLabel(LB.Sup)(l)) Option("^")
-      else if (hasLabel(LB.Sub)(l))      Option("_")
-      else None
+                else if (hasLabel(LB.Sub)(l))      Option("_")
+                else None
 
       esc.map(e =>
         flow(insert(s"$e{"), a, insert("}")).unFix
@@ -319,8 +325,11 @@ trait TextReflowBasics {
     )
   }
 
-  implicit object OffsetsInst extends Show[Offsets] {
+  implicit object OffsetsInst extends Show[Offsets] with Monoid[Offsets] {
     def zero: Offsets = Offsets(0, 0, 0, 0)
+    def append(f1: Offsets, f2: => Offsets): Offsets =
+      sys.error("meaningless op")
+
     override def shows(f: Offsets): String = s"(${f.begin} ${f.len}) ${f.total} +:${f.pad}"
   }
 

@@ -21,7 +21,7 @@ object SampleLabelWidgets {
       )
     )
 
-    val sampleText2 = textbox(
+    val _ = textbox(
       vjoin(left)(
         "Lorem ipsum dolor sit amet",
         "Anyconsectetur adipisicing elit, sed do eiusmod tempor",

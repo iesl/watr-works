@@ -180,7 +180,8 @@ object LabelWidgetTransforms {
     println(s"0---")
     val labelId = docStore.ensureLabel(label)
 
-    val pageIds = labelWidget.universe.list
+    // val pageIds = labelWidget.universe.list
+    val pageIds = labelWidget.elgotPara(universe).list
       .toList.collect{
         case l @ Embed(RegionOverlay(wid1, under, overlays)) => under.page.pageId
       }.toSet.toList

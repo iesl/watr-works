@@ -3,7 +3,6 @@ package labeling
 
 import scala.collection.mutable
 
-import textreflow._
 import textreflow.data._
 import geometry._
 import geometry.syntax._
