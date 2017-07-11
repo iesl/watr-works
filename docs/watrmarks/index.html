@@ -1,0 +1,51 @@
+<html><head><title>WatrWorks</title><meta charset="utf-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="edu.umass.cs.iesl" /><meta name="description" content="Text Extraction and Annotation Suite" /><meta name="og:image" content="/watr-works/img/poster.png" /><meta name="og:title" content="WatrWorks" /><meta name="og:site_name" content="WatrWorks" /><meta name="og:url" content="" /><meta name="og:type" content="website" /><meta name="og:description" content="Text Extraction and Annotation Suite" /><link rel="icon" type="image/png" href="/watr-works/img/favicon.png" /><meta name="twitter:title" content="WatrWorks" /><meta name="twitter:image" content="img/poster.png" /><meta name="twitter:description" content="Text Extraction and Annotation Suite" /><meta name="twitter:card" content="summary_large_image" /><link rel="icon" type="image/png" sizes="16x16" href="/watr-works/img/favicon16x16.png" /><link rel="icon" type="image/png" sizes="24x24" href="/watr-works/img/favicon24x24.png" /><link rel="icon" type="image/png" sizes="32x32" href="/watr-works/img/favicon32x32.png" /><link rel="icon" type="image/png" sizes="48x48" href="/watr-works/img/favicon48x48.png" /><link rel="icon" type="image/png" sizes="57x57" href="/watr-works/img/favicon57x57.png" /><link rel="icon" type="image/png" sizes="60x60" href="/watr-works/img/favicon60x60.png" /><link rel="icon" type="image/png" sizes="64x64" href="/watr-works/img/favicon64x64.png" /><link rel="icon" type="image/png" sizes="70x70" href="/watr-works/img/favicon70x70.png" /><link rel="icon" type="image/png" sizes="72x72" href="/watr-works/img/favicon72x72.png" /><link rel="icon" type="image/png" sizes="76x76" href="/watr-works/img/favicon76x76.png" /><link rel="icon" type="image/png" sizes="96x96" href="/watr-works/img/favicon96x96.png" /><link rel="icon" type="image/png" sizes="114x114" href="/watr-works/img/favicon114x114.png" /><link rel="icon" type="image/png" sizes="120x120" href="/watr-works/img/favicon120x120.png" /><link rel="icon" type="image/png" sizes="128x128" href="/watr-works/img/favicon128x128.png" /><link rel="icon" type="image/png" sizes="144x144" href="/watr-works/img/favicon144x144.png" /><link rel="icon" type="image/png" sizes="150x150" href="/watr-works/img/favicon150x150.png" /><link rel="icon" type="image/png" sizes="152x152" href="/watr-works/img/favicon152x152.png" /><link rel="icon" type="image/png" sizes="196x196" href="/watr-works/img/favicon196x196.png" /><link rel="icon" type="image/png" sizes="310x310" href="/watr-works/img/favicon310x310.png" /><link rel="icon" type="image/png" sizes="310x150" href="/watr-works/img/favicon310x150.png" /><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" /><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" /><link rel="stylesheet" href="/watr-works/highlight/styles/default.css" /><link rel="stylesheet" href="/watr-works/css/style.css" /><link rel="stylesheet" href="/watr-works/css/palette.css" /><link rel="stylesheet" href="/watr-works/css/codemirror.css" /><link rel="stylesheet" href="/watr-works/css/kazari-style.css" /><link rel="stylesheet" href="/watr-works/css/monokai.css" /><link rel="stylesheet" href="/watr-works/css/override.css" /></head><body class="docs"><div id="wrapper"><div id="sidebar-wrapper"><ul id="sidebar" class="sidebar-nav"><li class="sidebar-brand"><a href="/watr-works/" class="brand"><div class="brand-wrapper"><span>WatrWorks</span></div></a></li> <li><a href="/watr-works/docs/index.html" class="">Get started</a></li> <li><a href="/watr-works/docs/textworks/index.html" class="">TextWorks</a></li> <li><a href="/watr-works/docs/watrmarks/index.html" class="">WatrMarks</a></li></ul></div><div id="page-content-wrapper"><div class="nav"><div class="container-fluid"><div class="row"><div class="col-lg-12"><div class="action-menu pull-left clearfix"><a href="#menu-toggle" id="menu-toggle"><i class="fa fa-bars" aria-hidden="true"></i></a></div><ul class="pull-right"><li id="gh-eyes-item" class="hidden-xs"><a href="https://github.com/IESL/watr-works"><i class="fa fa-eye"></i><span>WATCH<span id="eyes" class="label label-default">--</span></span></a></li><li id="gh-stars-item" class="hidden-xs"><a href="https://github.com/IESL/watr-works"><i class="fa fa-star-o"></i><span>STARS<span id="stars" class="label label-default">--</span></span></a></li><li><a href="#" onclick="shareSiteTwitter('WatrWorks Text Extraction and Annotation Suite');"><i class="fa fa-twitter"></i></a></li><li><a href="#" onclick="shareSiteFacebook('WatrWorks Text Extraction and Annotation Suite');"><i class="fa fa-facebook"></i></a></li><li><a href="#" onclick="shareSiteGoogle();"><i class="fa fa-google-plus"></i></a></li></ul></div></div></div></div><div id="content" data-github-owner="IESL" data-github-repo="watr-works"><div class="content-wrapper"><section><h1 id="current-status">Current Status</h1>
+
+<h2 id="text-extraction-overview">Text extraction overview</h2>
+
+<h2 id="output-formats">Output formats</h2>
+
+<h3 id="line-tokenization">Line tokenization</h3>
+<h3 id="common-problems">Common problems</h3>
+
+<p>Spacing in patterns like these:</p>
+<div class="highlighter-rouge"><pre class="highlight"><code>            cind @nitt.edu
+            www.*.*
+            Pt/PANi
+            [7,17–24]
+            10^{5}s^{1}
+            doi: 10.1029/2005JD006318
+            70^{◦}C
+            Fe_{3}O_{4}@C
+</code></pre>
+</div>
+
+<ul>
+  <li>words parsed as stream of single chars (particularly on line w/one word)</li>
+  <li>2 0 1 2 J D 0 1 7 45 9 . 1010022013gl058232.pdf.d &lt;target pg:4 (l:319.97, t:560.87, w:50.71, h:7.28)</li>
+  <li>sup/subs are squished w/adjacent words</li>
+  <li>ligatures get sup/subscripted</li>
+  <li>inclusion of technical discipline-specific vocabulary in addition to default dictionary</li>
+  <li>common phrase parsing (e.g, “et al.” as a single token)</li>
+  <li>parse footnote sup/sub markers as independent tokens</li>
+  <li>A few reversed words across entire paper ??!! (I think doc orientation value is incorrect)</li>
+  <li>Non-textline elimination</li>
+  <li>better weight/measure/quantity parsing and tokenization</li>
+</ul>
+
+<h3 id="symbol-glyph-identification">Symbol Glyph Identification</h3>
+
+<p>Accurate extraction of math symbols, Greek/Latin alphabet, common scientific symbols</p>
+
+<h3 id="document-layout-analysis">Document Layout Analysis</h3>
+
+<p>Accurate identification of tables, graphs, charts, footnotes, sections, and paragraphs.</p>
+</section></div></div></div></div><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/watr-works/highlight/highlight.pack.js"></script><script>hljs.configure({
+languages:['scala','java','bash']
+});
+hljs.initHighlighting();
+             </script><script>((window.gitter = {}).chat = {}).options = {
+room: 'IESL/watr-works'};</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js"></script><script src="/watr-works/js/main.js"></script><script src="/watr-works/js/kazari.js"></script><script>
+$(document).ready(function() {
+	kazari.KazariPlugin().decorateCode('https://scala-evaluator-212.herokuapp.com/eval', 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.S2F6YXJp.Jl2eqMfw8IakJF93PjxTbrf-8YUJgX5OoOfy5JHE8Yw', '', 'monokai')
+})
+    </script></body></html>
