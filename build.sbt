@@ -127,15 +127,17 @@ lazy val watrcolorsJVM = watrcolors.jvm
 
 
 lazy val micrositeSettings = Seq(
-  micrositeName                     := "WatrWorks",
-  micrositeDescription              := "Text Extraction and Annotation Suite",
-  micrositeDocumentationUrl         := "/watrworks/docs/",
-  micrositeBaseUrl                  := "/watrworks",
-  micrositeGithubRepo               := "watr-works",
-  micrositeGithubOwner              := "IESL",
-  includeFilter in Jekyll           := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.md"
+  micrositeName             := "WatrWorks",
+  micrositeDescription      := "Text Extraction and Annotation Suite",
+  micrositeDocumentationUrl := "/watrworks/docs/",
+  micrositeBaseUrl          := "/watrworks",
+  micrositeGithubRepo       := "watr-works",
+  micrositeGithubOwner      := "IESL",
+  micrositePushSiteWith     := GitHub4s,
+  micrositeGithubToken      := Some(sys.env("GITHUB_MICROSITES_TOKEN")),
+  micrositeHighlightTheme   := "monokai",
+  includeFilter in Jekyll   := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.md"
 )
-
 lazy val watrdocs = (project in file("watr-docs"))
   .settings(SensibleProject.settings: _*)
   .settings(moduleName := "watrworks-documentation")
@@ -145,26 +147,3 @@ lazy val watrdocs = (project in file("watr-docs"))
   .dependsOn(watrmarksJVM)
   .dependsOn(textworks)
   .dependsOn(watrshed)
-
-// import java.nio.file.Files
-// import java.nio.file.StandardCopyOption._
-// lazy val copyDocs = TaskKey[Unit]("copyDocs")
-// lazy val watrdocs = scalatex.ScalatexReadme(
-//   projectId = "watr-docs",
-//   wd = file("watr-docs"),
-//   url = "https://github.com/iesl/watr-works/tree/master",
-//   source = "Readme")
-//   .settings(SensibleProject.settings: _*)
-//   .settings(copyDocs <<= (baseDirectory, target) map ({ (base, trg) =>
-//     println("copying doc files..")
-//       (trg / "scalatex").listFiles().foreach({file =>
-//         val from = file.toPath
-//         val to = base/".."/"docs"/file.getName()
-//         println(s"copying files from ${from} to ${to}")
-//         if (file.isDirectory) {
-//           sbt.IO.copyDirectory(file, to, overwrite = true)
-//         } else {
-//           Files.copy(from, to.toPath, REPLACE_EXISTING)
-//         }
-//       })
-//   }))
