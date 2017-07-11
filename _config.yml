@@ -1,0 +1,11 @@
+name: WatrWorks
+baseurl: /watrworks
+description: Text Extraction and Annotation Suite
+highlighter: rouge
+docs: true
+collections:
+  tut:
+    output: true
+version: 0.9-SNAPSHOT
+org: edu.umass.cs.iesl
+markdown: kramdown
