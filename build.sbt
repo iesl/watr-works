@@ -129,13 +129,12 @@ lazy val watrcolorsJVM = watrcolors.jvm
 lazy val micrositeSettings = Seq(
   micrositeName             := "WatrWorks",
   micrositeDescription      := "Text Extraction and Annotation Suite",
-  micrositeDocumentationUrl := "/watrworks/docs/",
-  micrositeBaseUrl          := "/watrworks",
+  micrositeDocumentationUrl := "/watr-works/docs/",
+  micrositeBaseUrl          := "/watr-works",
   micrositeGithubRepo       := "watr-works",
   micrositeGithubOwner      := "IESL",
   micrositePushSiteWith     := GitHub4s,
-  micrositeGithubToken      := Some(sys.env("GITHUB_MICROSITES_TOKEN")),
-  micrositeHighlightTheme   := "monokai",
+  micrositeGithubToken      := sys.env.get("GITHUB_MICROSITES_TOKEN"),
   includeFilter in Jekyll   := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.md"
 )
 lazy val watrdocs = (project in file("watr-docs"))

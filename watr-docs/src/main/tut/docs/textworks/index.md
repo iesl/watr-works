@@ -4,12 +4,12 @@ layout: docs
 
 # Current Status
 
-
 ## Text extraction overview
 
 ## Output formats
 
 ### Line tokenization
+
 ### Common problems
 
 

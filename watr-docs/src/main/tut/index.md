@@ -4,14 +4,20 @@ technologies:
 ---
 
 ```tut:invisible
-// This is here to remove the noisy warnings that appear on first run
 //
 ```
 
-# A helping hand for generating sensible data with ScalaCheck
-The ScalaCheck Toolbox is intended to be a set of libraries that can help rein in the power of ScalaCheck in a sensible way, while not impeding your tests. There are three libraries to help you:
+# A collection of tools and libraries to extract, annotate and analyze text and with layout information
 
-  * [`TextWorks`](/watrworks/docs/textworks/): Limit the test data to a certain range of times, and constrain generation to a certain level of precision.
+### Command Line Tools
+  * [`TextWorks`](/watr-works/docs/textworks/): PDF -> Text 
+
+### Scala Libraries
+  * [`WatrMarks`](/watr-works/docs/watrmarks/): Core library for loading, analyzing, and manipulating text 
+  
+  
+### Web Server 
+  * [`WatrColors`](/watr-works/docs/watrcolors/): Web-based annotation and document visualization 
 
 
-View the [documentation](/watrworks/docs/) 
+View the [full documentation](/watr-works/docs/) 
