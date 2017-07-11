@@ -1,5 +1,5 @@
 name: WatrWorks
-baseurl: /watrworks
+baseurl: /watr-works
 description: Text Extraction and Annotation Suite
 highlighter: rouge
 docs: true
