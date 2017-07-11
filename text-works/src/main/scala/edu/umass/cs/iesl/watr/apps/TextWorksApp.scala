@@ -37,67 +37,64 @@ object TextWorks extends App {
   case class Config(
     ioConfig: IOConfig = IOConfig(),
     outputOptions: List[OutputOption] = List(),
-    exec: Option[(Config) => Unit] = None
+    exec: Option[(Config) => Unit] = Some((c) => extractText(c))
   )
 
 
 
   val parser = new scopt.OptionParser[Config]("text-works") {
-    head("Text Works PDF text extraction, part of the WatrWorks suite", "0.1")
+    import scopt._
+
+    override def renderingMode: RenderingMode = RenderingMode.OneColumn
+
+    head("Text Works PDF text extraction, part of the WatrWorks", "0.1")
 
     note("Run text extraction and analysis on PDFs")
 
-    help("usage")
-
-    opt[OutputOption]('p', "output-option") action { (v, conf) =>
-      conf.copy(outputOptions = v :: conf.outputOptions)
-    } text("choose single input file")
-
-    cmd("totext")
-      .action((v, conf) => setAction(conf, extractText(_)))
-      .text ("run basic text extraction")
+    help("help")
 
     /// IO Config options
-    note("Specify exactly one input option")
+    note("Specify exactly one input mode: corpus|file|file-list \n")
 
     // val pageIdL = lens[CharAtom].charRegion.page.pageId
     opt[JFile]('c', "corpus") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
         Option(InputMode.CorpusInput(v))
       }
-    } text ("root path of PDF corpus")
-
-    opt[JFile]('c', "corpus") action { (v, conf) =>
-      lens[Config].ioConfig.inputMode.modify(conf){ m =>
-        Option(InputMode.CorpusInput(v))
-      }
-    } text ("root path of PDF corpus")
+    } text ("root path of PDF corpus; output will be written to same dir as input")
 
     opt[JFile]('i', "input") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
         Option(InputMode.PdfFile(v))
       }
-    } text("single input PDF")
+    } text("choose single input PDF")
 
     opt[JFile]('l', "input-list") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
         Option(InputMode.PdfFileList(v))
       }
-    } text("process PDFs listed in specified file. Specify '--' to read from stdin")
+    } text("process list of input PDFs in specified file. Specify '--' to read from stdin. ")
 
-    note("Output options")
+    note("\nOutput file options\n")
 
     opt[JFile]('o', "output-file") action { (v, conf) =>
       lens[Config].ioConfig.outputMode.modify(conf){ m =>
         Option(OutputMode.ToFile(v))
       }
-    } text("choose single input file")
+    } text("""|specify output file. In --corpus mode, ouput will be written to same directory as
+              |           input file, otherwise relative to cwd. Use --force to overwrite existing files.""".stripMargin)
 
     opt[String]('x', "output-ext") action { (v, conf) =>
       lens[Config].ioConfig.outputMode.modify(conf){ m =>
         Option(OutputMode.ToFileExt(v))
       }
-    } text("choose single input file")
+    } text("write output to input-file+ext")
+
+    note("\nOutput text layout options: \n")
+
+    opt[OutputOption]('p', "layout-option") action { (v, conf) =>
+      conf.copy(outputOptions = v :: conf.outputOptions)
+    } text("choose layout options for extracted text [visual-line|dehyphenated|super-sub-escaping|token-labeling]")
 
     checkConfig{ c =>
       if (c.ioConfig.inputMode.isEmpty) {
@@ -138,7 +135,9 @@ object TextWorks extends App {
         case OutputMode.ToFile(f) =>
           val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
           val p = fs.Path(f, pwd)
-          write(p, content)
+          if (!exists(p)) {
+            write(p, content)
+          }
       }}
     }
   }

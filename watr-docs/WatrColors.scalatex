@@ -1,5 +1,0 @@
-@import Main._
-
-@sect("WatrColors", "Document Labeling and Visualization")
-
-  @p Labeling and Annotating Documents

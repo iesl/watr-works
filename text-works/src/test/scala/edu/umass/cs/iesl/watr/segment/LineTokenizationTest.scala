@@ -141,7 +141,6 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   }
 
 
-
   def println0(s: String): Unit = {
     println(s)
   }
@@ -160,7 +159,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
     // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
-    // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+    tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
     segmenter.runLineDeterminationOnPage(pageId, pageNum)
 

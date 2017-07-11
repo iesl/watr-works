@@ -17,7 +17,7 @@ lazy val jvmProjects = Seq[ProjectReference](
 )
 
 lazy val root = (project in file("."))
-  .enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
+  .enablePlugins(ScalaJSPlugin)
   .aggregate( (jsProjects ++ jvmProjects): _*)
 
 lazy val prelude = (project in file("watr-prelude"))
@@ -126,7 +126,25 @@ lazy val watrcolorsJVM = watrcolors.jvm
 
 
 
+lazy val micrositeSettings = Seq(
+  micrositeName                     := "WatrWorks",
+  micrositeDescription              := "Text Extraction and Annotation Suite",
+  micrositeDocumentationUrl         := "/watrworks/docs/",
+  micrositeBaseUrl                  := "/watrworks",
+  micrositeGithubRepo               := "watr-works",
+  micrositeGithubOwner              := "IESL",
+  includeFilter in Jekyll           := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.md"
+)
 
+lazy val watrdocs = (project in file("watr-docs"))
+  .settings(SensibleProject.settings: _*)
+  .settings(moduleName := "watrworks-documentation")
+  .settings(name := "watrworks-documentation")
+  .settings(micrositeSettings: _*)
+  .enablePlugins(MicrositesPlugin)
+  .dependsOn(watrmarksJVM)
+  .dependsOn(textworks)
+  .dependsOn(watrshed)
 
 // import java.nio.file.Files
 // import java.nio.file.StandardCopyOption._

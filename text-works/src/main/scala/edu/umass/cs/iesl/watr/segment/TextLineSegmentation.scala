@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package segment
 
 import watrmarks.Label
 // import utils.Histogram, Histogram._
@@ -10,16 +10,15 @@ import utils.SlicingAndDicing._
 import utils.{CompassDirection => Compass}
 import tracing.VisualTracer, VisualTracer._
 import scala.collection.mutable
-// import utils.EnrichNumerics._
+import spindex._
 import TextReflowConversion._
-// import TypeTags._
 
 import geometry._
 
 import geometry.syntax._
 import utils.ExactFloats._
 
-object ComponentOperations {
+object TextLineSegmentation {
   import textreflow.data._
   import utils.EnglishDictionary
 
@@ -31,55 +30,6 @@ object ComponentOperations {
       .map(_.toString())
       .drawBox
   }
-
-
-  // def vtraceHistogram(hist: Histogram): TraceLog = {
-  //   vtraceHistogram(
-  //     hist.getFrequencies
-  //       .sortBy(_.frequency)
-  //       .reverse
-  //       .takeWhile(_.frequency > 0)
-  //       .map{b=>(b.value, b.frequency)},
-  //     hist.getStartingResolution, hist.getComputedResolution
-  //   )
-  // }
-
-  // def vtraceHistogram(vfs: Seq[(FloatExact, Double)], resStart: Double, resComputed: Double): TraceLog = {
-  //   message(
-  //     vjoin()(
-  //       s"histogram: resolution(in)=${resStart.pp}, resolution(computed):${resComputed.pp}", indent(2)(
-  //         vjoin(AlignLeft)(
-  //           "Val:",
-  //           "Freq:"
-  //         ) + hjoins(sep=" ")(
-  //           vfs.map({case d =>
-  //             vjoin(AlignRight)(
-  //               d._1.pp,
-  //               d._2.pp
-  //             )
-  //           })
-  //         ))
-  //     )
-  //   )
-  // }
-
-  // def getMostFrequentValuesAndFreqs(vtrace: VisualTracer)(in: Seq[FloatExact], resolution: Double): Seq[(FloatExact, Double)] = {
-  //   val hist = histogram(in, resolution)
-
-  //   val res = hist.getFrequencies
-  //     .sortBy(_.frequency)
-  //     .reverse
-  //     .takeWhile(_.frequency > 0)
-  //     .map{b=> (b.value, b.frequency)}
-
-  //   // vtrace.trace(vtraceHistogram(hist))
-  //   res
-  // }
-
-
-  // def getMostFrequentValues(vtrace: VisualTracer)(in: Seq[FloatExact], resolution: Double): Seq[FloatExact] = {
-  //   getMostFrequentValuesAndFreqs(vtrace)(in, resolution).map(_._1)
-  // }
 
   def joinTextLines(line1: TextReflow, line2: TextReflow, force: Boolean=false)(dict: EnglishDictionary): TextReflow = {
 

@@ -1,9 +1,0 @@
-@import Main._
-
-@sect("WatrMarks", "Watr Markup Language(s)")
-
-  @p
-    Markup Language
-
-
-  @p{Text alignment against PDF documents}
