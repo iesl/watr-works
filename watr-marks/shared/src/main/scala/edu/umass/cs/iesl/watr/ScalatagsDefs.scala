@@ -37,7 +37,6 @@ trait ScalatagsDefs {
 
   import texttags._
 
-
   implicit class RichString(val s: String)  {
     def clazz = ^.`class` := s
     def id = ^.`id` := s

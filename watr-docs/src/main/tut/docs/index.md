@@ -2,14 +2,11 @@
 layout: docs
 ---
 
-# Overview 
+### Modules
 
-## TextWorks
+* **[TextWorks](/watr-works/docs/textworks/index.html)**  Command line text extractor
 
-Given a PDF research paper, extract text from PDFs in such a way that we can find tokens, lines, formatting, and layout. This task is surprisingly difficult because PDF is a rich programming language and research papers are more complex than average documents.
+* **[WatrMarks](/watr-works/docs/watrmarks/index.html)** Core utility library
 
-
-##  WatrMarks
-##  WatrShed
-##  WatrColors
+* **WatrColors** Web-based annotation tool
 

@@ -5,5 +5,12 @@ options:
   - title: TextWorks
     url: docs/textworks/index.html
 
+    nested_options:
+    - title: Corpora 
+      url: docs/textworks/corpus-management.html
+
+    - title: Output Formats 
+      url: docs/textworks/output-formats.html
+
   - title: WatrMarks 
     url: docs/watrmarks/index.html

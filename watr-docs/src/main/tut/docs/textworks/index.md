@@ -1,46 +1,52 @@
 ---
 layout: docs
+title: TextWorks
 ---
 
-# Current Status
-
-## Text extraction overview
-
-## Output formats
-
-### Line tokenization
-
-### Common problems
-
-
-Spacing in patterns like these:
-```
-            cind @nitt.edu
-            www.*.*
-            Pt/PANi
-            [7,17–24]
-            10^{5}s^{1}
-            doi: 10.1029/2005JD006318
-            70^{◦}C
-            Fe_{3}O_{4}@C
+```tut:invisible
+import edu.umass.cs.iesl.watr
+import watr.apps._
 ```
 
+### Quick Start
 
--  words parsed as stream of single chars (particularly on line w/one word)
-  - 2 0 1 2 J D 0 1 7 45 9 . 1010022013gl058232.pdf.d <target pg:4 (l:319.97, t:560.87, w:50.71, h:7.28)
--  sup/subs are squished w/adjacent words
--  ligatures get sup/subscripted
--  inclusion of technical discipline-specific vocabulary in addition to default dictionary
--  common phrase parsing (e.g, "et al." as a single token)
--  parse footnote sup/sub markers as independent tokens
--  A few reversed words across entire paper ??!! (I think doc orientation value is incorrect)
--  Non-textline elimination
--  better weight/measure/quantity parsing and tokenization
+Download the latest release:
 
-### Symbol Glyph Identification
+    curl -o textworks.tar.gz -L https://github.com/iesl/watr-works/releases/download/v0.8/textworks-0.8.tar.gz
+    tar xzvf textworks.tar.gz
 
-Accurate extraction of math symbols, Greek/Latin alphabet, common scientific symbols
+and run
 
-### Document Layout Analysis
+    path/to/textworks/bin/textworks --help
 
-Accurate identification of tables, graphs, charts, footnotes, sections, and paragraphs.
+for option syntax.
+
+### Examples
+
+```
+# Single file
+textworks --input input.pdf --output-file output.json
+
+# Multiple files specified in list, output will be input file name + ext
+textworks --input-list ./files-to-process.txt --output-ext ".wtxt.json"
+```
+
+
+
+### [Corpus Management](/watr-works/docs/textworks/corpus-management.html)
+
+```plain
+# Run on all files in corpus (see Corpus Management for explanation) 
+textworks --corpus --output-file "extracted-text.json"
+```
+
+### [Output Formats](/watr-works/docs/textworks/output-formats.html)
+
+
+### Text layout and analysis options
+
+```plain
+# Single file
+textworks --input input.pdf --output-file output.json
+```
+

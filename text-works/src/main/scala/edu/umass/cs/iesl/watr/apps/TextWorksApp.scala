@@ -8,6 +8,7 @@ import java.io.{File => JFile}
 import segment.DocumentSegmenter
 import TypeTags._
 import scopt.Read
+import shapeless._
 
 sealed trait OutputOption
 
@@ -28,19 +29,13 @@ object OutputOption {
     }}
 }
 
-import shapeless._
-
-object TextWorks extends App {
-
-  // private[this] val log = org.log4s.getLogger
-
+object TextWorksConfig {
   case class Config(
     ioConfig: IOConfig = IOConfig(),
     outputOptions: List[OutputOption] = List(),
-    exec: Option[(Config) => Unit] = Some((c) => extractText(c))
+    exec: Option[(Config) => Unit] = None
+    // exec: Option[(Config) => Unit] = Some((c) => extractText(c))
   )
-
-
 
   val parser = new scopt.OptionParser[Config]("text-works") {
     import scopt._
@@ -106,6 +101,14 @@ object TextWorks extends App {
       else success
     }
   }
+
+}
+
+object TextWorks extends App {
+  import TextWorksConfig._
+
+  // private[this] val log = org.log4s.getLogger
+
 
   parser.parse(args, Config()).foreach{ config =>
     config.exec.foreach { _.apply(config) }

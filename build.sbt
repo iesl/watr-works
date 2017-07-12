@@ -127,16 +127,20 @@ lazy val watrcolorsJVM = watrcolors.jvm
 
 
 lazy val micrositeSettings = Seq(
-  micrositeName             := "WatrWorks",
-  micrositeDescription      := "Text Extraction and Annotation Suite",
-  micrositeDocumentationUrl := "/watr-works/docs/",
-  micrositeBaseUrl          := "/watr-works",
-  micrositeGithubRepo       := "watr-works",
-  micrositeGithubOwner      := "IESL",
-  micrositePushSiteWith     := GitHub4s,
-  micrositeGithubToken      := sys.env.get("GITHUB_MICROSITES_TOKEN"),
-  includeFilter in Jekyll   := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.md"
+  micrositeName                 := "WatrWorks",
+  micrositeDescription          := "Text Extraction and Annotation Suite",
+  micrositeAuthor               := "IESL",
+  micrositeHomepage             := "https://iesl.github.io/watr-works/",
+  micrositeOrganizationHomepage := "http://www.iesl.cs.umass.edu/",
+  micrositeDocumentationUrl     := "/watr-works/docs/",
+  micrositeBaseUrl              := "/watr-works",
+  micrositeGithubRepo           := "watr-works",
+  micrositeGithubOwner          := "IESL",
+  micrositePushSiteWith         := GitHub4s,
+  micrositeGithubToken          := sys.env.get("GITHUB_MICROSITES_TOKEN"),
+  includeFilter in Jekyll       := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.md"
 )
+
 lazy val watrdocs = (project in file("watr-docs"))
   .settings(SensibleProject.settings: _*)
   .settings(moduleName := "watrworks-documentation")
