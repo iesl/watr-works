@@ -28,7 +28,7 @@ object GenericHeuristics {
                 currentToken += charAtom.char
                 prevCharPosition = charAtom.bbox.right.asInt()
             }
-            else if (charAtom.bbox.right.asInt() < prevCharPosition) {
+            else if (charAtom.bbox.right.asInt() <= prevCharPosition) {
                 currentToken += charAtom.char
             }
         }
@@ -38,7 +38,7 @@ object GenericHeuristics {
             currentToken.clear()
         }
 
-        tokens.filter(_.nonEmpty)
+        tokens.filter(_.nonEmpty).filter(!_.equals(PERIOD))
     }
 
     def getSeparateComponentsByText(tokenizedTextReflow: ListBuffer[String]): ListBuffer[String] = {
