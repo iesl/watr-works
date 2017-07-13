@@ -191,4 +191,35 @@ object Utils {
         false
     }
 
+    def cleanPunctuations(tokens: Seq[String]): ListBuffer[String] = {
+
+        val cleanedTokens: ListBuffer[String] = new ListBuffer[String]()
+
+        tokens.foreach{
+            token => {
+                token.split(PUNCTUATIONS_PATTERN).foreach{
+                    splitToken => {
+                        if (splitToken.isEmpty) {
+                            cleanedTokens += PUNCTUATION_TAG
+                        }
+                        else if (isNumberString(splitToken)) {
+                            cleanedTokens += NUMBER_TAG
+                            cleanedTokens += PUNCTUATION_TAG
+                        }
+                        else {
+                            cleanedTokens += splitToken
+                            cleanedTokens += PUNCTUATION_TAG
+                        }
+                    }
+                }
+                if (! PUNCTUATIONS_PATTERN.contains(token.charAt(token.length - 1))) {
+                    cleanedTokens.remove(cleanedTokens.length - 1)
+                }
+            }
+        }
+
+        cleanedTokens.map( cleanedToken => cleanedToken.trim)
+
+    }
+    
 }
