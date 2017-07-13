@@ -12,22 +12,33 @@ import matryoshka._
 import matryoshka.data._
 import geometry._
 
-
 sealed trait TextReflowF[+A]
+
+sealed trait AnchorID
 
 object TextReflowF {
 
   type TextReflow = Fix[TextReflowF]
   type TextReflowT = TextReflowF[Fix[TextReflowF]]
 
-
   case class Atom(c: CharAtom)                            extends TextReflowF[Nothing]
   case class Insert(value: String)                        extends TextReflowF[Nothing]
   case class Rewrite[A](from: A, to: String)              extends TextReflowF[A]
-  case class Bracket[A](pre: String, post: String, a: A)  extends TextReflowF[A]  // { val _ = sys.error("disabled"); }
+  case class Bracket[A](pre: String, post: String, a: A)  extends TextReflowF[A]
   case class Flow[A](as: List[A])                         extends TextReflowF[A]
   case class Labeled[A](labels: Set[Label], a: A)         extends TextReflowF[A]
 
+  // // case class Region(bbox: LTBounds)                       extends TextReflowF[Nothing]
+  // case class Anchor[A](
+  //   id: String@@AnchorID,
+  //   optA: Option[A]
+  // ) extends TextReflowF[A]
+
+  // case class Coupling[A](
+  //   anchor: A,
+  //   prev: Option[AnchorID],
+  //   next: Option[AnchorID]
+  // ) extends TextReflowF[A]
 
   implicit def TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
     def traverseImpl[G[_], A, B](fa: TextReflowF[A])(f: A => G[B])(implicit G: Applicative[G]): G[TextReflowF[B]] = fa match {

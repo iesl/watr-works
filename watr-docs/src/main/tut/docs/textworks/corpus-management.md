@@ -1,6 +1,6 @@
 ---
 layout: docs 
-title: Corpus Management
+title: Corpus Structure 
 ---
 
 ## Corpus structure and initialization
@@ -9,6 +9,7 @@ bin/works expects the PDFs to be organized such that there is one subdirectory p
 and all generated artifacts (as well as the original PDF) are placed together in the appropriate
 artifacts directory, like so:
 
+```plain
     .
     ├── .corpus-root
     ├── 0575.pdf.d
@@ -27,6 +28,7 @@ artifacts directory, like so:
         ├── 2839.pdf
         ├── lineseg.txt
         └── paragraphs.txt
+```
 
 
 bin/works can initialize directory filled with PDFs (all in the root of the directory), by creating the

@@ -12,18 +12,22 @@ import watr.apps._
 
 Download the latest release:
 
-    curl -o textworks.tar.gz -L https://github.com/iesl/watr-works/releases/download/v0.8/textworks-0.8.tar.gz
-    tar xzvf textworks.tar.gz
+```plain
+curl -o textworks.tar.gz -L https://github.com/iesl/watr-works/releases/download/v0.8/textworks-0.8.tar.gz
+tar xzvf textworks.tar.gz
+```
 
 and run
 
-    path/to/textworks/bin/textworks --help
+```plain
+path/to/textworks/bin/textworks --help
+```
 
 for option syntax.
 
 ### Examples
 
-```
+```plain
 # Single file
 textworks --input input.pdf --output-file output.json
 
@@ -47,6 +51,6 @@ textworks --corpus --output-file "extracted-text.json"
 
 ```plain
 # Single file
-textworks --input input.pdf --output-file output.json
+textworks --input input.pdf --output-file output.json --options dehyphenate
 ```
 

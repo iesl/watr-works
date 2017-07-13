@@ -10,7 +10,7 @@
 -XX:+UseConcMarkSweepGC
 -XX:+CMSClassUnloadingEnabled
 # must be enabled for CMSClassUnloadingEnabled to work
-
+-XX:MaxDirectMemorySize=15926m 
 
 -Dakka.loglevel=OFF
 -Dorg.ensime.loglevel=DEBUG

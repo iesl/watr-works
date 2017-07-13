@@ -33,8 +33,7 @@ object TextWorksConfig {
   case class Config(
     ioConfig: IOConfig = IOConfig(),
     outputOptions: List[OutputOption] = List(),
-    exec: Option[(Config) => Unit] = None
-    // exec: Option[(Config) => Unit] = Some((c) => extractText(c))
+    exec: Option[(Config) => Unit] = Some((c) => extractText(c))
   )
 
   val parser = new scopt.OptionParser[Config]("text-works") {
@@ -102,23 +101,9 @@ object TextWorksConfig {
     }
   }
 
-}
-
-object TextWorks extends App {
-  import TextWorksConfig._
-
-  // private[this] val log = org.log4s.getLogger
-
-
-  parser.parse(args, Config()).foreach{ config =>
-    config.exec.foreach { _.apply(config) }
-  }
-
-
   def setAction(conf: Config, action: (Config) => Unit): Config = {
     conf.copy(exec=Option(action))
   }
-
 
   def extractText(conf: Config): Unit = {
     println("extracting text")
@@ -144,4 +129,17 @@ object TextWorks extends App {
       }}
     }
   }
+}
+
+object TextWorks extends App {
+  import TextWorksConfig._
+
+  // private[this] val log = org.log4s.getLogger
+
+
+  parser.parse(args, Config()).foreach{ config =>
+    config.exec.foreach { _.apply(config) }
+  }
+
+
 }

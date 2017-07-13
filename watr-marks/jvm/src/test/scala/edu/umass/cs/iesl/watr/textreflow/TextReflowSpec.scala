@@ -48,6 +48,9 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
     }
   }
 
+  it should "join reflows using explicity join-point anchors" in {
+
+  }
 
   it should "clip single-line reflow to target region" in {
     val pageLines = docStore.getPageVisualLines(PageID(1))
@@ -93,10 +96,10 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
 
       }
     }
-    println(dbgGrid.toBox())
+    // println(dbgGrid.toBox())
   }
 
-  it should "clip mulit-line reflows to target regions" in {
+  it should "clip multi-line reflows to target regions" in {
     val pageLines = docStore.getPageVisualLines(PageID(1))
     val page1Lines = for {
       line            <- pageLines
@@ -137,7 +140,7 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
         )
       }
     }
-    println(dbgGrid.toBox())
+    // println(dbgGrid.toBox())
   }
 
 
