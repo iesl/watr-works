@@ -98,7 +98,6 @@ object AffiliationsHeuristics {
 
         if(emailStrings.nonEmpty){
             affiliationComponentsWithClasses.insert(affiliationComponentIndex+1, (emailStrings.mkString(COMMA), ListBuffer[String](EMAIL_KEYWORD)))
-//            affiliationComponentsWithClasses += ((emailStrings.mkString(COMMA), ListBuffer[String](EMAIL_KEYWORD)))
         }
 
         affiliationComponentsWithClasses.foreach {
@@ -153,8 +152,6 @@ object AffiliationsHeuristics {
                 if (userNameStartIndex.!=(-1) && emailSuffixStartIndex.!=(-1) && emailSuffixStartIndex >= userNameEndIndex && (userNameEndIndex - userNameStartIndex + emailSuffixEndIndex - emailSuffixStartIndex).==(affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK).length)){
                     affiliations += ((affiliationsWithClasses(affiliationIndex)._1, affiliationsWithClasses(affiliationIndex)._2, getBoundingBoxesWithIndexesFromReflow((userNameStartIndex, emailSuffixEndIndex), textReflows(textReflowIndex))))
                     startIndex = emailSuffixEndIndex
-                    println(affiliationsWithClasses(affiliationIndex)._1 + ", " + userNameStartIndex + ", " + emailSuffixEndIndex)
-                    println(textReflows(textReflowIndex).charAtoms().length)
                     affiliationIndex += 1
                 }
             }
@@ -163,8 +160,6 @@ object AffiliationsHeuristics {
                 if (componentStartIndex.!=(-1) && (componentEndIndex - componentStartIndex).==(affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK).length)){
                     affiliations += ((affiliationsWithClasses(affiliationIndex)._1, affiliationsWithClasses(affiliationIndex)._2, getBoundingBoxesWithIndexesFromReflow((componentStartIndex, componentEndIndex), textReflows(textReflowIndex))))
                     startIndex = componentEndIndex
-                    println(affiliationsWithClasses(affiliationIndex)._1 + ", " + componentStartIndex + ", " + componentEndIndex)
-                    println(textReflows(textReflowIndex).charAtoms().length)
                     affiliationIndex += 1
                 }
             }
