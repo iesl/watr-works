@@ -4,7 +4,7 @@ package segment
 
 import spindex._
 
-object SpatialIndexOperations {
+object RTreeIndexOperations {
 
 
   implicit class RicherZoneIndex(val mpageIndex: MultiPageIndex) extends AnyVal {

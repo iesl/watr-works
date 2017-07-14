@@ -11,7 +11,6 @@ import scalaz.Tree
 import scala.collection.mutable
 
 import watrmarks.{StandardLabels => LB}
-// import TypeTags._
 
 // TODO move and/or delete this
 case class BioNode(
@@ -21,7 +20,7 @@ case class BioNode(
 
 object Component {
   import rindex._
-  implicit object ComponentIndexable extends SpatialIndexable[Component] {
+  implicit object ComponentIndexable extends RTreeIndexable[Component] {
     def id(t: Component): Int = t.id.unwrap
     def ltBounds(t: Component): LTBounds = t.bounds
   }

@@ -122,7 +122,7 @@ class PdfTextExtractor(
         )
 
         val pageAtoms = try {
-          val parser = new PdfCanvasProcessor(extractor);
+          val parser = new PdfCanvasProcessor(extractor)
           parser.processPageContent(pdfPage)
 
 
@@ -133,8 +133,6 @@ class PdfTextExtractor(
 
           if (maxExceeded) {
             println(s"Max chars per page limit exceeded: extracted only ${pageAtoms.length} of ${charCount} chars")
-          } else {
-            // println(s"Extracted ${pageAtoms.length} chars out of ${charCount} glyphs")
           }
 
           parser.reset()
@@ -155,7 +153,6 @@ class PdfTextExtractor(
       case f: Throwable =>
         println(s"ERROR extractCharacters(): ${f}: ${f.getMessage} ${f.getCause()}")
         f.printStackTrace()
-        List()
     } finally {
       if (instr != null) instr.close()
     }

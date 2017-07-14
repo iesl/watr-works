@@ -43,8 +43,8 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     TestLibs.testAndCheck ++ Seq(
       Lib.ammoniteOps,
       Lib.playJson,
-      // Needed by jsi
-      "net.sf.trove4j" % "trove4j" % "3.0.3"
+      "com.github.davidmoten" % "rtree" % "0.8.0.1",
+      "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
     ))
 
 lazy val watrmarksJS = watrmarks.js

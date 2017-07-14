@@ -20,7 +20,6 @@ import utils.ExactFloats._
 
 object TextLineSegmentation {
   import textreflow.data._
-  import utils.EnglishDictionary
 
   import utils.ScalazTreeImplicits._
   import scalaz._, Scalaz._
@@ -31,51 +30,7 @@ object TextLineSegmentation {
       .drawBox
   }
 
-  def joinTextLines(line1: TextReflow, line2: TextReflow, force: Boolean=false)(dict: EnglishDictionary): TextReflow = {
-
-    val line1Text = line1.toText()
-    val line2Text = line2.toText()
-
-    val lineMinLenReq = line1Text.length > 10  || force // magic # for minimum line length
-    val endsWithDash = line1Text.lastOption.exists(_ == '-')
-    val isBrokenWord = endsWithDash && lineMinLenReq  // && !hasNonLetterPrefix
-
-    // vtrace.trace("Broken word joined:" withInfo(word))
-    // vtrace.trace("Broken word hyphenated:" withInfo(s"${w1}-${w2}"))
-
-    def dehyphenate(): TextReflow = {
-      val dehyph = line1.modifyCharAt(line1Text.length-1)({case _ => Some("")})
-      val res = join("")(dehyph, line2)
-      res
-    }
-    def concat(): TextReflow = {
-      join("")(line1, line2)
-    }
-
-    if (isBrokenWord) {
-      val wordHalfFirst = line1Text.split(" ").lastOption
-      val wordHalfSecond =  line2Text.split(" ").headOption
-      (wordHalfFirst, wordHalfSecond) match {
-        case (Some(firstHalf), Some(secondHalf)) =>
-          val w1 = firstHalf.dropRight(1)
-          val w2 = secondHalf.reverse.dropWhile(!_.isLetter).reverse
-          // val w2Extra = secondHalf.reverse.takeWhile(!_.isLetter).reverse
-
-          val word = w1 + w2
-          if (dict.contains(word)) {
-            dehyphenate()
-          } else if (dict.contains(w1) && dict.contains(w2)) {
-            concat()
-          } else {
-            dehyphenate()
-          }
-        case _ =>
-          dehyphenate()
-      }
-    } else {
-      join(" ")(line1, line2)
-    }
-  }
+  // def joinTextLines(line1: TextReflow, line2: TextReflow, force: Boolean=false)(dict: EnglishDictionary): TextReflow = {}
 
 
   def centerX(cb: CharAtom) = cb.bbox.toCenterPoint.x

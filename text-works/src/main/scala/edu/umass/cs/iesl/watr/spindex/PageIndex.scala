@@ -10,14 +10,14 @@ import watrmarks.{StandardLabels => LB}
 import rindex._
 
 /**
-  A PageIndex wraps a SpatialIndex for Components, and adds:
+  A PageIndex wraps a RTreeIndex for Components, and adds:
     - the ability to associate labels with components
     - A tree-like parent/child relationship between components, which provides, e.g., a reading order
 
   */
 
 case class PageIndex(
-  componentIndex: SpatialIndex[Component],
+  componentIndex: RTreeIndex[Component],
   startingGeometry: PageGeometry,
   componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
   componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),

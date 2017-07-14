@@ -41,12 +41,12 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
     )
 
     val lwindex = LabelWidgetIndex.create(docStore, layout)
-    // val lwindex = LabelWidgetIndex.init(docStore, NilLabelerIdentifier, (_) => {(layout, NilLabelerIdentifier)}, layout)
 
   }
 
   override def xscale = 4.0d
   override def yscale = 4.0d
+
   it should "apply a label to selected regions" in new CommonSetup {
 
     val zoneAndLabel = getDocumentZonesWithLabels(stableId)
@@ -54,11 +54,10 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
     zoneAndLabel.length shouldBe(12)
 
     val queryBox = getRegionBounds(0, 0, 1, 2).scale(-3.percent)
-    // println("query box: " + queryBox)
 
     val qres = lwindex.queryRegion(queryBox)
 
-    // reportQueryHits(queryBox, qres)
+    reportQueryHits(queryBox, qres)
 
     docStore.getTargetRegions(page(1)).length shouldBe (6)
 
@@ -75,15 +74,15 @@ class LabelWidgetIndexSpec extends LabelWidgetTestUtil {
 
 
 
-  // it should "select region(s) by line" in new CommonSetup {
+  it should "select region(s) by line" in new CommonSetup {
 
-  //   // val queryBox = getRegionBounds(2, 1, 2, 4).scale(-3.percent)
+    val queryBox = getRegionBounds(2, 1, 2, 4).scale(-3.percent)
 
-  //   // val qres = lwindex.queryRegion(queryBox)
+    val qres = lwindex.queryRegion(queryBox)
 
-  //   // lwindex.debugPrint(Some(queryBox))
-  //   // reportQueryHits(queryBox, qres)
-  // }
+    lwindex.debugPrint(Some(queryBox))
+    reportQueryHits(queryBox, qres)
+  }
 
   // it should "select region(s) by char" in new CommonSetup {
 

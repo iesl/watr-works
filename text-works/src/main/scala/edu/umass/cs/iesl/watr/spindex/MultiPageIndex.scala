@@ -243,7 +243,7 @@ class MultiPageIndex(
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
     val pageIndex = PageIndex(
-      SpatialIndex.createFor[Component](),
+      RTreeIndex.createFor[Component](),
       pageGeometry
     )
 

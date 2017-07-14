@@ -1,5 +1,4 @@
 package edu.umass.cs.iesl.watr
-
 package segment
 
 import org.scalatest._
@@ -17,7 +16,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   behavior of "text line identification"
   val testExamples = List(
     TextExample(
-      """Page:0 /10.1101-090498.d-pg_0001.pdf""",
+      """Page:0 /saccharomyces-1-page.pdf""",
       """Daniel A. Skelly^{1,3}, Paul M. Magwene1 , Brianna Meeks^{2} , Helen A. Murphy^{2} (0.0, 160.0, 900.0, 50.0)""",
       """Daniel A. Skelly^{1,3}, Paul M. Magwene1 , Brianna Meeks^{2} , Helen A. Murphy^{2}"""
     ),
@@ -125,20 +124,20 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   )
 
 
-  it should "identify text lines" in {
-    // val justRunThisOne:Option[Int] = None
-    val justRunThisOne:Option[Int] = Some(0)
+  // it should "identify text lines" in {
+  //   // val justRunThisOne:Option[Int] = None
+  //   val justRunThisOne:Option[Int] = Some(0)
 
-    val examples = testExamples.map(cutAndPasteToTestExample(_))
+  //   val examples = testExamples.map(cutAndPasteToTestExample(_))
 
-    justRunThisOne
-      .map(i => examples.drop(i).take(1))
-      .getOrElse(examples)
-      .foreach({example =>
-        testExample(example)
-      })
+  //   justRunThisOne
+  //     .map(i => examples.drop(i).take(1))
+  //     .getOrElse(examples)
+  //     .foreach({example =>
+  //       testExample(example)
+  //     })
 
-  }
+  // }
 
 
   def println0(s: String): Unit = {
@@ -159,12 +158,13 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
 
     // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
-    tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+    // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
     segmenter.runLineDeterminationOnPage(pageId, pageNum)
 
     val docStore = segmenter.docStore
 
+    println("All VisualLines")
     for {
       docId <- docStore.getDocument(DocumentID("dummy-id"))
       _ <- Option[Unit]({ println(s"doc: ${docId}")})
@@ -181,13 +181,16 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
 
     val tokenizedLines = lineComponents.map { lineComponent =>
       lineComponent.tokenizeLine()
-      toTextReflow(lineComponent).get.toString()
+      val reflow = toTextReflow(lineComponent).get
+      // val text = reflow.toText
+      // println(text)
+      reflow
     }
-
 
     // println(s"""component= ${lineComponent.chars}, ${lineComponent.id} (${lineComponent.getLabels.mkString(", ")})""")
     // println(s"""expecting: ${example.expectedOutput.mkString(" \\\\  ")}""")
     // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")
+
 
     example.expectedOutput.zip(tokenizedLines)
       .foreach({case (expect, actual) =>

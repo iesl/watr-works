@@ -228,6 +228,7 @@ class DocumentSegmenter(
         docStore.addTargetRegion(pageId, pageGeometry)
       ).toPageRegion()
     }
+
     docStore.labelRegions(LB.DocumentPages, pageRegions)
   }
 
@@ -580,7 +581,6 @@ class DocumentSegmenter(
     components: Seq[AtomicComponent]
   ): Unit = {
 
-
     def minRegionId(ccs: Seq[AtomicComponent]): Int@@CharID =  ccs.map(_.charAtom.id).min
 
 
@@ -649,6 +649,10 @@ class DocumentSegmenter(
 
         shouldJoin
       })
+      .sortBy {  lineGroups =>
+        val bounds = lineGroups.head.head.bounds
+        (bounds.bottom, bounds.left)
+      }
 
     val visualLineLabelId = docStore.ensureLabel(LB.VisualLine)
 
@@ -662,13 +666,6 @@ class DocumentSegmenter(
           visualLine.setChildren(LB.PageAtom, line.sortBy(_.bounds.left))
           visualLine.cloneAndNest(LB.TextSpan)
 
-          // TODO: get rid of uri in VisualLine
-          // val uriStr = visualLine.targetRegion.uriString
-          // val vlineLabel = LB.VisualLine(uriStr)
-          // visualLine.removeLabel(LB.VisualLine)
-          // visualLine.addLabel(vlineLabel)
-          // vtrace.trace("Ending Tree" withInfo VisualLine.renderRoleTree(visualLine))
-          // val regionId = docStore.addTargetRegion(pageId, visualLine.targetRegion.bbox)
           val regionId = targetRegion.id
 
           val alreadyZoned = docStore.getZoneForRegion(regionId, LB.VisualLine).isDefined
@@ -691,10 +688,12 @@ class DocumentSegmenter(
     }).flatten.flatten
 
 
+    val ySortedLines = pageLines
+
     mpageIndex
-      .labelRegion(pageLines, LB.PageLines)
+      .labelRegion(ySortedLines, LB.PageLines)
       .map{ case (comp, targetRegion) =>
-        comp.setChildren(LB.VisualLine, pageLines)
+        comp.setChildren(LB.VisualLine, ySortedLines)
       }
 
   }

@@ -92,6 +92,7 @@ class CharExtractionListener(
     Set(EventType.RENDER_TEXT)
   }
 
+
   override def eventOccurred(data: IEventData,  eventType: EventType): Unit = {
     if (eventType.equals(EventType.RENDER_TEXT)) {
       val tri = data.asInstanceOf[TextRenderInfo]
@@ -265,24 +266,6 @@ class CharExtractionListener(
   }
 
 
-  def outputCharDebugInfo():Unit = {
-    // if(charsToDebug contains charIndex) {
-    //   println(s"""Char bounds ${charBounds.prettyPrint}""")
-    // }
-    // if (!charsToDebug.isEmpty) {
-    //   if(charsToDebug contains charIndex) {
-    //     println(s"Outputting char info #${charIndex}")
-    //     println(s"  text = ${text}")
-    //     DocumentFontInfo.outputCharInfo(charTri, reader)
-    //     DocumentFontInfo.reportFontInfo(charTri.getFont)
-    //     println(s"-------------------------------------\n\n")
-    //   } else {
-    //     if (charsToDebug.min - 10 < charIndex && charIndex < charsToDebug.max + 10) {
-    //       println(s" renderText(${text} ${charIndex})")
-    //     }
-    //   }
-    // }
-  }
 
 
 

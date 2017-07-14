@@ -45,7 +45,7 @@ abstract class LabelWidgetTestUtil extends FlatSpec with Matchers with CorpusTes
       val pid = qhit.pageId
       val pageQuery = qhit.pageQueryBounds
 
-      s"""widget: $wid page: $pid page-space query: $pageQuery""" +
+      s"""widget=$wid pageId=$pid query (in page${pid}-space): $pageQuery""" +
         qhit.iTextReflows
         .map{_.textReflow.toText()}
         .mkString("{\n  ", "\n  ", "\n  }")

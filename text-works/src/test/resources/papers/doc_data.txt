@@ -1,0 +1,174 @@
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20040412185537+05'30'
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20040412185537+05'30'
+InfoBegin
+InfoKey: Title
+InfoValue: doi:10.1016/j.actamat.2004.01.025
+InfoBegin
+InfoKey: Creator
+InfoValue: Elsevier
+InfoBegin
+InfoKey: Producer
+InfoValue: Acrobat Distiller 5.0.5 (Windows)
+PdfID0: 6737cb2de81c2a8fc0b5735ea1807726
+PdfID1: 6df2bfcafd321613b26f45d4a160007e
+NumberOfPages: 12
+BookmarkBegin
+BookmarkTitle: Austenite to bainite phase transformation in the heat-affected zone of a high strength low alloy steel
+BookmarkLevel: 1
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: Introduction
+BookmarkLevel: 2
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: Materials and experimental procedures
+BookmarkLevel: 2
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: Materials
+BookmarkLevel: 3
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: Metallographic techniques
+BookmarkLevel: 3
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: Experimental results
+BookmarkLevel: 2
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: TEM investigation of bainite packets
+BookmarkLevel: 3
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: Bainite packet morphology
+BookmarkLevel: 3
+BookmarkPageNumber: 3
+BookmarkBegin
+BookmarkTitle: Bainite packet crystallography
+BookmarkLevel: 3
+BookmarkPageNumber: 4
+BookmarkBegin
+BookmarkTitle: Austenite to bainitic ferrite orientation relationships
+BookmarkLevel: 4
+BookmarkPageNumber: 4
+BookmarkBegin
+BookmarkTitle: Orientation relationships between bainite packets
+BookmarkLevel: 4
+BookmarkPageNumber: 5
+BookmarkBegin
+BookmarkTitle: Investigation of the bainite habit plane
+BookmarkLevel: 3
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: Discussion and modelling
+BookmarkLevel: 2
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: Relationships between bainite packet properties and resistance to cleavage fracture
+BookmarkLevel: 3
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: Bainite packet formation
+BookmarkLevel: 4
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: Consequences on the resistance to brittle cleavage fracture
+BookmarkLevel: 4
+BookmarkPageNumber: 7
+BookmarkBegin
+BookmarkTitle: Modelling the local variant selection
+BookmarkLevel: 3
+BookmarkPageNumber: 8
+BookmarkBegin
+BookmarkTitle: Calculation of the shape strain and crystallographic features associated with the 24 bainite variants
+BookmarkLevel: 4
+BookmarkPageNumber: 8
+BookmarkBegin
+BookmarkTitle: Modelling self-accommodation between two bainite variants
+BookmarkLevel: 4
+BookmarkPageNumber: 9
+BookmarkBegin
+BookmarkTitle: Results given by the model
+BookmarkLevel: 4
+BookmarkPageNumber: 10
+BookmarkBegin
+BookmarkTitle: Summary and conclusions
+BookmarkLevel: 2
+BookmarkPageNumber: 11
+BookmarkBegin
+BookmarkTitle: Acknowledgements
+BookmarkLevel: 2
+BookmarkPageNumber: 11
+BookmarkBegin
+BookmarkTitle: References
+BookmarkLevel: 2
+BookmarkPageNumber: 11
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 6
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 7
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 8
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 9
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 10
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 11
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaBegin
+PageMediaNumber: 12
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageLabelBegin
+PageLabelNewIndex: 1
+PageLabelStart: 1
+PageLabelNumStyle: DecimalArabicNumerals

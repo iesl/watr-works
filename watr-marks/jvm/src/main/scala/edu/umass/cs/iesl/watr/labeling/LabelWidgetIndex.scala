@@ -79,12 +79,12 @@ object istate {
 // object LabelWidgetIndex extends LabelWidgetLayout with TextReflowJsonCodecs {
 object LabelWidgetIndex extends LabelWidgetLayout {
 
-  implicit object TextReflowIndexable extends SpatialIndexable[IndexableTextReflow] {
+  implicit object TextReflowIndexable extends RTreeIndexable[IndexableTextReflow] {
     def id(t: IndexableTextReflow): Int = t.id.unwrap
     def ltBounds(t: IndexableTextReflow): LTBounds = t.targetRegion.bbox
   }
 
-  implicit object LabelWidgetIndexable extends SpatialIndexable[AbsPosWidget] {
+  implicit object LabelWidgetIndexable extends RTreeIndexable[AbsPosWidget] {
     def id(t: AbsPosWidget): Int = t.widget.wid.unwrap
     def ltBounds(t: AbsPosWidget): LTBounds = t.strictBounds
   }
@@ -116,7 +116,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
         mkWidget0(labelerIdentifier0)
       }
 
-    val lwIndex = SpatialIndex.createFor[AbsPosWidget]()
+    val lwIndex = RTreeIndex.createFor[AbsPosWidget]()
 
 
     val layout0 = layoutWidgetPositions(newWidget)
@@ -129,20 +129,20 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       .foreach(lwIndex.add)
 
     // println(s"      :create(): index add complete")
-    val targetPageRIndexes: mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]] =
+    val targetPageRIndexes: mutable.HashMap[Int@@PageID, RTreeIndex[IndexableTextReflow]] =
       priorIndex.map{ p =>
-        val tmp = mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
+        val tmp = mutable.HashMap[Int@@PageID, RTreeIndex[IndexableTextReflow]]()
         tmp ++= p.pageIndexes
         tmp
       }.getOrElse {
-        mutable.HashMap[Int@@PageID, SpatialIndex[IndexableTextReflow]]()
+        mutable.HashMap[Int@@PageID, RTreeIndex[IndexableTextReflow]]()
       }
 
     def addPage(targetRegion: TargetRegion): Unit = {
       val pageId = targetRegion.page.pageId
       if (!targetPageRIndexes.contains(pageId)) {
         // println(s"adding page ${targetRegion}")
-        val pageIndex = SpatialIndex.createFor[IndexableTextReflow]()
+        val pageIndex = RTreeIndex.createFor[IndexableTextReflow]()
         targetPageRIndexes.put(pageId, pageIndex)
 
         // Put all visual lines into index
@@ -185,8 +185,8 @@ object LabelWidgetIndex extends LabelWidgetLayout {
       def docStore: DocumentZoningApi = docStore0
       def layout: WidgetLayout = layout0
       def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) = mkWidget0
-      def index: SpatialIndex[AbsPosWidget] = lwIndex
-      def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
+      def index: RTreeIndex[AbsPosWidget] = lwIndex
+      def pageIndexes: Map[Int@@PageID, RTreeIndex[IndexableTextReflow]] = targetPageRIndexes.toMap
       def labelerIdentifier: LabelerIdentifier = newWidgetId
     }
   }
@@ -200,8 +200,8 @@ trait LabelWidgetIndex { self =>
   def docStore: DocumentZoningApi
   def layout: WidgetLayout
   def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier)
-  def index: SpatialIndex[AbsPosWidget]
-  def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]]
+  def index: RTreeIndex[AbsPosWidget]
+  def pageIndexes: Map[Int@@PageID, RTreeIndex[IndexableTextReflow]]
   def labelerIdentifier: LabelerIdentifier
 
   def update(updatedLabeler: LabelerIdentifier): LabelWidgetIndex = {
@@ -209,8 +209,8 @@ trait LabelWidgetIndex { self =>
       def docStore: DocumentZoningApi                                         = self.docStore
       def layout: WidgetLayout                                             = self.layout
       def mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier)  = self.mkWidget
-      def index: SpatialIndex[AbsPosWidget]                                = self.index
-      def pageIndexes: Map[Int@@PageID, SpatialIndex[IndexableTextReflow]] = self.pageIndexes
+      def index: RTreeIndex[AbsPosWidget]                                = self.index
+      def pageIndexes: Map[Int@@PageID, RTreeIndex[IndexableTextReflow]] = self.pageIndexes
       def labelerIdentifier: LabelerIdentifier                             = updatedLabeler
     }
     ???
