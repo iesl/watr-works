@@ -15,15 +15,10 @@ import TextReflowF._
 import TypeTags._
 
 
-trait ArbitraryTextReflows {
+trait ArbitraryTextReflows extends ArbitraryGeometries {
   import Arbitrary._
 
 
-  implicit def arbLTBounds: Arbitrary[LTBounds] = {
-    (arbDouble |@| arbDouble |@| arbDouble |@| arbDouble)(
-      LTBounds.Doubles.apply
-    )
-  }
 
   implicit def arbStablePageID: Arbitrary[StablePageID] = {
     (arbString |@| arbInt)({

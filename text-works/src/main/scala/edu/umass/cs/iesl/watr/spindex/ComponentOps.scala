@@ -12,7 +12,7 @@ import tracing.VisualTracer, VisualTracer._
 import scala.collection.mutable
 // import utils.EnrichNumerics._
 import TextReflowConversion._
-// import TypeTags._
+import TypeTags._
 
 import geometry._
 

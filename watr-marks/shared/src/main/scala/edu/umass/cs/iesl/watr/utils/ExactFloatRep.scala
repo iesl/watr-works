@@ -13,9 +13,8 @@ object ExactFloats {
 
   type FloatExact = Int@@FloatRep
 
-  implicit val FloatExactOrdering: Ordering[Int@@FloatRep] =
-    Ordering.by{ _.unwrap }
-
+  // implicit val FloatExactOrdering: Ordering[Int@@FloatRep] =
+  //   Ordering.by{ _.unwrap }
 
   type FloatExactInterval = (FloatExact, FloatExact)@@Interval
 

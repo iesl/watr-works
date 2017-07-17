@@ -17,6 +17,7 @@ import geometry._
 
 import geometry.syntax._
 import utils.ExactFloats._
+import TypeTags._
 
 object TextLineSegmentation {
   import textreflow.data._

@@ -10,6 +10,7 @@ import utils.Color
 import TypeTags._
 
 import utils.ExactFloats._
+import utils.{CompassDirection => CDir}
 
 sealed trait GeometricFigure
 
@@ -489,17 +490,85 @@ object GeometryImplicits {
 
     //   leftRights
     // }
+    def putStrLn(s: String): Option[Unit] = Option({ println(s) })
 
-    def splitHorizontal(x: Int@@FloatRep): List[LTBounds] = {
-      if (intersectsX(x)) {
-        val leftHalf = theBbox.copy(width=x-theBbox.left)
-        val rightHalf = theBbox.copy(left=x, width=theBbox.width-leftHalf.width)
-        List(leftHalf, rightHalf)
-      } else List(theBbox)
+    def adjacentRegionWithin(enclosingRegion: LTBounds, cDir: CDir): Option[LTBounds] = {
+      println(s"(${theBbox}).adjacentRegionWithin($enclosingRegion)   ${cDir}  ")
+      cDir match {
+        case CDir.N  =>
+          for {
+            (l, right) <- enclosingRegion.splitVertical(theBbox.left)
+            // _          <- putStrLn(s"  (l, right) = ($l, $right)")
+            (left, r)  <- right.splitVertical(theBbox.right)
+            // _          <- putStrLn(s"  (left, r) = ($left, $r)")
+            (top, b)   <- left.splitHorizontal(theBbox.top)
+            // _          <- putStrLn(s"  (top, b) = ($top, $b)")
+          } yield top
+
+        case CDir.S  =>
+          for {
+            (l, right) <- enclosingRegion.splitVertical(theBbox.left)
+            (left, r)  <- right.splitVertical(theBbox.right)
+            (t, bot)   <- left.splitHorizontal(theBbox.bottom)
+          } yield bot
+
+
+        case CDir.E  =>
+          for {
+            (t, bot)   <- enclosingRegion.splitHorizontal(theBbox.top)
+            // _          <- putStrLn(s"  (t, bot) = ($t, $bot)")
+            (top, b)   <- bot.splitHorizontal(theBbox.bottom)
+            // _          <- putStrLn(s"  (top, b) = ($top, $b)")
+            (l, right) <- top.splitVertical(theBbox.right)
+            // _          <- putStrLn(s"  (l, right) = ($l, $right)")
+          } yield right
+
+        case CDir.W  =>
+          for {
+            (t, bot)  <- enclosingRegion.splitHorizontal(theBbox.top)
+            // _         <- putStrLn(s"  (t, bot) = ($t, $bot)")
+            (top, b)  <- bot.splitHorizontal(theBbox.bottom)
+            // _         <- putStrLn(s"  (top, b) = ($top, $b)")
+            (left, r) <- top.splitVertical(theBbox.left)
+            // _         <- putStrLn(s"  (left, r) = ($left, $r)")
+          } yield left
+
+        case CDir.NW => ???
+        case CDir.SW => ???
+        case CDir.NE => ???
+        case CDir.SE => ???
+      }
+    }
+
+    def splitVertical(x: Int@@FloatRep): Option[(LTBounds, LTBounds)] = {
+      if (overlapsX(x)) {
+        val LTBounds(left, top, width, height) = theBbox
+        val bleft = LTBounds(left, top, x-left, height)
+        val bright = LTBounds(x, top, width-bleft.width, height)
+
+        Some((bleft, bright))
+      } else None
+    }
+
+    def splitHorizontal(y: Int@@FloatRep): Option[(LTBounds, LTBounds)] = {
+      if (overlapsY(y)) {
+        val LTBounds(left, top, width, height) = theBbox
+        val upper = LTBounds(left, top, width, y-top)
+        val lower = LTBounds(left, y, width, height-upper.height)
+
+        Some((upper, lower))
+      } else None
+    }
+
+    def overlapsX(x: Int@@FloatRep): Boolean = {
+      theBbox.left < x &&  x < theBbox.right
+    }
+    def overlapsY(y: Int@@FloatRep): Boolean = {
+      theBbox.top < y && y < theBbox.bottom
     }
 
     def intersectsX(x: Int@@FloatRep):Boolean = {
-      theBbox.left <= x &&  x <= theBbox.right
+      theBbox.left <= x && x <= theBbox.right
     }
 
 
