@@ -78,21 +78,33 @@ object AuthorNameHeuristics {
         var lastName = None: Option[String]
         var firstName = None: Option[String]
         var middleName = None: Option[String]
+        var hereditySuffix = None: Option[String]
+        var degree = None: Option[String]
 
         if (!authorName.contains(COMMA)) {
             lastName = Some(authorNameComponents(authorNameComponents.length - 1))
             if (authorNameComponents.length.>(1)) {
                 firstName = Some(authorNameComponents(0))
                 if (authorNameComponents.length.>(2)) {
-                    var lastNameIndex: Int = authorNameComponents.length - 1
-                    while (containsPattern(reflowString = authorNameComponents(lastNameIndex), VALID_HEREDITY_SUFFIXES)
-                        || containsPattern(reflowString = authorNameComponents(lastNameIndex), VALID_DEGREES)) {
-                        lastNameIndex -= 1
+                    var degreeIndex: Int = authorNameComponents.length - 1
+                    while (containsPattern(reflowString = authorNameComponents(degreeIndex), VALID_DEGREES)) {
+                        degreeIndex -= 1
                     }
+                    if (degreeIndex < authorNameComponents.length - 1) {
+                        degree = Some(authorNameComponents.slice(degreeIndex + 1, authorNameComponents.length).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
+                    }
+                    var hereditySuffixIndex: Int = degreeIndex
+                    while (containsPattern(reflowString = authorNameComponents(hereditySuffixIndex), VALID_HEREDITY_SUFFIXES)) {
+                        hereditySuffixIndex -= 1
+                    }
+                    if (hereditySuffixIndex < degreeIndex) {
+                        hereditySuffix = Some(authorNameComponents.slice(hereditySuffixIndex + 1, authorNameComponents.length).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
+                    }
+                    var lastNameIndex: Int = hereditySuffixIndex
                     while (lastNameIndex > 0 && containsPattern(reflowString = authorNameComponents(lastNameIndex - 1).toLowerCase, VALID_SURNAME_PARTICLES)) {
                         lastNameIndex -= 1
                     }
-                    lastName = Some(authorNameComponents.slice(lastNameIndex, authorNameComponents.length).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
+                    lastName = Some(authorNameComponents.slice(lastNameIndex, hereditySuffixIndex + 1).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
                     middleName = Some(authorNameComponents.slice(1, lastNameIndex).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
                 }
             }
@@ -112,8 +124,10 @@ object AuthorNameHeuristics {
         val firstNameRepresentation: ComponentRepresentation = ComponentRepresentation(componentText = firstName.getOrElse(BLANK), componentBBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
         val middleNameRepresentation: ComponentRepresentation = ComponentRepresentation(componentText = middleName.getOrElse(BLANK), componentBBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
         val lastNameRepresentation: ComponentRepresentation = ComponentRepresentation(componentText = lastName.getOrElse(BLANK), componentBBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
+        val hereditySuffixRepresentation: ComponentRepresentation = ComponentRepresentation(componentText = hereditySuffix.getOrElse(BLANK), componentBBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
+        val degreeRepresentation: ComponentRepresentation = ComponentRepresentation(componentText = degree.getOrElse(BLANK), componentBBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
 
-        NameWithBBox(firstName = firstNameRepresentation, middleName = middleNameRepresentation, lastName = lastNameRepresentation, bBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
+        NameWithBBox(firstName = firstNameRepresentation, middleName = middleNameRepresentation, lastName = lastNameRepresentation, hereditySuffix = hereditySuffixRepresentation, degree = degreeRepresentation, bBox = LTBounds(FloatRep(-1), FloatRep(-1), FloatRep(-1), FloatRep(-1)))
     }
 
     def getBoundingBoxesForAuthorNames(name: NameWithBBox, geometricallySeparatedName: String, textReflow: TextReflow): NameWithBBox = {
@@ -131,6 +145,14 @@ object AuthorNameHeuristics {
         if (name.lastName.componentText.nonEmpty) {
             val (lastNameStartIndex, lastNameEndIndex) = getIndexesForComponents(component = name.lastName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
             name.lastName.componentBBox = getBoundingBoxesWithIndexesFromReflow((lastNameStartIndex, lastNameEndIndex), textReflow)
+        }
+        if (name.hereditySuffix.componentText.nonEmpty) {
+            val (suffixStartIndex, suffixEndIndex) = getIndexesForComponents(component = name.lastName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            name.hereditySuffix.componentBBox = getBoundingBoxesWithIndexesFromReflow((suffixStartIndex, suffixEndIndex), textReflow)
+        }
+        if (name.degree.componentText.nonEmpty) {
+            val (degreeStartIndex, degreeEndIndex) = getIndexesForComponents(component = name.lastName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            name.degree.componentBBox = getBoundingBoxesWithIndexesFromReflow((degreeStartIndex, degreeEndIndex), textReflow)
         }
         name
     }
