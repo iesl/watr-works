@@ -4,7 +4,7 @@ package heuristics
 import TypeTags._
 import geometry.LTBounds
 import Constants._
-import Utils._
+import Utils.{containsPattern, _}
 import textreflow.data._
 import textreflow.TextReflowF.TextReflow
 
@@ -35,23 +35,30 @@ object AuthorNameHeuristics {
                     break
                 }
                 else if (checkNextFlag) {
-                    if (isOfFirstNameInitialFormat(textReflowToken) && separateAuthorName.length.==(1)) {
-                        separateAuthorName += textReflowToken.replace(COMMA, BLANK)
-                        separateAuthorNames += separateAuthorName.filter(_.nonEmpty).mkString(SPACE_SEPARATOR)
-                        separateAuthorName.clear()
+                    if ((isOfNameInitialFormat(textReflowToken) && separateAuthorName.length.==(1))
+                        || containsPattern(reflowString = textReflowToken, patternSeq = VALID_HEREDITY_SUFFIXES)
+                        || containsPattern(reflowString = textReflowToken, patternSeq = VALID_DEGREES)) {
+
+                        if (PUNCTUATION_SEPARATORS.contains(textReflowToken.takeRight(n = 1))) {
+                            separateAuthorName += textReflowToken.replace(textReflowToken.takeRight(n = 1), BLANK)
+                        }
+                        else{
+                            separateAuthorName += textReflowToken
+                        }
                     }
                     else {
                         separateAuthorNames += separateAuthorName.filter(_.nonEmpty).mkString(SPACE_SEPARATOR)
                         separateAuthorName.clear()
-                        if(textReflowToken.takeRight(1).equals(PERIOD)){
+                        if (textReflowToken.takeRight(1).equals(PERIOD)) {
                             textReflowToken.dropRight(1)
                         }
                         separateAuthorName += textReflowToken
+                        checkNextFlag = false
                     }
-                    checkNextFlag = false
+
                 }
                 else {
-                    if(textReflowToken.takeRight(1).equals(PERIOD)){
+                    if (textReflowToken.takeRight(1).equals(PERIOD)) {
                         textReflowToken.dropRight(1)
                     }
                     separateAuthorName += textReflowToken
@@ -77,9 +84,12 @@ object AuthorNameHeuristics {
             if (authorNameComponents.length.>(1)) {
                 firstName = Some(authorNameComponents(0))
                 if (authorNameComponents.length.>(2)) {
-                    middleName = Some(authorNameComponents.slice(1, authorNameComponents.length - 1).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
                     var lastNameIndex: Int = authorNameComponents.length - 1
-                    while(VALID_SURNAME_PARTICLES.contains(authorNameComponents(lastNameIndex-1).toLowerCase)){
+                    while (containsPattern(reflowString = authorNameComponents(lastNameIndex), VALID_HEREDITY_SUFFIXES)
+                        || containsPattern(reflowString = authorNameComponents(lastNameIndex), VALID_DEGREES)) {
+                        lastNameIndex -= 1
+                    }
+                    while (lastNameIndex > 0 && containsPattern(reflowString = authorNameComponents(lastNameIndex - 1).toLowerCase, VALID_SURNAME_PARTICLES)) {
                         lastNameIndex -= 1
                     }
                     lastName = Some(authorNameComponents.slice(lastNameIndex, authorNameComponents.length).filter(_.nonEmpty).mkString(SPACE_SEPARATOR))
@@ -124,7 +134,6 @@ object AuthorNameHeuristics {
         }
         name
     }
-
 
 
 }

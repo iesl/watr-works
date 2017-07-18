@@ -18,9 +18,10 @@ object GenericHeuristics {
 
         var prevCharPosition: Int = -1 * SPACE_BETWEEN_WORDS_THRESHOLD
         val yPosition: Int = getYPosition(textReflow = textReflow)
+        val height: Int = getMajorityHeight(textReflow = textReflow)
 
         for (charAtom <- textReflow.charAtoms()) {
-            if (charAtom.bbox.top.asInt().==(yPosition)) {
+            if (charAtom.bbox.top.asInt().==(yPosition) && charAtom.bbox.height.asInt().==(height)) {
                 if (charAtom.bbox.left.asInt() - prevCharPosition >= SPACE_BETWEEN_WORDS_THRESHOLD) {
                     tokens += currentToken.mkString
                     currentToken.clear()

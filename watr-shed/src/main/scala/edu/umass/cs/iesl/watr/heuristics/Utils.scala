@@ -14,7 +14,7 @@ import scala.util.control.Breaks._
 
 object Utils {
 
-    def isOfFirstNameInitialFormat(authorNameComponent: String): Boolean = {
+    def isOfNameInitialFormat(authorNameComponent: String): Boolean = {
 
         if (NAME_INITIAL_FORMAT_PATTERN.findFirstIn(authorNameComponent).getOrElse(BLANK).length.==(authorNameComponent.length)) {
             return true
@@ -56,18 +56,23 @@ object Utils {
         while (componentIndex < component.length && textReflowIndex < indexRange._2) {
             val currentTextReflowChar: String = textReflow.charAtoms()(textReflowIndex).char
             var localReflowCharIndex: Int = 0
-            while (localReflowCharIndex < currentTextReflowChar.length) {
-                if (component.charAt(componentIndex).==(currentTextReflowChar.charAt(localReflowCharIndex))) {
-                    if (componentStartIndex.==(-1)) {
-                        componentStartIndex = textReflowIndex
+            breakable {
+                while (localReflowCharIndex < currentTextReflowChar.length) {
+                    if (component.charAt(componentIndex).==(currentTextReflowChar.charAt(localReflowCharIndex))) {
+                        if (componentStartIndex.==(-1)) {
+                            componentStartIndex = textReflowIndex
+                        }
+                        componentIndex += 1
                     }
-                    componentIndex += 1
+                    else if (PUNCTUATION_SEPARATORS.contains(currentTextReflowChar.charAt(localReflowCharIndex).toString)){
+                        break
+                    }
+                    else {
+                        componentIndex = 0
+                        componentStartIndex = -1
+                    }
+                    localReflowCharIndex += 1
                 }
-                else {
-                    componentIndex = 0
-                    componentStartIndex = -1
-                }
-                localReflowCharIndex += 1
             }
             textReflowIndex += 1
         }
@@ -111,6 +116,24 @@ object Utils {
         }
 
         val maxRecord: (Int, Int) = yPositionCounts.maxBy(_._2)
+        if (maxRecord._2 > 1) {
+            return maxRecord._1
+        }
+        -1
+    }
+
+    def getMajorityHeight(textReflow: TextReflow): Int = {
+        val heightCounts: scala.collection.mutable.Map[Int, Int] = scala.collection.mutable.Map[Int, Int]()
+
+        for (charAtom <- textReflow.charAtoms()) {
+            if (heightCounts.get(charAtom.bbox.height.asInt()).isEmpty) {
+                heightCounts += (charAtom.bbox.height.asInt() -> 0)
+            }
+            heightCounts.update(charAtom.bbox.height.asInt(), heightCounts(charAtom.bbox.height.asInt()) + 1)
+
+        }
+
+        val maxRecord: (Int, Int) = heightCounts.maxBy(_._2)
         if (maxRecord._2 > 1) {
             return maxRecord._1
         }
@@ -221,5 +244,16 @@ object Utils {
         cleanedTokens.map( cleanedToken => cleanedToken.trim)
 
     }
-    
+
+    def containsPattern(reflowString: String, patternSeq: Seq[String]): Boolean = {
+
+        for (pattern <- patternSeq) {
+            if (reflowString.contains(pattern)) {
+                return true
+            }
+        }
+
+        false
+    }
+
 }

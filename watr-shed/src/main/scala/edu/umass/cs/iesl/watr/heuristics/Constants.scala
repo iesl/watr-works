@@ -6,7 +6,7 @@ import scala.util.matching.Regex
 object Constants {
 
     final val WORD_SEPARATORS: Seq[String] = Seq("and", "&")
-    final val PUNCTUATION_SEPARATORS: Seq[String] = Seq(",")
+    final val PUNCTUATION_SEPARATORS: Seq[String] = Seq(",", ";")
     final val SPACE_SEPARATOR: String = " "
     final val SPACE_BETWEEN_WORDS_THRESHOLD: Int = 2
     final val COMMA: String = ","
@@ -16,6 +16,7 @@ object Constants {
     final val BLANK: String = ""
     final val AT_THE_RATE: String = "@"
 
+    final val VALID_DEGREES = Seq("M.D.", "Ph.D.", "MD", "PhD")
     final val VALID_HEREDITY_SUFFIXES: Seq[String] = Seq("Jr.", "Sr.", "II", "III", "IV")
     final val VALID_SURNAME_PARTICLES: Seq[String] = Seq("van", "von", "der", "de", "du", "da", "di", "do", "la", "del", "della", "ter", "bin", "ben", "den")
     final val FIRST_NAME: String = "first_name"
