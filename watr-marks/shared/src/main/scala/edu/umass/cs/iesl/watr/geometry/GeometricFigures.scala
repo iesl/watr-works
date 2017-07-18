@@ -14,6 +14,8 @@ import utils.{CompassDirection => CDir}
 
 sealed trait GeometricFigure
 
+case object EmptyFigure extends GeometricFigure
+
 case class LTBounds(
   left   : Int@@FloatRep,
   top    : Int@@FloatRep,
@@ -73,7 +75,6 @@ object LTBounds {
       bbox.height.asFloat()
     ))
   }
-
 
   val empty = IntReps.apply(0, 0, 0, 0)
   val zero = empty
@@ -160,7 +161,6 @@ case class Padding(
 }
 
 
-
 object Padding {
   object IntReps {
     def apply(left: Int, top: Int, right: Int, bottom: Int): Padding =
@@ -229,6 +229,8 @@ object GeometryImplicits {
       case (g1: Point, g2: Point)       => g1.x===g2.x && g1.y===g2.y
       case (g1: Line, g2: Line)         => g1.p1===g2.p1 && g1.p2===g2.p2
 
+      case (g1: EmptyFigure.type, g2: EmptyFigure.type)         => true
+
       case (_, _)                       => false
     })
 
@@ -294,7 +296,6 @@ object GeometryImplicits {
       fringe
     )
   }
-
 
 
   implicit class RicherPoint(val self: Point) extends AnyVal {
@@ -410,6 +411,25 @@ object GeometryImplicits {
       Line(Point(p1x, p1y), Point(p2x, p2y))
 
     }
+
+    def splitVertical(x: Int@@FloatRep): Option[(Line, Line)] = {
+      val Line(Point(x1, y1), Point(x2, y2)) = line.normalizeOrder
+      val overlaps = x1 < x && x < x2
+      if (overlaps) {
+        val left = Line(Point(x1, y1), Point(x, y2))
+        val right = Line(Point(x, y1), Point(x2, y2))
+
+        Some((left, right))
+      } else None
+    }
+
+    def translate(x: Double=0.0d, y: Double=0.0d): Line = {
+      Line(
+        line.p1.translate(x, y),
+        line.p2.translate(x, y)
+      )
+    }
+
   }
 
   def max(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.max(d1.unwrap, d2.unwrap))
@@ -417,6 +437,21 @@ object GeometryImplicits {
 
   implicit class RicherLTBounds(val theBbox: LTBounds) extends AnyVal {
     def area: Double = (theBbox.width*theBbox.height).asDouble
+
+
+    // TODO these should return Option[LTBounds] and/or check for empty regions
+    def setLeft(left: Int@@FloatRep): LTBounds = {
+      theBbox.copy(
+        left=left,
+        width=theBbox.right-left
+      )
+    }
+
+    def setRight(right: Int@@FloatRep): LTBounds = {
+      theBbox.copy(
+        width=right-theBbox.left
+      )
+    }
 
 
     def translate(pvec: Point): LTBounds = {
@@ -454,55 +489,18 @@ object GeometryImplicits {
       theBbox.copy(width=w, height=h)
     }
 
-    // /* TODO this rectangle split function is useful but has bugs.
-    //  Split this rectangle into 0-3 parts, depending on overlap, like so:
-    //                    +-------------+
-    //                    |             |  <- splitter bbox
-    //    +---------------+-------------+-----------------+
-    //    |               |             |                 |    <-- self bbox
-    //    |               |             |                 |
-    //    |     left      |     mid     |      right      |
-    //    |     bbox      |    bbox     |       bbox      |
-    //    |               |             |                 |
-    //    +---------------+-------------+-----------------+
-    //                    |             |
-    //                    |             |
-    //                    +-------------+
-
-    //  */
-    // def splitHorizontal(splitter: LTBounds): List[LTBounds] = {
-    //   val leftX = splitter.toPoint(CDir.W).x
-    //   val rightX = splitter.toPoint(CDir.E).x
-    //   val self = theBbox
-    //   val leftRights = if (self.intersectsX(leftX)){
-    //     val splitLeft = self.splitHorizontal(leftX)
-    //     if (self.intersectsX(rightX)){
-    //       val splitRight = self.splitHorizontal(rightX)
-    //       splitLeft.head :: splitLeft.tail
-    //     } else {
-    //       List(splitLeft.head)
-    //     }
-    //   } else if (self.intersectsX(rightX)){
-    //     self.splitHorizontal(rightX).tail
-    //   } else {
-    //     List()
-    //   }
-
-    //   leftRights
-    // }
-    def putStrLn(s: String): Option[Unit] = Option({ println(s) })
 
     def adjacentRegionWithin(enclosingRegion: LTBounds, cDir: CDir): Option[LTBounds] = {
-      println(s"(${theBbox}).adjacentRegionWithin($enclosingRegion)   ${cDir}  ")
+      // println(s"(${theBbox}).adjacentRegionWithin($enclosingRegion)   ${cDir}  ")
       cDir match {
         case CDir.N  =>
           for {
             (l, right) <- enclosingRegion.splitVertical(theBbox.left)
-            // _          <- putStrLn(s"  (l, right) = ($l, $right)")
+            // _          <- IO.putStrLn[Option](s"  (l, right) = ($l, $right)")
             (left, r)  <- right.splitVertical(theBbox.right)
-            // _          <- putStrLn(s"  (left, r) = ($left, $r)")
+            // _          <- IO.putStrLn[Option](s"  (left, r) = ($left, $r)")
             (top, b)   <- left.splitHorizontal(theBbox.top)
-            // _          <- putStrLn(s"  (top, b) = ($top, $b)")
+            // _          <- IO.putStrLn[Option](s"  (top, b) = ($top, $b)")
           } yield top
 
         case CDir.S  =>
@@ -516,21 +514,21 @@ object GeometryImplicits {
         case CDir.E  =>
           for {
             (t, bot)   <- enclosingRegion.splitHorizontal(theBbox.top)
-            // _          <- putStrLn(s"  (t, bot) = ($t, $bot)")
+            // _          <- IO.putStrLn[Option](s"  (t, bot) = ($t, $bot)")
             (top, b)   <- bot.splitHorizontal(theBbox.bottom)
-            // _          <- putStrLn(s"  (top, b) = ($top, $b)")
+            // _          <- IO.putStrLn[Option](s"  (top, b) = ($top, $b)")
             (l, right) <- top.splitVertical(theBbox.right)
-            // _          <- putStrLn(s"  (l, right) = ($l, $right)")
+            // _          <- IO.putStrLn[Option](s"  (l, right) = ($l, $right)")
           } yield right
 
         case CDir.W  =>
           for {
             (t, bot)  <- enclosingRegion.splitHorizontal(theBbox.top)
-            // _         <- putStrLn(s"  (t, bot) = ($t, $bot)")
+            // _         <- IO.putStrLn[Option](s"  (t, bot) = ($t, $bot)")
             (top, b)  <- bot.splitHorizontal(theBbox.bottom)
-            // _         <- putStrLn(s"  (top, b) = ($top, $b)")
+            // _         <- IO.putStrLn[Option](s"  (top, b) = ($top, $b)")
             (left, r) <- top.splitVertical(theBbox.left)
-            // _         <- putStrLn(s"  (left, r) = ($left, $r)")
+            // _         <- IO.putStrLn[Option](s"  (left, r) = ($left, $r)")
           } yield left
 
         case CDir.NW => ???

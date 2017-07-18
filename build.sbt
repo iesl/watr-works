@@ -60,6 +60,7 @@ lazy val textworks = (project in file("text-works"))
     LogLibs.logback ++
     TestLibs.testAndCheck ++
     Lib.fs2 ++ Seq(
+      "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,
       Lib.scrimageCore,
       Lib.ammoniteOps,

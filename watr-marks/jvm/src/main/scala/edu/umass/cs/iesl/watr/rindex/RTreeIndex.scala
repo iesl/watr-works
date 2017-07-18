@@ -42,6 +42,15 @@ class RTreeIndex[T: RTreeIndexable](
     RGeometry.rectangle(l, t, w, h)
   }
 
+  def toRGLine(tb: Line): RG.Line = {
+    val Line(Point.Doubles(x1, y1), Point.Doubles(x2, y2)) = tb
+    RG.Geometries.line(x1, y1, x2, y2)
+  }
+
+  def toRGPoint(tb: Point): RG.Point = {
+    val Point.Doubles(x1, y1) = tb
+    RG.Geometries.point(x1, y1)
+  }
 
   def remove(item: T): Unit = {
     spatialIndex = spatialIndex.delete(
@@ -84,7 +93,24 @@ class RTreeIndex[T: RTreeIndexable](
   import rx.functions.Func2
   import rx.functions.Func1
 
-  // def search(q:LTBounds, filter: (T, LTBounds)=>Boolean): Seq[T] = {
+
+  def searchLine(q: Line, filter: T=>Boolean): Seq[T] = {
+    val query0 = toRGLine(q)
+    val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
+      override def call(entry: Entry[T, RG.Geometry]): JBool = {
+        filter(entry.value())
+      }
+    }
+
+    val hits = spatialIndex.search(query0).filter(filterFunc)
+
+    hits.toBlocking()
+      .toIterable().asScala
+      .toSeq.map{ _.value() }
+
+  }
+
+
   def search(q:LTBounds, filter: T=>Boolean): Seq[T] = {
     val query0 = toJsiRectangle(q)
     val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
@@ -100,6 +126,8 @@ class RTreeIndex[T: RTreeIndexable](
       .toSeq.map{ _.value() }
 
   }
+
+
   def queryForContainedIDs(q:LTBounds): Seq[Int] = {
 
     val query0 = toJsiRectangle(q)
