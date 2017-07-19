@@ -230,8 +230,18 @@ class MultiPageIndex(
     c
   }
 
+  def addImageAtom(pageAtom: ImageAtom): RegionComponent = {
+    val c = createRegionComponent(pageAtom.pageRegion, LB.Image)
+    addComponent(c)
+    c
+  }
+
   def getPageAtoms(pageNum: Int@@PageNum): Seq[AtomicComponent] = {
     getPageIndex(pageNum).getPageAtoms
+  }
+
+  def getImageAtoms(pageNum: Int@@PageNum): Seq[RegionComponent] = {
+    getPageIndex(pageNum).getImageAtoms
   }
 
   def getComponent(id: Int@@ComponentID, pageId: Int@@PageNum): Component = {

@@ -12,7 +12,6 @@ import utils.SlicingAndDicing._
 import utils.{CompassDirection => CDir}
 import utils.ExactFloats._
 
-
 case class BioNode(
   component: Component,
   pins: mutable.Set[BioPin] =  mutable.Set()
@@ -21,7 +20,6 @@ case class BioNode(
 sealed trait FontInfo
 
 case object NoFonts extends FontInfo
-
 
 object TextGrid {
   type SetType[A] = mutable.Set[A]
@@ -103,9 +101,6 @@ object TextGrid {
     }
   }
 
-  // abstract class ImmutableRow extends Row {
-  //   override val cells: List[GridCell] = List()
-  // }
 
   object Row {
     def fromComponents(ccs: Seq[Component]): Row = {
@@ -202,92 +197,5 @@ object TextGrid {
       Row.fromCells(zipper.toList.flatten)
     }
   }
-
-
-
-  // case class SlidingCursor(
-  //   focus: Seq[GridCell],
-  //   prevs: Seq[GridCell] = Seq(),
-  //   nexts: Seq[GridCell] = Seq(),
-  //   windowSize: Int
-  // ) extends Cursor {
-
-  //   def focusedText: String = {
-  //     focus.map(_.text).mkString
-  //   }
-
-  //   // def unfoldLabels: Stream[SlidingCursor] = {
-  //   //   import scalaz.std.stream._
-  //   //   unfold[Option[SlidingCursor], SlidingCursor](
-  //   //     Some(this)
-  //   //   )(_ match {
-  //   //     case Some(cur) => Some(cur -> cur.next)
-  //   //     case _ => None
-  //   //   })
-  //   // }
-
-
-  //   def focusedFonts(): Seq[FontInfo] = {
-  //     focus.map(_.fonts)
-  //   }
-
-  //   def focusedBounds(): Seq[LTBounds] = {
-  //     focus.map(_.bounds)
-  //   }
-
-
-  //   def next: Option[Cursor] = {
-  //     // BioRow.initCursor(label, nexts, Forward)
-  //     //   .map{ nextc => nextc.copy(
-  //     //     prevs = nextc.prevs ++ (focus.reverse ++ prevs)
-  //     //   )
-  //     // }
-  //     ???
-  //   }
-
-  //   def prev: Option[Cursor] = {
-  //     // BioRow.initCursor(label, prevs, Forward)
-  //     //   .map{ prevc => prevc.copy(
-  //     //     nexts = prevc.nexts ++ focus ++ nexts
-  //     //   )
-  //     // }
-  //     ???
-  //   }
-
-
-
-  //   def toBioRow = Row.fromCells(
-  //     prevs.reverse ++ focus ++ nexts
-  //   )
-
-  //   lazy val hpins = focus.head.pins
-  //   lazy val lpins = focus.last.pins
-
-  //   // def coversCompleteLabel: Boolean =
-  //   //   coversStartOfLabel && coversEndOfLabel
-
-  //   // def coversStartOfLabel: Boolean =
-  //   //   hpins.contains(label.U) || hpins.contains(label.B)
-
-  //   // def coversEndOfLabel: Boolean =
-  //   //   lpins.contains(label.U) || lpins.contains(label.L)  // || label==CharLabel
-
-  //   // override def toString = {
-  //   //   s"""< ${prevs.reverse.map(c => s"'${c.char}").mkString(" ")} ..[${label}:${focus.mkString(" :: ")}].. ${nexts.map(c => s"'${c.char}").mkString(" ")}>""".stripMargin
-  //   // }
-
-
-  //   // def showBox: TB.Box = {
-  //   //   borderInlineTop(
-  //   //     vjoin()(
-  //   //       label.showBox,
-  //   //       prevs.reverse.map(_.showIcon) |> hjoin(sep=", "),
-  //   //       "-> " beside (focus.map(_.showBox) |> hjoin(sep=", ")) ,
-  //   //       nexts.map(_.showIcon) |> hjoin(sep=", ")
-  //   //     )
-  //   //   )
-  //   // }
-
-  // }
 
 }

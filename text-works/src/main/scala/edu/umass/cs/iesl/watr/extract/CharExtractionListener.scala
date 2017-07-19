@@ -8,7 +8,7 @@ import scala.collection.mutable
 import scala.collection.JavaConversions._
 
 import _root_.com.itextpdf
-import itextpdf.kernel.geom.{Vector => PVector}
+import itextpdf.kernel.geom.{Vector => PVector, Subpath, IShape, Point => IPoint}
 import itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import itextpdf.kernel.pdf.canvas.parser.EventType
 import itextpdf.kernel.pdf.canvas.parser.data._
@@ -81,7 +81,7 @@ class CharExtractionListener(
   stableId: String@@DocumentID,
   charsToDebug: Set[Int] = Set(),
   charIdGen: IdGenerator[CharID],
-  currCharBuffer: mutable.ArrayBuffer[CharAtom], // = mutable.ArrayBuffer[CharAtom]()
+  currCharBuffer: mutable.ArrayBuffer[PageItem],
   pdfPage: PdfPage,
   pageNum: Int@@PageNum,
   pageGeometry: PageGeometry,
@@ -89,7 +89,12 @@ class CharExtractionListener(
 ) extends IEventListener {
 
   override def getSupportedEvents(): java.util.Set[EventType] ={
-    Set(EventType.RENDER_TEXT)
+    Set(
+      EventType.RENDER_TEXT,
+      EventType.RENDER_PATH,
+      EventType.CLIP_PATH_CHANGED,
+      EventType.RENDER_IMAGE
+    )
   }
 
 
@@ -97,6 +102,14 @@ class CharExtractionListener(
     if (eventType.equals(EventType.RENDER_TEXT)) {
       val tri = data.asInstanceOf[TextRenderInfo]
       renderText(tri)
+
+    } else if (eventType.equals(EventType.RENDER_PATH)) {
+      val renderInfo = data.asInstanceOf[PathRenderInfo]
+      renderPath(renderInfo)
+
+    } else if (eventType.equals(EventType.RENDER_IMAGE)) {
+      val tri = data.asInstanceOf[ImageRenderInfo]
+      renderImage(tri)
     }
   }
 
@@ -265,35 +278,70 @@ class CharExtractionListener(
     }
   }
 
-
-
-
+  def renderPath(renderInfo: PathRenderInfo): Unit = {
+    // val op = renderInfo.getOperation
+    val path = renderInfo.getPath
+    val pathCurr = path.getCurrentPoint
+    val px = pathCurr.x
+    val py = pathCurr.y
+    println(s"  path: [$px, $py]")
+    // val subPaths = path.getSubpaths.asScala
+    val subPaths: Seq[Subpath] = path.getSubpaths
+    subPaths.map{ subPath =>
+      val subStart = subPath.getStartPoint
+      val subLast = subPath.getLastPoint
+      println(s"   sub [${subStart.x}, ${subStart.y}] -> [${subLast.x}, ${subLast.y}] ")
+      val segments: Seq[IShape] = subPath.getSegments
+      segments.map{ ishape =>
+        val basePoints: Seq[IPoint] = ishape.getBasePoints
+        basePoints.map{ point =>
+          val x = point.x
+          val y = point.y
+          println(s"      p: [$x, $y]")
+        }
+      }
+    }
+  }
 
   def renderImage(iri: ImageRenderInfo): Unit = {
-    // TODO figure out why this isn't working (img type not supported...)
+
+    // println(s"ctm------")
+    // println(s"${ctm}")
+    // println(s"======")
+    // val imgBounds =  LTBounds.Floats(ctm.get(6), ctm.get(7), ctm.get(6) + ctm.get(0), ctm.get(7) + ctm.get(4))
     // val img = iri.getImage
-    // val bimg = img.getBufferedImage
+    // val width = img.getWidth
+    // val height = img.getHeight
+    // val scaledWidthAndHeight = new PVector(width, height, 1).cross(ctm);
+    // println(s" startPoint: ${startPoint} w/h: ${scaledWidthAndHeight}")
 
-    // val x = bimg.getMinX.toDouble
-    // val y = bimg.getMinY.toDouble
-    // val w = bimg.getWidth.toDouble
-    // val h = bimg.getHeight.toDouble
+    val ctm = iri.getImageCtm
+    val x1 = ctm.get(6).toDouble
+    val y1 = ctm.get(7).toDouble
+    val x2 = x1 + ctm.get(0)
+    val y2 = y1 + ctm.get(4)
+    val w = x2 - x1
+    val h = y2 - y1
 
-    // val bounds = LTBounds(
-    //   x - pageRectangle.getLeft,
-    //   pageRectangle.getHeight - y - pageRectangle.getBottom - h,
-    //   w, h
-    // )
 
-    // val imgRegion = ImgAtom(
-    //     TargetRegion(
-    //       componentIdGen.nextId,
-    //       PageNum(0),
-    //       bounds
-    //     )
-    //   )
+    val imageLeft = geomTranslation.transX(x1)
+    val imageTop = geomTranslation.transY(y2)
 
-    // currCharBuffer.append(imgRegion)
+    val imgBounds =  LTBounds.Doubles(imageLeft, imageTop, w, h)
+
+
+    val pageRegion = PageRegion(
+      RecordedPageID(
+        PageID(-(1+pageNum.unwrap)), // This is just  hacky way to set an invalid PageID (which will be later changed when added to db)
+        StablePageID(stableId, pageNum)
+      ),
+      imgBounds
+    )
+
+    // println(s"Image at ${pageRegion}")
+
+    val imgRegion = ImageAtom(pageRegion)
+
+    currCharBuffer.append(imgRegion)
   }
 }
-

@@ -17,7 +17,7 @@ import java.nio.{file => nio}
 
 
 object PdfTextExtractor {
-  def extractChars(stableId: String@@DocumentID, pdfPath: Path): Seq[(Seq[CharAtom], PageGeometry)] = {
+  def extractChars(stableId: String@@DocumentID, pdfPath: Path): Seq[(Seq[PageItem], PageGeometry)] = {
     val charExtractor = new PdfTextExtractor(
       Set[Int](), IdGenerator[CharID]()
     )
@@ -87,15 +87,17 @@ class PdfTextExtractor(
       height = bottom
     )
 
+    println(s"getReportedPageGeometry: ${bounds}   ($lval, $bval, $rval, $tval)")
+
     (PageGeometry(pageId, bounds),
       GeometryTranslation(xtrans, ytrans))
 
   }
 
 
-  def extractCharacters(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[CharAtom], PageGeometry)] = {
+  def extractCharacters(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[PageItem], PageGeometry)] = {
     var instr: InputStream = null
-    val pages = mutable.ListBuffer[(Seq[CharAtom], PageGeometry)]()
+    val pages = mutable.ListBuffer[(Seq[PageItem], PageGeometry)]()
     try {
       instr = nio.Files.newInputStream(pdfPath.toNIO)
       val reader = new PdfReader(instr)
@@ -108,7 +110,7 @@ class PdfTextExtractor(
 
         val pdfPage = document.getPage(pageNumber)
 
-        val currCharBuffer: mutable.ArrayBuffer[CharAtom] = mutable.ArrayBuffer[CharAtom]()
+        val currCharBuffer: mutable.ArrayBuffer[PageItem] = mutable.ArrayBuffer[PageItem]()
         val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage, reader)
 
         val extractor = new CharExtractionListener(
@@ -126,7 +128,7 @@ class PdfTextExtractor(
           parser.processPageContent(pdfPage)
 
 
-          val pageAtoms = Seq[CharAtom](currCharBuffer:_*)
+          val pageAtoms = Seq[PageItem](currCharBuffer:_*)
 
           val charCount = extractor.totalCharCount
           val maxExceeded = charCount > extractor.MAX_EXTRACTED_CHARS_PER_PAGE

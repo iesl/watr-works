@@ -71,16 +71,24 @@ case class PageGeometry(
   bounds: LTBounds
 )
 
+sealed trait PageItem {
+  def pageRegion: PageRegion
+  def bbox: LTBounds = pageRegion.bbox
+}
+
 case class CharAtom(
   id: Int@@CharID,
-  charRegion: PageRegion,
+  override val pageRegion: PageRegion,
   char: String,
   wonkyCharCode: Option[Int] = None
-)  {
-  override def toString = s"CharAtom($char, $charRegion)"
+) extends PageItem {
+  override def toString = s"CharAtom($char, $pageRegion)"
 
-  def bbox: LTBounds = charRegion.bbox
 }
+
+case class ImageAtom(
+  override val pageRegion: PageRegion
+) extends PageItem
 
 object CharAtom {
 
@@ -184,48 +192,48 @@ object PageComponentImplicits {
   }
 
 
-  implicit class RicherCharAtom(val charRegion: CharAtom) extends AnyVal {
+  implicit class RicherCharAtom(val charAtom: CharAtom) extends AnyVal {
 
     def debugPrint: String = {
-      val bbox = charRegion.bbox.prettyPrint
+      val bbox = charAtom.bbox.prettyPrint
 
-      val wonk = charRegion.wonkyCharCode
+      val wonk = charAtom.wonkyCharCode
         .map({ code =>
           if (code==32) { "<sp>"  }
           else { s"?:#${code}?" }
         }) getOrElse { "" }
 
-      s"""${charRegion.char} ${wonk} ${bbox}"""
+      s"""${charAtom.char} ${wonk} ${bbox}"""
     }
 
     def prettyPrint: String = {
-      charRegion.wonkyCharCode
+      charAtom.wonkyCharCode
         .map({ code =>
           if (code==32) { "_"  }
           else { s"#${code}?" }
         })
         .getOrElse({
-          charRegion.char
+          charAtom.char
         })
     }
 
     def bestGuessChar: String = {
-      charRegion.wonkyCharCode
+      charAtom.wonkyCharCode
         .map({ code =>
           if (code==32) { s" "  }
           else { s"#{${code}}" }
         })
         .getOrElse({
-          // if (charRegion)
-          charRegion.char
+          // if (charAtom)
+          charAtom.char
         })
     }
 
-    def isWonky: Boolean = charRegion.wonkyCharCode.isDefined
+    def isWonky: Boolean = charAtom.wonkyCharCode.isDefined
 
-    def isSpace: Boolean = charRegion.wonkyCharCode.exists(_==32)
-    def isControl: Boolean = charRegion.wonkyCharCode.exists(_<32)
-    def isNonPrintable: Boolean = charRegion.wonkyCharCode.exists(_<=32)
+    def isSpace: Boolean = charAtom.wonkyCharCode.exists(_==32)
+    def isControl: Boolean = charAtom.wonkyCharCode.exists(_<32)
+    def isNonPrintable: Boolean = charAtom.wonkyCharCode.exists(_<=32)
 
   }
 }

@@ -36,10 +36,31 @@ class PageTextTest extends DocsegTestUtil  {
 
     expectedText.split("\n").map(_.trim())
 
-    // val pdfIns = papers.paperUrl("saccharomyces-1-page.pdf")
-    val pdfIns = papers.paperUrl("austenite/pg_0001.pdf")
+
+    val allTestPdfs =
+      """|101016jactamat201112024.pdf
+         |101016jactamat201501032.pdf
+         |101016japsusc201210126.pdf
+         |101016jcarbon201301056.pdf
+         |2839.pdf
+         |6376.pdf
+         |acsnano.5b00028.pdf
+         |austenite.pdf
+         |bongard2005.pdf
+         |font-type-0-1-t.pdf
+         |font-type-1-3.pdf
+         |quantification-Smith-2013.pdf
+         |saccharomyces-1-page.pdf
+         |Schauer-1987.pdf
+         |""".stripMargin.split("\n")
+        .map(_.trim())
+        .filter(_.length()>0)
+
+
+    val pdfName = allTestPdfs(2)
+    val pdfIns = papers.paperUrl(pdfName)
     val path = fs.Path(pdfIns.getPath)
-    val docId = DocumentID("dummy-id")
+    val docId = DocumentID(s"${pdfName}")
     import corpora._
 
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)

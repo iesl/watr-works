@@ -50,7 +50,7 @@ object TextWorksConfig {
     /// IO Config options
     note("Specify exactly one input mode: corpus|file|file-list \n")
 
-    // val pageIdL = lens[CharAtom].charRegion.page.pageId
+    // val pageIdL = lens[CharAtom].pageRegion.page.pageId
     opt[JFile]('c', "corpus") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
         Option(InputMode.CorpusInput(v))

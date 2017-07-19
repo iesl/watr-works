@@ -40,6 +40,12 @@ case class PageIndex(
       .map(_.asInstanceOf[AtomicComponent])
   }
 
+  def getImageAtoms(): Seq[RegionComponent] = {
+    componentIndex.getItems
+      .filter(_.roleLabel==LB.Image)
+      .map(_.asInstanceOf[RegionComponent])
+  }
+
 
   def setChildrenWithLabel(cid: Int@@ComponentID, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
     val lmap = componentToChildren.getOrElse(cid, mutable.HashMap())

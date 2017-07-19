@@ -291,7 +291,7 @@ case class AtomicComponent(
     groupf: (AtomicComponent, AtomicComponent, Int) => Boolean,
     onGrouped: (RegionComponent, Int, Int) => Unit = ((_, _, _) => ())
   ): Seq[RegionComponent] = {
-    val newRegion = mpageIndex.createRegionComponent(charAtom.charRegion, LB.NullLabel) // FIXME <- nulllabel?
+    val newRegion = mpageIndex.createRegionComponent(charAtom.pageRegion, LB.NullLabel) // FIXME <- nulllabel?
 
     onGrouped(newRegion, 0, 1)
     Seq(newRegion)
@@ -310,7 +310,7 @@ case class AtomicComponent(
 
   val bounds = charAtom.bbox
 
-  def targetRegion: PageRegion = charAtom.charRegion
+  def targetRegion: PageRegion = charAtom.pageRegion
 
   def chars: String = char
 

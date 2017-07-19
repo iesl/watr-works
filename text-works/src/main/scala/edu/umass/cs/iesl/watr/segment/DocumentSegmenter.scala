@@ -122,7 +122,8 @@ object DocumentSegmenter {
     val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
     val mpageIndex = new MultiPageIndex(stableId, docStore)
 
-    val pageIdL = lens[CharAtom].charRegion.page.pageId
+    val pageIdL = lens[CharAtom].pageRegion.page.pageId
+    val imgPageIdL = lens[ImageAtom].pageRegion.page.pageId
 
     val docId = docStore.addDocument(stableId)
     pageAtomsAndGeometry.foreach { case(regions, geom)  =>
@@ -136,6 +137,10 @@ object DocumentSegmenter {
           // modify the pageId to match the one assigned by docStore
           val update = pageIdL.modify(cb){_ => pageId}
           mpageIndex.addCharAtom(update)
+
+        case cb:ImageAtom =>
+          val update = imgPageIdL.modify(cb){_ => pageId}
+          mpageIndex.addImageAtom(update)
 
         case cb => println(s"error adding ${cb}")
       }
