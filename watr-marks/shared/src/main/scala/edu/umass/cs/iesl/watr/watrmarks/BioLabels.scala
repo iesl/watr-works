@@ -5,6 +5,7 @@ import TypeTags._
 
 import textboxing.{TextBoxing => TB}, TB._
 
+
 sealed trait BioPin {
   def label: Label
   def pinChar: Char

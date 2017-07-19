@@ -948,24 +948,24 @@ class DocumentSegmenter(
 
   def labelSectionHeadings(): Unit = {
     vtrace.trace(begin("LabelSectionHeadings"))
-    val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
-    for {
-      lineBioNode <- lineBioLabels
-      lineComp = lineBioNode.component
-      numbering = lineComp.chars.takeWhile(c => c.isDigit || c=='.')
-      nexts = lineComp.chars.drop(numbering.length) //.takeWhile(c => c.isLetter)
-      isTOCLine = """\.+""".r.findAllIn(nexts).toSeq.sortBy(_.length).lastOption.exists(_.length > 4)
+    // val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
+    // for {
+    //   lineBioNode <- lineBioLabels
+    //   lineComp = lineBioNode.component
+    //   numbering = lineComp.chars.takeWhile(c => c.isDigit || c=='.')
+    //   nexts = lineComp.chars.drop(numbering.length) //.takeWhile(c => c.isLetter)
+    //   isTOCLine = """\.+""".r.findAllIn(nexts).toSeq.sortBy(_.length).lastOption.exists(_.length > 4)
 
-      if !numbering.isEmpty && !nexts.isEmpty()
-      if numbering.matches("^[1-9]+\\.([1-9]\\.)*")
-      if !isTOCLine
-    } {
+    //   if !numbering.isEmpty && !nexts.isEmpty()
+    //   if numbering.matches("^[1-9]+\\.([1-9]\\.)*")
+    //   if !isTOCLine
+    // } {
 
-      // vtrace.trace("Labeled section heading" withInfo
-      //   show(lineBioNode.component))
+    //   // vtrace.trace("Labeled section heading" withInfo
+    //   //   show(lineBioNode.component))
 
-      mpageIndex.addBioLabels(LB.SectionHeadingLine, lineBioNode)
-    }
+    //   mpageIndex.addBioLabels(LB.SectionHeadingLine, lineBioNode)
+    // }
 
     vtrace.trace(end("LabelSectionHeadings"))
 
@@ -977,24 +977,24 @@ class DocumentSegmenter(
   }
 
   def labelTitle(): Unit = {
-    val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
-    // look for lines with biggest font within first [x] lines of paper
-    // get rid of lines with length less than some arbitrary length (to weed out some weird cases)
-    val biggestLineAtBeginning = lineBioLabels.take(50)
-      .filter(_.component.chars.length() > 5)
-      .sortWith(_.component.height > _.component.height)
+    // val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
+    // // look for lines with biggest font within first [x] lines of paper
+    // // get rid of lines with length less than some arbitrary length (to weed out some weird cases)
+    // val biggestLineAtBeginning = lineBioLabels.take(50)
+    //   .filter(_.component.chars.length() > 5)
+    //   .sortWith(_.component.height > _.component.height)
 
-    // for debugging, print out all the lines sorted in order from largest to smallest
-    //    biggestLineAtBeginning.foreach(node => println(node.component.chars))
-    //    println
+    // // for debugging, print out all the lines sorted in order from largest to smallest
+    // //    biggestLineAtBeginning.foreach(node => println(node.component.chars))
+    // //    println
 
-    if(biggestLineAtBeginning.headOption.isDefined) {
-      // println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
-      mpageIndex.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
-      println
-    } else {
-      println("there isn't a biggest line?")
-    }
+    // if(biggestLineAtBeginning.headOption.isDefined) {
+    //   // println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
+    //   mpageIndex.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
+    //   println
+    // } else {
+    //   println("there isn't a biggest line?")
+    // }
   }
 
 

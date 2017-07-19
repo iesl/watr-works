@@ -119,12 +119,12 @@ class MultiPageIndex(
   }
 
 
-  type BioLabeling = mutable.MutableList[BioNode]
-  val bioLabelings = mutable.Map[String, BioLabeling]()
+  // type BioLabeling = mutable.MutableList[BioNode]
+  // val bioLabelings = mutable.Map[String, BioLabeling]()
 
-  def bioLabeling(name: String): BioLabeling = {
-    bioLabelings.getOrElseUpdate(name, mutable.MutableList[BioNode]())
-  }
+  // def bioLabeling(name: String): BioLabeling = {
+  //   bioLabelings.getOrElseUpdate(name, mutable.MutableList[BioNode]())
+  // }
 
 
   def setChildrenWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
@@ -175,11 +175,21 @@ class MultiPageIndex(
   def getPageIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
 
   def removeComponent(c: Component): Unit = {
-    // vtrace.trace("removeComponent" withTrace showComponent(c))
     val pinfo = getPageIndex(getPageForComponent(c))
+    pinfo.componentToLabels.get(c.id)
+      .foreach{ labels =>
+        labels.foreach { label =>
+          pinfo.labelToComponents.get(label)
+            .map{_.filterNot(id => id == c.id)}
+            .foreach{ filtered =>
+              pinfo.labelToComponents.update(label, filtered)
+            }
+        }
+
+      }
     pinfo.componentToLabels -= c.id
     pinfo.componentIndex.remove(c)
-    // FIXME also delete label maps, etc.
+
   }
 
   def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, TargetRegion)] = {
@@ -256,24 +266,24 @@ class MultiPageIndex(
   }
 
 
-  def addBioLabels(label: Label, node: BioNode): Unit = {
-    addBioLabels(label, Seq(node))
-  }
+  // def addBioLabels(label: Label, node: BioNode): Unit = {
+  //   addBioLabels(label, Seq(node))
+  // }
 
-  def addBioLabels(label: Label, nodes: Seq[BioNode]): Unit = {
-    val labelId = labelIdGen.nextId
-    val l = label.copy(id=labelId)
+  // def addBioLabels(label: Label, nodes: Seq[BioNode]): Unit = {
+  //   val labelId = labelIdGen.nextId
+  //   val l = label.copy(id=labelId)
 
-    if (nodes.length==1) {
-      nodes.foreach(_.pins += l.U)
-    } else if (nodes.length > 1) {
-      nodes.head.pins += l.B
-      nodes.last.pins += l.L
+  //   if (nodes.length==1) {
+  //     nodes.foreach(_.pins += l.U)
+  //   } else if (nodes.length > 1) {
+  //     nodes.head.pins += l.B
+  //     nodes.last.pins += l.L
 
-      nodes.drop(1).dropRight(1).foreach(
-        _.pins += l.I
-      )
-    }
-  }
+  //     nodes.drop(1).dropRight(1).foreach(
+  //       _.pins += l.I
+  //     )
+  //   }
+  // }
 
 }

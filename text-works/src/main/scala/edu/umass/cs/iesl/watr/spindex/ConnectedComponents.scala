@@ -12,11 +12,6 @@ import scala.collection.mutable
 
 import watrmarks.{StandardLabels => LB}
 
-// TODO move and/or delete this
-case class BioNode(
-  component: Component,
-  pins: mutable.Set[BioPin] =  mutable.Set()
-)
 
 object Component {
   import rindex._

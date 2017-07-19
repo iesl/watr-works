@@ -2,13 +2,9 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
-// import scalaz.{@@ => _, _}, Scalaz._
 import utils.SlicingAndDicing._
 
 import ammonite.{ops => fs}, fs._
-// import java.io.InputStream
-// import scala.collection.JavaConversions._
-// import textboxing.{TextBoxing => TB}, TB._
 import watrmarks.{StandardLabels => LB}
 
 import geometry._
@@ -16,32 +12,12 @@ import geometry.syntax._
 import org.dianahep.histogrammar._
 // import org.dianahep.histogrammar.ascii._
 
-// import textreflow.data._
-
-// import ComponentOperations._
-// import PageComponentImplicits._
-
 import utils.{CompassDirection => CDir}
-// import tracing.VisualTracer._
-// import EnrichNumerics._
-// import SlicingAndDicing._
-
 import TypeTags._
-// import corpora._
-// import extract.PdfTextExtractor
 import utils.ExactFloats._
 import images.{ImageManipulation => IM}
-import scala.collection.mutable
+import utils.FunctionalHelpers._
 
-
-object TextGrid {
-
-  sealed trait GridCell
-
-  case class ComponentCell(
-
-  ) extends GridCell
-}
 
 class RTreePageSegmentation(
   val mpageIndex: MultiPageIndex
@@ -122,27 +98,140 @@ class RTreePageSegmentation(
 
 
     approximateLineBins(components)
-    writeRTreeImage(pageNum, "01-lineHashing")
+    // writeRTreeImage(pageNum, "01-lineHashing")
 
     splitLinesWithOverlaps(pageNum)
-    writeRTreeImage(pageNum, "02-splitLineHashing")
+    // writeRTreeImage(pageNum, "02-splitLineHashing")
 
     maybeSplitColumns(pageId, components)
 
-    writeRTreeImage(pageNum, "03-columnHashing")
+    // writeRTreeImage(pageNum, "03-columnHashing")
 
     splitLinesOnWhitespaceColumns(pageNum)
 
-    writeRTreeImage(pageNum, "04-splitOnCols")
+    // writeRTreeImage(pageNum, "04-splitOnCols")
 
     // Construct super/sub queries
     // Start w/ hashed lines with greatest # of clustered atoms,
-    joinSuperSubs(pageId)
+    val textGridRows = findVisualLines(pageId)
+    insertSpaces(pageId, textGridRows)
+
+
 
   }
 
+  def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[Component]): FloatExact = {
+    // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
+    def pairwiseSpaceWidths(): Seq[FloatExact] = {
+      val cpairs = sortedLineCCs.sliding(2).toList
 
-  def joinSuperSubs(pageId: Int@@PageID): Unit = {
+      val dists = cpairs.map({
+        case Seq(c1, c2)  => (c2.bounds.left - c1.bounds.right)
+        case _  => 0d.toFloatExact()
+      })
+
+      dists :+ 0d.toFloatExact()
+    }
+
+    def determineSpacings(): Seq[FloatExact] = {
+      val dists = pairwiseSpaceWidths()
+
+      val mostFrequentDists = dists.groupBy(x => x)
+        .mapValues { _.length }
+        .toList
+        .sortBy(_._2).reverse
+
+      mostFrequentDists.map(_._1)
+    }
+    val charDists = determineSpacings()
+
+    val charWidths = sortedLineCCs.map(_.bounds.width)
+    val widestChar = charWidths.max
+
+    // Don't  accept a space wider than (some magic number)*the widest char?
+    val saneCharDists = charDists
+      .filter(_ < widestChar*2 )
+      .filter(_ == 0)
+
+    def resolution =  0.3d
+
+    // Try to divide the list of char dists into 2 groups, small gap and large gap:
+    // See if we can divide our histogram values by some value > 2*histResolution
+    val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
+      math.abs((c2 - c1).asDouble()) < resolution
+    })
+
+
+    val threshold = if (saneCharDists.length == 1) {
+      // If there is only 1 distance, the line is only 1 word (no word breaks)
+      1.0d.toFloatExact()
+    } else if (distGroups.length >= 2) {
+      // vtrace.trace(message(""))
+      val d1 = distGroups(0).last
+      val d2 = distGroups(1).head
+
+      (d1+d2) / 2
+    } else if (saneCharDists.length >= 2) {
+      // Take most common space to be char space within words
+      val modalLittleGap = saneCharDists.head
+      // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+      val modalBigGap = saneCharDists
+        .drop(1)
+        .filter(_ > modalLittleGap)
+        .headOption.getOrElse(modalLittleGap)
+
+      (modalBigGap+modalLittleGap)/2
+    } else {
+      // Fallback to using unfiltered char dists
+      val modalLittleGap = charDists.head
+      // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+      val modalBigGap = charDists
+        .drop(1)
+        .filter(_ > modalLittleGap)
+        .headOption.getOrElse(modalLittleGap)
+
+      (modalBigGap*2+modalLittleGap)/3
+    }
+
+
+    threshold
+  }
+
+  def insertSpaces(pageId: Int@@PageID, textGridRows: Seq[TextGrid.Row]): Unit = {
+    textGridRows.map { textRow =>
+      val lineCCs = textRow.cells.collect{
+        case TextGrid.ComponentCell(cc) => cc
+      }
+
+      val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
+
+      val maybeGroups = textRow.groupBy { (c1, c2) =>
+        val pairwiseDist = c2.bounds.left - c1.bounds.right
+        val sameGroup = pairwiseDist < splitValue
+        sameGroup
+      }
+
+      maybeGroups.map { groupCursor =>
+
+        val finalGroups = groupCursor.unfoldBy { group =>
+          if (!group.atEnd) {
+            val ins = group.focus.last.cloneCell()
+            Some(group.insertRight(ins.copy(text=" ")))
+          } else {
+            Some(group)
+          }
+        }
+
+        val finalRow = finalGroups.toRow
+        println(
+          finalRow.toText
+        )
+      }
+
+    }
+  }
+
+  def findVisualLines(pageId: Int@@PageID): Seq[TextGrid.Row] = {
 
     val pageNum = pageIdMap(pageId)
     val pageIndex = mpageIndex.getPageIndex(pageNum)
@@ -160,16 +249,10 @@ class RTreePageSegmentation(
       (hashedLineCC, charsInRegion.length)
     }
 
-    // val allWhitespaceCols = for {
-    //   ccs <- pageIndex.labelToComponents.get(LBP.WhitespaceCol).toList
-    //   ccId <- ccs
-    //   cc <- rTreeIndex.get(ccId.unwrap)
-    // } yield cc
-
-    linesWithCharCounts
+    val allTextRows = linesWithCharCounts
       .sortBy { case (_, count) => count }
       .reverse
-      .foreach { case (hashLineRegion, count) =>
+      .map { case (hashLineRegion, count) =>
         // if not already examined:
         val alreadyProcessed = rTreeIndex.search(hashLineRegion.bounds, {_.roleLabel == LBP.Marked}).nonEmpty
 
@@ -208,49 +291,53 @@ class RTreePageSegmentation(
           val topLine = extendedLineRegion.toLine(CDir.N).translate(y=0.5)
           val bottomLine = extendedLineRegion.toLine(CDir.S).translate(y = -0.5)
 
-          val centerLine = extendedLineRegion.toPoint(CDir.W).lineTo(
-            extendedLineRegion.toPoint(CDir.E)
-          )
-
+          // val centerLine = extendedLineRegion.toPoint(CDir.W).lineTo(
+          //   extendedLineRegion.toPoint(CDir.E)
+          // )
           val topIntersects = rTreeIndex.searchLine(topLine, {_.roleLabel == LB.PageAtom}).map(_.id)
           val bottomIntersects = rTreeIndex.searchLine(bottomLine, {_.roleLabel == LB.PageAtom}).map(_.id)
-          val centerIntersects = rTreeIndex.searchLine(centerLine, {_.roleLabel == LB.PageAtom}).map(_.id)
+          // val centerIntersects = rTreeIndex.searchLine(centerLine, {_.roleLabel == LB.PageAtom}).map(_.id)
 
 
-          val comps = mutable.ArrayBuffer[Component](
-            visualLineAtoms.sortBy(_.bounds.left):_*
-          )
-          println(s"Sup/Sub")
-          println(s"${comps.map(_.chars).mkString}")
-          comps.map{ cc =>
-            val intersectsTop = topIntersects.contains(cc.id)
-            val intersectsBottom = bottomIntersects.contains(cc.id)
-            val intersectsCenter = centerIntersects.contains(cc.id)
+          val comps = visualLineAtoms.sortBy(_.bounds.left)
 
-            if (intersectsTop && intersectsBottom) {
-              print("|")
-            } else if (intersectsTop && !intersectsBottom) {
-              print("^")
-            } else if (!intersectsTop && intersectsBottom) {
-              print("v")
-            } else if (intersectsCenter) {
-              print("-")
-            } else {
-              print("?")
-              // huh???
-            }
-          }
+          val textRow = TextGrid.Row.fromComponents(comps)
+
+          textRow.foreach{ _ match {
+            case cell@ TextGrid.ComponentCell(cc) =>
+              val intersectsTop = topIntersects.contains(cc.id)
+              val intersectsBottom = bottomIntersects.contains(cc.id)
+              // val intersectsCenter = centerIntersects.contains(cc.id)
+
+              if (intersectsTop && !intersectsBottom) {
+                cell.addLabel(LB.Sup)
+              } else if (!intersectsTop && intersectsBottom) {
+                cell.addLabel(LB.Sub)
+              }
+
+            case _ =>
+
+          }}
 
           val regionId = docStore.addTargetRegion(pageId, extendedLineRegion)
           val targetRegion = docStore.getTargetRegion(regionId)
           val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
           mpageIndex.createRegionComponent(pageRegion, LBP.Marked)
 
-
-        }
+          Some(textRow)
+        } else None
       }
 
-    // val hashedLineSized = SparselyBin.ing(1.0, {x: AtomicComponent => x.bounds.left.asDouble()} named "char-lefts")
+    val justTextRows = allTextRows.flatten
+
+    // Get rid of all the housekeeping "marked" regions
+    pageIndex.labelToComponents.get(LBP.Marked).foreach { markedRegions =>
+      markedRegions.foreach { ccId =>
+        val cc = mpageIndex.getComponent(ccId, pageNum)
+        mpageIndex.removeComponent(cc)
+      }
+    }
+    justTextRows
 
   }
 
@@ -329,7 +416,7 @@ class RTreePageSegmentation(
                 val startingRegion = LTBounds(
                   left   = colBounds.left-0.1d,
                   top    = colBounds.top,
-                  width  = 0.1.toFloatExact(),
+                  width  = 0.01.toFloatExact(),
                   height = colBounds.height
                 )
                 println(s"   col-by-hash: ${colBounds}, starting ws: ${startingRegion}")
@@ -358,6 +445,7 @@ class RTreePageSegmentation(
     val rTreeIndex = pageIndex.componentIndex
 
     var currWhiteSpace = startingRegion
+    val nudgeFactor = 0.01.toFloatExact()
 
     currWhiteSpace.adjacentRegionWithin(pageBounds, CDir.W)
       .foreach { regionLeftOf =>
@@ -368,7 +456,7 @@ class RTreePageSegmentation(
 
         if (atomsLeftOf.nonEmpty) {
           val rightMostCC = atomsLeftOf.maxBy(_.bounds.right)
-          regionLeftOf.splitVertical(rightMostCC.bounds.right)
+          regionLeftOf.splitVertical(rightMostCC.bounds.right+nudgeFactor)
             .foreach { case (left, right) =>
               currWhiteSpace = currWhiteSpace union right
             }
@@ -384,7 +472,7 @@ class RTreePageSegmentation(
 
         if (atomsAbove.nonEmpty) {
           val bottomMostCC = atomsAbove.maxBy(_.bounds.bottom)
-          regionAbove.splitHorizontal(bottomMostCC.bounds.bottom)
+          regionAbove.splitHorizontal(bottomMostCC.bounds.bottom+nudgeFactor)
             .foreach { case (top, bottom) =>
               currWhiteSpace = currWhiteSpace union bottom
             }
@@ -400,7 +488,7 @@ class RTreePageSegmentation(
 
         if (atomsBelow.nonEmpty) {
           val topmostCC = atomsBelow.minBy(_.bounds.top)
-          regionBelow.splitHorizontal(topmostCC.bounds.top)
+          regionBelow.splitHorizontal(topmostCC.bounds.top-nudgeFactor)
             .foreach { case (top, bottom) =>
               currWhiteSpace = currWhiteSpace union top
             }
