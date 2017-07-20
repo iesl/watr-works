@@ -52,12 +52,29 @@ class RTreePageSegmentation(
     docStore.labelRegions(LB.DocumentPages, pageRegions)
   }
 
+
   def writeRTreeImage(
     pageNum: Int@@PageNum,
     name: String,
     l0: Label,
     labels: Label*
   ): Unit = {
+    import com.sksamuel.scrimage
+    import scrimage._
+    import X11Colorlist._
+    val labelColors: Map[Label, Color] = {
+      Map(
+        (LB.VisualLine, X11Colorlist.Plum),
+        (LB.PathBounds, X11Colorlist.RoyalBlue),
+        (LB.HLinePath, X11Colorlist.Black),
+        (LB.VLinePath, X11Colorlist.Black),
+        (LB.Image, X11Colorlist.DarkCyan),
+        (LBP.LineByHash, Firebrick3),
+        (LBP.ColByHash, Blue),
+        (LBP.WhitespaceCol, Green),
+        (LBP.Marked, MediumTurquoise)
+      )
+    }
     val pageIndex = mpageIndex.getPageIndex(pageNum)
     val pageBounds = pageIndex.getPageGeometry.bounds
     val pageCanvas = IM.createCanvas(pageBounds)
@@ -68,7 +85,7 @@ class RTreePageSegmentation(
       .filter { c =>
         lbls.contains(c.roleLabel)
       }
-      .map { c => IM.ltBoundsToDrawables(c.bounds, pageIndex.getPageGeometry, pageBounds) }
+      .map { c => IM.ltBoundsToDrawables(c.bounds, pageIndex.getPageGeometry, pageBounds, labelColors(c.roleLabel) ) }
 
     val embossedCanvas = pageCanvas.draw(overlays.flatten)
 
@@ -104,27 +121,34 @@ class RTreePageSegmentation(
     pageNum: Int@@PageNum,
     components: Seq[AtomicComponent]
   ): Unit = {
+    val stdLabels = List(
+      LB.Image, LB.HLinePath, LB.VLinePath
+    )
 
+    // val interestingLabels = List(
+    //   LBP.LineByHash, LB.Image, LBP.ColByHash, LBP.WhitespaceCol,
+    //   LB.PathBounds
+    // )
 
     approximateLineBins(components)
-    // writeRTreeImage(pageNum, "01-lineHashing", LBP.LineByHash)
+    writeRTreeImage(pageNum, "01-lineHashing", LBP.LineByHash, stdLabels:_*)
 
     splitLinesWithOverlaps(pageNum)
-    // writeRTreeImage(pageNum, "02-splitLineHashing", LBP.LineByHash)
+    writeRTreeImage(pageNum, "02-splitLineHashing", LBP.LineByHash, stdLabels:_*)
 
     maybeSplitColumns(pageId, components)
 
-    // writeRTreeImage(pageNum, "03-columnHashing", LBP.LineByHash)
+    writeRTreeImage(pageNum, "03-columnHashing", LBP.LineByHash, (List(LBP.ColByHash, LBP.WhitespaceCol) ++ stdLabels):_*)
 
     splitLinesOnWhitespaceColumns(pageNum)
 
-    writeRTreeImage(pageNum, "04-HashedLinesAndCols", LBP.ColByHash, LB.Image)
+    writeRTreeImage(pageNum, "04-HashedLinesAndCols", LBP.LineByHash, (List(LBP.WhitespaceCol) ++ stdLabels):_*)
 
     // Construct super/sub queries
     // Start w/ hashed lines with greatest # of clustered atoms,
     val textGridRows = findVisualLines(pageId)
 
-    writeRTreeImage(pageNum, "05-VisualLines", LB.VisualLine, LBP.WhitespaceCol, LB.Image)
+    writeRTreeImage(pageNum, "05-VisualLines", LB.VisualLine, stdLabels:_*)
 
     insertSpaces(pageId, textGridRows)
 
@@ -600,7 +624,6 @@ class RTreePageSegmentation(
 
 object LBP {
   // import watrmarks.Label
-
 
   val LineByHash = Label("LineByHash")
   val ColByHash = Label("ColByHash")

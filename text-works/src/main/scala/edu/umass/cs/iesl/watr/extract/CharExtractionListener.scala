@@ -8,7 +8,7 @@ import scala.collection.mutable
 import scala.collection.JavaConversions._
 
 import _root_.com.itextpdf
-import itextpdf.kernel.geom.{Vector => PVector, Subpath, IShape, Point => IPoint}
+import itextpdf.kernel.geom.{Vector => PVector, Subpath, IShape, Point => IPoint, Matrix}
 import itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
 import itextpdf.kernel.pdf.canvas.parser.EventType
 import itextpdf.kernel.pdf.canvas.parser.data._
@@ -18,6 +18,7 @@ import fonts._
 import utils.IdGenerator
 import utils.EnrichNumerics._
 import TypeTags._
+import utils.ExactFloats._
 
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -278,44 +279,7 @@ class CharExtractionListener(
     }
   }
 
-  def renderPath(renderInfo: PathRenderInfo): Unit = {
-    // val op = renderInfo.getOperation
-    val path = renderInfo.getPath
-    val pathCurr = path.getCurrentPoint
-    val px = pathCurr.x
-    val py = pathCurr.y
-    println(s"  path: [$px, $py]")
-    // val subPaths = path.getSubpaths.asScala
-    val subPaths: Seq[Subpath] = path.getSubpaths
-    subPaths.map{ subPath =>
-      val subStart = subPath.getStartPoint
-      val subLast = subPath.getLastPoint
-      println(s"   sub [${subStart.x}, ${subStart.y}] -> [${subLast.x}, ${subLast.y}] ")
-      val segments: Seq[IShape] = subPath.getSegments
-      segments.map{ ishape =>
-        val basePoints: Seq[IPoint] = ishape.getBasePoints
-        basePoints.map{ point =>
-          val x = point.x
-          val y = point.y
-          println(s"      p: [$x, $y]")
-        }
-      }
-    }
-  }
-
-  def renderImage(iri: ImageRenderInfo): Unit = {
-
-    // println(s"ctm------")
-    // println(s"${ctm}")
-    // println(s"======")
-    // val imgBounds =  LTBounds.Floats(ctm.get(6), ctm.get(7), ctm.get(6) + ctm.get(0), ctm.get(7) + ctm.get(4))
-    // val img = iri.getImage
-    // val width = img.getWidth
-    // val height = img.getHeight
-    // val scaledWidthAndHeight = new PVector(width, height, 1).cross(ctm);
-    // println(s" startPoint: ${startPoint} w/h: ${scaledWidthAndHeight}")
-
-    val ctm = iri.getImageCtm
+  def ctmToLTBounds(ctm:  Matrix): LTBounds = {
     val x1 = ctm.get(6).toDouble
     val y1 = ctm.get(7).toDouble
     val x2 = x1 + ctm.get(0)
@@ -323,12 +287,99 @@ class CharExtractionListener(
     val w = x2 - x1
     val h = y2 - y1
 
+    val left = geomTranslation.transX(x1)
+    val top = geomTranslation.transY(y2)
 
-    val imageLeft = geomTranslation.transX(x1)
-    val imageTop = geomTranslation.transY(y2)
+    LTBounds.Doubles(left, top, w, h)
+  }
 
-    val imgBounds =  LTBounds.Doubles(imageLeft, imageTop, w, h)
+  def ctmToLTBoundsPdfSpace(ctm:  Matrix): LTBounds = {
+    val x1 = ctm.get(6).toDouble
+    val y1 = ctm.get(7).toDouble
+    val x2 = x1 + ctm.get(0)
+    val y2 = y1 + ctm.get(4)
+    val w = x2 - x1
+    val h = y2 - y1
 
+    val left = x1 //  geomTranslation.transX(x1)
+    val top = y2 // geomTranslation.transY(y2)
+
+    LTBounds.Doubles(left, top, w, h)
+  }
+
+  def ipointToPoint(p:  IPoint): Point = {
+    // val x = geomTranslation.transX(p.x)
+    // val y = geomTranslation.transY(p.y)
+    Point.Doubles(p.x, p.y)
+  }
+
+  def invertPointSpace(p:  Point): Point = {
+    val x = geomTranslation.transX(p.x.asDouble())
+    val y = geomTranslation.transY(p.y.asDouble)
+    Point.Doubles(x, y)
+  }
+
+  import geometry.syntax._
+    import utils.{CompassDirection => CDir}
+
+  def renderPath(renderInfo: PathRenderInfo): Unit = {
+    // val op = renderInfo.getOperation
+    val ctm = renderInfo.getCtm
+    // val pathBounds = ctmToLTBounds(ctm)
+    val pathTransVec = ctmToLTBoundsPdfSpace(ctm).toPoint(CDir.NW)
+
+    // val startPoint = pathBounds.toPoint(CDir.NW)
+
+    // println(s"renderPath: ")
+
+    // var pathCurrPt = startPoint //  ipointToPoint(path.getCurrentPoint)
+
+    val path = renderInfo.getPath
+    // println(s"  path: getCurrentPoint=${path.getCurrentPoint}")
+
+
+    val waypoints = for {
+      subPath <- path.getSubpaths : Seq[Subpath]
+      ishape  <- subPath.getSegments: Seq[IShape]
+      ipoint   <- ishape.getBasePoints: Seq[IPoint]
+    } yield {
+      val p = ipointToPoint(ipoint)
+      val trans = p.translate(pathTransVec)
+      val tInvert = invertPointSpace(trans)
+      // val endPoint = pathCurrPt.translate(p )
+      // pathCurrPt = endPoint
+      // println(s"      waypoint: $trans /inv= ${tInvert}")
+      tInvert
+    }
+
+    val xsort = waypoints.sortBy(_.x)
+    val ysort = waypoints.sortBy(_.y)
+    val xmin = xsort.head.x
+    val xmax = xsort.last.x
+    val ymin = ysort.head.y
+    val ymax = ysort.last.y
+    val bounds = LTBounds(xmin, ymin, xmax-xmin, ymax-ymin)
+
+    val pageRegion = PageRegion(
+      RecordedPageID(
+        PageID(-(1+pageNum.unwrap)),
+        StablePageID(stableId, pageNum)
+      ),
+      bounds
+    )
+
+    currCharBuffer.append(
+      PageItem.Path(
+        pageRegion,
+        waypoints
+      )
+    )
+  }
+
+  def renderImage(iri: ImageRenderInfo): Unit = {
+
+    val ctm = iri.getImageCtm
+    val imgBounds = ctmToLTBounds(ctm)
 
     val pageRegion = PageRegion(
       RecordedPageID(
@@ -340,7 +391,7 @@ class CharExtractionListener(
 
     // println(s"Image at ${pageRegion}")
 
-    val imgRegion = ImageAtom(pageRegion)
+    val imgRegion = PageItem.ImageAtom(pageRegion)
 
     currCharBuffer.append(imgRegion)
   }

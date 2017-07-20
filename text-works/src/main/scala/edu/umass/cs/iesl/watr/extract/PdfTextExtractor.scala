@@ -87,7 +87,7 @@ class PdfTextExtractor(
       height = bottom
     )
 
-    println(s"getReportedPageGeometry: ${bounds}   ($lval, $bval, $rval, $tval)")
+    // println(s"getReportedPageGeometry: ${bounds}   ($lval, $bval, $rval, $tval)")
 
     (PageGeometry(pageId, bounds),
       GeometryTranslation(xtrans, ytrans))

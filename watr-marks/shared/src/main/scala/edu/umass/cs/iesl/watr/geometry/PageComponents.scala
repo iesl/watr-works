@@ -76,6 +76,78 @@ sealed trait PageItem {
   def bbox: LTBounds = pageRegion.bbox
 }
 
+object PageItem {
+
+  case class ImageAtom(
+    override val pageRegion: PageRegion
+  ) extends PageItem
+
+
+  val VERTICAL   = 0
+  val HORIZONTAL = 1
+  val SLANTED    = 2
+  val EMPTY      = 3
+
+  case class Path(
+    override val pageRegion: PageRegion,
+    points: Seq[Point]
+  ) extends PageItem {
+
+    lazy val uniquePoints = if (points.length > 1 ) {
+      points.sliding(2).map{
+        case Seq(p1, p2)  =>
+          if (p1.x == p2.x && p1.y == p2.y) {
+            List(p2)
+          } else List(p1, p2)
+      }.flatten.toSeq
+    } else points
+
+
+    def makeLineWithOrientation(p1: Point, p2: Point): (Line, Int) = {
+      if (p1.x == p2.x && p1.y != p2.y) {
+        (Line(p1, p2), VERTICAL)
+      } else if (p1.x != p2.x && p1.y == p2.y) {
+        (Line(p1, p2), HORIZONTAL)
+      } else if (p1.x == p2.x && p1.y == p2.y) {
+        (Line(p1, p2), EMPTY)
+      } else {
+        (Line(p1, p2), SLANTED)
+      }
+    }
+
+    lazy val linesWithOrientation: Seq[(Line, Int)] = {
+      if (uniquePoints.length > 1) {
+
+        val segments = uniquePoints.sliding(2).map{
+          case Seq(p1, p2)  =>  makeLineWithOrientation(p1, p2)
+        }.toSeq
+
+        val finalSegment: Seq[(Line, Int)] =
+          if (uniquePoints.length > 2) {
+            val l = makeLineWithOrientation(uniquePoints.head, uniquePoints.last)
+            if (l._2 != EMPTY) Seq(l) else Seq()
+          } else Seq()
+
+        segments ++ finalSegment
+      } else Seq[(Line, Int)]()
+    }
+
+    def lines(): Seq[Line] = {
+      linesWithOrientation.map(_._1)
+    }
+
+    def horizontalLines(): Seq[Line] = {
+      linesWithOrientation.filter(_._2==HORIZONTAL).map(_._1)
+    }
+
+    def verticalLines(): Seq[Line] = {
+      linesWithOrientation.filter(_._2==VERTICAL).map(_._1)
+    }
+
+  }
+
+}
+
 case class CharAtom(
   id: Int@@CharID,
   override val pageRegion: PageRegion,
@@ -86,16 +158,12 @@ case class CharAtom(
 
 }
 
-case class ImageAtom(
-  override val pageRegion: PageRegion
-) extends PageItem
+
+
 
 object CharAtom {
-
   implicit val EqualCharAtom: Equal[CharAtom] =
     Equal.equal((a, b)  => a.id==b.id )
-
-
 }
 
 case class Zone(

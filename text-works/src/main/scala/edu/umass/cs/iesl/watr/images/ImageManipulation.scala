@@ -14,7 +14,7 @@ trait ImageManipulation {
 
   def createCanvas(dim: LTBounds): SC.Canvas = {
     val LTBounds.Ints(_, _, w, h) = dim
-    new SC.Canvas(Image.filled(w, h, Color.Transparent))
+    new SC.Canvas(Image.filled(w, h, Color.White))
   }
 
 
@@ -32,13 +32,21 @@ trait ImageManipulation {
 
 
 
-  def ltBoundsToDrawables(bbox: LTBounds, pageGeometry: PageGeometry, imageGeometry: LTBounds): List[SC.Drawable] =  {
-    val LTBounds(rl, rt, rw, rh) = rescale(bbox, pageGeometry.bounds, imageGeometry)
-    val ctx = SC.Context.painter(Color(10, 10, 220, 40))
-    val r = SC.Rect(rl.asInt, rt.asInt, rw.asInt, rh.asInt, ctx)
-    val ctx2 = SC.Context.painter(Color(10, 10, 0, 150))
-    val underline = SC.Line(x0=r.x, y0=r.y+r.height, r.x+r.width, r.y+r.height, ctx2)
-    val leftline = SC.Line(x0=r.x, y0=r.y, r.x, r.y+r.height, ctx2)
+  def ltBoundsToDrawables(
+    bbox: LTBounds,
+    pageGeometry: PageGeometry,
+    imageGeometry: LTBounds,
+    color: Color
+  ): List[SC.Drawable] =  {
+    val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry.bounds, imageGeometry)
+
+    val lighter = SC.Context.painter(color.copy(alpha=40))
+    val darker = SC.Context.painter(color.copy(alpha=200))
+
+    val r = SC.Rect(rl, rt, rw, rh, lighter)
+    val underline = SC.Line(x0=r.x, y0=r.y+r.height, r.x+r.width, r.y+r.height, darker)
+    val leftline = SC.Line(x0=r.x, y0=r.y, r.x, r.y+r.height, darker)
+
     List[SC.Drawable](r, underline, leftline)
   }
 

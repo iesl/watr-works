@@ -18,9 +18,14 @@ object CompassDirection {
 
 
 sealed trait RelativeDirection
+
 object RelativeDirection {
   case object Left extends RelativeDirection
   case object Right extends RelativeDirection
   case object Up extends RelativeDirection
   case object Down extends RelativeDirection
+  case object UpLeft extends RelativeDirection
+  case object UpRight extends RelativeDirection
+  case object DownLeft extends RelativeDirection
+  case object DownRight extends RelativeDirection
 }

@@ -123,7 +123,8 @@ object DocumentSegmenter {
     val mpageIndex = new MultiPageIndex(stableId, docStore)
 
     val pageIdL = lens[CharAtom].pageRegion.page.pageId
-    val imgPageIdL = lens[ImageAtom].pageRegion.page.pageId
+    val imgPageIdL = lens[PageItem.ImageAtom].pageRegion.page.pageId
+    val pathPageIdL = lens[PageItem.Path].pageRegion.page.pageId
 
     val docId = docStore.addDocument(stableId)
     pageAtomsAndGeometry.foreach { case(regions, geom)  =>
@@ -138,9 +139,13 @@ object DocumentSegmenter {
           val update = pageIdL.modify(cb){_ => pageId}
           mpageIndex.addCharAtom(update)
 
-        case cb:ImageAtom =>
+        case cb:PageItem.ImageAtom =>
           val update = imgPageIdL.modify(cb){_ => pageId}
           mpageIndex.addImageAtom(update)
+
+        case cb:PageItem.Path =>
+          val update = pathPageIdL.modify(cb){_ => pageId}
+          mpageIndex.addPathItem(update)
 
         case cb => println(s"error adding ${cb}")
       }

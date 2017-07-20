@@ -37,6 +37,12 @@ trait DocSegLabels {
   val VisualLine = Label("ds", "visual-line")
   val SemanticLine = Label("ds", "semantic-line")
 
+  // Drawn path lines
+  val PathBounds = Label("PathBounds")
+  val HLinePath = Label("HLine")
+  val VLinePath = Label("VLine")
+  val OutlineBox = Label("Outline")
+
   val TokenizedLine = Label("ds", "tline")
 
   val Token = Label("ds", "token")

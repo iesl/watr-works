@@ -230,7 +230,31 @@ class MultiPageIndex(
     c
   }
 
-  def addImageAtom(pageAtom: ImageAtom): RegionComponent = {
+  def addPathItem(path: PageItem.Path): Seq[RegionComponent] = {
+    val hlineCCs = path.horizontalLines
+      .map{ line =>
+        val region = path.pageRegion.copy(bbox = line.bounds)
+        println(s"addPathItem: hline $region")
+        val c = createRegionComponent(region, LB.HLinePath)
+        addComponent(c)
+        c
+      }
+    val vlineCCs = path.verticalLines()
+      .map{ line =>
+        val region = path.pageRegion.copy(bbox = line.bounds)
+        println(s"addPathItem: vline $region")
+        val c = createRegionComponent(region, LB.HLinePath)
+        addComponent(c)
+        c
+      }
+    val region = path.pageRegion
+    val c = createRegionComponent(region, LB.PathBounds)
+    addComponent(c)
+
+    Seq(c) ++ hlineCCs ++ vlineCCs
+  }
+
+  def addImageAtom(pageAtom: PageItem.ImageAtom): RegionComponent = {
     val c = createRegionComponent(pageAtom.pageRegion, LB.Image)
     addComponent(c)
     c
