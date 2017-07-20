@@ -109,9 +109,10 @@ class SampleDbCorpus {
                 }
             }
 
+
             print("------------------------------------------------------------------------------------------------\n")
         }
-        println(names)
+//        println(names)
         names
     }
 
@@ -245,11 +246,11 @@ class TransformToCoNLLFormat {
         val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
-        val dataFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-input.txt"
+        val dataFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/random-input.txt"
         val dataFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(dataFileName)))
 
-        val tokensFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-tokens.txt"
-        val tokensFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tokensFileName)))
+//        val tokensFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-name-tokens.txt"
+//        val tokensFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tokensFileName)))
 
         val affiliationReflows: ListBuffer[TextReflow] = new ListBuffer[TextReflow]()
 
@@ -277,13 +278,13 @@ class TransformToCoNLLFormat {
                                     if (affiliationLabel._2.head.equals("EMAIL")) {
                                         cleanPunctuations(affiliationLabel._1.split(SPACE_SEPARATOR)).foreach(affiliationToken => {
                                             dataFileWriter.write(affiliationToken + " * * I-" + affiliationLabel._2.head + "\n")
-                                            tokensFileWriter.write(affiliationToken + " ")
+//                                            tokensFileWriter.write(affiliationToken + " ")
                                         })
                                     }
                                     else {
                                         affiliationLabel._1.split(SPACE_SEPARATOR).foreach(affiliationToken => {
                                             dataFileWriter.write(affiliationToken + " * * I-" + affiliationLabel._2.head + "\n")
-                                            tokensFileWriter.write(affiliationToken + " ")
+//                                            tokensFileWriter.write(affiliationToken + " ")
                                         })
                                     }
                                 }
@@ -292,25 +293,38 @@ class TransformToCoNLLFormat {
                             names.clear()
                         }
                         if (targetRegionLabel.toString.equals(LB.Authors.toString)) {
+                            val authorNameToken: String = "AUTHOR_NAME"
                             val authorNamesWithLabels = getAuthorLabelsForReflow(textReflow.get)
                             authorNamesWithLabels.foreach {
                                 authorNameWithLabels => {
                                     if (authorNameWithLabels.firstName.componentText.nonEmpty) {
                                         authorNameWithLabels.firstName.componentText.split(SPACE_SEPARATOR).foreach(name => {
                                             dataFileWriter.write(name + " * * I-" + "FIRST-NAME" + "\n")
-                                            tokensFileWriter.write(name + " ")
+//                                            tokensFileWriter.write(authorNameToken + " ")
                                         })
                                     }
                                     if (authorNameWithLabels.middleName.componentText.nonEmpty) {
                                         authorNameWithLabels.middleName.componentText.split(SPACE_SEPARATOR).foreach(name => {
                                             dataFileWriter.write(name + " * * I-" + "MIDDLE-NAME" + "\n")
-                                            tokensFileWriter.write(name + " ")
+//                                            tokensFileWriter.write(authorNameToken + " ")
                                         })
                                     }
                                     if (authorNameWithLabels.lastName.componentText.nonEmpty) {
                                         authorNameWithLabels.lastName.componentText.split(SPACE_SEPARATOR).foreach(name => {
                                             dataFileWriter.write(name + " * * I-" + "LAST-NAME" + "\n")
-                                            tokensFileWriter.write(name + " ")
+//                                            tokensFileWriter.write(authorNameToken + " ")
+                                        })
+                                    }
+                                    if (authorNameWithLabels.hereditySuffix.componentText.nonEmpty) {
+                                        authorNameWithLabels.hereditySuffix.componentText.split(SPACE_SEPARATOR).foreach(name => {
+                                            dataFileWriter.write(name + " * * I-" + "HEREDITY-SUFFIX" + "\n")
+//                                            tokensFileWriter.write(authorNameToken + " ")
+                                        })
+                                    }
+                                    if (authorNameWithLabels.degree.componentText.nonEmpty) {
+                                        authorNameWithLabels.degree.componentText.split(SPACE_SEPARATOR).foreach(name => {
+                                            dataFileWriter.write(name + " * * I-" + "DEGREE" + "\n")
+//                                            tokensFileWriter.write(authorNameToken + " ")
                                         })
                                     }
                                 }
@@ -328,39 +342,47 @@ class TransformToCoNLLFormat {
                             }
                             textReflowTokens.foreach {
                                 textReflowToken => {
-                                    dataFileWriter.write(textReflowToken + " * * " + regionLabel + "\n")
-                                    tokensFileWriter.write(textReflowToken + " ")
+                                    dataFileWriter.write(textReflowToken.trim + " * * " + regionLabel + "\n")
+//                                    tokensFileWriter.write(textReflowToken + " ")
                                 }
                             }
                         }
                     }
                 }
             }
-            dataFileWriter.write("\n")
-            tokensFileWriter.write("\n")
+            dataFileWriter.write("\n\n")
+//            tokensFileWriter.write("\n")
         }
         dataFileWriter.close()
-        tokensFileWriter.close()
+//        tokensFileWriter.close()
     }
 
 }
 
 object TextReflowDBExamples extends App {
 
-    val documents: Seq[String] = Seq()
+    val documents: Seq[String] = Seq("name_with_degree.pdf.d", "commai.pdf.d")
     val pageNum = PageNum(0)
 
     //      "1609.03499.pdf.d", "AISTATS2010_Glorot.pdf.d", "1702.02098.pdf.d", "5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf.d"
-//                val dbCorpus = new SampleDbCorpus()
-//                val names = dbCorpus.exampleFunction1(130, documents, LB.Authors)
-//                println(names)
+//    val dbCorpus = new SampleDbCorpus()
+//    val names = dbCorpus.exampleFunction1(500, documents, LB.Authors)
+//    names.foreach{
+//        name => {
+//            println("First Name: " + name.firstName.componentText)
+//            println("Middle Name: " + name.middleName.componentText)
+//            println("Last Name: " + name.lastName.componentText)
+//            println("Heredity Suffix: " + name.hereditySuffix.componentText)
+//            println("Degree: " + name.degree.componentText)
+//            println("--------------------------------")
+//        }
+//    }
+
     //      val affiliations = dbCorpus.exampleFunction2(130, documents, LB.Affiliations, names)
     //      println(affiliations)
     //      dbCorpus.exampleFunction3()
 
     val transformer: TransformToCoNLLFormat = new TransformToCoNLLFormat()
-    transformer.getReflowWithLabelsForPage(130, documents, pageNum, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
-
-//    println(cleanPunctuations(Seq("email: abc@def.ghi.jkl.m")))
+    transformer.getReflowWithLabelsForPage(131, documents, pageNum, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
 
 }
