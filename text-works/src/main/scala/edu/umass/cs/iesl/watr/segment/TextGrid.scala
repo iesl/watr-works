@@ -9,7 +9,7 @@ import geometry._
 import geometry.syntax._
 import scalaz.{@@ => _, _} , Scalaz._
 import utils.SlicingAndDicing._
-import utils.{CompassDirection => CDir}
+import utils.{RelativeDirection => Dir}
 import utils.ExactFloats._
 
 case class BioNode(
@@ -51,7 +51,7 @@ object TextGrid {
   case class ComponentCell(
     component: Component
   ) extends GridCell {
-    override def location: Point = component.bounds.toPoint(CDir.SW)
+    override def location: Point = component.bounds.toPoint(Dir.BottomLeft)
     override def bounds: LTBounds = component.bounds
     override def text: String = component.chars
   }

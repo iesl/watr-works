@@ -9,7 +9,7 @@ import matryoshka.implicits._
 import matryoshka.patterns.EnvT
 
 import textreflow.data._
-import utils.{CompassDirection => CDir}
+import utils.{RelativeDirection => Dir}
 import utils.ExactFloats._
 import geometry._
 import geometry.syntax._
@@ -95,7 +95,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
 
         case flw @ RegionOverlay(wid, under, overlays)  =>
           val fv = F.void(flw)
-          val selfTranslation = -under.bbox.toPoint(CDir.NW)
+          val selfTranslation = -under.bbox.toPoint(Dir.TopLeft)
           val selfStrictBounds = under.bbox.moveToOrigin
 
           val childMaxZ = childMaxZIndex(overlays.map(_._2))
@@ -121,7 +121,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
               LTBounds.empty,
               attrs.map(_._2), {
                 (totalChildsBbox, childNode) =>
-                totalChildsBbox.toPoint(CDir.NE).copy(y=0.toFloatExact)
+                totalChildsBbox.toPoint(Dir.TopRight).copy(y=0.toFloatExact)
               })
 
           val childMaxZ = childMaxZIndex(attrs.map(_._2))
@@ -136,7 +136,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
               LTBounds.empty,
               attrs.map(_._2), {
                 (totalChildsBbox, childNode)=>
-                totalChildsBbox.toPoint(CDir.SW).copy(x=0.toFloatExact)
+                totalChildsBbox.toPoint(Dir.BottomLeft).copy(x=0.toFloatExact)
               })
 
           val childMaxZ = childMaxZIndex(attrs.map(_._2))

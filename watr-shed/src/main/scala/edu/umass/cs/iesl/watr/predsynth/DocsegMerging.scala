@@ -16,7 +16,7 @@ import spindex._
 // import ComponentOperations._
 
 // import utils._
-// import utils.{CompassDirection => CDir}
+// import utils.{RelativeDirection => Dir}
 // import tracing.VisualTracer._
 // import utils.EnrichNumerics._
 // import SlicingAndDicing._

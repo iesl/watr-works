@@ -7,7 +7,7 @@ import textboxing.{TextBoxing => TB}, TB._
 import watrmarks.{StandardLabels => LB}
 
 import utils.SlicingAndDicing._
-import utils.{CompassDirection => Compass}
+import utils.{RelativeDirection => Dir}
 import tracing.VisualTracer, VisualTracer._
 import scala.collection.mutable
 import spindex._
@@ -34,8 +34,8 @@ object TextLineSegmentation {
   // def joinTextLines(line1: TextReflow, line2: TextReflow, force: Boolean=false)(dict: EnglishDictionary): TextReflow = {}
 
 
-  def centerX(cb: CharAtom) = cb.bbox.toCenterPoint.x
-  def centerY(cb: CharAtom) = cb.bbox.toCenterPoint.y
+  def centerX(cb: CharAtom) = cb.bbox.toPoint(Dir.Center).x
+  def centerY(cb: CharAtom) = cb.bbox.toPoint(Dir.Center).y
 
   def spaceWidths(cs: Seq[CharAtom]): Seq[FloatExact] = {
     val cpairs = cs.sliding(2).toList
@@ -103,11 +103,11 @@ object TextLineSegmentation {
     def columnContains(other: Component): Boolean = {
       val slopFactor = 4.5d // TODO test this magic number?
 
-      val left = theComponent.bounds.toWesternPoint.x
-      val right = theComponent.bounds.toEasternPoint.x
+      val left = theComponent.bounds.toPoint(Dir.Left).x
+      val right = theComponent.bounds.toPoint(Dir.Right).x
 
-      val otherLeft = other.bounds.toWesternPoint.x + slopFactor
-      val otherRight = other.bounds.toEasternPoint.x - slopFactor
+      val otherLeft = other.bounds.toPoint(Dir.Left).x + slopFactor
+      val otherRight = other.bounds.toPoint(Dir.Right).x - slopFactor
 
       left <= otherLeft && otherRight <= right
 
@@ -116,10 +116,10 @@ object TextLineSegmentation {
     def columnIntersects(other: Component): Boolean = {
       val slopFactor = 0.31d // XXX what is this magic number?
 
-      val otherx0 = other.bounds.toWesternPoint.x-slopFactor
-      val otherx1 = other.bounds.toEasternPoint.x+slopFactor
-      val candx0 = theComponent.bounds.toWesternPoint.x
-      val candx1 = theComponent.bounds.toEasternPoint.x
+      val otherx0 = other.bounds.toPoint(Dir.Left).x-slopFactor
+      val otherx1 = other.bounds.toPoint(Dir.Right).x+slopFactor
+      val candx0 = theComponent.bounds.toPoint(Dir.Left).x
+      val candx1 = theComponent.bounds.toPoint(Dir.Right).x
       val candRightInside = otherx0 <= candx1 && candx1 <= otherx1
       val candLeftOutside = candx0 < otherx0
       val candLeftInside = otherx0 <= candx0 && candx0 <= otherx1
@@ -141,25 +141,25 @@ object TextLineSegmentation {
     }
 
     def isStrictlyAbove(other: Component): Boolean = {
-      val y1 = theComponent.bounds.toPoint(Compass.S).y
-      val y2 = other.bounds.toPoint(Compass.N).y
+      val y1 = theComponent.bounds.toPoint(Dir.Bottom).y
+      val y2 = other.bounds.toPoint(Dir.Top).y
       y1 < y2
     }
     def isStrictlyBelow(other: Component): Boolean = {
-      val y1 = theComponent.bounds.toPoint(Compass.N).y
-      val y2 = other.bounds.toPoint(Compass.S).y
+      val y1 = theComponent.bounds.toPoint(Dir.Top).y
+      val y2 = other.bounds.toPoint(Dir.Bottom).y
       y1 > y2
     }
 
     def isStrictlyLeftOf(other: Component): Boolean = {
-      val rightEdge = theComponent.bounds.toEasternPoint.x
-      val otherLeftEdge = other.bounds.toWesternPoint.x
+      val rightEdge = theComponent.bounds.toPoint(Dir.Right).x
+      val otherLeftEdge = other.bounds.toPoint(Dir.Left).x
       rightEdge < otherLeftEdge
     }
 
     def isStrictlyRightOf(other: Component): Boolean = {
-      val leftEdge = theComponent.bounds.toEasternPoint.x
-      val otherRightEdge = other.bounds.toWesternPoint.x
+      val leftEdge = theComponent.bounds.toPoint(Dir.Right).x
+      val otherRightEdge = other.bounds.toPoint(Dir.Left).x
       otherRightEdge < leftEdge
     }
 
@@ -172,10 +172,10 @@ object TextLineSegmentation {
     def isAbove(other: Component) = theComponent.bounds.top < other.bounds.top
 
     def hasSameVCenterPoint(tolerance: Double)(other: Component) =
-      theComponent.bounds.toCenterPoint.x.eqFuzzy(tolerance)(other.bounds.toCenterPoint.x)
+      theComponent.bounds.toPoint(Dir.Center).x.eqFuzzy(tolerance)(other.bounds.toPoint(Dir.Center).x)
 
     def hasSameLeftEdge(tolerance: Double)(other: Component) =
-      theComponent.bounds.toPoint(Compass.W).x.eqFuzzy(tolerance)(other.bounds.toPoint(Compass.W).x)
+      theComponent.bounds.toPoint(Dir.Left).x.eqFuzzy(tolerance)(other.bounds.toPoint(Dir.Left).x)
 
     def isEqualWidth(tolerance: Double)(other: Component) =
       theComponent.bounds.width.eqFuzzy(tolerance)(other.bounds.width)
@@ -263,7 +263,7 @@ object TextLineSegmentation {
       theComponent.getChildren(LB.TextSpan).foreach({ textSpan =>
 
         val supOrSubList = textSpan.atoms.map { atom =>
-          // val cctr = atom.bounds.toCenterPoint
+          // val cctr = atom.bounds.toPoint(Dir.Center)
           // val cbottom = atom.bounds.bottom
           // val supSubTolerance = theComponent.bounds.height / 20.0
 

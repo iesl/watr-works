@@ -320,15 +320,15 @@ class CharExtractionListener(
   }
 
   import geometry.syntax._
-    import utils.{CompassDirection => CDir}
+    import utils.{RelativeDirection => Dir}
 
   def renderPath(renderInfo: PathRenderInfo): Unit = {
     // val op = renderInfo.getOperation
     val ctm = renderInfo.getCtm
     // val pathBounds = ctmToLTBounds(ctm)
-    val pathTransVec = ctmToLTBoundsPdfSpace(ctm).toPoint(CDir.NW)
+    val pathTransVec = ctmToLTBoundsPdfSpace(ctm).toPoint(Dir.TopLeft)
 
-    // val startPoint = pathBounds.toPoint(CDir.NW)
+    // val startPoint = pathBounds.toPoint(Dir.TopLeft)
 
     // println(s"renderPath: ")
 

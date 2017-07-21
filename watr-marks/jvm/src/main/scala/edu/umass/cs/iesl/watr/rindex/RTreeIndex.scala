@@ -58,6 +58,11 @@ class RTreeIndex[T: RTreeIndexable](
       toJsiRectangle(si.ltBounds(item))
     )
     itemMap.remove(si.id(item).toLong)
+
+    // val scalaIter = spatialIndex.entries().toBlocking().toIterable().asScala
+    // val values = scalaIter.toList.map(_.value())
+    // assert(!values.contains(item))
+    // assert(!itemMap.contains(si.id(item).toLong))
   }
 
   def add(item: T): Unit = {
@@ -66,6 +71,11 @@ class RTreeIndex[T: RTreeIndexable](
       toJsiRectangle(si.ltBounds(item))
     )
     itemMap.put(si.id(item).toLong, item)
+
+    // val scalaIter = spatialIndex.entries().toBlocking().toIterable().asScala
+    // val values = scalaIter.toList.map(_.value())
+    // assert(values.contains(item))
+    // assert(itemMap.contains(si.id(item).toLong))
   }
 
   def getItems(): Seq[T] = {

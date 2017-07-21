@@ -9,7 +9,7 @@ object RTreeIndexOperations {
 
   implicit class RicherZoneIndex(val mpageIndex: MultiPageIndex) extends AnyVal {
 
-  //   def approximateColumnBins(pageId: Int@@PageNum, charBoxes: Seq[CharAtom]): Seq[(CompassDirection, Line)] = {
+  //   def approximateColumnBins(pageId: Int@@PageNum, charBoxes: Seq[CharAtom]): Seq[(Dir, Line)] = {
   //     val leftBins = charBoxes
   //       .groupBy(_.targetRegion.bbox.left.pp)
   //       .toSeq
@@ -20,7 +20,7 @@ object RTreeIndexOperations {
   //     val leftEdges = leftBins.map({ case (leftXstr, bin) =>
   //       val ysorted = bin.sortBy(_.targetRegion.bbox.bottom)
   //       val colbounds = charBoxesBounds(ysorted)
-  //       val leftEdge = colbounds.toLine(CompassDirection.W)
+  //       val leftEdge = colbounds.toLine(Dir.Left)
 
   //       val query = LTBounds(
   //         leftEdge.p1.x, leftEdge.p1.y,
@@ -52,7 +52,7 @@ object RTreeIndexOperations {
   //         .filter(_.length > 1)
   //         .map({ ss =>
   //           val sbounds = charBoxesBounds(ss)
-  //           (CompassDirection.W, sbounds.toLine(CompassDirection.W))
+  //           (Dir.Left, sbounds.toLine(Dir.Left))
   //         })
 
 

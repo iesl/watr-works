@@ -19,7 +19,7 @@ import geometry.syntax._
 import ComponentOperations._
 import PageComponentImplicits._
 
-import utils.{CompassDirection => CDir, _}
+import utils.{RelativeDirection => Dir, _}
 import tracing.VisualTracer._
 import EnrichNumerics._
 import SlicingAndDicing._
@@ -158,10 +158,10 @@ object DocumentSegmenter {
   def candidateCrossesLineBounds(cand: Component, line: Component): Boolean = {
     val slopFactor = 0.31d
 
-    val linex0 = line.bounds.toWesternPoint.x-slopFactor
-    val linex1 = line.bounds.toEasternPoint.x+slopFactor
-    val candx0 = cand.bounds.toWesternPoint.x
-    val candx1 = cand.bounds.toEasternPoint.x
+    val linex0 = line.bounds.toPoint(Dir.Left).x-slopFactor
+    val linex1 = line.bounds.toPoint(Dir.Right).x+slopFactor
+    val candx0 = cand.bounds.toPoint(Dir.Left).x
+    val candx1 = cand.bounds.toPoint(Dir.Right).x
     val candRightInside = linex0 <= candx1 && candx1 <= linex1
     val candLeftOutside = candx0 < linex0
     val candLeftInside = linex0 <= candx0 && candx0 <= linex1
@@ -179,25 +179,25 @@ object DocumentSegmenter {
   }
 
   def isStrictlyAbove(line1: Component, line2: Component): Boolean = {
-    val y1 = line1.bounds.toPoint(CDir.S).y
-    val y2 = line2.bounds.toPoint(CDir.N).y
+    val y1 = line1.bounds.toPoint(Dir.Bottom).y
+    val y2 = line2.bounds.toPoint(Dir.Top).y
     y1 < y2
   }
   def isStrictlyBelow(line1: Component, line2: Component): Boolean = {
-    val y1 = line1.bounds.toPoint(CDir.N).y
-    val y2 = line2.bounds.toPoint(CDir.S).y
+    val y1 = line1.bounds.toPoint(Dir.Top).y
+    val y2 = line2.bounds.toPoint(Dir.Bottom).y
     y1 > y2
   }
 
   def isStrictlyLeftToRight(cand: Component, line: Component): Boolean = {
-    val linex0 = line.bounds.toWesternPoint.x
-    val candx1 = cand.bounds.toEasternPoint.x
+    val linex0 = line.bounds.toPoint(Dir.Left).x
+    val candx1 = cand.bounds.toPoint(Dir.Right).x
     candx1 < linex0
   }
 
   def isStrictlyRightToLeft(cand: Component, line: Component): Boolean = {
-    val linex1 = line.bounds.toEasternPoint.x
-    val candx0 = cand.bounds.toWesternPoint.x
+    val linex1 = line.bounds.toPoint(Dir.Right).x
+    val candx0 = cand.bounds.toPoint(Dir.Left).x
     candx0 > linex1
   }
   def candidateIsOutsideLineBounds(cand: Component, line: Component): Boolean = {
@@ -258,8 +258,8 @@ class DocumentSegmenter(
   //       .sliding(2).toSeq
   //       .map({
   //         case Seq(a1, a2) =>
-  //           val upperLowerLeft = a1.bounds.toPoint(CDir.SW).y
-  //           val lowerTopLeft = a2.bounds.toPoint(CDir.NW).y
+  //           val upperLowerLeft = a1.bounds.toPoint(Dir.BottomLeft).y
+  //           val lowerTopLeft = a2.bounds.toPoint(Dir.TopLeft).y
   //           val vdist = math.abs((lowerTopLeft-upperLowerLeft).asDouble()).toFloatExact
   //           vdist
 
@@ -403,8 +403,8 @@ class DocumentSegmenter(
       val splitBlocks = for {
         block       <- blocksOnPage
         blockPart   <- block.splitOnPairs({ case (block1, block2) =>
-          val b1BottomY = block1.bounds.toPoint(CDir.S).y
-          val b2TopY = block2.bounds.toPoint(CDir.N).y
+          val b1BottomY = block1.bounds.toPoint(Dir.Bottom).y
+          val b2TopY = block2.bounds.toPoint(Dir.Top).y
           val vdist = b2TopY - b1BottomY
           val willSplit = vdist > maxVDist
           vtrace.traceIf(willSplit)(message(
@@ -759,8 +759,8 @@ class DocumentSegmenter(
 
 
   def focalJump(c1: Component, c2: Component): Double = {
-    val c1East = c1.bounds.toPoint(CDir.E)
-    val c2West = c2.bounds.toPoint(CDir.W)
+    val c1East = c1.bounds.toPoint(Dir.Right)
+    val c2West = c2.bounds.toPoint(Dir.Left)
     c1East.dist(c2West)
   }
 

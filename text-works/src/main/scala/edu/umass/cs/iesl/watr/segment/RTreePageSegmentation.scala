@@ -12,7 +12,7 @@ import geometry.syntax._
 import org.dianahep.{histogrammar => HST}
 // import org.dianahep.histogrammar.ascii._
 
-import utils.{CompassDirection => CDir}
+import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.ExactFloats._
 import images.{ImageManipulation => IM}
@@ -33,6 +33,26 @@ class RTreePageSegmentation(
 
   def runPageSegmentation(): Unit = {
     runLineDetermination()
+  }
+
+  def rtreeSearch(
+    pageId: Int@@PageID, queryRegion: LTBounds,
+    label: Label, labels: Label*
+  ): Seq[Component] = {
+    val pageNum = pageIdMap(pageId)
+    val pageIndex = mpageIndex.getPageIndex(pageNum)
+    val rTreeIndex = pageIndex.componentIndex
+    val lbls = label :: labels.toList
+
+    rTreeIndex.search(queryRegion, {cc =>
+      lbls.contains(cc.roleLabel)
+    })
+  }
+
+  def labelRegion(pageId: Int@@PageID, bbox: LTBounds, label: Label): RegionComponent = {
+    val regionId = docStore.addTargetRegion(pageId, bbox)
+    val pageRegion = docStore.getTargetRegion(regionId).toPageRegion
+    mpageIndex.createRegionComponent(pageRegion, label)
   }
 
   def runLineDetermination(): Unit = {
@@ -70,8 +90,9 @@ class RTreePageSegmentation(
         (LB.VLinePath, X11Colorlist.Black),
         (LB.Image, X11Colorlist.DarkCyan),
         (LBP.LineByHash, Firebrick3),
-        (LBP.ColByHash, Blue),
-        (LBP.WhitespaceCol, Green),
+        (LBP.LeftAlignedCharCol, Blue),
+        (LBP.WhitespaceColCandidate, Green),
+        (LBP.WhitespaceCol, X11Colorlist.Peru),
         (LBP.Marked, MediumTurquoise)
       )
     }
@@ -121,41 +142,54 @@ class RTreePageSegmentation(
     pageNum: Int@@PageNum,
     components: Seq[AtomicComponent]
   ): Unit = {
-    val stdLabels = List(
-      LB.Image, LB.HLinePath, LB.VLinePath
-    )
+    def stdLabels(lls: Label*) = List(
+      LB.Image, LB.HLinePath, LB.VLinePath, LBP.WhitespaceCol
+    ) ++ lls.toList
 
     // val interestingLabels = List(
-    //   LBP.LineByHash, LB.Image, LBP.ColByHash, LBP.WhitespaceCol,
+    //   LBP.LineByHash, LB.Image, LBP.LeftAlignedCharCol, LBP.WhitespaceColCandidate,
     //   LB.PathBounds
     // )
 
     approximateLineBins(components)
-    writeRTreeImage(pageNum, "01-lineHashing", LBP.LineByHash, stdLabels:_*)
+    writeRTreeImage(pageNum, "01-lineHashing", LBP.LineByHash, stdLabels():_*)
 
-    splitLinesWithOverlaps(pageNum)
-    writeRTreeImage(pageNum, "02-splitLineHashing", LBP.LineByHash, stdLabels:_*)
+    splitLinesWithOverlaps(pageId)
 
-    maybeSplitColumns(pageId, components)
+    writeRTreeImage(pageNum, "02-splitLineHashing", LBP.LineByHash, stdLabels():_*)
 
-    writeRTreeImage(pageNum, "03-columnHashing", LBP.LineByHash, (List(LBP.ColByHash, LBP.WhitespaceCol) ++ stdLabels):_*)
+    findCandidateWhitespaceCols(pageId, components)
+
+    writeRTreeImage(pageNum, "03-colCandidates", LBP.LineByHash, stdLabels(LBP.LeftAlignedCharCol, LBP.WhitespaceColCandidate):_*)
+
+    combineCandidateWhitespaceCols(pageId)
+
+    writeRTreeImage(pageNum, "04-colsCombined", LBP.LineByHash, stdLabels():_*)
 
     splitLinesOnWhitespaceColumns(pageNum)
 
-    writeRTreeImage(pageNum, "04-HashedLinesAndCols", LBP.LineByHash, (List(LBP.WhitespaceCol) ++ stdLabels):_*)
+    writeRTreeImage(pageNum, "05-LinesSplitByCols", LBP.LineByHash, stdLabels():_*)
 
-    // Construct super/sub queries
-    // Start w/ hashed lines with greatest # of clustered atoms,
     val textGridRows = findVisualLines(pageId)
 
-    writeRTreeImage(pageNum, "05-VisualLines", LB.VisualLine, stdLabels:_*)
+    writeRTreeImage(pageNum, "06-VisualLines", LB.VisualLine, stdLabels():_*)
 
     insertSpaces(pageId, textGridRows)
 
+
+    val pageGeometry = docStore.getPageGeometry(pageId)
+    dividePageIntoBlocks(pageId, pageGeometry)
+
+    // determine reading order for page lines
+    // Find page-dividing hlines
+    //   find h-lines that span page-width (no h text or col overlaps)
+    //   divide page into top/bottom regions for each h-line divider
+    // within h-divided sub-regions, split on ws cols
+
+
+
     // find line-joins
-
-    // order page lines
-
+    // rewrite line-paths representing symbols into chars (eg, -, =, vinculum)
   }
 
   def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[Component]): FloatExact = {
@@ -298,22 +332,19 @@ class RTreePageSegmentation(
 
           // look left and right to find candidate line-parts to join into visual lines, respecting whitespace cols
 
-          val leftAdjacentRegion = hashLineRegion.bounds.adjacentRegionWithin(pageGeometry, CDir.W)
+          val leftAdjacentRegion = hashLineRegion.bounds.withinRegion(pageGeometry).adjacentRegion(Dir.Left)
 
           val leftEdge = leftAdjacentRegion.map { leftAdjacentBounds =>
-            val colsToTheLeft = rTreeIndex.search(leftAdjacentBounds, {cc =>
-              cc.roleLabel == LBP.WhitespaceCol
-            }).map(_.bounds.right)
+            val colsToTheLeft = rtreeSearch(pageId, leftAdjacentBounds, LBP.WhitespaceCol)
+              .map(_.bounds.right)
 
             (pageGeometry.left +: colsToTheLeft).max
           } getOrElse {  pageGeometry.left }
 
-          val rightAdjacentRegion = hashLineRegion.bounds.adjacentRegionWithin(pageGeometry, CDir.E)
+          val rightAdjacentRegion = hashLineRegion.bounds.withinRegion(pageGeometry).adjacentRegion(Dir.Right)
 
           val rightEdge = rightAdjacentRegion.map { rightAdjacentBounds =>
-            val colsToTheRight = rTreeIndex.search(rightAdjacentBounds, {cc =>
-              cc.roleLabel == LBP.WhitespaceCol
-            }).map(_.bounds.left)
+            val colsToTheRight = rtreeSearch(pageId, rightAdjacentBounds, LBP.WhitespaceCol).map(_.bounds.left)
 
             (pageGeometry.right +: colsToTheRight).min
           } getOrElse {  pageGeometry.right }
@@ -323,13 +354,13 @@ class RTreePageSegmentation(
             .setRight(rightEdge)
 
           // Now find all chars in queryRegion and string them together into a single visual line
-          val visualLineAtoms = rTreeIndex.search(extendedLineRegion, {_.roleLabel == LB.PageAtom })
+          val visualLineAtoms = rtreeSearch(pageId, extendedLineRegion, LB.PageAtom)
 
-          val topLine = extendedLineRegion.toLine(CDir.N).translate(y=0.5)
-          val bottomLine = extendedLineRegion.toLine(CDir.S).translate(y = -0.5)
+          val topLine = extendedLineRegion.toLine(Dir.Top).translate(y=0.5)
+          val bottomLine = extendedLineRegion.toLine(Dir.Bottom).translate(y = -0.5)
 
-          // val centerLine = extendedLineRegion.toPoint(CDir.W).lineTo(
-          //   extendedLineRegion.toPoint(CDir.E)
+          // val centerLine = extendedLineRegion.toPoint(Dir.Left).lineTo(
+          //   extendedLineRegion.toPoint(Dir.Right)
           // )
           val topIntersects = rTreeIndex.searchLine(topLine, {_.roleLabel == LB.PageAtom}).map(_.id)
           val bottomIntersects = rTreeIndex.searchLine(bottomLine, {_.roleLabel == LB.PageAtom}).map(_.id)
@@ -357,13 +388,17 @@ class RTreePageSegmentation(
 
           }}
 
-          val regionId = docStore.addTargetRegion(pageId, compBbox)
-          val targetRegion = docStore.getTargetRegion(regionId)
-          val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
-          mpageIndex.createRegionComponent(pageRegion, LBP.Marked)
+
+          // val regionId = docStore.addTargetRegion(pageId, compBbox)
+          // val targetRegion = docStore.getTargetRegion(regionId)
+          // val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
+          // mpageIndex.createRegionComponent(pageRegion, LBP.Marked)
+          // mpageIndex.createRegionComponent(pageRegion, LB.VisualLine)
+
+          labelRegion(pageId, compBbox, LB.VisualLine)
+          labelRegion(pageId, compBbox, LBP.Marked)
 
 
-          mpageIndex.createRegionComponent(pageRegion, LB.VisualLine)
 
           Some(textRow)
         } else None
@@ -398,98 +433,125 @@ class RTreePageSegmentation(
   }
 
 
-  def maybeSplitColumns(
+  def findLeftAlignedCharCols(
     pageId: Int@@PageID,
     components: Seq[AtomicComponent]
-  ): Unit = {
-    // find char-based left-edge histogram
-    val pageNum = pageIdMap(pageId)
-    val pageIndex = mpageIndex.getPageIndex(pageNum)
-    val rTreeIndex = pageIndex.componentIndex
-
+  ): Seq[RegionComponent] = {
     import HST._
     val componentLefts = HST.SparselyBin.ing(1.0, {x: AtomicComponent => x.bounds.left.asDouble()} named "char-lefts")
 
-    components.foreach { i =>
-      componentLefts.fill(i)
-    }
+    components.foreach { componentLefts.fill(_) }
 
     val pageGeometry = docStore.getPageGeometry(pageId)
 
     // Construct a horizontal query, looking to boost scores of "runs" of consecutive left-x-value
-    val hQueries = componentLefts.bins.toList
+    val queryBoxes = componentLefts.bins.toList
       .sortBy { case (bin, counting) => counting.entries }
-      .reverse
-      .take(10)
+      .reverse.take(10) //  only consider the 10 tallest cols
       .map{ case (bin, counting) =>
         val bw = componentLefts.binWidth
 
-        val hQuery = LTBounds.Doubles(
+        LTBounds.Doubles(
           left   = bw * bin,
           top    = 0d,
           width  = bw,
           height = pageGeometry.height.asDouble()
         )
-        hQuery
       }
 
+    val res: List[Option[RegionComponent]] =
+      queryBoxes.flatMap { query =>
+        val intersects = rtreeSearch(pageId, query, LB.PageAtom)
 
-    // TODO Drop hQueries w/left edges == page left edge
+        val consecutiveLeftAlignedCharCols =
+          intersects.sortBy(_.bounds.bottom)
+            .groupByPairs((c1, c2) => c1.bounds.bottom == c2.bounds.bottom)
+            .map(_.sortBy(_.bounds.left).head)
+            .groupByPairs((c1, c2) => c1.bounds.left == c2.bounds.left)
+            .filter{ groups => groups.length > 1 }
 
-    hQueries.foreach { query =>
-      // println(s"querying ${query}")
-      val intersects = rTreeIndex.search(query, {cc =>
-        cc.roleLabel == LB.PageAtom
-      })
+        consecutiveLeftAlignedCharCols
+          .map{ ccs => mpageIndex.labelRegion(ccs, LBP.LeftAlignedCharCol).map(_._1) }
 
-      // println(s"  hits: ${intersects.length}")
-      // val leftMostComponentsInQuery =
-      intersects.sortBy(_.bounds.bottom)
-        .groupByPairs((c1, c2) => c1.bounds.bottom == c2.bounds.bottom)
-        .map(_.sortBy(_.bounds.left).head)
-        .groupByPairs((c1, c2) => c1.bounds.left == c2.bounds.left)
-        .filter{ groups => groups.length > 1 }
-        .map{ ccs =>
-          // val chars = ccs.map(_.chars).mkString
-          // println(s"   chars: ${chars}")
-          mpageIndex.labelRegion(ccs, LBP.ColByHash)
-            .foreach { case (regionCC, targetRegion) =>
-              val colBounds = targetRegion.bbox
-              val startingRegion = LTBounds(
-                left   = colBounds.left-0.1d,
-                top    = colBounds.top,
-                width  = 0.01.toFloatExact(),
-                height = colBounds.height
-              )
-              // println(s"   col-by-hash: ${colBounds}, starting ws: ${startingRegion}")
 
-              findMaxEmptyRegion(pageId, startingRegion).foreach { maxRegion => }
-            }
-        }
+      }
 
-      // println(s"filtered groups count = ${leftMostComponentsInQuery.length}")
-
-    }
-
+    res.flatten
   }
 
-  def rtreeSearch(
-    pageId: Int@@PageID, queryRegion: LTBounds,
-    label: Label, labels: Label*
-  ): Seq[Component] = {
+
+  def findCandidateWhitespaceCols(
+    pageId: Int@@PageID,
+    components: Seq[AtomicComponent]
+  ): Unit = {
+
+    val cols = findLeftAlignedCharCols(pageId, components)
+
+    cols.foreach { colRegion =>
+      val colBounds = colRegion.bounds
+      val startingRegion = LTBounds(
+        left   = colBounds.left-0.1d,
+        top    = colBounds.top,
+        width  = 0.01.toFloatExact(),
+        height = colBounds.height
+      )
+
+      growToMaxEmptySpace(pageId, startingRegion)
+        .foreach{ emptyRegion =>
+          val colIsWideEnough = emptyRegion.width > 4.0d
+
+          if (colIsWideEnough) {
+            labelRegion(pageId, emptyRegion, LBP.WhitespaceColCandidate)
+          }
+        }
+
+    }
+  }
+
+  def combineCandidateWhitespaceCols(
+    pageId: Int@@PageID
+  ): Unit = {
     val pageNum = pageIdMap(pageId)
     val pageIndex = mpageIndex.getPageIndex(pageNum)
     val rTreeIndex = pageIndex.componentIndex
-    val lbls = label :: labels.toList
-    rTreeIndex.search(queryRegion, {cc =>
-      lbls.contains(cc.roleLabel)
-    })
+    val pageGeometry = docStore.getPageGeometry(pageId)
+
+    // var foundOverlaps = false
+
+    var candidates = pageIndex.labelToComponents.get(LBP.WhitespaceColCandidate).getOrElse { Seq() }
+
+    while(candidates.nonEmpty) {
+      val nextCandidate = candidates.head
+      val candidate = rTreeIndex.get(nextCandidate.unwrap).get
+
+      val overlaps = rtreeSearch(pageId, candidate.bounds, LBP.WhitespaceColCandidate)
+      val totalOverlapArea = overlaps.map(_.bounds).reduce(_ union _)
+
+      val commonArea = overlaps.map(_.bounds)
+        .map{ _.withinRegion(pageGeometry).coveringRegion(Dir.Top, Dir.Bottom) }
+        .foldLeft(totalOverlapArea){ case (acc, e) =>
+          (acc intersection e).get
+        }
+
+      labelRegion(pageId, commonArea, LBP.WhitespaceCol)
+
+      mpageIndex.removeComponent(candidate)
+
+      overlaps.foreach{ c =>
+        mpageIndex.removeComponent(c)
+      }
+
+      candidates = pageIndex.labelToComponents.get(LBP.WhitespaceColCandidate).getOrElse { Seq() }
+    }
   }
 
-  def findMaxEmptyRegion(
+
+
+
+  def growToMaxEmptySpace(
     pageId: Int@@PageID,
     startingRegion: LTBounds
-  ): Option[RegionComponent] = {
+  ): Option[LTBounds] = {
 
     val pageNum = pageIdMap(pageId)
     val pageIndex = mpageIndex.getPageIndex(pageNum)
@@ -499,10 +561,10 @@ class RTreePageSegmentation(
     var currWhiteSpace = startingRegion
     val nudgeFactor = 0.05.toFloatExact()
 
-    currWhiteSpace.adjacentRegionWithin(pageBounds, CDir.W)
+    currWhiteSpace.withinRegion(pageBounds).adjacentRegion(Dir.Left)
       .foreach { regionLeftOf =>
         // println(s"querying left of ${currWhiteSpace}: ${regionLeftOf}")
-        val atomsLeftOf = rtreeSearch(pageId, regionLeftOf, LB.PageAtom, LB.Image)
+        val atomsLeftOf = rtreeSearch(pageId, regionLeftOf, LB.PageAtom, LB.Image, LB.VLinePath, LB.HLinePath)
 
         if (atomsLeftOf.nonEmpty) {
           val rightMostCC = atomsLeftOf.maxBy(_.bounds.right)
@@ -513,10 +575,10 @@ class RTreePageSegmentation(
         }
       }
 
-    currWhiteSpace.adjacentRegionWithin(pageBounds, CDir.N)
+    currWhiteSpace.withinRegion(pageBounds).adjacentRegion(Dir.Top)
       .foreach { regionAbove =>
         // println(s"querying above ${currWhiteSpace}: ${regionAbove}")
-        val atomsAbove = rtreeSearch(pageId, regionAbove, LB.PageAtom, LB.Image)
+        val atomsAbove = rtreeSearch(pageId, regionAbove, LB.PageAtom, LB.Image, LB.HLinePath, LB.VLinePath)
 
         if (atomsAbove.nonEmpty) {
           val bottomMostCC = atomsAbove.maxBy(_.bounds.bottom)
@@ -529,10 +591,10 @@ class RTreePageSegmentation(
         }
       }
 
-    currWhiteSpace.adjacentRegionWithin(pageBounds, CDir.S)
+    currWhiteSpace.withinRegion(pageBounds).adjacentRegion(Dir.Bottom)
       .foreach { regionBelow =>
         // println(s"querying below ${currWhiteSpace}: ${regionBelow}")
-        val atomsBelow = rtreeSearch(pageId, regionBelow, LB.PageAtom, LB.Image)
+        val atomsBelow = rtreeSearch(pageId, regionBelow, LB.PageAtom, LB.Image, LB.HLinePath, LB.VLinePath)
 
         if (atomsBelow.nonEmpty) {
           val topmostCC = atomsBelow.minBy(_.bounds.top)
@@ -545,20 +607,12 @@ class RTreePageSegmentation(
         }
       }
 
+    Some(currWhiteSpace)
 
-    val colIsWideEnough = currWhiteSpace.width > 4.0d
-
-    if (colIsWideEnough) {
-      // println(s"Creating WhitespaceCol : ${currWhiteSpace} with area ${currWhiteSpace.area} = (w:${currWhiteSpace.width} x h:${currWhiteSpace.height})")
-      val regionId = docStore.addTargetRegion(pageId, currWhiteSpace)
-      val targetRegion = docStore.getTargetRegion(regionId)
-      val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
-      val regionComp = mpageIndex.createRegionComponent(pageRegion, LBP.WhitespaceCol)
-      Some(regionComp)
-    } else None
   }
 
-  def splitLinesWithOverlaps(pageNum: Int@@PageNum): Unit = {
+  def splitLinesWithOverlaps(pageId: Int@@PageID): Unit = {
+    val pageNum = pageIdMap(pageId)
     val pageIndex = mpageIndex.getPageIndex(pageNum)
     val rTreeIndex = pageIndex.componentIndex
     for {
@@ -567,16 +621,12 @@ class RTreePageSegmentation(
       cc <- rTreeIndex.get(hashedLine.unwrap)
     } {
       // Split up lines into strictly non-overlapping regions
-      val intersects = rTreeIndex.search(cc.bounds, {cc =>
-        cc.roleLabel == LBP.LineByHash
-      })
+      val intersects = rtreeSearch(pageId, cc.bounds, LBP.LineByHash)
 
 
       if (intersects.length > 1) {
         val totalBounds = intersects.map(_.bounds).reduce(_ union _)
-        val charsInRegion = rTreeIndex.search(totalBounds, {cc =>
-          cc.roleLabel == LB.PageAtom
-        })
+        val charsInRegion = rtreeSearch(pageId, totalBounds, LB.PageAtom)
         // Remove the LineByHash regions
         // iterate over chars left-to-right and group them into non-overlaps and overlaps
         val allChars = charsInRegion.sortBy(_.bounds.left)
@@ -619,14 +669,53 @@ class RTreePageSegmentation(
 
   }
 
+  def dividePageIntoBlocks(
+    pageId: Int@@PageID,
+    initBlock: LTBounds
+  ): Unit = {
+    val pageNum = pageIdMap(pageId)
+    val pageIndex = mpageIndex.getPageIndex(pageNum)
+    val rTreeIndex = pageIndex.componentIndex
 
+
+    rtreeSearch(pageId, initBlock, LB.HLinePath)
+      .foreach { hlineCC =>
+        val hLine = hlineCC.bounds.toLine(Dir.Top)
+        val extendedLine = hlineCC.bounds.withinRegion(initBlock).coveringRegion(Dir.Right, Dir.Left)
+        val hLineExt = extendedLine.toLine(Dir.Top)
+        val noPageHits = rTreeIndex.searchLine(hLineExt,
+          {c => List(LB.PageAtom, LB.Image).contains(c.roleLabel)}
+        ).isEmpty
+
+        if (noPageHits) {
+          val bottomRegion = extendedLine.withinRegion(initBlock).coveringRegion(Dir.BottomLeft, Dir.Bottom, Dir.BottomRight)
+          val topRegion = bottomRegion
+
+        }
+
+      }
+      // val charsInRegion = rTreeIndex.search(intersectedLine.bounds, {cc =>
+      //   cc.roleLabel == LB.PageAtom
+      // })
+      // val allChars = charsInRegion.sortBy(_.bounds.left)
+
+      // val (leftSplit, rightSplit) = allChars.span(_.bounds.left < colRegion.bounds.left)
+
+      // mpageIndex.labelRegion(leftSplit, LBP.LineByHash)
+      // mpageIndex.labelRegion(rightSplit, LBP.LineByHash)
+
+      // mpageIndex.removeComponent(intersectedLine)
+
+
+  }
 }
 
 object LBP {
   // import watrmarks.Label
 
   val LineByHash = Label("LineByHash")
-  val ColByHash = Label("ColByHash")
+  val LeftAlignedCharCol = Label("LeftAlignedCharCol")
+  val WhitespaceColCandidate = Label("WhitespaceColCandidate")
   val WhitespaceCol = Label("WhitespaceCol")
   val Marked = Label("Marked")
 

@@ -31,6 +31,9 @@ object ExactFloats {
     // }
   }
 
+  def max(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.max(d1.unwrap, d2.unwrap))
+  def min(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.min(d1.unwrap, d2.unwrap))
+
   implicit class RicherFloatExact(val self: Int@@FloatRep) extends AnyVal {
     def +(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap+r.unwrap)
     def -(r: Int@@FloatRep): Int@@FloatRep = FloatRep(self.unwrap-r.unwrap)
