@@ -9,14 +9,16 @@ trait RectangleOps {
 
 
   class NestedRectangleOps(innerRect: LTBounds, enclosingRect: LTBounds) {
-    def coveringRegion(dirs: Dir*): LTBounds = {
+
+    def adjacentRegions(dirs: Dir*): Option[LTBounds] = {
       val adjacents = dirs.toList.map{ dir =>
         adjacentRegion(dir)
       }
-
-      (innerRect :: adjacents.flatten).reduce(_ union _)
+      val nonEmptyAdjs = adjacents.flatten
+      if (nonEmptyAdjs.nonEmpty) {
+        Some(nonEmptyAdjs.reduce(_ union _))
+      } else None
     }
-
 
     def adjacentRegion(dir: Dir): Option[LTBounds] = {
       // println(s"(${self}).adjacentRegion($enclosingRegion)   ${dir}  ")
@@ -53,10 +55,27 @@ trait RectangleOps {
             (left, r) <- top.splitVertical(innerRect.left)
           } yield left
 
-        case Dir.TopLeft => ???
-        case Dir.BottomLeft => ???
-        case Dir.TopRight => ???
-        case Dir.BottomRight => ???
+        case Dir.TopLeft =>
+          for {
+            (left, right) <- enclosingRect.splitVertical(innerRect.left)
+            (top,  bot)   <- left.splitHorizontal(innerRect.top)
+          } yield top
+
+        case Dir.BottomLeft =>
+          for {
+            (left, right) <- enclosingRect.splitVertical(innerRect.left)
+            (top,  bot)   <- left.splitHorizontal(innerRect.bottom)
+          } yield bot
+        case Dir.TopRight =>
+          for {
+            (left, right) <- enclosingRect.splitVertical(innerRect.right)
+            (top,  bot)   <- right.splitHorizontal(innerRect.top)
+          } yield top
+        case Dir.BottomRight =>
+          for {
+            (left, right) <- enclosingRect.splitVertical(innerRect.right)
+            (top,  bot)   <- right.splitHorizontal(innerRect.bottom)
+          } yield bot
       }
     }
 
