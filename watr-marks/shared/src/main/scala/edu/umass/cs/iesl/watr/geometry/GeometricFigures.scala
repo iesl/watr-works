@@ -262,7 +262,7 @@ object Padding {
   }
 }
 
-object GeometryImplicits extends RectangleOps {
+object GeometryImplicits extends RectangularCuts {
 
   implicit def EqualGeometricFigure
       : Equal[GeometricFigure] =

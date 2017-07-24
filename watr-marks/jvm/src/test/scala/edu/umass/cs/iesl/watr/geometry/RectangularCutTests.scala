@@ -3,91 +3,144 @@ package geometry
 
 import org.scalatest._
 
-import org.scalacheck._
-import scalaz._, Scalaz._
-import scalaz.scalacheck.ScalaCheckBinding._
-import org.scalacheck.Prop._
-import Arbitrary._
-import utils.{RelativeDirection => Dir}
-import utils.ExactFloats._
 
-trait ArbitraryGeometries {
-
-  implicit def arbLTBounds: Arbitrary[LTBounds] = {
-    (arbDouble |@| arbDouble |@| arbDouble |@| arbDouble)(
-      LTBounds.Doubles.apply
-    )
-  }
-}
-
-object GeometricFigureProperties extends Properties("GeometricFigureProperties") with ArbitraryGeometries {
-  property("json <--> LTBounds") = forAll{ (bounds: LTBounds) =>
-    true
-  }
-}
-
-object GeometryTestUtils extends FlatSpec {
-  import utils.GraphPaper
-  import GraphPaper._
-
-  def makeGraph(
-    graphDimension: LTBounds
-  ): GraphPaper = {
-    val w: Int = graphDimension.width.asInt()
-    val h: Int = graphDimension.height.asInt()
-    GraphPaper.create(w+1, h+1)
-  }
-
-  def drawBox(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-    graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.SingleWidth)
-  }
-  def drawBoxBold(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-    graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.Bold)
-  }
-  def drawBoxDouble(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-    graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.DoubleWidth)
-  }
-
-  def assertExpectedText(expected: String, actual: String): Unit = {
-    val l1s = actual.split("\n").map(_.trim())
-    val l2s = expected.split("\n").map(_.trim())
-    val zipped = l1s.zip(l2s)
-    zipped.foreach { case (l1, l2) =>
-      assertResult(l1)(l2)
-    }
-  }
-
-}
-
-class GeometricFigureTests  extends FlatSpec with Matchers {
+class RectangularCutTests  extends FlatSpec with Matchers {
   behavior of "Geometric Figures"
 
   import GeometryImplicits._
   import GeometryTestUtils._
+  import utils.{RelativeDirection => Dir}
   import textboxing.{TextBoxing => TB}, TB._
+  import utils.ExactFloats._
 
-  it should "split figures h/v" in {
+  it should "split rectangles vertically and horizontally" in {
+    val rect = LTBounds.Ints(1, 1, 10, 10)
+
+    val (lsplit, rsplit) = rect.splitHorizontal(10.toFloatExact())
+    List(0, 3, 10).map(_.toFloatExact)
+      .foreach { splitVal =>
+        // println(s" l: ${lsplit}")
+        // println(s" r: ${rsplit}")
+      }
+
+  }
+  it should "find  adjacent regions when inner rect is not strictly within outer" in {
+    val graphSize = LTBounds.Ints(0, 0, 14, 14)
+    val outer = LTBounds.Ints(3, 3, 6, 6)
+    val inner = LTBounds.Ints(2, 2, 4, 4)
+
+    def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
+      // println(s"drawAdjacencyDiagram")
+      // println(s"   graph: ${graphSize}")
+      // println(s"   inner: ${inner}")
+      // println(s"   outer: ${outer}")
+      // println(s"   adjacent: ${adjacent}")
+      val g = makeGraph(graphSize)
+      drawBox(g, graphSize)
+      drawBoxDouble(g, outer)
+      drawBox(g, inner)
+      drawBoxBold(g, adjacent)
+      g.asMonocolorString().mbox
+    }
+
+    {
+      val boxes = List(Dir.Left, Dir.Center, Dir.Right, Dir.Top, Dir.Bottom)
+        .map{ dir =>
+          (dir, inner.withinRegion(outer).adjacentRegion(dir))
+        }.map{ case (d, maybAdjacent) =>
+            maybAdjacent.map{ adjacent =>
+              drawAdjacencyDiagram(adjacent)
+            }.getOrElse { "  <empty>  ".box }
+        }
+
+      val expectedOutput = {
+        """|  <empty>  ┌─────────────┐┌─────────────┐  <empty>  ┌─────────────┐
+           |           │░░░░░░░░░░░░░││░░░░░░░░░░░░░│           │░░░░░░░░░░░░░│
+           |           │░┌───┐░░░░░░░││░┌───┐░░░░░░░│           │░┌───┐░░░░░░░│
+           |           │░│┏━━┓══╗░░░░││░│╔══┏━━┓░░░░│           │░│╔══│══╗░░░░│
+           |           │░│┃░░┃░░║░░░░││░│║░░┃░░┃░░░░│           │░│║░░│░░║░░░░│
+           |           │░│┃░░┃░░║░░░░││░│║░░┃░░┃░░░░│           │░│║░░│░░║░░░░│
+           |           │░└┗━━┛░░║░░░░││░└───┗━━┛░░░░│           │░└┏━━┓░░║░░░░│
+           |           │░░║░░░░░║░░░░││░░║░░░░░║░░░░│           │░░┃░░┃░░║░░░░│
+           |           │░░║░░░░░║░░░░││░░║░░░░░║░░░░│           │░░┃░░┃░░║░░░░│
+           |           │░░╚═════╝░░░░││░░╚═════╝░░░░│           │░░┗━━┛══╝░░░░│
+           |           │░░░░░░░░░░░░░││░░░░░░░░░░░░░│           │░░░░░░░░░░░░░│
+           |           │░░░░░░░░░░░░░││░░░░░░░░░░░░░│           │░░░░░░░░░░░░░│
+           |           │░░░░░░░░░░░░░││░░░░░░░░░░░░░│           │░░░░░░░░░░░░░│
+           |           │░░░░░░░░░░░░░││░░░░░░░░░░░░░│           │░░░░░░░░░░░░░│
+           |           └─────────────┘└─────────────┘           └─────────────┘
+
+           |""".stripMargin
+      }
+      // println(hcat(boxes))
+      assertExpectedText(expectedOutput, hcat(boxes).toString())
+    }
+    {
+      val boxes = List(
+        List(Dir.Left, Dir.Center),
+        List(Dir.Left, Dir.Right),
+        List(Dir.Right, Dir.Center),
+        List(Dir.Left, Dir.Bottom),
+        List(Dir.Right, Dir.BottomRight),
+        List(Dir.Right, Dir.Bottom)
+      ).flatMap{ dirs =>
+        inner.withinRegion(outer)
+          .adjacentRegions(dirs:_*)
+          .map{ adjacent => drawAdjacencyDiagram(adjacent) }
+      }
+
+      val expectedOutput = {
+        """|┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░┌───┐░░░░░░░││░┌───┐░░░░░░░││░┌───┐░░░░░░░││░┌───┐░░░░░░░││░┌───┐░░░░░░░││░┌───┐░░░░░░░│
+           |│░│┏━━┓══╗░░░░││░│╔══┏━━┓░░░░││░│┏━━━━━┓░░░░││░│╔══│══╗░░░░││░│╔══┏━━┓░░░░││░│┏━━━━━┓░░░░│
+           |│░│┃░░┃░░║░░░░││░│║░░┃░░┃░░░░││░│┃░░│░░┃░░░░││░│║░░│░░║░░░░││░│║░░┃░░┃░░░░││░│┃░░│░░┃░░░░│
+           |│░│┃░░┃░░║░░░░││░│║░░┃░░┃░░░░││░│┃░░│░░┃░░░░││░│║░░│░░║░░░░││░│║░░┃░░┃░░░░││░│┃░░│░░┃░░░░│
+           |│░└┗━━┛░░║░░░░││░└───┗━━┛░░░░││░└┗━━━━━┛░░░░││░└┏━━┓░░║░░░░││░└───┃░░┃░░░░││░└┃──┘░░┃░░░░│
+           |│░░║░░░░░║░░░░││░░║░░░░░║░░░░││░░║░░░░░║░░░░││░░┃░░┃░░║░░░░││░░║░░┃░░┃░░░░││░░┃░░░░░┃░░░░│
+           |│░░║░░░░░║░░░░││░░║░░░░░║░░░░││░░║░░░░░║░░░░││░░┃░░┃░░║░░░░││░░║░░┃░░┃░░░░││░░┃░░░░░┃░░░░│
+           |│░░╚═════╝░░░░││░░╚═════╝░░░░││░░╚═════╝░░░░││░░┗━━┛══╝░░░░││░░╚══┗━━┛░░░░││░░┗━━━━━┛░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |└─────────────┘└─────────────┘└─────────────┘└─────────────┘└─────────────┘└─────────────┘
+           |""".stripMargin
+      }
+
+      // println(hcat(boxes))
+      assertExpectedText(expectedOutput, hcat(boxes).toString())
+    }
+  }
+
+
+  it should "find regions adjacent to rectangle within enclosing region" in {
     val graphSize = LTBounds.Ints(0, 0, 14, 14)
     val outer = LTBounds.Ints(1, 1, 10, 10)
     val inner = LTBounds.Ints(3, 4, 5, 2)
 
+    def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
+      // println(s"drawAdjacencyDiagram")
+      // println(s"   graph: ${graphSize}")
+      // println(s"   inner: ${inner}")
+      // println(s"   outer: ${outer}")
+      // println(s"   adjacent: ${adjacent}")
+      val g = makeGraph(graphSize)
+      drawBox(g, graphSize)
+      drawBoxDouble(g, outer)
+      drawBox(g, inner)
+      drawBoxBold(g, adjacent)
+      g.asMonocolorString().mbox
+    }
 
     {
       val boxes = List(Dir.Left, Dir.Center, Dir.Right, Dir.Top, Dir.Bottom)
         .flatMap{ dir =>
           inner.withinRegion(outer)
             .adjacentRegion(dir)
-            .map{ adjacent =>
-              val g = makeGraph(graphSize)
-              drawBox(g, graphSize)
-              drawBoxDouble(g, outer)
-              drawBox(g, inner)
-              drawBoxBold(g, adjacent)
-              g.asMonocolorString().mbox
-            }
+            .map{ adjacent => drawAdjacencyDiagram(adjacent) }
         }
 
-      val actual = hcat(boxes).toString()
       val expectedOutput = {
         """|┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐
            |│╔═════════╗░░││╔═════════╗░░││╔═════════╗░░││╔═┏━━━━┓══╗░░││╔═════════╗░░│
@@ -106,27 +159,20 @@ class GeometricFigureTests  extends FlatSpec with Matchers {
            |└─────────────┘└─────────────┘└─────────────┘└─────────────┘└─────────────┘
            |""".stripMargin
       }
-      assertExpectedText(expectedOutput, actual)
+      // println(hcat(boxes))
+      assertExpectedText(expectedOutput, hcat(boxes).toString())
     }
+
 
     {
       val boxes = List(Dir.TopLeft, Dir.TopRight, Dir.BottomLeft, Dir.BottomRight)
         .flatMap{ dir =>
           inner.withinRegion(outer)
             .adjacentRegion(dir)
-            .map{ adjacent =>
-              val g = makeGraph(graphSize)
-              drawBox(g, graphSize)
-              drawBoxDouble(g, outer)
-              drawBox(g, inner)
-              drawBoxBold(g, adjacent)
-              g.asMonocolorString().mbox
-            }
+            .map{ adjacent => drawAdjacencyDiagram(adjacent) }
         }
 
-      val actual = hcat(boxes).toString()
       val expectedOutput = {
-
         """|┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐
            |│┏━┓═══════╗░░││╔══════┏━━┓░░││╔═════════╗░░││╔═════════╗░░│
            |│┃░┃░░░░░░░║░░││║░░░░░░┃░░┃░░││║░░░░░░░░░║░░││║░░░░░░░░░║░░│
@@ -145,7 +191,7 @@ class GeometricFigureTests  extends FlatSpec with Matchers {
            |""".stripMargin
       }
 
-      assertExpectedText(expectedOutput, actual)
+      assertExpectedText(expectedOutput, hcat(boxes).toString())
     }
 
     {
@@ -159,17 +205,9 @@ class GeometricFigureTests  extends FlatSpec with Matchers {
       ).flatMap{ dirs =>
         inner.withinRegion(outer)
           .adjacentRegions(dirs:_*)
-          .map{ adjacent =>
-            val g = makeGraph(graphSize)
-            drawBox(g, graphSize)
-            drawBoxDouble(g, outer)
-            drawBox(g, inner)
-            drawBoxBold(g, adjacent)
-            g.asMonocolorString().mbox
-          }
+          .map{ adjacent => drawAdjacencyDiagram(adjacent) }
       }
 
-      val actual = hcat(boxes).toString()
       val expectedOutput = {
         """|┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐
            |│╔═════════╗░░││╔═════════╗░░││╔═════════╗░░││╔═════════╗░░││╔═════════╗░░││╔═════════╗░░│
@@ -189,89 +227,7 @@ class GeometricFigureTests  extends FlatSpec with Matchers {
            |""".stripMargin
       }
 
-      assertExpectedText(expectedOutput, actual)
+      assertExpectedText(expectedOutput, hcat(boxes).toString())
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // inner.withinRegion(outer).adjacentRegion(Dir.Left)
-    //   .foreach { adjacent =>
-    //     val g = makeGraph(graphSize)
-    //     drawBoxDouble(g, outer)
-    //     drawBox(g, inner)
-    //     println(g.asString)
-    //     println()
-
-    //     drawBoxBold(g, adjacent)
-    //     println(g.asString)
-    //     // assertResult(LTBounds.Ints(0, 30, 20, 10))(adj)
-    //   }
-
-    // inner.withinRegion(outer).adjacentRegion(Dir.Right)
-    //   .foreach { adj =>
-    //     assertResult(LTBounds.Ints(30, 30, 70, 10))(adj)
-    //   }
-    // inner.withinRegion(outer).adjacentRegion(Dir.Top)
-    //   .foreach { adj =>
-    //     assertResult(LTBounds.Ints(20, 0, 10, 30))(adj)
-    //   }
-
-    // inner.withinRegion(outer).adjacentRegion(Dir.Bottom)
-    //   .foreach { adj =>
-    //     assertResult(LTBounds.Ints(20, 40, 10, 60))(adj)
-    //   }
   }
 }
-
-// {
-//   // Left, Right, Left/Center, Right/Center, Left/Right =>
-//   """|
-//      |░░░░░░░░░░░░░░░░░░░░░░░░░░~░░░░░░░░░░░░░░░░░░░░░░░░░░~░░░░░░░░░░░░░░░░░░░░░░░░░░
-//      |░░░░░░░░░░░░░░░░░░░░░░░░░░~░░░░░░░░░░░░░░░░░░░░░░░░░░~░░░░░░░░░░░░░░░░░░░░░░░░░░
-//      |░░░╔═══════════════╗░░░░░░~░░░╔═══════════════╗░░░░░░~░░░╔═══════════════╗░░░░░░
-//      |░░░║               ║░░░░░░~░░░║               ║░░░░░░~░░░║               ║░░░░░░
-//      |░░░║               ║░░░░░░~░░░║               ║░░░░░░~░░░║               ║░░░░░░
-//      |░░░║               ║░░░░░░~░░░║               ║░░░░░░~░░░║               ║░░░░░░
-//      |░░░║   ┌──────┐    ║░░░░░░~░░░┌───┐           ║░░░░░░~░░░║          ┌────┐░░░░░░
-//      |░░░║   │      │    ║░░░░░░~░░░│   │           ║░░░░░░~░░░║          │    │░░░░░░
-//      |░░░║   └──────┘    ║░░░░░░~░░░└───┘           ║░░░░░░~░░░║          └────┘░░░░░░
-//      |░░░║               ║░░░░░░~░░░║               ║░░░░░░~░░░║               ║░░░░░░
-//      |░░░╚═══════════════╝░░░░░░~░░░╚═══════════════╝░░░░░░~░░░╚═══════════════╝░░░░░░
-//      |░░░░░░░░░░░░░░░░░░░░░░░░░░~░░░░░░░░░░░░░░░░░░░░░░░░░░~░░░░░░░░░░░░░░░░░░░░░░░░░░
-//      |""".stripMargin
-
-
-//   """|
-//      |░░░░░░░░░░░░░░░░░░░░░░░░░░
-//      |░░░╔═══┌──────┐════╗░░░░░░
-//      |░░░║   │      │    ║░░░░░░
-//      |░░░║   │      │    ║░░░░░░
-//      |░░░║   │      │    ║░░░░░░
-//      |░░░║   └──────┘    ║░░░░░░
-//      |░░░║               ║░░░░░░
-//      |░░░║   ┌──────┐    ║░░░░░░
-//      |░░░║   │      │    ║░░░░░░
-//      |░░░╚═══└──────┘════╝░░░░░░
-//      |░░░░░░░░░░░░░░░░░░░░░░░░░░
-//      |""".stripMargin
-// }

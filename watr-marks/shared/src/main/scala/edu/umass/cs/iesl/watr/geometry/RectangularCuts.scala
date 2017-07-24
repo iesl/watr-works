@@ -5,10 +5,10 @@ import utils.ExactFloats._
 import utils.{RelativeDirection => Dir}
 
 
-trait RectangleOps {
+trait RectangularCuts {
 
 
-  class NestedRectangleOps(innerRect: LTBounds, enclosingRect: LTBounds) {
+  class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
 
     def adjacentRegions(dirs: Dir*): Option[LTBounds] = {
       val adjacents = dirs.toList.map{ dir =>
@@ -21,60 +21,64 @@ trait RectangleOps {
     }
 
     def adjacentRegion(dir: Dir): Option[LTBounds] = {
-      // println(s"(${self}).adjacentRegion($enclosingRegion)   ${dir}  ")
-      // _   <- IO.putStrLn[Option](s"  (l, right) = ($l, $right)")
-      // _   <- IO.putStrLn[Option](s"  (t, bot) = ($t, $bot)")
       dir match {
         case Dir.Center  => innerRect.intersection(enclosingRect)
         case Dir.Top  =>
           for {
-            (l, right) <- enclosingRect.splitVertical(innerRect.left)
-            (left, r)  <- right.splitVertical(innerRect.right)
-            (top, b)   <- left.splitHorizontal(innerRect.top)
+            right <- enclosingRect.splitVertical(innerRect.left)._2
+            left  <- right.splitVertical(innerRect.right)._1
+            top   <- left.splitHorizontal(innerRect.top)._1
           } yield top
+          // for {
+          //   (l, right) <- enclosingRect.splitVertical(innerRect.left)
+          //   (left, r)  <- right.splitVertical(innerRect.right)
+          //   (top, b)   <- left.splitHorizontal(innerRect.top)
+          // } yield top
 
         case Dir.Bottom  =>
           for {
-            (l, right) <- enclosingRect.splitVertical(innerRect.left)
-            (left, r)  <- right.splitVertical(innerRect.right)
-            (t, bot)   <- left.splitHorizontal(innerRect.bottom)
+            right <- enclosingRect.splitVertical(innerRect.left)._2
+            left  <- right.splitVertical(innerRect.right)._1
+            bot   <- left.splitHorizontal(innerRect.bottom)._2
           } yield bot
 
 
         case Dir.Right  =>
           for {
-            (t, bot)   <- enclosingRect.splitHorizontal(innerRect.top)
-            (top, b)   <- bot.splitHorizontal(innerRect.bottom)
-            (l, right) <- top.splitVertical(innerRect.right)
+            bot   <- enclosingRect.splitHorizontal(innerRect.top)._2
+            top   <- bot.splitHorizontal(innerRect.bottom)._1
+            right <- top.splitVertical(innerRect.right)._2
           } yield right
 
         case Dir.Left  =>
           for {
-            (t, bot)  <- enclosingRect.splitHorizontal(innerRect.top)
-            (top, b)  <- bot.splitHorizontal(innerRect.bottom)
-            (left, r) <- top.splitVertical(innerRect.left)
+            bot  <- enclosingRect.splitHorizontal(innerRect.top)._2
+            top  <- bot.splitHorizontal(innerRect.bottom)._1
+            left <- top.splitVertical(innerRect.left)._1
           } yield left
 
         case Dir.TopLeft =>
           for {
-            (left, right) <- enclosingRect.splitVertical(innerRect.left)
-            (top,  bot)   <- left.splitHorizontal(innerRect.top)
+            left  <- enclosingRect.splitVertical(innerRect.left)._1
+            top   <- left.splitHorizontal(innerRect.top)._1
           } yield top
 
         case Dir.BottomLeft =>
           for {
-            (left, right) <- enclosingRect.splitVertical(innerRect.left)
-            (top,  bot)   <- left.splitHorizontal(innerRect.bottom)
+            left  <- enclosingRect.splitVertical(innerRect.left)._1
+            bot   <- left.splitHorizontal(innerRect.bottom)._2
           } yield bot
+
         case Dir.TopRight =>
           for {
-            (left, right) <- enclosingRect.splitVertical(innerRect.right)
-            (top,  bot)   <- right.splitHorizontal(innerRect.top)
+            right  <- enclosingRect.splitVertical(innerRect.right)._2
+            top   <- right.splitHorizontal(innerRect.top)._1
           } yield top
+
         case Dir.BottomRight =>
           for {
-            (left, right) <- enclosingRect.splitVertical(innerRect.right)
-            (top,  bot)   <- right.splitHorizontal(innerRect.bottom)
+            right <- enclosingRect.splitVertical(innerRect.right)._2
+            bot   <- right.splitHorizontal(innerRect.bottom)._2
           } yield bot
       }
     }
@@ -84,12 +88,11 @@ trait RectangleOps {
   implicit class RicherLTBounds(val self: LTBounds) {
     def area: Double = (self.width*self.height).asDouble
 
+    def withinRegion(enclosingRect: LTBounds): RectangularCutOps =
+      new RectangularCutOps(self, enclosingRect)
 
-    def withinRegion(enclosingRect: LTBounds): NestedRectangleOps =
-      new NestedRectangleOps(self, enclosingRect)
-
-    def enclosingRect(inner: LTBounds): NestedRectangleOps =
-      new NestedRectangleOps(inner, self)
+    def enclosingRect(inner: LTBounds): RectangularCutOps =
+      new RectangularCutOps(inner, self)
 
     // TODO these should return Option[LTBounds] and/or check for empty regions
     def setLeft(left: Int@@FloatRep): LTBounds = {
@@ -139,31 +142,54 @@ trait RectangleOps {
     }
 
 
-    def splitVertical(x: Int@@FloatRep): Option[(LTBounds, LTBounds)] = {
-      if (overlapsX(x)) {
-        val LTBounds(left, top, width, height) = self
-        val bleft = LTBounds(left, top, x-left, height)
-        val bright = LTBounds(x, top, width-bleft.width, height)
+    def splitVertical(x: Int@@FloatRep): (Option[LTBounds], Option[LTBounds]) = {
+      val LTBounds(left, top, width, height) = self
 
-        Some((bleft, bright))
+      val maybeLeft = if (left < x) {
+        val leftWidth = min(x-left, width)
+        Some(LTBounds(left, top, leftWidth, height))
       } else None
+
+      val maybeRight = if (x < self.right) {
+        val leftWidth = maybeLeft.map(_.width).getOrElse(0.toFloatExact)
+        Some(LTBounds(left+leftWidth, top, width-leftWidth, height))
+      } else None
+      (maybeLeft, maybeRight)
     }
 
-    def splitHorizontal(y: Int@@FloatRep): Option[(LTBounds, LTBounds)] = {
-      if (overlapsY(y)) {
-        val LTBounds(left, top, width, height) = self
-        val upper = LTBounds(left, top, width, y-top)
-        val lower = LTBounds(left, y, width, height-upper.height)
+    def splitHorizontal(y: Int@@FloatRep): (Option[LTBounds], Option[LTBounds]) = {
+      val LTBounds(left, top, width, height) = self
 
-        Some((upper, lower))
+
+      val maybeTop = if (top < y) {
+        val topHeight = min(y-top, height)
+        Some(LTBounds(left, top, width, topHeight))
       } else None
+
+
+      val maybeBottom = if (y < self.bottom) {
+        val topHeight = maybeTop.map(_.height).getOrElse(0.toFloatExact)
+        Some(LTBounds(left, top+topHeight, width, height-topHeight))
+      } else None
+
+      (maybeTop, maybeBottom)
     }
+
+    // def splitHorizontal(y: Int@@FloatRep): Option[(LTBounds, LTBounds)] = {
+    //   if (overlapsY(y)) {
+    //     val LTBounds(left, top, width, height) = self
+    //     val upper = LTBounds(left, top, width, y-top)
+    //     val lower = LTBounds(left, y, width, height-upper.height)
+
+    //     Some((upper, lower))
+    //   } else None
+    // }
 
     def overlapsX(x: Int@@FloatRep): Boolean = {
-      self.left < x &&  x < self.right
+      self.left <= x &&  x <= self.right
     }
     def overlapsY(y: Int@@FloatRep): Boolean = {
-      self.top < y && y < self.bottom
+      self.top <= y && y <= self.bottom
     }
 
     def intersectsX(x: Int@@FloatRep):Boolean = {

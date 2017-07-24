@@ -40,17 +40,16 @@ trait ImageManipulation {
   ): List[SC.Drawable] =  {
     val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry.bounds, imageGeometry)
 
-    val lightest = SC.Context.painter(color.copy(alpha=20))
+    // val lightest = SC.Context.painter(color.copy(alpha=20))
     val lighter = SC.Context.painter(color.copy(alpha=40))
-    val darker = SC.Context.painter(color.copy(alpha=100))
-
+    val darker = SC.Context.painter(color.copy(alpha=255))
     val r = SC.Rect(rl, rt, rw, rh, lighter)
     // val r = SC.FilledRect(rl, rt, rw, rh, lightest)
     val underline = SC.Line(x0=r.x, y0=r.y+r.height, r.x+r.width, r.y+r.height, darker)
     val leftline = SC.Line(x0=r.x, y0=r.y, r.x, r.y+r.height, darker)
 
 
-    List[SC.Drawable](r, underline, leftline)
+    List[SC.Drawable](underline, leftline)
   }
 
   // def embossTargetRegion(targetRegion: TargetRegion, labels: Seq[Label]): Unit = {

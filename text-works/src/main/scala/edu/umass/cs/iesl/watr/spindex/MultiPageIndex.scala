@@ -18,6 +18,7 @@ import rindex._
 import corpora._
 
 import watrmarks.{StandardLabels => LB}
+import utils.ExactFloats._
 
 /**
 
@@ -233,7 +234,7 @@ class MultiPageIndex(
   def addPathItem(path: PageItem.Path): Seq[RegionComponent] = {
     val hlineCCs = path.horizontalLines
       .map{ line =>
-        val region = path.pageRegion.copy(bbox = line.bounds)
+        val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
         println(s"addPathItem: hline $region")
         val c = createRegionComponent(region, LB.HLinePath)
         addComponent(c)
