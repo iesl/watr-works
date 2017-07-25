@@ -16,22 +16,26 @@ object GenericHeuristics {
         val tokens: ListBuffer[String] = ListBuffer[String]()
         val currentToken: ListBuffer[String] = ListBuffer[String]()
 
-        var prevCharPosition: Int = -1 * SPACE_BETWEEN_WORDS_THRESHOLD
+        var prevCharRight: Int = -1 * SPACE_BETWEEN_WORDS_THRESHOLD
         val yPosition: Int = getYPosition(textReflow = textReflow)
-        val height: Int = getMajorityHeight(textReflow = textReflow)
+        var charAtomIndex: Int = 0
 
         for (charAtom <- textReflow.charAtoms()) {
             if (charAtom.bbox.top.asInt().==(yPosition)) {
-                if (charAtom.bbox.left.asInt() - prevCharPosition >= SPACE_BETWEEN_WORDS_THRESHOLD) {
+                if (charAtom.bbox.left.asInt() - prevCharRight >= SPACE_BETWEEN_WORDS_THRESHOLD) {
                     tokens += currentToken.mkString
                     currentToken.clear()
                 }
                 currentToken += charAtom.char
-                prevCharPosition = charAtom.bbox.right.asInt()
+                prevCharRight = charAtom.bbox.right.asInt()
             }
-            else if (charAtom.bbox.right.asInt() <= prevCharPosition) {
+            else if (charAtom.bbox.right.asInt() <= prevCharRight) {
                 currentToken += charAtom.char
             }
+            else if (charAtomIndex < textReflow.charAtoms().length - 1 && (charAtom.bbox.left <= textReflow.charAtoms()(charAtomIndex + 1).bbox.left && charAtom.bbox.right >= textReflow.charAtoms()(charAtomIndex + 1).bbox.right)) {
+                currentToken += charAtom.char
+            }
+            charAtomIndex += 1
         }
 
         if (currentToken.nonEmpty) {
