@@ -134,7 +134,7 @@ object AffiliationsHeuristics {
         affiliationComponentsWithClasses
     }
 
-    def getBoundingBoxesForAffiliations(affiliationsWithClasses: ListBuffer[(String, ListBuffer[String])], textReflows: ListBuffer[TextReflow]): ListBuffer[(String, ListBuffer[String], LTBounds)] = {
+    def getBoundingBoxesForAffiliations(affiliationsWithClasses: ListBuffer[(String, ListBuffer[String])], textReflows: Seq[TextReflow]): ListBuffer[(String, ListBuffer[String], LTBounds)] = {
 
         val affiliations: ListBuffer[(String, ListBuffer[String], LTBounds)] = new ListBuffer[(String, ListBuffer[String], LTBounds)]
 
@@ -147,24 +147,33 @@ object AffiliationsHeuristics {
 
             if (affiliationsWithClasses(affiliationIndex)._2.contains(EMAIL_KEYWORD)){
                 val (userNameStartIndex, userNameEndIndex) =  getIndexesForComponents(affiliationsWithClasses(affiliationIndex)._1.split(AT_THE_RATE).head.replace(SPACE_SEPARATOR, BLANK), textReflows(textReflowIndex), (startIndex, textReflows(textReflowIndex).charAtoms().length))
-                val (emailSuffixStartIndex, emailSuffixEndIndex) = getIndexesForComponents(AT_THE_RATE.concat(affiliationsWithClasses(affiliationIndex)._1.split(AT_THE_RATE)(1)).replace(SPACE_SEPARATOR, BLANK), textReflows(textReflowIndex), (0, textReflows(textReflowIndex).charAtoms().length))
-
-                if (userNameStartIndex.!=(-1) && emailSuffixStartIndex.!=(-1) && emailSuffixStartIndex >= userNameEndIndex && (userNameEndIndex - userNameStartIndex + emailSuffixEndIndex - emailSuffixStartIndex).==(affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK).length)){
-                    affiliations += ((affiliationsWithClasses(affiliationIndex)._1, affiliationsWithClasses(affiliationIndex)._2, getBoundingBoxesWithIndexesFromReflow((userNameStartIndex, emailSuffixEndIndex), textReflows(textReflowIndex))))
-                    startIndex = emailSuffixEndIndex
-                    affiliationIndex += 1
+                val (emailSuffixStartIndex, emailSuffixEndIndex) = getIndexesForComponents(AT_THE_RATE.concat(affiliationsWithClasses(affiliationIndex)._1.split(AT_THE_RATE)(1)).replace(SPACE_SEPARATOR, BLANK), textReflows(textReflowIndex), (userNameEndIndex, textReflows(textReflowIndex).charAtoms().length))
+                if (userNameStartIndex.!=(-1) && emailSuffixStartIndex.!=(-1) && emailSuffixStartIndex >= userNameEndIndex){
+                    if (getTextReflowLengthFromIndices(textReflow = textReflows(textReflowIndex), indexRange = (userNameStartIndex, userNameEndIndex)) + getTextReflowLengthFromIndices(textReflow = textReflows(textReflowIndex), indexRange = (emailSuffixStartIndex, emailSuffixEndIndex)) == affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK).length) {
+                        affiliations += ((affiliationsWithClasses(affiliationIndex)._1, affiliationsWithClasses(affiliationIndex)._2, getBoundingBoxesWithIndexesFromReflow((userNameStartIndex, emailSuffixEndIndex), textReflows(textReflowIndex))))
+                        startIndex = emailSuffixEndIndex
+                        affiliationIndex += 1
+                    }
                 }
             }
             else{
                 val (componentStartIndex, componentEndIndex) = getIndexesForComponents(affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK), textReflows(textReflowIndex), (startIndex, textReflows(textReflowIndex).charAtoms().length))
-                if (componentStartIndex.!=(-1) && (componentEndIndex - componentStartIndex).==(affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK).length)){
+                if (componentStartIndex.!=(-1) && Math.abs(getTextReflowLengthFromIndices(textReflow = textReflows(textReflowIndex), indexRange = (componentStartIndex, componentEndIndex)) - affiliationsWithClasses(affiliationIndex)._1.replace(SPACE_SEPARATOR, BLANK).length) <= 2){
                     affiliations += ((affiliationsWithClasses(affiliationIndex)._1, affiliationsWithClasses(affiliationIndex)._2, getBoundingBoxesWithIndexesFromReflow((componentStartIndex, componentEndIndex), textReflows(textReflowIndex))))
                     startIndex = componentEndIndex
                     affiliationIndex += 1
                 }
             }
 
-            if (textReflowIndex < textReflows.length && startIndex.==(textReflows(textReflowIndex).charAtoms().length) || textReflows(textReflowIndex).charAtoms().length.==(1)){
+            if (textReflowIndex < textReflows.length && (
+                    startIndex.==(textReflows(textReflowIndex).charAtoms().length)
+                    || (
+                        startIndex.==(textReflows(textReflowIndex).charAtoms().length - 1)
+                            && PUNCTUATIONS_PATTERN.contains(textReflows(textReflowIndex).charAtoms().takeRight(1).head.char.toCharArray.head)
+                    )
+                )
+                || textReflows(textReflowIndex).charAtoms().length.==(1)
+            ){
                 textReflowIndex += 1
                 startIndex = 0
             }
