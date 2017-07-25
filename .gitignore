@@ -5,7 +5,6 @@
 target
 project/target
 project/project
-lib_managed
 
 # IntelliJ IDEA
 .idea*
@@ -18,9 +17,6 @@ ensime.sbt
 .ensime_cache
 
 
-#pdf svg extractor
-svgdump
-
 # Common directory names
 *.d
 *.db
@@ -32,5 +28,4 @@ svgdump
 *.log
 *.tmp
 
-itext*
 .sbtopts
