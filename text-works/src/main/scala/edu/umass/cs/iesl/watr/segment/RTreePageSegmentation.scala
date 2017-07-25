@@ -60,7 +60,7 @@ object DocumentSegmenter {
 }
 class DocumentSegmenter(
   mpageIndex: MultiPageIndex
-) extends RTreePageSegmentation(mpageIndex) {
+) extends RTreePageSegmentation(mpageIndex) { 
 
 }
 
@@ -115,6 +115,10 @@ class RTreePageSegmentation(
     mpageIndex.createRegionComponent(pageRegion, label, text)
   }
 
+  def createZone(label: Label, pageRegions: Seq[PageRegion]): Option[Int@@ZoneID] = {
+    docStore.labelRegions(label, pageRegions)
+  }
+
   def runLineDetermination(): Unit = {
     val pageRegions = for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
@@ -129,7 +133,7 @@ class RTreePageSegmentation(
       ).toPageRegion()
     }
 
-    docStore.labelRegions(LB.DocumentPages, pageRegions)
+    createZone(LB.DocumentPages, pageRegions)
   }
 
 
@@ -226,10 +230,6 @@ class RTreePageSegmentation(
       LB.Image, LB.HLinePath, LB.VLinePath, LB.LinePath, LB.WhitespaceCol, LB.ReadingBlock
     ) ++ lls.toList
 
-    // val interestingLabels = List(
-    //   LB.LineByHash, LB.Image, LB.LeftAlignedCharCol, LB.WhitespaceColCandidate,
-    //   LB.PathBounds
-    // )
 
     approximateLineBins(components)
     writeRTreeImage(pageNum, "01-lineHashing", LB.LineByHash, stdLabels():_*)
@@ -389,7 +389,7 @@ class RTreePageSegmentation(
 
     val pageNum = pageIdMap(pageId)
     val pageIndex = mpageIndex.getPageIndex(pageNum)
-    val rTreeIndex = pageIndex.componentIndex
+    // val rTreeIndex = pageIndex.componentIndex
     val pageGeometry = docStore.getPageGeometry(pageId)
 
     val linesWithCharCounts = for {
@@ -467,12 +467,14 @@ class RTreePageSegmentation(
 
           }}
 
-          labelRegion(pageId, compBbox, LB.VisualLine)
+          val visualLineCC = labelRegion(pageId, compBbox, LB.VisualLine)
+          createZone(LB.VisualLine, Seq(visualLineCC.targetRegion))
           labelRegion(pageId, compBbox, LB.Marked)
 
           Some(textRow)
         } else None
       }
+
 
     val justTextRows = allTextRows.flatten
 
@@ -603,7 +605,7 @@ class RTreePageSegmentation(
   ): Unit = {
     val pageNum = pageIdMap(pageId)
     val pageIndex = mpageIndex.getPageIndex(pageNum)
-    val rTreeIndex = pageIndex.componentIndex
+    // val rTreeIndex = pageIndex.componentIndex
     val pageGeometry = docStore.getPageGeometry(pageId)
 
     var candidates = pageIndex.getComponentsWithLabel(LB.HLinePath)
@@ -634,7 +636,7 @@ class RTreePageSegmentation(
   ): Unit = {
     val pageNum = pageIdMap(pageId)
     val pageIndex = mpageIndex.getPageIndex(pageNum)
-    val rTreeIndex = pageIndex.componentIndex
+    // val rTreeIndex = pageIndex.componentIndex
     // val pageGeometry = docStore.getPageGeometry(pageId)
 
 

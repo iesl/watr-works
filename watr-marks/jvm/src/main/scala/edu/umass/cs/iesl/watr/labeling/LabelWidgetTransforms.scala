@@ -206,7 +206,7 @@ object LabelWidgetTransforms {
           if (acc.contains(docId)) {
             acc
           } else {
-            val zones = docStore.getZonesForDocument(docId,labelId)
+            val zones = docStore.getZonesForDocument(docId, labelId)
               .map(docStore.getZone(_))
               .toList
 
