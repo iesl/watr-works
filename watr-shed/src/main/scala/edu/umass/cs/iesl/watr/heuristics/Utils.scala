@@ -5,16 +5,24 @@ import geometry.LTBounds
 import Constants._
 import textreflow.TextReflowF.TextReflow
 import textreflow.data._
-import simstring._
+// import simstring._
 import utils.ExactFloats._
+import TypeTags._
+import geometry.{CharAtom, LTBounds}
+import geometry.syntax._
+import Constants._
+import textreflow.TextReflowF.TextReflow
+import textreflow.data._
 
 import scala.collection.mutable.ListBuffer
+import scala.io.Source
+import scala.util.control.Breaks._
 
 object Utils {
 
-    def isOfFirstNameInitialFormat(authorNameComponent: String): Boolean = {
+    def isOfNameInitialFormat(authorNameComponent: String): Boolean = {
 
-        if(NAME_INITIAL_FORMAT_PATTERN.findFirstIn(authorNameComponent).getOrElse(BLANK).length.==(authorNameComponent.length)){
+        if (NAME_INITIAL_FORMAT_PATTERN.findFirstIn(authorNameComponent).getOrElse(BLANK).length.==(authorNameComponent.length)) {
             return true
         }
         false
@@ -50,22 +58,28 @@ object Utils {
         var componentIndex: Int = 0
         var textReflowIndex: Int = indexRange._1
         var componentStartIndex: Int = -1
+        val yPosition: Int = getYPosition(textReflow = textReflow)
 
         while (componentIndex < component.length && textReflowIndex < indexRange._2) {
-            val currentTextReflowChar: String = textReflow.charAtoms()(textReflowIndex).char
+            val currentTextReflowAtom: CharAtom = textReflow.charAtoms()(textReflowIndex)
             var localReflowCharIndex: Int = 0
-            while (localReflowCharIndex < currentTextReflowChar.length) {
-                if (component.charAt(componentIndex).==(currentTextReflowChar.charAt(localReflowCharIndex))) {
-                    if (componentStartIndex.==(-1)) {
-                        componentStartIndex = textReflowIndex
+            breakable {
+                while (localReflowCharIndex < currentTextReflowAtom.char.length) {
+                    if (component.charAt(componentIndex).==(currentTextReflowAtom.char.charAt(localReflowCharIndex))) {
+                        if (componentStartIndex.==(-1)) {
+                            componentStartIndex = textReflowIndex
+                        }
+                        componentIndex += 1
                     }
-                    componentIndex += 1
+                    else if (PUNCTUATION_SEPARATORS.contains(currentTextReflowAtom.char.charAt(localReflowCharIndex).toString) || currentTextReflowAtom.bbox.top.!=(yPosition)){
+                        break
+                    }
+                    else {
+                        componentIndex = 0
+                        componentStartIndex = -1
+                    }
+                    localReflowCharIndex += 1
                 }
-                else {
-                    componentIndex = 0
-                    componentStartIndex = -1
-                }
-                localReflowCharIndex += 1
             }
             textReflowIndex += 1
         }
@@ -74,27 +88,8 @@ object Utils {
     }
 
     def getBoundingBoxesWithIndexesFromReflow(indexes: (Int, Int), textReflow: TextReflow): LTBounds = {
-        LTBounds(FloatRep(textReflow.charAtoms()(indexes._1).bbox.left.asInstanceOf[Int]), FloatRep(textReflow.charAtoms()(indexes._1).bbox.top.asInstanceOf[Int]),
-            FloatRep(textReflow.charAtoms()(indexes._2 - 1).bbox.right.asInstanceOf[Int] - textReflow.charAtoms()(indexes._1).bbox.left.asInstanceOf[Int]), FloatRep(textReflow.charAtoms()(indexes._1).bbox.height.asInstanceOf[Int]))
-    }
-
-    def getBoundingBoxesForComponents(name: NameWithBBox, geometricallySeparatedName: String, textReflow: TextReflow): NameWithBBox = {
-
-        val (nameStartIndex, nameEndIndex) = getIndexesForComponents(component = geometricallySeparatedName.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (0, textReflow.charAtoms().length))
-        name.bbox = getBoundingBoxesWithIndexesFromReflow((nameStartIndex, nameEndIndex), textReflow)
-        if (name.firstName.componentText.nonEmpty) {
-            val (firstNameStartIndex, firstNameEndIndex) = getIndexesForComponents(component = name.firstName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.firstName.componentBBox = getBoundingBoxesWithIndexesFromReflow((firstNameStartIndex, firstNameEndIndex), textReflow)
-        }
-        if (name.middleName.componentText.nonEmpty) {
-            val (middleNameStartIndex, middleNameEndIndex) = getIndexesForComponents(component = name.middleName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.middleName.componentBBox = getBoundingBoxesWithIndexesFromReflow((middleNameStartIndex, middleNameEndIndex), textReflow)
-        }
-        if (name.lastName.componentText.nonEmpty) {
-            val (lastNameStartIndex, lastNameEndIndex) = getIndexesForComponents(component = name.lastName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
-            name.lastName.componentBBox = getBoundingBoxesWithIndexesFromReflow((lastNameStartIndex, lastNameEndIndex), textReflow)
-        }
-        name
+        LTBounds(textReflow.charAtoms()(indexes._1).bbox.left, textReflow.charAtoms()(indexes._1).bbox.top,
+            textReflow.charAtoms()(indexes._2 - 1).bbox.right - textReflow.charAtoms()(indexes._1).bbox.left, textReflow.charAtoms()(indexes._1).bbox.height)
     }
 
     def isLetterString(charSequence: String): Boolean = {
@@ -119,16 +114,34 @@ object Utils {
 
         val yPositionCounts: scala.collection.mutable.Map[Int, Int] = scala.collection.mutable.Map[Int, Int]()
 
-        for(charAtom <- textReflow.charAtoms()){
-            if(yPositionCounts.get(charAtom.bbox.top.asInstanceOf[Int]).isEmpty){
-                yPositionCounts += (charAtom.bbox.top.asInstanceOf[Int] -> 0)
+        for (charAtom <- textReflow.charAtoms()) {
+            if (yPositionCounts.get(charAtom.bbox.top.asInt()).isEmpty) {
+                yPositionCounts += (charAtom.bbox.top.asInt() -> 0)
             }
-            yPositionCounts.update(charAtom.bbox.top.asInstanceOf[Int], yPositionCounts(charAtom.bbox.top.asInstanceOf[Int])+1)
+            yPositionCounts.update(charAtom.bbox.top.asInt(), yPositionCounts(charAtom.bbox.top.asInt()) + 1)
 
         }
 
         val maxRecord: (Int, Int) = yPositionCounts.maxBy(_._2)
-        if(maxRecord._2 > 1){
+        if (maxRecord._2 > 1) {
+            return maxRecord._1
+        }
+        -1
+    }
+
+    def getMajorityHeight(textReflow: TextReflow): Int = {
+        val heightCounts: scala.collection.mutable.Map[Int, Int] = scala.collection.mutable.Map[Int, Int]()
+
+        for (charAtom <- textReflow.charAtoms()) {
+            if (heightCounts.get(charAtom.bbox.height.asInt()).isEmpty) {
+                heightCounts += (charAtom.bbox.height.asInt() -> 0)
+            }
+            heightCounts.update(charAtom.bbox.height.asInt(), heightCounts(charAtom.bbox.height.asInt()) + 1)
+
+        }
+
+        val maxRecord: (Int, Int) = heightCounts.maxBy(_._2)
+        if (maxRecord._2 > 1) {
             return maxRecord._1
         }
         -1
@@ -138,27 +151,22 @@ object Utils {
 
         val matchedKeywords: ListBuffer[String] = new ListBuffer[String]()
 
-        for(affiliationComponentWord <- affiliationComponent.split(SPACE_SEPARATOR)){
-//            if(CityKeywords.keywords.get(affiliationComponentWord, 0.9, Jaccard).isDefined){
-//                matchedKeywords += CITY_KEYWORDS
-//            }
-            if(CountryKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += COUNTRY_KEYWORD
-            }
-            if(DepartmentKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += DEPARTMENT_KEYWORD
-            }
-            if(InstitutionKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += INSTITUTION_KEYWORD
-            }
-            if(CompanyKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += COMPANY_KEYWORD
-            }
-            if(UniversityKeywords.keywords.get(affiliationComponentWord, 0.9, Cosine).isDefined){
-                matchedKeywords += UNIVERSITY_KEYWORD
-            }
-            if(EMAIL_PATTERN.findFirstIn(affiliationComponentWord).getOrElse(BLANK).length.!=(0)){
-                matchedKeywords += EMAIL_KEYWORD
+        if (EMAIL_PATTERN.findFirstIn(affiliationComponent).getOrElse(BLANK).length.!=(0)) {
+            matchedKeywords += EMAIL_KEYWORD
+        }
+
+        if (matchedKeywords.isEmpty) {
+            breakable {
+                RESOURCE_KEYWORDS.foreach {
+                    resource => {
+                        for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines) {
+                            if ("\\b".concat(line).concat("\\b").r.findFirstIn(affiliationComponent).isDefined) {
+                                matchedKeywords += resource._1
+                                break
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -172,10 +180,10 @@ object Utils {
 
         cleanedComponent = separatedComponent.substring(CLEANUP_PATTERN.findFirstIn(separatedComponent).getOrElse(BLANK).length, separatedComponent.length)
 
-        if(separatedComponent.takeRight(1).equals(PERIOD)){
+        if (separatedComponent.takeRight(1).equals(PERIOD)) {
             cleanedComponent = separatedComponent.dropRight(1)
         }
-        if(cleanedComponent.head.==(DOT)){
+        if (cleanedComponent.head.==(DOT)) {
             cleanedComponent = separatedComponent.tail
         }
 
@@ -187,11 +195,11 @@ object Utils {
 
         val matchedZipCodePatterns: ListBuffer[String] = new ListBuffer[String]()
 
-        ZIP_CODE_PATTERNS.foreach{
+        ZIP_CODE_PATTERNS.foreach {
             zipCodePattern => {
-                zipCodePattern._2.foreach{
+                zipCodePattern._2.foreach {
                     zipCodeRegex => {
-                        if (zipCodeRegex.findFirstIn(affiliationComponent).getOrElse(BLANK).nonEmpty){
+                        if (zipCodeRegex.findFirstIn(affiliationComponent).getOrElse(BLANK).nonEmpty) {
                             matchedZipCodePatterns += zipCodePattern._1
                         }
                     }
@@ -202,5 +210,114 @@ object Utils {
         matchedZipCodePatterns
 
     }
+
+    def isPresentInAuthors(component: String, authorNames: ListBuffer[NameWithBBox]): Boolean = {
+
+        for (authorName <- authorNames) {
+            if (component.contains(authorName.lastName.componentText.toLowerCase)) {
+                return true
+            }
+            if (! isOfNameInitialFormat(authorName.middleName.componentText) && component.contains(authorName.middleName.componentText.toLowerCase)) {
+                return true
+            }
+            if (! isOfNameInitialFormat(authorName.firstName.componentText) && component.contains(authorName.firstName.componentText.toLowerCase)) {
+                return true
+            }
+        }
+        false
+    }
+
+    def cleanPunctuations(tokens: Seq[String]): ListBuffer[String] = {
+
+        val cleanedTokens: ListBuffer[String] = new ListBuffer[String]()
+
+        tokens.foreach{
+            token => {
+                token.split(PUNCTUATIONS_PATTERN).foreach{
+                    splitToken => {
+                        if (splitToken.isEmpty) {
+                            cleanedTokens += PUNCTUATION_TAG
+                        }
+                        else if (isNumberString(splitToken)) {
+                            cleanedTokens += NUMBER_TAG
+                            cleanedTokens += PUNCTUATION_TAG
+                        }
+                        else {
+                            cleanedTokens += splitToken
+                            cleanedTokens += PUNCTUATION_TAG
+                        }
+                    }
+                }
+                if (! PUNCTUATIONS_PATTERN.contains(token.charAt(token.length - 1))) {
+                    cleanedTokens.remove(cleanedTokens.length - 1)
+                }
+            }
+        }
+
+        cleanedTokens.map( cleanedToken => cleanedToken.trim)
+
+    }
+
+    def containsPattern(reflowString: String, patternSeq: Seq[String]): Boolean = {
+
+        for (pattern <- patternSeq) {
+            if (reflowString.contains(pattern)) {
+                return true
+            }
+        }
+
+        false
+    }
+
+    def getBoundingBoxesForComponents(components: Seq[String], textReflow: TextReflow): ListBuffer[(String, LTBounds)] = {
+
+        var componentStartIndex: Int = 0
+        var componentEndIndex: Int = textReflow.charAtoms().length - 1
+        var indices: (Int, Int) = (0, textReflow.charAtoms().length - 1)
+
+        val componentsWithBoundingBoxes: ListBuffer[(String, LTBounds)] = new ListBuffer[(String, LTBounds)]()
+
+        for (component <- components) {
+            if (!LEXICON_TAGS.contains(component)) {
+                if (componentEndIndex.!=(textReflow.charAtoms().length - 1)) {
+                    indices = getIndexesForComponents(component = component, textReflow = textReflow, indexRange = (componentEndIndex, textReflow.charAtoms().length))
+                }
+                else {
+                    indices = getIndexesForComponents(component = component, textReflow = textReflow, indexRange = (componentStartIndex, textReflow.charAtoms().length))
+                }
+
+                componentStartIndex = indices._1
+                componentEndIndex = indices._2
+                componentsWithBoundingBoxes.+=((component, getBoundingBoxesWithIndexesFromReflow(indexes = (componentStartIndex, componentEndIndex), textReflow = textReflow)))
+
+            }
+        }
+        componentsWithBoundingBoxes
+    }
+
+    def getBoundingBoxAsString(bBox: LTBounds): String = {
+        val bBoxAsString: ListBuffer[String] = new ListBuffer[String]()
+
+        bBoxAsString.+=(bBox.left.asInt().toString)
+        bBoxAsString.+=(bBox.top.asInt().toString)
+        bBoxAsString.+=(bBox.right.asInt().toString)
+        bBoxAsString.+=(bBox.bottom.asInt().toString)
+
+        bBoxAsString.mkString(BOUNDING_BOX_SEPARATOR)
+    }
+
+    def getTextReflowLengthFromIndices(textReflow: TextReflow, indexRange: (Int, Int)): Int = {
+
+        var reflowLength: Int = 0
+        var reflowAtomIndex: Int = indexRange._1
+
+        while (reflowAtomIndex < indexRange._2) {
+            reflowLength += textReflow.charAtoms()(reflowAtomIndex).char.length
+            reflowAtomIndex += 1
+        }
+
+        reflowLength
+    }
+
 
 }

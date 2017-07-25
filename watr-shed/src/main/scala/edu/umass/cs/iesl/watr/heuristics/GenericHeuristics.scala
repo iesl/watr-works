@@ -9,6 +9,12 @@ import textreflow.data._
 import geometry._
 // import geometry.syntax._
 // import TypeTags._
+import geometry.syntax._
+import Constants._
+import Utils._
+import textreflow.data._
+import utils.ExactFloats._
+
 import scala.collection.mutable.ListBuffer
 // import scalaz.syntax.equal._
 // import scalaz.std.anyVal._
@@ -47,21 +53,26 @@ object GenericHeuristics {
         val tokens: ListBuffer[String] = ListBuffer[String]()
         val currentToken: ListBuffer[String] = ListBuffer[String]()
 
-        var prevCharPosition: Int = -1 * SPACE_BETWEEN_WORDS_THRESHOLD
+        var prevCharRight: Int = -1 * SPACE_BETWEEN_WORDS_THRESHOLD
         val yPosition: Int = getYPosition(textReflow = textReflow)
+        var charAtomIndex: Int = 0
 
         for (charAtom <- textReflow.charAtoms()) {
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition)) {
-                if (charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition >= SPACE_BETWEEN_WORDS_THRESHOLD) {
+            if (charAtom.bbox.top.asInt().==(yPosition)) {
+                if (charAtom.bbox.left.asInt() - prevCharRight >= SPACE_BETWEEN_WORDS_THRESHOLD) {
                     tokens += currentToken.mkString
                     currentToken.clear()
                 }
                 currentToken += charAtom.char
-                prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
+                prevCharRight = charAtom.bbox.right.asInt()
             }
-            else if (charAtom.bbox.right.asInstanceOf[Int] < prevCharPosition) {
+            else if (charAtom.bbox.right.asInt() <= prevCharRight) {
                 currentToken += charAtom.char
             }
+            else if (charAtomIndex < textReflow.charAtoms().length - 1 && (charAtom.bbox.left <= textReflow.charAtoms()(charAtomIndex + 1).bbox.left && charAtom.bbox.right >= textReflow.charAtoms()(charAtomIndex + 1).bbox.right)) {
+                currentToken += charAtom.char
+            }
+            charAtomIndex += 1
         }
 
         if (currentToken.nonEmpty) {
@@ -69,7 +80,7 @@ object GenericHeuristics {
             currentToken.clear()
         }
 
-        tokens.filter(_.nonEmpty)
+        tokens.filter(_.nonEmpty).filter(!_.equals(PERIOD))
     }
 
     def getSeparateComponentsByText(tokenizedTextReflow: ListBuffer[String]): ListBuffer[String] = {
@@ -120,10 +131,10 @@ object GenericHeuristics {
             var charAtom: CharAtom = textReflow.charAtoms()(currentCharAtomIndex)
             val currentCharacter = charAtom.char.toCharArray.head
             if (currentCharacter.equals(currentSeparateComponent.head)) {
-                if (usualSpaceWidth == 0) {
-                    usualSpaceWidth = charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition
+                if (usualSpaceWidth == 0 && prevCharPosition.!=(-1)) {
+                    usualSpaceWidth = charAtom.bbox.left.asInt - prevCharPosition
                 }
-                else if ((charAtom.bbox.left.asInstanceOf[Int] - prevCharPosition) > 2 * usualSpaceWidth) {
+                else if ((charAtom.bbox.left.asInt - prevCharPosition) > 2 * usualSpaceWidth && usualSpaceWidth.!=(0)) {
                     separateComponents += separateComponent.mkString(SPACE_SEPARATOR)
                     separateComponent.clear()
                 }
@@ -140,10 +151,10 @@ object GenericHeuristics {
 
             }
             charAtom = textReflow.charAtoms()(currentCharAtomIndex)
-            if (charAtom.bbox.top.asInstanceOf[Int].==(yPosition) || (currentCharAtomIndex > 0
-                && charAtom.bbox.right.asInstanceOf[Int] < textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right.asInstanceOf[Int]
-                && textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.top.asInstanceOf[Int].==(yPosition))) {
-                prevCharPosition = charAtom.bbox.right.asInstanceOf[Int]
+            if (charAtom.bbox.top.asInt().==(yPosition) || (currentCharAtomIndex > 0
+                && charAtom.bbox.right < textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.right
+                && textReflow.charAtoms()(currentCharAtomIndex - 1).bbox.top.asInt().==(yPosition))) {
+                prevCharPosition = charAtom.bbox.right.asInt()
             }
             currentCharAtomIndex += 1
 
