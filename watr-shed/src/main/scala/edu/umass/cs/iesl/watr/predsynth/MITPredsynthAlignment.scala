@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package predsynth
 
 import spindex._
-import ComponentOperations._
 
 import scala.collection.mutable
 
@@ -19,184 +18,184 @@ import TypeTags._
 object MITAlignPredsynth {
   private[this] val log = org.log4s.getLogger
 
-  // import utils.IdGenerator
+  // // import utils.IdGenerator
 
-  def alignPredSynthPaper(mpageIndex: MultiPageIndex, paper: Paper): Seq[AlignedGroup] = {
-    log.debug("aligning predsynth paper ")
+  // def alignPredSynthPaper(mpageIndex: MultiPageIndex, paper: Paper): Seq[AlignedGroup] = {
+  //   log.debug("aligning predsynth paper ")
 
-    val docStore = mpageIndex.docStore
-    val stableId = mpageIndex.getStableId()
-    val docId = docStore.getDocument(stableId).get
+  //   val docStore = mpageIndex.docStore
+  //   val stableId = mpageIndex.getStableId()
+  //   val docId = docStore.getDocument(stableId).get
 
-    val paperTextReflows = for {
-      lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
-      reflow <- docStore.getTextReflowForZone(lineZone.id)
+  //   val paperTextReflows = for {
+  //     lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
+  //     reflow <- docStore.getTextReflowForZone(lineZone.id)
 
-    } yield reflow
-    // val paperTextReflows = mpageIndex.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
+  //   } yield reflow
+  //   // val paperTextReflows = mpageIndex.getTextReflows(LB.PageTextBlocks, LB.TextBlock)
 
-    log.debug("creating one line from entire paper")
-    val oneLineReflow = paperTextReflows.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
+  //   log.debug("creating one line from entire paper")
+  //   val oneLineReflow: TextReflow =  ??? /// paperTextReflows.reduce { joinTextLines(_, _)(utils.EnglishDictionary.global) }
 
-    val oneLineText = oneLineReflow.toText
+  //   val oneLineText = oneLineReflow.toText
 
-    log.debug("Aligning contexts")
+  //   log.debug("Aligning contexts")
 
-    val alignedGroups: Seq[AlignedGroup] = PredsynthLoad.alignContexts(paper, oneLineText)
+  //   val alignedGroups: Seq[AlignedGroup] = PredsynthLoad.alignContexts(paper, oneLineText)
 
-    val mongoIdToClusterId = mutable.HashMap[String, Int@@ClusterID]()
-    val rawTextMentionsById = mutable.HashMap[Int@@MentionID, RawTextContext]()
-    val relations = mutable.ArrayBuffer[Relation.Record]()
-    val props = mutable.ArrayBuffer[Prop.PropRec]()
+  //   val mongoIdToClusterId = mutable.HashMap[String, Int@@ClusterID]()
+  //   val rawTextMentionsById = mutable.HashMap[Int@@MentionID, RawTextContext]()
+  //   val relations = mutable.ArrayBuffer[Relation.Record]()
+  //   val props = mutable.ArrayBuffer[Prop.PropRec]()
 
-    // val relationIds = IdGenerator[RelationID]()
-    // val clusterIds = IdGenerator[ClusterID]()
-
-
-    alignedGroups.foreach({ alignedGroup: AlignedGroup =>
-      val groupNumber = alignedGroup.textMentionGroup.groupNumber
-      val id = alignedGroup.textMentionGroup.id
-      val groupClusterID = ClusterID(groupNumber) // clusterIds.nextId
-      log.debug(s"aligning group w/ClusterID:${groupClusterID}")
-
-      id.foreach { mongoId =>
-        mongoIdToClusterId.put(mongoId, groupClusterID)
-      }
-
-      props += Prop.PropRec(
-        Identities.cluster(groupClusterID),
-        Prop.PropKV(
-          "role",
-          Prop.Str("recipe/"+alignedGroup.groupType)
-        )
-      )
-
-      props += Prop.PropRec(
-        Identities.cluster(groupClusterID),
-        Prop.PropKV(
-          "mongoId",
-          Prop.Str(id.getOrElse("null"))
-        )
-      )
-
-      props ++= alignedGroup.textMentionGroup.props.map(
-        Prop.PropRec(
-          Identities.cluster(groupClusterID), _))
+  //   // val relationIds = IdGenerator[RelationID]()
+  //   // val clusterIds = IdGenerator[ClusterID]()
 
 
-      alignedGroup.alignedContexts.foreach {
-        case AlignSuccess(rtc, (begin, end)) =>
+  //   alignedGroups.foreach({ alignedGroup: AlignedGroup =>
+  //     val groupNumber = alignedGroup.textMentionGroup.groupNumber
+  //     val id = alignedGroup.textMentionGroup.id
+  //     val groupClusterID = ClusterID(groupNumber) // clusterIds.nextId
+  //     log.debug(s"aligning group w/ClusterID:${groupClusterID}")
 
-          // val len = oneLineText.length
-          val reflowSliceOpt = oneLineReflow.slice(begin, end)
+  //     id.foreach { mongoId =>
+  //       mongoIdToClusterId.put(mongoId, groupClusterID)
+  //     }
 
-          reflowSliceOpt match {
-            case Some(reflowSlice) =>
-              val reflowSliceText = reflowSlice.toText
-              log.debug(s"found mention: ${reflowSliceText}")
+  //     props += Prop.PropRec(
+  //       Identities.cluster(groupClusterID),
+  //       Prop.PropKV(
+  //         "role",
+  //         Prop.Str("recipe/"+alignedGroup.groupType)
+  //       )
+  //     )
 
-              // TODO The following should be captured by something like textReflow.intersectPages(LB.VisualLine, ..) function
-              val targetRegions = reflowSlice.targetRegions()
+  //     props += Prop.PropRec(
+  //       Identities.cluster(groupClusterID),
+  //       Prop.PropKV(
+  //         "mongoId",
+  //         Prop.Str(id.getOrElse("null"))
+  //       )
+  //     )
 
-              val intersectedVisualLines  = reflowSlice.charAtoms.map{ case CharAtom(charId, targetRegion, char, _) =>
-                val pageNum = targetRegion.page.stable.pageNum
-                // val pageId = docStore.getPage(docId, pageNum)
-                val pageIndex = mpageIndex.getPageIndex(pageNum)
-                val bbox = targetRegion.bbox
-
-                pageIndex.componentIndex
-                  .queryForIntersects(bbox)
-                  .filter(_.hasLabel(LB.VisualLine))
-                  .headOption
-                  .getOrElse { sys.error(s"no visual line found intersecting ${bbox}") }
-
-              }
-
-              val uniqVisualLines = intersectedVisualLines
-                .groupByPairs ({ case (c1, c2) => c1.id == c2.id })
-                .map(_.head)
-
-              val ann = LB.Annotation(rtc.textType)
-
-              // Compute the intersection of a TextReflow w/ RegionComponent
-              val annotationRegions = uniqVisualLines.map{visualLine =>
-                val pageRegions = targetRegions.filter(_.page.stable.pageNum == visualLine.pageNum)
-                // Select the span for each line that corresponds to labeled region
-                val intersectingLineAtoms = visualLine.queryAtoms()
-                  .trimLeftRightBy({lineAtom: AtomicComponent =>
-                    val intersects = pageRegions.exists(_.bbox.intersects(lineAtom.bounds));
-                    !intersects
-                  })
-
-                mpageIndex.labelRegion(intersectingLineAtoms, ann)
-              }
-
-              val _ = annotationRegions
-                .flatten.map{ case (cc, targetRegion) =>
-                  cc.targetRegion
-                }
-
-              def newZone: Zone = ??? // mpageIndex.createZone()
-
-              // mpageIndex
-              // HACK: make zoneId==mentionId TODO document why
-              val mentionId = MentionID(newZone.id.unwrap)
-
-              rawTextMentionsById.put(mentionId, rtc)
-
-              relations += Relation.Record(
-                Identities.cluster(groupClusterID),
-                "hasMember",
-                Identities.mention(mentionId)
-              )
-
-              val textSlice = oneLineText.slice(begin, end)
-              if (rtc.rawText.raw_text == textSlice) {
-                log.debug(s"exact str match  > g:${groupNumber} ${id} >> ${rtc.toString()}")
-              } else {
-                log.debug(s"*inexact match> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${textSlice}")
-              }
-
-            case None =>
-              log.debug("Error: couldn't slice textreflow")
-          }
+  //     props ++= alignedGroup.textMentionGroup.props.map(
+  //       Prop.PropRec(
+  //         Identities.cluster(groupClusterID), _))
 
 
-        case AlignFailure(rtc, message) =>
-          log.debug(s"!failed to align> ${rtc} ${message}")
-      }
-    })
+  //     alignedGroup.alignedContexts.foreach {
+  //       case AlignSuccess(rtc, (begin, end)) =>
 
-    paper.connections
-      .flatten.foreach({ connection =>
-        (connection.id1, connection.id2) match {
-          case (Some(id1), Some(id2)) =>
-            val group1 = mongoIdToClusterId(id1)
-            val group2 = mongoIdToClusterId(id2)
+  //         // val len = oneLineText.length
+  //         val reflowSliceOpt = oneLineReflow.slice(begin, end)
 
-            relations += Relation.Record(
-              Identities.cluster(group1),
-              "connectsTo",
-              Identities.cluster(group2)
-            )
+  //         reflowSliceOpt match {
+  //           case Some(reflowSlice) =>
+  //             val reflowSliceText = reflowSlice.toText
+  //             log.debug(s"found mention: ${reflowSliceText}")
 
-          case (None, Some(id2)) =>
-            val group2 = mongoIdToClusterId(id2)
-            log.debug(
-              s"""errata: (?? `connectsTo` group:${group2})""")
-          case (Some(id1), None) =>
-            val group1 = mongoIdToClusterId(id1)
-            log.debug(
-              s"""(group:${group1} `connectsTo` ??)""")
-          case _ =>
-        }
-      })
+  //             // TODO The following should be captured by something like textReflow.intersectPages(LB.VisualLine, ..) function
+  //             val targetRegions = reflowSlice.targetRegions()
 
-    mpageIndex.addRelations(relations)
-    mpageIndex.addProps(props)
+  //             val intersectedVisualLines  = reflowSlice.charAtoms.map{ case CharAtom(charId, targetRegion, char, _) =>
+  //               val pageNum = targetRegion.page.stable.pageNum
+  //               // val pageId = docStore.getPage(docId, pageNum)
+  //               val pageIndex = mpageIndex.getPageIndex(pageNum)
+  //               val bbox = targetRegion.bbox
 
-    alignedGroups
+  //               pageIndex.componentIndex
+  //                 .queryForIntersects(bbox)
+  //                 .filter(_.hasLabel(LB.VisualLine))
+  //                 .headOption
+  //                 .getOrElse { sys.error(s"no visual line found intersecting ${bbox}") }
 
-  }
+  //             }
+
+  //             val uniqVisualLines = intersectedVisualLines
+  //               .groupByPairs ({ case (c1, c2) => c1.id == c2.id })
+  //               .map(_.head)
+
+  //             val ann = LB.Annotation(rtc.textType)
+
+  //             // Compute the intersection of a TextReflow w/ RegionComponent
+  //             val annotationRegions = uniqVisualLines.map{visualLine =>
+  //               val pageRegions = targetRegions.filter(_.page.stable.pageNum == visualLine.pageNum)
+  //               // Select the span for each line that corresponds to labeled region
+  //               val intersectingLineAtoms = visualLine.queryAtoms()
+  //                 .trimLeftRightBy({lineAtom: AtomicComponent =>
+  //                   val intersects = pageRegions.exists(_.bbox.intersects(lineAtom.bounds));
+  //                   !intersects
+  //                 })
+
+  //               mpageIndex.labelRegion(intersectingLineAtoms, ann)
+  //             }
+
+  //             val _ = annotationRegions
+  //               .flatten.map{ case (cc, targetRegion) =>
+  //                 cc.targetRegion
+  //               }
+
+  //             def newZone: Zone = ??? // mpageIndex.createZone()
+
+  //             // mpageIndex
+  //             // HACK: make zoneId==mentionId TODO document why
+  //             val mentionId = MentionID(newZone.id.unwrap)
+
+  //             rawTextMentionsById.put(mentionId, rtc)
+
+  //             relations += Relation.Record(
+  //               Identities.cluster(groupClusterID),
+  //               "hasMember",
+  //               Identities.mention(mentionId)
+  //             )
+
+  //             val textSlice = oneLineText.slice(begin, end)
+  //             if (rtc.rawText.raw_text == textSlice) {
+  //               log.debug(s"exact str match  > g:${groupNumber} ${id} >> ${rtc.toString()}")
+  //             } else {
+  //               log.debug(s"*inexact match> g:${groupNumber} ${id} >> ${rtc.toString()}  ===>  ${textSlice}")
+  //             }
+
+  //           case None =>
+  //             log.debug("Error: couldn't slice textreflow")
+  //         }
+
+
+  //       case AlignFailure(rtc, message) =>
+  //         log.debug(s"!failed to align> ${rtc} ${message}")
+  //     }
+  //   })
+
+  //   paper.connections
+  //     .flatten.foreach({ connection =>
+  //       (connection.id1, connection.id2) match {
+  //         case (Some(id1), Some(id2)) =>
+  //           val group1 = mongoIdToClusterId(id1)
+  //           val group2 = mongoIdToClusterId(id2)
+
+  //           relations += Relation.Record(
+  //             Identities.cluster(group1),
+  //             "connectsTo",
+  //             Identities.cluster(group2)
+  //           )
+
+  //         case (None, Some(id2)) =>
+  //           val group2 = mongoIdToClusterId(id2)
+  //           log.debug(
+  //             s"""errata: (?? `connectsTo` group:${group2})""")
+  //         case (Some(id1), None) =>
+  //           val group1 = mongoIdToClusterId(id1)
+  //           log.debug(
+  //             s"""(group:${group1} `connectsTo` ??)""")
+  //         case _ =>
+  //       }
+  //     })
+
+  //   mpageIndex.addRelations(relations)
+  //   mpageIndex.addProps(props)
+
+  //   alignedGroups
+
+  // }
 
 }

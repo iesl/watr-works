@@ -85,29 +85,9 @@ class MultiPageIndex(
   val regionIdGen = IdGenerator[RegionID]()
 
 
-  // FIXME: remove this kludge
-  //   map component to zone when there is a 1-to-1 correspondence and a TextReflow for the Zone involved
-  // val componentIdToZoneId: mutable.HashMap[Int@@ComponentID, Int@@ZoneID] = mutable.HashMap()
-  // val componentIdToRegionId: mutable.HashMap[Int@@ComponentID, Int@@RegionID] = mutable.HashMap()
-
-  // def getTargetRegionForComponent(cc: Int@@ComponentID): Option[Int@@RegionID] = {
-  //   componentIdToRegionId.get(cc)
-  // }
-
-
   def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
     docStore.getTextReflowForZone(zoneId)
   }
-
-  def getPageVisualLines(pageId: Int@@PageNum): Seq[Component]  = for {
-    pageLineCC <- getPageIndex(pageId).getComponentsWithLabel(LB.PageLines)
-    vline <- pageLineCC.getChildren(LB.VisualLine)
-  } yield vline
-
-  def getDocumentVisualLines(): Seq[Seq[Component]] = for {
-    pageId <- getPages
-  } yield getPageVisualLines(pageId)
-
 
   val relations = mutable.ArrayBuffer[Relation.Record]()
   val props = mutable.ArrayBuffer[Prop.PropRec]()
@@ -210,7 +190,7 @@ class MultiPageIndex(
       val targetRegion = docStore.getTargetRegion(regionId)
       val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
 
-      val region = createRegionComponent(pageRegion, role)
+      val region = createRegionComponent(pageRegion, role, None)
       // componentIdToRegionId.put(region.id, targetRegion.id)
 
       Some((region, targetRegion))
@@ -218,8 +198,8 @@ class MultiPageIndex(
   }
 
 
-  def createRegionComponent(targetRegion: PageRegion, role: Label): RegionComponent = {
-    val region = RegionComponent(componentIdGen.nextId, role, targetRegion, this)
+  def createRegionComponent(targetRegion: PageRegion, role: Label, text:Option[String]): RegionComponent = {
+    val region = RegionComponent(componentIdGen.nextId, role, targetRegion, this, text)
     addComponent(region)
 
     region
@@ -232,31 +212,41 @@ class MultiPageIndex(
   }
 
   def addPathItem(path: PageItem.Path): Seq[RegionComponent] = {
+
+    val slineCCs = path.slantedLines
+      .map{ line =>
+        val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
+        println(s"addPathItem: slant-line $region")
+        val c = createRegionComponent(region, LB.LinePath, None)
+        addComponent(c)
+        c
+      }
+
     val hlineCCs = path.horizontalLines
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        println(s"addPathItem: hline $region")
-        val c = createRegionComponent(region, LB.HLinePath)
+        println(s"addPathItem: h-line $region")
+        val c = createRegionComponent(region, LB.HLinePath, None)
         addComponent(c)
         c
       }
     val vlineCCs = path.verticalLines()
       .map{ line =>
-        val region = path.pageRegion.copy(bbox = line.bounds)
-        println(s"addPathItem: vline $region")
-        val c = createRegionComponent(region, LB.HLinePath)
+        val region = path.pageRegion.copy(bbox = line.bounds.copy(width=0.01.toFloatExact))
+        println(s"addPathItem: v-line $region")
+        val c = createRegionComponent(region, LB.VLinePath, None)
         addComponent(c)
         c
       }
     val region = path.pageRegion
-    val c = createRegionComponent(region, LB.PathBounds)
+    val c = createRegionComponent(region, LB.PathBounds, None)
     addComponent(c)
 
-    Seq(c) ++ hlineCCs ++ vlineCCs
+    Seq(c) ++ hlineCCs ++ vlineCCs ++ slineCCs
   }
 
   def addImageAtom(pageAtom: PageItem.ImageAtom): RegionComponent = {
-    val c = createRegionComponent(pageAtom.pageRegion, LB.Image)
+    val c = createRegionComponent(pageAtom.pageRegion, LB.Image, None)
     addComponent(c)
     c
   }

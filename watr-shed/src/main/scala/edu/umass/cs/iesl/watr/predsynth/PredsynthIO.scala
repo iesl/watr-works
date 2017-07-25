@@ -130,11 +130,11 @@ object PredsynthIO extends DocsegJsonFormats {
   }
 
 
-  def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
-    n.pins
-      .filter(p => p.label==lb)
-      .head
-  }
+  // def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
+  //   n.pins
+  //     .filter(p => p.label==lb)
+  //     .head
+  // }
 
 
   def serializeZones(mpageIndex: MultiPageIndex, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): Box = {
@@ -216,27 +216,27 @@ object PredsynthIO extends DocsegJsonFormats {
   }
 
 
-  def serializeLabeling(label: Label, bioLabeling: Seq[BioNode]): Seq[Box] = {
-    // val labeledSpans = selectBioLabelings(label, bioLabeling)
+  // def serializeLabeling(label: Label, bioLabeling: Seq[BioNode]): Seq[Box] = {
+  //   // val labeledSpans = selectBioLabelings(label, bioLabeling)
 
-    // val spanBoxes = for {
-    //   span <- labeledSpans
-    // } yield {
+  //   // val spanBoxes = for {
+  //   //   span <- labeledSpans
+  //   // } yield {
 
-    //   val bioSpan = span
-    //     .map(p => selectPinForLabel(label, p))
+  //   //   val bioSpan = span
+  //   //     .map(p => selectPinForLabel(label, p))
 
-    //   val spanId = bioSpan.head.id
-    //   val compIds = span.map(_.component.id)
+  //   //   val spanId = bioSpan.head.id
+  //   //   val compIds = span.map(_.component.id)
 
-    //   val cids = compIds.mkString(",")
+  //   //   val cids = compIds.mkString(",")
 
-    //   s"""["${label}", [${cids}], ${spanId}]""".box
-    // }
+  //   //   s"""["${label}", [${cids}], ${spanId}]""".box
+  //   // }
 
-    // spanBoxes
-    ???
-  }
+  //   // spanBoxes
+  //   ???
+  // }
 
 
 

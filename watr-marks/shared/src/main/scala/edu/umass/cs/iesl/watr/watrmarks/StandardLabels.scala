@@ -37,11 +37,6 @@ trait DocSegLabels {
   val VisualLine = Label("ds", "visual-line")
   val SemanticLine = Label("ds", "semantic-line")
 
-  // Drawn path lines
-  val PathBounds = Label("PathBounds")
-  val HLinePath = Label("HLine")
-  val VLinePath = Label("VLine")
-  val OutlineBox = Label("Outline")
 
   val TokenizedLine = Label("ds", "tline")
 
@@ -66,6 +61,30 @@ trait DocSegLabels {
   val Last = Label("last")
 
   val Annotation = Label("ds", "annotation")
+
+
+
+
+
+  // Page Segmentation Labels
+  val LineByHash             = Label("LineByHash")
+  val LeftAlignedCharCol     = Label("LeftAlignedCharCol")
+  val WhitespaceColCandidate = Label("WhitespaceColCandidate")
+  val WhitespaceCol          = Label("WhitespaceCol")
+  val WhitespaceColTop       = Label("WhitespaceColTop")
+  val HPageDivider           = Label("HPageDivider")
+  val WhitespaceColBottom    = Label("WhitespaceColBottom")
+  val Marked                 = Label("Marked")
+  val ReadingBlock           = Label("ReadingBlock")
+  // Drawn path lines
+  val PathBounds             = Label("PathBounds")
+  val HLinePath              = Label("HLinePath")
+  val VLinePath              = Label("VLinePath")
+  val LinePath               = Label("LinePath")
+  val OutlineBox             = Label("Outline")
+
+
+
 
 }
 

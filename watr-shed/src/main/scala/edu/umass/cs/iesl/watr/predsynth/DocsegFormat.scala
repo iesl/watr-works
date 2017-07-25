@@ -11,7 +11,7 @@ import spindex._
 import TypeTags._
 
 trait DocsegJsonFormats extends PredsynthJsonFormats with ExplicitTypeTagFormats {
-  private[this] val log = org.log4s.getLogger
+  // private[this] val log = org.log4s.getLogger
 
   import play.api.libs.json._
   import Prop._

@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package table
 
 import pprint._
-import spindex._
+// import spindex._
 // import textreflow.data._
 import textboxing.{TextBoxing => TB}
 // import labeling._
@@ -13,7 +13,7 @@ object ShellPrettyPrinters extends ComponentEnrichments {
 
 
   def additionalHandlers: PartialFunction[Any, Tree] = {
-    case c: Component => Tree.Literal(c.show.toString())
+    // case c: Component => Tree.Literal(c.show.toString())
     case c: TB.Box    => Tree.Literal(c.toString())
   }
 

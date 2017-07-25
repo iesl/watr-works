@@ -136,6 +136,10 @@ object PageItem {
       linesWithOrientation.map(_._1)
     }
 
+    def slantedLines(): Seq[Line] = {
+      linesWithOrientation.filter(_._2==SLANTED).map(_._1)
+    }
+
     def horizontalLines(): Seq[Line] = {
       linesWithOrientation.filter(_._2==HORIZONTAL).map(_._1)
     }

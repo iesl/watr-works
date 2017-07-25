@@ -313,10 +313,11 @@ object Works extends App {
           val paper = predsynthPapers.get(entryFilename)
 
           val output = paper.map({ p =>
-            val alignedGroups =
-              MITAlignPredsynth.alignPredSynthPaper(segmenter.mpageIndex, p)
-            writePredsynthJson(p, corpusEntry)
-            PredsynthIO.richTextSerializeDocument(segmenter.mpageIndex, alignedGroups)
+            sys.error("TODO: disabled")
+
+            // val alignedGroups = MITAlignPredsynth.alignPredSynthPaper(segmenter.mpageIndex, p)
+            // writePredsynthJson(p, corpusEntry)
+            // PredsynthIO.richTextSerializeDocument(segmenter.mpageIndex, alignedGroups)
           }).getOrElse(
             PredsynthIO.richTextSerializeDocument(segmenter.mpageIndex, Seq())
           )

@@ -5,14 +5,10 @@ import org.scalatest._
 
 import geometry._
 
-import ammonite.{ops => fs}
 import java.net.URL
 import TypeTags._
-import corpora._
-import utils.ExactFloats._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers {
-  import DocumentSegmenter._
 
   object page {
     val page = (0 to 10).map(PageNum(_))
@@ -97,40 +93,6 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
       parsedFrags,
       cAndp.expectedOutput.trim.split("\n").map(_.trim)
     )
-  }
-
-  def createFilteredMultiPageIndex(pdfIns: URL, pageNum: Int@@PageNum, regions: Seq[LTBounds]): DocumentSegmenter = {
-    val path = fs.Path(pdfIns.getPath)
-
-    val docId = DocumentID("dummy-id")
-
-    val segmenter =  DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
-
-    // Assume these example regions are all from one page
-    // val pageNum = regions.map(_.page.stable.pageNum).head
-    // val allBboxes = regions.map(_.bbox)
-
-    val minX = regions.map(_.left).min
-    val minY = regions.map(_.top).min
-    val maxX = regions.map(_.right).max
-    val maxY = regions.map(_.bottom).max
-
-    val totalBounds = LTBounds(
-      minX, minY,
-      maxX-minX,
-      maxY-minY
-    )
-    // segmenter.mpageIndex.dbgFilterPages(pageNum)
-    // segmenter.mpageIndex.dbgFilterComponents(pageNum, totalBounds)
-
-    val interestingChars = segmenter.mpageIndex
-      .getPageIndex(pageNum)
-      .componentIndex
-      .queryForIntersects(totalBounds)
-
-
-    println("examining chars: ["+squishb(interestingChars)+"]")
-    segmenter
   }
 
 }

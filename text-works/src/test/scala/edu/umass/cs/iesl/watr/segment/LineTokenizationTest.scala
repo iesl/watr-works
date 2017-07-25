@@ -3,12 +3,12 @@ package segment
 
 import org.scalatest._
 
-import spindex._
-import ComponentOperations._
-import TextReflowConversion.toTextReflow
-import watrmarks.{StandardLabels => LB}
-import TypeTags._
-import textreflow.data._
+// import spindex._
+// import ComponentOperations._
+// import TextReflowConversion.toTextReflow
+// import watrmarks.{StandardLabels => LB}
+// import TypeTags._
+// import textreflow.data._
 
 class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
@@ -145,71 +145,71 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   }
 
 
-  def testExample(example: ParsedExample): Unit = {
-    println0(s"\ntesting ${example.source}")
+  // def testExample(example: ParsedExample): Unit = {
+  //   println0(s"\ntesting ${example.source}")
 
-    val pdfIns = papers.paperUrl(example.source)
-    println(s"pdfIns = ${pdfIns}")
-    // Assume these example regions are all from one page
-    val pageNum = example.targetRegions.map(_._2).head
-    val pageId = PageID(pageNum.unwrap+1)
-    println(s"testExample pageNum = ${pageNum}")
-    val segmenter = createFilteredMultiPageIndex(pdfIns, pageNum, example.targetRegions.map(_._3))
-
-
-    // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
-    // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
-
-    segmenter.runLineDeterminationOnPage(pageId, pageNum)
-
-    val docStore = segmenter.docStore
-
-    println("All VisualLines")
-    for {
-      docId <- docStore.getDocument(DocumentID("dummy-id"))
-      _ <- Option[Unit]({ println(s"doc: ${docId}")})
-      pageId <- docStore.getPages(docId)
-      _ <- Option[Unit]({ println(s"page: ${pageId}")})
-      lineZone <- docStore.getPageVisualLines(pageId)
-      reflow <- docStore.getTextReflowForZone(lineZone.id)
-    }  {
-      println(reflow.toFormattedText())
-    }
-
-    val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-    val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
-
-    val tokenizedLines = lineComponents.map { lineComponent =>
-      lineComponent.tokenizeLine()
-      val reflow = toTextReflow(lineComponent).get
-      // val text = reflow.toText
-      // println(text)
-      reflow
-    }
-
-    // println(s"""component= ${lineComponent.chars}, ${lineComponent.id} (${lineComponent.getLabels.mkString(", ")})""")
-    // println(s"""expecting: ${example.expectedOutput.mkString(" \\\\  ")}""")
-    // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")
+  //   val pdfIns = papers.paperUrl(example.source)
+  //   println(s"pdfIns = ${pdfIns}")
+  //   // Assume these example regions are all from one page
+  //   val pageNum = example.targetRegions.map(_._2).head
+  //   val pageId = PageID(pageNum.unwrap+1)
+  //   println(s"testExample pageNum = ${pageNum}")
+  //   val segmenter = createFilteredMultiPageIndex(pdfIns, pageNum, example.targetRegions.map(_._3))
 
 
-    example.expectedOutput.zip(tokenizedLines)
-      .foreach({case (expect, actual) =>
-        if (!expect.isEmpty && expect == actual) {
-          // println0(s"ok> ${actual}")
-        } else if (!expect.isEmpty && expect != actual) {
-          // println0(s"want> $expect")
-          // println0(s"got> ${actual}")
-        } else  if (expect.isEmpty) {
-          // println0(s"got> ${actual}")
-        }
+  //   // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
+  //   // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
-        // if (!expect.isEmpty()) {
-        //   assertResult(expect){ actual }
-        // }
-      })
+  //   segmenter.runLineDeterminationOnPage(pageId, pageNum)
 
-    // assertResult(example.expectedOutput.length)(tokenized.length)
-  }
+  //   val docStore = segmenter.docStore
+
+  //   println("All VisualLines")
+  //   for {
+  //     docId <- docStore.getDocument(DocumentID("dummy-id"))
+  //     _ <- Option[Unit]({ println(s"doc: ${docId}")})
+  //     pageId <- docStore.getPages(docId)
+  //     _ <- Option[Unit]({ println(s"page: ${pageId}")})
+  //     lineZone <- docStore.getPageVisualLines(pageId)
+  //     reflow <- docStore.getTextReflowForZone(lineZone.id)
+  //   }  {
+  //     println(reflow.toFormattedText())
+  //   }
+
+  //   val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
+  //   val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
+
+  //   val tokenizedLines = lineComponents.map { lineComponent =>
+  //     lineComponent.tokenizeLine()
+  //     val reflow = toTextReflow(lineComponent).get
+  //     // val text = reflow.toText
+  //     // println(text)
+  //     reflow
+  //   }
+
+  //   // println(s"""component= ${lineComponent.chars}, ${lineComponent.id} (${lineComponent.getLabels.mkString(", ")})""")
+  //   // println(s"""expecting: ${example.expectedOutput.mkString(" \\\\  ")}""")
+  //   // println(s"""tokenized: ${tokenizedLines.mkString(" \\\\  ")}""")
+
+
+  //   example.expectedOutput.zip(tokenizedLines)
+  //     .foreach({case (expect, actual) =>
+  //       if (!expect.isEmpty && expect == actual) {
+  //         // println0(s"ok> ${actual}")
+  //       } else if (!expect.isEmpty && expect != actual) {
+  //         // println0(s"want> $expect")
+  //         // println0(s"got> ${actual}")
+  //       } else  if (expect.isEmpty) {
+  //         // println0(s"got> ${actual}")
+  //       }
+
+  //       // if (!expect.isEmpty()) {
+  //       //   assertResult(expect){ actual }
+  //       // }
+  //     })
+
+  //   // assertResult(example.expectedOutput.length)(tokenized.length)
+  // }
 
 
 }
