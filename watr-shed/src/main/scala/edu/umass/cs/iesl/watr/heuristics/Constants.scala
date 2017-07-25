@@ -8,6 +8,7 @@ object Constants {
     final val WORD_SEPARATORS: Seq[String] = Seq("and", "&")
     final val PUNCTUATION_SEPARATORS: Seq[String] = Seq(",", ";")
     final val SPACE_SEPARATOR: String = " "
+    final val BOUNDING_BOX_SEPARATOR: String = ":"
     final val SPACE_BETWEEN_WORDS_THRESHOLD: Int = 2
     final val COMMA: String = ","
     final val COMMA_CHARACTER: Char = ','
@@ -15,6 +16,7 @@ object Constants {
     final val PERIOD: String = "."
     final val BLANK: String = ""
     final val AT_THE_RATE: String = "@"
+    final val UNDERSCORE: String = "_"
 
     final val VALID_DEGREES = Seq("M.D.", "Ph.D.", "MD", "PhD")
     final val VALID_HEREDITY_SUFFIXES: Seq[String] = Seq("Jr.", "Sr.", "II", "III", "IV")
@@ -24,7 +26,7 @@ object Constants {
     final val LAST_NAME: String = "last_name"
 
 
-    final val CLEANUP_PATTERN: Regex = """^[‡†]|\(\d+\)|\d\.""".r
+    final val CLEANUP_PATTERN: Regex = """^([‡†]|\(\d+\)|\d\.)""".r
     final val NAME_INITIAL_FORMAT_PATTERN: Regex = """^([A-Z]\.)+$""".r
     final val EMAIL_PATTERN: Regex = """[^@]+@[^@]+\.[^@]+""".r
     final val EMAIL_SUFFIX_PATTERN: Regex = """@[^@]+\.[^@]+""".r
@@ -102,5 +104,6 @@ object Constants {
         '`', '{', '|', '}', '~')
     final val PUNCTUATION_TAG = "<PUNCT>"
     final val NUMBER_TAG = "<NUM>"
+    final val LEXICON_TAGS: Seq[String] = Seq(PUNCTUATION_TAG, NUMBER_TAG)
 
 }
