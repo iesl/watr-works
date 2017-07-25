@@ -147,11 +147,11 @@ object AuthorNameHeuristics {
             name.lastName.componentBBox = getBoundingBoxesWithIndexesFromReflow((lastNameStartIndex, lastNameEndIndex), textReflow)
         }
         if (name.hereditySuffix.componentText.nonEmpty) {
-            val (suffixStartIndex, suffixEndIndex) = getIndexesForComponents(component = name.lastName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            val (suffixStartIndex, suffixEndIndex) = getIndexesForComponents(component = name.hereditySuffix.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
             name.hereditySuffix.componentBBox = getBoundingBoxesWithIndexesFromReflow((suffixStartIndex, suffixEndIndex), textReflow)
         }
         if (name.degree.componentText.nonEmpty) {
-            val (degreeStartIndex, degreeEndIndex) = getIndexesForComponents(component = name.lastName.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
+            val (degreeStartIndex, degreeEndIndex) = getIndexesForComponents(component = name.degree.componentText.replace(SPACE_SEPARATOR, BLANK), textReflow = textReflow, (nameStartIndex, nameEndIndex))
             name.degree.componentBBox = getBoundingBoxesWithIndexesFromReflow((degreeStartIndex, degreeEndIndex), textReflow)
         }
         name
