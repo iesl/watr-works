@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package heuristics
 
 import TypeTags._
-import geometry.LTBounds
+import geometry.{CharAtom, LTBounds}
 import geometry.syntax._
 import Constants._
 import textreflow.TextReflowF.TextReflow
@@ -52,19 +52,20 @@ object Utils {
         var componentIndex: Int = 0
         var textReflowIndex: Int = indexRange._1
         var componentStartIndex: Int = -1
+        val yPosition: Int = getYPosition(textReflow = textReflow)
 
         while (componentIndex < component.length && textReflowIndex < indexRange._2) {
-            val currentTextReflowChar: String = textReflow.charAtoms()(textReflowIndex).char
+            val currentTextReflowAtom: CharAtom = textReflow.charAtoms()(textReflowIndex)
             var localReflowCharIndex: Int = 0
             breakable {
-                while (localReflowCharIndex < currentTextReflowChar.length) {
-                    if (component.charAt(componentIndex).==(currentTextReflowChar.charAt(localReflowCharIndex))) {
+                while (localReflowCharIndex < currentTextReflowAtom.char.length) {
+                    if (component.charAt(componentIndex).==(currentTextReflowAtom.char.charAt(localReflowCharIndex))) {
                         if (componentStartIndex.==(-1)) {
                             componentStartIndex = textReflowIndex
                         }
                         componentIndex += 1
                     }
-                    else if (PUNCTUATION_SEPARATORS.contains(currentTextReflowChar.charAt(localReflowCharIndex).toString)){
+                    else if (PUNCTUATION_SEPARATORS.contains(currentTextReflowAtom.char.charAt(localReflowCharIndex).toString) || currentTextReflowAtom.bbox.top.!=(yPosition)){
                         break
                     }
                     else {
@@ -207,7 +208,13 @@ object Utils {
     def isPresentInAuthors(component: String, authorNames: ListBuffer[NameWithBBox]): Boolean = {
 
         for (authorName <- authorNames) {
-            if (component.contains(authorName.lastName.componentText.toLowerCase) || component.contains(authorName.middleName.componentText.toLowerCase) || component.contains(authorName.firstName.componentText.toLowerCase)) {
+            if (component.contains(authorName.lastName.componentText.toLowerCase)) {
+                return true
+            }
+            if (! isOfNameInitialFormat(authorName.middleName.componentText) && component.contains(authorName.middleName.componentText.toLowerCase)) {
+                return true
+            }
+            if (! isOfNameInitialFormat(authorName.firstName.componentText) && component.contains(authorName.firstName.componentText.toLowerCase)) {
                 return true
             }
         }
@@ -255,5 +262,56 @@ object Utils {
 
         false
     }
+
+    def getBoundingBoxesForComponents(components: Seq[String], textReflow: TextReflow): ListBuffer[(String, LTBounds)] = {
+
+        var componentStartIndex: Int = 0
+        var componentEndIndex: Int = textReflow.charAtoms().length - 1
+        var indices: (Int, Int) = (0, textReflow.charAtoms().length - 1)
+
+        val componentsWithBoundingBoxes: ListBuffer[(String, LTBounds)] = new ListBuffer[(String, LTBounds)]()
+
+        for (component <- components) {
+            if (!LEXICON_TAGS.contains(component)) {
+                if (componentEndIndex.!=(textReflow.charAtoms().length - 1)) {
+                    indices = getIndexesForComponents(component = component, textReflow = textReflow, indexRange = (componentEndIndex, textReflow.charAtoms().length))
+                }
+                else {
+                    indices = getIndexesForComponents(component = component, textReflow = textReflow, indexRange = (componentStartIndex, textReflow.charAtoms().length))
+                }
+
+                componentStartIndex = indices._1
+                componentEndIndex = indices._2
+                componentsWithBoundingBoxes.+=((component, getBoundingBoxesWithIndexesFromReflow(indexes = (componentStartIndex, componentEndIndex), textReflow = textReflow)))
+
+            }
+        }
+        componentsWithBoundingBoxes
+    }
+
+    def getBoundingBoxAsString(bBox: LTBounds): String = {
+        val bBoxAsString: ListBuffer[String] = new ListBuffer[String]()
+
+        bBoxAsString.+=(bBox.left.asInt().toString)
+        bBoxAsString.+=(bBox.top.asInt().toString)
+        bBoxAsString.+=(bBox.right.asInt().toString)
+        bBoxAsString.+=(bBox.bottom.asInt().toString)
+
+        bBoxAsString.mkString(BOUNDING_BOX_SEPARATOR)
+    }
+
+    def getTextReflowLengthFromIndices(textReflow: TextReflow, indexRange: (Int, Int)): Int = {
+
+        var reflowLength: Int = 0
+        var reflowAtomIndex: Int = indexRange._1
+
+        while (reflowAtomIndex < indexRange._2) {
+            reflowLength += textReflow.charAtoms()(reflowAtomIndex).char.length
+            reflowAtomIndex += 1
+        }
+
+        reflowLength
+    }
+
 
 }
