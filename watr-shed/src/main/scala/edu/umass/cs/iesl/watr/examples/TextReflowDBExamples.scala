@@ -2,11 +2,13 @@ package edu.umass.cs.iesl.watr
 package examples
 
 import java.io.{BufferedWriter, FileOutputStream, OutputStreamWriter}
+import scala.io.Source
 
 import TypeTags._
 import corpora._
 import corpora.database.CorpusAccessDB
 import corpora.database.CorpusAccessDBTables
+import edu.umass.cs.iesl.watr.geometry.LTBounds
 import edu.umass.cs.iesl.watr.heuristics.NameWithBBox
 import watrmarks.{Label, StandardLabels => LB}
 import heuristics.GenericHeuristics._
@@ -112,7 +114,7 @@ class SampleDbCorpus {
 
             print("------------------------------------------------------------------------------------------------\n")
         }
-//        println(names)
+        //        println(names)
         names
     }
 
@@ -134,23 +136,23 @@ class SampleDbCorpus {
 
                 for (zone <- docStore.getDocumentZones(docId = docId, label = targetLabel)) {
                     for (targetRegion <- zone.regions) {
-                        //                        println("Document: \t\t\t\t\t" + docStableId)
+                        println("Document: \t\t\t\t\t" + docStableId)
                         val targetRegionTextReflow = docStore.getTextReflowForTargetRegion(regionId = targetRegion.id)
                         if (targetRegionTextReflow.isDefined) {
-                            //                            print("Text Reflow: \t\t\t\t" + targetRegionTextReflow.get.toText() + "\n")
-                            //                            textReflows += targetRegionTextReflow.get
+                            print("Text Reflow: \t\t\t\t" + targetRegionTextReflow.get.toText() + "\n")
+                            textReflows += targetRegionTextReflow.get
                             val tokenizedReflow = tokenizeTextReflow(targetRegionTextReflow.get)
                             if (tokenizedReflow.nonEmpty) {
-                                //                                print("Tokenized: \t\t\t\t\t" + tokenizedReflow.mkString("||") + "\n")
+                                print("Tokenized: \t\t\t\t\t" + tokenizedReflow.mkString("||") + "\n")
                                 val affiliationsSeparatedByText = getSeparateAffiliationComponentsByText(tokenizedTextReflow = tokenizedReflow)
                                 if (affiliationsSeparatedByText.nonEmpty) {
-                                    //                                    print("Text Separated: \t\t\t" + affiliationsSeparatedByText.mkString("||") + "\n")
+                                    print("Text Separated: \t\t\t" + affiliationsSeparatedByText.mkString("||") + "\n")
                                     val affiliationsSeparatedByGeometry = getSeparateComponentsByGeometry(componentsSeparatedByText = affiliationsSeparatedByText, textReflow = targetRegionTextReflow.get).map {
                                         separateComponent => cleanSeparatedComponent(separateComponent)
                                     }
                                     if (affiliationsSeparatedByGeometry.nonEmpty) {
 
-                                        //                                        print("Geometrically Separated: \t" + affiliationsSeparatedByGeometry.mkString("||") + "\n")
+                                        print("Geometrically Separated: \t" + affiliationsSeparatedByGeometry.mkString("||") + "\n")
                                         separatedComponentsWithClasses.++=(getCategoryForSeparateAffiliationComponents(affiliationsSeparatedByGeometry))
                                     }
                                 }
@@ -160,17 +162,17 @@ class SampleDbCorpus {
                 }
                 //                println("Categories for Separated Affiliations")
                 val affiliationsWithCategories = getUpdatedCategoriesForAffiliationComponents(authorNames, separatedComponentsWithClasses)
-                //                getBoundingBoxesForAffiliations(affiliationsWithCategories, textReflows)
-                //                    .foreach {
-                //
-                //                    affiliation => {
-                //                        println(affiliation._1 + " : " + affiliation._2)
-                //                        println(affiliation._3)
-                //                    }
-                //
-                //                }
+                val boundingBoxes = getBoundingBoxesForAffiliations(affiliationsWithCategories, textReflows)
+                boundingBoxes.foreach {
+
+                    affiliation => {
+                        println(affiliation._1 + " : " + affiliation._2)
+                        println(affiliation._3)
+                    }
+
+                }
                 affiliations.++=:(affiliationsWithCategories)
-                //                print("------------------------------------------------------------------------------------------------\n")
+                print("------------------------------------------------------------------------------------------------\n")
             }
         }
         affiliations
@@ -217,7 +219,7 @@ class TransformToCoNLLFormat {
         names
     }
 
-    def getAffiliationLabelsForReflows(affiliationReflows: Seq[TextReflow], authorNames: ListBuffer[NameWithBBox]): ListBuffer[(String, ListBuffer[String])] = {
+    def getAffiliationLabelsForReflows(affiliationReflows: Seq[TextReflow], authorNames: ListBuffer[NameWithBBox]): ListBuffer[(String, ListBuffer[String], LTBounds)] = {
 
 
         val separatedComponentsWithClasses: ListBuffer[(String, ListBuffer[String])] = new ListBuffer[(String, ListBuffer[String])]()
@@ -236,7 +238,7 @@ class TransformToCoNLLFormat {
                 }
             }
         }
-        getUpdatedCategoriesForAffiliationComponents(authorNames, separatedComponentsWithClasses)
+        getBoundingBoxesForAffiliations(getUpdatedCategoriesForAffiliationComponents(authorNames, separatedComponentsWithClasses), affiliationReflows)
 
     }
 
@@ -246,11 +248,8 @@ class TransformToCoNLLFormat {
         val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
-        val dataFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/random-input.txt"
+        val dataFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-sample.txt"
         val dataFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(dataFileName)))
-
-//        val tokensFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-name-tokens.txt"
-//        val tokensFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tokensFileName)))
 
         val affiliationReflows: ListBuffer[TextReflow] = new ListBuffer[TextReflow]()
 
@@ -273,58 +272,50 @@ class TransformToCoNLLFormat {
                     }
                     else {
                         if (affiliationReflows.nonEmpty) {
-                            getAffiliationLabelsForReflows(affiliationReflows, names).foreach {
+                            val affiliationsWithLabels = getAffiliationLabelsForReflows(affiliationReflows, names)
+                            affiliationsWithLabels.foreach {
                                 affiliationLabel => {
-                                    if (affiliationLabel._2.head.equals("EMAIL")) {
-                                        cleanPunctuations(affiliationLabel._1.split(SPACE_SEPARATOR)).foreach(affiliationToken => {
-                                            dataFileWriter.write(affiliationToken + " * * I-" + affiliationLabel._2.head + "\n")
-//                                            tokensFileWriter.write(affiliationToken + " ")
-                                        })
-                                    }
-                                    else {
-                                        affiliationLabel._1.split(SPACE_SEPARATOR).foreach(affiliationToken => {
-                                            dataFileWriter.write(affiliationToken + " * * I-" + affiliationLabel._2.head + "\n")
-//                                            tokensFileWriter.write(affiliationToken + " ")
-                                        })
-                                    }
+                                    cleanPunctuations(affiliationLabel._1.split(SPACE_SEPARATOR)).foreach(affiliationToken => {
+//                                        println(affiliationToken.concat(UNDERSCORE).concat(getBoundingBoxAsString(affiliationLabel._3)) + " * * I-" + affiliationLabel._2.head + "\n")
+                                        dataFileWriter.write(affiliationToken + " "  + getBoundingBoxAsString(affiliationLabel._3) + " * I-" + affiliationLabel._2.head + "\n")
+                                    })
                                 }
                             }
                             affiliationReflows.clear()
                             names.clear()
                         }
                         if (targetRegionLabel.toString.equals(LB.Authors.toString)) {
-                            val authorNameToken: String = "AUTHOR_NAME"
                             val authorNamesWithLabels = getAuthorLabelsForReflow(textReflow.get)
                             authorNamesWithLabels.foreach {
                                 authorNameWithLabels => {
                                     if (authorNameWithLabels.firstName.componentText.nonEmpty) {
                                         authorNameWithLabels.firstName.componentText.split(SPACE_SEPARATOR).foreach(name => {
-                                            dataFileWriter.write(name + " * * I-" + "FIRST-NAME" + "\n")
-//                                            tokensFileWriter.write(authorNameToken + " ")
+//                                            println(name.concat(UNDERSCORE).concat(getBoundingBoxAsString(authorNameWithLabels.firstName.componentBBox)) + " * * I-" + "FIRST-NAME" + "\n")
+                                            dataFileWriter.write(name + " " + getBoundingBoxAsString(authorNameWithLabels.firstName.componentBBox) + " * I-" + "FIRST-NAME" + "\n")
                                         })
                                     }
                                     if (authorNameWithLabels.middleName.componentText.nonEmpty) {
                                         authorNameWithLabels.middleName.componentText.split(SPACE_SEPARATOR).foreach(name => {
-                                            dataFileWriter.write(name + " * * I-" + "MIDDLE-NAME" + "\n")
-//                                            tokensFileWriter.write(authorNameToken + " ")
+//                                            println(name.concat(UNDERSCORE).concat(getBoundingBoxAsString(authorNameWithLabels.middleName.componentBBox)) + " * * I-" + "MIDDLE-NAME" + "\n")
+                                            dataFileWriter.write(name + " " + getBoundingBoxAsString(authorNameWithLabels.middleName.componentBBox) + " * I-" + "MIDDLE-NAME" + "\n")
                                         })
                                     }
                                     if (authorNameWithLabels.lastName.componentText.nonEmpty) {
                                         authorNameWithLabels.lastName.componentText.split(SPACE_SEPARATOR).foreach(name => {
-                                            dataFileWriter.write(name + " * * I-" + "LAST-NAME" + "\n")
-//                                            tokensFileWriter.write(authorNameToken + " ")
+//                                            println(name.concat(UNDERSCORE).concat(getBoundingBoxAsString(authorNameWithLabels.lastName.componentBBox)) + " * * I-" + "LAST-NAME" + "\n")
+                                            dataFileWriter.write(name + " " + getBoundingBoxAsString(authorNameWithLabels.lastName.componentBBox) + " * I-" + "LAST-NAME" + "\n")
                                         })
                                     }
                                     if (authorNameWithLabels.hereditySuffix.componentText.nonEmpty) {
                                         authorNameWithLabels.hereditySuffix.componentText.split(SPACE_SEPARATOR).foreach(name => {
-                                            dataFileWriter.write(name + " * * I-" + "HEREDITY-SUFFIX" + "\n")
-//                                            tokensFileWriter.write(authorNameToken + " ")
+//                                            println(name.concat(UNDERSCORE).concat(getBoundingBoxAsString(authorNameWithLabels.hereditySuffix.componentBBox)) + " * * I-" + "HEREDITY-SUFFIX" + "\n")
+                                            dataFileWriter.write(name + " " + getBoundingBoxAsString(authorNameWithLabels.hereditySuffix.componentBBox) + " * I-" + "HEREDITY-SUFFIX" + "\n")
                                         })
                                     }
                                     if (authorNameWithLabels.degree.componentText.nonEmpty) {
                                         authorNameWithLabels.degree.componentText.split(SPACE_SEPARATOR).foreach(name => {
-                                            dataFileWriter.write(name + " * * I-" + "DEGREE" + "\n")
-//                                            tokensFileWriter.write(authorNameToken + " ")
+//                                            println(name.concat(UNDERSCORE).concat(getBoundingBoxAsString(authorNameWithLabels.degree.componentBBox)) + " * * I-" + "DEGREE" + "\n")
+                                            dataFileWriter.write(name + " " + getBoundingBoxAsString(authorNameWithLabels.degree.componentBBox) + " * I-" + "DEGREE" + "\n")
                                         })
                                     }
                                 }
@@ -332,7 +323,8 @@ class TransformToCoNLLFormat {
                             names.++=(authorNamesWithLabels)
                         }
                         else {
-                            val textReflowTokens = cleanPunctuations(tokenizeTextReflow(textReflow.get))
+                            val components = cleanPunctuations(tokenizeTextReflow(textReflow.get))
+                            val boundingBox = getBoundingBoxAsString(getBoundingBoxesWithIndexesFromReflow(indexes = (0, textReflow.get.charAtoms().length), textReflow = textReflow.get))
                             var regionLabel = "O"
                             if (targetRegionLabel.equals(LB.Title)) {
                                 regionLabel = "I-TITLE"
@@ -340,47 +332,34 @@ class TransformToCoNLLFormat {
                             else if (targetRegionLabel.equals(LB.Abstract)) {
                                 regionLabel = "I-ABSTRACT"
                             }
-                            textReflowTokens.foreach {
-                                textReflowToken => {
-                                    dataFileWriter.write(textReflowToken.trim + " * * " + regionLabel + "\n")
-//                                    tokensFileWriter.write(textReflowToken + " ")
+                            components.foreach {
+                                component => {
+//                                    println(component.concat(UNDERSCORE).concat(boundingBox) + " * * " + regionLabel + "\n")
+                                    dataFileWriter.write(component + " " + boundingBox + " * " + regionLabel + "\n")
                                 }
                             }
                         }
                     }
                 }
             }
-            dataFileWriter.write("\n\n")
-//            tokensFileWriter.write("\n")
+            dataFileWriter.write("\n")
         }
         dataFileWriter.close()
-//        tokensFileWriter.close()
     }
 
 }
 
 object TextReflowDBExamples extends App {
 
-    val documents: Seq[String] = Seq("name_with_degree.pdf.d", "commai.pdf.d")
+    val documents: Seq[String] = Seq("0101001.pdf.d")
     val pageNum = PageNum(0)
 
-    //      "1609.03499.pdf.d", "AISTATS2010_Glorot.pdf.d", "1702.02098.pdf.d", "5021-distributed-representations-of-words-and-phrases-and-their-compositionality.pdf.d"
-//    val dbCorpus = new SampleDbCorpus()
-//    val names = dbCorpus.exampleFunction1(500, documents, LB.Authors)
-//    names.foreach{
-//        name => {
-//            println("First Name: " + name.firstName.componentText)
-//            println("Middle Name: " + name.middleName.componentText)
-//            println("Last Name: " + name.lastName.componentText)
-//            println("Heredity Suffix: " + name.hereditySuffix.componentText)
-//            println("Degree: " + name.degree.componentText)
-//            println("--------------------------------")
-//        }
-//    }
+    //    val dbCorpus = new SampleDbCorpus()
+    //    dbCorpus.exampleFunction3()
+    //    val names = dbCorpus.exampleFunction1(500, documents, LB.Authors)
 
-    //      val affiliations = dbCorpus.exampleFunction2(130, documents, LB.Affiliations, names)
-    //      println(affiliations)
-    //      dbCorpus.exampleFunction3()
+    //    val affiliations = dbCorpus.exampleFunction2(131, documents, LB.Affiliations, names)
+    //    println(affiliations)
 
     val transformer: TransformToCoNLLFormat = new TransformToCoNLLFormat()
     transformer.getReflowWithLabelsForPage(131, documents, pageNum, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
