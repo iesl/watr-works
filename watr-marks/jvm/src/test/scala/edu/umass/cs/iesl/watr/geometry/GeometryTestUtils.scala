@@ -29,7 +29,9 @@ object GeometryTestUtils extends FlatSpec {
   ): GraphPaper = {
     val w: Int = graphDimension.width.asInt()
     val h: Int = graphDimension.height.asInt()
-    GraphPaper.create(w+1, h+1)
+    val g = GraphPaper.create(w+1, h+1)
+    drawBox(g, graphDimension)
+    g
   }
 
   def drawBox(graphPaper: GraphPaper, region: LTBounds): Unit  = {

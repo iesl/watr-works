@@ -10,3 +10,4 @@ corpus-*
 *.pdf
 *.svg
 resources
+ext.d

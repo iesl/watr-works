@@ -259,6 +259,12 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
   }
 
   def segment(corpusEntry: CorpusEntry)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    import com.github.davidmoten.rtree
+    import rtree._
+    import rtree.{geometry => RG}
+    import spindex._
+    import rx.functions.Func1
+
     val docStore = corpusAccessApi.docStore
 
     for {
@@ -279,6 +285,34 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
           .createSegmenter(stableId, pdfPath, memZoneApi)
 
         segmenter.runPageSegmentation()
+
+        for {
+          pageNum <- segmenter.mpageIndex.getPages
+        } {
+          val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
+          val rtree = pageIndex.componentIndex.spatialIndex
+
+          val ccSerializer = new Func1[Component, Array[Byte]]() {
+            override def call(entry: Component): Array[Byte] = {
+              Component.Serialization.serialize(entry)
+            }
+          }
+
+          val ccDeSerializer = new Func1[Array[Byte], Component]() {
+            override def call(bytes: Array[Byte]): Component = {
+              Component.Serialization.deserialize(bytes)
+            }
+          }
+
+          val ser: Serializer[Component, RG.Geometry] = Serializers
+            .flatBuffers[Component, RG.Geometry]()
+            .serializer(ccSerializer)
+            .deserializer(ccDeSerializer)
+            .create()
+
+          val os = new java.io.FileOutputStream(new java.io.File(s"${stableId}-page-${pageNum}.rtree"))
+          ser.write(rtree, os)
+        }
 
         println(s"Importing ${stableId} into database.")
         corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoneApi)

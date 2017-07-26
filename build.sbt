@@ -44,6 +44,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
       Lib.ammoniteOps,
       Lib.playJson,
       "com.github.davidmoten" % "rtree" % "0.8.0.1",
+      "com.github.davidmoten" % "flatbuffers-java" % "1.7.0.1",
       "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
     ))
 

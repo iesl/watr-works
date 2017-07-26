@@ -55,7 +55,7 @@ object DatabaseLibs extends LibVersions {
     "org.tpolecat" %% "doobie-postgres"   % doobieVersion,
     "org.tpolecat" %% "doobie-hikari"     % doobieVersion,
     "org.tpolecat" %% "doobie-specs2"     % doobieVersion % "test",
-    "org.postgresql"          % "postgresql" % "42.1.1",
+    "org.postgresql"          % "postgresql" % "42.1.3",
     "org.javassist" % "javassist" % "3.22.0-CR2",
     "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7.1"
   )
@@ -71,7 +71,7 @@ trait CommonLibs extends LibVersions {
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.6.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
-  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.15"
+  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.16"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,

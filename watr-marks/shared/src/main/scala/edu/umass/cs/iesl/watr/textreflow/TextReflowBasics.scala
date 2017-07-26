@@ -36,7 +36,6 @@ trait TextReflowBasics {
   def fixf = Fix[TextReflowF](_)
 
   def atom(c: CharAtom) = fixf(Atom(c))
-  def atomStr(c: CharAtom) = fixf(Atom(c))
   def rewrite(t: TextReflow, s: String) = fixf(Rewrite(t, s))
   def flow(as:TextReflow*) = flows(as)
   def flows(as: Seq[TextReflow]) = fixf(Flow(as.toList))

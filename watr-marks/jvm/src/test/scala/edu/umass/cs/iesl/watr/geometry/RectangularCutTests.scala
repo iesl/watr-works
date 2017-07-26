@@ -13,16 +13,102 @@ class RectangularCutTests  extends FlatSpec with Matchers {
   import textboxing.{TextBoxing => TB}, TB._
   import utils.ExactFloats._
 
+  val graphSize = LTBounds.Ints(0, 0, 14, 14)
+
+  it should "burst overlapping regions into all contiguous rectangles" in {
+
+    List(
+      (LTBounds.Ints(2, 2, 4, 1), LTBounds.Ints(2, 2, 4, 1), {
+        """|┌─────────────┐
+           |│░░░░░░░░░░░░░│
+           |│░┏━━━┓░░░░░░░│
+           |│░┗━━━┛░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░│
+           |└─────────────┘
+           |""".stripMargin
+      }),
+      (LTBounds.Ints(1, 3, 4, 1), LTBounds.Ints(2, 2, 4, 4), {
+        """|┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐┌─────────────┐
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░┌───┐░░░░░░░││░┌───┐░░░░░░░││░┏━━┓┐░░░░░░░││░┌───┐░░░░░░░││░┌──┏┓░░░░░░░││░┌───┐░░░░░░░││░┌───┐░░░░░░░│
+           |│╔┏━━┓│░░░░░░░││┏┓══╗│░░░░░░░││╔┗━━┛│░░░░░░░││╔│══╗│░░░░░░░││╔│══┗┛░░░░░░░││╔│══┏┓░░░░░░░││╔│══╗│░░░░░░░│
+           |│╚┗━━┛│░░░░░░░││┗┛══╝│░░░░░░░││╚│══╝│░░░░░░░││╚┏━━┓│░░░░░░░││╚│══╝│░░░░░░░││╚│══┗┛░░░░░░░││╚│══┏┓░░░░░░░│
+           |│░│░░░│░░░░░░░││░│░░░│░░░░░░░││░│░░░│░░░░░░░││░┃░░┃│░░░░░░░││░│░░░│░░░░░░░││░│░░░│░░░░░░░││░│░░┃┃░░░░░░░│
+           |│░└───┘░░░░░░░││░└───┘░░░░░░░││░└───┘░░░░░░░││░┗━━┛┘░░░░░░░││░└───┘░░░░░░░││░└───┘░░░░░░░││░└──┗┛░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |└─────────────┘└─────────────┘└─────────────┘└─────────────┘└─────────────┘└─────────────┘└─────────────┘
+           |""".stripMargin
+
+      }),
+      (LTBounds.Ints(2, 2, 4, 1), LTBounds.Ints(2, 2, 6, 1), {
+        """|┌─────────────┐┌─────────────┐
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░┏━━━┓─┐░░░░░││░┌───┏━┓░░░░░│
+           |│░┗━━━┛─┘░░░░░││░└───┗━┛░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |│░░░░░░░░░░░░░││░░░░░░░░░░░░░│
+           |└─────────────┘└─────────────┘
+           |""".stripMargin
+
+      })
+    ) foreach {case (bbox1, bbox2, expectedOutput) =>
+
+        val burstRegions = bbox1.withinRegion(bbox2).burstAll()
+
+        def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
+          val g = makeGraph(graphSize)
+          drawBoxDouble(g, bbox1)
+          drawBox(g, bbox2)
+          drawBoxBold(g, adjacent)
+          g.asMonocolorString().mbox
+        }
+
+        val adjs = burstRegions.map{ r =>
+          drawAdjacencyDiagram(r)
+        }
+
+        val actualOutput = hcat(adjs)
+        // println(actualOutput)
+        assertExpectedText(expectedOutput, actualOutput.toString())
+    }
+
+
+  }
+
+
+
   it should "split rectangles vertically and horizontally" in {
     val rect = LTBounds.Ints(1, 1, 10, 10)
 
-    val (lsplit, rsplit) = rect.splitHorizontal(10.toFloatExact())
+    // val (lsplit, rsplit) = rect.splitHorizontal(10.toFloatExact())
     List(0, 3, 10).map(_.toFloatExact)
       .foreach { splitVal =>
         // println(s" l: ${lsplit}")
         // println(s" r: ${rsplit}")
       }
-
   }
   it should "find  adjacent regions when inner rect is not strictly within outer" in {
     val graphSize = LTBounds.Ints(0, 0, 14, 14)
@@ -30,13 +116,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
     val inner = LTBounds.Ints(2, 2, 4, 4)
 
     def drawAdjacencyDiagram(adjacent: LTBounds): Box = {
-      // println(s"drawAdjacencyDiagram")
-      // println(s"   graph: ${graphSize}")
-      // println(s"   inner: ${inner}")
-      // println(s"   outer: ${outer}")
-      // println(s"   adjacent: ${adjacent}")
       val g = makeGraph(graphSize)
-      drawBox(g, graphSize)
       drawBoxDouble(g, outer)
       drawBox(g, inner)
       drawBoxBold(g, adjacent)
@@ -126,7 +206,6 @@ class RectangularCutTests  extends FlatSpec with Matchers {
       // println(s"   outer: ${outer}")
       // println(s"   adjacent: ${adjacent}")
       val g = makeGraph(graphSize)
-      drawBox(g, graphSize)
       drawBoxDouble(g, outer)
       drawBox(g, inner)
       drawBoxBold(g, adjacent)

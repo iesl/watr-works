@@ -3,7 +3,6 @@ package spindex
 
 import watrmarks._
 import geometry._
-// import geometry.syntax._
 import watrmarks.{StandardLabels => LB}
 
 
@@ -14,84 +13,70 @@ object Component {
     def ltBounds(t: Component): LTBounds = t.bounds
   }
 
+  import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
+
+  object Serialization  {
+
+    def serialize[C <: Component](value: C): Array[Byte] = {
+      val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
+      val oos = new ObjectOutputStream(stream)
+      oos.writeObject(value)
+      oos.close
+      stream.toByteArray
+    }
+
+    def deserialize[C <: Component](bytes: Array[Byte]): C = {
+      val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
+      val value = ois.readObject
+      ois.close
+      value.asInstanceOf[C]
+    }
+  }
 }
+
 sealed trait Component {
   def id: Int@@ComponentID
 
-  def mpageIndex: MultiPageIndex
-  def vtrace = mpageIndex.vtrace
-
   def roleLabel: Label
 
-  lazy val pageNum = mpageIndex.getPageForComponent(this)
+  def targetRegion(): PageRegion
 
-  def getDocumentID() = mpageIndex.docId
-  def getStableID() = mpageIndex.getStableId()
-
-  def getPageGeometry(): PageGeometry = {
-    mpageIndex.getPageGeometry(pageNum)
-  }
-
-  def targetRegion: PageRegion
-  def bounds: LTBounds
+  def bounds(): LTBounds = targetRegion().bbox
 
   def chars: String
 
-  def orientation: Double = 0.0d // placeholder until this is implemented for real
+  def getStableID(): String@@DocumentID = targetRegion.page.stable.stableId
 
-  def addLabel(l: Label): Component = {
-    mpageIndex.addLabel(this, l)
-  }
+  lazy val pageNum = targetRegion.page.stable.pageNum
 
-  def removeLabel(l: Label): Component = {
-    mpageIndex.removeLabel(this, l)
-  }
-
-  def getLabels(): Set[Label] = {
-    mpageIndex.getLabels(this)
-  }
-
-  def getLabel(l: Label): Option[Label] = {
-    getLabels().filter(_ == l).headOption
-  }
 }
 
 case class RegionComponent(
   id: Int@@ComponentID,
   override val roleLabel: Label,
-  initPageRegion: PageRegion,
-  override val mpageIndex: MultiPageIndex,
+  override val targetRegion: PageRegion,
   text: Option[String] = None
 ) extends Component {
 
   def chars: String = text.getOrElse("")
 
-  def targetRegion: PageRegion = initPageRegion
-  def bounds: LTBounds = targetRegion.bbox
-
   override def toString(): String = {
-    val lls = getLabels.mkString(",")
-    s"<${roleLabel.key}.${id} ${targetRegion}${lls}>"
+    s"<${roleLabel.key}.${id} ${targetRegion}"
   }
 }
 
 case class AtomicComponent(
   id: Int@@ComponentID,
-  charAtom: CharAtom,
-  override val mpageIndex: MultiPageIndex
+  charAtom: CharAtom
 ) extends Component {
 
-
   def roleLabel: Label = LB.PageAtom
-
-  val bounds = charAtom.bbox
 
   def targetRegion: PageRegion = charAtom.pageRegion
 
   def chars: String = charAtom.char
 
   override def toString(): String = {
-    val lls = getLabels.mkString(",")
-    s"<`${chars}`${id} ${charAtom.bbox.prettyPrint}$lls>"
+    s"<`${chars}`${id} ${charAtom.bbox.prettyPrint}>"
   }
 }

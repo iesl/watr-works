@@ -199,14 +199,14 @@ class MultiPageIndex(
 
 
   def createRegionComponent(targetRegion: PageRegion, role: Label, text:Option[String]): RegionComponent = {
-    val region = RegionComponent(componentIdGen.nextId, role, targetRegion, this, text)
+    val region = RegionComponent(componentIdGen.nextId, role, targetRegion, text)
     addComponent(region)
 
     region
   }
 
   def addCharAtom(pageAtom: CharAtom): AtomicComponent = {
-    val c = AtomicComponent(componentIdGen.nextId, pageAtom, this)
+    val c = AtomicComponent(componentIdGen.nextId, pageAtom)
     addComponent(c)
     c
   }
@@ -216,7 +216,6 @@ class MultiPageIndex(
     val slineCCs = path.slantedLines
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        println(s"addPathItem: slant-line $region")
         val c = createRegionComponent(region, LB.LinePath, None)
         addComponent(c)
         c
@@ -225,7 +224,6 @@ class MultiPageIndex(
     val hlineCCs = path.horizontalLines
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        println(s"addPathItem: h-line $region")
         val c = createRegionComponent(region, LB.HLinePath, None)
         addComponent(c)
         c
@@ -233,7 +231,6 @@ class MultiPageIndex(
     val vlineCCs = path.verticalLines()
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(width=0.01.toFloatExact))
-        println(s"addPathItem: v-line $region")
         val c = createRegionComponent(region, LB.VLinePath, None)
         addComponent(c)
         c

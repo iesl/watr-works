@@ -3,12 +3,44 @@ package geometry
 
 import utils.ExactFloats._
 import utils.{RelativeDirection => Dir}
+import TypeTags._
 
 
 trait RectangularCuts {
 
 
   class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
+
+    def burstUpperToLower(): (Option[LTBounds], Seq[LTBounds]) = {
+      ???
+    }
+
+    def burstAllAdjacent(): (Option[LTBounds], Seq[LTBounds]) = {
+      val intersection = innerRect.intersection(enclosingRect)
+
+      val burst1 = Dir.AllAdjacent.map{ dir =>
+        innerRect.withinRegion(enclosingRect)
+          .adjacentRegion(dir)
+      }
+
+      val burst2 = Dir.AllAdjacent.map{ dir =>
+        enclosingRect.withinRegion(innerRect)
+          .adjacentRegion(dir)
+      }
+
+      val burstRegions = (burst1 ++ burst2).flatten.sortBy(b => (b.left, b.top))
+
+      (intersection, burstRegions)
+
+    }
+
+    def burstAll(): Seq[LTBounds] = {
+      val (maybeIntersect, burstRegions) =
+        innerRect.withinRegion(enclosingRect).burstAllAdjacent()
+
+      maybeIntersect.map(_ +: burstRegions).getOrElse(burstRegions)
+    }
+
 
     def adjacentRegions(dirs: Dir*): Option[LTBounds] = {
       val adjacents = dirs.toList.map{ dir =>
@@ -85,7 +117,7 @@ trait RectangularCuts {
 
   }
 
-  implicit class RicherLTBounds(val self: LTBounds) {
+  implicit class RectangularCuts_RicherLTBounds(val self: LTBounds) {
     def area: Double = (self.width*self.height).asDouble
 
     def withinRegion(enclosingRect: LTBounds): RectangularCutOps =
@@ -101,6 +133,26 @@ trait RectangularCuts {
         width=self.right-left
       )
     }
+
+    def burstWith(bbox2: LTBounds): (Option[LTBounds], Seq[LTBounds]) = {
+      val intersection = self.intersection(bbox2)
+
+      val burst1 = Dir.AllAdjacent.map{ dir =>
+        self.withinRegion(bbox2)
+          .adjacentRegion(dir)
+      }
+
+      val burst2 = Dir.AllAdjacent.map{ dir =>
+        bbox2.withinRegion(self)
+          .adjacentRegion(dir)
+      }
+
+      val burstRegions = (burst1 ++ burst2).flatten.sortBy(b => (b.left, b.top))
+
+      (intersection, burstRegions)
+
+    }
+
 
     def setRight(right: Int@@FloatRep): LTBounds = {
       self.copy(
@@ -268,41 +320,4 @@ trait RectangularCuts {
     }
   }
 
-
-  // /* TODO this rectangle split function is useful but has bugs.
-  //  Split this rectangle into 0-3 parts, depending on overlap, like so:
-  //                    +-------------+
-  //                    |             |  <- splitter bbox
-  //    +---------------+-------------+-----------------+
-  //    |               |             |                 |    <-- self bbox
-  //    |               |             |                 |
-  //    |     left      |     mid     |      right      |
-  //    |     bbox      |    bbox     |       bbox      |
-  //    |               |             |                 |
-  //    +---------------+-------------+-----------------+
-  //                    |             |
-  //                    |             |
-  //                    +-------------+
-
-  //  */
-  // def splitHorizontal(splitter: LTBounds): List[LTBounds] = {
-  //   val leftX = splitter.toPoint(Dir.Left).x
-  //   val rightX = splitter.toPoint(Dir.Right).x
-  //   val self = self
-  //   val leftRights = if (self.intersectsX(leftX)){
-  //     val splitLeft = self.splitHorizontal(leftX)
-  //     if (self.intersectsX(rightX)){
-  //       val splitRight = self.splitHorizontal(rightX)
-  //       splitLeft.head :: splitLeft.tail
-  //     } else {
-  //       List(splitLeft.head)
-  //     }
-  //   } else if (self.intersectsX(rightX)){
-  //     self.splitHorizontal(rightX).tail
-  //   } else {
-  //     List()
-  //   }
-
-  //   leftRights
-  // }
 }

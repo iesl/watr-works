@@ -4,7 +4,7 @@ package segment
 import ammonite.{ops => fs}
 
 import TypeTags._
-// import textreflow.data._
+import textreflow.data._
 
 class PageTextTest extends DocsegTestUtil  {
   /**
@@ -40,6 +40,7 @@ class PageTextTest extends DocsegTestUtil  {
     val allTestPdfs =
       """|101016jactamat201112024.pdf
          |101016jactamat201501032.pdf
+         |saccharomyces-1-page.pdf
          |101016japsusc201210126.pdf
          |101016jcarbon201301056.pdf
          |2839.pdf
@@ -50,7 +51,6 @@ class PageTextTest extends DocsegTestUtil  {
          |font-type-0-1-t.pdf
          |font-type-1-3.pdf
          |quantification-Smith-2013.pdf
-         |saccharomyces-1-page.pdf
          |Schauer-1987.pdf
          |""".stripMargin.split("\n")
         .map(_.trim())
@@ -64,28 +64,25 @@ class PageTextTest extends DocsegTestUtil  {
     import corpora._
 
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
-    val rTreePageSegmenter = new RTreePageSegmentation(
-      segmenter.mpageIndex
-    )
 
-    rTreePageSegmenter.runPageSegmentation()
+    segmenter.runPageSegmentation()
     // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
     // segmenter.runLineDeterminationOnPage(PageID(1), PageNum(0))
-    // val docStore = segmenter.docStore
+    val docStore = segmenter.docStore
 
     // println("All VisualLines")
 
-    // for {
-    //   docId    <- docStore.getDocument(docId).toList
-    //   pageId   <- docStore.getPages(docId)
-    //   (lineZone, lineNum) <- docStore.getPageVisualLines(pageId).zipWithIndex
-    //   reflow   <- docStore.getTextReflowForZone(lineZone.id)
-    // } yield {
-    //   val asText = reflow.toFormattedText()
+    for {
+      docId    <- docStore.getDocument(docId).toList
+      pageId   <- docStore.getPages(docId)
+      (lineZone, lineNum) <- docStore.getPageVisualLines(pageId).zipWithIndex
+      reflow   <- docStore.getTextReflowForZone(lineZone.id)
+    } yield {
+      val asText = reflow.toFormattedText()
 
-    //   println(asText)
-    //   (lineNum, asText)
-    // }
+      println(asText)
+      (lineNum, asText)
+    }
 
   }
 }
