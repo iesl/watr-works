@@ -96,12 +96,13 @@ object Constants {
 
     final val AFFILIATION_LABELS: Seq[String] = Seq(DEPARTMENT_KEYWORD, INSTITUTION_KEYWORD, UNIVERSITY_KEYWORD, COMPANY_KEYWORD, CITY_KEYWORD, REGION_KEYWORD, COUNTRY_KEYWORD)
 
-    final val PUNCTUATIONS_PATTERN: Array[Char] = Array('\'', '!', '"', '#', '$', '%', '&',
+    final val PUNCTUATIONS: Array[Char] = Array('\'', '!', '"', '#', '$', '%', '&',
         '(', ')', '*', '+', ',',
         '-', '.', '/', ':', ';',
         '<', '=', '>', '?', '@',
         '[', '\\', ']', '^', '_',
         '`', '{', '|', '}', '~')
+    final val PUNCTUATIONS_PATTERN: String = "(?=[\'!\"#$%&\\(\\)*+,-./:;<=>?@\\[~\\{\\|^_}\\]])"
     final val PUNCTUATION_TAG = "<PUNCT>"
     final val NUMBER_TAG = "<NUM>"
     final val LEXICON_TAGS: Seq[String] = Seq(PUNCTUATION_TAG, NUMBER_TAG)

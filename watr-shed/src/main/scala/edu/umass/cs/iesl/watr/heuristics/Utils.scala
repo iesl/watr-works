@@ -71,7 +71,7 @@ object Utils {
                         }
                         componentIndex += 1
                     }
-                    else if (PUNCTUATION_SEPARATORS.contains(currentTextReflowAtom.char.charAt(localReflowCharIndex).toString) || currentTextReflowAtom.bbox.top.!=(yPosition)){
+                    else if (PUNCTUATION_SEPARATORS.contains(currentTextReflowAtom.char.charAt(localReflowCharIndex).toString) || currentTextReflowAtom.bbox.top.asInt().!=(yPosition)){
                         break
                     }
                     else {
@@ -231,30 +231,22 @@ object Utils {
 
         val cleanedTokens: ListBuffer[String] = new ListBuffer[String]()
 
-        tokens.foreach{
+        tokens.foreach {
             token => {
-                token.split(PUNCTUATIONS_PATTERN).foreach{
+                token.split(PUNCTUATIONS_PATTERN).foreach {
                     splitToken => {
-                        if (splitToken.isEmpty) {
-                            cleanedTokens += PUNCTUATION_TAG
-                        }
-                        else if (isNumberString(splitToken)) {
-                            cleanedTokens += NUMBER_TAG
-                            cleanedTokens += PUNCTUATION_TAG
+                        if (PUNCTUATIONS.contains(splitToken.head)) {
+                            cleanedTokens += splitToken.head.toString
+                            cleanedTokens += splitToken.tail
                         }
                         else {
                             cleanedTokens += splitToken
-                            cleanedTokens += PUNCTUATION_TAG
                         }
                     }
                 }
-                if (! PUNCTUATIONS_PATTERN.contains(token.charAt(token.length - 1))) {
-                    cleanedTokens.remove(cleanedTokens.length - 1)
-                }
             }
         }
-
-        cleanedTokens.map( cleanedToken => cleanedToken.trim)
+        cleanedTokens.map(cleanedToken => cleanedToken.trim).filter(_.nonEmpty)
 
     }
 
