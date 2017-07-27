@@ -182,7 +182,6 @@ class RTreeIndex[T: RTreeIndexable](
 }
 
 object RTreeIndex {
-
   def createFor[T : RTreeIndexable](
     initItems: Seq[T] = Seq()
   ): RTreeIndex[T] = {

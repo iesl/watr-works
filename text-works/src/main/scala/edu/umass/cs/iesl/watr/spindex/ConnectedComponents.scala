@@ -39,6 +39,12 @@ sealed trait Component {
 
   def roleLabel: Label
 
+  // def labels: Set[Label]
+
+  def setRole(l: Label): Component
+  // def addLabel(l: Label): Component
+  // def removeLabel(l: Label): Component
+
   def targetRegion(): PageRegion
 
   def bounds(): LTBounds = targetRegion().bbox
@@ -56,7 +62,14 @@ case class RegionComponent(
   override val roleLabel: Label,
   override val targetRegion: PageRegion,
   text: Option[String] = None
+  // otherLabels: Seq[Label] = Seq()
 ) extends Component {
+
+  // override val labels: Set[Label] = (roleLabel +: otherLabels).toSet
+
+  def setRole(l: Label): Component = copy(roleLabel = l)
+  // def addLabel(l: Label) = copy(otherLabels = l +: otherLabels)
+  // def removeLabel(l: Label) = copy(otherLabels = otherLabels.filterNot(_==l))
 
   def chars: String = text.getOrElse("")
 
@@ -67,10 +80,16 @@ case class RegionComponent(
 
 case class AtomicComponent(
   id: Int@@ComponentID,
-  charAtom: CharAtom
+  charAtom: CharAtom,
+  override val roleLabel: Label = LB.PageAtom
+  // otherLabels: Seq[Label] = Seq()
 ) extends Component {
 
-  def roleLabel: Label = LB.PageAtom
+  // override val labels: Set[Label] = (roleLabel +: otherLabels).toSet
+
+  def setRole(l: Label): Component = copy(roleLabel = l)
+  // def addLabel(l: Label) = copy(otherLabels = l +: otherLabels)
+  // def removeLabel(l: Label) = copy(otherLabels = otherLabels.filterNot(_==l))
 
   def targetRegion: PageRegion = charAtom.pageRegion
 

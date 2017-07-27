@@ -13,6 +13,7 @@ trait ImageManipulation {
 
 
   def createCanvas(dim: LTBounds): SC.Canvas = {
+    // val imgtmp = Image.filled(0, 0, Color.White)
     val LTBounds.Ints(_, _, w, h) = dim
     new SC.Canvas(Image.filled(w, h, Color.White))
   }

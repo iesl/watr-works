@@ -11,10 +11,6 @@ trait RectangularCuts {
 
   class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
 
-    def burstUpperToLower(): (Option[LTBounds], Seq[LTBounds]) = {
-      ???
-    }
-
     def burstAllAdjacent(): (Option[LTBounds], Seq[LTBounds]) = {
       val intersection = innerRect.intersection(enclosingRect)
 
@@ -61,11 +57,6 @@ trait RectangularCuts {
             left  <- right.splitVertical(innerRect.right)._1
             top   <- left.splitHorizontal(innerRect.top)._1
           } yield top
-          // for {
-          //   (l, right) <- enclosingRect.splitVertical(innerRect.left)
-          //   (left, r)  <- right.splitVertical(innerRect.right)
-          //   (top, b)   <- left.splitHorizontal(innerRect.top)
-          // } yield top
 
         case Dir.Bottom  =>
           for {
@@ -133,26 +124,6 @@ trait RectangularCuts {
         width=self.right-left
       )
     }
-
-    def burstWith(bbox2: LTBounds): (Option[LTBounds], Seq[LTBounds]) = {
-      val intersection = self.intersection(bbox2)
-
-      val burst1 = Dir.AllAdjacent.map{ dir =>
-        self.withinRegion(bbox2)
-          .adjacentRegion(dir)
-      }
-
-      val burst2 = Dir.AllAdjacent.map{ dir =>
-        bbox2.withinRegion(self)
-          .adjacentRegion(dir)
-      }
-
-      val burstRegions = (burst1 ++ burst2).flatten.sortBy(b => (b.left, b.top))
-
-      (intersection, burstRegions)
-
-    }
-
 
     def setRight(right: Int@@FloatRep): LTBounds = {
       self.copy(

@@ -34,6 +34,17 @@ case class PageIndex(
     c
   }
 
+  def updateComponent(c: Component, f: Component => Component): Component = {
+
+    removeLabel(c, c.roleLabel)
+    componentIndex.remove(c)
+
+    val cUpdate = f(c)
+    componentIndex.add(cUpdate)
+    addLabel(cUpdate, cUpdate.roleLabel)
+    cUpdate
+  }
+
   def getPageAtoms(): Seq[AtomicComponent] = {
     componentIndex.getItems
       .filter(_.roleLabel==LB.PageAtom)

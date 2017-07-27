@@ -35,6 +35,7 @@ trait DocSegLabels {
   val Image = Label("ds", "image")
   val Table = Label("ds", "table")
   val VisualLine = Label("ds", "visual-line")
+  val VisualLineModal = Label("ds", "visual-line-modal")
   val SemanticLine = Label("ds", "semantic-line")
 
 
@@ -55,7 +56,9 @@ trait DocSegLabels {
   val NoteMarkers = Label("note-markers")
   val NoteMarker = Label("note-marker")
 
-  val PageAtom = Label("ds", "atom")
+  val PageAtom = Label("atom")
+  val PageAtomGrp = Label("atom-grp")
+  val PageAtomTmp = Label("atom-tmp")
 
   val First = Label("first")
   val Last = Label("last")
