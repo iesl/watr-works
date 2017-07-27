@@ -19,6 +19,7 @@ import TypeTags._
 import utils.ExactFloats._
 import shapeless.lens
 import PageComponentImplicits._
+import edu.umass.cs.iesl.watr.tracing.VisualTracer
 
 object DocumentSegmenter {
   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
@@ -66,6 +67,8 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
   val docId = docStore.getDocument(stableId)
     .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
 
+  val vtrace = new VisualTracer()
+
   val __debug = true
 
   val segvisRoot = s"${stableId}-segs.d"
@@ -107,7 +110,9 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
 
   def runPageSegmentation(): Unit = {
-    vis.cleanRTreeImageFiles(segvisRoot)
+    vtrace.ifTrace{
+      vis.cleanRTreeImageFiles(segvisRoot)
+    }
 
     val pageRegions = for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
@@ -141,9 +146,11 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
     def segvisGifFile(name: String) = s"${name}.pg${pageNum}.gif"
 
     def writeRTreeImage(name: String, l0: Label, labels: Label*): Unit = {
-      if (__debug) {
-        val image = vis.createRTreeImage(pageIndex, l0, labels:_*)
-        vis.writeRTreeImage(segvisRoot, segvisFile(name), image)
+      vtrace.ifTrace {
+        if (__debug) {
+          val image = vis.createRTreeImage(pageIndex, l0, labels:_*)
+          vis.writeRTreeImage(segvisRoot, segvisFile(name), image)
+        }
       }
     }
 
@@ -392,52 +399,59 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
       val gifFrames = mutable.ArrayBuffer[Image]()
 
       def indicate(caption: String, bounds:LTBounds, labels: Label*): Unit = {
-        labelRegion(bounds, LB.Marked)
-        addFrame(caption, LB.Marked)
-        addFrame("+"+caption, LB.Marked, labels:_*)
-        deleteComponentsWithLabel(LB.Marked)
+        vtrace.ifTrace {
+          labelRegion(bounds, LB.Marked)
+          addFrame(caption, LB.Marked)
+          addFrame("+"+caption, LB.Marked, labels:_*)
+          deleteComponentsWithLabel(LB.Marked)
+        }
       }
 
       def indicate(caption: String, bounds:Seq[LTBounds], labels: Label*): Unit = {
-        bounds.foreach { b => labelRegion(b, LB.Marked) }
-        addFrame(caption, LB.Marked)
-        addFrame("+"+caption, LB.Marked, labels:_*)
-        deleteComponentsWithLabel(LB.Marked)
+        vtrace.ifTrace {
+          bounds.foreach { b => labelRegion(b, LB.Marked) }
+          addFrame(caption, LB.Marked)
+          addFrame("+"+caption, LB.Marked, labels:_*)
+          deleteComponentsWithLabel(LB.Marked)
+        }
       }
 
       def addFrame(caption: String, l0: Label, labels: Label*): Unit = {
-        val img0 = vis.createRTreeImage(pageIndex, l0, labels:_*)
-        val filter = new scrimage.canvas.CaptionFilter(
-          caption,
-          textColor=Clr.Black,
-          textAlpha=0.8,
-          captionBackground= Clr.Grey20,
-          captionAlpha=0.4
-        )
-        filter.apply(img0)
-        gifFrames.append(img0)
+        vtrace.ifTrace {
+          val img0 = vis.createRTreeImage(pageIndex, l0, labels:_*)
+          val filter = new scrimage.canvas.CaptionFilter(
+            caption,
+            textColor=Clr.Black,
+            textAlpha=0.8,
+            captionBackground= Clr.Grey20,
+            captionAlpha=0.4
+          )
+          filter.apply(img0)
+          gifFrames.append(img0)
+        }
       }
 
       def finish(): Unit = {
-        val gifWriter = StreamingGifWriter().withFrameDelay(frameRate)
-        val outputPath = fs.pwd / segvisRoot / segvisGifFile(name)
-        if (fs.exists(outputPath)) {
-          fs.rm(outputPath)
+        vtrace.ifTrace {
+          val gifWriter = StreamingGifWriter().withFrameDelay(frameRate)
+          val outputPath = fs.pwd / segvisRoot / segvisGifFile(name)
+          if (fs.exists(outputPath)) {
+            fs.rm(outputPath)
+          }
+
+          val gifStream =  gifWriter.prepareStream(outputPath.toNIO, BufferedImage.TYPE_INT_ARGB)
+
+          println(s"gifFrames.len (final): ${gifFrames.length}")
+          gifFrames.foreach { img => gifStream.writeFrame(img) }
+          gifStream.finish()
         }
-
-        val gifStream =  gifWriter.prepareStream(outputPath.toNIO, BufferedImage.TYPE_INT_ARGB)
-
-        println(s"gifFrames.len (final): ${gifFrames.length}")
-        gifFrames.foreach { img => gifStream.writeFrame(img) }
-        gifStream.finish()
       }
     }
 
 
+
     def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
       val gifBuilder = new GifBuilder("findVisualLines", 500.millis)
-
-
 
       pageIndex.getComponentsWithLabel(LB.PageAtom)
         .foreach{ a =>
@@ -467,11 +481,9 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
           (hashedLineCC, charsInRegion)
         }).sortBy { case (_, chars) => chars.length }.reverse
 
-        println(s"    found ${sortedHashedLinesWithChars.length} hashedLines")
 
         sortedHashedLinesWithChars.zipWithIndex
           .foreach{ case ((hashLineCC, hashedChars), index) =>
-            println(s"Processing Hash-Line ${index} of ${sortedHashedLinesWithChars.length}")
 
             labelRegion(hashLineCC.bounds(), LB.Marked)
             gifBuilder.addFrame(s"Processing Hash-Line ${index} of ${sortedHashedLinesWithChars.length}", LB.Marked, LB.PageAtomTmp)
@@ -509,11 +521,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
                 pageIndex.updateComponent(cc, {_.setRole(LB.PageAtomGrp)})
               }
 
-              // val clippedVLineModal = fullVLineModalBounds.intersection(visualLineBBox).get
-
               val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
-
-              // labelRegion(modalVisualLine, LB.VisualLineModal)
 
               createTextRowsFromVisualLines(visualLineCC, visualLineComps)
             }
@@ -542,16 +550,20 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         2.seconds
       )
 
-      gifBuilder.indicate(
-        s"Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
-        visualLineCC.bounds(), LB.PageAtomGrp, LB.PageAtomTmp
-      )
+      vtrace.ifTrace{
 
-      gifBuilder.indicate(
-        s"(Grp) Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
-        visualLineCC.bounds(), LB.PageAtomGrp
-      )
 
+        gifBuilder.indicate(
+          s"Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
+          visualLineCC.bounds(), LB.PageAtomGrp, LB.PageAtomTmp
+        )
+
+        gifBuilder.indicate(
+          s"(Grp) Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
+          visualLineCC.bounds(), LB.PageAtomGrp
+        )
+
+      }
 
       def shrinkVisualLineToModalTopAndBottom(visualLineCC: Component): LTBounds = {
         // pageIndex.getComponentsWithLabel(LB.PageAtomGrp)
@@ -579,15 +591,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
           top=modalTopline, height=modalBaseline-modalTopline
         )
 
-        // val fullVLineModalBounds = visualLineModalBounds
-        //   .withinRegion(textBlock)
-        //   .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
-        //   .getOrElse { visualLineModalBounds }
-        // labelRegion(fullVLineModalBounds, LB.Marked)
-        // gifBuilder.addFrame("Modal VisualLine Full-widte", LB.Marked)
-        // deleteComponentsWithLabel(LB.Marked)
-
-
         labelRegion(visualLineModalBounds, LB.Marked)
         gifBuilder.addFrame("Modal-base/top VisualLine", LB.Marked)
         deleteComponentsWithLabel(LB.Marked)
@@ -598,10 +601,9 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
       if (visualLineAtoms.nonEmpty) {
         val visualLineModalBounds = shrinkVisualLineToModalTopAndBottom(visualLineCC)
+
         gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
-
         gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
-
 
         val topLine = visualLineModalBounds.toLine(Dir.Top) // .translate(y=0.5)
         val bottomLine =  visualLineModalBounds.toLine(Dir.Bottom) // .translate(y = -0.5)

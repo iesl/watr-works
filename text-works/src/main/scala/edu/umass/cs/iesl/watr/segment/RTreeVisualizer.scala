@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import ammonite.{ops => fs}
+import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import images.{ImageManipulation => IM}
 
 import watrmarks._
@@ -13,6 +14,7 @@ import scrimage._
 
 class RTreeVisualizer(
   labelColors: Map[Label, Color]
+  // vtrace: VisualTracer
 ) {
   implicit val writer = scrimage.nio.GifWriter.Progressive
   // implicit val writer = scrimage.nio.GifSequenceWriter
