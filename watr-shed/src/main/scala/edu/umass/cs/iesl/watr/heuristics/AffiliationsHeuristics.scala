@@ -14,7 +14,7 @@ import textreflow.data._
 
 object AffiliationsHeuristics {
 
-    def getSeparateAffiliationComponentsByText(tokenizedTextReflow: ListBuffer[String]): ListBuffer[String] = {
+    def getSeparateAffiliationComponentsByText(tokenizedTextReflow: Seq[String]): ListBuffer[String] = {
 
         val separateComponents: ListBuffer[String] = ListBuffer[String]()
         val separateComponent: ListBuffer[String] = ListBuffer[String]()
@@ -51,7 +51,7 @@ object AffiliationsHeuristics {
         separateComponents
     }
 
-    def getCategoryForSeparateAffiliationComponents(separatedAffiliationComponents: ListBuffer[String]): ListBuffer[(String, ListBuffer[String])] = {
+    def getCategoryForSeparateAffiliationComponents(separatedAffiliationComponents: Seq[String]): ListBuffer[(String, ListBuffer[String])] = {
 
         val separatedComponentsWithClasses: ListBuffer[(String, ListBuffer[String])] = new ListBuffer[(String, ListBuffer[String])]()
 
@@ -62,7 +62,7 @@ object AffiliationsHeuristics {
         separatedComponentsWithClasses
     }
 
-    def getUpdatedCategoriesForAffiliationComponents(authorNames: ListBuffer[NameWithBBox], affiliationComponentsWithClasses: ListBuffer[(String, ListBuffer[String])]): ListBuffer[(String, ListBuffer[String])] = {
+    def getUpdatedCategoriesForAffiliationComponents(authorNames: Seq[String], affiliationComponentsWithClasses: ListBuffer[(String, ListBuffer[String])]): ListBuffer[(String, ListBuffer[String])] = {
 
         val emailStrings: ListBuffer[String] = new ListBuffer[String]()
         var academicKeywordFound: Boolean = false
@@ -134,7 +134,7 @@ object AffiliationsHeuristics {
         affiliationComponentsWithClasses
     }
 
-    def getBoundingBoxesForAffiliations(affiliationsWithClasses: ListBuffer[(String, ListBuffer[String])], textReflows: Seq[TextReflow]): ListBuffer[(String, ListBuffer[String], LTBounds)] = {
+    def getBoundingBoxesForAffiliations(affiliationsWithClasses: Seq[(String, ListBuffer[String])], textReflows: Seq[TextReflow]): ListBuffer[(String, ListBuffer[String], LTBounds)] = {
 
         val affiliations: ListBuffer[(String, ListBuffer[String], LTBounds)] = new ListBuffer[(String, ListBuffer[String], LTBounds)]
 
