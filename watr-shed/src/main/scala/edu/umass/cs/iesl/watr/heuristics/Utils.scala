@@ -211,16 +211,10 @@ object Utils {
 
     }
 
-    def isPresentInAuthors(component: String, authorNames: ListBuffer[NameWithBBox]): Boolean = {
+    def isPresentInAuthors(component: String, authorNames: Seq[String]): Boolean = {
 
         for (authorName <- authorNames) {
-            if (component.contains(authorName.lastName.componentText.toLowerCase)) {
-                return true
-            }
-            if (! isOfNameInitialFormat(authorName.middleName.componentText) && component.contains(authorName.middleName.componentText.toLowerCase)) {
-                return true
-            }
-            if (! isOfNameInitialFormat(authorName.firstName.componentText) && component.contains(authorName.firstName.componentText.toLowerCase)) {
+            if (! isOfNameInitialFormat(authorName) && component.contains(authorName.toLowerCase)) {
                 return true
             }
         }
@@ -236,17 +230,17 @@ object Utils {
                 token.split(PUNCTUATIONS_PATTERN).foreach {
                     splitToken => {
                         if (PUNCTUATIONS.contains(splitToken.head)) {
-                            cleanedTokens += splitToken.head.toString
-                            cleanedTokens += splitToken.tail
+                            cleanedTokens += splitToken.head.toString.trim
+                            cleanedTokens += splitToken.tail.trim
                         }
                         else {
-                            cleanedTokens += splitToken
+                            cleanedTokens += splitToken.trim
                         }
                     }
                 }
             }
         }
-        cleanedTokens.map(cleanedToken => cleanedToken.trim).filter(_.nonEmpty)
+        cleanedTokens.filter(_.nonEmpty)
 
     }
 
@@ -264,26 +258,17 @@ object Utils {
     def getBoundingBoxesForComponents(components: Seq[String], textReflow: TextReflow): ListBuffer[(String, LTBounds)] = {
 
         var componentStartIndex: Int = 0
-        var componentEndIndex: Int = textReflow.charAtoms().length - 1
-        var indices: (Int, Int) = (0, textReflow.charAtoms().length - 1)
+        val componentEndIndex: Int = textReflow.charAtoms().length
+        var indices: (Int, Int) = (0, textReflow.charAtoms().length)
 
         val componentsWithBoundingBoxes: ListBuffer[(String, LTBounds)] = new ListBuffer[(String, LTBounds)]()
 
         for (component <- components) {
-            if (!LEXICON_TAGS.contains(component)) {
-                if (componentEndIndex.!=(textReflow.charAtoms().length - 1)) {
-                    indices = getIndexesForComponents(component = component, textReflow = textReflow, indexRange = (componentEndIndex, textReflow.charAtoms().length))
-                }
-                else {
-                    indices = getIndexesForComponents(component = component, textReflow = textReflow, indexRange = (componentStartIndex, textReflow.charAtoms().length))
-                }
-
-                componentStartIndex = indices._1
-                componentEndIndex = indices._2
-                componentsWithBoundingBoxes.+=((component, getBoundingBoxesWithIndexesFromReflow(indexes = (componentStartIndex, componentEndIndex), textReflow = textReflow)))
-
-            }
+            indices = getIndexesForComponents(component = component, textReflow = textReflow, indexRange = (componentStartIndex, componentEndIndex))
+            componentStartIndex = indices._2
+            componentsWithBoundingBoxes.+=((component, getBoundingBoxesWithIndexesFromReflow(indexes = indices, textReflow = textReflow)))
         }
+
         componentsWithBoundingBoxes
     }
 
