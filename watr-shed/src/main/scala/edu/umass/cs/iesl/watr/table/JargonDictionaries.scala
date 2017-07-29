@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package table  
+package table
 
 trait JargonDictionaries {
   import scala.util.matching.Regex

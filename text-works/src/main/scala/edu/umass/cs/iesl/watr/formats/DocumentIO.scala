@@ -12,7 +12,7 @@ import watrmarks.{StandardLabels => LB}
 
 object DocumentIO  {
 
-  def documentToPlaintext(mpageIndex: MultiPageIndex): Seq[String]= {
+  def documentToPlaintext(mpageIndex: MultiPageIndex): Seq[String] = {
     val docStore = mpageIndex.docStore
     val stableId = mpageIndex.getStableId()
     val docId = docStore.getDocument(stableId).get

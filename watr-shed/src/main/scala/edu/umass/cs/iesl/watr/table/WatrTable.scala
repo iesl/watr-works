@@ -29,6 +29,7 @@ object SharedInit {
         |import ShellCommands._
         |import labeling.SampleLabelWidgets
         |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi
+        |implicit val docStore: DocumentZoningApi = corpusAccessApi.docStore
         |""".stripMargin
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
@@ -49,7 +50,6 @@ object SharedInit {
 
 }
 
-
 object WatrTable extends App {
   import SharedInit._
 
@@ -57,8 +57,9 @@ object WatrTable extends App {
 
   def run(args: Array[String]): Unit = {
     val dbname = args(0)
+    val passwd = args(1)
 
-    val db = initReflowDB(dbname)
+    val db = initReflowDB(dbname, passwd)
 
     val corpus = initCorpus()
     val corpusAccessApi = CorpusAccessApi(db, corpus)
@@ -92,14 +93,14 @@ object WatrTable extends App {
 
 object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments {
 
-  def initReflowDB(dbname: String): CorpusAccessDB = {
+  def initReflowDB(dbname: String, dbpass: String): CorpusAccessDB = {
     // val doLogging = false
     // val loggingProp = if (doLogging) "?loglevel=2" else ""
     val tables = new CorpusAccessDBTables()
     new CorpusAccessDB(tables,
       dbname=dbname,
       dbuser="watrworker",
-      dbpass="watrpasswd"
+      dbpass=dbpass
     )
   }
 
@@ -169,64 +170,6 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
       .run.unsafeRun
   }
 
-  val tmpSampleDocs = Seq(
-    // processed 3 times??
-    "10.1101-021006.d",
-    // Started and finished
-    "10.1101-095851.d",
-    "10.1101-093740.d",
-    "10.1101-093492.d",
-    "10.1101-093138.d",
-    "10.1101-091470.d",
-    "10.1101-090910.d",
-    "10.1101-089359.d",
-    "10.1101-086165.d",
-    "10.1101-085670.d",
-    "10.1101-084780.d",
-    "10.1101-082461.d",
-    "10.1101-080903.d",
-    "10.1101-080028.d",
-    "10.1101-075721.d",
-    "10.1101-075465.d",
-    "10.1101-074880.d",
-    "10.1101-074864.d",
-    "10.1101-065680.d",
-    "10.1101-064873.d",
-    "10.1101-057828.d",
-    "10.1101-056457.d",
-    "10.1101-056143.d",
-    "10.1101-053629.d",
-    "10.1101-050096.d",
-    "10.1101-049114.d",
-    "10.1101-048892.d",
-    "10.1101-035667.d",
-    "10.1101-034843.d",
-    "10.1101-034066.d",
-    "10.1101-032458.d",
-    "10.1101-031443.d",
-    "10.1101-029207.d",
-    "10.1101-028597.d",
-    "10.1101-026252.d",
-    "10.1101-022889.d",
-    "10.1101-022111.d",
-    "10.1101-021691.d",
-    "10.1101-019901.d",
-    "10.1101-014985.d",
-    "10.1101-014233.d",
-    "10.1101-009670.d",
-    "10.1101-007310.d",
-    "10.1101-005611.d",
-    "10.1101-003889.d",
-    "10.1101-001750.d",
-    "10.1101-097840.d",
-    "10.1101-094904.d",
-    "10.1101-075275.d",
-    "10.1101-054015.d",
-    "10.1101-025221.d",
-    "10.1101-006098.d",
-    "10.1101-006080.d"
-  )
-
   def segmentEntry(stableId: String@@DocumentID, commitToDb: Boolean=false)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val docStore = corpusAccessApi.docStore
 
@@ -239,31 +182,31 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
 
       for {
         corpusEntry    <- corpusAccessApi.corpus.entry(stableId.unwrap)
-        pdfArtifact    <- corpusEntry.getPdfArtifact
-        pdfPath        <- pdfArtifact.asPath.toOption
+        // pdfArtifact    <- corpusEntry.getPdfArtifact
+        // pdfPath        <- pdfArtifact.asPath.toOption
       } {
-        val memZoneApi = new MemDocZoningApi
-        val segmenter = DocumentSegmenter
-          .createSegmenter(stableId, pdfPath, memZoneApi)
+        segment(corpusEntry, commitToDb)
+        // val memZoneApi = new MemDocZoningApi
+        // val segmenter = DocumentSegmenter
+        //   .createSegmenter(stableId, pdfPath, memZoneApi)
 
-        segmenter.runPageSegmentation()
+        // segmenter.runPageSegmentation()
 
-        if (commitToDb) {
-          println(s"Importing ${stableId} into database.")
-          corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoneApi)
-          println(s"Done importing ${stableId}")
-        }
+        // if (commitToDb) {
+        //   println(s"Importing ${stableId} into database.")
+        //   corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoneApi)
+        //   println(s"Done importing ${stableId}")
+        // }
 
       }
     }
   }
 
-  def segment(corpusEntry: CorpusEntry)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-    import com.github.davidmoten.rtree
-    import rtree._
-    import rtree.{geometry => RG}
-    import spindex._
-    import rx.functions.Func1
+  def segment(
+    corpusEntry: CorpusEntry,
+    commitToDb: Boolean=true,
+    writeRTrees: Boolean=true
+  )(implicit corpusAccessApi: CorpusAccessApi): Unit = {
 
     val docStore = corpusAccessApi.docStore
 
@@ -286,37 +229,34 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
 
         segmenter.runPageSegmentation()
 
-        for {
-          pageNum <- segmenter.mpageIndex.getPages
-        } {
-          val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-          val rtree = pageIndex.componentIndex.spatialIndex
+        if (writeRTrees) {
+          println("Writing RTrees")
+          val rtreeGroup = corpusEntry.ensureArtifactGroup("rtrees")
 
-          val ccSerializer = new Func1[Component, Array[Byte]]() {
-            override def call(entry: Component): Array[Byte] = {
-              Component.Serialization.serialize(entry)
-            }
+          for {
+            pageNum <- segmenter.mpageIndex.getPages
+          } {
+            val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
+            val rtree = pageIndex.componentIndex.spatialIndex
+
+            val rtreeSerializer = DocumentSegmenter.createRTreeSerializer()
+
+            val baos = new java.io.ByteArrayOutputStream()
+            rtreeSerializer.write(rtree, baos)
+            baos.toByteArray()
+            val rtreeArtifactName = s"page-${pageNum}.rtree"
+            rtreeGroup.putArtifactBytes(rtreeArtifactName, baos.toByteArray())
           }
-
-          val ccDeSerializer = new Func1[Array[Byte], Component]() {
-            override def call(bytes: Array[Byte]): Component = {
-              Component.Serialization.deserialize(bytes)
-            }
-          }
-
-          val ser: Serializer[Component, RG.Geometry] = Serializers
-            .flatBuffers[Component, RG.Geometry]()
-            .serializer(ccSerializer)
-            .deserializer(ccDeSerializer)
-            .create()
-
-          val os = new java.io.FileOutputStream(new java.io.File(s"${stableId}-page-${pageNum}.rtree"))
-          ser.write(rtree, os)
         }
 
-        println(s"Importing ${stableId} into database.")
-        corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoneApi)
-        println(s"Done importing ${stableId}")
+        if (commitToDb) {
+          println(s"Importing ${stableId} into database.")
+          corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoneApi)
+          println(s"Done importing ${stableId}")
+        } else {
+          println(s"DB Importing disabled.")
+        }
+
         println()
       }
     }

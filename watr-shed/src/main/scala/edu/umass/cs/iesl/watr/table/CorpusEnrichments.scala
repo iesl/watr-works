@@ -1,12 +1,9 @@
 package edu.umass.cs.iesl.watr
 package table
 
-import corpora._
 import corpora.filesys._
 
-trait CorpusEnrichments extends
-    ComponentEnrichments with
-    TextReflowEnrichments {
+trait CorpusEnrichments extends TextReflowEnrichments {
 
   import ammonite.ops._
 

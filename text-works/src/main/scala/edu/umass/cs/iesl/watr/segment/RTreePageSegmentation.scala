@@ -23,6 +23,7 @@ import edu.umass.cs.iesl.watr.tracing.VisualTracer
 
 object DocumentSegmenter {
   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
+    println(s"extracting ${stableId} chars")
     val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
     val mpageIndex = new MultiPageIndex(stableId, docStore)
 
@@ -33,7 +34,6 @@ object DocumentSegmenter {
     val docId = docStore.addDocument(stableId)
     pageAtomsAndGeometry.foreach { case(regions, geom)  =>
       val pageId = docStore.addPage(docId, geom.id)
-      println(s"added page ${pageId}")
       docStore.setPageGeometry(pageId, geom.bounds)
       mpageIndex.addPage(geom)
 
@@ -57,6 +57,38 @@ object DocumentSegmenter {
 
     new DocumentSegmenter(mpageIndex)
   }
+
+  import com.github.davidmoten.rtree
+  import rtree._
+  import rtree.{geometry => RG}
+  import spindex._
+  import rx.functions.Func1
+
+  def createRTreeSerializer(): Serializer[Component, RG.Geometry] = {
+    val ccSerializer = new Func1[Component, Array[Byte]]() {
+      override def call(entry: Component): Array[Byte] = {
+        Component.Serialization.serialize(entry)
+      }
+    }
+
+    val ccDeSerializer = new Func1[Array[Byte], Component]() {
+      override def call(bytes: Array[Byte]): Component = {
+        Component.Serialization.deserialize(bytes)
+      }
+    }
+
+    val ser: Serializer[Component, RG.Geometry] = Serializers
+      .flatBuffers[Component, RG.Geometry]()
+      .serializer(ccSerializer)
+      .deserializer(ccDeSerializer)
+      .create()
+
+    ser
+  }
+
+
+
+
 }
 
 class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
@@ -107,8 +139,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
   }
 
 
-
-
   def runPageSegmentation(): Unit = {
     vtrace.ifTrace{
       vis.cleanRTreeImageFiles(segvisRoot)
@@ -118,7 +148,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } yield {
 
-      println(s"Page ${pagenum} id=${pageId}")
+      println(s"Seg. p.${pagenum} id.${pageId}")
       val pageSegmenter = new PageSegmenter(pageId, PageNum(pagenum))
 
       pageSegmenter.runLineDeterminationOnPage()
@@ -531,11 +561,15 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
           }
       }
 
-
       gifBuilder.finish()
 
-      println(s"findVisualLines: leftover tmp page atoms = ${pageIndex.getComponentsWithLabel(LB.PageAtomTmp).length}")
+      // println(s"findVisualLines: leftover tmp page atoms = ${pageIndex.getComponentsWithLabel(LB.PageAtomTmp).length}")
+    }
 
+    def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {
+      ccs.groupBy{f(_)}.toSeq
+        .sortBy({ case (_, atoms) => atoms.length })
+        .reverse.headOption.map(_._1)
     }
 
     def createTextRowsFromVisualLines(visualLineCC: Component, visualLineComps: Seq[Component]): Unit = {
@@ -566,31 +600,32 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
       }
 
       def shrinkVisualLineToModalTopAndBottom(visualLineCC: Component): LTBounds = {
+        // println(s"shrinkVisualLineToModalTopAndBottom(${visualLineCC})")
         // pageIndex.getComponentsWithLabel(LB.PageAtomGrp)
 
         val visualLineAtoms = rtreeSearch(visualLineCC.bounds(), LB.PageAtomGrp)
 
-        val modalBaselineI = visualLineAtoms
-          .groupBy{ _.bounds.bottom.unwrap }.toSeq
-          .sortBy({ case (_, atoms) => atoms.length })
-          .reverse.headOption.map(_._1)
+        val modalBaselineI = modalValue(visualLineAtoms, _.bounds().bottom.unwrap)
           .getOrElse(visualLineCC.bounds.bottom.unwrap)
 
         val modalBaseline = FloatRep(modalBaselineI)
 
-        val modalToplineI = visualLineAtoms
-          .groupBy{ _.bounds.top.unwrap }.toSeq
-          .sortBy({ case (_, atoms) => atoms.length })
-          .reverse.headOption.map(_._1)
+        val modalToplineI = modalValue(visualLineAtoms, _.bounds.top.unwrap)
           .getOrElse(visualLineCC.bounds.top.unwrap)
 
         val modalTopline = FloatRep(modalToplineI)
 
+        val height = modalBaseline-modalTopline
 
-        val visualLineModalBounds = visualLineCC.bounds.copy(
-          top=modalTopline, height=modalBaseline-modalTopline
-        )
+        val visualLineModalBounds = if (height > 0) {
+          visualLineCC.bounds.copy(
+            top=modalTopline, height=modalBaseline-modalTopline
+          )
+        } else {
+          visualLineCC.bounds()
+        }
 
+        // println(s"    visualLineModalBounds (${visualLineModalBounds})")
         labelRegion(visualLineModalBounds, LB.Marked)
         gifBuilder.addFrame("Modal-base/top VisualLine", LB.Marked)
         deleteComponentsWithLabel(LB.Marked)
@@ -661,7 +696,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         }}.flatten
 
         val textReflow = flows(textReflowAtoms)
-        println(s"r> ${textReflow.toFormattedText()}")
+        // println(s"r> ${textReflow.toFormattedText()}")
 
         createZone(LB.VisualLine, Seq(visualLineCC.targetRegion)).foreach { zoneId =>
           docStore.setTextReflowForZone(zoneId, textReflow)

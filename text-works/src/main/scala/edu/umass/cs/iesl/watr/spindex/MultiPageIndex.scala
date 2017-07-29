@@ -243,6 +243,7 @@ class MultiPageIndex(
   }
 
   def addImageAtom(pageAtom: PageItem.ImageAtom): RegionComponent = {
+    // println(s"addImageAtom ${pageAtom.pageRegion}")
     val c = createRegionComponent(pageAtom.pageRegion, LB.Image, None)
     addComponent(c)
     c

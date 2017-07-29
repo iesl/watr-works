@@ -3,9 +3,10 @@ package table
 
 import textreflow.data._
 import corpora._
-import corpora.filesys._
 import TypeTags._
 import labeling._
+
+import textboxing.{TextBoxing => TB}, TB._
 
 trait DocumentZoningApiEnrichments extends LabelWidgetUtils {
 
@@ -40,6 +41,44 @@ trait DocumentZoningApiEnrichments extends LabelWidgetUtils {
         }
 
       }
+    }
+
+    def reportDocument()(implicit docStore: DocumentZoningApi): TB.Box = {
+      val docBoxes = for {
+        docId <- docStore.getDocument(thisStableId).toSeq
+      } yield {
+        val pagesBox = for {
+          pageId <- docStore.getPages(docId)
+        } yield {
+          val pageGeometry = docStore.getPageGeometry(pageId)
+
+          val allTargetRegions = docStore.getTargetRegions(pageId)
+
+          val regionCount =  s"TargetRegions for page ${pageId}: ${allTargetRegions.length} ".box
+
+          (
+            indent(2)("PageGeometry")
+              % indent(4)(pageGeometry.toString.box)
+              % indent(2)(regionCount)
+              % indent(2)("Page Zones")
+          )
+        }
+
+        val zoneBoxes = for {
+          labelId <- docStore.getZoneLabelsForDocument(docId)
+          zoneId <- docStore.getZonesForDocument(docId, labelId)
+          textReflow <- docStore.getTextReflowForZone(zoneId)
+        } yield {
+          (textReflow.toText.box
+            % docStore.getZone(zoneId).toString().box)
+        }
+        (s"Document ${docId} (${thisStableId}) report"
+          % indent(4)(vcat(pagesBox))
+          % indent(2)("Zones")
+          % indent(4)(vcat(zoneBoxes))
+        )
+      }
+      vcat(docBoxes)
     }
 
   }

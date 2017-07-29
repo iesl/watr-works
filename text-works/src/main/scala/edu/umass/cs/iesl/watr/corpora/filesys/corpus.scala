@@ -170,6 +170,12 @@ class CorpusEntry(
     allFiles.map(_.name)
   }
 
+  def putArtifactBytes(artifactDescriptor: String, content: Array[Byte], groupDescriptor: String = "."): CorpusArtifact = {
+    val outputPath = artifactsRoot / RelPath(groupDescriptor) / RelPath(artifactDescriptor)
+    write(outputPath, content)
+    val group = new CorpusArtifactGroup(groupDescriptor, this)
+    new CorpusArtifact(artifactDescriptor, group)
+  }
 
   def putArtifact(artifactDescriptor: String, content: String, groupDescriptor: String = "."): CorpusArtifact = {
     val outputPath = artifactsRoot / RelPath(groupDescriptor) / RelPath(artifactDescriptor)
@@ -249,6 +255,10 @@ class CorpusArtifactGroup(
 
   override val toString = {
     s"${entry}/${groupDescriptor}"
+  }
+
+  def putArtifactBytes(artifactDescriptor: String, content: Array[Byte]): CorpusArtifact = {
+    entry.putArtifactBytes(artifactDescriptor, content, groupDescriptor)
   }
 
   def putArtifact(artifactDescriptor: String, content: String): CorpusArtifact = {

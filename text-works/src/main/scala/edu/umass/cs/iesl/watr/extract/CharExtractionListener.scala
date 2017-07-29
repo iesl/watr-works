@@ -290,7 +290,10 @@ class CharExtractionListener(
     val left = geomTranslation.transX(x1)
     val top = geomTranslation.transY(y2)
 
-    LTBounds.Doubles(left, top, w, h)
+    val width = math.max(w, 0.1)
+    val height = math.max(h, 0.1)
+
+    LTBounds.Doubles(left, top, width, height)
   }
 
   def ctmToLTBoundsPdfSpace(ctm:  Matrix): LTBounds = {
@@ -380,6 +383,16 @@ class CharExtractionListener(
 
     val ctm = iri.getImageCtm
     val imgBounds = ctmToLTBounds(ctm)
+    // val bimgWidth = iri.getImage.getBufferedImage.getWidth
+    // val bimgHeight = iri.getImage.getBufferedImage.getHeight
+    // val imgWidth = iri.getImage.getWidth
+    // val imgHeight = iri.getImage.getHeight
+    // println("ctm:")
+    // println(ctm)
+    // println(s"    >> ${imgBounds} page: ${pageNum}")
+    // println(s"    >> img  w:${imgWidth} h:${imgHeight}")
+    // println(s"    >> img bw:${bimgWidth} h:${bimgHeight}")
+    // println()
 
     val pageRegion = PageRegion(
       RecordedPageID(

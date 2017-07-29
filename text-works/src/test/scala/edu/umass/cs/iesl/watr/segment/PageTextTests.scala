@@ -39,6 +39,7 @@ class PageTextTest extends DocsegTestUtil  {
 
     val allTestPdfs =
       """|101016jactamat201112024.pdf
+         |cond-mat9803032.pdf
          |101016jactamat201501032.pdf
          |saccharomyces-1-page.pdf
          |101016japsusc201210126.pdf
@@ -57,7 +58,8 @@ class PageTextTest extends DocsegTestUtil  {
         .filter(_.length()>0)
 
 
-    val pdfName = allTestPdfs(2)
+
+    val pdfName = allTestPdfs(1)
     val pdfIns = papers.paperUrl(pdfName)
     val path = fs.Path(pdfIns.getPath)
     val docId = DocumentID(s"${pdfName}")
@@ -72,17 +74,17 @@ class PageTextTest extends DocsegTestUtil  {
 
     // println("All VisualLines")
 
-    for {
-      docId    <- docStore.getDocument(docId).toList
-      pageId   <- docStore.getPages(docId)
-      (lineZone, lineNum) <- docStore.getPageVisualLines(pageId).zipWithIndex
-      reflow   <- docStore.getTextReflowForZone(lineZone.id)
-    } yield {
-      val asText = reflow.toFormattedText()
+    // for {
+    //   docId    <- docStore.getDocument(docId).toList
+    //   pageId   <- docStore.getPages(docId)
+    //   (lineZone, lineNum) <- docStore.getPageVisualLines(pageId).zipWithIndex
+    //   reflow   <- docStore.getTextReflowForZone(lineZone.id)
+    // } yield {
+    //   val asText = reflow.toFormattedText()
 
-      println(asText)
-      (lineNum, asText)
-    }
+    //   println(asText)
+    //   (lineNum, asText)
+    // }
 
   }
 }

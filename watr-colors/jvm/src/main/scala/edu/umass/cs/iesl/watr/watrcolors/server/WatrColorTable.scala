@@ -10,9 +10,10 @@ object WatrColorTable extends App {
 
   def run(args: Array[String]): Unit = {
     val dbname = args(0)
+    val passwd = args(1)
 
     val corpus = ShellCommands.initCorpus()
-    val reflowDB = ShellCommands.initReflowDB(dbname)
+    val reflowDB = ShellCommands.initReflowDB(dbname, passwd)
     val corpusAccessApi = CorpusAccessApi(reflowDB, corpus)
 
     val httpService =  new Http4sService(corpusAccessApi, "localhost", 9999)
