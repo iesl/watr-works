@@ -3,11 +3,7 @@ package formats
 
 import spindex._
 import textboxing.{TextBoxing => TB}, TB._
-
-// import watrmarks._
-// import textreflow._
 import textreflow.data._
-import utils.EnrichNumerics._
 import watrmarks.{StandardLabels => LB}
 
 object DocumentIO  {
@@ -50,7 +46,7 @@ object DocumentIO  {
     val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(   textLines.map(t => Json.stringify(JsString(t)).box):_*))
     val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
 
-    // val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
+    val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
 
     // val relations = serializeRelation(mpageIndex)
 
@@ -64,12 +60,16 @@ object DocumentIO  {
 
     // val lineLabelBlock = serializeLineLabels(mpageIndex)
 
+
+    // Lines: ordered list ("visual order") of text lines
+    // Zones: region-based labelings {"authors", [[10, 12, 14, 180], ... ]}
+
     val finalDocument = (
       s"""|{ "lines": [
           |${textLinesBlock}
           |  ],
-          |  "mentions": [
-          |{serializedZones}
+          |  "zones": [
+          |${serializedZones}
           |  ],
           |  "relations": [
           |{relationBlock}
@@ -81,8 +81,8 @@ object DocumentIO  {
           |  ],
           |  "labels": [
           |  ],
-          |  "lineDefs": [
-          |${jsonLines}
+          |  "reflows": [
+          |{jsonLines}
           |  ]
           |}
           |""".stripMargin)
@@ -93,95 +93,32 @@ object DocumentIO  {
       .mkString("\n")
   }
 
-  def serializeRelation(mpageIndex: MultiPageIndex): Seq[Box] = {
-    mpageIndex.relations
-      .filter({
-        case Relation.Record(_, rel, _)
-            if rel=="hasType" || rel== "hasMember" =>  false
-        case _ => true
-      })
-      .map({relation =>
-        val lhs = relation.lhs.map(Identities.write).unify
-        val rhs = relation.rhs.map(Identities.write).unify
-
-        val rel = relation.relationship
-        val pad1 = " "*(15-lhs.length())
-        val pad2 = " "*(12-rel.length())
-        s"""["$lhs", $pad1 "$rel", $pad2 "$rhs"]""".box
-      })
-  }
-
-
-  // def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
-  //   n.pins
-  //     .filter(p => p.label==lb)
-  //     .head
-  // }
 
 
   def serializeZones(mpageIndex: MultiPageIndex, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): Box = {
-    // val zones = mpageIndex.getZones.map({ zone =>
 
     val docStore = mpageIndex.docStore
     val docId = mpageIndex.docId
 
-    val zoneTuple = for {
+    val zones = for {
       labelId <- docStore.getZoneLabelsForDocument(docId)
       zoneId <- docStore.getZonesForDocument(docId, labelId)
     } yield {
       val zone = docStore.getZone(zoneId)
 
       // for each target region in each zone, find the (begin, end) bounds of the TextReflow in that zone
-      val zoneLocationsAndReflows = zone.regions.map({ targetRegion =>
+      val targetRegions = zone.regions.map{ targetRegion =>
+        s"[${targetRegion.bbox}]"
+      }.mkString(", ")
 
-        val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
-        for {
-          (textFlow, lineNum) <- textBlockReflows.zipWithIndex
-          (clipped, range) <- textFlow.clipToBoundingRegion(zoneTargetRegion.bbox)
-        } yield {
-          ((lineNum, range), clipped)
-        }
-      }).flatten
-
-      val zoneLineAndRange = zoneLocationsAndReflows.map(_._1)
-      val zoneReflows = zoneLocationsAndReflows.map(_._2)
-      // TODO This is a future error! it will only work b/c I happen to know in this case that
-      //    labeled zones won't cross TextReflow instances for the MIT labeling
-      val joinedZoneReflow = joins("")(zoneReflows)
-      val zoneText = joinedZoneReflow.toText()
-
-      val zoneTargets = zoneLineAndRange
-        .map({case (l, r) =>
-          val slice = textLines(l).slice(r.min, r.max)
-          if (!zoneText.contains(slice)) {
-            // Assert that the text for the mention we're serializing matches the line text
-            println(s"mismatch between mention/text line: mention=${zoneText}, lineText=${slice}")
-          }
-
-          s"""[${l}, ${r.min}, ${r.len}]"""
-        }).mkString(",")
 
       val zoneLabel = zone.label.toString
-      val mentionId = zone.id.unwrap
 
-      val clustId = mpageIndex.relations.collect({
-        case Relation.Record(clusterId, "hasMember", e2) if Identities.idValue(e2) == mentionId =>
-          Identities.idValue(clusterId)
-      }).headOption.getOrElse(0)
-
-
-      val pad3 = " "*(3 - mentionId.toString.length)
-      val pad4 = " "*(3 - clustId.toString.length)
-
-      val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 ["$zoneLabel"], "${zoneText}", [${zoneTargets}]]""".box
-
-      (mentionId, clustId, mentionStr)
+      val mentionStr = s"""[${zoneId}, ["$zoneLabel"], [${targetRegions}]]""".box
+      mentionStr
     }
 
-    val zones = zoneTuple
-      .sortBy({x => (x._1, x._2) })
-
-    vjoinTrailSep(left, ",")(zones.map(_._3):_*)
+    vjoinTrailSep(left, ",")(zones:_*)
   }
 
   def serializeLineLabels(mpageIndex: MultiPageIndex): Box = {
@@ -224,3 +161,92 @@ object DocumentIO  {
 
 
 }
+
+  // def serializeZones2(mpageIndex: MultiPageIndex, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): Box = {
+
+  //   val docStore = mpageIndex.docStore
+  //   val docId = mpageIndex.docId
+
+  //   val zoneTuple = for {
+  //     labelId <- docStore.getZoneLabelsForDocument(docId)
+  //     zoneId <- docStore.getZonesForDocument(docId, labelId)
+  //   } yield {
+  //     val zone = docStore.getZone(zoneId)
+
+  //     // for each target region in each zone, find the (begin, end) bounds of the TextReflow in that zone
+  //     val zoneLocationsAndReflows = zone.regions.map({ targetRegion =>
+
+  //       val zoneTargetRegion = docStore.getTargetRegion(targetRegion.id)
+  //       for {
+  //         (textFlow, lineNum) <- textBlockReflows.zipWithIndex
+  //         (clipped, range) <- textFlow.clipToBoundingRegion(zoneTargetRegion.bbox)
+  //       } yield {
+  //         ((lineNum, range), clipped)
+  //       }
+  //     }).flatten
+
+  //     val zoneLineAndRange = zoneLocationsAndReflows.map(_._1)
+  //     val zoneReflows = zoneLocationsAndReflows.map(_._2)
+  //     // TODO This is a future error! it will only work b/c I happen to know in this case that
+  //     //    labeled zones won't cross TextReflow instances for the MIT labeling
+  //     val joinedZoneReflow = joins("")(zoneReflows)
+  //     val zoneText = joinedZoneReflow.toText()
+
+  //     val zoneTargets = zoneLineAndRange
+  //       .map({case (l, r) =>
+  //         val slice = textLines(l).slice(r.min, r.max)
+  //         if (!zoneText.contains(slice)) {
+  //           // Assert that the text for the mention we're serializing matches the line text
+  //           println(s"mismatch between mention/text line: mention=${zoneText}, lineText=${slice}")
+  //         }
+
+  //         s"""[${l}, ${r.min}, ${r.len}]"""
+  //       }).mkString(",")
+
+  //     val zoneLabel = zone.label.toString
+  //     val mentionId = zone.id.unwrap
+
+  //     val clustId = mpageIndex.relations.collect({
+  //       case Relation.Record(clusterId, "hasMember", e2) if Identities.idValue(e2) == mentionId =>
+  //         Identities.idValue(clusterId)
+  //     }).headOption.getOrElse(0)
+
+
+  //     val pad3 = " "*(3 - mentionId.toString.length)
+  //     val pad4 = " "*(3 - clustId.toString.length)
+
+  //     val mentionStr = s"""[${mentionId},$pad3 ${clustId},$pad4 ["$zoneLabel"], "${zoneText}", [${zoneTargets}]]""".box
+
+  //     (mentionId, clustId, mentionStr)
+  //   }
+
+  //   val zones = zoneTuple
+  //     .sortBy({x => (x._1, x._2) })
+
+  //   vjoinTrailSep(left, ",")(zones.map(_._3):_*)
+  // }
+
+// def serializeRelation(mpageIndex: MultiPageIndex): Seq[Box] = {
+//   mpageIndex.relations
+//     .filter({
+//       case Relation.Record(_, rel, _)
+//           if rel=="hasType" || rel== "hasMember" =>  false
+//       case _ => true
+//     })
+//     .map({relation =>
+//       val lhs = relation.lhs.map(Identities.write).unify
+//       val rhs = relation.rhs.map(Identities.write).unify
+
+//       val rel = relation.relationship
+//       val pad1 = " "*(15-lhs.length())
+//       val pad2 = " "*(12-rel.length())
+//       s"""["$lhs", $pad1 "$rel", $pad2 "$rhs"]""".box
+//     })
+// }
+
+
+// def selectPinForLabel(lb: Label, n: BioNode): BioPin = {
+//   n.pins
+//     .filter(p => p.label==lb)
+//     .head
+// }

@@ -129,7 +129,7 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
       .evalMap { case (corpusEntry, i) =>
         Task.delay {
           println(s"processing entry ${i}")
-          segment(corpusEntry)
+          segment(corpusEntry, commitToDb=true, writeRTrees=false)
           println(s"done entry ${i}")
         }
       }
@@ -160,7 +160,7 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
           .evalMap { case (corpusEntry, i) =>
             Task.delay {
               println(s"processing entry ${i}")
-              segment(corpusEntry)
+              segment(corpusEntry, commitToDb=true, writeRTrees=false)
               println(s"done entry ${i}")
             }
           }
@@ -170,7 +170,7 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
       .run.unsafeRun
   }
 
-  def segmentEntry(stableId: String@@DocumentID, commitToDb: Boolean=false)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+  def segmentEntry(stableId: String@@DocumentID, commitToDb: Boolean=false, writeRTrees: Boolean=false)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val docStore = corpusAccessApi.docStore
 
     if (commitToDb && docStore.getDocument(stableId).isDefined) {
@@ -185,7 +185,7 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
         // pdfArtifact    <- corpusEntry.getPdfArtifact
         // pdfPath        <- pdfArtifact.asPath.toOption
       } {
-        segment(corpusEntry, commitToDb)
+        segment(corpusEntry, commitToDb, writeRTrees)
         // val memZoneApi = new MemDocZoningApi
         // val segmenter = DocumentSegmenter
         //   .createSegmenter(stableId, pdfPath, memZoneApi)
@@ -205,7 +205,7 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
   def segment(
     corpusEntry: CorpusEntry,
     commitToDb: Boolean=true,
-    writeRTrees: Boolean=true
+    writeRTrees: Boolean=false
   )(implicit corpusAccessApi: CorpusAccessApi): Unit = {
 
     val docStore = corpusAccessApi.docStore

@@ -84,14 +84,14 @@ class PageOneLabeler(
   workflowId: String@@WorkflowID
 ) extends ServerLabelerBuilder {
 
-  override def queryLabel: Label = LB.Authors
-  override def batchSize: Int = 12
+  override def queryLabel: Label = LB.DocumentPages
+  override def batchSize: Int = 8
 
   override def createLabeler(zones: Seq[Zone]): LabelWidgetConfig = {
 
     val pageOnes = for {
       zone <- zones
-      region <- zone.regions
+      region <- zone.regions.headOption
     } yield region
 
     singlePageLabeler(pageOnes)
@@ -111,7 +111,7 @@ class PageOneLabeler(
     val placeholders = Stream.continually(LW.textbox("<empty page>"))
     val widgets = (pageOnes.toStream ++ placeholders).take(batchSize)
 
-    val rows = widgets.grouped(4).toList.map{ws =>
+    val rows = widgets.grouped(3).toList.map{ws =>
       LW.row(ws:_*)
     }
 
