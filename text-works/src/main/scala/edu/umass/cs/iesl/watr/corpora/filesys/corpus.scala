@@ -172,6 +172,9 @@ class CorpusEntry(
 
   def putArtifactBytes(artifactDescriptor: String, content: Array[Byte], groupDescriptor: String = "."): CorpusArtifact = {
     val outputPath = artifactsRoot / RelPath(groupDescriptor) / RelPath(artifactDescriptor)
+    if (fs.exists(outputPath)) {
+      fs.rm(outputPath)
+    }
     write(outputPath, content)
     val group = new CorpusArtifactGroup(groupDescriptor, this)
     new CorpusArtifact(artifactDescriptor, group)

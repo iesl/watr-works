@@ -32,13 +32,12 @@ class PageTextTest extends DocsegTestUtil  {
          |
          |""".stripMargin
     }
-
-
     expectedText.split("\n").map(_.trim())
-
 
     val allTestPdfs =
       """|101016jactamat201112024.pdf
+         |hep-ph9503349.pdf
+         |astro-ph9903259.pdf
          |cond-mat9803032.pdf
          |101016jactamat201501032.pdf
          |saccharomyces-1-page.pdf

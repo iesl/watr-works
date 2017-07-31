@@ -428,9 +428,6 @@ object DocumentFontInfo {
         Char.char2int(c).toString
       }.mkString
 
-
-
-
       val bs = pdfstring.getValueBytes.map(Byte.byte2int(_)).mkString(",")
 
       val fontProgram = font.getFontProgram

@@ -171,6 +171,10 @@ class CharExtractionListener(
 
           computeTextBounds(charTri).map { charBounds =>
             val nextId = charIdGen.nextId
+            if (charBounds.width <= 0 || charBounds.height <= 0) {
+              println(s"bad bbox: ${charBounds}")
+              fonts.DocumentFontInfo.outputCharInfo(charTri, reader, force=true)
+            }
 
             val charAtom = CharAtom(
               nextId,
@@ -223,12 +227,21 @@ class CharExtractionListener(
     val descentStart = charTri.getDescentLine().getStartPoint()
 
     val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
-    val absoluteCharBottom: Double = descentStart.get(PVector.I2).toDouble
+
+    val ascentY = ascentStart.get(PVector.I2).toDouble
+    val descentY = descentStart.get(PVector.I2).toDouble
+
+    var absCharBottom: Double = descentY
+    var charHeight = ascentY - descentY
+
+    if (charHeight < 0 ) {
+      charHeight = - charHeight
+      absCharBottom = ascentY
+    }
 
     val charLeft = geomTranslation.transX(absoluteCharLeft)
-    val charBottom = geomTranslation.transY(absoluteCharBottom)
+    val charBottom = geomTranslation.transY(absCharBottom)
 
-    val charHeight = ascentStart.get(PVector.I2).toDouble - descentStart.get(PVector.I2)
     var charWidth = charTri.getDescentLine().getLength().toDouble
 
     if (charWidth.toInt == 0) {
@@ -240,14 +253,6 @@ class CharExtractionListener(
       val bs = pdfString.getValueBytes.map(Byte.byte2int(_) & 0xFF)
       val glyphCode = bs(0)
 
-      if (glyphCode < 0) {
-        // println(s"""bs = [${bs.mkString(", ")}], pdfString = ${pdfString.toString()}""")
-
-        // import DocumentFontInfo._
-        // println(getCharTriInfo(charTri, reader))
-
-      }
-      // val charBBox = fontProgram.getCharBBox(glyphCode)
       val fontBbox = fontMetrics.getBbox
       val glyphWidths = fontMetrics.getGlyphWidths
 
@@ -261,6 +266,8 @@ class CharExtractionListener(
         }
       }
     }
+
+
 
 
     if (charHeight.nan || charHeight.inf || charHeight.toInt==0) {

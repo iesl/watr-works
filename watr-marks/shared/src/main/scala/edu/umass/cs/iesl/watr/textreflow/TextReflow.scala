@@ -28,18 +28,6 @@ object TextReflowF {
   case class Flow[A](as: List[A])                         extends TextReflowF[A]
   case class Labeled[A](labels: Set[Label], a: A)         extends TextReflowF[A]
 
-  // // case class Region(bbox: LTBounds)                       extends TextReflowF[Nothing]
-  // case class Anchor[A](
-  //   id: String@@AnchorID,
-  //   optA: Option[A]
-  // ) extends TextReflowF[A]
-
-  // case class Coupling[A](
-  //   anchor: A,
-  //   prev: Option[AnchorID],
-  //   next: Option[AnchorID]
-  // ) extends TextReflowF[A]
-
   implicit def TextReflowTraverse: Traverse[TextReflowF] = new Traverse[TextReflowF] {
     def traverseImpl[G[_], A, B](fa: TextReflowF[A])(f: A => G[B])(implicit G: Applicative[G]): G[TextReflowF[B]] = fa match {
       case Atom(c)                    => G.point(Atom(c))

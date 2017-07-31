@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
+
 import scala.concurrent.Future
 
 import labeling._
@@ -50,8 +51,8 @@ class BioArxivServer(
 
         val mkWidgetOpt: Option[MakeWidget] = for {
           entry <- corpus.entry(stableId.unwrap)
-          rec   <- BioArxivOps.getBioarxivJsonArtifact(entry)
         } yield doOrDie {
+          val rec  = BioArxivOps.getBioarxivJsonArtifact(entry)
 
           val mkWidget: LabelerIdentifier => (LabelWidget, LabelerIdentifier) =
             labelerIdentifier => {

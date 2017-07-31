@@ -86,9 +86,6 @@ object DocumentSegmenter {
     ser
   }
 
-
-
-
 }
 
 class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
@@ -419,11 +416,10 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
     case class GifBuilder(name: String, frameRate: FiniteDuration) {
 
       import com.sksamuel.scrimage.nio.StreamingGifWriter
-      // import com.sksamuel.scrimage.nio
       import java.awt.image.BufferedImage;
       import scala.collection.mutable
       import com.sksamuel.scrimage
-      import com.sksamuel.scrimage.Image
+      import scrimage.Image
 
 
       val gifFrames = mutable.ArrayBuffer[Image]()
@@ -553,7 +549,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
               val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
 
-              createTextRowsFromVisualLines(visualLineCC, visualLineComps)
+              createTextRowFromVisualLine(visualLineCC, visualLineComps)
             }
 
             pageIndex.getComponentsWithLabel(LB.PageAtomGrp)
@@ -572,9 +568,8 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         .reverse.headOption.map(_._1)
     }
 
-    def createTextRowsFromVisualLines(visualLineCC: Component, visualLineComps: Seq[Component]): Unit = {
+    def createTextRowFromVisualLine(visualLineCC: Component, visualLineComps: Seq[Component]): Unit = {
       import textreflow.data._
-
 
       val visualLineBounds = visualLineCC.bounds()
       val visualLineAtoms  = visualLineComps.sortBy{ _.bounds.left }
