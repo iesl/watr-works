@@ -19,7 +19,7 @@ trait LibVersions {
   val scaladgetV          = "0.9.4"
   val http4sVersion       = "0.16.0a-M2"
   val fs2Version          = "0.9.7"
-  val ammoniteVersion     = "1.0.0"
+  val ammoniteVersion     = "1.0.1"
 }
 
 

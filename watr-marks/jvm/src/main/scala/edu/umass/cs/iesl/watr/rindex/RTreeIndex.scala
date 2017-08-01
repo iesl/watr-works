@@ -19,6 +19,7 @@ class RTreeIndex[T: RTreeIndexable](
   initItems: Seq[T]
 ) {
   import G._
+  import RGeometry._
 
   val si = implicitly[RTreeIndexable[T]]
 
@@ -37,20 +38,6 @@ class RTreeIndex[T: RTreeIndexable](
   }
 
 
-  def toJsiRectangle(tb: LTBounds): RG.Rectangle = {
-    val LTBounds.Floats(l, t, w, h) = tb
-    RGeometry.rectangle(l, t, w, h)
-  }
-
-  def toRGLine(tb: Line): RG.Line = {
-    val Line(Point.Doubles(x1, y1), Point.Doubles(x2, y2)) = tb
-    RG.Geometries.line(x1, y1, x2, y2)
-  }
-
-  def toRGPoint(tb: Point): RG.Point = {
-    val Point.Doubles(x1, y1) = tb
-    RG.Geometries.point(x1, y1)
-  }
 
   def remove(item: T): Unit = {
     spatialIndex = spatialIndex.delete(
@@ -192,6 +179,23 @@ object RTreeIndex {
 
 
 object RGeometry {
+  import G._
+
+  def toJsiRectangle(tb: LTBounds): RG.Rectangle = {
+    val LTBounds.Floats(l, t, w, h) = tb
+    RGeometry.rectangle(l, t, w, h)
+  }
+
+  def toRGLine(tb: Line): RG.Line = {
+    val Line(Point.Doubles(x1, y1), Point.Doubles(x2, y2)) = tb
+    RG.Geometries.line(x1, y1, x2, y2)
+  }
+
+  def toRGPoint(tb: Point): RG.Point = {
+    val Point.Doubles(x1, y1) = tb
+    RG.Geometries.point(x1, y1)
+  }
+
   def rectangle(
     x: Double, y: Double, width: Double, height: Double
   ): RG.Rectangle = rectangle(

@@ -8,25 +8,37 @@ import geometry._
 
 import watrmarks.{StandardLabels => LB}
 import rindex._
+import utils.DisjointSet
 
 /**
-  A PageIndex wraps a RTreeIndex for Components, and adds:
-    - the ability to associate labels with components
-    - A tree-like parent/child relationship between components, which provides, e.g., a reading order
+  A PageIndex wraps an RTree[Component], and adds:
+  - Connecting components via:
+    - Disjoint sets
+       LB.VisualLine -> DisjointSet()
+       LB.Formula -> DisjointSet()
+
+    - Ordering (List[Component])
 
   */
 
-case class PageIndex(
-  componentIndex: RTreeIndex[Component],
-  startingGeometry: PageGeometry,
-  componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap(),
-  componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap(),
-  labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
+class PageIndex(
+  val pageGeometry: PageGeometry
 ) {
+  val componentIndex: RTreeIndex[Component] = RTreeIndex.createFor[Component]()
 
-  var pageGeometry: PageGeometry = startingGeometry
-  def getPageGeometry(): PageGeometry = pageGeometry
-  def adjustBounds(bbox: LTBounds): Unit = pageGeometry = pageGeometry.copy(bounds=bbox)
+  val componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap()
+  val componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap()
+  val labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
+
+  val disjointSets: mutable.HashMap[Label, DisjointSet[Component]] = mutable.HashMap()
+
+  def initDisjointCluster(l: Label, f: Component => Boolean): Unit = {
+    val toAdd = componentIndex.getItems.filter(f)
+    disjointSets.getOrElseUpdate(l,
+      DisjointSet.apply[Component](toAdd:_*)
+    )
+  }
+
 
   def addComponent(c: Component): Component = {
     componentIndex.add(c)
@@ -57,20 +69,6 @@ case class PageIndex(
       .map(_.asInstanceOf[RegionComponent])
   }
 
-
-  def setChildrenWithLabel(cid: Int@@ComponentID, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
-    val lmap = componentToChildren.getOrElse(cid, mutable.HashMap())
-    lmap.put(l, tree)
-    componentToChildren.put(cid, lmap)
-  }
-
-
-  def getChildrenWithLabel(cid: Int@@ComponentID, l: Label): Option[Seq[Int@@ComponentID]] = {
-    for {
-      lt <- componentToChildren.get(cid)
-      t <- lt.get(l)
-    } yield t
-  }
 
   def getComponentLabels(cid: Int@@ComponentID): Seq[Label] = {
     componentToLabels.get(cid)

@@ -10,32 +10,13 @@ class DocumentIOTests extends DocsegTestUtil  {
 
   it should "extract text" in {
 
-    val expectedText = {
-      """|
-         | bioRxiv preprint first posted online Nov. 30, 2016; doi: http://dx.doi.org/10.1101/090498. The copyright holder for this preprint (which was not
-         |                   peer-reviewed) is the author/funder. It is made available under a CC-BY-NC-ND 4.0 International license.
-         |
-         |
-         |          The effect of known mutator alleles in a cluster of clinical
-         |                      Saccharomyces cerevisiae strains
-         |
-         |    Daniel A. Skelly^{1,3}, Paul M. Magwene^{1}, Brianna Meeks^{2}, Helen A.Murphy^{2}
-         |
-         |    ^{1}Department of Biology, Duke University, Durham, North Carolina
-         |    ^{2}Department of Biology, The College of William and Mary, Williamsburg, Virginia
-         |    ^{3}Current address: The Jackson Laboratory, Bar Harbor, Maine
-         |
-         |""".stripMargin
-    }
-    expectedText.split("\n").map(_.trim())
-
     val allTestPdfs =
       """|
-         |saccharomyces-1-page.pdf
+         |example-from-latex.pdf.d/pg_0015.pdf
+         |example-from-latex.pdf.d/example-from-latex.pdf
          |""".stripMargin.split("\n")
         .map(_.trim())
         .filter(_.length()>0)
-
 
 
     val pdfName = allTestPdfs(0)

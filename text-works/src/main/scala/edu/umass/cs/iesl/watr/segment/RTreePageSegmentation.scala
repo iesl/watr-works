@@ -20,6 +20,7 @@ import utils.ExactFloats._
 import shapeless.lens
 import PageComponentImplicits._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
+import textreflow.data._
 
 object DocumentSegmenter {
   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
@@ -395,10 +396,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
           }
         }
 
-        val finalRow = finalGroups.toRow
-        // val hb = lineCCs.head.bounds
-        // println(s"${hb}>    ${finalRow.toText}")
-        finalRow
+        finalGroups.toRow
       } getOrElse { textRow }
 
     }
@@ -569,7 +567,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
     }
 
     def createTextRowFromVisualLine(visualLineCC: Component, visualLineComps: Seq[Component]): Unit = {
-      import textreflow.data._
 
       val visualLineBounds = visualLineCC.bounds()
       val visualLineAtoms  = visualLineComps.sortBy{ _.bounds.left }
@@ -628,7 +625,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         visualLineModalBounds
       }
 
-
       if (visualLineAtoms.nonEmpty) {
         val visualLineModalBounds = shrinkVisualLineToModalTopAndBottom(visualLineCC)
 
@@ -671,33 +667,55 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
           case _ =>
 
         }}
+        // Convert consecutive sup/sub to single label
+        val maybeCursor = textRow.groupBy { case (cell1, cell2) =>
+          cell1.labels.contains(LB.Sub) && cell2.labels.contains(LB.Sub)
+        }
+        maybeCursor.foreach { nCursor =>
+          nCursor.foreach{ c =>
+            val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sub) }
+            if (hasSubLabel) {
+              c.focus.foreach { fcell =>
+                fcell.pins.remove(LB.Sub.U)
+              }
+              c.addLabel(LB.Sub)
+            }
+          }
+        }
 
         val spacedRow = insertSpacesInRow(textRow)
-        val textReflowAtoms: Seq[TextReflow] = spacedRow.cells.map{ _ match {
-          case cell@ TextGrid.ComponentCell(cc) => cc match {
-            case RegionComponent(id, role, pageRegion, maybeText ) =>
-              None
-            case AtomicComponent(id, charAtom, role) =>
-              val tr = if (cell.labels.nonEmpty) {
-                labeled(cell.labels.toSet, atom(charAtom))
-              } else {
-                atom(charAtom)
-              }
-              Some(tr)
-          }
-          case cell@ TextGrid.InsertCell(text, loc) =>
-            Some(insert(text))
 
-        }}.flatten
 
-        val textReflow = flows(textReflowAtoms)
-        // println(s"r> ${textReflow.toFormattedText()}")
+        val textReflow = convertTextRowToTextReflow(spacedRow)
 
         createZone(LB.VisualLine, Seq(visualLineCC.targetRegion)).foreach { zoneId =>
           docStore.setTextReflowForZone(zoneId, textReflow)
         }
       }
       gifBuilder.finish()
+    }
+
+
+    def convertTextRowToTextReflow(textRow: TextGrid.Row): TextReflow = {
+
+      val textReflowAtoms: Seq[TextReflow] = textRow.cells.map{ _ match {
+        case cell@ TextGrid.ComponentCell(cc) => cc match {
+          case RegionComponent(id, role, pageRegion, maybeText) =>
+            None
+          case AtomicComponent(id, charAtom, role) =>
+            val tr = if (cell.labels.nonEmpty) {
+              labeled(cell.labels.toSet, atom(charAtom))
+            } else {
+              atom(charAtom)
+            }
+            Some(tr)
+        }
+        case cell@ TextGrid.InsertCell(text, loc) =>
+          Some(insert(text))
+
+      }}.flatten
+
+      flows(textReflowAtoms)
     }
 
 

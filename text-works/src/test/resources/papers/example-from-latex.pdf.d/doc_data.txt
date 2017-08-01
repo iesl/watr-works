@@ -1,0 +1,306 @@
+InfoBegin
+InfoKey: Subject
+InfoValue: LaTeX, TeX
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20030114154800
+InfoBegin
+InfoKey: Author
+InfoValue: Wang Yin &lt;wang-y01@mails.tsinghua.edu.cn&gt;
+InfoBegin
+InfoKey: Keywords
+InfoValue: LaTeX, TeX, Typesetting
+InfoBegin
+InfoKey: Title
+InfoValue: A LaTeX example
+InfoBegin
+InfoKey: Creator
+InfoValue: LaTeX with hyperref package
+InfoBegin
+InfoKey: Producer
+InfoValue: pdfTeX-1.0b-pdfcrypt
+NumberOfPages: 24
+BookmarkBegin
+BookmarkTitle: Basic List Types
+BookmarkLevel: 1
+BookmarkPageNumber: 4
+BookmarkBegin
+BookmarkTitle: Enumeration
+BookmarkLevel: 2
+BookmarkPageNumber: 4
+BookmarkBegin
+BookmarkTitle: Change the style of enumeration
+BookmarkLevel: 2
+BookmarkPageNumber: 4
+BookmarkBegin
+BookmarkTitle: Itemize
+BookmarkLevel: 2
+BookmarkPageNumber: 5
+BookmarkBegin
+BookmarkTitle: Description
+BookmarkLevel: 2
+BookmarkPageNumber: 5
+BookmarkBegin
+BookmarkTitle: Your own list
+BookmarkLevel: 2
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: Math Formulae
+BookmarkLevel: 1
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: Aligned Math
+BookmarkLevel: 2
+BookmarkPageNumber: 7
+BookmarkBegin
+BookmarkTitle: Phantoms
+BookmarkLevel: 2
+BookmarkPageNumber: 7
+BookmarkBegin
+BookmarkTitle: Theorems
+BookmarkLevel: 1
+BookmarkPageNumber: 7
+BookmarkBegin
+BookmarkTitle: Tables
+BookmarkLevel: 1
+BookmarkPageNumber: 7
+BookmarkBegin
+BookmarkTitle: Table aligned with dots
+BookmarkLevel: 2
+BookmarkPageNumber: 9
+BookmarkBegin
+BookmarkTitle: hhline example
+BookmarkLevel: 2
+BookmarkPageNumber: 10
+BookmarkBegin
+BookmarkTitle: Tables inside tables
+BookmarkLevel: 2
+BookmarkPageNumber: 10
+BookmarkBegin
+BookmarkTitle: Longtable
+BookmarkLevel: 2
+BookmarkPageNumber: 10
+BookmarkBegin
+BookmarkTitle: color
+BookmarkLevel: 1
+BookmarkPageNumber: 13
+BookmarkBegin
+BookmarkTitle: Shaped Paragraphs
+BookmarkLevel: 1
+BookmarkPageNumber: 14
+BookmarkBegin
+BookmarkTitle: Font
+BookmarkLevel: 1
+BookmarkPageNumber: 14
+BookmarkBegin
+BookmarkTitle: family, series, and shapes
+BookmarkLevel: 2
+BookmarkPageNumber: 15
+BookmarkBegin
+BookmarkTitle: default text fonts
+BookmarkLevel: 2
+BookmarkPageNumber: 15
+BookmarkBegin
+BookmarkTitle: symbol
+BookmarkLevel: 2
+BookmarkPageNumber: 15
+BookmarkBegin
+BookmarkTitle: MathFonts
+BookmarkLevel: 2
+BookmarkPageNumber: 15
+BookmarkBegin
+BookmarkTitle: font packages
+BookmarkLevel: 2
+BookmarkPageNumber: 15
+BookmarkBegin
+BookmarkTitle: Old German Fonts
+BookmarkLevel: 3
+BookmarkPageNumber: 15
+BookmarkBegin
+BookmarkTitle: Lucida Bright
+BookmarkLevel: 2
+BookmarkPageNumber: 15
+BookmarkBegin
+BookmarkTitle: Setting font attributes individually
+BookmarkLevel: 2
+BookmarkPageNumber: 16
+BookmarkBegin
+BookmarkTitle: Choose Font Directly
+BookmarkLevel: 2
+BookmarkPageNumber: 16
+BookmarkBegin
+BookmarkTitle: Figure insertion
+BookmarkLevel: 1
+BookmarkPageNumber: 16
+BookmarkBegin
+BookmarkTitle: Basic Insertion of a EPS figure
+BookmarkLevel: 2
+BookmarkPageNumber: 16
+BookmarkBegin
+BookmarkTitle: Floating Figures
+BookmarkLevel: 2
+BookmarkPageNumber: 17
+BookmarkBegin
+BookmarkTitle: Insert format other than EPS
+BookmarkLevel: 2
+BookmarkPageNumber: 17
+BookmarkBegin
+BookmarkTitle: Rotate and Scale Figures
+BookmarkLevel: 2
+BookmarkPageNumber: 17
+BookmarkBegin
+BookmarkTitle: Boxed figures
+BookmarkLevel: 2
+BookmarkPageNumber: 17
+BookmarkBegin
+BookmarkTitle: The picins Package
+BookmarkLevel: 2
+BookmarkPageNumber: 21
+BookmarkBegin
+BookmarkTitle: &#186;&#186;&#215;&#214;
+BookmarkLevel: 1
+BookmarkPageNumber: 21
+BookmarkBegin
+BookmarkTitle: &#202;&#215;&#182;&#206;&#203;&#245;&#189;&#248;
+BookmarkLevel: 2
+BookmarkPageNumber: 21
+BookmarkBegin
+BookmarkTitle: &#203;&#245;&#189;&#248;&#202;&#215;&#182;&#206;
+BookmarkLevel: 2
+BookmarkPageNumber: 21
+BookmarkBegin
+BookmarkTitle: &#187;&#216;&#181;&#189;&#195;&#187;&#211;&#208;&#203;&#245;&#189;&#248;&#181;&#196;&#199;&#233;&#191;&#246;
+BookmarkLevel: 2
+BookmarkPageNumber: 22
+BookmarkBegin
+BookmarkTitle: &#214;&#208;&#206;&#196;&#180;&#214;&#204;&#229;&#178;&#226;&#202;&#212;
+BookmarkLevel: 2
+BookmarkPageNumber: 22
+BookmarkBegin
+BookmarkTitle: &#215;&#214;&#204;&#229;&#188;&#228;&#190;&#221;&#208;&#222;&#184;&#196;
+BookmarkLevel: 2
+BookmarkPageNumber: 22
+BookmarkBegin
+BookmarkTitle: &#214;&#208;&#206;&#196;&#215;&#214;&#204;&#229;&#180;&#243;&#208;&#161;
+BookmarkLevel: 2
+BookmarkPageNumber: 23
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 6
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 7
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 8
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 9
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 10
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 11
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 12
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 13
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 14
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 15
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 16
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 17
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 18
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 19
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 20
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 21
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 22
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 23
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89
+PageMediaBegin
+PageMediaNumber: 24
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 841.89
+PageMediaDimensions: 595.276 841.89

@@ -14,7 +14,6 @@ import tracing.VisualTracer
 // import textreflow._
 import textreflow.data._
 import TypeTags._
-import rindex._
 import corpora._
 
 import watrmarks.{StandardLabels => LB}
@@ -108,25 +107,25 @@ class MultiPageIndex(
   // }
 
 
-  def setChildrenWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
-    val pageIndex = pageIndexes(getPageForComponent(c))
-    pageIndex.setChildrenWithLabel(c.id, l, tree)
-  }
+  // def setChildrenWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
+  //   val pageIndex = pageIndexes(getPageForComponent(c))
+  //   pageIndex.setChildrenWithLabel(c.id, l, tree)
+  // }
 
-  def getChildrenWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
-    val pageIndex = pageIndexes(getPageForComponent(c))
-    pageIndex.getChildrenWithLabel(c.id, l)
-  }
+  // def getChildrenWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
+  //   val pageIndex = pageIndexes(getPageForComponent(c))
+  //   pageIndex.getChildrenWithLabel(c.id, l)
+  // }
 
-  def getChildren(c: Component, l: Label): Option[Seq[Component]] = {
-    val pageIndex = pageIndexes(getPageForComponent(c))
-    pageIndex.getChildrenWithLabel(c.id, l)
-      .map(tree => tree.map{ cid =>
-        pageIndex.componentIndex.get(cid.unwrap).getOrElse {
-          sys.error(s"getChildren(${c}, ${l}) contained an invalid component id: ${cid}")
-        }
-      })
-  }
+  // def getChildren(c: Component, l: Label): Option[Seq[Component]] = {
+  //   val pageIndex = pageIndexes(getPageForComponent(c))
+  //   pageIndex.getChildrenWithLabel(c.id, l)
+  //     .map(tree => tree.map{ cid =>
+  //       pageIndex.componentIndex.get(cid.unwrap).getOrElse {
+  //         sys.error(s"getChildren(${c}, ${l}) contained an invalid component id: ${cid}")
+  //       }
+  //     })
+  // }
 
   def getPageForComponent(c: Component): Int@@PageNum = {
     c.targetRegion.page.stable.pageNum
@@ -275,8 +274,7 @@ class MultiPageIndex(
 
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
-    val pageIndex = PageIndex(
-      RTreeIndex.createFor[Component](),
+    val pageIndex = new PageIndex(
       pageGeometry
     )
 

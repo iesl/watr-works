@@ -22,7 +22,7 @@ class RTreeVisualizer(
   def createRTreeImage(pageIndex: PageIndex, l0: Label, labels: Label*): Image = {
     val rTreeIndex = pageIndex.componentIndex
 
-    val LTBounds(l, t, w, h) = pageIndex.getPageGeometry.bounds
+    val LTBounds(l, t, w, h) = pageIndex.pageGeometry.bounds
     val pageBounds = LTBounds(l, t, w+10, h+10)
     val pageCanvas = IM.createCanvas(pageBounds)
 
@@ -32,7 +32,7 @@ class RTreeVisualizer(
       .filter { c =>
         lbls.contains(c.roleLabel)
       }
-      .map { c => IM.ltBoundsToDrawables(c.bounds, pageIndex.getPageGeometry, pageBounds, labelColors(c.roleLabel) ) }
+      .map { c => IM.ltBoundsToDrawables(c.bounds, pageIndex.pageGeometry, pageBounds, labelColors(c.roleLabel) ) }
 
     val embossedCanvas = pageCanvas.draw(overlays.flatten.reverse)
 
