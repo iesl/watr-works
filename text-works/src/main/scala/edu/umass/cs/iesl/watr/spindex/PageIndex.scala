@@ -77,18 +77,19 @@ class PageIndex(
     disjointSets.get(l)
   }
 
-  def getClusters(l: Label): Iterable[Iterable[Component]] = {
+  def getClusters(l: Label): Seq[Seq[Component]] = {
     disjointSets.get(l).map{set =>
-      set.sets
-    } getOrElse(Iterable())
+      set.sets.toSeq.map(_.toSeq)
+    } getOrElse(Seq())
   }
 
-  def getClusterRoots(l: Label): Iterable[Component] = {
+  def getClusterRoots(l: Label): Seq[Component] = {
     disjointSets.get(l).map{set =>
-      set.sets.map{ cluster =>
-        set.getCanonical(cluster.head)
-      }
-    } getOrElse(Iterable())
+      set.sets.toSeq.map(_.toSeq)
+        .map{ cluster =>
+          set.getCanonical(cluster.head)
+        }
+    } getOrElse(Seq())
   }
 
 

@@ -24,6 +24,12 @@ import textreflow.data._
 import scala.concurrent.duration._
 
 object DocumentSegmenter {
+  import com.github.davidmoten.rtree
+  import rtree._
+  import rtree.{geometry => RG}
+  import spindex._
+  import rx.functions.Func1
+
 
   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
     println(s"extracting ${stableId} chars")
@@ -61,11 +67,6 @@ object DocumentSegmenter {
     new DocumentSegmenter(mpageIndex)
   }
 
-  import com.github.davidmoten.rtree
-  import rtree._
-  import rtree.{geometry => RG}
-  import spindex._
-  import rx.functions.Func1
 
   def createRTreeSerializer(): Serializer[Component, RG.Geometry] = {
     val ccSerializer = new Func1[Component, Array[Byte]]() {
@@ -172,26 +173,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
     vis.cleanRTreeImageFiles()
 
-
-    // def writeRTreeImage(name: String, l0: Label, labels: Label*): Unit = {
-    //   vtrace.ifTrace {
-    //     if (__debug) {
-    //       val image = vis.createRTreeImage(l0, labels:_*)
-    //       vis.writeRTreeImage(name, image)
-    //     }
-    //   }
-    // }
-
-    // def rtreeSearchHasAllLabels(
-    //   queryRegion: LTBounds,
-    //   role: Label, labels: Label*
-    // ): Seq[Component] = {
-
-    //   rTreeIndex.search(queryRegion, {cc =>
-    //     (cc.roleLabel == role &&
-    //       labels.forall(cc.hasLabel(_)))
-    //   })
-    // }
 
     def rtreeSearchHasAllLabels(
       queryRegion: LTBounds,
@@ -304,7 +285,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         LB.Image, LB.HLinePath, LB.VLinePath, LB.LinePath, LB.WhitespaceCol, LB.ReadingBlock, LB.VisualLineModal
       ) ++ lls.toList
 
-
       approximateLineBins(components)
 
       vis.writeRTreeImage("01-lineHashing", LB.LineByHash, stdLabels():_*)
@@ -337,25 +317,23 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
       vis.writeRTreeImage("06-VisualLines", LB.VisualLine, stdLabels(LB.PageAtom):_*)
 
       // reorder visual lines within and across reading blocks
+      import scala.collection.mutable
+
+      val alreadySeen: mutable.Set[Int@@ComponentID] = mutable.Set.empty
+      val lines: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
 
       for {
         regionBounds <- orderedRegions
-        vlineRoots = rtreeSearchHasAllLabels(regionBounds, LB.VisualLine, LB.Canonical)
+        vlineRoots = rtreeSearchHasAllLabels(regionBounds, LB.VisualLine, LB.Canonical) // TODO this search picks up some lines multiple times
         line <- vlineRoots.sortBy(_.bounds.bottom)
       }  {
-        // visualLineClusters
-        pageIndex.getComponentText(line, LB.VisualLine)
-          .foreach { textRow =>
-            val text = textRow.toText()
-            println(s"${regionBounds}:   ${text}")
-          }
-        line
+        if (!alreadySeen.contains(line.id)) {
+          alreadySeen.add(line.id)
+          lines.append(line)
+        }
       }
 
-      // pageIndex.addCluster(LB.ReadingOrder, readingOrder)
-
-
-      // find line-joins
+      pageIndex.addCluster(LB.ReadingOrder, lines)
     }
 
 
@@ -472,9 +450,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
           mpageIndex.removeComponent(cc)
         }
     }
-
-
-
 
 
 

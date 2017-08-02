@@ -8,17 +8,20 @@ import watrmarks.{StandardLabels => LB}
 
 object DocumentIO  {
 
-  def documentToPlaintext(mpageIndex: MultiPageIndex): Seq[String] = {
-    val docStore = mpageIndex.docStore
-    val stableId = mpageIndex.getStableId()
-    val docId = docStore.getDocument(stableId).get
+  def documentToPlaintext(mpageIndex: MultiPageIndex): String = {
 
-    for {
-      lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
-      reflow <- docStore.getTextReflowForZone(lineZone.id)
+    val textlines = for {
+      pageNum      <- mpageIndex.getPages
+      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+      readingOrder <- pageIndex.getClusters(LB.ReadingOrder)
+      (line, n)    <- readingOrder.zipWithIndex
+      textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
     } yield {
-      reflow.applyLineFormatting().toText
+      val text = textRow.toText()
+      text
     }
+
+    textlines.mkString("\n")
   }
 
   def richTextSerializeDocument(mpageIndex: MultiPageIndex): String = {
@@ -263,3 +266,4 @@ object DocumentIO  {
 //     .filter(p => p.label==lb)
 //     .head
 // }
+

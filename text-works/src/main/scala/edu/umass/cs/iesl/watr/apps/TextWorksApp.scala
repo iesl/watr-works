@@ -59,13 +59,13 @@ object TextWorksConfig {
 
     opt[JFile]('i', "input") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
-        Option(InputMode.PdfFile(v))
+        Option(InputMode.SingleFile(v))
       }
     } text("choose single input PDF")
 
     opt[JFile]('l', "input-list") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
-        Option(InputMode.PdfFileList(v))
+        Option(InputMode.ListOfFiles(v))
       }
     } text("process list of input PDFs in specified file. Specify '--' to read from stdin. ")
 
@@ -106,14 +106,18 @@ object TextWorksConfig {
   }
 
   def extractText(conf: Config): Unit = {
-    println("extracting text")
     for {
       pdfFile <- IOOptionParser.inputPaths(conf.ioConfig)
     } {
+      val rp = FilePath(pdfFile)
+      val filename = rp.last
+      // val filepath = rp.segments.dropRight(1)
+
       val pdfPath = pwd / RelPath(pdfFile)
+
       println(s"file: $pdfPath")
 
-      val stableId = DocumentID(pdfPath.toString())
+      val stableId = DocumentID(filename)
 
       val segmenter = DocumentSegmenter.createSegmenter(stableId, pdfPath, new MemDocZoningApi)
 
@@ -121,8 +125,13 @@ object TextWorksConfig {
 
       conf.ioConfig.outputMode.foreach{ _ match {
         case OutputMode.ToFile(f) =>
-          val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
+          // val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
+          val content = formats.DocumentIO.documentToPlaintext(segmenter.mpageIndex)
+          // println(content)
           val p = fs.Path(f, pwd)
+          if (exists(p)) {
+            rm(p)
+          }
           if (!exists(p)) {
             write(p, content)
           }

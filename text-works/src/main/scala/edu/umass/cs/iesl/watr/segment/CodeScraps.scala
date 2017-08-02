@@ -116,44 +116,6 @@
 //     AngleFilter(direction - t2, direction + t2)
 //   }
 
-//   import shapeless.lens
-
-//   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
-//     val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
-//     val mpageIndex = new MultiPageIndex(stableId, docStore)
-
-//     val pageIdL = lens[CharAtom].pageRegion.page.pageId
-//     val imgPageIdL = lens[PageItem.ImageAtom].pageRegion.page.pageId
-//     val pathPageIdL = lens[PageItem.Path].pageRegion.page.pageId
-
-//     val docId = docStore.addDocument(stableId)
-//     pageAtomsAndGeometry.foreach { case(regions, geom)  =>
-//       val pageId = docStore.addPage(docId, geom.id)
-//       println(s"added page ${pageId}")
-//       docStore.setPageGeometry(pageId, geom.bounds)
-//       mpageIndex.addPage(geom)
-
-//       regions.foreach {
-//         case cb:CharAtom if !cb.isNonPrintable =>
-//           // modify the pageId to match the one assigned by docStore
-//           val update = pageIdL.modify(cb){_ => pageId}
-//           mpageIndex.addCharAtom(update)
-
-//         case cb:PageItem.ImageAtom =>
-//           val update = imgPageIdL.modify(cb){_ => pageId}
-//           mpageIndex.addImageAtom(update)
-
-//         case cb:PageItem.Path =>
-//           val update = pathPageIdL.modify(cb){_ => pageId}
-//           mpageIndex.addPathItem(update)
-
-//         case cb => println(s"error adding ${cb}")
-//       }
-//     }
-
-//     new DocumentSegmenter(mpageIndex)
-//   }
-
 
 //   def candidateCrossesLineBounds(cand: Component, line: Component): Boolean = {
 //     val slopFactor = 0.31d
@@ -224,30 +186,7 @@
 
 //   var pageSegAccum: PageSegAccumulator = PageSegAccumulator(Seq())
 
-//   def runLineDetermination(): Unit = {
-//     val pageRegions = for {
-//       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
-//     } yield {
 
-//       println(s"Page ${pagenum} id=${pageId}")
-//       // print(s".")
-//       runLineDeterminationOnPage(pageId, PageNum(pagenum))
-
-//       val pageGeometry = docStore.getPageGeometry(pageId)
-//       docStore.getTargetRegion(
-//         docStore.addTargetRegion(pageId, pageGeometry)
-//       ).toPageRegion()
-//     }
-
-//     docStore.labelRegions(LB.DocumentPages, pageRegions)
-//   }
-
-//   def runLineDeterminationOnPage(pageId: Int@@PageID, pageNum: Int@@PageNum): Unit = {
-//     val atomicComponents = mpageIndex.getPageAtoms(pageNum)
-//     vtrace.trace(message(s"runLineDetermination() on page ${pageNum} w/ ${atomicComponents.length} char atoms"))
-
-//     determineLines(pageId, pageNum, atomicComponents)
-//   }
 
 //   // def findDocWideModalLineVSpacing(alignedBlocksPerPage: Seq[Seq[Seq[Component]]]): Unit = {
 //   //   val allVDists = for {

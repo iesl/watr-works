@@ -63,3 +63,19 @@ object VisualTraceMacros {
   }
 
 }
+
+object Deshugar {
+
+  import scala.reflect.macros.Context
+  import scala.reflect.runtime.universe._
+  import scala.language.experimental.macros
+
+  def desugarImpl(c : Context)(expr : c.Expr[Any]): c.Expr[Unit] = {
+    import c.universe._
+    println(show(expr.tree))
+    reify {}
+  }
+
+  def desugar(expr : Any) = macro desugarImpl
+
+}

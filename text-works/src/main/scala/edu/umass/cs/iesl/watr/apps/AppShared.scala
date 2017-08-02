@@ -9,14 +9,15 @@ sealed trait InputMode
 
 object InputMode {
   case class CorpusInput(corpusRoot: JFile) extends InputMode
-  case class PdfFile(f: JFile) extends InputMode
-  case class PdfFileList(f: JFile) extends InputMode
+  case class SingleFile(f: JFile) extends InputMode
+  case class ListOfFiles(f: JFile) extends InputMode
 }
 
 sealed trait OutputMode
 
 object OutputMode {
-  case class ToFile(f: JFile) extends OutputMode
+  // case class ToFile(outfile: JFile, artifactRoot: Option[JFile]) extends OutputMode
+  case class ToFile(outfile: JFile) extends OutputMode
   case class ToFileExt(f: String) extends OutputMode
   case class ToDatabase() extends OutputMode
 }
@@ -35,7 +36,7 @@ object IOOptionParser {
   def inputPaths(c: IOConfig): Seq[JFile] = {
     c.inputMode.map{ mode =>
       mode match {
-        case InputMode.PdfFile(f) => Seq(f)
+        case InputMode.SingleFile(f) => Seq(f)
         case _ => sys.error("inputPaths(): TODO")
       }
     }.getOrElse {

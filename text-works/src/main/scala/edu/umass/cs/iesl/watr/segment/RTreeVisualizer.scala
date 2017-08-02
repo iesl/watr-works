@@ -75,8 +75,10 @@ class RTreeVisualizer(
   }
 
   def cleanRTreeImageFiles(): Unit = {
-    if (fs.exists(outputRoot)) {
-      fs.rm(outputRoot)
+    vtrace.ifTrace {
+      if (fs.exists(outputRoot)) {
+        fs.rm(outputRoot)
+      }
     }
   }
 

@@ -68,5 +68,21 @@ class DisjointSetsTest extends FlatSpec with Matchers {
 
     ds.sets should contain allOf (List(1), List(3, 2), List(6, 5, 4))
   }
+  it should "preserve ordering with incremental additions" in {
+    val ds = OrderedDisjointSet[Int]()
+
+
+
+    ds.add(0)
+    (1 to 6).foreach {n =>
+      ds.add(n)
+      ds union (0, n)
+
+    }
+
+
+    ds.sets should contain (List(0, 1, 2, 3, 4, 5, 6))
+
+  }
 
 }
