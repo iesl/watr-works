@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+
 import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
 import edu.umass.cs.iesl.watr.extract.PdfTextExtractor
 import spindex._
@@ -12,7 +13,6 @@ import watrmarks.{StandardLabels => LB, _}
 import geometry._
 import geometry.syntax._
 import org.dianahep.{histogrammar => HST}
-// import org.dianahep.histogrammar.ascii._
 
 import utils.{RelativeDirection => Dir}
 import TypeTags._
@@ -21,8 +21,10 @@ import shapeless.lens
 import PageComponentImplicits._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import textreflow.data._
+import scala.concurrent.duration._
 
 object DocumentSegmenter {
+
   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
     println(s"extracting ${stableId} chars")
     val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
@@ -101,7 +103,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
   val __debug = true
 
-  val segvisRoot = s"${stableId}-segs.d"
 
   val labelColors: Map[Label, Color] = {
     Map(
@@ -124,7 +125,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
     )
   }
 
-  val vis = new RTreeVisualizer(labelColors)
 
   lazy val pageIdMap: Map[Int@@PageID, Int@@PageNum] =
     docStore.getPages(docId).zipWithIndex.map{
@@ -138,9 +138,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
 
   def runPageSegmentation(): Unit = {
-    vtrace.ifTrace{
-      vis.cleanRTreeImageFiles(segvisRoot)
-    }
 
     val pageRegions = for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
@@ -169,18 +166,64 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
     val pageIndex = mpageIndex.getPageIndex(pageNum)
     val rTreeIndex = pageIndex.componentIndex
 
+    val segvisRootPath = pwd / s"${stableId}-segs.d"
 
-    def segvisFile(name: String) = s"${name}.pg${pageNum}.png"
-    def segvisGifFile(name: String) = s"${name}.pg${pageNum}.gif"
+    val vis = new RTreeVisualizer(pageIndex, labelColors, segvisRootPath, vtrace)
 
-    def writeRTreeImage(name: String, l0: Label, labels: Label*): Unit = {
-      vtrace.ifTrace {
-        if (__debug) {
-          val image = vis.createRTreeImage(pageIndex, l0, labels:_*)
-          vis.writeRTreeImage(segvisRoot, segvisFile(name), image)
-        }
-      }
+    vis.cleanRTreeImageFiles()
+
+
+    // def writeRTreeImage(name: String, l0: Label, labels: Label*): Unit = {
+    //   vtrace.ifTrace {
+    //     if (__debug) {
+    //       val image = vis.createRTreeImage(l0, labels:_*)
+    //       vis.writeRTreeImage(name, image)
+    //     }
+    //   }
+    // }
+
+    // def rtreeSearchHasAllLabels(
+    //   queryRegion: LTBounds,
+    //   role: Label, labels: Label*
+    // ): Seq[Component] = {
+
+    //   rTreeIndex.search(queryRegion, {cc =>
+    //     (cc.roleLabel == role &&
+    //       labels.forall(cc.hasLabel(_)))
+    //   })
+    // }
+
+    def rtreeSearchHasAllLabels(
+      queryRegion: LTBounds,
+      labels: Label*
+    ): Seq[Component] = {
+
+      rTreeIndex.search(queryRegion, {cc =>
+        val overlapLR = (
+          cc.bounds.left < queryRegion.right
+            && cc.bounds.right > queryRegion.left
+        )
+        val overlapTB = (
+          cc.bounds.top < queryRegion.bottom
+            && cc.bounds.bottom > queryRegion.top
+        )
+
+        val overlapping = overlapLR && overlapTB
+
+        overlapping && labels.forall(cc.hasLabel(_))
+      })
     }
+
+    def rtreeSearchHasLabel(
+      queryRegion: LTBounds,
+      label: Label
+    ): Seq[Component] = {
+
+      rTreeIndex.search(queryRegion, {cc =>
+        cc.hasLabel(label)
+      })
+    }
+
 
     def rtreeSearch(
       queryRegion: LTBounds,
@@ -215,6 +258,16 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
       })
     }
 
+    def rtreeSearchLineHasLabel(
+      queryRegion: Line,
+      label: Label
+    ): Seq[Component] = {
+
+      rTreeIndex.searchLine(queryRegion, {cc =>
+        cc.hasLabel(label)
+      })
+    }
+
     def rtreeSearchLine(
       queryRegion: Line,
       label: Label, labels: Label*
@@ -231,8 +284,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
       val pageRegion = docStore.getTargetRegion(regionId).toPageRegion
       mpageIndex.createRegionComponent(pageRegion, label, text)
     }
-
-
 
 
 
@@ -256,41 +307,55 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
       approximateLineBins(components)
 
-      writeRTreeImage("01-lineHashing", LB.LineByHash, stdLabels():_*)
+      vis.writeRTreeImage("01-lineHashing", LB.LineByHash, stdLabels():_*)
 
       splitLinesWithOverlaps()
 
-      writeRTreeImage("02-splitLineHashing", LB.LineByHash, stdLabels():_*)
+      vis.writeRTreeImage("02-splitLineHashing", LB.LineByHash, stdLabels():_*)
 
       findCandidateWhitespaceCols(components)
 
-      writeRTreeImage("03-colCandidates", LB.LineByHash, stdLabels(LB.LeftAlignedCharCol, LB.WhitespaceColCandidate):_*)
+      vis.writeRTreeImage("03-colCandidates", LB.LineByHash, stdLabels(LB.LeftAlignedCharCol, LB.WhitespaceColCandidate):_*)
 
       combineCandidateWhitespaceCols()
 
-      writeRTreeImage("04-colsCombined", LB.LineByHash, stdLabels():_*)
+      vis.writeRTreeImage("04-colsCombined", LB.LineByHash, stdLabels():_*)
 
       splitLinesOnWhitespaceColumns()
 
-      writeRTreeImage("05-LinesSplitByCols", LB.LineByHash, stdLabels():_*)
+      vis.writeRTreeImage("05-LinesSplitByCols", LB.LineByHash, stdLabels():_*)
 
       val orderedRegions = findReadingOrder(pageGeometry)
 
-      orderedRegions.foreach { r =>
-        labelRegion(r, LB.ReadingBlock)
-        // println(s"block> ${r}")
-      }
 
-      writeRTreeImage("06-ReadingOrder", LB.LineByHash, stdLabels():_*)
+      // vis.writeRTreeImage("06-ReadingOrder", LB.LineByHash, stdLabels():_*)
 
       rewritePathObjects(orderedRegions)
 
       findVisualLines(orderedRegions)
 
-      writeRTreeImage("06-VisualLines", LB.VisualLine, stdLabels(LB.PageAtom):_*)
+      vis.writeRTreeImage("06-VisualLines", LB.VisualLine, stdLabels(LB.PageAtom):_*)
+
+      // reorder visual lines within and across reading blocks
+
+      for {
+        regionBounds <- orderedRegions
+        vlineRoots = rtreeSearchHasAllLabels(regionBounds, LB.VisualLine, LB.Canonical)
+        line <- vlineRoots.sortBy(_.bounds.bottom)
+      }  {
+        // visualLineClusters
+        pageIndex.getComponentText(line, LB.VisualLine)
+          .foreach { textRow =>
+            val text = textRow.toText()
+            println(s"${regionBounds}:   ${text}")
+          }
+        line
+      }
+
+      // pageIndex.addCluster(LB.ReadingOrder, readingOrder)
+
 
       // find line-joins
-      // rewrite line-paths representing symbols into chars (eg, -, =, vinculum)
     }
 
 
@@ -409,155 +474,88 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
     }
 
 
-    import scala.concurrent.duration._
 
-    case class GifBuilder(name: String, frameRate: FiniteDuration) {
-
-      import com.sksamuel.scrimage.nio.StreamingGifWriter
-      import java.awt.image.BufferedImage;
-      import scala.collection.mutable
-      import com.sksamuel.scrimage
-      import scrimage.Image
-
-
-      val gifFrames = mutable.ArrayBuffer[Image]()
-
-      def indicate(caption: String, bounds:LTBounds, labels: Label*): Unit = {
-        vtrace.ifTrace {
-          labelRegion(bounds, LB.Marked)
-          addFrame(caption, LB.Marked)
-          addFrame("+"+caption, LB.Marked, labels:_*)
-          deleteComponentsWithLabel(LB.Marked)
-        }
-      }
-
-      def indicate(caption: String, bounds:Seq[LTBounds], labels: Label*): Unit = {
-        vtrace.ifTrace {
-          bounds.foreach { b => labelRegion(b, LB.Marked) }
-          addFrame(caption, LB.Marked)
-          addFrame("+"+caption, LB.Marked, labels:_*)
-          deleteComponentsWithLabel(LB.Marked)
-        }
-      }
-
-      def addFrame(caption: String, l0: Label, labels: Label*): Unit = {
-        vtrace.ifTrace {
-          val img0 = vis.createRTreeImage(pageIndex, l0, labels:_*)
-          val filter = new scrimage.canvas.CaptionFilter(
-            caption,
-            textColor=Clr.Black,
-            textAlpha=0.8,
-            captionBackground= Clr.Grey20,
-            captionAlpha=0.4
-          )
-          filter.apply(img0)
-          gifFrames.append(img0)
-        }
-      }
-
-      def finish(): Unit = {
-        vtrace.ifTrace {
-          val gifWriter = StreamingGifWriter().withFrameDelay(frameRate)
-          val outputPath = fs.pwd / segvisRoot / segvisGifFile(name)
-          if (fs.exists(outputPath)) {
-            fs.rm(outputPath)
-          }
-
-          val gifStream =  gifWriter.prepareStream(outputPath.toNIO, BufferedImage.TYPE_INT_ARGB)
-
-          println(s"gifFrames.len (final): ${gifFrames.length}")
-          gifFrames.foreach { img => gifStream.writeFrame(img) }
-          gifStream.finish()
-        }
-      }
-    }
 
 
 
     def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
-      val gifBuilder = new GifBuilder("findVisualLines", 500.millis)
+
+      val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
 
       pageIndex.getComponentsWithLabel(LB.PageAtom)
-        .foreach{ a =>
-          pageIndex.updateComponent(a, {_.setRole(LB.PageAtomTmp)})
-        }
+        .foreach{ a => a.addLabel(LB.PageAtomTmp) }
 
       gifBuilder.addFrame("Starting", LB.PageAtomTmp)
 
-      // println(s"findVisualLines: starting page atom count: ${allPageAtoms.length} == ${pageIndex.getComponentsWithLabel(LB.PageAtomTmp).length} == ${pageIndex.getComponentsWithLabel(LB.PageAtom).length}")
-
-      // val blocksWithLinesAndAtoms: Seq[(LTBounds, Seq[Option[(Component, Seq[Component])]])] =
       for {
         textBlock <- orderedTextBlocks
       } {
-        // println(s"findVisualLines ${textBlock}")
 
-
-        labelRegion(textBlock, LB.Marked)
-        gifBuilder.addFrame("Examining Block", LB.PageAtomTmp, LB.Marked)
-        deleteComponentsWithLabel(LB.Marked)
+        gifBuilder.indicate("Examining Block", textBlock, LB.PageAtomTmp)
 
 
         val sortedHashedLinesWithChars = (for {
           hashedLineCC <- rtreeSearch(textBlock, LB.LineByHash)
         } yield {
-          val charsInRegion = rtreeSearch(hashedLineCC.bounds, LB.PageAtomTmp)
+          val charsInRegion = rtreeSearchHasLabel(hashedLineCC.bounds, LB.PageAtomTmp)
           (hashedLineCC, charsInRegion)
         }).sortBy { case (_, chars) => chars.length }.reverse
 
 
         sortedHashedLinesWithChars.zipWithIndex
           .foreach{ case ((hashLineCC, hashedChars), index) =>
+            val remainingChars = hashedChars.filter(_.hasLabel(LB.PageAtomTmp)).nonEmpty
+            if (remainingChars) {
 
-            labelRegion(hashLineCC.bounds(), LB.Marked)
-            gifBuilder.addFrame(s"Processing Hash-Line ${index} of ${sortedHashedLinesWithChars.length}", LB.Marked, LB.PageAtomTmp)
-            deleteComponentsWithLabel(LB.Marked)
+              gifBuilder.indicate(s"Processing Hash-Line ${index} of ${sortedHashedLinesWithChars.length}", hashLineCC.bounds(), LB.PageAtomTmp)
 
-            val extendedLineRegion = hashLineCC.bounds.withinRegion(textBlock)
-              .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
-              .getOrElse { hashLineCC.bounds }
-
-
-            // Progressively scan from center out to find super/subs
-            val height = extendedLineRegion.height
-            val top = extendedLineRegion.top
-
-            val centerLine = extendedLineRegion
-              .copy(height = height/2, top=top+height/4)
-            // .toLine(Dir.Bottom)
+              val extendedLineRegion = hashLineCC.bounds.withinRegion(textBlock)
+                .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
+                .getOrElse { hashLineCC.bounds }
 
 
-            labelRegion(centerLine, LB.Marked)
-            gifBuilder.addFrame("Search Line Region", LB.Marked, LB.PageAtomTmp)
-            deleteComponentsWithLabel(LB.Marked)
+              // Progressively scan from center out to find super/subs
+              val height = extendedLineRegion.height
+              val top = extendedLineRegion.top
 
-            // Now find all chars in queryRegion and string them together into a single visual line
-            val visualLineAtoms = rtreeSearch(centerLine, LB.PageAtomTmp)
+              val centerLine = extendedLineRegion
+                .copy(height = height/2, top=top+height/4)
 
-            if (visualLineAtoms.nonEmpty) {
-              val visualLineComps = visualLineAtoms.sortBy(_.bounds.left).toSeq
 
-              val visualLineBBox = visualLineComps.map(_.bounds).reduce { (c1, c2) => c1 union c2 }
+              gifBuilder.indicate("Search Line Region", centerLine, LB.PageAtomTmp)
 
-              gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
+              // Now find all chars in queryRegion and string them together into a single visual line
+              val visualLineAtoms = rtreeSearchHasLabel(centerLine, LB.PageAtomTmp)
 
-              visualLineComps.foreach { cc =>
-                pageIndex.updateComponent(cc, {_.setRole(LB.PageAtomGrp)})
+              if (visualLineAtoms.nonEmpty) {
+                val xSortedAtoms = visualLineAtoms.sortBy(_.bounds.left).toSeq
+
+                val visualLineBBox = xSortedAtoms.map(_.bounds).reduce { (c1, c2) => c1 union c2 }
+
+                gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
+
+                xSortedAtoms.foreach { cc =>
+                  cc.removeLabel(LB.PageAtomTmp)
+                  cc.addLabel(LB.PageAtomGrp)
+                }
+
+                val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
+
+                // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
+                createTextRowFromVisualLine(visualLineCC, xSortedAtoms)
+                // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+
+                xSortedAtoms.foreach { cc =>
+                  cc.removeLabel(LB.PageAtomGrp)
+                }
               }
 
-              val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
-
-              createTextRowFromVisualLine(visualLineCC, visualLineComps)
             }
-
-            pageIndex.getComponentsWithLabel(LB.PageAtomGrp)
-              .foreach{ a => pageIndex.updateComponent(a, _.setRole(LB.PageAtom)) }
           }
       }
 
       gifBuilder.finish()
 
-      // println(s"findVisualLines: leftover tmp page atoms = ${pageIndex.getComponentsWithLabel(LB.PageAtomTmp).length}")
     }
 
     def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {
@@ -566,36 +564,23 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         .reverse.headOption.map(_._1)
     }
 
-    def createTextRowFromVisualLine(visualLineCC: Component, visualLineComps: Seq[Component]): Unit = {
+    def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
 
       val visualLineBounds = visualLineCC.bounds()
-      val visualLineAtoms  = visualLineComps.sortBy{ _.bounds.left }
 
-      val gifBuilder = new GifBuilder(
+      val gifBuilder = vis.gifBuilder(
         s"createTextRowsFromVisualLines-${visualLineBounds.left}-${visualLineBounds.bottom}",
-        2.seconds
+        1.seconds
       )
 
-      vtrace.ifTrace{
+
+      gifBuilder.indicate(
+        s"Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
+        visualLineCC.bounds(), LB.PageAtomGrp, LB.PageAtomTmp
+      )
 
 
-        gifBuilder.indicate(
-          s"Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
-          visualLineCC.bounds(), LB.PageAtomGrp, LB.PageAtomTmp
-        )
-
-        gifBuilder.indicate(
-          s"(Grp) Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
-          visualLineCC.bounds(), LB.PageAtomGrp
-        )
-
-      }
-
-      def shrinkVisualLineToModalTopAndBottom(visualLineCC: Component): LTBounds = {
-        // println(s"shrinkVisualLineToModalTopAndBottom(${visualLineCC})")
-        // pageIndex.getComponentsWithLabel(LB.PageAtomGrp)
-
-        val visualLineAtoms = rtreeSearch(visualLineCC.bounds(), LB.PageAtomGrp)
+      def shrinkVisualLineToModalTopAndBottom(): LTBounds = {
 
         val modalBaselineI = modalValue(visualLineAtoms, _.bounds().bottom.unwrap)
           .getOrElse(visualLineCC.bounds.bottom.unwrap)
@@ -617,16 +602,13 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
           visualLineCC.bounds()
         }
 
-        // println(s"    visualLineModalBounds (${visualLineModalBounds})")
-        labelRegion(visualLineModalBounds, LB.Marked)
-        gifBuilder.addFrame("Modal-base/top VisualLine", LB.Marked)
-        deleteComponentsWithLabel(LB.Marked)
+        gifBuilder.indicate("Modal-base/top VisualLine", visualLineModalBounds)
 
         visualLineModalBounds
       }
 
       if (visualLineAtoms.nonEmpty) {
-        val visualLineModalBounds = shrinkVisualLineToModalTopAndBottom(visualLineCC)
+        val visualLineModalBounds = shrinkVisualLineToModalTopAndBottom()
 
         gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
         gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
@@ -634,8 +616,8 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         val topLine = visualLineModalBounds.toLine(Dir.Top) // .translate(y=0.5)
         val bottomLine =  visualLineModalBounds.toLine(Dir.Bottom) // .translate(y = -0.5)
 
-        val topIntersections = rtreeSearchLine(topLine, LB.PageAtomGrp)
-        val bottomIntersections = rtreeSearchLine(bottomLine, LB.PageAtomGrp)
+        val topIntersections = rtreeSearchLineHasLabel(topLine, LB.PageAtomGrp)
+        val bottomIntersections = rtreeSearchLineHasLabel(bottomLine, LB.PageAtomGrp)
 
         val topIntersects = topIntersections.map(_.id)
         val bottomIntersects = bottomIntersections.map(_.id)
@@ -685,11 +667,15 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
         val spacedRow = insertSpacesInRow(textRow)
 
+        // println(s""" createTextRowsFromVisualLines: ${visualLineCC}  > ${spacedRow.toText} """)
+        val visualLineClusterCC = pageIndex.addCluster(LB.VisualLine, visualLineAtoms)
 
-        val textReflow = convertTextRowToTextReflow(spacedRow)
+        pageIndex.setComponentText(visualLineClusterCC, LB.VisualLine, spacedRow)
 
-        createZone(LB.VisualLine, Seq(visualLineCC.targetRegion)).foreach { zoneId =>
-          docStore.setTextReflowForZone(zoneId, textReflow)
+        // val textReflow = convertTextRowToTextReflow(spacedRow)
+
+        createZone(LB.VisualLine, Seq(visualLineCC.pageRegion)).foreach { zoneId =>
+          // docStore.setTextReflowForZone(zoneId, textReflow)
         }
       }
       gifBuilder.finish()
@@ -717,7 +703,6 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
       flows(textReflowAtoms)
     }
-
 
 
 

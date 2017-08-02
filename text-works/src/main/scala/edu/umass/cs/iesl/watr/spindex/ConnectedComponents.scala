@@ -4,6 +4,7 @@ package spindex
 import watrmarks._
 import geometry._
 import watrmarks.{StandardLabels => LB}
+import scala.collection.mutable
 
 
 object Component {
@@ -34,11 +35,6 @@ object Component {
   }
 }
 
-// case class Cluster(
-//   id: Int@@ClusterID,
-//   roleLabel: Label
-// )
-
 sealed trait Component {
   def id: Int@@ComponentID
 
@@ -46,34 +42,36 @@ sealed trait Component {
 
   def setRole(l: Label): Component
 
-  def targetRegion(): PageRegion
+  def pageRegion(): PageRegion
 
-  def bounds(): LTBounds = targetRegion().bbox
+  def bounds(): LTBounds = pageRegion().bbox
 
   def chars: String
 
-  def getStableID(): String@@DocumentID = targetRegion.page.stable.stableId
+  def getStableID(): String@@DocumentID = pageRegion.page.stable.stableId
 
-  lazy val pageNum = targetRegion.page.stable.pageNum
+  lazy val pageNum = pageRegion.page.stable.pageNum
 
-  // def getCluster(l: Label): Option[Int@@ClusterID]
+  val labels: mutable.Set[Label] = mutable.Set.empty[Label]
+  def addLabel(l: Label): Unit = labels.add(l)
+  def removeLabel(l: Label): Unit = labels.remove(l)
+  def hasLabel(l: Label): Boolean = labels.contains(l)
 
 }
 
 case class RegionComponent(
   id: Int@@ComponentID,
   override val roleLabel: Label,
-  override val targetRegion: PageRegion,
+  override val pageRegion: PageRegion,
   text: Option[String] = None
 ) extends Component {
-
 
   def setRole(l: Label): Component = copy(roleLabel = l)
 
   def chars: String = text.getOrElse("")
 
   override def toString(): String = {
-    s"<${roleLabel.key}.${id} ${targetRegion}"
+    s"<${roleLabel.key}.${id} ${pageRegion}"
   }
 }
 
@@ -83,10 +81,9 @@ case class AtomicComponent(
   override val roleLabel: Label = LB.PageAtom
 ) extends Component {
 
-
   def setRole(l: Label): Component = copy(roleLabel = l)
 
-  def targetRegion: PageRegion = charAtom.pageRegion
+  def pageRegion: PageRegion = charAtom.pageRegion
 
   def chars: String = charAtom.char
 
@@ -95,14 +92,20 @@ case class AtomicComponent(
   }
 }
 
+// case class ClusterComponent(
+//   id: Int@@ComponentID,
+//   root: Component,
+//   override val roleLabel: Label,
+//   boundsFn: Component => PageRegion = _.pageRegion
+// ) extends Component {
 
+//   def setRole(l: Label): Component = copy(roleLabel = l)
 
+//   override val pageRegion: PageRegion = boundsFn(root)
 
+//   def chars: String = root.chars
 
-// otherLabels: Seq[Label] = Seq()
-// override val labels: Set[Label] = (roleLabel +: otherLabels).toSet
-// def addLabel(l: Label) = copy(otherLabels = l +: otherLabels)
-// def removeLabel(l: Label) = copy(otherLabels = otherLabels.filterNot(_==l))
-// def labels: Set[Label]
-// def addLabel(l: Label): Component
-// def removeLabel(l: Label): Component
+//   override def toString(): String = {
+//     s"<root:`${chars}`${id} ${root.bounds.prettyPrint}>"
+//   }
+// }

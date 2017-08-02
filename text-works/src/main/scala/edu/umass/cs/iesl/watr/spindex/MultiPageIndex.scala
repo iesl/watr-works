@@ -19,6 +19,7 @@ import corpora._
 import watrmarks.{StandardLabels => LB}
 import utils.ExactFloats._
 
+
 /**
 
   MultiPageIndex manages:
@@ -128,7 +129,7 @@ class MultiPageIndex(
   // }
 
   def getPageForComponent(c: Component): Int@@PageNum = {
-    c.targetRegion.page.stable.pageNum
+    c.pageRegion.page.stable.pageNum
   }
 
 
@@ -261,7 +262,7 @@ class MultiPageIndex(
   }
 
   def addComponent(c: Component): Component = {
-    val pageNum = c.targetRegion.page.stable.pageNum
+    val pageNum = c.pageRegion.page.stable.pageNum
     getPageIndex(pageNum)
       .addComponent(c)
   }

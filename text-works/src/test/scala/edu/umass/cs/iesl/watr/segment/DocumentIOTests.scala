@@ -22,8 +22,11 @@ class DocumentIOTests extends DocsegTestUtil  {
     val pdfName = allTestPdfs(0)
     val pdfIns = papers.paperUrl(pdfName)
     val path = fs.Path(pdfIns.getPath)
-    val docId = DocumentID(s"${pdfName}")
+    val stableIdent = pdfName.replaceAll("/","_")
+    val docId = DocumentID(stableIdent)
     import corpora._
+
+    // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
@@ -31,7 +34,7 @@ class DocumentIOTests extends DocsegTestUtil  {
 
     val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
 
-    println(content)
+    // println(content)
 
   }
 }

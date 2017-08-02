@@ -60,12 +60,10 @@ trait DocSegLabels {
   val PageAtomGrp = Label("atom-grp")
   val PageAtomTmp = Label("atom-tmp")
 
-  val First = Label("first")
-  val Last = Label("last")
+  // val First = Label("first")
+  // val Last = Label("last")
 
   val Annotation = Label("ds", "annotation")
-
-
 
 
 
@@ -79,6 +77,8 @@ trait DocSegLabels {
   val WhitespaceColBottom    = Label("WhitespaceColBottom")
   val Marked                 = Label("Marked")
   val ReadingBlock           = Label("ReadingBlock")
+  val ReadingOrder           = Label("ReadingOrder")
+
   // Drawn path lines
   val PathBounds             = Label("PathBounds")
   val HLinePath              = Label("HLinePath")
@@ -86,7 +86,7 @@ trait DocSegLabels {
   val LinePath               = Label("LinePath")
   val OutlineBox             = Label("Outline")
 
-
+  val Canonical             = Label("Canonical")
 
 
 }

@@ -27,6 +27,19 @@ object DocumentIO  {
     val stableId = mpageIndex.getStableId()
     val docId = docStore.getDocument(stableId).get
 
+    // mpageIndex.getPages
+    for {
+      pageNum <- mpageIndex.getPages
+    } yield {
+      val pageIndex = mpageIndex.getPageIndex(pageNum)
+      pageIndex.getClusterRoots(LB.VisualLine).map { root =>
+        val maybeText = pageIndex.getComponentText(root, LB.VisualLine)
+        maybeText.foreach { text =>
+          // println(text.toText())
+        }
+      }
+    }
+
     val escapedTextReflows = for {
       lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
       reflow <- docStore.getTextReflowForZone(lineZone.id)
@@ -43,7 +56,7 @@ object DocumentIO  {
 
 
     val textLines = textAndJsons.map(_._1)
-    val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(   textLines.map(t => Json.stringify(JsString(t)).box):_*))
+    val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")( textLines.map(t => Json.stringify(JsString(t)).box):_*))
     val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
 
     val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
@@ -69,7 +82,7 @@ object DocumentIO  {
           |${textLinesBlock}
           |  ],
           |  "zones": [
-          |${serializedZones}
+          |{serializedZones}
           |  ],
           |  "relations": [
           |{relationBlock}

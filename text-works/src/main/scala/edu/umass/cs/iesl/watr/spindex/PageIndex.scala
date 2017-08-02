@@ -8,16 +8,16 @@ import geometry._
 
 import watrmarks.{StandardLabels => LB}
 import rindex._
-import utils.DisjointSet
+import utils.OrderedDisjointSet
+
+
 
 /**
   A PageIndex wraps an RTree[Component], and adds:
-  - Connecting components via:
-    - Disjoint sets
-       LB.VisualLine -> DisjointSet()
-       LB.Formula -> DisjointSet()
+  - Clustering components via:
+    - Disjoint sets (with internal ordering)
+       e.g., LB.VisualLine -> DisjointSet()
 
-    - Ordering (List[Component])
 
   */
 
@@ -27,16 +27,68 @@ class PageIndex(
   val componentIndex: RTreeIndex[Component] = RTreeIndex.createFor[Component]()
 
   val componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap()
-  val componentToChildren: mutable.HashMap[Int@@ComponentID, mutable.HashMap[Label, Seq[Int@@ComponentID]]] = mutable.HashMap()
   val labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
 
-  val disjointSets: mutable.HashMap[Label, DisjointSet[Component]] = mutable.HashMap()
+  val componentToText: mutable.HashMap[Int@@ComponentID,
+    mutable.HashMap[Label, TextGrid.Row]
+  ] = mutable.HashMap()
 
-  def initDisjointCluster(l: Label, f: Component => Boolean): Unit = {
+
+  val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[Component]] = mutable.HashMap()
+
+  def initClustering(l: Label, f: Component => Boolean): Unit = {
     val toAdd = componentIndex.getItems.filter(f)
     disjointSets.getOrElseUpdate(l,
-      DisjointSet.apply[Component](toAdd:_*)
+      OrderedDisjointSet.apply[Component](toAdd:_*)
     )
+  }
+
+  def setComponentText(c: Component, l: Label, t: TextGrid.Row): Unit = {
+    componentToText
+      .getOrElseUpdate(c.id, mutable.HashMap())
+      .put(l, t)
+  }
+
+  def getComponentText(c: Component, l: Label): Option[TextGrid.Row] = {
+    componentToText.get(c.id).flatMap(_.get(l))
+  }
+
+  def addCluster(l: Label, cs: Seq[Component]): Component = {
+    assume(cs.nonEmpty)
+
+    val set = disjointSets.getOrElseUpdate(l,
+      OrderedDisjointSet.apply[Component]()
+    )
+
+    val c0 = cs.head
+    set.add(c0)
+    cs.tail.foreach { cn =>
+      set.add(cn)
+      set.union(c0, cn)
+    }
+    val canonical = set.getCanonical(c0)
+    canonical.addLabel(LB.Canonical)
+    canonical.addLabel(l)
+    // println(s"addCluster(${canonical.labels})")
+    canonical
+  }
+
+  def getClusterSets(l: Label): Option[OrderedDisjointSet[Component]] = {
+    disjointSets.get(l)
+  }
+
+  def getClusters(l: Label): Iterable[Iterable[Component]] = {
+    disjointSets.get(l).map{set =>
+      set.sets
+    } getOrElse(Iterable())
+  }
+
+  def getClusterRoots(l: Label): Iterable[Component] = {
+    disjointSets.get(l).map{set =>
+      set.sets.map{ cluster =>
+        set.getCanonical(cluster.head)
+      }
+    } getOrElse(Iterable())
   }
 
 

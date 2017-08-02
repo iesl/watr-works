@@ -34,20 +34,26 @@ class PageTextTest extends DocsegTestUtil  {
     }
     expectedText.split("\n").map(_.trim())
 
+    // 6376.pdf  => page 2 column seg is wrong, many paths making up graphs kill performance
+    // 101016jcarbon201301056.pdf => reference section columns are wrong, page 1 has repeated lines
+    // bongard2005.pdf => reference section is dividing into 2 cols, one for markers one for ref
+
     val allTestPdfs =
-      """|101016jactamat201112024.pdf
+      """|
+         |101016jcarbon201301056.pdf.pages/pg_0001.pdf
+         |101016jcarbon201301056.pdf
+         |bongard2005.pdf
+         |austenite.pdf
+         |101016jactamat201112024.pdf
+         |6376.pdf
+         |2839.pdf
          |saccharomyces-1-page.pdf
          |hep-ph9503349.pdf
          |astro-ph9903259.pdf
          |cond-mat9803032.pdf
          |101016jactamat201501032.pdf
          |101016japsusc201210126.pdf
-         |101016jcarbon201301056.pdf
-         |2839.pdf
-         |6376.pdf
          |acsnano.5b00028.pdf
-         |austenite.pdf
-         |bongard2005.pdf
          |font-type-0-1-t.pdf
          |font-type-1-3.pdf
          |quantification-Smith-2013.pdf
@@ -58,11 +64,14 @@ class PageTextTest extends DocsegTestUtil  {
 
 
 
-    val pdfName = allTestPdfs(1)
+    val pdfName = allTestPdfs(0)
     val pdfIns = papers.paperUrl(pdfName)
     val path = fs.Path(pdfIns.getPath)
-    val docId = DocumentID(s"${pdfName}")
+    val stableIdent = pdfName.replaceAll("/","_")
+    val docId = DocumentID(stableIdent)
     import corpora._
+
+    // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
@@ -73,7 +82,7 @@ class PageTextTest extends DocsegTestUtil  {
 
     val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
 
-    println(content)
+    // println(content)
     // println("All VisualLines")
 
     // for {

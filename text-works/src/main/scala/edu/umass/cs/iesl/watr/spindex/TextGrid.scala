@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
-package segment
+package spindex
 
-import spindex._
 
 import scala.collection.mutable
 import watrmarks._
@@ -87,6 +86,10 @@ object TextGrid {
     def toText(): String = {
       cells.map(_.text).mkString("")
     }
+  }
+
+  trait Grid {
+
   }
 
   abstract class MutableRow extends Row {
