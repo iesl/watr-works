@@ -108,63 +108,61 @@ class TransformToCoNLLFormat {
         } {
             println(docStableId)
             for {
-                pageId <- docStore.getPages(docId = docId)
+                pageId <- docStore.getPage(docId = docId, pageNum = pageNum)
             } {
-                if (areLabelsPresentInPage(docStore = docStore, pageId = pageId, labels = labels))
-                {
-                    for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
-                        val textReflow = docStore.getTextReflowForTargetRegion(regionId = targetRegionId)
-                        if (textReflow.isDefined) {
-                            val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
-                            if (targetRegionLabel.toString.equals(LB.Affiliations.toString)) {
-                                affiliationReflows += textReflow.get
+                for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
+                    val textReflow = docStore.getTextReflowForTargetRegion(regionId = targetRegionId)
+                    if (textReflow.isDefined) {
+                        val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
+                        if (targetRegionLabel.toString.equals(LB.Affiliations.toString)) {
+                            affiliationReflows += textReflow.get
+                        }
+                        else {
+                            if (affiliationReflows.nonEmpty) {
+                                val affiliationsWithLabels = getAffiliationLabelsForReflows(affiliationReflows, names)
+                                affiliationsWithLabels.foreach {
+                                    affiliationWithLabel => {
+//                                        print(affiliationWithLabel._1 + " " + getBoundingBoxAsString(affiliationWithLabel._3) + " * I-" + affiliationWithLabel._2.head + "\n")
+                                        dataFileWriter.write(affiliationWithLabel._1 + " " + getBoundingBoxAsString(affiliationWithLabel._3) + " * I-" + affiliationWithLabel._2.head + "\n")
+                                    }
+                                }
+                                affiliationReflows.clear()
+
+                            }
+                            if (targetRegionLabel.toString.equals(LB.Authors.toString)) {
+                                val authorNamesWithLabels = getAuthorLabelsForReflow(textReflow.get)
+                                authorNamesWithLabels.foreach {
+                                    authorNameWithLabels => {
+                                        //                                        print(authorNameWithLabels._1 + " " + getBoundingBoxAsString(bBox = authorNameWithLabels._3) + " * I-" + authorNameWithLabels._2 + "\n")
+                                        dataFileWriter.write(authorNameWithLabels._1 + " " + getBoundingBoxAsString(bBox = authorNameWithLabels._3) + " * I-" + authorNameWithLabels._2 + "\n")
+                                        names += authorNameWithLabels._1
+                                    }
+                                }
+
                             }
                             else {
-                                if (affiliationReflows.nonEmpty) {
-                                    val affiliationsWithLabels = getAffiliationLabelsForReflows(affiliationReflows, names)
-                                    affiliationsWithLabels.foreach {
-                                        affiliationLabel => {
-                                            cleanPunctuations(affiliationLabel._1.split(SPACE_SEPARATOR)).foreach(affiliationToken => {
-                                                //                                        println(affiliationToken.concat(UNDERSCORE).concat(getBoundingBoxAsString(affiliationLabel._3)) + " * * I-" + affiliationLabel._2.head + "\n")
-                                                dataFileWriter.write(affiliationToken + " " + getBoundingBoxAsString(affiliationLabel._3) + " * I-" + affiliationLabel._2.head + "\n")
-                                            })
-                                        }
-                                    }
-                                    affiliationReflows.clear()
-                                    names.clear()
+                                val componentsWithBoundingBoxes = getBoundingBoxesForComponents(components = cleanPunctuations(tokenizeTextReflow(textReflow.get)), textReflow = textReflow.get)
+                                var regionLabel = "O"
+                                if (targetRegionLabel.equals(LB.Title)) {
+                                    regionLabel = "I-TITLE"
                                 }
-                                if (targetRegionLabel.toString.equals(LB.Authors.toString)) {
-                                    val authorNamesWithLabels = getAuthorLabelsForReflow(textReflow.get)
-                                    authorNamesWithLabels.foreach {
-                                        authorNameWithLabels => {
-                                            dataFileWriter.write(authorNameWithLabels._1 + " " + getBoundingBoxAsString(bBox = authorNameWithLabels._3) + " * I-" + authorNameWithLabels._2)
-                                            names += authorNameWithLabels._1
-                                        }
-                                    }
-
+                                else if (targetRegionLabel.equals(LB.Abstract)) {
+                                    regionLabel = "I-ABSTRACT"
                                 }
-                                else {
-                                    val componentsWithBoundingBoxes = getBoundingBoxesForComponents(components = cleanPunctuations(tokenizeTextReflow(textReflow.get)), textReflow = textReflow.get)
-                                    var regionLabel = "O"
-                                    if (targetRegionLabel.equals(LB.Title)) {
-                                        regionLabel = "I-TITLE"
-                                    }
-                                    else if (targetRegionLabel.equals(LB.Abstract)) {
-                                        regionLabel = "I-ABSTRACT"
-                                    }
-                                    componentsWithBoundingBoxes.foreach {
-                                        componentWithBoundingBox => {
-                                            //                                    println(component.concat(UNDERSCORE).concat(boundingBox) + " * * " + regionLabel + "\n")
-                                            dataFileWriter.write(componentWithBoundingBox._1 + " " + getBoundingBoxAsString(componentWithBoundingBox._2) + " * " + regionLabel + "\n")
-                                        }
+                                componentsWithBoundingBoxes.foreach {
+                                    componentWithBoundingBox => {
+                                        //                                        print(componentWithBoundingBox._1 + " " + getBoundingBoxAsString(componentWithBoundingBox._2) + " * " + regionLabel + "\n")
+                                        dataFileWriter.write(componentWithBoundingBox._1 + " " + getBoundingBoxAsString(componentWithBoundingBox._2) + " * " + regionLabel + "\n")
                                     }
                                 }
                             }
                         }
                     }
                 }
+
             }
             dataFileWriter.write("\n")
+            names.clear()
         }
         dataFileWriter.close()
     }
@@ -172,9 +170,9 @@ class TransformToCoNLLFormat {
 }
 
 object RunTransformer extends App {
-    val documents: Seq[String] = Seq("0101001.pdf.d")
+    val documents: Seq[String] = Seq()
     val pageNum = PageNum(0)
 
     val transformer: TransformToCoNLLFormat = new TransformToCoNLLFormat()
-    transformer.getReflowWithLabelsForPage(131, documents, pageNum, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
+    transformer.getReflowWithLabelsForPage(960, documents, pageNum, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
 }
