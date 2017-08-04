@@ -53,7 +53,7 @@ trait ImageManipulation {
     List[SC.Drawable](underline, leftline)
   }
 
-  // def embossTargetRegion(targetRegion: TargetRegion, labels: Seq[Label]): Unit = {
+  // def embossTargetRegion(targetRegion: PageRegion, labels: Seq[Label]): Unit = {
   //   val docId = targetRegion.docId
   //   val pageId = targetRegion.pageId
 

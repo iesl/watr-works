@@ -1,20 +1,21 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package textgrid
 
 
 import scala.collection.mutable
 import watrmarks._
 import geometry._
-import geometry.syntax._
 import scalaz.{@@ => _, _} , Scalaz._
 import utils.SlicingAndDicing._
-import utils.{RelativeDirection => Dir}
-import utils.ExactFloats._
 
-case class BioNode(
-  component: Component,
-  pins: mutable.Set[BioPin] =  mutable.Set()
-)
+// import geometry.syntax._
+// import utils.{RelativeDirection => Dir}
+// import utils.ExactFloats._
+
+// case class BioNode(
+//   component: Component,
+//   pins: mutable.Set[BioPin] =  mutable.Set()
+// )
 
 sealed trait FontInfo
 
@@ -25,12 +26,15 @@ object TextGrid {
   type PinSet = SetType[BioPin]
 
   sealed trait GridCell {
-    def location: Point
-    def bounds: LTBounds = LTBounds(
-      location.x, location.y,
-      0.toFloatExact, 0.toFloatExact
-    )
-    def text: String
+    def pageRegion: PageRegion
+
+    // def location: Point
+    // def bounds: LTBounds = LTBounds(
+    //   location.x, location.y,
+    //   0.toFloatExact, 0.toFloatExact
+    // )
+
+    def char: Char
 
     val pins: PinSet = mutable.HashSet[BioPin]()
 
@@ -42,22 +46,26 @@ object TextGrid {
 
     def addLabel(l: Label): Unit = addPin(l.U)
 
-    def cloneCell(): InsertCell = InsertCell(
-      "", location
-    )
+    def cloneCell(): InsertCell = InsertCell(char, pageRegion)
+
   }
 
-  case class ComponentCell(
-    component: Component
+  case class PageItemCell(
+    headItem: PageItem,
+    tailItems: Seq[PageItem] = Seq(),
+    override val char: Char,
+    floc: (PageItem, Seq[PageItem]) => PageRegion = (h, _) => h.pageRegion
   ) extends GridCell {
-    override def location: Point = component.bounds.toPoint(Dir.BottomLeft)
-    override def bounds: LTBounds = component.bounds
-    override def text: String = component.chars
+    // override def location: Point = floc(headItem, tailItems)
+    // override def bounds: LTBounds = component.bounds
+    // override val char: Char = component.chars
+
+    override val pageRegion: PageRegion = floc(headItem, tailItems)
   }
 
   case class InsertCell(
-    override val text: String,
-    override val location: Point
+    override val char: Char,
+    override val pageRegion: PageRegion
   ) extends GridCell
 
 
@@ -93,7 +101,7 @@ object TextGrid {
     }
 
     def toText(): String = {
-      cells.map(_.text).mkString("")
+      cells.map(_.char).mkString("")
     }
   }
 
@@ -115,12 +123,12 @@ object TextGrid {
 
 
   object Row {
-    def fromComponents(ccs: Seq[Component]): Row = {
-      new MutableRow { self =>
-        val init = ccs.map(ComponentCell(_))
-        cells.appendAll(init)
-      }
-    }
+    // def fromComponents(ccs: Seq[Component]): Row = {
+    //   new MutableRow { self =>
+    //     val init = ccs.map(ComponentCell(_))
+    //     cells.appendAll(init)
+    //   }
+    // }
 
 
     def fromCells(init: Seq[GridCell]): Row = new MutableRow {

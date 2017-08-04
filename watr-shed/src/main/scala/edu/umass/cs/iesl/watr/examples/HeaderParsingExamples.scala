@@ -53,7 +53,7 @@ class HeaderParsingExamples(dbName: String) {
             dbDocId <- docStore.getDocument(stableId)
             dbZone <- docStore.getDocumentZones(dbDocId, targetLabel)
           } {
-            val pageRegions = dbZone.regions.map(_.toPageRegion())
+            val pageRegions = dbZone.regions // .map(_.toPageRegion())
             mdocStore.labelRegions(targetLabel, pageRegions)
           }
         }

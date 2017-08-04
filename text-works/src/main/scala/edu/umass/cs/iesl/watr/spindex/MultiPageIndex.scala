@@ -129,7 +129,7 @@ class MultiPageIndex(
   // }
 
   def getPageForComponent(c: Component): Int@@PageNum = {
-    c.pageRegion.page.stable.pageNum
+    c.pageRegion.page.pageNum
   }
 
 
@@ -173,7 +173,7 @@ class MultiPageIndex(
 
   }
 
-  def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, TargetRegion)] = {
+  def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, PageRegion)] = {
     if (components.isEmpty) None else {
       val totalBounds = components.map(_.bounds).reduce(_ union _)
       val targetPages = components.map(_.pageNum.unwrap)
@@ -262,7 +262,7 @@ class MultiPageIndex(
   }
 
   def addComponent(c: Component): Component = {
-    val pageNum = c.pageRegion.page.stable.pageNum
+    val pageNum = c.pageRegion.page.pageNum
     getPageIndex(pageNum)
       .addComponent(c)
   }

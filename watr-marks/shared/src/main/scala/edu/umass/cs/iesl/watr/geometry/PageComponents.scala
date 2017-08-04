@@ -3,7 +3,10 @@ package geometry
 
 import scalaz.Equal
 import geometry.syntax._
+import scalaz.syntax.equal._
+import scalaz.std.anyVal._
 import watrmarks._
+import TypeTags._
 
 /**
 
@@ -20,49 +23,41 @@ import watrmarks._
 
   */
 
-case class StablePageID(
+case class StablePage(
   stableId: String@@DocumentID,
-  pageNum: Int@@PageNum
+  pageNum: Int@@PageNum,
+  pageId: Int@@PageID = PageID(-1)
 ) {
   override def toString = s"""${stableId}/pg${pageNum}"""
-}
-
-
-case class RecordedPageID(
-  pageId: Int@@PageID,
-  stable: StablePageID
-) {
-  override def toString = s"""${stable}@${pageId}"""
+  // def pageId: Int@@PageID = idOpt.getOrElse{ sys.error(s"no id for ${toString}") }
 }
 
 
 case class PageRegion(
-  page: RecordedPageID,
-  bbox: LTBounds
-)
-
-case class TargetRegion(
-  id: Int@@RegionID,
-  page: RecordedPageID,
-  bbox: LTBounds
+  page: StablePage,
+  bbox: LTBounds,
+  regionId: Int@@RegionID = RegionID(-1)
 ) {
-  lazy val uri = {
-    import PageComponentImplicits._
-    this.uriString
-  }
-  override def toString = s"""${page}/${id}@${bbox.prettyPrint}"""
-
-  def toPageRegion(): PageRegion = {
-    PageRegion(page, bbox)
-
-  }
+  // def regionId: Int@@RegionID = idOpt.getOrElse{ sys.error(s"no id for ${page} ${bbox}") }
+  def id: Int@@RegionID = regionId
 }
 
-object TargetRegion {
+// case class PageRegion(
+//   stableRegion: PageRegion
+// ) {
+//   def id: Int@@RegionID
 
-  implicit val EqualTargetRegion: Equal[TargetRegion] =
-    Equal.equal((a, b) => a.id==b.id)
+// }
 
+object PageRegion {
+  implicit val EqualPageRegion: Equal[PageRegion] =
+    Equal.equal{
+      case (PageRegion(p1, bbox1, _), PageRegion(p2, bbox2, _)) =>
+        p1 == p2 && bbox1 === bbox2
+
+      // case (a, b) => (a.idOpt, b.idOpt) match
+
+    }
 }
 
 
@@ -147,9 +142,7 @@ object PageItem {
     def verticalLines(): Seq[Line] = {
       linesWithOrientation.filter(_._2==VERTICAL).map(_._1)
     }
-
   }
-
 }
 
 case class CharAtom(
@@ -163,8 +156,6 @@ case class CharAtom(
 }
 
 
-
-
 object CharAtom {
   implicit val EqualCharAtom: Equal[CharAtom] =
     Equal.equal((a, b)  => a.id==b.id )
@@ -172,21 +163,51 @@ object CharAtom {
 
 case class Zone(
   id: Int@@ZoneID,
-  regions: Seq[TargetRegion],
+  regions: Seq[PageRegion],
   label: Label
 )
 
 
 object PageComponentImplicits {
-  def createTargetRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
+  def createPageRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
     s"${stableId}+${pageNum}+${bbox.uriString}"
   }
 
+  // implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
+  //   def union(r: PageRegion): PageRegion = {
+  //     val samePage = thePageRegion.page.pageId == r.page.pageId
+  //     if (!samePage) {
+  //       sys.error(s"""cannot union PageRegions from different pages: ${thePageRegion} + ${r}""")
+  //     }
+  //     thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
+  //   }
+
+  //   def intersects(pageId: Int@@PageID, bbox: LTBounds): Boolean = {
+  //     val samePage = thePageRegion.page.pageId == pageId
+  //     samePage && (thePageRegion.bbox intersects bbox)
+  //   }
+  //   def intersects(r: PageRegion): Boolean = {
+  //     intersects(r.page.pageId, r.bbox)
+  //   }
+
+  //   def intersection(b: LTBounds): Option[PageRegion] = {
+  //     thePageRegion.bbox
+  //       .intersection(b)
+  //       .map(b => thePageRegion.copy(bbox=b))
+  //   }
+  //   def uriString: String = {
+  //     createPageRegionUri(
+  //       thePageRegion.page.stableId,
+  //       thePageRegion.page.pageNum,
+  //       thePageRegion.bbox
+  //     )
+  //   }
+  // }
+
   implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
     def union(r: PageRegion): PageRegion = {
-      val samePage = thePageRegion.page.pageId == r.page.pageId
-      if (!samePage) {
-        sys.error(s"""cannot union PageRegions from different pages: ${thePageRegion} + ${r}""")
+      if (thePageRegion.page.pageId != r.page.pageId) {
+        sys.error(s"""cannot union thePageRegions from different pages: ${thePageRegion} + ${r}""")
       }
       thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
     }
@@ -199,66 +220,36 @@ object PageComponentImplicits {
       intersects(r.page.pageId, r.bbox)
     }
 
+
     def intersection(b: LTBounds): Option[PageRegion] = {
       thePageRegion.bbox
         .intersection(b)
         .map(b => thePageRegion.copy(bbox=b))
     }
-    def uriString: String = {
-      createTargetRegionUri(
-        thePageRegion.page.stable.stableId,
-        thePageRegion.page.stable.pageNum,
-        thePageRegion.bbox
-      )
-    }
-  }
 
-  implicit class RicherTargetRegion(val theTargetRegion: TargetRegion) extends AnyVal {
-    def union(r: TargetRegion): TargetRegion = {
-      if (theTargetRegion.page.pageId != r.page.pageId) {
-        sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
-      }
-      theTargetRegion.copy(bbox = theTargetRegion.bbox union r.bbox)
-    }
-
-    def intersects(pageId: Int@@PageID, bbox: LTBounds): Boolean = {
-      val samePage = theTargetRegion.page.pageId == pageId
-      samePage && (theTargetRegion.bbox intersects bbox)
-    }
-    def intersects(r: TargetRegion): Boolean = {
-      intersects(r.page.pageId, r.bbox)
-    }
-
-
-    def intersection(b: LTBounds): Option[TargetRegion] = {
-      theTargetRegion.bbox
-        .intersection(b)
-        .map(b => theTargetRegion.copy(bbox=b))
-    }
-
-    // def splitHorizontal(r: TargetRegion): List[TargetRegion] = {
-    //   if (theTargetRegion.page.pageId != r.page.pageId) {
-    //     sys.error(s"""cannot union theTargetRegions from different pages: ${theTargetRegion} + ${r}""")
+    // def splitHorizontal(r: PageRegion): List[PageRegion] = {
+    //   if (thePageRegion.page.pageId != r.page.pageId) {
+    //     sys.error(s"""cannot union thePageRegions from different pages: ${thePageRegion} + ${r}""")
     //   }
 
     //   val splitBoxes = r.bbox.splitHorizontal
 
     //   splitBoxes.map { ltb =>
-    //     theTargetRegion.copy(
+    //     thePageRegion.copy(
     //       bbox = ltb
     //     )
     //   }
     // }
 
     def prettyPrint(): String = {
-      theTargetRegion.toString
+      thePageRegion.toString
     }
 
     def uriString: String = {
-      createTargetRegionUri(
-        theTargetRegion.page.stable.stableId,
-        theTargetRegion.page.stable.pageNum,
-        theTargetRegion.bbox
+      createPageRegionUri(
+        thePageRegion.page.stableId,
+        thePageRegion.page.pageNum,
+        thePageRegion.bbox
       )
     }
   }
@@ -309,3 +300,60 @@ object PageComponentImplicits {
 
   }
 }
+
+// case class PageRegion(
+//   id: Int@@RegionID,
+//   page: RecordedPageID,
+//   bbox: LTBounds
+// ) {
+//   lazy val uri = {
+//     import PageComponentImplicits._
+//     this.uriString
+//   }
+//   override def toString = s"""${page}/${id}@${bbox.prettyPrint}"""
+
+//   def toPageRegion(): PageRegion = {
+//     PageRegion(page, bbox)
+
+//   }
+// }
+
+
+
+// case class StablePageID(
+//   stableId: String@@DocumentID,
+//   pageNum: Int@@PageNum
+// ) {
+//   override def toString = s"""${stableId}/pg${pageNum}"""
+// }
+
+
+// case class RecordedPageID(
+//   pageId: Int@@PageID,
+//   stable: StablePageID
+// ) {
+//   override def toString = s"""${stable}@${pageId}"""
+// }
+
+
+// case class PageRegion(
+//   page: RecordedPageID,
+//   bbox: LTBounds
+// )
+
+// case class TargetRegion(
+//   id: Int@@RegionID,
+//   page: RecordedPageID,
+//   bbox: LTBounds
+// ) {
+//   lazy val uri = {
+//     import PageComponentImplicits._
+//     this.uriString
+//   }
+//   override def toString = s"""${page}/${id}@${bbox.prettyPrint}"""
+
+//   def toPageRegion(): PageRegion = {
+//     PageRegion(page, bbox)
+
+//   }
+// }

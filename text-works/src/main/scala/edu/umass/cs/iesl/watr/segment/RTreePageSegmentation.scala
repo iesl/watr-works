@@ -22,6 +22,7 @@ import PageComponentImplicits._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import textreflow.data._
 import scala.concurrent.duration._
+import textgrid._
 
 object DocumentSegmenter {
   import com.github.davidmoten.rtree
@@ -153,7 +154,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
       docStore.getTargetRegion(
         docStore.addTargetRegion(pageId, pageGeometry)
-      ).toPageRegion()
+      )
     }
 
     createZone(LB.DocumentPages, pageRegions)
@@ -262,7 +263,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
     def labelRegion(bbox: LTBounds, label: Label, text: Option[String]=None): RegionComponent = {
       val regionId = docStore.addTargetRegion(pageId, bbox)
-      val pageRegion = docStore.getTargetRegion(regionId).toPageRegion
+      val pageRegion = docStore.getTargetRegion(regionId)
       mpageIndex.createRegionComponent(pageRegion, label, text)
     }
 

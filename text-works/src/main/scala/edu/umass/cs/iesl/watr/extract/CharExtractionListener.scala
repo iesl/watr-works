@@ -179,10 +179,7 @@ class CharExtractionListener(
             val charAtom = CharAtom(
               nextId,
               PageRegion(
-                RecordedPageID(
-                  PageID(-(1+pageNum.unwrap)), // This is just  hacky way to set an invalid PageID (which will be later changed when added to db)
-                  StablePageID(stableId, pageNum)
-                ),
+                StablePage(stableId, pageNum),
                 charBounds
               ),
               stringRep,
@@ -371,10 +368,7 @@ class CharExtractionListener(
     val bounds = LTBounds(xmin, ymin, xmax-xmin, ymax-ymin)
 
     val pageRegion = PageRegion(
-      RecordedPageID(
-        PageID(-(1+pageNum.unwrap)),
-        StablePageID(stableId, pageNum)
-      ),
+      StablePage(stableId, pageNum),
       bounds
     )
 
@@ -402,10 +396,7 @@ class CharExtractionListener(
     // println()
 
     val pageRegion = PageRegion(
-      RecordedPageID(
-        PageID(-(1+pageNum.unwrap)), // This is just  hacky way to set an invalid PageID (which will be later changed when added to db)
-        StablePageID(stableId, pageNum)
-      ),
+      StablePage(stableId, pageNum),
       imgBounds
     )
 

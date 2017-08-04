@@ -775,14 +775,12 @@ class CorpusAccessDB(
       runq { selectPageImage(pageId) }
     }
 
-    def getPageIdentifier(pageId: Int@@PageID): RecordedPageID = {
+    def getPageIdentifier(pageId: Int@@PageID): StablePage = {
       val query = for {
         p <- selectPage(pageId)
         d <- selectDocument(p.document)
-      } yield RecordedPageID(
-        pageId,
-        StablePageID(d.stableId, p.pagenum)
-      )
+      } yield StablePage(d.stableId, p.pagenum, Some(pageId))
+
       runq { query }
     }
 
@@ -806,20 +804,20 @@ class CorpusAccessDB(
     }
 
     // G.TargetRegion = M.TargetRegion+M.Page+M.Document
-    def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[TargetRegion] =
+    def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[PageRegion] =
       for {
         mTr <- selectTargetRegion(regionId)
         mPage <- selectPage(mTr.page)
         mDocument <- selectDocument(mPage.document)
       } yield {
-        val stable = StablePageID(mDocument.stableId, mPage.pagenum)
-        val page = RecordedPageID(mPage.prKey, stable)
-        TargetRegion(mTr.prKey, page, mTr.bounds)
-        // TargetRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
+        val stable = StablePage(mDocument.stableId, mPage.pagenum)
+        val page = StablePage(mPage.prKey, stable)
+        PageRegion(mTr.prKey, page, mTr.bounds)
+        // PageRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
       }
 
 
-    def getTargetRegion(regionId: Int@@RegionID): TargetRegion =
+    def getTargetRegion(regionId: Int@@RegionID): PageRegion =
       runq { selTargetRegion(regionId) }
 
     def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {

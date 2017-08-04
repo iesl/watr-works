@@ -22,10 +22,10 @@ object VisualTracer {
 
   def noop                                              = Noop
   def setPageGeometries(b: Seq[PageGeometry]): TraceLog = {SetPageGeometries(b)}
-  def showRegion(s: TargetRegion): TraceLog             = {Show(Seq(s))}
-  def showRegions(s: Seq[TargetRegion]): TraceLog       = {Show(s)}
+  def showRegion(s: PageRegion): TraceLog             = {Show(Seq(s))}
+  def showRegions(s: Seq[PageRegion]): TraceLog       = {Show(s)}
   // def showZone(s: Zone): TraceLog                       = {ShowZone(s)}
-  def focusOn(s: TargetRegion): TraceLog                = {FocusOn(s)}
+  def focusOn(s: PageRegion): TraceLog                = {FocusOn(s)}
   def message(s: TB.Box): TraceLog                         = {Message(s)}
   def all(ts: Seq[TraceLog]): TraceLog                  = {All(ts)}
   def link(ts: TraceLog*): TraceLog                     = {Link(ts)}

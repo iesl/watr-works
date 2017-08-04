@@ -47,9 +47,9 @@ object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflo
       }
     }
 
-    property("json <--> TargetRegion") = forAll{ (example: TargetRegion) =>
+    property("json <--> PageRegion") = forAll{ (example: PageRegion) =>
       val jsVal = Json.toJson(example)
-      jsVal.validate[TargetRegion] match   {
+      jsVal.validate[PageRegion] match   {
         case JsSuccess(targetRegion, path) =>
           example === targetRegion
         case x =>

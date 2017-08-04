@@ -40,7 +40,7 @@ class SampleTextCorpus extends PlainTextCorpus {
 
         val allTargetRegions = docStore.getTargetRegions(pageId)
 
-        val regionCount =  s"TargetRegions for page ${pageId}: ${allTargetRegions.length} ".box
+        val regionCount =  s"PageRegions for page ${pageId}: ${allTargetRegions.length} ".box
 
         (
           indent(2)("PageGeometry")

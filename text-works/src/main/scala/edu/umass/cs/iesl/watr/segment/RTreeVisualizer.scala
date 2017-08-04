@@ -97,10 +97,7 @@ class RTreeVisualizer(
     val gifFrames = mutable.ArrayBuffer[Image]()
 
     def mkPageRegion(bounds: LTBounds) = PageRegion(
-      RecordedPageID(
-        PageID(0),
-        StablePageID(DocumentID(""), PageNum(0))
-      ),
+      StablePage(DocumentID(""), PageNum(0)),
       bounds
     )
 

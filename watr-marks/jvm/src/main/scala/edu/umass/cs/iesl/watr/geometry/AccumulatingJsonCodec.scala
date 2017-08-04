@@ -21,13 +21,13 @@ class AccumulatingJsonCodec extends TypeTagFormats {
   import geometryCodecs.FormatLTBounds
   import geometryCodecs.FormatLabel
 
-  implicit val FormatStablePageID: Format[StablePageID] = Json.format[StablePageID]
-  implicit val FormatRecordedPageID: Format[RecordedPageID] = Json.format[RecordedPageID]
+  implicit val FormatStablePage: Format[StablePage] = Json.format[StablePage]
+  // implicit val FormatStablePage: Format[StablePage] = Json.format[StablePage]
 
   implicit val FormatZone: Format[Zone] = new Format[Zone] {
     override def reads(json: JsValue)= json match {
       case JsArray(Seq(labelJs, regionsJs, idJs)) =>
-        JsSuccess(Zone(idJs.as[Int@@ZoneID], regionsJs.as[Seq[TargetRegion]], labelJs.as[Label]))
+        JsSuccess(Zone(idJs.as[Int@@ZoneID], regionsJs.as[Seq[PageRegion]], labelJs.as[Label]))
 
       case _ => JsError(s"Zone ${json}")
     }
@@ -38,7 +38,7 @@ class AccumulatingJsonCodec extends TypeTagFormats {
     }
   }
 
-  implicit val FormatTargetRegion: Format[TargetRegion] = Json.format[TargetRegion]
+  implicit val FormatPageRegion: Format[PageRegion] = Json.format[PageRegion]
   // implicit val FormatTargetRegion: Format[TargetRegion] = new Format[TargetRegion] {
   //   override def reads(json: JsValue)= json match {
   //     case JsArray(Seq(JsNumber(id), bboxJs)) =>

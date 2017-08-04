@@ -91,7 +91,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
 
         ("PageGeometry"
           % indent(4)(pageGeometry.toString.box)
-          % indent(2)(s"TargetRegions for page ${pageId}: ${allTargetRegions.length} ")
+          % indent(2)(s"PageRegions for page ${pageId}: ${allTargetRegions.length} ")
           % indent(4)(vcat(regions)))
       }
 

@@ -98,7 +98,7 @@ object MITAlignPredsynth {
   //             val targetRegions = reflowSlice.targetRegions()
 
   //             val intersectedVisualLines  = reflowSlice.charAtoms.map{ case CharAtom(charId, targetRegion, char, _) =>
-  //               val pageNum = targetRegion.page.stable.pageNum
+  //               val pageNum = targetRegion.page.pageNum
   //               // val pageId = docStore.getPage(docId, pageNum)
   //               val pageIndex = mpageIndex.getPageIndex(pageNum)
   //               val bbox = targetRegion.bbox
@@ -119,7 +119,7 @@ object MITAlignPredsynth {
 
   //             // Compute the intersection of a TextReflow w/ RegionComponent
   //             val annotationRegions = uniqVisualLines.map{visualLine =>
-  //               val pageRegions = targetRegions.filter(_.page.stable.pageNum == visualLine.pageNum)
+  //               val pageRegions = targetRegions.filter(_.page.pageNum == visualLine.pageNum)
   //               // Select the span for each line that corresponds to labeled region
   //               val intersectingLineAtoms = visualLine.queryAtoms()
   //                 .trimLeftRightBy({lineAtom: AtomicComponent =>

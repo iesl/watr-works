@@ -48,9 +48,9 @@ sealed trait Component {
 
   def chars: String
 
-  def getStableID(): String@@DocumentID = pageRegion.page.stable.stableId
+  def getStableID(): String@@DocumentID = pageRegion.page.stableId
 
-  lazy val pageNum = pageRegion.page.stable.pageNum
+  lazy val pageNum = pageRegion.page.pageNum
 
   val labels: mutable.Set[Label] = mutable.Set.empty[Label]
   def addLabel(l: Label): Unit = labels.add(l)

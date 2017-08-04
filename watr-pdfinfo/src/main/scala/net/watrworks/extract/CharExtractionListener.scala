@@ -165,9 +165,9 @@ class CharExtractionListener(
           CharAtom(
             nextId,
             PageRegion(
-              RecordedPageID(
+              StablePage(
                 PageID(pageNum.unwrap),
-                StablePageID(stableId, pageNum)
+                StablePage(stableId, pageNum)
               ),
               charBounds
             ),
@@ -318,7 +318,7 @@ class CharExtractionListener(
     // )
 
     // val imgRegion = ImgAtom(
-    //     TargetRegion(
+    //     PageRegion(
     //       componentIdGen.nextId,
     //       PageNum(0),
     //       bounds

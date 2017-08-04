@@ -156,11 +156,11 @@ trait GeometryJsonCodecs extends TypeTagFormats {
   }
 
 
-  implicit val FormatStablePageID: Format[StablePageID] = Json.format[StablePageID]
-  implicit val FormatRecordedPageID: Format[RecordedPageID] = Json.format[RecordedPageID]
-
-  implicit val FormatTargetRegion: Format[TargetRegion] = Json.format[TargetRegion]
+  implicit val FormatStablePage: Format[StablePage] = Json.format[StablePage]
   implicit val FormatPageRegion: Format[PageRegion] = Json.format[PageRegion]
+
+  // implicit val FormatStablePage: Format[StablePage] = Json.format[StablePage]
+  // implicit val FormatPageRegion: Format[PageRegion] = Json.format[PageRegion]
 
   // implicit val FormatTargetRegion: Format[TargetRegion] = new Format[TargetRegion] {
   //   override def reads(json: JsValue)= json match {
@@ -223,7 +223,7 @@ trait GeometryJsonCodecs extends TypeTagFormats {
   implicit val FormatZone: Format[Zone] = new Format[Zone] {
     override def reads(json: JsValue)= json match {
       case JsArray(Seq(labelJs, regionsJs, idJs)) =>
-        JsSuccess(Zone(idJs.as[Int@@ZoneID], regionsJs.as[Seq[TargetRegion]], labelJs.as[Label]))
+        JsSuccess(Zone(idJs.as[Int@@ZoneID], regionsJs.as[Seq[PageRegion]], labelJs.as[Label]))
 
       case _ => JsError(s"Zone ${json}")
     }

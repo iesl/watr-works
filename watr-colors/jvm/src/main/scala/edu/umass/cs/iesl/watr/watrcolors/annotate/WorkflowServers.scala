@@ -98,7 +98,7 @@ class PageOneLabeler(
 
   }
 
-  def singlePageLabeler(targetRegions: Seq[TargetRegion]): LabelWidgetConfig = {
+  def singlePageLabeler(targetRegions: Seq[PageRegion]): LabelWidgetConfig = {
 
     val pageOnes = targetRegions.map{ pageTargetRegion =>
       LW.pad(

@@ -21,7 +21,7 @@ trait DocumentZoningApi {
 
   def addPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Int@@PageID
   def getPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): Option[Int@@PageID]
-  def getPageIdentifier(pageId: Int@@PageID): RecordedPageID
+  def getPageIdentifier(pageId: Int@@PageID): StablePage
   def getPageDef(pageId: Int@@PageID): Option[Rel.Page]
   def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
   def getPageGeometry(pageId: Int@@PageID): LTBounds
@@ -30,7 +30,7 @@ trait DocumentZoningApi {
   def getPageImage(pageId: Int@@PageID): Option[Array[Byte]]
 
   def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
-  def getTargetRegion(regionId: Int@@RegionID): TargetRegion
+  def getTargetRegion(regionId: Int@@RegionID): PageRegion
 
   // def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit
   // def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]]
@@ -94,8 +94,8 @@ trait DocumentZoningApi {
   } yield reflow
 
   def ensurePageRegion(pageRegion: PageRegion): Option[Int@@RegionID] = {
-    val stableId = pageRegion.page.stable.stableId
-    val pageNum =  pageRegion.page.stable.pageNum
+    val stableId = pageRegion.page.stableId
+    val pageNum =  pageRegion.page.pageNum
     ensureTargetRegion(stableId, pageNum, pageRegion.bbox)
   }
 

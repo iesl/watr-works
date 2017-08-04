@@ -10,6 +10,8 @@ import watrmarks.{StandardLabels => LB}
 import rindex._
 import utils.OrderedDisjointSet
 
+import textgrid._
+
 
 
 /**

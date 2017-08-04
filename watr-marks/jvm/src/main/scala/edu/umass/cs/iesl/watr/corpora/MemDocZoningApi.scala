@@ -190,9 +190,8 @@ class MemDocZoningApi extends DocumentZoningApi {
         val page = pages.unique(pageId)
         val pageNum = page.pagenum
         val doc = documents.unique(page.document)
-        val uriKey = createTargetRegionUri(doc.stableId, pageNum, bbox)
+        val uriKey = createPageRegionUri(doc.stableId, pageNum, bbox)
 
-        // val uriKey = bbox.uriString
         forUriKey.getOrElseUpdate(uriKey,{
           // FIXME: correct rank
           val rec = Rel.TargetRegion(nextId(), pageId, rank=0, None, bbox)
@@ -258,12 +257,11 @@ class MemDocZoningApi extends DocumentZoningApi {
     documents.unique(docId).stableId
   }
 
-  def getPageIdentifier(pageId: Int@@PageID): RecordedPageID = {
+  def getPageIdentifier(pageId: Int@@PageID): StablePage = {
     val p = pages.unique(pageId)
     val d = documents.unique(p.document)
-    RecordedPageID(
-      pageId,
-      StablePageID(d.stableId, p.pagenum)
+    StablePage(
+      d.stableId, p.pagenum, pageId
     )
   }
 
@@ -316,13 +314,13 @@ class MemDocZoningApi extends DocumentZoningApi {
     targetregions.ensure(pageId, bbox)
   }
 
-  def getTargetRegion(regionId: Int@@RegionID): G.TargetRegion = {
+  def getTargetRegion(regionId: Int@@RegionID): G.PageRegion = {
     val model = targetregions.unique(regionId)
     val modelPage = pages.unique(model.page)
     val mDocument = documents.unique(modelPage.document)
-    val stable = G.StablePageID(mDocument.stableId, modelPage.pagenum)
-    val page = G.RecordedPageID(model.page, stable)
-    G.TargetRegion(model.prKey, page, model.bounds)
+    // d.stableId, p.pagenum, Some(pageId)
+    val page = G.StablePage(mDocument.stableId, modelPage.pagenum, model.page)
+    G.PageRegion(page, model.bounds, model.prKey)
   }
 
   def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
