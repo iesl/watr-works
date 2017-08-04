@@ -72,6 +72,11 @@ object GenericHeuristics {
             else if (charAtomIndex < textReflow.charAtoms().length - 1 && (charAtom.bbox.left <= textReflow.charAtoms()(charAtomIndex + 1).bbox.left && charAtom.bbox.right >= textReflow.charAtoms()(charAtomIndex + 1).bbox.right)) {
                 currentToken += charAtom.char
             }
+            // test this component
+            else {
+                tokens += currentToken.mkString
+                currentToken.clear()
+            }
             charAtomIndex += 1
         }
 
@@ -80,7 +85,7 @@ object GenericHeuristics {
             currentToken.clear()
         }
 
-        tokens.filter(_.nonEmpty).filter(!_.equals(PERIOD))
+        tokens.filter(_.nonEmpty) //.filter( token => !(token.length.==(1) && PUNCTUATIONS.contains(token.head)))
     }
 
     def getSeparateComponentsByText(tokenizedTextReflow: ListBuffer[String]): ListBuffer[String] = {
