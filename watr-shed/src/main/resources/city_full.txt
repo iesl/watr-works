@@ -7322,7 +7322,6 @@ oberon
 oberursel
 obihiro
 obninsk
-observatory
 obu
 ocala
 ocean
