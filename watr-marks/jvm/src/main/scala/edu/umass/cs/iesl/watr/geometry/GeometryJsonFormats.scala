@@ -72,11 +72,6 @@ trait TypeTagFormats {
   val WriteChar: Writes[Char] = Writes[Char] { c => JsString(c.toString()) }
   implicit def FormatChar     = Format(ReadChar, WriteChar)
 
-
-  // implicit def FormatSHA1String  = Format(
-  //   __.read[String].map(i => Tag.of[SHA1String](i)),
-  //   Writes[String@@SHA1String](i => JsString(i.unwrap))
-  // )
 }
 
 
@@ -129,15 +124,15 @@ trait OptionFormatting {
 trait GeometryJsonCodecs extends TypeTagFormats {
   import play.api.libs.json._
 
-  trait SerializationDefs {
-    // def stableDocumentIds(): Seq[String@@DocumentID]
-    // def stablePageIds(): Seq[StablePageID]
-    // def stableIdToPageId(x: String@@DocumentID, p:Int@@PageNum): Int@@PageID
-    def pageIdToStableID(pageId: Int@@PageID): Option[StablePageID]
+  // trait SerializationDefs {
+  //   // def stableDocumentIds(): Seq[String@@DocumentID]
+  //   // def stablePageIds(): Seq[StablePageID]
+  //   // def stableIdToPageId(x: String@@DocumentID, p:Int@@PageNum): Int@@PageID
+  //   def pageIdToStableID(pageId: Int@@PageID): Option[StablePageID]
 
-  }
+  // }
 
-  def serializationDefs: SerializationDefs
+  // def serializationDefs: SerializationDefs
 
   def jstr(s: String) = JsString(s)
   def num(s: Int) = JsNumber(s)
@@ -163,38 +158,91 @@ trait GeometryJsonCodecs extends TypeTagFormats {
 
   implicit val FormatStablePageID: Format[StablePageID] = Json.format[StablePageID]
   implicit val FormatRecordedPageID: Format[RecordedPageID] = Json.format[RecordedPageID]
+
   implicit val FormatTargetRegion: Format[TargetRegion] = Json.format[TargetRegion]
+  implicit val FormatPageRegion: Format[PageRegion] = Json.format[PageRegion]
 
-  implicit val FormatPageRegion: Format[PageRegion] = new Format[PageRegion] {
+  // implicit val FormatTargetRegion: Format[TargetRegion] = new Format[TargetRegion] {
+  //   override def reads(json: JsValue)= json match {
+  //     case JsArray(Seq(JsNumber(id), bboxJs)) =>
+
+  //       val pageId = PageID(pageIdNum.intValue())
+  //       val stableId = serializationDefs
+  //         .pageIdToStableID(pageId)
+  //         .getOrElse { sys.error(s"no page found for pageId=${pageId}")}
+
+  //       JsSuccess(TargetRegion(
+  //         RecordedPageID(pageId, stableId),
+  //         bboxJs.as[LTBounds]
+  //       ))
+  //     case _ => JsError(s"unmatched TargetRegion ${json}")
+  //   }
+
+  //   override def writes(o: TargetRegion) = o match {
+  //     case c@ TargetRegion(
+  //       RecordedPageID(
+  //         PageID(pageId),
+  //         StablePageID(DocumentID(stableId), PageNum(pageNum))
+  //       ),
+  //       bbox
+  //     ) =>
+  //       Json.arr(num(pageId), Json.toJson(bbox))
+  //   }
+  // }
+
+  // implicit val FormatPageRegion: Format[PageRegion] = new Format[PageRegion] {
+  //   override def reads(json: JsValue)= json match {
+  //     case JsArray(Seq(JsNumber(pageIdNum), bboxJs)) =>
+
+  //       val pageId = PageID(pageIdNum.intValue())
+  //       val stableId = serializationDefs
+  //         .pageIdToStableID(pageId)
+  //         .getOrElse { sys.error(s"no page found for pageId=${pageId}")}
+
+  //       JsSuccess(PageRegion(
+  //         RecordedPageID(pageId, stableId),
+  //         bboxJs.as[LTBounds]
+  //       ))
+  //     case _ => JsError(s"unmatched PageRegion ${json}")
+  //   }
+
+  //   override def writes(o: PageRegion) = o match {
+  //     case c@ PageRegion(
+  //       RecordedPageID(
+  //         PageID(pageId),
+  //         StablePageID(DocumentID(stableId), PageNum(pageNum))
+  //       ),
+  //       bbox
+  //     ) =>
+  //       Json.arr(num(pageId), Json.toJson(bbox))
+  //   }
+  // }
+
+  implicit val FormatPageGeometry     = Json.format[PageGeometry]
+
+  implicit val FormatZone: Format[Zone] = new Format[Zone] {
     override def reads(json: JsValue)= json match {
-      case JsArray(Seq(JsNumber(pageIdNum), bboxJs)) =>
-        val pageId = PageID(pageIdNum.intValue())
-        val stableId = serializationDefs
-          .pageIdToStableID(pageId)
-          .getOrElse { sys.error(s"no page found for pageId=${pageId}")}
-          // .getOrElse { StablePageID(DocumentID(""), PageNum(0)) }
+      case JsArray(Seq(labelJs, regionsJs, idJs)) =>
+        JsSuccess(Zone(idJs.as[Int@@ZoneID], regionsJs.as[Seq[TargetRegion]], labelJs.as[Label]))
 
-        JsSuccess(PageRegion(
-          RecordedPageID(pageId, stableId),
-          bboxJs.as[LTBounds]
-        ))
-      case _ => JsError(s"unmatched PageRegion ${json}")
+      case _ => JsError(s"Zone ${json}")
     }
 
-    override def writes(o: PageRegion) = o match {
-      case c@ PageRegion(
-        RecordedPageID(
-          PageID(pageId),
-          StablePageID(DocumentID(stableId), PageNum(pageNum))
-        ),
-        bbox
-      ) =>
-        Json.arr(num(pageId), Json.toJson(bbox))
+    override def writes(o: Zone) = o match {
+      case c@ Zone(id, regions, label) =>
+        Json.arr(Json.toJson(label), Json.toJson(regions), Json.toJson(id))
     }
   }
 
-  implicit val FormatPageGeometry     = Json.format[PageGeometry]
-  implicit val FormatLabel            = Json.format[Label]
+  implicit val FormatLabel = new Format[Label]  {
+    override def reads(json: JsValue)= json match {
+      case JsString(str) => JsSuccess(Labels.fromString(str))
+    }
+
+    override def writes(o: Label) = o match {
+      case c@ Label(ns, key, value, id) => jstr(c.fqn)
+    }
+  }
 
 
 

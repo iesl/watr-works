@@ -11,12 +11,13 @@ import matryoshka.scalacheck.arbitrary._
 import geometry._
 import geometry.syntax._
 
+import watrmarks._
 import TextReflowF._
 
 object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflows {
   import play.api.libs.json._
 
-  new corpora.MemDocZoningApi {
+  new corpora.MemDocZoningApi with GeometryJsonCodecs {
 
     def showFailed[A: Equal](a1: A, a2: A): Unit = {
       if (a1 =/= a2) {
@@ -29,7 +30,6 @@ object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflo
 
     property("json <--> LTBounds") = forAll{ (example: LTBounds) =>
       val jsVal = Json.toJson(example)
-      // val jsOut = Json.prettyPrint(jsVal)
       jsVal.validate[LTBounds] match   {
         case JsSuccess(ltb, path) =>
           example === ltb
@@ -37,13 +37,18 @@ object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflo
       }
     }
 
+    property("json <--> Label") = forAll{ (example: Label) =>
+      val jsVal = Json.toJson(example)
+      jsVal.validate[Label] match   {
+        case JsSuccess(targetRegion, path) =>
+          example matches targetRegion
+        case x =>
+          false
+      }
+    }
 
     property("json <--> TargetRegion") = forAll{ (example: TargetRegion) =>
-      // println("example: " +example)
       val jsVal = Json.toJson(example)
-      // println("  jsVal: " +jsVal)
-      // val jsOut = Json.prettyPrint(jsVal)
-      // println("  jsOut: " +jsOut)
       jsVal.validate[TargetRegion] match   {
         case JsSuccess(targetRegion, path) =>
           example === targetRegion

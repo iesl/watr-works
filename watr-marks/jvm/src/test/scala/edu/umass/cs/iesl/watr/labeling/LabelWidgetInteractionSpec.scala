@@ -71,9 +71,9 @@ class LabelWidgetInteractionSpec extends LabelWidgetTestUtil {
     val lwindexWithIndicators = LabelWidgetIndex.create(docStore, labelWidgetWithIndicators)
     lwindexWithIndicators.debugPrint(Some(queryBox))
 
-    val absPositioned = lwindexWithIndicators.layout.positioning
-    val absPosMapx = absPositioned.groupBy(_.widget.wid)
-    val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
+    // val absPositioned = lwindexWithIndicators.layout.positioning
+    // val absPosMapx = absPositioned.groupBy(_.widget.wid)
+    // val absPosMap = absPositioned.map(a => (a.widget.wid, a)).toMap
 
     val updates = mods
 

@@ -157,9 +157,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
               reflow.prKey,
               reflowJson,
               lineTargetRegion.toPageRegion,
-              () => {
-                docStore0.jsonStrToTextReflow(reflowJson)
-              }
+              () => { docStore0.jsonStrToTextReflow(reflowJson) }
             )
             pageIndex.add(indexable)
           }

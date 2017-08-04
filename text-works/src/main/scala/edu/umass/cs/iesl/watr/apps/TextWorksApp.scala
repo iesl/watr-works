@@ -16,14 +16,14 @@ object OutputOption {
   case object VisualLine extends OutputOption
   case object Dehyphenated extends OutputOption
   case object SuperSubEscaping extends OutputOption
-  case object TokenLabeling extends OutputOption
+  // case object TokenLabeling extends OutputOption
 
   implicit val OutputOptionRead: Read[OutputOption] =
     Read.reads { _.toLowerCase match {
       case "visual-line"        | "vl"  => VisualLine
       case "dehyphenated"       | "dh"  => Dehyphenated
       case "super-sub-escaping" | "sse" => SuperSubEscaping
-      case "token-labeling"     | "tl"  => TokenLabeling
+      // case "token-labeling"     | "tl"  => TokenLabeling
       case s       =>
         throw new IllegalArgumentException(s"""'${s}' is not an output option.""")
     }}

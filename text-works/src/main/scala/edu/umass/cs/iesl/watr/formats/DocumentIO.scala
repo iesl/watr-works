@@ -8,6 +8,21 @@ import watrmarks.{StandardLabels => LB}
 
 object DocumentIO  {
 
+  def textAndLineDefs(mpageIndex: MultiPageIndex): Unit = {
+
+    for {
+      pageNum      <- mpageIndex.getPages
+      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+      readingOrder <- pageIndex.getClusters(LB.ReadingOrder)
+      (line, n)    <- readingOrder.zipWithIndex
+      textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+    } yield {
+      textRow.cells
+      val text = textRow.toText()
+    }
+
+  }
+
   def documentToPlaintext(mpageIndex: MultiPageIndex): String = {
 
     val textlines = for {

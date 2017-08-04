@@ -61,6 +61,15 @@ object TextGrid {
   ) extends GridCell
 
 
+  /*
+   Serialization:
+   "the quick brown"  => [[bb], [bb], [bb], " ", ]
+   "ll" => [[bb0], [bb0]  ]
+   "Fe_{3}" => [[bb], [bb], "_", "{", [bb], "}" ]
+   "plann-"
+   "ing"
+   "planning" => [....['h', [bb]],...]
+   */
   trait Row {
     def cells: Seq[GridCell]
 

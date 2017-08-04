@@ -647,10 +647,10 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
 
         pageIndex.setComponentText(visualLineClusterCC, LB.VisualLine, spacedRow)
 
-        // val textReflow = convertTextRowToTextReflow(spacedRow)
+        val textReflow = convertTextRowToTextReflow(spacedRow)
 
         createZone(LB.VisualLine, Seq(visualLineCC.pageRegion)).foreach { zoneId =>
-          // docStore.setTextReflowForZone(zoneId, textReflow)
+          docStore.setTextReflowForZone(zoneId, textReflow)
         }
       }
       gifBuilder.finish()

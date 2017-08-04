@@ -24,7 +24,7 @@ object SharedInit {
         |import textreflow._
         |import textreflow.data._
         |import bioarxiv._, BioArxiv._, BioArxivOps._
-        |import watrmarks.StandardLabels._
+        |import watrmarks.{StandardLabels => LB}
         |import TypeTags._
         |import ShellCommands._
         |import labeling.SampleLabelWidgets
@@ -262,26 +262,20 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
     }
   }
 
+  import watrmarks._
+  import geometry._
+  import play.api.libs.json, json._
+
+  // Export all documents having any of the specified labels
+  def exportLabels(labels: Seq[Label])(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val docStore = corpusAccessApi.docStore
+
+  }
+
   def addUserAndLockTables(db: CorpusAccessDB)(): Unit = {
     db.runqOnce{ db.tables.UserTables.create.run }
     db.runqOnce{ db.tables.workflowTables.create.run }
   }
 
-  def createDocumentPagesLabels()(implicit docStore: DocumentZoningApi): Unit = {
-    for {
-      stableId <- docStore.getDocuments()
-      docId <- docStore.getDocument(stableId)
-    } {
-      val regions = docStore.getPages(docId)
-        .map{ pageId =>
-          val pageGeometry = docStore.getPageGeometry(pageId)
-          docStore.getTargetRegion(
-            docStore.addTargetRegion(pageId, pageGeometry)
-          ).toPageRegion()
-        }
-      docStore.labelRegions(LB.DocumentPages, regions)
-    }
-
-  }
 
 }

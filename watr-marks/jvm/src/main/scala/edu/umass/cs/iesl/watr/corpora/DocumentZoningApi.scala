@@ -8,7 +8,9 @@ import TextReflowF._
 
 import watrmarks.{StandardLabels => LB}
 
-trait DocumentZoningApi extends TextReflowJsonCodecs {
+
+// trait DocumentZoningApi extends TextReflowJsonCodecs {
+trait DocumentZoningApi {
   val Rel = RelationModel
 
   def getDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]=List()): Seq[String@@DocumentID]
@@ -30,9 +32,9 @@ trait DocumentZoningApi extends TextReflowJsonCodecs {
   def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
   def getTargetRegion(regionId: Int@@RegionID): TargetRegion
 
-  def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit
-  def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]]
-  def deleteTargetRegionImage(regionId: Int@@RegionID): Unit
+  // def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit
+  // def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]]
+  // def deleteTargetRegionImage(regionId: Int@@RegionID): Unit
 
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID]
 
@@ -124,11 +126,70 @@ trait DocumentZoningApi extends TextReflowJsonCodecs {
     }
   }
 
-  override def serializationDefs: SerializationDefs  = new SerializationDefs {
-    def pageIdToStableID(pageId: Int@@PageID): Option[StablePageID] = {
-      for { pageDef <- getPageDef(pageId) } yield {
-        StablePageID(getDocumentStableId(pageDef.document), pageDef.pagenum)
+
+  def exportDocumentZones(labelFilters: Seq[Label]=List()): DocumentZoneExport = {
+    val accumCodec = new AccumulatingJsonCodec {
+
+      import play.api.libs.json, json._
+      val exportJson = for {
+        stableId <- getDocuments(labelFilters = labelFilters)
+        docId    <- getDocument(stableId).toList
+      } yield {
+        val docZones = for {
+          label <- labelFilters
+          zone <- getDocumentZones(docId, label)
+        } yield  {
+          Json.toJson(zone)
+          // val regions = zone.regions.map { r =>
+          //   Json.toJson(r.toPageRegion())
+          // }
+          // Json.arr(
+          //   Json.toJson(label),
+          //   Json.arr(regions)
+          // )
+        }
+
+        Json.obj(
+          ("stableId", stableId),
+          ("zones", docZones)
+        )
+
       }
+      val export = Json.arr(exportJson)
+
+      // println(Json.prettyPrint(export))
+      val jsOut = Json.stringify(export)
+      println(jsOut)
+      DocumentZoneExport(jsOut)
     }
+
+    ???
+  }
+
+  def importDocumentZones(zoneExport: DocumentZoneExport): Unit = {
+    import play.api.libs.json, json._
+    val asJson = Json.parse(zoneExport.jsonStr)
+
+  }
+
+
+
+
+  import play.api.libs.json.JsValue
+  val codecs = new TextReflowJsonCodecs {}
+
+  def textReflowToJson(textReflow: TextReflow): JsValue = {
+    codecs.textReflowToJson(textReflow)
+  }
+
+  def jsonStrToTextReflow(jsStr: String): TextReflow = {
+    codecs.jsonStrToTextReflow(jsStr)
+  }
+
+  def jsonToTextReflow(jsval: JsValue): TextReflow = {
+    codecs.jsonToTextReflow(jsval)
   }
 }
+
+
+case class DocumentZoneExport(jsonStr: String)

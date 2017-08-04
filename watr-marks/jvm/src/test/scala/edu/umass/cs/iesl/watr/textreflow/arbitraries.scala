@@ -57,6 +57,7 @@ trait ArbitraryTextReflows extends ArbitraryGeometries {
 
 
   implicit def arbLabel: Arbitrary[Label] = {
+
     (arbString |@| arbString |@| arbOption[String] |@| arbInt)({
       case (ns, key, value, id) =>
         Label(ns, key, value, LabelID(id))

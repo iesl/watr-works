@@ -205,7 +205,7 @@ class MemDocZoningApi extends DocumentZoningApi {
       }
     }
 
-    object textreflows extends DBRelation[TextReflowID, Rel.TextReflow] {
+    object textreflows extends DBRelation[TextReflowID, Rel.TextReflow] with TextReflowJsonCodecs {
       object forZone extends EdgeTableOneToOne[ZoneID, TextReflowID]
 
 
@@ -404,13 +404,14 @@ class MemDocZoningApi extends DocumentZoningApi {
       .flatMap(id => textreflows.option(id))
   }
 
+
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
+
     textreflows.forZone
       .getRhs(zoneId)
       .map({reflowId =>
-        import play.api.libs.json
-        jsonToTextReflow(
-          json.Json.parse(textreflows.unique(reflowId).reflow)
+        jsonStrToTextReflow(
+          textreflows.unique(reflowId).reflow
         )
       })
   }

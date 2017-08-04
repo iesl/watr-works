@@ -81,6 +81,7 @@ object Labels {
           case Array(key, value) =>
             Label("", key, Option(value))
         }
+      // case x => println(s"fromString: ${x}")
     }
   }
 }
@@ -129,13 +130,13 @@ case class Label(
 }
 
 
-import utils.IdGenerator
-class Labeler() {
-  val idGen = IdGenerator[LabelID]()
+// import utils.IdGenerator
+// class Labeler() {
+//   val idGen = IdGenerator[LabelID]()
 
-  def getLabel(l: Label): Label = {
-    l.copy(id = idGen.nextId)
-  }
+//   def getLabel(l: Label): Label = {
+//     l.copy(id = idGen.nextId)
+//   }
 
 
-}
+// }

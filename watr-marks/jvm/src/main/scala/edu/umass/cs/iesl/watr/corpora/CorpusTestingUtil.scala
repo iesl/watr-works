@@ -55,6 +55,7 @@ trait CorpusTestingUtil extends PlainTextCorpus {
     println(s)
   })
 
+
   def visualizeDocStore(): Unit = {
     for {
       stableId     <- docStore.getDocuments()
