@@ -63,23 +63,29 @@ object Utils {
         while (componentIndex < component.length && textReflowIndex < indexRange._2) {
             val currentTextReflowAtom: CharAtom = textReflow.charAtoms()(textReflowIndex)
             var localReflowCharIndex: Int = 0
-            breakable {
-                while (localReflowCharIndex < currentTextReflowAtom.char.length) {
+            while (localReflowCharIndex < currentTextReflowAtom.char.length) {
+                breakable {
                     if (component.charAt(componentIndex).==(currentTextReflowAtom.char.charAt(localReflowCharIndex))) {
                         if (componentStartIndex.==(-1)) {
                             componentStartIndex = textReflowIndex
                         }
                         componentIndex += 1
                     }
-                    else if (PUNCTUATION_SEPARATORS.contains(currentTextReflowAtom.char.charAt(localReflowCharIndex).toString) || currentTextReflowAtom.bbox.top.asInt().!=(yPosition)){
+                    else if (PUNCTUATION_SEPARATORS.contains(currentTextReflowAtom.char.charAt(localReflowCharIndex).toString) || currentTextReflowAtom.bbox.top.asInt().!=(yPosition)) {
                         break
                     }
                     else {
-                        componentIndex = 0
-                        componentStartIndex = -1
+                        if (component.head.==(currentTextReflowAtom.char.charAt(localReflowCharIndex))) {
+                            componentStartIndex = textReflowIndex
+                            componentIndex = 1
+                        }
+                        else {
+                            componentIndex = 0
+                            componentStartIndex = -1
+                        }
                     }
-                    localReflowCharIndex += 1
                 }
+                localReflowCharIndex += 1
             }
             textReflowIndex += 1
         }
@@ -159,7 +165,7 @@ object Utils {
             breakable {
                 RESOURCE_KEYWORDS.foreach {
                     resource => {
-                        for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines) {
+                        for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines if !line.equals("\n")) {
                             if ("\\b".concat(line).concat("\\b").r.findFirstIn(affiliationComponent).isDefined) {
                                 matchedKeywords += resource._1
                                 break
@@ -214,7 +220,7 @@ object Utils {
     def isPresentInAuthors(component: String, authorNames: Seq[String]): Boolean = {
 
         for (authorName <- authorNames) {
-            if (! isOfNameInitialFormat(authorName) && component.contains(authorName.toLowerCase)) {
+            if (!isOfNameInitialFormat(authorName) && component.contains(authorName.toLowerCase)) {
                 return true
             }
         }
