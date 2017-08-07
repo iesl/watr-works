@@ -31,7 +31,6 @@ class RTreeVisualizer(
   def segvisFile(name: String) = s"${name}.pg${pageNum}.png"
   def segvisGifFile(name: String) = s"${name}.pg${pageNum}.gif"
 
-
   def writeRTreeImage(name: String, l0: Label, labels: Label*): Unit = {
     vtrace.ifTrace{
       val image = createRTreeImage(l0, labels:_*)

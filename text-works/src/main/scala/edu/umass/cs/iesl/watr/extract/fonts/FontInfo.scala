@@ -2,12 +2,11 @@ package edu.umass.cs.iesl.watr
 package extract
 package fonts
 
-
 import _root_.com.itextpdf
 import com.itextpdf.io.font.{ FontProgramFactory, _ }
 import com.itextpdf.io.font.otf.Glyph
 import com.itextpdf.kernel.pdf.PdfName
-// import com.itextpdf.io.font.{ FontIdentification, FontNames, FontProgram }
+import com.itextpdf.io.font.{ FontIdentification, FontNames, FontProgram }
 import com.itextpdf.kernel.font.PdfFont
 import com.itextpdf.kernel.geom.LineSegment
 import com.itextpdf.kernel.geom
@@ -32,9 +31,9 @@ object DocumentFontInfo {
 
     val bs = pdfString.getValueBytes.map(Byte.byte2int(_))
     val bsMasked = bs.map(_ & 0xFF)
-    val b0 = bsMasked(0)
-    val fprogram = pdfFont.getFontProgram
-    val pglyphByCode = fprogram.getGlyphByCode(b0)
+    // val b0 = bsMasked(0)
+    // val fprogram = pdfFont.getFontProgram
+    // val pglyphByCode = fprogram.getGlyphByCode(b0)
 
     val decoded = pdfFont.decode(pdfString)
 
@@ -225,7 +224,7 @@ object DocumentFontInfo {
 
     val glyphBytes = maybeGlyph.map(pdfFont.convertToBytes(_)).map(_.mkString(",")).getOrElse("none")
 
-    val registered = FontProgramFactory.getRegisteredFonts.mkString(", ")
+    // val registered = FontProgramFactory.getRegisteredFonts.mkString(", ")
 
     val fmtPdfObject = formatting.formatPdfObject(
       pdfFont.getPdfObject, reader
@@ -332,7 +331,7 @@ object DocumentFontInfo {
 
 
   def outputFontProgramInfo(fontProgram: FontProgram): Box = {
-    val fontTypes = typesOf(fontProgram).mkString("["," ", "]" )
+    // val fontTypes = typesOf(fontProgram).mkString("["," ", "]" )
 
     val fontIdBox = outputFontIdentificationInfo(fontProgram.getFontIdentification)
 
@@ -340,13 +339,13 @@ object DocumentFontInfo {
       val fp = fontProgram.asInstanceOf[Type1Font]
       outputType1FontProgramInfo(fp)
     } else if (fontProgram.isInstanceOf[CidFont]) {
-      val fp = fontProgram.asInstanceOf[CidFont]
+      // val fp = fontProgram.asInstanceOf[CidFont]
       "(TODO no specific font info)".box
     } else if (fontProgram.isInstanceOf[TrueTypeFont]) {
-      val fp = fontProgram.asInstanceOf[TrueTypeFont]
+      // val fp = fontProgram.asInstanceOf[TrueTypeFont]
       "(TODO no specific font info)".box
     } else if (fontProgram.isInstanceOf[TrueTypeFont]) {
-      val fp = fontProgram.asInstanceOf[TrueTypeFont]
+      // val fp = fontProgram.asInstanceOf[TrueTypeFont]
       "(TODO no specific font info)".box
     } else {
       "(no specific font info)".box
@@ -432,7 +431,8 @@ object DocumentFontInfo {
 
       val fontProgram = font.getFontProgram
 
-      val fontProgramInfo =
+
+      // val fontProgramInfo =
         s"""|  ${fontProgram.getFontIdentification} getFontIdentification
             |  countOfGlyphs       () => Int                 ${fontProgram.countOfGlyphs          }
             |  getAvgWidth         () => Int                 ${fontProgram.getAvgWidth            }
@@ -577,8 +577,8 @@ object formatting {
   def formatStreamObject(obj: PdfObject, reader: PdfReader): Box = {
     val strm = obj.asInstanceOf[PdfStream]
 
-    val subtype = strm.getAsName(new PdfName("Subtype"))
-    val isType1C = subtype != null && subtype.getValue == "Type1C"
+    // val subtype = strm.getAsName(new PdfName("Subtype"))
+    // val isType1C = subtype != null && subtype.getValue == "Type1C"
 
     val strmAsDict = indent(3)(formatDictionary(strm, reader))
 
@@ -604,7 +604,7 @@ object formatting {
     } else if (obj.isIndirectReference()) {
       val iref: PdfIndirectReference = obj.asInstanceOf[PdfIndirectReference]
       val refNum =iref.getObjNumber
-      val refGen =iref.getGenNumber
+      // val refGen =iref.getGenNumber
       val objDirect = iref.getDocument.getPdfObject(refNum)
       val dtype = objectType(objDirect, reader)
       s"${dtype}*${refNum}"
@@ -635,7 +635,7 @@ object formatting {
 
     if (obj.isArray()) {
       val arr = obj.asInstanceOf[PdfArray]
-      val alen = arr.size()
+      // val alen = arr.size()
       val fmt = arr.map{ formatObject(_, reader) }.toSeq
       val isMultiLine = fmt.exists { _.rows > 1 }
       val fbox = if (isMultiLine) {
@@ -645,7 +645,7 @@ object formatting {
       }
       fbox
     } else if (obj.isDictionary) {
-      val xo = obj.asInstanceOf[PdfDictionary]
+      // val xo = obj.asInstanceOf[PdfDictionary]
       indent(4)(formatDictionary(obj, reader))
     } else if (obj.isBoolean()) {
       s"${obj.toString().trim()}"

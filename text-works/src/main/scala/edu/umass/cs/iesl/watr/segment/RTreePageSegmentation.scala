@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-
 import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
 import edu.umass.cs.iesl.watr.extract.PdfTextExtractor
 import spindex._
@@ -30,6 +29,7 @@ object DocumentSegmenter {
   import rtree.{geometry => RG}
   import spindex._
   import rx.functions.Func1
+
 
 
   def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
@@ -338,13 +338,13 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
     }
 
 
-    def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[Component]): FloatExact = {
+    def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact = {
       // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
       def pairwiseSpaceWidths(): Seq[FloatExact] = {
         val cpairs = sortedLineCCs.sliding(2).toList
 
         val dists = cpairs.map({
-          case Seq(c1, c2)  => (c2.bounds.left - c1.bounds.right)
+          case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
           case _  => 0d.toFloatExact()
         })
 
@@ -363,7 +363,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
       }
       val charDists = determineSpacings()
 
-      val charWidths = sortedLineCCs.map(_.bounds.width)
+      val charWidths = sortedLineCCs.map(_.bbox.width)
       val widestChar = charWidths.max
 
       // Don't  accept a space wider than (some magic number)*the widest char?
@@ -414,16 +414,16 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
       threshold
     }
 
-
     def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row = {
       val lineCCs = textRow.cells.collect{
-        case TextGrid.ComponentCell(cc) => cc
+        case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+          headItem
       }
 
       val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
 
       val maybeGroups = textRow.groupBy { (c1, c2) =>
-        val pairwiseDist = c2.bounds.left - c1.bounds.right
+        val pairwiseDist = c2.pageRegion.bbox.left - c1.pageRegion.bbox.right
         val sameGroup = pairwiseDist < splitValue
         sameGroup
       }
@@ -434,7 +434,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         val finalGroups = groupCursor.unfoldBy { group =>
           if (!group.atEnd) {
             val ins = group.focus.last.cloneCell()
-            Some(group.insertRight(ins.copy(text=" ")))
+            Some(group.insertRight(ins.copy(char=' ')))
           } else {
             Some(group)
           }
@@ -603,28 +603,63 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
         gifBuilder.indicate(s"Top Atoms", topIntersections.map(_.bounds()), LB.PageAtomGrp)
         gifBuilder.indicate(s"Bottom Atoms", bottomIntersections.map(_.bounds()), LB.PageAtomGrp)
 
-        val textRow = TextGrid.Row.fromComponents(visualLineAtoms)
+        def fromComponents(ccs: Seq[Component]): TextGrid.Row = {
+          new TextGrid.MutableRow { self =>
+            val init = ccs.map{
+              case cc@ AtomicComponent(id, charAtom, roleLabel) =>
+                val intersectsTop = topIntersects.contains(cc.id)
+                val intersectsBottom = bottomIntersects.contains(cc.id)
 
-        textRow.foreach{ _ match {
-          case cell@ TextGrid.ComponentCell(cc) =>
-            val intersectsTop = topIntersects.contains(cc.id)
-            val intersectsBottom = bottomIntersects.contains(cc.id)
+                charAtom.char.headOption.map{ char =>
+                  val cell = TextGrid.PageItemCell(charAtom, Seq(), char)
 
-            if (cc.bounds.bottom == visualLineModalBounds.bottom) {
-              // Center-text
-            } else if (intersectsTop && !intersectsBottom) {
-              gifBuilder.indicate(s"SuperScript", cc.bounds(), LB.PageAtomGrp)
-              cell.addLabel(LB.Sup)
-            } else if (!intersectsTop && intersectsBottom) {
-              gifBuilder.indicate(s"SubScript", cc.bounds(), LB.PageAtomGrp)
-              cell.addLabel(LB.Sub)
-            } else {
-              gifBuilder.indicate(s"???Script", cc.bounds(), LB.PageAtomGrp)
+                  if (cc.bounds.bottom == visualLineModalBounds.bottom) {
+                    // Center-text
+                  } else if (intersectsTop && !intersectsBottom) {
+                    gifBuilder.indicate(s"SuperScript", cc.bounds(), LB.PageAtomGrp)
+                    cell.addLabel(LB.Sup)
+                  } else if (!intersectsTop && intersectsBottom) {
+                    gifBuilder.indicate(s"SubScript", cc.bounds(), LB.PageAtomGrp)
+                    cell.addLabel(LB.Sub)
+                  } else {
+                    gifBuilder.indicate(s"???Script", cc.bounds(), LB.PageAtomGrp)
+                  }
+
+                  cell
+                }
+
+              case c@ RegionComponent(id, roleLabel, pageRegion, text) =>
+                None
+
             }
 
-          case _ =>
+            cells.appendAll(init.flatten)
+          }
+        }
 
-        }}
+        val textRow = fromComponents(visualLineAtoms)
+
+        // textRow.foreach{ _ match {
+        //   case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+        //   // case cell@ TextGrid.ComponentCell(cc) =>
+        //     val intersectsTop = topIntersects.contains(cc.id)
+        //     val intersectsBottom = bottomIntersects.contains(cc.id)
+
+        //     if (cc.bounds.bottom == visualLineModalBounds.bottom) {
+        //       // Center-text
+        //     } else if (intersectsTop && !intersectsBottom) {
+        //       gifBuilder.indicate(s"SuperScript", cc.bounds(), LB.PageAtomGrp)
+        //       cell.addLabel(LB.Sup)
+        //     } else if (!intersectsTop && intersectsBottom) {
+        //       gifBuilder.indicate(s"SubScript", cc.bounds(), LB.PageAtomGrp)
+        //       cell.addLabel(LB.Sub)
+        //     } else {
+        //       gifBuilder.indicate(s"???Script", cc.bounds(), LB.PageAtomGrp)
+        //     }
+
+        //   case _ =>
+
+        // }}
         // Convert consecutive sup/sub to single label
         val maybeCursor = textRow.groupBy { case (cell1, cell2) =>
           cell1.labels.contains(LB.Sub) && cell2.labels.contains(LB.Sub)
@@ -661,19 +696,19 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) {
     def convertTextRowToTextReflow(textRow: TextGrid.Row): TextReflow = {
 
       val textReflowAtoms: Seq[TextReflow] = textRow.cells.map{ _ match {
-        case cell@ TextGrid.ComponentCell(cc) => cc match {
-          case RegionComponent(id, role, pageRegion, maybeText) =>
-            None
-          case AtomicComponent(id, charAtom, role) =>
-            val tr = if (cell.labels.nonEmpty) {
-              labeled(cell.labels.toSet, atom(charAtom))
-            } else {
-              atom(charAtom)
-            }
-            Some(tr)
-        }
-        case cell@ TextGrid.InsertCell(text, loc) =>
-          Some(insert(text))
+        case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+          headItem match {
+            case charAtom : CharAtom =>
+              val tr = if (cell.labels.nonEmpty) {
+                labeled(cell.labels.toSet, atom(charAtom))
+              } else {
+                atom(charAtom)
+              }
+              Some(tr)
+            case _ => None
+          }
+        case cell@ TextGrid.InsertCell(char, loc) =>
+          Some(insert(char.toString()))
 
       }}.flatten
 

@@ -779,7 +779,7 @@ class CorpusAccessDB(
       val query = for {
         p <- selectPage(pageId)
         d <- selectDocument(p.document)
-      } yield StablePage(d.stableId, p.pagenum, Some(pageId))
+      } yield StablePage(d.stableId, p.pagenum, pageId)
 
       runq { query }
     }
@@ -810,9 +810,9 @@ class CorpusAccessDB(
         mPage <- selectPage(mTr.page)
         mDocument <- selectDocument(mPage.document)
       } yield {
-        val stable = StablePage(mDocument.stableId, mPage.pagenum)
-        val page = StablePage(mPage.prKey, stable)
-        PageRegion(mTr.prKey, page, mTr.bounds)
+        val stablePage = StablePage(mDocument.stableId, mPage.pagenum, mPage.prKey)
+        // val page = StablePage(mPage.prKey, stable)
+        PageRegion(stablePage, mTr.bounds, mTr.prKey)
         // PageRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
       }
 

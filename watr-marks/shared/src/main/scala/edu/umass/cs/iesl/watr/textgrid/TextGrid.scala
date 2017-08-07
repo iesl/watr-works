@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-
 import scala.collection.mutable
 import watrmarks._
 import geometry._
@@ -123,13 +122,6 @@ object TextGrid {
 
 
   object Row {
-    // def fromComponents(ccs: Seq[Component]): Row = {
-    //   new MutableRow { self =>
-    //     val init = ccs.map(ComponentCell(_))
-    //     cells.appendAll(init)
-    //   }
-    // }
-
 
     def fromCells(init: Seq[GridCell]): Row = new MutableRow {
       cells.appendAll(init)
