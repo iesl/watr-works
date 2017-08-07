@@ -5,7 +5,7 @@ import scala.util.matching.Regex
 
 object Constants {
 
-    final val WORD_SEPARATORS: Seq[String] = Seq("and", "&")
+    final val WORD_SEPARATORS: Seq[String] = Seq("and", "&", "und")
     final val PUNCTUATION_SEPARATORS: Seq[String] = Seq(",", ";")
     final val SPACE_SEPARATOR: String = " "
     final val BOUNDING_BOX_SEPARATOR: String = ":"
