@@ -38,11 +38,12 @@ class PageIndex(
 
   val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[Component]] = mutable.HashMap()
 
-  def initClustering(l: Label, f: Component => Boolean): Unit = {
+  def initClustering(l: Label, f: Component => Boolean): Seq[Component] = {
     val toAdd = componentIndex.getItems.filter(f)
     disjointSets.getOrElseUpdate(l,
       OrderedDisjointSet.apply[Component](toAdd:_*)
     )
+    toAdd
   }
 
   def setComponentText(c: Component, l: Label, t: TextGrid.Row): Unit = {
@@ -53,6 +54,17 @@ class PageIndex(
 
   def getComponentText(c: Component, l: Label): Option[TextGrid.Row] = {
     componentToText.get(c.id).flatMap(_.get(l))
+  }
+
+  def unionAll(l: Label, cs: Seq[Component]): Unit = {
+    addCluster(l, cs)
+  }
+
+  def union(l: Label, c1: Component, c2: Component): Unit = {
+    val set = disjointSets.getOrElseUpdate(l,
+      OrderedDisjointSet.apply[Component]()
+    )
+    set.union(c1, c2)
   }
 
   def addCluster(l: Label, cs: Seq[Component]): Component = {

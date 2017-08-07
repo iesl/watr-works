@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package tracing
 
+import tracemacros._
 import scala.language.experimental.macros
 import scala.collection.mutable
 
@@ -59,12 +60,6 @@ object VisualTracer {
   }
 }
 
-sealed trait VisualTraceLevel
-object VisualTraceLevel {
-  case object Off extends VisualTraceLevel
-  case object Append extends VisualTraceLevel
-  case object Print extends VisualTraceLevel
-}
 
 class VisualTracer() { // extends EnableTrace[TraceLog] {
   import VisualTracer._
@@ -95,6 +90,8 @@ class VisualTracer() { // extends EnableTrace[TraceLog] {
   def trace(exprs: TraceLog*): Unit = macro VisualTraceMacros.runIfEnabled[TraceLog]
 
   def ifTrace(body: Unit): Unit = macro VisualTraceMacros.sideEffectIfEnabled[TraceLog]
+
+  // def onTrace(level: VisualTraceLevel)(body: Unit): Unit = macro VisualTraceMacros.sideEffectIfEnabled[TraceLog]
 
   def formatTrace(trace: TraceLog): Option[TB.Box] = {
     trace match {

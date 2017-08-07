@@ -13,17 +13,15 @@ import shapeless._
 sealed trait OutputOption
 
 object OutputOption {
-  case object VisualLine extends OutputOption
-  case object Dehyphenated extends OutputOption
+  case object VisualStructure extends OutputOption
+  case object ReadingStructure extends OutputOption
   case object SuperSubEscaping extends OutputOption
-  // case object TokenLabeling extends OutputOption
 
   implicit val OutputOptionRead: Read[OutputOption] =
     Read.reads { _.toLowerCase match {
-      case "visual-line"        | "vl"  => VisualLine
-      case "dehyphenated"       | "dh"  => Dehyphenated
-      case "super-sub-escaping" | "sse" => SuperSubEscaping
-      // case "token-labeling"     | "tl"  => TokenLabeling
+      case "VisualStructure"        | "vs"  => VisualStructure
+      case "ReadingStructure"       | "rs"  => ReadingStructure
+      case "SuperSubEscaping"       | "sse" => SuperSubEscaping
       case s       =>
         throw new IllegalArgumentException(s"""'${s}' is not an output option.""")
     }}
@@ -88,7 +86,8 @@ object TextWorksConfig {
 
     opt[OutputOption]('p', "layout-option") action { (v, conf) =>
       conf.copy(outputOptions = v :: conf.outputOptions)
-    } text("choose layout options for extracted text [visual-line|dehyphenated|super-sub-escaping|token-labeling]")
+    } text("choose layout options for extracted text [VisualStructure|ReadingStructure] [SuperSubEscaping]")
+
 
     checkConfig{ c =>
       if (c.ioConfig.inputMode.isEmpty) {
@@ -109,9 +108,11 @@ object TextWorksConfig {
     for {
       pdfFile <- IOOptionParser.inputPaths(conf.ioConfig)
     } {
-      val rp = FilePath(pdfFile)
-      val filename = rp.last
-      // val filepath = rp.segments.dropRight(1)
+      if (conf.outputOptions.contains(OutputOption.VisualStructure)) {
+        // ...
+      }
+
+      val filename = FilePath(pdfFile).last
 
       val pdfPath = pwd / RelPath(pdfFile)
 
@@ -119,22 +120,19 @@ object TextWorksConfig {
 
       val stableId = DocumentID(filename)
 
+      // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+
       val segmenter = DocumentSegmenter.createSegmenter(stableId, pdfPath, new MemDocZoningApi)
 
       segmenter.runPageSegmentation()
 
       conf.ioConfig.outputMode.foreach{ _ match {
         case OutputMode.ToFile(f) =>
-          // val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
           val content = formats.DocumentIO.documentToPlaintext(segmenter.mpageIndex)
-          // println(content)
           val p = fs.Path(f, pwd)
-          if (exists(p)) {
-            rm(p)
-          }
-          if (!exists(p)) {
-            write(p, content)
-          }
+          if (exists(p)) { rm(p) }
+
+          write(p, content)
       }}
     }
   }
@@ -143,12 +141,8 @@ object TextWorksConfig {
 object TextWorks extends App {
   import TextWorksConfig._
 
-  // private[this] val log = org.log4s.getLogger
-
-
   parser.parse(args, Config()).foreach{ config =>
     config.exec.foreach { _.apply(config) }
   }
-
 
 }

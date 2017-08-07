@@ -34,7 +34,11 @@ trait DocSegLabels {
   val Para = Label("ds", "para")
   val Image = Label("ds", "image")
   val Table = Label("ds", "table")
+
   val VisualLine = Label("ds", "visual-line")
+  val VisualLines = Label("ds", "visual-lines")
+  val NotClustered = Label("NotClustered")
+
   val VisualLineModal = Label("ds", "visual-line-modal")
   val SemanticLine = Label("ds", "semantic-line")
 

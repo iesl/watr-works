@@ -23,6 +23,7 @@ ensime.sbt
 
 *~
 /corpus-*
+/*.pdf.json
 .zz-attic
 
 *.log

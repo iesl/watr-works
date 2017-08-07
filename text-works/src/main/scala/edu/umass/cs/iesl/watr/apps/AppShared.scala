@@ -1,8 +1,6 @@
 package edu.umass.cs.iesl.watr
 package apps
 
-
-import scopt._
 import java.io.{File => JFile}
 
 sealed trait InputMode
@@ -22,7 +20,6 @@ object OutputMode {
   case class ToDatabase() extends OutputMode
 }
 
-// outputFileExtension: String = "wtext.json",
 case class IOConfig(
   inputMode: Option[InputMode] = None,
   outputMode: Option[OutputMode] = None,
