@@ -6,9 +6,7 @@ import org.scalatest._
 import org.scalacheck._
 import scalaz._, Scalaz._
 import scalaz.scalacheck.ScalaCheckBinding._
-import org.scalacheck.Prop._
 import Arbitrary._
-import utils.{RelativeDirection => Dir}
 import utils.ExactFloats._
 
 trait ArbitraryGeometries {

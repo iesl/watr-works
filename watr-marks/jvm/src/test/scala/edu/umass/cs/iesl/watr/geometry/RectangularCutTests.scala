@@ -101,7 +101,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
 
 
   it should "split rectangles vertically and horizontally" in {
-    val rect = LTBounds.Ints(1, 1, 10, 10)
+    // val rect = LTBounds.Ints(1, 1, 10, 10)
 
     // val (lsplit, rsplit) = rect.splitHorizontal(10.toFloatExact())
     List(0, 3, 10).map(_.toFloatExact)

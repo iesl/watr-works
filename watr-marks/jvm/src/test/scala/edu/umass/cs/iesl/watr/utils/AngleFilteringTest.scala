@@ -3,27 +3,26 @@ package utils
 
 import org.scalatest._
 
-import geometry._
-import utils.ExactFloats._
-
+// import geometry._
+// import utils.ExactFloats._
 
 class AngleFilteringTest extends FlatSpec with Matchers {
 
   behavior of "angle filtering"
 
   it should "make sure I compute angles correctly" in {
-    import math._
+    // import math._
 
-    // val ctr = Point.origin
+    // // val ctr = Point.origin
 
-    val pointsOnUnitCircle = (0.0 to Pi*2 by 0.3).map{ r =>
-      (Point.Doubles(cos(r),  sin(r)), r)
-    }
+    // val pointsOnUnitCircle = (0.0 to Pi*2 by 0.3).map{ r =>
+    //   (Point.Doubles(cos(r),  sin(r)), r)
+    // }
 
-    pointsOnUnitCircle.foreach { case(point, r) =>
-      val atan = math.atan2(point.y.asDouble, point.x.asDouble)
-      // println(s"r:${r.pp} (${(r/Pi).pp})  = ${point.prettyPrint}, atan: ${atan.pp} p1 angleto p2: ${ctr.angleTo(point)}")
-    }
+    // pointsOnUnitCircle.foreach { case(point, r) =>
+    //   val atan = math.atan2(point.y.asDouble, point.x.asDouble)
+    //   // println(s"r:${r.pp} (${(r/Pi).pp})  = ${point.prettyPrint}, atan: ${atan.pp} p1 angleto p2: ${ctr.angleTo(point)}")
+    // }
 
     // val pointsOnUnitCircleRev = (0.0 to -Pi by -0.2).map{ r =>
     //   (Point(cos(r),  sin(r)), r)

@@ -4,7 +4,6 @@ package geometry
 import scalaz.Equal
 import geometry.syntax._
 import scalaz.syntax.equal._
-import scalaz.std.anyVal._
 import watrmarks._
 import TypeTags._
 

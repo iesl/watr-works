@@ -18,12 +18,13 @@ import TypeTags._
 trait ArbitraryTextReflows extends ArbitraryGeometries {
   import Arbitrary._
 
+  val smallInteger = Gen.choose(0,100)
 
 
   implicit def arbStablePage: Arbitrary[StablePage] = {
     (arbString |@| arbInt |@| arbInt)({
       case (s, i, i2) =>
-        StablePage(DocumentID(s), PageNum(i), Some(PageID(i2)))
+        StablePage(DocumentID(s), PageNum(i), PageID(i2))
     })
   }
 
@@ -31,7 +32,7 @@ trait ArbitraryTextReflows extends ArbitraryGeometries {
   implicit def arbPageRegion: Arbitrary[PageRegion] = {
     (arbInt |@| arbStablePage |@| arbLTBounds)({
       case (id, page, bbox) =>
-        PageRegion(page, bbox, Option(RegionID(id)))
+        PageRegion(page, bbox, RegionID(id))
     })
   }
 
@@ -43,10 +44,14 @@ trait ArbitraryTextReflows extends ArbitraryGeometries {
     })
   }
 
+  def arbAlphaStr: Arbitrary[String] = {
+    val nelChars = Gen.nonEmptyListOf(Gen.alphaChar)
+    Arbitrary(nelChars.map(_.mkString))
+  }
 
   implicit def arbLabel: Arbitrary[Label] = {
 
-    (arbString |@| arbString |@| arbOption[String] |@| arbInt)({
+    (arbAlphaStr |@| arbAlphaStr |@| arbOption[String] |@| arbInt)({
       case (ns, key, value, id) =>
         Label(ns, key, value, LabelID(id))
     })

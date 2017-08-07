@@ -237,6 +237,7 @@ trait GeometryJsonCodecs extends TypeTagFormats {
   implicit val FormatLabel = new Format[Label]  {
     override def reads(json: JsValue)= json match {
       case JsString(str) => JsSuccess(Labels.fromString(str))
+      case _ => JsError(s"Label ${json}")
     }
 
     override def writes(o: Label) = o match {

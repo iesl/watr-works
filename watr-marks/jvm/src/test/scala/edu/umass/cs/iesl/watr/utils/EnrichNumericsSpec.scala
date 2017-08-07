@@ -35,7 +35,6 @@ class EnrichNumericsSpec extends FlatSpec with Matchers {
 }
 
 import org.scalacheck._
-import org.scalacheck.Prop._
 
 object EnrichNumericsCheck extends Properties("EnrichNumericsCheck")  {
 

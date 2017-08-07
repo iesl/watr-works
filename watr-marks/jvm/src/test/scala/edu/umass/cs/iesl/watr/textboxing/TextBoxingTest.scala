@@ -5,7 +5,7 @@ import org.scalatest._
 
 
 class TextBoxingTest extends FlatSpec with Matchers {
-  import TextBoxing._
+  // import TextBoxing._
 
   behavior of "textboxing"
 
@@ -28,15 +28,15 @@ class TextBoxingTest extends FlatSpec with Matchers {
 
   it should "create grids" in {
 
-    val grid = Grid.widthAligned(
-      (10, AlignRight),
-      (10, AlignCenter),
-      (10, AlignLeft)
-    )
-    val gFinal = grid
-      .addRow("1%>","-!-", "<2%" )
-      .addRow("1%>","-!-", "<2%" )
-      .addRow("1%>","-!-", "<2%" )
+    // val grid = Grid.widthAligned(
+    //   (10, AlignRight),
+    //   (10, AlignCenter),
+    //   (10, AlignLeft)
+    // )
+    // val gFinal = grid
+    //   .addRow("1%>","-!-", "<2%" )
+    //   .addRow("1%>","-!-", "<2%" )
+    //   .addRow("1%>","-!-", "<2%" )
 
     // gFinal.toBox().toString() shouldBe {
     //   """|          1%>   -!-    <2%

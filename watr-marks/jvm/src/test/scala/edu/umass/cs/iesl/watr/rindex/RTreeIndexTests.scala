@@ -15,9 +15,7 @@ class RTreeIndexTests extends FlatSpec {
   }
 
   it should "just work" in {
-    val rTree = RTreeIndex.createFor[GeometricFigure]()
-
-
+    // val rTree = RTreeIndex.createFor[GeometricFigure]()
 
   }
 }
