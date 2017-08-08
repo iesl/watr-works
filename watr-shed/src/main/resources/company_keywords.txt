@@ -60,7 +60,6 @@ research
 lexicon
 chemistry
 astex
-hoffmann-la
 performance
 corps
 quality
@@ -212,14 +211,11 @@ company
 science
 glaxosmithkline
 pharma
-ag
 analytical
 safety
 communications
-bd
 tech
 accelrys
-de
 co
 aventis
 bv
@@ -227,8 +223,6 @@ cardiovascular
 cv
 becker
 resources
-ii
-la
 genome
 advanced
 bayer
@@ -257,7 +251,6 @@ biopharma
 shire
 roche
 pharmacokinetics
-us
 solvay
 strategic
 otsuka
