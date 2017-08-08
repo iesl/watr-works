@@ -40,6 +40,7 @@ class PageTextTest extends DocsegTestUtil  {
 
     val allTestPdfs =
       """|
+         |gr-qc9903064.pdf.pages/pg_0001.pdf
          |101016jcarbon201301056.pdf.pages/pg_0001.pdf
          |101016jcarbon201301056.pdf
          |bongard2005.pdf
@@ -80,9 +81,9 @@ class PageTextTest extends DocsegTestUtil  {
     // segmenter.runLineDeterminationOnPage(PageID(1), PageNum(0))
     // val docStore = segmenter.docStore
 
-    val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
+    val content = formats.DocumentIO.documentToPlaintext(segmenter.mpageIndex)
 
-    // println(content)
+    println(content)
     // println("All VisualLines")
 
     // for {

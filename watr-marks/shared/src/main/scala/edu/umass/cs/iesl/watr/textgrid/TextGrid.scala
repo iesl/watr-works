@@ -55,11 +55,15 @@ object TextGrid {
     override val char: Char,
     floc: (PageItem, Seq[PageItem]) => PageRegion = (h, _) => h.pageRegion
   ) extends GridCell {
-    // override def location: Point = floc(headItem, tailItems)
-    // override def bounds: LTBounds = component.bounds
-    // override val char: Char = component.chars
 
     override val pageRegion: PageRegion = floc(headItem, tailItems)
+  }
+
+  case class ContinuedCell(
+    override val char: Char,
+    root: PageItemCell
+  ) extends GridCell {
+    override val pageRegion: PageRegion = root.pageRegion
   }
 
   case class InsertCell(

@@ -375,7 +375,7 @@ class MemDocZoningApi extends DocumentZoningApi {
         .getTargetRegions(mzone.prKey)
         .map(tr => getTargetRegion(tr.prKey))
 
-      G.Zone(zoneId, targetRegions, label)
+      G.Zone(zoneId, targetRegions, label, mzone.rank)
     }
     zs.getOrElse(sys.error(s"getZone(${zoneId}) error"))
   }

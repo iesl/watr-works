@@ -163,7 +163,8 @@ object CharAtom {
 case class Zone(
   id: Int@@ZoneID,
   regions: Seq[PageRegion],
-  label: Label
+  label: Label,
+  order: Int
 )
 
 

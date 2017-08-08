@@ -22,21 +22,21 @@ class AccumulatingJsonCodec extends TypeTagFormats {
   import geometryCodecs.FormatLabel
 
   implicit val FormatStablePage: Format[StablePage] = Json.format[StablePage]
-  // implicit val FormatStablePage: Format[StablePage] = Json.format[StablePage]
+  implicit val FormatZone: Format[Zone] = Json.format[Zone]
 
-  implicit val FormatZone: Format[Zone] = new Format[Zone] {
-    override def reads(json: JsValue)= json match {
-      case JsArray(Seq(labelJs, regionsJs, idJs)) =>
-        JsSuccess(Zone(idJs.as[Int@@ZoneID], regionsJs.as[Seq[PageRegion]], labelJs.as[Label]))
+  // implicit val FormatZone: Format[Zone] = new Format[Zone] {
+  //   override def reads(json: JsValue)= json match {
+  //     case JsArray(Seq(labelJs, regionsJs, idJs)) =>
+  //       JsSuccess(Zone(idJs.as[Int@@ZoneID], regionsJs.as[Seq[PageRegion]], labelJs.as[Label]))
 
-      case _ => JsError(s"Zone ${json}")
-    }
+  //     case _ => JsError(s"Zone ${json}")
+  //   }
 
-    override def writes(o: Zone) = o match {
-      case c@ Zone(id, regions, label) =>
-        Json.arr(Json.toJson(label), Json.toJson(regions), Json.toJson(id))
-    }
-  }
+  //   override def writes(o: Zone) = o match {
+  //     case c@ Zone(id, regions, label) =>
+  //       Json.arr(Json.toJson(label), Json.toJson(regions), Json.toJson(id))
+  //   }
+  // }
 
   implicit val FormatPageRegion: Format[PageRegion] = Json.format[PageRegion]
   // implicit val FormatTargetRegion: Format[TargetRegion] = new Format[TargetRegion] {

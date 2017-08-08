@@ -93,7 +93,7 @@ class CharExtractionListener(
     Set(
       EventType.RENDER_TEXT,
       EventType.RENDER_PATH,
-      EventType.CLIP_PATH_CHANGED,
+      // EventType.CLIP_PATH_CHANGED,
       EventType.RENDER_IMAGE
     )
   }
@@ -124,7 +124,7 @@ class CharExtractionListener(
 
 
   val charWindow = mutable.MutableList[String]()
-  var __triggerText = "pathways" // "ansferredinto100" // Start debug logging when this text is found
+  var __triggerText = "gravitational" // "ansferredinto100" // Start debug logging when this text is found
   var (__curr: Int, __start:Int, __enable:Boolean) = (0, 150, false)
   var __verbose:Boolean = false
 
@@ -153,9 +153,14 @@ class CharExtractionListener(
           val t = charTri.getText()
             .map{ c =>
               if (__verbose) {
-                val maybsub = UnicodeUtil.maybeSubChar(c)
-                println(s"    c=${c}, asint=${c.toInt}, maybeSub: ${maybsub.map(_.toInt)}")
+                val maybeSub = UnicodeUtil.maybeSubChar(c)
+                if (maybeSub != c) {
+                  println(s"""    c=${c},  subs: ${maybeSub.map(_.toChar).mkString(", ")}""")
+                } else {
+                  println(s"""    c=${c}, asint=${c.toInt}}""")
+                }
               }
+
               UnicodeUtil.maybeSubChar(c).filter(_ > ' ').mkString
             }
             .mkString
@@ -330,20 +335,10 @@ class CharExtractionListener(
     import utils.{RelativeDirection => Dir}
 
   def renderPath(renderInfo: PathRenderInfo): Unit = {
-    // val op = renderInfo.getOperation
     val ctm = renderInfo.getCtm
-    // val pathBounds = ctmToLTBounds(ctm)
     val pathTransVec = ctmToLTBoundsPdfSpace(ctm).toPoint(Dir.TopLeft)
 
-    // val startPoint = pathBounds.toPoint(Dir.TopLeft)
-
-    // println(s"renderPath: ")
-
-    // var pathCurrPt = startPoint //  ipointToPoint(path.getCurrentPoint)
-
     val path = renderInfo.getPath
-    // println(s"  path: getCurrentPoint=${path.getCurrentPoint}")
-
 
     val waypoints = for {
       subPath <- path.getSubpaths : Seq[Subpath]
@@ -381,26 +376,13 @@ class CharExtractionListener(
   }
 
   def renderImage(iri: ImageRenderInfo): Unit = {
-
     val ctm = iri.getImageCtm
     val imgBounds = ctmToLTBounds(ctm)
-    // val bimgWidth = iri.getImage.getBufferedImage.getWidth
-    // val bimgHeight = iri.getImage.getBufferedImage.getHeight
-    // val imgWidth = iri.getImage.getWidth
-    // val imgHeight = iri.getImage.getHeight
-    // println("ctm:")
-    // println(ctm)
-    // println(s"    >> ${imgBounds} page: ${pageNum}")
-    // println(s"    >> img  w:${imgWidth} h:${imgHeight}")
-    // println(s"    >> img bw:${bimgWidth} h:${bimgHeight}")
-    // println()
 
     val pageRegion = PageRegion(
       StablePage(stableId, pageNum),
       imgBounds
     )
-
-    // println(s"Image at ${pageRegion}")
 
     val imgRegion = PageItem.ImageAtom(pageRegion)
 

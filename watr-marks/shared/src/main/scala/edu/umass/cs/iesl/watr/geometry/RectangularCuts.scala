@@ -289,6 +289,33 @@ trait RectangularCuts {
         math.pow((cx-cx2), 2) + math.pow((cy-cy2), 2)
       )
     }
+
+    def isOverlapping(other: LTBounds): Boolean = {
+      val overlapLR = (
+        self.left < other.right
+          && self.right > other.left
+      )
+      val overlapTB = (
+        self.top < other.bottom
+          && self.bottom > other.top
+      )
+
+      overlapLR && overlapTB
+    }
+
+    def isWithin(other: LTBounds): Boolean = {
+      val withinLR = (
+        self.left >= other.left
+          && self.right <= other.right
+      )
+      val withinTB = (
+        self.top >= other.top
+          && self.bottom <= other.bottom
+      )
+
+      withinLR && withinTB
+
+    }
   }
 
 }

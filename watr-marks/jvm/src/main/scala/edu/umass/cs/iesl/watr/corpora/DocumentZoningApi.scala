@@ -47,6 +47,7 @@ trait DocumentZoningApi {
   // Destroy
   def deleteZone(zoneId: Int@@ZoneID): Unit
 
+
   // Locate
   def getZone(zoneId: Int@@ZoneID): Zone
   def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID]
@@ -73,15 +74,21 @@ trait DocumentZoningApi {
     zone      <- getPageZones(pageId, label)
   } yield zone
 
-  def getPageZones(pageId: Int@@PageID, label: Label): Seq[Zone] = (for {
-    regionId  <- getTargetRegions(pageId)
-    zoneId    <- getZoneForRegion(regionId, label)
-  } yield { getZone(zoneId) })
-    .foldLeft(Seq[Zone]()){ case (acc, e) =>
-      if (acc.exists(_.id==e.id)) acc
-      else acc :+ e
-    }
+  def getPageZones(pageId: Int@@PageID, label: Label): Seq[Zone] = {
 
+    val zones = for {
+      regionId  <- getTargetRegions(pageId)
+      zoneId    <- getZoneForRegion(regionId, label)
+    } yield { getZone(zoneId) }
+
+    zones
+      .sortBy(_.order)
+      .foldLeft(Seq[Zone]()){ case (acc, e) =>
+        if (acc.exists(_.id==e.id)) acc
+        else acc :+ e
+      }
+
+  }
   def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] =
     getPageZones(stableId, pageNum, LB.VisualLine)
 

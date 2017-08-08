@@ -396,7 +396,6 @@ class CorpusAccessDB(
   }
 
 
-
   def ensureTargetRegion(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Int@@RegionID] = {
     val LTBounds.IntReps(bl, bt, bw, bh) = bbox
 
@@ -634,6 +633,28 @@ class CorpusAccessDB(
 
   }
 
+  def setZoneOrder(zoneId: Int@@ZoneID, newRank: Int): Unit = {
+    runq { sql"""
+        with zdoc as (
+             select document from zone where zone=${zoneId}
+        ),
+        zlabel as (
+             select label from zone where zone=${zoneId}
+        ),
+        rerank as (
+            update zone SET rank = rank+1
+            where document=(select document from zdoc)
+              AND label=(select label from zlabel)
+              AND rank >= ${newRank}
+            returning ${newRank}
+
+        )
+        update zone SET rank=(select * from rerank) where zone=${zoneId}
+        """.update.run
+    }
+  }
+
+
   object docStore extends DocumentZoningApi {
     def workflowApi: WorkflowApi = self.workflowApi
     def userbaseApi: UserbaseApi = self.userbaseApi
@@ -827,7 +848,7 @@ class CorpusAccessDB(
         l             <- selectLabel(zone.label)
       } yield {
         val label = Labels.fromString(l.key).copy(id=l.prKey)
-        Zone(zone.prKey, targetRegions, label)
+        Zone(zone.prKey, targetRegions, label, zone.rank)
       }
 
       runq { query }
@@ -935,9 +956,7 @@ class CorpusAccessDB(
     }
 
     def getZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): Seq[Int@@ZoneID] = {
-      runq {
-        selectZonesForDocument(docId, labelId)
-      }
+      runq { selectZonesForDocument(docId, labelId) }
     }
 
     import scala.collection.mutable

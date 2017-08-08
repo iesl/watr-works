@@ -19,6 +19,7 @@ object DocumentIO  {
     } yield {
       textRow.cells
       val text = textRow.toText()
+
     }
 
   }
