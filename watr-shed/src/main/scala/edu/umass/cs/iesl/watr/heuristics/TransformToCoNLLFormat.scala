@@ -127,6 +127,7 @@ class TransformToCoNLLFormat {
 
         val names: ListBuffer[String] = new ListBuffer[String]()
         var documentNumber: Int = 0
+        var previousDocument: String = BLANK
 
         for {
             docStableId <- docStore.getDocuments(n = documentLimit) if targetDocumentStableId.isEmpty || targetDocumentStableId.contains(docStableId.asInstanceOf[String])
@@ -137,7 +138,11 @@ class TransformToCoNLLFormat {
             for {
                 pageId <- getPagesWithMetadata(docStore = docStore, docId = docId, labels = labels)
             } {
-                dataFileWriter.write("\n" + getBoundingBoxAsString(docStore.getPageGeometry(pageId = pageId)) + "\n")
+                if (! docStableId.equals(previousDocument))
+                {
+                    dataFileWriter.write("\n" + getBoundingBoxAsString(docStore.getPageGeometry(pageId = pageId)) + "\n")
+                    previousDocument = docStableId.toString
+                }
                 println("Page Number: " + pageId.toString)
                 for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
                     val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
@@ -191,9 +196,9 @@ class TransformToCoNLLFormat {
                     }
                     catch {
                         case exception: Exception =>
-                            exceptionsFileWriter.write("\n\n---------------------------------------------------" + docStableId + "\n")
+                            exceptionsFileWriter.write("\n\n---------------------------------------------------\n" + docStableId + "\n")
                             for (stackTraceElement <- exception.getStackTrace) {
-                                exceptionsFileWriter.write(stackTraceElement.toString)
+                                exceptionsFileWriter.write(stackTraceElement.toString + "\n")
                             }
                     }
 
@@ -208,7 +213,7 @@ class TransformToCoNLLFormat {
 }
 
 object RunTransformer extends App {
-    val documents: Seq[String] = Seq()
+    val documents: Seq[String] = Seq("gr-qc9605062.pdf.d", "math0004097.pdf.d")
 
     val transformer: TransformToCoNLLFormat = new TransformToCoNLLFormat()
     transformer.getReflowWithLabelsForPage(960, documents, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
