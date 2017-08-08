@@ -176,18 +176,6 @@ class CorpusAccessDB(
     } yield pk
   }
 
-
-  // def selectZoneTargetRegions(zoneId: Int@@ZoneID): ConnectionIO[List[Int@@RegionID]] = {
-  //   sql"""
-  //    select z2tr.targetregion
-  //    from
-  //       zone                      as zn
-  //       join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
-  //    where
-  //       z2tr.zone=${zoneId}
-  //    order by z2tr.rank
-  //   """.query[Int@@RegionID].list
-  // }
   def selectZoneTargetRegions(zoneId: Int@@ZoneID): ConnectionIO[List[Int@@RegionID]] = {
     sql"""
      select targetregion
@@ -199,21 +187,6 @@ class CorpusAccessDB(
     """.query[Int@@RegionID].list
   }
 
-  def selectZoneForTargetRegion(regionId: Int@@RegionID, label: Label): ConnectionIO[Option[Int@@ZoneID]] = {
-    // println(s"selectZoneForTargetRegion(${regionId}, ${label})")
-    val query = sql"""
-     select zn.zone
-     from
-        zone                      as zn
-        join label                as lb    on (zn.label=lb.label)
-        join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
-     where
-        z2tr.targetregion=${regionId} AND
-        lb.key=${label.fqn}
-    """.query[Int@@ZoneID].option
-
-    query
-  }
 
   def selectModelTextReflowForZone(zoneId: Int@@ZoneID): ConnectionIO[Option[Rel.TextReflow]] = {
     val query = sql"""
@@ -234,11 +207,11 @@ class CorpusAccessDB(
      where  z.zone=${zoneId}
     """.query[String]
       .option
-      .map({maybeStr =>
-        maybeStr.map({str =>
+      .map { maybeStr =>
+        maybeStr.flatMap { str =>
           docStore.jsonToTextReflow(Json.parse(str))
-        })
-      })
+        }
+      }
 
     query
   }
@@ -862,7 +835,26 @@ class CorpusAccessDB(
 
 
     def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
-      runq { selectZoneForTargetRegion(regionId, label) }
+      // TODO this is a bandaid for a  bug!
+      val query =  {
+        sql"""
+            select zn.zone
+            from
+               zone                      as zn
+               join label                as lb    on (zn.label=lb.label)
+               join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
+            where
+               z2tr.targetregion=${regionId} AND
+               lb.key=${label.fqn}
+           """.query[Int@@ZoneID].list
+      }
+
+      val allZoneIds = runq { query }
+      if (allZoneIds.length > 1) {
+        println(s"Warning: multiple zones with label ${label} detected for region ${regionId}")
+      }
+
+      allZoneIds.headOption
     }
 
     def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {

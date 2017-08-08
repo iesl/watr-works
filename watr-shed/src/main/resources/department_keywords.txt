@@ -34,3 +34,5 @@ studies
 servicio
 departamento
 wydzial
+departments
+dpto.

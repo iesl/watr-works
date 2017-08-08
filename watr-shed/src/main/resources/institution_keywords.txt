@@ -22,6 +22,7 @@ fraunhofer
 institutionen
 center
 centre
+centro
 institutions
 school
 college
@@ -40,3 +41,10 @@ colegio
 fachhochschule
 instytut
 akademie
+academy
+academia
+observatory
+observatoire
+triumf
+association
+sternwarte

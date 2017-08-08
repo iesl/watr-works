@@ -3,6 +3,7 @@ package labeling
 
 import scala.collection.mutable
 
+import textreflow._
 import textreflow.data._
 import geometry._
 import geometry.syntax._
@@ -155,9 +156,14 @@ object LabelWidgetIndex extends LabelWidgetLayout {
             val reflowJson = reflow.reflow
             val indexable = IndexableTextReflowLazy(
               reflow.prKey,
-              reflowJson,
+              reflowJson, //               linePageRegion, //               () => { docStore0.jsonStrToTextReflow(reflowJson) }
               linePageRegion,
-              () => { docStore0.jsonStrToTextReflow(reflowJson) }
+              () => {
+                docStore0.jsonStrToTextReflow(reflowJson).getOrElse{
+                  sys.error("addPage: invalid text reflow json  ${reflowJson}")
+
+                }
+              }
             )
             pageIndex.add(indexable)
           }

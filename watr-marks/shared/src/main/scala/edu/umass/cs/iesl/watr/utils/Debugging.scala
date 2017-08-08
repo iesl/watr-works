@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package utils
 
 
-
 object Debugging {
 
   // pprint.pprintln(t: T, width: Integer, height: Integer, indent: Integer, colors: Colors)
@@ -20,19 +19,3 @@ object Debugging {
 
 }
 
-object PrintDeshugared {
-  import scala.reflect.runtime.universe._
-  import scala.reflect.macros.Context
-  // import scala.reflect.macros.blackbox.Context
-  import scala.language.experimental.macros
-
-  def desugarImpl(c : Context)(expr : c.Expr[Any]): c.Expr[Unit] = {
-    import c.universe._
-    println(show(expr.tree))
-    reify {}
-  }
-
-  def desugar(expr : Any): Unit = macro desugarImpl
-
-
-}

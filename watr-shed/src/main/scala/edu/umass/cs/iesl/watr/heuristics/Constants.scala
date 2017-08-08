@@ -5,7 +5,7 @@ import scala.util.matching.Regex
 
 object Constants {
 
-    final val WORD_SEPARATORS: Seq[String] = Seq("and", "&")
+    final val WORD_SEPARATORS: Seq[String] = Seq("and", "&", "und")
     final val PUNCTUATION_SEPARATORS: Seq[String] = Seq(",", ";")
     final val SPACE_SEPARATOR: String = " "
     final val BOUNDING_BOX_SEPARATOR: String = ":"
@@ -18,9 +18,9 @@ object Constants {
     final val AT_THE_RATE: String = "@"
     final val UNDERSCORE: String = "_"
 
-    final val VALID_DEGREES = Seq("M.D.", "Ph.D.", "MD", "PhD")
+    final val VALID_DEGREES = Seq("M.D.", "Ph.D.", "MD", "PhD", "MS")
     final val VALID_HEREDITY_SUFFIXES: Seq[String] = Seq("Jr.", "Sr.", "II", "III", "IV")
-    final val VALID_SURNAME_PARTICLES: Seq[String] = Seq("van", "von", "der", "de", "du", "da", "di", "do", "la", "del", "della", "ter", "bin", "ben", "den")
+    final val VALID_NOBILITY_PARTICLES: Seq[String] = Seq("van", "von", "der", "de", "du", "da", "di", "do", "la", "del", "della", "ter", "bin", "ben", "den")
     final val FIRST_NAME: String = "first_name"
     final val MIDDLE_NAME: String = "middle_name"
     final val LAST_NAME: String = "last_name"
@@ -96,12 +96,13 @@ object Constants {
 
     final val AFFILIATION_LABELS: Seq[String] = Seq(DEPARTMENT_KEYWORD, INSTITUTION_KEYWORD, UNIVERSITY_KEYWORD, COMPANY_KEYWORD, CITY_KEYWORD, REGION_KEYWORD, COUNTRY_KEYWORD)
 
-    final val PUNCTUATIONS_PATTERN: Array[Char] = Array('\'', '!', '"', '#', '$', '%', '&',
+    final val PUNCTUATIONS: Array[Char] = Array('\'', '!', '"', '#', '$', '%', '&',
         '(', ')', '*', '+', ',',
         '-', '.', '/', ':', ';',
         '<', '=', '>', '?', '@',
         '[', '\\', ']', '^', '_',
         '`', '{', '|', '}', '~')
+    final val PUNCTUATIONS_PATTERN: String = "(?=[\'!\"#$%&\\(\\)*+,-./:;<=>?@\\[~\\{\\|^_}\\]])"
     final val PUNCTUATION_TAG = "<PUNCT>"
     final val NUMBER_TAG = "<NUM>"
     final val LEXICON_TAGS: Seq[String] = Seq(PUNCTUATION_TAG, NUMBER_TAG)

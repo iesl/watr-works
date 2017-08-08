@@ -407,11 +407,11 @@ class MemDocZoningApi extends DocumentZoningApi {
 
     textreflows.forZone
       .getRhs(zoneId)
-      .map({reflowId =>
+      .flatMap { reflowId =>
         jsonStrToTextReflow(
           textreflows.unique(reflowId).reflow
         )
-      })
+      }
   }
 
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {

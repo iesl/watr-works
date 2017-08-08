@@ -182,11 +182,11 @@ trait DocumentZoningApi {
     codecs.textReflowToJson(textReflow)
   }
 
-  def jsonStrToTextReflow(jsStr: String): TextReflow = {
+  def jsonStrToTextReflow(jsStr: String): Option[TextReflow] = {
     codecs.jsonStrToTextReflow(jsStr)
   }
 
-  def jsonToTextReflow(jsval: JsValue): TextReflow = {
+  def jsonToTextReflow(jsval: JsValue): Option[TextReflow] = {
     codecs.jsonToTextReflow(jsval)
   }
 }
