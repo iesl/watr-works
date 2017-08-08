@@ -5,6 +5,7 @@ import geometry._
 import play.api.libs.json._
 import Json._
 import watrmarks.Label
+import data._
 
 import TextReflowF._
 
@@ -38,15 +39,20 @@ trait TextReflowJsonCodecs extends GeometryJsonCodecs with TextReflowBasics {
     case _ => ???
   }
 
-  def jsonStrToTextReflow(jsStr: String): TextReflow = {
+  def jsonStrToTextReflow(jsStr: String): Option[TextReflow] = {
     jsonToTextReflow(Json.parse(jsStr))
   }
 
-  def jsonToTextReflow(jsValue: JsValue): TextReflow = {
-    jsValue
+  def jsonToTextReflow(jsValue: JsValue): Option[TextReflow]= {
+    val reflow = jsValue
       .ana[TextReflow](unfoldJsonToTextReflow)
       .cata(attributePara(refoldJsonTextReflow))
       .toPair._1
+
+    if (reflow.charAtoms.length > 0) {
+      Some(reflow)
+    } else None
+
   }
 
   def unfoldJsonToTextReflow: Coalgebra[TextReflowF, JsValue] = jsValue => {

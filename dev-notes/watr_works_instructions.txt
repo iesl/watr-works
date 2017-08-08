@@ -15,6 +15,10 @@ SegmentAll: Extracts the text and geometric information from the pdf documents, 
 4) -- Corpus(new java.io.File("/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/corpus-test").toPath).normalizeCorpusEntries for additional pdfs
 5) corpusAccessApi.corpus.entries
 6) new docstore.TextReflowDB(new docstore.TextReflowDBTables(), "watr_works_test_1", "watrworker", "watrpasswd").dropAndRecreate()
+    -- { ## unsafe
+        corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
+        corpusAccessApi.corpusAccessDB.dropAndRecreate()
+    }
 7) segmentAll() // populate the database with the entries wrt the newly pre-processed pdf files
 
 Annotation UI: Annotate the pdf file by drawing boxes around the required region, with the required granularity

@@ -407,7 +407,7 @@ class MemDocZoningApi extends DocumentZoningApi {
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
     textreflows.forZone
       .getRhs(zoneId)
-      .map({reflowId =>
+      .flatMap({reflowId =>
         import play.api.libs.json
         jsonToTextReflow(
           json.Json.parse(textreflows.unique(reflowId).reflow)
