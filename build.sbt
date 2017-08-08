@@ -4,8 +4,6 @@ import ReleaseTransformations._
 SensibleThisBuild.settings
 SensibleProject.settings
 
-//enablePlugins(ScalaJSPlugin, WorkbenchPlugin)
-
 val Lib = CommonLibs
 
 lazy val jsProjects = Seq[ProjectReference](

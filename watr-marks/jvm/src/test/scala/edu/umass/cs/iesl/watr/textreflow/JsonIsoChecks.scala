@@ -71,7 +71,11 @@ object JsonIsoChecks extends Properties("JsonIsoChecks") with ArbitraryTextReflo
     property("json <--> textReflow isomorphism") = forAll{ (textReflowEx: TextReflow) =>
       val asJson = textReflowToJson(textReflowEx)
       val textReflow = jsonToTextReflow(asJson)
-      textReflowEx === textReflow.get
+      if (textReflow.isDefined) {
+        textReflowEx === textReflow.get
+      } else {
+        true
+      }
     }
 
 
