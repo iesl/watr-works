@@ -92,7 +92,7 @@ object DocumentSegmenter {
   }
 
 
-  val labelColors: Map[Label, Color] = {
+  val DebugLabelColors: Map[Label, Color] = {
     Map(
       (LB.VisualLineModal        , Clr.Cornsilk4),
       (LB.VisualLine             , Clr.Plum),
@@ -117,16 +117,11 @@ object DocumentSegmenter {
 }
 
 class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
-  // import DocumentSegmenter._
 
   val docStore = mpageIndex.docStore
   val stableId = mpageIndex.getStableId
   val docId = docStore.getDocument(stableId)
     .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
-
-
-  val __debug = true
-
 
 
 
@@ -164,28 +159,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
 
 }
 
-class PageSegmenter(
-  pageId: Int@@PageID,
-  pageNum: Int@@PageNum,
-  mpageIndex: MultiPageIndex
-) { pageSegmenter =>
-
-  val docStore = mpageIndex.docStore
-  val stableId = mpageIndex.getStableId
-  val docId = docStore.getDocument(stableId)
-    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
-
-  val pageGeometry = docStore.getPageGeometry(pageId)
-  val pageIndex = mpageIndex.getPageIndex(pageNum)
-  val rTreeIndex = pageIndex.componentIndex
-
-  val segvisRootPath = pwd / s"${stableId}-segs.d"
-
-  val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.labelColors, segvisRootPath, DocumentSegmenter.vtrace)
-
-  vis.cleanRTreeImageFiles()
-
-
+trait PageQueries {
   def rtreeSearchHasAllLabels(
     queryRegion: LTBounds,
     labels: Label*
@@ -272,13 +246,35 @@ class PageSegmenter(
     })
   }
 
+  def pageIndex: PageIndex
+  def rTreeIndex = pageIndex.componentIndex
+}
+
+class PageSegmenter(
+  pageId: Int@@PageID,
+  pageNum: Int@@PageNum,
+  mpageIndex: MultiPageIndex
+) extends PageQueries {
+
+  val docStore = mpageIndex.docStore
+  val stableId = mpageIndex.getStableId
+  val docId = docStore.getDocument(stableId)
+    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
+
+  val pageGeometry = docStore.getPageGeometry(pageId)
+  val pageIndex = mpageIndex.getPageIndex(pageNum)
+
+  val segvisRootPath = pwd / s"${stableId}-segs.d"
+  val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath, DocumentSegmenter.vtrace)
+
+  vis.cleanRTreeImageFiles()
+
+
   def labelRegion(bbox: LTBounds, label: Label, text: Option[String]=None): RegionComponent = {
     val regionId = docStore.addTargetRegion(pageId, bbox)
     val pageRegion = docStore.getTargetRegion(regionId)
     mpageIndex.createRegionComponent(pageRegion, label, text)
   }
-
-
 
   def runLineDeterminationOnPage(): Unit = {
 

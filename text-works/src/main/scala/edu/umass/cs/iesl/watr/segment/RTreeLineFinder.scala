@@ -83,12 +83,11 @@ class LineFinder(
   }
 
 
-  def findVisualLinesV2(orderedTextBlocks: Seq[LTBounds]): Unit = {
+  def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
 
     val atomSingletons = pageIndex.initClustering(LB.VisualLines, _.hasLabel(LB.PageAtom))
 
     atomSingletons.foreach{ a => a.addLabel(LB.NotClustered) }
-
 
     for { textBlock <- orderedTextBlocks } {
 
@@ -129,87 +128,11 @@ class LineFinder(
             createTextRowFromVisualLine(visualLineCC, xSortedAtoms)
 
           }
-
         }
     }
   }
 
 
-  def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
-
-    val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
-
-    pageIndex.getComponentsWithLabel(LB.PageAtom)
-      .foreach{ a => a.addLabel(LB.PageAtomTmp) }
-
-    gifBuilder.addFrame("Starting", LB.PageAtomTmp)
-
-    for { textBlock <- orderedTextBlocks } {
-
-      gifBuilder.indicate("Examining Block", textBlock, LB.PageAtomTmp)
-
-
-      val sortedHashedLinesWithChars = (for {
-        hashedLineCC <- rtreeSearch(textBlock, LB.LineByHash)
-      } yield {
-        val charsInRegion = rtreeSearchHasLabel(hashedLineCC.bounds, LB.PageAtomTmp)
-        (hashedLineCC, charsInRegion)
-      }).sortBy { case (_, chars) => chars.length }.reverse
-
-
-      sortedHashedLinesWithChars.zipWithIndex
-        .foreach{ case ((hashLineCC, hashedChars), index) =>
-          val remainingChars = hashedChars.filter(_.hasLabel(LB.PageAtomTmp)).nonEmpty
-          if (remainingChars) {
-
-            gifBuilder.indicate(s"Processing Hash-Line ${index} of ${sortedHashedLinesWithChars.length}", hashLineCC.bounds(), LB.PageAtomTmp)
-
-            val extendedLineRegion = hashLineCC.bounds.withinRegion(textBlock)
-              .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
-              .getOrElse { hashLineCC.bounds }
-
-
-            // Progressively scan from center out to find super/subs
-            val height = extendedLineRegion.height
-            val top = extendedLineRegion.top
-
-            val centerLine = extendedLineRegion
-              .copy(height = height/2, top=top+height/4)
-
-
-            gifBuilder.indicate("Search Line Region", centerLine, LB.PageAtomTmp)
-
-            // Now find all chars in queryRegion and string them together into a single visual line
-            val visualLineAtoms = rtreeSearchHasLabel(centerLine, LB.PageAtomTmp)
-
-            if (visualLineAtoms.nonEmpty) {
-              val xSortedAtoms = visualLineAtoms.sortBy(_.bounds.left).toSeq
-
-              val visualLineBBox = xSortedAtoms.map(_.bounds).reduce { (c1, c2) => c1 union c2 }
-
-              gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
-
-              xSortedAtoms.foreach { cc =>
-                cc.removeLabel(LB.PageAtomTmp)
-                cc.addLabel(LB.PageAtomGrp)
-              }
-
-              val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
-
-              createTextRowFromVisualLine(visualLineCC, xSortedAtoms)
-
-              xSortedAtoms.foreach { cc =>
-                cc.removeLabel(LB.PageAtomGrp)
-              }
-            }
-
-          }
-        }
-    }
-
-    gifBuilder.finish()
-
-  }
 
   def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
 
@@ -328,14 +251,12 @@ class LineFinder(
 
       val spacedRow = insertSpacesInRow(textRow)
 
-      // println(s""" createTextRowsFromVisualLines: ${visualLineCC}  > ${spacedRow.toText} """)
       val visualLineClusterCC = pageIndex.addCluster(LB.VisualLine, visualLineAtoms)
 
       pageIndex.setComponentText(visualLineClusterCC, LB.VisualLine, spacedRow)
 
       val textReflow = convertTextRowToTextReflow(spacedRow)
 
-      // createZone(LB.VisualLine, Seq(visualLineCC.pageRegion)).foreach { zoneId =>
       docStore.labelRegions(LB.VisualLine, Seq(visualLineCC.pageRegion)).foreach { zoneId =>
         docStore.setTextReflowForZone(zoneId, textReflow)
       }
@@ -378,3 +299,75 @@ class LineFinder(
       }
   }
 }
+
+
+
+
+
+
+
+
+
+
+// def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
+  //   val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
+  //   pageIndex.getComponentsWithLabel(LB.PageAtom)
+  //     .foreach{ a => a.addLabel(LB.PageAtomTmp) }
+  //   gifBuilder.addFrame("Starting", LB.PageAtomTmp)
+  //   for { textBlock <- orderedTextBlocks } {
+  //     gifBuilder.indicate("Examining Block", textBlock, LB.PageAtomTmp)
+  //     val sortedHashedLinesWithChars = (for {
+  //       hashedLineCC <- rtreeSearch(textBlock, LB.LineByHash)
+  //     } yield {
+  //       val charsInRegion = rtreeSearchHasLabel(hashedLineCC.bounds, LB.PageAtomTmp)
+  //       (hashedLineCC, charsInRegion)
+  //     }).sortBy { case (_, chars) => chars.length }.reverse
+  //     sortedHashedLinesWithChars.zipWithIndex
+  //       .foreach{ case ((hashLineCC, hashedChars), index) =>
+  //         val remainingChars = hashedChars.filter(_.hasLabel(LB.PageAtomTmp)).nonEmpty
+  //         if (remainingChars) {
+  //           gifBuilder.indicate(s"Processing Hash-Line ${index} of ${sortedHashedLinesWithChars.length}", hashLineCC.bounds(), LB.PageAtomTmp)
+  //           val extendedLineRegion = hashLineCC.bounds.withinRegion(textBlock)
+  //             .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
+  //             .getOrElse { hashLineCC.bounds }
+  //           // Progressively scan from center out to find super/subs
+  //           val height = extendedLineRegion.height
+  //           val top = extendedLineRegion.top
+
+  //           val centerLine = extendedLineRegion
+  //             .copy(height = height/2, top=top+height/4)
+
+
+  //           gifBuilder.indicate("Search Line Region", centerLine, LB.PageAtomTmp)
+
+  //           // Now find all chars in queryRegion and string them together into a single visual line
+  //           val visualLineAtoms = rtreeSearchHasLabel(centerLine, LB.PageAtomTmp)
+
+  //           if (visualLineAtoms.nonEmpty) {
+  //             val xSortedAtoms = visualLineAtoms.sortBy(_.bounds.left).toSeq
+
+  //             val visualLineBBox = xSortedAtoms.map(_.bounds).reduce { (c1, c2) => c1 union c2 }
+
+  //             gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
+
+  //             xSortedAtoms.foreach { cc =>
+  //               cc.removeLabel(LB.PageAtomTmp)
+  //               cc.addLabel(LB.PageAtomGrp)
+  //             }
+
+  //             val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
+
+  //             createTextRowFromVisualLine(visualLineCC, xSortedAtoms)
+
+  //             xSortedAtoms.foreach { cc =>
+  //               cc.removeLabel(LB.PageAtomGrp)
+  //             }
+  //           }
+
+  //         }
+  //       }
+  //   }
+
+  //   gifBuilder.finish()
+
+  // }
