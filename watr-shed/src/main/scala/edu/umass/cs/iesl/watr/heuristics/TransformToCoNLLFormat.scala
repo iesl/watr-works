@@ -126,15 +126,18 @@ class TransformToCoNLLFormat {
         val affiliationReflows: ListBuffer[TextReflow] = new ListBuffer[TextReflow]()
 
         val names: ListBuffer[String] = new ListBuffer[String]()
+        var documentNumber: Int = 0
 
         for {
             docStableId <- docStore.getDocuments(n = documentLimit) if targetDocumentStableId.isEmpty || targetDocumentStableId.contains(docStableId.asInstanceOf[String])
             docId <- docStore.getDocument(docStableId)
         } {
-            println("Document: " + docStableId)
+            documentNumber += 1
+            println("Document: " + documentNumber + " : " + docStableId)
             for {
                 pageId <- getPagesWithMetadata(docStore = docStore, docId = docId, labels = labels)
             } {
+                dataFileWriter.write("\n" + getBoundingBoxAsString(docStore.getPageGeometry(pageId = pageId)) + "\n")
                 println("Page Number: " + pageId.toString)
                 for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
                     val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
