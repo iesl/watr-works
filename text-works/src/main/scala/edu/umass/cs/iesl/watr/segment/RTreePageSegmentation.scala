@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-
 import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
 import edu.umass.cs.iesl.watr.extract.PdfTextExtractor
 import spindex._
@@ -24,11 +23,7 @@ import textgrid._
 import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
 
 object DocumentSegmenter {
-  import com.github.davidmoten.rtree
-  import rtree._
-  import rtree.{geometry => RG}
   import spindex._
-  import rx.functions.Func1
 
 
 
@@ -67,30 +62,6 @@ object DocumentSegmenter {
 
     new DocumentSegmenter(mpageIndex)
   }
-
-
-  def createRTreeSerializer(): Serializer[Component, RG.Geometry] = {
-    val ccSerializer = new Func1[Component, Array[Byte]]() {
-      override def call(entry: Component): Array[Byte] = {
-        Component.Serialization.serialize(entry)
-      }
-    }
-
-    val ccDeSerializer = new Func1[Array[Byte], Component]() {
-      override def call(bytes: Array[Byte]): Component = {
-        Component.Serialization.deserialize(bytes)
-      }
-    }
-
-    val ser: Serializer[Component, RG.Geometry] = Serializers
-      .flatBuffers[Component, RG.Geometry]()
-      .serializer(ccSerializer)
-      .deserializer(ccDeSerializer)
-      .create()
-
-    ser
-  }
-
 
   val DebugLabelColors: Map[Label, Color] = {
     Map(
@@ -159,102 +130,13 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
 
 }
 
-trait PageQueries {
-  def rtreeSearchHasAllLabels(
-    queryRegion: LTBounds,
-    labels: Label*
-  ): Seq[Component] = {
 
-    rTreeIndex.search(queryRegion, {cc =>
-      val overlapLR = (
-        cc.bounds.left < queryRegion.right
-          && cc.bounds.right > queryRegion.left
-      )
-      val overlapTB = (
-        cc.bounds.top < queryRegion.bottom
-          && cc.bounds.bottom > queryRegion.top
-      )
-
-      val overlapping = overlapLR && overlapTB
-
-      overlapping && labels.forall(cc.hasLabel(_))
-    })
-  }
-
-  def rtreeSearchHasLabel(
-    queryRegion: LTBounds,
-    label: Label
-  ): Seq[Component] = {
-
-    rTreeIndex.search(queryRegion, {cc =>
-      cc.hasLabel(label)
-    })
-  }
-
-
-  def rtreeSearch(
-    queryRegion: LTBounds,
-    label: Label, labels: Label*
-  ): Seq[Component] = {
-    val lbls = label :: labels.toList
-
-    rTreeIndex.search(queryRegion, {cc =>
-      lbls.contains(cc.roleLabel)
-    })
-  }
-
-  def rtreeSearchOverlapping(
-    queryRegion: LTBounds,
-    label: Label, labels: Label*
-  ): Seq[Component] = {
-    val lbls = label :: labels.toList
-
-    rTreeIndex.search(queryRegion, {cc =>
-      val overlapLR = (
-        cc.bounds.left < queryRegion.right
-          && cc.bounds.right > queryRegion.left
-      )
-      val overlapTB = (
-        cc.bounds.top < queryRegion.bottom
-          && cc.bounds.bottom > queryRegion.top
-      )
-
-      val overlapping = overlapLR && overlapTB
-
-      overlapping && lbls.contains(cc.roleLabel)
-    })
-  }
-
-  def rtreeSearchLineHasLabel(
-    queryRegion: Line,
-    label: Label
-  ): Seq[Component] = {
-
-    rTreeIndex.searchLine(queryRegion, {cc =>
-      cc.hasLabel(label)
-    })
-  }
-
-  def rtreeSearchLine(
-    queryRegion: Line,
-    label: Label, labels: Label*
-  ): Seq[Component] = {
-    val lbls = label :: labels.toList
-
-    rTreeIndex.searchLine(queryRegion, {cc =>
-      lbls.contains(cc.roleLabel)
-    })
-  }
-
-  def pageIndex: PageIndex
-  def rTreeIndex = pageIndex.componentIndex
-}
 
 class PageSegmenter(
   pageId: Int@@PageID,
   pageNum: Int@@PageNum,
   mpageIndex: MultiPageIndex
-) extends PageQueries {
+) {
 
   val docStore = mpageIndex.docStore
   val stableId = mpageIndex.getStableId
@@ -334,7 +216,7 @@ class PageSegmenter(
     val threshold = if (saneCharDists.length == 1) {
       // If there is only 1 distance, the line is only 1 word (no word breaks)
       1.0d.toFloatExact()
-    } else if (distGroups.length >= 2) {
+    } else if (distGroups.length == 2) {
       // vtrace.trace(message(""))
       val d1 = distGroups(0).last
       val d2 = distGroups(1).head
@@ -375,8 +257,8 @@ class PageSegmenter(
 
     val maybeGroups = textRow.groupBy { (c1, c2) =>
       val pairwiseDist = c2.pageRegion.bbox.left - c1.pageRegion.bbox.right
-      val sameGroup = pairwiseDist < splitValue
-      sameGroup
+      // println(s"group? ${c1} <--> ${c2}  iff ${pairwiseDist} <?< ${splitValue}")
+      pairwiseDist < splitValue
     }
 
 
@@ -399,7 +281,7 @@ class PageSegmenter(
   def deleteComponentsWithLabel(l: Label): Unit = {
     pageIndex.getComponentsWithLabel(l)
       .foreach { cc =>
-        mpageIndex.removeComponent(cc)
+        pageIndex.removeComponent(cc)
       }
   }
 
@@ -437,7 +319,7 @@ class PageSegmenter(
 
     val res: List[Option[RegionComponent]] =
       queryBoxes.flatMap { query =>
-        val intersects = rtreeSearch(query, LB.PageAtom)
+        val intersects = pageIndex.rtreeSearch(query, LB.PageAtom)
 
         val consecutiveLeftAlignedCharCols =
           intersects.sortBy(_.bounds.bottom)
@@ -492,7 +374,7 @@ class PageSegmenter(
     cc.bounds.withinRegion(queryRegion)
       .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
       .map { horizontalStripeRegion =>
-        rtreeSearch(horizontalStripeRegion, l0, labels:_*)
+        pageIndex.rtreeSearch(horizontalStripeRegion, l0, labels:_*)
           .sortBy(_.bounds.left)
           .filterNot(_.id == cc.id)
           .span(_.bounds.left < cc.bounds.left)
@@ -506,9 +388,9 @@ class PageSegmenter(
   def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
     for {
       textBlock <- orderedTextBlocks
-      hlineCC <- rtreeSearchOverlapping(textBlock, LB.HLinePath)
+      hlineCC <- pageIndex.rtreeSearchOverlapping(textBlock, LB.HLinePath)
     } yield {
-      mpageIndex.removeComponent(hlineCC)
+      pageIndex.removeComponent(hlineCC)
 
       val width = hlineCC.bounds.width
 
@@ -539,7 +421,7 @@ class PageSegmenter(
     while(candidates.nonEmpty) {
       val candidate = candidates.head
 
-      val overlaps = rtreeSearch(candidate.bounds, LB.WhitespaceColCandidate)
+      val overlaps = pageIndex.rtreeSearch(candidate.bounds, LB.WhitespaceColCandidate)
         .filterNot { _.id.unwrap == candidate.id.unwrap }
 
 
@@ -572,10 +454,10 @@ class PageSegmenter(
             }
           }
 
-          mpageIndex.removeComponent(candidate)
-          mpageIndex.removeComponent(overlap)
+          pageIndex.removeComponent(candidate)
+          pageIndex.removeComponent(overlap)
         case None =>
-          mpageIndex.removeComponent(candidate)
+          pageIndex.removeComponent(candidate)
           labelRegion(candidate.bounds(), LB.WhitespaceCol)
       }
 
@@ -590,7 +472,7 @@ class PageSegmenter(
     var currWhiteSpace = startingRegion
     val nudgeFactor = 0.05.toFloatExact()
 
-    def search(q:LTBounds) = rtreeSearch(q, LB.PageAtom, LB.Image, LB.VLinePath, LB.HLinePath, LB.HPageDivider)
+    def search(q:LTBounds) = pageIndex.rtreeSearch(q, LB.PageAtom, LB.Image, LB.VLinePath, LB.HLinePath, LB.HPageDivider)
 
     currWhiteSpace.withinRegion(pageGeometry).adjacentRegion(Dir.Left)
       .foreach { regionLeftOf =>
@@ -648,12 +530,12 @@ class PageSegmenter(
       cc <- pageIndex.getComponentsWithLabel(LB.LineByHash)
     } {
       // Split up lines into strictly non-overlapping regions
-      val intersects = rtreeSearch(cc.bounds, LB.LineByHash)
+      val intersects = pageIndex.rtreeSearch(cc.bounds, LB.LineByHash)
 
 
       if (intersects.length > 1) {
         val totalBounds = intersects.map(_.bounds).reduce(_ union _)
-        val charsInRegion = rtreeSearch(totalBounds, LB.PageAtom)
+        val charsInRegion = pageIndex.rtreeSearch(totalBounds, LB.PageAtom)
         // Remove the LineByHash regions
         // iterate over chars left-to-right and group them into non-overlaps and overlaps
         val allChars = charsInRegion.sortBy(_.bounds.left)
@@ -665,7 +547,7 @@ class PageSegmenter(
         }
 
         intersects.foreach { cc =>
-          mpageIndex.removeComponent(cc)
+          pageIndex.removeComponent(cc)
         }
       }
     }
@@ -675,10 +557,10 @@ class PageSegmenter(
 
     for {
       colRegion <- pageIndex.getComponentsWithLabel(LB.WhitespaceCol)
-      intersectedLine <- rtreeSearch(colRegion.bounds, LB.LineByHash)
+      intersectedLine <- pageIndex.rtreeSearch(colRegion.bounds, LB.LineByHash)
     } {
 
-      val charsInRegion = rtreeSearch(intersectedLine.bounds, LB.PageAtom)
+      val charsInRegion = pageIndex.rtreeSearch(intersectedLine.bounds, LB.PageAtom)
       val allChars = charsInRegion.sortBy(_.bounds.left)
 
       val (leftSplit, rightSplit) = allChars.span(_.bounds.left < colRegion.bounds.left)
@@ -686,14 +568,14 @@ class PageSegmenter(
       mpageIndex.labelRegion(leftSplit, LB.LineByHash)
       mpageIndex.labelRegion(rightSplit, LB.LineByHash)
 
-      mpageIndex.removeComponent(intersectedLine)
+      pageIndex.removeComponent(intersectedLine)
     }
 
   }
 
   def findReadingOrder(initRegion: LTBounds): Seq[LTBounds] = {
 
-    val maybeCol = rtreeSearchOverlapping(initRegion, LB.WhitespaceCol)
+    val maybeCol = pageIndex.rtreeSearchOverlapping(initRegion, LB.WhitespaceCol)
       .sortBy(cc => (cc.bounds.top, cc.bounds.left))
       .headOption
 

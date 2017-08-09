@@ -14,25 +14,23 @@ object Component {
     def ltBounds(t: Component): LTBounds = t.bounds
   }
 
-  import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
+  // import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
+  // object Serialization  {
+  //   def serialize[C <: Component](value: C): Array[Byte] = {
+  //     val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
+  //     val oos = new ObjectOutputStream(stream)
+  //     oos.writeObject(value)
+  //     oos.close
+  //     stream.toByteArray
+  //   }
 
-  object Serialization  {
-
-    def serialize[C <: Component](value: C): Array[Byte] = {
-      val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
-      val oos = new ObjectOutputStream(stream)
-      oos.writeObject(value)
-      oos.close
-      stream.toByteArray
-    }
-
-    def deserialize[C <: Component](bytes: Array[Byte]): C = {
-      val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
-      val value = ois.readObject
-      ois.close
-      value.asInstanceOf[C]
-    }
-  }
+  //   def deserialize[C <: Component](bytes: Array[Byte]): C = {
+  //     val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
+  //     val value = ois.readObject
+  //     ois.close
+  //     value.asInstanceOf[C]
+  //   }
+  // }
 }
 
 sealed trait Component {
@@ -52,10 +50,12 @@ sealed trait Component {
 
   lazy val pageNum = pageRegion.page.pageNum
 
-  val labels: mutable.Set[Label] = mutable.Set.empty[Label]
-  def addLabel(l: Label): Unit = labels.add(l)
-  def removeLabel(l: Label): Unit = labels.remove(l)
+  protected [spindex] val labelSet: mutable.Set[Label] = mutable.Set.empty[Label]
+  protected [spindex] def addLabel(l: Label): Unit = labelSet.add(l)
+  protected [spindex] def removeLabel(l: Label): Unit = labelSet.remove(l)
+
   def hasLabel(l: Label): Boolean = labels.contains(l)
+  def labels(): Set[Label] = labelSet.toSet
 
 }
 
@@ -91,21 +91,3 @@ case class AtomicComponent(
     s"<`${chars}`${id} ${charAtom.bbox.prettyPrint}>"
   }
 }
-
-// case class ClusterComponent(
-//   id: Int@@ComponentID,
-//   root: Component,
-//   override val roleLabel: Label,
-//   boundsFn: Component => PageRegion = _.pageRegion
-// ) extends Component {
-
-//   def setRole(l: Label): Component = copy(roleLabel = l)
-
-//   override val pageRegion: PageRegion = boundsFn(root)
-
-//   def chars: String = root.chars
-
-//   override def toString(): String = {
-//     s"<root:`${chars}`${id} ${root.bounds.prettyPrint}>"
-//   }
-// }

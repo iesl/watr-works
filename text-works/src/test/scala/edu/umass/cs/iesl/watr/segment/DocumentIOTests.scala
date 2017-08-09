@@ -4,7 +4,6 @@ package segment
 import ammonite.{ops => fs}
 
 import TypeTags._
-  // import textreflow.data._
 
 class DocumentIOTests extends DocsegTestUtil  {
 

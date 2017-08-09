@@ -11,9 +11,9 @@ import corpora.database._
 import segment._
 // import geometry._
 import geometry.syntax._
-import scalaz.syntax.equal._
+// import scalaz.syntax.equal._
 // import bioarxiv._
-import textreflow.data._
+// import textreflow.data._
 
 
 import TypeTags._
@@ -23,8 +23,7 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
   def initReflowDB(dbname: String, dbpass: String): CorpusAccessDB = {
     // val doLogging = false
     // val loggingProp = if (doLogging) "?loglevel=2" else ""
-    val tables = new CorpusAccessDBTables()
-    new CorpusAccessDB(tables,
+    new CorpusAccessDB(
       dbname=dbname,
       dbuser="watrworker",
       dbpass=dbpass
@@ -145,20 +144,12 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
         if (writeRTrees) {
           println("Writing RTrees")
           val rtreeGroup = corpusEntry.ensureArtifactGroup("rtrees")
-
           for {
             pageNum <- segmenter.mpageIndex.getPages
           } {
             val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-            val rtree = pageIndex.componentIndex.spatialIndex
-
-            val rtreeSerializer = DocumentSegmenter.createRTreeSerializer()
-
-            val baos = new java.io.ByteArrayOutputStream()
-            rtreeSerializer.write(rtree, baos)
-            baos.toByteArray()
-            val rtreeArtifactName = s"page-${pageNum}.rtree"
-            rtreeGroup.putArtifactBytes(rtreeArtifactName, baos.toByteArray())
+            val bytes = pageIndex.saveToBytes()
+            rtreeGroup.putArtifactBytes(pageIndex.rtreeArtifactName, bytes)
           }
         }
 

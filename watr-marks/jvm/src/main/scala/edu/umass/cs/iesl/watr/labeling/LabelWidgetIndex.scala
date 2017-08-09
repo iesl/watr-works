@@ -160,7 +160,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
               linePageRegion,
               () => {
                 docStore0.jsonStrToTextReflow(reflowJson).getOrElse{
-                  sys.error("addPage: invalid text reflow json  ${reflowJson}")
+                  sys.error(s"addPage: invalid text reflow json  ${reflowJson}")
 
                 }
               }

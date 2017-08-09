@@ -114,7 +114,8 @@ class TransformToCoNLLFormat {
     def getReflowWithLabelsForPage(documentLimit: Int, targetDocumentStableId: Seq[String], labels: Seq[Label]) = {
         val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+        // val textReflowDB = new CorpusAccessDB(dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+      val textReflowDB = new CorpusAccessDB(dbname = "ieslarxiv", dbuser = "watrworker", dbpass = "watrpasswd")
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
         // val dataFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-sample.txt"
@@ -212,5 +213,5 @@ object RunTransformer extends App {
 
     val transformer: TransformToCoNLLFormat = new TransformToCoNLLFormat()
     // transformer.getReflowWithLabelsForPage(131, documents, pageNum, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
-    transformer.getReflowWithLabelsForPage(960, documents, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
+    transformer.getReflowWithLabelsForPage(2, documents, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
 }

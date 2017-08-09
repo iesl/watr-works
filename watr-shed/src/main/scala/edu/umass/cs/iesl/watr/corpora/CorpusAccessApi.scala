@@ -67,28 +67,27 @@ trait CorpusAccessApi {
     }
   }
 
-  def serveTargetRegionImage(regionId: Int@@RegionID): Array[Byte] = {
-    val corpusRoot = corpus.corpusRoot.toNIO
-    val targetRegion = docStore.getTargetRegion(regionId)
-    val pageId = targetRegion.page.pageId
-    val (rPage, rDoc) = getPageAndDocument(pageId)
-    val tbbox = targetRegion.bbox
-    val pbbox = rPage.bounds
-    if (tbbox === pbbox) {
-      // Client is requesting the entire page
-      val entryPath = rDoc.stableId.unwrap
-      val imagePath = corpusRoot
-        .resolve(entryPath)
-        .resolve("page-images")
-        .resolve(s"page-${rPage.pagenum.unwrap+1}.opt.png")
 
-      imagePath
-
-    } else {
-      // Client is requesting a clipped page region
-    }
-    ???
-  }
+  // def serveTargetRegionImage(regionId: Int@@RegionID): Array[Byte] = {
+  //   val corpusRoot = corpus.corpusRoot.toNIO
+  //   val targetRegion = docStore.getTargetRegion(regionId)
+  //   val pageId = targetRegion.page.pageId
+  //   val (rPage, rDoc) = getPageAndDocument(pageId)
+  //   val tbbox = targetRegion.bbox
+  //   val pbbox = rPage.bounds
+  //   if (tbbox === pbbox) {
+  //     // Client is requesting the entire page
+  //     val entryPath = rDoc.stableId.unwrap
+  //     val imagePath = corpusRoot
+  //       .resolve(entryPath)
+  //       .resolve("page-images")
+  //       .resolve(s"page-${rPage.pagenum.unwrap+1}.opt.png")
+  //     imagePath
+  //   } else {
+  //     // Client is requesting a clipped page region
+  //   }
+  //   ???
+  // }
 
 }
 

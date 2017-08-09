@@ -8,9 +8,11 @@ import TypeTags._
 
 class PageTextTest extends DocsegTestUtil  {
   /**
+
     These are meant to be minimal smokescreen tests to insure that basic text
-    extraction is working reasonable well with respect to spacing, spacing,
+    extraction is working reasonable well with respect to spacing,
     char/line ordering, super/subscripts, etc.
+
    */
 
   it should "extract text" in {
@@ -77,6 +79,7 @@ class PageTextTest extends DocsegTestUtil  {
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
     segmenter.runPageSegmentation()
+
     // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
     // segmenter.runLineDeterminationOnPage(PageID(1), PageNum(0))
     // val docStore = segmenter.docStore

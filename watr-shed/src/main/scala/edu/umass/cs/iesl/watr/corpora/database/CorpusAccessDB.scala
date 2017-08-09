@@ -25,9 +25,10 @@ import play.api.libs.json, json._
 import shapeless._
 
 class CorpusAccessDB(
-  val tables: CorpusAccessDBTables,
   dbname: String, dbuser: String, dbpass: String
 ) extends DoobieImplicits  { self =>
+
+  val tables: CorpusAccessDBTables = new CorpusAccessDBTables()
 
   val Rel = RelationModel
 

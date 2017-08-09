@@ -24,7 +24,7 @@ import TypeTags._
 class HeaderParsingExamples(dbName: String) {
   val textReflowDBTables = new CorpusAccessDBTables
 
-  lazy val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = dbName, dbuser = "watrworker", dbpass = "watrpasswd")
+  lazy val textReflowDB = new CorpusAccessDB(dbname = dbName, dbuser = "watrworker", dbpass = "watrpasswd")
   lazy val docStore: DocumentZoningApi = textReflowDB.docStore
   lazy val corpus = Corpus(pwd / "corpus-test")
 

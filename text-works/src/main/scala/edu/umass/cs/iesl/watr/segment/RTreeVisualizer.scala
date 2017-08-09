@@ -25,7 +25,7 @@ class RTreeVisualizer(
   vtrace: VisualTracer
 ) {
   implicit val writer = scrimage.nio.GifWriter.Progressive // nio.GifSequenceWriter
-  val rTreeIndex = pageIndex.componentIndex
+  val rTreeIndex = pageIndex.componentRTree
   val pageNum = pageIndex.pageGeometry.id
 
   def segvisFile(name: String) = s"${name}.pg${pageNum}.png"

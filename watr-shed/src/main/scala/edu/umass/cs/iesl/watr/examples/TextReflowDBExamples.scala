@@ -27,7 +27,7 @@ import scala.collection.mutable.ListBuffer
 class SampleDbCorpus(dbName: String) {
     val textReflowDBTables = new CorpusAccessDBTables
 
-    lazy val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = dbName, dbuser = "watrworker", dbpass = "watrpasswd")
+    lazy val textReflowDB = new CorpusAccessDB(dbname = dbName, dbuser = "watrworker", dbpass = "watrpasswd")
     lazy val docStore: DocumentZoningApi = textReflowDB.docStore
     lazy val corpus = Corpus(pwd / "corpus-test")
 
@@ -132,7 +132,7 @@ class SampleDbCorpus(dbName: String) {
     def exampleFunction1(documentLimit: Int, targetDocumentStableId: Seq[String], targetLabel: Label): ListBuffer[(String, String, LTBounds)] = {
         val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+        val textReflowDB = new CorpusAccessDB(dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
         val names: ListBuffer[(String, String, LTBounds)] = new ListBuffer[(String, String, LTBounds)]()
@@ -179,7 +179,7 @@ class SampleDbCorpus(dbName: String) {
     def exampleFunction2(documentLimit: Int, targetDocumentStableIds: Seq[String], targetLabel: Label, authorNames: Seq[String]): ListBuffer[(String, ListBuffer[String])] = {
         val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+        val textReflowDB = new CorpusAccessDB(dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
         val affiliations: ListBuffer[(String, ListBuffer[String])] = new ListBuffer[(String, ListBuffer[String])]()
@@ -302,7 +302,7 @@ class TransformToCoNLLFormat {
     def getReflowWithLabelsForPage(documentLimit: Int, targetDocumentStableId: Seq[String], pageNum: Int @@ PageNum, labels: Seq[Label]) = {
         val textReflowDBTables = new CorpusAccessDBTables
 
-        val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
+        val textReflowDB = new CorpusAccessDB(dbname = "watr_works_db", dbuser = "watrworker", dbpass = "watrpasswd")
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
         val dataFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-sample.txt"
