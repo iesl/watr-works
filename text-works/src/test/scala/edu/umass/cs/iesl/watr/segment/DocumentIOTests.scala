@@ -1,37 +1,31 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import ammonite.{ops => fs}
-
-import TypeTags._
+import corpora._
 
 class DocumentIOTests extends DocsegTestUtil  {
 
-  it should "extract text" in {
+  behavior of "Segmentation IO"
 
-    val allTestPdfs =
-      """|
-         |example-from-latex.pdf.d/pg_0015.pdf
-         |example-from-latex.pdf.d/example-from-latex.pdf
-         |""".stripMargin.split("\n")
-        .map(_.trim())
-        .filter(_.length()>0)
+  val allTestPdfs = parsePdfs {
+    """|
+       |example-from-latex.pdf.d/pg_0015.pdf
+       |example-from-latex.pdf.d/example-from-latex.pdf
+       |""".stripMargin
+  }
 
+  it should "save/load page indexes and rtrees" in {
 
-    val pdfName = allTestPdfs(0)
-    val pdfIns = papers.paperUrl(pdfName)
-    val path = fs.Path(pdfIns.getPath)
-    val stableIdent = pdfName.replaceAll("/","_")
-    val docId = DocumentID(stableIdent)
-    import corpora._
-
-    // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
+    val (docId, path) = allTestPdfs(0)
 
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
     segmenter.runPageSegmentation()
 
-    val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
+    val mpageIndex = segmenter.mpageIndex
+    mpageIndex
+
+    // val content = formats.DocumentIO.richTextSerializeDocument(segmenter.mpageIndex)
 
     // println(content)
 

@@ -5,10 +5,12 @@ import corpora._
 
 import ammonite.{ops => fs}, fs._
 import java.io.{File => JFile}
+// import java.nio.{file => nio}
 import segment.DocumentSegmenter
 import TypeTags._
 import scopt.Read
 import shapeless._
+import utils.PathUtils._
 
 sealed trait OutputOption
 
@@ -28,10 +30,12 @@ object OutputOption {
 }
 
 object TextWorksConfig {
+
   case class Config(
-    ioConfig: IOConfig = IOConfig(),
-    outputOptions: List[OutputOption] = List(),
-    exec: Option[(Config) => Unit] = Some((c) => extractText(c))
+    ioConfig        : IOConfig = IOConfig(),
+    writeRTrees     : Boolean = false,
+    outputOptions   : List[OutputOption] = List(),
+    exec            : Option[(Config) => Unit] = Some((c) => extractText(c))
   )
 
   val parser = new scopt.OptionParser[Config]("text-works") {
@@ -48,10 +52,11 @@ object TextWorksConfig {
     /// IO Config options
     note("Specify exactly one input mode: corpus|file|file-list \n")
 
+
     // val pageIdL = lens[CharAtom].pageRegion.page.pageId
     opt[JFile]('c', "corpus") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
-        Option(InputMode.CorpusInput(v))
+        Option(InputMode.CorpusFiles(v))
       }
     } text ("root path of PDF corpus; output will be written to same dir as input")
 
@@ -67,6 +72,8 @@ object TextWorksConfig {
       }
     } text("process list of input PDFs in specified file. Specify '--' to read from stdin. ")
 
+
+
     note("\nOutput file options\n")
 
     opt[JFile]('o', "output-file") action { (v, conf) =>
@@ -76,11 +83,20 @@ object TextWorksConfig {
     } text("""|specify output file. In --corpus mode, ouput will be written to same directory as
               |           input file, otherwise relative to cwd. Use --force to overwrite existing files.""".stripMargin)
 
+
     opt[String]('x', "output-ext") action { (v, conf) =>
       lens[Config].ioConfig.outputMode.modify(conf){ m =>
-        Option(OutputMode.ToFileExt(v))
+        Option(OutputMode.ToInFilePlusExt(v))
       }
     } text("write output to input-file+ext")
+
+    opt[Unit]("write-rtrees") action { (v, conf) =>
+      lens[Config].writeRTrees.modify(conf){ m =>
+        true
+      }
+    } text ("write the computed rtrees to disk")
+
+
 
     note("\nOutput text layout options: \n")
 
@@ -105,35 +121,44 @@ object TextWorksConfig {
   }
 
   def extractText(conf: Config): Unit = {
-    for {
-      pdfFile <- IOOptionParser.inputPaths(conf.ioConfig)
-    } {
-      if (conf.outputOptions.contains(OutputOption.VisualStructure)) {
-        // ...
-      }
+    val ioOpts = new IOOptionParser(conf.ioConfig)
+
+    for { pdfFile <- ioOpts.inputPaths() } {
 
       val filename = FilePath(pdfFile).last
 
-      val pdfPath = pwd / RelPath(pdfFile)
+      val inputPdf = pwd / RelPath(pdfFile)
 
-      println(s"file: $pdfPath")
+      // val parentPath = pdfPath.toNIO.normalize().getParent
+      // println(s"file: $pdfPath ; parent=${parentPath}")
 
       val stableId = DocumentID(filename)
 
-      // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
-
-      val segmenter = DocumentSegmenter.createSegmenter(stableId, pdfPath, new MemDocZoningApi)
+      val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, new MemDocZoningApi)
 
       segmenter.runPageSegmentation()
 
-      conf.ioConfig.outputMode.foreach{ _ match {
-        case OutputMode.ToFile(f) =>
-          val content = formats.DocumentIO.documentToPlaintext(segmenter.mpageIndex)
-          val p = fs.Path(f, pwd)
-          if (exists(p)) { rm(p) }
+      val mpageIndex = segmenter.mpageIndex
 
-          write(p, content)
-      }}
+      ioOpts.withOutputFile(inputPdf) { outfile =>
+        val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
+        write(outfile, content)
+      }
+
+      if (conf.writeRTrees) {
+        println("Writing RTrees")
+        ioOpts.withOutputDir(inputPdf, "rtrees") { rtreeRootPath =>
+
+          for { pageNum <- segmenter.mpageIndex.getPages } {
+            val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
+            val bytes = pageIndex.saveToBytes()
+            val pageIndexPath = rtreeRootPath / pageIndex.rtreeArtifactName
+            fs.write(pageIndexPath, bytes)
+          }
+
+        }
+
+      }
     }
   }
 }

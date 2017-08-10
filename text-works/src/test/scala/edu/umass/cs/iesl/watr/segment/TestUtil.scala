@@ -10,6 +10,28 @@ import TypeTags._
 
 trait DocsegTestUtil extends  FlatSpec with Matchers {
 
+  import ammonite.{ops => fs}
+
+  def resourcePaperIStream(filename: String) = getClass().getResourceAsStream(s"/papers/$filename")
+  def resourcePaperUrl(filename: String) = getClass().getResource(s"/papers/$filename")
+
+  def parsePdfs(pdfPerLineStr: String): Seq[(String@@DocumentID, fs.Path)] = {
+
+    pdfPerLineStr.split("\n")
+      .map(_.trim())
+      .filter(_.length()>0)
+      .map{ pdfName =>
+        val pdfIns = resourcePaperUrl(pdfName)
+        val path = fs.Path(pdfIns.getPath)
+        val stableIdent = pdfName.replaceAll("/","_")
+        val docId = DocumentID(stableIdent)
+
+        (docId, path)
+      }
+
+
+  }
+
   object page {
     val page = (0 to 10).map(PageNum(_))
     def apply(i:Int) = page(i)

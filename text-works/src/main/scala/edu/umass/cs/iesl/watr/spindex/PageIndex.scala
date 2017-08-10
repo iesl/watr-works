@@ -126,7 +126,6 @@ class PageIndex(
     val canonical = set.getCanonical(c0)
     canonical.addLabel(LB.Canonical)
     canonical.addLabel(l)
-    // println(s"addCluster(${canonical.labels})")
     canonical
   }
 
@@ -214,7 +213,8 @@ class PageIndex(
   }
 
 
-  // Searching
+
+  // Searching: TODO most of these functions should be pushed back into RTreeIndex class
 
   def rtreeSearchHasAllLabels(
     queryRegion: LTBounds,

@@ -5,6 +5,7 @@ import database._
 import filesys._
 import workflow._
 import corpora.{RelationModel => Rel}
+import spindex.MultiPageIndex
 import geometry.syntax._
 import scalaz.syntax.equal._
 import java.nio.{file => nio}
@@ -37,6 +38,20 @@ trait CorpusAccessApi {
   def getPageAndDocument(pageId: Int@@PageID): (Rel.Page, Rel.Document) = {
     corpusAccessDB.getPageAndDocument(pageId)
   }
+
+  def getPageIndexes(stableId: String@@DocumentID): Option[MultiPageIndex] = {
+    for {
+      entry     <- corpus.entry(stableId.unwrap)
+      group     <- entry.getArtifactGroup("rtrees")
+      rtreeBlob <- group.getArtifact(s"page-${pageNum}.rtree")
+      rtreePath <- rtreeBlob.asPath
+    } {
+    }
+    //   rindex.RTreeIndex.load(rtreePath.toNIO)
+
+    ???
+  }
+
 
   import RegionImageResponse._
 

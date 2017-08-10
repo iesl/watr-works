@@ -15,33 +15,26 @@ import corpora._
 
 import watrmarks.{StandardLabels => LB}
 import utils.ExactFloats._
+import java.nio.{file => nio}
 
 
 /**
 
   MultiPageIndex manages:
-    - PageIndexes, one per pdf page
-    - TextReflow -> Component mapping (e.g., text contained in VisualLine, TextBlock) (TODO perhaps TextReflow should be Zone-associated)
+    - PageIndexes, one per PDF page
+
     - Zones, each of which is a list of Components, potentially crossing PageIndexes
     - Relations and Props, e.g., {ClusterID -hasMember-> MentionID}, {id hasProp isTargetEntity}
       - nb. this is a kludge that will be removed at some point
 
-    - BioLabeling, a BIOLU format list of TextBlock regions, for labeling Sections, Headers, and a few other things. Obsolete and on the chopping block
-
-    - Interface to individual PageIndex functions
-
-    - RegionComponent creation and indexing, per PageIndex
-      - Creates a new bounding box around lists of other PageIndex components
-
-    - Add/remove Pages/PageAtoms/ConnectedComponents
-
-
-    TODO:
-      - Handle PageIndexes across PDFs (or create another layered class over this one)
-      - Caching, either within this class or attachable
-
-
   */
+
+object MultiPageIndex {
+
+  def load(rootPath: nio.Path): MultiPageIndex = {
+    ???
+  }
+}
 
 class MultiPageIndex(
   stableId: String@@DocumentID,
@@ -74,29 +67,6 @@ class MultiPageIndex(
     props ++= rs
   }
 
-
-  // def getPageForComponent(c: Component): Int@@PageNum = {
-  //   c.pageRegion.page.pageNum
-  // }
-
-  // def addLabel(c: Component, l: Label): Unit = {
-  //   val pageId = getPageForComponent(c)
-  //   val pageIndex = getPageIndex(pageId)
-  //   pageIndex.addLabel(c, l)
-  // }
-
-  // def removeLabel(c: Component, l: Label): Unit = {
-  //   val pageId = getPageForComponent(c)
-  //   val pageIndex = getPageIndex(pageId)
-  //   pageIndex.removeLabel(c, l)
-  // }
-
-
-  // def getLabels(c: Component): Set[Label] = {
-  //   val pageId = getPageForComponent(c)
-  //   val pageIndex = getPageIndex(pageId)
-  //   pageIndex.getComponentLabels(c.id)
-  // }
 
   def getPageIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
 
