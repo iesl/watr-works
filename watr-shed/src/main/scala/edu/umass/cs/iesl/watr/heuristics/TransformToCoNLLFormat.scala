@@ -13,8 +13,6 @@ import AuthorNameHeuristics._
 import AffiliationsHeuristics._
 import Utils._
 import textreflow.data._
-import edu.umass.cs.iesl.watr.`package`
-import scala.util.control.Breaks._
 
 import scala.collection.mutable.ListBuffer
 
@@ -77,8 +75,10 @@ class TransformToCoNLLFormat {
         // val dataFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-sample.txt"
         val dataFileName: String = "arxiv-sample_1.txt"
         val exceptionsFileName: String = "arxiv-exceptions_2.txt"
+        val pageStatsFileName: String = "arxiv_page_stats.txt"
         val dataFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(dataFileName)))
         val exceptionsFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(exceptionsFileName)))
+        val pageStatsFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pageStatsFileName)))
 
         var previousDocument: Int = -1
 
@@ -88,6 +88,7 @@ class TransformToCoNLLFormat {
         } {
             val affiliationReflows: ListBuffer[TextReflow] = new ListBuffer[TextReflow]()
             val names: ListBuffer[String] = new ListBuffer[String]()
+            var pageNumbers: ListBuffer[Int] = new ListBuffer[Int]()
 
             println("Document: " + docId + " : " + docStableId)
 
@@ -103,6 +104,8 @@ class TransformToCoNLLFormat {
                         previousDocument = docId.unwrap
                     }
                     println("Page Number: " + pageId.toString)
+                    pageNumbers += pageId.unwrap
+
                     for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
                         val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
 
@@ -161,9 +164,12 @@ class TransformToCoNLLFormat {
 
             }
             dataFileWriter.write("\n")
+            pageNumbers = pageNumbers.map(pageNumber => pageNumber - pageNumbers.head + 1)
+            pageStatsFileWriter.write(docId + ":" + docStableId + "\t" + pageNumbers.mkString("\t") + "\n")
         }
         dataFileWriter.close()
         exceptionsFileWriter.close()
+        pageStatsFileWriter.close()
     }
 
 
