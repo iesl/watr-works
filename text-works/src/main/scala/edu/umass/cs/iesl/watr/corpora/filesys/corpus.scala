@@ -3,7 +3,7 @@ package corpora
 package filesys
 
 
-import java.io.{ InputStream }
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.Reader
 import java.net.URI

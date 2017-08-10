@@ -27,15 +27,9 @@ import utils.ExactFloats._
   */
 
 object PageIndex {
-  // import segment._
-  // import java.io.ByteArrayInputStream
-  // import java.io.ByteArrayOutputStream
-  // import java.io.IOException
-  // import java.io.ObjectInputStream
-  // import java.io.ObjectOutputStream
-  // import java.io.Serializable
-  // import java.nio.charset.Charset
-  // import java.nio.file.{Files, Paths}
+  // import java.nio.file.Files
+  import java.nio.file.Path
+  import TypeTags._
 
   // def rtreeAccess(entry: String, pageNum: Int@@PageNum) = for {
   //   entry     <- corpus.entry(entry)
@@ -44,28 +38,24 @@ object PageIndex {
   //   rtreePath <- rtreeBlob.asPath
   // } {
   //   rindex.RTreeIndex.load(rtreePath.toNIO)
-
-
-
-  // val rtree = pageIndex.componentRTree.spatialIndex
-  // val rtreeSerializer = DocumentSegmenter.createRTreeSerializer()
-  // val baos = new java.io.ByteArrayOutputStream()
-  // rtreeSerializer.write(rtree, baos)
-  // baos.toByteArray()
-
+  def load(path: Path): PageIndex = {
+    val rtree = RTreeIndex.load[Component](path)
+    val pageGeometry = PageGeometry(PageNum(0), LTBounds.empty)
+    new PageIndex(pageGeometry, rtree)
+  }
 }
+
 class PageIndex(
-  val pageGeometry: PageGeometry
+  val pageGeometry: PageGeometry,
+  val componentRTree: RTreeIndex[Component] = RTreeIndex.createFor[Component]()
 ) {
 
   lazy val pageNum = pageGeometry.id
   val rtreeArtifactName = s"page-${pageNum}.rtree"
 
   def saveToBytes(): Array[Byte] = {
-    ???
+    RTreeIndex.saveBytes(componentRTree)
   }
-
-  val componentRTree: RTreeIndex[Component] = RTreeIndex.createFor[Component]()
 
   val componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap()
   val labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()

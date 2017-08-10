@@ -4,13 +4,13 @@ package apps
 import corpora._
 
 import ammonite.{ops => fs}, fs._
-import java.io.{File => JFile}
-// import java.nio.{file => nio}
+// import java.io.{File => JFile}
 import segment.DocumentSegmenter
 import TypeTags._
 import scopt.Read
 import shapeless._
-import utils.PathUtils._
+import java.nio.{file => nio}
+import fs2._
 
 sealed trait OutputOption
 
@@ -30,6 +30,10 @@ object OutputOption {
 }
 
 object TextWorksConfig {
+  implicit val NioPath: Read[nio.Path] =
+    Read.reads { v =>
+      nio.Paths.get(v).toAbsolutePath().normalize()
+    }
 
   case class Config(
     ioConfig        : IOConfig = IOConfig(),
@@ -53,48 +57,51 @@ object TextWorksConfig {
     note("Specify exactly one input mode: corpus|file|file-list \n")
 
 
-    // val pageIdL = lens[CharAtom].pageRegion.page.pageId
-    opt[JFile]('c', "corpus") action { (v, conf) =>
-      lens[Config].ioConfig.inputMode.modify(conf){ m =>
-        Option(InputMode.CorpusFiles(v))
+    opt[nio.Path]('c', "corpus") action { (v, conf) =>
+
+      lens[Config].ioConfig.modify(conf) { ioConfig =>
+        ioConfig.copy(
+          inputMode = Option(InputMode.CorpusFile(v, None))
+        )
       }
     } text ("root path of PDF corpus; output will be written to same dir as input")
 
-    opt[JFile]('i', "input") action { (v, conf) =>
+    opt[nio.Path]('i', "input") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
         Option(InputMode.SingleFile(v))
       }
     } text("choose single input PDF")
 
-    opt[JFile]('l', "input-list") action { (v, conf) =>
+    opt[nio.Path]('l', "input-list") action { (v, conf) =>
       lens[Config].ioConfig.inputMode.modify(conf){ m =>
         Option(InputMode.ListOfFiles(v))
       }
-    } text("process list of input PDFs in specified file. Specify '--' to read from stdin. ")
+    } text("process list of input PDFs in specified file.")
 
 
 
     note("\nOutput file options\n")
 
-    opt[JFile]('o', "output-file") action { (v, conf) =>
-      lens[Config].ioConfig.outputMode.modify(conf){ m =>
-        Option(OutputMode.ToFile(v))
+    opt[nio.Path]('o', "output-file") action { (v, conf) =>
+      lens[Config].ioConfig.outputPath.modify(conf){ m =>
+        Some(v)
       }
     } text("""|specify output file. In --corpus mode, ouput will be written to same directory as
-              |           input file, otherwise relative to cwd. Use --force to overwrite existing files.""".stripMargin)
+              |           input file, otherwise relative to cwd. Use --overwrite to overwrite existing files.""".stripMargin)
 
-
-    opt[String]('x', "output-ext") action { (v, conf) =>
-      lens[Config].ioConfig.outputMode.modify(conf){ m =>
-        Option(OutputMode.ToInFilePlusExt(v))
-      }
-    } text("write output to input-file+ext")
 
     opt[Unit]("write-rtrees") action { (v, conf) =>
       lens[Config].writeRTrees.modify(conf){ m =>
         true
       }
     } text ("write the computed rtrees to disk")
+
+    opt[Unit]("overwrite") action { (v, conf) =>
+      lens[Config].ioConfig.overwrite.modify(conf){ m =>
+        true
+      }
+    } text ("write the computed rtrees to disk")
+
 
 
 
@@ -109,9 +116,9 @@ object TextWorksConfig {
       if (c.ioConfig.inputMode.isEmpty) {
         failure("Invalid input options")
       }
-      else if (c.ioConfig.outputMode.isEmpty) {
-        failure("Invalid output options")
-      }
+      // else if (c.ioConfig.outputMode.isEmpty) {
+      //   failure("Invalid output options")
+      // }
       else success
     }
   }
@@ -123,44 +130,130 @@ object TextWorksConfig {
   def extractText(conf: Config): Unit = {
     val ioOpts = new IOOptionParser(conf.ioConfig)
 
-    for { pdfFile <- ioOpts.inputPaths() } {
+    val fsStream = ioOpts.inputStream()
+      .through(pipe.zipWithIndex)
+      .evalMap { case (input, i) =>
+        Task.delay{
 
-      val filename = FilePath(pdfFile).last
+          try {
 
-      val inputPdf = pwd / RelPath(pdfFile)
+            input match {
+              case InputMode.SingleFile(f) =>
+              case InputMode.CorpusFile(_, Some(corpusEntry)) =>
 
-      // val parentPath = pdfPath.toNIO.normalize().getParent
-      // println(s"file: $pdfPath ; parent=${parentPath}")
+                val stableId = DocumentID(corpusEntry.entryDescriptor)
+                for {
+                  tryPdf <- corpusEntry.getPdfArtifact
+                  pdf <- tryPdf.asPath
+                } {
 
-      val stableId = DocumentID(filename)
+                  val outfile = nio.Paths.get("docseg.json")
 
-      val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, new MemDocZoningApi)
+                  val rtreePath = corpusEntry.ensureArtifactGroup("rtrees").rootPath
+                  val rtreeOutput = if (conf.writeRTrees)  Some(rtreePath) else None
 
-      segmenter.runPageSegmentation()
+                  val outPath = fs.Path(
+                    fs.FilePath.apply(outfile),
+                    corpusEntry.artifactsRoot
+                  )
 
-      val mpageIndex = segmenter.mpageIndex
-
-      ioOpts.withOutputFile(inputPdf) { outfile =>
-        val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
-        write(outfile, content)
+                  TextWorksActions.extractText(stableId, pdf, outPath, rtreeOutput)
+                }
+            }
+          } catch {
+            case t: Throwable => println(s"error ${t}")
+          }
+        }
       }
 
-      if (conf.writeRTrees) {
-        println("Writing RTrees")
-        ioOpts.withOutputDir(inputPdf, "rtrees") { rtreeRootPath =>
 
-          for { pageNum <- segmenter.mpageIndex.getPages } {
-            val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-            val bytes = pageIndex.saveToBytes()
-            val pageIndexPath = rtreeRootPath / pageIndex.rtreeArtifactName
-            fs.write(pageIndexPath, bytes)
-          }
 
-        }
+    // val fsStream = for {
+    //   pdfFile <- ioOpts.inputStream()
+    // } yield {
+    //   pdfFile match {
+    //     case InputMode.SingleFile(f) =>
+    //     case InputMode.CorpusFile(_, Some(corpusEntry)) =>
 
+    //       val stableId = DocumentID(corpusEntry.entryDescriptor)
+    //       for {
+    //         tryPdf <- corpusEntry.getPdfArtifact
+    //         pdf <- tryPdf.asPath
+    //       } {
+
+    //         val outfile = nio.Paths.get("docseg.json")
+
+    //         val rtreePath = corpusEntry.ensureArtifactGroup("rtrees").rootPath
+    //         val rtreeOutput = if (conf.writeRTrees)  Some(rtreePath) else None
+
+    //         val outPath = fs.Path(
+    //           fs.FilePath.apply(outfile),
+    //           corpusEntry.artifactsRoot
+    //         )
+
+    //         TextWorksActions.extractText(stableId, pdf, outPath, rtreeOutput)
+    //       }
+    //   }
+
+    // }
+
+    fsStream.run.unsafeRun()
+
+    // for { pdfFile <- ioOpts.inputPaths() } {
+
+    //   val filename = FilePath(pdfFile).last
+
+    //   val inputPdf = pwd / RelPath(pdfFile)
+
+    //   ioOpts.withOutputFile(inputPdf) { outfile =>
+
+    //     val stableId = DocumentID(filename)
+
+    //     var rtreeOutput: Option[fs.Path] = None
+
+    //     if (conf.writeRTrees) {
+    //         ioOpts.withOutputDir(inputPdf, "rtrees") { rtreeRootPath =>
+    //           rtreeOutput = Some(rtreeRootPath)
+    //         }
+    //     }
+
+    //     TextWorksActions.extractText(stableId, inputPdf, outfile, rtreeOutput)
+
+    // }
+    // }
+  }
+}
+
+object TextWorksActions {
+
+  def extractText(
+    stableId: String@@DocumentID,
+    inputPdf: fs.Path,
+    textOutputFile: fs.Path,
+    rtreeOutputRoot: Option[fs.Path]
+  ): Unit = {
+
+    val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, new MemDocZoningApi)
+
+    segmenter.runPageSegmentation()
+
+    val mpageIndex = segmenter.mpageIndex
+
+    val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
+    write(textOutputFile, content)
+
+    rtreeOutputRoot.foreach { rtreeRootPath =>
+
+      for { pageNum <- segmenter.mpageIndex.getPages } {
+        val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
+        val bytes = pageIndex.saveToBytes()
+        val pageIndexPath = rtreeRootPath / pageIndex.rtreeArtifactName
+        fs.write(pageIndexPath, bytes)
       }
     }
+
   }
+
 }
 
 object TextWorks extends App {

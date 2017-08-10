@@ -172,19 +172,20 @@ class PageSegmenter(
 
 
   def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact = {
-    // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
-    def pairwiseSpaceWidths(): Seq[FloatExact] = {
-      val cpairs = sortedLineCCs.sliding(2).toList
-
-      val dists = cpairs.map({
-        case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
-        case _  => 0d.toFloatExact()
-      })
-
-      dists :+ 0d.toFloatExact()
-    }
 
     def determineSpacings(): Seq[FloatExact] = {
+      // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
+      def pairwiseSpaceWidths(): Seq[FloatExact] = {
+        val cpairs = sortedLineCCs.sliding(2).toList
+
+        val dists = cpairs.map({
+          case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
+          case _  => 0d.toFloatExact()
+        })
+
+        dists :+ 0d.toFloatExact()
+      }
+
       val dists = pairwiseSpaceWidths()
 
       val mostFrequentDists = dists.groupBy(x => x)
@@ -194,6 +195,9 @@ class PageSegmenter(
 
       mostFrequentDists.map(_._1)
     }
+
+
+
     val charDists = determineSpacings()
 
     val charWidths = sortedLineCCs.map(_.bbox.width)

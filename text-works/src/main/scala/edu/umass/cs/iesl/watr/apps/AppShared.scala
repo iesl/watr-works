@@ -1,46 +1,69 @@
 package edu.umass.cs.iesl.watr
 package apps
 
-import java.io.{File => JFile}
-import ammonite.{ops => fs}
-// import utils.PathUtils._
+// import java.io.{File => JFile}
 import java.nio.{file => nio}
-
+import ammonite.{ops => fs}
+import corpora.filesys._
 
 sealed trait InputMode
 
 object InputMode {
-  case class SingleFile(f: JFile) extends InputMode
-  case class ListOfFiles(f: JFile) extends InputMode
-  case class CorpusFiles(corpusRoot: JFile) extends InputMode
+  case class SingleFile(f: nio.Path) extends InputMode
+  case class ListOfFiles(f: nio.Path) extends InputMode
+  // case class CorpusFile(corpusEntry: CorpusEntry) extends InputMode
+  case class CorpusFile(corpusRoot: nio.Path, corpusEntry: Option[CorpusEntry]) extends InputMode
 }
 
-sealed trait OutputMode
+// sealed trait OutputNaming
 
-object OutputMode {
-  case class ToFile(filename: JFile) extends OutputMode
-  case class ToInFilePlusExt(ext: String) extends OutputMode
-}
-
-sealed trait ArtifactOutput
-
-object ArtifactOutput {
-  case object CurrWD extends ArtifactOutput
-  case object InputPath extends ArtifactOutput
-}
+// object OutputNaming {
+//   case class ToFile(filename: nio.Path) extends OutputNaming
+//   case object ToStdOut extends OutputNaming
+// }
 
 case class IOConfig(
   inputMode: Option[InputMode] = None,
-  outputMode: Option[OutputMode] = None,
-  artifactOutput: ArtifactOutput = ArtifactOutput.CurrWD,
+  outputPath: Option[nio.Path] = None,
+  // outputNaming: OutputNaming = OutputNaming.ToStdOut,
   overwrite: Boolean = false,
   numToRun: Int = 0,
   numToSkip: Int = 0
 )
 
 class IOOptionParser(conf: IOConfig) {
+  import fs2._
+  import fs2.util.Async
+  implicit val S = Strategy.fromCachedDaemonPool()
 
-  def inputPaths(): Seq[JFile] = {
+  val T = implicitly[Async[Task]]
+
+
+  def inputStream(): Stream[Task, InputMode] = {
+    conf.inputMode.map{ mode =>
+      mode match {
+        case in@ InputMode.SingleFile(f) =>
+          Stream.emit(in)
+
+        case InputMode.CorpusFile(corpusRoot, None) =>
+          val skip = conf.numToSkip
+          val take = conf.numToRun
+          val corpus = Corpus(corpusRoot)
+          val allEntries = corpus.entryStream()
+          val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
+          val entries = if (take > 0) skipped.take(take.toLong) else skipped
+          entries.map{ entry =>
+            InputMode.CorpusFile(corpusRoot, Some(entry))
+          }
+
+        case _ => sys.error("inputStream(): TODO")
+      }
+    }.getOrElse {
+      sys.error("inputStream(): Invalid input options")
+    }
+  }
+
+  def inputPaths(): Seq[nio.Path] = {
     conf.inputMode.map{ mode =>
       mode match {
         case InputMode.SingleFile(f) => Seq(f)
@@ -53,35 +76,38 @@ class IOOptionParser(conf: IOConfig) {
 
   def withWorkingDir(in: fs.Path)(runf: fs.Path => Unit): Unit = {
 
-    val workingDir: nio.Path = conf.artifactOutput match {
-      case ArtifactOutput.CurrWD =>
-        fs.pwd.toNIO
-      case ArtifactOutput.InputPath =>
-        in.toNIO.normalize().getParent
-    }
-
-    val wd = fs.pwd / fs.RelPath(workingDir)
-    runf(wd)
+    // val workingDir: fs.Path = conf.artifactOutput match {
+    //   case ArtifactOutput.CurrWD =>
+    //     fs.pwd
+    //   case ArtifactOutput.InputPath =>
+    //     val normal = in.toNIO.normalize()
+    //     if (normal.isAbsolute()) {
+    //       fs.Path(normal)
+    //     } else {
+    //       fs.pwd / fs.RelPath(normal)
+    //     }
+    // }
+    // runf(workingDir)
   }
 
   def withOutputFile(in: fs.Path)(runf: fs.Path => Unit): Unit = {
-    withWorkingDir(in) { workingDir =>
-      val outPath = conf.outputMode.map{ _ match {
-        case OutputMode.ToFile(f) =>
-          workingDir /  f.getPath
-        case OutputMode.ToInFilePlusExt(ext) =>
-          val outpath = in.toIO.getName + s".${ext}"
-          workingDir / outpath
-      }}
+    // withWorkingDir(in) { workingDir =>
+    //   val outPath = conf.outputMode.map{ _ match {
+    //     case OutputNaming.ToFile(f) =>
+    //       workingDir /  f.getPath
+    //     case OutputNaming.ToInFilePlusExt(ext) =>
+    //       val outpath = in.toIO.getName + s".${ext}"
+    //       workingDir / outpath
+    //   }}
 
-      outPath.foreach { outFile =>
-        if (conf.overwrite && fs.exists(outFile) && fs.stat(outFile).isFile) {
-          fs.rm(outFile)
-        }
-        runf(outFile)
-      }
+    //   outPath.foreach { outFile =>
+    //     if (conf.overwrite && fs.exists(outFile) && fs.stat(outFile).isFile) {
+    //       fs.rm(outFile)
+    //     }
+    //     runf(outFile)
+    //   }
 
-    }
+    // }
   }
 
   def withOutputDir(in: fs.Path, dir: String)(runf: fs.Path => Unit): Unit = {

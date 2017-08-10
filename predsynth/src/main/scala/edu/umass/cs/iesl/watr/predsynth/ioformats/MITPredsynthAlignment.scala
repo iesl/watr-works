@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package predsynth
+package ioformats
 
 import spindex._
 

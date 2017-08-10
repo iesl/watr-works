@@ -1,12 +1,13 @@
 package edu.umass.cs.iesl.watr
-package predsynth 
+package predsynth
+package ioformats
 
 // import ammonite.{ops => fs}, fs._
 // import java.io.InputStream
 // import java.net.URI
 // import watrmarks._
 import spindex._
-// 
+//
 
 //
 // //import TypeTags._

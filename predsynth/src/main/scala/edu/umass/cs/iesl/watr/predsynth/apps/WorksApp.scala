@@ -1,4 +1,5 @@
 package edu.umass.cs.iesl.watr
+package predsynth
 package apps
 
 import corpora._
@@ -129,9 +130,6 @@ object Works extends App {
       .action((v, conf) => setAction(conf, segmentDocument(_)))
       .text ("run document segmentation")
 
-    cmd("totext")
-      .action((v, conf) => setAction(conf, extractText(_)))
-      .text ("run basic text extraction")
 
     cmd("fast-forward-docseg")
       .action((v, conf) => setAction(conf, fastForwardDocsegs(_)))
@@ -333,22 +331,5 @@ object Works extends App {
 
   }
 
-  def extractText(conf: AppConfig): Unit = {
-    println("extracting text")
-    for {
-      pdfFile <- conf.inputFile
-    } {
-      val pdfPath = pwd / RelPath(pdfFile)
-      println(s"file: $pdfPath")
-
-      val stableId = DocumentID(pdfPath.toString())
-      val segmenter = runPageSegmentation(stableId, pdfPath)
-      PredsynthIO
-        .documentToPlaintext(segmenter.mpageIndex)
-        .foreach{ line =>
-          println(line)
-        }
-    }
-  }
 
 }

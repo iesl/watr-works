@@ -40,14 +40,20 @@ trait CorpusAccessApi {
   }
 
   def getPageIndexes(stableId: String@@DocumentID): Option[MultiPageIndex] = {
+    import ammonite.{ops => fs}
     for {
       entry     <- corpus.entry(stableId.unwrap)
       group     <- entry.getArtifactGroup("rtrees")
-      rtreeBlob <- group.getArtifact(s"page-${pageNum}.rtree")
-      rtreePath <- rtreeBlob.asPath
+      // rtreeBlob <- group.getArtifact(s"page-${pageNum}.rtree")
+      // rtreePath <- rtreeBlob.asPath
     } {
+      val rtreeRootPath = group.rootPath
+      fs.ls(rtreeRootPath)
+        .filter(_.name.endsWith(".rtree"))
+        .map{ rtreePath =>
+          // rindex.RTreeIndex.load(rtreePath.toNIO)
+        }
     }
-    //   rindex.RTreeIndex.load(rtreePath.toNIO)
 
     ???
   }

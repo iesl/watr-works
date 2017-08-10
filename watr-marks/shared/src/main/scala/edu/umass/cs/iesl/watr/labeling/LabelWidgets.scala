@@ -3,6 +3,12 @@ package labeling
 
 import scalaz.{@@ => _, _}, Scalaz._
 
+// import scalaz.{Traverse, Applicative, Show, Functor, Equal}
+// import scalaz.Scalaz._
+// import scalaz.std.list._
+// import scalaz.syntax.equal._
+// , Scalaz._
+
 import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._

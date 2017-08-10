@@ -1,6 +1,5 @@
 package edu.umass.cs.iesl.watr
 
-// import scalaz.{Tag, @@}
 
 object `package` extends PackageDefs {
 

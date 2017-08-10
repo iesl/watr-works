@@ -1,24 +1,17 @@
 package edu.umass.cs.iesl.watr
 package table
 
-import ammonite.ops._
-
 import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
-// import watrmarks.{StandardLabels => LB}
 import corpora._
 import corpora.filesys._
 import corpora.database._
 import segment._
-// import geometry._
 import geometry.syntax._
-// import scalaz.syntax.equal._
-// import bioarxiv._
-// import textreflow.data._
-
+// import ammonite.{ops => fs}, fs._
 
 import TypeTags._
 
-object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments {
+object ShellCommands extends DocumentZoningApiEnrichments {
 
   def initReflowDB(dbname: String, dbpass: String): CorpusAccessDB = {
     // val doLogging = false
@@ -30,14 +23,11 @@ object ShellCommands extends CorpusEnrichments with DocumentZoningApiEnrichments
     )
   }
 
-  def initCorpus(): Corpus = {
-    initCorpus(pwd)
-  }
-
 
   import fs2._
   import fs2.util.Async
   implicit val S = Strategy.fromCachedDaemonPool()
+
   val T = implicitly[Async[Task]]
 
   def chooseEntries(n: Int, skip: Int)(implicit corpusAccessApi: CorpusAccessApi): Stream[Task, CorpusEntry] = {

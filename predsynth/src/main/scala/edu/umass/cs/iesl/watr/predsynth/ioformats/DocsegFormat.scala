@@ -1,5 +1,6 @@
 package edu.umass.cs.iesl.watr
 package predsynth
+package ioformats
 
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}

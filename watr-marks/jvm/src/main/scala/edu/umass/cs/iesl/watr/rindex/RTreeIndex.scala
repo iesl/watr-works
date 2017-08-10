@@ -217,7 +217,7 @@ object RTreeIndex {
     createFor(rt)
   }
 
-  def saveBytes[T: RTreeIndexable](path: Path, rtree: RTreeIndex[T]): Array[Byte] = {
+  def saveBytes[T: RTreeIndexable](rtree: RTreeIndex[T]): Array[Byte] = {
     val ser = createRTreeSerializer[T]
     val baos = new java.io.ByteArrayOutputStream()
     ser.write(rtree.spatialIndex, baos)

@@ -4,6 +4,7 @@ package table
 import ammonite.ops._
 
 import corpora._
+import corpora.filesys.Corpus
 import bioarxiv._
 
 
@@ -44,18 +45,30 @@ object SharedInit {
 
 }
 
-object WatrTable extends App {
+object WatrTable extends App with utils.AppMainBasics {
   import SharedInit._
+
 
   import ShellCommands._
 
+  val argMap = argsToMap(args)
+  println(argMap)
+
+  val dbname = argMap.get("db").flatMap(_.headOption)
+    .getOrElse(sys.error("no db supplied (--db ...)"))
+
+  val passwd = argMap.get("passwd").flatMap(_.headOption)
+    .getOrElse(sys.error("no password supplied (--passwd ...)"))
+
+  val corpusRoot = argMap.get("corpus").flatMap(_.headOption)
+    .getOrElse(sys.error("no corpus path supplied (--corpus ...)"))
+
   def run(args: Array[String]): Unit = {
-    val dbname = args(0)
-    val passwd = args(1)
 
     val db = initReflowDB(dbname, passwd)
 
-    val corpus = initCorpus()
+    val corpus = Corpus(pwd / corpusRoot)
+
     val corpusAccessApi = CorpusAccessApi(db, corpus)
 
     replMain().run(

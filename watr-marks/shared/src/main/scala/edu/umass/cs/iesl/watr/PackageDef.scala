@@ -11,7 +11,11 @@ trait ScalaZCommonOps
     with std.ToOptionIdOps
     with std.ToOptionOps
 
-// extends ScalaZCommonOps with TypeTags {
+    // with syntax.ToEqualOps
+    // with std.ToListOps
+    // with syntax.ToTraverseOps
+
+
 trait PackageDefs extends ScalaZCommonOps {
 
   // val LB = watrmarks.StandardLabels
