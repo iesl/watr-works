@@ -270,8 +270,8 @@ class PageSegmenter(
 
       val finalGroups = groupCursor.unfoldBy { group =>
         if (!group.atEnd) {
-          val ins = group.focus.last.cloneCell()
-          Some(group.insertRight(ins.copy(char=' ')))
+          val ins = group.focus.last.createRightInsert(' ')
+          Some(group.insertRight(ins))
         } else {
           Some(group)
         }

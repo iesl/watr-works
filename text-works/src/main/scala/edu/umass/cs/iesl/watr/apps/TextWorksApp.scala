@@ -149,9 +149,7 @@ object TextWorksConfig {
                   val rtreeOutput = if (conf.writeRTrees) {
                     rtreeGroup.deleteGroupArtifacts()
                     Some(rtreeGroup.rootPath)
-                  } else {
-                    None
-                  }
+                  } else None
 
                   val ammPath = PathConversions.nioToAmm(docsegPath)
 

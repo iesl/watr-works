@@ -15,6 +15,7 @@ import utils.ExactFloats._
 import textreflow.data._
 import scala.concurrent.duration._
 import textgrid._
+import textboxing.{TextBoxing => TB}, TB._
 
 class LineFinder(
   mpageIndex: MultiPageIndex,
@@ -259,6 +260,33 @@ class LineFinder(
       gifBuilder.indicate(s"Top Atoms", topIntersections.map(_.bounds()), LB.PageAtomGrp)
       gifBuilder.indicate(s"Bottom Atoms", bottomIntersections.map(_.bounds()), LB.PageAtomGrp)
 
+
+      var dbgGrid = TB.Grid.widthAligned(
+        (1, AlignLeft),  // join indicator
+        (2, AlignLeft),  // char(s)
+        (6, AlignRight), // char.top
+        (1, AlignLeft),  // space
+        (6, AlignRight), // char.bottom
+        (1, AlignLeft),  // space
+        (6, AlignLeft), // labels
+        (1, AlignLeft)  // space
+      )
+
+      DocumentSegmenter.vtrace.ifTrace({
+        dbgGrid = dbgGrid.addRow(
+          "J",
+          "",
+          "Top|||",
+          "",
+          "Bottm|",
+          "",
+          "pins||",
+          ""
+        )
+        dbgGrid = dbgGrid.addRow(" ", "  ", "      ", " ", "      ", " ", "      ", " ")
+      })
+
+
       def fromComponents(ccs: Seq[Component]): TextGrid.Row = {
         new TextGrid.MutableRow { self =>
           val init = ccs.map{
@@ -270,7 +298,7 @@ class LineFinder(
                 val cell = TextGrid.PageItemCell(charAtom, Seq(), char)
 
                 val continuations = charAtom.char.tail.map { cn =>
-                  TextGrid.ContinuedCell(cn, cell)
+                  cell.createRightExpansion(cn)
                 }
 
                 val allCells: Seq[TextGrid.GridCell] = cell +: continuations
@@ -285,6 +313,23 @@ class LineFinder(
                   allCells.foreach{ _.addLabel(LB.Sub) }
                 } else {
                   gifBuilder.indicate(s"???Script", cc.bounds(), LB.PageAtomGrp)
+                }
+
+
+                DocumentSegmenter.vtrace.ifTrace {
+
+                  val pinChars = cell.pins.toList.map(_.pinChar).sorted.mkString
+
+                  dbgGrid = dbgGrid.addRow(
+                    " ",
+                    cell.char.toString(),
+                    cell.pageRegion.bbox.top.pp,
+                    "~",
+                    cell.pageRegion.bbox.bottom.pp,
+                    "~",
+                    pinChars,
+                    "."
+                  )
                 }
 
                 allCells
@@ -302,11 +347,14 @@ class LineFinder(
 
       val textRow = fromComponents(visualLineAtoms)
 
-      // Convert consecutive sup/sub to single label
-      val maybeCursor = textRow.groupBy { case (cell1, cell2) =>
-        cell1.labels.contains(LB.Sub) && cell2.labels.contains(LB.Sub)
+      DocumentSegmenter.vtrace.ifTrace {
+        println(dbgGrid.toBox().transpose())
       }
-      maybeCursor.foreach { nCursor =>
+
+      // Convert consecutive sup/sub to single label
+      textRow.groupBy { case (cell1, cell2) =>
+        cell1.labels.contains(LB.Sub) && cell2.labels.contains(LB.Sub)
+      }.foreach { nCursor =>
         nCursor.foreach{ c =>
           val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sub) }
           if (hasSubLabel) {
@@ -317,6 +365,21 @@ class LineFinder(
           }
         }
       }
+
+      textRow.groupBy { case (cell1, cell2) =>
+        cell1.labels.contains(LB.Sup) && cell2.labels.contains(LB.Sup)
+      }.foreach { nCursor =>
+        nCursor.foreach{ c =>
+          val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sup) }
+          if (hasSubLabel) {
+            c.focus.foreach { fcell =>
+              fcell.pins.remove(LB.Sup.U)
+            }
+            c.addLabel(LB.Sup)
+          }
+        }
+      }
+
 
       val spacedRow = insertSpacesInRow(textRow)
 
@@ -337,8 +400,10 @@ class LineFinder(
   def convertTextRowToTextReflow(textRow: TextGrid.Row): TextReflow = {
 
     val textReflowAtoms: Seq[TextReflow] = textRow.cells.map{ _ match {
-      case cell@ TextGrid.ContinuedCell(char, root) =>
-        Some(insert(char.toString()))
+      case cell@ TextGrid.LeftExpansionCell(char, root)  => Some(insert(char.toString()))
+      case cell@ TextGrid.RightExpansionCell(char, root) => Some(insert(char.toString()))
+      case cell@ TextGrid.LeftInsertCell(char, loc)      => Some(insert(char.toString()))
+      case cell@ TextGrid.RightInsertCell(char, loc)     => Some(insert(char.toString()))
 
       case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
         headItem match {
@@ -351,8 +416,6 @@ class LineFinder(
             Some(tr)
           case _ => None
         }
-      case cell@ TextGrid.InsertCell(char, loc) =>
-        Some(insert(char.toString()))
 
     }}.flatten
 

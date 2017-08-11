@@ -8,21 +8,6 @@ import watrmarks.{StandardLabels => LB}
 
 object DocumentIO  {
 
-  def textAndLineDefs(mpageIndex: MultiPageIndex): Unit = {
-
-    for {
-      pageNum      <- mpageIndex.getPages
-      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
-      readingOrder <- pageIndex.getClusters(LB.ReadingOrder)
-      (line, n)    <- readingOrder.zipWithIndex
-      textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
-    } yield {
-      textRow.cells
-      val text = textRow.toText()
-
-    }
-
-  }
 
   def documentToPlaintext(mpageIndex: MultiPageIndex): String = {
 
@@ -33,7 +18,32 @@ object DocumentIO  {
       (line, n)    <- readingOrder.zipWithIndex
       textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
     } yield {
-      val text = textRow.toText()
+      println(s"for text row ${textRow.toText()}")
+      // expand textRow to include any formatting options
+      val adjustedRow = textRow.sliding(1).map{ cursor =>
+        val finalCursor = cursor.unfoldBy { c =>
+          val focus = c.focus.head
+
+          val cur = if (focus.pins.contains(LB.Sub.B)) { c.insertLeft (focus.createLeftInsert('₍')).next
+          } else if (focus.pins.contains(LB.Sup.B))    { c.insertLeft (focus.createLeftInsert('⁽')).next
+          } else if (focus.pins.contains(LB.Sub.L))    { c.insertRight(focus.createRightInsert('₎')).some
+          } else if (focus.pins.contains(LB.Sup.L))    { c.insertRight(focus.createRightInsert('⁾')).some
+          } else if (focus.pins.contains(LB.Sub.U))    {
+            c.insertLeft(focus.createLeftInsert('₍')).next.get
+              .insertRight(focus.createRightInsert('₎')).some
+          } else if (focus.pins.contains(LB.Sup.U)) {
+            c.insertLeft(focus.createLeftInsert('⁽')).next.get
+              .insertRight(focus.createRightInsert('⁾')).some
+          } else {
+            c.some
+          }
+
+          cur
+        }
+        finalCursor.toRow
+      }
+
+      val text = adjustedRow.map(_.toText()).getOrElse("<error error>")
       text
     }
 

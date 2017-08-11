@@ -7,15 +7,6 @@ import geometry._
 import scalaz.{@@ => _, _} , Scalaz._
 import utils.SlicingAndDicing._
 
-// import geometry.syntax._
-// import utils.{RelativeDirection => Dir}
-// import utils.ExactFloats._
-
-// case class BioNode(
-//   component: Component,
-//   pins: mutable.Set[BioPin] =  mutable.Set()
-// )
-
 sealed trait FontInfo
 
 case object NoFonts extends FontInfo
@@ -26,12 +17,6 @@ object TextGrid {
 
   sealed trait GridCell {
     def pageRegion: PageRegion
-
-    // def location: Point
-    // def bounds: LTBounds = LTBounds(
-    //   location.x, location.y,
-    //   0.toFloatExact, 0.toFloatExact
-    // )
 
     def char: Char
 
@@ -45,7 +30,8 @@ object TextGrid {
 
     def addLabel(l: Label): Unit = addPin(l.U)
 
-    def cloneCell(): InsertCell = InsertCell(char, pageRegion)
+    def createLeftInsert(ch: Char): InsertCell = LeftInsertCell(ch, this)
+    def createRightInsert(ch: Char): InsertCell = RightInsertCell(ch, this)
 
   }
 
@@ -53,34 +39,53 @@ object TextGrid {
     headItem: PageItem,
     tailItems: Seq[PageItem] = Seq(),
     override val char: Char,
-    floc: (PageItem, Seq[PageItem]) => PageRegion = (h, _) => h.pageRegion
+    regionFunc: (PageItem, Seq[PageItem]) => PageRegion = (h, _) => h.pageRegion
   ) extends GridCell {
 
-    override val pageRegion: PageRegion = floc(headItem, tailItems)
+    override val pageRegion: PageRegion = regionFunc(headItem, tailItems)
+
+    def createLeftExpansion(ch: Char): ExpansionCell = LeftExpansionCell(ch, this)
+    def createRightExpansion(ch: Char): ExpansionCell = RightExpansionCell(ch, this)
   }
 
-  case class ContinuedCell(
-    override val char: Char,
+  abstract class ExpansionCell(
+    char: Char,
     root: PageItemCell
   ) extends GridCell {
     override val pageRegion: PageRegion = root.pageRegion
+    // TODO override addPin() = root.addPin()
   }
 
-  case class InsertCell(
+  case class LeftExpansionCell(
     override val char: Char,
-    override val pageRegion: PageRegion
-  ) extends GridCell
+    root: PageItemCell
+  ) extends ExpansionCell(char, root)
+
+  case class RightExpansionCell(
+    override val char: Char,
+    root: PageItemCell
+  ) extends ExpansionCell(char, root)
 
 
-  /*
-   Serialization:
-   "the quick brown"  => [[bb], [bb], [bb], " ", ]
-   "ll" => [[bb0], [bb0]  ]
-   "Fe_{3}" => [[bb], [bb], "_", "{", [bb], "}" ]
-   "plann-"
-   "ing"
-   "planning" => [....['h', [bb]],...]
-   */
+  abstract class InsertCell(
+    char: Char,
+    root: GridCell
+  ) extends GridCell {
+    override val pageRegion: PageRegion = root.pageRegion
+    // TODO override addPin() = root.addPin()
+  }
+
+  case class LeftInsertCell(
+    override val char: Char,
+    root: GridCell
+  ) extends InsertCell(char, root)
+
+  case class RightInsertCell(
+    override val char: Char,
+    root: GridCell
+  ) extends InsertCell(char, root)
+
+
   trait Row {
     def cells: Seq[GridCell]
 
@@ -104,6 +109,15 @@ object TextGrid {
     }
 
     def toText(): String = {
+
+      // cells.map { _ match {
+      //   case cell@ TextGrid.LeftExpansionCell(char, root)  => char.toString()
+      //   case cell@ TextGrid.RightExpansionCell(char, root) => char.toString()
+      //   case cell@ TextGrid.LeftInsertCell(char, loc)      => char.toString()
+      //   case cell@ TextGrid.RightInsertCell(char, loc)     => char.toString()
+      //   case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+      // }}
+
       cells.map(_.char).mkString("")
     }
   }
@@ -138,6 +152,8 @@ object TextGrid {
     def focus: Seq[GridCell]
     def next: Option[Cursor]
     def prev: Option[Cursor]
+
+    def move(n: Int): Option[Cursor]
 
     def insertRight(g: GridCell): Cursor
     def insertLeft(g: GridCell): Cursor
@@ -206,7 +222,7 @@ object TextGrid {
     def atStart: Boolean = zipper.atStart
     def atEnd: Boolean = zipper.atEnd
 
-    def move(n: Int): Option[ZipCursor] =
+    def move(n: Int): Option[Cursor] =
       ZipCursor.init{ zipper.move(n) }
 
     def toRow: Row = {
