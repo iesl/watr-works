@@ -103,8 +103,6 @@ object TextWorksConfig {
     } text ("write the computed rtrees to disk")
 
 
-
-
     note("\nOutput text layout options: \n")
 
     opt[OutputOption]('p', "layout-option") action { (v, conf) =>
@@ -115,17 +113,15 @@ object TextWorksConfig {
     checkConfig{ c =>
       if (c.ioConfig.inputMode.isEmpty) {
         failure("Invalid input options")
-      }
-      // else if (c.ioConfig.outputMode.isEmpty) {
-      //   failure("Invalid output options")
-      // }
-      else success
+      } else success
     }
   }
 
   def setAction(conf: Config, action: (Config) => Unit): Config = {
     conf.copy(exec=Option(action))
   }
+
+
 
   def extractText(conf: Config): Unit = {
     val ioOpts = new IOOptionParser(conf.ioConfig)
@@ -142,22 +138,24 @@ object TextWorksConfig {
               case InputMode.CorpusFile(_, Some(corpusEntry)) =>
 
                 val stableId = DocumentID(corpusEntry.entryDescriptor)
+
                 for {
-                  tryPdf <- corpusEntry.getPdfArtifact
-                  pdf <- tryPdf.asPath
+                  pdfEntry <- corpusEntry.getPdfArtifact
+                  pdfPath <- pdfEntry.asPath
+                  docsegPath <- ioOpts.maybeProcess(corpusEntry, "docseg.json")
                 } {
+                  val rtreeGroup = corpusEntry.ensureArtifactGroup("rtrees")
 
-                  val outfile = nio.Paths.get("docseg.json")
+                  val rtreeOutput = if (conf.writeRTrees) {
+                    rtreeGroup.deleteGroupArtifacts()
+                    Some(rtreeGroup.rootPath)
+                  } else {
+                    None
+                  }
 
-                  val rtreePath = corpusEntry.ensureArtifactGroup("rtrees").rootPath
-                  val rtreeOutput = if (conf.writeRTrees)  Some(rtreePath) else None
+                  val ammPath = PathConversions.nioToAmm(docsegPath)
 
-                  val outPath = fs.Path(
-                    fs.FilePath.apply(outfile),
-                    corpusEntry.artifactsRoot
-                  )
-
-                  TextWorksActions.extractText(stableId, pdf, outPath, rtreeOutput)
+                  TextWorksActions.extractText(stableId, pdfPath, ammPath, rtreeOutput)
                 }
             }
           } catch {
@@ -167,60 +165,7 @@ object TextWorksConfig {
       }
 
 
-
-    // val fsStream = for {
-    //   pdfFile <- ioOpts.inputStream()
-    // } yield {
-    //   pdfFile match {
-    //     case InputMode.SingleFile(f) =>
-    //     case InputMode.CorpusFile(_, Some(corpusEntry)) =>
-
-    //       val stableId = DocumentID(corpusEntry.entryDescriptor)
-    //       for {
-    //         tryPdf <- corpusEntry.getPdfArtifact
-    //         pdf <- tryPdf.asPath
-    //       } {
-
-    //         val outfile = nio.Paths.get("docseg.json")
-
-    //         val rtreePath = corpusEntry.ensureArtifactGroup("rtrees").rootPath
-    //         val rtreeOutput = if (conf.writeRTrees)  Some(rtreePath) else None
-
-    //         val outPath = fs.Path(
-    //           fs.FilePath.apply(outfile),
-    //           corpusEntry.artifactsRoot
-    //         )
-
-    //         TextWorksActions.extractText(stableId, pdf, outPath, rtreeOutput)
-    //       }
-    //   }
-
-    // }
-
     fsStream.run.unsafeRun()
-
-    // for { pdfFile <- ioOpts.inputPaths() } {
-
-    //   val filename = FilePath(pdfFile).last
-
-    //   val inputPdf = pwd / RelPath(pdfFile)
-
-    //   ioOpts.withOutputFile(inputPdf) { outfile =>
-
-    //     val stableId = DocumentID(filename)
-
-    //     var rtreeOutput: Option[fs.Path] = None
-
-    //     if (conf.writeRTrees) {
-    //         ioOpts.withOutputDir(inputPdf, "rtrees") { rtreeRootPath =>
-    //           rtreeOutput = Some(rtreeRootPath)
-    //         }
-    //     }
-
-    //     TextWorksActions.extractText(stableId, inputPdf, outfile, rtreeOutput)
-
-    // }
-    // }
   }
 }
 

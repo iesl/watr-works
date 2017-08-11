@@ -150,6 +150,8 @@ class CorpusEntry(
   val corpus: Corpus
 ) {
 
+  val artifactsRoot = corpus.corpusRoot / RelPath(entryDescriptor)
+
   override val toString = {
     s"${corpus}/./${entryDescriptor}"
   }
@@ -158,39 +160,59 @@ class CorpusEntry(
     artifactsRoot.toIO.toURI()
   }
 
-  val artifactsRoot = corpus.corpusRoot / RelPath(entryDescriptor)
 
   val entryDescriptorRoot = {
     entryDescriptor.dropRight(2)
   }
 
   def getArtifacts(): Seq[String] = {
-    val allFiles = ls! artifactsRoot
+    val allFiles = ls(artifactsRoot)
+      .filter(fs.stat(_).isFile)
 
     allFiles.map(_.name)
   }
 
-  def putArtifactBytes(artifactDescriptor: String, content: Array[Byte], groupDescriptor: String = "."): CorpusArtifact = {
-    val outputPath = artifactsRoot / RelPath(groupDescriptor) / RelPath(artifactDescriptor)
+  def resolveArtifact(artifactDescriptor: String, groupDescriptor: Option[String]): CorpusArtifact = {
+    groupDescriptor.map { grp =>
+      new CorpusArtifact(artifactDescriptor, Left(
+        new CorpusArtifactGroup(grp, this)
+      ))
+    } getOrElse {
+      new CorpusArtifact(artifactDescriptor, Right(this))
+    }
+  }
+
+  def resolveArtifactPath(artifactDescriptor: String, groupDescriptor: Option[String]): fs.Path = {
+    groupDescriptor.map{group =>
+      artifactsRoot / group / artifactDescriptor
+    } getOrElse {
+      artifactsRoot / artifactDescriptor
+    }
+  }
+
+  def putArtifactBytes(artifactDescriptor: String, content: Array[Byte], groupDescriptor: Option[String]=None): CorpusArtifact = {
+    val outputPath = resolveArtifactPath(artifactDescriptor, groupDescriptor)
     if (fs.exists(outputPath)) {
       fs.rm(outputPath)
     }
     write(outputPath, content)
-    val group = new CorpusArtifactGroup(groupDescriptor, this)
-    new CorpusArtifact(artifactDescriptor, group)
+
+    resolveArtifact(artifactDescriptor, groupDescriptor)
   }
 
-  def putArtifact(artifactDescriptor: String, content: String, groupDescriptor: String = "."): CorpusArtifact = {
-    val outputPath = artifactsRoot / RelPath(groupDescriptor) / RelPath(artifactDescriptor)
+  def putArtifact(artifactDescriptor: String, content: String, groupDescriptor: Option[String]=None): CorpusArtifact = {
+    val outputPath = resolveArtifactPath(artifactDescriptor, groupDescriptor)
     write(outputPath, content)
-    val group = new CorpusArtifactGroup(groupDescriptor, this)
-    new CorpusArtifact(artifactDescriptor, group)
+    resolveArtifact(artifactDescriptor, groupDescriptor)
   }
 
-  def getArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Option[CorpusArtifact] = {
+  def getArtifactPath(artifactDescriptor: String, groupDescriptor: Option[String]=None): fs.Path = {
+    resolveArtifactPath(artifactDescriptor, groupDescriptor)
+  }
+
+  def getArtifact(artifactDescriptor: String, groupDescriptor: Option[String]=None): Option[CorpusArtifact] = {
     if (hasArtifact(artifactDescriptor, groupDescriptor)) {
-      val group = new CorpusArtifactGroup(groupDescriptor, this)
-      (new CorpusArtifact(artifactDescriptor, group)).some
+      Option(resolveArtifact(artifactDescriptor, groupDescriptor))
     } else None
   }
 
@@ -208,42 +230,32 @@ class CorpusEntry(
     group
   }
 
-  def deleteArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Unit = {
-    val artifact = new CorpusArtifact(artifactDescriptor,
-      new CorpusArtifactGroup(groupDescriptor, this)
-    )
-
-    artifact.delete
+  def deleteArtifact(artifactDescriptor: String, groupDescriptor: Option[String]=None): Unit = {
+    val p = getArtifactPath(artifactDescriptor, groupDescriptor)
+    if (fs.exists(p) && fs.stat(p).isFile) {
+      fs.rm(p)
+    }
   }
 
-  def stashArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Option[Path] = {
-    val artifact = new CorpusArtifact(artifactDescriptor,
-      new CorpusArtifactGroup(groupDescriptor, this)
-    )
-    artifact.stash
-  }
+  // def stashArtifact(artifactDescriptor: String, groupDescriptor: Option[String]=None): Option[Path] = {
+  //   val artifact = new CorpusArtifact(artifactDescriptor,
+  //     new CorpusArtifactGroup(groupDescriptor, this)
+  //   )
+  //   artifact.stash
+  // }
 
   def hasArtifactGroup(groupDescriptor: String): Boolean ={
     exists(artifactsRoot / RelPath(groupDescriptor))
   }
 
-  def hasArtifact(artifactDescriptor: String, groupDescriptor: String = "."): Boolean ={
+  def hasArtifact(artifactDescriptor: String, groupDescriptor: Option[String]=None): Boolean ={
     exists(artifactsRoot / RelPath(artifactDescriptor))
   }
 
   def getPdfArtifact(): Option[CorpusArtifact] = {
-    getArtifacts
-      .filter(_.endsWith(".pdf"))
+    getArtifacts.filter(_.endsWith(".pdf"))
       .headOption
-      .map({ name =>
-        new CorpusArtifact(name, new CorpusArtifactGroup(".", this))
-      })
-  }
-
-  def getSvgArtifact(): CorpusArtifact = {
-    new CorpusArtifact(s"${entryDescriptorRoot}.svg",
-        new CorpusArtifactGroup(".", this)
-    )
+      .flatMap { getArtifact(_, None) }
   }
 
 }
@@ -260,42 +272,49 @@ class CorpusArtifactGroup(
     s"${entry}/${groupDescriptor}"
   }
 
+  def deleteGroupArtifacts(): Unit = {
+    ls(rootPath)
+      .foreach(fs.rm(_))
+  }
+
   def putArtifactBytes(artifactDescriptor: String, content: Array[Byte]): CorpusArtifact = {
-    entry.putArtifactBytes(artifactDescriptor, content, groupDescriptor)
+    entry.putArtifactBytes(artifactDescriptor, content, Some(groupDescriptor))
   }
 
   def putArtifact(artifactDescriptor: String, content: String): CorpusArtifact = {
-    entry.putArtifact(artifactDescriptor, content, groupDescriptor)
+    putArtifactBytes(artifactDescriptor, content.getBytes)
   }
 
   def getArtifact(artifactDescriptor: String): Option[CorpusArtifact] = {
-    entry.getArtifact(artifactDescriptor, groupDescriptor)
+    entry.getArtifact(artifactDescriptor, Some(groupDescriptor))
   }
 
   def getArtifacts(): Seq[CorpusArtifact] = {
-    ls(rootPath)
-      .sortBy(_.name)
-      .map(path => new CorpusArtifact(path.name, this))
+    ls(rootPath).sortBy(_.name)
+      .map(path => new CorpusArtifact(path.name, Left(this)))
   }
 
 }
 
 class CorpusArtifact(
   val artifactDescriptor: String,
-  val group: CorpusArtifactGroup
+  val grouping: Either[CorpusArtifactGroup, CorpusEntry]
 ) {
   private[this] val log = org.log4s.getLogger
 
-  def rootPath = group.rootPath
+  def rootPath = grouping.fold(
+    group => group.rootPath,
+    entry => entry.artifactsRoot
+  )
 
-  def descriptor = s"""${group.descriptor}/${artifactDescriptor}"""
+  def descriptor = grouping.fold(
+    group => s"""${group.descriptor}/${artifactDescriptor}""",
+    entry => s"""${artifactDescriptor}"""
+  )
 
   def artifactPath = rootPath / artifactDescriptor
 
-  override val toString = {
-    s"${group}/${artifactDescriptor}"
-  }
-
+  override val toString = descriptor
 
   def exists(): Boolean = {
     fs.exists(artifactPath)
@@ -308,8 +327,8 @@ class CorpusArtifact(
   import utils.PathUtils._
 
   def stash(): Option[Path] = {
-    val fileWithTimestamp = appendTimestamp(artifactPath.segments.last)
-    val stashedName = group.rootPath / fileWithTimestamp
+    val fileWithTimestamp = appendTimestamp(artifactDescriptor)
+    val stashedName = rootPath / fileWithTimestamp
     log.trace(s"stashing ${artifactPath} as ${stashedName}")
     fs.mv(artifactPath, stashedName)
     Some(stashedName)
