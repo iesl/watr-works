@@ -259,27 +259,27 @@ class PageSegmenter(
 
     val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
 
-    val maybeGroups = textRow.groupBy { (c1, c2) =>
-      val pairwiseDist = c2.pageRegion.bbox.left - c1.pageRegion.bbox.right
-      // println(s"group? ${c1} <--> ${c2}  iff ${pairwiseDist} <?< ${splitValue}")
-      pairwiseDist < splitValue
-    }
+    textRow.toCursor().map{cx =>
+      val finalRow = cx.foreachC { ncur =>
 
+        // println(s"at ncur = ${ncur.focus.char}")
 
-    maybeGroups.map { groupCursor =>
-
-      val finalGroups = groupCursor.unfoldBy { group =>
-        if (!group.atEnd) {
-          val ins = group.focus.last.createRightInsert(' ')
-          Some(group.insertRight(ins))
-        } else {
-          Some(group)
+        val wordWin = ncur.toWindow.slurpRight{ case (win, cell) =>
+          val pairwiseDist = cell.pageRegion.bbox.left - win.last.pageRegion.bbox.right
+          pairwiseDist < splitValue
         }
+
+        // println(s"  win=. ${wordWin.debugString}")
+
+        if (!wordWin.atEnd) {
+          wordWin.extendRight(' ').toLastCursor.some
+        } else None //  wordWin.nextCursor()
+
       }
+      // println(s"finalRow. ${finalRow.cells.map(_.char).mkString}")
+      finalRow
 
-      finalGroups.toRow
     } getOrElse { textRow }
-
   }
 
   def deleteComponentsWithLabel(l: Label): Unit = {

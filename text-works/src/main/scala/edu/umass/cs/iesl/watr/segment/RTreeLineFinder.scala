@@ -3,6 +3,7 @@ package segment
 
 import spindex._
 
+
 import watrmarks.{StandardLabels => LB, _}
 
 import geometry._
@@ -352,33 +353,46 @@ class LineFinder(
       }
 
       // Convert consecutive sup/sub to single label
-      textRow.groupBy { case (cell1, cell2) =>
-        cell1.labels.contains(LB.Sub) && cell2.labels.contains(LB.Sub)
-      }.foreach { nCursor =>
-        nCursor.foreach{ c =>
-          val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sub) }
-          if (hasSubLabel) {
-            c.focus.foreach { fcell =>
-              fcell.pins.remove(LB.Sub.U)
+      def relabel(c: TextGrid.Cursor, l: Label): Unit = {
+         c.findNext(_.hasLabel(l))
+           .map{ cur =>
+               val win = cur.slurpRight(_.hasLabel(l))
+               win.removePins(l)
+               win.addLabel(l)
+               win.nextCursor().foreach(relabel(_, l))
             }
-            c.addLabel(LB.Sub)
-          }
-        }
       }
 
-      textRow.groupBy { case (cell1, cell2) =>
-        cell1.labels.contains(LB.Sup) && cell2.labels.contains(LB.Sup)
-      }.foreach { nCursor =>
-        nCursor.foreach{ c =>
-          val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sup) }
-          if (hasSubLabel) {
-            c.focus.foreach { fcell =>
-              fcell.pins.remove(LB.Sup.U)
-            }
-            c.addLabel(LB.Sup)
-          }
-        }
-      }
+      textRow.toCursor().foreach { c => relabel(c, LB.Sub) }
+      textRow.toCursor().foreach { c => relabel(c, LB.Sup) }
+
+      // textRow.groupBy { case (cell1, cell2) =>
+      //   cell1.labels.contains(LB.Sub) && cell2.labels.contains(LB.Sub)
+      // }.foreach { nCursor =>
+      //   nCursor.foreach{ c =>
+      //     val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sub) }
+      //     if (hasSubLabel) {
+      //       c.focus.foreach { fcell =>
+      //         fcell.pins.remove(LB.Sub.U)
+      //       }
+      //       c.addLabel(LB.Sub)
+      //     }
+      //   }
+      // }
+
+      // textRow.groupBy { case (cell1, cell2) =>
+      //   cell1.labels.contains(LB.Sup) && cell2.labels.contains(LB.Sup)
+      // }.foreach { nCursor =>
+      //   nCursor.foreach{ c =>
+      //     val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sup) }
+      //     if (hasSubLabel) {
+      //       c.focus.foreach { fcell =>
+      //         fcell.pins.remove(LB.Sup.U)
+      //       }
+      //       c.addLabel(LB.Sup)
+      //     }
+      //   }
+      // }
 
 
       val spacedRow = insertSpacesInRow(textRow)

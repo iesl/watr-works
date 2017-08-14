@@ -18,33 +18,29 @@ object DocumentIO  {
       (line, n)    <- readingOrder.zipWithIndex
       textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
     } yield {
-      println(s"for text row ${textRow.toText()}")
       // expand textRow to include any formatting options
-      val adjustedRow = textRow.sliding(1).map{ cursor =>
-        val finalCursor = cursor.unfoldBy { c =>
-          val focus = c.focus.head
+      val adjustedRow = textRow.toCursor().map { cursor =>
+        val finalCursor = cursor.foreachC { c =>
 
-          val cur = if (focus.pins.contains(LB.Sub.B)) { c.insertLeft (focus.createLeftInsert('₍')).next
-          } else if (focus.pins.contains(LB.Sup.B))    { c.insertLeft (focus.createLeftInsert('⁽')).next
-          } else if (focus.pins.contains(LB.Sub.L))    { c.insertRight(focus.createRightInsert('₎')).some
-          } else if (focus.pins.contains(LB.Sup.L))    { c.insertRight(focus.createRightInsert('⁾')).some
-          } else if (focus.pins.contains(LB.Sub.U))    {
-            c.insertLeft(focus.createLeftInsert('₍')).next.get
-              .insertRight(focus.createRightInsert('₎')).some
-          } else if (focus.pins.contains(LB.Sup.U)) {
-            c.insertLeft(focus.createLeftInsert('⁽')).next.get
-              .insertRight(focus.createRightInsert('⁾')).some
-          } else {
-            c.some
-          }
+          val focus = c.focus
+
+          val cur = if      (focus.hasPin(LB.Sub.B))  { c.insertCharLeft ('₍').next }
+                    else if (focus.hasPin(LB.Sub.L))  { c.insertCharRight('₎').some }
+                    else if (focus.hasPin(LB.Sub.U))  { c.insertCharLeft('₍').next.get.insertCharRight('₎').some }
+                    else if (focus.hasPin(LB.Sup.B))  { c.insertCharLeft ('⁽').next }
+                    else if (focus.hasPin(LB.Sup.L))  { c.insertCharRight('⁾').some }
+                    else if (focus.hasPin(LB.Sup.U))  { c.insertCharLeft('⁽').next.get.insertCharRight('⁾').some }
+                    else { c.some }
+
 
           cur
         }
-        finalCursor.toRow
+        finalCursor
       }
 
       val text = adjustedRow.map(_.toText()).getOrElse("<error error>")
       text
+
     }
 
     textlines.mkString("\n")
@@ -86,9 +82,9 @@ object DocumentIO  {
 
     val textLines = textAndJsons.map(_._1)
     val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")( textLines.map(t => Json.stringify(JsString(t)).box):_*))
-    val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
+    // val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
 
-    val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
+    // val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
 
     // val relations = serializeRelation(mpageIndex)
 
@@ -292,4 +288,3 @@ object DocumentIO  {
 //     .filter(p => p.label==lb)
 //     .head
 // }
-
