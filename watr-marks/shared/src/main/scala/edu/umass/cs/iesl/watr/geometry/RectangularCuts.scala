@@ -8,7 +8,6 @@ import TypeTags._
 
 trait RectangularCuts {
 
-
   class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
 
     def burstAllAdjacent(): (Option[LTBounds], Seq[LTBounds]) = {
@@ -178,6 +177,21 @@ trait RectangularCuts {
         Some(LTBounds(left+leftWidth, top, width-leftWidth, height))
       } else None
       (maybeLeft, maybeRight)
+    }
+
+    def sliceHorizontal(n: Int): Seq[LTBounds] = {
+      val LTBounds(_, top, _, height) = self
+      val sliceHeight: Int@@FloatRep = height / n
+      // println(s"sliceHorizontal($n): ${self}")
+
+      val slices = (1 until n).map{ i =>
+        val sliceAt = top + sliceHeight * i
+        val split = splitHorizontal(sliceAt)
+        // println(s"    sliceAt($sliceAt) = ${split}")
+        split
+      }
+
+      slices.map(_._1.get) :+ slices.last._2.get
     }
 
     def splitHorizontal(y: Int@@FloatRep): (Option[LTBounds], Option[LTBounds]) = {

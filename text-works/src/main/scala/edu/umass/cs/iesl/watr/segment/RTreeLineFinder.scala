@@ -3,7 +3,6 @@ package segment
 
 import spindex._
 
-
 import watrmarks.{StandardLabels => LB, _}
 
 import geometry._
@@ -247,17 +246,26 @@ class LineFinder(
       gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
       gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
 
-      val topLine = visualLineModalBounds.toLine(Dir.Top) // .translate(y=0.5)
-      val bottomLine =  visualLineModalBounds.toLine(Dir.Bottom) // .translate(y = -0.5)
+      // top 1/3  & bottom 1/3 ==> centered
 
-      val topIntersections = pageIndex.rtreeSearchLineHasLabel(topLine, LB.PageAtomGrp)
-      val bottomIntersections = pageIndex.rtreeSearchLineHasLabel(bottomLine, LB.PageAtomGrp)
+      val slices = visualLineBounds.sliceHorizontal(3)
+      val Seq(topSlice, middleSlice, bottomSlice) = slices
+
+
+      // val topLine = visualLineModalBounds.toLine(Dir.Top).translate(y=0.5)
+      // val bottomLine =  visualLineModalBounds.toLine(Dir.Bottom).translate(y = -0.5)
+
+      // val topIntersections = pageIndex.rtreeSearchLineHasLabel(topLine, LB.PageAtomGrp)
+      // val bottomIntersections = pageIndex.rtreeSearchLineHasLabel(bottomLine, LB.PageAtomGrp)
+      val topIntersections = pageIndex.rtreeSearchHasLabel(topSlice, LB.PageAtomGrp)
+      val bottomIntersections = pageIndex.rtreeSearchHasLabel(bottomSlice, LB.PageAtomGrp)
+      val middleIntersections = pageIndex.rtreeSearchHasLabel(middleSlice, LB.PageAtomGrp)
 
       val topIntersects = topIntersections.map(_.id)
       val bottomIntersects = bottomIntersections.map(_.id)
 
-      gifBuilder.indicate(s"Top intersection Line", topLine.bounds(), LB.PageAtomGrp)
-      gifBuilder.indicate(s"Bottom intersection Line", bottomLine.bounds(), LB.PageAtomGrp)
+      // gifBuilder.indicate(s"Top intersection Line", topLine.bounds(), LB.PageAtomGrp)
+      // gifBuilder.indicate(s"Bottom intersection Line", bottomLine.bounds(), LB.PageAtomGrp)
       gifBuilder.indicate(s"Top Atoms", topIntersections.map(_.bounds()), LB.PageAtomGrp)
       gifBuilder.indicate(s"Bottom Atoms", bottomIntersections.map(_.bounds()), LB.PageAtomGrp)
 

@@ -262,21 +262,16 @@ class PageSegmenter(
     textRow.toCursor().map{cx =>
       val finalRow = cx.foreachC { ncur =>
 
-        // println(s"at ncur = ${ncur.focus.char}")
-
         val wordWin = ncur.toWindow.slurpRight{ case (win, cell) =>
           val pairwiseDist = cell.pageRegion.bbox.left - win.last.pageRegion.bbox.right
           pairwiseDist < splitValue
         }
 
-        // println(s"  win=. ${wordWin.debugString}")
-
         if (!wordWin.atEnd) {
           wordWin.extendRight(' ').toLastCursor.some
-        } else None //  wordWin.nextCursor()
+        } else None
 
       }
-      // println(s"finalRow. ${finalRow.cells.map(_.char).mkString}")
       finalRow
 
     } getOrElse { textRow }
