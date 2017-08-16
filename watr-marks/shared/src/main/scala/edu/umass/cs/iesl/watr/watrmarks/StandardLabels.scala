@@ -9,8 +9,6 @@ trait DocSegLabels {
 
   val DocumentPages = Label("document-pages")
   val DocumentPage = Label("document-page")
-  val PageLines = Label("ds", "page-lines")
-  val PageTextBlocks = Label("ds", "page-textblocks")
   val Column = Label("ds", "column")
 
   val SectionHeadingLine = Label("ds", "section-heading-line")
@@ -37,25 +35,16 @@ trait DocSegLabels {
 
   val VisualLine = Label("ds", "visual-line")
   val VisualLines = Label("ds", "visual-lines")
-  val NotClustered = Label("NotClustered")
 
   val VisualLineModal = Label("ds", "visual-line-modal")
   val SemanticLine = Label("ds", "semantic-line")
 
 
-  val TokenizedLine = Label("ds", "tline")
-
   val Token = Label("ds", "token")
-  // val WhitespaceSep = Label("ws-sep")
-  val WhitespaceAfter = Label("ws-after")
-  val WhitespaceBefore = Label("ws-before")
 
   val Tokenized = Label("ds", "tokenized")
-  val LineBreakToken = Label("ds", "lb-token")
-  val Invisible = Label("ds", "invisible")
   val Sup = Label("ds", "sup-script")
   val Sub = Label("ds", "sub-script")
-  val CenterScript = Label("ds", "ctr-script")
 
   val NoteMarkers = Label("note-markers")
   val NoteMarker = Label("note-marker")
@@ -63,12 +52,6 @@ trait DocSegLabels {
   val PageAtom = Label("atom")
   val PageAtomGrp = Label("atom-grp")
   val PageAtomTmp = Label("atom-tmp")
-
-  // val First = Label("first")
-  // val Last = Label("last")
-
-  val Annotation = Label("ds", "annotation")
-
 
 
   // Page Segmentation Labels
@@ -80,8 +63,16 @@ trait DocSegLabels {
   val HPageDivider           = Label("HPageDivider")
   val WhitespaceColBottom    = Label("WhitespaceColBottom")
   val Marked                 = Label("Marked")
-  val ReadingBlock           = Label("ReadingBlock")
-  val ReadingOrder           = Label("ReadingOrder")
+
+
+  // Ordering for blocks/lines on page
+  val ReadingBlock         = Label("ReadingBlock")
+  val ReadingBlocks        = Label("ReadingBlocks")
+  val ReadingBlockLines    = Label("ReadingBlockLines")
+  val PageLines            = Label("PageLines")
+
+  // val BlockReadingOrder      = Label("BlockReadingOrder")
+  // val ReadingOrder           = Label("ReadingOrder")
 
   // Drawn path lines
   val PathBounds             = Label("PathBounds")

@@ -129,6 +129,14 @@ class PageIndex(
     } getOrElse(Seq())
   }
 
+  def getClusterMembers(l: Label, cc: Component): Option[Seq[Component]] = {
+    disjointSets.get(l).map{set =>
+      set.sets.toSeq.map(_.toSeq)
+        .filter(_.contains(cc))
+        .headOption
+    } getOrElse(None)
+  }
+
   def getClusterRoots(l: Label): Seq[Component] = {
     disjointSets.get(l).map{set =>
       set.sets.toSeq.map(_.toSeq)

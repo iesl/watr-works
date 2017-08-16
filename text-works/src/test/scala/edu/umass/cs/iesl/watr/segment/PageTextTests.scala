@@ -59,7 +59,7 @@ class PageTextTest extends DocsegTestUtil  {
          |""".stripMargin
     }
 
-    val (docId, path) = allTestPdfs(0)
+    val (docId, path) = allTestPdfs(1)
 
     // tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Print
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)

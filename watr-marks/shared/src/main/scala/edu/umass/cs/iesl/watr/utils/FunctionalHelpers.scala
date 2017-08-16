@@ -30,4 +30,7 @@ object FunctionalHelpers {
   def orDefault[A, B](default: B)(f: A => Option[B]): A => B =
     expr => f(expr).getOrElse(default)
 
+  def liftSeq[A](a: A): Seq[A] = { Seq(a) }
+  def liftOpt[A](a: A): Option[A] = { Option(a) }
+
 }

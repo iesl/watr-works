@@ -15,6 +15,7 @@ object TextGrid {
   type SetType[A] = mutable.Set[A]
   type PinSet = SetType[BioPin]
 
+
   sealed trait GridCell {
     def pageRegion: PageRegion
 
@@ -113,6 +114,42 @@ object TextGrid {
     def toText(): String = {
       cells.map(_.char).mkString("")
     }
+
+
+    def serialize(props: SerializationProps): Int = {
+
+      val lineCells = cells.map{ _ match {
+        case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+          val items = (headItem +: tailItems).map{ pageItem =>
+            val page = pageItem.pageRegion.page
+            if (!props.pageIdMap.contains(page.pageId)) {
+              props.pageIdMap.put(page.pageId, (page.stableId, page.pageNum))
+            }
+            val LTBounds.IntReps(l, t, w, h) = pageItem.pageRegion.bbox
+            s"""[${page.pageId}, [$l, $t, $w, $h]]"""
+          }
+
+          items.mkString("[", ",", "]")
+        case cell@ TextGrid.LeftExpansionCell(char, root)  => '"'+"el"+'"'
+        case cell@ TextGrid.RightExpansionCell(char, root) => '"'+"er"+'"'
+        case cell@ TextGrid.LeftInsertCell(char, root)     => '"'+"il"+'"'
+        case cell@ TextGrid.RightInsertCell(char, root)    => '"'+"ir"+'"'
+      }}
+
+      val lineDefStr = lineCells.mkString(",")
+      val lineDef = s"""[${lineDefStr}]"""
+      val lineNum = props.nextLineNum
+      props.lineMap.put(lineNum, (lineDef, toText))
+      lineNum
+    }
+
+  }
+
+  class SerializationProps {
+    val pageIdMap = mutable.Map[Int@@PageID, (String@@DocumentID, Int@@PageNum)]()
+    val lineMap = mutable.Map[Int, (String, String)]()
+
+    def nextLineNum: Int = if (lineMap.keySet.isEmpty) 0 else lineMap.keySet.max + 1
   }
 
   // trait Grid {}
@@ -126,6 +163,8 @@ object TextGrid {
     def fromCells(init: Seq[GridCell]): Row = new MutableRow {
       cells.appendAll(init)
     }
+
+
   }
 
 
@@ -262,21 +301,13 @@ object TextGrid {
       }
     }
 
-    // def slurpRight(f: GridCell => Boolean): Window = {}
-
-    def unfoldBy(f: Cursor => Option[Cursor]): Cursor  = {
-      f(self)
-        .flatMap(_.next.map(_.unfoldBy(f)))
-        .getOrElse(self)
-    }
-
-    def foreach(f: Cursor => Unit): Unit  = {
-      f(this)
-      next match {
-        case Some(n) => n.foreach(f)
-        case None => ()
-      }
-    }
+    // def foreach(f: Cursor => Unit): Unit  = {
+    //   f(this)
+    //   next match {
+    //     case Some(n) => n.foreach(f)
+    //     case None => ()
+    //   }
+    // }
 
     def toRow: Row
 

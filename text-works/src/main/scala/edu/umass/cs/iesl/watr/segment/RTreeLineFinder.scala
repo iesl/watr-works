@@ -53,6 +53,11 @@ class LineFinder(
 
     val orderedRegions = findReadingOrder(pageGeometry)
 
+    val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
+    pageIndex.addCluster(LB.ReadingBlocks, readingBlocks)
+
+
+
     // vis.writeRTreeImage("06-ReadingOrder", LB.LineByHash, stdLabels():_*)
 
     // TODO extract path objects in groups, rather than singly, to avoid trying to rewrite large drawn shapes
@@ -70,8 +75,11 @@ class LineFinder(
 
     for {
       regionBounds <- orderedRegions
-      vlineRoots = pageIndex.rtreeSearchHasAllLabels(regionBounds, LB.VisualLine, LB.Canonical) // TODO this search picks up some lines multiple times
-      line <- vlineRoots.sortBy(_.bounds.bottom)
+      vlineRoots   <- Seq(pageIndex.rtreeSearchHasAllLabels(regionBounds, LB.VisualLine, LB.Canonical)) // TODO this search picks up some lines multiple times
+      if vlineRoots.nonEmpty
+      sortedLines   = vlineRoots.sortBy(_.bounds.bottom)
+      _            <- Seq(pageIndex.addCluster(LB.ReadingBlockLines, sortedLines))
+      line         <- sortedLines
     }  {
       if (!alreadySeen.contains(line.id)) {
         alreadySeen.add(line.id)
@@ -79,7 +87,7 @@ class LineFinder(
       }
     }
 
-    pageIndex.addCluster(LB.ReadingOrder, lines)
+    pageIndex.addCluster(LB.PageLines, lines)
   }
 
 
@@ -241,6 +249,7 @@ class LineFinder(
     }
 
     if (visualLineAtoms.nonEmpty) {
+      // Associate visualLine bounds (modal, normal) w/visual line cluster
       val visualLineModalBounds = shrinkVisualLineToModalTopAndBottom()
 
       gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
@@ -249,7 +258,7 @@ class LineFinder(
       // top 1/3  & bottom 1/3 ==> centered
 
       val slices = visualLineBounds.sliceHorizontal(3)
-      val Seq(topSlice, middleSlice, bottomSlice) = slices
+      val Seq(topSlice, _, bottomSlice) = slices
 
 
       // val topLine = visualLineModalBounds.toLine(Dir.Top).translate(y=0.5)
@@ -259,7 +268,7 @@ class LineFinder(
       // val bottomIntersections = pageIndex.rtreeSearchLineHasLabel(bottomLine, LB.PageAtomGrp)
       val topIntersections = pageIndex.rtreeSearchHasLabel(topSlice, LB.PageAtomGrp)
       val bottomIntersections = pageIndex.rtreeSearchHasLabel(bottomSlice, LB.PageAtomGrp)
-      val middleIntersections = pageIndex.rtreeSearchHasLabel(middleSlice, LB.PageAtomGrp)
+      // val middleIntersections = pageIndex.rtreeSearchHasLabel(middleSlice, LB.PageAtomGrp)
 
       val topIntersects = topIntersections.map(_.id)
       val bottomIntersects = bottomIntersections.map(_.id)
@@ -374,42 +383,33 @@ class LineFinder(
       textRow.toCursor().foreach { c => relabel(c, LB.Sub) }
       textRow.toCursor().foreach { c => relabel(c, LB.Sup) }
 
-      // textRow.groupBy { case (cell1, cell2) =>
-      //   cell1.labels.contains(LB.Sub) && cell2.labels.contains(LB.Sub)
-      // }.foreach { nCursor =>
-      //   nCursor.foreach{ c =>
-      //     val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sub) }
-      //     if (hasSubLabel) {
-      //       c.focus.foreach { fcell =>
-      //         fcell.pins.remove(LB.Sub.U)
-      //       }
-      //       c.addLabel(LB.Sub)
-      //     }
-      //   }
-      // }
-
-      // textRow.groupBy { case (cell1, cell2) =>
-      //   cell1.labels.contains(LB.Sup) && cell2.labels.contains(LB.Sup)
-      // }.foreach { nCursor =>
-      //   nCursor.foreach{ c =>
-      //     val hasSubLabel = c.focus.exists { _.labels.contains(LB.Sup) }
-      //     if (hasSubLabel) {
-      //       c.focus.foreach { fcell =>
-      //         fcell.pins.remove(LB.Sup.U)
-      //       }
-      //       c.addLabel(LB.Sup)
-      //     }
-      //   }
-      // }
-
 
       val spacedRow = insertSpacesInRow(textRow)
 
+      val supSubLabeledRow = spacedRow.toCursor()
+        .map { cursor =>
+          cursor.foreachC { c =>
+            val focus = c.focus
+
+            if      (focus.hasPin(LB.Sub.B))  { c.insertCharLeft ('₍').next }
+            else if (focus.hasPin(LB.Sub.L))  { c.insertCharRight('₎').some }
+            else if (focus.hasPin(LB.Sub.U))  { c.insertCharLeft('₍').next.get.insertCharRight('₎').some }
+            else if (focus.hasPin(LB.Sup.B))  { c.insertCharLeft ('⁽').next }
+            else if (focus.hasPin(LB.Sup.L))  { c.insertCharRight('⁾').some }
+            else if (focus.hasPin(LB.Sup.U))  { c.insertCharLeft('⁽').next.get.insertCharRight('⁾').some }
+            else { c.some }
+
+          }
+        }.getOrElse { spacedRow }
+
       val visualLineClusterCC = pageIndex.addCluster(LB.VisualLine, visualLineAtoms)
 
-      pageIndex.setComponentText(visualLineClusterCC, LB.VisualLine, spacedRow)
+      val visualLineModalCC = labelRegion(visualLineModalBounds, LB.VisualLineModal)
+      pageIndex.addCluster(LB.VisualLineModal, Seq(visualLineClusterCC, visualLineModalCC))
 
-      val textReflow = convertTextRowToTextReflow(spacedRow)
+      pageIndex.setComponentText(visualLineClusterCC, LB.VisualLine, supSubLabeledRow)
+
+      val textReflow = convertTextRowToTextReflow(supSubLabeledRow)
 
       docStore.labelRegions(LB.VisualLine, Seq(visualLineCC.pageRegion)).foreach { zoneId =>
         docStore.setTextReflowForZone(zoneId, textReflow)
@@ -454,5 +454,28 @@ class LineFinder(
       }.foreach{ lineBin =>
         mpageIndex.labelRegion(lineBin, LB.LineByHash)
       }
+  }
+
+  def findReadingOrder(initRegion: LTBounds): Seq[LTBounds] = {
+
+    val maybeCol = pageIndex.rtreeSearchOverlapping(initRegion, LB.WhitespaceCol)
+      .sortBy(cc => (cc.bounds.top, cc.bounds.left))
+      .headOption
+
+    maybeCol.map{ wsCol =>
+      val colBounds = wsCol.bounds.withinRegion(initRegion)
+      val upperRegion = colBounds.adjacentRegions(Dir.TopLeft, Dir.Top, Dir.TopRight)
+      val lowerRegion = colBounds.adjacentRegions(Dir.BottomLeft, Dir.Bottom, Dir.BottomRight)
+
+      val leftRegion = colBounds.adjacentRegion(Dir.Left)
+      val rightRegion = colBounds.adjacentRegion(Dir.Right)
+
+      val rs = Seq(leftRegion, rightRegion, lowerRegion)
+        .flatten.flatMap{ r =>
+          findReadingOrder(r)
+        }
+
+      upperRegion.map( _ +: rs ).getOrElse(rs)
+    } getOrElse { Seq(initRegion) }
   }
 }

@@ -13,8 +13,6 @@ import utils.ExactFloats._
 
 sealed trait GeometricFigure
 
-// case object EmptyFigure extends GeometricFigure
-
 case class LTBounds(
   left   : Int@@FloatRep,
   top    : Int@@FloatRep,
@@ -186,6 +184,24 @@ case class Line(
   p1: Point, p2: Point
 ) extends GeometricFigure {
   override def toString: String = this.prettyPrint
+}
+
+case class Trapezoid(
+  topLeft: Point,
+  topWidth: Int@@FloatRep,
+  bottomLeft: Point,
+  bottomWidth: Int@@FloatRep
+) extends GeometricFigure  { self =>
+  import utils.{RelativeDirection => Dir}
+
+  val (l, r) = self.classifyLeftRight()
+
+  val t = self.toLine(Dir.Top)
+  val b = self.toLine(Dir.Bottom)
+
+  def prettyPrint: String = {
+    s"${l}/${r}:${t}/${b}"
+  }
 }
 
 case class GeometricGroup(
@@ -386,11 +402,14 @@ object GeometryImplicits extends RectangularCuts {
     }
 
     def angleTo(p1: Point): Double = {
-      if (self.x > p1.x) {
-        math.atan2((self.y - p1.y).asDouble, (self.x - p1.x).asDouble)
-      } else {
-        math.atan2((p1.y - self.y).asDouble, (p1.x - self.x).asDouble)
-      }
+      val dy = self.y - p1.y
+      val dx = p1.x - self.x
+      math.atan2(dy.asDouble, dx.asDouble)
+      // if (self.x > p1.x) {
+      //   math.atan2((self.y - p1.y).asDouble, (self.x - p1.x).asDouble)
+      // } else {
+      //   math.atan2((p1.y - self.y).asDouble, (p1.x - self.x).asDouble)
+      // }
     }
     def prettyPrint: String = {
       s"""(${self.x.pp}, ${self.y.pp})"""

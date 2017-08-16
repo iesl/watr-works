@@ -6,7 +6,7 @@ import corpora._
 import corpora.filesys._
 import corpora.database._
 import segment._
-import geometry.syntax._
+// import geometry.syntax._
 // import ammonite.{ops => fs}, fs._
 
 import TypeTags._
@@ -169,74 +169,74 @@ object ShellCommands extends DocumentZoningApiEnrichments {
 
 
 
-  def reorderVisualLines(n: Int, skip: Int)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-    import watrmarks.{StandardLabels => LB}
-    val docStore = corpusAccessApi.docStore
+  // def reorderVisualLines(n: Int, skip: Int)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+  //   import watrmarks.{StandardLabels => LB}
+  //   val docStore = corpusAccessApi.docStore
 
 
-    for {
-      stableId <- docStore.documents(n, skip)
-      corpusEntry    <- corpusAccessApi.corpus.entry(stableId.unwrap)
-    } {
-      println(s"processing entry ${stableId}")
-      val documentSegmenter = segment(corpusEntry, commitToDb=false, writeRTrees=false)
-      println("segmented")
-      documentSegmenter.foreach { segmenter =>
-        val stableId = segmenter.stableId
-        val mpageIndex = segmenter.mpageIndex
+  //   for {
+  //     stableId <- docStore.documents(n, skip)
+  //     corpusEntry    <- corpusAccessApi.corpus.entry(stableId.unwrap)
+  //   } {
+  //     println(s"processing entry ${stableId}")
+  //     val documentSegmenter = segment(corpusEntry, commitToDb=false, writeRTrees=false)
+  //     println("segmented")
+  //     documentSegmenter.foreach { segmenter =>
+  //       val stableId = segmenter.stableId
+  //       val mpageIndex = segmenter.mpageIndex
 
-        var nextOrder = 0
-        println("computing reading order")
-        for {
-          pageNum      <- mpageIndex.getPages
-          pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
-          readingOrder <- pageIndex.getClusters(LB.ReadingOrder)
-        }  {
-          val visualLineZones = docStore.getPageVisualLines(stableId, pageNum)
-          println(s"aligning reading order for ${visualLineZones.length} lines")
+  //       var nextOrder = 0
+  //       println("computing reading order")
+  //       for {
+  //         pageNum      <- mpageIndex.getPages
+  //         pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+  //         readingOrder <- pageIndex.getClusters(LB.ReadingOrder)
+  //       }  {
+  //         val visualLineZones = docStore.getPageVisualLines(stableId, pageNum)
+  //         println(s"aligning reading order for ${visualLineZones.length} lines")
 
-          val vlineCCsToZones = readingOrder
-            .map{ vlineCC =>
-              val maybeZone = visualLineZones.find { zone =>
-                zone.regions.exists { zregion =>
-                  vlineCC.bounds.isWithin(zregion.bbox)
-                }
-              }
-              (vlineCC, maybeZone)
-            }
+  //         val vlineCCsToZones = readingOrder
+  //           .map{ vlineCC =>
+  //             val maybeZone = visualLineZones.find { zone =>
+  //               zone.regions.exists { zregion =>
+  //                 vlineCC.bounds.isWithin(zregion.bbox)
+  //               }
+  //             }
+  //             (vlineCC, maybeZone)
+  //           }
 
-          println(s"Corrected reading order for ${stableId} page ${pageNum}")
+  //         println(s"Corrected reading order for ${stableId} page ${pageNum}")
 
-          vlineCCsToZones.foreach { case (vlineCC, maybeZone) =>
-            val maybeText = pageIndex.getComponentText(vlineCC, LB.VisualLine)
-            maybeZone match {
-              case Some(zone) =>
-                val reflow = docStore.getModelTextReflowForZone(zone.id)
+  //         vlineCCsToZones.foreach { case (vlineCC, maybeZone) =>
+  //           val maybeText = pageIndex.getComponentText(vlineCC, LB.VisualLine)
+  //           maybeZone match {
+  //             case Some(zone) =>
+  //               val reflow = docStore.getModelTextReflowForZone(zone.id)
 
-                val rtext = reflow.map { tr =>
-                  tr.astext
-                } getOrElse("<no text>")
+  //               val rtext = reflow.map { tr =>
+  //                 tr.astext
+  //               } getOrElse("<no text>")
 
-                val newText = maybeText.map(_.toText()).getOrElse("<notext>")
+  //               val newText = maybeText.map(_.toText()).getOrElse("<notext>")
 
-                println(s"""${nextOrder}>>> ${newText}""")
-                if (rtext.trim() != newText.trim()) {
-                  println(s"""  was> ${rtext}""")
-                }
+  //               println(s"""${nextOrder}>>> ${newText}""")
+  //               if (rtext.trim() != newText.trim()) {
+  //                 println(s"""  was> ${rtext}""")
+  //               }
 
-                // db.setZoneOrder(zone.id, nextOrder)
-                nextOrder = nextOrder + 1
-              case None =>
-                println(s"""!!no matching zone> ${maybeText.map(_.toText()).getOrElse("<notext>")}""")
-            }
-          }
+  //               // db.setZoneOrder(zone.id, nextOrder)
+  //               nextOrder = nextOrder + 1
+  //             case None =>
+  //               println(s"""!!no matching zone> ${maybeText.map(_.toText()).getOrElse("<notext>")}""")
+  //           }
+  //         }
 
-        }
-      }
+  //       }
+  //     }
 
-    }
+  //   }
 
 
-  }
+  // }
 
 }

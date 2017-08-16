@@ -4,9 +4,10 @@ package geometry
 import utils.ExactFloats._
 import utils.{RelativeDirection => Dir}
 import TypeTags._
-
+import utils.EnrichNumerics._
 
 trait RectangularCuts {
+  import GeometryImplicits._
 
   class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
 
@@ -103,6 +104,97 @@ trait RectangularCuts {
             bot   <- right.splitHorizontal(innerRect.bottom)._2
           } yield bot
       }
+    }
+
+  }
+
+
+  sealed trait Trapezoidal
+  object Trapezoidal {
+    case object Right extends Trapezoidal
+    case object Acute extends Trapezoidal
+    case object Obtuse extends Trapezoidal
+  }
+
+
+  implicit class RectangularCuts_RicherTrapezoid(val self: Trapezoid) {
+    def lowerLeftAngle(): Double = {
+      toPoint(Dir.BottomLeft).angleTo(toPoint(Dir.TopLeft))
+    }
+
+    def lowerRightAngle(): Double = {
+      math.Pi - toPoint(Dir.BottomRight).angleTo(toPoint(Dir.TopRight))
+    }
+
+    def classifyLeftRight(
+      tolerance: Double = 0.03d
+    ): (Trapezoidal, Trapezoidal) = {
+      val lla = lowerLeftAngle()
+      val lra = lowerRightAngle()
+
+      val pi2 = math.Pi/2
+
+      val deg90 = DoubleInterval(pi2-tolerance, tolerance*2)
+      println(s"  interval: ${deg90}, pi2: ${pi2.pp}, lla: ${lla.pp} lra: ${lra.pp}")
+
+      val leftClass = if (lla.withinRange(deg90)) Trapezoidal.Right
+                      else if (lla < pi2) Trapezoidal.Acute
+                      else Trapezoidal.Obtuse
+
+      val rightClass = if (lra.withinRange(deg90)) Trapezoidal.Right
+                       else if (lra < pi2) Trapezoidal.Acute
+                       else Trapezoidal.Obtuse
+
+
+
+
+      (leftClass, rightClass)
+    }
+
+    // def classifyLeftRight(): (Trapezoidal, Trapezoidal) = {
+    //   val tl = self.topLeft
+    //   val bl = self.bottomLeft
+
+    //   val leftClass = if (tl.x == bl.x) Trapezoidal.Right
+    //                   else if (tl.x < bl.x) Trapezoidal.Obtuse
+    //                   else  Trapezoidal.Acute
+
+    //   val tr = self.toPoint(Dir.TopRight)
+    //   val br = self.toPoint(Dir.BottomRight)
+
+    //   val rightClass = if (tr.x == br.x) Trapezoidal.Right
+    //                   else if (tr.x < br.x) Trapezoidal.Acute
+    //                   else  Trapezoidal.Obtuse
+
+    //   (leftClass, rightClass)
+    // }
+
+    def toPoint(dir: Dir): Point ={
+      val Trapezoid(Point(tlx, tly), twidth, Point(blx, bly), bwidth) = self
+
+      dir match {
+        case Dir.Top         => ???
+        case Dir.Bottom      => ???
+        case Dir.Right       => ???
+        case Dir.Left        => ???
+        case Dir.TopLeft     => self.topLeft
+        case Dir.BottomLeft  => self.bottomLeft
+        case Dir.TopRight    => Point(tlx+twidth, tly)
+        case Dir.BottomRight => Point(blx+bwidth, bly)
+        case Dir.Center      => ???
+      }
+    }
+
+    def toLine(dir: Dir): Line = dir match {
+      case Dir.Top         => Line(self.toPoint(Dir.TopLeft), self.toPoint(Dir.TopRight))
+      case Dir.Bottom      => Line(self.toPoint(Dir.BottomLeft), self.toPoint(Dir.BottomRight))
+      case Dir.Right       => Line(self.toPoint(Dir.TopRight), self.toPoint(Dir.BottomRight))
+      case Dir.Left        => Line(self.toPoint(Dir.TopLeft), self.toPoint(Dir.BottomLeft))
+      case Dir.TopLeft     => ???
+      case Dir.BottomLeft  => ???
+      case Dir.TopRight    => ???
+      case Dir.BottomRight => ???
+      case Dir.Center      => ???
     }
 
   }

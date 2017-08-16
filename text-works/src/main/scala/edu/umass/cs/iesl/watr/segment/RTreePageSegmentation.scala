@@ -21,6 +21,7 @@ import PageComponentImplicits._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import textgrid._
 import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
+import utils.EnrichNumerics._
 
 object DocumentSegmenter {
   import spindex._
@@ -126,11 +127,78 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
     }
 
     createZone(LB.DocumentPages, pageRegions)
+
+    // Determine paragraph structure
+    for {
+      (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
+    } {
+      val pageIndex = mpageIndex.getPageIndex(PageNum(pagenum))
+      for {
+        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
+        linePair <- lineCCs.sliding(2)
+      } {
+
+        // construct trapezoids: isosceles, right, rectangular
+        linePair match {
+          case Seq(l1, l2) =>
+            pageIndex.getComponentText(l1, LB.VisualLine).foreach{ row =>
+              println(s"1> ${row.toText()}")
+            }
+            pageIndex.getComponentText(l2, LB.VisualLine).foreach{ row =>
+              println(s"2> ${row.toText()}")
+            }
+
+            val l1VisLineModal = pageIndex.getClusterMembers(LB.VisualLineModal, l1).get.last
+            val l2VisLineModal = pageIndex.getClusterMembers(LB.VisualLineModal, l2).get.last
+            val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
+            val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
+            val l1Width = l1Baseline.p2.x - l1Baseline.p1.x
+            val l2Width = l2Baseline.p2.x - l2Baseline.p1.x
+
+            val t = Trapezoid(
+              l1Baseline.p1, l1Width,
+              l2Baseline.p1, l2Width
+            )
+
+            val leftAngle = t.toPoint(Dir.BottomLeft).angleTo(t.toPoint(Dir.TopLeft))
+            val rightAngle = math.Pi - t.toPoint(Dir.BottomRight).angleTo(t.toPoint(Dir.TopRight))
+            println(s"    ${t.prettyPrint}: left >: ${leftAngle.pp} right >: ${rightAngle.pp}")
+            println()
+          case Seq(l1) =>
+            println(s"$l1")
+          case _ => sys.error("only 1 or 2 lines in sliding(2)")
+        }
+      }
+    }
+
   }
 
 }
 
 
+object PageSegmenter {
+
+  def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[(Component, Seq[Component])] = {
+    val linesPerBlock0 = for {
+      readingBlockRegions <- pageIndex.getClusters(LB.ReadingBlocks)
+      // (line, n)    <- readingOrder.zipWithIndex
+      // textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+    } yield {
+      for {
+        block <- readingBlockRegions
+        rootLine   <- pageIndex.rtreeSearchHasAllLabels(block.bounds(), LB.ReadingBlockLines, LB.Canonical)
+        lineMembers   <- pageIndex.getClusterMembers(LB.ReadingBlockLines, rootLine)
+      } yield {
+        (block, lineMembers)
+      }
+    }
+
+    val linesPerBlock = linesPerBlock0.flatten
+
+    linesPerBlock
+  }
+
+}
 
 class PageSegmenter(
   pageId: Int@@PageID,
@@ -572,32 +640,6 @@ class PageSegmenter(
 
   }
 
-  def findReadingOrder(initRegion: LTBounds): Seq[LTBounds] = {
-
-    val maybeCol = pageIndex.rtreeSearchOverlapping(initRegion, LB.WhitespaceCol)
-      .sortBy(cc => (cc.bounds.top, cc.bounds.left))
-      .headOption
-
-    // println(s"  findReadingOrder: wscol: ${maybeCol}")
-    maybeCol.map{ wsCol =>
-      val colBounds = wsCol.bounds.withinRegion(initRegion)
-      val upperRegion = colBounds.adjacentRegions(Dir.TopLeft, Dir.Top, Dir.TopRight)
-      val lowerRegion = colBounds.adjacentRegions(Dir.BottomLeft, Dir.Bottom, Dir.BottomRight)
-
-      val leftRegion = colBounds.adjacentRegion(Dir.Left)
-      val rightRegion = colBounds.adjacentRegion(Dir.Right)
-
-      // println(s"  examining: ${ Seq(leftRegion, rightRegion, lowerRegion) }")
-
-
-      val rs = Seq(leftRegion, rightRegion, lowerRegion)
-        .flatten.flatMap{ r =>
-          findReadingOrder(r)
-        }
-
-      upperRegion.map( _ +: rs ).getOrElse(rs)
-    } getOrElse { Seq(initRegion) }
-  }
 
 
 }

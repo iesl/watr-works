@@ -5,49 +5,85 @@ import spindex._
 import textboxing.{TextBoxing => TB}, TB._
 import textreflow.data._
 import watrmarks.{StandardLabels => LB}
+import play.api.libs.json, json._
+import segment.PageSegmenter
+
 
 object DocumentIO  {
 
+  import textgrid._
 
   def documentToPlaintext(mpageIndex: MultiPageIndex): String = {
 
-    val textlines = for {
+    val serProps = new TextGrid.SerializationProps
+    for {
       pageNum      <- mpageIndex.getPages
       pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
-      readingOrder <- pageIndex.getClusters(LB.ReadingOrder)
-      (line, n)    <- readingOrder.zipWithIndex
-      textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
-    } yield {
-      // expand textRow to include any formatting options
-      val adjustedRow = textRow.toCursor().map { cursor =>
-        val finalCursor = cursor.foreachC { c =>
-
-          val focus = c.focus
-
-          val cur = if      (focus.hasPin(LB.Sub.B))  { c.insertCharLeft ('₍').next }
-                    else if (focus.hasPin(LB.Sub.L))  { c.insertCharRight('₎').some }
-                    else if (focus.hasPin(LB.Sub.U))  { c.insertCharLeft('₍').next.get.insertCharRight('₎').some }
-                    else if (focus.hasPin(LB.Sup.B))  { c.insertCharLeft ('⁽').next }
-                    else if (focus.hasPin(LB.Sup.L))  { c.insertCharRight('⁾').some }
-                    else if (focus.hasPin(LB.Sup.U))  { c.insertCharLeft('⁽').next.get.insertCharRight('⁾').some }
-                    else { c.some }
-
-
-          cur
-        }
-        finalCursor
+    }  {
+      for {
+        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
+        (line, n)    <- lineCCs.zipWithIndex
+        textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+      } {
+        textRow.serialize(serProps)
       }
 
-      val text = adjustedRow.map(_.toText()).getOrElse("<error error>")
-      text
+    }
+    val lineNums = serProps.lineMap.keys.toList.sorted
 
+    val textLines = lineNums.map { lineNum =>
+      val t = serProps.lineMap(lineNum)._2
+      Json.stringify(JsString(t)).box
     }
 
-    textlines.mkString("\n")
+    val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(textLines:_*))
+
+    val lineDefs = lineNums.map { lineNum =>
+      serProps.lineMap(lineNum)._1.box
+    }
+
+    val lineDefsBlock = indent(4)(vjoinTrailSep(left, ",")(lineDefs:_*))
+
+    val pageIdDefs = serProps.pageIdMap.toList
+      .map{ case (pageId, (stableId, pageNum)) =>
+        s"""[${pageId}, "${stableId}", ${pageNum}]""".box
+      }
+
+
+    val pageIdBlock = indent(4)(vjoinTrailSep(left, ",")(pageIdDefs:_*))
+
+    val finalDocument = (
+      s"""|{ "lines": [
+          |${textLinesBlock}
+          |  ],
+          |  "zones": [
+          |{serializedZones}
+          |  ],
+          |  "relations": [
+          |{relationBlock}
+          |  ],
+          |  "errors": [
+          |  ],
+          |  "labels": [
+          |  ],
+          |  "pageDefs": [
+          |${pageIdBlock}
+          |  ],
+          |  "lineDefs": [
+          |${lineDefsBlock}
+          |  ]
+          |}
+          |""".stripMargin)
+
+
+    finalDocument.split("\n")
+      .map(_.reverse.dropWhile(_==' ').reverse)
+      .mkString("\n")
+
+    textLines.mkString("\n")
   }
 
   def richTextSerializeDocument(mpageIndex: MultiPageIndex): String = {
-    import play.api.libs.json, json._
     val docStore = mpageIndex.docStore
     val stableId = mpageIndex.getStableId()
     val docId = docStore.getDocument(stableId).get

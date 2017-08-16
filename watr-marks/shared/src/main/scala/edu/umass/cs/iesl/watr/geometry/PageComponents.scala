@@ -28,7 +28,6 @@ case class StablePage(
   pageId: Int@@PageID = PageID(-1)
 ) {
   override def toString = s"""${stableId}/pg${pageNum}"""
-  // def pageId: Int@@PageID = idOpt.getOrElse{ sys.error(s"no id for ${toString}") }
 }
 
 
@@ -37,16 +36,8 @@ case class PageRegion(
   bbox: LTBounds,
   regionId: Int@@RegionID = RegionID(-1)
 ) {
-  // def regionId: Int@@RegionID = idOpt.getOrElse{ sys.error(s"no id for ${page} ${bbox}") }
   def id: Int@@RegionID = regionId
 }
-
-// case class PageRegion(
-//   stableRegion: PageRegion
-// ) {
-//   def id: Int@@RegionID
-
-// }
 
 object PageRegion {
   implicit val EqualPageRegion: Equal[PageRegion] =
