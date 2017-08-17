@@ -169,7 +169,8 @@ object Utils {
                 RESOURCE_KEYWORDS.foreach {
                     resource => {
                         for (line <- Source.fromInputStream(getClass.getResourceAsStream(resource._2)).getLines if !line.equals("\n")) {
-                            if ("\\b".concat(line).concat("\\b").r.findFirstIn(affiliationComponent).isDefined) {
+                            val potentialMatch = "\\b".concat(line).concat("\\b").r.findFirstIn(affiliationComponent)
+                            if (potentialMatch.isDefined && potentialMatch.get.length.==(line.length)) {
                                 matchedKeywords += resource._1
                                 break
                             }
