@@ -115,7 +115,7 @@ class TransformToCoNLLFormat {
                                     val affiliationsWithLabels = getAffiliationLabelsForReflows(affiliationReflows, names)
                                     affiliationsWithLabels.foreach {
                                         affiliationWithLabel => {
-                                            dataFileWriter.write(affiliationWithLabel._1 + " " + getBoundingBoxAsString(affiliationWithLabel._3) + " * I-" + affiliationWithLabel._2.head + "\n")
+                                            dataFileWriter.write(affiliationWithLabel._1 + " " + pageId.toString + ":" + getBoundingBoxAsString(affiliationWithLabel._3) + " * I-" + affiliationWithLabel._2.head + "\n")
                                         }
                                     }
                                     affiliationReflows.clear()
@@ -125,7 +125,7 @@ class TransformToCoNLLFormat {
                                     val authorNamesWithLabels = getAuthorLabelsForReflow(textReflow.get)
                                     authorNamesWithLabels.foreach {
                                         authorNameWithLabels => {
-                                            dataFileWriter.write(authorNameWithLabels._1 + " " + getBoundingBoxAsString(bBox = authorNameWithLabels._3) + " * I-" + authorNameWithLabels._2 + "\n")
+                                            dataFileWriter.write(authorNameWithLabels._1 + " " + pageId.toString + ":" + getBoundingBoxAsString(bBox = authorNameWithLabels._3) + " * I-" + authorNameWithLabels._2 + "\n")
                                             names += authorNameWithLabels._1
                                         }
                                     }
@@ -143,7 +143,7 @@ class TransformToCoNLLFormat {
                                     }
                                     componentsWithBoundingBoxes.foreach {
                                         componentWithBoundingBox => {
-                                            dataFileWriter.write(componentWithBoundingBox._1 + " " + getBoundingBoxAsString(componentWithBoundingBox._2) + " * " + regionLabel + "\n")
+                                            dataFileWriter.write(componentWithBoundingBox._1 + " " + pageId.toString + ":" + getBoundingBoxAsString(componentWithBoundingBox._2) + " * " + regionLabel + "\n")
                                         }
                                     }
                                 }
@@ -153,6 +153,7 @@ class TransformToCoNLLFormat {
                 }
                 catch {
                     case exception: Exception =>
+                        exceptionsFileWriter.write(exception.getMessage + "\n")
                         for (stackTraceElement <- exception.getStackTrace) {
                             exceptionsFileWriter.write(stackTraceElement.toString + "\n")
                         }
@@ -172,5 +173,5 @@ object RunTransformer extends App {
     val documents: Seq[String] = Seq()
 
     val transformer: TransformToCoNLLFormat = new TransformToCoNLLFormat()
-    transformer.getReflowWithLabelsForPage(960, documents, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
+    transformer.getReflowWithLabelsForPage(10000, documents, Seq(LB.Title, LB.Authors, LB.Affiliations, LB.Abstract))
 }
