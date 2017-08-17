@@ -8,29 +8,13 @@ import scala.collection.mutable
 
 
 object Component {
+
   import rindex._
   implicit object ComponentIndexable extends RTreeIndexable[Component] {
     def id(t: Component): Int = t.id.unwrap
     def ltBounds(t: Component): LTBounds = t.bounds
   }
 
-  // import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
-  // object Serialization  {
-  //   def serialize[C <: Component](value: C): Array[Byte] = {
-  //     val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
-  //     val oos = new ObjectOutputStream(stream)
-  //     oos.writeObject(value)
-  //     oos.close
-  //     stream.toByteArray
-  //   }
-
-  //   def deserialize[C <: Component](bytes: Array[Byte]): C = {
-  //     val ois = new ObjectInputStream(new ByteArrayInputStream(bytes))
-  //     val value = ois.readObject
-  //     ois.close
-  //     value.asInstanceOf[C]
-  //   }
-  // }
 }
 
 sealed trait Component {
@@ -51,8 +35,14 @@ sealed trait Component {
   lazy val pageNum = pageRegion.page.pageNum
 
   protected [spindex] val labelSet: mutable.Set[Label] = mutable.Set.empty[Label]
-  protected [spindex] def addLabel(l: Label): Unit = labelSet.add(l)
-  protected [spindex] def removeLabel(l: Label): Unit = labelSet.remove(l)
+  protected [spindex] def addLabel(l: Label): Unit = {
+    labelSet += l
+    // labelSet.add(l)
+  }
+  protected [spindex] def removeLabel(l: Label): Unit = {
+
+    labelSet -= l
+  }
 
   def hasLabel(l: Label): Boolean = labels.contains(l)
   def labels(): Set[Label] = labelSet.toSet

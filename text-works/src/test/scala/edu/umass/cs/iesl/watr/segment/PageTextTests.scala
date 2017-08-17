@@ -38,6 +38,7 @@ class PageTextTest extends DocsegTestUtil  {
     val allTestPdfs = parsePdfs {
       """|
          |101016jcarbon201301056.pdf.pages/pg_0001.pdf
+         |101016jcarbon201301056.pdf.pages/pg_0002.pdf
          |101016jactamat201112024.pdf
          |101016jcarbon201301056.pdf
          |101016jactamat201501032.pdf
@@ -59,7 +60,7 @@ class PageTextTest extends DocsegTestUtil  {
          |""".stripMargin
     }
 
-    val (docId, path) = allTestPdfs(0)
+    val (docId, path) = allTestPdfs(1)
 
     // tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Print
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)

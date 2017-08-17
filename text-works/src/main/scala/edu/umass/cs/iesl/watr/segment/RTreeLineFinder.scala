@@ -57,9 +57,16 @@ class LineFinder(
     val orderedRegions = findReadingOrder(pageGeometry)
 
     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
-    pageIndex.addCluster(LB.ReadingBlocks, readingBlocks)
 
+    pageIndex.setOrdering(LB.ReadingBlocks, readingBlocks)
+    val tmpReadingBlocks = pageIndex.getOrdering(LB.ReadingBlocks)
 
+    // println(" get/set ordering  = ")
+    // println("  "+tmpReadingBlocks.map(_.id).toList.sorted)
+    // println("  "+readingBlocks.map(_.id).toList.sorted)
+    assert(tmpReadingBlocks.map(_.id).toSet == readingBlocks.map(_.id).toSet)
+
+    // pageIndex.addCluster(LB.ReadingBlocks, readingBlocks)
 
     // vis.writeRTreeImage("06-ReadingOrder", LB.LineByHash, stdLabels():_*)
 
@@ -72,45 +79,77 @@ class LineFinder(
 
     // reorder visual lines within and across reading blocks
 
-    val alreadySeen: mutable.Set[Int@@ComponentID] = mutable.Set.empty
-    val lines: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
+    // val alreadySeen: mutable.Set[Int@@ComponentID] = mutable.Set.empty
+
+    val allPageLines: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
+
+    pageIndex.getComponentsWithLabel(LB.VisualLine)
+      .foreach{ a =>
+        // println(s" has VisualLine label ${a}")
+        if (a.hasLabel(LB.Canonical)) {
+          // println("adding tmp label")
+          pageIndex.addLabel(a, LB.Tmp)
+        }
+      }
 
     for {
-      regionBounds <- orderedRegions
-      vlineRoots   <- Seq(pageIndex.rtreeSearchHasAllLabels(regionBounds, LB.VisualLine, LB.Canonical)) // TODO this search picks up some lines multiple times
+      readingBlock <-  pageIndex.getOrdering(LB.ReadingBlocks)
+      vlineRoots   <- Seq(pageIndex.rtreeSearchHasAllLabels(readingBlock.bounds(), LB.VisualLine, LB.Canonical, LB.Tmp)) // TODO this search picks up some lines multiple times
       if vlineRoots.nonEmpty
+
+      // _             = allPageLines.clear()
+
       sortedLines   = vlineRoots.sortBy(_.bounds.bottom)
-      _            <- Seq(pageIndex.addCluster(LB.ReadingBlockLines, sortedLines))
+      vlineCluster   = pageIndex.addCluster(LB.ReadingBlockLines, sortedLines)
+
+      // Tie together the readingBlock and the canonicalReadingBlockLine
+      // _ = pageIndex.addCluster(LB.HasVisualLines, Seq(readingBlock, canonicalReadingBlockLine))
+      _                = pageIndex.addRelation(readingBlock, LB.HasVisualLines, vlineCluster)
+      vlineClusterTmp  = pageIndex.getRelations(readingBlock, LB.HasVisualLines)
+      // _ = println(s"  add/get relation: ")
+      // _ = println(s"    ${vlineCluster}")
+      // _ = println(s"    ${vlineClusterTmp}")
+
       line         <- sortedLines
     }  {
-      if (!alreadySeen.contains(line.id)) {
-        alreadySeen.add(line.id)
-        lines.append(line)
-      }
+      pageIndex.removeLabel(line, LB.Tmp)
+      // if (!alreadySeen.contains(line.id)) {
+      //   alreadySeen.add(line.id)
+      //   lines.append(line)
+      // }
+      allPageLines.append(line)
     }
 
-    pageIndex.addCluster(LB.PageLines, lines)
+    if (allPageLines.nonEmpty) {
+      // println(s"clustering...")
+      val _ = pageIndex.addCluster(LB.PageLines, allPageLines)
+    }
   }
 
 
   def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
-    val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
+    // val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
+
     pageIndex.getComponentsWithLabel(LB.PageAtom)
       .foreach{ a => pageIndex.addLabel(a, LB.PageAtomTmp) }
-    gifBuilder.addFrame("Starting", LB.PageAtomTmp)
+
+    // gifBuilder.addFrame("Starting", LB.PageAtomTmp)
+
     for { textBlock <- orderedTextBlocks } {
-      gifBuilder.indicate("Examining Block", textBlock, LB.PageAtomTmp)
+      // gifBuilder.indicate("Examining Block", textBlock, LB.PageAtomTmp)
       val sortedHashedLinesWithChars = (for {
         hashedLineCC <- pageIndex.rtreeSearch(textBlock, LB.LineByHash)
       } yield {
         val charsInRegion = pageIndex.rtreeSearchHasLabel(hashedLineCC.bounds, LB.PageAtomTmp)
         (hashedLineCC, charsInRegion)
       }).sortBy { case (_, chars) => chars.length }.reverse
+
+
       sortedHashedLinesWithChars.zipWithIndex
         .foreach{ case ((hashLineCC, hashedChars), index) =>
           val remainingChars = hashedChars.filter(_.hasLabel(LB.PageAtomTmp)).nonEmpty
           if (remainingChars) {
-            gifBuilder.indicate(s"Processing Hash-Line ${index} of ${sortedHashedLinesWithChars.length}", hashLineCC.bounds(), LB.PageAtomTmp)
+            // gifBuilder.indicate(s"Processing Hash-Line ${index} of ${sortedHashedLinesWithChars.length}", hashLineCC.bounds(), LB.PageAtomTmp)
             val extendedLineRegion = hashLineCC.bounds.withinRegion(textBlock)
               .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
               .getOrElse { hashLineCC.bounds }
@@ -122,7 +161,7 @@ class LineFinder(
               .copy(height = height/2, top=top+height/4)
 
 
-            gifBuilder.indicate("Search Line Region", centerLine, LB.PageAtomTmp)
+            // gifBuilder.indicate("Search Line Region", centerLine, LB.PageAtomTmp)
 
             // Now find all chars in queryRegion and string them together into a single visual line
             val visualLineAtoms = pageIndex.rtreeSearchHasLabel(centerLine, LB.PageAtomTmp)
@@ -132,7 +171,9 @@ class LineFinder(
 
               val visualLineBBox = xSortedAtoms.map(_.bounds).reduce { (c1, c2) => c1 union c2 }
 
-              gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
+              // gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
+              val lineChars = xSortedAtoms.map(_.chars).mkString
+              println("vis.line> " + lineChars)
 
               xSortedAtoms.foreach { cc =>
                 pageIndex.removeLabel(cc, LB.PageAtomTmp)
@@ -152,58 +193,9 @@ class LineFinder(
         }
     }
 
-    gifBuilder.finish()
+    // gifBuilder.finish()
 
   }
-
-  // def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
-
-  //   val atomSingletons = pageIndex.initClustering(LB.VisualLines, _.hasLabel(LB.PageAtom))
-
-  //   atomSingletons.foreach{ a => a.addLabel(LB.NotClustered) }
-
-  //   for { textBlock <- orderedTextBlocks } {
-
-  //     // Find all hashed-lines in text block, sort into descending order by # of chars
-  //     val sortedHashedLinesWithChars = (for {
-  //       hashedLineCC <- pageIndex.rtreeSearch(textBlock, LB.LineByHash)
-  //     } yield {
-  //       val charsInRegion = pageIndex.rtreeSearchHasLabel(hashedLineCC.bounds, LB.PageAtom)
-  //       (hashedLineCC, charsInRegion)
-  //     }).sortBy { case (_, chars) => chars.length }.reverse
-
-
-  //     sortedHashedLinesWithChars.zipWithIndex
-  //       .foreach{ case ((hashLineCC, hashedChars), index) =>
-
-  //         val horizontalStripeRegion = hashLineCC.bounds.withinRegion(textBlock)
-  //           .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
-  //           .getOrElse { hashLineCC.bounds }
-
-  //         val height = horizontalStripeRegion.height
-  //         val top = horizontalStripeRegion.top
-
-  //         val centerLine = horizontalStripeRegion
-  //           .copy(height = height/2, top=top+height/4)
-
-  //         // Now find all chars in queryRegion and string them together into a single visual line
-  //         val visualLineAtoms = pageIndex.rtreeSearchHasAllLabels(centerLine, LB.PageAtom, LB.NotClustered)
-
-  //         if (visualLineAtoms.nonEmpty) {
-  //           val xSortedAtoms = visualLineAtoms.sortBy(_.bounds.left).toSeq
-  //           val visualLineBBox = xSortedAtoms.map(_.bounds).reduce { (c1, c2) => c1 union c2 }
-  //           val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
-
-  //           xSortedAtoms.foreach { _.removeLabel(LB.NotClustered) }
-
-  //           pageIndex.unionAll(LB.VisualLines, xSortedAtoms)
-
-  //           createTextRowFromVisualLine(visualLineCC, xSortedAtoms)
-
-  //         }
-  //       }
-  //   }
-  // }
 
 
 
@@ -262,12 +254,6 @@ class LineFinder(
       val slices = visualLineBounds.sliceHorizontal(3)
       val Seq(topSlice, _, bottomSlice) = slices
 
-
-      // val topLine = visualLineModalBounds.toLine(Dir.Top).translate(y=0.5)
-      // val bottomLine =  visualLineModalBounds.toLine(Dir.Bottom).translate(y = -0.5)
-
-      // val topIntersections = pageIndex.rtreeSearchLineHasLabel(topLine, LB.PageAtomGrp)
-      // val bottomIntersections = pageIndex.rtreeSearchLineHasLabel(bottomLine, LB.PageAtomGrp)
       val topIntersections = pageIndex.rtreeSearchHasLabel(topSlice, LB.PageAtomGrp)
       val bottomIntersections = pageIndex.rtreeSearchHasLabel(bottomSlice, LB.PageAtomGrp)
       // val middleIntersections = pageIndex.rtreeSearchHasLabel(middleSlice, LB.PageAtomGrp)
@@ -374,7 +360,7 @@ class LineFinder(
       // Convert consecutive sup/sub to single label
       def relabel(c: TextGrid.Cursor, l: Label): Unit = {
          c.findNext(_.hasLabel(l))
-           .map{ cur =>
+           .foreach{ cur =>
                val win = cur.slurpRight(_.hasLabel(l))
                win.removePins(l)
                win.addLabel(l)

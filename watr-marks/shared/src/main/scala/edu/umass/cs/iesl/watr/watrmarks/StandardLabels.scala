@@ -52,6 +52,7 @@ trait DocSegLabels {
   val PageAtom = Label("atom")
   val PageAtomGrp = Label("atom-grp")
   val PageAtomTmp = Label("atom-tmp")
+  val Ordering = Label("Ordering")
 
 
   // Page Segmentation Labels
@@ -70,6 +71,7 @@ trait DocSegLabels {
   val ReadingBlocks        = Label("ReadingBlocks")
   val ReadingBlockLines    = Label("ReadingBlockLines")
   val PageLines            = Label("PageLines")
+  val HasVisualLines       = Label("HasVisualLines")
 
   // val BlockReadingOrder      = Label("BlockReadingOrder")
   // val ReadingOrder           = Label("ReadingOrder")
@@ -82,6 +84,7 @@ trait DocSegLabels {
   val OutlineBox             = Label("Outline")
 
   val Canonical             = Label("Canonical")
+  val Tmp                   = Label("Tmp")
 
 
 }

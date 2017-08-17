@@ -80,7 +80,7 @@ class PageIndex(
   }
 
   def setComponentText(c: Component, l: Label, t: TextGrid.Row): Unit = {
-    componentToText
+    val _ = componentToText
       .getOrElseUpdate(c.id, mutable.HashMap())
       .put(l, t)
   }
@@ -90,7 +90,7 @@ class PageIndex(
   }
 
   def unionAll(l: Label, cs: Seq[Component]): Unit = {
-    addCluster(l, cs)
+    val _ = addCluster(l, cs)
   }
 
   def union(l: Label, c1: Component, c2: Component): Unit = {
@@ -98,6 +98,30 @@ class PageIndex(
       OrderedDisjointSet.apply[Component]()
     )
     set.union(c1, c2)
+  }
+
+  def setOrdering(l: Label, cs: Seq[Component]): Component = {
+    assume(!disjointSets.contains(l))
+
+    val canon = addCluster(l, cs)
+    addLabel(canon, LB.Ordering)
+    canon
+  }
+
+  def getOrdering(l: Label): Seq[Component] = {
+    assume(disjointSets.contains(l))
+    val canon = getComponentsWithLabel(LB.Ordering).filter(_.hasLabel(l)).head
+    getClusterMembers(l, canon).get
+  }
+
+  def addRelation(lhs: Component, l: Label, rhs: Component): Unit = {
+    val _ = addCluster(l, Seq(lhs, rhs))
+  }
+
+  def getRelations(lhs: Component, l: Label): Option[Seq[Component]] = {
+    getClusterMembers(l, lhs).map{ rels =>
+      rels.filter(_.id != lhs.id)
+    }
   }
 
   def addCluster(l: Label, cs: Seq[Component]): Component = {
@@ -114,8 +138,8 @@ class PageIndex(
       set.union(c0, cn)
     }
     val canonical = set.getCanonical(c0)
-    canonical.addLabel(LB.Canonical)
-    canonical.addLabel(l)
+    addLabel(canonical, LB.Canonical)
+    addLabel(canonical, l)
     canonical
   }
 

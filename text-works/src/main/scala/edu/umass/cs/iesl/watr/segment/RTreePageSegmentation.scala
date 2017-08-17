@@ -127,7 +127,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
       )
     }
 
-    createZone(LB.DocumentPages, pageRegions)
+    val _ = createZone(LB.DocumentPages, pageRegions)
 
 
     // buildLinePairTrapezoids()
@@ -186,15 +186,21 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
 object PageSegmenter {
 
   def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[(Component, Seq[Component])] = {
+    // val linesPerBlock0 = for {
+    //   pageLinesSets <- pageIndex.getClusters(LB.PageLines)
+    //   pageLines <- pageLineSets
+    // } yield {
+    // }
+
+
     val linesPerBlock0 = for {
-      readingBlockRegions <- pageIndex.getClusters(LB.ReadingBlocks)
-      // (line, n)    <- readingOrder.zipWithIndex
-      // textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+      block <- pageIndex.getOrdering(LB.ReadingBlocks)
     } yield {
       for {
-        block <- readingBlockRegions
-        rootLine   <- pageIndex.rtreeSearchHasAllLabels(block.bounds(), LB.ReadingBlockLines, LB.Canonical)
-        lineMembers   <- pageIndex.getClusterMembers(LB.ReadingBlockLines, rootLine)
+        visualLineRootCCs <- pageIndex.getRelations(block, LB.HasVisualLines).toList
+        visualLineRootCC <- visualLineRootCCs
+        // rootLine   <- pageIndex.rtreeSearchHasAllLabels(block.bounds(), LB.ReadingBlockLines, LB.Canonical)
+        lineMembers   <- pageIndex.getClusterMembers(LB.ReadingBlockLines, visualLineRootCC)
       } yield {
         (block, lineMembers)
       }
@@ -460,7 +466,7 @@ class PageSegmenter(
 
   // Try to detect and possibly rewrite text that is represented as path objects
   def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
-    for {
+    val _ = for {
       textBlock <- orderedTextBlocks
       hlineCC <- pageIndex.rtreeSearchOverlapping(textBlock, LB.HLinePath)
     } yield {
