@@ -130,7 +130,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
     val _ = createZone(LB.DocumentPages, pageRegions)
 
 
-    // buildLinePairTrapezoids()
+    buildLinePairTrapezoids()
 
   }
 
@@ -175,9 +175,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
       }
     }
 
-    println(
-      trapezoidHeights.ascii
-    )
+    // println(trapezoidHeights.ascii)
   }
 
 }

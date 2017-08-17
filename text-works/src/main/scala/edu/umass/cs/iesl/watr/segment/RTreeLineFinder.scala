@@ -172,8 +172,6 @@ class LineFinder(
               val visualLineBBox = xSortedAtoms.map(_.bounds).reduce { (c1, c2) => c1 union c2 }
 
               // gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
-              val lineChars = xSortedAtoms.map(_.chars).mkString
-              println("vis.line> " + lineChars)
 
               xSortedAtoms.foreach { cc =>
                 pageIndex.removeLabel(cc, LB.PageAtomTmp)
