@@ -424,10 +424,10 @@ class LineFinder(
   def convertTextRowToTextReflow(textRow: TextGrid.Row): TextReflow = {
 
     val textReflowAtoms: Seq[TextReflow] = textRow.cells.map{ _ match {
-      case cell@ TextGrid.LeftExpansionCell(char, root)  => Some(insert(char.toString()))
-      case cell@ TextGrid.RightExpansionCell(char, root) => Some(insert(char.toString()))
-      case cell@ TextGrid.LeftInsertCell(char, loc)      => Some(insert(char.toString()))
-      case cell@ TextGrid.RightInsertCell(char, loc)     => Some(insert(char.toString()))
+      case  TextGrid.LeftExpansionCell(char, root)  => Some(insert(char.toString()))
+      case  TextGrid.RightExpansionCell(char, root) => Some(insert(char.toString()))
+      case  TextGrid.LeftInsertCell(char, _)      => Some(insert(char.toString()))
+      case  TextGrid.RightInsertCell(char, loc@_)     => Some(insert(char.toString()))
 
       case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
         headItem match {

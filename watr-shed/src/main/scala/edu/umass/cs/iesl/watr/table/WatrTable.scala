@@ -48,7 +48,6 @@ object SharedInit {
 object WatrTable extends App with utils.AppMainBasics {
   import SharedInit._
 
-
   import ShellCommands._
 
   val argMap = argsToMap(args)

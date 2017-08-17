@@ -77,7 +77,7 @@ object BioArxivOps extends BioArxivJsonFormats {
     val papers = json.Json.parse(fis).validate[Seq[PaperRec]]
 
     papers.fold(
-      (errors: Seq[(JsPath, Seq[ValidationError])]) => {
+      (errors: Seq[(JsPath, Seq[JsonValidationError])]) => {
         println(s"errors: ${errors.length}")
 
         errors.take(10).foreach { case (errPath, errs) =>
