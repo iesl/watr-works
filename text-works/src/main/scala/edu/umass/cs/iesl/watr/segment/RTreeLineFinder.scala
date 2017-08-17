@@ -17,6 +17,9 @@ import scala.concurrent.duration._
 import textgrid._
 import textboxing.{TextBoxing => TB}, TB._
 
+import scala.collection.mutable
+
+
 class LineFinder(
   mpageIndex: MultiPageIndex,
   pageId: Int@@PageID,
@@ -68,7 +71,6 @@ class LineFinder(
     vis.writeRTreeImage("06-VisualLines", LB.VisualLine, stdLabels(LB.PageAtom):_*)
 
     // reorder visual lines within and across reading blocks
-    import scala.collection.mutable
 
     val alreadySeen: mutable.Set[Int@@ComponentID] = mutable.Set.empty
     val lines: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty

@@ -4,7 +4,6 @@ package bioarxiv
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
 import play.api.libs.json, json._
-import play.api.data.validation.ValidationError
 import watrmarks.{StandardLabels => LB}
 
 import corpora._
@@ -57,7 +56,7 @@ object BioArxivOps extends BioArxivJsonFormats {
       rec      <- corpusEntry.getArtifact("bioarxiv.json")
       asJson   <- rec.asJson.toOption
       paperRec <- asJson.validate[PaperRec].fold(
-        (errors: Seq[(JsPath, Seq[ValidationError])]) => {
+        (errors: Seq[(JsPath, Seq[JsonValidationError])]) => {
           println(s"errors: ${errors.length}")
 
           errors.take(10).foreach { case (errPath, errs) =>

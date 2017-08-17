@@ -12,6 +12,7 @@ import watrmarks.{StandardLabels => LB, _}
 import geometry._
 import geometry.syntax._
 import org.dianahep.{histogrammar => HST}
+import org.dianahep.histogrammar.ascii._
 
 import utils.{RelativeDirection => Dir}
 import TypeTags._
@@ -21,7 +22,7 @@ import PageComponentImplicits._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import textgrid._
 import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
-import utils.EnrichNumerics._
+// import utils.EnrichNumerics._
 
 object DocumentSegmenter {
   import spindex._
@@ -128,7 +129,15 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
 
     createZone(LB.DocumentPages, pageRegions)
 
-    // Determine paragraph structure
+
+    // buildLinePairTrapezoids()
+
+  }
+
+  def buildLinePairTrapezoids(): Unit = {
+    import HST._
+    val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble} named "trapezoid-heights")
+
     for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } {
@@ -152,17 +161,12 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
             val l2VisLineModal = pageIndex.getClusterMembers(LB.VisualLineModal, l2).get.last
             val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
             val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
-            val l1Width = l1Baseline.p2.x - l1Baseline.p1.x
-            val l2Width = l2Baseline.p2.x - l2Baseline.p1.x
 
-            val t = Trapezoid(
-              l1Baseline.p1, l1Width,
-              l2Baseline.p1, l2Width
-            )
+            val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
 
-            val leftAngle = t.toPoint(Dir.BottomLeft).angleTo(t.toPoint(Dir.TopLeft))
-            val rightAngle = math.Pi - t.toPoint(Dir.BottomRight).angleTo(t.toPoint(Dir.TopRight))
-            println(s"    ${t.prettyPrint}: left >: ${leftAngle.pp} right >: ${rightAngle.pp}")
+            trapezoidHeights.fill(t)
+
+            println(s"    ${t.prettyPrint}")
             println()
           case Seq(l1) =>
             println(s"$l1")
@@ -171,6 +175,9 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
       }
     }
 
+    println(
+      trapezoidHeights.ascii
+    )
   }
 
 }

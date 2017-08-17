@@ -192,16 +192,30 @@ case class Trapezoid(
   bottomLeft: Point,
   bottomWidth: Int@@FloatRep
 ) extends GeometricFigure  { self =>
-  import utils.{RelativeDirection => Dir}
 
-  val (l, r) = self.classifyLeftRight()
+  def height(): Int@@FloatRep = bottomLeft.y - topLeft.y
 
-  val t = self.toLine(Dir.Top)
-  val b = self.toLine(Dir.Bottom)
+  // def mbr()
+}
+object Trapezoid {
 
-  def prettyPrint: String = {
-    s"${l}/${r}:${t}/${b}"
+  def isHorizontal(l: Line): Boolean = l.p1.y==l.p2.y
+
+  def fromHorizontals(l1: Line, l2: Line): Trapezoid = {
+    assume(isHorizontal(l1) && isHorizontal(l2))
+    val Seq(ltop, lbottom) = Seq(l1, l2).sortBy(_.p1.y)
+    val ltn = ltop.normalizeOrder
+    val lbn = lbottom.normalizeOrder
+
+    val tWidth = ltn.p2.x - ltn.p1.x
+    val bWidth = lbn.p2.x - lbn.p1.x
+
+    Trapezoid(
+      ltn.p1, tWidth,
+      lbn.p1, bWidth
+    )
   }
+
 }
 
 case class GeometricGroup(
@@ -305,8 +319,8 @@ object GeometryImplicits extends RectangularCuts {
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
   def composeFigures(fig1: GeometricFigure, fig2: GeometricFigure): GeometricFigure = {
-    val bbox1 = totalBounds(fig1)
-    val bbox2 = totalBounds(fig2)
+    val bbox1 = minBoundingRect(fig1)
+    val bbox2 = minBoundingRect(fig2)
     val bbox12 = bbox1 union bbox2
     GeometricGroup(
       bbox12,
@@ -314,18 +328,28 @@ object GeometryImplicits extends RectangularCuts {
     )
   }
 
-  def totalBounds(fig: GeometricFigure): LTBounds = fig match {
+  def minBoundingRect(fig: GeometricFigure): LTBounds = fig match {
     case f: LTBounds       => f
     case f: LBBounds       => f.toLTBounds
     case f: Point          => LTBounds(f.x, f.y, FloatRep(0), FloatRep(0))
     case f: Line           => f.bounds()
+    case f: Trapezoid      =>
+      val Trapezoid(Point(tlx, tly), twidth, Point(blx, bly), bwidth) = f
+      val minx = min(tlx, blx)
+      val maxx = max(tlx+twidth, blx+bwidth)
+
+      val miny = min(tly, bly)
+      val maxy = max(tly, bly)
+
+      LTBounds(minx, miny, maxx-minx, maxy-miny)
+
     case f: GeometricGroup => f.bounds
-    case f: Colorized => totalBounds(f.figure)
+    case f: Colorized => minBoundingRect(f.figure)
   }
 
   def makeFringeParts(fig: GeometricFigure, padding: Padding): List[GeometricFigure] = {
 
-    val wbbox = totalBounds(fig)
+    val wbbox = minBoundingRect(fig)
 
     val leftGutter = wbbox.copy(
       width=padding.left
@@ -355,7 +379,7 @@ object GeometryImplicits extends RectangularCuts {
 
   def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
     val fringe = makeFringeParts(fig, padding)
-    val wbbox = totalBounds(fig)
+    val wbbox = minBoundingRect(fig)
     GeometricGroup(
       wbbox,
       fringe
@@ -429,7 +453,7 @@ object GeometryImplicits extends RectangularCuts {
     def prettyPrint(): String = {
       val p1 = line.p1.prettyPrint
       val p2 = line.p2.prettyPrint
-      s"<line:$p1->$p2>"
+      s"<$p1->$p2>"
     }
 
     def rise(): Double = (line.p2.y - line.p1.y).asDouble
@@ -455,8 +479,8 @@ object GeometryImplicits extends RectangularCuts {
     )
 
     def normalizeOrder: Line = {
-      val (p1x, p2x) = if (line.p1.x < line.p2.x) (line.p1.x, line.p2.x) else (line.p2.x, line.p1.x)
-      val (p1y, p2y) = if (line.p1.y < line.p2.y) (line.p1.y, line.p2.y) else (line.p2.y, line.p1.y)
+      val (p1x, p2x) = if (line.p1.x <= line.p2.x) (line.p1.x, line.p2.x) else (line.p2.x, line.p1.x)
+      val (p1y, p2y) = if (line.p1.y <= line.p2.y) (line.p1.y, line.p2.y) else (line.p2.y, line.p1.y)
 
       Line(Point(p1x, p1y), Point(p2x, p2y))
     }

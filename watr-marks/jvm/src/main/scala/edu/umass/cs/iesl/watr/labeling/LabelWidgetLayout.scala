@@ -204,7 +204,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
           PosAttr(F.void(flw), selfStrictBounds, selfStrictBounds, 0, Point.zero)
 
         case flw @ Figure(wid, figure) =>
-          val selfStrictBounds = totalBounds(figure)
+          val selfStrictBounds = minBoundingRect(figure)
 
           PosAttr(F.void(flw), selfStrictBounds, selfStrictBounds, 10, Point.zero)
 

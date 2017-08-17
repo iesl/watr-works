@@ -104,7 +104,7 @@ lazy val watrcolors = (crossProject in file("watr-colors"))
     scalacOptions -= "-Ywarn-dead-code" // doesn't play well with ScalaJS native binding declarations
   )
   .jvmSettings(libraryDependencies ++= Lib.http4s ++ TestLibs.testAndCheck ++ Seq(
-    "com.typesafe.akka"  %% "akka-actor"                % "2.5.3",
+    "com.typesafe.akka"  %% "akka-actor"                % "2.5.4",
     "org.webjars"        %  "bootstrap"                 % "3.3.7", // only used for css (bootstrap native is used instead)
     "org.webjars"        %  "jquery"                    % "2.2.4",
     "org.webjars"        %  "d3js"                      % "3.5.17",

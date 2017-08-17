@@ -61,7 +61,7 @@ object LabelWidgetTransforms {
     intersectingBboxes: List[GeometricFigure],
     zoneColor: Color
   ): LabelWidget = {
-    val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
+    val groupBbox = intersectingBboxes.map(minBoundingRect(_)).reduce(_ union _)
     withLabel("tooltip", label.key,
       figure(
         Colorized(
@@ -79,7 +79,7 @@ object LabelWidgetTransforms {
     intersectingBboxes: List[GeometricFigure],
     zoneColor: Color
   ): LabelWidget = {
-    // val groupBbox = intersectingBboxes.map(totalBounds(_)).reduce(_ union _)
+    // val groupBbox = intersectingBboxes.map(minBoundingRect(_)).reduce(_ union _)
     panel(
       withId(zoneId,
         makeZoneHighlightFigure(label, intersectingBboxes, zoneColor)

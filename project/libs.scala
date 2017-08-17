@@ -3,15 +3,15 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.14"
+  val scalazVersion       = "7.2.15"
   val scalaTagsVersion    = "0.6.5"
-  val scalaAsyncVersion   = "0.9.6"
+  val scalaAsyncVersion   = "0.9.7"
   // val akkaVersion         = "2.4.17"
   val scalatestVersion    = "3.0.3"
   val logbackVersion      = "1.7.25"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
-  val doobieVersion       = "0.4.1"
+  val doobieVersion       = "0.4.4"
   val matryoshkaCoreV     = "0.21.0"
   val sourcecodeV         = "0.1.4"
   val fansiV              = "0.2.4"
@@ -55,7 +55,7 @@ object DatabaseLibs extends LibVersions {
     "org.tpolecat" %% "doobie-postgres"   % doobieVersion,
     "org.tpolecat" %% "doobie-hikari"     % doobieVersion,
     "org.tpolecat" %% "doobie-specs2"     % doobieVersion % "test",
-    "org.postgresql"          % "postgresql" % "42.1.3",
+    "org.postgresql"          % "postgresql" % "42.1.4",
     "org.javassist" % "javassist" % "3.22.0-CR2",
     "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7.1"
   )
@@ -65,13 +65,13 @@ object DatabaseLibs extends LibVersions {
 trait CommonLibs extends LibVersions {
 
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.11.11"  % ammoniteVersion
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.12.3"  % ammoniteVersion
   // val ammoniteOps      = "com.lihaoyi"             % "ammonite-ops_2.11.11"  % ammoniteVersion
   val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"  % ammoniteVersion
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.6.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
-  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.5.16"
+  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.3"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,

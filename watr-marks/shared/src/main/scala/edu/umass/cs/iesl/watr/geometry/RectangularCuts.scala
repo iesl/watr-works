@@ -109,11 +109,11 @@ trait RectangularCuts {
   }
 
 
-  sealed trait Trapezoidal
-  object Trapezoidal {
-    case object Right extends Trapezoidal
-    case object Acute extends Trapezoidal
-    case object Obtuse extends Trapezoidal
+  sealed trait AngleType
+  object AngleType {
+    case object Right extends AngleType
+    case object Acute extends AngleType
+    case object Obtuse extends AngleType
   }
 
 
@@ -126,24 +126,48 @@ trait RectangularCuts {
       math.Pi - toPoint(Dir.BottomRight).angleTo(toPoint(Dir.TopRight))
     }
 
-    def classifyLeftRight(
-      tolerance: Double = 0.03d
-    ): (Trapezoidal, Trapezoidal) = {
+    def prettyPrint: String = {
+
+      val lla = lowerLeftAngle()
+      val lra = lowerRightAngle()
+
+      val (llba, lrba) = classifyBaseAngles()
+
+      val lls = llba match {
+        case AngleType.Right => "◻"
+        case AngleType.Acute => s"◿"
+        case AngleType.Obtuse => s"◹"
+      }
+
+      val lrs = lrba match {
+        case AngleType.Right => "◻"
+        case AngleType.Acute => s"◺"
+        case AngleType.Obtuse => s"◸"
+      }
+
+      // val tline = self.toLine(Dir.Top)
+      // val bline = self.toLine(Dir.Bottom)
+      val lldeg = (lla * 180) / math.Pi
+      val lrdeg = (lra * 180) / math.Pi
+
+      s"${lls}◻${lrs}:<${lldeg.pp}º,${lrdeg.pp}º>mbr:${minBoundingRect(self)}"
+    }
+
+    def classifyBaseAngles(tolerance: Double = 0.03d): (AngleType, AngleType) = {
       val lla = lowerLeftAngle()
       val lra = lowerRightAngle()
 
       val pi2 = math.Pi/2
 
       val deg90 = DoubleInterval(pi2-tolerance, tolerance*2)
-      println(s"  interval: ${deg90}, pi2: ${pi2.pp}, lla: ${lla.pp} lra: ${lra.pp}")
 
-      val leftClass = if (lla.withinRange(deg90)) Trapezoidal.Right
-                      else if (lla < pi2) Trapezoidal.Acute
-                      else Trapezoidal.Obtuse
+      val leftClass = if (lla.withinRange(deg90)) AngleType.Right
+                      else if (lla < pi2) AngleType.Acute
+                      else AngleType.Obtuse
 
-      val rightClass = if (lra.withinRange(deg90)) Trapezoidal.Right
-                       else if (lra < pi2) Trapezoidal.Acute
-                       else Trapezoidal.Obtuse
+      val rightClass = if (lra.withinRange(deg90)) AngleType.Right
+                       else if (lra < pi2) AngleType.Acute
+                       else AngleType.Obtuse
 
 
 
@@ -151,23 +175,6 @@ trait RectangularCuts {
       (leftClass, rightClass)
     }
 
-    // def classifyLeftRight(): (Trapezoidal, Trapezoidal) = {
-    //   val tl = self.topLeft
-    //   val bl = self.bottomLeft
-
-    //   val leftClass = if (tl.x == bl.x) Trapezoidal.Right
-    //                   else if (tl.x < bl.x) Trapezoidal.Obtuse
-    //                   else  Trapezoidal.Acute
-
-    //   val tr = self.toPoint(Dir.TopRight)
-    //   val br = self.toPoint(Dir.BottomRight)
-
-    //   val rightClass = if (tr.x == br.x) Trapezoidal.Right
-    //                   else if (tr.x < br.x) Trapezoidal.Acute
-    //                   else  Trapezoidal.Obtuse
-
-    //   (leftClass, rightClass)
-    // }
 
     def toPoint(dir: Dir): Point ={
       val Trapezoid(Point(tlx, tly), twidth, Point(blx, bly), bwidth) = self
