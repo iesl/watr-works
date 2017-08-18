@@ -8,7 +8,7 @@ import geometry._
 import java.net.URL
 import TypeTags._
 
-trait DocsegTestUtil extends  FlatSpec with Matchers {
+trait SegmentationTestUtils extends  FlatSpec with Matchers {
 
   import ammonite.{ops => fs}
 
@@ -118,7 +118,6 @@ trait DocsegTestUtil extends  FlatSpec with Matchers {
   }
 
 }
-
 
 case class TestRegion(
   pdfUrl: URL,

@@ -18,6 +18,7 @@ import textgrid._
 import textboxing.{TextBoxing => TB}, TB._
 
 import scala.collection.mutable
+import utils.SlicingAndDicing._
 
 
 class LineFinder(
@@ -276,7 +277,7 @@ class LineFinder(
         (1, AlignLeft)  // space
       )
 
-      DocumentSegmenter.vtrace.ifTrace({
+      DocumentSegmenter.vtrace({
         dbgGrid = dbgGrid.addRow(
           "J",
           "",
@@ -320,7 +321,7 @@ class LineFinder(
                 }
 
 
-                DocumentSegmenter.vtrace.ifTrace {
+                DocumentSegmenter.vtrace {
 
                   val pinChars = cell.pins.toList.map(_.pinChar).sorted.mkString
 
@@ -340,7 +341,8 @@ class LineFinder(
               }
               cells.getOrElse(Seq())
 
-            case c@ RegionComponent(id, roleLabel, pageRegion, text) =>
+            case c@ RegionComponent(id, roleLabel, pageRegion, maybeText) =>
+              // TODO this is skipping over text represented as paths (but I have to figure out sup/sub script handling to make it work)
               Seq()
 
           }
@@ -351,8 +353,8 @@ class LineFinder(
 
       val textRow = fromComponents(visualLineAtoms)
 
-      DocumentSegmenter.vtrace.ifTrace {
-        println(dbgGrid.toBox().transpose())
+      DocumentSegmenter.vtrace.printTrace {
+        dbgGrid.toBox().transpose()
       }
 
       // Convert consecutive sup/sub to single label
@@ -432,14 +434,19 @@ class LineFinder(
 
 
   def approximateLineBins(charBoxes: Seq[AtomicComponent]): Unit = {
+    tracer.enter()
+
     charBoxes
       .groupBy{ _.bounds.bottom.unwrap }
       .toSeq
       .map { case (bottomY, charBoxes) =>
         charBoxes.sortBy(_.bounds.left)
       }.foreach{ lineBin =>
+        // TODO label this as a line, perhaps?
         mpageIndex.labelRegion(lineBin, LB.LineByHash)
       }
+
+    tracer.exit()
   }
 
   def findReadingOrder(initRegion: LTBounds): Seq[LTBounds] = {
@@ -464,4 +471,53 @@ class LineFinder(
       upperRegion.map( _ +: rs ).getOrElse(rs)
     } getOrElse { Seq(initRegion) }
   }
+
+  def splitLinesWithOverlaps(): Unit = {
+    for {
+      cc <- pageIndex.getComponentsWithLabel(LB.LineByHash)
+    } {
+      // Split up lines into strictly non-overlapping regions
+      val intersects = pageIndex.rtreeSearch(cc.bounds, LB.LineByHash)
+
+
+      if (intersects.length > 1) {
+        val totalBounds = intersects.map(_.bounds).reduce(_ union _)
+        val charsInRegion = pageIndex.rtreeSearch(totalBounds, LB.PageAtom)
+        // Remove the LineByHash regions
+        // iterate over chars left-to-right and group them into non-overlaps and overlaps
+        val allChars = charsInRegion.sortBy(_.bounds.left)
+
+        allChars.groupByPairs { (c1, c2) =>
+          c1.bounds.bottom == c2.bounds.bottom
+        }.foreach{ ccs =>
+          mpageIndex.labelRegion(ccs, LB.LineByHash)
+        }
+
+        intersects.foreach { cc =>
+          pageIndex.removeComponent(cc)
+        }
+      }
+    }
+  }
+
+  def splitLinesOnWhitespaceColumns(): Unit = {
+
+    for {
+      colRegion <- pageIndex.getComponentsWithLabel(LB.WhitespaceCol)
+      intersectedLine <- pageIndex.rtreeSearch(colRegion.bounds, LB.LineByHash)
+    } {
+
+      val charsInRegion = pageIndex.rtreeSearch(intersectedLine.bounds, LB.PageAtom)
+      val allChars = charsInRegion.sortBy(_.bounds.left)
+
+      val (leftSplit, rightSplit) = allChars.span(_.bounds.left < colRegion.bounds.left)
+
+      mpageIndex.labelRegion(leftSplit, LB.LineByHash)
+      mpageIndex.labelRegion(rightSplit, LB.LineByHash)
+
+      pageIndex.removeComponent(intersectedLine)
+    }
+
+  }
+
 }

@@ -6,7 +6,7 @@ package segment
 
 // import watrmarks.{StandardLabels => LB}
 
-class SuperSubScriptTest extends DocsegTestUtil {
+class SuperSubScriptTest extends SegmentationTestUtils {
   behavior of "super/subscript labeling"
 
   case class Example(

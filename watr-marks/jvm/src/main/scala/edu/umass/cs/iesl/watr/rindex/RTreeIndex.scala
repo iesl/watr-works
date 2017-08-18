@@ -62,7 +62,7 @@ class RTreeIndex[T: RTreeIndexable](
       toJsiRectangle(si.ltBounds(item))
     )
 
-    itemMap.remove(si.id(item).toLong)
+    itemMap -= si.id(item).toLong
   }
 
   def add(item: T): Unit = {
@@ -70,7 +70,7 @@ class RTreeIndex[T: RTreeIndexable](
       item,
       toJsiRectangle(si.ltBounds(item))
     )
-    itemMap.put(si.id(item).toLong, item)
+    itemMap += (si.id(item).toLong, item)
   }
 
   def getItems(): Seq[T] = {

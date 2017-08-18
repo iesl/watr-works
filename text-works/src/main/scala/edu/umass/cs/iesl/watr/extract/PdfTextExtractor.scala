@@ -11,7 +11,7 @@ import geometry._
 
 import TypeTags._
 import scala.collection.mutable
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters
 import ammonite.{ops => fs}, fs._
 import java.nio.{file => nio}
 
@@ -44,15 +44,18 @@ class PdfTextExtractor(
       .map(pdfObject.getAsArray(_))
       .filterNot(_ == null)
       .headOption
-      .map(_.toArray.map(_.asInstanceOf[PdfNumber].doubleValue()))
-      .getOrElse({
+      .map{ x =>
+        JavaConverters.asScalaIterator(x.iterator()).toArray
+          .map(_.asInstanceOf[PdfNumber].doubleValue())
+      }
+      .getOrElse{
         val parent = pdfObject.getAsDictionary(PdfName.Parent)
         if (parent!=null) {
           getBestBoundingBox(parent)
         } else {
           sys.error("no bounding box (media/crop/trim/etc) found in pdfobjects!")
         }
-      })
+      }
   }
 
   def getBestBoundingBox(pdfPage: PdfPage): Array[Double] = {

@@ -3,7 +3,7 @@ package segment
 
 import corpora._
 
-class DocumentIOTests extends DocsegTestUtil  {
+class DocumentIOTests extends SegmentationTestUtils  {
 
   behavior of "Segmentation IO"
 

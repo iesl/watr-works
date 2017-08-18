@@ -12,6 +12,8 @@ import utils.OrderedDisjointSet
 
 import textgrid._
 import utils.ExactFloats._
+import edu.umass.cs.iesl.watr.tracing._
+
 
 
 /**
@@ -20,35 +22,70 @@ import utils.ExactFloats._
     - Disjoint sets (with internal ordering)
        e.g., LB.VisualLines -> DisjointSet()
 
-  - Ordering components
+  - Ordering for components withing a single page
+
+  - Weighted labels for components
+
+  - Edges (relations) between components
 
   - Quick access to components with a particular label
 
   */
 
+object UpgradedLabels extends TypeTagUtils {
+
+  // import scalaz.Tag
+  sealed trait DisjointSetL
+  val DisjointSetL = Tag.of[DisjointSetL]
+
+
+  sealed trait WeightedLabel
+  val WeightedLabel = Tag.of[WeightedLabel]
+  type Weight = String@@WeightedLabel
+  // CategoryLabel =
+  // WeightedLabel =
+
+}
+
 object PageIndex {
-  // import java.nio.file.Files
   import java.nio.file.Path
   import TypeTags._
 
-  // def rtreeAccess(entry: String, pageNum: Int@@PageNum) = for {
-  //   entry     <- corpus.entry(entry)
-  //   group     <- entry.getArtifactGroup("rtrees")
-  //   rtreeBlob <- group.getArtifact(s"page-${pageNum}.rtree")
-  //   rtreePath <- rtreeBlob.asPath
-  // } {
-  //   rindex.RTreeIndex.load(rtreePath.toNIO)
+
+  val noopTracer = new VisualTracer()
+
   def load(path: Path): PageIndex = {
     val rtree = RTreeIndex.load[Component](path)
     val pageGeometry = PageGeometry(PageNum(0), LTBounds.empty)
     new PageIndex(pageGeometry, rtree)
   }
+
+
+  var activeTracingCallback: (PageIndex) => Unit = (pageIndex: PageIndex) => {
+    println("called activeTracingCallback")
+  }
+
+  var activeTracer = noopTracer
+  def tracer() = activeTracer
 }
+
+// class PageIndexTracer() extends VisualTracer { self =>
+//   def addComponent(c: Component): Unit = {}
+// }
 
 class PageIndex(
   val pageGeometry: PageGeometry,
   val componentRTree: RTreeIndex[Component] = RTreeIndex.createFor[Component]()
 ) {
+
+
+  val weightedComponentLabels: mutable.HashMap[
+    Int@@ComponentID, mutable.HashMap[Label, Double]
+  ] = mutable.HashMap()
+
+  def assignWeight(cc: Int@@ComponentID, l: Label, initWeight: Double): Unit = ???
+  def getWeight(cc: Int@@ComponentID, l: Label): Double = ???
+  def modifyWeight(cc: Int@@ComponentID, l: Label, modf: Double => Double): Double = ???
 
   lazy val pageNum = pageGeometry.id
   val rtreeArtifactName = s"page-${pageNum}.rtree"
@@ -85,6 +122,7 @@ class PageIndex(
       .put(l, t)
   }
 
+  // AttibuteLabel
   def getComponentText(c: Component, l: Label): Option[TextGrid.Row] = {
     componentToText.get(c.id).flatMap(_.get(l))
   }
@@ -108,24 +146,30 @@ class PageIndex(
     canon
   }
 
+  // l: String@@Ordering
   def getOrdering(l: Label): Seq[Component] = {
     assume(disjointSets.contains(l))
     val canon = getComponentsWithLabel(LB.Ordering).filter(_.hasLabel(l)).head
     getClusterMembers(l, canon).get
   }
 
+  // l: String@@Relation
   def addRelation(lhs: Component, l: Label, rhs: Component): Unit = {
     val _ = addCluster(l, Seq(lhs, rhs))
   }
 
+  // l: String@@Relation
   def getRelations(lhs: Component, l: Label): Option[Seq[Component]] = {
     getClusterMembers(l, lhs).map{ rels =>
       rels.filter(_.id != lhs.id)
     }
   }
 
+  // l: String@@DisjointCluster
   def addCluster(l: Label, cs: Seq[Component]): Component = {
     assume(cs.nonEmpty)
+
+    // PageIndex..traceIf(true)()
 
     val set = disjointSets.getOrElseUpdate(l,
       OrderedDisjointSet.apply[Component]()
@@ -140,6 +184,8 @@ class PageIndex(
     val canonical = set.getCanonical(c0)
     addLabel(canonical, LB.Canonical)
     addLabel(canonical, l)
+
+
     canonical
   }
 
@@ -147,12 +193,14 @@ class PageIndex(
     disjointSets.get(l)
   }
 
+  // l: String@@DisjointCluster
   def getClusters(l: Label): Seq[Seq[Component]] = {
     disjointSets.get(l).map{set =>
       set.sets.toSeq.map(_.toSeq)
     } getOrElse(Seq())
   }
 
+  // l: String@@DisjointCluster
   def getClusterMembers(l: Label, cc: Component): Option[Seq[Component]] = {
     disjointSets.get(l).map{set =>
       set.sets.toSeq.map(_.toSeq)
@@ -170,24 +218,24 @@ class PageIndex(
     } getOrElse(Seq())
   }
 
-
   def addComponent(c: Component): Component = {
     componentRTree.add(c)
     addLabel(c, c.roleLabel)
+    c.labels().foreach { l =>
+      addLabel(c, l)
+    }
     c
   }
 
   def removeComponent(c: Component): Unit = {
-    c.labels.foreach { label =>
+    (c.roleLabel +: c.labels.toSeq).foreach { label =>
       labelToComponents.get(label)
         .map{ ccIds => ccIds -= c.id }
     }
 
     componentToLabels -= c.id
     componentRTree.remove(c)
-
   }
-
 
   def getPageAtoms(): Seq[AtomicComponent] = {
     componentRTree.getItems
@@ -276,6 +324,7 @@ class PageIndex(
   ): Seq[Component] = {
     val lbls = label :: labels.toList
 
+    PageIndex.tracer.checkpoint("search")
     componentRTree.search(queryRegion, {cc =>
       lbls.contains(cc.roleLabel)
     })

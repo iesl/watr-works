@@ -70,6 +70,7 @@ class MultiPageIndex(
 
   def getPageIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
 
+  // TODO this should be pushed into the PageIndex class
   def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, PageRegion)] = {
     if (components.isEmpty) None else {
       val totalBounds = components.map(_.bounds).reduce(_ union _)
@@ -87,15 +88,14 @@ class MultiPageIndex(
       val targetRegion = docStore.getTargetRegion(regionId)
       val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
 
-      val region = createRegionComponent(pageRegion, role, None)
-      // componentIdToRegionId.put(region.id, targetRegion.id)
+      val region = createRegionComponent(pageRegion, role)
 
       Some((region, targetRegion))
     }
   }
 
 
-  def createRegionComponent(targetRegion: PageRegion, role: Label, text:Option[String]): RegionComponent = {
+  def createRegionComponent(targetRegion: PageRegion, role: Label, text:Option[String] = None): RegionComponent = {
     val region = RegionComponent(componentIdGen.nextId, role, targetRegion, text)
     addComponent(region)
 
@@ -113,7 +113,7 @@ class MultiPageIndex(
     val slineCCs = path.slantedLines
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        val c = createRegionComponent(region, LB.LinePath, None)
+        val c = createRegionComponent(region, LB.LinePath)
         addComponent(c)
         c
       }
@@ -121,19 +121,19 @@ class MultiPageIndex(
     val hlineCCs = path.horizontalLines
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        val c = createRegionComponent(region, LB.HLinePath, None)
+        val c = createRegionComponent(region, LB.HLinePath)
         addComponent(c)
         c
       }
     val vlineCCs = path.verticalLines()
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(width=0.01.toFloatExact))
-        val c = createRegionComponent(region, LB.VLinePath, None)
+        val c = createRegionComponent(region, LB.VLinePath)
         addComponent(c)
         c
       }
     val region = path.pageRegion
-    val c = createRegionComponent(region, LB.PathBounds, None)
+    val c = createRegionComponent(region, LB.PathBounds)
     addComponent(c)
 
     Seq(c) ++ hlineCCs ++ vlineCCs ++ slineCCs
@@ -141,7 +141,7 @@ class MultiPageIndex(
 
   def addImageAtom(pageAtom: PageItem.ImageAtom): RegionComponent = {
     // println(s"addImageAtom ${pageAtom.pageRegion}")
-    val c = createRegionComponent(pageAtom.pageRegion, LB.Image, None)
+    val c = createRegionComponent(pageAtom.pageRegion, LB.Image)
     addComponent(c)
     c
   }

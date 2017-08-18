@@ -32,7 +32,7 @@ class RTreeVisualizer(
   def segvisGifFile(name: String) = s"${name}.pg${pageNum}.gif"
 
   def writeRTreeImage(name: String, l0: Label, labels: Label*): Unit = {
-    vtrace.ifTrace{
+    vtrace {
       val image = createRTreeImage(l0, labels:_*)
       writeImage(name, image)
     }
@@ -74,7 +74,7 @@ class RTreeVisualizer(
   }
 
   def cleanRTreeImageFiles(): Unit = {
-    vtrace.ifTrace {
+    vtrace {
       if (fs.exists(outputRoot)) {
         fs.rm(outputRoot)
       }
@@ -101,7 +101,7 @@ class RTreeVisualizer(
     )
 
     def indicate(caption: String, bounds:LTBounds, labels: Label*): Unit = {
-      vtrace.ifTrace {
+      vtrace {
         val tmpRegion = RegionComponent(ComponentID(0), LB.Marked, mkPageRegion(bounds))
 
         rTreeIndex.add(tmpRegion)
@@ -113,7 +113,7 @@ class RTreeVisualizer(
     }
 
     def indicate(caption: String, bounds:Seq[LTBounds], labels: Label*): Unit = {
-      vtrace.ifTrace {
+      vtrace {
         val tmps = bounds.map { b =>
           val tmpRegion = RegionComponent(ComponentID(0), LB.Marked, mkPageRegion(b))
           rTreeIndex.add(tmpRegion)
@@ -127,7 +127,7 @@ class RTreeVisualizer(
     }
 
     def addFrame(caption: String, l0: Label, labels: Label*): Unit = {
-      vtrace.ifTrace {
+      vtrace {
         val img0 = createRTreeImage(l0, labels:_*)
         val filter = new scrimage.canvas.CaptionFilter(
           caption,
@@ -143,7 +143,7 @@ class RTreeVisualizer(
 
 
     def finish(): Unit = {
-      vtrace.ifTrace {
+      vtrace {
         val gifWriter = StreamingGifWriter().withFrameDelay(frameRate)
         // val outputPath = fs.pwd / segvisRoot / segvisGifFile(name)
         val outputPath =  outputRoot / segvisGifFile(name)

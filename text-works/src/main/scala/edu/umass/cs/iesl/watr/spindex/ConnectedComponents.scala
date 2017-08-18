@@ -22,27 +22,22 @@ sealed trait Component {
 
   def roleLabel: Label
 
-  def setRole(l: Label): Component
+  // def setRole(l: Label): Component
 
   def pageRegion(): PageRegion
 
   def bounds(): LTBounds = pageRegion().bbox
 
-  def chars: String
+  // def chars: String
 
   def getStableID(): String@@DocumentID = pageRegion.page.stableId
 
   lazy val pageNum = pageRegion.page.pageNum
 
   protected [spindex] val labelSet: mutable.Set[Label] = mutable.Set.empty[Label]
-  protected [spindex] def addLabel(l: Label): Unit = {
-    labelSet += l
-    // labelSet.add(l)
-  }
-  protected [spindex] def removeLabel(l: Label): Unit = {
 
-    labelSet -= l
-  }
+  protected [spindex] def addLabel(l: Label): Unit = labelSet += l
+  protected [spindex] def removeLabel(l: Label): Unit =  labelSet -= l
 
   def hasLabel(l: Label): Boolean = labels.contains(l)
   def labels(): Set[Label] = labelSet.toSet
@@ -56,9 +51,9 @@ case class RegionComponent(
   text: Option[String] = None
 ) extends Component {
 
-  def setRole(l: Label): Component = copy(roleLabel = l)
+  // def setRole(l: Label): Component = copy(roleLabel = l)
 
-  def chars: String = text.getOrElse("")
+  // def chars: String = text.getOrElse("")
 
   override def toString(): String = {
     s"<${roleLabel.key}.${id} ${pageRegion}"
@@ -71,7 +66,7 @@ case class AtomicComponent(
   override val roleLabel: Label = LB.PageAtom
 ) extends Component {
 
-  def setRole(l: Label): Component = copy(roleLabel = l)
+  // def setRole(l: Label): Component = copy(roleLabel = l)
 
   def pageRegion: PageRegion = charAtom.pageRegion
 

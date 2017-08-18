@@ -2,8 +2,9 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import corpora._
+import spindex._
 
-class PageTextTest extends DocsegTestUtil  {
+class PageTextTest extends SegmentationTestUtils  {
   /**
 
     These are meant to be minimal smokescreen tests to insure that basic text
@@ -60,9 +61,17 @@ class PageTextTest extends DocsegTestUtil  {
          |""".stripMargin
     }
 
-    val (docId, path) = allTestPdfs(1)
+    val (docId, path) = allTestPdfs(0)
 
-    // tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Print
+
+    def tracecb(pageIndex: PageIndex): Unit = {
+      println("tracecb!")
+    }
+
+    tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Visualize
+
+    PageIndex.activeTracingCallback = tracecb(_)
+
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
     segmenter.runPageSegmentation()

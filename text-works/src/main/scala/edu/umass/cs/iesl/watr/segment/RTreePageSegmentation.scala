@@ -22,7 +22,6 @@ import PageComponentImplicits._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import textgrid._
 import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
-// import utils.EnrichNumerics._
 
 object DocumentSegmenter {
   import spindex._
@@ -89,7 +88,9 @@ object DocumentSegmenter {
   val vtrace = new VisualTracer()
 }
 
-class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
+class DocumentSegmenter(
+  val mpageIndex: MultiPageIndex
+) { documentSegmenter =>
 
   val docStore = mpageIndex.docStore
   val stableId = mpageIndex.getStableId
@@ -131,13 +132,12 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
 
 
     buildLinePairTrapezoids()
+    classifyLinePairs()
 
   }
 
-  def buildLinePairTrapezoids(): Unit = {
-    import HST._
-    val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble} named "trapezoid-heights")
 
+  def classifyLinePairs(): Unit = {
     for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
     } {
@@ -146,6 +146,22 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
         (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
         linePair <- lineCCs.sliding(2)
       } {
+      }
+    }
+  }
+
+  def buildLinePairTrapezoids(): Seq[(Component, Seq[Trapezoid])] = {
+    import HST._
+    val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble} named "trapezoid-heights")
+
+    val _ = for {
+      (pageId, pagenum) <- docStore.getPages(docId).toList.zipWithIndex
+    } yield {
+      val pageIndex = mpageIndex.getPageIndex(PageNum(pagenum))
+      val maybeTraps = for {
+        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+        linePair <- lineCCs.sliding(2)
+      } yield {
 
         // construct trapezoids: isosceles, right, rectangular
         linePair match {
@@ -157,6 +173,7 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
               println(s"2> ${row.toText()}")
             }
 
+            // This is a relation
             val l1VisLineModal = pageIndex.getClusterMembers(LB.VisualLineModal, l1).get.last
             val l2VisLineModal = pageIndex.getClusterMembers(LB.VisualLineModal, l2).get.last
             val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
@@ -168,36 +185,35 @@ class DocumentSegmenter(val mpageIndex: MultiPageIndex) { documentSegmenter =>
 
             println(s"    ${t.prettyPrint}")
             println()
+            Option(t)
           case Seq(l1) =>
             println(s"$l1")
+            None
           case _ => sys.error("only 1 or 2 lines in sliding(2)")
         }
+
       }
+      maybeTraps.flatten
     }
 
-    // println(trapezoidHeights.ascii)
-  }
+    println(trapezoidHeights.ascii)
 
+    // traps
+    ???
+
+  }
 }
 
 
 object PageSegmenter {
 
   def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[(Component, Seq[Component])] = {
-    // val linesPerBlock0 = for {
-    //   pageLinesSets <- pageIndex.getClusters(LB.PageLines)
-    //   pageLines <- pageLineSets
-    // } yield {
-    // }
-
-
     val linesPerBlock0 = for {
       block <- pageIndex.getOrdering(LB.ReadingBlocks)
     } yield {
       for {
         visualLineRootCCs <- pageIndex.getRelations(block, LB.HasVisualLines).toList
         visualLineRootCC <- visualLineRootCCs
-        // rootLine   <- pageIndex.rtreeSearchHasAllLabels(block.bounds(), LB.ReadingBlockLines, LB.Canonical)
         lineMembers   <- pageIndex.getClusterMembers(LB.ReadingBlockLines, visualLineRootCC)
       } yield {
         (block, lineMembers)
@@ -228,10 +244,12 @@ class PageSegmenter(
   val segvisRootPath = pwd / s"${stableId}-segs.d"
   val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath, DocumentSegmenter.vtrace)
 
+  def tracer() = PageIndex.tracer()
+
   vis.cleanRTreeImageFiles()
 
 
-  def labelRegion(bbox: LTBounds, label: Label, text: Option[String]=None): RegionComponent = {
+  def labelRegion(bbox: LTBounds, label: Label, text: Option[String] = None): RegionComponent = {
     val regionId = docStore.addTargetRegion(pageId, bbox)
     val pageRegion = docStore.getTargetRegion(regionId)
     mpageIndex.createRegionComponent(pageRegion, label, text)
@@ -285,7 +303,7 @@ class PageSegmenter(
     // Don't  accept a space wider than (some magic number)*the widest char?
     val saneCharDists = charDists
       .filter(_ < widestChar*2 )
-      .filter(_ == 0)
+      .filterNot(_.unwrap == 0)
 
     def resolution =  0.3d
 
@@ -300,7 +318,6 @@ class PageSegmenter(
       // If there is only 1 distance, the line is only 1 word (no word breaks)
       1.0d.toFloatExact()
     } else if (distGroups.length == 2) {
-      // vtrace.trace(message(""))
       val d1 = distGroups(0).last
       val d2 = distGroups(1).head
 
@@ -600,54 +617,6 @@ class PageSegmenter(
       }
 
     Some(currWhiteSpace)
-
-  }
-
-  def splitLinesWithOverlaps(): Unit = {
-    for {
-      cc <- pageIndex.getComponentsWithLabel(LB.LineByHash)
-    } {
-      // Split up lines into strictly non-overlapping regions
-      val intersects = pageIndex.rtreeSearch(cc.bounds, LB.LineByHash)
-
-
-      if (intersects.length > 1) {
-        val totalBounds = intersects.map(_.bounds).reduce(_ union _)
-        val charsInRegion = pageIndex.rtreeSearch(totalBounds, LB.PageAtom)
-        // Remove the LineByHash regions
-        // iterate over chars left-to-right and group them into non-overlaps and overlaps
-        val allChars = charsInRegion.sortBy(_.bounds.left)
-
-        allChars.groupByPairs { (c1, c2) =>
-          c1.bounds.bottom == c2.bounds.bottom
-        }.foreach{ ccs =>
-          mpageIndex.labelRegion(ccs, LB.LineByHash)
-        }
-
-        intersects.foreach { cc =>
-          pageIndex.removeComponent(cc)
-        }
-      }
-    }
-  }
-
-  def splitLinesOnWhitespaceColumns(): Unit = {
-
-    for {
-      colRegion <- pageIndex.getComponentsWithLabel(LB.WhitespaceCol)
-      intersectedLine <- pageIndex.rtreeSearch(colRegion.bounds, LB.LineByHash)
-    } {
-
-      val charsInRegion = pageIndex.rtreeSearch(intersectedLine.bounds, LB.PageAtom)
-      val allChars = charsInRegion.sortBy(_.bounds.left)
-
-      val (leftSplit, rightSplit) = allChars.span(_.bounds.left < colRegion.bounds.left)
-
-      mpageIndex.labelRegion(leftSplit, LB.LineByHash)
-      mpageIndex.labelRegion(rightSplit, LB.LineByHash)
-
-      pageIndex.removeComponent(intersectedLine)
-    }
 
   }
 
