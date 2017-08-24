@@ -19,13 +19,17 @@ import textboxing.{TextBoxing => TB}, TB._
 
 import scala.collection.mutable
 import utils.SlicingAndDicing._
+import edu.umass.cs.iesl.watr.tracing.VisualTracer
+
+
 
 
 class LineFinder(
   mpageIndex: MultiPageIndex,
   pageId: Int@@PageID,
-  pageNum: Int@@PageNum
-) extends PageSegmenter(pageId, pageNum, mpageIndex) {
+  pageNum: Int@@PageNum,
+  tracer: VisualTracer
+) extends PageSegmenter(pageId, pageNum, mpageIndex, tracer) {
 
 
   def determineLines(): Unit = {
@@ -129,6 +133,7 @@ class LineFinder(
 
 
   def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
+    tracer.enter()
     // val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
 
     pageIndex.getComponentsWithLabel(LB.PageAtom)
@@ -162,8 +167,6 @@ class LineFinder(
               .copy(height = height/2, top=top+height/4)
 
 
-            // gifBuilder.indicate("Search Line Region", centerLine, LB.PageAtomTmp)
-
             // Now find all chars in queryRegion and string them together into a single visual line
             val visualLineAtoms = pageIndex.rtreeSearchHasLabel(centerLine, LB.PageAtomTmp)
 
@@ -194,15 +197,174 @@ class LineFinder(
 
     // gifBuilder.finish()
 
+    tracer.exit()
+  }
+
+  def findModalBoundingRect(visualLineCC: Component, visualLineAtoms: Seq[Component]): LTBounds = {
+    val visualLineBounds = visualLineCC.bounds()
+
+    val modalBaselineI = modalValue(visualLineAtoms, _.bounds().bottom.unwrap)
+      .getOrElse(visualLineBounds.bottom.unwrap)
+
+    val modalBaseline = FloatRep(modalBaselineI)
+
+    val modalToplineI = modalValue(visualLineAtoms, _.bounds.top.unwrap)
+      .getOrElse(visualLineBounds.top.unwrap)
+
+    val modalTopline = FloatRep(modalToplineI)
+
+    val height = modalBaseline-modalTopline
+
+    val visualLineModalBounds = if (height > 0) {
+      visualLineBounds.copy(
+        top=modalTopline, height=modalBaseline-modalTopline
+      )
+    } else {
+      visualLineBounds
+    }
+
+    // gifBuilder.indicate("Modal-base/top VisualLine", visualLineModalBounds)
+
+    visualLineModalBounds
   }
 
 
 
-  def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
+  def textRowFromComponents(visualLineCC: Component, visualLineAtoms: Seq[Component])
+    (implicit gifBuilder: GifBuilder): TextGrid.Row = {
+
+
+    val visualLineModalCC = pageIndex.getRelations(visualLineCC, LB.VisualLineModal).head.head
+    val visualLineModalBounds = visualLineModalCC.bounds()
+
+    val (topIntersects, bottomIntersects) = findLineAtomScriptPositions(visualLineCC, visualLineAtoms)
+
+
+    new TextGrid.MutableRow { self =>
+      val init = visualLineAtoms.map{
+        case cc@ AtomicComponent(id, charAtom, roleLabel) =>
+          val intersectsTop = topIntersects.contains(cc.id)
+          val intersectsBottom = bottomIntersects.contains(cc.id)
+
+          val cells = charAtom.char.headOption.map{ char =>
+            val cell = TextGrid.PageItemCell(charAtom, Seq(), char)
+
+            val continuations = charAtom.char.tail.map { cn =>
+              cell.createRightExpansion(cn)
+            }
+
+            val allCells: Seq[TextGrid.GridCell] = cell +: continuations
+
+            if (cc.bounds.bottom == visualLineModalBounds.bottom) {
+              // Center-text
+            } else if (intersectsTop && !intersectsBottom) {
+              gifBuilder.indicate(s"SuperScript", cc.bounds(), LB.PageAtomGrp)
+              allCells.foreach{ _.addLabel(LB.Sup) }
+            } else if (!intersectsTop && intersectsBottom) {
+              gifBuilder.indicate(s"SubScript", cc.bounds(), LB.PageAtomGrp)
+              allCells.foreach{ _.addLabel(LB.Sub) }
+            } else {
+              gifBuilder.indicate(s"???Script", cc.bounds(), LB.PageAtomGrp)
+            }
+
+
+            tracer {
+
+              val pinChars = cell.pins.toList.map(_.pinChar).sorted.mkString
+
+              dbgGrid = dbgGrid.addRow(
+                " ",
+                cell.char.toString(),
+                cell.pageRegion.bbox.top.pp,
+                "~",
+                cell.pageRegion.bbox.bottom.pp,
+                "~",
+                pinChars,
+                "."
+              )
+            }
+
+            allCells
+          }
+          cells.getOrElse(Seq())
+
+        case c@ RegionComponent(id, roleLabel, pageRegion, maybeText) =>
+          // TODO this is skipping over text represented as paths (but I have to figure out sup/sub script handling to make it work)
+          Seq()
+
+      }
+
+      cells.appendAll(init.flatten)
+    }
+  }
+
+
+  def labelSuperAndSubscripts(): Unit = {
+
+  }
+
+  var dbgGrid = TB.Grid.widthAligned(
+    (1, AlignLeft),  // join indicator
+    (2, AlignLeft),  // char(s)
+    (6, AlignRight), // char.top
+    (1, AlignLeft),  // space
+    (6, AlignRight), // char.bottom
+    (1, AlignLeft),  // space
+    (6, AlignLeft), // labels
+    (1, AlignLeft)  // space
+  )
+
+  // Group line atoms into center/sub/superscript bins
+  def findLineAtomScriptPositions(visualLineCC: Component, visualLineAtoms: Seq[Component])
+    (implicit gifBuilder: GifBuilder): (Seq[Int@@ComponentID], Seq[Int@@ComponentID]) = {
 
     val visualLineBounds = visualLineCC.bounds()
 
-    val gifBuilder = vis.gifBuilder(
+    // top 1/3  & bottom 1/3 ==> centered
+
+    val slices = visualLineBounds.sliceHorizontal(3)
+    val Seq(topSlice, _, bottomSlice) = slices
+
+    val topIntersections = pageIndex.rtreeSearchHasLabel(topSlice, LB.PageAtomGrp)
+    val bottomIntersections = pageIndex.rtreeSearchHasLabel(bottomSlice, LB.PageAtomGrp)
+    // val middleIntersections = pageIndex.rtreeSearchHasLabel(middleSlice, LB.PageAtomGrp)
+
+    val topIntersects = topIntersections.map(_.id)
+    val bottomIntersects = bottomIntersections.map(_.id)
+
+    // gifBuilder.indicate(s"Top intersection Line", topLine.bounds(), LB.PageAtomGrp)
+    // gifBuilder.indicate(s"Bottom intersection Line", bottomLine.bounds(), LB.PageAtomGrp)
+    gifBuilder.indicate(s"Top Atoms", topIntersections.map(_.bounds()), LB.PageAtomGrp)
+    gifBuilder.indicate(s"Bottom Atoms", bottomIntersections.map(_.bounds()), LB.PageAtomGrp)
+
+
+
+    tracer {
+
+      dbgGrid = dbgGrid.addRow(
+        "J",
+        "",
+        "Top|||",
+        "",
+        "Bottm|",
+        "",
+        "pins||",
+        ""
+      )
+      dbgGrid = dbgGrid.addRow(" ", "  ", "      ", " ", "      ", " ", "      ", " ")
+
+    }
+
+    (topIntersects, bottomIntersects)
+  }
+
+
+  def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
+    tracer.enter()
+
+    val visualLineBounds = visualLineCC.bounds()
+
+    implicit val gifBuilder = vis.gifBuilder(
       s"createTextRowsFromVisualLines-${visualLineBounds.left}-${visualLineBounds.bottom}",
       1.seconds
     )
@@ -213,148 +375,21 @@ class LineFinder(
       visualLineBounds, LB.PageAtomGrp, LB.PageAtomTmp
     )
 
-
-    def shrinkVisualLineToModalTopAndBottom(): LTBounds = {
-
-      val modalBaselineI = modalValue(visualLineAtoms, _.bounds().bottom.unwrap)
-        .getOrElse(visualLineBounds.bottom.unwrap)
-
-      val modalBaseline = FloatRep(modalBaselineI)
-
-      val modalToplineI = modalValue(visualLineAtoms, _.bounds.top.unwrap)
-        .getOrElse(visualLineBounds.top.unwrap)
-
-      val modalTopline = FloatRep(modalToplineI)
-
-      val height = modalBaseline-modalTopline
-
-      val visualLineModalBounds = if (height > 0) {
-        visualLineBounds.copy(
-          top=modalTopline, height=modalBaseline-modalTopline
-        )
-      } else {
-        visualLineBounds
-      }
-
-      gifBuilder.indicate("Modal-base/top VisualLine", visualLineModalBounds)
-
-      visualLineModalBounds
-    }
-
     if (visualLineAtoms.nonEmpty) {
       // Associate visualLine bounds (modal, normal) w/visual line cluster
-      val visualLineModalBounds = shrinkVisualLineToModalTopAndBottom()
+      val visualLineModalBounds = findModalBoundingRect(visualLineCC, visualLineAtoms)
+      val visualLineModalCC = labelRegion(visualLineModalBounds, LB.VisualLineModal)
+      val visualLineClusterCC = pageIndex.addCluster(LB.VisualLine, visualLineAtoms)
+
+      pageIndex.addRelation(visualLineCC, LB.VisualLineModal, visualLineModalCC)
 
       gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
       gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
 
-      // top 1/3  & bottom 1/3 ==> centered
+      val textRow = textRowFromComponents(visualLineCC, visualLineAtoms)
 
-      val slices = visualLineBounds.sliceHorizontal(3)
-      val Seq(topSlice, _, bottomSlice) = slices
-
-      val topIntersections = pageIndex.rtreeSearchHasLabel(topSlice, LB.PageAtomGrp)
-      val bottomIntersections = pageIndex.rtreeSearchHasLabel(bottomSlice, LB.PageAtomGrp)
-      // val middleIntersections = pageIndex.rtreeSearchHasLabel(middleSlice, LB.PageAtomGrp)
-
-      val topIntersects = topIntersections.map(_.id)
-      val bottomIntersects = bottomIntersections.map(_.id)
-
-      // gifBuilder.indicate(s"Top intersection Line", topLine.bounds(), LB.PageAtomGrp)
-      // gifBuilder.indicate(s"Bottom intersection Line", bottomLine.bounds(), LB.PageAtomGrp)
-      gifBuilder.indicate(s"Top Atoms", topIntersections.map(_.bounds()), LB.PageAtomGrp)
-      gifBuilder.indicate(s"Bottom Atoms", bottomIntersections.map(_.bounds()), LB.PageAtomGrp)
-
-
-      var dbgGrid = TB.Grid.widthAligned(
-        (1, AlignLeft),  // join indicator
-        (2, AlignLeft),  // char(s)
-        (6, AlignRight), // char.top
-        (1, AlignLeft),  // space
-        (6, AlignRight), // char.bottom
-        (1, AlignLeft),  // space
-        (6, AlignLeft), // labels
-        (1, AlignLeft)  // space
-      )
-
-      DocumentSegmenter.vtrace({
-        dbgGrid = dbgGrid.addRow(
-          "J",
-          "",
-          "Top|||",
-          "",
-          "Bottm|",
-          "",
-          "pins||",
-          ""
-        )
-        dbgGrid = dbgGrid.addRow(" ", "  ", "      ", " ", "      ", " ", "      ", " ")
-      })
-
-
-      def fromComponents(ccs: Seq[Component]): TextGrid.Row = {
-        new TextGrid.MutableRow { self =>
-          val init = ccs.map{
-            case cc@ AtomicComponent(id, charAtom, roleLabel) =>
-              val intersectsTop = topIntersects.contains(cc.id)
-              val intersectsBottom = bottomIntersects.contains(cc.id)
-
-              val cells = charAtom.char.headOption.map{ char =>
-                val cell = TextGrid.PageItemCell(charAtom, Seq(), char)
-
-                val continuations = charAtom.char.tail.map { cn =>
-                  cell.createRightExpansion(cn)
-                }
-
-                val allCells: Seq[TextGrid.GridCell] = cell +: continuations
-
-                if (cc.bounds.bottom == visualLineModalBounds.bottom) {
-                  // Center-text
-                } else if (intersectsTop && !intersectsBottom) {
-                  gifBuilder.indicate(s"SuperScript", cc.bounds(), LB.PageAtomGrp)
-                  allCells.foreach{ _.addLabel(LB.Sup) }
-                } else if (!intersectsTop && intersectsBottom) {
-                  gifBuilder.indicate(s"SubScript", cc.bounds(), LB.PageAtomGrp)
-                  allCells.foreach{ _.addLabel(LB.Sub) }
-                } else {
-                  gifBuilder.indicate(s"???Script", cc.bounds(), LB.PageAtomGrp)
-                }
-
-
-                DocumentSegmenter.vtrace {
-
-                  val pinChars = cell.pins.toList.map(_.pinChar).sorted.mkString
-
-                  dbgGrid = dbgGrid.addRow(
-                    " ",
-                    cell.char.toString(),
-                    cell.pageRegion.bbox.top.pp,
-                    "~",
-                    cell.pageRegion.bbox.bottom.pp,
-                    "~",
-                    pinChars,
-                    "."
-                  )
-                }
-
-                allCells
-              }
-              cells.getOrElse(Seq())
-
-            case c@ RegionComponent(id, roleLabel, pageRegion, maybeText) =>
-              // TODO this is skipping over text represented as paths (but I have to figure out sup/sub script handling to make it work)
-              Seq()
-
-          }
-
-          cells.appendAll(init.flatten)
-        }
-      }
-
-      val textRow = fromComponents(visualLineAtoms)
-
-      DocumentSegmenter.vtrace.printTrace {
-        dbgGrid.toBox().transpose()
+      tracer {
+        println(dbgGrid.toBox().transpose())
       }
 
       // Convert consecutive sup/sub to single label
@@ -390,10 +425,8 @@ class LineFinder(
           }
         }.getOrElse { spacedRow }
 
-      val visualLineClusterCC = pageIndex.addCluster(LB.VisualLine, visualLineAtoms)
 
-      val visualLineModalCC = labelRegion(visualLineModalBounds, LB.VisualLineModal)
-      pageIndex.addCluster(LB.VisualLineModal, Seq(visualLineClusterCC, visualLineModalCC))
+
 
       pageIndex.setComponentText(visualLineClusterCC, LB.VisualLine, supSubLabeledRow)
 
@@ -403,7 +436,10 @@ class LineFinder(
         docStore.setTextReflowForZone(zoneId, textReflow)
       }
     }
+
     gifBuilder.finish()
+
+    tracer.exit()
   }
 
 
@@ -442,9 +478,11 @@ class LineFinder(
       .map { case (bottomY, charBoxes) =>
         charBoxes.sortBy(_.bounds.left)
       }.foreach{ lineBin =>
-        // TODO label this as a line, perhaps?
         mpageIndex.labelRegion(lineBin, LB.LineByHash)
       }
+
+    tracer.checkpoint("visualize hash-line bins", pageIndex)
+    // tracer.checkpoint("visualize hash-line bins")
 
     tracer.exit()
   }

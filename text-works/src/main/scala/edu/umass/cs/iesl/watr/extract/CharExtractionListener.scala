@@ -5,7 +5,8 @@ import com.itextpdf.kernel.pdf.PdfPage
 import geometry._
 
 import scala.collection.mutable
-import scala.collection.JavaConversions._
+// import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 import _root_.com.itextpdf
 import itextpdf.kernel.geom.{Vector => PVector, Subpath, IShape, Point => IPoint, Matrix}
@@ -31,6 +32,7 @@ object PdfPageObjectOutput {
   def fmtelem(e: IPdfStructElem) = {
     s"""struct role = ${e.getRole}""".box
   }
+
 
   def renderElemLoc(elem: IPdfStructElem, l:Int=0): Box = {
     val path = renderElemPath(elem)
@@ -61,7 +63,8 @@ object PdfPageObjectOutput {
     val ks = vcat(left)({
       val kids = elem.getKids
       if (kids!= null) {
-        kids.toList.map(renderElemTree(_, l+1))
+        kids.asScala.toList
+          .map(renderElemTree(_, l+1))
       } else {
         List()
       }
@@ -89,13 +92,14 @@ class CharExtractionListener(
   geomTranslation:GeometryTranslation
 ) extends IEventListener {
 
+
   override def getSupportedEvents(): java.util.Set[EventType] ={
     Set(
       EventType.RENDER_TEXT,
       EventType.RENDER_PATH,
       // EventType.CLIP_PATH_CHANGED,
       EventType.RENDER_IMAGE
-    )
+    ).asJava
   }
 
 
@@ -138,7 +142,7 @@ class CharExtractionListener(
 
     if (__enable) { __curr += 1 }
 
-    for (charTri <- charTris.getCharacterRenderInfos) {
+    for (charTri <- charTris.getCharacterRenderInfos.asScala) {
       totalCharCount += 1
 
       if (totalCharCount < MAX_EXTRACTED_CHARS_PER_PAGE) {
@@ -341,9 +345,9 @@ class CharExtractionListener(
     val path = renderInfo.getPath
 
     val waypoints = for {
-      subPath <- path.getSubpaths : Seq[Subpath]
-      ishape  <- subPath.getSegments: Seq[IShape]
-      ipoint   <- ishape.getBasePoints: Seq[IPoint]
+      subPath <- path.getSubpaths.asScala : Seq[Subpath]
+      ishape  <- subPath.getSegments.asScala:  Seq[IShape]
+      ipoint   <- ishape.getBasePoints.asScala:  Seq[IPoint]
     } yield {
       val p = ipointToPoint(ipoint)
       val trans = p.translate(pathTransVec)

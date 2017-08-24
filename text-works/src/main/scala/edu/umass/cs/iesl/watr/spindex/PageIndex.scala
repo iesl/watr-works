@@ -12,7 +12,7 @@ import utils.OrderedDisjointSet
 
 import textgrid._
 import utils.ExactFloats._
-import edu.umass.cs.iesl.watr.tracing._
+// import edu.umass.cs.iesl.watr.tracing._
 
 
 
@@ -52,7 +52,7 @@ object PageIndex {
   import TypeTags._
 
 
-  val noopTracer = new VisualTracer()
+  // val noopTracer = new VisualTracer()
 
   def load(path: Path): PageIndex = {
     val rtree = RTreeIndex.load[Component](path)
@@ -65,8 +65,8 @@ object PageIndex {
     println("called activeTracingCallback")
   }
 
-  var activeTracer = noopTracer
-  def tracer() = activeTracer
+  // var activeTracer = noopTracer
+  // def tracer() = activeTracer
 }
 
 // class PageIndexTracer() extends VisualTracer { self =>
@@ -160,9 +160,10 @@ class PageIndex(
 
   // l: String@@Relation
   def getRelations(lhs: Component, l: Label): Option[Seq[Component]] = {
-    getClusterMembers(l, lhs).map{ rels =>
-      rels.filter(_.id != lhs.id)
-    }
+    for {
+      rels <- getClusterMembers(l, lhs)
+      if rels.headOption.exists(_.id==lhs.id)
+    } yield { rels.tail }
   }
 
   // l: String@@DisjointCluster
@@ -324,7 +325,8 @@ class PageIndex(
   ): Seq[Component] = {
     val lbls = label :: labels.toList
 
-    PageIndex.tracer.checkpoint("search")
+    // PageIndex.tracer.checkpoint("search")
+
     componentRTree.search(queryRegion, {cc =>
       lbls.contains(cc.roleLabel)
     })
@@ -341,6 +343,7 @@ class PageIndex(
         cc.bounds.left < queryRegion.right
           && cc.bounds.right > queryRegion.left
       )
+
       val overlapTB = (
         cc.bounds.top < queryRegion.bottom
           && cc.bounds.bottom > queryRegion.top

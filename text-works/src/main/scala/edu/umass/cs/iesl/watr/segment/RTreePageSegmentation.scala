@@ -20,15 +20,27 @@ import utils.ExactFloats._
 import shapeless.lens
 import PageComponentImplicits._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
+import edu.umass.cs.iesl.watr.tracing.TraceCallbacks
 import textgrid._
 import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
 
 object DocumentSegmenter {
   import spindex._
 
+  val noopVisualTracer = new VisualTracer {
+    def traceCallbacks: TraceCallbacks = new TraceCallbacks {
+
+    }
+
+  }
 
 
-  def createSegmenter(stableId: String@@DocumentID, pdfPath: Path, docStore: DocumentZoningApi): DocumentSegmenter = {
+  def createSegmenter(
+    stableId: String@@DocumentID,
+    pdfPath: Path,
+    docStore: DocumentZoningApi,
+    tracer: VisualTracer = noopVisualTracer
+  ): DocumentSegmenter = {
     println(s"extracting ${stableId} chars")
     val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
     val mpageIndex = new MultiPageIndex(stableId, docStore)
@@ -61,7 +73,7 @@ object DocumentSegmenter {
       }
     }
 
-    new DocumentSegmenter(mpageIndex)
+    new DocumentSegmenter(mpageIndex, tracer)
   }
 
   val DebugLabelColors: Map[Label, Color] = {
@@ -85,11 +97,12 @@ object DocumentSegmenter {
     )
   }
 
-  val vtrace = new VisualTracer()
+  // val vtrace = new VisualTracer()
 }
 
 class DocumentSegmenter(
-  val mpageIndex: MultiPageIndex
+  val mpageIndex: MultiPageIndex,
+  tracer: VisualTracer
 ) { documentSegmenter =>
 
   val docStore = mpageIndex.docStore
@@ -117,7 +130,7 @@ class DocumentSegmenter(
     } yield {
 
       println(s"Seg. p.${pagenum} id.${pageId}")
-      val pageSegmenter = new PageSegmenter(pageId, PageNum(pagenum), mpageIndex)
+      val pageSegmenter = new PageSegmenter(pageId, PageNum(pagenum), mpageIndex, tracer)
 
       pageSegmenter.runLineDeterminationOnPage()
 
@@ -130,9 +143,8 @@ class DocumentSegmenter(
 
     val _ = createZone(LB.DocumentPages, pageRegions)
 
-
-    buildLinePairTrapezoids()
-    classifyLinePairs()
+    // buildLinePairTrapezoids()
+    // classifyLinePairs()
 
   }
 
@@ -230,7 +242,8 @@ object PageSegmenter {
 class PageSegmenter(
   pageId: Int@@PageID,
   pageNum: Int@@PageNum,
-  mpageIndex: MultiPageIndex
+  mpageIndex: MultiPageIndex,
+  tracer: VisualTracer
 ) {
 
   val docStore = mpageIndex.docStore
@@ -242,9 +255,9 @@ class PageSegmenter(
   val pageIndex = mpageIndex.getPageIndex(pageNum)
 
   val segvisRootPath = pwd / s"${stableId}-segs.d"
-  val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath, DocumentSegmenter.vtrace)
+  val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath, tracer)
 
-  def tracer() = PageIndex.tracer()
+  // def tracer() = PageIndex.tracer()
 
   vis.cleanRTreeImageFiles()
 
@@ -256,13 +269,16 @@ class PageSegmenter(
   }
 
   def runLineDeterminationOnPage(): Unit = {
+    tracer.enter()
 
     mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>
       mpageIndex.labelRegion(Seq(imgCC), LB.Image)
     }
 
-    val lineFinder = new LineFinder(mpageIndex, pageId, pageNum)
+    val lineFinder = new LineFinder(mpageIndex, pageId, pageNum, tracer)
     lineFinder.determineLines()
+
+    tracer.exit()
   }
 
 

@@ -2,7 +2,8 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import corpora._
-import spindex._
+// import spindex._
+import edu.umass.cs.iesl.watr.tracing.{VisualTracer, TraceCallbacks}
 
 class PageTextTest extends SegmentationTestUtils  {
   /**
@@ -38,12 +39,12 @@ class PageTextTest extends SegmentationTestUtils  {
 
     val allTestPdfs = parsePdfs {
       """|
+         |saccharomyces-1-page.pdf
          |101016jcarbon201301056.pdf.pages/pg_0001.pdf
          |101016jcarbon201301056.pdf.pages/pg_0002.pdf
          |101016jactamat201112024.pdf
          |101016jcarbon201301056.pdf
          |101016jactamat201501032.pdf
-         |saccharomyces-1-page.pdf
          |gr-qc9903064.pdf.pages/pg_0001.pdf
          |bongard2005.pdf
          |austenite.pdf
@@ -64,15 +65,34 @@ class PageTextTest extends SegmentationTestUtils  {
     val (docId, path) = allTestPdfs(0)
 
 
-    def tracecb(pageIndex: PageIndex): Unit = {
-      println("tracecb!")
+    // def tracecb(pageIndex: PageIndex): Unit = {
+    //   println("tracecb!")
+    // }
+
+    tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Checkpoint
+
+    // PageIndex.activeTracingCallback = tracecb(_)
+
+    val tracer = new VisualTracer {
+      def traceCallbacks: TraceCallbacks = new TraceCallbacks {
+
+        // "visualize hash-line bins"
+
+        def `visualize hash-line bins`(): Unit = {
+
+        }
+
+      }
     }
 
-    tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Visualize
+    val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi, tracer)
 
-    PageIndex.activeTracingCallback = tracecb(_)
-
-    val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
+    // val callbacks = new tracing.TraceCallbacks {
+    //   //  '(visualize hash-line bins)'
+    //   def segment_LineFinder__approximateLineBins(pageIndex: PageIndex): Unit = {
+    //     println(s"Callback to approximateLineBins")
+    //   }
+    // }
 
     segmenter.runPageSegmentation()
 
