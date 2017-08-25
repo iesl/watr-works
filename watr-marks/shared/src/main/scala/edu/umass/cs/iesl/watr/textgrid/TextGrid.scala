@@ -4,6 +4,8 @@ package textgrid
 import scala.collection.mutable
 import watrmarks._
 import geometry._
+import geometry.PageComponentImplicits._
+
 import scalaz.{@@ => _, _} , Scalaz._
 // import utils.SlicingAndDicing._
 
@@ -48,11 +50,16 @@ object TextGrid {
 
   }
 
+
+  def mbrRegionFunc(h: PageItem, tail: Seq[PageItem]): PageRegion = {
+    (h +: tail).map(_.pageRegion).reduce { _ union _ }
+  }
+
   case class PageItemCell(
     headItem: PageItem,
     tailItems: Seq[PageItem] = Seq(),
     override val char: Char,
-    regionFunc: (PageItem, Seq[PageItem]) => PageRegion = (h, _) => h.pageRegion
+    regionFunc: (PageItem, Seq[PageItem]) => PageRegion = mbrRegionFunc(_, _)
   ) extends GridCell {
 
     override val pageRegion: PageRegion = regionFunc(headItem, tailItems)
@@ -290,10 +297,10 @@ object TextGrid {
       focus.addLabel(label)
     }
 
-    def foreachC(f: Cursor => Option[Cursor]): Row  = {
+    def unfoldCursorToRow(f: Cursor => Option[Cursor]): Row  = {
       f(self) match {
         case Some(cmod) => cmod.next match {
-          case Some(cnext) => cnext.foreachC(f)
+          case Some(cnext) => cnext.unfoldCursorToRow(f)
           case None => cmod.toRow
 
         }
@@ -301,13 +308,6 @@ object TextGrid {
       }
     }
 
-    // def foreach(f: Cursor => Unit): Unit  = {
-    //   f(this)
-    //   next match {
-    //     case Some(n) => n.foreach(f)
-    //     case None => ()
-    //   }
-    // }
 
     def toRow: Row
 
@@ -326,15 +326,6 @@ object TextGrid {
       }
     }
 
-    // def init(z: Zipper[Seq[GridCell]]) = new ZipCursor {
-    //   def zipper: Zipper[Seq[GridCell]] = z
-    // }
-
-    // def init(optZ: Option[Zipper[Seq[GridCell]]]) = optZ.map{ z =>
-    //   new ZipCursor {
-    //     def zipper: Zipper[Seq[GridCell]] = z
-    //   }
-    // }
   }
 
   trait ZipCursor extends Cursor {

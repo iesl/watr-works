@@ -164,37 +164,6 @@ object PageComponentImplicits {
     s"${stableId}+${pageNum}+${bbox.uriString}"
   }
 
-  // implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
-  //   def union(r: PageRegion): PageRegion = {
-  //     val samePage = thePageRegion.page.pageId == r.page.pageId
-  //     if (!samePage) {
-  //       sys.error(s"""cannot union PageRegions from different pages: ${thePageRegion} + ${r}""")
-  //     }
-  //     thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
-  //   }
-
-  //   def intersects(pageId: Int@@PageID, bbox: LTBounds): Boolean = {
-  //     val samePage = thePageRegion.page.pageId == pageId
-  //     samePage && (thePageRegion.bbox intersects bbox)
-  //   }
-  //   def intersects(r: PageRegion): Boolean = {
-  //     intersects(r.page.pageId, r.bbox)
-  //   }
-
-  //   def intersection(b: LTBounds): Option[PageRegion] = {
-  //     thePageRegion.bbox
-  //       .intersection(b)
-  //       .map(b => thePageRegion.copy(bbox=b))
-  //   }
-  //   def uriString: String = {
-  //     createPageRegionUri(
-  //       thePageRegion.page.stableId,
-  //       thePageRegion.page.pageNum,
-  //       thePageRegion.bbox
-  //     )
-  //   }
-  // }
-
   implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
     def union(r: PageRegion): PageRegion = {
       if (thePageRegion.page.pageId != r.page.pageId) {
@@ -292,59 +261,3 @@ object PageComponentImplicits {
   }
 }
 
-// case class PageRegion(
-//   id: Int@@RegionID,
-//   page: RecordedPageID,
-//   bbox: LTBounds
-// ) {
-//   lazy val uri = {
-//     import PageComponentImplicits._
-//     this.uriString
-//   }
-//   override def toString = s"""${page}/${id}@${bbox.prettyPrint}"""
-
-//   def toPageRegion(): PageRegion = {
-//     PageRegion(page, bbox)
-
-//   }
-// }
-
-
-
-// case class StablePageID(
-//   stableId: String@@DocumentID,
-//   pageNum: Int@@PageNum
-// ) {
-//   override def toString = s"""${stableId}/pg${pageNum}"""
-// }
-
-
-// case class RecordedPageID(
-//   pageId: Int@@PageID,
-//   stable: StablePageID
-// ) {
-//   override def toString = s"""${stable}@${pageId}"""
-// }
-
-
-// case class PageRegion(
-//   page: RecordedPageID,
-//   bbox: LTBounds
-// )
-
-// case class TargetRegion(
-//   id: Int@@RegionID,
-//   page: RecordedPageID,
-//   bbox: LTBounds
-// ) {
-//   lazy val uri = {
-//     import PageComponentImplicits._
-//     this.uriString
-//   }
-//   override def toString = s"""${page}/${id}@${bbox.prettyPrint}"""
-
-//   def toPageRegion(): PageRegion = {
-//     PageRegion(page, bbox)
-
-//   }
-// }

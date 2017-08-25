@@ -1,0 +1,64 @@
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20041025175247+05'30'
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20041025102016
+InfoBegin
+InfoKey: Title
+InfoValue: doi:10.1016/j.jallcom.2004.04.003
+InfoBegin
+InfoKey: Creator
+InfoValue: Elsevier
+InfoBegin
+InfoKey: Producer
+InfoValue: Acrobat Distiller 4.05 for Windows
+PdfID0: adaa37f8404320170677f263967f101f
+PdfID1: adaa37f8404320170677f263967f101f
+NumberOfPages: 3
+BookmarkBegin
+BookmarkTitle: Pressure effect on the Curie temperature of the Heusler alloys Rh2MnZ (Z = Sn, Ge)
+BookmarkLevel: 1
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: Introduction
+BookmarkLevel: 2
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: Experimental details
+BookmarkLevel: 2
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: Results and discussion
+BookmarkLevel: 2
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: Acknowledgements
+BookmarkLevel: 2
+BookmarkPageNumber: 3
+BookmarkBegin
+BookmarkTitle: References
+BookmarkLevel: 2
+BookmarkPageNumber: 3
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 842 1191
+PageMediaDimensions: 842 1191
+PageMediaCropRect: 42 47 637 840
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 842 1191
+PageMediaDimensions: 842 1191
+PageMediaCropRect: 42 47 637 840
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 842 1191
+PageMediaDimensions: 842 1191
+PageMediaCropRect: 42 47 637 840
+PageLabelBegin
+PageLabelNewIndex: 1
+PageLabelStart: 37
+PageLabelNumStyle: DecimalArabicNumerals

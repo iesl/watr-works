@@ -1,0 +1,94 @@
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20031007123608+05'30'
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20030927110422
+InfoBegin
+InfoKey: Title
+InfoValue: doi:10.1016/S0022-4596(03)00334-7
+InfoBegin
+InfoKey: Creator
+InfoValue: Elsevier Science
+InfoBegin
+InfoKey: Producer
+InfoValue: Acrobat Distiller 4.05 for Windows
+PdfID0: 3b70f2b8de5cb59e6a3462073141096f
+PdfID1: 3b70f2b8de5cb59e6a3462073141096f
+NumberOfPages: 6
+BookmarkBegin
+BookmarkTitle: New ferromagnets of Sr8ARe3Cu4O24 (A=Sr, Ca) with an ordered perovskite structure
+BookmarkLevel: 1
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: Introduction
+BookmarkLevel: 2
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: Experimental
+BookmarkLevel: 2
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: Results and discussion
+BookmarkLevel: 2
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: Synthesis, phase identification and structure analysis
+BookmarkLevel: 3
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: Magnetic properties
+BookmarkLevel: 3
+BookmarkPageNumber: 4
+BookmarkBegin
+BookmarkTitle: Conclusion
+BookmarkLevel: 2
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: Acknowledgements
+BookmarkLevel: 2
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: References
+BookmarkLevel: 2
+BookmarkPageNumber: 6
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaCropRect: 0 0 612 795
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaCropRect: 0 0 612 795
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaCropRect: 0 0 612 795
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaCropRect: 0 0 612 795
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaCropRect: 0 0 612 795
+PageMediaBegin
+PageMediaNumber: 6
+PageMediaRotation: 0
+PageMediaRect: 0 0 595 794
+PageMediaDimensions: 595 794
+PageMediaCropRect: 0 0 612 795
+PageLabelBegin
+PageLabelNewIndex: 1
+PageLabelStart: 1
+PageLabelNumStyle: DecimalArabicNumerals

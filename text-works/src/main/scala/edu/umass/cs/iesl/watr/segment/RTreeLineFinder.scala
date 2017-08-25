@@ -11,6 +11,7 @@ import geometry.syntax._
 import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.ExactFloats._
+import utils.EnrichNumerics._
 
 import textreflow.data._
 import scala.concurrent.duration._
@@ -273,7 +274,7 @@ class LineFinder(
               val pinChars = cell.pins.toList.map(_.pinChar).sorted.mkString
 
               dbgGrid = dbgGrid.addRow(
-                " ",
+                "-",
                 cell.char.toString(),
                 cell.pageRegion.bbox.top.pp,
                 "~",
@@ -303,16 +304,7 @@ class LineFinder(
 
   }
 
-  var dbgGrid = TB.Grid.widthAligned(
-    (1, AlignLeft),  // join indicator
-    (2, AlignLeft),  // char(s)
-    (6, AlignRight), // char.top
-    (1, AlignLeft),  // space
-    (6, AlignRight), // char.bottom
-    (1, AlignLeft),  // space
-    (6, AlignLeft), // labels
-    (1, AlignLeft)  // space
-  )
+  var dbgGrid = TB.Grid.widthAligned()
 
   // Group line atoms into center/sub/superscript bins
   def findLineAtomScriptPositions(visualLineCC: Component, visualLineAtoms: Seq[Component])
@@ -340,6 +332,16 @@ class LineFinder(
 
 
     tracer {
+      dbgGrid = TB.Grid.widthAligned(
+        (1, AlignLeft),  // join indicator
+        (2, AlignLeft),  // line text (char(s))
+        (6, AlignRight), // char.top
+        (1, AlignLeft),  // space
+        (6, AlignRight), // char.bottom
+        (1, AlignLeft),  // space
+        (6, AlignLeft), // labels
+        (1, AlignLeft)  // space
+      )
 
       dbgGrid = dbgGrid.addRow(
         "J",
@@ -411,7 +413,7 @@ class LineFinder(
 
       val supSubLabeledRow = spacedRow.toCursor()
         .map { cursor =>
-          cursor.foreachC { c =>
+          cursor.unfoldCursorToRow { c =>
             val focus = c.focus
 
             if      (focus.hasPin(LB.Sub.B))  { c.insertCharLeft ('₍').next }
@@ -558,4 +560,265 @@ class LineFinder(
 
   }
 
+
+
+  def pairwiseItemDistances(sortedLineCCs: Seq[PageItem]): Seq[FloatExact] = {
+    val cpairs = sortedLineCCs.sliding(2).toList
+
+    val dists = cpairs.map({
+      case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
+      case _  => 0d.toFloatExact()
+    })
+
+    dists :+ 0d.toFloatExact()
+  }
+
+  def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact = {
+    tracer.enter()
+
+    val charDists = pairwiseItemDistances(sortedLineCCs)
+      .toSet.toSeq
+
+    val charWidths = sortedLineCCs.map(_.bbox.width)
+
+    val widestChar = charWidths.max.asDouble()
+    val narrowestChar = charWidths.min.asDouble()
+    val avgCharWidth = (widestChar + narrowestChar) / 2
+
+    // Don't  accept a space wider than (some magic number)*the widest char?
+    val saneCharDists = charDists
+      .filter(_ < widestChar*2 )
+      .filterNot(_.unwrap == 0)
+      .map(_.asDouble())
+
+
+    val noSplitThreshold = widestChar
+    val threshold = if (saneCharDists.length <= 1 || sortedLineCCs.length <= 1) {
+      // If there is only 1 distance between chars, the line is only 1 word (no word breaks)
+      noSplitThreshold
+    } else {
+      val averageDist = saneCharDists.sum / saneCharDists.length
+
+      val charDistSpread = saneCharDists.max - saneCharDists.min
+      if (charDistSpread < avgCharWidth / 4) {
+        noSplitThreshold
+      } else {
+
+        // val (littleDists, bigDists) = saneCharDists.sorted.span(_ < averageDist)
+        averageDist
+      }
+    }
+    tracer {
+      println(
+        s"""|guessWordbreakWhitespaceThreshold
+            | Char Dists      = ${charDists.map(_.pp).mkString(", ")}
+            | Sane Dists      = ${saneCharDists.map(_.pp).mkString(", ")}
+            | Wide/Nar/Avg Ch = ${widestChar.pp}/${narrowestChar.pp}/${avgCharWidth.pp}
+            | Split threshold = ${threshold.pp}
+            |""".stripMargin.mbox
+      )
+    }
+
+    tracer.exit()
+
+    threshold.toFloatExact
+  }
+
+
+
+
+
+
+  def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row = {
+    tracer.enter()
+    val lineCCs = textRow.cells.collect{
+      case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+        headItem
+    }
+
+    val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
+
+    var spacingDbgGrid = Grid.widthAligned(
+      (1, AlignLeft),  // join indicator
+      (2, AlignLeft),  // char(s)
+      (6, AlignRight), // char.left
+      (1, AlignLeft),  // space
+      (6, AlignRight), // char.right
+      (1, AlignLeft),  // space
+      (6, AlignRight), // c1 - c2 dist
+      (1, AlignLeft),  // space
+      (5, AlignRight)  // char.width
+    )
+    tracer {
+      spacingDbgGrid = spacingDbgGrid.addRow(
+        "J",
+        "",
+        "LEFT||",
+        "",
+        "RIGHT|",
+        "",
+        "DIST||",
+        "",
+        "WIDTH"
+      )
+      spacingDbgGrid = spacingDbgGrid.addRow(" ", "  ", "      ", " ", "      ", " ", "      ", " ", "     ")
+    }
+
+    val res = textRow.toCursor().map{ cursor =>
+      val finalRow = cursor.unfoldCursorToRow { nextCursor =>
+
+        val wordWin = nextCursor.toWindow.slurpRight{ case (win, cell) =>
+
+          val pairwiseDist = cell.pageRegion.bbox.left - win.last.pageRegion.bbox.right
+          val willGroup = pairwiseDist < splitValue
+
+           tracer {
+             val c1 = win.last
+             spacingDbgGrid = spacingDbgGrid.addRow(
+               if(willGroup) "_" else "$",
+               c1.char.toString,
+               c1.pageRegion.bbox.left.pp,
+               "~",
+               c1.pageRegion.bbox.right.pp,
+               "~",
+               pairwiseDist.pp,
+               "~",
+               c1.pageRegion.bbox.width.pp
+             )
+           }
+
+
+          willGroup
+        }
+
+        if (!wordWin.atEnd) {
+          tracer {
+            spacingDbgGrid = spacingDbgGrid.addRow(
+              " ",
+              " ",
+              " ",
+              " ",
+              " ",
+              " ",
+              " ",
+              " ",
+              " "
+            )
+          }
+
+          wordWin.extendRight(' ').toLastCursor.some
+        } else None
+
+
+      }
+
+      tracer {
+        println(spacingDbgGrid.toBox().transpose())
+      }
+      finalRow
+
+    } getOrElse { textRow }
+
+    tracer.exit()
+
+    res
+  }
 }
+
+
+
+
+  // def guessWordbreakWhitespaceThresholdOld(sortedLineCCs: Seq[PageItem]): FloatExact = {
+  //   tracer.enter()
+
+  //   def determineSpacings(): Seq[FloatExact] = {
+  //     tracer.enter()
+  //     // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
+  //     def pairwiseSpaceWidths(): Seq[FloatExact] = {
+  //       val cpairs = sortedLineCCs.sliding(2).toList
+
+  //       val dists = cpairs.map({
+  //         case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
+  //         case _  => 0d.toFloatExact()
+  //       })
+
+  //       dists :+ 0d.toFloatExact()
+  //     }
+
+  //     val dists = pairwiseSpaceWidths()
+
+  //     val mostFrequentDists = dists.groupBy(x => x)
+  //       .mapValues { _.length }
+  //       .toList
+  //       .sortBy(_._2).reverse
+
+  //     tracer.exit()
+  //     mostFrequentDists.map(_._1)
+  //   }
+
+
+
+  //   val charDists = determineSpacings()
+
+  //   val charWidths = sortedLineCCs.map(_.bbox.width)
+  //   val widestChar = charWidths.max
+
+  //   // Don't  accept a space wider than (some magic number)*the widest char?
+  //   val saneCharDists = charDists
+  //     .filter(_ < widestChar*2 )
+  //     .filterNot(_.unwrap == 0)
+
+  //   def resolution =  0.3d
+
+  //   // Try to divide the list of char dists into 2 groups, small gap and large gap:
+  //   // See if we can divide our histogram values by some value > 2*histResolution
+  //   val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
+  //     math.abs((c2 - c1).asDouble()) < resolution
+  //   })
+
+
+  //   val threshold = if (saneCharDists.length == 1) {
+  //     // If there is only 1 distance, the line is only 1 word (no word breaks)
+  //     1.0d.toFloatExact()
+  //   } else if (distGroups.length == 2) {
+  //     val d1 = distGroups(0).last
+  //     val d2 = distGroups(1).head
+
+  //     (d1+d2) / 2
+  //   } else if (saneCharDists.length >= 2) {
+  //     // Take most common space to be char space within words
+  //     val modalLittleGap = saneCharDists.head
+  //     // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+  //     val modalBigGap = saneCharDists
+  //       .drop(1)
+  //       .filter(_ > modalLittleGap)
+  //       .headOption.getOrElse(modalLittleGap)
+
+  //     (modalBigGap+modalLittleGap)/2
+  //   } else {
+  //     // Fallback to using unfiltered char dists
+  //     val modalLittleGap = charDists.head
+  //     // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
+  //     val modalBigGap = charDists
+  //       .drop(1)
+  //       .filter(_ > modalLittleGap)
+  //       .headOption.getOrElse(modalLittleGap)
+
+  //     (modalBigGap*2+modalLittleGap)/3
+  //   }
+
+  //   tracer {
+  //     println(
+  //       s"""|guessWordbreakWhitespaceThreshold
+  //           | Char Dists      = ${charDists.map(_.pp).mkString(", ")}
+  //           | Sane Dists      = ${saneCharDists.map(_.pp).mkString(", ")}
+  //           | Widest Char     = ${widestChar.pp}
+  //           | Split threshold = ${threshold.pp}
+  //           |""".stripMargin.mbox
+  //     )
+  //   }
+
+  //   tracer.exit()
+
+  //   threshold
+  // }

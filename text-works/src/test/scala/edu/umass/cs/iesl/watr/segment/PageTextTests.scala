@@ -2,8 +2,8 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import corpora._
-// import spindex._
 import edu.umass.cs.iesl.watr.tracing.{VisualTracer, TraceCallbacks}
+import ammonite.{ops => fs}
 
 class PageTextTest extends SegmentationTestUtils  {
   /**
@@ -37,68 +37,53 @@ class PageTextTest extends SegmentationTestUtils  {
     // 101016jcarbon201301056.pdf => reference section columns are wrong, page 1 has repeated lines
     // bongard2005.pdf => reference section is dividing into 2 cols, one for markers one for ref
 
-    val allTestPdfs = parsePdfs {
-      """|
-         |saccharomyces-1-page.pdf
-         |101016jcarbon201301056.pdf.pages/pg_0001.pdf
-         |101016jcarbon201301056.pdf.pages/pg_0002.pdf
-         |101016jactamat201112024.pdf
-         |101016jcarbon201301056.pdf
-         |101016jactamat201501032.pdf
-         |gr-qc9903064.pdf.pages/pg_0001.pdf
-         |bongard2005.pdf
-         |austenite.pdf
-         |6376.pdf
-         |2839.pdf
-         |hep-ph9503349.pdf
-         |astro-ph9903259.pdf
-         |cond-mat9803032.pdf
-         |101016japsusc201210126.pdf
-         |acsnano.5b00028.pdf
-         |font-type-0-1-t.pdf
-         |font-type-1-3.pdf
-         |quantification-Smith-2013.pdf
-         |Schauer-1987.pdf
+    val allTestPdfs = parsePdfsSinglePages {
+      """|101016jactamat201112024.pdf.pages   #22
+         |101016jactamat201501032.pdf.pages   #13
+         |101016japsusc201210126.pdf.pages    #10
+         |101016jcarbon201301056.pdf.pages    #09
+         |1609.03499.pdf.pages                #15
+         |2839.pdf.pages                      #06
+         |6376.pdf.pages                      #03
+         |acsnano.5b00028.pdf.pages           #12
+         |astro-ph9903259.pdf.pages           #03
+         |austenite.pdf.pages                 #12
+         |bongard2005.pdf.pages               #10
+         |cond-mat9803032.pdf.pages           #15
+         |example-from-latex.pdf.pages        #24
+         |gr-qc9903064.pdf.pages              #04
+         |hep-ph9503349.pdf.pages             #94
+         |hep-th9903041.pdf.pages             #09
+         |quantification-Smith-2013.pdf.pages #05
+         |saccharomyces-1-page.pdf.pages      #01
+         |Schauer-1987.pdf.pages              #02
          |""".stripMargin
     }
 
-    val (docId, path) = allTestPdfs(0)
+    // tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Debug
 
+    selectPdfPage(allTestPdfs, "1056", 2).foreach {
+      case (docId, page, path) =>
 
-    // def tracecb(pageIndex: PageIndex): Unit = {
-    //   println("tracecb!")
-    // }
-
-    tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Checkpoint
-
-    // PageIndex.activeTracingCallback = tracecb(_)
-
-    val tracer = new VisualTracer {
-      def traceCallbacks: TraceCallbacks = new TraceCallbacks {
-
-        // "visualize hash-line bins"
-
-        def `visualize hash-line bins`(): Unit = {
-
+        val tracer = new VisualTracer {
+          def traceCallbacks: TraceCallbacks = new TraceCallbacks {
+          }
         }
 
-      }
+        val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi, tracer)
+
+        segmenter.runPageSegmentation()
+
+        val content = formats.DocumentIO.documentToPlaintext(segmenter.mpageIndex)
+
+        val textfile = s"${docId.unwrap}.txt"
+
+        fs.write(fs.pwd / textfile, content)
+
+        println(content)
     }
 
-    val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi, tracer)
 
-    // val callbacks = new tracing.TraceCallbacks {
-    //   //  '(visualize hash-line bins)'
-    //   def segment_LineFinder__approximateLineBins(pageIndex: PageIndex): Unit = {
-    //     println(s"Callback to approximateLineBins")
-    //   }
-    // }
-
-    segmenter.runPageSegmentation()
-
-    val content = formats.DocumentIO.documentToPlaintext(segmenter.mpageIndex)
-
-    println(content)
 
   }
 }

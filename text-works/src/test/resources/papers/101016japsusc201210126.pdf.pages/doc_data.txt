@@ -1,0 +1,145 @@
+InfoBegin
+InfoKey: doi
+InfoValue: 10.1016/j.apsusc.2012.10.126
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20121228120001+05'30'
+InfoBegin
+InfoKey: Subject
+InfoValue: Applied Surface Science, 265 (2013) 78-87. 10.1016/j.apsusc.2012.10.126
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20121121085814Z
+InfoBegin
+InfoKey: ElsevierWebPDFSpecifications
+InfoValue: 6.3
+InfoBegin
+InfoKey: Author
+InfoValue: R. Jayasree
+InfoBegin
+InfoKey: Title
+InfoValue: Synthesis of platinum&#8211;polyaniline composite, its evaluation as a performance boosting interphase in the electrode assembly of proton exchange membrane fuel cell
+InfoBegin
+InfoKey: robots
+InfoValue: noindex
+InfoBegin
+InfoKey: Creator
+InfoValue: Elsevier
+InfoBegin
+InfoKey: Producer
+InfoValue: Acrobat Distiller 9.0.0 (Windows)
+PdfID0: cb2032e97cb35eba04bac7f437977327
+PdfID1: cb2032e97cb35eba04bac7f437977327
+NumberOfPages: 10
+BookmarkBegin
+BookmarkTitle: Synthesis of platinum&#8211;polyaniline composite, its evaluation as a performance boosting interphase in the electrode assembly...
+BookmarkLevel: 1
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: 1 Introduction
+BookmarkLevel: 2
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: 2 Experimental
+BookmarkLevel: 2
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: 2.1 Materials
+BookmarkLevel: 3
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: 2.2 Synthesis of polyaniline
+BookmarkLevel: 3
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: 2.3 Deposition of platinum nanoparticles on polyaniline
+BookmarkLevel: 3
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: 2.4 Construction of membrane electrode assembly (MEA) and fuel cell evaluation
+BookmarkLevel: 3
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: 2.5 Characterization techniques
+BookmarkLevel: 3
+BookmarkPageNumber: 3
+BookmarkBegin
+BookmarkTitle: 3 Results and discussion
+BookmarkLevel: 2
+BookmarkPageNumber: 3
+BookmarkBegin
+BookmarkTitle: 4 Conclusions
+BookmarkLevel: 2
+BookmarkPageNumber: 9
+BookmarkBegin
+BookmarkTitle: Acknowledgements
+BookmarkLevel: 2
+BookmarkPageNumber: 9
+BookmarkBegin
+BookmarkTitle: References
+BookmarkLevel: 2
+BookmarkPageNumber: 9
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 6
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 7
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 8
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 9
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageMediaBegin
+PageMediaNumber: 10
+PageMediaRotation: 0
+PageMediaRect: 33.4 38 645.7 848.7
+PageMediaDimensions: 612.3 810.7
+PageMediaCropRect: 41.9 46.5 637.2 840.2
+PageLabelBegin
+PageLabelNewIndex: 1
+PageLabelStart: 78
+PageLabelNumStyle: DecimalArabicNumerals

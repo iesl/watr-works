@@ -33,6 +33,32 @@ object DocumentIO  {
 
     val textLines = lineNums.map { lineNum =>
       val t = serProps.lineMap(lineNum)._2
+      t.box
+    }
+
+    textLines.mkString("\n")
+  }
+
+  def documentToJson(mpageIndex: MultiPageIndex): String = {
+
+    val serProps = new TextGrid.SerializationProps
+    for {
+      pageNum      <- mpageIndex.getPages
+      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+    }  {
+      for {
+        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
+        (line, n)    <- lineCCs.zipWithIndex
+        textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+      } {
+        textRow.serialize(serProps)
+      }
+
+    }
+    val lineNums = serProps.lineMap.keys.toList.sorted
+
+    val textLines = lineNums.map { lineNum =>
+      val t = serProps.lineMap(lineNum)._2
       Json.stringify(JsString(t)).box
     }
 

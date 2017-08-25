@@ -15,6 +15,46 @@ trait SegmentationTestUtils extends  FlatSpec with Matchers {
   def resourcePaperIStream(filename: String) = getClass().getResourceAsStream(s"/papers/$filename")
   def resourcePaperUrl(filename: String) = getClass().getResource(s"/papers/$filename")
 
+  def parsePdfsSinglePages(pdfPerLineStr: String): Seq[(String@@DocumentID, Int, fs.Path)] = {
+    pdfPerLineStr.split("\n")
+      .map(_.trim())
+      .filter(_.length()>0)
+      .flatMap{ pathAndPageCount =>
+
+        val split = pathAndPageCount.split("#")
+        val pathRoot0 = split.head.trim
+        val pageCountStr = split.last.trim
+
+        val pathRoot = pathRoot0.trim
+        val pageCount = pageCountStr.trim.toInt
+
+        (1 to pageCount).map{ page =>
+          val pg = "%04d".format(page)
+          val pathName = s"${pathRoot}/pg_${pg}.pdf"
+          val pdfIns = resourcePaperUrl(pathName)
+          val path = fs.Path(pdfIns.getPath)
+          val stableIdent = pathName.trim.replaceAll("/","_")
+          val docId = DocumentID(stableIdent)
+          (docId, page,  path)
+        }
+      }
+  }
+
+  def selectPdfPage(
+    allPages: Seq[(String@@DocumentID, Int, fs.Path)],
+    pdfStr: String, page: Int
+  ): Option[(String@@DocumentID, Int, fs.Path)] = {
+
+    allPages
+      .filter { case (stableId, pg, path) =>
+        stableId.unwrap.contains(pdfStr) && pg == page
+      }
+      .map { case (stableId, pg, path) =>
+        (stableId, pg, path)
+      }
+      .headOption
+  }
+
   def parsePdfs(pdfPerLineStr: String): Seq[(String@@DocumentID, fs.Path)] = {
 
     pdfPerLineStr.split("\n")

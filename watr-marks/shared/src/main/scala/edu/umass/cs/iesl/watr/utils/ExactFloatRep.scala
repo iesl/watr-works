@@ -5,7 +5,6 @@ package utils
 object ExactFloats {
   import scalaz.Tag
   import TypeTags._
-  // import scalaz.Equal
 
   sealed trait FloatRep
 
@@ -13,22 +12,13 @@ object ExactFloats {
 
   type FloatExact = Int@@FloatRep
 
-  // implicit val FloatExactOrdering: Ordering[Int@@FloatRep] =
-  //   Ordering.by{ _.unwrap }
-
   type FloatExactInterval = (FloatExact, FloatExact)@@Interval
 
-  // implicit def IntToFloatExact(i: Int): FloatExact = i.toFloatExact
-  // implicit def DoubleToFloatExact(i: Double): FloatExact = i.toFloatExact
 
   implicit class RicherFloatExactInterval(val theRange: FloatExactInterval) extends AnyVal {
     def min: FloatExact = theRange.unwrap._1
     def max: FloatExact = theRange.unwrap._1+theRange.unwrap._2
     def len: FloatExact = theRange.unwrap._2
-
-    // def union(r2: FloatExactInterval): FloatExactInterval = {
-    //   doubleIntervalUnion(theRange, r2)
-    // }
   }
 
   def max(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.max(d1.unwrap, d2.unwrap))
@@ -78,13 +68,15 @@ object ExactFloats {
     def asInt(): Int = { self.unwrap/100 }
 
     def dblFormat(): String = {
-      val digits = self.unwrap.toString.toList
+      val intRep = self.unwrap
+      val negSign = if(intRep < 0) "-" else ""
+      val digits = math.abs(intRep).toString.toList
       val(decR, wholeR) = digits.reverse.splitAt(2)
       val decPad = decR ++ List.fill(2-decR.length)('0')
       val dec = decPad.reverse.mkString
       val whole = if (wholeR.isEmpty) "0" else wholeR.reverse.mkString
 
-      whole+"."+dec
+      s"${negSign}${whole}.${dec}"
     }
 
     def pp(): String = dblFormat()

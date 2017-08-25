@@ -1,0 +1,77 @@
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20090709143739-04'00'
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20051221134259
+InfoBegin
+InfoKey: Title
+InfoValue: Synthesis of Nonsymmetrically N,N[prime]-Diaryl-Substituted 4,4[prime]-Bipyridinium Salts with Redox-Tunable and Titanium Dioxide (TiO2)-Anchoring Properties
+InfoBegin
+InfoKey: WPS-JOURNALDOI
+InfoValue: 10.1002/(ISSN)1522-2675
+InfoBegin
+InfoKey: WPS-ARTICLEDOI
+InfoValue: 10.1002/hlca.200590257
+InfoBegin
+InfoKey: WPS-PROCLEVEL
+InfoValue: 2
+InfoBegin
+InfoKey: Creator
+InfoValue: 3B2 Total Publishing System 8.07j/W
+InfoBegin
+InfoKey: Producer
+InfoValue: PDFlib PLOP 2.0.0p6 (SunOS)/Acrobat Distiller 4.05 for Windows
+PdfID0: a878503337feb4a23e4eb25cf04e27bb
+PdfID1: 1091ababdb33dc995c5e5f975603f861
+NumberOfPages: 10
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 6
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 7
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 8
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 9
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
+PageMediaBegin
+PageMediaNumber: 10
+PageMediaRotation: 0
+PageMediaRect: 0 0 596 842
+PageMediaDimensions: 596 842
