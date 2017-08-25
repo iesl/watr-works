@@ -9,7 +9,6 @@ import TextReflowF._
 import watrmarks.{StandardLabels => LB}
 
 
-// trait DocumentZoningApi extends TextReflowJsonCodecs {
 trait DocumentZoningApi {
   val Rel = RelationModel
 
@@ -32,12 +31,7 @@ trait DocumentZoningApi {
   def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
   def getTargetRegion(regionId: Int@@RegionID): PageRegion
 
-  // def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit
-  // def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]]
-  // def deleteTargetRegionImage(regionId: Int@@RegionID): Unit
-
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID]
-
 
   // Construct
   def createZone(regionId: Int@@RegionID, label: Int@@LabelID): Int@@ZoneID

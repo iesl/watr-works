@@ -16,23 +16,6 @@ class PageTextTest extends SegmentationTestUtils  {
 
   it should "extract text reasonably well" in {
 
-    val expectedText = {
-      """|
-         |  bioRxiv preprint first posted online Nov. 30, 2016; doi: http://dx.doi.org/10.1101/090498. The copyright holder for this preprint (which was not
-         |        peer-reviewed) is the author/funder. It is made available under a CC-BY-NC-ND 4.0 International license.
-         |
-         |         The effect of known mutator alleles in a cluster of clinical
-         |                   Saccharomyces cerevisiae strains
-         |
-         |  Daniel A. Skelly⁽1,3⁾, Paul M. Magwene⁽1⁾, Brianna Meeks⁽2⁾, Helen A. Murphy2
-         |
-         |  ⁽1⁾ Department of Biology, Duke University, Durham, North Carolina
-         |  ⁽2⁾ Department of Biology, The College of William and Mary, Williamsburg, Virginia
-         |  ⁽3⁾ Current address: The Jackson Laboratory, Bar Harbor, Maine
-         |""".stripMargin
-    }
-    expectedText.split("\n").map(_.trim())
-
     // 6376.pdf  => page 2 column seg is wrong, many paths making up graphs kill performance
     // 101016jcarbon201301056.pdf => reference section columns are wrong, page 1 has repeated lines
     // bongard2005.pdf => reference section is dividing into 2 cols, one for markers one for ref
@@ -62,7 +45,8 @@ class PageTextTest extends SegmentationTestUtils  {
 
     // tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Debug
 
-    selectPdfPage(allTestPdfs, "1056", 2).foreach {
+    // allTestPdfs.foreach {
+    selectPdfPage(allTestPdfs, "2839.pdf", 2).foreach {
       case (docId, page, path) =>
 
         val tracer = new VisualTracer {
@@ -78,7 +62,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
         val textfile = s"${docId.unwrap}.txt"
 
-        fs.write(fs.pwd / textfile, content)
+        // fs.write(fs.pwd / textfile, content)
 
         println(content)
     }

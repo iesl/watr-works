@@ -7,7 +7,6 @@ import geometry._
 import geometry.PageComponentImplicits._
 
 import scalaz.{@@ => _, _} , Scalaz._
-// import utils.SlicingAndDicing._
 
 sealed trait FontInfo
 
@@ -110,7 +109,7 @@ object TextGrid {
     def cells: Seq[GridCell]
 
     def toCursor(): Option[Cursor] = {
-      ZipCursor.init(cells.toList.toZipper)
+      Cursor.init(cells.toList.toZipper)
     }
 
     def foreach(f: GridCell => Unit): Unit  = {
@@ -206,13 +205,13 @@ object TextGrid {
       val newLefts = cells.init.reverse.toStream ++ zipper.lefts
       val newFocus = cells.last
 
-      ZipCursor.init{
+      Cursor.init{
         Zipper.zipper(newLefts, newFocus, zipper.rights)
       }
     }
 
     def nextCursor(): Option[Cursor] = {
-      ZipCursor.init{
+      Cursor.init{
         zipper.next.map{znext =>
           Zipper.zipper(
             cells.reverse.toStream ++ znext.lefts,
@@ -271,27 +270,67 @@ object TextGrid {
     }
   }
 
-  sealed trait Cursor { self =>
-    def focus: GridCell
-    def next: Option[Cursor]
-    def prev: Option[Cursor]
+  object Cursor {
+    def init(z: Zipper[GridCell]) = new Cursor {
+      def zipper: Zipper[GridCell] = z
+    }
 
-    def move(n: Int): Option[Cursor]
+    def init(optZ: Option[Zipper[GridCell]]) = optZ.map{ z =>
+      new Cursor {
+        def zipper: Zipper[GridCell] = z
+      }
+    }
 
-    def insertRight(g: GridCell): Cursor
-    def insertLeft(g: GridCell): Cursor
-    def atStart: Boolean
-    def atEnd: Boolean
+  }
 
-    def start: Cursor
-    def end: Cursor
+  trait Cursor { self =>
+    def zipper: Zipper[GridCell]
 
-    def findNext(p: GridCell => Boolean): Option[Cursor]
-    def findPrevious(p: GridCell => Boolean): Option[Cursor]
+    def focus: GridCell = zipper.focus
 
-    def toWindow(): Window
+    def next: Option[Cursor] =
+      Cursor.init{ zipper.next }
 
-    def slurpRight(p: GridCell => Boolean): Window
+    def prev: Option[Cursor] =
+      Cursor.init{ zipper.previous }
+
+    def insertLeft(g: GridCell): Cursor =
+      Cursor.init{ zipper.insertLeft(g)}
+
+    def insertRight(g: GridCell): Cursor =
+      Cursor.init{ zipper.insertRight(g)}
+
+
+    def atStart: Boolean = zipper.atStart
+    def atEnd: Boolean = zipper.atEnd
+
+    def start: Cursor = Cursor.init{ zipper.start }
+    def end: Cursor = Cursor.init{ zipper.end }
+
+    def toWindow(): Window = {
+      Window(Seq(focus), zipper.lefts, zipper.focus, zipper.rights)
+    }
+
+    def move(n: Int): Option[Cursor] =
+      Cursor.init{ zipper.move(n) }
+
+    def slurpRight(p: GridCell => Boolean): Window = {
+      val (winTail, tail) = zipper.rights.span(p)
+      val window = zipper.focus +: winTail
+      Window(window, zipper.lefts, zipper.focus, tail)
+    }
+
+    def findNext(p: GridCell => Boolean): Option[Cursor] = {
+      Cursor.init{ zipper.findNext(p) }
+    }
+
+    def findPrevious(p: GridCell => Boolean): Option[Cursor] = {
+      Cursor.init{ zipper.findPrevious(p) }
+    }
+
+    def toRow: Row = {
+      Row.fromCells(zipper.toList)
+    }
 
     def addLabel(label: Label): Unit = {
       focus.addLabel(label)
@@ -309,102 +348,9 @@ object TextGrid {
     }
 
 
-    def toRow: Row
 
     def insertCharLeft(c: Char): Cursor =  insertLeft(focus.createLeftInsert(c))
     def insertCharRight(c: Char): Cursor =  insertRight(focus.createRightInsert(c))
   }
-
-  object ZipCursor {
-    def init(z: Zipper[GridCell]) = new ZipCursor {
-      def zipper: Zipper[GridCell] = z
-    }
-
-    def init(optZ: Option[Zipper[GridCell]]) = optZ.map{ z =>
-      new ZipCursor {
-        def zipper: Zipper[GridCell] = z
-      }
-    }
-
-  }
-
-  trait ZipCursor extends Cursor {
-    def zipper: Zipper[GridCell]
-
-    def focus: GridCell = zipper.focus
-
-    def next: Option[Cursor] =
-      ZipCursor.init{ zipper.next }
-
-    def prev: Option[Cursor] =
-      ZipCursor.init{ zipper.previous }
-
-    def insertLeft(g: GridCell): Cursor =
-      ZipCursor.init{ zipper.insertLeft(g)}
-
-    def insertRight(g: GridCell): Cursor =
-      ZipCursor.init{ zipper.insertRight(g)}
-
-
-    def atStart: Boolean = zipper.atStart
-    def atEnd: Boolean = zipper.atEnd
-
-    def start: Cursor = ZipCursor.init{ zipper.start }
-    def end: Cursor = ZipCursor.init{ zipper.end }
-
-    def toWindow(): Window = {
-      Window(Seq(focus), zipper.lefts, zipper.focus, zipper.rights)
-    }
-
-    def move(n: Int): Option[Cursor] =
-      ZipCursor.init{ zipper.move(n) }
-
-    def slurpRight(p: GridCell => Boolean): Window = {
-      val (winTail, tail) = zipper.rights.span(p)
-      val window = zipper.focus +: winTail
-      Window(window, zipper.lefts, zipper.focus, tail)
-    }
-
-    def findNext(p: GridCell => Boolean): Option[Cursor] = {
-      ZipCursor.init{ zipper.findNext(p) }
-    }
-
-    def findPrevious(p: GridCell => Boolean): Option[Cursor] = {
-      ZipCursor.init{ zipper.findPrevious(p) }
-    }
-
-    def toRow: Row = {
-      Row.fromCells(zipper.toList)
-    }
-  }
-
-  // trait ZipMultiCursor extends MultiCursor {
-  //   def zipper: Zipper[Seq[GridCell]]
-
-  //   def focus: Seq[GridCell] = zipper.focus
-
-  //   def next: Option[Cursor] =
-  //     ZipCursor.init{ zipper.next }
-
-  //   def prev: Option[Cursor] =
-  //     ZipCursor.init{ zipper.previous }
-
-  //   def insertLeft(g: GridCell): Cursor =
-  //     ZipCursor.init{ zipper.insertLeft(Seq(g))}
-
-  //   def insertRight(g: GridCell): Cursor =
-  //     ZipCursor.init{ zipper.insertRight(Seq(g))}
-
-
-  //   def atStart: Boolean = zipper.atStart
-  //   def atEnd: Boolean = zipper.atEnd
-
-  //   def move(n: Int): Option[Cursor] =
-  //     ZipCursor.init{ zipper.move(n) }
-
-  //   def toRow: Row = {
-  //     Row.fromCells(zipper.toList.flatten)
-  //   }
-  // }
 
 }

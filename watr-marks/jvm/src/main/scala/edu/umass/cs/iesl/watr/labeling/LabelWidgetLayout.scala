@@ -58,7 +58,7 @@ trait LabelWidgetLayout extends LabelWidgetBasics {
     offsetFn: (LTBounds, PosAttr) => PositionVector
   ): (LTBounds, LTBounds, List[PositionVector]) = {
     val newpositions =
-      (children foldLeft (initBounds, initBounds, List[PositionVector]())) {
+      (children foldLeft ( (initBounds, initBounds, List[PositionVector]())) )  {
         case ((currStrictBounds, currBleedBounds, childVecs), child) =>
           val newChildVec = offsetFn(currStrictBounds, child)
           val newpos = child.translate(newChildVec)

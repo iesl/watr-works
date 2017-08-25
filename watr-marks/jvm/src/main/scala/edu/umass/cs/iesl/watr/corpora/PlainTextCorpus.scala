@@ -6,6 +6,7 @@ import textreflow._
 import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
+// This is being replaced with textgrid functionality
 trait PlainTextCorpus extends TextReflowSharedFunctions {
   import scala.collection.mutable
   import scalaz.Tree

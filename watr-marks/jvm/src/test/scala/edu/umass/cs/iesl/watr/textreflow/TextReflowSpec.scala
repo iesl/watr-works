@@ -244,10 +244,7 @@ class TextReflowSpec extends FlatSpec with Matchers with CorpusTestingUtil {
   //      |""".stripMargin)
 
 
-
   //   it should "join/break paragraph" in {}
-  //   it should "grep-search virtual lines" in {}
-  //   it should "define a repr for MIT-annots with context" in {}
 
 
 }
