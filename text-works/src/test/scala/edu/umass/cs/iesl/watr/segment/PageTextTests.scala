@@ -43,10 +43,10 @@ class PageTextTest extends SegmentationTestUtils  {
          |""".stripMargin
     }
 
-    // tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Debug
+    tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.EnterExit
 
     // allTestPdfs.foreach {
-    selectPdfPage(allTestPdfs, "2839.pdf", 2).foreach {
+    selectPdfPage(allTestPdfs, "1032", 11).foreach {
       case (docId, page, path) =>
 
         val tracer = new VisualTracer {

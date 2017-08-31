@@ -1,12 +1,10 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
 import TypeTags._
-
 import corpora._
 
-// This is being replaced with textgrid functionality
 trait TextGridBuilder {
   import geometry._
 
@@ -29,17 +27,6 @@ trait TextGridBuilder {
            })
   }
 
-  val ffi = 0xFB03.toChar
-  val charSubs = Map(
-    ffi -> "ffi",
-    'ﬂ' -> "fl",
-    'ﬆ' -> "st",
-    'æ' -> "ae",
-    'Æ' -> "AE"
-  )
-
-
-
   def getRegionBoundsDbl(x: Double, y: Double, w: Double, h: Double): LTBounds = {
     val left   = x * xscale
     val top    = y * yscale
@@ -49,7 +36,7 @@ trait TextGridBuilder {
     LTBounds.Doubles(left, top, width, height)
   }
 
-  // // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
+  // bbox areas (for non-empty bounding boxes) are a bit smaller than full 1x1 area
   def getRegionBounds(x: Int, y: Int, w: Int, h: Int): LTBounds = {
     getRegionBoundsDbl(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
   }
@@ -62,23 +49,39 @@ trait TextGridBuilder {
   }
 
 
-  def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Unit  = {
-    docStore.addDocument(stableId)
+  def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Seq[TextGrid]  = {
+    val docId = docStore.addDocument(stableId)
     for {
       (page, n) <- pages.zipWithIndex
     } yield {
-      loadPageFromString(stableId, PageNum(n), page)
+      val textGrid = loadPageFromString(stableId, PageNum(n), page)
+      val pageId = docStore.addPage(docId, PageNum(n))
+      docStore.setPageText(pageId, textGrid)
+      textGrid
     }
   }
+
 
   def loadPageFromString(
     stableId: String@@DocumentID,
     pageNum: Int@@PageNum,
     pageBlock: String
-  ): Unit = {
+  ): TextGrid = {
     val docId = docStore.getDocument(stableId).get
     val pageId = docStore.addPage(docId, pageNum)
 
+    stringToPageTextGrid(pageBlock, pageNum, Some(pageId))
+  }
+
+
+
+  def stringToPageTextGrid(
+    pageBlock: String,
+    pageNum: Int@@PageNum,
+    maybePageId: Option[Int@@PageID]
+  ): TextGrid = {
+
+    val pageId = maybePageId.getOrElse { PageID(pageNum.unwrap) }
 
     val pageLines = linesWithLeftPadding(pageBlock)
 
@@ -88,6 +91,7 @@ trait TextGridBuilder {
       val cells = for { (char, ichar) <- line.toCharArray.zipWithIndex } yield {
         val chnum = lpad + ichar
         val pageRegion = mkPageRegion(pageId, x=chnum, y=linenum, w=1, h=1)
+        // TODO make this clipBorder(..)
         val adjustedBbox = pageRegion.bbox.scale(-2.percent).translate(0.1, 0.1)
         val adjRegion = pageRegion.copy(bbox = adjustedBbox)
         val charAtom = CharAtom(
@@ -101,6 +105,7 @@ trait TextGridBuilder {
       TextGrid.Row.fromCells(cells)
     }
 
+    TextGrid.fromRows(rows)
 
     // docStore.setPageGeometry(pageId, reflowBuilder.totalBounds())
   }
@@ -113,7 +118,11 @@ trait TextGridBuilder {
       pageId       <- docStore.getPages(docId)
       pageGeometry  = docStore.getPageGeometry(pageId)
       // _            <- putStrLn(s"  Page  ${pageId}: ${pageGeometry}")
-    } ()
+      pageTextGrid <- docStore.getPageText(pageId)
+    } {
+      println(pageTextGrid.toText())
+
+    }
   }
 
 }

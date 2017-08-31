@@ -220,6 +220,22 @@ trait GeometryJsonCodecs extends TypeTagFormats {
 
   implicit val FormatPageGeometry     = Json.format[PageGeometry]
 
+  implicit val FormatLabel = new Format[Label]  {
+    override def reads(json: JsValue)= json match {
+      case JsString(str) => JsSuccess(Labels.fromString(str))
+      case JsObject(fields) =>
+        JsSuccess(Label(fields("ns").as[String], fields("key").as[String]))
+        // (Label {"ns":"ds","key":"sup-script","id":0}),WrappedArray()
+
+      case _ => JsError(s"Label ${json}")
+    }
+
+    override def writes(o: Label) = o match {
+      case c@ Label(ns, key, value, id) => jstr(c.fqn)
+    }
+  }
+
+
   implicit val FormatZone: Format[Zone] = new Format[Zone] {
     override def reads(json: JsValue)= json match {
       case JsArray(Seq(labelJs, regionsJs, idJs, rankJs)) =>
@@ -235,21 +251,6 @@ trait GeometryJsonCodecs extends TypeTagFormats {
     override def writes(o: Zone) = o match {
       case c@ Zone(id, regions, label, rank) =>
         Json.arr(Json.toJson(label), Json.toJson(regions), Json.toJson(id), Json.toJson(rank))
-    }
-  }
-
-  implicit val FormatLabel = new Format[Label]  {
-    override def reads(json: JsValue)= json match {
-      case JsString(str) => JsSuccess(Labels.fromString(str))
-      case JsObject(fields) =>
-        JsSuccess(Label(fields("ns").as[String], fields("key").as[String]))
-        // (Label {"ns":"ds","key":"sup-script","id":0}),WrappedArray()
-
-      case _ => JsError(s"Label ${json}")
-    }
-
-    override def writes(o: Label) = o match {
-      case c@ Label(ns, key, value, id) => jstr(c.fqn)
     }
   }
 

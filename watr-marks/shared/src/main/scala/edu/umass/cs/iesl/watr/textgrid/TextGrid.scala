@@ -12,6 +12,17 @@ sealed trait FontInfo
 
 case object NoFonts extends FontInfo
 
+trait TextGrid {
+  import TextGrid._
+
+  def rows: Seq[Row]
+
+  def toText(): String = {
+    rows.map(_.toText).mkString("\n  ", "\n  ", "\n")
+  }
+
+}
+
 object TextGrid {
   type SetType[A] = mutable.Set[A]
   type PinSet = SetType[BioPin]
@@ -105,11 +116,14 @@ object TextGrid {
   ) extends InsertCell(char, root)
 
 
+
+
+
   trait Row {
     def cells: Seq[GridCell]
 
-    def toCursor(): Option[Cursor] = {
-      Cursor.init(cells.toList.toZipper)
+    def toCursor(): Option[GridCursor] = {
+      GridCursor.init(cells.toList.toZipper)
     }
 
     def foreach(f: GridCell => Unit): Unit  = {
@@ -158,7 +172,6 @@ object TextGrid {
     def nextLineNum: Int = if (lineMap.keySet.isEmpty) 0 else lineMap.keySet.max + 1
   }
 
-  // trait Grid {}
 
   abstract class MutableRow extends Row {
     override val cells: mutable.ArrayBuffer[GridCell] = mutable.ArrayBuffer()
@@ -169,188 +182,17 @@ object TextGrid {
     def fromCells(init: Seq[GridCell]): Row = new MutableRow {
       cells.appendAll(init)
     }
-
-
   }
 
 
-  object Window {
-    def apply(window: Seq[GridCell], lefts: Stream[GridCell], focus: GridCell, rights:Stream[GridCell]): Window = {
-      new Window {
-        def cells: Seq[GridCell] = window
-
-        def zipper: Zipper[GridCell] =
-          Zipper.zipper(lefts, focus, rights)
-      }
-    }
-  }
-
-
-  sealed trait Window { self =>
-    def zipper: Zipper[GridCell]
-    def cells: Seq[GridCell]
-
-    def atStart: Boolean = zipper.atStart
-    def atEnd: Boolean = zipper.atEnd
-
-    def debugString(): String = {
-      val rs = zipper.rights.map(_.char).mkString
-      val ls = zipper.lefts.map(_.char).mkString.reverse
-      val ws = cells.map(_.char).mkString
-      s"""($ls [${ws}] $rs)"""
-
-    }
-
-    def toLastCursor(): Cursor = {
-      val newLefts = cells.init.reverse.toStream ++ zipper.lefts
-      val newFocus = cells.last
-
-      Cursor.init{
-        Zipper.zipper(newLefts, newFocus, zipper.rights)
-      }
-    }
-
-    def nextCursor(): Option[Cursor] = {
-      Cursor.init{
-        zipper.next.map{znext =>
-          Zipper.zipper(
-            cells.reverse.toStream ++ znext.lefts,
-            znext.focus,
-            znext.rights
-          )
-        }
-      }
-    }
-
-    def removePins(label: Label): Unit = {
-      cells.foreach { c =>
-        c.removeLabel(label)
-      }
-    }
-
-    def addLabel(label: Label): Unit = {
-      if (cells.length==1) {
-        cells.foreach(_.addPin(label.U))
-      } else if (cells.length > 1) {
-        cells.head.addPin(label.B)
-        cells.last.addPin(label.L)
-        cells.drop(1).dropRight(1).foreach(
-          _.addPin(label.I)
-        )
-      }
-    }
-
-    def slurpRight(p: (Seq[GridCell], GridCell) => Boolean): Window = {
-      val slurped = zipper.rights
-        .inits.toSeq.reverse.drop(1).map{ init =>
-          val nextWin = cells ++ init
-          (nextWin.init, nextWin.last)
-        }
-        .takeWhile { case (h, t) =>
-          val b = p(h, t)
-          // println(s"""  slurpRight(win=[${h.map(_.char).mkString}], cell=${t.char}) = ${b}""")
-          b
-        }
-
-      val slcells = slurped.map{case (ws, t) => ws :+ t}.toList
-        .lastOption
-        .getOrElse { cells }
-
-      Window(slcells, zipper.lefts, zipper.focus, zipper.rights.drop(slurped.length))
-
-    }
-
-    def extendRight(char: Char): Window = {
-      val ins = zipper.focus.createRightInsert(char)
-      Window(
-        cells :+ ins,
-        zipper.lefts, zipper.focus, zipper.rights
-      )
-
-    }
-  }
-
-  object Cursor {
-    def init(z: Zipper[GridCell]) = new Cursor {
-      def zipper: Zipper[GridCell] = z
-    }
-
-    def init(optZ: Option[Zipper[GridCell]]) = optZ.map{ z =>
-      new Cursor {
-        def zipper: Zipper[GridCell] = z
-      }
-    }
+  abstract class MutableTextGrid extends TextGrid {
+    override val rows: mutable.ArrayBuffer[Row] = mutable.ArrayBuffer()
 
   }
 
-  trait Cursor { self =>
-    def zipper: Zipper[GridCell]
-
-    def focus: GridCell = zipper.focus
-
-    def next: Option[Cursor] =
-      Cursor.init{ zipper.next }
-
-    def prev: Option[Cursor] =
-      Cursor.init{ zipper.previous }
-
-    def insertLeft(g: GridCell): Cursor =
-      Cursor.init{ zipper.insertLeft(g)}
-
-    def insertRight(g: GridCell): Cursor =
-      Cursor.init{ zipper.insertRight(g)}
-
-
-    def atStart: Boolean = zipper.atStart
-    def atEnd: Boolean = zipper.atEnd
-
-    def start: Cursor = Cursor.init{ zipper.start }
-    def end: Cursor = Cursor.init{ zipper.end }
-
-    def toWindow(): Window = {
-      Window(Seq(focus), zipper.lefts, zipper.focus, zipper.rights)
-    }
-
-    def move(n: Int): Option[Cursor] =
-      Cursor.init{ zipper.move(n) }
-
-    def slurpRight(p: GridCell => Boolean): Window = {
-      val (winTail, tail) = zipper.rights.span(p)
-      val window = zipper.focus +: winTail
-      Window(window, zipper.lefts, zipper.focus, tail)
-    }
-
-    def findNext(p: GridCell => Boolean): Option[Cursor] = {
-      Cursor.init{ zipper.findNext(p) }
-    }
-
-    def findPrevious(p: GridCell => Boolean): Option[Cursor] = {
-      Cursor.init{ zipper.findPrevious(p) }
-    }
-
-    def toRow: Row = {
-      Row.fromCells(zipper.toList)
-    }
-
-    def addLabel(label: Label): Unit = {
-      focus.addLabel(label)
-    }
-
-    def unfoldCursorToRow(f: Cursor => Option[Cursor]): Row  = {
-      f(self) match {
-        case Some(cmod) => cmod.next match {
-          case Some(cnext) => cnext.unfoldCursorToRow(f)
-          case None => cmod.toRow
-
-        }
-        case None => self.toRow
-      }
-    }
-
-
-
-    def insertCharLeft(c: Char): Cursor =  insertLeft(focus.createLeftInsert(c))
-    def insertCharRight(c: Char): Cursor =  insertRight(focus.createRightInsert(c))
+  def fromRows(init: Seq[Row]): TextGrid = new MutableTextGrid {
+    rows.appendAll(init)
   }
 
 }
+

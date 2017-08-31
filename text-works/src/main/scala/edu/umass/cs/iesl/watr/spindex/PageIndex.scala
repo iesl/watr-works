@@ -13,6 +13,7 @@ import utils.OrderedDisjointSet
 import textgrid._
 import utils.ExactFloats._
 // import edu.umass.cs.iesl.watr.tracing._
+import textboxing.{TextBoxing => TB}
 
 
 
@@ -32,27 +33,22 @@ import utils.ExactFloats._
 
   */
 
-object UpgradedLabels extends TypeTagUtils {
 
-  // import scalaz.Tag
-  sealed trait DisjointSetL
-  val DisjointSetL = Tag.of[DisjointSetL]
-
-
-  sealed trait WeightedLabel
-  val WeightedLabel = Tag.of[WeightedLabel]
-  type Weight = String@@WeightedLabel
-  // CategoryLabel =
-  // WeightedLabel =
-
-}
+// object UpgradedLabels extends TypeTagUtils {
+//   // import scalaz.Tag
+//   sealed trait DisjointSetL
+//   val DisjointSetL = Tag.of[DisjointSetL]
+//   sealed trait WeightedLabel
+//   val WeightedLabel = Tag.of[WeightedLabel]
+//   type Weight = String@@WeightedLabel
+//   // CategoryLabel =
+//   // WeightedLabel =
+// }
 
 object PageIndex {
   import java.nio.file.Path
   import TypeTags._
 
-
-  // val noopTracer = new VisualTracer()
 
   def load(path: Path): PageIndex = {
     val rtree = RTreeIndex.load[Component](path)
@@ -65,13 +61,8 @@ object PageIndex {
     println("called activeTracingCallback")
   }
 
-  // var activeTracer = noopTracer
-  // def tracer() = activeTracer
 }
 
-// class PageIndexTracer() extends VisualTracer { self =>
-//   def addComponent(c: Component): Unit = {}
-// }
 
 class PageIndex(
   val pageGeometry: PageGeometry,
@@ -79,13 +70,13 @@ class PageIndex(
 ) {
 
 
-  val weightedComponentLabels: mutable.HashMap[
-    Int@@ComponentID, mutable.HashMap[Label, Double]
-  ] = mutable.HashMap()
+  // val weightedComponentLabels: mutable.HashMap[
+  //   Int@@ComponentID, mutable.HashMap[Label, Double]
+  // ] = mutable.HashMap()
 
-  def assignWeight(cc: Int@@ComponentID, l: Label, initWeight: Double): Unit = ???
-  def getWeight(cc: Int@@ComponentID, l: Label): Double = ???
-  def modifyWeight(cc: Int@@ComponentID, l: Label, modf: Double => Double): Double = ???
+  // def assignWeight(cc: Int@@ComponentID, l: Label, initWeight: Double): Unit = ???
+  // def getWeight(cc: Int@@ComponentID, l: Label): Double = ???
+  // def modifyWeight(cc: Int@@ComponentID, l: Label, modf: Double => Double): Double = ???
 
   lazy val pageNum = pageGeometry.id
   val rtreeArtifactName = s"page-${pageNum}.rtree"
@@ -102,6 +93,33 @@ class PageIndex(
   ] = mutable.HashMap()
 
 
+  import scala.reflect.ClassTag
+
+  val componentAttributes: mutable.HashMap[Int@@ComponentID,
+    mutable.HashMap[Label, Any]
+  ] = mutable.HashMap()
+
+  def setAttribute[A](cc: Int@@ComponentID, l: Label, attr: A)
+    (implicit act: ClassTag[A]): Unit = {
+    val typedLabel = l.as(act.runtimeClass.getSimpleName)
+
+    val ccAttrs = componentAttributes.getOrElseUpdate(cc,
+      mutable.HashMap[Label, Any]()
+    )
+    ccAttrs.put(typedLabel, attr)
+  }
+
+  def getAttribute[A](cc: Int@@ComponentID, l: Label)
+    (implicit act: ClassTag[A]): Option[A] = {
+
+    val typedLabel = l.as(act.runtimeClass.getSimpleName)
+
+    componentAttributes.get(cc)
+      .flatMap{ ccAttrs =>
+        ccAttrs.get(typedLabel).map(_.asInstanceOf[A])
+      }
+  }
+
   def allLabels(): Set[Label] = {
     labelToComponents.keySet.toSet
   }
@@ -109,11 +127,39 @@ class PageIndex(
   val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[Component]] = mutable.HashMap()
 
   def initClustering(l: Label, f: Component => Boolean): Seq[Component] = {
+    assume(!disjointSets.contains(l))
     val toAdd = componentRTree.getItems.filter(f)
     disjointSets.getOrElseUpdate(l,
       OrderedDisjointSet.apply[Component](toAdd:_*)
     )
     toAdd
+  }
+
+  def reportClusters(): Unit = {
+    import TB._
+    val allSets = disjointSets.keys.toList
+      .map{l =>
+        val dsets = disjointSets(l)
+        val setStrs = dsets.sets().map{ set =>
+          val canon = dsets.getCanonical(set.head)
+          val members = set.take(2).map(_.id).mkString(", ")
+          val membersFull = set.take(8).map(_.toString().box)
+
+          s"[${canon}] = (${set.length}) ${members} ..." atop indent(2)(vcat(membersFull))
+        }
+
+        vjoin(left)(
+          s"$l => ",
+          indent(2)(vsep(setStrs, 1)),
+          "~"*20
+        )
+        // set.mkString(s"{  ${l} =>\n      ", "\n      ", "\n    }")
+      }
+
+    val res = vjoin(left)(indent(4)(vcat(allSets)))
+    // val allStr = allSets.mkString("{\n  ", "\n  ", "\n}")
+
+    println(res)
   }
 
   def setComponentText(c: Component, l: Label, t: TextGrid.Row): Unit = {
@@ -122,13 +168,12 @@ class PageIndex(
       .put(l, t)
   }
 
-  // AttibuteLabel
   def getComponentText(c: Component, l: Label): Option[TextGrid.Row] = {
     componentToText.get(c.id).flatMap(_.get(l))
   }
 
   def unionAll(l: Label, cs: Seq[Component]): Unit = {
-    val _ = addCluster(l, cs)
+    val _ = _addCluster(l, cs)
   }
 
   def union(l: Label, c1: Component, c2: Component): Unit = {
@@ -139,29 +184,34 @@ class PageIndex(
   }
 
   def setOrdering(l: Label, cs: Seq[Component]): Component = {
-    assume(!disjointSets.contains(l))
+    val typedLabel = l.as("ordering")
+    assume(!disjointSets.contains(typedLabel))
 
-    val canon = addCluster(l, cs)
-    addLabel(canon, LB.Ordering)
+    val canon = _addCluster(typedLabel, cs)
     canon
   }
 
   // l: String@@Ordering
   def getOrdering(l: Label): Seq[Component] = {
-    assume(disjointSets.contains(l))
-    val canon = getComponentsWithLabel(LB.Ordering).filter(_.hasLabel(l)).head
-    getClusterMembers(l, canon).get
+    val typedLabel = l.as("ordering")
+    assume(disjointSets.contains(typedLabel))
+    val canonLabel = l.as("ordering").as("rep")
+    // val canon = getComponentsWithLabel(LB.Ordering).filter(_.hasLabel(l)).head
+    val canon = getComponentsWithLabel(canonLabel).head
+    _getClusterMembers(typedLabel, canon).get
   }
 
   // l: String@@Relation
   def addRelation(lhs: Component, l: Label, rhs: Component): Unit = {
-    val _ = addCluster(l, Seq(lhs, rhs))
+    val relationLabel = l.as("relation")
+    val _ = _addCluster(relationLabel, Seq(lhs, rhs))
   }
 
   // l: String@@Relation
   def getRelations(lhs: Component, l: Label): Option[Seq[Component]] = {
+    val typedLabel = l.as("relation")
     for {
-      rels <- getClusterMembers(l, lhs)
+      rels <- _getClusterMembers(typedLabel, lhs)
       if rels.headOption.exists(_.id==lhs.id)
     } yield { rels.tail }
   }
@@ -169,6 +219,15 @@ class PageIndex(
   // l: String@@DisjointCluster
   def addCluster(l: Label, cs: Seq[Component]): Component = {
     assume(cs.nonEmpty)
+
+    val typedLabel = l.as("cluster")
+
+    _addCluster(typedLabel, cs)
+  }
+  private def _addCluster(l: Label, cs: Seq[Component]): Component = {
+    assume(cs.nonEmpty)
+
+    val canonLabel = l.as("rep")
 
     // PageIndex..traceIf(true)()
 
@@ -183,26 +242,28 @@ class PageIndex(
       set.union(c0, cn)
     }
     val canonical = set.getCanonical(c0)
-    addLabel(canonical, LB.Canonical)
-    addLabel(canonical, l)
 
+    addLabel(canonical, canonLabel)
 
     canonical
   }
 
-  def getClusterSets(l: Label): Option[OrderedDisjointSet[Component]] = {
-    disjointSets.get(l)
-  }
+  // def getClusterSets(l: Label): Option[OrderedDisjointSet[Component]] = {
+  //   disjointSets.get(l)
+  // }
 
   // l: String@@DisjointCluster
-  def getClusters(l: Label): Seq[Seq[Component]] = {
-    disjointSets.get(l).map{set =>
-      set.sets.toSeq.map(_.toSeq)
-    } getOrElse(Seq())
-  }
+  // def getClusters(l: Label): Seq[Seq[Component]] = {
+  //   disjointSets.get(l).map{set =>
+  //     set.sets.toSeq.map(_.toSeq)
+  //   } getOrElse(Seq())
+  // }
 
   // l: String@@DisjointCluster
   def getClusterMembers(l: Label, cc: Component): Option[Seq[Component]] = {
+    _getClusterMembers(l.as("cluster"), cc)
+  }
+  private def _getClusterMembers(l: Label, cc: Component): Option[Seq[Component]] = {
     disjointSets.get(l).map{set =>
       set.sets.toSeq.map(_.toSeq)
         .filter(_.contains(cc))

@@ -67,7 +67,7 @@ trait CommonLibs extends LibVersions {
   val ammonite         = "com.lihaoyi"             % "ammonite_2.12.3"  % ammoniteVersion
   // val ammoniteOps      = "com.lihaoyi"             % "ammonite-ops_2.11.11"  % ammoniteVersion
   val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"  % ammoniteVersion
-  val scopt            = "com.github.scopt"        %% "scopt"            % "3.6.0"
+  val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
   val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.3"

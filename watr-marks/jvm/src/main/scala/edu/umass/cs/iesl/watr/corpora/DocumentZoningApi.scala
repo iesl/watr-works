@@ -5,6 +5,7 @@ import geometry._
 import watrmarks._
 import textreflow._
 import TextReflowF._
+import textgrid._
 
 import watrmarks.{StandardLabels => LB}
 
@@ -27,6 +28,9 @@ trait DocumentZoningApi {
   def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
   def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
   def getPageImage(pageId: Int@@PageID): Option[Array[Byte]]
+
+  def setPageText(pageId: Int@@PageID, text: TextGrid): Unit
+  def getPageText(pageId: Int@@PageID): Option[TextGrid]
 
   def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID
   def getTargetRegion(regionId: Int@@RegionID): PageRegion

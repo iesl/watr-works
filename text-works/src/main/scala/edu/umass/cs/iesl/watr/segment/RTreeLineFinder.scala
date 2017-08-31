@@ -22,6 +22,8 @@ import scala.collection.mutable
 import utils.SlicingAndDicing._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
 
+import org.dianahep.{histogrammar => HST}
+import org.dianahep.histogrammar.ascii._
 
 
 
@@ -65,12 +67,8 @@ class LineFinder(
     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
 
     pageIndex.setOrdering(LB.ReadingBlocks, readingBlocks)
-    val tmpReadingBlocks = pageIndex.getOrdering(LB.ReadingBlocks)
-
-    // println(" get/set ordering  = ")
-    // println("  "+tmpReadingBlocks.map(_.id).toList.sorted)
-    // println("  "+readingBlocks.map(_.id).toList.sorted)
-    assert(tmpReadingBlocks.map(_.id).toSet == readingBlocks.map(_.id).toSet)
+    // val tmpReadingBlocks = pageIndex.getOrdering(LB.ReadingBlocks)
+    // assert(tmpReadingBlocks.map(_.id).toSet == readingBlocks.map(_.id).toSet)
 
     // pageIndex.addCluster(LB.ReadingBlocks, readingBlocks)
 
@@ -79,57 +77,64 @@ class LineFinder(
     // TODO extract path objects in groups, rather than singly, to avoid trying to rewrite large drawn shapes
     rewritePathObjects(orderedRegions)
 
+    // pageIndex.reportClusters()
+    // println()
+
     findVisualLines(orderedRegions)
 
     vis.writeRTreeImage("06-VisualLines", LB.VisualLine, stdLabels(LB.PageAtom):_*)
 
-    // reorder visual lines within and across reading blocks
+    setVisualLineOrdering()
 
-    // val alreadySeen: mutable.Set[Int@@ComponentID] = mutable.Set.empty
+    buildLinePairTrapezoids()
+
+
+    // Group visual lines into text blocks, s.t. each each block is semantically meaningful unit, e.g., part of a paragraph, a chart/table/figure+caption, or footnote
+
+
+    // Group text blocks into paragraphs (within single page)
+
+
+  }
+
+  def setVisualLineOrdering(): Seq[Component] = {
+    tracer.enter()
+    // reorder visual lines within and across reading blocks
 
     val allPageLines: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
 
-    pageIndex.getComponentsWithLabel(LB.VisualLine)
+    val vlineClusterRepLabel = LB.VisualLine.as("cluster").as("rep")
+
+    pageIndex.getComponentsWithLabel(vlineClusterRepLabel)
       .foreach{ a =>
-        // println(s" has VisualLine label ${a}")
-        if (a.hasLabel(LB.Canonical)) {
-          // println("adding tmp label")
-          pageIndex.addLabel(a, LB.Tmp)
-        }
+        pageIndex.addLabel(a, LB.Tmp)
       }
 
     for {
       readingBlock <-  pageIndex.getOrdering(LB.ReadingBlocks)
-      vlineRoots   <- Seq(pageIndex.rtreeSearchHasAllLabels(readingBlock.bounds(), LB.VisualLine, LB.Canonical, LB.Tmp)) // TODO this search picks up some lines multiple times
+      vlineRoots   <- Seq(pageIndex.rtreeSearchHasAllLabels(readingBlock.bounds(), vlineClusterRepLabel, LB.Tmp)) // TODO this search picks up some lines multiple times
       if vlineRoots.nonEmpty
 
-      // _             = allPageLines.clear()
 
       sortedLines   = vlineRoots.sortBy(_.bounds.bottom)
       vlineCluster   = pageIndex.addCluster(LB.ReadingBlockLines, sortedLines)
 
       // Tie together the readingBlock and the canonicalReadingBlockLine
-      // _ = pageIndex.addCluster(LB.HasVisualLines, Seq(readingBlock, canonicalReadingBlockLine))
       _                = pageIndex.addRelation(readingBlock, LB.HasVisualLines, vlineCluster)
       vlineClusterTmp  = pageIndex.getRelations(readingBlock, LB.HasVisualLines)
-      // _ = println(s"  add/get relation: ")
-      // _ = println(s"    ${vlineCluster}")
-      // _ = println(s"    ${vlineClusterTmp}")
 
       line         <- sortedLines
     }  {
       pageIndex.removeLabel(line, LB.Tmp)
-      // if (!alreadySeen.contains(line.id)) {
-      //   alreadySeen.add(line.id)
-      //   lines.append(line)
-      // }
       allPageLines.append(line)
     }
 
     if (allPageLines.nonEmpty) {
-      // println(s"clustering...")
-      val _ = pageIndex.addCluster(LB.PageLines, allPageLines)
+      pageIndex.setOrdering(LB.PageLines, allPageLines)
     }
+
+    tracer.exit()
+    allPageLines
   }
 
 
@@ -231,11 +236,13 @@ class LineFinder(
 
 
 
-  def textRowFromComponents(visualLineCC: Component, visualLineAtoms: Seq[Component])
+  def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component])
     (implicit gifBuilder: GifBuilder): TextGrid.Row = {
 
 
-    val visualLineModalCC = pageIndex.getRelations(visualLineCC, LB.VisualLineModal).head.head
+    val visualLineModalCC = pageIndex.getRelations(visualLineClusterCC, LB.VisualLineModal).head.head
+    val visualLineCC = pageIndex.getRelations(visualLineClusterCC, LB.VisualLine).head.head
+
     val visualLineModalBounds = visualLineModalCC.bounds()
 
     val (topIntersects, bottomIntersects) = findLineAtomScriptPositions(visualLineCC, visualLineAtoms)
@@ -299,6 +306,65 @@ class LineFinder(
     }
   }
 
+  def buildLinePairTrapezoids(): Seq[(Component, Seq[Trapezoid])] = {
+    tracer.enter()
+    import HST._
+    val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble} named "trapezoid-heights")
+
+    // pageIndex.reportClusters()
+
+    for {
+      (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+      linePair <- lineCCs.sliding(2)
+    }  {
+
+      // construct trapezoids: isosceles, right, rectangular
+      linePair match {
+        case Seq(l1, l2) =>
+          val ml1Text = pageIndex.getComponentText(l1, LB.VisualLine)
+          val ml2Text = pageIndex.getComponentText(l2, LB.VisualLine)
+
+
+          (ml1Text, ml2Text) match {
+            case (Some(l1Text), Some(l2Text)) =>
+              println(s"1: ${l1}> ")
+              println(s"  => ${l1Text.toText()}")
+              println(s"2: ${l2}>")
+              println(s"  => ${l2Text.toText()}")
+
+
+              pageIndex.getRelations(l1, LB.VisualLineModal)
+              val l1VisLineModal = pageIndex.getRelations(l1, LB.VisualLineModal).head.head
+              val l2VisLineModal = pageIndex.getRelations(l2, LB.VisualLineModal).head.head
+              val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
+              val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
+
+              val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
+
+              trapezoidHeights.fill(t)
+
+              pageIndex.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
+
+              println(s"    ${t.prettyPrint}")
+              println()
+              Option(t)
+
+            case _ => None
+          }
+        case Seq(l1) =>
+          println(s"$l1")
+          None
+        case _ => sys.error("only 1 or 2 lines in sliding(2)")
+      }
+    }
+
+    // val asdf = maybeTraps.flatten
+
+    // println(trapezoidHeights.ascii)
+
+    tracer.exit()
+    Seq()
+  }
 
   def labelSuperAndSubscripts(): Unit = {
 
@@ -383,19 +449,21 @@ class LineFinder(
       val visualLineModalCC = labelRegion(visualLineModalBounds, LB.VisualLineModal)
       val visualLineClusterCC = pageIndex.addCluster(LB.VisualLine, visualLineAtoms)
 
-      pageIndex.addRelation(visualLineCC, LB.VisualLineModal, visualLineModalCC)
+      // pageIndex.addRelation(visualLineCC, LB.VisualLineModal, visualLineModalCC)
+      pageIndex.addRelation(visualLineClusterCC, LB.VisualLineModal, visualLineModalCC)
+      pageIndex.addRelation(visualLineClusterCC, LB.VisualLine, visualLineCC)
 
       gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
       gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
 
-      val textRow = textRowFromComponents(visualLineCC, visualLineAtoms)
+      val textRow = textRowFromComponents(visualLineClusterCC, visualLineAtoms)
 
       tracer {
         println(dbgGrid.toBox().transpose())
       }
 
       // Convert consecutive sup/sub to single label
-      def relabel(c: TextGrid.Cursor, l: Label): Unit = {
+      def relabel(c: GridCursor, l: Label): Unit = {
          c.findNext(_.hasLabel(l))
            .foreach{ cur =>
                val win = cur.slurpRight(_.hasLabel(l))
@@ -444,7 +512,6 @@ class LineFinder(
     tracer.exit()
   }
 
-
   def convertTextRowToTextReflow(textRow: TextGrid.Row): TextReflow = {
 
     val textReflowAtoms: Seq[TextReflow] = textRow.cells.map{ _ match {
@@ -484,7 +551,6 @@ class LineFinder(
       }
 
     tracer.checkpoint("visualize hash-line bins", pageIndex)
-    // tracer.checkpoint("visualize hash-line bins")
 
     tracer.exit()
   }

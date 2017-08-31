@@ -11,8 +11,6 @@ import watrmarks.{StandardLabels => LB, _}
 
 import geometry._
 import geometry.syntax._
-import org.dianahep.{histogrammar => HST}
-import org.dianahep.histogrammar.ascii._
 
 import utils.{RelativeDirection => Dir}
 import TypeTags._
@@ -23,6 +21,8 @@ import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import edu.umass.cs.iesl.watr.tracing.TraceCallbacks
 import textgrid._
 import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
+
+import org.dianahep.{histogrammar => HST}
 
 object DocumentSegmenter {
   import spindex._
@@ -136,15 +136,13 @@ class DocumentSegmenter(
 
       val pageGeometry = pageSegmenter.pageGeometry
 
+
       docStore.getTargetRegion(
         docStore.addTargetRegion(pageId, pageGeometry)
       )
     }
 
     val _ = createZone(LB.DocumentPages, pageRegions)
-
-    // buildLinePairTrapezoids()
-    // classifyLinePairs()
 
   }
 
@@ -162,58 +160,6 @@ class DocumentSegmenter(
     }
   }
 
-  def buildLinePairTrapezoids(): Seq[(Component, Seq[Trapezoid])] = {
-    import HST._
-    val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble} named "trapezoid-heights")
-
-    val _ = for {
-      (pageId, pagenum) <- docStore.getPages(docId).toList.zipWithIndex
-    } yield {
-      val pageIndex = mpageIndex.getPageIndex(PageNum(pagenum))
-      val maybeTraps = for {
-        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
-        linePair <- lineCCs.sliding(2)
-      } yield {
-
-        // construct trapezoids: isosceles, right, rectangular
-        linePair match {
-          case Seq(l1, l2) =>
-            pageIndex.getComponentText(l1, LB.VisualLine).foreach{ row =>
-              println(s"1> ${row.toText()}")
-            }
-            pageIndex.getComponentText(l2, LB.VisualLine).foreach{ row =>
-              println(s"2> ${row.toText()}")
-            }
-
-            // This is a relation
-            val l1VisLineModal = pageIndex.getClusterMembers(LB.VisualLineModal, l1).get.last
-            val l2VisLineModal = pageIndex.getClusterMembers(LB.VisualLineModal, l2).get.last
-            val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
-            val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
-
-            val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
-
-            trapezoidHeights.fill(t)
-
-            println(s"    ${t.prettyPrint}")
-            println()
-            Option(t)
-          case Seq(l1) =>
-            println(s"$l1")
-            None
-          case _ => sys.error("only 1 or 2 lines in sliding(2)")
-        }
-
-      }
-      maybeTraps.flatten
-    }
-
-    println(trapezoidHeights.ascii)
-
-    // traps
-    ???
-
-  }
 }
 
 
@@ -278,7 +224,26 @@ class PageSegmenter(
     val lineFinder = new LineFinder(mpageIndex, pageId, pageNum, tracer)
     lineFinder.determineLines()
 
+    setPageText()
+
     tracer.exit()
+  }
+
+  def setPageText(): Unit = {
+    for {
+      pageNum      <- mpageIndex.getPages
+      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+    }  {
+      val textLines = for {
+        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
+        (line, n)    <- lineCCs.zipWithIndex
+        textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+      } yield textRow
+
+      val pageTextGrid = TextGrid.fromRows(textLines)
+
+      docStore.setPageText(pageId, pageTextGrid)
+    }
   }
 
 

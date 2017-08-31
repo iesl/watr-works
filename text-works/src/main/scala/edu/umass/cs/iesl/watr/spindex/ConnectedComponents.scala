@@ -22,13 +22,9 @@ sealed trait Component {
 
   def roleLabel: Label
 
-  // def setRole(l: Label): Component
-
   def pageRegion(): PageRegion
 
   def bounds(): LTBounds = pageRegion().bbox
-
-  // def chars: String
 
   def getStableID(): String@@DocumentID = pageRegion.page.stableId
 
@@ -42,6 +38,15 @@ sealed trait Component {
   def hasLabel(l: Label): Boolean = labels.contains(l)
   def labels(): Set[Label] = labelSet.toSet
 
+  def formatLabels(): String = {
+    labels.toSeq
+      .filter(_ != roleLabel)
+      .sortBy(_.fqn).mkString("[", "; ", "]")
+  }
+
+  // def formatWithLabels(): String = {
+  //   s"<${roleLabel.key}.${id} ${formatLabels()}>"
+  // }
 }
 
 case class RegionComponent(
@@ -51,12 +56,8 @@ case class RegionComponent(
   text: Option[String] = None
 ) extends Component {
 
-  // def setRole(l: Label): Component = copy(roleLabel = l)
-
-  // def chars: String = text.getOrElse("")
-
   override def toString(): String = {
-    s"<${roleLabel.key}.${id} ${pageRegion}"
+    s"<${roleLabel.key}.${id} ${formatLabels}"
   }
 }
 
@@ -66,13 +67,12 @@ case class AtomicComponent(
   override val roleLabel: Label = LB.PageAtom
 ) extends Component {
 
-  // def setRole(l: Label): Component = copy(roleLabel = l)
 
   def pageRegion: PageRegion = charAtom.pageRegion
 
   def chars: String = charAtom.char
 
   override def toString(): String = {
-    s"<`${chars}`${id} ${charAtom.bbox.prettyPrint}>"
+    s"<`${chars}`${id} ${formatLabels()}>"
   }
 }

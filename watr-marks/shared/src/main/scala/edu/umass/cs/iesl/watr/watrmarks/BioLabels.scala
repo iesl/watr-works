@@ -127,6 +127,16 @@ case class Label(
 
   def matches(l: Label) =
     ns==l.ns && key==l.key
+
+  // def /(rhs: Label): Label = {
+  //   Label(s"${key}/${rhs.key}")
+  // }
+
+  def as(t: String): Label = {
+    Label(s"${fqn}::${t}")
+  }
+
+
 }
 
 

@@ -6,6 +6,7 @@ import edu.umass.cs.iesl.watr.{watrmarks => W}
 import scala.collection.mutable
 import TypeTags._
 import textreflow._
+import textgrid._
 import textreflow.data._
 import TextReflowF._
 import watrmarks.Label
@@ -56,6 +57,16 @@ class MemDocZoningApi extends DocumentZoningApi {
 
       def getGeometry(pageId: Int@@PageID): G.LTBounds = {
         unique(pageId).bounds
+      }
+
+      val pageText = mutable.HashMap[Int@@PageID, TextGrid]()
+
+      def setPageText(pageId: Int@@PageID, text: TextGrid): Unit = {
+        pageText.update(pageId, text)
+      }
+
+      def getPageText(pageId: Int@@PageID): Option[TextGrid] = {
+        pageText.get(pageId)
       }
     }
 
@@ -299,6 +310,14 @@ class MemDocZoningApi extends DocumentZoningApi {
     pageImages
       .getRhs(pageId)
       .map(imageclips.unique(_).image)
+  }
+
+  def setPageText(pageId: Int@@PageID, text: TextGrid): Unit = {
+    pages.setPageText(pageId, text)
+  }
+
+  def getPageText(pageId: Int@@PageID): Option[TextGrid] = {
+    pages.getPageText(pageId)
   }
 
   def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {

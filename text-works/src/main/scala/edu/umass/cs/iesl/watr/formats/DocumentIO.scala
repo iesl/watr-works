@@ -14,6 +14,7 @@ object DocumentIO  {
   import textgrid._
 
   def documentToPlaintext(mpageIndex: MultiPageIndex): String = {
+    // mpageIndex.docStore.getPageText(pageId)
 
     val serProps = new TextGrid.SerializationProps
     for {

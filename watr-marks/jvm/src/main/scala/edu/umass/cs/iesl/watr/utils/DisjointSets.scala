@@ -175,10 +175,11 @@ class OrderedDisjointSet[A] {
   /**
     * @return Iterator over groups of items in same set
     */
-  def sets(): Iterable[Iterable[A]] = {
+  def sets(): Seq[Seq[A]] = {
     parent.keys
       .groupBy {_.root.entry}
-      .keys.map(_.ordering)
+      .keys.toSeq
+      .map(_.ordering)
   }
 }
 
