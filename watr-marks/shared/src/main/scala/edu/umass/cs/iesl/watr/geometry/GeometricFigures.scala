@@ -195,7 +195,6 @@ case class Trapezoid(
 
   def height(): Int@@FloatRep = bottomLeft.y - topLeft.y
 
-  // def mbr()
 }
 object Trapezoid {
 

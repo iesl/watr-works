@@ -224,6 +224,9 @@ class PageSegmenter(
     val lineFinder = new LineFinder(mpageIndex, pageId, pageNum, tracer)
     lineFinder.determineLines()
 
+    val lineClassifier = new LineGroupClassifier(mpageIndex, pageId, pageNum, tracer)
+    lineClassifier.classifyLines()
+
     setPageText()
 
     tracer.exit()

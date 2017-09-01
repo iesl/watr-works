@@ -23,7 +23,7 @@ import utils.SlicingAndDicing._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
 
 import org.dianahep.{histogrammar => HST}
-import org.dianahep.histogrammar.ascii._
+// import org.dianahep.histogrammar.ascii._
 
 
 
@@ -84,9 +84,9 @@ class LineFinder(
 
     vis.writeRTreeImage("06-VisualLines", LB.VisualLine, stdLabels(LB.PageAtom):_*)
 
+
     setVisualLineOrdering()
 
-    buildLinePairTrapezoids()
 
 
     // Group visual lines into text blocks, s.t. each each block is semantically meaningful unit, e.g., part of a paragraph, a chart/table/figure+caption, or footnote
@@ -97,13 +97,14 @@ class LineFinder(
 
   }
 
+
   def setVisualLineOrdering(): Seq[Component] = {
     tracer.enter()
     // reorder visual lines within and across reading blocks
 
     val allPageLines: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
 
-    val vlineClusterRepLabel = LB.VisualLine.as("cluster").as("rep")
+    val vlineClusterRepLabel = LB.VisualLine.qualifiedAs("cluster").qualifiedAs("rep")
 
     pageIndex.getComponentsWithLabel(vlineClusterRepLabel)
       .foreach{ a =>
@@ -306,69 +307,6 @@ class LineFinder(
     }
   }
 
-  def buildLinePairTrapezoids(): Seq[(Component, Seq[Trapezoid])] = {
-    tracer.enter()
-    import HST._
-    val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble} named "trapezoid-heights")
-
-    // pageIndex.reportClusters()
-
-    for {
-      (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
-      linePair <- lineCCs.sliding(2)
-    }  {
-
-      // construct trapezoids: isosceles, right, rectangular
-      linePair match {
-        case Seq(l1, l2) =>
-          val ml1Text = pageIndex.getComponentText(l1, LB.VisualLine)
-          val ml2Text = pageIndex.getComponentText(l2, LB.VisualLine)
-
-
-          (ml1Text, ml2Text) match {
-            case (Some(l1Text), Some(l2Text)) =>
-              println(s"1: ${l1}> ")
-              println(s"  => ${l1Text.toText()}")
-              println(s"2: ${l2}>")
-              println(s"  => ${l2Text.toText()}")
-
-
-              pageIndex.getRelations(l1, LB.VisualLineModal)
-              val l1VisLineModal = pageIndex.getRelations(l1, LB.VisualLineModal).head.head
-              val l2VisLineModal = pageIndex.getRelations(l2, LB.VisualLineModal).head.head
-              val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
-              val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
-
-              val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
-
-              trapezoidHeights.fill(t)
-
-              pageIndex.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
-
-              println(s"    ${t.prettyPrint}")
-              println()
-              Option(t)
-
-            case _ => None
-          }
-        case Seq(l1) =>
-          println(s"$l1")
-          None
-        case _ => sys.error("only 1 or 2 lines in sliding(2)")
-      }
-    }
-
-    // val asdf = maybeTraps.flatten
-
-    // println(trapezoidHeights.ascii)
-
-    tracer.exit()
-    Seq()
-  }
-
-  def labelSuperAndSubscripts(): Unit = {
-
-  }
 
   var dbgGrid = TB.Grid.widthAligned()
 

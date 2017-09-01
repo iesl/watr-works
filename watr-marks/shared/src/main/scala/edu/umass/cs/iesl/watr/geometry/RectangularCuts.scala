@@ -6,6 +6,15 @@ import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.EnrichNumerics._
 
+sealed trait AngleType
+
+object AngleType {
+  case object Right extends AngleType
+  case object Acute extends AngleType
+  case object Obtuse extends AngleType
+}
+
+
 trait RectangularCuts {
   import GeometryImplicits._
 
@@ -108,13 +117,6 @@ trait RectangularCuts {
 
   }
 
-
-  sealed trait AngleType
-  object AngleType {
-    case object Right extends AngleType
-    case object Acute extends AngleType
-    case object Obtuse extends AngleType
-  }
 
 
   implicit class RectangularCuts_RicherTrapezoid(val self: Trapezoid) {

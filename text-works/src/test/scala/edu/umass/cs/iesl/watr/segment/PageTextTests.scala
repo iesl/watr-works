@@ -43,7 +43,7 @@ class PageTextTest extends SegmentationTestUtils  {
          |""".stripMargin
     }
 
-    tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.EnterExit
+    // tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.EnterExit
 
     // allTestPdfs.foreach {
     selectPdfPage(allTestPdfs, "1032", 11).foreach {

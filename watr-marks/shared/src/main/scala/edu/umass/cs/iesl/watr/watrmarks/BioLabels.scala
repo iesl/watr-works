@@ -5,6 +5,8 @@ import TypeTags._
 
 import textboxing.{TextBoxing => TB}, TB._
 
+import scala.collection.mutable
+
 
 sealed trait BioPin {
   def label: Label
@@ -128,25 +130,37 @@ case class Label(
   def matches(l: Label) =
     ns==l.ns && key==l.key
 
-  // def /(rhs: Label): Label = {
-  //   Label(s"${key}/${rhs.key}")
-  // }
-
-  def as(t: String): Label = {
+  def qualifiedAs(t: String): Label = {
     Label(s"${fqn}::${t}")
   }
 
 
 }
 
+object WeightedLabeling {
 
-// import utils.IdGenerator
-// class Labeler() {
-//   val idGen = IdGenerator[LabelID]()
+  def apply(): WeightedLabeling = new WeightedLabeling {}
 
-//   def getLabel(l: Label): Label = {
-//     l.copy(id = idGen.nextId)
-//   }
+}
 
 
-// }
+trait WeightedLabeling {
+
+  private val pins = mutable.ArrayBuffer[BioPin]()
+
+  def uniquePins(): Seq[BioPin] = {
+    pins.toSet.toSeq
+  }
+
+  def countedPins(): Seq[(BioPin, Int)] = {
+    uniquePins().map { pin =>
+      (pin, pins.count(_ == pin))
+    }
+  }
+
+  def addPin(p: BioPin): Unit = pins.append(p)
+
+  def hasPin(p: BioPin): Boolean = {
+    pins.contains(p)
+  }
+}

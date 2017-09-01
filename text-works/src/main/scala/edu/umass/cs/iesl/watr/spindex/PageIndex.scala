@@ -101,7 +101,7 @@ class PageIndex(
 
   def setAttribute[A](cc: Int@@ComponentID, l: Label, attr: A)
     (implicit act: ClassTag[A]): Unit = {
-    val typedLabel = l.as(act.runtimeClass.getSimpleName)
+    val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
 
     val ccAttrs = componentAttributes.getOrElseUpdate(cc,
       mutable.HashMap[Label, Any]()
@@ -112,7 +112,7 @@ class PageIndex(
   def getAttribute[A](cc: Int@@ComponentID, l: Label)
     (implicit act: ClassTag[A]): Option[A] = {
 
-    val typedLabel = l.as(act.runtimeClass.getSimpleName)
+    val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
 
     componentAttributes.get(cc)
       .flatMap{ ccAttrs =>
@@ -184,7 +184,7 @@ class PageIndex(
   }
 
   def setOrdering(l: Label, cs: Seq[Component]): Component = {
-    val typedLabel = l.as("ordering")
+    val typedLabel = l.qualifiedAs("ordering")
     assume(!disjointSets.contains(typedLabel))
 
     val canon = _addCluster(typedLabel, cs)
@@ -193,9 +193,9 @@ class PageIndex(
 
   // l: String@@Ordering
   def getOrdering(l: Label): Seq[Component] = {
-    val typedLabel = l.as("ordering")
+    val typedLabel = l.qualifiedAs("ordering")
     assume(disjointSets.contains(typedLabel))
-    val canonLabel = l.as("ordering").as("rep")
+    val canonLabel = l.qualifiedAs("ordering").qualifiedAs("rep")
     // val canon = getComponentsWithLabel(LB.Ordering).filter(_.hasLabel(l)).head
     val canon = getComponentsWithLabel(canonLabel).head
     _getClusterMembers(typedLabel, canon).get
@@ -203,13 +203,13 @@ class PageIndex(
 
   // l: String@@Relation
   def addRelation(lhs: Component, l: Label, rhs: Component): Unit = {
-    val relationLabel = l.as("relation")
+    val relationLabel = l.qualifiedAs("relation")
     val _ = _addCluster(relationLabel, Seq(lhs, rhs))
   }
 
   // l: String@@Relation
   def getRelations(lhs: Component, l: Label): Option[Seq[Component]] = {
-    val typedLabel = l.as("relation")
+    val typedLabel = l.qualifiedAs("relation")
     for {
       rels <- _getClusterMembers(typedLabel, lhs)
       if rels.headOption.exists(_.id==lhs.id)
@@ -220,14 +220,14 @@ class PageIndex(
   def addCluster(l: Label, cs: Seq[Component]): Component = {
     assume(cs.nonEmpty)
 
-    val typedLabel = l.as("cluster")
+    val typedLabel = l.qualifiedAs("cluster")
 
     _addCluster(typedLabel, cs)
   }
   private def _addCluster(l: Label, cs: Seq[Component]): Component = {
     assume(cs.nonEmpty)
 
-    val canonLabel = l.as("rep")
+    val canonLabel = l.qualifiedAs("rep")
 
     // PageIndex..traceIf(true)()
 
@@ -261,7 +261,7 @@ class PageIndex(
 
   // l: String@@DisjointCluster
   def getClusterMembers(l: Label, cc: Component): Option[Seq[Component]] = {
-    _getClusterMembers(l.as("cluster"), cc)
+    _getClusterMembers(l.qualifiedAs("cluster"), cc)
   }
   private def _getClusterMembers(l: Label, cc: Component): Option[Seq[Component]] = {
     disjointSets.get(l).map{set =>
