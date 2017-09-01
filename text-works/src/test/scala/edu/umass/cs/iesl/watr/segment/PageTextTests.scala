@@ -45,8 +45,8 @@ class PageTextTest extends SegmentationTestUtils  {
 
     // tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.EnterExit
 
-    // allTestPdfs.foreach {
-    selectPdfPage(allTestPdfs, "1032", 11).foreach {
+    allTestPdfs.foreach {
+    // selectPdfPage(allTestPdfs, "1032", 3).foreach {
       case (docId, page, path) =>
 
         val tracer = new VisualTracer {
@@ -58,13 +58,17 @@ class PageTextTest extends SegmentationTestUtils  {
 
         segmenter.runPageSegmentation()
 
-        val content = formats.DocumentIO.documentToPlaintext(segmenter.mpageIndex)
+        val content = formats.DocumentIO.documentToStructuredPlaintext(segmenter.mpageIndex)
 
         val textfile = s"${docId.unwrap}.txt"
+        val outputFile = fs.pwd / textfile
+        if (fs.exists(outputFile)) {
+          fs.rm(outputFile)
+        }
 
-        // fs.write(fs.pwd / textfile, content)
+        fs.write(outputFile, content)
 
-        println(content)
+        // println(content)
     }
 
 

@@ -120,18 +120,18 @@ trait RectangularCuts {
 
 
   implicit class RectangularCuts_RicherTrapezoid(val self: Trapezoid) {
-    def lowerLeftAngle(): Double = {
+    def leftBaseAngle(): Double = {
       toPoint(Dir.BottomLeft).angleTo(toPoint(Dir.TopLeft))
     }
 
-    def lowerRightAngle(): Double = {
+    def rightBaseAngle(): Double = {
       math.Pi - toPoint(Dir.BottomRight).angleTo(toPoint(Dir.TopRight))
     }
 
     def prettyPrint: String = {
 
-      val lla = lowerLeftAngle()
-      val lra = lowerRightAngle()
+      val lla = leftBaseAngle()
+      val lra = rightBaseAngle()
 
       val (llba, lrba) = classifyBaseAngles()
 
@@ -155,26 +155,30 @@ trait RectangularCuts {
       s"${lls}◻${lrs}:<${lldeg.pp}º,${lrdeg.pp}º>mbr:${minBoundingRect(self)}"
     }
 
-    def classifyBaseAngles(tolerance: Double = 0.03d): (AngleType, AngleType) = {
-      val lla = lowerLeftAngle()
-      val lra = lowerRightAngle()
+    private val defaultAngleTolerance = 0.03d
+    private val pi2 = math.Pi/2
 
-      val pi2 = math.Pi/2
-
+    def leftBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {
+      val lla = leftBaseAngle()
       val deg90 = DoubleInterval(pi2-tolerance, tolerance*2)
 
-      val leftClass = if (lla.withinRange(deg90)) AngleType.Right
-                      else if (lla < pi2) AngleType.Acute
-                      else AngleType.Obtuse
+      if (lla.withinRange(deg90)) AngleType.Right
+      else if (lla < pi2) AngleType.Acute
+      else AngleType.Obtuse
 
-      val rightClass = if (lra.withinRange(deg90)) AngleType.Right
-                       else if (lra < pi2) AngleType.Acute
-                       else AngleType.Obtuse
+    }
 
+    def rightBaseAngleType(tolerance: Double = defaultAngleTolerance): AngleType = {
+      val lra = rightBaseAngle()
+      val deg90 = DoubleInterval(pi2-tolerance, tolerance*2)
 
+      if (lra.withinRange(deg90)) AngleType.Right
+      else if (lra < pi2) AngleType.Acute
+      else AngleType.Obtuse
+    }
 
-
-      (leftClass, rightClass)
+    def classifyBaseAngles(tolerance: Double = defaultAngleTolerance): (AngleType, AngleType) = {
+      (leftBaseAngleType(tolerance), rightBaseAngleType(tolerance))
     }
 
 

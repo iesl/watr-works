@@ -70,14 +70,6 @@ class PageIndex(
 ) {
 
 
-  // val weightedComponentLabels: mutable.HashMap[
-  //   Int@@ComponentID, mutable.HashMap[Label, Double]
-  // ] = mutable.HashMap()
-
-  // def assignWeight(cc: Int@@ComponentID, l: Label, initWeight: Double): Unit = ???
-  // def getWeight(cc: Int@@ComponentID, l: Label): Double = ???
-  // def modifyWeight(cc: Int@@ComponentID, l: Label, modf: Double => Double): Double = ???
-
   lazy val pageNum = pageGeometry.id
   val rtreeArtifactName = s"page-${pageNum}.rtree"
 

@@ -10,13 +10,9 @@ import utils.{RelativeDirection => Dir}
 import utils.ExactFloats._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import org.dianahep.{histogrammar => HST}
-// import org.dianahep.histogrammar.ascii._
+import org.dianahep.histogrammar.ascii._
 import textboxing.{TextBoxing => TB}
 import textgrid._
-// import scalaz.Tags.Conjunction
-// import scalaz.std.anyVal._
-// import scalaz.syntax.all._
-// import LB._
 
 
 class LineGroupClassifier(
@@ -26,72 +22,14 @@ class LineGroupClassifier(
   tracer: VisualTracer
 ) extends PageSegmenter(pageId, pageNum, mpageIndex, tracer) {
 
+
   def classifyLines(): Unit = {
-    buildLinePairTrapezoids()
+    // buildLinePairTrapezoids()
 
     groupLines()
 
 
     showGroupings()
-  }
-
-  def buildLinePairTrapezoids(): Unit = {
-    tracer.enter()
-    import HST._
-    val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble} named "trapezoid-heights")
-
-    // pageIndex.reportClusters()
-
-    for {
-      (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
-      linePair <- lineCCs.sliding(2)
-    }  {
-
-      // construct trapezoids: isosceles, right, rectangular
-      linePair match {
-        case Seq(l1, l2) =>
-          val ml1Text = pageIndex.getComponentText(l1, LB.VisualLine)
-          val ml2Text = pageIndex.getComponentText(l2, LB.VisualLine)
-
-
-          (ml1Text, ml2Text) match {
-            case (Some(l1Text), Some(l2Text)) =>
-              // println(s"1: ${l1}> ")
-              // println(s"  => ${l1Text.toText()}")
-              // println(s"2: ${l2}>")
-              // println(s"  => ${l2Text.toText()}")
-
-
-              pageIndex.getRelations(l1, LB.VisualLineModal)
-              val l1VisLineModal = pageIndex.getRelations(l1, LB.VisualLineModal).head.head
-              val l2VisLineModal = pageIndex.getRelations(l2, LB.VisualLineModal).head.head
-              val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
-              val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
-
-              val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
-
-              trapezoidHeights.fill(t)
-
-              pageIndex.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
-
-              // println(s"    ${t.prettyPrint}")
-              // println()
-              Option(t)
-
-            case _ => None
-          }
-        case Seq(l1) =>
-          println(s"$l1")
-          None
-        case _ => sys.error("only 1 or 2 lines in sliding(2)")
-      }
-    }
-
-    // val asdf = maybeTraps.flatten
-
-    // println(trapezoidHeights.ascii)
-
-    tracer.exit()
   }
 
 
@@ -149,12 +87,13 @@ class LineGroupClassifier(
           object line1 { def +=(p: BioPin): Unit = { l1Labels.addPin(p) } }
           // object line2 { def +=(p: BioPin): Unit = { l2Labels.addPin(p) } }
 
-          object line1_2 {
-            def +=(ps: (BioPin, BioPin)): Unit = {
-              l1Labels.addPin(ps._1)
-              l2Labels.addPin(ps._2)
-            }
-          }
+          // object line1_2 {
+          //   def +=(ps: (BioPin, BioPin)): Unit = {
+          //     l1Labels.addPin(ps._1)
+          //     l2Labels.addPin(ps._2)
+          //   }
+          // }
+
           object line1_2_3 {
             def +=(ps: (BioPin, BioPin, BioPin)): Unit = {
               l1Labels.addPin(ps._1)
@@ -185,6 +124,9 @@ class LineGroupClassifier(
               (shape1.like.paraLast         && shape2.like.paraLastAndBegin) ==> { line1_2_3 += ((Para.I, Para.L, Para.B)) };
 
               shape1.textLike.captionBegin ==> {  line1 += Caption.B }
+
+              //
+              shape1.upperText
 
 
             case _ =>
@@ -261,7 +203,7 @@ class LineGroupClassifier(
           }
 
 
-
+        case _ =>
 
       }
     }
@@ -330,6 +272,7 @@ class LineGroupClassifier(
 
       def hasEqualSign: Boolean = true //
 
+      def splitFont: Boolean = false
 
     }
   }
@@ -386,7 +329,7 @@ class LineGroupClassifier(
       l2TextOpt: Option[TextGrid.Row]
     ): ShapeProps = {
       val (llAngleType, lrAngleType) = t.classifyBaseAngles()
-      val (llAngle, lrAngle) = (t.lowerLeftAngle(), t.lowerRightAngle())
+      val (llAngle, lrAngle) = (t.leftBaseAngle(), t.rightBaseAngle())
 
       def hasAngles(l: AngleType, r: AngleType) = l==llAngleType && r==lrAngleType
 

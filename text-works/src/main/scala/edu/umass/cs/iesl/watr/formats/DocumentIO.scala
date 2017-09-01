@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package formats
 
+import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
 import spindex._
 import textboxing.{TextBoxing => TB}, TB._
 import textreflow.data._
@@ -38,6 +39,73 @@ object DocumentIO  {
     }
 
     textLines.mkString("\n")
+  }
+
+  def documentToStructuredPlaintext(mpageIndex: MultiPageIndex): String = {
+    val allText = for {
+      pageNum      <- mpageIndex.getPages
+      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+    } yield {
+      val textCol = for {
+        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+        lineCC <- lineCCs
+      } yield {
+
+        val lineText = pageIndex.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
+        lineText.getOrElse("<no text>").box
+      }
+
+      val pinCol = for {
+        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+        lineCC <- lineCCs
+      } yield {
+        val lineWeights = pageIndex.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
+        val linePins = lineWeights.countedPins()
+        if (linePins.nonEmpty) {
+          val maxPin = linePins.maxBy(_._2)._1
+
+          val pinrep = {
+            maxPin.isBegin.option[String]("^")
+              .orElse { maxPin.isInside.option[String]("|") }
+              .orElse { maxPin.isUnit.option[String]("#") }
+              .orElse { maxPin.isLast.option[String]("$") }
+              .getOrElse { "?" }
+          }
+
+          val pincol = maxPin.label match {
+            case LB.Para =>
+              val pincls = {
+                maxPin.isBegin.option[String]("¶")
+                  .getOrElse { " " }
+              }
+
+              // '¶'     ; '⁋' '§'
+
+              s"${pincls}${pinrep}"
+
+
+            case _ =>
+              s"${pinrep} "
+          }
+
+          pincol.box
+
+        } else {
+          "~".box
+        }
+      }
+      val groupings = hjoin(left)(
+        vjoins(TB.right)(pinCol),
+        "  ",
+        vjoins(TB.left)(textCol)
+      )
+
+      groupings
+    }
+
+    vjoins(left)(
+      allText
+    ).toString()
   }
 
   def documentToJson(mpageIndex: MultiPageIndex): String = {

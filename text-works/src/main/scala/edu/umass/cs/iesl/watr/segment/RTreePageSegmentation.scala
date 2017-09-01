@@ -23,6 +23,34 @@ import textgrid._
 import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
 
 import org.dianahep.{histogrammar => HST}
+import org.dianahep.histogrammar.ascii._
+import scala.collection.mutable
+
+class LayoutStats {
+  import HST._
+
+  val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble})
+  val leftAcuteBaseAngles = HST.SparselyBin.ing(0.1, {t: Trapezoid => if (t.leftBaseAngleType() == AngleType.Acute) { t.leftBaseAngle() } else 0})
+  val leftObtuseBaseAngles = HST.SparselyBin.ing(0.1, {t: Trapezoid => if (t.leftBaseAngleType() == AngleType.Obtuse) { t.leftBaseAngle() } else 0})
+
+}
+
+class PageLayoutStats extends LayoutStats {}
+
+class DocumentLayoutStats extends LayoutStats {
+  val pageStats: mutable.HashMap[Int@@PageNum, PageLayoutStats] = mutable.HashMap()
+
+  def addPage(pageNum: Int@@PageNum): PageLayoutStats = {
+    pageStats.put(pageNum, new PageLayoutStats())
+    pageStats(pageNum)
+  }
+
+  def getPage(pageNum: Int@@PageNum): PageLayoutStats = {
+    pageStats(pageNum)
+  }
+
+}
+
 
 object DocumentSegmenter {
   import spindex._
@@ -110,7 +138,7 @@ class DocumentSegmenter(
   val docId = docStore.getDocument(stableId)
     .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
 
-
+  val docStats: DocumentLayoutStats = new DocumentLayoutStats()
 
   lazy val pageIdMap: Map[Int@@PageID, Int@@PageNum] =
     docStore.getPages(docId).zipWithIndex.map{
@@ -132,7 +160,7 @@ class DocumentSegmenter(
       println(s"Seg. p.${pagenum} id.${pageId}")
       val pageSegmenter = new PageSegmenter(pageId, PageNum(pagenum), mpageIndex, tracer)
 
-      pageSegmenter.runLineDeterminationOnPage()
+      pageSegmenter.runSegmentation()
 
       val pageGeometry = pageSegmenter.pageGeometry
 
@@ -144,20 +172,6 @@ class DocumentSegmenter(
 
     val _ = createZone(LB.DocumentPages, pageRegions)
 
-  }
-
-
-  def classifyLinePairs(): Unit = {
-    for {
-      (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
-    } {
-      val pageIndex = mpageIndex.getPageIndex(PageNum(pagenum))
-      for {
-        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
-        linePair <- lineCCs.sliding(2)
-      } {
-      }
-    }
   }
 
 }
@@ -190,12 +204,9 @@ class PageSegmenter(
   pageNum: Int@@PageNum,
   mpageIndex: MultiPageIndex,
   tracer: VisualTracer
-) {
+) extends DocumentSegmenter (mpageIndex, tracer){
 
-  val docStore = mpageIndex.docStore
-  val stableId = mpageIndex.getStableId
-  val docId = docStore.getDocument(stableId)
-    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
+  val pageStats = docStats.addPage(pageNum)
 
   val pageGeometry = docStore.getPageGeometry(pageId)
   val pageIndex = mpageIndex.getPageIndex(pageNum)
@@ -203,10 +214,7 @@ class PageSegmenter(
   val segvisRootPath = pwd / s"${stableId}-segs.d"
   val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath, tracer)
 
-  // def tracer() = PageIndex.tracer()
-
   vis.cleanRTreeImageFiles()
-
 
   def labelRegion(bbox: LTBounds, label: Label, text: Option[String] = None): RegionComponent = {
     val regionId = docStore.addTargetRegion(pageId, bbox)
@@ -214,7 +222,22 @@ class PageSegmenter(
     mpageIndex.createRegionComponent(pageRegion, label, text)
   }
 
-  def runLineDeterminationOnPage(): Unit = {
+  def runSegmentation(): Unit = {
+    tracer.enter()
+
+    runLineDeterminationOnPage()
+
+    collectPageStats()
+
+    val lineClassifier = new LineGroupClassifier(mpageIndex, pageId, pageNum, tracer)
+    lineClassifier.classifyLines()
+
+    setPageText()
+
+    tracer.exit()
+  }
+
+  private def runLineDeterminationOnPage(): Unit = {
     tracer.enter()
 
     mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>
@@ -224,13 +247,73 @@ class PageSegmenter(
     val lineFinder = new LineFinder(mpageIndex, pageId, pageNum, tracer)
     lineFinder.determineLines()
 
-    val lineClassifier = new LineGroupClassifier(mpageIndex, pageId, pageNum, tracer)
-    lineClassifier.classifyLines()
-
-    setPageText()
 
     tracer.exit()
   }
+
+  private def collectPageStats(): Unit = {
+    buildLinePairTrapezoids()
+  }
+
+  private def buildLinePairTrapezoids(): Unit = {
+    tracer.enter()
+
+    // pageIndex.reportClusters()
+
+    for {
+      (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+      linePair <- lineCCs.sliding(2)
+    }  {
+
+      // construct trapezoids: isosceles, right, rectangular
+      linePair match {
+        case Seq(l1, l2) =>
+          val ml1Text = pageIndex.getComponentText(l1, LB.VisualLine)
+          val ml2Text = pageIndex.getComponentText(l2, LB.VisualLine)
+
+
+          (ml1Text, ml2Text) match {
+            case (Some(l1Text), Some(l2Text)) =>
+
+              pageIndex.getRelations(l1, LB.VisualLineModal)
+              val l1VisLineModal = pageIndex.getRelations(l1, LB.VisualLineModal).head.head
+              val l2VisLineModal = pageIndex.getRelations(l2, LB.VisualLineModal).head.head
+
+              val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
+              val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
+
+              val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
+
+              pageStats.trapezoidHeights.fill(t)
+              pageStats.leftAcuteBaseAngles.fill(t)
+              pageStats.leftObtuseBaseAngles.fill(t)
+              docStats.trapezoidHeights.fill(t)
+              docStats.leftAcuteBaseAngles.fill(t)
+              docStats.leftObtuseBaseAngles.fill(t)
+
+              pageIndex.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
+
+              Option(t)
+
+            case _ => None
+          }
+        case Seq(l1) => None
+        case Seq() => None
+      }
+    }
+
+    // val asdf = maybeTraps.flatten
+
+    println(pageStats.trapezoidHeights.ascii)
+    println("\n\n" )
+    println(pageStats.leftAcuteBaseAngles.ascii)
+    println("\n\n" )
+    println(pageStats.leftObtuseBaseAngles.ascii)
+    println("\n\n" )
+
+    tracer.exit()
+  }
+
 
   def setPageText(): Unit = {
     for {
