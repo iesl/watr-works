@@ -21,48 +21,68 @@ import textboxing.{TextBoxing => TB}, TB._
 import scala.collection.mutable
 import utils.SlicingAndDicing._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
+import utils._
 
 import org.dianahep.{histogrammar => HST}
+import ammonite.{ops => fs}
 // import org.dianahep.histogrammar.ascii._
 
 
 
 class LineFinder(
-  mpageIndex: MultiPageIndex,
-  pageId: Int@@PageID,
-  pageNum: Int@@PageNum,
-  tracer: VisualTracer
-) extends PageSegmenter(pageId, pageNum, mpageIndex, tracer) {
+  override val mpageIndex: MultiPageIndex,
+  override val pageId: Int@@PageID,
+  override val pageNum: Int@@PageNum,
+  tracer: VisualTracer,
+  vis: RTreeVisualizer
+) extends SegmentationCommons with PageLevelFunctions {
 
+  val pageIndex = mpageIndex.getPageIndex(pageNum)
+  val docStore = mpageIndex.docStore
+  val stableId = mpageIndex.getStableId
+  val docId = docStore.getDocument(stableId)
+    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
+
+  val segvisRootPath = fs.pwd / s"${stableId}-segs.d"
+
+
+  def svgVisualize(name: String) =  {
+    new SVGVisualization(name, pageIndex, segvisRootPath)
+  }
 
   def determineLines(): Unit = {
     val components = mpageIndex.getPageAtoms(pageNum)
 
-    def stdLabels(lls: Label*) = List(
-      LB.Image, LB.HLinePath, LB.VLinePath, LB.LinePath, LB.WhitespaceCol, LB.ReadingBlock, LB.VisualLineModal
-    ) ++ lls.toList
+    // def stdLabels(lls: Label*) = List(
+    //   LB.Image, LB.HLinePath, LB.VLinePath, LB.LinePath, LB.WhitespaceCol, LB.ReadingBlock, LB.VisualLineModal
+    // ) ++ lls.toList
 
     approximateLineBins(components)
 
-    vis.writeRTreeImage("01-lineHashing", LB.LineByHash, stdLabels():_*)
+    // vis.writeRTreeImage("01-lineHashing", LB.LineByHash, stdLabels():_*)
 
     splitLinesWithOverlaps()
 
-    vis.writeRTreeImage("02-splitLineHashing", LB.LineByHash, stdLabels():_*)
+    // vis.writeRTreeImage("02-splitLineHashing", LB.LineByHash, stdLabels():_*)
 
     findCandidateWhitespaceCols(components)
 
-    vis.writeRTreeImage("03-colCandidates", LB.LineByHash, stdLabels(LB.LeftAlignedCharCol, LB.WhitespaceColCandidate):_*)
+    // vis.writeRTreeImage("03-colCandidates", LB.WhitespaceColCandidate, LB.LineByHash)
+
+    // vis.writeRTreeImage("03.1-lineByHash", LB.LineByHash)
 
     combineCandidateWhitespaceCols()
 
-    vis.writeRTreeImage("04-colsCombined", LB.LineByHash, stdLabels():_*)
+    // vis.writeRTreeImage("04-colsCombined", LB.WhitespaceCol, LB.LineByHash, LB.WhitespaceColCandidate)
 
     splitLinesOnWhitespaceColumns()
 
-    vis.writeRTreeImage("05-LinesSplitByCols", LB.LineByHash, stdLabels():_*)
+    // vis.writeRTreeImage("05-LinesSplitByCols", LB.LineByHash, LB.WhitespaceCol)
 
-    val orderedRegions = findReadingOrder(pageGeometry)
+
+    val svgVis = svgVisualize("ShowReadingOrder")
+    val orderedRegions = findReadingOrder(pageGeometry)(svgVis)
+    svgVis.write()
 
     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
 
@@ -72,7 +92,7 @@ class LineFinder(
 
     // pageIndex.addCluster(LB.ReadingBlocks, readingBlocks)
 
-    // vis.writeRTreeImage("06-ReadingOrder", LB.LineByHash, stdLabels():_*)
+    // vis.indicateRegions("06-ReadingBlockOrder", readingBlocks.map(_.bounds()))
 
     // TODO extract path objects in groups, rather than singly, to avoid trying to rewrite large drawn shapes
     rewritePathObjects(orderedRegions)
@@ -82,8 +102,7 @@ class LineFinder(
 
     findVisualLines(orderedRegions)
 
-    vis.writeRTreeImage("06-VisualLines", LB.VisualLine, stdLabels(LB.PageAtom):_*)
-
+    // vis.writeRTreeImage("06-VisualLines", LB.VisualLine)
 
     setVisualLineOrdering()
 
@@ -234,7 +253,6 @@ class LineFinder(
 
     visualLineModalBounds
   }
-
 
 
   def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component])
@@ -396,9 +414,9 @@ class LineFinder(
 
       val textRow = textRowFromComponents(visualLineClusterCC, visualLineAtoms)
 
-      tracer {
-        println(dbgGrid.toBox().transpose())
-      }
+      // tracer {
+      //   println(dbgGrid.toBox().transpose())
+      // }
 
       // Convert consecutive sup/sub to single label
       def relabel(c: GridCursor, l: Label): Unit = {
@@ -445,7 +463,7 @@ class LineFinder(
       }
     }
 
-    gifBuilder.finish()
+    // gifBuilder.finish()
 
     tracer.exit()
   }
@@ -493,11 +511,15 @@ class LineFinder(
     tracer.exit()
   }
 
-  def findReadingOrder(initRegion: LTBounds): Seq[LTBounds] = {
+  def findReadingOrder(initRegion: LTBounds)(svgVis: SVGVisualization, level: Int=0): Seq[LTBounds] = {
+
+    // svgVis.indicateRegion(s"(${level}) Init Region ${initRegion}", initRegion, Colors.Blue, Colors.White)
 
     val maybeCol = pageIndex.rtreeSearchOverlapping(initRegion, LB.WhitespaceCol)
       .sortBy(cc => (cc.bounds.top, cc.bounds.left))
       .headOption
+
+    // Flash all Whitespace Cols found:...
 
     maybeCol.map{ wsCol =>
       val colBounds = wsCol.bounds.withinRegion(initRegion)
@@ -507,9 +529,24 @@ class LineFinder(
       val leftRegion = colBounds.adjacentRegion(Dir.Left)
       val rightRegion = colBounds.adjacentRegion(Dir.Right)
 
+      /*
+       Animate region burst:
+         flash center col
+         flash top
+         flash bottom...
+
+       */
+
+
+      svgVis.indicateRegion(s"(${level}) WS.Column ${wsCol}", wsCol.bounds(), Colors.Black, Colors.Black)
+      upperRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Upper Adj Region ${r}", r, Colors.Green, Colors.Yellow) }
+      leftRegion.foreach  { r => svgVis.indicateRegion(s"(${level}) Left  Adj Region ${r}", r, Colors.Green, Colors.AliceBlue) }
+      rightRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Right Adj Region ${r}", r, Colors.Green, Colors.Brown) }
+      lowerRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Lower Adj Region ${r}", r, Colors.Green, Colors.Cyan) }
+
       val rs = Seq(leftRegion, rightRegion, lowerRegion)
         .flatten.flatMap{ r =>
-          findReadingOrder(r)
+          findReadingOrder(r)(svgVis, level+1)
         }
 
       upperRegion.map( _ +: rs ).getOrElse(rs)
@@ -554,7 +591,7 @@ class LineFinder(
       val charsInRegion = pageIndex.rtreeSearch(intersectedLine.bounds, LB.PageAtom)
       val allChars = charsInRegion.sortBy(_.bounds.left)
 
-      val (leftSplit, rightSplit) = allChars.span(_.bounds.left < colRegion.bounds.left)
+      val (leftSplit, rightSplit) = allChars.span(_.bounds.left <= colRegion.bounds.left)
 
       mpageIndex.labelRegion(leftSplit, LB.LineByHash)
       mpageIndex.labelRegion(rightSplit, LB.LineByHash)
@@ -716,9 +753,10 @@ class LineFinder(
 
       }
 
-      tracer {
-        println(spacingDbgGrid.toBox().transpose())
-      }
+      // tracer {
+      //   println(spacingDbgGrid.toBox().transpose())
+      // }
+
       finalRow
 
     } getOrElse { textRow }
@@ -727,6 +765,75 @@ class LineFinder(
 
     res
   }
+
+  def findCandidateWhitespaceCols(components: Seq[AtomicComponent]): Unit = {
+
+    val cols = findLeftAlignedCharCols(components)
+
+    cols.foreach { colRegion =>
+      val colBounds = colRegion.bounds
+      val startingRegion = LTBounds(
+        left   = colBounds.left-0.1d,
+        top    = colBounds.top,
+        width  = 0.01.toFloatExact(),
+        height = colBounds.height
+      )
+
+      growToMaxEmptySpace(startingRegion)
+        .foreach{ emptyRegion =>
+          val colIsWideEnough = emptyRegion.width > 4.0d
+
+          if (colIsWideEnough) {
+            labelRegion(emptyRegion, LB.WhitespaceColCandidate)
+          }
+        }
+
+    }
+  }
+  def findLeftAlignedCharCols(
+    components: Seq[AtomicComponent]
+  ): Seq[RegionComponent] = {
+    import HST._
+    val componentLefts = HST.SparselyBin.ing(1.0, {x: AtomicComponent => x.bounds.left.asDouble()} named "char-lefts")
+
+    components.foreach { componentLefts.fill(_) }
+
+    // Construct a horizontal query, looking to boost scores of "runs" of consecutive left-x-value
+    val queryBoxes = componentLefts.bins.toList
+      .sortBy { case (bin, counting) => counting.entries }
+      .reverse.take(10) //  only consider the 10 tallest cols
+      .map{ case (bin, counting) =>
+        val bw = componentLefts.binWidth
+
+        LTBounds.Doubles(
+          left   = bw * bin,
+          top    = 0d,
+          width  = bw,
+          height = pageGeometry.height.asDouble()
+        )
+      }
+
+    val res: List[Option[RegionComponent]] =
+      queryBoxes.flatMap { query =>
+        val intersects = pageIndex.rtreeSearch(query, LB.PageAtom)
+
+        val consecutiveLeftAlignedCharCols =
+          intersects.sortBy(_.bounds.bottom)
+            .groupByPairs((c1, c2) => c1.bounds.bottom == c2.bounds.bottom)
+            .map(_.sortBy(_.bounds.left).head)
+            .groupByPairs((c1, c2) => c1.bounds.left == c2.bounds.left)
+            .filter{ groups => groups.length > 1 }
+
+        consecutiveLeftAlignedCharCols
+          .map{ ccs => mpageIndex.labelRegion(ccs, LB.LeftAlignedCharCol).map(_._1) }
+
+
+      }
+
+    res.flatten
+  }
+
+
 }
 
 

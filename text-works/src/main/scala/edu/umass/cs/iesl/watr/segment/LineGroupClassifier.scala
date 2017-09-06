@@ -6,11 +6,7 @@ import spindex._
 import watrmarks.{StandardLabels => LB, _}
 import geometry._
 import geometry.syntax._
-import utils.{RelativeDirection => Dir}
-import utils.ExactFloats._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
-import org.dianahep.{histogrammar => HST}
-import org.dianahep.histogrammar.ascii._
 import textboxing.{TextBoxing => TB}
 import textgrid._
 
@@ -20,11 +16,12 @@ class LineGroupClassifier(
   pageId: Int@@PageID,
   pageNum: Int@@PageNum,
   tracer: VisualTracer
-) extends PageSegmenter(pageId, pageNum, mpageIndex, tracer) {
+) {
+
+  val pageIndex = mpageIndex.getPageIndex(pageNum)
 
 
   def classifyLines(): Unit = {
-    // buildLinePairTrapezoids()
 
     groupLines()
 

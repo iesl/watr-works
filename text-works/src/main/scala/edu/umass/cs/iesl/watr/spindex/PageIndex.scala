@@ -284,7 +284,8 @@ class PageIndex(
   def removeComponent(c: Component): Unit = {
     (c.roleLabel +: c.labels.toSeq).foreach { label =>
       labelToComponents.get(label)
-        .map{ ccIds => ccIds -= c.id }
+        .foreach{ ccIds => ccIds -= c.id }
+
     }
 
     componentToLabels -= c.id

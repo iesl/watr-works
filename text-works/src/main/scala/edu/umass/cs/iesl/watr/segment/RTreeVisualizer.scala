@@ -38,21 +38,58 @@ case class RTreeVisualizer(
     }
   }
 
+  def indicateRegionImage(bboxes: Seq[LTBounds]): Image = {
+
+    val LTBounds(l, t, w, h) = pageIndex.pageGeometry.bounds
+    val pageBounds = LTBounds(l, t, w, h)
+    val pageCanvas = IM.createCanvas(pageBounds)
+
+
+    // val alphaStep = 200 / bboxes.length
+    val overlays = bboxes.zipWithIndex.map { case (bbox, i) =>
+      // val alpha = 255 - (i*alphaStep)
+      IM.ltBoundsToDrawablesFilled(bbox, pageIndex.pageGeometry, pageBounds, Clr.Blue, 200)
+    }
+
+    val embossedCanvas = pageCanvas.draw(
+      (overlays.flatten).reverse
+    )
+
+    embossedCanvas.image
+  }
+
+  def indicateRegion(name: String, bbox: LTBounds): Unit = {
+    indicateRegions(name, Seq(bbox))
+  }
+
+  def indicateRegions(name: String, bboxes: Seq[LTBounds]): Unit = {
+    val image = indicateRegionImage(bboxes)
+
+    writeImage(name, image)
+  }
+
+
   def createRTreeImage(l0: Label, labels: Label*): Image = {
 
     val LTBounds(l, t, w, h) = pageIndex.pageGeometry.bounds
-    val pageBounds = LTBounds(l, t, w+10, h+10)
+    val pageBounds = LTBounds(l, t, w, h)
     val pageCanvas = IM.createCanvas(pageBounds)
 
-    val lbls = l0 :: labels.toList
+    val lbls = labels.toList
+
+    val highlight = rTreeIndex.getItems
+      .filter { _.hasLabel(l0) }
+      .map { c => IM.ltBoundsToDrawablesFilled(c.bounds, pageIndex.pageGeometry, pageBounds, labelColors(c.roleLabel), 10 ) }
 
     val overlays = rTreeIndex.getItems
       .filter { c =>
         lbls.contains(c.roleLabel) || lbls.exists(c.hasLabel(_))
       }
-      .map { c => IM.ltBoundsToDrawables(c.bounds, pageIndex.pageGeometry, pageBounds, labelColors(c.roleLabel) ) }
+      .map { c => IM.ltBoundsToDrawablesFilled(c.bounds, pageIndex.pageGeometry, pageBounds, labelColors(c.roleLabel), 200 ) }
 
-    val embossedCanvas = pageCanvas.draw(overlays.flatten.reverse)
+    val embossedCanvas = pageCanvas.draw(
+      (highlight.flatten ++ overlays.flatten)
+    )
 
     embossedCanvas.image
   }
@@ -110,12 +147,18 @@ case class GifBuilder(
     bounds
   )
 
+  def indicateRegion(caption: String, bounds:LTBounds): Unit = {
+    vtrace {
+      val image = vis.indicateRegionImage(Seq(bounds))
+      addFrameWithCaption(caption, image)
+    }
+  }
   def indicate(caption: String, bounds:LTBounds, labels: Label*): Unit = {
     vtrace {
       val tmpRegion = RegionComponent(ComponentID(0), LB.Marked, mkPageRegion(bounds))
 
       rTreeIndex.add(tmpRegion)
-      addFrame(caption, LB.Marked)
+      addFrame(caption, LB.Marked, LB.Marked)
       addFrame(s"+${caption}", LB.Marked, labels:_*)
       rTreeIndex.remove(tmpRegion)
 
@@ -129,7 +172,7 @@ case class GifBuilder(
         rTreeIndex.add(tmpRegion)
         tmpRegion
       }
-      addFrame(caption, LB.Marked)
+      addFrame(" "+caption, LB.Marked)
       addFrame("+"+caption, LB.Marked, labels:_*)
       // deleteComponentsWithLabel(LB.Marked)
       tmps.foreach { tmp => rTreeIndex.remove(tmp) }
@@ -139,6 +182,12 @@ case class GifBuilder(
   def addFrame(caption: String, l0: Label, labels: Label*): Unit = {
     vtrace {
       val img0 = vis.createRTreeImage(l0, labels:_*)
+      addFrameWithCaption(caption, img0)
+    }
+  }
+
+  def addFrameWithCaption(caption: String, frame: Image): Unit = {
+    vtrace {
       val filter = new scrimage.canvas.CaptionFilter(
         caption,
         textColor=Clr.Black,
@@ -146,8 +195,8 @@ case class GifBuilder(
         captionBackground= Clr.Grey20,
         captionAlpha=0.4
       )
-      filter.apply(img0)
-      gifFrames.append(img0)
+      filter.apply(frame)
+      gifFrames.append(frame)
     }
   }
 

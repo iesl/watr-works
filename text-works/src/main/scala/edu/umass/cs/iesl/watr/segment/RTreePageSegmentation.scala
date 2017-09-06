@@ -2,9 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
-import edu.umass.cs.iesl.watr.extract.PdfTextExtractor
 import spindex._
-import utils.SlicingAndDicing._
 
 import ammonite.{ops => fs}, fs._
 import watrmarks.{StandardLabels => LB, _}
@@ -15,166 +13,9 @@ import geometry.syntax._
 import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.ExactFloats._
-import shapeless.lens
-import PageComponentImplicits._
-import edu.umass.cs.iesl.watr.tracing.VisualTracer
-import edu.umass.cs.iesl.watr.tracing.TraceCallbacks
 import textgrid._
-import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
 
-import org.dianahep.{histogrammar => HST}
-import org.dianahep.histogrammar.ascii._
-import scala.collection.mutable
-
-class LayoutStats {
-  import HST._
-
-  val trapezoidHeights = HST.SparselyBin.ing(1.0, {t: Trapezoid => t.height().asDouble})
-  val leftAcuteBaseAngles = HST.SparselyBin.ing(0.1, {t: Trapezoid => if (t.leftBaseAngleType() == AngleType.Acute) { t.leftBaseAngle() } else 0})
-  val leftObtuseBaseAngles = HST.SparselyBin.ing(0.1, {t: Trapezoid => if (t.leftBaseAngleType() == AngleType.Obtuse) { t.leftBaseAngle() } else 0})
-
-}
-
-class PageLayoutStats extends LayoutStats {}
-
-class DocumentLayoutStats extends LayoutStats {
-  val pageStats: mutable.HashMap[Int@@PageNum, PageLayoutStats] = mutable.HashMap()
-
-  def addPage(pageNum: Int@@PageNum): PageLayoutStats = {
-    pageStats.put(pageNum, new PageLayoutStats())
-    pageStats(pageNum)
-  }
-
-  def getPage(pageNum: Int@@PageNum): PageLayoutStats = {
-    pageStats(pageNum)
-  }
-
-}
-
-
-object DocumentSegmenter {
-  import spindex._
-
-  val noopVisualTracer = new VisualTracer {
-    def traceCallbacks: TraceCallbacks = new TraceCallbacks {
-
-    }
-
-  }
-
-
-  def createSegmenter(
-    stableId: String@@DocumentID,
-    pdfPath: Path,
-    docStore: DocumentZoningApi,
-    tracer: VisualTracer = noopVisualTracer
-  ): DocumentSegmenter = {
-    println(s"extracting ${stableId} chars")
-    val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
-    val mpageIndex = new MultiPageIndex(stableId, docStore)
-
-    val pageIdL = lens[CharAtom].pageRegion.page.pageId
-    val imgPageIdL = lens[PageItem.ImageAtom].pageRegion.page.pageId
-    val pathPageIdL = lens[PageItem.Path].pageRegion.page.pageId
-
-    val docId = docStore.addDocument(stableId)
-    pageAtomsAndGeometry.foreach { case(regions, geom)  =>
-      val pageId = docStore.addPage(docId, geom.id)
-      docStore.setPageGeometry(pageId, geom.bounds)
-      mpageIndex.addPage(geom)
-
-      regions.foreach {
-        case cb:CharAtom if !cb.isNonPrintable =>
-          // modify the pageId to match the one assigned by docStore
-          val update = pageIdL.modify(cb){_ => pageId}
-          mpageIndex.addCharAtom(update)
-
-        case cb:PageItem.ImageAtom =>
-          val update = imgPageIdL.modify(cb){_ => pageId}
-          mpageIndex.addImageAtom(update)
-
-        case cb:PageItem.Path =>
-          val update = pathPageIdL.modify(cb){_ => pageId}
-          mpageIndex.addPathItem(update)
-
-        case cb => println(s"error adding ${cb}")
-      }
-    }
-
-    new DocumentSegmenter(mpageIndex, tracer)
-  }
-
-  val DebugLabelColors: Map[Label, Color] = {
-    Map(
-      (LB.VisualLineModal        , Clr.Cornsilk4),
-      (LB.VisualLine             , Clr.Plum),
-      (LB.PageAtomTmp            , Clr.DarkBlue),
-      (LB.PageAtomGrp            , Clr.YellowGreen),
-      (LB.PageAtom               , Clr.Grey80),
-      (LB.PathBounds             , Clr.Thistle),
-      (LB.LinePath               , Clr.Green),
-      (LB.HLinePath              , Clr.Black),
-      (LB.VLinePath              , Clr.LimeGreen),
-      (LB.Image                  , Clr.DarkCyan),
-      (LB.LineByHash             , Clr.Firebrick3),
-      (LB.LeftAlignedCharCol     , Clr.Orange4),
-      (LB.WhitespaceColCandidate , Clr.Green),
-      (LB.WhitespaceCol          , Clr.Peru),
-      (LB.ReadingBlock           , Clr.Red),
-      (LB.Marked                 , Clr.Red4)
-    )
-  }
-
-  // val vtrace = new VisualTracer()
-}
-
-class DocumentSegmenter(
-  val mpageIndex: MultiPageIndex,
-  tracer: VisualTracer
-) { documentSegmenter =>
-
-  val docStore = mpageIndex.docStore
-  val stableId = mpageIndex.getStableId
-  val docId = docStore.getDocument(stableId)
-    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
-
-  val docStats: DocumentLayoutStats = new DocumentLayoutStats()
-
-  lazy val pageIdMap: Map[Int@@PageID, Int@@PageNum] =
-    docStore.getPages(docId).zipWithIndex.map{
-      case (pageId, pageNum) => (pageId, PageNum(pageNum))
-    }.toMap
-
-
-  def createZone(label: Label, pageRegions: Seq[PageRegion]): Option[Int@@ZoneID] = {
-    docStore.labelRegions(label, pageRegions)
-  }
-
-
-  def runPageSegmentation(): Unit = {
-
-    val pageRegions = for {
-      (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
-    } yield {
-
-      println(s"Seg. p.${pagenum} id.${pageId}")
-      val pageSegmenter = new PageSegmenter(pageId, PageNum(pagenum), mpageIndex, tracer)
-
-      pageSegmenter.runSegmentation()
-
-      val pageGeometry = pageSegmenter.pageGeometry
-
-
-      docStore.getTargetRegion(
-        docStore.addTargetRegion(pageId, pageGeometry)
-      )
-    }
-
-    val _ = createZone(LB.DocumentPages, pageRegions)
-
-  }
-
-}
+// import org.dianahep.histogrammar.ascii._
 
 
 object PageSegmenter {
@@ -199,276 +40,29 @@ object PageSegmenter {
 
 }
 
-class PageSegmenter(
-  pageId: Int@@PageID,
-  pageNum: Int@@PageNum,
-  mpageIndex: MultiPageIndex,
-  tracer: VisualTracer
-) extends DocumentSegmenter (mpageIndex, tracer){
-
-  val pageStats = docStats.addPage(pageNum)
-
-  val pageGeometry = docStore.getPageGeometry(pageId)
-  val pageIndex = mpageIndex.getPageIndex(pageNum)
-
-  val segvisRootPath = pwd / s"${stableId}-segs.d"
-  val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath, tracer)
-
-  vis.cleanRTreeImageFiles()
-
-  def labelRegion(bbox: LTBounds, label: Label, text: Option[String] = None): RegionComponent = {
-    val regionId = docStore.addTargetRegion(pageId, bbox)
-    val pageRegion = docStore.getTargetRegion(regionId)
-    mpageIndex.createRegionComponent(pageRegion, label, text)
-  }
-
-  def runSegmentation(): Unit = {
-    tracer.enter()
-
-    runLineDeterminationOnPage()
-
-    collectPageStats()
-
-    val lineClassifier = new LineGroupClassifier(mpageIndex, pageId, pageNum, tracer)
-    lineClassifier.classifyLines()
-
-    setPageText()
-
-    tracer.exit()
-  }
-
-  private def runLineDeterminationOnPage(): Unit = {
-    tracer.enter()
-
-    mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>
-      mpageIndex.labelRegion(Seq(imgCC), LB.Image)
-    }
-
-    val lineFinder = new LineFinder(mpageIndex, pageId, pageNum, tracer)
-    lineFinder.determineLines()
-
-
-    tracer.exit()
-  }
-
-  private def collectPageStats(): Unit = {
-    buildLinePairTrapezoids()
-  }
-
-  private def buildLinePairTrapezoids(): Unit = {
-    tracer.enter()
-
-    // pageIndex.reportClusters()
-
-    for {
-      (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
-      linePair <- lineCCs.sliding(2)
-    }  {
-
-      // construct trapezoids: isosceles, right, rectangular
-      linePair match {
-        case Seq(l1, l2) =>
-          val ml1Text = pageIndex.getComponentText(l1, LB.VisualLine)
-          val ml2Text = pageIndex.getComponentText(l2, LB.VisualLine)
-
-
-          (ml1Text, ml2Text) match {
-            case (Some(l1Text), Some(l2Text)) =>
-
-              pageIndex.getRelations(l1, LB.VisualLineModal)
-              val l1VisLineModal = pageIndex.getRelations(l1, LB.VisualLineModal).head.head
-              val l2VisLineModal = pageIndex.getRelations(l2, LB.VisualLineModal).head.head
-
-              val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
-              val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
-
-              val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
-
-              pageStats.trapezoidHeights.fill(t)
-              pageStats.leftAcuteBaseAngles.fill(t)
-              pageStats.leftObtuseBaseAngles.fill(t)
-              docStats.trapezoidHeights.fill(t)
-              docStats.leftAcuteBaseAngles.fill(t)
-              docStats.leftObtuseBaseAngles.fill(t)
-
-              pageIndex.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
-
-              Option(t)
-
-            case _ => None
-          }
-        case Seq(l1) => None
-        case Seq() => None
-      }
-    }
-
-    // val asdf = maybeTraps.flatten
-
-    println(pageStats.trapezoidHeights.ascii)
-    println("\n\n" )
-    println(pageStats.leftAcuteBaseAngles.ascii)
-    println("\n\n" )
-    println(pageStats.leftObtuseBaseAngles.ascii)
-    println("\n\n" )
-
-    tracer.exit()
-  }
-
-
-  def setPageText(): Unit = {
-    for {
-      pageNum      <- mpageIndex.getPages
-      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
-    }  {
-      val textLines = for {
-        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
-        (line, n)    <- lineCCs.zipWithIndex
-        textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
-      } yield textRow
-
-      val pageTextGrid = TextGrid.fromRows(textLines)
-
-      docStore.setPageText(pageId, pageTextGrid)
-    }
-  }
-
-
-
-
-
-  def deleteComponentsWithLabel(l: Label): Unit = {
-    pageIndex.getComponentsWithLabel(l)
-      .foreach { cc =>
-        pageIndex.removeComponent(cc)
-      }
-  }
-
-
+trait SegmentationCommons {
   def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {
     ccs.groupBy{f(_)}.toSeq
       .sortBy({ case (_, atoms) => atoms.length })
       .reverse.headOption.map(_._1)
   }
 
+}
 
+trait PageLevelFunctions {
+  def pageId: Int@@PageID
+  def pageNum: Int@@PageNum
+  def pageIndex: PageIndex
+  def mpageIndex: MultiPageIndex
 
-  def findLeftAlignedCharCols(
-    components: Seq[AtomicComponent]
-  ): Seq[RegionComponent] = {
-    import HST._
-    val componentLefts = HST.SparselyBin.ing(1.0, {x: AtomicComponent => x.bounds.left.asDouble()} named "char-lefts")
+  def pageGeometry = docStore.getPageGeometry(pageId)
 
-    components.foreach { componentLefts.fill(_) }
+  def docStore: DocumentZoningApi
 
-    // Construct a horizontal query, looking to boost scores of "runs" of consecutive left-x-value
-    val queryBoxes = componentLefts.bins.toList
-      .sortBy { case (bin, counting) => counting.entries }
-      .reverse.take(10) //  only consider the 10 tallest cols
-      .map{ case (bin, counting) =>
-        val bw = componentLefts.binWidth
-
-        LTBounds.Doubles(
-          left   = bw * bin,
-          top    = 0d,
-          width  = bw,
-          height = pageGeometry.height.asDouble()
-        )
-      }
-
-    val res: List[Option[RegionComponent]] =
-      queryBoxes.flatMap { query =>
-        val intersects = pageIndex.rtreeSearch(query, LB.PageAtom)
-
-        val consecutiveLeftAlignedCharCols =
-          intersects.sortBy(_.bounds.bottom)
-            .groupByPairs((c1, c2) => c1.bounds.bottom == c2.bounds.bottom)
-            .map(_.sortBy(_.bounds.left).head)
-            .groupByPairs((c1, c2) => c1.bounds.left == c2.bounds.left)
-            .filter{ groups => groups.length > 1 }
-
-        consecutiveLeftAlignedCharCols
-          .map{ ccs => mpageIndex.labelRegion(ccs, LB.LeftAlignedCharCol).map(_._1) }
-
-
-      }
-
-    res.flatten
-  }
-
-
-  def findCandidateWhitespaceCols(components: Seq[AtomicComponent]): Unit = {
-
-    val cols = findLeftAlignedCharCols(components)
-
-    cols.foreach { colRegion =>
-      val colBounds = colRegion.bounds
-      val startingRegion = LTBounds(
-        left   = colBounds.left-0.1d,
-        top    = colBounds.top,
-        width  = 0.01.toFloatExact(),
-        height = colBounds.height
-      )
-
-      growToMaxEmptySpace(startingRegion)
-        .foreach{ emptyRegion =>
-          val colIsWideEnough = emptyRegion.width > 4.0d
-
-          if (colIsWideEnough) {
-            labelRegion(emptyRegion, LB.WhitespaceColCandidate)
-          }
-        }
-
-    }
-  }
-
-
-  def leftRightContext(
-    cc: Component,
-    queryRegion: LTBounds,
-    l0: Label,
-    labels: Label*
-  ): Option[(Seq[Component], Seq[Component])] = {
-
-    cc.bounds.withinRegion(queryRegion)
-      .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
-      .map { horizontalStripeRegion =>
-        pageIndex.rtreeSearch(horizontalStripeRegion, l0, labels:_*)
-          .sortBy(_.bounds.left)
-          .filterNot(_.id == cc.id)
-          .span(_.bounds.left < cc.bounds.left)
-      }
-
-    // currWhiteSpace.withinRegion(pageBounds).adjacentRegion(Dir.Left)
-
-  }
-
-  // Try to detect and possibly rewrite text that is represented as path objects
-  def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
-    val _ = for {
-      textBlock <- orderedTextBlocks
-      hlineCC <- pageIndex.rtreeSearchOverlapping(textBlock, LB.HLinePath)
-    } yield {
-      pageIndex.removeComponent(hlineCC)
-
-      val width = hlineCC.bounds.width
-
-      if (width.asDouble() < 10d) {
-        labelRegion(hlineCC.bounds, LB.PageAtom, Some("—"))
-      } else {
-
-        leftRightContext(hlineCC, textBlock, LB.PageAtom, LB.HLinePath) match {
-          case Some((lefts, rights)) =>
-            if (lefts.isEmpty && rights.isEmpty) {
-              labelRegion(hlineCC.bounds, LB.HPageDivider)
-            } else {
-              labelRegion(hlineCC.bounds, LB.HLinePath)
-            }
-
-          case None =>
-            labelRegion(hlineCC.bounds, LB.HPageDivider)
-        }
-      }
-    }
+  def labelRegion(bbox: LTBounds, label: Label, text: Option[String] = None): RegionComponent = {
+    val regionId = docStore.addTargetRegion(pageId, bbox)
+    val pageRegion = docStore.getTargetRegion(regionId)
+    mpageIndex.createRegionComponent(pageRegion, label, text)
   }
 
 
@@ -582,6 +176,206 @@ class PageSegmenter(
     Some(currWhiteSpace)
 
   }
+
+  // Try to detect and possibly rewrite text that is represented as path objects
+  def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
+    val _ = for {
+      textBlock <- orderedTextBlocks
+      hlineCC <- pageIndex.rtreeSearchOverlapping(textBlock, LB.HLinePath)
+    } yield {
+      pageIndex.removeComponent(hlineCC)
+
+      val width = hlineCC.bounds.width
+
+      if (width.asDouble() < 10d) {
+        labelRegion(hlineCC.bounds, LB.PageAtom, Some("—"))
+      } else {
+
+        leftRightContext(hlineCC, textBlock, LB.PageAtom, LB.HLinePath) match {
+          case Some((lefts, rights)) =>
+            if (lefts.isEmpty && rights.isEmpty) {
+              labelRegion(hlineCC.bounds, LB.HPageDivider)
+            } else {
+              labelRegion(hlineCC.bounds, LB.HLinePath)
+            }
+
+          case None =>
+            labelRegion(hlineCC.bounds, LB.HPageDivider)
+        }
+      }
+    }
+  }
+
+  def leftRightContext(
+    cc: Component,
+    queryRegion: LTBounds,
+    l0: Label,
+    labels: Label*
+  ): Option[(Seq[Component], Seq[Component])] = {
+
+    cc.bounds.withinRegion(queryRegion)
+      .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
+      .map { horizontalStripeRegion =>
+        pageIndex.rtreeSearch(horizontalStripeRegion, l0, labels:_*)
+          .sortBy(_.bounds.left)
+          .filterNot(_.id == cc.id)
+          .span(_.bounds.left < cc.bounds.left)
+      }
+
+    // currWhiteSpace.withinRegion(pageBounds).adjacentRegion(Dir.Left)
+
+  }
+}
+
+class PageSegmenter(
+  override val pageId: Int@@PageID,
+  override val pageNum: Int@@PageNum,
+  documentSegmenter: DocumentSegmenter
+) extends SegmentationCommons with PageLevelFunctions {
+
+  val mpageIndex = documentSegmenter.mpageIndex
+  val tracer = documentSegmenter.tracer
+  val docStats = documentSegmenter.docStats
+
+  val docStore = mpageIndex.docStore
+  val stableId = mpageIndex.getStableId
+  val docId = docStore.getDocument(stableId)
+    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
+  val pageStats = docStats.addPage(pageNum)
+
+  val pageIndex = mpageIndex.getPageIndex(pageNum)
+
+  val segvisRootPath = pwd / s"${stableId}-segs.d"
+  val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath, tracer)
+
+  vis.cleanRTreeImageFiles()
+
+
+  def runLineSegmentation(): Unit = {
+    tracer.enter()
+
+    labelImages()
+
+    runLineDeterminationOnPage()
+
+    buildLinePairTrapezoids()
+
+    tracer.exit()
+  }
+
+  def runLineClassification(): Unit = {
+    val lineClassifier = new LineGroupClassifier(mpageIndex, pageId, pageNum, tracer)
+    lineClassifier.classifyLines()
+
+    setPageText()
+  }
+
+  private def labelImages(): Unit = {
+    mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>
+      mpageIndex.labelRegion(Seq(imgCC), LB.Image)
+    }
+  }
+
+  private def runLineDeterminationOnPage(): Unit = {
+    tracer.enter()
+
+    val lineFinder = new LineFinder(mpageIndex, pageId, pageNum, tracer, vis)
+    lineFinder.determineLines()
+
+
+    tracer.exit()
+  }
+
+
+  private def buildLinePairTrapezoids(): Unit = {
+    tracer.enter()
+
+    // pageIndex.reportClusters()
+
+    for {
+      (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+      linePair <- lineCCs.sliding(2)
+    }  {
+
+      // construct trapezoids: isosceles, right, rectangular
+      linePair match {
+        case Seq(l1, l2) =>
+          val ml1Text = pageIndex.getComponentText(l1, LB.VisualLine)
+          val ml2Text = pageIndex.getComponentText(l2, LB.VisualLine)
+
+
+          (ml1Text, ml2Text) match {
+            case (Some(l1Text), Some(l2Text)) =>
+
+              pageIndex.getRelations(l1, LB.VisualLineModal)
+              val l1VisLineModal = pageIndex.getRelations(l1, LB.VisualLineModal).head.head
+              val l2VisLineModal = pageIndex.getRelations(l2, LB.VisualLineModal).head.head
+
+              val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
+              val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
+
+              val t = Trapezoid.fromHorizontals(l1Baseline, l2Baseline)
+
+              pageStats.trapezoidHeights.fill(t)
+              pageStats.leftAcuteBaseAngles.fill(t)
+              pageStats.leftObtuseBaseAngles.fill(t)
+              docStats.trapezoidHeights.fill(t)
+              docStats.leftAcuteBaseAngles.fill(t)
+              docStats.leftObtuseBaseAngles.fill(t)
+
+              pageIndex.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
+
+              Option(t)
+
+            case _ => None
+          }
+        case Seq(l1) => None
+        case Seq() => None
+      }
+    }
+
+
+
+    tracer.exit()
+  }
+
+
+  def setPageText(): Unit = {
+    for {
+      pageNum      <- mpageIndex.getPages
+      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+    }  {
+      val textLines = for {
+        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
+        (line, n)    <- lineCCs.zipWithIndex
+        textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+      } yield textRow
+
+      val pageTextGrid = TextGrid.fromRows(textLines)
+
+      docStore.setPageText(pageId, pageTextGrid)
+    }
+  }
+
+
+
+
+
+  def deleteComponentsWithLabel(l: Label): Unit = {
+    pageIndex.getComponentsWithLabel(l)
+      .foreach { cc =>
+        pageIndex.removeComponent(cc)
+      }
+  }
+
+
+
+
+
+
+
+
+
 
 
 
