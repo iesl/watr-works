@@ -79,10 +79,9 @@ class LineFinder(
 
     // vis.writeRTreeImage("05-LinesSplitByCols", LB.LineByHash, LB.WhitespaceCol)
 
-
     val svgVis = svgVisualize("ShowReadingOrder")
     val orderedRegions = findReadingOrder(pageGeometry)(svgVis)
-    svgVis.write()
+    svgVis.writeLogs()
 
     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
 
@@ -513,7 +512,7 @@ class LineFinder(
 
   def findReadingOrder(initRegion: LTBounds)(svgVis: SVGVisualization, level: Int=0): Seq[LTBounds] = {
 
-    // svgVis.indicateRegion(s"(${level}) Init Region ${initRegion}", initRegion, Colors.Blue, Colors.White)
+    // svgVis.logRegions("All Columns", bboxes: Seq[LTBounds], lineColor: Color, fillColor: Color)(s"(${level}) Init Region ${initRegion}", initRegion, Colors.Blue, Colors.White)
 
     val maybeCol = pageIndex.rtreeSearchOverlapping(initRegion, LB.WhitespaceCol)
       .sortBy(cc => (cc.bounds.top, cc.bounds.left))
@@ -529,20 +528,19 @@ class LineFinder(
       val leftRegion = colBounds.adjacentRegion(Dir.Left)
       val rightRegion = colBounds.adjacentRegion(Dir.Right)
 
-      /*
-       Animate region burst:
-         flash center col
-         flash top
-         flash bottom...
+      val adjacentRegions = List(upperRegion, leftRegion, rightRegion, lowerRegion).flatten
 
-       */
+      svgVis.logRegions(
+        s"WS.Col + Adjacent Regions ($level)",
+        wsCol.bounds() :: adjacentRegions
+      )
 
-
-      svgVis.indicateRegion(s"(${level}) WS.Column ${wsCol}", wsCol.bounds(), Colors.Black, Colors.Black)
-      upperRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Upper Adj Region ${r}", r, Colors.Green, Colors.Yellow) }
-      leftRegion.foreach  { r => svgVis.indicateRegion(s"(${level}) Left  Adj Region ${r}", r, Colors.Green, Colors.AliceBlue) }
-      rightRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Right Adj Region ${r}", r, Colors.Green, Colors.Brown) }
-      lowerRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Lower Adj Region ${r}", r, Colors.Green, Colors.Cyan) }
+      // svgVis.indicateRegion(s"(${level}) WS.Column ${wsCol}", wsCol.bounds(), Colors.Black, Colors.Black)
+      // upperRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Upper Adj Region ${r}", r, Colors.Green, Colors.Yellow) }
+      // upperRegion.foreach { r => svgVis.logRegions(s"(${level}) Upper Adj Region ${r}", r, Colors.Green, Colors.Yellow) }
+      // leftRegion.foreach  { r => svgVis.indicateRegion(s"(${level}) Left  Adj Region ${r}", r, Colors.Green, Colors.AliceBlue) }
+      // rightRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Right Adj Region ${r}", r, Colors.Green, Colors.Brown) }
+      // lowerRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Lower Adj Region ${r}", r, Colors.Green, Colors.Cyan) }
 
       val rs = Seq(leftRegion, rightRegion, lowerRegion)
         .flatten.flatMap{ r =>

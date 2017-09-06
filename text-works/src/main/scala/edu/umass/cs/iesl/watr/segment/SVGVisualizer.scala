@@ -10,6 +10,7 @@ import spindex._
 import utils.Colors
 import utils.Color
 import ammonite.{ops => fs}
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class SVGVisualization(
@@ -103,5 +104,50 @@ class SVGVisualization(
   def indicateRegions(name: String, bboxes: Seq[LTBounds]): Unit = {
   }
 
+  import play.api.libs.json, json._
+  def jstr(s: String) = JsString(s)
+  def num(s: Double) = JsNumber(s)
+
+  val logs = mutable.ListBuffer[JsObject]()
+
+  def logRegions(name: String, bboxes: Seq[LTBounds], lineColor: Color=Colors.Blue, fillColor: Color=Colors.Yellow): Unit = {
+    val boxBlock = bboxes.map{ bbox =>
+      val LTBounds.Doubles(l, t, w, h) = rescale(bbox)
+
+      Json.obj(
+        ("x" -> num(l)),     ("y" -> num(t)),
+        ("width" -> num(w)), ("height" -> num(h))
+      )
+    }
+
+    val obj = Json.obj(
+      ("desc" -> jstr(name)),
+      ("shapes" -> boxBlock)
+    )
+
+    logs += obj
+  }
+
+
+  def jsonLogFile(name: String) = s"${name}.pg${pageNum}.json"
+
+  def writeLogs(): Unit = {
+
+    val logJson = Json.toJson(logs.toList)
+    val jsonStr = Json.prettyPrint(logJson)
+
+    if (!fs.exists(outputRoot)) {
+      fs.mkdir(outputRoot)
+    }
+
+    val outPath = outputRoot / jsonLogFile(visName)
+
+    if (fs.exists(outPath)) {
+      fs.rm(outPath)
+    }
+
+    fs.write(outPath, jsonStr)
+
+  }
 
 }
