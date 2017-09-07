@@ -21,7 +21,6 @@ import textboxing.{TextBoxing => TB}, TB._
 import scala.collection.mutable
 import utils.SlicingAndDicing._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
-import utils._
 
 import org.dianahep.{histogrammar => HST}
 import ammonite.{ops => fs}
@@ -45,9 +44,8 @@ class LineFinder(
 
   val segvisRootPath = fs.pwd / s"${stableId}-segs.d"
 
-
-  def svgVisualize(name: String) =  {
-    new SVGVisualization(name, pageIndex, segvisRootPath)
+  def visualLogger(name: String) = {
+    new VisualLogger(name, pageIndex, segvisRootPath)
   }
 
   def determineLines(): Unit = {
@@ -79,7 +77,7 @@ class LineFinder(
 
     // vis.writeRTreeImage("05-LinesSplitByCols", LB.LineByHash, LB.WhitespaceCol)
 
-    val svgVis = svgVisualize("ShowReadingOrder")
+    val svgVis = visualLogger("ShowReadingOrder")
     val orderedRegions = findReadingOrder(pageGeometry)(svgVis)
     svgVis.writeLogs()
 
@@ -510,7 +508,7 @@ class LineFinder(
     tracer.exit()
   }
 
-  def findReadingOrder(initRegion: LTBounds)(svgVis: SVGVisualization, level: Int=0): Seq[LTBounds] = {
+  def findReadingOrder(initRegion: LTBounds)(svgVis: VisualLogger, level: Int=0): Seq[LTBounds] = {
 
     // svgVis.logRegions("All Columns", bboxes: Seq[LTBounds], lineColor: Color, fillColor: Color)(s"(${level}) Init Region ${initRegion}", initRegion, Colors.Blue, Colors.White)
 
