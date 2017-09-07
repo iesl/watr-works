@@ -14,27 +14,26 @@ import utils.ExactFloats._
 import utils.EnrichNumerics._
 
 import textreflow.data._
-import scala.concurrent.duration._
+// import scala.concurrent.duration._
 import textgrid._
 import textboxing.{TextBoxing => TB}, TB._
 
 import scala.collection.mutable
 import utils.SlicingAndDicing._
-import edu.umass.cs.iesl.watr.tracing.VisualTracer
+// import edu.umass.cs.iesl.watr.tracing.VisualTracer
 
 import org.dianahep.{histogrammar => HST}
 import ammonite.{ops => fs}
 // import org.dianahep.histogrammar.ascii._
+import tracemacros.VisualTraceLevel
 
 
 
 class LineFinder(
   override val mpageIndex: MultiPageIndex,
   override val pageId: Int@@PageID,
-  override val pageNum: Int@@PageNum,
-  tracer: VisualTracer,
-  vis: RTreeVisualizer
-) extends SegmentationCommons with PageLevelFunctions {
+  override val pageNum: Int@@PageNum
+) extends SegmentationCommons with PageLevelFunctions with tracing.VisualTracer {
 
   val pageIndex = mpageIndex.getPageIndex(pageNum)
   val docStore = mpageIndex.docStore
@@ -77,9 +76,14 @@ class LineFinder(
 
     // vis.writeRTreeImage("05-LinesSplitByCols", LB.LineByHash, LB.WhitespaceCol)
 
+    // val svgVis = traced[VisualLogger] {  visualLogger("ShowReadingOrder") }
+
     val svgVis = visualLogger("ShowReadingOrder")
     val orderedRegions = findReadingOrder(pageGeometry)(svgVis)
-    svgVis.writeLogs()
+
+    tracer.ifTrace(VisualTraceLevel.AccumLogs) {
+      svgVis.writeLogs()
+    }
 
     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
 
@@ -252,8 +256,7 @@ class LineFinder(
   }
 
 
-  def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component])
-    (implicit gifBuilder: GifBuilder): TextGrid.Row = {
+  def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component]): TextGrid.Row = {
 
 
     val visualLineModalCC = pageIndex.getRelations(visualLineClusterCC, LB.VisualLineModal).head.head
@@ -282,13 +285,13 @@ class LineFinder(
             if (cc.bounds.bottom == visualLineModalBounds.bottom) {
               // Center-text
             } else if (intersectsTop && !intersectsBottom) {
-              gifBuilder.indicate(s"SuperScript", cc.bounds(), LB.PageAtomGrp)
+              // gifBuilder.indicate(s"SuperScript", cc.bounds(), LB.PageAtomGrp)
               allCells.foreach{ _.addLabel(LB.Sup) }
             } else if (!intersectsTop && intersectsBottom) {
-              gifBuilder.indicate(s"SubScript", cc.bounds(), LB.PageAtomGrp)
+              // gifBuilder.indicate(s"SubScript", cc.bounds(), LB.PageAtomGrp)
               allCells.foreach{ _.addLabel(LB.Sub) }
             } else {
-              gifBuilder.indicate(s"???Script", cc.bounds(), LB.PageAtomGrp)
+              // gifBuilder.indicate(s"???Script", cc.bounds(), LB.PageAtomGrp)
             }
 
 
@@ -326,8 +329,7 @@ class LineFinder(
   var dbgGrid = TB.Grid.widthAligned()
 
   // Group line atoms into center/sub/superscript bins
-  def findLineAtomScriptPositions(visualLineCC: Component, visualLineAtoms: Seq[Component])
-    (implicit gifBuilder: GifBuilder): (Seq[Int@@ComponentID], Seq[Int@@ComponentID]) = {
+  def findLineAtomScriptPositions(visualLineCC: Component, visualLineAtoms: Seq[Component]): (Seq[Int@@ComponentID], Seq[Int@@ComponentID]) = {
 
     val visualLineBounds = visualLineCC.bounds()
 
@@ -345,8 +347,8 @@ class LineFinder(
 
     // gifBuilder.indicate(s"Top intersection Line", topLine.bounds(), LB.PageAtomGrp)
     // gifBuilder.indicate(s"Bottom intersection Line", bottomLine.bounds(), LB.PageAtomGrp)
-    gifBuilder.indicate(s"Top Atoms", topIntersections.map(_.bounds()), LB.PageAtomGrp)
-    gifBuilder.indicate(s"Bottom Atoms", bottomIntersections.map(_.bounds()), LB.PageAtomGrp)
+    // gifBuilder.indicate(s"Top Atoms", topIntersections.map(_.bounds()), LB.PageAtomGrp)
+    // gifBuilder.indicate(s"Bottom Atoms", bottomIntersections.map(_.bounds()), LB.PageAtomGrp)
 
 
 
@@ -383,18 +385,16 @@ class LineFinder(
   def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
     tracer.enter()
 
-    val visualLineBounds = visualLineCC.bounds()
+    // val visualLineBounds = visualLineCC.bounds()
 
-    implicit val gifBuilder = vis.gifBuilder(
-      s"createTextRowsFromVisualLines-${visualLineBounds.left}-${visualLineBounds.bottom}",
-      1.seconds
-    )
-
-
-    gifBuilder.indicate(
-      s"Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
-      visualLineBounds, LB.PageAtomGrp, LB.PageAtomTmp
-    )
+    // implicit val gifBuilder = vis.gifBuilder(
+    //   s"createTextRowsFromVisualLines-${visualLineBounds.left}-${visualLineBounds.bottom}",
+    //   1.seconds
+    // )
+    // gifBuilder.indicate(
+    //   s"Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
+    //   visualLineBounds, LB.PageAtomGrp, LB.PageAtomTmp
+    // )
 
     if (visualLineAtoms.nonEmpty) {
       // Associate visualLine bounds (modal, normal) w/visual line cluster
@@ -406,8 +406,8 @@ class LineFinder(
       pageIndex.addRelation(visualLineClusterCC, LB.VisualLineModal, visualLineModalCC)
       pageIndex.addRelation(visualLineClusterCC, LB.VisualLine, visualLineCC)
 
-      gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
-      gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
+      // gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
+      // gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
 
       val textRow = textRowFromComponents(visualLineClusterCC, visualLineAtoms)
 
@@ -528,10 +528,13 @@ class LineFinder(
 
       val adjacentRegions = List(upperRegion, leftRegion, rightRegion, lowerRegion).flatten
 
-      svgVis.logRegions(
-        s"WS.Col + Adjacent Regions ($level)",
-        wsCol.bounds() :: adjacentRegions
-      )
+      tracer.ifTrace(tracemacros.VisualTraceLevel.AccumLogs) {
+        svgVis.logRegions(
+          s"WS.Col + Adjacent Regions ($level)",
+          wsCol.bounds() :: adjacentRegions
+        )
+
+      }
 
       // svgVis.indicateRegion(s"(${level}) WS.Column ${wsCol}", wsCol.bounds(), Colors.Black, Colors.Black)
       // upperRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Upper Adj Region ${r}", r, Colors.Green, Colors.Yellow) }

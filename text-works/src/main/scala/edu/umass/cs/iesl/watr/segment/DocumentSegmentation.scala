@@ -12,16 +12,16 @@ import ammonite.{ops => fs}, fs._
 import watrmarks.{StandardLabels => LB, _}
 
 import geometry._
-import geometry.syntax._
+// import geometry.syntax._
 
-import utils.{RelativeDirection => Dir}
+// import utils.{RelativeDirection => Dir}
 import TypeTags._
-import utils.ExactFloats._
+// import utils.ExactFloats._
 import shapeless.lens
 import PageComponentImplicits._
 import edu.umass.cs.iesl.watr.tracing.VisualTracer
-import edu.umass.cs.iesl.watr.tracing.TraceCallbacks
-import textgrid._
+// import edu.umass.cs.iesl.watr.tracing.TraceCallbacks
+// import textgrid._
 import com.sksamuel.scrimage.{X11Colorlist => Clr, Color}
 
 import org.dianahep.histogrammar.ascii._
@@ -30,19 +30,11 @@ import org.dianahep.histogrammar.ascii._
 object DocumentSegmenter {
   import spindex._
 
-  val noopVisualTracer = new VisualTracer {
-    def traceCallbacks: TraceCallbacks = new TraceCallbacks {
-
-    }
-
-  }
-
 
   def createSegmenter(
     stableId: String@@DocumentID,
     pdfPath: Path,
-    docStore: DocumentZoningApi,
-    tracer: VisualTracer = noopVisualTracer
+    docStore: DocumentZoningApi
   ): DocumentSegmenter = {
     println(s"extracting ${stableId} chars")
 
@@ -77,7 +69,7 @@ object DocumentSegmenter {
       }
     }
 
-    new DocumentSegmenter(mpageIndex, tracer)
+    new DocumentSegmenter(mpageIndex)
   }
 
   val DebugLabelColors: Map[Label, Color] = {
@@ -105,9 +97,9 @@ object DocumentSegmenter {
 
 class DocumentSegmenter(
   val mpageIndex: MultiPageIndex,
-  val tracer: VisualTracer,
+  // val tracer: VisualTracer,
   val docStats: DocumentLayoutStats = new DocumentLayoutStats()
-) { documentSegmenter =>
+) extends VisualTracer { documentSegmenter =>
 
   val docStore = mpageIndex.docStore
   val stableId = mpageIndex.getStableId

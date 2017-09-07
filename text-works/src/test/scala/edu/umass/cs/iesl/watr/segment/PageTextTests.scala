@@ -2,8 +2,8 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import corpora._
-import edu.umass.cs.iesl.watr.tracing.{VisualTracer, TraceCallbacks}
-import ammonite.{ops => fs}
+// import edu.umass.cs.iesl.watr.tracing._
+import edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => VTL}
 
 class PageTextTest extends SegmentationTestUtils  {
   /**
@@ -43,18 +43,15 @@ class PageTextTest extends SegmentationTestUtils  {
          |""".stripMargin
     }
 
-    tracing.VisualTracer.visualTraceLevel = tracemacros.VisualTraceLevel.Debug
+    tracing.VisualTracer.addTraceLevel(VTL.PrintLogs)
 
+    // import ammonite.{ops => fs}
     // allTestPdfs.foreach {
     selectPdfPage(allTestPdfs, "1056", 1).foreach {
       case (docId, page, path) =>
 
-        val tracer = new VisualTracer {
-          def traceCallbacks: TraceCallbacks = new TraceCallbacks {
-          }
-        }
 
-        val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi, tracer)
+        val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
         segmenter.runPageSegmentation()
 

@@ -231,10 +231,10 @@ class PageSegmenter(
   override val pageId: Int@@PageID,
   override val pageNum: Int@@PageNum,
   documentSegmenter: DocumentSegmenter
-) extends SegmentationCommons with PageLevelFunctions {
+) extends SegmentationCommons with PageLevelFunctions with tracing.VisualTracer {
 
   val mpageIndex = documentSegmenter.mpageIndex
-  val tracer = documentSegmenter.tracer
+  // val tracer = documentSegmenter.tracer
   val docStats = documentSegmenter.docStats
 
   val docStore = mpageIndex.docStore
@@ -246,9 +246,10 @@ class PageSegmenter(
   val pageIndex = mpageIndex.getPageIndex(pageNum)
 
   val segvisRootPath = pwd / s"${stableId}-segs.d"
-  val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath, tracer)
+  // val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath)
 
-  vis.cleanRTreeImageFiles()
+  // vis.cleanRTreeImageFiles()
+
 
 
   def runLineSegmentation(): Unit = {
@@ -279,7 +280,7 @@ class PageSegmenter(
   private def runLineDeterminationOnPage(): Unit = {
     tracer.enter()
 
-    val lineFinder = new LineFinder(mpageIndex, pageId, pageNum, tracer, vis)
+    val lineFinder = new LineFinder(mpageIndex, pageId, pageNum)
     lineFinder.determineLines()
 
 
