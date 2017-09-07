@@ -26,6 +26,7 @@ import org.dianahep.{histogrammar => HST}
 import ammonite.{ops => fs}
 // import org.dianahep.histogrammar.ascii._
 import tracemacros.VisualTraceLevel
+import shapeless._
 
 
 
@@ -296,19 +297,19 @@ class LineFinder(
 
 
             tracer {
-
               val pinChars = cell.pins.toList.map(_.pinChar).sorted.mkString
-
-              dbgGrid = dbgGrid.addRow(
-                "-",
-                cell.char.toString(),
-                cell.pageRegion.bbox.top.pp,
-                "~",
-                cell.pageRegion.bbox.bottom.pp,
-                "~",
-                pinChars,
-                "."
-              )
+              dbgGrid = dbgGrid.map { grid =>
+                 grid.addRow(
+                  "-",
+                  cell.char.toString(),
+                  cell.pageRegion.bbox.top.pp,
+                  "~",
+                  cell.pageRegion.bbox.bottom.pp,
+                  "~",
+                  pinChars,
+                  "."
+                )
+              }
             }
 
             allCells
@@ -326,7 +327,8 @@ class LineFinder(
   }
 
 
-  var dbgGrid = TB.Grid.widthAligned()
+  var dbgGrid = Lazy[TB.Grid]{ TB.Grid.widthAligned() }
+  // var dbgGrid = TB.Grid.widthAligned()
 
   // Group line atoms into center/sub/superscript bins
   def findLineAtomScriptPositions(visualLineCC: Component, visualLineAtoms: Seq[Component]): (Seq[Int@@ComponentID], Seq[Int@@ComponentID]) = {
@@ -353,30 +355,34 @@ class LineFinder(
 
 
     tracer {
-      dbgGrid = TB.Grid.widthAligned(
-        (1, AlignLeft),  // join indicator
-        (2, AlignLeft),  // line text (char(s))
-        (6, AlignRight), // char.top
-        (1, AlignLeft),  // space
-        (6, AlignRight), // char.bottom
-        (1, AlignLeft),  // space
-        (6, AlignLeft), // labels
-        (1, AlignLeft)  // space
-      )
+      dbgGrid = dbgGrid.map { grid =>
+        var g = TB.Grid.widthAligned(
+          (1, AlignLeft),  // join indicator
+          (2, AlignLeft),  // line text (char(s))
+          (6, AlignRight), // char.top
+          (1, AlignLeft),  // space
+          (6, AlignRight), // char.bottom
+          (1, AlignLeft),  // space
+          (6, AlignLeft), // labels
+          (1, AlignLeft)  // space
+        )
 
-      dbgGrid = dbgGrid.addRow(
-        "J",
-        "",
-        "Top|||",
-        "",
-        "Bottm|",
-        "",
-        "pins||",
-        ""
-      )
-      dbgGrid = dbgGrid.addRow(" ", "  ", "      ", " ", "      ", " ", "      ", " ")
-
+        g = g.addRow(
+          "J",
+          "",
+          "Top|||",
+          "",
+          "Bottm|",
+          "",
+          "pins||",
+          ""
+        )
+        g = g.addRow(" ", "  ", "      ", " ", "      ", " ", "      ", " ")
+        g
+      }
     }
+
+
 
     (topIntersects, bottomIntersects)
   }

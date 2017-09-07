@@ -43,7 +43,7 @@ class PageTextTest extends SegmentationTestUtils  {
          |""".stripMargin
     }
 
-    tracing.VisualTracer.addTraceLevel(VTL.PrintLogs)
+    // tracing.VisualTracer.addTraceLevel(VTL.PrintLogs)
 
     // import ammonite.{ops => fs}
     // allTestPdfs.foreach {
