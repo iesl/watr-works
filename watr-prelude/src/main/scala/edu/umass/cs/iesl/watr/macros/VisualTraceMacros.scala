@@ -9,7 +9,7 @@ object VisualTraceLevel {
   case object EnterExit extends VisualTraceLevel
   case object Checkpoint extends VisualTraceLevel
   case object PrintLogs extends VisualTraceLevel
-  case object AccumLogs extends VisualTraceLevel
+  case object JsonLogs extends VisualTraceLevel
   // case object Callback extends VisualTraceLevel
 
   // val all = List(Off, EnterExit, Checkpoint, Debug, Callback)

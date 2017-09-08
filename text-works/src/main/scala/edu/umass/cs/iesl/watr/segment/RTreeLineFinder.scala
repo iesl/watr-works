@@ -25,7 +25,7 @@ import utils.SlicingAndDicing._
 import org.dianahep.{histogrammar => HST}
 import ammonite.{ops => fs}
 // import org.dianahep.histogrammar.ascii._
-import tracemacros.VisualTraceLevel
+// import tracemacros.VisualTraceLevel
 import shapeless._
 
 
@@ -34,7 +34,7 @@ class LineFinder(
   override val mpageIndex: MultiPageIndex,
   override val pageId: Int@@PageID,
   override val pageNum: Int@@PageNum
-) extends SegmentationCommons with PageLevelFunctions with tracing.VisualTracer {
+) extends SegmentationCommons with PageLevelFunctions with tracing.VisualTracer with SegmentLogging {
 
   val pageIndex = mpageIndex.getPageIndex(pageNum)
   val docStore = mpageIndex.docStore
@@ -43,10 +43,6 @@ class LineFinder(
     .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
 
   val segvisRootPath = fs.pwd / s"${stableId}-segs.d"
-
-  def visualLogger(name: String) = {
-    new VisualLogger(name, pageIndex, segvisRootPath)
-  }
 
   def determineLines(): Unit = {
     val components = mpageIndex.getPageAtoms(pageNum)
@@ -79,12 +75,13 @@ class LineFinder(
 
     // val svgVis = traced[VisualLogger] {  visualLogger("ShowReadingOrder") }
 
-    val svgVis = visualLogger("ShowReadingOrder")
-    val orderedRegions = findReadingOrder(pageGeometry)(svgVis)
+    // val svgVis = visualLogger("ShowReadingOrder")
+    createLog("ShowReadingOrder")
+    val orderedRegions = findReadingOrder(pageGeometry)()
 
-    tracer.ifTrace(VisualTraceLevel.AccumLogs) {
-      svgVis.writeLogs()
-    }
+    // tracer.ifTrace(VisualTraceLevel.JsonLogs) {
+    //   svgVis.writeLogs()
+    // }
 
     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
 
@@ -296,7 +293,7 @@ class LineFinder(
             }
 
 
-            tracer {
+            tracer.printLog {
               val pinChars = cell.pins.toList.map(_.pinChar).sorted.mkString
               dbgGrid = dbgGrid.map { grid =>
                  grid.addRow(
@@ -354,7 +351,7 @@ class LineFinder(
 
 
 
-    tracer {
+    tracer.printLog {
       dbgGrid = dbgGrid.map { grid =>
         var g = TB.Grid.widthAligned(
           (1, AlignLeft),  // join indicator
@@ -417,7 +414,7 @@ class LineFinder(
 
       val textRow = textRowFromComponents(visualLineClusterCC, visualLineAtoms)
 
-      // tracer {
+      // tracer.printLog {
       //   println(dbgGrid.toBox().transpose())
       // }
 
@@ -500,6 +497,8 @@ class LineFinder(
   def approximateLineBins(charBoxes: Seq[AtomicComponent]): Unit = {
     tracer.enter()
 
+    implicit val log = createLog("approximateLineBins")
+
     charBoxes
       .groupBy{ _.bounds.bottom.unwrap }
       .toSeq
@@ -509,14 +508,33 @@ class LineFinder(
         mpageIndex.labelRegion(lineBin, LB.LineByHash)
       }
 
-    tracer.checkpoint("visualize hash-line bins", pageIndex)
+    tracer.jsonAppend {
+      val showableItems = pageIndex.componentRTree.getItems
+        .filter { _.hasLabel(LB.LineByHash) }
+        .map { _.bounds() }
+
+      showRegions(s"Hashed Lines", showableItems)
+    }
 
     tracer.exit()
   }
 
-  def findReadingOrder(initRegion: LTBounds)(svgVis: VisualLogger, level: Int=0): Seq[LTBounds] = {
+  def findReadingOrder(initRegion: LTBounds)(level: Int=0): Seq[LTBounds] = {
 
-    // svgVis.logRegions("All Columns", bboxes: Seq[LTBounds], lineColor: Color, fillColor: Color)(s"(${level}) Init Region ${initRegion}", initRegion, Colors.Blue, Colors.White)
+
+    tracer.jsonLog {
+      if (level==0) {
+        createLog("ShowAllWSColumns")
+
+        val wsCols = pageIndex.rtreeSearchOverlapping(pageGeometry, LB.WhitespaceCol)
+          .sortBy(cc => (cc.bounds.top, cc.bounds.left))
+          .map(_.bounds())
+
+        appendLog("ShowAllWSColumns", {
+          showRegions(s"W.S. Columns", wsCols)
+        })
+      }
+    }
 
     val maybeCol = pageIndex.rtreeSearchOverlapping(initRegion, LB.WhitespaceCol)
       .sortBy(cc => (cc.bounds.top, cc.bounds.left))
@@ -534,24 +552,23 @@ class LineFinder(
 
       val adjacentRegions = List(upperRegion, leftRegion, rightRegion, lowerRegion).flatten
 
-      tracer.ifTrace(tracemacros.VisualTraceLevel.AccumLogs) {
-        svgVis.logRegions(
-          s"WS.Col + Adjacent Regions ($level)",
-          wsCol.bounds() :: adjacentRegions
-        )
+      // tracer.jsonLog(ShowReadingOrder) {
+      //   zipFlashThroughRegions( ...  )
 
+      tracer.jsonLog {
+        appendLog("ShowReadingOrder", {
+          zipFlashThroughRegions(
+            s"WS.Col + Adjacent Regions ($level)",
+            wsCol.bounds() :: adjacentRegions
+          )
+
+        })
       }
 
-      // svgVis.indicateRegion(s"(${level}) WS.Column ${wsCol}", wsCol.bounds(), Colors.Black, Colors.Black)
-      // upperRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Upper Adj Region ${r}", r, Colors.Green, Colors.Yellow) }
-      // upperRegion.foreach { r => svgVis.logRegions(s"(${level}) Upper Adj Region ${r}", r, Colors.Green, Colors.Yellow) }
-      // leftRegion.foreach  { r => svgVis.indicateRegion(s"(${level}) Left  Adj Region ${r}", r, Colors.Green, Colors.AliceBlue) }
-      // rightRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Right Adj Region ${r}", r, Colors.Green, Colors.Brown) }
-      // lowerRegion.foreach { r => svgVis.indicateRegion(s"(${level}) Lower Adj Region ${r}", r, Colors.Green, Colors.Cyan) }
 
       val rs = Seq(leftRegion, rightRegion, lowerRegion)
         .flatten.flatMap{ r =>
-          findReadingOrder(r)(svgVis, level+1)
+          findReadingOrder(r)(level+1)
         }
 
       upperRegion.map( _ +: rs ).getOrElse(rs)
@@ -654,7 +671,7 @@ class LineFinder(
         averageDist
       }
     }
-    tracer {
+    tracer.printLog {
       println(
         s"""|guessWordbreakWhitespaceThreshold
             | Char Dists      = ${charDists.map(_.pp).mkString(", ")}
@@ -695,7 +712,7 @@ class LineFinder(
       (1, AlignLeft),  // space
       (5, AlignRight)  // char.width
     )
-    tracer {
+    tracer.printLog {
       spacingDbgGrid = spacingDbgGrid.addRow(
         "J",
         "",
@@ -718,7 +735,7 @@ class LineFinder(
           val pairwiseDist = cell.pageRegion.bbox.left - win.last.pageRegion.bbox.right
           val willGroup = pairwiseDist < splitValue
 
-           tracer {
+           tracer.printLog {
              val c1 = win.last
              spacingDbgGrid = spacingDbgGrid.addRow(
                if(willGroup) "_" else "$",
@@ -738,7 +755,7 @@ class LineFinder(
         }
 
         if (!wordWin.atEnd) {
-          tracer {
+          tracer.printLog {
             spacingDbgGrid = spacingDbgGrid.addRow(
               " ",
               " ",
@@ -758,7 +775,7 @@ class LineFinder(
 
       }
 
-      // tracer {
+      // tracer.printLog {
       //   println(spacingDbgGrid.toBox().transpose())
       // }
 
@@ -773,10 +790,18 @@ class LineFinder(
 
   def findCandidateWhitespaceCols(components: Seq[AtomicComponent]): Unit = {
 
+    implicit val log = createLog("findCandidateWhitespaceCols")
+
     val cols = findLeftAlignedCharCols(components)
+
+    drawPageGeometry()
+
+    flashComponents(s"Left-aligned Char Cols", cols)
 
     cols.foreach { colRegion =>
       val colBounds = colRegion.bounds
+      pageIndex.removeComponent(colRegion)
+
       val startingRegion = LTBounds(
         left   = colBounds.left-0.1d,
         top    = colBounds.top,
@@ -789,12 +814,20 @@ class LineFinder(
           val colIsWideEnough = emptyRegion.width > 4.0d
 
           if (colIsWideEnough) {
-            labelRegion(emptyRegion, LB.WhitespaceColCandidate)
+            val expandedRegion = labelRegion(emptyRegion, LB.WhitespaceColCandidate)
+
+            showMorph(s"Expand To Max-empty WS Column", startingRegion, expandedRegion.bounds())
+
+          } else {
+            showComponentRemoval(s"Delete candidate col (too narrow)", Seq(colRegion))
           }
         }
-
     }
+
+    showLabeledComponents(s"Final WS Col Candidates", LB.WhitespaceColCandidate)
+
   }
+
   def findLeftAlignedCharCols(
     components: Seq[AtomicComponent]
   ): Seq[RegionComponent] = {
@@ -923,7 +956,7 @@ class LineFinder(
   //     (modalBigGap*2+modalLittleGap)/3
   //   }
 
-  //   tracer {
+  //   tracer.printLog {
   //     println(
   //       s"""|guessWordbreakWhitespaceThreshold
   //           | Char Dists      = ${charDists.map(_.pp).mkString(", ")}

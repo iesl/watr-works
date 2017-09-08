@@ -7,6 +7,8 @@ import geometry._
 
 // import textboxing.{TextBoxing => TB}
 
+import play.api.libs.json, json._
+
 object VisualTracer {
   import scala.collection.mutable
   import VisualTraceLevel._
@@ -23,12 +25,51 @@ object VisualTracer {
       activeTraces += EnterExit
     case  Checkpoint =>
       activeTraces ++= Seq(EnterExit, Checkpoint)
-    case  AccumLogs =>
-      activeTraces ++= Seq(EnterExit, AccumLogs)
+    case  JsonLogs =>
+      activeTraces ++= Seq(EnterExit, JsonLogs)
     case  PrintLogs =>
       activeTraces ++= Seq(EnterExit, PrintLogs)
   }
 
+  // val jsonLogs = mutable.ListBuffer[JsObject]()
+  val jsonLogs = mutable.HashMap[String,
+    mutable.ArrayBuffer[
+      mutable.ArrayBuffer[JsObject]
+    ]
+  ]()
+
+  def createLog(logname: String): Unit = {
+    assume(!jsonLogs.contains(logname))
+    val logsBuffer = jsonLogs.getOrElseUpdate(logname,
+      mutable.ArrayBuffer()
+    )
+    logsBuffer += mutable.ArrayBuffer()
+  }
+
+  def appendLog(logname: String, log: json.JsObject): Unit = {
+    assume(jsonLogs.contains(logname))
+
+    jsonLogs.get(logname).foreach { logBuffers =>
+      val currLogs = logBuffers.last
+      currLogs += log
+    }
+  }
+
+  def emitLogs(): JsValue = {
+    val allLogs = for {
+      (logname, logInstances) <- jsonLogs
+      logInstance <- logInstances
+    } yield {
+
+      Json.obj(
+        ("name", logname),
+        ("steps", logInstance)
+      )
+
+    }
+
+    Json.toJson(allLogs)
+  }
 
 }
 
@@ -44,8 +85,6 @@ trait VisualTracer { self =>
     activeTraces.nonEmpty
   }
 
-  def apply(body: => Unit): Unit = ifTrace(VisualTraceLevel.PrintLogs)(body)
-
 
   def ifTrace(vtl: VisualTraceLevel)(body: => Unit): Unit = macro VisualTraceMacros.runOnTraceLevel[TraceLog]
 
@@ -58,6 +97,16 @@ trait VisualTracer { self =>
   }
 
 
+  def jsonLog(body: => Unit) = ifTrace(VisualTraceLevel.JsonLogs)(body)
+
+  def jsonAppend(body: => JsObject)(implicit l: LogSpec) =
+    ifTrace(VisualTraceLevel.JsonLogs) {
+      appendLog(l.logname, body)
+    }
+
+  def printLog(body: => Unit) = ifTrace(VisualTraceLevel.PrintLogs)(body)
+
+
   def checkpoint(msg: String, args: Any*)(implicit
     enclosing: sourcecode.Name,
     loc: sourcecode.Enclosing
@@ -65,4 +114,17 @@ trait VisualTracer { self =>
     println(s"checkpoint@${enclosing.value}/${loc.value}:  '($msg)'")
   }
 
+  def createLog(logname: String): LogSpec = {
+    VisualTracer.createLog(logname)
+    LogSpec(logname)
+  }
+
+  def appendLog(logname: String, log: json.JsObject): Unit = {
+    VisualTracer.appendLog(logname, log)
+  }
+
 }
+
+case class LogSpec(
+  logname: String
+)

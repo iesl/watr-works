@@ -4,6 +4,8 @@ package segment
 import corpora._
 // import edu.umass.cs.iesl.watr.tracing._
 import edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => VTL}
+import play.api.libs.json, json._
+import ammonite.{ops => fs}
 
 class PageTextTest extends SegmentationTestUtils  {
   /**
@@ -43,12 +45,17 @@ class PageTextTest extends SegmentationTestUtils  {
          |""".stripMargin
     }
 
-    // tracing.VisualTracer.addTraceLevel(VTL.PrintLogs)
 
-    // import ammonite.{ops => fs}
+
+    tracing.VisualTracer.addTraceLevel(VTL.JsonLogs)
+
+
     // allTestPdfs.foreach {
     selectPdfPage(allTestPdfs, "1056", 1).foreach {
       case (docId, page, path) =>
+
+        // def jsonLogFile(name: String) = s"${docId}.pg${page}.json"
+        val jsonLogFile = s"${docId}.pg${page}.json"
 
 
         val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
@@ -56,6 +63,10 @@ class PageTextTest extends SegmentationTestUtils  {
         segmenter.runPageSegmentation()
 
         val content = formats.DocumentIO.documentToStructuredPlaintext(segmenter.mpageIndex)
+
+        val jsonLogs = tracing.VisualTracer.emitLogs()
+
+        writeLogs(jsonLogs, fs.pwd / docId.unwrap, jsonLogFile)
 
         // val textfile = s"${docId.unwrap}.txt"
         // val outputFile = fs.pwd / textfile
@@ -69,6 +80,24 @@ class PageTextTest extends SegmentationTestUtils  {
     }
 
 
+
+  }
+
+  def writeLogs(logJson: JsValue, outputRoot: fs.Path, logfile: String): Unit = {
+
+    val jsonStr = Json.prettyPrint(logJson)
+
+    if (!fs.exists(outputRoot)) {
+      fs.mkdir(outputRoot)
+    }
+
+    val outPath = outputRoot / logfile
+
+    if (fs.exists(outPath)) {
+      fs.rm(outPath)
+    }
+
+    fs.write(outPath, jsonStr)
 
   }
 }

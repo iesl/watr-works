@@ -49,7 +49,7 @@ trait SegmentationCommons {
 
 }
 
-trait PageLevelFunctions {
+trait PageLevelFunctions extends tracing.VisualTracer with SegmentLogging{
   def pageId: Int@@PageID
   def pageNum: Int@@PageNum
   def pageIndex: PageIndex
@@ -68,7 +68,11 @@ trait PageLevelFunctions {
 
   def combineCandidateWhitespaceCols(): Unit = {
 
+    implicit val log = tracer.createLog("combineCandidateWhitespaceCols")
+
     var candidates = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate)
+
+    flashComponents("Whitespace Col Candidates", candidates)
 
     while(candidates.nonEmpty) {
       val candidate = candidates.head
@@ -76,6 +80,8 @@ trait PageLevelFunctions {
       val overlaps = pageIndex.rtreeSearch(candidate.bounds, LB.WhitespaceColCandidate)
         .filterNot { _.id.unwrap == candidate.id.unwrap }
 
+      flashComponents("Target Cols", Seq(candidate))
+      flashComponents("Overlapped Cols", overlaps)
 
       overlaps.headOption match {
         case Some(overlap) =>
@@ -234,7 +240,6 @@ class PageSegmenter(
 ) extends SegmentationCommons with PageLevelFunctions with tracing.VisualTracer {
 
   val mpageIndex = documentSegmenter.mpageIndex
-  // val tracer = documentSegmenter.tracer
   val docStats = documentSegmenter.docStats
 
   val docStore = mpageIndex.docStore
@@ -246,11 +251,6 @@ class PageSegmenter(
   val pageIndex = mpageIndex.getPageIndex(pageNum)
 
   val segvisRootPath = pwd / s"${stableId}-segs.d"
-  // val vis = new RTreeVisualizer(pageIndex, DocumentSegmenter.DebugLabelColors, segvisRootPath)
-
-  // vis.cleanRTreeImageFiles()
-
-
 
   def runLineSegmentation(): Unit = {
     tracer.enter()

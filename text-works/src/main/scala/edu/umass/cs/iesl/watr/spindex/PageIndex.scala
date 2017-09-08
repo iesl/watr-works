@@ -77,8 +77,9 @@ class PageIndex(
     RTreeIndex.saveBytes(componentRTree)
   }
 
-  val componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.ArrayBuffer[Label]] = mutable.HashMap()
-  val labelToComponents: mutable.HashMap[Label, mutable.ArrayBuffer[Int@@ComponentID]] = mutable.HashMap()
+  // mutable.Set
+  val componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.Set[Label]] = mutable.HashMap()
+  val labelToComponents: mutable.HashMap[Label, mutable.Set[Int@@ComponentID]] = mutable.HashMap()
 
   val componentToText: mutable.HashMap[Int@@ComponentID,
     mutable.HashMap[Label, TextGrid.Row]
@@ -221,8 +222,6 @@ class PageIndex(
 
     val canonLabel = l.qualifiedAs("rep")
 
-    // PageIndex..traceIf(true)()
-
     val set = disjointSets.getOrElseUpdate(l,
       OrderedDisjointSet.apply[Component]()
     )
@@ -312,17 +311,18 @@ class PageIndex(
   }
 
   def getComponentsWithLabel(l: Label): Seq[Component] = {
-    labelToComponents.get(l)
-      .map(_.map(id => componentRTree.getItem(id.unwrap)))
+    labelToComponents.get(l).map { ccIds =>
+      ccIds.map(id => componentRTree.getItem(id.unwrap)).toSeq
+    }
       .getOrElse(Seq())
   }
 
-  private def getComponentLabelBuffer(c: Component): mutable.ArrayBuffer[Label] = {
-    componentToLabels.getOrElseUpdate(c.id, mutable.ArrayBuffer[Label]())
+  private def getComponentLabelBuffer(c: Component): mutable.Set[Label] = {
+    componentToLabels.getOrElseUpdate(c.id, mutable.Set[Label]())
   }
 
-  private def getLabelToComponentBuffer(l: Label): mutable.ArrayBuffer[Int@@ComponentID] = {
-    labelToComponents.getOrElseUpdate(l, mutable.ArrayBuffer[Int@@ComponentID]())
+  private def getLabelToComponentBuffer(l: Label): mutable.Set[Int@@ComponentID] = {
+    labelToComponents.getOrElseUpdate(l, mutable.Set[Int@@ComponentID]())
   }
 
   def addLabel(c: Component, l: Label)  = {
