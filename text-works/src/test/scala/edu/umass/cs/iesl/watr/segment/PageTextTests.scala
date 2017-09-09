@@ -3,7 +3,6 @@ package segment
 
 import corpora._
 // import edu.umass.cs.iesl.watr.tracing._
-import edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => VTL}
 import play.api.libs.json, json._
 import ammonite.{ops => fs}
 
@@ -47,14 +46,12 @@ class PageTextTest extends SegmentationTestUtils  {
 
 
 
-    tracing.VisualTracer.addTraceLevel(VTL.JsonLogs)
-
-
     // allTestPdfs.foreach {
     selectPdfPage(allTestPdfs, "1056", 1).foreach {
       case (docId, page, path) =>
 
-        tracing.VisualTracer.clearAllLogs()
+        tracing.VisualTracer.clearPages()
+        tracing.VisualTracer.newPage()
 
         // def jsonLogFile(name: String) = s"${docId}.pg${page}.json"
         val jsonLogFile = s"${docId}.pg${page}.json"

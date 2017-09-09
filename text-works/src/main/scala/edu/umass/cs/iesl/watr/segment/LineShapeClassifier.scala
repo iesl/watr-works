@@ -13,10 +13,9 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
   lazy val lineShapes = self
 
   def classifyLines(): Unit = {
-
     groupLines()
 
-    showGroupings()
+    // showGroupings()
   }
 
 
@@ -89,11 +88,11 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
           }
 
 
-          println(s"> ${l1Text}")
-          println(s"> ${l2Text}")
-          println(s"> ${l3Text}")
-          println(s"     ${l1Trapezoid.map(_.prettyPrint)}")
-          println(s"     ${l2Trapezoid.map(_.prettyPrint)}")
+          // println(s"> ${l1Text}")
+          // println(s"> ${l2Text}")
+          // println(s"> ${l3Text}")
+          // println(s"     ${l1Trapezoid.map(_.prettyPrint)}")
+          // println(s"     ${l2Trapezoid.map(_.prettyPrint)}")
 
 
 
@@ -144,10 +143,10 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
           }
 
 
-          println(s"> ${l1Text}")
-          println(s"> ${l2Text}")
-          println(s"     ${l1Trapezoid.map(_.prettyPrint)}")
-          println(s"     ${l2Trapezoid.map(_.prettyPrint)}")
+          // println(s"> ${l1Text}")
+          // println(s"> ${l2Text}")
+          // println(s"     ${l1Trapezoid.map(_.prettyPrint)}")
+          // println(s"     ${l2Trapezoid.map(_.prettyPrint)}")
 
 
           (l1Trapezoid, l2Trapezoid) match {
@@ -171,7 +170,7 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
               (shape1.like.paraLastAndBegin && shape2.like.anyParaBegin)     ==> { line1_2 += (Para.L -> Para.B)  };
               (shape1.like.paraLast         && shape2.like.paraLastAndBegin) ==> { line1_2 += (Para.I -> Para.L)  };
 
-              println(s"""l1 labels: ${l1Labels.countedPins().map({case (p, c) => s"$p(${c})" }).mkString}""")
+              // println(s"""l1 labels: ${l1Labels.countedPins().map({case (p, c) => s"$p(${c})" }).mkString}""")
 
 
             case (Some(t1), None) =>

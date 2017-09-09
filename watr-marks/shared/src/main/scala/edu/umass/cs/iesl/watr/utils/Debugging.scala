@@ -17,5 +17,11 @@ object Debugging {
     throw t
   }
 
+  def printAndSwallow(t: Throwable)(implicit enclosing: sourcecode.File, line: sourcecode.Line): Unit = {
+    val message = s"""error ${enclosing.value}:${line.value}: ${t}: ${t.getCause}: ${t.getMessage} """
+    println(s"ERROR: ${message}")
+    t.printStackTrace()
+  }
+
 }
 

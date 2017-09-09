@@ -47,7 +47,7 @@ trait LineFinding extends ColumnFinding { self =>
 
 
     // TODO extract path objects in groups, rather than singly, to avoid trying to rewrite large drawn shapes
-    rewritePathObjects(orderedRegions)
+    // rewritePathObjects(orderedRegions)
 
     // pageIndex.reportClusters()
 
@@ -333,17 +333,6 @@ trait LineFinding extends ColumnFinding { self =>
   private def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
     tracer.enter()
 
-    // val visualLineBounds = visualLineCC.bounds()
-
-    // implicit val gifBuilder = vis.gifBuilder(
-    //   s"createTextRowsFromVisualLines-${visualLineBounds.left}-${visualLineBounds.bottom}",
-    //   1.seconds
-    // )
-    // gifBuilder.indicate(
-    //   s"Text From VisualLine ${visualLineBounds.left}-${visualLineBounds.bottom}",
-    //   visualLineBounds, LB.PageAtomGrp, LB.PageAtomTmp
-    // )
-
     if (visualLineAtoms.nonEmpty) {
       // Associate visualLine bounds (modal, normal) w/visual line cluster
       val visualLineModalBounds = findModalBoundingRect(visualLineCC, visualLineAtoms)
@@ -358,6 +347,7 @@ trait LineFinding extends ColumnFinding { self =>
       // gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
 
       val textRow = textRowFromComponents(visualLineClusterCC, visualLineAtoms)
+
 
       // tracer.printLog {
       //   println(dbgGrid.toBox().transpose())

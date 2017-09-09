@@ -57,7 +57,7 @@ case class RegionComponent(
 ) extends Component {
 
   override def toString(): String = {
-    s"<${roleLabel.key}.${id} ${formatLabels}"
+    s"<${roleLabel.key}.${id} ${formatLabels}>"
   }
 }
 

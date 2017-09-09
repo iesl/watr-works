@@ -4,17 +4,104 @@ package tracing
 import tracemacros._
 import scala.language.experimental.macros
 import geometry._
+import scala.collection.mutable
+import VisualTraceLevel._
 
 // import textboxing.{TextBoxing => TB}
 
 import play.api.libs.json, json._
 
 object VisualTracer {
-  import scala.collection.mutable
-  import VisualTraceLevel._
 
+  { // Set trace levels here to force recompile and macro re-eval
+    VisualTraceGlobals.addTraceLevel(VisualTraceLevel.JsonLogs)
+
+  }
+
+
+  def tracingEnabled(): Boolean = {
+    VisualTraceGlobals.tracingEnabled()
+  }
+
+  type PageLogBuffer = mutable.HashMap[String,
+    mutable.ArrayBuffer[
+      mutable.ArrayBuffer[JsObject]
+    ]
+  ]
+
+  def PageLogBuffer() = mutable.HashMap[String,
+    mutable.ArrayBuffer[
+      mutable.ArrayBuffer[JsObject]
+    ]
+  ]()
+
+
+  lazy val pageLogs = mutable.ArrayBuffer[PageLogBuffer]()
+
+  def clearPages(): Unit = {
+    pageLogs.clear()
+  }
+
+  def newPage(): Unit = {
+    pageLogs += PageLogBuffer()
+  }
+
+  def currentLog(): PageLogBuffer = {
+    pageLogs.last
+  }
+
+  // val jsonLogs = mutable.HashMap[String,
+  //   mutable.ArrayBuffer[
+  //     mutable.ArrayBuffer[JsObject]
+  //   ]
+  // ]()
+
+  // def clearAllLogs(): Unit = {
+  //   jsonLogs.clear()
+  // }
+
+  def createLog(logname: String): Unit = {
+    assume(!currentLog.contains(logname))
+    val logsBuffer = currentLog.getOrElseUpdate(logname,
+      mutable.ArrayBuffer()
+    )
+    logsBuffer += mutable.ArrayBuffer()
+  }
+
+  def appendLog(logname: String, log: json.JsObject): Unit = {
+    assume(currentLog.contains(logname))
+
+    currentLog.get(logname).foreach { logBuffers =>
+      val currLogs = logBuffers.last
+      currLogs += log
+    }
+  }
+
+  def emitLogs(): JsValue = {
+    val allLogs = for {
+      (pageBuffer, page) <- pageLogs.zipWithIndex
+      (logname, logInstances) <- pageBuffer
+      logInstance <- logInstances
+    } yield {
+      // ("name", logname),
+      Json.obj(
+        ("name", s"${logname}-page-${page+1}"),
+        ("steps", logInstance)
+      )
+
+    }
+
+    Json.toJson(allLogs)
+  }
+}
+
+protected [tracing] object VisualTraceGlobals {
 
   val activeTraces = mutable.HashSet[VisualTraceLevel]()
+
+  def tracingEnabled(): Boolean = {
+    activeTraces.nonEmpty
+  }
 
   def clearTraceLevels(): Unit = {
     activeTraces.clear()
@@ -31,55 +118,12 @@ object VisualTracer {
       activeTraces ++= Seq(EnterExit, PrintLogs)
   }
 
-  // val jsonLogs = mutable.ListBuffer[JsObject]()
-  val jsonLogs = mutable.HashMap[String,
-    mutable.ArrayBuffer[
-      mutable.ArrayBuffer[JsObject]
-    ]
-  ]()
-
-  def clearAllLogs(): Unit = {
-    jsonLogs.clear()
-  }
-
-  def createLog(logname: String): Unit = {
-    assume(!jsonLogs.contains(logname))
-    val logsBuffer = jsonLogs.getOrElseUpdate(logname,
-      mutable.ArrayBuffer()
-    )
-    logsBuffer += mutable.ArrayBuffer()
-  }
-
-  def appendLog(logname: String, log: json.JsObject): Unit = {
-    assume(jsonLogs.contains(logname))
-
-    jsonLogs.get(logname).foreach { logBuffers =>
-      val currLogs = logBuffers.last
-      currLogs += log
-    }
-  }
-
-  def emitLogs(): JsValue = {
-    val allLogs = for {
-      (logname, logInstances) <- jsonLogs
-      logInstance <- logInstances
-    } yield {
-
-      Json.obj(
-        ("name", logname),
-        ("steps", logInstance)
-      )
-
-    }
-
-    Json.toJson(allLogs)
-  }
 
 }
 
-
 trait VisualTracer { self =>
-  import VisualTracer._
+  // import VisualTracer._
+  import VisualTraceGlobals._
 
   lazy val tracer = self
 
@@ -93,11 +137,11 @@ trait VisualTracer { self =>
   def ifTrace(vtl: VisualTraceLevel)(body: => Unit): Unit = macro VisualTraceMacros.runOnTraceLevel[TraceLog]
 
   def enter()(implicit enclosing: sourcecode.Name): Unit = ifTrace(VisualTraceLevel.EnterExit){
-    println(s"entered: ${enclosing.value}")
+    // println(s"entered: ${enclosing.value}")
   }
 
   def exit()(implicit enclosing: sourcecode.Name): Unit = ifTrace(VisualTraceLevel.EnterExit) {
-    println(s"exit: ${enclosing.value}")
+    // println(s"exit: ${enclosing.value}")
   }
 
 
@@ -115,7 +159,7 @@ trait VisualTracer { self =>
     enclosing: sourcecode.Name,
     loc: sourcecode.Enclosing
   ): Unit = ifTrace(VisualTraceLevel.Checkpoint) {
-    println(s"checkpoint@${enclosing.value}/${loc.value}:  '($msg)'")
+    // println(s"checkpoint@${enclosing.value}/${loc.value}:  '($msg)'")
   }
 
   def createLog(logname: String): LogSpec = {

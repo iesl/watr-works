@@ -50,7 +50,9 @@ trait PageSegmenter extends PageLevelFunctions {
 
 
   def runPageSegmentation(): Unit = {
-    tracer.enter()
+    if (traceLog.tracingEnabled()) {
+      tracing.VisualTracer.newPage()
+    }
 
     labelImageRegions()
 
@@ -58,7 +60,6 @@ trait PageSegmenter extends PageLevelFunctions {
 
     shapeFunctions.buildLinePairTrapezoids()
 
-    tracer.exit()
   }
 
   def runLineClassification(): Unit = {

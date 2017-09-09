@@ -1,16 +1,19 @@
 package edu.umass.cs.iesl.watr
 package apps
 
+
 import corpora._
 
 import ammonite.{ops => fs}, fs._
-// import java.io.{File => JFile}
 import segment.DocumentSegmenter
 import TypeTags._
 import scopt.Read
 import shapeless._
 import java.nio.{file => nio}
 import fs2._
+import tracing.VisualTracer
+import play.api.libs.json.Json
+
 
 sealed trait OutputOption
 
@@ -38,6 +41,7 @@ object TextWorksConfig {
   case class Config(
     ioConfig        : IOConfig = IOConfig(),
     writeRTrees     : Boolean = false,
+    runTraceLogging : Boolean = VisualTracer.tracingEnabled(),
     outputOptions   : List[OutputOption] = List(),
     exec            : Option[(Config) => Unit] = Some((c) => extractText(c))
   )
@@ -144,6 +148,13 @@ object TextWorksConfig {
                   pdfPath <- pdfEntry.asPath
                   docsegPath <- ioOpts.maybeProcess(corpusEntry, "docseg.json")
                 } {
+
+                  val traceLogRoot = if (conf.runTraceLogging) {
+                    val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
+                    traceLogGroup.deleteGroupArtifacts()
+                    Some(traceLogGroup.rootPath)
+                  } else None
+
                   val rtreeGroup = corpusEntry.ensureArtifactGroup("rtrees")
 
                   val rtreeOutput = if (conf.writeRTrees) {
@@ -153,11 +164,12 @@ object TextWorksConfig {
 
                   val ammPath = PathConversions.nioToAmm(docsegPath)
 
-                  TextWorksActions.extractText(stableId, pdfPath, ammPath, rtreeOutput)
+                  TextWorksActions.extractText(stableId, pdfPath, ammPath, rtreeOutput, traceLogRoot)
                 }
             }
           } catch {
-            case t: Throwable => println(s"error ${t}")
+            case t: Throwable =>
+              utils.Debugging.printAndSwallow(t)
           }
         }
       }
@@ -173,7 +185,8 @@ object TextWorksActions {
     stableId: String@@DocumentID,
     inputPdf: fs.Path,
     textOutputFile: fs.Path,
-    rtreeOutputRoot: Option[fs.Path]
+    rtreeOutputRoot: Option[fs.Path],
+    traceLogRoot: Option[fs.Path]
   ): Unit = {
 
     val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, new MemDocZoningApi)
@@ -183,7 +196,14 @@ object TextWorksActions {
     val mpageIndex = segmenter.mpageIndex
 
     val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
+
     write(textOutputFile, content)
+
+    traceLogRoot.foreach { rootPath =>
+      val jsonLogs = tracing.VisualTracer.emitLogs()
+      val jsonStr = Json.prettyPrint(jsonLogs)
+      fs.write(rootPath / "tracelog.json", jsonStr)
+    }
 
     rtreeOutputRoot.foreach { rtreeRootPath =>
 
