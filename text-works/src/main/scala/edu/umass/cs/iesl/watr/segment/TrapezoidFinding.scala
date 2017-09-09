@@ -9,11 +9,17 @@ import geometry.syntax._
 
 import utils.{RelativeDirection => Dir}
 
+trait ShapeFunctions extends TrapezoidFinding with LineShapeClassification { self =>
+  lazy val shapeFunctions = self
 
-trait TrapezoidFinding extends PageScopeSegmenter {
+}
+
+trait TrapezoidFinding extends PageScopeSegmenter { self =>
 
   def buildLinePairTrapezoids(): Unit = {
     tracer.enter()
+
+    val docStats = docScope.docStats
 
     // pageIndex.reportClusters()
 

@@ -18,12 +18,21 @@ import org.dianahep.{histogrammar => HST}
 // import org.dianahep.histogrammar.ascii._
 
 
-trait ColumnFinding extends PageScopeSegmenter {
+trait ColumnFinding extends PageScopeSegmenter { self =>
+  lazy val columnFinder = self
 
 
-  def findCandidateWhitespaceCols(components: Seq[AtomicComponent]): Unit = {
+  def runColumnFinder(): Unit = {
 
+    findCandidateWhitespaceCols()
+
+    combineCandidateWhitespaceCols()
+  }
+
+  def findCandidateWhitespaceCols(): Unit = {
     implicit val log = traceLog.createLog("findCandidateWhitespaceCols")
+
+    val components = mpageIndex.getPageAtoms(pageNum)
 
     val cols = findLeftAlignedCharCols(components)
 

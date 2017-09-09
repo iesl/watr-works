@@ -8,8 +8,7 @@ import textgrid._
 
 trait PageLevelFunctions extends ColumnFinding
     with LineFinding
-    with TrapezoidFinding
-    with LineShapeClassification
+    with ShapeFunctions
 
 
 object PageSegmenter {
@@ -32,59 +31,47 @@ object PageSegmenter {
     linesPerBlock
   }
 
+  def apply(
+    pageId0: Int@@PageID,
+    pageNum0: Int@@PageNum,
+    documentSegmenter0: DocumentScopeSegmenter
+  ): PageSegmenter = new PageSegmenter {
+
+    override val docScope: DocumentScopeSegmenter = documentSegmenter0
+
+    override val pageId: Int@@PageID = pageId0
+    override val pageNum: Int@@PageNum = pageNum0
+    override val pageStats: PageLayoutStats = new PageLayoutStats()
+
+  }
 }
 
-
-class PageSegmenter(
-  override val pageId: Int@@PageID,
-  override val pageNum: Int@@PageNum,
-  documentSegmenter: DocumentScopeSegmenter
-) extends SegmentationCommons with PageLevelFunctions {
-
-  val mpageIndex = documentSegmenter.mpageIndex
-  val docStats = documentSegmenter.docStats
-
-  val docStore = mpageIndex.docStore
-  val stableId = mpageIndex.getStableId
-  val docId = docStore.getDocument(stableId)
-    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
-  val pageStats = docStats.addPage(pageNum)
-
-  val pageIndex = mpageIndex.getPageIndex(pageNum)
+trait PageSegmenter extends PageLevelFunctions {
 
 
   def runPageSegmentation(): Unit = {
     tracer.enter()
 
-    labelImages()
+    labelImageRegions()
 
-    runLineDeterminationOnPage()
+    lineFinding.runLineSegmentation()
 
-    buildLinePairTrapezoids()
+    shapeFunctions.buildLinePairTrapezoids()
 
     tracer.exit()
   }
 
   def runLineClassification(): Unit = {
-    lineShapes.classifyLines()
+    shapeFunctions.classifyLines()
 
     setPageText()
   }
 
-  private def labelImages(): Unit = {
+  private def labelImageRegions(): Unit = {
     mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>
       mpageIndex.labelRegion(Seq(imgCC), LB.Image)
     }
   }
-
-  private def runLineDeterminationOnPage(): Unit = {
-    tracer.enter()
-
-    lineFinding.determineLines()
-
-    tracer.exit()
-  }
-
 
   def setPageText(): Unit = {
     for {

@@ -22,24 +22,22 @@ import utils.SlicingAndDicing._
 
 import shapeless._
 
-trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
+trait LineFinding extends ColumnFinding { self =>
   lazy val lineFinding = self
 
-  def determineLines(): Unit = {
+  def runLineSegmentation(): Unit = {
     val components = mpageIndex.getPageAtoms(pageNum)
 
     approximateLineBins(components)
 
     splitLinesWithOverlaps()
 
-    findCandidateWhitespaceCols(components)
-
-    combineCandidateWhitespaceCols()
+    columnFinder.runColumnFinder()
 
     splitLinesOnWhitespaceColumns()
 
-
     createLog("ShowReadingOrder")
+
     val orderedRegions = findReadingOrder(pageGeometry)()
 
 
@@ -47,36 +45,25 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
 
     pageIndex.setOrdering(LB.ReadingBlocks, readingBlocks)
 
-    // val tmpReadingBlocks = pageIndex.getOrdering(LB.ReadingBlocks)
-    // assert(tmpReadingBlocks.map(_.id).toSet == readingBlocks.map(_.id).toSet)
-
-    // pageIndex.addCluster(LB.ReadingBlocks, readingBlocks)
-
 
     // TODO extract path objects in groups, rather than singly, to avoid trying to rewrite large drawn shapes
     rewritePathObjects(orderedRegions)
 
     // pageIndex.reportClusters()
-    // println()
 
     findVisualLines(orderedRegions)
 
-    // vis.writeRTreeImage("06-VisualLines", LB.VisualLine)
 
     setVisualLineOrdering()
 
-
-
     // Group visual lines into text blocks, s.t. each each block is semantically meaningful unit, e.g., part of a paragraph, a chart/table/figure+caption, or footnote
-
-
     // Group text blocks into paragraphs (within single page)
 
 
   }
 
 
-  def setVisualLineOrdering(): Seq[Component] = {
+  private def setVisualLineOrdering(): Seq[Component] = {
     tracer.enter()
     // reorder visual lines within and across reading blocks
 
@@ -117,7 +104,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
   }
 
 
-  def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
+  private def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
     tracer.enter()
     // val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
 
@@ -185,7 +172,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
     tracer.exit()
   }
 
-  def findModalBoundingRect(visualLineCC: Component, visualLineAtoms: Seq[Component]): LTBounds = {
+  private def findModalBoundingRect(visualLineCC: Component, visualLineAtoms: Seq[Component]): LTBounds = {
     val visualLineBounds = visualLineCC.bounds()
 
     val modalBaselineI = modalValue(visualLineAtoms, _.bounds().bottom.unwrap)
@@ -214,7 +201,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
   }
 
 
-  def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component]): TextGrid.Row = {
+  private def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component]): TextGrid.Row = {
 
 
     val visualLineModalCC = pageIndex.getRelations(visualLineClusterCC, LB.VisualLineModal).head.head
@@ -283,12 +270,10 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
     }
   }
 
-
   var dbgGrid = Lazy[TB.Grid]{ TB.Grid.widthAligned() }
-  // var dbgGrid = TB.Grid.widthAligned()
 
   // Group line atoms into center/sub/superscript bins
-  def findLineAtomScriptPositions(visualLineCC: Component, visualLineAtoms: Seq[Component]): (Seq[Int@@ComponentID], Seq[Int@@ComponentID]) = {
+  private def findLineAtomScriptPositions(visualLineCC: Component, visualLineAtoms: Seq[Component]): (Seq[Int@@ComponentID], Seq[Int@@ComponentID]) = {
 
     val visualLineBounds = visualLineCC.bounds()
 
@@ -345,7 +330,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
   }
 
 
-  def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
+  private def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
     tracer.enter()
 
     // val visualLineBounds = visualLineCC.bounds()
@@ -428,7 +413,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
     tracer.exit()
   }
 
-  def convertTextRowToTextReflow(textRow: TextGrid.Row): TextReflow = {
+  private def convertTextRowToTextReflow(textRow: TextGrid.Row): TextReflow = {
 
     val textReflowAtoms: Seq[TextReflow] = textRow.cells.map{ _ match {
       case  TextGrid.LeftExpansionCell(char, root)  => Some(insert(char.toString()))
@@ -454,7 +439,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
   }
 
 
-  def approximateLineBins(charBoxes: Seq[AtomicComponent]): Unit = {
+  private def approximateLineBins(charBoxes: Seq[AtomicComponent]): Unit = {
     tracer.enter()
 
 
@@ -480,7 +465,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
     tracer.exit()
   }
 
-  def findReadingOrder(initRegion: LTBounds)(level: Int=0): Seq[LTBounds] = {
+  private def findReadingOrder(initRegion: LTBounds)(level: Int=0): Seq[LTBounds] = {
 
 
     tracer.jsonLog {
@@ -536,7 +521,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
     } getOrElse { Seq(initRegion) }
   }
 
-  def splitLinesWithOverlaps(): Unit = {
+  private def splitLinesWithOverlaps(): Unit = {
     for {
       cc <- pageIndex.getComponentsWithLabel(LB.LineByHash)
     } {
@@ -564,7 +549,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
     }
   }
 
-  def splitLinesOnWhitespaceColumns(): Unit = {
+  private def splitLinesOnWhitespaceColumns(): Unit = {
 
     for {
       colRegion <- pageIndex.getComponentsWithLabel(LB.WhitespaceCol)
@@ -586,7 +571,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
 
 
 
-  def pairwiseItemDistances(sortedLineCCs: Seq[PageItem]): Seq[FloatExact] = {
+  private def pairwiseItemDistances(sortedLineCCs: Seq[PageItem]): Seq[FloatExact] = {
     val cpairs = sortedLineCCs.sliding(2).toList
 
     val dists = cpairs.map({
@@ -597,7 +582,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
     dists :+ 0d.toFloatExact()
   }
 
-  def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact = {
+  private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact = {
     tracer.enter()
 
     val charDists = pairwiseItemDistances(sortedLineCCs)
@@ -649,11 +634,7 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
   }
 
 
-
-
-
-
-  def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row = {
+  private def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row = {
     tracer.enter()
     val lineCCs = textRow.cells.collect{
       case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
@@ -732,7 +713,6 @@ trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
 
           wordWin.extendRight(' ').toLastCursor.some
         } else None
-
 
       }
 

@@ -1,11 +1,11 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
-import edu.umass.cs.iesl.watr.extract.PdfTextExtractor
-
 import ammonite.{ops => fs}, fs._
+
 import watrmarks.{StandardLabels => LB}
+import corpora.DocumentZoningApi
+import extract.PdfTextExtractor
 
 import geometry._
 import TypeTags._
@@ -21,7 +21,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     def createPageSegmenters(): Seq[PageSegmenter] = for {
       (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
-    } yield new PageSegmenter(pageId, PageNum(pagenum), self)
+    } yield PageSegmenter(pageId, PageNum(pagenum), self)
 
     createPageSegmenters()
   }

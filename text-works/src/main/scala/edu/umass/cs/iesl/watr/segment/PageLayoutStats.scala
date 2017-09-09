@@ -24,16 +24,16 @@ class LayoutStats {
 class PageLayoutStats extends LayoutStats {}
 
 class DocumentLayoutStats extends LayoutStats {
-  val pageStats: mutable.HashMap[Int@@PageNum, PageLayoutStats] = mutable.HashMap()
+  // val pageStats: mutable.HashMap[Int@@PageNum, PageLayoutStats] = mutable.HashMap()
 
-  def addPage(pageNum: Int@@PageNum): PageLayoutStats = {
-    pageStats.put(pageNum, new PageLayoutStats())
-    pageStats(pageNum)
-  }
+  // def addPage(pageNum: Int@@PageNum): PageLayoutStats = {
+  //   pageStats.put(pageNum, new PageLayoutStats())
+  //   pageStats(pageNum)
+  // }
 
-  def getPage(pageNum: Int@@PageNum): PageLayoutStats = {
-    pageStats(pageNum)
-  }
+  // def getPage(pageNum: Int@@PageNum): PageLayoutStats = {
+  //   pageStats(pageNum)
+  // }
 
 }
 
