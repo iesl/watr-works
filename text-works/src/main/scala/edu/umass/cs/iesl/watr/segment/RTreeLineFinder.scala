@@ -47,51 +47,31 @@ class LineFinder(
   def determineLines(): Unit = {
     val components = mpageIndex.getPageAtoms(pageNum)
 
-    // def stdLabels(lls: Label*) = List(
-    //   LB.Image, LB.HLinePath, LB.VLinePath, LB.LinePath, LB.WhitespaceCol, LB.ReadingBlock, LB.VisualLineModal
-    // ) ++ lls.toList
 
     approximateLineBins(components)
 
-    // vis.writeRTreeImage("01-lineHashing", LB.LineByHash, stdLabels():_*)
-
     splitLinesWithOverlaps()
-
-    // vis.writeRTreeImage("02-splitLineHashing", LB.LineByHash, stdLabels():_*)
 
     findCandidateWhitespaceCols(components)
 
-    // vis.writeRTreeImage("03-colCandidates", LB.WhitespaceColCandidate, LB.LineByHash)
-
-    // vis.writeRTreeImage("03.1-lineByHash", LB.LineByHash)
-
     combineCandidateWhitespaceCols()
-
-    // vis.writeRTreeImage("04-colsCombined", LB.WhitespaceCol, LB.LineByHash, LB.WhitespaceColCandidate)
 
     splitLinesOnWhitespaceColumns()
 
-    // vis.writeRTreeImage("05-LinesSplitByCols", LB.LineByHash, LB.WhitespaceCol)
 
-    // val svgVis = traced[VisualLogger] {  visualLogger("ShowReadingOrder") }
-
-    // val svgVis = visualLogger("ShowReadingOrder")
     createLog("ShowReadingOrder")
     val orderedRegions = findReadingOrder(pageGeometry)()
 
-    // tracer.ifTrace(VisualTraceLevel.JsonLogs) {
-    //   svgVis.writeLogs()
-    // }
 
     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
 
     pageIndex.setOrdering(LB.ReadingBlocks, readingBlocks)
+
     // val tmpReadingBlocks = pageIndex.getOrdering(LB.ReadingBlocks)
     // assert(tmpReadingBlocks.map(_.id).toSet == readingBlocks.map(_.id).toSet)
 
     // pageIndex.addCluster(LB.ReadingBlocks, readingBlocks)
 
-    // vis.indicateRegions("06-ReadingBlockOrder", readingBlocks.map(_.bounds()))
 
     // TODO extract path objects in groups, rather than singly, to avoid trying to rewrite large drawn shapes
     rewritePathObjects(orderedRegions)
@@ -497,6 +477,7 @@ class LineFinder(
   def approximateLineBins(charBoxes: Seq[AtomicComponent]): Unit = {
     tracer.enter()
 
+
     implicit val log = createLog("approximateLineBins")
 
     charBoxes
@@ -801,6 +782,7 @@ class LineFinder(
     cols.foreach { colRegion =>
       val colBounds = colRegion.bounds
       pageIndex.removeComponent(colRegion)
+      showComponentRemoval(s"Removing Left-aligned Col", Seq(colRegion))
 
       val startingRegion = LTBounds(
         left   = colBounds.left-0.1d,
@@ -813,13 +795,11 @@ class LineFinder(
         .foreach{ emptyRegion =>
           val colIsWideEnough = emptyRegion.width > 4.0d
 
+          showMorph(s"Expanding ${startingRegion.prettyPrint} To Max=${emptyRegion.prettyPrint}", startingRegion, emptyRegion)
+
           if (colIsWideEnough) {
             val expandedRegion = labelRegion(emptyRegion, LB.WhitespaceColCandidate)
-
-            showMorph(s"Expand To Max-empty WS Column", startingRegion, expandedRegion.bounds())
-
-          } else {
-            showComponentRemoval(s"Delete candidate col (too narrow)", Seq(colRegion))
+            flashComponents("Creating Candidate", Seq(expandedRegion))
           }
         }
     }

@@ -3,8 +3,8 @@ package segment
 
 import geometry._
 import spindex._
-import utils.Colors
-import utils.Color
+// import utils.Colors
+// import utils.Color
 import play.api.libs.json, json._
 import tracing._
 
@@ -79,7 +79,7 @@ trait SegmentLogging { traceLog: VisualTracer =>
 
   private def formatLogRecCcs(method: String, desc: String, ccs: Seq[Component]): JsObject = {
     Json.obj(
-      ("desc" -> JsString(desc)),
+      ("desc" -> JsString(desc + s"(${ccs.length})")),
       ("Method" -> method),
       ("shapes" -> mkComponentRecs(ccs))
     )
@@ -89,12 +89,15 @@ trait SegmentLogging { traceLog: VisualTracer =>
     formatLogRec(DrawMethods.ZipFlash, desc, bboxes)
   }
 
-  def showMorph(desc: String, bboxes: LTBounds*): JsObject = {
-    formatLogRec(DrawMethods.Morph, desc, bboxes)
+
+  def showRegions(desc: String, bboxes: Seq[LTBounds]): JsObject = {
+    formatLogRec(DrawMethods.Draw, desc, bboxes)
   }
 
-  def showRegions(desc: String, bboxes: Seq[LTBounds], lineColor: Color=Colors.Blue, fillColor: Color=Colors.Yellow): JsObject = {
-    formatLogRec(DrawMethods.Draw, desc, bboxes)
+  def showMorph(desc: String, bboxes: LTBounds*)(
+    implicit lg: LogSpec
+  ): Unit = jsonAppend {
+    formatLogRec(DrawMethods.Morph, desc, bboxes)
   }
 
   def drawPageGeometry()(
@@ -107,7 +110,7 @@ trait SegmentLogging { traceLog: VisualTracer =>
   def flashComponents(desc: String, ccs: Seq[Component])(
     implicit lg: LogSpec
   ): Unit = jsonAppend {
-    formatLogRecCcs(DrawMethods.Draw, desc, ccs)
+    formatLogRecCcs(DrawMethods.ZipFlash, desc, ccs)
   }
 
   def showComponentRemoval(desc: String, ccs: Seq[Component])(

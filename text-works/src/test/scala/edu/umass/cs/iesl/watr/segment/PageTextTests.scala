@@ -66,13 +66,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
         val jsonLogs = tracing.VisualTracer.emitLogs()
 
-        writeLogs(jsonLogs, fs.pwd / docId.unwrap, jsonLogFile)
-
-        // val textfile = s"${docId.unwrap}.txt"
-        // val outputFile = fs.pwd / textfile
-        // if (fs.exists(outputFile)) {
-        //   fs.rm(outputFile)
-        // }
+        writeLogs(jsonLogs, fs.pwd / s"${docId.unwrap}.d", jsonLogFile)
 
         // fs.write(outputFile, content)
 
