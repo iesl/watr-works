@@ -1,49 +1,55 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import scalaz.{@@ => _, _}
-import Scalaz._
-import Free.Trampoline
 
-import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
-import edu.umass.cs.iesl.watr.tracing.VisualTracer
+import geometry._
+import watrmarks.Label
+import corpora.DocumentZoningApi
 import spindex._
-// import ammonite.{ops => fs}, fs._
 
-case class SegReadOnly(
-)
+trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
-// case class SegWriteOnly()
+  lazy val docScope = self
 
-case class SegState(
-  mpageIndex: MultiPageIndex,
-  tracer: VisualTracer,
-  docStats: DocumentLayoutStats,
-  pageSegState: Option[PageSegState]
-)
-
-case class PageSegState(
-  pageId: Int@@PageID,
-  pageNum: Int@@PageNum
-)
-
-trait SegmenterCommon {
-
+  def mpageIndex: MultiPageIndex
   def docStore: DocumentZoningApi
+  def docStats: DocumentLayoutStats
+
   def stableId: String@@DocumentID
   def docId: Int@@DocumentID
 
 }
 
-trait SegmentationSystem extends SegmenterCommon {
+trait PageScopeSegmenter extends DocumentScopeSegmenter with PageScopeTracing { self =>
+  lazy val pageScope = self
 
-  type SegFunc[A] = ReaderWriterStateT[Trampoline, SegReadOnly, Unit, SegState, A]
+  def pageId: Int@@PageID
+  def pageNum: Int@@PageNum
+  def pageIndex: PageIndex
+  def pageStats: PageLayoutStats
 
-  // type PageSegFunc[A] = ReaderWriterStateT[Trampoline, SegReadOnly, Unit, PageSegState, A]
+  def pageGeometry = docStore.getPageGeometry(pageId)
 
-  def rwstMonad[W : Monoid] = ReaderWriterStateT.rwstMonad[Trampoline, SegReadOnly, Unit, SegState]
+  def labelRegion(bbox: LTBounds, label: Label, text: Option[String] = None): RegionComponent = {
+    val regionId = docStore.addTargetRegion(pageId, bbox)
+    val pageRegion = docStore.getTargetRegion(regionId)
+    mpageIndex.createRegionComponent(pageRegion, label, text)
+  }
 
-  protected val rle = rwstMonad[Unit]
+  def deleteComponentsWithLabel(l: Label): Unit = {
+    pageIndex.getComponentsWithLabel(l)
+      .foreach { cc =>
+        pageIndex.removeComponent(cc)
+      }
+  }
 
+}
+
+trait SegmentationCommons {
+  def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {
+    ccs.groupBy{f(_)}.toSeq
+      .sortBy({ case (_, atoms) => atoms.length })
+      .reverse.headOption.map(_._1)
+  }
 
 }

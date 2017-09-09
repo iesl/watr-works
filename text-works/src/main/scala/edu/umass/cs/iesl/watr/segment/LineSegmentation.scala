@@ -14,39 +14,19 @@ import utils.ExactFloats._
 import utils.EnrichNumerics._
 
 import textreflow.data._
-// import scala.concurrent.duration._
 import textgrid._
 import textboxing.{TextBoxing => TB}, TB._
 
 import scala.collection.mutable
 import utils.SlicingAndDicing._
-// import edu.umass.cs.iesl.watr.tracing.VisualTracer
 
-import org.dianahep.{histogrammar => HST}
-import ammonite.{ops => fs}
-// import org.dianahep.histogrammar.ascii._
-// import tracemacros.VisualTraceLevel
 import shapeless._
 
-
-
-class LineFinder(
-  override val mpageIndex: MultiPageIndex,
-  override val pageId: Int@@PageID,
-  override val pageNum: Int@@PageNum
-) extends SegmentationCommons with PageLevelFunctions with tracing.VisualTracer with SegmentLogging {
-
-  val pageIndex = mpageIndex.getPageIndex(pageNum)
-  val docStore = mpageIndex.docStore
-  val stableId = mpageIndex.getStableId
-  val docId = docStore.getDocument(stableId)
-    .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
-
-  val segvisRootPath = fs.pwd / s"${stableId}-segs.d"
+trait LineFinding extends PageScopeSegmenter with ColumnFinding { self =>
+  lazy val lineFinding = self
 
   def determineLines(): Unit = {
     val components = mpageIndex.getPageAtoms(pageNum)
-
 
     approximateLineBins(components)
 
@@ -769,185 +749,4 @@ class LineFinder(
     res
   }
 
-  def findCandidateWhitespaceCols(components: Seq[AtomicComponent]): Unit = {
-
-    implicit val log = createLog("findCandidateWhitespaceCols")
-
-    val cols = findLeftAlignedCharCols(components)
-
-    drawPageGeometry()
-
-    flashComponents(s"Left-aligned Char Cols", cols)
-
-    cols.foreach { colRegion =>
-      val colBounds = colRegion.bounds
-      pageIndex.removeComponent(colRegion)
-      showComponentRemoval(s"Removing Left-aligned Col", Seq(colRegion))
-
-      val startingRegion = LTBounds(
-        left   = colBounds.left-0.1d,
-        top    = colBounds.top,
-        width  = 0.01.toFloatExact(),
-        height = colBounds.height
-      )
-
-      growToMaxEmptySpace(startingRegion)
-        .foreach{ emptyRegion =>
-          val colIsWideEnough = emptyRegion.width > 4.0d
-
-          showMorph(s"Expanding ${startingRegion.prettyPrint} To Max=${emptyRegion.prettyPrint}", startingRegion, emptyRegion)
-
-          if (colIsWideEnough) {
-            val expandedRegion = labelRegion(emptyRegion, LB.WhitespaceColCandidate)
-            flashComponents("Creating Candidate", Seq(expandedRegion))
-          }
-        }
-    }
-
-    showLabeledComponents(s"Final WS Col Candidates", LB.WhitespaceColCandidate)
-
-  }
-
-  def findLeftAlignedCharCols(
-    components: Seq[AtomicComponent]
-  ): Seq[RegionComponent] = {
-    import HST._
-    val componentLefts = HST.SparselyBin.ing(1.0, {x: AtomicComponent => x.bounds.left.asDouble()} named "char-lefts")
-
-    components.foreach { componentLefts.fill(_) }
-
-    // Construct a horizontal query, looking to boost scores of "runs" of consecutive left-x-value
-    val queryBoxes = componentLefts.bins.toList
-      .sortBy { case (bin, counting) => counting.entries }
-      .reverse.take(10) //  only consider the 10 tallest cols
-      .map{ case (bin, counting) =>
-        val bw = componentLefts.binWidth
-
-        LTBounds.Doubles(
-          left   = bw * bin,
-          top    = 0d,
-          width  = bw,
-          height = pageGeometry.height.asDouble()
-        )
-      }
-
-    val res: List[Option[RegionComponent]] =
-      queryBoxes.flatMap { query =>
-        val intersects = pageIndex.rtreeSearch(query, LB.PageAtom)
-
-        val consecutiveLeftAlignedCharCols =
-          intersects.sortBy(_.bounds.bottom)
-            .groupByPairs((c1, c2) => c1.bounds.bottom == c2.bounds.bottom)
-            .map(_.sortBy(_.bounds.left).head)
-            .groupByPairs((c1, c2) => c1.bounds.left == c2.bounds.left)
-            .filter{ groups => groups.length > 1 }
-
-        consecutiveLeftAlignedCharCols
-          .map{ ccs => mpageIndex.labelRegion(ccs, LB.LeftAlignedCharCol).map(_._1) }
-
-
-      }
-
-    res.flatten
-  }
-
-
 }
-
-
-
-
-  // def guessWordbreakWhitespaceThresholdOld(sortedLineCCs: Seq[PageItem]): FloatExact = {
-  //   tracer.enter()
-
-  //   def determineSpacings(): Seq[FloatExact] = {
-  //     tracer.enter()
-  //     // List of avg distances between chars, sorted largest (inter-word) to smallest (intra-word)
-  //     def pairwiseSpaceWidths(): Seq[FloatExact] = {
-  //       val cpairs = sortedLineCCs.sliding(2).toList
-
-  //       val dists = cpairs.map({
-  //         case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
-  //         case _  => 0d.toFloatExact()
-  //       })
-
-  //       dists :+ 0d.toFloatExact()
-  //     }
-
-  //     val dists = pairwiseSpaceWidths()
-
-  //     val mostFrequentDists = dists.groupBy(x => x)
-  //       .mapValues { _.length }
-  //       .toList
-  //       .sortBy(_._2).reverse
-
-  //     tracer.exit()
-  //     mostFrequentDists.map(_._1)
-  //   }
-
-
-
-  //   val charDists = determineSpacings()
-
-  //   val charWidths = sortedLineCCs.map(_.bbox.width)
-  //   val widestChar = charWidths.max
-
-  //   // Don't  accept a space wider than (some magic number)*the widest char?
-  //   val saneCharDists = charDists
-  //     .filter(_ < widestChar*2 )
-  //     .filterNot(_.unwrap == 0)
-
-  //   def resolution =  0.3d
-
-  //   // Try to divide the list of char dists into 2 groups, small gap and large gap:
-  //   // See if we can divide our histogram values by some value > 2*histResolution
-  //   val distGroups = saneCharDists.groupByPairs( { (c1, c2) =>
-  //     math.abs((c2 - c1).asDouble()) < resolution
-  //   })
-
-
-  //   val threshold = if (saneCharDists.length == 1) {
-  //     // If there is only 1 distance, the line is only 1 word (no word breaks)
-  //     1.0d.toFloatExact()
-  //   } else if (distGroups.length == 2) {
-  //     val d1 = distGroups(0).last
-  //     val d2 = distGroups(1).head
-
-  //     (d1+d2) / 2
-  //   } else if (saneCharDists.length >= 2) {
-  //     // Take most common space to be char space within words
-  //     val modalLittleGap = saneCharDists.head
-  //     // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
-  //     val modalBigGap = saneCharDists
-  //       .drop(1)
-  //       .filter(_ > modalLittleGap)
-  //       .headOption.getOrElse(modalLittleGap)
-
-  //     (modalBigGap+modalLittleGap)/2
-  //   } else {
-  //     // Fallback to using unfiltered char dists
-  //     val modalLittleGap = charDists.head
-  //     // The next most frequent space (that is larger than the within-word space) is assumed to be the space between words:
-  //     val modalBigGap = charDists
-  //       .drop(1)
-  //       .filter(_ > modalLittleGap)
-  //       .headOption.getOrElse(modalLittleGap)
-
-  //     (modalBigGap*2+modalLittleGap)/3
-  //   }
-
-  //   tracer.printLog {
-  //     println(
-  //       s"""|guessWordbreakWhitespaceThreshold
-  //           | Char Dists      = ${charDists.map(_.pp).mkString(", ")}
-  //           | Sane Dists      = ${saneCharDists.map(_.pp).mkString(", ")}
-  //           | Widest Char     = ${widestChar.pp}
-  //           | Split threshold = ${threshold.pp}
-  //           |""".stripMargin.mbox
-  //     )
-  //   }
-
-  //   tracer.exit()
-
-  //   threshold
-  // }

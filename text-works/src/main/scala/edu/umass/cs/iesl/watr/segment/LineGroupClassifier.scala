@@ -2,33 +2,22 @@ package edu.umass.cs.iesl.watr
 package segment
 
 
-import spindex._
 import watrmarks.{StandardLabels => LB, _}
 import geometry._
 import geometry.syntax._
-import edu.umass.cs.iesl.watr.tracing.VisualTracer
 import textboxing.{TextBoxing => TB}
 import textgrid._
 
 
-class LineGroupClassifier(
-  mpageIndex: MultiPageIndex,
-  pageId: Int@@PageID,
-  pageNum: Int@@PageNum,
-  tracer: VisualTracer
-) {
-
-  val pageIndex = mpageIndex.getPageIndex(pageNum)
-
+trait LineGroupClassification extends PageScopeSegmenter { self =>
+  lazy val lineClassifier = self
 
   def classifyLines(): Unit = {
 
     groupLines()
 
-
     showGroupings()
   }
-
 
 
   implicit class RicherBoolean(val self: Boolean) {
@@ -398,3 +387,4 @@ class LineGroupClassifier(
 
   }
 }
+

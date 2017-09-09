@@ -11,3 +11,4 @@ corpus-*
 *.svg
 resources
 ext.d
+node_modules

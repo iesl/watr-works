@@ -1063,3 +1063,62 @@
 //   //   vtrace.trace(end("determineTextBlockOrdering"))
 
 //   // }
+
+// val DebugLabelColors: Map[Label, Color] = {
+//   Map(
+//     (LB.VisualLineModal        , Clr.Cornsilk4),
+//     (LB.VisualLine             , Clr.Plum),
+//     (LB.PageAtomTmp            , Clr.DarkBlue),
+//     (LB.PageAtomGrp            , Clr.YellowGreen),
+//     (LB.PageAtom               , Clr.Grey80),
+//     (LB.PathBounds             , Clr.Thistle),
+//     (LB.LinePath               , Clr.Green),
+//     (LB.HLinePath              , Clr.Black),
+//     (LB.VLinePath              , Clr.LimeGreen),
+//     (LB.Image                  , Clr.DarkCyan),
+//     (LB.LineByHash             , Clr.Firebrick3),
+//     (LB.LeftAlignedCharCol     , Clr.Orange4),
+//     (LB.WhitespaceColCandidate , Clr.Green),
+//     (LB.WhitespaceCol          , Clr.Peru),
+//     (LB.ReadingBlock           , Clr.Red),
+//     (LB.Marked                 , Clr.Red4)
+//   )
+// }
+
+// case class SegReadOnly(
+// )
+
+// // case class SegWriteOnly()
+
+// case class SegState(
+//   mpageIndex: MultiPageIndex,
+//   tracer: VisualTracer,
+//   docStats: DocumentLayoutStats,
+//   pageSegState: Option[PageSegState]
+// )
+
+// case class PageSegState(
+//   pageId: Int@@PageID,
+//   pageNum: Int@@PageNum
+// )
+
+// trait SegmenterCommon {
+
+//   def docStore: DocumentZoningApi
+//   def stableId: String@@DocumentID
+//   def docId: Int@@DocumentID
+
+// }
+
+// trait SegmentationSystem extends SegmenterCommon {
+
+//   type SegFunc[A] = ReaderWriterStateT[Trampoline, SegReadOnly, Unit, SegState, A]
+
+//   // type PageSegFunc[A] = ReaderWriterStateT[Trampoline, SegReadOnly, Unit, PageSegState, A]
+
+//   def rwstMonad[W : Monoid] = ReaderWriterStateT.rwstMonad[Trampoline, SegReadOnly, Unit, SegState]
+
+//   protected val rle = rwstMonad[Unit]
+
+
+// }

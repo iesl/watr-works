@@ -50,9 +50,11 @@ class PageTextTest extends SegmentationTestUtils  {
     tracing.VisualTracer.addTraceLevel(VTL.JsonLogs)
 
 
-    // allTestPdfs.foreach {
-    selectPdfPage(allTestPdfs, "1056", 1).foreach {
+    allTestPdfs.foreach {
+    // selectPdfPage(allTestPdfs, "1056", 1).foreach {
       case (docId, page, path) =>
+
+        tracing.VisualTracer.clearAllLogs()
 
         // def jsonLogFile(name: String) = s"${docId}.pg${page}.json"
         val jsonLogFile = s"${docId}.pg${page}.json"
@@ -62,7 +64,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
         segmenter.runPageSegmentation()
 
-        val content = formats.DocumentIO.documentToStructuredPlaintext(segmenter.mpageIndex)
+        // val content = formats.DocumentIO.documentToStructuredPlaintext(segmenter.mpageIndex)
 
         val jsonLogs = tracing.VisualTracer.emitLogs()
 
@@ -70,7 +72,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
         // fs.write(outputFile, content)
 
-        println(content)
+        // println(content)
     }
 
 

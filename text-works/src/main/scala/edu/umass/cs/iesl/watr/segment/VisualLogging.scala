@@ -26,7 +26,9 @@ object DrawMethods {
 
 }
 
-trait SegmentLogging { traceLog: VisualTracer =>
+trait PageScopeTracing extends VisualTracer { self  =>
+  lazy val traceLog = self
+
   def pageIndex: PageIndex
 
   lazy val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageIndex.pageGeometry.bounds

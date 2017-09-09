@@ -38,6 +38,10 @@ object VisualTracer {
     ]
   ]()
 
+  def clearAllLogs(): Unit = {
+    jsonLogs.clear()
+  }
+
   def createLog(logname: String): Unit = {
     assume(!jsonLogs.contains(logname))
     val logsBuffer = jsonLogs.getOrElseUpdate(logname,
