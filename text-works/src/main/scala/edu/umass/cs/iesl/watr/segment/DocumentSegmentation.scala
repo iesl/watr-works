@@ -5,69 +5,66 @@ import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
 import edu.umass.cs.iesl.watr.extract.PdfTextExtractor
 
 import ammonite.{ops => fs}, fs._
-import watrmarks.{StandardLabels => LB, _}
+import watrmarks.{StandardLabels => LB}
 
 import geometry._
 import TypeTags._
 import shapeless.lens
 import PageComponentImplicits._
 
-import org.dianahep.histogrammar.ascii._
 
 trait DocumentLevelFunctions extends DocumentScopeSegmenter
 
 trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
+  lazy val pageSegmenters = {
 
-  lazy val pageIdMap: Map[Int@@PageID, Int@@PageNum] =
-    docStore.getPages(docId).zipWithIndex.map{
-      case (pageId, pageNum) => (pageId, PageNum(pageNum))
-    }.toMap
+    def createPageSegmenters(): Seq[PageSegmenter] = for {
+      (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
+    } yield new PageSegmenter(pageId, PageNum(pagenum), self)
 
-
-  def createZone(label: Label, pageRegions: Seq[PageRegion]): Option[Int@@ZoneID] = {
-    docStore.labelRegions(label, pageRegions)
+    createPageSegmenters()
   }
 
 
-  def runPageSegmentation(): Unit = {
+  def runDocumentSegmentation(): Unit = {
 
-    val pageSegmenters = for {
-      (pageId, pagenum) <- docStore.getPages(docId).zipWithIndex
-    } yield {
-      new PageSegmenter(pageId, PageNum(pagenum), docScope)
+    pageSegmenters.foreach { pageSegmenter =>
+      pageSegmenter.runPageSegmentation()
     }
 
-    val pageRegions = pageSegmenters
-      .map { pageSegmenter =>
-        pageSegmenter.runLineSegmentation()
+    pageSegmenters.foreach { pageSegmenter =>
+      pageSegmenter.runLineClassification()
+    }
 
-        docStore.getTargetRegion(
-          docStore.addTargetRegion(pageSegmenter.pageId, pageSegmenter.pageGeometry)
-        )
-      }
-
-    val _ = createZone(LB.DocumentPages, pageRegions)
-
-
-    pageSegmenters.zipWithIndex
-      .foreach { case (pageSegmenter, pageNum)  =>
-        val pageStats = pageSegmenter.pageStats
-        println(s"Page ${pageNum} Stats")
-        println(pageStats.trapezoidHeights.ascii)
-        println("\n\n" )
-        println(pageStats.leftAcuteBaseAngles.ascii)
-        println("\n\n" )
-        println(pageStats.leftObtuseBaseAngles.ascii)
-        println("\n\n" )
-      }
-
-    pageSegmenters
-      .foreach { pageSegmenter =>
-        pageSegmenter.runLineClassification()
-      }
+    recordPageRegion()
 
   }
+
+  def recordPageRegion(): Unit = {
+    val pageRegions = pageSegmenters.map { pageSegmenter =>
+      docStore.getTargetRegion(
+        docStore.addTargetRegion(pageSegmenter.pageId, pageSegmenter.pageGeometry)
+      )
+    }
+
+    createZone(LB.DocumentPages, pageRegions)
+  }
+
+  // def printPageStats(): Unit = {
+  //   import org.dianahep.histogrammar.ascii._
+  //   pageSegmenters.zipWithIndex
+  //     .foreach { case (pageSegmenter, pageNum)  =>
+  //       val pageStats = pageSegmenter.pageStats
+  //       println(s"Page ${pageNum} Stats")
+  //       println(pageStats.trapezoidHeights.ascii)
+  //       println("\n\n" )
+  //       println(pageStats.leftAcuteBaseAngles.ascii)
+  //       println("\n\n" )
+  //       println(pageStats.leftObtuseBaseAngles.ascii)
+  //       println("\n\n" )
+  //     }
+  // }
 
 }
 
@@ -79,49 +76,49 @@ object DocumentSegmenter {
 
 
   def createSegmenter(
-    stableId: String@@DocumentID,
+    stableId0: String@@DocumentID,
     pdfPath: Path,
-    docStore: DocumentZoningApi
+    docStore0: DocumentZoningApi
   ): DocumentSegmentation = {
-    println(s"extracting ${stableId} chars")
+    println(s"extracting ${stableId0} chars")
 
-    val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId, pdfPath)
-    val mpageIndex = new MultiPageIndex(stableId, docStore)
+    val pageAtomsAndGeometry = PdfTextExtractor.extractChars(stableId0, pdfPath)
+    val mpageIndex0 = new MultiPageIndex(stableId0, docStore0)
 
     val pageIdL = lens[CharAtom].pageRegion.page.pageId
     val imgPageIdL = lens[PageItem.ImageAtom].pageRegion.page.pageId
     val pathPageIdL = lens[PageItem.Path].pageRegion.page.pageId
 
-    val docId = docStore.addDocument(stableId)
+    val docId0 = docStore0.addDocument(stableId0)
+
     pageAtomsAndGeometry.foreach { case(regions, geom)  =>
-      val pageId = docStore.addPage(docId, geom.id)
-      docStore.setPageGeometry(pageId, geom.bounds)
-      mpageIndex.addPage(geom)
+      val pageId = docStore0.addPage(docId0, geom.id)
+      docStore0.setPageGeometry(pageId, geom.bounds)
+      mpageIndex0.addPage(geom)
 
       regions.foreach {
         case cb:CharAtom if !cb.isNonPrintable =>
-          // modify the pageId to match the one assigned by docStore
+          // modify the pageId to match the one assigned by docStore0
           val update = pageIdL.modify(cb){_ => pageId}
-          mpageIndex.addCharAtom(update)
+          mpageIndex0.addCharAtom(update)
 
         case cb:PageItem.ImageAtom =>
           val update = imgPageIdL.modify(cb){_ => pageId}
-          mpageIndex.addImageAtom(update)
+          mpageIndex0.addImageAtom(update)
 
         case cb:PageItem.Path =>
           val update = pathPageIdL.modify(cb){_ => pageId}
-          mpageIndex.addPathItem(update)
+          mpageIndex0.addPathItem(update)
 
         case cb => println(s"error adding ${cb}")
       }
     }
 
     new DocumentSegmentation {
-      override val mpageIndex: MultiPageIndex = mpageIndex
-      override val docStore: DocumentZoningApi = docStore
-      override val stableId = mpageIndex.getStableId
-      override val docId = docStore.getDocument(stableId)
-        .getOrElse(sys.error(s"DocumentSegmenter trying to access non-existent document ${stableId}"))
+      override val mpageIndex: MultiPageIndex = mpageIndex0
+      override val docStore: DocumentZoningApi = docStore0
+      override val stableId = stableId0
+      override val docId = docId0
 
       override val docStats: DocumentLayoutStats = new DocumentLayoutStats()
 

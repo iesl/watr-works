@@ -178,7 +178,7 @@ object TextWorksActions {
 
     val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, new MemDocZoningApi)
 
-    segmenter.runPageSegmentation()
+    segmenter.runDocumentSegmentation()
 
     val mpageIndex = segmenter.mpageIndex
 

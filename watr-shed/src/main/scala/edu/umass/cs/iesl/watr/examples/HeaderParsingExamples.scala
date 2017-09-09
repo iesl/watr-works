@@ -43,7 +43,7 @@ class HeaderParsingExamples(dbName: String) {
       val mdocStore = new MemDocZoningApi
       val segmenter = DocumentSegmenter.createSegmenter(stableId, pdfPath, mdocStore)
 
-      segmenter.runPageSegmentation()
+      segmenter.runDocumentSegmentation()
 
       for {
         docId <- mdocStore.getDocument(stableId)

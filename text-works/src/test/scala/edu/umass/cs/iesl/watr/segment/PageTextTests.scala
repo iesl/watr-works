@@ -50,8 +50,8 @@ class PageTextTest extends SegmentationTestUtils  {
     tracing.VisualTracer.addTraceLevel(VTL.JsonLogs)
 
 
-    allTestPdfs.foreach {
-    // selectPdfPage(allTestPdfs, "1056", 1).foreach {
+    // allTestPdfs.foreach {
+    selectPdfPage(allTestPdfs, "1056", 1).foreach {
       case (docId, page, path) =>
 
         tracing.VisualTracer.clearAllLogs()
@@ -62,7 +62,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
         val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
-        segmenter.runPageSegmentation()
+        segmenter.runDocumentSegmentation()
 
         // val content = formats.DocumentIO.documentToStructuredPlaintext(segmenter.mpageIndex)
 

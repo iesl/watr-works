@@ -9,8 +9,8 @@ import textboxing.{TextBoxing => TB}
 import textgrid._
 
 
-trait LineGroupClassification extends PageScopeSegmenter { self =>
-  lazy val lineClassifier = self
+trait LineShapeClassification extends PageScopeSegmenter { self =>
+  lazy val lineShapes = self
 
   def classifyLines(): Unit = {
 

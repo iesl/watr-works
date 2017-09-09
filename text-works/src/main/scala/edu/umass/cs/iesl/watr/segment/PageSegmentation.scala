@@ -9,7 +9,7 @@ import textgrid._
 trait PageLevelFunctions extends ColumnFinding
     with LineFinding
     with TrapezoidFinding
-    with LineGroupClassification
+    with LineShapeClassification
 
 
 object PageSegmenter {
@@ -53,7 +53,7 @@ class PageSegmenter(
   val pageIndex = mpageIndex.getPageIndex(pageNum)
 
 
-  def runLineSegmentation(): Unit = {
+  def runPageSegmentation(): Unit = {
     tracer.enter()
 
     labelImages()
@@ -66,8 +66,7 @@ class PageSegmenter(
   }
 
   def runLineClassification(): Unit = {
-    // val lineClassifier = new LineGroupClassifier(mpageIndex, pageId, pageNum, tracer)
-    lineClassifier.classifyLines()
+    lineShapes.classifyLines()
 
     setPageText()
   }

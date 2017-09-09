@@ -18,6 +18,9 @@ trait DocumentScopeSegmenter extends SegmentationCommons { self =>
   def stableId: String@@DocumentID
   def docId: Int@@DocumentID
 
+  def createZone(label: Label, pageRegions: Seq[PageRegion]): Option[Int@@ZoneID] = {
+    docStore.labelRegions(label, pageRegions)
+  }
 }
 
 trait PageScopeSegmenter extends DocumentScopeSegmenter with PageScopeTracing { self =>

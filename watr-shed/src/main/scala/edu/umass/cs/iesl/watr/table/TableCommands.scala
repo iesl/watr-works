@@ -129,7 +129,7 @@ object ShellCommands extends DocumentZoningApiEnrichments {
         val segmenter = DocumentSegmenter
           .createSegmenter(stableId, pdfPath, memZoneApi)
 
-        segmenter.runPageSegmentation()
+        segmenter.runDocumentSegmentation()
 
         if (writeRTrees) {
           println("Writing RTrees")

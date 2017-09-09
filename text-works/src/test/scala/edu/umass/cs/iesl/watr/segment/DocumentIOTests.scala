@@ -20,7 +20,7 @@ class DocumentIOTests extends SegmentationTestUtils  {
 
     val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
-    segmenter.runPageSegmentation()
+    segmenter.runDocumentSegmentation()
 
     val mpageIndex = segmenter.mpageIndex
     mpageIndex
