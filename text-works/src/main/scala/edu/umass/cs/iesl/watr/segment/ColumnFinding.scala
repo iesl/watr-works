@@ -13,6 +13,7 @@ import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.ExactFloats._
 import utils.SlicingAndDicing._
+// import utils.{Debugging => Dbg}
 
 import org.dianahep.{histogrammar => HST}
 // import org.dianahep.histogrammar.ascii._
@@ -21,7 +22,27 @@ import org.dianahep.{histogrammar => HST}
 trait ColumnFinding extends PageScopeSegmenter { self =>
   lazy val columnFinder = self
 
-
+  /**
+    *
+    * - Column-finding, take two:
+    *
+    *    - Label col-L-aligned-left / col-L-aligned-right positions /pairs
+    *      - i.e., chars that start a line left-aligned with the upstairs neighbor
+    *      - upper char is col-right, lower is col-left
+    *
+    *    - Label line start / terminal positions, as determined by char position jumps, right->left + down
+    *    - Mark up-right jump transition lines
+    *      - lower line is col-ending, upper line is col-beginning
+    *
+    *    - Mark image left/right as col-left, col-right
+    *
+    *
+    *    - combine vert stacked cols
+    *      - left-to-right, examine each col-left line
+    *      - find min col-lefts (that don't cross a col-right)
+    *      -      max col-rights (that don't cross a col-left)
+    *
+    **/
   def runColumnFinder(): Unit = {
 
     findCandidateWhitespaceCols()
@@ -30,6 +51,7 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
   }
 
   def findCandidateWhitespaceCols(): Unit = {
+    tracer.enter()
     implicit val log = traceLog.createLog("findCandidateWhitespaceCols")
 
     val components = mpageIndex.getPageAtoms(pageNum)
@@ -58,6 +80,7 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
 
           traceLog.showMorph(s"Expanding ${startingRegion.prettyPrint} To Max=${emptyRegion.prettyPrint}", startingRegion, emptyRegion)
 
+
           if (colIsWideEnough) {
             val expandedRegion = labelRegion(emptyRegion, LB.WhitespaceColCandidate)
 
@@ -68,6 +91,8 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
     }
 
     showLabeledComponents(s"Final WS Col Candidates", LB.WhitespaceColCandidate)
+
+    tracer.exit()
 
   }
 
@@ -112,64 +137,6 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
       }
 
     res.flatten
-  }
-
-
-  def combineCandidateWhitespaceCols(): Unit = {
-
-    implicit val log = tracer.createLog("combineCandidateWhitespaceCols")
-
-    var candidates = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate)
-
-    flashComponents("Whitespace Col Candidates", candidates)
-
-    while(candidates.nonEmpty) {
-      val candidate = candidates.head
-
-      val overlaps = pageIndex.rtreeSearch(candidate.bounds, LB.WhitespaceColCandidate)
-        .filterNot { _.id.unwrap == candidate.id.unwrap }
-
-      flashComponents("Target Cols", Seq(candidate))
-      flashComponents("Overlapped Cols", overlaps)
-
-      overlaps.headOption match {
-        case Some(overlap) =>
-          // "Burst" the overlapping regions into all constituent parts
-          val obbox = overlap.bounds
-          val cbbox = candidate.bounds
-
-          val (maybeIntersect, burstRegions) = obbox.withinRegion(cbbox).burstAllAdjacent()
-
-          val allRegions = maybeIntersect.map(_ +: burstRegions).getOrElse(burstRegions)
-
-          allRegions.foreach { bbox =>
-            // Discard very small columns
-            if (bbox.width > 1.0 && bbox.height > 1.0) {
-              // micro-shrink the bbox to prevent it from overlapping its neighbors
-              val LTBounds(x, y, w, h) = bbox
-              val shrunk = LTBounds(
-                x+0.01.toFloatExact,
-                y+0.01.toFloatExact,
-                w-0.02.toFloatExact,
-                h-0.02.toFloatExact
-              )
-              if (shrunk.area >= 0) {
-                labelRegion(shrunk, LB.WhitespaceColCandidate)
-              } else {
-                // println(s"combineCandidateWhitespaceCols: area <= 0 for ${shrunk} was ${bbox}")
-              }
-            }
-          }
-
-          pageIndex.removeComponent(candidate)
-          pageIndex.removeComponent(overlap)
-        case None =>
-          pageIndex.removeComponent(candidate)
-          labelRegion(candidate.bounds(), LB.WhitespaceCol)
-      }
-
-      candidates = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate)
-    }
   }
 
 
@@ -280,4 +247,113 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
     // currWhiteSpace.withinRegion(pageBounds).adjacentRegion(Dir.Left)
 
   }
+
+  def combineCandidateWhitespaceCols(): Unit = {
+
+    implicit val log = tracer.createLog("combineCandidateWhitespaceCols")
+
+    import scala.collection.mutable
+
+    val candidateCCs = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate).sortBy(_.bounds.area).reverse
+
+    // val candidateBounds = candidateCCs.map(_.bounds()).sortBy(_.area).reverse
+
+    val candidates = mutable.ArrayBuffer[Component](candidateCCs:_*)
+    // val candidates = mutable.ArrayBuffer[LTBounds](candidateBounds)
+
+    traceLog.flashComponents("Whitespace Col Candidates", candidateCCs)
+
+    while(candidates.nonEmpty) {
+      val candidate = candidates.head
+      var currColBounds = candidate.bounds()
+
+
+      val overlaps = pageIndex.rtreeSearch(currColBounds, LB.WhitespaceColCandidate)
+        .filterNot { _.id.unwrap == candidate.id.unwrap }
+
+      traceLog.flashComponents("Query Column + Overlaps", candidate +: overlaps)
+
+      overlaps.foreach { overlappedCC =>
+
+        if (overlappedCC.bounds.isContainedBy(candidate.bounds)){
+          pageIndex.removeComponent(overlappedCC)
+          candidates -= overlappedCC
+
+        } else if (overlappedCC.bounds.isContainedByVProjection(candidate.bounds)) {
+          val adjacency = overlappedCC.bounds().withinRegion(candidate.bounds())
+          val overlappingVertStripe = adjacency.adjacentRegions(Dir.Top, Dir.Center, Dir.Bottom)
+          val vstripe = overlappingVertStripe.getOrElse { sys.error("no overlapping area") }
+
+        }
+
+
+      }
+
+      pageIndex.removeComponent(candidate)
+    }
+  }
+
+
 }
+
+
+
+
+
+
+  // def combineCandidateWhitespaceColsV0(): Unit = {
+
+  //   implicit val log = tracer.createLog("combineCandidateWhitespaceCols")
+
+  //   var candidates = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate)
+
+  //   flashComponents("Whitespace Col Candidates", candidates)
+
+  //   while(candidates.nonEmpty) {
+  //     val candidate = candidates.head
+
+  //     val overlaps = pageIndex.rtreeSearch(candidate.bounds, LB.WhitespaceColCandidate)
+  //       .filterNot { _.id.unwrap == candidate.id.unwrap }
+
+  //     flashComponents("Target Cols", Seq(candidate))
+  //     flashComponents("Overlapped Cols", overlaps)
+
+  //     overlaps.headOption match {
+  //       case Some(overlap) =>
+  //         // "Burst" the overlapping regions into all constituent parts
+  //         val obbox = overlap.bounds
+  //         val cbbox = candidate.bounds
+
+  //         val (maybeIntersect, burstRegions) = obbox.withinRegion(cbbox).burstAllAdjacent()
+
+  //         val allRegions = maybeIntersect.map(_ +: burstRegions).getOrElse(burstRegions)
+
+  //         allRegions.foreach { bbox =>
+  //           // Discard very small columns
+  //           if (bbox.width > 1.0 && bbox.height > 1.0) {
+  //             // micro-shrink the bbox to prevent it from overlapping its neighbors
+  //             val LTBounds(x, y, w, h) = bbox
+  //             val shrunk = LTBounds(
+  //               x+0.01.toFloatExact,
+  //               y+0.01.toFloatExact,
+  //               w-0.02.toFloatExact,
+  //               h-0.02.toFloatExact
+  //             )
+  //             if (shrunk.area >= 0) {
+  //               labelRegion(shrunk, LB.WhitespaceColCandidate)
+  //             } else {
+  //               // println(s"combineCandidateWhitespaceCols: area <= 0 for ${shrunk} was ${bbox}")
+  //             }
+  //           }
+  //         }
+
+  //         pageIndex.removeComponent(candidate)
+  //         pageIndex.removeComponent(overlap)
+  //       case None =>
+  //         pageIndex.removeComponent(candidate)
+  //         labelRegion(candidate.bounds(), LB.WhitespaceCol)
+  //     }
+
+  //     candidates = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate)
+  //   }
+  // }

@@ -17,13 +17,15 @@ import java.nio.{file => nio}
 
 
 object PdfTextExtractor {
-  def extractChars(stableId: String@@DocumentID, pdfPath: Path): Seq[(Seq[PageItem], PageGeometry)] = {
+
+  def extractPages(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[ExtractedItem], PageGeometry)] = {
     val charExtractor = new PdfTextExtractor(
       Set[Int](), IdGenerator[CharID]()
     )
 
-    charExtractor.extractCharacters(stableId, pdfPath)
+    charExtractor.extractPages(stableId, pdfPath)
   }
+
 
 }
 
@@ -98,9 +100,11 @@ class PdfTextExtractor(
   }
 
 
-  def extractCharacters(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[PageItem], PageGeometry)] = {
+  // def extractPages(stableId: String@@DocumentID, pdfPath: Path): List[PageIndex] = {
+  def extractPages(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[ExtractedItem], PageGeometry)] = {
     var instr: InputStream = null
-    val pages = mutable.ListBuffer[(Seq[PageItem], PageGeometry)]()
+    val pages = mutable.ListBuffer[(Seq[ExtractedItem], PageGeometry)]()
+
     try {
       instr = nio.Files.newInputStream(pdfPath.toNIO)
       val reader = new PdfReader(instr)
@@ -109,60 +113,126 @@ class PdfTextExtractor(
 
       for (pageNumber <- 1 to document.getNumberOfPages) {
 
-        val pageId = PageNum(pageNumber-1)
+        val pageNum = PageNum(pageNumber-1)
 
         val pdfPage = document.getPage(pageNumber)
 
-        val currCharBuffer: mutable.ArrayBuffer[PageItem] = mutable.ArrayBuffer[PageItem]()
-        val (pageGeometry, geomTrans) = getReportedPageGeometry(pageId, pdfPage, reader)
+        val (pageGeometry, geomTrans) = getReportedPageGeometry(pageNum, pdfPage, reader)
+        println("Extracting page")
 
-        val extractor = new CharExtractionListener(
-          reader, stableId, charsToDebug,
+        val extractor = new ColumnTrackingListener(
+          reader,
           charIdGen,
-          currCharBuffer,
           pdfPage,
-          pageId,
+          pageNum,
           pageGeometry,
           geomTrans
         )
 
-        val pageAtoms = try {
+        try {
           val parser = new PdfCanvasProcessor(extractor)
           parser.processPageContent(pdfPage)
 
 
-          val pageAtoms = Seq[PageItem](currCharBuffer:_*)
+          val pageItems = extractor.getPageItems()
 
           val charCount = extractor.totalCharCount
           val maxExceeded = charCount > extractor.MAX_EXTRACTED_CHARS_PER_PAGE
 
           if (maxExceeded) {
-            println(s"Max chars per page limit exceeded: extracted only ${pageAtoms.length} of ${charCount} chars")
+            println(s"Max chars per page limit exceeded: extracted only ${pageItems.length} of ${charCount} chars")
           }
 
           parser.reset()
 
-          (pageAtoms, pageGeometry)
+          pages.append((pageItems, pageGeometry))
         } catch {
-          case f: Throwable => println(s"ERROR extractCharacters(page: ${pageNumber}): ${f}: ${f.getMessage} ${f.getCause()}")
+          case f: Throwable =>
+            println(s"ERROR extractCharacters(page: ${pageNumber}): ${f}: ${f.getMessage} ${f.getCause()}")
+            f.printStackTrace()
 
-            (List(), pageGeometry)
         } finally {
           if (instr != null) instr.close()
         }
 
-        pages.append(pageAtoms)
       }
 
     } catch {
       case f: Throwable =>
         println(s"ERROR extractCharacters(): ${f}: ${f.getMessage} ${f.getCause()}")
-        f.printStackTrace()
+        // f.printStackTrace()
     } finally {
       if (instr != null) instr.close()
     }
 
     pages.toList
   }
+
+  // def extractCharacters(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[PageItem], PageGeometry)] = {
+  //   var instr: InputStream = null
+  //   val pages = mutable.ListBuffer[(Seq[PageItem], PageGeometry)]()
+  //   try {
+  //     instr = nio.Files.newInputStream(pdfPath.toNIO)
+  //     val reader = new PdfReader(instr)
+  //     val document = new PdfDocument(reader)
+
+
+  //     for (pageNumber <- 1 to document.getNumberOfPages) {
+
+  //       val pageNum = PageNum(pageNumber-1)
+
+  //       val pdfPage = document.getPage(pageNumber)
+
+  //       val (pageGeometry, geomTrans) = getReportedPageGeometry(pageNum, pdfPage, reader)
+
+  //       val extractor = new ColumnTrackingListener(
+  //         reader,
+  //         charIdGen,
+  //         pdfPage,
+  //         pageNum,
+  //         pageGeometry,
+  //         geomTrans
+  //       )
+
+  //       val pageAtoms = try {
+  //         val parser = new PdfCanvasProcessor(extractor)
+  //         parser.processPageContent(pdfPage)
+
+
+  //         val pageAtoms = extractor.getPageItems
+
+  //         val charCount = extractor.totalCharCount
+  //         val maxExceeded = charCount > extractor.MAX_EXTRACTED_CHARS_PER_PAGE
+
+  //         if (maxExceeded) {
+  //           println(s"Max chars per page limit exceeded: extracted only ${pageAtoms.length} of ${charCount} chars")
+  //         }
+
+  //         parser.reset()
+
+  //         (pageAtoms, pageGeometry)
+  //       } catch {
+  //         case f: Throwable =>
+  //           println(s"ERROR extractCharacters(page: ${pageNumber}): ${f}: ${f.getMessage} ${f.getCause()}")
+  //           f.printStackTrace()
+
+  //           (List(), pageGeometry)
+  //       } finally {
+  //         if (instr != null) instr.close()
+  //       }
+
+  //       pages.append(pageAtoms)
+  //     }
+
+  //   } catch {
+  //     case f: Throwable =>
+  //       println(s"ERROR extractCharacters(): ${f}: ${f.getMessage} ${f.getCause()}")
+  //       // f.printStackTrace()
+  //   } finally {
+  //     if (instr != null) instr.close()
+  //   }
+
+  //   pages.toList
+  // }
 
 }

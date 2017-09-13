@@ -80,6 +80,7 @@ case class GeometryTranslation(
   transX: (Double) => Double,
   transY: (Double) => Double
 )
+
 class CharExtractionListener(
   reader: PdfReader,
   stableId: String@@DocumentID,

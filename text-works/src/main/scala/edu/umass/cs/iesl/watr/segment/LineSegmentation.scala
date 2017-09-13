@@ -512,6 +512,7 @@ trait LineFinding extends ColumnFinding { self =>
   }
 
   private def splitLinesWithOverlaps(): Unit = {
+    tracer.enter()
     for {
       cc <- pageIndex.getComponentsWithLabel(LB.LineByHash)
     } {
@@ -537,6 +538,7 @@ trait LineFinding extends ColumnFinding { self =>
         }
       }
     }
+    tracer.exit()
   }
 
   private def splitLinesOnWhitespaceColumns(): Unit = {

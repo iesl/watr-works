@@ -70,7 +70,7 @@ class PageIndex(
 ) {
 
 
-  lazy val pageNum = pageGeometry.id
+  lazy val pageNum = pageGeometry.pageNum
   val rtreeArtifactName = s"page-${pageNum}.rtree"
 
   def saveToBytes(): Array[Byte] = {
@@ -313,8 +313,7 @@ class PageIndex(
   def getComponentsWithLabel(l: Label): Seq[Component] = {
     labelToComponents.get(l).map { ccIds =>
       ccIds.map(id => componentRTree.getItem(id.unwrap)).toSeq
-    }
-      .getOrElse(Seq())
+    }.getOrElse(Seq())
   }
 
   private def getComponentLabelBuffer(c: Component): mutable.Set[Label] = {
@@ -326,9 +325,11 @@ class PageIndex(
   }
 
   def addLabel(c: Component, l: Label)  = {
-    c.addLabel(l)
-    getComponentLabelBuffer(c) += l
-    getLabelToComponentBuffer(l) += c.id
+    if (!c.hasLabel(l)) {
+      c.addLabel(l)
+      getComponentLabelBuffer(c) += l
+      getLabelToComponentBuffer(l) += c.id
+    }
   }
 
   def removeLabel(c: Component, l: Label) = {

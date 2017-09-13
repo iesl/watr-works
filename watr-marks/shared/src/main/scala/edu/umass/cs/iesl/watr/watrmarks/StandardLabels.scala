@@ -34,6 +34,7 @@ trait DocSegLabels {
   val Image = Label("Image")
   val Table = Label("Table")
 
+  val ExtractedLine = Label("ExtractedLine")
   val VisualLine = Label("ds", "visual-line")
   val VisualLines = Label("ds", "visual-lines")
 

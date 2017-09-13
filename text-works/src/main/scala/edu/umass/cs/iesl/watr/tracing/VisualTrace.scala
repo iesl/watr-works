@@ -137,11 +137,11 @@ trait VisualTracer { self =>
   def ifTrace(vtl: VisualTraceLevel)(body: => Unit): Unit = macro VisualTraceMacros.runOnTraceLevel[TraceLog]
 
   def enter()(implicit enclosing: sourcecode.Name): Unit = ifTrace(VisualTraceLevel.EnterExit){
-    // println(s"entered: ${enclosing.value}")
+    println(s"entered: ${enclosing.value}")
   }
 
   def exit()(implicit enclosing: sourcecode.Name): Unit = ifTrace(VisualTraceLevel.EnterExit) {
-    // println(s"exit: ${enclosing.value}")
+    println(s"exit: ${enclosing.value}")
   }
 
 

@@ -67,7 +67,6 @@ class MultiPageIndex(
     props ++= rs
   }
 
-
   def getPageIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
 
   // TODO this should be pushed into the PageIndex class
@@ -166,13 +165,20 @@ class MultiPageIndex(
     pageIndexes.keys.toList.sortBy(PageNum.unwrap(_))
   }
 
+  def addPageIndex(pageIndex: PageIndex): Unit = {
+    val existing = pageIndexes.put(pageIndex.pageGeometry.pageNum, pageIndex)
+
+    existing.foreach { e =>
+      sys.error("error adding new page w/existing id")
+    }
+  }
 
   def addPage(pageGeometry: PageGeometry): PageIndex = {
     val pageIndex = new PageIndex(
       pageGeometry
     )
 
-    val existing = pageIndexes.put(pageGeometry.id, pageIndex)
+    val existing = pageIndexes.put(pageGeometry.pageNum, pageIndex)
 
     existing.foreach { e =>
       sys.error("adding new page w/existing id")

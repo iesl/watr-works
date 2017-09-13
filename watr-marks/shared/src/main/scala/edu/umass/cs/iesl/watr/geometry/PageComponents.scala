@@ -52,7 +52,7 @@ object PageRegion {
 
 
 case class PageGeometry(
-  id: Int@@PageNum,
+  pageNum: Int@@PageNum,
   bounds: LTBounds
 )
 
@@ -134,6 +134,7 @@ object PageItem {
     }
   }
 }
+
 
 case class CharAtom(
   id: Int@@CharID,
