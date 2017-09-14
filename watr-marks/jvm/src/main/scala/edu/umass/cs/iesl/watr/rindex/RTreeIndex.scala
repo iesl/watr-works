@@ -1,15 +1,11 @@
 package edu.umass.cs.iesl.watr
 package rindex
 
-import rx.Observable
 
 import scala.collection.JavaConverters
-import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 import com.github.davidmoten.rtree.{geometry => RG, _}
 import com.github.davidmoten.rtree
-import edu.umass.cs.iesl.watr.{geometry => G}
 import rx.functions.Func1
 
 /**
@@ -29,25 +25,9 @@ class RTreeIndex[T: RTreeIndexable](
 ) extends RTreeSearch[T] {
   import RGeometryConversions._
 
+  override val indexable: RTreeIndexable[T] = implicitly[RTreeIndexable[T]]
+
   override val rtreeIndex: RTree[T, RG.Geometry] = spatialIndex
-
-  val itemMap: mutable.LongMap[T] = {
-    val initMap = toScalaSeq(spatialIndex.entries())
-      .map { item => (si.id(item).toLong, item) }
-
-    mutable.LongMap[T](initMap:_*)
-  }
-
-  def get(id: Int): Option[T] = {
-    itemMap.get(id.toLong)
-  }
-  def getItem(id: Int): T = {
-    itemMap(id.toLong)
-  }
-
-  // def addIndexable(item: T): Unit = {}
-  // def addShape(shape: G.GeometricFigure): Unit = {}
-
 
   def remove(item: T): Unit = {
     spatialIndex = spatialIndex.delete(
@@ -55,7 +35,6 @@ class RTreeIndex[T: RTreeIndexable](
       toRGRectangle(si.ltBounds(item))
     )
 
-    itemMap -= si.id(item).toLong
   }
 
   def add(item: T): Unit = {
@@ -63,13 +42,11 @@ class RTreeIndex[T: RTreeIndexable](
       item,
       toRGRectangle(si.ltBounds(item))
     )
-    itemMap += (si.id(item).toLong, item)
   }
 
   def getItems(): Seq[T] = {
     toScalaSeq(spatialIndex.entries())
   }
-
 
 }
 

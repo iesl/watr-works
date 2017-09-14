@@ -77,7 +77,7 @@ trait LineFinding extends ColumnFinding { self =>
 
     for {
       readingBlock <-  pageIndex.getOrdering(LB.ReadingBlocks)
-      vlineRoots   <- Seq(pageIndex.rtreeSearchHasAllLabels(readingBlock.bounds(), vlineClusterRepLabel, LB.Tmp)) // TODO this search picks up some lines multiple times
+      vlineRoots   <- Seq(pageIndex.searchOverlapping(readingBlock.bounds(), vlineClusterRepLabel, LB.Tmp)) // TODO this search picks up some lines multiple times
       if vlineRoots.nonEmpty
 
 
@@ -113,9 +113,9 @@ trait LineFinding extends ColumnFinding { self =>
     for { textBlock <- orderedTextBlocks } {
       // gifBuilder.indicate("Examining Block", textBlock, LB.PageAtomTmp)
       val sortedHashedLinesWithChars = (for {
-        hashedLineCC <- pageIndex.rtreeSearch(textBlock, LB.LineByHash)
+        hashedLineCC <- pageIndex.searchIntersecting(textBlock, LB.LineByHash)
       } yield {
-        val charsInRegion = pageIndex.rtreeSearchHasLabel(hashedLineCC.bounds, LB.PageAtomTmp)
+        val charsInRegion = pageIndex.searchOverlapping(hashedLineCC.bounds, LB.PageAtomTmp)
         (hashedLineCC, charsInRegion)
       }).sortBy { case (_, chars) => chars.length }.reverse
 
@@ -137,7 +137,7 @@ trait LineFinding extends ColumnFinding { self =>
 
 
             // Now find all chars in queryRegion and string them together into a single visual line
-            val visualLineAtoms = pageIndex.rtreeSearchHasLabel(centerLine, LB.PageAtomTmp)
+            val visualLineAtoms = pageIndex.searchOverlapping(centerLine, LB.PageAtomTmp)
 
             if (visualLineAtoms.nonEmpty) {
               val xSortedAtoms = visualLineAtoms.sortBy(_.bounds.left).toSeq
@@ -278,9 +278,9 @@ trait LineFinding extends ColumnFinding { self =>
     val slices = visualLineBounds.sliceHorizontal(3)
     val Seq(topSlice, _, bottomSlice) = slices
 
-    val topIntersections = pageIndex.rtreeSearchHasLabel(topSlice, LB.PageAtomGrp)
-    val bottomIntersections = pageIndex.rtreeSearchHasLabel(bottomSlice, LB.PageAtomGrp)
-    // val middleIntersections = pageIndex.rtreeSearchHasLabel(middleSlice, LB.PageAtomGrp)
+    val topIntersections = pageIndex.searchOverlapping(topSlice, LB.PageAtomGrp)
+    val bottomIntersections = pageIndex.searchOverlapping(bottomSlice, LB.PageAtomGrp)
+    // val middleIntersections = pageIndex.searchOverlapping(middleSlice, LB.PageAtomGrp)
 
     val topIntersects = topIntersections.map(_.id)
     val bottomIntersects = bottomIntersections.map(_.id)
@@ -453,7 +453,7 @@ trait LineFinding extends ColumnFinding { self =>
       if (level==0) {
         createLog("ShowAllWSColumns")
 
-        val wsCols = pageIndex.rtreeSearchOverlapping(pageGeometry, LB.WhitespaceCol)
+        val wsCols = pageIndex.searchOverlapping(pageGeometry, LB.WhitespaceCol)
           .sortBy(cc => (cc.bounds.top, cc.bounds.left))
           .map(_.bounds())
 
@@ -463,7 +463,7 @@ trait LineFinding extends ColumnFinding { self =>
       }
     }
 
-    val maybeCol = pageIndex.rtreeSearchOverlapping(initRegion, LB.WhitespaceCol)
+    val maybeCol = pageIndex.searchOverlapping(initRegion, LB.WhitespaceCol)
       .sortBy(cc => (cc.bounds.top, cc.bounds.left))
       .headOption
 
@@ -507,12 +507,12 @@ trait LineFinding extends ColumnFinding { self =>
       cc <- pageIndex.getComponentsWithLabel(LB.LineByHash)
     } {
       // Split up lines into strictly non-overlapping regions
-      val intersects = pageIndex.rtreeSearch(cc.bounds, LB.LineByHash)
+      val intersects = pageIndex.searchIntersecting(cc.bounds, LB.LineByHash)
 
 
       if (intersects.length > 1) {
         val totalBounds = intersects.map(_.bounds).reduce(_ union _)
-        val charsInRegion = pageIndex.rtreeSearch(totalBounds, LB.PageAtom)
+        val charsInRegion = pageIndex.searchIntersecting(totalBounds, LB.PageAtom)
         // Remove the LineByHash regions
         // iterate over chars left-to-right and group them into non-overlaps and overlaps
         val allChars = charsInRegion.sortBy(_.bounds.left)
@@ -534,10 +534,10 @@ trait LineFinding extends ColumnFinding { self =>
 
     for {
       colRegion <- pageIndex.getComponentsWithLabel(LB.WhitespaceCol)
-      intersectedLine <- pageIndex.rtreeSearch(colRegion.bounds, LB.LineByHash)
+      intersectedLine <- pageIndex.searchIntersecting(colRegion.bounds, LB.LineByHash)
     } {
 
-      val charsInRegion = pageIndex.rtreeSearch(intersectedLine.bounds, LB.PageAtom)
+      val charsInRegion = pageIndex.searchIntersecting(intersectedLine.bounds, LB.PageAtom)
       val allChars = charsInRegion.sortBy(_.bounds.left)
 
       val (leftSplit, rightSplit) = allChars.span(_.bounds.left <= colRegion.bounds.left)

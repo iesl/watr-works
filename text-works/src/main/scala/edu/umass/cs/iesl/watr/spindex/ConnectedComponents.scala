@@ -8,13 +8,11 @@ import scala.collection.mutable
 
 
 object Component {
-
   import rindex._
   implicit object ComponentIndexable extends RTreeIndexable[Component] {
     def id(t: Component): Int = t.id.unwrap
     def ltBounds(t: Component): LTBounds = t.bounds
   }
-
 }
 
 sealed trait Component {

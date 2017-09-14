@@ -8,6 +8,7 @@ import corpora.DocumentZoningApi
 import extract.PdfTextExtractor
 import geometry._
 import extract._
+import spindex.PageIndex
 
 import TypeTags._
 
@@ -27,6 +28,11 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       case (a, b) => (a, PageNum(b))
     }
 
+  def getNumberedPageIndexes(): Seq[(Int@@PageID, PageIndex)] =
+    docStore.getPages(docId).zipWithIndex.map {
+      case (a, b) => (a, mpageIndex.getPageIndex(PageNum(b)))
+    }
+
   private def initPageIndexes(): Unit = {
     val pageRegions = pageAtomsAndGeometry
       .map { case(extractedItems, pageGeometry)  =>
@@ -41,8 +47,8 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
   }
 
   private def initStartingComponents(): Unit = {
-    pageAtomsAndGeometry.zip(getNumberedPages).foreach {
-      case ((extractedItems: Seq[ExtractedItem], pageGeometry), (pageId, pageNum)) =>
+    pageAtomsAndGeometry.zip(getNumberedPageIndexes).foreach {
+      case ((extractedItems: Seq[ExtractedItem], pageGeometry), (pageId, pageIndex)) =>
 
         //   val pageIdL = lens[CharAtom].pageRegion.page.pageId
         //   val imgPageIdL = lens[PageItem.ImageAtom].pageRegion.page.pageId
@@ -60,11 +66,14 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
               item.char,
               item.wonkyCharCode
             )
-            mpageIndex.addCharAtom(charAtom)
+            val cc = mpageIndex.addCharAtom(charAtom)
 
             item.charProps match {
 
               case prop: CharBioProp.LastChar =>
+
+                pageIndex.addLabel(cc, LB.Tmp)
+
               case prop: CharBioProp.InsChar =>
               case prop: CharBioProp.BegChar =>
               case prop: CharBioProp.OutChar.type =>
@@ -85,6 +94,8 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
 
         }}
+
+        val pageNum = pageIndex.pageNum
 
         // Label all page images
         mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>

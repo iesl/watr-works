@@ -327,6 +327,7 @@ object GeometryImplicits extends RectangularCuts {
     )
   }
 
+
   def minBoundingRect(fig: GeometricFigure): LTBounds = fig match {
     case f: LTBounds       => f
     case f: LBBounds       => f.toLTBounds
@@ -345,6 +346,20 @@ object GeometryImplicits extends RectangularCuts {
     case f: GeometricGroup => f.bounds
     case f: Colorized => minBoundingRect(f.figure)
   }
+
+  def intersectionMBR(f1: GeometricFigure, f2: GeometricFigure): Option[LTBounds] = {
+    minBoundingRect(f1).intersection(minBoundingRect(f2))
+  }
+
+  def shapesIntersect(f1: GeometricFigure, f2: GeometricFigure): Boolean =
+    intersectionMBR(f1, f2).isDefined
+
+  def shapesOverlap(f1: GeometricFigure, f2: GeometricFigure): Boolean =
+    intersectionMBR(f1, f2).exists(_.area > 0)
+
+  def shapesTouch(f1: GeometricFigure, f2: GeometricFigure): Boolean =
+    intersectionMBR(f1, f2).exists(_.area == 0)
+
 
   def makeFringeParts(fig: GeometricFigure, padding: Padding): List[GeometricFigure] = {
 

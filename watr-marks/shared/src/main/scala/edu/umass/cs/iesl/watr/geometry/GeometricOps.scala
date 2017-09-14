@@ -197,17 +197,17 @@ trait GeometricOps {
       )
     }
 
-    // def isOverlapping(other: LTBounds): Boolean = {
-    //   val overlapLR = (
-    //     self.left < other.right
-    //       && self.right > other.left
-    //   )
-    //   val overlapTB = (
-    //     self.top < other.bottom
-    //       && self.bottom > other.top
-    //   )
-    //   overlapLR && overlapTB
-    // }
+    def hasOverlappingArea(other: LTBounds): Boolean = {
+      val overlapLR = (
+        self.left < other.right
+          && self.right > other.left
+      )
+      val overlapTB = (
+        self.top < other.bottom
+          && self.bottom > other.top
+      )
+      overlapLR && overlapTB
+    }
 
     def hasSharedEdge(other: LTBounds): Boolean = {
       (self.left == other.left

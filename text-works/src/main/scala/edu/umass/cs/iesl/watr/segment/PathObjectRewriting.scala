@@ -18,7 +18,7 @@ trait PathObjectRewriting extends PageScopeSegmenter {
   def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
     val _ = for {
       textBlock <- orderedTextBlocks
-      hlineCC <- pageIndex.rtreeSearchOverlapping(textBlock, LB.HLinePath)
+      hlineCC <- pageIndex.searchOverlapping(textBlock, LB.HLinePath)
     } yield {
       pageIndex.removeComponent(hlineCC)
 
@@ -46,14 +46,13 @@ trait PathObjectRewriting extends PageScopeSegmenter {
   def leftRightContext(
     cc: Component,
     queryRegion: LTBounds,
-    l0: Label,
     labels: Label*
   ): Option[(Seq[Component], Seq[Component])] = {
 
     cc.bounds.withinRegion(queryRegion)
       .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
       .map { horizontalStripeRegion =>
-        pageIndex.rtreeSearch(horizontalStripeRegion, l0, labels:_*)
+        pageIndex.searchIntersecting(horizontalStripeRegion, labels:_*)
           .sortBy(_.bounds.left)
           .filterNot(_.id == cc.id)
           .span(_.bounds.left < cc.bounds.left)

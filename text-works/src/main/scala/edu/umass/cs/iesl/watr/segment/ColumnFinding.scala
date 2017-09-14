@@ -136,7 +136,7 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
 
     val res: List[Option[RegionComponent]] =
       queryBoxes.flatMap { query =>
-        val intersects = pageIndex.rtreeSearch(query, LB.PageAtom)
+        val intersects = pageIndex.searchIntersecting(query, LB.PageAtom)
 
         val consecutiveLeftAlignedCharCols =
           intersects.sortBy(_.bounds.bottom)
@@ -161,7 +161,7 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
     var currWhiteSpace = startingRegion
     val nudgeFactor = 0.05.toFloatExact()
 
-    def search(q:LTBounds) = pageIndex.rtreeSearch(q, LB.PageAtom, LB.Image, LB.VLinePath, LB.HLinePath, LB.HPageDivider)
+    def search(q:LTBounds) = pageIndex.searchIntersecting(q, LB.PageAtom, LB.Image, LB.VLinePath, LB.HLinePath, LB.HPageDivider)
 
     currWhiteSpace.withinRegion(pageGeometry).adjacentRegion(Dir.Left)
       .foreach { regionLeftOf =>
@@ -218,7 +218,7 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
   def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
     val _ = for {
       textBlock <- orderedTextBlocks
-      hlineCC <- pageIndex.rtreeSearchOverlapping(textBlock, LB.HLinePath)
+      hlineCC <- pageIndex.searchOverlapping(textBlock, LB.HLinePath)
     } yield {
       pageIndex.removeComponent(hlineCC)
 
@@ -253,7 +253,7 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
     cc.bounds.withinRegion(queryRegion)
       .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
       .map { horizontalStripeRegion =>
-        pageIndex.rtreeSearch(horizontalStripeRegion, l0, labels:_*)
+        pageIndex.searchIntersecting(horizontalStripeRegion, (l0 +: labels):_*)
           .sortBy(_.bounds.left)
           .filterNot(_.id == cc.id)
           .span(_.bounds.left < cc.bounds.left)
@@ -283,7 +283,7 @@ trait ColumnFinding extends PageScopeSegmenter { self =>
       var currColBounds = candidate.bounds()
 
 
-      val overlaps = pageIndex.rtreeSearch(currColBounds, LB.WhitespaceColCandidate)
+      val overlaps = pageIndex.searchIntersecting(currColBounds, LB.WhitespaceColCandidate)
         .filterNot { _.id.unwrap == candidate.id.unwrap }
 
       traceLog.flashComponents("Query Column + Overlaps", candidate +: overlaps)

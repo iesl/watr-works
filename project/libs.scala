@@ -70,7 +70,7 @@ trait CommonLibs extends LibVersions {
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
-  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.3"
+  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.5"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,

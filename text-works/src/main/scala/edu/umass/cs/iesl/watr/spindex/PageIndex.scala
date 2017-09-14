@@ -5,15 +5,19 @@ import scala.collection.mutable
 
 import watrmarks._
 import geometry._
+import geometry.syntax._
 
 import watrmarks.{StandardLabels => LB}
 import rindex._
 import utils.OrderedDisjointSet
 
 import textgrid._
-import utils.ExactFloats._
-// import edu.umass.cs.iesl.watr.tracing._
+// import utils.ExactFloats._
 import textboxing.{TextBoxing => TB}
+import scala.reflect.ClassTag
+import scala.collection.JavaConverters._
+import com.google.{common => guava}
+import guava.{collect => gcol}
 
 
 
@@ -34,40 +38,57 @@ import textboxing.{TextBoxing => TB}
   */
 
 
-// object UpgradedLabels extends TypeTagUtils {
-//   // import scalaz.Tag
-//   sealed trait DisjointSetL
-//   val DisjointSetL = Tag.of[DisjointSetL]
-//   sealed trait WeightedLabel
-//   val WeightedLabel = Tag.of[WeightedLabel]
-//   type Weight = String@@WeightedLabel
-//   // CategoryLabel =
-//   // WeightedLabel =
-// }
-
 object PageIndex {
-  import java.nio.file.Path
-  import TypeTags._
+  // import java.nio.file.Path
+  // import TypeTags._
 
+  // def load(path: Path): PageIndex = {
+  //   val rtree = RTreeIndex.load[Component](path)
+  //   val pageGeometry = PageGeometry(PageNum(0), LTBounds.empty)
+  //   new PageIndex(pageGeometry, rtree)
+  // }
 
-  def load(path: Path): PageIndex = {
-    val rtree = RTreeIndex.load[Component](path)
-    val pageGeometry = PageGeometry(PageNum(0), LTBounds.empty)
-    new PageIndex(pageGeometry, rtree)
-  }
-
-
-  var activeTracingCallback: (PageIndex) => Unit = (pageIndex: PageIndex) => {
-    println("called activeTracingCallback")
-  }
 
 }
 
 
+
+case class LabeledShape(
+  shape: GeometricFigure,
+  labels: Set[Label]
+) {
+  def hasLabel(l: Label) = labels.exists(_ == l)
+}
+
+
+object LabeledShape {
+  implicit object ShapeIndexable extends RTreeIndexable[LabeledShape] {
+    def id(t: LabeledShape): Int = 0
+    def ltBounds(t: LabeledShape): LTBounds = {
+      minBoundingRect(t.shape)
+    }
+  }
+
+}
+
 class PageIndex(
   val pageGeometry: PageGeometry,
-  val componentRTree: RTreeIndex[Component] = RTreeIndex.createFor[Component]()
 ) {
+
+  val componentRTree: RTreeIndex[Component] = RTreeIndex.createFor[Component]()
+  val shapeRIndex: RTreeIndex[LabeledShape] = RTreeIndex.createFor[LabeledShape]()
+
+  val componentMap: mutable.LongMap[Component] = {
+    val initMap = componentRTree.getItems
+      .map { item => (item.id.unwrap.toLong, item) }
+
+    mutable.LongMap[Component](initMap:_*)
+  }
+
+
+  def getById(id: Int): Component = {
+    componentMap(id.toLong)
+  }
 
 
   lazy val pageNum = pageGeometry.pageNum
@@ -77,47 +98,39 @@ class PageIndex(
     RTreeIndex.saveBytes(componentRTree)
   }
 
-  // mutable.Set
-  val componentToLabels: mutable.HashMap[Int@@ComponentID, mutable.Set[Label]] = mutable.HashMap()
-  val labelToComponents: mutable.HashMap[Label, mutable.Set[Int@@ComponentID]] = mutable.HashMap()
+  val componentToLabelMMap = guava.collect.ArrayListMultimap.create[Int@@ComponentID, Label]()
 
-  val componentToText: mutable.HashMap[Int@@ComponentID,
-    mutable.HashMap[Label, TextGrid.Row]
-  ] = mutable.HashMap()
+  val textTable = gcol.HashBasedTable.create[Int@@ComponentID, Label, TextGrid.Row]()
+
+  def setComponentText(cc: Component, l: Label, t: TextGrid.Row): Unit = {
+    textTable.put(cc.id, l, t)
+  }
+
+  def getComponentText(cc: Component, l: Label): Option[TextGrid.Row] = {
+    if (textTable.contains(cc, l)) Some(textTable.get(cc, l))
+    else None
+  }
 
 
-  import scala.reflect.ClassTag
-
-  val componentAttributes: mutable.HashMap[Int@@ComponentID,
-    mutable.HashMap[Label, Any]
-  ] = mutable.HashMap()
+  val attributeTable = gcol.HashBasedTable.create[Int@@ComponentID, Label, Any]()
 
   def setAttribute[A](cc: Int@@ComponentID, l: Label, attr: A)
     (implicit act: ClassTag[A]): Unit = {
     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
-
-    val ccAttrs = componentAttributes.getOrElseUpdate(cc,
-      mutable.HashMap[Label, Any]()
-    )
-    ccAttrs.put(typedLabel, attr)
+    attributeTable.put(cc, typedLabel, attr)
   }
 
   def getAttribute[A](cc: Int@@ComponentID, l: Label)
     (implicit act: ClassTag[A]): Option[A] = {
-
     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
 
-    componentAttributes.get(cc)
-      .flatMap{ ccAttrs =>
-        ccAttrs.get(typedLabel).map(_.asInstanceOf[A])
-      }
-  }
-
-  def allLabels(): Set[Label] = {
-    labelToComponents.keySet.toSet
+    if (attributeTable.contains(cc, typedLabel)) {
+      Some(attributeTable.get(cc, typedLabel).asInstanceOf[A])
+    } else None
   }
 
   val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[Component]] = mutable.HashMap()
+
 
   def initClustering(l: Label, f: Component => Boolean): Seq[Component] = {
     assume(!disjointSets.contains(l))
@@ -153,16 +166,6 @@ class PageIndex(
     // val allStr = allSets.mkString("{\n  ", "\n  ", "\n}")
 
     println(res)
-  }
-
-  def setComponentText(c: Component, l: Label, t: TextGrid.Row): Unit = {
-    val _ = componentToText
-      .getOrElseUpdate(c.id, mutable.HashMap())
-      .put(l, t)
-  }
-
-  def getComponentText(c: Component, l: Label): Option[TextGrid.Row] = {
-    componentToText.get(c.id).flatMap(_.get(l))
   }
 
   def unionAll(l: Label, cs: Seq[Component]): Unit = {
@@ -217,6 +220,7 @@ class PageIndex(
 
     _addCluster(typedLabel, cs)
   }
+
   private def _addCluster(l: Label, cs: Seq[Component]): Component = {
     assume(cs.nonEmpty)
 
@@ -239,18 +243,6 @@ class PageIndex(
     canonical
   }
 
-  // def getClusterSets(l: Label): Option[OrderedDisjointSet[Component]] = {
-  //   disjointSets.get(l)
-  // }
-
-  // l: String@@DisjointCluster
-  // def getClusters(l: Label): Seq[Seq[Component]] = {
-  //   disjointSets.get(l).map{set =>
-  //     set.sets.toSeq.map(_.toSeq)
-  //   } getOrElse(Seq())
-  // }
-
-  // l: String@@DisjointCluster
   def getClusterMembers(l: Label, cc: Component): Option[Seq[Component]] = {
     _getClusterMembers(l.qualifiedAs("cluster"), cc)
   }
@@ -271,7 +263,18 @@ class PageIndex(
     } getOrElse(Seq())
   }
 
+  def addShape(shape: GeometricFigure, labels: Label*): Unit = {
+    val lshape = LabeledShape(shape, labels.toSet)
+    shapeRIndex.add(lshape)
+  }
+
+  def removeShape(shape: GeometricFigure, labels: Label*): Unit = {
+    val lshape = LabeledShape(shape, labels.toSet)
+    shapeRIndex.remove(lshape)
+  }
+
   def addComponent(c: Component): Component = {
+    componentMap.put(c.id.unwrap.toLong, c)
     componentRTree.add(c)
     addLabel(c, c.roleLabel)
     c.labels().foreach { l =>
@@ -281,13 +284,7 @@ class PageIndex(
   }
 
   def removeComponent(c: Component): Unit = {
-    (c.roleLabel +: c.labels.toSeq).foreach { label =>
-      labelToComponents.get(label)
-        .foreach{ ccIds => ccIds -= c.id }
-
-    }
-
-    componentToLabels -= c.id
+    componentToLabelMMap.removeAll(c.id)
     componentRTree.remove(c)
   }
 
@@ -305,129 +302,59 @@ class PageIndex(
 
 
   def getComponentLabels(cid: Int@@ComponentID): Set[Label] = {
-    componentToLabels.get(cid)
-      .map(_.toSet)
-      .getOrElse(Set())
+    componentToLabelMMap.get(cid).asScala.toSet
   }
 
   def getComponentsWithLabel(l: Label): Seq[Component] = {
-    labelToComponents.get(l).map { ccIds =>
-      ccIds.map(id => componentRTree.getItem(id.unwrap)).toSeq
-    }.getOrElse(Seq())
+    val empty = guava.collect.HashMultimap.create[Label, Int@@ComponentID]()
+    val inv = guava.collect.Multimaps.invertFrom[Label, Int@@ComponentID, gcol.Multimap[Label, Int@@ComponentID]](componentToLabelMMap, empty)
+
+    inv.get(l).asScala.toSeq.map(id =>getById(id.unwrap))
   }
 
-  private def getComponentLabelBuffer(c: Component): mutable.Set[Label] = {
-    componentToLabels.getOrElseUpdate(c.id, mutable.Set[Label]())
-  }
-
-  private def getLabelToComponentBuffer(l: Label): mutable.Set[Int@@ComponentID] = {
-    labelToComponents.getOrElseUpdate(l, mutable.Set[Int@@ComponentID]())
-  }
 
   def addLabel(c: Component, l: Label)  = {
     if (!c.hasLabel(l)) {
       c.addLabel(l)
-      getComponentLabelBuffer(c) += l
-      getLabelToComponentBuffer(l) += c.id
+      componentToLabelMMap.put(c.id, l)
     }
   }
 
   def removeLabel(c: Component, l: Label) = {
     c.removeLabel(l)
-    getComponentLabelBuffer(c) -= l
-    getLabelToComponentBuffer(l) -= c.id
+    componentToLabelMMap.remove(c.id, l)
   }
 
-
-
-  // Searching: TODO most of these functions should be pushed back into RTreeIndex class
-
-  def rtreeSearchHasAllLabels(
+  def searchShapes(
     queryRegion: LTBounds,
+    intersectFunc: (GeometricFigure, GeometricFigure) => Boolean,
+    labels: Label*
+  ): Seq[LabeledShape] = {
+    shapeRIndex.search(queryRegion, { lshape =>
+      (intersectFunc(lshape.shape, queryRegion)
+        && labels.forall(lshape.hasLabel(_)))
+    })
+  }
+
+  def searchComponents(
+    queryRegion: LTBounds,
+    intersectFunc: (GeometricFigure, GeometricFigure) => Boolean,
     labels: Label*
   ): Seq[Component] = {
 
     componentRTree.search(queryRegion, {cc =>
-      val overlapLR = (
-        cc.bounds.left < queryRegion.right
-          && cc.bounds.right > queryRegion.left
-      )
-      val overlapTB = (
-        cc.bounds.top < queryRegion.bottom
-          && cc.bounds.bottom > queryRegion.top
-      )
-
-      val overlapping = overlapLR && overlapTB
-
-      overlapping && labels.forall(cc.hasLabel(_))
+      (intersectFunc(cc.bounds(), queryRegion)
+        && labels.forall(cc.hasLabel(_)))
     })
   }
 
-  def rtreeSearchHasLabel(
-    queryRegion: LTBounds,
-    label: Label
-  ): Seq[Component] = {
+  def searchIntersecting(queryRegion: LTBounds, labels: Label*): Seq[Component] =
+    searchComponents(queryRegion, shapesIntersect(_, _), labels:_*)
 
-    componentRTree.search(queryRegion, {cc =>
-      cc.hasLabel(label)
-    })
-  }
+  def searchOverlapping(queryRegion: LTBounds, labels: Label*): Seq[Component] =
+    searchComponents(queryRegion, shapesIntersect(_, _), labels:_*)
 
+  def searchTouching(queryRegion: LTBounds, labels: Label*): Seq[Component] =
+    searchComponents(queryRegion, shapesIntersect(_, _), labels:_*)
 
-  def rtreeSearch(
-    queryRegion: LTBounds,
-    label: Label, labels: Label*
-  ): Seq[Component] = {
-    val lbls = label :: labels.toList
-
-    // PageIndex.tracer.checkpoint("search")
-
-    componentRTree.search(queryRegion, {cc =>
-      lbls.contains(cc.roleLabel)
-    })
-  }
-
-  def rtreeSearchOverlapping(
-    queryRegion: LTBounds,
-    label: Label, labels: Label*
-  ): Seq[Component] = {
-    val lbls = label :: labels.toList
-
-    componentRTree.search(queryRegion, {cc =>
-      val overlapLR = (
-        cc.bounds.left < queryRegion.right
-          && cc.bounds.right > queryRegion.left
-      )
-
-      val overlapTB = (
-        cc.bounds.top < queryRegion.bottom
-          && cc.bounds.bottom > queryRegion.top
-      )
-
-      val overlapping = overlapLR && overlapTB
-
-      overlapping && lbls.contains(cc.roleLabel)
-    })
-  }
-
-  def rtreeSearchLineHasLabel(
-    queryRegion: Line,
-    label: Label
-  ): Seq[Component] = {
-
-    componentRTree.searchLine(queryRegion, {cc =>
-      cc.hasLabel(label)
-    })
-  }
-
-  def rtreeSearchLine(
-    queryRegion: Line,
-    label: Label, labels: Label*
-  ): Seq[Component] = {
-    val lbls = label :: labels.toList
-
-    componentRTree.searchLine(queryRegion, {cc =>
-      lbls.contains(cc.roleLabel)
-    })
-  }
 }

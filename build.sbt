@@ -13,7 +13,6 @@ lazy val jsProjects = Seq[ProjectReference](
 lazy val jvmProjects = Seq[ProjectReference](
   prelude, watrmarksJVM, textworks, watrshed, watrcolorsJVM
 )
-
 lazy val root = (project in file("."))
   .enablePlugins(ScalaJSPlugin)
   .aggregate( (jsProjects ++ jvmProjects): _*)
@@ -59,6 +58,7 @@ lazy val textworks = (project in file("text-works"))
     LogLibs.logback ++
     TestLibs.testAndCheck ++
     Lib.fs2 ++ Seq(
+      "com.google.guava" % "guava" % "23.0",
       "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,
       Lib.scrimageCore,

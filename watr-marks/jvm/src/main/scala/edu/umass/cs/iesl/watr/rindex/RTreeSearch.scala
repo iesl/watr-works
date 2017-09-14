@@ -14,38 +14,34 @@ import com.github.davidmoten.rtree.{geometry => RG, _}
 import edu.umass.cs.iesl.watr.{geometry => G}
 import java.lang.{Boolean => JBool}
 
-abstract class RTreeSearch[T: RTreeIndexable] {
+trait RTreeSearch[T] {
 
   def rtreeIndex: RTree[T, RG.Geometry]
 
-  val si = implicitly[RTreeIndexable[T]]
+  def indexable: RTreeIndexable[T]
 
-  // Search TODO: open/closed intervals for search inclusion
-  def searchLine(q: G.Line, filter: T=>Boolean): Seq[T] = {
-    val query0 = toRGLine(q)
+  lazy implicit val si = indexable
+
+  // // Search TODO: open/closed intervals for search inclusion
+
+  def search(queryFig:G.GeometricFigure, filter: T=>Boolean): Seq[T] = {
     val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
       override def call(entry: Entry[T, RG.Geometry]): JBool = {
         filter(entry.value())
       }
     }
 
-    val hits = rtreeIndex.search(query0).filter(filterFunc)
-    toScalaSeq(hits)
-  }
-
-
-  def search(q:G.LTBounds, filter: T=>Boolean): Seq[T] = {
-    val query0 = toRGRectangle(q)
-    val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
-      override def call(entry: Entry[T, RG.Geometry]): JBool = {
-        filter(entry.value())
-      }
+    val hits0 = queryFig match {
+      case f: G.LTBounds => rtreeIndex.search(toRGRectangle(f))
+      case f: G.Line     => rtreeIndex.search(toRGLine(f))
+      case f: G.Point    => rtreeIndex.search(toRGPoint(f))
+      case f: G.LBBounds => rtreeIndex.search(toRGRectangle(f.toLTBounds))
+      case _             => sys.error("unsupported query shape")
     }
 
-    val hits = rtreeIndex.search(query0).filter(filterFunc)
+    val hits = hits0.filter(filterFunc)
 
     toScalaSeq(hits)
-
   }
 
   // def queryForContainedIDs(q:G.LTBounds): Seq[Int] = {
