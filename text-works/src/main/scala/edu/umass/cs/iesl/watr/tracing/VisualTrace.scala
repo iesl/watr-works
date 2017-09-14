@@ -121,11 +121,15 @@ protected [tracing] object VisualTraceGlobals {
 
 }
 
-trait VisualTracer { self =>
+trait VisualTracer extends EnableTrace { self =>
   // import VisualTracer._
   import VisualTraceGlobals._
 
   lazy val tracer = self
+
+  def isEnabled(v: VisualTraceLevel): Boolean = {
+    activeTraces.contains(v)
+  }
 
   def traceLevels(): Seq[VisualTraceLevel] = activeTraces.toSeq
 
@@ -143,6 +147,8 @@ trait VisualTracer { self =>
   def exit()(implicit enclosing: sourcecode.Name): Unit = ifTrace(VisualTraceLevel.EnterExit) {
     println(s"exit: ${enclosing.value}")
   }
+
+  // def Traced[T](body: => T): T = macro VisualTraceMacros.tracedImpl[T]
 
 
   def jsonLog(body: => Unit) = ifTrace(VisualTraceLevel.JsonLogs)(body)

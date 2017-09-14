@@ -224,3 +224,40 @@ object OrderedDisjointSet {
     d
   }
 }
+
+
+
+
+
+
+// import scalaz.Equal
+// import scala.reflect.ClassTag
+
+// trait AttributeSets[IDType: Equal] {
+//   // val attrCT: implicitly[ClassTag[AttrT]]
+
+//   val componentAttributes: mutable.HashMap[IDType,
+//     mutable.HashMap[Label, Any]
+//   ] = mutable.HashMap()
+
+//   def setAttribute[A](cc: IDType, l: Label, attr: A)
+//     (implicit act: ClassTag[A]): Unit = {
+//     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
+
+//     val ccAttrs = componentAttributes.getOrElseUpdate(cc,
+//       mutable.HashMap[Label, Any]()
+//     )
+//     ccAttrs.put(typedLabel, attr)
+//   }
+
+//   def getAttribute[A](cc: IDType, l: Label)
+//     (implicit act: ClassTag[A]): Option[A] = {
+
+//     val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
+
+//     componentAttributes.get(cc)
+//       .flatMap{ ccAttrs =>
+//         ccAttrs.get(typedLabel).map(_.asInstanceOf[A])
+//       }
+//   }
+// }

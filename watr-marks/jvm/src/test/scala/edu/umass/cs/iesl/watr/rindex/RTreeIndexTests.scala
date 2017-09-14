@@ -9,6 +9,7 @@ import geometry._
 class RTreeIndexTests extends FlatSpec {
 
   behavior of "RTrees"
+
   implicit object GeometryIndexable extends RTreeIndexable[GeometricFigure] {
     def id(t: GeometricFigure): Int = 0
     def ltBounds(t: GeometricFigure): LTBounds = ???

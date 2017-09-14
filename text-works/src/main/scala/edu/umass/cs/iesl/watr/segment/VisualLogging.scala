@@ -34,6 +34,11 @@ trait PageScopeTracing extends VisualTracer { self  =>
   lazy val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageIndex.pageGeometry.bounds
   lazy val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageIndex.pageGeometry.bounds
 
+  def initPageTracing(): Unit = {
+    if (traceLog.tracingEnabled()) {
+      tracing.VisualTracer.newPage()
+    }
+  }
   def rescale(bboxScale1: LTBounds): LTBounds = {
     val LTBounds.Doubles(l, t, w, h) = bboxScale1
 

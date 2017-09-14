@@ -17,36 +17,44 @@ object VisualTraceLevel {
   // def cmp(a: VisualTraceLevel, b:VisualTraceLevel) = all.indexOf(b) - all.indexOf(a)
 }
 
-
-trait EnableTrace[T] {
-  def traceLevel(): VisualTraceLevel
-  def tracingEnabled(): Boolean
+trait EnableTrace {
   def isEnabled(v: VisualTraceLevel): Boolean
+  def tracingEnabled(): Boolean
   def traceLevels(): Seq[VisualTraceLevel]
-  // def runTrace(level: VisualTraceLevel, ts: T*): Unit
-  // def traceCallbacks: TraceCallbacksT
-
 }
 
 object VisualTraceMacros {
-  type VTraceContext[S] = Context { type PrefixType = EnableTrace[S] }
+  type VTraceContext = Context { type PrefixType = EnableTrace }
 
 
-  def printTrace[T](c: VTraceContext[T])(str: c.Expr[String]) = {
-    import c.universe._
-    q"""
-    if (${c.prefix}.tracingEnabled()) {
-       import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
-       if( ${c.prefix}.isEnabled() )
-       ${c.prefix}.traceLevel() match {
-         case L.Print  => println($str)
-         case _  =>
-       }
-    }
-    """
-  }
+  // def printTrace[T](c: VTraceContext)(str: c.Expr[String]) = {
+  //   import c.universe._
+  //   q"""
+  //      import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
+  //      val doPrint: Boolean = ${c.prefix}.traceLevels().contains(L.PrintLogs)
 
-  def runOnTraceLevel[T](c: VTraceContext[T])(vtl: c.Expr[VisualTraceLevel])(body: c.Tree): c.Tree = {
+  //      if( doPrint ) {
+
+  //      }
+  //   """
+  // }
+
+  // def tracedImpl[T](c: VTraceContext)(body: c.Tree): c.Tree = {
+  //   import c.universe._
+  //   q"""
+  //      {
+  //        import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
+  //        if( ${c.prefix}.isEnabled(L.EnterExit) ) {
+  //          enter();
+  //          val a = ${body};
+  //          exit();
+  //          a;
+  //        } else { ${body} }
+  //     }
+  //   """
+  // }
+
+  def runOnTraceLevel[T](c: VTraceContext)(vtl: c.Expr[VisualTraceLevel])(body: c.Tree): c.Tree = {
     import c.universe._
     q"""
     if (${c.prefix}.tracingEnabled()) {
@@ -93,6 +101,3 @@ object VisualTraceMacros {
   // }
 
 }
-
-
-

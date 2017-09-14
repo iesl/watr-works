@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package rindex
 
-import java.lang.{Boolean => JBool}
 import rx.Observable
 
 import scala.collection.JavaConverters
@@ -11,14 +10,26 @@ import scala.collection.mutable
 import com.github.davidmoten.rtree.{geometry => RG, _}
 import com.github.davidmoten.rtree
 import edu.umass.cs.iesl.watr.{geometry => G}
-import rx.functions.{Func1, Func2}
+import rx.functions.Func1
+
+/**
+  * + R-Tree index supporting shapes: rects, lines, points
+  * + Arbitrary attributes may be attached to shapes
+  * + Shapes can be clustered via disjoint sets
+  * + Search:
+  *   - Open/closed interval search support inclusion/exclusion of shapes that share an edge, but have no common area
+  *
+  * + Serialization
+  *   - Trees may be written to disk
+  *
+  **/
 
 class RTreeIndex[T: RTreeIndexable](
   var spatialIndex: RTree[T, RG.Geometry]
-) {
+) extends RTreeSearch[T] {
   import RGeometryConversions._
 
-  val si = implicitly[RTreeIndexable[T]]
+  override val rtreeIndex: RTree[T, RG.Geometry] = spatialIndex
 
   val itemMap: mutable.LongMap[T] = {
     val initMap = toScalaSeq(spatialIndex.entries())
@@ -33,6 +44,10 @@ class RTreeIndex[T: RTreeIndexable](
   def getItem(id: Int): T = {
     itemMap(id.toLong)
   }
+
+  // def addIndexable(item: T): Unit = {}
+  // def addShape(shape: G.GeometricFigure): Unit = {}
+
 
   def remove(item: T): Unit = {
     spatialIndex = spatialIndex.delete(
@@ -56,85 +71,6 @@ class RTreeIndex[T: RTreeIndexable](
   }
 
 
-  // Search TODO: open/closed intervals for search inclusion
-  def searchLine(q: G.Line, filter: T=>Boolean): Seq[T] = {
-    val query0 = toRGLine(q)
-    val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
-      override def call(entry: Entry[T, RG.Geometry]): JBool = {
-        filter(entry.value())
-      }
-    }
-
-    val hits = spatialIndex.search(query0).filter(filterFunc)
-    toScalaSeq(hits)
-  }
-
-
-  def search(q:G.LTBounds, filter: T=>Boolean): Seq[T] = {
-    val query0 = toRGRectangle(q)
-    val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
-      override def call(entry: Entry[T, RG.Geometry]): JBool = {
-        filter(entry.value())
-      }
-    }
-
-    val hits = spatialIndex.search(query0).filter(filterFunc)
-
-    toScalaSeq(hits)
-
-  }
-
-
-  def queryForContainedIDs(q:G.LTBounds): Seq[Int] = {
-
-    val query0 = toRGRectangle(q)
-    val x1 = query0.x1()
-    val x2 = query0.x2()
-    val y1 = query0.y1()
-    val y2 = query0.y2()
-
-    val queryCornerPts = List(
-      RG.Geometries.point(x1, y1),
-      RG.Geometries.point(x1, y2),
-      RG.Geometries.point(x2, y1),
-      RG.Geometries.point(x2, y2)
-
-    )
-
-
-    val contains: Func2[RG.Geometry, RG.Rectangle, JBool] = {
-      new Func2[RG.Geometry, RG.Rectangle, JBool]() {
-        override def call(entryRect: RG.Geometry, queryRect: RG.Rectangle): JBool = {
-          queryCornerPts.forall(entryRect.intersects(_))
-        }
-      }
-    }
-
-
-    toIdSeq(spatialIndex.search(query0, contains))
-  }
-
-  def queryForIntersectedIDs(q:G.LTBounds): Seq[Int] = {
-    toEntrySeq(spatialIndex.search(toRGRectangle(q)))
-      .map{ entry => si.id(entry.value()) }
-  }
-
-  private def toEntrySeq(obs: Observable[Entry[T, RG.Geometry]]): Seq[Entry[T, RG.Geometry]]  = {
-    obs.toBlocking().toIterable().asScala.toSeq
-  }
-
-  private def toIdSeq(obs: Observable[Entry[T, RG.Geometry]]): Seq[Int]  = {
-    toEntrySeq(obs).map{ entry => si.id(entry.value()) }
-  }
-
-  private def toScalaSeq(obs: Observable[Entry[T, RG.Geometry]]): Seq[T]  = {
-    toEntrySeq(obs).toSeq.map{ _.value() }
-  }
-
-  def queryForIntersects(q: G.LTBounds): Seq[T] = {
-    toScalaSeq(spatialIndex.search(toRGRectangle(q)))
-  }
-
 }
 
 object RTreeIndex {
@@ -150,10 +86,7 @@ object RTreeIndex {
     }
     val asJava = JavaConverters.asJavaCollectionConverter(entries)
     val l = new java.util.ArrayList(asJava.asJavaCollection)
-
-    val spatialIndex: RTree[T, RG.Geometry] = RTree.create[T, RG.Geometry](l)
-
-    new RTreeIndex[T](spatialIndex)
+    createFor[T](RTree.create[T, RG.Geometry](l))
   }
 
   def createFor[T : RTreeIndexable](initRtree: RTree[T, RG.Geometry]): RTreeIndex[T] = {
@@ -206,5 +139,3 @@ object RTreeIndex {
     baos.toByteArray()
   }
 }
-
-

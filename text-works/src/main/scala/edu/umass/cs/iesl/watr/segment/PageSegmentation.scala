@@ -49,19 +49,12 @@ object PageSegmenter {
 trait PageSegmenter extends PageLevelFunctions {
 
 
-  def runPageSegmentation(): Unit = {
-    tracer.enter()
-    if (traceLog.tracingEnabled()) {
-      tracing.VisualTracer.newPage()
-    }
-
-    labelImageRegions()
+  def runPageSegmentation(): Unit =  {
+    traceLog.initPageTracing()
 
     lineFinding.runLineSegmentation()
 
     shapeFunctions.buildLinePairTrapezoids()
-
-    tracer.exit()
   }
 
   def runLineClassification(): Unit = {
@@ -70,11 +63,6 @@ trait PageSegmenter extends PageLevelFunctions {
     setPageText()
   }
 
-  private def labelImageRegions(): Unit = {
-    mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>
-      mpageIndex.labelRegion(Seq(imgCC), LB.Image)
-    }
-  }
 
   def setPageText(): Unit = {
     for {

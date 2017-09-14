@@ -7,7 +7,6 @@ import edu.umass.cs.iesl.watr.{geometry => G}
 object RGeometryConversions {
   import G._
 
-
   def toRGLine(tb: Line): RG.Line = {
     val Line(Point.Doubles(x1, y1), Point.Doubles(x2, y2)) = tb
     RG.Geometries.line(x1, y1, x2, y2)
@@ -20,7 +19,7 @@ object RGeometryConversions {
 
   def toRGRectangle(tb: LTBounds): RG.Rectangle = {
     val LTBounds.Floats(l, t, w, h) = tb
-    RGeometry.rectangle(l, t, w, h)
+    rectangle(l, t, w, h)
   }
 
   def rectangle(

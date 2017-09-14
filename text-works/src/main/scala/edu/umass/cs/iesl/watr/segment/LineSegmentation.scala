@@ -64,7 +64,6 @@ trait LineFinding extends ColumnFinding { self =>
 
 
   private def setVisualLineOrdering(): Seq[Component] = {
-    tracer.enter()
     // reorder visual lines within and across reading blocks
 
     val allPageLines: mutable.ArrayBuffer[Component] = mutable.ArrayBuffer.empty
@@ -99,13 +98,11 @@ trait LineFinding extends ColumnFinding { self =>
       pageIndex.setOrdering(LB.PageLines, allPageLines)
     }
 
-    tracer.exit()
     allPageLines
   }
 
 
-  private def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit = {
-    tracer.enter()
+  private def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit =  {
     // val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
 
     pageIndex.getComponentsWithLabel(LB.PageAtom)
@@ -169,7 +166,6 @@ trait LineFinding extends ColumnFinding { self =>
 
     // gifBuilder.finish()
 
-    tracer.exit()
   }
 
   private def findModalBoundingRect(visualLineCC: Component, visualLineAtoms: Seq[Component]): LTBounds = {
@@ -331,7 +327,6 @@ trait LineFinding extends ColumnFinding { self =>
 
 
   private def createTextRowFromVisualLine(visualLineCC: Component, visualLineAtoms: Seq[Component]): Unit = {
-    tracer.enter()
 
     if (visualLineAtoms.nonEmpty) {
       // Associate visualLine bounds (modal, normal) w/visual line cluster
@@ -400,7 +395,6 @@ trait LineFinding extends ColumnFinding { self =>
 
     // gifBuilder.finish()
 
-    tracer.exit()
   }
 
   private def convertTextRowToTextReflow(textRow: TextGrid.Row): TextReflow = {
@@ -430,8 +424,6 @@ trait LineFinding extends ColumnFinding { self =>
 
 
   private def approximateLineBins(charBoxes: Seq[AtomicComponent]): Unit = {
-    tracer.enter()
-
 
     implicit val log = createLog("approximateLineBins")
 
@@ -452,7 +444,6 @@ trait LineFinding extends ColumnFinding { self =>
       showRegions(s"Hashed Lines", showableItems)
     }
 
-    tracer.exit()
   }
 
   private def findReadingOrder(initRegion: LTBounds)(level: Int=0): Seq[LTBounds] = {
@@ -511,8 +502,7 @@ trait LineFinding extends ColumnFinding { self =>
     } getOrElse { Seq(initRegion) }
   }
 
-  private def splitLinesWithOverlaps(): Unit = {
-    tracer.enter()
+  private def splitLinesWithOverlaps(): Unit =  {
     for {
       cc <- pageIndex.getComponentsWithLabel(LB.LineByHash)
     } {
@@ -538,7 +528,6 @@ trait LineFinding extends ColumnFinding { self =>
         }
       }
     }
-    tracer.exit()
   }
 
   private def splitLinesOnWhitespaceColumns(): Unit = {
@@ -574,8 +563,7 @@ trait LineFinding extends ColumnFinding { self =>
     dists :+ 0d.toFloatExact()
   }
 
-  private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact = {
-    tracer.enter()
+  private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact =  {
 
     val charDists = pairwiseItemDistances(sortedLineCCs)
       .toSet.toSeq
@@ -609,6 +597,7 @@ trait LineFinding extends ColumnFinding { self =>
         averageDist
       }
     }
+
     tracer.printLog {
       println(
         s"""|guessWordbreakWhitespaceThreshold
@@ -620,14 +609,12 @@ trait LineFinding extends ColumnFinding { self =>
       )
     }
 
-    tracer.exit()
 
     threshold.toFloatExact
   }
 
 
-  private def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row = {
-    tracer.enter()
+  private def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row =  {
     val lineCCs = textRow.cells.collect{
       case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
         headItem
@@ -715,8 +702,6 @@ trait LineFinding extends ColumnFinding { self =>
       finalRow
 
     } getOrElse { textRow }
-
-    tracer.exit()
 
     res
   }

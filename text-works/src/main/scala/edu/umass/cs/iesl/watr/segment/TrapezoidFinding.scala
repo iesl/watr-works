@@ -16,8 +16,8 @@ trait ShapeFunctions extends TrapezoidFinding with LineShapeClassification { sel
 
 trait TrapezoidFinding extends PageScopeSegmenter { self =>
 
+
   def buildLinePairTrapezoids(): Unit = {
-    tracer.enter()
 
     val docStats = docScope.docStats
 
@@ -65,8 +65,5 @@ trait TrapezoidFinding extends PageScopeSegmenter { self =>
       }
     }
 
-
-
-    tracer.exit()
   }
 }
