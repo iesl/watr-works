@@ -13,22 +13,27 @@ trait PageLevelFunctions extends ColumnFinding
 
 object PageSegmenter {
 
+  def getVisualLinesInExtractionOrder(pageIndex: PageIndex): Seq[Component] = {
+    pageIndex.getOrdering(LB.ExtractedLineStarts)
+  }
+
   def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[(Component, Seq[Component])] = {
-    val linesPerBlock0 = for {
-      block <- pageIndex.getOrdering(LB.ReadingBlocks)
-    } yield {
-      for {
-        visualLineRootCCs <- pageIndex.getRelations(block, LB.HasVisualLines).toList
-        visualLineRootCC <- visualLineRootCCs
-        lineMembers   <- pageIndex.getClusterMembers(LB.ReadingBlockLines, visualLineRootCC)
-      } yield {
-        (block, lineMembers)
-      }
-    }
+    // val linesPerBlock0 = for {
+    //   block <- pageIndex.getOrdering(LB.ReadingBlocks)
+    // } yield {
+    //   for {
+    //     visualLineRootCCs <- pageIndex.getRelation(block, LB.HasVisualLines).toList
+    //     // visualLineRootCC <- visualLineRootCCs
+    //     lineMembers   <- pageIndex.getClusterMembers(LB.ReadingBlockLines, visualLineRootCC)
+    //   } yield {
+    //     (block, lineMembers)
+    //   }
+    // }
 
-    val linesPerBlock = linesPerBlock0.flatten
+    // val linesPerBlock = linesPerBlock0.flatten
 
-    linesPerBlock
+    // linesPerBlock
+    ???
   }
 
   def apply(
@@ -52,8 +57,12 @@ trait PageSegmenter extends PageLevelFunctions {
   def runPageSegmentation(): Unit =  {
     traceLog.initPageTracing()
 
-    lineFinding.runLineSegmentation()
+    implicit val log = createLog("initialPageComponents")
+    traceLog.drawPageShapes()
 
+    // columnFinder.runColumnFinder()
+
+    // lineFinding.runLineSegmentation()
     shapeFunctions.buildLinePairTrapezoids()
   }
 

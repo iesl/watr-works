@@ -420,11 +420,14 @@ object GeometryImplicits extends RectangularCuts {
       Line(self, p1)
     }
 
-    def translate(x: Double=0d, y: Double=0d): Point = {
+    def translate(x: Double, y: Double): Point = {
       Point(self.x+x, self.y+y)
     }
     def translate(p: Point): Point = {
       Point(self.x+p.x, self.y+p.y)
+    }
+    def translate(x: Int@@FloatRep, y: Int@@FloatRep): Point = {
+      Point(self.x+x, self.y+y)
     }
 
     def hdist(p1: Point): Double = (p1.x - self.x).asDouble()
@@ -529,7 +532,14 @@ object GeometryImplicits extends RectangularCuts {
       } else None
     }
 
-    def translate(x: Double=0.0d, y: Double=0.0d): Line = {
+    def translate(x: Double, y: Double): Line = {
+      Line(
+        line.p1.translate(x, y),
+        line.p2.translate(x, y)
+      )
+    }
+
+    def translate(x: Int@@FloatRep, y: Int@@FloatRep): Line = {
       Line(
         line.p1.translate(x, y),
         line.p2.translate(x, y)

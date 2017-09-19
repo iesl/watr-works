@@ -27,7 +27,11 @@ class RTreeIndex[T: RTreeIndexable](
 
   override val indexable: RTreeIndexable[T] = implicitly[RTreeIndexable[T]]
 
-  override val rtreeIndex: RTree[T, RG.Geometry] = spatialIndex
+  override def rtreeIndex: RTree[T, RG.Geometry] = spatialIndex
+
+  def clearAll(): Unit = {
+    spatialIndex = RTree.create[T, RG.Geometry]()
+  }
 
   def remove(item: T): Unit = {
     spatialIndex = spatialIndex.delete(

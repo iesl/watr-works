@@ -9,7 +9,7 @@ trait DocSegLabels {
 
   val DocumentPages = Label("document-pages")
   val DocumentPage = Label("document-page")
-  val Column = Label("ds", "column")
+  val Column = Label("Column")
 
   val SectionHeadingLine = Label("ds", "section-heading-line")
   val SectionNumber = Label("ds", "section-number")
@@ -58,8 +58,11 @@ trait DocSegLabels {
 
 
   // Page Segmentation Labels
+  val ExtractedLineStarts    = Label("ExtractedLineStarts")
+  val ExtractedLineEnds    = Label("ExtractedLineEnds")
   val LineByHash             = Label("LineByHash")
   val LeftAlignedCharCol     = Label("LeftAlignedCharCol")
+  val LeftAlignedColEnd      = Label("LeftAlignedColEnd")
   val WhitespaceColCandidate = Label("WhitespaceColCandidate")
   val WhitespaceCol          = Label("WhitespaceCol")
   val WhitespaceColTop       = Label("WhitespaceColTop")
@@ -67,6 +70,10 @@ trait DocSegLabels {
   val WhitespaceColBottom    = Label("WhitespaceColBottom")
   val Marked                 = Label("Marked")
 
+  val LineStartHint           = Label("LineStartHint")
+  val LineEndHint             = Label("LineEndHint")
+  val LineStartEvidence       = Label("LineStartEvidence")
+  val LineEndEvidence         = Label("LineEndEvidence")
 
   // Ordering for blocks/lines on page
   val ReadingBlock         = Label("ReadingBlock")

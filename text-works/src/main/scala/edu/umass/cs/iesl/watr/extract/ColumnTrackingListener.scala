@@ -16,10 +16,17 @@ import fonts._
 import utils.IdGenerator
 import utils.ExactFloats._
 import TypeTags._
-// import watrmarks.{StandardLabels => LB}
 
 
-sealed trait ExtractedItem
+sealed trait ExtractedItem {
+  var charProps: CharBioProp = new CharBioProp.OutChar
+
+  def id: Int@@CharID
+  def bbox: LTBounds
+
+  def strRepr(): String
+
+}
 
 object ExtractedItem {
   implicit class RicherExtractedItem(val self: CharItem) extends AnyVal {
@@ -39,7 +46,7 @@ object ExtractedItem {
     char: String,
     wonkyCharCode: Option[Int] = None
   ) extends ExtractedItem {
-    var charProps: CharBioProp = CharBioProp.OutChar
+    def strRepr(): String = char
 
     def modp[P <: CharBioProp](modf: P => CharBioProp): Unit = {
       charProps = modf(charProps.asInstanceOf[P])
@@ -52,32 +59,52 @@ object ExtractedItem {
 
 
   case class ImgItem(
+    id: Int@@CharID,
     bbox: LTBounds
-  ) extends ExtractedItem
+  ) extends ExtractedItem {
+    def strRepr(): String = s"[image ${bbox.prettyPrint}]"
+
+    charProps = new CharBioProp.OutChar {
+      isImage = true
+    }
+  }
 
   case class PathItem(
+    id: Int@@CharID,
     bbox: LTBounds
-  ) extends ExtractedItem
+  ) extends ExtractedItem {
+    def strRepr(): String = "[path]"
+  }
 
+
+  // case class BTEvent(
+  //   id: Int@@CharID
+  // ) extends ExtractedItem
 }
 
 sealed trait CharBioProp
 
 object CharBioProp {
 
-  object OutChar extends CharBioProp
+  class OutChar extends CharBioProp {
+    var isImage: Boolean = false
+    var isPath: Boolean =  false
+  }
 
   class BegChar extends CharBioProp {
+    var lineEndId: Int@@CharID = CharID(0)
     var prevLineBeginId: Int@@CharID = CharID(0)
     var nextLineBeginId: Int@@CharID = CharID(0)
     var alignedLeftToPrev: Boolean = false
     var alignedLeftToNext: Boolean = false
+
   }
 
   class InsChar extends CharBioProp {
   }
 
   class LastChar extends CharBioProp {
+    var lineBeginId: Int@@CharID = CharID(0)
     var prevLineBeginId: Int@@CharID = CharID(0)
 
   }
@@ -134,95 +161,120 @@ class ColumnTrackingListener(
   val MAX_EXTRACTED_CHARS_PER_PAGE = 10000
   var totalCharCount = 0
 
-  var extractedItems = List[ExtractedItem]()
-  var lineLists = List[List[CharItem]]()
-  var newLineCandidates = List[CharItem]()
+  var lastItem: ExtractedItem = null
+  var lastLineStartItem: ExtractedItem = null
+
+  var lineLists = List[List[ExtractedItem]]()
 
   def getPageItems(): Seq[ExtractedItem] = {
-    extractedItems.reverse
+    val lineRows = lineLists.reverse.map{ rline =>
+      val lineLast = rline.head
+      rline.drop(1).foreach {c =>
+        c.charProps = new CharBioProp.InsChar {}
+      }
+      val line = rline.reverse
+      val lineFirst = line.head
+
+      // Overwrite final Ins with BegChar
+      lineFirst.charProps = new CharBioProp.BegChar {
+        lineEndId = lineLast.id
+      }
+      lineLast.charProps = new CharBioProp.LastChar {
+        lineBeginId = lineFirst.id
+      }
+
+      line
+    }
+
+    debugPrintPageItems(lineRows)
+
+    val lines = lineRows.flatten
+
+    lines  // ++ pageImages
   }
 
-  var lastChar: CharItem = null
+  private def debugPrintPageItems(rows: List[List[ExtractedItem]]): Unit = {
+    val rowStrs = rows.map { row =>
+      row.map(_.strRepr()).mkString
+    }
 
-  def lastLineBegin(): CharItem = {
-    newLineCandidates.head
+    val pageStr = rowStrs.mkString("\n  ", "\n  ", "\n")
+
+    println(pageStr)
   }
 
   def addImgItem(imgItem: ExtractedItem.ImgItem): Unit = {
-    extractedItems = imgItem :: extractedItems
+    lineLists = List(imgItem) :: lineLists
+    // pageImages = imgItem :: pageImages
+    lastItem = imgItem
+    lastLineStartItem = imgItem
   }
-  def addCharItem(charAtom: ExtractedItem.CharItem): Unit = {
+
+
+  def charIsLikelyLineChange(charAtom: ExtractedItem.CharItem): Boolean = {
     val charBounds = charAtom.bbox
 
-    extractedItems = charAtom :: extractedItems
+    val lastWasImage = lastItem.isInstanceOf[ImgItem]
 
-    if (lastChar==null) {
-      charAtom.charProps = new CharBioProp.BegChar()
+    // val isLargeLeftJump = charBounds.left <= lastLineStartItem.bbox.left
 
-      lineLists = List(List(charAtom))
-      newLineCandidates = charAtom :: newLineCandidates
+    val isLeftJump = (
+      charBounds.left < lastItem.bbox.left)
 
-    } else {
+    val isLeftOverstrike = (
+      charBounds.left <= lastItem.bbox.left
+        && charBounds.bottom > lastLineStartItem.bbox.bottom
+        && charBounds.bottom < lastItem.bbox.bottom
+    )
 
-      val isDownLeftJump = (
-        charBounds.left < lastChar.bbox.left && charBounds.bottom > lastChar.bbox.bottom)
 
-      val isUpRightJump = (
-        charBounds.left > lastChar.bbox.left && charBounds.bottom < lastChar.bbox.top)
+    // val isDownLeftJump = (
+    //   charBounds.left < lastItem.bbox.left && charBounds.bottom > lastItem.bbox.bottom)
 
-      val alignsWithLastNewline = charBounds.left == lastLineBegin().bbox.left
+    val isUpRightJump = (
+      charBounds.left > lastItem.bbox.left && charBounds.bottom < lastItem.bbox.top)
 
-      if (isDownLeftJump) {
-        lastChar.charProps = new CharBioProp.LastChar {
-          prevLineBeginId = lastLineBegin.id
-        }
+    // val alignsWithLastNewline = charBounds.left == lastLineBegin().bbox.left
 
-        if (alignsWithLastNewline) {
-          charAtom.charProps = new CharBioProp.BegChar {
-            alignedLeftToPrev = true
-            prevLineBeginId = lastLineBegin().id
-          }
-
-          lastLineBegin.setp[CharBioProp.BegChar]{p =>
-            p.alignedLeftToNext = true
-            p.nextLineBeginId = charAtom.id
-          }
-
-        } else {
-          charAtom.charProps = new CharBioProp.BegChar {
-            alignedLeftToPrev = false
-            prevLineBeginId = lastLineBegin().id
-          }
-        }
-
-        lineLists = List(charAtom) :: lineLists
-        newLineCandidates = charAtom :: newLineCandidates
-      } else if (isUpRightJump) {
-
-        lastChar.charProps = new CharBioProp.LastChar {
-          prevLineBeginId = lastLineBegin.id
-        }
-
-        lineLists = List(charAtom) :: lineLists
-        newLineCandidates = charAtom :: newLineCandidates
-
-        charAtom.charProps = new CharBioProp.BegChar {
-          alignedLeftToPrev = false
-          prevLineBeginId = lastLineBegin().id
-        }
-
-        lastLineBegin.setp[CharBioProp.BegChar]{p =>
-          p.alignedLeftToNext = false
-          p.nextLineBeginId = charAtom.id
-        }
-
-      } else {
-        charAtom.charProps = new CharBioProp.InsChar()
-        lineLists = (charAtom +: lineLists.head) :: lineLists.tail
-      }
+    !isLeftOverstrike && {
+      isLeftJump || isUpRightJump || lastWasImage
     }
 
-    lastChar = charAtom
+  }
+
+
+
+  def addCharItem(charAtom: ExtractedItem.CharItem): Unit = {
+
+
+
+    if (lastItem==null) {
+      lineLists = List(List(charAtom))
+      lastLineStartItem = charAtom
+    } else if (charIsLikelyLineChange(charAtom)) {
+      lineLists = List(charAtom) :: lineLists
+      lastLineStartItem = charAtom
+    } else {
+      val lastLine = lineLists.drop(1).headOption
+
+      val lastLineBases: Seq[Int@@FloatRep] = 
+        lastLine.toList.flatMap{ l => l.map(_.bbox.bottom) }
+
+      val sharesBaseWithLastLine = lastLineBases.exists { _ == charAtom.bbox.bottom }
+      if (sharesBaseWithLastLine) {
+        val currLine = lineLists.head
+
+        val joinedTwo = currLine ++ lastLine.get
+
+        lineLists = (charAtom :: joinedTwo) :: lineLists.drop(2)
+
+        lastLineStartItem = lineLists.head.last
+
+      } else {
+        lineLists = (charAtom :: lineLists.head) :: lineLists.tail
+      }
+    }
+    lastItem = charAtom
 
   }
 
@@ -260,65 +312,82 @@ class ColumnTrackingListener(
             addCharItem(charAtom)
 
           }
+        } else if (code.exists(_ < 32)) {
+
+          computeTextBounds(charTri).map { charBounds =>
+            val nextId = charIdGen.nextId
+
+            val charAtom = CharItem(
+              nextId,
+              charBounds,
+              "░",
+              code
+            )
+
+            addCharItem(charAtom)
+
+          }
         }
       }
     }
   }
 
-  import geometry.syntax._
-  import utils.{RelativeDirection => Dir}
-  import itextpdf.kernel.geom.{
-    Subpath, IShape,
-    Point => IPoint
-  }
+  // import geometry.syntax._
+  // import utils.{RelativeDirection => Dir}
+  // import itextpdf.kernel.geom.{
+  //   Subpath, IShape,
+  //   Point => IPoint
+  // }
 
-  def renderPath(renderInfo: PathRenderInfo): Unit = {
-    val ctm = renderInfo.getCtm
-    val pathTransVec = ctmToLTBoundsPdfSpace(ctm).toPoint(Dir.TopLeft)
+  // def renderPath(renderInfo: PathRenderInfo): Unit = {
+  //   val ctm = renderInfo.getCtm
+  //   val pathTransVec = ctmToLTBoundsPdfSpace(ctm).toPoint(Dir.TopLeft)
 
-    val path = renderInfo.getPath
+  //   val path = renderInfo.getPath
 
-    val waypoints = for {
-      subPath <- path.getSubpaths.asScala : Seq[Subpath]
-      ishape  <- subPath.getSegments.asScala:  Seq[IShape]
-      ipoint   <- ishape.getBasePoints.asScala:  Seq[IPoint]
-    } yield {
-      val p = ipointToPoint(ipoint)
-      val trans = p.translate(pathTransVec)
-      val tInvert = invertPointSpace(trans)
-      // val endPoint = pathCurrPt.translate(p )
-      // pathCurrPt = endPoint
-      // println(s"      waypoint: $trans /inv= ${tInvert}")
-      tInvert
-    }
+  //   val waypoints = for {
+  //     subPath <- path.getSubpaths.asScala : Seq[Subpath]
+  //     ishape  <- subPath.getSegments.asScala:  Seq[IShape]
+  //     ipoint   <- ishape.getBasePoints.asScala:  Seq[IPoint]
+  //   } yield {
+  //     val p = ipointToPoint(ipoint)
+  //     val trans = p.translate(pathTransVec)
+  //     val tInvert = invertPointSpace(trans)
+  //     // val endPoint = pathCurrPt.translate(p )
+  //     // pathCurrPt = endPoint
+  //     // println(s"      waypoint: $trans /inv= ${tInvert}")
+  //     tInvert
+  //   }
 
-    val xsort = waypoints.sortBy(_.x)
-    val ysort = waypoints.sortBy(_.y)
-    val xmin = xsort.head.x
-    val xmax = xsort.last.x
-    val ymin = ysort.head.y
-    val ymax = ysort.last.y
-    val bounds = LTBounds(xmin, ymin, xmax-xmin, ymax-ymin)
+  //   val xsort = waypoints.sortBy(_.x)
+  //   val ysort = waypoints.sortBy(_.y)
+  //   val xmin = xsort.head.x
+  //   val xmax = xsort.last.x
+  //   val ymin = ysort.head.y
+  //   val ymax = ysort.last.y
+  //   val bounds = LTBounds(xmin, ymin, xmax-xmin, ymax-ymin)
 
-    // val pageRegion = PageRegion(
-    //   StablePage(stableId, pageNum),
-    //   bounds
-    // )
+  //   // val pageRegion = PageRegion(
+  //   //   StablePage(stableId, pageNum),
+  //   //   bounds
+  //   // )
 
-    // currCharBuffer.append(
-    //   PageItem.Path(
-    //     pageRegion,
-    //     waypoints
-    //   )
-    // )
-  }
+  //   // currCharBuffer.append(
+  //   //   PageItem.Path(
+  //   //     pageRegion,
+  //   //     waypoints
+  //   //   )
+  //   // )
+  // }
 
   def renderImage(iri: ImageRenderInfo): Unit = {
     val ctm = iri.getImageCtm
     val imgBounds = ctmToLTBounds(ctm)
 
-    val item = ExtractedItem.ImgItem(imgBounds)
-    extractedItems = item :: extractedItems
+    addImgItem(ExtractedItem.ImgItem(
+      charIdGen.nextId,
+      imgBounds
+    ))
 
   }
 }

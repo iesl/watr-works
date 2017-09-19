@@ -22,49 +22,8 @@ import org.dianahep.{histogrammar => HST}
 trait ColumnFinding extends PageScopeSegmenter { self =>
   lazy val columnFinder = self
 
-  /**
-    *
-    * - Column-finding, take two:
-    *
-    *    + Find all rectangular blocks:
-    *      - Label line-split 'jump pair' chars (Xe, Xb), s.t.,
-    *         e = line-end, b=line-begin, as determined by pdf output position changes
-    *
-    *      - Additionally label col-L-aligned-left / col-L-aligned-right positions /pairs
-    *        - i.e., chars that start a line left-aligned with the upstairs neighbor
-    *        - upper char is col-right, lower is col-left
-    *
-    *      - Draw V-lines along left-cols
-    *
-    *      - Mark image left/right as col-left, col-right
-    *
-    *    - Mark up-right jump transition lines
-    *      - lower line is col-ending, upper line is col-beginning
-    *
-    *
-    *
-    *    - combine vert stacked cols
-    *      - left-to-right, examine each col-left line
-    *      - find min col-lefts (that don't cross a col-right)
-    *      -      max col-rights (that don't cross a col-left)
 
-    *  Allowable Jumps between blocks:
-    *  - Down to next highest
-    *  - Up-Right
-    *  - Down-Left
-    * Jumps not allowed:
-    *  - Up-Left
-
-    * Assign cost to each jump, including:
-    *   Direction of jump (as weight?)
-    *   char extraction distance
-    *
-    **/
   def runColumnFinder(): Unit = {
-
-    findCandidateWhitespaceCols()
-
-    combineCandidateWhitespaceCols()
   }
 
   def findCandidateWhitespaceCols(): Unit = {

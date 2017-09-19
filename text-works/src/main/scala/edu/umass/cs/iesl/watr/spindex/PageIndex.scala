@@ -48,6 +48,10 @@ object PageIndex {
   //   new PageIndex(pageGeometry, rtree)
   // }
 
+  def qualifyCluster(l: Label): Label = { l.qualifiedAs("cluster") }
+  def qualifyOrdering(l: Label): Label = { l.qualifiedAs("ordering") }
+  def qualifyRelation(l: Label): Label = { l.qualifiedAs("relation") }
+  def qualifyRep(l: Label): Label = { l.qualifiedAs("rep") }
 
 }
 
@@ -75,6 +79,8 @@ class PageIndex(
   val pageGeometry: PageGeometry,
 ) {
 
+  import PageIndex._
+
   val componentRTree: RTreeIndex[Component] = RTreeIndex.createFor[Component]()
   val shapeRIndex: RTreeIndex[LabeledShape] = RTreeIndex.createFor[LabeledShape]()
 
@@ -86,8 +92,8 @@ class PageIndex(
   }
 
 
-  def getById(id: Int): Component = {
-    componentMap(id.toLong)
+  def getById(id: Int@@ComponentID): Component = {
+    componentMap(id.unwrap.toLong)
   }
 
 
@@ -98,9 +104,11 @@ class PageIndex(
     RTreeIndex.saveBytes(componentRTree)
   }
 
-  val componentToLabelMMap = guava.collect.ArrayListMultimap.create[Int@@ComponentID, Label]()
+  val componentToLabelMMap = gcol.ArrayListMultimap.create[Int@@ComponentID, Label]()
 
   val textTable = gcol.HashBasedTable.create[Int@@ComponentID, Label, TextGrid.Row]()
+
+  val orderingTable = mutable.HashMap[Label, mutable.ListBuffer[Int@@ComponentID]]()
 
   def setComponentText(cc: Component, l: Label, t: TextGrid.Row): Unit = {
     textTable.put(cc.id, l, t)
@@ -144,7 +152,7 @@ class PageIndex(
   def reportClusters(): Unit = {
     import TB._
     val allSets = disjointSets.keys.toList
-      .map{l =>
+      .map{ l =>
         val dsets = disjointSets(l)
         val setStrs = dsets.sets().map{ set =>
           val canon = dsets.getCanonical(set.head)
@@ -159,11 +167,9 @@ class PageIndex(
           indent(2)(vsep(setStrs, 1)),
           "~"*20
         )
-        // set.mkString(s"{  ${l} =>\n      ", "\n      ", "\n    }")
       }
 
     val res = vjoin(left)(indent(4)(vcat(allSets)))
-    // val allStr = allSets.mkString("{\n  ", "\n  ", "\n}")
 
     println(res)
   }
@@ -179,52 +185,46 @@ class PageIndex(
     set.union(c1, c2)
   }
 
-  def setOrdering(l: Label, cs: Seq[Component]): Component = {
-    val typedLabel = l.qualifiedAs("ordering")
-    assume(!disjointSets.contains(typedLabel))
 
-    val canon = _addCluster(typedLabel, cs)
-    canon
+
+
+  def appendToOrdering(l: Label, cc: Component): Unit = {
+    val orderingBuffer = orderingTable.getOrElseUpdate(qualifyOrdering(l), mutable.ListBuffer())
+    orderingBuffer.append(cc.id)
   }
 
-  // l: String@@Ordering
+  def setOrdering(l: Label, cs: Seq[Component]): Unit = {
+    val orderingBuffer = mutable.ListBuffer[Int@@ComponentID]()
+    orderingBuffer.appendAll(cs.map(_.id))
+    orderingTable.put(qualifyOrdering(l),orderingBuffer)
+  }
+
   def getOrdering(l: Label): Seq[Component] = {
-    val typedLabel = l.qualifiedAs("ordering")
-    assume(disjointSets.contains(typedLabel))
-    val canonLabel = l.qualifiedAs("ordering").qualifiedAs("rep")
-    // val canon = getComponentsWithLabel(LB.Ordering).filter(_.hasLabel(l)).head
-    val canon = getComponentsWithLabel(canonLabel).head
-    _getClusterMembers(typedLabel, canon).get
+    val orderingBuffer = orderingTable.getOrElseUpdate(qualifyOrdering(l), mutable.ListBuffer())
+    orderingBuffer.map(id => getById(id))
   }
 
+  val relationTable = gcol.HashBasedTable.create[Int@@ComponentID, Label, Int@@ComponentID]()
   // l: String@@Relation
   def addRelation(lhs: Component, l: Label, rhs: Component): Unit = {
-    val relationLabel = l.qualifiedAs("relation")
-    val _ = _addCluster(relationLabel, Seq(lhs, rhs))
+    relationTable.put(lhs.id, qualifyRelation(l), rhs.id)
   }
 
-  // l: String@@Relation
-  def getRelations(lhs: Component, l: Label): Option[Seq[Component]] = {
-    val typedLabel = l.qualifiedAs("relation")
-    for {
-      rels <- _getClusterMembers(typedLabel, lhs)
-      if rels.headOption.exists(_.id==lhs.id)
-    } yield { rels.tail }
+  def getRelation(lhs: Component, l: Label): Option[Component] = {
+    if (relationTable.contains(lhs.id, qualifyRelation(l))) {
+      Some(getById(relationTable.get(lhs.id, qualifyRelation(l))))
+    } else None
   }
 
   // l: String@@DisjointCluster
   def addCluster(l: Label, cs: Seq[Component]): Component = {
     assume(cs.nonEmpty)
 
-    val typedLabel = l.qualifiedAs("cluster")
-
-    _addCluster(typedLabel, cs)
+    _addCluster(qualifyCluster(l), cs)
   }
 
   private def _addCluster(l: Label, cs: Seq[Component]): Component = {
     assume(cs.nonEmpty)
-
-    val canonLabel = l.qualifiedAs("rep")
 
     val set = disjointSets.getOrElseUpdate(l,
       OrderedDisjointSet.apply[Component]()
@@ -238,7 +238,7 @@ class PageIndex(
     }
     val canonical = set.getCanonical(c0)
 
-    addLabel(canonical, canonLabel)
+    addLabel(canonical, qualifyRep(l))
 
     canonical
   }
@@ -271,6 +271,10 @@ class PageIndex(
   def removeShape(shape: GeometricFigure, labels: Label*): Unit = {
     val lshape = LabeledShape(shape, labels.toSet)
     shapeRIndex.remove(lshape)
+  }
+
+  def removeShapes(): Unit = {
+    shapeRIndex.clearAll()
   }
 
   def addComponent(c: Component): Component = {
@@ -309,7 +313,7 @@ class PageIndex(
     val empty = guava.collect.HashMultimap.create[Label, Int@@ComponentID]()
     val inv = guava.collect.Multimaps.invertFrom[Label, Int@@ComponentID, gcol.Multimap[Label, Int@@ComponentID]](componentToLabelMMap, empty)
 
-    inv.get(l).asScala.toSeq.map(id =>getById(id.unwrap))
+    inv.get(l).asScala.toSeq.map(id =>getById(id))
   }
 
 

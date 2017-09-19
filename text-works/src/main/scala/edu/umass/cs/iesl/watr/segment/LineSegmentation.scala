@@ -86,7 +86,7 @@ trait LineFinding extends ColumnFinding { self =>
 
       // Tie together the readingBlock and the canonicalReadingBlockLine
       _                = pageIndex.addRelation(readingBlock, LB.HasVisualLines, vlineCluster)
-      vlineClusterTmp  = pageIndex.getRelations(readingBlock, LB.HasVisualLines)
+      vlineClusterTmp  = pageIndex.getRelation(readingBlock, LB.HasVisualLines)
 
       line         <- sortedLines
     }  {
@@ -200,8 +200,8 @@ trait LineFinding extends ColumnFinding { self =>
   private def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component]): TextGrid.Row = {
 
 
-    val visualLineModalCC = pageIndex.getRelations(visualLineClusterCC, LB.VisualLineModal).head.head
-    val visualLineCC = pageIndex.getRelations(visualLineClusterCC, LB.VisualLine).head.head
+    val visualLineModalCC = pageIndex.getRelation(visualLineClusterCC, LB.VisualLineModal).head
+    val visualLineCC = pageIndex.getRelation(visualLineClusterCC, LB.VisualLine).head
 
     val visualLineModalBounds = visualLineModalCC.bounds()
 

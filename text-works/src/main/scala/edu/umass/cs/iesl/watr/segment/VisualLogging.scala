@@ -7,6 +7,7 @@ import spindex._
 // import utils.Color
 import play.api.libs.json, json._
 import tracing._
+// import utils.ExactFloats._
 
 object DrawMethods {
   def strIdent[V](implicit n: sourcecode.Name) = n.value
@@ -21,15 +22,13 @@ object DrawMethods {
   val Clear   = strIdent
 
 
-  // push/pop layers
-  // alpha fade
-
 }
 
 trait PageScopeTracing extends VisualTracer { self  =>
   lazy val traceLog = self
 
   def pageIndex: PageIndex
+
 
   lazy val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageIndex.pageGeometry.bounds
   lazy val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageIndex.pageGeometry.bounds
@@ -136,6 +135,52 @@ trait PageScopeTracing extends VisualTracer { self  =>
     )
   }
 
+  def drawPageShapes()(
+    implicit lg: LogSpec
+  ): Unit = jsonAppend {
+    val pageBounds = pageIndex.pageGeometry.bounds
+
+    val allShapes = pageIndex.shapeRIndex.getItems.map{ lshape =>
+      val lls = lshape.labels.mkString(" ")
+      lshape.shape match {
+        case p@ Point.Ints(x, y) =>
+          Json.obj(
+            ("type" -> "circle"), ("class" -> lls),
+            ("x" -> x), ("y" -> y),
+            ("r" -> 2)
+          ).some
+
+        case l@ Line(Point.Ints(p1x, p1y), Point.Ints(p2x, p2y)) =>
+
+          Json.obj(
+            ("type" -> "line"), ("class" -> lls),
+            ("x1" -> p1x), ("y1" -> p1y),
+            ("x2" -> p2x), ("y2" -> p2y)
+          ).some
+        case LTBounds.Ints(left, top, width, height) =>
+
+          Json.obj(
+            ("type" -> "rect"), ("class" -> lls),
+            ("x" -> left),     ("y" -> top),
+            ("width" -> width), ("height" -> height)
+          ).some
+
+        case _ => None
+      }
+
+    }
+
+    val pgBounds = mkRegions(Seq(pageBounds))
+
+    val shapes = pgBounds ++ (allShapes.flatten)
+
+    Json.obj(
+      ("desc" -> JsString("All Page Shapes")),
+      ("Method" -> DrawMethods.Outline),
+      ("shapes" -> shapes)
+    )
+
+  }
 }
 
 

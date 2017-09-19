@@ -22,9 +22,13 @@ trait RTreeSearch[T] {
 
   lazy implicit val si = indexable
 
-  // // Search TODO: open/closed intervals for search inclusion
 
-  def search(queryFig:G.GeometricFigure, filter: T=>Boolean): Seq[T] = {
+
+  def search(
+    queryFig:G.GeometricFigure,
+    filter: T=>Boolean,
+    intersectFunc: (G.GeometricFigure, G.GeometricFigure) => Boolean = (_,_) => true,
+  ): Seq[T] = {
     val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
       override def call(entry: Entry[T, RG.Geometry]): JBool = {
         filter(entry.value())
@@ -43,6 +47,15 @@ trait RTreeSearch[T] {
 
     toScalaSeq(hits)
   }
+
+  // def queryIntersecting(queryRegion: LTBounds): Seq[T] =
+  //   search(queryRegion, _ => shapesIntersect(_, _))
+
+  // def queryOverlapping(queryRegion: LTBounds, labels: Label*): Seq[Component] =
+  //   searchComponents(queryRegion, shapesIntersect(_, _), labels:_*)
+
+  // def queryTouching(queryRegion: LTBounds, labels: Label*): Seq[Component] =
+  //   searchComponents(queryRegion, shapesIntersect(_, _), labels:_*)
 
   // def queryForContainedIDs(q:G.LTBounds): Seq[Int] = {
 
