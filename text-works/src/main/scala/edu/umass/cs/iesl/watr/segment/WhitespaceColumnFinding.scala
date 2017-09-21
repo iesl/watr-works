@@ -19,12 +19,9 @@ import org.dianahep.{histogrammar => HST}
 // import org.dianahep.histogrammar.ascii._
 
 
-trait ColumnFinding extends PageScopeSegmenter { self =>
+trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
   lazy val columnFinder = self
 
-
-  def runColumnFinder(): Unit = {
-  }
 
   def findCandidateWhitespaceCols(): Unit = {
     implicit val log = traceLog.createLog("findCandidateWhitespaceCols")

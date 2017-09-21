@@ -120,7 +120,7 @@ class PdfTextExtractor(
         val (pageGeometry, geomTrans) = getReportedPageGeometry(pageNum, pdfPage, reader)
         println("Extracting page")
 
-        val extractor = new ColumnTrackingListener(
+        val extractor = new RunTrackingListener(
           reader,
           charIdGen,
           pdfPage,

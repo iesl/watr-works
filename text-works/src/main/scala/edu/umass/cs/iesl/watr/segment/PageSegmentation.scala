@@ -5,6 +5,7 @@ import spindex._
 import watrmarks.{StandardLabels => LB}
 import textgrid._
 
+trait ColumnFinding extends CharColumnFinding
 
 trait PageLevelFunctions extends ColumnFinding
     with LineFinding
@@ -57,10 +58,8 @@ trait PageSegmenter extends PageLevelFunctions {
   def runPageSegmentation(): Unit =  {
     traceLog.initPageTracing()
 
-    implicit val log = createLog("initialPageComponents")
-    traceLog.drawPageShapes()
 
-    // columnFinder.runColumnFinder()
+    columnFinder.runColumnFinder()
 
     // lineFinding.runLineSegmentation()
     shapeFunctions.buildLinePairTrapezoids()

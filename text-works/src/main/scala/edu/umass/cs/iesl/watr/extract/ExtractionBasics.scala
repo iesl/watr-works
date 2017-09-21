@@ -1,24 +1,19 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-
-
 import _root_.com.itextpdf
 
 import itextpdf.kernel.geom.{
   Vector => PVector,
-  // Subpath, IShape,
   Point => IPoint,
   Matrix
 }
-// import itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
-// import itextpdf.kernel.pdf.canvas.parser.EventType
-import itextpdf.kernel.pdf.canvas.parser.data._
-// import itextpdf.kernel.pdf.PdfReader
-import utils.EnrichNumerics._
 
+import itextpdf.kernel.pdf.canvas.parser.data._
+import utils.EnrichNumerics._
 import utils.ExactFloats._
 import geometry._
+import geometry.syntax._
 
 abstract class ExtractionBasics(
   geomTranslation: GeometryTranslation
@@ -138,3 +133,108 @@ abstract class ExtractionBasics(
   }
 
 }
+
+sealed trait ExtractedItem {
+  val charProps: CharProps = new CharProps {}
+
+  def id: Int@@CharID
+  def bbox: LTBounds
+
+  def strRepr(): String
+
+}
+
+object ExtractedItem {
+  implicit class RicherExtractedItem(val self: CharItem) extends AnyVal {
+
+
+    def isWonky: Boolean = self.wonkyCharCode.isDefined
+
+    def isSpace: Boolean = self.wonkyCharCode.exists(_==32)
+    def isControl: Boolean = self.wonkyCharCode.exists(_<32)
+    def isNonPrintable: Boolean = self.wonkyCharCode.exists(_<=32)
+
+  }
+
+  case class CharItem(
+    id: Int@@CharID,
+    bbox: LTBounds,
+    char: String,
+    wonkyCharCode: Option[Int] = None
+  ) extends ExtractedItem {
+    def strRepr(): String = char
+
+    // def modp[P <: CharBioProp](modf: P => CharBioProp): Unit = {
+    //   charProps = modf(charProps.asInstanceOf[P])
+    // }
+
+    // def setp[P <: CharBioProp](modf: P => Unit): Unit = {
+    //   modf(charProps.asInstanceOf[P])
+    // }
+  }
+
+
+  case class ImgItem(
+    id: Int@@CharID,
+    bbox: LTBounds
+  ) extends ExtractedItem {
+    def strRepr(): String = s"[image ${bbox.prettyPrint}]"
+    // charProps = new CharBioProp.OutChar {
+    //   isImage = true
+    // }
+  }
+
+  case class PathItem(
+    id: Int@@CharID,
+    bbox: LTBounds,
+    waypoints: Seq[Point]
+    // waypoints: Seq[Seq[Seq[Point]]]
+  ) extends ExtractedItem {
+
+    lazy val pp = waypoints.map(_.prettyPrint).take(4).mkString(", ")
+    def strRepr(): String = s"[path ${bbox.prettyPrint}=[$pp]]"
+  }
+
+
+}
+
+
+
+class CharProps()  {
+  var charRunId: Int = -1
+  var isRunBegin: Boolean = false
+}
+
+  // sealed trait CharClass
+  // object CharClass {
+  //   final case object ImageClass extends CharClass
+  // }
+
+// sealed trait CharBioProp
+// object CharBioProp {
+
+
+//   // class OutChar extends CharBioProp {
+//   //   var isImage: Boolean = false
+//   //   var isPath: Boolean =  false
+//   // }
+
+//   // class BegChar extends CharBioProp {
+//   //   // var lineEndId: Int@@CharID = CharID(0)
+//   //   // var prevLineBeginId: Int@@CharID = CharID(0)
+//   //   // var nextLineBeginId: Int@@CharID = CharID(0)
+//   //   // var alignedLeftToPrev: Boolean = false
+//   //   // var alignedLeftToNext: Boolean = false
+
+//   // }
+
+//   // class InsChar extends CharBioProp {
+//   // }
+
+//   // class LastChar extends CharBioProp {
+//   //   // var lineBeginId: Int@@CharID = CharID(0)
+//   //   // var prevLineBeginId: Int@@CharID = CharID(0)
+
+//   // }
+
+// }

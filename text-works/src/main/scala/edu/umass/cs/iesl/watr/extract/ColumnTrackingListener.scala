@@ -3,6 +3,7 @@ package extract
 
 import com.itextpdf.kernel.pdf.PdfPage
 import geometry._
+// import geometry.syntax._
 
 import scala.collection.JavaConverters._
 
@@ -15,101 +16,9 @@ import itextpdf.kernel.pdf.PdfReader
 import fonts._
 import utils.IdGenerator
 import utils.ExactFloats._
-import TypeTags._
+// import TypeTags._
 
 
-sealed trait ExtractedItem {
-  var charProps: CharBioProp = new CharBioProp.OutChar
-
-  def id: Int@@CharID
-  def bbox: LTBounds
-
-  def strRepr(): String
-
-}
-
-object ExtractedItem {
-  implicit class RicherExtractedItem(val self: CharItem) extends AnyVal {
-
-
-    def isWonky: Boolean = self.wonkyCharCode.isDefined
-
-    def isSpace: Boolean = self.wonkyCharCode.exists(_==32)
-    def isControl: Boolean = self.wonkyCharCode.exists(_<32)
-    def isNonPrintable: Boolean = self.wonkyCharCode.exists(_<=32)
-
-  }
-
-  case class CharItem(
-    id: Int@@CharID,
-    bbox: LTBounds,
-    char: String,
-    wonkyCharCode: Option[Int] = None
-  ) extends ExtractedItem {
-    def strRepr(): String = char
-
-    def modp[P <: CharBioProp](modf: P => CharBioProp): Unit = {
-      charProps = modf(charProps.asInstanceOf[P])
-    }
-
-    def setp[P <: CharBioProp](modf: P => Unit): Unit = {
-      modf(charProps.asInstanceOf[P])
-    }
-  }
-
-
-  case class ImgItem(
-    id: Int@@CharID,
-    bbox: LTBounds
-  ) extends ExtractedItem {
-    def strRepr(): String = s"[image ${bbox.prettyPrint}]"
-
-    charProps = new CharBioProp.OutChar {
-      isImage = true
-    }
-  }
-
-  case class PathItem(
-    id: Int@@CharID,
-    bbox: LTBounds
-  ) extends ExtractedItem {
-    def strRepr(): String = "[path]"
-  }
-
-
-  // case class BTEvent(
-  //   id: Int@@CharID
-  // ) extends ExtractedItem
-}
-
-sealed trait CharBioProp
-
-object CharBioProp {
-
-  class OutChar extends CharBioProp {
-    var isImage: Boolean = false
-    var isPath: Boolean =  false
-  }
-
-  class BegChar extends CharBioProp {
-    var lineEndId: Int@@CharID = CharID(0)
-    var prevLineBeginId: Int@@CharID = CharID(0)
-    var nextLineBeginId: Int@@CharID = CharID(0)
-    var alignedLeftToPrev: Boolean = false
-    var alignedLeftToNext: Boolean = false
-
-  }
-
-  class InsChar extends CharBioProp {
-  }
-
-  class LastChar extends CharBioProp {
-    var lineBeginId: Int@@CharID = CharID(0)
-    var prevLineBeginId: Int@@CharID = CharID(0)
-
-  }
-
-}
 
 class ColumnTrackingListener(
   reader: PdfReader,
@@ -167,41 +76,42 @@ class ColumnTrackingListener(
   var lineLists = List[List[ExtractedItem]]()
 
   def getPageItems(): Seq[ExtractedItem] = {
-    val lineRows = lineLists.reverse.map{ rline =>
-      val lineLast = rline.head
-      rline.drop(1).foreach {c =>
-        c.charProps = new CharBioProp.InsChar {}
-      }
-      val line = rline.reverse
-      val lineFirst = line.head
+    // val lineRows = lineLists.reverse.map{ rline =>
+    //   val lineLast = rline.head
+    //   rline.drop(1).foreach {c =>
+    //     c.charProps = new CharBioProp.InsChar {}
+    //   }
+    //   val line = rline.reverse
+    //   val lineFirst = line.head
 
-      // Overwrite final Ins with BegChar
-      lineFirst.charProps = new CharBioProp.BegChar {
-        lineEndId = lineLast.id
-      }
-      lineLast.charProps = new CharBioProp.LastChar {
-        lineBeginId = lineFirst.id
-      }
+    //   // Overwrite final Ins with BegChar
+    //   lineFirst.charProps = new CharBioProp.BegChar {
+    //     lineEndId = lineLast.id
+    //   }
+    //   lineLast.charProps = new CharBioProp.LastChar {
+    //     lineBeginId = lineFirst.id
+    //   }
 
-      line
-    }
+    //   line
+    // }
 
-    debugPrintPageItems(lineRows)
+    // debugPrintPageItems(lineRows)
 
-    val lines = lineRows.flatten
+    // val lines = lineRows.flatten
 
-    lines  // ++ pageImages
+    // lines  // ++ pageImages
+    ???
   }
 
-  private def debugPrintPageItems(rows: List[List[ExtractedItem]]): Unit = {
-    val rowStrs = rows.map { row =>
-      row.map(_.strRepr()).mkString
-    }
+  // private def debugPrintPageItems(rows: List[List[ExtractedItem]]): Unit = {
+  //   val rowStrs = rows.map { row =>
+  //     row.map(_.strRepr()).mkString
+  //   }
 
-    val pageStr = rowStrs.mkString("\n  ", "\n  ", "\n")
+  //   val pageStr = rowStrs.mkString("\n  ", "\n  ", "\n")
 
-    println(pageStr)
-  }
+  //   println(pageStr)
+  // }
 
   def addImgItem(imgItem: ExtractedItem.ImgItem): Unit = {
     lineLists = List(imgItem) :: lineLists

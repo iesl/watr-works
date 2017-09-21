@@ -7,12 +7,12 @@ import watrmarks.{StandardLabels => LB}
 import corpora.DocumentZoningApi
 import extract.PdfTextExtractor
 import geometry._
-import geometry.syntax._
+// import geometry.syntax._
 import extract._
-import utils.{RelativeDirection => Dir}
+// import utils.{RelativeDirection => Dir}
 import spindex.PageIndex
 
-import utils.ExactFloats._
+// import utils.ExactFloats._
 import TypeTags._
 
 trait DocumentLevelFunctions extends DocumentScopeSegmenter
@@ -54,12 +54,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     pageAtomsAndGeometry.zip(getNumberedPageIndexes).foreach {
       case ((extractedItems: Seq[ExtractedItem], pageGeometry), (pageId, pageIndex)) =>
 
-        val leftEdge = pageGeometry.bounds.toLine(Dir.Left)
-
-        import org.dianahep.{histogrammar => HST}
-        val colLefts = HST.SparselyBin.ing(1.0, {p: Point => p.x.asDouble()})
-        val colRights = HST.SparselyBin.ing(1.0, {p: Point => p.x.asDouble()})
-        // val colRights = HST.SparselyBin.ing(1.0d, {t: Double => t})
 
         extractedItems.foreach { _ match {
 
@@ -75,34 +69,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
             )
 
             val cc = mpageIndex.addCharAtom(charAtom)
-
-            item.charProps match {
-              case prop: CharBioProp.BegChar =>
-                val vline = leftEdge.translate(x=cc.bounds.left, 0.toFloatExact)
-                val llPoint = cc.bounds().toPoint(Dir.BottomLeft)
-
-                pageIndex.addShape(vline, LB.LineStartHint)
-                pageIndex.addShape(llPoint, LB.LineStartEvidence)
-                colLefts.fill(llPoint)
-                pageIndex.appendToOrdering(LB.ExtractedLineStarts, cc)
-
-                prop.lineEndId
-
-
-              case prop: CharBioProp.LastChar =>
-
-                val vline = leftEdge.translate(x=cc.bounds.left, 0.toFloatExact)
-                val llPoint = cc.bounds().toPoint(Dir.BottomLeft)
-
-
-                pageIndex.addShape(vline, LB.LineEndHint)
-                pageIndex.addShape(llPoint, LB.LineEndEvidence)
-                colRights.fill(llPoint)
-                // pageIndex.appendToOrdering(LB.ExtractedLineEnds, cc)
-
-              case prop: CharBioProp.InsChar =>
-              case prop: CharBioProp.OutChar =>
+            if (item.charProps.isRunBegin) {
+              pageIndex.appendToOrdering(LB.ExtractedLineStarts, cc)
             }
+
 
           case item:ExtractedItem.ImgItem =>
             val pageRegion = PageRegion(
@@ -112,6 +82,9 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
             val imgRegion = PageItem.ImageAtom(pageRegion)
             mpageIndex.addImageAtom(imgRegion)
+
+            pageIndex.addShape(item.bbox, LB.Image)
+
 
           case item:ExtractedItem.PathItem =>
 
@@ -123,7 +96,8 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
         mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>
           mpageIndex.labelRegion(Seq(imgCC), LB.Image)
         }
-        // pruneCols()
+
+        // markLeftRightColumns()
     }
 
   }
@@ -186,25 +160,3 @@ object DocumentSegmenter {
 }
 
 
-        // def pruneCols(): Unit = {
-        //   // pageIndex.removeShapes()
-        //   colLefts.bins.toList
-        //     .sortBy { case (bin, counting) => counting.entries }
-        //     .filter{  case (bin, counting) => counting.entries > 1d }
-        //     .map{ case (bin, counting) =>
-        //       val bw = colLefts.binWidth
-
-        //       val colGuess = LTBounds.Doubles(left=bin.toDouble, top=0d, width=bw, pageGeometry.bounds.height.asDouble())
-        //       pageIndex.addShape(colGuess, LB.LeftAlignedCharCol)
-
-        //     }
-        //   colRights.bins.toList
-        //     .sortBy { case (bin, counting) => counting.entries }
-        //     .filter{  case (bin, counting) => counting.entries > 1d }
-        //     .map{ case (bin, counting) =>
-        //       val bw = colRights.binWidth
-        //       val colGuess = LTBounds.Doubles(left=bin.toDouble, top=0d, width=bw, pageGeometry.bounds.height.asDouble())
-        //       pageIndex.addShape(colGuess, LB.LeftAlignedColEnd)
-        //     }
-
-        // }
