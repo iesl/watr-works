@@ -12,3 +12,5 @@ corpus-*
 resources
 ext.d
 node_modules
+*.css
+lib/

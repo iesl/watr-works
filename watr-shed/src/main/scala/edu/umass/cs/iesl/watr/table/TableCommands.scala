@@ -208,7 +208,7 @@ object ShellCommands extends DocumentZoningApiEnrichments {
   //         println(s"Corrected reading order for ${stableId} page ${pageNum}")
 
   //         vlineCCsToZones.foreach { case (vlineCC, maybeZone) =>
-  //           val maybeText = pageIndex.getComponentText(vlineCC, LB.VisualLine)
+  //           val maybeText = pageIndex.components.getComponentText(vlineCC, LB.VisualLine)
   //           maybeZone match {
   //             case Some(zone) =>
   //               val reflow = docStore.getModelTextReflowForZone(zone.id)

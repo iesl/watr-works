@@ -11,7 +11,7 @@ trait LibVersions {
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.4.4"
-  val matryoshkaCoreV     = "0.21.1"
+  val matryoshkaCoreV     = "0.21.2"
   val sourcecodeV         = "0.1.4"
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.2"

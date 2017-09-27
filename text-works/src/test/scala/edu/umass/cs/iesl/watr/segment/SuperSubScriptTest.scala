@@ -59,7 +59,7 @@ class SuperSubScriptTest extends SegmentationTestUtils {
 
   //     segmenter.runLineDetermination()
 
-  //     val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
+  //     val lineComponents = pageIndex.components.getComponentsWithLabel(LB.VisualLine)
 
   //     val tokenizedLines = lineComponents.map { lineComponent =>
   //       lineComponent.tokenizeLine()

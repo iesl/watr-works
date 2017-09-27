@@ -13,9 +13,10 @@ import textreflow.data._
 import TypeTags._
 import corpora._
 
-import watrmarks.{StandardLabels => LB}
+import segment.{SegmentationLabels => LB}
 import utils.ExactFloats._
 import java.nio.{file => nio}
+import extract.ExtractedItem
 
 
 /**
@@ -38,7 +39,9 @@ object MultiPageIndex {
 
 class MultiPageIndex(
   stableId: String@@DocumentID,
-  val docStore: DocumentZoningApi
+  val docStore: DocumentZoningApi,
+  val extractedItems: Seq[(Seq[ExtractedItem], PageGeometry)]
+
 ) {
   lazy val docId: Int@@DocumentID =
     docStore.getDocument(stableId).getOrElse(sys.error("MultiPageIndex created for non-existent document"))
@@ -46,11 +49,36 @@ class MultiPageIndex(
 
   def getStableId(): String@@DocumentID = stableId
 
-
   val pageIndexes = mutable.HashMap[Int@@PageNum, PageIndex]()
 
   // ID generators
   val componentIdGen = IdGenerator[ComponentID]()
+
+  private def initPages(): Unit = {
+    val extractedItemCount = extractedItems
+      .map { case (items, _) => items.lastOption.map { _.id.unwrap } }
+      .flatten
+      .sorted.lastOption.getOrElse(0)
+
+    // val offsetArray = new Array[Int](extractedItems.length)
+    val itemArray = new Array[ExtractedItem](extractedItemCount+1)
+
+    extractedItems.foreach { case (items, _) =>
+      items.foreach { item => itemArray(item.id.unwrap) = item }
+    }
+
+    extractedItems.foreach { case (items, pageGeometry) =>
+      val pageIndex = new PageIndex(
+        pageGeometry,
+        itemArray,
+        0
+      )
+      val existing = pageIndexes.put(pageGeometry.pageNum, pageIndex)
+      existing.foreach { e => sys.error("adding new page w/existing id") }
+    }
+  }
+
+  initPages()
 
   def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
     docStore.getTextReflowForZone(zoneId)
@@ -145,18 +173,18 @@ class MultiPageIndex(
     c
   }
 
-  def getPageAtoms(pageNum: Int@@PageNum): Seq[AtomicComponent] = {
-    getPageIndex(pageNum).getPageAtoms
-  }
+  // def getPageAtoms(pageNum: Int@@PageNum): Seq[AtomicComponent] = {
+  //   getPageIndex(pageNum).getPageAtoms
+  // }
 
-  def getImageAtoms(pageNum: Int@@PageNum): Seq[RegionComponent] = {
-    getPageIndex(pageNum).getImageAtoms
-  }
+  // def getImageAtoms(pageNum: Int@@PageNum): Seq[RegionComponent] = {
+  //   getPageIndex(pageNum).getImageAtoms
+  // }
 
   def addComponent(c: Component): Component = {
     val pageNum = c.pageRegion.page.pageNum
     getPageIndex(pageNum)
-      .addComponent(c)
+      .components.addComponent(c)
   }
 
   def getPageGeometry(p: Int@@PageNum) = pageIndexes(p).pageGeometry
@@ -165,26 +193,14 @@ class MultiPageIndex(
     pageIndexes.keys.toList.sortBy(PageNum.unwrap(_))
   }
 
-  def addPageIndex(pageIndex: PageIndex): Unit = {
-    val existing = pageIndexes.put(pageIndex.pageGeometry.pageNum, pageIndex)
+  // def addPageIndex(pageIndex: PageIndex): Unit = {
+  //   val existing = pageIndexes.put(pageIndex.pageGeometry.pageNum, pageIndex)
 
-    existing.foreach { e =>
-      sys.error("error adding new page w/existing id")
-    }
-  }
+  //   existing.foreach { e =>
+  //     sys.error("error adding new page w/existing id")
+  //   }
+  // }
 
-  def addPage(pageGeometry: PageGeometry): PageIndex = {
-    val pageIndex = new PageIndex(
-      pageGeometry
-    )
-
-    val existing = pageIndexes.put(pageGeometry.pageNum, pageIndex)
-
-    existing.foreach { e =>
-      sys.error("adding new page w/existing id")
-    }
-    pageIndex
-  }
 
 
 

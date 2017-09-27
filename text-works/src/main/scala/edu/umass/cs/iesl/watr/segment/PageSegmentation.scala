@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
-import watrmarks.{StandardLabels => LB}
+import segment.{SegmentationLabels => LB}
 import textgrid._
 
 trait ColumnFinding extends CharColumnFinding
@@ -15,15 +15,15 @@ trait PageLevelFunctions extends ColumnFinding
 object PageSegmenter {
 
   def getVisualLinesInExtractionOrder(pageIndex: PageIndex): Seq[Component] = {
-    pageIndex.getOrdering(LB.ExtractedLineStarts)
+    pageIndex.components.getOrdering(LB.ExtractedLineStarts)
   }
 
   def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[(Component, Seq[Component])] = {
     // val linesPerBlock0 = for {
-    //   block <- pageIndex.getOrdering(LB.ReadingBlocks)
+    //   block <- pageIndex.components.getOrdering(LB.ReadingBlocks)
     // } yield {
     //   for {
-    //     visualLineRootCCs <- pageIndex.getRelation(block, LB.HasVisualLines).toList
+    //     visualLineRootCCs <- pageIndex.components.getRelation(block, LB.HasVisualLines).toList
     //     // visualLineRootCC <- visualLineRootCCs
     //     lineMembers   <- pageIndex.getClusterMembers(LB.ReadingBlockLines, visualLineRootCC)
     //   } yield {
@@ -58,11 +58,11 @@ trait PageSegmenter extends PageLevelFunctions {
   def runPageSegmentation(): Unit =  {
     traceLog.initPageTracing()
 
-
     columnFinder.runColumnFinder()
 
     // lineFinding.runLineSegmentation()
-    shapeFunctions.buildLinePairTrapezoids()
+    // shapeFunctions.buildLinePairTrapezoids()
+
   }
 
   def runLineClassification(): Unit = {
@@ -80,7 +80,7 @@ trait PageSegmenter extends PageLevelFunctions {
       val textLines = for {
         (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
         (line, n)    <- lineCCs.zipWithIndex
-        textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+        textRow      <- pageIndex.components.getComponentText(line, LB.VisualLine).toList
       } yield textRow
 
       val pageTextGrid = TextGrid.fromRows(textLines)

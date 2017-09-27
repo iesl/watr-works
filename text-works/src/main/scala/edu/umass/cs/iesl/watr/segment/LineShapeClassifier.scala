@@ -2,15 +2,19 @@ package edu.umass.cs.iesl.watr
 package segment
 
 
-import watrmarks.{StandardLabels => LB, _}
+// import watrmarks.{StandardLabels => LB, _}
+import watrmarks._
+import watrmarks.Label
 import geometry._
 import geometry.syntax._
 import textboxing.{TextBoxing => TB}
 import textgrid._
 
+import segment.{SegmentationLabels => LB}
 
 trait LineShapeClassification extends PageScopeSegmenter { self =>
   lazy val lineShapes = self
+
 
   def classifyLines(): Unit = {
     groupLines()
@@ -30,11 +34,11 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
   }
 
   def getTrapezoidAttr(cc: Int@@ComponentID): Option[Trapezoid] = {
-    pageIndex.getAttribute[Trapezoid](cc, watrmarks.Label("Trapezoid"))
+    pageIndex.components.getAttribute[Trapezoid](cc, watrmarks.Label("Trapezoid"))
   }
 
   def getWeightsAttr(cc: Int@@ComponentID): Option[WeightedLabeling] = {
-    pageIndex.getAttribute[WeightedLabeling](cc, watrmarks.Label("LineGrouping"))
+    pageIndex.components.getAttribute[WeightedLabeling](cc, watrmarks.Label("LineGrouping"))
   }
 
   def groupLines(): Unit = {
@@ -43,7 +47,7 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
       _ = {
         // Create weighted label set on each line
         lineCCs.foreach { cc =>
-          pageIndex.setAttribute(cc.id, watrmarks.Label("LineGrouping"), WeightedLabeling())
+          pageIndex.components.setAttribute(cc.id, watrmarks.Label("LineGrouping"), WeightedLabeling())
         }
       }
       linePair <- lineCCs.sliding(3)
@@ -53,9 +57,9 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
       linePair match {
 
         case Seq(line1CC, line2CC, line3CC) =>
-          val l1TextRowOpt = pageIndex.getComponentText(line1CC, LB.VisualLine)
-          val l2TextRowOpt = pageIndex.getComponentText(line2CC, LB.VisualLine)
-          val l3TextRowOpt = pageIndex.getComponentText(line3CC, LB.VisualLine)
+          val l1TextRowOpt = pageIndex.components.getComponentText(line1CC, LB.VisualLine)
+          val l2TextRowOpt = pageIndex.components.getComponentText(line2CC, LB.VisualLine)
+          val l3TextRowOpt = pageIndex.components.getComponentText(line3CC, LB.VisualLine)
 
           val l1Text = l1TextRowOpt.map(_.toText()).getOrElse("<no text>")
           val l2Text = l2TextRowOpt.map(_.toText()).getOrElse("<no text>")
@@ -121,8 +125,8 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
 
 
         case Seq(line1CC, line2CC) =>
-          val l1TextRowOpt = pageIndex.getComponentText(line1CC, LB.VisualLine)
-          val l2TextRowOpt = pageIndex.getComponentText(line2CC, LB.VisualLine)
+          val l1TextRowOpt = pageIndex.components.getComponentText(line1CC, LB.VisualLine)
+          val l2TextRowOpt = pageIndex.components.getComponentText(line2CC, LB.VisualLine)
 
           val l1Text = l1TextRowOpt.map(_.toText()).getOrElse("<no text>")
           val l2Text = l2TextRowOpt.map(_.toText()).getOrElse("<no text>")
@@ -201,7 +205,7 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
       lineCC <- lineCCs
     } yield {
 
-      val lineText = pageIndex.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
+      val lineText = pageIndex.components.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
       lineText.getOrElse("<no text>").box
     }
 
@@ -209,7 +213,7 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
       lineCC <- lineCCs
     } yield {
-      val lineWeights = pageIndex.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
+      val lineWeights = pageIndex.components.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
 
       val pinstr = lineWeights.countedPins().map({case (p, c) => s"$p(${c})" }).mkString("; ")
       // val pins = lineWeights.uniquePins()

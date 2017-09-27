@@ -48,9 +48,9 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   }
 
   def deleteComponentsWithLabel(l: Label): Unit = {
-    pageIndex.getComponentsWithLabel(l)
+    pageIndex.components.getComponentsWithLabel(l)
       .foreach { cc =>
-        pageIndex.removeComponent(cc)
+        pageIndex.components.removeComponent(cc)
       }
   }
 

@@ -44,4 +44,14 @@ object RGeometryConversions {
       height = (r.y2 - r.y1)
     )
   }
+
+  def geometricFigureToRtreeGeometry(fig: GeometricFigure): RG.Geometry = {
+    fig match {
+      case f: LTBounds => toRGRectangle(f)
+      case f: Point    => toRGPoint(f)
+      case f: Line     => toRGLine(f)
+      case f: LBBounds => toRGRectangle(f.toLTBounds)
+      case _ => ???
+    }
+  }
 }

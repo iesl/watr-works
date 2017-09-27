@@ -168,6 +168,12 @@ trait VisualTracer extends EnableTrace { self =>
     // println(s"checkpoint@${enclosing.value}/${loc.value}:  '($msg)'")
   }
 
+
+  def createFnLog(implicit enclosing: sourcecode.Enclosing): LogSpec = {
+    val logname= enclosing.value.split("\\.").toList.last
+    createLog(logname)
+  }
+
   def createLog(logname: String): LogSpec = {
     VisualTracer.createLog(logname)
     LogSpec(logname)

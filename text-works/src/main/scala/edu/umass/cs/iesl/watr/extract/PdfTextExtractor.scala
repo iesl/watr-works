@@ -19,9 +19,7 @@ import java.nio.{file => nio}
 object PdfTextExtractor {
 
   def extractPages(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[ExtractedItem], PageGeometry)] = {
-    val charExtractor = new PdfTextExtractor(
-      Set[Int](), IdGenerator[CharID]()
-    )
+    val charExtractor = new PdfTextExtractor()
 
     charExtractor.extractPages(stableId, pdfPath)
   }
@@ -29,10 +27,7 @@ object PdfTextExtractor {
 
 }
 
-class PdfTextExtractor(
-  charsToDebug: Set[Int] = Set(),
-  charIdGen: IdGenerator[CharID]
-) {
+class PdfTextExtractor() {
 
   val bboxNames = List[PdfName](
     PdfName.CropBox,
@@ -92,7 +87,6 @@ class PdfTextExtractor(
       height = bottom
     )
 
-    // println(s"getReportedPageGeometry: ${bounds}   ($lval, $bval, $rval, $tval)")
 
     (PageGeometry(pageId, bounds),
       GeometryTranslation(xtrans, ytrans))
@@ -100,10 +94,10 @@ class PdfTextExtractor(
   }
 
 
-  // def extractPages(stableId: String@@DocumentID, pdfPath: Path): List[PageIndex] = {
   def extractPages(stableId: String@@DocumentID, pdfPath: Path): List[(Seq[ExtractedItem], PageGeometry)] = {
     var instr: InputStream = null
     val pages = mutable.ListBuffer[(Seq[ExtractedItem], PageGeometry)]()
+    val charIdGen = IdGenerator[CharID]()
 
     try {
       instr = nio.Files.newInputStream(pdfPath.toNIO)

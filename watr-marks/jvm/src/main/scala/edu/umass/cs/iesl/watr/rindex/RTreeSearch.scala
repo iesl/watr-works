@@ -14,6 +14,21 @@ import com.github.davidmoten.rtree.{geometry => RG, _}
 import edu.umass.cs.iesl.watr.{geometry => G}
 import java.lang.{Boolean => JBool}
 
+import java.awt.geom.Line2D;
+import java.awt.geom.Line2D.Float;
+
+object RTreeSearchFilters {
+  def overlaps: (RG.Geometry, RG.Geometry) => Boolean = {
+    case (fig1, fi2) =>
+
+      fig1.mbr()
+
+
+      true
+  }
+
+}
+
 trait RTreeSearch[T] {
 
   def rtreeIndex: RTree[T, RG.Geometry]
@@ -27,7 +42,8 @@ trait RTreeSearch[T] {
   def search(
     queryFig:G.GeometricFigure,
     filter: T=>Boolean,
-    intersectFunc: (G.GeometricFigure, G.GeometricFigure) => Boolean = (_,_) => true,
+    // intersectFunc: (G.GeometricFigure, G.GeometricFigure) => Boolean = (_,_) => true,
+    intersectFunc: (RG.Geometry, RG.Geometry) => Boolean = (_,_) => true,
   ): Seq[T] = {
     val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
       override def call(entry: Entry[T, RG.Geometry]): JBool = {

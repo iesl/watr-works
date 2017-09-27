@@ -177,7 +177,7 @@ class LineTokenizationTest extends SegmentationTestUtils  with DiagrammedAsserti
   //   }
 
   //   val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-  //   val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
+  //   val lineComponents = pageIndex.components.getComponentsWithLabel(LB.VisualLine)
 
   //   val tokenizedLines = lineComponents.map { lineComponent =>
   //     lineComponent.tokenizeLine()

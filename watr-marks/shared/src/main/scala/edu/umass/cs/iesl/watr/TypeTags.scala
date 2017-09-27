@@ -42,6 +42,7 @@ sealed trait Username
 sealed trait Password
 sealed trait EmailAddr
 sealed trait StatusCode
+sealed trait ShapeID
 
 object TypeTags extends TypeTags
 
@@ -60,9 +61,12 @@ trait TypeTagUtils {
     Ordering.by(_.unwrap)
   }
 
+  implicit def TypeTagOrder[T] : scalaz.Order[Int@@T] = scalaz.Order.fromScalaOrdering
+
   import scalaz.syntax.equal._
   implicit def EqualTypeTag[A: Equal, T]: Equal[A@@T] =
     Equal.equal((a, b)  => a.unwrap===b.unwrap)
+
 }
 trait TypeTags extends TypeTagUtils {
   val SHA1String = Tag.of[SHA1String]
@@ -77,6 +81,7 @@ trait TypeTags extends TypeTagUtils {
   val ComponentID = Tag.of[ComponentID]
   val LabelID = Tag.of[LabelID]
   val TextReflowID = Tag.of[TextReflowID]
+  val ShapeID = Tag.of[ShapeID]
 
   val MentionID  = Tag.of[MentionID]
   val ClusterID  = Tag.of[ClusterID]

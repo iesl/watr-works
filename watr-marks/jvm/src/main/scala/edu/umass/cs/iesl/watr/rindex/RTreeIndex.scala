@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package rindex
 
-
 import scala.collection.JavaConverters
 
 import com.github.davidmoten.rtree.{geometry => RG, _}
@@ -34,6 +33,9 @@ class RTreeIndex[T: RTreeIndexable](
   }
 
   def remove(item: T): Unit = {
+    // si.id(item)
+    // spatialIndex.delete(x$1: T, x$2: Geometry)
+
     spatialIndex = spatialIndex.delete(
       item,
       toRGRectangle(si.ltBounds(item))

@@ -23,6 +23,7 @@ import utils.GraphPaper
 import utils.Colors
 import LabelWidgetTransforms._
 import utils.ExactFloats._
+import com.github.davidmoten.rtree.{geometry => RG}
 
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
@@ -83,11 +84,13 @@ object LabelWidgetIndex extends LabelWidgetLayout {
   implicit object TextReflowIndexable extends RTreeIndexable[IndexableTextReflow] {
     def id(t: IndexableTextReflow): Int = t.id.unwrap
     def ltBounds(t: IndexableTextReflow): LTBounds = t.targetRegion.bbox
+    def rtreeGeometry(t: IndexableTextReflow): RG.Geometry = ???
   }
 
   implicit object LabelWidgetIndexable extends RTreeIndexable[AbsPosWidget] {
     def id(t: AbsPosWidget): Int = t.widget.wid.unwrap
     def ltBounds(t: AbsPosWidget): LTBounds = t.strictBounds
+    def rtreeGeometry(t: AbsPosWidget): RG.Geometry = ???
   }
 
 

@@ -3,16 +3,16 @@ package segment
 
 import ammonite.{ops => fs}, fs._
 
-import watrmarks.{StandardLabels => LB}
+
+import segment.{SegmentationLabels => LB}
 import corpora.DocumentZoningApi
 import extract.PdfTextExtractor
 import geometry._
 // import geometry.syntax._
 import extract._
-// import utils.{RelativeDirection => Dir}
-import spindex.PageIndex
-
 // import utils.ExactFloats._
+import spindex._
+
 import TypeTags._
 
 trait DocumentLevelFunctions extends DocumentScopeSegmenter
@@ -41,7 +41,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       .map { case(extractedItems, pageGeometry)  =>
         val pageId = docStore.addPage(docId, pageGeometry.pageNum)
         docStore.setPageGeometry(pageId, pageGeometry.bounds)
-        mpageIndex.addPage(pageGeometry)
         docStore.getTargetRegion(
           docStore.addTargetRegion(pageId, pageGeometry.bounds)
         )
@@ -50,56 +49,73 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
   }
 
   private def initStartingComponents(): Unit = {
+    import utils.SlicingAndDicing._
 
     pageAtomsAndGeometry.zip(getNumberedPageIndexes).foreach {
       case ((extractedItems: Seq[ExtractedItem], pageGeometry), (pageId, pageIndex)) =>
 
+        val charRuns = extractedItems
+          .groupByPairsWithIndex {
+            case (item1, item2, i) =>
+              item1.charProps.charRunId == item2.charProps.charRunId
+          }
 
-        extractedItems.foreach { _ match {
+        charRuns.foreach { run =>
+          val runBeginPt =  Point(run.head.bbox.left, run.head.bbox.bottom)
+          val runEndPt = Point(run.last.bbox.left, run.last.bbox.bottom)
+          val runLine = Line(runBeginPt, runEndPt)
 
-          case item:ExtractedItem.CharItem =>
-            val charAtom = CharAtom(
-              item.id,
-              PageRegion(
+          // val vCrossLine = runBeginPt.translate(x=0.toFloatExact, y= 5.toFloatExact)
+          //   .lineTo(runBeginPt.translate(x=0.toFloatExact, y= -5.toFloatExact))
+
+          val baselineShape = pageIndex.shapes.addShape(runLine, LB.CharRunBaseline)
+          // val beginVLineShape = pageIndex.shapes.addShape(vCrossLine, LB.CharRunBeginVLine)
+
+          pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, run)
+          // pageIndex.shapes.setShapeAttribute[LabeledShape[GeometricFigure]](beginVLineShape.id, LB.CharRunBaseline, baselineShape)
+
+          run.foreach { _ match  {
+            case item:ExtractedItem.CharItem =>
+              val charAtom = CharAtom(
+                item.id,
+                PageRegion(
+                  StablePage(stableId, pageGeometry.pageNum, pageId),
+                  item.bbox
+                ),
+                item.char,
+                item.wonkyCharCode
+              )
+
+              val cc = mpageIndex.addCharAtom(charAtom)
+
+              if (item.charProps.isRunBegin) {
+                pageIndex.components.appendToOrdering(LB.CharRunBegin, cc)
+              }
+
+              pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
+
+
+            case item:ExtractedItem.ImgItem =>
+
+              val pageRegion = PageRegion(
                 StablePage(stableId, pageGeometry.pageNum, pageId),
                 item.bbox
-              ),
-              item.char,
-              item.wonkyCharCode
-            )
+              )
 
-            val cc = mpageIndex.addCharAtom(charAtom)
-            if (item.charProps.isRunBegin) {
-              pageIndex.appendToOrdering(LB.ExtractedLineStarts, cc)
-            }
+              val imgRegion = PageItem.ImageAtom(pageRegion)
+              mpageIndex.addImageAtom(imgRegion)
 
+              pageIndex.shapes.addShape(item.bbox, LB.Image)
 
-          case item:ExtractedItem.ImgItem =>
-            val pageRegion = PageRegion(
-              StablePage(stableId, pageGeometry.pageNum, pageId),
-              item.bbox
-            )
+              pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
 
-            val imgRegion = PageItem.ImageAtom(pageRegion)
-            mpageIndex.addImageAtom(imgRegion)
+            case item:ExtractedItem.PathItem =>
 
-            pageIndex.addShape(item.bbox, LB.Image)
+              pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
 
-
-          case item:ExtractedItem.PathItem =>
-
-        }}
-
-        val pageNum = pageIndex.pageNum
-
-        // Label all page images
-        mpageIndex.getImageAtoms(pageNum).foreach { imgCC =>
-          mpageIndex.labelRegion(Seq(imgCC), LB.Image)
+          }}
         }
-
-        // markLeftRightColumns()
     }
-
   }
 
 
@@ -144,7 +160,7 @@ object DocumentSegmenter {
 
     val segmenter = new DocumentSegmentation {
       override val pageAtomsAndGeometry = pages
-      override val mpageIndex: MultiPageIndex = new MultiPageIndex(stableId0, docStore0)
+      override val mpageIndex: MultiPageIndex = new MultiPageIndex(stableId0, docStore0, pages)
 
       override val docStore: DocumentZoningApi = docStore0
       override val stableId = stableId0
@@ -158,5 +174,3 @@ object DocumentSegmenter {
     segmenter
   }
 }
-
-

@@ -3,15 +3,20 @@ package spindex
 
 import watrmarks._
 import geometry._
-import watrmarks.{StandardLabels => LB}
+import segment.{SegmentationLabels => LB}
 import scala.collection.mutable
 
 
 object Component {
   import rindex._
+  import com.github.davidmoten.rtree.{geometry => RG}
+
   implicit object ComponentIndexable extends RTreeIndexable[Component] {
     def id(t: Component): Int = t.id.unwrap
     def ltBounds(t: Component): LTBounds = t.bounds
+    def rtreeGeometry(t: Component): RG.Geometry = {
+      RGeometryConversions.geometricFigureToRtreeGeometry(t.bounds)
+    }
   }
 }
 

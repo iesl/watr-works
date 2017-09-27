@@ -47,7 +47,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
 
     // allTestPdfs.foreach {
-    selectPdfPage(allTestPdfs, "1056", 5).foreach {
+    selectPdfPage(allTestPdfs, "0126", 7).foreach {
       case (docId, page, path) =>
 
         tracing.VisualTracer.clearPages()
@@ -61,7 +61,7 @@ class PageTextTest extends SegmentationTestUtils  {
         val segmenter = DocumentSegmenter.createSegmenter(docId, path, new MemDocZoningApi)
 
 
-        // segmenter.runDocumentSegmentation()
+        segmenter.runDocumentSegmentation()
 
         println(s"===========================")
         // val content = formats.DocumentIO.documentToStructuredPlaintext(segmenter.mpageIndex)

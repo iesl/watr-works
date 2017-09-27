@@ -18,8 +18,6 @@ trait ScalaZCommonOps
 
 trait PackageDefs extends ScalaZCommonOps {
 
-  // val LB = watrmarks.StandardLabels
-  // val TB = textboxing.TextBoxing
 
   type @@[A, B] = scalaz.@@[A, B]
 

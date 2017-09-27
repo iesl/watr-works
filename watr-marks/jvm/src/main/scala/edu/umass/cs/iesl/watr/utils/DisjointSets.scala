@@ -133,15 +133,19 @@ class OrderedDisjointSet[A] {
   /**
     * Add a new singleton set with only x in it (assuming x is not already known)
     */
-  def add(x: A) = {
+  def add(x: A): Unit = {
     assume(!contains(x))
     parent(x) = new Node(x)
+  }
+
+  def ensure(x: A): Unit = {
+    if(!contains(x)) add(x)
   }
 
   /**
     * Union the sets containing x and y
     */
-  def union(x: A, y: A) = {
+  def union(x: A, y: A): Unit = {
     val (xRoot, yRoot) = (x.root, y.root)
     if (xRoot != yRoot) {
       if (xRoot.rank < yRoot.rank) {        // change the root of the shorter/less-depth one
@@ -172,6 +176,11 @@ class OrderedDisjointSet[A] {
 
   def at(x: A) = x.root
 
+  def ensureUnion(x: A, y: A): Unit = {
+    if (!contains(x)) add(x)
+    if (!contains(y)) add(y)
+    union(x, y)
+  }
   /**
     * @return Iterator over groups of items in same set
     */

@@ -3,7 +3,7 @@ package segment
 
 import spindex._
 
-import watrmarks.{StandardLabels => LB, _}
+import watrmarks._
 
 import geometry._
 import geometry.syntax._
@@ -12,6 +12,7 @@ import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.ExactFloats._
 import utils.EnrichNumerics._
+import segment.{SegmentationLabels => LB}
 
 import textreflow.data._
 import textgrid._
@@ -25,8 +26,9 @@ import shapeless._
 trait LineFinding extends ColumnFinding { self =>
   lazy val lineFinding = self
 
+
   def runLineSegmentation(): Unit = {
-    val components = mpageIndex.getPageAtoms(pageNum)
+    val components = pageIndex.components.getPageAtoms
 
     approximateLineBins(components)
 
@@ -43,7 +45,7 @@ trait LineFinding extends ColumnFinding { self =>
 
     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
 
-    pageIndex.setOrdering(LB.ReadingBlocks, readingBlocks)
+    pageIndex.components.setOrdering(LB.ReadingBlocks, readingBlocks)
 
 
     // TODO extract path objects in groups, rather than singly, to avoid trying to rewrite large drawn shapes
@@ -70,32 +72,32 @@ trait LineFinding extends ColumnFinding { self =>
 
     val vlineClusterRepLabel = LB.VisualLine.qualifiedAs("cluster").qualifiedAs("rep")
 
-    pageIndex.getComponentsWithLabel(vlineClusterRepLabel)
+    pageIndex.components.getComponentsWithLabel(vlineClusterRepLabel)
       .foreach{ a =>
-        pageIndex.addLabel(a, LB.Tmp)
+        pageIndex.components.addLabel(a, LB.Tmp)
       }
 
     for {
-      readingBlock <-  pageIndex.getOrdering(LB.ReadingBlocks)
-      vlineRoots   <- Seq(pageIndex.searchOverlapping(readingBlock.bounds(), vlineClusterRepLabel, LB.Tmp)) // TODO this search picks up some lines multiple times
+      readingBlock <-  pageIndex.components.getOrdering(LB.ReadingBlocks)
+      vlineRoots   <- Seq(pageIndex.components.searchOverlapping(readingBlock.bounds(), vlineClusterRepLabel, LB.Tmp)) // TODO this search picks up some lines multiple times
       if vlineRoots.nonEmpty
 
 
       sortedLines   = vlineRoots.sortBy(_.bounds.bottom)
-      vlineCluster   = pageIndex.addCluster(LB.ReadingBlockLines, sortedLines)
+      vlineCluster   = pageIndex.components.addCluster(LB.ReadingBlockLines, sortedLines)
 
       // Tie together the readingBlock and the canonicalReadingBlockLine
-      _                = pageIndex.addRelation(readingBlock, LB.HasVisualLines, vlineCluster)
-      vlineClusterTmp  = pageIndex.getRelation(readingBlock, LB.HasVisualLines)
+      _                = pageIndex.components.addRelation(readingBlock, LB.HasVisualLines, vlineCluster)
+      vlineClusterTmp  = pageIndex.components.getRelation(readingBlock, LB.HasVisualLines)
 
       line         <- sortedLines
     }  {
-      pageIndex.removeLabel(line, LB.Tmp)
+      pageIndex.components.removeLabel(line, LB.Tmp)
       allPageLines.append(line)
     }
 
     if (allPageLines.nonEmpty) {
-      pageIndex.setOrdering(LB.PageLines, allPageLines)
+      pageIndex.components.setOrdering(LB.PageLines, allPageLines)
     }
 
     allPageLines
@@ -105,17 +107,17 @@ trait LineFinding extends ColumnFinding { self =>
   private def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit =  {
     // val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
 
-    pageIndex.getComponentsWithLabel(LB.PageAtom)
-      .foreach{ a => pageIndex.addLabel(a, LB.PageAtomTmp) }
+    pageIndex.components.getComponentsWithLabel(LB.PageAtom)
+      .foreach{ a => pageIndex.components.addLabel(a, LB.PageAtomTmp) }
 
     // gifBuilder.addFrame("Starting", LB.PageAtomTmp)
 
     for { textBlock <- orderedTextBlocks } {
       // gifBuilder.indicate("Examining Block", textBlock, LB.PageAtomTmp)
       val sortedHashedLinesWithChars = (for {
-        hashedLineCC <- pageIndex.searchIntersecting(textBlock, LB.LineByHash)
+        hashedLineCC <- pageIndex.components.searchIntersecting(textBlock, LB.LineByHash)
       } yield {
-        val charsInRegion = pageIndex.searchOverlapping(hashedLineCC.bounds, LB.PageAtomTmp)
+        val charsInRegion = pageIndex.components.searchOverlapping(hashedLineCC.bounds, LB.PageAtomTmp)
         (hashedLineCC, charsInRegion)
       }).sortBy { case (_, chars) => chars.length }.reverse
 
@@ -137,7 +139,7 @@ trait LineFinding extends ColumnFinding { self =>
 
 
             // Now find all chars in queryRegion and string them together into a single visual line
-            val visualLineAtoms = pageIndex.searchOverlapping(centerLine, LB.PageAtomTmp)
+            val visualLineAtoms = pageIndex.components.searchOverlapping(centerLine, LB.PageAtomTmp)
 
             if (visualLineAtoms.nonEmpty) {
               val xSortedAtoms = visualLineAtoms.sortBy(_.bounds.left).toSeq
@@ -147,8 +149,8 @@ trait LineFinding extends ColumnFinding { self =>
               // gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
 
               xSortedAtoms.foreach { cc =>
-                pageIndex.removeLabel(cc, LB.PageAtomTmp)
-                pageIndex.addLabel(cc, LB.PageAtomGrp)
+                pageIndex.components.removeLabel(cc, LB.PageAtomTmp)
+                pageIndex.components.addLabel(cc, LB.PageAtomGrp)
               }
 
               val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
@@ -156,7 +158,7 @@ trait LineFinding extends ColumnFinding { self =>
               createTextRowFromVisualLine(visualLineCC, xSortedAtoms)
 
               xSortedAtoms.foreach { cc =>
-                pageIndex.removeLabel(cc, LB.PageAtomGrp)
+                pageIndex.components.removeLabel(cc, LB.PageAtomGrp)
               }
             }
 
@@ -200,8 +202,8 @@ trait LineFinding extends ColumnFinding { self =>
   private def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component]): TextGrid.Row = {
 
 
-    val visualLineModalCC = pageIndex.getRelation(visualLineClusterCC, LB.VisualLineModal).head
-    val visualLineCC = pageIndex.getRelation(visualLineClusterCC, LB.VisualLine).head
+    val visualLineModalCC = pageIndex.components.getRelation(visualLineClusterCC, LB.VisualLineModal).head
+    val visualLineCC = pageIndex.components.getRelation(visualLineClusterCC, LB.VisualLine).head
 
     val visualLineModalBounds = visualLineModalCC.bounds()
 
@@ -278,9 +280,9 @@ trait LineFinding extends ColumnFinding { self =>
     val slices = visualLineBounds.sliceHorizontal(3)
     val Seq(topSlice, _, bottomSlice) = slices
 
-    val topIntersections = pageIndex.searchOverlapping(topSlice, LB.PageAtomGrp)
-    val bottomIntersections = pageIndex.searchOverlapping(bottomSlice, LB.PageAtomGrp)
-    // val middleIntersections = pageIndex.searchOverlapping(middleSlice, LB.PageAtomGrp)
+    val topIntersections = pageIndex.components.searchOverlapping(topSlice, LB.PageAtomGrp)
+    val bottomIntersections = pageIndex.components.searchOverlapping(bottomSlice, LB.PageAtomGrp)
+    // val middleIntersections = pageIndex.components.searchOverlapping(middleSlice, LB.PageAtomGrp)
 
     val topIntersects = topIntersections.map(_.id)
     val bottomIntersects = bottomIntersections.map(_.id)
@@ -332,11 +334,11 @@ trait LineFinding extends ColumnFinding { self =>
       // Associate visualLine bounds (modal, normal) w/visual line cluster
       val visualLineModalBounds = findModalBoundingRect(visualLineCC, visualLineAtoms)
       val visualLineModalCC = labelRegion(visualLineModalBounds, LB.VisualLineModal)
-      val visualLineClusterCC = pageIndex.addCluster(LB.VisualLine, visualLineAtoms)
+      val visualLineClusterCC = pageIndex.components.addCluster(LB.VisualLine, visualLineAtoms)
 
-      // pageIndex.addRelation(visualLineCC, LB.VisualLineModal, visualLineModalCC)
-      pageIndex.addRelation(visualLineClusterCC, LB.VisualLineModal, visualLineModalCC)
-      pageIndex.addRelation(visualLineClusterCC, LB.VisualLine, visualLineCC)
+      // pageIndex.components.addRelation(visualLineCC, LB.VisualLineModal, visualLineModalCC)
+      pageIndex.components.addRelation(visualLineClusterCC, LB.VisualLineModal, visualLineModalCC)
+      pageIndex.components.addRelation(visualLineClusterCC, LB.VisualLine, visualLineCC)
 
       // gifBuilder.indicate(s"VisualLine Bounds", visualLineBounds)
       // gifBuilder.indicate(s"ModalVisualLine Bounds", visualLineModalBounds)
@@ -384,7 +386,7 @@ trait LineFinding extends ColumnFinding { self =>
 
 
 
-      pageIndex.setComponentText(visualLineClusterCC, LB.VisualLine, supSubLabeledRow)
+      pageIndex.components.setComponentText(visualLineClusterCC, LB.VisualLine, supSubLabeledRow)
 
       val textReflow = convertTextRowToTextReflow(supSubLabeledRow)
 
@@ -437,7 +439,7 @@ trait LineFinding extends ColumnFinding { self =>
       }
 
     tracer.jsonAppend {
-      val showableItems = pageIndex.componentRTree.getItems
+      val showableItems = pageIndex.components.componentRTree.getItems
         .filter { _.hasLabel(LB.LineByHash) }
         .map { _.bounds() }
 
@@ -453,7 +455,7 @@ trait LineFinding extends ColumnFinding { self =>
       if (level==0) {
         createLog("ShowAllWSColumns")
 
-        val wsCols = pageIndex.searchOverlapping(pageGeometry, LB.WhitespaceCol)
+        val wsCols = pageIndex.components.searchOverlapping(pageGeometry, LB.WhitespaceCol)
           .sortBy(cc => (cc.bounds.top, cc.bounds.left))
           .map(_.bounds())
 
@@ -463,7 +465,7 @@ trait LineFinding extends ColumnFinding { self =>
       }
     }
 
-    val maybeCol = pageIndex.searchOverlapping(initRegion, LB.WhitespaceCol)
+    val maybeCol = pageIndex.components.searchOverlapping(initRegion, LB.WhitespaceCol)
       .sortBy(cc => (cc.bounds.top, cc.bounds.left))
       .headOption
 
@@ -504,15 +506,15 @@ trait LineFinding extends ColumnFinding { self =>
 
   private def splitLinesWithOverlaps(): Unit =  {
     for {
-      cc <- pageIndex.getComponentsWithLabel(LB.LineByHash)
+      cc <- pageIndex.components.getComponentsWithLabel(LB.LineByHash)
     } {
       // Split up lines into strictly non-overlapping regions
-      val intersects = pageIndex.searchIntersecting(cc.bounds, LB.LineByHash)
+      val intersects = pageIndex.components.searchIntersecting(cc.bounds, LB.LineByHash)
 
 
       if (intersects.length > 1) {
         val totalBounds = intersects.map(_.bounds).reduce(_ union _)
-        val charsInRegion = pageIndex.searchIntersecting(totalBounds, LB.PageAtom)
+        val charsInRegion = pageIndex.components.searchIntersecting(totalBounds, LB.PageAtom)
         // Remove the LineByHash regions
         // iterate over chars left-to-right and group them into non-overlaps and overlaps
         val allChars = charsInRegion.sortBy(_.bounds.left)
@@ -524,7 +526,7 @@ trait LineFinding extends ColumnFinding { self =>
         }
 
         intersects.foreach { cc =>
-          pageIndex.removeComponent(cc)
+          pageIndex.components.removeComponent(cc)
         }
       }
     }
@@ -533,11 +535,11 @@ trait LineFinding extends ColumnFinding { self =>
   private def splitLinesOnWhitespaceColumns(): Unit = {
 
     for {
-      colRegion <- pageIndex.getComponentsWithLabel(LB.WhitespaceCol)
-      intersectedLine <- pageIndex.searchIntersecting(colRegion.bounds, LB.LineByHash)
+      colRegion <- pageIndex.components.getComponentsWithLabel(LB.WhitespaceCol)
+      intersectedLine <- pageIndex.components.searchIntersecting(colRegion.bounds, LB.LineByHash)
     } {
 
-      val charsInRegion = pageIndex.searchIntersecting(intersectedLine.bounds, LB.PageAtom)
+      val charsInRegion = pageIndex.components.searchIntersecting(intersectedLine.bounds, LB.PageAtom)
       val allChars = charsInRegion.sortBy(_.bounds.left)
 
       val (leftSplit, rightSplit) = allChars.span(_.bounds.left <= colRegion.bounds.left)
@@ -545,7 +547,7 @@ trait LineFinding extends ColumnFinding { self =>
       mpageIndex.labelRegion(leftSplit, LB.LineByHash)
       mpageIndex.labelRegion(rightSplit, LB.LineByHash)
 
-      pageIndex.removeComponent(intersectedLine)
+      pageIndex.components.removeComponent(intersectedLine)
     }
 
   }

@@ -688,7 +688,7 @@
 
 //   // } yield {
 //   //   val page = mpageIndex.getPageIndex(pageId)
-//   //   val pageLiness = page.getComponentsWithLabel(LB.PageLines)
+//   //   val pageLiness = page.components.getComponentsWithLabel(LB.PageLines)
 //   //   assert(pageLiness.length==1)
 //   //   val pageLines = pageLiness.head
 //   //   val lls = pageLines.getChildren(LB.VisualLine)
@@ -1122,3 +1122,77 @@
 
 
 // }
+
+  // def sweepJoinColinearCharRunShapes(): Unit = {
+  //   implicit val log = createFnLog
+  //   traceLog.drawPageShapes()
+
+  //   val charRunBaselines = pageIndex.shapes.getShapesWithLabel(LB.CharRunBaseline)
+  //   // Sweep along horizontals, starting from leftmost char-begins, taking
+  //   //   all intersecting char-begin verticals, and decide to either
+  //   //   (1) join the two lines, selecting the most appropriate combined baseline
+  //   //   or (2) make that the line-ending run
+  //   charRunBaselines.foreach { runBaseline =>
+  //     // val runHLine = runBaseline.shape.asInstanceOf[Line]
+  //     // val yIntercept = runBeginMbr.bottom
+  //     // val hline = runHLine.extendRightTo(pageGeometry.right)
+  //     // val hline = boundedHLine(pageGeometry, yIntercept)
+  //     // val xSortedHits = pageIndex.shapes.searchShapes(hline, LB.CharRunBeginVLine).sortBy(_.shape.mbr.left)
+  //     // val hitsLeftOfFocusPoint = xSortedHits.dropWhile(_.shape.mbr.left <= runBeginMbr.left)
+
+  //     // if (hitsLeftOfFocusPoint.isEmpty) {
+
+
+  //     //   // pageIndex.addShape(charRunLine, LB.VisualBaseLine)
+  //     // } else {
+  //     //   // take while there is not discontinuous jump in char ids
+
+  //     // }
+  //   }
+
+  // }
+
+  // def joinColinearCharRunShapes(): Unit = {
+  //   implicit val log = createFnLog
+  //   traceLog.drawPageShapes()
+
+  //   val leftEvPoints = pageIndex.shapes.getShapesWithLabel(LB.ColLeftEvidence)
+
+  //   leftEvPoints.foreach { leftEvidence =>
+  //     val hline = boundedHLine(pageGeometry, leftEvidence.shape.mbr.toPoint(Dir.BottomLeft).y)
+  //     val colinearEvidenceHits = pageIndex.shapes.searchShapes(hline, LB.ColLeftEvidence)
+
+  //     traceLog.jsonAppend {
+  //       showShapes(
+  //         s"Searching Horiz. ${hline}, mbr=${hline.mbr} for colinear bases, got ${colinearEvidenceHits.length} hits ..",
+  //         Seq(hline)
+  //       )
+  //     }
+  //     traceLog.jsonAppend {
+  //       showShapes(
+  //         s"  ${colinearEvidenceHits.length} hits ..",
+  //         colinearEvidenceHits.map(_.shape.mbr.toPoint(Dir.BottomLeft))
+  //       )
+  //     }
+
+  //     colinearEvidenceHits.sortBy{ lsh => lsh.shape.mbr.left }
+  //       .foreach { lshape =>
+  //         val evLoc = lshape.shape.mbr.toPoint(Dir.BottomLeft)
+  //         val evAtoms = pageIndex.components.searchComponents(evLoc, LB.PageAtom)
+  //         evAtoms.foreach { evCC =>
+  //           val offset = evCC.id.unwrap
+  //           val charTri = pageIndex.extractedItems.slice(offset-1, offset+2)
+  //           if (! charTri.exists(_ == null)) {
+  //             val lefts = charTri.map(_.bbox.left)
+
+  //             val windowIsSorted = lefts.zip(lefts.sorted)
+  //               .forall{ case(a,b) =>  a == b }
+
+  //             if (windowIsSorted) {
+  //               pageIndex.shapes.removeShape(lshape)
+  //             }
+  //           }
+  //         }
+  //       }
+  //   }
+  // }

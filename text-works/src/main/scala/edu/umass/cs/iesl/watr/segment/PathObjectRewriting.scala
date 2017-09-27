@@ -3,7 +3,6 @@ package segment
 
 import spindex._
 
-import watrmarks.{StandardLabels => LB, _}
 
 import geometry._
 import geometry.syntax._
@@ -12,15 +11,19 @@ import utils.{RelativeDirection => Dir}
 import TypeTags._
 import utils.ExactFloats._
 
+import segment.{SegmentationLabels => LB}
+import watrmarks._
+
 trait PathObjectRewriting extends PageScopeSegmenter {
+
 
   // Try to detect and possibly rewrite text that is represented as path objects
   def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
     val _ = for {
       textBlock <- orderedTextBlocks
-      hlineCC <- pageIndex.searchOverlapping(textBlock, LB.HLinePath)
+      hlineCC <- pageIndex.components.searchOverlapping(textBlock, LB.HLinePath)
     } yield {
-      pageIndex.removeComponent(hlineCC)
+      pageIndex.components.removeComponent(hlineCC)
 
       val width = hlineCC.bounds.width
 
@@ -52,7 +55,7 @@ trait PathObjectRewriting extends PageScopeSegmenter {
     cc.bounds.withinRegion(queryRegion)
       .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
       .map { horizontalStripeRegion =>
-        pageIndex.searchIntersecting(horizontalStripeRegion, labels:_*)
+        pageIndex.components.searchIntersecting(horizontalStripeRegion, labels:_*)
           .sortBy(_.bounds.left)
           .filterNot(_.id == cc.id)
           .span(_.bounds.left < cc.bounds.left)

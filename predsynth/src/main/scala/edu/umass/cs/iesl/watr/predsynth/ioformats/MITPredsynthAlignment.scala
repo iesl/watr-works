@@ -192,7 +192,7 @@ object MITAlignPredsynth {
   //       }
   //     })
 
-  //   mpageIndex.addRelations(relations)
+  //   mpageIndex.components.addRelations(relations)
   //   mpageIndex.addProps(props)
 
   //   alignedGroups

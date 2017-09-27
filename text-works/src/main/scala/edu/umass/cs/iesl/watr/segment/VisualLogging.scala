@@ -51,6 +51,38 @@ trait PageScopeTracing extends VisualTracer { self  =>
     LTBounds.Doubles(l2, t2, w2, h2)
   }
 
+  private def mkShapeRecs(shapes: Seq[GeometricFigure]): Seq[JsObject] = {
+    shapes.map{ _ match {
+      case bbox: LTBounds =>
+        val LTBounds.Doubles(l, t, w, h) = rescale(bbox)
+
+        Json.obj(
+          ("type" -> "rect"), ("class" -> ""),
+          ("x" -> JsNumber(l)),     ("y" -> JsNumber(t)),
+          ("width" -> JsNumber(w)), ("height" -> JsNumber(h))
+        )
+
+      case p@ Point.Ints(x, y) =>
+        Json.obj(
+          ("type" -> "circle"), ("class" -> ""),
+          ("cx" -> x), ("cy" -> y),
+          ("r" -> 2)
+        )
+
+      case l@ Line(Point.Ints(p1x, p1y), Point.Ints(p2x, p2y)) =>
+
+        Json.obj(
+          ("type" -> "line"), ("class" -> ""),
+          ("x1" -> p1x), ("y1" -> p1y),
+          ("x2" -> p2x), ("y2" -> p2y)
+        )
+
+      // case b: LBBounds =>
+      case _ => ???
+      // case g @ GeometricGroup(bounds, figs) =>
+      // case g @ Colorized(fig: GeometricFigure, fg: Color, bg: Color, fgOpacity: Float, bgOpacity: Float) =>
+    } }
+  }
   private def mkRegions(bboxes: Seq[LTBounds]): Seq[JsObject] = {
     bboxes.map{ bbox =>
       val LTBounds.Doubles(l, t, w, h) = rescale(bbox)
@@ -75,11 +107,11 @@ trait PageScopeTracing extends VisualTracer { self  =>
     }
   }
 
-  private def formatLogRec(method: String, desc: String, bboxes: Seq[LTBounds]): JsObject = {
+  private def formatLogRec(method: String, desc: String, shapes: Seq[GeometricFigure]): JsObject = {
     Json.obj(
       ("desc" -> JsString(desc)),
       ("Method" -> method),
-      ("shapes" -> mkRegions(bboxes))
+      ("shapes" -> mkShapeRecs(shapes))
     )
   }
 
@@ -95,6 +127,9 @@ trait PageScopeTracing extends VisualTracer { self  =>
     formatLogRec(DrawMethods.ZipFlash, desc, bboxes)
   }
 
+  def showShapes(desc: String, shapes: Seq[GeometricFigure]): JsObject = {
+    formatLogRec(DrawMethods.Draw, desc, shapes)
+  }
 
   def showRegions(desc: String, bboxes: Seq[LTBounds]): JsObject = {
     formatLogRec(DrawMethods.Draw, desc, bboxes)
@@ -131,7 +166,7 @@ trait PageScopeTracing extends VisualTracer { self  =>
     implicit lg: LogSpec
   ): Unit = {
     flashComponents(desc + s" ${l.fqn}",
-      pageIndex.componentRTree.getItems.filter(_.hasLabel(l))
+      pageIndex.components.componentRTree.getItems.filter(_.hasLabel(l))
     )
   }
 
@@ -140,13 +175,13 @@ trait PageScopeTracing extends VisualTracer { self  =>
   ): Unit = jsonAppend {
     val pageBounds = pageIndex.pageGeometry.bounds
 
-    val allShapes = pageIndex.shapeRIndex.getItems.map{ lshape =>
+    val allShapes = pageIndex.shapes.shapeRIndex.getItems.map{ lshape =>
       val lls = lshape.labels.mkString(" ")
       lshape.shape match {
         case p@ Point.Ints(x, y) =>
           Json.obj(
             ("type" -> "circle"), ("class" -> lls),
-            ("x" -> x), ("y" -> y),
+            ("cx" -> x), ("cy" -> y),
             ("r" -> 2)
           ).some
 
@@ -158,7 +193,6 @@ trait PageScopeTracing extends VisualTracer { self  =>
             ("x2" -> p2x), ("y2" -> p2y)
           ).some
         case LTBounds.Ints(left, top, width, height) =>
-
           Json.obj(
             ("type" -> "rect"), ("class" -> lls),
             ("x" -> left),     ("y" -> top),

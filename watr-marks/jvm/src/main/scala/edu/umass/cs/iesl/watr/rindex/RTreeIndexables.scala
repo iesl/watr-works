@@ -4,10 +4,12 @@ package rindex
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 
 import edu.umass.cs.iesl.watr.{geometry => G}
+import com.github.davidmoten.rtree.{geometry => RG}
 
 trait RTreeIndexable[T] {
   def id(t: T): Int
   def ltBounds(t: T): G.LTBounds
+  def rtreeGeometry(t: T): RG.Geometry
 
   def serialize[C <: T](value: C): Array[Byte] = {
     val stream: ByteArrayOutputStream = new ByteArrayOutputStream()

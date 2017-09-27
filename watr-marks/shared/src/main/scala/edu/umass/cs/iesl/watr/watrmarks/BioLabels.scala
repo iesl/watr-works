@@ -91,6 +91,10 @@ object Labels {
 
 object Label {
   def apply(key: String): Label = Label("", key)
+
+  def auto(implicit name: sourcecode.Name): Label = {
+    Label(name.value)
+  }
 }
 
 case class Label(

@@ -5,7 +5,8 @@ import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
 import spindex._
 import textboxing.{TextBoxing => TB}, TB._
 import textreflow.data._
-import watrmarks.{StandardLabels => LB}
+// import watrmarks.{StandardLabels => LB}
+import segment.{SegmentationLabels => LB}
 import play.api.libs.json, json._
 import segment.PageSegmenter
 
@@ -25,7 +26,7 @@ object DocumentIO  {
       for {
         (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
         (line, n)    <- lineCCs.zipWithIndex
-        textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+        textRow      <- pageIndex.components.getComponentText(line, LB.VisualLine).toList
       } {
         textRow.serialize(serProps)
       }
@@ -51,7 +52,7 @@ object DocumentIO  {
         lineCC <- lineCCs
       } yield {
 
-        val lineText = pageIndex.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
+        val lineText = pageIndex.components.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
         lineText.getOrElse("<no text>").box
       }
 
@@ -59,7 +60,7 @@ object DocumentIO  {
         (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
         lineCC <- lineCCs
       } yield {
-        val lineWeights = pageIndex.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
+        val lineWeights = pageIndex.components.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
         val linePins = lineWeights.countedPins()
         if (linePins.nonEmpty) {
           val maxPin = linePins.maxBy(_._2)._1
@@ -118,7 +119,7 @@ object DocumentIO  {
       for {
         (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
         (line, n)    <- lineCCs.zipWithIndex
-        textRow      <- pageIndex.getComponentText(line, LB.VisualLine).toList
+        textRow      <- pageIndex.components.getComponentText(line, LB.VisualLine).toList
       } {
         textRow.serialize(serProps)
       }
@@ -188,8 +189,8 @@ object DocumentIO  {
       pageNum <- mpageIndex.getPages
     } yield {
       val pageIndex = mpageIndex.getPageIndex(pageNum)
-      pageIndex.getClusterRoots(LB.VisualLine).map { root =>
-        val maybeText = pageIndex.getComponentText(root, LB.VisualLine)
+      pageIndex.components.getClusterRoots(LB.VisualLine).map { root =>
+        val maybeText = pageIndex.components.getComponentText(root, LB.VisualLine)
         maybeText.foreach { text =>
           // println(text.toText())
         }

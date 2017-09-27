@@ -4,7 +4,7 @@ package segment
 import spindex._
 
 // import ammonite.{ops => fs}, fs._
-import watrmarks.{StandardLabels => LB, _}
+import watrmarks.{_}
 
 import geometry._
 import geometry.syntax._
@@ -18,6 +18,7 @@ import utils.SlicingAndDicing._
 import org.dianahep.{histogrammar => HST}
 // import org.dianahep.histogrammar.ascii._
 
+import segment.{SegmentationLabels => LB}
 
 trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
   lazy val columnFinder = self
@@ -26,7 +27,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
   def findCandidateWhitespaceCols(): Unit = {
     implicit val log = traceLog.createLog("findCandidateWhitespaceCols")
 
-    val components = mpageIndex.getPageAtoms(pageNum)
+    val components = pageIndex.components.getPageAtoms
 
     val cols = findLeftAlignedCharCols(components)
 
@@ -36,7 +37,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
     cols.foreach { colRegion =>
       val colBounds = colRegion.bounds
-      pageIndex.removeComponent(colRegion)
+      pageIndex.components.removeComponent(colRegion)
       showComponentRemoval(s"Removing Left-aligned Col", Seq(colRegion))
 
       val startingRegion = LTBounds(
@@ -92,7 +93,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
     val res: List[Option[RegionComponent]] =
       queryBoxes.flatMap { query =>
-        val intersects = pageIndex.searchIntersecting(query, LB.PageAtom)
+        val intersects = pageIndex.components.searchIntersecting(query, LB.PageAtom)
 
         val consecutiveLeftAlignedCharCols =
           intersects.sortBy(_.bounds.bottom)
@@ -117,7 +118,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
     var currWhiteSpace = startingRegion
     val nudgeFactor = 0.05.toFloatExact()
 
-    def search(q:LTBounds) = pageIndex.searchIntersecting(q, LB.PageAtom, LB.Image, LB.VLinePath, LB.HLinePath, LB.HPageDivider)
+    def search(q:LTBounds) = pageIndex.components.searchIntersecting(q, LB.PageAtom, LB.Image, LB.VLinePath, LB.HLinePath, LB.HPageDivider)
 
     currWhiteSpace.withinRegion(pageGeometry).adjacentRegion(Dir.Left)
       .foreach { regionLeftOf =>
@@ -174,9 +175,9 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
   def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
     val _ = for {
       textBlock <- orderedTextBlocks
-      hlineCC <- pageIndex.searchOverlapping(textBlock, LB.HLinePath)
+      hlineCC <- pageIndex.components.searchOverlapping(textBlock, LB.HLinePath)
     } yield {
-      pageIndex.removeComponent(hlineCC)
+      pageIndex.components.removeComponent(hlineCC)
 
       val width = hlineCC.bounds.width
 
@@ -209,7 +210,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
     cc.bounds.withinRegion(queryRegion)
       .adjacentRegions(Dir.Left, Dir.Center, Dir.Right)
       .map { horizontalStripeRegion =>
-        pageIndex.searchIntersecting(horizontalStripeRegion, (l0 +: labels):_*)
+        pageIndex.components.searchIntersecting(horizontalStripeRegion, (l0 +: labels):_*)
           .sortBy(_.bounds.left)
           .filterNot(_.id == cc.id)
           .span(_.bounds.left < cc.bounds.left)
@@ -225,7 +226,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
     import scala.collection.mutable
 
-    val candidateCCs = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate).sortBy(_.bounds.area).reverse
+    val candidateCCs = pageIndex.components.getComponentsWithLabel(LB.WhitespaceColCandidate).sortBy(_.bounds.area).reverse
 
     // val candidateBounds = candidateCCs.map(_.bounds()).sortBy(_.area).reverse
 
@@ -239,7 +240,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
       var currColBounds = candidate.bounds()
 
 
-      val overlaps = pageIndex.searchIntersecting(currColBounds, LB.WhitespaceColCandidate)
+      val overlaps = pageIndex.components.searchIntersecting(currColBounds, LB.WhitespaceColCandidate)
         .filterNot { _.id.unwrap == candidate.id.unwrap }
 
       traceLog.flashComponents("Query Column + Overlaps", candidate +: overlaps)
@@ -247,7 +248,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
       overlaps.foreach { overlappedCC =>
 
         if (overlappedCC.bounds.isContainedBy(candidate.bounds)){
-          pageIndex.removeComponent(overlappedCC)
+          pageIndex.components.removeComponent(overlappedCC)
           candidates -= overlappedCC
 
         } else if (overlappedCC.bounds.isContainedByVProjection(candidate.bounds)) {
@@ -260,7 +261,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
       }
 
-      pageIndex.removeComponent(candidate)
+      pageIndex.components.removeComponent(candidate)
     }
   }
 
@@ -276,7 +277,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
   //   implicit val log = tracer.createLog("combineCandidateWhitespaceCols")
 
-  //   var candidates = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate)
+  //   var candidates = pageIndex.components.getComponentsWithLabel(LB.WhitespaceColCandidate)
 
   //   flashComponents("Whitespace Col Candidates", candidates)
 
@@ -318,13 +319,13 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
   //           }
   //         }
 
-  //         pageIndex.removeComponent(candidate)
-  //         pageIndex.removeComponent(overlap)
+  //         pageIndex.components.removeComponent(candidate)
+  //         pageIndex.components.removeComponent(overlap)
   //       case None =>
-  //         pageIndex.removeComponent(candidate)
+  //         pageIndex.components.removeComponent(candidate)
   //         labelRegion(candidate.bounds(), LB.WhitespaceCol)
   //     }
 
-  //     candidates = pageIndex.getComponentsWithLabel(LB.WhitespaceColCandidate)
+  //     candidates = pageIndex.components.getComponentsWithLabel(LB.WhitespaceColCandidate)
   //   }
   // }
