@@ -178,6 +178,15 @@ class PageIndex(
       _addCluster(l, shapes)
     }
 
+    def initClustering(l: Label, f: LabeledShape[GeometricFigure] => Boolean): Seq[LabeledShape[GeometricFigure]] = {
+      assume(!disjointSets.contains(l))
+      val toAdd = shapeRIndex.getItems.filter(f)
+      disjointSets.getOrElseUpdate(l,
+        OrderedDisjointSet.apply[LabeledShape[GeometricFigure]](toAdd:_*)
+      )
+      toAdd
+    }
+
 
     private def _addCluster[T <: GeometricFigure, R <: GeometricFigure](
       l: Label, cs: Seq[LabeledShape[T]]

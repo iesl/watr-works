@@ -14,6 +14,7 @@ import utils.EnrichNumerics._
 import utils.ExactFloats._
 import geometry._
 import geometry.syntax._
+import utils.{RelativeDirection => Dir}
 
 abstract class ExtractionBasics(
   geomTranslation: GeometryTranslation
@@ -139,6 +140,8 @@ sealed trait ExtractedItem {
 
   def id: Int@@CharID
   def bbox: LTBounds
+
+  lazy val location: Point = bbox.toPoint(Dir.BottomLeft)
 
   def strRepr(): String
 

@@ -65,14 +65,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
           val runEndPt = Point(run.last.bbox.left, run.last.bbox.bottom)
           val runLine = Line(runBeginPt, runEndPt)
 
-          // val vCrossLine = runBeginPt.translate(x=0.toFloatExact, y= 5.toFloatExact)
-          //   .lineTo(runBeginPt.translate(x=0.toFloatExact, y= -5.toFloatExact))
 
           val baselineShape = pageIndex.shapes.addShape(runLine, LB.CharRunBaseline)
-          // val beginVLineShape = pageIndex.shapes.addShape(vCrossLine, LB.CharRunBeginVLine)
 
           pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, run)
-          // pageIndex.shapes.setShapeAttribute[LabeledShape[GeometricFigure]](beginVLineShape.id, LB.CharRunBaseline, baselineShape)
 
           run.foreach { _ match  {
             case item:ExtractedItem.CharItem =>

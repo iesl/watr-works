@@ -46,6 +46,7 @@ object SegmentationLabels {
 
   val LineByHash             = Label.auto
   val LeftAlignedCharCol     = Label.auto
+  val RightAlignedCharCol     = Label.auto
   val LeftAlignedColEnd      = Label.auto
   val WhitespaceColCandidate = Label.auto
   val WhitespaceCol          = Label.auto
