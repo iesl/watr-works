@@ -72,19 +72,31 @@ trait GeometricOps {
       (maybeLeft, maybeRight)
     }
 
-    def sliceHorizontal(n: Int): Seq[LTBounds] = {
+    def getHorizontalSlices(n: Int): Seq[LTBounds] = {
       val LTBounds(_, top, _, height) = self
       val sliceHeight: Int@@FloatRep = height / n
-      // println(s"sliceHorizontal($n): ${self}")
 
       val slices = (1 until n).map{ i =>
         val sliceAt = top + sliceHeight * i
-        val split = splitHorizontal(sliceAt)
-        // println(s"    sliceAt($sliceAt) = ${split}")
-        split
+        splitHorizontal(sliceAt)
       }
 
       slices.map(_._1.get) :+ slices.last._2.get
+    }
+
+    def getHorizontalSlice(y: Int@@FloatRep, h: Int@@FloatRep): Option[LTBounds] = {
+      val (_, maybeLower) = splitHorizontal(y)
+      maybeLower.flatMap { lowerRect =>
+        val (maybeUpper, _) = lowerRect.splitHorizontal(y+h)
+        maybeUpper
+      }
+    }
+    def getVerticalSlice(x: Int@@FloatRep, w: Int@@FloatRep): Option[LTBounds] = {
+      val (_, maybeRight) = splitVertical(x)
+      maybeRight.flatMap { rightRect =>
+        val (maybeLeft, _) = rightRect.splitVertical(x+w)
+        maybeLeft
+      }
     }
 
     def splitHorizontal(y: Int@@FloatRep): (Option[LTBounds], Option[LTBounds]) = {

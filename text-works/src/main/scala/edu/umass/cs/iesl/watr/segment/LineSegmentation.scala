@@ -277,7 +277,7 @@ trait LineFinding extends ColumnFinding { self =>
 
     // top 1/3  & bottom 1/3 ==> centered
 
-    val slices = visualLineBounds.sliceHorizontal(3)
+    val slices = visualLineBounds.getHorizontalSlices(3)
     val Seq(topSlice, _, bottomSlice) = slices
 
     val topIntersections = pageIndex.components.searchOverlapping(topSlice, LB.PageAtomGrp)

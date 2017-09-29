@@ -8,7 +8,8 @@ import segment.{SegmentationLabels => LB}
 import corpora.DocumentZoningApi
 import extract.PdfTextExtractor
 import geometry._
-// import geometry.syntax._
+import geometry.syntax._
+import utils.{RelativeDirection => Dir}
 import extract._
 // import utils.ExactFloats._
 import spindex._
@@ -61,14 +62,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
           }
 
         charRuns.foreach { run =>
-          val runBeginPt =  Point(run.head.bbox.left, run.head.bbox.bottom)
-          val runEndPt = Point(run.last.bbox.left, run.last.bbox.bottom)
-          val runLine = Line(runBeginPt, runEndPt)
-
-
-          val baselineShape = pageIndex.shapes.addShape(runLine, LB.CharRunBaseline)
-
-          pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, run)
 
           run.foreach { _ match  {
             case item:ExtractedItem.CharItem =>
@@ -88,26 +81,43 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
                 pageIndex.components.appendToOrdering(LB.CharRunBegin, cc)
               }
 
+              val runBeginPt =  Point(run.head.bbox.left, run.head.bbox.bottom)
+              val runEndPt = Point(run.last.bbox.left, run.last.bbox.bottom)
+              val runLine = Line(runBeginPt, runEndPt)
+
+
+              val baselineShape = pageIndex.shapes.addShape(runLine, LB.CharRunBaseline)
+
+              pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, run)
+
               pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
 
 
             case item:ExtractedItem.ImgItem =>
+              item
 
-              val pageRegion = PageRegion(
-                StablePage(stableId, pageGeometry.pageNum, pageId),
-                item.bbox
-              )
+              // val pageRegion = PageRegion(
+              //   StablePage(stableId, pageGeometry.pageNum, pageId),
+              //   item.bbox
+              // )
 
-              val imgRegion = PageItem.ImageAtom(pageRegion)
-              mpageIndex.addImageAtom(imgRegion)
+              // val imgRegion = PageItem.ImageAtom(pageRegion)
+              // mpageIndex.addImageAtom(imgRegion)
 
               pageIndex.shapes.addShape(item.bbox, LB.Image)
 
-              pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
+              val underline = item.bbox.toLine(Dir.Bottom)
+              val pathUnderline = pageIndex.shapes.addShape(underline, LB.CharRunBaseline)
+              pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, pathUnderline)
+              // pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](pathUnderline.id, LB.ExtractedItems, run)
+
 
             case item:ExtractedItem.PathItem =>
 
-              pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
+              // val underline = item.bbox.toLine(Dir.Bottom)
+              // val pathUnderline = pageIndex.shapes.addShape(underline, LB.CharRunBaseline)
+              // pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, pathUnderline)
+              // pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](pathUnderline.id, LB.ExtractedItems, run)
 
           }}
         }
