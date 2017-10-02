@@ -224,14 +224,14 @@ trait GeometryJsonCodecs extends TypeTagFormats {
     override def reads(json: JsValue)= json match {
       case JsString(str) => JsSuccess(Labels.fromString(str))
       case JsObject(fields) =>
-        JsSuccess(Label(fields("ns").as[String], fields("key").as[String]))
-        // (Label {"ns":"ds","key":"sup-script","id":0}),WrappedArray()
+        JsSuccess(Label(fields("key").as[String]))
+        // JsSuccess(Label(fields("ns").as[String], fields("key").as[String]))
 
       case _ => JsError(s"Label ${json}")
     }
 
     override def writes(o: Label) = o match {
-      case c@ Label(ns, key, value, id) => jstr(c.fqn)
+      case c@ Label(key, id) => jstr(c.fqn)
     }
   }
 

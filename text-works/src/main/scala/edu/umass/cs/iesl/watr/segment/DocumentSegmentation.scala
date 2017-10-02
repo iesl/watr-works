@@ -86,7 +86,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
               val runLine = Line(runBeginPt, runEndPt)
 
 
-              val baselineShape = pageIndex.shapes.addShape(runLine, LB.CharRunBaseline)
+              val baselineShape = pageIndex.shapes.indexShape(runLine, LB.CharRunBaseline)
 
               pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, run)
 
@@ -94,7 +94,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
 
             case item:ExtractedItem.ImgItem =>
-              item
 
               // val pageRegion = PageRegion(
               //   StablePage(stableId, pageGeometry.pageNum, pageId),
@@ -104,10 +103,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
               // val imgRegion = PageItem.ImageAtom(pageRegion)
               // mpageIndex.addImageAtom(imgRegion)
 
-              pageIndex.shapes.addShape(item.bbox, LB.Image)
+              pageIndex.shapes.indexShape(item.bbox, LB.Image)
 
               val underline = item.bbox.toLine(Dir.Bottom)
-              val pathUnderline = pageIndex.shapes.addShape(underline, LB.CharRunBaseline)
+              val pathUnderline = pageIndex.shapes.indexShape(underline, LB.CharRunBaseline)
               pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, pathUnderline)
               // pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](pathUnderline.id, LB.ExtractedItems, run)
 
@@ -115,7 +114,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
             case item:ExtractedItem.PathItem =>
 
               // val underline = item.bbox.toLine(Dir.Bottom)
-              // val pathUnderline = pageIndex.shapes.addShape(underline, LB.CharRunBaseline)
+              // val pathUnderline = pageIndex.shapes.indexShape(underline, LB.CharRunBaseline)
               // pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, pathUnderline)
               // pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](pathUnderline.id, LB.ExtractedItems, run)
 

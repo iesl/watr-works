@@ -68,38 +68,41 @@ case class UPin(
 
 object Labels {
   def fromString(s: String): Label = {
-    s.split(":") match {
-      case Array(ns, keyval) =>
-        keyval.split("=") match {
-          case Array(key) =>
-            Label(ns, key, None)
-          case Array(key, value) =>
-            Label(ns, key, Option(value))
-        }
-      case Array(keyval) =>
-        keyval.split("=") match {
-          case Array(key) =>
-            Label("", key, None)
-          case Array(key, value) =>
-            Label("", key, Option(value))
-        }
-      // case x => println(s"fromString: ${x}")
-    }
+    Label(s)
+    // s.split(":") match {
+    //   case Array(ns, keyval) =>
+    //     keyval.split("=") match {
+    //       case Array(key) =>
+    //         Label(key)
+    //       case Array(key) =>
+    //         Label(key)
+    //     }
+    //   case Array(keyval) =>
+    //     keyval.split("=") match {
+    //       case Array(key) =>
+    //         Label("", key, None)
+    //       case Array(key, value) =>
+    //         Label("", key, Option(value))
+    //     }
+    // case x => println(s"fromString: ${x}")
+    // }
   }
 }
 
 
 object Label {
-  def apply(key: String): Label = Label("", key)
+  def apply(key: String): Label = Label(key)
 
   def auto(implicit name: sourcecode.Name): Label = {
     Label(name.value)
   }
 }
 
+
 case class Label(
-  ns: String, key: String,
-  value: Option[String]=None,
+  // ns: String,
+  key: String,
+  // value: Option[String]=None,
   id: Int@@LabelID=LabelID(0)
 ) {
 
@@ -109,35 +112,44 @@ case class Label(
   def L: BioPin = LPin(this, id)
   def U: BioPin = UPin(this, id)
 
-  def apply(value: String) = copy(value=Some(value))
+  // def apply(value: String) = copy(value=Some(value))
 
   def fqn: String = {
-    if (ns.length()>0) {
-      s"""${ns}:${key}"""
-    } else {
-      key
-    }
+    key
+    // if (ns.length()>0) {
+    //   s"""${ns}:${key}"""
+    // } else {
+    //   key
+    // }
   }
 
   override def toString = {
-    val v = value.map(x => s"=$x").getOrElse("")
-    s"${fqn}$v"
+    key
+    // val v = value.map(x => s"=$x").getOrElse("")
+    // s"${fqn}$v"
   }
 
-  override def hashCode = (ns, key).##
+  override def hashCode = (key).##
 
   override def equals(o:Any) = o match {
-    case Label(`ns`, `key`, _, _) => true
+    case Label(`key`, _) => true
     case _ => false
   }
 
   def matches(l: Label) =
-    ns==l.ns && key==l.key
+    key==l.key
 
   def qualifiedAs(t: String): Label = {
     Label(s"${fqn}::${t}")
   }
 
+  def ::(l: Label): Label = {
+    this.qualifiedAs(l.fqn)
+  }
+
+  def /(l: Label): Label = {
+    Label(s"${fqn}/${l.fqn}")
+  }
 
 }
 

@@ -6,24 +6,29 @@ import watrmarks.Label
 
 object SegmentationLabels {
 
+  val Cluster = Label.auto
+  val Attr = Label.auto
+  val Order = Label.auto
+  val Rel = Label.auto
+  val Has = Label.auto
+
+  val HasRel = Has::Rel
+
   val Caption = Label.auto
   val Image = Label.auto
-  val Table = Label.auto
+  // val Table = Label.auto
 
   val DocumentPages = Label.auto
   val Para = Label.auto
 
-  val ExtractedLine = Label.auto
   val ExtractedLineStarts    = Label.auto
-  val ExtractedLineEnds      = Label.auto
 
   val CharRun           = Label.auto
   val CharRunBegin      = Label.auto
-  val CharRunEnd        = Label.auto
   val CharRunBaseline   = Label.auto
-  val CharRunBeginVLine = Label.auto
-  val CharRunBeginVLineToBaseline = Label.auto
-  val VisualBaseLine    = Label.auto
+  val VisualBaseline    = Label.auto
+
+  val HasCharRunBaselines  = Label.auto
 
   val ExtractedItems    = Label.auto
 

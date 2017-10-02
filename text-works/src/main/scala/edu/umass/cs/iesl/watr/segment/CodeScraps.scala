@@ -1143,7 +1143,7 @@
   //     // if (hitsLeftOfFocusPoint.isEmpty) {
 
 
-  //     //   // pageIndex.addShape(charRunLine, LB.VisualBaseLine)
+  //     //   // pageIndex.indexShape(charRunLine, LB.VisualBaseLine)
   //     // } else {
   //     //   // take while there is not discontinuous jump in char ids
 

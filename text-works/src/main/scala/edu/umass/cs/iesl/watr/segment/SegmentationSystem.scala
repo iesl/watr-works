@@ -2,9 +2,11 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import geometry._
+import geometry.syntax._
 import watrmarks.Label
 import corpora.DocumentZoningApi
 import spindex._
+import utils.ExactFloats._
 
 trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
@@ -28,6 +30,12 @@ trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
 trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { self =>
   lazy val pageScope = self
+
+  type LineShape = LabeledShape[Line]
+  type PointShape = LabeledShape[Point]
+  type RectShape = LabeledShape[LTBounds]
+  type AnyShape = LabeledShape[GeometricFigure]
+
 
   def docScope: DocumentScopeSegmenter
 
@@ -53,6 +61,62 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
         pageIndex.components.removeComponent(cc)
       }
   }
+
+  protected def pageVerticalSlice(left: Double, width: Double): Option[LTBounds] = {
+    pageGeometry.getVerticalSlice(left.toFloatExact(), width.toFloatExact())
+  }
+
+  protected def pageHorizontalSlice(top: Double, height: Double): Option[LTBounds] = {
+    pageGeometry.getHorizontalSlice(top.toFloatExact(), height.toFloatExact())
+  }
+
+  protected def searchForPoints(query: GeometricFigure, l: Label): Seq[PointShape] = {
+    pageIndex.shapes.searchShapes(query, l)
+      .map {_.asInstanceOf[PointShape]}
+  }
+
+  protected def searchForLines(query: GeometricFigure, l: Label): Seq[LineShape] = {
+    pageIndex.shapes.searchShapes(query, l)
+      .map {_.asInstanceOf[LineShape]}
+  }
+
+  protected def getLabeledRects(l: Label): Seq[LineShape] = {
+    pageIndex.shapes.getShapesWithLabel(l)
+      .map(_.asInstanceOf[LineShape])
+  }
+
+  protected def getLabeledLines(l: Label): Seq[LineShape] = {
+    pageIndex.shapes.getShapesWithLabel(l)
+      .map(_.asInstanceOf[LineShape])
+  }
+
+  protected def deleteShapes[T <: GeometricFigure](shapes: Seq[LabeledShape[T]]): Unit = {
+    shapes.foreach { sh => pageIndex.shapes.deleteShape(sh) }
+  }
+
+  protected def indexShape[T <: GeometricFigure](shape: T, l: Label): LabeledShape[GeometricFigure] = {
+    pageIndex.shapes.indexShape(shape, l)
+  }
+
+  protected def unindexShape[T <: GeometricFigure](shape: LabeledShape[T]): Unit = {
+    pageIndex.shapes.unindexShape(shape)
+  }
+  protected def unindexShapes[T <: GeometricFigure](shapes: Seq[LabeledShape[T]]): Unit = {
+    shapes.foreach { sh => pageIndex.shapes.unindexShape(sh) }
+  }
+
+  protected def addRelation(lhs: Int@@ShapeID, l: Label, rhs: Int@@ShapeID): Unit = {
+    pageIndex.shapes.addRelation(lhs, l, rhs)
+  }
+
+  protected def getClusteredLines(l: Label): Seq[(Int@@ShapeID, Seq[LineShape])] = {
+    pageIndex.shapes.getClustersWithReprID(l)
+      .map{ case (id, shapes) =>
+        (id, shapes.map {_.asInstanceOf[LineShape]})
+      }
+  }
+
+
 
 }
 

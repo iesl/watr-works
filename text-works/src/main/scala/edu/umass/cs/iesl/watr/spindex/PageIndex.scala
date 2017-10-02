@@ -101,28 +101,44 @@ class PageIndex(
   }
 
   object shapes {
+    type Shape = LabeledShape[GeometricFigure]
 
-    val extractedItemShapes = gcol.HashBasedTable.create[Int@@CharID, Label, LabeledShape[GeometricFigure]]()
+    val shapeMap: mutable.LongMap[Shape] = {
+      mutable.LongMap[Shape]()
+    }
+
+    def getById(id: Int@@ShapeID): Shape = {
+      shapeMap(id.unwrap.toLong)
+    }
+
+    val extractedItemShapes = gcol.HashBasedTable.create[Int@@CharID, Label, Shape]()
 
     val shapeIDGen = utils.IdGenerator[ShapeID]()
-    val shapeRIndex: RTreeIndex[LabeledShape[GeometricFigure]] = RTreeIndex.createFor[LabeledShape[GeometricFigure]]()
+    val shapeRIndex: RTreeIndex[Shape] = RTreeIndex.createFor[Shape]()
 
-    def addShape(shape: GeometricFigure, labels: Label*): LabeledShape[GeometricFigure] = {
-      val lshape = LabeledShape[GeometricFigure](shape, labels.toSet, shapeIDGen.nextId)
+    def indexShape(shape: GeometricFigure, labels: Label*): Shape = {
+      val lshape = LabeledShape(shape, labels.toSet, shapeIDGen.nextId)
       shapeRIndex.add(lshape)
+      shapeMap.put(lshape.id.unwrap.toLong, lshape)
       lshape
     }
 
-    def removeShape(lshape: LabeledShape[GeometricFigure]): Unit = {
-      // val lshape = LabeledShape[GeometricFigure](shape, labels.toSet, shapeIDGen.nextId)
+    def unindexShape(lshape: Shape): Unit = {
       shapeRIndex.remove(lshape)
     }
 
-    def removeShapes(): Unit = {
+
+    def deleteShape(lshape: Shape): Unit = {
+      unindexShape(lshape)
+      shapeMap.remove(lshape.id.unwrap.toLong)
+    }
+
+    def deleteShapes(): Unit = {
+      shapeMap.clear()
       shapeRIndex.clearAll()
     }
 
-    def getShapesWithLabel(l: Label): Seq[LabeledShape[GeometricFigure]] = {
+    def getShapesWithLabel(l: Label): Seq[Shape] = {
       shapeRIndex.getItems
         .filter { item =>
           item.labels.contains(l)
@@ -133,7 +149,7 @@ class PageIndex(
       query: GeometricFigure,
       intersectFunc: (GeometricFigure, GeometricFigure) => Boolean,
       labels: Label*
-    ): Seq[LabeledShape[GeometricFigure]] = {
+    ): Seq[Shape] = {
       shapeRIndex.search(query, { lshape =>
         (intersectFunc(lshape.shape, query)
           && labels.forall(lshape.hasLabel(_)))
@@ -142,7 +158,7 @@ class PageIndex(
     def searchShapes(
       query: GeometricFigure,
       labels: Label*
-    ): Seq[LabeledShape[GeometricFigure]] = {
+    ): Seq[Shape] = {
       shapeRIndex.search(query, { lshape =>
         labels.forall(lshape.hasLabel(_))
       })
@@ -165,11 +181,11 @@ class PageIndex(
       } else None
     }
 
-    val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[LabeledShape[GeometricFigure]]] = mutable.HashMap()
+    val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[Shape]] = mutable.HashMap()
 
-    def ensureCluster[T <: GeometricFigure](l: Label): OrderedDisjointSet[LabeledShape[GeometricFigure]] = {
+    def ensureCluster[T <: GeometricFigure](l: Label): OrderedDisjointSet[Shape] = {
       disjointSets.getOrElseUpdate(l,
-        OrderedDisjointSet.apply[LabeledShape[GeometricFigure]]()
+        OrderedDisjointSet.apply[Shape]()
       )
     }
 
@@ -178,11 +194,11 @@ class PageIndex(
       _addCluster(l, shapes)
     }
 
-    def initClustering(l: Label, f: LabeledShape[GeometricFigure] => Boolean): Seq[LabeledShape[GeometricFigure]] = {
+    def initClustering(l: Label, f: Shape => Boolean): Seq[Shape] = {
       assume(!disjointSets.contains(l))
       val toAdd = shapeRIndex.getItems.filter(f)
       disjointSets.getOrElseUpdate(l,
-        OrderedDisjointSet.apply[LabeledShape[GeometricFigure]](toAdd:_*)
+        OrderedDisjointSet.apply[Shape](toAdd:_*)
       )
       toAdd
     }
@@ -205,19 +221,19 @@ class PageIndex(
       canonical.asInstanceOf[LabeledShape[R]]
     }
 
-    def unionAll(l: Label, cs: Seq[LabeledShape[GeometricFigure]]): Unit = {
+    def unionAll(l: Label, cs: Seq[Shape]): Unit = {
       val _ = _addCluster(l, cs)
     }
 
-    def union(l: Label, c1: LabeledShape[GeometricFigure], c2: LabeledShape[GeometricFigure]): Unit = {
+    def union(l: Label, c1: Shape, c2: Shape): Unit = {
       val _ = _addCluster(l, Seq(c1, c2))
     }
 
-    def getClusterMembers(l: Label, cc: LabeledShape[GeometricFigure]): Option[Seq[LabeledShape[GeometricFigure]]] = {
+    def getClusterMembers(l: Label, cc: Shape): Option[Seq[Shape]] = {
       _getClusterMembers(l, cc)
     }
 
-    private def _getClusterMembers(l: Label, cc: LabeledShape[GeometricFigure]): Option[Seq[LabeledShape[GeometricFigure]]] = {
+    private def _getClusterMembers(l: Label, cc: Shape): Option[Seq[Shape]] = {
       disjointSets.get(l).map{set =>
         set.sets.toSeq.map(_.toSeq)
           .filter(_.contains(cc))
@@ -225,15 +241,58 @@ class PageIndex(
       } getOrElse(None)
     }
 
-    def getClusterRoots(l: Label): Seq[LabeledShape[GeometricFigure]] = {
-      disjointSets.get(l).map{set =>
-        set.sets.toSeq.map(_.toSeq)
-          .map{ cluster =>
-            set.getCanonical(cluster.head)
-          }
+
+    def getClusters(l: Label): Option[Seq[Seq[Shape]]] = {
+      disjointSets.get(l)
+        .map{ set => set.sets }
+    }
+
+    def getClustersWithReprID(l: Label): Seq[(Int@@ShapeID, Seq[Shape])] = {
+      disjointSets.get(l).map { disjointSet =>
+        disjointSet.sets.map{ cluster =>
+          val repr = disjointSet.getCanonical(cluster.head)
+          (repr.id, cluster)
+        }
       } getOrElse(Seq())
     }
 
+    def getClusterRoots(l: Label): Seq[Shape] = {
+      disjointSets.get(l).map{set =>
+        set.sets.map{ cluster =>
+          set.getCanonical(cluster.head)
+        }
+      } getOrElse(Seq())
+    }
+
+    val relationTable = gcol.HashBasedTable.create[Int@@ShapeID, Label, Int@@ShapeID]()
+
+    def addRelation(lhs: Int@@ShapeID, l: Label, rhs: Int@@ShapeID): Unit = {
+      relationTable.put(lhs, l, rhs)
+    }
+
+    def getRelation(lhs: Shape, l: Label): Option[Shape] = {
+      if (relationTable.contains(lhs.id, l)) {
+        Some(getById(relationTable.get(lhs.id, l)))
+      } else None
+    }
+
+
+    val orderingTable = mutable.HashMap[Label, mutable.ListBuffer[Int@@ShapeID]]()
+    def appendToOrdering(l: Label, cc: Shape): Unit = {
+      val orderingBuffer = orderingTable.getOrElseUpdate(qualifyOrdering(l), mutable.ListBuffer())
+      orderingBuffer.append(cc.id)
+    }
+
+    def setOrdering(l: Label, cs: Seq[Shape]): Unit = {
+      val orderingBuffer = mutable.ListBuffer[Int@@ShapeID]()
+      orderingBuffer.appendAll(cs.map(_.id))
+      orderingTable.put(qualifyOrdering(l),orderingBuffer)
+    }
+
+    def getOrdering(l: Label): Seq[Shape] = {
+      val orderingBuffer = orderingTable.getOrElseUpdate(qualifyOrdering(l), mutable.ListBuffer())
+      orderingBuffer.map(id => getById(id))
+    }
   }
 
 
@@ -257,7 +316,6 @@ class PageIndex(
 
     val textTable = gcol.HashBasedTable.create[Int@@ComponentID, Label, TextGrid.Row]()
 
-    val orderingTable = mutable.HashMap[Label, mutable.ListBuffer[Int@@ComponentID]]()
 
     def setComponentText(cc: Component, l: Label, t: TextGrid.Row): Unit = {
       textTable.put(cc.id, l, t)
@@ -285,6 +343,7 @@ class PageIndex(
         Some(attributeTable.get(cc, typedLabel).asInstanceOf[A])
       } else None
     }
+
     val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[Component]] = mutable.HashMap()
 
 
@@ -336,6 +395,7 @@ class PageIndex(
 
 
 
+    val orderingTable = mutable.HashMap[Label, mutable.ListBuffer[Int@@ComponentID]]()
     def appendToOrdering(l: Label, cc: Component): Unit = {
       val orderingBuffer = orderingTable.getOrElseUpdate(qualifyOrdering(l), mutable.ListBuffer())
       orderingBuffer.append(cc.id)
