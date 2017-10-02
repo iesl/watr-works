@@ -42,10 +42,12 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       .map { case(extractedItems, pageGeometry)  =>
         val pageId = docStore.addPage(docId, pageGeometry.pageNum)
         docStore.setPageGeometry(pageId, pageGeometry.bounds)
-        docStore.getTargetRegion(
+        val tr = docStore.getTargetRegion(
           docStore.addTargetRegion(pageId, pageGeometry.bounds)
         )
+        tr
       }
+
     createZone(LB.DocumentPages, pageRegions)
   }
 
@@ -62,6 +64,13 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
           }
 
         charRuns.foreach { run =>
+
+          val runBeginPt =  Point(run.head.bbox.left, run.head.bbox.bottom)
+          val runEndPt = Point(run.last.bbox.left, run.last.bbox.bottom)
+          val runLine = Line(runBeginPt, runEndPt)
+          val baselineShape = pageIndex.shapes.indexShape(runLine, LB.CharRunBaseline)
+
+          pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, run)
 
           run.foreach { _ match  {
             case item:ExtractedItem.CharItem =>
@@ -80,15 +89,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
               if (item.charProps.isRunBegin) {
                 pageIndex.components.appendToOrdering(LB.CharRunBegin, cc)
               }
-
-              val runBeginPt =  Point(run.head.bbox.left, run.head.bbox.bottom)
-              val runEndPt = Point(run.last.bbox.left, run.last.bbox.bottom)
-              val runLine = Line(runBeginPt, runEndPt)
-
-
-              val baselineShape = pageIndex.shapes.indexShape(runLine, LB.CharRunBaseline)
-
-              pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, run)
 
               pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
 

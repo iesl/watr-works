@@ -264,6 +264,31 @@ class PageIndex(
       } getOrElse(Seq())
     }
 
+    def reportClusters(): Unit = {
+      import TB._
+      val allSets = disjointSets.keys.toList
+        .map{ l =>
+          val dsets = disjointSets(l)
+          val setStrs = dsets.sets().map{ set =>
+            val canon = dsets.getCanonical(set.head)
+            val members = set.take(2).map(_.id).mkString(", ")
+            val membersFull = set.take(8).map(_.toString().box)
+
+            s"[${canon}] = (${set.length}) ${members} ..." atop indent(2)(vcat(membersFull))
+          }
+
+          vjoin(left)(
+            s"$l => ",
+            indent(2)(vsep(setStrs, 1)),
+            "~"*20
+          )
+        }
+
+      val res = vjoin(left)(indent(4)(vcat(allSets)))
+
+      println(res)
+    }
+
     val relationTable = gcol.HashBasedTable.create[Int@@ShapeID, Label, Int@@ShapeID]()
 
     def addRelation(lhs: Int@@ShapeID, l: Label, rhs: Int@@ShapeID): Unit = {

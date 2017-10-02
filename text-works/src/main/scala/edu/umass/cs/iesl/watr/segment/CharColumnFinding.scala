@@ -14,6 +14,7 @@ import org.dianahep.{histogrammar => HST}
 import spindex._
 import extract.ExtractedItem
 import utils.FunctionalHelpers._
+// import watrmarks._
 
 
 trait CharColumnFinding extends PageScopeSegmenter { self =>
@@ -43,18 +44,19 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
 
 
   def runColumnFinder(): Unit = {
+
     initialState()
 
     excludeImageRegionPoints()
 
     createBaselineClusters()
 
+
     createBaselineShapes()
 
     addColumnEvidence()
 
     // Find Baseline deviation up/down, for each font
-
 
     collectLineText()
 
@@ -63,10 +65,21 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
   }
 
   def collectLineText(): Unit = {
-    // Line chars are in:
-    // val baselineClusterId =pageIndex.shapes.getRelation(visualBaseline, LB.HasCharRunBaselines)
+    val orderedLines = pageIndex.shapes.getOrdering(LB.VisualLine::Ordering)
+    orderedLines.foreach { visualBaseline =>
+      val baselineCluster = pageIndex.shapes.getRelation(visualBaseline, LB.HasCharRunBaselines).get
 
-    // getExtractedItemsForShape(runBaseline1)
+      val baselineMembers = pageIndex.shapes.getClusterMembers(LB.CharRunBaseline::Cluster, baselineCluster).get
+
+      val extractedItems = getCharRunBaselineItems(baselineMembers.map(_.asInstanceOf[LineShape]))
+
+      val clusterStr = extractedItems.map { extractedItems =>
+        extractedItems.map(_.strRepr()).mkString
+      }
+
+      println(s"clstr>> ${clusterStr.mkString}")
+
+    }
 
   }
 
@@ -78,6 +91,12 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
 
   protected def getExtractedItemsForShape(shape: LabeledShape[GeometricFigure]): Seq[ExtractedItem] = {
     pageIndex.shapes.getShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems).get
+  }
+
+  protected def getCharRunBaselineItems(baselineMembers: Seq[LineShape]): Seq[Seq[ExtractedItem]] = {
+    baselineMembers.map {charRun =>
+      getExtractedItemsForShape(charRun)
+    }
   }
 
 
@@ -103,7 +122,16 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
       charRunBaseline.shape
         .extendLeftTo(pageLeft)
         .extendRightTo(pageRight)
-    }
+    }.groupByPairs(_.p1.y == _.p1.y).map(_.head)
+
+    // hPageRules.foreach { ruler =>
+    //   println(s"indexing ${ruler}")
+    //   indexShape(ruler, Label("Ruler"))
+    // }
+    // val _ = hPageRules.length
+    // implicit val log = createFnLog
+    // traceLog.drawPageShapes()
+
     hPageRules
   }
 
@@ -176,36 +204,51 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
     }
   }
 
+
   def createBaselineShapes(): Unit = {
+    pageIndex.shapes.reportClusters()
 
-    getClusteredLines(LB.CharRunBaseline::Cluster).foreach { case (baselineClusterId,  baseLineMembers) =>
+    val visualBaselinesWithMinId = getClusteredLines(LB.CharRunBaseline::Cluster)
+      .map { case (baselineClusterId,  baseLineMembers) =>
 
-      unindexShapes(baseLineMembers)
+        // baseLineMembers.map(_.id)
+        val extractedItems = getCharRunBaselineItems(baseLineMembers)
+        val minItemID = extractedItems.map(_.map(_.id).min).min
 
-      val totalBounds = baseLineMembers.tail.foldLeft(
-        baseLineMembers.head.shape.bounds()
-      ){ case (acc, e) =>
-          acc union e.shape.bounds()
+        unindexShapes(baseLineMembers)
+
+        val totalBounds = baseLineMembers.tail.foldLeft(
+          baseLineMembers.head.shape.bounds()
+        ){ case (acc, e) =>
+            acc union e.shape.bounds()
+        }
+
+        val LTBounds(l, t, w, h) = totalBounds
+
+        val (weight, runLines) = baseLineMembers
+          .map { baseLineShape => (baseLineShape.shape.p1.y, baseLineShape.shape.length()) }
+          .sortBy { _._1 }
+          .groupByPairs { case (l1, l2) => l1._1 == l2._1}
+          .map{ group => (group.map(_._2).sum, group) }
+          .sortBy(_._1)
+          .last
+
+        runLines.headOption.map { case (yval, len) =>
+          val likelyBaseline = Line(Point(l, yval), Point(l+w, yval))
+          val visualBaseline = indexShape(likelyBaseline, LB.VisualBaseline)
+          pageIndex.shapes.addRelation(visualBaseline.id, LB.HasCharRunBaselines, baselineClusterId)
+          (visualBaseline, minItemID)
+        }
       }
 
-      val LTBounds(l, t, w, h) = totalBounds
-
-      val (weight, runLines) = baseLineMembers
-        .map { baseLineShape => (baseLineShape.shape.p1.y, baseLineShape.shape.length()) }
-        .sortBy { _._1 }
-        .groupByPairs { case (l1, l2) => l1._1 == l2._1}
-        .map{ group => (group.map(_._2).sum, group) }
-        .sortBy(_._1)
-        .last
-
-      runLines.headOption.foreach { case (yval, len) =>
-        val likelyBaseline = Line(Point(l, yval), Point(l+w, yval))
-        val visualBaseline = indexShape(likelyBaseline, LB.VisualBaseline)
-        pageIndex.shapes.addRelation(visualBaseline.id, LB.HasCharRunBaselines, baselineClusterId)
+    val sortedByExtractionOrder = visualBaselinesWithMinId.sortBy { _.map(_._2.unwrap).getOrElse(Int.MaxValue)  }
+    sortedByExtractionOrder.foreach { ordered =>
+      ordered.foreach{ case (visualBaseline, minId) =>
+        pageIndex.shapes.appendToOrdering(LB.VisualLine::Ordering, visualBaseline)
       }
-
     }
 
+    // pageIndex.shapes.setOrdering(LB.VisualLine::Ordering, cs: Seq[LabeledShape[GeometricFigure]])
     // pageIndex.components.setOrdering(l: Label, cs: Seq[Component])
     // pageIndex.shapes.setOrdering(LB.)
     // pageIndex.shapes.appendToOrdering(LB.VisualLine::Order, )

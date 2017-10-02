@@ -162,7 +162,6 @@ trait DocumentZoningApi {
       }
       val export = Json.arr(exportJson)
 
-      // println(Json.prettyPrint(export))
       val jsOut = Json.stringify(export)
       println(jsOut)
       DocumentZoneExport(jsOut)
