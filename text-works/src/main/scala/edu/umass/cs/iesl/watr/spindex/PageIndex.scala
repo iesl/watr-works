@@ -83,17 +83,22 @@ object LabeledShape {
 
 }
 
-
 class PageIndex(
   val pageGeometry: PageGeometry,
   val extractedItems: Array[ExtractedItem],
-  firstItemIndex: Int
+  firstItemOffset: Int,
+  itemsLen: Int
 ) {
 
   import PageIndex._
 
   lazy val pageNum = pageGeometry.pageNum
   val rtreeArtifactName = s"page-${pageNum}.rtree"
+
+  lazy val pageItems: Array[ExtractedItem] =
+    extractedItems.slice(firstItemOffset, firstItemOffset+itemsLen)
+
+  lazy val lastItemOffset = firstItemOffset + itemsLen
 
   def saveToBytes(): Array[Byte] = {
     // RTreeIndex.saveBytes(components.componentRTree)

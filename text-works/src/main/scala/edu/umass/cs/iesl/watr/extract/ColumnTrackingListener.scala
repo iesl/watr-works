@@ -156,8 +156,6 @@ class ColumnTrackingListener(
 
   def addCharItem(charAtom: ExtractedItem.CharItem): Unit = {
 
-
-
     if (lastItem==null) {
       lineLists = List(List(charAtom))
       lastLineStartItem = charAtom

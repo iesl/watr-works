@@ -116,6 +116,13 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
       }
   }
 
+  protected def cluster1(l: Label, shape: LabeledShape[GeometricFigure]): Unit = {
+    pageIndex.shapes.addCluster(l, Seq(shape))
+  }
+
+  protected def cluster2(l: Label, shape1: LabeledShape[GeometricFigure], shape2: LabeledShape[GeometricFigure]): Unit = {
+    pageIndex.shapes.union(l, shape1, shape2)
+  }
 
 
 }

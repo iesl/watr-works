@@ -14,7 +14,7 @@ import org.dianahep.{histogrammar => HST}
 import spindex._
 import extract.ExtractedItem
 import utils.FunctionalHelpers._
-// import watrmarks._
+import watrmarks._
 
 
 trait CharColumnFinding extends PageScopeSegmenter { self =>
@@ -43,18 +43,20 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
     */
 
 
-  def runColumnFinder(): Unit = {
+  val L = Label.apply(_, _)
 
-    initialState()
+  def runColumnFinder(): Unit = {
+    // initPageComponents()
+    // initHRuleShapes()
+    initGridShapes()
 
     excludeImageRegionPoints()
 
-    createBaselineClusters()
+    // createBaselineClusters()
 
+    // createBaselineShapes()
 
-    createBaselineShapes()
-
-    addColumnEvidence()
+    // addColumnEvidence()
 
     // Find Baseline deviation up/down, for each font
 
@@ -66,6 +68,7 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
 
   def collectLineText(): Unit = {
     val orderedLines = pageIndex.shapes.getOrdering(LB.VisualLine::Ordering)
+
     orderedLines.foreach { visualBaseline =>
       val baselineCluster = pageIndex.shapes.getRelation(visualBaseline, LB.HasCharRunBaselines).get
 
@@ -77,15 +80,11 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
         extractedItems.map(_.strRepr()).mkString
       }
 
-      println(s"clstr>> ${clusterStr.mkString}")
+      val lineText = clusterStr.mkString
 
+      println(s"line>> ${lineText.mkString}")
     }
 
-  }
-
-  def initialState(): Unit = {
-    implicit val log = createFnLog
-    traceLog.drawPageShapes()
   }
 
 
@@ -95,6 +94,7 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
 
   protected def getCharRunBaselineItems(baselineMembers: Seq[LineShape]): Seq[Seq[ExtractedItem]] = {
     baselineMembers.map {charRun =>
+      println(s"charRun: ${charRun}")
       getExtractedItemsForShape(charRun)
     }
   }
@@ -103,10 +103,18 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
   def excludeImageRegionPoints(): Unit = {
     implicit val log = createFnLog
 
-    getLabeledRects(LB.Image).foreach { img =>
-      val baseLines = searchForLines(img.shape, LB.CharRunBaseline)
-      deleteShapes(baseLines)
-    }
+    pageIndex.pageItems.toSeq
+      .filter { _.isInstanceOf[ExtractedItem.ImgItem] }
+      .foreach { imageItem =>
+        indexShape(imageItem.bbox, LB.Image)
+        val baseLines = searchForLines(imageItem.bbox, LB.CharRunBaseline)
+        deleteShapes(baseLines)
+      }
+
+    // getLabeledRects(LB.Image).foreach { img =>
+    //   val baseLines = searchForLines(img.shape, LB.CharRunBaseline)
+    //   deleteShapes(baseLines)
+    // }
 
     traceLog.drawPageShapes()
   }
@@ -124,13 +132,6 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
         .extendRightTo(pageRight)
     }.groupByPairs(_.p1.y == _.p1.y).map(_.head)
 
-    // hPageRules.foreach { ruler =>
-    //   println(s"indexing ${ruler}")
-    //   indexShape(ruler, Label("Ruler"))
-    // }
-    // val _ = hPageRules.length
-    // implicit val log = createFnLog
-    // traceLog.drawPageShapes()
 
     hPageRules
   }
@@ -140,11 +141,15 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
 
     pageIndex.shapes.ensureCluster(LB.CharRunBaseline::Cluster)
 
-    createHPageRules().foreach { hPageRule =>
+    val hPageRules = createHPageRules()
+
+    hPageRules.foreach { hPageRule =>
 
       val ruleY = hPageRule.p1.y.asDouble()
 
-      val queryRegion = pageHorizontalSlice(ruleY-1.0, 2.0).get
+      val queryRegion = pageHorizontalSlice(ruleY-2.0, 4.0).get
+
+      // indexShape(queryRegion, Label("QueryRegion"))
 
       // Query horizontal slice of char baseline runs that might be part of the same line as this one
       val hPageRuleHits = searchForLines(queryRegion, LB.CharRunBaseline)
@@ -154,8 +159,8 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
         pairs match {
           case Seq(runBaseline1, runBaseline2) =>
 
-            pageIndex.shapes.addCluster(LB.CharRunBaseline::Cluster, Seq(runBaseline1))
-            pageIndex.shapes.addCluster(LB.CharRunBaseline::Cluster, Seq(runBaseline2))
+            cluster1(LB.CharRunBaseline::Cluster, runBaseline1)
+            cluster1(LB.CharRunBaseline::Cluster, runBaseline2)
 
             val run1Items = getExtractedItemsForShape(runBaseline1)
             val run2Items = getExtractedItemsForShape(runBaseline2)
@@ -179,29 +184,37 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
 
             inlineIntermediates.foreach { case (p, extractedItem) =>
               val intBaseline = pageIndex.shapes.extractedItemShapes.get(extractedItem.id, LB.CharRun)
-              pageIndex.shapes.union(LB.CharRunBaseline::Cluster, runBaseline1, intBaseline)
+              cluster2(LB.CharRunBaseline::Cluster, runBaseline1, intBaseline)
             }
 
             val allIntermediatesAreInlined = intermediateChars.length == inlineIntermediates.length
 
             if (allIntermediatesAreInlined) {
-              pageIndex.shapes.union(LB.CharRunBaseline::Cluster, runBaseline1, runBaseline2)
+              cluster2(LB.CharRunBaseline::Cluster, runBaseline1, runBaseline2)
             } else {
               nonInlineIntermediates.foreach { case(p, item) =>
                 val intBaseline = pageIndex.shapes.extractedItemShapes.get(item.id, LB.CharRun)
-                pageIndex.shapes.addCluster(LB.CharRunBaseline::Cluster, Seq(intBaseline))
+                cluster1(LB.CharRunBaseline::Cluster, intBaseline)
               }
 
             }
 
 
           case Seq(run) =>
-            pageIndex.shapes.addCluster(LB.CharRunBaseline::Cluster, Seq(run))
+            cluster1(LB.CharRunBaseline::Cluster, run)
 
           case _ =>
         }
       }
     }
+
+
+    hPageRules.sliding(2).foreach { _ match {
+      case Seq(hRule1, hRule2) =>
+      case Seq(hRule) =>
+      case Seq() =>
+    }}
+
   }
 
 
@@ -211,8 +224,8 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
     val visualBaselinesWithMinId = getClusteredLines(LB.CharRunBaseline::Cluster)
       .map { case (baselineClusterId,  baseLineMembers) =>
 
-        // baseLineMembers.map(_.id)
         val extractedItems = getCharRunBaselineItems(baseLineMembers)
+
         val minItemID = extractedItems.map(_.map(_.id).min).min
 
         unindexShapes(baseLineMembers)
@@ -247,12 +260,6 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
         pageIndex.shapes.appendToOrdering(LB.VisualLine::Ordering, visualBaseline)
       }
     }
-
-    // pageIndex.shapes.setOrdering(LB.VisualLine::Ordering, cs: Seq[LabeledShape[GeometricFigure]])
-    // pageIndex.components.setOrdering(l: Label, cs: Seq[Component])
-    // pageIndex.shapes.setOrdering(LB.)
-    // pageIndex.shapes.appendToOrdering(LB.VisualLine::Order, )
-
 
     implicit val log = createFnLog
     traceLog.drawPageShapes()
@@ -378,6 +385,7 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
       Point(x+w, atY)
     )
   }
+
   def boundedVerticalLine(bbox: LTBounds, atX: Int@@FloatRep): Line = {
     val LTBounds(x, y, w, h) = bbox
     Line(
@@ -386,32 +394,150 @@ trait CharColumnFinding extends PageScopeSegmenter { self =>
     )
   }
 
+  protected def findPageCharRuns(): Seq[Seq[ExtractedItem]] = {
+    val charRuns = pageIndex.pageItems.toSeq
+      .filter { _.isInstanceOf[ExtractedItem.CharItem] }
+      .groupByPairsWithIndex {
+        case (item1, item2, i) =>
+          val consecutive = item1.id.unwrap+1 == item2.id.unwrap
+          val sameLine = item1.bbox.bottom == item2.bbox.bottom
+          consecutive && sameLine
+      }
+
+    charRuns
+  }
+
+  def createCharRunBaseline(charRun: Seq[ExtractedItem]): Line = {
+    val runBeginPt =  Point(charRun.head.bbox.left, charRun.head.bbox.bottom)
+    val runEndPt = Point(charRun.last.bbox.right, charRun.last.bbox.bottom)
+    Line(runBeginPt, runEndPt)
+  }
+
+  def createHorizontalPageRules(charRuns: Seq[Seq[ExtractedItem]]): Seq[Line] = {
+
+    val baselines = charRuns.map{ charRun =>
+      val isChar  = charRun.head.isInstanceOf[ExtractedItem.CharItem]
+      if (isChar) {
+        createCharRunBaseline(charRun).some
+      } else None
+    }.flatten
+
+    val hPageRules = baselines
+      .sortBy(_.p1.y)
+      .map { _.extendLeftTo(pageGeometry.left).extendRightTo(pageGeometry.right) }
+      .groupByPairs(_.p1.y == _.p1.y) // uniquify
+      .map(_.head)                    //  ...
+
+    hPageRules
+  }
 
 
-  // def initCharRunShapes(): Unit = {
-  //   implicit val log = createFnLog
+  private def initGridShapes(): Unit = {
+    val pageCharRuns = findPageCharRuns()
+    val hPageRules = createHorizontalPageRules(pageCharRuns)
+    // hPageRules.foreach { pageRule =>
+    //   indexShape(pageRule, LB.HPageDivider)
+    // }
 
-  //   for {
-  //     runBeginCC <- pageIndex.components.getOrdering(LB.CharRunBegin)
-  //   } {
-  //     val point = runBeginCC.bounds.toPoint(Dir.BottomLeft)
 
-  //     // pageIndex.shapes.indexShape(point, LB.ColLeftEvidence)
+    pageCharRuns.foreach { charRun =>
+      val loc = charRun.head.location
+      val baseLine = createCharRunBaseline(charRun)
+      indexShape(baseLine, LB.CharRunBaseline)
+      indexShape(loc, LB.CharRunBegin)
+    }
 
-  //     val vCrossLine = point.translate(x=0.toFloatExact, y= 5.toFloatExact)
-  //       .lineTo(point.translate(x=0.toFloatExact, y= -5.toFloatExact))
+    implicit val log = createFnLog
+    traceLog.drawPageShapes()
+  }
 
-  //     val beginVLineShape = pageIndex.indexShape(vCrossLine, LB.CharRunBeginVLine)
-  //     pageIndex.setShapeAttribute(beginVLineShape.id, LB.CharRunBeginVLineToBaseline, runBaseline)
+  // private def initHRuleShapes(): Unit = {
+  //   val pageCharRuns = findPageCharRuns()
+  //   val hPageRules = createHorizontalPageRules(pageCharRuns)
 
-  //     colLeftHist.fill(point)
 
+  //   pageCharRuns.foreach { charRun =>
+
+
+  //     val charRunY = charRun.head.location.y
+  //     val matchingHRuler = hPageRules.find(_.p1.y == charRunY).getOrElse {
+  //       sys.error("no matching h-page rule")
+  //     }
+
+  //     val initIndex = charRun.head.id.unwrap
+  //     // Scan and align items left->right
+  //     val endOffset = pageIndex.lastItemOffset
+
+  //     var currIndex = initIndex+1
+  //     var done = false
+
+  //     while (!done) {
+  //       val item = pageIndex.extractedItems(currIndex)
+  //       val lastItem  = pageIndex.extractedItems(currIndex-1)
+  //       val itemX = item.location.x
+  //       val lastItemX = lastItem.location.x
+  //       if (itemX >= lastItemX && currIndex < endOffset) {
+  //         currIndex += 1
+  //       } else {
+  //         done = true
+  //       }
+  //     }
+  //     val leftIncludes = pageIndex.extractedItems.slice(initIndex, currIndex)
+  //     val leftStr = leftIncludes.map(_.strRepr()).mkString
+  //     println(s"lft>${leftStr}")
+
+
+  //     // val runBaseline = createCharRunBaseline(charRun)
+  //     // val baselineShape = indexShape(runBaseline, LB.CharRunBaseline)
+
+  //     // pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, charRun)
+
+  //     // charRun.foreach { _ match  {
+
+  //     //   case item:ExtractedItem.CharItem =>
+  //     //     if (item.charProps.isRunBegin) {
+  //     //       // pageIndex.components.appendToOrdering(LB.CharRunBegin, cc)
+  //     //     }
+
+  //     //     pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
+
+
+  //     //   case item:ExtractedItem.ImgItem =>
+  //     //     // pageIndex.shapes.indexShape(item.bbox, LB.Image)
+  //     //     // val underline = item.bbox.toLine(Dir.Bottom)
+  //     //     // val pathUnderline = indexShape(underline, LB.CharRunBaseline)
+  //     //     // pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, pathUnderline)
+  //     //     // // pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](pathUnderline.id, LB.ExtractedItems, run)
+
+  //     //   case item:ExtractedItem.PathItem =>
+  //     // }}
   //   }
 
+  //   implicit val log = createFnLog
   //   traceLog.drawPageShapes()
-
   // }
 
-
-
+  // private def initPageComponents(): Unit = {
+  //   // import utils.{RelativeDirection => Dir}
+  //   val pageCharRuns = findPageCharRuns()
+  //   pageCharRuns.foreach { charRun =>
+  //     val runBaseline = createCharRunBaseline(charRun)
+  //     val baselineShape = indexShape(runBaseline, LB.CharRunBaseline)
+  //     pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, charRun)
+  //     charRun.foreach { _ match  {
+  //       case item:ExtractedItem.CharItem =>
+  //         if (item.charProps.isRunBegin) {
+  //           // pageIndex.components.appendToOrdering(LB.CharRunBegin, cc)
+  //         }
+  //         pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
+  //       case item:ExtractedItem.ImgItem =>
+  //         // pageIndex.shapes.indexShape(item.bbox, LB.Image)
+  //         // val underline = item.bbox.toLine(Dir.Bottom)
+  //         // val pathUnderline = indexShape(underline, LB.CharRunBaseline)
+  //         // pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, pathUnderline)
+  //         // // pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](pathUnderline.id, LB.ExtractedItems, run)
+  //       case item:ExtractedItem.PathItem =>
+  //     }}
+  //   }
+  // }
 }

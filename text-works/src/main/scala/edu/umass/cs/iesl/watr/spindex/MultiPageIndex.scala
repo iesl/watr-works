@@ -67,12 +67,19 @@ class MultiPageIndex(
       items.foreach { item => itemArray(item.id.unwrap) = item }
     }
 
+    var itemArrayOffsetForPage: Int = 1
+
     extractedItems.foreach { case (items, pageGeometry) =>
+      val lastIndex = items.lastOption.map(_.id.unwrap).getOrElse(itemArrayOffsetForPage)
+      val itemArrayLen = lastIndex - itemArrayOffsetForPage
+
       val pageIndex = new PageIndex(
         pageGeometry,
         itemArray,
-        0
+        itemArrayOffsetForPage, itemArrayLen
       )
+
+      itemArrayOffsetForPage = itemArrayOffsetForPage + items.length
       val existing = pageIndexes.put(pageGeometry.pageNum, pageIndex)
       existing.foreach { e => sys.error("adding new page w/existing id") }
     }

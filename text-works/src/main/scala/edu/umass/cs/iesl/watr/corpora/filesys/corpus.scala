@@ -19,7 +19,12 @@ import fs2.Stream
 object Corpus {
 
   def initCorpus(corpusRoot: String): Unit = {
-    val fullPath = pwd/RelPath(corpusRoot)
+
+    val fullPath = fs.FilePath(corpusRoot) match {
+      case p: fs.Path =>  p
+      case p: fs.RelPath => fs.pwd / p
+    }
+
     val validPath = exists(fullPath)
 
     if (!validPath) {

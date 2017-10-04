@@ -41,6 +41,7 @@ object TextWorksConfig {
   case class Config(
     ioConfig        : IOConfig = IOConfig(),
     writeRTrees     : Boolean = false,
+    initCorpus      : Option[nio.Path] = None,
     runTraceLogging : Boolean = VisualTracer.tracingEnabled(),
     outputOptions   : List[OutputOption] = List(),
     exec            : Option[(Config) => Unit] = Some((c) => extractText(c))
@@ -62,7 +63,6 @@ object TextWorksConfig {
 
 
     opt[nio.Path]('c', "corpus") action { (v, conf) =>
-
       lens[Config].ioConfig.modify(conf) { ioConfig =>
         ioConfig.copy(
           inputMode = Option(InputMode.CorpusFile(v, None))
@@ -100,6 +100,13 @@ object TextWorksConfig {
       }
     } text ("write the computed rtrees to disk")
 
+    opt[nio.Path]("init-corpus") action { (v, conf) =>
+      val conf1 = lens[Config].initCorpus.modify(conf){ m =>
+        Some(v)
+      }
+      setAction(conf1, initCorpus(_))
+    } text ("initialize dir of pdfs to corpus structure")
+
     opt[Unit]("overwrite") action { (v, conf) =>
       lens[Config].ioConfig.overwrite.modify(conf){ m =>
         true
@@ -115,7 +122,11 @@ object TextWorksConfig {
 
 
     checkConfig{ c =>
-      if (c.ioConfig.inputMode.isEmpty) {
+      val validConfig = (
+        c.initCorpus.isDefined
+          || c.ioConfig.inputMode.nonEmpty)
+
+      if (!validConfig) {
         failure("Invalid input options")
       } else success
     }
@@ -127,6 +138,12 @@ object TextWorksConfig {
 
 
 
+  def initCorpus(conf: Config): Unit = {
+    println("initCorpus")
+    conf.initCorpus.foreach { corpusRoot =>
+      filesys.Corpus.initCorpus(corpusRoot.toString())
+    }
+  }
   def extractText(conf: Config): Unit = {
     val ioOpts = new IOOptionParser(conf.ioConfig)
 
@@ -150,6 +167,7 @@ object TextWorksConfig {
                 } {
 
                   val traceLogRoot = if (conf.runTraceLogging) {
+                    println("writing tracelogs")
                     val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
                     traceLogGroup.deleteGroupArtifacts()
                     Some(traceLogGroup.rootPath)

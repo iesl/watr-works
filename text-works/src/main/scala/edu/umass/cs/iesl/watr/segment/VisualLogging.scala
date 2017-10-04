@@ -83,16 +83,6 @@ trait PageScopeTracing extends VisualTracer { self  =>
       // case g @ Colorized(fig: GeometricFigure, fg: Color, bg: Color, fgOpacity: Float, bgOpacity: Float) =>
     } }
   }
-  private def mkRegions(bboxes: Seq[LTBounds]): Seq[JsObject] = {
-    bboxes.map{ bbox =>
-      val LTBounds.Doubles(l, t, w, h) = rescale(bbox)
-
-      Json.obj(
-        ("x" -> JsNumber(l)),     ("y" -> JsNumber(t)),
-        ("width" -> JsNumber(w)), ("height" -> JsNumber(h))
-      )
-    }
-  }
 
   private def mkComponentRecs(ccs: Seq[Component]): Seq[JsObject] = {
     ccs.map{ cc =>
@@ -173,7 +163,24 @@ trait PageScopeTracing extends VisualTracer { self  =>
   def drawPageShapes()(
     implicit lg: LogSpec
   ): Unit = jsonAppend {
-    val pageBounds = pageIndex.pageGeometry.bounds
+
+
+    val pageImage = {
+      val LTBounds.Ints(left, top, width, height) = pageIndex.pageGeometry.bounds
+      val border = Json.obj(
+        ("type" -> "rect"), 
+        ("x" -> left),     ("y" -> top),
+        ("width" -> width), ("height" -> height),
+        ("stroke" -> "black"), ("stroke-width" -> 1), ("fill" -> "none")
+      )
+      val image = Json.obj(
+        ("type" -> "image"), ("class" -> "page-image"),
+        ("page" -> (pageIndex.pageNum.unwrap+1)),
+        ("x" -> left),     ("y" -> top),
+        ("width" -> width), ("height" -> height)
+      )
+      Seq(image, border)
+    }
 
     val allShapes = pageIndex.shapes.shapeRIndex.getItems.map{ lshape =>
       val lls = lshape.labels.mkString(" ")
@@ -204,9 +211,7 @@ trait PageScopeTracing extends VisualTracer { self  =>
 
     }
 
-    val pgBounds = mkRegions(Seq(pageBounds))
-
-    val shapes = pgBounds ++ (allShapes.flatten)
+    val shapes = pageImage ++ allShapes.flatten
 
     Json.obj(
       ("desc" -> JsString("All Page Shapes")),
@@ -216,94 +221,3 @@ trait PageScopeTracing extends VisualTracer { self  =>
 
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// class VisualLogger(
-//   logName: String,
-//   pageIndex: PageIndex,
-//   outputRoot: Path
-// ) {
-//   val rTreeIndex = pageIndex.componentRTree
-//   val pageNum = pageIndex.pageGeometry.id
-
-//   val logs = mutable.ListBuffer[JsObject]()
-
-//   val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageIndex.pageGeometry.bounds
-//   val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageIndex.pageGeometry.bounds
-
-//   def jsonLogFile(name: String) = s"${name}.pg${pageNum}.json"
-
-
-//   def rescale(bboxScale1: LTBounds): LTBounds = {
-//     val LTBounds.Doubles(l, t, w, h) = bboxScale1
-
-//     val scaleX = pageW / svgW
-//     val scaleY = pageH / svgH
-//     val l2 = l * scaleX
-//     val t2 = t * scaleY
-//     val w2 = w * scaleX
-//     val h2 = h * scaleY
-
-//     LTBounds.Doubles(l2, t2, w2, h2)
-//   }
-
-
-//   def showRegions(name: String, bboxes: Seq[LTBounds], lineColor: Color=Colors.Blue, fillColor: Color=Colors.Yellow): Unit = {
-//     val boxBlock = bboxes.map{ bbox =>
-//       val LTBounds.Doubles(l, t, w, h) = rescale(bbox)
-
-//       Json.obj(
-//         ("x" -> JsNumber(l)),     ("y" -> JsNumber(t)),
-//         ("width" -> JsNumber(w)), ("height" -> JsNumber(h))
-//       )
-//     }
-
-//     val obj = Json.obj(
-//       ("desc" -> JsString(name)),
-//       ("shapes" -> boxBlock)
-//     )
-
-//     logs += obj
-//   }
-
-
-
-//   def writeLogs(): Unit = {
-
-//     val logJson = Json.toJson(logs.toList)
-//     val jsonStr = Json.prettyPrint(logJson)
-
-//     if (!fs.exists(outputRoot)) {
-//       fs.mkdir(outputRoot)
-//     }
-
-//     val outPath = outputRoot / jsonLogFile(logName)
-
-//     if (fs.exists(outPath)) {
-//       fs.rm(outPath)
-//     }
-
-//     fs.write(outPath, jsonStr)
-
-//   }
-
-// }

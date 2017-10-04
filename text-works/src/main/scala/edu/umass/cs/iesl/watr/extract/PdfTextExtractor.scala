@@ -104,15 +104,17 @@ class PdfTextExtractor() {
       val reader = new PdfReader(instr)
       val document = new PdfDocument(reader)
 
+      val numOfPages = document.getNumberOfPages
 
-      for (pageNumber <- 1 to document.getNumberOfPages) {
+      print(s"Extracting ${numOfPages} pages.")
+      for (pageNumber <- 1 to numOfPages) {
+        print(s".")
 
         val pageNum = PageNum(pageNumber-1)
 
         val pdfPage = document.getPage(pageNumber)
 
         val (pageGeometry, geomTrans) = getReportedPageGeometry(pageNum, pdfPage, reader)
-        println("Extracting page")
 
         val extractor = new RunTrackingListener(
           reader,
@@ -143,8 +145,7 @@ class PdfTextExtractor() {
         } catch {
           case f: Throwable =>
             println(s"ERROR extractCharacters(page: ${pageNumber}): ${f}: ${f.getMessage} ${f.getCause()}")
-            f.printStackTrace()
-
+            // f.printStackTrace()
         } finally {
           if (instr != null) instr.close()
         }
@@ -157,6 +158,7 @@ class PdfTextExtractor() {
         // f.printStackTrace()
     } finally {
       if (instr != null) instr.close()
+      println()
     }
 
     pages.toList

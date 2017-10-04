@@ -16,30 +16,31 @@ object DocumentIO  {
   import textgrid._
 
   def documentToPlaintext(mpageIndex: MultiPageIndex): String = {
-    // mpageIndex.docStore.getPageText(pageId)
+    // // mpageIndex.docStore.getPageText(pageId)
 
-    val serProps = new TextGrid.SerializationProps
-    for {
-      pageNum      <- mpageIndex.getPages
-      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
-    }  {
-      for {
-        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
-        (line, n)    <- lineCCs.zipWithIndex
-        textRow      <- pageIndex.components.getComponentText(line, LB.VisualLine).toList
-      } {
-        textRow.serialize(serProps)
-      }
+    // val serProps = new TextGrid.SerializationProps
+    // for {
+    //   pageNum      <- mpageIndex.getPages
+    //   pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+    // }  {
+    //   for {
+    //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
+    //     (line, n)    <- lineCCs.zipWithIndex
+    //     textRow      <- pageIndex.components.getComponentText(line, LB.VisualLine).toList
+    //   } {
+    //     textRow.serialize(serProps)
+    //   }
 
-    }
-    val lineNums = serProps.lineMap.keys.toList.sorted
+    // }
+    // val lineNums = serProps.lineMap.keys.toList.sorted
 
-    val textLines = lineNums.map { lineNum =>
-      val t = serProps.lineMap(lineNum)._2
-      t.box
-    }
+    // val textLines = lineNums.map { lineNum =>
+    //   val t = serProps.lineMap(lineNum)._2
+    //   t.box
+    // }
 
-    textLines.mkString("\n")
+    // textLines.mkString("\n")
+    "TODO"
   }
 
   def documentToStructuredPlaintext(mpageIndex: MultiPageIndex): String = {

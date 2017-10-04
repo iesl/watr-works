@@ -96,12 +96,11 @@ class RunTrackingListener(
       line
     }
 
-    debugPrintPageItems(lineRows)
+    // debugPrintPageItems(lineRows)
 
     val lines = lineRows.flatten
 
     lines  // ++ pageImages
-    // ???
   }
 
   private def debugPrintPageItems(rows: List[List[ExtractedItem]]): Unit = {
@@ -126,8 +125,6 @@ class RunTrackingListener(
     // pageImages = imgItem :: pageImages
     lastItem = imgItem
   }
-
-
 
 
   def addCharItem(charAtom: ExtractedItem.CharItem): Unit = {
