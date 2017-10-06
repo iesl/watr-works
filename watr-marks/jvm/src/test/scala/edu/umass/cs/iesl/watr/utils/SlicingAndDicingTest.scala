@@ -66,7 +66,7 @@ class SlicingAndDicingTest extends FlatSpec with Matchers {
   it should "do greedy clustering on lists" in {
 
     val hasSharedLetter: ((String, String) => Boolean) = (s1, s2) => {
-      !(s1.toSet intersect s2.toSet).isEmpty
+      (s1.toSet intersect s2.toSet).nonEmpty
     }
 
     assertResult(List[List[Int]]()){

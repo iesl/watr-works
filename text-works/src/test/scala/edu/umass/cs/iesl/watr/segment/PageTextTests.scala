@@ -47,7 +47,7 @@ class PageTextTest extends SegmentationTestUtils  {
 
 
     // allTestPdfs.foreach {
-    selectPdfPage(allTestPdfs, "sacc", 1).foreach {
+    selectPdfPage(allTestPdfs, "2024", 1).foreach {
       case (docId, page, path) =>
 
         tracing.VisualTracer.clearPages()

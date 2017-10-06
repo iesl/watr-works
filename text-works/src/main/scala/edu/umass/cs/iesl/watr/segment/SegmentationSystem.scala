@@ -90,6 +90,15 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
       .map(_.asInstanceOf[LineShape])
   }
 
+  protected def getLabeledPoints(l: Label): Seq[PointShape] = {
+    pageIndex.shapes.getShapesWithLabel(l)
+      .map(_.asInstanceOf[PointShape])
+  }
+
+  protected def deleteLabeledShapes(l: Label): Unit = {
+    deleteShapes(pageIndex.shapes.getShapesWithLabel(l))
+  }
+
   protected def deleteShapes[T <: GeometricFigure](shapes: Seq[LabeledShape[T]]): Unit = {
     shapes.foreach { sh => pageIndex.shapes.deleteShape(sh) }
   }
@@ -127,6 +136,21 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
 
 }
 
+case class Bin(
+  centroid: DataPoint,
+  neighbors: Seq[DataPoint]
+    // weightedAverage: Int@@FloatRep
+)
+case class DataPoint(
+  value: Int@@FloatRep,
+  len: Int
+)
+
+import TypeTags._
+import utils.ExactFloats._
+import utils.SlicingAndDicing._
+import scala.annotation.tailrec
+
 trait SegmentationCommons {
   def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {
     ccs.groupBy{f(_)}.toSeq
@@ -134,4 +158,33 @@ trait SegmentationCommons {
       .reverse.headOption.map(_._1)
   }
 
+  def quickNearestNeighbors(in: Seq[Int@@FloatRep]): Seq[Bin] = {
+
+    @tailrec
+    def loop(init: List[(Int@@FloatRep, Int)], groups: List[Bin]): List[Bin] = {
+      if (init.isEmpty) groups else {
+        val (dmax, dmaxCount) = init.head
+        val (grouped, others) = init.tail.partition { case (d, dcount) =>
+          val inRange = d - 0.5d < dmax && dmax < d + 0.5d
+          inRange
+        }
+        val bin = Bin(
+          DataPoint(dmax, dmaxCount),
+          grouped.map(g => DataPoint(g._1, g._2))
+        )
+        loop(others, bin::groups)
+      }
+    }
+
+    val distsSortByCount: List[(Int@@FloatRep, Int)] = in
+      .sorted.toList
+      .groupByPairs(_ == _)
+      .map(p => (p.head, p.length))
+      .sortBy(_._2)
+      .reverse
+      .toList
+
+
+    loop(distsSortByCount, List()).reverse
+  }
 }

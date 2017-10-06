@@ -141,7 +141,6 @@ case class LBBounds(
   }
 }
 
-
 case class Point(
   x: Int@@FloatRep, y: Int@@FloatRep
 ) extends GeometricFigure {

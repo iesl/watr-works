@@ -106,9 +106,10 @@ class PdfTextExtractor() {
 
       val numOfPages = document.getNumberOfPages
 
-      print(s"Extracting ${numOfPages} pages.")
+      println(s"Extracting ${numOfPages} pages.")
       for (pageNumber <- 1 to numOfPages) {
-        print(s".")
+        // print(s".")
+        println(s".${pageNumber}")
 
         val pageNum = PageNum(pageNumber-1)
 

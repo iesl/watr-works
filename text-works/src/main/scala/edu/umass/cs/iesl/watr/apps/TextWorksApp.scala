@@ -167,7 +167,6 @@ object TextWorksConfig {
                 } {
 
                   val traceLogRoot = if (conf.runTraceLogging) {
-                    println("writing tracelogs")
                     val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
                     traceLogGroup.deleteGroupArtifacts()
                     Some(traceLogGroup.rootPath)
@@ -207,6 +206,8 @@ object TextWorksActions {
     traceLogRoot: Option[fs.Path]
   ): Unit = {
 
+    println(s"Extracting ${stableId}")
+
     val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, new MemDocZoningApi)
 
     segmenter.runDocumentSegmentation()
@@ -218,12 +219,14 @@ object TextWorksActions {
     write(textOutputFile, content)
 
     traceLogRoot.foreach { rootPath =>
+      println("writing tracelogs")
       val jsonLogs = tracing.VisualTracer.emitLogs()
       val jsonStr = Json.prettyPrint(jsonLogs)
       fs.write(rootPath / "tracelog.json", jsonStr)
     }
 
     rtreeOutputRoot.foreach { rtreeRootPath =>
+      println("writing rtrees")
 
       for { pageNum <- segmenter.mpageIndex.getPages } {
         val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
