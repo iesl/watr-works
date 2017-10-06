@@ -12,7 +12,7 @@ import shapeless._
 import java.nio.{file => nio}
 import fs2._
 import tracing.VisualTracer
-import play.api.libs.json.Json
+import play.api.libs.json, json._
 
 
 sealed trait OutputOption
@@ -218,9 +218,17 @@ object TextWorksActions {
 
     write(textOutputFile, content)
 
+
     traceLogRoot.foreach { rootPath =>
       println("writing tracelogs")
-      val jsonLogs = tracing.VisualTracer.emitLogs()
+
+      val allLogs = segmenter.pageSegmenters
+        .foldLeft(List[JsObject]()) { 
+          case (accum, pageSegmenter) =>
+            accum ++ pageSegmenter.emitLogs()
+        }
+
+      val jsonLogs = Json.toJson(allLogs)
       val jsonStr = Json.prettyPrint(jsonLogs)
       fs.write(rootPath / "tracelog.json", jsonStr)
     }

@@ -7,6 +7,7 @@ import spindex._
 // import utils.Color
 import play.api.libs.json, json._
 import tracing._
+// import watrmarks.Label
 // import utils.ExactFloats._
 
 object DrawMethods {
@@ -24,20 +25,39 @@ object DrawMethods {
 
 }
 
+import scala.collection.mutable
+case class LogEntry(
+  name: String,
+  jsonLog: JsObject
+)
 trait PageScopeTracing extends VisualTracer { self  =>
   lazy val traceLog = self
 
   def pageIndex: PageIndex
 
-
   lazy val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageIndex.pageGeometry.bounds
   lazy val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageIndex.pageGeometry.bounds
 
-  def initPageTracing(): Unit = {
-    if (traceLog.tracingEnabled()) {
-      tracing.VisualTracer.newPage()
+  lazy val pageLogs = mutable.ArrayBuffer[LogEntry]()
+
+  def jsonAppend(enclosingCallSite: String)(body: => JsObject) =
+    ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {
+      val methodFqn = enclosingCallSite.split("\\.").toList.last
+      val logName = methodFqn.replace("#", " . ")
+      pageLogs.append(LogEntry(
+        logName, body
+      ))
     }
+
+  def emitLogs(): Seq[JsObject] = {
+    for {
+      logEntry <- pageLogs
+    } yield Json.obj(
+      ("name", s"Page ${pageIndex.pageNum.unwrap+1}: ${logEntry.name}"),
+      ("steps", Json.arr(logEntry.jsonLog))
+    )
   }
+
   def rescale(bboxScale1: LTBounds): LTBounds = {
     val LTBounds.Doubles(l, t, w, h) = bboxScale1
 
@@ -113,62 +133,60 @@ trait PageScopeTracing extends VisualTracer { self  =>
     )
   }
 
-  def zipFlashThroughRegions(desc: String, bboxes: Seq[LTBounds]): JsObject = {
-    formatLogRec(DrawMethods.ZipFlash, desc, bboxes)
-  }
+  // def zipFlashThroughRegions(desc: String, bboxes: Seq[LTBounds]): JsObject = {
+  //   formatLogRec(DrawMethods.ZipFlash, desc, bboxes)
+  // }
 
-  def showShapes(desc: String, shapes: Seq[GeometricFigure]): JsObject = {
-    formatLogRec(DrawMethods.Draw, desc, shapes)
-  }
+  // def showShapes(desc: String, shapes: Seq[GeometricFigure]): JsObject = {
+  //   formatLogRec(DrawMethods.Draw, desc, shapes)
+  // }
 
-  def showRegions(desc: String, bboxes: Seq[LTBounds]): JsObject = {
-    formatLogRec(DrawMethods.Draw, desc, bboxes)
-  }
+  // def showRegions(desc: String, bboxes: Seq[LTBounds]): JsObject = {
+  //   formatLogRec(DrawMethods.Draw, desc, bboxes)
+  // }
 
-  def showMorph(desc: String, bboxes: LTBounds*)(
-    implicit lg: LogSpec
-  ): Unit = jsonAppend {
-    formatLogRec(DrawMethods.Morph, desc, bboxes)
-  }
+  // def showMorph(desc: String, bboxes: LTBounds*)(
+  //   // implicit lg: LogSpec
+  // ): Unit = jsonAppend {
+  //   formatLogRec(DrawMethods.Morph, desc, bboxes)
+  // }
 
-  def drawPageGeometry()(
-    implicit lg: LogSpec
-  ): Unit = jsonAppend {
-    val pageBounds = pageIndex.pageGeometry.bounds
-    formatLogRec(DrawMethods.Outline, "Page Bounds", Seq(pageBounds))
-  }
+  // def drawPageGeometry()(
+  //   // implicit lg: LogSpec
+  // ): Unit = jsonAppend {
+  //   val pageBounds = pageIndex.pageGeometry.bounds
+  //   formatLogRec(DrawMethods.Outline, "Page Bounds", Seq(pageBounds))
+  // }
 
-  def flashComponents(desc: String, ccs: Seq[Component])(
-    implicit lg: LogSpec
-  ): Unit = jsonAppend {
-    formatLogRecCcs(DrawMethods.ZipFlash, desc, ccs)
-  }
+  // def flashComponents(desc: String, ccs: Seq[Component])(
+  //   // implicit lg: LogSpec
+  // ): Unit = jsonAppend {
+  //   formatLogRecCcs(DrawMethods.ZipFlash, desc, ccs)
+  // }
 
-  def showComponentRemoval(desc: String, ccs: Seq[Component])(
-    implicit lg: LogSpec
-  ): Unit = jsonAppend {
-    formatLogRecCcs(DrawMethods.Remove, desc, ccs)
-  }
+  // def showComponentRemoval(desc: String, ccs: Seq[Component])(
+  //   // implicit lg: LogSpec
+  // ): Unit = jsonAppend {
+  //   formatLogRecCcs(DrawMethods.Remove, desc, ccs)
+  // }
 
-  import watrmarks.Label
 
-  def showLabeledComponents(desc: String, l: Label)(
-    implicit lg: LogSpec
-  ): Unit = {
-    flashComponents(desc + s" ${l.fqn}",
-      pageIndex.components.componentRTree.getItems.filter(_.hasLabel(l))
-    )
-  }
+  // def showLabeledComponents(desc: String, l: Label)(
+  //   // implicit lg: LogSpec
+  // ): Unit = {
+  //   flashComponents(desc + s" ${l.fqn}",
+  //     pageIndex.components.componentRTree.getItems.filter(_.hasLabel(l))
+  //   )
+  // }
 
-  def drawPageShapes()(
-    implicit lg: LogSpec
-  ): Unit = jsonAppend {
-
+  def drawPageShapes()(implicit
+    enclosing: sourcecode.Enclosing
+  ): Unit = jsonAppend(enclosing.value) {
 
     val pageImage = {
       val LTBounds.Ints(left, top, width, height) = pageIndex.pageGeometry.bounds
       val border = Json.obj(
-        ("type" -> "rect"), 
+        ("type" -> "rect"),
         ("x" -> left),     ("y" -> top),
         ("width" -> width), ("height" -> height),
         ("stroke" -> "black"), ("stroke-width" -> 1), ("fill" -> "none")

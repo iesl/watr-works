@@ -133,32 +133,30 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     pageIndex.shapes.union(l, shape1, shape2)
   }
 
+  protected def clusterN(l: Label, shapes: Seq[LabeledShape[GeometricFigure]]): Unit = {
+    pageIndex.shapes.addCluster(l, shapes)
+  }
 
 }
 
-case class Bin(
-  centroid: DataPoint,
-  neighbors: Seq[DataPoint]
-    // weightedAverage: Int@@FloatRep
-)
-case class DataPoint(
-  value: Int@@FloatRep,
-  len: Int
-)
 
-import TypeTags._
-import utils.ExactFloats._
-import utils.SlicingAndDicing._
-import scala.annotation.tailrec
+object QuickNearestNeighbors {
+  import TypeTags._
+  import utils.ExactFloats._
+  import utils.SlicingAndDicing._
+  import scala.annotation.tailrec
 
-trait SegmentationCommons {
-  def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {
-    ccs.groupBy{f(_)}.toSeq
-      .sortBy({ case (_, atoms) => atoms.length })
-      .reverse.headOption.map(_._1)
-  }
+  case class Bin(
+    centroid: DataPoint,
+    neighbors: Seq[DataPoint]
+      // weightedAverage: Int@@FloatRep
+  )
+  case class DataPoint(
+    value: Int@@FloatRep,
+    len: Int
+  )
 
-  def quickNearestNeighbors(in: Seq[Int@@FloatRep]): Seq[Bin] = {
+  def qnn(in: Seq[Int@@FloatRep]): Seq[Bin] = {
 
     @tailrec
     def loop(init: List[(Int@@FloatRep, Int)], groups: List[Bin]): List[Bin] = {
@@ -187,4 +185,13 @@ trait SegmentationCommons {
 
     loop(distsSortByCount, List()).reverse
   }
+}
+
+trait SegmentationCommons {
+  def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {
+    ccs.groupBy{f(_)}.toSeq
+      .sortBy({ case (_, atoms) => atoms.length })
+      .reverse.headOption.map(_._1)
+  }
+
 }

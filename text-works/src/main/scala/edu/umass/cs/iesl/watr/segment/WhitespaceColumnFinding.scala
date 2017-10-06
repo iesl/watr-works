@@ -25,20 +25,20 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
 
   def findCandidateWhitespaceCols(): Unit = {
-    implicit val log = traceLog.createLog("findCandidateWhitespaceCols")
+    // implicit val log = traceLog.createLog("findCandidateWhitespaceCols")
 
     val components = pageIndex.components.getPageAtoms
 
     val cols = findLeftAlignedCharCols(components)
 
-    traceLog.drawPageGeometry()
+    // traceLog.drawPageGeometry()
 
-    traceLog.flashComponents(s"Left-aligned Char Cols", cols)
+    // traceLog.flashComponents(s"Left-aligned Char Cols", cols)
 
     cols.foreach { colRegion =>
       val colBounds = colRegion.bounds
       pageIndex.components.removeComponent(colRegion)
-      showComponentRemoval(s"Removing Left-aligned Col", Seq(colRegion))
+      // showComponentRemoval(s"Removing Left-aligned Col", Seq(colRegion))
 
       val startingRegion = LTBounds(
         left   = colBounds.left-0.1d,
@@ -51,19 +51,19 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
         .foreach{ emptyRegion =>
           val colIsWideEnough = emptyRegion.width > 4.0d
 
-          traceLog.showMorph(s"Expanding ${startingRegion.prettyPrint} To Max=${emptyRegion.prettyPrint}", startingRegion, emptyRegion)
+          // traceLog.showMorph(s"Expanding ${startingRegion.prettyPrint} To Max=${emptyRegion.prettyPrint}", startingRegion, emptyRegion)
 
 
           if (colIsWideEnough) {
             val expandedRegion = labelRegion(emptyRegion, LB.WhitespaceColCandidate)
 
-            traceLog.flashComponents("Creating Candidate", Seq(expandedRegion))
+            // traceLog.flashComponents("Creating Candidate", Seq(expandedRegion))
 
           }
         }
     }
 
-    showLabeledComponents(s"Final WS Col Candidates", LB.WhitespaceColCandidate)
+    // showLabeledComponents(s"Final WS Col Candidates", LB.WhitespaceColCandidate)
 
 
   }
@@ -222,7 +222,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
   def combineCandidateWhitespaceCols(): Unit = {
 
-    implicit val log = tracer.createLog("combineCandidateWhitespaceCols")
+    // implicit val log = tracer.createLog("combineCandidateWhitespaceCols")
 
     import scala.collection.mutable
 
@@ -233,7 +233,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
     val candidates = mutable.ArrayBuffer[Component](candidateCCs:_*)
     // val candidates = mutable.ArrayBuffer[LTBounds](candidateBounds)
 
-    traceLog.flashComponents("Whitespace Col Candidates", candidateCCs)
+    // traceLog.flashComponents("Whitespace Col Candidates", candidateCCs)
 
     while(candidates.nonEmpty) {
       val candidate = candidates.head
@@ -243,7 +243,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
       val overlaps = pageIndex.components.searchIntersecting(currColBounds, LB.WhitespaceColCandidate)
         .filterNot { _.id.unwrap == candidate.id.unwrap }
 
-      traceLog.flashComponents("Query Column + Overlaps", candidate +: overlaps)
+      // traceLog.flashComponents("Query Column + Overlaps", candidate +: overlaps)
 
       overlaps.foreach { overlappedCC =>
 

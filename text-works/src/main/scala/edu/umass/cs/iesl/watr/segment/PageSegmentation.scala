@@ -54,11 +54,13 @@ object PageSegmenter {
 
 trait PageSegmenter extends PageLevelFunctions {
 
+  def runPageSegmentationPass1(): Unit =  {
 
-  def runPageSegmentation(): Unit =  {
-    traceLog.initPageTracing()
+    columnFinder.runPass1()
+  }
 
-    columnFinder.runColumnFinder()
+  def runPageSegmentationPass2(): Unit =  {
+    columnFinder.runPass2()
 
     // lineFinding.runLineSegmentation()
     // shapeFunctions.buildLinePairTrapezoids()

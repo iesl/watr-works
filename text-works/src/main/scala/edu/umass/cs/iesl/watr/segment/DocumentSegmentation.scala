@@ -131,15 +131,14 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
 
   def runDocumentSegmentation(): Unit = {
-    tracing.VisualTracer.clearPages()
 
-    pageSegmenters.foreach { pageSegmenter =>
-      pageSegmenter.runPageSegmentation()
+    pageSegmenters.foreach {
+      _.runPageSegmentationPass1()
     }
 
-    // pageSegmenters.foreach { pageSegmenter =>
-    //   pageSegmenter.runLineClassification()
-    // }
+    pageSegmenters.foreach {
+      _.runPageSegmentationPass2()
+    }
 
   }
 
