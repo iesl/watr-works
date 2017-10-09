@@ -12,7 +12,7 @@ import rindex._
 import utils.OrderedDisjointSet
 
 import textgrid._
-// import utils.ExactFloats._
+import utils.ExactFloats._
 import textboxing.{TextBoxing => TB}
 import scala.reflect.ClassTag
 import scala.collection.JavaConverters._
@@ -103,6 +103,12 @@ class PageIndex(
   def saveToBytes(): Array[Byte] = {
     // RTreeIndex.saveBytes(components.componentRTree)
     ???
+  }
+
+  var pageVerticalJumps: mutable.ListBuffer[Int@@FloatRep] = mutable.ListBuffer()
+
+  def addPageVerticalJumps(jumps: Seq[Int@@FloatRep]): Unit = {
+    pageVerticalJumps ++= jumps
   }
 
   object shapes {
