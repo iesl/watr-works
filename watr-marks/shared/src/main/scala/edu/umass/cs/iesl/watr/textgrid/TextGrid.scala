@@ -117,8 +117,6 @@ object TextGrid {
 
 
 
-
-
   trait Row {
     def cells: Seq[GridCell]
 

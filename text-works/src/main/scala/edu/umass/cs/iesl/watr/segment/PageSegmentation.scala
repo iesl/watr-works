@@ -8,9 +8,8 @@ import textgrid._
 trait ColumnFinding extends CharColumnFinding
 
 trait PageLevelFunctions extends ColumnFinding
-    with LineFinding
+    with LineSegmentation
     with ShapeFunctions
-
 
 object PageSegmenter {
 

@@ -7,6 +7,8 @@ import watrmarks.Label
 import corpora.DocumentZoningApi
 import spindex._
 import utils.ExactFloats._
+import extract.ExtractedItem
+import segment.{SegmentationLabels => LB}
 
 trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
@@ -30,12 +32,6 @@ trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
 trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { self =>
   lazy val pageScope = self
-
-  type LineShape = LabeledShape[Line]
-  type PointShape = LabeledShape[Point]
-  type RectShape = LabeledShape[LTBounds]
-  type AnyShape = LabeledShape[GeometricFigure]
-
 
   def docScope: DocumentScopeSegmenter
 
@@ -137,6 +133,19 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     pageIndex.shapes.addCluster(l, shapes)
   }
 
+  protected def setExtractedItemsForShape(shape: LabeledShape[GeometricFigure], items: Seq[ExtractedItem] ): Unit = {
+    pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems, items)
+  }
+
+  protected def getExtractedItemsForShape(shape: LabeledShape[GeometricFigure]): Seq[ExtractedItem] = {
+    pageIndex.shapes.getShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems).get
+  }
+
+  protected def getCharRunBaselineItems(baselineMembers: Seq[LineShape]): Seq[Seq[ExtractedItem]] = {
+    baselineMembers.map {charRun =>
+      getExtractedItemsForShape(charRun)
+    }
+  }
 }
 
 
