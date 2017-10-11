@@ -148,10 +148,24 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
     res
   }
 
+  // import utils.SlicingAndDicing._
   // Group line atoms into center/sub/superscript bins
   private def findLineAtomScriptPositions(
-    visualLineCC: LineShape
-  ): (Seq[Int@@ShapeID], Seq[Int@@ShapeID]) = {
+    visualBaseline: LineShape
+  ): (Seq[Int@@CharID], Seq[Int@@CharID]) = {
+    val extractedItems = getExtractedItemsForShape(visualBaseline)
+    // val mostCommonHeight = extractedItems.map(_.bbox.height).sorted
+    //   .groupByPairs(_ == _)
+    //   .head.head
+    val (onBaseline, offBaseline) = extractedItems
+      .partition { item =>
+        item.location.y == visualBaseline.shape.p1.y
+      }
+
+    val (aboveBaseline, belowBaseline) = offBaseline
+      .partition { item =>
+        item.location.y < visualBaseline.shape.p1.y
+      }
 
     //     val visualLineBounds = visualLineCC.bounds()
 
@@ -168,8 +182,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
     //     val bottomIntersects = bottomIntersections.map(_.id)
 
 
-    //     (topIntersects, bottomIntersects)
-    (Seq(), Seq())
+    (aboveBaseline.map(_.id), belowBaseline.map(_.id))
   }
 
   // private def findModalBoundingRect(): LTBounds = {

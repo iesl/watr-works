@@ -1124,7 +1124,6 @@
 // }
 
   // def sweepJoinColinearCharRunShapes(): Unit = {
-  //   implicit val log = createFnLog
   //   traceLog.drawPageShapes()
 
   //   val charRunBaselines = pageIndex.shapes.getShapesWithLabel(LB.CharRunBaseline)
@@ -1153,7 +1152,6 @@
   // }
 
   // def joinColinearCharRunShapes(): Unit = {
-  //   implicit val log = createFnLog
   //   traceLog.drawPageShapes()
 
   //   val leftEvPoints = pageIndex.shapes.getShapesWithLabel(LB.ColLeftEvidence)

@@ -8,7 +8,6 @@ import textgrid._
 trait ColumnFinding extends CharColumnFinding
 
 trait PageLevelFunctions extends ColumnFinding
-    with LineSegmentation
     with ShapeFunctions
 
 object PageSegmenter {
@@ -52,6 +51,10 @@ object PageSegmenter {
 }
 
 trait PageSegmenter extends PageLevelFunctions {
+
+  def getPageTextGrid(): TextGrid = {
+    columnFinder.getTextGrid()
+  }
 
   def runPageSegmentationPass1(): Unit =  {
 

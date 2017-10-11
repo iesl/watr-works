@@ -5,12 +5,69 @@ import scala.collection.mutable
 import watrmarks._
 import geometry._
 import geometry.PageComponentImplicits._
+import textboxing.{TextBoxing => TB}, TB._
 
-import scalaz.{@@ => _, _} , Scalaz._
 
 sealed trait FontInfo
 
 case object NoFonts extends FontInfo
+
+
+class TextOutputBuilder(textGrid: TextGrid) {
+
+  def withText(): Unit = {
+    textGrid.rows.map{ row =>
+      row.toText()
+    }
+  }
+
+  def withLineNumbering(): Unit = {}
+  def withMarginLabels(): Unit = {}
+  def withTextLocations(): Unit = {}
+
+  def getSerialization(): TextGrid.SerializationProps = {
+    val serProps = new TextGrid.SerializationProps
+
+    textGrid.rows.zipWithIndex
+      .foreach{ case (row, rowi) =>
+        row.serialize(serProps)
+      }
+
+    serProps
+  }
+  def getOutput(): String = {
+    val serProps = new TextGrid.SerializationProps
+
+    textGrid.rows.zipWithIndex
+      .foreach{ case (row, rowi) =>
+        row.serialize(serProps)
+      }
+
+    val lineNums = serProps.lineMap.keys.toList.sorted
+
+    val textAndLoci = lineNums.map { lineNum =>
+      val text = serProps.lineMap(lineNum)._2
+      val loci = serProps.lineMap(lineNum)._1
+      (text, loci)
+    }
+
+    val textBlock = textAndLoci.zipWithIndex.map{ case ((text, _), i) =>
+      val linenum = "%04d".format(i)
+      s"${linenum}>  ${text}"
+    }
+    val lociBlock = textAndLoci.zipWithIndex.map{ case ((_, loci), i) =>
+      val linenum = "%04d".format(i)
+      s"${linenum}: ${loci}"
+    }
+
+    val allLines = textBlock ++ List("##", "##") ++ lociBlock
+    allLines.mkString("\n  ", "\n  ", "\n")
+    // val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(textLines:_*))
+    // textLinesBlock.toString()
+    // textLines.mkString("\n  ", "\n  ", "\n")
+  }
+
+}
 
 trait TextGrid {
   import TextGrid._
@@ -20,6 +77,8 @@ trait TextGrid {
   def toText(): String = {
     rows.map(_.toText).mkString("\n  ", "\n  ", "\n")
   }
+
+  def buildOutput() = new TextOutputBuilder(this)
 
 }
 
@@ -134,17 +193,20 @@ object TextGrid {
     }
 
 
-    def serialize(props: SerializationProps): Int = {
+
+    def serialize(props: SerializationProps): Unit = {
 
       val lineCells = cells.map{ _ match {
         case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
           val items = (headItem +: tailItems).map{ pageItem =>
             val page = pageItem.pageRegion.page
+            val pageNum = page.pageNum
             if (!props.pageIdMap.contains(page.pageId)) {
               props.pageIdMap.put(page.pageId, (page.stableId, page.pageNum))
             }
-            val LTBounds.IntReps(l, t, w, h) = pageItem.pageRegion.bbox
-            s"""[${page.pageId}, [$l, $t, $w, $h]]"""
+            val l = pageItem.bbox.left
+            val b = pageItem.bbox.bottom
+            s"""[${pageNum}, [$l, $b]]"""
           }
 
           items.mkString("[", ",", "]")
@@ -158,7 +220,6 @@ object TextGrid {
       val lineDef = s"""[${lineDefStr}]"""
       val lineNum = props.nextLineNum
       props.lineMap.put(lineNum, (lineDef, toText))
-      lineNum
     }
 
   }
@@ -193,4 +254,3 @@ object TextGrid {
   }
 
 }
-

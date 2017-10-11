@@ -14,7 +14,6 @@ import fs2._
 import tracing.VisualTracer
 import play.api.libs.json, json._
 
-
 sealed trait OutputOption
 
 object OutputOption {
@@ -222,8 +221,46 @@ object TextWorksActions {
     traceLogRoot.foreach { rootPath =>
       println("writing tracelogs")
 
+      segmenter.pageSegmenters.foreach { pageSegmenter =>
+        val textGrid = pageSegmenter.getTextGrid
+        val serProps = textGrid.buildOutput()
+          .getSerialization()
+
+        val pageImageShapes = pageSegmenter.pageImageShapes()
+        val lineNums = serProps.lineMap.keys.toList.sorted
+
+        val textAndLoci = lineNums.map { lineNum =>
+          val text = serProps.lineMap(lineNum)._2
+          val loci = serProps.lineMap(lineNum)._1
+          val lociJs = Json.parse(loci)
+          Json.obj(
+            ("line" -> lineNum),
+            ("text" -> text),
+            ("loci" -> lociJs)
+          )
+        }
+        val gridJs = Json.obj(
+          ("rows", textAndLoci)
+        )
+        val pageNum = pageSegmenter.pageIndex.pageNum
+        val jsLog = Json.arr(
+          Json.obj(
+            ("name", s"Page ${pageNum.unwrap+1} Text"),
+            ("steps", Json.arr(Json.obj(
+              ("desc" -> "textgrid pg"),
+              ("Method" -> "TextGrid"),
+              ("grid" -> gridJs),
+              ("shapes" -> pageImageShapes)
+            )))
+          ))
+
+        val gridJsStr = Json.stringify(jsLog)
+
+        fs.write(rootPath / s"page-${pageNum}-textgrid.json",gridJsStr)
+      }
+
       val allLogs = segmenter.pageSegmenters
-        .foldLeft(List[JsObject]()) { 
+        .foldLeft(List[JsObject]()) {
           case (accum, pageSegmenter) =>
             accum ++ pageSegmenter.emitLogs()
         }

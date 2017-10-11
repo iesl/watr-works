@@ -47,14 +47,14 @@ class PageTextTest extends SegmentationTestUtils  {
 
 
     // allTestPdfs.foreach {
-    selectPdfPage(allTestPdfs, "2024", 1).foreach {
+    selectPdfPage(allTestPdfs, "3064", 1).foreach {
       case (docId, page, path) =>
 
         // tracing.VisualTracer.clearPages()
         // tracing.VisualTracer.newPage()
 
         // def jsonLogFile(name: String) = s"${docId}.pg${page}.json"
-        val jsonLogFile = s"${docId}.pg${page}.json"
+        // val jsonLogFile = s"${docId}.pg${page}.json"
 
         println(s"${docId} ${page} ready; segmenting")
 

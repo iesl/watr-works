@@ -11,9 +11,9 @@ import segment.{SegmentationLabels => LB}
 import utils.SlicingAndDicing._
 
 import org.dianahep.{histogrammar => HST}
-import spindex._
 import extract.ExtractedItem
 import utils.FunctionalHelpers._
+import textgrid.TextGrid
 // import watrmarks._
 // import utils.{RelativeDirection => Dir}
 
@@ -42,35 +42,28 @@ trait CharColumnFinding extends PageScopeSegmenter
 
     subdivideColumnEvidence()
 
-    collectLineText()
-
   }
 
-  def collectLineText(): Unit = {
-
+  def getTextGrid(): TextGrid = {
     val orderedLines = pageIndex.shapes.getOrdering(LB.VisualBaseline::Ordering)
+
     // Reorder lines
     val reorderedLines = orderedLines.sortBy { baselineShape =>
       val items = getExtractedItemsForShape(baselineShape)
       items.head.id.unwrap
     }
 
-    reorderedLines.foreach { visualBaseline =>
-      // val extractedItems = getExtractedItemsForShape(visualBaseline)
-      val textRow = createTextRowFromVisualLine(visualBaseline.asInstanceOf[LineShape])
-
-      val lineText = textRow.toText
-
-      println(s"line>> ${lineText.mkString}")
+    val rows = reorderedLines.map { visualBaseline =>
+      createTextRowFromVisualLine(visualBaseline.asInstanceOf[LineShape])
     }
 
+    TextGrid.fromRows(rows)
   }
 
 
 
 
   def excludeImageRegionPoints(): Unit = {
-    // implicit val log = createFnLog
 
     pageIndex.pageItems.toSeq
       .filter { _.isInstanceOf[ExtractedItem.ImgItem] }
@@ -217,7 +210,8 @@ trait CharColumnFinding extends PageScopeSegmenter
   def subdivideColumnEvidence(): Unit = {
     val pageVdists = pageIndex.pageVerticalJumps
     val bins = QuickNearestNeighbors.qnn(pageVdists)
-    println(bins.mkString("\n  ", "\n  ", "\n"))
+
+    // println(bins.mkString("\n  ", "\n  ", "\n"))
 
     val baselineShapeClusters = getClusteredLines(LB.LeftAlignedCharCol::Cluster)
 
