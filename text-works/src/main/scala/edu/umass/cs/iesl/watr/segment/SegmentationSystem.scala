@@ -158,21 +158,37 @@ object QuickNearestNeighbors {
   case class Bin(
     centroid: DataPoint,
     neighbors: Seq[DataPoint]
-      // weightedAverage: Int@@FloatRep
-  )
+  ) {
+
+    def size(): Int = neighbors.map(_.len).sum + centroid.len
+    // def minValue: Int@@FloatRep =
+
+    override def toString(): String = {
+      val cstr = centroid.toString()
+      val nstr = neighbors.map(_.toString()).mkString(", ")
+      s"{${cstr} +[ ${nstr} ]}"
+    }
+  }
   case class DataPoint(
     value: Int@@FloatRep,
     len: Int
-  )
+  ) {
+    override def toString(): String = {
+      val cpp = value.pp
+      val clen = len
+      s"[${cpp} x ${clen}]"
+    }
 
-  def qnn(in: Seq[Int@@FloatRep]): Seq[Bin] = {
+  }
+
+  def qnn(in: Seq[Int@@FloatRep], tolerance: Double = 0.5d): Seq[Bin] = {
 
     @tailrec
     def loop(init: List[(Int@@FloatRep, Int)], groups: List[Bin]): List[Bin] = {
       if (init.isEmpty) groups else {
         val (dmax, dmaxCount) = init.head
         val (grouped, others) = init.tail.partition { case (d, dcount) =>
-          val inRange = d - 0.5d < dmax && dmax < d + 0.5d
+          val inRange = d - tolerance < dmax && dmax < d + tolerance
           inRange
         }
         val bin = Bin(
@@ -192,7 +208,9 @@ object QuickNearestNeighbors {
       .toList
 
 
-    loop(distsSortByCount, List()).reverse
+    val binned = loop(distsSortByCount, List())
+
+    binned.sortBy(_.size()).reverse
   }
 }
 

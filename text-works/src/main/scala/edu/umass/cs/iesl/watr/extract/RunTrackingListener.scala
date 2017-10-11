@@ -141,23 +141,42 @@ class RunTrackingListener(
     for (charTri <- charTris.getCharacterRenderInfos.asScala) {
       totalCharCount += 1
 
+      // if (pageNum.unwrap == 0) {
+      //   if (totalCharCount > 244 && totalCharCount < 250) {
+      //     val info = DocumentFontInfo.getCharTriInfo(charTri, reader)
+      //     println(s"${totalCharCount}: =================================================================")
+      //     println(info)
+      //   }
+      // }
+
+
+
       if (totalCharCount < MAX_EXTRACTED_CHARS_PER_PAGE) {
 
         val (stringRep: String, code: Option[Int]) = if (!charTri.getText.isEmpty) {
+          // val t = charTri.getText().map{ c =>
+          //     UnicodeUtil.maybeSubChar(c).filter(_ > ' ').mkString
+          //   }.mkString
           val t = charTri.getText()
-            .map{ c =>
-              UnicodeUtil.maybeSubChar(c).filter(_ > ' ').mkString
-            }
-            .mkString
           (t, None)
         } else {
           fallbackRep(charTri)
         }
 
+        // if (totalCharCount > 244 && totalCharCount < 250) {
+        //   println(s"(stringRep/code) = ${stringRep} / ${code} (${stringRep.map(_.toInt).mkString(','.toString())})")
+        // }
 
-        if (!stringRep.isEmpty && !code.exists(_ <= 32)) {
+        if (stringRep.nonEmpty && !code.exists(_ <= 32)) {
+          // if (totalCharCount > 244 && totalCharCount < 250) {
+          //   println(s"1: ")
+          // }
 
-          computeTextBounds(charTri).map { charBounds =>
+          computeTextBounds(charTri).foreach { charBounds =>
+            // if (totalCharCount > 244 && totalCharCount < 250) {
+            //   println(s"2: ")
+            // }
+
             val nextId = charIdGen.nextId
 
             val charAtom = CharItem(
@@ -171,9 +190,14 @@ class RunTrackingListener(
 
           }
         } else if (code.exists(_ < 32)) {
-
-          computeTextBounds(charTri).map { charBounds =>
+          // if (totalCharCount > 244 && totalCharCount < 250) {
+          //   println(s"3: ")
+          // }
+          computeTextBounds(charTri).foreach { charBounds =>
             val nextId = charIdGen.nextId
+            // if (totalCharCount > 244 && totalCharCount < 250) {
+            //   println(s"4: ")
+            // }
 
             val charAtom = CharItem(
               nextId,

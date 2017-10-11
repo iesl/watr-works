@@ -9,6 +9,7 @@ import segment.{SegmentationLabels => LB}
 import textgrid._
 import utils.ExactFloats._
 import TypeTags._
+// import utils.SlicingAndDicing._
 
 trait LineSegmentation extends PageScopeSegmenter { self =>
   lazy val lineSegmenter = self
@@ -63,10 +64,11 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
     val (topIntersects, bottomIntersects) = findLineAtomScriptPositions(visualBaseline)
 
     val visualLineModalBounds: LTBounds = LTBounds.empty
-
+    // println("textRowFromComponents:")
     new TextGrid.MutableRow { self =>
       val init = extractedItems.map{
         case item: ExtractedItem.CharItem =>
+          // print(s" ${item.strRepr()};")
           val intersectsTop = topIntersects.contains(item.id)
           val intersectsBottom = bottomIntersects.contains(item.id)
 
@@ -106,7 +108,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
           }
           cells.getOrElse(Seq())
 
-        case _ =>
+        case item =>
           // TODO this is skipping over text represented as paths (but I have to figure out sup/sub script handling to make it work)
           Seq()
 
@@ -121,6 +123,18 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
       case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
         headItem
     }
+
+    val lineText = textRow.cells.collect{
+      case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+        if (tailItems.nonEmpty) {
+          val ts = tailItems.mkString(", ")
+          s"[${char}::: ${ts}]"
+        } else {
+          char
+        }
+    }
+
+    println(s"lineText =>${lineText.mkString}")
 
     val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
 
@@ -225,43 +239,28 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
   }
 
   private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact =  {
+    val charSpacings = QuickNearestNeighbors.qnn(
+      pairwiseItemDistances(sortedLineCCs), 0.5d
+    )
 
-    val charDists = pairwiseItemDistances(sortedLineCCs)
-      .toSet.toSeq
+    println("guessWordbreakWhitespaceThreshold: ")
+    println(charSpacings.mkString("\n  ", "\n  ", "\n"))
 
-    val charWidths = sortedLineCCs.map(_.bbox.width)
-
-    val widestChar = charWidths.max.asDouble()
-    val narrowestChar = charWidths.min.asDouble()
-    val avgCharWidth = (widestChar + narrowestChar) / 2
-
-    // Don't  accept a space wider than (some magic number)*the widest char?
-    val saneCharDists = charDists
-      .filter(_ < widestChar*2 )
-      .filterNot(_.unwrap == 0)
-      .map(_.asDouble())
-
-
-    val noSplitThreshold = widestChar
-    val threshold = if (saneCharDists.length <= 1 || sortedLineCCs.length <= 1) {
-      // If there is only 1 distance between chars, the line is only 1 word (no word breaks)
-      noSplitThreshold
-    } else {
-      val averageDist = saneCharDists.sum / saneCharDists.length
-
-      val charDistSpread = saneCharDists.max - saneCharDists.min
-      if (charDistSpread < avgCharWidth / 4) {
-        noSplitThreshold
+    if (charSpacings.length == 1) {
+      val charWidths = sortedLineCCs.map(_.bbox.width)
+      charWidths.max
+    } else if (charSpacings.length > 1) {
+      val mostCommonSpacing = charSpacings.head.centroid.value
+      val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing)
+      if (largerSpacings.nonEmpty) {
+        val nextCommonSpacing = largerSpacings.head.centroid.value
+        (mostCommonSpacing + nextCommonSpacing) / 2
       } else {
-
-        // val (littleDists, bigDists) = saneCharDists.sorted.span(_ < averageDist)
-        averageDist
+        mostCommonSpacing + 1.0
       }
+    } else {
+      0.toFloatExact()
     }
-
-
-
-    threshold.toFloatExact
   }
 
 }

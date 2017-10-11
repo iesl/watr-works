@@ -74,20 +74,20 @@ abstract class ExtractionBasics(
 
 
 
-    if (charHeight.nan || charHeight.inf || charHeight.toInt==0) {
-      None
-    } else if (charWidth.nan || charWidth.inf || charWidth.toInt==0) {
-      None
-    } else {
-      val charTop = charBottom - charHeight
-
-      Some(LTBounds.Doubles(
-        left=charLeft,
-        top=charTop,
-        width=charWidth,
-        height=charHeight
-      ))
+    if (charHeight.nan || charHeight.inf || charHeight <= 0) {
+      charHeight = 0
+    } else if (charWidth.nan || charWidth.inf || charWidth <= 0) {
+      charWidth = 0
     }
+
+    val charTop = charBottom - charHeight
+
+    Some(LTBounds.Doubles(
+      left=charLeft,
+      top=charTop,
+      width=charWidth,
+      height=charHeight
+    ))
   }
 
   def ctmToLTBounds(ctm:  Matrix): LTBounds = {
