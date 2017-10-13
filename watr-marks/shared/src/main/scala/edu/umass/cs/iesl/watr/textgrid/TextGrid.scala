@@ -206,7 +206,9 @@ object TextGrid {
             }
             val l = pageItem.bbox.left
             val b = pageItem.bbox.bottom
-            s"""[${pageNum}, [$l, $b]]"""
+            val w = pageItem.bbox.width
+            val h = pageItem.bbox.height
+            s"""[${pageNum}, [$l, $b, $w, $h]]"""
           }
 
           items.mkString("[", ",", "]")

@@ -262,15 +262,13 @@ trait GeometryJsonCodecs extends TypeTagFormats {
       case JsArray(Seq(
         JsNumber(charId),
         pageRegionJs,
-        JsString(achar),
-        JsNumber(wonkyCode)
+        JsString(achar)
       )) =>
         JsSuccess(
           CharAtom(
             CharID(charId.intValue()),
             pageRegionJs.as[PageRegion],
-            achar,
-            Option(wonkyCode.toInt)
+            achar
           )
         )
 
@@ -283,8 +281,7 @@ trait GeometryJsonCodecs extends TypeTagFormats {
           CharAtom(
             CharID(charId.intValue()),
             pageRegionJs.as[PageRegion],
-            achar,
-            None
+            achar
           )
         )
 
@@ -295,23 +292,13 @@ trait GeometryJsonCodecs extends TypeTagFormats {
       case c@ CharAtom(
         CharID(charId),
         pageRegion,
-        char,
-        wonkyCharCode
+        char
       ) =>
-        wonkyCharCode.map{ ccode =>
-          Json.arr(
-            num(charId),
-            Json.toJson(pageRegion),
-            jstr(char),
-            num(ccode)
-          )
-        } getOrElse {
-          Json.arr(
-            num(charId),
-            Json.toJson(pageRegion),
-            jstr(char)
-          )
-        }
+        Json.arr(
+          num(charId),
+          Json.toJson(pageRegion),
+          jstr(char)
+        )
     }
   }
 }

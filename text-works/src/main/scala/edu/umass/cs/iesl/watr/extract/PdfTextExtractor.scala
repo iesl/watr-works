@@ -166,3 +166,72 @@ package extract
 
 
 // }
+// -  def computeTextBounds(charTri: TextRenderInfo): Option[LTBounds] = {
+// -    val fontProgramEmbedded = charTri.getFont.getFontProgram
+// -
+// -    val fontProgram = fontProgramEmbedded
+// -
+// -    val fontMetrics = fontProgram.getFontMetrics
+// -
+// -    val ascentStart = charTri.getAscentLine().getStartPoint()
+// -    val descentStart = charTri.getDescentLine().getStartPoint()
+// -
+// -    val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
+// -
+// -    val ascentY = ascentStart.get(PVector.I2).toDouble
+// -    val descentY = descentStart.get(PVector.I2).toDouble
+// -
+// -    var absCharBottom: Double = descentY
+// -    var charHeight = ascentY - descentY
+// -
+// -    if (charHeight < 0 ) {
+// -      charHeight = - charHeight
+// -      absCharBottom = ascentY
+// -    }
+// -
+// -    val charLeft = geomTranslation.transX(absoluteCharLeft)
+// -    val charBottom = geomTranslation.transY(absCharBottom)
+// -
+// -    var charWidth = charTri.getDescentLine().getLength().toDouble
+// -
+// -    if (charWidth.toInt == 0) {
+// -      // figure out the exact dimensions of this glyph...
+// -      // In glyph space:
+// -
+// -      val pdfString = charTri.getPdfString
+// -      // val decoded = charTri.getFont.decode(pdfString)
+// -      val bs = pdfString.getValueBytes.map(Byte.byte2int(_) & 0xFF)
+// -      val glyphCode = bs(0)
+// -
+// -      val fontBbox = fontMetrics.getBbox
+// -      val glyphWidths = fontMetrics.getGlyphWidths
+// -
+// -      if (glyphWidths!=null && glyphWidths.length > glyphCode) {
+// -        charWidth = glyphWidths(glyphCode).toDouble
+// -      } else {
+// -        if (fontBbox != null) {
+// -          val y0 = fontBbox(1)
+// -          val y1 = fontBbox(3)
+// -          charWidth = (y1 - y0).toDouble
+// -        }
+// -      }
+// -    }
+// -
+// -
+// -
+// -
+// -    if (charHeight.nan || charHeight.inf || charHeight.toInt==0) {
+// -      None
+// -    } else if (charWidth.nan || charWidth.inf || charWidth.toInt==0) {
+// -      None
+// -    } else {
+// -      val charTop = charBottom - charHeight
+// -
+// -      Some(LTBounds.Doubles(
+// -        left=charLeft,
+// -        top=charTop,
+// -        width=charWidth,
+// -        height=charHeight
+// -      ))
+// -    }
+// -  }

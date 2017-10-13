@@ -369,18 +369,21 @@ trait CharColumnFinding extends PageScopeSegmenter
     val charRuns = pageIndex.pageItems.toSeq
       .filter { _.isInstanceOf[ExtractedItem.CharItem] }
       .groupByPairsWithIndex {
-        case (item1, item2, i) =>
+        case (itm1, itm2, i) =>
+          val item1 = itm1.asInstanceOf[ExtractedItem.CharItem]
+          val item2 = itm2.asInstanceOf[ExtractedItem.CharItem]
           val consecutive = item1.id.unwrap+1 == item2.id.unwrap
-          val sameLine = item1.bbox.bottom == item2.bbox.bottom
+          // val sameLine = item1.bbox.bottom == item2.bbox.bottom
+          val sameLine = item1.fontBbox.bottom == item2.fontBbox.bottom
           consecutive && sameLine
       }
 
     charRuns
   }
 
-  def createCharRunBaseline(charRun: Seq[ExtractedItem]): Line = {
-    val runBeginPt =  Point(charRun.head.bbox.left, charRun.head.bbox.bottom)
-    val runEndPt = Point(charRun.last.bbox.right, charRun.last.bbox.bottom)
+  def createCharRunBaseline(charRun: Seq[ExtractedItem.CharItem]): Line = {
+    val runBeginPt =  Point(charRun.head.fontBbox.left, charRun.head.fontBbox.bottom)
+    val runEndPt = Point(charRun.last.fontBbox.right, charRun.last.fontBbox.bottom)
     Line(runBeginPt, runEndPt)
   }
 
@@ -389,7 +392,7 @@ trait CharColumnFinding extends PageScopeSegmenter
     val baselines = charRuns.map{ charRun =>
       val isChar  = charRun.head.isInstanceOf[ExtractedItem.CharItem]
       if (isChar) {
-        createCharRunBaseline(charRun).some
+        createCharRunBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem])).some
       } else None
     }.flatten
 
@@ -405,13 +408,10 @@ trait CharColumnFinding extends PageScopeSegmenter
   private def initGridShapes(): Unit = {
     val pageCharRuns = findPageCharRuns()
     pageCharRuns.foreach { charRun =>
-      val baseLine = createCharRunBaseline(charRun)
-      val baselineShape = indexShape(baseLine, LB.CharRunBaseline)
 
-      // val loc = charRun.head.location
-      // val endLoc = charRun.last.bbox.toPoint(Dir.BottomRight)
-      // indexShape(loc, LB.CharRunBegin)
-      // indexShape(endLoc, Label("CharRunEnd"))
+      val baseLine = createCharRunBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem]))
+
+      val baselineShape = indexShape(baseLine, LB.CharRunBaseline)
 
       charRun.foreach { _ match  {
         case item:ExtractedItem.CharItem =>
@@ -422,13 +422,5 @@ trait CharColumnFinding extends PageScopeSegmenter
     }
     traceLog.drawPageShapes()
   }
-
-
-  // private def initPageDividers(): Unit = {
-  //   val ptop = pageGeometry.toPoint(Dir.Top)
-  //   val pbot = pageGeometry.toPoint(Dir.Bottom)
-  //   val vline = Line(ptop, pbot)
-  //   indexShape(vline, Label("PageVertical"))
-  // }
 
 }

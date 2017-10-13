@@ -83,8 +83,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
                 ),
                 item.bbox
               ),
-              item.char,
-              item.wonkyCharCode
+              item.char
             )
 
             val cell = TextGrid.PageItemCell(charAtom, Seq(), char)
@@ -125,17 +124,16 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
         headItem
     }
 
-    val lineText = textRow.cells.collect{
-      case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
-        if (tailItems.nonEmpty) {
-          val ts = tailItems.mkString(", ")
-          s"[${char}::: ${ts}]"
-        } else {
-          char
-        }
-    }
-
-    println(s"lineText =>${lineText.mkString}")
+    // val lineText = textRow.cells.collect{
+    //   case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+    //     if (tailItems.nonEmpty) {
+    //       val ts = tailItems.mkString(", ")
+    //       s"[${char}::: ${ts}]"
+    //     } else {
+    //       char
+    //     }
+    // }
+    // println(s"lineText =>${lineText.mkString}")
 
     val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
 
@@ -244,8 +242,8 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
       pairwiseItemDistances(sortedLineCCs), 0.5d
     )
 
-    println("guessWordbreakWhitespaceThreshold: ")
-    println(charSpacings.mkString("\n  ", "\n  ", "\n"))
+    // println("guessWordbreakWhitespaceThreshold: ")
+    // println(charSpacings.mkString("\n  ", "\n  ", "\n"))
 
     if (charSpacings.length == 1) {
       val charWidths = sortedLineCCs.map(_.bbox.width)

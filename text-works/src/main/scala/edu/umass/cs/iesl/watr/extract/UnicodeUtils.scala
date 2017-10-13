@@ -196,19 +196,6 @@ object UnicodeUtil {
     (0x02DB, Seq(0x0328)),
     (0x02DC, Seq(0x0303)),
     (0x02DD, Seq(0x030B)),
-    (0x037A, Seq(0x0345)),
-    (0x0384, Seq(0x0301)),
-    (0x03D0, Seq(0x03B2)),
-    (0x03D1, Seq(0x03B8)),
-    (0x03D2, Seq(0x03A5)),
-    (0x03D5, Seq(0x03C6)),
-    (0x03D6, Seq(0x03C0)),
-    (0x03F0, Seq(0x03BA)),
-    (0x03F1, Seq(0x03C1)),
-    (0x03F2, Seq(0x03C2)),
-    (0x03F4, Seq(0x0398)),
-    (0x03F5, Seq(0x03B5)),
-    (0x03F9, Seq(0x03A3)),
     (0x0587, Seq(0x0565, 0x0582)),
     (0x0675, Seq(0x0627, 0x0674)),
     (0x0676, Seq(0x0648, 0x0674)),
@@ -1549,15 +1536,15 @@ object UnicodeUtil {
 
   val subMap:Map[Int, Seq[Int]] = substitutionList.toMap
 
-  def maybeSubChar(c: Char): Seq[Char] = {
-    if (c <= ' ') {
-      // s"¿${c.toInt};"
-      Seq()
-    } else {
-      subMap.get(c.toInt)
-        .map(_.map(_.toChar))
-        .getOrElse { Seq(c) }
-    }
+  def maybeSubChar(c: Char): Either[Char, Seq[Char]] = {
+    subMap.get(c.toInt)
+      .map(subs => Right(subs.map(_.toChar)))
+      .getOrElse { Left(c) }
+    // if (c <= ' ') {
+    //   // s"¿${c.toInt};"
+    //   Left(c)
+    // } else {
+    // }
   }
 
 

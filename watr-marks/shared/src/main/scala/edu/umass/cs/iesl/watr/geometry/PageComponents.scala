@@ -139,8 +139,8 @@ object PageItem {
 case class CharAtom(
   id: Int@@CharID,
   override val pageRegion: PageRegion,
-  char: String,
-  wonkyCharCode: Option[Int] = None
+  char: String
+  // wonkyCharCode: Option[Int] = None
 ) extends PageItem {
   override def toString = s"CharAtom($char, $pageRegion)"
 
@@ -188,19 +188,6 @@ object PageComponentImplicits {
         .map(b => thePageRegion.copy(bbox=b))
     }
 
-    // def splitHorizontal(r: PageRegion): List[PageRegion] = {
-    //   if (thePageRegion.page.pageId != r.page.pageId) {
-    //     sys.error(s"""cannot union thePageRegions from different pages: ${thePageRegion} + ${r}""")
-    //   }
-
-    //   val splitBoxes = r.bbox.splitHorizontal
-
-    //   splitBoxes.map { ltb =>
-    //     thePageRegion.copy(
-    //       bbox = ltb
-    //     )
-    //   }
-    // }
 
     def prettyPrint(): String = {
       thePageRegion.toString
@@ -220,44 +207,13 @@ object PageComponentImplicits {
 
     def debugPrint: String = {
       val bbox = charAtom.bbox.prettyPrint
-
-      val wonk = charAtom.wonkyCharCode
-        .map({ code =>
-          if (code==32) { "<sp>"  }
-          else { s"?:#${code}?" }
-        }) getOrElse { "" }
-
-      s"""${charAtom.char} ${wonk} ${bbox}"""
+      s"""${charAtom.char} ${bbox}"""
     }
 
     def prettyPrint: String = {
-      charAtom.wonkyCharCode
-        .map({ code =>
-          if (code==32) { "_"  }
-          else { s"#${code}?" }
-        })
-        .getOrElse({
-          charAtom.char
-        })
+      charAtom.char
+
     }
-
-    def bestGuessChar: String = {
-      charAtom.wonkyCharCode
-        .map({ code =>
-          if (code==32) { s" "  }
-          else { s"#{${code}}" }
-        })
-        .getOrElse({
-          // if (charAtom)
-          charAtom.char
-        })
-    }
-
-    def isWonky: Boolean = charAtom.wonkyCharCode.isDefined
-
-    def isSpace: Boolean = charAtom.wonkyCharCode.exists(_==32)
-    def isControl: Boolean = charAtom.wonkyCharCode.exists(_<32)
-    def isNonPrintable: Boolean = charAtom.wonkyCharCode.exists(_<=32)
 
   }
 }
