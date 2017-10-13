@@ -1,23 +1,6 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-// import com.itextpdf.kernel.pdf.PdfPage
-// import geometry._
-
-// import scala.collection.JavaConverters._
-
-// import _root_.com.itextpdf
-// import itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
-// import itextpdf.kernel.pdf.canvas.parser.EventType
-// import itextpdf.kernel.pdf.canvas.parser.data._
-// import itextpdf.kernel.pdf.PdfReader
-
-// import fonts._
-// import utils.IdGenerator
-// import utils.ExactFloats._
-// import TypeTags._
-
-
 
 // class RunTrackingListener(
 //   reader: PdfReader,
@@ -28,37 +11,6 @@ package extract
 //   geomTranslation: GeometryTranslation
 // ) extends  ExtractionBasics (geomTranslation) with IEventListener {
 
-//   import ExtractedItem._
-
-
-//   override def getSupportedEvents(): java.util.Set[EventType] ={
-//     Set(
-//       EventType.RENDER_TEXT,
-//       EventType.RENDER_PATH,
-//       // EventType.CLIP_PATH_CHANGED,
-//       EventType.RENDER_IMAGE
-//     ).asJava
-//   }
-
-
-//   override def eventOccurred(data: IEventData,  eventType: EventType): Unit = {
-//     if (eventType.equals(EventType.RENDER_TEXT)) {
-//       val tri = data.asInstanceOf[TextRenderInfo]
-//       renderText(tri)
-
-//     } else if (eventType.equals(EventType.RENDER_PATH)) {
-//       val renderInfo = data.asInstanceOf[PathRenderInfo]
-//       renderPath(renderInfo)
-
-//     } else if (eventType.equals(EventType.RENDER_IMAGE)) {
-//       val tri = data.asInstanceOf[ImageRenderInfo]
-//       renderImage(tri)
-//     } else if (eventType.equals(EventType.CLIP_PATH_CHANGED)) {
-//       val cpi = data.asInstanceOf[ClippingPathInfo]
-//       renderClipPathInfo(cpi)
-//     }
-//   }
-
 //   def fallbackRep(charTri: TextRenderInfo): (String, Option[Int]) = {
 //     val pdfString = charTri.getPdfString
 //     val valueBytes = pdfString.getValueBytes.map(Byte.byte2int(_))
@@ -67,128 +19,15 @@ package extract
 //       Option(valueBytes(0)))
 //   }
 
-
 //   // Limit the # of chars that can be extracted per page to prevent pathological cases (e.g., embedded charts using symbol font-based dots)
 //   val MAX_EXTRACTED_CHARS_PER_PAGE = 10000
 //   var totalCharCount = 0
-
 //   var lastItem: ExtractedItem = null
-
-//   var runLists = List[List[ExtractedItem]]()
-
-//   def getPageItems(): Seq[ExtractedItem] = {
-//     var currCharRunId = 0
-//     def nextRunId() = {
-//       currCharRunId = currCharRunId + 1
-//       currCharRunId
-//     }
-
-//     val lineRows = runLists.reverse.map{ rline =>
-//       val runId = nextRunId()
-
-//       rline.foreach { item =>
-//         item.charProps.charRunId = runId
-//       }
-
-//       val line = rline.reverse
-
-//       line.head.charProps.isRunBegin = true
-//       line
-//     }
-
-//     debugPrintPageItems(lineRows)
-
-//     lineRows.flatten
-
-//   }
-
-//   private def debugPrintPageItems(rows: List[List[ExtractedItem]]): Unit = {
-//     val rowStrs = rows.map { row =>
-//       val runId = row.headOption.map(_.charProps.charRunId).getOrElse(-1)
-//       val chars = row.map(_.strRepr()).mkString
-//       s"${runId} >> $chars"
-//     }
-
-//     val pageStr = rowStrs.mkString("\n  ", "\n  ", "\n")
-
-//     println(pageStr)
-//   }
-
-//   def addPathItem(item: ExtractedItem.PathItem): Unit = {
-//     runLists = List(item) :: runLists
-//     lastItem = item
-//   }
-
-//   def addImgItem(imgItem: ExtractedItem.ImgItem): Unit = {
-//     runLists = List(imgItem) :: runLists
-//     // pageImages = imgItem :: pageImages
-//     lastItem = imgItem
-//   }
-
-
-//   def addCharItem(charAtom: ExtractedItem.CharItem): Unit = {
-//     println(s"adding ${charAtom}")
-//     if (lastItem==null || lastItem.bbox.bottom != charAtom.bbox.bottom) {
-//       runLists = List(charAtom) :: runLists
-//     } else {
-//       runLists = (charAtom :: runLists.head) :: runLists.tail
-//     }
-//     lastItem = charAtom
-//   }
 
 //   def renderText(charTris: TextRenderInfo): Unit = {
 
-//     if (pageNum.unwrap == 0) {
-//       if (totalCharCount > 314 && totalCharCount < 318) {
-//         println(s"${totalCharCount} (prequel): =================================================================")
-
-
-//         val pdfString = charTris.getPdfString
-//         val valueBytes = pdfString.getValueBytes
-//         if (valueBytes.length > 2) {
-//           val isUnicodeEncoded = valueBytes(0).toInt == 254 && valueBytes(1).toInt == 255
-//           if (isUnicodeEncoded) {
-//             println(s"Found Unicode Encoding: ")
-//             // valueBytes.map(_.toInt)
-//             val s1 = valueBytes.mkString(", ")
-//             println(s"  valueBytes: ${s1}   ")
-//           }
-//         }
-
-//         val info = DocumentFontInfo.getCharTriInfo(charTris, reader)
-//         println(s"${totalCharCount}: =================================================================")
-//         println(info)
-//       }
-//     }
-
-
 //     for (charTri <- charTris.getCharacterRenderInfos.asScala) {
 //       totalCharCount += 1
-
-
-//       if (pageNum.unwrap == 0) {
-//         if (totalCharCount > 314 && totalCharCount < 318) {
-//           {
-
-//             val pdfString = charTri.getPdfString
-//             val valueBytes = pdfString.getValueBytes
-//             if (valueBytes.length > 2) {
-//               val isUnicodeEncoded = valueBytes(0).toInt == 254 && valueBytes(1).toInt == 255
-//               if (isUnicodeEncoded) {
-//                 println(s"Found Unicode Encoding: ")
-//                 // valueBytes.map(_.toInt)
-//                 val s1 = valueBytes.mkString(", ")
-//                 println(s"  valueBytes: ${s1}   ")
-//               }
-//             }
-//           }
-//           val info = DocumentFontInfo.getCharTriInfo(charTri, reader)
-//           println(s"${totalCharCount}: =================================================================")
-//           println(info)
-//         }
-//       }
-
-
 
 //       if (totalCharCount < MAX_EXTRACTED_CHARS_PER_PAGE) {
 
@@ -202,19 +41,8 @@ package extract
 //           fallbackRep(charTri)
 //         }
 
-//         // if (totalCharCount > 244 && totalCharCount < 250) {
-//         //   println(s"(stringRep/code) = ${stringRep} / ${code} (${stringRep.map(_.toInt).mkString(','.toString())})")
-//         // }
-
 //         if (stringRep.nonEmpty && !code.exists(_ <= 32)) {
-//           // if (totalCharCount > 244 && totalCharCount < 250) {
-//           //   println(s"1: ")
-//           // }
-
 //           computeTextBounds(charTri).foreach { charBounds =>
-//             // if (totalCharCount > 244 && totalCharCount < 250) {
-//             //   println(s"2: ")
-//             // }
 
 //             val nextId = charIdGen.nextId
 
@@ -229,15 +57,8 @@ package extract
 
 //           }
 //         } else if (code.exists(_ < 32)) {
-//           // if (totalCharCount > 244 && totalCharCount < 250) {
-//           //   println(s"3: ")
-//           // }
 //           computeTextBounds(charTri).foreach { charBounds =>
 //             val nextId = charIdGen.nextId
-//             // if (totalCharCount > 244 && totalCharCount < 250) {
-//             //   println(s"4: ")
-//             // }
-
 //             val charAtom = CharItem(
 //               nextId,
 //               charBounds,
@@ -251,13 +72,6 @@ package extract
 //         }
 //       }
 //     }
-//   }
-
-//   import geometry.syntax._
-//   import utils.{RelativeDirection => Dir}
-//   import itextpdf.kernel.geom.{
-//     Subpath, IShape,
-//     Point => IPoint
 //   }
 
 //   def renderClipPathInfo(cpi: ClippingPathInfo): Unit = {
@@ -356,4 +170,172 @@ package extract
 //     ))
 
 //   }
+// }
+
+// sealed trait CharClass
+// object CharClass {
+//   final case object ImageClass extends CharClass
+// }
+
+// sealed trait CharBioProp
+// object CharBioProp {
+
+
+//   // class OutChar extends CharBioProp {
+//   //   var isImage: Boolean = false
+//   //   var isPath: Boolean =  false
+//   // }
+
+//   // class BegChar extends CharBioProp {
+//   //   // var lineEndId: Int@@CharID = CharID(0)
+//   //   // var prevLineBeginId: Int@@CharID = CharID(0)
+//   //   // var nextLineBeginId: Int@@CharID = CharID(0)
+//   //   // var alignedLeftToPrev: Boolean = false
+//   //   // var alignedLeftToNext: Boolean = false
+
+//   // }
+
+//   // class InsChar extends CharBioProp {
+//   // }
+
+//   // class LastChar extends CharBioProp {
+//   //   // var lineBeginId: Int@@CharID = CharID(0)
+//   //   // var prevLineBeginId: Int@@CharID = CharID(0)
+
+//   // }
+
+// }
+
+// import _root_.com.itextpdf
+
+// import itextpdf.kernel.geom.{
+//   Vector => PVector,
+//   Point => IPoint,
+//   Matrix
+// }
+
+// import itextpdf.kernel.pdf.canvas.parser.data._
+// import utils.EnrichNumerics._
+// import utils.ExactFloats._
+// import geometry._
+// import geometry.syntax._
+// import utils.{RelativeDirection => Dir}
+
+// abstract class ExtractionBasics(
+//   geomTranslation: GeometryTranslation
+// ) {
+
+//   def computeTextBounds(charTri: TextRenderInfo): Option[LTBounds] = {
+//     val fontProgramEmbedded = charTri.getFont.getFontProgram
+
+//     val fontProgram = fontProgramEmbedded
+
+//     val fontMetrics = fontProgram.getFontMetrics
+
+//     val ascentStart = charTri.getAscentLine().getStartPoint()
+//     val descentStart = charTri.getDescentLine().getStartPoint()
+
+//     val absoluteCharLeft: Double = descentStart.get(PVector.I1).toDouble
+
+//     val ascentY = ascentStart.get(PVector.I2).toDouble
+//     val descentY = descentStart.get(PVector.I2).toDouble
+
+//     var absCharBottom: Double = descentY
+//     var charHeight = ascentY - descentY
+
+//     if (charHeight < 0 ) {
+//       charHeight = - charHeight
+//       absCharBottom = ascentY
+//     }
+
+//     val charLeft = geomTranslation.transX(absoluteCharLeft)
+//     val charBottom = geomTranslation.transY(absCharBottom)
+
+//     var charWidth = charTri.getDescentLine().getLength().toDouble
+
+//     if (charWidth.toInt == 0) {
+//       // figure out the exact dimensions of this glyph...
+//       // In glyph space:
+
+//       val pdfString = charTri.getPdfString
+//       // val decoded = charTri.getFont.decode(pdfString)
+//       val bs = pdfString.getValueBytes.map(Byte.byte2int(_) & 0xFF)
+//       val glyphCode = bs(0)
+
+//       val fontBbox = fontMetrics.getBbox
+//       val glyphWidths = fontMetrics.getGlyphWidths
+
+//       if (glyphWidths!=null && glyphWidths.length > glyphCode) {
+//         charWidth = glyphWidths(glyphCode).toDouble
+//       } else {
+//         if (fontBbox != null) {
+//           val y0 = fontBbox(1)
+//           val y1 = fontBbox(3)
+//           charWidth = (y1 - y0).toDouble
+//         }
+//       }
+//     }
+
+
+
+
+//     if (charHeight.nan || charHeight.inf || charHeight <= 0) {
+//       charHeight = 0
+//     } else if (charWidth.nan || charWidth.inf || charWidth <= 0) {
+//       charWidth = 0
+//     }
+
+//     val charTop = charBottom - charHeight
+
+//     Some(LTBounds.Doubles(
+//       left=charLeft,
+//       top=charTop,
+//       width=charWidth,
+//       height=charHeight
+//     ))
+//   }
+
+//   def ctmToLTBounds(ctm:  Matrix): LTBounds = {
+//     val x1 = ctm.get(6).toDouble
+//     val y1 = ctm.get(7).toDouble
+//     val x2 = x1 + ctm.get(0)
+//     val y2 = y1 + ctm.get(4)
+//     val w = x2 - x1
+//     val h = y2 - y1
+
+//     val left = geomTranslation.transX(x1)
+//     val top = geomTranslation.transY(y2)
+
+//     val width = math.max(w, 0.1)
+//     val height = math.max(h, 0.1)
+
+//     LTBounds.Doubles(left, top, width, height)
+//   }
+
+//   def ctmToLTBoundsPdfSpace(ctm:  Matrix): LTBounds = {
+//     val x1 = ctm.get(6).toDouble
+//     val y1 = ctm.get(7).toDouble
+//     val x2 = x1 + ctm.get(0)
+//     val y2 = y1 + ctm.get(4)
+//     val w = x2 - x1
+//     val h = y2 - y1
+
+//     val left = x1 //  geomTranslation.transX(x1)
+//     val top = y2 // geomTranslation.transY(y2)
+
+//     LTBounds.Doubles(left, top, w, h)
+//   }
+
+//   def ipointToPoint(p:  IPoint): Point = {
+//     // val x = geomTranslation.transX(p.x)
+//     // val y = geomTranslation.transY(p.y)
+//     Point.Doubles(p.x, p.y)
+//   }
+
+//   def invertPointSpace(p:  Point): Point = {
+//     val x = geomTranslation.transX(p.x.asDouble())
+//     val y = geomTranslation.transY(p.y.asDouble)
+//     Point.Doubles(x, y)
+//   }
+
 // }

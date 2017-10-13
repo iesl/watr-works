@@ -10,23 +10,16 @@ import org.apache.pdfbox.contentstream._
 import java.io._
 import java.text.Bidi
 import java.text.Normalizer
-  // import java.util._
 import java.util.regex.Pattern
 
-// import org.apache.commons.logging.Log;
-// import org.apache.commons.logging.LogFactory;
 import org.apache.pdfbox.pdmodel._;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
-// import org.apache.pdfbox.pdmodel.interactive.pagenavigation.PDThreadBead;
 import org.apache.pdfbox.util.QuickSort;
 import scala.collection.immutable.{List => _}
 
-
-// import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-// import java.util.Collections
 import java.util.TreeMap
 import java.util.TreeSet
 import java.util.HashMap
@@ -34,10 +27,12 @@ import java.util.ArrayList
 import java.{util => ju}
 import java.lang.{StringBuilder}
 
-class PdfBoxExtractor() extends PDFStreamEngine {
-  // // protected def document_=(x$1: org.apache.pdfbox.pdmodel.PDDocument): Unit = ???
-  // // protected def output_=(x$1: java.io.Writer): Unit = ???
+/**
+  * Scala translation of the java pdftotext implemented in PdfBox.
+  * Here for reference and comparison, not actually used to extract text
+  */
 
+class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
 
 
   private var _document: PDDocument = null
@@ -49,8 +44,6 @@ class PdfBoxExtractor() extends PDFStreamEngine {
   private def defaultIndentThreshold = 2.0f;
   private def defaultDropThreshold = 2.5f;
   private def useCustomQuickSort = true;
-
-  // private static final Log LOG = LogFactory.getLog(PDFTextStripper.class);
 
 
   protected var LINE_SEPARATOR = System.getProperty("line.separator");
@@ -1652,38 +1645,6 @@ class PdfBoxExtractor() extends PDFStreamEngine {
 
     }
 
-    // val rd : LineNumberReader= new LineNumberReader(new InputStreamReader(inputStream));
-    // do {
-    //   var s : String= rd.readLine();
-    //   if (s == null) {
-    //     break;
-    //   }
-
-    //   val comment : Int= s.indexOf('#'); // ignore comments
-
-    //   if (comment != -1) {
-    //     s = s.substring(0, comment);
-    //   }
-
-    //   if (s.length() < 2) {
-    //     continue;
-    //   }
-
-    //   val st : StringTokenizer= new StringTokenizer(s, ";");
-    //   val nFields : Int= st.countTokens();
-    //   val fields: ju.Array[Character] = Array[Character](nFields)
-
-    //   for (i <- 0 until nFields) {
-    //     fields(i) =  Integer.parseInt(st.nextToken().trim(), 16);
-    //   }
-
-    //   if (fields.length == 2) {
-    //     // initialize the MIRRORING_CHAR_MAP
-    //     MIRRORING_CHAR_MAP.put(fields(0), fields(1));
-    //   }
-
-    // } while (true);
-
   }
 
   /**
@@ -1867,72 +1828,29 @@ class PositionWrapper(
   var  isArticleStart : Boolean= false;
 
 
-
-  /**
-    * Returns the underlying TextPosition object.
-    *
-    * @return the text position
-    */
   def  getTextPosition(): TextPosition = {
     return textPosition;
   }
 
-  // def  isLineStart(): Boolean = {
-  //   return isLineStart;
-  // }
-
-  /**
-    * Sets the isLineStart() flag to true.
-    */
   def  setLineStart(): Unit = {
     this.isLineStart = true;
   }
 
-  // def  isParagraphStart(): Boolean = {
-  //   return isParagraphStart;
-  // }
 
-  /**
-    * sets the isParagraphStart() flag to true.
-    */
   def setParagraphStart(): Unit = {
     this.isParagraphStart = true;
   }
 
-  // def  isArticleStart(): Boolean
-  // {
-  //   return isArticleStart;
-  // }
 
-  /**
-    * Sets the isArticleStart() flag to true.
-    */
   def  setArticleStart(): Unit = {
     this.isArticleStart = true;
   }
 
-  // def  isPageBreak()
-  // {
-  //   return isPageBreak;
-  // }
-
-  /**
-    * Sets the isPageBreak() flag to true.
-    */
   def  setPageBreak(): Unit = {
     this.isPageBreak = true;
   }
 
-  // def Boolean isHangingIndent()
-  // {
-  //   return isHangingIndent;
-  // }
-
-  /**
-    * Sets the isHangingIndent() flag to true.
-    */
   def  setHangingIndent(): Unit = {
     this.isHangingIndent = true;
   }
 }
-
