@@ -96,11 +96,10 @@ class RunTrackingListener(
       line
     }
 
-    // debugPrintPageItems(lineRows)
+    debugPrintPageItems(lineRows)
 
-    val lines = lineRows.flatten
+    lineRows.flatten
 
-    lines  // ++ pageImages
   }
 
   private def debugPrintPageItems(rows: List[List[ExtractedItem]]): Unit = {
@@ -128,6 +127,7 @@ class RunTrackingListener(
 
 
   def addCharItem(charAtom: ExtractedItem.CharItem): Unit = {
+    println(s"adding ${charAtom}")
     if (lastItem==null || lastItem.bbox.bottom != charAtom.bbox.bottom) {
       runLists = List(charAtom) :: runLists
     } else {
@@ -138,16 +138,55 @@ class RunTrackingListener(
 
   def renderText(charTris: TextRenderInfo): Unit = {
 
+    if (pageNum.unwrap == 0) {
+      if (totalCharCount > 314 && totalCharCount < 318) {
+        println(s"${totalCharCount} (prequel): =================================================================")
+
+
+        val pdfString = charTris.getPdfString
+        val valueBytes = pdfString.getValueBytes
+        if (valueBytes.length > 2) {
+          val isUnicodeEncoded = valueBytes(0).toInt == 254 && valueBytes(1).toInt == 255
+          if (isUnicodeEncoded) {
+            println(s"Found Unicode Encoding: ")
+            // valueBytes.map(_.toInt)
+            val s1 = valueBytes.mkString(", ")
+            println(s"  valueBytes: ${s1}   ")
+          }
+        }
+
+        val info = DocumentFontInfo.getCharTriInfo(charTris, reader)
+        println(s"${totalCharCount}: =================================================================")
+        println(info)
+      }
+    }
+
+
     for (charTri <- charTris.getCharacterRenderInfos.asScala) {
       totalCharCount += 1
 
-      // if (pageNum.unwrap == 0) {
-      //   if (totalCharCount > 244 && totalCharCount < 250) {
-      //     val info = DocumentFontInfo.getCharTriInfo(charTri, reader)
-      //     println(s"${totalCharCount}: =================================================================")
-      //     println(info)
-      //   }
-      // }
+
+      if (pageNum.unwrap == 0) {
+        if (totalCharCount > 314 && totalCharCount < 318) {
+          {
+
+            val pdfString = charTri.getPdfString
+            val valueBytes = pdfString.getValueBytes
+            if (valueBytes.length > 2) {
+              val isUnicodeEncoded = valueBytes(0).toInt == 254 && valueBytes(1).toInt == 255
+              if (isUnicodeEncoded) {
+                println(s"Found Unicode Encoding: ")
+                // valueBytes.map(_.toInt)
+                val s1 = valueBytes.mkString(", ")
+                println(s"  valueBytes: ${s1}   ")
+              }
+            }
+          }
+          val info = DocumentFontInfo.getCharTriInfo(charTri, reader)
+          println(s"${totalCharCount}: =================================================================")
+          println(info)
+        }
+      }
 
 
 

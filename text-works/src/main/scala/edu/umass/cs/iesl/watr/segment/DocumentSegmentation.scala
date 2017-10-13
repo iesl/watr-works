@@ -100,7 +100,8 @@ object DocumentSegmenter {
     docStore0: DocumentZoningApi
   ): DocumentSegmentation = {
 
-    val pages = PdfTextExtractor.extractPages(stableId0, pdfPath)
+    // val pages = PdfTextExtractor.extractPages(stableId0, pdfPath)
+    val pages = PdfBoxExtractorMain.extractPages(stableId0, pdfPath)
 
     val segmenter = new DocumentSegmentation {
       override val pageAtomsAndGeometry = pages

@@ -11,7 +11,7 @@ trait LibVersions {
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
   val doobieVersion       = "0.4.4"
-  val matryoshkaCoreV     = "0.21.2"
+  val matryoshkaCoreV     = "0.21.3"
   val sourcecodeV         = "0.1.4"
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.2"
@@ -39,7 +39,7 @@ object TestLibs extends LibVersions {
 
 object LogLibs extends LibVersions {
   val logback = Seq(
-    "org.log4s"      %% "log4s"            % "1.3.6",
+    "org.log4s"      %% "log4s"            % "1.4.0",
     "ch.qos.logback"  % "logback-classic"  % "1.2.3",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
@@ -70,7 +70,7 @@ trait CommonLibs extends LibVersions {
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
-  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.5"
+  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.6"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,

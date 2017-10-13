@@ -17,6 +17,11 @@
   <logger name="com.zaxxer.hikari" level="INFO" />
   <logger name="io.netty" level="INFO" />
 
+  <!-- <logger name="org.apache.fontbox.util.autodetect" level="INFO" /> -->
+  <logger name="org.apache" level="INFO" />
+  <!-- <logger name="org.apache.pdfbox.io" level="INFO" /> -->
+  <logger name="org.apache.pdfbox" level="INFO" />
+
   // Suppress "rebuilding pdf x-ref table" errors
   <logger name="com.itextpdf.kernel.pdf" level="OFF" />
 

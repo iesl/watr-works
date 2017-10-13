@@ -161,7 +161,15 @@ object QuickNearestNeighbors {
   ) {
 
     def size(): Int = neighbors.map(_.len).sum + centroid.len
-    // def minValue: Int@@FloatRep =
+
+    // def avgValue: Int@@FloatRep = {
+    // }
+    def maxValue: Int@@FloatRep = {
+      val max = (centroid.value.unwrap +:
+        neighbors.map(_.value.unwrap)).max
+
+      FloatRep(max)
+    }
 
     override def toString(): String = {
       val cstr = centroid.toString()

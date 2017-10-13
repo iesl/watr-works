@@ -58,6 +58,7 @@ lazy val textworks = (project in file("text-works"))
     LogLibs.logback ++
     TestLibs.testAndCheck ++
     Lib.fs2 ++ Seq(
+      "org.apache.pdfbox" % "pdfbox" % "2.0.7",
       "com.google.guava" % "guava" % "23.0",
       "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,

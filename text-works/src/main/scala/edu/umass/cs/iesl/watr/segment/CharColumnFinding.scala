@@ -53,9 +53,12 @@ trait CharColumnFinding extends PageScopeSegmenter
       items.head.id.unwrap
     }
 
+    // println(s" getTextGrid:reorderedLines: ${reorderedLines} ")
     val rows = reorderedLines.map { visualBaseline =>
+      // println(s" getTextGrid:visualBaseline: ${visualBaseline} ")
       createTextRowFromVisualLine(visualBaseline.asInstanceOf[LineShape])
     }
+
 
     TextGrid.fromRows(rows)
   }
@@ -100,6 +103,7 @@ trait CharColumnFinding extends PageScopeSegmenter
     val hPageRules = createHPageRules()
 
     hPageRules.foreach { hPageRule =>
+
 
       val ruleY = hPageRule.p1.y.asDouble()
 

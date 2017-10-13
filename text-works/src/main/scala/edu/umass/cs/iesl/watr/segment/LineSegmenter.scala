@@ -52,7 +52,8 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
       }.getOrElse { spacedRow }
 
     // pageIndex.components.setComponentText(visualLineClusterCC, LB.VisualLine, supSubLabeledRow)
-    supSubLabeledRow
+    // supSubLabeledRow
+    spacedRow
   }
 
   private def textRowFromComponents(visualBaseline: LineShape): TextGrid.Row = {
@@ -250,8 +251,9 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
       val charWidths = sortedLineCCs.map(_.bbox.width)
       charWidths.max
     } else if (charSpacings.length > 1) {
-      val mostCommonSpacing = charSpacings.head.centroid.value
-      val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing)
+      val mostCommonSpacingBin = charSpacings.head
+      val mostCommonSpacing = mostCommonSpacingBin.maxValue
+      val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing*2)
       if (largerSpacings.nonEmpty) {
         val nextCommonSpacing = largerSpacings.head.centroid.value
         (mostCommonSpacing + nextCommonSpacing) / 2

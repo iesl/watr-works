@@ -185,7 +185,9 @@ object TextWorksConfig {
             }
           } catch {
             case t: Throwable =>
-              utils.Debugging.printAndSwallow(t)
+              println(s"t = ${t}")
+              // t.printStackTrace()
+              // utils.Debugging.printAndSwallow(t)
           }
         }
       }
@@ -222,6 +224,7 @@ object TextWorksActions {
       println("writing tracelogs")
 
       segmenter.pageSegmenters.foreach { pageSegmenter =>
+        println(s" page ${pageSegmenter.pageNum}")
         val textGrid = pageSegmenter.getTextGrid
         val serProps = textGrid.buildOutput()
           .getSerialization()
@@ -229,6 +232,7 @@ object TextWorksActions {
         val pageImageShapes = pageSegmenter.pageImageShapes()
         val lineNums = serProps.lineMap.keys.toList.sorted
 
+        println(s" 3 ")
         val textAndLoci = lineNums.map { lineNum =>
           val text = serProps.lineMap(lineNum)._2
           val loci = serProps.lineMap(lineNum)._1
@@ -239,10 +243,12 @@ object TextWorksActions {
             ("loci" -> lociJs)
           )
         }
+        println(s" 4 ")
         val gridJs = Json.obj(
           ("rows", textAndLoci)
         )
         val pageNum = pageSegmenter.pageIndex.pageNum
+        println(s" 5 ")
         val jsLog = Json.arr(
           Json.obj(
             ("name", s"Page ${pageNum.unwrap+1} Text"),
@@ -259,14 +265,17 @@ object TextWorksActions {
         fs.write(rootPath / s"page-${pageNum}-textgrid.json",gridJsStr)
       }
 
+      println(s" done w/pages")
       val allLogs = segmenter.pageSegmenters
         .foldLeft(List[JsObject]()) {
           case (accum, pageSegmenter) =>
             accum ++ pageSegmenter.emitLogs()
         }
 
+      println(s"  all logs..")
       val jsonLogs = Json.toJson(allLogs)
       val jsonStr = Json.prettyPrint(jsonLogs)
+      println(s"  pp all logs.., writing")
       fs.write(rootPath / "tracelog.json", jsonStr)
     }
 
