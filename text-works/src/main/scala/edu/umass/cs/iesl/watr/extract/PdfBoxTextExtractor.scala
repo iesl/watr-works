@@ -12,6 +12,7 @@ import org.apache.fontbox.util.BoundingBox
 import org.apache.pdfbox.contentstream._
 import org.apache.pdfbox.pdmodel._
 import org.apache.pdfbox.pdmodel.common.PDRectangle
+import org.apache.pdfbox.pdmodel.graphics.image.PDImage
 import org.apache.pdfbox.pdmodel.font._
 import org.apache.pdfbox.util.{Matrix, Vector}
 
@@ -55,11 +56,11 @@ class PdfBoxTextExtractor(
   }
 
   def addImgItem(item: ExtractedItem.ImgItem): Unit = {
+    println(s"addImgItem: ${item}")
     extractedItems = item :: extractedItems
   }
 
   def addCharItem(charAtom: ExtractedItem.CharItem): Unit = {
-    // println(s"addCharItem ${charAtom}: bottom=${charAtom.bbox.bottom.pp()} / ${charAtom.fontBbox.bottom.pp }")
     extractedItems = charAtom :: extractedItems
   }
 
@@ -67,45 +68,108 @@ class PdfBoxTextExtractor(
     // addCharItem(CharItem(charIdGen.nextId, charBounds, c))
   }
 
-  override def appendRectangle(x1: Point2D,x2: Point2D,x3: Point2D,x4: Point2D): Unit = {
+  def traceFunc()(implicit enc: sourcecode.Enclosing): Unit = {
+    println(s"running ${enc.value}")
+  }
+  override def appendRectangle(p0: Point2D, p1: Point2D, p2: Point2D, p3: Point2D): Unit = {
+    p0.getX()
+    p0.getY()
+    p1.getX()
+    p1.getY()
+    p2.getX()
+    p2.getY()
+    p3.getX()
+    p3.getY()
+
+    traceFunc()
   }
 
   override def clip(x1: Int): Unit = {
+    // traceFunc()
   }
 
   override def closePath(): Unit = {
+    // traceFunc()
   }
 
   override def curveTo(x1: Float,x2: Float,x3: Float,x4: Float,x5: Float,x6: Float): Unit = {
+    // traceFunc()
   }
 
-  override def drawImage(x1: org.apache.pdfbox.pdmodel.graphics.image.PDImage): Unit = {
+    //  def ctmToLTBounds(ctm:  Matrix): LTBounds = {
+    // -    val x1 = ctm.get(6).toDouble
+    // -    val y1 = ctm.get(7).toDouble
+    // -    val x2 = x1 + ctm.get(0)
+    // -    val y2 = y1 + ctm.get(4)
+    // -    val w = x2 - x1
+    // -    val h = y2 - y1
+    // -
+    // -    val left = geomTranslation.transX(x1)
+    // -    val top = geomTranslation.transY(y2)
+    // -
+    // -    val width = math.max(w, 0.1)
+    // -    val height = math.max(h, 0.1)
+    // -
+    // -    LTBounds.Doubles(left, top, width, height)
+    // -  }
+
+  override def drawImage(image: PDImage): Unit = {
+    val ctm = getGraphicsState.getCurrentTransformationMatrix()
+    val x1 = ctm.getValue(2, 0).toDouble
+    val y1 = ctm.getValue(2, 1).toDouble
+    val x2 = x1 + ctm.getValue(0, 0)
+    val y2 = y1 + ctm.getValue(1, 1)
+
+    val width = x2 - x1
+    val height = y2 - y1
+
+    val left = x1 - cropBox.getLowerLeftX
+    val top = cropBox.getUpperRightY - y2
+
+    val imgBounds = LTBounds.Doubles(left, top, width, height)
+
+    val item = ExtractedItem.ImgItem(
+      charIdGen.nextId,
+      imgBounds
+    )
+
+    addImgItem(item)
+
+    traceFunc()
   }
 
   override def endPath(): Unit = {
+    // traceFunc()
   }
 
   override def fillAndStrokePath(x1: Int): Unit = {
+    // traceFunc()
   }
 
   override def fillPath(x1: Int): Unit = {
+    // traceFunc()
   }
 
   override def getCurrentPoint(): Point2D = {
-    //     // if you want to build paths, you'll need to keep track of this like PageDrawer does
+    // traceFunc()
+    // if you want to build paths, you'll need to keep track of this
     new Point2D.Float(0, 0)
   }
 
   override def lineTo(x1: Float,x2: Float): Unit = {
+    // traceFunc()
   }
 
   override def moveTo(x1: Float,x2: Float): Unit = {
+    // traceFunc()
   }
 
   override def shadingFill(x1: org.apache.pdfbox.cos.COSName): Unit = {
+    // traceFunc()
   }
 
   override def strokePath(): Unit = {
+    // traceFunc()
   }
 
 
@@ -137,69 +201,6 @@ class PdfBoxTextExtractor(
     )
   }
 
-  protected def printFontInfo(textRenderingMatrix: Matrix,
-    font: PDFont,
-    code: Int,
-    unicode: String,
-    displacement: Vector
-  ): Unit = {
-
-    import utils.Debugging._
-
-    val at: AffineTransform = textRenderingMatrix.createAffineTransform()
-    at.concatenate(font.getFontMatrix().createAffineTransform())
-
-
-
-    println("~"*40)
-
-    val fdesc = font.getFontDescriptor
-
-    log(fdesc.getStemH)
-    log( fdesc.getStemV   )
-    log( fdesc.getAscent  )
-    log( fdesc.getDescent )
-
-    log(code)
-    log(unicode)
-    log(displacement)
-
-    log( font.getType )
-    log( font.getName )
-    // log( font.isDamaged() )
-    log( font.getSubType )
-    // log( font.getCOSObject )
-    log( font.getSpaceWidth )
-    log( font.getFontMatrix )
-    log( font.getBoundingBox )
-    // log( font.getPositionVector(code) )
-    log( font.getFontDescriptor )
-    log( font.isVertical() )
-    log( font.isDamaged() )
-    log( font.isEmbedded() )
-    log( font.isStandard14() )
-
-    val bbox = font.getBoundingBox
-
-    val xmin = bbox.getLowerLeftX
-    val ymin = bbox.getLowerLeftY
-    val xmax = bbox.getUpperRightX
-    val ymax = bbox.getUpperRightY
-    val w = xmax - xmin
-    val h = ymax - ymin
-
-    // at.transform(bbox)
-    // val fontBBox = new PDRectangle((float) minX, (float) minY, (float) (maxX - minX), (float) (maxY - minY))
-    // val fontBBox = new PDRectangle(x, y, w, h)
-    val fontBBox = new PDRectangle(xmin, ymin, w, h)
-    val fontPath = fontBBox.toGeneralPath().getBounds2D
-
-    val pTrans = at.createTransformedShape(fontPath)
-
-    log (pTrans.getBounds2D)
-
-  }
-
   private def getFontBounds(font: PDFont): PDRectangle = {
     val bbox = font.getBoundingBox
     val xmin = bbox.getLowerLeftX
@@ -225,31 +226,30 @@ class PdfBoxTextExtractor(
     unicode: String,
     displacement: Vector
   ): Unit = {
-    super.showGlyph(textRenderingMatrix, font, code, unicode, displacement)
+    val isSpace = code == 32 && unicode.head == ' '
 
-    // getFontBounds(font)
+    if (!isSpace) {
 
-    var (glyphShape, fontShape, strRepr) = calculateGlyphBounds(textRenderingMatrix, font, code)
+      super.showGlyph(textRenderingMatrix, font, code, unicode, displacement)
 
-    if (glyphShape != null) {
-      glyphShape = transformShapeOnPage(glyphShape)
-      fontShape = transformShapeOnPage(fontShape)
+      val (glyphShape0, fontShape0, strRepr) = calculateGlyphBounds(textRenderingMatrix, font, code)
 
-      val charBounds = glyphShape.getBounds2D().toLTBounds
-      val charFontBounds = fontShape.getBounds2D().toLTBounds
+      if (glyphShape0 != null) {
+        val glyphShape = transformShapeOnPage(glyphShape0)
+        val fontShape = transformShapeOnPage(fontShape0)
 
-      def isSpace() = code == 32 && unicode.head == ' '
+        val charBounds = glyphShape.getBounds2D().toLTBounds
+        val charFontBounds = fontShape.getBounds2D().toLTBounds
 
-      def appendChar(c: Char): Unit = {
-        addCharItem(CharItem(charIdGen.nextId, charBounds, charFontBounds, c.toString))
-      }
+        def appendChar(c: Char): Unit = {
+          addCharItem(CharItem(charIdGen.nextId, charBounds, charFontBounds, c.toString))
+        }
 
-      if (unicode == null) {
-        s"¿${code}".foreach { appendChar(_) }
-      } else {
+        if (unicode == null) {
+          s"¿${code}".foreach { appendChar(_) }
+        } else {
 
-        unicode.foreach { ch =>
-          if (!isSpace()) {
+          unicode.foreach { ch =>
             UnicodeUtil.maybeSubChar(ch) match {
               case Left(c)  =>
                 if (isCombiningMark(c)) stashChar(c) else appendChar(c)
@@ -258,8 +258,8 @@ class PdfBoxTextExtractor(
                 cs.foreach{ c =>
                   if (isCombiningMark(c)) stashChar(c) else appendChar(c)
                 }
-            }
 
+            }
           }
         }
       }
@@ -279,6 +279,8 @@ class PdfBoxTextExtractor(
 
       val t3Font : PDType3Font =  font.asInstanceOf[PDType3Font]
       val charProc : PDType3CharProc = t3Font.getCharProc(code)
+
+
       if (charProc != null) {
         val fontBBox : BoundingBox = t3Font.getBoundingBox()
         val glyphBBox : PDRectangle = charProc.getGlyphBBox()
@@ -469,3 +471,59 @@ object PdfBoxExtractorMain {
   }
 
 }
+
+
+// protected def printFontInfo(textRenderingMatrix: Matrix, font: PDFont, code: Int, unicode: String, displacement: Vector): Unit = {
+//   import utils.Debugging._
+
+//   val at: AffineTransform = textRenderingMatrix.createAffineTransform()
+//   at.concatenate(font.getFontMatrix().createAffineTransform())
+
+//   println("~"*40)
+
+//   val fdesc = font.getFontDescriptor
+
+//   log(fdesc.getStemH)
+//   log( fdesc.getStemV   )
+//   log( fdesc.getAscent  )
+//   log( fdesc.getDescent )
+
+//   log(code)
+//   log(unicode)
+//   log(displacement)
+
+//   log( font.getType )
+//   log( font.getName )
+//   // log( font.isDamaged() )
+//   log( font.getSubType )
+//   // log( font.getCOSObject )
+//   log( font.getSpaceWidth )
+//   log( font.getFontMatrix )
+//   log( font.getBoundingBox )
+//   // log( font.getPositionVector(code) )
+//   log( font.getFontDescriptor )
+//   log( font.isVertical() )
+//   log( font.isDamaged() )
+//   log( font.isEmbedded() )
+//   log( font.isStandard14() )
+
+//   val bbox = font.getBoundingBox
+
+//   val xmin = bbox.getLowerLeftX
+//   val ymin = bbox.getLowerLeftY
+//   val xmax = bbox.getUpperRightX
+//   val ymax = bbox.getUpperRightY
+//   val w = xmax - xmin
+//   val h = ymax - ymin
+
+//   // at.transform(bbox)
+//   // val fontBBox = new PDRectangle((float) minX, (float) minY, (float) (maxX - minX), (float) (maxY - minY))
+//   // val fontBBox = new PDRectangle(x, y, w, h)
+//   val fontBBox = new PDRectangle(xmin, ymin, w, h)
+//   val fontPath = fontBBox.toGeneralPath().getBounds2D
+
+//   val pTrans = at.createTransformedShape(fontPath)
+
+//   log (pTrans.getBounds2D)
+
+// }

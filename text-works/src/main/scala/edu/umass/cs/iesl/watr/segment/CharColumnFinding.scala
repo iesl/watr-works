@@ -76,6 +76,7 @@ trait CharColumnFinding extends PageScopeSegmenter
         deleteShapes(baseLines)
       }
 
+    traceLog.drawPageShapes()
   }
 
   def createHPageRules(): Seq[Line] = {

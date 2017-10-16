@@ -20,24 +20,21 @@ sealed trait ExtractedItem {
 
 }
 
+// Font properties:
+//   name/type
+//   unique id within document (e.g, 104 0 R)
+//   # of glyphs represented (per page, per document)
+//   is natural language??
+//   is symbolic??
+
 object ExtractedItem {
-  implicit class RicherExtractedItem(val self: CharItem) extends AnyVal {
-
-
-    // def isWonky: Boolean = self.wonkyCharCode.isDefined
-
-    // def isSpace: Boolean = self.wonkyCharCode.exists(_==32)
-    // def isControl: Boolean = self.wonkyCharCode.exists(_<32)
-    // def isNonPrintable: Boolean = self.wonkyCharCode.exists(_<=32)
-
-  }
+  // implicit class RicherExtractedItem(val self: CharItem) extends AnyVal {}
 
   case class CharItem(
     id: Int@@CharID,
     bbox: LTBounds,
     fontBbox: LTBounds,
     char: String
-    // wonkyCharCode: Option[Int] = None
   ) extends ExtractedItem {
     def strRepr(): String = char
   }
@@ -54,7 +51,6 @@ object ExtractedItem {
     id: Int@@CharID,
     bbox: LTBounds,
     waypoints: Seq[Point]
-    // waypoints: Seq[Seq[Seq[Point]]]
   ) extends ExtractedItem {
 
     lazy val pp = waypoints.map(_.prettyPrint).take(4).mkString(", ")
@@ -70,4 +66,3 @@ class CharProps()  {
   var charRunId: Int = -1
   var isRunBegin: Boolean = false
 }
-
