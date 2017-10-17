@@ -7,12 +7,16 @@ import watrmarks.Label
 import corpora.DocumentZoningApi
 import spindex._
 import utils.ExactFloats._
-import extract.ExtractedItem
+import extract._
 import segment.{SegmentationLabels => LB}
 
 trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
   lazy val docScope = self
+
+  def pageAtomsAndGeometry: Seq[(Seq[ExtractedItem], PageGeometry)]
+
+  def fontDefs: FontDefs
 
   def mpageIndex: MultiPageIndex
 

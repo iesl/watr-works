@@ -6,17 +6,17 @@ import ammonite.{ops => fs}, fs._
 
 import segment.{SegmentationLabels => LB}
 import corpora.DocumentZoningApi
-import geometry._
 import extract._
 import spindex._
 
+import utils.SlicingAndDicing._
+import utils.ExactFloats._
 import TypeTags._
 
 trait DocumentLevelFunctions extends DocumentScopeSegmenter
 
 trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
-  def pageAtomsAndGeometry: Seq[(Seq[ExtractedItem], PageGeometry)]
 
   protected[segment] def init(): Unit = {
     initPageIndexes()
@@ -74,6 +74,8 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       _.runPageSegmentationPass1()
     }
 
+    doCharMetricComputations()
+
     pageSegmenters.foreach {
       _.runPageSegmentationPass2()
     }
@@ -86,6 +88,39 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
   }
 
+
+  private def doCharMetricComputations(): Unit = {
+
+    docScope.fontDefs.fontProperties.foreach{ fontProps =>
+      println("Font properties")
+      println(fontProps)
+      // val bistr = fontProps.bigramEvidence. mkString("{\n  ", "\n  ", "\n}")
+      // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
+      val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
+      val tristr = fontProps.trigramEvidence. mkString("{  ", ", ", "  }")
+      println("Bigrams: ")
+      println(bistr)
+      println("Trigrams: ")
+      println(tristr)
+
+      val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
+      println("PageEvidence: ")
+      println(pageEvidence)
+
+
+      val ds = fontProps.dets.sorted
+        .toList.groupByPairs { case (a, b) =>
+          math.abs(a - b) < 0.1
+        }
+        .map(_.head)
+        .mkString(", ")
+      println(s"Font Trans Dets: $ds")
+
+      val _ = fontProps.inferredMetrics()
+    }
+
+
+  }
 }
 
 
@@ -101,10 +136,11 @@ object DocumentSegmenter {
   ): DocumentSegmentation = {
 
     // val pages = PdfTextExtractor.extractPages(stableId0, pdfPath)
-    val pages = PdfBoxExtractorMain.extractPages(stableId0, pdfPath)
+    val (pages, fontDefs0) = PdfBoxExtractorMain.extractPages(stableId0, pdfPath)
 
     val segmenter = new DocumentSegmentation {
       override val pageAtomsAndGeometry = pages
+      override val fontDefs = fontDefs0
       override val mpageIndex: MultiPageIndex = new MultiPageIndex(stableId0, docStore0, pages)
 
       override val docStore: DocumentZoningApi = docStore0

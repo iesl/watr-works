@@ -40,6 +40,8 @@ trait CharColumnFinding extends PageScopeSegmenter
 
   def runPass2(): Unit = {
 
+    // doCharMetricComputations()
+
     subdivideColumnEvidence()
 
   }
@@ -366,15 +368,14 @@ trait CharColumnFinding extends PageScopeSegmenter
     )
   }
 
-  protected def findPageCharRuns(): Seq[Seq[ExtractedItem]] = {
+  protected def findPageCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
     val charRuns = pageIndex.pageItems.toSeq
-      .filter { _.isInstanceOf[ExtractedItem.CharItem] }
+      .collect { case item: ExtractedItem.CharItem => item }
       .groupByPairsWithIndex {
         case (itm1, itm2, i) =>
           val item1 = itm1.asInstanceOf[ExtractedItem.CharItem]
           val item2 = itm2.asInstanceOf[ExtractedItem.CharItem]
           val consecutive = item1.id.unwrap+1 == item2.id.unwrap
-          // val sameLine = item1.bbox.bottom == item2.bbox.bottom
           val sameLine = item1.fontBbox.bottom == item2.fontBbox.bottom
           consecutive && sameLine
       }
@@ -406,6 +407,38 @@ trait CharColumnFinding extends PageScopeSegmenter
     hPageRules
   }
 
+  // private def doCharMetricComputations(): Unit = {
+
+  //   docScope.fontDefs.fontProperties.foreach{ fontProps =>
+  //     println("Font properties")
+  //     println(fontProps)
+  //     // val bistr = fontProps.bigramEvidence. mkString("{\n  ", "\n  ", "\n}")
+  //     // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
+  //     val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
+  //     val tristr = fontProps.trigramEvidence. mkString("{  ", ", ", "  }")
+  //     println("Bigrams: ")
+  //     println(bistr)
+  //     println("Trigrams: ")
+  //     println(tristr)
+
+  //     val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
+  //     println("PageEvidence: ")
+  //     println(pageEvidence)
+
+
+  //     val ds = fontProps.dets.sorted
+  //       .toList.groupByPairs { case (a, b) =>
+  //         math.abs(a - b) < 0.1
+  //       }
+  //       .map(_.head)
+  //       .mkString(", ")
+  //     println(s"Font Trans Dets: $ds")
+
+  //     val _ = fontProps.inferredMetrics()
+  //   }
+
+
+  // }
   private def initGridShapes(): Unit = {
     val pageCharRuns = findPageCharRuns()
     pageCharRuns.foreach { charRun =>
@@ -414,12 +447,40 @@ trait CharColumnFinding extends PageScopeSegmenter
 
       val baselineShape = indexShape(baseLine, LB.CharRunBaseline)
 
-      charRun.foreach { _ match  {
-        case item:ExtractedItem.CharItem =>
+      charRun.foreach { item =>
           pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
-      }}
+      }
 
       pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, charRun)
+
+      // Init Font/char stats
+      charRun.foreach { item =>
+        item.char.foreach { c =>
+          docScope.fontDefs.addEvidence(item.fontName, pageNum, c)
+        }
+      }
+
+      val runChars = charRun.flatMap(_.strRepr())
+
+      val fontRuns = charRun.groupByPairs{
+        case (i1, i2) => i1.fontName == i2.fontName
+      }
+
+      fontRuns.foreach { fontRun =>
+        val headFont = fontRun.head.fontName
+
+        if (charRun.length > 1) {
+          runChars.sliding(2).foreach { ngram =>
+            self.docScope.fontDefs.addEvidence(headFont, pageNum, ngram:_*)
+          }
+          if (charRun.length > 2) {
+            runChars.sliding(3).foreach { ngram =>
+              self.docScope.fontDefs.addEvidence(headFont, pageNum, ngram:_*)
+            }
+
+          }
+        }
+      }
     }
     traceLog.drawPageShapes()
   }
