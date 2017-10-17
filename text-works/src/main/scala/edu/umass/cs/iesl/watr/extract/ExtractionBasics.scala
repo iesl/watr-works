@@ -70,15 +70,26 @@ case class FontProperties(
 
   val pagewiseEvidence = Array.ofDim[Int](pageCount)
 
-  val asciiHeights = Array.ofDim[Double](128)
+  // val asciiHeights = Array.ofDim[Double](128)
+  // val dets = mutable.ListBuffer[Double]()
+  val indexDets  = mutable.ArrayBuffer[(Int, Array[Double])]()
 
-  val dets = mutable.ListBuffer[Double]()
 
-  def addEvidence(c: Char, height: Double, glyphProps: GlyphProps): Unit = {
-    // val ctmDet = glyphProps
+  def addEvidence(c: Char, glyphProps: GlyphProps): Unit = {
+    val bbox = glyphProps.glyphBBox.getOrElse { glyphProps.fontBBox }
+    val height = bbox.height.asDouble()
+    val ctmDet = glyphProps.finalAffineTrans.getDeterminant
+    val normDet = ctmDet * 1000 * 1000
+    val indexDet = normDet.toInt
     if (c.toInt < 128) {
-      // dets.append(ctmDet)
-      asciiHeights(c.toInt) = height
+      if (!indexDets.exists(_._1 == indexDet)) {
+        indexDets.append(
+          (indexDet, Array.ofDim[Double](128))
+        )
+      }
+      indexDets.find(_._1 == indexDet).foreach { case (_, asciiHeights) =>
+        asciiHeights(c.toInt) = height
+      }
     }
   }
 
@@ -88,18 +99,20 @@ case class FontProperties(
   }
 
   def inferredMetrics(): FontBounds = {
-    // midline ~= height of eaoru
     if (isNatLangFont()) {
+      indexDets.foreach { case (det, asciiHeights) =>
+        println(s"At Determinant = ${det}")
+        val midlineEv = "eaoru"       .map({c => val h = asciiHeights(c.toInt);  s"${c}/${h}"}) //avg
+        val ascentEv = "ldkh"         .map({c => val h = asciiHeights(c.toInt);  s"${c}/${h}"}) // max
+        val capEv = (65 to 90).toList .map({c => val h = asciiHeights(c); s"${c.toChar}/${h}" } ) //max
+        val descentEv = "yqpg"        .map({c => val h = asciiHeights(c.toInt); s"${c.toChar}/${h}" }) // - midline
 
-      val midlineEv = "eaoru".map(c => asciiHeights(c.toInt)) //avg
-      val ascentEv = "ldkh".map(c => asciiHeights(c.toInt)) // max
-      val capEv = (65 to 90).toList.map(asciiHeights(_)) //max
-      val descentEv = "yqpg".map(c => asciiHeights(c.toInt)) // - midline
+        println(s"    midline ev  : ${midlineEv}")
+        println(s"    ascentEv ev : ${ascentEv}")
+        println(s"    descentEv ev: ${descentEv}")
+        println(s"    cap ev      : ${capEv}")
+      }
 
-      println(s"midline ev: ${midlineEv}")
-      println(s"ascentEv ev: ${ascentEv}")
-      println(s"descentEv ev: ${descentEv}")
-      println(s"cap ev: ${capEv}")
 
       declaredBounds
     } else {
@@ -115,7 +128,7 @@ class FontDefs(pageCount: Int) {
 
   val fontProperties = mutable.ArrayBuffer[FontProperties]()
 
-  def addFont(pdFont: PDFont, glyphProps: GlyphProps): Unit = {
+  def addFont(pdFont: PDFont): FontProperties = {
 
     val fname = getFontName(pdFont)
 
@@ -134,13 +147,13 @@ class FontDefs(pageCount: Int) {
       )
       fontProperties.append(props)
     }
+    fontProperties.find(_.name == pdFont.getName).get
   }
 
-  def addMetricEvidence(pdFont: PDFont, char: Char, bbox: LTBounds, glyphProps: GlyphProps): Unit = {
-    fontProperties.find(_.name == pdFont.getName)
-      .foreach { fontProps =>
-        fontProps.addEvidence(char, bbox.height.asDouble, glyphProps)
-      }
+  def addGlyphEvidence(pdFont: PDFont, char: Char, glyphProps: GlyphProps): Unit = {
+    val fontProps = addFont(pdFont)
+
+    fontProps.addEvidence(char, glyphProps)
   }
 
 

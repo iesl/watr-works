@@ -24,11 +24,31 @@ import TypeTags._
 import geometry._
 import utils._
 
+import PdfBoxExtractorMain._
+
 case class GlyphProps(
   finalGlyphBounds: Option[Shape],
   finalFontBounds: Shape,
   finalAffineTrans: AffineTransform
-)
+) {
+
+  lazy val glyphBBox = finalGlyphBounds.map(_.getBounds2D().toLTBounds)
+  lazy val fontBBox = finalFontBounds.getBounds2D().toLTBounds
+}
+
+case class PageSpaceTransforms(
+  flip: AffineTransform,
+  rotate: AffineTransform,
+  translate: AffineTransform
+) {
+  def transform(shape: Shape): Shape = {
+    translate.createTransformedShape(
+      rotate.createTransformedShape(
+        flip.createTransformedShape(
+          shape
+        )))
+  }
+}
 
 class PdfBoxTextExtractor(
   page: PDPage,
@@ -37,7 +57,6 @@ class PdfBoxTextExtractor(
   fontDefs: FontDefs
 ) extends PDFGraphicsStreamEngine(page) {
   import ExtractedItem._
-  import PdfBoxExtractorMain._
   import FontDefs._
   // Limit the # of chars that can be extracted per page to prevent pathological cases (e.g., embedded charts using symbol font-based dots)
   val MAX_EXTRACTED_CHARS_PER_PAGE = 10000
@@ -84,15 +103,7 @@ class PdfBoxTextExtractor(
   }
 
   override def appendRectangle(p0: Point2D, p1: Point2D, p2: Point2D, p3: Point2D): Unit = {
-    p0.getX()
-    p0.getY()
-    p1.getX()
-    p1.getY()
-    p2.getX()
-    p2.getY()
-    p3.getX()
-    p3.getY()
-
+    // p0.getX() p0.getY() p1.getX() p1.getY() p2.getX() p2.getY() p3.getX() p3.getY()
     // traceFunc()
   }
 
@@ -192,6 +203,11 @@ class PdfBoxTextExtractor(
     )
   }
 
+  def isSurrogateCodepoint(ch: Char): Boolean = {
+    val cint = ch.toInt
+    0xD800 <= cint && cint  <= 0xDFFF
+  }
+
   private def getFontBounds(font: PDFont): PDRectangle = {
     val bbox = font.getBoundingBox
     val xmin = bbox.getLowerLeftX
@@ -203,7 +219,7 @@ class PdfBoxTextExtractor(
     new PDRectangle(xmin, ymin, w, h)
   }
 
-  var pageSpaceTransform: AffineTransform = new AffineTransform()
+  var pageSpaceTransform: PageSpaceTransforms = null
 
   override protected def showGlyph(
     textRenderingMatrix: Matrix,
@@ -214,14 +230,11 @@ class PdfBoxTextExtractor(
   ): Unit = {
     val isSpace = code == 32 && unicode.head == ' '
 
-
     if (!isSpace) {
-
-      super.showGlyph(textRenderingMatrix, pdFont, code, unicode, displacement)
 
       val glyphProps = calculateGlyphBounds(textRenderingMatrix, pdFont, code)
 
-      fontDefs.addFont(pdFont, glyphProps)
+      fontDefs.addFont(pdFont)
 
       glyphProps.finalGlyphBounds.foreach { finalGlyphBounds =>
 
@@ -229,20 +242,39 @@ class PdfBoxTextExtractor(
         val charFontBounds = glyphProps.finalFontBounds.getBounds2D().toLTBounds
 
         def appendChar(strRepr: String): Unit = {
-          strRepr.foreach { c =>
-            fontDefs.addMetricEvidence(pdFont, c, charBounds, glyphProps)
-          }
           addCharItem(CharItem(charIdGen.nextId, charBounds, charFontBounds, strRepr, getFontName(pdFont)))
         }
-
         if (unicode == null) {
           appendChar(s"¿${code};")
         } else {
+          val isSurrogate =  unicode.exists(isSurrogateCodepoint(_))
+          if (isSurrogate) {
+            appendChar(s"¿${code};")
 
-          unicode.foreach { ch =>
-            UnicodeUtil.maybeSubChar(ch) match {
-              case Left(c)   => if (isCombiningMark(c)) stashChar(c) else appendChar(c.toString())
-              case Right(cs) => cs.foreach{ c => if (isCombiningMark(c)) stashChar(c) else appendChar(c.toString()) }
+          } else {
+
+            // if (unicode.length() > 1) { println(s"unicode > 1: ${unicode} = ${unicode.map(_.toInt.toHexString).toList}, code: ${code}") }
+
+            val isAsciiCode =  unicode.forall(_.toInt == code)
+
+
+            unicode.foreach { ch =>
+
+              if (isAsciiCode) {
+                fontDefs.addGlyphEvidence(pdFont, ch, glyphProps)
+              }
+
+              UnicodeUtil.maybeSubChar(ch) match {
+                case Left(c)   =>
+
+                  if (isCombiningMark(c)) stashChar(c) else appendChar(c.toString())
+
+                case Right(cs) =>
+
+                  cs.foreach{ c =>
+                    if (isCombiningMark(c)) stashChar(c) else appendChar(c.toString())
+                  }
+              }
             }
           }
 
@@ -257,12 +289,9 @@ class PdfBoxTextExtractor(
     textRenderingMatrix.concatenate(font.getFontMatrix)
     val affineTr = textRenderingMatrix.createAffineTransform()
 
-
-    // affineTr.concatenate(pageSpaceTransform)
-
     def trans(p: GeneralPath): Shape = {
       val sh = affineTr.createTransformedShape(p.getBounds2D)
-      pageSpaceTransform.createTransformedShape(sh)
+      pageSpaceTransform.transform(sh)
     }
 
     var initGlyphProps = GlyphProps(
@@ -289,9 +318,9 @@ class PdfBoxTextExtractor(
           glyphBBox.setUpperRightY(math.min(fontBBox.getUpperRightY(), glyphBBox.getUpperRightY()))
 
           val gpath = glyphBBox.toGeneralPath() // .getBounds2D
-          initGlyphProps = initGlyphProps.copy(
-            finalGlyphBounds = Some(trans(gpath))
-          )
+            initGlyphProps = initGlyphProps.copy(
+              finalGlyphBounds = Some(trans(gpath))
+            )
         }
       }
     } else if (font.isInstanceOf[PDVectorFont]) {
@@ -338,15 +367,13 @@ class PdfBoxTextExtractor(
   }
 
 
-  private def findPageSpaceTransforms(pdPage: PDPage): AffineTransform = {
+  private def findPageSpaceTransforms(pdPage: PDPage): PageSpaceTransforms = {
     // flip y-axis
     val flipTr = new AffineTransform()
     flipTr.translate(0, cropBox.getHeight().toDouble)
     flipTr.scale(1, -1)
 
-    println(s"Flip: ${flipTr}")
-
-    // page may be rotated
+    // page rotation
     val rotateTr = new AffineTransform()
     val rotation : Int = pdPage.getRotation()
     if (rotation != 0) {
@@ -362,17 +389,11 @@ class PdfBoxTextExtractor(
       }
       rotateTr.rotate(Math.toRadians(rotation.toDouble))
     }
-    println(s"Rot: ${rotateTr}")
 
-    // cropbox
+    // position within cropBox
     val transTr = AffineTransform.getTranslateInstance(-cropBox.getLowerLeftX().toDouble, cropBox.getLowerLeftY().toDouble)
 
-    println(s"move: ${transTr}")
-    flipTr.concatenate(rotateTr)
-    flipTr.concatenate(transTr)
-
-    println(s"final: ${flipTr}")
-    flipTr
+    PageSpaceTransforms(flipTr, rotateTr, transTr)
   }
 
   def stripPage(document: PDDocument, page: Int): Unit = {
@@ -458,7 +479,7 @@ object PdfBoxExtractorMain {
 
     } catch {
       case t: Throwable =>
-        println(s"Error: ${t.getMessage}")
+        println(s"Error: ${t}: ${t.getCause}: ${t.getMessage}")
         t.printStackTrace()
         pages.append((Seq(), currPageGeometry))
 
