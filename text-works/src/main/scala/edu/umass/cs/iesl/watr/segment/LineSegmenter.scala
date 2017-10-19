@@ -35,21 +35,21 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
 
     val spacedRow = insertSpacesInRow(textRow)
 
-    val supSubLabeledRow = spacedRow.toCursor()
-      .map { cursor =>
-        cursor.unfoldCursorToRow { c =>
-          val focus = c.focus
+    // val supSubLabeledRow = spacedRow.toCursor()
+    //   .map { cursor =>
+    //     cursor.unfoldCursorToRow { c =>
+    //       val focus = c.focus
 
-          if      (focus.hasPin(LB.Sub.B))  { c.insertCharLeft ('₍').next }
-          else if (focus.hasPin(LB.Sub.L))  { c.insertCharRight('₎').some }
-          else if (focus.hasPin(LB.Sub.U))  { c.insertCharLeft('₍').next.get.insertCharRight('₎').some }
-          else if (focus.hasPin(LB.Sup.B))  { c.insertCharLeft ('⁽').next }
-          else if (focus.hasPin(LB.Sup.L))  { c.insertCharRight('⁾').some }
-          else if (focus.hasPin(LB.Sup.U))  { c.insertCharLeft('⁽').next.get.insertCharRight('⁾').some }
-          else { c.some }
+    //       if      (focus.hasPin(LB.Sub.B))  { c.insertCharLeft ('₍').next }
+    //       else if (focus.hasPin(LB.Sub.L))  { c.insertCharRight('₎').some }
+    //       else if (focus.hasPin(LB.Sub.U))  { c.insertCharLeft('₍').next.get.insertCharRight('₎').some }
+    //       else if (focus.hasPin(LB.Sup.B))  { c.insertCharLeft ('⁽').next }
+    //       else if (focus.hasPin(LB.Sup.L))  { c.insertCharRight('⁾').some }
+    //       else if (focus.hasPin(LB.Sup.U))  { c.insertCharLeft('⁽').next.get.insertCharRight('⁾').some }
+    //       else { c.some }
 
-        }
-      }.getOrElse { spacedRow }
+    //     }
+    //   }.getOrElse { spacedRow }
 
     // pageIndex.components.setComponentText(visualLineClusterCC, LB.VisualLine, supSubLabeledRow)
     // supSubLabeledRow
@@ -81,7 +81,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
                   docScope.stableId,
                   pageNum
                 ),
-                item.bbox
+                item.minBBox
               ),
               item.char
             )
@@ -94,7 +94,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
 
             val allCells: Seq[TextGrid.GridCell] = cell +: continuations
 
-            if (item.bbox.bottom == visualLineModalBounds.bottom) {
+            if (item.minBBox.bottom == visualLineModalBounds.bottom) {
               // Center-text
             } else if (intersectsTop && !intersectsBottom) {
               allCells.foreach{ _.addLabel(LB.Sup) }
@@ -127,8 +127,8 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
     // val lineText = textRow.cells.collect{
     //   case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
     //     if (tailItems.nonEmpty) {
-    //       val ts = tailItems.mkString(", ")
-    //       s"[${char}::: ${ts}]"
+    //       val ts = tailItems.mkString(",")
+    //       s"[${char}|${ts}]"
     //     } else {
     //       char
     //     }
@@ -137,6 +137,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
 
     val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
 
+
     val res = textRow.toCursor().map{ cursor =>
       val finalRow = cursor.unfoldCursorToRow { nextCursor =>
 
@@ -144,6 +145,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
 
           val pairwiseDist = cell.pageRegion.bbox.left - win.last.pageRegion.bbox.right
           val willGroup = pairwiseDist < splitValue
+
 
           willGroup
         }

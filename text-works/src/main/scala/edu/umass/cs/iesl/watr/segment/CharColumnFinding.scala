@@ -3,7 +3,7 @@ package segment
 
 import geometry._
 import geometry.syntax._
-
+import spindex._
 import TypeTags._
 
 import utils.ExactFloats._
@@ -33,14 +33,15 @@ trait CharColumnFinding extends PageScopeSegmenter
 
     createBaselineClusters()
 
-    createBaselineShapes()
-
-    collectColumnEvidence()
   }
 
   def runPass2(): Unit = {
 
-    // doCharMetricComputations()
+    createFontBaselineShapes() // => createLineMetrics
+
+    //
+
+    collectColumnEvidence()
 
     subdivideColumnEvidence()
 
@@ -55,31 +56,31 @@ trait CharColumnFinding extends PageScopeSegmenter
       items.head.id.unwrap
     }
 
-    // println(s" getTextGrid:reorderedLines: ${reorderedLines} ")
     val rows = reorderedLines.map { visualBaseline =>
-      // println(s" getTextGrid:visualBaseline: ${visualBaseline} ")
       createTextRowFromVisualLine(visualBaseline.asInstanceOf[LineShape])
     }
+
 
 
     TextGrid.fromRows(rows)
   }
 
 
-
-
   def excludeImageRegionPoints(): Unit = {
+
 
     pageIndex.pageItems.toSeq
       .filter { _.isInstanceOf[ExtractedItem.ImgItem] }
       .foreach { imageItem =>
-        indexShape(imageItem.bbox, LB.Image)
-        val baseLines = searchForLines(imageItem.bbox, LB.CharRunBaseline)
+        indexShape(imageItem.minBBox, LB.Image)
+        val baseLines = searchForLines(imageItem.minBBox, LB.CharRunBaseline)
         deleteShapes(baseLines)
       }
 
     traceLog.drawPageShapes()
   }
+
+
 
   def createHPageRules(): Seq[Line] = {
     val pageRight = pageGeometry.right
@@ -106,7 +107,6 @@ trait CharColumnFinding extends PageScopeSegmenter
     val hPageRules = createHPageRules()
 
     hPageRules.foreach { hPageRule =>
-
 
       val ruleY = hPageRule.p1.y.asDouble()
 
@@ -167,7 +167,7 @@ trait CharColumnFinding extends PageScopeSegmenter
     traceLog.drawPageShapes()
   }
 
-  def createBaselineShapes(): Unit = {
+  def createFontBaselineShapes(): Unit = {
     getClusteredLines(LB.CharRunBaseline::Cluster)
       .foreach { case (baselineClusterId,  baseLineMembers) =>
 
@@ -201,40 +201,189 @@ trait CharColumnFinding extends PageScopeSegmenter
 
     traceLog.drawPageShapes()
   }
+  /***
+   *   Create: Baseline Midline Capline Ascentline Descentline
+   *
+   *   1. Find most likely font-y-baseline value
+   *      - given all extracted items in line, give preference to
+   *        most common natLang font per-document, per-page, at given determinant
+   *
+   *   2. With font-y-baseline:
+   *   3.   map getGlyphMetrics over  (y-baseline extractedItems)
+   *   4.   Take average (or use first) glyphMetric, translated to y-baseline, as the line's metrics
+   *   5.   Index font-y-baseline (currently recorded as VisualBaseline)
+   *   5.   Record translated metrics as a property on font-y-baseline
+   *
+   **/
+  def createLineMetricShapes(): Unit = {
+    getClusteredLines(LB.CharRunBaseline::Cluster)
+      .foreach { case (baselineClusterId,  baseLineMembers) =>
+
+        unindexShapes(baseLineMembers)
 
 
-  protected def findCommonVerticalJumps(points: Seq[PointShape]): Seq[(Int@@FloatRep, PointShape)] = {
-    val sorted = points.sortBy { _.shape.y }
+        val extractedItems = getCharRunBaselineItems(baseLineMembers).flatten
+
+        // extractedItems.exists(isMostCommonTextFont (OnPage/InDocument))
+
+        extractedItems.collect{ case item: ExtractedItem.CharItem =>
+          docScope.fontDefs.getFont(item.fontName).foreach { fontProps =>
+            val itemDetIndex = item.glyphProps.scalingFactor
+            fontProps.isNatLangFont()
+
+
+          }
+        }
+
+
+        val sorted = baseLineMembers.sortBy(_.shape.p1.x)
+        val totalBounds = sorted.head.shape.bounds.union(
+          sorted.last.shape.bounds
+        )
+
+        val LTBounds(l, t, w, h) = totalBounds
+
+        val (weight, runLines) = baseLineMembers
+          .map { baseLineShape => (baseLineShape.shape.p1.y, baseLineShape.shape.length()) }
+          .sortBy { _._1 }
+          .groupByPairs { case (l1, l2) => l1._1 == l2._1}
+          .map{ group => (group.map(_._2).sum, group) }
+          .sortBy(_._1)
+          .last
+
+        runLines.headOption.map { case (yval, len) =>
+          val likelyBaseline = Line(Point(l, yval), Point(l+w, yval))
+          val shape = indexShape(likelyBaseline, LB.VisualBaseline)
+          setExtractedItemsForShape(shape, extractedItems)
+          pageIndex.shapes.appendToOrdering(LB.VisualBaseline::Ordering, shape)
+        }
+      }
+
+
+    traceLog.drawPageShapes()
+  }
+
+
+  protected def findCommonVerticalJumps(points: Seq[Int@@FloatRep]): Seq[Int@@FloatRep] = {
+    val sorted = points.sorted
+
+    sorted.zip(sorted.tail)
+      .map {case (upperY, lowerY) =>
+        lowerY - upperY
+      }
+  }
+
+  // protected def findPairwiseVDists[S <: ](lines: Seq[LineShape]): Seq[(Int@@FloatRep, LineShape)] = {
+  //   val sorted = lines.sortBy { _.shape.p1.y }
+
+  //   sorted.zip(sorted.tail)
+  //     .map {case (upper, lower) =>
+  //       val dist = lower.shape.p1.y - upper.shape.p1.y
+  //       (dist, upper)
+  //     }
+  // }
+  protected def findPairwiseVerticalJumps[G <: GeometricFigure](
+    shapes: Seq[LabeledShape[G]],
+    getY: (LabeledShape[G]) => Int@@FloatRep
+  ): Seq[(Int@@FloatRep, (LabeledShape[G], LabeledShape[G]))] = {
+
+    val sorted = shapes.sortBy { getY(_) }
 
     sorted.zip(sorted.tail)
       .map {case (upper, lower) =>
-        val dist = lower.shape.y - upper.shape.y
-        (dist, upper)
+        val dist = getY(lower) - getY(upper)
+        (dist, (upper, lower))
       }
   }
+
+  // protected def findPairwiseVerticalDistances(points: Seq[PointShape]): Seq[(Int@@FloatRep, PointShape)] = {
+  //   val sorted = points.sortBy { _.shape.y }
+
+  //   sorted.zip(sorted.tail)
+  //     .map {case (upper, lower) =>
+  //       val dist = lower.shape.y - upper.shape.y
+  //       (dist, upper)
+  //     }
+  // }
 
   // Divide Left-column lines into shorter lines that cover evenly spaced blocks of lines
   def subdivideColumnEvidence(): Unit = {
     val pageVdists = pageIndex.pageVerticalJumps
-    val bins = QuickNearestNeighbors.qnn(pageVdists)
+    val allBins = QuickNearestNeighbors.qnn(pageVdists, tolerance = 0.5d)
 
-    // println(bins.mkString("\n  ", "\n  ", "\n"))
+    val bins = allBins.filter(_.size() > 1)
 
-    val baselineShapeClusters = getClusteredLines(LB.LeftAlignedCharCol::Cluster)
+    println("subdivideColumnEvidence: PageVerticalJumps")
+    println(allBins.mkString("\n  ", "\n  ", "\n"))
 
-    baselineShapeClusters.foreach { case (clusterReprId, baselineShapes) =>
-      val leftXVals = baselineShapes.map(_.shape.p1.x)
-      val leftX = leftXVals.min
-      val yVals = baselineShapes.map(_.shape.p1.y)
-      val topY = yVals.min
-      val bottomY = yVals.max
 
-      indexShape(Line(
-        Point(leftX, topY),
-        Point(leftX, bottomY)),
-        LB.LeftAlignedCharCol
-      )
+    for {
+      (clusterReprId, baselineShapes) <- getClusteredLines(LB.LeftAlignedCharCol::Cluster)
+    } {
+
+      val assignedBins =
+        findPairwiseVerticalJumps[Line](baselineShapes, _.shape.p1.y)
+          .map{ case (yJump, (l1, l2)) =>
+            // Assign a bin #
+            val i = bins.indexWhere { bin =>
+              val (bmin, bmax) = bin.range()
+              bmin <= yJump && yJump <= bmax
+            }
+            (i, yJump, (l1, l2))
+          }
+
+      println(s"Assigned Bins")
+      assignedBins.foreach { case (binNum, yJump, (l1, l2)) =>
+        println(s"    ${binNum}: ${yJump}")
+      }
+
+      val lineGroups = assignedBins.groupByPairs(_._1 == _._1)
+
+      lineGroups.foreach{ group =>
+        val binNum = group.head._1
+        if (binNum >= 0) {
+
+
+          val lowerLines = group.map { case (binNum, yJump, (l1, l2)) =>
+            l2.shape
+          }
+          val firstLine = group.head._3._1.shape
+
+          val blockLines = firstLine +: lowerLines
+          val rightX = blockLines.map(_.p2.x).max
+          val leftX = blockLines.map(_.p1.x).min
+          val top = firstLine.p1.y
+          val bottom = lowerLines.last.p1.y
+          val blockBounds = LTBounds(leftX, top, rightX-leftX, bottom-top)
+          indexShape(blockBounds, LB.ReadingBlock)
+          indexShape(Line(
+            Point(leftX, top),
+            Point(leftX, bottom)),
+            LB.LeftAlignedCharCol
+          )
+
+        }
+      }
+
     }
+
+    // val leftAlignedBaselines = getClusteredLines(LB.LeftAlignedCharCol::Cluster)
+
+    // leftAlignedBaselines.foreach { case (clusterReprId, baselineShapes) =>
+    //   // baselineShapes == list of font-baselines that share left col pt
+
+    //   val leftXVals = baselineShapes.map(_.shape.p1.x)
+    //   val leftX = leftXVals.min
+    //   val yVals = baselineShapes.map(_.shape.p1.y)
+    //   val topY = yVals.min
+    //   val bottomY = yVals.max
+
+    //   indexShape(Line(
+    //     Point(leftX, topY),
+    //     Point(leftX, bottomY)),
+    //     LB.LeftAlignedCharCol
+    //   )
+    // }
 
     traceLog.drawPageShapes()
   }
@@ -242,7 +391,7 @@ trait CharColumnFinding extends PageScopeSegmenter
   def collectColumnEvidence(): Unit = {
 
     val colLeftHist = HST.SparselyBin.ing(1.0, {p: Point => p.x.asDouble()})
-    val colRightHist = HST.SparselyBin.ing(2.0, {p: Point => p.x.asDouble()})
+    // val colRightHist = HST.SparselyBin.ing(2.0, {p: Point => p.x.asDouble()})
 
     // add column Left/Right evidence points
     getLabeledLines(LB.VisualBaseline).foreach { charRunLine =>
@@ -250,11 +399,9 @@ trait CharColumnFinding extends PageScopeSegmenter
       indexShape(p1, LB.ColLeftEvidence)
       indexShape(p2, LB.ColRightEvidence)
       colLeftHist.fill(p1)
-      colRightHist.fill(p2)
+      // colRightHist.fill(p2)
     }
 
-
-    // var pageVdists: Seq[Int@@FloatRep] = List()
     val pageRight = pageGeometry.right
 
     pageIndex.shapes.ensureCluster(LB.LeftAlignedCharCol::Cluster)
@@ -270,12 +417,12 @@ trait CharColumnFinding extends PageScopeSegmenter
         val binWidth = colLeftHist.binWidth
         val binLeft = bin*binWidth
         val pageColumn = pageVerticalSlice(binLeft, binWidth).get
-        val hits = searchForPoints(pageColumn, LB.ColLeftEvidence)
+        val hitLeftColPoints = searchForPoints(pageColumn, LB.ColLeftEvidence)
 
-        deleteShapes(hits)
+        deleteShapes(hitLeftColPoints)
 
-        if (hits.length > 1) {
-          val yvals = hits.map(_.shape.y)
+        if (hitLeftColPoints.length > 1) {
+          val yvals = hitLeftColPoints.map(_.shape.y)
           val (maxy, miny) = (yvals.max,  yvals.min)
           val height = maxy - miny
 
@@ -292,58 +439,58 @@ trait CharColumnFinding extends PageScopeSegmenter
 
           hitsAndOverlaps.foreach{ _ match {
             case Right(baselineShapes) if baselineShapes.length > 1 =>
-                clusterN(LB.LeftAlignedCharCol::Cluster, baselineShapes)
+              clusterN(LB.LeftAlignedCharCol::Cluster, baselineShapes)
 
-            case _ =>
-          }}
+              val contiguousYValues = baselineShapes.map(_.shape.p1.y)
 
-
-          pageIndex.addPageVerticalJumps(
-            findCommonVerticalJumps(hits).map(_._1)
-          )
-
-        }
-      }
-
-
-    colRightHist.bins.toList
-      .filter { case (bin, counting) =>
-        val binWidth = colLeftHist.binWidth
-        val binRight = (bin+1)*binWidth
-        counting.entries > 1 && binRight.toFloatExact() < pageRight
-      }
-      .foreach{ case (bin, counting) =>
-        val binWidth = colRightHist.binWidth
-        val binLeft = bin*binWidth
-        val pageColumn = pageVerticalSlice(binLeft, binWidth).get
-
-        val hits = searchForPoints(pageColumn, LB.ColRightEvidence)
-
-        deleteShapes(hits)
-
-        if (hits.length > 1) {
-          val yvals = hits.map(_.shape.y)
-          val (maxy, miny) = (yvals.max,  yvals.min)
-          val height = maxy - miny
-
-          val colActual = pageColumn.getHorizontalSlice(miny, height).get
-
-          val intersectedRuns = searchForLines(colActual, LB.VisualBaseline)
-            .sortBy(_.shape.p1.y)
-
-          val hitsAndOverlaps = spanAllEithers(intersectedRuns, { charRunShape: LineShape =>
-            val hitRightX = charRunShape.shape.p2.x
-            colActual.right >= hitRightX
-          })
-
-          hitsAndOverlaps.foreach{ _ match {
-            case Right(baselineShapes) if baselineShapes.length > 1  =>
-              clusterN(LB.RightAlignedCharCol::Cluster, baselineShapes)
+              pageIndex.addPageVerticalJumps(
+                findCommonVerticalJumps(contiguousYValues)
+              )
 
             case _ =>
           }}
         }
       }
+
+
+    // colRightHist.bins.toList
+    //   .filter { case (bin, counting) =>
+    //     val binWidth = colLeftHist.binWidth
+    //     val binRight = (bin+1)*binWidth
+    //     counting.entries > 1 && binRight.toFloatExact() < pageRight
+    //   }
+    //   .foreach{ case (bin, counting) =>
+    //     val binWidth = colRightHist.binWidth
+    //     val binLeft = bin*binWidth
+    //     val pageColumn = pageVerticalSlice(binLeft, binWidth).get
+
+    //     val hits = searchForPoints(pageColumn, LB.ColRightEvidence)
+
+    //     deleteShapes(hits)
+
+    //     if (hits.length > 1) {
+    //       val yvals = hits.map(_.shape.y)
+    //       val (maxy, miny) = (yvals.max,  yvals.min)
+    //       val height = maxy - miny
+
+    //       val colActual = pageColumn.getHorizontalSlice(miny, height).get
+
+    //       val intersectedRuns = searchForLines(colActual, LB.VisualBaseline)
+    //         .sortBy(_.shape.p1.y)
+
+    //       val hitsAndOverlaps = spanAllEithers(intersectedRuns, { charRunShape: LineShape =>
+    //         val hitRightX = charRunShape.shape.p2.x
+    //         colActual.right >= hitRightX
+    //       })
+
+    //       hitsAndOverlaps.foreach{ _ match {
+    //         case Right(baselineShapes) if baselineShapes.length > 1  =>
+    //           clusterN(LB.RightAlignedCharCol::Cluster, baselineShapes)
+
+    //         case _ =>
+    //       }}
+    //     }
+    //   }
 
 
     deleteLabeledShapes(LB.ColRightEvidence)
@@ -389,23 +536,23 @@ trait CharColumnFinding extends PageScopeSegmenter
     Line(runBeginPt, runEndPt)
   }
 
-  def createHorizontalPageRules(charRuns: Seq[Seq[ExtractedItem]]): Seq[Line] = {
+  // def createHorizontalPageRules(charRuns: Seq[Seq[ExtractedItem]]): Seq[Line] = {
 
-    val baselines = charRuns.map{ charRun =>
-      val isChar  = charRun.head.isInstanceOf[ExtractedItem.CharItem]
-      if (isChar) {
-        createCharRunBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem])).some
-      } else None
-    }.flatten
+  //   val baselines = charRuns.map{ charRun =>
+  //     val isChar  = charRun.head.isInstanceOf[ExtractedItem.CharItem]
+  //     if (isChar) {
+  //       createCharRunBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem])).some
+  //     } else None
+  //   }.flatten
 
-    val hPageRules = baselines
-      .sortBy(_.p1.y)
-      .map { _.extendLeftTo(pageGeometry.left).extendRightTo(pageGeometry.right) }
-      .groupByPairs(_.p1.y == _.p1.y) // uniquify
-      .map(_.head)                    //  ...
+  //   val hPageRules = baselines
+  //     .sortBy(_.p1.y)
+  //     .map { _.extendLeftTo(pageGeometry.left).extendRightTo(pageGeometry.right) }
+  //     .groupByPairs(_.p1.y == _.p1.y) // uniquify
+  //     .map(_.head)                    //  ...
 
-    hPageRules
-  }
+  //   hPageRules
+  // }
 
   // private def doCharMetricComputations(): Unit = {
 
@@ -448,15 +595,15 @@ trait CharColumnFinding extends PageScopeSegmenter
       val baselineShape = indexShape(baseLine, LB.CharRunBaseline)
 
       charRun.foreach { item =>
-          pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
+        pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
       }
 
-      pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](baselineShape.id, LB.ExtractedItems, charRun)
+      setExtractedItemsForShape(baselineShape, charRun)
 
       // Init Font/char stats
       charRun.foreach { item =>
         item.char.foreach { c =>
-          docScope.fontDefs.addEvidence(item.fontName, pageNum, c)
+          docScope.fontDefs.addNGramEvidence(item.fontName, pageNum, c)
         }
       }
 
@@ -471,11 +618,11 @@ trait CharColumnFinding extends PageScopeSegmenter
 
         if (charRun.length > 1) {
           runChars.sliding(2).foreach { ngram =>
-            self.docScope.fontDefs.addEvidence(headFont, pageNum, ngram:_*)
+            self.docScope.fontDefs.addNGramEvidence(headFont, pageNum, ngram.head, ngram.tail:_*)
           }
           if (charRun.length > 2) {
             runChars.sliding(3).foreach { ngram =>
-              self.docScope.fontDefs.addEvidence(headFont, pageNum, ngram:_*)
+              self.docScope.fontDefs.addNGramEvidence(headFont, pageNum, ngram.head, ngram.tail:_*)
             }
 
           }

@@ -9,8 +9,9 @@ import corpora.DocumentZoningApi
 import extract._
 import spindex._
 
-import utils.SlicingAndDicing._
+// import utils.SlicingAndDicing._
 // import utils.ExactFloats._
+
 import TypeTags._
 
 trait DocumentLevelFunctions extends DocumentScopeSegmenter
@@ -98,9 +99,9 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
       println(s"Bigrams: ${bistr} ")
 
-      val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
-      println("PageEvidence: ")
-      println(pageEvidence)
+      // val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
+      // println("PageEvidence: ")
+      // println(pageEvidence)
 
       val _ = fontProps.inferredMetrics()
     }
@@ -121,7 +122,7 @@ object DocumentSegmenter {
     docStore0: DocumentZoningApi
   ): DocumentSegmentation = {
 
-    val (pages, fontDefs0) = PdfBoxExtractorMain.extractPages(stableId0, pdfPath)
+    val (pages, fontDefs0) = PdfBoxTextExtractor.extractPages(stableId0, pdfPath)
 
     val segmenter = new DocumentSegmentation {
       override val pageAtomsAndGeometry = pages

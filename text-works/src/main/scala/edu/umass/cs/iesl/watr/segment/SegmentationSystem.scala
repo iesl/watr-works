@@ -166,9 +166,13 @@ object QuickNearestNeighbors {
 
     def size(): Int = neighbors.map(_.len).sum + centroid.len
 
-    // def avgValue: Int@@FloatRep = {
-    // }
-    def maxValue: Int@@FloatRep = {
+    def range(): (Int@@FloatRep, Int@@FloatRep) = {
+      val values = (centroid.value.unwrap +:
+        neighbors.map(_.value.unwrap))
+
+      (FloatRep(values.min), FloatRep(values.max))
+    }
+    def maxValue(): Int@@FloatRep = {
       val max = (centroid.value.unwrap +:
         neighbors.map(_.value.unwrap)).max
 
@@ -180,7 +184,9 @@ object QuickNearestNeighbors {
       val nstr = neighbors.map(_.toString()).mkString(", ")
       s"{${cstr} +[ ${nstr} ]}"
     }
+
   }
+
   case class DataPoint(
     value: Int@@FloatRep,
     len: Int

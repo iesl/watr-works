@@ -28,6 +28,7 @@ sealed trait Offset
 sealed trait Length
 
 sealed trait Percent
+sealed trait ScalingFactor
 
 sealed trait LockGroupID
 sealed trait ZoneLockID
@@ -93,6 +94,7 @@ trait TypeTags extends TypeTagUtils {
   val Length = Tag.of[Length]
 
   val Percent = Tag.of[Percent]
+  val ScalingFactor = Tag.of[ScalingFactor]
 
   val ImageID = Tag.of[ImageID]
 
@@ -110,4 +112,3 @@ trait TypeTags extends TypeTagUtils {
   val StatusCode = Tag.of[StatusCode]
 
 }
-

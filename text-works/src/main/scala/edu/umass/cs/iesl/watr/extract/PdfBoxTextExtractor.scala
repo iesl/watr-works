@@ -24,37 +24,15 @@ import TypeTags._
 import geometry._
 import utils._
 
-import PdfBoxExtractorMain._
+import ExtractionImplicits._
 
-case class GlyphProps(
-  finalGlyphBounds: Option[Shape],
-  finalFontBounds: Shape,
-  finalAffineTrans: AffineTransform
-) {
-
-  lazy val glyphBBox = finalGlyphBounds.map(_.getBounds2D().toLTBounds)
-  lazy val fontBBox = finalFontBounds.getBounds2D().toLTBounds
-}
-
-case class PageSpaceTransforms(
-  flip: AffineTransform,
-  rotate: AffineTransform,
-  translate: AffineTransform
-) {
-  def transform(shape: Shape): Shape = {
-    translate.createTransformedShape(
-      rotate.createTransformedShape(
-        flip.createTransformedShape(
-          shape
-        )))
-  }
-}
 
 class PdfBoxTextExtractor(
   page: PDPage,
   charIdGen: IdGenerator[CharID],
   pageNum: Int@@PageNum,
-  fontDefs: FontDefs
+  fontDefs: FontDefs,
+  cropBox: PDRectangle
 ) extends PDFGraphicsStreamEngine(page) {
   import ExtractedItem._
   import FontDefs._
@@ -71,9 +49,9 @@ class PdfBoxTextExtractor(
 
   protected def debugPrintPageItems(rows: List[List[ExtractedItem]]): Unit = {
     val rowStrs = rows.map { row =>
-      val runId = row.headOption.map(_.charProps.charRunId).getOrElse(-1)
+      // val runId = row.headOption.map(_.charProps.charRunId).getOrElse(-1)
       val chars = row.map(_.strRepr()).mkString
-      s"${runId} >> $chars"
+      s">> $chars"
     }
 
     val pageStr = rowStrs.mkString("\n  ", "\n  ", "\n")
@@ -238,12 +216,10 @@ class PdfBoxTextExtractor(
 
       glyphProps.finalGlyphBounds.foreach { finalGlyphBounds =>
 
-        val charBounds = finalGlyphBounds.getBounds2D().toLTBounds
-        val charFontBounds = glyphProps.finalFontBounds.getBounds2D().toLTBounds
-
         def appendChar(strRepr: String): Unit = {
-          addCharItem(CharItem(charIdGen.nextId, charBounds, charFontBounds, strRepr, getFontName(pdFont)))
+          addCharItem(CharItem(charIdGen.nextId, strRepr, getFontName(pdFont), glyphProps))
         }
+
         if (unicode == null) {
           appendChar(s"¿${code};")
         } else {
@@ -257,11 +233,10 @@ class PdfBoxTextExtractor(
 
             val isAsciiCode =  unicode.forall(_.toInt == code)
 
-
             unicode.foreach { ch =>
 
               if (isAsciiCode) {
-                fontDefs.addGlyphEvidence(pdFont, ch, glyphProps)
+                fontDefs.addGlyphEvidence(pdFont, ch, glyphProps, pageNum)
               }
 
               UnicodeUtil.maybeSubChar(ch) match {
@@ -409,30 +384,9 @@ class PdfBoxTextExtractor(
   }
 }
 
-object PdfBoxExtractorMain {
+object PdfBoxTextExtractor {
 
-  implicit class RicherRectangle2D(val self: Rectangle2D) extends AnyVal {
-    def toLTBounds(): LTBounds = {
-      val h = self.getHeight
-      val w = self.getWidth
-      val left = self.getMinX
-      val top = self.getMinY
-      LTBounds.Doubles(left, top, w, h)
-    }
-  }
 
-  implicit class RicherPDRectangle(val self: PDRectangle) extends AnyVal {
-    def toLTBounds(): LTBounds = {
-      val l = self.getLowerLeftX
-      // val bottom = self.getLowerLeftY
-      val t = self.getUpperRightY
-      val w = self.getWidth
-      val h = self.getHeight
-      LTBounds.Floats(l, t-h, w, h)
-    }
-  }
-
-  var cropBox : PDRectangle = null
 
   def extractPages(stableId: String@@DocumentID, pdfPath: Path): (List[(Seq[ExtractedItem], PageGeometry)], FontDefs) = {
     val pages = mutable.ListBuffer[(Seq[ExtractedItem], PageGeometry)]()
@@ -454,7 +408,7 @@ object PdfBoxExtractorMain {
         println(s"Extracting page ${page}")
         val pdfPage = document.getPage(page)
 
-        cropBox = pdfPage.getMediaBox   // getBBox getArtBox getTrimBox getCropBox getBleedBox getMediaBox
+        val cropBox = pdfPage.getMediaBox   // getBBox getArtBox getTrimBox getCropBox getBleedBox getMediaBox
 
         currPageGeometry = PageGeometry(
           PageNum(page),
@@ -466,7 +420,8 @@ object PdfBoxExtractorMain {
           pdfPage,
           charIdGen,
           PageNum(page),
-          fontDefs
+          fontDefs,
+          cropBox
         )
 
         extractor.stripPage(document, page)

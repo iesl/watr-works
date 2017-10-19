@@ -215,9 +215,9 @@ object TextWorksActions {
 
     val mpageIndex = segmenter.mpageIndex
 
-    val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
+    // val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
 
-    write(textOutputFile, content)
+    // write(textOutputFile, content)
 
 
     traceLogRoot.foreach { rootPath =>
@@ -241,6 +241,7 @@ object TextWorksActions {
             ("loci" -> lociJs)
           )
         }
+
 
         val gridJs = Json.obj(
           ("rows", textAndLoci)
