@@ -81,7 +81,23 @@ object TextWorksConfig {
       }
     } text("process list of input PDFs in specified file.")
 
+    opt[String]("filter") action { (v, conf) =>
+      lens[Config].ioConfig.pathFilter.modify(conf){ m =>
+        val f = trimQuotes(v)
+        Option(f)
+      }
+    } text("if specified, only files matching regex will be processed")
 
+
+    def trimQuotes(s: String): String = {
+      val t = s.trim
+      if (t.length() >= 2) {
+        val isQuote = List('"', '\'').contains(t.head)
+        if (isQuote && t.head == t.last) {
+          t.drop(1).dropRight(1)
+        } else s
+      } else s
+    }
 
     note("\nOutput file options\n")
 
@@ -159,6 +175,8 @@ object TextWorksConfig {
 
                 val stableId = DocumentID(corpusEntry.entryDescriptor)
 
+                println(s"Processing ${stableId}")
+
                 for {
                   pdfEntry <- corpusEntry.getPdfArtifact
                   pdfPath <- pdfEntry.asPath
@@ -185,9 +203,9 @@ object TextWorksConfig {
             }
           } catch {
             case t: Throwable =>
-              println(s"t = ${t}")
+              // println(s"t = ${t}")
               // t.printStackTrace()
-              // utils.Debugging.printAndSwallow(t)
+              utils.Debugging.printAndSwallow(t)
           }
         }
       }

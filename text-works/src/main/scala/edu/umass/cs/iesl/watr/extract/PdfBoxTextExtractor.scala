@@ -17,11 +17,13 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImage
 import org.apache.pdfbox.pdmodel.font._
 import org.apache.pdfbox.util.{Matrix, Vector}
 // import scala.collection.JavaConverters._
+import utils.Debugging._
 
 
 
 import TypeTags._
 import geometry._
+import geometry.syntax._
 import utils._
 
 import ExtractionImplicits._
@@ -212,12 +214,20 @@ class PdfBoxTextExtractor(
 
       val glyphProps = calculateGlyphBounds(textRenderingMatrix, pdFont, code)
 
+      // println(s"glyphProps: ${glyphProps}")
+
       fontDefs.addFont(pdFont)
 
+      val pageBounds = cropBox.toLTBounds()
+
       glyphProps.finalGlyphBounds.foreach { finalGlyphBounds =>
+        val glyphBounds = finalGlyphBounds.getBounds2D.toLTBounds()
+        val isContained = glyphBounds.isContainedBy(pageBounds) && glyphProps.fontBBox.isContainedBy(pageBounds)
 
         def appendChar(strRepr: String): Unit = {
-          addCharItem(CharItem(charIdGen.nextId, strRepr, getFontName(pdFont), glyphProps))
+          if (isContained) {
+            addCharItem(CharItem(charIdGen.nextId, strRepr, getFontName(pdFont), glyphProps))
+          }
         }
 
         if (unicode == null) {
@@ -352,6 +362,7 @@ class PdfBoxTextExtractor(
     val rotateTr = new AffineTransform()
     val rotation : Int = pdPage.getRotation()
     if (rotation != 0) {
+      println(s"Rotated page: ${rotation}")
       rotation match {
         case 90 =>
           rotateTr.translate(cropBox.getHeight().toDouble, 0)
@@ -405,16 +416,24 @@ object PdfBoxTextExtractor {
       fontDefs = new FontDefs(numOfPages)
 
       for { page <- 0 until numOfPages } {
-        println(s"Extracting page ${page}")
         val pdfPage = document.getPage(page)
 
         val cropBox = pdfPage.getMediaBox   // getBBox getArtBox getTrimBox getCropBox getBleedBox getMediaBox
+
+        // log(pdfPage.getBBox)
+        // log(pdfPage.getArtBox)
+        // log(pdfPage.getTrimBox)
+        // log(pdfPage.getCropBox)
+        // log(pdfPage.getBleedBox)
+        // log(pdfPage.getRotation)
+        // log(pdfPage.getMediaBox)
 
         currPageGeometry = PageGeometry(
           PageNum(page),
           cropBox.toLTBounds()
         )
 
+        println(s"Extracting page ${page}: ${currPageGeometry}")
 
         val extractor = new PdfBoxTextExtractor(
           pdfPage,

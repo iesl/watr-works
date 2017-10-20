@@ -15,6 +15,9 @@ case object NoFonts extends FontInfo
 
 class TextOutputBuilder(textGrid: TextGrid) {
 
+
+
+
   def withText(): Unit = {
     textGrid.rows.map{ row =>
       row.toText()
@@ -193,6 +196,8 @@ object TextGrid {
     }
 
 
+    import play.api.libs.json, json._
+    private def esc(s: String) = Json.stringify(JsString(s))
 
     def serialize(props: SerializationProps): Unit = {
 
@@ -208,7 +213,7 @@ object TextGrid {
             val b = pageItem.bbox.bottom
             val w = pageItem.bbox.width
             val h = pageItem.bbox.height
-            s"""[${pageNum}, [$l, $b, $w, $h]]"""
+            s"""[${pageNum}, [$l, $b, $w, $h], ${esc(char.toString())}]"""
           }
 
           items.mkString("[", ",", "]")

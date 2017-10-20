@@ -18,6 +18,7 @@ case class IOConfig(
   inputMode: Option[InputMode] = None,
   outputPath: Option[nio.Path] = None,
   overwrite: Boolean = false,
+  pathFilter: Option[String] = None,
   numToRun: Int = 0,
   numToSkip: Int = 0
 )
@@ -41,7 +42,12 @@ class IOOptionParser(conf: IOConfig) {
           val take = conf.numToRun
           val corpus = Corpus(corpusRoot)
           val allEntries = corpus.entryStream()
-          val skipped = if (skip > 0) allEntries.drop(skip.toLong) else allEntries
+          val filteredEntries = allEntries.filter { entry =>
+            conf.pathFilter.map { filter =>
+              entry.entryDescriptor.matches(filter)
+            }.getOrElse { true }
+          }
+          val skipped = if (skip > 0) filteredEntries.drop(skip.toLong) else filteredEntries
           val entries = if (take > 0) skipped.take(take.toLong) else skipped
           entries.map{ entry =>
             InputMode.CorpusFile(corpusRoot, Some(entry))

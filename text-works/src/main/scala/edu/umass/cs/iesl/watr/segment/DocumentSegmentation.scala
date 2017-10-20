@@ -90,14 +90,15 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
   }
 
 
+
   private def doCharMetricComputations(): Unit = {
 
     docScope.fontDefs.fontProperties.foreach{ fontProps =>
-      println("Font properties")
-      println(fontProps)
-      // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
-      val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
-      println(s"Bigrams: ${bistr} ")
+      // println("Font properties")
+      // println(fontProps)
+      // // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
+      // val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
+      // println(s"Bigrams: ${bistr} ")
 
       // val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
       // println("PageEvidence: ")

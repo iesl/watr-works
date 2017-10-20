@@ -82,13 +82,13 @@ trait PageScopeTracing extends VisualTracer { self  =>
   def pageImageShapes(): Seq[JsValue] = {
     val LTBounds.Ints(left, top, width, height) = pageIndex.pageGeometry.bounds
     val border = Json.obj(
-      ("type" -> "rect"),
+      ("type" -> "rect"), ("hover" -> false),
       ("x" -> left),     ("y" -> top),
       ("width" -> width), ("height" -> height),
       ("stroke" -> "black"), ("stroke-width" -> 1), ("fill" -> "none")
     )
     val image = Json.obj(
-      ("type" -> "image"), ("class" -> "page-image"),
+      ("type" -> "image"), ("class" -> "page-image"), ("hover" -> false),
       ("page" -> (pageIndex.pageNum.unwrap+1)),
       ("x" -> left),     ("y" -> top),
       ("width" -> width), ("height" -> height)
@@ -106,22 +106,25 @@ trait PageScopeTracing extends VisualTracer { self  =>
       val lls = lshape.labels.mkString(" ")
       lshape.shape match {
         case p@ Point.Ints(x, y) =>
+
           Json.obj(
             ("type" -> "circle"), ("class" -> lls),
             ("cx" -> x), ("cy" -> y),
-            ("r" -> 2)
+            ("r" -> 2),
+            ("hover" -> false),
           ).some
 
         case l@ Line(Point.Ints(p1x, p1y), Point.Ints(p2x, p2y)) =>
 
           Json.obj(
-            ("type" -> "line"), ("class" -> lls),
+            ("type" -> "line"), ("class" -> lls), ("hover" -> true),
             ("x1" -> p1x), ("y1" -> p1y),
             ("x2" -> p2x), ("y2" -> p2y)
           ).some
+
         case LTBounds.Ints(left, top, width, height) =>
           Json.obj(
-            ("type" -> "rect"), ("class" -> lls),
+            ("type" -> "rect"), ("class" -> lls), ("hover" -> true),
             ("x" -> left),     ("y" -> top),
             ("width" -> width), ("height" -> height)
           ).some
@@ -141,14 +144,6 @@ trait PageScopeTracing extends VisualTracer { self  =>
 
   }
 }
-
-
-
-
-
-
-
-
 
 
 

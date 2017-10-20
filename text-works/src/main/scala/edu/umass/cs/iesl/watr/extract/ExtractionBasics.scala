@@ -187,18 +187,18 @@ case class FontProperties(
     val caps = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString
     if (isNatLangFont()) {
 
-      asciiHeightsPerScaleFactor.foreach { case (scaleFactor, asciiHeightRec) =>
-        println(s"At ScalingFactor = ${scaleFactor}")
-        val midlineEv = nonZeroHeights("aeoru", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
-        val ascentEv = nonZeroHeights("ldkh", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
-        val descentEv = nonZeroHeights("ypqg", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
-        val capEv = nonZeroHeights(caps, asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
+      // asciiHeightsPerScaleFactor.foreach { case (scaleFactor, asciiHeightRec) =>
+      //   println(s"At ScalingFactor = ${scaleFactor}")
+      //   val midlineEv = nonZeroHeights("aeoru", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
+      //   val ascentEv = nonZeroHeights("ldkh", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
+      //   val descentEv = nonZeroHeights("ypqg", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
+      //   val capEv = nonZeroHeights(caps, asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
 
-        println(s"    midline ev  : ${midlineEv}")
-        println(s"    ascentEv ev : ${ascentEv}")
-        println(s"    descentEv ev: ${descentEv}")
-        println(s"    cap ev      : ${capEv}")
-      }
+      //   println(s"    midline ev  : ${midlineEv}")
+      //   println(s"    ascentEv ev : ${ascentEv}")
+      //   println(s"    descentEv ev: ${descentEv}")
+      //   println(s"    cap ev      : ${capEv}")
+      // }
 
 
       declaredMetrics
@@ -242,13 +242,17 @@ class FontDefs(pageCount: Int) {
 
     if (!fontProperties.exists(_.name == fname)) {
       val fontDesc = pdFont.getFontDescriptor
+      // if (fontDesc==null) {
+      //   println(s"WT Font?? ${pdFont}, $fname")
+      // }
       val props = FontProperties(
         fname,
         pdFont.getType,
         FontMetrics(
-          fontDesc.getAscent,
-          fontDesc.getDescent,
-          fontDesc.getCapHeight
+          0f, 0f, 0
+          // fontDesc.getAscent,
+          // fontDesc.getDescent,
+          // fontDesc.getCapHeight
         ),
         pageCount
       )

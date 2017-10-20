@@ -26,7 +26,7 @@ object SegmentationLabels {
   val CharRun           = Label.auto
   val CharRunBegin      = Label.auto
   val CharRunBaseline   = Label.auto
-  val VisualBaseline    = Label.auto
+  val FontBaseline    = Label.auto
 
   val HasCharRunBaselines  = Label.auto
 

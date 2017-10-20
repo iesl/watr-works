@@ -67,7 +67,15 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   }
 
   protected def pageHorizontalSlice(top: Double, height: Double): Option[LTBounds] = {
-    pageGeometry.getHorizontalSlice(top.toFloatExact(), height.toFloatExact())
+    val texact = top.toFloatExact()
+    val hexact = height.toFloatExact()
+    val t = max(texact, pageGeometry.top)
+    val b = min(texact + hexact, pageGeometry.bottom)
+    // pageGeometry.getHorizontalSlice(top.toFloatExact(), height.toFloatExact())
+    // println(s"pageHorizontalSlice: ${pageGeometry}")
+    // println(s"                   : top: ${top}, height: ${height}")
+    // println(s"                   : tex: ${t}, bex: ${b}")
+    pageGeometry.getHorizontalSlice(t, b-t)
   }
 
   protected def searchForPoints(query: GeometricFigure, l: Label): Seq[PointShape] = {
@@ -155,7 +163,6 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
 
 object QuickNearestNeighbors {
   import TypeTags._
-  import utils.ExactFloats._
   import utils.SlicingAndDicing._
   import scala.annotation.tailrec
 

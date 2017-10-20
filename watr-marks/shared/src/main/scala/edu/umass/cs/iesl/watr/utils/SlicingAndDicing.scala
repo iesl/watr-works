@@ -5,7 +5,7 @@ package utils
 import scala.collection.mutable
 
 
-object SlicingAndDicing {
+object SlicingAndDicing { outer =>
 
   private def splitAtBreaks[A](bis: Seq[Int], cs: Seq[A]): Seq[Seq[A]] = {
     if (bis.isEmpty) Seq(cs) else {
@@ -28,7 +28,18 @@ object SlicingAndDicing {
     groups
   }
 
+  def uniqueCountBy[A, O: scala.Ordering](ss: Seq[A], f: (A) => O): Seq[(Int, A)] = {
+    ss.sortBy(f)
+      .groupByPairs((a, b) => f(a) == f(b))
+      .map(g => (g.length, g.head))
+  }
+
+  def uniqueBy[A, O: scala.Ordering](ss: Seq[A], f: (A) => O): Seq[A] = {
+    uniqueCountBy(ss, f).map(_._2)
+  }
+
   implicit class RicherSeq[A](val thisSeq: Seq[A]) extends AnyVal {
+
 
     import scala.collection.mutable
 
@@ -79,6 +90,7 @@ object SlicingAndDicing {
     def groupByPairs(f: (A, A) => Boolean): Seq[Seq[A]] =
       groupByPairsWithIndex((a, b, _) => f(a, b))
 
+
     def splitOnPairs(f: (A, A) => Boolean): Seq[Seq[A]] =
       splitOnPairsWithIndex((a, b, _) => f(a, b))
 
@@ -89,6 +101,14 @@ object SlicingAndDicing {
 
     def clusterBy(f: (A, A)=>Boolean): Seq[Seq[A]] = {
       clusterSeqBy(thisSeq)(f)
+    }
+
+    def uniqueCountBy[O: scala.Ordering](f: (A) => O): Seq[(Int, A)] = {
+      outer.uniqueCountBy(thisSeq, f)
+    }
+
+    def uniqueBy[O: scala.Ordering](f: (A) => O): Seq[A] = {
+      outer.uniqueBy(thisSeq, f)
     }
 
   }
