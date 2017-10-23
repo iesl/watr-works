@@ -3,6 +3,8 @@ package heuristics
 
 import geometry.LTBounds
 import Constants._
+import edu.umass.cs.iesl.watr.corpora.DocumentZoningApi
+import edu.umass.cs.iesl.watr.watrmarks.Label
 import textreflow.TextReflowF.TextReflow
 import textreflow.data._
 // import simstring._
@@ -13,6 +15,7 @@ import geometry.syntax._
 import Constants._
 import textreflow.TextReflowF.TextReflow
 import textreflow.data._
+import watrmarks.{Label, StandardLabels => LB}
 
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
@@ -302,5 +305,34 @@ object Utils {
         reflowLength
     }
 
+    def getLabelForTargetRegion(docStore: DocumentZoningApi, targetRegionId: Int @@ RegionID, labels: Seq[Label]): Label = {
+
+        for (label <- labels) {
+            if (docStore.getZoneForRegion(regionId = targetRegionId, label = label).isDefined) {
+                return label
+            }
+        }
+        LB.NullLabel
+    }
+
+    def getPagesWithMetadata(docStore: DocumentZoningApi, docId: Int @@ DocumentID, labels: Seq[Label]): ListBuffer[Int @@ PageID] = {
+
+        val pagesWithMetadata: ListBuffer[Int @@ PageID] = new ListBuffer[`package`.@@[Int, PageID]]()
+
+        for (pageId <- docStore.getPages(docId = docId)) {
+            breakable {
+                for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
+                    val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
+                    if (labels.contains(targetRegionLabel)) {
+                        pagesWithMetadata += pageId
+                        break
+                    }
+                }
+            }
+        }
+
+        pagesWithMetadata
+
+    }
 
 }

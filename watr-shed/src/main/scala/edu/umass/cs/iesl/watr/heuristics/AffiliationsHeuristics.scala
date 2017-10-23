@@ -40,14 +40,14 @@ object AffiliationsHeuristics {
 
         var currentComponentIndex: Int = 0
 
-        while (currentComponentIndex < separateComponents.length) {
-            val currentComponent = separateComponents(currentComponentIndex)
-            for (conjunction <- WORD_SEPARATORS if currentComponent.split(SPACE_SEPARATOR).length.==(3) && currentComponent.split(conjunction).length.==(2)) {
-                separateComponents(currentComponentIndex - 1) = separateComponents.slice(currentComponentIndex - 1, currentComponentIndex + 1).mkString(COMMA.concat(SPACE_SEPARATOR))
-                separateComponents -= currentComponent
-            }
-            currentComponentIndex += 1
-        }
+//        while (currentComponentIndex < separateComponents.length) {
+//            val currentComponent = separateComponents(currentComponentIndex)
+//            for (conjunction <- WORD_SEPARATORS if currentComponent.split(SPACE_SEPARATOR).length.>=(3) && currentComponent.split(conjunction).length.==(2)) {
+//                separateComponents(currentComponentIndex - 1) = separateComponents.slice(currentComponentIndex - 1, currentComponentIndex + 1).mkString(COMMA.concat(SPACE_SEPARATOR))
+//                separateComponents -= currentComponent
+//            }
+//            currentComponentIndex += 1
+//        }
         separateComponents
     }
 

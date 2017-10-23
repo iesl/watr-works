@@ -13,55 +13,12 @@ import AuthorNameHeuristics._
 import AffiliationsHeuristics._
 import Utils._
 import textreflow.data._
-import Constants._
-import edu.umass.cs.iesl.watr.TypeTags.PageNum
 import edu.umass.cs.iesl.watr.`package`
 import scala.util.control.Breaks._
 
 import scala.collection.mutable.ListBuffer
 
 class TransformToCoNLLFormat {
-
-    def getLabelForTargetRegion(docStore: DocumentZoningApi, targetRegionId: Int @@ RegionID, labels: Seq[Label]): Label = {
-
-        for (label <- labels) {
-            if (docStore.getZoneForRegion(regionId = targetRegionId, label = label).isDefined) {
-                return label
-            }
-        }
-        LB.NullLabel
-    }
-
-    def areLabelsPresentInPage(docStore: DocumentZoningApi, pageId: Int @@ PageID, labels: Seq[Label]): Boolean = {
-
-        for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
-            if (labels.contains(getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels))) {
-                return true
-            }
-        }
-
-        false
-    }
-
-    def getPagesWithMetadata(docStore: DocumentZoningApi, docId: Int @@ DocumentID, labels: Seq[Label]): ListBuffer[Int @@ PageID] = {
-
-        val pagesWithMetadata: ListBuffer[Int @@ PageID] = new ListBuffer[`package`.@@[Int, PageID]]()
-
-        for (pageId <- docStore.getPages(docId = docId)) {
-            breakable {
-                for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
-                    val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
-                    if (labels.contains(targetRegionLabel)) {
-                        pagesWithMetadata += pageId
-                        break
-                    }
-                }
-            }
-        }
-
-        pagesWithMetadata
-
-    }
 
     def getAuthorLabelsForReflow(authorReflow: TextReflow): ListBuffer[(String, String, LTBounds)] = {
 
@@ -119,30 +76,37 @@ class TransformToCoNLLFormat {
         val docStore: DocumentZoningApi = textReflowDB.docStore
 
         // val dataFileName: String = "/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/arxiv-sample.txt"
-        val dataFileName: String = "arxiv-sample.txt"
-        val exceptionsFileName: String = "arxiv-exceptions.txt"
+        val dataFileName: String = "arxiv-sample_1.txt"
+        val exceptionsFileName: String = "arxiv-exceptions_2.txt"
         val dataFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(dataFileName)))
         val exceptionsFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(exceptionsFileName)))
 
-        val affiliationReflows: ListBuffer[TextReflow] = new ListBuffer[TextReflow]()
-
-        val names: ListBuffer[String] = new ListBuffer[String]()
-        var documentNumber: Int = 0
+        var previousDocument: Int = -1
 
         for {
             docStableId <- docStore.getDocuments(n = documentLimit) if targetDocumentStableId.isEmpty || targetDocumentStableId.contains(docStableId.asInstanceOf[String])
             docId <- docStore.getDocument(docStableId)
         } {
-            documentNumber += 1
-            println("Document: " + documentNumber + " : " + docStableId)
+            val affiliationReflows: ListBuffer[TextReflow] = new ListBuffer[TextReflow]()
+            val names: ListBuffer[String] = new ListBuffer[String]()
+
+            println("Document: " + docId + " : " + docStableId)
+
+            exceptionsFileWriter.write("\n\n---------------------------------------------------\n" + docStableId + "\n")
+
             for {
                 pageId <- getPagesWithMetadata(docStore = docStore, docId = docId, labels = labels)
             } {
-                dataFileWriter.write("\n" + getBoundingBoxAsString(docStore.getPageGeometry(pageId = pageId)) + "\n")
-                println("Page Number: " + pageId.toString)
-                for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
-                    val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
-                    try {
+
+                try {
+                    if (!docId.unwrap.equals(previousDocument)) {
+                        dataFileWriter.write("\n" + getBoundingBoxAsString(docStore.getPageGeometry(pageId = pageId)) + "\n")
+                        previousDocument = docId.unwrap
+                    }
+                    println("Page Number: " + pageId.toString)
+                    for (targetRegionId <- docStore.getTargetRegions(pageId = pageId)) {
+                        val targetRegionLabel: Label = getLabelForTargetRegion(docStore = docStore, targetRegionId = targetRegionId, labels = labels)
+
                         val textReflow = docStore.getTextReflowForTargetRegion(regionId = targetRegionId)
                         if (textReflow.isDefined) {
                             if (targetRegionLabel.toString.equals(LB.Affiliations.toString)) {
@@ -153,24 +117,23 @@ class TransformToCoNLLFormat {
                                     val affiliationsWithLabels = getAffiliationLabelsForReflows(affiliationReflows, names)
                                     affiliationsWithLabels.foreach {
                                         affiliationWithLabel => {
-                                            //                                        print(affiliationWithLabel._1 + " " + getBoundingBoxAsString(affiliationWithLabel._3) + " * I-" + affiliationWithLabel._2.head + "\n")
                                             dataFileWriter.write(affiliationWithLabel._1 + " " + getBoundingBoxAsString(affiliationWithLabel._3) + " * I-" + affiliationWithLabel._2.head + "\n")
                                         }
                                     }
                                     affiliationReflows.clear()
-
                                 }
+
                                 if (targetRegionLabel.toString.equals(LB.Authors.toString)) {
                                     val authorNamesWithLabels = getAuthorLabelsForReflow(textReflow.get)
                                     authorNamesWithLabels.foreach {
                                         authorNameWithLabels => {
-                                            //                                        print(authorNameWithLabels._1 + " " + getBoundingBoxAsString(bBox = authorNameWithLabels._3) + " * I-" + authorNameWithLabels._2 + "\n")
                                             dataFileWriter.write(authorNameWithLabels._1 + " " + getBoundingBoxAsString(bBox = authorNameWithLabels._3) + " * I-" + authorNameWithLabels._2 + "\n")
                                             names += authorNameWithLabels._1
                                         }
                                     }
 
                                 }
+
                                 else {
                                     val componentsWithBoundingBoxes = getBoundingBoxesForComponents(components = cleanPunctuations(tokenizeTextReflow(textReflow.get)), textReflow = textReflow.get)
                                     var regionLabel = "O"
@@ -182,7 +145,6 @@ class TransformToCoNLLFormat {
                                     }
                                     componentsWithBoundingBoxes.foreach {
                                         componentWithBoundingBox => {
-                                            //                                        print(componentWithBoundingBox._1 + " " + getBoundingBoxAsString(componentWithBoundingBox._2) + " * " + regionLabel + "\n")
                                             dataFileWriter.write(componentWithBoundingBox._1 + " " + getBoundingBoxAsString(componentWithBoundingBox._2) + " * " + regionLabel + "\n")
                                         }
                                     }
@@ -190,21 +152,21 @@ class TransformToCoNLLFormat {
                             }
                         }
                     }
-                    catch {
-                        case exception: Exception =>
-                            exceptionsFileWriter.write("\n\n---------------------------------------------------" + docStableId + "\n")
-                            for (stackTraceElement <- exception.getStackTrace) {
-                                exceptionsFileWriter.write(stackTraceElement.toString)
-                            }
-                    }
-
                 }
+                catch {
+                    case exception: Exception =>
+                        for (stackTraceElement <- exception.getStackTrace) {
+                            exceptionsFileWriter.write(stackTraceElement.toString + "\n")
+                        }
+                }
+
             }
             dataFileWriter.write("\n")
-            names.clear()
         }
         dataFileWriter.close()
+        exceptionsFileWriter.close()
     }
+
 
 }
 
