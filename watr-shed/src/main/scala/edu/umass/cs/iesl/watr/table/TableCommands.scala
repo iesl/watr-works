@@ -11,7 +11,7 @@ import segment._
 
 import TypeTags._
 
-object ShellCommands extends DocumentZoningApiEnrichments {
+object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageWriter {
 
   def initReflowDB(dbname: String, dbpass: String): CorpusAccessDB = {
     // val doLogging = false
@@ -107,7 +107,7 @@ object ShellCommands extends DocumentZoningApiEnrichments {
     corpusEntry: CorpusEntry,
     commitToDb: Boolean=true,
     writeRTrees: Boolean=false
-  )(implicit corpusAccessApi: CorpusAccessApi): Option[DocumentSegmenter] = {
+  )(implicit corpusAccessApi: CorpusAccessApi): Option[DocumentSegmentation] = {
 
     val docStore = corpusAccessApi.docStore
 
@@ -158,10 +158,6 @@ object ShellCommands extends DocumentZoningApiEnrichments {
     maybeSegmenter.flatten
   }
 
-  // import watrmarks._
-  // import play.api.libs.json, json._
-
-
   def addUserAndLockTables(db: CorpusAccessDB)(): Unit = {
     db.runqOnce{ db.tables.UserTables.create.run }
     db.runqOnce{ db.tables.workflowTables.create.run }
@@ -169,74 +165,5 @@ object ShellCommands extends DocumentZoningApiEnrichments {
 
 
 
-  // def reorderVisualLines(n: Int, skip: Int)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-  //   import watrmarks.{StandardLabels => LB}
-  //   val docStore = corpusAccessApi.docStore
-
-
-  //   for {
-  //     stableId <- docStore.documents(n, skip)
-  //     corpusEntry    <- corpusAccessApi.corpus.entry(stableId.unwrap)
-  //   } {
-  //     println(s"processing entry ${stableId}")
-  //     val documentSegmenter = segment(corpusEntry, commitToDb=false, writeRTrees=false)
-  //     println("segmented")
-  //     documentSegmenter.foreach { segmenter =>
-  //       val stableId = segmenter.stableId
-  //       val mpageIndex = segmenter.mpageIndex
-
-  //       var nextOrder = 0
-  //       println("computing reading order")
-  //       for {
-  //         pageNum      <- mpageIndex.getPages
-  //         pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
-  //         readingOrder <- pageIndex.getClusters(LB.ReadingOrder)
-  //       }  {
-  //         val visualLineZones = docStore.getPageVisualLines(stableId, pageNum)
-  //         println(s"aligning reading order for ${visualLineZones.length} lines")
-
-  //         val vlineCCsToZones = readingOrder
-  //           .map{ vlineCC =>
-  //             val maybeZone = visualLineZones.find { zone =>
-  //               zone.regions.exists { zregion =>
-  //                 vlineCC.bounds.isWithin(zregion.bbox)
-  //               }
-  //             }
-  //             (vlineCC, maybeZone)
-  //           }
-
-  //         println(s"Corrected reading order for ${stableId} page ${pageNum}")
-
-  //         vlineCCsToZones.foreach { case (vlineCC, maybeZone) =>
-  //           val maybeText = pageIndex.components.getComponentText(vlineCC, LB.VisualLine)
-  //           maybeZone match {
-  //             case Some(zone) =>
-  //               val reflow = docStore.getModelTextReflowForZone(zone.id)
-
-  //               val rtext = reflow.map { tr =>
-  //                 tr.astext
-  //               } getOrElse("<no text>")
-
-  //               val newText = maybeText.map(_.toText()).getOrElse("<notext>")
-
-  //               println(s"""${nextOrder}>>> ${newText}""")
-  //               if (rtext.trim() != newText.trim()) {
-  //                 println(s"""  was> ${rtext}""")
-  //               }
-
-  //               // db.setZoneOrder(zone.id, nextOrder)
-  //               nextOrder = nextOrder + 1
-  //             case None =>
-  //               println(s"""!!no matching zone> ${maybeText.map(_.toText()).getOrElse("<notext>")}""")
-  //           }
-  //         }
-
-  //       }
-  //     }
-
-  //   }
-
-
-  // }
 
 }

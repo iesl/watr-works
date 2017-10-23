@@ -32,11 +32,11 @@ trait ImageManipulation {
 
   def ltBoundsToDrawables(
     bbox: LTBounds,
-    pageGeometry: PageGeometry,
+    pageGeometry: LTBounds,
     imageGeometry: LTBounds,
     color: Color
   ): List[SC.Drawable] =  {
-    val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry.bounds, imageGeometry)
+    val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry, imageGeometry)
 
     val lighter = SC.Context.painter(color.copy(alpha=128))
     val darker = SC.Context.painter(color.copy(alpha=255))
@@ -51,12 +51,12 @@ trait ImageManipulation {
 
   def ltBoundsToDrawablesFilled(
     bbox: LTBounds,
-    pageGeometry: PageGeometry,
+    pageGeometry: LTBounds,
     imageGeometry: LTBounds,
     color: Color,
     alpha: Int = 128
   ): List[SC.Drawable] =  {
-    val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry.bounds, imageGeometry)
+    val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry, imageGeometry)
     val draw0 = ltBoundsToDrawables(bbox, pageGeometry, imageGeometry, color)
     val fill = SC.Context.painter(color.copy(alpha=alpha))
     val r = SC.FilledRect(rl+2, rt+2, rw-2, rh-2, fill)
@@ -94,6 +94,9 @@ trait ImageManipulation {
 
     trimmed.scale(rescaleFactorX)
   }
+
+
+
 
 }
 

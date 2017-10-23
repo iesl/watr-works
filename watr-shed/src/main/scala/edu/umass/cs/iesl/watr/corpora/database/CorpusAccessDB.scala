@@ -28,6 +28,7 @@ class CorpusAccessDB(
   dbname: String, dbuser: String, dbpass: String
 ) extends DoobieImplicits  { self =>
 
+
   val tables: CorpusAccessDBTables = new CorpusAccessDBTables()
 
   val Rel = RelationModel
@@ -659,6 +660,12 @@ class CorpusAccessDB(
   object docStore extends DocumentZoningApi {
     def workflowApi: WorkflowApi = self.workflowApi
     def userbaseApi: UserbaseApi = self.userbaseApi
+
+    /** As seen from object docStore, the missing signatures are as follows.
+      *  For convenience, these are usable as stub implementations.
+      */
+    def getPageText(pageId: Int @@ edu.umass.cs.iesl.watr.PageID): Option[edu.umass.cs.iesl.watr.textgrid.TextGrid] = ???
+    def setPageText(pageId: Int @@ edu.umass.cs.iesl.watr.PageID,text: edu.umass.cs.iesl.watr.textgrid.TextGrid): Unit = ???
 
     // def listDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[(String@@DocumentID, Seq[(Label, Int)])] = {
     //   val query = if (labelFilters.isEmpty) {

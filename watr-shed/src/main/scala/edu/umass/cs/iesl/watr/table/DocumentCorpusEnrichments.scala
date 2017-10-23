@@ -20,6 +20,7 @@ trait DocumentZoningApiEnrichments extends LabelWidgetUtils {
     }
   }
 
+
   implicit class RicherStableID(val thisStableId: String@@DocumentID) {
     def getDocument()(implicit docStore: DocumentZoningApi): Int@@DocumentID = {
       docStore.getDocument(thisStableId).getOrElse { sys.error(s"no document ${thisStableId}") }
@@ -66,11 +67,11 @@ trait DocumentZoningApiEnrichments extends LabelWidgetUtils {
 
         val zoneBoxes = for {
           labelId <- docStore.getZoneLabelsForDocument(docId)
-          zoneId <- docStore.getZonesForDocument(docId, labelId)
-          textReflow <- docStore.getTextReflowForZone(zoneId)
+          zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 2
+          // textReflow <- docStore.getTextReflowForZone(zoneId)
         } yield {
-          (textReflow.toText.box
-            % docStore.getZone(zoneId).toString().box)
+          // (textReflow.toText.box % docStore.getZone(zoneId).toString().box)
+          docStore.getZone(zoneId).toString().box
         }
         (s"Document ${docId} (${thisStableId}) report"
           % indent(4)(vcat(pagesBox))
@@ -80,6 +81,10 @@ trait DocumentZoningApiEnrichments extends LabelWidgetUtils {
       }
       vcat(docBoxes)
     }
+
+
+
+
 
   }
 
