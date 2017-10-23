@@ -241,6 +241,50 @@ object TextWorksActions {
     traceLogRoot.foreach { rootPath =>
       println("writing tracelogs")
 
+      val allPageTextGrids = segmenter.pageSegmenters
+        .map { pageSegmenter =>
+          val textGrid = pageSegmenter.getTextGrid
+          val serProps = textGrid.buildOutput()
+            .getSerialization()
+
+          val pageImageShapes = pageSegmenter.pageImageShapes()
+          val lineNums = serProps.lineMap.keys.toList.sorted
+
+          val textAndLoci = lineNums.map { lineNum =>
+            val text = serProps.lineMap(lineNum)._2
+            val loci = serProps.lineMap(lineNum)._1
+            val lociJs = Json.parse(loci)
+            Json.obj(
+              ("line" -> lineNum),
+              ("text" -> text),
+              ("loci" -> lociJs)
+            )
+          }
+
+          val gridJs = Json.obj(
+            ("rows", textAndLoci)
+          )
+
+          Json.obj(
+            ("shapes", pageImageShapes),
+            ("textgrid", gridJs)
+          )
+        }
+
+      val jsLog = Json.arr(
+        Json.obj(
+          ("name", s"Document Text"),
+          ("steps", Json.arr(Json.obj(
+            ("desc" -> "DocumentText"),
+            ("Method" -> "DocumentTextGrid"),
+            ("pages" -> allPageTextGrids)
+          )))
+        ))
+
+      val gridJsStr = Json.stringify(jsLog)
+
+      fs.write(rootPath / s"textgrid.json",gridJsStr)
+
       segmenter.pageSegmenters.foreach { pageSegmenter =>
         val textGrid = pageSegmenter.getTextGrid
         val serProps = textGrid.buildOutput()

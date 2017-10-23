@@ -26,10 +26,13 @@ object DrawMethods {
 }
 
 import scala.collection.mutable
+
 case class LogEntry(
   name: String,
   jsonLog: JsObject
 )
+
+
 trait PageScopeTracing extends VisualTracer { self  =>
   lazy val traceLog = self
 
