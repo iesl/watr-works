@@ -14,8 +14,8 @@ class ArxivStats {
 
     def pageStats(docStore: DocumentZoningApi, targetDocuments: Seq[String], metadataLabels: Seq[Label] ): Unit = {
 
-        val pageStatsFileName: String = "arxiv_page_stats.txt"
-//        val pageStatsFileWriter = new PrintWriter(new File(pageStatsFileName))
+        val pageStatsFileName: String = "arxiv_total_pages.txt"
+
         val pageStatsFileWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pageStatsFileName)))
 
         for {
@@ -23,9 +23,11 @@ class ArxivStats {
             docId <- docStore.getDocument(docStableId)
         } {
             println(docId)
+            val totalPages = docStore.getPages(docId = docId).length
+
             var pageNumbers = getPagesWithMetadata(docStore = docStore, docId = docId, labels = metadataLabels)
             pageNumbers = pageNumbers.map(pageNumber => PageID(pageNumber.unwrap - pageNumbers.head.unwrap + 1))
-            pageStatsFileWriter.write(docId + ":" + docStableId + "\t" + pageNumbers.mkString("\t") + "\n")
+            pageStatsFileWriter.write(docId + ":" + docStableId + "\t" + pageNumbers.mkString("\t") + "\t" + totalPages.toString + "\n")
         }
 
         pageStatsFileWriter.close()

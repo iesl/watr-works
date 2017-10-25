@@ -206,7 +206,6 @@ toxicology
 wienke
 oxford
 millennium
-ab
 company
 science
 glaxosmithkline
@@ -216,11 +215,8 @@ safety
 communications
 tech
 accelrys
-co
 aventis
-bv
 cardiovascular
-cv
 becker
 resources
 genome
@@ -240,10 +236,7 @@ nutrition
 amgen
 s.a.
 platform
-nv
 philips
-oy
-a/s
 behavioral
 mckesson
 bioinformatics
@@ -279,7 +272,4 @@ comision
 nasa
 service
 jinr
-infm
-cnism
-lal
 planetarium
