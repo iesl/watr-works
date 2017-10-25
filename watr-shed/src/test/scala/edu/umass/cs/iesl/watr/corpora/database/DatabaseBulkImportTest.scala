@@ -15,7 +15,6 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
 
   def initDB(): CorpusAccessDB = {
     new CorpusAccessDB(
-      new CorpusAccessDBTables(),
       dbname="watrdev",
       dbuser="watrworker",
       dbpass="watrpasswd"

@@ -1,6 +1,5 @@
 package edu.umass.cs.iesl.watr
 
-import scalaz.Tag
 import scalaz.Equal
 import scala.reflect._
 
@@ -29,6 +28,7 @@ sealed trait Offset
 sealed trait Length
 
 sealed trait Percent
+sealed trait ScalingFactor
 
 sealed trait LockGroupID
 sealed trait ZoneLockID
@@ -43,11 +43,33 @@ sealed trait Username
 sealed trait Password
 sealed trait EmailAddr
 sealed trait StatusCode
+sealed trait ShapeID
 
 object TypeTags extends TypeTags
 
 
-trait TypeTags {
+trait TypeTagUtils {
+  val Tag = scalaz.Tag
+
+  def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
+    val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+    s"${tagClsname}:${tt.unwrap}"
+  }
+
+  import scala.math.Ordering.Implicits._
+
+  implicit def TypeTagOrdering[T]: Ordering[Int@@T] = {
+    Ordering.by(_.unwrap)
+  }
+
+  implicit def TypeTagOrder[T] : scalaz.Order[Int@@T] = scalaz.Order.fromScalaOrdering
+
+  import scalaz.syntax.equal._
+  implicit def EqualTypeTag[A: Equal, T]: Equal[A@@T] =
+    Equal.equal((a, b)  => a.unwrap===b.unwrap)
+
+}
+trait TypeTags extends TypeTagUtils {
   val SHA1String = Tag.of[SHA1String]
 
   val DocumentID = Tag.of[DocumentID]
@@ -60,6 +82,7 @@ trait TypeTags {
   val ComponentID = Tag.of[ComponentID]
   val LabelID = Tag.of[LabelID]
   val TextReflowID = Tag.of[TextReflowID]
+  val ShapeID = Tag.of[ShapeID]
 
   val MentionID  = Tag.of[MentionID]
   val ClusterID  = Tag.of[ClusterID]
@@ -71,6 +94,7 @@ trait TypeTags {
   val Length = Tag.of[Length]
 
   val Percent = Tag.of[Percent]
+  val ScalingFactor = Tag.of[ScalingFactor]
 
   val ImageID = Tag.of[ImageID]
 
@@ -84,21 +108,7 @@ trait TypeTags {
   val Username = Tag.of[Username]
   val Password = Tag.of[Password]
 
+  // sealed trait StatusCode
   val StatusCode = Tag.of[StatusCode]
 
-
-  def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
-    val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-    s"${tagClsname}:${tt.unwrap}"
-  }
-
-  import scala.math.Ordering.Implicits._
-
-  implicit def TypeTagOrdering[T]: Ordering[Int@@T] = {
-    Ordering.by(_.unwrap)
-  }
-
-  import scalaz.syntax.equal._
-  implicit def EqualTypeTag[A: Equal, T]: Equal[A@@T] =
-    Equal.equal((a, b)  => a.unwrap===b.unwrap)
 }

@@ -16,17 +16,16 @@ class GraphPaper(
 
   val gridBuffer = mutable.ArrayBuffer
     .tabulate(height, width){ case (y, x) =>
-      // val fcolor = fansi.Color.White("*")
-      // val fcolor = fansi.Color.White("╌")
       // val fcolor = fansi.Color.Blue(" ")
       val fcolor =fansi.Color.White("░")
       fcolor
-
     }
 
   def drawCell(cell: GraphPaper.GridCell, char: Char): Unit = {
     gridBuffer(cell.y)(cell.x) = char.toString()
   }
+
+
 
   def drawBox(box: GraphPaper.Box, borderChars: BorderChars): Unit = {
 
@@ -40,6 +39,7 @@ class GraphPaper(
         drawCell(box.getCell(d), borderChars.charFor(d))
       }
   }
+
 
   def fillFg(fill: Char, gridbox: GraphPaper.Box): Unit = {
     for {
@@ -243,8 +243,8 @@ object GraphPaper {
       case Dir.BottomRight => chars(7)
       case Dir.Center      => ' '
     }
-
   }
+
   object BorderLineStyle {
     val DoubleWidth = BorderChars( "══║║╔╗╚╝")
     val SingleWidth = BorderChars( "──││┌┐└┘")

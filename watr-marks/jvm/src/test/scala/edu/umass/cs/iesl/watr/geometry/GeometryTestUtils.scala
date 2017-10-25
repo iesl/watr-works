@@ -6,9 +6,7 @@ import org.scalatest._
 import org.scalacheck._
 import scalaz._, Scalaz._
 import scalaz.scalacheck.ScalaCheckBinding._
-import org.scalacheck.Prop._
 import Arbitrary._
-import utils.{RelativeDirection => Dir}
 import utils.ExactFloats._
 
 trait ArbitraryGeometries {
@@ -29,7 +27,9 @@ object GeometryTestUtils extends FlatSpec {
   ): GraphPaper = {
     val w: Int = graphDimension.width.asInt()
     val h: Int = graphDimension.height.asInt()
-    GraphPaper.create(w+1, h+1)
+    val g = GraphPaper.create(w+1, h+1)
+    drawBox(g, graphDimension)
+    g
   }
 
   def drawBox(graphPaper: GraphPaper, region: LTBounds): Unit  = {

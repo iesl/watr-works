@@ -6,6 +6,7 @@ import edu.umass.cs.iesl.watr.{watrmarks => W}
 import scala.collection.mutable
 import TypeTags._
 import textreflow._
+import textgrid._
 import textreflow.data._
 import TextReflowF._
 import watrmarks.Label
@@ -56,6 +57,16 @@ class MemDocZoningApi extends DocumentZoningApi {
 
       def getGeometry(pageId: Int@@PageID): G.LTBounds = {
         unique(pageId).bounds
+      }
+
+      val pageText = mutable.HashMap[Int@@PageID, TextGrid]()
+
+      def setPageText(pageId: Int@@PageID, text: TextGrid): Unit = {
+        pageText.update(pageId, text)
+      }
+
+      def getPageText(pageId: Int@@PageID): Option[TextGrid] = {
+        pageText.get(pageId)
       }
     }
 
@@ -190,9 +201,8 @@ class MemDocZoningApi extends DocumentZoningApi {
         val page = pages.unique(pageId)
         val pageNum = page.pagenum
         val doc = documents.unique(page.document)
-        val uriKey = createTargetRegionUri(doc.stableId, pageNum, bbox)
+        val uriKey = createPageRegionUri(doc.stableId, pageNum, bbox)
 
-        // val uriKey = bbox.uriString
         forUriKey.getOrElseUpdate(uriKey,{
           // FIXME: correct rank
           val rec = Rel.TargetRegion(nextId(), pageId, rank=0, None, bbox)
@@ -205,7 +215,7 @@ class MemDocZoningApi extends DocumentZoningApi {
       }
     }
 
-    object textreflows extends DBRelation[TextReflowID, Rel.TextReflow] {
+    object textreflows extends DBRelation[TextReflowID, Rel.TextReflow] with TextReflowJsonCodecs {
       object forZone extends EdgeTableOneToOne[ZoneID, TextReflowID]
 
 
@@ -258,12 +268,11 @@ class MemDocZoningApi extends DocumentZoningApi {
     documents.unique(docId).stableId
   }
 
-  def getPageIdentifier(pageId: Int@@PageID): RecordedPageID = {
+  def getPageIdentifier(pageId: Int@@PageID): StablePage = {
     val p = pages.unique(pageId)
     val d = documents.unique(p.document)
-    RecordedPageID(
-      pageId,
-      StablePageID(d.stableId, p.pagenum)
+    StablePage(
+      d.stableId, p.pagenum, pageId
     )
   }
 
@@ -303,6 +312,14 @@ class MemDocZoningApi extends DocumentZoningApi {
       .map(imageclips.unique(_).image)
   }
 
+  def setPageText(pageId: Int@@PageID, text: TextGrid): Unit = {
+    pages.setPageText(pageId, text)
+  }
+
+  def getPageText(pageId: Int@@PageID): Option[TextGrid] = {
+    pages.getPageText(pageId)
+  }
+
   def addCharAtom(pageId: Int@@PageID, charAtom: CharAtom): Unit = {
     charatoms.add(pageId, charAtom)
   }
@@ -316,13 +333,13 @@ class MemDocZoningApi extends DocumentZoningApi {
     targetregions.ensure(pageId, bbox)
   }
 
-  def getTargetRegion(regionId: Int@@RegionID): G.TargetRegion = {
+  def getTargetRegion(regionId: Int@@RegionID): G.PageRegion = {
     val model = targetregions.unique(regionId)
     val modelPage = pages.unique(model.page)
     val mDocument = documents.unique(modelPage.document)
-    val stable = G.StablePageID(mDocument.stableId, modelPage.pagenum)
-    val page = G.RecordedPageID(model.page, stable)
-    G.TargetRegion(model.prKey, page, model.bounds)
+    // d.stableId, p.pagenum, Some(pageId)
+    val page = G.StablePage(mDocument.stableId, modelPage.pagenum, model.page)
+    G.PageRegion(page, model.bounds, model.prKey)
   }
 
   def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
@@ -377,7 +394,7 @@ class MemDocZoningApi extends DocumentZoningApi {
         .getTargetRegions(mzone.prKey)
         .map(tr => getTargetRegion(tr.prKey))
 
-      G.Zone(zoneId, targetRegions, label)
+      G.Zone(zoneId, targetRegions, label, mzone.rank)
     }
     zs.getOrElse(sys.error(s"getZone(${zoneId}) error"))
   }
@@ -404,15 +421,16 @@ class MemDocZoningApi extends DocumentZoningApi {
       .flatMap(id => textreflows.option(id))
   }
 
+
   def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
+
     textreflows.forZone
       .getRhs(zoneId)
-      .flatMap({reflowId =>
-        import play.api.libs.json
-        jsonToTextReflow(
-          json.Json.parse(textreflows.unique(reflowId).reflow)
+      .flatMap { reflowId =>
+        jsonStrToTextReflow(
+          textreflows.unique(reflowId).reflow
         )
-      })
+      }
   }
 
   def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {

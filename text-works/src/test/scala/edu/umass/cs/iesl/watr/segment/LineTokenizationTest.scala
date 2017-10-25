@@ -10,7 +10,7 @@ import org.scalatest._
 // import TypeTags._
 // import textreflow.data._
 
-class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
+class LineTokenizationTest extends SegmentationTestUtils  with DiagrammedAssertions {
   // N.B. this paper removed from test cases b/c the visible text is actually image overlays, w/ some hand-entered text
   //   """Page:0 file:///Schauer-1987.pdf""",
   behavior of "text line identification"
@@ -177,7 +177,7 @@ class LineTokenizationTest extends DocsegTestUtil  with DiagrammedAssertions {
   //   }
 
   //   val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-  //   val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
+  //   val lineComponents = pageIndex.components.getComponentsWithLabel(LB.VisualLine)
 
   //   val tokenizedLines = lineComponents.map { lineComponent =>
   //     lineComponent.tokenizeLine()

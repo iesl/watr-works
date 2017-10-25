@@ -1,0 +1,158 @@
+InfoBegin
+InfoKey: Creator
+InfoValue: Elsevier
+InfoBegin
+InfoKey: Producer
+InfoValue: Acrobat Distiller 8.0.0 (Windows)
+InfoBegin
+InfoKey: Author
+InfoValue: C.M. Cepeda-Jim&#195;&#169;nez
+InfoBegin
+InfoKey: ElsevierWebPDFSpecifications
+InfoValue: 6.4
+InfoBegin
+InfoKey: CrossMarkDomains[1]
+InfoValue: sciencedirect.com
+InfoBegin
+InfoKey: CrossmarkMajorVersionDate
+InfoValue: 2010-04-23
+InfoBegin
+InfoKey: robots
+InfoValue: noindex
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20150226091807+05'30'
+InfoBegin
+InfoKey: CrossmarkDomainExclusive
+InfoValue: true
+InfoBegin
+InfoKey: Title
+InfoValue: Origin of the twinning to slip transition with grain size refinement, with decreasing strain rate and with increasing temperature in magnesium
+InfoBegin
+InfoKey: CrossMarkDomains[2]
+InfoValue: elsevier.com
+InfoBegin
+InfoKey: doi
+InfoValue: 10.1016/j.actamat.2015.01.032
+InfoBegin
+InfoKey: Subject
+InfoValue: Acta Materialia, 88 (2015) 232-244. doi:10.1016/j.actamat.2015.01.032
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20150226091653+05'30'
+PdfID0: 827f689628b7d294a5ff20b060b95d10
+PdfID1: 3080b5e3ddd26d459b1d78ae3b72cf2b
+NumberOfPages: 13
+BookmarkBegin
+BookmarkTitle: Origin of the twinning to slip transition with grain size refinement, with decreasing strain rate and with increasing temperature in magnesium
+BookmarkLevel: 1
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: 1 Introduction
+BookmarkLevel: 2
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: 2 Experimental procedure
+BookmarkLevel: 2
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: 3 Results and discussion
+BookmarkLevel: 2
+BookmarkPageNumber: 3
+BookmarkBegin
+BookmarkTitle: 3.1 Twinning to slip transition with decreasing grain size
+BookmarkLevel: 3
+BookmarkPageNumber: 3
+BookmarkBegin
+BookmarkTitle: 3.2 Twinning to slip transition with decreasing strain rate
+BookmarkLevel: 3
+BookmarkPageNumber: 8
+BookmarkBegin
+BookmarkTitle: 3.3 Twinning to slip transition with increasing temperature
+BookmarkLevel: 3
+BookmarkPageNumber: 9
+BookmarkBegin
+BookmarkTitle: 3.4 Outlook
+BookmarkLevel: 3
+BookmarkPageNumber: 11
+BookmarkBegin
+BookmarkTitle: 4 Conclusions
+BookmarkLevel: 2
+BookmarkPageNumber: 12
+BookmarkBegin
+BookmarkTitle: Acknowledgements
+BookmarkLevel: 2
+BookmarkPageNumber: 12
+BookmarkBegin
+BookmarkTitle: References
+BookmarkLevel: 2
+BookmarkPageNumber: 12
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 6
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 7
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 8
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 9
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 10
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 11
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 12
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 13
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageLabelBegin
+PageLabelNewIndex: 1
+PageLabelStart: 232
+PageLabelNumStyle: DecimalArabicNumerals

@@ -6,6 +6,7 @@ import textreflow._
 import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
+// This is being replaced with textgrid functionality
 trait PlainTextCorpus extends TextReflowSharedFunctions {
   import scala.collection.mutable
   import scalaz.Tree
@@ -119,7 +120,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     getRegionBoundsDbl(x.toDouble, y.toDouble, w.toDouble, h.toDouble)
   }
 
-  def mkTargetRegionDbl(pageId: Int@@PageID, x: Double, y: Double, w: Double, h: Double): TargetRegion = {
+  def mkTargetRegionDbl(pageId: Int@@PageID, x: Double, y: Double, w: Double, h: Double): PageRegion = {
     val bbox  = getRegionBoundsDbl(x, y, w, h)
     val regionId = docStore.addTargetRegion(pageId, bbox)
     docStore.getTargetRegion(regionId)
@@ -131,7 +132,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     PageRegion(recPageId, bbox)
   }
 
-  def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): TargetRegion = {
+  def mkTargetRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): PageRegion = {
     val pageRegion = mkPageRegion(pageId, x, y, w, h)
     val regionId = docStore.addTargetRegion(pageId, pageRegion.bbox)
     docStore.getTargetRegion(regionId)

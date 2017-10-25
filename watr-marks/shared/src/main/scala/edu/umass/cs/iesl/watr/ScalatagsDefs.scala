@@ -34,6 +34,7 @@ trait ScalatagsDefs {
   }
 
   object $ extends Text.Cap with Text.Styles with Text.Styles2
+  object * extends Text.Cap with Text.SvgAttrs
 
   import texttags._
 

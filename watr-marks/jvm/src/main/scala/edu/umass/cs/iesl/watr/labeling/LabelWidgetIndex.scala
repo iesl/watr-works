@@ -23,6 +23,7 @@ import utils.GraphPaper
 import utils.Colors
 import LabelWidgetTransforms._
 import utils.ExactFloats._
+import com.github.davidmoten.rtree.{geometry => RG}
 
 
 // Provide a caching wrapper around TextReflow + precomputed page bbox
@@ -83,11 +84,13 @@ object LabelWidgetIndex extends LabelWidgetLayout {
   implicit object TextReflowIndexable extends RTreeIndexable[IndexableTextReflow] {
     def id(t: IndexableTextReflow): Int = t.id.unwrap
     def ltBounds(t: IndexableTextReflow): LTBounds = t.targetRegion.bbox
+    def rtreeGeometry(t: IndexableTextReflow): RG.Geometry = ???
   }
 
   implicit object LabelWidgetIndexable extends RTreeIndexable[AbsPosWidget] {
     def id(t: AbsPosWidget): Int = t.widget.wid.unwrap
     def ltBounds(t: AbsPosWidget): LTBounds = t.strictBounds
+    def rtreeGeometry(t: AbsPosWidget): RG.Geometry = ???
   }
 
 
@@ -139,7 +142,7 @@ object LabelWidgetIndex extends LabelWidgetLayout {
         mutable.HashMap[Int@@PageID, RTreeIndex[IndexableTextReflow]]()
       }
 
-    def addPage(targetRegion: TargetRegion): Unit = {
+    def addPage(targetRegion: PageRegion): Unit = {
       val pageId = targetRegion.page.pageId
       if (!targetPageRIndexes.contains(pageId)) {
         // println(s"adding page ${targetRegion}")
@@ -152,15 +155,15 @@ object LabelWidgetIndex extends LabelWidgetLayout {
           reflow <- docStore0.getModelTextReflowForZone(vline.id)
         } {
           val zone = docStore0.getZone(reflow.zone)
-          zone.regions.headOption.map{ lineTargetRegion =>
+          zone.regions.headOption.map{ linePageRegion =>
             val reflowJson = reflow.reflow
             val indexable = IndexableTextReflowLazy(
               reflow.prKey,
-              reflowJson,
-              lineTargetRegion.toPageRegion,
+              reflowJson, //               linePageRegion, //               () => { docStore0.jsonStrToTextReflow(reflowJson) }
+              linePageRegion,
               () => {
                 docStore0.jsonStrToTextReflow(reflowJson).getOrElse{
-                  sys.error("addPage: invalid text reflow json  ${reflowJson}")
+                  sys.error(s"addPage: invalid text reflow json  ${reflowJson}")
 
                 }
               }

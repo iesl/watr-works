@@ -25,9 +25,11 @@ import play.api.libs.json, json._
 import shapeless._
 
 class CorpusAccessDB(
-  val tables: CorpusAccessDBTables,
   dbname: String, dbuser: String, dbpass: String
 ) extends DoobieImplicits  { self =>
+
+
+  val tables: CorpusAccessDBTables = new CorpusAccessDBTables()
 
   val Rel = RelationModel
 
@@ -396,7 +398,6 @@ class CorpusAccessDB(
   }
 
 
-
   def ensureTargetRegion(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Int@@RegionID] = {
     val LTBounds.IntReps(bl, bt, bw, bh) = bbox
 
@@ -634,9 +635,37 @@ class CorpusAccessDB(
 
   }
 
+  def setZoneOrder(zoneId: Int@@ZoneID, newRank: Int): Unit = {
+    runq { sql"""
+        with zdoc as (
+             select document from zone where zone=${zoneId}
+        ),
+        zlabel as (
+             select label from zone where zone=${zoneId}
+        ),
+        rerank as (
+            update zone SET rank = rank+1
+            where document=(select document from zdoc)
+              AND label=(select label from zlabel)
+              AND rank >= ${newRank}
+            returning ${newRank}
+
+        )
+        update zone SET rank=(select * from rerank) where zone=${zoneId}
+        """.update.run
+    }
+  }
+
+
   object docStore extends DocumentZoningApi {
     def workflowApi: WorkflowApi = self.workflowApi
     def userbaseApi: UserbaseApi = self.userbaseApi
+
+    /** As seen from object docStore, the missing signatures are as follows.
+      *  For convenience, these are usable as stub implementations.
+      */
+    def getPageText(pageId: Int @@ edu.umass.cs.iesl.watr.PageID): Option[edu.umass.cs.iesl.watr.textgrid.TextGrid] = ???
+    def setPageText(pageId: Int @@ edu.umass.cs.iesl.watr.PageID,text: edu.umass.cs.iesl.watr.textgrid.TextGrid): Unit = ???
 
     // def listDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[(String@@DocumentID, Seq[(Label, Int)])] = {
     //   val query = if (labelFilters.isEmpty) {
@@ -748,14 +777,12 @@ class CorpusAccessDB(
       runq { selectPageImage(pageId) }
     }
 
-    def getPageIdentifier(pageId: Int@@PageID): RecordedPageID = {
+    def getPageIdentifier(pageId: Int@@PageID): StablePage = {
       val query = for {
         p <- selectPage(pageId)
         d <- selectDocument(p.document)
-      } yield RecordedPageID(
-        pageId,
-        StablePageID(d.stableId, p.pagenum)
-      )
+      } yield StablePage(d.stableId, p.pagenum, pageId)
+
       runq { query }
     }
 
@@ -779,20 +806,20 @@ class CorpusAccessDB(
     }
 
     // G.TargetRegion = M.TargetRegion+M.Page+M.Document
-    def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[TargetRegion] =
+    def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[PageRegion] =
       for {
         mTr <- selectTargetRegion(regionId)
         mPage <- selectPage(mTr.page)
         mDocument <- selectDocument(mPage.document)
       } yield {
-        val stable = StablePageID(mDocument.stableId, mPage.pagenum)
-        val page = RecordedPageID(mPage.prKey, stable)
-        TargetRegion(mTr.prKey, page, mTr.bounds)
-        // TargetRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
+        val stablePage = StablePage(mDocument.stableId, mPage.pagenum, mPage.prKey)
+        // val page = StablePage(mPage.prKey, stable)
+        PageRegion(stablePage, mTr.bounds, mTr.prKey)
+        // PageRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
       }
 
 
-    def getTargetRegion(regionId: Int@@RegionID): TargetRegion =
+    def getTargetRegion(regionId: Int@@RegionID): PageRegion =
       runq { selTargetRegion(regionId) }
 
     def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
@@ -829,7 +856,7 @@ class CorpusAccessDB(
         l             <- selectLabel(zone.label)
       } yield {
         val label = Labels.fromString(l.key).copy(id=l.prKey)
-        Zone(zone.prKey, targetRegions, label)
+        Zone(zone.prKey, targetRegions, label, zone.rank)
       }
 
       runq { query }
@@ -937,9 +964,7 @@ class CorpusAccessDB(
     }
 
     def getZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): Seq[Int@@ZoneID] = {
-      runq {
-        selectZonesForDocument(docId, labelId)
-      }
+      runq { selectZonesForDocument(docId, labelId) }
     }
 
     import scala.collection.mutable

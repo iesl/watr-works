@@ -52,7 +52,7 @@ trait ServerLabelerBuilder extends LabelerBuilder {
 
   }
 
-  def ensureTargetRegion(pageRegion: PageRegion): TargetRegion = {
+  def ensureTargetRegion(pageRegion: PageRegion):PageRegion= {
     docStore.getTargetRegion(
       docStore.addTargetRegion(pageRegion.page.pageId, pageRegion.bbox)
     )

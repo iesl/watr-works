@@ -2,15 +2,9 @@ package edu.umass.cs.iesl.watr
 package table
 
 import pprint._
-// import spindex._
-// import textreflow.data._
 import textboxing.{TextBoxing => TB}
-// import labeling._
-// import labeling.data._
-// import scala.{Iterator => Iter}
 
-object ShellPrettyPrinters extends ComponentEnrichments {
-
+object ShellPrettyPrinters  {
 
   def additionalHandlers: PartialFunction[Any, Tree] = {
     // case c: Component => Tree.Literal(c.show.toString())

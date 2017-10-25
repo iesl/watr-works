@@ -10,3 +10,7 @@ corpus-*
 *.pdf
 *.svg
 resources
+ext.d
+node_modules
+*.css
+lib/

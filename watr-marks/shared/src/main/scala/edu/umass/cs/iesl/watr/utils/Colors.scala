@@ -41,6 +41,7 @@ sealed trait Color {
   def toHex: String = Integer.toHexString(toRGB.toInt & 0xffffff).toUpperCase.reverse.padTo(6, '0').reverse
 
   def cssHash():String = s"#${toHex}"
+  def toCss():String = s"#${toHex}"
 
 }
 

@@ -11,9 +11,9 @@ import TypeTags._
 
 import utils.ExactFloats._
 
-sealed trait GeometricFigure
-
-// case object EmptyFigure extends GeometricFigure
+sealed trait GeometricFigure { self =>
+  lazy val mbr = minBoundingRect(self)
+}
 
 case class LTBounds(
   left   : Int@@FloatRep,
@@ -141,7 +141,6 @@ case class LBBounds(
   }
 }
 
-
 case class Point(
   x: Int@@FloatRep, y: Int@@FloatRep
 ) extends GeometricFigure {
@@ -182,10 +181,53 @@ object Point {
 
 }
 
+sealed trait Axis
+object Axis {
+  final case object XAxis extends Axis
+  final case object YAxis extends Axis
+}
+
 case class Line(
   p1: Point, p2: Point
 ) extends GeometricFigure {
   override def toString: String = this.prettyPrint
+}
+
+case class AxisAlignedLine(
+  p1: Point, len: Int@@FloatRep,
+  alignment: Axis
+) extends GeometricFigure {
+  // override def toString: String = this.prettyPrint
+}
+case class Trapezoid(
+  topLeft: Point,
+  topWidth: Int@@FloatRep,
+  bottomLeft: Point,
+  bottomWidth: Int@@FloatRep
+) extends GeometricFigure  { self =>
+
+  def height(): Int@@FloatRep = bottomLeft.y - topLeft.y
+
+}
+object Trapezoid {
+
+  def isHorizontal(l: Line): Boolean = l.p1.y==l.p2.y
+
+  def fromHorizontals(l1: Line, l2: Line): Trapezoid = {
+    assume(isHorizontal(l1) && isHorizontal(l2))
+    val Seq(ltop, lbottom) = Seq(l1, l2).sortBy(_.p1.y)
+    val ltn = ltop.sortPointsAsc
+    val lbn = lbottom.sortPointsAsc
+
+    val tWidth = ltn.p2.x - ltn.p1.x
+    val bWidth = lbn.p2.x - lbn.p1.x
+
+    Trapezoid(
+      ltn.p1, tWidth,
+      lbn.p1, bWidth
+    )
+  }
+
 }
 
 case class GeometricGroup(
@@ -289,8 +331,8 @@ object GeometryImplicits extends RectangularCuts {
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
   def composeFigures(fig1: GeometricFigure, fig2: GeometricFigure): GeometricFigure = {
-    val bbox1 = totalBounds(fig1)
-    val bbox2 = totalBounds(fig2)
+    val bbox1 = minBoundingRect(fig1)
+    val bbox2 = minBoundingRect(fig2)
     val bbox12 = bbox1 union bbox2
     GeometricGroup(
       bbox12,
@@ -298,18 +340,43 @@ object GeometryImplicits extends RectangularCuts {
     )
   }
 
-  def totalBounds(fig: GeometricFigure): LTBounds = fig match {
+
+  def minBoundingRect(fig: GeometricFigure): LTBounds = fig match {
     case f: LTBounds       => f
     case f: LBBounds       => f.toLTBounds
     case f: Point          => LTBounds(f.x, f.y, FloatRep(0), FloatRep(0))
     case f: Line           => f.bounds()
+    case f: Trapezoid      =>
+      val Trapezoid(Point(tlx, tly), twidth, Point(blx, bly), bwidth) = f
+      val minx = min(tlx, blx)
+      val maxx = max(tlx+twidth, blx+bwidth)
+
+      val miny = min(tly, bly)
+      val maxy = max(tly, bly)
+
+      LTBounds(minx, miny, maxx-minx, maxy-miny)
+
     case f: GeometricGroup => f.bounds
-    case f: Colorized => totalBounds(f.figure)
+    case f: Colorized => minBoundingRect(f.figure)
   }
+
+  def intersectionMBR(f1: GeometricFigure, f2: GeometricFigure): Option[LTBounds] = {
+    minBoundingRect(f1).intersection(minBoundingRect(f2))
+  }
+
+  def shapesIntersect(f1: GeometricFigure, f2: GeometricFigure): Boolean =
+    intersectionMBR(f1, f2).isDefined
+
+  def shapesOverlap(f1: GeometricFigure, f2: GeometricFigure): Boolean =
+    intersectionMBR(f1, f2).exists(_.area > 0)
+
+  def shapesTouch(f1: GeometricFigure, f2: GeometricFigure): Boolean =
+    intersectionMBR(f1, f2).exists(_.area == 0)
+
 
   def makeFringeParts(fig: GeometricFigure, padding: Padding): List[GeometricFigure] = {
 
-    val wbbox = totalBounds(fig)
+    val wbbox = minBoundingRect(fig)
 
     val leftGutter = wbbox.copy(
       width=padding.left
@@ -339,7 +406,7 @@ object GeometryImplicits extends RectangularCuts {
 
   def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
     val fringe = makeFringeParts(fig, padding)
-    val wbbox = totalBounds(fig)
+    val wbbox = minBoundingRect(fig)
     GeometricGroup(
       wbbox,
       fringe
@@ -366,11 +433,14 @@ object GeometryImplicits extends RectangularCuts {
       Line(self, p1)
     }
 
-    def translate(x: Double=0d, y: Double=0d): Point = {
+    def translate(x: Double, y: Double): Point = {
       Point(self.x+x, self.y+y)
     }
     def translate(p: Point): Point = {
       Point(self.x+p.x, self.y+p.y)
+    }
+    def translate(x: Int@@FloatRep, y: Int@@FloatRep): Point = {
+      Point(self.x+x, self.y+y)
     }
 
     def hdist(p1: Point): Double = (p1.x - self.x).asDouble()
@@ -386,11 +456,14 @@ object GeometryImplicits extends RectangularCuts {
     }
 
     def angleTo(p1: Point): Double = {
-      if (self.x > p1.x) {
-        math.atan2((self.y - p1.y).asDouble, (self.x - p1.x).asDouble)
-      } else {
-        math.atan2((p1.y - self.y).asDouble, (p1.x - self.x).asDouble)
-      }
+      val dy = self.y - p1.y
+      val dx = p1.x - self.x
+      math.atan2(dy.asDouble, dx.asDouble)
+      // if (self.x > p1.x) {
+      //   math.atan2((self.y - p1.y).asDouble, (self.x - p1.x).asDouble)
+      // } else {
+      //   math.atan2((p1.y - self.y).asDouble, (p1.x - self.x).asDouble)
+      // }
     }
     def prettyPrint: String = {
       s"""(${self.x.pp}, ${self.y.pp})"""
@@ -406,44 +479,44 @@ object GeometryImplicits extends RectangularCuts {
     (l.p1, l.p2)
   }
 
-  implicit class RicherLine(val line: Line) extends AnyVal {
+  implicit class RicherLine(val self: Line) extends AnyVal {
     def prettyPrint(): String = {
-      val p1 = line.p1.prettyPrint
-      val p2 = line.p2.prettyPrint
-      s"<line:$p1->$p2>"
+      val p1 = self.p1.prettyPrint
+      val p2 = self.p2.prettyPrint
+      s"<$p1->$p2>"
     }
 
-    def rise(): Double = (line.p2.y - line.p1.y).asDouble
+    def rise(): Double = (self.p2.y - self.p1.y).asDouble
 
-    def run(): Double =  (line.p2.x - line.p1.x).asDouble
+    def run(): Double =  (self.p2.x - self.p1.x).asDouble
 
-    def angle(): Double = math.atan2(line.rise, line.run)
+    def angle(): Double = math.atan2(self.rise, self.run)
 
-    def slope(): Double = (line.rise) / (line.run)
+    def slope(): Double = (self.rise) / (self.run)
 
     def length(): Double = {
-      math.sqrt(line.run*line.run + line.rise*line.rise)
+      math.sqrt(self.run*self.run + self.rise*self.rise)
     }
 
     def ordered(l2: Line): (Line, Line) = {
-      if (lineOrd.compare(line, l2) <= 0) (line, l2)
-      else (l2, line)
+      if (lineOrd.compare(self, l2) <= 0) (self, l2)
+      else (l2, self)
     }
 
     def centerPoint: Point = Point(
-      ((line.p1.x+line.p2.x) / 2),
-      ((line.p1.y+line.p2.y) / 2)
+      ((self.p1.x+self.p2.x) / 2),
+      ((self.p1.y+self.p2.y) / 2)
     )
 
-    def normalizeOrder: Line = {
-      val (p1x, p2x) = if (line.p1.x < line.p2.x) (line.p1.x, line.p2.x) else (line.p2.x, line.p1.x)
-      val (p1y, p2y) = if (line.p1.y < line.p2.y) (line.p1.y, line.p2.y) else (line.p2.y, line.p1.y)
+    def sortPointsAsc: Line = {
+      val (p1x, p2x) = if (self.p1.x <= self.p2.x) (self.p1.x, self.p2.x) else (self.p2.x, self.p1.x)
+      val (p1y, p2y) = if (self.p1.y <= self.p2.y) (self.p1.y, self.p2.y) else (self.p2.y, self.p1.y)
 
       Line(Point(p1x, p1y), Point(p2x, p2y))
     }
 
     def bounds(): LTBounds = {
-      val nline = normalizeOrder
+      val nline = sortPointsAsc
       LTBounds(
         nline.p1.x, nline.p1.y,
         nline.p2.x - nline.p1.x,
@@ -452,17 +525,26 @@ object GeometryImplicits extends RectangularCuts {
     }
 
     def clipTo(b: LTBounds): Line = {
-      val lnorm = line.normalizeOrder
+      val lnorm = self.sortPointsAsc
       val p1x = max(lnorm.p1.x, b.left)
       val p2x = min(lnorm.p2.x, b.left+b.width)
       val p1y = max(lnorm.p1.y, b.top)
       val p2y = min(lnorm.p2.y, b.left+b.width)
       Line(Point(p1x, p1y), Point(p2x, p2y))
+    }
 
+    def extendRightTo(x: Int@@FloatRep): Line = {
+      val Line(_, Point(_, y2)) = self
+      self.copy(p2=Point(x, y2))
+    }
+
+    def extendLeftTo(x: Int@@FloatRep): Line = {
+      val Line(Point(x1, y1), _) = self
+      self.copy(p1=Point(x, y1))
     }
 
     def splitVertical(x: Int@@FloatRep): Option[(Line, Line)] = {
-      val Line(Point(x1, y1), Point(x2, y2)) = line.normalizeOrder
+      val Line(Point(x1, y1), Point(x2, y2)) = self.sortPointsAsc
       val overlaps = x1 < x && x < x2
       if (overlaps) {
         val left = Line(Point(x1, y1), Point(x, y2))
@@ -472,10 +554,17 @@ object GeometryImplicits extends RectangularCuts {
       } else None
     }
 
-    def translate(x: Double=0.0d, y: Double=0.0d): Line = {
+    def translate(x: Double, y: Double): Line = {
       Line(
-        line.p1.translate(x, y),
-        line.p2.translate(x, y)
+        self.p1.translate(x, y),
+        self.p2.translate(x, y)
+      )
+    }
+
+    def translate(x: Int@@FloatRep, y: Int@@FloatRep): Line = {
+      Line(
+        self.p1.translate(x, y),
+        self.p2.translate(x, y)
       )
     }
 

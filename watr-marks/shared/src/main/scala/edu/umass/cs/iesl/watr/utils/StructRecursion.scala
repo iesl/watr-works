@@ -86,14 +86,14 @@ object Main {
   val PowF = RecursiveExtractor[ExprF, Pow, Expr].tuple
   val LitF = RecursiveExtractor[ExprF, Lit, Expr].single[Int]
 
-  def main(args: Array[String]): Unit = {
-    val v1: ExprF = Fix(Add(Fix(Lit(1)), Fix(Lit(2))))
-    val v2: ExprF = Fix(Mul(v1, v1))
-    val v3: ExprF = Fix(Pow(v2, 2))
+  // def main(args: Array[String]): Unit = {
+  //   val v1: ExprF = Fix(Add(Fix(Lit(1)), Fix(Lit(2))))
+  //   val v2: ExprF = Fix(Mul(v1, v1))
+  //   val v3: ExprF = Fix(Pow(v2, 2))
 
-    v3 match {
-      case PowF(MulF(AddF(LitF(a), LitF(b)), AddF(LitF(c), LitF(d))), exp) =>
-        println(Math.pow((a + b) * (c + d), exp))
-    }
-  }
+  //   v3 match {
+  //     case PowF(MulF(AddF(LitF(a), LitF(b)), AddF(LitF(c), LitF(d))), exp) =>
+  //       println(Math.pow((a + b) * (c + d), exp))
+  //   }
+  // }
 }

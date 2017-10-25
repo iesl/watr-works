@@ -1,4 +1,5 @@
-package edu.umass.cs.iesl.watr.utils
+package edu.umass.cs.iesl.watr
+package utils
 
 
 object Debugging {
@@ -15,4 +16,12 @@ object Debugging {
     t.printStackTrace()
     throw t
   }
+
+  def printAndSwallow(t: Throwable)(implicit enclosing: sourcecode.File, line: sourcecode.Line): Unit = {
+    val message = s"""error ${enclosing.value}:${line.value}: ${t}: ${t.getCause}: ${t.getMessage} """
+    println(s"ERROR: ${message}")
+    t.printStackTrace()
+  }
+
 }
+

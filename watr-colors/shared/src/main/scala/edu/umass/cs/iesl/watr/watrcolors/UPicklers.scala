@@ -82,10 +82,8 @@ object UPicklers {
 
 
   implicit val Label_RW: RW[Label] = macroRW[Label]
-  implicit val StablePageID_RW: RW[StablePageID] = macroRW[StablePageID]
-  implicit val RecordedPageID_RW: RW[RecordedPageID] = macroRW[RecordedPageID]
+  implicit val StablePage_RW: RW[StablePage] = macroRW[StablePage]
   implicit val PageRegion_RW: RW[PageRegion] = macroRW[PageRegion]
-  implicit val TargetRegion_RW: RW[TargetRegion] = macroRW[TargetRegion]
   implicit val PageGeometry_RW: RW[PageGeometry] = macroRW[PageGeometry]
   implicit val CharAtom_RW: RW[CharAtom] = macroRW[CharAtom]
   implicit val Zone_RW: RW[Zone] = macroRW[Zone]

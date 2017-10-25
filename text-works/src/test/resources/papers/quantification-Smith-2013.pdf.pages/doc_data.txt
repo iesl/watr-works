@@ -1,0 +1,56 @@
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20131230142100-05'00'
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20131220113300+08'00'
+InfoBegin
+InfoKey: Title
+InfoValue: Quantification of fuel moisture effects on biomass consumed derived from fire radiative energy retrievals
+InfoBegin
+InfoKey: WPS-JOURNALDOI
+InfoValue: 10.1002/(ISSN)1944-8007
+InfoBegin
+InfoKey: WPS-ARTICLEDOI
+InfoValue: 10.1002/2013GL058232
+InfoBegin
+InfoKey: WPS-PROCLEVEL
+InfoValue: 2
+InfoBegin
+InfoKey: Creator
+InfoValue: Arbortext Advanced Print Publisher 9.0.114/W Unicode
+InfoBegin
+InfoKey: Producer
+InfoValue: PDFlib PLOP 2.0.0p6 (SunOS)/Acrobat Distiller 9.0.0 (Windows)
+PdfID0: 7abff85dbe33f8dad0a4638c53efd82e
+PdfID1: a88a42029deecf5542a5502c26faa46b
+NumberOfPages: 5
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageLabelBegin
+PageLabelNewIndex: 1
+PageLabelStart: 6298
+PageLabelNumStyle: DecimalArabicNumerals

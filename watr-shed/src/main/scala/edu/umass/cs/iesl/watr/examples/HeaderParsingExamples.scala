@@ -24,7 +24,7 @@ import TypeTags._
 class HeaderParsingExamples(dbName: String) {
   val textReflowDBTables = new CorpusAccessDBTables
 
-  lazy val textReflowDB = new CorpusAccessDB(tables = textReflowDBTables, dbname = dbName, dbuser = "watrworker", dbpass = "watrpasswd")
+  lazy val textReflowDB = new CorpusAccessDB(dbname = dbName, dbuser = "watrworker", dbpass = "watrpasswd")
   lazy val docStore: DocumentZoningApi = textReflowDB.docStore
   lazy val corpus = Corpus(pwd / "corpus-test")
 
@@ -43,7 +43,7 @@ class HeaderParsingExamples(dbName: String) {
       val mdocStore = new MemDocZoningApi
       val segmenter = DocumentSegmenter.createSegmenter(stableId, pdfPath, mdocStore)
 
-      segmenter.runPageSegmentation()
+      segmenter.runDocumentSegmentation()
 
       for {
         docId <- mdocStore.getDocument(stableId)
@@ -53,7 +53,7 @@ class HeaderParsingExamples(dbName: String) {
             dbDocId <- docStore.getDocument(stableId)
             dbZone <- docStore.getDocumentZones(dbDocId, targetLabel)
           } {
-            val pageRegions = dbZone.regions.map(_.toPageRegion())
+            val pageRegions = dbZone.regions // .map(_.toPageRegion())
             mdocStore.labelRegions(targetLabel, pageRegions)
           }
         }

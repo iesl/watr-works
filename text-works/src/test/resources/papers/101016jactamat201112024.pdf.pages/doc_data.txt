@@ -1,0 +1,243 @@
+InfoBegin
+InfoKey: Creator
+InfoValue: Elsevier
+InfoBegin
+InfoKey: Producer
+InfoValue: Acrobat Distiller 8.1.0 (Windows)
+InfoBegin
+InfoKey: Author
+InfoValue: L.W. Martin
+InfoBegin
+InfoKey: ElsevierWebPDFSpecifications
+InfoValue: 6.2
+InfoBegin
+InfoKey: CrossMarkDomains[1]
+InfoValue: sciencedirect.com
+InfoBegin
+InfoKey: CrossmarkMajorVersionDate
+InfoValue: 2010-04-23
+InfoBegin
+InfoKey: robots
+InfoValue: noindex
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20120323162838+05'30'
+InfoBegin
+InfoKey: CrossmarkDomainExclusive
+InfoValue: true
+InfoBegin
+InfoKey: Title
+InfoValue: Multiferroic and magnetoelectric heterostructures
+InfoBegin
+InfoKey: CrossMarkDomains[2]
+InfoValue: elsevier.com
+InfoBegin
+InfoKey: doi
+InfoValue: 10.1016/j.actamat.2011.12.024
+InfoBegin
+InfoKey: Subject
+InfoValue: Acta Materialia, 60 (2012) 2449-2470. doi:10.1016/j.actamat.2011.12.024
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20120323162625+05'30'
+PdfID0: 58cfeb7e8de8067a0628c609879c0e06
+PdfID1: 27b9f408532077489f8c1246477b9f79
+NumberOfPages: 22
+BookmarkBegin
+BookmarkTitle: Multiferroic and magnetoelectric heterostructures
+BookmarkLevel: 1
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: 1 Introduction
+BookmarkLevel: 2
+BookmarkPageNumber: 1
+BookmarkBegin
+BookmarkTitle: 2 The crystal chemistry of complex oxides
+BookmarkLevel: 2
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: 3 Multiferroism and magnetoelectricity
+BookmarkLevel: 2
+BookmarkPageNumber: 2
+BookmarkBegin
+BookmarkTitle: 3.1 The model multiferroic, BiFeO3
+BookmarkLevel: 3
+BookmarkPageNumber: 3
+BookmarkBegin
+BookmarkTitle: 3.2 Evolution of antiferromagnetism in BiFeO3 thin films
+BookmarkLevel: 3
+BookmarkPageNumber: 5
+BookmarkBegin
+BookmarkTitle: 3.3 Role of domain walls in BiFeO3
+BookmarkLevel: 3
+BookmarkPageNumber: 6
+BookmarkBegin
+BookmarkTitle: 3.4 Magnetoelectric coupling in BiFeO3
+BookmarkLevel: 3
+BookmarkPageNumber: 8
+BookmarkBegin
+BookmarkTitle: 3.5 Horizontal multilayer heterostructures
+BookmarkLevel: 3
+BookmarkPageNumber: 8
+BookmarkBegin
+BookmarkTitle: 3.6 Vertical nanostructures
+BookmarkLevel: 3
+BookmarkPageNumber: 9
+BookmarkBegin
+BookmarkTitle: 3.7 Phase stability and self-assembled mixed phase nanostructures
+BookmarkLevel: 3
+BookmarkPageNumber: 10
+BookmarkBegin
+BookmarkTitle: 4 Engineering new functionalities with multiferroics
+BookmarkLevel: 2
+BookmarkPageNumber: 13
+BookmarkBegin
+BookmarkTitle: 4.1 Electric field vs. current control of magnetism
+BookmarkLevel: 3
+BookmarkPageNumber: 13
+BookmarkBegin
+BookmarkTitle: 4.2 Electric field control of ferromagnetism
+BookmarkLevel: 3
+BookmarkPageNumber: 14
+BookmarkBegin
+BookmarkTitle: 4.3 Exchange bias with multiferroic antiferromagnets
+BookmarkLevel: 3
+BookmarkPageNumber: 14
+BookmarkBegin
+BookmarkTitle: 4.4 Room temperature electric field control of ferromagnetic domain structures
+BookmarkLevel: 3
+BookmarkPageNumber: 16
+BookmarkBegin
+BookmarkTitle: 4.5 Electronic reconstruction and coupling at oxide interfaces
+BookmarkLevel: 3
+BookmarkPageNumber: 17
+BookmarkBegin
+BookmarkTitle: 4.6 Multiferroic and magnetoelectric devices
+BookmarkLevel: 3
+BookmarkPageNumber: 17
+BookmarkBegin
+BookmarkTitle: 5 Future directions and conclusions
+BookmarkLevel: 2
+BookmarkPageNumber: 20
+BookmarkBegin
+BookmarkTitle: Acknowledgements
+BookmarkLevel: 2
+BookmarkPageNumber: 21
+BookmarkBegin
+BookmarkTitle: References
+BookmarkLevel: 2
+BookmarkPageNumber: 21
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 6
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 7
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 8
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 9
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 10
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 11
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 12
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 13
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 14
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 15
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 16
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 17
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 18
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 19
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 20
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 21
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageMediaBegin
+PageMediaNumber: 22
+PageMediaRotation: 0
+PageMediaRect: 0 0 595.276 793.701
+PageMediaDimensions: 595.276 793.701
+PageLabelBegin
+PageLabelNewIndex: 1
+PageLabelStart: 2449
+PageLabelNumStyle: DecimalArabicNumerals

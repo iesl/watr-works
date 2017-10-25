@@ -3,6 +3,12 @@ package labeling
 
 import scalaz.{@@ => _, _}, Scalaz._
 
+// import scalaz.{Traverse, Applicative, Show, Functor, Equal}
+// import scalaz.Scalaz._
+// import scalaz.std.list._
+// import scalaz.syntax.equal._
+// , Scalaz._
+
 import matryoshka._
 import matryoshka.data._
 import matryoshka.implicits._
@@ -31,7 +37,7 @@ object LabelWidgetF {
 
   case class RegionOverlay[A](
     wid: Int@@WidgetID,
-    under: TargetRegion,
+    under: PageRegion,
     overlays: List[A]
   ) extends LabelWidgetF[A]
 
@@ -225,10 +231,10 @@ object LabelWidgets {
 
   def fixlw = Fix[LabelWidgetF](_)
 
-  def targetOverlay(targetRegion: TargetRegion, overlays: Seq[LabelWidget]) =
+  def targetOverlay(targetRegion: PageRegion, overlays: Seq[LabelWidget]) =
     fixlw(RegionOverlay(idgen.nextId, targetRegion, overlays.toList))
 
-  def targetOverlays(targetRegion: TargetRegion, overlays: LabelWidget*) =
+  def targetOverlays(targetRegion: PageRegion, overlays: LabelWidget*) =
     fixlw(RegionOverlay(idgen.nextId, targetRegion, overlays.toList))
 
   def reflow(tr: TextReflow) =

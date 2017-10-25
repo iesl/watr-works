@@ -28,23 +28,25 @@ object HeaderCoarseLabelers {
 
   def bioArxivLabeler(
     labelerIdentifier: LabelerIdentifier,
-    paperRec: PaperRec,
+    paperRecOpt: Option[PaperRec],
     docStore: DocumentZoningApi
   ): (LabelWidget, LabelerIdentifier) = {
     val DocumentLabelerIdentifier(stableId, labelerType, pagination) = labelerIdentifier
 
     val startingPageWindow: Int = pagination.currentPage.unwrap
 
-    val paperRecWidget = LW.textbox(
-      TB.vjoin()(
-        paperRec.title,
-        indent(4)(
-          TB.vcat(
-            paperRec.authors.map(_.box)
+    val paperRecWidget = paperRecOpt.map{ paperRec =>
+      LW.textbox(
+        TB.vjoin()(
+          paperRec.title,
+          indent(4)(
+            TB.vcat(
+              paperRec.authors.map(_.box)
+            )
           )
         )
       )
-    )
+    } getOrElse { LW.textbox("No Metadata Provided") }
 
     val docId = docStore.getDocument(stableId)
       .getOrElse(sys.error(s"Trying to access non-existent document ${stableId}"))

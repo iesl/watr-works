@@ -6,7 +6,7 @@ package segment
 
 // import watrmarks.{StandardLabels => LB}
 
-class SuperSubScriptTest extends DocsegTestUtil {
+class SuperSubScriptTest extends SegmentationTestUtils {
   behavior of "super/subscript labeling"
 
   case class Example(
@@ -59,7 +59,7 @@ class SuperSubScriptTest extends DocsegTestUtil {
 
   //     segmenter.runLineDetermination()
 
-  //     val lineComponents = pageIndex.getComponentsWithLabel(LB.VisualLine)
+  //     val lineComponents = pageIndex.components.getComponentsWithLabel(LB.VisualLine)
 
   //     val tokenizedLines = lineComponents.map { lineComponent =>
   //       lineComponent.tokenizeLine()

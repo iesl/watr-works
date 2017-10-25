@@ -168,7 +168,7 @@ class Http4sService(
   val autowireService = authOrForbid(authedAutowire)
 
 
-  val builder = BlazeBuilder.bindHttp(9999, "localhost")
+  val builder = BlazeBuilder.bindHttp(port, url)
     .mountService(serveAuthorizedPages)
     .mountService(webJarService)
     .mountService(assetService)

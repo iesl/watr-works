@@ -1,0 +1,3 @@
+[submodule "watr-jslibs"]
+	path = watr-jslibs
+	url = git@github.com:iesl/watr-jslibs.git

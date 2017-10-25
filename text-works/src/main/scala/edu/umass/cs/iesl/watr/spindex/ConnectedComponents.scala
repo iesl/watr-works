@@ -3,95 +3,79 @@ package spindex
 
 import watrmarks._
 import geometry._
-// import geometry.syntax._
-import watrmarks.{StandardLabels => LB}
+import segment.{SegmentationLabels => LB}
+import scala.collection.mutable
 
 
 object Component {
   import rindex._
+  import com.github.davidmoten.rtree.{geometry => RG}
+
   implicit object ComponentIndexable extends RTreeIndexable[Component] {
     def id(t: Component): Int = t.id.unwrap
     def ltBounds(t: Component): LTBounds = t.bounds
+    def rtreeGeometry(t: Component): RG.Geometry = {
+      RGeometryConversions.geometricFigureToRtreeGeometry(t.bounds)
+    }
   }
-
 }
+
 sealed trait Component {
   def id: Int@@ComponentID
 
-  def mpageIndex: MultiPageIndex
-  def vtrace = mpageIndex.vtrace
-
   def roleLabel: Label
 
-  lazy val pageNum = mpageIndex.getPageForComponent(this)
+  def pageRegion(): PageRegion
 
-  def getDocumentID() = mpageIndex.docId
-  def getStableID() = mpageIndex.getStableId()
+  def bounds(): LTBounds = pageRegion().bbox
 
-  def getPageGeometry(): PageGeometry = {
-    mpageIndex.getPageGeometry(pageNum)
+  def getStableID(): String@@DocumentID = pageRegion.page.stableId
+
+  lazy val pageNum = pageRegion.page.pageNum
+
+  protected [spindex] val labelSet: mutable.Set[Label] = mutable.Set.empty[Label]
+
+  protected [spindex] def addLabel(l: Label): Unit = labelSet += l
+  protected [spindex] def removeLabel(l: Label): Unit =  labelSet -= l
+
+  def hasLabel(l: Label): Boolean = labels.contains(l)
+  def labels(): Set[Label] = labelSet.toSet
+
+  def formatLabels(): String = {
+    labels.toSeq
+      .filter(_ != roleLabel)
+      .sortBy(_.fqn).mkString("[", "; ", "]")
   }
 
-  def targetRegion: PageRegion
-  def bounds: LTBounds
-
-  def chars: String
-
-  def orientation: Double = 0.0d // placeholder until this is implemented for real
-
-  def addLabel(l: Label): Component = {
-    mpageIndex.addLabel(this, l)
-  }
-
-  def removeLabel(l: Label): Component = {
-    mpageIndex.removeLabel(this, l)
-  }
-
-  def getLabels(): Set[Label] = {
-    mpageIndex.getLabels(this)
-  }
-
-  def getLabel(l: Label): Option[Label] = {
-    getLabels().filter(_ == l).headOption
-  }
+  // def formatWithLabels(): String = {
+  //   s"<${roleLabel.key}.${id} ${formatLabels()}>"
+  // }
 }
 
 case class RegionComponent(
   id: Int@@ComponentID,
   override val roleLabel: Label,
-  initPageRegion: PageRegion,
-  override val mpageIndex: MultiPageIndex,
+  override val pageRegion: PageRegion,
   text: Option[String] = None
 ) extends Component {
 
-  def chars: String = text.getOrElse("")
-
-  def targetRegion: PageRegion = initPageRegion
-  def bounds: LTBounds = targetRegion.bbox
-
   override def toString(): String = {
-    val lls = getLabels.mkString(",")
-    s"<${roleLabel.key}.${id} ${targetRegion}${lls}>"
+    s"<${roleLabel.key}.${id} ${formatLabels}>"
   }
 }
 
 case class AtomicComponent(
   id: Int@@ComponentID,
   charAtom: CharAtom,
-  override val mpageIndex: MultiPageIndex
+  override val roleLabel: Label = LB.PageAtom
 ) extends Component {
 
 
-  def roleLabel: Label = LB.PageAtom
-
-  val bounds = charAtom.bbox
-
-  def targetRegion: PageRegion = charAtom.pageRegion
+  def pageRegion: PageRegion = charAtom.pageRegion
 
   def chars: String = charAtom.char
 
   override def toString(): String = {
-    val lls = getLabels.mkString(",")
-    s"<`${chars}`${id} ${charAtom.bbox.prettyPrint}$lls>"
+    s"<`${chars}`${id} ${formatLabels()}>"
   }
 }

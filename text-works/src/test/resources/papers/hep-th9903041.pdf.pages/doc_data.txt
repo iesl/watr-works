@@ -1,0 +1,63 @@
+InfoBegin
+InfoKey: ModDate
+InfoValue: D:20080201040944-05'00'
+InfoBegin
+InfoKey: CreationDate
+InfoValue: D:20080201040944-05'00'
+InfoBegin
+InfoKey: Title
+InfoValue: arXiv:hep-th/9903041v1  4 Mar 1999
+InfoBegin
+InfoKey: Creator
+InfoValue: dvips(k) 5.86 Copyright 1999 Radical Eye Software
+InfoBegin
+InfoKey: Producer
+InfoValue: GPL Ghostscript SVN PRE-RELEASE 8.62
+PdfID0: 73135f7dee458201f393f390e85df2f9
+PdfID1: 73135f7dee458201f393f390e85df2f9
+NumberOfPages: 9
+PageMediaBegin
+PageMediaNumber: 1
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 2
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 3
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 4
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 5
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 6
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 7
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 8
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792
+PageMediaBegin
+PageMediaNumber: 9
+PageMediaRotation: 0
+PageMediaRect: 0 0 612 792
+PageMediaDimensions: 612 792

@@ -6,15 +6,13 @@ import scrimage._
 import scrimage.{canvas => SC}
 import geometry._
 
-// import geometry.syntax._
 import utils.ExactFloats._
 
 trait ImageManipulation {
 
-
   def createCanvas(dim: LTBounds): SC.Canvas = {
     val LTBounds.Ints(_, _, w, h) = dim
-    new SC.Canvas(Image.filled(w, h, Color.White))
+    new SC.Canvas(Image.filled(w+40, h+40, Color.White))
   }
 
 
@@ -27,73 +25,44 @@ trait ImageManipulation {
     val w2 = w * scaleX
     val h2 = h * scaleY
 
-    LTBounds(l2, t2, w2, h2)
+    LTBounds(l2+20, t2+20, w2, h2)
   }
 
 
 
   def ltBoundsToDrawables(
     bbox: LTBounds,
-    pageGeometry: PageGeometry,
+    pageGeometry: LTBounds,
     imageGeometry: LTBounds,
     color: Color
   ): List[SC.Drawable] =  {
-    val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry.bounds, imageGeometry)
+    val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry, imageGeometry)
 
-    // val lightest = SC.Context.painter(color.copy(alpha=20))
-    val lighter = SC.Context.painter(color.copy(alpha=40))
+    val lighter = SC.Context.painter(color.copy(alpha=128))
     val darker = SC.Context.painter(color.copy(alpha=255))
     val r = SC.Rect(rl, rt, rw, rh, lighter)
-    // val r = SC.FilledRect(rl, rt, rw, rh, lightest)
     val underline = SC.Line(x0=r.x, y0=r.y+r.height, r.x+r.width, r.y+r.height, darker)
+    val upperLine = SC.Line(x0=r.x, y0=r.y, r.x+r.width, r.y, darker)
     val leftline = SC.Line(x0=r.x, y0=r.y, r.x, r.y+r.height, darker)
 
 
-    List[SC.Drawable](underline, leftline)
+    List[SC.Drawable](underline, leftline, upperLine)
   }
 
-  // def embossTargetRegion(targetRegion: TargetRegion, labels: Seq[Label]): Unit = {
-  //   val docId = targetRegion.docId
-  //   val pageId = targetRegion.pageId
+  def ltBoundsToDrawablesFilled(
+    bbox: LTBounds,
+    pageGeometry: LTBounds,
+    imageGeometry: LTBounds,
+    color: Color,
+    alpha: Int = 128
+  ): List[SC.Drawable] =  {
+    val LTBounds.Ints(rl, rt, rw, rh) = rescale(bbox, pageGeometry, imageGeometry)
+    val draw0 = ltBoundsToDrawables(bbox, pageGeometry, imageGeometry, color)
+    val fill = SC.Context.painter(color.copy(alpha=alpha))
+    val r = SC.FilledRect(rl+2, rt+2, rw-2, rh-2, fill)
 
-  //   val (pageImage, pageGeometry) = reflowDB.getPageImageAndGeometry(docId, pageId)
-
-  //   val (pageW, pageH) = pageImage.dimensions
-  //   val imageGeometry = LTBounds(0, 0, pageW.toDouble, pageH.toDouble)
-
-  //   val maskCanvas = new SC.Canvas(
-  //     Image.filled(pageW.asInt, pageH.asInt, Color.Transparent)
-  //   )
-
-  //   val hardcodeLabel = LB.VisualLine
-  //   // select all zones w/label on given page
-  //   val zones = reflowDB.selectZones(docId, pageId, hardcodeLabel)
-  //   val embossings = for {
-  //     zone <- zones
-  //     region <- zone.regions
-  //   } yield {
-  //     ltBoundsToDrawables(region.bbox, pageGeometry, imageGeometry)
-  //   }
-
-  //   val embossedCanvas = maskCanvas.draw(embossings.flatten)
-  //   val overlay = pageImage.overlay(embossedCanvas.image, 0, 0)
-
-  //   val imageClipRegion @ LTBounds(clipL, clipT, clipW, clipH) =
-  //     rescale(targetRegion.bbox, pageGeometry.bounds, imageGeometry)
-
-  //   // println(s"embossTargetRegion: clipping image to ${imageClipRegion} w/geom ${imageGeometry}")
-
-  //   val clippedPageImage = overlay.subimage(
-  //     clipL.toInt,
-  //     clipT.toInt,
-  //     clipL.toInt + clipW.toInt,
-  //     clipT.toInt + clipH.toInt
-  //   )
-
-  //   reflowDB.overwriteTargetRegionImage(targetRegion, clippedPageImage)
-  // }
-
-
+    r :: draw0
+  }
 
 
   def cropTo(imageBytes: Array[Byte], cropBox: LTBounds, pageBounds: LTBounds): Image = {
@@ -125,6 +94,9 @@ trait ImageManipulation {
 
     trimmed.scale(rescaleFactorX)
   }
+
+
+
 
 }
 

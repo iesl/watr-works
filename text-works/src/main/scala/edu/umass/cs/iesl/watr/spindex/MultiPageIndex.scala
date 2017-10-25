@@ -6,49 +6,42 @@ import scala.collection.mutable
 import geometry._
 import watrmarks._
 
-// import PageComponentImplicits._
 import utils.IdGenerator
 import geometry.syntax._
 
-import tracing.VisualTracer
-// import textreflow._
 import textreflow.data._
 import TypeTags._
-import rindex._
 import corpora._
 
-import watrmarks.{StandardLabels => LB}
+import segment.{SegmentationLabels => LB}
 import utils.ExactFloats._
+import java.nio.{file => nio}
+import extract.ExtractedItem
+
 
 /**
 
   MultiPageIndex manages:
-    - PageIndexes, one per pdf page
-    - TextReflow -> Component mapping (e.g., text contained in VisualLine, TextBlock) (TODO perhaps TextReflow should be Zone-associated)
+    - PageIndexes, one per PDF page
+
     - Zones, each of which is a list of Components, potentially crossing PageIndexes
     - Relations and Props, e.g., {ClusterID -hasMember-> MentionID}, {id hasProp isTargetEntity}
       - nb. this is a kludge that will be removed at some point
 
-    - BioLabeling, a BIOLU format list of TextBlock regions, for labeling Sections, Headers, and a few other things. Obsolete and on the chopping block
-
-    - Interface to individual PageIndex functions
-
-    - RegionComponent creation and indexing, per PageIndex
-      - Creates a new bounding box around lists of other PageIndex components
-
-    - Add/remove Pages/PageAtoms/ConnectedComponents
-
-
-    TODO:
-      - Handle PageIndexes across PDFs (or create another layered class over this one)
-      - Caching, either within this class or attachable
-
-
   */
+
+object MultiPageIndex {
+
+  def load(rootPath: nio.Path): MultiPageIndex = {
+    ???
+  }
+}
 
 class MultiPageIndex(
   stableId: String@@DocumentID,
-  val docStore: DocumentZoningApi
+  val docStore: DocumentZoningApi,
+  val extractedItems: Seq[(Seq[ExtractedItem], PageGeometry)]
+
 ) {
   lazy val docId: Int@@DocumentID =
     docStore.getDocument(stableId).getOrElse(sys.error("MultiPageIndex created for non-existent document"))
@@ -56,34 +49,43 @@ class MultiPageIndex(
 
   def getStableId(): String@@DocumentID = stableId
 
-  val vtrace: VisualTracer = new VisualTracer()
-
   val pageIndexes = mutable.HashMap[Int@@PageNum, PageIndex]()
-
-  def dbgFilterComponents(pg: Int@@PageNum, include: LTBounds): Unit ={
-    pageIndexes.get(pg).foreach ({ pageIndex =>
-      val keep = pageIndex.componentIndex.queryForIntersects(include).map(_.id.unwrap)
-      pageIndex.componentIndex.getItems
-        .filterNot(c => keep.contains(c.id.unwrap))
-        .foreach(c => pageIndex.componentIndex.remove(c))
-    })
-  }
-  def dbgFilterPages(pg: Int@@PageNum): Unit ={
-    println(s"dbgFilterPages: $pg")
-    getPages
-      .filterNot(_.unwrap == pg.unwrap)
-      .foreach ({ p =>
-        println(s"removing page num $p")
-        pageIndexes.remove(p)
-      })
-  }
 
   // ID generators
   val componentIdGen = IdGenerator[ComponentID]()
-  val labelIdGen = IdGenerator[LabelID]()
-  // NB this is only for Components, and it a kludge until Component/DocumentZoningApi systems are unified
-  val regionIdGen = IdGenerator[RegionID]()
 
+  private def initPages(): Unit = {
+    val extractedItemCount = extractedItems
+      .map { case (items, _) => items.lastOption.map { _.id.unwrap } }
+      .flatten
+      .sorted.lastOption.getOrElse(0)
+
+    // val offsetArray = new Array[Int](extractedItems.length)
+    val itemArray = new Array[ExtractedItem](extractedItemCount+1)
+
+    extractedItems.foreach { case (items, _) =>
+      items.foreach { item => itemArray(item.id.unwrap) = item }
+    }
+
+    var itemArrayOffsetForPage: Int = 1
+
+    extractedItems.foreach { case (items, pageGeometry) =>
+      val lastIndex = items.lastOption.map(_.id.unwrap).getOrElse(itemArrayOffsetForPage)
+      val itemArrayLen = lastIndex - itemArrayOffsetForPage
+
+      val pageIndex = new PageIndex(
+        pageGeometry,
+        itemArray,
+        itemArrayOffsetForPage, itemArrayLen
+      )
+
+      itemArrayOffsetForPage = itemArrayOffsetForPage + items.length
+      val existing = pageIndexes.put(pageGeometry.pageNum, pageIndex)
+      existing.foreach { e => sys.error("adding new page w/existing id") }
+    }
+  }
+
+  initPages()
 
   def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
     docStore.getTextReflowForZone(zoneId)
@@ -95,85 +97,15 @@ class MultiPageIndex(
   def addRelations(rs: Seq[Relation.Record]): Unit = {
     relations ++= rs
   }
+
   def addProps(rs: Seq[Prop.PropRec]): Unit = {
     props ++= rs
   }
 
-
-  // type BioLabeling = mutable.MutableList[BioNode]
-  // val bioLabelings = mutable.Map[String, BioLabeling]()
-
-  // def bioLabeling(name: String): BioLabeling = {
-  //   bioLabelings.getOrElseUpdate(name, mutable.MutableList[BioNode]())
-  // }
-
-
-  def setChildrenWithLabel(c: Component, l: Label, tree: Seq[Int@@ComponentID]):Unit = {
-    val pageIndex = pageIndexes(getPageForComponent(c))
-    pageIndex.setChildrenWithLabel(c.id, l, tree)
-  }
-
-  def getChildrenWithLabel(c: Component, l: Label): Option[Seq[Int@@ComponentID]] = {
-    val pageIndex = pageIndexes(getPageForComponent(c))
-    pageIndex.getChildrenWithLabel(c.id, l)
-  }
-
-  def getChildren(c: Component, l: Label): Option[Seq[Component]] = {
-    val pageIndex = pageIndexes(getPageForComponent(c))
-    pageIndex.getChildrenWithLabel(c.id, l)
-      .map(tree => tree.map{ cid =>
-        pageIndex.componentIndex.get(cid.unwrap).getOrElse {
-          sys.error(s"getChildren(${c}, ${l}) contained an invalid component id: ${cid}")
-        }
-      })
-  }
-
-  def getPageForComponent(c: Component): Int@@PageNum = {
-    c.targetRegion.page.stable.pageNum
-  }
-
-
-
-  def addLabel(c: Component, l: Label): Component = {
-    val pageId = getPageForComponent(c)
-    val pinfo = getPageIndex(pageId)
-    pinfo.addLabel(c, l)
-  }
-
-  def removeLabel(c: Component, l: Label): Component = {
-    val pageId = getPageForComponent(c)
-    val pinfo = getPageIndex(pageId)
-    pinfo.removeLabel(c, l)
-  }
-
-
-  def getLabels(c: Component): Set[Label] = {
-    val pageId = getPageForComponent(c)
-    val pinfo = getPageIndex(pageId)
-    pinfo.getLabels(c)
-  }
-
   def getPageIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
 
-  def removeComponent(c: Component): Unit = {
-    val pinfo = getPageIndex(getPageForComponent(c))
-    pinfo.componentToLabels.get(c.id)
-      .foreach{ labels =>
-        labels.foreach { label =>
-          pinfo.labelToComponents.get(label)
-            .map{_.filterNot(id => id == c.id)}
-            .foreach{ filtered =>
-              pinfo.labelToComponents.update(label, filtered)
-            }
-        }
-
-      }
-    pinfo.componentToLabels -= c.id
-    pinfo.componentIndex.remove(c)
-
-  }
-
-  def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, TargetRegion)] = {
+  // TODO this should be pushed into the PageIndex class
+  def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, PageRegion)] = {
     if (components.isEmpty) None else {
       val totalBounds = components.map(_.bounds).reduce(_ union _)
       val targetPages = components.map(_.pageNum.unwrap)
@@ -190,23 +122,22 @@ class MultiPageIndex(
       val targetRegion = docStore.getTargetRegion(regionId)
       val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
 
-      val region = createRegionComponent(pageRegion, role, None)
-      // componentIdToRegionId.put(region.id, targetRegion.id)
+      val region = createRegionComponent(pageRegion, role)
 
       Some((region, targetRegion))
     }
   }
 
 
-  def createRegionComponent(targetRegion: PageRegion, role: Label, text:Option[String]): RegionComponent = {
-    val region = RegionComponent(componentIdGen.nextId, role, targetRegion, this, text)
+  def createRegionComponent(targetRegion: PageRegion, role: Label, text:Option[String] = None): RegionComponent = {
+    val region = RegionComponent(componentIdGen.nextId, role, targetRegion, text)
     addComponent(region)
 
     region
   }
 
   def addCharAtom(pageAtom: CharAtom): AtomicComponent = {
-    val c = AtomicComponent(componentIdGen.nextId, pageAtom, this)
+    val c = AtomicComponent(componentIdGen.nextId, pageAtom)
     addComponent(c)
     c
   }
@@ -216,8 +147,7 @@ class MultiPageIndex(
     val slineCCs = path.slantedLines
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        println(s"addPathItem: slant-line $region")
-        val c = createRegionComponent(region, LB.LinePath, None)
+        val c = createRegionComponent(region, LB.LinePath)
         addComponent(c)
         c
       }
@@ -225,48 +155,43 @@ class MultiPageIndex(
     val hlineCCs = path.horizontalLines
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        println(s"addPathItem: h-line $region")
-        val c = createRegionComponent(region, LB.HLinePath, None)
+        val c = createRegionComponent(region, LB.HLinePath)
         addComponent(c)
         c
       }
     val vlineCCs = path.verticalLines()
       .map{ line =>
         val region = path.pageRegion.copy(bbox = line.bounds.copy(width=0.01.toFloatExact))
-        println(s"addPathItem: v-line $region")
-        val c = createRegionComponent(region, LB.VLinePath, None)
+        val c = createRegionComponent(region, LB.VLinePath)
         addComponent(c)
         c
       }
     val region = path.pageRegion
-    val c = createRegionComponent(region, LB.PathBounds, None)
+    val c = createRegionComponent(region, LB.PathBounds)
     addComponent(c)
 
     Seq(c) ++ hlineCCs ++ vlineCCs ++ slineCCs
   }
 
   def addImageAtom(pageAtom: PageItem.ImageAtom): RegionComponent = {
-    val c = createRegionComponent(pageAtom.pageRegion, LB.Image, None)
+    // println(s"addImageAtom ${pageAtom.pageRegion}")
+    val c = createRegionComponent(pageAtom.pageRegion, LB.Image)
     addComponent(c)
     c
   }
 
-  def getPageAtoms(pageNum: Int@@PageNum): Seq[AtomicComponent] = {
-    getPageIndex(pageNum).getPageAtoms
-  }
+  // def getPageAtoms(pageNum: Int@@PageNum): Seq[AtomicComponent] = {
+  //   getPageIndex(pageNum).getPageAtoms
+  // }
 
-  def getImageAtoms(pageNum: Int@@PageNum): Seq[RegionComponent] = {
-    getPageIndex(pageNum).getImageAtoms
-  }
-
-  def getComponent(id: Int@@ComponentID, pageId: Int@@PageNum): Component = {
-    getPageIndex(pageId).componentIndex.getItem(id.unwrap)
-  }
+  // def getImageAtoms(pageNum: Int@@PageNum): Seq[RegionComponent] = {
+  //   getPageIndex(pageNum).getImageAtoms
+  // }
 
   def addComponent(c: Component): Component = {
-    val pageNum = c.targetRegion.page.stable.pageNum
+    val pageNum = c.pageRegion.page.pageNum
     getPageIndex(pageNum)
-      .addComponent(c)
+      .components.addComponent(c)
   }
 
   def getPageGeometry(p: Int@@PageNum) = pageIndexes(p).pageGeometry
@@ -275,40 +200,15 @@ class MultiPageIndex(
     pageIndexes.keys.toList.sortBy(PageNum.unwrap(_))
   }
 
+  // def addPageIndex(pageIndex: PageIndex): Unit = {
+  //   val existing = pageIndexes.put(pageIndex.pageGeometry.pageNum, pageIndex)
 
-  def addPage(pageGeometry: PageGeometry): PageIndex = {
-    val pageIndex = PageIndex(
-      RTreeIndex.createFor[Component](),
-      pageGeometry
-    )
-
-    val existing = pageIndexes.put(pageGeometry.id, pageIndex)
-
-    existing.foreach { e =>
-      sys.error("adding new page w/existing id")
-    }
-    pageIndex
-  }
-
-
-  // def addBioLabels(label: Label, node: BioNode): Unit = {
-  //   addBioLabels(label, Seq(node))
-  // }
-
-  // def addBioLabels(label: Label, nodes: Seq[BioNode]): Unit = {
-  //   val labelId = labelIdGen.nextId
-  //   val l = label.copy(id=labelId)
-
-  //   if (nodes.length==1) {
-  //     nodes.foreach(_.pins += l.U)
-  //   } else if (nodes.length > 1) {
-  //     nodes.head.pins += l.B
-  //     nodes.last.pins += l.L
-
-  //     nodes.drop(1).dropRight(1).foreach(
-  //       _.pins += l.I
-  //     )
+  //   existing.foreach { e =>
+  //     sys.error("error adding new page w/existing id")
   //   }
   // }
+
+
+
 
 }

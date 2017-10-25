@@ -1,65 +1,103 @@
 package edu.umass.cs.iesl.watr
-package tracing
+package tracemacros
 
 import scala.reflect.macros.blackbox.Context
 
 sealed trait VisualTraceLevel
+
 object VisualTraceLevel {
-  case object Off extends VisualTraceLevel
-  case object Append extends VisualTraceLevel
-  case object Print extends VisualTraceLevel
+  case object EnterExit extends VisualTraceLevel
+  case object Checkpoint extends VisualTraceLevel
+  case object PrintLogs extends VisualTraceLevel
+  case object JsonLogs extends VisualTraceLevel
+  // case object Callback extends VisualTraceLevel
+
+  // val all = List(Off, EnterExit, Checkpoint, Debug, Callback)
+
+  // def cmp(a: VisualTraceLevel, b:VisualTraceLevel) = all.indexOf(b) - all.indexOf(a)
 }
 
-
-
-trait EnableTrace[T] {
-  def traceLevel(): VisualTraceLevel
-
-  // def tracingEnabled(): Boolean = traceLevel() != VisualTraceLevel.Off
+trait EnableTrace {
+  def isEnabled(v: VisualTraceLevel): Boolean
   def tracingEnabled(): Boolean
-  def runTrace(level: VisualTraceLevel, ts: T*): Unit
+  def traceLevels(): Seq[VisualTraceLevel]
 }
 
 object VisualTraceMacros {
-  type VTraceContext[S] = Context { type PrefixType = EnableTrace[S] }
+  type VTraceContext = Context { type PrefixType = EnableTrace }
 
-  def runIfEnabledWithCondition[T](c: VTraceContext[T])(cond: c.Expr[Boolean])(exprs: c.Expr[T]*) = {
-    import c.universe._
-    q"""
-    if (${c.prefix}.tracingEnabled() && $cond) {
-       import _root_.edu.umass.cs.iesl.watr.tracing.{VisualTraceLevel => L}
-       ${c.prefix}.traceLevel() match {
-         case L.Off          => // noop
-         case L.Append|L.Print => ${c.prefix}.runTrace(${c.prefix}.traceLevel(), ..$exprs)
-       }
-    }
-    """
-  }
 
-  def sideEffectIfEnabled[T](c: VTraceContext[T])(body: c.Expr[Unit]) = {
+  // def printTrace[T](c: VTraceContext)(str: c.Expr[String]) = {
+  //   import c.universe._
+  //   q"""
+  //      import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
+  //      val doPrint: Boolean = ${c.prefix}.traceLevels().contains(L.PrintLogs)
+
+  //      if( doPrint ) {
+
+  //      }
+  //   """
+  // }
+
+  // def tracedImpl[T](c: VTraceContext)(body: c.Tree): c.Tree = {
+  //   import c.universe._
+  //   q"""
+  //      {
+  //        import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
+  //        if( ${c.prefix}.isEnabled(L.EnterExit) ) {
+  //          enter();
+  //          val a = ${body};
+  //          exit();
+  //          a;
+  //        } else { ${body} }
+  //     }
+  //   """
+  // }
+
+  def runOnTraceLevel[T](c: VTraceContext)(vtl: c.Expr[VisualTraceLevel])(body: c.Tree): c.Tree = {
     import c.universe._
     q"""
     if (${c.prefix}.tracingEnabled()) {
-       import _root_.edu.umass.cs.iesl.watr.tracing.{VisualTraceLevel => L}
-       ${c.prefix}.traceLevel() match {
-         case L.Off          => // noop
-         case _              => ..$body
+
+       val doTrace: Boolean = ${c.prefix}.traceLevels().contains(..$vtl)
+
+       if (doTrace) {
+          val _ = $body
        }
     }
     """
   }
-  def runIfEnabled[T](c: VTraceContext[T])(exprs: c.Expr[T]*) = {
-    import c.universe._
-    // q"if (${c.prefix}.tracingEnabled) { ${c.prefix}.runTrace(..$exprs) }"
-    q"""
-    if (${c.prefix}.tracingEnabled()) {
-       import _root_.edu.umass.cs.iesl.watr.tracing.{VisualTraceLevel => L}
-       ${c.prefix}.traceLevel() match {
-         case L.Off          => // noop
-         case L.Append|L.Print => ${c.prefix}.runTrace(${c.prefix}.traceLevel(), ..$exprs)
-       }
-    }
-    """
-  }
+
+  // def sideEffectIfEnabled[T](c: VTraceContext[T])(vtl: c.Expr[VisualTraceLevel])(body: c.Tree): c.Tree = {
+  //   import c.universe._
+  //   q"""
+  //   if (${c.prefix}.tracingEnabled()) {
+  //      import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
+
+  //      val doTrace: Boolean = true //  L.cmp(..$vtl, ${c.prefix}.traceLevel()) >= 0
+
+  //      if (doTrace) {
+  //         val _ = $body
+  //      }
+  //   }
+  //   """
+  // }
+
+  // def materializeCallback[T](c: VTraceContext[T])(name: c.Expr[String])(value: c.Expr[Any]) = {
+  // def materializeCallback[T](c: VTraceContext[T])(name: c.Expr[String])(value: c.Expr[Any]): c.Expr[Unit] = {
+
+  // def checkpointImpl[T](c: VTraceContext[T])
+  //   (loc: c.Expr[String], msg: c.Expr[String], args: c.Expr[Seq[Any]]) = {
+
+  //   import c.universe._
+
+  //   q"""
+  //     val callbacks = ${c.prefix}.traceCallbacks()
+  //     callbacks
+
+  //   ; ()
+  //   """
+
+  // }
 
 }

@@ -97,7 +97,7 @@ object EnrichNumerics {
     }
 
     def percent: Double@@Percent = {
-      assert(0.0 <= theDouble && theDouble <= 100.0)
+      // assert(0.0 <= theDouble && theDouble <= 100.0)
       Percent(theDouble)
     }
 

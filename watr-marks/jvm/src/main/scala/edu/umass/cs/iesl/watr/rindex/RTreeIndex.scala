@@ -1,225 +1,121 @@
 package edu.umass.cs.iesl.watr
 package rindex
 
-import _root_.edu.umass.cs.iesl.watr.{geometry => G}
-
-import scala.collection.mutable
-import com.github.davidmoten.rtree
-import rtree._
-import rtree.{geometry => RG}
-import scala.collection.JavaConverters._
 import scala.collection.JavaConverters
 
-trait RTreeIndexable[T] {
-  def id(t: T): Int
-  def ltBounds(t: T): G.LTBounds
-}
+import com.github.davidmoten.rtree.{geometry => RG, _}
+import com.github.davidmoten.rtree
+import rx.functions.Func1
+
+/**
+  * + R-Tree index supporting shapes: rects, lines, points
+  * + Arbitrary attributes may be attached to shapes
+  * + Shapes can be clustered via disjoint sets
+  * + Search:
+  *   - Open/closed interval search support inclusion/exclusion of shapes that share an edge, but have no common area
+  *
+  * + Serialization
+  *   - Trees may be written to disk
+  *
+  **/
 
 class RTreeIndex[T: RTreeIndexable](
-  initItems: Seq[T]
-) {
-  import G._
+  var spatialIndex: RTree[T, RG.Geometry]
+) extends RTreeSearch[T] {
+  import RGeometryConversions._
 
-  val si = implicitly[RTreeIndexable[T]]
+  override val indexable: RTreeIndexable[T] = implicitly[RTreeIndexable[T]]
 
-  val itemMap: mutable.LongMap[T] = mutable.LongMap[T]()
+  override def rtreeIndex: RTree[T, RG.Geometry] = spatialIndex
 
-  var spatialIndex: RTree[T, RG.Geometry] = {
-    val entries: Seq[rtree.Entry[T, RG.Geometry]] = initItems.map{ t =>
-      rtree.Entries.entry(t,
-        RGeometry.rectangle(si.ltBounds(t)).asInstanceOf[RG.Geometry]
-      )
-    }
-    val asJava = JavaConverters.asJavaCollectionConverter(entries)
-    val l = new java.util.ArrayList(asJava.asJavaCollection)
-
-    RTree.create[T, RG.Geometry](l)
-  }
-
-
-  def toJsiRectangle(tb: LTBounds): RG.Rectangle = {
-    val LTBounds.Floats(l, t, w, h) = tb
-    RGeometry.rectangle(l, t, w, h)
-  }
-
-  def toRGLine(tb: Line): RG.Line = {
-    val Line(Point.Doubles(x1, y1), Point.Doubles(x2, y2)) = tb
-    RG.Geometries.line(x1, y1, x2, y2)
-  }
-
-  def toRGPoint(tb: Point): RG.Point = {
-    val Point.Doubles(x1, y1) = tb
-    RG.Geometries.point(x1, y1)
+  def clearAll(): Unit = {
+    spatialIndex = RTree.create[T, RG.Geometry]()
   }
 
   def remove(item: T): Unit = {
     spatialIndex = spatialIndex.delete(
       item,
-      toJsiRectangle(si.ltBounds(item))
+      toRGRectangle(si.ltBounds(item))
     )
-    itemMap.remove(si.id(item).toLong)
 
-    // val scalaIter = spatialIndex.entries().toBlocking().toIterable().asScala
-    // val values = scalaIter.toList.map(_.value())
-    // assert(!values.contains(item))
-    // assert(!itemMap.contains(si.id(item).toLong))
   }
 
   def add(item: T): Unit = {
     spatialIndex = spatialIndex.add(
       item,
-      toJsiRectangle(si.ltBounds(item))
+      toRGRectangle(si.ltBounds(item))
     )
-    itemMap.put(si.id(item).toLong, item)
-
-    // val scalaIter = spatialIndex.entries().toBlocking().toIterable().asScala
-    // val values = scalaIter.toList.map(_.value())
-    // assert(values.contains(item))
-    // assert(itemMap.contains(si.id(item).toLong))
   }
 
   def getItems(): Seq[T] = {
-    itemMap.values.toSeq
-  }
-
-  def get(id: Int): Option[T] = {
-    itemMap.get(id.toLong)
-  }
-
-  def getItem(id: Int): T = {
-    itemMap(id.toLong)
-  }
-
-
-  def queryForIntersectedIDs(q:LTBounds): Seq[Int] = {
-    spatialIndex.search(toJsiRectangle(q))
-      .toBlocking().toIterable().asScala
-      .toSeq.map{ entry =>
-        si.id(entry.value())
-      }
-  }
-
-  import java.lang.{Boolean => JBool}
-  import rx.functions.Func2
-  import rx.functions.Func1
-
-
-  def searchLine(q: Line, filter: T=>Boolean): Seq[T] = {
-    val query0 = toRGLine(q)
-    val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
-      override def call(entry: Entry[T, RG.Geometry]): JBool = {
-        filter(entry.value())
-      }
-    }
-
-    val hits = spatialIndex.search(query0).filter(filterFunc)
-
-    hits.toBlocking()
-      .toIterable().asScala
-      .toSeq.map{ _.value() }
-
-  }
-
-
-  def search(q:LTBounds, filter: T=>Boolean): Seq[T] = {
-    val query0 = toJsiRectangle(q)
-    val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
-      override def call(entry: Entry[T, RG.Geometry]): JBool = {
-        filter(entry.value())
-      }
-    }
-
-    val hits = spatialIndex.search(query0).filter(filterFunc)
-
-    hits.toBlocking()
-      .toIterable().asScala
-      .toSeq.map{ _.value() }
-
-  }
-
-
-  def queryForContainedIDs(q:LTBounds): Seq[Int] = {
-
-    val query0 = toJsiRectangle(q)
-    val x1 = query0.x1()
-    val x2 = query0.x2()
-    val y1 = query0.y1()
-    val y2 = query0.y2()
-    val p1 = RG.Geometries.point(x1, y1)
-    val p2 = RG.Geometries.point(x1, y2)
-    val p3 = RG.Geometries.point(x2, y1)
-    val p4 = RG.Geometries.point(x2, y2)
-
-
-    val contains: Func2[RG.Geometry, RG.Rectangle, JBool] = {
-      new Func2[RG.Geometry, RG.Rectangle, JBool]() {
-        override def call(g: RG.Geometry, h: RG.Rectangle): JBool = {
-          (g.intersects(p1)
-            && g.intersects(p2)
-            && g.intersects(p3)
-            && g.intersects(p4)
-          )
-        }
-      }
-    }
-
-
-    spatialIndex.search(query0, contains)
-      .toBlocking().toIterable().asScala
-      .toSeq.map{ entry =>
-        si.id(entry.value())
-      }
-  }
-
-  def queryForIntersects(q: LTBounds): Seq[T] = {
-    queryForIntersectedIDs(q).map(cid => itemMap(cid.toLong))
-  }
-
-  def queryForContained(q: LTBounds): Seq[T] = {
-    queryForContainedIDs(q).map(cid => itemMap(cid.toLong))
+    toScalaSeq(spatialIndex.entries())
   }
 
 }
 
 object RTreeIndex {
+  import RGeometryConversions._
 
-  def createFor[T : RTreeIndexable](
-    initItems: Seq[T] = Seq()
-  ): RTreeIndex[T] = {
-    new RTreeIndex[T](initItems)
+  def createFor[T : RTreeIndexable](initItems: Seq[T] = Seq()): RTreeIndex[T] = {
+    val si = implicitly[RTreeIndexable[T]]
+
+    val entries: Seq[rtree.Entry[T, RG.Geometry]] = initItems.map{ t =>
+      rtree.Entries.entry(t,
+        toRGRectangle(si.ltBounds(t)).asInstanceOf[RG.Geometry]
+      )
+    }
+    val asJava = JavaConverters.asJavaCollectionConverter(entries)
+    val l = new java.util.ArrayList(asJava.asJavaCollection)
+    createFor[T](RTree.create[T, RG.Geometry](l))
   }
 
-}
-
-
-object RGeometry {
-  def rectangle(
-    x: Double, y: Double, width: Double, height: Double
-  ): RG.Rectangle = rectangle(
-    x.toFloat, y.toFloat, width.toFloat, height.toFloat
-  )
-
-  def rectangle(
-    x: Float, y: Float, width: Float, height: Float
-  ): RG.Rectangle = {
-    RG.Geometries.rectangle(
-      x, y, x+width, y+height
-    )
+  def createFor[T : RTreeIndexable](initRtree: RTree[T, RG.Geometry]): RTreeIndex[T] = {
+    new RTreeIndex[T](initRtree)
   }
 
-  def rectangle(ltBounds: G.LTBounds): RG.Rectangle = {
-    val G.LTBounds.Floats(l, t, w, h) = ltBounds
-    RG.Geometries.rectangle(
-      l, t, l+w, t+h
-    )
+
+  def createRTreeSerializer[T : RTreeIndexable](): Serializer[T, RG.Geometry] = {
+
+    val si = implicitly[RTreeIndexable[T]]
+
+    val ccSerializer = new Func1[T, Array[Byte]]() {
+      override def call(entry: T): Array[Byte] = {
+        si.serialize(entry)
+      }
+    }
+
+    val ccDeSerializer = new Func1[Array[Byte], T]() {
+      override def call(bytes: Array[Byte]): T = {
+        si.deserialize(bytes)
+      }
+    }
+
+    val ser: Serializer[T, RG.Geometry] = Serializers
+      .flatBuffers[T, RG.Geometry]()
+      .serializer(ccSerializer)
+      .deserializer(ccDeSerializer)
+      .create()
+
+    ser
   }
 
-  def toLTBounds(r: RG.Rectangle): G.LTBounds = {
-    G.LTBounds.Floats(
-      left = r.x1,
-      top =  r.y1,
-      width = (r.x2 - r.x1),
-      height = (r.y2 - r.y1)
-    )
+
+  import java.nio.file.Files
+  import java.nio.file.Path
+  import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+
+  def load[T: RTreeIndexable](path: Path): RTreeIndex[T] = {
+    val ser = createRTreeSerializer[T]
+    val byteArray = Files.readAllBytes(path)
+    val bais = new ByteArrayInputStream(byteArray)
+    val rt  = ser.read(bais, byteArray.length.toLong, rtree.InternalStructure.DEFAULT)
+    createFor(rt)
+  }
+
+  def saveBytes[T: RTreeIndexable](rtree: RTreeIndex[T]): Array[Byte] = {
+    val ser = createRTreeSerializer[T]
+    val baos = new ByteArrayOutputStream()
+    ser.write(rtree.spatialIndex, baos)
+    baos.toByteArray()
   }
 }
