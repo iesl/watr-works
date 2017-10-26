@@ -10,7 +10,7 @@ Preprocessing: Generate thumbnails of each page of each pdf file and store them 
 
 SegmentAll: Extracts the text and geometric information from the pdf documents, and stores them in postgresql db tables
 1) project watrshed //change project
-2) runMain edu.umass.cs.iesl.watr.table.WatrTable watr_works_db
+2) runMain edu.umass.cs.iesl.watr.table.WatrTable --db watr_works_db --passwd watrpasswd --corpus corpus-test
 3) Corpus.initCorpus("path_to_corpus_test")
 4) -- Corpus(new java.io.File("/Users/BatComp/Desktop/UMass/IESL/Code/watr-works/corpus-test").toPath).normalizeCorpusEntries for additional pdfs
 5) corpusAccessApi.corpus.entries
