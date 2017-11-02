@@ -18,23 +18,31 @@ import TypeTags._
 protected object ExtractionImplicits {
   implicit class RicherRectangle2D(val self: Rectangle2D) extends AnyVal {
     def toLTBounds(): LTBounds = {
-      val h = self.getHeight
-      val w = self.getWidth
       val left = self.getMinX
       val top = self.getMinY
+      val h = self.getHeight
+      val w = self.getWidth
       LTBounds.Doubles(left, top, w, h)
     }
   }
 
   implicit class RicherPDRectangle(val self: PDRectangle) extends AnyVal {
-    def toLTBounds(): LTBounds = {
-      val l = self.getLowerLeftX
+    def toLBBounds(): LBBounds = {
+      val left = self.getLowerLeftX
+      val top = self.getUpperRightY
       // val bottom = self.getLowerLeftY
-      val t = self.getUpperRightY
       val w = self.getWidth
       val h = self.getHeight
-      LTBounds.Floats(l, t-h, w, h)
+      LTBounds.Floats(left, top, w, h).toLBBounds
     }
+    // def xtoLTBounds(): LTBounds = {
+    //   val left = self.getLowerLeftX
+    //   val top = self.getUpperRightY
+    //   val w = self.getWidth
+    //   val h = self.getHeight
+    //   // LTBounds.Floats(l, t-h, w, h)
+    //   LTBounds.Floats(left, top, w, h)
+    // }
   }
 
 }
@@ -92,6 +100,7 @@ case class GlyphProps(
   finalFontBounds: Shape,
   finalAffineTrans: AffineTransform
 ) {
+
 
   lazy val fontBBox = finalFontBounds.getBounds2D().toLTBounds
   lazy val glyphBBox = finalGlyphBounds.map(_.getBounds2D().toLTBounds).getOrElse { fontBBox }

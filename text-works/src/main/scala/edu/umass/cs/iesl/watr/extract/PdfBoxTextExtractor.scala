@@ -17,7 +17,7 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImage
 import org.apache.pdfbox.pdmodel.font._
 import org.apache.pdfbox.util.{Matrix, Vector}
 // import scala.collection.JavaConverters._
-import utils.Debugging._
+// import utils.Debugging._
 
 
 
@@ -34,7 +34,7 @@ class PdfBoxTextExtractor(
   charIdGen: IdGenerator[CharID],
   pageNum: Int@@PageNum,
   fontDefs: FontDefs,
-  cropBox: PDRectangle
+  pageBoundsPdfCoords: PDRectangle
 ) extends PDFGraphicsStreamEngine(page) {
   import ExtractedItem._
   import FontDefs._
@@ -109,8 +109,8 @@ class PdfBoxTextExtractor(
     val width = x2 - x1
     val height = y2 - y1
 
-    val left = x1 - cropBox.getLowerLeftX
-    val top = cropBox.getUpperRightY - y2
+    val left = x1 - pageBoundsPdfCoords.getLowerLeftX
+    val top = pageBoundsPdfCoords.getUpperRightY - y2
 
     val imgBounds = LTBounds.Doubles(left, top, width, height)
 
@@ -201,6 +201,8 @@ class PdfBoxTextExtractor(
 
   var pageSpaceTransform: PageSpaceTransforms = null
 
+  lazy val pageLTBounds = getPageGeometry().bounds
+
   override protected def showGlyph(
     textRenderingMatrix: Matrix,
     pdFont: PDFont,
@@ -218,11 +220,10 @@ class PdfBoxTextExtractor(
 
       fontDefs.addFont(pdFont)
 
-      val pageBounds = cropBox.toLTBounds()
 
       glyphProps.finalGlyphBounds.foreach { finalGlyphBounds =>
         val glyphBounds = finalGlyphBounds.getBounds2D.toLTBounds()
-        val isContained = glyphBounds.isContainedBy(pageBounds) && glyphProps.fontBBox.isContainedBy(pageBounds)
+        val isContained = glyphBounds.isContainedBy(pageLTBounds) && glyphProps.fontBBox.isContainedBy(pageLTBounds)
 
         def appendChar(strRepr: String): Unit = {
           if (isContained) {
@@ -231,7 +232,7 @@ class PdfBoxTextExtractor(
         }
 
         if (unicode == null) {
-          appendChar(s"¿${code};")
+         appendChar(s"¿${code};")
         } else {
           val isSurrogate =  unicode.exists(isSurrogateCodepoint(_))
           if (isSurrogate) {
@@ -268,8 +269,39 @@ class PdfBoxTextExtractor(
     }
   }
 
+  // var i = 4;
 
   def calculateGlyphBounds(textRenderingMatrix: Matrix,  font: PDFont,  code: Int) : GlyphProps = {
+
+    // if (i > 0) {
+    //   val fontMatrix = font.getFontMatrix.clone()
+    //   val trm = textRenderingMatrix.clone()
+
+    //   println(s"${i}. calculateGlyphBounds: code: ${code.toChar}")
+    //   println(s"Page Box       : ${pageBounds.toLTBounds()}")
+    //   println(s"Font Matrix    : ${fontMatrix}")
+    //   println(s"TRM            : ${trm}")
+    //   trm.concatenate(fontMatrix)
+
+    //   val affineTRM = trm.createAffineTransform()
+    //   println(s"F+TRM          : ${trm}")
+    //   println(s"  (as affine)  : ${affineTRM}")
+
+    //   val fontBounds = getFontBounds(font).toGeneralPath().getBounds2D() /// .toLTBounds()
+
+    //   println(s"FontBounds     : ${fontBounds.toLTBounds()}")
+
+    //   val ftrmFontBounds = affineTRM.createTransformedShape(fontBounds)
+    //   println(s" apply F+TRM   : ${ftrmFontBounds.getBounds2D.toLTBounds()}")
+
+    //   val pageAligned = pageSpaceTransform.transform(ftrmFontBounds)
+    //   println(s" page-aligned  : ${pageAligned.getBounds2D.toLTBounds()}")
+
+
+    //   println("\n" * 3)
+
+    //   i = i-1
+    // }
 
     textRenderingMatrix.concatenate(font.getFontMatrix)
     val affineTr = textRenderingMatrix.createAffineTransform()
@@ -355,7 +387,7 @@ class PdfBoxTextExtractor(
   private def findPageSpaceTransforms(pdPage: PDPage): PageSpaceTransforms = {
     // flip y-axis
     val flipTr = new AffineTransform()
-    flipTr.translate(0, cropBox.getHeight().toDouble)
+    flipTr.translate(0, pageBoundsPdfCoords.getHeight().toDouble)
     flipTr.scale(1, -1)
 
     // page rotation
@@ -365,19 +397,24 @@ class PdfBoxTextExtractor(
       println(s"Rotated page: ${rotation}")
       rotation match {
         case 90 =>
-          rotateTr.translate(cropBox.getHeight().toDouble, 0)
+          rotateTr.translate(pageBoundsPdfCoords.getHeight().toDouble, 0)
         case 270 =>
-          rotateTr.translate(0, cropBox.getWidth().toDouble)
+          rotateTr.translate(0, pageBoundsPdfCoords.getWidth().toDouble)
         case 180 =>
-          rotateTr.translate(cropBox.getWidth().toDouble, cropBox.getHeight().toDouble)
+          rotateTr.translate(pageBoundsPdfCoords.getWidth().toDouble, pageBoundsPdfCoords.getHeight().toDouble)
         case rot =>
           println(s"Page rotation of ${rot} encountered")
       }
       rotateTr.rotate(Math.toRadians(rotation.toDouble))
     }
 
-    // position within cropBox
-    val transTr = AffineTransform.getTranslateInstance(-cropBox.getLowerLeftX().toDouble, cropBox.getLowerLeftY().toDouble)
+    // position within pageBounds
+    // val transTr = AffineTransform.getTranslateInstance(-pageBounds.getLowerLeftX().toDouble, pageBounds.getLowerLeftY().toDouble)
+    val transTr = AffineTransform.getTranslateInstance(
+      -pageBoundsPdfCoords.getLowerLeftX().toDouble,
+      pageBoundsPdfCoords.getLowerLeftY().toDouble
+    )
+    // val transTr = new AffineTransform()
 
     PageSpaceTransforms(flipTr, rotateTr, transTr)
   }
@@ -391,7 +428,13 @@ class PdfBoxTextExtractor(
   }
 
   def getPageGeometry(): PageGeometry = {
-    PageGeometry(pageNum, cropBox.toLTBounds)
+    val pageBox = LTBounds.Floats(
+      0, 0,
+      pageBoundsPdfCoords.getWidth,
+      pageBoundsPdfCoords.getHeight
+    )
+
+    PageGeometry(pageNum, pageBox)
   }
 }
 
@@ -418,20 +461,42 @@ object PdfBoxTextExtractor {
       for { page <- 0 until numOfPages } {
         val pdfPage = document.getPage(page)
 
-        val cropBox = pdfPage.getMediaBox   // getBBox getArtBox getTrimBox getCropBox getBleedBox getMediaBox
 
-        // log(pdfPage.getBBox)
-        // log(pdfPage.getArtBox)
-        // log(pdfPage.getTrimBox)
-        // log(pdfPage.getCropBox)
-        // log(pdfPage.getBleedBox)
-        // log(pdfPage.getRotation)
-        // log(pdfPage.getMediaBox)
-
-        currPageGeometry = PageGeometry(
-          PageNum(page),
-          cropBox.toLTBounds()
+        // Use the largest page box
+        val strs = List(
+          pdfPage.getBBox,
+          pdfPage.getArtBox,
+          pdfPage.getTrimBox,
+          pdfPage.getCropBox,
+          pdfPage.getBleedBox,
+          pdfPage.getMediaBox
+        ).map {b =>
+          List (b.getWidth(), b.getHeight,
+            b.getLowerLeftX, b.getLowerLeftY,
+            b.getUpperRightX, b.getUpperRightY
+          ).mkString("  ;  ")
+        }
+        println("All Media: W  H  LLX LLY  URX  URY")
+        println(
+          strs.mkString("\n  ", "\n  ", "\n")
         )
+
+        val allMediaBoxes = List(
+          pdfPage.getBBox,
+          pdfPage.getArtBox,
+          pdfPage.getTrimBox,
+          pdfPage.getCropBox,
+          pdfPage.getBleedBox,
+          pdfPage.getMediaBox
+        ).map {b => (b.getUpperRightX, b.getUpperRightY) }
+
+        val maxX = allMediaBoxes.map(_._1).max
+        val maxY = allMediaBoxes.map(_._2).max
+
+        // val effectivePageBox = new PDRectangle(0, 0, maxX, maxY)
+        val effectivePageBox = pdfPage.getBBox
+
+
 
         println(s"Extracting page ${page}: ${currPageGeometry}")
 
@@ -440,8 +505,10 @@ object PdfBoxTextExtractor {
           charIdGen,
           PageNum(page),
           fontDefs,
-          cropBox
+          effectivePageBox
         )
+
+        currPageGeometry = extractor.getPageGeometry()
 
         extractor.stripPage(document, page)
 
