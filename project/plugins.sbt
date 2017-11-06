@@ -3,7 +3,6 @@ resolvers += "Artima Maven Repository" at "http://repo.artima.com/releases"
 
 logLevel := Level.Warn
 
-addSbtPlugin("org.scala-js"         % "sbt-scalajs"         % "0.6.21")
 addSbtPlugin("com.github.gseitz"    % "sbt-release"         % "1.0.6")
 addSbtPlugin("com.typesafe.sbt"     % "sbt-native-packager" % "1.3.1")
 addSbtPlugin("com.47deg"            % "sbt-microsites"      % "0.7.4")
