@@ -3,7 +3,7 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.15"
+  val scalazVersion       = "7.2.16"
   val scalaTagsVersion    = "0.6.7"
   val scalaAsyncVersion   = "0.9.7"
   val scalatestVersion    = "3.0.4"
@@ -18,7 +18,7 @@ trait LibVersions {
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.16.0"
   val fs2Version          = "0.9.7"
-  val ammoniteVersion     = "1.0.2"
+  val ammoniteVersion     = "1.0.3"
 }
 
 
@@ -64,13 +64,13 @@ object DatabaseLibs extends LibVersions {
 trait CommonLibs extends LibVersions {
 
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.12.3"  % ammoniteVersion
+  val ammonite         = "com.lihaoyi"             % "ammonite_2.12.4"  % ammoniteVersion
   // val ammoniteOps      = "com.lihaoyi"             % "ammonite-ops_2.11.11"  % ammoniteVersion
   val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"  % ammoniteVersion
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
-  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.6"
+  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.7"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,

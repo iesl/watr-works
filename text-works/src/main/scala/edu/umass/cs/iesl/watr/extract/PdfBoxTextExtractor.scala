@@ -462,41 +462,40 @@ object PdfBoxTextExtractor {
         val pdfPage = document.getPage(page)
 
 
-        // Use the largest page box
-        val strs = List(
-          pdfPage.getBBox,
-          pdfPage.getArtBox,
-          pdfPage.getTrimBox,
-          pdfPage.getCropBox,
-          pdfPage.getBleedBox,
-          pdfPage.getMediaBox
-        ).map {b =>
-          List (b.getWidth(), b.getHeight,
-            b.getLowerLeftX, b.getLowerLeftY,
-            b.getUpperRightX, b.getUpperRightY
-          ).mkString("  ;  ")
-        }
-        println("All Media: W  H  LLX LLY  URX  URY")
-        println(
-          strs.mkString("\n  ", "\n  ", "\n")
-        )
+        // // Use the largest page box
+        // val strs = List(
+        //   pdfPage.getBBox,
+        //   pdfPage.getArtBox,
+        //   pdfPage.getTrimBox,
+        //   pdfPage.getCropBox,
+        //   pdfPage.getBleedBox,
+        //   pdfPage.getMediaBox
+        // ).map {b =>
+        //   List (b.getWidth(), b.getHeight,
+        //     b.getLowerLeftX, b.getLowerLeftY,
+        //     b.getUpperRightX, b.getUpperRightY
+        //   ).mkString("  ;  ")
+        // }
+        // println("All Media: W  H  LLX LLY  URX  URY")
+        // println(
+        //   strs.mkString("\n  ", "\n  ", "\n")
+        // )
 
-        val allMediaBoxes = List(
-          pdfPage.getBBox,
-          pdfPage.getArtBox,
-          pdfPage.getTrimBox,
-          pdfPage.getCropBox,
-          pdfPage.getBleedBox,
-          pdfPage.getMediaBox
-        ).map {b => (b.getUpperRightX, b.getUpperRightY) }
+        // val allMediaBoxes = List(
+        //   pdfPage.getBBox,
+        //   pdfPage.getArtBox,
+        //   pdfPage.getTrimBox,
+        //   pdfPage.getCropBox,
+        //   pdfPage.getBleedBox,
+        //   pdfPage.getMediaBox
+        // ).map {b => (b.getUpperRightX, b.getUpperRightY) }
 
-        val maxX = allMediaBoxes.map(_._1).max
-        val maxY = allMediaBoxes.map(_._2).max
+        // val maxX = allMediaBoxes.map(_._1).max
+        // val maxY = allMediaBoxes.map(_._2).max
 
         // val effectivePageBox = new PDRectangle(0, 0, maxX, maxY)
+
         val effectivePageBox = pdfPage.getBBox
-
-
 
         println(s"Extracting page ${page}: ${currPageGeometry}")
 
@@ -542,57 +541,3 @@ object PdfBoxTextExtractor {
 }
 
 
-// protected def printFontInfo(textRenderingMatrix: Matrix, font: PDFont, code: Int, unicode: String, displacement: Vector): Unit = {
-//   import utils.Debugging._
-
-//   val at: AffineTransform = textRenderingMatrix.createAffineTransform()
-//   at.concatenate(font.getFontMatrix().createAffineTransform())
-
-//   println("~"*40)
-
-//   val fdesc = font.getFontDescriptor
-
-//   log(fdesc.getStemH)
-//   log( fdesc.getStemV   )
-//   log( fdesc.getAscent  )
-//   log( fdesc.getDescent )
-
-//   log(code)
-//   log(unicode)
-//   log(displacement)
-
-//   log( font.getType )
-//   log( font.getName )
-//   // log( font.isDamaged() )
-//   log( font.getSubType )
-//   // log( font.getCOSObject )
-//   log( font.getSpaceWidth )
-//   log( font.getFontMatrix )
-//   log( font.getBoundingBox )
-//   // log( font.getPositionVector(code) )
-//   log( font.getFontDescriptor )
-//   log( font.isVertical() )
-//   log( font.isDamaged() )
-//   log( font.isEmbedded() )
-//   log( font.isStandard14() )
-
-//   val bbox = font.getBoundingBox
-
-//   val xmin = bbox.getLowerLeftX
-//   val ymin = bbox.getLowerLeftY
-//   val xmax = bbox.getUpperRightX
-//   val ymax = bbox.getUpperRightY
-//   val w = xmax - xmin
-//   val h = ymax - ymin
-
-//   // at.transform(bbox)
-//   // val fontBBox = new PDRectangle((float) minX, (float) minY, (float) (maxX - minX), (float) (maxY - minY))
-//   // val fontBBox = new PDRectangle(x, y, w, h)
-//   val fontBBox = new PDRectangle(xmin, ymin, w, h)
-//   val fontPath = fontBBox.toGeneralPath().getBounds2D
-
-//   val pTrans = at.createTransformedShape(fontPath)
-
-//   log (pTrans.getBounds2D)
-
-// }

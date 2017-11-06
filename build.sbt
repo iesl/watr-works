@@ -40,7 +40,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     TestLibs.testAndCheck ++ Seq(
       Lib.ammoniteOps,
       Lib.playJson,
-      "com.github.davidmoten" % "rtree" % "0.8.0.1",
+      "com.github.davidmoten" % "rtree" % "0.8.0.2",
       "com.github.davidmoten" % "flatbuffers-java" % "1.7.0.1",
       "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
     ))
@@ -58,7 +58,7 @@ lazy val textworks = (project in file("text-works"))
     LogLibs.logback ++
     TestLibs.testAndCheck ++
     Lib.fs2 ++ Seq(
-      "org.apache.pdfbox" % "pdfbox" % "2.0.7",
+      "org.apache.pdfbox" % "pdfbox" % "2.0.8",
       "com.google.guava" % "guava" % "23.0",
       "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,

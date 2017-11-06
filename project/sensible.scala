@@ -110,7 +110,7 @@ object SensibleProject extends CommonLibs {
 
 
   lazy val settings =  Seq(
-    scalaVersion := "2.12.3",
+    scalaVersion := "2.12.4",
     organization := "edu.umass.cs.iesl",
     scalacOptions ++=  scala_2_12_RecommendedOptionList,
 
