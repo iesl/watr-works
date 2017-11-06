@@ -6,7 +6,6 @@ SensibleProject.settings
 
 val Lib = CommonLibs
 
-
 lazy val root = (project in file("."))
   .aggregate(
     prelude, watrmarks, textworks, watrshed, watrcolorServer
@@ -43,9 +42,7 @@ lazy val textworks = (project in file("text-works"))
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
-    LogLibs.logback ++
-    TestLibs.testAndCheck ++
-    Lib.fs2 ++ Seq(
+    LogLibs.logback ++ TestLibs.testAndCheck ++ Lib.fs2 ++ Seq(
       "org.apache.pdfbox" % "pdfbox" % "2.0.8",
       "com.google.guava" % "guava" % "23.0",
       "com.vividsolutions" % "jts-core" % "1.14.0",
@@ -62,9 +59,8 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++=
-    LogLibs.logback ++
+    LogLibs.logback ++ TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
-    TestLibs.testAndCheck ++
     Lib.fs2 ++ Seq(
       Lib.scopt,
       Lib.scrimageCore,
@@ -79,10 +75,14 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
   .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++=
+    Lib.fs2 ++
     LogLibs.logback ++
+    TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
-    Lib.http4s ++
-    TestLibs.testAndCheck
+    Lib.http4s ++ Seq(
+      // "org.typelevel" %% "cats-core" % "1.0.0-RC1"
+        "org.typelevel" %% "cats-core" % "0.9.0"
+    )
   )
   .dependsOn(watrshed)
 

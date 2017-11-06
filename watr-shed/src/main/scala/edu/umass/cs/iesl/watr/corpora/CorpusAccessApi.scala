@@ -27,6 +27,8 @@ object RegionImageResponse {
   ) = v.fold(onError, _.fold(onBytes, onPath))
 
 }
+
+
 trait CorpusAccessApi {
   def corpusAccessDB: CorpusAccessDB
   def corpus: Corpus

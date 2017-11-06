@@ -16,8 +16,10 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.2"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.16.0"
+  val http4sVersion       = "0.17.5"
   val fs2Version          = "0.9.7"
+  // val fs2Version          = "0.10.0-M8" // For cats 1.0.0-RC1 and cats-effect 0.5
+
   val ammoniteVersion     = "1.0.3"
 }
 
@@ -50,12 +52,12 @@ object LogLibs extends LibVersions {
 object DatabaseLibs extends LibVersions {
 
   val doobieDb = Seq(
-    "org.tpolecat" %% "doobie-core"       % doobieVersion,
-    "org.tpolecat" %% "doobie-postgres"   % doobieVersion,
-    "org.tpolecat" %% "doobie-hikari"     % doobieVersion,
-    "org.tpolecat" %% "doobie-specs2"     % doobieVersion % "test",
-    "org.postgresql"          % "postgresql" % "42.1.4",
-    "org.javassist" % "javassist" % "3.22.0-CR2",
+    "org.tpolecat"      %% "doobie-core"       % doobieVersion,
+    "org.tpolecat"      %% "doobie-postgres"   % doobieVersion,
+    "org.tpolecat"      %% "doobie-hikari"     % doobieVersion,
+    "org.tpolecat"      %% "doobie-specs2"     % doobieVersion % "test",
+    "org.postgresql"     % "postgresql"        % "42.1.4",
+    "org.javassist"      % "javassist"         % "3.22.0-CR2",
     "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7.1"
   )
 
@@ -64,8 +66,7 @@ object DatabaseLibs extends LibVersions {
 trait CommonLibs extends LibVersions {
 
   val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
-  val ammonite         = "com.lihaoyi"             % "ammonite_2.12.4"  % ammoniteVersion
-  // val ammoniteOps      = "com.lihaoyi"             % "ammonite-ops_2.11.11"  % ammoniteVersion
+  val ammonite         = "com.lihaoyi"             % "ammonite" % ammoniteVersion cross CrossVersion.full
   val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"  % ammoniteVersion
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV

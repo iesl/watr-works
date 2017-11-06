@@ -124,6 +124,10 @@ object SensibleProject extends CommonLibs {
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.4"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.1" cross CrossVersion.full),
 
+    // These settings are required to make Ammonite Repl work properly
+    fork := true,
+    connectInput := true,
+    outputStrategy := Some(StdoutOutput),
 
     // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the
     //   scala library get loaded

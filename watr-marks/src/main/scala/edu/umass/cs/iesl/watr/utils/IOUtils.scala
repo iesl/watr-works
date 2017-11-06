@@ -4,6 +4,7 @@ package utils
 object PathUtils {
 
   import ammonite.{ops => fs}
+  import java.nio.{file => nio}
 
   def appendTimestamp(path: String): String = {
     import java.text.SimpleDateFormat
@@ -12,6 +13,18 @@ object PathUtils {
     s"$path-$dateStamp"
   }
 
+  def nioToAmm(nioPath: nio.Path): fs.Path = {
+    fs.FilePath(nioPath) match {
+      case p: fs.Path =>  p
+      case p: fs.RelPath => fs.pwd / p
+    }
+  }
+  def strToAmmPath(str: String): fs.Path = {
+    fs.FilePath(str) match {
+      case p: fs.Path =>  p
+      case p: fs.RelPath => fs.pwd / p
+    }
+  }
 
   // def cleanFile(p: fs.Path, clean: Boolean): Unit = {
   //   fs.stat(p).isDir

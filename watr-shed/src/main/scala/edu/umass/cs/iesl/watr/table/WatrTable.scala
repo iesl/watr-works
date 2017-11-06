@@ -2,28 +2,29 @@ package edu.umass.cs.iesl.watr
 package table
 
 import ammonite.ops._
-
+import ammonite.runtime.Storage
+import ammonite.main.Defaults
 import corpora._
 import corpora.filesys.Corpus
+import utils.{PathUtils => P}
 
-
-object SharedInit {
+object SharedInit extends utils.AppMainBasics {
 
   val predef =
     s"""|import edu.umass.cs.iesl.watr
-        |import watr._, spindex._, geometry._, table._
+        |import watr._
         |import corpora._
         |import corpora.filesys._
         |import corpora.database._
-        |import textreflow._
-        |import textreflow.data._
         |import watrmarks.{StandardLabels => LB}
         |import TypeTags._
+        |import watr._, spindex._, geometry._, table._
         |import ShellCommands._
-        |import labeling.SampleLabelWidgets
         |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi
         |implicit val docStore: DocumentZoningApi = corpusAccessApi.docStore
+        |val corpusDb: CorpusAccessDB = corpusAccessApi.corpusAccessDB
         |""".stripMargin
+
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
 
@@ -41,43 +42,42 @@ object SharedInit {
     info     = fansi.Color.LightGray
   )
 
+  def initCorpusAccessApi(args: Array[String]): CorpusAccessApi = {
+    val argMap = argsToMap(args)
+    val dbname = argMap.get("db").flatMap(_.headOption)
+      .getOrElse(sys.error("no db supplied (--db ...)"))
+
+    val passwd = argMap.get("passwd").flatMap(_.headOption)
+      .getOrElse(sys.error("no password supplied (--passwd ...)"))
+
+    val corpusRoot = argMap.get("corpus").flatMap(_.headOption)
+      .getOrElse(sys.error("no corpus path supplied (--corpus ...)"))
+
+    val corpus = Corpus(P.strToAmmPath(corpusRoot))
+
+    val reflowDB = ShellCommands.initReflowDB(dbname, passwd)
+
+    CorpusAccessApi(reflowDB, corpus)
+  }
 }
 
 object WatrTable extends App with utils.AppMainBasics {
   import SharedInit._
 
-  import ShellCommands._
-
-  val argMap = argsToMap(args)
-  println(argMap)
-
-  val dbname = argMap.get("db").flatMap(_.headOption)
-    .getOrElse(sys.error("no db supplied (--db ...)"))
-
-  val passwd = argMap.get("passwd").flatMap(_.headOption)
-    .getOrElse(sys.error("no password supplied (--passwd ...)"))
-
-  val corpusRoot = argMap.get("corpus").flatMap(_.headOption)
-    .getOrElse(sys.error("no corpus path supplied (--corpus ...)"))
-
   def run(args: Array[String]): Unit = {
+    val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
 
-    val db = initReflowDB(dbname, passwd)
-
-    val corpus = Corpus(pwd / corpusRoot)
-
-    val corpusAccessApi = CorpusAccessApi(db, corpus)
 
     replMain().run(
       "corpusAccessApi" -> corpusAccessApi
     )
 
-    db.shutdown()
+    corpusAccessApi.corpusAccessDB.shutdown()
   }
 
 
   def replMain() = ammonite.Main(
-    // storageBackend = new Storage.Folder(Defaults.ammoniteHome)
+    storageBackend = new Storage.Folder(Defaults.ammoniteHome),
     predefCode = predef,
     defaultPredef = true,
     wd = pwd,
@@ -85,7 +85,7 @@ object WatrTable extends App with utils.AppMainBasics {
     inputStream = System.in,
     outputStream  = System.out,
     errorStream = System.err,
-    verboseOutput = false,
+    // verboseOutput = true,
     colors = replColors
   )
 

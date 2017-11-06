@@ -254,7 +254,12 @@ class CorpusEntry(
   }
 
   def hasArtifact(artifactDescriptor: String, groupDescriptor: Option[String]=None): Boolean ={
-    exists(artifactsRoot / RelPath(artifactDescriptor))
+    val artifactPath = groupDescriptor.map{ gd =>
+      artifactsRoot / RelPath(gd) / RelPath(artifactDescriptor)
+    } getOrElse {
+      artifactsRoot / RelPath(artifactDescriptor)
+    }
+    exists(artifactPath)
   }
 
   def getPdfArtifact(): Option[CorpusArtifact] = {

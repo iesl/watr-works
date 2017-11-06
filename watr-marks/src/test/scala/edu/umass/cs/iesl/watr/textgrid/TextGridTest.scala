@@ -36,11 +36,7 @@ class TextGridTests extends TextGridTestUtil {
 
   it should "join two rows into one, with optional space or dehyphenation" in {
 
-    val textGrid = stringToPageTextGrid("exit-\ning\n", PageNum(0), None)
-    // textGrid.rows.toCursor
-
-    // textGrid.toCursor.slurpRight((a, b) => Some(a join b))
-    //     .branchAside().slurpRight(...).unbranch()
+    // val textGrid = stringToPageTextGrid("exit-\ning\n", PageNum(0), None)
 
   }
 

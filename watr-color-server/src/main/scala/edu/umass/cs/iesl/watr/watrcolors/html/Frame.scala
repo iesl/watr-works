@@ -20,9 +20,6 @@ object WatrStyles extends CascadingStyleSheet {
   )
 }
 
-// <.script(`type` := "text/javascript", src := "/webjars/mousetrap/1.6.0/mousetrap.min.js"),
-// <.script(`type` := "text/javascript", src := "/webjars/fabric/1.6.2/dist/fabric.js"),
-
 object ShellHtml {
   def htmlHead() = {
     <.head(
@@ -31,25 +28,16 @@ object ShellHtml {
       <.meta(httpEquiv:="X-UA-Compatible", content:="IE=edge"),
       <.meta(^.charset:="utf-8"),
       <.title("WatrColors"),
-      <.script(`type` := "text/javascript", src := "/webjars/jquery/2.2.4/jquery.min.js"),
-      <.script(`type` := "text/javascript", src := "/webjars/d3js/3.5.17/d3.min.js"),
-
-      <.link(rel := "stylesheet", `type` := "text/css", href := "/webjars/bootstrap/3.3.7/css/bootstrap.min.css"),
-      <.link(rel := "stylesheet", `type` := "text/css", href := "/assets/css/main.css"),
-      <.link(rel := "stylesheet", `type` := "text/css", href := "/assets/css/simple-sidebar.css"),
-
-      // <.script(`type` := "text/javascript", src := "/assets/js/d3.js"),
-      <.script(`type` := "text/javascript", src := "/assets/js/d3-drag-select.js"),
-      <.script(`type` := "text/javascript", src := "/assets/watrcolors-fastopt.js"),
-
-      <.style(^.`type` := "text/css", WatrStyles.styleSheetText)
     )
   }
 
   def apply(pageName: String, user: Option[String]) = {
     <.html(
       htmlHead(),
-      <.body(WatrStyles.htmlBody, ^.onload:=s"""${pageName}.display("${user.getOrElse("")}");""")
+      <.body(
+        <.div(id := "menu")
+      ),
+      <.script(`type` := "text/javascript", src := "/dist/menu.bundle.js")
     )
   }
 
