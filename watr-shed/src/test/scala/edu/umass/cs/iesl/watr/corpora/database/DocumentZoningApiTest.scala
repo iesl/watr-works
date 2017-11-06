@@ -55,9 +55,9 @@ class DocumentZoningApiTest extends DatabaseTest {
     val lineZones = docStore.getPageZones(pageId, LB.VisualLine)
     val lineRegions = lineZones.flatMap(_.regions)
 
-    docStore.labelRegions(LB.TextBlock, lineRegions) // .map(_.toPageRegion()))
+    // docStore.labelRegions(LB.TextBlock, lineRegions) // .map(_.toPageRegion()))
 
-    val zoneExport = docStore.exportDocumentZones(Seq(LB.TextBlock))
+    // val zoneExport = docStore.exportDocumentZones(Seq(LB.TextBlock))
 
     // println(s"========================================")
     // val label = LB.TextBlock

@@ -20,7 +20,6 @@ import org.http4s.server.syntax._
 import org.http4s.server.staticcontent._
 import org.http4s.server.blaze._
 import TypeTags._
-import upickle.{default => UPickle}
 
 import scala.concurrent._
 
@@ -49,27 +48,27 @@ class Http4sService(
 
   val corpusRoot = corpus.corpusRoot.toNIO
 
-  val regionImageService = HttpService {
-    case req @ GET -> Root / "region" / IntVar(regionId0) =>
-      val regionId = RegionID(regionId0)
-      val resp = corpusAccessApi.serveTargetRegionImageUpdate(regionId)
-      RegionImageResponse.fold(resp)(
-        err => {
-          Ok(err)
-        },
-        bytes => {
-          Ok(bytes).putHeaders(
-            H.`Content-Type`(MediaType.`image/png`)
-          )
-        },
-        path => {
-          Task.now{
-            StaticFile.fromFile(path.toFile(), Some(req))
-              .getOrElse { Response(http4s.Status(500)(s"could not serve image ${regionId}")) }
-          }
-        }
-      )
-  }
+  // val regionImageService = HttpService {
+  //   case req @ GET -> Root / "region" / IntVar(regionId0) =>
+  //     val regionId = RegionID(regionId0)
+  //     val resp = corpusAccessApi.serveTargetRegionImageUpdate(regionId)
+  //     RegionImageResponse.fold(resp)(
+  //       err => {
+  //         Ok(err)
+  //       },
+  //       bytes => {
+  //         Ok(bytes).putHeaders(
+  //           H.`Content-Type`(MediaType.`image/png`)
+  //         )
+  //       },
+  //       path => {
+  //         Task.now{
+  //           StaticFile.fromFile(path.toFile(), Some(req))
+  //             .getOrElse { Response(http4s.Status(500)(s"could not serve image ${regionId}")) }
+  //         }
+  //       }
+  //     )
+  // }
 
   def htmlPage(pageName: String, user: Option[String]): Task[Response]= {
     Ok(html.ShellHtml(pageName, user).toString())
@@ -88,89 +87,88 @@ class Http4sService(
   }
 
 
-  val authedPages = AuthedService[UserData] {
+  // val authedPages = AuthedService[UserData] {
 
-    case request @ GET -> Root / pageName as user =>
-      pageName match {
-        case "browse"    => htmlPage("BrowseCorpus", Some(user.emailAddr.unwrap))
-        case "label"     => htmlPage("WatrColors", Some(user.emailAddr.unwrap))
-      }
+  //   case request @ GET -> Root / pageName as user =>
+  //     pageName match {
+  //       case "browse"    => htmlPage("BrowseCorpus", Some(user.emailAddr.unwrap))
+  //       case "label"     => htmlPage("WatrColors", Some(user.emailAddr.unwrap))
+  //     }
 
-    case request @ GET -> Root  as user =>
-      SeeOther(uri("/browse"))
-  }
+  //   case request @ GET -> Root  as user =>
+  //     SeeOther(uri("/browse"))
+  // }
 
   val redirectOnFailure: AuthedService[String] = Kleisli(req => SeeOther(uri("/user/register")))
 
-  val serveAuthorizedPages = AuthMiddleware(
-    authUser,
-    redirectOnFailure
-  )( userStatusAndLogout orElse authedPages )
+  // val serveAuthorizedPages = AuthMiddleware(
+  //   authUser,
+  //   redirectOnFailure
+  // )( userStatusAndLogout orElse authedPages )
 
 
-  val actorSystem = ActorSystem()
-  import actorSystem.dispatcher
+  // val actorSystem = ActorSystem()
+  // import actorSystem.dispatcher
 
-  lazy val browseCorpusServer = new BrowseCorpusApiListeners(corpusAccessApi)
+  // lazy val browseCorpusServer = new BrowseCorpusApiListeners(corpusAccessApi)
 
-  val userSessions = actorSystem.actorOf(SessionsActor.props(corpusAccessApi), "sessionsActor")
+  // val userSessions = actorSystem.actorOf(SessionsActor.props(corpusAccessApi), "sessionsActor")
 
-  val authedAutowire = AuthedService[UserData] {
-    case req @ POST -> "api" /: path as user =>
-      path.toList.headOption match {
-        case Some("browse") =>
+  // val authedAutowire = AuthedService[UserData] {
+  //   case req @ POST -> "api" /: path as user =>
+  //     path.toList.headOption match {
+  //       case Some("browse") =>
 
-          import UPicklers._
-          val router = ShellsideServer.route[BrowseCorpusApi](browseCorpusServer)
-          Ok {
-            req.req.bodyAsText().map{ body =>
-              router(
-                autowire.Core.Request(
-                  path.toList.tail,
-                  UPickle.read[Map[String, String]](body)
-                )
-              ).map{ responseData =>
-                responseData.getBytes
-              }
-            }
-          }
+  //         val router = ShellsideServer.route[BrowseCorpusApi](browseCorpusServer)
+  //         Ok {
+  //           req.req.bodyAsText().map{ body =>
+  //             router(
+  //               autowire.Core.Request(
+  //                 path.toList.tail,
+  //                 UPickle.read[Map[String, String]](body)
+  //               )
+  //             ).map{ responseData =>
+  //               responseData.getBytes
+  //             }
+  //           }
+  //         }
 
-        case Some("shell") =>
+  //       case Some("shell") =>
 
-          implicit val timeout = Timeout(20.seconds)
+  //         implicit val timeout = Timeout(20.seconds)
 
-          Ok {
-            req.req.bodyAsText().map{ body =>
-              for {
-                resp <- ask(userSessions, RoutingRequest(
-                  user,
-                  path.toList.tail,
-                  body
-                )).mapTo[RoutingResponse]
-                respData <- resp.response
+  //         Ok {
+  //           req.req.bodyAsText().map{ body =>
+  //             for {
+  //               resp <- ask(userSessions, RoutingRequest(
+  //                 user,
+  //                 path.toList.tail,
+  //                 body
+  //               )).mapTo[RoutingResponse]
+  //               respData <- resp.response
 
-              } yield respData.getBytes()
-            }
-          }
+  //             } yield respData.getBytes()
+  //           }
+  //         }
 
-        case Some(path) =>
-          sys.error(s"autowire request to unknown url ${path}")
+  //       case Some(path) =>
+  //         sys.error(s"autowire request to unknown url ${path}")
 
-        case None =>
-          sys.error(s"autowire request to empty path")
-      }
-  }
+  //       case None =>
+  //         sys.error(s"autowire request to empty path")
+  //     }
+  // }
 
 
-  val autowireService = authOrForbid(authedAutowire)
+  // val autowireService = authOrForbid(authedAutowire)
 
 
   val builder = BlazeBuilder.bindHttp(port, url)
-    .mountService(serveAuthorizedPages)
+    // .mountService(serveAuthorizedPages)
     .mountService(webJarService)
     .mountService(assetService)
-    .mountService(regionImageService, "/img")
-    .mountService(autowireService, "/autowire")
+    // .mountService(regionImageService, "/img")
+    // .mountService(autowireService, "/autowire")
     .mountService(userRegistration, "/user")
 
   def run(): Server = {
@@ -178,10 +176,10 @@ class Http4sService(
   }
 
   def shutdown(): Unit = {
-    Await.result(
-      actorSystem.terminate(),
-      Duration.Inf
-    )
+    // Await.result(
+    //   actorSystem.terminate(),
+    //   Duration.Inf
+    // )
   }
 }
 
