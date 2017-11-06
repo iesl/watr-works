@@ -5,7 +5,6 @@ import ammonite.ops._
 
 import corpora._
 import corpora.filesys.Corpus
-import bioarxiv._
 
 
 object SharedInit {
@@ -18,7 +17,6 @@ object SharedInit {
         |import corpora.database._
         |import textreflow._
         |import textreflow.data._
-        |import bioarxiv._, BioArxiv._, BioArxivOps._
         |import watrmarks.{StandardLabels => LB}
         |import TypeTags._
         |import ShellCommands._
@@ -71,8 +69,7 @@ object WatrTable extends App with utils.AppMainBasics {
     val corpusAccessApi = CorpusAccessApi(db, corpus)
 
     replMain().run(
-      "corpusAccessApi" -> corpusAccessApi,
-      "barx" -> BioArxivOps
+      "corpusAccessApi" -> corpusAccessApi
     )
 
     db.shutdown()

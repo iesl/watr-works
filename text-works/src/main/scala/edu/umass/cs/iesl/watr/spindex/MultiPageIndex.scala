@@ -9,7 +9,6 @@ import watrmarks._
 import utils.IdGenerator
 import geometry.syntax._
 
-import textreflow.data._
 import TypeTags._
 import corpora._
 
@@ -87,9 +86,9 @@ class MultiPageIndex(
 
   initPages()
 
-  def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
-    docStore.getTextReflowForZone(zoneId)
-  }
+  // def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
+  //   docStore.getTextReflowForZone(zoneId)
+  // }
 
   val relations = mutable.ArrayBuffer[Relation.Record]()
   val props = mutable.ArrayBuffer[Prop.PropRec]()

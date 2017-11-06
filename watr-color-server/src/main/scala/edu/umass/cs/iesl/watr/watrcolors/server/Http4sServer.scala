@@ -5,9 +5,6 @@ package server
 import scalaz.Kleisli
 import scalaz.concurrent.Task
 
-import akka.actor._
-import akka.util.Timeout
-import akka.pattern.{ ask }
 import concurrent.duration._
 
 import corpora._

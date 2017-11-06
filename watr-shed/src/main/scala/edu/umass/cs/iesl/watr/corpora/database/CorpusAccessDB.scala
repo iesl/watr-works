@@ -17,8 +17,6 @@ import corpora._
 import workflow._
 // import labeling._
 
-import textreflow._
-import textreflow.data._
 import watrmarks._
 import TypeTags._
 import play.api.libs.json, json._
@@ -161,23 +159,6 @@ class CorpusAccessDB(
     sql""" delete from zone where zone=${zoneId} """.update.run
   }
 
-  def selectTextReflow(textReflowId: Int@@TextReflowID): ConnectionIO[Rel.TextReflow] = {
-    sql"""
-     select * from  textreflow
-     where textreflow=${textReflowId}
-    """.query[Rel.TextReflow].unique
-  }
-
-
-  def insertTextReflow(zonePk: Int@@ZoneID, textReflowJs: String, asText: String): ConnectionIO[Int] = {
-    for {
-      pk <- sql"""
-       insert into textreflow (reflow, astext, zone)
-       values (${textReflowJs}, $asText, ${zonePk})
-      """.update.withUniqueGeneratedKeys[Int]("textreflow")
-    } yield pk
-  }
-
   def selectZoneTargetRegions(zoneId: Int@@ZoneID): ConnectionIO[List[Int@@RegionID]] = {
     sql"""
      select targetregion
@@ -189,34 +170,6 @@ class CorpusAccessDB(
     """.query[Int@@RegionID].list
   }
 
-
-  def selectModelTextReflowForZone(zoneId: Int@@ZoneID): ConnectionIO[Option[Rel.TextReflow]] = {
-    val query = sql"""
-     select tr.*
-     from   textreflow as tr join zone as z on (tr.zone=z.zone)
-     where  z.zone=${zoneId}
-    """.query[Rel.TextReflow].option
-
-    query
-  }
-
-  def selectTextReflowForZone(zoneId: Int@@ZoneID): ConnectionIO[Option[TextReflow]] = {
-    import play.api.libs.json, json._
-
-    val query = sql"""
-     select tr.reflow
-     from   textreflow as tr join zone as z on (tr.zone=z.zone)
-     where  z.zone=${zoneId}
-    """.query[String]
-      .option
-      .map { maybeStr =>
-        maybeStr.flatMap { str =>
-          docStore.jsonToTextReflow(Json.parse(str))
-        }
-      }
-
-    query
-  }
 
   def updatePage(pageId: Int@@PageID, geom: LTBounds): ConnectionIO[Int] = {
     val LTBounds.IntReps(l, t, w, h) = geom
@@ -886,20 +839,6 @@ class CorpusAccessDB(
       allZoneIds.headOption
     }
 
-    def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
-      runq { selectModelTextReflowForZone(zoneId) }
-    }
-    def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
-      runq { selectTextReflowForZone(zoneId) }
-    }
-
-    def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
-      val js = textReflowToJson(textReflow)
-      val str = textReflow.toText()
-      val jsStr = Json.stringify(js)
-      runq { insertTextReflow(zoneId, jsStr, str) }
-    }
-
     def ensureLabel(label: Label): Int@@LabelID = {
       runq{ getOrInsertLabel(label) }
     }
@@ -977,7 +916,6 @@ class CorpusAccessDB(
       val transRegionID   = mutable.HashMap[Int@@RegionID      , Int@@RegionID]()
       val transZoneID     = mutable.HashMap[Int@@ZoneID        , Int@@ZoneID]()
       val transLabelID    = mutable.HashMap[Int@@LabelID       , Int@@LabelID]()
-      val transReflowID   = mutable.HashMap[Int@@TextReflowID  , Int@@TextReflowID]()
 
       val insertLog = mutable.ArrayBuffer[String]()
 
@@ -1122,42 +1060,6 @@ class CorpusAccessDB(
 
       }// END Block
 
-      {// BLOCK
-        val allRecs =  otherZoningApi.tables.textreflows.all().toList
-        val allEntries = allRecs.map{rec =>
-          (
-            rec.reflow,
-            rec.astext,
-            transZoneID(rec.zone)
-          )
-        }
-
-        val sqlStr = (
-          """|insert into textreflow
-             |  (reflow, astext, zone)
-             |values (?, ?, ?)
-             |""".stripMargin)
-
-        val up =  Update[(
-          String,
-          String,
-          Int@@ZoneID
-        )](sqlStr)
-          .updateManyWithGeneratedKeys[Int@@TextReflowID]("textreflow")(allEntries)
-
-
-        val keys = runq{
-          up.runLog
-        }
-
-        allRecs.zip(keys)
-          .foreach{ case (rec, key) =>
-            transReflowID.put(rec.prKey, key)
-          }
-
-        insertLog.append(s"textreflows:${keys.length}")
-
-      }// END Block
 
       {// BLOCK
         val allEntries =  otherZoningApi.tables.zones.toTargetRegion.getEdges()

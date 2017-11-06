@@ -4,7 +4,6 @@ package formats
 import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
 import spindex._
 import textboxing.{TextBoxing => TB}, TB._
-import textreflow.data._
 // import watrmarks.{StandardLabels => LB}
 import segment.{SegmentationLabels => LB}
 import play.api.libs.json, json._
@@ -180,130 +179,130 @@ object DocumentIO  {
     textLines.mkString("\n")
   }
 
-  def richTextSerializeDocument(mpageIndex: MultiPageIndex): String = {
-    val docStore = mpageIndex.docStore
-    val stableId = mpageIndex.getStableId()
-    val docId = docStore.getDocument(stableId).get
+  // def richTextSerializeDocument(mpageIndex: MultiPageIndex): String = {
+  //   val docStore = mpageIndex.docStore
+  //   val stableId = mpageIndex.getStableId()
+  //   val docId = docStore.getDocument(stableId).get
 
-    // mpageIndex.getPages
-    for {
-      pageNum <- mpageIndex.getPages
-    } yield {
-      val pageIndex = mpageIndex.getPageIndex(pageNum)
-      pageIndex.components.getClusterRoots(LB.VisualLine).map { root =>
-        val maybeText = pageIndex.components.getComponentText(root, LB.VisualLine)
-        maybeText.foreach { text =>
-          // println(text.toText())
-        }
-      }
-    }
+  //   // mpageIndex.getPages
+  //   for {
+  //     pageNum <- mpageIndex.getPages
+  //   } yield {
+  //     val pageIndex = mpageIndex.getPageIndex(pageNum)
+  //     pageIndex.components.getClusterRoots(LB.VisualLine).map { root =>
+  //       val maybeText = pageIndex.components.getComponentText(root, LB.VisualLine)
+  //       maybeText.foreach { text =>
+  //         // println(text.toText())
+  //       }
+  //     }
+  //   }
 
-    val escapedTextReflows = for {
-      lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
-      reflow <- docStore.getTextReflowForZone(lineZone.id)
-    } yield {
-      reflow.applyLineFormatting()
-    }
+  //   val escapedTextReflows = for {
+  //     lineZone <- docStore.getDocumentZones(docId, LB.VisualLine)
+  //     reflow <- docStore.getTextReflowForZone(lineZone.id)
+  //   } yield {
+  //     reflow.applyLineFormatting()
+  //   }
 
-    val textAndJsons = escapedTextReflows
-      .map({ blockTextReflow =>
-        val formattedText = blockTextReflow.toText()
-        val json = docStore.textReflowToJson(blockTextReflow)
-        (formattedText, json)
-      })
-
-
-    val textLines = textAndJsons.map(_._1)
-    val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")( textLines.map(t => Json.stringify(JsString(t)).box):_*))
-    // val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
-
-    // val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
-
-    // val relations = serializeRelation(mpageIndex)
-
-    // val relationBlock = indent(4)(vjoinTrailSep(left, ",")(relations:_*))
-
-    // val propertyBlock = indent(4)(vjoinTrailSep(left, ",")(
-    //   mpageIndex.props.map({ prop =>
-    //     Json.stringify(Json.toJson(prop)).box
-    //   }):_*
-    // ))
-
-    // val lineLabelBlock = serializeLineLabels(mpageIndex)
+  //   val textAndJsons = escapedTextReflows
+  //     .map({ blockTextReflow =>
+  //       val formattedText = blockTextReflow.toText()
+  //       val json = docStore.textReflowToJson(blockTextReflow)
+  //       (formattedText, json)
+  //     })
 
 
-    // Lines: ordered list ("visual order") of text lines
-    // Zones: region-based labelings {"authors", [[10, 12, 14, 180], ... ]}
+  //   val textLines = textAndJsons.map(_._1)
+  //   val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")( textLines.map(t => Json.stringify(JsString(t)).box):_*))
+  //   // val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
 
-    val finalDocument = (
-      s"""|{ "lines": [
-          |${textLinesBlock}
-          |  ],
-          |  "zones": [
-          |{serializedZones}
-          |  ],
-          |  "relations": [
-          |{relationBlock}
-          |  ],
-          |  "errors": [
-          |  ],
-          |  "properties": [
-          |{indent(4)(propertyBlock)}
-          |  ],
-          |  "labels": [
-          |  ],
-          |  "reflows": [
-          |{jsonLines}
-          |  ]
-          |}
-          |""".stripMargin)
+  //   // val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
+
+  //   // val relations = serializeRelation(mpageIndex)
+
+  //   // val relationBlock = indent(4)(vjoinTrailSep(left, ",")(relations:_*))
+
+  //   // val propertyBlock = indent(4)(vjoinTrailSep(left, ",")(
+  //   //   mpageIndex.props.map({ prop =>
+  //   //     Json.stringify(Json.toJson(prop)).box
+  //   //   }):_*
+  //   // ))
+
+  //   // val lineLabelBlock = serializeLineLabels(mpageIndex)
 
 
-    finalDocument.split("\n")
-      .map(_.reverse.dropWhile(_==' ').reverse)
-      .mkString("\n")
-  }
+  //   // Lines: ordered list ("visual order") of text lines
+  //   // Zones: region-based labelings {"authors", [[10, 12, 14, 180], ... ]}
+
+  //   val finalDocument = (
+  //     s"""|{ "lines": [
+  //         |${textLinesBlock}
+  //         |  ],
+  //         |  "zones": [
+  //         |{serializedZones}
+  //         |  ],
+  //         |  "relations": [
+  //         |{relationBlock}
+  //         |  ],
+  //         |  "errors": [
+  //         |  ],
+  //         |  "properties": [
+  //         |{indent(4)(propertyBlock)}
+  //         |  ],
+  //         |  "labels": [
+  //         |  ],
+  //         |  "reflows": [
+  //         |{jsonLines}
+  //         |  ]
+  //         |}
+  //         |""".stripMargin)
+
+
+  //   finalDocument.split("\n")
+  //     .map(_.reverse.dropWhile(_==' ').reverse)
+  //     .mkString("\n")
+  // }
 
 
 
-  def serializeZones(mpageIndex: MultiPageIndex, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): Box = {
+  // def serializeZones(mpageIndex: MultiPageIndex, textBlockReflows: Seq[TextReflow], textLines: Seq[String]): Box = {
 
-    val docStore = mpageIndex.docStore
-    val docId = mpageIndex.docId
+  //   val docStore = mpageIndex.docStore
+  //   val docId = mpageIndex.docId
 
-    val zones = for {
-      labelId <- docStore.getZoneLabelsForDocument(docId)
-      zoneId <- docStore.getZonesForDocument(docId, labelId)
-    } yield {
-      val zone = docStore.getZone(zoneId)
+  //   val zones = for {
+  //     labelId <- docStore.getZoneLabelsForDocument(docId)
+  //     zoneId <- docStore.getZonesForDocument(docId, labelId)
+  //   } yield {
+  //     val zone = docStore.getZone(zoneId)
 
-      // for each target region in each zone, find the (begin, end) bounds of the TextReflow in that zone
-      val targetRegions = zone.regions.map{ targetRegion =>
-        s"[${targetRegion.bbox}]"
-      }.mkString(", ")
+  //     // for each target region in each zone, find the (begin, end) bounds of the TextReflow in that zone
+  //     val targetRegions = zone.regions.map{ targetRegion =>
+  //       s"[${targetRegion.bbox}]"
+  //     }.mkString(", ")
 
 
-      val zoneLabel = zone.label.toString
+  //     val zoneLabel = zone.label.toString
 
-      val mentionStr = s"""[${zoneId}, ["$zoneLabel"], [${targetRegions}]]""".box
-      mentionStr
-    }
+  //     val mentionStr = s"""[${zoneId}, ["$zoneLabel"], [${targetRegions}]]""".box
+  //     mentionStr
+  //   }
 
-    vjoinTrailSep(left, ",")(zones:_*)
-  }
+  //   vjoinTrailSep(left, ",")(zones:_*)
+  // }
 
-  def serializeLineLabels(mpageIndex: MultiPageIndex): Box = {
+  // def serializeLineLabels(mpageIndex: MultiPageIndex): Box = {
 
-    // val serComponents = List(
-    //   LB.SectionHeadingLine,
-    //   LB.ParaBegin,
-    //   LB.TextBlock,
-    //   LB.Abstract
-    // ).map(serializeLabeling(_, lineBioLabels))
+  //   // val serComponents = List(
+  //   //   LB.SectionHeadingLine,
+  //   //   LB.ParaBegin,
+  //   //   LB.TextBlock,
+  //   //   LB.Abstract
+  //   // ).map(serializeLabeling(_, lineBioLabels))
 
-    // vjoinTrailSep(left, ",")(serComponents.flatten:_*)
-    ???
-  }
+  //   // vjoinTrailSep(left, ",")(serComponents.flatten:_*)
+  //   ???
+  // }
 
 
   // def serializeLabeling(label: Label, bioLabeling: Seq[BioNode]): Seq[Box] = {

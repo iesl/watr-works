@@ -5,10 +5,7 @@ import edu.umass.cs.iesl.watr.{geometry => G}
 import edu.umass.cs.iesl.watr.{watrmarks => W}
 import scala.collection.mutable
 import TypeTags._
-import textreflow._
 import textgrid._
-import textreflow.data._
-import TextReflowF._
 import watrmarks.Label
 import geometry._
 import PageComponentImplicits._
@@ -215,22 +212,22 @@ class MemDocZoningApi extends DocumentZoningApi {
       }
     }
 
-    object textreflows extends DBRelation[TextReflowID, Rel.TextReflow] with TextReflowJsonCodecs {
-      object forZone extends EdgeTableOneToOne[ZoneID, TextReflowID]
+    // object textreflows extends DBRelation[TextReflowID, Rel.TextReflow] with TextReflowJsonCodecs {
+    //   object forZone extends EdgeTableOneToOne[ZoneID, TextReflowID]
 
 
-      def add(zoneId: Int@@ZoneID, t: TextReflow): Rel.TextReflow = {
-        // import TextReflowJsonCodecs._
-        import play.api.libs.json
-        val asJson = textReflowToJson(t)
-        val asText = t.toText()
-        val jsstr = json.Json.stringify(asJson)
-        val rec = Rel.TextReflow(nextId(), jsstr, asText, zoneId)
-        this.insert(rec.prKey, rec)
-        rec
-      }
+    //   def add(zoneId: Int@@ZoneID, t: TextReflow): Rel.TextReflow = {
+    //     // import TextReflowJsonCodecs._
+    //     import play.api.libs.json
+    //     val asJson = textReflowToJson(t)
+    //     val asText = t.toText()
+    //     val jsstr = json.Json.stringify(asJson)
+    //     val rec = Rel.TextReflow(nextId(), jsstr, asText, zoneId)
+    //     this.insert(rec.prKey, rec)
+    //     rec
+    //   }
 
-    }
+    // }
 
     object charatoms extends DBRelation[CharID, CharAtom] {
       object forPage extends EdgeTableOneToMany[PageID, CharID]
@@ -415,27 +412,27 @@ class MemDocZoningApi extends DocumentZoningApi {
     labels.ensureLabel(label.fqn)
   }
 
-  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
-    textreflows.forZone
-      .getRhs(zoneId)
-      .flatMap(id => textreflows.option(id))
-  }
+  // def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
+  //   textreflows.forZone
+  //     .getRhs(zoneId)
+  //     .flatMap(id => textreflows.option(id))
+  // }
 
 
-  def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
+  // def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
 
-    textreflows.forZone
-      .getRhs(zoneId)
-      .flatMap { reflowId =>
-        jsonStrToTextReflow(
-          textreflows.unique(reflowId).reflow
-        )
-      }
-  }
+  //   textreflows.forZone
+  //     .getRhs(zoneId)
+  //     .flatMap { reflowId =>
+  //       jsonStrToTextReflow(
+  //         textreflows.unique(reflowId).reflow
+  //       )
+  //     }
+  // }
 
-  def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
-    val model = textreflows.add(zoneId, textReflow)
-    textreflows.forZone.addEdge(zoneId, model.prKey)
-  }
+  // def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
+  //   val model = textreflows.add(zoneId, textReflow)
+  //   textreflows.forZone.addEdge(zoneId, model.prKey)
+  // }
 
 }

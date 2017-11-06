@@ -53,10 +53,11 @@ class SampleTextCorpus extends PlainTextCorpus {
       val zoneBoxes = for {
         labelId <- docStore.getZoneLabelsForDocument(docId)
         zoneId <- docStore.getZonesForDocument(docId, labelId)
-        textReflow <- docStore.getTextReflowForZone(zoneId)
+        // textReflow <- docStore.getTextReflowForZone(zoneId)
       } yield {
-        (textReflow.toText.box
-          % docStore.getZone(zoneId).toString().box)
+        // (textReflow.toText.box
+        //   % docStore.getZone(zoneId).toString().box)
+        "TODO".box
       }
       (s"Document ${docId} (${stableId}) report"
         % indent(4)(vcat(pagesBox))

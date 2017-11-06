@@ -100,11 +100,12 @@ trait CorpusTestingUtil extends PlainTextCorpus {
         zoneId <- docStore.getZonesForDocument(docId, labelId)
       } yield {
         val zbox = docStore.getZone(zoneId).toString().box
-        docStore.getTextReflowForZone(zoneId)
-          .map { reflow =>
-            zbox atop indent(2)(reflow.toText.box)
-          }
-          .getOrElse(zbox)
+        // docStore.getTextReflowForZone(zoneId)
+        //   .map { reflow =>
+        //     zbox atop indent(2)(reflow.toText.box)
+        //   }
+        //   .getOrElse(zbox)
+        "TODO".box
       }
 
       (s"Document ${docId} (${stableId}) report"

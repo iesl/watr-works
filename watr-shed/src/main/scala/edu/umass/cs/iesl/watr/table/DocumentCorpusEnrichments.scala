@@ -1,14 +1,12 @@
 package edu.umass.cs.iesl.watr
 package table
 
-import textreflow.data._
 import corpora._
 import TypeTags._
-import labeling._
 
 import textboxing.{TextBoxing => TB}, TB._
 
-trait DocumentZoningApiEnrichments extends LabelWidgetUtils {
+trait DocumentZoningApiEnrichments  {
 
   implicit class RicherDocumentZoningApi(val theDocumentZoningApi: DocumentZoningApi) {
 
@@ -31,18 +29,6 @@ trait DocumentZoningApiEnrichments extends LabelWidgetUtils {
         .flatMap(docId => docStore.getPages(docId))
     }
 
-    def printPageLines(pageNum: Int)(implicit docStore: DocumentZoningApi): Unit = {
-      for {
-        (vlineZone, linenum) <- docStore.getPageVisualLines(thisStableId, PageNum(pageNum)).zipWithIndex
-      }  {
-        val maybeReflow = docStore.getTextReflowForZone(vlineZone.id)
-        maybeReflow match {
-          case Some(reflow) => println(reflow.toText)
-          case None => println(s"no reflow for zone ${vlineZone}")
-        }
-
-      }
-    }
 
     def reportDocument()(implicit docStore: DocumentZoningApi): TB.Box = {
       val docBoxes = for {

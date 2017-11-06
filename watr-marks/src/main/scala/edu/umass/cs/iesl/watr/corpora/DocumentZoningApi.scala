@@ -3,8 +3,6 @@ package corpora
 
 import geometry._
 import watrmarks._
-import textreflow._
-import TextReflowF._
 import textgrid._
 
 import watrmarks.{StandardLabels => LB}
@@ -56,9 +54,9 @@ trait DocumentZoningApi {
   def getLabel(labelId: Int@@LabelID): Label
 
   // Get Text
-  def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
-  def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
-  def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
+  // def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
+  // def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
+  // def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
 
   ///////////////////////
   /// Derived operations
@@ -93,10 +91,6 @@ trait DocumentZoningApi {
   def getPageVisualLines(pageId: Int@@PageID): Seq[Zone] =
     getPageZones(pageId, LB.VisualLine)
 
-  def getTextReflowForTargetRegion(regionId: Int@@RegionID): Option[TextReflow] = for {
-    zoneId  <- getZoneForRegion(regionId, LB.VisualLine)
-    reflow <- getTextReflowForZone(zoneId)
-  } yield reflow
 
   def ensurePageRegion(pageRegion: PageRegion): Option[Int@@RegionID] = {
     val stableId = pageRegion.page.stableId
@@ -176,23 +170,6 @@ trait DocumentZoningApi {
 
   }
 
-
-
-
-  import play.api.libs.json.JsValue
-  val codecs = new TextReflowJsonCodecs {}
-
-  def textReflowToJson(textReflow: TextReflow): JsValue = {
-    codecs.textReflowToJson(textReflow)
-  }
-
-  def jsonStrToTextReflow(jsStr: String): Option[TextReflow] = {
-    codecs.jsonStrToTextReflow(jsStr)
-  }
-
-  def jsonToTextReflow(jsval: JsValue): Option[TextReflow] = {
-    codecs.jsonToTextReflow(jsval)
-  }
 }
 
 

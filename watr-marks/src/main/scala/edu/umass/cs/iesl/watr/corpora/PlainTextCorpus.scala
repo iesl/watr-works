@@ -2,21 +2,18 @@ package edu.umass.cs.iesl.watr
 package corpora
 
 
-import textreflow._
 import watrmarks.{StandardLabels => LB}
 import TypeTags._
 
 // This is being replaced with textgrid functionality
-trait PlainTextCorpus extends TextReflowSharedFunctions {
+trait PlainTextCorpus {
   import scala.collection.mutable
   import scalaz.Tree
   import scalaz.TreeLoc
-  import matryoshka._
   import geometry._
 
   import utils.EnrichNumerics._
   import geometry.syntax._
-  import TextReflowF._
 
   def docStore: DocumentZoningApi
 
@@ -42,69 +39,6 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     'Æ' -> "AE"
   )
 
-  class TextReflowBuilder {
-    import utils.ScalazTreeImplicits._
-    type TextReflowV = TextReflowF[Unit]
-
-    val reflowStack = mutable.Stack[TreeLoc[TextReflowV]]()
-    val completed = mutable.Queue[TextReflow]()
-
-    def reset(): Unit = {
-      while (reflowStack.nonEmpty) reflowStack.pop()
-    }
-
-    def totalBounds(): LTBounds = {
-      completed
-        .map(_.bounds)
-        .reduce { _ union _ }
-    }
-
-
-    val empty: Tree[TextReflowV] = Tree.Leaf(Flow(List()))
-    def mod(f: TreeLoc[TextReflowV] => TreeLoc[TextReflowV]): Unit = {
-      if (reflowStack.isEmpty) {
-        reflowStack.push(empty.loc)
-      }
-      val top = reflowStack.pop
-
-      reflowStack.push(f(top))
-    }
-
-    import scalaz.std.string._
-    def debug(treeLoc: TreeLoc[TextReflowV]): Unit = {
-      println(treeLoc.toTree.map(_.toString).drawBox)
-    }
-
-    def insertDownLast(tr: TextReflowV): Unit = mod {  _.insertDownLast(Tree.Node(tr, Stream())) }
-    def pop(): Unit = mod { _.parent.get }
-
-    def newline(): Unit = {
-      reflowStack
-        .headOption
-        .map({tloc =>
-          // Construct the Fix(..) version of the tree:
-          val ftree = tloc.toTree
-          val res = ftree.scanr ((reflowNode: TextReflowV, childs: Stream[Tree[TextReflow]]) =>
-            fixf {
-              reflowNode match {
-                case t@ Atom(c)                 => Atom(c)
-                case t@ Insert(value)           => Insert(value)
-                case t@ Rewrite(from, to)       => Rewrite(childs.head.rootLabel, to)
-                case t@ Bracket(pre, post, a)   => Bracket(pre, post, childs.head.rootLabel)
-                case t@ Flow(atoms)             => Flow(childs.toList.map(_.rootLabel))
-                case t@ Labeled(ls, _)          => Labeled(ls, childs.head.rootLabel)
-              }}
-          )
-          val treflow = res.rootLabel
-          val txt = treflow.toText().trim
-          if (txt.length>0) {
-            completed.enqueue(treflow)
-          }
-          reset()
-        })
-
-    }
-  }
 
   def getRegionBoundsDbl(x: Double, y: Double, w: Double, h: Double): LTBounds = {
     val left   = x * xscale
@@ -157,7 +91,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
     var linenum:Int = -1
     var chnum = 0
-    val reflowBuilder = new TextReflowBuilder
+    // val reflowBuilder = new TextReflowBuilder
 
     val pageLines = linesWithPad(pageBlock)
 
@@ -166,7 +100,7 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
     } {
       linenum += 1
       chnum = pad - 1
-      reflowBuilder.newline()
+      // reflowBuilder.newline()
 
       for {
         chpair <- (line+" ").sliding(2)
@@ -174,12 +108,12 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
         chpair match {
           case "^{" =>
-            reflowBuilder.insertDownLast(Labeled(Set(LB.Sup), ()))
-            reflowBuilder.insertDownLast(Flow(List()))
+            // reflowBuilder.insertDownLast(Labeled(Set(LB.Sup), ()))
+            // reflowBuilder.insertDownLast(Flow(List()))
 
           case "_{" =>
-            reflowBuilder.insertDownLast(Labeled(Set(LB.Sub), ()))
-            reflowBuilder.insertDownLast(Flow(List()))
+            // reflowBuilder.insertDownLast(Labeled(Set(LB.Sub), ()))
+            // reflowBuilder.insertDownLast(Flow(List()))
 
           case chs if chs.nonEmpty =>
             chnum += 1
@@ -190,16 +124,16 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
 
               case '}' =>
                 chnum -= 1
-                reflowBuilder.pop()
-                reflowBuilder.pop()
+                // reflowBuilder.pop()
+                // reflowBuilder.pop()
 
               case ' ' =>
-                reflowBuilder.insertDownLast(Insert(" "))
-                reflowBuilder.pop()
+                // reflowBuilder.insertDownLast(Insert(" "))
+                // reflowBuilder.pop()
 
               case ch  =>
                 if (charSubs.contains(ch)) {
-                  reflowBuilder.insertDownLast(Rewrite((), charSubs(ch)))
+                  // reflowBuilder.insertDownLast(Rewrite((), charSubs(ch)))
                 }
 
                 val pageRegion = mkPageRegion(pageId, x=chnum, y=linenum, w=1, h=1)
@@ -211,26 +145,26 @@ trait PlainTextCorpus extends TextReflowSharedFunctions {
                   ch.toString
                 )
 
-                reflowBuilder.insertDownLast(Atom(charAtom))
-                reflowBuilder.pop()
+                // reflowBuilder.insertDownLast(Atom(charAtom))
+                // reflowBuilder.pop()
             }
             case x => println(s"error: ${x}")
         }
       }
     }
 
-    reflowBuilder.newline()
+    // reflowBuilder.newline()
     val labelId = docStore.ensureLabel(LB.VisualLine)
 
-    reflowBuilder.completed.foreach { reflow =>
-      val lineBounds = reflow.bounds()
-      val regionId = docStore.addTargetRegion(pageId, lineBounds)
+    // reflowBuilder.completed.foreach { reflow =>
+    //   val lineBounds = reflow.bounds()
+    //   val regionId = docStore.addTargetRegion(pageId, lineBounds)
 
-      val lineZoneId = docStore.createZone(regionId, labelId)
+    //   val lineZoneId = docStore.createZone(regionId, labelId)
 
-      docStore.setTextReflowForZone(lineZoneId, reflow)
-    }
+    //   docStore.setTextReflowForZone(lineZoneId, reflow)
+    // }
 
-    docStore.setPageGeometry(pageId, reflowBuilder.totalBounds())
+    // docStore.setPageGeometry(pageId, reflowBuilder.totalBounds())
   }
 }
