@@ -93,6 +93,24 @@ class Http4sService(
         }
       }
 
+    case req @ GET -> Root / "vtrace" /  "json" / entryId / jsonArtifact =>
+
+      val maybeResp = for {
+        entry <- corpus.entry(entryId)
+        traceLogs <- entry.getArtifactGroup("tracelogs")
+        artifact <- traceLogs.getArtifact(jsonArtifact)
+        artifactPath <- artifact.asPath.toOption
+      } yield {
+        StaticFile
+          .fromFile(artifactPath.toIO, Some(req))
+          .getOrElse { Response(http4s.Status(404)(s"could not serve ${entryId} artifact ${jsonArtifact}")) }
+      }
+      maybeResp.getOrElse {
+        Task.now{
+          Response(http4s.Status(500)(s"could not serve ${entryId} artifact ${jsonArtifact}")) 
+        }
+      }
+
     case req @ GET -> Root / "menu" =>
       val entries = for {
         stableId <- docStore.getDocuments(40, 0, Seq())
@@ -116,8 +134,8 @@ class Http4sService(
 
   }
 
-  def htmlPage(pageName: String, user: Option[String]): Task[Response]= {
-    Ok(html.ShellHtml(pageName, user).toString())
+  def htmlPage(bundleName: String, user: Option[String]): Task[Response]= {
+    Ok(html.Frame(bundleName).toString())
       .putHeaders(
         H.`Content-Type`(MediaType.`text/html`)
       )
@@ -126,7 +144,10 @@ class Http4sService(
   // Pages
   val htmlPageService = HttpService {
     case req @ GET -> Root =>
-      htmlPage("Menu", None)
+      htmlPage("menu", None)
+
+    case req @ GET -> Root / "document" / stableId =>
+      htmlPage("document", None)
 
     case req @ GET -> Root / "register" =>
       htmlPage("Registration", None)

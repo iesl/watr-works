@@ -1,15 +1,16 @@
 package edu.umass.cs.iesl.watr
 package table
 
-import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
+// import edu.umass.cs.iesl.watr.segment.DocumentSegmenter
 import corpora._
 import corpora.filesys._
 import corpora.database._
 import segment._
 // import geometry.syntax._
-// import ammonite.{ops => fs}, fs._
+import ammonite.{ops => fs}
 
 import TypeTags._
+import apps.TextWorksActions
 
 object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageWriter {
 
@@ -123,29 +124,38 @@ object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageW
         None
       } else {
         println(s"segmenting ${stableId}")
+        val traceLogs = corpusEntry.ensureArtifactGroup("tracelogs")
+        val traceLogRoot = traceLogs.rootPath
+        val textOutputPath = corpusEntry.getRootPath() / "richtext.json"
 
-        val memZoneApi = new MemDocZoningApi
+        val segmenter = TextWorksActions.extractText(stableId, pdfPath,
+          textOutputFile = textOutputPath,
+          rtreeOutputRoot = None,
+          traceLogRoot = Some(traceLogRoot)
+        )
+        val memZoningApi = segmenter.docStore.asInstanceOf[MemDocZoningApi]
+        // val memZoneApi = new MemDocZoningApi
 
-        val segmenter = DocumentSegmenter
-          .createSegmenter(stableId, pdfPath, memZoneApi)
+        // val segmenter = DocumentSegmenter
+        //   .createSegmenter(stableId, pdfPath, memZoneApi)
 
-        segmenter.runDocumentSegmentation()
+        // segmenter.runDocumentSegmentation()
 
-        if (writeRTrees) {
-          println("Writing RTrees")
-          val rtreeGroup = corpusEntry.ensureArtifactGroup("rtrees")
-          for {
-            pageNum <- segmenter.mpageIndex.getPages
-          } {
-            val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-            val bytes = pageIndex.saveToBytes()
-            rtreeGroup.putArtifactBytes(pageIndex.rtreeArtifactName, bytes)
-          }
-        }
+        // if (writeRTrees) {
+        //   println("Writing RTrees")
+        //   val rtreeGroup = corpusEntry.ensureArtifactGroup("rtrees")
+        //   for {
+        //     pageNum <- segmenter.mpageIndex.getPages
+        //   } {
+        //     val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
+        //     val bytes = pageIndex.saveToBytes()
+        //     rtreeGroup.putArtifactBytes(pageIndex.rtreeArtifactName, bytes)
+        //   }
+        // }
 
         if (commitToDb) {
           println(s"Importing ${stableId} into database.")
-          corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoneApi)
+          corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoningApi)
           println(s"Done importing ${stableId}")
         } else {
           println(s"DB Importing disabled.")

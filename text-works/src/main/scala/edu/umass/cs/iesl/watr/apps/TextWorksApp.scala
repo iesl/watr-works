@@ -6,6 +6,7 @@ import corpora._
 
 import ammonite.{ops => fs}, fs._
 import segment.DocumentSegmenter
+import segment.DocumentSegmentation
 import TypeTags._
 import scopt.Read
 import shapeless._
@@ -223,11 +224,13 @@ object TextWorksActions {
     textOutputFile: fs.Path,
     rtreeOutputRoot: Option[fs.Path],
     traceLogRoot: Option[fs.Path]
-  ): Unit = {
+  ): DocumentSegmentation = {
 
     println(s"Extracting ${stableId}")
 
-    val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, new MemDocZoningApi)
+    val zoningApi = new MemDocZoningApi
+
+    val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, zoningApi)
 
     segmenter.runDocumentSegmentation()
 
@@ -349,6 +352,7 @@ object TextWorksActions {
       }
     }
 
+    segmenter
   }
 
 }

@@ -112,7 +112,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 }
 
 
-trait DocumentSegmenter extends DocumentSegmentation
+// trait DocumentSegmenter extends DocumentSegmentation
 
 object DocumentSegmenter {
   import spindex._

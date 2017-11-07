@@ -9,7 +9,7 @@ import predsynth._
 import ammonite.{ops => fs}, fs._
 import java.io.{File => JFile}
 import predsynth._
-import segment.DocumentSegmenter
+// import segment.DocumentSegmenter
 import TypeTags._
 
 case class AppConfig(
@@ -224,7 +224,7 @@ object Works extends App {
   }
 
 
-  def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path): DocumentSegmenter =  {
+  def runPageSegmentation(stableId: String@@DocumentID, pdfPath: Path): DocumentSegmentation =  {
     val segmenter = DocumentSegmenter
       .createSegmenter(stableId, pdfPath, new MemDocZoningApi)
 
@@ -282,7 +282,7 @@ object Works extends App {
 
   }
 
-  def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmenter] = {
+  def segmentDocument(conf: AppConfig): Option[segment.DocumentSegmentation] = {
     val artifactOutputName = "docseg.json"
 
     var rsegmenter: Option[segment.DocumentSegmenter] = None

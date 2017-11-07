@@ -157,6 +157,10 @@ class CorpusEntry(
 
   val artifactsRoot = corpus.corpusRoot / RelPath(entryDescriptor)
 
+  def getRootPath(): Path = {
+    artifactsRoot
+  }
+
   override val toString = {
     s"${corpus}/./${entryDescriptor}"
   }
