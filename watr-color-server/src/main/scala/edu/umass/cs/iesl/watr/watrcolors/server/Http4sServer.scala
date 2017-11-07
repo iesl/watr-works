@@ -18,18 +18,23 @@ import org.http4s.server._
 // import org.http4s.server.syntax._
 import org.http4s.server.staticcontent._
 import org.http4s.server.blaze._
-// import TypeTags._
-// import scala.concurrent._
-import play.api.libs.json, json._
+import org.http4s.circe._
+import _root_.io.circe
+// import circe._
+// import circe.generic._
+// import circe.generic.auto._
+// import circe.syntax._
+import circe.literal._
+
 
 import ammonite.{ops => fs}
+
 class Http4sService(
   corpusAccessApi: CorpusAccessApi,
   url: String,
   port: Int,
   distDir: fs.Path
-// ) extends AuthServer {
-) {
+) extends LabelingServices {
 
   println(s"Current Dir: ${ fs.pwd }")
 
@@ -48,7 +53,6 @@ class Http4sService(
     systemPath = distDir.toString(),
     pathPrefix = "/dist"
   ))
-
 
   val pageImageService = HttpService {
     case req @ GET -> Root / "entry" / entryId / "image" / "page" / IntVar(pageNum) =>
@@ -107,7 +111,7 @@ class Http4sService(
       }
       maybeResp.getOrElse {
         Task.now{
-          Response(http4s.Status(500)(s"could not serve ${entryId} artifact ${jsonArtifact}")) 
+          Response(http4s.Status(500)(s"could not serve ${entryId} artifact ${jsonArtifact}"))
         }
       }
 
@@ -116,17 +120,14 @@ class Http4sService(
         stableId <- docStore.getDocuments(40, 0, Seq())
         docId <- docStore.getDocument(stableId)
       } yield {
-        Json.obj(
-          ("entry", stableId.unwrap),
-          ("logfiles", ""),
-        )
+        json"""{ "entry": ${stableId.unwrap}, "logfiles": "" }"""
       }
 
-      val jsstr = Json.stringify(
-        JsArray(entries)
+      val all = circe.Json.arr(
+        entries:_*
       )
 
-      Ok(jsstr)
+      Ok(all)
         .putHeaders(
           H.`Content-Type`(MediaType.`application/json`)
         )
@@ -237,8 +238,8 @@ class Http4sService(
     .mountService(jslibDistService)
     .mountService(assetService)
     .mountService(htmlPageService)
+    .mountService(labelingServiceEndpoints, "/api/v1/labeling")
     .mountService(pageImageService)
-    // .mountService(userRegistration, "/user")
 
   def run(): Server = {
     builder.run
@@ -251,3 +252,4 @@ class Http4sService(
   def shutdown(): Unit = {}
 
 }
+

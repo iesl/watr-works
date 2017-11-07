@@ -39,10 +39,15 @@ trait ScalatagsDefs {
   import texttags._
 
   implicit class RichString(val s: String)  {
-    def clazz = ^.`class` := s
-    def id = ^.`id` := s
-    def labelName = ^.labelName:=s
+    def clazz      = ^.`class` := s
+    def id         = ^.`id` := s
+    def labelName  = ^.labelName:=s
     def labelValue = ^.labelValue:=s
+    def action     = ^.action:=s
+    def name       = ^.name:=s
+    def typ        = ^.`type`:=s
+    def method     = ^.method :=s
+    def attr       = ^.attr(s)
   }
 
   def fmt = (d: Double) => f"${d}%1.2f"

@@ -79,10 +79,7 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
     LogLibs.logback ++
     TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
-    Lib.http4s ++ Seq(
-      // "org.typelevel" %% "cats-core" % "1.0.0-RC1"
-        "org.typelevel" %% "cats-core" % "0.9.0"
-    )
+    Lib.http4s
   )
   .dependsOn(watrshed)
 

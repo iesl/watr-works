@@ -33,7 +33,7 @@ object TestLibs extends LibVersions {
 
   val scalacheck = Seq(
     "org.scalaz"     %% "scalaz-scalacheck-binding" % scalazVersion  % "test",
-    "org.scalacheck" %% "scalacheck"                % "1.13.4"       % "test" //  force()
+    "org.scalacheck" %% "scalacheck"                % "1.13.5"       % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck
@@ -57,7 +57,7 @@ object DatabaseLibs extends LibVersions {
     "org.tpolecat"      %% "doobie-hikari"     % doobieVersion,
     "org.tpolecat"      %% "doobie-specs2"     % doobieVersion % "test",
     "org.postgresql"     % "postgresql"        % "42.1.4",
-    "org.javassist"      % "javassist"         % "3.22.0-CR2",
+    "org.javassist"      % "javassist"         % "3.22.0-GA",
     "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7.1"
   )
 
@@ -87,11 +87,14 @@ trait CommonLibs extends LibVersions {
   )
 
   val http4s = Seq(
-    // "org.http4s" %% "http4s-circe" % http4sVersion,
     "org.reactormonk" %% "cryptobits" % "1.1",
     "org.http4s" %% "http4s-dsl" % http4sVersion,
     "org.http4s" %% "http4s-blaze-server" % http4sVersion,
-    "org.http4s" %% "http4s-blaze-client" % http4sVersion
+    "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+    "org.http4s" %% "http4s-circe" % http4sVersion,
+    "io.circe" %% "circe-generic" % "0.8.0",
+    "io.circe" %% "circe-literal" % "0.8.0",
+    "org.typelevel" %% "cats-core" % "0.9.0" // % "1.0.0-RC1"
   )
 }
 
