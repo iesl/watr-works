@@ -30,7 +30,7 @@ import circe.literal._
 import ammonite.{ops => fs}
 
 class Http4sService(
-  corpusAccessApi: CorpusAccessApi,
+  override val corpusAccessApi: CorpusAccessApi,
   url: String,
   port: Int,
   distDir: fs.Path
@@ -38,7 +38,7 @@ class Http4sService(
 
   println(s"Current Dir: ${ fs.pwd }")
 
-  val docStore: DocumentZoningApi = corpusAccessApi.docStore
+  private val docStore: DocumentZoningApi = corpusAccessApi.docStore
   val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
   // override val userbaseApi: UserbaseApi = corpusAccessApi.userbaseApi
   val corpus: Corpus = corpusAccessApi.corpus

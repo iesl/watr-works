@@ -6,22 +6,43 @@ package server
 import org.http4s._
 import org.http4s.{headers => H}
 import org.http4s.dsl._
-import org.http4s.server._
-  // import org.http4s.server.syntax._
-import org.http4s.server.staticcontent._
-import org.http4s.server.blaze._
 import org.http4s.circe._
 import _root_.io.circe
 import circe._
-import circe.generic._
-  // import circe.generic.auto._
-  // import circe.syntax._
+import circe.syntax._
 import circe.literal._
+import corpora._
+import fs2._
+import TypeTags._
+import watrmarks._
+
+import geometry._
+// import geometry.syntax._
+
+object CirceJsonCodecs {
+  import circe.generic.semiauto._
+
+  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
+
+  implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
+
+  implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
+  implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
 
 
+  // implicit val Enc_XX: Encoder[XX] = deriveEncoder
+  implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
+  implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
+
+  implicit val Enc_Zone: Encoder[Zone] = deriveEncoder
+
+}
+
+import CirceJsonCodecs._
 
 case class LabelerReqForm(
-  labels: Seq[String],
+  labels: Seq[Label],
   description: String
 )
 
@@ -38,15 +59,16 @@ case class LTarget(
 )
 
 object LTarget {
-
   import circe.generic.semiauto._
   implicit val encoder: Encoder[LTarget] = deriveEncoder
   implicit val decoder: Decoder[LTarget] = deriveDecoder
 }
+
 case class LabelingSelection(
   annotType: String,
   targets: Seq[LTarget]
 )
+
 object LabelingSelection {
   import circe.generic.semiauto._
   implicit val encoder: Encoder[LabelingSelection] = deriveEncoder
@@ -54,45 +76,118 @@ object LabelingSelection {
 }
 
 case class LabelingReqForm(
-  // form: String, Seq[String]],
+  stableId: String,
+  labelChoice: Label,
   selection: LabelingSelection
 )
+
 object LabelingReqForm {
   import circe.generic.semiauto._
   implicit val encoder: Encoder[LabelingReqForm] = deriveEncoder
   implicit val decoder: Decoder[LabelingReqForm] = deriveDecoder
 }
 
+case class LabelsRequest(
+  stableId: String
+)
+
+object LabelsRequest {
+  import circe.generic.semiauto._
+  implicit val encoder: Encoder[LabelsRequest] = deriveEncoder
+  implicit val decoder: Decoder[LabelsRequest] = deriveDecoder
+}
+
 trait LabelingServices { self =>
   lazy val labelingServices = self
 
-  // Mounted at /api/v1xx/..
+  def corpusAccessApi: CorpusAccessApi
+
+  private lazy val docStore: DocumentZoningApi = corpusAccessApi.docStore
+
+  def decodeOrErr[T: Decoder](req: Request): Task[T] = {
+    req.as(jsonOf[T]).attemptFold(t => {
+      println(s"Error: ${t}")
+      println(s"Error: ${t.getCause}")
+      println(s"Error: ${t.getMessage}")
+      sys.error(s"${t}")
+    }, ss => ss)
+  }
+
+  // Mounted at /api/v1xx/labeling/..
   val labelingServiceEndpoints = HttpService {
     case req @ POST -> Root / "ui" / "labeler" =>
 
-      println(s"POST /ui/labeler/ : req: ${req}")
-
       for {
-        labels <- req.as(jsonOf[LabelerReqForm]).attemptFold(t => {
-          println(s"Error: ${t}")
-          println(s"Error: ${t.getCause}")
-          println(s"Error: ${t.getMessage}")
-          LabelerReqForm(List("Error"), s"Server Error ${t}")
-        }, ss => ss)
+        labels <- decodeOrErr[LabelerReqForm](req)
         panel = html.Parts.labelingPanel(labels.labels)
         resp <- Ok(panel.toString).putHeaders(H.`Content-Type`(MediaType.`text/html`))
-      } yield { resp }
+      } yield resp
+
+    case req @ GET -> Root / "labels" / stableIdStr =>
+      val stableId = DocumentID(stableIdStr)
+      val docId  = docStore.getDocument(stableId).getOrElse {
+        sys.error(s"docId not found for ${stableId}")
+      }
+
+      val allDocZones = for {
+        labelId <- docStore.getZoneLabelsForDocument(docId)
+        zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
+      } yield {
+        val zone = docStore.getZone(zoneId)
+        zone.asJson
+      }
+      val jsonResp = Json.obj(
+        ("zones", Json.arr(allDocZones:_*))
+      )
+
+      for {
+        resp <- Ok(jsonResp).putHeaders(H.`Content-Type`(MediaType.`application/json`))
+      } yield resp
 
     case req @ POST -> Root / "label"  =>
-      println(s"req: ${req}")
+
       for {
-        labels <- req.as(jsonOf[LabelingReqForm]).attemptFold(t => {
-          println(s"Error: ${t}")
-          println(s"Error: ${t.getCause}")
-          println(s"Error: ${t.getMessage}")
-          LabelingReqForm(LabelingSelection("Error", Seq()))
-        }, ss => ss)
-        resp <- Ok("<span>Successfully labeled!</span>").putHeaders(H.`Content-Type`(MediaType.`text/html`))
-      } yield { resp }
+        labeling <- decodeOrErr[LabelingReqForm](req)
+        allZones = {
+          val stableId = DocumentID(labeling.stableId)
+          val docId  = docStore.getDocument(stableId).getOrElse {
+            sys.error(s"docId not found for ${stableId}")
+          }
+
+          val regions = labeling.selection.targets.map { ltarget =>
+            val pageNum = PageNum(ltarget.page)
+
+            val (l, t, w, h) = (
+              ltarget.bbox(0),
+              ltarget.bbox(1),
+              ltarget.bbox(2),
+              ltarget.bbox(3)
+            )
+            val bbox = LTBounds.IntReps(l, t, w, h)
+
+            val pageRegions = for {
+              pageId    <- docStore.getPage(docId, pageNum).toSeq
+            } yield {
+              val regionId = docStore.addTargetRegion(pageId, bbox)
+              docStore.getTargetRegion(regionId)
+            }
+            pageRegions
+          }
+
+          docStore.labelRegions(labeling.labelChoice, regions.flatten)
+
+          val allDocZones = for {
+            labelId <- docStore.getZoneLabelsForDocument(docId)
+            zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
+          } yield {
+            val zone = docStore.getZone(zoneId)
+            zone.asJson
+          }
+          Json.obj(
+            ("zones", Json.arr(allDocZones:_*))
+          )
+        }
+        resp <- Ok(allZones).putHeaders(H.`Content-Type`(MediaType.`application/json`))
+      } yield resp
   }
 }

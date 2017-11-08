@@ -28,8 +28,8 @@ trait ScalatagsDefs {
     lazy val y = attr("y")
     lazy val width = attr("width")
     lazy val height =     attr("height")
-    lazy val labelName =  attr("label-name")
-    lazy val labelValue = attr("label-value")
+    // lazy val labelName =  attr("label-name")
+    // lazy val labelValue = attr("label-value")
 
   }
 
@@ -39,14 +39,15 @@ trait ScalatagsDefs {
   import texttags._
 
   implicit class RichString(val s: String)  {
-    def clazz      = ^.`class` := s
-    def id         = ^.`id` := s
-    def labelName  = ^.labelName:=s
-    def labelValue = ^.labelValue:=s
-    def action     = ^.action:=s
-    def name       = ^.name:=s
-    def typ        = ^.`type`:=s
-    def method     = ^.method :=s
+    def clazz      = ^.`class`    := s
+    def id         = ^.`id`       := s
+    // def labelName  = ^.labelName  := s
+    // def labelValue = ^.labelValue := s
+    def action     = ^.action     := s
+    def name       = ^.name       := s
+    def value      = ^.value      := s
+    def typ        = ^.`type`     := s
+    def method     = ^.method     := s
     def attr       = ^.attr(s)
   }
 

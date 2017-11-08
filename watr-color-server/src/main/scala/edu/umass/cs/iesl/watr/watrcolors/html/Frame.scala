@@ -4,6 +4,7 @@ package html
 
 // import scalatags.Text.all._
 import texttags._
+import watrmarks._
 
 object Frame {
   def htmlHead() = {
@@ -54,26 +55,32 @@ object Parts {
     )
   }
 
-  def labelButton(label: String): TextTag = {
-    <.button("label-type".id, "btn btn-xs btn-block btn-default".clazz, "submit".typ)(
-      <.small(label)
-    )
+  def labelButton(label: Label): TextTag = {
+    <.button(
+      "labelChoice".name,
+      label.fqn.value,
+      label.fqn.id,
+      "labelChoice btn btn-xs btn-block btn-default".clazz,
+      "submit".typ
+    )(<.small(label.fqn))
   }
-  def modalDialogTitle(title:String): TextTag = {
+
+  def modalDialogTitle(title: String): TextTag = {
     <.h5(^.`class`:="modal-title", ^.`id`:="")(title)
   }
 
-  def labelingForm(labels: Seq[String]): TextTag = {
+  def labelingForm(labels: Seq[Label]): TextTag = {
     val buttons = labels.map(labelButton(_))
 
     <.form(^.enctype:="multipart/form-data")(
+      <.input("hidden".typ, "selectedLabel".id, "selectedLabel".name),
       <.div(^.`class`:="form-group")(
         buttons
       )
     )
   }
 
-  def labelingPanel(labels: Seq[String]): TextTag = {
+  def labelingPanel(labels: Seq[Label]): TextTag = {
     val form = labelingForm(labels)
 
     val postForm = form(

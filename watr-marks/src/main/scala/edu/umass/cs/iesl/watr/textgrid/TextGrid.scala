@@ -210,10 +210,10 @@ object TextGrid {
               props.pageIdMap.put(page.pageId, (page.stableId, page.pageNum))
             }
             val l = pageItem.bbox.left
-            val b = pageItem.bbox.bottom
+            val t = pageItem.bbox.top
             val w = pageItem.bbox.width
             val h = pageItem.bbox.height
-            s"""[${pageNum}, [$l, $b, $w, $h], ${esc(char.toString())}]"""
+            s"""[${pageNum}, [$l, $t, $w, $h], ${esc(char.toString())}]"""
           }
 
           items.mkString("[", ",", "]")
