@@ -96,6 +96,16 @@ object LabelsRequest {
   implicit val encoder: Encoder[LabelsRequest] = deriveEncoder
   implicit val decoder: Decoder[LabelsRequest] = deriveDecoder
 }
+case class DeleteZoneRequest(
+  stableId: String,
+  zoneIds: Seq[Int]
+)
+
+object DeleteZoneRequest {
+  import circe.generic.semiauto._
+  implicit val encoder: Encoder[DeleteZoneRequest] = deriveEncoder
+  implicit val decoder: Decoder[DeleteZoneRequest] = deriveDecoder
+}
 
 trait LabelingServices { self =>
   lazy val labelingServices = self
@@ -143,6 +153,40 @@ trait LabelingServices { self =>
       for {
         resp <- Ok(jsonResp).putHeaders(H.`Content-Type`(MediaType.`application/json`))
       } yield resp
+
+    case req @ DELETE -> Root / "label"  =>
+      println(s"Got delete label request")
+
+      for {
+        deleteReq <- decodeOrErr[DeleteZoneRequest](req)
+
+        allZones = {
+          val stableId = DocumentID(deleteReq.stableId)
+          val docId  = docStore.getDocument(stableId).getOrElse {
+            sys.error(s"docId not found for ${stableId}")
+          }
+          for {
+            zoneId <- deleteReq.zoneIds
+          } {
+            val zone = docStore.getZone(ZoneID(zoneId))
+            println(s"Deleting zones ${zone}")
+            docStore.deleteZone(ZoneID(zoneId))
+          }
+          val allDocZones = for {
+            labelId <- docStore.getZoneLabelsForDocument(docId)
+            zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
+          } yield {
+            val zone = docStore.getZone(zoneId)
+            zone.asJson
+          }
+          Json.obj(
+            ("zones", Json.arr(allDocZones:_*))
+          )
+        }
+        resp <- Ok(allZones).putHeaders(H.`Content-Type`(MediaType.`application/json`))
+      } yield {
+        resp
+      }
 
     case req @ POST -> Root / "label"  =>
 

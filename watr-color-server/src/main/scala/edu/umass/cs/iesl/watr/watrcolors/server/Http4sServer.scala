@@ -158,81 +158,8 @@ class Http4sService(
   }
 
 
-  // val authedPages = AuthedService[UserData] {
-
-  //   case request @ GET -> Root / pageName as user =>
-  //     pageName match {
-  //       case "browse"    => htmlPage("BrowseCorpus", Some(user.emailAddr.unwrap))
-  //       case "label"     => htmlPage("WatrColors", Some(user.emailAddr.unwrap))
-  //     }
-
-  //   case request @ GET -> Root  as user =>
-  //     SeeOther(uri("/browse"))
-  // }
 
   val redirectOnFailure: AuthedService[String] = Kleisli(req => SeeOther(uri("/user/register")))
-
-  // val serveAuthorizedPages = AuthMiddleware(
-  //   authUser,
-  //   redirectOnFailure
-  // )( userStatusAndLogout orElse authedPages )
-
-
-  // val actorSystem = ActorSystem()
-  // import actorSystem.dispatcher
-
-  // lazy val browseCorpusServer = new BrowseCorpusApiListeners(corpusAccessApi)
-
-  // val userSessions = actorSystem.actorOf(SessionsActor.props(corpusAccessApi), "sessionsActor")
-
-  // val authedAutowire = AuthedService[UserData] {
-  //   case req @ POST -> "api" /: path as user =>
-  //     path.toList.headOption match {
-  //       case Some("browse") =>
-
-  //         val router = ShellsideServer.route[BrowseCorpusApi](browseCorpusServer)
-  //         Ok {
-  //           req.req.bodyAsText().map{ body =>
-  //             router(
-  //               autowire.Core.Request(
-  //                 path.toList.tail,
-  //                 UPickle.read[Map[String, String]](body)
-  //               )
-  //             ).map{ responseData =>
-  //               responseData.getBytes
-  //             }
-  //           }
-  //         }
-
-  //       case Some("shell") =>
-
-  //         implicit val timeout = Timeout(20.seconds)
-
-  //         Ok {
-  //           req.req.bodyAsText().map{ body =>
-  //             for {
-  //               resp <- ask(userSessions, RoutingRequest(
-  //                 user,
-  //                 path.toList.tail,
-  //                 body
-  //               )).mapTo[RoutingResponse]
-  //               respData <- resp.response
-
-  //             } yield respData.getBytes()
-  //           }
-  //         }
-
-  //       case Some(path) =>
-  //         sys.error(s"autowire request to unknown url ${path}")
-
-  //       case None =>
-  //         sys.error(s"autowire request to empty path")
-  //     }
-  // }
-
-
-  // val autowireService = authOrForbid(authedAutowire)
-
 
   val builder = BlazeBuilder.bindHttp(port, url)
     .mountService(jslibDistService)
