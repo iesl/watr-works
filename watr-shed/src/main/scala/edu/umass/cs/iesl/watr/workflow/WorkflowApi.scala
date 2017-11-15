@@ -23,7 +23,11 @@ import watrmarks.Label
   *       have no lock status, i.e., have not been seen by any user
   *    When the user is finished adding labels to a particular zone, the lock status is changed to Completed or Skipped
   *
-  *    The workflow API include a WorkflowReport, which included counts for all zones having a status, as well as unseen zone
+  *    A WorkflowReport includes
+  *       a count of as-yet unseen zones,
+  *       counts of other zones having a particular status
+  *       users with assigned zones
+  *
   */
 
 object WorkflowStatus {
@@ -34,17 +38,17 @@ object WorkflowStatus {
 
 
 object ZoneLockStatus {
-  val Unassigned   = StatusCode("Unassigned")
   val Assigned     = StatusCode("Assigned")
   val Completed    = StatusCode("Completed")
   val Skipped      = StatusCode("Skipped")
 
-  val all = List(Unassigned, Assigned, Completed, Skipped)
+  val all = List(Assigned, Completed, Skipped)
 }
 
 case class WorkflowReport(
   unassignedCount: Int,
-  statusCounts: Map[String@@StatusCode, Int]
+  statusCounts: Map[String@@StatusCode, Int],
+  userAssignmentCounts: Map[Int@@UserID, Int]
 )
 
 trait UserbaseApi {

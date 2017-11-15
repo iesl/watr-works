@@ -397,34 +397,37 @@ class CorpusAccessDB(
     }
 
     def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport = {
-      // val tuples = for {
-      //   status <- ZoneLockStatus.all
-      // } yield {
+      val unassignedCount = runq {
+        sql"""
+          select count(*)
+            from      zone as z
+            left join zonelock as lk using (zone)
+            where  z.label=(select label from workflow where workflow=${workflowId})
+              AND  lk.zone is null
+       """.query[Int].unique
+      }
 
-      //   val count =  runq{
-      //     sql"""
-      //       select count(zonelock)
-      //       from zonelock
-      //       where lockgroup = ${lockGroupId} AND status=${status}
-      //     """.query[Int].unique
-      //   }
-      //   (status, count)
-      // }
-      // tuples.toMap
+      val tuples = for {
+        status <- ZoneLockStatus.all
+      } yield {
+        val statusCount = runq {
+          sql""" select count(*) from zonelock where status=${status} """
+            .query[Int].unique
+        }
+        (status, statusCount)
+      }
 
-      ???
+      val assigneeCounts  = runq {
+        sql"""
+            select assignee, count(zone)
+            from zonelock where assignee is not null
+            group by assignee
+         """.query[(Int@@UserID, Int)].list
+      }
+      WorkflowReport(unassignedCount, tuples.toMap, assigneeCounts.toMap)
     }
 
     def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID, count: Int): Seq[Int@@ZoneLockID] = runq {
-      // sql"""
-      //   insert into zonelock (assignee, workflow, zone, status)
-      //     select ${userId}, ${workflowId}, z.zone, ${ZoneLockStatus.Assigned}
-      //       from zonelock as lk
-      //       left join zone as z using (zone)
-      //       where  z.label=(select label from workflow where workflow=${workflowId})
-      //         AND  lk.zone is null
-      //       limit ${count}
-      //  """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog
       sql"""
         insert into zonelock (assignee, workflow, zone, status)
           select ${userId}, ${workflowId}, z.zone, ${ZoneLockStatus.Assigned}
@@ -436,25 +439,6 @@ class CorpusAccessDB(
        """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog
     }
 
-
-    // def acquireZoneLocksWithStatus(lockGroupId: Int@@LockGroupID, withStatus: String@@StatusCode, count: Int): Seq[Int@@ZoneLockID] = {
-    //   runq { for {
-    //     q1 <- sql"""
-    //       update zonelock SET lockgroup=${lockGroupId}
-    //           where zonelock IN (
-    //            select zonelock from zonelock
-    //              where lockgroup IS NULL AND status=${withStatus}
-    //              limit ${count}
-    //           )
-    //       """.update.run
-
-    //     q2 <- sql"""
-    //       select zonelock from zonelock where lockgroup = ${lockGroupId} AND status=${withStatus}
-    //       """.query[Int@@ZoneLockID].list
-
-    //     } yield q2
-    //   }
-    // }
 
     def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit = {
       runq {

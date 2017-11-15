@@ -13,12 +13,10 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
 
   val VisualLine: Label = Label.auto
 
-  def initWorkflow(): String@@WorkflowID = {
-    val workflowId = workflowApi.defineWorkflow("wf-slug-0", "sample labeling task", VisualLine)
-    val workflow = workflowApi.getWorkflow(workflowId)
-    println(workflow)
-
-    workflowId
+  def initWorkflows(n: Int): Seq[String@@WorkflowID] = {
+    0 until n map { i =>
+      workflowApi.defineWorkflow(s"curation-workflow-${i}", s"sample labeling task $i", VisualLine)
+    }
   }
 
   def initUsers(n: Int): Seq[Int@@UserID] = {
@@ -58,8 +56,6 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
   }
 
   it should "return lock status info for zones" in new CleanDocstore {
-    addSampleDocs(1)
-    initWorkflow()
 
 
   }
@@ -67,17 +63,23 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
   it should "lock/unlock target zones, to exhaustion, with single user" in new CleanDocstore {
     addSampleDocs(1)
     val userId = initUsers(1).head
-    val workflowId = initWorkflow()
+    val workflowId = initWorkflows(1).head
+
+    println(workflowApi.getWorkflowReport(workflowId))
 
     val locks = workflowApi.lockUnassignedZones(userId, workflowId, 3)
       .map(zoneLockId => workflowApi.getZoneLock(zoneLockId))
 
     locks.length shouldBe 3
 
+    println(workflowApi.getWorkflowReport(workflowId))
+
     workflowApi.getLockedZones(userId).length shouldBe 3
 
     val locks2 = workflowApi.lockUnassignedZones(userId, workflowId, 6)
       .map(zoneLockId => workflowApi.getZoneLock(zoneLockId))
+
+    println(workflowApi.getWorkflowReport(workflowId))
 
     locks2.length shouldBe 6
 
@@ -89,6 +91,8 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
     locks3.length shouldBe 0
 
     workflowApi.getLockedZones(userId).length shouldBe 9
+
+    println(workflowApi.getWorkflowReport(workflowId))
 
     for {
       maybeLock <- locks
@@ -103,6 +107,33 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
     } workflowApi.releaseZoneLock(lock.id)
 
     workflowApi.getLockedZones(userId).length shouldBe 0
+
+  }
+
+  it should "handle multiple workflows, users" in new CleanDocstore {
+    addSampleDocs(3) // 9 zones/doc, so 27 total zones
+    val users = initUsers(3)
+    val workflows = initWorkflows(3)
+
+    workflowApi.lockUnassignedZones(users(0), workflows(0), 3)
+    workflowApi.getLockedZones(users(0)).length shouldBe 3
+
+    workflowApi.lockUnassignedZones(users(1), workflows(1), 3)
+    workflowApi.getLockedZones(users(1)).length shouldBe 3
+    workflowApi.getLockedZones(users(0)).length shouldBe 3
+
+    println(workflowApi.getWorkflowReport(workflows(0)))
+
+    workflowApi.getWorkflowReport(workflows(0)) shouldBe WorkflowReport(
+      21, Map(
+        (ZoneLockStatus.Assigned, 6),
+        (ZoneLockStatus.Completed, 0),
+        (ZoneLockStatus.Skipped, 0)
+      ), Map(
+        (users(0), 3),
+        (users(1), 3)
+      )
+    )
 
   }
 
