@@ -24,8 +24,6 @@ trait DocumentZoningApi {
   def getPages(docId: Int@@DocumentID): Seq[Int@@PageID]
   def getPageGeometry(pageId: Int@@PageID): LTBounds
   def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit
-  def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit
-  def getPageImage(pageId: Int@@PageID): Option[Array[Byte]]
 
   def setPageText(pageId: Int@@PageID, text: TextGrid): Unit
   def getPageText(pageId: Int@@PageID): Option[TextGrid]

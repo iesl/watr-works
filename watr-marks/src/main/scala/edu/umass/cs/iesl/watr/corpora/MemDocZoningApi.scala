@@ -38,7 +38,7 @@ class MemDocZoningApi extends DocumentZoningApi {
       }
 
       def add(docId: Int@@DocumentID, pageNum: Int@@PageNum): Rel.Page = {
-        val rec = Rel.Page(nextId(), docId, pageNum, None, G.LTBounds.zero)
+        val rec = Rel.Page(nextId(), docId, pageNum, G.LTBounds.zero)
         insert(rec.prKey, rec)
         documentFKey.put(docId, rec.prKey)
         docIdPageNumKey.put((docId, pageNum), rec.prKey)
@@ -186,8 +186,6 @@ class MemDocZoningApi extends DocumentZoningApi {
 
     object pageImages extends EdgeTableOneToOne[PageID, ImageID]
 
-    object imageclips extends DBRelation[ImageID, Rel.ImageClip]
-
     object targetregions extends DBRelation[RegionID, Rel.TargetRegion]  {
       // object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
 
@@ -202,7 +200,7 @@ class MemDocZoningApi extends DocumentZoningApi {
 
         forUriKey.getOrElseUpdate(uriKey,{
           // FIXME: correct rank
-          val rec = Rel.TargetRegion(nextId(), pageId, rank=0, None, bbox)
+          val rec = Rel.TargetRegion(nextId(), pageId, rank=0, bbox)
           insert(rec.prKey, rec)
           forUriKey.put(uriKey, rec.prKey)
           forPage.addEdge(pageId, rec.prKey)
@@ -298,17 +296,6 @@ class MemDocZoningApi extends DocumentZoningApi {
     pages.setGeometry(pageId, pageBounds)
   }
 
-  def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
-    val rec = imageclips.create(Rel.ImageClip(_, bytes))
-    pageImages.addEdge(pageId, rec.prKey)
-  }
-
-  def getPageImage(pageId: Int@@PageID): Option[Array[Byte]] = {
-    pageImages
-      .getRhs(pageId)
-      .map(imageclips.unique(_).image)
-  }
-
   def setPageText(pageId: Int@@PageID, text: TextGrid): Unit = {
     pages.setPageText(pageId, text)
   }
@@ -337,21 +324,6 @@ class MemDocZoningApi extends DocumentZoningApi {
     // d.stableId, p.pagenum, Some(pageId)
     val page = G.StablePage(mDocument.stableId, modelPage.pagenum, model.page)
     G.PageRegion(page, model.bounds, model.prKey)
-  }
-
-  def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
-    val rec = imageclips.create(Rel.ImageClip(_, bytes))
-    targetRegionImages.addEdge(regionId, rec.prKey)
-  }
-
-  def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]] = {
-    targetRegionImages
-      .getRhs(regionId)
-      .map(imageclips.unique(_).image)
-  }
-
-  def deleteTargetRegionImage(regionId: Int@@RegionID): Unit = {
-    ???
   }
 
   def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID] = {

@@ -4,6 +4,7 @@ package textgrid
 import scala.collection.mutable
 import watrmarks._
 import geometry._
+import geometry.syntax._
 import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
 
@@ -14,9 +15,6 @@ case object NoFonts extends FontInfo
 
 
 class TextOutputBuilder(textGrid: TextGrid) {
-
-
-
 
   def withText(): Unit = {
     textGrid.rows.map{ row =>
@@ -82,6 +80,20 @@ trait TextGrid {
   }
 
   def buildOutput() = new TextOutputBuilder(this)
+  def pageBounds(): Seq[PageRegion] = {
+
+    val allBounds = rows.flatMap{ row => row.pageBounds() }
+
+    val regionsByPages = allBounds.groupBy(_.page.pageNum)
+    regionsByPages.map { case (pageNum, pageRegions) =>
+      val headRegion = pageRegions.head.page
+      val pageBbox = pageRegions.map(_.bbox).reduce(_ union _)
+      PageRegion(
+        headRegion,
+        pageBbox
+      )
+    }.toList
+  }
 
 }
 
@@ -180,7 +192,21 @@ object TextGrid {
 
 
   trait Row {
+
     def cells: Seq[GridCell]
+
+    def pageBounds(): Seq[PageRegion] = {
+      val regionsByPages = cells.groupBy(_.pageRegion.page.pageNum)
+
+      regionsByPages.map { case (pageNum, pageRegions) =>
+        val headRegion = pageRegions.head.pageRegion
+        val pageBbox = pageRegions.map(_.pageRegion.bbox).reduce(_ union _)
+        PageRegion(
+          headRegion.page,
+          pageBbox
+        )
+      }.toList
+    }
 
     def toCursor(): Option[GridCursor] = {
       GridCursor.init(cells.toList.toZipper)

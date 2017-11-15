@@ -3,8 +3,9 @@ package corpora
 
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
+import textgrid._
 
-trait CorpusTestingUtil extends PlainTextCorpus {
+trait CorpusTestingUtil extends TextGridBuilder {
   def createEmptyDocumentZoningApi(): DocumentZoningApi
   val regionIdGen = utils.IdGenerator[RegionID]()
 
@@ -56,16 +57,16 @@ trait CorpusTestingUtil extends PlainTextCorpus {
   })
 
 
-  def visualizeDocStore(): Unit = {
-    for {
-      stableId     <- docStore.getDocuments()
-      docId        <- docStore.getDocument(stableId).toSeq
-      _            <- putStrLn(s"Document $stableId id:${docId}")
-      pageId       <- docStore.getPages(docId)
-      pageGeometry  = docStore.getPageGeometry(pageId)
-      _            <- putStrLn(s"  Page  ${pageId}: ${pageGeometry}")
-    } ()
-  }
+  // def visualizeDocStore(): Unit = {
+  //   for {
+  //     stableId     <- docStore.getDocuments()
+  //     docId        <- docStore.getDocument(stableId).toSeq
+  //     _            <- putStrLn(s"Document $stableId id:${docId}")
+  //     pageId       <- docStore.getPages(docId)
+  //     pageGeometry  = docStore.getPageGeometry(pageId)
+  //     _            <- putStrLn(s"  Page  ${pageId}: ${pageGeometry}")
+  //   } ()
+  // }
 
   def visualizeDocuments(): TB.Box = {
     val docBoxes = for {

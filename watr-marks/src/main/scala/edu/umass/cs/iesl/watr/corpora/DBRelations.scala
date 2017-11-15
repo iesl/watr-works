@@ -14,7 +14,6 @@ object RelationModel {
     prKey      : Int@@PageID,
     document   : Int@@DocumentID,
     pagenum    : Int@@PageNum,
-    imageclip  : Option[Int@@ImageID],
     bounds     : G.LTBounds
   )
 
@@ -22,13 +21,7 @@ object RelationModel {
     prKey      : Int@@RegionID,
     page       : Int@@PageID,
     rank       : Int,
-    imageclip  : Option[Int@@ImageID],
     bounds     : G.LTBounds
-  )
-
-  case class ImageClip(
-    prKey    : Int@@ImageID,
-    image    : Array[Byte]
   )
 
   // TODO rank ordering should be wrt (document, role)
@@ -39,21 +32,9 @@ object RelationModel {
     rank     : Int
   )
 
-  case class TextReflow(
-    prKey     : Int@@TextReflowID,
-    reflow    : String,
-    astext    : String,
-    zone      : Int@@ZoneID
-  )
-
   case class Label(
     prKey : Int@@LabelID,
     key   : String
-  )
-
-  case class LabelingWidget(
-    prKey   : Int@@LabelerID,
-    widget  : String
   )
 
 
@@ -64,17 +45,14 @@ object RelationModel {
 
   case class WorkflowDef(
     workflow     : String@@WorkflowID,
-    description  : String
-  )
-
-  case class LockGroup(
-    id: Int@@LockGroupID,
-    user: Int@@UserID
+    description  : String,
+    labelId      : Int@@LabelID
   )
 
   case class ZoneLock(
     id         : Int@@ZoneLockID,
-    group      : Option[Int@@LockGroupID],
+    assignee   : Option[Int@@UserID],
+    workflow   : String@@WorkflowID,
     zone       : Int@@ZoneID,
     status     : String@@StatusCode
   )

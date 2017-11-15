@@ -1,7 +1,8 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-// import watrmarks.{StandardLabels => LB}
+
+import watrmarks.{StandardLabels => LB}
 import TypeTags._
 import corpora._
 
@@ -50,15 +51,18 @@ trait TextGridBuilder {
 
 
   def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Seq[TextGrid]  = {
-    val docId = docStore.addDocument(stableId)
-    for {
+    docStore.addDocument(stableId)
+    val pageRegions = for {
       (page, n) <- pages.zipWithIndex
     } yield {
       val textGrid = loadPageFromString(stableId, PageNum(n), page)
-      val pageId = docStore.addPage(docId, PageNum(n))
-      docStore.setPageText(pageId, textGrid)
-      textGrid
+      // val pageId = docStore.getPage(docId, PageNum(n)).get
+      // docStore.setPageText(pageId, textGrid)
+      (textGrid, textGrid.pageBounds().head)
     }
+
+    docStore.labelRegions(LB.DocumentPages, pageRegions.map(_._2))
+    pageRegions.map(_._1)
   }
 
 
@@ -72,7 +76,6 @@ trait TextGridBuilder {
 
     stringToPageTextGrid(pageBlock, pageNum, Some(pageId))
   }
-
 
 
   def stringToPageTextGrid(
@@ -102,12 +105,17 @@ trait TextGridBuilder {
         TextGrid.PageItemCell(charAtom, char = char)
       }
 
-      TextGrid.Row.fromCells(cells)
+      val row = TextGrid.Row.fromCells(cells)
+      val headBounds = row.pageBounds().head
+      docStore.labelRegions(LB.VisualLine, Seq(headBounds))
+      row
     }
 
-    TextGrid.fromRows(rows)
+    val grid = TextGrid.fromRows(rows)
+    val headBounds = grid.pageBounds().head.bbox
 
-    // docStore.setPageGeometry(pageId, reflowBuilder.totalBounds())
+    docStore.setPageGeometry(pageId, headBounds)
+    grid
   }
 
   def visualizeDocStore(): Unit = {

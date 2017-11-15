@@ -182,8 +182,8 @@ class CorpusAccessDB(
   def insertPage(docPrKey: Int@@DocumentID, pageNum: Int@@PageNum): ConnectionIO[Int@@PageID] = {
     updateGetKey("page",
       sql""" insert into page
-                (document, pagenum, imageclip, bleft, btop, bwidth, bheight)
-         values (${docPrKey}, ${pageNum}, null, 0, 0, 0, 0) """.update
+                (document, pagenum, bleft, btop, bwidth, bheight)
+         values (${docPrKey}, ${pageNum}, 0, 0, 0, 0) """.update
     )
   }
 
@@ -219,62 +219,12 @@ class CorpusAccessDB(
 
   def selectPage(pageId: Int@@PageID): ConnectionIO[Rel.Page] = {
     sql"""
-     select pg.page, pg.document, pg.pagenum, pg.imageclip, pg.bleft, pg.btop, pg.bwidth, pg.bheight
+     select pg.page, pg.document, pg.pagenum, pg.bleft, pg.btop, pg.bwidth, pg.bheight
      from   page as pg
      where  pg.page=${pageId.unwrap}
     """.query[Rel.Page].unique
   }
 
-  def selectPageImage(pageId: Int@@PageID): ConnectionIO[Option[Array[Byte]]] = {
-    sql"""select i.image
-          from page as p join imageclips as i
-               on(p.imageclip=i.imageclip)
-          where p.page=${pageId}
-       """.query[Array[Byte]].option
-  }
-
-  def selectTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Option[Array[Byte]]] = {
-    sql"""select i.image
-          from targetregion as tr join imageclips as i
-               on(tr.imageclip=i.imageclip)
-          where tr.targetregion=${regionId}
-       """.query[Array[Byte]].option
-  }
-
-  def insertImageClip(imageBytes: Array[Byte]): ConnectionIO[Int] = {
-    sql"""insert into imageclips (image) values(${imageBytes})"""
-      .update.withUniqueGeneratedKeys[Int]("imageclip")
-  }
-
-  def deleteImageClip(clipId: Int@@ImageID): ConnectionIO[Int] = {
-    sql"""delete from imageclips where imageclip=${clipId}""".update.run
-  }
-
-  def delTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Unit] = {
-    for {
-      tr <- selectTargetRegion(regionId)
-      del <- {
-        tr.imageclip.fold(FC.delay { 0 })(
-          deleteImageClip(_)
-        )
-      }
-      pup <- sql"""update targetregion set imageclip=null where targetregion=${regionId}""".update.run
-    } yield ()
-  }
-
-  def updatePageImage(pageId: Int@@PageID, imageBytes: Array[Byte]): ConnectionIO[Int] = {
-    for {
-      page <- selectPage(pageId)
-      del <- {
-        page.imageclip.fold(FC.delay { 0 })(
-          deleteImageClip(_)
-        )
-      }
-      clipId <- insertImageClip(imageBytes)
-      pup <- sql"""update page set imageclip=${clipId} where page=${pageId}""".update.run
-    } yield pup
-
-  }
 
   def updatePageGeometry(pageId: Int@@PageID, pageBounds: LTBounds): Update0 = {
     val LTBounds.IntReps(bl, bt, bw, bh) = pageBounds
@@ -358,66 +308,11 @@ class CorpusAccessDB(
       page         <- selectPage(pageId)
       maybeRegion  <- selectTargetRegionForBbox(pageId, bbox)
       regionId     <- maybeRegion.fold(
-        sql"""insert into targetregion (page, imageclip, bleft, btop, bwidth, bheight)
-                 values ($pageId, null, $bl, $bt, $bw, $bh)
+        sql"""insert into targetregion (page, bleft, btop, bwidth, bheight)
+                 values ($pageId, $bl, $bt, $bw, $bh)
              """.update.withUniqueGeneratedKeys[Int]("targetregion").map(RegionID(_))
       )(tr => FC.delay(tr.prKey))
     } yield regionId
-  }
-
-  def createTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Array[Byte]] = {
-    // val TargetRegion(regionId, stableId, pageNum, bbox) = targetRegion
-
-    def cropTo(bs: Array[Byte], cbbox: LTBounds, pbbox: LTBounds): ConnectionIO[Array[Byte]] = {
-      images.ImageManipulation.cropTo(bs, cbbox, pbbox)
-        .bytes
-        .point[ConnectionIO]
-    }
-
-    for {
-      _              <- putStrLn(s"createTargetRegionImage(${regionId})")
-      _              <- putStrLn(s"  selectTargetRegion(${regionId})")
-      region         <- selectTargetRegion(regionId)
-      _              <- putStrLn(s"  selectPage(${region})")
-      page           <- selectPage(region.page)
-      _              <- putStrLn(s"  selectPageImage(${page})")
-
-      // Get page image from filesystem
-      maybePageImage <- selectPageImage(region.page)
-
-      imageBytes     <- maybePageImage.map(cropTo(_, region.bounds, page.bounds)).getOrElse { sys.error(s"  createTargetRegionImage: no page image found!") }
-      // TODO delete old image if exists
-      _              <- putStrLn("  insertTargetRegionImage()")
-      clipId         <- insertTargetRegionImage(regionId, imageBytes)
-    } yield {
-      imageBytes
-    }
-  }
-
-  def insertTargetRegionImage(regionId: Int@@RegionID, imageBytes: Array[Byte]): ConnectionIO[Int@@ImageID] = {
-    for {
-      clipId <- insertImageClip(imageBytes)
-      pup <- sql"""update targetregion set imageclip=${clipId} where targetregion=${regionId}""".update.run
-    } yield ImageID(clipId)
-  }
-
-
-  def getOrCreateTargetRegionImage(regionId: Int@@RegionID): ConnectionIO[Array[Byte]] = {
-    for {
-      _          <- putStrLn(s"getOrCreateTargetRegionImage(${regionId})")
-      _          <- putStrLn("  selectTargetRegionImage()")
-      maybeImage <- selectTargetRegionImage(regionId)
-      _          <- putStrLn("  maybe createTargetRegionImage()")
-      imageBytes <- maybeImage.fold(createTargetRegionImage(regionId))(_.point[ConnectionIO])
-    } yield imageBytes
-  }
-
-
-  def serveTargetRegionImage(regionId: Int@@RegionID): Array[Byte] = {
-    println(s"serveTargetRegionImage(${regionId})")
-    runq{
-      getOrCreateTargetRegionImage(regionId)
-    }
   }
 
   def getPageAndDocument(pageId: Int@@PageID): (Rel.Page, Rel.Document) = {
@@ -443,7 +338,7 @@ class CorpusAccessDB(
   object userbaseApi extends UserbaseApi {
     def addUser(email: String): Int@@UserID = {
       runq { sql"""
-        insert into persons (email) values (${email})
+        insert into person (email) values (${email})
         """.update
         .withUniqueGeneratedKeys[Int]("person")
         .map(UserID(_))
@@ -452,26 +347,31 @@ class CorpusAccessDB(
 
     def getUser(userId: Int@@UserID): Option[Rel.Person] = {
       runq { sql"""
-        select person, email from persons where person=${userId}
+        select person, email from person where person=${userId}
         """.query[Rel.Person].option
       }
     }
 
     def getUserByEmail(email: String): Option[Int@@UserID] = {
       runq { sql"""
-        select person from persons where email=${email}
+        select person from person where email=${email}
         """.query[Int@@UserID].option
       }
     }
   }
   object workflowApi extends WorkflowApi {
-    def defineWorkflow(slug: String, desc: String): String@@WorkflowID = {
-      // select workflow from workflows where workflow=${slug}
-      val query = sql"""
-         insert into workflows (workflow, description) values (${slug}, ${desc})
-         returning workflow
-      """.query[String@@WorkflowID].unique
-      runq{ query }
+
+    def defineWorkflow(slug: String, desc: String, label: Label): String@@WorkflowID = {
+
+      val labelId = docStore.ensureLabel(label)
+
+      runq {
+        sql"""
+           insert into workflow (workflow, description, label)
+           values (${slug}, ${desc}, ${labelId})
+           returning workflow
+        """.query[String@@WorkflowID].unique
+      }
     }
 
     def activateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit] = {
@@ -486,102 +386,107 @@ class CorpusAccessDB(
       ???
     }
 
-    def getWorkflows(): Seq[String@@WorkflowID] = {
-      val query = sql"""
-          select workflow from workflows
-      """.query[String@@WorkflowID].list
-      runq{ query }
+    def getWorkflows(): Seq[String@@WorkflowID] = runq {
+      sql""" select workflow from workflow """.query[String@@WorkflowID].list
     }
 
     def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
-      runq { sql"""
-        select workflow, description from workflows
-        """.query[Rel.WorkflowDef].unique
-      }
-    }
-
-    def makeLockGroup(user: Int@@UserID): Int@@LockGroupID = {
-      runq { sql"""
-        insert into lockgroups (person) values (${user})
-        """.update.withUniqueGeneratedKeys[Int]("lockgroup").map(LockGroupID(_))
-      }
-    }
-
-    def aquireZoneLocks(lockGroup: Int@@LockGroupID, labelId: Int@@LabelID, count: Int): Seq[Int@@ZoneLockID] = {
       runq {
-        for {
-          q1 <- sql"""
-              insert into zonelocks (lockgroup, zone, status)
-                select ${lockGroup.unwrap}, z.zone, ${ZoneLockStatus.Unexamined}
-                  from      zone as z
-                  left join zonelocks as lk using (zone)
-                  where  z.label=${labelId}
-                    AND  lk.zone is null
-                  limit ${count}
-             """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog
-
-        } yield q1
+        sql""" select * from workflow """.query[Rel.WorkflowDef].unique
       }
     }
 
-    def aquireZoneLocksWithStatus(lockGroupId: Int@@LockGroupID, withStatus: String@@StatusCode, count: Int): Seq[Int@@ZoneLockID] = {
-      runq { for {
-        q1 <- sql"""
-          update zonelocks SET lockgroup=${lockGroupId}
-              where zonelock IN (
-               select zonelock from zonelocks
-                 where lockgroup IS NULL AND status=${withStatus}
-                 limit ${count}
-              )
-          """.update.run
+    def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport = {
+      // val tuples = for {
+      //   status <- ZoneLockStatus.all
+      // } yield {
 
-        q2 <- sql"""
-          select zonelock from zonelocks where lockgroup = ${lockGroupId} AND status=${withStatus}
-          """.query[Int@@ZoneLockID].list
+      //   val count =  runq{
+      //     sql"""
+      //       select count(zonelock)
+      //       from zonelock
+      //       where lockgroup = ${lockGroupId} AND status=${status}
+      //     """.query[Int].unique
+      //   }
+      //   (status, count)
+      // }
+      // tuples.toMap
 
-        } yield q2
-      }
+      ???
     }
+
+    def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID, count: Int): Seq[Int@@ZoneLockID] = runq {
+      // sql"""
+      //   insert into zonelock (assignee, workflow, zone, status)
+      //     select ${userId}, ${workflowId}, z.zone, ${ZoneLockStatus.Assigned}
+      //       from zonelock as lk
+      //       left join zone as z using (zone)
+      //       where  z.label=(select label from workflow where workflow=${workflowId})
+      //         AND  lk.zone is null
+      //       limit ${count}
+      //  """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog
+      sql"""
+        insert into zonelock (assignee, workflow, zone, status)
+          select ${userId}, ${workflowId}, z.zone, ${ZoneLockStatus.Assigned}
+            from      zone as z
+            left join zonelock as lk using (zone)
+            where  z.label=(select label from workflow where workflow=${workflowId})
+              AND  lk.zone is null
+            limit ${count}
+       """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog
+    }
+
+
+    // def acquireZoneLocksWithStatus(lockGroupId: Int@@LockGroupID, withStatus: String@@StatusCode, count: Int): Seq[Int@@ZoneLockID] = {
+    //   runq { for {
+    //     q1 <- sql"""
+    //       update zonelock SET lockgroup=${lockGroupId}
+    //           where zonelock IN (
+    //            select zonelock from zonelock
+    //              where lockgroup IS NULL AND status=${withStatus}
+    //              limit ${count}
+    //           )
+    //       """.update.run
+
+    //     q2 <- sql"""
+    //       select zonelock from zonelock where lockgroup = ${lockGroupId} AND status=${withStatus}
+    //       """.query[Int@@ZoneLockID].list
+
+    //     } yield q2
+    //   }
+    // }
 
     def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit = {
-      runq { sql"""
-        update zonelocks SET status=${newStatus}
-            where zonelock=${zoneLockId}
-        """.update.run
+      runq {
+        sql""" update zonelock SET status=${newStatus} where zonelock=${zoneLockId} """.update.run
       }
     }
 
-    def releaseZoneLocks(lockGroupId: Int@@LockGroupID): Unit = {
-      runq { sql"""
-        delete from lockgroups where lockgroup=${lockGroupId}
-        """.update.run
+    def releaseZoneLock(zoneLockId: Int@@ZoneLockID): Unit = {
+      runq {
+        sql""" update zonelock set assignee = null where zonelock=${zoneLockId} """
+          .update.run
       }
     }
 
-    def getLockForZone(zoneId: Int@@ZoneID): Option[Rel.ZoneLock] = {
-      runq { sql"""
-        select * from zonelocks where zone=${zoneId}
-        """.query[Rel.ZoneLock].option
+    def getLockForZone(zoneId: Int@@ZoneID): Option[Int@@ZoneLockID] = {
+      runq {
+        sql""" select zonelock from zonelock where zone=${zoneId} """
+          .query[Int@@ZoneLockID].option
       }
     }
 
     def getZoneLock(zoneLockId: Int@@ZoneLockID): Option[Rel.ZoneLock] = {
       runq { sql"""
-        select * from zonelocks where zonelock=${zoneLockId}
+        select * from zonelock where zonelock=${zoneLockId}
         """.query[Rel.ZoneLock].option
       }
     }
 
-    def getUserLockGroup(userId: Int@@UserID): Option[Int@@LockGroupID] = {
-      runq { sql"""
-        select lockgroup from lockgroups where person=${userId}
-        """.query[Int@@LockGroupID].option
-      }
-    }
 
-    def getLockedZones(lockGroupId: Int@@LockGroupID): Seq[Int@@ZoneLockID] = {
+    def getLockedZones(userId: Int@@UserID): Seq[Int@@ZoneLockID] = {
       runq { sql"""
-        select zone from zonelocks where lockgroup=${lockGroupId}
+        select zone from zonelock where assignee=${userId}
         """.query[Int@@ZoneLockID].list
       }
     }
@@ -726,9 +631,6 @@ class CorpusAccessDB(
       runq { selectPage(pageId).map(_.bounds) }
     }
 
-    def getPageImage(pageId: Int@@PageID): Option[Array[Byte]] = {
-      runq { selectPageImage(pageId) }
-    }
 
     def getPageIdentifier(pageId: Int@@PageID): StablePage = {
       val query = for {
@@ -747,10 +649,6 @@ class CorpusAccessDB(
 
     def setPageGeometry(pageId: Int@@PageID, geom: LTBounds): Unit = {
       runq { updatePage(pageId, geom) }
-    }
-
-    def setPageImage(pageId: Int@@PageID, bytes: Array[Byte]): Unit = {
-      runq { updatePageImage(pageId, bytes) }
     }
 
 
@@ -775,17 +673,6 @@ class CorpusAccessDB(
     def getTargetRegion(regionId: Int@@RegionID): PageRegion =
       runq { selTargetRegion(regionId) }
 
-    def setTargetRegionImage(regionId: Int@@RegionID, bytes: Array[Byte]): Unit = {
-      runq { insertTargetRegionImage(regionId, bytes) }
-    }
-
-    def getTargetRegionImage(regionId: Int@@RegionID): Option[Array[Byte]] = {
-      runq { selectTargetRegionImage(regionId) }
-    }
-
-    def deleteTargetRegionImage(regionId: Int@@RegionID): Unit = {
-      runq { delTargetRegionImage(regionId) }
-    }
 
     def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID] = {
       runq { selectTargetRegions(pageId) }
@@ -949,21 +836,19 @@ class CorpusAccessDB(
             (
               transDocumentID(rec.document),
               rec.pagenum,
-              rec.imageclip,
               rec.bounds
             )
           }
 
         val sqlStr = (
           """|insert into page
-             |  (document, pagenum, imageclip, bleft, btop, bwidth, bheight)
+             |  (document, pagenum, bleft, btop, bwidth, bheight)
              |values (?, ?, ?, ?, ?, ?, ?)
              |""".stripMargin)
 
         val up =  Update[(
           Int@@DocumentID,
           Int@@PageNum,
-          Option[Int@@ImageID],
           LTBounds
         )](sqlStr)
           .updateManyWithGeneratedKeys[Int@@PageID]("page")(allEntries)
@@ -985,7 +870,6 @@ class CorpusAccessDB(
         val allEntries = allRecs.map{rec =>
           (
             transPageID(rec.page),
-            rec.imageclip,
             rec.bounds
           )
         }
@@ -993,13 +877,12 @@ class CorpusAccessDB(
         // TODO decide whether to disable rank trigger on import or trust db
         val sqlStr = (
           """|insert into targetregion
-             |  (page, imageclip, bleft, btop, bwidth, bheight)
+             |  (page, bleft, btop, bwidth, bheight)
              |values (?, ?, ?, ?, ?, ?)
              |""".stripMargin)
 
         val up =  Update[(
           Int@@PageID,
-          Option[Int@@ImageID],
           LTBounds
         )](sqlStr)
           .updateManyWithGeneratedKeys[Int@@RegionID]("targetregion")(allEntries)
