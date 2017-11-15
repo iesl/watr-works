@@ -392,7 +392,7 @@ class CorpusAccessDB(
 
     def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
       runq {
-        sql""" select * from workflow """.query[Rel.WorkflowDef].unique
+        sql""" select * from workflow where workflow=${workflowId}""".query[Rel.WorkflowDef].unique
       }
     }
 

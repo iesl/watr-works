@@ -53,6 +53,14 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
   }
 
   it should "define, activate, deactivate workflows" in new CleanDocstore {
+    val workflows = initWorkflows(10)
+    val workflowIds = workflowApi.getWorkflows()
+
+    workflows.length shouldBe workflowIds.length
+
+      // (0 until 10).foreach{ i =>
+      //   // workflowApi.getWorkflow(s"curation-workflow-${i}")
+      // }
   }
 
   it should "return lock status info for zones" in new CleanDocstore {

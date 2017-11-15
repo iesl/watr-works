@@ -3,15 +3,17 @@ package watrcolors
 package server
 
 
-import org.http4s._
-import org.http4s.server.middleware.authentication._
-import org.http4s.dsl._
-import org.http4s.headers._
-import org.http4s.parser.HttpHeaderParser
-
-import scalaz.concurrent.Task
-
-import org.scalatest._
+// import org.http4s._
+// import org.http4s.server.middleware.authentication._
+// import org.http4s.dsl._
+// import org.http4s.headers._
+// import org.http4s.parser.HttpHeaderParser
+// import org.http4s.circe._
+// import _root_.io.circe
+// import circe._
+// import corpora._
+// import corpora.database._
+// import workflow._
 
 
 class AuthenticationSpec extends Http4sSpec {
