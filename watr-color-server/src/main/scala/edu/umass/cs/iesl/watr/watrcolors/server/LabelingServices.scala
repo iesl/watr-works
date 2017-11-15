@@ -11,39 +11,12 @@ import _root_.io.circe
 import circe._
 import circe.syntax._
 import circe.literal._
-import corpora._
-import fs2._
+// import corpora._
+// import fs2._
 import TypeTags._
 import watrmarks._
-
+import org.http4s.circe._
 import geometry._
-// import geometry.syntax._
-
-trait TypeTagCodecs {
-  // import circe.generic.semiauto._
-
-  implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
-  implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
-
-}
-trait CirceJsonCodecs extends TypeTagCodecs {
-  import circe.generic.semiauto._
-
-  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
-
-  implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
-  implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
-
-
-  // implicit val Enc_XX: Encoder[XX] = deriveEncoder
-  implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
-  implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
-
-  implicit lazy val Enc_Zone: Encoder[Zone] = deriveEncoder
-
-}
-
-// import CirceJsonCodecs._
 
 case class LabelerReqForm(
   labels: Seq[Label],
@@ -111,20 +84,7 @@ object DeleteZoneRequest {
   implicit val decoder: Decoder[DeleteZoneRequest] = deriveDecoder
 }
 
-trait LabelingServices extends CirceJsonCodecs { self =>
-
-  def corpusAccessApi: CorpusAccessApi
-
-  private lazy val docStore: DocumentZoningApi = corpusAccessApi.docStore
-
-  def decodeOrErr[T: Decoder](req: Request): Task[T] = {
-    req.as(jsonOf[T]).attemptFold(t => {
-      println(s"Error: ${t}")
-      println(s"Error: ${t.getCause}")
-      println(s"Error: ${t.getMessage}")
-      sys.error(s"${t}")
-    }, ss => ss)
-  }
+trait LabelingServices extends ServiceCommons { self =>
 
   // Mounted at /api/v1xx/labeling/..
   val labelingServiceEndpoints = HttpService {
@@ -153,9 +113,7 @@ trait LabelingServices extends CirceJsonCodecs { self =>
         ("zones", Json.arr(allDocZones:_*))
       )
 
-      for {
-        resp <- Ok(jsonResp).putHeaders(H.`Content-Type`(MediaType.`application/json`))
-      } yield resp
+      okJson(jsonResp)
 
     case req @ DELETE -> Root / "label"  =>
       println(s"Got delete label request")

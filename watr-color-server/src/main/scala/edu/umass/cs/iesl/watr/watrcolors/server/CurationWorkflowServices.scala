@@ -4,45 +4,15 @@ package server
 
 
 import org.http4s._
-import org.http4s.{headers => H}
 import org.http4s.dsl._
-import org.http4s.circe._
 import _root_.io.circe
 import circe._
 import circe.syntax._
 import circe.literal._
-import corpora._
-import workflow._
-import corpora.{RelationModel => R}
 import TypeTags._
 
-trait WorkflowCodecs extends CirceJsonCodecs {
-  import circe.generic.semiauto._
 
-  //   implicit val Enc_XX: Encoder[XX] = deriveEncoder
-  //   implicit val Dec_XX: Decoder[XX] = deriveDecoder
-
-  lazy implicit val Enc_WorkflowDef: Encoder[R.WorkflowDef] = deriveEncoder
-
-}
-
-trait CurationWorkflowServices extends WorkflowCodecs { self =>
-
-  def corpusAccessApi: CorpusAccessApi
-
-  object UserQP extends QueryParamDecoderMatcher[String]("user")
-  object ZoneQP extends QueryParamDecoderMatcher[Int]("zone")
-  object StatusQP extends QueryParamDecoderMatcher[String]("status")
-
-  private lazy val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
-  private lazy val userApi = corpusAccessApi.userbaseApi
-  private lazy val docStore = corpusAccessApi.docStore
-
-  def okJson(resp: Json): fs2.Task[Response] = {
-    for {
-      resp <- Ok(resp).putHeaders(H.`Content-Type`(MediaType.`application/json`))
-    } yield resp
-  }
+trait CurationWorkflowServices extends ServiceCommons with WorkflowCodecs { self =>
 
   // Mounted at /api/v1xx/workflow/..
   val curationWorkflowEndpoints = HttpService {

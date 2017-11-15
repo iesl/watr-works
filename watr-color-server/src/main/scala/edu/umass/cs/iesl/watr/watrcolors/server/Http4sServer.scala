@@ -15,33 +15,26 @@ import org.http4s._
 import org.http4s.{headers => H}
 import org.http4s.dsl._
 import org.http4s.server._
-// import org.http4s.server.syntax._
 import org.http4s.server.staticcontent._
 import org.http4s.server.blaze._
 import org.http4s.circe._
 import _root_.io.circe
-// import circe._
-// import circe.generic._
-// import circe.generic.auto._
-// import circe.syntax._
 import circe.literal._
 
 import ammonite.{ops => fs}
+
+trait AllServices extends LabelingServices
+    with CurationWorkflowServices
+    with CorpusListingServices
 
 class Http4sService(
   override val corpusAccessApi: CorpusAccessApi,
   url: String,
   port: Int,
   distDir: fs.Path
-) extends LabelingServices {
+) extends AllServices {
 
   println(s"Current Dir: ${ fs.pwd }")
-
-  private val docStore: DocumentZoningApi = corpusAccessApi.docStore
-  val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
-  // override val userbaseApi: UserbaseApi = corpusAccessApi.userbaseApi
-  val corpus: Corpus = corpusAccessApi.corpus
-
 
   val assetService = resourceService(ResourceService.Config(
     basePath = "",
@@ -165,6 +158,8 @@ class Http4sService(
     .mountService(assetService)
     .mountService(htmlPageService)
     .mountService(labelingServiceEndpoints, "/api/v1/labeling")
+    .mountService(curationWorkflowEndpoints, "/api/v1/workflow")
+    .mountService(corpusListingEndpoints, "/api/v1/corpus")
     .mountService(pageImageService)
 
   def run(): Server = {
