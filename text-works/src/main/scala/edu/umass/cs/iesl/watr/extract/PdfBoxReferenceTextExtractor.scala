@@ -1624,7 +1624,7 @@ class PdfBoxReferenceTextExtractor() extends PDFStreamEngine {
     * @throws IOException if any line could not be read by the LineNumberReader
     */
   def parseBidiFile(inputStream: InputStream) : Unit = {
-    val source = io.Source.fromInputStream(inputStream)
+    val source = scala.io.Source.fromInputStream(inputStream)
     for {
       l <- source.getLines
     } {

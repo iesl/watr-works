@@ -112,3 +112,13 @@ trait TypeTags extends TypeTagUtils {
   val StatusCode = Tag.of[StatusCode]
 
 }
+
+trait TypeTagCodecs {
+  import _root_.io.circe
+  import circe._
+  import circe.generic.semiauto._
+
+  implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
+
+}

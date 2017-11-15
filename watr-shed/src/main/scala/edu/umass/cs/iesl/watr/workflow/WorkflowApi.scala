@@ -18,14 +18,16 @@ import watrmarks.Label
   *
   * Workflow operates like so:
   *    Assume that users are present in the user table.
-  *    A new workflow is defined, given a name and description, along with the zone label to be locked for further labeling.
+  *    A new workflow is defined, including a unique name and description, along with the zone label to be locked for further labeling.
   *    One or more zone locks are acquired for a user. The pool of candidate zones for locking include only those that
-  *       have no lock status, i.e., have not been seen by any user
+  *       have no lock status, i.e., have not yet been seen by any user
   *    When the user is finished adding labels to a particular zone, the lock status is changed to Completed or Skipped
+  *    Users continue to acquire new zone locks until there are none left
+  *
   *
   *    A WorkflowReport includes
   *       a count of as-yet unseen zones,
-  *       counts of other zones having a particular status
+  *       counts of zones having a particular status
   *       users with assigned zones
   *
   */
@@ -51,6 +53,24 @@ case class WorkflowReport(
   userAssignmentCounts: Map[Int@@UserID, Int]
 )
 
+object WorkflowReport extends TypeTagCodecs {
+  import _root_.io.circe
+  import circe._
+  import circe.generic.semiauto._
+
+  implicit val encMap: Encoder[Map[String@@StatusCode, Int]] =
+    Encoder[Map[String, Int]].contramap { m =>
+      m.map{case (k, v) => (k.unwrap, v)}
+    }
+
+  implicit val encMap2: Encoder[Map[Int@@UserID, Int]] =
+    Encoder[Map[Int, Int]].contramap { m =>
+      m.map{case (k, v) => (k.unwrap, v)}
+    }
+
+  implicit lazy val enc: Encoder[WorkflowReport] = deriveEncoder
+}
+
 trait UserbaseApi {
   def addUser(email: String): Int@@UserID
   def getUser(userId: Int@@UserID): Option[R.Person]
@@ -75,11 +95,5 @@ trait WorkflowApi {
   def getZoneLock(zoneLockId: Int@@ZoneLockID): Option[R.ZoneLock]
   def getLockForZone(zoneId: Int@@ZoneID): Option[Int@@ZoneLockID]
   def getLockedZones(userId: Int@@UserID): Seq[Int@@ZoneLockID]
-
-  // Zone-level locking/status
-  // def makeLockGroup(user: Int@@UserID, workflowId: String@@WorkflowID): Int@@LockGroupID
-  // def acquireZoneLocksWithStatus(lockGroupId: Int@@LockGroupID, withStatus: String@@StatusCode, count: Int): Seq[Int@@ZoneLockID]
-  // def getUserLockGroup(userId: Int@@UserID): Option[Int@@LockGroupID]
-
 
 }

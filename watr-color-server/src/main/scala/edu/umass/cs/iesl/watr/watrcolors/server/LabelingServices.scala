@@ -19,13 +19,17 @@ import watrmarks._
 import geometry._
 // import geometry.syntax._
 
-object CirceJsonCodecs {
-  import circe.generic.semiauto._
-
-  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
+trait TypeTagCodecs {
+  // import circe.generic.semiauto._
 
   implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
   implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
+
+}
+trait CirceJsonCodecs extends TypeTagCodecs {
+  import circe.generic.semiauto._
+
+  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
 
   implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
   implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
@@ -35,18 +39,18 @@ object CirceJsonCodecs {
   implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
   implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
 
-  implicit val Enc_Zone: Encoder[Zone] = deriveEncoder
+  implicit lazy val Enc_Zone: Encoder[Zone] = deriveEncoder
 
 }
 
-import CirceJsonCodecs._
+// import CirceJsonCodecs._
 
 case class LabelerReqForm(
   labels: Seq[Label],
   description: String
 )
 
-object LabelerReqForm {
+object LabelerReqForm extends CirceJsonCodecs {
   import circe.generic.semiauto._
   implicit val encoder: Encoder[LabelerReqForm] = deriveEncoder
   implicit val decoder: Decoder[LabelerReqForm] = deriveDecoder
@@ -81,7 +85,7 @@ case class LabelingReqForm(
   selection: LabelingSelection
 )
 
-object LabelingReqForm {
+object LabelingReqForm extends CirceJsonCodecs {
   import circe.generic.semiauto._
   implicit val encoder: Encoder[LabelingReqForm] = deriveEncoder
   implicit val decoder: Decoder[LabelingReqForm] = deriveDecoder
@@ -107,8 +111,7 @@ object DeleteZoneRequest {
   implicit val decoder: Decoder[DeleteZoneRequest] = deriveDecoder
 }
 
-trait LabelingServices { self =>
-  lazy val labelingServices = self
+trait LabelingServices extends CirceJsonCodecs { self =>
 
   def corpusAccessApi: CorpusAccessApi
 

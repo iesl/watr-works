@@ -125,39 +125,39 @@ trait DocumentZoningApi {
 
 
   def exportDocumentZones(labelFilters: Seq[Label]=List()): DocumentZoneExport = {
-    val accumCodec = new AccumulatingJsonCodec {
+    // val accumCodec = new {
 
-      import play.api.libs.json, json._
-      val exportJson = for {
-        stableId <- getDocuments(labelFilters = labelFilters)
-        docId    <- getDocument(stableId).toList
-      } yield {
-        val docZones = for {
-          label <- labelFilters
-          zone <- getDocumentZones(docId, label)
-        } yield  {
-          Json.toJson(zone)
-          // val regions = zone.regions.map { r =>
-          //   Json.toJson(r.toPageRegion())
-          // }
-          // Json.arr(
-          //   Json.toJson(label),
-          //   Json.arr(regions)
-          // )
-        }
+    //   import play.api.libs.json, json._
+    //   val exportJson = for {
+    //     stableId <- getDocuments(labelFilters = labelFilters)
+    //     docId    <- getDocument(stableId).toList
+    //   } yield {
+    //     val docZones = for {
+    //       label <- labelFilters
+    //       zone <- getDocumentZones(docId, label)
+    //     } yield  {
+    //       Json.toJson(zone)
+    //       // val regions = zone.regions.map { r =>
+    //       //   Json.toJson(r.toPageRegion())
+    //       // }
+    //       // Json.arr(
+    //       //   Json.toJson(label),
+    //       //   Json.arr(regions)
+    //       // )
+    //     }
 
-        Json.obj(
-          ("stableId", stableId),
-          ("zones", docZones)
-        )
+    //     Json.obj(
+    //       ("stableId", stableId),
+    //       ("zones", docZones)
+    //     )
 
-      }
-      val export = Json.arr(exportJson)
+    //   }
+    //   val export = Json.arr(exportJson)
 
-      val jsOut = Json.stringify(export)
-      println(jsOut)
-      DocumentZoneExport(jsOut)
-    }
+    //   val jsOut = Json.stringify(export)
+    //   println(jsOut)
+    //   DocumentZoneExport(jsOut)
+    // }
 
     ???
   }

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package utils 
+package utils
 
 
 object EnglishDictionary {
@@ -10,9 +10,10 @@ object EnglishDictionary {
     new EnglishDictionary(words.toSet)
   }
 
+
   def apply(): EnglishDictionary = {
     val inputStream = new GZIPInputStream(new BufferedInputStream(this.getClass.getResourceAsStream("/eng-dict.txt.gz")))
-    val sourceFile = io.Source.fromInputStream(inputStream)
+    val sourceFile = scala.io.Source.fromInputStream(inputStream)
 
     val mappings = sourceFile.getLines
       .map(_.toLowerCase())

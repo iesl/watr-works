@@ -26,7 +26,6 @@ import _root_.io.circe
 // import circe.syntax._
 import circe.literal._
 
-
 import ammonite.{ops => fs}
 
 class Http4sService(

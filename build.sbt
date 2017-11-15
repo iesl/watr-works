@@ -21,7 +21,9 @@ lazy val watrmarks = (project in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
-    LogLibs.logback ++ TestLibs.testAndCheck ++ Seq(
+    LogLibs.logback ++
+    TestLibs.testAndCheck ++
+    Lib.circeJson ++ Seq(
     "org.scalaz"                 %% "scalaz-core"            % Lib.scalazVersion,
     "com.chuusai"                %% "shapeless"              % "2.3.2",
     "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
@@ -42,14 +44,16 @@ lazy val textworks = (project in file("text-works"))
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
-    LogLibs.logback ++ TestLibs.testAndCheck ++ Lib.fs2 ++ Seq(
+    LogLibs.logback ++ TestLibs.testAndCheck ++
+    Lib.fs2 ++
+    Lib.circeJson ++ Seq(
       "org.apache.pdfbox" % "pdfbox" % "2.0.8",
       "com.google.guava" % "guava" % "23.0",
       "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,
       Lib.scrimageCore,
       Lib.ammoniteOps,
-      Lib.playJson,
+      // Lib.playJson,
       Lib.shapeless
     ))
   .dependsOn(prelude, watrmarks)
@@ -61,11 +65,13 @@ lazy val watrshed = (project in file("watr-shed"))
   .settings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
-    Lib.fs2 ++ Seq(
+    Lib.fs2 ++
+    Lib.circeJson ++
+    Seq(
       Lib.scopt,
       Lib.scrimageCore,
       Lib.ammonite,
-      Lib.playJson,
+      // Lib.playJson,
       Lib.shapeless
     ))
   .dependsOn(prelude, watrmarks, textworks)
@@ -79,7 +85,8 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
     LogLibs.logback ++
     TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
-    Lib.http4s
+    Lib.http4s ++
+    Lib.circeJson
   )
   .dependsOn(watrshed)
 

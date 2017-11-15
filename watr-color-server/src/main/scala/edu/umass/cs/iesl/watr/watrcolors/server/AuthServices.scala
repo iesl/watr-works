@@ -7,7 +7,6 @@ import scalaz.{
   \/, -\/, \/-
 }
 import scalaz.concurrent.Task
-// import fs2.Task
 
 import org.http4s._
 import org.http4s.dsl._

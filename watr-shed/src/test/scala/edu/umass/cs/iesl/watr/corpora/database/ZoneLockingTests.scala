@@ -72,14 +72,30 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
 
     locks.length shouldBe 3
 
-    println(workflowApi.getWorkflowReport(workflowId))
+    workflowApi.getWorkflowReport(workflowId) shouldBe WorkflowReport(
+      6, Map(
+        (ZoneLockStatus.Assigned, 3),
+        (ZoneLockStatus.Completed, 0),
+        (ZoneLockStatus.Skipped, 0)
+      ), Map(
+        (userId, 3)
+      )
+    )
 
     workflowApi.getLockedZones(userId).length shouldBe 3
 
     val locks2 = workflowApi.lockUnassignedZones(userId, workflowId, 6)
       .map(zoneLockId => workflowApi.getZoneLock(zoneLockId))
 
-    println(workflowApi.getWorkflowReport(workflowId))
+    workflowApi.getWorkflowReport(workflowId) shouldBe WorkflowReport(
+      0, Map(
+        (ZoneLockStatus.Assigned, 9),
+        (ZoneLockStatus.Completed, 0),
+        (ZoneLockStatus.Skipped, 0)
+      ), Map(
+        (userId, 9)
+      )
+    )
 
     locks2.length shouldBe 6
 
@@ -92,7 +108,6 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
 
     workflowApi.getLockedZones(userId).length shouldBe 9
 
-    println(workflowApi.getWorkflowReport(workflowId))
 
     for {
       maybeLock <- locks
@@ -122,8 +137,6 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
     workflowApi.getLockedZones(users(1)).length shouldBe 3
     workflowApi.getLockedZones(users(0)).length shouldBe 3
 
-    println(workflowApi.getWorkflowReport(workflows(0)))
-
     workflowApi.getWorkflowReport(workflows(0)) shouldBe WorkflowReport(
       21, Map(
         (ZoneLockStatus.Assigned, 6),
@@ -134,7 +147,23 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
         (users(1), 3)
       )
     )
+    workflowApi.getLockedZones(users(0)).foreach { zoneLockId =>
+      workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Completed)
+    }
+    workflowApi.getLockedZones(users(1)).foreach { zoneLockId =>
+      workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Skipped)
+      workflowApi.releaseZoneLock(zoneLockId)
+    }
 
+    workflowApi.getWorkflowReport(workflows(0)) shouldBe WorkflowReport(
+      21, Map(
+        (ZoneLockStatus.Assigned, 0),
+        (ZoneLockStatus.Completed, 3),
+        (ZoneLockStatus.Skipped, 3)
+      ), Map(
+        (users(0), 3)
+      )
+    )
   }
 
 }
