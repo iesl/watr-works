@@ -8,14 +8,7 @@ import org.http4s.server.middleware.authentication._
 import org.http4s.dsl._
 import org.http4s.headers._
 import org.http4s.parser.HttpHeaderParser
-// import org.http4s.circe._
-// import _root_.io.circe
-// import circe._
-// import corpora._
-// import corpora.database._
-// import workflow._
 import fs2._
-
 
 class AuthenticationSpec extends Http4sSpec {
 
@@ -101,7 +94,6 @@ class AuthenticationSpec extends Http4sSpec {
 
     response.status shouldEqual (Ok)
   }
-
 
   private def parse(value: String) = HttpHeaderParser.WWW_AUTHENTICATE(value).fold(err => sys.error(s"Couldn't parse: $value"), identity)
 

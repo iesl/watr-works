@@ -827,7 +827,7 @@ class CorpusAccessDB(
         val sqlStr = (
           """|insert into page
              |  (document, pagenum, bleft, btop, bwidth, bheight)
-             |values (?, ?, ?, ?, ?, ?, ?)
+             |values (?, ?, ?, ?, ?, ?)
              |""".stripMargin)
 
         val up =  Update[(
@@ -862,7 +862,7 @@ class CorpusAccessDB(
         val sqlStr = (
           """|insert into targetregion
              |  (page, bleft, btop, bwidth, bheight)
-             |values (?, ?, ?, ?, ?, ?)
+             |values (?, ?, ?, ?, ?)
              |""".stripMargin)
 
         val up =  Update[(

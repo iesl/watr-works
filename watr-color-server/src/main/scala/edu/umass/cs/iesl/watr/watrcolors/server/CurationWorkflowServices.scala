@@ -34,7 +34,7 @@ trait CurationWorkflowServices extends ServiceCommons with WorkflowCodecs { self
 
     case req @ GET -> Root / "workflow" / workflowId / "assignment" :? UserQP(userEmail)  =>
       val lockedZones = (for {
-        userId     <- userApi.getUserByEmail(userEmail).toSeq
+        userId     <- userbaseApi.getUserByEmail(userEmail).toSeq
         zoneLockId <- workflowApi.lockUnassignedZones(userId, WorkflowID(workflowId), 1)
         zoneLock   <- workflowApi.getZoneLock(zoneLockId)
       } yield {
@@ -47,7 +47,7 @@ trait CurationWorkflowServices extends ServiceCommons with WorkflowCodecs { self
     case req @ PUT -> Root / "workflow" / workflowId / "assignment" :? UserQP(userEmail) +& ZoneQP(zoneId) +& StatusQP(status) =>
 
       for {
-        userId     <- userApi.getUserByEmail(userEmail).toSeq
+        userId     <- userbaseApi.getUserByEmail(userEmail).toSeq
         zoneLockId <- workflowApi.getLockForZone(ZoneID(zoneId))
         zoneLock   <- workflowApi.getZoneLock(zoneLockId)
       } {
@@ -60,7 +60,7 @@ trait CurationWorkflowServices extends ServiceCommons with WorkflowCodecs { self
     // Get current assignments for user
     case req @ GET -> Root / "workflow" / workflowId / "assignments" :? UserQP(userEmail) =>
       val lockedZones = (for {
-        userId     <- userApi.getUserByEmail(userEmail).toSeq
+        userId     <- userbaseApi.getUserByEmail(userEmail).toSeq
         zoneLockId <- workflowApi.getLockedZones(userId)
         zoneLock   <- workflowApi.getZoneLock(zoneLockId)
       } yield {

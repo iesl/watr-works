@@ -13,12 +13,12 @@ import circe.literal._
 // import watrmarks.Label
 
 trait CorpusListingServices extends ServiceCommons with WorkflowCodecs { self =>
-  // Mounted at /api/v1xx/corpus/..
+  // Mounted at /api/v1xx/corpus/entries/..
 
 
   val corpusListingEndpoints = HttpService {
-    // case req @ GET -> Root / "overview" => ???
-    case req @ GET -> Root / "entries" :? StartQP(start) +& LengthQP(len) =>
+
+    case req @ GET -> Root :? StartQP(start) +& LengthQP(len) =>
 
       val skip = start.getOrElse(0)
       val get = len.getOrElse(100)

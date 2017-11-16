@@ -24,7 +24,7 @@ trait ServiceCommons extends CirceJsonCodecs { self =>
   def corpusAccessApi: CorpusAccessApi
 
   lazy val workflowApi: WorkflowApi = corpusAccessApi.workflowApi
-  lazy val userApi = corpusAccessApi.userbaseApi
+  lazy val userbaseApi = corpusAccessApi.userbaseApi
   lazy val docStore = corpusAccessApi.docStore
   lazy val corpus: Corpus = corpusAccessApi.corpus
 

@@ -6,7 +6,6 @@ package server
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server._
-import workflow.UserbaseApi
 
 import fs2._
 import fs2.interop.cats._
@@ -22,9 +21,7 @@ case class UserData(
   session: String
 )
 
-
 trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { self =>
-  def userbaseApi: UserbaseApi
 
   val key = PrivateKey(scala.io.Codec.toUTF8(scala.util.Random.alphanumeric.take(20).mkString("")))
 

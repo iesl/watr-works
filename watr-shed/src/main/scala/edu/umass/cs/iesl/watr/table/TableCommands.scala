@@ -118,6 +118,9 @@ object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageW
     } yield {
       val stableId = DocumentID(corpusEntry.entryDescriptor)
 
+      val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
+      traceLogGroup.deleteGroupArtifacts()
+
       if (commitToDb && docStore.getDocument(stableId).isDefined) {
         println(s"document ${stableId} already exists in database, skipping.")
 
