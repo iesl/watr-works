@@ -92,7 +92,7 @@ class MemDocZoningApi extends DocumentZoningApi {
           zoneId <- forDocument.getEdges(docId)
           zone    = unique(zoneId)
           zlabel  = labels.getLabel(zone.label)
-          label  = labels.getLabel(labelId)
+          label   = labels.getLabel(labelId)
           if zlabel == label
         } yield { zoneId }
       }
@@ -102,7 +102,6 @@ class MemDocZoningApi extends DocumentZoningApi {
         zeroOrOne {
           for {
             zoneId <- regionToZone.getEdges(regionId)
-            // labelId <- zoneToLabel.getEdges(zoneId)
             zone = unique(zoneId)
             if labels.getLabel(zone.label) == label
           } yield { unique(zoneId) }
@@ -142,19 +141,10 @@ class MemDocZoningApi extends DocumentZoningApi {
         val docId = pages.unique(pageId).document
         forDocument.addEdge(docId, zoneId)
 
-        // add label
-        // val labelId = labels.ensureLabel(label.fqn)
-
         // ensure ordering
         val orderedZones = zoneOrdering.getOrElseUpdate((docId, labelId), mutable.ArrayBuffer[Int@@ZoneID]())
         orderedZones += zoneId
         val rank = orderedZones.length
-
-
-        // link target region
-        // addTargetRegion(zoneId, regionId)
-
-        forDocument
 
         val rec = Rel.Zone(zoneId, docId, labelId, rank, None)
         insert(zoneId, rec)
@@ -180,10 +170,6 @@ class MemDocZoningApi extends DocumentZoningApi {
         })
       }
     }
-
-    // object targetRegionImages extends EdgeTableOneToOne[RegionID, ImageID]
-
-    // object pageImages extends EdgeTableOneToOne[PageID, ImageID]
 
     object targetregions extends DBRelation[RegionID, Rel.TargetRegion]  {
       // object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
@@ -366,27 +352,21 @@ class MemDocZoningApi extends DocumentZoningApi {
     labels.ensureLabel(label.fqn)
   }
 
-  // def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow] = {
-  //   textreflows.forZone
-  //     .getRhs(zoneId)
-  //     .flatMap(id => textreflows.option(id))
-  // }
+  import play.api.libs.json, json._
+  def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit = {
+    for { mzone   <- zones.option(zoneId) }  {
+      val gridJs = textgrid.buildOutput().gridToJson()
+      val gridJsStr = Json.stringify(gridJs)
+      val up = mzone.copy(glyphs = Some(gridJsStr))
+      zones.update(mzone.prKey, up)
+    }
+  }
 
-
-  // def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow] = {
-
-  //   textreflows.forZone
-  //     .getRhs(zoneId)
-  //     .flatMap { reflowId =>
-  //       jsonStrToTextReflow(
-  //         textreflows.unique(reflowId).reflow
-  //       )
-  //     }
-  // }
-
-  // def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit = {
-  //   val model = textreflows.add(zoneId, textReflow)
-  //   textreflows.forZone.addEdge(zoneId, model.prKey)
-  // }
+  def getZoneTextAsJsonStr(zoneId: Int@@ZoneID): Option[String] = {
+    for {
+      mzone   <- zones.option(zoneId)
+      gridStr <- mzone.glyphs
+    } yield { gridStr }
+  }
 
 }

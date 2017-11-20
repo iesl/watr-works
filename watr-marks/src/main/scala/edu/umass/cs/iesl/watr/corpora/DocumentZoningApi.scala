@@ -51,10 +51,8 @@ trait DocumentZoningApi {
   def ensureLabel(label: Label): Int@@LabelID
   def getLabel(labelId: Int@@LabelID): Label
 
-  // Get Text
-  // def getModelTextReflowForZone(zoneId: Int@@ZoneID): Option[Rel.TextReflow]
-  // def getTextReflowForZone(zoneId: Int@@ZoneID): Option[TextReflow]
-  // def setTextReflowForZone(zoneId: Int@@ZoneID, textReflow: TextReflow): Unit
+  def getZoneTextAsJsonStr(zoneId: Int@@ZoneID): Option[String]
+  def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit
 
   ///////////////////////
   /// Derived operations
@@ -125,49 +123,8 @@ trait DocumentZoningApi {
   }
 
 
-  def exportDocumentZones(labelFilters: Seq[Label]=List()): DocumentZoneExport = {
-    // val accumCodec = new {
-
-    //   import play.api.libs.json, json._
-    //   val exportJson = for {
-    //     stableId <- getDocuments(labelFilters = labelFilters)
-    //     docId    <- getDocument(stableId).toList
-    //   } yield {
-    //     val docZones = for {
-    //       label <- labelFilters
-    //       zone <- getDocumentZones(docId, label)
-    //     } yield  {
-    //       Json.toJson(zone)
-    //       // val regions = zone.regions.map { r =>
-    //       //   Json.toJson(r.toPageRegion())
-    //       // }
-    //       // Json.arr(
-    //       //   Json.toJson(label),
-    //       //   Json.arr(regions)
-    //       // )
-    //     }
-
-    //     Json.obj(
-    //       ("stableId", stableId),
-    //       ("zones", docZones)
-    //     )
-
-    //   }
-    //   val export = Json.arr(exportJson)
-
-    //   val jsOut = Json.stringify(export)
-    //   println(jsOut)
-    //   DocumentZoneExport(jsOut)
-    // }
-
-    ???
-  }
-
-  def importDocumentZones(zoneExport: DocumentZoneExport): Unit = {
-    import play.api.libs.json, json._
-    val asJson = Json.parse(zoneExport.jsonStr)
-
-  }
+  // def exportDocumentZones(labelFilters: Seq[Label]=List()): DocumentZoneExport = {}
+  // def importDocumentZones(zoneExport: DocumentZoneExport): Unit = {}
 
 }
 

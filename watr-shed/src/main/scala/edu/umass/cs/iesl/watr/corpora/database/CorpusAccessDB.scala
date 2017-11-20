@@ -19,6 +19,7 @@ import watrmarks._
 import TypeTags._
 import play.api.libs.json, json._
 import shapeless._
+import textgrid._
 
 class CorpusAccessDB(
   dbname: String, dbuser: String, dbpass: String
@@ -501,11 +502,28 @@ class CorpusAccessDB(
     def workflowApi: WorkflowApi = self.workflowApi
     def userbaseApi: UserbaseApi = self.userbaseApi
 
-    /** As seen from object docStore, the missing signatures are as follows.
-      *  For convenience, these are usable as stub implementations.
-      */
-    def getPageText(pageId: Int @@ edu.umass.cs.iesl.watr.PageID): Option[edu.umass.cs.iesl.watr.textgrid.TextGrid] = ???
-    def setPageText(pageId: Int @@ edu.umass.cs.iesl.watr.PageID,text: edu.umass.cs.iesl.watr.textgrid.TextGrid): Unit = ???
+    def getPageText(pageId: Int@@PageID): Option[TextGrid] = {
+      ???
+
+    }
+    def setPageText(pageId: Int@@PageID, textgrid: TextGrid): Unit = {
+      ???
+    }
+
+    def getZoneTextAsJsonStr(zoneId: Int@@ZoneID): Option[String] = {
+      runq{
+        sql""" select glyphs from zone where zone = ${zoneId} """.query[Option[String]].unique
+      }
+    }
+
+    def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit = {
+      val gridJs = textgrid.buildOutput().gridToJson()
+      val gridJsStr = Json.stringify(gridJs)
+      runq{
+        sql""" update zone SET glyphs = ${gridJsStr} where zone = ${zoneId} """.update.run
+      }
+    }
+
 
     // def listDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[(String@@DocumentID, Seq[(Label, Int)])] = {
     //   val query = if (labelFilters.isEmpty) {
@@ -678,7 +696,8 @@ class CorpusAccessDB(
         l             <- selectLabel(zone.label)
       } yield {
         val label = Labels.fromString(l.key).copy(id=l.prKey)
-        Zone(zone.prKey, targetRegions, label, zone.rank)
+        val jsStr = getZoneTextAsJsonStr(zoneId)
+        Zone(zone.prKey, targetRegions, label, zone.rank, jsStr)
       }
 
       runq { query }

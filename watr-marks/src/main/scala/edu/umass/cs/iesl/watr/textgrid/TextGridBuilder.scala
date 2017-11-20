@@ -56,8 +56,6 @@ trait TextGridBuilder {
       (page, n) <- pages.zipWithIndex
     } yield {
       val textGrid = loadPageFromString(stableId, PageNum(n), page)
-      // val pageId = docStore.getPage(docId, PageNum(n)).get
-      // docStore.setPageText(pageId, textGrid)
       (textGrid, textGrid.pageBounds().head)
     }
 
@@ -107,7 +105,10 @@ trait TextGridBuilder {
 
       val row = TextGrid.Row.fromCells(cells)
       val headBounds = row.pageBounds().head
-      docStore.labelRegions(LB.VisualLine, Seq(headBounds))
+      val maybeZoneId = docStore.labelRegions(LB.VisualLine, Seq(headBounds))
+      maybeZoneId.foreach { zoneId =>
+        docStore.setZoneText(zoneId, TextGrid.fromRows(Seq(row)))
+      }
       row
     }
 

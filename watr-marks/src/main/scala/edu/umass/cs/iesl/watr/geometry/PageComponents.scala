@@ -156,7 +156,8 @@ case class Zone(
   id: Int@@ZoneID,
   regions: Seq[PageRegion],
   label: Label,
-  order: Int
+  order: Int,
+  glyphDefs: Option[String] = None
 )
 
 

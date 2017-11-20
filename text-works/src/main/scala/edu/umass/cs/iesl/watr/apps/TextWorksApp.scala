@@ -4,7 +4,7 @@ package apps
 
 import corpora._
 
-import ammonite.{ops => fs}, fs._
+import ammonite.{ops => fs} // , fs._
 import segment.DocumentSegmenter
 import segment.DocumentSegmentation
 import TypeTags._
@@ -234,12 +234,11 @@ object TextWorksActions {
 
     segmenter.runDocumentSegmentation()
 
-    val mpageIndex = segmenter.mpageIndex
+    // val mpageIndex = segmenter.mpageIndex
 
     // val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
 
     // write(textOutputFile, content)
-
 
     traceLogRoot.foreach { rootPath =>
       println("writing tracelogs")
@@ -247,26 +246,12 @@ object TextWorksActions {
       val allPageTextGrids = segmenter.pageSegmenters
         .map { pageSegmenter =>
           val textGrid = pageSegmenter.getTextGrid
-          val serProps = textGrid.buildOutput()
-            .getSerialization()
+          val gridJs = textGrid.buildOutput().gridToJson()
+            // .getSerialization()
 
           val pageImageShapes = pageSegmenter.pageImageShapes()
-          val lineNums = serProps.lineMap.keys.toList.sorted
 
-          val textAndLoci = lineNums.map { lineNum =>
-            val text = serProps.lineMap(lineNum)._2
-            val loci = serProps.lineMap(lineNum)._1
-            val lociJs = Json.parse(loci)
-            Json.obj(
-              ("line" -> lineNum),
-              ("text" -> text),
-              ("loci" -> lociJs)
-            )
-          }
-
-          val gridJs = Json.obj(
-            ("rows", textAndLoci)
-          )
+          // val gridJs = serProps.gridToJson()
 
           Json.obj(
             ("shapes", pageImageShapes),
@@ -290,27 +275,10 @@ object TextWorksActions {
 
       segmenter.pageSegmenters.foreach { pageSegmenter =>
         val textGrid = pageSegmenter.getTextGrid
-        val serProps = textGrid.buildOutput()
-          .getSerialization()
+        val gridJs = textGrid.buildOutput().gridToJson()
 
         val pageImageShapes = pageSegmenter.pageImageShapes()
-        val lineNums = serProps.lineMap.keys.toList.sorted
 
-        val textAndLoci = lineNums.map { lineNum =>
-          val text = serProps.lineMap(lineNum)._2
-          val loci = serProps.lineMap(lineNum)._1
-          val lociJs = Json.parse(loci)
-          Json.obj(
-            ("line" -> lineNum),
-            ("text" -> text),
-            ("loci" -> lociJs)
-          )
-        }
-
-
-        val gridJs = Json.obj(
-          ("rows", textAndLoci)
-        )
         val pageNum = pageSegmenter.pageIndex.pageNum
 
         val jsLog = Json.arr(

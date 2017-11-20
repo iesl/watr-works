@@ -1,13 +1,16 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
+
 import scala.collection.mutable
 import watrmarks._
 import geometry._
 import geometry.syntax._
 import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
+import TypeTags._
 
+import play.api.libs.json, json._
 
 sealed trait FontInfo
 
@@ -16,15 +19,15 @@ case object NoFonts extends FontInfo
 
 class TextOutputBuilder(textGrid: TextGrid) {
 
-  def withText(): Unit = {
-    textGrid.rows.map{ row =>
-      row.toText()
-    }
-  }
+  // def withText(): Unit = {
+  //   textGrid.rows.map{ row =>
+  //     row.toText()
+  //   }
+  // }
 
-  def withLineNumbering(): Unit = {}
-  def withMarginLabels(): Unit = {}
-  def withTextLocations(): Unit = {}
+  // def withLineNumbering(): Unit = {}
+  // def withMarginLabels(): Unit = {}
+  // def withTextLocations(): Unit = {}
 
   def getSerialization(): TextGrid.SerializationProps = {
     val serProps = new TextGrid.SerializationProps
@@ -36,13 +39,35 @@ class TextOutputBuilder(textGrid: TextGrid) {
 
     serProps
   }
-  def getOutput(): String = {
-    val serProps = new TextGrid.SerializationProps
 
-    textGrid.rows.zipWithIndex
-      .foreach{ case (row, rowi) =>
-        row.serialize(serProps)
-      }
+  def gridToJson(): JsObject = {
+    val serProps = getSerialization()
+    val lineNums = serProps.lineMap.keys.toList.sorted
+
+    val textAndLoci = lineNums.map { lineNum =>
+      val text = serProps.lineMap(lineNum)._2
+      val loci = serProps.lineMap(lineNum)._1
+      val lociJs = Json.parse(loci)
+      Json.obj(
+        ("line" -> lineNum),
+        ("text" -> text),
+        ("loci" -> lociJs)
+      )
+    }
+
+    Json.obj(
+      ("rows", textAndLoci)
+    )
+  }
+
+  def getEnrichedTextOutput(): String = {
+    val serProps = getSerialization()
+    // val serProps = new TextGrid.SerializationProps
+
+    // textGrid.rows.zipWithIndex
+    //   .foreach{ case (row, rowi) =>
+    //     row.serialize(serProps)
+    //   }
 
     val lineNums = serProps.lineMap.keys.toList.sorted
 
@@ -63,9 +88,6 @@ class TextOutputBuilder(textGrid: TextGrid) {
 
     val allLines = textBlock ++ List("##", "##") ++ lociBlock
     allLines.mkString("\n  ", "\n  ", "\n")
-    // val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(textLines:_*))
-    // textLinesBlock.toString()
-    // textLines.mkString("\n  ", "\n  ", "\n")
   }
 
 }
@@ -274,16 +296,38 @@ object TextGrid {
     def fromCells(init: Seq[GridCell]): Row = new MutableRow {
       cells.appendAll(init)
     }
-  }
 
+    def fromPageGlyphArrays(stableId: String@@DocumentID, inits: Seq[(Int@@PageNum, LTBounds, Char)]): Row = {
+      val cells = inits.map{ case (pageNum, bbox, char) =>
+        val charAtom = CharAtom(
+          CharID(-1),
+          PageRegion(
+            StablePage(
+              stableId,
+              pageNum
+            ),
+            bbox
+          ),
+          char.toString()
+        )
+
+        TextGrid.PageItemCell(charAtom, Seq(), char)
+      }
+      fromCells(cells)
+    }
+  }
 
   abstract class MutableTextGrid extends TextGrid {
     override val rows: mutable.ArrayBuffer[Row] = mutable.ArrayBuffer()
-
   }
 
   def fromRows(init: Seq[Row]): TextGrid = new MutableTextGrid {
     rows.appendAll(init)
+  }
+
+  def fromPageGlyphArrays(stableId: String@@DocumentID, init: Seq[(Int@@PageNum, LTBounds, Char)]): TextGrid = {
+    val row = Row.fromPageGlyphArrays(stableId, init)
+    fromRows(Seq(row))
   }
 
 }

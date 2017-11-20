@@ -83,7 +83,7 @@ object Parts {
     val form = labelingForm(labels)
 
     val postForm = form(
-      "/api/v1/label".action,
+      "/api/v1/label/region".action,
       "POST".method
     )
 
