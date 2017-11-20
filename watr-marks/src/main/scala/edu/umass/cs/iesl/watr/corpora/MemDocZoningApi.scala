@@ -79,7 +79,6 @@ class MemDocZoningApi extends DocumentZoningApi {
       object regionToZone extends EdgeTableOneToMany[RegionID, ZoneID]
 
       def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
-        // forDocument.debugPrint()
         val allLabels = for {
           zoneId <- forDocument.getEdges(docId)
         } yield {
@@ -153,11 +152,11 @@ class MemDocZoningApi extends DocumentZoningApi {
 
 
         // link target region
-        addTargetRegion(zoneId, regionId)
+        // addTargetRegion(zoneId, regionId)
 
         forDocument
 
-        val rec = Rel.Zone(zoneId, docId, labelId, rank)
+        val rec = Rel.Zone(zoneId, docId, labelId, rank, None)
         insert(zoneId, rec)
         rec
       }
@@ -182,9 +181,9 @@ class MemDocZoningApi extends DocumentZoningApi {
       }
     }
 
-    object targetRegionImages extends EdgeTableOneToOne[RegionID, ImageID]
+    // object targetRegionImages extends EdgeTableOneToOne[RegionID, ImageID]
 
-    object pageImages extends EdgeTableOneToOne[PageID, ImageID]
+    // object pageImages extends EdgeTableOneToOne[PageID, ImageID]
 
     object targetregions extends DBRelation[RegionID, Rel.TargetRegion]  {
       // object forZone extends EdgeTableOneToMany[RegionID, ZoneID]
@@ -209,23 +208,6 @@ class MemDocZoningApi extends DocumentZoningApi {
 
       }
     }
-
-    // object textreflows extends DBRelation[TextReflowID, Rel.TextReflow] with TextReflowJsonCodecs {
-    //   object forZone extends EdgeTableOneToOne[ZoneID, TextReflowID]
-
-
-    //   def add(zoneId: Int@@ZoneID, t: TextReflow): Rel.TextReflow = {
-    //     // import TextReflowJsonCodecs._
-    //     import play.api.libs.json
-    //     val asJson = textReflowToJson(t)
-    //     val asText = t.toText()
-    //     val jsstr = json.Json.stringify(asJson)
-    //     val rec = Rel.TextReflow(nextId(), jsstr, asText, zoneId)
-    //     this.insert(rec.prKey, rec)
-    //     rec
-    //   }
-
-    // }
 
     object charatoms extends DBRelation[CharID, CharAtom] {
       object forPage extends EdgeTableOneToMany[PageID, CharID]

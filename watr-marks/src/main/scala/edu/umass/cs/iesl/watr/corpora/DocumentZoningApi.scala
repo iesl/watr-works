@@ -83,6 +83,7 @@ trait DocumentZoningApi {
       }
 
   }
+
   def getPageVisualLines(stableId: String@@DocumentID, pageNum: Int@@PageNum): Seq[Zone] =
     getPageZones(stableId, pageNum, LB.VisualLine)
 

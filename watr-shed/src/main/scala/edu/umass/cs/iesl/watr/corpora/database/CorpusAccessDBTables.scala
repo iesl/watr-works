@@ -51,11 +51,13 @@ class CorpusAccessDBTables extends DoobieImplicits {
         zone         SERIAL PRIMARY KEY,
         document     INTEGER REFERENCES document NOT NULL,
         label        INTEGER REFERENCES label NOT NULL,
-        rank         INTEGER NOT NULL
+        rank         INTEGER NOT NULL,
+        glyphs       TEXT
       );
 
-      CREATE INDEX zone_idx_document ON zone (document, label, rank);
+      CREATE INDEX zone_idx_document ON zone (document, label);
       CREATE INDEX zone_idx_label ON zone (label, document);
+
 
       CREATE TABLE zone_to_targetregion (
         zone          INTEGER REFERENCES zone ON DELETE CASCADE NOT NULL,
@@ -66,9 +68,11 @@ class CorpusAccessDBTables extends DoobieImplicits {
       CREATE INDEX zone_to_targetregion_idx2 ON zone_to_targetregion (targetregion, rank);
 
       CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
+
       """.update.run
 
     } yield ())
+
 
     def create(): ConnectionIO[Unit] = {
       for {
@@ -76,13 +80,17 @@ class CorpusAccessDBTables extends DoobieImplicits {
         _ <- createZoneTables
         _ <- defineOrderingTriggers(fr0"zone_to_targetregion", fr0"targetregion")
         _ <- defineOrderingTriggers(fr0"zone", fr0"document", fr0"label")
+
       } yield ()
     }
   }
 
-  /////////
-  val createTargetRegion = (for {
-    _ <- sql"""
+
+
+  object targetregions {
+    // CREATE INDEX targetregion_bbox ON targetregion (page, bleft, btop, bwidth, bheight);
+    val createTargetRegion = (for {
+      _ <- sql"""
       CREATE TABLE targetregion (
         targetregion  SERIAL PRIMARY KEY,
         page          INTEGER REFERENCES page,
@@ -92,18 +100,19 @@ class CorpusAccessDBTables extends DoobieImplicits {
         bwidth        INTEGER,
         bheight       INTEGER
       );
-      """.update.run
-    _ <- sql"""
-      CREATE INDEX targetregion_bbox ON targetregion (page, bleft, btop, bwidth, bheight);
-      """.update.run
 
-    _ <- sql"""
+
       CREATE INDEX targetregion_page_rank ON targetregion (page, rank);
+
+      CREATE TABLE textregion (
+        textregion    SERIAL PRIMARY KEY,
+        page          INTEGER REFERENCES page,
+        rank          INTEGER NOT NULL,
+        regions       TEXT
+      );
+
       """.update.run
-  } yield ())
-
-
-  object targetregions {
+    } yield ())
     def create(): ConnectionIO[Unit] = {
       for {
         _ <- putStrLn("create targetregion")

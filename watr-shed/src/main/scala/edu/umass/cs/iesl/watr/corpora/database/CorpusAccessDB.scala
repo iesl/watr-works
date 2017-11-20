@@ -10,12 +10,10 @@ import java.util.Properties
 import scalaz.syntax.applicative._
 import scalaz.std.list._
 import scalaz.syntax.traverse._
-// import scalaz.syntax.apply._
 
 import geometry._
 import corpora._
 import workflow._
-// import labeling._
 
 import watrmarks._
 import TypeTags._
@@ -848,7 +846,7 @@ class CorpusAccessDB(
 
       }
 
-      {
+      {// BLOCK
         val allRecs =  otherZoningApi.tables.targetregions.all().toList
         insertLog.append(s"targetregions: ${allRecs.length}")
         val allEntries = allRecs.map{rec =>
@@ -898,23 +896,24 @@ class CorpusAccessDB(
           (
             transDocumentID(rec.document),
             transLabelID(rec.label),
-            rec.rank
+            rec.rank,
+            rec.glyphs
           )
         }
 
         val sqlStr = (
           """|insert into zone
-             |  (document, label, rank)
-             |values (?, ?, ?)
+             |  (document, label, rank, glyphs)
+             |values (?, ?, ?, ?)
              |""".stripMargin)
 
         val up =  Update[(
           Int@@DocumentID,
           Int@@LabelID,
-          Int
+          Int,
+          Option[String]
         )](sqlStr)
           .updateManyWithGeneratedKeys[Int@@ZoneID]("zone")(allEntries)
-
 
         val keys = runq{
           up.runLog

@@ -26,10 +26,11 @@ object RelationModel {
 
   // TODO rank ordering should be wrt (document, role)
   case class Zone(
-    prKey    : Int@@ZoneID,
-    document : Int@@DocumentID,
-    label    : Int@@LabelID,
-    rank     : Int
+    prKey        : Int@@ZoneID,
+    document     : Int@@DocumentID,
+    label        : Int@@LabelID,
+    rank         : Int,
+    glyphs       : Option[String]
   )
 
   case class Label(

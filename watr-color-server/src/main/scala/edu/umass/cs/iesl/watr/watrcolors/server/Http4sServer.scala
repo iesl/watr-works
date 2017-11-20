@@ -73,7 +73,7 @@ class Http4sService(
   // Pages
   val htmlPageService = HttpService {
     case req @ GET -> Root =>
-      htmlPage("menu", None)
+      htmlPage("browse", None)
 
     case req @ GET -> Root / "document" / stableId =>
       htmlPage("document", None)

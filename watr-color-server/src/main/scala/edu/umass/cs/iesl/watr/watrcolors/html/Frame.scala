@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package html
 
-// import scalatags.Text.all._
 import texttags._
 import watrmarks._
 

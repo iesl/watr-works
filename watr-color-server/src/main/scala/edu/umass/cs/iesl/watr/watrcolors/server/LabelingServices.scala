@@ -43,6 +43,7 @@ object LTarget {
 
 case class LabelingSelection(
   annotType: String,
+  pageNum: Int,
   targets: Seq[LTarget]
 )
 
@@ -159,38 +160,45 @@ trait LabelingServices extends ServiceCommons { self =>
             sys.error(s"docId not found for ${stableId}")
           }
 
-          val regions = labeling.selection.targets.map { ltarget =>
-            val pageNum = PageNum(ltarget.page)
+          labeling.selection.annotType match {
+            case "text-span" =>
 
-            val (l, t, w, h) = (
-              ltarget.bbox(0),
-              ltarget.bbox(1),
-              ltarget.bbox(2),
-              ltarget.bbox(3)
-            )
-            val bbox = LTBounds.IntReps(l, t, w, h)
+              Json.obj()
 
-            val pageRegions = for {
-              pageId    <- docStore.getPage(docId, pageNum).toSeq
-            } yield {
-              val regionId = docStore.addTargetRegion(pageId, bbox)
-              docStore.getTargetRegion(regionId)
-            }
-            pageRegions
+            case "bounding-boxes" =>
+              // labeling.selection
+
+              val regions = labeling.selection.targets.map { ltarget =>
+                val pageNum = PageNum(ltarget.page)
+
+                val (l, t, w, h) = (
+                  ltarget.bbox(0), ltarget.bbox(1), ltarget.bbox(2), ltarget.bbox(3)
+                )
+                val bbox = LTBounds.IntReps(l, t, w, h)
+
+                val pageRegions = for {
+                  pageId    <- docStore.getPage(docId, pageNum).toSeq
+                } yield {
+                  val regionId = docStore.addTargetRegion(pageId, bbox)
+                  docStore.getTargetRegion(regionId)
+                }
+                pageRegions
+              }
+
+              docStore.labelRegions(labeling.labelChoice, regions.flatten)
+
+              val allDocZones = for {
+                labelId <- docStore.getZoneLabelsForDocument(docId)
+                zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
+              } yield {
+                val zone = docStore.getZone(zoneId)
+                zone.asJson
+              }
+              Json.obj(
+                ("zones", Json.arr(allDocZones:_*))
+              )
+
           }
-
-          docStore.labelRegions(labeling.labelChoice, regions.flatten)
-
-          val allDocZones = for {
-            labelId <- docStore.getZoneLabelsForDocument(docId)
-            zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
-          } yield {
-            val zone = docStore.getZone(zoneId)
-            zone.asJson
-          }
-          Json.obj(
-            ("zones", Json.arr(allDocZones:_*))
-          )
         }
         resp <- Ok(allZones).putHeaders(H.`Content-Type`(MediaType.`application/json`))
       } yield resp

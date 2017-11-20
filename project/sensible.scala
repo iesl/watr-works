@@ -136,7 +136,9 @@ object SensibleProject extends CommonLibs {
     ),
 
 
-    logBuffered in Test := false,
+    logBuffered in Test       := false,
+    fork in Test              := true,
+    connectInput in Test      := false,
     parallelExecution in Test := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
