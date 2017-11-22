@@ -13,6 +13,7 @@ import TypeTags._
 import _root_.io.circe
 import circe._
 import circe.syntax._
+import circe.literal._
 
 sealed trait FontInfo
 
@@ -49,11 +50,10 @@ class TextOutputBuilder(textGrid: TextGrid) {
     val textAndLoci = lineNums.map { lineNum =>
       val text = serProps.lineMap(lineNum)._2
       val loci = serProps.lineMap(lineNum)._1
-      val lociJs = loci.asJson
       Json.obj(
-        ("line" -> lineNum.asJson),
-        ("text" -> text.asJson),
-        ("loci" -> lociJs)
+        "line" := lineNum,
+        "text" := text,
+        "loci" := loci
       )
     }
 
@@ -246,9 +246,6 @@ object TextGrid {
       cells.map(_.char).mkString("")
     }
 
-
-    // private def esc(s: String) = Json.stringify(JsonString(s))
-
     def serialize(props: SerializationProps): Unit = {
 
       val lineCells = cells.map{ _ match {
@@ -259,31 +256,28 @@ object TextGrid {
             if (!props.pageIdMap.contains(page.pageId)) {
               props.pageIdMap.put(page.pageId, (page.stableId, page.pageNum))
             }
-            val l = pageItem.bbox.left
-            val t = pageItem.bbox.top
-            val w = pageItem.bbox.width
-            val h = pageItem.bbox.height
-            s"""[${pageNum}, [$l, $t, $w, $h], ${char.toString().asJson}]"""
+            val LTBounds.IntReps(l, t, w, h) = pageItem.bbox
+            json"""[${pageNum.unwrap}, [$l, $t, $w, $h], ${char}]"""
           }
 
-          items.mkString("[", ",", "]")
-        case cell@ TextGrid.LeftExpansionCell(char, root)  => '"'+"el"+'"'
-        case cell@ TextGrid.RightExpansionCell(char, root) => '"'+"er"+'"'
-        case cell@ TextGrid.LeftInsertCell(char, root)     => '"'+"il"+'"'
-        case cell@ TextGrid.RightInsertCell(char, root)    => '"'+"ir"+'"'
+          items.asJson
+
+        case cell@ TextGrid.LeftExpansionCell(char, root)  => json""" {"el": ${char} }"""
+        case cell@ TextGrid.RightExpansionCell(char, root) => json""" {"er": ${char} }"""
+        case cell@ TextGrid.LeftInsertCell(char, root)     => json""" {"il": ${char} }"""
+        case cell@ TextGrid.RightInsertCell(char, root)    => json""" {"ir": ${char} }"""
+        case _ => json""" {} """
       }}
 
-      val lineDefStr = lineCells.mkString(",")
-      val lineDef = s"""[${lineDefStr}]"""
       val lineNum = props.nextLineNum
-      props.lineMap.put(lineNum, (lineDef, toText))
+      props.lineMap.put(lineNum, (lineCells.asJson, toText))
     }
 
   }
 
   class SerializationProps {
     val pageIdMap = mutable.Map[Int@@PageID, (String@@DocumentID, Int@@PageNum)]()
-    val lineMap = mutable.Map[Int, (String, String)]()
+    val lineMap = mutable.Map[Int, (Json, String)]()
 
     def nextLineNum: Int = if (lineMap.keySet.isEmpty) 0 else lineMap.keySet.max + 1
   }

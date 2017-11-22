@@ -8,12 +8,14 @@ import java.nio.file.{Files, Path}
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-import fs2.{io, Pipe, Sink, Stream}
-import fs2.util.{Effect, Async}
+import fs2._
+import cats.effect._
+import cats.implicits._
 
 object zip {
+  implicit val ctx = scala.concurrent.ExecutionContext.Implicits.global
 
-  def zip[F[_]](chunkSize: Int)(implicit F: Async[F]): Pipe[F, (String, Stream[F,Byte]), Byte] = {
+  def zip[F[_]](chunkSize: Int)(implicit F: Async[F], E: Effect[F]): Pipe[F, (String, Stream[F,Byte]), Byte] = {
     val zipped = F.delay {
       val pout = new PipedOutputStream()
       val pin = new PipedInputStream(pout, chunkSize)
@@ -37,6 +39,11 @@ object zip {
       t.close
     }
 
+    // Scheduler[IO](1).flatMap { scheduler =>
+    //   val s1 = scheduler.awakeEvery[IO](500.millis).scan(0)((acc, i) => acc + 1)
+    //   s1.merge(scheduler.sleep_[IO](250.millis) ++ s1)
+    // }
+
     in => Stream.eval(zipped).flatMap {
       case (pin, zout) =>
         val fill = in.to(writeSink(zout)).onFinalize(close(zout))
@@ -45,7 +52,7 @@ object zip {
     }
   }
 
-  def zip[F[_]](entries: Stream[F, (String, Stream[F, Byte])], chunkSize: Int)(implicit F: Async[F]): Stream[F, Byte] = {
+  def zip[F[_]](entries: Stream[F, (String, Stream[F, Byte])], chunkSize: Int)(implicit F: Effect[F]): Stream[F, Byte] = {
     entries.through(zip(chunkSize))
   }
 
@@ -66,9 +73,9 @@ object zip {
     }
 
 
-  def zipDir[F[_]](dir: Path, chunkSize: Int, include: Path => Boolean = _ => true)(implicit F: Async[F]): Stream[F, Byte] = {
-    val entries = dirEntriesRecursive(dir, e => !Files.isDirectory(e) && include(e))
-    zip(entries.
-      map(e => dir.relativize(e).toString -> io.file.readAll(e, chunkSize)), chunkSize)
-  }
+  // def zipDir[F[_]](dir: Path, chunkSize: Int, include: Path => Boolean = _ => true)(implicit F: Async[F]): Stream[F, Byte] = {
+  //   val entries = dirEntriesRecursive(dir, e => !Files.isDirectory(e) && include(e))
+  //   zip(entries.
+  //     map(e => dir.relativize(e).toString -> io.file.readAll(e, chunkSize)), chunkSize)
+  // }
 }

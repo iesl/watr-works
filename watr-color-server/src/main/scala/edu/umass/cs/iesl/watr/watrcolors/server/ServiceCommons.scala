@@ -13,13 +13,16 @@ import org.http4s.circe._
 import _root_.io.circe
 import circe._
 
+import cats.implicits._, cats.data._
+import cats.effect._
+
 import corpora.{RelationModel => R}
 import corpora.filesys._
 
 import geometry._
 import watrmarks.Label
 
-trait ServiceCommons extends CirceJsonCodecs { self =>
+trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs { self =>
 
   def corpusAccessApi: CorpusAccessApi
 
@@ -36,25 +39,40 @@ trait ServiceCommons extends CirceJsonCodecs { self =>
   object StartQP extends OptionalQueryParamDecoderMatcher[Int]("start")
   object LengthQP extends OptionalQueryParamDecoderMatcher[Int]("len")
 
-  def okJson(resp: Json): fs2.Task[Response] = {
+  def okJson(resp: Json): IO[Response[IO]] = {
     for {
       resp <- Ok(resp).putHeaders(H.`Content-Type`(MediaType.`application/json`))
     } yield resp
   }
 
-  def decodeOrErr[T: Decoder](req: Request): fs2.Task[T] = {
-    req.as(jsonOf[T]).attemptFold(t => {
-      println(s"Error: ${t}")
-      println(s"Error: ${t.getCause}")
-      println(s"Error: ${t.getMessage}")
-      sys.error(s"${t}")
-    }, ss => ss)
+  //   jsonOf[IO, T].decode(req, strict=true)
+  //     .attempt.fold(t => {
+  //       t match {
+  //         case Left(x) =>
+  //           println(s"Error: ${t}")
+  //           println(s"Error: ${t.getCause}")
+  //           println(s"Error: ${t.getMessage}")
+  //         // sys.error(s"${t}")
+  //         case Right(y) =>
+  //       }
+  //     }, ss => ss)
+
+  def decodeOrErr[T: Decoder](req: Request[IO]): IO[T] = {
+    jsonOf[IO, T].decode(req, strict=true)
+      .attempt.fold(t => {
+        println(s"Error: ${t}")
+        println(s"Error: ${t.getCause}")
+        println(s"Error: ${t.getMessage}")
+        sys.error(s"${t}")
+      }, ss => {
+        sys.error(s"${ss}")
+      })
   }
 
 }
 
 trait TypeTagCodecs {
-  // import circe.generic.semiauto._
+  import circe.generic.semiauto._
 
   implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
   implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)

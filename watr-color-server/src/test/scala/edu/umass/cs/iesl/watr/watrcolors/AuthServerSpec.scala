@@ -12,7 +12,7 @@ import fs2._
 
 class AuthenticationSpec extends Http4sSpec {
 
-  def nukeService(launchTheNukes: => Unit) = AuthedService[String] {
+  def nukeService(launchTheNukes: => Unit) = AuthedService[String, IO] {
     case GET -> Root / "launch-the-nukes" as user =>
       for {
         _ <- Task.delay(launchTheNukes)
@@ -34,7 +34,7 @@ class AuthenticationSpec extends Http4sSpec {
     else None
   }
 
-  val service = AuthedService[String] {
+  val service = AuthedService[String, IO] {
     case GET -> Root as user => Ok(user)
     case req as _ => Response.notFound(req)
   }

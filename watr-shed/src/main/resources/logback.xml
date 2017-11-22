@@ -11,16 +11,17 @@
     </encoder>
   </appender>
 
-  <logger name="akka" level="OFF" />
 
-  <logger name="net.sf.jsi.rtree" level="OFF" />
-  <logger name="com.zaxxer.hikari" level="INFO" />
-  <logger name="io.netty" level="INFO" />
+  <logger name="com.zaxxer.hikari.pool" level="INFO" />
 
-  // Suppress "rebuilding pdf x-ref table" errors
-  <logger name="com.itextpdf.kernel.pdf" level="OFF" />
+  <logger name="org.http4s" level="INFO" />
 
-  <root level="trace">
+  <logger name="org.apache" level="INFO" />
+  <logger name="org.apache.pdfbox" level="INFO" />
+  <logger name="org.apache.pdfbox.pdmodel.font" level="OFF" />
+
+
+  <root level="debug">
     <appender-ref ref="STDOUT" />
   </root>
 

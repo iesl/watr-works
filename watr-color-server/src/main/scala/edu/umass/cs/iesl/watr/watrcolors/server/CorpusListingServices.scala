@@ -11,12 +11,16 @@ import circe._
 import circe.syntax._
 import circe.literal._
 // import watrmarks.Label
+import cats.implicits._, cats.data._
 
-trait CorpusListingServices extends ServiceCommons with WorkflowCodecs { self =>
+import cats.effect._
+
+
+trait CorpusListingServices extends Http4sDsl[IO] with ServiceCommons with WorkflowCodecs { self =>
   // Mounted at /api/v1xx/corpus/entries/..
 
 
-  val corpusListingEndpoints = HttpService {
+  val corpusListingEndpoints = HttpService[IO] {
 
     case req @ GET -> Root :? StartQP(start) +& LengthQP(len) =>
 

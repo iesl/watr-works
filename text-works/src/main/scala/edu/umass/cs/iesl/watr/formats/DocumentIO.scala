@@ -132,7 +132,7 @@ object DocumentIO  {
     val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(textLines:_*))
 
     val lineDefs = lineNums.map { lineNum =>
-      serProps.lineMap(lineNum)._1.box
+      serProps.lineMap(lineNum)._1.noSpaces.box
     }
 
     val lineDefsBlock = indent(4)(vjoinTrailSep(left, ",")(lineDefs:_*))

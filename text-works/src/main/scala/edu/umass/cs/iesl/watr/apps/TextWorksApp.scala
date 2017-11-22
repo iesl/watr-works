@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package apps
 
-
 import corpora._
 
 import ammonite.{ops => fs} // , fs._
@@ -11,9 +10,10 @@ import TypeTags._
 import scopt.Read
 import shapeless._
 import java.nio.{file => nio}
-import fs2._
 import tracing.VisualTracer
 import _root_.io.circe, circe._, circe.syntax._
+
+import cats.effect._
 
 sealed trait OutputOption
 
@@ -40,11 +40,10 @@ object TextWorksConfig {
 
   case class Config(
     ioConfig        : IOConfig = IOConfig(),
-    writeRTrees     : Boolean = false,
     initCorpus      : Option[nio.Path] = None,
     runTraceLogging : Boolean = VisualTracer.tracingEnabled(),
     outputOptions   : List[OutputOption] = List(),
-    exec            : Option[(Config) => Unit] = Some((c) => extractText(c))
+    exec            : Option[(Config) => Unit] = Some((c) => TextWorksActions.extractText(c))
   )
 
   val parser = new scopt.OptionParser[Config]("text-works") {
@@ -110,12 +109,6 @@ object TextWorksConfig {
               |           input file, otherwise relative to cwd. Use --overwrite to overwrite existing files.""".stripMargin)
 
 
-    opt[Unit]("write-rtrees") action { (v, conf) =>
-      lens[Config].writeRTrees.modify(conf){ m =>
-        true
-      }
-    } text ("write the computed rtrees to disk")
-
     opt[nio.Path]("init-corpus") action { (v, conf) =>
       val conf1 = lens[Config].initCorpus.modify(conf){ m =>
         Some(v)
@@ -127,7 +120,7 @@ object TextWorksConfig {
       lens[Config].ioConfig.overwrite.modify(conf){ m =>
         true
       }
-    } text ("write the computed rtrees to disk")
+    } text ("force overwrite of existing output artifacts")
 
 
     note("\nOutput text layout options: \n")
@@ -160,29 +153,35 @@ object TextWorksConfig {
       filesys.Corpus.initCorpus(corpusRoot.toString())
     }
   }
-  def extractText(conf: Config): Unit = {
+}
+
+object TextWorksActions {
+  val PrettyPrint2Spaces = circe.Printer.spaces2
+
+
+  def buildProcessStream(conf: TextWorksConfig.Config): fs2.Stream[IO, Either[String, DocumentSegmentation]] = {
     val ioOpts = new IOOptionParser(conf.ioConfig)
 
-    val fsStream = ioOpts.inputStream()
-      .through(pipe.zipWithIndex)
+    val fsStream = ioOpts.inputStream().zipWithIndex
       .evalMap { case (input, i) =>
-        Task.delay{
+        IO {
 
           try {
 
             input match {
-              case InputMode.SingleFile(f) =>
+              case m@ InputMode.SingleFile(f) =>
+                Left(s"Unsupported InputMode ${m}")
               case InputMode.CorpusFile(_, Some(corpusEntry)) =>
 
                 val stableId = DocumentID(corpusEntry.entryDescriptor)
 
                 println(s"Processing ${stableId}")
 
-                for {
-                  pdfEntry <- corpusEntry.getPdfArtifact
-                  pdfPath <- pdfEntry.asPath
-                  docsegPath <- ioOpts.maybeProcess(corpusEntry, "docseg.json")
-                } {
+                val maybeSegmenter = for {
+                  pdfEntry <- corpusEntry.getPdfArtifact.toRight(left="Could not get PDF")
+                  pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
+                  docsegPath <- ioOpts.maybeProcess(corpusEntry, "docseg.json").toRight(left="Existing output. --overwrite to force processing")
+                } yield {
 
                   val traceLogRoot = if (conf.runTraceLogging) {
                     val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
@@ -190,39 +189,39 @@ object TextWorksConfig {
                     Some(traceLogGroup.rootPath)
                   } else None
 
-                  val rtreeGroup = corpusEntry.ensureArtifactGroup("rtrees")
-
-                  val rtreeOutput = if (conf.writeRTrees) {
-                    rtreeGroup.deleteGroupArtifacts()
-                    Some(rtreeGroup.rootPath)
-                  } else None
 
                   val ammPath = PathConversions.nioToAmm(docsegPath)
 
-                  TextWorksActions.extractText(stableId, pdfPath, ammPath, rtreeOutput, traceLogRoot)
+                  TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
                 }
+
+                maybeSegmenter
+
+              case m => Left(s"Unsupported InputMode ${m}")
             }
           } catch {
             case t: Throwable =>
               // println(s"t = ${t}")
               // t.printStackTrace()
               utils.Debugging.printAndSwallow(t)
+              Left[String,DocumentSegmentation](t.toString())
           }
         }
       }
 
+    fsStream
 
-    fsStream.run.unsafeRun()
   }
-}
 
-object TextWorksActions {
+  def extractText(conf: TextWorksConfig.Config): Unit = {
+    val processStream = buildProcessStream(conf)
+    processStream.run.unsafeRunSync()
+  }
 
   def extractText(
     stableId: String@@DocumentID,
     inputPdf: fs.Path,
     textOutputFile: fs.Path,
-    rtreeOutputRoot: Option[fs.Path],
     traceLogRoot: Option[fs.Path]
   ): DocumentSegmentation = {
 
@@ -235,23 +234,21 @@ object TextWorksActions {
     segmenter.runDocumentSegmentation()
 
     // val mpageIndex = segmenter.mpageIndex
-
     // val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
-
     // write(textOutputFile, content)
 
     traceLogRoot.foreach { rootPath =>
       println("writing tracelogs")
 
+      fs.ls(rootPath)
+        .foreach{ p => fs.rm(p) }
+
       val allPageTextGrids = segmenter.pageSegmenters
         .map { pageSegmenter =>
           val textGrid = pageSegmenter.getTextGrid
           val gridJs = textGrid.buildOutput().gridToJson()
-            // .getSerialization()
 
           val pageImageShapes = pageSegmenter.pageImageShapes()
-
-          // val gridJs = serProps.gridToJson()
 
           Json.obj(
             ("shapes" := pageImageShapes),
@@ -261,41 +258,13 @@ object TextWorksActions {
 
       val jsLog = Json.arr(
         Json.obj(
-          ("name" := s"Document Text"),
-          ("steps" := Json.arr(Json.obj(
-            ("desc" := "DocumentText"),
-            ("Method" := "DocumentTextGrid"),
-            ("pages" := allPageTextGrids)
-          )))
+          ("description" := "Pdf Pages+TextGrids"),
+          ("pages" := allPageTextGrids)
         ))
 
-      val gridJsStr = jsLog.noSpaces
+      val gridJsStr = jsLog.pretty(PrettyPrint2Spaces)
 
-      fs.write(rootPath / s"textgrid.json", gridJsStr)
-
-      segmenter.pageSegmenters.foreach { pageSegmenter =>
-        val textGrid = pageSegmenter.getTextGrid
-        val gridJs = textGrid.buildOutput().gridToJson()
-
-        val pageImageShapes = pageSegmenter.pageImageShapes()
-
-        val pageNum = pageSegmenter.pageIndex.pageNum
-
-        val jsLog = Json.arr(
-          Json.obj(
-            ("name" := s"Page ${pageNum.unwrap+1} Text"),
-            ("steps" := Json.arr(Json.obj(
-              ("desc" := "textgrid pg"),
-              ("Method" := "TextGrid"),
-              ("grid" := gridJs),
-              ("shapes" := pageImageShapes)
-            )))
-          ))
-
-        val gridJsStr = jsLog.noSpaces
-
-        fs.write(rootPath / s"page-${pageNum}-textgrid.json",gridJsStr)
-      }
+      fs.write(rootPath / "textgrid.json", gridJsStr)
 
       val allLogs = segmenter.pageSegmenters
         .foldLeft(List[Json]()) {
@@ -304,21 +273,9 @@ object TextWorksActions {
         }
 
       val jsonLogs = allLogs.asJson
-      val pp = circe.Printer.spaces2
-      val jsonStr = jsonLogs.pretty(pp)
+      val jsonStr = jsonLogs.pretty(PrettyPrint2Spaces)
 
       fs.write(rootPath / "tracelog.json", jsonStr)
-    }
-
-    rtreeOutputRoot.foreach { rtreeRootPath =>
-      println("writing rtrees")
-
-      for { pageNum <- segmenter.mpageIndex.getPages } {
-        val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-        val bytes = pageIndex.saveToBytes()
-        val pageIndexPath = rtreeRootPath / pageIndex.rtreeArtifactName
-        fs.write(pageIndexPath, bytes)
-      }
     }
 
     segmenter

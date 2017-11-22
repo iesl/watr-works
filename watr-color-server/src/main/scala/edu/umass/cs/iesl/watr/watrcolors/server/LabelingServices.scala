@@ -16,6 +16,8 @@ import watrmarks._
 import org.http4s.circe._
 import geometry._
 import textgrid._
+import cats.implicits._, cats.data._
+import cats.effect._
 
 case class LabelerReqForm(
   labels: Seq[Label],
@@ -111,7 +113,7 @@ object DeleteZoneRequest {
 trait LabelingServices extends ServiceCommons { self =>
 
   // Mounted at /api/v1xx/labeling/..
-  val labelingServiceEndpoints = HttpService {
+  val labelingServiceEndpoints = HttpService[IO] {
     case req @ POST -> Root / "ui" / "labeler" =>
 
       for {

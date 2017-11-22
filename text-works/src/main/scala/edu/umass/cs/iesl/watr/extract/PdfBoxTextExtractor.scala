@@ -461,26 +461,6 @@ object PdfBoxTextExtractor {
       for { page <- 0 until numOfPages } {
         val pdfPage = document.getPage(page)
 
-
-        // // Use the largest page box
-        // val strs = List(
-        //   pdfPage.getBBox,
-        //   pdfPage.getArtBox,
-        //   pdfPage.getTrimBox,
-        //   pdfPage.getCropBox,
-        //   pdfPage.getBleedBox,
-        //   pdfPage.getMediaBox
-        // ).map {b =>
-        //   List (b.getWidth(), b.getHeight,
-        //     b.getLowerLeftX, b.getLowerLeftY,
-        //     b.getUpperRightX, b.getUpperRightY
-        //   ).mkString("  ;  ")
-        // }
-        // println("All Media: W  H  LLX LLY  URX  URY")
-        // println(
-        //   strs.mkString("\n  ", "\n  ", "\n")
-        // )
-
         // val allMediaBoxes = List(
         //   pdfPage.getBBox,
         //   pdfPage.getArtBox,
@@ -490,14 +470,9 @@ object PdfBoxTextExtractor {
         //   pdfPage.getMediaBox
         // ).map {b => (b.getUpperRightX, b.getUpperRightY) }
 
-        // val maxX = allMediaBoxes.map(_._1).max
-        // val maxY = allMediaBoxes.map(_._2).max
-
-        // val effectivePageBox = new PDRectangle(0, 0, maxX, maxY)
 
         val effectivePageBox = pdfPage.getBBox
 
-        println(s"Extracting page ${page}: ${currPageGeometry}")
 
         val extractor = new PdfBoxTextExtractor(
           pdfPage,

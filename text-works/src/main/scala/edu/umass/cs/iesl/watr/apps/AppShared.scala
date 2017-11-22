@@ -25,17 +25,20 @@ case class IOConfig(
 
 class IOOptionParser(conf: IOConfig) {
   import fs2._
-  import fs2.util.Async
-  implicit val S = Strategy.fromCachedDaemonPool()
 
-  val T = implicitly[Async[Task]]
+  import cats.effect.Async
+  import cats.effect.IO
+  // implicit val S = Strategy.fromCachedDaemonPool()
+
+  val T = implicitly[Async[IO]]
 
 
-  def inputStream(): Stream[Task, InputMode] = {
+  def inputStream(): Stream[IO, InputMode] = {
     conf.inputMode.map{ mode =>
       mode match {
         case in@ InputMode.SingleFile(f) =>
-          Stream.emit(in)
+
+          Stream.emit(in).covary[IO]
 
         case InputMode.CorpusFile(corpusRoot, None) =>
           val skip = conf.numToSkip
@@ -52,6 +55,7 @@ class IOOptionParser(conf: IOConfig) {
           entries.map{ entry =>
             InputMode.CorpusFile(corpusRoot, Some(entry))
           }
+
 
         case _ => sys.error("inputStream(): TODO")
       }

@@ -89,7 +89,21 @@ object WatrTable extends App with utils.AppMainBasics {
     colors = replColors
   )
 
+  run(args)
 
+}
+
+object WatrTableCommands extends App with utils.AppMainBasics {
+  def run(args: Array[String]): Unit = {
+    implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
+
+    corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
+    corpusAccessApi.corpusAccessDB.dropAndRecreate()
+
+    ShellCommands.segmentAll(10, 0)
+
+    corpusAccessApi.corpusAccessDB.shutdown()
+  }
   run(args)
 
 }

@@ -2,20 +2,23 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-import fs2._
-import cats.data.Kleisli
+// import fs2._
+// import cats.data.Kleisli
+import cats.effect._
 
 import corpora._
 
 import org.http4s._
+import org.http4s.util.ExitCode
 import org.http4s.{headers => H}
-import org.http4s.dsl._
+// import org.http4s.dsl._
 import org.http4s.server._
 import org.http4s.server.staticcontent._
 import org.http4s.server.blaze._
 
 import ammonite.{ops => fs}
 
+import cats.effect._
 
 trait AllServices extends LabelingServices
     with CurationWorkflowServices
@@ -33,12 +36,12 @@ class Http4sService(
 
   println(s"Current Dir: ${ fs.pwd }")
 
-  val assetService = resourceService(ResourceService.Config(
+  val assetService = resourceService(ResourceService.Config[IO](
     basePath = "",
     pathPrefix = "/assets"
   ))
 
-  val jslibDistService = fileService(FileService.Config(
+  val jslibDistService = fileService(FileService.Config[IO](
     systemPath = distDir.toString(),
     pathPrefix = "/dist"
   ))
@@ -63,7 +66,7 @@ class Http4sService(
   //       )
   // }
 
-  def htmlPage(bundleName: String, user: Option[String]): Task[Response]= {
+  def htmlPage(bundleName: String, user: Option[String]): IO[Response[IO]]= {
     Ok(html.Frame(bundleName).toString())
       .putHeaders(
         H.`Content-Type`(MediaType.`text/html`)
@@ -71,7 +74,7 @@ class Http4sService(
   }
 
   // Pages
-  val htmlPageService = HttpService {
+  val htmlPageService = HttpService[IO] {
     case req @ GET -> Root =>
       htmlPage("browse", None)
 
@@ -87,9 +90,10 @@ class Http4sService(
 
 
 
-  val redirectOnFailure: AuthedService[String] = Kleisli(req => SeeOther(uri("/user/register")))
+  // val redirectOnFailure: AuthedService[String, IO] = Kleisli(req => SeeOther(uri("/user/register")))
+  val redirectOnFailure: AuthedService[String, IO] = AuthedService.lift{ req => SeeOther(uri("/user/register")) }
 
-  val builder = BlazeBuilder.bindHttp(port, url)
+  val builder = BlazeBuilder[IO].bindHttp(port, url)
     .mountService(jslibDistService)
     .mountService(assetService)
     .mountService(htmlPageService)
@@ -99,13 +103,16 @@ class Http4sService(
     .mountService(corpusListingEndpoints, "/api/v1/corpus/entries")
     .mountService(loginService, "/api/v1/auth")
 
-  def run(): Server = {
-    builder.run
+  def run(): Server[IO]= {
+    builder.start
+      .unsafeRunSync()
   }
 
-  def serve(): Stream[Task, Nothing] = {
+
+  def serve(): fs2.Stream[IO, ExitCode] = {
     builder.serve
   }
+
 
   def shutdown(): Unit = {}
 

@@ -7,10 +7,12 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server._
 
-import fs2._
-import fs2.interop.cats._
+import org.http4s.dsl.io._
+// import fs2._
+// import fs2.interop.cats._
 import cats.implicits._, cats.data._
 
+import cats.effect._
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time._
 
@@ -29,8 +31,8 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
 
   val clock = Clock.systemUTC
 
-  // def retrieveUser: Service[String, Either[String, UserData]] = Kleisli(emailAddr => Task.delay{
-  def retrieveUser: Service[String, UserData] = Kleisli(emailAddr => Task.delay{
+  // def retrieveUser: Service[String, Either[String, UserData]] = Kleisli(emailAddr => IO.delay{
+  def retrieveUser: Service[IO, String, UserData] = Kleisli(emailAddr => IO{
     val userOrErr = for {
       userId <- userbaseApi.getUserByEmail(emailAddr).toRight(left="User not found")
       person <- userbaseApi.getUser(userId).toRight(left="User id not found")
@@ -40,7 +42,7 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
     userOrErr.right.get
   })
 
-  val authUser: Service[Request, Either[String, UserData]] = Kleisli({ request =>
+  val authUser: Service[IO, Request[IO], Either[String, UserData]] = Kleisli({ request =>
     val message = for {
       header    <- headers.Cookie.from(request.headers).toRight(left = "Cookie parsing error")
       cookie    <- header.values.toList.find(_.name == "authcookie").toRight(left = "Couldn't find the authcookie")
@@ -52,10 +54,11 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
   })
 
 
-  val forbidOnFailure: AuthedService[String] = Kleisli(req => Forbidden(req.authInfo))
-  // def redirectOnFailure(urlstr: String): AuthedService[String] = Kleisli(req => SeeOther(Uri.fromString(urlstr)))
+  // val forbidOnFailure: AuthedService[String, IO] = Kleisli(req => Forbidden(req.authInfo))
+  val forbidOnFailure: AuthedService[String, IO] = AuthedService.lift(req => Forbidden(req.authInfo))
+  // def redirectOnFailure(urlstr: String): AuthedService[String, IO] = Kleisli(req => SeeOther(Uri.fromString(urlstr)))
 
-  val userStatusAndLogout: AuthedService[UserData] = AuthedService {
+  val userStatusAndLogout = AuthedService[UserData, IO] {
     case GET -> Root / "status" as user =>
       Ok(s"User ${user.emailAddr} is logged in.")
 
@@ -68,7 +71,7 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
 
   // val authStatusLogoutService: HttpService = authOrForbid(authedService)
 
-  def verifyLogin(request: Request): Task[Either[String, UserData]] =  {
+  def verifyLogin(request: Request[IO]): IO[Either[String, UserData]] =  {
 
     request.as[UrlForm].map{ formData =>
       println(s"verifyLogin: ${formData}")
@@ -87,7 +90,7 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
     }
   }
 
-  val login: Service[Request, Response] = Kleisli({ request =>
+  val login: Service[IO, Request[IO], Response[IO]] = Kleisli({ request =>
     verifyLogin(request).flatMap(_ match {
       case Left(error) =>
         Forbidden(error)
@@ -100,7 +103,7 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
     })
   })
 
-  val loginService : HttpService = HttpService {
+  val loginService : HttpService[IO] = HttpService {
     case req @ POST -> Root /  "login" =>
       println(s"POST: login")
       login.run(req)
@@ -110,12 +113,12 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
 
 // case class UserLogin(u: String, p: String)
 
-// class AdminUserHttpEndpoint[F[_] : Task](middleware: Middleware[F]) extends Http4sDsl[F] {
+// class AdminUserHttpEndpoint[F[_] : IO](middleware: Middleware[F]) extends Http4sDsl[F] {
 
   // private val adminUser = UserLogin("gvolpe", "") // Hardcoded admin user
 
   // private def retrieveUser: Kleisli[F, String, UserLogin] =
-  //   Kleisli(username => Task[F].delay(UserLogin(username, "")))
+  //   Kleisli(username => IO[F].delay(UserLogin(username, "")))
 
   // private val onFailure: AuthedService[String, F] = Kleisli(req => OptionT.liftF(Forbidden(req.authInfo)))
 
@@ -138,8 +141,8 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
   // // TODO: Retrieve user from real admin db...
   // private def verifyLogin(userLogin: UserLogin): F[String Either UserLogin] =
   //   userLogin match {
-  //     case user @ UserLogin(adminUser.username, _)  => Task[F].delay(Right(user))
-  //     case _                                        => Task[F].delay(Left("User must be admin"))
+  //     case user @ UserLogin(adminUser.username, _)  => IO[F].delay(Right(user))
+  //     case _                                        => IO[F].delay(Left("User must be admin"))
   //   }
 
   // private def login: Kleisli[F, Request[F], Response[F]] = Kleisli({ request =>

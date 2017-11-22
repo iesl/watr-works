@@ -27,7 +27,6 @@ trait CharColumnFinding extends PageScopeSegmenter
   import LB._
 
   def runPass1(): Unit = {
-    println(s"pg ${pageNum}: CharColumnFinding: runPass1")
     initGridShapes()
 
     excludeImageRegionPoints()
@@ -37,7 +36,6 @@ trait CharColumnFinding extends PageScopeSegmenter
   }
 
   def runPass2(): Unit = {
-    println(s"pg ${pageNum}: CharColumnFinding: runPass2")
 
     createFontBaselineShapes() // => createLineMetrics
 

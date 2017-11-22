@@ -9,12 +9,12 @@ import java.io.Reader
 import java.net.URI
 import java.nio.{file => nio}
 import scala.util.{Try, Failure, Success}
-import _root_.io.circe, circe._, circe.syntax._
+import _root_.io.circe, circe._ // , circe.syntax._
 import circe.parser._
 
 import ammonite.{ops => fs}, fs._
 
-import fs2.Task
+import cats.effect.IO
 import fs2.Stream
 
 object Corpus {
@@ -123,9 +123,9 @@ class Corpus(
   }
 
 
-  def entryStream(): Stream[Task, CorpusEntry] = {
+  def entryStream(): Stream[IO, CorpusEntry] = {
 
-    zip.dirEntriesRecursive[Task](corpusRoot.toNIO)
+    zip.dirEntriesRecursive[IO](corpusRoot.toNIO)
       .filter{ p =>
         val f = Path(p)
         f.ext == "d" && f.isDir

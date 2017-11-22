@@ -10,12 +10,14 @@ import circe._
 import circe.syntax._
 import circe.literal._
 import TypeTags._
+import cats.implicits._, cats.data._
+import cats.effect._
 
 
 trait CurationWorkflowServices extends ServiceCommons with WorkflowCodecs { self =>
 
   // Mounted at /api/v1xx/workflow/..
-  val curationWorkflowEndpoints = HttpService {
+  val curationWorkflowEndpoints = HttpService[IO] {
 
     // Get all workflows
     case req @ GET -> Root / "workflows" =>

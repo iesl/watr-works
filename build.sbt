@@ -45,6 +45,7 @@ lazy val textworks = (project in file("text-works"))
     LogLibs.logback ++ TestLibs.testAndCheck ++
     Lib.fs2 ++
     Lib.circeJson ++ Seq(
+      "co.fs2" %% "fs2-io" % Lib.fs2Version,
       "org.apache.pdfbox" % "pdfbox" % "2.0.8",
       "com.google.guava" % "guava" % "23.0",
       "com.vividsolutions" % "jts-core" % "1.14.0",
@@ -82,8 +83,8 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
     TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
     Lib.http4s ++
-    Lib.circeJson ++
-    Lib.jwtCirce
+    Lib.circeJson //  ++
+    // Lib.jwtCirce
   )
   .dependsOn(watrshed)
 
