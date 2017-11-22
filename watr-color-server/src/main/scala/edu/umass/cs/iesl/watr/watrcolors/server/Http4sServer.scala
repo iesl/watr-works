@@ -97,6 +97,7 @@ class Http4sService(
     .mountService(curationWorkflowEndpoints, "/api/v1/workflow")
     .mountService(corpusArtifactEndpoints, "/api/v1/corpus/artifacts")
     .mountService(corpusListingEndpoints, "/api/v1/corpus/entries")
+    .mountService(loginService, "/api/v1/auth")
 
   def run(): Server = {
     builder.run
