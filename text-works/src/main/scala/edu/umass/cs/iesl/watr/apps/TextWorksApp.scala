@@ -13,7 +13,7 @@ import shapeless._
 import java.nio.{file => nio}
 import fs2._
 import tracing.VisualTracer
-import play.api.libs.json, json._
+import _root_.io.circe, circe._, circe.syntax._
 
 sealed trait OutputOption
 
@@ -254,24 +254,24 @@ object TextWorksActions {
           // val gridJs = serProps.gridToJson()
 
           Json.obj(
-            ("shapes", pageImageShapes),
-            ("textgrid", gridJs)
+            ("shapes" := pageImageShapes),
+            ("textgrid" := gridJs)
           )
         }
 
       val jsLog = Json.arr(
         Json.obj(
-          ("name", s"Document Text"),
-          ("steps", Json.arr(Json.obj(
-            ("desc" -> "DocumentText"),
-            ("Method" -> "DocumentTextGrid"),
-            ("pages" -> allPageTextGrids)
+          ("name" := s"Document Text"),
+          ("steps" := Json.arr(Json.obj(
+            ("desc" := "DocumentText"),
+            ("Method" := "DocumentTextGrid"),
+            ("pages" := allPageTextGrids)
           )))
         ))
 
-      val gridJsStr = Json.stringify(jsLog)
+      val gridJsStr = jsLog.noSpaces
 
-      fs.write(rootPath / s"textgrid.json",gridJsStr)
+      fs.write(rootPath / s"textgrid.json", gridJsStr)
 
       segmenter.pageSegmenters.foreach { pageSegmenter =>
         val textGrid = pageSegmenter.getTextGrid
@@ -283,28 +283,29 @@ object TextWorksActions {
 
         val jsLog = Json.arr(
           Json.obj(
-            ("name", s"Page ${pageNum.unwrap+1} Text"),
-            ("steps", Json.arr(Json.obj(
-              ("desc" -> "textgrid pg"),
-              ("Method" -> "TextGrid"),
-              ("grid" -> gridJs),
-              ("shapes" -> pageImageShapes)
+            ("name" := s"Page ${pageNum.unwrap+1} Text"),
+            ("steps" := Json.arr(Json.obj(
+              ("desc" := "textgrid pg"),
+              ("Method" := "TextGrid"),
+              ("grid" := gridJs),
+              ("shapes" := pageImageShapes)
             )))
           ))
 
-        val gridJsStr = Json.stringify(jsLog)
+        val gridJsStr = jsLog.noSpaces
 
         fs.write(rootPath / s"page-${pageNum}-textgrid.json",gridJsStr)
       }
 
       val allLogs = segmenter.pageSegmenters
-        .foldLeft(List[JsObject]()) {
+        .foldLeft(List[Json]()) {
           case (accum, pageSegmenter) =>
             accum ++ pageSegmenter.emitLogs()
         }
 
-      val jsonLogs = Json.toJson(allLogs)
-      val jsonStr = Json.prettyPrint(jsonLogs)
+      val jsonLogs = allLogs.asJson
+      val pp = circe.Printer.spaces2
+      val jsonStr = jsonLogs.pretty(pp)
 
       fs.write(rootPath / "tracelog.json", jsonStr)
     }

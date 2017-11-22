@@ -10,7 +10,9 @@ import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 
-import play.api.libs.json, json._
+import _root_.io.circe
+import circe._
+import circe.syntax._
 
 sealed trait FontInfo
 
@@ -40,23 +42,23 @@ class TextOutputBuilder(textGrid: TextGrid) {
     serProps
   }
 
-  def gridToJson(): JsObject = {
+  def gridToJson(): Json = {
     val serProps = getSerialization()
     val lineNums = serProps.lineMap.keys.toList.sorted
 
     val textAndLoci = lineNums.map { lineNum =>
       val text = serProps.lineMap(lineNum)._2
       val loci = serProps.lineMap(lineNum)._1
-      val lociJs = Json.parse(loci)
+      val lociJs = loci.asJson
       Json.obj(
-        ("line" -> lineNum),
-        ("text" -> text),
+        ("line" -> lineNum.asJson),
+        ("text" -> text.asJson),
         ("loci" -> lociJs)
       )
     }
 
     Json.obj(
-      ("rows", textAndLoci)
+      ("rows", textAndLoci.asJson)
     )
   }
 
@@ -102,6 +104,7 @@ trait TextGrid {
   }
 
   def buildOutput() = new TextOutputBuilder(this)
+
   def pageBounds(): Seq[PageRegion] = {
 
     val allBounds = rows.flatMap{ row => row.pageBounds() }
@@ -244,8 +247,7 @@ object TextGrid {
     }
 
 
-    import play.api.libs.json, json._
-    private def esc(s: String) = Json.stringify(JsString(s))
+    // private def esc(s: String) = Json.stringify(JsonString(s))
 
     def serialize(props: SerializationProps): Unit = {
 
@@ -261,7 +263,7 @@ object TextGrid {
             val t = pageItem.bbox.top
             val w = pageItem.bbox.width
             val h = pageItem.bbox.height
-            s"""[${pageNum}, [$l, $t, $w, $h], ${esc(char.toString())}]"""
+            s"""[${pageNum}, [$l, $t, $w, $h], ${char.toString().asJson}]"""
           }
 
           items.mkString("[", ",", "]")

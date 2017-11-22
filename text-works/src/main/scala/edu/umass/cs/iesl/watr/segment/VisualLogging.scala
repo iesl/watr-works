@@ -3,12 +3,11 @@ package segment
 
 import geometry._
 import spindex._
-// import utils.Colors
-// import utils.Color
-import play.api.libs.json, json._
+
+import _root_.io.circe, circe._, circe.syntax._
+
 import tracing._
-// import watrmarks.Label
-// import utils.ExactFloats._
+import scala.collection.mutable
 
 object DrawMethods {
   def strIdent[V](implicit n: sourcecode.Name) = n.value
@@ -25,11 +24,10 @@ object DrawMethods {
 
 }
 
-import scala.collection.mutable
 
 case class LogEntry(
   name: String,
-  jsonLog: JsObject
+  jsonLog: Json
 )
 
 
@@ -43,7 +41,7 @@ trait PageScopeTracing extends VisualTracer { self  =>
 
   lazy val pageLogs = mutable.ArrayBuffer[LogEntry]()
 
-  def jsonAppend(enclosingCallSite: String)(body: => JsObject) =
+  def jsonAppend(enclosingCallSite: String)(body: => Json) =
     ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {
       val methodFqn = enclosingCallSite.split("\\.").toList.last
       val logName = methodFqn.replace("#", " . ")
@@ -52,11 +50,11 @@ trait PageScopeTracing extends VisualTracer { self  =>
       ))
     }
 
-  def emitLogs(): Seq[JsObject] = {
+  def emitLogs(): Seq[Json] = {
     for {
       logEntry <- pageLogs
     } yield Json.obj(
-      ("name", s"Page ${pageIndex.pageNum.unwrap+1}: ${logEntry.name}"),
+      ("name", s"Page ${pageIndex.pageNum.unwrap+1}: ${logEntry.name}".asJson),
       ("steps", Json.arr(logEntry.jsonLog))
     )
   }
@@ -82,19 +80,20 @@ trait PageScopeTracing extends VisualTracer { self  =>
   // }
 
 
-  def pageImageShapes(): Seq[JsValue] = {
+  def pageImageShapes(): Seq[Json] = {
     val LTBounds.Ints(left, top, width, height) = pageIndex.pageGeometry.bounds
     val border = Json.obj(
-      ("type" -> "rect"), ("hover" -> false),
-      ("x" -> left),     ("y" -> top),
-      ("width" -> width), ("height" -> height),
-      ("stroke" -> "black"), ("stroke-width" -> 1), ("fill" -> "none")
+      "type" := "rect",
+      "hover" := false,
+      "x" := left,     "y" := top,
+      "width" := width, "height" := height,
+      "stroke" := "black", "stroke-width" := 1, "fill" := "none"
     )
     val image = Json.obj(
-      ("type" -> "image"), ("class" -> "page-image"), ("hover" -> false),
-      ("page" -> (pageIndex.pageNum.unwrap+1)),
-      ("x" -> left),     ("y" -> top),
-      ("width" -> width), ("height" -> height)
+      ("type" := "image"), ("class" := "page-image"), ("hover" := false),
+      ("page" := (pageIndex.pageNum.unwrap+1)),
+      ("x" := left),     ("y" := top),
+      ("width" := width), ("height" := height)
     )
     Seq(image, border)
   }
@@ -111,25 +110,25 @@ trait PageScopeTracing extends VisualTracer { self  =>
         case p@ Point.Ints(x, y) =>
 
           Json.obj(
-            ("type" -> "circle"), ("class" -> lls),
-            ("cx" -> x), ("cy" -> y),
-            ("r" -> 2),
-            ("hover" -> false),
+            ("type" := "circle"), ("class" := lls),
+            ("cx" := x), ("cy" := y),
+            ("r" := 2),
+            ("hover" := false),
           ).some
 
         case l@ Line(Point.Ints(p1x, p1y), Point.Ints(p2x, p2y)) =>
 
           Json.obj(
-            ("type" -> "line"), ("class" -> lls), ("hover" -> true),
-            ("x1" -> p1x), ("y1" -> p1y),
-            ("x2" -> p2x), ("y2" -> p2y)
+            ("type" := "line"), ("class" := lls), ("hover" := true),
+            ("x1" := p1x), ("y1" := p1y),
+            ("x2" := p2x), ("y2" := p2y)
           ).some
 
         case LTBounds.Ints(left, top, width, height) =>
           Json.obj(
-            ("type" -> "rect"), ("class" -> lls), ("hover" -> true),
-            ("x" -> left),     ("y" -> top),
-            ("width" -> width), ("height" -> height)
+            ("type" := "rect"), ("class" := lls), ("hover" := true),
+            ("x" := left),     ("y" := top),
+            ("width" := width), ("height" := height)
           ).some
 
         case _ => None
@@ -140,9 +139,9 @@ trait PageScopeTracing extends VisualTracer { self  =>
     val shapes = pageImage ++ allShapes.flatten
 
     Json.obj(
-      ("desc" -> JsString("All Page Shapes")),
-      ("Method" -> DrawMethods.Outline),
-      ("shapes" -> shapes)
+      ("desc" := "All Page Shapes"),
+      ("Method" := DrawMethods.Outline),
+      ("shapes" := shapes)
     )
 
   }
@@ -151,7 +150,7 @@ trait PageScopeTracing extends VisualTracer { self  =>
 
 
 
-  // private def mkShapeRecs(shapes: Seq[GeometricFigure]): Seq[JsObject] = {
+  // private def mkShapeRecs(shapes: Seq[GeometricFigure]): Seq[JsonObject] = {
   //   shapes.map{ _ match {
   //     case bbox: LTBounds =>
   //       val LTBounds.Doubles(l, t, w, h) = rescale(bbox)
@@ -184,7 +183,7 @@ trait PageScopeTracing extends VisualTracer { self  =>
   //   } }
   // }
 
-  // private def mkComponentRecs(ccs: Seq[Component]): Seq[JsObject] = {
+  // private def mkComponentRecs(ccs: Seq[Component]): Seq[JsonObject] = {
   //   ccs.map{ cc =>
   //     val bbox = cc.bounds()
   //     val LTBounds.Doubles(l, t, w, h) = rescale(bbox)
@@ -197,7 +196,7 @@ trait PageScopeTracing extends VisualTracer { self  =>
   //   }
   // }
 
-  // private def formatLogRec(method: String, desc: String, shapes: Seq[GeometricFigure]): JsObject = {
+  // private def formatLogRec(method: String, desc: String, shapes: Seq[GeometricFigure]): JsonObject = {
   //   Json.obj(
   //     ("desc" -> JsString(desc)),
   //     ("Method" -> method),
@@ -205,7 +204,7 @@ trait PageScopeTracing extends VisualTracer { self  =>
   //   )
   // }
 
-  // private def formatLogRecCcs(method: String, desc: String, ccs: Seq[Component]): JsObject = {
+  // private def formatLogRecCcs(method: String, desc: String, ccs: Seq[Component]): JsonObject = {
   //   Json.obj(
   //     ("desc" -> JsString(desc + s"(${ccs.length})")),
   //     ("Method" -> method),
@@ -213,15 +212,15 @@ trait PageScopeTracing extends VisualTracer { self  =>
   //   )
   // }
 
-  // def zipFlashThroughRegions(desc: String, bboxes: Seq[LTBounds]): JsObject = {
+  // def zipFlashThroughRegions(desc: String, bboxes: Seq[LTBounds]): JsonObject = {
   //   formatLogRec(DrawMethods.ZipFlash, desc, bboxes)
   // }
 
-  // def showShapes(desc: String, shapes: Seq[GeometricFigure]): JsObject = {
+  // def showShapes(desc: String, shapes: Seq[GeometricFigure]): JsonObject = {
   //   formatLogRec(DrawMethods.Draw, desc, shapes)
   // }
 
-  // def showRegions(desc: String, bboxes: Seq[LTBounds]): JsObject = {
+  // def showRegions(desc: String, bboxes: Seq[LTBounds]): JsonObject = {
   //   formatLogRec(DrawMethods.Draw, desc, bboxes)
   // }
 

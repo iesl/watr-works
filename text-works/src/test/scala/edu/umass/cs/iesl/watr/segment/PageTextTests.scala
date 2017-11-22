@@ -3,7 +3,6 @@ package segment
 
 import corpora._
 // import edu.umass.cs.iesl.watr.tracing._
-import play.api.libs.json, json._
 import ammonite.{ops => fs}
 
 class PageTextTest extends SegmentationTestUtils  {
@@ -74,10 +73,11 @@ class PageTextTest extends SegmentationTestUtils  {
 
 
   }
+  import _root_.io.circe, circe._, circe.syntax._
 
-  def writeLogs(logJson: JsValue, outputRoot: fs.Path, logfile: String): Unit = {
+  def writeLogs(logJson: Json, outputRoot: fs.Path, logfile: String): Unit = {
 
-    val jsonStr = Json.prettyPrint(logJson)
+    val jsonStr = logJson.asJson.pretty(circe.Printer.spaces2)
 
     if (!fs.exists(outputRoot)) {
       fs.mkdir(outputRoot)

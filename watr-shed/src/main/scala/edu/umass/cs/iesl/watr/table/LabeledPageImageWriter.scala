@@ -4,7 +4,7 @@ package table
 import corpora._
 import geometry._
 
-import play.api.libs.json, json._
+import _root_.io.circe, circe._, circe.syntax._
 import com.sksamuel.scrimage
 import scrimage._
 import scrimage.{canvas => SC}
@@ -18,15 +18,16 @@ trait LabeledPageImageWriter extends ImageManipulation {
   def exportDocuments()(implicit docStore: DocumentZoningApi): Unit = {
     import ammonite.{ops => fs}, fs._
     val exportedJs = docStore.getDocuments().flatMap(exportDocument(_))
-    val allExports = Json.arr(exportedJs)
+    val allExports = exportedJs
 
-    val jsOut = Json.prettyPrint(allExports)
+    val jsOut = allExports.asJson.noSpaces
+
     fs.write(pwd / RelPath("zone-document-export"), jsOut)
   }
 
 
   // export one json record per zone
-  def exportDocument(stableId: String@@DocumentID)(implicit docStore: DocumentZoningApi): Option[JsObject]= {
+  def exportDocument(stableId: String@@DocumentID)(implicit docStore: DocumentZoningApi): Option[Json]= {
     val documentZones = for {
       docId <- docStore.getDocument(stableId).headOption
     } yield {
@@ -39,8 +40,8 @@ trait LabeledPageImageWriter extends ImageManipulation {
         val LTBounds.Ints(left, top, width, height) = pageGeometry
 
         Json.obj(
-          ("page" -> pageNum),
-          ("geometry" -> Json.obj(("x" -> left), ("y" -> top), ("width" -> width), ("height" -> height)))
+          ("page" := pageNum),
+          ("geometry" := Json.obj(("x" := left), ("y" := top), ("width" := width), ("height" := height)))
         )
       }
 
@@ -53,22 +54,22 @@ trait LabeledPageImageWriter extends ImageManipulation {
         val regions = zone.regions.map{region =>
           val LTBounds.Ints(left, top, width, height) = region.bbox
           Json.obj(
-            ("page" -> region.page.pageNum.unwrap),
-            ("x" -> left),     ("y" -> top),
-            ("width" -> width), ("height" -> height)
+            ("page" := region.page.pageNum.unwrap),
+            ("x" := left),     ("y" := top),
+            ("width" := width), ("height" := height)
           )
         }
         Json.obj(
-          ("label" -> zone.label.toString()),
-          ("regions", regions)
+          ("label" := zone.label.toString()),
+          ("regions" := regions)
         )
       }
 
       if (zonesJs.nonEmpty) Some(
         Json.obj(
-          ("document", stableId.unwrap),
-          ("pages", pageDefs),
-          ("zones", zonesJs)
+          ("document" := stableId.unwrap),
+          ("pages" := pageDefs),
+          ("zones" := zonesJs)
         )
       ) else None
     }

@@ -17,9 +17,10 @@ import workflow._
 
 import watrmarks._
 import TypeTags._
-import play.api.libs.json, json._
 import shapeless._
 import textgrid._
+
+import _root_.io.circe, circe._, circe.syntax._
 
 class CorpusAccessDB(
   dbname: String, dbuser: String, dbpass: String
@@ -518,7 +519,7 @@ class CorpusAccessDB(
 
     def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit = {
       val gridJs = textgrid.buildOutput().gridToJson()
-      val gridJsStr = Json.stringify(gridJs)
+      val gridJsStr = gridJs.noSpaces
       runq{
         sql""" update zone SET glyphs = ${gridJsStr} where zone = ${zoneId} """.update.run
       }

@@ -10,6 +10,10 @@ import watrmarks.Label
 import geometry._
 import PageComponentImplicits._
 
+import _root_.io.circe
+import circe._
+import circe.syntax._
+
 class MemDocZoningApi extends DocumentZoningApi {
 
   object tables  {
@@ -352,11 +356,10 @@ class MemDocZoningApi extends DocumentZoningApi {
     labels.ensureLabel(label.fqn)
   }
 
-  import play.api.libs.json, json._
   def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit = {
     for { mzone   <- zones.option(zoneId) }  {
       val gridJs = textgrid.buildOutput().gridToJson()
-      val gridJsStr = Json.stringify(gridJs)
+      val gridJsStr = gridJs.noSpaces
       val up = mzone.copy(glyphs = Some(gridJsStr))
       zones.update(mzone.prKey, up)
     }

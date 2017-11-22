@@ -6,8 +6,8 @@ import spindex._
 import textboxing.{TextBoxing => TB}, TB._
 // import watrmarks.{StandardLabels => LB}
 import segment.{SegmentationLabels => LB}
-import play.api.libs.json, json._
 import segment.PageSegmenter
+import _root_.io.circe, circe.syntax._
 
 
 object DocumentIO  {
@@ -79,11 +79,8 @@ object DocumentIO  {
                 maxPin.isBegin.option[String]("¶")
                   .getOrElse { " " }
               }
-
-              // '¶'     ; '⁋' '§'
-
+              // '¶' ; '⁋' '§'
               s"${pincls}${pinrep}"
-
 
             case _ =>
               s"${pinrep} "
@@ -129,7 +126,7 @@ object DocumentIO  {
 
     val textLines = lineNums.map { lineNum =>
       val t = serProps.lineMap(lineNum)._2
-      Json.stringify(JsString(t)).box
+      t.asJson.noSpaces.box
     }
 
     val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(textLines:_*))

@@ -24,19 +24,17 @@ lazy val watrmarks = (project in file("watr-marks"))
     LogLibs.logback ++
     TestLibs.testAndCheck ++
     Lib.circeJson ++ Seq(
-    "org.scalaz"                 %% "scalaz-core"            % Lib.scalazVersion,
-    "com.chuusai"                %% "shapeless"              % "2.3.2",
-    "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
-    "com.lihaoyi"                %% "fansi"                  % Lib.fansiV,
-    "com.lihaoyi"                %% "sourcecode"             % Lib.sourcecodeV,
-    Lib.ammoniteOps,
-    Lib.playJson,
-    "com.github.davidmoten" % "rtree" % "0.8.0.2",
-    "com.github.davidmoten" % "flatbuffers-java" % "1.7.0.1",
-    "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
+      Lib.shapeless,
+      "org.scalaz"                 %% "scalaz-core"            % Lib.scalazVersion,
+      "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
+      "com.lihaoyi"                %% "fansi"                  % Lib.fansiV,
+      "com.lihaoyi"                %% "sourcecode"             % Lib.sourcecodeV,
+      Lib.ammoniteOps,
+      "com.github.davidmoten" % "rtree" % "0.8.0.2",
+      "com.github.davidmoten" % "flatbuffers-java" % "1.8.0.1",
+      "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
     )
   )
-
 
 lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)
@@ -53,7 +51,6 @@ lazy val textworks = (project in file("text-works"))
       Lib.scopt,
       Lib.scrimageCore,
       Lib.ammoniteOps,
-      // Lib.playJson,
       Lib.shapeless
     ))
   .dependsOn(prelude, watrmarks)
@@ -71,7 +68,6 @@ lazy val watrshed = (project in file("watr-shed"))
       Lib.scopt,
       Lib.scrimageCore,
       Lib.ammonite,
-      // Lib.playJson,
       Lib.shapeless
     ))
   .dependsOn(prelude, watrmarks, textworks)
@@ -86,7 +82,8 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
     TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
     Lib.http4s ++
-    Lib.circeJson
+    Lib.circeJson ++
+    Lib.jwtCirce
   )
   .dependsOn(watrshed)
 

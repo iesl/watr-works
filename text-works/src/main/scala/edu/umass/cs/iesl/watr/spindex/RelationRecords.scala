@@ -2,7 +2,10 @@ package edu.umass.cs.iesl.watr
 package spindex
 
 import TypeTags._
-import utils.{StringUtils => SU}
+// import utils.{StringUtils => SU}
+
+import _root_.io.circe, circe._, circe.syntax._
+import circe.generic.auto._
 
 trait Identities {
   import shapeless._
@@ -47,22 +50,16 @@ trait Identities {
 object Identities extends Identities
 
 object Prop {
-  import play.api.libs.json._
   import Identities._
 
-  case class Value(jsval: JsValue)
+  case class Value(jsval: Json)
 
   case class PropKV(
     key: String,
     value: Value
   )
 
-  def formatValue(prop: Value): String = prop.jsval match {
-    case JsString(v)    => v.toString
-    case JsBoolean(v)   => SU.dquote(v.toString)
-    case JsNumber(v)    => v.toString
-    case _              => sys.error("")
-  }
+  def formatValue(prop: Value): String = prop.asJson.noSpaces
 
   case class PropRec(
     propHolder: Entity,
@@ -76,7 +73,7 @@ object Prop {
     s"""["$e", "$k", $v]"""
   }
 
-  def Str(s: String): Value = Value(JsString(s))
+  // def Str(s: String): Value = Value(JsonString(s))
 
 }
 

@@ -8,8 +8,9 @@ import java.io.InputStreamReader
 import java.io.Reader
 import java.net.URI
 import java.nio.{file => nio}
-import play.api.libs.json
 import scala.util.{Try, Failure, Success}
+import _root_.io.circe, circe._, circe.syntax._
+import circe.parser._
 
 import ammonite.{ops => fs}, fs._
 
@@ -374,8 +375,10 @@ class CorpusArtifact(
     asInputStream.map(new InputStreamReader(_))
   }
 
-  def asJson: Try[json.JsValue] = try {
-    asInputStream.map(json.Json.parse(_))
+  def asJson: Try[Json] = try {
+    asPath.flatMap(p =>
+      parse(read(p)).toTry
+    )
   } catch {
     case t: Exception => Failure(t)
   }

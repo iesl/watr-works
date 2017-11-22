@@ -5,7 +5,6 @@ import Keys._
 trait LibVersions {
   val scalazVersion       = "7.2.16"
   val scalaTagsVersion    = "0.6.7"
-  val scalaAsyncVersion   = "0.9.7"
   val scalatestVersion    = "3.0.4"
   val logbackVersion      = "1.7.25"
   val scrimageVersion     = "2.1.8"
@@ -65,13 +64,11 @@ object DatabaseLibs extends LibVersions {
 
 trait CommonLibs extends LibVersions {
 
-  val scalaAsync       = "org.scala-lang.modules"  %% "scala-async"      % scalaAsyncVersion
   val ammonite         = "com.lihaoyi"             % "ammonite" % ammoniteVersion cross CrossVersion.full
   val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"  % ammoniteVersion
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
-  val playJson         = "com.typesafe.play"       %% "play-json"        % "2.6.7"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,
@@ -87,8 +84,9 @@ trait CommonLibs extends LibVersions {
   )
 
   val circeJson = Seq(
-    "io.circe" %% "circe-generic" % "0.8.0",
-    "io.circe" %% "circe-literal" % "0.8.0"
+    "io.circe" %% "circe-generic" % "0.9.0-M2",
+    "io.circe" %% "circe-parser" % "0.9.0-M2",
+    "io.circe" %% "circe-literal" % "0.9.0-M2"
   )
 
   val http4s = Seq(
@@ -97,8 +95,15 @@ trait CommonLibs extends LibVersions {
     "org.http4s" %% "http4s-blaze-server" % http4sVersion,
     "org.http4s" %% "http4s-blaze-client" % http4sVersion,
     "org.http4s" %% "http4s-circe" % http4sVersion,
-    "org.typelevel" %% "cats-core" % "0.9.0" // % "1.0.0-RC1"
+    // "org.typelevel" %% "cats-core" % "0.9.0" // % "1.0.0-RC1"
+      "org.typelevel" %% "cats-core" % "1.0.0-RC1"
+  )
+
+  val jwtCirce = Seq(
+    "com.pauldijou" %% "jwt-core" % "0.14.1",
+    "com.pauldijou" %% "jwt-circe" % "0.14.1"
   )
 }
 
 object CommonLibs extends CommonLibs
+
