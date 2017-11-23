@@ -3,17 +3,29 @@ package table
 
 import corpora._
 import geometry._
-
-import play.api.libs.json, json._
+import play.api.libs.json
+import json._
 import com.sksamuel.scrimage
-import scrimage._
-import scrimage.{canvas => SC}
 import images.ImageManipulation
+import scrimage.{Image, canvas => SC}
+import scrimage._
+
 
 // import TypeTags._
 import utils.ExactFloats._
 
 trait LabeledPageImageWriter extends ImageManipulation {
+
+    def scaleRegionBBox(regionBBox: LTBounds): LTBounds = {
+//        935 : 1210
+//        612 : 792
+        val newRight = regionBBox.right.unwrap - 600
+        val newBottom = regionBBox.bottom.unwrap - 1100
+        val newLeft = regionBBox.left.unwrap - 1800
+        val newTop = regionBBox.top.unwrap - 1450
+        LTBounds(FloatRep(newLeft), FloatRep(newTop), FloatRep(newRight - newLeft), FloatRep(newBottom - newTop))
+
+    }
 
     def exportDocuments()(implicit docStore: DocumentZoningApi): Unit = {
         import ammonite.{ops => fs}, fs._
@@ -80,21 +92,40 @@ trait LabeledPageImageWriter extends ImageManipulation {
 
     def writeLabeledPageImages()(implicit docStore: DocumentZoningApi): Unit = {
         import ammonite.{ops => fs}, fs._
-        val rootDir = pwd / RelPath("labeled-image-output")
-
+        val labelledPDFsDir = pwd / RelPath("labelled-pdfs_2")
+        val pdfsDir = pwd / RelPath("corpus-test")
+        var docCount: Int = 193
         for {
-            stableId <- docStore.getDocuments().drop(97).take(10000)
-            (pageNum, pageImage) <- createLabeledPageImages(stableId)
+            stableId <- docStore.getDocuments().drop(docCount).take(1000) //if Seq("1605.00405.pdf.d", "1603.00332.pdf.d").contains(stableId.unwrap)
+            (pageNum, pageLabelImage) <- createLabeledPageImages(stableId)
         } {
-            val imageBytes = pageImage.bytes
+            docCount += 1
+            println("Document: " + docCount + " : " + stableId)
 
-            val docDir = rootDir / RelPath(stableId.unwrap)
-            val pageImagePath = docDir / RelPath(s"page-${pageNum}.png")
-            if (!fs.exists(docDir)) {
-                mkdir(docDir)
+            val labelledDocDir = labelledPDFsDir / RelPath(stableId.unwrap)
+            val pdfsDocDir = pdfsDir / RelPath(stableId.unwrap)
+
+            val labelledPageImagePath = labelledDocDir / RelPath(s"page-${pageNum}.png")
+            val pdfPageImagePath = pdfsDocDir / RelPath("page-images") / RelPath(s"page-${pageNum.unwrap+1}.opt.png")
+            var pdfImage = Image.fromPath(pdfPageImagePath.toNIO)
+
+            if (pdfImage.width != 935 || pdfImage.height != 1210) {
+                pdfImage = pdfImage.fit(935, 1210)
             }
 
-            fs.write(pageImagePath, imageBytes)
+//            println(pdfImage.width + " : " + pdfImage.height)
+//            println(pageLabelImage.width + " : " + pageLabelImage.height)
+
+            val pdfLabelledImage = pdfImage.overlay(pageLabelImage)
+            rm(labelledDocDir)
+            mkdir(labelledDocDir)
+            try{
+                fs.write(labelledPageImagePath, pdfLabelledImage.bytes)
+            }
+            catch {
+                case exception: Exception => exception.printStackTrace()
+            }
+
         }
 
     }
@@ -119,9 +150,9 @@ trait LabeledPageImageWriter extends ImageManipulation {
             val pageGeometry = docStore.getPageGeometry(pageId)
             val LTBounds.Ints(left, top, width, height) = pageGeometry
 
-            println(s"createLabeledPageImages: ${stableId}: page ${pageDef.pagenum}")
+//            println(s"createLabeledPageImages: ${stableId}: page ${pageDef.pagenum}")
 
-            val imageGeometry = LTBounds.Ints(left, top, width, height)
+            val imageGeometry = LTBounds.Ints(0, 0, 935, 1210)
             val labelsAndDrawables = for {
                 labelId <- documentLabels
                 label = docStore.getLabel(labelId)
@@ -134,7 +165,7 @@ trait LabeledPageImageWriter extends ImageManipulation {
                     val r = colorScheme(labelId.unwrap).head
                     val g = colorScheme(labelId.unwrap)(1)
                     val b = colorScheme(labelId.unwrap)(2)
-                    ltBoundsToDrawablesFilled(region.bbox, pageGeometry, imageGeometry, Color.apply(red = r, green = g, blue = b))
+                    ltBoundsToDrawablesFilled(scaleRegionBBox(region.bbox), pageGeometry, imageGeometry, Color.apply(red = r, green = g, blue = b))
 
                 }
 
@@ -142,11 +173,11 @@ trait LabeledPageImageWriter extends ImageManipulation {
             }
 
             if (labelsAndDrawables.nonEmpty) {
-                println(s"   writing page ${pageDef.pagenum}: ")
+//                println(s"   writing page ${pageDef.pagenum}: ")
                 // Init page image:
                 var labelOverlay = new SC.Canvas(Image.filled(imageGeometry.width.asInt(), imageGeometry.height.asInt(), Color.Transparent))
                 labelsAndDrawables.foreach { case (label, drawables) =>
-                    println(s"      l: ${label.toString()}: ")
+//                    println(s"      l: ${label.toString()}: ")
                     labelOverlay = labelOverlay.draw(drawables)
                 }
                 Some(
@@ -157,6 +188,5 @@ trait LabeledPageImageWriter extends ImageManipulation {
 
         pageImages.flatten
     }
-
 
 }
