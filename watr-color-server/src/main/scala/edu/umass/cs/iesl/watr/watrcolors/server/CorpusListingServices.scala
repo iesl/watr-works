@@ -15,6 +15,7 @@ import cats.implicits._, cats.data._
 
 import cats.effect._
 
+import models._
 
 trait CorpusListingServices extends Http4sDsl[IO] with ServiceCommons with WorkflowCodecs { self =>
   // Mounted at /api/v1xx/corpus/entries/..

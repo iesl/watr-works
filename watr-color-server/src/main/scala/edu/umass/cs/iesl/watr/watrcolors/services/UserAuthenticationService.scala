@@ -14,12 +14,16 @@ import tsec.common._
 import tsec.authentication._
 import persistence.{PasswordStore, UserStore}
 import tsec.cipher.symmetric.imports.AES128
-import models.LoginForm.LoginError
-import models.SignupForm.SignupError
+
+import models.users._
+import models.formdata._
+import LoginForm.LoginError
+import SignupForm.SignupError
+import TypeTags._
 
 case class UserAuthenticationService(
-    userStore: UserStore,
-    authStore: PasswordStore,
+  userStore: UserStore,
+  authStore: PasswordStore,
   authenticator: EncryptedCookieAuthenticator[IO, Int, User, AES128]
 )(implicit F: Effect[IO])
     extends Http4sDsl[IO] {
@@ -36,10 +40,10 @@ case class UserAuthenticationService(
         signup   <- request.as[SignupForm]
         exists   <- userStore.exists(signup.username).fold(())(_ => throw SignupError)
         password <- F.pure(signup.password.base64Bytes.toAsciiString.hashPassword[SCrypt])
-        newUser = User(0, signup.username, signup.age)
+        newUser = User(UserID(0), EmailAddr(signup.email), Username(signup.username))
         _      <- userStore.put(newUser)
         _      <- authStore.put(AuthInfo(UUID.randomUUID(), newUser.id, password))
-        cookie <- authenticator.create(newUser.id).getOrRaise(LoginError)
+        cookie <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
         o      <- Ok("Successfully signed up!")
       } yield authenticator.embed(o, cookie)
 
@@ -54,9 +58,9 @@ case class UserAuthenticationService(
       (for {
         login    <- request.as[LoginForm]
         user     <- userStore.exists(login.username).getOrRaise(LoginError)
-        authInfo <- authStore.get(user.id).getOrRaise(LoginError)
+        authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
         _        <- checkOrRaise(login.password, authInfo.password)
-        cookie   <- authenticator.create(user.id).getOrRaise(LoginError)
+        cookie   <- authenticator.create(user.id.unwrap).getOrRaise(LoginError)
         o        <- Ok()
       } yield authenticator.embed(o, cookie))
         .handleError { _ =>

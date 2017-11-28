@@ -11,6 +11,7 @@ import tsec.authentication._
 
 import scala.collection.immutable.HashMap
 import scala.concurrent.ExecutionContext
+import models.users._
 
 sealed abstract class PasswordStore extends BackingStore[IO, PasswordStore.IDType, AuthInfo] {
   import PasswordStore._

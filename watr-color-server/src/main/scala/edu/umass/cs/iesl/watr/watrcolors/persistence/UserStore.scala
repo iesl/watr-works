@@ -7,25 +7,18 @@ package persistence
 import cats.effect.IO
 import cats.data.OptionT
 import edu.umass.cs.iesl.watr.workflow.UserbaseApi
-// import fs2.async.Ref
-import models.User
 import tsec.authentication._
-// import scala.collection.immutable.HashMap
-// import scala.concurrent.ExecutionContext
+import models.users._
 
 sealed class UserStore(
   userbaseApi: UserbaseApi
 ) extends BackingStore[IO, Int, User] {
   import UserStore._
 
-  // protected val ref: Ref[IO, HashMap[IDType, User]]
 
   def put(elem: ValueType): IO[ValueType] = {
-    userbaseApi.addUser(email: String)
+    // userbaseApi.addUser(email: String)
     ???
-    // ref
-    //   .modify(_ + (elem.id -> elem))
-    //   .map(modified => modified.now.size - modified.previous.size)
   }
 
   def get(id: IDType): OptionT[IO, ValueType] = {

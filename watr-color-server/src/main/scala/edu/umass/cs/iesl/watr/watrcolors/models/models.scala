@@ -21,33 +21,83 @@ import circe.generic.auto._
 import corpora.{RelationModel => R}
 // import circe.generic.semiauto._
 
-case class User(id: Int, username: String, age: Int)
+object users {
 
-case class AuthInfo(id: UUID, parentId: Int, password: SCrypt)
+  case class User(
+    id       : Int@@UserID,
+    email    : String@@EmailAddr,
+    username : String@@Username,
+    // pass     : String,
+    // session  : String,
+    // roles: Seq[Role]
+  )
 
-case class LoginForm(username: String, password: String)
 
-object LoginForm {
-  object LoginError extends Exception {
-    override def getMessage: String = "Login Error"
+  case class AuthInfo(
+    id: UUID,
+    parentId: Int@@UserID,
+    password: SCrypt
+  )
 
-    override def fillInStackTrace(): Throwable = this
-  }
 
-  implicit def decoder[F[_]: Effect]: EntityDecoder[F, LoginForm] = jsonOf[F, LoginForm]
+  // object User {
+  //   implicit def authRole[F[_]](implicit F: MonadError[F, Throwable]): AuthorizationInfo[F, Role, User] =
+  //     new AuthorizationInfo[F, Role, User] {
+  //       def fetchInfo(u: User): F[Role] = F.pure(u.role)
+  //     }
+  // }
+
+  // sealed abstract case class Role(roleRepr: String)
+
+  // object Role extends SimpleAuthEnum[Role, String] {
+  //   implicit object Administrator  extends Role("Administrator")
+  //   implicit object Curator        extends Role("Curator")
+  //   implicit object Labeler        extends Role("Labeler")
+
+  //   implicit object CorruptedData  extends Role("CorruptedData")
+
+  //   implicit val E: Eq[Role]      = Eq.fromUniversalEquals[Role]
+  //   val getRepr: (Role) => String = _.roleRepr
+
+  //   protected val values: AuthGroup[Role] = AuthGroup(Administrator, Curator, Labeler)
+  //   val orElse: Role                      = CorruptedData
+  // }
+
+
 
 }
 
-case class SignupForm(username: String, age: Int, password: String)
+object formdata {
+  case class LoginForm(username: String, password: String)
 
-object SignupForm {
-  final object SignupError extends Exception {
-    override def getMessage: String = "Signup Error"
+  object LoginForm {
+    object LoginError extends Exception {
+      override def getMessage: String = "Login Error"
 
-    override def fillInStackTrace(): Throwable = this
+      override def fillInStackTrace(): Throwable = this
+    }
+
+    implicit def decoder[F[_]: Effect]: EntityDecoder[F, LoginForm] = jsonOf[F, LoginForm]
+
   }
 
-  implicit def entityD[F[_]: Effect]: EntityDecoder[F, SignupForm] = jsonOf[F, SignupForm]
+  case class SignupForm(
+    email: String,
+    username: String,
+    password: String
+  )
+
+  object SignupForm {
+    final object SignupError extends Exception {
+      override def getMessage: String = "Signup Error"
+
+      override def fillInStackTrace(): Throwable = this
+    }
+
+    implicit def entityD[F[_]: Effect]: EntityDecoder[F, SignupForm] = jsonOf[F, SignupForm]
+  }
+
+
 }
 
 case class LabelerReqForm(

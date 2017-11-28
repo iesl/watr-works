@@ -13,6 +13,7 @@ import TypeTags._
 import cats.implicits._, cats.data._
 import cats.effect._
 
+import models._
 
 trait CurationWorkflowServices extends ServiceCommons with WorkflowCodecs { self =>
 

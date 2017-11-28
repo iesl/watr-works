@@ -17,6 +17,7 @@ import org.http4s.dsl.io._
 import org.http4s.headers._
 // import cats.implicits._
 
+import models._
 
 // import ammonite.{ops => fs}
 

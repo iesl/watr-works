@@ -16,6 +16,8 @@ import cats.effect._
 import org.reactormonk.{CryptoBits, PrivateKey}
 import java.time._
 
+import models._
+
 trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { self =>
 
   // val key = PrivateKey(scala.io.Codec.toUTF8(scala.util.Random.alphanumeric.take(20).mkString("")))
