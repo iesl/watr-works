@@ -13,102 +13,12 @@ import circe.syntax._
 import circe.literal._
 import TypeTags._
 import watrmarks._
-import org.http4s.circe._
 import geometry._
 import textgrid._
 import cats.implicits._, cats.data._
 import cats.effect._
 
-case class LabelerReqForm(
-  labels: Seq[Label],
-  description: String
-)
-
-object LabelerReqForm extends CirceJsonCodecs {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelerReqForm] = deriveEncoder
-  implicit val decoder: Decoder[LabelerReqForm] = deriveDecoder
-}
-
-
-case class LTarget(
-  page: Int,
-  bbox: Seq[Int]
-)
-object LTarget {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LTarget] = deriveEncoder
-  implicit val decoder: Decoder[LTarget] = deriveDecoder
-}
-
-// case class GlyphTarget(
-//   page: Int,
-//   bbox: Seq[Int],
-//   char: String
-// )
-
-
-// object GlyphTarget {
-//   import circe.generic.semiauto._
-//   implicit val encoder: Encoder[GlyphTarget] = deriveEncoder
-//   implicit val decoder: Decoder[GlyphTarget] = deriveDecoder
-// }
-
-case class LabelingSelection(
-  annotType: String,
-  targets: Seq[LTarget]
-)
-
-object LabelingSelection {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelingSelection] = deriveEncoder
-  implicit val decoder: Decoder[LabelingSelection] = deriveDecoder
-}
-
-case class LabelSpanReq(
-  stableId: String,
-  labelChoice: Label,
-  //           (page: Int, bbox: Seq[Int], char: String)
-  targets: Seq[(Int, (Int, Int, Int, Int), String)]
-)
-
-object LabelSpanReq extends CirceJsonCodecs {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelSpanReq] = deriveEncoder
-  implicit val decoder: Decoder[LabelSpanReq] = deriveDecoder
-}
-
-case class LabelingReqForm(
-  stableId: String,
-  labelChoice: Label,
-  selection: LabelingSelection
-)
-
-object LabelingReqForm extends CirceJsonCodecs {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelingReqForm] = deriveEncoder
-  implicit val decoder: Decoder[LabelingReqForm] = deriveDecoder
-}
-
-case class LabelsRequest(
-  stableId: String
-)
-
-object LabelsRequest {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelsRequest] = deriveEncoder
-  implicit val decoder: Decoder[LabelsRequest] = deriveDecoder
-}
-case class DeleteZoneRequest(
-  stableId: String,
-  zoneIds: Seq[Int]
-)
-
-object DeleteZoneRequest {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[DeleteZoneRequest] = deriveEncoder
-  implicit val decoder: Decoder[DeleteZoneRequest] = deriveDecoder
-}
+import models._
 
 trait LabelingServices extends ServiceCommons { self =>
 
@@ -119,8 +29,10 @@ trait LabelingServices extends ServiceCommons { self =>
       for {
         labels <- decodeOrErr[LabelerReqForm](req)
         panel = html.Parts.labelingPanel(labels.labels)
-        resp <- Ok(panel.toString).putHeaders(H.`Content-Type`(MediaType.`text/html`))
-      } yield resp
+        ok <- Ok(panel.toString())
+      } yield {
+        ok.putHeaders(H.`Content-Type`(MediaType.`text/html`))
+      }
 
     case req @ GET -> Root / "labels" / stableIdStr =>
       val stableId = DocumentID(stableIdStr)
@@ -170,9 +82,9 @@ trait LabelingServices extends ServiceCommons { self =>
             ("zones", Json.arr(allDocZones:_*))
           )
         }
-        resp <- Ok(allZones).putHeaders(H.`Content-Type`(MediaType.`application/json`))
+        resp <- Ok(allZones)
       } yield {
-        resp
+        resp.putHeaders(H.`Content-Type`(MediaType.`application/json`))
       }
 
     case req @ POST -> Root / "label" / "span"  =>
@@ -211,11 +123,13 @@ trait LabelingServices extends ServiceCommons { self =>
           Json.obj(
             ("zones", Json.arr(allDocZones:_*))
           )
-
-
         }
-        resp <- Ok(allZones).putHeaders(H.`Content-Type`(MediaType.`application/json`))
-      } yield resp
+
+        resp <- Ok(allZones)
+
+      } yield {
+        resp.putHeaders(H.`Content-Type`(MediaType.`application/json`))
+      }
 
     case req @ POST -> Root / "label" / "region" =>
 
@@ -259,7 +173,9 @@ trait LabelingServices extends ServiceCommons { self =>
           )
 
         }
-        resp <- Ok(allZones).putHeaders(H.`Content-Type`(MediaType.`application/json`))
-      } yield resp
+        resp <- Ok(allZones)
+      } yield {
+        resp.putHeaders(H.`Content-Type`(MediaType.`application/json`))
+      }
   }
 }

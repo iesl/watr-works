@@ -107,3 +107,4 @@ object WatrTableCommands extends App with utils.AppMainBasics {
   run(args)
 
 }
+

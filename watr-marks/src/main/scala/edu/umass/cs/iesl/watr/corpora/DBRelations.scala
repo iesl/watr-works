@@ -40,8 +40,8 @@ object RelationModel {
 
 
   case class Person(
-    prKey   : Int@@UserID,
-    email   : String@@EmailAddr
+    prKey     : Int@@UserID,
+    email     : String@@EmailAddr
   )
 
   case class WorkflowDef(

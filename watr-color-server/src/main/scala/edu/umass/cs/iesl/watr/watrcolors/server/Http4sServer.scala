@@ -2,8 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-// import fs2._
-// import cats.data.Kleisli
 import cats.effect._
 
 import corpora._
@@ -11,14 +9,18 @@ import corpora._
 import org.http4s._
 import org.http4s.util.ExitCode
 import org.http4s.{headers => H}
-// import org.http4s.dsl._
-import org.http4s.server._
 import org.http4s.server.staticcontent._
 import org.http4s.server.blaze._
+
+import org.http4s.util.StreamApp
+import org.http4s.util.ExitCode
 
 import ammonite.{ops => fs}
 
 import cats.effect._
+
+import utils.{PathUtils => P}
+import edu.umass.cs.iesl.watr.table._
 
 trait AllServices extends LabelingServices
     with CurationWorkflowServices
@@ -46,31 +48,13 @@ class Http4sService(
     pathPrefix = "/dist"
   ))
 
-  // val pageImageService = HttpService {
-
-  //   case req @ GET -> Root / "menu" =>
-  //     val entries = for {
-  //       stableId <- docStore.getDocuments(40, 0, Seq())
-  //       docId <- docStore.getDocument(stableId)
-  //     } yield {
-  //       json"""{ "entry": ${stableId.unwrap}, "logfiles": "" }"""
-  //     }
-
-  //     val all = circe.Json.arr(
-  //       entries:_*
-  //     )
-
-  //     Ok(all)
-  //       .putHeaders(
-  //         H.`Content-Type`(MediaType.`application/json`)
-  //       )
-  // }
 
   def htmlPage(bundleName: String, user: Option[String]): IO[Response[IO]]= {
-    Ok(html.Frame(bundleName).toString())
-      .putHeaders(
-        H.`Content-Type`(MediaType.`text/html`)
-      )
+    Ok().flatMap { resp =>
+      resp
+        .withBody(html.Frame(bundleName).toString())
+        .putHeaders(H.`Content-Type`(MediaType.`text/html`))
+    }
   }
 
   // Pages
@@ -91,7 +75,7 @@ class Http4sService(
 
 
   // val redirectOnFailure: AuthedService[String, IO] = Kleisli(req => SeeOther(uri("/user/register")))
-  val redirectOnFailure: AuthedService[String, IO] = AuthedService.lift{ req => SeeOther(uri("/user/register")) }
+  // val redirectOnFailure: AuthedService[String, IO] = AuthedService.lift{ req => SeeOther(uri("/user/register")) }
 
   val builder = BlazeBuilder[IO].bindHttp(port, url)
     .mountService(jslibDistService)
@@ -101,12 +85,7 @@ class Http4sService(
     .mountService(curationWorkflowEndpoints, "/api/v1/workflow")
     .mountService(corpusArtifactEndpoints, "/api/v1/corpus/artifacts")
     .mountService(corpusListingEndpoints, "/api/v1/corpus/entries")
-    .mountService(loginService, "/api/v1/auth")
-
-  def run(): Server[IO]= {
-    builder.start
-      .unsafeRunSync()
-  }
+    // .mountService(loginService, "/api/v1/auth")
 
 
   def serve(): fs2.Stream[IO, ExitCode] = {
@@ -116,4 +95,28 @@ class Http4sService(
 
   def shutdown(): Unit = {}
 
+
+}
+
+object WatrColorMain extends StreamApp[IO] with utils.AppMainBasics {
+  override def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, ExitCode] = {
+
+    val corpusAccessApi = SharedInit.initCorpusAccessApi(args.toArray)
+
+    val argMap = argsToMap(args.toArray)
+
+    val port = argMap.get("port").flatMap(_.headOption)
+      .getOrElse(sys.error("no port supplied (--port ...)"))
+
+    val distRoot = argMap.get("dist").flatMap(_.headOption)
+      .getOrElse(sys.error("no dist dir specified (--dist ...); "))
+
+    val portNum = port.toInt
+
+    val distDir = P.strToAmmPath(distRoot)
+
+    val httpService =  new Http4sService(corpusAccessApi, "localhost", portNum, distDir)
+    httpService.serve()
+
+  }
 }

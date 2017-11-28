@@ -159,11 +159,11 @@ object SensibleThisBuild {
 
   lazy val settings =  Seq(
 
-
     resolvers in ThisBuild ++= List(
       Resolver.sonatypeRepo("snapshots"),
       Resolver.sonatypeRepo("releases"),
-      Resolver.jcenterRepo
+      Resolver.jcenterRepo,
+      Resolver.bintrayRepo("jmcardon", "tsec")
     ),
 
     shellPrompt in ThisBuild := colorPrompt

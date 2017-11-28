@@ -3,7 +3,7 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.16"
+  val scalazVersion       = "7.2.17"
   val scalaTagsVersion    = "0.6.7"
   val scalatestVersion    = "3.0.4"
   val logbackVersion      = "1.7.25"
@@ -104,6 +104,19 @@ trait CommonLibs extends LibVersions {
   val jwtCirce = Seq(
     "com.pauldijou" %% "jwt-core" % "0.14.1",
     "com.pauldijou" %% "jwt-circe" % "0.14.1"
+  )
+
+  val tsecV = "0.0.1-M5"
+  val tsec = Seq(
+    "io.github.jmcardon" %% "tsec-common" % tsecV,
+    "io.github.jmcardon" %% "tsec-password" % tsecV,
+    "io.github.jmcardon" %% "tsec-symmetric-cipher" % tsecV,
+    "io.github.jmcardon" %% "tsec-mac" % tsecV,
+    "io.github.jmcardon" %% "tsec-signatures" % tsecV,
+    "io.github.jmcardon" %% "tsec-md" % tsecV,
+    "io.github.jmcardon" %% "tsec-jwt-mac" % tsecV,
+    "io.github.jmcardon" %% "tsec-jwt-sig" % tsecV,
+    "io.github.jmcardon" %% "tsec-http4s" % tsecV
   )
 }
 
