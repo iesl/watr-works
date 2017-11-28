@@ -68,7 +68,10 @@ object users {
 }
 
 object formdata {
-  case class LoginForm(username: String, password: String)
+  case class LoginForm(
+    email: String,
+    password: String
+  )
 
   object LoginForm {
     object LoginError extends Exception {

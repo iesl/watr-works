@@ -44,6 +44,8 @@ class AllServices(
   override val corpusAccessApi: CorpusAccessApi,
   distDir: fs.Path,
   portNum: Int
+)(
+  implicit ec: ExecutionContext
 ) extends Http4sDsl[IO] with TheServices {
 
   val assetService = resourceService(ResourceService.Config[IO](
@@ -93,28 +95,14 @@ class AllServices(
     pathPrefix = "/dist"
   ))
 
-  def blazeBuilder() ={
-    BlazeBuilder[IO]
-      .bindHttp(portNum, "localhost")
-      .mountService(CORS(jslibDistService))
-      .mountService(CORS(assetService))
-      .mountService(CORS(jslibDistService))
-      .mountService(CORS(userAuthService.signupRoute))
-      .mountService(CORS(userAuthService.loginRoute))
-      .mountService(htmlPageService)
-      .mountService(labelingServiceEndpoints, "/api/v1/labeling")
-      .mountService(curationWorkflowEndpoints, "/api/v1/workflow")
-      .mountService(corpusArtifactEndpoints, "/api/v1/corpus/artifacts")
-      .mountService(corpusListingEndpoints, "/api/v1/corpus/entries")
-    // .mountService(CORS(authedService.helloFromAuthentication))
-
-
-    val wiring = for {
+  def buildServer() = {
+    for {
       userStore     <- UserStore.fromUserbaseApi(corpusAccessApi.userbaseApi)
       tokenStore    <- TokenStore.apply
       passwordStore <- PasswordStore.apply
       symmetricKey  <- AES128.generateLift[IO]
     } yield {
+
       val authenticator = EncryptedCookieAuthenticator.withBackingStore[IO, Int, User, AES128](
         authenticatorSettings,
         tokenStore,
@@ -123,8 +111,22 @@ class AllServices(
       )
 
       val userAuthService = UserAuthenticationService(userStore, passwordStore, authenticator)
-      val allServices = new AllServices(corpusAccessApi, distDir, portNum)
-      allServices.blazeBuilder
+
+      BlazeBuilder[IO]
+        .bindHttp(portNum, "localhost")
+        .mountService(CORS(jslibDistService))
+        .mountService(CORS(assetService))
+        .mountService(CORS(jslibDistService))
+        .mountService(CORS(userAuthService.signupRoute))
+        .mountService(CORS(userAuthService.loginRoute))
+        .mountService(htmlPageService)
+        .mountService(labelingServiceEndpoints, "/api/v1/labeling")
+        .mountService(curationWorkflowEndpoints, "/api/v1/workflow")
+        .mountService(corpusArtifactEndpoints, "/api/v1/corpus/artifacts")
+        .mountService(corpusListingEndpoints, "/api/v1/corpus/entries")
+      // .mountService(CORS(authedService.helloFromAuthentication))
+
+
 
     }
 
@@ -150,10 +152,12 @@ object WiredServerMain extends StreamApp[IO] with Http4sDsl[IO] with utils.AppMa
 
     val corpusAccessApi = SharedInit.initCorpusAccessApi(args.toArray)
 
+    val allServices = new AllServices(corpusAccessApi, distDir, portNum)
+
+    val server = allServices.buildServer()
 
 
-
-    Stream.eval(wiring).flatMap(_.serve)
+    Stream.eval(server).flatMap(_.serve)
   }
 
 }

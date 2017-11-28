@@ -72,9 +72,10 @@ object WorkflowReport extends TypeTagCodecs {
 }
 
 trait UserbaseApi {
-  def addUser(email: String): Int@@UserID
+  def addUser(email: String@@EmailAddr): Int@@UserID
   def getUser(userId: Int@@UserID): Option[R.Person]
-  def getUserByEmail(email: String): Option[Int@@UserID]
+  def getUserByEmail(email: String@@EmailAddr): Option[Int@@UserID]
+  // def deleteUser(userId: Int@@UserID): Unit
 }
 
 trait WorkflowApi {

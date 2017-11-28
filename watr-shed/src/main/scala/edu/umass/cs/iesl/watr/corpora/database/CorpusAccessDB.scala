@@ -336,7 +336,7 @@ class CorpusAccessDB(
   }
 
   object userbaseApi extends UserbaseApi {
-    def addUser(email: String): Int@@UserID = {
+    def addUser(email: String@@EmailAddr): Int@@UserID = {
       runq { sql"""
         insert into person (email) values (${email})
         """.update
@@ -352,7 +352,7 @@ class CorpusAccessDB(
       }
     }
 
-    def getUserByEmail(email: String): Option[Int@@UserID] = {
+    def getUserByEmail(email: String@@EmailAddr): Option[Int@@UserID] = {
       runq { sql"""
         select person from person where email=${email}
         """.query[Int@@UserID].option

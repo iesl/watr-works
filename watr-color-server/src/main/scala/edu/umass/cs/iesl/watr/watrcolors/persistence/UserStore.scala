@@ -9,6 +9,7 @@ import cats.data.OptionT
 import edu.umass.cs.iesl.watr.workflow.UserbaseApi
 import tsec.authentication._
 import models.users._
+import TypeTags._
 
 sealed class UserStore(
   userbaseApi: UserbaseApi
@@ -17,36 +18,50 @@ sealed class UserStore(
 
 
   def put(elem: ValueType): IO[ValueType] = {
-    // userbaseApi.addUser(email: String)
-    ???
+    val userId = userbaseApi.addUser(elem.email)
+    val u: Option[User] = for {
+      person <- userbaseApi.getUser(userId)
+    } yield {
+      User(person.prKey, person.email, Username(person.email.unwrap))
+    }
+    IO(u.getOrElse { sys.error(s"could not add user ${elem.email}") })
   }
 
   def get(id: IDType): OptionT[IO, ValueType] = {
-    // OptionT(ref.get.map(_.get(id)))
-    ???
+    getById(UserID(id))
   }
 
   def update(v: ValueType): IO[ValueType] = {
-    // ref
-    //   .modify(_.updated(v.id, v))
-    //   .map(_ => 1)
     ???
 
   }
 
   def delete(id: IDType): IO[Unit] = {
-    // ref
-    //   .modify(_ - id)
-    //   .map(modified => modified.previous.size - modified.now.size)
-
    ???
   }
 
-  def exists(username: String): OptionT[IO, User] = {
-    ???
-
+  def exists(email: String@@EmailAddr): OptionT[IO, User] = {
+    getByEmail(email)
   }
-    // OptionT(ref.get.map(_.values.find(_.username == username)))
+
+  def getByEmail(email: String@@EmailAddr): OptionT[IO, User] = {
+    val userByEmail: Option[User] = for {
+      userId <- userbaseApi.getUserByEmail(email)
+      person <- userbaseApi.getUser(userId)
+    } yield {
+      User(person.prKey, person.email, Username(person.email.unwrap))
+    }
+    OptionT(IO(userByEmail))
+  }
+  def getById(userId: Int@@UserID): OptionT[IO, User] = {
+    val userByEmail: Option[User] = for {
+      person <- userbaseApi.getUser(userId)
+    } yield {
+      User(person.prKey, person.email, Username(person.email.unwrap))
+    }
+    OptionT(IO(userByEmail))
+  }
+
 }
 
 object UserStore {
