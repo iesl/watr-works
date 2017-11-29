@@ -32,11 +32,30 @@ sealed class PasswordStore(
 
     runq{
       sql"""
-         insert into person_auth (person, username, password)
-         values (${userId.unwrap}, ${username.unwrap}, ${password.toString()})
+           WITH upsert AS (
+             UPDATE person_auth
+             SET username=${username.unwrap},
+                 password=${password.toString()}
+             WHERE person = ${userId.unwrap}
+             RETURNING *
+           )
+           INSERT INTO person_auth (person, username, password)
+           SELECT ${userId.unwrap},
+                  ${username.unwrap},
+                  ${password.toString()}
+           WHERE NOT EXISTS (SELECT * FROM upsert)
       """.update.run
     }
-    IO { elem }
+    // runq{
+    //   sql"""
+    //      insert into person_auth (person, username, password)
+    //      values (${userId.unwrap}, ${username.unwrap}, ${password.toString()})
+    //   """.update.run
+    // }
+    get(userId.unwrap).getOrElse {
+      sys.error("TokenStore:put; just-inserted UUID not found")
+    }
+    // IO { elem }
   }
 
   def get(id: IDType): OptionT[IO, ValueType] = {

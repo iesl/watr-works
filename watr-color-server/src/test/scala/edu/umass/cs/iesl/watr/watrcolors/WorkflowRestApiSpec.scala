@@ -1,10 +1,8 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
-package server
 
 import corpora._
 import org.http4s._
-import org.http4s.dsl._
 import org.http4s.circe._
 import _root_.io.circe
 import circe._
@@ -15,6 +13,7 @@ import TypeTags._
 import workflow._
 
 import cats.effect.IO
+import server._
 
 class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
   behavior of "Workflow Rest API"
@@ -145,7 +144,7 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
   it should "get next workflow assignment" in new CleanDocstore {
     addSampleDocs(1)
     initUsers(2)
-    val workflows = initWorkflows(DocumentPages, 2)
+    initWorkflows(DocumentPages, 2)
 
     val expect = {
       json"""

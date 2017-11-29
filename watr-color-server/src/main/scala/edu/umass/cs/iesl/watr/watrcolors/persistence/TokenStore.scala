@@ -39,13 +39,30 @@ class TokenStore(
       extension   , // : Option[String] = None
     ) = elem
 
-    val tokenId = runq{
+    runq{
       sql"""
-         insert into token (tuuid, name, content, owner)
-         values (${id}, ${name}, ${content.toString}, ${identity})
-      """.update.withUniqueGeneratedKeys[Int]("token")
+           WITH upsert AS (
+             UPDATE token
+             SET
+               name=${name},
+               content=${content.toString()},
+               owner=${identity}
+             WHERE tuuid = ${id}
+             RETURNING *
+           )
+           INSERT INTO token (token, tuuid, name, content, owner)
+           SELECT nextval('token_token_seq'),
+                  ${id},
+                  ${name},
+                  ${content.toString()},
+                  ${identity}
+           WHERE NOT EXISTS (SELECT * FROM upsert)
+      """.update.run
     }
-    IO { getToken(TokenID(tokenId)) }
+
+    get(id).getOrElse {
+      sys.error("TokenStore:put; just-inserted UUID not found")
+    }
   }
 
   def get(id: IDType): OptionT[IO, ValueType] = {
@@ -56,11 +73,7 @@ class TokenStore(
   }
 
   def update(v: ValueType): IO[ValueType] = {
-    runq{
-      sql""" update token set content=${v.content.toString} where tuuid=${v.id} """
-        .update.run
-    }
-    IO{ v }
+    put(v)
   }
 
   def delete(id: IDType): IO[Unit] = {

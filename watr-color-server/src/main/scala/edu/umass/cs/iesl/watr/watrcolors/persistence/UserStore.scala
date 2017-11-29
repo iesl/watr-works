@@ -21,12 +21,13 @@ sealed class UserStore(
 
 
   def put(elem: ValueType): IO[ValueType] = {
-    val userId = userbaseApi.addUser(elem.email)
-    val u: Option[User] = for {
+    val userId = userbaseApi.getUserByEmail(elem.email)
+      .fold (userbaseApi.addUser(elem.email)) (id => id)
+
+    val u = for {
       person <- userbaseApi.getUser(userId)
-    } yield {
-      User(person.prKey, person.email)
-    }
+    } yield User(person.prKey, person.email)
+
     IO(u.getOrElse { sys.error(s"could not add user ${elem.email}") })
   }
 
@@ -75,5 +76,3 @@ object UserStore {
     IO(new UserStore(corpusAccessDB))
   }
 }
-
-

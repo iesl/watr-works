@@ -221,6 +221,8 @@ class CorpusAccessDBTables extends DoobieImplicits {
     DROP TABLE IF EXISTS workflow;
     DROP TABLE IF EXISTS zonelock;
     DROP TABLE IF EXISTS person;
+    DROP TABLE IF EXISTS person_auth;
+    DROP TABLE IF EXISTS token;
   """.update.run
 
 }
