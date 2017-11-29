@@ -14,6 +14,7 @@ import watrmarks.Label
 import TypeTags._
 import workflow._
 
+import cats.effect.IO
 
 class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
   behavior of "Workflow Rest API"
@@ -50,7 +51,7 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
 
   def initUsers(n: Int): Seq[Int@@UserID] = {
     0 until n map { i =>
-      userbaseApi.addUser(s"user${i}@umass.edu")
+      userbaseApi.addUser(EmailAddr(s"user${i}@umass.edu"))
     }
   }
 
@@ -61,8 +62,8 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
   initWorkflows(Authors, 2)
 
   it should "get a list of available workflows" in {
-    val req = Request(uri = Uri(path = "/workflows"))
-    val res = endpoints.orNotFound(req).as[Json].unsafeRunSync()
+    val req = Request[IO](uri = Uri(path = "/workflows"))
+    // val res = endpoints.orNotFound(req).as[Json].unsafeRunSync()
     val expect = {
       json"""
         [
@@ -89,10 +90,14 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
         ]
       """
     }
-    res.foreach { resp =>
+    endpoints.run(req).fold(
+      fail
+    )(response => {
+      val jsonResp = response.as[Json].unsafeRunSync()
       // println(resp)
-      assert(expect === resp)
-    }
+      assert(expect === jsonResp)
+
+    })
 
   }
 
@@ -111,9 +116,6 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
     workflowApi.getLockedZones(users(1)).drop(2).foreach { zoneLockId =>
       workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Skipped)
     }
-
-    val req = Request(uri = Uri(path = "/workflow/wf-VisualLine-0/report"))
-    val res = endpoints.orNotFound(req).as[Json].unsafeRunSync()
     val expect = {
       json"""
         {
@@ -130,18 +132,21 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
         }
       """
     }
-    res.foreach { resp =>
-      assert(expect === resp)
-    }
+
+    val req = Request[IO](uri = Uri(path = "/workflow/wf-VisualLine-0/report"))
+    endpoints.run(req).fold(
+      fail
+    )(response => {
+      val jsonResp = response.as[Json].unsafeRunSync()
+      assert(expect === jsonResp)
+    })
   }
 
   it should "get next workflow assignment" in new CleanDocstore {
     addSampleDocs(1)
     initUsers(2)
     val workflows = initWorkflows(DocumentPages, 2)
-    val uq = Query.fromPairs(("user", "user0@umass.edu"))
-    val req = Request(uri = Uri(path = "/workflow/wf-DocumentPages-0/assignment", query=uq))
-    val res = endpoints.orNotFound(req).as[Json].unsafeRunSync()
+
     val expect = {
       json"""
          [
@@ -197,8 +202,15 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
          ]
       """
     }
-    res.foreach { resp =>
-      assert(expect === resp)
-    }
+
+    val uq = Query.fromPairs(("user", "user0@umass.edu"))
+    val req = Request[IO](uri = Uri(path = "/workflow/wf-DocumentPages-0/assignment", query=uq))
+    endpoints.run(req).fold(
+      fail
+    )(response => {
+      val jsonResp = response.as[Json].unsafeRunSync()
+      assert(expect === jsonResp)
+    })
+
   }
 }
