@@ -93,18 +93,31 @@ object WatrTable extends App with utils.AppMainBasics {
 
 }
 
-object WatrTableCommands extends App with utils.AppMainBasics {
+object WatrMain extends App with utils.AppMainBasics {
   def run(args: Array[String]): Unit = {
     implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
 
-    corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
-    corpusAccessApi.corpusAccessDB.dropAndRecreate()
+    val argMap = argsToMap(args)
 
-    ShellCommands.segmentAll(10, 0)
+    val command = argMap.get("command").flatMap(_.headOption)
+      .getOrElse(sys.error("no command supplied (--command ...)"))
+
+    command match {
+      case "db:drop" =>
+        corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
+
+      case "db:create" =>
+        corpusAccessApi.corpusAccessDB.dropAndRecreate()
+
+      case "corpus:segment" =>
+        ShellCommands.segmentAll(10, 0)
+
+      case x =>
+        println(s"Unknown command: ${x}")
+    }
 
     corpusAccessApi.corpusAccessDB.shutdown()
   }
+
   run(args)
-
 }
-

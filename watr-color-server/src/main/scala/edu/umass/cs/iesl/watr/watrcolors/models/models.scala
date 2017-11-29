@@ -26,16 +26,11 @@ object users {
   case class User(
     id       : Int@@UserID,
     email    : String@@EmailAddr,
-    username : String@@Username,
-    // pass     : String,
-    // session  : String,
-    // roles: Seq[Role]
   )
 
-
   case class AuthInfo(
-    id: UUID,
-    parentId: Int@@UserID,
+    userId: Int@@UserID,
+    username : String@@Username,
     password: SCrypt
   )
 
@@ -64,6 +59,10 @@ object users {
   // }
 
 
+
+}
+
+object tokendata {
 
 }
 

@@ -158,13 +158,37 @@ class CorpusAccessDBTables extends DoobieImplicits {
     val create: Update0 = sql"""
       CREATE TABLE person (
         person      SERIAL PRIMARY KEY,
-        email       VARCHAR(128) NOT NULL
+        email       TEXT NOT NULL
       );
       CREATE UNIQUE INDEX person_email ON person(email);
+
+
+      CREATE TABLE person_auth (
+        person      INTEGER REFERENCES person ON DELETE CASCADE,
+        username    TEXT NOT NULL,
+        password    TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX person_auth_person ON person_auth(person);
+
+
+      CREATE TABLE token (
+        token        SERIAL PRIMARY KEY,
+        tuuid        UUID,
+        name         TEXT NOT NULL,
+        content      TEXT NOT NULL,
+        owner        INTEGER REFERENCES person ON DELETE CASCADE
+      );
+      CREATE UNIQUE INDEX token_tuuid ON token(tuuid);
+      CREATE UNIQUE INDEX token_owner ON token(owner);
+
     """.update
+    // expiry       TIMESTAMP NOT NULL,
+    // lastTouched  TIMESTAMP NOT NULL,
 
     val drop = sql"""
         DROP TABLE IF EXISTS person;
+        DROP TABLE IF EXISTS person_auth;
+        DROP TABLE IF EXISTS token;
     """.update.run
   }
 

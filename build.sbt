@@ -85,7 +85,6 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
     Lib.http4s ++
     Lib.circeJson ++
     Lib.tsec
-    // Lib.jwtCirce
   )
   .dependsOn(watrshed)
 

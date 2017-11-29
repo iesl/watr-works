@@ -35,37 +35,48 @@ case class UserAuthenticationService(
       IO.raiseError[Unit](LoginError)
 
   val signupRoute: HttpService[IO] = HttpService[IO] {
-    case request @ POST -> Root / "api" / "signup" =>
+    case request @ POST -> Root / "signup" =>
+      println(s"signup: ${request.toString()}")
+      // request.decode[SignupForm]
       val response = for {
-        signup   <- request.as[SignupForm]
-        exists   <- userStore.exists(EmailAddr(signup.email)).fold(())(_ => throw SignupError)
-        password <- F.pure(signup.password.base64Bytes.toAsciiString.hashPassword[SCrypt])
-        newUser = User(UserID(0), EmailAddr(signup.email), Username(signup.username))
-        _      <- userStore.put(newUser)
-        _      <- authStore.put(AuthInfo(UUID.randomUUID(), newUser.id, password))
-        cookie <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
-        o      <- Ok("Successfully signed up!")
-      } yield authenticator.embed(o, cookie)
+        // signup    <- request.as[SignupForm]
+        signup    <- request.attemptAs[SignupForm].fold(
+          decodeFailure => {println(s"decodeFailure: ${decodeFailure}"); throw SignupError},
+          signupForm => { signupForm }
+        )
 
+        _          = println(s"signup; $signup")
+        exists    <- userStore.exists(EmailAddr(signup.email)).fold(())(_ => throw SignupError)
+        _          = println(s"exists; $exists")
+        password  <- F.pure(signup.password.base64Bytes.toAsciiString.hashPassword[SCrypt])
+        _          = println(s"password; $password")
+        newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
+        _          = println(s"newUser; $newUser")
+        _         <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
+        cookie    <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
+        _          = println(s"cookie; $cookie")
+        response  <- Ok("Successfully signed up!")
+      } yield authenticator.embed(response, cookie)
+
+      Status.Redirection
       response
-        .handleError { _ =>
-          Response(Status.BadRequest)
-        }
+        .handleError { _ => Response(Status.BadRequest) }
   }
 
   val loginRoute: HttpService[IO] = HttpService[IO] {
-    case request @ POST -> Root / "api" / "login" =>
-      (for {
+    case request @ POST -> Root / "login" =>
+      println(s"login")
+      val response = for {
         login    <- request.as[LoginForm]
         user     <- userStore.exists(EmailAddr(login.email)).getOrRaise(LoginError)
         authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
         _        <- checkOrRaise(login.password, authInfo.password)
         cookie   <- authenticator.create(user.id.unwrap).getOrRaise(LoginError)
-        o        <- Ok()
-      } yield authenticator.embed(o, cookie))
-        .handleError { _ =>
-          Response(Status.BadRequest)
-        }
+        response <- Ok()
+      } yield authenticator.embed(response, cookie)
+
+      response
+        .handleError { _ => Response(Status.BadRequest) }
   }
 
 }

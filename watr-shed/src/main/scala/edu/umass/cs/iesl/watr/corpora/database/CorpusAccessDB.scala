@@ -358,6 +358,31 @@ class CorpusAccessDB(
         """.query[Int@@UserID].option
       }
     }
+
+    def deleteUser(userId: Int@@UserID): Unit = {
+      ???
+    }
+    def setPassword(userId:Int@@UserID, passhash: String@@PasswordHash): Unit = {
+      ???
+
+    }
+
+    def getPassword(userId:Int@@UserID): String@@PasswordHash = {
+      ???
+    }
+
+    def grantRole(userId: Int@@UserID, role: String@@Role): Unit = {
+
+      ???
+    }
+    def getRoles(userId: Int@@UserID): Seq[String@@Role] = {
+
+      ???
+    }
+    def revokeRole(userId: Int@@UserID, role: String@@Role): Unit = {
+      ???
+
+    }
   }
   object workflowApi extends WorkflowApi {
 

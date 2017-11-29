@@ -41,9 +41,13 @@ sealed trait ImageID
 sealed trait UserID
 sealed trait Username
 sealed trait Password
+sealed trait PasswordHash
 sealed trait EmailAddr
 sealed trait StatusCode
 sealed trait ShapeID
+sealed trait Role
+
+sealed trait TokenID
 
 object TypeTags extends TypeTags
 
@@ -106,17 +110,19 @@ trait TypeTags extends TypeTagUtils {
   val UserID = Tag.of[UserID]
   val EmailAddr = Tag.of[EmailAddr]
   val Username = Tag.of[Username]
+  val Role = Tag.of[Role]
   val Password = Tag.of[Password]
+  val PasswordHash = Tag.of[PasswordHash]
 
   // sealed trait StatusCode
   val StatusCode = Tag.of[StatusCode]
 
+  val TokenID = Tag.of[TokenID]
 }
 
 trait TypeTagCodecs {
   import _root_.io.circe
   import circe._
-  import circe.generic.semiauto._
 
   implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
   implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)

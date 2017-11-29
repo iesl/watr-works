@@ -1,13 +1,10 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
 
-import java.util.concurrent.Executors
 
 import cats.effect.IO
 import fs2.Stream
-// import io.circe._
-// import org.http4s._
-// import org.http4s.circe._
+
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{headers => H}
@@ -18,13 +15,13 @@ import org.http4s.util.{ ExitCode, StreamApp }
 import persistence.{PasswordStore, TokenStore, UserStore}
 import services._
 import tsec.authentication._
-import tsec.cipher.symmetric.imports.{
-  AES128,
-  // SecretKey
-}
-import models._
 
-import scala.concurrent.ExecutionContext
+import tsec.cipher.symmetric.imports.AES128
+// import models._
+
+// import scala.concurrent.ExecutionContext
+// import java.util.concurrent.Executors
+
 import scala.concurrent.duration._
 import utils.{PathUtils => P}
 import models.users._
@@ -45,7 +42,6 @@ class AllServices(
   distDir: fs.Path,
   portNum: Int
 )(
-  implicit ec: ExecutionContext
 ) extends Http4sDsl[IO] with TheServices {
 
   val assetService = resourceService(ResourceService.Config[IO](
@@ -67,11 +63,8 @@ class AllServices(
   )
 
   def htmlPage(bundleName: String, user: Option[String]): IO[Response[IO]]= {
-    Ok().flatMap { resp =>
-      resp
-        .withBody(html.Frame(bundleName).toString())
-        .putHeaders(H.`Content-Type`(MediaType.`text/html`))
-    }
+    Ok(html.Frame(bundleName).toString())
+      .map { _.putHeaders(H.`Content-Type`(MediaType.`text/html`)) }
   }
 
 
@@ -97,9 +90,9 @@ class AllServices(
 
   def buildServer() = {
     for {
-      userStore     <- UserStore.fromUserbaseApi(corpusAccessApi.userbaseApi)
-      tokenStore    <- TokenStore.apply
-      passwordStore <- PasswordStore.apply
+      userStore     <- UserStore.fromDb(corpusAccessApi.corpusAccessDB)
+      tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
+      passwordStore <- PasswordStore.fromDb(corpusAccessApi.corpusAccessDB)
       symmetricKey  <- AES128.generateLift[IO]
     } yield {
 
@@ -112,18 +105,19 @@ class AllServices(
 
       val userAuthService = UserAuthenticationService(userStore, passwordStore, authenticator)
 
+      // url: "/api/v1/auth/login",
       BlazeBuilder[IO]
         .bindHttp(portNum, "localhost")
         .mountService(CORS(jslibDistService))
         .mountService(CORS(assetService))
         .mountService(CORS(jslibDistService))
-        .mountService(CORS(userAuthService.signupRoute))
-        .mountService(CORS(userAuthService.loginRoute))
         .mountService(htmlPageService)
-        .mountService(labelingServiceEndpoints, "/api/v1/labeling")
-        .mountService(curationWorkflowEndpoints, "/api/v1/workflow")
-        .mountService(corpusArtifactEndpoints, "/api/v1/corpus/artifacts")
-        .mountService(corpusListingEndpoints, "/api/v1/corpus/entries")
+        .mountService(CORS(userAuthService.signupRoute) , "/api/v1/auth")
+        .mountService(CORS(userAuthService.loginRoute)  , "/api/v1/auth")
+        .mountService(labelingServiceEndpoints          , "/api/v1/labeling")
+        .mountService(curationWorkflowEndpoints         , "/api/v1/workflow")
+        .mountService(corpusArtifactEndpoints           , "/api/v1/corpus/artifacts")
+        .mountService(corpusListingEndpoints            , "/api/v1/corpus/entries")
       // .mountService(CORS(authedService.helloFromAuthentication))
 
 
@@ -137,7 +131,7 @@ object WiredServerMain extends StreamApp[IO] with Http4sDsl[IO] with utils.AppMa
 
 
   def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, ExitCode] = {
-    implicit val refEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
+    // implicit val refEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
     val argMap = argsToMap(args.toArray)
 
     val port = argMap.get("port").flatMap(_.headOption)
@@ -152,7 +146,7 @@ object WiredServerMain extends StreamApp[IO] with Http4sDsl[IO] with utils.AppMa
 
     val corpusAccessApi = SharedInit.initCorpusAccessApi(args.toArray)
 
-    val allServices = new AllServices(corpusAccessApi, distDir, portNum)
+    val allServices = new AllServices(corpusAccessApi, distDir, portNum)()
 
     val server = allServices.buildServer()
 
