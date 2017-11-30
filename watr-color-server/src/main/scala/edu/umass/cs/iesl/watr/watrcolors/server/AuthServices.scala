@@ -102,37 +102,7 @@ trait UserAuthenticationServices extends ServiceCommons with WorkflowCodecs { se
   //     println(s"POST: login")
   //     login.run(req)
   // }
-  // import tsec.common._
-    // import tsec.authorization._
-    // import tsec.authentication.BackingStore
-  // import tsec.common.SecureRandomId
-  // import tsec.mac.imports.HMACSHA256
-  // import tsec.authentication.credentials.{RawCredentials, SCryptPasswordStore}
-  // import tsec.passwordhashers._
-  // import tsec.passwordhashers.imports._
 
-  // private def checkOrRaise(rawFromLogin: String, hashed: SCrypt): IO[Unit] = {
-
-  //   if (rawFromLogin.base64Bytes.toAsciiString.checkWithHash(hashed))
-  //     IO.unit
-  //   else
-  //     IO.raiseError[Unit](LoginForm.LoginError)
-  // }
-
-  // val loginRoute: HttpService[IO] = HttpService[IO] {
-  //   case request @ POST -> Root / "api" / "login" =>
-  //     (for {
-  //       login    <- request.as[LoginForm]
-  //       user     <- userStore.exists(login.username).getOrRaise(LoginForm.LoginError)
-  //       authInfo <- authStore.get(user.id).getOrRaise(LoginForm.LoginError)
-  //       _        <- checkOrRaise(login.password, authInfo.password)
-  //       cookie   <- authenticator.create(user.id).getOrRaise(LoginError)
-  //       o        <- Ok()
-  //     } yield authenticator.embed(o, cookie))
-  //       .handleError { _ =>
-  //         Response(Status.BadRequest)
-  //       }
-  // }
 
 }
 

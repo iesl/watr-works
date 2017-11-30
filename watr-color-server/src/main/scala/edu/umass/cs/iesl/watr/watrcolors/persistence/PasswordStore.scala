@@ -60,7 +60,7 @@ sealed class PasswordStore(
 
   def get(id: IDType): OptionT[IO, ValueType] = {
     val res = runq{
-      sql""" select person, username, password from person_auth """
+      sql""" select person, username, password from person_auth where person=${id} """
         .query[(Int, String, String)]
         .map{ case (userId, username, password) =>
           AuthInfo(UserID(userId), Username(username), SCrypt.fromString(password))

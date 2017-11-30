@@ -2,11 +2,13 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package services
 
-import java.util.UUID
 import cats.effect.{Effect, IO}
-import org.http4s.{HttpService, Response, Status}
+import org.http4s.{
+  HttpService,
+  Response,
+  Status
+}
 import org.http4s.dsl.Http4sDsl
-import models._
 import tsec.passwordhashers._
 import tsec.passwordhashers.imports._
 import cats.syntax.all._
@@ -29,32 +31,34 @@ case class UserAuthenticationService(
     extends Http4sDsl[IO] {
 
   private def checkOrRaise(rawFromLogin: String, hashed: SCrypt): IO[Unit] =
-    if (rawFromLogin.base64Bytes.toAsciiString.checkWithHash(hashed))
-      IO.unit
-    else
-      IO.raiseError[Unit](LoginError)
+    if (rawFromLogin.checkWithHash(hashed)) IO.unit
+    else IO.raiseError[Unit](LoginError)
+
+  // val forbidOnFailure: AuthedService[String, IO] = AuthedService.lift(req => Forbidden(req.authInfo))
+  val Auth = SecuredRequestHandler(authenticator)
+
 
   val signupRoute: HttpService[IO] = HttpService[IO] {
     case request @ POST -> Root / "signup" =>
       println(s"signup: ${request.toString()}")
-      // request.decode[SignupForm]
+
       val response = for {
-        // signup    <- request.as[SignupForm]
+
         signup    <- request.attemptAs[SignupForm].fold(
           decodeFailure => {println(s"decodeFailure: ${decodeFailure}"); throw SignupError},
           signupForm => { signupForm }
         )
 
-        _          = println(s"signup; $signup")
+        // _         <- F.pure( println(s"signup; $signup"))
         exists    <- userStore.exists(EmailAddr(signup.email)).fold(())(_ => throw SignupError)
-        _          = println(s"exists; $exists")
-        password  <- F.pure(signup.password.base64Bytes.toAsciiString.hashPassword[SCrypt])
-        _          = println(s"password; $password")
+        // _         <- F.pure(println(s"exists; $exists"))
+        password  <- F.pure(signup.password.hashPassword[SCrypt])
+        // _         <- F.pure(println(s"password; $password"))
         newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
-        _          = println(s"newUser; $newUser")
+        // _         <- F.pure( println(s"newUser; $newUser") )
         _         <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
         cookie    <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
-        _          = println(s"cookie; $cookie")
+        // _         <- F.pure( println(s"cookie; $cookie") )
         response  <- Ok("Successfully signed up!")
       } yield authenticator.embed(response, cookie)
 
@@ -68,15 +72,36 @@ case class UserAuthenticationService(
       println(s"login")
       val response = for {
         login    <- request.as[LoginForm]
-        user     <- userStore.exists(EmailAddr(login.email)).getOrRaise(LoginError)
+        // _         = println(s"login; $login")
+        user     <- userStore.getByEmail(EmailAddr(login.email)).getOrRaise(LoginError)
+        // _         = println(s"user; $user")
         authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
+        // _         = println(s"authInfo; $authInfo")
         _        <- checkOrRaise(login.password, authInfo.password)
         cookie   <- authenticator.create(user.id.unwrap).getOrRaise(LoginError)
+        // _         = println(s"cookie; $cookie")
         response <- Ok()
       } yield authenticator.embed(response, cookie)
 
       response
         .handleError { _ => Response(Status.BadRequest) }
+  }
+
+
+
+  val authedUserRoutes = Auth {
+    case GET -> Root / "status" asAuthed user =>
+      Ok(s"User ${user.email} is logged in.")
+
+    case request @ GET -> Root / "logout" asAuthed user =>
+      val r: SecuredRequest[IO, User, AuthEncryptedCookie[AES128, Int]] = request
+
+
+      import org.http4s.Uri
+      import org.http4s.headers.Location
+
+      authenticator.discard(r.authenticator)
+      TemporaryRedirect(Location(Uri.unsafeFromString("/")))
   }
 
 }

@@ -25,7 +25,9 @@ class TokenStore(
   }
 
   def put(elem: ValueType): IO[ValueType] = {
-   val AuthEncryptedCookie(
+    // println(s"TokenStore:put(${elem})")
+
+    val AuthEncryptedCookie(
       id          , // : UUID,
       name        , // : String,
       content     , // : AEADCookie[A]=String ,
@@ -44,10 +46,10 @@ class TokenStore(
            WITH upsert AS (
              UPDATE token
              SET
+               tuuid=${id},
                name=${name},
-               content=${content.toString()},
-               owner=${identity}
-             WHERE tuuid = ${id}
+               content=${content.toString()}
+             WHERE owner = ${identity}
              RETURNING *
            )
            INSERT INTO token (token, tuuid, name, content, owner)

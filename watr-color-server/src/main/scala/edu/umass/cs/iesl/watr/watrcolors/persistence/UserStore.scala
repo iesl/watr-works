@@ -5,7 +5,7 @@ package persistence
 // import java.util.UUID
 
 import cats.effect.IO
-import cats.data.OptionT
+import cats.data._
 import tsec.authentication._
 import models.users._
 import TypeTags._
@@ -37,7 +37,6 @@ sealed class UserStore(
 
   def update(v: ValueType): IO[ValueType] = {
     ???
-
   }
 
   def delete(id: IDType): IO[Unit] = {
@@ -48,22 +47,32 @@ sealed class UserStore(
     getByEmail(email)
   }
 
+
+  // def create(email: String@@EmailAddr): EitherT[IO, Unit, User] = {
+  //   val asdf: Either[IO[Unit], IO[User]] = getByEmail(email).fold(
+  //     Right[Unit, User](put(User(UserID(0), email)))
+  //   )(u => Left[Unit, User](IO((): Unit)))
+  //   // getByEmail(email).toLeft(right=())
+  //   ???
+  // }
+
   def getByEmail(email: String@@EmailAddr): OptionT[IO, User] = {
-    val userByEmail: Option[User] = for {
+    val u: Option[User] = for {
       userId <- userbaseApi.getUserByEmail(email)
       person <- userbaseApi.getUser(userId)
     } yield {
       User(person.prKey, person.email)
     }
-    OptionT(IO(userByEmail))
+    OptionT(IO(u))
   }
+
   def getById(userId: Int@@UserID): OptionT[IO, User] = {
-    val userByEmail: Option[User] = for {
+    val u: Option[User] = for {
       person <- userbaseApi.getUser(userId)
     } yield {
       User(person.prKey, person.email)
     }
-    OptionT(IO(userByEmail))
+    OptionT(IO(u))
   }
 
 }

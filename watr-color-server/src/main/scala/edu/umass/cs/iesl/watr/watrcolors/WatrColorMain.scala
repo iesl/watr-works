@@ -105,7 +105,6 @@ class AllServices(
 
       val userAuthService = UserAuthenticationService(userStore, passwordStore, authenticator)
 
-      // url: "/api/v1/auth/login",
       BlazeBuilder[IO]
         .bindHttp(portNum, "localhost")
         .mountService(CORS(jslibDistService))
