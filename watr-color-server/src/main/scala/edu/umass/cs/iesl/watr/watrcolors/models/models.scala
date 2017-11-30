@@ -19,7 +19,6 @@ import geometry._
 
 import circe.generic.auto._
 import corpora.{RelationModel => R}
-// import circe.generic.semiauto._
 
 object users {
 
@@ -57,9 +56,6 @@ object users {
   //   protected val values: AuthGroup[Role] = AuthGroup(Administrator, Curator, Labeler)
   //   val orElse: Role                      = CorruptedData
   // }
-
-
-
 }
 
 object tokendata {

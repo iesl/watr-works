@@ -18,10 +18,34 @@ import cats.effect._
 
 import corpora.filesys._
 
-// import geometry._
-// import watrmarks.Label
 
 import models._
+import persistence.{PasswordStore, UserStore}
+import tsec.authentication._
+import tsec.cipher.symmetric.imports.AES128
+import models.users._
+import scala.concurrent.duration._
+
+trait AuthenticationHandlers extends Http4sDsl[IO] {
+  def userStore: UserStore
+  def authStore: PasswordStore
+
+  val authenticatorSettings = TSecCookieSettings("tsec-auth", secure = false, httpOnly = true,
+    expiryDuration = 1.hour, //   scala.concurrent.duration.FiniteDuration,
+    maxIdle = Some(1.hour) //  Option[scala.concurrent.duration.FiniteDuration]
+  )
+
+  def symmetricKey = AES128.generateKeyUnsafe()
+
+  lazy val authenticator: EncryptedCookieAuthenticator[IO, Int, User, AES128] =
+    EncryptedCookieAuthenticator.stateless[IO, Int, User, AES128](
+      authenticatorSettings,
+      userStore,
+      symmetricKey
+    )
+
+  lazy val Auth = SecuredRequestHandler(authenticator)
+}
 
 trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs { self =>
 
@@ -32,9 +56,6 @@ trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs { self =>
   lazy val docStore = corpusAccessApi.docStore
   lazy val corpus: Corpus = corpusAccessApi.corpus
 
-  // lazy val userStore = new UserBackingStore(userbaseApi)
-  // lazy val jwtStore = new JWTBackingStore()
-  // def authStore: PasswordStore[IO, Int, User]
 
   object UserQP extends QueryParamDecoderMatcher[String]("user")
   object ZoneQP extends QueryParamDecoderMatcher[Int]("zone")
@@ -61,17 +82,7 @@ trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs { self =>
     res
   }
 
-  //   jsonOf[IO, T].decode(req, strict=true)
-  //     .attempt.fold(t => {
-  //       t match {
-  //         case Left(x) =>
-  //           println(s"Error: ${t}")
-  //           println(s"Error: ${t.getCause}")
-  //           println(s"Error: ${t.getMessage}")
-  //         // sys.error(s"${t}")
-  //         case Right(y) =>
-  //       }
-  //     }, ss => ss)
-
 }
 
+
+trait AuthenticatedService extends ServiceCommons with AuthenticationHandlers

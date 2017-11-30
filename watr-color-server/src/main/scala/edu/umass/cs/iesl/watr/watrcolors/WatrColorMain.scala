@@ -3,7 +3,6 @@ package watrcolors
 
 
 import cats.effect.IO
-import fs2.Stream
 
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
@@ -12,24 +11,23 @@ import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.server.staticcontent._
 import org.http4s.server.middleware.{CORS, CORSConfig}
 import org.http4s.util.{ ExitCode, StreamApp }
-import persistence.{PasswordStore, TokenStore, UserStore}
+import persistence.{PasswordStore, UserStore}
 import services._
-import tsec.authentication._
+// import tsec.authentication._
 
-import tsec.cipher.symmetric.imports.AES128
+// import tsec.cipher.symmetric.imports.AES128
 // import models._
 
 // import scala.concurrent.ExecutionContext
 // import java.util.concurrent.Executors
 
-import scala.concurrent.duration._
 import utils.{PathUtils => P}
-import models.users._
 import edu.umass.cs.iesl.watr.table._
 import ammonite.{ops => fs}
 
 import server._
 import corpora._
+import services._
 
 trait TheServices extends LabelingServices
     with CurationWorkflowServices
@@ -57,10 +55,6 @@ class AllServices(
     maxAge = 100000
   )
 
-  val authenticatorSettings = TSecCookieSettings("tsec-auth", secure = false, httpOnly = true,
-    expiryDuration = 1.hour, //   scala.concurrent.duration.FiniteDuration,
-    maxIdle = Some(1.hour) //  Option[scala.concurrent.duration.FiniteDuration]
-  )
 
   def htmlPage(bundleName: String, user: Option[String]): IO[Response[IO]]= {
     Ok(html.Frame(bundleName).toString())
@@ -82,6 +76,11 @@ class AllServices(
       // case req @ POST -> Root / "login" =>
       //   logInService(req)
   }
+  lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
+  lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
+
+  // tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
+
 
   val jslibDistService = fileService(FileService.Config[IO](
     systemPath = distDir.toString(),
@@ -89,39 +88,18 @@ class AllServices(
   ))
 
   def buildServer() = {
-    for {
-      userStore     <- UserStore.fromDb(corpusAccessApi.corpusAccessDB)
-      tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
-      passwordStore <- PasswordStore.fromDb(corpusAccessApi.corpusAccessDB)
-      symmetricKey  <- AES128.generateLift[IO]
-    } yield {
-
-      val authenticator = EncryptedCookieAuthenticator.withBackingStore[IO, Int, User, AES128](
-        authenticatorSettings,
-        tokenStore,
-        userStore,
-        symmetricKey
-      )
-
-      val userAuthService = UserAuthenticationService(userStore, passwordStore, authenticator)
-
-      BlazeBuilder[IO]
-        .bindHttp(portNum, "localhost")
-        .mountService(CORS(jslibDistService))
-        .mountService(CORS(assetService))
-        .mountService(CORS(jslibDistService))
-        .mountService(htmlPageService)
-        .mountService(CORS(userAuthService.signupRoute) , "/api/v1/auth")
-        .mountService(CORS(userAuthService.loginRoute)  , "/api/v1/auth")
-        .mountService(labelingServiceEndpoints          , "/api/v1/labeling")
-        .mountService(curationWorkflowEndpoints         , "/api/v1/workflow")
-        .mountService(corpusArtifactEndpoints           , "/api/v1/corpus/artifacts")
-        .mountService(corpusListingEndpoints            , "/api/v1/corpus/entries")
-      // .mountService(CORS(authedService.helloFromAuthentication))
-
-
-
-    }
+    BlazeBuilder[IO]
+      .bindHttp(portNum, "localhost")
+      .mountService(CORS(jslibDistService))
+      .mountService(CORS(assetService))
+      .mountService(CORS(jslibDistService))
+      .mountService(htmlPageService)
+      .mountService(CORS(signupRoute)                 , "/api/v1/auth")
+      .mountService(CORS(loginRoute)                  , "/api/v1/auth")
+      .mountService(labelingServiceEndpoints          , "/api/v1/labeling")
+      .mountService(curationWorkflowEndpoints         , "/api/v1/workflow")
+      .mountService(corpusArtifactEndpoints           , "/api/v1/corpus/artifacts")
+      .mountService(corpusListingEndpoints            , "/api/v1/corpus/entries")
 
   }
 }
@@ -149,8 +127,9 @@ object WiredServerMain extends StreamApp[IO] with Http4sDsl[IO] with utils.AppMa
 
     val server = allServices.buildServer()
 
+    server.serve
 
-    Stream.eval(server).flatMap(_.serve)
+    // Stream.eval(server).flatMap(_.serve)
   }
 
 }

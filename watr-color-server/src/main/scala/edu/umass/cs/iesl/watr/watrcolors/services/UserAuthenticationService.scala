@@ -23,20 +23,23 @@ import LoginForm.LoginError
 import SignupForm.SignupError
 import TypeTags._
 
-case class UserAuthenticationService(
-  userStore: UserStore,
-  authStore: PasswordStore,
-  authenticator: EncryptedCookieAuthenticator[IO, Int, User, AES128]
-)(implicit F: Effect[IO])
-    extends Http4sDsl[IO] {
+
+import server._
+
+// case class UserAuthenticationService(
+//   // userStore: UserStore,
+//   // authStore: PasswordStore,
+//   // authenticator: EncryptedCookieAuthenticator[IO, Int, User, AES128]
+// )(implicit F: Effect[IO]) extends Http4sDsl[IO] with ServiceCommons {
+
+trait UserAuthenticationServices extends AuthenticatedService {
 
   private def checkOrRaise(rawFromLogin: String, hashed: SCrypt): IO[Unit] =
     if (rawFromLogin.checkWithHash(hashed)) IO.unit
     else IO.raiseError[Unit](LoginError)
 
   // val forbidOnFailure: AuthedService[String, IO] = AuthedService.lift(req => Forbidden(req.authInfo))
-  val Auth = SecuredRequestHandler(authenticator)
-
+  // val Auth = SecuredRequestHandler(authenticator)
 
   val signupRoute: HttpService[IO] = HttpService[IO] {
     case request @ POST -> Root / "signup" =>
@@ -49,16 +52,11 @@ case class UserAuthenticationService(
           signupForm => { signupForm }
         )
 
-        // _         <- F.pure( println(s"signup; $signup"))
         exists    <- userStore.exists(EmailAddr(signup.email)).fold(())(_ => throw SignupError)
-        // _         <- F.pure(println(s"exists; $exists"))
-        password  <- F.pure(signup.password.hashPassword[SCrypt])
-        // _         <- F.pure(println(s"password; $password"))
+        password  <- IO.pure(signup.password.hashPassword[SCrypt])
         newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
-        // _         <- F.pure( println(s"newUser; $newUser") )
         _         <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
         cookie    <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
-        // _         <- F.pure( println(s"cookie; $cookie") )
         response  <- Ok("Successfully signed up!")
       } yield authenticator.embed(response, cookie)
 
@@ -71,14 +69,10 @@ case class UserAuthenticationService(
       println(s"login")
       val response = for {
         login    <- request.as[LoginForm]
-        // _         = println(s"login; $login")
         user     <- userStore.getByEmail(EmailAddr(login.email)).getOrRaise(LoginError)
-        // _         = println(s"user; $user")
         authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
-        // _         = println(s"authInfo; $authInfo")
         _        <- checkOrRaise(login.password, authInfo.password)
         cookie   <- authenticator.create(user.id.unwrap).getOrRaise(LoginError)
-        // _         = println(s"cookie; $cookie")
         response <- Ok()
       } yield authenticator.embed(response, cookie)
 

@@ -80,26 +80,31 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
     maxIdle = Some(1.hour) //  Option[scala.concurrent.duration.FiniteDuration]
   )
 
-  def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(reflowDB, null)
 
-  def userAuthService(): UserAuthenticationService = {
-    val io = for {
-      userStore     <- UserStore.fromDb(corpusAccessApi.corpusAccessDB)
-      // tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
-      passwordStore <- PasswordStore.fromDb(corpusAccessApi.corpusAccessDB)
-      symmetricKey  <- AES128.generateLift[IO]
-    } yield {
+  def userAuthService() = new UserAuthenticationServices {
 
-      val authenticator = EncryptedCookieAuthenticator.stateless[IO, Int, User, AES128](
-        authenticatorSettings,
-        userStore,
-        symmetricKey
-      )
+    def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(reflowDB, null)
 
-      UserAuthenticationService(userStore, passwordStore, authenticator)
-    }
+    lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
+    lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
 
-    io.unsafeRunSync()
+    // val io = for {
+    //   userStore     <- UserStore.fromDb(corpusAccessApi.corpusAccessDB)
+    //   // tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
+    //   passwordStore <- PasswordStore.fromDb(corpusAccessApi.corpusAccessDB)
+    //   symmetricKey  <- AES128.generateLift[IO]
+    // } yield {
+
+    //   val authenticator = EncryptedCookieAuthenticator.stateless[IO, Int, User, AES128](
+    //     authenticatorSettings,
+    //     userStore,
+    //     symmetricKey
+    //   )
+
+    //   // UserAuthenticationService(userStore, passwordStore, authenticator)
+    // }
+
+    // io.unsafeRunSync()
   }
 
   def loginFormJson(name: String) = { json""" { "email": ${name+"@x.com"}, "password": ${name+"-psswd"} } """ }
