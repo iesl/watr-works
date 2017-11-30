@@ -100,7 +100,7 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
 
   }
 
-  it should "get workflow report" in new CleanDocstore {
+  it should "get workflow report" in new EmptyDatabase {
     addSampleDocs(3) // 9 zones/doc, so 27 total zones
     val users = initUsers(2)
     val workflows = initWorkflows(VisualLine, 2)
@@ -141,7 +141,7 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
     })
   }
 
-  it should "get next workflow assignment" in new CleanDocstore {
+  it should "get next workflow assignment" in new EmptyDatabase {
     addSampleDocs(1)
     initUsers(2)
     initWorkflows(DocumentPages, 2)

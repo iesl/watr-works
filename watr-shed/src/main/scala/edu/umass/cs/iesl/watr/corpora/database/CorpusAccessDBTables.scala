@@ -179,8 +179,13 @@ class CorpusAccessDBTables extends DoobieImplicits {
       CREATE UNIQUE INDEX token_owner ON token(owner);
 
     """.update
-    // expiry       TIMESTAMP NOT NULL,
-    // lastTouched  TIMESTAMP NOT NULL,
+    // expiry       null,
+    //   lastTouched  None,
+    //   secure       true,
+    //   httpOnly     true,
+    //   domain        None,
+    //   path          None,
+    //   extension     None
 
     val drop = sql"""
         DROP TABLE IF EXISTS person;

@@ -9,7 +9,7 @@ class DocumentZoningApiTest extends DatabaseTest {
 
   behavior of "database-backed corpus"
 
-  // it should "run default tests" in new CleanDocstore {
+  // it should "run default tests" in new EmptyDatabase {
   //   addSampleDoc(MockPapers.sample_4pg_3x3_doc)
 
   //   val stableId = DocumentID("doc#0")
@@ -46,7 +46,7 @@ class DocumentZoningApiTest extends DatabaseTest {
 
   // }
 
-  it should "export and reimport zones" in new CleanDocstore {
+  it should "export and reimport zones" in new EmptyDatabase {
     addSampleDoc(MockPapers.sample_4pg_3x3_doc)
 
     val stableId = DocumentID("doc#0")

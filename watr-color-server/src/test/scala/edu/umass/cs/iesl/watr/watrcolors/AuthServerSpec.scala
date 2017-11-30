@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package services
 
-
 import org.http4s
 import org.http4s._
 // import org.http4s.syntax._
@@ -22,11 +21,56 @@ import tsec.cipher.symmetric.imports.AES128
 import scala.concurrent.duration._
 
 import org.scalatest._
-// import org.http4s.headers.{Authorization, `Content-Type`, `X-Forwarded-For`}
-// import org.http4s.headers
-import scala.collection.JavaConverters._
 
 import java.net.HttpCookie
+
+import scala.concurrent.duration._
+
+class MockCookieJar {
+
+  var responseCookies: List[Cookie] = Nil
+
+  def httpCookiesToHttp4s(cs: List[HttpCookie]): List[Cookie] = {
+    cs.map{httpCookie =>
+
+      Cookie(
+        httpCookie.getName,
+        httpCookie.getValue,
+        expires=Some(HttpDate.now),
+        // maxAge=Some(httpCookie.getMaxAge),
+        // domain=Some(httpCookie.getDomain),
+        // path=Some(httpCookie.getPath),
+        httpOnly=httpCookie.isHttpOnly(),
+        secure=httpCookie.getSecure
+      )
+    }
+  }
+
+  def updateCookies(r: Response[IO]): Unit = {
+    responseCookies = r.cookies
+
+    // val setCookieHdrs = r.headers.get("Set-Cookie".ci)
+    // val authCookie = setCookieHdrs.toList.flatMap{ h =>
+    //   HttpCookie.parse(h.value).asScala
+    // }
+    // responseCookies = responseCookies ++ httpCookiesToHttp4s(authCookie)
+  }
+
+  def addCookies(req: Request[IO]): Request[IO] = {
+    responseCookies.foldLeft(req)({case (racc, celem) =>
+      req.addCookie(celem.name, celem.content, celem.expires)
+    })
+  }
+
+  def debugPrint(hdr: String): String = {
+    val cookieStr = responseCookies.map { c =>
+      c.toString()
+    }.mkString("{\n  ", "\n  ", "\n}")
+
+    s"${hdr}: Cookie jar state==========\n" + cookieStr
+  }
+
+}
 
 class AuthenticationSpec extends DatabaseFreeSpec  {
 
@@ -41,14 +85,13 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
   def userAuthService(): UserAuthenticationService = {
     val io = for {
       userStore     <- UserStore.fromDb(corpusAccessApi.corpusAccessDB)
-      tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
+      // tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
       passwordStore <- PasswordStore.fromDb(corpusAccessApi.corpusAccessDB)
       symmetricKey  <- AES128.generateLift[IO]
     } yield {
 
-      val authenticator = EncryptedCookieAuthenticator.withBackingStore[IO, Int, User, AES128](
+      val authenticator = EncryptedCookieAuthenticator.stateless[IO, Int, User, AES128](
         authenticatorSettings,
-        tokenStore,
         userStore,
         symmetricKey
       )
@@ -59,58 +102,32 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
     io.unsafeRunSync()
   }
 
-  case class MockCookieJar(
-    var cookies: List[HttpCookie] = List()
-  ) {
-
-    // var authCookieHdr: Option[Header] = None
-    // var authCookie: List[HttpCookie] = List()
-    // authCookie = authCookieHdr.toList.flatMap{ h =>
-    //   HttpCookie.parse(h.value).asScala
-    // }
-    // authCookie.foreach({c =>
-    //   println(s"> ${c.getName}, ${c.getValue}")
-    //   println(s">== ${c} ")
-    //   println()
-    // })
-
-    def httpCookies(): List[Cookie] = {
-      cookies.map{httpCookie =>
-        Cookie(
-          httpCookie.getName,
-          httpCookie.getValue,
-          None
-        )
-      }
-    }
-  }
-
-
   def loginFormJson(name: String) = { json""" { "email": ${name+"@x.com"}, "password": ${name+"-psswd"} } """ }
   def loginForm(name: String) = { loginFormJson(name).noSpaces }
   def signupForm(name: String) = {  loginFormJson(name).deepMerge(json""" { "username": ${name} } """).noSpaces }
 
   def doPost(url: String)(implicit cj: MockCookieJar) = {
-    addCookies(Request[IO](Method.POST, uri = Uri(path = url)), cj)
+    cj.addCookies(Request[IO](Method.POST, uri = Uri(path = url)))
   }
 
   def doGet(url: String)(implicit cj: MockCookieJar) = {
-    addCookies(Request[IO](Method.GET, uri = Uri(path = url)), cj)
-  }
-
-  def addCookies(req: Request[IO], cj: MockCookieJar): Request[IO] = {
-    cj.httpCookies().foldLeft(req)({case (racc, celem) =>
-      req.addCookie(celem.name, celem.content, celem.expires)
-    })
+    cj.addCookies(Request[IO](Method.GET, uri = Uri(path = url)))
   }
 
   def signupReq(name: String)(implicit cj: MockCookieJar): Request[IO] = doPost("/signup").withBody(signupForm(name)).unsafeRunSync()
   def loginReq(name: String)(implicit cj: MockCookieJar): Request[IO] = doPost("/login").withBody(loginForm(name)).unsafeRunSync()
   def logoutReq()(implicit cj: MockCookieJar): Request[IO] = doGet("/logout")
 
+  def statusReq()(implicit cj: MockCookieJar): Request[IO] = doGet("/status")
+
   def checkResponse(r: OptionT[IO, Response[IO]], checks: (Response[IO] => Unit)*)(implicit cj: MockCookieJar) = {
+
     r.fold(fail("no response")){ resp =>
       checks.foreach { check => check(resp) }
+      // Put any headers from response into cookie jar
+      cj.updateCookies(resp)
+
+
     }.unsafeRunSync()
   }
 
@@ -118,12 +135,20 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
     r => r.status shouldEqual s
 
   def hasHeader(hdr: String): Response[IO] => Unit =
-    r => r.headers.get(hdr.ci).isDefined
+    r => assert(r.headers.get(hdr.ci).isDefined)
 
   def tapWith(f: Response[IO] => Unit): Response[IO] => Unit = r => f(r)
   def tapWith(f: => Unit): Response[IO] => Unit = _ => f
 
-  // doGet("").addCookie(name: String, content: String, expires: Option[HttpDate])
+
+
+
+  ///////////////////////////////
+  ///////////////////////////
+
+
+
+
   "Behavior of Authorization" - {
 
     "When Not Registered" - {
@@ -131,28 +156,32 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
       val authService = userAuthService()
 
 
-      "Should Permit Signup" in new CleanDocstore {
+      "Should Permit Signup" in new EmptyDatabase {
+        implicit val cookieJar  = new MockCookieJar()
 
-        implicit val cookieJar  = MockCookieJar()
+        checkResponse(authService.signupRoute(signupReq("Morgan")),
+          hasStatus(Status.Ok),
+          hasHeader("Set-Cookie"))
+      }
 
-        val req = signupReq("Morgan")
+      "Allow Login After Signup" in new EmptyDatabase {
+        implicit val cookieJar  = new MockCookieJar()
 
-        checkResponse(authService.signupRoute(req), {resp =>
-          resp.status shouldEqual Status.Ok
+        checkResponse(authService.signupRoute(signupReq("Morgan")))
 
-          val cookieHeader = resp.headers.get("Set-Cookie".ci)
-          assert(cookieHeader.isDefined)
-        })
+        checkResponse(authService.loginRoute(loginReq("Morgan")),
+          hasStatus(Status.Ok)
+        )
 
       }
 
-      "Should Block Unregistered Login" in {
-        implicit val cookieJar  = MockCookieJar()
-        val req = loginReq("Oliver")
+      "Should Block Unregistered Login" in new EmptyDatabase {
+        implicit val cookieJar  = new MockCookieJar()
 
-        checkResponse(authService.loginRoute(req), {resp =>
-          resp.status shouldEqual Status.BadRequest
-        })
+        checkResponse(
+          authService.loginRoute(loginReq("Oliver")),
+          hasStatus(Status.BadRequest)
+        )
 
       }
     }
@@ -161,139 +190,73 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
 
     "When Registered" - {
 
-      "When Not Logged In" - {
+      "Should Block Duplicate Registration" in new EmptyDatabase {
+        implicit val cookieJar = new MockCookieJar()
+        val authService = userAuthService()
 
-        "Should redirect to login/signup" in {
+        checkResponse(authService.signupRoute(signupReq("Morgan")),
+          hasStatus(Status.Ok))
 
-        }
+        checkResponse(authService.signupRoute(signupReq("Morgan")),
+          hasStatus(Status.BadRequest))
 
-        implicit val cookieJar  = MockCookieJar()
+        info("Still block dup. reg. after logout")
+        checkResponse(authService.authedUserRoutes(logoutReq()))
+
+        checkResponse(authService.signupRoute(signupReq("Morgan")),
+          hasStatus(Status.BadRequest))
+      }
+
+      "When Logged In" - {
+        implicit val cookieJar = new MockCookieJar()
 
         val authService = userAuthService()
 
-        "After Signup" in new CleanDocstore {
 
-          checkResponse(authService.signupRoute(signupReq("Morgan")),
-            hasHeader("Set-Cookie"),
-            tapWith(info("should be logged in"))
-          )
+        "Allow logout, re-login, and authorized/unauthorized status codes as appropriate" in new EmptyDatabase {
+          // info(cookieJar.debugPrint("New Cookie Jar"))
 
-        }
+          checkResponse(authService.signupRoute(signupReq("Morgan")))
 
-        "Should Block Duplicate Signup" in {
-          checkResponse(authService.signupRoute(signupReq("Morgan")),
-            hasStatus(Status.BadRequest)
-          )
-        }
+          checkResponse(authService.authedUserRoutes(logoutReq()),
+            hasStatus(Status.Ok))
 
-        "After Logout" - {
-          checkResponse(authService.authedUserRoutes(logoutReq()), { resp =>
-            info(s"After Logout: ${resp}")
-          })
-        }
-
-        "Should Permit Login" in {
+          checkResponse(authService.authedUserRoutes(statusReq()),
+            hasStatus(Status.Unauthorized))
 
           checkResponse(authService.loginRoute(loginReq("Morgan")),
-            hasStatus(Status.Ok)
-          )
+            hasStatus(Status.Ok))
+
+          checkResponse(authService.authedUserRoutes(statusReq()),
+            tapWith( r => info(s"Status (login): ${r.as[String]}") ),
+            hasStatus(Status.Ok))
         }
 
       }
+
+      "When Not Logged In" - {
+
+        implicit val cookieJar = new MockCookieJar()
+        val authService = userAuthService()
+
+        "Should return Unauthorized status" in {
+
+          checkResponse(authService.authedUserRoutes(statusReq()),
+            hasStatus(Status.Unauthorized))
+
+        }
+
+
+
+      }
     }
-
-    "When Logged In" - {
-
-    }
-
-
   }
 
 
-
-
-
-  // val service = AuthedService[String, IO] {
-  //   case GET -> Root as user => Ok(user)
-  //   case req as _ => Response.notFound(req)
-  // }
-
-  // behavior of "Failure to authenticate"
-
-  // it should "not run unauthorized routes" in {
-  //   val req = Request(uri = Uri(path = "/launch-the-nukes"))
-  //   var isNuked = false
-  //   val authedValidateNukeService = BasicAuth(realm, validatePassword _)(nukeService { isNuked = true })
-  //   val res = authedValidateNukeService.orNotFound(req).unsafeRunSync()
-  //   isNuked shouldEqual false
-  //   val response = res.right.get
-
-  //   response.status shouldEqual (Unauthorized)
-  // }
-
-  // behavior of "BasicAuthentication"
-
-  // val basicAuthedService = BasicAuth(realm, validatePassword _)(service)
-
+  // "Should return Forbidden status" in {}
   // it should "Respond to a request without authentication with 401" in {
-  //   val req = Request(uri = Uri(path = "/"))
-  //   val res = basicAuthedService.orNotFound(req).unsafeRunSync
-
-  //   val response = res.right.get
-
-  //   response.status shouldEqual (Unauthorized)
-  //   response.headers.get(`WWW-Authenticate`).map(_.value) shouldEqual (Some(Challenge("Basic", realm, Nil.toMap).toString))
-  // }
-
   // it should "Respond to a request with unknown username with 401" in {
-  //   val req = Request(uri = Uri(path = "/"), headers = Headers(Authorization(BasicCredentials("Wrong User", password))))
-  //   val res = basicAuthedService.orNotFound(req).unsafeRunSync
-
-  //   val response = res.right.get
-
-  //   response.status shouldEqual (Unauthorized)
-  //   response.headers.get(`WWW-Authenticate`).map(_.value) shouldEqual (Some(Challenge("Basic", realm, Nil.toMap).toString))
-  // }
-
+  // it should "not run unauthorized routes" in {
   // it should "Respond to a request with wrong password with 401" in {
-  //   val req = Request(uri = Uri(path = "/"), headers = Headers(Authorization(BasicCredentials(username, "Wrong Password"))))
-  //   val res = basicAuthedService.orNotFound(req).unsafeRunSync
-
-  //   val response = res.right.get
-
-  //   response.status shouldEqual (Unauthorized)
-  //   response.headers.get(`WWW-Authenticate`).map(_.value) shouldEqual (Some(Challenge("Basic", realm, Nil.toMap).toString))
-  // }
-
-  // it should "Respond to a request with correct credentials" in {
-  //   val req = Request(uri = Uri(path = "/"), headers = Headers(Authorization(BasicCredentials(username, password))))
-  //   val res = basicAuthedService.orNotFound(req).unsafeRunSync
-
-  //   val response = res.right.get
-
-  //   response.status shouldEqual (Ok)
-  // }
-
-  // private def parse(value: String) = HttpHeaderParser.WWW_AUTHENTICATE(value).fold(err => sys.error(s"Couldn't parse: $value"), identity)
-
-  // behavior of "DigestAuthentication"
-
-  // it should "Respond to a request without authentication with 401" in {
-  //   val authedService = DigestAuth(realm, authStore)(service)
-  //   val req = Request(uri = Uri(path = "/"))
-  //   val res = authedService.orNotFound(req).unsafeRunSync
-
-  //   val response = res.right.get
-  //   response.status shouldEqual (Status.Unauthorized)
-  //   val opt = response.headers.get(`WWW-Authenticate`).map(_.value)
-  //   opt.isDefined shouldEqual true
-  //   val challenge = parse(opt.get).values.head
-  //   (challenge match {
-  //     case Challenge("Digest", realm, _) => true
-  //     case _ => false
-  //   }) shouldEqual true
-
-  // }
-
 
 }

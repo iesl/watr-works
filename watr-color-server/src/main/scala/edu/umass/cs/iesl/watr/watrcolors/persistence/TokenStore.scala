@@ -24,6 +24,31 @@ class TokenStore(
     corpusAccessDB.runq(query)
   }
 
+  def getToken(tokenId: Int@@TokenID): ValueType = {
+    runq{
+      sql"""
+        select token, tuuid, name, content, owner
+        from token where token = ${tokenId.unwrap}
+      """.query[(Int, UUID, String, String, Int)].unique.map {
+        case (tokenId, tuuid, name, content, owner)  =>
+          val cookieContent = tsec.cookies.AEADCookie[AES128](content)
+          AuthEncryptedCookie(
+            id=tuuid,
+            name=name,
+            content=cookieContent,
+            identity=owner,
+            expiry=null,
+            lastTouched=None,
+            secure=true,
+            httpOnly=true,
+            domain = None,
+            path = None,
+            extension = None
+          )
+      }
+    }
+  }
+
   def put(elem: ValueType): IO[ValueType] = {
     // println(s"TokenStore:put(${elem})")
 
@@ -31,7 +56,7 @@ class TokenStore(
       id          , // : UUID,
       name        , // : String,
       content     , // : AEADCookie[A]=String ,
-      identity    , // : Id=String (userId: owner),
+      identity    , // : Id=Int (userId: owner),
       expiry      , // : Instant,
       lastTouched , // : Option[Instant],
       secure      , // : Boolean,
@@ -106,30 +131,6 @@ class TokenStore(
     }
   }
 
-  def getToken(tokenId: Int@@TokenID): ValueType = {
-    runq{
-      sql"""
-        select token, tuuid, name, content, owner
-        from token where token = ${tokenId.unwrap}
-      """.query[(Int, UUID, String, String, Int)].unique.map {
-        case (tokenId, tuuid, name, content, owner)  =>
-          val cookieContent = tsec.cookies.AEADCookie[AES128](content)
-          AuthEncryptedCookie(
-            id=tuuid,
-            name=name,
-            content=cookieContent,
-            identity=owner,
-            expiry=null,
-            lastTouched=None,
-            secure=true,
-            httpOnly=true,
-            domain = None,
-            path = None,
-            extension = None
-          )
-      }
-    }
-  }
 
 }
 

@@ -12,7 +12,7 @@ import org.http4s.dsl.Http4sDsl
 import tsec.passwordhashers._
 import tsec.passwordhashers.imports._
 import cats.syntax.all._
-import tsec.common._
+// import tsec.common._
 import tsec.authentication._
 import persistence.{PasswordStore, UserStore}
 import tsec.cipher.symmetric.imports.AES128
@@ -62,7 +62,6 @@ case class UserAuthenticationService(
         response  <- Ok("Successfully signed up!")
       } yield authenticator.embed(response, cookie)
 
-      Status.Redirection
       response
         .handleError { _ => Response(Status.BadRequest) }
   }
@@ -93,15 +92,16 @@ case class UserAuthenticationService(
     case GET -> Root / "status" asAuthed user =>
       Ok(s"User ${user.email} is logged in.")
 
-    case request @ GET -> Root / "logout" asAuthed user =>
-      val r: SecuredRequest[IO, User, AuthEncryptedCookie[AES128, Int]] = request
+    case r @ GET -> Root / "logout" asAuthed user =>
+      // val request: SecuredRequest[IO, User, AuthEncryptedCookie[AES128, Int]] = r
 
+      val response = for {
+        deadCookie   <- authenticator.discard(r.authenticator).getOrRaise(LoginError)
+        response     <- Ok()
+      } yield authenticator.embed(response, deadCookie)
 
-      import org.http4s.Uri
-      import org.http4s.headers.Location
-
-      authenticator.discard(r.authenticator)
-      TemporaryRedirect(Location(Uri.unsafeFromString("/")))
+      response
+        .handleError { _ => Response(Status.BadRequest) }
   }
 
 }

@@ -8,7 +8,7 @@ class DocstoreTest extends FlatSpec with Matchers with CorpusTestingUtil {
 
   behavior of "Document storage"
 
-  it should "correctly add single document" in new CleanDocstore {
+  it should "correctly add single document" in new EmptyDatabase {
     test1()
 
     println(visualizeDocuments())

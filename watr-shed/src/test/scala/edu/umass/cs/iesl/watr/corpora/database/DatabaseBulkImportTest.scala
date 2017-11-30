@@ -46,7 +46,7 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
     addDocument(stableId, doc)
   }
 
-  it should "import a mem-based document db" in new CleanDocstore {
+  it should "import a mem-based document db" in new EmptyDatabase {
     memZoneApi = new MemDocZoningApi
     freshDocstore = Some(memZoneApi)
     val id0 = DocumentID("doc#0")
@@ -57,7 +57,7 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
   }
 
 
-  it should "properly translate mem-based db key into postgres keys" in new CleanDocstore {
+  it should "properly translate mem-based db key into postgres keys" in new EmptyDatabase {
     memZoneApi = new MemDocZoningApi
     freshDocstore = Some(memZoneApi)
     // Extract into memory-db, add to postgres

@@ -21,22 +21,22 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
 
   def initUsers(n: Int): Seq[Int@@UserID] = {
     0 until n map { i =>
-      userbaseApi.addUser(s"user${i}@umass.edu")
+      userbaseApi.addUser(EmailAddr(s"user${i}@umass.edu"))
     }
   }
 
 
-  it should "handle user creation" in new CleanDocstore {
+  it should "handle user creation" in new EmptyDatabase {
     for {
       (userId, i)   <- initUsers(10).zipWithIndex
       user0 <- userbaseApi.getUser(userId)
-      userIdByEmail <- userbaseApi.getUserByEmail(s"user${i}@umass.edu")
+      userIdByEmail <- userbaseApi.getUserByEmail(EmailAddr(s"user${i}@umass.edu"))
       user1 <- userbaseApi.getUser(userIdByEmail)
     } {
       user0 shouldEqual(user1)
     }
 
-    userbaseApi.getUserByEmail("noone@zz.com") shouldBe None
+    userbaseApi.getUserByEmail(EmailAddr("noone@zz.com")) shouldBe None
   }
 
   def addSampleDocs(n: Int): Seq[String@@DocumentID] = {
@@ -52,7 +52,7 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
     }
   }
 
-  it should "define, activate, deactivate workflows" in new CleanDocstore {
+  it should "define, activate, deactivate workflows" in new EmptyDatabase {
     val workflows = initWorkflows(10)
     val workflowIds = workflowApi.getWorkflows()
 
@@ -63,12 +63,12 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
       // }
   }
 
-  it should "return lock status info for zones" in new CleanDocstore {
+  it should "return lock status info for zones" in new EmptyDatabase {
 
 
   }
 
-  it should "lock/unlock target zones, to exhaustion, with single user" in new CleanDocstore {
+  it should "lock/unlock target zones, to exhaustion, with single user" in new EmptyDatabase {
     addSampleDocs(1)
     val userId = initUsers(1).head
     val workflowId = initWorkflows(1).head
@@ -116,7 +116,6 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
 
     workflowApi.getLockedZones(userId).length shouldBe 9
 
-
     for {
       maybeLock <- locks
       lock <- maybeLock
@@ -133,7 +132,7 @@ class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
 
   }
 
-  it should "handle multiple workflows, users" in new CleanDocstore {
+  it should "handle multiple workflows, users" in new EmptyDatabase {
     addSampleDocs(3) // 9 zones/doc, so 27 total zones
     val users = initUsers(3)
     val workflows = initWorkflows(3)

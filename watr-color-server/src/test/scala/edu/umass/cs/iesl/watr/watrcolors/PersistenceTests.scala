@@ -13,7 +13,7 @@ class PersistenceTests extends DatabaseTest {
 
   behavior of "UserStore"
 
-  it should "put/get/update/delete" in new CleanDocstore {
+  it should "put/get/update/delete" in new EmptyDatabase {
 
     val store = new UserStore(reflowDB)
 
@@ -43,7 +43,7 @@ class PersistenceTests extends DatabaseTest {
   import tsec.authentication.AuthEncryptedCookie
   import tsec.cipher.symmetric.imports.AES128
 
-  it should "put/get/update/delete" in new CleanDocstore {
+  it should "put/get/update/delete" in new EmptyDatabase {
 
     val userStore = new UserStore(reflowDB)
 
@@ -88,7 +88,7 @@ class PersistenceTests extends DatabaseTest {
   import tsec.passwordhashers._
   import tsec.passwordhashers.imports._
 
-  it should "put/get/update/delete" in new CleanDocstore {
+  it should "put/get/update/delete" in new EmptyDatabase {
     val passwordStore = new PasswordStore(reflowDB)
     val userStore = new UserStore(reflowDB)
 

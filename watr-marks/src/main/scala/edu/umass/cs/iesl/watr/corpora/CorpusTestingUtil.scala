@@ -12,7 +12,7 @@ trait CorpusTestingUtil extends TextGridBuilder {
   var freshDocstore: Option[DocumentZoningApi] = None
 
   def docStore: DocumentZoningApi = freshDocstore
-    .getOrElse(sys.error("Uninitialized DocumentZoningApi; Use CleanDocstore() class"))
+    .getOrElse(sys.error("Uninitialized DocumentZoningApi; Use EmptyDatabase() class"))
 
   def initEmpty(): Unit = {
     try {
@@ -26,7 +26,7 @@ trait CorpusTestingUtil extends TextGridBuilder {
     }
   }
 
-  trait CleanDocstore {
+  trait EmptyDatabase {
     initEmpty()
   }
 
