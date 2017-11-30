@@ -76,7 +76,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
     def create(): ConnectionIO[Unit] = {
       for {
-        _ <- putStrLn("create zone")
         _ <- createZoneTables
         _ <- defineOrderingTriggers(fr0"zone_to_targetregion", fr0"targetregion")
         _ <- defineOrderingTriggers(fr0"zone", fr0"document", fr0"label")
@@ -115,9 +114,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
     } yield ())
     def create(): ConnectionIO[Unit] = {
       for {
-        _ <- putStrLn("create targetregion")
         _ <- createTargetRegion
-        _ <- putStrLn("create targetregion triggers")
         _ <- defineOrderingTriggers(fr0"targetregion", fr0"page")
       } yield ()
     }
@@ -194,19 +191,14 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
 
   def createAll = for {
-    _ <- putStrLn("create doc")
     _ <- createDocumentTable
-    _ <- putStrLn("create page")
     _ <- createPageTable
-    _ <- putStrLn("create label")
     _ <- createLabelTable.run
 
     _ <- targetregions.create()
     _ <- zonetables.create()
 
-    _ <- putStrLn("create user tables")
     _ <- UserTables.create.run
-    _ <- putStrLn("create workflow tables")
     _ <- workflowTables.create.run
   } yield ()
 

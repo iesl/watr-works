@@ -60,6 +60,7 @@ class CorpusAccessDB(
   var xa: HikariTransactor[Task] = xa0
 
   def reinit() = {
+    shutdown()
     xa = xa0
   }
 

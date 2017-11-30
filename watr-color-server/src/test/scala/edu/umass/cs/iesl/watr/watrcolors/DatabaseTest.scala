@@ -17,6 +17,7 @@ trait DatabaseBaseTest extends Matchers with CorpusTestingUtil {
   def userbaseApi: UserbaseApi = reflowDB.userbaseApi
 
   def createEmptyDocumentZoningApi(): DocumentZoningApi = {
+    println("Dropping/recreating DB tables")
     reflowDB.runqOnce {
       reflowDB.veryUnsafeDropDatabase().run
     }

@@ -3,10 +3,12 @@ package watrcolors
 package services
 
 
+import org.http4s
 import org.http4s._
 // import org.http4s.syntax._
 import org.http4s.syntax.string._
 import persistence._
+
 
 import _root_.io.circe
 import circe.literal._
@@ -20,6 +22,11 @@ import tsec.cipher.symmetric.imports.AES128
 import scala.concurrent.duration._
 
 import org.scalatest._
+// import org.http4s.headers.{Authorization, `Content-Type`, `X-Forwarded-For`}
+// import org.http4s.headers
+import scala.collection.JavaConverters._
+
+import java.net.HttpCookie
 
 class AuthenticationSpec extends DatabaseFreeSpec  {
 
@@ -52,107 +59,146 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
     io.unsafeRunSync()
   }
 
+  case class MockCookieJar(
+    var cookies: List[HttpCookie] = List()
+  ) {
+
+    // var authCookieHdr: Option[Header] = None
+    // var authCookie: List[HttpCookie] = List()
+    // authCookie = authCookieHdr.toList.flatMap{ h =>
+    //   HttpCookie.parse(h.value).asScala
+    // }
+    // authCookie.foreach({c =>
+    //   println(s"> ${c.getName}, ${c.getValue}")
+    //   println(s">== ${c} ")
+    //   println()
+    // })
+
+    def httpCookies(): List[Cookie] = {
+      cookies.map{httpCookie =>
+        Cookie(
+          httpCookie.getName,
+          httpCookie.getValue,
+          None
+        )
+      }
+    }
+  }
+
 
   def loginFormJson(name: String) = { json""" { "email": ${name+"@x.com"}, "password": ${name+"-psswd"} } """ }
   def loginForm(name: String) = { loginFormJson(name).noSpaces }
   def signupForm(name: String) = {  loginFormJson(name).deepMerge(json""" { "username": ${name} } """).noSpaces }
 
-  def doPost(url: String) = Request[IO](Method.POST, uri = Uri(path = url))
-  def doGet(url: String) = Request[IO](Method.GET, uri = Uri(path = url))
-
-  def signupReq(name: String): Request[IO] = doPost("/signup").withBody(signupForm(name)).unsafeRunSync()
-  def loginReq(name: String): Request[IO] = doPost("/login").withBody(loginForm(name)).unsafeRunSync()
-
-  def logoutReq(): Request[IO] = doGet("/logout")
-
-  def checkResponse(r: OptionT[IO, Response[IO]], f: Response[IO] => Unit) = {
-    r.fold(fail("no response"))(f(_))
-      .unsafeRunSync()
+  def doPost(url: String)(implicit cj: MockCookieJar) = {
+    addCookies(Request[IO](Method.POST, uri = Uri(path = url)), cj)
   }
 
+  def doGet(url: String)(implicit cj: MockCookieJar) = {
+    addCookies(Request[IO](Method.GET, uri = Uri(path = url)), cj)
+  }
+
+  def addCookies(req: Request[IO], cj: MockCookieJar): Request[IO] = {
+    cj.httpCookies().foldLeft(req)({case (racc, celem) =>
+      req.addCookie(celem.name, celem.content, celem.expires)
+    })
+  }
+
+  def signupReq(name: String)(implicit cj: MockCookieJar): Request[IO] = doPost("/signup").withBody(signupForm(name)).unsafeRunSync()
+  def loginReq(name: String)(implicit cj: MockCookieJar): Request[IO] = doPost("/login").withBody(loginForm(name)).unsafeRunSync()
+  def logoutReq()(implicit cj: MockCookieJar): Request[IO] = doGet("/logout")
+
+  def checkResponse(r: OptionT[IO, Response[IO]], checks: (Response[IO] => Unit)*)(implicit cj: MockCookieJar) = {
+    r.fold(fail("no response")){ resp =>
+      checks.foreach { check => check(resp) }
+    }.unsafeRunSync()
+  }
+
+  def hasStatus(s: http4s.Status): Response[IO] => Unit =
+    r => r.status shouldEqual s
+
+  def hasHeader(hdr: String): Response[IO] => Unit =
+    r => r.headers.get(hdr.ci).isDefined
+
+  def tapWith(f: Response[IO] => Unit): Response[IO] => Unit = r => f(r)
+  def tapWith(f: => Unit): Response[IO] => Unit = _ => f
+
+  // doGet("").addCookie(name: String, content: String, expires: Option[HttpDate])
   "Behavior of Authorization" - {
 
-    "When Not Logged In" - {
+    "When Not Registered" - {
 
-      "Should redirect to login/signup" in {
+      val authService = userAuthService()
+
+
+      "Should Permit Signup" in new CleanDocstore {
+
+        implicit val cookieJar  = MockCookieJar()
+
+        val req = signupReq("Morgan")
+
+        checkResponse(authService.signupRoute(req), {resp =>
+          resp.status shouldEqual Status.Ok
+
+          val cookieHeader = resp.headers.get("Set-Cookie".ci)
+          assert(cookieHeader.isDefined)
+        })
 
       }
 
-      "When Not Registered" - {
+      "Should Block Unregistered Login" in {
+        implicit val cookieJar  = MockCookieJar()
+        val req = loginReq("Oliver")
 
-        val authService = userAuthService()
+        checkResponse(authService.loginRoute(req), {resp =>
+          resp.status shouldEqual Status.BadRequest
+        })
 
-        // info("info is recorded")
-        // markup("markup is *also* recorded")
-        // note("notes are sent immediately")
-        // alert("alerts are also sent immediately")
-
-        "Should Permit Signup" in new CleanDocstore {
-
-          val req = signupReq("Morgan")
-
-          checkResponse(authService.signupRoute(req), {resp =>
-            resp.status shouldEqual Status.Ok
-
-            val cookieHeader = resp.headers.get("Set-Cookie".ci)
-            assert(cookieHeader.isDefined)
-          })
-
-        }
-
-        "Should Block Unregistered Login" in {
-          val req = loginReq("Oliver")
-
-          checkResponse(authService.loginRoute(req), {resp =>
-            resp.status shouldEqual Status.BadRequest
-          })
-
-        }
       }
+    }
 
-      // import org.http4s.headers.{Authorization, `Content-Type`, `X-Forwarded-For`}
-      // import org.http4s.headers
 
-      "When Registered" - {
+
+    "When Registered" - {
+
+      "When Not Logged In" - {
+
+        "Should redirect to login/signup" in {
+
+        }
+
+        implicit val cookieJar  = MockCookieJar()
 
         val authService = userAuthService()
-        // var authCookie: Option[Cookie] = None
-        var authCookieHdr: Option[Header] = None
-        var authCookieVal: String = ""
 
         "After Signup" in new CleanDocstore {
 
-          checkResponse(authService.signupRoute(signupReq("Morgan")), { resp =>
-            info("should be logged in")
-            authCookieHdr = resp.headers.get("Set-Cookie".ci)
-            authCookieVal = resp.headers.get("Set-Cookie".ci).get.value
-            info(s"authCookieHdr ${authCookieHdr}")
-            assert(resp.headers.get("Set-Cookie".ci).isDefined)
-          })
+          checkResponse(authService.signupRoute(signupReq("Morgan")),
+            hasHeader("Set-Cookie"),
+            tapWith(info("should be logged in"))
+          )
+
         }
 
         "Should Block Duplicate Signup" in {
-          checkResponse(authService.signupRoute(signupReq("Morgan")), { resp =>
-            resp.status shouldEqual Status.BadRequest
-          })
+          checkResponse(authService.signupRoute(signupReq("Morgan")),
+            hasStatus(Status.BadRequest)
+          )
         }
 
         "After Logout" - {
-          logoutReq().addCookie()()
           checkResponse(authService.authedUserRoutes(logoutReq()), { resp =>
             info(s"After Logout: ${resp}")
           })
         }
 
         "Should Permit Login" in {
-          checkResponse(authService.loginRoute(loginReq("Morgan")), { resp =>
 
-            println(s"login resp: ${resp}")
-
-            // resp.status shouldEqual Status.Ok
-
-          })
+          checkResponse(authService.loginRoute(loginReq("Morgan")),
+            hasStatus(Status.Ok)
+          )
         }
+
       }
     }
 
