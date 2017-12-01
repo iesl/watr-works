@@ -20,7 +20,7 @@ import corpora.filesys._
 
 
 import models._
-import persistence.{PasswordStore, UserStore}
+import persistence._
 import tsec.authentication._
 import tsec.cipher.symmetric.imports.AES128
 import models.users._
@@ -29,10 +29,17 @@ import scala.concurrent.duration._
 trait AuthenticationHandlers extends Http4sDsl[IO] {
   def userStore: UserStore
   def authStore: PasswordStore
+  def tokenStore: TokenStore.StoreType
 
-  val authenticatorSettings = TSecCookieSettings("tsec-auth", secure = false, httpOnly = true,
-    expiryDuration = 1.hour, //   scala.concurrent.duration.FiniteDuration,
-    maxIdle = Some(1.hour) //  Option[scala.concurrent.duration.FiniteDuration]
+  val authenticatorSettings = TSecCookieSettings(
+    "tsec-auth",
+    secure         = false,
+    httpOnly       = false,
+    expiryDuration = 1.day,
+    maxIdle        = Some(1.hour),
+    domain         = None, // Some("localhost") , // : Option[String] = None,
+    path           = Some("/"), // : Option[String] = None,
+    extension      = None // : Option[String] = None,
   )
 
   def symmetricKey = AES128.generateKeyUnsafe()
@@ -40,6 +47,7 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
   lazy val authenticator: EncryptedCookieAuthenticator[IO, Int, User, AES128] =
     EncryptedCookieAuthenticator.stateless[IO, Int, User, AES128](
       authenticatorSettings,
+      // tokenStore,
       userStore,
       symmetricKey
     )

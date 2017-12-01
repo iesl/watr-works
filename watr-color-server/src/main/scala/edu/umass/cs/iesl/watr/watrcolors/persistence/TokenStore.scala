@@ -15,6 +15,13 @@ import doobie.imports._
 import doobie.postgres.pgtypes.UuidType
 import TypeTags._
 
+import cats.effect.Effect
+import fs2.async.Ref
+import cats.syntax.all._
+
+import scala.collection.immutable.HashMap
+import scala.concurrent.ExecutionContext
+
 class TokenStore(
   corpusAccessDB: CorpusAccessDB
 ) extends BackingStore[IO, TokenStore.IDType, TokenStore.ValueType] {
@@ -141,4 +148,47 @@ object TokenStore {
   def fromDb(corpusAccessDB: CorpusAccessDB): IO[TokenStore] = {
     IO(new TokenStore(corpusAccessDB))
   }
+
+  type StoreType = BackingStore[IO, UUID, TokenStore.ValueType]
+
+}
+
+
+sealed abstract class MemTokenStore[F[_]: Effect]
+    extends BackingStore[F, UUID, TokenStore.ValueType] {
+  protected val ref: Ref[F, HashMap[UUID, TokenStore.ValueType]]
+
+  def put(elem: TokenStore.ValueType): F[TokenStore.ValueType] = {
+    ref.modify(_ + (elem.id -> elem))
+
+    ref.get.map(_(elem.id))
+
+  }
+
+  def get(id: UUID): OptionT[F, TokenStore.ValueType] =
+    OptionT(ref.get.map(_.get(id)))
+
+  def update(v: TokenStore.ValueType): F[TokenStore.ValueType] = {
+
+    ref.modify(_.updated(v.id, v))
+      .map(_ => 1)
+
+    ref.get.map(_(v.id))
+
+  }
+  def delete(id: UUID): F[Unit] =
+    ref.modify(_ - id)
+      .map(_ => ())
+}
+
+object MemTokenStore {
+  def apply[F[_]: Effect](implicit ec: ExecutionContext): F[MemTokenStore[F]] =
+    Ref
+      .initialized(HashMap.empty[UUID, TokenStore.ValueType])
+      .map { m =>
+        new MemTokenStore[F] {
+          protected val ref
+            : Ref[F, HashMap[UUID, TokenStore.ValueType]] = m
+        }
+      }
 }

@@ -2,27 +2,17 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package server
 
-
 import org.http4s
 
 import org.http4s._
-// import org.http4s.dsl._
-// import fs2._
-// import fs2.interop.cats._
 import org.http4s
 import org.http4s._
-import org.http4s.dsl._
 import cats.effect._
-import org.http4s.dsl.io._
-import org.http4s.headers._
-// import cats.implicits._
 
 import models._
 
-// import ammonite.{ops => fs}
 
-trait CorpusArtifactServices extends ServiceCommons with WorkflowCodecs { self =>
-  // http4s.Status.x
+trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { self =>
 
   // Mounted at /api/v1/corpus/artifacts
   val corpusArtifactEndpoints = HttpService[IO] {

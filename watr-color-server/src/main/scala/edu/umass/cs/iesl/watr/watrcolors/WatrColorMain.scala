@@ -11,8 +11,9 @@ import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.server.staticcontent._
 import org.http4s.server.middleware.{CORS, CORSConfig}
 import org.http4s.util.{ ExitCode, StreamApp }
-import persistence.{PasswordStore, UserStore}
+import persistence._
 import services._
+import scala.concurrent.ExecutionContext.Implicits.global
 // import tsec.authentication._
 
 // import tsec.cipher.symmetric.imports.AES128
@@ -76,10 +77,10 @@ class AllServices(
       // case req @ POST -> Root / "login" =>
       //   logInService(req)
   }
+
   lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
   lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
-
-  // tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
+  lazy val tokenStore = MemTokenStore.apply[IO].unsafeRunSync()
 
 
   val jslibDistService = fileService(FileService.Config[IO](
@@ -94,8 +95,7 @@ class AllServices(
       .mountService(CORS(assetService))
       .mountService(CORS(jslibDistService))
       .mountService(htmlPageService)
-      .mountService(CORS(signupRoute)                 , "/api/v1/auth")
-      .mountService(CORS(loginRoute)                  , "/api/v1/auth")
+      .mountService(userAuthenticationServices        , "/api/v1/auth")
       .mountService(labelingServiceEndpoints          , "/api/v1/labeling")
       .mountService(curationWorkflowEndpoints         , "/api/v1/workflow")
       .mountService(corpusArtifactEndpoints           , "/api/v1/corpus/artifacts")
@@ -123,6 +123,10 @@ object WiredServerMain extends StreamApp[IO] with Http4sDsl[IO] with utils.AppMa
 
     val corpusAccessApi = SharedInit.initCorpusAccessApi(args.toArray)
 
+    // _         <- F.pure(println(s"exists; $exists"))
+    // _         <- F.pure(println(s"password; $password"))
+    // _         <- F.pure( println(s"newUser; $newUser") )
+    // _         <- F.pure( println(s"cookie; $cookie") )
     val allServices = new AllServices(corpusAccessApi, distDir, portNum)()
 
     val server = allServices.buildServer()

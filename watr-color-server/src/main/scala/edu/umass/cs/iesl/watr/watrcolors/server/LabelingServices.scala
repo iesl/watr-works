@@ -5,36 +5,33 @@ package server
 
 import org.http4s._
 import org.http4s.{headers => H}
-import org.http4s.dsl._
 import org.http4s.circe._
 import _root_.io.circe
 import circe._
 import circe.syntax._
 import circe.literal._
 import TypeTags._
-import watrmarks._
 import geometry._
 import textgrid._
-import cats.implicits._, cats.data._
-import cats.effect._
-
 import models._
+import tsec.authentication._
 
-trait LabelingServices extends ServiceCommons { self =>
+trait LabelingServices extends AuthenticatedService { self =>
 
   // Mounted at /api/v1xx/labeling/..
-  val labelingServiceEndpoints = HttpService[IO] {
-    case req @ POST -> Root / "ui" / "labeler" =>
+  val labelingServiceEndpoints = Auth {
+
+    case req @ POST -> Root / "ui" / "labeler" asAuthed user =>
 
       for {
-        labels <- decodeOrErr[LabelerReqForm](req)
+        labels <- decodeOrErr[LabelerReqForm](req.request)
         panel = html.Parts.labelingPanel(labels.labels)
         ok <- Ok(panel.toString())
       } yield {
         ok.putHeaders(H.`Content-Type`(MediaType.`text/html`))
       }
 
-    case req @ GET -> Root / "labels" / stableIdStr =>
+    case req @ GET -> Root / "labels" / stableIdStr asAuthed user =>
       val stableId = DocumentID(stableIdStr)
       val docId  = docStore.getDocument(stableId).getOrElse {
         sys.error(s"docId not found for ${stableId}")
@@ -53,11 +50,11 @@ trait LabelingServices extends ServiceCommons { self =>
 
       okJson(jsonResp)
 
-    case req @ DELETE -> Root / "label"  =>
+    case req @ DELETE -> Root / "label"  asAuthed user =>
       println(s"Got delete label request")
 
       for {
-        deleteReq <- decodeOrErr[DeleteZoneRequest](req)
+        deleteReq <- decodeOrErr[DeleteZoneRequest](req.request)
 
         allZones = {
           val stableId = DocumentID(deleteReq.stableId)
@@ -87,10 +84,10 @@ trait LabelingServices extends ServiceCommons { self =>
         resp.putHeaders(H.`Content-Type`(MediaType.`application/json`))
       }
 
-    case req @ POST -> Root / "label" / "span"  =>
+    case req @ POST -> Root / "label" / "span"  asAuthed user =>
 
       for {
-        labeling <- decodeOrErr[LabelSpanReq](req)
+        labeling <- decodeOrErr[LabelSpanReq](req.request)
         allZones = {
           val stableId = DocumentID(labeling.stableId)
           val docId  = docStore.getDocument(stableId).getOrElse {
@@ -131,10 +128,10 @@ trait LabelingServices extends ServiceCommons { self =>
         resp.putHeaders(H.`Content-Type`(MediaType.`application/json`))
       }
 
-    case req @ POST -> Root / "label" / "region" =>
+    case req @ POST -> Root / "label" / "region" asAuthed user =>
 
       for {
-        labeling <- decodeOrErr[LabelingReqForm](req)
+        labeling <- decodeOrErr[LabelingReqForm](req.request)
         allZones = {
           val stableId = DocumentID(labeling.stableId)
           val docId  = docStore.getDocument(stableId).getOrElse {

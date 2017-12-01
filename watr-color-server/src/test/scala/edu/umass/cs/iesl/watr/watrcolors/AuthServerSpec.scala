@@ -75,7 +75,10 @@ class MockCookieJar {
 class AuthenticationSpec extends DatabaseFreeSpec  {
 
 
-  val authenticatorSettings = TSecCookieSettings("tsec-auth", secure = false, httpOnly = true,
+  val authenticatorSettings = TSecCookieSettings(
+    "tsec-auth",
+    secure = false,
+    httpOnly = true,
     expiryDuration = 1.hour, //   scala.concurrent.duration.FiniteDuration,
     maxIdle = Some(1.hour) //  Option[scala.concurrent.duration.FiniteDuration]
   )
@@ -88,23 +91,6 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
     lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
     lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
 
-    // val io = for {
-    //   userStore     <- UserStore.fromDb(corpusAccessApi.corpusAccessDB)
-    //   // tokenStore    <- TokenStore.fromDb(corpusAccessApi.corpusAccessDB)
-    //   passwordStore <- PasswordStore.fromDb(corpusAccessApi.corpusAccessDB)
-    //   symmetricKey  <- AES128.generateLift[IO]
-    // } yield {
-
-    //   val authenticator = EncryptedCookieAuthenticator.stateless[IO, Int, User, AES128](
-    //     authenticatorSettings,
-    //     userStore,
-    //     symmetricKey
-    //   )
-
-    //   // UserAuthenticationService(userStore, passwordStore, authenticator)
-    // }
-
-    // io.unsafeRunSync()
   }
 
   def loginFormJson(name: String) = { json""" { "email": ${name+"@x.com"}, "password": ${name+"-psswd"} } """ }
