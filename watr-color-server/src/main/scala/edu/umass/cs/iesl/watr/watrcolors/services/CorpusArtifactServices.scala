@@ -1,6 +1,6 @@
 package edu.umass.cs.iesl.watr
 package watrcolors
-package server
+package services
 
 import org.http4s
 
