@@ -257,15 +257,15 @@ object TextGrid {
               props.pageIdMap.put(page.pageId, (page.stableId, page.pageNum))
             }
             val LTBounds.IntReps(l, t, w, h) = pageItem.bbox
-            json"""[${pageNum.unwrap}, [$l, $t, $w, $h], ${char}]"""
+            json"""[${char}, ${pageNum.unwrap}, [$l, $t, $w, $h]]"""
           }
 
           items.asJson
 
-        case cell@ TextGrid.LeftExpansionCell(char, root)  => json""" {"el": ${char} }"""
-        case cell@ TextGrid.RightExpansionCell(char, root) => json""" {"er": ${char} }"""
-        case cell@ TextGrid.LeftInsertCell(char, root)     => json""" {"il": ${char} }"""
-        case cell@ TextGrid.RightInsertCell(char, root)    => json""" {"ir": ${char} }"""
+        case cell@ TextGrid.LeftExpansionCell(char, root)  => json""" [${char}]"""
+        case cell@ TextGrid.RightExpansionCell(char, root) => json""" [${char}] """
+        case cell@ TextGrid.LeftInsertCell(char, root)     => json""" [${char}] """
+        case cell@ TextGrid.RightInsertCell(char, root)    => json""" [${char}] """
         case _ => json""" {} """
       }}
 

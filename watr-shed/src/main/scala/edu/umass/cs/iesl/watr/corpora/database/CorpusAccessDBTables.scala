@@ -142,7 +142,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
       CREATE TABLE zonelock (
         zonelock       SERIAL PRIMARY KEY,
-        assignee       INTEGER REFERENCES person,
+        assignee       INTEGER REFERENCES person ON DELETE CASCADE,
         workflow       VARCHAR(32) REFERENCES workflow ON DELETE CASCADE,
         zone           INTEGER REFERENCES zone ON DELETE CASCADE,
         status         VARCHAR(32) NOT NULL
