@@ -104,9 +104,7 @@ case class LabelerReqForm(
 )
 
 object LabelerReqForm extends CirceJsonCodecs {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelerReqForm] = deriveEncoder
-  implicit val decoder: Decoder[LabelerReqForm] = deriveDecoder
+  implicit def entityD[F[_]: Effect]: EntityDecoder[F, LabelerReqForm] = jsonOf[F, LabelerReqForm]
 }
 
 

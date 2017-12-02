@@ -13,7 +13,6 @@ import TypeTags._
 import workflow._
 
 import cats.effect.IO
-import server._
 
 class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
   behavior of "Workflow Rest API"

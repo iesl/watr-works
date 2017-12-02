@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package services
 
+import cats.syntax.all._
 
 import org.http4s._
 import org.http4s.{headers => H}
@@ -23,12 +24,20 @@ trait LabelingServices extends AuthenticatedService { self =>
 
     case req @ POST -> Root / "ui" / "labeler" asAuthed user =>
 
-      for {
-        labels <- decodeOrErr[LabelerReqForm](req.request)
+      val response = for {
+        labels    <- req.request.attemptAs[LabelerReqForm].fold(
+          decodeFailure => throw new Exception(s"decodeFailure: ${decodeFailure}"),
+          succ => succ)
+
         panel = html.Parts.labelingPanel(labels.labels)
-        ok <- Ok(panel.toString())
-      } yield {
-        ok.putHeaders(H.`Content-Type`(MediaType.`text/html`))
+        ok <- Ok(
+          json""" { "ui": { "labeler": ${panel.toString()} } } """
+        )
+      } yield ok
+      response.handleError { err =>
+        println(s"err: ${err}: ${err.getMessage} ${err.getCause}")
+        err.printStackTrace()
+        Response(Status.BadRequest)
       }
 
     case req @ GET -> Root / "labels" / stableIdStr asAuthed user =>

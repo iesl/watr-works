@@ -26,7 +26,6 @@ import utils.{PathUtils => P}
 import edu.umass.cs.iesl.watr.table._
 import ammonite.{ops => fs}
 
-import server._
 import corpora._
 import services._
 

@@ -3,6 +3,7 @@ package watrcolors
 package services
 
 import cats.effect.IO
+import cats.syntax.all._
 import org.http4s.{
   HttpService,
   Response,
@@ -10,7 +11,6 @@ import org.http4s.{
 }
 import tsec.passwordhashers._
 import tsec.passwordhashers.imports._
-import cats.syntax.all._
 import tsec.authentication._
 
 import models.users._
@@ -19,12 +19,9 @@ import LoginForm.LoginError
 import SignupForm.SignupError
 import TypeTags._
 
-import server._
 import _root_.io.circe, circe._
 import circe.literal._
 import org.http4s.circe._
-import fs2._
-import org.http4s.implicits._
 
 trait UserAuthenticationServices extends AuthenticatedService {
 
@@ -91,6 +88,13 @@ trait UserAuthenticationServices extends AuthenticatedService {
 
   val authedUserRoutes = Auth {
     case GET -> Root / "status" asAuthed user =>
+
+      for {
+        authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
+        response  <- Ok(userInfoResponse(user, authInfo))
+      } yield response
+
+    case POST -> Root / "status" asAuthed user =>
 
       for {
         authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
