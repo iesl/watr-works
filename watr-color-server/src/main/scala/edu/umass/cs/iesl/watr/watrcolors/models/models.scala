@@ -58,9 +58,6 @@ object users {
   // }
 }
 
-object tokendata {
-
-}
 
 object formdata {
   case class LoginForm(
@@ -188,7 +185,6 @@ object DeleteZoneRequest {
 }
 
 trait TypeTagCodecs {
-  import circe.generic.semiauto._
 
   implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
   implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
@@ -212,13 +208,21 @@ trait CirceJsonCodecs extends TypeTagCodecs {
 
 }
 
+case class WorkflowForm(
+  workflow     : String,
+  description  : String,
+  targetLabel  : String
+)
 
 trait WorkflowCodecs extends CirceJsonCodecs {
   import circe.generic.semiauto._
 
-  //   implicit val Enc_XX: Encoder[XX] = deriveEncoder
-  //   implicit val Dec_XX: Decoder[XX] = deriveDecoder
+  implicit val encoder: Encoder[WorkflowForm] = deriveEncoder
+  implicit val decoder: Decoder[WorkflowForm] = deriveDecoder
 
-  lazy implicit val Enc_WorkflowDef: Encoder[R.WorkflowDef] = deriveEncoder
+  implicit val encoder2: Encoder[R.WorkflowDef] = deriveEncoder
+
+  implicit def decoder3[F[_]: Effect]: EntityDecoder[F, WorkflowForm] = jsonOf[F, WorkflowForm]
+  // implicit val decoder2: Decoder[R.WorkflowDef] = deriveDecoder
 
 }

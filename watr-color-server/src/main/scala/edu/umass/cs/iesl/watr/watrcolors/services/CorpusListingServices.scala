@@ -2,17 +2,12 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package services
 
-// import corpora._
-
 import org.http4s._
 import org.http4s.dsl._
 import _root_.io.circe
 import circe._
 import circe.syntax._
 import circe.literal._
-// import watrmarks.Label
-import cats.implicits._, cats.data._
-
 import cats.effect._
 
 import models._

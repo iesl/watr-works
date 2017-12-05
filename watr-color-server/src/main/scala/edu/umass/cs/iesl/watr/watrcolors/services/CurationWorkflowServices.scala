@@ -2,53 +2,69 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package services
 
-
 import org.http4s._
+import org.http4s.circe._
 import _root_.io.circe
 import circe._
 import circe.syntax._
 import circe.literal._
+import circe.generic.auto._
 import TypeTags._
-import cats.effect._
+import tsec.authentication._
+import cats.syntax.all._
 
 import models._
+import watrmarks.Label
 
-trait CurationWorkflowServices extends ServiceCommons with WorkflowCodecs { self =>
+trait CurationWorkflowServices extends AuthenticatedService with WorkflowCodecs { self =>
+
+
+  private def getZoneJson(zoneLockId: Int@@ZoneLockID) = (for {
+    zoneLock   <- workflowApi.getZoneLock(zoneLockId)
+  } yield {
+    docStore.getZone(zoneLock.zone).asJson
+  })
 
   // Mounted at /api/v1xx/workflow/..
-  val curationWorkflowEndpoints = HttpService[IO] {
-
-    // Get all workflows
-    case req @ GET -> Root / "workflows" =>
+  private val workflowEndpoints = Auth {
+    // Get list of all workflows
+    case req @ GET -> Root / "workflows" asAuthed user =>
       val workflowDefs = for {
         workflowId <- workflowApi.getWorkflows()
       } yield {
         workflowApi.getWorkflow(workflowId)
       }
 
-      okJson(workflowDefs.asJson)
+      Ok(workflowDefs.asJson)
 
-    case req @ GET -> Root / "workflow" / workflowId / "report" =>
+    case req @ GET -> Root / "workflows" / workflowId / "report" asAuthed user =>
       val workflowReport = workflowApi.getWorkflowReport(WorkflowID(workflowId))
 
-      okJson(workflowReport.asJson)
+      Ok(workflowReport.asJson)
 
-    case req @ GET -> Root / "workflow" / workflowId / "assignment" :? UserQP(userEmail)  =>
+    case req @ POST -> Root / "workflows" / workflowId / "assignments" asAuthed user  =>
+
       val lockedZones = (for {
-        userId     <- userbaseApi.getUserByEmail(EmailAddr(userEmail)).toSeq
-        zoneLockId <- workflowApi.lockUnassignedZones(userId, WorkflowID(workflowId), 1)
-        zoneLock   <- workflowApi.getZoneLock(zoneLockId)
-      } yield {
-        docStore.getZone(zoneLock.zone).asJson
-      }).asJson
+        zoneLockId <- workflowApi.lockUnassignedZones(user.id, WorkflowID(workflowId), 1)
+        js <- getZoneJson(zoneLockId)
+      } yield js).asJson
 
-      okJson(lockedZones)
+      Ok(lockedZones)
+
+    case req @ GET -> Root / "workflows" / workflowId / "assignments" asAuthed user  =>
+
+      val lockedZones = (for {
+        zoneLockId <- workflowApi.getLockedZones(user.id)
+        js <- getZoneJson(zoneLockId)
+      } yield js).asJson
+
+      Ok(lockedZones)
+
 
     // Complete assignment, set status and unlock
-    case req @ PUT -> Root / "workflow" / workflowId / "assignment" :? UserQP(userEmail) +& ZoneQP(zoneId) +& StatusQP(status) =>
+    case req @ PUT -> Root / "workflows" / workflowId / "assignments" / IntVar(zoneId) :? StatusQP(status) asAuthed user =>
 
       for {
-        userId     <- userbaseApi.getUserByEmail(EmailAddr(userEmail)).toSeq
         zoneLockId <- workflowApi.getLockForZone(ZoneID(zoneId))
         zoneLock   <- workflowApi.getZoneLock(zoneLockId)
       } {
@@ -56,20 +72,24 @@ trait CurationWorkflowServices extends ServiceCommons with WorkflowCodecs { self
         workflowApi.releaseZoneLock(zoneLockId)
       }
 
-      okJson(Json.fromString("Ok"))
+      Ok(Json.obj())
 
-    // Get current assignments for user
-    case req @ GET -> Root / "workflow" / workflowId / "assignments" :? UserQP(userEmail) =>
-      val lockedZones = (for {
-        userId     <- userbaseApi.getUserByEmail(EmailAddr(userEmail)).toSeq
-        zoneLockId <- workflowApi.getLockedZones(userId)
-        zoneLock   <- workflowApi.getZoneLock(zoneLockId)
-      } yield {
-        docStore.getZone(zoneLock.zone).asJson
-      }).asJson
+    case req @ POST -> Root / "workflows" asAuthed user =>
 
-      okJson(lockedZones)
+      for {
+        // workflowForm  <- req.request.as[WorkflowForm]
+        workflowForm    <- req.request.attemptAs[WorkflowForm].fold(
+          decodeFailure => throw new Exception(s"decodeFailure: ${decodeFailure}"),
+          succ => succ)
+        workflowId     = workflowApi.defineWorkflow(workflowForm.workflow, workflowForm.description, Label(workflowForm.targetLabel))
+
+        resp          <- Ok(Json.obj("workflowId" := workflowId))
+      } yield resp
+
+
 
   }
+
+  def curationServices =  workflowEndpoints
 
 }

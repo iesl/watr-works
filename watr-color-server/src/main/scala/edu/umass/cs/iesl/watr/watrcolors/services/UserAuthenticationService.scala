@@ -4,11 +4,14 @@ package services
 
 import cats.effect.IO
 import cats.syntax.all._
-import org.http4s.{
-  HttpService,
-  Response,
-  Status
-}
+import org.http4s.UrlForm
+import org.http4s.headers.Location
+import org.http4s._
+// import org.http4s.{
+//   HttpService,
+//   Response,
+//   Status
+// }
 import tsec.passwordhashers._
 import tsec.passwordhashers.imports._
 import tsec.authentication._
@@ -46,8 +49,7 @@ trait UserAuthenticationServices extends AuthenticatedService {
           decodeFailure => {
             println(s"decodeFailure: ${decodeFailure}")
             throw SignupError
-          },
-          signupForm => signupForm)
+          }, x => x)
 
         exists    <- userStore.exists(EmailAddr(signup.email)).fold(true)(_ => throw SignupError)
         _         <- IO(println(s"exists; $exists"))
@@ -58,7 +60,8 @@ trait UserAuthenticationServices extends AuthenticatedService {
         _         <- IO( println(s"newUser; $newUser") )
         cookie    <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
         _         <- IO( println(s"cookie; $cookie") )
-        response  <- Ok(userInfoResponse(newUser, authInfo))
+        // response  <- Ok(userInfoResponse(newUser, authInfo))
+        response  <- TemporaryRedirect(Location(uri("/")))
       } yield authenticator.embed(response, cookie)
 
       response.handleError { _ => Response(Status.BadRequest) }
@@ -67,22 +70,36 @@ trait UserAuthenticationServices extends AuthenticatedService {
   val loginRoute: HttpService[IO] = HttpService[IO] {
     case request @ POST -> Root / "login" =>
       println(s"login")
-      val response = for {
-        login    <- request.as[LoginForm]
-        _         <- IO( println(s"login; $login"))
-        user     <- userStore.getByEmail(EmailAddr(login.email)).getOrRaise(LoginError)
-        _       <- IO(   println(s"user; $user"))
-        authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
-        _       <- IO(    println(s"authInfo; $authInfo"))
-        _        <- checkOrRaise(login.password, authInfo.password)
-        cookie   <- authenticator.create(user.id.unwrap).getOrRaise(LoginError)
-        _       <- IO(    println(s"cookie; $cookie"))
-        response  <- Ok(userInfoResponse(user, authInfo))
-      } yield authenticator.embed(response, cookie)
 
-      response
+      val resp = request.decode[UrlForm]{ data =>
+        println(s"login: data=${data.values}")
+        val login = LoginForm(
+          data.values("email").head,
+          data.values("password").head
+        )
+        for {
+          // login <- UrlForm.entityDecoder[IO].decode(request, strict = false)
+          // login       <- request.as[LoginForm]
+
+          _           <- IO( println(s"login; $login"))
+          user        <- userStore.getByEmail(EmailAddr(login.email)).getOrRaise(LoginError)
+          _           <- IO(   println(s"user; $user"))
+          authInfo    <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
+          _           <- IO(    println(s"authInfo; $authInfo"))
+          _           <- checkOrRaise(login.password, authInfo.password)
+          cookie      <- authenticator.create(user.id.unwrap).getOrRaise(LoginError)
+          _           <- IO(    println(s"cookie; $cookie"))
+          // response <- Ok(userInfoResponse(user, authInfo))
+          // response    <- TemporaryRedirect(Location(uri("/")))
+          response    <- TemporaryRedirect(Location(uri("/")))
+        } yield authenticator.embed(response, cookie)
+      }
+
+      resp
         .handleError { _ => Response(Status.BadRequest) }
   }
+
+
 
 
 

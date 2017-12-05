@@ -34,10 +34,10 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
   val authenticatorSettings = TSecCookieSettings(
     "tsec-auth",
     secure         = false,
-    httpOnly       = false,
+    httpOnly       = true,
     expiryDuration = 1.day,
     maxIdle        = Some(1.hour),
-    domain         = None, // Some("localhost") , // : Option[String] = None,
+    domain         = Option.empty[String],
     path           = Some("/"), // : Option[String] = None,
     extension      = None // : Option[String] = None,
   )
@@ -52,7 +52,8 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
       symmetricKey
     )
 
-  lazy val Auth = SecuredRequestHandler(authenticator)
+  lazy val Auth = WSecureRequestHandler(authenticator)
+  lazy val UserAwareService = WSecureRequestHandler(authenticator)
 }
 
 trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs { self =>

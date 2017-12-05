@@ -17,14 +17,27 @@ object Frame {
   }
 
   def apply(bundleName: String) = {
+    empty()
+  }
+
+  def withBodyContent(content: TextTag) = {
     <.html(
       htmlHead(),
       <.body(
-        <.script("text/javascript".typ, ^.src := s"/dist/${bundleName}.bundle.js")
+        content,
+        <.script("text/javascript".typ, ^.src := s"/dist/app.bundle.js")
       ),
     )
   }
 
+  def empty() = {
+    <.html(
+      htmlHead(),
+      <.body(
+        <.script("text/javascript".typ, ^.src := s"/dist/app.bundle.js")
+      ),
+    )
+  }
 }
 
 object Parts {
@@ -90,38 +103,55 @@ object Parts {
     modalSkeleton("label-chooser", modalDialogTitle("Choose label"), postForm, None)
   }
 
-  // def labelingPanelXX(): TextTag = {
+}
 
-  //   <.div(^.`class`:="modal fade", ^.`id`:="exampleModal", ^.`tabindex`:="-1", ^.`role`:="dialog", "aria-labelledby".attr :="exampleModalLabel", ^.aria.hidden:="true")(
-  //     <.div(^.`class`:="modal-dialog", ^.`role`:="document")(
-  //       <.div(^.`class`:="modal-content")(
-  //         <.div(^.`class`:="modal-header")(
-  //           <.h5(^.`class`:="modal-title", ^.`id`:="exampleModalLabel")("New message"),
-  //           <.button(^.`type`:="button", ^.`class`:="close", "data-dismiss".attr:="modal", ^.aria.label:="Close")(
-  //             <.span(^.aria.hidden:="true")("x")
-  //           )
-  //         ),
-  //         <.div(^.`class`:="modal-body")(
-  //           <.form(
-  //             <.div(^.`class`:="form-group")(
-  //               <.label(^.`for`:="recipient-name", ^.`class`:="col-form-label")("Recipient:"),
-  //               <.input(^.`type`:="text", ^.`class`:="form-control", ^.`id`:="recipient-name")(
-  //               ),
-  //               <.div(^.`class`:="form-group")(
-  //                 <.label(^.`for`:="message-text", ^.`class`:="col-form-label")("Message:"),
-  //                 <.textarea(^.`class`:="form-control", ^.`id`:="message-text")()
-  //               )
-  //             )
-  //           ),
-  //           <.div(^.`class`:="modal-footer")(
-  //             <.button(^.`type`:="button", ^.`class`:="btn btn-secondary", ^.data.dismiss:="modal")("Close"),
-  //             <.button(^.`type`:="button", ^.`class`:="btn btn-primary")("Send message")
-  //           )
-  //         )
-  //       )
-  //     )
-  //   )
-  // }
 
+object Authentication {
+  def labeledPasswordInput(label: String, key: String)  = {
+    <.div(
+      <.input("password".typ, key.name, key.id),
+      <.label(^.`for` := key, label)
+    )
+  }
+
+  def labeledTextInput(label: String, key:String)  = {
+    <.div(
+      <.input("text".typ, key.name, key.id),
+      <.label(^.`for` := key, label)
+    )
+  }
+
+  def loginForm()  = {
+    val forms = <.div("login-forms".id, ^.hidden := true,
+      "Login",
+      <.form(^.action := "/api/v1/auth/login", ^.method := "POST",
+        ^.enctype:= "application/x-www-form-urlencoded",
+        <.div(
+          labeledTextInput("Email", "email"),
+          labeledPasswordInput("Password", "password"),
+          <.div(
+            <.button("submit".typ, "Login".value, "Login")
+          )
+        ),
+      ),
+      "Or Signup",
+      <.form(^.action:= "/api/v1/auth/signup", ^.method := "POST",
+        ^.enctype:= "application/x-www-form-urlencoded",
+
+        <.div(
+          labeledTextInput("Email", "email"),
+          labeledTextInput("Username", "username"),
+          labeledPasswordInput("Password", "password"),
+          <.div(
+            <.button("submit".typ, "Signup".value, "Signup")
+          )
+        )
+      )
+    )
+
+    Frame.withBodyContent(
+      forms
+    )
+  }
 
 }

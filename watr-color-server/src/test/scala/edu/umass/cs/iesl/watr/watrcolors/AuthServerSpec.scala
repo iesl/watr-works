@@ -25,6 +25,7 @@ import org.scalatest._
 import java.net.HttpCookie
 
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class MockCookieJar {
 
@@ -90,6 +91,7 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
 
     lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
     lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
+    lazy val tokenStore = MemTokenStore.apply[IO].unsafeRunSync()
 
   }
 
@@ -173,6 +175,10 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
           authService.loginRoute(loginReq("Oliver")),
           hasStatus(Status.BadRequest)
         )
+
+      }
+
+      "Should respond with Unauthorized header + Json payload" in new EmptyDatabase {
 
       }
     }
