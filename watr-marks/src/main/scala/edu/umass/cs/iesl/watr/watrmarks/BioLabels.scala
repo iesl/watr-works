@@ -79,11 +79,11 @@ case class Label(
   id: Int@@LabelID=LabelID(0)
 ) {
 
-  def B: BioPin = BPin(this) // , id)
-  def I: BioPin = IPin(this) // , id)
-  def O: BioPin = OPin(this) // , id)
-  def L: BioPin = LPin(this) // , id)
-  def U: BioPin = UPin(this) // , id)
+  def B: BioPin = BPin(this)
+  def I: BioPin = IPin(this)
+  def O: BioPin = OPin(this)
+  def L: BioPin = LPin(this)
+  def U: BioPin = UPin(this)
 
 
   def fqn: String = {

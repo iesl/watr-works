@@ -6,24 +6,29 @@ import org.http4s._
 import org.http4s.circe._
 import _root_.io.circe
 import circe._
-// import circe.syntax._
 import circe.literal._
 import watrmarks.Label
 import TypeTags._
 import workflow._
+import persistence._
 
 import cats.effect.IO
 import services._
+import scala.concurrent.ExecutionContext.Implicits.global
+import models.users._
 
-class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
+class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest with MockAuthentication {
   behavior of "Workflow Rest API"
 
 
   def workflowService() = new CurationWorkflowServices {
     def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(reflowDB, null)
+    lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
+    lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
+    lazy val tokenStore = MemTokenStore.apply[IO].unsafeRunSync()
   }
 
-  def endpoints() = workflowService().curationWorkflowEndpoints
+  def endpoints() = workflowService().curationServices
 
   val VisualLine: Label = Label.auto
   val DocumentPages: Label = Label.auto
@@ -58,11 +63,13 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
 
   initUsers(2)
   initWorkflows(VisualLine, 2)
-  initWorkflows(Authors, 2)
+  initWorkflows(Authors, 1)
+
+  implicit val cookieJar  = new MockCookieJar()
+
 
   it should "get a list of available workflows" in {
     val req = Request[IO](uri = Uri(path = "/workflows"))
-    // val res = endpoints.orNotFound(req).as[Json].unsafeRunSync()
     val expect = {
       json"""
         [
@@ -80,24 +87,18 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
             "workflow" : "wf-Authors-0",
             "description" : "Annot. Authors #0",
             "labelId" : 2
-          },
-          {
-            "workflow" : "wf-Authors-1",
-            "description" : "Annot. Authors #1",
-            "labelId" : 2
           }
         ]
       """
     }
-    endpoints.run(req).fold(
+    val res = endpoints.run(req).fold(
       fail
     )(response => {
       val jsonResp = response.as[Json].unsafeRunSync()
-      // println(resp)
       assert(expect === jsonResp)
-
     })
 
+    res.unsafeRunSync()
   }
 
   it should "get workflow report" in new EmptyDatabase {
@@ -132,11 +133,20 @@ class WorkflowRestApiSpec extends Http4sSpec with DatabaseTest {
       """
     }
 
+    // final case class SecuredRequest[F[_], Identity, Auth](request: Request[F], identity: Identity, authenticator: Auth)
+
+
     val req = Request[IO](uri = Uri(path = "/workflow/wf-VisualLine-0/report"))
+    trait MockAuth
+
+    val auth = new MockAuth {}
+
+    SecuredRequest(req, User(UserID(0), EmailAddr("b")), auth)
     endpoints.run(req).fold(
       fail
     )(response => {
       val jsonResp = response.as[Json].unsafeRunSync()
+      println("?"+jsonResp)
       assert(expect === jsonResp)
     })
   }

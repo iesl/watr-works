@@ -25,6 +25,17 @@ trait CurationWorkflowServices extends AuthenticatedService with WorkflowCodecs 
     docStore.getZone(zoneLock.zone).asJson
   })
 
+  private val workflowEndpoints2 = Auth {
+    // Get list of all workflows
+    case req @ GET  -> Root / "workflows" asAuthed user =>
+    case req @ GET  -> Root / "workflows" / workflowId / "report" asAuthed user =>
+    case req @ POST -> Root / "workflows" / workflowId / "assignments" asAuthed user  =>
+    case req @ GET  -> Root / "workflows" / workflowId / "assignments" asAuthed user  =>
+    case req @ PUT  -> Root / "workflows" / workflowId / "assignments" / IntVar(zoneId) :? StatusQP(status) asAuthed user =>
+    case req @ POST -> Root / "workflows" asAuthed user =>
+
+
+  }
   // Mounted at /api/v1xx/workflow/..
   private val workflowEndpoints = Auth {
     // Get list of all workflows
@@ -77,7 +88,6 @@ trait CurationWorkflowServices extends AuthenticatedService with WorkflowCodecs 
     case req @ POST -> Root / "workflows" asAuthed user =>
 
       for {
-        // workflowForm  <- req.request.as[WorkflowForm]
         workflowForm    <- req.request.attemptAs[WorkflowForm].fold(
           decodeFailure => throw new Exception(s"decodeFailure: ${decodeFailure}"),
           succ => succ)

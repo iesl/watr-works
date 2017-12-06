@@ -28,8 +28,7 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil with Be
     println("re-initing db connections")
     reflowDB.reinit()
   }
+
   override def afterEach(): Unit = {
-    println("closing db connections")
-    reflowDB.shutdown()
   }
 }

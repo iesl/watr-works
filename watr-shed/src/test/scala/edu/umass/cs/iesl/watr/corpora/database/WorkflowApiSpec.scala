@@ -8,7 +8,7 @@ import watrmarks.Label
 import TypeTags._
 import textgrid._
 
-class ZoneLockingTest extends DatabaseTest with TextGridBuilder {
+class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
   behavior of "Zone lock/unlock + basic user support"
 
   val VisualLine: Label = Label.auto

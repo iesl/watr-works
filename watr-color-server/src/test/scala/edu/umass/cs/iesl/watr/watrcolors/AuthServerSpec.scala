@@ -11,13 +11,13 @@ import persistence._
 
 import _root_.io.circe
 import circe.literal._
-import models.users._
+// import models.users._
 import cats.effect._
 import cats.data._
 import corpora._
 import tsec.authentication._
 
-import tsec.cipher.symmetric.imports.AES128
+// import tsec.cipher.symmetric.imports.AES128
 import scala.concurrent.duration._
 
 import org.scalatest._
@@ -73,7 +73,43 @@ class MockCookieJar {
 
 }
 
-class AuthenticationSpec extends DatabaseFreeSpec  {
+
+trait MockAuthentication {
+
+  def loginFormJson(name: String) = { json""" { "email": ${name+"@x.com"}, "password": ${name+"-psswd"} } """ }
+  def loginForm(name: String) = { loginFormJson(name).noSpaces }
+  def signupForm(name: String) = {  loginFormJson(name).deepMerge(json""" { "username": ${name} } """).noSpaces }
+
+  def doPost(url: String)(implicit cj: MockCookieJar) = {
+    cj.addCookies(Request[IO](Method.POST, uri = Uri(path = url)))
+  }
+
+  def doGet(url: String)(implicit cj: MockCookieJar) = {
+    cj.addCookies(Request[IO](Method.GET, uri = Uri(path = url)))
+  }
+
+  def signupReq(name: String)(implicit cj: MockCookieJar): Request[IO] = doPost("/signup").withBody(signupForm(name)).unsafeRunSync()
+  def loginReq(name: String)(implicit cj: MockCookieJar): Request[IO] = doPost("/login").withBody(loginForm(name)).unsafeRunSync()
+  def logoutReq()(implicit cj: MockCookieJar): Request[IO] = doGet("/logout")
+
+  def checkResponse(r: OptionT[IO, Response[IO]], checks: (Response[IO] => Unit)*)(implicit cj: MockCookieJar) = {
+    r.fold(sys.error("no response")){ resp =>
+      checks.foreach { check => check(resp) }
+      // Put any headers from response into cookie jar
+      cj.updateCookies(resp)
+    }.unsafeRunSync()
+  }
+
+
+  def hasHeader(hdr: String): Response[IO] => Unit =
+    r => assert(r.headers.get(hdr.ci).isDefined)
+
+  def tapWith(f: Response[IO] => Unit): Response[IO] => Unit = r => f(r)
+  def tapWith(f: => Unit): Response[IO] => Unit = _ => f
+
+}
+
+class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
 
 
   val authenticatorSettings = TSecCookieSettings(
@@ -95,43 +131,11 @@ class AuthenticationSpec extends DatabaseFreeSpec  {
 
   }
 
-  def loginFormJson(name: String) = { json""" { "email": ${name+"@x.com"}, "password": ${name+"-psswd"} } """ }
-  def loginForm(name: String) = { loginFormJson(name).noSpaces }
-  def signupForm(name: String) = {  loginFormJson(name).deepMerge(json""" { "username": ${name} } """).noSpaces }
-
-  def doPost(url: String)(implicit cj: MockCookieJar) = {
-    cj.addCookies(Request[IO](Method.POST, uri = Uri(path = url)))
-  }
-
-  def doGet(url: String)(implicit cj: MockCookieJar) = {
-    cj.addCookies(Request[IO](Method.GET, uri = Uri(path = url)))
-  }
-
-  def signupReq(name: String)(implicit cj: MockCookieJar): Request[IO] = doPost("/signup").withBody(signupForm(name)).unsafeRunSync()
-  def loginReq(name: String)(implicit cj: MockCookieJar): Request[IO] = doPost("/login").withBody(loginForm(name)).unsafeRunSync()
-  def logoutReq()(implicit cj: MockCookieJar): Request[IO] = doGet("/logout")
 
   def statusReq()(implicit cj: MockCookieJar): Request[IO] = doGet("/status")
 
-  def checkResponse(r: OptionT[IO, Response[IO]], checks: (Response[IO] => Unit)*)(implicit cj: MockCookieJar) = {
-
-    r.fold(fail("no response")){ resp =>
-      checks.foreach { check => check(resp) }
-      // Put any headers from response into cookie jar
-      cj.updateCookies(resp)
-
-
-    }.unsafeRunSync()
-  }
-
   def hasStatus(s: http4s.Status): Response[IO] => Unit =
     r => r.status shouldEqual s
-
-  def hasHeader(hdr: String): Response[IO] => Unit =
-    r => assert(r.headers.get(hdr.ci).isDefined)
-
-  def tapWith(f: Response[IO] => Unit): Response[IO] => Unit = r => f(r)
-  def tapWith(f: => Unit): Response[IO] => Unit = _ => f
 
 
 

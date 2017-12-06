@@ -15,9 +15,7 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.2"
   val scaladgetV          = "0.9.5"
-  // val http4sVersion       = "0.17.5"
   val http4sVersion       = "0.18.0-M5"
-  // val fs2Version          = "0.9.7"
   val fs2Version          = "0.10.0-M8" // For cats 1.0.0-RC1 and cats-effect 0.5
 
   val ammoniteVersion     = "1.0.3"
