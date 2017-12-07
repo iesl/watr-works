@@ -211,7 +211,8 @@ trait CirceJsonCodecs extends TypeTagCodecs {
 case class WorkflowForm(
   workflow     : String,
   description  : String,
-  targetLabel  : String
+  targetLabel  : String,
+  curatedLabels: Seq[String]
 )
 
 trait WorkflowCodecs extends CirceJsonCodecs {

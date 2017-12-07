@@ -31,10 +31,9 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
     reflowDB.dropAndRecreate
     reflowDB.reinit()
   }
-  override def afterEach(): Unit = {
-    println("closing db connections")
-    reflowDB.shutdown()
-  }
+
+  override def afterEach(): Unit = {}
+
   def add4pg_3x3SampleDoc(stableId: String@@DocumentID): Unit = {
     val doc = List(
       "abc\ndef\nghi",

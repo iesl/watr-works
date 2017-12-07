@@ -41,30 +41,33 @@ trait UserAuthenticationServices extends AuthenticatedService {
 
   val signupRoute: HttpService[IO] = HttpService[IO] {
     case request @ POST -> Root / "signup" =>
-
       println(s"signup")
-      val response = for {
 
-        signup    <- request.attemptAs[SignupForm].fold(
-          decodeFailure => {
-            println(s"decodeFailure: ${decodeFailure}")
-            throw SignupError
-          }, x => x)
+      val resp = request.decode[UrlForm]{ data =>
+        val signup = SignupForm(
+          data.values("email").head,
+          data.values("username").head,
+          data.values("password").head
+        )
 
-        exists    <- userStore.exists(EmailAddr(signup.email)).fold(true)(_ => throw SignupError)
-        _         <- IO(println(s"exists; $exists"))
-        password  <- IO(signup.password.hashPassword[SCrypt])
-        _         <- IO(println(s"password; $password"))
-        newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
-        authInfo  <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
-        _         <- IO( println(s"newUser; $newUser") )
-        cookie    <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
-        _         <- IO( println(s"cookie; $cookie") )
-        // response  <- Ok(userInfoResponse(newUser, authInfo))
-        response  <- TemporaryRedirect(Location(uri("/")))
-      } yield authenticator.embed(response, cookie)
+        for {
 
-      response.handleError { _ => Response(Status.BadRequest) }
+          exists    <- userStore.exists(EmailAddr(signup.email)).fold(true)(_ => throw SignupError)
+          _         <- IO(println(s"exists; $exists"))
+          password  <- IO(signup.password.hashPassword[SCrypt])
+          _         <- IO(println(s"password; $password"))
+          newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
+          authInfo  <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
+          _         <- IO( println(s"newUser; $newUser") )
+          cookie    <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
+          _         <- IO( println(s"cookie; $cookie") )
+          // response  <- Ok(userInfoResponse(newUser, authInfo))
+          response  <- TemporaryRedirect(Location(uri("/")))
+        } yield authenticator.embed(response, cookie)
+
+      }
+
+      resp.handleError { _ => Response(Status.BadRequest) }
   }
 
   val loginRoute: HttpService[IO] = HttpService[IO] {

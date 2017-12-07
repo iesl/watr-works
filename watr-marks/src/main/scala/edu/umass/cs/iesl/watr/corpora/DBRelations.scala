@@ -45,9 +45,10 @@ object RelationModel {
   )
 
   case class WorkflowDef(
-    workflow     : String@@WorkflowID,
-    description  : String,
-    labelId      : Int@@LabelID
+    workflow      : String@@WorkflowID,
+    description   : String,
+    targetLabel   : Label,
+    curatedLabels : Seq[Label]
   )
 
   case class ZoneLock(

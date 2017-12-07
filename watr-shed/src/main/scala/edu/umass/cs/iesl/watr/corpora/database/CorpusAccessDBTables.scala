@@ -132,11 +132,13 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
 
   object workflowTables {
+
     val create: Update0 = sql"""
       CREATE TABLE workflow (
         workflow          VARCHAR(32) PRIMARY KEY,
         description       TEXT,
-        label             INTEGER REFERENCES label NOT NULL
+        targetLabel       INTEGER REFERENCES label NOT NULL,
+        curatedLabels     INTEGER[]
       );
 
 

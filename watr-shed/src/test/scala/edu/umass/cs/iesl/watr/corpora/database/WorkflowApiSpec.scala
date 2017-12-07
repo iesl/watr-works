@@ -12,10 +12,13 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
   behavior of "Zone lock/unlock + basic user support"
 
   val VisualLine: Label = Label.auto
+  val Sup: Label = Label.auto
+  val Sub: Label = Label.auto
+  val Math: Label = Label.auto
 
   def initWorkflows(n: Int): Seq[String@@WorkflowID] = {
     0 until n map { i =>
-      workflowApi.defineWorkflow(s"curation-workflow-${i}", s"sample labeling task $i", VisualLine)
+      workflowApi.defineWorkflow(s"curation-workflow-${i}", s"sample labeling task $i", VisualLine, Seq(Sup, Sub, Math))
     }
   }
 

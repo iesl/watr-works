@@ -87,7 +87,7 @@ trait UserbaseApi {
 
 trait WorkflowApi {
 
-  def defineWorkflow(slug: String, desc: String, targetLabel: Label): String@@WorkflowID
+  def defineWorkflow(slug: String, desc: String, targetLabel: Label, curatedLabels: Seq[Label]): String@@WorkflowID
   def activateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
   def deactivateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
   def deleteWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]

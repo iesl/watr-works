@@ -4,6 +4,7 @@ package database
 
 import doobie.imports._
 import doobie.free.{ connection => C }
+
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Properties
@@ -386,17 +387,45 @@ class CorpusAccessDB(
     }
   }
   object workflowApi extends WorkflowApi {
+    import doobie.postgres.imports._
 
-    def defineWorkflow(slug: String, desc: String, label: Label): String@@WorkflowID = {
+    def defineWorkflow(slug: String, desc: String, targetLabel: Label, curatedLabels: Seq[Label]): String@@WorkflowID = {
 
-      val labelId = docStore.ensureLabel(label)
+      val targetLabelId = docStore.ensureLabel(targetLabel)
+      val curatedLabelIds = curatedLabels
+        .map(docStore.ensureLabel(_).unwrap)
+        .toArray
 
       runq {
         sql"""
-           insert into workflow (workflow, description, label)
-           values (${slug}, ${desc}, ${labelId})
+           insert into workflow (workflow, description, targetLabel, curatedLabels)
+           values (${slug}, ${desc}, ${targetLabelId}, ${curatedLabelIds})
            returning workflow
         """.query[String@@WorkflowID].unique
+      }
+    }
+
+
+
+    def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
+      runq {
+        sql""" select workflow, description, targetLabel, curatedLabels
+               from   workflow
+               where  workflow=${workflowId}
+        """.query[(String, String, Int@@LabelID, Array[Int])]
+
+          .map{ case (workflowId, desc, target, curated) =>
+            val curatedLabels = curated.map{ id =>
+              val labelId = LabelID(id)
+              val l = docStore.getLabel(labelId)
+              Rel.Label(l.id, l.key),
+            }
+            val l = docStore.getLabel(target)
+            Rel.WorkflowDef(WorkflowID(workflowId), desc,
+              Rel.Label(l.id, l.key),
+              curatedLabels
+            )
+          }.unique
       }
     }
 
@@ -416,11 +445,6 @@ class CorpusAccessDB(
       sql""" select workflow from workflow """.query[String@@WorkflowID].list
     }
 
-    def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
-      runq {
-        sql""" select * from workflow where workflow=${workflowId}""".query[Rel.WorkflowDef].unique
-      }
-    }
 
     def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport = {
       val unassignedCount = runq {
@@ -428,7 +452,7 @@ class CorpusAccessDB(
           select count(*)
             from      zone as z
             left join zonelock as lk using (zone)
-            where  z.label=(select label from workflow where workflow=${workflowId})
+            where  z.label=(select targetLabel from workflow where workflow=${workflowId})
               AND  lk.zone is null
        """.query[Int].unique
       }
@@ -459,7 +483,7 @@ class CorpusAccessDB(
           select ${userId}, ${workflowId}, z.zone, ${ZoneLockStatus.Assigned}
             from      zone as z
             left join zonelock as lk using (zone)
-            where  z.label=(select label from workflow where workflow=${workflowId})
+            where  z.label=(select targetLabel from workflow where workflow=${workflowId})
               AND  lk.zone is null
             limit ${count}
        """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog

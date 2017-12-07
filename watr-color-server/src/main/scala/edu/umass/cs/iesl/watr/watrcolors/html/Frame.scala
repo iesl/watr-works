@@ -12,9 +12,27 @@ object Frame {
       <.meta(^.httpEquiv:="Content-Type", ^.content:="text/html"),
       <.meta(^.httpEquiv:="X-UA-Compatible", ^.content:="IE=edge"),
       <.meta(^.charset:="utf-8"),
-      <.title("WatrColors"),
+
+      <.script("text/javascript".typ, ^.src := "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"),
+      <.script("text/javascript".typ, ^.src := "https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"),
+
+      <.link(^.rel:="stylesheet", ^.href:="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css"),
+
+      <.link(^.rel:="stylesheet",
+        ^.href:=" https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
+        "integrity".attr:="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN",
+        "crossorigin".attr:="anonymous"),
+
+      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"),
+
+      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/d3/4.12.0/d3.min.js"),
+
+      <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.5.5/Rx.min.js"),
+
+      <.title("WatrColors")
     )
   }
+
 
   def apply(bundleName: String) = {
     empty()
@@ -29,7 +47,6 @@ object Frame {
       ),
     )
   }
-
   def empty() = {
     <.html(
       htmlHead(),
