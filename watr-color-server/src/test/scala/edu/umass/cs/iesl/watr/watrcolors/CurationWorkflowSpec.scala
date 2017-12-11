@@ -18,6 +18,7 @@ class CurationWorkflowSpec extends Http4sSpec with DatabaseTest {
     def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(reflowDB, null)
     def docStore = corpusAccessApi.docStore
     def workflowApi = corpusAccessApi.workflowApi
+    def userbaseApi = corpusAccessApi.userbaseApi
   }
 
 

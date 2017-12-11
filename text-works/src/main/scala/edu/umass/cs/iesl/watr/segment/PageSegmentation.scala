@@ -87,7 +87,7 @@ trait PageSegmenter extends PageLevelFunctions {
         textRow      <- pageIndex.components.getComponentText(line, LB.VisualLine).toList
       } yield textRow
 
-      val pageTextGrid = TextGrid.fromRows(textLines)
+      val pageTextGrid = TextGrid.fromRows(docScope.stableId, textLines)
 
       docStore.setPageText(pageId, pageTextGrid)
     }

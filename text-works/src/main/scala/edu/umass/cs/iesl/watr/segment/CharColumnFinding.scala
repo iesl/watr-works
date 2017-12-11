@@ -58,8 +58,7 @@ trait CharColumnFinding extends PageScopeSegmenter
     }
 
 
-
-    TextGrid.fromRows(rows)
+    TextGrid.fromRows(docScope.stableId,  rows)
   }
 
 

@@ -3,16 +3,18 @@ package watrcolors
 package models
 
 import cats.effect.Effect
+import io.circe.generic.JsonCodec
 import org.http4s.circe._
 import io.circe
 import circe._
-import circe.syntax._
+// import circe.syntax._
 import circe.literal._
 import org.http4s.EntityDecoder
-import java.util.UUID
+// import java.util.UUID
 
-import cats.implicits._, cats.data._
+// import cats.implicits._, cats.data._
 import tsec.passwordhashers.imports.SCrypt
+
 
 import watrmarks._
 import geometry._
@@ -95,14 +97,14 @@ object formdata {
 
 }
 
-case class LabelerReqForm(
-  labels: Seq[Label],
-  description: String
-)
+// case class LabelerReqForm(
+//   labels: Seq[Label],
+//   description: String
+// )
 
-object LabelerReqForm extends CirceJsonCodecs {
-  implicit def entityD[F[_]: Effect]: EntityDecoder[F, LabelerReqForm] = jsonOf[F, LabelerReqForm]
-}
+// object LabelerReqForm extends CirceJsonCodecs {
+//   implicit def entityD[F[_]: Effect]: EntityDecoder[F, LabelerReqForm] = jsonOf[F, LabelerReqForm]
+// }
 
 
 case class LTarget(
@@ -115,18 +117,6 @@ object LTarget {
   implicit val decoder: Decoder[LTarget] = deriveDecoder
 }
 
-// case class GlyphTarget(
-//   page: Int,
-//   bbox: Seq[Int],
-//   char: String
-// )
-
-
-// object GlyphTarget {
-//   import circe.generic.semiauto._
-//   implicit val encoder: Encoder[GlyphTarget] = deriveEncoder
-//   implicit val decoder: Decoder[GlyphTarget] = deriveDecoder
-// }
 
 case class LabelingSelection(
   annotType: String,
@@ -140,10 +130,8 @@ object LabelingSelection {
 }
 
 case class LabelSpanReq(
-  stableId: String,
   labelChoice: Label,
-  //           (page: Int, bbox: Seq[Int], char: String)
-  targets: Seq[(Int, (Int, Int, Int, Int), String)]
+  gridJson: Json
 )
 
 object LabelSpanReq extends CirceJsonCodecs {
@@ -151,6 +139,7 @@ object LabelSpanReq extends CirceJsonCodecs {
   implicit val encoder: Encoder[LabelSpanReq] = deriveEncoder
   implicit val decoder: Decoder[LabelSpanReq] = deriveDecoder
 }
+
 
 case class LabelingReqForm(
   stableId: String,
@@ -215,6 +204,14 @@ case class WorkflowForm(
   curatedLabels: Seq[String]
 )
 
+@JsonCodec sealed trait Mod
+case class StatusUpdate(status: String) extends Mod
+case class Unassign() extends Mod
+
+@JsonCodec case class WorkflowMod(
+  update: Mod
+)
+
 trait WorkflowCodecs extends CirceJsonCodecs {
   import circe.generic.semiauto._
 
@@ -223,7 +220,9 @@ trait WorkflowCodecs extends CirceJsonCodecs {
 
   implicit val encoder2: Encoder[R.WorkflowDef] = deriveEncoder
 
-  implicit def decoder3[F[_]: Effect]: EntityDecoder[F, WorkflowForm] = jsonOf[F, WorkflowForm]
-  // implicit val decoder2: Decoder[R.WorkflowDef] = deriveDecoder
+  implicit def WorkflowForm_EntityDecoder[F[_]: Effect]: EntityDecoder[F, WorkflowForm] = jsonOf[F, WorkflowForm]
+
+  // implicit def WorkflowMod_EntityDecoder[F[_]: Effect]: EntityDecoder[F, WorkflowMod] = jsonOf[F, WorkflowMod]
+  // implicit def WorkflowUpdate_EntityDecoder[F[_]: Effect]: EntityDecoder[F, StatusUpdate] = jsonOf[F, StatusUpdate]
 
 }

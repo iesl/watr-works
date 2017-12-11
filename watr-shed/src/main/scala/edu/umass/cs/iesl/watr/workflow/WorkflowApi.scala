@@ -42,9 +42,10 @@ object WorkflowStatus {
 object ZoneLockStatus {
   val Assigned     = StatusCode("Assigned")
   val Completed    = StatusCode("Completed")
+  val NeedsReview  = StatusCode("NeedsReview")
   val Skipped      = StatusCode("Skipped")
 
-  val all = List(Assigned, Completed, Skipped)
+  val all = List(Assigned, Completed, Skipped, NeedsReview)
 }
 
 case class WorkflowReport(

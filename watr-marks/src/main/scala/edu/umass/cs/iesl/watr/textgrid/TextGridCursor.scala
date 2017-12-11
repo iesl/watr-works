@@ -88,9 +88,8 @@ trait GridCursor { self =>
   }
 
 
-
-  def insertCharLeft(c: Char): GridCursor =  insertLeft(focus.createLeftInsert(c))
-  def insertCharRight(c: Char): GridCursor =  insertRight(focus.createRightInsert(c))
+  def insertCharLeft(c: Char): GridCursor =  insertLeft(focus.createInsert(c))
+  // def insertCharRight(c: Char): GridCursor =  insertRight(focus.createRightInsert(c))
 }
 
 
@@ -183,7 +182,7 @@ sealed trait Window { self =>
   }
 
   def extendRight(char: Char): Window = {
-    val ins = zipper.focus.createRightInsert(char)
+    val ins = zipper.focus.createInsert(char)
     Window(
       cells :+ ins,
       zipper.lefts, zipper.focus, zipper.rights

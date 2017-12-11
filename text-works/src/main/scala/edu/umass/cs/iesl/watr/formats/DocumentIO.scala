@@ -106,75 +106,75 @@ object DocumentIO  {
     ).toString()
   }
 
-  def documentToJson(mpageIndex: MultiPageIndex): String = {
+  // def documentToJson(mpageIndex: MultiPageIndex): String = {
 
-    val serProps = new TextGrid.SerializationProps
-    for {
-      pageNum      <- mpageIndex.getPages
-      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
-    }  {
-      for {
-        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
-        (line, n)    <- lineCCs.zipWithIndex
-        textRow      <- pageIndex.components.getComponentText(line, LB.VisualLine).toList
-      } {
-        textRow.serialize(serProps)
-      }
+  //   // val serProps = new TextGrid.SerializationProps
+  //   for {
+  //     pageNum      <- mpageIndex.getPages
+  //     pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+  //   }  {
+  //     for {
+  //       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex)
+  //       (line, n)    <- lineCCs.zipWithIndex
+  //       textRow      <- pageIndex.components.getComponentText(line, LB.VisualLine).toList
+  //     } {
+  //       // textRow.serialize(serProps)
+  //     }
 
-    }
-    val lineNums = serProps.lineMap.keys.toList.sorted
+  //   }
+  //   val lineNums = serProps.lineMap.keys.toList.sorted
 
-    val textLines = lineNums.map { lineNum =>
-      val t = serProps.lineMap(lineNum)._2
-      t.asJson.noSpaces.box
-    }
+  //   val textLines = lineNums.map { lineNum =>
+  //     val t = serProps.lineMap(lineNum)._2
+  //     t.asJson.noSpaces.box
+  //   }
 
-    val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(textLines:_*))
+  //   val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(textLines:_*))
 
-    val lineDefs = lineNums.map { lineNum =>
-      serProps.lineMap(lineNum)._1.noSpaces.box
-    }
+  //   val lineDefs = lineNums.map { lineNum =>
+  //     serProps.lineMap(lineNum)._1.noSpaces.box
+  //   }
 
-    val lineDefsBlock = indent(4)(vjoinTrailSep(left, ",")(lineDefs:_*))
+  //   val lineDefsBlock = indent(4)(vjoinTrailSep(left, ",")(lineDefs:_*))
 
-    val pageIdDefs = serProps.pageIdMap.toList
-      .map{ case (pageId, (stableId, pageNum)) =>
-        s"""[${pageId}, "${stableId}", ${pageNum}]""".box
-      }
-
-
-    val pageIdBlock = indent(4)(vjoinTrailSep(left, ",")(pageIdDefs:_*))
-
-    val finalDocument = (
-      s"""|{ "lines": [
-          |${textLinesBlock}
-          |  ],
-          |  "zones": [
-          |{serializedZones}
-          |  ],
-          |  "relations": [
-          |{relationBlock}
-          |  ],
-          |  "errors": [
-          |  ],
-          |  "labels": [
-          |  ],
-          |  "pageDefs": [
-          |${pageIdBlock}
-          |  ],
-          |  "lineDefs": [
-          |${lineDefsBlock}
-          |  ]
-          |}
-          |""".stripMargin)
+  //   val pageIdDefs = serProps.pageIdMap.toList
+  //     .map{ case (pageId, (stableId, pageNum)) =>
+  //       s"""[${pageId}, "${stableId}", ${pageNum}]""".box
+  //     }
 
 
-    finalDocument.split("\n")
-      .map(_.reverse.dropWhile(_==' ').reverse)
-      .mkString("\n")
+  //   val pageIdBlock = indent(4)(vjoinTrailSep(left, ",")(pageIdDefs:_*))
 
-    textLines.mkString("\n")
-  }
+  //   val finalDocument = (
+  //     s"""|{ "lines": [
+  //         |${textLinesBlock}
+  //         |  ],
+  //         |  "zones": [
+  //         |{serializedZones}
+  //         |  ],
+  //         |  "relations": [
+  //         |{relationBlock}
+  //         |  ],
+  //         |  "errors": [
+  //         |  ],
+  //         |  "labels": [
+  //         |  ],
+  //         |  "pageDefs": [
+  //         |${pageIdBlock}
+  //         |  ],
+  //         |  "lineDefs": [
+  //         |${lineDefsBlock}
+  //         |  ]
+  //         |}
+  //         |""".stripMargin)
+
+
+  //   finalDocument.split("\n")
+  //     .map(_.reverse.dropWhile(_==' ').reverse)
+  //     .mkString("\n")
+
+  //   textLines.mkString("\n")
+  // }
 
   // def richTextSerializeDocument(mpageIndex: MultiPageIndex): String = {
   //   val docStore = mpageIndex.docStore

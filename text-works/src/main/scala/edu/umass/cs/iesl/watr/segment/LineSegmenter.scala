@@ -89,7 +89,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
             val cell = TextGrid.PageItemCell(charAtom, Seq(), char)
 
             val continuations = item.char.tail.map { cn =>
-              cell.createRightExpansion(cn)
+              cell.createInsert(cn)
             }
 
             val allCells: Seq[TextGrid.GridCell] = cell +: continuations

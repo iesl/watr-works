@@ -6,14 +6,15 @@ import corpora._
 import workflow._
 
 import org.http4s._
-import org.http4s.{headers => H}
 import org.http4s.dsl._
 import org.http4s.circe._
 
 import _root_.io.circe
 import circe._
+import circe.syntax._
+import circe.literal._
 
-import cats.implicits._
+// import cats.implicits._
 import cats.effect._
 
 import corpora.filesys._
@@ -66,29 +67,32 @@ trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs { self =>
   lazy val corpus: Corpus = corpusAccessApi.corpus
 
 
-  object UserQP extends QueryParamDecoderMatcher[String]("user")
-  object ZoneQP extends QueryParamDecoderMatcher[Int]("zone")
   object StatusQP extends QueryParamDecoderMatcher[String]("status")
 
   object StartQP extends OptionalQueryParamDecoderMatcher[Int]("start")
   object LengthQP extends OptionalQueryParamDecoderMatcher[Int]("len")
 
-  def okJson(resp: Json): IO[Response[IO]] = {
-    Ok(resp)
-      .map { _.putHeaders(H.`Content-Type`(MediaType.`application/json`)) }
+  def decodeOrErr[T: Decoder](req: Request[IO]): IO[T] = {
+    for {
+      js   <- req.as[Json]
+      decoded <-  IO{  Decoder[T].decodeJson(js).fold(fail => {
+        println(s"Error decoding: ${js}: ${fail}")
+        throw new Throwable(s"error decoding ${js} ${fail}")
+      }, mod => mod) }
+    } yield decoded
   }
 
-  def decodeOrErr[T: Decoder](req: Request[IO]): IO[T] = {
-    val res = jsonOf[IO, T].decode(req, strict=true)
-      .attempt.fold(t => {
-        println(s"Error: ${t}")
-        println(s"Error: ${t.getCause}")
-        println(s"Error: ${t.getMessage}")
-        sys.error(s"${t}")
-      }, ss => {
-        sys.error(s"${ss}")
-      })
-    res
+  import cats.effect.IO
+
+  def orErrorJson(response: IO[Response[IO]]): IO[Response[IO]] = {
+    response.attempt.map { _ match {
+      case Left(t: Throwable) =>
+        println(s"server error: ${t}: ${t.getMessage}: ${t.getCause}")
+        Ok(Json.obj(
+          "server error" := s""
+        )).unsafeRunSync()
+      case Right(r: Response[IO]) => r
+    }}
   }
 
 }

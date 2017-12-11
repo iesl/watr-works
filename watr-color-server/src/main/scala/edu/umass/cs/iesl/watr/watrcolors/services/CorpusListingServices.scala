@@ -3,6 +3,7 @@ package watrcolors
 package services
 
 import org.http4s._
+import org.http4s.circe._
 import org.http4s.dsl._
 import _root_.io.circe
 import circe._
@@ -45,7 +46,7 @@ trait CorpusListingServices extends Http4sDsl[IO] with ServiceCommons with Workf
 
       }).asJson
 
-      okJson(
+      Ok(
         Json.obj(
           ("corpusSize", Json.fromInt(docCount)),
           ("entries", entries),

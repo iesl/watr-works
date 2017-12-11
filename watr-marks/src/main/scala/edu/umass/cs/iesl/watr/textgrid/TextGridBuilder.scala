@@ -72,11 +72,12 @@ trait TextGridBuilder {
     val docId = docStore.getDocument(stableId).get
     val pageId = docStore.addPage(docId, pageNum)
 
-    stringToPageTextGrid(pageBlock, pageNum, Some(pageId))
+    stringToPageTextGrid(stableId, pageBlock, pageNum, Some(pageId))
   }
 
 
   def stringToPageTextGrid(
+    stableId: String@@DocumentID,
     pageBlock: String,
     pageNum: Int@@PageNum,
     maybePageId: Option[Int@@PageID]
@@ -107,12 +108,12 @@ trait TextGridBuilder {
       val headBounds = row.pageBounds().head
       val maybeZoneId = docStore.labelRegions(LB.VisualLine, Seq(headBounds))
       maybeZoneId.foreach { zoneId =>
-        docStore.setZoneText(zoneId, TextGrid.fromRows(Seq(row)))
+        docStore.setZoneText(zoneId, TextGrid.fromRows(stableId, Seq(row)))
       }
       row
     }
 
-    val grid = TextGrid.fromRows(rows)
+    val grid = TextGrid.fromRows(stableId, rows)
     val headBounds = grid.pageBounds().head.bbox
 
     docStore.setPageGeometry(pageId, headBounds)
@@ -122,11 +123,12 @@ trait TextGridBuilder {
   def visualizeDocStore(): Unit = {
     for {
       stableId     <- docStore.getDocuments()
+      _            = println(s"stableId: ${stableId}")
       docId        <- docStore.getDocument(stableId).toSeq
-      // _            <- putStrLn(s"Document $stableId id:${docId}")
+      _            = println(s"Document $stableId id:${docId}")
       pageId       <- docStore.getPages(docId)
       pageGeometry  = docStore.getPageGeometry(pageId)
-      // _            <- putStrLn(s"  Page  ${pageId}: ${pageGeometry}")
+      _             = println(s"  Page  ${pageId}: ${pageGeometry}")
       pageTextGrid <- docStore.getPageText(pageId)
     } {
       println(pageTextGrid.toText())

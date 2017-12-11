@@ -2,10 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package services
 
-import cats.syntax.all._
-
 import org.http4s._
-import org.http4s.{headers => H}
 import org.http4s.circe._
 import _root_.io.circe
 import circe._
@@ -21,24 +18,6 @@ trait LabelingServices extends AuthenticatedService { self =>
 
   // Mounted at /api/v1xx/labeling/..
   val labelingServiceEndpoints = Auth {
-
-    case req @ POST -> Root / "ui" / "labeler" asAuthed user =>
-
-      val response = for {
-        labels    <- req.request.attemptAs[LabelerReqForm].fold(
-          decodeFailure => throw new Exception(s"decodeFailure: ${decodeFailure}"),
-          succ => succ)
-
-        panel = html.Parts.labelingPanel(labels.labels)
-        ok <- Ok(
-          json""" { "ui": { "labeler": ${panel.toString()} } } """
-        )
-      } yield ok
-      response.handleError { err =>
-        println(s"err: ${err}: ${err.getMessage} ${err.getCause}")
-        err.printStackTrace()
-        Response(Status.BadRequest)
-      }
 
     case req @ GET -> Root / "labels" / stableIdStr asAuthed user =>
       val stableId = DocumentID(stableIdStr)
@@ -57,96 +36,56 @@ trait LabelingServices extends AuthenticatedService { self =>
         ("zones", Json.arr(allDocZones:_*))
       )
 
-      okJson(jsonResp)
+      Ok(jsonResp)
 
     case req @ DELETE -> Root / "label"  asAuthed user =>
       println(s"Got delete label request")
 
       for {
         deleteReq <- decodeOrErr[DeleteZoneRequest](req.request)
-
-        allZones = {
-          val stableId = DocumentID(deleteReq.stableId)
-          val docId  = docStore.getDocument(stableId).getOrElse {
-            sys.error(s"docId not found for ${stableId}")
-          }
-          for {
-            zoneId <- deleteReq.zoneIds
-          } {
-            val zone = docStore.getZone(ZoneID(zoneId))
-            println(s"Deleting zones ${zone}")
-            docStore.deleteZone(ZoneID(zoneId))
-          }
-          val allDocZones = for {
-            labelId <- docStore.getZoneLabelsForDocument(docId)
-            zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
-          } yield {
-            val zone = docStore.getZone(zoneId)
-            zone.asJson
-          }
-          Json.obj(
-            ("zones", Json.arr(allDocZones:_*))
-          )
-        }
-        resp <- Ok(allZones)
       } yield {
-        resp.putHeaders(H.`Content-Type`(MediaType.`application/json`))
+        for { zoneId <- deleteReq.zoneIds } {
+          val zone = docStore.getZone(ZoneID(zoneId))
+          println(s"Deleting zones ${zone}")
+          docStore.deleteZone(ZoneID(zoneId))
+        }
       }
+      Ok(Json.obj())
 
     case req @ POST -> Root / "label" / "span"  asAuthed user =>
 
-      for {
+      val handler = for {
+        // gridJson <- req.request.as[Json]
         labeling <- decodeOrErr[LabelSpanReq](req.request)
-        allZones = {
-          val stableId = DocumentID(labeling.stableId)
-          val docId  = docStore.getDocument(stableId).getOrElse {
-            sys.error(s"docId not found for ${stableId}")
-          }
 
-          val asdf = labeling.targets.map { case (page, (l, t, w, h), charStr) =>
-            val pageNum = PageNum(page)
-
-            // val (l, t, w, h) = bbox
-            // (bbox(0), bbox(1), bbox(2), bbox(3))
-            val bbox = LTBounds.IntReps(l, t, w, h)
-            (pageNum, bbox, charStr.head)
-          }
-
-          val textgrid = TextGrid.fromPageGlyphArrays(stableId, asdf)
+        _ = {
+          // val stableId = DocumentID(labeling.stableId)
+          val textgrid = TextGrid.fromJson(labeling.gridJson)
           val gridBounds = textgrid.pageBounds()
 
-          docStore.labelRegions(labeling.labelChoice, gridBounds).foreach{
-            zoneId => docStore.setZoneText(zoneId, textgrid)
-          }
-
-          val allDocZones = for {
-            labelId <- docStore.getZoneLabelsForDocument(docId)
-            zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
-          } yield {
-            val zone = docStore.getZone(zoneId)
-            zone.asJson
-          }
-          Json.obj(
-            ("zones", Json.arr(allDocZones:_*))
-          )
+          println(s"labeling span ${gridBounds}")
+          docStore.labelRegions(labeling.labelChoice, gridBounds)
+            .foreach{ zoneId =>
+              println(s"setting zone ${zoneId} text to  ${textgrid}")
+              docStore.setZoneText(zoneId, textgrid)
+            }
         }
+        resp <- Ok(Json.obj())
+      } yield resp
 
-        resp <- Ok(allZones)
-
-      } yield {
-        resp.putHeaders(H.`Content-Type`(MediaType.`application/json`))
-      }
+      orErrorJson(handler)
 
     case req @ POST -> Root / "label" / "region" asAuthed user =>
+      println(s"${req}")
 
-      for {
+      val handler = for {
         labeling <- decodeOrErr[LabelingReqForm](req.request)
-        allZones = {
+        _ = {
+
           val stableId = DocumentID(labeling.stableId)
           val docId  = docStore.getDocument(stableId).getOrElse {
             sys.error(s"docId not found for ${stableId}")
           }
-
 
           val regions = labeling.selection.targets.map { ltarget =>
             val pageNum = PageNum(ltarget.page)
@@ -166,22 +105,10 @@ trait LabelingServices extends AuthenticatedService { self =>
           }
 
           docStore.labelRegions(labeling.labelChoice, regions.flatten)
-
-          val allDocZones = for {
-            labelId <- docStore.getZoneLabelsForDocument(docId)
-            zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
-          } yield {
-            val zone = docStore.getZone(zoneId)
-            zone.asJson
-          }
-          Json.obj(
-            ("zones", Json.arr(allDocZones:_*))
-          )
-
         }
-        resp <- Ok(allZones)
-      } yield {
-        resp.putHeaders(H.`Content-Type`(MediaType.`application/json`))
-      }
+        resp <- Ok(Json.obj())
+      } yield resp
+
+      orErrorJson(handler)
   }
 }

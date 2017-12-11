@@ -66,7 +66,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     val allRows = textGrids.map(_.rows).flatten
 
-    TextGrid.fromRows(allRows)
+    TextGrid.fromRows(docScope.stableId,  allRows)
   }
 
   def runDocumentSegmentation(): Unit = {
