@@ -112,4 +112,20 @@ class TextGridTests extends TextGridTestUtil {
 
   }
 
+  it should "render to a textgrid labeling widget" in {
+    val stableId = DocumentID("docXX")
+    for {
+      (doc, i) <- docs.zipWithIndex
+      pages <- docs
+      page <- pages
+    } {
+      val textGrid = stringToPageTextGrid(stableId, page,  PageNum(1), None)
+
+      textGrid.rows.map { row =>
+        row.cells.head
+      }
+    }
+  }
+
+
 }

@@ -17,7 +17,7 @@ lazy val prelude = (project in file("watr-prelude"))
     "org.scala-lang" % "scala-reflect" % scalaVersion.value
   ))
 
-lazy val watrmarks = (project in file("watr-marks"))
+lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
@@ -25,16 +25,23 @@ lazy val watrmarks = (project in file("watr-marks"))
     TestLibs.testAndCheck ++
     Lib.circeJson ++ Seq(
       Lib.shapeless,
-      "org.scalaz"                 %% "scalaz-core"            % Lib.scalazVersion,
-      "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
-      "com.lihaoyi"                %% "fansi"                  % Lib.fansiV,
-      "com.lihaoyi"                %% "sourcecode"             % Lib.sourcecodeV,
-      Lib.ammoniteOps,
-      "com.github.davidmoten" % "rtree" % "0.8.0.2",
-      "com.github.davidmoten" % "flatbuffers-java" % "1.8.0.1",
-      "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
+      "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion
     )
   )
+  .jvmSettings(libraryDependencies ++=
+    LogLibs.logback ++
+    TestLibs.testAndCheck ++ Seq(
+      Lib.ammoniteOps,
+      "com.lihaoyi"                %%% "scalatags"              % Lib.scalaTagsVersion,
+      "com.lihaoyi"                %% "sourcecode"             % Lib.sourcecodeV,
+      "com.github.davidmoten" % "rtree" % "0.8.0.4",
+      "com.github.davidmoten" % "flatbuffers-java" % "1.8.0.1",
+      "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
+    ))
+
+lazy val watrmarksJS = watrmarks.js
+
+lazy val watrmarksJVM = watrmarks.jvm
 
 lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)

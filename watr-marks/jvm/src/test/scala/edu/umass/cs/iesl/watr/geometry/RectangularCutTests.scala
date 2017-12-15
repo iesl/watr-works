@@ -16,6 +16,18 @@ class RectangularCutTests  extends FlatSpec with Matchers {
   val graphSize = LTBounds.Ints(0, 0, 14, 14)
 
   it should "burst overlapping regions into all contiguous rectangles" in {
+    // Result is:
+    //   Intersection ++
+    //   val AllAdjacent: List[RelativeDirection] = List(
+    //     Left        ,
+    //     Right       ,
+    //     Top         ,
+    //     Bottom      ,
+    //     TopLeft     ,
+    //     TopRight    ,
+    //     BottomLeft  ,
+    //     BottomRight
+    //   )
 
     List(
       (LTBounds.Ints(2, 2, 4, 1), LTBounds.Ints(2, 2, 4, 1), {
