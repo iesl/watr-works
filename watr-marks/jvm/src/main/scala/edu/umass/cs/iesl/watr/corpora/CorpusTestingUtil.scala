@@ -73,7 +73,7 @@ trait CorpusTestingUtil extends TextGridBuilder {
       stableId     <- docStore.getDocuments()
     } yield visualizeDocument(stableId)
 
-    TB.vjoins()(docBoxes)
+    TB.vjoins(docBoxes)
   }
 
   def visualizeDocument(stableId: String@@DocumentID): TB.Box = {
@@ -91,9 +91,9 @@ trait CorpusTestingUtil extends TextGridBuilder {
           .map(r => docStore.getTargetRegion(r).toString().box)
 
         ("PageGeometry"
-          % indent(4)(pageGeometry.toString.box)
-          % indent(2)(s"PageRegions for page ${pageId}: ${allTargetRegions.length} ")
-          % indent(4)(vcat(regions)))
+          % indent(4, pageGeometry.toString.box)
+          % indent(2, s"PageRegions for page ${pageId}: ${allTargetRegions.length} ")
+          % indent(4, vcat(left,regions)))
       }
 
       val zoneBoxes = for {
@@ -103,19 +103,19 @@ trait CorpusTestingUtil extends TextGridBuilder {
         val zbox = docStore.getZone(zoneId).toString().box
         // docStore.getTextReflowForZone(zoneId)
         //   .map { reflow =>
-        //     zbox atop indent(2)(reflow.toText.box)
+        //     zbox atop indent(2, reflow.toText.box)
         //   }
         //   .getOrElse(zbox)
         "TODO".box
       }
 
       (s"Document ${docId} (${stableId}) report"
-        % indent(2)(vcat(pagesBox))
-        % indent(2)("Zones")
-        % indent(4)(vcat(zoneBoxes))
+        % indent(2, vcat(left,pagesBox))
+        % indent(2, "Zones")
+        % indent(4, vcat(left,zoneBoxes))
       )
     }
-    vcat(docBoxes)
+    vcat(left,docBoxes)
   }
 
   def reportDocument(stableId: String@@DocumentID): TB.Box = {

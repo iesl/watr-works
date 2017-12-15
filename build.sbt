@@ -8,7 +8,7 @@ val Lib = CommonLibs
 
 lazy val root = (project in file("."))
   .aggregate(
-    prelude, watrmarks, textworks, watrshed, watrcolorServer
+    prelude, watrmarksJVM, watrmarksJS, textworks, watrshed, watrcolorServer
   )
 
 lazy val prelude = (project in file("watr-prelude"))
@@ -18,6 +18,7 @@ lazy val prelude = (project in file("watr-prelude"))
   ))
 
 lazy val watrmarks = (crossProject in file("watr-marks"))
+  .enablePlugins(ScalaJSPlugin)
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
@@ -32,8 +33,9 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     LogLibs.logback ++
     TestLibs.testAndCheck ++ Seq(
       Lib.ammoniteOps,
-      "com.lihaoyi"                %%% "scalatags"              % Lib.scalaTagsVersion,
+      "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
       "com.lihaoyi"                %% "sourcecode"             % Lib.sourcecodeV,
+      "com.lihaoyi"                %% "fansi"                  % Lib.fansiV,
       "com.github.davidmoten" % "rtree" % "0.8.0.4",
       "com.github.davidmoten" % "flatbuffers-java" % "1.8.0.1",
       "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
@@ -61,7 +63,7 @@ lazy val textworks = (project in file("text-works"))
       Lib.ammoniteOps,
       Lib.shapeless
     ))
-  .dependsOn(prelude, watrmarks)
+  .dependsOn(prelude, watrmarksJVM)
 
 lazy val watrshed = (project in file("watr-shed"))
   .enablePlugins(JavaAppPackaging)
@@ -78,12 +80,17 @@ lazy val watrshed = (project in file("watr-shed"))
       Lib.ammonite,
       Lib.shapeless
     ))
-  .dependsOn(prelude, watrmarks, textworks)
+  .dependsOn(prelude, watrmarksJVM, textworks)
 
 lazy val watrcolorServer = (project in file("watr-color-server"))
   .enablePlugins(JavaAppPackaging)
   .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
+  .settings(
+    fork in run := true,
+    connectInput := true,
+    outputStrategy := Some(StdoutOutput)
+  )
   .settings(libraryDependencies ++=
     Lib.fs2 ++
     LogLibs.logback ++

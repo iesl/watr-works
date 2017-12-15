@@ -44,10 +44,10 @@ trait DocumentZoningApiEnrichments  {
           val regionCount =  s"TargetRegions for page ${pageId}: ${allTargetRegions.length} ".box
 
           (
-            indent(2)("PageGeometry")
-              % indent(4)(pageGeometry.toString.box)
-              % indent(2)(regionCount)
-              % indent(2)("Page Zones")
+            indent(2, "PageGeometry")
+              % indent(4, pageGeometry.toString.box)
+              % indent(2, regionCount)
+              % indent(2, "Page Zones")
           )
         }
 
@@ -60,12 +60,12 @@ trait DocumentZoningApiEnrichments  {
           docStore.getZone(zoneId).toString().box
         }
         (s"Document ${docId} (${thisStableId}) report"
-          % indent(4)(vcat(pagesBox))
-          % indent(2)("Zones")
-          % indent(4)(vcat(zoneBoxes))
+          % indent(4, vcat(left,pagesBox))
+          % indent(2, "Zones")
+          % indent(4, vcat(left,zoneBoxes))
         )
       }
-      vcat(docBoxes)
+      vcat(left,docBoxes)
     }
 
 

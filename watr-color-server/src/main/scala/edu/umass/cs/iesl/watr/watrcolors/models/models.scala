@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package watrcolors
 package models
 
-import cats.effect.Effect
+import cats.effect._
 import io.circe.generic.JsonCodec
 import org.http4s.circe._
 import io.circe
@@ -33,6 +33,7 @@ object users {
     userId: Int@@UserID,
     username : String@@Username,
     password: SCrypt
+    // password: IO[PasswordHash[SCrypt]]
   )
 
 

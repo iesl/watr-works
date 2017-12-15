@@ -285,17 +285,17 @@ class PageIndex(
             val members = set.take(2).map(_.id).mkString(", ")
             val membersFull = set.take(8).map(_.toString().box)
 
-            s"[${canon}] = (${set.length}) ${members} ..." atop indent(2)(vcat(membersFull))
+            s"[${canon}] = (${set.length}) ${members} ..." atop indent(2, vcat(left,membersFull))
           }
 
-          vjoin(left)(
+          vjoin(left,
             s"$l => ",
-            indent(2)(vsep(setStrs, 1)),
+            indent(2, vjoinWith(left, vspace(1), setStrs)),
             "~"*20
           )
         }
 
-      val res = vjoin(left)(indent(4)(vcat(allSets)))
+      val res = vjoin(indent(4, vcat(left, allSets)))
 
       println(res)
     }
@@ -402,17 +402,17 @@ class PageIndex(
             val members = set.take(2).map(_.id).mkString(", ")
             val membersFull = set.take(8).map(_.toString().box)
 
-            s"[${canon}] = (${set.length}) ${members} ..." atop indent(2)(vcat(membersFull))
+            s"[${canon}] = (${set.length}) ${members} ..." atop indent(2, vcat(left,membersFull))
           }
 
-          vjoin(left)(
+          vjoin(left,
             s"$l => ",
-            indent(2)(vsep(setStrs, 1)),
+            indent(2, vjoinWith(left, vspace(1), setStrs)),
             "~"*20
           )
         }
 
-      val res = vjoin(left)(indent(4)(vcat(allSets)))
+      val res = vjoin(indent(4, vcat(left,allSets)))
 
       println(res)
     }

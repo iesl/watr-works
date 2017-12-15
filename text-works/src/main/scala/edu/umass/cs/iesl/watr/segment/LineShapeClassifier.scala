@@ -222,10 +222,10 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
       pinstr.box
     }
 
-    val groupings = hjoin(left)(
-      vjoins(TB.right)(pinCol),
+    val groupings = hjoin(
+      vjoins(TB.right, pinCol),
       "  ",
-      vjoins(TB.left)(textCol)
+      vjoins(TB.left, textCol)
     )
 
     println()

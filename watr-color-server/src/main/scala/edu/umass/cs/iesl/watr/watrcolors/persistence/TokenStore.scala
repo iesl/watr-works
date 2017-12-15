@@ -183,8 +183,7 @@ sealed abstract class MemTokenStore[F[_]: Effect]
 
 object MemTokenStore {
   def apply[F[_]: Effect](implicit ec: ExecutionContext): F[MemTokenStore[F]] =
-    Ref
-      .initialized(HashMap.empty[UUID, TokenStore.ValueType])
+    Ref(HashMap.empty[UUID, TokenStore.ValueType])
       .map { m =>
         new MemTokenStore[F] {
           protected val ref

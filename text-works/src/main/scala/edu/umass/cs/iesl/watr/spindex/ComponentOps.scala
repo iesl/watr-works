@@ -47,7 +47,7 @@
 //   // def vtraceHistogram(vfs: Seq[(FloatExact, Double)], resStart: Double, resComputed: Double): TraceLog = {
 //   //   message(
 //   //     vjoin()(
-//   //       s"histogram: resolution(in)=${resStart.pp}, resolution(computed):${resComputed.pp}", indent(2)(
+//   //       s"histogram: resolution(in)=${resStart.pp}, resolution(computed):${resComputed.pp}", indent(2, 
 //   //         vjoin(AlignLeft)(
 //   //           "Val:",
 //   //           "Freq:"

@@ -121,13 +121,13 @@ object SensibleProject extends CommonLibs {
 
 
     autoCompilerPlugins  := true,
-    addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.4"),
+    addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.5"),
     addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.1" cross CrossVersion.full),
 
     // These settings are required to make Ammonite Repl work properly
-    fork := true,
-    connectInput := true,
-    outputStrategy := Some(StdoutOutput),
+    // fork := true,
+    // connectInput := true,
+    // outputStrategy := Some(StdoutOutput),
 
     // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the
     //   scala library get loaded
@@ -137,7 +137,7 @@ object SensibleProject extends CommonLibs {
 
 
     logBuffered in Test       := false,
-    fork in Test              := true,
+    fork in Test              := false,
     connectInput in Test      := false,
     parallelExecution in Test := false,
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),

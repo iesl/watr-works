@@ -58,23 +58,23 @@ object PredsynthIO extends DocsegJsonFormats {
       })
     }
 
-    val alignmentErrors = indent(4)(vjoinTrailSep(left, ",")(
+    val alignmentErrors = indent(4, vjoinTrailSep(left, ",")(
       misalignments.flatten.map({msg =>
         Json.stringify(JsString(msg)).box
       }):_*
     ))
 
     val textLines = textAndJsons.map(_._1)
-    val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(   textLines.map(t => Json.stringify(JsString(t)).box):_*))
-    val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
+    val textLinesBlock = indent(4, vjoinTrailSep(left, ",")(   textLines.map(t => Json.stringify(JsString(t)).box):_*))
+    val jsonLines =      indent(4, vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
 
-    // val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
+    // val serializedZones = indent(4, serializeZones(mpageIndex, escapedTextReflows, textLines))
 
     // val relations = serializeRelation(mpageIndex)
 
-    // val relationBlock = indent(4)(vjoinTrailSep(left, ",")(relations:_*))
+    // val relationBlock = indent(4, vjoinTrailSep(left, ",")(relations:_*))
 
-    // val propertyBlock = indent(4)(vjoinTrailSep(left, ",")(
+    // val propertyBlock = indent(4, vjoinTrailSep(left, ",")(
     //   mpageIndex.props.map({ prop =>
     //     Json.stringify(Json.toJson(prop)).box
     //   }):_*
@@ -96,7 +96,7 @@ object PredsynthIO extends DocsegJsonFormats {
           |${alignmentErrors}
           |  ],
           |  "properties": [
-          |{indent(4)(propertyBlock)}
+          |{indent(4, propertyBlock)}
           |  ],
           |  "labels": [
           |  ],

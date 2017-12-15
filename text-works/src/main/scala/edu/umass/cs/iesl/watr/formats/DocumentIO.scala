@@ -92,16 +92,16 @@ object DocumentIO  {
           "~".box
         }
       }
-      val groupings = hjoin(left)(
-        vjoins(TB.right)(pinCol),
+      val groupings = hjoin(
+        vjoins(TB.right, pinCol),
         "  ",
-        vjoins(TB.left)(textCol)
+        vjoins(TB.left, textCol)
       )
 
       groupings
     }
 
-    vjoins(left)(
+    vjoins(left,
       allText
     ).toString()
   }
@@ -129,13 +129,13 @@ object DocumentIO  {
   //     t.asJson.noSpaces.box
   //   }
 
-  //   val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")(textLines:_*))
+  //   val textLinesBlock = indent(4, vjoinTrailSep(left, ",")(textLines:_*))
 
   //   val lineDefs = lineNums.map { lineNum =>
   //     serProps.lineMap(lineNum)._1.noSpaces.box
   //   }
 
-  //   val lineDefsBlock = indent(4)(vjoinTrailSep(left, ",")(lineDefs:_*))
+  //   val lineDefsBlock = indent(4, vjoinTrailSep(left, ",")(lineDefs:_*))
 
   //   val pageIdDefs = serProps.pageIdMap.toList
   //     .map{ case (pageId, (stableId, pageNum)) =>
@@ -143,7 +143,7 @@ object DocumentIO  {
   //     }
 
 
-  //   val pageIdBlock = indent(4)(vjoinTrailSep(left, ",")(pageIdDefs:_*))
+  //   val pageIdBlock = indent(4, vjoinTrailSep(left, ",")(pageIdDefs:_*))
 
   //   val finalDocument = (
   //     s"""|{ "lines": [
@@ -210,16 +210,16 @@ object DocumentIO  {
 
 
   //   val textLines = textAndJsons.map(_._1)
-  //   val textLinesBlock = indent(4)(vjoinTrailSep(left, ",")( textLines.map(t => Json.stringify(JsString(t)).box):_*))
-  //   // val jsonLines =      indent(4)(vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
+  //   val textLinesBlock = indent(4, vjoinTrailSep(left, ",")( textLines.map(t => Json.stringify(JsString(t)).box):_*))
+  //   // val jsonLines =      indent(4, vjoinTrailSep(left, ",")(textAndJsons.map(pair => Json.stringify(pair._2).box):_* ))
 
-  //   // val serializedZones = indent(4)(serializeZones(mpageIndex, escapedTextReflows, textLines))
+  //   // val serializedZones = indent(4, serializeZones(mpageIndex, escapedTextReflows, textLines))
 
   //   // val relations = serializeRelation(mpageIndex)
 
-  //   // val relationBlock = indent(4)(vjoinTrailSep(left, ",")(relations:_*))
+  //   // val relationBlock = indent(4, vjoinTrailSep(left, ",")(relations:_*))
 
-  //   // val propertyBlock = indent(4)(vjoinTrailSep(left, ",")(
+  //   // val propertyBlock = indent(4, vjoinTrailSep(left, ",")(
   //   //   mpageIndex.props.map({ prop =>
   //   //     Json.stringify(Json.toJson(prop)).box
   //   //   }):_*
@@ -244,7 +244,7 @@ object DocumentIO  {
   //         |  "errors": [
   //         |  ],
   //         |  "properties": [
-  //         |{indent(4)(propertyBlock)}
+  //         |{indent(4, propertyBlock)}
   //         |  ],
   //         |  "labels": [
   //         |  ],

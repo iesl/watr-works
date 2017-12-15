@@ -67,14 +67,14 @@ class AllServices(
   def buildServer() = {
     BlazeBuilder[IO]
       .bindHttp(portNum, "localhost")
-      .mountService(htmlPageServices                  , "/")
+      .mountService(assetService                      , "/assets")
+      .mountService(jslibDistService                  , "/dist")
       .mountService(userAuthenticationServices        , "/api/v1/auth")
       .mountService(labelingServiceEndpoints          , "/api/v1/labeling")
       .mountService(curationServices                  , "/api/v1/workflow")
       .mountService(corpusArtifactEndpoints           , "/api/v1/corpus/artifacts")
       .mountService(corpusListingEndpoints            , "/api/v1/corpus/entries")
-      .mountService(assetService                      , "/assets")
-      .mountService(jslibDistService                  , "/dist")
+      .mountService(htmlPageServices                  , "/")
 
   }
 }
