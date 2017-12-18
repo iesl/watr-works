@@ -60,25 +60,6 @@ object SensibleProject extends CommonLibs {
     // "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
   )
 
-
-  val scalaOptionList = Seq(
-    "-deprecation"
-      , "-encoding", "UTF-8"
-      , "-feature"
-      , "-unchecked"
-      , "-language:existentials"
-      , "-language:higherKinds"
-      , "-language:implicitConversions"
-      , "-Xlint"
-      , "-Ywarn-adapted-args"
-      , "-Ywarn-inaccessible"
-      , "-Ywarn-unused-import"
-      , "-Ywarn-unused"
-      , "-Ywarn-dead-code"
-      , "-Ypartial-unification"
-      , "-Xfuture"
-  )
-
   lazy val wartremoverSettings = Seq(
     // wartremoverWarnings in (Compile, compile) ++= Warts.all
     // wartremoverWarnings ++= Warts.unsafe

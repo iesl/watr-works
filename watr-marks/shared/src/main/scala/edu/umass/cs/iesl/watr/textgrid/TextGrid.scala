@@ -372,18 +372,31 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
           }
 
           val LTBounds.IntReps(l, t, w, h) = pageItem.bbox
-          json"""[${char}, ${pageNum.unwrap}, [$l, $t, $w, $h]]"""
+          Json.arr(
+            Json.fromString(char.toString()),
+            Json.fromInt(pageNum.unwrap),
+            Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
+          )
         }
 
-        json"""{"g": ${items}}"""
-
+        Json.obj(
+          "g" := items
+        )
 
       case cell@ TextGrid.InsertCell(char, insertAt)     =>
 
         val pageNum = insertAt.page.pageNum
         val LTBounds.IntReps(l, t, w, h) = insertAt.bbox
 
-        json"""{"i": [${char}, ${pageNum.unwrap}, [$l, $t, $w, $h]]}"""
+        // json"""{"i": [${char}, ${pageNum.unwrap}, [$l, $t, $w, $h]]}"""
+        val jsonRec = Json.arr(
+          Json.fromString(char.toString()),
+          Json.fromInt(pageNum.unwrap),
+          Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
+        )
+        Json.obj(
+          "i" := jsonRec
+        )
     }}
 
   }

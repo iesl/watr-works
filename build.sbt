@@ -17,29 +17,34 @@ lazy val prelude = (project in file("watr-prelude"))
     "org.scala-lang" % "scala-reflect" % scalaVersion.value
   ))
 
+
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .enablePlugins(ScalaJSPlugin)
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
-    LogLibs.logback ++
-    TestLibs.testAndCheck ++
-    Lib.circeJson ++ Seq(
-      Lib.shapeless,
+    Seq(
+      "io.circe"                   %%% "circe-generic"          % Lib.circeJsonVersion,
+      "io.circe"                   %%% "circe-parser"           % Lib.circeJsonVersion,
+      "io.circe"                   %%% "circe-literal"          % Lib.circeJsonVersion,
+      "com.chuusai"                %%% "shapeless"              % Lib.shapelessV,
+      "org.scalatest"              %%% "scalatest"              % Lib.scalatestVersion % "test",
+      "com.lihaoyi"                %%% "fansi"                  % Lib.fansiV,
       "com.lihaoyi"                %%% "sourcecode"             % Lib.sourcecodeV,
       "org.scalaz"                 %%% "scalaz-core"            % Lib.scalazVersion
     )
   )
   .jvmSettings(libraryDependencies ++=
     LogLibs.logback ++
-    TestLibs.testAndCheck ++ Seq(
+    Seq(
+      "org.scalaz"                 %% "scalaz-scalacheck-binding" % Lib.scalazVersion  % "test",
+      "org.scalacheck"             %% "scalacheck"                % "1.13.5"       % "test", //  force()
       Lib.ammoniteOps,
       "org.scala-js"               %% "scalajs-stubs"          % "0.6.21" % "provided",
       "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
-      "com.lihaoyi"                %% "fansi"                  % Lib.fansiV,
-      "com.github.davidmoten" % "rtree" % "0.8.0.4",
-      "com.github.davidmoten" % "flatbuffers-java" % "1.8.0.1",
-      "ichi.bench" % "thyme" % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
+      "com.github.davidmoten"       % "rtree"                  % "0.8.0.4",
+      "com.github.davidmoten"       % "flatbuffers-java"       % "1.8.0.1",
+      "ichi.bench" % "thyme"        % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
     ))
 
 lazy val watrmarksJS = watrmarks.js

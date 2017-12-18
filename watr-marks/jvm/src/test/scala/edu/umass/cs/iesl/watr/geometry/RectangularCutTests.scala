@@ -102,7 +102,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
           drawAdjacencyDiagram(r)
         }
 
-        val actualOutput = hcat(adjs)
+        val actualOutput = hcat(top, adjs)
         // println(actualOutput)
         assertExpectedText(expectedOutput, actualOutput.toString())
     }
@@ -165,7 +165,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
            |""".stripMargin
       }
       // println(hcat(boxes))
-      assertExpectedText(expectedOutput, hcat(boxes).toString())
+      assertExpectedText(expectedOutput, hcat(top, boxes).toString())
     }
     {
       val boxes = List(
@@ -201,7 +201,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
       }
 
       // println(hcat(boxes))
-      assertExpectedText(expectedOutput, hcat(boxes).toString())
+      assertExpectedText(expectedOutput, hcat(top, boxes).toString())
     }
   }
 
@@ -251,7 +251,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
            |""".stripMargin
       }
       // println(hcat(boxes))
-      assertExpectedText(expectedOutput, hcat(boxes).toString())
+      assertExpectedText(expectedOutput, hcat(top, boxes).toString())
     }
 
 
@@ -282,7 +282,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
            |""".stripMargin
       }
 
-      assertExpectedText(expectedOutput, hcat(boxes).toString())
+      assertExpectedText(expectedOutput, hcat(top, boxes).toString())
     }
 
     {
@@ -318,7 +318,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
            |""".stripMargin
       }
 
-      assertExpectedText(expectedOutput, hcat(boxes).toString())
+      assertExpectedText(expectedOutput, hcat(top, boxes).toString())
     }
   }
 }

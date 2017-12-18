@@ -17,7 +17,7 @@ trait LibVersions {
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.18.0-M6"
   val fs2Version          = "0.10.0-M9" // For cats 1.0.0-RC1 and cats-effect 0.5
-
+  val circeJsonVersion    = "0.9.0-M2"
   val ammoniteVersion     = "1.0.3"
 }
 
