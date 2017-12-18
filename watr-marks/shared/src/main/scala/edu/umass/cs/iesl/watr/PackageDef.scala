@@ -1,6 +1,5 @@
 package edu.umass.cs.iesl.watr
 
-
 import scalaz.syntax
 import scalaz.syntax.std
 import scalaz.Tag

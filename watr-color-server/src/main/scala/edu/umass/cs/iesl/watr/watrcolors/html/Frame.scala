@@ -29,7 +29,7 @@ object Frame {
       <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/d3/4.12.0/d3.min.js"),
 
       <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.5.5/Rx.min.js"),
-      <.script("text/javascript".typ, ^.src := s"/dist/watrmarks-fastopt.js"),
+      <.script("text/javascript".typ, ^.src := s"/assets/watrmarks-fastopt.js"),
 
       <.title("WatrColors")
     )
