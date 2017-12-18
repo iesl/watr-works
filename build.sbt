@@ -3,6 +3,7 @@ import ReleaseTransformations._
 
 SensibleThisBuild.settings
 SensibleProject.settings
+enablePlugins(ScalaJSPlugin)
 
 val Lib = CommonLibs
 
@@ -19,7 +20,6 @@ lazy val prelude = (project in file("watr-prelude"))
 
 
 lazy val watrmarks = (crossProject in file("watr-marks"))
-  .enablePlugins(ScalaJSPlugin)
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=

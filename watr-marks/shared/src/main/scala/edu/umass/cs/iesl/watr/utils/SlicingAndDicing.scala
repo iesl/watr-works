@@ -1,9 +1,7 @@
 package edu.umass.cs.iesl.watr
 package utils
 
-// import scala.annotation.tailrec
 import scala.collection.mutable
-
 
 object SlicingAndDicing { outer =>
 

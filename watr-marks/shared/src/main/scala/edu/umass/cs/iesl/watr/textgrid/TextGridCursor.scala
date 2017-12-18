@@ -4,9 +4,6 @@ package textgrid
 import scalaz.{@@ => _, _} , Scalaz._
 
 import watrmarks._
-// import geometry._
-// import geometry.PageComponentImplicits._
-
 
 object GridCursor {
   def init(z: Zipper[TextGrid.GridCell]) = new GridCursor {

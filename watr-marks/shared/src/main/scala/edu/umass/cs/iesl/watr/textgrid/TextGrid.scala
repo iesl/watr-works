@@ -8,6 +8,7 @@ import geometry.syntax._
 import geometry.PageComponentImplicits._
 import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
+import utils.SlicingAndDicing._
 
 import _root_.io.circe
 import circe._
@@ -27,6 +28,37 @@ trait TextGrid {
 
   def toText(): String = {
     rows.map(_.toText).mkString("\n  ", "\n  ", "\n")
+  }
+
+  def splitOneLeafLabelPerLine(): TextGrid = {
+    val splitRows = rows.flatMap { row =>
+      row.splitOnLeafLabels()
+    }
+
+    TextGrid.fromRows(stableId, splitRows)
+  }
+
+  def split(row: Int, col: Int): Option[TextGrid] = {
+    if (0 <= row && row < rows.length) {
+      rows(row).split(col).map {
+        case (row1, row2) =>
+          val (pre, post) = rows.splitAt(row)
+          val end = row1 +: row2 +: (post.drop(1))
+          val newRows = pre ++ end
+          TextGrid.fromRows(stableId, newRows)
+      }
+    } else None
+  }
+
+  def slurp(row: Int): Option[TextGrid] = {
+    if (0 <= row && row < rows.length-1) {
+      val (pre, post) = rows.splitAt(row)
+      val r1 = pre.last
+      val r2 = post.head
+      val r12 = r1.append(r2)
+      val newRows = pre.dropRight(1) ++ (r12 +: post.drop(1))
+      Some(TextGrid.fromRows(stableId, newRows))
+    } else None
   }
 
   def buildOutput() = new TextOutputBuilder(this)
@@ -52,7 +84,8 @@ trait TextGrid {
 }
 
 object TextGrid {
-  type SetType[A] = mutable.Set[A]
+  // type SetType[A] = mutable.Set[A]
+  type SetType[A] = mutable.ArrayStack[A]
   type PinSet = SetType[BioPin]
 
 
@@ -68,26 +101,22 @@ object TextGrid {
 
   }
 
-  sealed trait GridCell {
-    def pageRegion: PageRegion
-
-    def char: Char
-
-    val pins: PinSet = mutable.HashSet[BioPin]()
-
-    def fonts: FontInfo = NoFonts
+  sealed trait LabelTarget {
+    val pins: PinSet = mutable.ArrayStack[BioPin]()
 
     def labels: SetType[Label] = pins.map(_.label)
 
-    def addPin(p: BioPin): Unit = pins.add(p)
+    def addPin(p: BioPin): Unit = pins.push(p)
 
     def addLabel(l: Label): Unit = addPin(l.U)
 
     def removeLabel(l: Label): Unit = {
-      pins.retain(_.label != l)
+      if (pins.contains(l)) {
+        while(pins.top.label != l) {
+          pins.pop()
+        }
+      }
     }
-
-    def createInsert(ch: Char): InsertCell = InsertCell(ch, this.pageRegion)
 
     def hasLabel(l: Label): Boolean = {
       pins.exists(_.label == l)
@@ -95,6 +124,36 @@ object TextGrid {
 
     def hasPin(p: BioPin): Boolean = {
       pins.contains(p)
+    }
+
+    def topLabel(): Option[Label] = {
+      if (pins.nonEmpty) {
+        Some(pins.top.label)
+      } else None
+    }
+
+    def topPin(): Option[BioPin] = {
+      if (pins.nonEmpty) {
+        Some(pins.top)
+      } else None
+    }
+
+    def showPinsVert(): Box = {
+      vjoins(left, pins.toList.reverse.map(_.pinChar.toString.box))
+    }
+  }
+
+  sealed trait GridCell extends LabelTarget {
+    def pageRegion: PageRegion
+
+    def char: Char
+
+    def fonts: FontInfo = NoFonts
+
+    def createInsert(ch: Char): InsertCell = InsertCell(ch, this.pageRegion)
+
+    def showCell(): Box = {
+      vjoin(left, char.toString(), showPinsVert())
     }
   }
 
@@ -120,9 +179,45 @@ object TextGrid {
   }
 
 
-  trait Row {
+  trait Row extends LabelTarget {
 
     def cells: Seq[GridCell]
+
+    def split(col: Int): Option[(Row, Row)] = {
+      if (0 < col && col < cells.length-1) {
+        val (c1, c2) = cells.splitAt(col)
+        Some((
+          Row.fromCells(c1), Row.fromCells(c2)
+        ))
+      } else None
+    }
+
+    def splitOnLeafLabels(): Seq[Row] = {
+      val groups = cells.groupByPairs((a, b) => {
+        (a.topPin(), b.topPin()) match {
+          case (Some(pin1), Some(pin2)) =>
+            val isBIL = pin1.isBegin && (pin2.isInside || pin2.isLast)
+            val isIIL = pin1.isInside && (pin2.isInside || pin2.isLast)
+            val sameLabel = pin1.label == pin2.label
+            sameLabel && (isBIL || isIIL)
+
+          case (None, None) => true
+          case _ => false
+        }})
+
+
+      groups.map{ group =>
+        val r = Row.fromCells(group)
+        r.cells.head.topPin().foreach { pin =>
+          r.addLabel(pin.label)
+        }
+        r
+      }
+    }
+
+    def append(row: Row): Row = {
+      Row.fromCells(cells ++ row.cells)
+    }
 
     def pageBounds(): Seq[PageRegion] = {
       val regionsByPages = cells.groupBy(_.pageRegion.page.pageNum)
@@ -148,6 +243,10 @@ object TextGrid {
 
     def toText(): String = {
       cells.map(_.char).mkString("")
+    }
+
+    def showRow(): Box = {
+      hcat(top, cells.map(_.showCell()))
     }
 
     protected[textgrid] def serialize(codecs: AccumulatingTextGridCodecs): Unit = {
@@ -185,10 +284,6 @@ case class TextGridSerialization(
 )
 
 class TextOutputBuilder(textGrid: TextGrid) {
-
-  // def withLineNumbering(): Unit = {}
-  // def withMarginLabels(): Unit = {}
-  // def withTextLocations(): Unit = {}
 
   def getSerialization(): TextGridSerialization = {
     val codecs = new AccumulatingTextGridCodecs(textGrid.stableId)
