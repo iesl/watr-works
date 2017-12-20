@@ -144,8 +144,6 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
   ///////////////////////////
 
 
-
-
   "Behavior of Authorization" - {
 
     "When Not Registered" - {

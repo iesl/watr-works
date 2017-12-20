@@ -15,10 +15,7 @@ object GridCursor {
       def zipper: Zipper[TextGrid.GridCell] = z
     }
   }
-
 }
-
-
 
 trait GridCursor { self =>
   def zipper: Zipper[TextGrid.GridCell]
