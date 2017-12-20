@@ -508,43 +508,91 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
 object TextGridFunctions {
   import scalaz.{@@ => _, _} , Scalaz._
 
+  sealed trait TreeNode
+
+  object TreeNode {
+    case class CellNode(
+      cell: TextGrid.GridCell
+    ) extends TreeNode
+
+    case class LabelNode(
+      label: Label
+    ) extends TreeNode
+
+    case object UnlabeledNode extends TreeNode
+
+  }
+
+  def bioPinsToRoseTreeNewVer(textGrid: TextGrid): Tree[TreeNode] = {
+    val init = Tree.Node[TreeNode](TreeNode.UnlabeledNode, Stream.empty)
+    var currLoc = init.loc
+
+    def up(): Unit = {
+      currLoc = currLoc.parent.getOrElse(sys.error("no parent found"))
+    }
+
+    for { (cell, row, col) <- textGrid.indexedCells() } {
+      val pinStack = cell.pins.reverse
+      val basePins = pinStack.drop(currLoc.parents.length)
+
+      basePins.takeWhile(p => p.isBegin || p.isUnit)
+        .foreach { pin =>
+          // val n = Tree.Node(pin.label.fqn, Stream.empty)
+          val n = Tree.Node[TreeNode](TreeNode.LabelNode(pin.label), Stream.empty)
+          currLoc = currLoc.insertDownLast(n)
+        }
+
+      val leaf = Tree.Leaf[TreeNode](TreeNode.CellNode(cell))
+      currLoc = currLoc.insertDownLast(leaf)
+
+      up()
+
+      cell.pins.takeWhile(p => p.isLast || p.isUnit)
+        .foreach { _ => up()  }
+    }
+
+    currLoc.root.toTree
+
+  }
+
   def bioPinsToRoseTree(textGrid: TextGrid): Tree[String] = {
-      val init = Tree.Node("<empty label>", Stream.empty)
-      var currLoc = init.loc
+    val init = Tree.Node("<empty label>", Stream.empty)
+    var currLoc = init.loc
 
-      def up(): Unit = {
-        currLoc = currLoc.parent.getOrElse(sys.error("no parent found"))
-      }
-      for {
-        (cell, row, col) <- textGrid.indexedCells()
-      } {
-        // println(s"cell.pins: ${cell.pins}")
-        val pinStack = cell.pins.reverse
-        val basePins = pinStack.drop(currLoc.parents.length)
-        // println(s"========")
-        // println(s"tree depth: ${currLoc.parents.length}")
-        // println(s"pinStack: ${pinStack}")
-        // println(s"basePins: ${basePins}")
+    def up(): Unit = {
+      currLoc = currLoc.parent.getOrElse(sys.error("no parent found"))
+    }
 
-        basePins
-          .takeWhile(p => p.isBegin || p.isUnit)
-          .foreach { pin =>
-            val n = Tree.Node(pin.label.fqn, Stream.empty)
-            currLoc = currLoc.insertDownLast(n)
-          }
+    for {
+      (cell, row, col) <- textGrid.indexedCells()
+    } {
+      // println(s"cell.pins: ${cell.pins}")
+      val pinStack = cell.pins.reverse
+      val basePins = pinStack.drop(currLoc.parents.length)
+      // println(s"========")
+      // println(s"tree depth: ${currLoc.parents.length}")
+      // println(s"pinStack: ${pinStack}")
+      // println(s"basePins: ${basePins}")
+
+      basePins
+        .takeWhile(p => p.isBegin || p.isUnit)
+        .foreach { pin =>
+          val n = Tree.Node(pin.label.fqn, Stream.empty)
+          currLoc = currLoc.insertDownLast(n)
+        }
 
 
-        currLoc = currLoc.insertDownLast(Tree.Leaf(s"${cell.char}"))
-        up()
+      currLoc = currLoc.insertDownLast(Tree.Leaf(s"${cell.char}"))
+      up()
 
-        // println("Current: ")
-        // println(currLoc.root.toTree.drawTree)
-        // println()
+      // println("Current: ")
+      // println(currLoc.root.toTree.drawTree)
+      // println()
 
-        cell.pins
-          .takeWhile(p => p.isLast || p.isUnit)
-          .foreach { _ => up()  }
-      }
+      cell.pins
+        .takeWhile(p => p.isLast || p.isUnit)
+        .foreach { _ => up()  }
+    }
 
     currLoc.root.toTree
 

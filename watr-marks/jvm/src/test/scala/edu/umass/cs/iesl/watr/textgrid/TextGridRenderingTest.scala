@@ -181,19 +181,18 @@ class TextGridRenderingTests extends TextGridSpec {
       println(finalTree.drawBox)
 
       info("map rose trees to zippers w/sliding focuses")
+
+      // finalTree.subForest.foreach{ finalTree =>
+      // }
+
       val leafLocs = finalTree.loc.cojoin.toStream.filter(_.isLeaf)
-      // leafLocs.foreach { l =>
-      //   println("loc")
-      //   println(l)
-      //  }
+
 
       info("split zippers into rows corresponding to textgrid row layout")
       val rowLengths = labelPerLineGrid.rows.map(_.cells.length)
       val locRowsR = rowLengths.foldLeft(
-        (
-          List.empty[List[TreeLoc[String]]],
-          leafLocs
-        )
+        (List.empty[List[TreeLoc[String]]],
+          leafLocs)
       ){
         case ((acc, locs), e) =>
           val (row, rest) = (locs.take(e), locs.drop(e))
@@ -204,7 +203,10 @@ class TextGridRenderingTests extends TextGridSpec {
       val locRows = locRowsR._1.reverse
 
 
-      info("to render widget text block:")
+      info("Render widget text block:")
+
+      val Indent: Int = 2
+
       def textForTreeLoc(loc: TreeLoc[String]): String = {
         val rleaves = loc.tree.loc.cojoin.toStream.filter(_.isLeaf)
         rleaves.map(_.getLabel).mkString
@@ -225,65 +227,28 @@ class TextGridRenderingTests extends TextGridSpec {
 
       val rows = locRows.map { locRow =>
         val rowText = locRow.map(_.getLabel).mkString
-        println(s"rowText: ${rowText}")
         val depth = locRow.head.parents.length-1
         val headLoc = locRow.head
+        // val mod1 = headLoc.pins.isEmpty ? -1 else tailLoc.pins.top.isLast || locRow.len==1 && headLoc.pins.top.isUnit
 
         val headerList = parentHeaders(headLoc).drop(1).reverse
         val indentedHdrs = headerList.map{ case (h, i) =>
-          indent((i-1)*2, "+".besideS(h))
+          indent((i-1)*Indent, "+".besideS(h))
         }
 
         if (headerList.nonEmpty) {
           vjoin(left,
             vjoins(left, indentedHdrs),
-            indent(depth*2, ">".besideS(rowText))
+            indent((depth+1)*Indent, ">".besideS(rowText))
           )
         } else {
-          indent(depth*2, ">".besideS(rowText))
+          indent((depth+1)*Indent, ">".besideS(rowText))
         }
-        // if (headLoc.lefts.isEmpty) {
-        //   val beginAlignedAncestors = headLoc.parents.takeWhile(_._1.isEmpty).map(_._3)
-        //   val headers = (headLoc.rights +: beginAlignedAncestors.toList).zipWithIndex.map{ case (rights, parentDepth) =>
-        //     val rightTexts = rights.map{ rightTree =>
-        //       val rleaves = rightTree.loc.cojoin.toStream.filter(_.isLeaf)
-        //       rleaves.map(_.getLabel).mkString
-        //     }
-        //     val rightText = rightTexts.mkString
-        //     (rightText, parentDepth)
-        //   }
-
-        //   val hdrBlock = headers.reverse.map{ case (hdr, hdrDepth) =>
-        //     indent(hdrDepth*2, "+".besideS(hdr))
-        //   }
-        //   println("Header: ")
-        //   println(vjoins(left, hdrBlock))
       }
-      //   val beginAlignedAncestors = l.parents.takeWhile(_._1.isEmpty)
-      //   val headers = beginAlignedAncestors.zipWithIndex.map{ case ((_, focus, rights), parentDepth) =>
-      //     val rightTexts = rights.map{ rightTree =>
-      //       val rleaves = rightTree.loc.cojoin.toStream.filter(_.isLeaf)
-      //       rleaves.map(_.getLabel).mkString
-      //     }
-      //     val rightText = rightTexts.mkString
-      //     (rightText, parentDepth)
-      //   }
-
-      //   val hdrBlock = headers.reverse.map{ case (hdr, hdrDepth) =>
-      //     indent(hdrDepth*2, "+".besideS(hdr))
-      //   }
-
-      //   vjoin(left,
-      //     vjoins(left, hdrBlock),
-      //     indent(depth*2, ">".besideS(rowText))
-      //   )
-      // }
 
       val block = vjoins(left, rows)
       println(block.toString)
 
-      // - indentation is equal to ancestor height at cursor
-      // - create a header line for each ancestor for which cursor is the first child of ancestor
       // - output is a list of grid data points, with bboxes, classes,  or spacers, which may also have classes
       //     or create indentation. classes allow hover highlighting for indentation spaces
       // - to create left-side controls...
