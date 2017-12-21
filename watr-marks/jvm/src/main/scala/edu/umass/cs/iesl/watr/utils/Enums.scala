@@ -13,8 +13,11 @@ object EnumVals {
   }
 
   object MkEnumVals {
+    // implicit def values[T, Repr <: Coproduct]
+    //   (implicit gen: Generic.Aux[T, Repr], v: Aux[T, Repr]): MkEnumVals[T] =
+    //   new MkEnumVals[T] { def values = v.values }
     implicit def values[T, Repr <: Coproduct]
-      (implicit gen: Generic.Aux[T, Repr], v: Aux[T, Repr]): MkEnumVals[T] =
+      (implicit v: Aux[T, Repr]): MkEnumVals[T] =
       new MkEnumVals[T] { def values = v.values }
 
     trait Aux[T, Repr] {

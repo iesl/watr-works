@@ -31,8 +31,8 @@ object RGeometryConversions {
   def rectangle(
     x: Float, y: Float, width: Float, height: Float
   ): RG.Rectangle = {
-    val x2 = if (width > 0) x + width else x + 0.01d
-    val y2 = if (height > 0) y + height else y + 0.01d
+    val x2 = if (width > 0) x + width else x + 0.01f
+    val y2 = if (height > 0) y + height else y + 0.01f
     RG.Geometries.rectangle(
       x, y, x2, y2
     )

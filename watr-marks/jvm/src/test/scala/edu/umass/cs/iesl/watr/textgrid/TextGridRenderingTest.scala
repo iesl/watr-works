@@ -8,13 +8,13 @@ import TypeTags._
 // import circe._
 // import circe.syntax._
 // import circe.literal._
-import textboxing.{TextBoxing => TB}, TB._
+// import textboxing.{TextBoxing => TB}, TB._
 import org.scalatest._
 
 import watrmarks._
 // import utils.SlicingAndDicing._
 import utils.ScalazTreeImplicits._
-import scalaz.{@@ => _, _} , Scalaz._
+// import scalaz.{@@ => _, _} , Scalaz._
 
 case class LineRenderInfo(
   text: String,
@@ -63,6 +63,7 @@ class TextGridRenderingTests extends TextGridSpec {
   val MiddleName = Label.auto
   val Journal = Label.auto
   val RefMarker = Label.auto
+  val RefNumber = Label.auto
 
 
   val inlineSpec = {
@@ -71,21 +72,8 @@ class TextGridRenderingTests extends TextGridSpec {
     // n: Name
     // f/m/l: First/Middle/LastName
 
-    val _ ={
-      """|
-         |>     |1.
-         |>snL  |Bishop-Clark
-         |>║╨F  |, C.
-         |>║    |and
-         |>║nL  |Wheeler
-         |>║║   |,
-         |>║╨F  |D.
-         |>║    |and
-         |>╨N   |Boehm, B.W.
-         |>J    |; Software Engineering Economics. Prentice-Hall
-         |"""
-    }
-
+  }
+  val _ = {
 
     """|
        |>R    |1.
@@ -129,147 +117,69 @@ class TextGridRenderingTests extends TextGridSpec {
 
   val labelSpans = List(
     ((0, 1),   RefMarker),
-    ((3, 51),  Authors),
-    ((3, 19),  Author),
+    ((0, 0),   RefNumber),
+    ((3, 33),  Authors),
+    ((3, 17),  Author),
     ((3, 14),  LastName),
-    ((18, 19), FirstName),
-    ((25, 35), Author),
-    ((41, 51), Author),
-    ((54, 98), Journal)
+    ((17, 17), FirstName),
+    ((24, 30), Author),
+    ((36, 48), Journal)
   )
+
   val unlabeledText = {
-    //"0         1         2         3         4         5         6         7         8         9
-    // 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 """
-    """1. Bishop-Clark,  C. and Wheeler, D. and Boehm, B.W.; Software Engineering Economics. Prentice-Hall"""
+    //"0         1         2         3         4         5
+    // 012345678901234567890123456789012345678901234567899 """
+    """1. Bishop-Clark, C  and Wheeler, D; S.Eng. P-Hall"""
 
   }
 
 
+  import TextGridRendering._
+
+  val stableId = DocumentID("docXX")
+
   "Behavior of Textgrid Widget Creation" - {
     info("Starting with unlabeled TextGrid")
-    val stableId = DocumentID("docXX")
 
     val textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
 
     info(textGrid.toText())
 
     info("... With labels applied")
-    val row0 = textGrid.rows.head.toCursor.get
 
-    val labeledCursor = labelSpans.foldLeft(row0) {case (accCur, ((start, end), label)) =>
-      val win = accCur.move(start)
-        .get.toWindow
-        .slurpRight({ case (window, next) => window.length <= end-start })
+    val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
 
-      win.addLabel(label)
-      win.toLastCursor.start
-    }
-
-    val labeledRow = labeledCursor.toRow
     info("\n"+ labeledRow.showRow().toString()+ "\n")
 
     info("... and normalized to one leaf label per line")
+
     val textGrid2 = TextGrid.fromRows(stableId, Seq(labeledRow))
     val labelPerLineGrid = textGrid2.splitOneLeafLabelPerLine()
 
     info(s"\n${labelPerLineGrid.toText()}\n\n-------------------")
 
-    "fold biopin stacks into rose tree" - {
+    info(s"Create a tree structure out of the BIO labels")
 
-      val finalTree = TextGridFunctions.bioPinsToRoseTree(labelPerLineGrid)
+    val labelTree = textGridToLabelTree(labelPerLineGrid)
+    info(labelTree.drawBox.toString())
 
-      println(finalTree.drawBox)
-
-      info("map rose trees to zippers w/sliding focuses")
-
-      // finalTree.subForest.foreach{ finalTree =>
-      // }
-
-      val leafLocs = finalTree.loc.cojoin.toStream.filter(_.isLeaf)
-
-
-      info("split zippers into rows corresponding to textgrid row layout")
-      val rowLengths = labelPerLineGrid.rows.map(_.cells.length)
-      val locRowsR = rowLengths.foldLeft(
-        (List.empty[List[TreeLoc[String]]],
-          leafLocs)
-      ){
-        case ((acc, locs), e) =>
-          val (row, rest) = (locs.take(e), locs.drop(e))
-          ((row.toList +: acc),
-            rest)
-      }
-
-      val locRows = locRowsR._1.reverse
-
-
-      info("Render widget text block:")
-
-      val Indent: Int = 2
-
-      def textForTreeLoc(loc: TreeLoc[String]): String = {
-        val rleaves = loc.tree.loc.cojoin.toStream.filter(_.isLeaf)
-        rleaves.map(_.getLabel).mkString
-      }
-
-      def parentHeaders(loc: TreeLoc[String]): Seq[(String, Int)] = {
-        if (loc.isFirst) {
-          val parentTexts = loc.parent.map{ p =>
-            val ptext = textForTreeLoc(p)
-            (ptext, loc.parents.length) +: parentHeaders(p)
-          }.getOrElse(Seq())
-
-          parentTexts
-        } else {
-          Seq()
-        }
-      }
-
-      val rows = locRows.map { locRow =>
-        val rowText = locRow.map(_.getLabel).mkString
-        val depth = locRow.head.parents.length-1
-        val headLoc = locRow.head
-        // val mod1 = headLoc.pins.isEmpty ? -1 else tailLoc.pins.top.isLast || locRow.len==1 && headLoc.pins.top.isUnit
-
-        val headerList = parentHeaders(headLoc).drop(1).reverse
-        val indentedHdrs = headerList.map{ case (h, i) =>
-          indent((i-1)*Indent, "+".besideS(h))
-        }
-
-        if (headerList.nonEmpty) {
-          vjoin(left,
-            vjoins(left, indentedHdrs),
-            indent((depth+1)*Indent, ">".besideS(rowText))
-          )
-        } else {
-          indent((depth+1)*Indent, ">".besideS(rowText))
-        }
-      }
-
-      val block = vjoins(left, rows)
-      println(block.toString)
-
-      // - output is a list of grid data points, with bboxes, classes,  or spacers, which may also have classes
-      //     or create indentation. classes allow hover highlighting for indentation spaces
-      // - to create left-side controls...
-      //   - "Marginalize" the BIO labels
-
-    }
+    // info(s"Create a TextGrid Labeling Widget")
+    // textGridToLabelingWidget(labelPerLineGrid)
 
   }
 }
 
 
-  // val layout = textgridToLayout(textGrid2)
-  // println(layout)
+// val layout = textgridToLayout(textGrid2)
+// println(layout)
 
-  // val renderedWidgetBlock = splitGrid.rows
-  //   .zipWithIndex.flatMap { case (row, rowNum) =>
-  //     val rowText = row.toText()
-  //     val rowPins = row.pins.toList
-  //     val textIndent = rowPins.filterNot(_.isUnit).length
-  //     val headerPins = rowPins.filter(_.isBegin)
-  //     println(s"R-------\n${row.showRow()}\n\n")
+// val renderedWidgetBlock = splitGrid.rows
+//   .zipWithIndex.flatMap { case (row, rowNum) =>
+//     val rowText = row.toText()
+//     val rowPins = row.pins.toList
+//     val textIndent = rowPins.filterNot(_.isUnit).length
+//     val headerPins = rowPins.filter(_.isBegin)
+//     println(s"R-------\n${row.showRow()}\n\n")
 
   //     val thisRow = LineRenderInfo(
   //       rowText,

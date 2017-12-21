@@ -136,4 +136,17 @@ trait TextGridBuilder {
     }
   }
 
+  def addLabelsToGridRow(row: TextGrid.Row, labelSpans: Seq[((Int, Int), watrmarks.Label)]): TextGrid.Row = {
+    val row0 = row.toCursor.get
+    val labeledCursor = labelSpans.foldLeft(row0) {case (accCur, ((start, end), label)) =>
+      val win = accCur.move(start)
+        .get.toWindow
+        .slurpRight({ case (window, next) => window.length <= end-start })
+
+      win.addLabel(label)
+      win.toLastCursor.start
+    }
+
+    labeledCursor.toRow
+  }
 }

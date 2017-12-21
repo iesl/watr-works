@@ -358,6 +358,7 @@ object GeometryImplicits extends RectangularCuts {
 
     case f: GeometricGroup => f.bounds
     case f: Colorized => minBoundingRect(f.figure)
+    case x => sys.error(s"minBoundingRect unexpected case ${x}")
   }
 
   def intersectionMBR(f1: GeometricFigure, f2: GeometricFigure): Option[LTBounds] = {

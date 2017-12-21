@@ -3,7 +3,7 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.17"
+  val scalazVersion       = "7.2.18"
   val scalaTagsVersion    = "0.6.7"
   val scalatestVersion    = "3.0.4"
   val logbackVersion      = "1.7.25"
@@ -16,7 +16,7 @@ trait LibVersions {
   val shapelessV          = "2.3.2"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.18.0-M6"
-  val fs2Version          = "0.10.0-M9" // For cats 1.0.0-RC1 and cats-effect 0.5
+  val fs2Version          = "0.10.0-M10" // For cats 1.0.0-RC1 and cats-effect 0.5
   val circeJsonVersion    = "0.9.0-M2"
   val ammoniteVersion     = "1.0.3"
 }
@@ -71,7 +71,7 @@ trait CommonLibs extends LibVersions {
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,
-    "org.typelevel" %% "cats-effect" % "0.5"
+    "org.typelevel" %% "cats-effect" % "0.6"
   )
 
 
@@ -96,7 +96,7 @@ trait CommonLibs extends LibVersions {
     "org.http4s" %% "http4s-blaze-client" % http4sVersion,
     "org.http4s" %% "http4s-circe" % http4sVersion,
     // "org.typelevel" %% "cats-core" % "0.9.0" // % "1.0.0-RC1"
-    "org.typelevel" %% "cats-core" % "1.0.0-RC1"
+    "org.typelevel" %% "cats-core" % "1.0.0-RC2"
   )
 
   val jwtCirce = Seq(

@@ -5,16 +5,12 @@ package utils
 import textboxing.{TextBoxing => TB}
 
 object TreeShaper {
-  def apply[N : Numeric](
-    implicit o: Ordering[N]
-  ) = new TreeShaper {
+  def apply[N:Numeric:Ordering] = new TreeShaper {
     override type NodeType = N
   }
 }
 
-abstract class TreeShaper[N](
-  implicit ord: Ordering[N], num: Numeric[N]
-) {
+abstract class TreeShaper[N:Numeric:Ordering] {
   import scalaz.Tree
   import scalaz.TreeLoc
   import scalaz.syntax.tree._
