@@ -1,14 +1,8 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-
 import corpora._
 import TypeTags._
-// import _root_.io.circe
-// import circe._
-// import circe.syntax._
-// import circe.literal._
-// import textboxing.{TextBoxing => TB}, TB._
 import org.scalatest._
 
 import watrmarks._
@@ -163,8 +157,8 @@ class TextGridRenderingTests extends TextGridSpec {
     val labelTree = textGridToLabelTree(labelPerLineGrid)
     info(labelTree.drawBox.toString())
 
-    // info(s"Create a TextGrid Labeling Widget")
-    // textGridToLabelingWidget(labelPerLineGrid)
+    info(s"Create a TextGrid Labeling Widget")
+    textGridToLabelingWidget(labelPerLineGrid)
 
   }
 }
