@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package textgrid
 
 
-// import textboxing.{TextBoxing => TB}, TB._
+import textboxing.{TextBoxing => TB}, TB._
 import utils.ScalazTreeImplicits._
 import scalaz.{@@ => _, _}, Scalaz._
 
@@ -34,19 +34,28 @@ object TreeNode {
 
 sealed trait LabeledRowElem {
   def labels: List[Label]
+  def getRowText: String
 }
 
 object LabeledRowElem {
 
   case class CellGroupRow(
     override val labels: List[Label],
-    cells: Seq[TreeNode.CellGroup]
-  ) extends LabeledRowElem
+    cells: Seq[TreeNode.CellGroup],
+    depthMod: Int = 0
+  ) extends LabeledRowElem {
+    def getRowText: String = {
+      cells.map(_.cells.map(_.char).mkString).mkString
+    }
+
+  }
 
   case class HeadingRow(
     override val labels: List[Label],
     heading: String
-  ) extends LabeledRowElem
+  ) extends LabeledRowElem {
+    def getRowText: String = heading
+  }
 
 
 }
@@ -74,13 +83,44 @@ object TextGridRendering {
         case n @ TreeNode.LabelNode(label) =>
           val childRowElems: List[LabeledRowElem] = children.toList.flatMap { _.rootLabel }
 
-          childRowElems.map{ _ match {
-            case r @ LabeledRowElem.CellGroupRow(labels, cells) =>
-              r.copy(labels = label::labels)
+          val headerList = childRowElems.collect{
+            case r @ LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
+              cells.map(_.cells.map(_.char).mkString).mkString
+          }
+
+          val localText = headerList.mkString
+
+          val localHeader = LabeledRowElem.HeadingRow(List(label), localText)
+
+          val updatedChildren:List[LabeledRowElem] = childRowElems.map{ _ match {
+            case r @ LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
+                r.copy(labels = label::labels)
 
             case r @ LabeledRowElem.HeadingRow(labels, heading) =>
-              r.copy(labels = label::labels)
+                r.copy(labels = label::labels)
           }}
+
+          val shouldShiftFirstChild = updatedChildren.headOption.exists { firstChild =>
+            firstChild.isInstanceOf[LabeledRowElem.CellGroupRow] && firstChild.getRowText == localText
+          }
+
+          val shiftedChildren = if (shouldShiftFirstChild) {
+            updatedChildren.headOption.map{head =>
+              head.asInstanceOf[LabeledRowElem.CellGroupRow].copy(
+                depthMod = -1
+              ) :: updatedChildren.tail
+            } getOrElse { updatedChildren }
+          } else {
+            updatedChildren
+          }
+
+          val shouldPrependHeader = updatedChildren.headOption.exists { firstChild =>
+            firstChild.getRowText != localText
+          }
+
+          if (shouldPrependHeader) {
+            localHeader :: shiftedChildren
+          } else shiftedChildren
       }
     }
 
@@ -93,17 +133,35 @@ object TextGridRendering {
     val lls = flattenLabelTreeToLines(labelTree)
 
     val dbg = lls.map { _ match {
-
-      case r0 @ LabeledRowElem.CellGroupRow(labels, cells) =>
+      case LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
         val text = cells.map(_.cells.map(_.char).mkString).mkString
-        s"${labels}: ${text}"
-      case r0 @ LabeledRowElem.HeadingRow(labels, heading) =>
+        val depth = Indent * (labels.length+1+depthMod)
+        (
+          labels.map(_.fqn).mkString(", "),
+          indent(
+            depth,
+            s">> ${text}"
+          )
+        )
+      case LabeledRowElem.HeadingRow(labels, heading) =>
         val text = heading
-        s"${labels}: ${text}"
+        val depth = Indent * labels.length
+        (
+          labels.map(_.fqn).mkString(", "),
+          indent(
+            depth,
+            s"++ ${text}"
+          )
+        )
     }}
 
+    val lbox = vjoins(left, dbg.map(_._1.box))
+    val rbox = vjoins(left, dbg.map(_._2))
+
     println(
-      dbg.mkString("{\n  ", "\n  ", "\n}")
+      hjoin(
+        lbox, hspace(4), rbox
+      )
     )
 
 
@@ -165,4 +223,3 @@ object TextGridRendering {
 
 
 }
-

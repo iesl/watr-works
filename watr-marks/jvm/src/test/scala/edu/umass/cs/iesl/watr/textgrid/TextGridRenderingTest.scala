@@ -6,8 +6,8 @@ import TypeTags._
 import org.scalatest._
 
 import watrmarks._
-// import utils.SlicingAndDicing._
 import utils.ScalazTreeImplicits._
+
 // import scalaz.{@@ => _, _} , Scalaz._
 
 case class LineRenderInfo(
@@ -18,19 +18,6 @@ case class LineRenderInfo(
   canJoin: Boolean,
   canLabel: Boolean
 )
-
-sealed trait TextGridLayout
-
-object TextGridLayout {
-  case class Node(
-    sub: Seq[TextGridLayout]
-  ) extends TextGridLayout
-
-  case class Leaf(
-    cells: Seq[(TextGrid.GridCell, Int)]
-  ) extends TextGridLayout
-
-}
 
 
 trait TextGridSpec extends FreeSpec with Matchers with TextGridBuilder
@@ -163,70 +150,6 @@ class TextGridRenderingTests extends TextGridSpec {
   }
 }
 
-
-// val layout = textgridToLayout(textGrid2)
-// println(layout)
-
-// val renderedWidgetBlock = splitGrid.rows
-//   .zipWithIndex.flatMap { case (row, rowNum) =>
-//     val rowText = row.toText()
-//     val rowPins = row.pins.toList
-//     val textIndent = rowPins.filterNot(_.isUnit).length
-//     val headerPins = rowPins.filter(_.isBegin)
-//     println(s"R-------\n${row.showRow()}\n\n")
-
-  //     val thisRow = LineRenderInfo(
-  //       rowText,
-  //       textIndent,
-  //       isHoverable = true,
-  //       canSplit = false,
-  //       canJoin = false,
-  //       canLabel = false
-  //     )
-
-  //     val headerLines = headerPins.zipWithIndex.map{ case (pin, pinNum) =>
-  //       val hdr = textGrid.rows.drop(rowNum)
-  //         .takeWhile{ r => r.hasPin(pin.label.I) }
-  //         .take(1)
-
-  //       val text = hdr.map(_.toText()).mkString(" ")
-
-  //       LineRenderInfo(
-  //         text,
-  //         pinNum,
-  //         isHoverable = false,
-  //         canSplit = false,
-  //         canJoin = false,
-  //         canLabel = false
-  //       )
-  //     }
-
-  //     headerLines :+ thisRow
-  //   }
-
-  // val lines = renderedWidgetBlock.map{ renderInfo =>
-  //   indent(renderInfo.indent, renderInfo.text)
-  // }
-
-  // val block = vcat(left, lines)
-
-  // println(block.toString)
-  // def makeRuler(str: String): String = {
-  //   val height = str.length.toString.length
-//   val topRulerList = (height to 2 by -1).map(level => {
-//     (bb.startIndex until next).map(i => {
-//       if (i == bb.startIndex || (i % 10) == 0){
-//         val divisor = Math.pow(10,level).toInt
-//         val digit = (i % divisor)/(divisor/10)
-//         if (digit == 0 && level == height) " " else digit
-//       } else " "
-//     }).mkString("")+"|"
-//   })
-//   val bottomRuler = "| |" + (bb.startIndex until next).map(_ % 10).mkString("") + "|"
-//   val ruler = (topRulerList :+ bottomRuler).mkString("\n")
-//   "\n" + bb.annotationMap.values.toList.reverse.distinct.map(renderAnnotation(_, (next - bb.startIndex))).mkString("\n") + "\n" + ruler + "\n "
-// }
-
 // val jsonLabelSpec = {
 //   Json.obj(
 //     "label" := "Affiliations",
@@ -243,39 +166,3 @@ class TextGridRenderingTests extends TextGridSpec {
 //   )
 // }
 
-  // def textgridToLayout(textGrid: TextGrid): TextGridLayout = {
-  //   cellsToLayout(textGrid.indexedCells, 0)
-  // }
-
-  // def cellsToLayout(cells: Seq[(TextGrid.GridCell, Int)], level: Int): TextGridLayout = {
-  //   val groups = cells.groupByPairs{ case ((a, ar), (b, br)) => {
-
-  //     val alen = a.pins.length - level
-  //     val blen = b.pins.length - level
-
-  //     val emptyPins = alen==0 && blen==0
-  //     val samePinCount = alen == blen
-
-  //     emptyPins || { samePinCount && {
-  //       val pin1 = a.pins.head
-  //       val pin2 = b.pins.head
-  //       val isBIL = pin1.isBegin && (pin2.isInside || pin2.isLast)
-  //       val isIIL = pin1.isInside && (pin2.isInside || pin2.isLast)
-  //       val sameLabel = pin1.label == pin2.label
-
-  //       sameLabel && (isBIL || isIIL)
-  //     }}
-  //   }}
-
-  //   val subNodes = groups.map{ group =>
-  //     val glen = group.head._1.pins.length - level
-  //     if (glen > 0) {
-  //       cellsToLayout(group, level+1)
-  //     } else {
-  //       TextGridLayout.Leaf(group)
-  //     }
-  //   }
-
-  //   TextGridLayout.Node(subNodes)
-
-  // }

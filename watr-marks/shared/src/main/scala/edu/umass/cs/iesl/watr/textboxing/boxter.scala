@@ -195,8 +195,8 @@ object TextBoxing extends ToListOps with ToIdOps {
 
   // The null box, which has no content and no size.
   def nullBox = emptyBox(0, 0)
-  def vspace(n: Int) = emptyBox(0, n)
-  def hspace(n: Int) = emptyBox(n, 0)
+  def hspace(n: Int) = emptyBox(0, n)
+  def vspace(n: Int) = emptyBox(n, 0)
 
   // @emptyBox r c@ is an empty box with @r@ rows and @c@ columns.
   //   Useful for effecting more fine-grained positioning of other
@@ -229,6 +229,8 @@ object TextBoxing extends ToListOps with ToIdOps {
 
   def hjoinWith(a:Alignment, sep:Box, bs:Seq[Box]): Box =
     hcat(a, bs.toList intersperse sep)
+
+  def hjoins(a: Alignment, bs:Seq[Box]):Box = hjoinWith(a, nullBox, bs)
 
   // Glue a list of boxes together vertically, with the given alignment.
   def vcat(align: Alignment, bs: Seq[Box]): Box = {
