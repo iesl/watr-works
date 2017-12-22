@@ -159,9 +159,7 @@ object TextGridLabelWidget {
     MarginalLabels(columns)
   }
 
-  def labelTreeToMarginalLabels(labelTree: Tree[TreeNode]): Unit = {
-
-    val marginalLabels = labelTreeToMarginals(labelTree)
+  def marginalGlossToCompactTextBlock(marginalLabels: MarginalLabels): TB.Box = {
 
     val colBoxes = marginalLabels.columns.map{ col =>
       val colPins = col.gloss.map{ _ match {
@@ -179,9 +177,7 @@ object TextGridLabelWidget {
 
       vjoins(colPins)
     }
-    val pinBlock = borderLeftRight("|", ":")(hcat(top, colBoxes))
-    println("pinBlock")
-    println(pinBlock.toString())
+    borderLeftRight("|", ":")(hcat(top, colBoxes))
   }
 
 

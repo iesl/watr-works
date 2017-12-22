@@ -9,6 +9,7 @@ import watrmarks._
 import utils.ScalazTreeImplicits._
 
 // import scalaz.{@@ => _, _} , Scalaz._
+import textboxing.{TextBoxing => TB}, TB._
 
 case class LineRenderInfo(
   text: String,
@@ -139,7 +140,8 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     textGrid = textGrid.split(9, 7).get
 
     info("Split Journal")
-    info(s"\n${textGrid.toText()}\n\n-------------------")
+    val gridTextBox = textGrid.toText().mbox
+    info(s"==\n${textGrid.toText()}\n-------------------")
 
     info(s"Create a tree structure out of the BIO labels")
 
@@ -149,9 +151,16 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     info(s"Create a TextGrid Labeling Widget")
     textGridToLabelingWidget(textGrid)
 
+    info(s"Create compact marginal labels")
+    val marginals = labelTreeToMarginals(labelTree)
 
-    info(s"Create marginal labels")
-    labelTreeToMarginalLabels(labelTree)
+    val marginBlock = marginalGlossToCompactTextBlock(marginals)
+    val ltextBlock = marginBlock + gridTextBox
+
+    info("\n"+ltextBlock.toString)
+
+    info(s"Create indented tree-view marginal labels")
+
 
 
   }

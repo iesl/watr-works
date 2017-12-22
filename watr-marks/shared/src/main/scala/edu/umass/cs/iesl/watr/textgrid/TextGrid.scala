@@ -28,7 +28,7 @@ trait TextGrid {
   def rows: Seq[Row]
 
   def toText(): String = {
-    rows.map(_.toText).mkString("\n  ", "\n  ", "\n")
+    rows.map(_.toText).mkString("\n")
   }
 
   def splitOneLeafLabelPerLine(): TextGrid = {
