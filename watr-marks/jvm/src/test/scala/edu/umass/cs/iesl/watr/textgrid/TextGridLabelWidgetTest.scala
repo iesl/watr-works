@@ -149,15 +149,21 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     info(labelTree.drawBox.toString())
 
     info(s"Create a TextGrid Labeling Widget")
-    textGridToLabelingWidget(textGrid)
+    val indentedBlock = textGridToIndentedBox(textGrid)
+
+    val cMarginals = labelTreeToMarginals(labelTree, compactMarginals=true)
+    val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+
+    val cmarginBlock = marginalGlossToTextBlock(cMarginals)
+    val emarginBlock = marginalGlossToTextBlock(expMarginals)
+    val ltextBlock = cmarginBlock + gridTextBox
+    val expBlock = emarginBlock + indentedBlock
 
     info(s"Create compact marginal labels")
-    val marginals = labelTreeToMarginals(labelTree)
-
-    val marginBlock = marginalGlossToCompactTextBlock(marginals)
-    val ltextBlock = marginBlock + gridTextBox
-
     info("\n"+ltextBlock.toString)
+
+    info(s"Create  expanded marginal labels")
+    info("\n"+expBlock.toString)
 
     info(s"Create indented tree-view marginal labels")
 
@@ -166,6 +172,9 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   }
 }
 
+// Create left-side controls...
+//    "Marginalize" the BIO labels
+// Create Label Key: List of all valid labels arranged in tree structure at bottom of widget
 // val jsonLabelSpec = {
 //   Json.obj(
 //     "label" := "Affiliations",
