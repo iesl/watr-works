@@ -61,7 +61,7 @@ object LabeledRowElem {
 }
 
 
-object TextGridRendering {
+object TextGridLabelWidget {
 
   val Indent: Int = 2
 
@@ -140,7 +140,7 @@ object TextGridRendering {
           labels.map(_.fqn).mkString(", "),
           indent(
             depth,
-            s">> ${text}"
+            s"`${text}`"
           )
         )
       case LabeledRowElem.HeadingRow(labels, heading) =>

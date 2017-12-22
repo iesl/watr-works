@@ -22,7 +22,7 @@ case class LineRenderInfo(
 
 trait TextGridSpec extends FreeSpec with Matchers with TextGridBuilder
 
-class TextGridRenderingTests extends TextGridSpec {
+class TextGridLabelWidgetTests extends TextGridSpec {
   override val docStore: DocumentZoningApi = new MemDocZoningApi
   val docs = List(
     List(
@@ -115,7 +115,7 @@ class TextGridRenderingTests extends TextGridSpec {
   }
 
 
-  import TextGridRendering._
+  import TextGridLabelWidget._
 
   val stableId = DocumentID("docXX")
 
