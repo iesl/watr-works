@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package utils
 
-
 import textboxing.{TextBoxing => TB}
 
 object TreeShaper {

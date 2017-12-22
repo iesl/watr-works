@@ -1,10 +1,10 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-
 import textboxing.{TextBoxing => TB}, TB._
-import utils.ScalazTreeImplicits._
 import scalaz.{@@ => _, _}, Scalaz._
+
+import utils.ScalazTreeImplicits._
 
 import watrmarks._
 
@@ -57,9 +57,20 @@ object LabeledRowElem {
     def getRowText: String = heading
   }
 
-
 }
 
+
+case class MarginalLabels(
+  columns: List[MarginalLabelColumn]
+)
+case class MarginalLabelColumn(
+  gloss: List[Gloss]
+)
+sealed trait Gloss
+object Gloss {
+  case class VSpace(len: Int) extends Gloss
+  case class LabelGloss(label: Label, len: Int) extends Gloss
+}
 
 object TextGridLabelWidget {
 
@@ -69,6 +80,110 @@ object TextGridLabelWidget {
 
 
   type LabeledRows = List[LabeledRowElem]
+
+  type Start = Int
+  type Len = Int
+  type Attr = (Option[Label], Start, Len)
+
+  implicit val ShowAttr = Show.shows[Attr]{ case(lbl, st, len) =>
+    s"${lbl}: (${st}-${st+len})"
+  }
+
+  def labelTreeToMarginals(labelTree: Tree[TreeNode]): MarginalLabels = {
+    def histo(node: TreeNode, children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
+      node match {
+        case n: TreeNode.CellGroup =>
+          assume(children.isEmpty)
+
+          Tree.Leaf((None, 0, 1))
+
+        case TreeNode.UnlabeledNode =>
+          assume(children.nonEmpty)
+          val adjChildren = children.foldLeft(Stream.empty[Tree[Attr]]){
+            case (acc, e: Tree[Tree[Attr]]) =>
+              val offset = acc.headOption.map { h: Tree[Attr] => h.rootLabel._2+h.rootLabel._3 }.getOrElse(0)
+              val adjusted = e.rootLabel.map{ case (nlbl, nst, nlen) => (nlbl, nst+offset, nlen) }
+
+              adjusted #:: acc
+          }
+          val childLen = adjChildren.headOption.map { h: Tree[Attr] => h.rootLabel._2+h.rootLabel._3 }.getOrElse(0)
+          Tree.Node(
+            (None, 0, childLen),
+            adjChildren.reverse
+          )
+
+        case n @ TreeNode.LabelNode(label) =>
+          assume(children.nonEmpty)
+
+          val adjChildren = children.foldLeft(Stream.empty[Tree[Attr]]){
+            case (acc, e: Tree[Tree[Attr]]) =>
+              val offset = acc.headOption.map { h: Tree[Attr] => h.rootLabel._2+h.rootLabel._3 }.getOrElse(0)
+              val adjusted = e.rootLabel.map{ case (nlbl, nst, nlen) => (nlbl, nst+offset, nlen) }
+
+              adjusted #:: acc
+          }
+
+          val childLen = adjChildren.headOption.map { h: Tree[Attr] => h.rootLabel._2+h.rootLabel._3 }.getOrElse(0)
+          Tree.Node(
+            (Some(label), 0, childLen),
+            adjChildren.reverse
+          )
+
+      }
+    }
+
+    val tree = labelTree.scanr(histo).rootLabel
+
+    val columns = tree.levels.toList.map{ level =>
+
+      val spacers = level.foldLeft(List.empty[(Int, Int)]) { case (acc, (_, st, len)) =>
+        val (lastEnd, lastSpace) = acc.headOption.getOrElse( (0, 0) )
+        val thisSpace = (st+len, st-lastEnd)
+        thisSpace :: acc
+      }
+
+      val spaces = spacers.map(_._2).reverse.map(Gloss.VSpace(_))
+
+      val glossColumn = (level zip spaces).toList
+        .flatMap { case ((lbl, st, len), space) =>
+          val gloss = lbl.map{ l =>
+            Gloss.LabelGloss(l, len)
+          } getOrElse {
+            Gloss.VSpace(len)
+          }
+          List(space, gloss)
+        }
+
+      MarginalLabelColumn(glossColumn)
+    }
+    MarginalLabels(columns)
+  }
+
+  def labelTreeToMarginalLabels(labelTree: Tree[TreeNode]): Unit = {
+
+    val marginalLabels = labelTreeToMarginals(labelTree)
+
+    val colBoxes = marginalLabels.columns.map{ col =>
+      val colPins = col.gloss.map{ _ match {
+        case Gloss.VSpace(len) =>
+          vspace(len)
+
+        case Gloss.LabelGloss(label, len) =>
+          if (len==1) {
+            label.fqn(0).toUpper.toString.box
+          } else {
+            val ch = label.fqn(0).toLower.toString()
+            vjoin(ch, vjoins(List.fill(len-2)("║")), "╨")
+          }
+      }}
+
+      vjoins(colPins)
+    }
+    val pinBlock = borderLeftRight("|", ":")(hcat(top, colBoxes))
+    println("pinBlock")
+    println(pinBlock.toString())
+  }
+
 
   def flattenLabelTreeToLines(labelTree: Tree[TreeNode]): List[LabeledRowElem] = {
 
@@ -132,6 +247,15 @@ object TextGridLabelWidget {
 
     val lls = flattenLabelTreeToLines(labelTree)
 
+    // Create left-side controls...
+    //    "Marginalize" the BIO labels
+
+
+    // Create Label Key: List of all valid labels arranged in tree structure at bottom of widget
+
+
+
+
     val dbg = lls.map { _ match {
       case LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
         val text = cells.map(_.cells.map(_.char).mkString).mkString
@@ -167,8 +291,6 @@ object TextGridLabelWidget {
 
     // - output is a list of grid data points, with bboxes, classes,  or spacers, which may also have classes
     //     or create indentation. classes allow hover highlighting for indentation spaces
-    // - to create left-side controls...
-    //   - "Marginalize" the BIO labels
   }
 
 

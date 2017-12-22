@@ -103,7 +103,7 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     ((3, 17),  Author),
     ((3, 14),  LastName),
     ((17, 17), FirstName),
-    ((24, 30), Author),
+    ((24, 33), Author),
     ((36, 48), Journal)
   )
 
@@ -122,7 +122,7 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   "Behavior of Textgrid Widget Creation" - {
     info("Starting with unlabeled TextGrid")
 
-    val textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+    var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
 
     info(textGrid.toText())
 
@@ -134,18 +134,25 @@ class TextGridLabelWidgetTests extends TextGridSpec {
 
     info("... and normalized to one leaf label per line")
 
-    val textGrid2 = TextGrid.fromRows(stableId, Seq(labeledRow))
-    val labelPerLineGrid = textGrid2.splitOneLeafLabelPerLine()
+    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+    textGrid = textGrid.splitOneLeafLabelPerLine()
+    textGrid = textGrid.split(9, 7).get
 
-    info(s"\n${labelPerLineGrid.toText()}\n\n-------------------")
+    info("Split Journal")
+    info(s"\n${textGrid.toText()}\n\n-------------------")
 
     info(s"Create a tree structure out of the BIO labels")
 
-    val labelTree = textGridToLabelTree(labelPerLineGrid)
+    val labelTree = textGridToLabelTree(textGrid)
     info(labelTree.drawBox.toString())
 
     info(s"Create a TextGrid Labeling Widget")
-    textGridToLabelingWidget(labelPerLineGrid)
+    textGridToLabelingWidget(textGrid)
+
+
+    info(s"Create marginal labels")
+    labelTreeToMarginalLabels(labelTree)
+
 
   }
 }
