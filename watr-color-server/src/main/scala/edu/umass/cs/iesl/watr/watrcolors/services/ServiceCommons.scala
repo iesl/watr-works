@@ -57,7 +57,7 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
   lazy val UserAwareService = WSecureRequestHandler(authenticator)
 }
 
-trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs { self =>
+trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs with HttpPayloads { self =>
 
   def corpusAccessApi: CorpusAccessApi
 

@@ -45,7 +45,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
         tr
       }
 
-    createZone(LB.DocumentPages, pageRegions)
+    createZone(LB.FullPdf, pageRegions)
   }
 
   lazy val pageSegmenters = {

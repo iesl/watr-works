@@ -7,20 +7,40 @@ import io.circe.generic.JsonCodec
 import org.http4s.circe._
 import io.circe
 import circe._
-// import circe.syntax._
 import circe.literal._
 import org.http4s.EntityDecoder
-// import java.util.UUID
 
-// import cats.implicits._, cats.data._
 import tsec.passwordhashers.imports.SCrypt
-
 
 import watrmarks._
 import geometry._
 
 import circe.generic.auto._
 import corpora.{RelationModel => R}
+
+trait TypeTagCodecs {
+
+  implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
+
+}
+
+trait CirceJsonCodecs extends TypeTagCodecs {
+  import circe.generic.semiauto._
+
+  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
+
+  implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
+  implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
+
+
+  // implicit val Enc_XX: Encoder[XX] = deriveEncoder
+  implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
+  implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
+
+  implicit lazy val Enc_Zone: Encoder[Zone] = deriveEncoder
+
+}
 
 object users {
 
@@ -98,107 +118,53 @@ object formdata {
 
 }
 
-// case class LabelerReqForm(
-//   labels: Seq[Label],
-//   description: String
-// )
-
-// object LabelerReqForm extends CirceJsonCodecs {
-//   implicit def entityD[F[_]: Effect]: EntityDecoder[F, LabelerReqForm] = jsonOf[F, LabelerReqForm]
-// }
+trait HttpPayloads extends CirceJsonCodecs {
 
 
-case class LTarget(
-  page: Int,
-  bbox: Seq[Int]
-)
-object LTarget {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LTarget] = deriveEncoder
-  implicit val decoder: Decoder[LTarget] = deriveDecoder
+  @JsonCodec case class LTarget(
+    page: Int,
+    bbox: Seq[Int]
+  )
+
+  case class LabelingSelection(
+    annotType: String,
+    targets: Seq[LTarget]
+  )
+
+  object LabelingSelection {
+    import circe.generic.semiauto._
+    implicit val encoder: Encoder[LabelingSelection] = deriveEncoder
+    implicit val decoder: Decoder[LabelingSelection] = deriveDecoder
+  }
+
+
+
+  @JsonCodec case class LabelingReqForm(
+    stableId: String,
+    labelChoice: Label,
+    target: LTarget
+  )
+
+  @JsonCodec case class LabelsRequest(
+    stableId: String
+  )
+
+
+  @JsonCodec case class DocumentZone(
+    stableId: String,
+    zoneId: Int
+  )
+
+  @JsonCodec sealed trait ZoneUpdate
+  object ZoneUpdate {
+    case class MergeWith(zoneId: Int) extends ZoneUpdate
+    case class SetText(gridJson: Json) extends ZoneUpdate
+  }
 }
 
 
-case class LabelingSelection(
-  annotType: String,
-  targets: Seq[LTarget]
-)
 
-object LabelingSelection {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelingSelection] = deriveEncoder
-  implicit val decoder: Decoder[LabelingSelection] = deriveDecoder
-}
-
-case class LabelSpanReq(
-  labelChoice: Label,
-  gridJson: Json
-)
-
-object LabelSpanReq extends CirceJsonCodecs {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelSpanReq] = deriveEncoder
-  implicit val decoder: Decoder[LabelSpanReq] = deriveDecoder
-}
-
-
-case class LabelingReqForm(
-  stableId: String,
-  labelChoice: Label,
-  selection: LabelingSelection
-)
-
-object LabelingReqForm extends CirceJsonCodecs {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelingReqForm] = deriveEncoder
-  implicit val decoder: Decoder[LabelingReqForm] = deriveDecoder
-}
-
-case class LabelsRequest(
-  stableId: String
-)
-
-object LabelsRequest {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[LabelsRequest] = deriveEncoder
-  implicit val decoder: Decoder[LabelsRequest] = deriveDecoder
-}
-case class DeleteZoneRequest(
-  stableId: String,
-  zoneIds: Seq[Int]
-)
-
-object DeleteZoneRequest {
-  import circe.generic.semiauto._
-  implicit val encoder: Encoder[DeleteZoneRequest] = deriveEncoder
-  implicit val decoder: Decoder[DeleteZoneRequest] = deriveDecoder
-}
-
-trait TypeTagCodecs {
-
-  implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
-  implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
-
-}
-
-trait CirceJsonCodecs extends TypeTagCodecs {
-  import circe.generic.semiauto._
-
-  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
-
-  implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
-  implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
-
-
-  // implicit val Enc_XX: Encoder[XX] = deriveEncoder
-  implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
-  implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
-
-  implicit lazy val Enc_Zone: Encoder[Zone] = deriveEncoder
-
-}
-
-case class WorkflowForm(
+@JsonCodec case class WorkflowForm(
   workflow     : String,
   description  : String,
   targetLabel  : String,
@@ -216,14 +182,53 @@ case class Unassign() extends Mod
 trait WorkflowCodecs extends CirceJsonCodecs {
   import circe.generic.semiauto._
 
-  implicit val encoder: Encoder[WorkflowForm] = deriveEncoder
-  implicit val decoder: Decoder[WorkflowForm] = deriveDecoder
+  // implicit val encoder: Encoder[WorkflowForm] = deriveEncoder
+  // implicit val decoder: Decoder[WorkflowForm] = deriveDecoder
 
   implicit val encoder2: Encoder[R.WorkflowDef] = deriveEncoder
 
   implicit def WorkflowForm_EntityDecoder[F[_]: Effect]: EntityDecoder[F, WorkflowForm] = jsonOf[F, WorkflowForm]
 
-  // implicit def WorkflowMod_EntityDecoder[F[_]: Effect]: EntityDecoder[F, WorkflowMod] = jsonOf[F, WorkflowMod]
-  // implicit def WorkflowUpdate_EntityDecoder[F[_]: Effect]: EntityDecoder[F, StatusUpdate] = jsonOf[F, StatusUpdate]
 
 }
+
+
+
+
+
+
+
+
+
+
+// object LabelsRequest {
+// case class LabelSpanReq(
+//   labelChoice: Label,
+//   gridJson: Json
+// )
+
+// object LabelSpanReq extends CirceJsonCodecs {
+//   import circe.generic.semiauto._
+//   implicit val encoder: Encoder[LabelSpanReq] = deriveEncoder
+//   implicit val decoder: Decoder[LabelSpanReq] = deriveDecoder
+// }
+// object LabelingReqForm extends CirceJsonCodecs {
+//   import circe.generic.semiauto._
+//   implicit val encoder: Encoder[LabelingReqForm] = deriveEncoder
+//   implicit val decoder: Decoder[LabelingReqForm] = deriveDecoder
+// }
+
+//   import circe.generic.semiauto._
+//   implicit val encoder: Encoder[LabelsRequest] = deriveEncoder
+//   implicit val decoder: Decoder[LabelsRequest] = deriveDecoder
+// }
+// object DeleteZoneRequest {
+//   import circe.generic.semiauto._
+//   implicit val encoder: Encoder[DeleteZoneRequest] = deriveEncoder
+//   implicit val decoder: Decoder[DeleteZoneRequest] = deriveDecoder
+// }
+// object LTarget {
+//   import circe.generic.semiauto._
+//   implicit val encoder: Encoder[LTarget] = deriveEncoder
+//   implicit val decoder: Decoder[LTarget] = deriveDecoder
+// }

@@ -10,6 +10,7 @@ import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 
 import utils.SlicingAndDicing._
+import scala.scalajs.js.annotation._
 
 
 import _root_.io.circe
@@ -20,6 +21,7 @@ sealed trait FontInfo
 
 case object NoFonts extends FontInfo
 
+@JSExportAll
 trait TextGrid {
   import TextGrid._
 
@@ -91,11 +93,19 @@ trait TextGrid {
   }
 }
 
+@JSExportTopLevel("watr.textgrid.TextGrid.Companion") @JSExportAll
 object TextGrid {
   type SetType[A] = mutable.ArrayStack[A]
   type PinSet = SetType[BioPin]
 
 
+  def fromJsonStr(jsStr: String): TextGrid = {
+    circe.parser.parse(jsStr).fold(
+      fail => sys.error(s"could not decode TextGrid: ${fail}: ${jsStr}"),
+      succ => fromJson(succ)
+    )
+
+  }
   def fromJson(js: Json): TextGrid = {
     val cursor = js.hcursor
 

@@ -10,17 +10,13 @@ import org.http4s.{headers => H}
 import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.server.staticcontent._
 import org.http4s.server.middleware.{CORS, CORSConfig}
-import org.http4s.util.{ ExitCode, StreamApp }
+
+// import org.http4s.util.{ ExitCode, StreamApp }
+import fs2.StreamApp.ExitCode
+
 import persistence._
 import services._
 import scala.concurrent.ExecutionContext.Implicits.global
-// import tsec.authentication._
-
-// import tsec.cipher.symmetric.imports.AES128
-// import models._
-
-// import scala.concurrent.ExecutionContext
-// import java.util.concurrent.Executors
 
 import utils.{PathUtils => P}
 import edu.umass.cs.iesl.watr.table._
@@ -29,7 +25,7 @@ import ammonite.{ops => fs}
 import corpora._
 import services._
 
-trait AllTheServices extends LabelingServices
+trait AllTheServices extends ZoningServices
     with CurationWorkflowServices
     with CorpusListingServices
     with CorpusArtifactServices
@@ -52,12 +48,6 @@ class AllServices(
   ))
 
 
-  // val corsConfig = CORSConfig(
-  //   anyOrigin = true,
-  //   allowCredentials = true,
-  //   maxAge = 100000
-  // )
-
   lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
   lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
   lazy val tokenStore = MemTokenStore.apply[IO].unsafeRunSync()
@@ -79,7 +69,7 @@ class AllServices(
   }
 }
 
-object WiredServerMain extends StreamApp[IO] with Http4sDsl[IO] with utils.AppMainBasics {
+object WiredServerMain extends fs2.StreamApp[IO] with Http4sDsl[IO] with utils.AppMainBasics {
 
 
   def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, ExitCode] = {

@@ -6,109 +6,140 @@ import org.http4s._
 import org.http4s.circe._
 import _root_.io.circe
 import circe._
-import circe.syntax._
 import circe.literal._
 import TypeTags._
 import geometry._
 import textgrid._
 import models._
 import tsec.authentication._
+import corpora._
 
-trait LabelingServices extends AuthenticatedService { self =>
+trait ZoningApi extends HttpPayloads {
+  import watrmarks._
+  import circe._
+  import circe.syntax._
+  import circe.literal._
+
+  def docStore: DocumentZoningApi
+
+  def readZones(stableId: String@@DocumentID): Json = {
+    // val stableId = DocumentID(stableIdStr)
+    val docId  = docStore.getDocument(stableId).getOrElse {
+      sys.error(s"docId not found for ${stableId}")
+    }
+
+    val allDocZones = for {
+      labelId <- docStore.getZoneLabelsForDocument(docId)
+      if ! docStore.getLabel(labelId).fqn.startsWith("seg:")
+      zoneId <- docStore.getZonesForDocument(docId, labelId)
+    } yield {
+      docStore.getZone(zoneId)
+    }
+    Json.obj(
+      "zones" := allDocZones
+    )
+  }
+
+  def deleteZone(zoneId: Int@@ZoneID): Unit = {
+    docStore.deleteZone(zoneId)
+  }
+
+  def mergeZones(zoneIds: Seq[Int@@ZoneID]): Unit = {
+
+  }
+
+
+  def createZone(label: Label, pageRegion: PageRegion): Unit = {
+    docStore.labelRegions(label, Seq(pageRegion))
+
+  }
+
+  def putZoneText(): Unit = {
+
+  }
+
+
+
+
+  protected def targetToPageBounds(docId: Int@@DocumentID, ltarget: LTarget): PageRegion = {
+    val pageNum = PageNum(ltarget.page)
+
+    val (l, t, w, h) = (
+      ltarget.bbox(0), ltarget.bbox(1), ltarget.bbox(2), ltarget.bbox(3)
+    )
+    val bbox = LTBounds.IntReps(l, t, w, h)
+    val pageId    = docStore.getPage(docId, pageNum).getOrElse { sys.error(s"Document ${docId} has no page ${pageNum}") }
+    val regionId = docStore.addTargetRegion(pageId, bbox)
+    docStore.getTargetRegion(regionId)
+
+  }
+
+}
+
+trait ZoningServices extends AuthenticatedService with ZoningApi { self =>
 
   // Mounted at /api/v1xx/labeling/..
   val labelingServiceEndpoints = Auth {
 
-    case req @ GET -> Root / "labels" / stableIdStr asAuthed user =>
-      val stableId = DocumentID(stableIdStr)
-      val docId  = docStore.getDocument(stableId).getOrElse {
-        sys.error(s"docId not found for ${stableId}")
-      }
+    // Read all zones for document
+    case req @ GET -> Root / "zones" / stableIdStr asAuthed user =>
+      val zones = readZones(DocumentID(stableIdStr))
 
-      val allDocZones = for {
-        labelId <- docStore.getZoneLabelsForDocument(docId)
-        zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 1  // TODO un hardcode this
-      } yield {
-        val zone = docStore.getZone(zoneId)
-        zone.asJson
-      }
-      val jsonResp = Json.obj(
-        ("zones", Json.arr(allDocZones:_*))
-      )
+      Ok(zones)
 
-      Ok(jsonResp)
+    // Delete zone
+    case req @ DELETE -> Root / "zones" / IntVar(zoneId) asAuthed user =>
+      println(s"Got delete zone request")
 
-    case req @ DELETE -> Root / "label"  asAuthed user =>
-      println(s"Got delete label request")
+      val zone = docStore.getZone(ZoneID(zoneId))
+      docStore.deleteZone(zone.id)
 
-      for {
-        deleteReq <- decodeOrErr[DeleteZoneRequest](req.request)
-      } yield {
-        for { zoneId <- deleteReq.zoneIds } {
-          val zone = docStore.getZone(ZoneID(zoneId))
-          println(s"Deleting zones ${zone}")
-          docStore.deleteZone(ZoneID(zoneId))
-        }
-      }
       Ok(Json.obj())
 
-    case req @ POST -> Root / "label" / "span"  asAuthed user =>
-
-      val handler = for {
-        // gridJson <- req.request.as[Json]
-        labeling <- decodeOrErr[LabelSpanReq](req.request)
-
-        _ = {
-          // val stableId = DocumentID(labeling.stableId)
-          val textgrid = TextGrid.fromJson(labeling.gridJson)
-          val gridBounds = textgrid.pageBounds()
-
-          println(s"labeling span ${gridBounds}")
-          docStore.labelRegions(labeling.labelChoice, gridBounds)
-            .foreach{ zoneId =>
-              println(s"setting zone ${zoneId} text to  ${textgrid}")
-              docStore.setZoneText(zoneId, textgrid)
-            }
-        }
-        resp <- Ok(Json.obj())
-      } yield resp
-
-      orErrorJson(handler)
-
-    case req @ POST -> Root / "label" / "region" asAuthed user =>
+    // Create new zone
+    case req @ POST -> Root / "zones" asAuthed user =>
       println(s"${req}")
 
       val handler = for {
         labeling <- decodeOrErr[LabelingReqForm](req.request)
         _ = {
-
           val stableId = DocumentID(labeling.stableId)
+
           val docId  = docStore.getDocument(stableId).getOrElse {
             sys.error(s"docId not found for ${stableId}")
           }
 
-          val regions = labeling.selection.targets.map { ltarget =>
-            val pageNum = PageNum(ltarget.page)
+          val pageBounds = targetToPageBounds(docId, labeling.target)
 
-            val (l, t, w, h) = (
-              ltarget.bbox(0), ltarget.bbox(1), ltarget.bbox(2), ltarget.bbox(3)
-            )
-            val bbox = LTBounds.IntReps(l, t, w, h)
-
-            val pageRegions = for {
-              pageId    <- docStore.getPage(docId, pageNum).toSeq
-            } yield {
-              val regionId = docStore.addTargetRegion(pageId, bbox)
-              docStore.getTargetRegion(regionId)
-            }
-            pageRegions
-          }
-
-          docStore.labelRegions(labeling.labelChoice, regions.flatten)
+          createZone(labeling.labelChoice, pageBounds)
         }
         resp <- Ok(Json.obj())
       } yield resp
 
       orErrorJson(handler)
+
+    // Update zone
+    case req @ POST -> Root / "zones" / IntVar(zoneId)  asAuthed user =>
+
+      val handler = for {
+        // gridJson <- req.request.as[Json]
+        update <- decodeOrErr[ZoneUpdate](req.request)
+        _ = {
+          // val stableId = DocumentID(labeling.stableId)
+          update match {
+            case ZoneUpdate.MergeWith(otherZoneId) =>
+              println(s"merging zone ${zoneId} with ${otherZoneId}")
+
+            case ZoneUpdate.SetText(gridJson) =>
+              val textgrid = TextGrid.fromJson(gridJson)
+              println(s"setting zone ${zoneId} text to ${textgrid}")
+              docStore.setZoneText(ZoneID(zoneId), textgrid)
+          }
+        }
+        resp <- Ok(Json.obj())
+      } yield resp
+
+      orErrorJson(handler)
+
   }
 }

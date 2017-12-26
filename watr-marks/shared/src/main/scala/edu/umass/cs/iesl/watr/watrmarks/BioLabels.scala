@@ -108,6 +108,10 @@ case class Label(
     Label(s"${fqn}::${t}")
   }
 
+  def withNamespace(t: String): Label = {
+    Label(s"${t}:${fqn}")
+  }
+
   def ::(l: Label): Label = {
     this.qualifiedAs(l.fqn)
   }

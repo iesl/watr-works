@@ -3,8 +3,7 @@ package watrcolors
 package services
 
 
-import edu.umass.cs.iesl.watr.workflow.UserbaseApi
-import workflow.WorkflowApi
+import workflow._
 import corpora._
 import org.http4s._
 import org.http4s.circe._

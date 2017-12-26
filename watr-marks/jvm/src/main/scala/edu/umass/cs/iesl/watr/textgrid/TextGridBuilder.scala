@@ -59,7 +59,7 @@ trait TextGridBuilder {
       (textGrid, textGrid.pageBounds().head)
     }
 
-    docStore.labelRegions(LB.DocumentPages, pageRegions.map(_._2))
+    docStore.labelRegions(LB.FullPdf, pageRegions.map(_._2))
     pageRegions.map(_._1)
   }
 

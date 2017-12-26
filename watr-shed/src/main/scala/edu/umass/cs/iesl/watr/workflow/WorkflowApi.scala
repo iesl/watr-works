@@ -14,7 +14,7 @@ import watrmarks.Label
   *    Given a set of regions labeled "Bibliography", ask users to label individual references
   *
   *    Given the pages of a document, label the titles and abstracts.
-  *    For consistency, the "zone" of a full document has the label DocumentPages
+  *    For consistency, the "zone" of a full document has the label FullPdf
   *
   * Workflow operates like so:
   *    Assume that users are present in the user table.

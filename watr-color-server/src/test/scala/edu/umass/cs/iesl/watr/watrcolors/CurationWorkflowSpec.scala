@@ -23,7 +23,7 @@ class CurationWorkflowSpec extends Http4sSpec with DatabaseTest {
 
 
   val VisualLine: Label = Label.auto
-  val DocumentPages: Label = Label.auto
+  val FullPdf: Label = Label.auto
   val Authors: Label = Label.auto
   val Sup: Label = Label.auto
   val Sub: Label = Label.auto

@@ -18,7 +18,7 @@ object SegmentationLabels {
   val Image = Label.auto
   // val Table = Label.auto
 
-  val DocumentPages = Label.auto
+  val FullPdf = Label.auto
   val Para = Label.auto
 
   val ExtractedLineStarts    = Label.auto

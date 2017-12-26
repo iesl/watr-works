@@ -10,6 +10,7 @@ import utils.ScalazTreeImplicits._
 
 // import scalaz.{@@ => _, _} , Scalaz._
 import textboxing.{TextBoxing => TB}, TB._
+import _root_.io.circe, circe._, circe.syntax._
 
 case class LineRenderInfo(
   text: String,
@@ -40,61 +41,51 @@ class TextGridLabelWidgetTests extends TextGridSpec {
 
   val Authors = Label.auto
   val Author = Label.auto
-  val LastName = Label.auto
   val FirstName = Label.auto
   val MiddleName = Label.auto
+  val LastName = Label.auto
   val Journal = Label.auto
   val RefMarker = Label.auto
   val RefNumber = Label.auto
 
+  // Create Label Key: List of all valid labels arranged in tree structure at bottom of widget
 
-  val inlineSpec = {
-    // j: Journal
-    // s: Authors
-    // n: Name
-    // f/m/l: First/Middle/LastName
+  val jsonLabelSchema = {
 
+    val authorNameSchema = LabelSchema(
+      Author, Some(('a', 'u')), List(
+        LabelSchema(FirstName),
+        LabelSchema(MiddleName),
+        LabelSchema(LastName))
+    )
+
+    val authorListSchema = LabelSchema(
+      Authors, Some(('a', 's')), List(
+        authorNameSchema)
+    )
+
+    val refMarkerSchema = LabelSchema(
+      RefMarker, None, List(
+        LabelSchema(RefNumber))
+    )
+
+    val abbrevs = List(
+      (Authors    ,('u', 's')),
+      (Author     ,('a', 'u')),
+      (FirstName  ,('f', 'n')),
+      (MiddleName ,('m', 'n')),
+      (LastName   ,('l', 'n')),
+      (Journal    ,('j', 'o')),
+      (RefMarker  ,('r', 'm')),
+      (RefNumber  ,('r', 'n'))
+    )
+
+    LabelSchemas(
+      List(
+        authorListSchema,
+        refMarkerSchema)
+    )
   }
-  val _ = {
-
-    """|
-       |>R    |1.
-       |>snL  |Bishop-Clark
-       |>║║   |,
-       |>║╨F  |C.
-       |>║    |and
-       |>║nL  |Wheeler
-       |>║║   |,
-       |>║╨F  |D.
-       |>║    |and
-       |>╨N   |Boehm, B.W.
-       |>     |;
-       |>AJ   |Software Engineering Economics. Prentice-Hall
-       |"""
-  }
-
-
-
-  val indentedRendering = {
-    """|
-       |1.
-       |Bishop-Clark,  C. and Wheeler, D. and Boehm, B.W.
-       |    Bishop-Clark,  C.
-       |        Bishop-Clark
-       |        ,
-       |        C.
-       |    and
-       |    Wheeler, D.
-       |        Wheeler
-       |        ,
-       |        D.
-       |    and
-       |    Boehm, B.W.
-       |;
-       |Software Engineering Economics. Prentice-Hall
-       |""".stripMargin
-  }
-
 
 
   val labelSpans = List(
@@ -120,14 +111,17 @@ class TextGridLabelWidgetTests extends TextGridSpec {
 
   val stableId = DocumentID("docXX")
 
+  def infobox(heading: String, b: TB.Box): Unit = {
+    info(heading)
+    info("\n" + indent(4, b).toString() + "\n")
+  }
+
   "Behavior of Textgrid Widget Creation" - {
-    info("Starting with unlabeled TextGrid")
 
     var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
 
-    info(textGrid.toText())
 
-    info("... With labels applied")
+    info("Starting with labeled TextGrid")
 
     val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
 
@@ -143,12 +137,11 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     val gridTextBox = textGrid.toText().mbox
     info(s"==\n${textGrid.toText()}\n-------------------")
 
-    info(s"Create a tree structure out of the BIO labels")
 
     val labelTree = textGridToLabelTree(textGrid)
-    info(labelTree.drawBox.toString())
 
-    info(s"Create a TextGrid Labeling Widget")
+    infobox(s"Create a tree structure out of the BIO labels", labelTree.drawBox)
+
     val indentedBlock = textGridToIndentedBox(textGrid)
 
     val cMarginals = labelTreeToMarginals(labelTree, compactMarginals=true)
@@ -157,37 +150,14 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     val cmarginBlock = marginalGlossToTextBlock(cMarginals)
     val emarginBlock = marginalGlossToTextBlock(expMarginals)
     val ltextBlock = cmarginBlock + gridTextBox
-    val expBlock = emarginBlock + indentedBlock
 
-    info(s"Create compact marginal labels")
-    info("\n"+ltextBlock.toString)
+    val schemaBox = LabelSchemas.labelSchemaToBox(jsonLabelSchema)
 
-    info(s"Create  expanded marginal labels")
-    info("\n"+expBlock.toString)
+    val expBlock = ((emarginBlock + indentedBlock) atop vspace(2) atop schemaBox)
 
-    info(s"Create indented tree-view marginal labels")
+    infobox(s"Create compact marginal labels", ltextBlock)
 
-
+    infobox(s"Create indented tree-view marginal labels", expBlock)
 
   }
 }
-
-// Create left-side controls...
-//    "Marginalize" the BIO labels
-// Create Label Key: List of all valid labels arranged in tree structure at bottom of widget
-// val jsonLabelSpec = {
-//   Json.obj(
-//     "label" := "Affiliations",
-//     "children" := Seq(
-//       Json.obj(
-//         "label" := "Authors",
-//         "children" := Seq(
-//           Json.obj(
-//             "label" := "Author"
-//           )
-//         )
-//       )
-//     )
-//   )
-// }
-
