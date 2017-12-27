@@ -97,16 +97,19 @@ object GridRegion {
   ) extends GridRegion
 
   case class Heading(
+    heading: String,
     override val bounds: LTBounds,
     override val classes: List[String],
   ) extends GridRegion
 
   case class LabelInstance(
+    label: Label,
     override val bounds: LTBounds,
     override val classes: List[String],
   ) extends GridRegion
 
   case class LabelName(
+    labelIdent: String,
     override val bounds: LTBounds,
     override val classes: List[String],
   ) extends GridRegion
@@ -274,22 +277,21 @@ object TextGridLabelWidget {
     borderLeftRight("|", ":")(hcat(top, colBoxes))
   }
 
-
-  def labelTreeDataPoints(labelTree: Tree[TreeNode], labelSchema: LabelSchema): List[GridRegion] = {
+  def labelTreeToGridRegions(labelTree: Tree[TreeNode], labelSchemas: LabelSchemas, originX: Int=0, originY: Int=0): List[GridRegion] = {
 
     def marginalGlossToGridRegions(marginalLabels: MarginalGloss, x: Int, y: Int): Seq[GridRegion] = {
       val allRegions = marginalLabels.columns.zipWithIndex.map{ case (col, colNum) =>
         val colRegions = col.gloss.foldLeft(
-          (List[GridRegion](), 0)
+          (List[GridRegion](), y)
         ){ case ((regionAcc, accLen), e) =>
           e match {
             case MarginalGloss.VSpace(len) =>
               (regionAcc, accLen + len)
 
             case MarginalGloss.Labeling(label, len) =>
-              val bounds = LTBounds.Ints(colNum, accLen, 1, len)
+              val bounds = LTBounds.Ints(x+colNum, accLen, 1, len)
               val classes = List(label.fqn)
-              val gridRegion = GridRegion.LabelInstance(bounds, classes)
+              val gridRegion = GridRegion.LabelInstance(label, bounds, classes)
               (gridRegion +: regionAcc, accLen + len)
           }
         }
@@ -313,11 +315,11 @@ object TextGridLabelWidget {
 
             val classes = labels.map(_.fqn)
 
-            val cellsStart =  Indent * (labels.length+1+depthMod)
+            val cellsStart = x + (Indent * (labels.length+1+depthMod))
 
             cells.map{ case (cell, cellCol) =>
               val left = cellsStart + cellCol
-              val top = labeledLineNum
+              val top = y + labeledLineNum
               val width = 1
               val height = 1
 
@@ -327,38 +329,50 @@ object TextGridLabelWidget {
 
           case LabeledRowElem.HeadingRow(labels, heading) =>
 
-            val left =  Indent * labels.length
-            val top = labeledLineNum
+            val left = x + (Indent * labels.length)
+            val top = y + labeledLineNum
             val width = heading.length()
             val height = 1
 
             val bounds = LTBounds.Ints(left, top, width, height)
             val classes = labels.map(_.fqn)
             List(
-              GridRegion.Heading(bounds, classes)
+              GridRegion.Heading(heading, bounds, classes)
             )
 
         }}
 
     }
 
-    def labelSchemaToGridRegions(s: LabelSchema, x: Int, y: Int): Seq[GridRegion] = {
-      val labelText = s.getAbbrev + ": " + s.label.fqn
-      val width = labelText.length()
-      val height = 1
-      val bounds = LTBounds.Ints(x, y, width, height)
-      val classes = List(s.label.fqn)
+    def labelSchemaToGridRegions(s: LabelSchemas, x0: Int, y0: Int): Seq[GridRegion] = {
 
-      val childRegions: Seq[GridRegion] = s.children.flatMap(ch => labelSchemaToGridRegions(ch, x+Indent, y+1))
-      GridRegion.LabelName(bounds, classes) +: childRegions
+      def loop(s: LabelSchema, x: Int, y: Int): Seq[GridRegion] = {
+        val labelText = s.getAbbrev + ": " + s.label.fqn
+        val width = labelText.length()
+        val height = 1
+        val bounds = LTBounds.Ints(x, y, width, height)
+        val classes = List(s.label.fqn)
+
+        val childRegions: Seq[GridRegion] = s.children.zipWithIndex
+          .flatMap{ case (ch, chi) => loop(ch, x+Indent, y+chi+1) }
+
+        GridRegion.LabelName(labelText, bounds, classes) +: childRegions
+      }
+
+      val init = Seq[GridRegion]()
+      val res = s.schemas.foldLeft(init) { case  (accRegions, schema) =>
+        accRegions ++ loop(schema, x0, y0+accRegions.length)
+      }
+
+      res
     }
 
     val marginalGloss = labelTreeToMarginals(labelTree, compactMarginals = false)
     val gridLines = flattenLabelTreeToLines(labelTree)
 
-    val glossRegions = marginalGlossToGridRegions(marginalGloss, 0, 0)
-    val gridRegions = labeledRowsToGridRegions(gridLines, x=marginalGloss.columns.length+2, y=0)
-    val schemaRegions = labelSchemaToGridRegions(labelSchema, 4, gridLines.length+4)
+    val glossRegions = marginalGlossToGridRegions(marginalGloss, originX, originY)
+    val gridRegions = labeledRowsToGridRegions(gridLines, x=originX+marginalGloss.columns.length+2, y=originY)
+    val schemaRegions = labelSchemaToGridRegions(labelSchemas, originX+8, originY+gridLines.length+4)
 
     gridRegions ++ schemaRegions ++ glossRegions
   }

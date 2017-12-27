@@ -25,6 +25,32 @@ case class LineRenderInfo(
 trait TextGridSpec extends FreeSpec with Matchers with TextGridBuilder
 
 class TextGridLabelWidgetTests extends TextGridSpec {
+  import geometry._
+  import utils.GraphPaper
+  import GraphPaper._
+  import utils.ExactFloats._
+  def makeGraph(
+    graphDimension: LTBounds
+  ): GraphPaper = {
+    val w: Int = graphDimension.width.asInt()
+    val h: Int = graphDimension.height.asInt()
+    val g = GraphPaper.create(w+1, h+1)
+    g.drawBox(GraphPaper.Box(GraphPaper.GridCell(0, 0), w, h))
+    g
+  }
+
+  // def drawBox(graphPaper: GraphPaper, region: LTBounds): Unit  = {
+  //   graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.SingleWidth)
+  // }
+  // def drawBoxBold(graphPaper: GraphPaper, region: LTBounds): Unit  = {
+  //   graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.Bold)
+  // }
+  // def drawBoxDouble(graphPaper: GraphPaper, region: LTBounds): Unit  = {
+  //   graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.DoubleWidth)
+  // }
+
+
+
   override val docStore: DocumentZoningApi = new MemDocZoningApi
   val docs = List(
     List(
@@ -116,48 +142,89 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     info("\n" + indent(4, b).toString() + "\n")
   }
 
-  "Behavior of Textgrid Widget Creation" - {
+  // "Behavior of Textgrid Widget Creation" - {
+
+  //   var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+
+
+  //   info("Starting with labeled TextGrid")
+
+  //   val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
+
+  //   info("\n"+ labeledRow.showRow().toString()+ "\n")
+
+  //   info("... and normalized to one leaf label per line")
+
+  //   textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+  //   textGrid = textGrid.splitOneLeafLabelPerLine()
+  //   textGrid = textGrid.split(9, 7).get
+
+  //   info("Split Journal")
+  //   val gridTextBox = textGrid.toText().mbox
+  //   info(s"==\n${textGrid.toText()}\n-------------------")
+
+  //   val labelTree = textGridToLabelTree(textGrid)
+
+  //   infobox(s"Create a tree structure out of the BIO labels", labelTree.drawBox)
+
+  //   val indentedBlock = textGridToIndentedBox(textGrid)
+
+  //   val cMarginals = labelTreeToMarginals(labelTree, compactMarginals=true)
+  //   val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+
+  //   val cmarginBlock = marginalGlossToTextBlock(cMarginals)
+  //   val emarginBlock = marginalGlossToTextBlock(expMarginals)
+  //   val ltextBlock = cmarginBlock + gridTextBox
+
+  //   val schemaBox = LabelSchemas.labelSchemaToBox(jsonLabelSchema)
+
+  //   val expBlock = ((emarginBlock + indentedBlock) atop vspace(2) atop schemaBox)
+
+  //   infobox(s"Create compact marginal labels", ltextBlock)
+
+  //   infobox(s"Create indented tree-view marginal labels", expBlock)
+
+  // }
+
+  "Layout for Textgrid Widget" - {
+
 
     var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
-
-
-    info("Starting with labeled TextGrid")
-
     val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
-
-    info("\n"+ labeledRow.showRow().toString()+ "\n")
-
-    info("... and normalized to one leaf label per line")
-
     textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
     textGrid = textGrid.splitOneLeafLabelPerLine()
     textGrid = textGrid.split(9, 7).get
-
-    info("Split Journal")
-    val gridTextBox = textGrid.toText().mbox
-    info(s"==\n${textGrid.toText()}\n-------------------")
-
-
     val labelTree = textGridToLabelTree(textGrid)
+    val gridRegions = labelTreeToGridRegions(labelTree, jsonLabelSchema, 2, 3)
 
-    infobox(s"Create a tree structure out of the BIO labels", labelTree.drawBox)
+    val graphSize = LTBounds.Ints(0, 0, 50, 30)
+    val graphPaper = makeGraph(graphSize)
 
-    val indentedBlock = textGridToIndentedBox(textGrid)
+    gridRegions.foreach { region => region match {
+      case GridRegion.Cell(cell, row, col, bounds, classes) =>
+        val LTBounds.Ints(l, t, w, h) = bounds
+        graphPaper.drawString(l, t, cell.char.toString())
 
-    val cMarginals = labelTreeToMarginals(labelTree, compactMarginals=true)
-    val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+      case GridRegion.Heading(heading, bounds, classes) =>
+        val LTBounds.Ints(l, t, w, h) = bounds
+        // graphPaper.drawString(l, t, heading)
+        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), 10, 0))
 
-    val cmarginBlock = marginalGlossToTextBlock(cMarginals)
-    val emarginBlock = marginalGlossToTextBlock(expMarginals)
-    val ltextBlock = cmarginBlock + gridTextBox
+      case GridRegion.LabelInstance(label, bounds, classes) =>
+        val LTBounds.Ints(l, t, w, h) = bounds
+        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
 
-    val schemaBox = LabelSchemas.labelSchemaToBox(jsonLabelSchema)
+      case GridRegion.LabelName(labelIdent, bounds, classes) =>
+        val LTBounds.Ints(l, t, w, h) = bounds
+        graphPaper.drawString(l, t, labelIdent)
 
-    val expBlock = ((emarginBlock + indentedBlock) atop vspace(2) atop schemaBox)
+    }}
 
-    infobox(s"Create compact marginal labels", ltextBlock)
 
-    infobox(s"Create indented tree-view marginal labels", expBlock)
+    println(s"==\n${textGrid.toText()}\n-------------------")
+    println(labelTree.drawBox)
+
+    println(graphPaper.asColorString())
 
   }
 }
