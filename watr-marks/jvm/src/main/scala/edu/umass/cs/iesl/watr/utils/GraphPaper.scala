@@ -5,14 +5,13 @@ import geometry._
 import scala.collection.mutable
 import utils.{RelativeDirection => Dir}
 
-class GraphPaper(
-  width: Int, height: Int, useColor: Boolean=true
-) {
+class AsciiGraphPaper(
+  override val width: Int,
+  override val height: Int,
+  useColor: Boolean=true
+) extends GraphPaper {
 
   import GraphPaper._
-
-  lazy val box = Box(GridCell(0, 0), width, height)
-  lazy val bbox = GraphPaper.box2ltb(box)
 
   val charBuffer: mutable.ArrayBuffer[
     mutable.ArrayBuffer[Char]
@@ -26,100 +25,50 @@ class GraphPaper(
       fansi.Attrs.Empty
   }
 
-  def drawString(x: Int, y: Int, str: String): Unit = {
-    str.zipWithIndex.foreach{ case (ch, i) =>
-      drawCell(GraphPaper.GridCell(x+i, y), ch)
-    }
-  }
-
-  def drawCell(cell: GraphPaper.GridCell, char: Char): Unit = {
+  def drawChar(cell: GridCell, char: Char): Unit = {
     charBuffer(cell.y)(cell.x) = char
   }
 
-
-  def drawBox(box: GraphPaper.Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit = {
+  // override
+  def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit = {
 
     if (box.spanRight==0 && box.spanDown==0) {
       box.getCells(Dir.Left).foreach { cell =>
-        drawCell(cell, borderChars.endcapFor(Dir.Center))
+        drawChar(cell, borderChars.endcapFor(Dir.Center))
       }
     } else if (box.spanRight==0) {
       box.getCells(Dir.Left).foreach { cell =>
-        drawCell(cell, borderChars.char1For(Dir.Left))
+        drawChar(cell, borderChars.char1For(Dir.Left))
       }
       box.getCells(Dir.Top).foreach { cell =>
-        drawCell(cell, borderChars.endcapFor(Dir.Top))
+        drawChar(cell, borderChars.endcapFor(Dir.Top))
       }
       box.getCells(Dir.Bottom).foreach { cell =>
-        drawCell(cell, borderChars.endcapFor(Dir.Bottom))
+        drawChar(cell, borderChars.endcapFor(Dir.Bottom))
       }
     } else if (box.spanDown==0) {
       box.getCells(Dir.Top).foreach { cell =>
-        drawCell(cell, borderChars.char1For(Dir.Top))
+        drawChar(cell, borderChars.char1For(Dir.Top))
       }
       box.getCells(Dir.Left).foreach { cell =>
-        drawCell(cell, borderChars.endcapFor(Dir.Left))
+        drawChar(cell, borderChars.endcapFor(Dir.Left))
       }
       box.getCells(Dir.Right).foreach { cell =>
-        drawCell(cell, borderChars.endcapFor(Dir.Right))
+        drawChar(cell, borderChars.endcapFor(Dir.Right))
       }
     } else {
       List(Dir.Top, Dir.Bottom, Dir.Left, Dir.Right)
         .foreach{ d =>
-          box.getCells(d).foreach(cell => drawCell(cell, borderChars.charFor(d)))
+          box.getCells(d).foreach(cell => drawChar(cell, borderChars.charFor(d)))
         }
 
       List(Dir.TopLeft, Dir.TopRight, Dir.BottomLeft, Dir.BottomRight)
         .foreach{ d =>
-          box.getCells(d).foreach(cell => drawCell(cell, borderChars.charFor(d)))
+          box.getCells(d).foreach(cell => drawChar(cell, borderChars.charFor(d)))
         }
 
     }
-
   }
-
-
-  def fillFg(fill: Char, gridbox: GraphPaper.Box): Unit = {
-    for {
-      y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown)
-      x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight)
-    } {
-      charBuffer(y)(x) = fill
-    }
-  }
-
-  def topLeftFrame(fill: Char, gridbox: GraphPaper.Box): Unit = {
-    val y0 = gridbox.origin.y+1
-    val x = gridbox.origin.x+1
-
-    // Left
-    for { y <- gridbox.origin.y+2 until (gridbox.origin.y+gridbox.spanDown) } {
-      charBuffer(y)(x) = '┊'
-    }
-    charBuffer(y0)(x) = fill
-
-    // Top
-    for { x <- gridbox.origin.x+2 until (gridbox.origin.x+gridbox.spanRight) } {
-      val y = gridbox.origin.y+1
-      charBuffer(y)(x) = '┄'
-    }
-  }
-
-  def bottomRightFrame(fill: Char, gridbox: GraphPaper.Box): Unit = {
-    val y0 = gridbox.origin.y+gridbox.spanDown-2
-    val x = gridbox.origin.x+gridbox.spanRight-2
-
-    // Right
-    for { y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown-2) } {
-      charBuffer(y)(x) = '│'
-    }
-    charBuffer(y0)(x) = fill
-
-    for { x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight-2) } {
-      charBuffer(y0)(x) = '─'
-    }
-  }
-
 
   def applyBgColor(x: Int, y: Int, color: Color): Unit = {
     val xy = charMods(y)(x)
@@ -133,29 +82,6 @@ class GraphPaper(
     val rgb = color.toRGB
     val fansiColor = fansi.Color.True(rgb.red, rgb.green, rgb.blue)
     charMods(y)(x) = xy ++ fansiColor
-  }
-
-  def border(gridbox: GraphPaper.Box, color: Color): Unit = {
-    borderLeftRight(gridbox, color)
-    borderTopBottom(gridbox, color)
-  }
-
-  def borderLeftRight(gridbox: GraphPaper.Box, color: Color): Unit = {
-    for { y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown) } {
-      val x1 = gridbox.origin.x
-      val x2 = gridbox.origin.x+gridbox.spanRight-1
-      applyBgColor(x1, y, color)
-      applyBgColor(x2, y, color)
-    }
-  }
-
-  def borderTopBottom(gridbox: GraphPaper.Box, color: Color): Unit = {
-    for { x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight) } {
-      val y1 = gridbox.origin.y
-      val y2 = gridbox.origin.y+gridbox.spanDown-1
-      applyBgColor(x, y1, color)
-      applyBgColor(x, y2, color)
-    }
   }
 
   def gradientHorizontal(gridbox: GraphPaper.Box): Unit = {
@@ -176,15 +102,6 @@ class GraphPaper(
       b = (b + 2) % 256
       val qq = charMods(y)(x)
       charMods(y)(x) = qq ++ fansi.Back.True(r,g,b)
-    }
-  }
-
-  def shadeBackground(gridbox: GraphPaper.Box, color: Color): Unit = {
-    for {
-      y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown)
-      x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight)
-    } {
-      applyBgColor(x, y, color)
     }
   }
 
@@ -212,67 +129,7 @@ class GraphPaper(
 }
 
 
-object GraphPaper {
-
-  def box2ltb(box: Box): LTBounds = {
-    val Box(GridCell(l, t), w, h) = box
-    LTBounds.Ints(l, t, w, h)
-  }
-
-  def ltb2box(bbox: LTBounds): GraphPaper.Box = {
-    val LTBounds.Ints(l, t, w, h) = bbox
-    GraphPaper.Box(GridCell(l, t), w, h)
-  }
-
-  case class GridCell(
-    x: Int, y: Int
-  )
-
-  case class Box(
-    origin: GridCell, spanRight: Int, spanDown: Int
-  ) {
-    val left: Int    = origin.x
-    val top: Int     = origin.y
-    val right: Int   = origin.x + spanRight
-    val bottom: Int  = origin.y + spanDown
-    val centerX: Int = left + spanRight/2
-    val centerY: Int = top + spanDown/2
-
-    def getCell(dir: Dir): GridCell = {
-      dir match {
-        case Dir.Top         => GridCell(centerX, top)
-        case Dir.Bottom      => GridCell(centerX, bottom)
-        case Dir.Right       => GridCell(right, centerY)
-        case Dir.Left        => GridCell(left, centerY)
-        case Dir.TopLeft     => origin
-        case Dir.BottomLeft  => GridCell(left, bottom)
-        case Dir.TopRight    => GridCell(right, top)
-        case Dir.BottomRight => GridCell(right, bottom)
-        case Dir.Center      => GridCell(centerX, centerY)
-      }
-    }
-    def getCells(dir: Dir): Seq[GridCell] = {
-      dir match {
-        case Dir.Top         => cells(left, top, right, top)
-        case Dir.Bottom      => cells(left, bottom, right, bottom)
-        case Dir.Left        => cells(left, top, left, bottom)
-        case Dir.Right       => cells(right, top, right, bottom)
-        case _               => Seq(getCell(dir))
-      }
-    }
-
-    private def cells(x1: Int, y1: Int, x2: Int, y2: Int): Seq[GridCell] = {
-      for {
-        y <- y1 to y2
-        x <- x1 to x2
-      } yield GridCell(x, y)
-    }
-
-  }
-
-  def create(w: Int, h: Int, useColor: Boolean=false) = {
-    new GraphPaper(w, h, useColor)
-  }
+object AsciiGraphPaper {
 
   case class BorderChars(str: String) {
     val chars = str.toCharArray()
@@ -312,3 +169,36 @@ object GraphPaper {
   }
 
 }
+
+
+// def topLeftFrame(fill: Char, gridbox: GraphPaper.Box): Unit = {
+//   val y0 = gridbox.origin.y+1
+//   val x = gridbox.origin.x+1
+
+//   // Left
+//   for { y <- gridbox.origin.y+2 until (gridbox.origin.y+gridbox.spanDown) } {
+//     charBuffer(y)(x) = '┊'
+//   }
+//   charBuffer(y0)(x) = fill
+
+//   // Top
+//   for { x <- gridbox.origin.x+2 until (gridbox.origin.x+gridbox.spanRight) } {
+//     val y = gridbox.origin.y+1
+//     charBuffer(y)(x) = '┄'
+//   }
+// }
+
+// def bottomRightFrame(fill: Char, gridbox: GraphPaper.Box): Unit = {
+//   val y0 = gridbox.origin.y+gridbox.spanDown-2
+//   val x = gridbox.origin.x+gridbox.spanRight-2
+
+//   // Right
+//   for { y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown-2) } {
+//     charBuffer(y)(x) = '│'
+//   }
+//   charBuffer(y0)(x) = fill
+
+//   for { x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight-2) } {
+//     charBuffer(y0)(x) = '─'
+//   }
+// }

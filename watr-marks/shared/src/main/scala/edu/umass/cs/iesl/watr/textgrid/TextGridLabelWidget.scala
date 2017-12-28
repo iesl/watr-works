@@ -139,30 +139,18 @@ object GridRegion {
     gridRegions: Seq[GridRegion],
     f0:GridRegion.Cell         => Unit,
     f1:GridRegion.Heading      => Unit,
-    f2:GridRegion.LabelInstance=> Unit,
-    f3:GridRegion.LabelName    => Unit
+    f2:GridRegion.LabelCover   => Unit,
+    f3:GridRegion.LabelKey    => Unit
   ): Unit = {
     println(s"fold: ${gridRegions}")
     gridRegions.foreach{ _ match {
       case g:GridRegion.Cell         => println("f0"); f0(g)
       case g:GridRegion.Heading      => println("f1"); f1(g)
-      case g:GridRegion.LabelInstance=> println("f2"); f2(g)
-      case g:GridRegion.LabelName    => println("f3"); f3(g)
+      case g:GridRegion.LabelCover   => println("f2"); f2(g)
+      case g:GridRegion.LabelKey     => println("f3"); f3(g)
       case _ => println("f??")
     }}
   }
-
-  // def fold(r: GridRegion,
-  //   f0:GridRegion.Cell         => Unit,
-  //   f1:GridRegion.Heading      => Unit,
-  //   f2:GridRegion.LabelInstance=> Unit,
-  //   f3:GridRegion.LabelName    => Unit
-  // ): Unit = r match {
-  //   case g:GridRegion.Cell         => f0(g)
-  //   case g:GridRegion.Heading      => f1(g)
-  //   case g:GridRegion.LabelInstance=> f2(g)
-  //   case g:GridRegion.LabelName    => f3(g)
-  // }
 
   @JSExportAll
   case class Cell(
@@ -185,7 +173,7 @@ object GridRegion {
   }
 
   @JSExportAll
-  case class LabelInstance(
+  case class LabelCover(
     label: Label,
     override val bounds: LTBounds,
     override val classes: List[String],
@@ -194,7 +182,7 @@ object GridRegion {
   }
 
   @JSExportAll
-  case class LabelName(
+  case class LabelKey(
     labelIdent: String,
     override val bounds: LTBounds,
     override val classes: List[String],
@@ -326,11 +314,11 @@ object LabelSchemas {
 //   //       // graphPaper.drawString(l, t, heading)
 //   //       graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), 10, 0))
 
-//   //     case GridRegion.LabelInstance(label, bounds, classes) =>
+//   //     case GridRegion.LabelCover(label, bounds, classes) =>
 //   //       val LTBounds.Ints(l, t, w, h) = bounds
 //   //       graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
 
-//   //     case GridRegion.LabelName(labelIdent, bounds, classes) =>
+//   //     case GridRegion.LabelKey(labelIdent, bounds, classes) =>
 //   //       val LTBounds.Ints(l, t, w, h) = bounds
 //   //       textCells().drawString(l, t, labelIdent)
 
@@ -453,7 +441,7 @@ object TextGridLabelWidget {
             case MarginalGloss.Labeling(label, len) =>
               val bounds = LTBounds.Ints(x+colNum, accLen, 1, len)
               val classes = List(label.fqn)
-              val gridRegion = GridRegion.LabelInstance(label, bounds, classes)
+              val gridRegion = GridRegion.LabelCover(label, bounds, classes)
               (gridRegion +: regionAcc, accLen + len)
           }
         }
@@ -517,7 +505,7 @@ object TextGridLabelWidget {
         val childRegions: Seq[GridRegion] = s.children.zipWithIndex
           .flatMap{ case (ch, chi) => loop(ch, x+Indent, y+chi+1) }
 
-        GridRegion.LabelName(labelText, bounds, classes) +: childRegions
+        GridRegion.LabelKey(labelText, bounds, classes) +: childRegions
       }
 
       val init = Seq[GridRegion]()

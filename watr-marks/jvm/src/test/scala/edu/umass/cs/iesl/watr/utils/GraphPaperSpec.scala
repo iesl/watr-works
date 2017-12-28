@@ -7,7 +7,7 @@ import textboxing.{TextBoxing => TB}, TB._
 class GraphPaperSpec extends FlatSpec with Matchers {
 
   it should "maintain height/width dimensions when rendered as string" in {
-    val graphPaper = new GraphPaper(2, 2)
+    val graphPaper = new AsciiGraphPaper(2, 2)
     // val (x, y, w, h) = (0, 0, 0, 0)
     // val box = GraphPaper.Box(GraphPaper.GridCell(x, y), w, h)
     // val border = GraphPaper.BorderLineStyle.SingleWidth
@@ -25,7 +25,7 @@ class GraphPaperSpec extends FlatSpec with Matchers {
       w <- 0 to 2
       h <- 0 to 2
     } yield {
-      val graphPaper = new GraphPaper(6, 6)
+      val graphPaper = new AsciiGraphPaper(6, 6)
       val box = GraphPaper.Box(GraphPaper.GridCell(x, y), w, h)
       val border = GraphPaper.BorderLineStyle.SingleWidth
       graphPaper.drawBox(box, border)

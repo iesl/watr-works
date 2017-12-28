@@ -26,29 +26,18 @@ trait TextGridSpec extends FreeSpec with Matchers with TextGridBuilder
 
 class TextGridLabelWidgetTests extends TextGridSpec {
   import geometry._
+  import utils.AsciiGraphPaper
   import utils.GraphPaper
-  import GraphPaper._
   import utils.ExactFloats._
   def makeGraph(
     graphDimension: LTBounds
-  ): GraphPaper = {
+  ): AsciiGraphPaper = {
     val w: Int = graphDimension.width.asInt()
     val h: Int = graphDimension.height.asInt()
-    val g = GraphPaper.create(w+1, h+1)
+    val g = new AsciiGraphPaper(w+1, h+1)
     g.drawBox(GraphPaper.Box(GraphPaper.GridCell(0, 0), w, h))
     g
   }
-
-  // def drawBox(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-  //   graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.SingleWidth)
-  // }
-  // def drawBoxBold(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-  //   graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.Bold)
-  // }
-  // def drawBoxDouble(graphPaper: GraphPaper, region: LTBounds): Unit  = {
-  //   graphPaper.drawBox(ltb2box(region), GraphPaper.BorderLineStyle.DoubleWidth)
-  // }
-
 
 
   override val docStore: DocumentZoningApi = new MemDocZoningApi
@@ -199,11 +188,11 @@ class TextGridLabelWidgetTests extends TextGridSpec {
         // graphPaper.drawString(l, t, heading)
         graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), 10, 0))
 
-      case GridRegion.LabelInstance(label, bounds, classes) =>
+      case GridRegion.LabelCover(label, bounds, classes) =>
         val LTBounds.Ints(l, t, w, h) = bounds
         graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
 
-      case GridRegion.LabelName(labelIdent, bounds, classes) =>
+      case GridRegion.LabelKey(labelIdent, bounds, classes) =>
         val LTBounds.Ints(l, t, w, h) = bounds
         graphPaper.drawString(l, t, labelIdent)
 

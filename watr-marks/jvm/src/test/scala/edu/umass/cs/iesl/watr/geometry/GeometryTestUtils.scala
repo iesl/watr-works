@@ -19,15 +19,16 @@ trait ArbitraryGeometries {
 }
 
 object GeometryTestUtils extends FlatSpec {
+  import utils.AsciiGraphPaper
   import utils.GraphPaper
   import GraphPaper._
 
   def makeGraph(
     graphDimension: LTBounds
-  ): GraphPaper = {
+  ): AsciiGraphPaper = {
     val w: Int = graphDimension.width.asInt()
     val h: Int = graphDimension.height.asInt()
-    val g = GraphPaper.create(w+1, h+1)
+    val g = new AsciiGraphPaper(w, h)
     drawBox(g, graphDimension)
     g
   }
