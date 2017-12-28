@@ -67,11 +67,6 @@ abstract class GraphPaper {
 
 object GraphPaper {
 
-  // def box2ltb(box: Box): LTBounds = {
-  //   val Box(GridCell(l, t), w, h) = box
-  //   LTBounds.Ints(l, t, w, h)
-  // }
-
   def ltb2box(bbox: LTBounds): GraphPaper.Box = {
     val LTBounds.Ints(l, t, w, h) = bbox
     GraphPaper.Box(GridCell(l, t), w-1, h-1)
