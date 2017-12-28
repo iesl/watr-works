@@ -95,17 +95,6 @@ class TextGridLabelWidgetTests extends TextGridSpec {
         LabelSchema(RefNumber))
     )
 
-    val abbrevs = List(
-      (Authors    ,('u', 's')),
-      (Author     ,('a', 'u')),
-      (FirstName  ,('f', 'n')),
-      (MiddleName ,('m', 'n')),
-      (LastName   ,('l', 'n')),
-      (Journal    ,('j', 'o')),
-      (RefMarker  ,('r', 'm')),
-      (RefNumber  ,('r', 'n'))
-    )
-
     LabelSchemas(
       List(
         authorListSchema,

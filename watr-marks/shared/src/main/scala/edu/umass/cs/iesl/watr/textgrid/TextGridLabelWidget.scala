@@ -4,12 +4,16 @@ package textgrid
 import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, _}, Scalaz._
 
-import utils.ScalazTreeImplicits._
+// import utils.ScalazTreeImplicits._
 import scala.scalajs.js.annotation._
-
+// import scala.scalajs.js
+// import scala.annotation.meta.field
 import watrmarks._
 
-import _root_.io.circe, circe._, circe.syntax._
+import _root_.io.circe, circe._ // circe.syntax._
+
+import utils.ExactFloats._
+import geometry._
 
 sealed trait TreeNode
 
@@ -63,7 +67,6 @@ object LabeledRowElem {
 }
 
 
-
 case class MarginalGloss(
   columns: List[MarginalGloss.Column]
 )
@@ -80,43 +83,130 @@ object MarginalGloss {
 
 }
 
-import geometry._
-sealed trait GridRegion {
+@JSExportAll
+trait PointPolyfill { self =>
+  def x: Int
+  def y: Int
+}
+
+trait BoundingBoxPolyfill { self =>
   def bounds: LTBounds
+
+  def left:Int   = bounds.left.asInt()
+  def top:Int    =  bounds.top.asInt()
+  def width:Int  = bounds.width.asInt()
+  def height:Int = bounds.height.asInt()
+
+
+  def minX() = left
+  def minY() = top
+  def maxX() = left + width
+  def maxY() = top + height
+
+  def x() = left
+  def y() = top
+
+  def x1() = left
+  def x2() = left + width
+  def y1() = top
+  def y2() = top + height
+
+  def bottom() = top + height
+  def right()  = left + width
+
+  def topLeft() = new PointPolyfill{
+    override val x = self.left
+    override val y = self.top
+  }
+}
+
+
+sealed trait GridRegion extends BoundingBoxPolyfill {
   def classes: List[String]
+
+  def isCell(): Boolean = false
+  def isHeading(): Boolean = false
+  def isLabelCover(): Boolean = false
+  def isLabelKey(): Boolean = false
 
 }
 
+@JSExportTopLevel("watr.textgrid.GridRegion")
 object GridRegion {
 
+  @JSExport
+  def fold(
+    gridRegions: Seq[GridRegion],
+    f0:GridRegion.Cell         => Unit,
+    f1:GridRegion.Heading      => Unit,
+    f2:GridRegion.LabelInstance=> Unit,
+    f3:GridRegion.LabelName    => Unit
+  ): Unit = {
+    println(s"fold: ${gridRegions}")
+    gridRegions.foreach{ _ match {
+      case g:GridRegion.Cell         => println("f0"); f0(g)
+      case g:GridRegion.Heading      => println("f1"); f1(g)
+      case g:GridRegion.LabelInstance=> println("f2"); f2(g)
+      case g:GridRegion.LabelName    => println("f3"); f3(g)
+      case _ => println("f??")
+    }}
+  }
+
+  // def fold(r: GridRegion,
+  //   f0:GridRegion.Cell         => Unit,
+  //   f1:GridRegion.Heading      => Unit,
+  //   f2:GridRegion.LabelInstance=> Unit,
+  //   f3:GridRegion.LabelName    => Unit
+  // ): Unit = r match {
+  //   case g:GridRegion.Cell         => f0(g)
+  //   case g:GridRegion.Heading      => f1(g)
+  //   case g:GridRegion.LabelInstance=> f2(g)
+  //   case g:GridRegion.LabelName    => f3(g)
+  // }
+
+  @JSExportAll
   case class Cell(
     cell: TextGrid.GridCell,
     row: Int, col: Int,
     override val bounds: LTBounds,
-    override val classes: List[String],
-  ) extends GridRegion
+    override val classes: List[String]
+  ) extends GridRegion {
+    override def isCell(): Boolean = true
+  }
 
+  @JSExportAll
   case class Heading(
     heading: String,
     override val bounds: LTBounds,
     override val classes: List[String],
-  ) extends GridRegion
+  ) extends GridRegion {
+    override def isHeading(): Boolean = true
 
+  }
+
+  @JSExportAll
   case class LabelInstance(
     label: Label,
     override val bounds: LTBounds,
     override val classes: List[String],
-  ) extends GridRegion
+  ) extends GridRegion {
+    override def isLabelCover(): Boolean = true
+  }
 
+  @JSExportAll
   case class LabelName(
     labelIdent: String,
     override val bounds: LTBounds,
     override val classes: List[String],
-  ) extends GridRegion
+  ) extends GridRegion {
+    override def isLabelKey(): Boolean = true
+  }
 
 }
 
 
+
+@JSExportTopLevel("watr.textgrid.LabelSchema")
 case class LabelSchema(
   label: Label,
   abbrev: Option[(Char, Char)] = None,
@@ -133,10 +223,13 @@ case class LabelSchema(
   }
 }
 
+@JSExportTopLevel("watr.textgrid.LabelSchemas")
 case class LabelSchemas(
   schemas: List[LabelSchema]
 )
 
+@JSExportTopLevel("watr.textgrid.LabelSchemasCompanion")
+@JSExportAll
 object LabelSchemas {
   def labelSchemaToBox(schema: LabelSchemas): TB.Box = {
 
@@ -173,9 +266,78 @@ object LabelSchemas {
     colonRight = " "
   )
 
+  val testLabelSchema = {
+
+    val Authors = Label.auto
+    val Author = Label.auto
+    val FirstName = Label.auto
+    val MiddleName = Label.auto
+    val LastName = Label.auto
+    val RefMarker = Label.auto
+    val RefNumber = Label.auto
+
+    val authorNameSchema = LabelSchema(
+      Author, Some(('a', 'u')), List(
+        LabelSchema(FirstName),
+        LabelSchema(MiddleName),
+        LabelSchema(LastName))
+    )
+
+    val authorListSchema = LabelSchema(
+      Authors, Some(('a', 's')), List(
+        authorNameSchema)
+    )
+
+    val refMarkerSchema = LabelSchema(
+      RefMarker, None, List(
+        LabelSchema(RefNumber))
+    )
+
+    LabelSchemas(
+      List(
+        authorListSchema,
+        refMarkerSchema)
+    )
+  }
+
 }
 
+// class TextCells {
 
+//   def drawString(): Unit
+//   def drawBox(): Unit
+// }
+// class TextGridLabelWidget {
+//   // text-surface
+//   //
+
+//   def textCells(): TextCells
+//   def gridRegions(): Seq[GridRegion]
+
+//   // def render(): Unit = {
+
+//   //   gridRegions.foreach { region => region match {
+//   //     case GridRegion.Cell(cell, row, col, bounds, classes) =>
+//   //       val LTBounds.Ints(l, t, w, h) = bounds
+//   //       textCells().drawString(l, t, cell.char.toString())
+
+//   //     case GridRegion.Heading(heading, bounds, classes) =>
+//   //       val LTBounds.Ints(l, t, w, h) = bounds
+//   //       // graphPaper.drawString(l, t, heading)
+//   //       graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), 10, 0))
+
+//   //     case GridRegion.LabelInstance(label, bounds, classes) =>
+//   //       val LTBounds.Ints(l, t, w, h) = bounds
+//   //       graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
+
+//   //     case GridRegion.LabelName(labelIdent, bounds, classes) =>
+//   //       val LTBounds.Ints(l, t, w, h) = bounds
+//   //       textCells().drawString(l, t, labelIdent)
+
+//   //   }}
+//   // }
+
+// }
 
 @JSExportTopLevel("watr.textgrid.TextGridLabelWidget") @JSExportAll
 object TextGridLabelWidget {
@@ -277,7 +439,7 @@ object TextGridLabelWidget {
     borderLeftRight("|", ":")(hcat(top, colBoxes))
   }
 
-  def labelTreeToGridRegions(labelTree: Tree[TreeNode], labelSchemas: LabelSchemas, originX: Int=0, originY: Int=0): List[GridRegion] = {
+  def labelTreeToGridRegions(labelTree: Tree[TreeNode], labelSchemas: LabelSchemas, originX: Int=0, originY: Int=0): Seq[GridRegion] = {
 
     def marginalGlossToGridRegions(marginalLabels: MarginalGloss, x: Int, y: Int): Seq[GridRegion] = {
       val allRegions = marginalLabels.columns.zipWithIndex.map{ case (col, colNum) =>
@@ -337,8 +499,7 @@ object TextGridLabelWidget {
             val bounds = LTBounds.Ints(left, top, width, height)
             val classes = labels.map(_.fqn)
             List(
-              GridRegion.Heading(heading, bounds, classes)
-            )
+              GridRegion.Heading(heading, bounds, classes))
 
         }}
 
@@ -518,6 +679,7 @@ object TextGridLabelWidget {
 
     currLoc.root.toTree
   }
+
 
 
 }

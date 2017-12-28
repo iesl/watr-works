@@ -93,7 +93,8 @@ trait TextGrid {
   }
 }
 
-@JSExportTopLevel("watr.textgrid.TextGrid.Companion") @JSExportAll
+@JSExportTopLevel("watr.textgrid.TextGrid.Companion")
+@JSExportAll
 object TextGrid {
   type SetType[A] = mutable.ArrayStack[A]
   type PinSet = SetType[BioPin]
@@ -118,6 +119,7 @@ object TextGrid {
 
   }
 
+  @JSExportAll
   sealed trait LabelTarget {
     val pins: PinSet = mutable.ArrayStack[BioPin]()
 
@@ -160,6 +162,7 @@ object TextGrid {
     }
   }
 
+  @JSExportAll
   sealed trait GridCell extends LabelTarget {
     def pageRegion: PageRegion
 
@@ -196,6 +199,7 @@ object TextGrid {
   }
 
 
+  @JSExportAll
   trait Row extends LabelTarget {
 
     def cells: Seq[GridCell]

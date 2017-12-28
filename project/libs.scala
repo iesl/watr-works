@@ -15,10 +15,13 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.2"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.0-M6"
-  val fs2Version          = "0.10.0-M10" // For cats 1.0.0-RC1 and cats-effect 0.5
-  val circeJsonVersion    = "0.9.0-M2"
+  val http4sVersion       = "0.18.0-M7"
+  val fs2Version          = "0.10.0-M10"
+  val circeJsonVersion    = "0.9.0-M3"
   val ammoniteVersion     = "1.0.3"
+  val catsV               = "1.0.0"
+  val catsEffectV         = "0.7"
+  val postgresqlV         = "42.1.4"
 }
 
 
@@ -54,7 +57,7 @@ object DatabaseLibs extends LibVersions {
     "org.tpolecat"      %% "doobie-postgres"   % doobieVersion,
     "org.tpolecat"      %% "doobie-hikari"     % doobieVersion,
     "org.tpolecat"      %% "doobie-specs2"     % doobieVersion % "test",
-    "org.postgresql"     % "postgresql"        % "42.1.4",
+    "org.postgresql"     % "postgresql"        % postgresqlV,
     "org.javassist"      % "javassist"         % "3.22.0-GA",
     "com.impossibl.pgjdbc-ng" % "pgjdbc-ng"  % "0.7.1"
   )
@@ -63,15 +66,15 @@ object DatabaseLibs extends LibVersions {
 
 trait CommonLibs extends LibVersions {
 
-  val ammonite         = "com.lihaoyi"             % "ammonite" % ammoniteVersion cross CrossVersion.full
-  val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"  % ammoniteVersion
+  val ammonite         = "com.lihaoyi"             % "ammonite"          % ammoniteVersion cross CrossVersion.full
+  val ammoniteOps      = "com.lihaoyi"             %% "ammonite-ops"     % ammoniteVersion
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,
-    "org.typelevel" %% "cats-effect" % "0.6"
+    "org.typelevel" %% "cats-effect" % catsEffectV
   )
 
 
@@ -84,19 +87,18 @@ trait CommonLibs extends LibVersions {
   )
 
   val circeJson = Seq(
-    "io.circe" %% "circe-generic" % "0.9.0-M2",
-    "io.circe" %% "circe-parser" % "0.9.0-M2",
-    "io.circe" %% "circe-literal" % "0.9.0-M2"
+    "io.circe" %% "circe-generic"  % circeJsonVersion,
+    "io.circe" %% "circe-parser"   % circeJsonVersion,
+    "io.circe" %% "circe-literal"  % circeJsonVersion
   )
 
   val http4s = Seq(
-    "org.reactormonk" %% "cryptobits" % "1.1",
-    "org.http4s" %% "http4s-dsl" % http4sVersion,
-    "org.http4s" %% "http4s-blaze-server" % http4sVersion,
-    "org.http4s" %% "http4s-blaze-client" % http4sVersion,
-    "org.http4s" %% "http4s-circe" % http4sVersion,
-    // "org.typelevel" %% "cats-core" % "0.9.0" // % "1.0.0-RC1"
-    "org.typelevel" %% "cats-core" % "1.0.0-RC2"
+    "org.reactormonk" %% "cryptobits"           % "1.1",
+    "org.http4s"      %% "http4s-dsl"           % http4sVersion,
+    "org.http4s"      %% "http4s-blaze-server"  % http4sVersion,
+    "org.http4s"      %% "http4s-blaze-client"  % http4sVersion,
+    "org.http4s"      %% "http4s-circe"         % http4sVersion,
+    "org.typelevel"   %% "cats-core"            % catsV
   )
 
   val jwtCirce = Seq(

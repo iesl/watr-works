@@ -113,6 +113,9 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
   .dependsOn(watrmarksJVM, watrshed)
 
 
+
+
+
 // lazy val micrositeSettings = Seq(
 //   micrositeName                 := "WatrWorks",
 //   micrositeDescription          := "Text Extraction and Annotation Suite",
