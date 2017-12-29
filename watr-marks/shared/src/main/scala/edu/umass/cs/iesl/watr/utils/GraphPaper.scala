@@ -90,6 +90,12 @@ object GraphPaper {
     val centerX: Int = left + spanRight/2
     val centerY: Int = top + spanDown/2
 
+
+
+    def toLTBounds(): LTBounds = {
+      LTBounds.Ints(left, top, spanRight+1, spanDown+1)
+    }
+
     def getCell(dir: Dir): GridCell = {
       dir match {
         case Dir.Top         => GridCell(centerX, top)

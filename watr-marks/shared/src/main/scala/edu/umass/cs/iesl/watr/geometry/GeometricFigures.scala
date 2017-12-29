@@ -10,11 +10,13 @@ import utils.Color
 import TypeTags._
 
 import utils.ExactFloats._
+import scala.scalajs.js.annotation._
 
 sealed trait GeometricFigure { self =>
   lazy val mbr = minBoundingRect(self)
 }
 
+@JSExportAll
 case class LTBounds(
   left   : Int@@FloatRep,
   top    : Int@@FloatRep,
@@ -24,6 +26,13 @@ case class LTBounds(
   override def toString: String = this.prettyPrint
   def right = left+width
   def bottom = top+height
+
+  def getLeft(): Double = left.asDouble()
+  def getTop(): Double = top.asDouble()
+  def getWidth(): Double = width.asDouble()
+  def getHeight(): Double = height.asDouble()
+  def getRight(): Double = right.asDouble()
+  def getBottom(): Double = bottom.asDouble()
 }
 
 object LTBounds {

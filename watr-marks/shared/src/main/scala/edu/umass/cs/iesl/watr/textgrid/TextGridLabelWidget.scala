@@ -4,16 +4,12 @@ package textgrid
 import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, _}, Scalaz._
 
-// import utils.ScalazTreeImplicits._
 import scala.scalajs.js.annotation._
-// import scala.scalajs.js
-// import scala.annotation.meta.field
 import watrmarks._
-
 import _root_.io.circe, circe._ // circe.syntax._
-
-import utils.ExactFloats._
 import geometry._
+
+
 
 sealed trait TreeNode
 
@@ -83,45 +79,10 @@ object MarginalGloss {
 
 }
 
+
 @JSExportAll
-trait PointPolyfill { self =>
-  def x: Int
-  def y: Int
-}
-
-trait BoundingBoxPolyfill { self =>
+sealed trait GridRegion  {
   def bounds: LTBounds
-
-  def left:Int   = bounds.left.asInt()
-  def top:Int    =  bounds.top.asInt()
-  def width:Int  = bounds.width.asInt()
-  def height:Int = bounds.height.asInt()
-
-
-  def minX() = left
-  def minY() = top
-  def maxX() = left + width
-  def maxY() = top + height
-
-  def x() = left
-  def y() = top
-
-  def x1() = left
-  def x2() = left + width
-  def y1() = top
-  def y2() = top + height
-
-  def bottom() = top + height
-  def right()  = left + width
-
-  def topLeft() = new PointPolyfill{
-    override val x = self.left
-    override val y = self.top
-  }
-}
-
-
-sealed trait GridRegion extends BoundingBoxPolyfill {
   def classes: List[String]
 
   def isCell(): Boolean = false
@@ -133,24 +94,6 @@ sealed trait GridRegion extends BoundingBoxPolyfill {
 
 @JSExportTopLevel("watr.textgrid.GridRegion")
 object GridRegion {
-
-  @JSExport
-  def fold(
-    gridRegions: Seq[GridRegion],
-    f0:GridRegion.Cell         => Unit,
-    f1:GridRegion.Heading      => Unit,
-    f2:GridRegion.LabelCover   => Unit,
-    f3:GridRegion.LabelKey    => Unit
-  ): Unit = {
-    println(s"fold: ${gridRegions}")
-    gridRegions.foreach{ _ match {
-      case g:GridRegion.Cell         => println("f0"); f0(g)
-      case g:GridRegion.Heading      => println("f1"); f1(g)
-      case g:GridRegion.LabelCover   => println("f2"); f2(g)
-      case g:GridRegion.LabelKey     => println("f3"); f3(g)
-      case _ => println("f??")
-    }}
-  }
 
   @JSExportAll
   case class Cell(
@@ -290,42 +233,6 @@ object LabelSchemas {
 
 }
 
-// class TextCells {
-
-//   def drawString(): Unit
-//   def drawBox(): Unit
-// }
-// class TextGridLabelWidget {
-//   // text-surface
-//   //
-
-//   def textCells(): TextCells
-//   def gridRegions(): Seq[GridRegion]
-
-//   // def render(): Unit = {
-
-//   //   gridRegions.foreach { region => region match {
-//   //     case GridRegion.Cell(cell, row, col, bounds, classes) =>
-//   //       val LTBounds.Ints(l, t, w, h) = bounds
-//   //       textCells().drawString(l, t, cell.char.toString())
-
-//   //     case GridRegion.Heading(heading, bounds, classes) =>
-//   //       val LTBounds.Ints(l, t, w, h) = bounds
-//   //       // graphPaper.drawString(l, t, heading)
-//   //       graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), 10, 0))
-
-//   //     case GridRegion.LabelCover(label, bounds, classes) =>
-//   //       val LTBounds.Ints(l, t, w, h) = bounds
-//   //       graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
-
-//   //     case GridRegion.LabelKey(labelIdent, bounds, classes) =>
-//   //       val LTBounds.Ints(l, t, w, h) = bounds
-//   //       textCells().drawString(l, t, labelIdent)
-
-//   //   }}
-//   // }
-
-// }
 
 @JSExportTopLevel("watr.textgrid.TextGridLabelWidget") @JSExportAll
 object TextGridLabelWidget {

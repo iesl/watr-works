@@ -2,11 +2,13 @@ package edu.umass.cs.iesl.watr
 package utils
 
 // import geometry._
+// import utils.ExactFloats._
 // import utils.{RelativeDirection => Dir}
 import scala.scalajs.js
 import scala.scalajs.js.annotation._
 
 import GraphPaper._
+
 
 @js.native
 trait DrawingApi extends js.Object {

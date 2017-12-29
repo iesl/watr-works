@@ -18,7 +18,6 @@ lazy val prelude = (project in file("watr-prelude"))
     "org.scala-lang" % "scala-reflect" % scalaVersion.value
   ))
 
-
 lazy val watrmarks = (crossProject in file("watr-marks"))
   .settings(SensibleProject.settings: _*)
   .settings(Release.settings :_*)
@@ -48,6 +47,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     ))
 
 lazy val watrmarksJS = watrmarks.js
+  .settings(scalacOptions += "-P:scalajs:sjsDefinedByDefault")
 
 lazy val watrmarksJVM = watrmarks.jvm
 
