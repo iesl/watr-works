@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package textgrid
 
 // import watrmarks.{StandardLabels => LB}
-// import TypeTags._
+import TypeTags._
 
 trait TextGridConstruction {
   import geometry._
@@ -39,36 +39,9 @@ trait TextGridConstruction {
   }
 
 
-  def mkPageRegion(pageId: Int@@PageID, x: Int, y: Int, w: Int, h: Int): PageRegion = {
+  def mkPageRegion(stablePage: StablePage, x: Int, y: Int, w: Int, h: Int): PageRegion = {
     val bbox = getRegionBounds(x, y, w, h)
-    val recPageId = docStore.getPageIdentifier(pageId)
-    PageRegion(recPageId, bbox)
-  }
-
-
-  def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Seq[TextGrid]  = {
-    docStore.addDocument(stableId)
-    val pageRegions = for {
-      (page, n) <- pages.zipWithIndex
-    } yield {
-      val textGrid = loadPageFromString(stableId, PageNum(n), page)
-      (textGrid, textGrid.pageBounds().head)
-    }
-
-    docStore.labelRegions(LB.FullPdf, pageRegions.map(_._2))
-    pageRegions.map(_._1)
-  }
-
-
-  def loadPageFromString(
-    stableId: String@@DocumentID,
-    pageNum: Int@@PageNum,
-    pageBlock: String
-  ): TextGrid = {
-    val docId = docStore.getDocument(stableId).get
-    val pageId = docStore.addPage(docId, pageNum)
-
-    stringToPageTextGrid(stableId, pageBlock, pageNum, Some(pageId))
+    PageRegion(stablePage, bbox)
   }
 
 
@@ -80,7 +53,7 @@ trait TextGridConstruction {
   ): TextGrid = {
 
     val pageId = maybePageId.getOrElse { PageID(pageNum.unwrap) }
-
+    val stablePage = StablePage(stableId, pageNum, pageId)
     val pageLines = linesWithLeftPadding(pageBlock)
 
     val rows = for {
@@ -88,7 +61,7 @@ trait TextGridConstruction {
     } yield {
       val cells = for { (char, ichar) <- line.toCharArray.zipWithIndex } yield {
         val chnum = lpad + ichar
-        val pageRegion = mkPageRegion(pageId, x=chnum, y=linenum, w=1, h=1)
+        val pageRegion = mkPageRegion(stablePage, x=chnum, y=linenum, w=1, h=1)
         // TODO make this clipBorder(..)
         val adjustedBbox = pageRegion.bbox.scale(-2.percent).translate(0.1, 0.1)
         val adjRegion = pageRegion.copy(bbox = adjustedBbox)
@@ -99,37 +72,10 @@ trait TextGridConstruction {
         )
         TextGrid.PageItemCell(charAtom, char = char)
       }
-
-      val row = TextGrid.Row.fromCells(cells)
-      val headBounds = row.pageBounds().head
-      val maybeZoneId = docStore.labelRegions(LB.VisualLine, Seq(headBounds))
-      maybeZoneId.foreach { zoneId =>
-        docStore.setZoneText(zoneId, TextGrid.fromRows(stableId, Seq(row)))
-      }
-      row
+      TextGrid.Row.fromCells(cells)
     }
 
-    val grid = TextGrid.fromRows(stableId, rows)
-    val headBounds = grid.pageBounds().head.bbox
-
-    docStore.setPageGeometry(pageId, headBounds)
-    grid
-  }
-
-  def visualizeDocStore(): Unit = {
-    for {
-      stableId     <- docStore.getDocuments()
-      _            = println(s"stableId: ${stableId}")
-      docId        <- docStore.getDocument(stableId).toSeq
-      _            = println(s"Document $stableId id:${docId}")
-      pageId       <- docStore.getPages(docId)
-      pageGeometry  = docStore.getPageGeometry(pageId)
-      _             = println(s"  Page  ${pageId}: ${pageGeometry}")
-      pageTextGrid <- docStore.getPageText(pageId)
-    } {
-      println(pageTextGrid.toText())
-
-    }
+    TextGrid.fromRows(stableId, rows)
   }
 
   def addLabelsToGridRow(row: TextGrid.Row, labelSpans: Seq[((Int, Int), watrmarks.Label)]): TextGrid.Row = {

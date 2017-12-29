@@ -11,31 +11,26 @@ import GraphPaper._
 @js.native
 trait DrawingApi extends js.Object {
   // override
-  def drawChar(cell: GridCell, char: Char): Unit
-  def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit
-  def applyBgColor(x: Int, y: Int, color: Color): Unit
-  def applyColor(x: Int, y: Int, color: Color): Unit
-  def gradientHorizontal(box: Box): Unit
-}
-
-trait CanvasApi extends DrawingApi {
-  def drawChar(cell: GridCell, char: Char): Unit
+  def drawChar(cell: GridCell, char: Char): Unit = js.native
+  def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit = js.native
+  def applyBgColor(x: Int, y: Int, color: Color): Unit = js.native
+  def applyColor(x: Int, y: Int, color: Color): Unit = js.native
+  def gradientHorizontal(box: Box): Unit = js.native
 }
 
 @JSExportTopLevel("watr.utils.ProxyGraphPaper")
-@JSExportAll
 class ProxyGraphPaper(
   override val width: Int,
   override val height: Int,
   drawingApi: DrawingApi
 ) extends GraphPaper {
 
-
   // override
-  def drawChar(cell: GridCell, char: Char): Unit
-  def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit
-  def applyBgColor(x: Int, y: Int, color: Color): Unit
-  def applyColor(x: Int, y: Int, color: Color): Unit
-  def gradientHorizontal(gridbox: GraphPaper.Box): Unit
+  def drawChar(cell: GridCell, char: Char): Unit = drawingApi.drawChar(cell, char)
+
+  def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit = drawingApi.drawBox(box, borderChars)
+  def applyBgColor(x: Int, y: Int, color: Color): Unit = drawingApi.applyBgColor(x, y, color)
+  def applyColor(x: Int, y: Int, color: Color): Unit = drawingApi.applyColor(x, y, color)
+  def gradientHorizontal(box: Box): Unit = drawingApi.gradientHorizontal(box)
 
 }

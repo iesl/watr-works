@@ -6,6 +6,7 @@ import watrmarks.{StandardLabels => LB}
 import TypeTags._
 import corpora._
 
+// TODO extends TextGridConstruction
 trait TextGridBuilder {
   import geometry._
 

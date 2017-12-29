@@ -63,6 +63,10 @@ abstract class GraphPaper {
   }
 }
 
+import scala.scalajs.js.annotation._
+
+@JSExportTopLevel("watr.utils.GraphPaper")
+@JSExportAll
 object GraphPaper {
 
   def ltb2box(bbox: LTBounds): GraphPaper.Box = {
@@ -70,10 +74,12 @@ object GraphPaper {
     GraphPaper.Box(GridCell(l, t), w-1, h-1)
   }
 
+  @JSExportAll
   case class GridCell(
     x: Int, y: Int
   )
 
+  @JSExportAll
   case class Box(
     origin: GridCell, spanRight: Int, spanDown: Int
   ) {
@@ -148,6 +154,7 @@ object GraphPaper {
     }
   }
 
+  @JSExportAll
   object BorderLineStyle {
     //                             0123456789
     val DoubleWidth = BorderChars("══║║╔╗╚╝◻╦╩╠╣")

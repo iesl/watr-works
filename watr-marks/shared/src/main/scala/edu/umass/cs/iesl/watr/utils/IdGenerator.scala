@@ -1,6 +1,6 @@
-package edu.umass.cs.iesl.watr.utils
+package edu.umass.cs.iesl.watr
+package utils
 
-import scalaz.@@
 import scalaz.Tag
 
 object IdGenerator {
