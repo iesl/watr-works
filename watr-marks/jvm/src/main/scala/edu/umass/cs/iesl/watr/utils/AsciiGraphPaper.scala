@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package utils
 
-import geometry._
 import scala.collection.mutable
 import utils.{RelativeDirection => Dir}
 
@@ -29,7 +28,6 @@ class AsciiGraphPaper(
     charBuffer(cell.y)(cell.x) = char
   }
 
-  // override
   def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit = {
 
     if (box.spanRight==0 && box.spanDown==0) {

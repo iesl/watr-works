@@ -2,13 +2,11 @@ package edu.umass.cs.iesl.watr
 package utils
 
 import geometry._
-import scala.collection.mutable
 import utils.{RelativeDirection => Dir}
 
 abstract class GraphPaper {
   def width: Int
   def height: Int
-  // useColor: Boolean=true
 
   import GraphPaper._
 
