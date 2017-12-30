@@ -3,6 +3,7 @@ package textgrid
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation._
+import js.JSConverters._
 
 import TypeTags._
 import watrmarks._
@@ -113,49 +114,28 @@ class TextGridConstructor extends TextGridConstruction {
 
 
   @JSExport
-  def drawTextGridToGraphPaper(textGrid: TextGrid, labelSchemas: LabelSchemas, graphPaper: GraphPaper): Unit = {
+  def textGridToWidgetGrid(
+    textGrid: TextGrid,
+    labelSchemas: LabelSchemas,
+    originX: Int,
+    originY: Int
+  ): WidgetDisplayGridProps = {
     val labelTree = textGridToLabelTree(textGrid)
-    val gridRegions = labelTreeToGridRegions(labelTree, labelSchemas, 0, 0)
-    println(s"drawTextGridToGraphPaper: ")
-
-    gridRegions.foreach { region => region match {
-      case GridRegion.Cell(cell, row, col, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawString(l, t, cell.char.toString())
-        // println(s"${bounds}:   GridRegion.Cell(cell:${cell.char}, row:${row}, col:${col}) ")
-
-      case GridRegion.Heading(heading, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawString(l, t, heading)
-        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), heading.length(), 0))
-        // println(s"${bounds}:   GridRegion.Heading() ")
-
-      case GridRegion.LabelCover(label, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
-        // println(s"${bounds}:   GridRegion.LabelCover() ")
-
-      case GridRegion.LabelKey(labelIdent, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawString(l, t, labelIdent)
-        // println(s"${bounds}:   GridRegion.LabelKey() ")
-    }}
+    val gridRegions = labelTreeToGridRegions(labelTree, labelSchemas, originX, originY)
+    new  WidgetDisplayGridProps(
+      labelTree,
+      gridRegions
+    )
   }
-  import js.JSConverters._
 
   @JSExport
   def writeTextGrid(
-    textGrid: TextGrid,
-    labelSchemas: LabelSchemas,
+    gridProps: WidgetDisplayGridProps,
     graphPaper: GraphPaper,
     rtreeApi: RTreeApi
   ): Unit = {
-    val labelTree = textGridToLabelTree(textGrid)
-    val gridRegions = labelTreeToGridRegions(labelTree, labelSchemas, 0, 0)
 
-    println(s"writeTextGrid")
-
-    val rtreeData = gridRegions.map { region => region match {
+    val rtreeData = gridProps.gridRegions.map { region => region match {
       case r@ GridRegion.Cell(cell, row, col, bounds, classes) =>
         val LTBounds.Ints(l, t, w, h) = bounds
         graphPaper.drawString(l, t, cell.char.toString())
@@ -182,26 +162,42 @@ class TextGridConstructor extends TextGridConstruction {
         new RTreeRect(r)
     }}
 
-    // val data = gridRegions.map { region => region match {
-    //   // case r@ GridRegion.Cell(cell, row, col, bounds, classes) => new RTreeData.Rect(r)
-    //   case r: GridRegion.Cell => new RTreeRect(r)
-    //   // case r@ GridRegion.Heading(heading, bounds, classes)     => new RTreeData.Rect[GridRegion](r, bounds)
-    //   // case r@ GridRegion.LabelCover(label, bounds, classes)    => new RTreeData.Rect[GridRegion](r, bounds)
-    //   // case r@ GridRegion.LabelKey(labelIdent, bounds, classes) => new RTreeData.Rect[GridRegion](r, bounds)
-    // }}
-
     rtreeApi.loadData(rtreeData.toJSArray)
   }
 
 }
 
+@JSExportTopLevel("watr.textgrid.WidgetDisplayGridProps")
+class WidgetDisplayGridProps(
+  val labelTree: scalaz.Tree[TreeNode],
+  val gridRegions: Seq[GridRegion]
+) {
+  lazy val regionExtents = gridRegions.map{r =>
+    (r.bounds.getRight.toInt, r.bounds.getBottom.toInt)
+  }
+
+  @JSExport
+  def getGridRowCount(): Int = {
+    regionExtents.map(_._2).max
+  }
+
+  @JSExport
+  def getGridColCount(): Int = {
+    regionExtents.map(_._1).max
+  }
+
+}
 
 @JSExportTopLevel("watr.textgrid.RTreeRect")
 @JSExportAll
 class RTreeRect(
   val region: GridRegion,
 ) {
-  val bounds = region.bounds
+
+  val bounds = {
+    val LTBounds.Ints(l, t, w, h) = region.bounds
+    LTBounds.Ints(l*4, t*4, w*4, h*4)
+  }
 
   val left:Int   = bounds.left.asInt
   val top:Int    = bounds.top.asInt

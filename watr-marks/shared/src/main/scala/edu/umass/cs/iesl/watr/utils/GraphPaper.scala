@@ -10,12 +10,12 @@ abstract class GraphPaper {
 
   import GraphPaper._
 
-  // override
   def drawChar(cell: GridCell, char: Char): Unit
   def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit
   def applyBgColor(x: Int, y: Int, color: Color): Unit
   def applyColor(x: Int, y: Int, color: Color): Unit
   def gradientHorizontal(gridbox: GraphPaper.Box): Unit
+  def cellDimensions(): CellDimensions
 
   def drawString(x: Int, y: Int, str: String): Unit = {
     str.zipWithIndex.foreach{ case (ch, i) =>
@@ -73,6 +73,12 @@ object GraphPaper {
     val LTBounds.Ints(l, t, w, h) = bbox
     GraphPaper.Box(GridCell(l, t), w-1, h-1)
   }
+
+  @JSExportAll
+  case class CellDimensions(
+    width: Int,
+    height: Int
+  )
 
   @JSExportAll
   case class GridCell(

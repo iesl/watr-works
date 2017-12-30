@@ -18,6 +18,8 @@ trait DrawingApi extends js.Object {
   def applyBgColor(x: Int, y: Int, color: Color): Unit = js.native
   def applyColor(x: Int, y: Int, color: Color): Unit = js.native
   def gradientHorizontal(box: Box): Unit = js.native
+  def cellWidth: Int = js.native
+  def cellHeight: Int = js.native
 }
 
 @JSExportTopLevel("watr.utils.ProxyGraphPaper")
@@ -34,5 +36,14 @@ class ProxyGraphPaper(
   def applyBgColor(x: Int, y: Int, color: Color): Unit = drawingApi.applyBgColor(x, y, color)
   def applyColor(x: Int, y: Int, color: Color): Unit = drawingApi.applyColor(x, y, color)
   def gradientHorizontal(box: Box): Unit = drawingApi.gradientHorizontal(box)
+
+
+  @JSExport
+  def cellDimensions(): CellDimensions = {
+    CellDimensions(
+      drawingApi.cellWidth,
+      drawingApi.cellHeight
+    )
+  }
 
 }
