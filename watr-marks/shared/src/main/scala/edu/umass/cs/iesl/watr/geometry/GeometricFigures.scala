@@ -16,7 +16,7 @@ sealed trait GeometricFigure { self =>
   lazy val mbr = minBoundingRect(self)
 }
 
-@JSExportAll
+@JSExportTopLevel("watr.geometry.LTBounds")
 case class LTBounds(
   left   : Int@@FloatRep,
   top    : Int@@FloatRep,
@@ -27,12 +27,12 @@ case class LTBounds(
   def right = left+width
   def bottom = top+height
 
-  def getLeft(): Double = left.asDouble()
-  def getTop(): Double = top.asDouble()
-  def getWidth(): Double = width.asDouble()
-  def getHeight(): Double = height.asDouble()
-  def getRight(): Double = right.asDouble()
-  def getBottom(): Double = bottom.asDouble()
+  @JSExport("left")   val getLeft: Double = left.asDouble
+  @JSExport("top")    val getTop: Double = top.asDouble
+  @JSExport("width")  val getWidth: Double = width.asDouble
+  @JSExport("height") val getHeight: Double = height.asDouble
+  @JSExport("right")  val getRight: Double = right.asDouble
+  @JSExport("bottom") val getBottom: Double = bottom.asDouble
 }
 
 object LTBounds {

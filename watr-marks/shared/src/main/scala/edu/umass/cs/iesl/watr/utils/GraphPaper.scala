@@ -8,13 +8,14 @@ abstract class GraphPaper {
   def width: Int
   def height: Int
 
+
   import GraphPaper._
 
   def drawChar(cell: GridCell, char: Char): Unit
   def drawBox(box: Box, borderChars: BorderChars = BorderLineStyle.SingleWidth): Unit
-  def applyBgColor(x: Int, y: Int, color: Color): Unit
-  def applyColor(x: Int, y: Int, color: Color): Unit
-  def gradientHorizontal(gridbox: GraphPaper.Box): Unit
+  def applyBgColor(box: Box, color: Color): Unit
+  def applyColor(box: Box, color: Color): Unit
+  def gradientHorizontal(gridbox: Box): Unit
   def cellDimensions(): CellDimensions
 
   def drawString(x: Int, y: Int, str: String): Unit = {
@@ -38,8 +39,8 @@ abstract class GraphPaper {
     for { y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown) } {
       val x1 = gridbox.origin.x
       val x2 = gridbox.origin.x+gridbox.spanRight-1
-      applyBgColor(x1, y, color)
-      applyBgColor(x2, y, color)
+      applyBgColor(boxAt(x1, y), color)
+      applyBgColor(boxAt(x2, y), color)
     }
   }
 
@@ -47,8 +48,8 @@ abstract class GraphPaper {
     for { x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight) } {
       val y1 = gridbox.origin.y
       val y2 = gridbox.origin.y+gridbox.spanDown-1
-      applyBgColor(x, y1, color)
-      applyBgColor(x, y2, color)
+      applyBgColor(boxAt(x, y1), color)
+      applyBgColor(boxAt(x, y2), color)
     }
   }
 
@@ -58,7 +59,7 @@ abstract class GraphPaper {
       y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown)
       x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight)
     } {
-      applyBgColor(x, y, color)
+      applyBgColor(boxAt(x, y), color)
     }
   }
 }
@@ -84,6 +85,8 @@ object GraphPaper {
   case class GridCell(
     x: Int, y: Int
   )
+
+  def boxAt(x: Int, y: Int) = Box(GridCell(x, y), 0, 0)
 
   @JSExportAll
   case class Box(

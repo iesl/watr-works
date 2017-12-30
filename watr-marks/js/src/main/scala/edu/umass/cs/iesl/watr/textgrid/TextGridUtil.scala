@@ -12,8 +12,25 @@ import geometry._
 import TextGridLabelWidget._
 import utils.ExactFloats._
 
+@JSExportTopLevel("watr.utils.Options")
+object Options {
+  @JSExport
+  def orOriginal[A](f: A => Option[A]): A => A =
+    expr => f(expr).getOrElse(expr)
+
+  @JSExport
+  def orDefault[A, B](default: B)(f: A => Option[B]): A => B =
+    expr => f(expr).getOrElse(default)
+
+  @JSExport
+  def getOrElse[A](a: Option[A], default: A): A = a.getOrElse(default)
+
+}
+
 @JSExportTopLevel("watr.textgrid.TextGridConstructor")
 class TextGridConstructor extends TextGridConstruction {
+
+
 
   def makeTextGrid(stableId: String, pageNum: Int, pageStr: String): TextGrid = {
     stringToPageTextGrid(DocumentID(stableId), pageStr, PageNum(pageNum), None)
@@ -139,26 +156,22 @@ class TextGridConstructor extends TextGridConstruction {
       case r@ GridRegion.Cell(cell, row, col, bounds, classes) =>
         val LTBounds.Ints(l, t, w, h) = bounds
         graphPaper.drawString(l, t, cell.char.toString())
-        // println(s"${bounds}:   GridRegion.Cell(cell:${cell.char}, row:${row}, col:${col}) ")
         new RTreeRect(r)
 
       case r@ GridRegion.Heading(heading, bounds, classes) =>
         val LTBounds.Ints(l, t, w, h) = bounds
         graphPaper.drawString(l, t, heading)
         graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), heading.length(), 0))
-        // println(s"${bounds}:   GridRegion.Heading() ")
         new RTreeRect(r)
 
       case r@ GridRegion.LabelCover(label, bounds, classes) =>
         val LTBounds.Ints(l, t, w, h) = bounds
         graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
-        // println(s"${bounds}:   GridRegion.LabelCover() ")
         new RTreeRect(r)
 
       case r@  GridRegion.LabelKey(labelIdent, bounds, classes) =>
         val LTBounds.Ints(l, t, w, h) = bounds
         graphPaper.drawString(l, t, labelIdent)
-        // println(s"${bounds}:   GridRegion.LabelKey() ")
         new RTreeRect(r)
     }}
 

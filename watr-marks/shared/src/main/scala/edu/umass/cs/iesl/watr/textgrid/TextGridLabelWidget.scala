@@ -5,6 +5,8 @@ import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, _}, Scalaz._
 
 import scala.scalajs.js.annotation._
+import scala.scalajs.js
+import js.JSConverters._
 import watrmarks._
 import _root_.io.circe, circe._ // circe.syntax._
 import geometry._
@@ -80,10 +82,13 @@ object MarginalGloss {
 }
 
 
+// @JSExportTopLevel("watr.textgrid.GridRegion") @JSExportAll
 @JSExportAll
 sealed trait GridRegion  {
   def bounds: LTBounds
   def classes: List[String]
+
+  val getClasses: js.Array[String] = classes.toJSArray
 
   def isCell(): Boolean = false
   def isHeading(): Boolean = false
@@ -152,12 +157,19 @@ case class LabelSchema(
         (uppers ++ lowers).take(2).mkString("")
       }
   }
+
+  def allLabels(): List[Label] = label :: children.flatMap(_.allLabels())
 }
 
 @JSExportTopLevel("watr.textgrid.LabelSchemas")
 case class LabelSchemas(
   schemas: List[LabelSchema]
-)
+) {
+
+  @JSExport val allLabels: js.Array[String] = {
+    schemas.flatMap(_.allLabels()).map(_.fqn).toJSArray
+  }
+}
 
 @JSExportTopLevel("watr.textgrid.LabelSchemasCompanion")
 @JSExportAll
