@@ -33,6 +33,19 @@ trait TextGrid {
     rows.map(_.toText).mkString("\n")
   }
 
+  def trimRights(): TextGrid = {
+    TextGrid.fromRows(
+      stableId,
+      rows.map(_.trimRight())
+    )
+  }
+  def padRights(): TextGrid = {
+    TextGrid.fromRows(
+      stableId,
+      rows.map(_.padRight)
+    )
+  }
+
   def splitOneLeafLabelPerLine(): TextGrid = {
     val splitRows = rows.flatMap { row =>
       row.splitOnLeafLabels()
@@ -62,12 +75,38 @@ trait TextGrid {
 
   def slurp(row: Int): Option[TextGrid] = {
     if (0 <= row && row < rows.length-1) {
-      val (pre, post) = rows.splitAt(row)
+      val (pre, post) = rows.splitAt(row+1)
       val r1 = pre.last
       val r2 = post.head
+
       val r12 = r1.append(r2)
       val newRows = pre.dropRight(1) ++ (r12 +: post.drop(1))
-      Some(TextGrid.fromRows(stableId, newRows))
+      val newGrid = TextGrid.fromRows(stableId, newRows)
+
+      // rows can only be joined if they share the same label stack
+      val maybeNewGrid = r12.cells.headOption.map{ c0 =>
+        val headCellPins  = c0.pins
+        val pinlen = headCellPins.length
+        val equalPinStackSize = r12.cells.forall(_.pins.length == pinlen)
+        if (equalPinStackSize) {
+          if (pinlen==0) Some(newGrid) else {
+            val headTopPin = c0.topPin().get
+            val validJoin = headTopPin.isBegin || headTopPin.isInside && {
+              val allInsideButLast = r12.cells.tail.dropRight(1).forall{ c =>
+                val ctop = c.topPin().get
+                ctop.isInside
+              }
+              val lastpin = r12.cells.last.topPin().get
+              val endsWithInsideOrLast = lastpin.isInside || lastpin.isLast
+
+              allInsideButLast && endsWithInsideOrLast
+            }
+
+            if (validJoin) Some(newGrid) else None
+          }
+        } else None
+      }
+      maybeNewGrid.flatten
     } else None
   }
 
@@ -204,9 +243,24 @@ object TextGrid {
 
     def cells: Seq[GridCell]
 
+    private def isSpace(gc: GridCell) = gc.char == ' '
+    private def trim(cs: Seq[GridCell]) = trimRight(cs.dropWhile(isSpace(_)))
+    private def trimRight(cs: Seq[GridCell]) = cs.reverse.dropWhile(isSpace(_)).reverse
+
+    def trimRight(): Row = {
+      Row.fromCells(trimRight(cells))
+    }
+
+    def padRight(): Row = {
+      cells.lastOption.map{ c =>
+        Row.fromCells( cells :+ c.createInsert(' '))
+      } getOrElse { this }
+    }
+
     def split(col: Int): Option[(Row, Row)] = {
-      if (0 < col && col < cells.length-1) {
+      if (0 < col && col < cells.length) {
         val (c1, c2) = cells.splitAt(col)
+
         Some((
           Row.fromCells(c1), Row.fromCells(c2)
         ))

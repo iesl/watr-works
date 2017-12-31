@@ -159,6 +159,13 @@ case class LabelSchema(
   }
 
   def allLabels(): List[Label] = label :: children.flatMap(_.allLabels())
+  def childLabelsFor(l: Label): List[Label] = {
+    if (label==l) {
+      children.map(_.label)
+    } else {
+      children.flatMap(_.childLabelsFor(l))
+    }
+  }
 }
 
 @JSExportTopLevel("watr.textgrid.LabelSchemas")
@@ -169,10 +176,20 @@ case class LabelSchemas(
   @JSExport val allLabels: js.Array[String] = {
     schemas.flatMap(_.allLabels()).map(_.fqn).toJSArray
   }
+
+  @JSExport def childLabelsFor(label: String): js.Array[String] = {
+    schemas.flatMap(_.childLabelsFor(Label(label)))
+      .map(_.fqn).toJSArray
+  }
+
+  // @JSExport def abbrevFor(label: String): String = {
+  //   schemas.flatMap(_.childLabelsFor(Label(label)))
+  //     .map(_.fqn).toJSArray
+  // }
 }
 
 @JSExportTopLevel("watr.textgrid.LabelSchemasCompanion")
-@JSExportAll
+  @JSExportAll
 object LabelSchemas {
   def labelSchemaToBox(schema: LabelSchemas): TB.Box = {
 

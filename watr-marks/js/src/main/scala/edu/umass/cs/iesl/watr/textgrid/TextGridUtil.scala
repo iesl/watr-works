@@ -121,11 +121,15 @@ class TextGridConstructor extends TextGridConstruction {
       RefMarker, None, List(
         LabelSchema(RefNumber))
     )
+    val journalSchema = LabelSchema(
+      Journal, None
+    )
 
     LabelSchemas(
       List(
         authorListSchema,
-        refMarkerSchema)
+        refMarkerSchema, journalSchema
+      )
     )
   }
 
@@ -161,7 +165,7 @@ class TextGridConstructor extends TextGridConstruction {
       case r@ GridRegion.Heading(heading, bounds, classes) =>
         val LTBounds.Ints(l, t, w, h) = bounds
         graphPaper.drawString(l, t, heading)
-        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), heading.length(), 0))
+        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), heading.length()-1, 0))
         new RTreeRect(r)
 
       case r@ GridRegion.LabelCover(label, bounds, classes) =>

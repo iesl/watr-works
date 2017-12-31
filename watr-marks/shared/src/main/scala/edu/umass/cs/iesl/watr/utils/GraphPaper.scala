@@ -30,12 +30,12 @@ abstract class GraphPaper {
     }
   }
 
-  def border(gridbox: GraphPaper.Box, color: Color): Unit = {
+  def border(gridbox: Box, color: Color): Unit = {
     borderLeftRight(gridbox, color)
     borderTopBottom(gridbox, color)
   }
 
-  def borderLeftRight(gridbox: GraphPaper.Box, color: Color): Unit = {
+  def borderLeftRight(gridbox: Box, color: Color): Unit = {
     for { y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown) } {
       val x1 = gridbox.origin.x
       val x2 = gridbox.origin.x+gridbox.spanRight-1
@@ -44,7 +44,7 @@ abstract class GraphPaper {
     }
   }
 
-  def borderTopBottom(gridbox: GraphPaper.Box, color: Color): Unit = {
+  def borderTopBottom(gridbox: Box, color: Color): Unit = {
     for { x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight) } {
       val y1 = gridbox.origin.y
       val y2 = gridbox.origin.y+gridbox.spanDown-1
@@ -54,7 +54,7 @@ abstract class GraphPaper {
   }
 
 
-  def shadeBackground(gridbox: GraphPaper.Box, color: Color): Unit = {
+  def shadeBackground(gridbox: Box, color: Color): Unit = {
     for {
       y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown)
       x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight)
@@ -70,7 +70,7 @@ import scala.scalajs.js.annotation._
 @JSExportAll
 object GraphPaper {
 
-  def ltb2box(bbox: LTBounds): GraphPaper.Box = {
+  def ltb2box(bbox: LTBounds): Box = {
     val LTBounds.Ints(l, t, w, h) = bbox
     GraphPaper.Box(GridCell(l, t), w-1, h-1)
   }
