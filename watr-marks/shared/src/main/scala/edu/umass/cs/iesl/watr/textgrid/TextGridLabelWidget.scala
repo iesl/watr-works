@@ -6,19 +6,19 @@ import scalaz.{@@ => _, _}, Scalaz._
 
 import scala.scalajs.js.annotation._
 import scala.scalajs.js
-import js.JSConverters._
+
 import watrmarks._
 import _root_.io.circe, circe._ // circe.syntax._
 import geometry._
 
-
+import scala.collection.mutable
 
 sealed trait TreeNode
 
 object TreeNode {
 
   case class CellGroup(
-    cells: List[TextGrid.GridCell],
+    cells: mutable.Seq[TextGrid.GridCell],
     gridRow: Int
   ) extends TreeNode
 
@@ -38,14 +38,14 @@ object TreeNode {
 }
 
 sealed trait LabeledRowElem {
-  def labels: List[Label]
+  def labels: mutable.Seq[Label]
   def getRowText: String
 }
 
 object LabeledRowElem {
 
   case class CellGroupRow(
-    override val labels: List[Label],
+    override val labels: mutable.Seq[Label],
     cells: Seq[TreeNode.CellGroup],
     depthMod: Int = 0
   ) extends LabeledRowElem {
@@ -56,7 +56,7 @@ object LabeledRowElem {
   }
 
   case class HeadingRow(
-    override val labels: List[Label],
+    override val labels: mutable.Seq[Label],
     heading: String
   ) extends LabeledRowElem {
     def getRowText: String = heading
@@ -66,13 +66,13 @@ object LabeledRowElem {
 
 
 case class MarginalGloss(
-  columns: List[MarginalGloss.Column]
+  columns: mutable.Seq[MarginalGloss.Column]
 )
 
 object MarginalGloss {
 
   case class Column(
-    gloss: List[Gloss]
+    gloss: mutable.Seq[Gloss]
   )
 
   sealed trait Gloss
@@ -82,58 +82,54 @@ object MarginalGloss {
 }
 
 
-// @JSExportTopLevel("watr.textgrid.GridRegion") @JSExportAll
-@JSExportAll
+// @JSExportAll
+// @JSExportTopLevel("watr.textgrid.GridRegion")
 sealed trait GridRegion  {
-  def bounds: LTBounds
-  def classes: List[String]
+  def bounds(): LTBounds
+  def classes(): mutable.Seq[String]
 
-  val getClasses: js.Array[String] = classes.toJSArray
-
-  def isCell(): Boolean = false
-  def isHeading(): Boolean = false
-  def isLabelCover(): Boolean = false
-  def isLabelKey(): Boolean = false
+  @JSExport def isCell(): Boolean = false
+  @JSExport def isHeading(): Boolean = false
+  @JSExport def isLabelCover(): Boolean = false
+  @JSExport def isLabelKey(): Boolean = false
 
 }
+import scala.annotation.meta.field
 
-@JSExportTopLevel("watr.textgrid.GridRegion")
+@JSExportAll
+  @JSExportTopLevel("watr.textgrid.GridRegion")
 object GridRegion {
 
-  @JSExportAll
   case class Cell(
-    cell: TextGrid.GridCell,
-    row: Int, col: Int,
-    override val bounds: LTBounds,
-    override val classes: List[String]
+    @(JSExport @field) cell: TextGrid.GridCell,
+    @(JSExport @field) row: Int,
+    @(JSExport @field) col: Int,
+    @(JSExport @field) override val bounds: LTBounds,
+    override val classes: mutable.Seq[String]
   ) extends GridRegion {
     override def isCell(): Boolean = true
   }
 
-  @JSExportAll
   case class Heading(
-    heading: String,
-    override val bounds: LTBounds,
-    override val classes: List[String],
+    @(JSExport @field) heading: String,
+    @(JSExport @field) override val bounds: LTBounds,
+    override val classes: mutable.Seq[String]
   ) extends GridRegion {
     override def isHeading(): Boolean = true
-
   }
 
-  @JSExportAll
   case class LabelCover(
-    label: Label,
-    override val bounds: LTBounds,
-    override val classes: List[String],
+    @(JSExport @field) label: Label,
+    @(JSExport @field) override val bounds: LTBounds,
+      override val classes: mutable.Seq[String]
   ) extends GridRegion {
     override def isLabelCover(): Boolean = true
   }
 
-  @JSExportAll
   case class LabelKey(
-    labelIdent: String,
-    override val bounds: LTBounds,
-    override val classes: List[String],
+    @(JSExport @field) labelIdent: String,
+    @(JSExport @field) override val bounds: LTBounds,
+    override val classes: mutable.Seq[String]
   ) extends GridRegion {
     override def isLabelKey(): Boolean = true
   }
@@ -146,7 +142,7 @@ object GridRegion {
 case class LabelSchema(
   label: Label,
   abbrev: Option[(Char, Char)] = None,
-  children: List[LabelSchema] = List()
+  children: mutable.ArrayBuffer[LabelSchema] = mutable.ArrayBuffer()
 ) {
   def getAbbrev(): String = {
     abbrev
@@ -158,8 +154,8 @@ case class LabelSchema(
       }
   }
 
-  def allLabels(): List[Label] = label :: children.flatMap(_.allLabels())
-  def childLabelsFor(l: Label): List[Label] = {
+  def allLabels(): mutable.Seq[Label] = label +: children.flatMap(_.allLabels())
+  def childLabelsFor(l: Label): mutable.Seq[Label] = {
     if (label==l) {
       children.map(_.label)
     } else {
@@ -168,24 +164,20 @@ case class LabelSchema(
   }
 }
 
+
 @JSExportTopLevel("watr.textgrid.LabelSchemas")
 case class LabelSchemas(
-  schemas: List[LabelSchema]
+  schemas: mutable.ArrayBuffer[LabelSchema]
 ) {
 
-  @JSExport val allLabels: js.Array[String] = {
-    schemas.flatMap(_.allLabels()).map(_.fqn).toJSArray
+  val allLabels: mutable.ArrayBuffer[String] = {
+    schemas.flatMap(_.allLabels()).map(_.fqn)
   }
 
-  @JSExport def childLabelsFor(label: String): js.Array[String] = {
-    schemas.flatMap(_.childLabelsFor(Label(label)))
-      .map(_.fqn).toJSArray
+  def childLabelsFor(label: Label): mutable.ArrayBuffer[String] = {
+    schemas.flatMap(_.childLabelsFor(label))
+      .map(_.fqn)
   }
-
-  // @JSExport def abbrevFor(label: String): String = {
-  //   schemas.flatMap(_.childLabelsFor(Label(label)))
-  //     .map(_.fqn).toJSArray
-  // }
 }
 
 @JSExportTopLevel("watr.textgrid.LabelSchemasCompanion")
@@ -237,24 +229,24 @@ object LabelSchemas {
     val RefNumber = Label.auto
 
     val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), List(
+      Author, Some(('a', 'u')), mutable.ArrayBuffer(
         LabelSchema(FirstName),
         LabelSchema(MiddleName),
         LabelSchema(LastName))
     )
 
     val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), List(
+      Authors, Some(('a', 's')), mutable.ArrayBuffer(
         authorNameSchema)
     )
 
     val refMarkerSchema = LabelSchema(
-      RefMarker, None, List(
+      RefMarker, None, mutable.ArrayBuffer(
         LabelSchema(RefNumber))
     )
 
     LabelSchemas(
-      List(
+      mutable.ArrayBuffer(
         authorListSchema,
         refMarkerSchema)
     )
@@ -334,12 +326,12 @@ object TextGridLabelWidget {
             .map{ MarginalGloss.Labeling(_, len) }
             .getOrElse { MarginalGloss.VSpace(len) }
 
-          List(space, gloss)
+          mutable.Seq(space, gloss)
         }
 
-      MarginalGloss.Column(glossColumn)
+      MarginalGloss.Column(mutable.Seq(glossColumn:_*))
     }
-    MarginalGloss(columns)
+    MarginalGloss(mutable.Seq(columns:_*))
   }
 
   def marginalGlossToTextBlock(marginalLabels: MarginalGloss): TB.Box = {
@@ -376,7 +368,7 @@ object TextGridLabelWidget {
 
             case MarginalGloss.Labeling(label, len) =>
               val bounds = LTBounds.Ints(x+colNum, accLen, 1, len)
-              val classes = List(label.fqn)
+              val classes = mutable.Seq(label.fqn)
               val gridRegion = GridRegion.LabelCover(label, bounds, classes)
               (gridRegion +: regionAcc, accLen + len)
           }
@@ -436,9 +428,9 @@ object TextGridLabelWidget {
         val width = labelText.length()
         val height = 1
         val bounds = LTBounds.Ints(x, y, width, height)
-        val classes = List(s.label.fqn)
+        val classes = mutable.Seq(s.label.fqn)
 
-        val childRegions: Seq[GridRegion] = s.children.zipWithIndex
+        val childRegions: mutable.Seq[GridRegion] = s.children.zipWithIndex
           .flatMap{ case (ch, chi) => loop(ch, x+Indent, y+chi+1) }
 
         GridRegion.LabelKey(labelText, bounds, classes) +: childRegions
@@ -467,7 +459,7 @@ object TextGridLabelWidget {
     def histo(node: TreeNode, children: Stream[Tree[LabeledRows]]): List[LabeledRowElem] = {
       node match {
         case n: TreeNode.CellGroup =>
-          List(LabeledRowElem.CellGroupRow(List(), List(n)))
+          List(LabeledRowElem.CellGroupRow(mutable.Seq(), mutable.Seq(n)))
 
         case TreeNode.RootNode =>
           children.toList.flatMap { _.rootLabel }
@@ -482,14 +474,14 @@ object TextGridLabelWidget {
 
           val localText = headerList.mkString
 
-          val localHeader = LabeledRowElem.HeadingRow(List(label), localText)
+          val localHeader = LabeledRowElem.HeadingRow(mutable.Seq(label), localText)
 
           val updatedChildren:List[LabeledRowElem] = childRowElems.map{ _ match {
             case r @ LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
-              r.copy(labels = label::labels)
+              r.copy(labels = label+:labels)
 
             case r @ LabeledRowElem.HeadingRow(labels, heading) =>
-              r.copy(labels = label::labels)
+              r.copy(labels = label+:labels)
           }}
 
           val shouldShiftFirstChild = updatedChildren.headOption.exists { firstChild =>
@@ -580,18 +572,18 @@ object TextGridLabelWidget {
         lastChild.getLabel match {
           case prevCell@ TreeNode.CellGroup(cells, prevRow) if prevRow == row =>
             lastChild.modifyLabel { p =>
-              TreeNode.CellGroup(cells++List(cell), row): TreeNode
+              TreeNode.CellGroup(cells++mutable.Seq(cell), row): TreeNode
             }
           case _ =>
             currLoc.insertDownLast(
-              Tree.Leaf[TreeNode](TreeNode.CellGroup(List(cell), row))
+              Tree.Leaf[TreeNode](TreeNode.CellGroup(mutable.Seq(cell), row))
             )
         }
       }
 
       currLoc = maybeAppend.getOrElse {
         currLoc.insertDownLast(
-          Tree.Leaf[TreeNode](TreeNode.CellGroup(List(cell), row))
+          Tree.Leaf[TreeNode](TreeNode.CellGroup(mutable.Seq(cell), row))
         )
       }
 

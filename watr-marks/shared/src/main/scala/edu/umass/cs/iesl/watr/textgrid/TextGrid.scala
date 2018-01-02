@@ -110,6 +110,92 @@ trait TextGrid {
     } else None
   }
 
+  def labelRow(row: Int, label:Label): Unit = {
+    if (0 <= row && row < rows.length) {
+      rows(row).addCellLabels(label)
+    }
+  }
+
+  def findLabelExtents(row: Int, col: Int, label: Label): Option[(Int, Int)] = {
+    val (pre, post) = indexedCells.span(c =>  c._2<row && c._3<col)
+    post.headOption.map{ case (focusCell, focusRow, focusCol) =>
+      val pinIndex = focusCell.pins.indexWhere(_.label == label)
+      if (pinIndex >= 0) {
+        val focusPin = focusCell.pins(pinIndex)
+        val maybeExtents = if (focusPin.isBegin) {
+          val tailCells = post.drop(1).takeWhile{ case (cell, cellRow, cellCol) =>
+            val cellPinIndex = cell.pins.indexWhere(_.label == label)
+            val sameIndex = cellPinIndex == pinIndex
+            val cellPin = cell.pins(cellPinIndex)
+            sameIndex && !cellPin.isLast
+          }
+
+          Some(
+            (pre.length, tailCells.length+1)
+          )
+
+        } else  if (focusPin.isInside) {
+          val tailCells = post.drop(1).takeWhile{ case (cell, cellRow, cellCol) =>
+            val cellPinIndex = cell.pins.indexWhere(_.label == label)
+            val sameIndex = cellPinIndex == pinIndex
+            val cellPin = cell.pins(cellPinIndex)
+            sameIndex && !cellPin.isLast
+          }
+          val preCells = pre.reverse.takeWhile{ case (cell, cellRow, cellCol) =>
+            val cellPinIndex = cell.pins.indexWhere(_.label == label)
+            val sameIndex = cellPinIndex == pinIndex
+            val cellPin = cell.pins(cellPinIndex)
+            sameIndex && !cellPin.isBegin
+          }
+          val (lastCell, lastRow, lastCol) = tailCells.last
+          val (firstCell, firstRow, firstCol) = preCells.head
+
+          Some(
+            (pre.length, preCells.length + tailCells.length + 1)
+          )
+
+        } else  if (focusPin.isLast) {
+          val preCells = pre.reverse.takeWhile{ case (cell, cellRow, cellCol) =>
+            val cellPinIndex = cell.pins.indexWhere(_.label == label)
+            val sameIndex = cellPinIndex == pinIndex
+            val cellPin = cell.pins(cellPinIndex)
+            sameIndex && !cellPin.isBegin
+          }
+          val (firstCell, firstRow, firstCol) = preCells.head
+          Some(
+            (pre.length, preCells.length + 1)
+          )
+        } else  if (focusPin.isUnit) {
+          Some(
+            (pre.length, 1)
+          )
+        } else {
+          None
+        }
+        maybeExtents
+      } else None
+    }.flatten
+  }
+
+  def unlabelNear(row: Int, col: Int, label: Label): Unit = {
+    findLabelExtents(row, col, label).map{
+      case (rbegin, rlen)  =>
+    }
+    // if (0 <= row && row < rows.length) {
+    //   val gridRow = rows(row)
+    //   for {
+    //     rC <- gridRow.toCursor()
+    //     colC <- rC.move(col)
+    //     if colC.focus.labels.contains(label)
+    //   } {
+    //     colC.focus.pins
+
+    //   }
+    // }
+
+
+  }
+
   def buildOutput() = new TextOutputBuilder(this)
 
   def pageBounds(): Seq[PageRegion] = {
@@ -170,7 +256,7 @@ object TextGrid {
 
     def removeLabel(l: Label): Unit = {
       if (pins.contains(l)) {
-        while(pins.top.label != l) {
+        while(pins.contains(l)) {
           pins.pop()
         }
       }
@@ -288,6 +374,17 @@ object TextGrid {
         }
         r
       }
+    }
+
+    // def addLabel(label: Label): TextGrid.Row = {
+    def addCellLabels(label: Label): Unit = {
+      val rowC = this.toCursor.get
+      val win = rowC.toWindow.slurpRight{ case (window, next) =>
+        window.length <= cells.length
+      }
+
+      win.addLabel(label)
+      // win.toLastCursor.start.toRow
     }
 
     def append(row: Row): Row = {

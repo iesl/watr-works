@@ -7,6 +7,7 @@ import org.scalatest._
 
 import watrmarks._
 import utils.ScalazTreeImplicits._
+import scala.collection.mutable
 
 // import scalaz.{@@ => _, _} , Scalaz._
 import textboxing.{TextBoxing => TB}, TB._
@@ -68,24 +69,24 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   val jsonLabelSchema = {
 
     val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), List(
+      Author, Some(('a', 'u')), mutable.Seq(
         LabelSchema(FirstName),
         LabelSchema(MiddleName),
         LabelSchema(LastName))
     )
 
     val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), List(
+      Authors, Some(('a', 's')), mutable.Seq(
         authorNameSchema)
     )
 
     val refMarkerSchema = LabelSchema(
-      RefMarker, None, List(
+      RefMarker, None, mutable.Seq(
         LabelSchema(RefNumber))
     )
 
     LabelSchemas(
-      List(
+      mutable.Seq(
         authorListSchema,
         refMarkerSchema)
     )

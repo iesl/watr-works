@@ -75,6 +75,8 @@ object GraphPaper {
     GraphPaper.Box(GridCell(l, t), w-1, h-1)
   }
 
+  def boundsToBox(bbox: LTBounds): Box = ltb2box(bbox)
+
   @JSExportAll
   case class CellDimensions(
     width: Int,
@@ -99,6 +101,20 @@ object GraphPaper {
     val centerX: Int = left + spanRight/2
     val centerY: Int = top + spanDown/2
 
+
+    def modifySpan(x: Int, y: Int): Box = {
+      this.copy(
+        spanRight = spanRight+x,
+        spanDown = spanDown+y
+      )
+    }
+
+    def shiftOrigin(x: Int, y: Int): Box = {
+      Box(
+        origin.copy(origin.x+x, origin.y+y),
+        spanRight, spanDown
+      )
+    }
 
 
     def toLTBounds(): LTBounds = {

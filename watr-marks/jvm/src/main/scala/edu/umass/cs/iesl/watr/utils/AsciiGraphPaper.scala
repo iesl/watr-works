@@ -18,6 +18,10 @@ class AsciiGraphPaper(
       '░'
   }
 
+  def cellDimensions(): CellDimensions= {
+    CellDimensions(1, 1)
+  }
+
   val charMods: mutable.ArrayBuffer[
     mutable.ArrayBuffer[fansi.Attrs]
   ] = mutable.ArrayBuffer.tabulate(height, width){ case (y, x) =>
@@ -68,21 +72,25 @@ class AsciiGraphPaper(
     }
   }
 
-  def applyBgColor(x: Int, y: Int, color: Color): Unit = {
+  def applyBgColor(box: Box, color: Color): Unit = {
+    val x = box.origin.x
+    val y = box.origin.y
     val xy = charMods(y)(x)
     val rgb = color.toRGB
     val fansiColor = fansi.Back.True(rgb.red, rgb.green, rgb.blue)
     charMods(y)(x) = xy ++ fansiColor
   }
 
-  def applyColor(x: Int, y: Int, color: Color): Unit = {
+  def applyColor(box: Box, color: Color): Unit = {
+    val x = box.origin.x
+    val y = box.origin.y
     val xy = charMods(y)(x)
     val rgb = color.toRGB
     val fansiColor = fansi.Color.True(rgb.red, rgb.green, rgb.blue)
     charMods(y)(x) = xy ++ fansiColor
   }
 
-  def gradientHorizontal(gridbox: GraphPaper.Box): Unit = {
+  def gradientHorizontal(gridbox: Box): Unit = {
     var r = 20
     val g = 20
     var b = 20

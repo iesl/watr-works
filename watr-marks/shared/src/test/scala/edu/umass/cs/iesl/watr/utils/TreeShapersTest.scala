@@ -53,8 +53,9 @@ class TreeShaperTests extends FlatSpec with Matchers {
     )
 
     val trees = ts.makeTreeFromPairs(graphPairs)
+    val sorted = trees.sortBy(_.rootLabel)
 
-    trees zip List(
+    sorted zip List(
       0.node(
         1.node(
           3.leaf,
@@ -63,12 +64,13 @@ class TreeShaperTests extends FlatSpec with Matchers {
         2.node(
           5.leaf
         )
+      ),
+      10.node(
+        11.leaf
       )
-    ) map {case (actual, expected) =>
+    ) foreach {case (actual, expected) =>
         actual.drawTree shouldEqual expected.drawTree
     }
-
-
   }
 
   it should "create a right-slanting list" in {

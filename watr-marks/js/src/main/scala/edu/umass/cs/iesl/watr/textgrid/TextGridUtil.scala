@@ -11,19 +11,34 @@ import utils._
 import geometry._
 import TextGridLabelWidget._
 import utils.ExactFloats._
+import scala.collection.mutable
 
-@JSExportTopLevel("watr.utils.Options")
-object Options {
-  @JSExport
-  def orOriginal[A](f: A => Option[A]): A => A =
-    expr => f(expr).getOrElse(expr)
+@JSExportTopLevel("watr.textgrid.TextGridInterop")
+object TextGridInterop {
 
-  @JSExport
-  def orDefault[A, B](default: B)(f: A => Option[B]): A => B =
-    expr => f(expr).getOrElse(default)
+  @JSExportTopLevel("watr.textgrid.TextGridInterop.labelSchemas")
+  object labelSchemas {
 
-  @JSExport
-  def getOrElse[A](a: Option[A], default: A): A = a.getOrElse(default)
+    @JSExport
+    def allLabels(ls: LabelSchemas): js.Array[String]  = {
+      ls.allLabels.toJSArray
+    }
+
+    @JSExport
+    def childLabelsFor(ls: LabelSchemas, label: String): js.Array[String]  = {
+      ls.childLabelsFor(Label(label)).toJSArray
+    }
+
+  }
+
+  @JSExportTopLevel("watr.textgrid.TextGridInterop.gridRegions")
+  object gridRegions {
+
+    @JSExport
+    def labels(gr: GridRegion): js.Array[String]  = {
+      gr.classes().toJSArray
+    }
+  }
 
 }
 
@@ -106,19 +121,19 @@ class TextGridConstructor extends TextGridConstruction {
   def getTestLabelSchema(): LabelSchemas = {
 
     val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), List(
+      Author, Some(('a', 'u')), mutable.ArrayBuffer(
         LabelSchema(FirstName),
         LabelSchema(MiddleName),
         LabelSchema(LastName))
     )
 
     val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), List(
+      Authors, Some(('a', 's')), mutable.ArrayBuffer(
         authorNameSchema)
     )
 
     val refMarkerSchema = LabelSchema(
-      RefMarker, None, List(
+      RefMarker, None, mutable.ArrayBuffer(
         LabelSchema(RefNumber))
     )
     val journalSchema = LabelSchema(
@@ -126,7 +141,7 @@ class TextGridConstructor extends TextGridConstruction {
     )
 
     LabelSchemas(
-      List(
+      mutable.ArrayBuffer(
         authorListSchema,
         refMarkerSchema, journalSchema
       )

@@ -35,7 +35,11 @@ case class LTBounds(
   @JSExport("bottom") val getBottom: Double = bottom.asDouble
 }
 
+@JSExportTopLevel("watr.geometry.LTBounds_Companion")
 object LTBounds {
+  @JSExport("FromInts")
+  def FromInts(l: Int, t: Int, w: Int, h: Int) = Ints(l, t, w, h)
+
   object IntReps {
     def apply(left: Int, top: Int, width: Int, height: Int): LTBounds =
       LTBounds(FloatRep(left), FloatRep(top), FloatRep(width), FloatRep(height))
@@ -49,6 +53,7 @@ object LTBounds {
   }
 
   object Ints {
+
     def apply(left: Int, top: Int, width: Int, height: Int): LTBounds =
       LTBounds(left.toFloatExact(), top.toFloatExact, width.toFloatExact, height.toFloatExact)
 
