@@ -4,7 +4,7 @@ package services
 
 import cats.effect.IO
 import cats.syntax.all._
-import org.http4s.UrlForm
+// import org.http4s.UrlForm
 import org.http4s.headers.Location
 import org.http4s._
 // import org.http4s.{
@@ -30,31 +30,37 @@ trait UserAuthenticationServices extends AuthenticatedService {
 
   def userAuthenticationServices = signupRoute <+> loginRoute <+> authedUserRoutes
 
-  private def checkOrRaise(rawFromLogin: String, hashed: SCrypt): IO[Unit] =
-    if (rawFromLogin.checkWithHash(hashed)) IO.unit
-    else IO.raiseError[Unit](LoginError)
+  private def checkOrRaise(rawFromLogin: String, hashed: PasswordHash[SCrypt]): IO[Unit] = {
+    SCrypt.checkpw[IO](rawFromLogin, hashed)
+      .map { valid => if (valid) () else IO.raiseError[Unit](LoginError) }
+  }
+
 
 
   def userInfoResponse(user: User, authInfo: AuthInfo): Json = {
     json""" { "email": ${user.email}, "username": ${authInfo.username} } """
   }
 
+
   val signupRoute: HttpService[IO] = HttpService[IO] {
     case request @ POST -> Root / "signup" =>
-      println(s"signup")
+      val hdrs = request.headers.toList.map(h => s"${h.name}: ${h.value}").mkString("\n")
+      println(s"signup: ${hdrs}")
+
 
       val resp = request.decode[UrlForm]{ data =>
+        println(s"signup data ${data}")
         val signup = SignupForm(
           data.values("email").head,
           data.values("username").head,
           data.values("password").head
         )
-
         for {
-
+          // signup    <- decodeOrErr[SignupForm](request)
           exists    <- userStore.exists(EmailAddr(signup.email)).fold(true)(_ => throw SignupError)
           _         <- IO(println(s"exists; $exists"))
-          password  <- IO(signup.password.hashPassword[SCrypt])
+          // password  <- IO(signup.password.hashPassword[SCrypt])
+          password  <- SCrypt.hashpw[IO](signup.password)
           _         <- IO(println(s"password; $password"))
           newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
           authInfo  <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
@@ -64,7 +70,6 @@ trait UserAuthenticationServices extends AuthenticatedService {
           // response  <- Ok(userInfoResponse(newUser, authInfo))
           response  <- TemporaryRedirect(Location(uri("/")))
         } yield authenticator.embed(response, cookie)
-
       }
 
       resp.handleError { _ => Response(Status.BadRequest) }
@@ -73,7 +78,6 @@ trait UserAuthenticationServices extends AuthenticatedService {
   val loginRoute: HttpService[IO] = HttpService[IO] {
     case request @ POST -> Root / "login" =>
       println(s"login")
-
       val resp = request.decode[UrlForm]{ data =>
         println(s"login: data=${data.values}")
         val login = LoginForm(
@@ -81,9 +85,7 @@ trait UserAuthenticationServices extends AuthenticatedService {
           data.values("password").head
         )
         for {
-          // login <- UrlForm.entityDecoder[IO].decode(request, strict = false)
-          // login       <- request.as[LoginForm]
-
+          // login       <- decodeOrErr[LoginForm](request)
           _           <- IO( println(s"login; $login"))
           user        <- userStore.getByEmail(EmailAddr(login.email)).getOrRaise(LoginError)
           _           <- IO(   println(s"user; $user"))
@@ -92,14 +94,11 @@ trait UserAuthenticationServices extends AuthenticatedService {
           _           <- checkOrRaise(login.password, authInfo.password)
           cookie      <- authenticator.create(user.id.unwrap).getOrRaise(LoginError)
           _           <- IO(    println(s"cookie; $cookie"))
-          // response <- Ok(userInfoResponse(user, authInfo))
-          // response    <- TemporaryRedirect(Location(uri("/")))
           response    <- TemporaryRedirect(Location(uri("/")))
         } yield authenticator.embed(response, cookie)
       }
 
-      resp
-        .handleError { _ => Response(Status.BadRequest) }
+      resp.handleError { _ => Response(Status.BadRequest) }
   }
 
 
@@ -139,4 +138,16 @@ trait UserAuthenticationServices extends AuthenticatedService {
   }
 
 
+  // _ = {
+  //   val asdf = authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
+  //   asdf.attempt.map { c => c match {
+  //     // _0: Either[Throwable, AuthEncryptedCookie[AES128, Int]] => B }
+  //     case Left(throwable) =>
+  //       println(s"Left: ${throwable}")
+  //       println(s"Left: ${throwable.getCause}")
+  //       throwable.printStackTrace()
+  //     case Right(auth) =>
+  //       println(s"Right: ${auth}")
+  //   }}.unsafeRunSync()
+  // }
 }

@@ -30,6 +30,7 @@ object Frame {
 
       <.script("text/javascript".typ, ^.src := "https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.5.6/Rx.min.js"),
       <.script("text/javascript".typ, ^.src := s"/assets/watrmarks-fastopt.js"),
+      <.link(^.rel:="stylesheet", ^.href:="/dist/app.css"),
 
       <.title("WatrColors")
     )
@@ -144,6 +145,7 @@ object Authentication {
     val forms = <.div("login-forms".id, ^.hidden := true,
       "Login",
       <.form(^.action := "/api/v1/auth/login", ^.method := "POST",
+        // ^.enctype:="multipart/form-data",
         ^.enctype:= "application/x-www-form-urlencoded",
         <.div(
           labeledTextInput("Email", "email"),

@@ -15,12 +15,11 @@ import doobie.imports._
 import doobie.postgres.pgtypes.UuidType
 import TypeTags._
 
-import cats.effect.Effect
+// import cats.effect.Effect
 import fs2.async.Ref
-import cats.syntax.all._
+// import cats.syntax.all._
 
 import scala.collection.immutable.HashMap
-import scala.concurrent.ExecutionContext
 
 class TokenStore(
   corpusAccessDB: CorpusAccessDB
@@ -57,7 +56,7 @@ class TokenStore(
   }
 
   def put(elem: ValueType): IO[ValueType] = {
-    // println(s"TokenStore:put(${elem})")
+    println(s"TokenStore:put(${elem})")
 
     val AuthEncryptedCookie(
       id          , // : UUID,
@@ -154,40 +153,48 @@ object TokenStore {
 }
 
 
-sealed abstract class MemTokenStore[F[_]: Effect]
-    extends BackingStore[F, UUID, TokenStore.ValueType] {
-  protected val ref: Ref[F, HashMap[UUID, TokenStore.ValueType]]
+sealed abstract class MemTokenStore extends BackingStore[IO, UUID, TokenStore.ValueType] {
+  protected val ref: Ref[IO, HashMap[UUID, TokenStore.ValueType]]
 
-  def put(elem: TokenStore.ValueType): F[TokenStore.ValueType] = {
-    ref.modify(_ + (elem.id -> elem))
+  def put(elem: TokenStore.ValueType): IO[TokenStore.ValueType] = {
+    // println(s"put: ${elem}")
+    // val show0 = ref.get.unsafeRunSync().toList.mkString("{\n  ", "\n  ", "\n}")
+    // println(s"(pre mod)put:\n ${show0}")
 
-    ref.get.map(_(elem.id))
-
+    for {
+      _     <- ref.modify(_ + (elem.id -> elem))
+      elem  <- ref.get.map(_(elem.id))
+    } yield elem
   }
 
-  def get(id: UUID): OptionT[F, TokenStore.ValueType] =
+  def get(id: UUID): OptionT[IO, TokenStore.ValueType] =
     OptionT(ref.get.map(_.get(id)))
 
-  def update(v: TokenStore.ValueType): F[TokenStore.ValueType] = {
-
-    ref.modify(_.updated(v.id, v))
-      .map(_ => 1)
-
-    ref.get.map(_(v.id))
-
+  def update(v: TokenStore.ValueType): IO[TokenStore.ValueType] = {
+    for {
+      _    <- ref.modify(_.updated(v.id, v)).map(_ => 1)
+      elem <- ref.get.map(_(v.id))
+    } yield elem
   }
-  def delete(id: UUID): F[Unit] =
+  def delete(id: UUID): IO[Unit] =
     ref.modify(_ - id)
       .map(_ => ())
 }
 
 object MemTokenStore {
-  def apply[F[_]: Effect](implicit ec: ExecutionContext): F[MemTokenStore[F]] =
-    Ref(HashMap.empty[UUID, TokenStore.ValueType])
+  // def apply[F[_]: Effect](implicit ec: ExecutionContext): F[MemTokenStore[F]] =
+  //   Ref(HashMap.empty[UUID, TokenStore.ValueType])
+  //     .map { m =>
+  //       new MemTokenStore[F] {
+  //         protected val ref
+  //             : Ref[F, HashMap[UUID, TokenStore.ValueType]] = m
+  //       }
+  //     }
+  def apply(): IO[MemTokenStore] =
+    Ref[IO, HashMap[UUID, TokenStore.ValueType]](HashMap.empty[UUID, TokenStore.ValueType])
       .map { m =>
-        new MemTokenStore[F] {
-          protected val ref
-            : Ref[F, HashMap[UUID, TokenStore.ValueType]] = m
+        new MemTokenStore {
+          protected val ref: Ref[IO, HashMap[UUID, TokenStore.ValueType]] = m
         }
       }
 }

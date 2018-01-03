@@ -106,7 +106,7 @@ trait CommonLibs extends LibVersions {
     "com.pauldijou" %% "jwt-circe" % "0.14.1"
   )
 
-  val tsecV = "0.0.1-M5"
+  val tsecV = "0.0.1-M6"
   val tsec = Seq(
     "io.github.jmcardon" %% "tsec-common" % tsecV,
     "io.github.jmcardon" %% "tsec-password" % tsecV,

@@ -10,7 +10,8 @@ import circe._
 import circe.literal._
 import org.http4s.EntityDecoder
 
-import tsec.passwordhashers.imports.SCrypt
+import tsec.passwordhashers._
+import tsec.passwordhashers.imports._
 
 import watrmarks._
 import geometry._
@@ -52,8 +53,7 @@ object users {
   case class AuthInfo(
     userId: Int@@UserID,
     username : String@@Username,
-    password: SCrypt
-    // password: IO[PasswordHash[SCrypt]]
+    password: PasswordHash[SCrypt]
   )
 
 
@@ -83,7 +83,7 @@ object users {
 
 
 object formdata {
-  case class LoginForm(
+  @JsonCodec case class LoginForm(
     email: String,
     password: String
   )
@@ -99,7 +99,7 @@ object formdata {
 
   }
 
-  case class SignupForm(
+  @JsonCodec case class SignupForm(
     email: String,
     username: String,
     password: String

@@ -69,24 +69,24 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   val jsonLabelSchema = {
 
     val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), mutable.ArrayBuffer(
+      Author, Some(('a', 'u')), List(
         LabelSchema(FirstName),
         LabelSchema(MiddleName),
         LabelSchema(LastName))
     )
 
     val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), mutable.ArrayBuffer(
+      Authors, Some(('a', 's')), List(
         authorNameSchema)
     )
 
     val refMarkerSchema = LabelSchema(
-      RefMarker, None, mutable.ArrayBuffer(
+      RefMarker, None, List(
         LabelSchema(RefNumber))
     )
 
     LabelSchemas(
-      mutable.ArrayBuffer(
+      List(
         authorListSchema,
         refMarkerSchema)
     )

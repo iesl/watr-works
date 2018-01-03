@@ -96,7 +96,7 @@ class PersistenceTests extends DatabaseTest {
       .put(User(UserID(0), EmailAddr("a@b.c")))
       .unsafeRunSync()
 
-    val hashedPass = "my-password".hashPassword[SCrypt]
+    val hashedPass = SCrypt.hashpwUnsafe("my-password")
 
     val authInfo = passwordStore.put(AuthInfo(
       user.id,
@@ -112,9 +112,10 @@ class PersistenceTests extends DatabaseTest {
     assert( authInfo.username === "my-username" )
     assert( authInfo2.username === "my-other-name" )
 
-    val mypass = SCrypt.fromString(hashedPass)
+    // val mypass = SCrypt.fromString(hashedPass)
+    val mypass = PasswordHash[SCrypt](hashedPass)
 
-    SCrypt.checkPassword(core.Password("my-password"), mypass)
+    SCrypt.checkpwUnsafe(hashedPass, mypass)
 
   }
 }

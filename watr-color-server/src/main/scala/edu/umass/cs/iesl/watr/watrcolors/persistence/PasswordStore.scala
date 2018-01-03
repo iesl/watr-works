@@ -63,7 +63,7 @@ sealed class PasswordStore(
       sql""" select person, username, password from person_auth where person=${id} """
         .query[(Int, String, String)]
         .map{ case (userId, username, password) =>
-          AuthInfo(UserID(userId), Username(username), SCrypt.fromString(password))
+          AuthInfo(UserID(userId), Username(username), SCrypt.hashpwUnsafe(password))
         }
         .option
     }

@@ -47,10 +47,12 @@ class AllServices(
     pathPrefix = "/"
   ))
 
+  lazy val corpusAccessDB  = corpusAccessApi.corpusAccessDB
+
 
   lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
   lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
-  lazy val tokenStore = MemTokenStore.apply[IO].unsafeRunSync()
+  lazy val tokenStore = MemTokenStore.apply().unsafeRunSync()
 
 
 

@@ -14,7 +14,6 @@ import circe._
 import circe.syntax._
 import circe.literal._
 
-// import cats.implicits._
 import cats.effect._
 
 import corpora.filesys._
@@ -26,8 +25,11 @@ import tsec.authentication._
 import tsec.cipher.symmetric.imports.AES128
 import models.users._
 import scala.concurrent.duration._
+import corpora.database.CorpusAccessDB
 
 trait AuthenticationHandlers extends Http4sDsl[IO] {
+
+  def corpusAccessDB: CorpusAccessDB
   def userStore: UserStore
   def authStore: PasswordStore
   def tokenStore: TokenStore.StoreType
@@ -45,10 +47,12 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
 
   def symmetricKey = AES128.generateKeyUnsafe()
 
+  val tokenBackingStore = new TokenStore(corpusAccessDB)
+
   lazy val authenticator: EncryptedCookieAuthenticator[IO, Int, User, AES128] =
-    EncryptedCookieAuthenticator.stateless[IO, Int, User, AES128](
+    EncryptedCookieAuthenticator.withBackingStore[IO, Int, User, AES128](
       authenticatorSettings,
-      // tokenStore,
+      tokenStore,
       userStore,
       symmetricKey
     )
@@ -75,7 +79,7 @@ trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs with HttpPayload
   def decodeOrErr[T: Decoder](req: Request[IO]): IO[T] = {
     for {
       js   <- req.as[Json]
-      decoded <-  IO{  Decoder[T].decodeJson(js).fold(fail => {
+      decoded <-  IO { Decoder[T].decodeJson(js).fold(fail => {
         println(s"Error decoding: ${js}: ${fail}")
         throw new Throwable(s"error decoding ${js} ${fail}")
       }, mod => mod) }

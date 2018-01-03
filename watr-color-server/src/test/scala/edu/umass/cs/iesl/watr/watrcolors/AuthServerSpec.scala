@@ -124,10 +124,11 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
   def userAuthService() = new UserAuthenticationServices {
 
     def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(reflowDB, null)
+    lazy val corpusAccessDB  = corpusAccessApi.corpusAccessDB
 
     lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
     lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
-    lazy val tokenStore = MemTokenStore.apply[IO].unsafeRunSync()
+    lazy val tokenStore = MemTokenStore.apply.unsafeRunSync()
 
   }
 
@@ -155,19 +156,13 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
         implicit val cookieJar  = new MockCookieJar()
 
         checkResponse(authService.signupRoute(signupReq("Morgan")),
-          hasStatus(Status.Ok),
+          hasStatus(Status.TemporaryRedirect),
           hasHeader("Set-Cookie"))
-      }
 
-      "Allow Login After Signup" in new EmptyDatabase {
-        implicit val cookieJar  = new MockCookieJar()
-
-        checkResponse(authService.signupRoute(signupReq("Morgan")))
-
+        info("..And then allow Login after Signup")
         checkResponse(authService.loginRoute(loginReq("Morgan")),
-          hasStatus(Status.Ok)
+          hasStatus(Status.TemporaryRedirect)
         )
-
       }
 
       "Should Block Unregistered Login" in new EmptyDatabase {
@@ -194,7 +189,7 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
         val authService = userAuthService()
 
         checkResponse(authService.signupRoute(signupReq("Morgan")),
-          hasStatus(Status.Ok))
+          hasStatus(Status.TemporaryRedirect))
 
         checkResponse(authService.signupRoute(signupReq("Morgan")),
           hasStatus(Status.BadRequest))
@@ -224,7 +219,7 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
             hasStatus(Status.Unauthorized))
 
           checkResponse(authService.loginRoute(loginReq("Morgan")),
-            hasStatus(Status.Ok))
+            hasStatus(Status.TemporaryRedirect))
 
           checkResponse(authService.authedUserRoutes(statusReq()),
             tapWith( r => info(s"Status (login): ${r.as[String]}") ),
