@@ -116,84 +116,60 @@ trait TextGrid {
     }
   }
 
-  def findLabelExtents(row: Int, col: Int, label: Label): Option[(Int, Int)] = {
-    val (pre, post) = indexedCells.span(c =>  c._2<row && c._3<col)
-    post.headOption.map{ case (focusCell, focusRow, focusCol) =>
-      val pinIndex = focusCell.pins.indexWhere(_.label == label)
-      if (pinIndex >= 0) {
-        val focusPin = focusCell.pins(pinIndex)
-        val maybeExtents = if (focusPin.isBegin) {
-          val tailCells = post.drop(1).takeWhile{ case (cell, cellRow, cellCol) =>
-            val cellPinIndex = cell.pins.indexWhere(_.label == label)
-            val sameIndex = cellPinIndex == pinIndex
-            val cellPin = cell.pins(cellPinIndex)
-            sameIndex && !cellPin.isLast
-          }
 
-          Some(
-            (pre.length, tailCells.length+1)
-          )
+  def findPin(c: GridCell, l: Label): Option[(BioPin, Int)] = {
+    val pinIndex = c.pins.indexWhere(_.label == l)
+    if (pinIndex > -1) Some( (c.pins(pinIndex), pinIndex) )
+    else None
 
-        } else  if (focusPin.isInside) {
-          val tailCells = post.drop(1).takeWhile{ case (cell, cellRow, cellCol) =>
-            val cellPinIndex = cell.pins.indexWhere(_.label == label)
-            val sameIndex = cellPinIndex == pinIndex
-            val cellPin = cell.pins(cellPinIndex)
-            sameIndex && !cellPin.isLast
-          }
-          val preCells = pre.reverse.takeWhile{ case (cell, cellRow, cellCol) =>
-            val cellPinIndex = cell.pins.indexWhere(_.label == label)
-            val sameIndex = cellPinIndex == pinIndex
-            val cellPin = cell.pins(cellPinIndex)
-            sameIndex && !cellPin.isBegin
-          }
-          val (lastCell, lastRow, lastCol) = tailCells.last
-          val (firstCell, firstRow, firstCol) = preCells.head
+  }
 
-          Some(
-            (pre.length, preCells.length + tailCells.length + 1)
-          )
+  def findLabelExtents(row: Int, col: Int, label: Label): Option[Seq[(GridCell, Int, Int)]] = {
+    import scalaz._
 
-        } else  if (focusPin.isLast) {
-          val preCells = pre.reverse.takeWhile{ case (cell, cellRow, cellCol) =>
-            val cellPinIndex = cell.pins.indexWhere(_.label == label)
-            val sameIndex = cellPinIndex == pinIndex
-            val cellPin = cell.pins(cellPinIndex)
-            sameIndex && !cellPin.isBegin
-          }
-          val (firstCell, firstRow, firstCol) = preCells.head
-          Some(
-            (pre.length, preCells.length + 1)
-          )
-        } else  if (focusPin.isUnit) {
-          Some(
-            (pre.length, 1)
-          )
-        } else {
-          None
-        }
-        maybeExtents
-      } else None
-    }.flatten
+    def findLabelEnd(zip: Zipper[(GridCell, Int, Int)]): Zipper[(GridCell, Int, Int)] = {
+      zip.findNext{ case (cell, _, _) =>
+        findPin(cell, label).exists(_._1.isLast)
+      } getOrElse {
+        sys.error("could not find label end")
+      }
+    }
+    def findLabelBegin(zip: Zipper[(GridCell, Int, Int)]): Zipper[(GridCell, Int, Int)] = {
+      zip.findPrevious{ case (cell, _, _) =>
+        findPin(cell, label).exists(_._1.isBegin)
+      } getOrElse {
+        sys.error("could not find label begin")
+      }
+    }
+
+    for {
+      zip <- indexedCells.toList.toZipper
+      atRowColZ <- zip.findZ{ case (cell, crow, ccol) => crow==row && ccol==col }
+
+      (focusCell, focusRow, focusCol) = atRowColZ.focus
+      (focusPin, pinIndex) <- findPin(focusCell, label)
+
+      (beginZ, endZ) = {
+        if (focusPin.isBegin)        (atRowColZ, findLabelEnd(atRowColZ))
+        else if (focusPin.isInside)  (findLabelBegin(atRowColZ), findLabelEnd(atRowColZ))
+        else if (focusPin.isLast)    (findLabelBegin(atRowColZ), atRowColZ)
+        else if (focusPin.isUnit)    (atRowColZ, atRowColZ)
+        else                         sys.error("findLabelExtents: unknown pin type")
+      }
+    } yield {
+      (endZ.focus +: endZ.lefts).reverse.drop(
+        beginZ.lefts.length
+      )
+    }
+
   }
 
   def unlabelNear(row: Int, col: Int, label: Label): Unit = {
-    findLabelExtents(row, col, label).map{
-      case (rbegin, rlen)  =>
+    findLabelExtents(row, col, label).foreach{ indexedSeq  =>
+      indexedSeq.foreach{ case (cell, row, col) =>
+        cell.removeLabel(label)
+      }
     }
-    // if (0 <= row && row < rows.length) {
-    //   val gridRow = rows(row)
-    //   for {
-    //     rC <- gridRow.toCursor()
-    //     colC <- rC.move(col)
-    //     if colC.focus.labels.contains(label)
-    //   } {
-    //     colC.focus.pins
-
-    //   }
-    // }
-
-
   }
 
   def buildOutput() = new TextOutputBuilder(this)
@@ -255,8 +231,8 @@ object TextGrid {
     def addLabel(l: Label): Unit = addPin(l.U)
 
     def removeLabel(l: Label): Unit = {
-      if (pins.contains(l)) {
-        while(pins.contains(l)) {
+      if (hasLabel(l)) {
+        while(hasLabel(l)) {
           pins.pop()
         }
       }
@@ -330,7 +306,7 @@ object TextGrid {
     def cells: Seq[GridCell]
 
     private def isSpace(gc: GridCell) = gc.char == ' '
-    private def trim(cs: Seq[GridCell]) = trimRight(cs.dropWhile(isSpace(_)))
+    // private def trim(cs: Seq[GridCell]) = trimRight(cs.dropWhile(isSpace(_)))
     private def trimRight(cs: Seq[GridCell]) = cs.reverse.dropWhile(isSpace(_)).reverse
 
     def trimRight(): Row = {
@@ -450,3 +426,64 @@ object TextGrid {
     fromRows(stableId, Seq(Row.fromCells(init)))
 
 }
+
+  // def findLabelExtentsback(row: Int, col: Int, label: Label): Option[(Int, Int)] = {
+  //   val (pre, post) = indexedCells.span(c =>  c._2<row && c._3<col)
+  //   post.headOption.map{ case (focusCell, focusRow, focusCol) =>
+  //     val pinIndex = focusCell.pins.indexWhere(_.label == label)
+  //     if (pinIndex >= 0) {
+  //       val focusPin = focusCell.pins(pinIndex)
+  //       val maybeExtents = if (focusPin.isBegin) {
+  //         val tailCells = post.drop(1).takeWhile{ case (cell, cellRow, cellCol) =>
+  //           val cellPinIndex = cell.pins.indexWhere(_.label == label)
+  //           val sameIndex = cellPinIndex == pinIndex
+  //           val cellPin = cell.pins(cellPinIndex)
+  //           sameIndex && !cellPin.isLast
+  //         }
+
+  //         Some(
+  //           (pre.length, tailCells.length+1)
+  //         )
+
+  //       } else  if (focusPin.isInside) {
+  //         val tailCells = post.drop(1).takeWhile{ case (cell, cellRow, cellCol) =>
+  //           val cellPinIndex = cell.pins.indexWhere(_.label == label)
+  //           val sameIndex = cellPinIndex == pinIndex
+  //           val cellPin = cell.pins(cellPinIndex)
+  //           sameIndex && !cellPin.isLast
+  //         }
+  //         val preCells = pre.reverse.takeWhile{ case (cell, cellRow, cellCol) =>
+  //           val cellPinIndex = cell.pins.indexWhere(_.label == label)
+  //           val sameIndex = cellPinIndex == pinIndex
+  //           val cellPin = cell.pins(cellPinIndex)
+  //           sameIndex && !cellPin.isBegin
+  //         }
+  //         val (lastCell, lastRow, lastCol) = tailCells.last
+  //         val (firstCell, firstRow, firstCol) = preCells.head
+
+  //         Some(
+  //           (pre.length, preCells.length + tailCells.length + 1)
+  //         )
+
+  //       } else  if (focusPin.isLast) {
+  //         val preCells = pre.reverse.takeWhile{ case (cell, cellRow, cellCol) =>
+  //           val cellPinIndex = cell.pins.indexWhere(_.label == label)
+  //           val sameIndex = cellPinIndex == pinIndex
+  //           val cellPin = cell.pins(cellPinIndex)
+  //           sameIndex && !cellPin.isBegin
+  //         }
+  //         val (firstCell, firstRow, firstCol) = preCells.head
+  //         Some(
+  //           (pre.length, preCells.length + 1)
+  //         )
+  //       } else  if (focusPin.isUnit) {
+  //         Some(
+  //           (pre.length, 1)
+  //         )
+  //       } else {
+  //         None
+  //       }
+  //       maybeExtents
+  //     } else None
+  //   }.flatten
+  // }

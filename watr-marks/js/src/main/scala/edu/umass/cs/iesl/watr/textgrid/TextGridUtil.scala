@@ -40,6 +40,15 @@ object TextGridInterop {
     }
   }
 
+  @JSExportTopLevel("watr.textgrid.TextGridInterop.widgetDisplayGridProps")
+  object widgetDisplayGridProps {
+
+    @JSExport
+    def gridRegions(wd: WidgetDisplayGridProps): js.Array[GridRegion]  = {
+      wd.gridRegions.toJSArray
+    }
+  }
+
 }
 
 @JSExportTopLevel("watr.textgrid.TextGridConstructor")

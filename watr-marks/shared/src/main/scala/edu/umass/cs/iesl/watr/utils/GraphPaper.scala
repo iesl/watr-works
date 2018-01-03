@@ -88,7 +88,8 @@ object GraphPaper {
     x: Int, y: Int
   )
 
-  def boxAt(x: Int, y: Int) = Box(GridCell(x, y), 0, 0)
+  def cellAt(x: Int, y: Int) = GridCell(x, y)
+  def boxAt(x: Int, y: Int) = Box(cellAt(x, y), 0, 0)
 
   @JSExportAll
   case class Box(

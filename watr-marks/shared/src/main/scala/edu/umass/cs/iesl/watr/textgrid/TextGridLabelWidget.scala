@@ -10,6 +10,7 @@ import scala.scalajs.js
 import watrmarks._
 import _root_.io.circe, circe._ // circe.syntax._
 import geometry._
+import utils.GraphPaper
 
 import scala.collection.mutable
 
@@ -87,6 +88,10 @@ object MarginalGloss {
 sealed trait GridRegion  {
   def bounds(): LTBounds
   def classes(): mutable.Seq[String]
+
+  @JSExport val gridBox: GraphPaper.Box = {
+    GraphPaper.boundsToBox(bounds)
+  }
 
   @JSExport def isCell(): Boolean = false
   @JSExport def isHeading(): Boolean = false
@@ -343,10 +348,11 @@ object TextGridLabelWidget {
 
         case MarginalGloss.Labeling(label, len) =>
           if (len==1) {
-            label.fqn(0).toUpper.toString.box
+            label.fqn.take(2).mkString.toUpperCase().box
           } else {
-            val ch = label.fqn(0).toLower.toString()
-            vjoin(ch, vjoins(List.fill(len-2)("║")), "╨")
+            // val ch = label.fqn(0).toLower.toString()
+            val ch = label.fqn.take(2).mkString.toLowerCase().box
+            vjoin(ch, vjoins(List.fill(len-2)("│┆")), "└─")
           }
       }}
 
@@ -367,7 +373,7 @@ object TextGridLabelWidget {
               (regionAcc, accLen + len)
 
             case MarginalGloss.Labeling(label, len) =>
-              val bounds = LTBounds.Ints(x+colNum, accLen, 1, len)
+              val bounds = LTBounds.Ints(x+(colNum*2), accLen, 2, len)
               val classes = mutable.Seq(label.fqn)
               val gridRegion = GridRegion.LabelCover(label, bounds, classes)
               (gridRegion +: regionAcc, accLen + len)
@@ -448,7 +454,7 @@ object TextGridLabelWidget {
     val gridLines = flattenLabelTreeToLines(labelTree)
 
     val glossRegions = marginalGlossToGridRegions(marginalGloss, originX, originY)
-    val gridRegions = labeledRowsToGridRegions(gridLines, x=originX+marginalGloss.columns.length+2, y=originY)
+    val gridRegions = labeledRowsToGridRegions(gridLines, x=originX+(marginalGloss.columns.length*2)+2, y=originY)
     val schemaRegions = labelSchemaToGridRegions(labelSchemas, originX+8, originY+gridLines.length+4)
 
     gridRegions ++ schemaRegions ++ glossRegions

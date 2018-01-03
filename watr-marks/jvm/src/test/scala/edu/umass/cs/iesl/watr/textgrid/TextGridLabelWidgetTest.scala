@@ -11,7 +11,7 @@ import scala.collection.mutable
 
 // import scalaz.{@@ => _, _} , Scalaz._
 import textboxing.{TextBoxing => TB}, TB._
-import _root_.io.circe, circe._, circe.syntax._
+// import _root_.io.circe, circe._, circe.syntax._
 
 case class LineRenderInfo(
   text: String,
@@ -69,24 +69,24 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   val jsonLabelSchema = {
 
     val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), mutable.Seq(
+      Author, Some(('a', 'u')), mutable.ArrayBuffer(
         LabelSchema(FirstName),
         LabelSchema(MiddleName),
         LabelSchema(LastName))
     )
 
     val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), mutable.Seq(
+      Authors, Some(('a', 's')), mutable.ArrayBuffer(
         authorNameSchema)
     )
 
     val refMarkerSchema = LabelSchema(
-      RefMarker, None, mutable.Seq(
+      RefMarker, None, mutable.ArrayBuffer(
         LabelSchema(RefNumber))
     )
 
     LabelSchemas(
-      mutable.Seq(
+      mutable.ArrayBuffer(
         authorListSchema,
         refMarkerSchema)
     )
@@ -165,45 +165,76 @@ class TextGridLabelWidgetTests extends TextGridSpec {
 
   // }
 
-  "Layout for Textgrid Widget" - {
-
-
+  "Behavior of Textgrid Labeling and Unlabeling" - {
     var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
     val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
     textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
     textGrid = textGrid.splitOneLeafLabelPerLine()
     textGrid = textGrid.split(9, 7).get
-    val labelTree = textGridToLabelTree(textGrid)
-    val gridRegions = labelTreeToGridRegions(labelTree, jsonLabelSchema, 2, 3)
 
-    val graphSize = LTBounds.Ints(0, 0, 50, 30)
-    val graphPaper = makeGraph(graphSize)
+    val indexedCells = textGrid.indexedCells()
+    labelSpans.reverse.foreach{ case ((lbegin, lend), label) =>
+      val (cell, row, col) = indexedCells(lbegin)
+      println(s"****unlabeling: ${row}, ${col}, ${label}")
+      val extents = textGrid.findLabelExtents(row, col, label)
 
-    gridRegions.foreach { region => region match {
-      case GridRegion.Cell(cell, row, col, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawString(l, t, cell.char.toString())
+      val textExtents = extents.map { cells =>
+        cells.map { case (cell, begin, end) =>
+          cell.char
+        }.mkString
+      } getOrElse { "<not found>" }
 
-      case GridRegion.Heading(heading, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        // graphPaper.drawString(l, t, heading)
-        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), 10, 0))
-
-      case GridRegion.LabelCover(label, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
-
-      case GridRegion.LabelKey(labelIdent, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawString(l, t, labelIdent)
-
-    }}
-
-
-    println(s"==\n${textGrid.toText()}\n-------------------")
-    println(labelTree.drawBox)
-
-    println(graphPaper.asColorString())
-
+      infobox(s"Unlabeled ${label}", textExtents)
+      textGrid.unlabelNear(row, col, label)
+      val indentedBlock = textGridToIndentedBox(textGrid)
+      val labelTree = textGridToLabelTree(textGrid)
+      val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+      val emarginBlock = marginalGlossToTextBlock(expMarginals)
+      val expBlock = emarginBlock + indentedBlock
+      infobox(s"Unlabeled ${label}", expBlock)
+    }
   }
+
+  // "Layout for Textgrid Widget" - {
+
+
+  //   var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+  //   val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
+  //   textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+  //   textGrid = textGrid.splitOneLeafLabelPerLine()
+  //   textGrid = textGrid.split(9, 7).get
+  //   val labelTree = textGridToLabelTree(textGrid)
+  //   val gridRegions = labelTreeToGridRegions(labelTree, jsonLabelSchema, 2, 3)
+
+  //   val graphSize = LTBounds.Ints(0, 0, 50, 30)
+  //   val graphPaper = makeGraph(graphSize)
+
+  //   gridRegions.foreach { region => region match {
+  //     case GridRegion.Cell(cell, row, col, bounds, classes) =>
+  //       val LTBounds.Ints(l, t, w, h) = bounds
+  //       graphPaper.drawString(l, t, cell.char.toString())
+
+  //     case GridRegion.Heading(heading, bounds, classes) =>
+  //       val LTBounds.Ints(l, t, w, h) = bounds
+  //       // graphPaper.drawString(l, t, heading)
+  //       graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), 10, 0))
+
+  //     case GridRegion.LabelCover(label, bounds, classes) =>
+  //       val LTBounds.Ints(l, t, w, h) = bounds
+  //       graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
+
+  //     case GridRegion.LabelKey(labelIdent, bounds, classes) =>
+  //       val LTBounds.Ints(l, t, w, h) = bounds
+  //       graphPaper.drawString(l, t, labelIdent)
+
+  //   }}
+
+
+  //   println(s"==\n${textGrid.toText()}\n-------------------")
+  //   println(labelTree.drawBox)
+
+  //   println(graphPaper.asColorString())
+
+  // }
 }
+
