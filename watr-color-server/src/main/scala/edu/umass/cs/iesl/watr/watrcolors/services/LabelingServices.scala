@@ -133,6 +133,7 @@ trait ZoningServices extends AuthenticatedService with ZoningApi { self =>
             case ZoneUpdate.SetText(gridJson) =>
               val textgrid = TextGrid.fromJson(gridJson)
               println(s"setting zone ${zoneId} text to ${textgrid}")
+              // docStore.getZoneTextAsJsonStr(zoneId: Int <refinement> ZoneID)
               docStore.setZoneText(ZoneID(zoneId), textgrid)
           }
         }

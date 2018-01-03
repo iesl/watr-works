@@ -200,7 +200,7 @@ case class LabelSchemas(
 }
 
 @JSExportTopLevel("watr.textgrid.LabelSchemasCompanion")
-  @JSExportAll
+@JSExportAll
 object LabelSchemas {
   def labelSchemaToBox(schema: LabelSchemas): TB.Box = {
 

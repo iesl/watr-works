@@ -1,19 +1,18 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-import org.scalatest._
 
 import corpora._
 import TypeTags._
 import _root_.io.circe
-import circe._
-import circe.syntax._
-import circe.literal._
-import geometry._
+// import circe._
+// import circe.syntax._
+// import circe.literal._
+// import geometry._
+import textboxing.{TextBoxing => TB}, TB._
 
-trait TextGridTestUtil extends FlatSpec with Matchers with TextGridBuilder
 
-class TextGridTests extends TextGridTestUtil {
+class TextGridTests extends TextGridSpec {
 
   override val docStore: DocumentZoningApi = new MemDocZoningApi
 
@@ -34,53 +33,48 @@ class TextGridTests extends TextGridTestUtil {
     addDocument(DocumentID(s"doc#${i}"), doc)
   }
 
-  behavior of "TextGrid Rows"
+  // info("behavior of TextGrid Rows")
 
-  it should "support plaintext rows" in {
-    val ds = docStore.getDocuments()
-    println(s"ds: ${ds}")
-    visualizeDocStore()
-  }
+  // "it should support plaintext rows" in {
+  //   val ds = docStore.getDocuments()
+  //   println(s"ds: ${ds}")
+  //   visualizeDocStore()
+  // }
 
-  it should "join two rows into one, with optional space or dehyphenation" in {
+  // "it should join two rows into one, with optional space or dehyphenation" in {}
 
+  // it should "support alphabet soup regions" in {}
+  // it should "clip single row to target region(s)" in {}
+  // it should "clip multiple rows to target region(s)" in {}
 
-  }
+  // behavior of "TextGrid Cursors"
 
-  it should "support alphabet soup regions" in {}
-  it should "clip single row to target region(s)" in {}
-  it should "clip multiple rows to target region(s)" in {}
+  // it should "slurp/barf" in {}
 
-  behavior of "TextGrid Cursors"
+  info("behavior of windows")
 
-  it should "slurp/barf" in {}
+  info("behavior of Serialization")
 
-  behavior of "windows"
+  // "it should ser grids" in {
+  //   val stableId = DocumentID("docXX")
+  //   for {
+  //     (doc, i) <- docs.zipWithIndex
+  //     pages <- docs
+  //     page <- pages
+  //   } {
+  //     val textGrid = stringToPageTextGrid(stableId, page,  PageNum(1), None)
+  //     val asJson = textGrid.toJson
+  //     val roundTripGrid = TextGrid.fromJson(asJson)
+  //     val rtJson = roundTripGrid.toJson()
+  //     // val cmpare = asJson.toString().mbox besideS rtJson.toString().mbox
+  //     // println("\n\n\n----------------------------------------------")
+  //     // println(cmpare)
+  //     // println("========================================================")
+  //     assert(asJson.toString() === rtJson.toString())
+  //   }
+  // }
 
-
-  import textboxing.{TextBoxing => TB}, TB._
-  behavior of "Serialization"
-
-  it should "ser grids" in {
-    val stableId = DocumentID("docXX")
-    for {
-      (doc, i) <- docs.zipWithIndex
-      pages <- docs
-      page <- pages
-    } {
-      val textGrid = stringToPageTextGrid(stableId, page,  PageNum(1), None)
-      val asJson = textGrid.toJson
-      val roundTripGrid = TextGrid.fromJson(asJson)
-      val rtJson = roundTripGrid.toJson()
-      // val cmpare = asJson.toString().mbox besideS rtJson.toString().mbox
-      // println("\n\n\n----------------------------------------------")
-      // println(cmpare)
-      // println("========================================================")
-      assert(asJson.toString() === rtJson.toString())
-    }
-  }
-
-  it should "round-trip ser/unser" in {
+  "it should round-trip ser/unser" in {
     // val stableId = DocumentID("docXX")
     // val codecs =  new TextGridCodecs(stableId)
     // val pageRegion0 = PageRegion(
@@ -112,19 +106,80 @@ class TextGridTests extends TextGridTestUtil {
 
   }
 
-  it should "render to a textgrid labeling widget" in {
-    val stableId = DocumentID("docXX")
-    for {
-      (doc, i) <- docs.zipWithIndex
-      pages <- docs
-      page <- pages
-    } {
-      val textGrid = stringToPageTextGrid(stableId, page,  PageNum(1), None)
+  // "it should render to a textgrid labeling widget" in {
+  //   val stableId = DocumentID("docXX")
+  //   for {
+  //     (doc, i) <- docs.zipWithIndex
+  //     pages <- docs
+  //     page <- pages
+  //   } {
+  //     val textGrid = stringToPageTextGrid(stableId, page,  PageNum(1), None)
 
-      textGrid.rows.map { row =>
-        row.cells.head
-      }
+  //     textGrid.rows.map { row =>
+  //       row.cells.head
+  //     }
+  //   }
+  // }
+
+  val jsonPrinter = circe.Printer(
+    preserveOrder = true,
+    dropNullValues = false,
+    indent = "    ",
+    lbraceRight = "",
+    rbraceLeft = "\n",
+    lbracketRight = "",
+    rbracketLeft = "",
+    lrbracketsEmpty = "",
+    arrayCommaRight = " ",
+    objectCommaRight = "\n",
+    colonLeft = " ",
+    colonRight = " "
+  )
+
+  import TextGridLabelWidget._
+
+  "Behavior of labeled TextGrid serialization" - {
+    val labelSpans = List(
+      ((0, 1),   RefMarker),
+      ((0, 0),   RefNumber),
+      ((3, 33),  Authors),
+      ((3, 17),  Author),
+      ((3, 14),  LastName),
+      ((17, 17), FirstName),
+      ((24, 33), Author),
+      ((36, 48), Journal)
+    )
+
+    val unlabeledText = {
+      //"0         1         2         3         4         5
+      // 012345678901234567890123456789012345678901234567899 """
+      """1. Bishop-Clark, C  and Wheeler, D; S.Eng. P-Hall"""
+
     }
+    var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+    val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
+    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+    textGrid = textGrid.splitOneLeafLabelPerLine()
+    textGrid = textGrid.split(9, 7).get
+
+    val asJson = textGrid.toJson // .pretty(jsonPrinter)
+    println(asJson)
+    val roundTripGrid = TextGrid.fromJson(asJson)
+    val rtJson = roundTripGrid.toJson()
+
+
+    val indentedBlock = textGridToIndentedBox(roundTripGrid)
+    val labelTree = textGridToLabelTree(roundTripGrid)
+    val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+    val emarginBlock = marginalGlossToTextBlock(expMarginals)
+    val expBlock = emarginBlock + indentedBlock
+    println("post: ")
+    println(expBlock.toString())
+    // val cmpare = asJson.toString().mbox besideS rtJson.toString().mbox
+    // println("\n\n\n----------------------------------------------")
+    // println(cmpare)
+    // println("========================================================")
+    assert(asJson.toString() === rtJson.toString())
   }
 
 

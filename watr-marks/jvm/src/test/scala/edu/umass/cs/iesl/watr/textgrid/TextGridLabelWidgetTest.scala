@@ -23,7 +23,18 @@ case class LineRenderInfo(
 )
 
 
-trait TextGridSpec extends FreeSpec with Matchers with TextGridBuilder
+trait TextGridSpec extends FreeSpec with Matchers with TextGridBuilder {
+  val Authors = Label.auto
+  val Author = Label.auto
+  val FirstName = Label.auto
+  val MiddleName = Label.auto
+  val LastName = Label.auto
+  val Journal = Label.auto
+  val RefMarker = Label.auto
+  val RefNumber = Label.auto
+
+  val stableId = DocumentID("docXX")
+}
 
 class TextGridLabelWidgetTests extends TextGridSpec {
   import geometry._
@@ -55,14 +66,6 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   }
 
 
-  val Authors = Label.auto
-  val Author = Label.auto
-  val FirstName = Label.auto
-  val MiddleName = Label.auto
-  val LastName = Label.auto
-  val Journal = Label.auto
-  val RefMarker = Label.auto
-  val RefNumber = Label.auto
 
   // Create Label Key: List of all valid labels arranged in tree structure at bottom of widget
 
@@ -114,7 +117,6 @@ class TextGridLabelWidgetTests extends TextGridSpec {
 
   import TextGridLabelWidget._
 
-  val stableId = DocumentID("docXX")
 
   def infobox(heading: String, b: TB.Box): Unit = {
     info(heading)

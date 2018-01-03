@@ -10,8 +10,13 @@ import circe._
 import circe.syntax._
 import circe.literal._
 
+import watrmarks._
+
 case class TextGridSerialization(
-  lineMap: Map[Int, (Json, String)]
+  lineMap: Map[Int, (Json, String)],
+  labelMap: Map[Label, Int],
+  cellLabelBuffer: List[List[String]]
+
 )
 
 class TextOutputBuilder(textGrid: TextGrid) {
@@ -25,26 +30,37 @@ class TextOutputBuilder(textGrid: TextGrid) {
       }
 
     TextGridSerialization(
-      codecs.lineMap.toMap
+      codecs.lineMap.toMap,
+      codecs.labelMap.toMap,
+      codecs.cellLabelBuffer.toList
     )
   }
 
   def gridToJson(): Json = {
     val serProps = getSerialization()
     val lineNums = serProps.lineMap.keys.toList.sorted
+    val labelMapJson = serProps.labelMap// .asJson
+    val cellLabelsJson = serProps.cellLabelBuffer.asJson
+
+    val labelDefs = Json.obj(
+      "labelMap" := serProps.labelMap.map{case (k, v) => (v, k.fqn)},
+      "cellLabels" := serProps.cellLabelBuffer
+    )
+
 
     val textAndLoci = lineNums.map { lineNum =>
       val text = serProps.lineMap(lineNum)._2
       val loci = serProps.lineMap(lineNum)._1
       Json.obj(
         "text" := text,
-        "loci" := loci
+        "loci" := loci,
       )
     }
 
     Json.obj(
       "stableId" := textGrid.stableId.unwrap,
-      "rows" := textAndLoci
+      "rows" := textAndLoci,
+      "labels" := labelDefs
     )
   }
 
@@ -77,8 +93,12 @@ class TextOutputBuilder(textGrid: TextGrid) {
 
 protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
 
+
   val pageIdMap = mutable.Map[Int@@PageID, (String@@DocumentID, Int@@PageNum)]()
   val lineMap = mutable.Map[Int, (Json, String)]()
+  val labelMap = mutable.Map[Label, Int]()
+  val labelIdMap = mutable.Map[Int, Label]()
+  val cellLabelBuffer = mutable.ArrayBuffer[List[String]]()
 
   def nextLineNum: Int = if (lineMap.keySet.isEmpty) 0 else lineMap.keySet.max + 1
 
@@ -108,6 +128,18 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
 
   def decodeGrid(js: Json): TextGrid = {
     val cursor = js.hcursor
+    val serLabelMap = cursor.downField("labels").downField("labelMap").as[Map[Int, String]]
+    serLabelMap.fold(fail => {
+      sys.error(s"could not decode textgrid loci:${fail} ")
+    }, succ => {
+      labelIdMap ++= succ.toList.map{ case (k, v) => (k, Label(v)) }
+    })
+    val cellLabels = cursor.downField("labels").downField("cellLabels").as[List[List[String]]]
+    cellLabels.fold(fail => {
+      sys.error(s"could not decode textgrid loci:${fail} ")
+    }, succ => {
+      cellLabelBuffer.appendAll(succ)
+    })
 
     val rowsM = cursor
       .downField("rows").values.map { jsVals =>
@@ -148,8 +180,26 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
                 char.toString()
               )
             }
+            val cell = TextGrid.PageItemCell(atoms.head, atoms.tail, atoms.head.char.head)
+            val cellPinRepr = cellLabelBuffer.remove(0)
+            cellPinRepr.foreach { pinRep =>
+              val Array(pinChar, labelId) = pinRep.split(":")
+              val label = labelIdMap.get(labelId.toInt).getOrElse {
+                sys.error(s"could not decode label ${labelId}")
+              }
+              val pin = pinChar match {
+                case "B" => label.B
+                case "I" => label.I
+                case "O" => label.O
+                case "L" => label.L
+                case "U" => label.U
+                case _ =>
+                  sys.error(s"could not decode label pinChar ${pinChar}")
+              }
+              cell.addPin(pin)
+            }
 
-            TextGrid.PageItemCell(atoms.head, atoms.tail, atoms.head.char.head)
+            cell
           }
 
           dec.fold(decFail => {
@@ -176,7 +226,25 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
                 bbox
               )
 
-              TextGrid.InsertCell(char.head, insertAt: PageRegion)
+              val cell = TextGrid.InsertCell(char.head, insertAt: PageRegion)
+              val cellPinRepr = cellLabelBuffer.remove(0)
+              cellPinRepr.foreach { pinRep =>
+                val Array(pinChar, labelId) = pinRep.split(":")
+                val label = labelIdMap.get(labelId.toInt).getOrElse {
+                  sys.error(s"could not decode label ${labelId}")
+                }
+                val pin = pinChar match {
+                  case "B" => label.B
+                  case "I" => label.I
+                  case "O" => label.O
+                  case "L" => label.L
+                  case "U" => label.U
+                  case _ =>
+                    sys.error(s"could not decode label pinChar ${pinChar}")
+                }
+                cell.addPin(pin)
+              }
+              cell
             }
         }
 
@@ -187,8 +255,17 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
 
   }
 
+  val labelIdGen = utils.IdGenerator[LabelID]()
+
   implicit def GridCellEncoder: Encoder[TextGrid.GridCell] = Encoder.instance[TextGrid.GridCell]{ _ match {
     case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+
+      val cellLabels = cell.pins.reverse.toList.map{ pin =>
+        val labelId = labelMap.getOrElseUpdate(pin.label, labelIdGen.nextId.unwrap)
+        s"${pin.pinChar}:${labelId}"
+      }
+      cellLabelBuffer.append(cellLabels)
+
       val items = (headItem +: tailItems).map{ pageItem =>
         val page = pageItem.pageRegion.page
         val pageNum = page.pageNum
@@ -210,6 +287,12 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
       )
 
     case cell@ TextGrid.InsertCell(char, insertAt)     =>
+      val cellLabels = cell.pins.reverse.toList.map{ pin =>
+        val labelId = labelMap.getOrElseUpdate(pin.label, labelIdGen.nextId.unwrap)
+        s"${pin.pinChar}:${labelId}"
+      }
+      cellLabelBuffer.append(cellLabels)
+
 
       val pageNum = insertAt.page.pageNum
       val LTBounds.IntReps(l, t, w, h) = insertAt.bbox
