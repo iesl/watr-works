@@ -11,7 +11,6 @@ import utils._
 import geometry._
 import TextGridLabelWidget._
 import utils.ExactFloats._
-import scala.collection.mutable
 
 @JSExportTopLevel("watr.textgrid.TextGridInterop")
 object TextGridInterop {
@@ -20,13 +19,22 @@ object TextGridInterop {
   object labelSchemas {
 
     @JSExport
+    def abbrevFor(ls: LabelSchemas, label: String): String  = {
+      ls.abbrevFor(Label(label))
+    }
+
+    @JSExport
     def allLabels(ls: LabelSchemas): js.Array[String]  = {
       ls.allLabels.toJSArray
     }
 
     @JSExport
     def childLabelsFor(ls: LabelSchemas, label: String): js.Array[String]  = {
-      ls.childLabelsFor(Label(label)).toJSArray
+      if (label=="") {
+        ls.topLabels().toJSArray
+      } else {
+        ls.childLabelsFor(Label(label)).toJSArray
+      }
     }
 
   }
@@ -130,19 +138,19 @@ class TextGridConstructor extends TextGridConstruction {
   def getTestLabelSchema(): LabelSchemas = {
 
     val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), mutable.ArrayBuffer(
+      Author, Some(('a', 'u')), List(
         LabelSchema(FirstName),
         LabelSchema(MiddleName),
         LabelSchema(LastName))
     )
 
     val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), mutable.ArrayBuffer(
+      Authors, Some(('a', 's')), List(
         authorNameSchema)
     )
 
     val refMarkerSchema = LabelSchema(
-      RefMarker, None, mutable.ArrayBuffer(
+      RefMarker, None, List(
         LabelSchema(RefNumber))
     )
     val journalSchema = LabelSchema(
@@ -150,7 +158,7 @@ class TextGridConstructor extends TextGridConstruction {
     )
 
     LabelSchemas(
-      mutable.ArrayBuffer(
+      List(
         authorListSchema,
         refMarkerSchema, journalSchema
       )
