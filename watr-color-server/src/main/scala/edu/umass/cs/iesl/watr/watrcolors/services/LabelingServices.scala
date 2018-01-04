@@ -64,14 +64,13 @@ trait ZoningApi extends HttpPayloads {
   protected def targetToPageBounds(docId: Int@@DocumentID, ltarget: LTarget): PageRegion = {
     val pageNum = PageNum(ltarget.page)
 
-    val (l, t, w, h) = (
-      ltarget.bbox(0), ltarget.bbox(1), ltarget.bbox(2), ltarget.bbox(3)
+    val bbox = LTBounds.Doubles(
+      ltarget.bbox.left, ltarget.bbox.top,
+      ltarget.bbox.width, ltarget.bbox.height
     )
-    val bbox = LTBounds.IntReps(l, t, w, h)
-    val pageId    = docStore.getPage(docId, pageNum).getOrElse { sys.error(s"Document ${docId} has no page ${pageNum}") }
+    val pageId  = docStore.getPage(docId, pageNum).getOrElse { sys.error(s"Document ${docId} has no page ${pageNum}") }
     val regionId = docStore.addTargetRegion(pageId, bbox)
     docStore.getTargetRegion(regionId)
-
   }
 
 }
@@ -120,19 +119,18 @@ trait ZoningServices extends AuthenticatedService with ZoningApi { self =>
 
     // Update zone
     case req @ POST -> Root / "zones" / IntVar(zoneId)  asAuthed user =>
+      println(s"${req}")
 
       val handler = for {
-        // gridJson <- req.request.as[Json]
         update <- decodeOrErr[ZoneUpdate](req.request)
         _ = {
-          // val stableId = DocumentID(labeling.stableId)
           update match {
             case ZoneUpdate.MergeWith(otherZoneId) =>
               println(s"merging zone ${zoneId} with ${otherZoneId}")
 
             case ZoneUpdate.SetText(gridJson) =>
+              println(s"setting zone ${zoneId} text ")
               val textgrid = TextGrid.fromJson(gridJson)
-              println(s"setting zone ${zoneId} text to ${textgrid}")
               // docStore.getZoneTextAsJsonStr(zoneId: Int <refinement> ZoneID)
               docStore.setZoneText(ZoneID(zoneId), textgrid)
           }

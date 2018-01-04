@@ -7,7 +7,6 @@ import js.JSConverters._
 
 import TypeTags._
 import watrmarks._
-import utils._
 import geometry._
 import TextGridLabelWidget._
 import utils.ExactFloats._
@@ -56,11 +55,18 @@ object TextGridInterop {
       wd.gridRegions.toJSArray
     }
   }
-
 }
 
+@JSExportTopLevel("watr.textgrid.TextGridConstructor_Companion")
+object TextGridConstructor {
+  @JSExport
+  def create(): TextGridConstructor =
+    new TextGridConstructor()
+}
+
+
 @JSExportTopLevel("watr.textgrid.TextGridConstructor")
-class TextGridConstructor extends TextGridConstruction {
+class TextGridConstructor() extends TextGridConstruction {
 
 
 
@@ -79,6 +85,33 @@ class TextGridConstructor extends TextGridConstruction {
 
   val stableId = DocumentID("docXX")
 
+  @JSExport
+  def getTestTextGridLarge(): TextGrid = {
+    val loremIpsum = """Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur? """
+    val labelSpans = List(
+      ((0, 100),   RefMarker),
+      ((0, 50),   RefNumber),
+      ((50, 60),   RefNumber),
+      ((100, 120),  Authors),
+      ((100, 110),  Author),
+      ((120, 130),  Authors),
+      ((120, 125),  Author),
+      ((130, 190),  Authors),
+      ((200, 400),  Authors),
+      ((200, 300),  Author),
+      ((300, 400),  Author),
+      ((400, 600),  Authors),
+      ((600, 820),  Authors)
+    )
+    val ls2 = labelSpans.map{case ((b, e), l) => ((b+820, e+820), l) }
+
+    val ls = labelSpans //  ++ ls2
+    var textGrid = stringToPageTextGrid(stableId, loremIpsum,  PageNum(1), None)
+    val labeledRow = addLabelsToGridRow(textGrid.rows.head, ls)
+    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+    textGrid = textGrid.splitOneLeafLabelPerLine()
+    textGrid
+  }
 
   @JSExport
   def getTestTextGrid(): TextGrid = {
@@ -104,6 +137,8 @@ class TextGridConstructor extends TextGridConstruction {
     textGrid = textGrid.splitOneLeafLabelPerLine()
     textGrid = textGrid.split(9, 7).get
 
+    // val allRows = (0 to 10).flatMap{_ => textGrid.rows }
+    // TextGrid.fromRows(stableId, allRows)
 
     textGrid
   }
@@ -173,45 +208,13 @@ class TextGridConstructor extends TextGridConstruction {
     originX: Int,
     originY: Int
   ): WidgetDisplayGridProps = {
-    val labelTree = textGridToLabelTree(textGrid)
-    val gridRegions = labelTreeToGridRegions(labelTree, labelSchemas, originX, originY)
+
+    val labelTree = time("textGridToLabelTree"){ textGridToLabelTree(textGrid)}
+    val gridRegions = time("labelTreeToGridRegions"){  labelTreeToGridRegions(labelTree, labelSchemas, originX, originY) }
     new  WidgetDisplayGridProps(
       labelTree,
       gridRegions
     )
-  }
-
-  @JSExport
-  def writeTextGrid(
-    gridProps: WidgetDisplayGridProps,
-    graphPaper: GraphPaper,
-    rtreeApi: RTreeApi
-  ): Unit = {
-
-    val rtreeData = gridProps.gridRegions.map { region => region match {
-      case r@ GridRegion.Cell(cell, row, col, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawString(l, t, cell.char.toString())
-        new RTreeRect(r)
-
-      case r@ GridRegion.Heading(heading, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawString(l, t, heading)
-        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), heading.length()-1, 0))
-        new RTreeRect(r)
-
-      case r@ GridRegion.LabelCover(label, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawBox(GraphPaper.Box(GraphPaper.GridCell(l, t), w-1, h-1), GraphPaper.BorderLineStyle.SingleWidth)
-        new RTreeRect(r)
-
-      case r@  GridRegion.LabelKey(labelIdent, bounds, classes) =>
-        val LTBounds.Ints(l, t, w, h) = bounds
-        graphPaper.drawString(l, t, labelIdent)
-        new RTreeRect(r)
-    }}
-
-    rtreeApi.loadData(rtreeData.toJSArray)
   }
 
 }

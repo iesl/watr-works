@@ -121,22 +121,17 @@ object formdata {
 trait HttpPayloads extends CirceJsonCodecs {
 
 
+  @JsonCodec case class BBox(
+    left: Double,
+    top: Double,
+    width: Double,
+    height: Double
+  )
+
   @JsonCodec case class LTarget(
     page: Int,
-    bbox: Seq[Int]
+    bbox: BBox
   )
-
-  case class LabelingSelection(
-    annotType: String,
-    targets: Seq[LTarget]
-  )
-
-  object LabelingSelection {
-    import circe.generic.semiauto._
-    implicit val encoder: Encoder[LabelingSelection] = deriveEncoder
-    implicit val decoder: Decoder[LabelingSelection] = deriveDecoder
-  }
-
 
 
   @JsonCodec case class LabelingReqForm(
@@ -145,15 +140,13 @@ trait HttpPayloads extends CirceJsonCodecs {
     target: LTarget
   )
 
-  @JsonCodec case class LabelsRequest(
-    stableId: String
-  )
-
-
-  @JsonCodec case class DocumentZone(
-    stableId: String,
-    zoneId: Int
-  )
+  // @JsonCodec case class LabelsRequest(
+  //   stableId: String
+  // )
+  // @JsonCodec case class DocumentZone(
+  //   stableId: String,
+  //   zoneId: Int
+  // )
 
   @JsonCodec sealed trait ZoneUpdate
   object ZoneUpdate {

@@ -39,14 +39,11 @@ class TextOutputBuilder(textGrid: TextGrid) {
   def gridToJson(): Json = {
     val serProps = getSerialization()
     val lineNums = serProps.lineMap.keys.toList.sorted
-    val labelMapJson = serProps.labelMap// .asJson
-    val cellLabelsJson = serProps.cellLabelBuffer.asJson
 
     val labelDefs = Json.obj(
       "labelMap" := serProps.labelMap.map{case (k, v) => (v, k.fqn)},
       "cellLabels" := serProps.cellLabelBuffer
     )
-
 
     val textAndLoci = lineNums.map { lineNum =>
       val text = serProps.lineMap(lineNum)._2
@@ -126,17 +123,43 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
     }, succ => succ)
   }
 
+  def addBioPins(cell: TextGrid.GridCell): TextGrid.GridCell = {
+    if (cellLabelBuffer.nonEmpty) {
+      val cellPinRepr = cellLabelBuffer.remove(0)
+      cellPinRepr.foreach { pinRep =>
+        val Array(pinChar, labelId) = pinRep.split(":")
+        val label = labelIdMap.get(labelId.toInt).getOrElse {
+          sys.error(s"could not decode label ${labelId}")
+        }
+        val pin = pinChar match {
+          case "B" => label.B
+          case "I" => label.I
+          case "O" => label.O
+          case "L" => label.L
+          case "U" => label.U
+          case _ =>
+            sys.error(s"could not decode label pinChar ${pinChar}")
+        }
+        cell.addPin(pin)
+      }
+    }
+    cell
+  }
+
   def decodeGrid(js: Json): TextGrid = {
     val cursor = js.hcursor
     val serLabelMap = cursor.downField("labels").downField("labelMap").as[Map[Int, String]]
     serLabelMap.fold(fail => {
-      sys.error(s"could not decode textgrid loci:${fail} ")
+      // sys.error(s"could not decode textgrid loci:${fail} ")
+      // Ok, noop
+      labelIdMap
     }, succ => {
       labelIdMap ++= succ.toList.map{ case (k, v) => (k, Label(v)) }
     })
     val cellLabels = cursor.downField("labels").downField("cellLabels").as[List[List[String]]]
     cellLabels.fold(fail => {
-      sys.error(s"could not decode textgrid loci:${fail} ")
+      // sys.error(s"could not decode textgrid loci:${fail} ")
+      // Ok, noop
     }, succ => {
       cellLabelBuffer.appendAll(succ)
     })
@@ -181,25 +204,7 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
               )
             }
             val cell = TextGrid.PageItemCell(atoms.head, atoms.tail, atoms.head.char.head)
-            val cellPinRepr = cellLabelBuffer.remove(0)
-            cellPinRepr.foreach { pinRep =>
-              val Array(pinChar, labelId) = pinRep.split(":")
-              val label = labelIdMap.get(labelId.toInt).getOrElse {
-                sys.error(s"could not decode label ${labelId}")
-              }
-              val pin = pinChar match {
-                case "B" => label.B
-                case "I" => label.I
-                case "O" => label.O
-                case "L" => label.L
-                case "U" => label.U
-                case _ =>
-                  sys.error(s"could not decode label pinChar ${pinChar}")
-              }
-              cell.addPin(pin)
-            }
-
-            cell
+            addBioPins(cell)
           }
 
           dec.fold(decFail => {
@@ -227,24 +232,7 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
               )
 
               val cell = TextGrid.InsertCell(char.head, insertAt: PageRegion)
-              val cellPinRepr = cellLabelBuffer.remove(0)
-              cellPinRepr.foreach { pinRep =>
-                val Array(pinChar, labelId) = pinRep.split(":")
-                val label = labelIdMap.get(labelId.toInt).getOrElse {
-                  sys.error(s"could not decode label ${labelId}")
-                }
-                val pin = pinChar match {
-                  case "B" => label.B
-                  case "I" => label.I
-                  case "O" => label.O
-                  case "L" => label.L
-                  case "U" => label.U
-                  case _ =>
-                    sys.error(s"could not decode label pinChar ${pinChar}")
-                }
-                cell.addPin(pin)
-              }
-              cell
+              addBioPins(cell)
             }
         }
 

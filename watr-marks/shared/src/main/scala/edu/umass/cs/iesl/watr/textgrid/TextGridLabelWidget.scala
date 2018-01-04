@@ -93,7 +93,7 @@ sealed trait GridRegion  {
     GraphPaper.boundsToBox(bounds)
   }
 
-  @JSExport def isCell(): Boolean = false
+  @JSExport def isCells(): Boolean = false
   @JSExport def isHeading(): Boolean = false
   @JSExport def isLabelCover(): Boolean = false
   @JSExport def isLabelKey(): Boolean = false
@@ -105,14 +105,14 @@ import scala.annotation.meta.field
   @JSExportTopLevel("watr.textgrid.GridRegion")
 object GridRegion {
 
-  case class Cell(
-    @(JSExport @field) cell: TextGrid.GridCell,
+  case class Cells(
+    @(JSExport @field) cells: Seq[TextGrid.GridCell],
     @(JSExport @field) row: Int,
-    @(JSExport @field) col: Int,
+    // @(JSExport @field) colStart: Int,
     @(JSExport @field) override val bounds: LTBounds,
     override val classes: List[String]
   ) extends GridRegion {
-    override def isCell(): Boolean = true
+    override def isCells(): Boolean = true
   }
 
   case class Heading(
@@ -404,7 +404,7 @@ object TextGridLabelWidget {
         labeledLine match {
           case LabeledRowElem.CellGroupRow(labels, cells0, depthMod) =>
 
-            val cells = cells0.flatMap(_.cells).zipWithIndex
+            val cells = cells0.flatMap(_.cells)
             val rowNums = cells0.map(_.gridRow).toSet
             if (rowNums.size != 1) {
               sys.error(s"more than one grid row found in label tree structure")
@@ -415,27 +415,29 @@ object TextGridLabelWidget {
 
             val cellsStart = x + (Indent * (labels.length+1+depthMod))
 
-            cells.map{ case (cell, cellCol) =>
-              val left = cellsStart + cellCol
-              val top = y + labeledLineNum
-              val width = 1
-              val height = 1
-
-              val bounds = LTBounds.Ints(left, top, width, height)
-              GridRegion.Cell(cell, rowNum, cellCol, bounds, classes)
-            }
+            val top = y + labeledLineNum
+            val height = 1
+            val bounds = LTBounds.Ints(cellsStart, top, cells.length, height)
+            List(
+              GridRegion.Cells(cells, rowNum, bounds, classes)
+            )
 
           case LabeledRowElem.HeadingRow(labels, heading) =>
+            val clippedHeading = if (heading.length() > 75) {
+              heading.substring(0, 75) ++ " ..."
+            } else {
+              heading
+            }
 
             val left = x + (Indent * labels.length)
             val top = y + labeledLineNum
-            val width = heading.length()
+            val width = clippedHeading.length()
             val height = 1
 
             val bounds = LTBounds.Ints(left, top, width, height)
             val classes = labels.map(_.fqn)
             List(
-              GridRegion.Heading(heading, bounds, classes))
+              GridRegion.Heading(clippedHeading, bounds, classes))
 
         }}
 
@@ -592,7 +594,7 @@ object TextGridLabelWidget {
         lastChild.getLabel match {
           case prevCell@ TreeNode.CellGroup(cells, prevRow) if prevRow == row =>
             lastChild.modifyLabel { p =>
-              TreeNode.CellGroup(cells++List(cell), row): TreeNode
+              TreeNode.CellGroup(cell :: cells, row): TreeNode
             }
           case _ =>
             currLoc.insertDownLast(
@@ -613,7 +615,11 @@ object TextGridLabelWidget {
         .foreach { _ => up()  }
     }
 
-    currLoc.root.toTree
+    currLoc.root.toTree.map { n => n match {
+      case TreeNode.CellGroup(cells, row) => TreeNode.CellGroup(cells.reverse, row)
+      case n => n
+    }}
+    // currLoc.root.toTree
   }
 
 

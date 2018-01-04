@@ -163,18 +163,16 @@ class TextGridTests extends TextGridSpec {
     textGrid = textGrid.split(9, 7).get
 
     val asJson = textGrid.toJson // .pretty(jsonPrinter)
-    println(asJson)
     val roundTripGrid = TextGrid.fromJson(asJson)
     val rtJson = roundTripGrid.toJson()
 
-
-    val indentedBlock = textGridToIndentedBox(roundTripGrid)
-    val labelTree = textGridToLabelTree(roundTripGrid)
-    val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
-    val emarginBlock = marginalGlossToTextBlock(expMarginals)
-    val expBlock = emarginBlock + indentedBlock
-    println("post: ")
-    println(expBlock.toString())
+    // val indentedBlock = textGridToIndentedBox(roundTripGrid)
+    // val labelTree = textGridToLabelTree(roundTripGrid)
+    // val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+    // val emarginBlock = marginalGlossToTextBlock(expMarginals)
+    // val expBlock = emarginBlock + indentedBlock
+    // println("post: ")
+    // println(expBlock.toString())
     // val cmpare = asJson.toString().mbox besideS rtJson.toString().mbox
     // println("\n\n\n----------------------------------------------")
     // println(cmpare)
