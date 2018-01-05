@@ -138,7 +138,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
         workflow          VARCHAR(32) PRIMARY KEY,
         description       TEXT,
         targetLabel       INTEGER REFERENCES label NOT NULL,
-        curatedLabels     INTEGER[]
+        labelSchemas      TEXT
       );
 
 

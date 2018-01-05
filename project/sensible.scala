@@ -49,7 +49,7 @@ object SensibleProject extends CommonLibs {
     "-Ywarn-nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
     "-Ywarn-nullary-unit",               // Warn when nullary methods return Unit.
     "-Ywarn-numeric-widen",              // Warn when numerics are widened.
-    "-Ywarn-unused:implicits"           // Warn if an implicit parameter is unused.
+    "-Ywarn-unused:implicits"            // Warn if an implicit parameter is unused.
     // The following are a pain during active dev, but should be on before releasing code:
     // "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
     // "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
@@ -62,7 +62,7 @@ object SensibleProject extends CommonLibs {
 
   lazy val wartremoverSettings = Seq(
     // wartremoverWarnings in (Compile, compile) ++= Warts.all
-    // wartremoverWarnings ++= Warts.unsafe
+    wartremoverWarnings ++= Warts.unsafe
     // addCompilerPlugin("org.wartremover" %% "wartremover" % "2.1.0"),
     // scalacOptions += "-P:wartremover:only-warn-traverser:org.brianmckenna.wartremover.warts.Unsafe"
     // more at wartremover.org/doc/warts.html

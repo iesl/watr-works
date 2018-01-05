@@ -67,10 +67,15 @@ object Labels {
 
 
 object Label {
+  import io.circe
+  import circe._
 
   def auto(implicit name: sourcecode.Name): Label = {
     Label(name.value)
   }
+
+  implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
+  implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
 }
 
 

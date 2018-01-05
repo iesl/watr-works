@@ -107,12 +107,12 @@ trait CurationWorkflow extends WorkflowCodecs {
     Json.obj()
   }
 
-  def POST_workflows(workflowForm: WorkflowForm): Json = {
+  def POST_workflows(workflowForm: CurationWorkflowDef): Json = {
     val workflowId = workflowApi.defineWorkflow(
       workflowForm.workflow,
       workflowForm.description,
-      Label(workflowForm.targetLabel),
-      workflowForm.curatedLabels.map(Label(_))
+      workflowForm.targetLabel,
+      workflowForm.labelSchemas
     )
     Json.obj("workflowId" := workflowId)
   }
@@ -150,7 +150,7 @@ trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedServic
 
     case req @ POST -> Root / "workflows" asAuthed user =>
       for {
-        workflowForm  <- req.request.as[WorkflowForm]
+        workflowForm  <- req.request.as[CurationWorkflowDef]
         resp          <- Ok(POST_workflows(workflowForm))
       } yield resp
   }

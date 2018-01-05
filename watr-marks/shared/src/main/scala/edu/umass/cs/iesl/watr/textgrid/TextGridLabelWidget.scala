@@ -5,14 +5,11 @@ import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, _}, Scalaz._
 
 import scala.scalajs.js.annotation._
-// import scala.scalajs.js
 
 import watrmarks._
 import _root_.io.circe, circe._ // circe.syntax._
 import geometry._
 import utils.GraphPaper
-
-// import scala.collection.mutable
 
 sealed trait TreeNode
 
@@ -84,7 +81,6 @@ object MarginalGloss {
 
 
 // @JSExportAll
-// @JSExportTopLevel("watr.textgrid.GridRegion")
 sealed trait GridRegion  {
   def bounds(): LTBounds
   def classes(): List[String]
@@ -102,7 +98,7 @@ sealed trait GridRegion  {
 import scala.annotation.meta.field
 
 @JSExportAll
-  @JSExportTopLevel("watr.textgrid.GridRegion")
+@JSExportTopLevel("watr.textgrid.GridRegion")
 object GridRegion {
 
   case class Cells(
@@ -140,139 +136,6 @@ object GridRegion {
   }
 
 }
-
-
-
-@JSExportTopLevel("watr.textgrid.LabelSchema")
-case class LabelSchema(
-  label: Label,
-  abbrev: Option[(Char, Char)] = None,
-  children: List[LabelSchema] = List()
-) {
-  def getAbbrev(): String = {
-    abbrev
-      .map{ case (c1, c2) => ""+c1+c2 }
-      .getOrElse{
-        val uppers = label.fqn.filter(_.isUpper).map(_.toLower)
-        val lowers = label.fqn.filter(_.isLower)
-        (uppers ++ lowers).take(2).mkString("")
-      }
-  }
-  def abbrevFor(l: Label): Option[String] = {
-    if (label == l) {
-      Some(getAbbrev())
-    } else children.flatMap(_.abbrevFor(l)).headOption
-  }
-
-  def allLabels(): List[Label] = label +: children.flatMap(_.allLabels())
-
-  def childLabelsFor(l: Label): List[Label] = {
-    if (label==l) {
-      children.map(_.label)
-    } else {
-      children.flatMap(_.childLabelsFor(l))
-    }
-  }
-}
-
-
-@JSExportTopLevel("watr.textgrid.LabelSchemas")
-case class LabelSchemas(
-  schemas: List[LabelSchema]
-) {
-
-  val allLabels: List[String] = {
-    schemas.flatMap(_.allLabels()).map(_.fqn)
-  }
-
-  def topLabels(): List[String] = {
-    schemas.map(_.label.fqn)
-  }
-
-  def abbrevFor(label: Label): String = {
-    schemas.flatMap(_.abbrevFor(label)).headOption.getOrElse("")
-  }
-
-  def childLabelsFor(label: Label): List[String] = {
-    schemas.flatMap(_.childLabelsFor(label))
-      .map(_.fqn)
-  }
-}
-
-@JSExportTopLevel("watr.textgrid.LabelSchemasCompanion")
-@JSExportAll
-object LabelSchemas {
-  def labelSchemaToBox(schema: LabelSchemas): TB.Box = {
-
-    def renderSchema(s: LabelSchema): TB.Box = {
-      val lbox = s.getAbbrev.box + ": " + s.label.fqn.box
-
-      if (s.children.nonEmpty) {
-        lbox atop indent(4,
-          vcat(left, s.children.map(renderSchema(_)))
-        )
-      } else { lbox }
-    }
-
-    vjoin(left,
-      "Label Schema", indent(4,
-        vjoins(
-          schema.schemas.map(renderSchema(_))
-        ))
-    )
-  }
-
-  val jsonPrinter = circe.Printer(
-    preserveOrder = true,
-    dropNullValues = false,
-    indent = "    ",
-    lbraceRight = "\n",
-    rbraceLeft = "\n",
-    lbracketRight = "",
-    rbracketLeft = "\n",
-    lrbracketsEmpty = "",
-    arrayCommaRight = " ",
-    objectCommaRight = "\n",
-    colonLeft = " ",
-    colonRight = " "
-  )
-
-  val testLabelSchema = {
-
-    val Authors = Label.auto
-    val Author = Label.auto
-    val FirstName = Label.auto
-    val MiddleName = Label.auto
-    val LastName = Label.auto
-    val RefMarker = Label.auto
-    val RefNumber = Label.auto
-
-    val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), List(
-        LabelSchema(FirstName),
-        LabelSchema(MiddleName),
-        LabelSchema(LastName))
-    )
-
-    val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), List(
-        authorNameSchema)
-    )
-
-    val refMarkerSchema = LabelSchema(
-      RefMarker, None, List(
-        LabelSchema(RefNumber))
-    )
-
-    LabelSchemas(
-      List(
-        authorListSchema,
-        refMarkerSchema)
-    )
-  }
-
-}
-
 
 @JSExportTopLevel("watr.textgrid.TextGridLabelWidget") @JSExportAll
 object TextGridLabelWidget {

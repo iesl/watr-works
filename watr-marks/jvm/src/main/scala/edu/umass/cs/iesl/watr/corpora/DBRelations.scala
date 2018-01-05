@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package corpora
 
 import edu.umass.cs.iesl.watr.{geometry => G}
+import watrmarks._
 
 object RelationModel {
 
@@ -48,7 +49,7 @@ object RelationModel {
     workflow      : String@@WorkflowID,
     description   : String,
     targetLabel   : Label,
-    curatedLabels : Seq[Label]
+    labelSchemas  : LabelSchemas
   )
 
   case class ZoneLock(

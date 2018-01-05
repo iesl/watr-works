@@ -22,6 +22,8 @@ import shapeless._
 import textgrid._
 
 import _root_.io.circe, circe._, circe.syntax._
+import circe.parser.decode
+// import circe.generic.semiauto._
 
 class CorpusAccessDB(
   dbname: String, dbuser: String, dbpass: String
@@ -388,18 +390,23 @@ class CorpusAccessDB(
   }
   object workflowApi extends WorkflowApi {
     import doobie.postgres.imports._
+    import watrmarks.{StandardLabels => LB}
 
-    def defineWorkflow(slug: String, desc: String, targetLabel: Label, curatedLabels: Seq[Label]): String@@WorkflowID = {
+    def defineWorkflow(slug: String, desc: String, targetLabelOpt: Option[Label], labelSchemas: LabelSchemas): String@@WorkflowID = {
 
+      val targetLabel = targetLabelOpt.getOrElse{ LB.FullPdf }
       val targetLabelId = docStore.ensureLabel(targetLabel)
-      val curatedLabelIds = curatedLabels
-        .map(docStore.ensureLabel(_).unwrap)
-        .toArray
+
+      labelSchemas.allLabels.map(Label(_)).foreach { l =>
+          docStore.ensureLabel(_)
+      }
+
+      val jsonSchema = labelSchemas.asJson.noSpaces
 
       runq {
         sql"""
-           insert into workflow (workflow, description, targetLabel, curatedLabels)
-           values (${slug}, ${desc}, ${targetLabelId}, ${curatedLabelIds})
+           insert into workflow (workflow, description, targetLabel, labelSchemas)
+           values (${slug}, ${desc}, ${targetLabelId}, ${jsonSchema})
            returning workflow
         """.query[String@@WorkflowID].unique
       }
@@ -409,21 +416,24 @@ class CorpusAccessDB(
 
     def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
       runq {
-        sql""" select workflow, description, targetLabel, curatedLabels
+        sql""" select workflow, description, targetLabel, labelSchemas
                from   workflow
                where  workflow=${workflowId}
-        """.query[(String, String, Int@@LabelID, Array[Int])]
+        """.query[(String, String, Int@@LabelID, String)]
 
-          .map{ case (workflowId, desc, target, curated) =>
-            val curatedLabels = curated.map{ id =>
-              val labelId = LabelID(id)
-              val l = docStore.getLabel(labelId)
-              Rel.Label(l.id, l.key),
-            }
+          .map{ case (workflowId, desc, target, schema) =>
+            val labelSchemas = decode[LabelSchemas](schema).fold(err => {
+              sys.error(s"could not decode LabelSchemas from ${schema}")
+            }, labelSchemas => {
+              labelSchemas
+            })
+
             val l = docStore.getLabel(target)
-            Rel.WorkflowDef(WorkflowID(workflowId), desc,
+
+            Rel.WorkflowDef(
+              WorkflowID(workflowId), desc,
               Rel.Label(l.id, l.key),
-              curatedLabels
+              labelSchemas
             )
           }.unique
       }

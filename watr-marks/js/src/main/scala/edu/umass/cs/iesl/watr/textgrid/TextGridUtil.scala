@@ -173,19 +173,19 @@ class TextGridConstructor() extends TextGridConstruction {
   def getTestLabelSchema(): LabelSchemas = {
 
     val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), List(
+      Author, Some(('a', 'u')), None, List(
         LabelSchema(FirstName),
         LabelSchema(MiddleName),
         LabelSchema(LastName))
     )
 
     val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), List(
+      Authors, Some(('a', 's')), None, List(
         authorNameSchema)
     )
 
     val refMarkerSchema = LabelSchema(
-      RefMarker, None, List(
+      RefMarker, None, None, List(
         LabelSchema(RefNumber))
     )
     val journalSchema = LabelSchema(
