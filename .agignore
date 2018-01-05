@@ -13,6 +13,5 @@ resources
 ext.d
 node_modules
 *.css
-lib/
 dist/*
 *.map

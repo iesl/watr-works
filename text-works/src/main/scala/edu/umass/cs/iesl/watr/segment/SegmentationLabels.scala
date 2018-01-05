@@ -1,10 +1,10 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import watrmarks.Label
+import watrmarks._
 
 
-object SegmentationLabels {
+object SegmentationLabels extends DocSegLabels {
 
   val Cluster = Label.auto
   val Attr = Label.auto
@@ -18,7 +18,6 @@ object SegmentationLabels {
   val Image = Label.auto
   // val Table = Label.auto
 
-  val FullPdf = Label.auto
   val Para = Label.auto
 
   val ExtractedLineStarts    = Label.auto
@@ -32,12 +31,9 @@ object SegmentationLabels {
 
   val ExtractedItems    = Label.auto
 
-  val VisualLine        = Label.auto
   val VisualLines       = Label.auto
 
   val VisualLineModal = Label.auto
-  val Sup             = Label.auto
-  val Sub             = Label.auto
 
   val NoteMarkers     = Label.auto
   val NoteMarker      = Label.auto

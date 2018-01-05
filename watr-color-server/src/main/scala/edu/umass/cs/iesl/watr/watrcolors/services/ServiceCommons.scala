@@ -37,7 +37,7 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
   val authenticatorSettings = TSecCookieSettings(
     "tsec-auth",
     secure         = false,
-    httpOnly       = true,
+    httpOnly       = false,
     expiryDuration = 1.day,
     maxIdle        = Some(1.hour),
     domain         = Option.empty[String],
@@ -46,8 +46,6 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
   )
 
   def symmetricKey = AES128.generateKeyUnsafe()
-
-  val tokenBackingStore = new TokenStore(corpusAccessDB)
 
   lazy val authenticator: EncryptedCookieAuthenticator[IO, Int, User, AES128] =
     EncryptedCookieAuthenticator.withBackingStore[IO, Int, User, AES128](

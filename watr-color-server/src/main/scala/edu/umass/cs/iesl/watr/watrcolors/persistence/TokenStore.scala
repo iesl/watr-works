@@ -46,7 +46,7 @@ class TokenStore(
             expiry=null,
             lastTouched=None,
             secure=true,
-            httpOnly=true,
+            httpOnly=false,
             domain = None,
             path = None,
             extension = None
@@ -157,9 +157,6 @@ sealed abstract class MemTokenStore extends BackingStore[IO, UUID, TokenStore.Va
   protected val ref: Ref[IO, HashMap[UUID, TokenStore.ValueType]]
 
   def put(elem: TokenStore.ValueType): IO[TokenStore.ValueType] = {
-    // println(s"put: ${elem}")
-    // val show0 = ref.get.unsafeRunSync().toList.mkString("{\n  ", "\n  ", "\n}")
-    // println(s"(pre mod)put:\n ${show0}")
 
     for {
       _     <- ref.modify(_ + (elem.id -> elem))
@@ -182,14 +179,6 @@ sealed abstract class MemTokenStore extends BackingStore[IO, UUID, TokenStore.Va
 }
 
 object MemTokenStore {
-  // def apply[F[_]: Effect](implicit ec: ExecutionContext): F[MemTokenStore[F]] =
-  //   Ref(HashMap.empty[UUID, TokenStore.ValueType])
-  //     .map { m =>
-  //       new MemTokenStore[F] {
-  //         protected val ref
-  //             : Ref[F, HashMap[UUID, TokenStore.ValueType]] = m
-  //       }
-  //     }
   def apply(): IO[MemTokenStore] =
     Ref[IO, HashMap[UUID, TokenStore.ValueType]](HashMap.empty[UUID, TokenStore.ValueType])
       .map { m =>

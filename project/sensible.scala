@@ -62,7 +62,7 @@ object SensibleProject extends CommonLibs {
 
   lazy val wartremoverSettings = Seq(
     // wartremoverWarnings in (Compile, compile) ++= Warts.all
-    wartremoverWarnings ++= Warts.unsafe
+    // wartremoverWarnings ++= Warts.unsafe
     // addCompilerPlugin("org.wartremover" %% "wartremover" % "2.1.0"),
     // scalacOptions += "-P:wartremover:only-warn-traverser:org.brianmckenna.wartremover.warts.Unsafe"
     // more at wartremover.org/doc/warts.html

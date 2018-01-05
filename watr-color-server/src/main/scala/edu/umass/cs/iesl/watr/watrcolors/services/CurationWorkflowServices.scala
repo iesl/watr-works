@@ -21,7 +21,8 @@ import cats.effect.IO
 import models._
 import models.users._
 
-import watrmarks.Label
+// import watrmarks.Label
+
 
 trait CurationWorkflow extends WorkflowCodecs {
 
@@ -107,17 +108,26 @@ trait CurationWorkflow extends WorkflowCodecs {
     Json.obj()
   }
 
+  import circe.parser.decode
+  import watrmarks.LabelSchemas
+
   def POST_workflows(workflowForm: CurationWorkflowDef): Json = {
-    val workflowId = workflowApi.defineWorkflow(
-      workflowForm.workflow,
-      workflowForm.description,
-      workflowForm.targetLabel,
-      workflowForm.labelSchemas
-    )
-    Json.obj("workflowId" := workflowId)
+    val maybeSchema = decode[LabelSchemas](workflowForm.labelSchemas)
+    maybeSchema.fold(
+      err => {
+        Json.obj(
+          "error" := "could not create workflow: malformed Json"
+        )
+      }, succ => {
+        val workflowId = workflowApi.defineWorkflow(
+          workflowForm.workflow,
+          workflowForm.description, None,
+          succ
+        )
+        Json.obj("workflowId" := workflowId)
+      })
   }
 }
-
 
 trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedService with WorkflowCodecs { self =>
 
@@ -148,9 +158,12 @@ trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedServic
     case req @ PUT -> Root / "workflows" / workflowId / "assignments" / IntVar(zoneId) :? StatusQP(status) asAuthed user =>
       Ok(PUT_workflows_assignments(ZoneID(zoneId), StatusCode(status)))
 
+
+    // Create a new workflow
     case req @ POST -> Root / "workflows" asAuthed user =>
       for {
-        workflowForm  <- req.request.as[CurationWorkflowDef]
+        workflowForm <- decodeOrErr[CurationWorkflowDef](req.request)
+        // workflowForm  <- req.request.as[CurationWorkflowDef]
         resp          <- Ok(POST_workflows(workflowForm))
       } yield resp
   }

@@ -110,7 +110,7 @@ object WatrMain extends App with utils.AppMainBasics {
         corpusAccessApi.corpusAccessDB.dropAndRecreate()
 
       case "corpus:segment" =>
-        ShellCommands.segmentAll(10, 0)
+        ShellCommands.segmentAll(50, 10)
 
       case x =>
         println(s"Unknown command: ${x}")

@@ -124,12 +124,10 @@ trait HttpPayloads extends CirceJsonCodecs {
   }
 }
 
-
 @JsonCodec case class CurationWorkflowDef(
   workflow     : String,
   description  : String,
-  targetLabel  : Option[Label],
-  labelSchemas : LabelSchemas
+  labelSchemas : String
 )
 
 @JsonCodec sealed trait Mod

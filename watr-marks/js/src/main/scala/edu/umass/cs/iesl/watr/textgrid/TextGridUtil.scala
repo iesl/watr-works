@@ -13,9 +13,24 @@ import utils.ExactFloats._
 
 @JSExportTopLevel("watr.textgrid.TextGridInterop")
 object TextGridInterop {
+  import _root_.io.circe, circe._, circe.syntax._
+  import circe.parser.decode
 
   @JSExportTopLevel("watr.textgrid.TextGridInterop.labelSchemas")
   object labelSchemas {
+
+    @JSExport
+    def schemaFromJson(jstr: String): LabelSchema  = {
+      decode[LabelSchema](jstr).fold(err => {
+        sys.error("invalid label schema json")
+      } , succ => succ)
+    }
+    @JSExport
+    def schemasFromJson(jstr: String): LabelSchemas  = {
+      decode[LabelSchemas](jstr).fold(err => {
+        sys.error("invalid label schema json")
+      } , succ => succ)
+    }
 
     @JSExport
     def abbrevFor(ls: LabelSchemas, label: String): String  = {
@@ -103,6 +118,7 @@ class TextGridConstructor() extends TextGridConstruction {
       ((400, 600),  Authors),
       ((600, 820),  Authors)
     )
+
     val ls2 = labelSpans.map{case ((b, e), l) => ((b+820, e+820), l) }
 
     val ls = labelSpans //  ++ ls2
