@@ -8,6 +8,7 @@ import workflow._
 import org.http4s._
 import org.http4s.dsl._
 import org.http4s.circe._
+import org.http4s.headers.Location
 
 import _root_.io.circe
 import circe._
@@ -85,15 +86,22 @@ trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs with HttpPayload
   }
 
   import cats.effect.IO
+  import formdata.LoginForm.LoginError
 
   def orErrorJson(response: IO[Response[IO]]): IO[Response[IO]] = {
-    response.attempt.map { _ match {
-      case Left(t: Throwable) =>
-        println(s"server error: ${t}: ${t.getMessage}: ${t.getCause}")
-        Ok(Json.obj(
-          "server error" := s""
-        )).unsafeRunSync()
-      case Right(r: Response[IO]) => r
+    response.attempt.flatMap { _ match {
+      case Left(t: Throwable) => t match {
+        case LoginError =>
+          TemporaryRedirect(Location(uri("/")))
+
+        case other =>
+          println(s"server error: ${t}: ${t.getMessage}: ${t.getCause}")
+          Ok(Json.obj(
+            "server error" := s""
+          ))
+      }
+      case Right(r: Response[IO]) => IO(r)
+
     }}
   }
 

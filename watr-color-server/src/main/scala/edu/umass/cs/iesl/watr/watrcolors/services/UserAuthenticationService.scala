@@ -72,7 +72,8 @@ trait UserAuthenticationServices extends AuthenticatedService {
         } yield authenticator.embed(response, cookie)
       }
 
-      resp.handleError { _ => Response(Status.BadRequest) }
+      // resp.handleError { _ => Response(Status.BadRequest) }
+      orErrorJson(resp)
   }
 
   val loginRoute: HttpService[IO] = HttpService[IO] {
@@ -98,7 +99,8 @@ trait UserAuthenticationServices extends AuthenticatedService {
         } yield authenticator.embed(response, cookie)
       }
 
-      resp.handleError { _ => Response(Status.BadRequest) }
+      // resp.handleError { _ => Response(Status.BadRequest) }
+      orErrorJson(resp)
   }
 
 
@@ -108,46 +110,34 @@ trait UserAuthenticationServices extends AuthenticatedService {
   val authedUserRoutes = Auth {
     case GET -> Root / "status" asAuthed user =>
 
-      for {
+      val resp = for {
         authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
         response  <- Ok(userInfoResponse(user, authInfo))
       } yield response
+
+      orErrorJson(resp)
 
     case POST -> Root / "status" asAuthed user =>
 
-      for {
+      val resp = for {
         authInfo <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
         response  <- Ok(userInfoResponse(user, authInfo))
       } yield response
+
+      orErrorJson(resp)
 
     case r @ GET -> Root / "logout" asAuthed user =>
       // val request: SecuredRequest[IO, User, AuthEncryptedCookie[AES128, Int]] = r
 
-
-      val response = for {
+      val resp = for {
         deadCookie   <- authenticator.discard(r.authenticator).getOrRaise(LoginError)
         response     <- Ok(json""" {} """)
       } yield {
         response.removeCookie(deadCookie.toCookie)
-        // authenticator.embed(response, deadCookie)
       }
 
+      orErrorJson(resp)
 
-      response
-        .handleError { _ => Response(Status.BadRequest) }
   }
 
-
-  // _ = {
-  //   val asdf = authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
-  //   asdf.attempt.map { c => c match {
-  //     // _0: Either[Throwable, AuthEncryptedCookie[AES128, Int]] => B }
-  //     case Left(throwable) =>
-  //       println(s"Left: ${throwable}")
-  //       println(s"Left: ${throwable.getCause}")
-  //       throwable.printStackTrace()
-  //     case Right(auth) =>
-  //       println(s"Right: ${auth}")
-  //   }}.unsafeRunSync()
-  // }
 }

@@ -30,11 +30,13 @@ trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { 
             Response(http4s.Status(404, s"could not serve image ${entryId} page ${pageNum}"))
           }
       }
+
       maybeImage.getOrElse {
         IO.pure{
           Response(http4s.Status(500, s"could not serve image ${entryId} page ${pageNum}"))
         }
       }
+
 
     case req @ GET -> Root / "entry" / entryId / "image" / "thumb" / IntVar(pageNum) =>
 

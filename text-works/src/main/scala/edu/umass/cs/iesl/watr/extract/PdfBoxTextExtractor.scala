@@ -210,7 +210,11 @@ class PdfBoxTextExtractor(
     unicode: String,
     displacement: Vector
   ): Unit = {
-    val isSpace = code == 32 && unicode.head == ' '
+
+    val isSpace = code == 32 && {
+      unicode == null || unicode.headOption.exists(_ == ' ')
+    }
+
 
     if (!isSpace) {
 
@@ -514,5 +518,3 @@ object PdfBoxTextExtractor {
   }
 
 }
-
-

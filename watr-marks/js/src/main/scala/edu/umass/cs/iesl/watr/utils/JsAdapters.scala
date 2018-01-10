@@ -18,6 +18,13 @@ object Options {
   @JSExport
   def getOrElse[A](a: Option[A], default: A): A = a.getOrElse(default)
 
+  @JSExport
+  def fold[A, B](
+    a: Option[A],
+    ifEmpty: js.Function0[B],
+    f: js.Function1[A, B]
+  ): B = { a.fold(ifEmpty())(f(_)) }
+
 }
 
 @JSExportTopLevel("watr.watrmarks.Labels")

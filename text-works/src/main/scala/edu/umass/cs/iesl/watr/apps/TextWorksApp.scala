@@ -165,12 +165,12 @@ object TextWorksActions {
     val fsStream = ioOpts.inputStream().zipWithIndex
       .evalMap { case (input, i) =>
         IO {
-
           try {
-
             input match {
               case m@ InputMode.SingleFile(f) =>
                 Left(s"Unsupported InputMode ${m}")
+
+
               case InputMode.CorpusFile(_, Some(corpusEntry)) =>
 
                 val stableId = DocumentID(corpusEntry.entryDescriptor)

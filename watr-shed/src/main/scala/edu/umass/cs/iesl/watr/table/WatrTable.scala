@@ -102,7 +102,18 @@ object WatrMain extends App with utils.AppMainBasics {
     val command = argMap.get("command").flatMap(_.headOption)
       .getOrElse(sys.error("no command supplied (--command ...)"))
 
+    val skip = argMap.get("skip").flatMap(_.headOption.map(_.toInt))
+      .getOrElse(0)
+
+    val run = argMap.get("run").flatMap(_.headOption.map(_.toInt))
+      .getOrElse(Int.MaxValue)
+
     command match {
+      case "the:works" =>
+        corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
+        corpusAccessApi.corpusAccessDB.dropAndRecreate()
+        ShellCommands.segmentAll(run, skip)
+
       case "db:drop" =>
         corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
 
@@ -110,7 +121,7 @@ object WatrMain extends App with utils.AppMainBasics {
         corpusAccessApi.corpusAccessDB.dropAndRecreate()
 
       case "corpus:segment" =>
-        ShellCommands.segmentAll(50, 10)
+        ShellCommands.segmentAll(run, skip)
 
       case x =>
         println(s"Unknown command: ${x}")

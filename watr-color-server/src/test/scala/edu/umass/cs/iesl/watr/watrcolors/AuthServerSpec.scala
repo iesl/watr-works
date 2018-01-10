@@ -170,7 +170,7 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
 
         checkResponse(
           authService.loginRoute(loginReq("Oliver")),
-          hasStatus(Status.BadRequest)
+          hasStatus(Status.TemporaryRedirect)
         )
 
       }
@@ -192,13 +192,14 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
           hasStatus(Status.TemporaryRedirect))
 
         checkResponse(authService.signupRoute(signupReq("Morgan")),
-          hasStatus(Status.BadRequest))
+          hasStatus(Status.TemporaryRedirect))
 
         info("Still block dup. reg. after logout")
         checkResponse(authService.authedUserRoutes(logoutReq()))
 
+
         checkResponse(authService.signupRoute(signupReq("Morgan")),
-          hasStatus(Status.BadRequest))
+          hasStatus(Status.TemporaryRedirect))
       }
 
       "When Logged In" - {
