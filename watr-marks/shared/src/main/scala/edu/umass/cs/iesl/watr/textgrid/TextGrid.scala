@@ -17,6 +17,34 @@ import _root_.io.circe
 import circe._
 import circe.literal._
 
+// TODO Move this..
+object ErrorUtil {
+
+  implicit class RicherOption[A](val self: Option[A]) extends AnyVal {
+
+    def orDie(msg: String = "")(implicit
+      srcName: sourcecode.Name,
+      srcFile: sourcecode.File,
+      srcLine: sourcecode.Line
+    ): A = {
+      self.getOrElse {
+        val n = srcName.value
+        val f = srcFile.value.split("/").last
+        val l = srcLine.value
+        val message = if (msg.length()> 0) {
+          s"""${msg}: ${n} line ${l} in ${f} """
+        } else {
+          s"""Unspecifed error: in ${n} line ${l} of ${f}"""
+        }
+        sys.error(message)
+      }
+    }
+  }
+
+}
+
+import ErrorUtil._
+
 sealed trait FontInfo
 
 case object NoFonts extends FontInfo
@@ -33,18 +61,18 @@ trait TextGrid {
     rows.map(_.toText).mkString("\n")
   }
 
-  def trimRights(): TextGrid = {
-    TextGrid.fromRows(
-      stableId,
-      rows.map(_.trimRight())
-    )
-  }
-  def padRights(): TextGrid = {
-    TextGrid.fromRows(
-      stableId,
-      rows.map(_.padRight)
-    )
-  }
+  // def trimRights(): TextGrid = {
+  //   TextGrid.fromRows(
+  //     stableId,
+  //     rows.map(_.trimRight())
+  //   )
+  // }
+  // def padRights(): TextGrid = {
+  //   TextGrid.fromRows(
+  //     stableId,
+  //     rows.map(_.padRight)
+  //   )
+  // }
 
   def splitOneLeafLabelPerLine(): TextGrid = {
     val splitRows = rows.flatMap { row =>
@@ -110,10 +138,22 @@ trait TextGrid {
     } else None
   }
 
-  def labelRow(row: Int, label:Label): Unit = {
+  def rowAt(row: Int): Option[Row] = {
     if (0 <= row && row < rows.length) {
-      rows(row).addCellLabels(label)
+      Some(rows(row))
+    } else None
+  }
+
+  def cellAt(row: Int, col: Int): Option[GridCell] = {
+    rowAt(row).flatMap { r =>
+      if (0 <= col && col < r.cells.length) {
+        Some(r.cells(col))
+      } else None
     }
+  }
+
+  def labelRow(row: Int, label:Label): Unit = {
+    rowAt(row).foreach{ _.addCellLabels(label) }
   }
 
 
@@ -123,6 +163,42 @@ trait TextGrid {
     else None
 
   }
+
+  // private def hasLPin(cell: GridCell, label: Label): Boolean = {
+  //   findPin(cell, label).exists{ case (pin, pindex) => pin.isLast }
+  // }
+
+  private def haveSameLabels(cell1: GridCell, cell2: GridCell): Boolean = {
+    val p1s = cell1.pins
+    val p2s = cell2.pins
+    p1s.length == p2s.length && {
+      p1s.zip(p2s).map{ case (p1, p2) =>
+        p1.label == p2.label
+      } forall (b => b)
+    }
+  }
+
+  def findIdenticallyLabeledSiblings(row: Int, col: Int): Option[Seq[(GridCell, Int, Int)]] = {
+    cellAt(row, col).map { gridCell =>
+
+      val extents = gridCell.labels.headOption.map { label =>
+        findLabelExtents(row, col, label).orDie()
+      } getOrElse { indexedCells() }
+
+      val (pre, post) =  extents.span { case (cell, rw, cl) => rw!=row && cl!=col }
+      val postIdenticals = post.takeWhile{ case (cell, rw, cl) =>
+        haveSameLabels(gridCell, cell)
+      }
+
+      val preIdenticals = pre.reverse.takeWhile{ case (cell, _, _) =>
+        haveSameLabels(gridCell, cell)
+      }
+
+      preIdenticals.reverse ++ postIdenticals
+    }
+  }
+
+
 
   def findLabelExtents(row: Int, col: Int, label: Label): Option[Seq[(GridCell, Int, Int)]] = {
     import scalaz._
@@ -426,4 +502,3 @@ object TextGrid {
     fromRows(stableId, Seq(Row.fromCells(init)))
 
 }
-

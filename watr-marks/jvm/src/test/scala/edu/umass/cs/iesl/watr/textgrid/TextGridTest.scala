@@ -13,6 +13,21 @@ import textboxing.{TextBoxing => TB}, TB._
 
 
 class TextGridTests extends TextGridSpec {
+  val jsonPrinter = circe.Printer(
+    preserveOrder = true,
+    dropNullValues = false,
+    indent = "    ",
+    lbraceRight = "",
+    rbraceLeft = "\n",
+    lbracketRight = "",
+    rbracketLeft = "",
+    lrbracketsEmpty = "",
+    arrayCommaRight = " ",
+    objectCommaRight = "\n",
+    colonLeft = " ",
+    colonRight = " "
+  )
+
 
   override val docStore: DocumentZoningApi = new MemDocZoningApi
 
@@ -35,11 +50,6 @@ class TextGridTests extends TextGridSpec {
 
   // info("behavior of TextGrid Rows")
 
-  // "it should support plaintext rows" in {
-  //   val ds = docStore.getDocuments()
-  //   println(s"ds: ${ds}")
-  //   visualizeDocStore()
-  // }
 
   // "it should join two rows into one, with optional space or dehyphenation" in {}
 
@@ -51,92 +61,77 @@ class TextGridTests extends TextGridSpec {
 
   // it should "slurp/barf" in {}
 
-  info("behavior of windows")
+  import TextGridLabelWidget._
+  def infobox(heading: String, b: TB.Box): Unit = {
+    info(heading)
+    info("\n" + indent(4, b).toString() + "\n")
+  }
 
-  info("behavior of Serialization")
+  "it should find the span of cells that have a particular label" - {
+    val unlabeledText = "11\n22\n33"
+    val textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+    textGrid.labelRow(1, Author)
 
-  // "it should ser grids" in {
-  //   val stableId = DocumentID("docXX")
-  //   for {
-  //     (doc, i) <- docs.zipWithIndex
-  //     pages <- docs
-  //     page <- pages
-  //   } {
-  //     val textGrid = stringToPageTextGrid(stableId, page,  PageNum(1), None)
-  //     val asJson = textGrid.toJson
-  //     val roundTripGrid = TextGrid.fromJson(asJson)
-  //     val rtJson = roundTripGrid.toJson()
-  //     // val cmpare = asJson.toString().mbox besideS rtJson.toString().mbox
-  //     // println("\n\n\n----------------------------------------------")
-  //     // println(cmpare)
-  //     // println("========================================================")
-  //     assert(asJson.toString() === rtJson.toString())
-  //   }
-  // }
+    textGrid.findLabelExtents(1, 1, Author).foreach { extent =>
+      val res = extent.map(c => (c._2, c._3))
+      res shouldEqual Seq((1, 0), (1, 1))
+    }
 
-  "it should round-trip ser/unser" in {
-    // val stableId = DocumentID("docXX")
-    // val codecs =  new TextGridCodecs(stableId)
-    // val pageRegion0 = PageRegion(
-    //   StablePage(
-    //     DocumentID("xyz"),
-    //     PageNum(0)
-    //   ),
-    //   LTBounds.IntReps(100, 200, 300, 400)
-    // )
+    textGrid.split(1, 1).foreach { splitGrid =>
+      splitGrid.findLabelExtents(1, 0, Author).foreach {extent =>
+        val res = extent.map(c => (c._2, c._3))
+        res shouldEqual Seq((1, 0), (2, 0))
+      }
+      splitGrid.findLabelExtents(2, 0, Author).foreach {extent =>
+        val res = extent.map(c => (c._2, c._3))
+        res shouldEqual Seq((1, 0), (2, 0))
+      }
+    }
+  }
 
-    // val charAtom = CharAtom(
-    //   CharID(0),
-    //   pageRegion0,
-    //   "A"
-    // )
-    // val cell: TextGrid.GridCell = TextGrid.PageItemCell(charAtom, Seq(), 'A')
-    // val cell2: TextGrid.GridCell = TextGrid.InsertCell('B', pageRegion0)
 
-    // json""" { "g": [ [ "2", 4, [25081, 4269, 337, 530]] ] } """
-    // val enc = codecs.encodeCell(cell)
-    // val enc2 = codecs.encodeCell(cell2)
-    // val roundTrip = codecs.decodeCell(enc)
-    // // val roundTrip = cell.asJson.as[TextGrid.GridCell]
+  "it should find the span of cells that have identical labeling (including perhaps unlabeled)" in {
+    val unlabeledText = "11\n22\n33"
+    val textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+    textGrid.labelRow(1, Author)
+    textGrid.findIdenticallyLabeledSiblings(0, 1).foreach { extent =>
+      val res = extent.map(c => (c._2, c._3))
+      res shouldEqual Seq((0, 0), (0, 1))
+    }
+    textGrid.findIdenticallyLabeledSiblings(1, 0).foreach { extent =>
+      val res = extent.map(c => (c._2, c._3))
+      res shouldEqual Seq((1, 0), (1, 1))
+    }
 
-    // println(cell)
-    // println(s"encoded> ${enc}")
-    // println(s"encoded2> ${enc2}")
-    // println(roundTrip)
+    textGrid.split(1, 1).foreach { splitGrid =>
+
+      splitGrid.findIdenticallyLabeledSiblings(1, 0).foreach { extent =>
+        val res = extent.map(c => (c._2, c._3))
+        res shouldEqual Seq((1, 0), (2, 0))
+      }
+      splitGrid.findIdenticallyLabeledSiblings(2, 0).foreach { extent =>
+        val res = extent.map(c => (c._2, c._3))
+        res shouldEqual Seq((1, 0), (2, 0))
+      }
+
+      splitGrid.labelRow(2, FirstName)
+
+      splitGrid.findIdenticallyLabeledSiblings(1, 0).foreach { extent =>
+        val res = extent.map(c => (c._2, c._3))
+        res shouldEqual Seq((1, 0))
+      }
+      splitGrid.findIdenticallyLabeledSiblings(2, 0).foreach { extent =>
+        val res = extent.map(c => (c._2, c._3))
+        res shouldEqual Seq((2, 0))
+      }
+    }
+  }
+
+  "it should find row reorderings" - {
 
   }
 
-  // "it should render to a textgrid labeling widget" in {
-  //   val stableId = DocumentID("docXX")
-  //   for {
-  //     (doc, i) <- docs.zipWithIndex
-  //     pages <- docs
-  //     page <- pages
-  //   } {
-  //     val textGrid = stringToPageTextGrid(stableId, page,  PageNum(1), None)
 
-  //     textGrid.rows.map { row =>
-  //       row.cells.head
-  //     }
-  //   }
-  // }
-
-  val jsonPrinter = circe.Printer(
-    preserveOrder = true,
-    dropNullValues = false,
-    indent = "    ",
-    lbraceRight = "",
-    rbraceLeft = "\n",
-    lbracketRight = "",
-    rbracketLeft = "",
-    lrbracketsEmpty = "",
-    arrayCommaRight = " ",
-    objectCommaRight = "\n",
-    colonLeft = " ",
-    colonRight = " "
-  )
-
-  import TextGridLabelWidget._
 
   "Behavior of labeled TextGrid serialization" - {
     val labelSpans = List(

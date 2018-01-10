@@ -13,7 +13,7 @@ import utils.ExactFloats._
 
 @JSExportTopLevel("watr.textgrid.TextGridInterop")
 object TextGridInterop {
-  import _root_.io.circe, circe._, circe.syntax._
+  import _root_.io.circe //, circe._, circe.syntax._
   import circe.parser.decode
 
   @JSExportTopLevel("watr.textgrid.TextGridInterop.labelSchemas")
@@ -70,6 +70,36 @@ object TextGridInterop {
       wd.gridRegions.toJSArray
     }
   }
+
+  @JSExportTopLevel("watr.textgrid.TextGridInterop.textGrids")
+  object textGrids {
+
+    @JSExport
+    def textGridToWidgetGrid(
+      textGrid: TextGrid,
+      labelSchemas: LabelSchemas,
+      originX: Int,
+      originY: Int
+    ): WidgetDisplayGridProps = {
+
+      val labelTree = time("textGridToLabelTree"){ textGridToLabelTree(textGrid)}
+      val gridRegions = time("labelTreeToGridRegions"){  labelTreeToGridRegions(labelTree, labelSchemas, originX, originY) }
+      new  WidgetDisplayGridProps(
+        labelTree,
+        gridRegions
+      )
+    }
+
+    @JSExport
+    def findLegalReorderingRows(textGrid: TextGrid, row: Int, col: Int): js.Array[Int]  = {
+      textGrid.findIdenticallyLabeledSiblings(row, col)
+        .map{ indexedCells =>
+          indexedCells.map(_._2).toSet.toList.sorted.toJSArray
+        } getOrElse {
+          js.Array[Int]()
+        }
+    }
+  }
 }
 
 @JSExportTopLevel("watr.textgrid.TextGridConstructor_Companion")
@@ -119,7 +149,7 @@ class TextGridConstructor() extends TextGridConstruction {
       ((600, 820),  Authors)
     )
 
-    val ls2 = labelSpans.map{case ((b, e), l) => ((b+820, e+820), l) }
+    // val ls2 = labelSpans.map{case ((b, e), l) => ((b+820, e+820), l) }
 
     val ls = labelSpans //  ++ ls2
     var textGrid = stringToPageTextGrid(stableId, loremIpsum,  PageNum(1), None)
@@ -216,22 +246,6 @@ class TextGridConstructor() extends TextGridConstruction {
     )
   }
 
-
-  @JSExport
-  def textGridToWidgetGrid(
-    textGrid: TextGrid,
-    labelSchemas: LabelSchemas,
-    originX: Int,
-    originY: Int
-  ): WidgetDisplayGridProps = {
-
-    val labelTree = time("textGridToLabelTree"){ textGridToLabelTree(textGrid)}
-    val gridRegions = time("labelTreeToGridRegions"){  labelTreeToGridRegions(labelTree, labelSchemas, originX, originY) }
-    new  WidgetDisplayGridProps(
-      labelTree,
-      gridRegions
-    )
-  }
 
 }
 

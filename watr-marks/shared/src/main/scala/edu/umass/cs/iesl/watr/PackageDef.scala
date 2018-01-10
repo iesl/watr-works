@@ -5,14 +5,14 @@ import scalaz.syntax.std
 import scalaz.Tag
 
 trait ScalaZCommonOps
-    extends syntax.ToIdOps
-    with std.ToBooleanOps
+    extends std.ToBooleanOps
     with std.ToOptionIdOps
     with std.ToOptionOps
 
-    // with syntax.ToEqualOps
-    // with std.ToListOps
-    // with syntax.ToTraverseOps
+// extends syntax.ToIdOps
+// with syntax.ToEqualOps
+// with std.ToListOps
+// with syntax.ToTraverseOps
 
 
 trait PackageDefs extends ScalaZCommonOps {
