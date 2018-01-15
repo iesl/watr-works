@@ -4,7 +4,7 @@ package database
 
 import workflow._
 // import watrmarks.{StandardLabels => LB}
-import watrmarks.Label
+import watrmarks._
 import TypeTags._
 import textgrid._
 
@@ -16,9 +16,15 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
   val Sub: Label = Label.auto
   val Math: Label = Label.auto
 
+  val testSchema = LabelSchemas(List(
+    LabelSchema(Sup),
+    LabelSchema(Sub),
+    LabelSchema(Math)
+  ))
+
   def initWorkflows(n: Int): Seq[String@@WorkflowID] = {
     0 until n map { i =>
-      workflowApi.defineWorkflow(s"curation-workflow-${i}", s"sample labeling task $i", VisualLine, Seq(Sup, Sub, Math))
+      workflowApi.defineWorkflow(s"curation-workflow-${i}", s"sample labeling task $i", Some(VisualLine), testSchema)
     }
   }
 

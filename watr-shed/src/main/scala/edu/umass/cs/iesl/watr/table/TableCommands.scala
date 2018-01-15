@@ -40,6 +40,7 @@ object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageW
   }
 
   def segmentAll(n: Int=Int.MaxValue, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    // jkl
     val processStream = TextWorksActions.buildProcessStream(TextWorksConfig.Config(
       IOConfig(
         inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO, None)),

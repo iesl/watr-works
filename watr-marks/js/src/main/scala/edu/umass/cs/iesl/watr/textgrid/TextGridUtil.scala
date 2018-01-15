@@ -94,9 +94,38 @@ object TextGridInterop {
     def findLegalReorderingRows(textGrid: TextGrid, row: Int, col: Int): js.Array[Int]  = {
       textGrid.findIdenticallyLabeledSiblings(row, col)
         .map{ indexedCells =>
-          indexedCells.map(_._2).toSet.toList.sorted.toJSArray
+          val isUnlabeled = indexedCells.headOption
+            .exists{ case (cell, r, c) => cell.pins.isEmpty }
+
+          if (isUnlabeled) {
+            indexedCells.map(_._2).toSet.toList.sorted.toJSArray
+          } else {
+            js.Array[Int]()
+          }
         } getOrElse {
           js.Array[Int]()
+        }
+    }
+
+    @JSExport
+    def reorderRows(textGrid: TextGrid, fromRow: Int, newOrder: js.Array[Int]): Option[TextGrid] = {
+
+      textGrid.findIdenticallyLabeledSiblings(fromRow, 0)
+        .flatMap{ indexedCells =>
+          val reorderableRows = indexedCells.map(_._2).toSet.toList.sorted
+
+          if (reorderableRows.sorted == newOrder.sorted.toList) {
+            println(s"reordering textgrid")
+            val (unchangedPre, changing) = textGrid.rows.zipWithIndex.span { case (row, rowNum) => rowNum != fromRow }
+            val (toReorder, unchangedPost) = changing.splitAt(newOrder.length)
+            val orderedRows = toReorder.zip(newOrder).sortBy(_._2)
+              .map{ case ((row, rowNum), newRow) => row }
+
+            val pre = unchangedPre.map(_._1)
+            val post = unchangedPost.map(_._1)
+            val reorderedRows = pre ++ orderedRows ++ post
+            Some(TextGrid.fromRows(textGrid.stableId, reorderedRows))
+          } else None
         }
     }
   }

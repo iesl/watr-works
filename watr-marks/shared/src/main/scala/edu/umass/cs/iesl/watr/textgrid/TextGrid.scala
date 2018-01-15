@@ -181,20 +181,40 @@ trait TextGrid {
   def findIdenticallyLabeledSiblings(row: Int, col: Int): Option[Seq[(GridCell, Int, Int)]] = {
     cellAt(row, col).map { gridCell =>
 
-      val extents = gridCell.labels.headOption.map { label =>
-        findLabelExtents(row, col, label).orDie()
-      } getOrElse { indexedCells() }
+      gridCell.labels.headOption.map { label =>
+        // println(s"findIdenticallyLabeledSiblings: for ${label}, ${gridCell}")
+        val extents = findLabelExtents(row, col, label).orDie()
+        val (pre, post) =  extents.span { case (cell, rw, cl) => rw!=row && cl!=col }
+        val postIdenticals = post.takeWhile{ case (cell, rw, cl) =>
+          haveSameLabels(gridCell, cell)
+        }
 
-      val (pre, post) =  extents.span { case (cell, rw, cl) => rw!=row && cl!=col }
-      val postIdenticals = post.takeWhile{ case (cell, rw, cl) =>
-        haveSameLabels(gridCell, cell)
+        val preIdenticals = pre.reverse.takeWhile{ case (cell, _, _) =>
+          haveSameLabels(gridCell, cell)
+        }
+        // println(s"findIdenticallyLabeledSiblings: found pre:${preIdenticals.length} + post:${postIdenticals.length}")
+
+        preIdenticals.reverse ++ postIdenticals
+
+      } getOrElse {
+        // println(s"findIdenticallyLabeledSiblings: (unlabeled) ${gridCell}")
+        // find span of unlabeled siblings
+        val (pre, post) = indexedCells().span { case (cell, rw, cl) => cell != gridCell }
+        val postIdenticals = post.takeWhile{ case (cell, rw, cl) =>
+          // println(s"cell post: ${cell.pins}")
+          cell.pins.isEmpty
+        }
+
+        val preIdenticals = pre.reverse.takeWhile{ case (cell, _, _) =>
+          // println(s"cell pre: ${cell.pins}")
+          cell.pins.isEmpty
+        }
+
+        // println(s"findIdenticallyLabeledSiblings: found pre:${preIdenticals.length} + post:${postIdenticals.length}")
+
+        preIdenticals.reverse ++ postIdenticals
+
       }
-
-      val preIdenticals = pre.reverse.takeWhile{ case (cell, _, _) =>
-        haveSameLabels(gridCell, cell)
-      }
-
-      preIdenticals.reverse ++ postIdenticals
     }
   }
 
