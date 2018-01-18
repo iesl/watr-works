@@ -38,7 +38,7 @@ trait UserAuthenticationServices extends AuthenticatedService {
 
 
   def userInfoResponse(user: User, authInfo: AuthInfo): Json = {
-    json""" { "email": ${user.email}, "username": ${authInfo.username} } """
+    json""" { "email": ${user.email}, "username": ${authInfo.username} , "id": ${user.id}} """
   }
 
 

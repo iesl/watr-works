@@ -53,7 +53,7 @@ trait DocumentZoningApiEnrichments  {
 
         val zoneBoxes = for {
           labelId <- docStore.getZoneLabelsForDocument(docId)
-          zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 2
+          zoneId <- docStore.getZonesForDocument(docId, labelId)
           // textReflow <- docStore.getTextReflowForZone(zoneId)
         } yield {
           // (textReflow.toText.box % docStore.getZone(zoneId).toString().box)

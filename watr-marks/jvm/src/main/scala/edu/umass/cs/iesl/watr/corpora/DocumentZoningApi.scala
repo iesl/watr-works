@@ -60,6 +60,14 @@ trait DocumentZoningApi {
   def getDocumentZones(docId: Int@@DocumentID, label: Label): Seq[Zone] =
     getZonesForDocument(docId, ensureLabel(label)).map(getZone(_))
 
+  def getDocumentZones(docId: Int@@DocumentID): Seq[Int@@ZoneID] = {
+    for {
+      labelId <- getZoneLabelsForDocument(docId)
+      zoneId <- getZonesForDocument(docId, labelId)
+    } yield zoneId
+  }
+
+
   def getPageZones(stableId: String@@DocumentID, pageNum: Int@@PageNum, label: Label): Seq[Zone] = for {
     docId     <- getDocument(stableId).toSeq
     pageId    <- getPage(docId, pageNum).toSeq

@@ -52,17 +52,18 @@ object WorkflowStatus {
 
 object ZoneLockStatus {
   val Assigned     = StatusCode("Assigned")
+  val InProgress   = StatusCode("InProgress")
   val Completed    = StatusCode("Completed")
-  val NeedsReview  = StatusCode("NeedsReview")
   val Skipped      = StatusCode("Skipped")
 
-  val all = List(Assigned, Completed, Skipped, NeedsReview)
+  val all = List(Assigned, InProgress, Completed, Skipped)
 }
 
 case class WorkflowReport(
   unassignedCount: Int,
   statusCounts: Map[String@@StatusCode, Int],
-  userAssignmentCounts: Map[Int@@UserID, Int]
+  userAssignmentCounts: Map[Int@@UserID, Int],
+  usernames: Map[Int@@UserID, String]
 )
 
 object WorkflowReport extends TypeTagCodecs {
@@ -74,6 +75,11 @@ object WorkflowReport extends TypeTagCodecs {
 
   implicit val encMap2: Encoder[Map[Int@@UserID, Int]] =
     Encoder[Map[Int, Int]].contramap { m =>
+      m.map{case (k, v) => (k.unwrap, v)}
+    }
+
+  implicit val encMap3: Encoder[Map[Int@@UserID, String]] =
+    Encoder[Map[Int, String]].contramap { m =>
       m.map{case (k, v) => (k.unwrap, v)}
     }
 
@@ -112,5 +118,6 @@ trait WorkflowApi {
   def getZoneLock(zoneLockId: Int@@ZoneLockID): Option[R.ZoneLock]
   def getLockForZone(zoneId: Int@@ZoneID): Option[Int@@ZoneLockID]
   def getLockedZones(userId: Int@@UserID): Seq[Int@@ZoneLockID]
+  // def getDocumentZoneLocks(stableId: String@@DocumentID): Seq[R.ZoneLock]
 
 }

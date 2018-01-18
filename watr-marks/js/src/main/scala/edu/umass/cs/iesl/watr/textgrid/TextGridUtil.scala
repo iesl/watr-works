@@ -10,6 +10,7 @@ import watrmarks._
 import geometry._
 import TextGridLabelWidget._
 import utils.ExactFloats._
+import scala.collection.mutable
 
 @JSExportTopLevel("watr.textgrid.TextGridInterop")
 object TextGridInterop {
@@ -107,6 +108,7 @@ object TextGridInterop {
         }
     }
 
+
     @JSExport
     def reorderRows(textGrid: TextGrid, fromRow: Int, newOrder: js.Array[Int]): Option[TextGrid] = {
 
@@ -115,15 +117,24 @@ object TextGridInterop {
           val reorderableRows = indexedCells.map(_._2).toSet.toList.sorted
 
           if (reorderableRows.sorted == newOrder.sorted.toList) {
-            println(s"reordering textgrid")
+            // println(s"reordering textgrid from ${fromRow} to ${newOrder}")
             val (unchangedPre, changing) = textGrid.rows.zipWithIndex.span { case (row, rowNum) => rowNum != fromRow }
             val (toReorder, unchangedPost) = changing.splitAt(newOrder.length)
-            val orderedRows = toReorder.zip(newOrder).sortBy(_._2)
-              .map{ case ((row, rowNum), newRow) => row }
+            val reordered = mutable.ArrayBuffer[TextGrid.Row]((toReorder.map(_._1)):_*)
+
+            newOrder.zipWithIndex.foreach{ case (newRow, i) =>
+              reordered.update(i, toReorder(newRow-fromRow)._1)
+            }
+
 
             val pre = unchangedPre.map(_._1)
             val post = unchangedPost.map(_._1)
-            val reorderedRows = pre ++ orderedRows ++ post
+            val reorderedRows = pre ++ reordered ++ post
+            // println(s"pre     len = ${unchangedPre.length}")
+            // println(s"post    len = ${unchangedPost.length}")
+            // println(s"reorder len = ${toReorder.length}")
+            // println(s"reordered   = ${reordered.map(_.toText())}")
+
             Some(TextGrid.fromRows(textGrid.stableId, reorderedRows))
           } else None
         }

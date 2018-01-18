@@ -11,8 +11,22 @@ import cats.effect._
 
 import models._
 
+// trait CorpusArtifacts extends WorkflowCodecs {
+
+//   def workflowApi: WorkflowApi
+//   def userbaseApi: UserbaseApi
+//   def docStore: DocumentZoningApi
+
+//   def GET_zonesForDocument(stableId: String@@DocumentID): Json = {
+//   }
+// }
+// private val authCorpusArtifacts = Auth {
+//   case req @ GET -> Root / "workflows" asAuthed user =>
+//     ???
+// }
 
 trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { self =>
+
 
   // Mounted at /api/v1/corpus/artifacts
   val corpusArtifactEndpoints = HttpService[IO] {

@@ -47,7 +47,7 @@ trait LabeledPageImageWriter extends ImageManipulation {
 
       val zonesJs = for {
         labelId <- docStore.getZoneLabelsForDocument(docId)
-        zoneId <- docStore.getZonesForDocument(docId, labelId) if labelId.unwrap > 2
+        zoneId <- docStore.getZonesForDocument(docId, labelId) 
       } yield {
         val zone = docStore.getZone(zoneId)
 

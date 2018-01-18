@@ -24,8 +24,8 @@ class CurationWorkflowSpec extends Http4sSpec with DatabaseTest {
   }
 
 
-  val VisualLine: Label = Label.auto
-  val FullPdf: Label = Label.auto
+  val VisualLine  = Label.auto.withNamespace("seg")
+  val FullPdf     = Label.auto.withNamespace("seg")
 
   val Authors: Label = Label.auto
   val Author = Label.auto
@@ -80,48 +80,47 @@ class CurationWorkflowSpec extends Http4sSpec with DatabaseTest {
 
   val users = initUsers(2)
   val sampleDocs = addSampleDocs(3) // 9 zones/doc, so 27 total zones
-  val workflows0 = initWorkflows(VisualLine, 2)
-  val workflows1 = initWorkflows(Authors, 1)
+  val workflows0 = initWorkflows(FullPdf, 3)
 
   lazy val service = workflowService()
 
-  it should "get a list of available workflows" in {
+  // it should "get a list of available workflows" in {
 
-    val actual =  service.GET_workflows()
-    println(actual)
-    // assertResult{
-    //   json"""
-    //     [
-    //       {
-    //         "workflow" : "wf-VisualLine-0",
-    //         "description" : "Annot. VisualLine #0",
-    //         "targetLabel" : { "prKey" : 1, "key" : "VisualLine" },
-    //         "curatedLabels" : [
-    //           { "prKey" : 3, "key" : "Sup" },
-    //           { "prKey" : 4, "key" : "Sub" }]
-    //       },
-    //       {
-    //         "workflow" : "wf-VisualLine-1",
-    //         "description" : "Annot. VisualLine #1",
-    //         "targetLabel" : { "prKey" : 1, "key" : "VisualLine" },
-    //         "curatedLabels" : [
-    //           { "prKey" : 3, "key" : "Sup" },
-    //           { "prKey" : 4, "key" : "Sub" }
-    //         ]
-    //       },
-    //       {
-    //         "workflow" : "wf-Authors-0",
-    //         "description" : "Annot. Authors #0",
-    //         "targetLabel" : { "prKey" : 5, "key" : "Authors" },
-    //         "curatedLabels" : [
-    //           { "prKey" : 3, "key" : "Sup" },
-    //           { "prKey" : 4, "key" : "Sub" }
-    //         ]
-    //       }
-    //     ]
-    //   """
-    // } { actual }
-  }
+  //   val actual =  service.GET_workflows()
+  //   // println(actual)
+  //   // assertResult{
+  //   //   json"""
+  //   //     [
+  //   //       {
+  //   //         "workflow" : "wf-VisualLine-0",
+  //   //         "description" : "Annot. VisualLine #0",
+  //   //         "targetLabel" : { "prKey" : 1, "key" : "VisualLine" },
+  //   //         "curatedLabels" : [
+  //   //           { "prKey" : 3, "key" : "Sup" },
+  //   //           { "prKey" : 4, "key" : "Sub" }]
+  //   //       },
+  //   //       {
+  //   //         "workflow" : "wf-VisualLine-1",
+  //   //         "description" : "Annot. VisualLine #1",
+  //   //         "targetLabel" : { "prKey" : 1, "key" : "VisualLine" },
+  //   //         "curatedLabels" : [
+  //   //           { "prKey" : 3, "key" : "Sup" },
+  //   //           { "prKey" : 4, "key" : "Sub" }
+  //   //         ]
+  //   //       },
+  //   //       {
+  //   //         "workflow" : "wf-Authors-0",
+  //   //         "description" : "Annot. Authors #0",
+  //   //         "targetLabel" : { "prKey" : 5, "key" : "Authors" },
+  //   //         "curatedLabels" : [
+  //   //           { "prKey" : 3, "key" : "Sup" },
+  //   //           { "prKey" : 4, "key" : "Sub" }
+  //   //         ]
+  //   //       }
+  //   //     ]
+  //   //   """
+  //   // } { actual }
+  // }
 
   it should "get workflow report" in {
     workflowApi.lockUnassignedZones(users(0), workflows0(0), 3)
@@ -136,12 +135,18 @@ class CurationWorkflowSpec extends Http4sSpec with DatabaseTest {
       workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Skipped)
     }
 
-    /*
-
-
-
-     */
     val actual = service.GET_workflows_report(workflows0(0))
+    println("Workflow Report==============")
+    println(actual)
+
+    val curatorAssignments = service.GET_curators_assignments(users(0))
+    println(s"Curator ${users(0)} Assignments ==============")
+    println(curatorAssignments)
+
+    val documentAssignments = service.GET_documents(DocumentID(s"doc#0"))
+    println(s"Document Assignments ==============")
+    println(documentAssignments)
+
     // assertResult{
     //   json"""
     //     {
@@ -160,30 +165,33 @@ class CurationWorkflowSpec extends Http4sSpec with DatabaseTest {
     // } { actual }
   }
 
-  it should "get next workflow assignment" in {
-    val actual = service.POST_workflows_assignments(workflows0(0), users(0))
 
-    // assertResult{
-    //   json"""
-    //    [{
-    //       "id" : 8,
-    //       "regions" : [
-    //         {
-    //           "page" : {
-    //             "stableId" : "doc#0",
-    //             "pageNum" : 2,
-    //             "pageId" : 3
-    //           },
-    //           "bbox" : { "left" : 10, "top" : 1010, "width" : 2980, "height" : 980 },
-    //           "regionId" : 8
-    //         }
-    //       ],
-    //       "label" : "VisualLine",
-    //       "order" : 7,
-    //       "glyphDefs" : "{\"rows\":[{\"line\":0,\"text\":\"mno\",\"loci\":[[[\"m\",2,[10,1010,980,980]]],[[\"n\",2,[1010,1010,980,980]]],[[\"o\",2,[2010,1010,980,980]]]]}]}"
-    //     }]
-    //   """
-    // } { actual }
-  }
+  // it should "get next workflow assignment" in {
+  //   workflowApi.lockUnassignedZones(users(0), workflows0(0), 3)
+  //   val actual = service.POST_workflows_assignments(workflows0(0), users(0))
+
+  //   // assertResult{
+  //   //   json"""
+  //   //    [{
+  //   //       "id" : 8,
+  //   //       "regions" : [
+  //   //         {
+  //   //           "page" : {
+  //   //             "stableId" : "doc#0",
+  //   //             "pageNum" : 2,
+  //   //             "pageId" : 3
+  //   //           },
+  //   //           "bbox" : { "left" : 10, "top" : 1010, "width" : 2980, "height" : 980 },
+  //   //           "regionId" : 8
+  //   //         }
+  //   //       ],
+  //   //       "label" : "VisualLine",
+  //   //       "order" : 7,
+  //   //       "glyphDefs" : "{\"rows\":[{\"line\":0,\"text\":\"mno\",\"loci\":[[[\"m\",2,[10,1010,980,980]]],[[\"n\",2,[1010,1010,980,980]]],[[\"o\",2,[2010,1010,980,980]]]]}]}"
+  //   //     }]
+  //   //   """
+  //   // } { actual }
+  // }
+
 
 }

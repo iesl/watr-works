@@ -484,7 +484,17 @@ class CorpusAccessDB(
             group by assignee
          """.query[(Int@@UserID, Int)].list
       }
-      WorkflowReport(unassignedCount, tuples.toMap, assigneeCounts.toMap)
+      val assigneeNames  = runq {
+        sql"""
+           select distinct assignee, email from zonelock z join person p on z.assignee=p.person;
+         """.query[(Int@@UserID, String)].list
+      }
+      WorkflowReport(
+        unassignedCount,
+        tuples.toMap,
+        assigneeCounts.toMap,
+        assigneeNames.toMap
+      )
     }
 
     def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID, count: Int): Seq[Int@@ZoneLockID] = runq {
@@ -493,7 +503,7 @@ class CorpusAccessDB(
           select ${userId}, ${workflowId}, z.zone, ${ZoneLockStatus.Assigned}
             from      zone as z
             left join zonelock as lk using (zone)
-            where  z.label=(select targetLabel from workflow where workflow=${workflowId})
+            where  z.label=(select targetlabel from workflow where workflow=${workflowId})
               AND  lk.zone is null
             limit ${count}
        """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog
@@ -530,7 +540,7 @@ class CorpusAccessDB(
 
     def getLockedZones(userId: Int@@UserID): Seq[Int@@ZoneLockID] = {
       runq { sql"""
-        select zone from zonelock where assignee=${userId}
+        select zonelock from zonelock where assignee=${userId}
         """.query[Int@@ZoneLockID].list
       }
     }
