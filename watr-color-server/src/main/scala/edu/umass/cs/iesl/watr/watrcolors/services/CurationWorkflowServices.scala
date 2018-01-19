@@ -15,16 +15,12 @@ import circe.generic.auto._
 import TypeTags._
 import tsec.authentication._
 // import cats.syntax.all._
-// import cats.effect.IO
+import cats.effect.IO
 
 
 import models._
-// import models.users._
 import circe.parser.decode
 import watrmarks.LabelSchemas
-
-
-// import watrmarks.Label
 
 
 trait CurationWorkflow extends WorkflowCodecs {
@@ -93,7 +89,7 @@ trait CurationWorkflow extends WorkflowCodecs {
   }
 
   // Post updates to specific assignment in assignments collection
-  def POST_workflows_assignments_assignment(workflowId: String@@WorkflowID, zoneLockId: Int@@ZoneLockID, mod: WorkflowMod, userId: Int@@UserID): Json = {
+  def POST_assignments(zoneLockId: Int@@ZoneLockID, mod: WorkflowMod, userId: Int@@UserID): Json = {
     println(s"got mod ${mod}")
     mod.update match {
       case StatusUpdate(newStatus) =>
@@ -104,23 +100,8 @@ trait CurationWorkflow extends WorkflowCodecs {
       case Unassign() =>
         workflowApi.releaseZoneLock(zoneLockId)
     }
-    val lockedZones = for {
-      js <- getZoneLockJson(zoneLockId)
-    } yield js
 
-    lockedZones.asJson
-  }
-
-  // Complete assignment, set status and unlock
-  def PUT_assignments(zoneLockId: Int@@ZoneLockID, statusCode: String@@StatusCode): Json = {
-    for {
-      zoneLock   <- workflowApi.getZoneLock(zoneLockId)
-    } {
-      workflowApi.updateZoneStatus(zoneLockId, statusCode)
-      workflowApi.releaseZoneLock(zoneLockId)
-    }
-
-    Json.obj()
+    getZoneLockJson(zoneLockId).asJson
   }
 
   def POST_workflows(workflowForm: CurationWorkflowDef): Json = {
@@ -140,16 +121,6 @@ trait CurationWorkflow extends WorkflowCodecs {
       })
   }
 
-  // def POST_workflows_workflowId_assignments_zonelockId(js: Json): Json = {
-  //   for {
-  //     mod <-  IO{  Decoder[WorkflowMod].decodeJson(js).fold(fail => {
-  //       throw new Throwable(s"error decoding ${js}")
-  //     }, mod => mod) }
-  //     resp  <- Ok(POST_workflows_assignments_assignment(WorkflowID(workflowId), ZoneLockID(zonelockId), mod, user.id))
-  //   } yield resp
-
-  //   ???
-  // }
 }
 
 trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedService with WorkflowCodecs { self =>
@@ -163,10 +134,7 @@ trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedServic
   // Mounted at /api/v1xx/workflow/..
   private val workflowEndpoints = Auth {
 
-    /**
-      * Workflows
-      */
-
+    /** Workflows */
     // Get All Workflows
     case req @ GET -> Root / "workflows" asAuthed user =>
       Ok(GET_workflows())
@@ -188,35 +156,36 @@ trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedServic
       } yield resp
 
 
-    /**
-      * Curators
-      */
+    /** Curators */
     case req @ GET -> Root / "curators"  asAuthed user  =>
       // Get all known curators
-      ???
+      val resp = for {
+        u <- userbaseApi.getUsers()
+      } yield u
+
+      Ok(resp.asJson)
 
     case req @ GET -> Root / "curators" / curatorId / "assignments" asAuthed user  =>
       // Get list of assignments for curator
       Ok(GET_curators_assignments(user.id))
 
-    /**
-      * Assignments
-      */
-
-
+    /** Assignments */
     // Change status for an assignment (zoneLockId)
-    case req @ PUT -> Root / "assignments" / IntVar(zoneLockId) :? StatusQP(status) asAuthed user =>
-      Ok(PUT_assignments(ZoneLockID(zoneLockId), StatusCode(status)))
+    case req @ POST -> Root / "assignments" / IntVar(zoneLockId) asAuthed user =>
+      val resp = for {
 
-    // case req @ POST -> Root / "assignments" / IntVar(zonelockId) asAuthed user  =>
-    //   req.request.as[Json].map { js =>
-    //     // POST_workflows_workflowId_assignments_zonelockId(js)
-    //   }
+        js <- req.request.as[Json]
+        mod <-  IO{  Decoder[WorkflowMod].decodeJson(js).fold(fail => {
+          throw new Throwable(s"error decoding ${js}")
+        }, mod => mod) }
+      } yield {
+        POST_assignments(ZoneLockID(zoneLockId), mod, user.id)
+      }
+      Ok(resp)
 
-    /**
-      * Zones
-      */
 
+
+    /** Zones */
     // Get any assignment status info for a particular zone
     case req @ GET -> Root / "zones" / IntVar(zoneId) asAuthed user  =>
       val lockInfo = for {
@@ -238,9 +207,9 @@ trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedServic
       }
       Ok(res)
 
-    /**
-      * Documents
-      */
+
+
+    /** Documents */
     case req @ GET -> Root / "documents" / stableId asAuthed user  =>
       // Get all target zones and assignment statuses within a document
       Ok(GET_documents(DocumentID(stableId)))

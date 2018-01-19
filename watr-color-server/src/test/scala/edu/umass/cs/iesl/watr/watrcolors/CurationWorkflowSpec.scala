@@ -13,7 +13,8 @@ import services._
 
 import watrmarks._
 
-class CurationWorkflowSpec extends Http4sSpec with DatabaseTest {
+// class CurationWorkflowSpec extends DatabaseFreeSpec with DatabaseTest with DocSegLabels {
+class CurationWorkflowSpec extends  DatabaseTest with DocSegLabels {
   behavior of "Curation Workflow"
 
   def workflowService() = new CurationWorkflow {
@@ -24,16 +25,10 @@ class CurationWorkflowSpec extends Http4sSpec with DatabaseTest {
   }
 
 
-  val VisualLine  = Label.auto.withNamespace("seg")
-  val FullPdf     = Label.auto.withNamespace("seg")
-
-  val Authors: Label = Label.auto
-  val Author = Label.auto
+  val Authors   = Label.auto
+  val Author    = Label.auto
   val FirstName = Label.auto
-  val LastName = Label.auto
-
-  val Sup: Label = Label.auto
-  val Sub: Label = Label.auto
+  val LastName  = Label.auto
 
   val NameLabelSchema =
     LabelSchemas(List(

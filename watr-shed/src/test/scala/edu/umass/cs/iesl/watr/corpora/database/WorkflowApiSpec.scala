@@ -3,17 +3,14 @@ package corpora
 package database
 
 import workflow._
-// import watrmarks.{StandardLabels => LB}
+import watrmarks._
 import watrmarks._
 import TypeTags._
 import textgrid._
 
-class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
+class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTestHelpers with DocSegLabels {
   behavior of "Zone lock/unlock + basic user support"
 
-  val VisualLine: Label = Label.auto
-  val Sup: Label = Label.auto
-  val Sub: Label = Label.auto
   val Math: Label = Label.auto
 
   val testSchema = LabelSchemas(List(
@@ -28,53 +25,25 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
     }
   }
 
-  def initUsers(n: Int): Seq[Int@@UserID] = {
-    0 until n map { i =>
-      userbaseApi.addUser(EmailAddr(s"user${i}@umass.edu"))
-    }
-  }
-
-
-  it should "handle user creation" in new EmptyDatabase {
-    for {
-      (userId, i)   <- initUsers(10).zipWithIndex
-      user0 <- userbaseApi.getUser(userId)
-      userIdByEmail <- userbaseApi.getUserByEmail(EmailAddr(s"user${i}@umass.edu"))
-      user1 <- userbaseApi.getUser(userIdByEmail)
-    } {
-      user0 shouldEqual(user1)
-    }
-
-    userbaseApi.getUserByEmail(EmailAddr("noone@zz.com")) shouldBe None
-  }
-
   def addSampleDocs(n: Int): Seq[String@@DocumentID] = {
     val doc = List(
       "abc\ndef\nghi",
       "012\n345\n678",
       "jkl\nmno\npqr"
     )
-    (0 until n).map{ i =>
-      val stableId = DocumentID(s"doc#${i}")
-      addDocument(stableId, doc)
-      stableId
-    }
+      (0 until n).map{ i =>
+        val stableId = DocumentID(s"doc#${i}")
+        addDocument(stableId, doc)
+        stableId
+      }
   }
+
 
   it should "define, activate, deactivate workflows" in new EmptyDatabase {
     val workflows = initWorkflows(10)
     val workflowIds = workflowApi.getWorkflows()
 
     workflows.length shouldBe workflowIds.length
-
-      // (0 until 10).foreach{ i =>
-      //   // workflowApi.getWorkflow(s"curation-workflow-${i}")
-      // }
-  }
-
-  it should "return lock status info for zones" in new EmptyDatabase {
-
-
   }
 
   it should "lock/unlock target zones, to exhaustion, with single user" in new EmptyDatabase {
@@ -92,11 +61,12 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
     workflowApi.getWorkflowReport(workflowId) shouldBe WorkflowReport(
       6, Map(
         (ZoneLockStatus.Assigned, 3),
+        (ZoneLockStatus.InProgress, 0),
         (ZoneLockStatus.Completed, 0),
         (ZoneLockStatus.Skipped, 0)
-      ), Map(
-        (userId, 3)
-      )
+      ),
+      Map((userId, 3)),
+      userMap()
     )
 
     workflowApi.getLockedZones(userId).length shouldBe 3
@@ -108,10 +78,11 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
       0, Map(
         (ZoneLockStatus.Assigned, 9),
         (ZoneLockStatus.Completed, 0),
+        (ZoneLockStatus.InProgress, 0),
         (ZoneLockStatus.Skipped, 0)
       ), Map(
         (userId, 9)
-      )
+      ), userMap()
     )
 
     locks2.length shouldBe 6
@@ -153,16 +124,18 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
     workflowApi.getLockedZones(users(1)).length shouldBe 3
     workflowApi.getLockedZones(users(0)).length shouldBe 3
 
-    workflowApi.getWorkflowReport(workflows(0)) shouldBe WorkflowReport(
-      21, Map(
+    { val report = workflowApi.getWorkflowReport(workflows(0))
+
+      report.unassignedCount shouldBe 21
+
+      report.statusCounts shouldBe Map(
         (ZoneLockStatus.Assigned, 6),
+        (ZoneLockStatus.InProgress, 0),
         (ZoneLockStatus.Completed, 0),
         (ZoneLockStatus.Skipped, 0)
-      ), Map(
-        (users(0), 3),
-        (users(1), 3)
       )
-    )
+    }
+
     workflowApi.getLockedZones(users(0)).foreach { zoneLockId =>
       workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Completed)
     }
@@ -171,15 +144,18 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder {
       workflowApi.releaseZoneLock(zoneLockId)
     }
 
-    workflowApi.getWorkflowReport(workflows(0)) shouldBe WorkflowReport(
-      21, Map(
+    { val report = workflowApi.getWorkflowReport(workflows(0))
+
+      report.unassignedCount shouldBe 21
+
+      report.statusCounts shouldBe Map(
         (ZoneLockStatus.Assigned, 0),
+        (ZoneLockStatus.InProgress, 0),
         (ZoneLockStatus.Completed, 3),
         (ZoneLockStatus.Skipped, 3)
-      ), Map(
-        (users(0), 3)
       )
-    )
+    }
+
   }
 
 }

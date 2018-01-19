@@ -125,9 +125,11 @@ trait CorpusTestingUtil extends TextGridBuilder {
   //// Tests to be run across mem/db docstore
   import watrmarks.{StandardLabels => LB}
 
-  def addSampleDocs(docs: List[List[String]]): Unit = {
-    for { (doc, i) <- docs.zipWithIndex } {
-      addDocument(DocumentID(s"doc#${i}"), doc)
+  def addSampleDocs(docs: List[List[String]]): Seq[String@@DocumentID] = {
+    for { (doc, i) <- docs.zipWithIndex } yield {
+      val stableId = DocumentID(s"doc#${i}")
+      addDocument(stableId, doc)
+      stableId
     }
   }
   def addSampleDoc(doc: List[String]): Unit = {

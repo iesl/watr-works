@@ -5,7 +5,10 @@ package database
 import org.scalatest._
 import workflow._
 
-trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil with BeforeAndAfterEach {
+trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll {
+
 
   lazy val reflowDB = new CorpusAccessDB(
     dbname="watrdev",
@@ -24,9 +27,19 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil with Be
     reflowDB.dropAndRecreate
     reflowDB.docStore
   }
-  override def beforeEach(): Unit = {
-    println("re-initing db connections")
+
+  override def beforeAll(): Unit = {
+    println("beforeAll: re-initing db connections")
     reflowDB.reinit()
+  }
+
+  override def afterAll(): Unit = {
+    println("afterAll: re-initing db connections")
+    reflowDB.reinit()
+  }
+  override def beforeEach(): Unit = {
+    println("beforeEach")
+    // reflowDB.reinit()
   }
 
   override def afterEach(): Unit = {

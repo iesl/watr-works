@@ -18,10 +18,10 @@ import watrmarks.Label
   *
   * Workflow operates like so:
   *    Assume that users are present in the user table.
-  *    A new workflow is defined, including a unique name and description, along with the zone label to be locked for further labeling.
+  *    A new workflow is defined, including a unique name and description, the target zone label to be locked for further labeling, and a label schema.
   *    One or more zone locks are acquired for a user. The pool of candidate zones for locking include only those that
   *       have no lock status, i.e., have not yet been seen by any user
-  *    When the user is finished adding labels to a particular zone, the lock status is changed to Completed or Skipped
+  *    When the user is finished adding labels to a particular zone, the lock status is changed to Completed (or Skipped, or another configurable status)
   *    Users continue to acquire new zone locks until there are none left
   *
   *
@@ -63,7 +63,7 @@ case class WorkflowReport(
   unassignedCount: Int,
   statusCounts: Map[String@@StatusCode, Int],
   userAssignmentCounts: Map[Int@@UserID, Int],
-  usernames: Map[Int@@UserID, String]
+  usernames: Map[Int@@UserID, String@@EmailAddr]
 )
 
 object WorkflowReport extends TypeTagCodecs {
@@ -78,9 +78,9 @@ object WorkflowReport extends TypeTagCodecs {
       m.map{case (k, v) => (k.unwrap, v)}
     }
 
-  implicit val encMap3: Encoder[Map[Int@@UserID, String]] =
+  implicit val encMap3: Encoder[Map[Int@@UserID, String@@EmailAddr]] =
     Encoder[Map[Int, String]].contramap { m =>
-      m.map{case (k, v) => (k.unwrap, v)}
+      m.map{case (k, v) => (k.unwrap, v.unwrap)}
     }
 
   implicit lazy val enc: Encoder[WorkflowReport] = deriveEncoder
@@ -89,6 +89,7 @@ object WorkflowReport extends TypeTagCodecs {
 trait UserbaseApi {
   def addUser(email: String@@EmailAddr): Int@@UserID
   def getUser(userId: Int@@UserID): Option[R.Person]
+  def getUsers(): Seq[Int@@UserID]
   def getUserByEmail(email: String@@EmailAddr): Option[Int@@UserID]
   def deleteUser(userId: Int@@UserID): Unit
   def setPassword(userId:Int@@UserID, passhash: String@@PasswordHash): Unit
@@ -118,6 +119,5 @@ trait WorkflowApi {
   def getZoneLock(zoneLockId: Int@@ZoneLockID): Option[R.ZoneLock]
   def getLockForZone(zoneId: Int@@ZoneID): Option[Int@@ZoneLockID]
   def getLockedZones(userId: Int@@UserID): Seq[Int@@ZoneLockID]
-  // def getDocumentZoneLocks(stableId: String@@DocumentID): Seq[R.ZoneLock]
 
 }

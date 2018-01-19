@@ -53,7 +53,7 @@ class CorpusAccessDB(
     xa <- HikariTransactor[Task]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
     _  <- xa.configure(hx => Task.delay{
       hx.setDataSourceProperties(props)
-      hx.setAutoCommit(false)
+      hx.setAutoCommit(true)
       ()
     })
   } yield {
@@ -356,6 +356,10 @@ class CorpusAccessDB(
       }
     }
 
+    def getUsers(): Seq[Int@@UserID] = {
+      runq { sql""" select person from person """.query[Int@@UserID].list }
+    }
+
     def getUserByEmail(email: String@@EmailAddr): Option[Int@@UserID] = {
       runq { sql"""
         select person from person where email=${email}
@@ -487,7 +491,7 @@ class CorpusAccessDB(
       val assigneeNames  = runq {
         sql"""
            select distinct assignee, email from zonelock z join person p on z.assignee=p.person;
-         """.query[(Int@@UserID, String)].list
+         """.query[(Int@@UserID, String@@EmailAddr)].list
       }
       WorkflowReport(
         unassignedCount,

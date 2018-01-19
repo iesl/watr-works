@@ -40,6 +40,9 @@ object Labels {
 object JsArray {
 
   @JSExport
+  def fromScalaIterable(seq: Iterable[Any]): js.Array[Any] = seq.toJSArray
+
+  @JSExport
   def fromScala(seq: Seq[Any]): js.Array[Any] = seq.toJSArray
 
 }
