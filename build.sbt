@@ -108,10 +108,21 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
   )
   .settings((resources in Compile) ++= Seq(
     (fastOptJS in (watrmarksJS, Compile)).value.data,
-    (artifactPath in (watrmarksJS, Compile, fastOptJS)).value
+    ((artifactPath in (watrmarksJS, Compile, fastOptJS)) map { (fastop) =>
+      val path = fastop.getPath
+      val map = path + ".map"
+      file(map)
+    }).value
   ))
   .dependsOn(watrmarksJVM, watrshed)
 
+// ((crossTarget in (watrmarksJS, Compile, fastOptJS)).value /
+//   ((moduleName in (watrmarksJS, Compile, fastOptJS)).value + ".js.map"))
+// (fastOptJS in (watrmarksJS, Compile)).value + ".map",
+// .settings((resources in Compile) ++= Seq(
+//   (fastOptJS in (watrmarksJS, Compile)).value.data,
+//   (artifactPath in (watrmarksJS, Compile, fastOptJS)).value
+// ))
 
 
 

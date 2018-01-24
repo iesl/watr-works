@@ -70,6 +70,27 @@ object TextGridInterop {
     def gridRegions(wd: WidgetDisplayGridProps): js.Array[GridRegion]  = {
       wd.gridRegions.toJSArray
     }
+
+  }
+
+  @JSExportTopLevel("watr.scalazed")
+  object scalazed {
+    import scalaz.{Tree => Tr, Show}
+    import utils.ScalazTreeImplicits._
+    import textboxing.{TextBoxing => TB}
+
+    @JSExportTopLevel("watr.scalazed.Tree") @JSExportAll
+    object Tree {
+      implicit def ShowA[A]  = Show.showA[A]
+
+      def drawTree[A](t: Tr[A]): TB.Box = {
+        t.drawBox(ShowA)
+      }
+
+      def Node[A](a: A, as: js.Array[Tr[A]]): Tr[A] = Tr.Node(a, as.toStream)
+
+      def Leaf[A](a: A): Tr[A] = Tr.Leaf(a)
+    }
   }
 
   @JSExportTopLevel("watr.textgrid.TextGridInterop.textGrids")

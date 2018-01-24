@@ -475,7 +475,7 @@ class CorpusAccessDB(
         status <- ZoneLockStatus.all
       } yield {
         val statusCount = runq {
-          sql""" select count(*) from zonelock where status=${status} """
+          sql""" select count(*) from zonelock where status=${status} AND workflow=${workflowId}"""
             .query[Int].unique
         }
         (status, statusCount)
@@ -484,13 +484,13 @@ class CorpusAccessDB(
       val assigneeCounts  = runq {
         sql"""
             select assignee, count(zone)
-            from zonelock where assignee is not null
+            from zonelock where workflow=${workflowId} AND assignee is not null
             group by assignee
          """.query[(Int@@UserID, Int)].list
       }
       val assigneeNames  = runq {
         sql"""
-           select distinct assignee, email from zonelock z join person p on z.assignee=p.person;
+           select distinct assignee, email from zonelock z join person p on z.assignee=p.person where workflow=${workflowId};
          """.query[(Int@@UserID, String@@EmailAddr)].list
       }
       WorkflowReport(

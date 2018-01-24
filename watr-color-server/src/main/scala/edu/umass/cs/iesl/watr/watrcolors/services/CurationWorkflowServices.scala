@@ -80,8 +80,11 @@ trait CurationWorkflow extends WorkflowCodecs {
 
 
   def POST_workflows_assignments(workflowId: String@@WorkflowID, userId: Int@@UserID): Json = {
+    val existingLock  = workflowApi.getLockedZones(userId).headOption
+    lazy val newLock =  workflowApi.lockUnassignedZones(userId, workflowId, 1).headOption
+
     val lockedZones = for {
-      zoneLockId <- workflowApi.lockUnassignedZones(userId, workflowId, 1)
+      zoneLockId  <- existingLock orElse newLock
       js <- getZoneLockJson(zoneLockId)
     } yield js
 
