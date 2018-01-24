@@ -15,15 +15,23 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.0-M7"
-  val fs2Version          = "0.10.0-M10"
-  val circeJsonVersion    = "0.9.0"
+  val http4sVersion       = "0.18.0-M8"
+  val fs2Version          = "0.10.0-RC1"
+  val circeJsonVersion    = "0.9.1"
   val ammoniteVersion     = "1.0.3"
   val catsV               = "1.0.1"
-  val catsEffectV         = "0.7"
-  val postgresqlV         = "42.1.4"
+  val catsEffectV         = "0.8"
+  val postgresqlV         = "42.2.0"
 }
 
+
+object PluginLibs {
+  val libs = Seq(
+    "com.github.gseitz"    % "sbt-release"         % "1.0.7",
+    "com.typesafe.sbt"     % "sbt-native-packager" % "1.3.2",
+    "com.47deg"            % "sbt-microsites"      % "0.7.4"
+  )
+}
 
 object LibVersions extends LibVersions
 
@@ -106,7 +114,7 @@ trait CommonLibs extends LibVersions {
     "com.pauldijou" %% "jwt-circe" % "0.14.1"
   )
 
-  val tsecV = "0.0.1-M6"
+  val tsecV = "0.0.1-M7"
   val tsec = Seq(
     "io.github.jmcardon" %% "tsec-common" % tsecV,
     "io.github.jmcardon" %% "tsec-password" % tsecV,

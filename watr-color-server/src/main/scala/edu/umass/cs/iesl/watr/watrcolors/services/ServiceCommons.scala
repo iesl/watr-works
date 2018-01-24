@@ -40,7 +40,7 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
     secure         = false,
     httpOnly       = false,
     expiryDuration = 1.day,
-    maxIdle        = Some(1.hour),
+    maxIdle        = Some(8.hour),
     domain         = Option.empty[String],
     path           = Some("/"), // : Option[String] = None,
     extension      = None // : Option[String] = None,

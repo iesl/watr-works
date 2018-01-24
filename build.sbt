@@ -39,7 +39,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
       "org.scalaz"                 %% "scalaz-scalacheck-binding" % Lib.scalazVersion  % "test",
       "org.scalacheck"             %% "scalacheck"                % "1.13.5"       % "test", //  force()
       Lib.ammoniteOps,
-      "org.scala-js"               %% "scalajs-stubs"          % "0.6.21" % "provided",
+      "org.scala-js"               %% "scalajs-stubs"          % "0.6.22" % "provided",
       "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
       "com.github.davidmoten"       % "rtree"                  % "0.8.0.4",
       "com.github.davidmoten"       % "flatbuffers-java"       % "1.8.0.1",
@@ -115,16 +115,6 @@ lazy val watrcolorServer = (project in file("watr-color-server"))
     }).value
   ))
   .dependsOn(watrmarksJVM, watrshed)
-
-// ((crossTarget in (watrmarksJS, Compile, fastOptJS)).value /
-//   ((moduleName in (watrmarksJS, Compile, fastOptJS)).value + ".js.map"))
-// (fastOptJS in (watrmarksJS, Compile)).value + ".map",
-// .settings((resources in Compile) ++= Seq(
-//   (fastOptJS in (watrmarksJS, Compile)).value.data,
-//   (artifactPath in (watrmarksJS, Compile, fastOptJS)).value
-// ))
-
-
 
 
 // lazy val micrositeSettings = Seq(

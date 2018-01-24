@@ -18,7 +18,7 @@ import tsec.authentication.{
 }
 
 // From TSec
-//   type TSecAuthService[F[_], Ident, A] = Kleisli[OptionT[F, ?], SecuredRequest[F, Ident, A], Response[F]]
+//   type TSecAuthService[Ident, A, F] = Kleisli[OptionT[F, ?], SecuredRequest[F, Ident, A], Response[F]]
 
 final case class UserAwareRequest[F[_], Identity, Auth](request: Request[F], identity: Option[Identity], authenticator: Auth)
 
@@ -59,7 +59,7 @@ sealed abstract class WSecureRequestHandler[F[_], Identity, User, Auth](
   def apply(pf: PartialFunction[SecuredRequest[F, User, Auth], F[Response[F]]]): HttpService[F]
 
   /** Lift an Authenticated Service into an HttpService **/
-  def liftService(service: TSecAuthService[F, User, Auth]): HttpService[F] =
+  def liftService(service: TSecAuthService[User, Auth, F]): HttpService[F] =
     defaultMiddleware(service)
       .handleError(_ => Response[F](Status.Unauthorized))
 
@@ -71,7 +71,7 @@ sealed abstract class WSecureRequestHandler[F[_], Identity, User, Auth](
   /** Create an Authorized service from a TSecAuthService **/
   def liftService(
       authorization: Authorization[F, User, Auth],
-      service: TSecAuthService[F, User, Auth]
+      service: TSecAuthService[User, Auth, F]
   ): HttpService[F] =
     authorizedMiddleware(authorization)(service)
       .handleError(_ => Response[F](Status.Unauthorized))

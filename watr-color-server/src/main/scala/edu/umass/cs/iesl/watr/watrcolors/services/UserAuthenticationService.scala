@@ -65,7 +65,7 @@ trait UserAuthenticationServices extends AuthenticatedService {
           newUser   <- userStore.put(User(UserID(0), EmailAddr(signup.email)))
           authInfo  <- authStore.put(AuthInfo(newUser.id, Username(signup.username), password))
           _         <- IO( println(s"newUser; $newUser") )
-          cookie    <- authenticator.create(newUser.id.unwrap).getOrRaise(LoginError)
+          cookie    <- authenticator.create(newUser.id.unwrap) // .getOrRaise(LoginError)
           _         <- IO( println(s"cookie; $cookie") )
           // response  <- Ok(userInfoResponse(newUser, authInfo))
           response  <- TemporaryRedirect(Location(uri("/")))
@@ -93,7 +93,7 @@ trait UserAuthenticationServices extends AuthenticatedService {
           authInfo    <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
           _           <- IO(    println(s"authInfo; $authInfo"))
           _           <- checkOrRaise(login.password, authInfo.password)
-          cookie      <- authenticator.create(user.id.unwrap).getOrRaise(LoginError)
+          cookie      <- authenticator.create(user.id.unwrap) // .getOrRaise(LoginError)
           _           <- IO(    println(s"cookie; $cookie"))
           response    <- TemporaryRedirect(Location(uri("/")))
         } yield authenticator.embed(response, cookie)
@@ -130,7 +130,7 @@ trait UserAuthenticationServices extends AuthenticatedService {
       // val request: SecuredRequest[IO, User, AuthEncryptedCookie[AES128, Int]] = r
 
       val resp = for {
-        deadCookie   <- authenticator.discard(r.authenticator).getOrRaise(LoginError)
+        deadCookie   <- authenticator.discard(r.authenticator) // .getOrRaise(LoginError)
         response     <- Ok(json""" {} """)
       } yield {
         response.removeCookie(deadCookie.toCookie)
