@@ -29,12 +29,6 @@ import extract.ExtractedItem
 
   */
 
-object MultiPageIndex {
-
-  def load(rootPath: nio.Path): MultiPageIndex = {
-    ???
-  }
-}
 
 class MultiPageIndex(
   stableId: String@@DocumentID,
@@ -54,28 +48,23 @@ class MultiPageIndex(
   val componentIdGen = IdGenerator[ComponentID]()
 
   private def initPages(): Unit = {
-    val extractedItemCount = extractedItems
-      .map { case (items, _) => items.lastOption.map { _.id.unwrap } }
-      .flatten
-      .sorted.lastOption.getOrElse(0)
+    val extractedItemCount = (0 +: extractedItems.map(_._1.length)).sum
 
-    // val offsetArray = new Array[Int](extractedItems.length)
     val itemArray = new Array[ExtractedItem](extractedItemCount+1)
 
     extractedItems.foreach { case (items, _) =>
+      println(s"items len: ${items.length}")
       items.foreach { item => itemArray(item.id.unwrap) = item }
     }
 
     var itemArrayOffsetForPage: Int = 1
 
     extractedItems.foreach { case (items, pageGeometry) =>
-      val lastIndex = items.lastOption.map(_.id.unwrap).getOrElse(itemArrayOffsetForPage)
-      val itemArrayLen = lastIndex - itemArrayOffsetForPage
 
       val pageIndex = new PageIndex(
         pageGeometry,
         itemArray,
-        itemArrayOffsetForPage, itemArrayLen
+        itemArrayOffsetForPage, items.length
       )
 
       itemArrayOffsetForPage = itemArrayOffsetForPage + items.length
@@ -85,10 +74,6 @@ class MultiPageIndex(
   }
 
   initPages()
-
-  // def getTextReflow(zoneId: Int@@ZoneID): Option[TextReflow] = {
-  //   docStore.getTextReflowForZone(zoneId)
-  // }
 
   val relations = mutable.ArrayBuffer[Relation.Record]()
   val props = mutable.ArrayBuffer[Prop.PropRec]()
@@ -179,14 +164,6 @@ class MultiPageIndex(
     c
   }
 
-  // def getPageAtoms(pageNum: Int@@PageNum): Seq[AtomicComponent] = {
-  //   getPageIndex(pageNum).getPageAtoms
-  // }
-
-  // def getImageAtoms(pageNum: Int@@PageNum): Seq[RegionComponent] = {
-  //   getPageIndex(pageNum).getImageAtoms
-  // }
-
   def addComponent(c: Component): Component = {
     val pageNum = c.pageRegion.page.pageNum
     getPageIndex(pageNum)
@@ -198,16 +175,6 @@ class MultiPageIndex(
   def getPages(): List[Int@@PageNum] = {
     pageIndexes.keys.toList.sortBy(PageNum.unwrap(_))
   }
-
-  // def addPageIndex(pageIndex: PageIndex): Unit = {
-  //   val existing = pageIndexes.put(pageIndex.pageGeometry.pageNum, pageIndex)
-
-  //   existing.foreach { e =>
-  //     sys.error("error adding new page w/existing id")
-  //   }
-  // }
-
-
 
 
 }

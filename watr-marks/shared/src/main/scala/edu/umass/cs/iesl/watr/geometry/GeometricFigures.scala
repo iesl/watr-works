@@ -585,5 +585,17 @@ object GeometryImplicits extends RectangularCuts {
 
   }
 
+}
+
+
+trait GeometricFigureCodecs extends TypeTagCodecs {
+  import io.circe
+  import circe._
+  import circe.literal._
+  import circe.generic.semiauto._
+
+  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
+  implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
+  implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
 
 }

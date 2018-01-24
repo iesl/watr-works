@@ -61,18 +61,6 @@ trait TextGrid {
     rows.map(_.toText).mkString("\n")
   }
 
-  // def trimRights(): TextGrid = {
-  //   TextGrid.fromRows(
-  //     stableId,
-  //     rows.map(_.trimRight())
-  //   )
-  // }
-  // def padRights(): TextGrid = {
-  //   TextGrid.fromRows(
-  //     stableId,
-  //     rows.map(_.padRight)
-  //   )
-  // }
 
   def splitOneLeafLabelPerLine(): TextGrid = {
     val splitRows = rows.flatMap { row =>

@@ -89,6 +89,11 @@ object SensibleProject extends CommonLibs {
     // )
   )
 
+  lazy val runForked = Seq(
+    fork := true,
+    connectInput := true,
+    outputStrategy := Some(StdoutOutput),
+  )
 
   lazy val settings =  Seq(
     scalaVersion := "2.12.4",

@@ -32,7 +32,6 @@ class IOOptionParser(conf: IOConfig) {
 
   val T = implicitly[Async[IO]]
 
-
   def inputStream(): Stream[IO, InputMode] = {
     conf.inputMode.map{ mode =>
       mode match {

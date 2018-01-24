@@ -26,19 +26,8 @@ trait TypeTagCodecs {
 
 }
 
-trait CirceJsonCodecs extends TypeTagCodecs {
+trait CirceJsonCodecs extends GeometricFigureCodecs {
   import circe.generic.semiauto._
-
-  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
-
-  implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
-  implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
-
-
-  /*
-
-   */
-
 
   // implicit val Enc_XX: Encoder[XX] = deriveEncoder
   // implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)

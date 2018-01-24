@@ -40,20 +40,30 @@ class TextOutputBuilder(textGrid: TextGrid) {
     val serProps = getSerialization()
     val lineNums = serProps.lineMap.keys.toList.sorted
 
-    val labelDefs = Json.obj(
-      "labelMap" := serProps.labelMap.map{case (k, v) => (v, k.fqn)},
-      "cellLabels" := serProps.cellLabelBuffer
-    )
 
+    var totalOffset = 0
     val textAndLoci = lineNums.map { lineNum =>
       val text = serProps.lineMap(lineNum)._2
       val loci = serProps.lineMap(lineNum)._1
+
+      val currOffset = totalOffset
+      totalOffset += text.length()
+
       Json.obj(
+        "offset" := currOffset,
         "text" := text,
         "loci" := loci,
       )
     }
 
+    val cellLabels = serProps.cellLabelBuffer
+
+    assume(cellLabels.length == totalOffset, "cell BIO labeling length != cell count")
+
+    val labelDefs = Json.obj(
+      "labelMap" := serProps.labelMap.map{case (k, v) => (v, k.fqn)},
+      "cellLabels" := cellLabels
+    )
     Json.obj(
       "stableId" := textGrid.stableId.unwrap,
       "rows" := textAndLoci,
@@ -257,6 +267,7 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
       val items = (headItem +: tailItems).map{ pageItem =>
         val page = pageItem.pageRegion.page
         val pageNum = page.pageNum
+
 
         if (!pageIdMap.contains(page.pageId)) {
           pageIdMap.put(page.pageId, (page.stableId, page.pageNum))

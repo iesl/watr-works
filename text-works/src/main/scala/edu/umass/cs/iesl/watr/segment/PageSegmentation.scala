@@ -94,18 +94,4 @@ trait PageSegmenter extends PageLevelFunctions {
   }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

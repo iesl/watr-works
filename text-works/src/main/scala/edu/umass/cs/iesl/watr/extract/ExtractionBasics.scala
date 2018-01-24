@@ -101,7 +101,6 @@ case class GlyphProps(
   finalAffineTrans: AffineTransform
 ) {
 
-
   lazy val fontBBox = finalFontBounds.getBounds2D().toLTBounds
   lazy val glyphBBox = finalGlyphBounds.map(_.getBounds2D().toLTBounds).getOrElse { fontBBox }
   lazy val scalingFactor: Int@@ScalingFactor = {
@@ -138,6 +137,12 @@ case class AsciiHeightRecord(
   heights: Array[Double] = Array.ofDim[Double](128)
 )
 
+case class ScaledMetrics(
+  scalingFactor: Int@@ScalingFactor,
+  heightLowerCaseSmall: Double,
+  heightLowerCaseLarge: Double,
+  heightUpperCase: Double,
+)
 
 case class FontProperties(
   name: String,
@@ -151,13 +156,11 @@ case class FontProperties(
   val bigramEvidence = Array.ofDim[Int](LetterFrequencies.Bigrams.length)
   // val trigramEvidence = Array.ofDim[Int](LetterFrequencies.Trigrams.length)
 
-
   val glyphOccurrenceCounts = gcol.HashBasedTable.create[Int@@PageNum, Int@@ScalingFactor, Int]()
 
   val asciiHeightsPerScaleFactor = mutable.HashMap[Int@@ScalingFactor, AsciiHeightRecord]()
 
   def initGlyphEvidence(c: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum): Unit = {
-
     val bbox = glyphProps.glyphBBox
     val height = bbox.height.asDouble()
     val scalingFactor = glyphProps.scalingFactor
@@ -171,13 +174,6 @@ case class FontProperties(
     if (i >= 0) {
       alphaEvidence(i) += 1
     }
-
-    // val priorCount = if (glyphOccurrenceCounts.contains(pageNum, scalingFactor)) {
-    //   glyphOccurrenceCounts.get(pageNum, scalingFactor)
-    // } else { 0 }
-
-    // glyphOccurrenceCounts.put(pageNum, scalingFactor, priorCount+1)
-
   }
 
   def isNatLangFont(): Boolean = {
@@ -192,36 +188,47 @@ case class FontProperties(
     }.filter(_._2 > 0d)
   }
 
-  def inferredMetrics(): FontMetrics = {
-    val caps = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString
-    if (isNatLangFont()) {
+  private val caps = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString
+  private def avg(rs: Seq[(Char, Double)]): Double = {
+    if (rs.length > 0) {
+      rs.map(_._2).sum / rs.length
+    } else 0
+  }
 
-      // asciiHeightsPerScaleFactor.foreach { case (scaleFactor, asciiHeightRec) =>
-      //   println(s"At ScalingFactor = ${scaleFactor}")
-      //   val midlineEv = nonZeroHeights("aeoru", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
-      //   val ascentEv = nonZeroHeights("ldkh", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
-      //   val descentEv = nonZeroHeights("ypqg", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
-      //   val capEv = nonZeroHeights(caps, asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
+  def scaledMetrics(): Seq[ScaledMetrics] = {
+    asciiHeightsPerScaleFactor.toSeq.map { case (scaleFactor, asciiHeightRec) =>
 
-      //   println(s"    midline ev  : ${midlineEv}")
-      //   println(s"    ascentEv ev : ${ascentEv}")
-      //   println(s"    descentEv ev: ${descentEv}")
-      //   println(s"    cap ev      : ${capEv}")
-      // }
-
-
-      declaredMetrics
-
-    } else {
-
-      declaredMetrics
+      val small = avg(nonZeroHeights("aeoru", asciiHeightRec))
+      val med1  = avg(nonZeroHeights("ldkh", asciiHeightRec))
+      // val med2  = avg(nonZeroHeights("ypqg", asciiHeightRec))
+      val large = avg(nonZeroHeights(caps, asciiHeightRec))
+      ScaledMetrics(
+        scaleFactor,
+        small, med1, large
+      )
     }
+
   }
 
-  def getGlyphMetrics(glyphProps: GlyphProps): FontMetrics = {
+  def inferredMetrics(): FontMetrics = {
+    // if (isNatLangFont()) {
+    //   val caps = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString
+    //   asciiHeightsPerScaleFactor.foreach { case (scaleFactor, asciiHeightRec) =>
+    //     println(s"At ScalingFactor = ${scaleFactor}")
+    //     val midlineEv = nonZeroHeights("aeoru", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
+    //     val ascentEv = nonZeroHeights("ldkh", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
+    //     val descentEv = nonZeroHeights("ypqg", asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
+    //     val capEv = nonZeroHeights(caps, asciiHeightRec).map {case (c, h) => s"${c}/${h}"} //avg
 
-    ???
+    //     println(s"    midline ev  : ${midlineEv}")
+    //     println(s"    ascentEv ev : ${ascentEv}")
+    //     println(s"    descentEv ev: ${descentEv}")
+    //     println(s"    cap ev      : ${capEv}")
+    //   }
+    // }
+    declaredMetrics
   }
+
 }
 
 object FontDefs {
@@ -250,7 +257,7 @@ class FontDefs(pageCount: Int) {
     val fname = getFontName(pdFont)
 
     if (!fontProperties.exists(_.name == fname)) {
-      val fontDesc = pdFont.getFontDescriptor
+      // val fontDesc = pdFont.getFontDescriptor
       // if (fontDesc==null) {
       //   println(s"WT Font?? ${pdFont}, $fname")
       // }

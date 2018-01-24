@@ -55,6 +55,7 @@ lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)
   .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
+  .settings(SensibleProject.runForked: _*)
   .settings(Release.settings :_*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++

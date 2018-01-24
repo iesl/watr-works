@@ -122,22 +122,34 @@ object TextWorksConfig {
       }
     } text ("force overwrite of existing output artifacts")
 
-
     note("\nOutput text layout options: \n")
 
     opt[OutputOption]('p', "layout-option") action { (v, conf) =>
       conf.copy(outputOptions = v :: conf.outputOptions)
     } text("choose layout options for extracted text [VisualStructure|ReadingStructure] [SuperSubEscaping]")
 
+    val toAmm = PathConversions.nioToAmm(_)
 
     checkConfig{ c =>
-      val validConfig = (
-        c.initCorpus.isDefined
-          || c.ioConfig.inputMode.nonEmpty)
-
-      if (!validConfig) {
-        failure("Invalid input options")
-      } else success
+      if (c.initCorpus.isDefined) {
+        val corpusRoot = c.initCorpus.get
+        if (fs.exists(toAmm(corpusRoot))) {
+          success
+        } else {
+          failure(s"Corpus root ${corpusRoot} doesn't exist")
+        }
+      } else {
+        c.ioConfig.inputMode.map { _  match {
+          case InputMode.SingleFile(f) =>
+            if (fs.exists(toAmm(f))) success else failure(s"file ${f} not found")
+          case InputMode.ListOfFiles(f) =>
+            if (fs.exists(toAmm(f))) success else failure(s"file ${f} not found")
+          case InputMode.CorpusFile(f, maybeEntry) =>
+            if (fs.exists(toAmm(f))) success else failure(s"corpus root ${f} not found")
+        }} getOrElse{
+          failure("No input specified")
+        }
+      }
     }
   }
 
@@ -155,7 +167,9 @@ object TextWorksConfig {
   }
 }
 
-object TextWorksActions {
+import PathConversions._
+import geometry._
+object TextWorksActions extends GeometricFigureCodecs {
   val PrettyPrint2Spaces = circe.Printer.spaces2
 
 
@@ -168,8 +182,15 @@ object TextWorksActions {
           try {
             input match {
               case m@ InputMode.SingleFile(f) =>
-                Left(s"Unsupported InputMode ${m}")
 
+                val pdfName = f.getFileName.toString()
+                val stableId = DocumentID(pdfName)
+                val input = nioToAmm(f)
+                val output = conf.ioConfig.outputPath.getOrElse {
+                  nio.Paths.get(pdfName + ".textgrid.json")
+                }
+
+                Right(TextWorksActions.extractText(stableId, input, nioToAmm(output), None))
 
               case InputMode.CorpusFile(_, Some(corpusEntry)) =>
 
@@ -190,7 +211,7 @@ object TextWorksActions {
                   } else None
 
 
-                  val ammPath = PathConversions.nioToAmm(docsegPath)
+                  val ammPath = nioToAmm(docsegPath)
 
                   TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
                 }
@@ -218,6 +239,21 @@ object TextWorksActions {
     processStream.run.unsafeRunSync()
   }
 
+  val jsonPrinter = circe.Printer(
+    preserveOrder = true,
+    dropNullValues = false,
+    indent = "    ",
+    lbraceRight = "",
+    rbraceLeft = "\n",
+    lbracketRight = "",
+    rbracketLeft = "",
+    lrbracketsEmpty = "",
+    arrayCommaRight = " ",
+    objectCommaRight = "\n",
+    colonLeft = " ",
+    colonRight = " "
+  )
+
   def extractText(
     stableId: String@@DocumentID,
     inputPdf: fs.Path,
@@ -233,9 +269,112 @@ object TextWorksActions {
 
     segmenter.runDocumentSegmentation()
 
-    // val mpageIndex = segmenter.mpageIndex
-    // val content = formats.DocumentIO.documentToPlaintext(mpageIndex)
-    // write(textOutputFile, content)
+    val allPageTextGrids = segmenter.pageSegmenters
+      .map { pageSegmenter =>
+        val textGrid = pageSegmenter.getTextGrid
+        val gridJs = textGrid.buildOutput().gridToJson()
+
+        val LTBounds.IntReps(l, t, w, h) = pageSegmenter.pageGeometry
+        val geom = Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
+
+        Json.obj(
+          ("pageGeometry" := geom),
+          ("textgrid" := gridJs)
+        )
+      }
+
+    val fontDefs = segmenter.docScope.fontDefs
+
+    val scaledMetrics = fontDefs.fontProperties.map { fp =>
+      println(s"fp: ${fp}")
+      println(s"sm: ${fp.scaledMetrics} ")
+      val metrics = fp.scaledMetrics.map{ scaledMetrics =>
+        Json.obj(
+          "scale" := scaledMetrics.scalingFactor.unwrap,
+          "heights" := Json.obj(
+            "lowerCaseSmall" := scaledMetrics.heightLowerCaseSmall,
+            "lowerCaseLarge" := scaledMetrics.heightLowerCaseLarge,
+            "upperCase" := scaledMetrics.heightUpperCase
+          )
+        )
+      }
+
+      /**
+
+        "fontDescriptions": {
+            "namedFonts": [
+                {
+                    "name": "ACOONO+AdvOptima-b",
+                    "naturalBigrams" : 15
+                    "scaled": [
+                        [104, {"heights" : {"lcSmall" : 0.0, "lcLarge" : 0.0, "uc" : 0.0 } }],
+                        [208, {"heights" : {"lcSmall" : 0.0, "lcLarge" : 0.0, "uc" : 0.0 } }]
+                    ]
+                },
+            ],
+            "scaledFonts": [
+                [0, "ACOONO+AdvOptima-b", 104],
+                [1, "ACOONO+AdvOptima-b", 208],
+                [2, "ACOONO+AdvOptima-b", 104]
+            ]
+       }
+
+
+
+       "fonts" : [
+        {
+            "name" : "ACOONO+AdvOptima-b",
+            "bigrams" : 15,
+            "metrics" : [
+                 {
+                    "scale" : 104,
+                    "heights" : {
+                        "lowerCaseSmall" : 0.0,
+                        "lowerCaseLarge" : 0.0,
+                        "upperCase" : 0.0
+                    }
+                }, {
+                    "scale" : 208,
+                    "heights" : {"lowerCaseSmall" : 7.266,
+                        "lowerCaseLarge" : 10.979999999999999,
+                        "upperCase" : 10.055714285714286
+                    }
+                }]
+
+
+
+
+
+
+        */
+
+
+
+
+
+
+
+
+
+
+
+
+      Json.obj(
+        "name" := fp.name,
+        "bigrams" := fp.bigramEvidence.count(_ > 0),
+        "metrics" := metrics
+      )
+    }
+
+    val jsLog = Json.obj(
+      "description" := s"Extracted Pages for ${stableId}",
+      "fonts" := scaledMetrics,
+      "pages" := allPageTextGrids
+    )
+
+    val gridJsStr = jsLog.pretty(jsonPrinter)
+
+    fs.write(textOutputFile, gridJsStr)
 
     traceLogRoot.foreach { rootPath =>
       println("writing tracelogs")
@@ -243,28 +382,6 @@ object TextWorksActions {
       fs.ls(rootPath)
         .foreach{ p => fs.rm(p) }
 
-      val allPageTextGrids = segmenter.pageSegmenters
-        .map { pageSegmenter =>
-          val textGrid = pageSegmenter.getTextGrid
-          val gridJs = textGrid.buildOutput().gridToJson()
-
-          val pageImageShapes = pageSegmenter.pageImageShapes()
-
-          Json.obj(
-            ("shapes" := pageImageShapes),
-            ("textgrid" := gridJs)
-          )
-        }
-
-      val jsLog = Json.arr(
-        Json.obj(
-          ("description" := "Pdf Pages+TextGrids"),
-          ("pages" := allPageTextGrids)
-        ))
-
-      val gridJsStr = jsLog.pretty(PrettyPrint2Spaces)
-
-      fs.write(rootPath / "textgrid.json", gridJsStr)
 
       val allLogs = segmenter.pageSegmenters
         .foldLeft(List[Json]()) {

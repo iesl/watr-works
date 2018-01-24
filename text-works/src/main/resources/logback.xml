@@ -22,7 +22,7 @@
   <logger name="org.apache.pdfbox.pdmodel.font" level="OFF" />
 
 
-  <root level="debug">
+  <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
 

@@ -96,15 +96,13 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     docScope.fontDefs.fontProperties.foreach{ fontProps =>
       // println("Font properties")
       // println(fontProps)
-      // // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
+      // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
       // val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
       // println(s"Bigrams: ${bistr} ")
-
       // val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
       // println("PageEvidence: ")
       // println(pageEvidence)
-
-      val _ = fontProps.inferredMetrics()
+      // val _ = fontProps.inferredMetrics()
     }
 
 

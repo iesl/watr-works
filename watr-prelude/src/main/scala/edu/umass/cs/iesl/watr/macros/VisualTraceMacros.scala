@@ -27,32 +27,6 @@ object VisualTraceMacros {
   type VTraceContext = Context { type PrefixType = EnableTrace }
 
 
-  // def printTrace[T](c: VTraceContext)(str: c.Expr[String]) = {
-  //   import c.universe._
-  //   q"""
-  //      import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
-  //      val doPrint: Boolean = ${c.prefix}.traceLevels().contains(L.PrintLogs)
-
-  //      if( doPrint ) {
-
-  //      }
-  //   """
-  // }
-
-  // def tracedImpl[T](c: VTraceContext)(body: c.Tree): c.Tree = {
-  //   import c.universe._
-  //   q"""
-  //      {
-  //        import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
-  //        if( ${c.prefix}.isEnabled(L.EnterExit) ) {
-  //          enter();
-  //          val a = ${body};
-  //          exit();
-  //          a;
-  //        } else { ${body} }
-  //     }
-  //   """
-  // }
 
   def runOnTraceLevel[T](c: VTraceContext)(vtl: c.Expr[VisualTraceLevel])(body: c.Tree): c.Tree = {
     import c.universe._
@@ -67,37 +41,5 @@ object VisualTraceMacros {
     }
     """
   }
-
-  // def sideEffectIfEnabled[T](c: VTraceContext[T])(vtl: c.Expr[VisualTraceLevel])(body: c.Tree): c.Tree = {
-  //   import c.universe._
-  //   q"""
-  //   if (${c.prefix}.tracingEnabled()) {
-  //      import _root_.edu.umass.cs.iesl.watr.tracemacros.{VisualTraceLevel => L}
-
-  //      val doTrace: Boolean = true //  L.cmp(..$vtl, ${c.prefix}.traceLevel()) >= 0
-
-  //      if (doTrace) {
-  //         val _ = $body
-  //      }
-  //   }
-  //   """
-  // }
-
-  // def materializeCallback[T](c: VTraceContext[T])(name: c.Expr[String])(value: c.Expr[Any]) = {
-  // def materializeCallback[T](c: VTraceContext[T])(name: c.Expr[String])(value: c.Expr[Any]): c.Expr[Unit] = {
-
-  // def checkpointImpl[T](c: VTraceContext[T])
-  //   (loc: c.Expr[String], msg: c.Expr[String], args: c.Expr[Seq[Any]]) = {
-
-  //   import c.universe._
-
-  //   q"""
-  //     val callbacks = ${c.prefix}.traceCallbacks()
-  //     callbacks
-
-  //   ; ()
-  //   """
-
-  // }
 
 }

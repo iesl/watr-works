@@ -241,7 +241,6 @@ class PdfBoxTextExtractor(
           val isSurrogate =  unicode.exists(isSurrogateCodepoint(_))
           if (isSurrogate) {
             appendChar(s"¿${code};")
-
           } else {
 
             // if (unicode.length() > 1) { println(s"unicode > 1: ${unicode} = ${unicode.map(_.toInt.toHexString).toList}, code: ${code}") }
