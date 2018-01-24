@@ -93,7 +93,7 @@ trait UserAuthenticationServices extends AuthenticatedService {
           authInfo    <- authStore.get(user.id.unwrap).getOrRaise(LoginError)
           _           <- IO(    println(s"authInfo; $authInfo"))
           _           <- checkOrRaise(login.password, authInfo.password)
-          cookie      <- authenticator.create(user.id.unwrap) // .getOrRaise(LoginError)
+          cookie      <- authenticator.create(user.id.unwrap) 
           _           <- IO(    println(s"cookie; $cookie"))
           response    <- TemporaryRedirect(Location(uri("/")))
         } yield authenticator.embed(response, cookie)
