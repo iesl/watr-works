@@ -90,8 +90,9 @@ object SensibleProject extends CommonLibs {
   )
 
   lazy val runForked = Seq(
-    fork := true,
-    connectInput := true,
+    Compile / run / fork := true,
+    Compile / run / connectInput := false,
+    Compile / run / baseDirectory := baseDirectory.value / "..",
     outputStrategy := Some(StdoutOutput),
   )
 
