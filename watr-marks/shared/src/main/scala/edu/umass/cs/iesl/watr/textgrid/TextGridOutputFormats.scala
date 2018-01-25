@@ -1,5 +1,7 @@
 package edu.umass.cs.iesl.watr
-package formats
+package textgrid
+
+
 
 import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
 import spindex._
