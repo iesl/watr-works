@@ -1,20 +1,17 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
+// import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
 
-
-import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
 import spindex._
 import textboxing.{TextBoxing => TB}, TB._
-// import watrmarks.{StandardLabels => LB}
-import segment.{SegmentationLabels => LB}
-import segment.PageSegmenter
-import _root_.io.circe, circe.syntax._
+// import segment.{SegmentationLabels => LB}
+// import segment.PageSegmenter
+// import _root_.io.circe, circe.syntax._
 
 
 object DocumentIO  {
 
-  import textgrid._
 
   def documentToPlaintext(mpageIndex: MultiPageIndex): String = {
     // // mpageIndex.docStore.getPageText(pageId)

@@ -283,6 +283,7 @@ object TextWorksActions extends GeometricFigureCodecs {
         )
       }
 
+
     val fontDefs = segmenter.docScope.fontDefs
 
     val scaledMetrics = fontDefs.fontProperties.map { fp =>
