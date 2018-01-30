@@ -3,6 +3,7 @@ package watrmarks
 
 
 import scala.collection.mutable
+import textboxing.{TextBoxing => TB}, TB._
 
 object WeightedLabeling {
 

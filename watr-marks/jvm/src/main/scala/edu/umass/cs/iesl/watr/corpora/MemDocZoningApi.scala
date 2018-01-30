@@ -358,7 +358,7 @@ class MemDocZoningApi extends DocumentZoningApi {
 
   def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit = {
     for { mzone   <- zones.option(zoneId) }  {
-      val gridJs = textgrid.buildOutput().gridToJson()
+      val gridJs = textgrid.toJson()
       val gridJsStr = gridJs.noSpaces
       val up = mzone.copy(glyphs = Some(gridJsStr))
       zones.update(mzone.prKey, up)

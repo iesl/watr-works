@@ -592,7 +592,7 @@ class CorpusAccessDB(
     }
 
     def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit = {
-      val gridJs = textgrid.buildOutput().gridToJson()
+      val gridJs = textgrid.toJson()
       val gridJsStr = gridJs.noSpaces
       runq{
         sql""" update zone SET glyphs = ${gridJsStr} where zone = ${zoneId} """.update.run

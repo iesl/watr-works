@@ -693,7 +693,7 @@ trait LineFinding extends ColumnFinding { self =>
 //             )
 //           }
 
-//           wordWin.extendRight(' ').toLastCursor.some
+//           wordWin.extendRight(' ').closeWindow.some
 //         } else None
 
 //       }

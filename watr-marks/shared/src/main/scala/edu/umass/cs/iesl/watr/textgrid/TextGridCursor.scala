@@ -10,11 +10,16 @@ object GridCursor {
     def zipper: Zipper[TextGrid.GridCell] = z
   }
 
-  def init(optZ: Option[Zipper[TextGrid.GridCell]]) = optZ.map{ z =>
-    new GridCursor {
-      def zipper: Zipper[TextGrid.GridCell] = z
+  def init(optZ: Option[Zipper[TextGrid.GridCell]]): Option[GridCursor] =
+    optZ.map{ z =>
+      new GridCursor {
+        def zipper: Zipper[TextGrid.GridCell] = z
+      }
     }
-  }
+
+  def init(cells: Seq[TextGrid.GridCell]): Option[GridCursor] =
+    init(cells.toList.toZipper)
+
 }
 
 trait GridCursor { self =>
@@ -94,40 +99,41 @@ object Window {
     new Window {
       def cells: Seq[TextGrid.GridCell] = window
 
-      def zipper: Zipper[TextGrid.GridCell] =
+      def winStart: Zipper[TextGrid.GridCell] =
         Zipper.zipper(lefts, focus, rights)
     }
   }
 }
 
 
+
 sealed trait Window { self =>
-  def zipper: Zipper[TextGrid.GridCell]
+  def winStart: Zipper[TextGrid.GridCell]
   def cells: Seq[TextGrid.GridCell]
 
-  def atStart: Boolean = zipper.atStart
-  def atEnd: Boolean = zipper.atEnd
+  def atStart: Boolean = winStart.atStart
+  def atEnd: Boolean = winStart.atEnd
 
   def debugString(): String = {
-    val rs = zipper.rights.map(_.char).mkString
-    val ls = zipper.lefts.map(_.char).mkString.reverse
+    val rs = winStart.rights.map(_.char).mkString
+    val ls = winStart.lefts.map(_.char).mkString.reverse
     val ws = cells.map(_.char).mkString
     s"""($ls [${ws}] $rs)"""
 
   }
 
-  def toLastCursor(): GridCursor = {
-    val newLefts = cells.init.reverse.toStream ++ zipper.lefts
+  def closeWindow(): GridCursor = {
+    val newLefts = cells.init.reverse.toStream ++ winStart.lefts
     val newFocus = cells.last
 
     GridCursor.init{
-      Zipper.zipper(newLefts, newFocus, zipper.rights)
+      Zipper.zipper(newLefts, newFocus, winStart.rights)
     }
   }
 
   def nextCursor(): Option[GridCursor] = {
     GridCursor.init{
-      zipper.next.map{znext =>
+      winStart.next.map{znext =>
         Zipper.zipper(
           cells.reverse.toStream ++ znext.lefts,
           znext.focus,
@@ -155,8 +161,14 @@ sealed trait Window { self =>
     }
   }
 
+  def widen(n: Int): Window = {
+    val (as, bs) = winStart.rights.splitAt(n)
+
+    Window(cells++as, winStart.lefts, winStart.focus, bs)
+  }
+
   def slurpRight(p: (Seq[TextGrid.GridCell], TextGrid.GridCell) => Boolean): Window = {
-    val slurped = zipper.rights
+    val slurped = winStart.rights
       .inits.toSeq.reverse.drop(1).map{ init =>
         val nextWin = cells ++ init
         (nextWin.init, nextWin.last)
@@ -171,15 +183,15 @@ sealed trait Window { self =>
       .lastOption
       .getOrElse { cells }
 
-    Window(slcells, zipper.lefts, zipper.focus, zipper.rights.drop(slurped.length))
+    Window(slcells, winStart.lefts, winStart.focus, winStart.rights.drop(slurped.length))
 
   }
 
   def extendRight(char: Char): Window = {
-    val ins = zipper.focus.createInsert(char)
+    val ins = winStart.focus.createInsert(char)
     Window(
       cells :+ ins,
-      zipper.lefts, zipper.focus, zipper.rights
+      winStart.lefts, winStart.focus, winStart.rights
     )
 
   }

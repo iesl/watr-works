@@ -2,14 +2,19 @@ package edu.umass.cs.iesl.watr
 package textgrid
 
 import textboxing.{TextBoxing => TB}, TB._
-import scalaz.{@@ => _, _}, Scalaz._
+import scalaz.{@@ => _, _} // , Scalaz._
+
+// import utils.ScalazTreeImplicits._
 
 import scala.scalajs.js.annotation._
+import utils.DoOrDieHandlers._
 
 import watrmarks._
-import _root_.io.circe, circe._ // circe.syntax._
+import _root_.io.circe, circe._, circe.syntax._
 import geometry._
 import utils.GraphPaper
+
+import TextGridFunctions._
 
 sealed trait TreeNode
 
@@ -80,7 +85,6 @@ object MarginalGloss {
 }
 
 
-// @JSExportAll
 sealed trait GridRegion  {
   def bounds(): LTBounds
   def classes(): List[String]
@@ -95,6 +99,7 @@ sealed trait GridRegion  {
   @JSExport def isLabelKey(): Boolean = false
 
 }
+
 import scala.annotation.meta.field
 
 @JSExportAll
@@ -145,52 +150,11 @@ object TextGridLabelWidget {
   implicit val Enc_LabelSchema: Encoder[LabelSchema] = deriveEncoder
   implicit val Enc_LabelSchemas: Encoder[LabelSchemas] = deriveEncoder
 
+
   val Indent: Int = 4
 
-  type LabeledLines = List[(List[Label], String)]
-
-  type LabeledRows = List[LabeledRowElem]
-
-  type Start = Int
-  type Len = Int
-  type Attr = (Option[Label], Start, Len)
-
-  implicit val ShowAttr = Show.shows[Attr]{ case(lbl, st, len) =>
-    s"${lbl}: (${st}-${st+len})"
-  }
-
-
   def labelTreeToMarginals(labelTree: Tree[TreeNode], compactMarginals: Boolean): MarginalGloss = {
-
-    def shiftChildren(ch: Stream[Tree[Tree[Attr]]], init: Int) =
-      ch.foldLeft(Stream.empty[Tree[Attr]]){
-        case (acc, child: Tree[Tree[Attr]]) =>
-          val offset = acc.headOption.map { h: Tree[Attr] => h.rootLabel._2+h.rootLabel._3 }.getOrElse(init)
-          val adjusted = child.rootLabel.map{ case (nlbl, nst, nlen) => (nlbl, nst+offset, nlen) }
-          adjusted #:: acc
-      }
-
-    def attrEndIndex(attr: Attr) = {
-      val (_, st, len) = attr
-      st+len
-    }
-
-
-    def histo(node: TreeNode, children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
-
-      node match {
-        case TreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
-        case _: TreeNode.CellGroup     => Tree.Leaf((None, 0, 1))
-        case TreeNode.LabelNode(label) =>
-
-          val initOffset: Int = if (compactMarginals || children.length==1) 0 else 1
-          val shifted = shiftChildren(children, initOffset)
-          val endOffset = shifted.headOption.map(_.rootLabel).map(attrEndIndex).getOrElse(0)
-          Tree.Node((Some(label), 0, endOffset), shifted.reverse)
-      }
-    }
-
-    val tree = labelTree.scanr(histo).rootLabel
+    val tree = labelTreeToMarginalSpanTree(labelTree, compactMarginals)
 
     val columns = tree.levels.toList.map{ level =>
 
@@ -396,7 +360,6 @@ object TextGridLabelWidget {
     labelTree.scanr(histo).rootLabel
   }
 
-
   def textGridToIndentedBox(textGrid: TextGrid): TB.Box = {
     val labelTree = textGridToLabelTree(textGrid)
 
@@ -425,64 +388,7 @@ object TextGridLabelWidget {
         )
     }}
 
-    // val lbox = vjoins(left, dbg.map(_._1.box))
-    val rbox = vjoins(left, dbg.map(_._2))
-
-    rbox
-  }
-
-
-
-  def textGridToLabelTree(textGrid: TextGrid): Tree[TreeNode] = {
-    val init = Tree.Node[TreeNode](TreeNode.RootNode, Stream.empty)
-    var currLoc = init.loc
-
-    def up(): Unit = {
-      currLoc = currLoc.parent.getOrElse(sys.error("no parent found"))
-    }
-
-    for { (cell, row, col) <- textGrid.indexedCells() } {
-      val pinStack = cell.pins.reverse
-      val basePins = pinStack.drop(currLoc.parents.length)
-
-      basePins.takeWhile(p => p.isBegin || p.isUnit)
-        .foreach { pin =>
-          val n = Tree.Node[TreeNode](TreeNode.LabelNode(pin.label), Stream.empty)
-          currLoc = currLoc.insertDownLast(n)
-        }
-
-      val maybeAppend = for {
-        lastChild <- currLoc.lastChild
-      } yield {
-        lastChild.getLabel match {
-          case prevCell@ TreeNode.CellGroup(cells, prevRow) if prevRow == row =>
-            lastChild.modifyLabel { p =>
-              TreeNode.CellGroup(cell :: cells, row): TreeNode
-            }
-          case _ =>
-            currLoc.insertDownLast(
-              Tree.Leaf[TreeNode](TreeNode.CellGroup(List(cell), row))
-            )
-        }
-      }
-
-      currLoc = maybeAppend.getOrElse {
-        currLoc.insertDownLast(
-          Tree.Leaf[TreeNode](TreeNode.CellGroup(List(cell), row))
-        )
-      }
-
-      up()
-
-      cell.pins.takeWhile(p => p.isLast || p.isUnit)
-        .foreach { _ => up()  }
-    }
-
-    currLoc.root.toTree.map { n => n match {
-      case TreeNode.CellGroup(cells, row) => TreeNode.CellGroup(cells.reverse, row)
-      case n => n
-    }}
-    // currLoc.root.toTree
+    vjoins(left, dbg.map(_._2))
   }
 
 

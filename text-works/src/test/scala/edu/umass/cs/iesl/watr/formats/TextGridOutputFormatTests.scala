@@ -1,75 +1,42 @@
 package edu.umass.cs.iesl.watr
 package formats
 
-
 import textgrid._
 import org.scalatest._
-import corpora._
-import watrmarks._
-import TypeTags._
 import TextGridLabelWidget._
+import utils.ScalazTreeImplicits._
 
-trait TextGridSpec extends FreeSpec with Matchers with TextGridBuilder {
-  val Authors = Label.auto
-  val Author = Label.auto
-  val FirstName = Label.auto
-  val MiddleName = Label.auto
-  val LastName = Label.auto
-  val Journal = Label.auto
-  val RefMarker = Label.auto
-  val RefNumber = Label.auto
-
-  val stableId = DocumentID("docXX")
-}
+trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples
 
 class TextGridOutputFormatsTest extends TextGridSpec {
 
-  override val docStore: DocumentZoningApi = new MemDocZoningApi
-  val docs = List(
-    List(
-      "exit-\ning\n",
-      "cellar\ndoor\n",
-      "close-\nup\n"
-    )
-  )
 
-  for { (doc, i) <- docs.zipWithIndex } {
-    addDocument(DocumentID(s"doc#${i}"), doc)
+  "Format of TextGrid serialization" in {
+    val textGrid = makeBishopClarkTextGrid()
+    val labelTree = textGridToLabelTree(textGrid)
+    println(labelTree.drawBox)
+    val spanTree = labelTreeToSpanTree(labelTree)
+    val offsetTrees = spanTree.drawBox
+    println()
+    println(offsetTrees)
+    println()
+    val indentedBlock = textGridToIndentedBox(textGrid)
+    println(indentedBlock)
+    val bioJson = spanTreeToJson(spanTree)
+    println(
+      bioJson.pretty(JsonPrettyPrinter)
+    )
   }
 
-
-
-
   "Behavior of labeled TextGrid serialization" in {
-    val labelSpans = List(
-      ((0, 1),   RefMarker),
-      ((0, 0),   RefNumber),
-      ((3, 33),  Authors),
-      ((3, 17),  Author),
-      ((3, 14),  LastName),
-      ((17, 17), FirstName),
-      ((24, 33), Author),
-      ((36, 48), Journal)
-    )
-
-    val unlabeledText = {
-      //"0         1         2         3         4         5
-      // 012345678901234567890123456789012345678901234567899 """
-      """1. Bishop-Clark, C  and Wheeler, D; S.Eng. P-Hall"""
-
-    }
-    var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
-    val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
-    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
-    textGrid = textGrid.splitOneLeafLabelPerLine()
-    textGrid = textGrid.split(9, 7).get
-
+    val textGrid = makeBishopClarkTextGrid()
     val asJson = textGrid.toJson // .pretty(jsonPrinter)
     val roundTripGrid = TextGrid.fromJson(asJson)
     val rtJson = roundTripGrid.toJson()
+    rtJson.pretty(JsonPrettyPrinter)
 
     val indentedBlock = textGridToIndentedBox(roundTripGrid)
-    println(asJson.spaces4)
+    // println(asJson.noSpaces)
     // println(indentedBlock)
     // val labelTree = textGridToLabelTree(roundTripGrid)
     // val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)

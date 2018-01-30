@@ -86,7 +86,7 @@ trait TextGridConstruction {
         .slurpRight({ case (window, next) => window.length <= end-start })
 
       win.addLabel(label)
-      win.toLastCursor.start
+      win.closeWindow.start
     }
 
     labeledCursor.toRow

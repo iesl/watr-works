@@ -8,10 +8,11 @@ import org.scalatest._
 import watrmarks._
 // import utils.ScalazTreeImplicits._
 // import scala.collection.mutable
-
 // import scalaz.{@@ => _, _} , Scalaz._
-import textboxing.{TextBoxing => TB}, TB._
 // import _root_.io.circe, circe._, circe.syntax._
+import textboxing.{TextBoxing => TB}, TB._
+import TextGridLabelWidget._
+import TextGridFunctions._
 
 case class LineRenderInfo(
   text: String,
@@ -23,17 +24,13 @@ case class LineRenderInfo(
 )
 
 
-trait TextGridSpec extends FreeSpec with Matchers with TextGridBuilder {
-  val Authors = Label.auto
-  val Author = Label.auto
-  val FirstName = Label.auto
-  val MiddleName = Label.auto
-  val LastName = Label.auto
-  val Journal = Label.auto
-  val RefMarker = Label.auto
-  val RefNumber = Label.auto
+trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples {
 
-  val stableId = DocumentID("docXX")
+  def infobox(heading: String, b: TB.Box): Unit = {
+    info(heading)
+    info("\n" + indent(4, b).toString() + "\n")
+  }
+
 }
 
 class TextGridLabelWidgetTests extends TextGridSpec {
@@ -41,6 +38,7 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   import utils.AsciiGraphPaper
   import utils.GraphPaper
   import utils.ExactFloats._
+
   def makeGraph(
     graphDimension: LTBounds
   ): AsciiGraphPaper = {
@@ -51,23 +49,6 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     g
   }
 
-
-  override val docStore: DocumentZoningApi = new MemDocZoningApi
-  val docs = List(
-    List(
-      "exit-\ning\n",
-      "cellar\ndoor\n",
-      "close-\nup\n"
-    )
-  )
-
-  for { (doc, i) <- docs.zipWithIndex } {
-    addDocument(DocumentID(s"doc#${i}"), doc)
-  }
-
-
-
-  // Create Label Key: List of all valid labels arranged in tree structure at bottom of widget
 
   val jsonLabelSchema = {
 
@@ -96,32 +77,6 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   }
 
 
-  val labelSpans = List(
-    ((0, 1),   RefMarker),
-    ((0, 0),   RefNumber),
-    ((3, 33),  Authors),
-    ((3, 17),  Author),
-    ((3, 14),  LastName),
-    ((17, 17), FirstName),
-    ((24, 33), Author),
-    ((36, 48), Journal)
-  )
-
-  val unlabeledText = {
-    //"0         1         2         3         4         5
-    // 012345678901234567890123456789012345678901234567899 """
-    """1. Bishop-Clark, C  and Wheeler, D; S.Eng. P-Hall"""
-
-  }
-
-
-  import TextGridLabelWidget._
-
-
-  def infobox(heading: String, b: TB.Box): Unit = {
-    info(heading)
-    info("\n" + indent(4, b).toString() + "\n")
-  }
 
   // "Behavior of Textgrid Widget Creation" - {
 
@@ -168,14 +123,10 @@ class TextGridLabelWidgetTests extends TextGridSpec {
   // }
 
   "Behavior of Textgrid Labeling and Unlabeling" - {
-    var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
-    val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
-    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
-    textGrid = textGrid.splitOneLeafLabelPerLine()
-    textGrid = textGrid.split(9, 7).get
+    val textGrid = makeBishopClarkTextGrid()
 
     val indexedCells = textGrid.indexedCells()
-    labelSpans.reverse.foreach{ case ((lbegin, lend), label) =>
+    bishopClarkLabelSpans.reverse.foreach{ case ((lbegin, lend), label) =>
       val (cell, row, col) = indexedCells(lbegin)
       println(s"****unlabeling: ${row}, ${col}, ${label}")
       val extents = textGrid.findLabelExtents(row, col, label)
@@ -239,4 +190,3 @@ class TextGridLabelWidgetTests extends TextGridSpec {
 
   // }
 }
-

@@ -151,7 +151,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
         }
 
         if (!wordWin.atEnd) {
-          wordWin.extendRight(' ').toLastCursor.some
+          wordWin.extendRight(' ').closeWindow.some
         } else None
 
       }

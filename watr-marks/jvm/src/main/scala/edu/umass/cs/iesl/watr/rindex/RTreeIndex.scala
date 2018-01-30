@@ -14,8 +14,6 @@ import rx.functions.Func1
   * + Search:
   *   - Open/closed interval search support inclusion/exclusion of shapes that share an edge, but have no common area
   *
-  * + Serialization
-  *   - Trees may be written to disk
   *
   **/
 

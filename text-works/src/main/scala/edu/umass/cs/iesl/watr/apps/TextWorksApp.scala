@@ -4,14 +4,14 @@ package apps
 import corpora._
 
 import ammonite.{ops => fs} // , fs._
-import segment.DocumentSegmenter
-import segment.DocumentSegmentation
+import segment._
 import TypeTags._
 import scopt.Read
 import shapeless._
 import java.nio.{file => nio}
 import tracing.VisualTracer
 import _root_.io.circe, circe._, circe.syntax._
+import formats._
 
 import cats.effect._
 
@@ -269,111 +269,9 @@ object TextWorksActions extends GeometricFigureCodecs {
 
     segmenter.runDocumentSegmentation()
 
-    val allPageTextGrids = segmenter.pageSegmenters
-      .map { pageSegmenter =>
-        val textGrid = pageSegmenter.getTextGrid
-        val gridJs = textGrid.buildOutput().gridToJson()
+    val jsonOutput = TextGridOutputFormats.jsonOutputGridPerPage(segmenter)
 
-        val LTBounds.IntReps(l, t, w, h) = pageSegmenter.pageGeometry
-        val geom = Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
-
-        Json.obj(
-          ("pageGeometry" := geom),
-          ("textgrid" := gridJs)
-        )
-      }
-
-
-    val fontDefs = segmenter.docScope.fontDefs
-
-    val scaledMetrics = fontDefs.fontProperties.map { fp =>
-      println(s"fp: ${fp}")
-      println(s"sm: ${fp.scaledMetrics} ")
-      val metrics = fp.scaledMetrics.map{ scaledMetrics =>
-        Json.obj(
-          "scale" := scaledMetrics.scalingFactor.unwrap,
-          "heights" := Json.obj(
-            "lowerCaseSmall" := scaledMetrics.heightLowerCaseSmall,
-            "lowerCaseLarge" := scaledMetrics.heightLowerCaseLarge,
-            "upperCase" := scaledMetrics.heightUpperCase
-          )
-        )
-      }
-
-      /**
-
-        "fontDescriptions": {
-            "namedFonts": [
-                {
-                    "name": "ACOONO+AdvOptima-b",
-                    "naturalBigrams" : 15
-                    "scaled": [
-                        [104, {"heights" : {"lcSmall" : 0.0, "lcLarge" : 0.0, "uc" : 0.0 } }],
-                        [208, {"heights" : {"lcSmall" : 0.0, "lcLarge" : 0.0, "uc" : 0.0 } }]
-                    ]
-                },
-            ],
-            "scaledFonts": [
-                [0, "ACOONO+AdvOptima-b", 104],
-                [1, "ACOONO+AdvOptima-b", 208],
-                [2, "ACOONO+AdvOptima-b", 104]
-            ]
-       }
-
-
-
-       "fonts" : [
-        {
-            "name" : "ACOONO+AdvOptima-b",
-            "bigrams" : 15,
-            "metrics" : [
-                 {
-                    "scale" : 104,
-                    "heights" : {
-                        "lowerCaseSmall" : 0.0,
-                        "lowerCaseLarge" : 0.0,
-                        "upperCase" : 0.0
-                    }
-                }, {
-                    "scale" : 208,
-                    "heights" : {"lowerCaseSmall" : 7.266,
-                        "lowerCaseLarge" : 10.979999999999999,
-                        "upperCase" : 10.055714285714286
-                    }
-                }]
-
-
-
-
-
-
-        */
-
-
-
-
-
-
-
-
-
-
-
-
-      Json.obj(
-        "name" := fp.name,
-        "bigrams" := fp.bigramEvidence.count(_ > 0),
-        "metrics" := metrics
-      )
-    }
-
-    val jsLog = Json.obj(
-      "description" := s"Extracted Pages for ${stableId}",
-      "fonts" := scaledMetrics,
-      "pages" := allPageTextGrids
-    )
-
-    val gridJsStr = jsLog.pretty(jsonPrinter)
+    val gridJsStr = jsonOutput.pretty(jsonPrinter)
 
     fs.write(textOutputFile, gridJsStr)
 

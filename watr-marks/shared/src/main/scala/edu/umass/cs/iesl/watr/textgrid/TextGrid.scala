@@ -10,44 +10,14 @@ import textboxing.{TextBoxing => TB}, TB._
 import TypeTags._
 
 import utils.SlicingAndDicing._
-import scala.scalajs.js.annotation._
+import utils.DoOrDieHandlers._
 
+import scala.scalajs.js.annotation._
 
 import _root_.io.circe
 import circe._
 import circe.literal._
 
-// TODO Move this..
-object ErrorUtil {
-
-  implicit class RicherOption[A](val self: Option[A]) extends AnyVal {
-
-    def orDie(msg: String = "")(implicit
-      srcName: sourcecode.Name,
-      srcFile: sourcecode.File,
-      srcLine: sourcecode.Line
-    ): A = {
-      self.getOrElse {
-        val n = srcName.value
-        val f = srcFile.value.split("/").last
-        val l = srcLine.value
-        val message = if (msg.length()> 0) {
-          s"""${msg}: ${n} line ${l} in ${f} """
-        } else {
-          s"""Unspecifed error: in ${n} line ${l} of ${f}"""
-        }
-        sys.error(message)
-      }
-    }
-  }
-
-}
-
-import ErrorUtil._
-
-sealed trait FontInfo
-
-case object NoFonts extends FontInfo
 
 @JSExportAll
 trait TextGrid {
@@ -256,8 +226,6 @@ trait TextGrid {
     }
   }
 
-  def buildOutput() = new TextOutputBuilder(this)
-
   def pageBounds(): Seq[PageRegion] = {
 
     val allBounds = rows.flatMap{ row => row.pageBounds() }
@@ -283,6 +251,7 @@ trait TextGrid {
 object TextGrid {
   type SetType[A] = mutable.ArrayStack[A]
   type PinSet = SetType[BioPin]
+  def PinSet() = mutable.ArrayStack[BioPin]()
 
 
   def fromJsonStr(jsStr: String): TextGrid = {
@@ -305,7 +274,7 @@ object TextGrid {
   }
 
   @JSExportAll
-  sealed trait LabelTarget {
+  trait LabelTarget {
     val pins: PinSet = mutable.ArrayStack[BioPin]()
 
     def labels: SetType[Label] = pins.map(_.label)
@@ -352,8 +321,6 @@ object TextGrid {
     def pageRegion: PageRegion
 
     def char: Char
-
-    def fonts: FontInfo = NoFonts
 
     def createInsert(ch: Char): InsertCell = InsertCell(ch, this.pageRegion)
 
@@ -444,7 +411,7 @@ object TextGrid {
       }
 
       win.addLabel(label)
-      // win.toLastCursor.start.toRow
+      // win.closeWindow.start.toRow
     }
 
     def append(row: Row): Row = {
