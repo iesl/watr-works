@@ -74,6 +74,23 @@ trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { 
         }
       }
 
+    case req @ GET -> Root / "entry" / entryId / "text"  =>
+
+      val maybeResp = for {
+        entry <- corpus.entry(entryId)
+        artifact <- entry.getArtifact("textgrid.json")
+        artifactPath <- artifact.asPath.toOption
+      } yield {
+        StaticFile
+          .fromFile(artifactPath.toIO, Some(req))
+          .getOrElse { Response(http4s.Status(404, s"could not serve ${entryId} text ")) }
+      }
+      maybeResp.getOrElse {
+        IO.pure{
+          Response(http4s.Status(500, s"could not serve ${entryId} text"))
+        }
+      }
+
     case req @ GET -> Root / "vtrace" /  "json" / entryId / jsonArtifact =>
 
       val maybeResp = for {

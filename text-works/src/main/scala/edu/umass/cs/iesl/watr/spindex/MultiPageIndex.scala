@@ -53,7 +53,6 @@ class MultiPageIndex(
     val itemArray = new Array[ExtractedItem](extractedItemCount+1)
 
     extractedItems.foreach { case (items, _) =>
-      println(s"items len: ${items.length}")
       items.foreach { item => itemArray(item.id.unwrap) = item }
     }
 

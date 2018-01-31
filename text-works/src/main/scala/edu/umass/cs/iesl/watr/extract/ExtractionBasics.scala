@@ -154,11 +154,11 @@ case class FontProperties(
 
   val alphaEvidence = Array.ofDim[Int](LetterFrequencies.Letters.length)
   val bigramEvidence = Array.ofDim[Int](LetterFrequencies.Bigrams.length)
-  // val trigramEvidence = Array.ofDim[Int](LetterFrequencies.Trigrams.length)
 
   val glyphOccurrenceCounts = gcol.HashBasedTable.create[Int@@PageNum, Int@@ScalingFactor, Int]()
 
   val asciiHeightsPerScaleFactor = mutable.HashMap[Int@@ScalingFactor, AsciiHeightRecord]()
+  // var glyphCount = 0
 
   def initGlyphEvidence(c: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum): Unit = {
     val bbox = glyphProps.glyphBBox
@@ -174,6 +174,8 @@ case class FontProperties(
     if (i >= 0) {
       alphaEvidence(i) += 1
     }
+    val nglyphs = glyphOccurrenceCounts.get(pageNum, scalingFactor)
+    glyphOccurrenceCounts.put(pageNum, scalingFactor, nglyphs + 1)
   }
 
   def isNatLangFont(): Boolean = {
@@ -257,13 +259,10 @@ class FontDefs(pageCount: Int) {
     val fname = getFontName(pdFont)
 
     if (!fontProperties.exists(_.name == fname)) {
-      // val fontDesc = pdFont.getFontDescriptor
-      // if (fontDesc==null) {
-      //   println(s"WT Font?? ${pdFont}, $fname")
-      // }
       val props = FontProperties(
         fname,
         pdFont.getType,
+        // 0f, 0f, 0
         FontMetrics(
           0f, 0f, 0
           // fontDesc.getAscent,

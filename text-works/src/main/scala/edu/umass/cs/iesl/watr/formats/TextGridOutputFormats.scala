@@ -115,24 +115,34 @@ object TextGridOutputFormats  {
 
     val outputDoc = Json.obj(
       "description" := s"Extracted Pages for ${stableId}",
-      "fonts" := fontDescription(docSeg),
-      "pages" := allPageTextGrids
+      "pages" := allPageTextGrids,
+      "fonts" := fontDescription(docSeg)
     )
 
     // jsLog.pretty(jsonPrinter)
     outputDoc
   }
 
+  import scala.collection.JavaConverters._
   def fontDescription(docSeg: DocumentSegmentation): Seq[Json] = {
 
     val fontDefs = docSeg.docScope.fontDefs
 
     val scaledMetrics = fontDefs.fontProperties.map { fp =>
-      println(s"fp: ${fp}")
-      println(s"sm: ${fp.scaledMetrics} ")
       val metrics = fp.scaledMetrics.map{ scaledMetrics =>
+        val perPageGlyphCounts = fp.glyphOccurrenceCounts.column(scaledMetrics.scalingFactor)
+
+        val perPageList = perPageGlyphCounts.entrySet().asScala.toList
+
+        val sortedByPage = perPageList.map { entry =>
+          val pageNum = entry.getKey()
+          val glyphCount = entry.getValue()
+          (pageNum.unwrap, glyphCount)
+        }.sorted
+
         Json.obj(
           "scale" := scaledMetrics.scalingFactor.unwrap,
+          "glyphsPerPage" := sortedByPage,
           "heights" := Json.obj(
             "lowerCaseSmall" := scaledMetrics.heightLowerCaseSmall,
             "lowerCaseLarge" := scaledMetrics.heightLowerCaseLarge,
@@ -143,7 +153,7 @@ object TextGridOutputFormats  {
 
       Json.obj(
         "name" := fp.name,
-        "bigrams" := fp.bigramEvidence.count(_ > 0),
+        "englishBigramEvidence" := fp.bigramEvidence.count(_ > 0),
         "metrics" := metrics
       )
     }

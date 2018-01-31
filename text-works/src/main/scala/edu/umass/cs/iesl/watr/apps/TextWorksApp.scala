@@ -15,22 +15,22 @@ import formats._
 
 import cats.effect._
 
-sealed trait OutputOption
+// sealed trait OutputOption
 
-object OutputOption {
-  case object VisualStructure extends OutputOption
-  case object ReadingStructure extends OutputOption
-  case object SuperSubEscaping extends OutputOption
+// object OutputOption {
+//   case object VisualStructure extends OutputOption
+//   case object ReadingStructure extends OutputOption
+//   case object SuperSubEscaping extends OutputOption
 
-  implicit val OutputOptionRead: Read[OutputOption] =
-    Read.reads { _.toLowerCase match {
-      case "VisualStructure"        | "vs"  => VisualStructure
-      case "ReadingStructure"       | "rs"  => ReadingStructure
-      case "SuperSubEscaping"       | "sse" => SuperSubEscaping
-      case s       =>
-        throw new IllegalArgumentException(s"""'${s}' is not an output option.""")
-    }}
-}
+//   implicit val OutputOptionRead: Read[OutputOption] =
+//     Read.reads { _.toLowerCase match {
+//       case "VisualStructure"        | "vs"  => VisualStructure
+//       case "ReadingStructure"       | "rs"  => ReadingStructure
+//       case "SuperSubEscaping"       | "sse" => SuperSubEscaping
+//       case s       =>
+//         throw new IllegalArgumentException(s"""'${s}' is not an output option.""")
+//     }}
+// }
 
 object TextWorksConfig {
   implicit val NioPath: Read[nio.Path] =
@@ -42,7 +42,7 @@ object TextWorksConfig {
     ioConfig        : IOConfig = IOConfig(),
     initCorpus      : Option[nio.Path] = None,
     runTraceLogging : Boolean = VisualTracer.tracingEnabled(),
-    outputOptions   : List[OutputOption] = List(),
+    // outputOptions   : List[OutputOption] = List(),
     exec            : Option[(Config) => Unit] = Some((c) => TextWorksActions.extractText(c))
   )
 
@@ -124,9 +124,9 @@ object TextWorksConfig {
 
     note("\nOutput text layout options: \n")
 
-    opt[OutputOption]('p', "layout-option") action { (v, conf) =>
-      conf.copy(outputOptions = v :: conf.outputOptions)
-    } text("choose layout options for extracted text [VisualStructure|ReadingStructure] [SuperSubEscaping]")
+    // opt[OutputOption]('p', "layout-option") action { (v, conf) =>
+    //   conf.copy(outputOptions = v :: conf.outputOptions)
+    // } text("choose layout options for extracted text [VisualStructure|ReadingStructure] [SuperSubEscaping]")
 
     val toAmm = PathConversions.nioToAmm(_)
 
@@ -189,8 +189,15 @@ object TextWorksActions extends GeometricFigureCodecs {
                 val output = conf.ioConfig.outputPath.getOrElse {
                   nio.Paths.get(pdfName + ".textgrid.json")
                 }
+                if (output.toFile().exists() && conf.ioConfig.overwrite) {
+                  fs.rm(nioToAmm(output))
+                  Right(TextWorksActions.extractText(stableId, input, nioToAmm(output), None))
+                } else {
+                  val msg = s"File ${output} already exists. Move file or use --overwrite"
+                  println(msg)
+                  Left(msg)
+                }
 
-                Right(TextWorksActions.extractText(stableId, input, nioToAmm(output), None))
 
               case InputMode.CorpusFile(_, Some(corpusEntry)) =>
 
@@ -201,7 +208,7 @@ object TextWorksActions extends GeometricFigureCodecs {
                 val maybeSegmenter = for {
                   pdfEntry <- corpusEntry.getPdfArtifact.toRight(left="Could not get PDF")
                   pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
-                  docsegPath <- ioOpts.maybeProcess(corpusEntry, "docseg.json").toRight(left="Existing output. --overwrite to force processing")
+                  docsegPath <- ioOpts.maybeProcess(corpusEntry, "textgrid.json").toRight(left="Existing output. --overwrite to force processing")
                 } yield {
 
                   val traceLogRoot = if (conf.runTraceLogging) {
@@ -214,6 +221,10 @@ object TextWorksActions extends GeometricFigureCodecs {
                   val ammPath = nioToAmm(docsegPath)
 
                   TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
+                }
+                maybeSegmenter.left.map { s =>
+                  println(s"Error: ${s}")
+                  s
                 }
 
                 maybeSegmenter
@@ -236,7 +247,10 @@ object TextWorksActions extends GeometricFigureCodecs {
 
   def extractText(conf: TextWorksConfig.Config): Unit = {
     val processStream = buildProcessStream(conf)
-    processStream.run.unsafeRunSync()
+
+    val prog = processStream.compile.drain
+
+    prog.unsafeRunSync()
   }
 
   val jsonPrinter = circe.Printer(

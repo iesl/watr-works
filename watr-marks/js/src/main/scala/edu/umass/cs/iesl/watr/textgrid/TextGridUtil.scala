@@ -95,6 +95,7 @@ object TextGridInterop {
 
   @JSExportTopLevel("watr.textgrid.TextGridInterop.textGrids")
   object textGrids {
+    import TextGridFunctions._
 
     @JSExport
     def textGridToWidgetGrid(
