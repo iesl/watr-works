@@ -60,7 +60,7 @@ object LabelTreeCodecs {
       (total +: lt.children.map(maxLen(_))).max
     }
 
-    val totalLen = labelingTrees.map(maxLen(_)).max
+    val totalLen = if (labelingTrees.isEmpty) 0 else labelingTrees.map(maxLen(_)).max
     val inlineBio = emptyInlineBIO(totalLen)
 
     def loop(lt: LabelingTree): Unit = {
@@ -160,24 +160,9 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
 
   val pageIdMap = mutable.Map[Int@@PageID, (String@@DocumentID, Int@@PageNum)]()
   val lineMap = mutable.Map[Int, (Json, String)]()
-  // val labelMap = mutable.Map[Label, Int]()
-  // val labelIdMap = mutable.Map[Int, Label]()
-  // val cellLabelBuffer = mutable.ArrayBuffer[List[String]]()
 
   def decodeGrid(js: Json): TextGrid = {
     val cursor = js.hcursor
-    // val serLabelMap = cursor.downField("labels").downField("labelMap").as[Map[Int, String]]
-    // serLabelMap.fold(fail => {
-    //   labelIdMap
-    // }, succ => {
-    //   labelIdMap ++= succ.toList.map{ case (k, v) => (k, Label(v)) }
-    // })
-
-    // val cellLabels = cursor.downField("labels").downField("cellLabels").as[List[List[String]]]
-    // val decoded = LabelTreeCodecs.decode(cellLabels)
-    // cellLabels.fold(fail => {}, succ => {
-    //   cellLabelBuffer.appendAll(succ)
-    // })
 
     val rowsM = cursor
       .downField("rows").values.map { jsVals =>

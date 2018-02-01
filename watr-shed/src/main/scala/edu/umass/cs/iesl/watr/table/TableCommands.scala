@@ -5,11 +5,11 @@ package table
 import corpora._
 import corpora.filesys._
 import corpora.database._
-import segment._
+// import segment._
 // import geometry.syntax._
-import ammonite.{ops => fs}
+// import ammonite.{ops => fs}
 
-import TypeTags._
+// import TypeTags._
 import apps._
 
 object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageWriter {
@@ -27,9 +27,11 @@ object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageW
 
   import fs2._
   import cats.effect._
-  // import fs2.util.Async
-  // implicit val S = Strategy.fromCachedDaemonPool()
-  // val T = implicitly[Async[IO]]
+  import utils.Timer.time
+  // import fs2.async
+  val T = implicitly[Async[IO]]
+  import scala.concurrent.ExecutionContext.Implicits.global
+  // implicit val strategy = Strategy.fromExecutionContext(global)
 
   def chooseEntries(n: Int, skip: Int)(implicit corpusAccessApi: CorpusAccessApi): Stream[IO, CorpusEntry] = {
     val corpus = corpusAccessApi.corpus
@@ -56,7 +58,10 @@ object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageW
     val st = processStream.drop(skip.toLong).take(n.toLong).map{ _ match {
       case Right(segmenter) =>
         println(s"Importing ${segmenter.stableId} into database.")
-        corpusAccessApi.corpusAccessDB.docStore.batchImport(segmenter.docStore.asInstanceOf[MemDocZoningApi])
+
+        time("batch import") {
+          corpusAccessApi.corpusAccessDB.docStore.batchImport(segmenter.docStore.asInstanceOf[MemDocZoningApi])
+        }
 
       case Left(message) =>
         println(s"Error: ${message}")
@@ -66,117 +71,61 @@ object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageW
     st.compile.drain.unsafeRunSync()
   }
 
-  // def segmentAllParallel(n: Int=Int.MaxValue, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-  //   val processStream = TextWorksActions.buildProcessStream(TextWorksConfig.Config(
-  //     IOConfig(
-  //       inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO, None))
-  //     )
-  //   ))
-  //   val stN = processStream.drop(skip.toLong)
-  //   val st0 = stN.take(1).map{ _ match {
-  //     case Right(segmenter) =>
-  //       println(s"Importing ${segmenter.stableId} into database.")
-  //       corpusAccessApi.corpusAccessDB.docStore.batchImport(segmenter.docStore.asInstanceOf[MemDocZoningApi])
-  //     case Left(message) =>
-  //   }}
-  //   st0.compile.drain.unsafeRunSync()
-  //   val st1 = stN.drop(1).take(n).map{ _ match {
-  //     case Right(segmenter) =>
-  //       println(s"Importing ${segmenter.stableId} into database.")
-  //       corpusAccessApi.corpusAccessDB.docStore.batchImport(segmenter.docStore.asInstanceOf[MemDocZoningApi])
-  //     case Left(message) =>
-  //   }}
-  //   st0.compile.drain.unsafeRunSync()
-  //   // val chunked = entries.drop(1)
-  //   //   .through(pipe.zipWithIndex)
-  //   //   .chunkN(1, allowFewer=true)
-  //   //   .map { chunks =>
-  //   //     chunks.map(Stream.chunk)
-  //   //       .reduce(_ ++ _)
-  //   //       .covary[IO]
-  //   //       .evalMap { case (corpusEntry, i) =>
-  //   //         IO {
-  //   //           println(s"processing entry ${i}")
-  //   //           segment(corpusEntry, commitToDb=true)
-  //   //           println(s"done entry ${i}")
-  //   //         }
-  //   //       }
-  //   //   }
-  // }
+  def segmentAllParallel(n: Int=Int.MaxValue, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val processStream = TextWorksActions.buildProcessStream(TextWorksConfig.Config(
+      IOConfig(
+        inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO, None)),
+        outputPath= None, // : Option[nio.Path] = None,
+        overwrite = true, // : Boolean = false,
+      )
+    ))
 
-  def segmentEntry(stableId: String@@DocumentID, commitToDb: Boolean=false)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-    val docStore = corpusAccessApi.docStore
+    val parProg0 = processStream
+      .zipWithIndex
+      .segmentN(10, allowFewer=true)
+      .map{ segment =>
 
-    if (commitToDb && docStore.getDocument(stableId).isDefined) {
-      println(s"document ${stableId} already exists in database, skipping.")
-    } else if (corpusAccessApi.corpus.hasEntry(stableId.unwrap)) {
-
-      println(s"segmenting ${stableId}")
-
-      for {
-        corpusEntry    <- corpusAccessApi.corpus.entry(stableId.unwrap)
-      } {
-        segment(corpusEntry, commitToDb)
+        segment.map { case (maybeSegmenter, i) =>
+          val xx = IO {
+            println(s"processing entry ${i}")
+            maybeSegmenter match {
+              case Right(segmenter) =>
+                println(s"${i}.Importing ${segmenter.stableId} into database.")
+                corpusAccessApi.corpusAccessDB.docStore.batchImport(segmenter.docStore.asInstanceOf[MemDocZoningApi])
+              case Left(message) =>
+                println(s"${i}. Error ${message}")
+            }
+            println(s"done entry ${i}")
+          }
+          fs2.async.fork(xx)
+        }
       }
-    }
+    parProg0.compile.drain.unsafeRunSync()
+
+
+    // val parProg = processStream
+    //   .zipWithIndex
+    //   .chunkLimit(10).chunks
+    //   .map{ chunks => chunks.map(Stream.chunk) }
+    //   .map{streams => streams.map { str =>
+    //     str.covary[IO]
+    //       .evalMap { case (maybeSegmenter, i) =>
+    //         IO {
+    //           println(s"processing entry ${i}")
+    //           maybeSegmenter match {
+    //             case Right(segmenter) =>
+    //               println(s"${i}.Importing ${segmenter.stableId} into database.")
+    //               corpusAccessApi.corpusAccessDB.docStore.batchImport(segmenter.docStore.asInstanceOf[MemDocZoningApi])
+    //             case Left(message) =>
+    //               println(s"${i}. Error ${message}")
+    //           }
+    //           println(s"done entry ${i}")
+    //         }
+    //       }
+    //   }}
+
+    // parProg.compile.drain.unsafeRunSync()
+
   }
-
-  def segment(
-    corpusEntry: CorpusEntry,
-    commitToDb: Boolean=true
-  )(implicit corpusAccessApi: CorpusAccessApi): Option[DocumentSegmentation] = {
-
-    // val docStore = corpusAccessApi.docStore
-
-    // val maybeSegmenter = for {
-    //   pdfArtifact    <- corpusEntry.getPdfArtifact
-    //   pdfPath        <- pdfArtifact.asPath.toOption
-    // } yield {
-    //   val stableId = DocumentID(corpusEntry.entryDescriptor)
-
-    //   val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
-    //   traceLogGroup.deleteGroupArtifacts()
-
-    //   if (commitToDb && docStore.getDocument(stableId).isDefined) {
-    //     println(s"document ${stableId} already exists in database, skipping.")
-
-    //     None
-    //   } else {
-    //     println(s"segmenting ${stableId}")
-    //     val traceLogs = corpusEntry.ensureArtifactGroup("tracelogs")
-    //     val traceLogRoot = traceLogs.rootPath
-    //     val textOutputPath = corpusEntry.getRootPath() / "richtext.json"
-
-    //     val segmenter = TextWorksActions.extractText(stableId, pdfPath,
-    //       textOutputFile = textOutputPath,
-    //       rtreeOutputRoot = None,
-    //       traceLogRoot = Some(traceLogRoot)
-    //     )
-    //     val memZoningApi = segmenter.docStore.asInstanceOf[MemDocZoningApi]
-    //     // val memZoneApi = new MemDocZoningApi
-
-    //     // val segmenter = DocumentSegmenter
-    //     //   .createSegmenter(stableId, pdfPath, memZoneApi)
-
-    //     // segmenter.runDocumentSegmentation()
-
-
-    //     if (commitToDb) {
-    //       println(s"Importing ${stableId} into database.")
-    //       corpusAccessApi.corpusAccessDB.docStore.batchImport(memZoningApi)
-    //       println(s"Done importing ${stableId}")
-    //     } else {
-    //       println(s"DB Importing disabled.")
-    //     }
-
-    //     println()
-    //     Some(segmenter)
-    //   }
-    // }
-    // maybeSegmenter.flatten
-    ???
-  }
-
-
 
 }

@@ -15,6 +15,10 @@ import formats._
 
 import cats.effect._
 
+import PathConversions._
+import geometry._
+import utils.Timer.time
+
 // sealed trait OutputOption
 
 // object OutputOption {
@@ -167,8 +171,7 @@ object TextWorksConfig {
   }
 }
 
-import PathConversions._
-import geometry._
+
 object TextWorksActions extends GeometricFigureCodecs {
   val PrettyPrint2Spaces = circe.Printer.spaces2
 
@@ -178,7 +181,7 @@ object TextWorksActions extends GeometricFigureCodecs {
 
     val fsStream = ioOpts.inputStream().zipWithIndex
       .evalMap { case (input, i) =>
-        IO {
+        IO.apply {
           try {
             input match {
               case m@ InputMode.SingleFile(f) =>
@@ -220,7 +223,9 @@ object TextWorksActions extends GeometricFigureCodecs {
 
                   val ammPath = nioToAmm(docsegPath)
 
-                  TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
+                  time("extractText") {
+                    TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
+                  }
                 }
                 maybeSegmenter.left.map { s =>
                   println(s"Error: ${s}")
@@ -281,13 +286,17 @@ object TextWorksActions extends GeometricFigureCodecs {
 
     val segmenter = DocumentSegmenter.createSegmenter(stableId, inputPdf, zoningApi)
 
-    segmenter.runDocumentSegmentation()
+    time("runDocumentSegmentation") {
+      segmenter.runDocumentSegmentation()
+    }
 
-    val jsonOutput = TextGridOutputFormats.jsonOutputGridPerPage(segmenter)
+    val jsonOutput = time("build json output") {  TextGridOutputFormats.jsonOutputGridPerPage(segmenter) }
 
     val gridJsStr = jsonOutput.pretty(jsonPrinter)
 
-    fs.write(textOutputFile, gridJsStr)
+    time("write textgrid.json") {
+      fs.write(textOutputFile, gridJsStr)
+    }
 
     traceLogRoot.foreach { rootPath =>
       println("writing tracelogs")

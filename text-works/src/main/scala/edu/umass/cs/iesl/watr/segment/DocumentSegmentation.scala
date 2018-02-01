@@ -11,6 +11,7 @@ import spindex._
 
 // import utils.SlicingAndDicing._
 // import utils.ExactFloats._
+import utils.Timer.time
 
 import TypeTags._
 
@@ -71,21 +72,21 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
   def runDocumentSegmentation(): Unit = {
 
-    pageSegmenters.foreach {
-      _.runPageSegmentationPass1()
+    time("segment pass 1") {
+      pageSegmenters.foreach { p =>
+        p.runPageSegmentationPass1()
+      }
     }
 
-    doCharMetricComputations()
-
-    pageSegmenters.foreach {
-      _.runPageSegmentationPass2()
+    time("segment char metric computations") {
+      doCharMetricComputations()
     }
 
-    // val docTextGrid = joinPageTextGrids()
-    // val outputBuilder = docTextGrid.buildOutput()
-    // val finalOutput = outputBuilder.getOutput
-
-    // println(finalOutput)
+    time("segment pass 2") {
+      pageSegmenters.foreach { p =>
+        p.runPageSegmentationPass2()
+      }
+    }
 
   }
 

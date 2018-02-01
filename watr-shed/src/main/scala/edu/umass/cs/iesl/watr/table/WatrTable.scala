@@ -108,7 +108,13 @@ object WatrMain extends App with utils.AppMainBasics {
     val run = argMap.get("run").flatMap(_.headOption.map(_.toInt))
       .getOrElse(Int.MaxValue)
 
+
     command match {
+      case "par:the:works" =>
+        corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
+        corpusAccessApi.corpusAccessDB.dropAndRecreate()
+        ShellCommands.segmentAllParallel(run, skip)
+
       case "the:works" =>
         corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
         corpusAccessApi.corpusAccessDB.dropAndRecreate()
