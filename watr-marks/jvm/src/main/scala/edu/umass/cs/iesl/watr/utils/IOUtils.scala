@@ -19,10 +19,18 @@ object PathUtils {
       case p: fs.RelPath => fs.pwd / p
     }
   }
+
   def strToAmmPath(str: String): fs.Path = {
     fs.FilePath(str) match {
       case p: fs.Path =>  p
       case p: fs.RelPath => fs.pwd / p
+    }
+  }
+
+  implicit class RicherPathUtils_String(val self: String) extends AnyVal {
+
+    def toPath(): fs.Path = {
+      strToAmmPath(self)
     }
   }
 

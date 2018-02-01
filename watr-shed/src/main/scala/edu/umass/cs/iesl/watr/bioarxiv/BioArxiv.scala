@@ -2,26 +2,25 @@ package edu.umass.cs.iesl.watr
 package bioarxiv
 
 import ammonite.{ops => fs}, fs._
-import java.nio.{file => nio}
-import play.api.libs.json, json._
-import watrmarks.{StandardLabels => LB}
-
-import corpora._
 import corpora.filesys._
 
-import scala.collection.mutable
-import textreflow.data._
-import TypeTags._
-import watrmarks._
+import _root_.io.circe, circe._, circe.syntax._
+import circe.generic.semiauto._
+import circe.{parser => CirceParser}
+
+import utils.DoOrDieHandlers._
+
+
+import sys.process._
+import java.net.URL
 
 object BioArxiv {
 
   case class PaperRec(
-    title: String,
-    `abstract`: String,
     doi_link: String,
     pdf_link: String,
-    authors: List[String]
+    pmid: Option[Long],
+    sourceJson: Option[Json]
   )
 
 }
@@ -29,22 +28,22 @@ object BioArxiv {
 trait BioArxivJsonFormats  {
   import BioArxiv._
 
-  implicit def optionalFormat[T](implicit jsFmt: Format[T]): Format[Option[T]] =
-    new Format[Option[T]] {
-      override def reads(json: JsValue): JsResult[Option[T]] = json match {
-        case JsNull => JsSuccess(None)
-        case js     => jsFmt.reads(js).map(Some(_))
-      }
-      override def writes(o: Option[T]): JsValue = o match {
-        case None    => JsNull
-        case Some(t) => jsFmt.writes(t)
-      }
-    }
+  // implicit def optionalFormat[T](implicit jsFmt: Format[T]): Format[Option[T]] =
+  //   new Format[Option[T]] {
+  //     override def reads(json: JsValue): JsResult[Option[T]] = json match {
+  //       case JsNull => JsSuccess(None)
+  //       case js     => jsFmt.reads(js).map(Some(_))
+  //     }
+  //     override def writes(o: Option[T]): JsValue = o match {
+  //       case None    => JsNull
+  //       case Some(t) => jsFmt.writes(t)
+  //     }
+  //   }
 
-  implicit def Format_PaperRec            =  Json.format[PaperRec]
+  implicit def Encode_PaperRec: Encoder[PaperRec] =  deriveEncoder
+  implicit def Decode_PaperRec: Decoder[PaperRec] =  deriveDecoder
 
 }
-
 
 
 object BioArxivOps extends BioArxivJsonFormats {
@@ -55,48 +54,32 @@ object BioArxivOps extends BioArxivJsonFormats {
     for {
       rec      <- corpusEntry.getArtifact("bioarxiv.json")
       asJson   <- rec.asJson.toOption
-      paperRec <- asJson.validate[PaperRec].fold(
-        (errors: Seq[(JsPath, Seq[JsonValidationError])]) => {
-          println(s"errors: ${errors.length}")
-
-          errors.take(10).foreach { case (errPath, errs) =>
-            println(s"$errPath")
-            errs.foreach { e =>
-              println(s"> $e")
-            }
-          }
-          None
-
-        }, ps => Option(ps))
-    } yield  paperRec
+    } yield { asJson.decodeOrDie[PaperRec]() }
   }
 
+  def loadPaperRecs(path: Path): Map[String, PaperRec] = {
+    // val fis = nio.Files.newInputStream(path.toNIO)
+    val jsonStr = _root_.scala.io.Source.fromFile(path.toIO).mkString
 
-  def loadPaperRecs(path: Path): Option[Map[String, PaperRec]] = {
-    val fis = nio.Files.newInputStream(path.toNIO)
-    val papers = json.Json.parse(fis).validate[Seq[PaperRec]]
-
-    papers.fold(
-      (errors: Seq[(JsPath, Seq[JsonValidationError])]) => {
-        println(s"errors: ${errors.length}")
-
-        errors.take(10).foreach { case (errPath, errs) =>
-          println(s"$errPath")
-          errs.foreach { e =>
-            println(s"> $e")
+    val papers = CirceParser.parse(jsonStr) match {
+      case Left(failure) => die(s"Invalid JSON : ${failure}")
+      case Right(json) =>
+        json.hcursor.values.map { jsons =>
+          jsons.map { jsonRec =>
+            // println(s"decoding ${jsonRec.spaces2}")
+            val paperRec = jsonRec.decodeOrDie[PaperRec]()
+            paperRec.copy(sourceJson = Some(jsonRec))
           }
-        }
-        None
+        }.orDie()
+    }
 
-      }, (ps: Seq[PaperRec]) => {
-        println("predsynth json load successful.")
+    println("bioarxiv json load successful.")
 
-        ps.map(p=> {
-          val pathParts = p.doi_link.split("/")
-          val key = pathParts.takeRight(2).mkString("-") + ".d"
-          (key -> p)
-        }).toMap.some
-      })
+    papers.map{  p=>
+      val pathParts = p.doi_link.split("/")
+      val key = pathParts.takeRight(2).mkString("-") + ".d"
+      (key, p)
+    }.toMap
   }
 
   def createCorpus(corpusRoot: Path, paperRecs: Map[String, PaperRec]): Unit = {
@@ -107,18 +90,14 @@ object BioArxivOps extends BioArxivJsonFormats {
       (key, rec) <- paperRecs
     } {
       val entry =  corpus.ensureEntry(key)
-      val pjson = Json.toJson(rec)
-      val jsOut = Json.prettyPrint(pjson)
+      val pjson = rec.sourceJson.orDie("no source json found")
+      val jsOut = pjson.spaces2
       val artifact = entry.putArtifact("bioarxiv.json", jsOut)
       val path = artifact.rootPath
       log.info(s"entry $key created in $path")
     }
   }
 
-
-
-  import sys.process._
-  import java.net.URL
 
   def downloadPdfs(corpusRoot: Path): Unit = {
     val corpus = Corpus(corpusRoot)
@@ -127,8 +106,8 @@ object BioArxivOps extends BioArxivJsonFormats {
       entry  <- corpus.entries()
       json   <- entry.getArtifact("bioarxiv.json")
       asJson <- json.asJson
-      paper  <- asJson.validate[PaperRec]
     } {
+      val paper = asJson.decodeOrDie[PaperRec]()
       val link = paper.pdf_link
       val pdfName = link.split("/").last
 
@@ -138,7 +117,13 @@ object BioArxivOps extends BioArxivJsonFormats {
           println(s"downloading ${link}")
           val downloadPath =  (entry.artifactsRoot / s"${pdfName}").toNIO.toFile
 
-          new URL(link) #> downloadPath !!
+          val cmd = Seq("curl", "-L", link, "--output", downloadPath.toString())
+
+          val status = cmd.!
+
+          println(s"code ${status} for ${link}")
+
+          // val asdf = new URL(link) #> downloadPath !!
 
         } catch {
           case t: Throwable =>
@@ -156,141 +141,162 @@ object BioArxivOps extends BioArxivJsonFormats {
   }
 }
 
+object BioArxivCLI extends App with utils.AppMainBasics {
+  import BioArxivOps._
+  import utils.PathUtils._
 
+  def run(args: Array[String]): Unit = {
+    val argMap = argsToMap(args)
 
-object AlignBioArxiv {
-  import BioArxiv._
-  private[this] val log = org.log4s.getLogger
+    // val json = argMap.get("json").flatMap(_.headOption)
+    //   .getOrElse(sys.error("no bioarxiv json file supplied (--json ...)"))
 
-  case class AlignmentScores(
-    alignmentLabel: Label
-  ) {
-    val lineScores = mutable.HashMap[Int, Double]()
-    val triScores  = mutable.HashMap[Int, Double]()
+    val corpusRoot = argMap.get("corpus").flatMap(_.headOption)
+      .getOrElse(sys.error("no corpus root  (--corpus ...)"))
 
-    val lineReflows = mutable.HashMap[Int, TextReflow]()
-    val triReflows = mutable.HashMap[Int, TextReflow]()
+    // val paperRecs = loadPaperRecs(json.toPath)
+    // val withPmids = paperRecs.filter { case (_, rec) => rec.pmid.isDefined }
 
-    val consecutiveTriBoosts  = mutable.HashMap[Int, Int]()
+    // createCorpus(corpusRoot.toPath, withPmids)
 
-    def boostTrigram(lineInfo: ReflowSliceInfo, triInfo: ReflowSliceInfo): Unit = {
-      val ReflowSliceInfo(linenum, lineReflow, _/*lineText*/) = lineInfo
-      val ReflowSliceInfo(trinum, triReflow, _/*triText*/) = triInfo
-      val triBoostRun = consecutiveTriBoosts.getOrElseUpdate(trinum-1, 0)+1
-      consecutiveTriBoosts.put(trinum, triBoostRun)
+    downloadPdfs(corpusRoot.toPath())
 
-      val lineScore = lineScores.getOrElse(linenum, 1d)
-      val triScore = triScores.getOrElse(trinum, 1d)
-
-      lineScores.put(linenum, lineScore + triBoostRun)
-      triScores.put(trinum, triScore + triBoostRun)
-
-      lineReflows.getOrElseUpdate(linenum, lineReflow)
-      triReflows.getOrElseUpdate(trinum, triReflow)
-    }
-
-
-    def alignStringToPage(str: String, pageTrigrams: Seq[(ReflowSliceInfo, ReflowSliceInfo)]): Unit = {
-      println(s"aligning ${str}")
-      // // Init lineScores/lineReflows
-      // for ((ReflowSliceInfo(linenum, lineReflow, lineText), _) <- pageTrigrams) {
-      //   lineScores.put(linenum, 0d)
-      //   lineReflows.put(linenum, lineReflow)
-      // }
-      for {
-        tri <- makeTrigrams(str)
-        (lineInfo@ReflowSliceInfo(linenum, lineReflow, lineText), triInfo@ReflowSliceInfo(trinum, triReflow, triText)) <- pageTrigrams
-      } {
-        if (tri == triText) {
-          boostTrigram(lineInfo, triInfo)
-        }
-      }
-    }
-
-    def report(lineText: Seq[String]): Unit = {
-      println(s"Top candidates:")
-      for {
-        (k, v) <- lineScores.toList.sortBy(_._2).reverse.take(10)
-      } {
-        val text = lineText(k)
-        println(s"score ${v}; ln ${k}>  $text")
-      }
-    }
-  }
-
-  def makeTrigrams(str: String): Seq[String] = {
-    str.sliding(3).toList
-  }
-
-  case class ReflowSliceInfo(
-    index: Int,
-    reflow: TextReflow,
-    text: String
-  )
-
-
-  def alignPaperWithDB(docStore: DocumentZoningApi, paper: PaperRec, stableId: String@@DocumentID): List[AlignmentScores] = {
-
-    log.debug("aligning bioarxiv paper")
-
-    val titleBoosts = new AlignmentScores(LB.Title)
-    val authorBoosts = new AlignmentScores(LB.Authors)
-    val abstractBoosts = new AlignmentScores(LB.Abstract)
-
-
-    val page0 = PageNum(0)
-
-    val lineReflows = for {
-      (vlineZone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
-    } yield {
-      println(s"${vlineZone}")
-
-      val vlineReflow = docStore.getTextReflowForZone(vlineZone.id)
-      val reflow = vlineReflow.getOrElse { sys.error(s"no text reflow found for line ${linenum}") }
-      val text = reflow.toText
-      println(s"  >>${text}<<")
-      (linenum, reflow, text)
-    }
-
-    val lineTrisAndText = for {
-      (linenum, vlineReflow, lineText) <- lineReflows
-      // _            = println(s"${linenum}> ${lineText}")
-      lineInfo = ReflowSliceInfo(linenum, vlineReflow, vlineReflow.toText())
-    } yield for {
-      i <- 0 until vlineReflow.length
-      (slice, sliceIndex)       <- vlineReflow.slice(i, i+3).zipWithIndex
-    } yield {
-      val triInfo = ReflowSliceInfo(sliceIndex, slice, slice.toText())
-      (lineInfo, triInfo)
-    }
-
-    val page0Trigrams = lineTrisAndText.flatten.toList
-
-    titleBoosts.alignStringToPage(paper.title, page0Trigrams)
-    abstractBoosts.alignStringToPage(paper.`abstract`, page0Trigrams)
-
-    paper.authors.map(author =>
-      authorBoosts.alignStringToPage(author, page0Trigrams)
-    )
-
-    println(s"Actual title> ${paper.title}")
-    titleBoosts.report(lineReflows.map(_._3))
-
-    println(s"""Actual Authors> ${paper.authors.mkString(", ")}""")
-    authorBoosts.report(lineReflows.map(_._3))
-
-    println("Abstract lines")
-    println(s"""Actual Abstract> ${paper.`abstract`.substring(0, 20)}...""")
-    abstractBoosts.report(lineReflows.map(_._3))
-
-    List(
-      titleBoosts,
-      authorBoosts,
-      abstractBoosts
-    )
 
   }
 
-
-
+  run(args)
 }
+
+
+// object AlignBioArxiv {
+//   import BioArxiv._
+//   private[this] val log = org.log4s.getLogger
+
+//   case class AlignmentScores(
+//     alignmentLabel: Label
+//   ) {
+//     val lineScores = mutable.HashMap[Int, Double]()
+//     val triScores  = mutable.HashMap[Int, Double]()
+
+//     val lineReflows = mutable.HashMap[Int, TextReflow]()
+//     val triReflows = mutable.HashMap[Int, TextReflow]()
+
+//     val consecutiveTriBoosts  = mutable.HashMap[Int, Int]()
+
+//     def boostTrigram(lineInfo: ReflowSliceInfo, triInfo: ReflowSliceInfo): Unit = {
+//       val ReflowSliceInfo(linenum, lineReflow, _/*lineText*/) = lineInfo
+//       val ReflowSliceInfo(trinum, triReflow, _/*triText*/) = triInfo
+//       val triBoostRun = consecutiveTriBoosts.getOrElseUpdate(trinum-1, 0)+1
+//       consecutiveTriBoosts.put(trinum, triBoostRun)
+
+//       val lineScore = lineScores.getOrElse(linenum, 1d)
+//       val triScore = triScores.getOrElse(trinum, 1d)
+
+//       lineScores.put(linenum, lineScore + triBoostRun)
+//       triScores.put(trinum, triScore + triBoostRun)
+
+//       lineReflows.getOrElseUpdate(linenum, lineReflow)
+//       triReflows.getOrElseUpdate(trinum, triReflow)
+//     }
+
+
+//     def alignStringToPage(str: String, pageTrigrams: Seq[(ReflowSliceInfo, ReflowSliceInfo)]): Unit = {
+//       println(s"aligning ${str}")
+//       // // Init lineScores/lineReflows
+//       // for ((ReflowSliceInfo(linenum, lineReflow, lineText), _) <- pageTrigrams) {
+//       //   lineScores.put(linenum, 0d)
+//       //   lineReflows.put(linenum, lineReflow)
+//       // }
+//       for {
+//         tri <- makeTrigrams(str)
+//         (lineInfo@ReflowSliceInfo(linenum, lineReflow, lineText), triInfo@ReflowSliceInfo(trinum, triReflow, triText)) <- pageTrigrams
+//       } {
+//         if (tri == triText) {
+//           boostTrigram(lineInfo, triInfo)
+//         }
+//       }
+//     }
+
+//     def report(lineText: Seq[String]): Unit = {
+//       println(s"Top candidates:")
+//       for {
+//         (k, v) <- lineScores.toList.sortBy(_._2).reverse.take(10)
+//       } {
+//         val text = lineText(k)
+//         println(s"score ${v}; ln ${k}>  $text")
+//       }
+//     }
+//   }
+
+//   def makeTrigrams(str: String): Seq[String] = {
+//     str.sliding(3).toList
+//   }
+
+//   case class ReflowSliceInfo(
+//     index: Int,
+//     reflow: TextReflow,
+//     text: String
+//   )
+
+
+//   def alignPaperWithDB(docStore: DocumentZoningApi, paper: PaperRec, stableId: String@@DocumentID): List[AlignmentScores] = {
+
+//     log.debug("aligning bioarxiv paper")
+
+//     val titleBoosts = new AlignmentScores(LB.Title)
+//     val authorBoosts = new AlignmentScores(LB.Authors)
+//     val abstractBoosts = new AlignmentScores(LB.Abstract)
+
+
+//     val page0 = PageNum(0)
+
+//     val lineReflows = for {
+//       (vlineZone, linenum) <- docStore.getPageVisualLines(stableId, page0).zipWithIndex
+//     } yield {
+//       println(s"${vlineZone}")
+
+//       val vlineReflow = docStore.getTextReflowForZone(vlineZone.id)
+//       val reflow = vlineReflow.getOrElse { sys.error(s"no text reflow found for line ${linenum}") }
+//       val text = reflow.toText
+//       println(s"  >>${text}<<")
+//       (linenum, reflow, text)
+//     }
+
+//     val lineTrisAndText = for {
+//       (linenum, vlineReflow, lineText) <- lineReflows
+//       // _            = println(s"${linenum}> ${lineText}")
+//       lineInfo = ReflowSliceInfo(linenum, vlineReflow, vlineReflow.toText())
+//     } yield for {
+//       i <- 0 until vlineReflow.length
+//       (slice, sliceIndex)       <- vlineReflow.slice(i, i+3).zipWithIndex
+//     } yield {
+//       val triInfo = ReflowSliceInfo(sliceIndex, slice, slice.toText())
+//       (lineInfo, triInfo)
+//     }
+
+//     val page0Trigrams = lineTrisAndText.flatten.toList
+
+//     titleBoosts.alignStringToPage(paper.title, page0Trigrams)
+//     abstractBoosts.alignStringToPage(paper.`abstract`, page0Trigrams)
+
+//     paper.authors.map(author =>
+//       authorBoosts.alignStringToPage(author, page0Trigrams)
+//     )
+
+//     println(s"Actual title> ${paper.title}")
+//     titleBoosts.report(lineReflows.map(_._3))
+
+//     println(s"""Actual Authors> ${paper.authors.mkString(", ")}""")
+//     authorBoosts.report(lineReflows.map(_._3))
+
+//     println("Abstract lines")
+//     println(s"""Actual Abstract> ${paper.`abstract`.substring(0, 20)}...""")
+//     abstractBoosts.report(lineReflows.map(_._3))
+
+//     List(
+//       titleBoosts,
+//       authorBoosts,
+//       abstractBoosts
+//     )
+//   }
+// }

@@ -59,6 +59,7 @@ object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageW
         corpusAccessApi.corpusAccessDB.docStore.batchImport(segmenter.docStore.asInstanceOf[MemDocZoningApi])
 
       case Left(message) =>
+        println(s"Error: ${message}")
 
     }}
 
