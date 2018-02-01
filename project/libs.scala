@@ -5,7 +5,7 @@ import Keys._
 trait LibVersions {
   val scalazVersion       = "7.2.18"
   val scalaTagsVersion    = "0.6.7"
-  val scalatestVersion    = "3.0.4"
+  val scalatestVersion    = "3.0.5"
   val logbackVersion      = "1.7.25"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
@@ -15,13 +15,13 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.0-M8"
-  val fs2Version          = "0.10.0-RC1"
+  val http4sVersion       = "0.18.0-M9"
+  val fs2Version          = "0.10.0"
   val circeJsonVersion    = "0.9.1"
   val ammoniteVersion     = "1.0.3"
   val catsV               = "1.0.1"
   val catsEffectV         = "0.8"
-  val postgresqlV         = "42.2.0"
+  val postgresqlV         = "42.2.1"
 }
 
 
