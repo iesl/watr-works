@@ -172,16 +172,16 @@ sealed trait Window { self =>
   }
 
   def rinits[A](as: Stream[A]): Seq[Seq[A]]= {
-    (1 until as.length) map { as.slice(0, _) }
+    (1 to as.length) map { as.slice(0, _) }
   }
 
   /// HOTSPOT: reverse, toList, insertSpacesInRow
   def slurpRight(p: (Seq[TextGrid.GridCell], TextGrid.GridCell) => Boolean): Window = {
 
-    // println(s"Checking winStart.right: ${winStart.rights.toList}")
+    // println(s"Checking winStart.right: ${winStart.rights.map(_.char).toList.mkString}")
     val slurped = rinits(winStart.rights)
       .map{ init =>
-        // println(s"    init= ${init}")
+        // println(s"    init= '${init.map(_.char).toList.mkString}'")
         val nextWin = cells ++ init
         (nextWin.init, nextWin.last)
       }
