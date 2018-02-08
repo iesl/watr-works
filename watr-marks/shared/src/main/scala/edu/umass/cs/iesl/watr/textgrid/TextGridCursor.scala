@@ -75,7 +75,11 @@ trait GridCursor { self =>
     focus.addLabel(label)
   }
 
-  def unfoldCursorToRow(f: GridCursor => Option[GridCursor]): TextGrid.Row  = {
+  import scala.annotation.tailrec
+
+  @tailrec
+  final def unfoldCursorToRow(f: GridCursor => Option[GridCursor]): TextGrid.Row  = {
+    // def loop(f: GridCursor => Option[GridCursor]): TextGrid.Row  = {}
     f(self) match {
       case Some(cmod) => cmod.next match {
         case Some(cnext) => cnext.unfoldCursorToRow(f)
@@ -167,17 +171,33 @@ sealed trait Window { self =>
     Window(cells++as, winStart.lefts, winStart.focus, bs)
   }
 
+  def rinits[A](as: Stream[A]): Seq[Seq[A]]= {
+    (1 until as.length) map { as.slice(0, _) }
+  }
+
+  /// HOTSPOT: reverse, toList, insertSpacesInRow
   def slurpRight(p: (Seq[TextGrid.GridCell], TextGrid.GridCell) => Boolean): Window = {
-    val slurped = winStart.rights
-      .inits.toSeq.reverse.drop(1).map{ init =>
+
+    // println(s"Checking winStart.right: ${winStart.rights.toList}")
+    val slurped = rinits(winStart.rights)
+      .map{ init =>
+        // println(s"    init= ${init}")
         val nextWin = cells ++ init
         (nextWin.init, nextWin.last)
       }
-      .takeWhile { case (h, t) =>
-        val b = p(h, t)
-        // println(s"""  slurpRight(win=[${h.map(_.char).mkString}], cell=${t.char}) = ${b}""")
-        b
-      }
+      .takeWhile { case (h, t) => p(h, t) }
+
+    // val slurped = winStart.rights
+    //   .inits.toSeq.reverse.drop(1)
+    //   .map{ init =>
+    //     val nextWin = cells ++ init
+    //     (nextWin.init, nextWin.last)
+    //   }
+    //   .takeWhile { case (h, t) =>
+    //     val b = p(h, t)
+    //     // println(s"""  slurpRight(win=[${h.map(_.char).mkString}], cell=${t.char}) = ${b}""")
+    //     b
+    //   }
 
     val slcells = slurped.map{case (ws, t) => ws :+ t}.toList
       .lastOption

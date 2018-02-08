@@ -4,19 +4,18 @@ package watrcolors
 
 import cats.effect.IO
 
-import org.http4s._
+// import org.http4s._
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{headers => H}
+// import org.http4s.{headers => H}
 import org.http4s.server.blaze.BlazeBuilder
 import org.http4s.server.staticcontent._
-import org.http4s.server.middleware.{CORS, CORSConfig}
+// import org.http4s.server.middleware.{CORS, CORSConfig}
 
 // import org.http4s.util.{ ExitCode, StreamApp }
 import fs2.StreamApp.ExitCode
 
 import persistence._
 import services._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 import utils.{PathUtils => P}
 import edu.umass.cs.iesl.watr.table._
@@ -72,10 +71,13 @@ class AllServices(
 }
 
 object WiredServerMain extends fs2.StreamApp[IO] with Http4sDsl[IO] with utils.AppMainBasics {
+  import java.util.concurrent.Executors
+  import scala.concurrent._
+  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
+  // implicit val refEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
 
 
   def stream(args: List[String], requestShutdown: IO[Unit]): fs2.Stream[IO, ExitCode] = {
-    // implicit val refEc = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
     val argMap = argsToMap(args.toArray)
 
     val port = argMap.get("port").flatMap(_.headOption)

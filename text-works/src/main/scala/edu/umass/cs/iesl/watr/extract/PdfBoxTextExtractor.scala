@@ -28,6 +28,7 @@ import utils._
 
 import ExtractionImplicits._
 
+class PageLimitExceeded extends Error
 
 class PdfBoxTextExtractor(
   page: PDPage,
@@ -36,6 +37,8 @@ class PdfBoxTextExtractor(
   fontDefs: FontDefs,
   pageBoundsPdfCoords: PDRectangle
 ) extends PDFGraphicsStreamEngine(page) {
+  private[this] val log = org.log4s.getLogger
+
   import ExtractedItem._
   import FontDefs._
   // Limit the # of chars that can be extracted per page to prevent pathological cases (e.g., embedded charts using symbol font-based dots)
@@ -210,6 +213,10 @@ class PdfBoxTextExtractor(
     unicode: String,
     displacement: Vector
   ): Unit = {
+    if (totalCharCount > MAX_EXTRACTED_CHARS_PER_PAGE) {
+      log.warn(s"Truncating page ${pageNum}. Limit of ${MAX_EXTRACTED_CHARS_PER_PAGE} glyphs/page exceeded")
+      throw new PageLimitExceeded()
+    }
 
     val isSpace = code == 32 && {
       unicode == null || unicode.headOption.exists(_ == ' ')
@@ -217,6 +224,7 @@ class PdfBoxTextExtractor(
 
 
     if (!isSpace) {
+      totalCharCount = totalCharCount + 1
 
       val glyphProps = calculateGlyphBounds(textRenderingMatrix, pdFont, code)
 
@@ -427,7 +435,12 @@ class PdfBoxTextExtractor(
 
     pageSpaceTransform = findPageSpaceTransforms(pdPage)
 
-    processPage(pdPage)
+    try {
+      processPage(pdPage)
+    } catch {
+      case t: PageLimitExceeded =>
+
+    }
   }
 
   def getPageGeometry(): PageGeometry = {

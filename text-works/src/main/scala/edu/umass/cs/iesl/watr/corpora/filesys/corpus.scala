@@ -13,9 +13,8 @@ import _root_.io.circe, circe._ // , circe.syntax._
 import circe.parser._
 
 import ammonite.{ops => fs}, fs._
+import cats.effect._
 
-import cats.effect.IO
-import fs2.Stream
 
 object Corpus {
 
@@ -123,17 +122,16 @@ class Corpus(
   }
 
 
-  def entryStream(): Stream[IO, CorpusEntry] = {
-
-    zip.dirEntriesRecursive[IO](corpusRoot.toNIO)
-      .filter{ p =>
-        val f = Path(p)
-        f.ext == "d" && f.isDir
-      }
-      .flatMap { p =>
-        val e = new CorpusEntry(p.toFile().getName, this)
-        Stream.emit(e)
-      }
+  // def entryStream[F[_]](implicit F: Effect[F]): fs2.Stream[F, CorpusEntry] = {
+  def entryStream[F[_]: Effect](): fs2.Stream[F, CorpusEntry] = {
+    zip.dirEntries[F](corpusRoot.toNIO, { p =>
+      val f = Path(p)
+      f.ext == "d" && f.isDir
+    }) flatMap { p =>
+      fs2.Stream.emit(
+        new CorpusEntry(p.toFile().getName, this)
+      )
+    }
   }
 
 

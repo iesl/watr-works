@@ -95,6 +95,7 @@ trait CharColumnFinding extends PageScopeSegmenter
   }
 
 
+  // HOTSPOT:toList
   def createBaselineClusters(): Unit = {
 
     pageIndex.shapes.ensureCluster(LB.CharRunBaseline::Cluster)
@@ -225,8 +226,6 @@ trait CharColumnFinding extends PageScopeSegmenter
           docScope.fontDefs.getFont(item.fontName).foreach { fontProps =>
             val itemDetIndex = item.glyphProps.scalingFactor
             fontProps.isNatLangFont()
-
-
           }
         }
 

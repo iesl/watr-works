@@ -111,17 +111,14 @@ object WatrMain extends App with utils.AppMainBasics {
 
     command match {
       case "par:the:works" =>
-        corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
-        corpusAccessApi.corpusAccessDB.dropAndRecreate()
         ShellCommands.segmentAllParallel(run, skip)
 
       case "the:works" =>
-        corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
-        corpusAccessApi.corpusAccessDB.dropAndRecreate()
         ShellCommands.segmentAll(run, skip)
 
-      case "db:drop" =>
+      case "db:clean" =>
         corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
+        corpusAccessApi.corpusAccessDB.dropAndRecreate()
 
       case "db:create" =>
         corpusAccessApi.corpusAccessDB.dropAndRecreate()

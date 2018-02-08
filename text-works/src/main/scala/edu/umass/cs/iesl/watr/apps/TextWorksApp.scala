@@ -19,23 +19,6 @@ import PathConversions._
 import geometry._
 import utils.Timer.time
 
-// sealed trait OutputOption
-
-// object OutputOption {
-//   case object VisualStructure extends OutputOption
-//   case object ReadingStructure extends OutputOption
-//   case object SuperSubEscaping extends OutputOption
-
-//   implicit val OutputOptionRead: Read[OutputOption] =
-//     Read.reads { _.toLowerCase match {
-//       case "VisualStructure"        | "vs"  => VisualStructure
-//       case "ReadingStructure"       | "rs"  => ReadingStructure
-//       case "SuperSubEscaping"       | "sse" => SuperSubEscaping
-//       case s       =>
-//         throw new IllegalArgumentException(s"""'${s}' is not an output option.""")
-//     }}
-// }
-
 object TextWorksConfig {
   implicit val NioPath: Read[nio.Path] =
     Read.reads { v =>
@@ -46,7 +29,6 @@ object TextWorksConfig {
     ioConfig        : IOConfig = IOConfig(),
     initCorpus      : Option[nio.Path] = None,
     runTraceLogging : Boolean = VisualTracer.tracingEnabled(),
-    // outputOptions   : List[OutputOption] = List(),
     exec            : Option[(Config) => Unit] = Some((c) => TextWorksActions.extractText(c))
   )
 
@@ -128,10 +110,6 @@ object TextWorksConfig {
 
     note("\nOutput text layout options: \n")
 
-    // opt[OutputOption]('p', "layout-option") action { (v, conf) =>
-    //   conf.copy(outputOptions = v :: conf.outputOptions)
-    // } text("choose layout options for extracted text [VisualStructure|ReadingStructure] [SuperSubEscaping]")
-
     val toAmm = PathConversions.nioToAmm(_)
 
     checkConfig{ c =>
@@ -173,78 +151,175 @@ object TextWorksConfig {
 
 
 object TextWorksActions extends GeometricFigureCodecs {
+  private[this] val log = org.log4s.getLogger
+
   val PrettyPrint2Spaces = circe.Printer.spaces2
 
+  type MarkedInput = Either[InputMode, InputMode]
+  type RunInput    = Right[InputMode, InputMode]
+  type SkipInput   = Left[InputMode, InputMode]
+
+  def cleanOldArtifacts(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+    inStream => {
+      inStream.map {
+        case Left(inputMode) => Left(inputMode)
+        case Right(inputMode) =>
+          val output = InputMode.getOutputFile(inputMode, conf.ioConfig)
+
+          if (output.toFile().exists()) {
+            if (conf.ioConfig.overwrite) {
+              log.info(s"Overwriting ${output}")
+              fs.rm(nioToAmm(output))
+              Right(inputMode)
+            } else {
+              Left(inputMode)
+            }
+          } else {
+            Right(inputMode)
+          }
+      }
+    }
+  }
+
+  def doSegment1(input: InputMode, conf: TextWorksConfig.Config): Either[String, DocumentSegmentation] = {
+    try {
+      input match {
+        case m@ InputMode.SingleFile(f) =>
+
+          val pdfName = f.getFileName.toString()
+          val stableId = DocumentID(pdfName)
+          val input = nioToAmm(f)
+          val output = InputMode.getOutputFile(m, conf.ioConfig)
+
+          if (!output.toFile().exists()) {
+            Right(TextWorksActions.extractText(stableId, input, nioToAmm(output), None))
+          } else {
+            val msg = s"File ${output} already exists. Move file or use --overwrite"
+            println(msg)
+            Left(msg)
+          }
+
+
+        case m@ InputMode.CorpusFile(_, Some(corpusEntry)) =>
+
+          val stableId = DocumentID(corpusEntry.entryDescriptor)
+
+          println(s"Processing ${stableId}")
+
+          val maybeSegmenter = for {
+            pdfEntry <- corpusEntry.getPdfArtifact.toRight(left="Could not get PDF")
+            pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
+          } yield {
+
+            val traceLogRoot = if (conf.runTraceLogging) {
+              val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
+              traceLogGroup.deleteGroupArtifacts()
+              Some(traceLogGroup.rootPath)
+            } else None
+
+            val output = InputMode.getOutputFile(m, conf.ioConfig)
+            val ammPath = nioToAmm(output)
+
+            time("extractText") {
+              TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
+            }
+          }
+          maybeSegmenter.left.map { s =>
+            println(s"Error: ${s}")
+            s
+          }
+
+          maybeSegmenter
+
+        case m => Left(s"Unsupported InputMode ${m}")
+      }
+    } catch {
+      case t: Throwable =>
+        utils.Debugging.printAndSwallow(t)
+        Left[String,DocumentSegmentation](t.toString())
+    }
+
+  }
+
+
+  def runSegmentation(conf: TextWorksConfig.Config): fs2.Pipe[IO, Either[InputMode, InputMode], Either[String, DocumentSegmentation]] =
+    inStream => {
+      inStream.map {
+        case Left(input) => Left("Skipping")
+        case Right(input) => doSegment1(input, conf)
+      }
+    }
+
+  def getInputStream(conf: TextWorksConfig.Config): fs2.Stream[IO, InputMode] = {
+    new IOOptionParser(conf.ioConfig).inputStream()
+  }
 
   def buildProcessStream(conf: TextWorksConfig.Config): fs2.Stream[IO, Either[String, DocumentSegmentation]] = {
     val ioOpts = new IOOptionParser(conf.ioConfig)
 
-    val fsStream = ioOpts.inputStream().zipWithIndex
-      .evalMap { case (input, i) =>
-        IO.apply {
-          try {
-            input match {
-              case m@ InputMode.SingleFile(f) =>
+    val fsStream = ioOpts.inputStream().evalMap { input =>
+      IO {
+        try {
+          input match {
+            case m@ InputMode.SingleFile(f) =>
 
-                val pdfName = f.getFileName.toString()
-                val stableId = DocumentID(pdfName)
-                val input = nioToAmm(f)
-                val output = conf.ioConfig.outputPath.getOrElse {
-                  nio.Paths.get(pdfName + ".textgrid.json")
-                }
-                if (output.toFile().exists() && conf.ioConfig.overwrite) {
-                  fs.rm(nioToAmm(output))
-                  Right(TextWorksActions.extractText(stableId, input, nioToAmm(output), None))
-                } else {
-                  val msg = s"File ${output} already exists. Move file or use --overwrite"
-                  println(msg)
-                  Left(msg)
-                }
-
-
-              case InputMode.CorpusFile(_, Some(corpusEntry)) =>
-
-                val stableId = DocumentID(corpusEntry.entryDescriptor)
-
-                println(s"Processing ${stableId}")
-
-                val maybeSegmenter = for {
-                  pdfEntry <- corpusEntry.getPdfArtifact.toRight(left="Could not get PDF")
-                  pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
-                  docsegPath <- ioOpts.maybeProcess(corpusEntry, "textgrid.json").toRight(left="Existing output. --overwrite to force processing")
-                } yield {
-
-                  val traceLogRoot = if (conf.runTraceLogging) {
-                    val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
-                    traceLogGroup.deleteGroupArtifacts()
-                    Some(traceLogGroup.rootPath)
-                  } else None
-
-
-                  val ammPath = nioToAmm(docsegPath)
-
-                  time("extractText") {
-                    TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
-                  }
-                }
-                maybeSegmenter.left.map { s =>
-                  println(s"Error: ${s}")
-                  s
-                }
-
-                maybeSegmenter
-
-              case m => Left(s"Unsupported InputMode ${m}")
+              val pdfName = f.getFileName.toString()
+              val stableId = DocumentID(pdfName)
+              val input = nioToAmm(f)
+            val output = conf.ioConfig.outputPath.getOrElse {
+              nio.Paths.get(pdfName + ".textgrid.json")
             }
-          } catch {
-            case t: Throwable =>
-              // println(s"t = ${t}")
-              // t.printStackTrace()
-              utils.Debugging.printAndSwallow(t)
-              Left[String,DocumentSegmentation](t.toString())
+            if (output.toFile().exists() && conf.ioConfig.overwrite) {
+              fs.rm(nioToAmm(output))
+              Right(TextWorksActions.extractText(stableId, input, nioToAmm(output), None))
+            } else {
+              val msg = s"File ${output} already exists. Move file or use --overwrite"
+                println(msg)
+                Left(msg)
+              }
+
+
+            case InputMode.CorpusFile(_, Some(corpusEntry)) =>
+
+              val stableId = DocumentID(corpusEntry.entryDescriptor)
+
+              println(s"Processing ${stableId}")
+
+              val maybeSegmenter = for {
+                pdfEntry <- corpusEntry.getPdfArtifact.toRight(left="Could not get PDF")
+                pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
+                docsegPath <- ioOpts.maybeProcess(corpusEntry, "textgrid.json").toRight(left="Existing output. --overwrite to force processing")
+              } yield {
+
+                val traceLogRoot = if (conf.runTraceLogging) {
+                  val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
+                  traceLogGroup.deleteGroupArtifacts()
+                  Some(traceLogGroup.rootPath)
+                } else None
+
+
+                val ammPath = nioToAmm(docsegPath)
+
+                time("extractText") {
+                  TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
+                }
+              }
+              maybeSegmenter.left.map { s =>
+                println(s"Error: ${s}")
+                s
+              }
+
+              maybeSegmenter
+
+            case m => Left(s"Unsupported InputMode ${m}")
           }
+        } catch {
+          case t: Throwable =>
+            utils.Debugging.printAndSwallow(t)
+            Left[String,DocumentSegmentation](t.toString())
         }
       }
+    }
 
     fsStream
 

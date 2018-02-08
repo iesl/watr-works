@@ -25,7 +25,6 @@ import org.scalatest._
 import java.net.HttpCookie
 
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class MockCookieJar {
 

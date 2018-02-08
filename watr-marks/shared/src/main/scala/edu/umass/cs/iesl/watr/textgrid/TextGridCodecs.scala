@@ -15,12 +15,6 @@ import watrmarks._
 import scala.collection.mutable
 
 
-// case class TextGridSerialization(
-//   lineMap: Map[Int, (Json, String)],
-//   labelMap: Map[Label, Int],
-//   cellLabelBuffer: List[List[String]]
-// )
-
 case class LabelSpan(
   label: Label,
   begin: Int,
@@ -120,6 +114,7 @@ class TextOutputBuilder(textGrid: TextGrid) {
     val codec = getSerialization()
     val lineNums = codec.lineMap.keys.toList.sorted
 
+    // println(s"gridToJson: 1 ")
 
     var totalOffset = 0
     val textAndLoci = lineNums.map { lineNum =>
@@ -129,29 +124,32 @@ class TextOutputBuilder(textGrid: TextGrid) {
       val currOffset = totalOffset
       totalOffset += text.length()
 
-      Json.obj(
+      val sdf = Json.obj(
         "offset" := currOffset,
         "text" := text,
         "loci" := loci,
       )
+      // println(s"gridToJson: @${currOffset}= ${sdf}")
+      sdf
     }
 
     val bioLabelJson = LabelTreeCodecs.encodeBioLabels(
       textGrid.indexedCells().map(_._1)
     )
+    // println(s"gridToJson: bioLabelJson: ${bioLabelJson}")
 
-    // val cellLabels = codec.cellLabelBuffer
-    // assume(cellLabels.length == totalOffset, "cell BIO labeling length != cell count")
 
     val labelDefs = Json.obj(
-      // "labelMap" := codec.labelMap.map{case (k, v) => (v, k.fqn)},
       "cellLabels" := bioLabelJson
     )
-    Json.obj(
+    val qwer = Json.obj(
       "stableId" := textGrid.stableId.unwrap,
       "rows" := textAndLoci,
       "labels" := labelDefs
     )
+
+    // println(s"gridToJson: final: ${qwer}")
+    qwer
   }
 
 }

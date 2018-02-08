@@ -10,9 +10,7 @@ import circe.{parser => CirceParser}
 
 import utils.DoOrDieHandlers._
 
-
 import sys.process._
-import java.net.URL
 
 object BioArxiv {
 
@@ -43,12 +41,14 @@ trait BioArxivJsonFormats  {
   implicit def Encode_PaperRec: Encoder[PaperRec] =  deriveEncoder
   implicit def Decode_PaperRec: Decoder[PaperRec] =  deriveDecoder
 
+
 }
 
 
 object BioArxivOps extends BioArxivJsonFormats {
   private[this] val log = org.log4s.getLogger
   import BioArxiv._
+
 
   def getBioarxivJsonArtifact(corpusEntry: CorpusEntry): Option[PaperRec] = {
     for {

@@ -108,27 +108,33 @@ object TextGridOutputFormats  {
         val geom = Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
 
         Json.obj(
-          ("pageGeometry" := geom),
-          ("textgrid" := gridJs)
+          "pageGeometry" := geom,
+          "textgrid" := gridJs
         )
       }
+
+    val fontDescriptions = fontDescription(docSeg)
+
+    // println(s"fontDescriptions")
+    // println(s"${fontDescriptions} ")
 
     val outputDoc = Json.obj(
       "description" := s"Extracted Pages for ${stableId}",
       "pages" := allPageTextGrids,
-      "fonts" := fontDescription(docSeg)
+      "fonts" := fontDescriptions
     )
 
-    // jsLog.pretty(jsonPrinter)
     outputDoc
   }
 
   import scala.collection.JavaConverters._
+
   def fontDescription(docSeg: DocumentSegmentation): Seq[Json] = {
 
     val fontDefs = docSeg.docScope.fontDefs
 
     val scaledMetrics = fontDefs.fontProperties.map { fp =>
+
       val metrics = fp.scaledMetrics.map{ scaledMetrics =>
         val perPageGlyphCounts = fp.glyphOccurrenceCounts.column(scaledMetrics.scalingFactor)
 
@@ -140,7 +146,7 @@ object TextGridOutputFormats  {
           (pageNum.unwrap, glyphCount)
         }.sorted
 
-        Json.obj(
+        val res = Json.obj(
           "scale" := scaledMetrics.scalingFactor.unwrap,
           "glyphsPerPage" := sortedByPage,
           "heights" := Json.obj(
@@ -149,14 +155,32 @@ object TextGridOutputFormats  {
             "upperCase" := scaledMetrics.heightUpperCase
           )
         )
+        // println(s"scaledMetrics: ")
+        // println(s" perPageList: ${perPageList}")
+        // println(s" perPageGlyphCounts: ${perPageGlyphCounts}")
+        // println(s" sortedByPage: ${sortedByPage}")
+        // println(s" inner final: ${res}")
+        res
       }
 
-      Json.obj(
-        "name" := fp.name,
+      val name = if (fp.name != null && fp.name.trim().length()>0) {
+        fp.name
+      } else {
+        "font"
+      }
+      val res = Json.obj(
+        "name" := name,
         "englishBigramEvidence" := fp.bigramEvidence.count(_ > 0),
         "metrics" := metrics
       )
+
+      // println(s" final fp: ${fp.name}")
+      // println(s" final bi: ${fp.bigramEvidence.toList}")
+      // println(s" final: ${res}")
+
+      res
     }
+
     scaledMetrics
 
   }

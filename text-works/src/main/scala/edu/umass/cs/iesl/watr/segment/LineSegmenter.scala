@@ -119,24 +119,18 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
   }
 
   private def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row =  {
+    // if (textRow.cells.length > 100) {
+    //   println(s"So, there's like ${textRow.cells.length} cells in this row...")
+    //   val dbg = textRow.cells.map(_.char).mkString
+    //   println(dbg)
+    // }
+
     val lineCCs = textRow.cells.collect{
       case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
         headItem
     }
 
-    // val lineText = textRow.cells.collect{
-    //   case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
-    //     if (tailItems.nonEmpty) {
-    //       val ts = tailItems.mkString(",")
-    //       s"[${char}|${ts}]"
-    //     } else {
-    //       char
-    //     }
-    // }
-    // println(s"lineText =>${lineText.mkString}")
-
     val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
-
 
     val res = textRow.toCursor().map{ cursor =>
       val finalRow = cursor.unfoldCursorToRow { nextCursor =>

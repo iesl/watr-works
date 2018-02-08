@@ -12,6 +12,20 @@ object InputMode {
   case class SingleFile(f: nio.Path) extends InputMode
   case class ListOfFiles(f: nio.Path) extends InputMode
   case class CorpusFile(corpusRoot: nio.Path, corpusEntry: Option[CorpusEntry]) extends InputMode
+
+
+  def getOutputFile(input: InputMode, conf: IOConfig): nio.Path = {
+    conf.outputPath.getOrElse {
+      input match {
+        case SingleFile(f) =>
+          conf.outputPath.getOrElse {
+            nio.Paths.get(f.getFileName() + ".textgrid.json")
+          }
+        case CorpusFile(corpusRoot, corpusEntry) =>
+          nio.Paths.get("textgrid.json")
+      }
+    }
+  }
 }
 
 case class IOConfig(
@@ -19,41 +33,33 @@ case class IOConfig(
   outputPath: Option[nio.Path] = None,
   overwrite: Boolean = false,
   pathFilter: Option[String] = None,
-  numToRun: Int = 0,
+  numToRun: Int = Int.MaxValue,
   numToSkip: Int = 0
 )
 
 class IOOptionParser(conf: IOConfig) {
-  import fs2._
 
-  import cats.effect.Async
-  import cats.effect.IO
-  // implicit val S = Strategy.fromCachedDaemonPool()
+  import cats.effect._
 
-  val T = implicitly[Async[IO]]
 
-  def inputStream(): Stream[IO, InputMode] = {
+  def inputStream(): fs2.Stream[IO, InputMode] = {
     conf.inputMode.map{ mode =>
       mode match {
         case in@ InputMode.SingleFile(f) =>
 
-          Stream.emit(in).covary[IO]
+          fs2.Stream.emit(in).covary[IO]
 
         case InputMode.CorpusFile(corpusRoot, None) =>
-          val skip = conf.numToSkip
-          val take = conf.numToRun
-          val corpus = Corpus(corpusRoot)
-          val allEntries = corpus.entryStream()
-          val filteredEntries = allEntries.filter { entry =>
-            conf.pathFilter.map { filter =>
-              entry.entryDescriptor.matches(filter)
-            }.getOrElse { true }
-          }
-          val skipped = if (skip > 0) filteredEntries.drop(skip.toLong) else filteredEntries
-          val entries = if (take > 0) skipped.take(take.toLong) else skipped
-          entries.map{ entry =>
-            InputMode.CorpusFile(corpusRoot, Some(entry))
-          }
+
+          Corpus(corpusRoot).entryStream[IO]()
+            .filter { entry =>
+              conf.pathFilter.map { filter =>
+                entry.entryDescriptor.matches(filter)
+              }.getOrElse { true }
+            }
+            .drop(conf.numToSkip.toLong)
+            .take(conf.numToRun.toLong)
+            .map{ entry => InputMode.CorpusFile(corpusRoot, Some(entry)) }
 
 
         case _ => sys.error("inputStream(): TODO")
