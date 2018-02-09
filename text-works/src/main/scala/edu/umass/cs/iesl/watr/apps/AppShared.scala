@@ -72,7 +72,7 @@ object ProcessPipelineSteps {
 
     val processStream = createInputStream[IO](conf.ioConfig)
       .through(initMarkedInput())
-      .through(cleanOldArtifacts(conf))
+      .through(cleanFileArtifacts(conf))
       .through(markUnextractedProcessables(conf))
       .through(runSegmentation(conf))
       .through(writeExtractedTextFile(conf))
@@ -111,35 +111,29 @@ object ProcessPipelineSteps {
 
   type MarkedInput = Either[ProcessableInput, ProcessableInput]
   type MarkedOutput = Either[String, ProcessedInput]
-  // type RunInput    = Right[ProcessableInput, ProcessableInput]
-  // type SkipInput   = Left[ProcessableInput, ProcessableInput]
 
   def initMarkedInput(): fs2.Pipe[IO, ProcessableInput, MarkedInput] = {
-    inStream => inStream.map {
-      Right(_)
-    }
+    _.map { Right(_) }
   }
 
-  def cleanOldArtifacts(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
-    inStream => {
-      inStream.map {
-        case Left(inputMode) => Left(inputMode)
-        case Right(inputMode) =>
-          val output = Processable.getTextgridOutputFile(inputMode, conf.ioConfig)
+  def cleanFileArtifacts(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+    _.map {
+      case Left(inputMode) => Left(inputMode)
+      case Right(inputMode) =>
+        val output = Processable.getTextgridOutputFile(inputMode, conf.ioConfig)
 
-          if (output.toFile().exists()) {
-            if (conf.ioConfig.overwrite) {
-              log.info(s"Overwriting ${output}")
-              fs.rm(nioToAmm(output))
-              Right(inputMode)
-            } else {
-              log.info(s"Skipping ${output}")
-              Left(inputMode)
-            }
-          } else {
+        if (output.toFile().exists()) {
+          if (conf.ioConfig.overwrite) {
+            log.info(s"Overwriting ${output}")
+            fs.rm(nioToAmm(output))
             Right(inputMode)
+          } else {
+            log.info(s"Skipping ${output}")
+            Left(inputMode)
           }
-      }
+        } else {
+          Right(inputMode)
+        }
     }
   }
 
@@ -206,7 +200,7 @@ object ProcessPipelineSteps {
 
   }
 
-  def writeExtractedTextFile(conf: TextWorksConfig.Config): fs2.Pipe[IO, Either[String, ProcessedInput], Either[String, ProcessedInput]] = {
+  def writeExtractedTextFile(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
     inStream => {
       inStream.map {
         case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
@@ -226,7 +220,8 @@ object ProcessPipelineSteps {
       }
     }
   }
-  def writeTraceLogs(conf: TextWorksConfig.Config): fs2.Pipe[IO, Either[String, ProcessedInput], Either[String, ProcessedInput]] = {
+
+  def writeTraceLogs(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
     inStream => {
       inStream.map {
         case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
@@ -243,21 +238,15 @@ object ProcessPipelineSteps {
 
           //   fs.ls(rootPath)
           //     .foreach{ p => fs.rm(p) }
-
-
           //   val allLogs = segmenter.pageSegmenters
           //     .foldLeft(List[Json]()) {
           //       case (accum, pageSegmenter) =>
           //         accum ++ pageSegmenter.emitLogs()
           //     }
-
           //   val jsonLogs = allLogs.asJson
           //   val jsonStr = jsonLogs.pretty(PrettyPrint2Spaces)
-
           //   fs.write(rootPath / "tracelog.json", jsonStr)
           // }
-
-
           m
 
         case x => x

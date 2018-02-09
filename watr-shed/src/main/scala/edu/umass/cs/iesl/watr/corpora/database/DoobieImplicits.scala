@@ -26,7 +26,7 @@ trait DoobieImplicits extends DoobiePredef {
 
 
   implicit val StrDocumentIDMeta: Meta[String @@ DocumentID] =
-    Meta[String].nxmap(
+    Meta[String].xmap(
       str => DocumentID(str),
       docId => docId.unwrap
     )
@@ -39,7 +39,7 @@ trait DoobieImplicits extends DoobiePredef {
   private implicit def StrTypeTagMeta[T: TypeTag](
     f: String => String@@T)(
     implicit T: TypeTag[String@@T]
-  ): Meta[String@@T] = Meta[String].nxmap(n => f(n), _.unwrap)
+  ): Meta[String@@T] = Meta[String].xmap(n => f(n), _.unwrap)
 
   implicit val DocumentIDMeta   : Meta[Int@@DocumentID   ] = TypeTagMeta[DocumentID   ](DocumentID   (_))
   implicit val TextReflowIDMeta : Meta[Int@@TextReflowID ] = TypeTagMeta[TextReflowID ](TextReflowID (_))

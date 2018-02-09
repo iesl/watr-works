@@ -23,7 +23,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
     _ <- sql"""
       CREATE TABLE page (
         page        SERIAL PRIMARY KEY,
-        document    INTEGER REFERENCES document NOT NULL ON DELETE CASCADE,
+        document    INTEGER REFERENCES document ON DELETE CASCADE,
         pagenum     SMALLINT,
         bleft       INTEGER,
         btop        INTEGER,
@@ -49,7 +49,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
       _ <- sql"""
       CREATE TABLE zone (
         zone         SERIAL PRIMARY KEY,
-        document     INTEGER REFERENCES document NOT NULL ON DELETE CASCADE,
+        document     INTEGER REFERENCES document ON DELETE CASCADE,
         label        INTEGER REFERENCES label NOT NULL,
         rank         INTEGER NOT NULL,
         glyphs       TEXT
@@ -133,7 +133,12 @@ class CorpusAccessDBTables extends DoobieImplicits {
         labelSchemas      TEXT
       );
 
+    """.update
 
+  }
+  object zonelockTables {
+
+    val create: Update0 = sql"""
       CREATE TABLE zonelock (
         zonelock       SERIAL PRIMARY KEY,
         assignee       INTEGER REFERENCES person ON DELETE CASCADE,
@@ -190,14 +195,16 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
   def createDocumentTables = for {
     _ <- createDocumentTable
+    _ = println("createDocumentTable")
     _ <- createPageTable
-    _ <- createLabelTable.run
+    _ = println("createPageTable")
 
     _ <- targetregions.create()
+    _ = println("create targetregions")
     _ <- zonetables.create()
+    _ = println("create zonetables")
+    _ <- zonelockTables.create.run
 
-    _ <- UserTables.create.run
-    _ <- workflowTables.create.run
   } yield ()
 
   def createAll = for {
@@ -210,19 +217,21 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
     _ <- UserTables.create.run
     _ <- workflowTables.create.run
+    _ <- zonelockTables.create.run
   } yield ()
 
   val dropDocuments = sql"""
+    DROP TABLE IF EXISTS zonelock;
     DROP TABLE IF EXISTS zone_to_targetregion;
     DROP TABLE IF EXISTS zone_to_label;
     DROP TABLE IF EXISTS zone;
     DROP TABLE IF EXISTS targetregion;
     DROP TABLE IF EXISTS page;
     DROP TABLE IF EXISTS document;
-    DROP TABLE IF EXISTS zonelock;
   """.update.run
 
   val dropAll = sql"""
+    DROP TABLE IF EXISTS zonelock;
     DROP TABLE IF EXISTS zone_to_targetregion;
     DROP TABLE IF EXISTS zone_to_label;
     DROP TABLE IF EXISTS zone;
@@ -231,7 +240,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
     DROP TABLE IF EXISTS page;
     DROP TABLE IF EXISTS document;
     DROP TABLE IF EXISTS workflow;
-    DROP TABLE IF EXISTS zonelock;
     DROP TABLE IF EXISTS person;
     DROP TABLE IF EXISTS person_auth;
     DROP TABLE IF EXISTS token;

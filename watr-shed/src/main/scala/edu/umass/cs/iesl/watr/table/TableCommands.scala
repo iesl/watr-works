@@ -4,18 +4,16 @@ package table
 import corpora._
 import corpora.database._
 import apps._
-import segment.DocumentSegmentation
-// import utils.Threading
 import cats.effect._
 import utils.Timer.time
 import TypeTags._
 
 
-object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageWriter {
-  // import TextWorksActions._
-  // import Threading._
+object ShellCommands {
 
   private[this] val log = org.log4s.getLogger
+
+  import apps.ProcessPipelineSteps._
 
   def initReflowDB(dbname: String, dbpass: String): CorpusAccessDB = {
     new CorpusAccessDB(
@@ -26,39 +24,77 @@ object ShellCommands extends DocumentZoningApiEnrichments with LabeledPageImageW
   }
 
 
-
-  def importPaperIntoDB()(implicit corpusAccessApi: CorpusAccessApi): fs2.Sink[IO, Either[String, DocumentSegmentation]] = {
-    s => s.map {
-      case Right(segmenter) =>
-        log.info(s"Importing ${segmenter.stableId} into database.")
+  private def importPaperIntoDB()(implicit
+    corpusAccessApi: CorpusAccessApi
+  ):fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
+    _.map {
+      case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
+        log.info(s"Importing ${segmentation.stableId} into database.")
 
         time("DB Batch Import") {
-          corpusAccessApi.corpusAccessDB.docStore.batchImport(segmenter.docStore.asInstanceOf[MemDocZoningApi])
+          corpusAccessApi.corpusAccessDB.docStore.batchImport(segmentation.docStore.asInstanceOf[MemDocZoningApi])
         }
-        println(s"done ${segmenter.stableId}")
+        println(s"done ${segmentation.stableId}")
+        m
 
-      case x =>  ()
+      case x => x
     }
-
   }
 
-  import apps.ProcessPipes._
+  private def cleanDBArtifacts(conf: TextWorksConfig.Config)(implicit
+    corpusAccessApi: CorpusAccessApi
+  ): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+    _.map {
+      case m@ Right(input) => input match {
+        case p@ Processable.CorpusFile(corpusEntry) =>
+          val stableId = DocumentID(corpusEntry.entryDescriptor)
+          val maybeDoc = corpusAccessApi.docStore.getDocument(stableId)
+          val isInDb = maybeDoc.isDefined
+
+          if (isInDb) {
+            log.info(s"Skipping ${corpusEntry}; already in DB")
+            Left(input)
+            // if (conf.ioConfig.overwrite) {
+            //   log.info(s"Overwriting DB Entry for ${corpusEntry}")
+            //   Right(p)
+            // } else {
+            //   log.info(s"Skipping ${corpusEntry}; already in DB")
+            //   Left(input)
+            // }
+          } else {
+            Right(input)
+          }
+
+        case x => Left(x)
+      }
+      case x => x
+    }
+  }
+
 
   def segmentAll(n: Int=Int.MaxValue, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val conf = TextWorksConfig.Config(IOConfig(
-      inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO, None)),
+      inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO)),
       outputPath= None,
       overwrite = true
     ))
 
-    val parProg0 = TextWorksActions.getInputStream(conf)
-      .through(markIfUnprocessed())
-      .through(cleanOldArtifacts(conf))
+    val processStream = createInputStream[IO](conf.ioConfig)
+      .drop(skip.toLong).take(n.toLong)
+      .through(initMarkedInput())
+      .through(cleanDBArtifacts(conf))
+      .through(cleanFileArtifacts(conf))
+      .through(markUnextractedProcessables(conf))
       .through(runSegmentation(conf))
+      .through(writeExtractedTextFile(conf))
       .through(importPaperIntoDB())
 
-    parProg0.compile.drain.unsafeRunSync()
+    processStream.compile.drain
+      .unsafeRunSync()
 
   }
 
+  def cleanDatabaseDocuments()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    corpusAccessApi.corpusAccessDB.deleteAllDocuments()
+  }
 }

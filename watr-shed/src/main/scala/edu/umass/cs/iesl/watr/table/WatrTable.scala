@@ -93,40 +93,40 @@ object WatrTable extends App with utils.AppMainBasics {
 
 }
 
-object WatrMain extends App with utils.AppMainBasics {
-  def run(args: Array[String]): Unit = {
-    implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
+// object WatrMain extends App with utils.AppMainBasics {
+//   def run(args: Array[String]): Unit = {
+//     implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
 
-    val argMap = argsToMap(args)
+//     val argMap = argsToMap(args)
 
-    val command = argMap.get("command").flatMap(_.headOption)
-      .getOrElse(sys.error("no command supplied (--command ...)"))
+//     val command = argMap.get("command").flatMap(_.headOption)
+//       .getOrElse(sys.error("no command supplied (--command ...)"))
 
-    val skip = argMap.get("skip").flatMap(_.headOption.map(_.toInt))
-      .getOrElse(0)
+//     val skip = argMap.get("skip").flatMap(_.headOption.map(_.toInt))
+//       .getOrElse(0)
 
-    val run = argMap.get("run").flatMap(_.headOption.map(_.toInt))
-      .getOrElse(Int.MaxValue)
+//     val run = argMap.get("run").flatMap(_.headOption.map(_.toInt))
+//       .getOrElse(Int.MaxValue)
 
 
-    command match {
+//     command match {
 
-      case "db:clean" =>
-        corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
-        corpusAccessApi.corpusAccessDB.dropAndRecreate()
+//       case "db:clean" =>
+//         corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
+//         corpusAccessApi.corpusAccessDB.dropAndRecreate()
 
-      case "db:create" =>
-        corpusAccessApi.corpusAccessDB.dropAndRecreate()
+//       case "db:create" =>
+//         corpusAccessApi.corpusAccessDB.dropAndRecreate()
 
-      case "corpus:segment" =>
-        ShellCommands.segmentAll(run, skip)
+//       case "corpus:segment" =>
+//         ShellCommands.segmentAll(run, skip)
 
-      case x =>
-        println(s"Unknown command: ${x}")
-    }
+//       case x =>
+//         println(s"Unknown command: ${x}")
+//     }
 
-    corpusAccessApi.corpusAccessDB.shutdown()
-  }
+//     corpusAccessApi.corpusAccessDB.shutdown()
+//   }
 
-  run(args)
-}
+//   run(args)
+// }

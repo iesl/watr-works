@@ -69,6 +69,15 @@ class CorpusAccessDB(
         r <- query.transact(xa)
       } yield r).unsafePerformSync
     } catch {
+      case t: org.postgresql.util.PSQLException =>
+        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+        val err = t.getServerErrorMessage()
+        println(s"ERROR: ${message}")
+        println(s"Server ERROR: ${err}")
+        val state = t.getSQLState
+        println(s"Server State: ${state}")
+
+        throw t
       case t: Throwable =>
         val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
         println(s"ERROR: ${message}")
@@ -83,6 +92,18 @@ class CorpusAccessDB(
         r <- query.transact(xa0) ensuring xa0.shutdown
       } yield r).unsafePerformSync
     } catch {
+      case t: org.postgresql.util.PSQLException =>
+        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
+        val err = t.getServerErrorMessage()
+        println(s"ERROR: ${message}")
+        println(s"Server ERROR: ${err}")
+        println(s"Query ${query}")
+
+        val state = t.getSQLState
+        println(s"Server State: ${state}")
+
+        throw t
+
       case t: Throwable =>
         val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
         println(s"ERROR: ${message}")
@@ -103,7 +124,7 @@ class CorpusAccessDB(
   def deleteAllDocuments() = runqOnce {
     for{
       _ <- tables.dropDocuments
-      _ <- tables.createAll
+      _ <- tables.createDocumentTables
     } yield ()
   }
 
@@ -391,6 +412,7 @@ class CorpusAccessDB(
 
     }
   }
+
   object workflowApi extends WorkflowApi {
     import doobie.postgres.imports._
     import watrmarks.{StandardLabels => LB}
