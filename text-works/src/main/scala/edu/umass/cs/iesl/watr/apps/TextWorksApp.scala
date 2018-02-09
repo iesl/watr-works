@@ -131,8 +131,6 @@ object TextWorksConfig {
     conf.copy(exec=Option(action))
   }
 
-
-
   def initCorpus(conf: Config): Unit = {
     println("initCorpus")
     conf.initCorpus.foreach { corpusRoot =>
@@ -150,97 +148,3 @@ object TextWorks extends App {
   }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // val fsStream = ioOpts.inputStream().evalMap { input =>
-    //   IO {
-    //     try {
-    //       input match {
-    //         case m@ InputMode.SingleFile(f) =>
-
-    //           val pdfName = f.getFileName.toString()
-    //           val stableId = DocumentID(pdfName)
-    //           val input = nioToAmm(f)
-    //         val output = conf.ioConfig.outputPath.getOrElse {
-    //           nio.Paths.get(pdfName + ".textgrid.json")
-    //         }
-    //         if (output.toFile().exists() && conf.ioConfig.overwrite) {
-    //           fs.rm(nioToAmm(output))
-    //           Right(TextWorksActions.extractText(stableId, input, nioToAmm(output), None))
-    //         } else {
-    //           val msg = s"File ${output} already exists. Move file or use --overwrite"
-    //             println(msg)
-    //             Left(msg)
-    //           }
-
-
-    //         case InputMode.CorpusFile(_, Some(corpusEntry)) =>
-
-    //           val stableId = DocumentID(corpusEntry.entryDescriptor)
-
-    //           println(s"Processing ${stableId}")
-
-    //           val maybeSegmenter = for {
-    //             pdfEntry <- corpusEntry.getPdfArtifact.toRight(left="Could not get PDF")
-    //             pdfPath <- pdfEntry.asPath.toEither.left.map(_.toString())
-    //             docsegPath <- ioOpts.maybeProcess(corpusEntry, "textgrid.json").toRight(left="Existing output. --overwrite to force processing")
-    //           } yield {
-
-    //             val traceLogRoot = if (conf.runTraceLogging) {
-    //               val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
-    //               traceLogGroup.deleteGroupArtifacts()
-    //               Some(traceLogGroup.rootPath)
-    //             } else None
-
-
-    //             val ammPath = nioToAmm(docsegPath)
-
-    //             time("extractText") {
-    //               TextWorksActions.extractText(stableId, pdfPath, ammPath, traceLogRoot)
-    //             }
-    //           }
-    //           maybeSegmenter.left.map { s =>
-    //             println(s"Error: ${s}")
-    //             s
-    //           }
-
-    //           maybeSegmenter
-
-    //         case m => Left(s"Unsupported InputMode ${m}")
-    //       }
-    //     } catch {
-    //       case t: Throwable =>
-    //         utils.Debugging.printAndSwallow(t)
-    //         Left[String,DocumentSegmentation](t.toString())
-    //     }
-    //   }
-    // }
-
-    // fsStream
