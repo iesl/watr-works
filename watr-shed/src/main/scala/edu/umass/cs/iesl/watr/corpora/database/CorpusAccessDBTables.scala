@@ -23,7 +23,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
     _ <- sql"""
       CREATE TABLE page (
         page        SERIAL PRIMARY KEY,
-        document    INTEGER REFERENCES document NOT NULL,
+        document    INTEGER REFERENCES document NOT NULL ON DELETE CASCADE,
         pagenum     SMALLINT,
         bleft       INTEGER,
         btop        INTEGER,
@@ -49,7 +49,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
       _ <- sql"""
       CREATE TABLE zone (
         zone         SERIAL PRIMARY KEY,
-        document     INTEGER REFERENCES document NOT NULL,
+        document     INTEGER REFERENCES document NOT NULL ON DELETE CASCADE,
         label        INTEGER REFERENCES label NOT NULL,
         rank         INTEGER NOT NULL,
         glyphs       TEXT
@@ -92,7 +92,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
       _ <- sql"""
       CREATE TABLE targetregion (
         targetregion  SERIAL PRIMARY KEY,
-        page          INTEGER REFERENCES page,
+        page          INTEGER REFERENCES page ON DELETE CASCADE,
         rank          INTEGER NOT NULL,
         bleft         INTEGER,
         btop          INTEGER,
@@ -100,15 +100,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
         bheight       INTEGER
       );
 
-
       CREATE INDEX targetregion_page_rank ON targetregion (page, rank);
-
-      CREATE TABLE textregion (
-        textregion    SERIAL PRIMARY KEY,
-        page          INTEGER REFERENCES page,
-        rank          INTEGER NOT NULL,
-        regions       TEXT
-      );
 
       """.update.run
     } yield ())
@@ -196,6 +188,17 @@ class CorpusAccessDBTables extends DoobieImplicits {
     """.update.run
   }
 
+  def createDocumentTables = for {
+    _ <- createDocumentTable
+    _ <- createPageTable
+    _ <- createLabelTable.run
+
+    _ <- targetregions.create()
+    _ <- zonetables.create()
+
+    _ <- UserTables.create.run
+    _ <- workflowTables.create.run
+  } yield ()
 
   def createAll = for {
     _ <- createDocumentTable
@@ -208,6 +211,16 @@ class CorpusAccessDBTables extends DoobieImplicits {
     _ <- UserTables.create.run
     _ <- workflowTables.create.run
   } yield ()
+
+  val dropDocuments = sql"""
+    DROP TABLE IF EXISTS zone_to_targetregion;
+    DROP TABLE IF EXISTS zone_to_label;
+    DROP TABLE IF EXISTS zone;
+    DROP TABLE IF EXISTS targetregion;
+    DROP TABLE IF EXISTS page;
+    DROP TABLE IF EXISTS document;
+    DROP TABLE IF EXISTS zonelock;
+  """.update.run
 
   val dropAll = sql"""
     DROP TABLE IF EXISTS zone_to_targetregion;

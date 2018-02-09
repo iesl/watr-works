@@ -4,6 +4,7 @@ package utils
 object PathUtils {
 
   import ammonite.{ops => fs}
+
   import java.nio.{file => nio}
 
   def appendTimestamp(path: String): String = {
@@ -34,29 +35,11 @@ object PathUtils {
     }
   }
 
-  // def cleanFile(p: fs.Path, clean: Boolean): Unit = {
-  //   fs.stat(p).isDir
-  //   if (fs.exists(p) || clean) {
-  //     fs.rm(p)
-  //   }
-  //   if (!fs.exists(p)) {
-  //     fs.mkdir(p)
-  //   }
-  // }
-  // def ensureDir(p: fs.Path, clean: Boolean): Unit = {
-  //   if (fs.exists(p) || clean) {
-  //     fs.rm(p)
-  //   }
-  //   if (!fs.exists(p)) {
-  //     fs.mkdir(p)
-  //   }
-  // }
-  // def ensurePath(p: fs.Path, clean: Boolean): Unit = {
-  //   if (fs.exists(p) || clean) {
-  //     fs.rm(p)
-  //   }
-  //   if (!fs.exists(p)) {
-  //     fs.mkdir(p)
-  //   }
-  // }
+  implicit class RicherPathUtils_NioPath(val self: nio.Path) extends AnyVal {
+
+    def toFsPath(): fs.Path = {
+      nioToAmm(self)
+    }
+  }
+
 }

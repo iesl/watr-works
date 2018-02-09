@@ -171,6 +171,7 @@ sealed trait Window { self =>
     Window(cells++as, winStart.lefts, winStart.focus, bs)
   }
 
+  // Reverse Seq.inits()
   def rinits[A](as: Stream[A]): Seq[Seq[A]]= {
     (1 to as.length) map { as.slice(0, _) }
   }
@@ -186,18 +187,6 @@ sealed trait Window { self =>
         (nextWin.init, nextWin.last)
       }
       .takeWhile { case (h, t) => p(h, t) }
-
-    // val slurped = winStart.rights
-    //   .inits.toSeq.reverse.drop(1)
-    //   .map{ init =>
-    //     val nextWin = cells ++ init
-    //     (nextWin.init, nextWin.last)
-    //   }
-    //   .takeWhile { case (h, t) =>
-    //     val b = p(h, t)
-    //     // println(s"""  slurpRight(win=[${h.map(_.char).mkString}], cell=${t.char}) = ${b}""")
-    //     b
-    //   }
 
     val slcells = slurped.map{case (ws, t) => ws :+ t}.toList
       .lastOption

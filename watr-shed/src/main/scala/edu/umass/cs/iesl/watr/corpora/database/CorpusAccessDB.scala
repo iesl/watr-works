@@ -100,6 +100,13 @@ class CorpusAccessDB(
     tables.dropAll
   }
 
+  def deleteAllDocuments() = runqOnce {
+    for{
+      _ <- tables.dropDocuments
+      _ <- tables.createAll
+    } yield ()
+  }
+
   def dropAndRecreate() = runqOnce {
     for{
       _ <- tables.dropAll
