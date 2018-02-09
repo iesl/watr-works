@@ -12,6 +12,7 @@ lazy val root = (project in file("."))
     prelude, watrmarksJVM, watrmarksJS, textworks, watrshed, watrcolorServer
   )
 
+
 lazy val prelude = (project in file("watr-prelude"))
   .settings(SensibleProject.settings: _*)
   .settings(libraryDependencies ++= Seq(
@@ -50,6 +51,9 @@ lazy val watrmarksJS = watrmarks.js
   .settings(scalacOptions += "-P:scalajs:sjsDefinedByDefault")
 
 lazy val watrmarksJVM = watrmarks.jvm
+
+lazy val marks = (project in file("."))
+  .aggregate(watrmarksJVM, watrmarksJS)
 
 lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)
