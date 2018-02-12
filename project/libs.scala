@@ -9,8 +9,8 @@ trait LibVersions {
   val logbackVersion      = "1.7.25"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
-  // val doobieVersion       = "0.5.0"
-  val doobieVersion       = "0.4.4"
+  val doobieVersion       = "0.5.0"
+  // val doobieVersion       = "0.4.4"
   val matryoshkaCoreV     = "0.21.3"
   val sourcecodeV         = "0.1.4"
   val fansiV              = "0.2.5"
@@ -26,8 +26,37 @@ trait LibVersions {
   val catsV               = "1.0.1"
   val catsEffectV         = "0.8"
   val postgresqlV         = "42.2.1"
+  val freestyleV         = "0.7.0"
 }
 
+object Freestyle extends LibVersions {
+
+  val libs = Seq(
+    "io.frees" %% "frees-core"               % freestyleV,
+
+    // optional - effects and patterns
+    "io.frees" %% "frees-effects"            % freestyleV,
+    "io.frees" %% "frees-async"              % freestyleV,
+    "io.frees" %% "frees-async-cats-effect"  % freestyleV,
+    // "io.frees" %% "frees-async-guava"        % freestyleV,
+    // "io.frees" %% "frees-cache"              % freestyleV,
+    "io.frees" %% "frees-config"             % freestyleV,
+    "io.frees" %% "frees-logging"            % freestyleV,
+
+    // optional - integrations
+    "io.frees" %% "frees-doobie"             % freestyleV,
+    "io.frees" %% "frees-http4s"             % freestyleV
+    // "io.frees" %% "frees-cache-redis"        % freestyleV,
+    // "io.frees" %% "frees-fetch"              % freestyleV,
+    // "io.frees" %% "frees-akka"               % freestyleV,
+    // "io.frees" %% "frees-finch"              % freestyleV,
+    // "io.frees" %% "frees-http-client"        % freestyleV,
+    // "io.frees" %% "frees-monix"              % freestyleV,
+    // "io.frees" %% "frees-play"               % freestyleV,
+    // "io.frees" %% "frees-slick"              % freestyleV,
+    // "io.frees" %% "frees-twitter-util"       % freestyleV
+  )
+}
 
 object PluginLibs {
   val libs = Seq(

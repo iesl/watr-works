@@ -8,7 +8,9 @@ import cats.effect._
 import tsec.authentication._
 import models.users._
 import corpora.database.CorpusAccessDB
-import doobie.imports._
+
+import doobie._
+import doobie.implicits._
 
 import TypeTags._
 

@@ -2,8 +2,9 @@ package edu.umass.cs.iesl.watr
 package corpora
 package database
 
+import doobie._
+import doobie.implicits._
 
-import doobie.imports._
 import shapeless._
 
 // class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
@@ -19,9 +20,9 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
     """.update
 
 
-  override def createEmptyDocumentZoningApi(): DocumentZoningApi = {
-    reflowDB.docStore
-  }
+  // override def createEmptyDocumentZoningApi(): DocumentZoningApi = {
+  //   reflowDB.docStore
+  // }
 
   override def beforeEach(): Unit = {
     reflowDB.reinit()
@@ -36,13 +37,10 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
       )
     )
   }
+
   override def afterEach(): Unit = {
-    reflowDB.shutdown()
   }
 
-  def freshTables() = {
-    // veryUnsafeDropDatabase().run.transact(xa).unsafePerformSync
-  }
 
   def appendPerson(name: String, age: Int): Unit = {
     val query = for {
@@ -87,7 +85,7 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
     reflowDB.runq{
       sql"""select name, age, rank from person order by age,rank ASC"""
         .query[String :: Int :: Int :: HNil]
-        .list
+        .to[List]
         .map{ _.map{
           case a :: b :: c :: HNil => (a, b, c)
         } }
@@ -98,7 +96,6 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
 
 
   it should "maintain ordering" in {
-    freshTables()
 
     appendPerson("oliver1", 20)
     prependPerson("oliver01", 20)

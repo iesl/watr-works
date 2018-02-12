@@ -2,8 +2,13 @@ package edu.umass.cs.iesl.watr
 package corpora
 package database
 
+import cats._
+import cats.effect.IO
+import cats.implicits._
 
-import doobie.imports._
+import doobie._
+import doobie.implicits._
+
 import shapeless._
 import geometry._
 import corpora._
@@ -16,10 +21,10 @@ trait DoobieImplicits extends DoobiePredef {
   type Int4 = Int :: Int :: Int :: Int :: HNil
 
   implicit val LTBoundsMeta: Composite[LTBounds] =
-    Composite[Int4].xmap({
+    Composite[Int4].imap({
       case l :: t :: w :: h :: HNil =>
         LTBounds.IntReps(l, t, w, h)
-    },{ltb =>
+    })({ltb =>
       val LTBounds.IntReps(l, t, w, h) = ltb
       l :: t :: w :: h :: HNil
     })

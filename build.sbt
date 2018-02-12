@@ -52,9 +52,6 @@ lazy val watrmarksJS = watrmarks.js
 
 lazy val watrmarksJVM = watrmarks.jvm
 
-lazy val marks = (project in file("."))
-  .aggregate(watrmarksJVM, watrmarksJS)
-
 lazy val textworks = (project in file("text-works"))
   .enablePlugins(JavaAppPackaging)
   .settings(mappings in (Compile, packageDoc) := Seq())
@@ -84,6 +81,7 @@ lazy val watrshed = (project in file("watr-shed"))
     LogLibs.logback ++ TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
     Lib.fs2 ++
+    Freestyle.libs ++
     Lib.circeJson ++
     Seq(
       Lib.scopt,

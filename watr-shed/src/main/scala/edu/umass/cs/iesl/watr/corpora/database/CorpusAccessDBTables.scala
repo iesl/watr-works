@@ -2,7 +2,9 @@ package edu.umass.cs.iesl.watr
 package corpora
 package database
 
-import doobie.imports._
+import doobie._
+import doobie.implicits._
+
 import corpora._
 
 class CorpusAccessDBTables extends DoobieImplicits {
@@ -149,7 +151,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
     """.update
 
   }
-
   object UserTables {
     val create: Update0 = sql"""
       CREATE TABLE person (
@@ -245,4 +246,26 @@ class CorpusAccessDBTables extends DoobieImplicits {
     DROP TABLE IF EXISTS token;
   """.update.run
 
+  object TestLTreeTables {
+    val create: Update0 = sql"""
+        CREATE TABLE test (path ltree);
+        INSERT INTO test VALUES ('Top');
+        INSERT INTO test VALUES ('Top.Science');
+        INSERT INTO test VALUES ('Top.Science.Astronomy');
+        INSERT INTO test VALUES ('Top.Science.Astronomy.Astrophysics');
+        INSERT INTO test VALUES ('Top.Science.Astronomy.Cosmology');
+        INSERT INTO test VALUES ('Top.Hobbies');
+        INSERT INTO test VALUES ('Top.Hobbies.Amateurs_Astronomy');
+        INSERT INTO test VALUES ('Top.Collections');
+        INSERT INTO test VALUES ('Top.Collections.Pictures');
+        INSERT INTO test VALUES ('Top.Collections.Pictures.Astronomy');
+        INSERT INTO test VALUES ('Top.Collections.Pictures.Astronomy.Stars');
+        INSERT INTO test VALUES ('Top.Collections.Pictures.Astronomy.Galaxies');
+        INSERT INTO test VALUES ('Top.Collections.Pictures.Astronomy.Astronauts');
+        CREATE INDEX path_gist_idx ON test USING GIST (path);
+        CREATE INDEX path_idx ON test USING BTREE (path);
+    """.update
+
+    def doCreate() = create.run
+  }
 }

@@ -11,7 +11,8 @@ import cats.effect.IO
 import tsec.cipher.symmetric.imports.AES128
 import corpora.database.CorpusAccessDB
 
-import doobie.imports._
+import doobie._
+import doobie.implicits._
 import doobie.postgres.pgtypes.UuidType
 import TypeTags._
 

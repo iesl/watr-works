@@ -2,15 +2,23 @@ package edu.umass.cs.iesl.watr
 package corpora
 package database
 
-import doobie.imports._
+
+import cats._
+import cats.effect.IO
+import cats.implicits._
+
+import doobie._
+import doobie.implicits._
+
 import doobie.free.{ connection => C }
 
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Properties
-import scalaz.syntax.applicative._
-import scalaz.std.list._
-import scalaz.syntax.traverse._
+
+// import scalaz.syntax.applicative._
+// import scalaz.std.list._
+// import scalaz.syntax.traverse._
 
 import geometry._
 import corpora._
@@ -34,25 +42,26 @@ class CorpusAccessDB(
 
   val Rel = RelationModel
 
-  import scalaz.concurrent.Task
+  // import scalaz.concurrent.Task
+
   import doobie.hikari.imports._
 
 
   val props = new Properties()
   props.setProperty("housekeeper","false")
 
-  def xa0: HikariTransactor[Task] = (for {
-    xa <- HikariTransactor[Task]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
-    _  <- xa.configure(hx => Task.delay{
+  def xa0: HikariTransactor[IO] = (for {
+    xa <- HikariTransactor[IO]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
+    _  <- xa.configure(hx => IO {
       hx.setDataSourceProperties(props)
       hx.setAutoCommit(true)
       ()
     })
   } yield {
     xa
-  }).unsafePerformSync
+  }).unsafeRunSync
 
-  var xa: HikariTransactor[Task] = xa0
+  var xa: HikariTransactor[IO] = xa0
 
   def reinit() = {
     shutdown()
@@ -60,14 +69,14 @@ class CorpusAccessDB(
   }
 
   def shutdown() = (for {
-    r <- sql"select 1".query[Int].unique.transact(xa) ensuring xa.shutdown
-  } yield r).unsafePerformSync
+    r <- sql"select 1".query[Int].unique.transact(xa) guarantee xa.shutdown
+  } yield r).unsafeRunSync
 
   def runq[A](query: C.ConnectionIO[A]): A = {
     try {
       (for {
         r <- query.transact(xa)
-      } yield r).unsafePerformSync
+      } yield r).unsafeRunSync
     } catch {
       case t: org.postgresql.util.PSQLException =>
         val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
@@ -88,9 +97,9 @@ class CorpusAccessDB(
   def runqOnce[A](query: C.ConnectionIO[A]): A = {
     try {
       (for {
-        xa0 <- HikariTransactor[Task]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
-        r <- query.transact(xa0) ensuring xa0.shutdown
-      } yield r).unsafePerformSync
+        xa0 <- HikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+        r <- query.transact(xa0) guarantee xa0.shutdown
+      } yield r).unsafeRunSync
     } catch {
       case t: org.postgresql.util.PSQLException =>
         val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
@@ -301,7 +310,7 @@ class CorpusAccessDB(
   def getOrInsertLabel(label: Label): ConnectionIO[Int@@LabelID] = for {
     maybePk <- sql"""select label from label where key=${label.fqn}""".query[Int].option
     pk      <- maybePk match {
-      case Some(id)    => id.point[ConnectionIO]
+      case Some(id)    => id.pure[ConnectionIO]
       case None        =>
         sql"""insert into label (key) values (${label.fqn})""".update
           .withUniqueGeneratedKeys[Int]("label")

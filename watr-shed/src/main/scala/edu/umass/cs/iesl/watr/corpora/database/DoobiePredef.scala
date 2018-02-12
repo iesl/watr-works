@@ -2,11 +2,16 @@ package edu.umass.cs.iesl.watr
 package corpora
 package database
 
-import doobie.imports._
+import doobie._
+import doobie.implicits._
 
-import scalaz.std.list._
-import scalaz.syntax.traverse._
-import scalaz.syntax.apply._
+// import scalaz.std.list._
+// import scalaz.syntax.traverse._
+// import scalaz.syntax.apply._
+
+import cats._
+import cats.effect.IO
+import cats.implicits._
 
 trait DoobiePredef {
 

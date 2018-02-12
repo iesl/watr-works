@@ -109,7 +109,8 @@ object SensibleProject extends CommonLibs {
 
     autoCompilerPlugins  := true,
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.6"),
-    addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.1" cross CrossVersion.full),
+    // addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.1" cross CrossVersion.full),
+    addCompilerPlugin("org.scalameta"   % "paradise"         % "3.0.0-M11" cross CrossVersion.full),
 
     // These settings are required to make Ammonite Repl work properly
     // fork := true,

@@ -17,15 +17,16 @@ import watrmarks.Label
   *    For consistency, the "zone" of a full document has the label FullPdf
   *
   * Workflow operates like so:
-  *    Assume that users are present in the user table.
-  *    A new workflow is defined, including a unique name and description, the target zone label to be locked for further labeling, and a label schema.
-  *    One or more zone locks are acquired for a user. The pool of candidate zones for locking include only those that
-  *       have no lock status, i.e., have not yet been seen by any user
-  *    When the user is finished adding labels to a particular zone, the lock status is changed to Completed (or Skipped, or another configurable status)
-  *    Users continue to acquire new zone locks until there are none left
+  *    ∘ Assume that users are present in the user table.
+  *    ∘ A new workflow is defined, including a unique name and description, the target zone label to be locked for further labeling, and a label schema.
+  *    ∘ One or more zone locks are acquired for a user. The pool of candidate zones for locking include only those that
+  *      have no lock status, i.e., have not yet been seen by any user
+  *
+  *    ∘ When the user is finished adding labels to a particular zone, the lock status is changed to Completed (or Skipped, or another configurable status)
+  *    ∘ Users continue to acquire new zone locks until there are none left
   *
   *
-  *    A WorkflowReport includes
+  *    ∘ A WorkflowReport includes
   *       a count of as-yet unseen zones,
   *       counts of zones having a particular status
   *       users with assigned zones
@@ -84,21 +85,6 @@ object WorkflowReport extends TypeTagCodecs {
     }
 
   implicit lazy val enc: Encoder[WorkflowReport] = deriveEncoder
-}
-
-trait UserbaseApi {
-  def addUser(email: String@@EmailAddr): Int@@UserID
-  def getUser(userId: Int@@UserID): Option[R.Person]
-  def getUsers(): Seq[Int@@UserID]
-  def getUserByEmail(email: String@@EmailAddr): Option[Int@@UserID]
-  def deleteUser(userId: Int@@UserID): Unit
-  def setPassword(userId:Int@@UserID, passhash: String@@PasswordHash): Unit
-  def getPassword(userId:Int@@UserID): String@@PasswordHash
-
-  def grantRole(userId: Int@@UserID, role: String@@Role): Unit
-  def getRoles(userId: Int@@UserID): Seq[String@@Role]
-  def revokeRole(userId: Int@@UserID, role: String@@Role): Unit
-
 }
 
 trait WorkflowApi {
