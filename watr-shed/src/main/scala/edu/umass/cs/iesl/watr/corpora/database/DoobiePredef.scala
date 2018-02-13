@@ -108,7 +108,10 @@ trait DoobiePredef {
         CREATE SCHEMA public;
         GRANT ALL ON SCHEMA public TO postgres;
         GRANT ALL ON SCHEMA public TO public;
+        GRANT ALL ON SCHEMA public TO watrworker;
         COMMENT ON SCHEMA public IS 'standard public schema';
+        CREATE EXTENSION IF NOT EXISTS LTREE WITH SCHEMA public;
       """.update
   }
+
 }

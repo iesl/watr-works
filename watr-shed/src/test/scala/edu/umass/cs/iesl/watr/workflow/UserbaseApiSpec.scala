@@ -1,11 +1,9 @@
-
 package edu.umass.cs.iesl.watr
-package corpora
-package database
+package workflow
 
-import workflow._
 import TypeTags._
-import textgrid._
+import corpora.database.DatabaseTest
+import textgrid.TextGridBuilder
 
 
 trait UserbaseTestHelpers {

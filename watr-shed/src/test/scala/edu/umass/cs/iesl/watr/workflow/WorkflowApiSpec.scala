@@ -1,12 +1,10 @@
 package edu.umass.cs.iesl.watr
-package corpora
-package database
+package workflow
 
-import workflow._
-import watrmarks._
-import watrmarks._
 import TypeTags._
-import textgrid._
+import corpora.database.DatabaseTest
+import textgrid.TextGridBuilder
+import watrmarks.{DocSegLabels, Label, LabelSchema, LabelSchemas}
 
 class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTestHelpers with DocSegLabels {
   behavior of "Zone lock/unlock + basic user support"

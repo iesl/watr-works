@@ -16,9 +16,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Properties
 
-// import scalaz.syntax.applicative._
-// import scalaz.std.list._
-// import scalaz.syntax.traverse._
 
 import geometry._
 import corpora._
@@ -425,6 +422,7 @@ class CorpusAccessDB(
   object workflowApi extends WorkflowApi {
     import doobie.postgres.imports._
     import watrmarks.{StandardLabels => LB}
+
 
     def defineWorkflow(slug: String, desc: String, targetLabelOpt: Option[Label], labelSchemas: LabelSchemas): String@@WorkflowID = {
 

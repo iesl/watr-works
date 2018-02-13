@@ -11,17 +11,18 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
   val Rel = RelationModel
 
-  val createDocumentTable  = (for {
-    _ <- sql""" CREATE TABLE document (
+  val createDocumentTable  = for {
+    _ <-
+      sql""" CREATE TABLE document (
                    document      SERIAL PRIMARY KEY,
                    stableId      VARCHAR(128) UNIQUE
                 );
              """.update.run
 
     _ <- sql"CREATE INDEX document_stable_id ON document USING hash (stableId);".update.run
-  } yield ())
+  } yield ()
 
-  val createPageTable = (for {
+  val createPageTable = for {
     _ <- sql"""
       CREATE TABLE page (
         page        SERIAL PRIMARY KEY,
@@ -37,7 +38,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
     _ <- sql"""
       CREATE UNIQUE INDEX document_pagenum ON page (document, pagenum);
       """.update.run
-  } yield ())
+  } yield ()
 
 
 
@@ -47,8 +48,9 @@ class CorpusAccessDBTables extends DoobieImplicits {
   // CREATE INDEX zone_idx_label ON zone (label, document, zone);
   // CREATE INDEX zone_idx_label ON zone (label);
   object zonetables {
-    val createZoneTables = (for {
-      _ <- sql"""
+    val createZoneTables = for {
+      _ <-
+        sql"""
       CREATE TABLE zone (
         zone         SERIAL PRIMARY KEY,
         document     INTEGER REFERENCES document ON DELETE CASCADE,
@@ -73,7 +75,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
       """.update.run
 
-    } yield ())
+    } yield ()
 
 
     def create(): ConnectionIO[Unit] = {
@@ -90,7 +92,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
   object targetregions {
     // CREATE INDEX targetregion_bbox ON targetregion (page, bleft, btop, bwidth, bheight);
-    val createTargetRegion = (for {
+    val createTargetRegion = for {
       _ <- sql"""
       CREATE TABLE targetregion (
         targetregion  SERIAL PRIMARY KEY,
@@ -105,7 +107,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
       CREATE INDEX targetregion_page_rank ON targetregion (page, rank);
 
       """.update.run
-    } yield ())
+    } yield ()
     def create(): ConnectionIO[Unit] = {
       for {
         _ <- createTargetRegion
@@ -246,26 +248,4 @@ class CorpusAccessDBTables extends DoobieImplicits {
     DROP TABLE IF EXISTS token;
   """.update.run
 
-  object TestLTreeTables {
-    val create: Update0 = sql"""
-        CREATE TABLE test (path ltree);
-        INSERT INTO test VALUES ('Top');
-        INSERT INTO test VALUES ('Top.Science');
-        INSERT INTO test VALUES ('Top.Science.Astronomy');
-        INSERT INTO test VALUES ('Top.Science.Astronomy.Astrophysics');
-        INSERT INTO test VALUES ('Top.Science.Astronomy.Cosmology');
-        INSERT INTO test VALUES ('Top.Hobbies');
-        INSERT INTO test VALUES ('Top.Hobbies.Amateurs_Astronomy');
-        INSERT INTO test VALUES ('Top.Collections');
-        INSERT INTO test VALUES ('Top.Collections.Pictures');
-        INSERT INTO test VALUES ('Top.Collections.Pictures.Astronomy');
-        INSERT INTO test VALUES ('Top.Collections.Pictures.Astronomy.Stars');
-        INSERT INTO test VALUES ('Top.Collections.Pictures.Astronomy.Galaxies');
-        INSERT INTO test VALUES ('Top.Collections.Pictures.Astronomy.Astronauts');
-        CREATE INDEX path_gist_idx ON test USING GIST (path);
-        CREATE INDEX path_idx ON test USING BTREE (path);
-    """.update
-
-    def doCreate() = create.run
-  }
 }

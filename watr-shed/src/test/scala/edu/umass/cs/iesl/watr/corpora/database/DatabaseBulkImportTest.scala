@@ -22,6 +22,7 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
   }
 
   lazy val reflowDB = initDB()
+
   override def beforeEach(): Unit = {
     println("re-initing db connections")
     reflowDB.runqOnce {

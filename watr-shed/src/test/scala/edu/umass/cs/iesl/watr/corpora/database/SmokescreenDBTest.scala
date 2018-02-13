@@ -20,9 +20,6 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
     """.update
 
 
-  // override def createEmptyDocumentZoningApi(): DocumentZoningApi = {
-  //   reflowDB.docStore
-  // }
 
   override def beforeEach(): Unit = {
     reflowDB.reinit()

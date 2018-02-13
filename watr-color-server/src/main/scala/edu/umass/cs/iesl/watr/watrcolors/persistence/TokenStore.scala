@@ -13,7 +13,10 @@ import corpora.database.CorpusAccessDB
 
 import doobie._
 import doobie.implicits._
-import doobie.postgres.pgtypes.UuidType
+
+import doobie.postgres._
+import doobie.postgres.implicits._
+
 import TypeTags._
 
 // import cats.effect.Effect

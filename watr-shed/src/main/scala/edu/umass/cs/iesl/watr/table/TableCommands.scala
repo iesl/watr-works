@@ -98,11 +98,4 @@ object ShellCommands {
     corpusAccessApi.corpusAccessDB.deleteAllDocuments()
   }
 
-  def createTestTagTables()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-
-    corpusAccessApi.corpusAccessDB.runqOnce{
-      corpusAccessApi.corpusAccessDB.tables.TestLTreeTables.create.run
-    }
-
-  }
 }
