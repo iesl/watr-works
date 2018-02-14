@@ -214,10 +214,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
         CREATE INDEX pathentry_corpuspath ON pathentry (corpuspath);
     """
 
-    // def create() = for {
-    //   _ <- createTables.update.run
-    // } yield ()
-
   }
 
   object UserTables {

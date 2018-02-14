@@ -7,6 +7,7 @@ import cats.effect._
 import corpora._
 import corpora.database._
 import utils.Timer.time
+import watrmarks._
 
 object ShellCommands {
 
@@ -156,6 +157,7 @@ object ShellCommands {
 
   object display {
     import textboxing.{TextBoxing => TB}, TB._
+
     def curators()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     }
 
@@ -165,6 +167,14 @@ object ShellCommands {
       val res = vjoins(
         workflowApi.getWorkflows.map { workflowId =>
           val report = workflowApi.getWorkflowReport(workflowId)
+
+          val workflowDef = workflowApi.getWorkflow(workflowId)
+          val path = workflowDef.corpusPath
+          val count = workflowDef.curationCount
+
+          val boxLabelSchema = LabelSchemas.labelSchemaToBox(
+            workflowDef.labelSchemas
+          )
 
           val userAssignments = "User Assignment Counts".atop(indent(4,
             vjoins(
@@ -189,14 +199,16 @@ object ShellCommands {
             }
           )))
 
-          s"Workflow: ${workflowId}" atop(indent(4, {
-            vjoin(
+          s"Workflow: ${workflowId} in ${path}" atop(
+            indent(4, vjoin(
               userAssignments,
               statusCounts,
               s"Unassigned:  ${report.unassignedCount} ".box,
-              allActiveUsers
-            )
-          }))
+              s"Curation Count: ${count}",
+              allActiveUsers,
+              boxLabelSchema
+            ))
+          )
         }
       )
 

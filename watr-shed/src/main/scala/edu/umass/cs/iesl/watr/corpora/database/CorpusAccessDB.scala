@@ -41,14 +41,15 @@ class CorpusAccessDB(
 
   // import scalaz.concurrent.Task
 
-  import doobie.hikari.imports._
+  import doobie.hikari._
+  import doobie.hikari.implicits._
 
 
   val props = new Properties()
   props.setProperty("housekeeper","false")
 
   def xa0: HikariTransactor[IO] = (for {
-    xa <- HikariTransactor[IO]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
+    xa <- HikariTransactor.newHikariTransactor[IO]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
     _  <- xa.configure(hx => IO {
       hx.setDataSourceProperties(props)
       hx.setAutoCommit(true)
@@ -94,7 +95,7 @@ class CorpusAccessDB(
   def runqOnce[A](query: C.ConnectionIO[A]): A = {
     try {
       (for {
-        xa0 <- HikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+        xa0 <- HikariTransactor.newHikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
         r <- query.transact(xa0) guarantee xa0.shutdown
       } yield r).unsafeRunSync
     } catch {
@@ -453,7 +454,7 @@ class CorpusAccessDB(
 
     def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
       runq {
-        sql""" select workflow, description, targetLabel, labelSchemas
+        sql""" select workflow, description, targetLabel, labelSchemas, corpusPath, curationCount
                from   workflow
                where  workflow=${workflowId}
         """.query[(String, String, Int@@LabelID, String, String@@CorpusPath, Int)]
@@ -498,13 +499,31 @@ class CorpusAccessDB(
     def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport = {
       val unassignedCount = runq {
         sql"""
+          WITH targetLabel as (
+            select targetLabel from workflow where workflow=${workflowId}
+          ), targetPath as (
+            select corpusPath from workflow where workflow=${workflowId}
+          )
           select count(*)
-            from      zone as z
-            left join zonelock as lk using (zone)
-            where  z.label=(select targetLabel from workflow where workflow=${workflowId})
+            from         zone  z
+              join       document d  on (z.document=d.document)
+              join       pathentry pe  on (z.document=pe.document)
+              join       corpuspath cp on (cp.corpuspath=pe.corpuspath)
+              left join  zonelock as lk using (zone)
+            where  z.label=(select * from targetLabel)
+              AND  cp.path = (select * from targetPath)
               AND  lk.zone is null
        """.query[Int].unique
       }
+      // val unassignedCount = runq {
+      //   sql"""
+      //     select count(*)
+      //       from        zone as z
+      //         left join zonelock as lk using (zone)
+      //       where  z.label=(select targetLabel from workflow where workflow=${workflowId})
+      //         AND  lk.zone is null
+      //  """.query[Int].unique
+      // }
 
       val tuples = for {
         status <- ZoneLockStatus.all
@@ -545,7 +564,7 @@ class CorpusAccessDB(
             where  z.label=(select targetlabel from workflow where workflow=${workflowId})
               AND  lk.zone is null
             limit ${count}
-       """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).runLog
+       """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).compile.toVector
     }
 
 
