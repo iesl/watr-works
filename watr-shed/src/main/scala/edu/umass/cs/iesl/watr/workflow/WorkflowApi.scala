@@ -34,7 +34,6 @@ import watrmarks.Label
   */
 
 import _root_.io.circe, circe._
-import circe.generic._
 import circe.generic.semiauto._
 
 import watrmarks._
@@ -84,7 +83,15 @@ object WorkflowReport extends TypeTagCodecs {
 
 trait WorkflowApi {
 
-  def defineWorkflow(slug: String, desc: String, targetLabelOpt: Option[Label], labelSchemas: LabelSchemas): String@@WorkflowID
+  def defineWorkflow(
+    slug: String,
+    desc: String,
+    targetLabelOpt: Option[Label],
+    labelSchemas: LabelSchemas,
+    corpusPath: String@@CorpusPath,
+    curationCount: Int
+  ): String@@WorkflowID
+
   def activateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
   def deactivateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
   def deleteWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]

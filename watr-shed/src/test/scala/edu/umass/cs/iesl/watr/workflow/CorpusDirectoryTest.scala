@@ -24,11 +24,12 @@ class CorpusDirectoryTest extends DatabaseTest with TextGridBuilder with Userbas
   }
 
 
+
   it should "smokescreen init" in new EmptyDatabase {
     implicit val db:CorpusAccessDB = reflowDB
 
     reflowDB.runqOnce{
-      DBCorpusDirectories.createTables
+      reflowDB.tables.corpusPathTables.create()
     }
 
     addSampleDocs(3)

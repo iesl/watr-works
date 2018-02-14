@@ -49,7 +49,9 @@ object RelationModel {
     workflow      : String@@WorkflowID,
     description   : String,
     targetLabel   : Label,
-    labelSchemas  : LabelSchemas
+    labelSchemas  : LabelSchemas,
+    corpusPath    : String@@CorpusPath,
+    curationCount : Int
   )
 
   case class ZoneLock(

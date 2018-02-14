@@ -420,11 +420,16 @@ class CorpusAccessDB(
   }
 
   object workflowApi extends WorkflowApi {
-    import doobie.postgres.imports._
     import watrmarks.{StandardLabels => LB}
 
-
-    def defineWorkflow(slug: String, desc: String, targetLabelOpt: Option[Label], labelSchemas: LabelSchemas): String@@WorkflowID = {
+    def defineWorkflow(
+      slug: String,
+      desc: String,
+      targetLabelOpt: Option[Label],
+      labelSchemas: LabelSchemas,
+      corpusPath: String@@CorpusPath,
+      curationCount: Int
+    ): String@@WorkflowID = {
 
       val targetLabel = targetLabelOpt.getOrElse{ LB.FullPdf }
       val targetLabelId = docStore.ensureLabel(targetLabel)
@@ -437,9 +442,9 @@ class CorpusAccessDB(
 
       runq {
         sql"""
-           insert into workflow (workflow, description, targetLabel, labelSchemas)
-           values (${slug}, ${desc}, ${targetLabelId}, ${jsonSchema})
-           returning workflow
+           insert into workflow (workflow, description, targetLabel, labelSchemas, corpusPath, curationCount)
+           values (${slug}, ${desc}, ${targetLabelId}, ${jsonSchema}, text2ltree(${corpusPath}), ${curationCount})
+           returning workflow;
         """.query[String@@WorkflowID].unique
       }
     }
@@ -451,9 +456,9 @@ class CorpusAccessDB(
         sql""" select workflow, description, targetLabel, labelSchemas
                from   workflow
                where  workflow=${workflowId}
-        """.query[(String, String, Int@@LabelID, String)]
+        """.query[(String, String, Int@@LabelID, String, String@@CorpusPath, Int)]
 
-          .map{ case (workflowId, desc, target, schema) =>
+          .map{ case (workflowId, desc, target, schema, path, count) =>
             val labelSchemas = decode[LabelSchemas](schema).fold(err => {
               sys.error(s"could not decode LabelSchemas from ${schema}")
             }, labelSchemas => {
@@ -465,7 +470,9 @@ class CorpusAccessDB(
             Rel.WorkflowDef(
               WorkflowID(workflowId), desc,
               Rel.Label(l.id, l.key),
-              labelSchemas
+              labelSchemas,
+              path,
+              count
             )
           }.unique
       }

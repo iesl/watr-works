@@ -45,8 +45,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
   ////////////////////////////
 
 
-  // CREATE INDEX zone_idx_label ON zone (label, document, zone);
-  // CREATE INDEX zone_idx_label ON zone (label);
   object zonetables {
     val createZoneTables = for {
       _ <-
@@ -129,17 +127,27 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
   object workflowTables {
 
-    val create: Update0 = sql"""
-      CREATE TABLE workflow (
-        workflow          VARCHAR(32) PRIMARY KEY,
-        description       TEXT,
-        targetLabel       INTEGER REFERENCES label NOT NULL,
-        labelSchemas      TEXT
-      );
+    val drop = sql""" DROP TABLE IF EXISTS workflow; """
 
-    """.update
+    val create =
+      sql"""
+         CREATE TABLE workflow (
+           workflow          VARCHAR(32) PRIMARY KEY,
+           description       TEXT,
+           targetLabel       INTEGER REFERENCES label NOT NULL,
+           labelSchemas      TEXT,
+           corpusPath        LTREE,
+           curationCount     INTEGER
+         )
+      """
+
+    def dropAndCreate() = for {
+      _ <- drop.update.run
+      _ <- create.update.run
+    } yield ()
 
   }
+
   object zonelockTables {
 
     val create: Update0 = sql"""
@@ -153,6 +161,61 @@ class CorpusAccessDBTables extends DoobieImplicits {
     """.update
 
   }
+
+  object annotationTables {
+    val createTables = sql"""
+
+        CREATE TABLE annotation (
+          annotation     SERIAL PRIMARY KEY,
+          document       INTEGER REFERENCES document,
+          curator        INTEGER REFERENCES person,
+          workflow       VARCHAR(32) REFERENCES workflow ON DELETE SET NULL,
+          created        TIMESTAMP WITH TIME ZONE,
+          status         VARCHAR(32) NOT NULL,
+          jsonrec        TEXT,
+          path           LTREE DEFAULT NULL
+        );
+
+        CREATE INDEX ann_document ON ann(document);
+        CREATE INDEX ann_curator ON ann(curator);
+        CREATE INDEX ann_workflow ON ann(workflow);
+
+        CREATE INDEX ann_path_gist ON ann using gist(path);
+        CREATE INDEX ann_path ON ann using btree(path);
+    """
+
+    def create() = for {
+      _ <- createTables.update.run
+    } yield ()
+  }
+  object corpusPathTables {
+
+    val createTables = sql"""
+        DROP TABLE IF EXISTS pathentry;
+        DROP TABLE IF EXISTS corpuspath;
+
+        CREATE TABLE corpuspath (
+          corpuspath   SERIAL PRIMARY KEY,
+          path         LTREE
+        );
+
+        CREATE INDEX corpuspath_path_gist ON corpuspath using gist(path);
+        CREATE UNIQUE INDEX corpuspath_path ON corpuspath using btree(path);
+
+        CREATE TABLE pathentry (
+          document      INTEGER REFERENCES document ON DELETE CASCADE,
+          corpuspath    INTEGER REFERENCES corpuspath
+        );
+        CREATE UNIQUE INDEX pathentry_document ON pathentry (document);
+        CREATE INDEX pathentry_corpuspath ON pathentry (corpuspath);
+    """
+
+    def create() = for {
+      _ <- createTables.update.run
+    } yield ()
+
+  }
+
   object UserTables {
     val create: Update0 = sql"""
       CREATE TABLE person (
@@ -181,13 +244,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
       CREATE UNIQUE INDEX token_owner ON token(owner);
 
     """.update
-    // expiry       null,
-    //   lastTouched  None,
-    //   secure       true,
-    //   httpOnly     true,
-    //   domain        None,
-    //   path          None,
-    //   extension     None
+
 
     val drop = sql"""
         DROP TABLE IF EXISTS person;
@@ -210,6 +267,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
   } yield ()
 
+
   def createAll = for {
     _ <- createDocumentTable
     _ <- createPageTable
@@ -217,9 +275,10 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
     _ <- targetregions.create()
     _ <- zonetables.create()
+    _ <- corpusPathTables.create()
 
     _ <- UserTables.create.run
-    _ <- workflowTables.create.run
+    _ <- workflowTables.dropAndCreate()
     _ <- zonelockTables.create.run
   } yield ()
 
@@ -242,7 +301,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
     DROP TABLE IF EXISTS targetregion;
     DROP TABLE IF EXISTS page;
     DROP TABLE IF EXISTS document;
-    DROP TABLE IF EXISTS workflow;
     DROP TABLE IF EXISTS person;
     DROP TABLE IF EXISTS person_auth;
     DROP TABLE IF EXISTS token;

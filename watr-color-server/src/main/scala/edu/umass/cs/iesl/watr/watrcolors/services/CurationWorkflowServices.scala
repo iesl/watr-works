@@ -129,7 +129,7 @@ trait CurationWorkflow extends WorkflowCodecs {
 trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedService with WorkflowCodecs { self =>
   /**
     workflows    : Defines what will be labeled and the label schema of a curation effort
-    curators     : Annotator pool
+    curators     : Annotator pool (People)
     zones        : The things which may be assigned to a curator for further annotation
     assignments  : Zones assigned to a curator
     */

@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package table
 
+import ammonite.util._
 import ammonite.ops._
 import ammonite.runtime.Storage
 import ammonite.main.Defaults
@@ -21,14 +22,47 @@ object SharedInit extends utils.AppMainBasics {
         |import TypeTags._
         |import watr._, spindex._, geometry._, table._
         |import ShellCommands._
+        |import ammonite.util._
         |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi
         |implicit val docStore: DocumentZoningApi = corpusAccessApi.docStore
         |implicit val corpusDb: CorpusAccessDB = corpusAccessApi.corpusAccessDB
+        |ammonite.repl.ReplBridge.value0.pprinter.update(SharedInit.pprinter)
         |val cdm = new DatabaseCorpusDirectory()
         |""".stripMargin
 
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
+
+  val ignoreUselessImports =
+    """|notify => _,
+       |  wait => _,
+       |  equals => _,
+       |  asInstanceOf => _,
+       |  synchronized => _,
+       |  notifyAll => _,
+       |  isInstanceOf => _,
+       |  == => _,
+       |  != => _,
+       |  getClass => _,
+       |  ne => _,
+       |  eq => _,
+       |  ## => _,
+       |  hashCode => _,
+       |  _
+       |""".stripMargin
+
+  val replPredef = """
+    |import ammonite.main.Router.{doc, main}
+    |import ammonite.main.Scripts.pathScoptRead
+    |  import ammonite.repl.ReplBridge.value.{
+    |  exit,
+    |  codeColorsImplicit,
+    |  tprintColorsImplicit,
+    |  pprinterImplicit,
+    |  show,
+    |  typeOf
+    |}
+  """.stripMargin
 
   val replColors = ammonite.util.Colors(
     prompt   = fansi.Color.Magenta,
@@ -42,6 +76,10 @@ object SharedInit extends utils.AppMainBasics {
     error    = fansi.Color.Red,
     warning  = fansi.Color.Yellow,
     info     = fansi.Color.LightGray
+  )
+
+  val pprinter: pprint.PPrinter = pprint.PPrinter.Color.copy(
+    additionalHandlers = ShellPrettyPrinters.additionalHandlers
   )
 
   def initCorpusAccessApi(args: Array[String]): CorpusAccessApi = {
@@ -80,7 +118,7 @@ object WatrTable extends App with utils.AppMainBasics {
 
   def replMain() = ammonite.Main(
     storageBackend = new Storage.Folder(Defaults.ammoniteHome),
-    predefCode = predef,
+    predefCode = predef ,
     defaultPredef = true,
     wd = pwd,
     welcomeBanner = Some(SharedInit.welcomeBanner),
@@ -93,5 +131,7 @@ object WatrTable extends App with utils.AppMainBasics {
 
   run(args)
 
-}
+  // Kill any daemon threads
+  System.exit(0)
 
+}

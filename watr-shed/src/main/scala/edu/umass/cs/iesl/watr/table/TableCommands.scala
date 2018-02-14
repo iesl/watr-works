@@ -95,10 +95,75 @@ object ShellCommands {
 
   }
 
-  def cleanDatabaseDocuments()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-    corpusAccessApi.corpusAccessDB.deleteAllDocuments()
+
+  object curationSetup {
+    import workflow._
+    val dryRunPath = CorpusPath("BioarxivPmid.Dryrun")
+
+
+    def reset()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      recreateCurationTables()
+      defineTestrunWorkflow()
+      moveDocsToDryrunPath(3)
+    }
+
+
+    def recreateCurationTables()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val tables = corpusAccessApi.corpusAccessDB.tables
+
+      println(s"Creating Workflow tables")
+      corpusAccessApi.corpusAccessDB.runqOnce{
+        tables.workflowTables.dropAndCreate()
+      }
+      println(s"Creating CorpusPath tables")
+      corpusAccessApi.corpusAccessDB.runqOnce{
+        tables.corpusPathTables.create()
+      }
+      println(s"Creating Annotation tables")
+      corpusAccessApi.corpusAccessDB.runqOnce{
+        tables.annotationTables.create()
+      }
+    }
+
+
+    def moveDocsToDryrunPath(n: Int)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val cdirs = new DatabaseCorpusDirectory()(corpusAccessApi.corpusAccessDB)
+      cdirs.makeDirectory(dryRunPath)
+
+      corpusAccessApi.docStore.getDocuments(n).foreach { stableId =>
+        cdirs.moveEntry(stableId, dryRunPath)
+      }
+
+    }
+
+    def defineTestrunWorkflow()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val workflowApi = corpusAccessApi.workflowApi
+
+      workflowApi.defineWorkflow("headers-dryrun-1", "Trial Run", None, ExampleLabelSchemas.headerLabelSchema,
+        dryRunPath,
+        curationCount = 2
+      )
+    }
+
   }
 
+  object display {
+    def curators(): Unit = {
+    }
+
+    def workflows(): Unit = {
+    }
+
+    def dirs(): Unit = {
+    }
+
+
+  }
+  object annot {
+    //
+
+  }
+
+
+
 }
-
-

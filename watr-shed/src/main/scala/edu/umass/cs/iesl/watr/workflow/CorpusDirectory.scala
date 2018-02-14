@@ -12,35 +12,10 @@ package workflow
   * Annotation= ordered rectangles + glyphs + creator(person) + corpus-path for underlying pdf
   */
 
-// import cats._
-// import cats.effect._
 import doobie.implicits._
 
 import corpora.database.{CorpusAccessDB, DoobieImplicits}
 import TypeTags._
-
-object DBCorpusDirectories {
-
-  val createTables = for {
-    _ <-
-      sql"""
-      CREATE TABLE corpuspath (
-        corpuspath   SERIAL PRIMARY KEY,
-        path         LTREE
-      );
-
-      CREATE INDEX corpuspath_path_gist ON corpuspath using gist(path);
-      CREATE UNIQUE INDEX corpuspath_path ON corpuspath using btree(path);
-
-      CREATE TABLE pathentry (
-        document      INTEGER REFERENCES document ON DELETE CASCADE,
-        corpuspath    INTEGER REFERENCES corpuspath
-      );
-      """.update.run
-
-  } yield ()
-
-}
 
 object cpath {
   def apply(s: String): String@@CorpusPath = CorpusPath(s)

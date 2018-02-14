@@ -2,7 +2,6 @@ package edu.umass.cs.iesl.watr
 package table
 
 import corpora._
-import TypeTags._
 
 import textboxing.{TextBoxing => TB}, TB._
 

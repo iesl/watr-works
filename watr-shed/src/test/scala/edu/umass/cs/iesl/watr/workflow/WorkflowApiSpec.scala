@@ -17,9 +17,18 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
     LabelSchema(Math)
   ))
 
+  val dryRunPath = CorpusPath("BioarxivPmid.Dryrun")
+
   def initWorkflows(n: Int): Seq[String@@WorkflowID] = {
     0 until n map { i =>
-      workflowApi.defineWorkflow(s"curation-workflow-${i}", s"sample labeling task $i", Some(VisualLine), testSchema)
+      workflowApi.defineWorkflow(
+        s"curation-workflow-${i}",
+        s"sample labeling task $i",
+        Some(VisualLine),
+        testSchema,
+        dryRunPath,
+        3
+      )
     }
   }
 
