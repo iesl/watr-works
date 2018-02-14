@@ -3,7 +3,6 @@ package table
 
 import TypeTags._
 import apps._
-import cats._
 import cats.effect._
 import corpora._
 import corpora.database._
@@ -95,6 +94,11 @@ object ShellCommands {
 
   }
 
+  import workflow._
+
+  def cdirs()(implicit corpusAccessApi: CorpusAccessApi): DatabaseCorpusDirectory = {
+    new DatabaseCorpusDirectory()(corpusAccessApi.corpusAccessDB)
+  }
 
   object curationSetup {
     import workflow._
@@ -111,27 +115,30 @@ object ShellCommands {
     def recreateCurationTables()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val tables = corpusAccessApi.corpusAccessDB.tables
 
-      println(s"Creating Workflow tables")
       corpusAccessApi.corpusAccessDB.runqOnce{
-        tables.workflowTables.dropAndCreate()
-      }
-      println(s"Creating CorpusPath tables")
-      corpusAccessApi.corpusAccessDB.runqOnce{
-        tables.corpusPathTables.create()
-      }
-      println(s"Creating Annotation tables")
-      corpusAccessApi.corpusAccessDB.runqOnce{
-        tables.annotationTables.create()
+        for {
+          _ <- tables.corpusPathTables.drop.update.run
+          _ <- tables.zonelockTables.drop.run
+          _ <- tables.annotationTables.drop.run
+          _ <- tables.workflowTables.drop.update.run
+
+          _ <- tables.workflowTables.create.update.run
+          _ <- tables.zonelockTables.create.run
+          _ <- tables.annotationTables.create.run
+          _ <- tables.corpusPathTables.create.update.run
+
+        } yield ()
       }
     }
 
 
+
     def moveDocsToDryrunPath(n: Int)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-      val cdirs = new DatabaseCorpusDirectory()(corpusAccessApi.corpusAccessDB)
-      cdirs.makeDirectory(dryRunPath)
+      val cd = cdirs()
+      cd.makeDirectory(dryRunPath)
 
       corpusAccessApi.docStore.getDocuments(n).foreach { stableId =>
-        cdirs.moveEntry(stableId, dryRunPath)
+        cd.moveEntry(stableId, dryRunPath)
       }
 
     }
@@ -148,17 +155,73 @@ object ShellCommands {
   }
 
   object display {
-    def curators(): Unit = {
+    import textboxing.{TextBoxing => TB}, TB._
+    def curators()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     }
 
-    def workflows(): Unit = {
+    def workflows()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val workflowApi = corpusAccessApi.workflowApi
+
+      val res = vjoins(
+        workflowApi.getWorkflows.map { workflowId =>
+          val report = workflowApi.getWorkflowReport(workflowId)
+
+          val userAssignments = "User Assignment Counts".atop(indent(4,
+            vjoins(
+              report.userAssignmentCounts.toSeq.map{ case (userId, count) =>
+                val email = report.usernames(userId)
+                s"$email :  ${count}".box
+              }
+            )))
+
+          val statusCounts = "User Assignment Status".atop(indent(4,
+            vjoins(
+              report.statusCounts.toSeq.map { case (statusCode, num) =>
+                s"${statusCode}: ${num}".box
+              }
+            )
+          ))
+
+
+          val allActiveUsers = "Active Users".atop(indent(4, vjoins(
+            report.usernames.toSeq.map { case (userId, email) =>
+              email.unwrap.box
+            }
+          )))
+
+          s"Workflow: ${workflowId}" atop(indent(4, {
+            vjoin(
+              userAssignments,
+              statusCounts,
+              s"Unassigned:  ${report.unassignedCount} ".box,
+              allActiveUsers
+            )
+          }))
+        }
+      )
+
+      println(res)
     }
 
-    def dirs(): Unit = {
+    def dirs()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val cd = cdirs()
+      val res = TB.vjoins(
+        cd.listDirectories().map{ d =>
+          TB.tbox(d.unwrap).atop(indent(4,
+            TB.vjoins(
+              cd.listEntries(d).fold(
+                err => Seq(err.box),
+                ids => ids.map { id => TB.tbox(id.unwrap) }
+              )
+            )
+          ))
+        }
+      )
+      println(res)
     }
-
 
   }
+
   object annot {
     //
 

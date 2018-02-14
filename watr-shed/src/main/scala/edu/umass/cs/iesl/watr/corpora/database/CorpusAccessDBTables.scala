@@ -131,7 +131,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
     val create =
       sql"""
-         CREATE TABLE workflow (
+         CREATE TABLE IF NOT EXISTS workflow (
            workflow          VARCHAR(32) PRIMARY KEY,
            description       TEXT,
            targetLabel       INTEGER REFERENCES label NOT NULL,
@@ -150,8 +150,11 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
   object zonelockTables {
 
+    val drop = sql""" DROP TABLE IF EXISTS zonelock; """.update
+
     val create: Update0 = sql"""
-      CREATE TABLE zonelock (
+
+      CREATE TABLE IF NOT EXISTS zonelock (
         zonelock       SERIAL PRIMARY KEY,
         assignee       INTEGER REFERENCES person ON DELETE CASCADE,
         workflow       VARCHAR(32) REFERENCES workflow ON DELETE CASCADE,
@@ -163,9 +166,11 @@ class CorpusAccessDBTables extends DoobieImplicits {
   }
 
   object annotationTables {
-    val createTables = sql"""
+    val drop = sql""" DROP TABLE IF EXISTS annotation; """.update
 
-        CREATE TABLE annotation (
+    val create = sql"""
+
+        CREATE TABLE IF NOT EXISTS annotation (
           annotation     SERIAL PRIMARY KEY,
           document       INTEGER REFERENCES document,
           curator        INTEGER REFERENCES person,
@@ -176,25 +181,24 @@ class CorpusAccessDBTables extends DoobieImplicits {
           path           LTREE DEFAULT NULL
         );
 
-        CREATE INDEX ann_document ON ann(document);
-        CREATE INDEX ann_curator ON ann(curator);
-        CREATE INDEX ann_workflow ON ann(workflow);
+        CREATE INDEX annotation_document ON annotation(document);
+        CREATE INDEX annotation_curator ON annotation(curator);
+        CREATE INDEX annotation_workflow ON annotation(workflow);
 
-        CREATE INDEX ann_path_gist ON ann using gist(path);
-        CREATE INDEX ann_path ON ann using btree(path);
-    """
-
-    def create() = for {
-      _ <- createTables.update.run
-    } yield ()
+        CREATE INDEX annotation_path_gist ON annotation using gist(path);
+        CREATE INDEX annotation_path ON annotation using btree(path);
+    """.update
   }
+
   object corpusPathTables {
 
-    val createTables = sql"""
+    val drop = sql"""
         DROP TABLE IF EXISTS pathentry;
         DROP TABLE IF EXISTS corpuspath;
+    """
 
-        CREATE TABLE corpuspath (
+    val create = sql"""
+        CREATE TABLE IF NOT EXISTS corpuspath (
           corpuspath   SERIAL PRIMARY KEY,
           path         LTREE
         );
@@ -202,7 +206,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
         CREATE INDEX corpuspath_path_gist ON corpuspath using gist(path);
         CREATE UNIQUE INDEX corpuspath_path ON corpuspath using btree(path);
 
-        CREATE TABLE pathentry (
+        CREATE TABLE IF NOT EXISTS pathentry (
           document      INTEGER REFERENCES document ON DELETE CASCADE,
           corpuspath    INTEGER REFERENCES corpuspath
         );
@@ -210,9 +214,9 @@ class CorpusAccessDBTables extends DoobieImplicits {
         CREATE INDEX pathentry_corpuspath ON pathentry (corpuspath);
     """
 
-    def create() = for {
-      _ <- createTables.update.run
-    } yield ()
+    // def create() = for {
+    //   _ <- createTables.update.run
+    // } yield ()
 
   }
 
@@ -275,7 +279,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
     _ <- targetregions.create()
     _ <- zonetables.create()
-    _ <- corpusPathTables.create()
+    _ <- corpusPathTables.create.update.run
 
     _ <- UserTables.create.run
     _ <- workflowTables.dropAndCreate()

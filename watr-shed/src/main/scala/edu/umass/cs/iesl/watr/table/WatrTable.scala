@@ -27,7 +27,6 @@ object SharedInit extends utils.AppMainBasics {
         |implicit val docStore: DocumentZoningApi = corpusAccessApi.docStore
         |implicit val corpusDb: CorpusAccessDB = corpusAccessApi.corpusAccessDB
         |ammonite.repl.ReplBridge.value0.pprinter.update(SharedInit.pprinter)
-        |val cdm = new DatabaseCorpusDirectory()
         |""".stripMargin
 
 

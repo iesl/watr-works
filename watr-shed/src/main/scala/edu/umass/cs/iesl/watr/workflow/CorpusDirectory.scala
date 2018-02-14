@@ -97,8 +97,6 @@ class DatabaseCorpusDirectory()(implicit
   def moveEntry(entry: String@@DocumentID, path: String@@CorpusPath): Either[String, Unit] =  {
 
     if (exists_(path)) {
-      println("ok??")
-
       corpusAccessDB.runq {
         sql"""
            WITH docid as(
