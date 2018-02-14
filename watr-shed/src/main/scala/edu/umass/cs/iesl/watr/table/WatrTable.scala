@@ -14,6 +14,7 @@ object SharedInit extends utils.AppMainBasics {
     s"""|import edu.umass.cs.iesl.watr
         |import watr._
         |import corpora._
+        |import workflow._
         |import corpora.filesys._
         |import corpora.database._
         |import watrmarks.{StandardLabels => LB}
@@ -22,7 +23,8 @@ object SharedInit extends utils.AppMainBasics {
         |import ShellCommands._
         |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi
         |implicit val docStore: DocumentZoningApi = corpusAccessApi.docStore
-        |val corpusDb: CorpusAccessDB = corpusAccessApi.corpusAccessDB
+        |implicit val corpusDb: CorpusAccessDB = corpusAccessApi.corpusAccessDB
+        |val cdm = new DatabaseCorpusDirectory()
         |""".stripMargin
 
 
@@ -84,8 +86,8 @@ object WatrTable extends App with utils.AppMainBasics {
     welcomeBanner = Some(SharedInit.welcomeBanner),
     inputStream = System.in,
     outputStream  = System.out,
-    errorStream = System.err,
-    // verboseOutput = true,
+    errorStream = System.out,
+    verboseOutput = true,
     colors = replColors
   )
 
@@ -93,40 +95,3 @@ object WatrTable extends App with utils.AppMainBasics {
 
 }
 
-// object WatrMain extends App with utils.AppMainBasics {
-//   def run(args: Array[String]): Unit = {
-//     implicit val corpusAccessApi = SharedInit.initCorpusAccessApi(args)
-
-//     val argMap = argsToMap(args)
-
-//     val command = argMap.get("command").flatMap(_.headOption)
-//       .getOrElse(sys.error("no command supplied (--command ...)"))
-
-//     val skip = argMap.get("skip").flatMap(_.headOption.map(_.toInt))
-//       .getOrElse(0)
-
-//     val run = argMap.get("run").flatMap(_.headOption.map(_.toInt))
-//       .getOrElse(Int.MaxValue)
-
-
-//     command match {
-
-//       case "db:clean" =>
-//         corpusAccessApi.corpusAccessDB.runqOnce{ corpusAccessApi.corpusAccessDB.veryUnsafeDropDatabase().run }
-//         corpusAccessApi.corpusAccessDB.dropAndRecreate()
-
-//       case "db:create" =>
-//         corpusAccessApi.corpusAccessDB.dropAndRecreate()
-
-//       case "corpus:segment" =>
-//         ShellCommands.segmentAll(run, skip)
-
-//       case x =>
-//         println(s"Unknown command: ${x}")
-//     }
-
-//     corpusAccessApi.corpusAccessDB.shutdown()
-//   }
-
-//   run(args)
-// }

@@ -39,14 +39,6 @@ import circe.generic.semiauto._
 
 import watrmarks._
 
-@JsonCodec case class Curation(
-  targetLabel: Option[Label],
-  labelSchemas: LabelSchemas
-)
-
-
-
-
 object WorkflowStatus {
   val OnHold    = StatusCode("OnHold")
   val Active    = StatusCode("Active")

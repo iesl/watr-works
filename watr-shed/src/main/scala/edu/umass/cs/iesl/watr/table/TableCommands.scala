@@ -1,13 +1,13 @@
 package edu.umass.cs.iesl.watr
 package table
 
+import TypeTags._
+import apps._
+import cats._
+import cats.effect._
 import corpora._
 import corpora.database._
-import apps._
-import cats.effect._
 import utils.Timer.time
-import TypeTags._
-
 
 object ShellCommands {
 
@@ -72,6 +72,7 @@ object ShellCommands {
   }
 
 
+
   def segmentAll(n: Int=Int.MaxValue, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val conf = TextWorksConfig.Config(IOConfig(
       inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO)),
@@ -99,3 +100,5 @@ object ShellCommands {
   }
 
 }
+
+

@@ -89,14 +89,34 @@ object SensibleProject extends CommonLibs {
     // )
   )
 
+  // These settings are required to make Ammonite Repl work properly
   lazy val runForked = Seq(
-    Compile / run / fork := true,
-    Compile / run / connectInput := false,
-    Compile / run / baseDirectory := baseDirectory.value / "..",
+    fork := true,
+    connectInput := true,
     outputStrategy := Some(StdoutOutput),
+    baseDirectory in run in Compile := baseDirectory.value / "..",
   )
 
-  lazy val settings =  Seq(
+  // lazy val runForked = Seq(
+  //   Compile / run / fork := true,
+  //   Compile / run / connectInput := false,
+  //   Compile / run / baseDirectory := baseDirectory.value / "..",
+  //   outputStrategy := Some(StdoutOutput),
+  // )
+
+  lazy val scalaMacroParadiseSettings = Seq(
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
+  )
+
+  lazy val scalaMetaSettings = Seq(
+    addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full),
+    scalacOptions += "-Xplugin-require:macroparadise",
+    scalacOptions in (Compile, console) ~= (_ filterNot (_ contains "paradise")) // macroparadise plugin doesn't work in repl yet.
+  )
+
+  lazy val macroSettings = scalaMacroParadiseSettings
+
+  lazy val settings =  macroSettings ++ Seq(
     scalaVersion := "2.12.4",
     organization := "edu.umass.cs.iesl",
     scalacOptions ++=  scala_2_12_RecommendedOptionList,
@@ -109,20 +129,10 @@ object SensibleProject extends CommonLibs {
 
     autoCompilerPlugins  := true,
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.6"),
-    // addCompilerPlugin("org.scalamacros" % "paradise"         % "2.1.1" cross CrossVersion.full),
-    addCompilerPlugin("org.scalameta"   % "paradise"         % "3.0.0-M11" cross CrossVersion.full),
 
-    // These settings are required to make Ammonite Repl work properly
-    // fork := true,
-    // connectInput := true,
-    // outputStrategy := Some(StdoutOutput),
 
-    // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the
-    //   scala library get loaded
-    excludeDependencies ++= Seq(
-      "org.typelevel" % "scala-library"
-    ),
-
+    // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the scala library get loaded
+    excludeDependencies ++= Seq("org.typelevel" % "scala-library"),
 
     logBuffered in Test       := false,
     fork in Test              := false,
@@ -131,7 +141,7 @@ object SensibleProject extends CommonLibs {
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-maxSize", "5", "-minSuccessfulTests", "33", "-workers", "1", "-verbosity", "1"),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDF"),
     testFrameworks := Seq(TestFrameworks.ScalaTest, TestFrameworks.ScalaCheck)
-  ) ++ wartremoverSettings
+  )
 
 }
 

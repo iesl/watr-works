@@ -8,6 +8,7 @@ enablePlugins(ScalaJSPlugin)
 val Lib = CommonLibs
 
 lazy val root = (project in file("."))
+  .settings(SensibleProject.settings: _*)
   .aggregate(
     prelude, watrmarksJVM, watrmarksJS, textworks, watrshed, watrcolorServer
   )
@@ -77,11 +78,12 @@ lazy val watrshed = (project in file("watr-shed"))
   .enablePlugins(JavaAppPackaging)
   .settings(mappings in (Compile, packageDoc) := Seq())
   .settings(SensibleProject.settings: _*)
+  .settings(SensibleProject.runForked: _*)
   .settings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
     Lib.fs2 ++
-    Freestyle.libs ++
+    // Freestyle.libs ++
     Lib.circeJson ++
     Seq(
       Lib.scopt,

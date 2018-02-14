@@ -1,10 +1,8 @@
 package edu.umass.cs.iesl.watr
 package workflow
 
-import cats.Id
 import corpora.database.DatabaseTest
-import doobie._
-import doobie.implicits._
+import corpora.database.CorpusAccessDB
 import textgrid.TextGridBuilder
 import TypeTags._
 
@@ -27,6 +25,7 @@ class CorpusDirectoryTest extends DatabaseTest with TextGridBuilder with Userbas
 
 
   it should "smokescreen init" in new EmptyDatabase {
+    implicit val db:CorpusAccessDB = reflowDB
 
     reflowDB.runqOnce{
       DBCorpusDirectories.createTables
@@ -34,7 +33,7 @@ class CorpusDirectoryTest extends DatabaseTest with TextGridBuilder with Userbas
 
     addSampleDocs(3)
 
-    val corpusDirectory = new DatabaseCorpusDirectory(reflowDB)
+    val corpusDirectory = new DatabaseCorpusDirectory()
 
     val entries = corpusDirectory.listEntries()
 

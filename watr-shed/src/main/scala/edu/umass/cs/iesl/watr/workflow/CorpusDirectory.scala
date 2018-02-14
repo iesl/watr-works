@@ -12,43 +12,16 @@ package workflow
   * Annotation= ordered rectangles + glyphs + creator(person) + corpus-path for underlying pdf
   */
 
-import cats._
-import freestyle.tagless._
-import freestyle.free.debug
-import doobie._
+// import cats._
+// import cats.effect._
 import doobie.implicits._
-import edu.umass.cs.iesl.watr.corpora.database.{CorpusAccessDB, DoobieImplicits}
+
+import corpora.database.{CorpusAccessDB, DoobieImplicits}
 import TypeTags._
-
-
-object CorpusDirectories {
-
-
-}
-
-@tagless
-trait CorpusDirectory {
-
-  def makeDirectory(path: String @@ CorpusPath): FS[Either[String, Unit]]
-
-  def removeDirectory(path: String @@ CorpusPath): FS[Either[String, Unit]]
-
-  def exists(path: String @@ CorpusPath): FS[Boolean]
-
-  def renameDirectory(from: String @@ CorpusPath, to: String @@ CorpusPath): FS[Either[String, Unit]]
-
-  def listEntries(path: String @@ CorpusPath): FS[Either[String, Seq[String @@ DocumentID]]]
-
-  def listDirectories(): FS[Seq[String @@ CorpusPath]]
-
-  def moveEntry(entry: String @@ DocumentID, path: String @@ CorpusPath): FS[Either[String, Unit]]
-
-}
 
 object DBCorpusDirectories {
 
   val createTables = for {
-
     _ <-
       sql"""
       CREATE TABLE corpuspath (
@@ -69,9 +42,21 @@ object DBCorpusDirectories {
 
 }
 
-class DatabaseCorpusDirectory(corpusAccessDB: CorpusAccessDB) extends CorpusDirectory.Handler[Id] with DoobieImplicits {
+object cpath {
+  def apply(s: String): String@@CorpusPath = CorpusPath(s)
 
-  def makeDirectory(path: String @@ CorpusPath): FS[Either[String, Unit]] = {
+  implicit class cpath_RicherString(val self: String) extends AnyVal {
+    def path(): String@@CorpusPath = apply(self)
+  }
+
+}
+
+class DatabaseCorpusDirectory()(implicit
+  corpusAccessDB: CorpusAccessDB
+) extends DoobieImplicits {
+
+
+  def makeDirectory(path: String@@CorpusPath): Either[String, Unit] =  {
     corpusAccessDB.runq {
       sql"""
           INSERT INTO corpuspath (path) VALUES ( text2ltree(${path}) )
@@ -80,7 +65,7 @@ class DatabaseCorpusDirectory(corpusAccessDB: CorpusAccessDB) extends CorpusDire
     Right((): Unit)
   }
 
-  def removeDirectory(path: String @@ CorpusPath): FS[Either[String, Unit]] = {
+  def removeDirectory(path: String@@CorpusPath): Either[String, Unit] = {
     corpusAccessDB.runq {
       sql"""
          DELETE FROM corpuspath WHERE path beginsWith ${path}
@@ -90,7 +75,7 @@ class DatabaseCorpusDirectory(corpusAccessDB: CorpusAccessDB) extends CorpusDire
 
   }
 
-  def exists(path: String @@ CorpusPath): FS[Boolean] = {
+  private def exists_(path: String@@CorpusPath): Boolean =  {
     corpusAccessDB.runq {
       sql"""
          SELECT 1 FROM corpuspath WHERE path = text2ltree(${path})
@@ -98,14 +83,17 @@ class DatabaseCorpusDirectory(corpusAccessDB: CorpusAccessDB) extends CorpusDire
     }.isDefined
   }
 
-  def renameDirectory(from: String @@ CorpusPath, to: String @@ CorpusPath): FS[Either[String, Unit]] = {
+  def exists(path: String@@CorpusPath): Boolean =  {
+    exists_(path)
+  }
 
+  def renameDirectory(from: String@@CorpusPath, to: String@@CorpusPath): Either[String, Unit] =  {
     ???
   }
 
   private val EmptyPath = CorpusPath("")
 
-  def listEntries(path: String@@CorpusPath = EmptyPath): FS[Either[String, Seq[String @@ DocumentID]]] = {
+  def listEntries(path: String@@CorpusPath = EmptyPath): Either[String, Seq[String@@DocumentID]] =  {
     if (path==EmptyPath) {
       Right( corpusAccessDB.docStore.getDocuments() )
     } else {
@@ -123,7 +111,7 @@ class DatabaseCorpusDirectory(corpusAccessDB: CorpusAccessDB) extends CorpusDire
     }
   }
 
-  def listDirectories(): FS[Seq[String @@ CorpusPath]] = {
+  def listDirectories(): Seq[String@@CorpusPath] =  {
     corpusAccessDB.runq {
       sql""" SELECT p.path FROM corpuspath p """
         .query[String@@CorpusPath].to[Vector]
@@ -131,9 +119,9 @@ class DatabaseCorpusDirectory(corpusAccessDB: CorpusAccessDB) extends CorpusDire
   }
 
 
-  def moveEntry(entry: String @@ DocumentID, path: String @@ CorpusPath): FS[Either[String, Unit]] = {
+  def moveEntry(entry: String@@DocumentID, path: String@@CorpusPath): Either[String, Unit] =  {
 
-    if (exists(path)) {
+    if (exists_(path)) {
       println("ok??")
 
       corpusAccessDB.runq {
@@ -163,24 +151,3 @@ class DatabaseCorpusDirectory(corpusAccessDB: CorpusAccessDB) extends CorpusDire
 
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -160,7 +160,7 @@ class CorpusAccessDB(
 
   def selectTargetRegions(pageId: Int@@PageID): ConnectionIO[List[Int@@RegionID]] = {
     sql""" select targetregion from targetregion where page=${pageId} order by rank"""
-      .query[Int@@RegionID].list
+      .query[Int@@RegionID].to[List]
   }
 
   def insertZone(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[Int@@ZoneID] = {
@@ -172,12 +172,12 @@ class CorpusAccessDB(
   def selectZoneLabelsForDocument(docId: Int@@DocumentID): ConnectionIO[List[Int@@LabelID]] = {
     sql""" select distinct label from  zone
            where document=${docId}
-       """.query[Int@@LabelID].list
+       """.query[Int@@LabelID].to[List]
   }
 
   def selectZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[List[Int@@ZoneID]] = {
     sql""" select * from  zone where document=${docId} AND label=${labelId} order by rank"""
-      .query[Int@@ZoneID].list
+      .query[Int@@ZoneID].to[List]
   }
 
   def selectZone(zoneId: Int@@ZoneID): ConnectionIO[Rel.Zone] = {
@@ -197,7 +197,7 @@ class CorpusAccessDB(
      where
         zone=${zoneId}
      order by rank
-    """.query[Int@@RegionID].list
+    """.query[Int@@RegionID].to[List]
   }
 
 
@@ -226,7 +226,7 @@ class CorpusAccessDB(
      order by pg.pagenum
     """.query[Int]
       .map(PageID(_))
-      .list
+      .to[List]
   }
 
   def selectPageAndDocument(pageId: Int@@PageID): ConnectionIO[(Rel.Page, Rel.Document)] = {
@@ -383,7 +383,7 @@ class CorpusAccessDB(
     }
 
     def getUsers(): Seq[Int@@UserID] = {
-      runq { sql""" select person from person """.query[Int@@UserID].list }
+      runq { sql""" select person from person """.query[Int@@UserID].to[List] }
     }
 
     def getUserByEmail(email: String@@EmailAddr): Option[Int@@UserID] = {
@@ -484,7 +484,7 @@ class CorpusAccessDB(
     }
 
     def getWorkflows(): Seq[String@@WorkflowID] = runq {
-      sql""" select workflow from workflow """.query[String@@WorkflowID].list
+      sql""" select workflow from workflow """.query[String@@WorkflowID].to[List]
     }
 
 
@@ -514,12 +514,12 @@ class CorpusAccessDB(
             select assignee, count(zone)
             from zonelock where workflow=${workflowId} AND assignee is not null
             group by assignee
-         """.query[(Int@@UserID, Int)].list
+         """.query[(Int@@UserID, Int)].to[List]
       }
       val assigneeNames  = runq {
         sql"""
            select distinct assignee, email from zonelock z join person p on z.assignee=p.person where workflow=${workflowId};
-         """.query[(Int@@UserID, String@@EmailAddr)].list
+         """.query[(Int@@UserID, String@@EmailAddr)].to[List]
       }
       WorkflowReport(
         unassignedCount,
@@ -573,7 +573,7 @@ class CorpusAccessDB(
     def getLockedZones(userId: Int@@UserID): Seq[Int@@ZoneLockID] = {
       runq { sql"""
         select zonelock from zonelock where assignee=${userId}
-        """.query[Int@@ZoneLockID].list
+        """.query[Int@@ZoneLockID].to[List]
       }
     }
 
@@ -630,7 +630,7 @@ class CorpusAccessDB(
 
     // def listDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[(String@@DocumentID, Seq[(Label, Int)])] = {
     //   val query = if (labelFilters.isEmpty) {
-    //     sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list
+    //     sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].to[List]
     //   } else {
     //     val filters = labelFilters.toList.map{ l =>
     //       s""" l.key='${l.fqn}' """
@@ -646,7 +646,7 @@ class CorpusAccessDB(
     //           |""".stripMargin
     //     }
 
-    //     Query0[(String@@DocumentID, Seq[(Label, Int)])](qstr).list
+    //     Query0[(String@@DocumentID, Seq[(Label, Int)])](qstr).to[List]
     //   }
 
     //   runq { query }
@@ -654,7 +654,7 @@ class CorpusAccessDB(
 
     def getDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[String@@DocumentID] = {
       val query = if (labelFilters.isEmpty) {
-        sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].list
+        sql"select stableId from document limit $n offset $skip".query[String@@DocumentID].to[List]
       } else {
         val filters = labelFilters.toList.map{ l =>
           s""" l.key='${l.fqn}' """
@@ -670,7 +670,7 @@ class CorpusAccessDB(
               |""".stripMargin
         }
 
-        Query0[String@@DocumentID](qstr).list
+        Query0[String@@DocumentID](qstr).to[List]
       }
 
       runq { query }
@@ -819,7 +819,7 @@ class CorpusAccessDB(
             where
                z2tr.targetregion=${regionId} AND
                lb.key=${label.fqn}
-           """.query[Int@@ZoneID].list
+           """.query[Int@@ZoneID].to[List]
       }
 
       val allZoneIds = runq { query }
@@ -922,7 +922,7 @@ class CorpusAccessDB(
 
 
         val keys = runq{
-          up.runLog
+          up.compile.toVector
         }
 
         allRecs.zip(keys)
@@ -959,7 +959,7 @@ class CorpusAccessDB(
 
 
         val keys = runq{
-          up.runLog
+          up.compile.toVector
         }
         allRecs.zip(keys)
           .foreach{ case (rec, key) =>
@@ -993,7 +993,7 @@ class CorpusAccessDB(
 
 
         val keys = runq{
-          up.runLog
+          up.compile.toVector
         }
         allRecs.zip(keys)
           .foreach{ case (rec, key) =>
@@ -1038,7 +1038,7 @@ class CorpusAccessDB(
           .updateManyWithGeneratedKeys[Int@@ZoneID]("zone")(allEntries)
 
         val keys = runq{
-          up.runLog
+          up.compile.toVector
         }
 
         allRecs.zip(keys)
