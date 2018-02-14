@@ -24,7 +24,10 @@
   </appender>
 
 
-  <logger name="com.zaxxer.hikari.pool" level="INFO" />
+  <logger name="com.zaxxer" level="OFF" />
+  <logger name="ch.qos.logback" level="OFF" />
+
+  <logger name="io.netty" level="INFO" />
 
   <logger name="org.http4s" level="INFO" />
 
