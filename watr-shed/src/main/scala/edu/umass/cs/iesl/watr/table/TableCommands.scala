@@ -152,13 +152,24 @@ object ShellCommands {
         curationCount = 2
       )
     }
-
   }
+
 
   object display {
     import textboxing.{TextBoxing => TB}, TB._
 
     def curators()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val userbaseApi = corpusAccessApi.userbaseApi
+      val userEmails = userbaseApi.getUsers().map { userId =>
+        val user = userbaseApi.getUser(userId)
+        val person  = user.get
+        userId.unwrap.toString.box + ":  " + person.email.unwrap
+      }
+      val users= "All Users".atop(indent(4,
+        vjoins(userEmails)
+      ))
+
+      println(users)
     }
 
     def workflows()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
@@ -239,6 +250,22 @@ object ShellCommands {
 
   }
 
+  implicit def StringToTypeTag_CorpusPath(s: String): String@@CorpusPath = CorpusPath(s)
+  implicit def StringToTypeTag_WorkflowID(s: String): String@@WorkflowID = WorkflowID(s)
+  implicit def IntToTypeTag_UserID(i: Int): Int@@UserID = UserID(i)
 
+
+  // object TypeTagAuto
+  object assign {
+
+    def getNextAssignment(workflowId: String@@WorkflowID, userId: Int@@UserID)(implicit corpusAccessApi: CorpusAccessApi): Option[Int@@ZoneLockID] = {
+      val workflowApi = corpusAccessApi.workflowApi
+      val existingLock  = workflowApi.getLockedZones(userId).headOption
+      lazy val newLock =  workflowApi.lockUnassignedZones(userId, workflowId).headOption
+
+      existingLock orElse newLock
+    }
+
+  }
 
 }

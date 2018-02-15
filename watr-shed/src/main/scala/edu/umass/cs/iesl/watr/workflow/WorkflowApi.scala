@@ -100,7 +100,7 @@ trait WorkflowApi {
   def getWorkflow(workflowId:String@@WorkflowID): R.WorkflowDef
   def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport
 
-  def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID, count: Int): Seq[Int@@ZoneLockID]
+  def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID]
   def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit
   def releaseZoneLock(zoneLockId: Int@@ZoneLockID): Unit
 

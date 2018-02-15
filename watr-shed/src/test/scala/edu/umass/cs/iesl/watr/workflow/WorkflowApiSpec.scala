@@ -60,7 +60,7 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
 
     println(workflowApi.getWorkflowReport(workflowId))
 
-    val locks = workflowApi.lockUnassignedZones(userId, workflowId, 3)
+    val locks = workflowApi.lockUnassignedZones(userId, workflowId)
       .map(zoneLockId => workflowApi.getZoneLock(zoneLockId))
 
     locks.length shouldBe 3
@@ -78,7 +78,7 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
 
     workflowApi.getLockedZones(userId).length shouldBe 3
 
-    val locks2 = workflowApi.lockUnassignedZones(userId, workflowId, 6)
+    val locks2 = workflowApi.lockUnassignedZones(userId, workflowId)
       .map(zoneLockId => workflowApi.getZoneLock(zoneLockId))
 
     workflowApi.getWorkflowReport(workflowId) shouldBe WorkflowReport(
@@ -96,7 +96,7 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
 
     workflowApi.getLockedZones(userId).length shouldBe 9
 
-    val locks3 = workflowApi.lockUnassignedZones(userId, workflowId, 1)
+    val locks3 = workflowApi.lockUnassignedZones(userId, workflowId)
       .map(zoneLockId => workflowApi.getZoneLock(zoneLockId))
 
     locks3.length shouldBe 0
@@ -124,10 +124,10 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
     val users = initUsers(3)
     val workflows = initWorkflows(3)
 
-    workflowApi.lockUnassignedZones(users(0), workflows(0), 3)
+    workflowApi.lockUnassignedZones(users(0), workflows(0))
     workflowApi.getLockedZones(users(0)).length shouldBe 3
 
-    workflowApi.lockUnassignedZones(users(1), workflows(1), 3)
+    workflowApi.lockUnassignedZones(users(1), workflows(1))
     workflowApi.getLockedZones(users(1)).length shouldBe 3
     workflowApi.getLockedZones(users(0)).length shouldBe 3
 

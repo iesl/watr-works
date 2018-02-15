@@ -555,18 +555,36 @@ class CorpusAccessDB(
       )
     }
 
-    def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID, count: Int): Seq[Int@@ZoneLockID] = runq {
-      sql"""
-        insert into zonelock (assignee, workflow, zone, status)
-          select ${userId}, ${workflowId}, z.zone, ${ZoneLockStatus.Assigned}
-            from      zone as z
-            left join zonelock as lk using (zone)
-            where  z.label=(select targetlabel from workflow where workflow=${workflowId})
-              AND  lk.zone is null
-            limit ${count}
-       """.update.withGeneratedKeys[Int]("zonelock").map(ZoneLockID(_)).compile.toVector
+    def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID] = {
+      runq {
+        sql"""
+              WITH targetLabel AS (
+                       SELECT targetLabel FROM workflow WHERE workflow=${workflowId.unwrap}
+                   ),
+                   targetPath AS (
+                       SELECT corpusPath FROM workflow WHERE workflow=${workflowId.unwrap}
+                   )
+               INSERT INTO zonelock (assignee, workflow, zone, status)
+                   SELECT ${userId.unwrap}, ${workflowId.unwrap}, z.zone, ${ZoneLockStatus.Assigned}
+                   FROM
+                         zone z
+                         JOIN document d
+                           ON (z.document=d.document)
+                         JOIN pathentry pe
+                           ON (z.document=pe.document)
+                         JOIN corpuspath cp
+                           ON (cp.corpuspath=pe.corpuspath)
+                         LEFT JOIN zonelock AS lk
+                           on (lk.zone=z.zone)
+                   WHERE
+                         z.label = (SELECT * FROM targetLabel)
+                     AND cp.path = (SELECT * FROM targetPath)
+                     AND lk.zone IS NULL
+                   LIMIT 1
+               """.update.run
+      }
+      getLockedZones(userId).headOption
     }
-
 
     def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit = {
       runq {
