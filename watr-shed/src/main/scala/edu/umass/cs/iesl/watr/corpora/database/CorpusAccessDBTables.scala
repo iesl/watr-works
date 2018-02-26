@@ -284,6 +284,26 @@ class CorpusAccessDBTables extends DoobieImplicits {
   } yield ()
 
 
+  def dropCurationTables() = {
+    for {
+      _ <- corpusPathTables.drop.update.run
+      _ <- zonelockTables.drop.run
+      _ <- annotationTables.drop.run
+      _ <- workflowTables.drop.update.run
+
+    } yield ()
+  }
+
+  def createCurationTables() = {
+    for {
+      _ <- workflowTables.create.update.run
+      _ <- zonelockTables.create.run
+      _ <- annotationTables.create.run
+      _ <- corpusPathTables.create.update.run
+
+    } yield ()
+  }
+
   def createAll = for {
     _ <- createDocumentTable
     _ <- createPageTable
@@ -291,11 +311,11 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
     _ <- targetregions.create()
     _ <- zonetables.create()
-    _ <- corpusPathTables.create.update.run
 
     _ <- UserTables.create.run
     _ <- workflowTables.dropAndCreate()
     _ <- zonelockTables.create.run
+    _ <- createCurationTables()
   } yield ()
 
   val dropDocuments = sql"""
@@ -308,18 +328,21 @@ class CorpusAccessDBTables extends DoobieImplicits {
     DROP TABLE IF EXISTS document;
   """.update.run
 
-  val dropAll = sql"""
-    DROP TABLE IF EXISTS zonelock;
-    DROP TABLE IF EXISTS zone_to_targetregion;
-    DROP TABLE IF EXISTS zone_to_label;
-    DROP TABLE IF EXISTS zone;
-    DROP TABLE IF EXISTS label;
-    DROP TABLE IF EXISTS targetregion;
-    DROP TABLE IF EXISTS page;
-    DROP TABLE IF EXISTS document;
-    DROP TABLE IF EXISTS person;
-    DROP TABLE IF EXISTS person_auth;
-    DROP TABLE IF EXISTS token;
-  """.update.run
+  val dropAll = for {
+    _ <- sql"""
+            DROP TABLE IF EXISTS zonelock;
+            DROP TABLE IF EXISTS zone_to_targetregion;
+            DROP TABLE IF EXISTS zone_to_label;
+            DROP TABLE IF EXISTS zone;
+            DROP TABLE IF EXISTS label;
+            DROP TABLE IF EXISTS targetregion;
+            DROP TABLE IF EXISTS page;
+            DROP TABLE IF EXISTS document;
+            DROP TABLE IF EXISTS person;
+            DROP TABLE IF EXISTS person_auth;
+            DROP TABLE IF EXISTS token;
+         """.update.run
+    _ <- dropCurationTables()
+  } yield ()
 
 }

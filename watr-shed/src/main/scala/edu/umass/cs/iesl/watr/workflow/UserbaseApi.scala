@@ -25,17 +25,3 @@ trait UserbaseApi {
 
 }
 
-trait UserbaseAlg[F[_]] {
-  def addUser(email: String@@EmailAddr): F[Int@@UserID]
-  def getUser(userId: Int@@UserID): F[Option[R.Person]]
-  def getUsers(): F[Seq[Int@@UserID]]
-  def getUserByEmail(email: String@@EmailAddr): F[Option[Int@@UserID]]
-  def deleteUser(userId: Int@@UserID): F[Unit]
-  def setPassword(userId:Int@@UserID, passhash: String@@PasswordHash): F[Unit]
-  def getPassword(userId:Int@@UserID): F[String@@PasswordHash]
-
-  def grantRole(userId: Int@@UserID, role: String@@Role): F[Unit]
-  def getRoles(userId: Int@@UserID): F[Seq[String@@Role]]
-  def revokeRole(userId: Int@@UserID, role: String@@Role): F[Unit]
-
-}

@@ -62,38 +62,41 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
     println(WorkflowReport.prettyPrint(workflowsWithReports))
   }
 
-  it should "lock/unlock target zones, to exhaustion, with single user" in new EmptyDatabase {
+
+  it should "lock/unlock target zones, to exhaustion" in new EmptyDatabase {
     val corpusSize = 2
     addSampleDocs(corpusSize)
     val userIds = initUsers(3)
     val workflowId = initWorkflows(1).head
 
     for {
-      i           <- 1 to (corpusSize * 3)
-      userId      <- userIds
-      zoneLockId  <- workflowApi.lockUnassignedZones(userId, workflowId)
+      i           <- (1 to (corpusSize * 3)).toStream
+      userId       = userIds( i % userIds.length )
+      _            = println(s"${i}. User ${userId} attempting lock")
+      zoneLockId  <- workflowApi.lockUnassignedZone(userId, workflowId)
       lock        <- workflowApi.getZoneLock(zoneLockId)
     } {
-      println(s"Workflow ${i}: $lock")
+      println(s"Workflow #${i}: $lock")
       printWorkflowReport(workflowId)
 
-      // workflowApi.getWorkflowReport(workflowId) shouldBe WorkflowReport(
-      //   corpusSize-i, Map(
-      //     (ZoneLockStatus.Assigned, 1),
-      //     (ZoneLockStatus.InProgress, 0),
-      //     (ZoneLockStatus.Completed, i-1),
-      //     (ZoneLockStatus.Skipped, 0)
-      //   ),
-      //   Map((userId, 1)),
-      //   userMap()
-      // )
+      val report = workflowApi.getWorkflowReport(workflowId)
 
-      // workflowApi.getLockedZones(userId).length shouldBe 1
+      report.unassignedCount shouldBe corpusSize - i
+
+      report.statusCounts shouldBe Map(
+        (ZoneLockStatus.Assigned, 1),
+        (ZoneLockStatus.InProgress, 0),
+        (ZoneLockStatus.Completed, i-1),
+        (ZoneLockStatus.Skipped, 0)
+      )
+
+
+      workflowApi.getLockedZones(userId).length shouldBe 1
 
       workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Completed)
       workflowApi.releaseZoneLock(zoneLockId)
 
-      // workflowApi.getLockedZones(userId).length shouldBe 0
+      workflowApi.getLockedZones(userId).length shouldBe 0
     }
 
   }
@@ -103,10 +106,10 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
   //   val users = initUsers(3)
   //   val workflows = initWorkflows(3)
 
-  //   workflowApi.lockUnassignedZones(users(0), workflows(0))
+  //   workflowApi.lockUnassignedZone(users(0), workflows(0))
   //   workflowApi.getLockedZones(users(0)).length shouldBe 3
 
-  //   workflowApi.lockUnassignedZones(users(1), workflows(1))
+  //   workflowApi.lockUnassignedZone(users(1), workflows(1))
   //   workflowApi.getLockedZones(users(1)).length shouldBe 3
   //   workflowApi.getLockedZones(users(0)).length shouldBe 3
 

@@ -35,11 +35,12 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
   }
 
   override def afterAll(): Unit = {
-    println("afterAll: re-initing db connections")
-    reflowDB.reinit()
+    println("afterAll: shutting down db connections")
+    // reflowDB.reinit()
+    reflowDB.shutdown()
   }
   override def beforeEach(): Unit = {
-    println("beforeEach")
+    // println("beforeEach")
     // reflowDB.reinit()
   }
 

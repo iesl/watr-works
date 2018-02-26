@@ -7,7 +7,7 @@ import textgrid.TextGridBuilder
 import TypeTags._
 
 
-class CorpusDirectoryTest extends DatabaseTest with TextGridBuilder with UserbaseTestHelpers {
+class CorpusDirectoryTest extends DatabaseTest with UserbaseTestHelpers {
 
 
   def addSampleDocs(n: Int): Seq[String@@DocumentID] = {

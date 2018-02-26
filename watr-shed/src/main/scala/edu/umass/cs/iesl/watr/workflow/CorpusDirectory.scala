@@ -17,14 +17,12 @@ import doobie.implicits._
 import corpora.database.{CorpusAccessDB, DoobieImplicits}
 import TypeTags._
 
-object cpath {
-  def apply(s: String): String@@CorpusPath = CorpusPath(s)
-
-  implicit class cpath_RicherString(val self: String) extends AnyVal {
-    def path(): String@@CorpusPath = apply(self)
-  }
-
-}
+// object cpath {
+//   def apply(s: String): String@@CorpusPath = CorpusPath(s)
+//   implicit class cpath_RicherString(val self: String) extends AnyVal {
+//     def path(): String@@CorpusPath = apply(self)
+//   }
+// }
 
 class DatabaseCorpusDirectory()(implicit
   corpusAccessDB: CorpusAccessDB

@@ -48,7 +48,7 @@ class CorpusAccessDB(
   val props = new Properties()
   props.setProperty("housekeeper","false")
 
-  def xa0: HikariTransactor[IO] = (for {
+  def initTransactor(): HikariTransactor[IO] = (for {
     xa <- HikariTransactor.newHikariTransactor[IO]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
     _  <- xa.configure(hx => IO {
       hx.setDataSourceProperties(props)
@@ -59,21 +59,30 @@ class CorpusAccessDB(
     xa
   }).unsafeRunSync
 
-  var xa: HikariTransactor[IO] = xa0
+  var _hikariTransactor: HikariTransactor[IO] = initTransactor()
+
+  def getTransactor(): HikariTransactor[IO] = {
+    if (_hikariTransactor == null) {
+      _hikariTransactor = initTransactor()
+    }
+    _hikariTransactor
+  }
 
   def reinit() = {
     shutdown()
-    xa = xa0
   }
 
-  def shutdown() = (for {
-    r <- sql"select 1".query[Int].unique.transact(xa) guarantee xa.shutdown
-  } yield r).unsafeRunSync
+  def shutdown(): Unit = {
+    // xa.kernel.shutdown()
+
+    _hikariTransactor.shutdown
+    _hikariTransactor = null
+  }
 
   def runq[A](query: C.ConnectionIO[A]): A = {
     try {
       (for {
-        r <- query.transact(xa)
+        r <- query.transact(getTransactor())
       } yield r).unsafeRunSync
     } catch {
       case t: org.postgresql.util.PSQLException =>
@@ -95,8 +104,11 @@ class CorpusAccessDB(
   def runqOnce[A](query: C.ConnectionIO[A]): A = {
     try {
       (for {
-        xa0 <- HikariTransactor.newHikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
-        r <- query.transact(xa0) guarantee xa0.shutdown
+        hikariTransactor0 <- HikariTransactor.newHikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+        _ <- hikariTransactor0.configure { h => IO{
+          h.setAutoCommit(true)
+        }}
+        r <- query.transact(hikariTransactor0) guarantee hikariTransactor0.shutdown
       } yield r).unsafeRunSync
     } catch {
       case t: org.postgresql.util.PSQLException =>
@@ -549,7 +561,7 @@ class CorpusAccessDB(
     ): Option[Int@@ZoneLockID] = {
       ???
     }
-    def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID] = {
+    def lockUnassignedZone(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID] = {
       getLockedZones(userId).headOption orElse runq {
         sql"""
               WITH targetLabel AS (

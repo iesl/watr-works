@@ -67,7 +67,6 @@ object RelationModel {
     document   : Int@@DocumentID,
     creator    : Int@@UserID,
     workflow   : String@@WorkflowID,
-    // created    : Date,
     created    : java.time.Instant,
     jsonRec    : Option[String],
     status     : String@@StatusCode

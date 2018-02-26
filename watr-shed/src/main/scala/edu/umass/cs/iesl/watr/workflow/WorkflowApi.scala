@@ -81,6 +81,7 @@ object WorkflowReport extends TypeTagCodecs {
   implicit lazy val enc: Encoder[WorkflowReport] = deriveEncoder
 
   import textboxing.{TextBoxing => TB}, TB._
+  import textboxing.TextBoxingLayouts._
 
   def prettyPrint(workflows: Seq[(WorkflowReport, R.WorkflowDef)]): TB.Box = {
     vjoins(
@@ -94,43 +95,36 @@ object WorkflowReport extends TypeTagCodecs {
           workflowDef.labelSchemas
         )
 
-        val userAssignments = "User Assignment Counts".atop(indent(4,
-          vjoins(
-            report.userAssignmentCounts.toSeq.map{ case (userId, count) =>
-              val email = report.usernames(userId)
-              s"$email :  ${count}".box
-            }
-          )))
+        val userAssignments = hangingIndent("User Assignment Counts",
+          report.userAssignmentCounts.toSeq.map{ case (userId, count) =>
+            val email = report.usernames(userId)
+            s"$email :  ${count}".box
+          }
+        )
 
-        val statusCounts = "User Assignment Status".atop(indent(4,
-          vjoins(
-            report.statusCounts.toSeq.map { case (statusCode, num) =>
-              s"${statusCode}: ${num}".box
-            }
-          )
-        ))
+        val statusCounts = hangingIndent("User Assignment Status",
+          report.statusCounts.toSeq.map { case (statusCode, num) =>
+            s"${statusCode}: ${num}".box
+          }
+        )
 
-
-        val allActiveUsers = "Active Users".atop(indent(4, vjoins(
+        val allActiveUsers = hangingIndent("Active Users",
           report.usernames.toSeq.map { case (userId, email) =>
             email.unwrap.box
           }
-        )))
-
-        s"Workflow ${workflowDef.workflow} in path '${path}'" atop(
-          indent(4, vjoin(
-            userAssignments,
-            statusCounts,
-            s"Unassigned:  ${report.unassignedCount} ".box,
-            s"Curation Count: ${count}",
-            allActiveUsers,
-            boxLabelSchema
-          ))
         )
+
+        hangingIndent(s"Workflow ${workflowDef.workflow} in path '${path}'", Seq(
+          userAssignments,
+          statusCounts,
+          s"Unassigned:  ${report.unassignedCount} ",
+          s"Curation Count: ${count}",
+          allActiveUsers,
+          boxLabelSchema
+        ))
       }
     )
   }
-
 }
 
 trait WorkflowApi {
@@ -152,7 +146,7 @@ trait WorkflowApi {
   def getWorkflow(workflowId:String@@WorkflowID): R.WorkflowDef
   def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport
 
-  def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID]
+  def lockUnassignedZone(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID]
   def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit
   def releaseZoneLock(zoneLockId: Int@@ZoneLockID): Unit
 

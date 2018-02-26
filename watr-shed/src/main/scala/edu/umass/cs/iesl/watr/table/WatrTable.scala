@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package table
 
-import ammonite.util._
+// import ammonite.util._
 import ammonite.ops._
 import ammonite.runtime.Storage
 import ammonite.main.Defaults
@@ -21,7 +21,7 @@ object SharedInit extends utils.AppMainBasics {
         |import watrmarks.{StandardLabels => LB}
         |import TypeTags._
         |import watr._, spindex._, geometry._, table._
-        |import ShellCommands._
+        |import InitialSegmentationCommands._
         |import ammonite.util._
         |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi
         |implicit val docStore: DocumentZoningApi = corpusAccessApi.docStore
@@ -32,36 +32,6 @@ object SharedInit extends utils.AppMainBasics {
 
   val welcomeBanner = s""">> WatrTable Shell <<"""
 
-  val ignoreUselessImports =
-    """|notify => _,
-       |  wait => _,
-       |  equals => _,
-       |  asInstanceOf => _,
-       |  synchronized => _,
-       |  notifyAll => _,
-       |  isInstanceOf => _,
-       |  == => _,
-       |  != => _,
-       |  getClass => _,
-       |  ne => _,
-       |  eq => _,
-       |  ## => _,
-       |  hashCode => _,
-       |  _
-       |""".stripMargin
-
-  val replPredef = """
-    |import ammonite.main.Router.{doc, main}
-    |import ammonite.main.Scripts.pathScoptRead
-    |  import ammonite.repl.ReplBridge.value.{
-    |  exit,
-    |  codeColorsImplicit,
-    |  tprintColorsImplicit,
-    |  pprinterImplicit,
-    |  show,
-    |  typeOf
-    |}
-  """.stripMargin
 
   val replColors = ammonite.util.Colors(
     prompt   = fansi.Color.Magenta,
@@ -94,7 +64,7 @@ object SharedInit extends utils.AppMainBasics {
 
     val corpus = Corpus(P.strToAmmPath(corpusRoot))
 
-    val reflowDB = ShellCommands.initReflowDB(dbname, passwd)
+    val reflowDB = InitialSegmentationCommands.initReflowDB(dbname, passwd)
 
     CorpusAccessApi(reflowDB, corpus)
   }
