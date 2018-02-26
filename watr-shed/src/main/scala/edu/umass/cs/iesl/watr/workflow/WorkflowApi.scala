@@ -79,6 +79,58 @@ object WorkflowReport extends TypeTagCodecs {
     }
 
   implicit lazy val enc: Encoder[WorkflowReport] = deriveEncoder
+
+  import textboxing.{TextBoxing => TB}, TB._
+
+  def prettyPrint(workflows: Seq[(WorkflowReport, R.WorkflowDef)]): TB.Box = {
+    vjoins(
+      workflows.map { case (report, workflowDef) =>
+        // val report = workflowApi.getWorkflowReport(workflowId)
+        // val workflowDef = workflowApi.getWorkflow(workflowId)
+        val path = workflowDef.targetPath
+        val count = workflowDef.curationCount
+
+        val boxLabelSchema = LabelSchemas.labelSchemaToBox(
+          workflowDef.labelSchemas
+        )
+
+        val userAssignments = "User Assignment Counts".atop(indent(4,
+          vjoins(
+            report.userAssignmentCounts.toSeq.map{ case (userId, count) =>
+              val email = report.usernames(userId)
+              s"$email :  ${count}".box
+            }
+          )))
+
+        val statusCounts = "User Assignment Status".atop(indent(4,
+          vjoins(
+            report.statusCounts.toSeq.map { case (statusCode, num) =>
+              s"${statusCode}: ${num}".box
+            }
+          )
+        ))
+
+
+        val allActiveUsers = "Active Users".atop(indent(4, vjoins(
+          report.usernames.toSeq.map { case (userId, email) =>
+            email.unwrap.box
+          }
+        )))
+
+        s"Workflow ${workflowDef.workflow} in path '${path}'" atop(
+          indent(4, vjoin(
+            userAssignments,
+            statusCounts,
+            s"Unassigned:  ${report.unassignedCount} ".box,
+            s"Curation Count: ${count}",
+            allActiveUsers,
+            boxLabelSchema
+          ))
+        )
+      }
+    )
+  }
+
 }
 
 trait WorkflowApi {
@@ -88,7 +140,7 @@ trait WorkflowApi {
     desc: String,
     targetLabelOpt: Option[Label],
     labelSchemas: LabelSchemas,
-    corpusPath: String@@CorpusPath,
+    targetPath: String@@CorpusPath,
     curationCount: Int
   ): String@@WorkflowID
 

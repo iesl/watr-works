@@ -124,3 +124,9 @@ class DatabaseCorpusDirectory()(implicit
 
   }
 }
+
+// Corpus locking mechanism
+
+object CorpusLocking {
+
+}

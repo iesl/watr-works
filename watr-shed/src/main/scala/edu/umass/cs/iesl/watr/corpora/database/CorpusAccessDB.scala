@@ -346,10 +346,6 @@ class CorpusAccessDB(
     } yield regionId
   }
 
-  def getPageAndDocument(pageId: Int@@PageID): (Rel.Page, Rel.Document) = {
-    runq{ selectPageAndDocument(pageId) }
-  }
-
   def getCorpusEntryPath(pageId: Int@@PageID): Path = {
     val query = sql"""
        select
@@ -428,7 +424,7 @@ class CorpusAccessDB(
       desc: String,
       targetLabelOpt: Option[Label],
       labelSchemas: LabelSchemas,
-      corpusPath: String@@CorpusPath,
+      targetPath: String@@CorpusPath,
       curationCount: Int
     ): String@@WorkflowID = {
 
@@ -443,8 +439,8 @@ class CorpusAccessDB(
 
       runq {
         sql"""
-           insert into workflow (workflow, description, targetLabel, labelSchemas, corpusPath, curationCount)
-           values (${slug}, ${desc}, ${targetLabelId}, ${jsonSchema}, text2ltree(${corpusPath}), ${curationCount})
+           insert into workflow (workflow, description, targetLabel, labelSchemas, targetPath, curationCount)
+           values (${slug}, ${desc}, ${targetLabelId}, ${jsonSchema}, text2ltree(${targetPath}), ${curationCount})
            returning workflow;
         """.query[String@@WorkflowID].unique
       }
@@ -454,7 +450,7 @@ class CorpusAccessDB(
 
     def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
       runq {
-        sql""" select workflow, description, targetLabel, labelSchemas, corpusPath, curationCount
+        sql""" select workflow, description, targetLabel, labelSchemas, targetPath, curationCount
                from   workflow
                where  workflow=${workflowId}
         """.query[(String, String, Int@@LabelID, String, String@@CorpusPath, Int)]
@@ -502,7 +498,7 @@ class CorpusAccessDB(
           WITH targetLabel as (
             select targetLabel from workflow where workflow=${workflowId}
           ), targetPath as (
-            select corpusPath from workflow where workflow=${workflowId}
+            select targetPath from workflow where workflow=${workflowId}
           )
           select count(*)
             from         zone  z
@@ -515,15 +511,6 @@ class CorpusAccessDB(
               AND  lk.zone is null
        """.query[Int].unique
       }
-      // val unassignedCount = runq {
-      //   sql"""
-      //     select count(*)
-      //       from        zone as z
-      //         left join zonelock as lk using (zone)
-      //       where  z.label=(select targetLabel from workflow where workflow=${workflowId})
-      //         AND  lk.zone is null
-      //  """.query[Int].unique
-      // }
 
       val tuples = for {
         status <- ZoneLockStatus.all
@@ -555,14 +542,28 @@ class CorpusAccessDB(
       )
     }
 
+
+    def getUserAnnotations(
+      userId: Int@@UserID,
+      workflowId: String@@WorkflowID
+    ): Option[Int@@ZoneLockID] = {
+      ???
+    }
     def lockUnassignedZones(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID] = {
-      runq {
+      getLockedZones(userId).headOption orElse runq {
         sql"""
               WITH targetLabel AS (
                        SELECT targetLabel FROM workflow WHERE workflow=${workflowId.unwrap}
                    ),
+                   priorAnnots AS (
+                       SELECT COUNT(*)
+                       FROM   annotation AS ann
+                         JOIN workflow AS wf ON (ann.workflow=wf.workflow)
+                       WHERE wf.workflow=${workflowId}
+                        AND  ann.creator=${userId}
+                   ),
                    targetPath AS (
-                       SELECT corpusPath FROM workflow WHERE workflow=${workflowId.unwrap}
+                       SELECT targetPath FROM workflow WHERE workflow=${workflowId.unwrap}
                    )
                INSERT INTO zonelock (assignee, workflow, zone, status)
                    SELECT ${userId.unwrap}, ${workflowId.unwrap}, z.zone, ${ZoneLockStatus.Assigned}
@@ -581,9 +582,8 @@ class CorpusAccessDB(
                      AND cp.path = (SELECT * FROM targetPath)
                      AND lk.zone IS NULL
                    LIMIT 1
-               """.update.run
-      }
-      getLockedZones(userId).headOption
+             """.update.withGeneratedKeys[Int@@ZoneLockID]("zonelock").compile.toVector
+      }.headOption
     }
 
     def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit = {
@@ -1126,4 +1126,42 @@ class CorpusAccessDB(
     }
 
   }
+
+  def updateAnnotationStatus(annotId: Int@@AnnotationID, status: String@@StatusCode): Unit = runq {
+    sql"""UPDATE annotation SET status=${status} WHERE annotation=${annotId} """.update.run
+  }
+
+  def updateAnnotationJson(annotId: Int@@AnnotationID, jsonRec: String): Unit =  runq {
+    sql"""UPDATE annotation SET jsonRec=${jsonRec} WHERE annotation=${annotId} """.update.run
+  }
+
+  def getAnnotations(): Seq[Int@@AnnotationID]= runq {
+    sql""" SELECT annotation FROM annotation """
+      .query[Int@@AnnotationID].to[Vector]
+  }
+
+  def getAnnotation(annotId: Int@@AnnotationID): Rel.AnnotationRec =  runq {
+    sql"""
+          SELECT annotation, document, creator, workflow, created, jsonRec, status
+          FROM annotation WHERE annotation=${annotId}
+      """.query[Rel.AnnotationRec].unique
+  }
+
+  def createAnnotation(
+    userId: Int@@UserID,
+    docId: Int@@DocumentID,
+    workflowId: String@@WorkflowID
+  ): Int@@AnnotationID = {
+    runq {
+      sql"""
+              WITH targetPath  AS (
+                       SELECT targetPath FROM workflow WHERE workflow=${workflowId}
+                   )
+              INSERT INTO annotation
+                       (  document,  creator,    workflow,      created, status )
+                  SELECT  ${docId},  ${userId},  ${workflowId}, NOW(),   ${ZoneLockStatus.InProgress}
+              """.update.withUniqueGeneratedKeys[Int@@AnnotationID]("annotation")
+    }
+  }
+
 }

@@ -136,7 +136,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
            description       TEXT,
            targetLabel       INTEGER REFERENCES label NOT NULL,
            labelSchemas      TEXT,
-           corpusPath        LTREE,
+           targetPath        LTREE,
            curationCount     INTEGER
          )
       """
@@ -147,6 +147,22 @@ class CorpusAccessDBTables extends DoobieImplicits {
     } yield ()
 
   }
+
+  object corpusLockingTables {
+
+    val drop = sql""" DROP TABLE IF EXISTS corpuslock; """.update
+
+    val create: Update0 = sql"""
+
+      CREATE TABLE IF NOT EXISTS lock (
+        lock        SERIAL PRIMARY KEY,
+        holder      INTEGER REFERENCES person ON DELETE CASCADE,
+        document    INTEGER REFERENCES document ON DELETE CASCADE,
+        status      VARCHAR(32) DEFAULT NULL
+      );
+    """.update
+  }
+
 
   object zonelockTables {
 
@@ -173,21 +189,21 @@ class CorpusAccessDBTables extends DoobieImplicits {
         CREATE TABLE IF NOT EXISTS annotation (
           annotation     SERIAL PRIMARY KEY,
           document       INTEGER REFERENCES document,
-          curator        INTEGER REFERENCES person,
+          creator        INTEGER REFERENCES person,
           workflow       VARCHAR(32) REFERENCES workflow ON DELETE SET NULL,
           created        TIMESTAMP WITH TIME ZONE,
           status         VARCHAR(32) NOT NULL,
-          jsonrec        TEXT,
-          path           LTREE DEFAULT NULL
+          jsonrec        TEXT DEFAULT NULL
         );
 
         CREATE INDEX annotation_document ON annotation(document);
-        CREATE INDEX annotation_curator ON annotation(curator);
+        CREATE INDEX annotation_curator ON annotation(creator);
         CREATE INDEX annotation_workflow ON annotation(workflow);
 
-        CREATE INDEX annotation_path_gist ON annotation using gist(path);
-        CREATE INDEX annotation_path ON annotation using btree(path);
     """.update
+
+    // CREATE INDEX annotation_path_gist ON annotation using gist(path);
+    // CREATE INDEX annotation_path ON annotation using btree(path);
   }
 
   object corpusPathTables {

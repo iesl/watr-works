@@ -29,7 +29,10 @@ class CorpusDirectoryTest extends DatabaseTest with TextGridBuilder with Userbas
     implicit val db:CorpusAccessDB = reflowDB
 
     reflowDB.runqOnce{
-      reflowDB.tables.corpusPathTables.create()
+      for {
+        _ <- reflowDB.tables.corpusPathTables.drop.update.run
+        _ <- reflowDB.tables.corpusPathTables.create.update.run
+      } yield ()
     }
 
     addSampleDocs(3)

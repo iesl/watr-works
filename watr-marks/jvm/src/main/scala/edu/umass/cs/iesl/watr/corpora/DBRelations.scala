@@ -50,7 +50,7 @@ object RelationModel {
     description   : String,
     targetLabel   : Label,
     labelSchemas  : LabelSchemas,
-    corpusPath    : String@@CorpusPath,
+    targetPath    : String@@CorpusPath,
     curationCount : Int
   )
 
@@ -59,6 +59,17 @@ object RelationModel {
     assignee   : Option[Int@@UserID],
     workflow   : String@@WorkflowID,
     zone       : Int@@ZoneID,
+    status     : String@@StatusCode
+  )
+
+  case class AnnotationRec(
+    id         : Int@@AnnotationID,
+    document   : Int@@DocumentID,
+    creator    : Int@@UserID,
+    workflow   : String@@WorkflowID,
+    // created    : Date,
+    created    : java.time.Instant,
+    jsonRec    : Option[String],
     status     : String@@StatusCode
   )
 

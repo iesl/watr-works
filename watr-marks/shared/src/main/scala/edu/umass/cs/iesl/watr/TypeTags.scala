@@ -50,6 +50,7 @@ sealed trait Role
 sealed trait TokenID
 
 sealed trait CorpusPath
+sealed trait AnnotationID
 
 
 object TypeTags extends TypeTags
@@ -123,6 +124,7 @@ trait TypeTags extends TypeTagUtils {
   val TokenID = Tag.of[TokenID]
 
   val CorpusPath = Tag.of[CorpusPath]
+  val AnnotationID = Tag.of[AnnotationID]
 }
 
 trait TypeTagCodecs {

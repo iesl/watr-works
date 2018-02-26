@@ -39,7 +39,7 @@ object RGeometryConversions {
   }
 
   def toLTBounds(r: RG.Rectangle): G.LTBounds = {
-    G.LTBounds.Floats(
+    G.LTBounds.Doubles(
       left = r.x1,
       top =  r.y1,
       width = (r.x2 - r.x1),

@@ -8,6 +8,7 @@ import org.http4s.circe._
 import io.circe
 import circe._
 import circe.literal._
+import circe.generic.auto._
 import org.http4s.EntityDecoder
 
 import tsec.passwordhashers._
@@ -16,7 +17,6 @@ import tsec.passwordhashers.imports._
 import watrmarks._
 import geometry._
 
-import circe.generic.auto._
 import corpora.{RelationModel => R}
 
 trait TypeTagCodecs {
@@ -69,7 +69,7 @@ object formdata {
     implicit def decoder[F[_]: Effect]: EntityDecoder[F, LoginForm] = jsonOf[F, LoginForm]
   }
 
-  @JsonCodec case class SignupForm(
+  case class SignupForm(
     email: String,
     username: String,
     password: String

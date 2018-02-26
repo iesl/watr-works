@@ -63,6 +63,7 @@ trait DoobieImplicits extends DoobiePredef {
   implicit val StatusCodeMeta   : Meta[String@@StatusCode] = StrTypeTagMeta[StatusCode   ](StatusCode (_))
   implicit val EmailAddrMeta    : Meta[String@@EmailAddr]  = StrTypeTagMeta[EmailAddr    ](EmailAddr  (_))
   implicit val CorpusPathMeta   : Meta[String@@CorpusPath] = StrTypeTagMeta[CorpusPath   ](CorpusPath (_))
+  implicit val AnnotationIDMeta : Meta[Int@@AnnotationID]  = TypeTagMeta[AnnotationID    ](AnnotationID (_))
 
   // implicit def TargetRegionMeta : Meta[R.TargetRegion] = implicitly[Meta[R.TargetRegion]]
   // implicit def ZoneMeta         : Meta[R.Zone]         = implicitly[Meta[R.Zone]]

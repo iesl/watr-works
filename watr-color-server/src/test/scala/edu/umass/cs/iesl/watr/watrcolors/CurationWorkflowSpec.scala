@@ -60,7 +60,9 @@ class CurationWorkflowSpec extends  DatabaseTest with DocSegLabels {
         s"wf-${l.fqn}-${i}",
         s"Annot. ${l.fqn} #$i",
         Some(l),
-        NameLabelSchema
+        NameLabelSchema,
+        CorpusPath("TODO"),
+        -100
       )
     }
   }

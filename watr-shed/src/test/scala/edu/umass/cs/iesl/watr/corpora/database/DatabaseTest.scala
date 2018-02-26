@@ -18,6 +18,7 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
 
   def workflowApi: WorkflowApi = reflowDB.workflowApi
   def userbaseApi: UserbaseApi = reflowDB.userbaseApi
+  def corpusDirectory: DatabaseCorpusDirectory = new DatabaseCorpusDirectory()(reflowDB)
 
   def createEmptyDocumentZoningApi(): DocumentZoningApi = {
     reflowDB.runqOnce {

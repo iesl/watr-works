@@ -6,6 +6,7 @@ import apps._
 import cats.effect._
 import corpora._
 import corpora.database._
+import java.text.SimpleDateFormat
 import utils.Timer.time
 import watrmarks._
 
@@ -174,56 +175,11 @@ object ShellCommands {
 
     def workflows()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val workflowApi = corpusAccessApi.workflowApi
+      val workflowsWithReports = workflowApi.getWorkflows.map{  id =>
+        (workflowApi.getWorkflowReport(id), workflowApi.getWorkflow(id))
+      }
 
-      val res = vjoins(
-        workflowApi.getWorkflows.map { workflowId =>
-          val report = workflowApi.getWorkflowReport(workflowId)
-
-          val workflowDef = workflowApi.getWorkflow(workflowId)
-          val path = workflowDef.corpusPath
-          val count = workflowDef.curationCount
-
-          val boxLabelSchema = LabelSchemas.labelSchemaToBox(
-            workflowDef.labelSchemas
-          )
-
-          val userAssignments = "User Assignment Counts".atop(indent(4,
-            vjoins(
-              report.userAssignmentCounts.toSeq.map{ case (userId, count) =>
-                val email = report.usernames(userId)
-                s"$email :  ${count}".box
-              }
-            )))
-
-          val statusCounts = "User Assignment Status".atop(indent(4,
-            vjoins(
-              report.statusCounts.toSeq.map { case (statusCode, num) =>
-                s"${statusCode}: ${num}".box
-              }
-            )
-          ))
-
-
-          val allActiveUsers = "Active Users".atop(indent(4, vjoins(
-            report.usernames.toSeq.map { case (userId, email) =>
-              email.unwrap.box
-            }
-          )))
-
-          s"Workflow: ${workflowId} in ${path}" atop(
-            indent(4, vjoin(
-              userAssignments,
-              statusCounts,
-              s"Unassigned:  ${report.unassignedCount} ".box,
-              s"Curation Count: ${count}",
-              allActiveUsers,
-              boxLabelSchema
-            ))
-          )
-        }
-      )
-
-      println(res)
+      println(WorkflowReport.prettyPrint(workflowsWithReports))
     }
 
     def dirs()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
@@ -243,29 +199,103 @@ object ShellCommands {
       println(res)
     }
 
+
+
+    def annots()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val db = corpusAccessApi.corpusAccessDB
+      // val datefmt = new SimpleDateFormat("dd MMM yyyy HH:mm:ss z")
+      // s"""Created: ${datefmt.format(annot.created)}""",
+      val allAnnots = db.getAnnotations().map{ annotId =>
+        val annot = db.getAnnotation(annotId)
+        s"${annot.id} on ${annot.document}" atop(indent(4, {
+          vjoin(
+            s"Creator: ${annot.creator}",
+            s"""Created: ${annot.created}""",
+            s"Status: ${annot.status}",
+            s"Json: ${annot.jsonRec}",
+          )
+        }))
+      }
+      val res = s"Annotations".box atop(indent(4,
+        vjoins(allAnnots)
+      ))
+      println(res)
+    }
   }
 
   object annot {
-    //
+
+
+    def updateStatus(annotId: Int@@AnnotationID, status: String@@StatusCode)(implicit
+      corpusAccessApi: CorpusAccessApi
+    ): Unit = {
+      val db = corpusAccessApi.corpusAccessDB
+      db.updateAnnotationStatus(annotId, status)
+    }
+
+    def updateJson(annotId: Int@@AnnotationID, jsonRec: String)(implicit
+      corpusAccessApi: CorpusAccessApi
+    ): Unit = {
+      val db = corpusAccessApi.corpusAccessDB
+      db.updateAnnotationJson(annotId, jsonRec)
+    }
+
+
+    import utils.DoOrDieHandlers._
+
+
+    def createAnnotation(
+      workflowId: String@@WorkflowID,
+      stableId: String@@DocumentID,
+      userEmail: String@@EmailAddr
+    )(implicit corpusAccessApi: CorpusAccessApi): Int@@AnnotationID = {
+      val db = corpusAccessApi.corpusAccessDB
+      val users = corpusAccessApi.userbaseApi
+      (for {
+        docId <- corpusAccessApi.docStore.getDocument(stableId)
+        userId <- users.getUserByEmail(userEmail)
+      } yield {
+        db.createAnnotation(userId, docId, workflowId)
+      }).orDie("")
+    }
 
   }
 
   implicit def StringToTypeTag_CorpusPath(s: String): String@@CorpusPath = CorpusPath(s)
   implicit def StringToTypeTag_WorkflowID(s: String): String@@WorkflowID = WorkflowID(s)
+  implicit def StringToTypeTag_EmailAddr(s: String): String@@EmailAddr = EmailAddr(s)
+  implicit def StringToTypeTag_DocumentID(s: String): String@@DocumentID = DocumentID(s)
   implicit def IntToTypeTag_UserID(i: Int): Int@@UserID = UserID(i)
 
 
-  // object TypeTagAuto
   object assign {
 
-    def getNextAssignment(workflowId: String@@WorkflowID, userId: Int@@UserID)(implicit corpusAccessApi: CorpusAccessApi): Option[Int@@ZoneLockID] = {
+    def getNextAssignment(workflowId: String@@WorkflowID, userEmail: String@@EmailAddr)(implicit corpusAccessApi: CorpusAccessApi): Option[Int@@ZoneLockID] = {
       val workflowApi = corpusAccessApi.workflowApi
-      val existingLock  = workflowApi.getLockedZones(userId).headOption
-      lazy val newLock =  workflowApi.lockUnassignedZones(userId, workflowId).headOption
+      val users = corpusAccessApi.userbaseApi
+      for {
+        userId <- users.getUserByEmail(userEmail)
+        lockId <- ( workflowApi.getLockedZones(userId).headOption
+                    orElse workflowApi.lockUnassignedZones(userId, workflowId) )
+      } yield lockId
+    }
 
-      existingLock orElse newLock
+    def completeAssignment(zonelockId: Int@@ZoneLockID)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val workflowApi = corpusAccessApi.workflowApi
+      workflowApi.updateZoneStatus(zonelockId, ZoneLockStatus.Completed)
     }
 
   }
 
+  object users {
+
+    def addUser(email: String@@EmailAddr)(implicit corpusAccessApi: CorpusAccessApi): Either[Int@@UserID, Int@@UserID] = {
+      val userbaseApi = corpusAccessApi.userbaseApi
+      userbaseApi.getUserByEmail(email)
+        .map(Left(_))
+        .getOrElse { Right(userbaseApi.addUser(email)) }
+    }
+  }
+
 }
+

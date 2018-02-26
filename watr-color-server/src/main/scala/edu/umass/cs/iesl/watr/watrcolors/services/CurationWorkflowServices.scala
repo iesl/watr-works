@@ -118,7 +118,9 @@ trait CurationWorkflow extends WorkflowCodecs {
         val workflowId = workflowApi.defineWorkflow(
           workflowForm.workflow,
           workflowForm.description, None,
-          succ
+          succ,
+          CorpusPath("TODO"),
+          -100
         )
         Json.obj("workflowId" := workflowId)
       })
