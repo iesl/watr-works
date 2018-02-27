@@ -911,24 +911,10 @@ class CorpusAccessDB(
 
       val query = queryf.query[Int@@ZoneID]
 
-      // val theSql = query.sql
-      // println(s"sql = ${theSql}")
-
       runq{ query.unique }
     }
 
-    def createZone0(regionId: Int@@RegionID, label: Label): Int@@ZoneID = {
 
-      val query = for {
-        region <- selectTargetRegion(regionId)
-        page <- selectPage(region.page)
-        labelId <- getOrInsertLabel(label)
-        zoneId <- insertZone(page.document, labelId)
-        _ <- linkZoneToTargetRegion(zoneId, regionId)
-      } yield zoneId
-
-      runq{ query }
-    }
     def addZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
       val query = for {
         _ <- linkZoneToTargetRegion(zoneId, regionId)

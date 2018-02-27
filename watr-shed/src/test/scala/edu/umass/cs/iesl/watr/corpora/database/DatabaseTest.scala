@@ -10,38 +10,38 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
     with BeforeAndAfterAll {
 
 
-  lazy val reflowDB = new CorpusAccessDB(
+  lazy val corpusAccessDB = new CorpusAccessDB(
     dbname="watrdev",
     dbuser="watrworker",
     dbpass="watrpasswd"
   )
 
-  def workflowApi: WorkflowApi = reflowDB.workflowApi
-  def userbaseApi: UserbaseApi = reflowDB.userbaseApi
-  def corpusDirectory: DatabaseCorpusDirectory = new DatabaseCorpusDirectory()(reflowDB)
+  def workflowApi: WorkflowApi = corpusAccessDB.workflowApi
+  def userbaseApi: UserbaseApi = corpusAccessDB.userbaseApi
+  def corpusDirectory: DatabaseCorpusDirectory = new DatabaseCorpusDirectory()(corpusAccessDB)
 
   def createEmptyDocumentZoningApi(): DocumentZoningApi = {
-    reflowDB.runqOnce {
-      reflowDB.veryUnsafeDropDatabase().run
+    corpusAccessDB.runqOnce {
+      corpusAccessDB.veryUnsafeDropDatabase().run
     }
 
-    reflowDB.dropAndRecreate
-    reflowDB.docStore
+    corpusAccessDB.dropAndRecreate
+    corpusAccessDB.docStore
   }
 
   override def beforeAll(): Unit = {
     println("beforeAll: re-initing db connections")
-    reflowDB.reinit()
+    corpusAccessDB.reinit()
   }
 
   override def afterAll(): Unit = {
     println("afterAll: shutting down db connections")
-    // reflowDB.reinit()
-    reflowDB.shutdown()
+    // corpusAccessDB.reinit()
+    corpusAccessDB.shutdown()
   }
   override def beforeEach(): Unit = {
     // println("beforeEach")
-    // reflowDB.reinit()
+    // corpusAccessDB.reinit()
   }
 
   override def afterEach(): Unit = {

@@ -18,7 +18,7 @@ class CurationWorkflowSpec extends  DatabaseTest with DocSegLabels {
   behavior of "Curation Workflow"
 
   def workflowService() = new CurationWorkflow {
-    def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(reflowDB, null)
+    def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(corpusAccessDB, null)
     def docStore = corpusAccessApi.docStore
     def workflowApi = corpusAccessApi.workflowApi
     def userbaseApi = corpusAccessApi.userbaseApi

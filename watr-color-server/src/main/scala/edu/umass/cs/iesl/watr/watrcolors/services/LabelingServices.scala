@@ -13,6 +13,7 @@ import textgrid._
 import models._
 import tsec.authentication._
 import corpora._
+import database.CorpusAccessDB
 
 trait ZoningApi extends HttpPayloads {
   import watrmarks._
@@ -21,6 +22,7 @@ trait ZoningApi extends HttpPayloads {
   import circe.literal._
 
   def docStore: DocumentZoningApi
+  def corpusAccessDB: CorpusAccessDB
 
   def readZones(stableId: String@@DocumentID): Json = {
     // val stableId = DocumentID(stableIdStr)
@@ -49,9 +51,9 @@ trait ZoningApi extends HttpPayloads {
   }
 
 
-  def createZone(label: Label, pageRegion: PageRegion): Unit = {
+  def createZone(userId: Int@@UserID, label: Label, pageRegion: PageRegion): Unit = {
+    // corpusAccessDB.createAnnotation(userId, docId, workflowId)
     docStore.labelRegions(label, Seq(pageRegion))
-
   }
 
   def putZoneText(): Unit = {
@@ -110,7 +112,7 @@ trait ZoningServices extends AuthenticatedService with ZoningApi { self =>
 
           val pageBounds = targetToPageBounds(docId, labeling.target)
 
-          createZone(labeling.labelChoice, pageBounds)
+          createZone(user.id, labeling.labelChoice, pageBounds)
         }
         resp <- Ok(Json.obj())
       } yield resp

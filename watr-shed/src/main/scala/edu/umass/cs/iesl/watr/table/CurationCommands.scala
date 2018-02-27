@@ -52,7 +52,6 @@ object CurationCommands {
       corpusAccessApi.docStore.getDocuments(n).foreach { stableId =>
         cd.moveEntry(stableId, dryRunPath)
       }
-
     }
 
     def defineTestrunWorkflow()(implicit corpusAccessApi: CorpusAccessApi): Unit = {

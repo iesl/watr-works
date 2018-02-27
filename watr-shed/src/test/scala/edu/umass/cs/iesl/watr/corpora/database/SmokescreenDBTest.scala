@@ -22,12 +22,12 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
 
 
   override def beforeEach(): Unit = {
-    reflowDB.reinit()
-    reflowDB.runqOnce {
-      reflowDB.veryUnsafeDropDatabase().run
+    corpusAccessDB.reinit()
+    corpusAccessDB.runqOnce {
+      corpusAccessDB.veryUnsafeDropDatabase().run
     }
-    reflowDB.runqOnce(create.run)
-    reflowDB.runqOnce(
+    corpusAccessDB.runqOnce(create.run)
+    corpusAccessDB.runqOnce(
       defineOrderingTriggers(
         fr0"person",
         fr0"age"
@@ -44,7 +44,7 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
       x <- sql""" insert into person (name, age) values($name, $age) """.update.run
     } yield x
 
-    reflowDB.runq{
+    corpusAccessDB.runq{
       query
     }
   }
@@ -53,7 +53,7 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
       x <- sql""" insert into person (name, age, rank) values($name, $age, $rank) """.update.run
     } yield x
 
-    reflowDB.runq{
+    corpusAccessDB.runq{
       query
     }
   }
@@ -62,7 +62,7 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
       x <- sql""" insert into person (name, age, rank) values($name, $age, 0) """.update.run
     } yield x
 
-    reflowDB.runq{
+    corpusAccessDB.runq{
       query
     }
   }
@@ -72,14 +72,14 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
       x <- sql"delete from person where name=$name AND age=$age".update.run
     } yield x
 
-    reflowDB.runq{
+    corpusAccessDB.runq{
       query
     }
   }
 
   // FIXME: map(_.map(...)) => traverse
   def getAll(): Seq[(String, Int, Int)] = {
-    reflowDB.runq{
+    corpusAccessDB.runq{
       sql"""select name, age, rank from person order by age,rank ASC"""
         .query[String :: Int :: Int :: HNil]
         .to[List]

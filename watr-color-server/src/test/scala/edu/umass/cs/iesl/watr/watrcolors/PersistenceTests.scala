@@ -15,7 +15,7 @@ class PersistenceTests extends DatabaseTest {
 
   it should "put/get/update/delete" in new EmptyDatabase {
 
-    val store = new UserStore(reflowDB)
+    val store = new UserStore(corpusAccessDB)
 
     store.put(User(UserID(0), EmailAddr("a@b.c")))
 
@@ -45,7 +45,7 @@ class PersistenceTests extends DatabaseTest {
 
   it should "put/get/update/delete" in new EmptyDatabase {
 
-    val userStore = new UserStore(reflowDB)
+    val userStore = new UserStore(corpusAccessDB)
 
     val user = userStore
       .put(User(UserID(0), EmailAddr("a@b.c")))
@@ -65,7 +65,7 @@ class PersistenceTests extends DatabaseTest {
       extension = None
     )
 
-    val tokenStore = new TokenStore(reflowDB)
+    val tokenStore = new TokenStore(corpusAccessDB)
 
     val cookie0 = tokenStore
       .put(cookie)
@@ -89,8 +89,8 @@ class PersistenceTests extends DatabaseTest {
   import tsec.passwordhashers.imports._
 
   it should "put/get/update/delete" in new EmptyDatabase {
-    val passwordStore = new PasswordStore(reflowDB)
-    val userStore = new UserStore(reflowDB)
+    val passwordStore = new PasswordStore(corpusAccessDB)
+    val userStore = new UserStore(corpusAccessDB)
 
     val user = userStore
       .put(User(UserID(0), EmailAddr("a@b.c")))

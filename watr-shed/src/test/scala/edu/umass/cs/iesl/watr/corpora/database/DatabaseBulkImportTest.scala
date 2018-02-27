@@ -21,16 +21,16 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
     )
   }
 
-  lazy val reflowDB = initDB()
+  lazy val corpusAccessDB = initDB()
 
   override def beforeEach(): Unit = {
     println("re-initing db connections")
-    reflowDB.runqOnce {
-      reflowDB.veryUnsafeDropDatabase().run
+    corpusAccessDB.runqOnce {
+      corpusAccessDB.veryUnsafeDropDatabase().run
     }
 
-    reflowDB.dropAndRecreate
-    reflowDB.reinit()
+    corpusAccessDB.dropAndRecreate
+    corpusAccessDB.reinit()
   }
 
   override def afterEach(): Unit = {}
@@ -53,7 +53,7 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
     val id1 = DocumentID("doc#1")
     add4pg_3x3SampleDoc(id0)
     add4pg_3x3SampleDoc(id1)
-    reflowDB.docStore.batchImport(memZoneApi)
+    corpusAccessDB.docStore.batchImport(memZoneApi)
   }
 
 
@@ -64,13 +64,13 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
     val id0 = DocumentID("doc#0")
     add4pg_3x3SampleDoc(id0)
     // docStore.batchImport
-    reflowDB.docStore.batchImport(memZoneApi)
+    corpusAccessDB.docStore.batchImport(memZoneApi)
 
     memZoneApi = new MemDocZoningApi
     freshDocstore = Some(memZoneApi)
     val id1 = DocumentID("doc#1")
     add4pg_3x3SampleDoc(id1)
-    reflowDB.docStore.batchImport(memZoneApi)
+    corpusAccessDB.docStore.batchImport(memZoneApi)
   }
 
 }

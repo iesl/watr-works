@@ -64,9 +64,9 @@ object SharedInit extends utils.AppMainBasics {
 
     val corpus = Corpus(P.strToAmmPath(corpusRoot))
 
-    val reflowDB = InitialSegmentationCommands.initReflowDB(dbname, passwd)
+    val corpusAccessDB = InitialSegmentationCommands.initReflowDB(dbname, passwd)
 
-    CorpusAccessApi(reflowDB, corpus)
+    CorpusAccessApi(corpusAccessDB, corpus)
   }
 }
 

@@ -208,7 +208,7 @@ object ProcessPipelineSteps {
 
           val jsonOutput = time("build json output") {  TextGridOutputFormats.jsonOutputGridPerPage(segmentation) }
 
-          val gridJsStr = jsonOutput.pretty(jsonPrinter)
+          val gridJsStr = jsonOutput.noSpaces
 
           time("write textgrid.json") {
             log.trace(s"writing textgrid.json to ${outputFile}")

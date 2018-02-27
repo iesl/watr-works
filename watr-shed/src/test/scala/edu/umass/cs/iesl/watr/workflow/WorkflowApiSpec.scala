@@ -101,50 +101,22 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
 
   }
 
-  // it should "handle multiple workflows, users" in new EmptyDatabase {
-  //   addSampleDocs(3) // 9 zones/doc, so 27 total zones
-  //   val users = initUsers(3)
-  //   val workflows = initWorkflows(3)
+  it should "annotate a locked document" in new EmptyDatabase {
+    val corpusSize = 2
+    addSampleDocs(corpusSize)
+    val userIds = initUsers(3)
+    val workflowId = initWorkflows(1).head
+    val stableId0 = docStore.getDocuments(1, 0).head
+    val docId0 = docStore.getDocument(stableId0).get
+    val annotId = corpusAccessDB.createAnnotation(userIds(0),  docId0, workflowId)
+    val annot = corpusAccessDB.getAnnotation(annotId)
+    // corpusAccessDB.updateAnnotationJson(annotId, )
+    corpusAccessDB.updateAnnotationStatus(annotId, StatusCode("NewStatus"))
 
-  //   workflowApi.lockUnassignedZone(users(0), workflows(0))
-  //   workflowApi.getLockedZones(users(0)).length shouldBe 3
+    println(s"Annot = ${annot}")
 
-  //   workflowApi.lockUnassignedZone(users(1), workflows(1))
-  //   workflowApi.getLockedZones(users(1)).length shouldBe 3
-  //   workflowApi.getLockedZones(users(0)).length shouldBe 3
-
-  //   { val report = workflowApi.getWorkflowReport(workflows(0))
-
-  //     report.unassignedCount shouldBe 21
-
-  //     report.statusCounts shouldBe Map(
-  //       (ZoneLockStatus.Assigned, 6),
-  //       (ZoneLockStatus.InProgress, 0),
-  //       (ZoneLockStatus.Completed, 0),
-  //       (ZoneLockStatus.Skipped, 0)
-  //     )
-  //   }
-
-  //   workflowApi.getLockedZones(users(0)).foreach { zoneLockId =>
-  //     workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Completed)
-  //   }
-  //   workflowApi.getLockedZones(users(1)).foreach { zoneLockId =>
-  //     workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Skipped)
-  //     workflowApi.releaseZoneLock(zoneLockId)
-  //   }
-
-  //   { val report = workflowApi.getWorkflowReport(workflows(0))
-
-  //     report.unassignedCount shouldBe 21
-
-  //     report.statusCounts shouldBe Map(
-  //       (ZoneLockStatus.Assigned, 0),
-  //       (ZoneLockStatus.InProgress, 0),
-  //       (ZoneLockStatus.Completed, 3),
-  //       (ZoneLockStatus.Skipped, 3)
-  //     )
-  //   }
-
-  // }
+    val annot1 = corpusAccessDB.getAnnotation(annotId)
+    println(s"Annot 1 = ${annot1}")
+  }
 
 }

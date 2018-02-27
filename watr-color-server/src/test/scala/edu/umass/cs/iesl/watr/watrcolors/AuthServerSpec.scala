@@ -122,7 +122,7 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
 
   def userAuthService() = new UserAuthenticationServices {
 
-    def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(reflowDB, null)
+    def corpusAccessApi: CorpusAccessApi = CorpusAccessApi(corpusAccessDB, null)
     lazy val corpusAccessDB  = corpusAccessApi.corpusAccessDB
 
     lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()

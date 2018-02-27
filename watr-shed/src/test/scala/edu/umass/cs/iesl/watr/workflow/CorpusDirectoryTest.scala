@@ -26,12 +26,12 @@ class CorpusDirectoryTest extends DatabaseTest with UserbaseTestHelpers {
 
 
   it should "smokescreen init" in new EmptyDatabase {
-    implicit val db:CorpusAccessDB = reflowDB
+    implicit val db:CorpusAccessDB = corpusAccessDB
 
-    reflowDB.runqOnce{
+    corpusAccessDB.runqOnce{
       for {
-        _ <- reflowDB.tables.corpusPathTables.drop.update.run
-        _ <- reflowDB.tables.corpusPathTables.create.update.run
+        _ <- corpusAccessDB.tables.corpusPathTables.drop.update.run
+        _ <- corpusAccessDB.tables.corpusPathTables.create.update.run
       } yield ()
     }
 

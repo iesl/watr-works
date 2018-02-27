@@ -60,7 +60,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
       CREATE INDEX zone_idx_document ON zone (document, label);
       CREATE INDEX zone_idx_label ON zone (label, document);
 
-
       CREATE TABLE zone_to_targetregion (
         zone          INTEGER REFERENCES zone ON DELETE CASCADE NOT NULL,
         targetregion  INTEGER REFERENCES targetregion NOT NULL,
@@ -118,7 +117,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
   val createLabelTable: Update0 = sql"""
       CREATE TABLE label (
         label          SERIAL PRIMARY KEY,
-        key            VARCHAR(50) UNIQUE NOT NULL
+        key            VARCHAR(128) UNIQUE NOT NULL
       );
       CREATE INDEX label_key ON label USING hash (key);
     """.update
@@ -132,7 +131,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
     val create =
       sql"""
          CREATE TABLE IF NOT EXISTS workflow (
-           workflow          VARCHAR(32) PRIMARY KEY,
+           workflow          VARCHAR(128) PRIMARY KEY,
            description       TEXT,
            targetLabel       INTEGER REFERENCES label NOT NULL,
            labelSchemas      TEXT,
@@ -158,7 +157,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
         lock        SERIAL PRIMARY KEY,
         holder      INTEGER REFERENCES person ON DELETE CASCADE,
         document    INTEGER REFERENCES document ON DELETE CASCADE,
-        status      VARCHAR(32) DEFAULT NULL
+        status      VARCHAR(128) DEFAULT NULL
       );
     """.update
   }
@@ -173,9 +172,9 @@ class CorpusAccessDBTables extends DoobieImplicits {
       CREATE TABLE IF NOT EXISTS zonelock (
         zonelock       SERIAL PRIMARY KEY,
         assignee       INTEGER REFERENCES person ON DELETE CASCADE,
-        workflow       VARCHAR(32) REFERENCES workflow ON DELETE CASCADE,
+        workflow       VARCHAR(128) REFERENCES workflow ON DELETE CASCADE,
         zone           INTEGER REFERENCES zone ON DELETE CASCADE,
-        status         VARCHAR(32) NOT NULL
+        status         VARCHAR(128) NOT NULL
       );
     """.update
 
@@ -190,9 +189,9 @@ class CorpusAccessDBTables extends DoobieImplicits {
           annotation     SERIAL PRIMARY KEY,
           document       INTEGER REFERENCES document,
           creator        INTEGER REFERENCES person,
-          workflow       VARCHAR(32) REFERENCES workflow ON DELETE SET NULL,
+          workflow       VARCHAR(128) REFERENCES workflow ON DELETE SET NULL,
           created        TIMESTAMP WITH TIME ZONE,
-          status         VARCHAR(32) NOT NULL,
+          status         VARCHAR(128) NOT NULL,
           jsonrec        TEXT DEFAULT NULL
         );
 
@@ -202,8 +201,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
     """.update
 
-    // CREATE INDEX annotation_path_gist ON annotation using gist(path);
-    // CREATE INDEX annotation_path ON annotation using btree(path);
   }
 
   object corpusPathTables {

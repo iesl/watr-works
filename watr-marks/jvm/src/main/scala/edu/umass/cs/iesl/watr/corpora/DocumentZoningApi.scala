@@ -41,7 +41,6 @@ trait DocumentZoningApi {
   // Destroy
   def deleteZone(zoneId: Int@@ZoneID): Unit
 
-
   // Locate
   def getZone(zoneId: Int@@ZoneID): Zone
   def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID]
