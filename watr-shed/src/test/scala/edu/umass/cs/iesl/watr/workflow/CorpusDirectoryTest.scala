@@ -3,9 +3,7 @@ package workflow
 
 import corpora.database.DatabaseTest
 import corpora.database.CorpusAccessDB
-import textgrid.TextGridBuilder
 import TypeTags._
-
 
 class CorpusDirectoryTest extends DatabaseTest with UserbaseTestHelpers {
 
@@ -22,8 +20,6 @@ class CorpusDirectoryTest extends DatabaseTest with UserbaseTestHelpers {
         stableId
       }
   }
-
-
 
   it should "smokescreen init" in new EmptyDatabase {
     implicit val db:CorpusAccessDB = corpusAccessDB

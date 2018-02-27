@@ -35,7 +35,9 @@ trait CorpusAccessApi {
 
   def docStore: DocumentZoningApi = corpusAccessDB.docStore
   def workflowApi: WorkflowApi = corpusAccessDB.workflowApi
+  def corpusLockApi: CorpusLockingApi = corpusAccessDB.corpusLockApi
   def userbaseApi: UserbaseApi = corpusAccessDB.userbaseApi
+  def annotApi: DocumentAnnotationApi = corpusAccessDB.annotApi
   def corpusDirectory: DatabaseCorpusDirectory = new DatabaseCorpusDirectory()(corpusAccessDB)
 
 }

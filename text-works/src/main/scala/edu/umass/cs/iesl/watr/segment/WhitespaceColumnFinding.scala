@@ -24,7 +24,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
   lazy val columnFinder = self
 
 
-  def findCandidateWhitespaceCols(): Unit = {
+  private def findCandidateWhitespaceCols(): Unit = {
     // implicit val log = traceLog.createLog("findCandidateWhitespaceCols")
 
     val components = pageIndex.components.getPageAtoms
@@ -68,7 +68,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
   }
 
-  def findLeftAlignedCharCols(
+  private def findLeftAlignedCharCols(
     components: Seq[AtomicComponent]
   ): Seq[RegionComponent] = {
     import HST._
@@ -102,8 +102,10 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
             .groupByPairs((c1, c2) => c1.bounds.left == c2.bounds.left)
             .filter{ groups => groups.length > 1 }
 
-        consecutiveLeftAlignedCharCols
-          .map{ ccs => mpageIndex.labelRegion(ccs, LB.LeftAlignedCharCol).map(_._1) }
+        consecutiveLeftAlignedCharCols.map{ ccs =>
+          ???
+          // mpageIndex.labelRegion(ccs, LB.LeftAlignedCharCol).map(_._1)
+        }
 
 
       }
@@ -113,7 +115,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
 
 
-  def growToMaxEmptySpace(startingRegion: LTBounds): Option[LTBounds] = {
+  private def growToMaxEmptySpace(startingRegion: LTBounds): Option[LTBounds] = {
 
     var currWhiteSpace = startingRegion
     val nudgeFactor = 0.05.toFloatExact()
@@ -172,7 +174,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
   }
 
   // Try to detect and possibly rewrite text that is represented as path objects
-  def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
+  private def rewritePathObjects(orderedTextBlocks: Seq[LTBounds]): Unit = {
     val _ = for {
       textBlock <- orderedTextBlocks
       hlineCC <- pageIndex.components.searchOverlapping(textBlock, LB.HLinePath)
@@ -200,7 +202,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
     }
   }
 
-  def leftRightContext(
+  private def leftRightContext(
     cc: Component,
     queryRegion: LTBounds,
     l0: Label,
@@ -220,7 +222,7 @@ trait WhitespaceColumnFinding extends PageScopeSegmenter { self =>
 
   }
 
-  def combineCandidateWhitespaceCols(): Unit = {
+  private def combineCandidateWhitespaceCols(): Unit = {
 
     // implicit val log = tracer.createLog("combineCandidateWhitespaceCols")
 

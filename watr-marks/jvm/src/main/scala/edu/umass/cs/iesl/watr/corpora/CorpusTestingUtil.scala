@@ -77,45 +77,46 @@ trait CorpusTestingUtil extends TextGridBuilder {
   }
 
   def visualizeDocument(stableId: String@@DocumentID): TB.Box = {
-    val docBoxes = for {
-      docId <- docStore.getDocument(stableId).toSeq
-    } yield {
-      val pagesBox = for {
-        pageId <- docStore.getPages(docId)
-      } yield {
-        val pageGeometry = docStore.getPageGeometry(pageId)
+    // val docBoxes = for {
+    //   docId <- docStore.getDocument(stableId).toSeq
+    // } yield {
+    //   val pagesBox = for {
+    //     pageId <- docStore.getPages(docId)
+    //   } yield {
+    //     val pageGeometry = docStore.getPageGeometry(pageId)
 
-        val allTargetRegions = docStore.getTargetRegions(pageId)
+    //     val allTargetRegions = docStore.getTargetRegions(pageId)
 
-        val regions = allTargetRegions
-          .map(r => docStore.getTargetRegion(r).toString().box)
+    //     val regions = allTargetRegions
+    //       .map(r => docStore.getTargetRegion(r).toString().box)
 
-        ("PageGeometry"
-          % indent(4, pageGeometry.toString.box)
-          % indent(2, s"PageRegions for page ${pageId}: ${allTargetRegions.length} ")
-          % indent(4, vcat(left,regions)))
-      }
+    //     ("PageGeometry"
+    //       % indent(4, pageGeometry.toString.box)
+    //       % indent(2, s"PageRegions for page ${pageId}: ${allTargetRegions.length} ")
+    //       % indent(4, vcat(left,regions)))
+    //   }
 
-      val zoneBoxes = for {
-        labelId <- docStore.getZoneLabelsForDocument(docId)
-        zoneId <- docStore.getZonesForDocument(docId, labelId)
-      } yield {
-        val zbox = docStore.getZone(zoneId).toString().box
-        // docStore.getTextReflowForZone(zoneId)
-        //   .map { reflow =>
-        //     zbox atop indent(2, reflow.toText.box)
-        //   }
-        //   .getOrElse(zbox)
-        "TODO".box
-      }
+    //   val zoneBoxes = for {
+    //     labelId <- docStore.getZoneLabelsForDocument(docId)
+    //     zoneId <- docStore.getZonesForDocument(docId, labelId)
+    //   } yield {
+    //     val zbox = docStore.getZone(zoneId).toString().box
+    //     // docStore.getTextReflowForZone(zoneId)
+    //     //   .map { reflow =>
+    //     //     zbox atop indent(2, reflow.toText.box)
+    //     //   }
+    //     //   .getOrElse(zbox)
+    //     "TODO".box
+    //   }
 
-      (s"Document ${docId} (${stableId}) report"
-        % indent(2, vcat(left,pagesBox))
-        % indent(2, "Zones")
-        % indent(4, vcat(left,zoneBoxes))
-      )
-    }
-    vcat(left,docBoxes)
+    //   (s"Document ${docId} (${stableId}) report"
+    //     % indent(2, vcat(left,pagesBox))
+    //     % indent(2, "Zones")
+    //     % indent(4, vcat(left,zoneBoxes))
+    //   )
+    // }
+    // vcat(left,docBoxes)
+    ???
   }
 
   def reportDocument(stableId: String@@DocumentID): TB.Box = {
@@ -123,11 +124,13 @@ trait CorpusTestingUtil extends TextGridBuilder {
   }
 
   //// Tests to be run across mem/db docstore
-  import watrmarks.{StandardLabels => LB}
+  // import watrmarks.{StandardLabels => LB}
 
   def addSampleDocs(docs: List[List[String]]): Seq[String@@DocumentID] = {
+    val numDocs = docStore.getDocumentCount()
     for { (doc, i) <- docs.zipWithIndex } yield {
-      val stableId = DocumentID(s"doc#${i}")
+      val d =  i + numDocs
+      val stableId = DocumentID(s"doc#${d}")
       addDocument(stableId, doc)
       stableId
     }
@@ -137,23 +140,24 @@ trait CorpusTestingUtil extends TextGridBuilder {
   }
 
   def test1(): Unit = {
-    addSampleDoc(MockPapers.sample_4pg_3x3_doc)
+    // addSampleDoc(MockPapers.sample_4pg_3x3_doc)
 
-    val stableId = DocumentID("doc#0")
-    val docId = docStore.getDocument(stableId).get
-    val pageId = docStore.getPage(docId, PageNum(0)).get
-    val lineZones = docStore.getPageZones(pageId, LB.VisualLine)
-    val lineRegions = lineZones.flatMap(_.regions)
+    // val stableId = DocumentID("doc#0")
+    // val docId = docStore.getDocument(stableId).get
+    // val pageId = docStore.getPage(docId, PageNum(0)).get
+    // val lineZones = docStore.getPageZones(pageId, LB.VisualLine)
+    // val lineRegions = lineZones.flatMap(_.regions)
 
-    // docStore.labelRegions(LB.VisualLine,regions: Seq[PageRegion])
-    val labelId = docStore.ensureLabel(LB.VisualLine)
-    lineRegions.headOption.foreach{ r0 =>
-      val zoneId = docStore.createZone(r0.id, labelId)
-      lineRegions.tail.foreach{ r1 =>
-        docStore.addZoneRegion(zoneId, r1.id)
-      }
-    }
+    // // docStore.labelRegions(LB.VisualLine,regions: Seq[PageRegion])
+    // val labelId = docStore.ensureLabel(LB.VisualLine)
+    // lineRegions.headOption.foreach{ r0 =>
+    //   val zoneId = docStore.createZone(r0.id, labelId)
+    //   lineRegions.tail.foreach{ r1 =>
+    //     docStore.addZoneRegion(zoneId, r1.id)
+    //   }
+    // }
 
+    ???
   }
 
 

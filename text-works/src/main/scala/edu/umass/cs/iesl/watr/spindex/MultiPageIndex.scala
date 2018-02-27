@@ -87,29 +87,29 @@ class MultiPageIndex(
 
   def getPageIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
 
-  // TODO this should be pushed into the PageIndex class
-  def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, PageRegion)] = {
-    if (components.isEmpty) None else {
-      val totalBounds = components.map(_.bounds).reduce(_ union _)
-      val targetPages = components.map(_.pageNum.unwrap)
-      val numOfTargetPages =  targetPages.toSet.size
+  // // TODO this should be pushed into the PageIndex class
+  // def labelRegion(components: Seq[Component], role: Label): Option[(RegionComponent, PageRegion)] = {
+  //   if (components.isEmpty) None else {
+  //     val totalBounds = components.map(_.bounds).reduce(_ union _)
+  //     val targetPages = components.map(_.pageNum.unwrap)
+  //     val numOfTargetPages =  targetPages.toSet.size
 
-      if (numOfTargetPages != 1) {
-        sys.error(s"""cannot label connected components from different pages (got pages=${targetPages.mkString(", ")})""")
-      }
+  //     if (numOfTargetPages != 1) {
+  //       sys.error(s"""cannot label connected components from different pages (got pages=${targetPages.mkString(", ")})""")
+  //     }
 
-      val pageNum =  PageNum(targetPages.head)
+  //     val pageNum =  PageNum(targetPages.head)
 
-      val pageId = docStore.getPage(docId, pageNum).get
-      val regionId = docStore.addTargetRegion(pageId, totalBounds)
-      val targetRegion = docStore.getTargetRegion(regionId)
-      val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
+  //     val pageId = docStore.getPage(docId, pageNum).get
+  //     val regionId = docStore.addTargetRegion(pageId, totalBounds)
+  //     val targetRegion = docStore.getTargetRegion(regionId)
+  //     val pageRegion = PageRegion(targetRegion.page, targetRegion.bbox)
 
-      val region = createRegionComponent(pageRegion, role)
+  //     val region = createRegionComponent(pageRegion, role)
 
-      Some((region, targetRegion))
-    }
-  }
+  //     Some((region, targetRegion))
+  //   }
+  // }
 
 
   def createRegionComponent(targetRegion: PageRegion, role: Label, text:Option[String] = None): RegionComponent = {

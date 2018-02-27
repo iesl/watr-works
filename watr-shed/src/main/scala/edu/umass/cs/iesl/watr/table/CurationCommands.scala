@@ -57,7 +57,7 @@ object CurationCommands {
     def defineTestrunWorkflow()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val workflowApi = corpusAccessApi.workflowApi
 
-      workflowApi.defineWorkflow("headers-dryrun-1", "Trial Run", None, ExampleLabelSchemas.headerLabelSchema,
+      workflowApi.defineWorkflow("headers-dryrun-1", "Trial Run", ExampleLabelSchemas.headerLabelSchema,
         dryRunPath,
         curationCount = 2
       )
@@ -113,13 +113,12 @@ object CurationCommands {
       val db = corpusAccessApi.corpusAccessDB
       // val datefmt = new SimpleDateFormat("dd MMM yyyy HH:mm:ss z")
       // s"""Created: ${datefmt.format(annot.created)}""",
-      val allAnnots = db.getAnnotations().map{ annotId =>
-        val annot = db.getAnnotation(annotId)
+      val allAnnots = db.annotApi.getAnnotations().map{ annotId =>
+        val annot = db.annotApi.getAnnotation(annotId)
         s"${annot.id} on ${annot.document}" atop(indent(4, {
           vjoin(
             s"Creator: ${annot.creator}",
             s"""Created: ${annot.created}""",
-            s"Status: ${annot.status}",
             s"Json: ${annot.jsonRec}",
           )
         }))
@@ -134,18 +133,18 @@ object CurationCommands {
   object annot {
 
 
-    def updateStatus(annotId: Int@@AnnotationID, status: String@@StatusCode)(implicit
-      corpusAccessApi: CorpusAccessApi
-    ): Unit = {
-      val db = corpusAccessApi.corpusAccessDB
-      db.updateAnnotationStatus(annotId, status)
-    }
+    // def updateStatus(annotId: Int@@AnnotationID, status: String@@StatusCode)(implicit
+    //   corpusAccessApi: CorpusAccessApi
+    // ): Unit = {
+    //   val db = corpusAccessApi.corpusAccessDB
+    //   db.annotApi.updateAnnotationStatus(annotId, status)
+    // }
 
-    def updateJson(annotId: Int@@AnnotationID, jsonRec: String)(implicit
+    def updateBody(annotId: Int@@AnnotationID, jsonRec: String)(implicit
       corpusAccessApi: CorpusAccessApi
     ): Unit = {
       val db = corpusAccessApi.corpusAccessDB
-      db.updateAnnotationJson(annotId, jsonRec)
+      db.annotApi.updateAnnotationBody(annotId, jsonRec)
     }
 
 
@@ -162,7 +161,7 @@ object CurationCommands {
         docId <- corpusAccessApi.docStore.getDocument(stableId)
         userId <- users.getUserByEmail(userEmail)
       } yield {
-        db.createAnnotation(userId, docId, workflowId)
+        db.annotApi.createAnnotation(userId, docId, workflowId)
       }).orDie("createAnnotation")
     }
 
@@ -172,19 +171,20 @@ object CurationCommands {
 
   object assign {
 
-    def getNextAssignment(workflowId: String@@WorkflowID, userEmail: String@@EmailAddr)(implicit corpusAccessApi: CorpusAccessApi): Option[Int@@ZoneLockID] = {
+    def getNextAssignment(workflowId: String@@WorkflowID, userEmail: String@@EmailAddr)(implicit corpusAccessApi: CorpusAccessApi): Option[Int@@LockID] = {
       val workflowApi = corpusAccessApi.workflowApi
       val users = corpusAccessApi.userbaseApi
+      val lockApi = corpusAccessApi.corpusLockApi
       for {
         userId <- users.getUserByEmail(userEmail)
-        lockId <- ( workflowApi.getLockedZones(userId).headOption
-                    orElse workflowApi.lockUnassignedZone(userId, workflowId) )
+        lockId <- ( lockApi.getUserLocks(userId).headOption
+                    orElse workflowApi.lockNextDocument(userId, workflowId) )
       } yield lockId
     }
 
-    def completeAssignment(zonelockId: Int@@ZoneLockID)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-      val workflowApi = corpusAccessApi.workflowApi
-      workflowApi.updateZoneStatus(zonelockId, ZoneLockStatus.Completed)
+    def completeAssignment(lockId: Int@@LockID)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+      val lockApi = corpusAccessApi.corpusLockApi
+      lockApi.releaseLock(lockId)
     }
 
   }

@@ -3,7 +3,6 @@ package workflow
 
 import corpora.{RelationModel => R}
 import TypeTags._
-import watrmarks.Label
 
 /**
   * A Workflow describes the progress of a data curation effort
@@ -45,14 +44,6 @@ object WorkflowStatus {
 }
 
 
-object ZoneLockStatus {
-  val Assigned     = StatusCode("Assigned")
-  val InProgress   = StatusCode("InProgress")
-  val Completed    = StatusCode("Completed")
-  val Skipped      = StatusCode("Skipped")
-
-  val all = List(Assigned, InProgress, Completed, Skipped)
-}
 
 case class WorkflowReport(
   unassignedCount: Int,
@@ -129,10 +120,11 @@ object WorkflowReport extends TypeTagCodecs {
 
 trait WorkflowApi {
 
+  def corpusLockingApi(): CorpusLockingApi
+
   def defineWorkflow(
     slug: String,
     desc: String,
-    targetLabelOpt: Option[Label],
     labelSchemas: LabelSchemas,
     targetPath: String@@CorpusPath,
     curationCount: Int
@@ -146,12 +138,32 @@ trait WorkflowApi {
   def getWorkflow(workflowId:String@@WorkflowID): R.WorkflowDef
   def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport
 
-  def lockUnassignedZone(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID]
-  def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit
-  def releaseZoneLock(zoneLockId: Int@@ZoneLockID): Unit
+  def lockNextDocument(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@LockID] = {
+    corpusLockingApi.acquireLock(userId, workflowId.unwrap)
+  }
 
-  def getZoneLock(zoneLockId: Int@@ZoneLockID): Option[R.ZoneLock]
-  def getLockForZone(zoneId: Int@@ZoneID): Option[Int@@ZoneLockID]
-  def getLockedZones(userId: Int@@UserID): Seq[Int@@ZoneLockID]
+}
+
+object CorpusLockStatus {
+  val Available    = StatusCode("Available")
+  val Locked       = StatusCode("Locked")
+  val Completed    = StatusCode("Completed")
+
+  val all = List(Available, Locked, Completed)
+}
+
+trait CorpusLockingApi {
+
+  def createLock(docId: Int@@DocumentID, reason: String): Int@@LockID
+  def deleteLock(lockId: Int@@LockID): Unit
+  def getLocks(): Seq[Int@@LockID]
+
+  def getLockRecord(lockId: Int@@LockID): Option[R.CorpusLock]
+
+  def getDocumentLocks(docId: Int@@DocumentID): Seq[Int@@LockID]
+  def getUserLocks(userId: Int@@UserID): Seq[Int@@LockID]
+
+  def acquireLock(userId: Int@@UserID, reason: String): Option[Int@@LockID]
+  def releaseLock(lockId: Int@@LockID): Unit
 
 }

@@ -31,7 +31,7 @@ sealed trait Percent
 sealed trait ScalingFactor
 
 sealed trait LockGroupID
-sealed trait ZoneLockID
+sealed trait LockID
 sealed trait LabelerID
 sealed trait WorkflowID
 
@@ -107,7 +107,7 @@ trait TypeTags extends TypeTagUtils {
   val ImageID = Tag.of[ImageID]
 
   val LockGroupID = Tag.of[LockGroupID]
-  val ZoneLockID = Tag.of[ZoneLockID]
+  val LockID = Tag.of[LockID]
   val LabelerID = Tag.of[LabelerID]
   val WorkflowID = Tag.of[WorkflowID]
 

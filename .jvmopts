@@ -1,8 +1,8 @@
 # Cats jvmopts see https://weblogs.java.net/blog/kcpeppe/archive/2013/12/11/case-study-jvm-hotspot-flags
 -Dfile.encoding=UTF8
--Xms400M
+-Xms2G
 -Xmx2G
--XX:MaxMetaspaceSize=512M
+# -XX:MaxMetaspaceSize=512M
 -XX:ReservedCodeCacheSize=250M
 -XX:+TieredCompilation
 -XX:-UseGCOverheadLimit
@@ -11,7 +11,6 @@
 -XX:+CMSClassUnloadingEnabled
 # must be enabled for CMSClassUnloadingEnabled to work
 -XX:MaxDirectMemorySize=15926m 
--server
 
 -Dakka.loglevel=OFF
 -Dorg.ensime.loglevel=DEBUG

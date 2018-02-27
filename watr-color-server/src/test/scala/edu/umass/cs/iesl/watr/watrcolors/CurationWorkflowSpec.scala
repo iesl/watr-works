@@ -124,12 +124,12 @@ class CurationWorkflowSpec extends  DatabaseTest with DocSegLabels {
     workflowApi.lockUnassignedZone(users(1), workflows0(0))
 
     workflowApi.getLockedZones(users(0)).drop(1).foreach { zoneLockId =>
-      workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Completed)
+      workflowApi.updateZoneStatus(zoneLockId, CorpusLockStatus.Completed)
       workflowApi.releaseZoneLock(zoneLockId)
     }
 
     workflowApi.getLockedZones(users(1)).drop(2).foreach { zoneLockId =>
-      workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Skipped)
+      workflowApi.updateZoneStatus(zoneLockId, CorpusLockStatus.Skipped)
     }
 
     val actual = service.GET_workflows_report(workflows0(0))

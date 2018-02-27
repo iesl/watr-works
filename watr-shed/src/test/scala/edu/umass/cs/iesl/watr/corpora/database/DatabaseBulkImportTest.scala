@@ -22,6 +22,7 @@ class DatabaseBulkImportTest extends FlatSpec with Matchers with CorpusTestingUt
   }
 
   lazy val corpusAccessDB = initDB()
+  def annotApi: DocumentAnnotationApi = corpusAccessDB.annotApi
 
   override def beforeEach(): Unit = {
     println("re-initing db connections")

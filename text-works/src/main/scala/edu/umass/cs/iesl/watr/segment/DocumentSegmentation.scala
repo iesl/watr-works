@@ -36,17 +36,10 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     }
 
   private def initPageIndexes(): Unit = {
-    val pageRegions = pageAtomsAndGeometry
-      .map { case(extractedItems, pageGeometry)  =>
-        val pageId = docStore.addPage(docId, pageGeometry.pageNum)
-        docStore.setPageGeometry(pageId, pageGeometry.bounds)
-        val tr = docStore.getTargetRegion(
-          docStore.addTargetRegion(pageId, pageGeometry.bounds)
-        )
-        tr
-      }
-
-    createZone(LB.FullPdf, pageRegions)
+    pageAtomsAndGeometry.foreach { case (extractedItems, pageGeometry) =>
+      val pageId = docStore.addPage(docId, pageGeometry.pageNum)
+      docStore.setPageGeometry(pageId, pageGeometry.bounds)
+    }
   }
 
   lazy val pageSegmenters = {

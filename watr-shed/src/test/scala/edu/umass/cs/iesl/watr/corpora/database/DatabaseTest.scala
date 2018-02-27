@@ -17,7 +17,9 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
   )
 
   def workflowApi: WorkflowApi = corpusAccessDB.workflowApi
+  def annotApi: DocumentAnnotationApi = corpusAccessDB.annotApi
   def userbaseApi: UserbaseApi = corpusAccessDB.userbaseApi
+  def corpusLockApi: CorpusLockingApi = corpusAccessDB.corpusLockApi
   def corpusDirectory: DatabaseCorpusDirectory = new DatabaseCorpusDirectory()(corpusAccessDB)
 
   def createEmptyDocumentZoningApi(): DocumentZoningApi = {

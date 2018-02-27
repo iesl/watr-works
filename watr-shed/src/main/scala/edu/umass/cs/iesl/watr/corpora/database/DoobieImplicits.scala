@@ -57,7 +57,7 @@ trait DoobieImplicits extends DoobiePredef {
   implicit val LabelIDMeta      : Meta[Int@@LabelID      ] = TypeTagMeta[LabelID      ](LabelID      (_))
   implicit val UserIDMeta       : Meta[Int@@UserID       ] = TypeTagMeta[UserID       ](UserID       (_))
   implicit val LockGroupIDMeta  : Meta[Int@@LockGroupID  ] = TypeTagMeta[LockGroupID  ](LockGroupID  (_))
-  implicit val ZoneLockIDMeta   : Meta[Int@@ZoneLockID   ] = TypeTagMeta[ZoneLockID   ](ZoneLockID   (_))
+  implicit val LockIDMeta   : Meta[Int@@LockID   ] = TypeTagMeta[LockID   ](LockID   (_))
 
   implicit val WorkflowIDMeta   : Meta[String@@WorkflowID] = StrTypeTagMeta[WorkflowID   ](WorkflowID (_))
   implicit val StatusCodeMeta   : Meta[String@@StatusCode] = StrTypeTagMeta[StatusCode   ](StatusCode (_))
@@ -72,7 +72,6 @@ trait DoobieImplicits extends DoobiePredef {
   // implicit def PageMeta         : Meta[R.Page]         = implicitly[Meta[R.Page]]
   // implicit def DocumentMeta     : Meta[R.Document]     = implicitly[Meta[R.Document]]
   // implicit def PersonMeta       : Meta[R.Person]       = implicitly[Meta[R.Person]]
-  // implicit def ZoneLockMeta     : Meta[R.ZoneLock]     = implicitly[Meta[R.ZoneLock]]
   // implicit def WorkflowDefMeta  : Meta[R.WorkflowDef]  = implicitly[Meta[R.WorkflowDef]]
 
 }

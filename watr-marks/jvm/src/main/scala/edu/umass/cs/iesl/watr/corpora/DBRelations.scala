@@ -18,26 +18,26 @@ object RelationModel {
     bounds     : G.LTBounds
   )
 
-  case class TargetRegion(
-    prKey      : Int@@RegionID,
-    page       : Int@@PageID,
-    rank       : Int,
-    bounds     : G.LTBounds
-  )
+  // case class TargetRegion(
+  //   prKey      : Int@@RegionID,
+  //   page       : Int@@PageID,
+  //   rank       : Int,
+  //   bounds     : G.LTBounds
+  // )
 
-  // TODO rank ordering should be wrt (document, role)
-  case class Zone(
-    prKey        : Int@@ZoneID,
-    document     : Int@@DocumentID,
-    label        : Int@@LabelID,
-    rank         : Int,
-    glyphs       : Option[String]
-  )
+  // // TODO rank ordering should be wrt (document, role)
+  // case class Zone(
+  //   prKey        : Int@@ZoneID,
+  //   document     : Int@@DocumentID,
+  //   label        : Int@@LabelID,
+  //   rank         : Int,
+  //   glyphs       : Option[String]
+  // )
 
-  case class Label(
-    prKey : Int@@LabelID,
-    key   : String
-  )
+  // case class Label(
+  //   prKey : Int@@LabelID,
+  //   key   : String
+  // )
 
 
   case class Person(
@@ -48,17 +48,17 @@ object RelationModel {
   case class WorkflowDef(
     workflow      : String@@WorkflowID,
     description   : String,
-    targetLabel   : Label,
+    // targetLabel   : Label,
     labelSchemas  : LabelSchemas,
     targetPath    : String@@CorpusPath,
     curationCount : Int
   )
 
-  case class ZoneLock(
-    id         : Int@@ZoneLockID,
-    assignee   : Option[Int@@UserID],
-    workflow   : String@@WorkflowID,
-    zone       : Int@@ZoneID,
+  case class CorpusLock(
+    id         : Int@@LockID,
+    holder     : Option[Int@@UserID],
+    document   : Int@@DocumentID,
+    reason     : String,
     status     : String@@StatusCode
   )
 
@@ -68,8 +68,7 @@ object RelationModel {
     creator    : Int@@UserID,
     workflow   : String@@WorkflowID,
     created    : java.time.Instant,
-    jsonRec    : Option[String],
-    status     : String@@StatusCode
+    jsonRec    : Option[String]
   )
 
 

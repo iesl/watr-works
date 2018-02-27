@@ -8,6 +8,7 @@ import corpora._
 
 trait TextGridBuilder extends TextGridConstruction {
   def docStore: DocumentZoningApi
+  def annotApi: DocumentAnnotationApi
 
   def addDocument(stableId: String@@DocumentID, pages:Seq[String]): Seq[TextGrid]  = {
     docStore.addDocument(stableId)
@@ -18,7 +19,7 @@ trait TextGridBuilder extends TextGridConstruction {
       (textGrid, textGrid.pageBounds().head)
     }
 
-    docStore.labelRegions(LB.FullPdf, pageRegions.map(_._2))
+    // docStore.labelRegions(LB.FullPdf, pageRegions.map(_._2))
     pageRegions.map(_._1)
   }
 
@@ -42,9 +43,10 @@ trait TextGridBuilder extends TextGridConstruction {
       pageId       <- docStore.getPages(docId)
       pageGeometry  = docStore.getPageGeometry(pageId)
       _             = println(s"  Page  ${pageId}: ${pageGeometry}")
-      pageTextGrid <- docStore.getPageText(pageId)
+      // pageTextGrid <- docStore.getPageText(pageId)
     } {
-      println(pageTextGrid.toText())
+      // println(pageTextGrid.toText())
+      ???
     }
   }
 

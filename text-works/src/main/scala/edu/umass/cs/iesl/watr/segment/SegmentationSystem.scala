@@ -29,9 +29,10 @@ trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
   def pageSegmenters(): Seq[PageScopeSegmenter]
 
-  def createZone(label: Label, pageRegions: Seq[PageRegion]): Option[Int@@ZoneID] = {
-    docStore.labelRegions(label, pageRegions)
-  }
+  // def createZone(label: Label, pageRegions: Seq[PageRegion]): Option[Int@@ZoneID] = {
+  //   docStore.labelRegions(label, pageRegions)
+  // }
+
 }
 
 trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { self =>
@@ -50,8 +51,10 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   def pageIndex: PageIndex = mpageIndex.getPageIndex(pageNum)
 
   def labelRegion(bbox: LTBounds, label: Label, text: Option[String] = None): RegionComponent = {
-    val regionId = docStore.addTargetRegion(pageId, bbox)
-    val pageRegion = docStore.getTargetRegion(regionId)
+    // val regionId = docStore.addTargetRegion(pageId, bbox)
+    // val pageRegion = docStore.getTargetRegion(regionId)
+    val stablePage = docStore.getPageIdentifier(pageId)
+    val pageRegion = PageRegion(stablePage, bbox)
     mpageIndex.createRegionComponent(pageRegion, label, text)
   }
 

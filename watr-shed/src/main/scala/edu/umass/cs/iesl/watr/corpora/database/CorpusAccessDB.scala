@@ -155,63 +155,63 @@ class CorpusAccessDB(
   }
 
 
-  def selectTargetRegion(regionId: Int@@RegionID): ConnectionIO[Rel.TargetRegion] = {
-    sql""" select * from targetregion where targetregion=${regionId} """
-      .query[Rel.TargetRegion].unique
-  }
+  // def selectTargetRegion(regionId: Int@@RegionID): ConnectionIO[Rel.TargetRegion] = {
+  //   sql""" select * from targetregion where targetregion=${regionId} """
+  //     .query[Rel.TargetRegion].unique
+  // }
 
-  def selectTargetRegionForBbox(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Option[Rel.TargetRegion]] = {
-    val LTBounds.IntReps(l, t, w, h) = bbox
+  // def selectTargetRegionForBbox(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Option[Rel.TargetRegion]] = {
+  //   val LTBounds.IntReps(l, t, w, h) = bbox
 
-    sql"""select * from targetregion where
-       page=${pageId} AND
-       bleft=${l} AND btop=${t} AND
-       bwidth=${w} AND bheight=${h}
-       order by rank
-    """.query[Rel.TargetRegion].option
-  }
+  //   sql"""select * from targetregion where
+  //      page=${pageId} AND
+  //      bleft=${l} AND btop=${t} AND
+  //      bwidth=${w} AND bheight=${h}
+  //      order by rank
+  //   """.query[Rel.TargetRegion].option
+  // }
 
-  def selectTargetRegions(pageId: Int@@PageID): ConnectionIO[List[Int@@RegionID]] = {
-    sql""" select targetregion from targetregion where page=${pageId} order by rank"""
-      .query[Int@@RegionID].to[List]
-  }
+  // def selectTargetRegions(pageId: Int@@PageID): ConnectionIO[List[Int@@RegionID]] = {
+  //   sql""" select targetregion from targetregion where page=${pageId} order by rank"""
+  //     .query[Int@@RegionID].to[List]
+  // }
 
-  def insertZone(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[Int@@ZoneID] = {
-    sql""" insert into zone (document, label) values ($docId, $labelId) """
-      .update.withUniqueGeneratedKeys[Int]("zone")
-      .map(ZoneID(_))
-  }
+  // def insertZone(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[Int@@ZoneID] = {
+  //   sql""" insert into zone (document, label) values ($docId, $labelId) """
+  //     .update.withUniqueGeneratedKeys[Int]("zone")
+  //     .map(ZoneID(_))
+  // }
 
-  def selectZoneLabelsForDocument(docId: Int@@DocumentID): ConnectionIO[List[Int@@LabelID]] = {
-    sql""" select distinct label from  zone
-           where document=${docId}
-       """.query[Int@@LabelID].to[List]
-  }
+  // def selectZoneLabelsForDocument(docId: Int@@DocumentID): ConnectionIO[List[Int@@LabelID]] = {
+  //   sql""" select distinct label from  zone
+  //          where document=${docId}
+  //      """.query[Int@@LabelID].to[List]
+  // }
 
-  def selectZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[List[Int@@ZoneID]] = {
-    sql""" select * from  zone where document=${docId} AND label=${labelId} order by rank"""
-      .query[Int@@ZoneID].to[List]
-  }
+  // def selectZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): ConnectionIO[List[Int@@ZoneID]] = {
+  //   sql""" select * from  zone where document=${docId} AND label=${labelId} order by rank"""
+  //     .query[Int@@ZoneID].to[List]
+  // }
 
-  def selectZone(zoneId: Int@@ZoneID): ConnectionIO[Rel.Zone] = {
-    sql""" select * from  zone where zone=${zoneId} order by rank """
-      .query[Rel.Zone].unique
-  }
+  // def selectZone(zoneId: Int@@ZoneID): ConnectionIO[Rel.Zone] = {
+  //   sql""" select * from  zone where zone=${zoneId} order by rank """
+  //     .query[Rel.Zone].unique
+  // }
 
-  def delZone(zoneId: Int@@ZoneID): ConnectionIO[Int] = {
-    sql""" delete from zone where zone=${zoneId} """.update.run
-  }
+  // def delZone(zoneId: Int@@ZoneID): ConnectionIO[Int] = {
+  //   sql""" delete from zone where zone=${zoneId} """.update.run
+  // }
 
-  def selectZoneTargetRegions(zoneId: Int@@ZoneID): ConnectionIO[List[Int@@RegionID]] = {
-    sql"""
-     select targetregion
-     from
-        zone_to_targetregion
-     where
-        zone=${zoneId}
-     order by rank
-    """.query[Int@@RegionID].to[List]
-  }
+  // def selectZoneTargetRegions(zoneId: Int@@ZoneID): ConnectionIO[List[Int@@RegionID]] = {
+  //   sql"""
+  //    select targetregion
+  //    from
+  //       zone_to_targetregion
+  //    where
+  //       zone=${zoneId}
+  //    order by rank
+  //   """.query[Int@@RegionID].to[List]
+  // }
 
 
   def updatePage(pageId: Int@@PageID, geom: LTBounds): ConnectionIO[Int] = {
@@ -313,27 +313,27 @@ class CorpusAccessDB(
       })
   }
 
-  def selectLabel(labelId: Int@@LabelID): ConnectionIO[Rel.Label] = {
-    sql"""select * from label where label=${labelId}""".query[Rel.Label].unique
-  }
+  // def selectLabel(labelId: Int@@LabelID): ConnectionIO[Rel.Label] = {
+  //   sql"""select * from label where label=${labelId}""".query[Rel.Label].unique
+  // }
 
-  def getOrInsertLabel(label: Label): ConnectionIO[Int@@LabelID] = for {
-    maybePk <- sql"""select label from label where key=${label.fqn}""".query[Int].option
-    pk      <- maybePk match {
-      case Some(id)    => id.pure[ConnectionIO]
-      case None        =>
-        sql"""insert into label (key) values (${label.fqn})""".update
-          .withUniqueGeneratedKeys[Int]("label")
-    }
-  } yield LabelID(pk)
+  // def getOrInsertLabel(label: Label): ConnectionIO[Int@@LabelID] = for {
+  //   maybePk <- sql"""select label from label where key=${label.fqn}""".query[Int].option
+  //   pk      <- maybePk match {
+  //     case Some(id)    => id.pure[ConnectionIO]
+  //     case None        =>
+  //       sql"""insert into label (key) values (${label.fqn})""".update
+  //         .withUniqueGeneratedKeys[Int]("label")
+  //   }
+  // } yield LabelID(pk)
 
 
-  def linkZoneToTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): ConnectionIO[Unit] = {
-    sql"""
-       insert into zone_to_targetregion (zone, targetregion)
-       values (${zoneId}, ${regionId})
-    """.update.run.map(_ => ())
-  }
+  // def linkZoneToTargetRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): ConnectionIO[Unit] = {
+  //   sql"""
+  //      insert into zone_to_targetregion (zone, targetregion)
+  //      values (${zoneId}, ${regionId})
+  //   """.update.run.map(_ => ())
+  // }
 
 
   def selectPage(docId: Int@@DocumentID, pageNum: Int@@PageNum): ConnectionIO[Option[Int@@PageID]] = {
@@ -344,19 +344,19 @@ class CorpusAccessDB(
   }
 
 
-  def ensureTargetRegion(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Int@@RegionID] = {
-    val LTBounds.IntReps(bl, bt, bw, bh) = bbox
+  // def ensureTargetRegion(pageId: Int@@PageID, bbox: LTBounds): ConnectionIO[Int@@RegionID] = {
+  //   val LTBounds.IntReps(bl, bt, bw, bh) = bbox
 
-    for {
-      page         <- selectPage(pageId)
-      maybeRegion  <- selectTargetRegionForBbox(pageId, bbox)
-      regionId     <- maybeRegion.fold(
-        sql"""insert into targetregion (page, bleft, btop, bwidth, bheight)
-                 values ($pageId, $bl, $bt, $bw, $bh)
-             """.update.withUniqueGeneratedKeys[Int]("targetregion").map(RegionID(_))
-      )(tr => FC.delay(tr.prKey))
-    } yield regionId
-  }
+  //   for {
+  //     page         <- selectPage(pageId)
+  //     maybeRegion  <- selectTargetRegionForBbox(pageId, bbox)
+  //     regionId     <- maybeRegion.fold(
+  //       sql"""insert into targetregion (page, bleft, btop, bwidth, bheight)
+  //                values ($pageId, $bl, $bt, $bw, $bh)
+  //            """.update.withUniqueGeneratedKeys[Int]("targetregion").map(RegionID(_))
+  //     )(tr => FC.delay(tr.prKey))
+  //   } yield regionId
+  // }
 
   def getCorpusEntryPath(pageId: Int@@PageID): Path = {
     val query = sql"""
@@ -431,28 +431,29 @@ class CorpusAccessDB(
   object workflowApi extends WorkflowApi {
     import watrmarks.{StandardLabels => LB}
 
+    override def corpusLockingApi(): CorpusLockingApi = self.corpusLockApi
+
     def defineWorkflow(
       slug: String,
       desc: String,
-      targetLabelOpt: Option[Label],
       labelSchemas: LabelSchemas,
       targetPath: String@@CorpusPath,
       curationCount: Int
     ): String@@WorkflowID = {
 
-      val targetLabel = targetLabelOpt.getOrElse{ LB.FullPdf }
-      val targetLabelId = docStore.ensureLabel(targetLabel)
+      // val targetLabel = targetLabelOpt.getOrElse{ LB.FullPdf }
+      // val targetLabelId = docStore.ensureLabel(targetLabel)
 
-      labelSchemas.allLabels.map(Label(_)).foreach { l =>
-          docStore.ensureLabel(_)
-      }
+      // labelSchemas.allLabels.map(Label(_)).foreach { l =>
+      //     docStore.ensureLabel(_)
+      // }
 
       val jsonSchema = labelSchemas.asJson.noSpaces
 
       runq {
         sql"""
-           insert into workflow (workflow, description, targetLabel, labelSchemas, targetPath, curationCount)
-           values (${slug}, ${desc}, ${targetLabelId}, ${jsonSchema}, text2ltree(${targetPath}), ${curationCount})
+           insert into workflow (workflow, description, labelSchemas, targetPath, curationCount)
+           values (${slug}, ${desc}, ${jsonSchema}, text2ltree(${targetPath}), ${curationCount})
            returning workflow;
         """.query[String@@WorkflowID].unique
       }
@@ -462,23 +463,22 @@ class CorpusAccessDB(
 
     def getWorkflow(workflowId:String@@WorkflowID): Rel.WorkflowDef = {
       runq {
-        sql""" select workflow, description, targetLabel, labelSchemas, targetPath, curationCount
+        sql""" select workflow, description, labelSchemas, targetPath, curationCount
                from   workflow
                where  workflow=${workflowId}
-        """.query[(String, String, Int@@LabelID, String, String@@CorpusPath, Int)]
+        """.query[(String, String, String, String@@CorpusPath, Int)]
 
-          .map{ case (workflowId, desc, target, schema, path, count) =>
+          .map{ case (workflowId, desc, schema, path, count) =>
             val labelSchemas = decode[LabelSchemas](schema).fold(err => {
               sys.error(s"could not decode LabelSchemas from ${schema}")
             }, labelSchemas => {
               labelSchemas
             })
 
-            val l = docStore.getLabel(target)
+            // val l = docStore.getLabel(target)
 
             Rel.WorkflowDef(
               WorkflowID(workflowId), desc,
-              Rel.Label(l.id, l.key),
               labelSchemas,
               path,
               count
@@ -525,7 +525,7 @@ class CorpusAccessDB(
       }
 
       val tuples = for {
-        status <- ZoneLockStatus.all
+        status <- CorpusLockStatus.all
       } yield {
         val statusCount = runq {
           sql""" select count(*) from zonelock where status=${status} AND workflow=${workflowId}"""
@@ -555,83 +555,6 @@ class CorpusAccessDB(
     }
 
 
-    def getUserAnnotations(
-      userId: Int@@UserID,
-      workflowId: String@@WorkflowID
-    ): Option[Int@@ZoneLockID] = {
-      ???
-    }
-    def lockUnassignedZone(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@ZoneLockID] = {
-      getLockedZones(userId).headOption orElse runq {
-        sql"""
-              WITH targetLabel AS (
-                       SELECT targetLabel FROM workflow WHERE workflow=${workflowId.unwrap}
-                   ),
-                   priorAnnots AS (
-                       SELECT COUNT(*)
-                       FROM   annotation AS ann
-                         JOIN workflow AS wf ON (ann.workflow=wf.workflow)
-                       WHERE wf.workflow=${workflowId}
-                        AND  ann.creator=${userId}
-                   ),
-                   targetPath AS (
-                       SELECT targetPath FROM workflow WHERE workflow=${workflowId.unwrap}
-                   )
-               INSERT INTO zonelock (assignee, workflow, zone, status)
-                   SELECT ${userId.unwrap}, ${workflowId.unwrap}, z.zone, ${ZoneLockStatus.Assigned}
-                   FROM
-                         zone z
-                         JOIN document d
-                           ON (z.document=d.document)
-                         JOIN pathentry pe
-                           ON (z.document=pe.document)
-                         JOIN corpuspath cp
-                           ON (cp.corpuspath=pe.corpuspath)
-                         LEFT JOIN zonelock AS lk
-                           on (lk.zone=z.zone)
-                   WHERE
-                         z.label = (SELECT * FROM targetLabel)
-                     AND cp.path = (SELECT * FROM targetPath)
-                     AND lk.zone IS NULL
-                   LIMIT 1
-             """.update.withGeneratedKeys[Int@@ZoneLockID]("zonelock").compile.toVector
-      }.headOption
-    }
-
-    def updateZoneStatus(zoneLockId: Int@@ZoneLockID, newStatus: String@@StatusCode): Unit = {
-      runq {
-        sql""" update zonelock SET status=${newStatus} where zonelock=${zoneLockId} """.update.run
-      }
-    }
-
-    def releaseZoneLock(zoneLockId: Int@@ZoneLockID): Unit = {
-      runq {
-        sql""" update zonelock set assignee = null where zonelock=${zoneLockId} """
-          .update.run
-      }
-    }
-
-    def getLockForZone(zoneId: Int@@ZoneID): Option[Int@@ZoneLockID] = {
-      runq {
-        sql""" select zonelock from zonelock where zone=${zoneId} """
-          .query[Int@@ZoneLockID].option
-      }
-    }
-
-    def getZoneLock(zoneLockId: Int@@ZoneLockID): Option[Rel.ZoneLock] = {
-      runq { sql"""
-        select * from zonelock where zonelock=${zoneLockId}
-        """.query[Rel.ZoneLock].option
-      }
-    }
-
-
-    def getLockedZones(userId: Int@@UserID): Seq[Int@@ZoneLockID] = {
-      runq { sql"""
-        select zonelock from zonelock where assignee=${userId}
-        """.query[Int@@ZoneLockID].to[List]
-      }
-    }
 
   }
 
@@ -661,27 +584,26 @@ class CorpusAccessDB(
     def workflowApi: WorkflowApi = self.workflowApi
     def userbaseApi: UserbaseApi = self.userbaseApi
 
-    def getPageText(pageId: Int@@PageID): Option[TextGrid] = {
-      ???
+    // def getPageText(pageId: Int@@PageID): Option[TextGrid] = {
+    //   ???
+    // }
+    // def setPageText(pageId: Int@@PageID, textgrid: TextGrid): Unit = {
+    //   ???
+    // }
 
-    }
-    def setPageText(pageId: Int@@PageID, textgrid: TextGrid): Unit = {
-      ???
-    }
+    // def getZoneTextAsJsonStr(zoneId: Int@@ZoneID): Option[String] = {
+    //   runq{
+    //     sql""" select glyphs from zone where zone = ${zoneId} """.query[Option[String]].unique
+    //   }
+    // }
 
-    def getZoneTextAsJsonStr(zoneId: Int@@ZoneID): Option[String] = {
-      runq{
-        sql""" select glyphs from zone where zone = ${zoneId} """.query[Option[String]].unique
-      }
-    }
-
-    def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit = {
-      val gridJs = textgrid.toJson()
-      val gridJsStr = gridJs.noSpaces
-      runq{
-        sql""" update zone SET glyphs = ${gridJsStr} where zone = ${zoneId} """.update.run
-      }
-    }
+    // def setZoneText(zoneId: Int@@ZoneID, textgrid: TextGrid): Unit = {
+    //   val gridJs = textgrid.toJson()
+    //   val gridJsStr = gridJs.noSpaces
+    //   runq{
+    //     sql""" update zone SET glyphs = ${gridJsStr} where zone = ${zoneId} """.update.run
+    //   }
+    // }
 
 
     // def listDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]): Seq[(String@@DocumentID, Seq[(Label, Int)])] = {
@@ -811,133 +733,133 @@ class CorpusAccessDB(
     }
 
 
-    def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID = {
-      runq { self.ensureTargetRegion(pageId, bbox) }
-    }
+    // def addTargetRegion(pageId: Int@@PageID, bbox:LTBounds): Int@@RegionID = {
+    //   runq { self.ensureTargetRegion(pageId, bbox) }
+    // }
 
-    // G.TargetRegion = M.TargetRegion+M.Page+M.Document
-    def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[PageRegion] =
-      for {
-        mTr <- selectTargetRegion(regionId)
-        mPage <- selectPage(mTr.page)
-        mDocument <- selectDocument(mPage.document)
-      } yield {
-        val stablePage = StablePage(mDocument.stableId, mPage.pagenum, mPage.prKey)
-        // val page = StablePage(mPage.prKey, stable)
-        PageRegion(stablePage, mTr.bounds, mTr.prKey)
-        // PageRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
-      }
-
-
-    def getTargetRegion(regionId: Int@@RegionID): PageRegion =
-      runq { selTargetRegion(regionId) }
+    // // G.TargetRegion = M.TargetRegion+M.Page+M.Document
+    // def selTargetRegion(regionId: Int@@RegionID): ConnectionIO[PageRegion] =
+    //   for {
+    //     mTr <- selectTargetRegion(regionId)
+    //     mPage <- selectPage(mTr.page)
+    //     mDocument <- selectDocument(mPage.document)
+    //   } yield {
+    //     val stablePage = StablePage(mDocument.stableId, mPage.pagenum, mPage.prKey)
+    //     // val page = StablePage(mPage.prKey, stable)
+    //     PageRegion(stablePage, mTr.bounds, mTr.prKey)
+    //     // PageRegion(tr.prKey, doc.stableId, page.pagenum, tr.bounds)
+    //   }
 
 
-    def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID] = {
-      runq { selectTargetRegions(pageId) }
-    }
-
-    // select count(zone), document from zone where label = 1 group by document;
-    def getLabel(labelId: Int@@LabelID): Label = {
-      val query = selectLabel(labelId)
-        .map(l => Labels.fromString(l.key).copy(id=l.prKey))
-      runq{ query }
-    }
+    // def getTargetRegion(regionId: Int@@RegionID): PageRegion =
+    //   runq { selTargetRegion(regionId) }
 
 
-    def getZone(zoneId: Int@@ZoneID): Zone =  {
-      val query = for {
-        zone          <- selectZone(zoneId)
-        regionIds     <- selectZoneTargetRegions(zone.prKey)
-        targetRegions <- regionIds.traverse { regionId =>
-          selTargetRegion(regionId)
-        }
-        l             <- selectLabel(zone.label)
-      } yield {
-        val label = Labels.fromString(l.key).copy(id=l.prKey)
-        val jsStr = getZoneTextAsJsonStr(zoneId)
-        Zone(zone.prKey, targetRegions, label, zone.rank, jsStr)
-      }
+    // def getTargetRegions(pageId: Int@@PageID): Seq[Int@@RegionID] = {
+    //   runq { selectTargetRegions(pageId) }
+    // }
 
-      runq { query }
-    }
+    // // select count(zone), document from zone where label = 1 group by document;
+    // def getLabel(labelId: Int@@LabelID): Label = {
+    //   val query = selectLabel(labelId)
+    //     .map(l => Labels.fromString(l.key).copy(id=l.prKey))
+    //   runq{ query }
+    // }
 
 
-    def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
-      // TODO this is a bandaid for a  bug!
-      val query =  {
-        sql"""
-            select zn.zone
-            from
-               zone                      as zn
-               join label                as lb    on (zn.label=lb.label)
-               join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
-            where
-               z2tr.targetregion=${regionId} AND
-               lb.key=${label.fqn}
-           """.query[Int@@ZoneID].to[List]
-      }
+    // def getZone(zoneId: Int@@ZoneID): Zone =  {
+    //   val query = for {
+    //     zone          <- selectZone(zoneId)
+    //     regionIds     <- selectZoneTargetRegions(zone.prKey)
+    //     targetRegions <- regionIds.traverse { regionId =>
+    //       selTargetRegion(regionId)
+    //     }
+    //     l             <- selectLabel(zone.label)
+    //   } yield {
+    //     val label = Labels.fromString(l.key).copy(id=l.prKey)
+    //     val jsStr = getZoneTextAsJsonStr(zoneId)
+    //     Zone(zone.prKey, targetRegions, label, zone.rank, jsStr)
+    //   }
 
-      val allZoneIds = runq { query }
-      if (allZoneIds.length > 1) {
-        println(s"Warning: multiple zones with label ${label} detected for region ${regionId}")
-      }
-
-      allZoneIds.headOption
-    }
-
-    def ensureLabel(label: Label): Int@@LabelID = {
-      runq{ getOrInsertLabel(label) }
-    }
-
-    def createZone(regionId: Int@@RegionID, labelId: Int@@LabelID): Int@@ZoneID = {
-      val queryf = sql"""
-           with pageid as (
-             select page, targetregion from targetregion where targetregion=${regionId}
-           ),
-           docid as (
-             select document from page where page=(select page from pageid)
-           ),
-           zoneid as (
-             insert into zone (document, label) values ((select document from docid), ${labelId}) returning zone
-           ),
-           ztr as (
-             insert into zone_to_targetregion (zone, targetregion)
-                 values ((select zone from zoneid),
-                         (select targetregion from pageid)) returning 0
-           )
-           select zone from zoneid
-       """
-
-      val query = queryf.query[Int@@ZoneID]
-
-      runq{ query.unique }
-    }
+    //   runq { query }
+    // }
 
 
-    def addZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
-      val query = for {
-        _ <- linkZoneToTargetRegion(zoneId, regionId)
-      } yield ()
+    // def getZoneForRegion(regionId: Int@@RegionID, label: Label): Option[Int@@ZoneID] = {
+    //   // TODO this is a bandaid for a  bug!
+    //   val query =  {
+    //     sql"""
+    //         select zn.zone
+    //         from
+    //            zone                      as zn
+    //            join label                as lb    on (zn.label=lb.label)
+    //            join zone_to_targetregion as z2tr  on (zn.zone=z2tr.zone)
+    //         where
+    //            z2tr.targetregion=${regionId} AND
+    //            lb.key=${label.fqn}
+    //        """.query[Int@@ZoneID].to[List]
+    //   }
 
-      runq{ query }
-    }
+    //   val allZoneIds = runq { query }
+    //   if (allZoneIds.length > 1) {
+    //     println(s"Warning: multiple zones with label ${label} detected for region ${regionId}")
+    //   }
 
-    def removeZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Option[Int@@ZoneID] = {
-      ???
-    }
+    //   allZoneIds.headOption
+    // }
 
-    def deleteZone(zoneId: Int@@ZoneID): Unit = {
-      runq{ delZone(zoneId) }
-    }
+    // def ensureLabel(label: Label): Int@@LabelID = {
+    //   runq{ getOrInsertLabel(label) }
+    // }
 
-    def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
-      runq{ selectZoneLabelsForDocument(docId) }
-    }
+    // def createZone(regionId: Int@@RegionID, labelId: Int@@LabelID): Int@@ZoneID = {
+    //   val queryf = sql"""
+    //        with pageid as (
+    //          select page, targetregion from targetregion where targetregion=${regionId}
+    //        ),
+    //        docid as (
+    //          select document from page where page=(select page from pageid)
+    //        ),
+    //        zoneid as (
+    //          insert into zone (document, label) values ((select document from docid), ${labelId}) returning zone
+    //        ),
+    //        ztr as (
+    //          insert into zone_to_targetregion (zone, targetregion)
+    //              values ((select zone from zoneid),
+    //                      (select targetregion from pageid)) returning 0
+    //        )
+    //        select zone from zoneid
+    //    """
 
-    def getZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): Seq[Int@@ZoneID] = {
-      runq { selectZonesForDocument(docId, labelId) }
-    }
+    //   val query = queryf.query[Int@@ZoneID]
+
+    //   runq{ query.unique }
+    // }
+
+
+    // def addZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Unit = {
+    //   val query = for {
+    //     _ <- linkZoneToTargetRegion(zoneId, regionId)
+    //   } yield ()
+
+    //   runq{ query }
+    // }
+
+    // def removeZoneRegion(zoneId: Int@@ZoneID, regionId: Int@@RegionID): Option[Int@@ZoneID] = {
+    //   ???
+    // }
+
+    // def deleteZone(zoneId: Int@@ZoneID): Unit = {
+    //   runq{ delZone(zoneId) }
+    // }
+
+    // def getZoneLabelsForDocument(docId: Int@@DocumentID): Seq[Int@@LabelID] = {
+    //   runq{ selectZoneLabelsForDocument(docId) }
+    // }
+
+    // def getZonesForDocument(docId: Int@@DocumentID, labelId: Int@@LabelID): Seq[Int@@ZoneID] = {
+    //   runq { selectZonesForDocument(docId, labelId) }
+    // }
 
     import scala.collection.mutable
 
@@ -1010,113 +932,113 @@ class CorpusAccessDB(
 
       }
 
-      {// BLOCK
-        val allRecs =  otherZoningApi.tables.targetregions.all().toList
-        insertLog.append(s"targetregions: ${allRecs.length}")
-        val allEntries = allRecs.map{rec =>
-          (
-            transPageID(rec.page),
-            rec.bounds
-          )
-        }
+      // {// BLOCK
+      //   val allRecs =  otherZoningApi.tables.targetregions.all().toList
+      //   insertLog.append(s"targetregions: ${allRecs.length}")
+      //   val allEntries = allRecs.map{rec =>
+      //     (
+      //       transPageID(rec.page),
+      //       rec.bounds
+      //     )
+      //   }
 
-        // TODO decide whether to disable rank trigger on import or trust db
-        val sqlStr = (
-          """|insert into targetregion
-             |  (page, bleft, btop, bwidth, bheight)
-             |values (?, ?, ?, ?, ?)
-             |""".stripMargin)
+      //   // TODO decide whether to disable rank trigger on import or trust db
+      //   val sqlStr = (
+      //     """|insert into targetregion
+      //        |  (page, bleft, btop, bwidth, bheight)
+      //        |values (?, ?, ?, ?, ?)
+      //        |""".stripMargin)
 
-        val up =  Update[(
-          Int@@PageID,
-          LTBounds
-        )](sqlStr)
-          .updateManyWithGeneratedKeys[Int@@RegionID]("targetregion")(allEntries)
-
-
-        val keys = runq{
-          up.compile.toVector
-        }
-        allRecs.zip(keys)
-          .foreach{ case (rec, key) =>
-            transRegionID.put(rec.prKey, key)
-          }
-      }
-
-      {// BLOCK
-        val allRecs =  otherZoningApi.tables.labels.all().toList
-        allRecs
-          .toList.foreach{rec =>
-            val labelId = ensureLabel(Labels.fromString(rec.key))
-            transLabelID.put(rec.prKey, labelId)
-          }
-
-      }// END Block
-
-      {// BLOCK
-        val allRecs =  otherZoningApi.tables.zones.all().toList
-        insertLog.append(s"zones: ${allRecs.length}")
-        val allEntries = allRecs.map{rec =>
-          (
-            transDocumentID(rec.document),
-            transLabelID(rec.label),
-            rec.rank,
-            rec.glyphs
-          )
-        }
-
-        val sqlStr = (
-          """|insert into zone
-             |  (document, label, rank, glyphs)
-             |values (?, ?, ?, ?)
-             |""".stripMargin)
-
-        val up =  Update[(
-          Int@@DocumentID,
-          Int@@LabelID,
-          Int,
-          Option[String]
-        )](sqlStr)
-          .updateManyWithGeneratedKeys[Int@@ZoneID]("zone")(allEntries)
-
-        val keys = runq{
-          up.compile.toVector
-        }
-
-        allRecs.zip(keys)
-          .foreach{ case (rec, key) =>
-            transZoneID.put(rec.prKey, key)
-          }
-
-      }// END Block
+      //   val up =  Update[(
+      //     Int@@PageID,
+      //     LTBounds
+      //   )](sqlStr)
+      //     .updateManyWithGeneratedKeys[Int@@RegionID]("targetregion")(allEntries)
 
 
-      {// BLOCK
-        val allEntries =  otherZoningApi.tables.zones.toTargetRegion.getEdges()
-          .toList.map{ case (lhs, rhs) =>
-            (transZoneID(lhs), transRegionID(rhs))
-          }
+      //   val keys = runq{
+      //     up.compile.toVector
+      //   }
+      //   allRecs.zip(keys)
+      //     .foreach{ case (rec, key) =>
+      //       transRegionID.put(rec.prKey, key)
+      //     }
+      // }
 
-        val sqlStr = (
-          """|insert into zone_to_targetregion
-             |  (zone, targetregion)
-             |values (?, ?)
-             |""".stripMargin)
+      // {// BLOCK
+      //   val allRecs =  otherZoningApi.tables.labels.all().toList
+      //   allRecs
+      //     .toList.foreach{rec =>
+      //       val labelId = ensureLabel(Labels.fromString(rec.key))
+      //       transLabelID.put(rec.prKey, labelId)
+      //     }
 
-        val up =  Update[(
-          Int@@ZoneID,
-          Int@@RegionID
-        )](sqlStr)
-          .updateMany(allEntries)
+      // }// END Block
+
+      // {// BLOCK
+      //   val allRecs =  otherZoningApi.tables.zones.all().toList
+      //   insertLog.append(s"zones: ${allRecs.length}")
+      //   val allEntries = allRecs.map{rec =>
+      //     (
+      //       transDocumentID(rec.document),
+      //       transLabelID(rec.label),
+      //       rec.rank,
+      //       rec.glyphs
+      //     )
+      //   }
+
+      //   val sqlStr = (
+      //     """|insert into zone
+      //        |  (document, label, rank, glyphs)
+      //        |values (?, ?, ?, ?)
+      //        |""".stripMargin)
+
+      //   val up =  Update[(
+      //     Int@@DocumentID,
+      //     Int@@LabelID,
+      //     Int,
+      //     Option[String]
+      //   )](sqlStr)
+      //     .updateManyWithGeneratedKeys[Int@@ZoneID]("zone")(allEntries)
+
+      //   val keys = runq{
+      //     up.compile.toVector
+      //   }
+
+      //   allRecs.zip(keys)
+      //     .foreach{ case (rec, key) =>
+      //       transZoneID.put(rec.prKey, key)
+      //     }
+
+      // }// END Block
 
 
-        val keys = runq{
-          up
-        }
+      // {// BLOCK
+      //   val allEntries =  otherZoningApi.tables.zones.toTargetRegion.getEdges()
+      //     .toList.map{ case (lhs, rhs) =>
+      //       (transZoneID(lhs), transRegionID(rhs))
+      //     }
 
-        insertLog.append(s"zone_to_targetregion: ${keys}")
+      //   val sqlStr = (
+      //     """|insert into zone_to_targetregion
+      //        |  (zone, targetregion)
+      //        |values (?, ?)
+      //        |""".stripMargin)
 
-      }// END Block
+      //   val up =  Update[(
+      //     Int@@ZoneID,
+      //     Int@@RegionID
+      //   )](sqlStr)
+      //     .updateMany(allEntries)
+
+
+      //   val keys = runq{
+      //     up
+      //   }
+
+      //   insertLog.append(s"zone_to_targetregion: ${keys}")
+
+      // }// END Block
 
       val logmsg = insertLog.mkString(";; ")
       println(logmsg)
@@ -1125,41 +1047,199 @@ class CorpusAccessDB(
 
   }
 
-  def updateAnnotationStatus(annotId: Int@@AnnotationID, status: String@@StatusCode): Unit = runq {
-    sql"""UPDATE annotation SET status=${status} WHERE annotation=${annotId} """.update.run
-  }
+  object annotApi extends DocumentAnnotationApi {
+    // def getUserAnnotations(
+    //   userId: Int@@UserID,
+    //   workflowId: String@@WorkflowID
+    // ): Option[Int@@LockID] = {
+    //   ???
+    // }
 
-  def updateAnnotationJson(annotId: Int@@AnnotationID, jsonRec: String): Unit =  runq {
-    sql"""UPDATE annotation SET jsonRec=${jsonRec} WHERE annotation=${annotId} """.update.run
-  }
+    // def updateAnnotationStatus(annotId: Int@@AnnotationID, status: String@@StatusCode): Unit = runq {
+    //   sql"""UPDATE annotation SET status=${status} WHERE annotation=${annotId} """.update.run
+    // }
 
-  def getAnnotations(): Seq[Int@@AnnotationID]= runq {
-    sql""" SELECT annotation FROM annotation """
-      .query[Int@@AnnotationID].to[Vector]
-  }
+    def updateAnnotationBody(annotId: Int@@AnnotationID, jsonRec: String): Unit =  runq {
+      sql"""UPDATE annotation SET jsonRec=${jsonRec} WHERE annotation=${annotId} """.update.run
+    }
 
-  def getAnnotation(annotId: Int@@AnnotationID): Rel.AnnotationRec =  runq {
-    sql"""
-          SELECT annotation, document, creator, workflow, created, jsonRec, status
+    def deleteAnnotation(annotId: Int@@AnnotationID): Unit =  runq {
+      sql""" DELETE FROM annotation WHERE annotation=${annotId} """.update.run
+    }
+
+    def getAnnotations(): Seq[Int@@AnnotationID]= runq {
+      sql""" SELECT annotation FROM annotation """
+        .query[Int@@AnnotationID].to[Vector]
+    }
+
+    def getAnnotation(annotId: Int@@AnnotationID): Rel.AnnotationRec =  runq {
+      sql"""
+          SELECT annotation, document, creator, workflow, created, jsonRec
           FROM annotation WHERE annotation=${annotId}
       """.query[Rel.AnnotationRec].unique
-  }
+    }
 
-  def createAnnotation(
-    userId: Int@@UserID,
-    docId: Int@@DocumentID,
-    workflowId: String@@WorkflowID
-  ): Int@@AnnotationID = {
-    runq {
-      sql"""
+    def createAnnotation(
+      userId: Int@@UserID,
+      docId: Int@@DocumentID,
+      workflowId: String@@WorkflowID
+    ): Int@@AnnotationID = {
+      runq {
+        sql"""
               WITH targetPath  AS (
                        SELECT targetPath FROM workflow WHERE workflow=${workflowId}
                    )
               INSERT INTO annotation
-                       (  document,  creator,    workflow,      created, status )
-                  SELECT  ${docId},  ${userId},  ${workflowId}, NOW(),   ${ZoneLockStatus.InProgress}
+                       (  document,  creator,    workflow,      created  )
+                  SELECT  ${docId},  ${userId},  ${workflowId}, NOW()
               """.update.withUniqueGeneratedKeys[Int@@AnnotationID]("annotation")
+      }
     }
   }
 
+  object corpusLockApi extends CorpusLockingApi {
+
+    def createLock(docId: Int@@DocumentID, reason: String): Int@@LockID = runq {
+      sql"""
+           INSERT INTO corpuslock (holder, document, reason, status)
+           SELECT NULL, ${docId}, ${reason}, ${CorpusLockStatus.Available}
+      """.update.withUniqueGeneratedKeys[Int@@LockID]("corpuslock")
+    }
+
+    def deleteLock(lockId: Int@@LockID): Unit = runq {
+      sql"""
+           DELETE FROM corpuslock WHERE corpuslock = ${lockId}
+      """.update.run
+    }
+
+    def getLocks(): Seq[Int@@LockID] = runq {
+      sql"""
+          SELECT corpuslock FROM corpuslock
+      """.query[Int@@LockID].to[Vector]
+    }
+
+
+    def getLockRecord(lockId: Int@@LockID): Option[R.CorpusLock] = runq {
+      sql"""
+          SELECT corpuslock, holder, document, reason, status
+          FROM corpuslock
+          WHERE corpuslock=${lockId}
+      """.query[Rel.CorpusLock].option
+    }
+
+
+    def getDocumentLocks(docId: Int@@DocumentID): Seq[Int@@LockID] = runq {
+      sql"""
+          SELECT corpuslock FROM corpuslock WHERE document=${docId}
+      """.query[Int@@LockID].to[Vector]
+    }
+
+
+    def getUserLocks(userId: Int@@UserID): Seq[Int@@LockID] = runq {
+      sql"""
+          SELECT corpuslock FROM corpuslock WHERE holder=${userId}
+      """.query[Int@@LockID].to[Vector]
+    }
+
+    def acquireLock(userId: Int@@UserID, reason: String): Option[Int@@LockID] = runq {
+      sql"""
+          WITH priorLockedDocs AS (
+            SELECT document FROM corpuslock WHERE holder=${userId} AND reason=${reason}
+          ),
+          nextAvailable AS (
+            SELECT corpuslock FROM corpuslock
+            WHERE   reason=${reason}
+              AND   status=${CorpusLockStatus.Available}
+              AND   document NOT IN (SELECT * FROM priorLockedDocs)
+            LIMIT 1
+            FOR UPDATE
+          )
+          UPDATE corpuslock cl
+          SET status=${CorpusLockStatus.Locked}, holder=${userId}
+          FROM nextAvailable
+          WHERE  nextAvailable.corpuslock = cl.corpuslock
+          RETURNING cl.corpuslock
+      """.query[Int@@LockID].option
+    }
+
+    def releaseLock(lockId: Int@@LockID): Unit = runq {
+      sql"""
+          UPDATE corpuslock SET status=${CorpusLockStatus.Completed}
+          WHERE   corpuslock=${lockId}
+      """.update.run
+    }
+
+
+    // def lockUnassignedZone(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@LockID] = {
+    //   getLockedZones(userId).headOption orElse runq {
+    //     sql"""
+    //           WITH targetLabel AS (
+    //                    SELECT targetLabel FROM workflow WHERE workflow=${workflowId.unwrap}
+    //                ),
+    //                priorAnnots AS (
+    //                    SELECT COUNT(*)
+    //                    FROM   annotation AS ann
+    //                      JOIN workflow AS wf ON (ann.workflow=wf.workflow)
+    //                    WHERE wf.workflow=${workflowId}
+    //                     AND  ann.creator=${userId}
+    //                ),
+    //                targetPath AS (
+    //                    SELECT targetPath FROM workflow WHERE workflow=${workflowId.unwrap}
+    //                )
+    //            INSERT INTO zonelock (assignee, workflow, zone, status)
+    //                SELECT ${userId.unwrap}, ${workflowId.unwrap}, z.zone, ${CorpusLockStatus.Assigned}
+    //                FROM
+    //                      zone z
+    //                      JOIN document d
+    //                        ON (z.document=d.document)
+    //                      JOIN pathentry pe
+    //                        ON (z.document=pe.document)
+    //                      JOIN corpuspath cp
+    //                        ON (cp.corpuspath=pe.corpuspath)
+    //                      LEFT JOIN zonelock AS lk
+    //                        on (lk.zone=z.zone)
+    //                WHERE
+    //                      z.label = (SELECT * FROM targetLabel)
+    //                  AND cp.path = (SELECT * FROM targetPath)
+    //                  AND lk.zone IS NULL
+    //                LIMIT 1
+    //          """.update.withGeneratedKeys[Int@@LockID]("zonelock").compile.toVector
+    //   }.headOption
+    // }
+
+    // def updateZoneStatus(zoneLockId: Int@@LockID, newStatus: String@@StatusCode): Unit = {
+    //   runq {
+    //     sql""" update zonelock SET status=${newStatus} where zonelock=${zoneLockId} """.update.run
+    //   }
+    // }
+
+    // def releaseZoneLock(zoneLockId: Int@@LockID): Unit = {
+    //   runq {
+    //     sql""" update zonelock set assignee = null where zonelock=${zoneLockId} """
+    //       .update.run
+    //   }
+    // }
+
+    // def getLockForZone(zoneId: Int@@ZoneID): Option[Int@@LockID] = {
+    //   runq {
+    //     sql""" select zonelock from zonelock where zone=${zoneId} """
+    //       .query[Int@@LockID].option
+    //   }
+    // }
+
+    // def getZoneLock(zoneLockId: Int@@LockID): Option[Rel.ZoneLock] = {
+    //   runq { sql"""
+    //     select * from zonelock where zonelock=${zoneLockId}
+    //     """.query[Rel.ZoneLock].option
+    //   }
+    // }
+
+
+    // def getLockedZones(userId: Int@@UserID): Seq[Int@@LockID] = {
+    //   runq { sql"""
+    //     select zonelock from zonelock where assignee=${userId}
+    //     """.query[Int@@LockID].to[List]
+    //   }
+    // }
+  }
 }

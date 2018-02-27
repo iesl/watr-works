@@ -29,7 +29,7 @@ trait CurationWorkflow extends WorkflowCodecs {
   def userbaseApi: UserbaseApi
   def docStore: DocumentZoningApi
 
-  private def getZoneLockJson(zoneLockId: Int@@ZoneLockID) = (for {
+  private def getZoneLockJson(zoneLockId: Int@@LockID) = (for {
     zoneLock   <- workflowApi.getZoneLock(zoneLockId)
   } yield {
     val assignee = zoneLock.assignee.map { userbaseApi.getUser(_) }
@@ -92,7 +92,7 @@ trait CurationWorkflow extends WorkflowCodecs {
   }
 
   // Post updates to specific assignment in assignments collection
-  def POST_assignments(zoneLockId: Int@@ZoneLockID, mod: WorkflowMod, userId: Int@@UserID): Json = {
+  def POST_assignments(zoneLockId: Int@@LockID, mod: WorkflowMod, userId: Int@@UserID): Json = {
     println(s"got mod ${mod}")
     mod.update match {
       case StatusUpdate(newStatus) =>
@@ -184,7 +184,7 @@ trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedServic
           throw new Throwable(s"error decoding ${js}")
         }, mod => mod) }
       } yield {
-        POST_assignments(ZoneLockID(zoneLockId), mod, user.id)
+        POST_assignments(LockID(zoneLockId), mod, user.id)
       }
       Ok(resp)
 

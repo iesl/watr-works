@@ -45,82 +45,82 @@ class CorpusAccessDBTables extends DoobieImplicits {
   ////////////////////////////
 
 
-  object zonetables {
-    val createZoneTables = for {
-      _ <-
-        sql"""
-      CREATE TABLE zone (
-        zone         SERIAL PRIMARY KEY,
-        document     INTEGER REFERENCES document ON DELETE CASCADE,
-        label        INTEGER REFERENCES label NOT NULL,
-        rank         INTEGER NOT NULL,
-        glyphs       TEXT
-      );
+  // object zonetables {
+  //   val createZoneTables = for {
+  //     _ <-
+  //       sql"""
+  //     CREATE TABLE zone (
+  //       zone         SERIAL PRIMARY KEY,
+  //       document     INTEGER REFERENCES document ON DELETE CASCADE,
+  //       label        INTEGER REFERENCES label NOT NULL,
+  //       rank         INTEGER NOT NULL,
+  //       glyphs       TEXT
+  //     );
 
-      CREATE INDEX zone_idx_document ON zone (document, label);
-      CREATE INDEX zone_idx_label ON zone (label, document);
+  //     CREATE INDEX zone_idx_document ON zone (document, label);
+  //     CREATE INDEX zone_idx_label ON zone (label, document);
 
-      CREATE TABLE zone_to_targetregion (
-        zone          INTEGER REFERENCES zone ON DELETE CASCADE NOT NULL,
-        targetregion  INTEGER REFERENCES targetregion NOT NULL,
-        rank          INTEGER NOT NULL
-      );
+  //     CREATE TABLE zone_to_targetregion (
+  //       zone          INTEGER REFERENCES zone ON DELETE CASCADE NOT NULL,
+  //       targetregion  INTEGER REFERENCES targetregion NOT NULL,
+  //       rank          INTEGER NOT NULL
+  //     );
 
-      CREATE INDEX zone_to_targetregion_idx2 ON zone_to_targetregion (targetregion, rank);
+  //     CREATE INDEX zone_to_targetregion_idx2 ON zone_to_targetregion (targetregion, rank);
 
-      CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
+  //     CREATE UNIQUE INDEX uniq__zone_to_targetregion ON zone_to_targetregion (zone, targetregion);
 
-      """.update.run
+  //     """.update.run
 
-    } yield ()
-
-
-    def create(): ConnectionIO[Unit] = {
-      for {
-        _ <- createZoneTables
-        _ <- defineOrderingTriggers(fr0"zone_to_targetregion", fr0"targetregion")
-        _ <- defineOrderingTriggers(fr0"zone", fr0"document", fr0"label")
-
-      } yield ()
-    }
-  }
+  //   } yield ()
 
 
+  //   def create(): ConnectionIO[Unit] = {
+  //     for {
+  //       _ <- createZoneTables
+  //       _ <- defineOrderingTriggers(fr0"zone_to_targetregion", fr0"targetregion")
+  //       _ <- defineOrderingTriggers(fr0"zone", fr0"document", fr0"label")
 
-  object targetregions {
-    // CREATE INDEX targetregion_bbox ON targetregion (page, bleft, btop, bwidth, bheight);
-    val createTargetRegion = for {
-      _ <- sql"""
-      CREATE TABLE targetregion (
-        targetregion  SERIAL PRIMARY KEY,
-        page          INTEGER REFERENCES page ON DELETE CASCADE,
-        rank          INTEGER NOT NULL,
-        bleft         INTEGER,
-        btop          INTEGER,
-        bwidth        INTEGER,
-        bheight       INTEGER
-      );
-
-      CREATE INDEX targetregion_page_rank ON targetregion (page, rank);
-
-      """.update.run
-    } yield ()
-    def create(): ConnectionIO[Unit] = {
-      for {
-        _ <- createTargetRegion
-        _ <- defineOrderingTriggers(fr0"targetregion", fr0"page")
-      } yield ()
-    }
-  }
+  //     } yield ()
+  //   }
+  // }
 
 
-  val createLabelTable: Update0 = sql"""
-      CREATE TABLE label (
-        label          SERIAL PRIMARY KEY,
-        key            VARCHAR(128) UNIQUE NOT NULL
-      );
-      CREATE INDEX label_key ON label USING hash (key);
-    """.update
+
+  // object targetregions {
+  //   // CREATE INDEX targetregion_bbox ON targetregion (page, bleft, btop, bwidth, bheight);
+  //   val createTargetRegion = for {
+  //     _ <- sql"""
+  //     CREATE TABLE targetregion (
+  //       targetregion  SERIAL PRIMARY KEY,
+  //       page          INTEGER REFERENCES page ON DELETE CASCADE,
+  //       rank          INTEGER NOT NULL,
+  //       bleft         INTEGER,
+  //       btop          INTEGER,
+  //       bwidth        INTEGER,
+  //       bheight       INTEGER
+  //     );
+
+  //     CREATE INDEX targetregion_page_rank ON targetregion (page, rank);
+
+  //     """.update.run
+  //   } yield ()
+  //   def create(): ConnectionIO[Unit] = {
+  //     for {
+  //       _ <- createTargetRegion
+  //       _ <- defineOrderingTriggers(fr0"targetregion", fr0"page")
+  //     } yield ()
+  //   }
+  // }
+
+
+  // val createLabelTable: Update0 = sql"""
+  //     CREATE TABLE label (
+  //       label          SERIAL PRIMARY KEY,
+  //       key            VARCHAR(128) UNIQUE NOT NULL
+  //     );
+  //     CREATE INDEX label_key ON label USING hash (key);
+  //   """.update
 
 
 
@@ -133,7 +133,6 @@ class CorpusAccessDBTables extends DoobieImplicits {
          CREATE TABLE IF NOT EXISTS workflow (
            workflow          VARCHAR(128) PRIMARY KEY,
            description       TEXT,
-           targetLabel       INTEGER REFERENCES label NOT NULL,
            labelSchemas      TEXT,
            targetPath        LTREE,
            curationCount     INTEGER
@@ -147,38 +146,38 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
   }
 
-  object corpusLockingTables {
+  object documentLockTables {
 
     val drop = sql""" DROP TABLE IF EXISTS corpuslock; """.update
 
     val create: Update0 = sql"""
-
-      CREATE TABLE IF NOT EXISTS lock (
-        lock        SERIAL PRIMARY KEY,
-        holder      INTEGER REFERENCES person ON DELETE CASCADE,
+      CREATE TABLE IF NOT EXISTS corpuslock (
+        corpuslock  SERIAL PRIMARY KEY,
+        holder      INTEGER REFERENCES person ON DELETE SET NULL,
         document    INTEGER REFERENCES document ON DELETE CASCADE,
+        reason      VARCHAR(128) DEFAULT NULL,
         status      VARCHAR(128) DEFAULT NULL
       );
     """.update
   }
 
 
-  object zonelockTables {
+  // object zonelockTables {
 
-    val drop = sql""" DROP TABLE IF EXISTS zonelock; """.update
+  //   val drop = sql""" DROP TABLE IF EXISTS zonelock; """.update
 
-    val create: Update0 = sql"""
+  //   val create: Update0 = sql"""
 
-      CREATE TABLE IF NOT EXISTS zonelock (
-        zonelock       SERIAL PRIMARY KEY,
-        assignee       INTEGER REFERENCES person ON DELETE CASCADE,
-        workflow       VARCHAR(128) REFERENCES workflow ON DELETE CASCADE,
-        zone           INTEGER REFERENCES zone ON DELETE CASCADE,
-        status         VARCHAR(128) NOT NULL
-      );
-    """.update
+  //     CREATE TABLE IF NOT EXISTS zonelock (
+  //       zonelock       SERIAL PRIMARY KEY,
+  //       assignee       INTEGER REFERENCES person ON DELETE CASCADE,
+  //       workflow       VARCHAR(128) REFERENCES workflow ON DELETE CASCADE,
+  //       zone           INTEGER REFERENCES zone ON DELETE CASCADE,
+  //       status         VARCHAR(128) NOT NULL
+  //     );
+  //   """.update
 
-  }
+  // }
 
   object annotationTables {
     val drop = sql""" DROP TABLE IF EXISTS annotation; """.update
@@ -272,11 +271,12 @@ class CorpusAccessDBTables extends DoobieImplicits {
     _ <- createPageTable
     _ = println("createPageTable")
 
-    _ <- targetregions.create()
-    _ = println("create targetregions")
-    _ <- zonetables.create()
-    _ = println("create zonetables")
-    _ <- zonelockTables.create.run
+    // _ <- targetregions.create()
+    // _ = println("create targetregions")
+    // _ <- zonetables.create()
+    // _ = println("create zonetables")
+    // _ <- zonelockTables.create.run
+    _ <- documentLockTables.create.run
 
   } yield ()
 
@@ -284,7 +284,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
   def dropCurationTables() = {
     for {
       _ <- corpusPathTables.drop.update.run
-      _ <- zonelockTables.drop.run
+      _ <- documentLockTables.drop.run
       _ <- annotationTables.drop.run
       _ <- workflowTables.drop.update.run
 
@@ -294,7 +294,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
   def createCurationTables() = {
     for {
       _ <- workflowTables.create.update.run
-      _ <- zonelockTables.create.run
+      _ <- documentLockTables.create.run
       _ <- annotationTables.create.run
       _ <- corpusPathTables.create.update.run
 
@@ -304,35 +304,26 @@ class CorpusAccessDBTables extends DoobieImplicits {
   def createAll = for {
     _ <- createDocumentTable
     _ <- createPageTable
-    _ <- createLabelTable.run
 
-    _ <- targetregions.create()
-    _ <- zonetables.create()
+    // _ <- createLabelTable.run
+    // _ <- targetregions.create()
+    // _ <- zonetables.create()
 
     _ <- UserTables.create.run
     _ <- workflowTables.dropAndCreate()
-    _ <- zonelockTables.create.run
+    _ <- documentLockTables.create.run
     _ <- createCurationTables()
   } yield ()
 
   val dropDocuments = sql"""
-    DROP TABLE IF EXISTS zonelock;
-    DROP TABLE IF EXISTS zone_to_targetregion;
-    DROP TABLE IF EXISTS zone_to_label;
-    DROP TABLE IF EXISTS zone;
-    DROP TABLE IF EXISTS targetregion;
+    DROP TABLE IF EXISTS document_lock;
     DROP TABLE IF EXISTS page;
     DROP TABLE IF EXISTS document;
   """.update.run
 
   val dropAll = for {
     _ <- sql"""
-            DROP TABLE IF EXISTS zonelock;
-            DROP TABLE IF EXISTS zone_to_targetregion;
-            DROP TABLE IF EXISTS zone_to_label;
-            DROP TABLE IF EXISTS zone;
-            DROP TABLE IF EXISTS label;
-            DROP TABLE IF EXISTS targetregion;
+            DROP TABLE IF EXISTS document_lock;
             DROP TABLE IF EXISTS page;
             DROP TABLE IF EXISTS document;
             DROP TABLE IF EXISTS person;

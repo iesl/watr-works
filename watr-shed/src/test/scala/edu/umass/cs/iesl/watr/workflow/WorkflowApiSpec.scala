@@ -7,7 +7,6 @@ import textgrid.TextGridBuilder
 import watrmarks.{DocSegLabels, Label, LabelSchema, LabelSchemas}
 
 class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTestHelpers with DocSegLabels {
-  behavior of "Zone lock/unlock + basic user support"
 
   val Math: Label = Label.auto
 
@@ -24,7 +23,6 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
       workflowApi.defineWorkflow(
         s"curation-workflow-${i}",
         s"sample labeling task $i",
-        Some(FullPdf),
         testSchema,
         dryRunPath,
         2
@@ -55,6 +53,7 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
 
     workflows.length shouldBe workflowIds.length
   }
+
   def printWorkflowReport(id: String@@WorkflowID): Unit = {
     val workflowsWithReports = workflowApi.getWorkflows.map{  id =>
       (workflowApi.getWorkflowReport(id), workflowApi.getWorkflow(id))
@@ -63,43 +62,40 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
   }
 
 
-  it should "lock/unlock target zones, to exhaustion" in new EmptyDatabase {
-    val corpusSize = 2
-    addSampleDocs(corpusSize)
-    val userIds = initUsers(3)
-    val workflowId = initWorkflows(1).head
+  // it should "lock/unlock target zones, to exhaustion" in new EmptyDatabase {
+  //   val corpusSize = 2
+  //   addSampleDocs(corpusSize)
+  //   val userIds = initUsers(3)
+  //   val workflowId = initWorkflows(1).head
 
-    for {
-      i           <- (1 to (corpusSize * 3)).toStream
-      userId       = userIds( i % userIds.length )
-      _            = println(s"${i}. User ${userId} attempting lock")
-      zoneLockId  <- workflowApi.lockUnassignedZone(userId, workflowId)
-      lock        <- workflowApi.getZoneLock(zoneLockId)
-    } {
-      println(s"Workflow #${i}: $lock")
-      printWorkflowReport(workflowId)
+  //   for {
+  //     i           <- (1 to (corpusSize * 3)).toStream
+  //     userId       = userIds( i % userIds.length )
+  //     _            = println(s"${i}. User ${userId} attempting lock")
+  //     zoneLockId  <- workflowApi.lockNextDocument(userId, workflowId)
+  //     lock        <- corpusLockApi.getLockRecord(zoneLockId)
+  //   } {
+  //     println(s"Workflow #${i}: $lock")
+  //     printWorkflowReport(workflowId)
 
-      val report = workflowApi.getWorkflowReport(workflowId)
+  //     val report = workflowApi.getWorkflowReport(workflowId)
 
-      report.unassignedCount shouldBe corpusSize - i
+  //     report.unassignedCount shouldBe corpusSize - i
 
-      report.statusCounts shouldBe Map(
-        (ZoneLockStatus.Assigned, 1),
-        (ZoneLockStatus.InProgress, 0),
-        (ZoneLockStatus.Completed, i-1),
-        (ZoneLockStatus.Skipped, 0)
-      )
+  //     report.statusCounts shouldBe Map(
+  //       (CorpusLockStatus.Available, corpusSize - i),
+  //       (CorpusLockStatus.Locked, 1),
+  //       (CorpusLockStatus.Completed, i-1)
+  //     )
 
+  //     corpusLockApi.getUserLocks(userId).length shouldBe 1
 
-      workflowApi.getLockedZones(userId).length shouldBe 1
+  //     corpusLockApi.releaseLock(zoneLockId)
 
-      workflowApi.updateZoneStatus(zoneLockId, ZoneLockStatus.Completed)
-      workflowApi.releaseZoneLock(zoneLockId)
+  //     corpusLockApi.getUserLocks(userId).length shouldBe 0
+  //   }
 
-      workflowApi.getLockedZones(userId).length shouldBe 0
-    }
-
-  }
+  // }
 
   it should "annotate a locked document" in new EmptyDatabase {
     val corpusSize = 2
@@ -108,14 +104,14 @@ class WorkflowApiSpec extends DatabaseTest with TextGridBuilder with UserbaseTes
     val workflowId = initWorkflows(1).head
     val stableId0 = docStore.getDocuments(1, 0).head
     val docId0 = docStore.getDocument(stableId0).get
-    val annotId = corpusAccessDB.createAnnotation(userIds(0),  docId0, workflowId)
-    val annot = corpusAccessDB.getAnnotation(annotId)
+    val annotId = annotApi.createAnnotation(userIds(0),  docId0, workflowId)
+    val annot = annotApi.getAnnotation(annotId)
     // corpusAccessDB.updateAnnotationJson(annotId, )
-    corpusAccessDB.updateAnnotationStatus(annotId, StatusCode("NewStatus"))
+    // corpusAccessDB.updateAnnotationStatus(annotId, StatusCode("NewStatus"))
 
     println(s"Annot = ${annot}")
 
-    val annot1 = corpusAccessDB.getAnnotation(annotId)
+    val annot1 = annotApi.getAnnotation(annotId)
     println(s"Annot 1 = ${annot1}")
   }
 
