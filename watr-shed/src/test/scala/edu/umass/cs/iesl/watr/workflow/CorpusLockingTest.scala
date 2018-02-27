@@ -68,10 +68,17 @@ class CorpusLockingApiSpec extends DatabaseTest with TextGridBuilder with Userba
     }
 
   }
+  def getLocksWithStatus(s: String@@StatusCode): Seq[Int@@LockID] = {
+    corpusLockApi.getLocks().filter { lockId =>
+      corpusLockApi.getLockRecord(lockId).exists { rec =>
+        rec.status == s
+      }
+    }
+  }
 
   it should "acquire/release locks" in new EmptyDatabase {
     val corpusSize = 10
-    val docIds =  addSampleDocuments(corpusSize)
+    addSampleDocuments(corpusSize)
     val userIds = initUsers(3)
 
     initCorpusLocks(1)
@@ -79,51 +86,64 @@ class CorpusLockingApiSpec extends DatabaseTest with TextGridBuilder with Userba
     for {
       i           <- (0 until (corpusSize * 3)).toStream
       userId       = userIds( i % userIds.length )
-      _            = println(s"${i}. User ${userId} attempting lock")
+      // _            = println(s"${i}. User ${userId} attempting lock")
       lockId      <- corpusLockApi.acquireLock(userId, lockReason)
       lock        <- corpusLockApi.getLockRecord(lockId)
     } {
-      val rec = corpusLockApi.getLockRecord(lockId)
-      println(s"acquired> ${rec}")
+      getLocksWithStatus(CorpusLockStatus.Locked).length shouldBe i+1
     }
 
     corpusLockApi.acquireLock(userIds.head, lockReason).isEmpty shouldBe true
 
     for {
-      lockId <- corpusLockApi.getLocks()
+      (lockId, i) <- corpusLockApi.getLocks().zipWithIndex
     } {
+      getLocksWithStatus(CorpusLockStatus.Completed).length shouldBe i
       corpusLockApi.releaseLock(lockId)
     }
 
 
-    val locks = corpusLockApi.getLocks()// .length shouldBe 0
-
-    val completed = locks.filter { lockId =>
-      corpusLockApi.getLockRecord(lockId).exists { rec =>
-        rec.status == CorpusLockStatus.Completed
-      }
-    }
-    completed.length shouldBe corpusSize
-
-    val available = locks.filter { lockId =>
-      corpusLockApi.getLockRecord(lockId).exists { rec =>
-        rec.status == CorpusLockStatus.Available
-      }
-    }
-    available.length shouldBe 0
-
-    val locked = locks.filter { lockId =>
-      corpusLockApi.getLockRecord(lockId).exists { rec =>
-        rec.status == CorpusLockStatus.Locked
-      }
-    }
-
-    locked.length shouldBe 0
+    getLocksWithStatus(CorpusLockStatus.Completed).length shouldBe corpusSize
+    getLocksWithStatus(CorpusLockStatus.Available).length shouldBe 0
+    getLocksWithStatus(CorpusLockStatus.Locked).length shouldBe 0
   }
 
   it should "not allow user to acquire more than one lock at a time" in new EmptyDatabase {
+    val corpusSize = 10
+    addSampleDocuments(corpusSize)
+    val user0 = initUsers(1).head
+    initCorpusLocks(1)
+
+    for {
+      i           <- (0 until corpusSize).toStream
+      lockId      <- corpusLockApi.acquireLock(user0, lockReason)
+    } {
+      getLocksWithStatus(CorpusLockStatus.Locked).length shouldBe i+1
+    }
+
+    getLocksWithStatus(CorpusLockStatus.Locked).length shouldBe 1
+    getLocksWithStatus(CorpusLockStatus.Available).length shouldBe corpusSize - 1
+
   }
 
   it should "not allow user to lock same doc more than once" in new EmptyDatabase {
+    val corpusSize = 2
+    addSampleDocuments(corpusSize)
+    initCorpusLocks(2) // 2 locks per document
+
+    val user0 = initUsers(1).head
+    // There are 2 docs, 2 locks/doc, so 4 locks available, but
+    //   a user can only lock a particular document once, so a particular
+    //   user may only acquire (and release) 2 locks (in this case) before they are exhausted
+    for {
+      i           <- (0 until 100).toStream
+      lockId      <- corpusLockApi.acquireLock(user0, lockReason)
+    } {
+      corpusLockApi.releaseLock(lockId)
+    }
+
+    getLocksWithStatus(CorpusLockStatus.Locked).length shouldBe 0
+    getLocksWithStatus(CorpusLockStatus.Completed).length shouldBe 2
+    getLocksWithStatus(CorpusLockStatus.Available).length shouldBe 2
   }
 }

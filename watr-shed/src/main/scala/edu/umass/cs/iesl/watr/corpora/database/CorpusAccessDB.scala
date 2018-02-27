@@ -1172,11 +1172,17 @@ class CorpusAccessDB(
           WITH priorLockedDocs AS (
             SELECT document FROM corpuslock WHERE holder=${userId} AND reason=${reason}
           ),
+          heldLocks AS (
+            SELECT corpuslock FROM corpuslock
+            WHERE   holder=${userId}
+              AND   status=${CorpusLockStatus.Locked}
+          ),
           nextAvailable AS (
             SELECT corpuslock FROM corpuslock
             WHERE   reason=${reason}
               AND   status=${CorpusLockStatus.Available}
               AND   document NOT IN (SELECT * FROM priorLockedDocs)
+              AND   (SELECT count(*) FROM heldLocks) = 0
             LIMIT 1
             FOR UPDATE
           )
