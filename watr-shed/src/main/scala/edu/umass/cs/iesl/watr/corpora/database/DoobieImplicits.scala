@@ -2,10 +2,6 @@ package edu.umass.cs.iesl.watr
 package corpora
 package database
 
-import cats._
-import cats.effect.IO
-import cats.implicits._
-
 import doobie._
 import doobie.implicits._
 

@@ -9,8 +9,6 @@ import doobie.implicits._
 // import scalaz.syntax.traverse._
 // import scalaz.syntax.apply._
 
-import cats._
-import cats.effect.IO
 import cats.implicits._
 
 trait DoobiePredef {

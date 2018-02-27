@@ -33,15 +33,15 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
 
   override def beforeAll(): Unit = {
     println("beforeAll: re-initing db connections")
-    corpusAccessDB.reinit()
+    // corpusAccessDB.reinit()
   }
 
   override def afterAll(): Unit = {
     println("afterAll: shutting down db connections")
-    // corpusAccessDB.reinit()
     corpusAccessDB.shutdown()
   }
   override def beforeEach(): Unit = {
+    // corpusAccessDB.reinit()
     // println("beforeEach")
     // corpusAccessDB.reinit()
   }

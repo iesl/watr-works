@@ -6,6 +6,7 @@ import corpora.database.DatabaseTest
 import textgrid.TextGridBuilder
 
 
+
 trait UserbaseTestHelpers {
   def workflowApi: WorkflowApi
   def userbaseApi: UserbaseApi

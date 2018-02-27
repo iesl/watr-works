@@ -46,20 +46,32 @@ class CorpusAccessDB(
 
 
   val props = new Properties()
-  props.setProperty("housekeeper","false")
+  props.setProperty("housekeeper","true")
 
   def initTransactor(): HikariTransactor[IO] = (for {
     xa <- HikariTransactor.newHikariTransactor[IO]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
     _  <- xa.configure(hx => IO {
       hx.setDataSourceProperties(props)
-      hx.setAutoCommit(true)
-      ()
+      hx.setAutoCommit(false)
+      // ()
     })
   } yield {
     xa
   }).unsafeRunSync
 
+
+  def initPostgresDriverTransactor2(): HikariTransactor[IO] = (for {
+    xa <- HikariTransactor.newHikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+    _ <- xa.configure { h => IO {
+      h.setAutoCommit(false)
+    }}
+  } yield {
+    xa
+  }).unsafeRunSync
+
   var _hikariTransactor: HikariTransactor[IO] = initTransactor()
+
+  var _hikariTransactor2: HikariTransactor[IO] = initPostgresDriverTransactor2()
 
   def getTransactor(): HikariTransactor[IO] = {
     if (_hikariTransactor == null) {
@@ -68,15 +80,28 @@ class CorpusAccessDB(
     _hikariTransactor
   }
 
+  def getTransactor2(): HikariTransactor[IO] = {
+    if (_hikariTransactor2 == null) {
+      _hikariTransactor2 = initPostgresDriverTransactor2()
+    }
+    _hikariTransactor2
+  }
+
   def reinit() = {
     shutdown()
   }
 
   def shutdown(): Unit = {
-    // xa.kernel.shutdown()
-
-    _hikariTransactor.shutdown
-    _hikariTransactor = null
+    if (_hikariTransactor != null) {
+      _hikariTransactor.kernel.close()
+      _hikariTransactor.shutdown
+      _hikariTransactor = null
+    }
+    if (_hikariTransactor2 != null) {
+      _hikariTransactor2.kernel.close()
+      _hikariTransactor2.shutdown
+      _hikariTransactor2 = null
+    }
   }
 
   def runq[A](query: C.ConnectionIO[A]): A = {
@@ -104,11 +129,12 @@ class CorpusAccessDB(
   def runqOnce[A](query: C.ConnectionIO[A]): A = {
     try {
       (for {
-        hikariTransactor0 <- HikariTransactor.newHikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
-        _ <- hikariTransactor0.configure { h => IO{
-          h.setAutoCommit(true)
-        }}
-        r <- query.transact(hikariTransactor0) guarantee hikariTransactor0.shutdown
+        // hikariTransactor0 <- HikariTransactor.newHikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
+        // _ <- hikariTransactor0.configure { h => IO {
+        //   h.setAutoCommit(false)
+        // }}
+        // r <- query.transact(hikariTransactor0) guarantee hikariTransactor0.shutdown
+        r <- query.transact(getTransactor2())
       } yield r).unsafeRunSync
     } catch {
       case t: org.postgresql.util.PSQLException =>
@@ -1169,77 +1195,5 @@ class CorpusAccessDB(
       """.update.run
     }
 
-
-    // def lockUnassignedZone(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@LockID] = {
-    //   getLockedZones(userId).headOption orElse runq {
-    //     sql"""
-    //           WITH targetLabel AS (
-    //                    SELECT targetLabel FROM workflow WHERE workflow=${workflowId.unwrap}
-    //                ),
-    //                priorAnnots AS (
-    //                    SELECT COUNT(*)
-    //                    FROM   annotation AS ann
-    //                      JOIN workflow AS wf ON (ann.workflow=wf.workflow)
-    //                    WHERE wf.workflow=${workflowId}
-    //                     AND  ann.creator=${userId}
-    //                ),
-    //                targetPath AS (
-    //                    SELECT targetPath FROM workflow WHERE workflow=${workflowId.unwrap}
-    //                )
-    //            INSERT INTO zonelock (assignee, workflow, zone, status)
-    //                SELECT ${userId.unwrap}, ${workflowId.unwrap}, z.zone, ${CorpusLockStatus.Assigned}
-    //                FROM
-    //                      zone z
-    //                      JOIN document d
-    //                        ON (z.document=d.document)
-    //                      JOIN pathentry pe
-    //                        ON (z.document=pe.document)
-    //                      JOIN corpuspath cp
-    //                        ON (cp.corpuspath=pe.corpuspath)
-    //                      LEFT JOIN zonelock AS lk
-    //                        on (lk.zone=z.zone)
-    //                WHERE
-    //                      z.label = (SELECT * FROM targetLabel)
-    //                  AND cp.path = (SELECT * FROM targetPath)
-    //                  AND lk.zone IS NULL
-    //                LIMIT 1
-    //          """.update.withGeneratedKeys[Int@@LockID]("zonelock").compile.toVector
-    //   }.headOption
-    // }
-
-    // def updateZoneStatus(zoneLockId: Int@@LockID, newStatus: String@@StatusCode): Unit = {
-    //   runq {
-    //     sql""" update zonelock SET status=${newStatus} where zonelock=${zoneLockId} """.update.run
-    //   }
-    // }
-
-    // def releaseZoneLock(zoneLockId: Int@@LockID): Unit = {
-    //   runq {
-    //     sql""" update zonelock set assignee = null where zonelock=${zoneLockId} """
-    //       .update.run
-    //   }
-    // }
-
-    // def getLockForZone(zoneId: Int@@ZoneID): Option[Int@@LockID] = {
-    //   runq {
-    //     sql""" select zonelock from zonelock where zone=${zoneId} """
-    //       .query[Int@@LockID].option
-    //   }
-    // }
-
-    // def getZoneLock(zoneLockId: Int@@LockID): Option[Rel.ZoneLock] = {
-    //   runq { sql"""
-    //     select * from zonelock where zonelock=${zoneLockId}
-    //     """.query[Rel.ZoneLock].option
-    //   }
-    // }
-
-
-    // def getLockedZones(userId: Int@@UserID): Seq[Int@@LockID] = {
-    //   runq { sql"""
-    //     select zonelock from zonelock where assignee=${userId}
-    //     """.query[Int@@LockID].to[List]
-    //   }
-    // }
   }
 }
