@@ -24,10 +24,14 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
 
   def createEmptyDocumentZoningApi(): DocumentZoningApi = {
     corpusAccessDB.runqOnce {
-      corpusAccessDB.veryUnsafeDropDatabase().run
+      for{
+        // _ <- corpusAccessDB.veryUnsafeDropDatabase().run
+        _ <- corpusAccessDB.tables.dropAll()
+        _ <- corpusAccessDB.tables.createAll()
+      } yield ()
     }
 
-    corpusAccessDB.dropAndRecreate
+    // corpusAccessDB.dropAndRecreate
     corpusAccessDB.docStore
   }
 

@@ -2,13 +2,17 @@ package edu.umass.cs.iesl.watr
 package corpora
 package database
 
-import cats.effect.IO
+import cats._
 import cats.implicits._
+import cats.data._
+import cats.effect._
 
 import doobie._
 import doobie.implicits._
 
 import doobie.free.{ connection => C }
+import java.io.PrintWriter
+
 
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -23,8 +27,7 @@ import watrmarks._
 import TypeTags._
 import shapeless._
 
-import _root_.io.circe,  circe._, circe.syntax._
-import circe.parser.decode
+import _root_.io.circe, circe.syntax._
 import utils.DoOrDieHandlers._
 
 class CorpusAccessDB(
@@ -38,41 +41,76 @@ class CorpusAccessDB(
 
   import doobie.hikari._
   import doobie.hikari.implicits._
+  import doobie.postgres.syntax._
+
+  /** Prepend a ConnectionIO program with a log message. */
+  def printBefore(tag: String, s: String): ConnectionIO[Unit] => ConnectionIO[Unit] =
+    HC.delay(Console.println(s"$tag: $s")) <* _
+
+
+  /** Derive a new transactor that logs stuff. */
+  def addLogging[A](name: String)(xa: Transactor[IO]): Transactor[IO] = {
+    import Transactor._ // bring the lenses into scope
+    val update: State[Transactor[IO], Unit] =
+      for {
+        _ <- before %= printBefore(name, "before - setting up the connection")
+        _ <- after  %= printBefore(name, "after - committing")
+        _ <- oops   %= printBefore(name, "oops - rolling back")
+        _ <- always %= printBefore(name, "always - closing")
+      } yield ()
+    update.runS(xa).value
+  }
+
 
   val props = new Properties()
-  props.setProperty("housekeeper","true")
+  // props.setProperty("housekeeper","true")
+  props.setProperty("logUnclosedConnections","true")
+	props.setProperty("maximumPoolSize", "20");
+	props.setProperty("minimumIdle", "20");
+	props.setProperty("maxLifetime", "30000");
+	props.put("dataSource.logWriter", new PrintWriter(System.out));
+  // def initTransactor(): HikariTransactor[IO] = (for {
+  //   xa <- HikariTransactor.newHikariTransactor[IO]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
+  //   _  <- xa.configure(hx => IO {
+  //     hx.setDataSourceProperties(props)
+  //     hx.setAutoCommit(false)
+  //     // ()
+  //   })
+  // } yield {
+  //   xa
+  // }).unsafeRunSync
 
-  def initTransactor(): HikariTransactor[IO] = (for {
-    xa <- HikariTransactor.newHikariTransactor[IO]("com.impossibl.postgres.jdbc.PGDriver", s"jdbc:pgsql:${dbname}", dbuser, dbpass)
-    _  <- xa.configure(hx => IO {
-      hx.setDataSourceProperties(props)
-      hx.setAutoCommit(false)
-      // ()
-    })
-  } yield {
-    xa
-  }).unsafeRunSync
-
+  val JdbcDriverName = "org.postgresql.ds.PGSimpleDataSource"
+  // "org.postgresql.Driver"
 
   def initPostgresDriverTransactor2(): HikariTransactor[IO] = (for {
-    xa <- HikariTransactor.newHikariTransactor[IO]("org.postgresql.Driver", s"jdbc:postgresql:${dbname}", dbuser, dbpass)
-    _ <- xa.configure { h => IO {
-      h.setAutoCommit(false)
+    transactor <- HikariTransactor.newHikariTransactor[IO](
+      JdbcDriverName,
+      s"jdbc:postgresql:${dbname}",
+      dbuser,
+      dbpass
+    )
+    // logTransactor = addLogging("Postgres")(transactor)
+    _ <- transactor.configure { h => IO {
+      // h.setDataSourceProperties(props)
+      // h.setAutoCommit(false)
+      // h.setMaximumPoolSize(20)
     }}
   } yield {
-    xa
+    // logTransactor.asInstanceOf[HikariTransactor[IO]]
+    transactor
   }).unsafeRunSync
 
-  var _hikariTransactor: HikariTransactor[IO] = initTransactor()
+  // var _hikariTransactor: HikariTransactor[IO] = initTransactor()
 
   var _hikariTransactor2: HikariTransactor[IO] = initPostgresDriverTransactor2()
 
-  def getTransactor(): HikariTransactor[IO] = {
-    if (_hikariTransactor == null) {
-      _hikariTransactor = initTransactor()
-    }
-    _hikariTransactor
-  }
+  // def getTransactor(): HikariTransactor[IO] = {
+  //   if (_hikariTransactor == null) {
+  //     _hikariTransactor = initTransactor()
+  //   }
+  //   _hikariTransactor
+  // }
 
   def getTransactor2(): HikariTransactor[IO] = {
     if (_hikariTransactor2 == null) {
@@ -86,24 +124,37 @@ class CorpusAccessDB(
   }
 
   def shutdown(): Unit = {
-    if (_hikariTransactor != null) {
-      _hikariTransactor.kernel.close()
-      _hikariTransactor.shutdown
-      _hikariTransactor = null
-    }
+    println(s"Running Shutdown.")
     if (_hikariTransactor2 != null) {
-      _hikariTransactor2.kernel.close()
-      _hikariTransactor2.shutdown
-      _hikariTransactor2 = null
+      // _hikariTransactor2.shutdown.unsafeRunSync()
+      (for {
+         _ <-  _hikariTransactor2.asInstanceOf[HikariTransactor[IO]].shutdown
+      } yield {
+        _hikariTransactor2 = null
+      }).unsafeRunSync()
     }
   }
 
   def runq[A](query: C.ConnectionIO[A]): A = {
-    try {
-      (for {
-        r <- query.transact(getTransactor())
-      } yield r).unsafeRunSync
-    } catch {
+    runWithTransactor(getTransactor2())(query)
+  }
+
+  // def runqOnceOld[A](query: C.ConnectionIO[A]): A = {
+  //   runWithTransactor(getTransactor2())(query)
+  // }
+
+  def runqOnce[A](query: C.ConnectionIO[A]): A = runq(query)
+
+  def runWithTransactor[A](t: HikariTransactor[IO])(query: C.ConnectionIO[A]): A = {
+    val run = for {
+      r <- query.transact(t)
+    } yield r
+
+    run.unsafeRunSync()
+  }
+
+  def decodeSQLExceptions(err: Throwable): Throwable = {
+    err match {
       case t: org.postgresql.util.PSQLException =>
         val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
         val err = t.getServerErrorMessage()
@@ -120,47 +171,15 @@ class CorpusAccessDB(
         throw t
     }
   }
-  def runqOnce[A](query: C.ConnectionIO[A]): A = {
-    try {
-      (for {
-        r <- query.transact(getTransactor2())
-      } yield r).unsafeRunSync
-    } catch {
-      case t: org.postgresql.util.PSQLException =>
-        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
-        val err = t.getServerErrorMessage()
-        println(s"ERROR: ${message}")
-        println(s"Server ERROR: ${err}")
-        println(s"Query ${query}")
 
-        val state = t.getSQLState
-        println(s"Server State: ${state}")
-
-        throw t
-
-      case t: Throwable =>
-        val message = s"""error: ${t}: ${t.getCause}: ${t.getMessage} """
-        println(s"ERROR: ${message}")
-        t.printStackTrace()
-        throw t
-    }
-  }
 
   def updateGetKey[A: Composite](key: String, up: Update0): C.ConnectionIO[A] = {
     up.withUniqueGeneratedKeys(key)
   }
 
-
   def dropTables() = runqOnce {
     tables.dropAll
   }
-
-  // def deleteAllDocuments() = runqOnce {
-  //   for{
-  //     _ <- tables.dropDocuments
-  //     _ <- tables.createDocumentTables
-  //   } yield ()
-  // }
 
   def dropAndRecreate() = runqOnce {
     for{
@@ -683,25 +702,28 @@ class CorpusAccessDB(
 
     def deleteLock(lockId: Int@@LockID): Unit = runq {
       sql"""
-           DELETE FROM corpuslock WHERE corpuslock = ${lockId}
+           DELETE FROM corpuslock WHERE corpuslock = ${lockId};
       """.update.run
     }
 
     def getLocks(): Seq[Int@@LockID] = runq {
       sql"""
-          SELECT corpuslock FROM corpuslock
+          SELECT corpuslock FROM corpuslock;
       """.query[Int@@LockID].to[Vector]
     }
 
 
-    def getLockRecord(lockId: Int@@LockID): Option[R.CorpusLock] = runq {
-      sql"""
+    def getLockRecord(lockId: Int@@LockID): Option[R.CorpusLock] = {
+      // println(s"getLockRecord ${lockId}")
+
+      runq {
+        sql"""
           SELECT corpuslock, holder, document, lockPath, status
           FROM corpuslock
-          WHERE corpuslock=${lockId}
+          WHERE corpuslock=${lockId.unwrap};
       """.query[Rel.CorpusLock].option
+      }
     }
-
 
     def getDocumentLocks(docId: Int@@DocumentID): Seq[Int@@LockID] = runq {
       sql"""

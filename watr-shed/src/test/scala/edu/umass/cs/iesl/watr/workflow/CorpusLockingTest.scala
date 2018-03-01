@@ -15,7 +15,7 @@ trait CorpusLockingTestHelpers extends UserbaseTestHelpers {
 
   def initCorpusLocks(n: Int): Unit = {
     for {
-      i <- 0 until n
+      _ <- 0 until n
       stableId <- docStore.getDocuments()
       docId <- docStore.getDocument(stableId)
     } {
@@ -86,24 +86,30 @@ class CorpusLockingApiSpec extends DatabaseTest with CorpusLockingTestHelpers {
       userId       = userIds( i % userIds.length )
       // _            = println(s"${i}. User ${userId} attempting lock")
       lockId      <- corpusLockApi.acquireLock(userId, lockPath)
+      // _            = println(s"      success ${i} ")
       lock        <- corpusLockApi.getLockRecord(lockId)
     } {
       getLocksWithStatus(CorpusLockStatus.Locked).length shouldBe i+1
     }
 
+    // Users may only hold one lock at a time
+    getLocksWithStatus(CorpusLockStatus.Locked).length shouldBe userIds.length
+
     corpusLockApi.acquireLock(userIds.head, lockPath).isEmpty shouldBe true
 
     for {
-      (lockId, i) <- corpusLockApi.getLocks().zipWithIndex
+      // (lockId, i) <- corpusLockApi.getLocks().zipWithIndex
+      (lockId, i) <- getLocksWithStatus(CorpusLockStatus.Locked).zipWithIndex
     } {
       getLocksWithStatus(CorpusLockStatus.Completed).length shouldBe i
       corpusLockApi.releaseLock(lockId)
     }
 
-
-    getLocksWithStatus(CorpusLockStatus.Completed).length shouldBe defaultCorpusSize
-    getLocksWithStatus(CorpusLockStatus.Available).length shouldBe 0
+    getLocksWithStatus(CorpusLockStatus.Completed).length shouldBe userIds.length
+    getLocksWithStatus(CorpusLockStatus.Available).length shouldBe defaultCorpusSize - userIds.length
     getLocksWithStatus(CorpusLockStatus.Locked).length shouldBe 0
+
+
   }
 
   it should "not allow user to acquire more than one lock at a time" in new EmptyDatabase {

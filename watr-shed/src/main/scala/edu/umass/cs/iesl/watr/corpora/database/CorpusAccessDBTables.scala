@@ -134,7 +134,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
         holder      INTEGER REFERENCES person ON DELETE SET NULL,
         document    INTEGER REFERENCES document ON DELETE CASCADE,
         lockPath    LTREE,
-        status      VARCHAR(128) DEFAULT NULL
+        status      VARCHAR(128)
       );
        CREATE INDEX        corpuslock_path_gist ON corpuslock using gist(lockPath);
     """.update
@@ -220,9 +220,9 @@ class CorpusAccessDBTables extends DoobieImplicits {
 
 
     val drop = sql"""
-        DROP TABLE IF EXISTS person;
         DROP TABLE IF EXISTS person_auth;
         DROP TABLE IF EXISTS token;
+        DROP TABLE IF EXISTS person;
     """.update
   }
 

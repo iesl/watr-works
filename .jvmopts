@@ -1,19 +1,19 @@
 # Cats jvmopts see https://weblogs.java.net/blog/kcpeppe/archive/2013/12/11/case-study-jvm-hotspot-flags
 -Dfile.encoding=UTF8
--Xms2G
--Xmx2G
+-Xms1400M
+-Xmx1400M
 # -XX:MaxMetaspaceSize=512M
--XX:ReservedCodeCacheSize=250M
+# -XX:ReservedCodeCacheSize=250M
 -XX:+TieredCompilation
 -XX:-UseGCOverheadLimit
 # effectively adds GC to Perm space
 -XX:+UseConcMarkSweepGC
 -XX:+CMSClassUnloadingEnabled
 # must be enabled for CMSClassUnloadingEnabled to work
--XX:MaxDirectMemorySize=15926m 
+-XX:MaxDirectMemorySize=15927m
 
 -Dakka.loglevel=OFF
 -Dorg.ensime.loglevel=DEBUG
--Dstorage.diskCache.bufferSize=7200
+# -Dstorage.diskCache.bufferSize=7200
 -Dio.netty.leakDetection.level=advanced
 -Dio.netty.leakDetection.maxRecords=30

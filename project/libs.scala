@@ -9,7 +9,7 @@ trait LibVersions {
   val logbackVersion      = "1.7.25"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
-  val doobieVersion       = "0.5.0"
+  val doobieVersion       = "0.5.1"
   // val doobieVersion       = "0.4.4"
   val matryoshkaCoreV     = "0.21.3"
   val sourcecodeV         = "0.1.4"
