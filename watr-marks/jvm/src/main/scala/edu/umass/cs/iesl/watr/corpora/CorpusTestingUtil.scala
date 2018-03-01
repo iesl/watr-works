@@ -139,6 +139,19 @@ trait CorpusTestingUtil extends TextGridBuilder {
     addSampleDocs(List(doc))
   }
 
+  def addDummyDocs(n: Int): Seq[String@@DocumentID] = {
+    val doc = List(
+      "abc\ndef\nghi",
+      "012\n345\n678",
+      "jkl\nmno\npqr"
+    );
+    (0 until n).map{ i =>
+      val stableId = DocumentID(s"doc#${i}")
+      addDocument(stableId, doc)
+      stableId
+    }
+  }
+
   def test1(): Unit = {
     // addSampleDoc(MockPapers.sample_4pg_3x3_doc)
 

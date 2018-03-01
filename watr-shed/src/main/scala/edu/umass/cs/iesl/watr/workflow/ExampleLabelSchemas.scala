@@ -74,7 +74,10 @@ object ExampleLabelSchemas {
       ))
     }
 
+    import TypeTags._
+
     val combinedSchemas = LabelSchemas(
+      LabelSchemaName("PaperHeadersV1"),
       List(
         LabelSchema(Title),
         LabelSchema(Abstract),

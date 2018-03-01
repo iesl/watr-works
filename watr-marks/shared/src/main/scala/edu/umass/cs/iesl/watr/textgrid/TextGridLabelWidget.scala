@@ -144,11 +144,12 @@ object GridRegion {
 
 @JSExportTopLevel("watr.textgrid.TextGridLabelWidget") @JSExportAll
 object TextGridLabelWidget {
-  import circe.generic.semiauto._
-  implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
-  implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
-  implicit val Enc_LabelSchema: Encoder[LabelSchema] = deriveEncoder
-  implicit val Enc_LabelSchemas: Encoder[LabelSchemas] = deriveEncoder
+  import watrmarks.LabelSchemas._
+  // import circe.generic.semiauto._
+  // implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
+  // implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
+  // implicit val Enc_LabelSchema: Encoder[LabelSchema] = deriveEncoder
+  // implicit val Enc_LabelSchemas: Encoder[LabelSchemas] = deriveEncoder
 
 
   val Indent: Int = 4

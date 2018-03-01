@@ -44,12 +44,9 @@ object WorkflowStatus {
 }
 
 
-
 case class WorkflowReport(
-  unassignedCount: Int,
   statusCounts: Map[String@@StatusCode, Int],
-  userAssignmentCounts: Map[Int@@UserID, Int],
-  usernames: Map[Int@@UserID, String@@EmailAddr]
+  userAssignmentCounts: Seq[(Int@@UserID, String@@EmailAddr, String@@StatusCode, Int)]
 )
 
 object WorkflowReport extends TypeTagCodecs {
@@ -80,16 +77,14 @@ object WorkflowReport extends TypeTagCodecs {
         // val report = workflowApi.getWorkflowReport(workflowId)
         // val workflowDef = workflowApi.getWorkflow(workflowId)
         val path = workflowDef.targetPath
-        val count = workflowDef.curationCount
 
         val boxLabelSchema = LabelSchemas.labelSchemaToBox(
           workflowDef.labelSchemas
         )
 
         val userAssignments = hangingIndent("User Assignment Counts",
-          report.userAssignmentCounts.toSeq.map{ case (userId, count) =>
-            val email = report.usernames(userId)
-            s"$email :  ${count}".box
+          report.userAssignmentCounts.toSeq.map{ case (userId, email, status, count) =>
+            s"$email / ${status} = ${count}".box
           }
         )
 
@@ -99,18 +94,10 @@ object WorkflowReport extends TypeTagCodecs {
           }
         )
 
-        val allActiveUsers = hangingIndent("Active Users",
-          report.usernames.toSeq.map { case (userId, email) =>
-            email.unwrap.box
-          }
-        )
 
         hangingIndent(s"Workflow ${workflowDef.workflow} in path '${path}'", Seq(
           userAssignments,
           statusCounts,
-          s"Unassigned:  ${report.unassignedCount} ",
-          s"Curation Count: ${count}",
-          allActiveUsers,
           boxLabelSchema
         ))
       }
@@ -124,22 +111,19 @@ trait WorkflowApi {
 
   def defineWorkflow(
     slug: String,
-    desc: String,
-    labelSchemas: LabelSchemas,
-    targetPath: String@@CorpusPath,
-    curationCount: Int
+    schemaName: String@@LabelSchemaName,
+    targetPath: String@@CorpusPath
   ): String@@WorkflowID
 
-  def activateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
-  def deactivateWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
-  def deleteWorkflow(workflowId:String@@WorkflowID): Either[String, Unit]
+  def deleteWorkflow(workflowId:String@@WorkflowID): Unit
 
   def getWorkflows(): Seq[String@@WorkflowID]
   def getWorkflow(workflowId:String@@WorkflowID): R.WorkflowDef
   def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport
 
   def lockNextDocument(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@LockID] = {
-    corpusLockingApi.acquireLock(userId, workflowId.unwrap)
+    val p = getWorkflow(workflowId).targetPath
+    corpusLockingApi.acquireLock(userId, p)
   }
 
 }
@@ -154,7 +138,7 @@ object CorpusLockStatus {
 
 trait CorpusLockingApi {
 
-  def createLock(docId: Int@@DocumentID, reason: String): Int@@LockID
+  def createLock(docId: Int@@DocumentID, lockPath: String@@CorpusPath): Int@@LockID
   def deleteLock(lockId: Int@@LockID): Unit
   def getLocks(): Seq[Int@@LockID]
 
@@ -163,7 +147,7 @@ trait CorpusLockingApi {
   def getDocumentLocks(docId: Int@@DocumentID): Seq[Int@@LockID]
   def getUserLocks(userId: Int@@UserID): Seq[Int@@LockID]
 
-  def acquireLock(userId: Int@@UserID, reason: String): Option[Int@@LockID]
+  def acquireLock(userId: Int@@UserID, lockPath: String@@CorpusPath): Option[Int@@LockID]
   def releaseLock(lockId: Int@@LockID): Unit
 
 }

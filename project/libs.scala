@@ -16,7 +16,7 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.0"
+  val http4sVersion       = "0.18.1"
   val fs2Version          = "0.10.2"
   val circeJsonVersion    = "0.9.1"
 
@@ -147,7 +147,7 @@ trait CommonLibs extends LibVersions {
     "com.pauldijou" %% "jwt-circe" % "0.14.1"
   )
 
-  val tsecV = "0.0.1-M7"
+  val tsecV = "0.0.1-M9"
   val tsec = Seq(
     "io.github.jmcardon" %% "tsec-common" % tsecV,
     "io.github.jmcardon" %% "tsec-password" % tsecV,

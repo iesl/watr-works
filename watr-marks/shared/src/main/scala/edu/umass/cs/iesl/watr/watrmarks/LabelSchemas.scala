@@ -6,6 +6,7 @@ import textboxing.{TextBoxing => TB}, TB._
 import _root_.io.circe, circe._
 // import circe.generic._
 import circe.generic.semiauto._
+import TypeTags._
 
 
 
@@ -64,6 +65,7 @@ object LabelSchema {
 
 @JSExportTopLevel("watr.watrmarks.LabelSchemas")
 case class LabelSchemas(
+  name: String@@LabelSchemaName,
   schemas: List[LabelSchema]
 ) {
 
@@ -107,6 +109,12 @@ object LabelSchemas {
         ))
     )
   }
+
+  implicit val L_Encoder: Encoder[String@@LabelSchemaName] =
+    Encoder[String].contramap { _.unwrap }
+
+  implicit val L_Decoder: Decoder[String@@LabelSchemaName] =
+    Decoder[String].map { LabelSchemaName(_) }
 
   implicit val Encode_LabelSchemas: Encoder[LabelSchemas] = deriveEncoder
   implicit val Decode_LabelSchemas: Decoder[LabelSchemas] = deriveDecoder

@@ -42,32 +42,28 @@ trait DoobieImplicits extends DoobiePredef {
     implicit T: TypeTag[String@@T]
   ): Meta[String@@T] = Meta[String].xmap(n => f(n), _.unwrap)
 
-  implicit val DocumentIDMeta   : Meta[Int@@DocumentID   ] = TypeTagMeta[DocumentID   ](DocumentID   (_))
-  implicit val TextReflowIDMeta : Meta[Int@@TextReflowID ] = TypeTagMeta[TextReflowID ](TextReflowID (_))
-  implicit val RegionIDMeta     : Meta[Int@@RegionID     ] = TypeTagMeta[RegionID     ](RegionID     (_))
-  implicit val PageIDMeta       : Meta[Int@@PageID       ] = TypeTagMeta[PageID       ](PageID       (_))
-  implicit val CharIDMeta       : Meta[Int@@CharID       ] = TypeTagMeta[CharID       ](CharID       (_))
-  implicit val ImageIDMeta      : Meta[Int@@ImageID      ] = TypeTagMeta[ImageID      ](ImageID      (_))
-  implicit val PageNumMeta      : Meta[Int@@PageNum      ] = TypeTagMeta[PageNum      ](PageNum      (_))
-  implicit val ZoneIDMeta       : Meta[Int@@ZoneID       ] = TypeTagMeta[ZoneID       ](ZoneID       (_))
-  implicit val LabelIDMeta      : Meta[Int@@LabelID      ] = TypeTagMeta[LabelID      ](LabelID      (_))
-  implicit val UserIDMeta       : Meta[Int@@UserID       ] = TypeTagMeta[UserID       ](UserID       (_))
-  implicit val LockGroupIDMeta  : Meta[Int@@LockGroupID  ] = TypeTagMeta[LockGroupID  ](LockGroupID  (_))
-  implicit val LockIDMeta   : Meta[Int@@LockID   ] = TypeTagMeta[LockID   ](LockID   (_))
+  implicit val DocumentIDMeta    : Meta[Int@@DocumentID   ] = TypeTagMeta[DocumentID   ](DocumentID   (_))
+  implicit val TextReflowIDMeta  : Meta[Int@@TextReflowID ] = TypeTagMeta[TextReflowID ](TextReflowID (_))
+  implicit val RegionIDMeta      : Meta[Int@@RegionID     ] = TypeTagMeta[RegionID     ](RegionID     (_))
+  implicit val PageIDMeta        : Meta[Int@@PageID       ] = TypeTagMeta[PageID       ](PageID       (_))
+  implicit val CharIDMeta        : Meta[Int@@CharID       ] = TypeTagMeta[CharID       ](CharID       (_))
+  implicit val ImageIDMeta       : Meta[Int@@ImageID      ] = TypeTagMeta[ImageID      ](ImageID      (_))
+  implicit val PageNumMeta       : Meta[Int@@PageNum      ] = TypeTagMeta[PageNum      ](PageNum      (_))
+  implicit val ZoneIDMeta        : Meta[Int@@ZoneID       ] = TypeTagMeta[ZoneID       ](ZoneID       (_))
+  implicit val LabelIDMeta       : Meta[Int@@LabelID      ] = TypeTagMeta[LabelID      ](LabelID      (_))
+  implicit val UserIDMeta        : Meta[Int@@UserID       ] = TypeTagMeta[UserID       ](UserID       (_))
+  implicit val LockGroupIDMeta   : Meta[Int@@LockGroupID  ] = TypeTagMeta[LockGroupID  ](LockGroupID  (_))
+  implicit val LockIDMeta        : Meta[Int@@LockID       ] = TypeTagMeta[LockID   ](LockID   (_))
 
-  implicit val WorkflowIDMeta   : Meta[String@@WorkflowID] = StrTypeTagMeta[WorkflowID   ](WorkflowID (_))
-  implicit val StatusCodeMeta   : Meta[String@@StatusCode] = StrTypeTagMeta[StatusCode   ](StatusCode (_))
-  implicit val EmailAddrMeta    : Meta[String@@EmailAddr]  = StrTypeTagMeta[EmailAddr    ](EmailAddr  (_))
-  implicit val CorpusPathMeta   : Meta[String@@CorpusPath] = StrTypeTagMeta[CorpusPath   ](CorpusPath (_))
-  implicit val AnnotationIDMeta : Meta[Int@@AnnotationID]  = TypeTagMeta[AnnotationID    ](AnnotationID (_))
+  implicit val WorkflowIDMeta      : Meta[String@@WorkflowID   ] = StrTypeTagMeta[WorkflowID   ](WorkflowID (_))
+  implicit val StatusCodeMeta      : Meta[String@@StatusCode   ] = StrTypeTagMeta[StatusCode   ](StatusCode (_))
+  implicit val EmailAddrMeta       : Meta[String@@EmailAddr    ] = StrTypeTagMeta[EmailAddr    ](EmailAddr  (_))
+  implicit val CorpusPathMeta      : Meta[String@@CorpusPath   ] = StrTypeTagMeta[CorpusPath   ](CorpusPath (_))
+  implicit val CorpusPathQueryMeta : Meta[String@@CorpusPathQuery] = StrTypeTagMeta[CorpusPathQuery ](CorpusPathQuery (_))
+  implicit val AnnotationIDMeta    : Meta[Int@@AnnotationID    ] = TypeTagMeta[AnnotationID    ](AnnotationID (_))
+  implicit val LabelSchemaIDMeta   : Meta[Int@@LabelSchemaID   ] = TypeTagMeta[LabelSchemaID   ](LabelSchemaID (_))
 
-  // implicit def TargetRegionMeta : Meta[R.TargetRegion] = implicitly[Meta[R.TargetRegion]]
-  // implicit def ZoneMeta         : Meta[R.Zone]         = implicitly[Meta[R.Zone]]
-  // implicit def TextReflowMeta   : Meta[R.TextReflow]   = implicitly[Meta[R.TextReflow]]
-  // implicit def LabelMeta        : Meta[R.Label]        = implicitly[Meta[R.Label]]
-  // implicit def PageMeta         : Meta[R.Page]         = implicitly[Meta[R.Page]]
-  // implicit def DocumentMeta     : Meta[R.Document]     = implicitly[Meta[R.Document]]
-  // implicit def PersonMeta       : Meta[R.Person]       = implicitly[Meta[R.Person]]
-  // implicit def WorkflowDefMeta  : Meta[R.WorkflowDef]  = implicitly[Meta[R.WorkflowDef]]
+
+
 
 }

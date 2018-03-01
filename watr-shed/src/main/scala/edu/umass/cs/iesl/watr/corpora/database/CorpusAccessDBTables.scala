@@ -4,43 +4,284 @@ package database
 
 import doobie._
 import doobie.implicits._
+import doobie.free.connection.ConnectionOp
+
+import cats.free._
+// import cats._
+import cats.implicits._
 
 import corpora._
+
+abstract class TableDef(implicit
+  enclosing: sourcecode.Enclosing
+) extends DoobiePredef {
+  def name(): String = enclosing.value
+
+  def drop(): Update0
+  def create(): Update0
+
+  def runDrop(): Free[ConnectionOp, Unit] = for {
+    _ <- putStrLn(s"Dropping ${name}")
+    _ <- drop().run
+  } yield ()
+
+  def runCreate(): Free[ConnectionOp, Unit] = for {
+    _ <- putStrLn(s"Creating ${name}")
+    _ <- create().run
+  } yield ()
+
+  def dropAndCreate(): Free[ConnectionOp, Unit] = for {
+    _ <- drop().run
+    _ <- create().run
+  } yield ()
+}
+
+// trait TableDef extends DoobiePredef {
+//   def drop(): Update0
+//   def create(): Update0
+
+//   def runDrop(): Free[ConnectionOp, Unit] = for {
+//     _ <- putStrLn(s"Dropping ${name}")
+//     _ <- drop().run
+//   } yield ()
+
+//   def runCreate(): Free[ConnectionOp, Unit] = for {
+//     _ <- putStrLn(s"Creating ${name}")
+//     _ <- create().run
+//   } yield ()
+
+//   def dropAndCreate(): Free[ConnectionOp, Unit] = for {
+//     _ <- drop().run
+//     _ <- create().run
+//   } yield ()
+
+// }
 
 class CorpusAccessDBTables extends DoobieImplicits {
 
   val Rel = RelationModel
 
-  val createDocumentTable  = for {
-    _ <-
-      sql""" CREATE TABLE document (
-                   document      SERIAL PRIMARY KEY,
-                   stableId      VARCHAR(128) UNIQUE
-                );
-             """.update.run
+  object documentTables extends TableDef {
+    val drop = {
+      sql"""
+            DROP TABLE IF EXISTS page;
+            DROP TABLE IF EXISTS document;
+            """.update
+    }
 
-    _ <- sql"CREATE INDEX document_stable_id ON document USING hash (stableId);".update.run
-  } yield ()
+    val create = {
+      fr"""
+           CREATE TABLE document (
+                document      SERIAL PRIMARY KEY,
+                stableId      VARCHAR(128) UNIQUE
+           );
 
-  val createPageTable = for {
-    _ <- sql"""
-      CREATE TABLE page (
-        page        SERIAL PRIMARY KEY,
+           CREATE INDEX document_stable_id ON document USING hash (stableId);
+
+           CREATE TABLE page (
+               page        SERIAL PRIMARY KEY,
+               document    INTEGER REFERENCES document ON DELETE CASCADE,
+               pagenum     SMALLINT,
+               bleft       INTEGER,
+               btop        INTEGER,
+               bwidth      INTEGER,
+               bheight     INTEGER
+           );
+
+           CREATE UNIQUE INDEX document_pagenum ON page (document, pagenum);
+           """.update
+    }
+  }
+
+
+  object labelSchemaTables extends TableDef {
+
+    val drop = sql""" DROP TABLE IF EXISTS labelschema; """.update
+
+    val create =
+      sql"""
+         CREATE TABLE IF NOT EXISTS labelschema (
+           labelschema       SERIAL PRIMARY KEY,
+           name              VARCHAR(128),
+           schema            TEXT
+         );
+         CREATE UNIQUE INDEX labelschema_name ON labelschema (name);
+      """.update
+  }
+
+  object workflowTables extends TableDef {
+
+    val drop = sql""" DROP TABLE IF EXISTS workflow; """.update
+
+    val create =
+      sql"""
+         CREATE TABLE IF NOT EXISTS workflow (
+           workflow          VARCHAR(128) PRIMARY KEY,
+           labelschema       INTEGER REFERENCES labelschema,
+           targetPath        LTREE
+         )
+      """.update
+
+  }
+
+  object documentLockTables extends TableDef {
+
+    val drop = sql""" DROP TABLE IF EXISTS corpuslock; """.update
+
+    val create: Update0 = sql"""
+      CREATE TABLE IF NOT EXISTS corpuslock (
+        corpuslock  SERIAL PRIMARY KEY,
+        holder      INTEGER REFERENCES person ON DELETE SET NULL,
         document    INTEGER REFERENCES document ON DELETE CASCADE,
-        pagenum     SMALLINT,
-        bleft       INTEGER,
-        btop        INTEGER,
-        bwidth      INTEGER,
-        bheight     INTEGER
+        lockPath    LTREE,
+        status      VARCHAR(128) DEFAULT NULL
       );
-      """.update.run
-
-    _ <- sql"""
-      CREATE UNIQUE INDEX document_pagenum ON page (document, pagenum);
-      """.update.run
-  } yield ()
+       CREATE INDEX        corpuslock_path_gist ON corpuslock using gist(lockPath);
+    """.update
+  }
 
 
+
+  object annotationTables extends TableDef {
+    val drop = sql""" DROP TABLE IF EXISTS annotation; """.update
+
+    val create = sql"""
+        CREATE TABLE IF NOT EXISTS annotation (
+          annotation     SERIAL PRIMARY KEY,
+          document       INTEGER REFERENCES document,
+          owner          INTEGER REFERENCES person DEFAULT NULL,
+          annotPath      LTREE DEFAULT NULL,
+          created        TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          body           TEXT DEFAULT NULL
+        );
+
+        CREATE INDEX annotation_document ON annotation(document);
+        CREATE INDEX annotation_owner ON annotation(owner);
+        CREATE INDEX annotation_annotPath_gist ON annotation using gist (annotPath);
+        CREATE INDEX annotation_annotPath      ON annotation using btree (annotPath);
+    """.update
+
+  }
+
+  object corpusPathTables extends TableDef {
+
+    val drop = sql"""
+        DROP TABLE IF EXISTS pathentry;
+        DROP TABLE IF EXISTS corpuspath;
+    """.update
+
+    val create = sql"""
+        CREATE TABLE IF NOT EXISTS corpuspath (
+          corpuspath   SERIAL PRIMARY KEY,
+          path         LTREE
+        );
+
+        CREATE INDEX        corpuspath_path_gist ON corpuspath using gist(path);
+        CREATE UNIQUE INDEX corpuspath_path      ON corpuspath using btree(path);
+
+        CREATE TABLE IF NOT EXISTS pathentry (
+          document      INTEGER REFERENCES document ON DELETE CASCADE,
+          corpuspath    INTEGER REFERENCES corpuspath
+        );
+        CREATE UNIQUE INDEX pathentry_document ON pathentry (document);
+        CREATE INDEX pathentry_corpuspath ON pathentry (corpuspath);
+    """.update
+
+  }
+
+  object userTables extends TableDef {
+    val create: Update0 = sql"""
+      CREATE TABLE person (
+        person      SERIAL PRIMARY KEY,
+        email       TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX person_email ON person(email);
+
+
+      CREATE TABLE person_auth (
+        person      INTEGER REFERENCES person ON DELETE CASCADE,
+        username    TEXT NOT NULL,
+        password    TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX person_auth_person ON person_auth(person);
+
+
+      CREATE TABLE token (
+        token        SERIAL PRIMARY KEY,
+        tuuid        UUID,
+        name         TEXT NOT NULL,
+        content      TEXT NOT NULL,
+        owner        INTEGER REFERENCES person ON DELETE CASCADE
+      );
+      CREATE UNIQUE INDEX token_tuuid ON token(tuuid);
+      CREATE UNIQUE INDEX token_owner ON token(owner);
+
+    """.update
+
+
+    val drop = sql"""
+        DROP TABLE IF EXISTS person;
+        DROP TABLE IF EXISTS person_auth;
+        DROP TABLE IF EXISTS token;
+    """.update
+  }
+
+
+  val CorpusTableDefs = List[TableDef](
+    documentTables,
+    labelSchemaTables,
+    workflowTables,
+    documentLockTables,
+    annotationTables,
+    corpusPathTables
+  )
+
+  val UserTableDefs = List[TableDef](
+    userTables
+  )
+
+
+  // def dropCurationTables() = {
+  //   for {
+  //     _ <- corpusPathTables.runDrop()
+  //     _ <- documentLockTables.runDrop()
+  //     _ <- annotationTables.runDrop()
+  //     _ <- workflowTables.runDrop()
+  //   } yield ()
+  // }
+
+  // def createCurationTables() = {
+  //   for {
+  //     _ <- workflowTables.runCreate()
+  //     _ <- documentLockTables.runCreate()
+  //     _ <- annotationTables.runCreate()
+  //     _ <- corpusPathTables.runCreate()
+  //   } yield ()
+  // }
+
+
+  // val dropDocuments = sql"""
+  //   DROP TABLE IF EXISTS page;
+  //   DROP TABLE IF EXISTS document;
+  // """.update.run
+
+  val AllTableDefs = UserTableDefs ++ CorpusTableDefs
+
+  // def createDocumentTables = for {
+  //   _ <- documentTables.runCreate()
+  //   _ <- documentLockTables.runCreate()
+  // } yield ()
+
+  def createAll(): Free[ConnectionOp, Unit] =
+    (UserTableDefs ++ CorpusTableDefs)
+    .map { _.runCreate() }
+    .reduce { _ >> _ }
+
+  def dropAll(): Free[ConnectionOp, Unit] = (CorpusTableDefs.reverse ++ UserTableDefs)
+    .map { _.runDrop() }
+    .reduce { _ >> _ }
+
+}
 
   ////////////////////////////
 
@@ -122,215 +363,19 @@ class CorpusAccessDBTables extends DoobieImplicits {
   //     CREATE INDEX label_key ON label USING hash (key);
   //   """.update
 
+// object zonelockTables {
 
+//   val drop = sql""" DROP TABLE IF EXISTS zonelock; """.update
 
-  object workflowTables {
+//   val create: Update0 = sql"""
 
-    val drop = sql""" DROP TABLE IF EXISTS workflow; """
+//     CREATE TABLE IF NOT EXISTS zonelock (
+//       zonelock       SERIAL PRIMARY KEY,
+//       assignee       INTEGER REFERENCES person ON DELETE CASCADE,
+//       workflow       VARCHAR(128) REFERENCES workflow ON DELETE CASCADE,
+//       zone           INTEGER REFERENCES zone ON DELETE CASCADE,
+//       status         VARCHAR(128) NOT NULL
+//     );
+//   """.update
 
-    val create =
-      sql"""
-         CREATE TABLE IF NOT EXISTS workflow (
-           workflow          VARCHAR(128) PRIMARY KEY,
-           description       TEXT,
-           labelSchemas      TEXT,
-           targetPath        LTREE,
-           curationCount     INTEGER
-         )
-      """
-
-    def dropAndCreate() = for {
-      _ <- drop.update.run
-      _ <- create.update.run
-    } yield ()
-
-  }
-
-  object documentLockTables {
-
-    val drop = sql""" DROP TABLE IF EXISTS corpuslock; """.update
-
-    val create: Update0 = sql"""
-      CREATE TABLE IF NOT EXISTS corpuslock (
-        corpuslock  SERIAL PRIMARY KEY,
-        holder      INTEGER REFERENCES person ON DELETE SET NULL,
-        document    INTEGER REFERENCES document ON DELETE CASCADE,
-        reason      VARCHAR(128) DEFAULT NULL,
-        status      VARCHAR(128) DEFAULT NULL
-      );
-    """.update
-  }
-
-
-  // object zonelockTables {
-
-  //   val drop = sql""" DROP TABLE IF EXISTS zonelock; """.update
-
-  //   val create: Update0 = sql"""
-
-  //     CREATE TABLE IF NOT EXISTS zonelock (
-  //       zonelock       SERIAL PRIMARY KEY,
-  //       assignee       INTEGER REFERENCES person ON DELETE CASCADE,
-  //       workflow       VARCHAR(128) REFERENCES workflow ON DELETE CASCADE,
-  //       zone           INTEGER REFERENCES zone ON DELETE CASCADE,
-  //       status         VARCHAR(128) NOT NULL
-  //     );
-  //   """.update
-
-  // }
-
-  object annotationTables {
-    val drop = sql""" DROP TABLE IF EXISTS annotation; """.update
-
-    val create = sql"""
-
-        CREATE TABLE IF NOT EXISTS annotation (
-          annotation     SERIAL PRIMARY KEY,
-          document       INTEGER REFERENCES document,
-          creator        INTEGER REFERENCES person,
-          workflow       VARCHAR(128) REFERENCES workflow ON DELETE SET NULL,
-          created        TIMESTAMP WITH TIME ZONE,
-          status         VARCHAR(128) NOT NULL,
-          jsonrec        TEXT DEFAULT NULL
-        );
-
-        CREATE INDEX annotation_document ON annotation(document);
-        CREATE INDEX annotation_curator ON annotation(creator);
-        CREATE INDEX annotation_workflow ON annotation(workflow);
-
-    """.update
-
-  }
-
-  object corpusPathTables {
-
-    val drop = sql"""
-        DROP TABLE IF EXISTS pathentry;
-        DROP TABLE IF EXISTS corpuspath;
-    """
-
-    val create = sql"""
-        CREATE TABLE IF NOT EXISTS corpuspath (
-          corpuspath   SERIAL PRIMARY KEY,
-          path         LTREE
-        );
-
-        CREATE INDEX corpuspath_path_gist ON corpuspath using gist(path);
-        CREATE UNIQUE INDEX corpuspath_path ON corpuspath using btree(path);
-
-        CREATE TABLE IF NOT EXISTS pathentry (
-          document      INTEGER REFERENCES document ON DELETE CASCADE,
-          corpuspath    INTEGER REFERENCES corpuspath
-        );
-        CREATE UNIQUE INDEX pathentry_document ON pathentry (document);
-        CREATE INDEX pathentry_corpuspath ON pathentry (corpuspath);
-    """
-
-  }
-
-  object UserTables {
-    val create: Update0 = sql"""
-      CREATE TABLE person (
-        person      SERIAL PRIMARY KEY,
-        email       TEXT NOT NULL
-      );
-      CREATE UNIQUE INDEX person_email ON person(email);
-
-
-      CREATE TABLE person_auth (
-        person      INTEGER REFERENCES person ON DELETE CASCADE,
-        username    TEXT NOT NULL,
-        password    TEXT NOT NULL
-      );
-      CREATE UNIQUE INDEX person_auth_person ON person_auth(person);
-
-
-      CREATE TABLE token (
-        token        SERIAL PRIMARY KEY,
-        tuuid        UUID,
-        name         TEXT NOT NULL,
-        content      TEXT NOT NULL,
-        owner        INTEGER REFERENCES person ON DELETE CASCADE
-      );
-      CREATE UNIQUE INDEX token_tuuid ON token(tuuid);
-      CREATE UNIQUE INDEX token_owner ON token(owner);
-
-    """.update
-
-
-    val drop = sql"""
-        DROP TABLE IF EXISTS person;
-        DROP TABLE IF EXISTS person_auth;
-        DROP TABLE IF EXISTS token;
-    """.update.run
-  }
-
-  def createDocumentTables = for {
-    _ <- createDocumentTable
-    _ = println("createDocumentTable")
-    _ <- createPageTable
-    _ = println("createPageTable")
-
-    // _ <- targetregions.create()
-    // _ = println("create targetregions")
-    // _ <- zonetables.create()
-    // _ = println("create zonetables")
-    // _ <- zonelockTables.create.run
-    _ <- documentLockTables.create.run
-
-  } yield ()
-
-
-  def dropCurationTables() = {
-    for {
-      _ <- corpusPathTables.drop.update.run
-      _ <- documentLockTables.drop.run
-      _ <- annotationTables.drop.run
-      _ <- workflowTables.drop.update.run
-
-    } yield ()
-  }
-
-  def createCurationTables() = {
-    for {
-      _ <- workflowTables.create.update.run
-      _ <- documentLockTables.create.run
-      _ <- annotationTables.create.run
-      _ <- corpusPathTables.create.update.run
-
-    } yield ()
-  }
-
-  def createAll = for {
-    _ <- createDocumentTable
-    _ <- createPageTable
-
-    // _ <- createLabelTable.run
-    // _ <- targetregions.create()
-    // _ <- zonetables.create()
-
-    _ <- UserTables.create.run
-    _ <- workflowTables.dropAndCreate()
-    _ <- documentLockTables.create.run
-    _ <- createCurationTables()
-  } yield ()
-
-  val dropDocuments = sql"""
-    DROP TABLE IF EXISTS document_lock;
-    DROP TABLE IF EXISTS page;
-    DROP TABLE IF EXISTS document;
-  """.update.run
-
-  val dropAll = for {
-    _ <- sql"""
-            DROP TABLE IF EXISTS document_lock;
-            DROP TABLE IF EXISTS page;
-            DROP TABLE IF EXISTS document;
-            DROP TABLE IF EXISTS person;
-            DROP TABLE IF EXISTS person_auth;
-            DROP TABLE IF EXISTS token;
-         """.update.run
-    _ <- dropCurationTables()
-  } yield ()
-
-}
+// }

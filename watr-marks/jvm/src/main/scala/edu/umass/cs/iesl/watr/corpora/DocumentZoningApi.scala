@@ -11,8 +11,8 @@ import watrmarks.{StandardLabels => LB}
 trait DocumentZoningApi {
   val Rel = RelationModel
 
-  def getDocuments(n: Int=Int.MaxValue, skip: Int=0, labelFilters: Seq[Label]=List()): Seq[String@@DocumentID]
-  def getDocumentCount(labelFilters: Seq[Label]=List()): Int
+  def getDocuments(n: Int=Int.MaxValue, skip: Int=0): Seq[String@@DocumentID]
+  def getDocumentCount(): Int
   def addDocument(stableId: String@@DocumentID): Int@@DocumentID
   def getDocument(stableId: String@@DocumentID): Option[Int@@DocumentID]
   def getDocumentStableId(docId: Int@@DocumentID): String@@DocumentID

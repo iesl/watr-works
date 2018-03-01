@@ -7,31 +7,17 @@ import TypeTags._
 
 class CorpusDirectoryTest extends DatabaseTest with UserbaseTestHelpers {
 
-
-  def addSampleDocs(n: Int): Seq[String@@DocumentID] = {
-    val doc = List(
-      "abc\ndef\nghi",
-      "012\n345\n678",
-      "jkl\nmno\npqr"
-    )
-      (0 until n).map{ i =>
-        val stableId = DocumentID(s"doc#${i}")
-        addDocument(stableId, doc)
-        stableId
-      }
-  }
-
   it should "smokescreen init" in new EmptyDatabase {
     implicit val db:CorpusAccessDB = corpusAccessDB
 
     corpusAccessDB.runqOnce{
       for {
-        _ <- corpusAccessDB.tables.corpusPathTables.drop.update.run
-        _ <- corpusAccessDB.tables.corpusPathTables.create.update.run
+        _ <- corpusAccessDB.tables.corpusPathTables.drop.run
+        _ <- corpusAccessDB.tables.corpusPathTables.create.run
       } yield ()
     }
 
-    addSampleDocs(3)
+    addDummyDocs(3)
 
     val corpusDirectory = new DatabaseCorpusDirectory()
 

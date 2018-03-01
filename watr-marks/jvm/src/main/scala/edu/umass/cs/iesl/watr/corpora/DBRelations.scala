@@ -18,28 +18,6 @@ object RelationModel {
     bounds     : G.LTBounds
   )
 
-  // case class TargetRegion(
-  //   prKey      : Int@@RegionID,
-  //   page       : Int@@PageID,
-  //   rank       : Int,
-  //   bounds     : G.LTBounds
-  // )
-
-  // // TODO rank ordering should be wrt (document, role)
-  // case class Zone(
-  //   prKey        : Int@@ZoneID,
-  //   document     : Int@@DocumentID,
-  //   label        : Int@@LabelID,
-  //   rank         : Int,
-  //   glyphs       : Option[String]
-  // )
-
-  // case class Label(
-  //   prKey : Int@@LabelID,
-  //   key   : String
-  // )
-
-
   case class Person(
     prKey     : Int@@UserID,
     email     : String@@EmailAddr
@@ -47,28 +25,25 @@ object RelationModel {
 
   case class WorkflowDef(
     workflow      : String@@WorkflowID,
-    description   : String,
-    // targetLabel   : Label,
     labelSchemas  : LabelSchemas,
     targetPath    : String@@CorpusPath,
-    curationCount : Int
   )
 
   case class CorpusLock(
     id         : Int@@LockID,
     holder     : Option[Int@@UserID],
     document   : Int@@DocumentID,
-    reason     : String,
+    lockPath   : String@@CorpusPath,
     status     : String@@StatusCode
   )
 
   case class AnnotationRec(
     id         : Int@@AnnotationID,
     document   : Int@@DocumentID,
-    creator    : Int@@UserID,
-    workflow   : String@@WorkflowID,
+    owner      : Option[Int@@UserID],
+    annotPath  : Option[String@@CorpusPath],
     created    : java.time.Instant,
-    jsonRec    : Option[String]
+    body       : Option[String]
   )
 
 

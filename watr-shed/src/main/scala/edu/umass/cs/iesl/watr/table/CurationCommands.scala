@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 package table
 
+
 import TypeTags._
 import corpora._
 import utils.DoOrDieHandlers._
@@ -35,12 +36,13 @@ object CurationCommands {
     def recreateCurationTables()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val tables = corpusAccessApi.corpusAccessDB.tables
 
-      corpusAccessApi.corpusAccessDB.runqOnce{
-        for {
-          _ <- tables.dropCurationTables()
-          _ <- tables.createCurationTables()
-        } yield ()
-      }
+      // corpusAccessApi.corpusAccessDB.runqOnce{
+      //   for {
+      //     _ <- tables.dropCurationTables()
+      //     _ <- tables.createCurationTables()
+      //   } yield ()
+      // }
+      ???
     }
 
 
@@ -57,9 +59,10 @@ object CurationCommands {
     def defineTestrunWorkflow()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val workflowApi = corpusAccessApi.workflowApi
 
-      workflowApi.defineWorkflow("headers-dryrun-1", "Trial Run", ExampleLabelSchemas.headerLabelSchema,
-        dryRunPath,
-        curationCount = 2
+      workflowApi.defineWorkflow(
+        "headers-dryrun-1",
+        ExampleLabelSchemas.headerLabelSchema.name,
+        dryRunPath
       )
     }
   }
@@ -114,12 +117,12 @@ object CurationCommands {
       // val datefmt = new SimpleDateFormat("dd MMM yyyy HH:mm:ss z")
       // s"""Created: ${datefmt.format(annot.created)}""",
       val allAnnots = db.annotApi.getAnnotations().map{ annotId =>
-        val annot = db.annotApi.getAnnotation(annotId)
+        val annot = db.annotApi.getAnnotationRecord(annotId)
         s"${annot.id} on ${annot.document}" atop(indent(4, {
           vjoin(
-            s"Creator: ${annot.creator}",
+            s"Owner: ${annot.owner}",
             s"""Created: ${annot.created}""",
-            s"Json: ${annot.jsonRec}",
+            s"Body: ${annot.body}",
           )
         }))
       }
@@ -140,11 +143,11 @@ object CurationCommands {
     //   db.annotApi.updateAnnotationStatus(annotId, status)
     // }
 
-    def updateBody(annotId: Int@@AnnotationID, jsonRec: String)(implicit
+    def updateBody(annotId: Int@@AnnotationID, body: String)(implicit
       corpusAccessApi: CorpusAccessApi
     ): Unit = {
       val db = corpusAccessApi.corpusAccessDB
-      db.annotApi.updateAnnotationBody(annotId, jsonRec)
+      db.annotApi.updateBody(annotId, body)
     }
 
 
@@ -161,12 +164,16 @@ object CurationCommands {
         docId <- corpusAccessApi.docStore.getDocument(stableId)
         userId <- users.getUserByEmail(userEmail)
       } yield {
-        db.annotApi.createAnnotation(userId, docId, workflowId)
+        val annotId = db.annotApi.createAnnotation(docId)
+        db.annotApi.assignOwnership(annotId, userId)
+        val path = db.workflowApi.getWorkflow(workflowId).targetPath
+        db.annotApi.setCorpusPath(annotId, path)
+        annotId
+
       }).orDie("createAnnotation")
     }
 
   }
-
 
 
   object assign {
