@@ -86,7 +86,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
       sql"""
          CREATE TABLE IF NOT EXISTS labelschema (
            labelschema       SERIAL PRIMARY KEY,
-           name              VARCHAR(128),
+           name              VARCHAR(128) NOT NULL,
            schema            TEXT
          );
          CREATE UNIQUE INDEX labelschema_name ON labelschema (name);

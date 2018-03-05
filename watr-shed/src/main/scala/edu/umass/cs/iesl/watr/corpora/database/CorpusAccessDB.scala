@@ -396,7 +396,7 @@ class CorpusAccessDB(
           .map{ case (workflowId, schema, path) =>
             Rel.WorkflowDef(
               WorkflowID(workflowId),
-              schema.asJson.decodeOrDie[LabelSchemas](),
+              schema.decodeOrDie[LabelSchemas](),
               path
             )
           }.unique
@@ -608,7 +608,7 @@ class CorpusAccessDB(
       val jsonSchema = labelSchema.asJson.noSpaces
       runq {
         sql"""
-           INSERT INTO labelschema (schema) VALUES ( ${jsonSchema} )
+           INSERT INTO labelschema (name, schema) VALUES ( ${labelSchema.name.unwrap}, ${jsonSchema} )
         """.update.withUniqueGeneratedKeys[Int@@LabelSchemaID]("labelschema")
       }
     }
@@ -616,7 +616,7 @@ class CorpusAccessDB(
     def getLabelSchema(schemaId: Int@@LabelSchemaID): LabelSchemas = runq {
       sql""" SELECT schema FROM labelschema WHERE labelschema = ${schemaId} """
         .query[String].map{ s  =>
-          s.asJson.decodeOrDie[LabelSchemas]()
+          s.decodeOrDie[LabelSchemas]()
         }.unique
     }
 
@@ -649,7 +649,7 @@ class CorpusAccessDB(
     def listAnnotations(pathQuery: String@@CorpusPathQuery): Seq[Int@@AnnotationID] = runq {
       sql"""
             SELECT annotation FROM annotation
-            WHERE annotPath ~ ${pathQuery}
+            WHERE annotPath ~ ${pathQuery.unwrap}::lquery
         """.query[Int@@AnnotationID].to[Vector]
     }
 
@@ -658,7 +658,7 @@ class CorpusAccessDB(
         case Some(query) =>
           sql"""
             SELECT annotation FROM annotation
-            WHERE annotPath ~ ${query} AND owner = ${userId}
+            WHERE annotPath ~ ${query.unwrap}::lquery AND owner = ${userId}
             """.query[Int@@AnnotationID].to[Vector]
 
         case None =>

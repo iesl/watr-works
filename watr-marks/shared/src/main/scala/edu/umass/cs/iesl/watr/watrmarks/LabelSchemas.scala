@@ -9,7 +9,6 @@ import circe.generic.semiauto._
 import TypeTags._
 
 
-
 @JSExportTopLevel("watr.watrmarks.LabelSchema")
 case class LabelSchema(
   label: Label,

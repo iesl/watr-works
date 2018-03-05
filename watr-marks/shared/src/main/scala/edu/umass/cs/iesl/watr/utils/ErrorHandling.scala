@@ -4,6 +4,7 @@ package utils
 import _root_.io.circe
 import circe._
 import circe.literal._
+import circe.{parser => CirceParser}
 
 object DoOrDieHandlers {
 
@@ -53,7 +54,20 @@ object DoOrDieHandlers {
   }
 
 
+  implicit class DoOrDieHandlers_RicherString(val self: String) extends AnyVal {
 
+    def decodeOrDie[T: Decoder](msg: String = "")(implicit
+      srcName: sourcecode.Name,
+      srcFile: sourcecode.File,
+      srcLine: sourcecode.Line
+    ): T = {
+      CirceParser.parse(self) match {
+        case Left(failure) => die(s"Invalid JSON String: ${failure}, string was ${self}")
+        case Right(json) =>
+          json.decodeOrDie[T]()
+      }
+    }
+  }
   implicit class RicherJson(val self: circe.Json) extends AnyVal {
 
     def decodeOrDie[T: Decoder](msg: String = "")(implicit

@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-import corpora._
+// import corpora._
 import TypeTags._
 import org.scalatest._
 
@@ -70,6 +70,7 @@ class TextGridLabelWidgetTests extends TextGridSpec {
     )
 
     LabelSchemas(
+      LabelSchemaName("TestSchema"),
       List(
         authorListSchema,
         refMarkerSchema)

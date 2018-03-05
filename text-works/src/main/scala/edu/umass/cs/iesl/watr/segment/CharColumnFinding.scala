@@ -330,18 +330,18 @@ trait CharColumnFinding extends PageScopeSegmenter
           val blockBounds = LTBounds(leftX, top, rightX-leftX, bottom-top)
           indexShape(blockBounds, LB.ReadingBlock)
 
-          println(s"Block ${blockBounds}")
+          // println(s"Block ${blockBounds}")
           val l0 = group.head._3._1
           val ll = group.map { case (binNum, yJump, (l1, l2)) =>
             l2
           }
 
-          (l0 +: ll).foreach{ lineShape =>
+          // (l0 +: ll).foreach{ lineShape =>
 
-            val items = getExtractedItemsForShape(lineShape)
-            val lineStr = items.map(_.strRepr()).mkString
-            println(s"   > ${lineStr}")
-          }
+          //   val items = getExtractedItemsForShape(lineShape)
+          //   val lineStr = items.map(_.strRepr()).mkString
+          //   println(s"   > ${lineStr}")
+          // }
 
 
           // baselineShapes.foreach { lineShape =>
