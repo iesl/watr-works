@@ -5,10 +5,6 @@ package database
 import doobie._
 import doobie.implicits._
 
-// import scalaz.std.list._
-// import scalaz.syntax.traverse._
-// import scalaz.syntax.apply._
-
 import cats.implicits._
 
 trait DoobiePredef {

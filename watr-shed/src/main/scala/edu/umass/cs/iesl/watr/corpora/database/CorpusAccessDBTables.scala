@@ -13,9 +13,13 @@ import cats.implicits._
 import corpora._
 
 abstract class TableDef(implicit
-  enclosing: sourcecode.Enclosing
+  enclosing: sourcecode.Enclosing,
+  // pkg: sourcecode.Pkg
 ) extends DoobiePredef {
-  def name(): String = enclosing.value
+  def name(): String = {
+    val Array(pre, post) = enclosing.value.split("#")
+    post
+  }
 
   def drop(): Update0
   def create(): Update0
@@ -36,26 +40,6 @@ abstract class TableDef(implicit
   } yield ()
 }
 
-// trait TableDef extends DoobiePredef {
-//   def drop(): Update0
-//   def create(): Update0
-
-//   def runDrop(): Free[ConnectionOp, Unit] = for {
-//     _ <- putStrLn(s"Dropping ${name}")
-//     _ <- drop().run
-//   } yield ()
-
-//   def runCreate(): Free[ConnectionOp, Unit] = for {
-//     _ <- putStrLn(s"Creating ${name}")
-//     _ <- create().run
-//   } yield ()
-
-//   def dropAndCreate(): Free[ConnectionOp, Unit] = for {
-//     _ <- drop().run
-//     _ <- create().run
-//   } yield ()
-
-// }
 
 class CorpusAccessDBTables extends DoobieImplicits {
 
@@ -241,36 +225,7 @@ class CorpusAccessDBTables extends DoobieImplicits {
   )
 
 
-  // def dropCurationTables() = {
-  //   for {
-  //     _ <- corpusPathTables.runDrop()
-  //     _ <- documentLockTables.runDrop()
-  //     _ <- annotationTables.runDrop()
-  //     _ <- workflowTables.runDrop()
-  //   } yield ()
-  // }
-
-  // def createCurationTables() = {
-  //   for {
-  //     _ <- workflowTables.runCreate()
-  //     _ <- documentLockTables.runCreate()
-  //     _ <- annotationTables.runCreate()
-  //     _ <- corpusPathTables.runCreate()
-  //   } yield ()
-  // }
-
-
-  // val dropDocuments = sql"""
-  //   DROP TABLE IF EXISTS page;
-  //   DROP TABLE IF EXISTS document;
-  // """.update.run
-
   val AllTableDefs = UserTableDefs ++ CorpusTableDefs
-
-  // def createDocumentTables = for {
-  //   _ <- documentTables.runCreate()
-  //   _ <- documentLockTables.runCreate()
-  // } yield ()
 
   def createAll(): Free[ConnectionOp, Unit] =
     (UserTableDefs ++ CorpusTableDefs)

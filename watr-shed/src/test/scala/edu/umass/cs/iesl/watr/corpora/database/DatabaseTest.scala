@@ -25,31 +25,21 @@ trait DatabaseTest extends FlatSpec with Matchers with CorpusTestingUtil
   def createEmptyDocumentZoningApi(): DocumentZoningApi = {
     corpusAccessDB.runqOnce {
       for{
-        // _ <- corpusAccessDB.veryUnsafeDropDatabase().run
         _ <- corpusAccessDB.tables.dropAll()
         _ <- corpusAccessDB.tables.createAll()
       } yield ()
     }
 
-    // corpusAccessDB.dropAndRecreate
     corpusAccessDB.docStore
   }
 
-  override def beforeAll(): Unit = {
-    println("beforeAll: re-initing db connections")
-    // corpusAccessDB.reinit()
-  }
+  // override def beforeAll(): Unit = {}
+  // override def beforeEach(): Unit = {}
+  // override def afterEach(): Unit = {}
 
   override def afterAll(): Unit = {
     println("afterAll: shutting down db connections")
     corpusAccessDB.shutdown()
   }
-  override def beforeEach(): Unit = {
-    // corpusAccessDB.reinit()
-    // println("beforeEach")
-    // corpusAccessDB.reinit()
-  }
 
-  override def afterEach(): Unit = {
-  }
 }

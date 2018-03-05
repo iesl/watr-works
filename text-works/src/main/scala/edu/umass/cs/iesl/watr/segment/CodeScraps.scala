@@ -2,32 +2,6 @@
 // package segment
 
 
-// import ammonite.{ops => fs}, fs._
-// // import java.io.InputStream
-// import spindex._
-
-// import scala.collection.JavaConversions._
-
-// import textboxing.{TextBoxing => TB}, TB._
-// import watrmarks.{StandardLabels => LB}
-
-// import geometry._
-
-// import textreflow.data._
-// import geometry.syntax._
-
-// import ComponentOperations._
-// import PageComponentImplicits._
-
-// import utils.{RelativeDirection => Dir, _}
-// import tracing.VisualTracer._
-// import EnrichNumerics._
-// import SlicingAndDicing._
-// import TypeTags._
-// import corpora._
-// import extract.PdfTextExtractor
-// import utils.ExactFloats._
-
 // case class LineDimensionBins(
 //   pageNum: Int@@PageNum,
 //   widthBin: Seq[((FloatExact, Double), Seq[Component])],

@@ -604,13 +604,6 @@ class CorpusAccessDB(
 
   object annotApi extends DocumentAnnotationApi {
 
-    def createAnnotation(docId: Int@@DocumentID): Int@@AnnotationID = runq {
-      sql"""
-            INSERT INTO annotation (document) VALUES ( ${docId} )
-         """.update.withUniqueGeneratedKeys[Int@@AnnotationID]("annotation")
-    }
-
-
     def createLabelSchema(labelSchema: LabelSchemas): Int@@LabelSchemaID = {
       val jsonSchema = labelSchema.asJson.noSpaces
       runq {
@@ -635,6 +628,14 @@ class CorpusAccessDB(
     def deleteLabelSchema(schemaId: Int@@LabelSchemaID): Unit = runq {
       sql""" DELETE FROM labelschema WHERE labelschema = ${schemaId} """.update.run
     }
+
+
+    def createAnnotation(docId: Int@@DocumentID): Int@@AnnotationID = runq {
+      sql"""
+            INSERT INTO annotation (document) VALUES ( ${docId} )
+         """.update.withUniqueGeneratedKeys[Int@@AnnotationID]("annotation")
+    }
+
 
     def assignOwnership(annotId: Int@@AnnotationID, userId: Int@@UserID): Unit = runq {
       sql"""UPDATE annotation SET owner=${userId} WHERE annotation=${annotId} """.update.run

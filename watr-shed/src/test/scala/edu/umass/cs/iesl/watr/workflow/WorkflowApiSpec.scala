@@ -20,7 +20,7 @@ class WorkflowApiSpec extends DatabaseTest with UserbaseTestHelpers with DocSegL
   def initWorkflows(n: Int): Seq[String@@WorkflowID] = {
     annotApi.createLabelSchema(testSchema)
 
-    0 until n map { i =>
+    (0 until n) map { i =>
       workflowApi.defineWorkflow(
         s"curation-workflow-${i}",
         testSchema.name,

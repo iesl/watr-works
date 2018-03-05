@@ -7,37 +7,16 @@ import doobie.implicits._
 
 import shapeless._
 
-// class Smokescreen extends FlatSpec with Matchers with DoobiePredef {
 class Smokescreen extends DatabaseTest with DoobiePredef {
 
-  val create: Update0 = sql"""
-    CREATE TABLE person (
-      id   SERIAL,
-      name VARCHAR NOT NULL UNIQUE,
-      age  SMALLINT,
-      rank INT NOT NULL
-    );
-    """.update
-
-
-
-  override def beforeEach(): Unit = {
-    corpusAccessDB.reinit()
+  override def createEmptyDocumentZoningApi(): DocumentZoningApi = {
     corpusAccessDB.runqOnce {
-      corpusAccessDB.veryUnsafeDropDatabase().run
+      for{
+        _ <- corpusAccessDB.tables.dropAll()
+      } yield ()
     }
-    corpusAccessDB.runqOnce(create.run)
-    corpusAccessDB.runqOnce(
-      defineOrderingTriggers(
-        fr0"person",
-        fr0"age"
-      )
-    )
+    corpusAccessDB.docStore
   }
-
-  override def afterEach(): Unit = {
-  }
-
 
   def appendPerson(name: String, age: Int): Unit = {
     val query = for {
@@ -91,8 +70,32 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
 
   behavior of "ordering data"
 
+  import cats.implicits._
 
-  it should "maintain ordering" in {
+  def setupEach(): Unit = {
+
+    val createTable: Update0 =
+      sql"""|
+            |CREATE TABLE person (
+            |  id   SERIAL,
+            |  name VARCHAR NOT NULL UNIQUE,
+            |  age  SMALLINT,
+            |  rank INT NOT NULL
+            |);
+            |""".stripMargin.update
+
+
+    corpusAccessDB.runq {
+      createTable.run >> defineOrderingTriggers(
+        fr0"person",
+        fr0"age"
+      )
+    }
+  }
+
+
+  it should "maintain ordering" in new EmptyDatabase {
+    setupEach()
 
     appendPerson("oliver1", 20)
     prependPerson("oliver01", 20)
