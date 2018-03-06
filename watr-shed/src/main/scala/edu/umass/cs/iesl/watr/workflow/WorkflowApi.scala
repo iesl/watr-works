@@ -120,6 +120,7 @@ trait WorkflowApi {
   def getWorkflows(): Seq[String@@WorkflowID]
   def getWorkflow(workflowId:String@@WorkflowID): R.WorkflowDef
   def getWorkflowReport(workflowId:String@@WorkflowID): WorkflowReport
+  def listWorkflows(path:String@@CorpusPath): Seq[String@@WorkflowID]
 
   def lockNextDocument(userId: Int@@UserID, workflowId: String@@WorkflowID): Option[Int@@LockID] = {
     val p = getWorkflow(workflowId).targetPath

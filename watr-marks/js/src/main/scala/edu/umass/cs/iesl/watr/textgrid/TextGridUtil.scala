@@ -301,6 +301,7 @@ class TextGridConstructor() extends TextGridConstruction {
     )
 
     LabelSchemas(
+      LabelSchemaName("TestLabelSchema"),
       List(
         authorListSchema,
         refMarkerSchema, journalSchema

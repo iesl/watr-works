@@ -19,23 +19,6 @@ import geometry._
 
 import corpora.{RelationModel => R}
 
-trait TypeTagCodecs {
-
-  implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
-  implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
-
-}
-
-trait CirceJsonCodecs extends GeometricFigureCodecs {
-  import circe.generic.semiauto._
-
-  // implicit val Enc_XX: Encoder[XX] = deriveEncoder
-  // implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
-  // implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
-
-  implicit lazy val Enc_Zone: Encoder[Zone] = deriveEncoder
-
-}
 
 object users {
 
@@ -84,7 +67,7 @@ object formdata {
   }
 }
 
-trait HttpPayloads extends CirceJsonCodecs {
+trait HttpPayloads  {
 
   @JsonCodec case class BBox(
     left: Double,
@@ -99,7 +82,7 @@ trait HttpPayloads extends CirceJsonCodecs {
   )
 
 
-  @JsonCodec case class LabelingReqForm(
+  @JsonCodec case class NewRegionLabel(
     stableId: String,
     labelChoice: Label,
     target: LTarget
@@ -127,8 +110,9 @@ case class Unassign() extends Mod
   update: Mod
 )
 
-trait WorkflowCodecs extends CirceJsonCodecs {
+trait WorkflowCodecs  {
   import circe.generic.semiauto._
+  import R._
 
   // implicit val encoder: Encoder[CurationWorkflowDef] = deriveEncoder
   // implicit val decoder: Decoder[CurationWorkflowDef] = deriveDecoder

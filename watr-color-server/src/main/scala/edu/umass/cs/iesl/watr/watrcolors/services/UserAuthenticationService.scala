@@ -4,14 +4,8 @@ package services
 
 import cats.effect.IO
 import cats.syntax.all._
-// import org.http4s.UrlForm
 import org.http4s.headers.Location
 import org.http4s._
-// import org.http4s.{
-//   HttpService,
-//   Response,
-//   Status
-// }
 import tsec.passwordhashers._
 import tsec.passwordhashers.imports._
 import tsec.authentication._
@@ -26,7 +20,7 @@ import _root_.io.circe, circe._
 import circe.literal._
 import org.http4s.circe._
 
-trait UserAuthenticationServices extends AuthenticatedService {
+trait UserAuthenticationServices extends AuthenticatedService with TypeTagCodecs {
 
   def userAuthenticationServices = signupRoute <+> loginRoute <+> authedUserRoutes
 
@@ -36,9 +30,8 @@ trait UserAuthenticationServices extends AuthenticatedService {
   }
 
 
-
   def userInfoResponse(user: User, authInfo: AuthInfo): Json = {
-    json""" { "email": ${user.email}, "username": ${authInfo.username} , "id": ${user.id}} """
+    json""" { "email": ${user.email.unwrap}, "username": ${authInfo.username.unwrap} , "id": ${user.id.unwrap}} """
   }
 
 

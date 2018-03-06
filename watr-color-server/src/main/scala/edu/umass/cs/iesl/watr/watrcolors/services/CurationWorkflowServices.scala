@@ -15,31 +15,33 @@ import circe.generic.auto._
 import TypeTags._
 import tsec.authentication._
 // import cats.syntax.all._
-import cats.effect.IO
-
+// import cats.effect.IO
 
 import models._
-import circe.parser.decode
-import watrmarks.LabelSchemas
+// import circe.parser.decode
+// import watrmarks.LabelSchemas
 
 
 trait CurationWorkflow extends WorkflowCodecs {
 
   def workflowApi: WorkflowApi
   def userbaseApi: UserbaseApi
+  def corpusLockApi: CorpusLockingApi
   def docStore: DocumentZoningApi
+  def annotApi: DocumentAnnotationApi
 
-  private def getZoneLockJson(zoneLockId: Int@@LockID) = (for {
-    zoneLock   <- workflowApi.getZoneLock(zoneLockId)
-  } yield {
-    val assignee = zoneLock.assignee.map { userbaseApi.getUser(_) }
-    Json.obj(
-      "zonelock" := zoneLock,
-      // "zone"     := docStore.getZone(zoneLock.zone),
-      // "workflow" := workflowApi.getWorkflow(zoneLock.workflow),
-      "assignee" := assignee
-    )
-  })
+  // private def getLockRecord(lockId: Int@@LockID): Option[Json] = (for {
+  //   lockRecord   <- corpusLockApi.getLockRecord(lockId)
+  // } yield {
+  //   // val assignee = zoneLock.assignee.map { userbaseApi.getUser(_) }
+  //   // Json.obj(
+  //   //   "zonelock" := zoneLock,
+  //   //   // "zone"     := docStore.getZone(zoneLock.zone),
+  //   //   // "workflow" := workflowApi.getWorkflow(zoneLock.workflow),
+  //   //   "assignee" := assignee
+  //   // )
+  //   lockRecord.asJson
+  // })
 
 
   def GET_workflows(): Json = {
@@ -56,75 +58,102 @@ trait CurationWorkflow extends WorkflowCodecs {
   }
 
 
-  // Get all assignments for user
-  def GET_curators_assignments(userId: Int@@UserID): Json = {
-    val lockedZones = (for {
-      zoneLockId <- workflowApi.getLockedZones(userId)
-      js <- getZoneLockJson(zoneLockId)
-    } yield js).asJson
+  // // Get all assignments for user
+  // def GET_curators_assignments(userId: Int@@UserID): Json = {
+  //   val lockedZones = (for {
+  //     // zoneLockId <- workflowApi.getLockedZones(userId)
+  //     lockId <- corpusLockApi.getUserLocks(userId)
+  //     js <- getLockRecord(zoneLockId)
+  //   } yield js).asJson
 
-    lockedZones
-  }
+  //   lockedZones
+  // }
 
-  // Get all assignments involving document
-  def GET_documents(stableId: String@@DocumentID): Json = {
-    val lockedZones = (for {
+  // Get all corpus locks involving document
+  def GET_documents(stableId: String@@DocumentID): Json = getLocksForDocument(stableId)
+  def getLocksForDocument(stableId: String@@DocumentID): Json = {
+    val lockRecs = for {
       docId <- docStore.getDocument(stableId).toSeq
-      zoneId <- docStore.getDocumentZones(docId)
-      zoneLockId <- workflowApi.getLockForZone(zoneId)
-      js <- getZoneLockJson(zoneLockId)
-    } yield js).asJson
+      lockId <- corpusLockApi.getDocumentLocks(docId)
+      lockRecord   <- corpusLockApi.getLockRecord(lockId).toSeq
+      workflowId <- workflowApi.listWorkflows(lockRecord.lockPath)
+      workflowRec = workflowApi.getWorkflow(workflowId)
+      lockRecord   <- corpusLockApi.getLockRecord(lockId)
+    } yield Json.obj(
+      "lockRecord" := lockRecord,
+      "workflowRecord" := workflowRec
+    )
 
-    lockedZones
+    lockRecs.asJson
   }
 
 
-  def POST_workflows_assignments(workflowId: String@@WorkflowID, userId: Int@@UserID): Json = {
-    val existingLock  = workflowApi.getLockedZones(userId).headOption
-    lazy val newLock =  workflowApi.lockUnassignedZone(userId, workflowId)
+  // def POST_workflows_assignments(workflowId: String@@WorkflowID, userId: Int@@UserID): Json = {
+  //   val heldLocks = corpusLockApi.getUserLocks(userId)
+  //   if (heldLocks.nonEmpty) {
 
-    val lockedZones = for {
-      zoneLockId  <- existingLock orElse newLock
-      js <- getZoneLockJson(zoneLockId)
-    } yield js
+  //   } else {
 
-    lockedZones.asJson
-  }
+  //     val workflowDef = workflowApi.getWorkflow(workflowId)
+  //     val lockPath = workflowDef.targetPath
+  //     for {
+  //      lockId <-  corpusLockApi.acquireLock(userId, lockPath)
+  //     } yield {
 
-  // Post updates to specific assignment in assignments collection
-  def POST_assignments(zoneLockId: Int@@LockID, mod: WorkflowMod, userId: Int@@UserID): Json = {
-    println(s"got mod ${mod}")
-    mod.update match {
-      case StatusUpdate(newStatus) =>
-        workflowApi.updateZoneStatus(zoneLockId, StatusCode(newStatus))
-        if (newStatus != "Assigned") {
-          workflowApi.releaseZoneLock(zoneLockId)
-        }
-      case Unassign() =>
-        workflowApi.releaseZoneLock(zoneLockId)
-    }
+  //     }
 
-    getZoneLockJson(zoneLockId).asJson
-  }
+  //   }
 
-  def POST_workflows(workflowForm: CurationWorkflowDef): Json = {
-    val maybeSchema = decode[LabelSchemas](workflowForm.labelSchemas)
-    maybeSchema.fold(
-      err => {
-        Json.obj(
-          "error" := "could not create workflow: malformed Json"
-        )
-      }, succ => {
-        val workflowId = workflowApi.defineWorkflow(
-          workflowForm.workflow,
-          workflowForm.description, None,
-          succ,
-          CorpusPath("TODO"),
-          -100
-        )
-        Json.obj("workflowId" := workflowId)
-      })
-  }
+  //   val lockedZones = (for {
+  //     // zoneLockId <- workflowApi.getLockedZones(userId)
+  //     js <- getLockRecord(zoneLockId)
+  //   } yield js).asJson
+
+  //   val existingLock  = workflowApi.getLockedZones(userId).headOption
+  //   lazy val newLock =  workflowApi.lockUnassignedZone(userId, workflowId)
+
+  //   val lockedZones = for {
+  //     zoneLockId  <- existingLock orElse newLock
+  //     js <- getLockRecord(zoneLockId)
+  //   } yield js
+
+  //   lockedZones.asJson
+  // }
+
+  // // Post updates to specific assignment in assignments collection
+  // def POST_assignments(zoneLockId: Int@@LockID, mod: WorkflowMod, userId: Int@@UserID): Json = {
+  //   println(s"got mod ${mod}")
+  //   mod.update match {
+  //     case StatusUpdate(newStatus) =>
+  //       workflowApi.updateZoneStatus(zoneLockId, StatusCode(newStatus))
+  //       if (newStatus != "Assigned") {
+  //         workflowApi.releaseZoneLock(zoneLockId)
+  //       }
+  //     case Unassign() =>
+  //       workflowApi.releaseZoneLock(zoneLockId)
+  //   }
+
+  //   getLockRecord(zoneLockId).asJson
+  // }
+
+  // def POST_workflows(workflowForm: CurationWorkflowDef): Json = {
+  //   val maybeSchema = decode[LabelSchemas](workflowForm.labelSchemas)
+  //   maybeSchema.fold(
+  //     err => {
+  //       Json.obj(
+  //         "error" := "could not create workflow: malformed Json"
+  //       )
+  //     }, succ => {
+  //       val workflowId = workflowApi.defineWorkflow(
+  //         workflowForm.workflow,
+  //         workflowForm.description, None,
+  //         succ,
+  //         CorpusPath("TODO"),
+  //         -100
+  //       )
+  //       Json.obj("workflowId" := workflowId)
+  //     })
+  // }
 
 }
 
@@ -148,69 +177,69 @@ trait CurationWorkflowServices extends CurationWorkflow with AuthenticatedServic
     case req @ GET -> Root / "workflows" / workflowId / "report" asAuthed user =>
       Ok(GET_workflows_report(WorkflowID(workflowId)))
 
-    // Get next assignment for a workflow: returns zoneLockId
-    case req @ POST -> Root / "workflows" / workflowId / "assignments" asAuthed user  =>
-      Ok(POST_workflows_assignments(WorkflowID(workflowId), user.id))
+    // // Get next assignment for a workflow: returns zoneLockId
+    // case req @ POST -> Root / "workflows" / workflowId / "assignments" asAuthed user  =>
+    //   Ok(POST_workflows_assignments(WorkflowID(workflowId), user.id))
 
 
-    case req @ POST -> Root / "workflows" asAuthed user =>
-      // Create a new workflow
-      for {
-        workflowForm <- decodeOrErr[CurationWorkflowDef](req.request)
-        resp          <- Ok(POST_workflows(workflowForm))
-      } yield resp
+    // case req @ POST -> Root / "workflows" asAuthed user =>
+    //   // Create a new workflow
+    //   for {
+    //     workflowForm <- decodeOrErr[CurationWorkflowDef](req.request)
+    //     resp          <- Ok(POST_workflows(workflowForm))
+    //   } yield resp
 
 
-    /** Curators */
-    case req @ GET -> Root / "curators"  asAuthed user  =>
-      // Get all known curators
-      val resp = for {
-        u <- userbaseApi.getUsers()
-      } yield u
+    // /** Curators */
+    // case req @ GET -> Root / "curators"  asAuthed user  =>
+    //   // Get all known curators
+    //   val resp = for {
+    //     u <- userbaseApi.getUsers()
+    //   } yield u
 
-      Ok(resp.asJson)
+    //   Ok(resp.asJson)
 
-    case req @ GET -> Root / "curators" / curatorId / "assignments" asAuthed user  =>
-      // Get list of assignments for curator
-      Ok(GET_curators_assignments(user.id))
+    // case req @ GET -> Root / "curators" / curatorId / "assignments" asAuthed user  =>
+    //   // Get list of assignments for curator
+    //   Ok(GET_curators_assignments(user.id))
 
-    /** Assignments */
-    // Change status for an assignment (zoneLockId)
-    case req @ POST -> Root / "assignments" / IntVar(zoneLockId) asAuthed user =>
-      val resp = for {
+    // /** Assignments */
+    // // Change status for an assignment (zoneLockId)
+    // case req @ POST -> Root / "assignments" / IntVar(zoneLockId) asAuthed user =>
+    //   val resp = for {
 
-        js <- req.request.as[Json]
-        mod <-  IO{  Decoder[WorkflowMod].decodeJson(js).fold(fail => {
-          throw new Throwable(s"error decoding ${js}")
-        }, mod => mod) }
-      } yield {
-        POST_assignments(LockID(zoneLockId), mod, user.id)
-      }
-      Ok(resp)
+    //     js <- req.request.as[Json]
+    //     mod <-  IO{  Decoder[WorkflowMod].decodeJson(js).fold(fail => {
+    //       throw new Throwable(s"error decoding ${js}")
+    //     }, mod => mod) }
+    //   } yield {
+    //     POST_assignments(LockID(zoneLockId), mod, user.id)
+    //   }
+    //   Ok(resp)
 
 
 
-    /** Zones */
-    // Get any assignment status info for a particular zone
-    case req @ GET -> Root / "zones" / IntVar(zoneId) asAuthed user  =>
-      val lockInfo = for {
-        zoneLockId   <- workflowApi.getLockForZone(ZoneID(zoneId))
-        zoneLock   <- workflowApi.getZoneLock(zoneLockId)
-      } yield {
-        val assignee = zoneLock.assignee.map { userbaseApi.getUser(_) }
-        Json.obj(
-          "zonelock" := zoneLock,
-          "zone"     := docStore.getZone(zoneLock.zone),
-          // "workflow" := workflowApi.getWorkflow(zoneLock.workflow),
-          "assignee" := assignee
-        )
-      }
-      val res = lockInfo.getOrElse {
-        Json.obj(
-          "zone"     := docStore.getZone(ZoneID(zoneId)),
-        )
-      }
-      Ok(res)
+    // /** Zones */
+    // // Get any assignment status info for a particular zone
+    // case req @ GET -> Root / "zones" / IntVar(zoneId) asAuthed user  =>
+    //   val lockInfo = for {
+    //     zoneLockId   <- workflowApi.getLockForZone(ZoneID(zoneId))
+    //     zoneLock   <- workflowApi.getZoneLock(zoneLockId)
+    //   } yield {
+    //     val assignee = zoneLock.assignee.map { userbaseApi.getUser(_) }
+    //     Json.obj(
+    //       "zonelock" := zoneLock,
+    //       "zone"     := docStore.getZone(zoneLock.zone),
+    //       // "workflow" := workflowApi.getWorkflow(zoneLock.workflow),
+    //       "assignee" := assignee
+    //     )
+    //   }
+    //   val res = lockInfo.getOrElse {
+    //     Json.obj(
+    //       "zone"     := docStore.getZone(ZoneID(zoneId)),
+    //     )
+    //   }
+    //   Ok(res)
 
 
 

@@ -98,13 +98,15 @@ class CorpusAccessDBTables extends DoobieImplicits {
     val drop = sql""" DROP TABLE IF EXISTS workflow; """.update
 
     val create =
-      sql"""
-         CREATE TABLE IF NOT EXISTS workflow (
-           workflow          VARCHAR(128) PRIMARY KEY,
-           labelschema       INTEGER REFERENCES labelschema,
-           targetPath        LTREE
-         )
-      """.update
+      sql"""|
+            |  CREATE TABLE IF NOT EXISTS workflow (
+            |    workflow          VARCHAR(128) PRIMARY KEY,
+            |    labelschema       INTEGER REFERENCES labelschema NOT NULL,
+            |    targetPath        LTREE
+            |  );
+            | CREATE        INDEX workflow_path_gist  ON workflow using gist(targetPath);
+            | CREATE UNIQUE INDEX workflow_path_btree ON workflow using btree(targetPath);
+            |""".stripMargin.update
 
   }
 

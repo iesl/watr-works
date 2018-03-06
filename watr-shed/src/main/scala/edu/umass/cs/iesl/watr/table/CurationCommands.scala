@@ -28,21 +28,20 @@ object CurationCommands {
 
 
     def reset()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
-      recreateCurationTables()
+      unsafeDropRecreateEverything()
       defineTestrunWorkflow()
       moveDocsToDryrunPath(3)
     }
 
-    def recreateCurationTables()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    def unsafeDropRecreateEverything()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val tables = corpusAccessApi.corpusAccessDB.tables
 
-      // corpusAccessApi.corpusAccessDB.runqOnce{
-      //   for {
-      //     _ <- tables.dropCurationTables()
-      //     _ <- tables.createCurationTables()
-      //   } yield ()
-      // }
-      ???
+      corpusAccessApi.corpusAccessDB.runqOnce{
+        for {
+          _ <- tables.dropAll()
+          _ <- tables.createAll()
+        } yield ()
+      }
     }
 
 
@@ -58,6 +57,8 @@ object CurationCommands {
 
     def defineTestrunWorkflow()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val workflowApi = corpusAccessApi.workflowApi
+      val annotApi = corpusAccessApi.annotApi
+      val schemaId = annotApi.createLabelSchema(ExampleLabelSchemas.headerLabelSchema)
 
       workflowApi.defineWorkflow(
         "headers-dryrun-1",
@@ -69,6 +70,10 @@ object CurationCommands {
 
 
   object display {
+
+    def locks(): Unit = {
+
+    }
 
     def curators()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val userbaseApi = corpusAccessApi.userbaseApi
@@ -143,7 +148,7 @@ object CurationCommands {
     //   db.annotApi.updateAnnotationStatus(annotId, status)
     // }
 
-    def updateBody(annotId: Int@@AnnotationID, body: String)(implicit
+    def updateBody(annotId: Int@@AnnotationID, body: AnnotationBody)(implicit
       corpusAccessApi: CorpusAccessApi
     ): Unit = {
       val db = corpusAccessApi.corpusAccessDB

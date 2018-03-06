@@ -30,7 +30,6 @@ sealed trait Length
 sealed trait Percent
 sealed trait ScalingFactor
 
-sealed trait LockGroupID
 sealed trait LockID
 sealed trait LabelerID
 sealed trait WorkflowID
@@ -109,7 +108,6 @@ trait TypeTags extends TypeTagUtils {
 
   val ImageID = Tag.of[ImageID]
 
-  val LockGroupID = Tag.of[LockGroupID]
   val LockID = Tag.of[LockID]
   val LabelerID = Tag.of[LabelerID]
   val WorkflowID = Tag.of[WorkflowID]
@@ -133,11 +131,57 @@ trait TypeTags extends TypeTagUtils {
   val LabelSchemaName = Tag.of[LabelSchemaName]
 }
 
+
 trait TypeTagCodecs {
+  import TypeTags._
   import _root_.io.circe
   import circe._
+
+  // import cats._
 
   implicit def Enc_IntTypeTags[T]: Encoder[Int@@T] = Encoder.encodeInt.contramap(_.unwrap)
   implicit def Enc_StringTypeTags[T]: Encoder[String@@T] = Encoder.encodeString.contramap(_.unwrap)
 
+  implicit val Enc_Str_DocumentID: Encoder[String@@DocumentID] = Encoder.encodeString.contramap(_.unwrap)
+  implicit val Dec_Str_DocumentID: Decoder[String@@DocumentID] = Decoder.decodeString.map(DocumentID(_))
+
+  implicit val Enc_Int_DocumentID: Encoder[Int@@DocumentID] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_DocumentID: Decoder[Int@@DocumentID] = Decoder.decodeInt.map(DocumentID(_))
+
+  implicit val Enc_Int_PageID: Encoder[Int@@PageID] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_PageID: Decoder[Int@@PageID] = Decoder.decodeInt.map(PageID(_))
+
+  implicit val Enc_Int_PageNum: Encoder[Int@@PageNum] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_PageNum: Decoder[Int@@PageNum] = Decoder.decodeInt.map(PageNum(_))
+
+  implicit val Enc_Int_UserID: Encoder[Int@@UserID] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_UserID: Decoder[Int@@UserID] = Decoder.decodeInt.map(UserID(_))
+
+  implicit val Enc_String_EmailAddr: Encoder[String@@EmailAddr] = Encoder.encodeString.contramap(_.unwrap)
+  implicit val Dec_String_EmailAddr: Decoder[String@@EmailAddr] = Decoder.decodeString.map(EmailAddr(_))
+
+  implicit val Enc_String_WorkflowID: Encoder[String@@WorkflowID] = Encoder.encodeString.contramap(_.unwrap)
+  implicit val Dec_String_WorkflowID: Decoder[String@@WorkflowID] = Decoder.decodeString.map(WorkflowID(_))
+
+  implicit val Enc_String_CorpusPath: Encoder[String@@CorpusPath] = Encoder.encodeString.contramap(_.unwrap)
+  implicit val Dec_String_CorpusPath: Decoder[String@@CorpusPath] = Decoder.decodeString.map(CorpusPath(_))
+
+  implicit val Enc_String_StatusCode: Encoder[String@@StatusCode] = Encoder.encodeString.contramap(_.unwrap)
+  implicit val Dec_String_StatusCode: Decoder[String@@StatusCode] = Decoder.decodeString.map(StatusCode(_))
+
+
+  implicit val Enc_Int_LockID: Encoder[Int@@LockID] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_LockID: Decoder[Int@@LockID] = Decoder.decodeInt.map(LockID(_))
+
+  implicit val Enc_Int_AnnotationID: Encoder[Int@@AnnotationID] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_AnnotationID: Decoder[Int@@AnnotationID] = Decoder.decodeInt.map(AnnotationID(_))
+
+  // implicit val Dec_IntTypeTag[T]: Decoder[Int@@T] = Decoder.decodeInt.map(T)
+
+  // implicit val Enc_XX: Encoder[XX] = deriveEncoder
+  // implicit val Enc_Label: Encoder[Label] = Encoder.encodeString.contramap(_.fqn)
+  // implicit val Dec_Label: Decoder[Label] = Decoder.decodeString.map(Label(_))
+
 }
+
+object TypeTagCodecs extends TypeTagCodecs

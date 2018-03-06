@@ -22,6 +22,8 @@ import TypeTags._
 
   */
 
+import TypeTagCodecs._
+
 case class StablePage(
   stableId: String@@DocumentID,
   pageNum: Int@@PageNum,
@@ -33,16 +35,13 @@ case class StablePage(
 
 case class PageRegion(
   page: StablePage,
-  bbox: LTBounds,
-  regionId: Int@@RegionID = RegionID(-1)
-) {
-  def id: Int@@RegionID = regionId
-}
+  bbox: LTBounds
+)
 
 object PageRegion {
   implicit val EqualPageRegion: Equal[PageRegion] =
     Equal.equal{
-      case (PageRegion(p1, bbox1, _), PageRegion(p2, bbox2, _)) =>
+      case (PageRegion(p1, bbox1), PageRegion(p2, bbox2)) =>
         p1 == p2 && bbox1 === bbox2
 
       // case (a, b) => (a.idOpt, b.idOpt) match
@@ -152,14 +151,6 @@ object CharAtom {
     Equal.equal((a, b)  => a.id==b.id )
 }
 
-case class Zone(
-  id: Int@@ZoneID,
-  regions: Seq[PageRegion],
-  label: Label,
-  order: Int,
-  glyphDefs: Option[String] = None
-)
-
 
 object PageComponentImplicits {
   def createPageRegionUri(stableId: String@@DocumentID, pageNum:Int@@PageNum, bbox: LTBounds): String = {
@@ -218,4 +209,3 @@ object PageComponentImplicits {
 
   }
 }
-

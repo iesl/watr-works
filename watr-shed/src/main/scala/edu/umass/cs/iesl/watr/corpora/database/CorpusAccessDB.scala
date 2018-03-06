@@ -27,7 +27,7 @@ import watrmarks._
 import TypeTags._
 import shapeless._
 
-import _root_.io.circe, circe.syntax._
+import _root_.io.circe, circe.syntax._, circe._
 import utils.DoOrDieHandlers._
 
 class CorpusAccessDB(
@@ -404,12 +404,18 @@ class CorpusAccessDB(
     }
 
 
-    def deleteWorkflow(workflowId:String@@WorkflowID): Unit = {
+    def deleteWorkflow(workflowId:String@@WorkflowID): Unit = runq {
       sql""" DELETE FROM workflow WHERE workflow = ${workflowId} """.update.run
     }
 
     def getWorkflows(): Seq[String@@WorkflowID] = runq {
-      sql""" select workflow from workflow """.query[String@@WorkflowID].to[List]
+      sql""" select workflow from workflow """.query[String@@WorkflowID].to[Vector]
+    }
+
+    def listWorkflows(path:String@@CorpusPath): Seq[String@@WorkflowID] = runq {
+      sql"""| select workflow from workflow
+            | where targetPath = text2ltree(${path})
+            |""".stripMargin.query[String@@WorkflowID].to[Vector]
     }
 
 
@@ -424,13 +430,12 @@ class CorpusAccessDB(
               )
               select count(*)
                 from   corpuslock cl
-                where  cl.lockPath ~ targetPath
+                where  cl.lockPath = (select * from targetPath)
                   AND  cl.status=${status}
               """.query[Int].unique
         }
         (status, statusCount)
       }
-      // select count(*) from zonelock where status=${status} AND workflow=${workflowId}
       val assigneeCounts  = runq {
         sql"""
               WITH targetPath as (
@@ -438,16 +443,10 @@ class CorpusAccessDB(
               )
               select p.person, p.email, cl.status, count(corpuslock)
               from corpuslock cl join person p on (cl.holder=p.person)
-              where cl.lockPath = targetPath AND cl.holder is not null
+              where cl.lockPath = (select * from targetPath) AND cl.holder is not null
               group by p.person, cl.status
          """.query[(Int@@UserID, String@@EmailAddr, String@@StatusCode, Int)].to[List]
       }
-
-      // val assigneeNames  = runq {
-      //   sql"""
-      //      select distinct assignee, email from zonelock z join person p on z.assignee=p.person where workflow=${workflowId};
-      //    """.query[(Int@@UserID, String@@EmailAddr)].to[List]
-      // }
 
       WorkflowReport(
         statusCounts.toMap,
@@ -646,14 +645,14 @@ class CorpusAccessDB(
     }
 
 
-    def listAnnotations(pathQuery: String@@CorpusPathQuery): Seq[Int@@AnnotationID] = runq {
+    def listPathAnnotations(pathQuery: String@@CorpusPathQuery): Seq[Int@@AnnotationID] = runq {
       sql"""
             SELECT annotation FROM annotation
             WHERE annotPath ~ ${pathQuery.unwrap}::lquery
         """.query[Int@@AnnotationID].to[Vector]
     }
 
-    def listAnnotations(userId: Int@@UserID, path: Option[String@@CorpusPathQuery]): Seq[Int@@AnnotationID] = runq {
+    def listUserAnnotations(userId: Int@@UserID, path: Option[String@@CorpusPathQuery]): Seq[Int@@AnnotationID] = runq {
       path match {
         case Some(query) =>
           sql"""
@@ -668,10 +667,19 @@ class CorpusAccessDB(
             """.query[Int@@AnnotationID].to[Vector]
       }
     }
+    def listDocumentAnnotations(docId: Int@@DocumentID): Seq[Int@@AnnotationID] = runq {
+      sql"""|
+            |SELECT annotation FROM annotation
+            |WHERE document = ${docId}
+            |""".stripMargin
+        .query[Int@@AnnotationID].to[Vector]
+    }
 
 
-    def updateBody(annotId: Int@@AnnotationID, body: String): Unit =  runq {
-      sql"""UPDATE annotation SET body=${body} WHERE annotation=${annotId} """.update.run
+    def updateBody(annotId: Int@@AnnotationID, body: AnnotationBody): Unit =  runq {
+      val bodyJson = body.asJson.noSpaces
+
+      sql"""UPDATE annotation SET body=${bodyJson} WHERE annotation=${annotId} """.update.run
     }
 
     def deleteAnnotation(annotId: Int@@AnnotationID): Unit =  runq {

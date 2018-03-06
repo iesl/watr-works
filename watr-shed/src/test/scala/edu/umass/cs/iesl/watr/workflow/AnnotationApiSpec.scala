@@ -3,6 +3,7 @@ package workflow
 
 import corpora.database.DatabaseTest
 import watrmarks._
+import TypeTags._
 
 class AnnotationApiSpec extends DatabaseTest with UserbaseTestHelpers {
 
@@ -80,7 +81,6 @@ class AnnotationApiSpec extends DatabaseTest with UserbaseTestHelpers {
     annots.head shouldBe annotId
   }
 
-  import TypeTags._
 
   it should "set annotation paths and filter queries on paths" in new EmptyDatabase {
     val corpusSize = 2

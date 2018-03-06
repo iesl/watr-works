@@ -23,12 +23,14 @@ import corpora.filesys._
 import models._
 import persistence._
 import tsec.authentication._
-import tsec.cipher.symmetric.imports.AES128
+// import tsec.cipher.symmetric.imports.AES128
+import tsec.cipher.symmetric.imports.{AES128, AES128GCM, SecretKey}
 import models.users._
 import scala.concurrent.duration._
 import corpora.database.CorpusAccessDB
 
 trait AuthenticationHandlers extends Http4sDsl[IO] {
+
 
   def corpusAccessDB: CorpusAccessDB
   def userStore: UserStore
@@ -47,6 +49,8 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
   )
 
   def symmetricKey = AES128.generateKeyUnsafe()
+  implicit val encryptor = AES128GCM.genEncryptor[IO].unsafeRunSync()
+  implicit val gcmstrategy = AES128GCM.defaultIvStrategy
 
   lazy val authenticator: EncryptedCookieAuthenticator[IO, Int, User, AES128] =
     EncryptedCookieAuthenticator.withBackingStore[IO, Int, User, AES128](
@@ -60,7 +64,7 @@ trait AuthenticationHandlers extends Http4sDsl[IO] {
   lazy val UserAwareService = WSecureRequestHandler(authenticator)
 }
 
-trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs with HttpPayloads { self =>
+trait ServiceCommons extends Http4sDsl[IO] with  HttpPayloads { self =>
 
   def corpusAccessApi: CorpusAccessApi
 
@@ -68,6 +72,8 @@ trait ServiceCommons extends Http4sDsl[IO] with CirceJsonCodecs with HttpPayload
   lazy val userbaseApi = corpusAccessApi.userbaseApi
   lazy val docStore = corpusAccessApi.docStore
   lazy val corpus: Corpus = corpusAccessApi.corpus
+  lazy val annotApi: DocumentAnnotationApi = corpusAccessApi.annotApi
+  lazy val corpusLockApi: CorpusLockingApi = corpusAccessApi.corpusLockApi
 
 
   object StatusQP extends QueryParamDecoderMatcher[String]("status")

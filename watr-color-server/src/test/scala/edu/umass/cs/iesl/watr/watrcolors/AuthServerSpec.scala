@@ -16,6 +16,7 @@ import cats.effect._
 import cats.data._
 import corpora._
 import tsec.authentication._
+import workflow._
 
 // import tsec.cipher.symmetric.imports.AES128
 import scala.concurrent.duration._
@@ -128,6 +129,8 @@ class AuthenticationSpec extends DatabaseFreeSpec with MockAuthentication {
     lazy val userStore = UserStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
     lazy val authStore = PasswordStore.fromDb(corpusAccessApi.corpusAccessDB).unsafeRunSync()
     lazy val tokenStore = MemTokenStore.apply.unsafeRunSync()
+    // lazy val annotApi: DocumentAnnotationApi = corpusAccessApi.annotApi
+    // lazy val corpusLockApi: CorpusLockingApi = corpusAccessApi.corpusLockApi
 
   }
 

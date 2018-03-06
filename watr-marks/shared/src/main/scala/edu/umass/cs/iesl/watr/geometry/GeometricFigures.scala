@@ -593,8 +593,15 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
   import circe._
   import circe.generic.semiauto._
 
+  implicit val Enc_Int_FloatRep: Encoder[Int@@FloatRep] = Encoder.encodeInt.contramap(_.unwrap)
+  implicit val Dec_Int_FloatRep: Decoder[Int@@FloatRep] = Decoder.decodeInt.map(FloatRep(_))
+
   implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
   implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
   implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
+
+  implicit val Dec_LTBounds: Decoder[LTBounds] = deriveDecoder
+  implicit val Dec_StablePage: Decoder[StablePage] = deriveDecoder
+  implicit val Dec_PageRegion: Decoder[PageRegion] = deriveDecoder
 
 }

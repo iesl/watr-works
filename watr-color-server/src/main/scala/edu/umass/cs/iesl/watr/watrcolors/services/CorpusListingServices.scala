@@ -28,29 +28,24 @@ trait CorpusListingServices extends Http4sDsl[IO] with ServiceCommons with Workf
 
       val entries = (for {
         (stableId, i) <- docStore.getDocuments(get, skip).zipWithIndex
+        docId <- docStore.getDocument(stableId)
       } yield {
-
-        val docLabels = (for {
-          docId <- docStore.getDocument(stableId).toList
-        } yield for {
-          labelId <- docStore.getZoneLabelsForDocument(docId)
-        } yield {
-          docStore.getLabel(labelId).asJson
-        }).asJson
+        val annots = annotApi.listDocumentAnnotations(docId)
+        val annotCount = annots.length
 
         Json.obj(
-          ("num", Json.fromInt(skip+i)),
-          ("stableId", Json.fromString(stableId.unwrap)),
-          ("labels", docLabels)
+          "num" := skip+i,
+          "stableId" := stableId.unwrap,
+          "labelCount" := annotCount
         )
 
       }).asJson
 
       Ok(
         Json.obj(
-          ("corpusSize", Json.fromInt(docCount)),
-          ("entries", entries),
-          ("start", Json.fromInt(skip))
+          "corpusSize" := Json.fromInt(docCount),
+          "entries" := entries,
+          "start" := Json.fromInt(skip)
         )
       )
   }

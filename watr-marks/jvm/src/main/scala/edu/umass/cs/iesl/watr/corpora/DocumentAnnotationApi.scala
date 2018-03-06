@@ -3,10 +3,15 @@ package corpora
 
 
 import watrmarks._
+import geometry._
 
-sealed trait Annotation
+import io.circe.generic.JsonCodec
 
-object Annotation {
+
+@JsonCodec
+sealed trait AnnotationBody
+
+object AnnotationBody extends GeometricFigureCodecs {
 
   // Zone = Ordered list of rectangles + Label Name
   //      + (optional) Textgrid
@@ -14,9 +19,15 @@ object Annotation {
   //      + (optional) tags (e.g., SynthesisPara, ExperimentalSection)
   //      + (optional) user-text, notes
 
-  // Anchor
+  @JsonCodec
+  case class Zone(
+    regions: Seq[PageRegion],
+    label: Label,
+    textGridDef: Option[String] = None
+  ) extends AnnotationBody
 
 }
+
 trait DocumentAnnotationApi {
   val Rel = RelationModel
 
@@ -28,10 +39,11 @@ trait DocumentAnnotationApi {
 
   def setCorpusPath(annotId: Int@@AnnotationID, path: String@@CorpusPath): Unit
 
-  def updateBody(annotId: Int@@AnnotationID, body: String): Unit
+  def updateBody(annotId: Int@@AnnotationID, body: AnnotationBody): Unit
 
-  def listAnnotations(path: String@@CorpusPathQuery): Seq[Int@@AnnotationID]
-  def listAnnotations(userId: Int@@UserID, path: Option[String@@CorpusPathQuery]): Seq[Int@@AnnotationID]
+  def listPathAnnotations(path: String@@CorpusPathQuery): Seq[Int@@AnnotationID]
+  def listUserAnnotations(userId: Int@@UserID, path: Option[String@@CorpusPathQuery]): Seq[Int@@AnnotationID]
+  def listDocumentAnnotations(docId: Int@@DocumentID): Seq[Int@@AnnotationID]
 
   def createLabelSchema(labelSchema: LabelSchemas): Int@@LabelSchemaID
   def getLabelSchema(schemaId: Int@@LabelSchemaID): LabelSchemas
