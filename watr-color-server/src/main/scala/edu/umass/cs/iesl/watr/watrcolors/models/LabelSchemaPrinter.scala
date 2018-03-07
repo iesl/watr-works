@@ -54,6 +54,7 @@ object LabelSchemaPrinter extends App with utils.AppMainBasics {
     val Country     = Label.auto
     val Zip         = Label.auto
     val Email       = Label.auto
+    val ContactNumber = Label.auto
     val Other       = Label.auto
 
     val Keywords       = Label.auto
@@ -76,7 +77,9 @@ object LabelSchemaPrinter extends App with utils.AppMainBasics {
           LabelSchema(Region      , None, Some("Region in which a  city is located.  States in USA or Canada, or Counties/Regions in Europe etc."), List()),
           LabelSchema(Zip         , None, Some("Postal code"), List()),
           LabelSchema(Country     , None, None, List()),
+          LabelSchema(Author),
           LabelSchema(Email),
+          LabelSchema(ContactNumber),
           LabelSchema(NoteMarker),
           LabelSchema(Other       , None, Some("Anything not matching another category"), List())
         ))
