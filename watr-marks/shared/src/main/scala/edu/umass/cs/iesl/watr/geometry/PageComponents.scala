@@ -4,8 +4,9 @@ package geometry
 import scalaz.Equal
 import geometry.syntax._
 import scalaz.syntax.equal._
-import watrmarks._
-import TypeTags._
+
+import _root_.io.circe, circe.syntax._, circe._
+import io.circe.generic._
 
 /**
 
@@ -22,30 +23,42 @@ import TypeTags._
 
   */
 
-import TypeTagCodecs._
+// import TypeTagCodecs._
+import GeometryCodecs._
 
+
+@JsonCodec
+sealed trait StableIdentifier {
+  def stableId: String@@DocumentID
+}
+
+@JsonCodec
+case class StableDocument(
+  stableId: String@@DocumentID,
+) extends StableIdentifier
+
+@JsonCodec
 case class StablePage(
   stableId: String@@DocumentID,
-  pageNum: Int@@PageNum,
-  pageId: Int@@PageID = PageID(-1)
-) {
+  pageNum: Int@@PageNum
+) extends StableIdentifier {
   override def toString = s"""${stableId}/pg${pageNum}"""
 }
 
 
+@JsonCodec
 case class PageRegion(
   page: StablePage,
   bbox: LTBounds
-)
+) extends StableIdentifier {
+  def stableId: String@@DocumentID = page.stableId
+}
 
 object PageRegion {
   implicit val EqualPageRegion: Equal[PageRegion] =
     Equal.equal{
       case (PageRegion(p1, bbox1), PageRegion(p2, bbox2)) =>
         p1 == p2 && bbox1 === bbox2
-
-      // case (a, b) => (a.idOpt, b.idOpt) match
-
     }
 }
 
@@ -159,19 +172,19 @@ object PageComponentImplicits {
 
   implicit class RicherPageRegion(val thePageRegion: PageRegion) extends AnyVal {
     def union(r: PageRegion): PageRegion = {
-      if (thePageRegion.page.pageId != r.page.pageId) {
+      if (thePageRegion.page != r.page) {
         sys.error(s"""cannot union thePageRegions from different pages: ${thePageRegion} + ${r}""")
       }
       thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
     }
 
-    def intersects(pageId: Int@@PageID, bbox: LTBounds): Boolean = {
-      val samePage = thePageRegion.page.pageId == pageId
-      samePage && (thePageRegion.bbox intersects bbox)
-    }
-    def intersects(r: PageRegion): Boolean = {
-      intersects(r.page.pageId, r.bbox)
-    }
+    // def intersects(pageId: Int@@PageID, bbox: LTBounds): Boolean = {
+    //   val samePage = thePageRegion.page.pageId == pageId
+    //   samePage && (thePageRegion.bbox intersects bbox)
+    // }
+    // def intersects(r: PageRegion): Boolean = {
+    //   intersects(r.page.pageId, r.bbox)
+    // }
 
 
     def intersection(b: LTBounds): Option[PageRegion] = {

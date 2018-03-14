@@ -8,6 +8,7 @@ import utils.DoOrDieHandlers._
 
 import workflow._
 import textboxing.{TextBoxing => TB}, TB._
+import geometry._
 
 object CurationCommands {
 
@@ -58,7 +59,7 @@ object CurationCommands {
     def defineTestrunWorkflow()(implicit corpusAccessApi: CorpusAccessApi): Unit = {
       val workflowApi = corpusAccessApi.workflowApi
       val annotApi = corpusAccessApi.annotApi
-      val schemaId = annotApi.createLabelSchema(ExampleLabelSchemas.headerLabelSchema)
+      annotApi.createLabelSchema(ExampleLabelSchemas.headerLabelSchema)
 
       workflowApi.defineWorkflow(
         "headers-dryrun-1",
@@ -165,17 +166,19 @@ object CurationCommands {
     )(implicit corpusAccessApi: CorpusAccessApi): Int@@AnnotationID = {
       val db = corpusAccessApi.corpusAccessDB
       val users = corpusAccessApi.userbaseApi
-      (for {
-        docId <- corpusAccessApi.docStore.getDocument(stableId)
-        userId <- users.getUserByEmail(userEmail)
-      } yield {
-        val annotId = db.annotApi.createAnnotation(docId)
-        db.annotApi.assignOwnership(annotId, userId)
-        val path = db.workflowApi.getWorkflow(workflowId).targetPath
-        db.annotApi.setCorpusPath(annotId, path)
-        annotId
 
-      }).orDie("createAnnotation")
+      // (for {
+      //   docId <- corpusAccessApi.docStore.getDocument(stableId)
+      //   userId <- users.getUserByEmail(userEmail)
+      // } yield {
+      //   val annotId = db.annotApi.createAnnotation(StableDocument(stableId))
+      //   db.annotApi.assignOwnership(annotId, userId)
+      //   val path = db.workflowApi.getWorkflow(workflowId).targetPath
+      //   db.annotApi.setCorpusPath(annotId, path)
+      //   annotId
+      // }).orDie("createAnnotation")
+
+      ???
     }
 
   }

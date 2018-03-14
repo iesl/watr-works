@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package textgrid
 
 // import watrmarks.{StandardLabels => LB}
-import TypeTags._
+// import TypeTags._
 
 trait TextGridConstruction {
   import geometry._
@@ -52,8 +52,8 @@ trait TextGridConstruction {
     maybePageId: Option[Int@@PageID]
   ): TextGrid = {
 
-    val pageId = maybePageId.getOrElse { PageID(pageNum.unwrap) }
-    val stablePage = StablePage(stableId, pageNum, pageId)
+    // val pageId = maybePageId.getOrElse { PageID(pageNum.unwrap) }
+    val stablePage = StablePage(stableId, pageNum)
     val pageLines = linesWithLeftPadding(pageBlock)
 
     val rows = for {

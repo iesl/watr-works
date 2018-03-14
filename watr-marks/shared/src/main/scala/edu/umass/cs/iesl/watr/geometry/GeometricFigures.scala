@@ -195,24 +195,12 @@ object Point {
 
 }
 
-sealed trait Axis
-object Axis {
-  final case object XAxis extends Axis
-  final case object YAxis extends Axis
-}
-
 case class Line(
   p1: Point, p2: Point
 ) extends GeometricFigure {
   override def toString: String = this.prettyPrint
 }
 
-case class AxisAlignedLine(
-  p1: Point, len: Int@@FloatRep,
-  alignment: Axis
-) extends GeometricFigure {
-  // override def toString: String = this.prettyPrint
-}
 case class Trapezoid(
   topLeft: Point,
   topWidth: Int@@FloatRep,
@@ -223,6 +211,7 @@ case class Trapezoid(
   def height(): Int@@FloatRep = bottomLeft.y - topLeft.y
 
 }
+
 object Trapezoid {
 
   def isHorizontal(l: Line): Boolean = l.p1.y==l.p2.y
@@ -605,3 +594,5 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
   implicit val Dec_PageRegion: Decoder[PageRegion] = deriveDecoder
 
 }
+
+object GeometryCodecs extends GeometricFigureCodecs

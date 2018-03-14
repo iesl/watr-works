@@ -156,7 +156,7 @@ class TextOutputBuilder(textGrid: TextGrid) {
 
 protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
 
-  val pageIdMap = mutable.Map[Int@@PageID, (String@@DocumentID, Int@@PageNum)]()
+  // val pageIdMap = mutable.Map[Int@@PageID, (String@@DocumentID, Int@@PageNum)]()
   val lineMap = mutable.Map[Int, (Json, String)]()
 
   def decodeGrid(js: Json): TextGrid = {
@@ -310,9 +310,9 @@ protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
         val pageNum = page.pageNum
 
 
-        if (!pageIdMap.contains(page.pageId)) {
-          pageIdMap.put(page.pageId, (page.stableId, page.pageNum))
-        }
+        // if (!pageIdMap.contains(page.pageId)) {
+        //   pageIdMap.put(page.pageId, (page.stableId, page.pageNum))
+        // }
 
         val LTBounds.IntReps(l, t, w, h) = pageItem.bbox
         Json.arr(

@@ -10,7 +10,7 @@ import io.circe.generic._
 import io.circe.generic.auto._
 import geometry._
 
-import TypeTags._
+// import TypeTags._
 
 import java.time.Instant
 
@@ -59,15 +59,27 @@ object RelationModel extends GeometricFigureCodecs {
     status     : String@@StatusCode
   )
 
-  @JsonCodec
-  case class AnnotationRec(
-    id         : Int@@AnnotationID,
-    document   : Int@@DocumentID,
-    owner      : Option[Int@@UserID],
-    annotPath  : Option[String@@CorpusPath],
-    created    : java.time.Instant,
-    body       : Option[String]
+  case class AnnotationRec_(
+    id             : Int@@AnnotationID,
+    document       : Int@@DocumentID,
+    owner          : Option[Int@@UserID],
+    annotPath      : Option[String@@CorpusPath],
+    created        : java.time.Instant,
+    label          : String,
+    location       : String,
+    body           : Option[String]
   )
 
+  @JsonCodec
+  case class AnnotationRec(
+    id             : Int@@AnnotationID,
+    document       : Int@@DocumentID,
+    owner          : Option[Int@@UserID],
+    annotPath      : Option[String@@CorpusPath],
+    created        : java.time.Instant,
+    label          : Label,
+    location       : AnnotatedLocation,
+    body           : Option[AnnotationBody]
+  )
 
 }

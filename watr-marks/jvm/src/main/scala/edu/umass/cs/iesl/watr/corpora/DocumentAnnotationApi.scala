@@ -1,12 +1,42 @@
 package edu.umass.cs.iesl.watr
 package corpora
 
-
 import watrmarks._
 import geometry._
 
 import io.circe.generic.JsonCodec
 
+import utils.DoOrDieHandlers._
+
+@JsonCodec
+sealed trait AnnotatedLocation {
+  def stableId: String@@DocumentID
+}
+
+
+object AnnotatedLocation extends GeometricFigureCodecs {
+
+  @JsonCodec
+  case class Location(
+    location: StableIdentifier
+  ) extends AnnotatedLocation {
+    def stableId: String@@DocumentID = location.stableId
+
+  }
+
+  @JsonCodec
+  case class Zone(
+    regions: Seq[PageRegion]
+  ) extends AnnotatedLocation {
+
+    def stableId: String@@DocumentID = {
+      val r0 = regions.headOption.orDie("No regions in Zone")
+      r0.stableId
+    }
+
+  }
+
+}
 
 @JsonCodec
 sealed trait AnnotationBody
@@ -20,10 +50,8 @@ object AnnotationBody extends GeometricFigureCodecs {
   //      + (optional) user-text, notes
 
   @JsonCodec
-  case class Zone(
-    regions: Seq[PageRegion],
-    label: Label,
-    textGridDef: Option[String] = None
+  case class TextGrid(
+    textGridDef: String
   ) extends AnnotationBody
 
 }
@@ -31,7 +59,8 @@ object AnnotationBody extends GeometricFigureCodecs {
 trait DocumentAnnotationApi {
   val Rel = RelationModel
 
-  def createAnnotation(docId: Int@@DocumentID): Int@@AnnotationID
+  def createAnnotation(label: Label, labeledRegion: AnnotatedLocation): Int@@AnnotationID
+
   def deleteAnnotation(annotId: Int@@AnnotationID): Unit
   def getAnnotationRecord(annotId: Int@@AnnotationID): Rel.AnnotationRec
 
@@ -40,6 +69,7 @@ trait DocumentAnnotationApi {
   def setCorpusPath(annotId: Int@@AnnotationID, path: String@@CorpusPath): Unit
 
   def updateBody(annotId: Int@@AnnotationID, body: AnnotationBody): Unit
+  def updateLocation(annotId: Int@@AnnotationID, loc: AnnotatedLocation): Unit
 
   def listPathAnnotations(path: String@@CorpusPathQuery): Seq[Int@@AnnotationID]
   def listUserAnnotations(userId: Int@@UserID, path: Option[String@@CorpusPathQuery]): Seq[Int@@AnnotationID]

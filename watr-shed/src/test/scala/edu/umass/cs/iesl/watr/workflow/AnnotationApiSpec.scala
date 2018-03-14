@@ -3,12 +3,15 @@ package workflow
 
 import corpora.database.DatabaseTest
 import watrmarks._
+import geometry._
 import TypeTags._
+import corpora._
 
 class AnnotationApiSpec extends DatabaseTest with UserbaseTestHelpers {
 
   import _root_.io.circe, circe.syntax._
   import utils.DoOrDieHandlers._
+  val Math: Label = Label.auto
 
   it should "serialize/unserialize schemas" in {
     {
@@ -46,39 +49,77 @@ class AnnotationApiSpec extends DatabaseTest with UserbaseTestHelpers {
 
   }
 
+
   it should "create/delete annotations on a document" in new EmptyDatabase {
     val corpusSize = 2
     val stableIds = addDummyDocs(corpusSize)
-    // val userIds = initUsers(1)
-    // val stableId0 = docStore.getDocuments(1, 0).head
-    val docId0 = docStore.getDocument(stableIds.head).get
-    val annotId = annotApi.createAnnotation(docId0)
+
+    val stableId0 = stableIds.head
+    val docId0 = docStore.getDocument(stableId0).get
+    val pageId0 = docStore.getPage(docId0, PageNum(0)).get
+    val stablePage0 = docStore.getPageIdentifier(pageId0)
 
     {
+      val loc = AnnotatedLocation.Location(StableDocument(stableId0))
+      val annotId = annotApi.createAnnotation(Math, loc)
       val annot = annotApi.getAnnotationRecord(annotId)
-      println(s"Annot = ${annot}")
+      annot.location shouldBe loc
+      // println(s"Annot = ${annot}")
     }
+    {
+      val loc = AnnotatedLocation.Location(StableDocument(stableId0))
+      val annotId = annotApi.createAnnotation(Math, loc)
+      val annot = annotApi.getAnnotationRecord(annotId)
+      // println(s"Annot = ${annot}")
 
-    annotApi.updateBody(annotId, "{}")
+      annot.location shouldBe loc
+
+      val loc2 = AnnotatedLocation.Zone(List(
+        PageRegion(stablePage0, LTBounds.Ints(10, 20, 30, 40))
+      ))
+
+      // val jsonStr = loc2.asJson.spaces2
+
+
+      annotApi.updateLocation(annotId, loc2)
+
+      val annot2 = annotApi.getAnnotationRecord(annotId)
+
+      val jsonStr = annot2.asJson.spaces2
+      println(jsonStr)
+      // println(s"Annot2 = ${annot2}")
+
+      annot2.location shouldBe loc2
+    }
 
     {
+      val bbox = LTBounds.Ints(10, 20, 30, 40)
+      val loc = AnnotatedLocation.Zone(List(
+        PageRegion(stablePage0, bbox)
+      ))
+      val annotId = annotApi.createAnnotation(Math, loc)
       val annot = annotApi.getAnnotationRecord(annotId)
-      println(s"Annot = ${annot}")
+      annot.location shouldBe loc
+      // println(s"Annot = ${annot}")
     }
-
   }
   it should "assign annotations" in new EmptyDatabase {
     val corpusSize = 2
     val stableIds = addDummyDocs(corpusSize)
     val userIds = initUsers(1)
     val user0 = userIds.head
-    val docId0 = docStore.getDocument(stableIds.head).get
-    val annotId = annotApi.createAnnotation(docId0)
+    val stableId0 = stableIds.head
+    val loc = AnnotatedLocation.Location(StableDocument(stableId0))
+    val annotId = annotApi.createAnnotation(Math, loc)
     annotApi.assignOwnership(annotId, user0)
-    val annots = annotApi.listAnnotations(user0, None)
+    val annots = annotApi.listUserAnnotations(user0, None)
 
     annots.length shouldBe 1
     annots.head shouldBe annotId
+
+
+    val rec = annotApi.getAnnotationRecord(annotId)
+    // println(rec)
   }
 
 
@@ -88,8 +129,10 @@ class AnnotationApiSpec extends DatabaseTest with UserbaseTestHelpers {
     val userIds = initUsers(3)
     val user0 = userIds.head
     val user1 = userIds.drop(1).head
-    val docId0 = docStore.getDocument(stableIds.head).get
-    val annotId = annotApi.createAnnotation(docId0)
+
+    val stableId0 = stableIds.head
+    val loc = AnnotatedLocation.Location(StableDocument(stableId0))
+    val annotId = annotApi.createAnnotation(Math, loc)
 
     val testPath = CorpusPath("A.B.C")
 
@@ -105,17 +148,17 @@ class AnnotationApiSpec extends DatabaseTest with UserbaseTestHelpers {
 
     queryWithExpectedResultCount.foreach{case (q, i) =>
       // println(s"testing ${q}")
-      annotApi.listAnnotations(q).length shouldBe i
+      annotApi.listPathAnnotations(q).length shouldBe i
     }
 
     annotApi.assignOwnership(annotId, user0)
 
     queryWithExpectedResultCount.foreach{case (q, i) =>
-      annotApi.listAnnotations(user0, Some(q)).length shouldBe i
+      annotApi.listUserAnnotations(user0, Some(q)).length shouldBe i
     }
 
     queryWithExpectedResultCount.foreach{case (q, i) =>
-      annotApi.listAnnotations(user1, Some(q)).length shouldBe 0
+      annotApi.listUserAnnotations(user1, Some(q)).length shouldBe 0
     }
   }
 

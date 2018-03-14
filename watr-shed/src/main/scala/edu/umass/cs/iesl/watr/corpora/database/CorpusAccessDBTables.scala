@@ -138,6 +138,8 @@ class CorpusAccessDBTables extends DoobieImplicits {
           owner          INTEGER REFERENCES person DEFAULT NULL,
           annotPath      LTREE DEFAULT NULL,
           created        TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+          label          TEXT NOT NULL,
+          location       TEXT NOT NULL,
           body           TEXT DEFAULT NULL
         );
 

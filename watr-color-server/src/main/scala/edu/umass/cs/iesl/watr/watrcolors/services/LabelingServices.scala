@@ -6,7 +6,9 @@ import org.http4s._
 import org.http4s.circe._
 import _root_.io.circe
 import circe._
+import circe.syntax._
 import circe.literal._
+
 import TypeTags._
 import geometry._
 // import textgrid._
@@ -17,9 +19,6 @@ import database.CorpusAccessDB
 
 trait ZoningApi extends HttpPayloads {
   // import watrmarks._
-  import circe._
-  import circe.syntax._
-  import circe.literal._
 
   def docStore: DocumentZoningApi
   def corpusAccessDB: CorpusAccessDB
@@ -99,7 +98,7 @@ trait ZoningServices extends AuthenticatedService with ZoningApi { self =>
 
       val handler = for {
         labeling <- decodeOrErr[NewRegionLabel](req.request)
-        _ = {
+        annotRec = {
           val stableId = DocumentID(labeling.stableId)
 
           val docId  = docStore.getDocument(stableId).getOrElse {
@@ -107,42 +106,45 @@ trait ZoningServices extends AuthenticatedService with ZoningApi { self =>
           }
 
           val pageRegion = targetToPageRegion(docId, labeling.target)
+          val location = AnnotatedLocation.Zone(List(
+            pageRegion
+          ))
 
-          val annotId = annotApi.createAnnotation(docId)
+          val label = labeling.labelChoice
+
+          val annotId = annotApi.createAnnotation(label, location)
           annotApi.assignOwnership(annotId, user.id)
-          annotApi.setCorpusPath(annotId, user.id)
-          val annotBody = ""
-          // annotApi.updateBody(annotId, annotBody)
 
-          // createZone(user.id, labeling.labelChoice, pageBounds)
+          // annotApi.setCorpusPath(annotId, user.id)
+          // val annotBody = ""
+
+          annotApi.getAnnotationRecord(annotId).asJson
+        }
+        resp <- Ok(annotRec)
+      } yield resp
+
+      orErrorJson(handler)
+
+    case req @ POST -> Root / "zones" / IntVar(annotId)  asAuthed user =>
+      println(s"${req}")
+
+      val handler = for {
+        update <- decodeOrErr[ZoneUpdate](req.request)
+        _ = {
+          update match {
+            case ZoneUpdate.MergeWith(otherZoneId) =>
+              println(s"merging zone ${annotId} with ${otherZoneId}")
+
+            case ZoneUpdate.SetText(gridJson) =>
+              println(s"setting annotation ${annotId} body ")
+              val body = AnnotationBody.TextGrid(gridJson.noSpaces)
+              annotApi.updateBody(AnnotationID(annotId), body)
+          }
         }
         resp <- Ok(Json.obj())
       } yield resp
 
       orErrorJson(handler)
-
-    // // Update zone
-    // case req @ POST -> Root / "zones" / IntVar(zoneId)  asAuthed user =>
-    //   println(s"${req}")
-
-    //   val handler = for {
-    //     update <- decodeOrErr[ZoneUpdate](req.request)
-    //     _ = {
-    //       update match {
-    //         case ZoneUpdate.MergeWith(otherZoneId) =>
-    //           println(s"merging zone ${zoneId} with ${otherZoneId}")
-
-    //         case ZoneUpdate.SetText(gridJson) =>
-    //           println(s"setting zone ${zoneId} text ")
-    //           val textgrid = TextGrid.fromJson(gridJson)
-    //           // docStore.getZoneTextAsJsonStr(zoneId: Int <refinement> ZoneID)
-    //           docStore.setZoneText(ZoneID(zoneId), textgrid)
-    //       }
-    //     }
-    //     resp <- Ok(Json.obj())
-    //   } yield resp
-
-    //   orErrorJson(handler)
 
   }
 }

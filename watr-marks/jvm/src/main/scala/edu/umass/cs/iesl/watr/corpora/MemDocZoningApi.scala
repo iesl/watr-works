@@ -105,7 +105,7 @@ class MemDocZoningApi extends DocumentZoningApi {
     val p = pages.unique(pageId)
     val d = documents.unique(p.document)
     StablePage(
-      d.stableId, p.pagenum, pageId
+      d.stableId, p.pagenum
     )
   }
 

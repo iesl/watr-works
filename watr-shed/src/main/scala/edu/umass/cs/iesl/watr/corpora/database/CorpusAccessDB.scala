@@ -27,7 +27,7 @@ import watrmarks._
 import TypeTags._
 import shapeless._
 
-import _root_.io.circe, circe.syntax._, circe._
+import _root_.io.circe, circe.syntax._
 import utils.DoOrDieHandlers._
 
 class CorpusAccessDB(
@@ -368,7 +368,6 @@ class CorpusAccessDB(
   }
 
   object workflowApi extends WorkflowApi {
-    import watrmarks.{StandardLabels => LB}
 
     override def corpusLockingApi(): CorpusLockingApi = self.corpusLockApi
 
@@ -511,7 +510,7 @@ class CorpusAccessDB(
       val query = for {
         p <- selectPage(pageId)
         d <- selectDocument(p.document)
-      } yield StablePage(d.stableId, p.pagenum, pageId)
+      } yield StablePage(d.stableId, p.pagenum)
 
       runq { query }
     }
@@ -629,10 +628,39 @@ class CorpusAccessDB(
     }
 
 
-    def createAnnotation(docId: Int@@DocumentID): Int@@AnnotationID = runq {
+
+    // def createAnnotation(stableIdentifier: StableIdentifier): Int@@AnnotationID = {
+    def createAnnotation(label: Label, loc: AnnotatedLocation): Int@@AnnotationID = {
+      val regionAsStr = loc.asJson.noSpaces
+      val stableId = loc.stableId
+
+      runq {
+        sql"""|INSERT INTO annotation (document, label, location)
+              |VALUES (
+              | (SELECT document FROM document WHERE stableId = ${stableId}),
+              | ${label.fqn},
+              | ${regionAsStr}  )
+              |""".stripMargin.update.withUniqueGeneratedKeys[Int@@AnnotationID]("annotation")
+      }
+    }
+
+    def updateLocation(annotId: Int@@AnnotationID, loc: AnnotatedLocation): Unit = {
+      val regionAsStr = loc.asJson.noSpaces
+      runq{ sql"""UPDATE annotation SET location=${regionAsStr} WHERE annotation=${annotId} """.update.run
+      }
+    }
+    def getAnnotationRecord(annotId: Int@@AnnotationID): Rel.AnnotationRec =  runq {
       sql"""
-            INSERT INTO annotation (document) VALUES ( ${docId} )
-         """.update.withUniqueGeneratedKeys[Int@@AnnotationID]("annotation")
+          SELECT annotation, document, owner, annotPath, created, label, location, body
+          FROM annotation WHERE annotation=${annotId}
+      """.query[Rel.AnnotationRec_].map{rec =>
+        Rel.AnnotationRec(
+          rec.id, rec.document, rec.owner, rec.annotPath, rec.created,
+          Labels.fromString(rec.label),
+          rec.location.decodeOrDie[AnnotatedLocation](),
+          rec.body.map(_.decodeOrDie[AnnotationBody]()),
+        )
+      }.unique
     }
 
 
@@ -689,13 +717,6 @@ class CorpusAccessDB(
     def getAnnotations(): Seq[Int@@AnnotationID]= runq {
       sql""" SELECT annotation FROM annotation """
         .query[Int@@AnnotationID].to[Vector]
-    }
-
-    def getAnnotationRecord(annotId: Int@@AnnotationID): Rel.AnnotationRec =  runq {
-      sql"""
-          SELECT annotation, document, owner, annotPath, created, body
-          FROM annotation WHERE annotation=${annotId}
-      """.query[Rel.AnnotationRec].unique
     }
 
   }
