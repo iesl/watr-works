@@ -1,0 +1,8 @@
+#!/bin/bash
+
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+DIR=$( $SCRIPTDIR/mkdir-with-timestamp.pl bioarxiv-db )
+echo creating backup dir $DIR
+pg_dump -U watrworker -w -d bioarxiv > $DIR/bioarxiv.db
+
