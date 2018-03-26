@@ -13,7 +13,6 @@ import services._
 
 import watrmarks._
 
-// class CurationWorkflowSpec extends DatabaseFreeSpec with DatabaseTest with DocSegLabels {
 class CurationWorkflowSpec extends  DatabaseTest with DocSegLabels {
   behavior of "Curation Workflow"
 
@@ -58,11 +57,14 @@ class CurationWorkflowSpec extends  DatabaseTest with DocSegLabels {
   }
 
   def initWorkflows(l: Label, n: Int): Seq[String@@WorkflowID] = {
+
+    annotApi.createLabelSchema(NameLabelSchema)
+
     0 until n map { i =>
       workflowApi.defineWorkflow(
         s"wf-${l.fqn}-${i}",
         NameLabelSchema.name,
-        CorpusPath("TODO"),
+        CorpusPath(s"workflow.batch${i}"),
       )
     }
   }
@@ -81,60 +83,70 @@ class CurationWorkflowSpec extends  DatabaseTest with DocSegLabels {
 
   lazy val service = workflowService()
 
-  // it should "get a list of available workflows" in {
+  it should "get a list of available workflows" in {
 
-  //   val actual =  service.GET_workflows()
-  //   // println(actual)
-  //   // assertResult{
-  //   //   json"""
-  //   //     [
-  //   //       {
-  //   //         "workflow" : "wf-VisualLine-0",
-  //   //         "description" : "Annot. VisualLine #0",
-  //   //         "targetLabel" : { "prKey" : 1, "key" : "VisualLine" },
-  //   //         "curatedLabels" : [
-  //   //           { "prKey" : 3, "key" : "Sup" },
-  //   //           { "prKey" : 4, "key" : "Sub" }]
-  //   //       },
-  //   //       {
-  //   //         "workflow" : "wf-VisualLine-1",
-  //   //         "description" : "Annot. VisualLine #1",
-  //   //         "targetLabel" : { "prKey" : 1, "key" : "VisualLine" },
-  //   //         "curatedLabels" : [
-  //   //           { "prKey" : 3, "key" : "Sup" },
-  //   //           { "prKey" : 4, "key" : "Sub" }
-  //   //         ]
-  //   //       },
-  //   //       {
-  //   //         "workflow" : "wf-Authors-0",
-  //   //         "description" : "Annot. Authors #0",
-  //   //         "targetLabel" : { "prKey" : 5, "key" : "Authors" },
-  //   //         "curatedLabels" : [
-  //   //           { "prKey" : 3, "key" : "Sup" },
-  //   //           { "prKey" : 4, "key" : "Sub" }
-  //   //         ]
-  //   //       }
-  //   //     ]
-  //   //   """
-  //   // } { actual }
-  // }
+    val actual =  service.GET_workflows()
+    println(actual)
+
+    // assertResult{
+    //   json"""
+    //     [
+    //       {
+    //         "workflow" : "wf-VisualLine-0",
+    //         "description" : "Annot. VisualLine #0",
+    //         "targetLabel" : { "prKey" : 1, "key" : "VisualLine" },
+    //         "curatedLabels" : [
+    //           { "prKey" : 3, "key" : "Sup" },
+    //           { "prKey" : 4, "key" : "Sub" }]
+    //       },
+    //       {
+    //         "workflow" : "wf-VisualLine-1",
+    //         "description" : "Annot. VisualLine #1",
+    //         "targetLabel" : { "prKey" : 1, "key" : "VisualLine" },
+    //         "curatedLabels" : [
+    //           { "prKey" : 3, "key" : "Sup" },
+    //           { "prKey" : 4, "key" : "Sub" }
+    //         ]
+    //       },
+    //       {
+    //         "workflow" : "wf-Authors-0",
+    //         "description" : "Annot. Authors #0",
+    //         "targetLabel" : { "prKey" : 5, "key" : "Authors" },
+    //         "curatedLabels" : [
+    //           { "prKey" : 3, "key" : "Sup" },
+    //           { "prKey" : 4, "key" : "Sub" }
+    //         ]
+    //       }
+    //     ]
+    //   """
+    // } { actual }
+  }
 
   it should "get workflow report" in {
-    // workflowApi.lockUnassignedZone(users(0), workflows0(0))
-    // workflowApi.lockUnassignedZone(users(1), workflows0(0))
+    workflowApi.lockNextDocument(users(0), workflows0(0))
+    workflowApi.lockNextDocument(users(1), workflows0(0))
 
-    // workflowApi.getLockedZones(users(0)).drop(1).foreach { zoneLockId =>
-    //   workflowApi.updateZoneStatus(zoneLockId, CorpusLockStatus.Completed)
-    //   workflowApi.releaseZoneLock(zoneLockId)
-    // }
+    sampleDocs.foreach { stableId =>
+      val docId = docStore.getDocument(stableId).get
+      corpusLockApi.createLock(docId, CorpusPath(s"workflow.batch0"))
+      sampleDocs.foreach { stableId =>
+        val docId = docStore.getDocument(stableId).get
+        corpusLockApi.createLock(docId, CorpusPath(s"workflow.batch0"))
+      }
 
-    // workflowApi.getLockedZones(users(1)).drop(2).foreach { zoneLockId =>
-    //   workflowApi.updateZoneStatus(zoneLockId, CorpusLockStatus.Skipped)
-    // }
+   }
 
-    // val actual = service.GET_workflows_report(workflows0(0))
-    // println("Workflow Report==============")
-    // println(actual)
+    corpusLockApi.getUserLocks(users(0)).drop(1).foreach { lockId =>
+      corpusLockApi.releaseLock(lockId)
+    }
+
+    corpusLockApi.getUserLocks(users(1)).drop(2).foreach { lockId =>
+      corpusLockApi.releaseLock(lockId)
+    }
+
+    val actual = service.GET_workflows_report(workflows0(0))
+    println("Workflow Report==============")
+    println(actual)
 
     // val curatorAssignments = service.GET_curators_assignments(users(0))
     // println(s"Curator ${users(0)} Assignments ==============")
@@ -164,7 +176,7 @@ class CurationWorkflowSpec extends  DatabaseTest with DocSegLabels {
 
 
   // it should "get next workflow assignment" in {
-  //   workflowApi.lockUnassignedZone(users(0), workflows0(0))
+  //   workflowApi.lockNextDocument(users(0), workflows0(0))
   //   val actual = service.POST_workflows_assignments(workflows0(0), users(0))
 
   //   // assertResult{

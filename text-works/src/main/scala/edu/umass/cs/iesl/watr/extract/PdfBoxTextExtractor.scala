@@ -213,6 +213,7 @@ class PdfBoxTextExtractor(
     unicode: String,
     displacement: Vector
   ): Unit = {
+
     if (totalCharCount > MAX_EXTRACTED_CHARS_PER_PAGE) {
       log.warn(s"Truncating page ${pageNum}. Limit of ${MAX_EXTRACTED_CHARS_PER_PAGE} glyphs/page exceeded")
       throw new PageLimitExceeded()

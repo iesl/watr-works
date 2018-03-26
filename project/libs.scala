@@ -16,14 +16,14 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.2"
-  val fs2Version          = "0.10.2"
+  val http4sVersion       = "0.18.4"
+  val fs2Version          = "0.10.3"
   val circeJsonVersion    = "0.9.2"
 
-  val ammoniteVersion     = "1.0.5"
+  val ammoniteVersion     = "1.1.0"
   // val ammoniteVersion     = "1.0.3-33-2d70b25" // uses update Jawn parser
 
-  val catsV               = "1.0.1"
+  val catsV               = "1.1.0"
   val catsEffectV         = "0.10"
   val postgresqlV         = "42.2.2"
   val freestyleV         = "0.7.0"
@@ -83,7 +83,7 @@ object TestLibs extends LibVersions {
 
 object LogLibs extends LibVersions {
   val logback = Seq(
-    "org.log4s"      %% "log4s"            % "1.6.0",
+    "org.log4s"      %% "log4s"            % "1.6.1",
     "ch.qos.logback"  % "logback-classic"  % "1.2.3",
     "org.slf4j"       % "slf4j-api"        % logbackVersion,
     "org.slf4j"       % "jul-to-slf4j"     % logbackVersion,
@@ -162,5 +162,3 @@ trait CommonLibs extends LibVersions {
 }
 
 object CommonLibs extends CommonLibs
-  // https://bioarxiv.watrworks.net/document/
-10.1101-006890.d?show=textgrid.json

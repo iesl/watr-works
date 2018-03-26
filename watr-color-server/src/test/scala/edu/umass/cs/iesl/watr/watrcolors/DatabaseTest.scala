@@ -16,7 +16,7 @@ trait DatabaseBaseTest extends Matchers with CorpusTestingUtil {
   def workflowApi: WorkflowApi = corpusAccessDB.workflowApi
   def userbaseApi: UserbaseApi = corpusAccessDB.userbaseApi
   def annotApi: DocumentAnnotationApi = corpusAccessDB.annotApi
-  // override def corpusLockApi: CorpusLockingApi = corpusAccessDB.corpusLockApi
+  def corpusLockApi: CorpusLockingApi = corpusAccessDB.corpusLockApi
 
   def createEmptyDocumentZoningApi(): DocumentZoningApi = {
     println("Dropping/recreating DB tables")

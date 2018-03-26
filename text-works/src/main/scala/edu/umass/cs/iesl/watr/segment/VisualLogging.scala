@@ -18,8 +18,8 @@ object DrawMethods {
   val Outline  = strIdent
   val Remove   = strIdent
   val Emboss   = strIdent
+  val Clear    = strIdent
 
-  val Clear   = strIdent
 
 
 }
