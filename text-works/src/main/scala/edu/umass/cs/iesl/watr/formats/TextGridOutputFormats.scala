@@ -8,6 +8,8 @@ import textboxing.{TextBoxing => TB}, TB._
 import segment.{SegmentationLabels => LB}
 import segment._
 import _root_.io.circe, circe._, circe.syntax._
+import circe.generic.auto._
+import circe.generic._
 import geometry._
 
 object TextGridOutputFormats  {
@@ -95,6 +97,26 @@ object TextGridOutputFormats  {
     *
     */
 
+  @JsonCodec
+  case class PageDef(
+    pageGeometry: (Int, Int, Int, Int),
+    textgrid: Json
+  )
+
+  @JsonCodec
+  case class DocumentTextGrids(
+    description: String,
+    pages: Seq[PageDef]
+  )
+
+  import java.nio.{file => nio}
+  import ammonite.{ops => fs}
+  import utils.DoOrDieHandlers._
+
+  def readDocumentJsonDef(f: nio.Path): DocumentTextGrids = {
+    val jsonStr = fs.read(fs.Path(f))
+    jsonStr.decodeOrDie[DocumentTextGrids]()
+  }
 
   def jsonOutputGridPerPage(docSeg: DocumentSegmentation): Json = {
     val stableId = docSeg.stableId
@@ -114,9 +136,6 @@ object TextGridOutputFormats  {
       }
 
     val fontDescriptions = fontDescription(docSeg)
-
-    // println(s"fontDescriptions")
-    // println(s"${fontDescriptions} ")
 
     val outputDoc = Json.obj(
       "description" := s"Extracted Pages for ${stableId}",

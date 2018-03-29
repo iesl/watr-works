@@ -89,7 +89,8 @@ lazy val watrshed = (project in file("watr-shed"))
       Lib.scopt,
       Lib.scrimageCore,
       Lib.ammonite,
-      Lib.shapeless
+      Lib.shapeless,
+      "com.github.tototoshi" %% "scala-csv" % "1.3.5"
     ))
   .dependsOn(prelude, watrmarksJVM, textworks)
 

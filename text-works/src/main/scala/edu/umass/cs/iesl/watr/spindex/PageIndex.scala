@@ -100,11 +100,6 @@ class PageIndex(
 
   lazy val lastItemOffset = firstItemOffset + itemsLen
 
-  def saveToBytes(): Array[Byte] = {
-    // RTreeIndex.saveBytes(components.componentRTree)
-    ???
-  }
-
   var pageVerticalJumps: mutable.ListBuffer[Int@@FloatRep] = mutable.ListBuffer()
 
   def addPageVerticalJumps(jumps: Seq[Int@@FloatRep]): Unit = {
@@ -116,6 +111,10 @@ class PageIndex(
 
     val shapeMap: mutable.LongMap[Shape] = {
       mutable.LongMap[Shape]()
+    }
+
+    def getAllShapes(): Seq[Shape] = {
+      shapeMap.values.toSeq
     }
 
     def getById(id: Int@@ShapeID): Shape = {

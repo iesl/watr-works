@@ -38,6 +38,11 @@ object Processable {
     input: ProcessableInput
   ) extends ProcessedInput
 
+  case class ExtractedTextGridFile(
+    textGridFile: nio.Path,
+    input: ProcessableInput
+  ) extends ProcessedInput
+
   def getTextgridOutputFile(input: Processable, conf: IOConfig): nio.Path = {
     conf.outputPath.getOrElse {
       input match {
@@ -116,6 +121,20 @@ object ProcessPipelineSteps {
     _.map { Right(_) }
   }
 
+  def pickupTextgridFiles(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedOutput] = {
+    _.map {
+      case Left(inputMode) => Left("no textgrid.json")
+      case Right(inputMode) =>
+        val textgridFile = Processable.getTextgridOutputFile(inputMode, conf.ioConfig)
+
+
+        if (textgridFile.toFile().exists()) {
+          Right(Processable.ExtractedTextGridFile(textgridFile, inputMode))
+        } else {
+          Left("no textgrid.json")
+        }
+    }
+  }
   def cleanFileArtifacts(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
     _.map {
       case Left(inputMode) => Left(inputMode)

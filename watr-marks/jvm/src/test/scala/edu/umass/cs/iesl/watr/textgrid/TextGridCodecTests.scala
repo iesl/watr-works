@@ -53,9 +53,21 @@ class TextGridCodecTests extends TextGridSpec {
 
     println(labelTree.drawTree)
 
+
+    {
+      println("Marginal Span Tree -----------------------")
+      val labelSpanTree2 = labelTreeToMarginalSpanTree(labelTree)
+      println(labelSpanTree2.drawTree)
+      println("-----------------------")
+    }
+
     val labelSpanTree = labelTreeToSpanTree(labelTree)
 
-    println(labelSpanTree.drawTree)
+    {
+      println("Label Span Tree -----------------------")
+      println(labelSpanTree.drawTree)
+      println("-----------------------")
+    }
     val jsonSpanTreeRep = spanTreeToJson(labelSpanTree)
     println(jsonSpanTreeRep.pretty(JsonPrettyPrinter))
 
@@ -79,7 +91,7 @@ class TextGridCodecTests extends TextGridSpec {
     val labelingTree = jsonSpanTreeRep.decodeOrDie[Seq[LabelingTree]]()
     println(labelingTree)
     val inlineBioRT = LabelTreeCodecs.decodeBioLabels(jsonSpanTreeRep)
-    println("inline Bio RT")
+    println("inline Bio Round Trip")
     val rt = inlineBioRT.map(_.mkString).zipWithIndex.mkString("\n  ", "\n  ", "\n")
     println(rt)
 

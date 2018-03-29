@@ -1,12 +1,9 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-// import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, _} // , Scalaz._
 import watrmarks._
 import _root_.io.circe, circe._, circe.syntax._
-// import geometry._
-// import utils.GraphPaper
 import utils.DoOrDieHandlers._
 import TypeTags._
 

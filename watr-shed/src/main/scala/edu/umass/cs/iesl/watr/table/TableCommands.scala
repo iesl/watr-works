@@ -7,6 +7,12 @@ import cats.effect._
 import corpora._
 import corpora.database._
 import utils.Timer.time
+// import ammonite.{ops => fs}
+// import utils.DoOrDieHandlers._
+// import geometry._
+import formats.TextGridOutputFormats._
+// import doobie._
+import doobie.implicits._
 
 object InitialSegmentationCommands {
 
@@ -22,6 +28,42 @@ object InitialSegmentationCommands {
     )
   }
 
+
+  private def importTextgridIntoDB()(implicit
+    corpusAccessApi: CorpusAccessApi
+  ):fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
+    _.map {
+      case m@ Right(Processable.ExtractedTextGridFile(textGridFile, input)) =>
+        log.info(s"Importing ${textGridFile} into database.")
+        val docDef = readDocumentJsonDef(textGridFile)
+
+        val desc = docDef.description
+        val stableId = desc.drop("Extracted pages for ".length())
+
+        val docId = corpusAccessApi.corpusAccessDB.runq {
+          corpusAccessApi.corpusAccessDB.updateGetKey[Int]("document",
+            sql"""insert into document (stableId) values (${stableId})""".update
+          )
+        }
+
+
+        docDef.pages.zipWithIndex.foreach { case (page, pageNum) =>
+          val (l, t, w, h) = page.pageGeometry
+
+          corpusAccessApi.corpusAccessDB.runq {
+            corpusAccessApi.corpusAccessDB.updateGetKey("page",
+              sql"""|insert into page (document, pagenum, bleft, btop, bwidth, bheight)
+                    |values ($docId, $pageNum, $l, $t, $w, $h)
+                    |""".stripMargin.update
+            )
+          }
+        }
+
+        m
+
+      case x => x
+    }
+  }
 
   private def importPaperIntoDB()(implicit
     corpusAccessApi: CorpusAccessApi
@@ -70,6 +112,29 @@ object InitialSegmentationCommands {
     }
   }
 
+  private def skipEntriesAlreadyInDB(conf: TextWorksConfig.Config)(implicit
+    corpusAccessApi: CorpusAccessApi
+  ): fs2.Pipe[IO, MarkedInput, MarkedInput] = {
+    _.map {
+      case m@ Right(input) => input match {
+        case p@ Processable.CorpusFile(corpusEntry) =>
+          val stableId = DocumentID(corpusEntry.entryDescriptor)
+          val maybeDoc = corpusAccessApi.docStore.getDocument(stableId)
+          val isInDb = maybeDoc.isDefined
+
+          if (isInDb) {
+            log.info(s"Skipping ${corpusEntry}; already in DB")
+            Left(input)
+          } else {
+            log.info(s"Importing ${corpusEntry}")
+            Right(input)
+          }
+
+        case x => Left(x)
+      }
+      case x => x
+    }
+  }
 
 
   def segmentAll(n: Int=Int.MaxValue, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
@@ -94,5 +159,22 @@ object InitialSegmentationCommands {
 
   }
 
-}
+  def importPreSegmentedPapers(n: Int=Int.MaxValue, skip: Int=0)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
+    val conf = TextWorksConfig.Config(IOConfig(
+      inputMode = Some(InputMode.CorpusFile(corpusAccessApi.corpus.corpusRoot.toNIO)),
+      outputPath= None,
+      overwrite = true
+    ))
 
+    val processStream = createInputStream[IO](conf.ioConfig)
+      .drop(skip.toLong).take(n.toLong)
+      .through(initMarkedInput())
+      .through(skipEntriesAlreadyInDB(conf))
+      .through(pickupTextgridFiles(conf))
+      .through(importTextgridIntoDB())
+
+    processStream.compile.drain
+      .unsafeRunSync()
+  }
+
+}

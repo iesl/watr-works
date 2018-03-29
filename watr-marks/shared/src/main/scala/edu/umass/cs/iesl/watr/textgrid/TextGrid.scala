@@ -18,7 +18,6 @@ import _root_.io.circe
 import circe._
 import circe.literal._
 
-
 @JSExportAll
 trait TextGrid {
   import TextGrid._
