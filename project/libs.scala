@@ -20,8 +20,7 @@ trait LibVersions {
   val fs2Version          = "0.10.1"
   val circeJsonVersion    = "0.9.1"
 
-  // val ammoniteVersion     = "1.0.3"// 1.0.3-10-4311ac9
-  val ammoniteVersion     = "1.0.3-33-2d70b25" // uses update Jawn parser
+  val ammoniteVersion     = "1.1.0"
 
   val catsV               = "1.0.1"
   val catsEffectV         = "0.8"

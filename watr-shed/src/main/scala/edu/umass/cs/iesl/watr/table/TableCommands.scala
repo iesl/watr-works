@@ -9,7 +9,7 @@ import utils.Timer.time
 import TypeTags._
 
 
-object ShellCommands {
+object ShellCommands extends  DocumentZoningApiEnrichments {
 
   private[this] val log = org.log4s.getLogger
 

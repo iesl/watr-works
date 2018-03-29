@@ -2,11 +2,14 @@ package edu.umass.cs.iesl.watr
 package table
 
 import corpora._
-import TypeTags._
 
 import textboxing.{TextBoxing => TB}, TB._
+import textgrid._
+import _root_.io.circe, circe._, circe.syntax._
+import geometry._
+import ammonite.{ops => fs}
 
-trait DocumentZoningApiEnrichments  {
+trait DocumentZoningApiEnrichments extends GeometricFigureCodecs {
 
   implicit class RicherDocumentZoningApi(val theDocumentZoningApi: DocumentZoningApi) {
 
@@ -29,6 +32,9 @@ trait DocumentZoningApiEnrichments  {
         .flatMap(docId => docStore.getPages(docId))
     }
 
+
+    import TextGridLabelWidget._
+    import TextGridFunctions._
 
     def reportDocument()(implicit docStore: DocumentZoningApi): TB.Box = {
       val docBoxes = for {
@@ -54,10 +60,21 @@ trait DocumentZoningApiEnrichments  {
         val zoneBoxes = for {
           labelId <- docStore.getZoneLabelsForDocument(docId)
           zoneId <- docStore.getZonesForDocument(docId, labelId)
-          // textReflow <- docStore.getTextReflowForZone(zoneId)
         } yield {
-          // (textReflow.toText.box % docStore.getZone(zoneId).toString().box)
-          docStore.getZone(zoneId).toString().box
+          val zone = docStore.getZone(zoneId)
+
+          val maybeTextGrid = zone.glyphDefs.map{ str =>
+            val textGrid = TextGrid.fromJsonStr(str)
+            val indentedBlock = textGridToIndentedBox(textGrid)
+            val labelTree = textGridToLabelTree(textGrid)
+
+            val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+            val emarginBlock = marginalGlossToTextBlock(expMarginals)
+            val expBlock = emarginBlock + indentedBlock
+            expBlock
+          } getOrElse { "<no glyphs>".box }
+
+          s"Zone: ${zone.label} # ${zone.id}, @ ".box atop indent(4, maybeTextGrid)
         }
         (s"Document ${docId} (${thisStableId}) report"
           % indent(4, vcat(left,pagesBox))
@@ -69,9 +86,52 @@ trait DocumentZoningApiEnrichments  {
     }
 
 
+    import circe.generic.auto._
 
+    def exportDocumentLabels()(implicit docStore: DocumentZoningApi): Option[Json] = {
+      for {
+        docId <- docStore.getDocument(thisStableId)
+      } yield {
+        val pageGeometries = for {
+          pageId <- docStore.getPages(docId)
+        } yield {
+          docStore.getPageGeometry(pageId)
+        }
 
+        val zoneJsons = for {
+          labelId <- docStore.getZoneLabelsForDocument(docId)
+          if ! docStore.getLabel(labelId).fqn.startsWith("seg:")
+          zoneId <- docStore.getZonesForDocument(docId, labelId)
+        } yield {
+          val zone = docStore.getZone(zoneId)
+          zone.asJson
+        }
 
+        Json.obj(
+          "stableId" := thisStableId,
+          "pageGeometries" := pageGeometries,
+          "zones" := zoneJsons
+        )
+      }
+    }
+
+  }
+  def exportAllDocumentLabels()(implicit docStore: DocumentZoningApi): Unit = {
+    val totalDocs = docStore.getDocumentCount()
+    println(s"Total doc count = ${totalDocs}")
+    val outputRoot = fs.pwd / "json-exports.d"
+    if (!fs.exists(outputRoot)) {
+      fs.mkdir(outputRoot)
+    }
+    val allDocJsons = docStore.getDocuments().zipWithIndex.flatMap { case (stableId, i) =>
+      if (i % 100 == 0) {
+        println(s"Output 100 documents...")
+      }
+      stableId.exportDocumentLabels()
+    }
+    val uberJson = allDocJsons.asJson
+
+    fs.write(outputRoot / "uber.json", uberJson.noSpaces)
   }
 
 }
