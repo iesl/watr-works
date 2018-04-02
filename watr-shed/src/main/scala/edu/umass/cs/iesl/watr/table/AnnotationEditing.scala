@@ -25,26 +25,12 @@ import TextGridLabelWidget._
 import GeometryCodecs._
 
 object OldZoneFormats extends TypeTagCodecs  {
-  // import _root_.io.circe, circe._, circe.syntax._
 
   case class DocZones(
     stableId: String,
     pageGeometries: Seq[LTBounds],
     zones: Seq[Zone]
   )
-
-  // case class StablePage(
-  //   stableId: String@@DocumentID,
-  //   pageNum: Int@@PageNum,
-  //   pageId: Int@@PageID = PageID(-1)
-  // )
-
-  // @JsonCodec
-  // case class PageRegion(
-  //   // page: StablePage,
-  //   bbox: LTBounds,
-  //   regionId: Int
-  // )
 
   @JsonCodec
   case class Zone(

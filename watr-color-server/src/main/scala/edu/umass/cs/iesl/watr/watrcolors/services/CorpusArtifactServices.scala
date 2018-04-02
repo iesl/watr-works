@@ -91,21 +91,22 @@ trait CorpusArtifactServices extends AuthenticatedService with WorkflowCodecs { 
         }
       }
 
-    case req @ GET -> Root / "vtrace" /  "json" / entryId / jsonArtifact =>
+
+    case req @ GET -> Root / "entry" / entryId / "tracelog" / logname  =>
 
       val maybeResp = for {
         entry <- corpus.entry(entryId)
         traceLogs <- entry.getArtifactGroup("tracelogs")
-        artifact <- traceLogs.getArtifact(jsonArtifact)
+        artifact <- traceLogs.getArtifact(logname)
         artifactPath <- artifact.asPath.toOption
       } yield {
         StaticFile
           .fromFile(artifactPath.toIO, Some(req))
-          .getOrElse { Response(http4s.Status(404, s"could not serve ${entryId} artifact ${jsonArtifact}")) }
+          .getOrElse { Response(http4s.Status(404, s"could not serve ${entryId} artifact ${logname}")) }
       }
       maybeResp.getOrElse {
         IO.pure{
-          Response(http4s.Status(500, s"could not serve ${entryId} artifact ${jsonArtifact}"))
+          Response(http4s.Status(500, s"could not serve ${entryId} artifact ${logname}"))
         }
       }
   }

@@ -1168,3 +1168,54 @@
   //       }
   //   }
   // }
+
+  // def createHorizontalPageRules(charRuns: Seq[Seq[ExtractedItem]]): Seq[Line] = {
+
+  //   val baselines = charRuns.map{ charRun =>
+  //     val isChar  = charRun.head.isInstanceOf[ExtractedItem.CharItem]
+  //     if (isChar) {
+  //       createCharRunBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem])).some
+  //     } else None
+  //   }.flatten
+
+  //   val hPageRules = baselines
+  //     .sortBy(_.p1.y)
+  //     .map { _.extendLeftTo(pageGeometry.left).extendRightTo(pageGeometry.right) }
+  //     .groupByPairs(_.p1.y == _.p1.y) // uniquify
+  //     .map(_.head)                    //  ...
+
+  //   hPageRules
+  // }
+
+  // private def doCharMetricComputations(): Unit = {
+
+  //   docScope.fontDefs.fontProperties.foreach{ fontProps =>
+  //     println("Font properties")
+  //     println(fontProps)
+  //     // val bistr = fontProps.bigramEvidence. mkString("{\n  ", "\n  ", "\n}")
+  //     // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
+  //     val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
+  //     val tristr = fontProps.trigramEvidence. mkString("{  ", ", ", "  }")
+  //     println("Bigrams: ")
+  //     println(bistr)
+  //     println("Trigrams: ")
+  //     println(tristr)
+
+  //     val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
+  //     println("PageEvidence: ")
+  //     println(pageEvidence)
+
+
+  //     val ds = fontProps.dets.sorted
+  //       .toList.groupByPairs { case (a, b) =>
+  //         math.abs(a - b) < 0.1
+  //       }
+  //       .map(_.head)
+  //       .mkString(", ")
+  //     println(s"Font Trans Dets: $ds")
+
+  //     val _ = fontProps.inferredMetrics()
+  //   }
+
+
+  // }

@@ -6,7 +6,7 @@ import scalaz.syntax.equal._
 import scalaz.std.anyVal._
 import geometry.syntax._
 
-import utils.Color
+// import utils.Color
 import TypeTags._
 
 import utils.ExactFloats._
@@ -233,16 +233,16 @@ object Trapezoid {
 
 }
 
-case class GeometricGroup(
-  bounds: LTBounds,
-  figures: List[GeometricFigure]
-) extends GeometricFigure
+// case class GeometricGroup(
+//   bounds: LTBounds,
+//   figures: List[GeometricFigure]
+// ) extends GeometricFigure
 
-case class Colorized(
-  figure: GeometricFigure,
-  fg: Color, bg: Color,
-  fgOpacity: Float, bgOpacity: Float
-) extends GeometricFigure
+// case class Colorized(
+//   figure: GeometricFigure,
+//   fg: Color, bg: Color,
+//   fgOpacity: Float, bgOpacity: Float
+// ) extends GeometricFigure
 
 case class Padding(
   left: Int@@FloatRep,
@@ -333,15 +333,15 @@ object GeometryImplicits extends RectangularCuts {
   implicit val EqualPoint: Equal[Point] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
-  def composeFigures(fig1: GeometricFigure, fig2: GeometricFigure): GeometricFigure = {
-    val bbox1 = minBoundingRect(fig1)
-    val bbox2 = minBoundingRect(fig2)
-    val bbox12 = bbox1 union bbox2
-    GeometricGroup(
-      bbox12,
-      List(fig1, fig2)
-    )
-  }
+  // def composeFigures(fig1: GeometricFigure, fig2: GeometricFigure): GeometricFigure = {
+  //   val bbox1 = minBoundingRect(fig1)
+  //   val bbox2 = minBoundingRect(fig2)
+  //   val bbox12 = bbox1 union bbox2
+  //   GeometricGroup(
+  //     bbox12,
+  //     List(fig1, fig2)
+  //   )
+  // }
 
 
   def minBoundingRect(fig: GeometricFigure): LTBounds = fig match {
@@ -359,8 +359,8 @@ object GeometryImplicits extends RectangularCuts {
 
       LTBounds(minx, miny, maxx-minx, maxy-miny)
 
-    case f: GeometricGroup => f.bounds
-    case f: Colorized => minBoundingRect(f.figure)
+    // case f: GeometricGroup => f.bounds
+    // case f: Colorized => minBoundingRect(f.figure)
     case x => sys.error(s"minBoundingRect unexpected case ${x}")
   }
 
@@ -408,14 +408,14 @@ object GeometryImplicits extends RectangularCuts {
   }
 
 
-  def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
-    val fringe = makeFringeParts(fig, padding)
-    val wbbox = minBoundingRect(fig)
-    GeometricGroup(
-      wbbox,
-      fringe
-    )
-  }
+  // def makeFringe(fig: GeometricFigure, padding: Padding): GeometricFigure = {
+  //   val fringe = makeFringeParts(fig, padding)
+  //   val wbbox = minBoundingRect(fig)
+  //   GeometricGroup(
+  //     wbbox,
+  //     fringe
+  //   )
+  // }
 
 
   implicit class RicherPoint(val self: Point) extends AnyVal {
@@ -585,13 +585,22 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
   implicit val Enc_Int_FloatRep: Encoder[Int@@FloatRep] = Encoder.encodeInt.contramap(_.unwrap)
   implicit val Dec_Int_FloatRep: Decoder[Int@@FloatRep] = Decoder.decodeInt.map(FloatRep(_))
 
-  implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
-  implicit val Enc_StablePage: Encoder[StablePage] = deriveEncoder
-  implicit val Enc_PageRegion: Encoder[PageRegion] = deriveEncoder
+  // implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
+  implicit val Enc_LTBoundsObj: ObjectEncoder[LTBounds] = deriveEncoder
+
+  implicit val Enc_LBBounds: ObjectEncoder[LBBounds] = deriveEncoder
+  implicit val Enc_Point: ObjectEncoder[Point] = deriveEncoder
+  implicit val Enc_Line: ObjectEncoder[Line] = deriveEncoder
+  implicit val Enc_Trapezoid: ObjectEncoder[Trapezoid] = deriveEncoder
+  implicit val Enc_StablePage: ObjectEncoder[StablePage] = deriveEncoder
+  implicit val Enc_PageRegion: ObjectEncoder[PageRegion] = deriveEncoder
 
   implicit val Dec_LTBounds: Decoder[LTBounds] = deriveDecoder
   implicit val Dec_StablePage: Decoder[StablePage] = deriveDecoder
   implicit val Dec_PageRegion: Decoder[PageRegion] = deriveDecoder
+
+  implicit val Enc_GeometricFigure: ObjectEncoder[GeometricFigure] = deriveEncoder
+
 
 }
 

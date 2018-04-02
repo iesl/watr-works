@@ -22,4 +22,14 @@ object LetterFrequencies {
        |""".stripMargin.trim.split(" ")
 
   }
+
+
+  def hasCommonBigram(s: String): Boolean = {
+    s.sliding(2).exists { Bigrams.contains(_) }
+  }
+
+  def hasCommonTrigram(s: String): Boolean = {
+    s.sliding(2).exists { Trigrams.contains(_) }
+  }
+
 }

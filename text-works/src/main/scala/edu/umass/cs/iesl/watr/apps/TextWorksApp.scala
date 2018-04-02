@@ -9,6 +9,7 @@ import shapeless._
 import java.nio.{file => nio}
 import tracing.VisualTracer
 import utils.PathUtils._
+import utils.TextOps._
 
 import ProcessPipelineSteps._
 
@@ -30,7 +31,7 @@ object TextWorksConfig {
 
     override def renderingMode: RenderingMode = RenderingMode.OneColumn
 
-    head("Text Works PDF text extraction, part of the WatrWorks", "0.1")
+    head("TextWorks PDF text extraction, part of WatrWorks", "0.1")
 
     note("Run text extraction and analysis on PDFs")
 
@@ -67,16 +68,6 @@ object TextWorksConfig {
       }
     } text("if specified, only files matching regex will be processed")
 
-
-    def trimQuotes(s: String): String = {
-      val t = s.trim
-      if (t.length() >= 2) {
-        val isQuote = List('"', '\'').contains(t.head)
-        if (isQuote && t.head == t.last) {
-          t.drop(1).dropRight(1)
-        } else s
-      } else s
-    }
 
     note("\nOutput file options\n")
 

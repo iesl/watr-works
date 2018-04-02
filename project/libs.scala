@@ -16,9 +16,9 @@ trait LibVersions {
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.4"
+  val http4sVersion       = "0.18.5"
   val fs2Version          = "0.10.3"
-  val circeJsonVersion    = "0.9.2"
+  val circeJsonVersion    = "0.9.3"
 
   val ammoniteVersion     = "1.1.0"
   // val ammoniteVersion     = "1.0.3-33-2d70b25" // uses update Jawn parser

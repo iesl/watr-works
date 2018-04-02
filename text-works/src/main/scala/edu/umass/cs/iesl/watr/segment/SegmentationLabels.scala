@@ -7,6 +7,7 @@ import watrmarks._
 object SegmentationLabels extends DocSegLabels {
 
   val Cluster = Label.auto
+  val Evidence = Label.auto
   val Attr = Label.auto
   val Order = Label.auto
   val Rel = Label.auto

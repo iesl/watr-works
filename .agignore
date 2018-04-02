@@ -16,3 +16,4 @@ node_modules
 dist/*
 *.map
 watr-docs/*
+watr-jslibs/*

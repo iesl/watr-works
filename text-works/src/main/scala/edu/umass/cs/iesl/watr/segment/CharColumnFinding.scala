@@ -14,7 +14,8 @@ import org.dianahep.{histogrammar => HST}
 import extract.ExtractedItem
 import utils.FunctionalHelpers._
 import textgrid.TextGrid
-// import watrmarks._
+import extract.LetterFrequencies
+import watrmarks._
 // import utils.{RelativeDirection => Dir}
 
 
@@ -73,7 +74,7 @@ trait CharColumnFinding extends PageScopeSegmenter
         deleteShapes(baseLines)
       }
 
-    traceLog.drawPageShapes()
+    // traceLog.drawPageShapes()
   }
 
 
@@ -160,7 +161,7 @@ trait CharColumnFinding extends PageScopeSegmenter
       }
     }
 
-    traceLog.drawPageShapes()
+    // traceLog.drawPageShapes()
   }
 
   def createFontBaselineShapes(): Unit = {
@@ -195,7 +196,7 @@ trait CharColumnFinding extends PageScopeSegmenter
       }
 
 
-    traceLog.drawPageShapes()
+    // traceLog.drawPageShapes()
   }
   /***
    *   Create: Baseline Midline Capline Ascentline Descentline
@@ -254,7 +255,7 @@ trait CharColumnFinding extends PageScopeSegmenter
       }
 
 
-    traceLog.drawPageShapes()
+    // traceLog.drawPageShapes()
   }
 
 
@@ -363,7 +364,7 @@ trait CharColumnFinding extends PageScopeSegmenter
 
     // Try to combine vertically stacked reading blocks
 
-    traceLog.drawPageShapes()
+    // traceLog.drawPageShapes()
   }
 
   def findEvenlySpacedTextBlocks(): Unit = {
@@ -372,6 +373,76 @@ trait CharColumnFinding extends PageScopeSegmenter
     subdivideColumnClusters()
   }
 
+  private def clusterColumnPoints(points: Seq[Point], label: Label): Unit = {
+    val pointHist = HST.SparselyBin.ing(1.4, {p: Point => p.x.asDouble()})
+    val pageRight = pageGeometry.right
+    val clusterLabel = label::Cluster
+    val evidenceLabel = label::Evidence
+
+    points.foreach{ point =>
+      indexShape(point, evidenceLabel)
+      pointHist.fill(point)
+    }
+
+    pageIndex.shapes.ensureCluster(clusterLabel)
+
+    pointHist.bins.toList
+      .filter { case (bin, counting) =>
+        val binWidth = pointHist.binWidth
+        val binRight = (bin+1)*binWidth
+        counting.entries > 1 && binRight.toFloatExact() < pageRight
+      }.foreach{ case (bin, counting) =>
+        val binWidth = pointHist.binWidth
+        val binLeft = bin*binWidth
+        val pageColumn = pageVerticalSlice(binLeft, binWidth).get
+        val hitLeftColPointsx = searchForPoints(pageColumn, evidenceLabel)
+
+        deleteShapes(hitLeftColPointsx)
+
+        traceLog.trace { figure(pageColumn) tagged "PageColumn" }
+
+        val uniqYHits = hitLeftColPointsx.uniqueBy(_.shape.y)
+
+
+        if (uniqYHits.length > 1) {
+          val yvals = uniqYHits.map(_.shape.y)
+          val (maxy, miny) = (yvals.max,  yvals.min)
+          val height = maxy - miny
+
+          val colActual = pageColumn.getHorizontalSlice(miny, height).get
+          traceLog.trace { figure(colActual) tagged "ColumnSlice" }
+
+          val intersectingBaselines = searchForLines(colActual, LB.CharRunBaseline)
+            .sortBy(_.shape.p1.y)
+
+          val hitsAndOverlaps = spanAllEithers(intersectingBaselines, { baselineShape: LineShape =>
+            val hitLeftX = baselineShape.shape.p1.x
+            colActual.left <= hitLeftX
+          })
+
+
+          hitsAndOverlaps.foreach{ _ match {
+            case Right(baselineShapes) if baselineShapes.length > 1 =>
+              clusterN(clusterLabel, baselineShapes)
+
+              val contiguousYValues = baselineShapes.map(_.shape.p1.y)
+
+              pageIndex.addPageVerticalJumps(
+                findCommonVerticalJumps(contiguousYValues)
+              )
+
+              traceLog.trace {
+                val evLine = Line(baselineShapes.head.shape.p1, baselineShapes.last.shape.p1)
+                figure(evLine) tagged "AlignedChars"
+              }
+
+            case _ =>
+          }}
+        }
+      }
+
+    deleteLabeledShapes(evidenceLabel)
+  }
 
   private def clusterLinesWithSharedLeftColumn(): Unit = {
     val colLeftHist = HST.SparselyBin.ing(1.0, {p: Point => p.x.asDouble()})
@@ -516,79 +587,13 @@ trait CharColumnFinding extends PageScopeSegmenter
   }
 
   def createCharRunBaseline(charRun: Seq[ExtractedItem.CharItem]): Line = {
-    // val hasOutlier = charRun.exists{ charItem =>
-    //   !(charItem.minBBox.isContainedBy(pageGeometry)
-    //     && charItem.fontBbox.isContainedBy(pageGeometry))
-    // }
-    // if (hasOutlier) {
-
-    //   val strs = charRun.map{ charItem =>
-    //     val mbr = charItem.minBBox
-    //     val fbr = charItem.fontBbox
-    //     s"${charItem.char}:  mbr: ${mbr}, fbr: ${fbr}"
-    //   }
-    //   println("createCharRunBaseline")
-    //   println(strs.mkString("\n  ", "\n  ", "\n"))
-
-    // }
-    val runBeginPt =  Point(charRun.head.fontBbox.left, charRun.head.fontBbox.bottom)
-    val runEndPt = Point(charRun.last.fontBbox.right, charRun.last.fontBbox.bottom)
+    val runBeginPt =  Point(charRun.head.minBBox.left, charRun.head.fontBbox.bottom)
+    val runEndPt = Point(charRun.last.minBBox.right, charRun.last.fontBbox.bottom)
     Line(runBeginPt, runEndPt)
   }
 
-  // def createHorizontalPageRules(charRuns: Seq[Seq[ExtractedItem]]): Seq[Line] = {
-
-  //   val baselines = charRuns.map{ charRun =>
-  //     val isChar  = charRun.head.isInstanceOf[ExtractedItem.CharItem]
-  //     if (isChar) {
-  //       createCharRunBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem])).some
-  //     } else None
-  //   }.flatten
-
-  //   val hPageRules = baselines
-  //     .sortBy(_.p1.y)
-  //     .map { _.extendLeftTo(pageGeometry.left).extendRightTo(pageGeometry.right) }
-  //     .groupByPairs(_.p1.y == _.p1.y) // uniquify
-  //     .map(_.head)                    //  ...
-
-  //   hPageRules
-  // }
-
-  // private def doCharMetricComputations(): Unit = {
-
-  //   docScope.fontDefs.fontProperties.foreach{ fontProps =>
-  //     println("Font properties")
-  //     println(fontProps)
-  //     // val bistr = fontProps.bigramEvidence. mkString("{\n  ", "\n  ", "\n}")
-  //     // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
-  //     val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
-  //     val tristr = fontProps.trigramEvidence. mkString("{  ", ", ", "  }")
-  //     println("Bigrams: ")
-  //     println(bistr)
-  //     println("Trigrams: ")
-  //     println(tristr)
-
-  //     val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
-  //     println("PageEvidence: ")
-  //     println(pageEvidence)
-
-
-  //     val ds = fontProps.dets.sorted
-  //       .toList.groupByPairs { case (a, b) =>
-  //         math.abs(a - b) < 0.1
-  //       }
-  //       .map(_.head)
-  //       .mkString(", ")
-  //     println(s"Font Trans Dets: $ds")
-
-  //     val _ = fontProps.inferredMetrics()
-  //   }
-
-
-  // }
-  private def initGridShapes(): Unit = {
-    val pageCharRuns = findPageCharRuns()
-    pageCharRuns.foreach { charRun =>
+  private def initNatLangCharSpans(natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
+    val baselineShapes = natLangCharRuns.map { charRun =>
 
       val baseLine = createCharRunBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem]))
 
@@ -599,37 +604,67 @@ trait CharColumnFinding extends PageScopeSegmenter
       }
 
       setExtractedItemsForShape(baselineShape, charRun)
+      addFontEvidence(charRun)
+      baselineShape
 
-      // Init Font/char stats
-      charRun.foreach { item =>
-        item.char.foreach { c =>
-          docScope.fontDefs.addNGramEvidence(item.fontName, pageNum, c)
+    }
+    val leftmostPoints = baselineShapes.map{ shape =>
+      val Line(p1, p2) = shape.shape // asInstanceOf[LineShape]
+      p1
+    }
+
+    clusterColumnPoints(leftmostPoints, LB.LeftAlignedCharCol)
+
+    traceLog.trace { labeledShapes(LB.CharRunBaseline) }
+  }
+
+  private def addFontEvidence(charRun: Seq[ExtractedItem.CharItem]): Unit = {
+    // Init Font/char stats
+    charRun.foreach { item =>
+      item.char.foreach { c =>
+        docScope.fontDefs.addNGramEvidence(item.fontName, pageNum, c)
+      }
+    }
+
+    val runChars = charRun.flatMap(_.strRepr())
+
+    val fontRuns = charRun.groupByPairs{
+      case (i1, i2) => i1.fontName == i2.fontName
+    }
+
+    fontRuns.foreach { fontRun =>
+      val headFont = fontRun.head.fontName
+
+      if (charRun.length > 1) {
+        runChars.sliding(2).foreach { ngram =>
+          self.docScope.fontDefs.addNGramEvidence(headFont, pageNum, ngram.head, ngram.tail:_*)
         }
-      }
-
-      val runChars = charRun.flatMap(_.strRepr())
-
-      val fontRuns = charRun.groupByPairs{
-        case (i1, i2) => i1.fontName == i2.fontName
-      }
-
-      fontRuns.foreach { fontRun =>
-        val headFont = fontRun.head.fontName
-
-        if (charRun.length > 1) {
-          runChars.sliding(2).foreach { ngram =>
+        if (charRun.length > 2) {
+          runChars.sliding(3).foreach { ngram =>
             self.docScope.fontDefs.addNGramEvidence(headFont, pageNum, ngram.head, ngram.tail:_*)
           }
-          if (charRun.length > 2) {
-            runChars.sliding(3).foreach { ngram =>
-              self.docScope.fontDefs.addNGramEvidence(headFont, pageNum, ngram.head, ngram.tail:_*)
-            }
 
-          }
         }
       }
     }
-    traceLog.drawPageShapes()
+  }
+
+  private def initGridShapes(): Unit = {
+    val pageCharRuns = findPageCharRuns()
+
+    // divide char runs to those with natural-language bigrams
+    val markedNatLangRuns = pageCharRuns.map { run =>
+      val str = run.map(_.char).mkString
+      if(LetterFrequencies.hasCommonBigram(str)) Right(run)
+      else Left(run)
+    }
+
+    val natLangCharRuns = markedNatLangRuns.collect {
+      case Right(run) => run
+    }
+
+    initNatLangCharSpans(natLangCharRuns)
+
   }
 
 }

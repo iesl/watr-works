@@ -58,6 +58,13 @@ object Processable {
       }
     }
   }
+
+  def withCorpusEntry(input: Processable)(f: CorpusEntry => Unit): Unit = {
+    input match {
+      case CorpusFile(corpusEntry) => f(corpusEntry)
+      case _ =>
+    }
+  }
 }
 
 case class IOConfig(
@@ -240,32 +247,34 @@ object ProcessPipelineSteps {
     }
   }
 
+  import _root_.io.circe, circe._, circe.syntax._
   def writeTraceLogs(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
     inStream => {
       inStream.map {
         case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
 
-          // val textGridFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
-          // val traceLogRoot = if (conf.runTraceLogging) {
-          //   val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
-          //   traceLogGroup.deleteGroupArtifacts()
-          //   Some(traceLogGroup.rootPath)
-          // } else None
+          Processable.withCorpusEntry(input) { corpusEntry =>
+            val traceLogRoot = if (conf.runTraceLogging) {
+              val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
+              traceLogGroup.deleteGroupArtifacts()
+              Some(traceLogGroup.rootPath)
+            } else None
+            traceLogRoot.foreach { rootPath =>
+              println("writing tracelogs")
 
-          // traceLogRoot.foreach { rootPath =>
-          //   println("writing tracelogs")
+              fs.ls(rootPath).foreach{ p => fs.rm(p) }
 
-          //   fs.ls(rootPath)
-          //     .foreach{ p => fs.rm(p) }
-          //   val allLogs = segmenter.pageSegmenters
-          //     .foldLeft(List[Json]()) {
-          //       case (accum, pageSegmenter) =>
-          //         accum ++ pageSegmenter.emitLogs()
-          //     }
-          //   val jsonLogs = allLogs.asJson
-          //   val jsonStr = jsonLogs.pretty(PrettyPrint2Spaces)
-          //   fs.write(rootPath / "tracelog.json", jsonStr)
-          // }
+              val allLogs = segmentation.pageSegmenters
+                .foldLeft(List[Json]()) {
+                  case (accum, pageSegmenter) =>
+                    accum ++ pageSegmenter.emitLogs()
+                }
+              val jsonLogs = allLogs.asJson
+              val jsonStr = jsonLogs.pretty(PrettyPrint2Spaces)
+              fs.write(rootPath / "tracelog.json", jsonStr)
+            }
+          }
+
           m
 
         case x => x
