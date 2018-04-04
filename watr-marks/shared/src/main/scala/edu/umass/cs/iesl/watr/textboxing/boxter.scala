@@ -8,6 +8,7 @@ import scala.language.postfixOps
 import scala.language.implicitConversions
 
 import scala.scalajs.js.annotation._
+import scala.annotation.tailrec
 
 
 sealed trait Alignment
@@ -155,6 +156,12 @@ object TextBoxing extends ToListOps with ToIdOps {
     def aligned(aligns: Alignment*): Grid = {
       new Grid(aligns.map(a => RowSpec(a)))
     }
+
+    def withCols(i: Int, align: Alignment): Grid = {
+      aligned((0 until i).map(_ => align):_*)
+    }
+
+    // Min width per column
     def widthAligned(aligns: (Int, Alignment)*): Grid = {
       new Grid(aligns.map(a => RowSpec(a._2, a._1)))
     }
@@ -168,27 +175,41 @@ object TextBoxing extends ToListOps with ToIdOps {
       }
 
       def toBox(): Box = {
-        val bx = theGrid.rows
-          .map({ row =>
-            val rowbs = row.bs.zipAll(theGrid.rowSpec,
-              nullBox, RowSpec(AlignLeft, 0)
-            ).map({case (cellBox, spec) =>
-              if (spec.width > 0) {
-                Box(
-                  rows = cellBox.rows,
-                  cols = math.max(spec.width, cellBox.cols),
-                  SubBox(
-                    hAlign = spec.alignment,
-                    vAlign = AlignFirst,
-                    cellBox
-                  )
-                )
-              } else cellBox
+        val allRows = theGrid.rows.reverse.map { row =>
 
-            })
-            hcat(top, rowbs)
-          })
-        vcat(left, bx.reverse)
+          val rowCells = row.bs.zipAll(theGrid.rowSpec,
+            nullBox, RowSpec(AlignLeft, 0)
+          ).map {case (cellBox, spec) =>
+            if (spec.width > 0) {
+              Box(
+                rows = cellBox.rows,
+                cols = math.max(spec.width, cellBox.cols),
+                SubBox(
+                  hAlign = spec.alignment,
+                  vAlign = AlignFirst,
+                  cellBox
+                )
+              )
+            } else cellBox
+
+          }
+          rowCells.toList
+        }
+
+
+        @tailrec
+        def loop(bs: List[List[Box]], acc: List[List[Box]]): List[List[Box]] = {
+          if (bs.exists(_.nonEmpty)) {
+            val h = bs.map(_.headOption.getOrElse(nullBox))
+            val ts = bs.map(_.tailOption.getOrElse(Nil))
+            loop(ts, h :: acc)
+          } else acc.reverse
+        }
+        val inv = loop(allRows, List[List[Box]]())
+
+        hjoins(left,
+          inv.map(vjoins(left, _))
+        )
       }
     }
   }

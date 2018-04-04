@@ -4,7 +4,6 @@ package segment
 
 // import watrmarks.{StandardLabels => LB, _}
 import watrmarks._
-import watrmarks.Label
 import geometry._
 import geometry.syntax._
 import textboxing.{TextBoxing => TB}
@@ -61,9 +60,9 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
           val l2TextRowOpt = pageIndex.components.getComponentText(line2CC, LB.VisualLine)
           val l3TextRowOpt = pageIndex.components.getComponentText(line3CC, LB.VisualLine)
 
-          val l1Text = l1TextRowOpt.map(_.toText()).getOrElse("<no text>")
-          val l2Text = l2TextRowOpt.map(_.toText()).getOrElse("<no text>")
-          val l3Text = l3TextRowOpt.map(_.toText()).getOrElse("<no text>")
+          // val l1Text = l1TextRowOpt.map(_.toText()).getOrElse("<no text>")
+          // val l2Text = l2TextRowOpt.map(_.toText()).getOrElse("<no text>")
+          // val l3Text = l3TextRowOpt.map(_.toText()).getOrElse("<no text>")
 
           val l1Trapezoid = getTrapezoidAttr(line1CC.id)
           val l2Trapezoid = getTrapezoidAttr(line2CC.id)
@@ -128,8 +127,8 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
           val l1TextRowOpt = pageIndex.components.getComponentText(line1CC, LB.VisualLine)
           val l2TextRowOpt = pageIndex.components.getComponentText(line2CC, LB.VisualLine)
 
-          val l1Text = l1TextRowOpt.map(_.toText()).getOrElse("<no text>")
-          val l2Text = l2TextRowOpt.map(_.toText()).getOrElse("<no text>")
+          // val l1Text = l1TextRowOpt.map(_.toText()).getOrElse("<no text>")
+          // val l2Text = l2TextRowOpt.map(_.toText()).getOrElse("<no text>")
           val l1Trapezoid = getTrapezoidAttr(line1CC.id)
           val l2Trapezoid = getTrapezoidAttr(line2CC.id)
           val l1Labels = getWeightsAttr(line1CC.id).get

@@ -8,9 +8,6 @@ import segment.{SegmentationLabels => LB}
 import corpora.DocumentZoningApi
 import extract._
 import spindex._
-
-// import utils.SlicingAndDicing._
-// import utils.ExactFloats._
 import utils.Timer.time
 
 import TypeTags._
@@ -22,7 +19,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
   protected[segment] def init(): Unit = {
     initPageIndexes()
-    // initStartingComponents()
   }
 
   def getNumberedPages(): Seq[(Int@@PageID, Int@@PageNum)] =
@@ -65,15 +61,14 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
   def runDocumentSegmentation(): Unit = {
 
+    println(this.docScope.fontDefs.report())
+
     time("segment pass 1") {
       pageSegmenters.foreach { p =>
         p.runPageSegmentationPass1()
       }
     }
 
-    time("segment char metric computations") {
-      doCharMetricComputations()
-    }
 
     time("segment pass 2") {
       pageSegmenters.foreach { p =>
@@ -83,28 +78,9 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
   }
 
-
-
-  private def doCharMetricComputations(): Unit = {
-
-    docScope.fontDefs.fontProperties.foreach{ fontProps =>
-      // println("Font properties")
-      // println(fontProps)
-      // val tristr = fontProps.trigramEvidence. mkString("{\n  ", "\n  ", "\n}")
-      // val bistr = fontProps.bigramEvidence. mkString("{  ", ", ", "  }")
-      // println(s"Bigrams: ${bistr} ")
-      // val pageEvidence = fontProps.pagewiseEvidence. mkString("{\n  ", "\n  ", "\n}")
-      // println("PageEvidence: ")
-      // println(pageEvidence)
-      // val _ = fontProps.inferredMetrics()
-    }
-
-
-  }
 }
 
 
-// trait DocumentSegmenter extends DocumentSegmentation
 
 object DocumentSegmenter {
   import spindex._

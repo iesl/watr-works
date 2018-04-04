@@ -33,7 +33,9 @@ object FunctionalHelpers {
   def liftSeq[A](a: A): Seq[A] = { Seq(a) }
   def liftOpt[A](a: A): Option[A] = { Option(a) }
 
-  def spanAllEithers[A](as: Seq[A], f: A => Boolean): Seq[Either[Seq[A], Seq[A]]] = {
+  // On seq `as`, mark Right(a) iff f(a)==true else Left(a), then collect contiguous spans of Right/Left
+  // into e.g., Right(Seq(a,...))
+  def collectSpanEither[A](as: Seq[A], f: A => Boolean): Seq[Either[Seq[A], Seq[A]]] = {
     import SlicingAndDicing._
 
     val eithers = as.map{ a => if (f(a)) Right(a) else Left(a) }

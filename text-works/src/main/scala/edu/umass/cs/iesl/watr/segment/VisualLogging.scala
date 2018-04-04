@@ -94,8 +94,12 @@ trait PageScopeTracing extends VisualTracer { self  =>
     implicit enclosing: sourcecode.Enclosing
   ) = ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {
     val methodFqn = enclosing.value.split("\\.").toList.last
-    val site = methodFqn.replace("#", " . ").replace("$anonfun", "").trim
-    val l2 = log.copy(callSite = site)
+    val rep1 = """.+[^#]#""".r
+    val rep2 = """\$anonfun""".r
+    val site0 = rep1.replaceFirstIn(methodFqn, "")
+    val site = rep2.replaceAllIn(site0, "")
+    // val site = methodFqn.replace("#", " . ").replace("$anonfun", "").trim
+    val l2 = log.copy(callSite = site.trim)
     traceLogs.append(l2)
   }
 

@@ -10,6 +10,7 @@ import textgrid._
 import utils.ExactFloats._
 import TypeTags._
 // import utils.SlicingAndDicing._
+import utils.QuickNearestNeighbors._
 
 trait LineSegmentation extends PageScopeSegmenter { self =>
   lazy val lineSegmenter = self
@@ -234,7 +235,7 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
   }
 
   private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact =  {
-    val charSpacings = QuickNearestNeighbors.qnn(
+    val charSpacings = qnn(
       pairwiseItemDistances(sortedLineCCs), 0.5d
     )
 

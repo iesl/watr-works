@@ -155,7 +155,7 @@ object TextGridOutputFormats  {
     val scaledMetrics = fontDefs.fontProperties.map { fp =>
 
       val metrics = fp.scaledMetrics.map{ scaledMetrics =>
-        val perPageGlyphCounts = fp.glyphOccurrenceCounts.column(scaledMetrics.scalingFactor)
+        val perPageGlyphCounts = fp.natLangGlyphOccurrenceCounts.column(scaledMetrics.scalingFactor)
 
         val perPageList = perPageGlyphCounts.entrySet().asScala.toList
 
@@ -189,7 +189,7 @@ object TextGridOutputFormats  {
       }
       val res = Json.obj(
         "name" := name,
-        "englishBigramEvidence" := fp.bigramEvidence.count(_ > 0),
+        // "englishBigramEvidence" := fp.bigramEvidence.count(_ > 0),
         "metrics" := metrics
       )
 

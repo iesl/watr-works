@@ -9,14 +9,14 @@ trait LibVersions {
   val logbackVersion      = "1.7.25"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
-  val doobieVersion       = "0.5.1"
+  val doobieVersion       = "0.5.2"
   // val doobieVersion       = "0.4.4"
   val matryoshkaCoreV     = "0.21.3"
   val sourcecodeV         = "0.1.4"
   val fansiV              = "0.2.5"
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
-  val http4sVersion       = "0.18.5"
+  val http4sVersion       = "0.18.6"
   val fs2Version          = "0.10.3"
   val circeJsonVersion    = "0.9.3"
 
@@ -26,7 +26,8 @@ trait LibVersions {
   val catsV               = "1.1.0"
   val catsEffectV         = "0.10"
   val postgresqlV         = "42.2.2"
-  val freestyleV         = "0.7.0"
+  val freestyleV          = "0.7.0"
+  val guavaV              = "23.0"
 }
 
 object Freestyle extends LibVersions {
@@ -112,6 +113,7 @@ trait CommonLibs extends LibVersions {
   val scopt            = "com.github.scopt"        %% "scopt"            % "3.7.0"
   val shapeless        = "com.chuusai"             %% "shapeless"        % shapelessV
   val acyclic          = "com.lihaoyi"             %% "acyclic"          % acyclicVersion % "provided"
+  val guava            = "com.google.guava"         % "guava"            % guavaV
 
   val fs2 = Seq(
     "co.fs2" %% "fs2-core" % fs2Version,

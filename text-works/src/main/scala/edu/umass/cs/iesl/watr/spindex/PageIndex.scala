@@ -41,13 +41,6 @@ import com.github.davidmoten.rtree.{geometry => RG}
 
 
 object PageIndex {
-  // import java.nio.file.Path
-
-  // def load(path: Path): PageIndex = {
-  //   val rtree = RTreeIndex.load[Component](path)
-  //   val pageGeometry = PageGeometry(PageNum(0), LTBounds.empty)
-  //   new PageIndex(pageGeometry, rtree)
-  // }
 
   def qualifyCluster(l: Label): Label = { l.qualifiedAs("cluster") }
   def qualifyOrdering(l: Label): Label = { l.qualifiedAs("ordering") }
@@ -93,7 +86,6 @@ class PageIndex(
   import PageIndex._
 
   lazy val pageNum = pageGeometry.pageNum
-  val rtreeArtifactName = s"page-${pageNum}.rtree"
 
   lazy val pageItems: Array[ExtractedItem] =
     extractedItems.slice(firstItemOffset, firstItemOffset+itemsLen)
@@ -272,6 +264,12 @@ class PageIndex(
           set.getCanonical(cluster.head)
         }
       } getOrElse(Seq())
+    }
+
+    def getClusterRoot(l: Label, s: Shape): Option[Shape] = {
+      disjointSets.get(l).flatMap{set =>
+        if (set.contains(s)) Some(set.getCanonical(s)) else None
+      }
     }
 
     def reportClusters(): Unit = {

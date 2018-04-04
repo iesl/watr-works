@@ -29,9 +29,6 @@ trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
   def pageSegmenters(): Seq[PageScopeSegmenter]
 
-  // def createZone(label: Label, pageRegions: Seq[PageRegion]): Option[Int@@ZoneID] = {
-  //   docStore.labelRegions(label, pageRegions)
-  // }
 
 }
 
@@ -50,9 +47,19 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   def pageGeometry = docStore.getPageGeometry(pageId)
   def pageIndex: PageIndex = mpageIndex.getPageIndex(pageNum)
 
+  implicit class RicherLabeledShapes[A <: GeometricFigure](val theShapes: Seq[LabeledShape[A]]) {
+    def asLineShapes: Seq[LineShape] = theShapes.asInstanceOf[Seq[LineShape]]
+    def asPointShapes: Seq[PointShape] = theShapes.asInstanceOf[Seq[PointShape]]
+    def asRectShapes: Seq[RectShape] = theShapes.asInstanceOf[Seq[RectShape]]
+  }
+
+  implicit class RicherLabeledShape[A <: GeometricFigure](val theShape: LabeledShape[A]) {
+    def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
+    def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
+    def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
+  }
+
   def labelRegion(bbox: LTBounds, label: Label, text: Option[String] = None): RegionComponent = {
-    // val regionId = docStore.addTargetRegion(pageId, bbox)
-    // val pageRegion = docStore.getTargetRegion(regionId)
     val stablePage = docStore.getPageIdentifier(pageId)
     val pageRegion = PageRegion(stablePage, bbox)
     mpageIndex.createRegionComponent(pageRegion, label, text)
@@ -74,36 +81,38 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     val hexact = height.toFloatExact()
     val t = max(texact, pageGeometry.top)
     val b = min(texact + hexact, pageGeometry.bottom)
-    // pageGeometry.getHorizontalSlice(top.toFloatExact(), height.toFloatExact())
-    // println(s"pageHorizontalSlice: ${pageGeometry}")
-    // println(s"                   : top: ${top}, height: ${height}")
-    // println(s"                   : tex: ${t}, bex: ${b}")
     pageGeometry.getHorizontalSlice(t, b-t)
   }
 
   protected def searchForPoints(query: GeometricFigure, l: Label): Seq[PointShape] = {
     pageIndex.shapes.searchShapes(query, l)
-      .map {_.asInstanceOf[PointShape]}
+      .map {_.asPointShape}
   }
 
-  protected def searchForLines(query: GeometricFigure, l: Label): Seq[LineShape] = {
-    pageIndex.shapes.searchShapes(query, l)
-      .map {_.asInstanceOf[LineShape]}
+  protected def searchForLines(query: GeometricFigure, l: Label*): Seq[LineShape] = {
+    pageIndex.shapes.searchShapes(query, l:_*)
+      .map {_.asLineShape}
   }
+
+  protected def searchForRects(query: GeometricFigure, l: Label*): Seq[RectShape] = {
+    pageIndex.shapes.searchShapes(query, l:_*)
+      .map {_.asRectShape}
+  }
+
 
   protected def getLabeledRects(l: Label): Seq[LineShape] = {
     pageIndex.shapes.getShapesWithLabel(l)
-      .map(_.asInstanceOf[LineShape])
+      .map(_.asLineShape)
   }
 
   protected def getLabeledLines(l: Label): Seq[LineShape] = {
     pageIndex.shapes.getShapesWithLabel(l)
-      .map(_.asInstanceOf[LineShape])
+      .map(_.asLineShape)
   }
 
   protected def getLabeledPoints(l: Label): Seq[PointShape] = {
     pageIndex.shapes.getShapesWithLabel(l)
-      .map(_.asInstanceOf[PointShape])
+      .map(_.asPointShape)
   }
 
   protected def deleteLabeledShapes(l: Label): Unit = {
@@ -116,6 +125,12 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
 
   protected def indexShape[T <: GeometricFigure](shape: T, l: Label): LabeledShape[GeometricFigure] = {
     pageIndex.shapes.indexShape(shape, l)
+  }
+
+  protected def indexShapeForItems[T <: GeometricFigure](shape: T, l: Label, items: ExtractedItem*): LabeledShape[GeometricFigure] = {
+    val s = pageIndex.shapes.indexShape(shape, l)
+    setExtractedItemsForShape(s, items.toSeq)
+    s
   }
 
   protected def unindexShape[T <: GeometricFigure](shape: LabeledShape[T]): Unit = {
@@ -164,83 +179,6 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
 }
 
 
-object QuickNearestNeighbors {
-  import TypeTags._
-  import utils.SlicingAndDicing._
-  import scala.annotation.tailrec
-
-  case class Bin(
-    centroid: DataPoint,
-    neighbors: Seq[DataPoint]
-  ) {
-
-    def size(): Int = neighbors.map(_.len).sum + centroid.len
-
-    def range(): (Int@@FloatRep, Int@@FloatRep) = {
-      val values = (centroid.value.unwrap +:
-        neighbors.map(_.value.unwrap))
-
-      (FloatRep(values.min), FloatRep(values.max))
-    }
-    def maxValue(): Int@@FloatRep = {
-      val max = (centroid.value.unwrap +:
-        neighbors.map(_.value.unwrap)).max
-
-      FloatRep(max)
-    }
-
-    override def toString(): String = {
-      val cstr = centroid.toString()
-      val nstr = neighbors.map(_.toString()).mkString(", ")
-      s"{${cstr} +[ ${nstr} ]}"
-    }
-
-  }
-
-  case class DataPoint(
-    value: Int@@FloatRep,
-    len: Int
-  ) {
-    override def toString(): String = {
-      val cpp = value.pp
-      val clen = len
-      s"[${cpp} x ${clen}]"
-    }
-
-  }
-
-  def qnn(in: Seq[Int@@FloatRep], tolerance: Double = 0.5d): Seq[Bin] = {
-
-    @tailrec
-    def loop(init: List[(Int@@FloatRep, Int)], groups: List[Bin]): List[Bin] = {
-      if (init.isEmpty) groups else {
-        val (dmax, dmaxCount) = init.head
-        val (grouped, others) = init.tail.partition { case (d, dcount) =>
-          val inRange = d - tolerance < dmax && dmax < d + tolerance
-          inRange
-        }
-        val bin = Bin(
-          DataPoint(dmax, dmaxCount),
-          grouped.map(g => DataPoint(g._1, g._2))
-        )
-        loop(others, bin::groups)
-      }
-    }
-
-    val distsSortByCount: List[(Int@@FloatRep, Int)] = in
-      .sorted.toList
-      .groupByPairs(_ == _)
-      .map(p => (p.head, p.length))
-      .sortBy(_._2)
-      .reverse
-      .toList
-
-
-    val binned = loop(distsSortByCount, List())
-
-    binned.sortBy(_.size()).reverse
-  }
-}
 
 trait SegmentationCommons {
   def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {

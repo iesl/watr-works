@@ -29,7 +29,7 @@ object LetterFrequencies {
   }
 
   def hasCommonTrigram(s: String): Boolean = {
-    s.sliding(2).exists { Trigrams.contains(_) }
+    s.sliding(3).exists { Trigrams.contains(_) }
   }
 
 }

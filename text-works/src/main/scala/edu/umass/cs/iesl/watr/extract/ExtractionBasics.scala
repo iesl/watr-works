@@ -14,6 +14,9 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle
 import com.google.{common => guava}
 import guava.{collect => gcol}
 import TypeTags._
+import textboxing.{TextBoxing => TB}, TB._
+
+import utils.GuavaHelpers
 
 protected object ExtractionImplicits {
   implicit class RicherRectangle2D(val self: Rectangle2D) extends AnyVal {
@@ -35,16 +38,7 @@ protected object ExtractionImplicits {
       val h = self.getHeight
       LTBounds.Floats(left, top, w, h).toLBBounds
     }
-    // def xtoLTBounds(): LTBounds = {
-    //   val left = self.getLowerLeftX
-    //   val top = self.getUpperRightY
-    //   val w = self.getWidth
-    //   val h = self.getHeight
-    //   // LTBounds.Floats(l, t-h, w, h)
-    //   LTBounds.Floats(left, top, w, h)
-    // }
   }
-
 }
 
 import ExtractionImplicits._
@@ -66,7 +60,7 @@ object ExtractedItem {
   case class CharItem(
     id: Int@@CharID,
     char: String,
-    fontName: String,
+    fontProps: FontProperties,
     glyphProps: GlyphProps
   ) extends ExtractedItem {
     def strRepr(): String = char
@@ -153,17 +147,30 @@ case class FontProperties(
 
 
   val alphaEvidence = Array.ofDim[Int](LetterFrequencies.Letters.length)
-  val bigramEvidence = Array.ofDim[Int](LetterFrequencies.Bigrams.length)
-
-  val glyphOccurrenceCounts = gcol.HashBasedTable.create[Int@@PageNum, Int@@ScalingFactor, Int]()
 
   val asciiHeightsPerScaleFactor = mutable.HashMap[Int@@ScalingFactor, AsciiHeightRecord]()
-  // var glyphCount = 0
+  val natLangGlyphOccurrenceCounts = gcol.HashBasedTable.create[Int@@PageNum, Int@@ScalingFactor, Int]()
+  val totalGlyphOccurrenceCounts = gcol.HashBasedTable.create[Int@@PageNum, Int@@ScalingFactor, Int]()
 
-  def initGlyphEvidence(c: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum): Unit = {
+  def initGlyphEvidence(c: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum, priorSimilarChars: Seq[ExtractedItem.CharItem]): Unit = {
     val bbox = glyphProps.glyphBBox
     val height = bbox.height.asDouble()
     val scalingFactor = glyphProps.scalingFactor
+
+    val recentSimilarTextWindow = priorSimilarChars.map(_.char).mkString
+
+    val hasBigram = LetterFrequencies.hasCommonBigram(recentSimilarTextWindow.take(2))
+    val hasTrigram = LetterFrequencies.hasCommonTrigram(recentSimilarTextWindow.take(3))
+
+    if (hasBigram || hasTrigram) {
+
+      val nglyphs = natLangGlyphOccurrenceCounts.get(pageNum, scalingFactor)
+      natLangGlyphOccurrenceCounts.put(pageNum, scalingFactor, nglyphs + 1)
+    }
+
+    totalGlyphOccurrenceCounts.put(pageNum, scalingFactor,
+      1 + totalGlyphOccurrenceCounts.get(pageNum, scalingFactor)
+    )
 
     if (c.toInt < 128) {
       val rec = asciiHeightsPerScaleFactor.getOrElseUpdate(scalingFactor, AsciiHeightRecord())
@@ -172,15 +179,8 @@ case class FontProperties(
 
     val i = LetterFrequencies.Letters.indexOf(c)
     if (i >= 0) {
-      alphaEvidence(i) += 1
+      alphaEvidence(i) = alphaEvidence(i) + 1
     }
-    val nglyphs = glyphOccurrenceCounts.get(pageNum, scalingFactor)
-    glyphOccurrenceCounts.put(pageNum, scalingFactor, nglyphs + 1)
-  }
-
-  def isNatLangFont(): Boolean = {
-    val nonZeros = bigramEvidence.count(_ > 0)
-    nonZeros > 3
   }
 
   private def nonZeroHeights(letters: String, asciiHeights: AsciiHeightRecord): Seq[(Char, Double)]= {
@@ -202,7 +202,6 @@ case class FontProperties(
 
       val small = avg(nonZeroHeights("aeoru", asciiHeightRec))
       val med1  = avg(nonZeroHeights("ldkh", asciiHeightRec))
-      // val med2  = avg(nonZeroHeights("ypqg", asciiHeightRec))
       val large = avg(nonZeroHeights(caps, asciiHeightRec))
       ScaledMetrics(
         scaleFactor,
@@ -231,6 +230,67 @@ case class FontProperties(
     declaredMetrics
   }
 
+
+  def report(): TB.Box = {
+    val letterFreqs = TB.hjoins(TB.center1,
+      alphaEvidence.zip(LetterFrequencies.Letters)
+        .map{ case (count, letter) =>
+          s"| ${letter}" atop s"| ${count}"
+        }
+    )
+
+    val heightPerScale = "Ascii Heights per Scaling Factor" atop indent(4, vjoins(
+      asciiHeightsPerScaleFactor.toSeq.map { case (scaleFactor, asciiHeightRec) =>
+        val lowerHeights = nonZeroHeights(('a' to 'z').mkString, asciiHeightRec)
+        val upperHeights = nonZeroHeights(('A' to 'A').mkString, asciiHeightRec)
+        val lbox = hjoins(top, lowerHeights.map{case (ch, height) =>
+          s"| ${ch}" atop s"| ${height}"
+        })
+        val ubox = hjoins(top, upperHeights.map{case (ch, height) =>
+          s"| ${ch}" atop s"| ${height}"
+        })
+
+        s"@ x${scaleFactor}" atop(indent(2,
+          vjoin(
+            "Lower Case".box,
+            lbox,
+            "Upper Case",
+            ubox
+          )
+        ))
+      }
+    ))
+
+
+    val natGlyphPerPage = "Nat. Lang. Glyphs per page" atop {
+      val tableMatrix = GuavaHelpers.guavaTableToMatrix(natLangGlyphOccurrenceCounts, 0)
+      val grid = GuavaHelpers.tableToGrid(tableMatrix)
+      indent(4, grid.toBox())
+    }
+
+    // Per page counts
+    val totalGlyphTable = {
+      val tableMatrix = GuavaHelpers.guavaTableToMatrix(totalGlyphOccurrenceCounts, 0)
+      val grid = GuavaHelpers.tableToGrid(tableMatrix)
+      indent(4, grid.toBox())
+    }
+
+    s"${name}".box atop TB.indent(4, vjoin(
+      s"Common English Letter Counts",
+      letterFreqs,
+      vspace(1),
+      vspace(1),
+      heightPerScale,
+      vspace(1),
+      natGlyphPerPage,
+      vspace(1),
+      "Total Glyph Counts Per Page/Scale",
+      totalGlyphTable
+    ))
+
+
+  }
+
 }
 
 object FontDefs {
@@ -254,61 +314,47 @@ class FontDefs(pageCount: Int) {
     fontProperties.find(_.name == fontName)
   }
 
-  def addFont(pdFont: PDFont): FontProperties = {
 
-    val fname = getFontName(pdFont)
+  def addFont(pdFont: PDFont): FontProperties = {
+    val fname = getQualifiedFontName(pdFont)
 
     if (!fontProperties.exists(_.name == fname)) {
       val props = FontProperties(
         fname,
         pdFont.getType,
-        // 0f, 0f, 0
-        FontMetrics(
-          0f, 0f, 0
-          // fontDesc.getAscent,
-          // fontDesc.getDescent,
-          // fontDesc.getCapHeight
-        ),
+        FontMetrics(0f, 0f, 0),
         pageCount
       )
       fontProperties.append(props)
     }
-    getFont(pdFont.getName).get
-  }
-
-  def addGlyphEvidence(pdFont: PDFont, char: Char, glyphProps: GlyphProps, pageNum: Int@@PageNum): Unit = {
-    val fontProps = addFont(pdFont)
-
-    fontProps.initGlyphEvidence(char, glyphProps, pageNum)
+    getFont(fname).get
   }
 
 
+  // def addNGramEvidence(fontName: String, pageNum: Int@@PageNum, char: Char, chars: Char*): Unit = {
+  //   val maybeProps = getFont(fontName)
+  //   if (maybeProps.isEmpty) {
+  //     println(s"Missing font: ${fontName} for chars: ${chars.mkString}")
+  //   }
 
-  def addNGramEvidence(fontName: String, pageNum: Int@@PageNum, char: Char, chars: Char*): Unit = {
-    val maybeProps = getFont(fontName)
-    if (maybeProps.isEmpty) {
-      println(s"Missing font: ${fontName} for chars: ${chars.mkString}")
-    }
+  //   maybeProps.foreach {  props =>
+  //     val ngram = (char +: chars).mkString
 
-    maybeProps.foreach {  props =>
-      val ngram = (char +: chars).mkString
+  //     if (chars.length == 1) {
+  //       val i = LetterFrequencies.Bigrams.indexOf(ngram)
+  //       if (i >= 0) {
+  //         props.bigramEvidence(i) += 1
+  //       }
+  //     }
+  //   }
 
-      // if (chars.length == 2) {
-      //   val i = LetterFrequencies.Trigrams.indexOf(ngram)
-      //   if (i >= 0) {
-      //     props.trigramEvidence(i) += 1
-      //   }
-      // } else if (chars.length == 1) {
-      if (chars.length == 1) {
-        val i = LetterFrequencies.Bigrams.indexOf(ngram)
-        if (i >= 0) {
-          props.bigramEvidence(i) += 1
-        }
-      }
-    }
+  // }
 
+  def report(): TB.Box = {
+    s"Font Definitions. Page Count: ${pageCount}" atop indent(4, vjoins(
+      fontProperties.map(_.report())
+    ))
   }
-
 
 
 }

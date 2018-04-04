@@ -40,7 +40,7 @@ class PdfBoxTextExtractor(
   private[this] val log = org.log4s.getLogger
 
   import ExtractedItem._
-  import FontDefs._
+  // import FontDefs._
   // Limit the # of chars that can be extracted per page to prevent pathological cases (e.g., embedded charts using symbol font-based dots)
   val MAX_EXTRACTED_CHARS_PER_PAGE = 10000
 
@@ -69,7 +69,6 @@ class PdfBoxTextExtractor(
   }
 
   def addImgItem(item: ExtractedItem.ImgItem): Unit = {
-    // println(s"addImgItem: ${item}")
     extractedItems = item :: extractedItems
   }
 
@@ -206,6 +205,20 @@ class PdfBoxTextExtractor(
 
   lazy val pageLTBounds = getPageGeometry().bounds
 
+  override protected def showFontGlyph(
+    textRenderingMatrix: Matrix,
+    font: PDFont,
+    code: Int,
+    unicode: String,
+    displacement: Vector
+  ): Unit = {
+    println("Warning: running showFontGlyph()");
+    showGlyph(textRenderingMatrix, font, code, unicode, displacement)
+  }
+
+  val priorCharWindowSize = 3
+  var priorCharWindow: List[ExtractedItem.CharItem] = List()
+
   override protected def showGlyph(
     textRenderingMatrix: Matrix,
     pdFont: PDFont,
@@ -223,16 +236,12 @@ class PdfBoxTextExtractor(
       unicode == null || unicode.headOption.exists(_ == ' ')
     }
 
-
     if (!isSpace) {
       totalCharCount = totalCharCount + 1
 
       val glyphProps = calculateGlyphBounds(textRenderingMatrix, pdFont, code)
 
-      // println(s"glyphProps: ${glyphProps}")
-
-      fontDefs.addFont(pdFont)
-
+      val fontProps = fontDefs.addFont(pdFont)
 
       glyphProps.finalGlyphBounds.foreach { finalGlyphBounds =>
         val glyphBounds = finalGlyphBounds.getBounds2D.toLTBounds()
@@ -240,31 +249,45 @@ class PdfBoxTextExtractor(
 
         def appendChar(strRepr: String): Unit = {
           if (isContained) {
-            addCharItem(CharItem(charIdGen.nextId, strRepr, getFontName(pdFont), glyphProps))
+            val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps)
+            val sameFont = priorCharWindow.headOption.exists(_.fontProps==nextItem.fontProps)
+            val sameScalingFactor = priorCharWindow.headOption.exists(_.glyphProps.scalingFactor == nextItem.glyphProps.scalingFactor)
+            val sameFontBaseline = priorCharWindow.headOption.exists(_.fontBbox.bottom == nextItem.fontBbox.bottom)
+
+            val similarGlyph = sameFont && sameScalingFactor && sameFontBaseline
+
+            if (similarGlyph) {
+              priorCharWindow = nextItem :: priorCharWindow
+            } else {
+              priorCharWindow = List(nextItem)
+            }
+
+            val isAsciiCode = unicode != null && unicode.forall(_.toInt == code)
+            if (isAsciiCode) {
+              strRepr.headOption.foreach { ch =>
+                fontProps.initGlyphEvidence(ch, glyphProps, pageNum,
+                  priorCharWindow.take(priorCharWindowSize).reverse
+                )
+              }
+
+            }
+
+            addCharItem(nextItem)
           }
         }
 
         if (unicode == null) {
-         appendChar(s"¿${code};")
+          appendChar(s"¿${code};")
         } else {
           val isSurrogate =  unicode.exists(isSurrogateCodepoint(_))
           if (isSurrogate) {
             appendChar(s"¿${code};")
           } else {
 
-            // if (unicode.length() > 1) { println(s"unicode > 1: ${unicode} = ${unicode.map(_.toInt.toHexString).toList}, code: ${code}") }
-
-            val isAsciiCode =  unicode.forall(_.toInt == code)
-
             unicode.foreach { ch =>
-
-              if (isAsciiCode) {
-                fontDefs.addGlyphEvidence(pdFont, ch, glyphProps, pageNum)
-              }
 
               UnicodeUtil.maybeSubChar(ch) match {
                 case Left(c)   =>
-
                   if (isCombiningMark(c)) stashChar(c) else appendChar(c.toString())
 
                 case Right(cs) =>
@@ -281,39 +304,8 @@ class PdfBoxTextExtractor(
     }
   }
 
-  // var i = 4;
 
   def calculateGlyphBounds(textRenderingMatrix: Matrix,  font: PDFont,  code: Int) : GlyphProps = {
-
-    // if (i > 0) {
-    //   val fontMatrix = font.getFontMatrix.clone()
-    //   val trm = textRenderingMatrix.clone()
-
-    //   println(s"${i}. calculateGlyphBounds: code: ${code.toChar}")
-    //   println(s"Page Box       : ${pageBounds.toLTBounds()}")
-    //   println(s"Font Matrix    : ${fontMatrix}")
-    //   println(s"TRM            : ${trm}")
-    //   trm.concatenate(fontMatrix)
-
-    //   val affineTRM = trm.createAffineTransform()
-    //   println(s"F+TRM          : ${trm}")
-    //   println(s"  (as affine)  : ${affineTRM}")
-
-    //   val fontBounds = getFontBounds(font).toGeneralPath().getBounds2D() /// .toLTBounds()
-
-    //   println(s"FontBounds     : ${fontBounds.toLTBounds()}")
-
-    //   val ftrmFontBounds = affineTRM.createTransformedShape(fontBounds)
-    //   println(s" apply F+TRM   : ${ftrmFontBounds.getBounds2D.toLTBounds()}")
-
-    //   val pageAligned = pageSpaceTransform.transform(ftrmFontBounds)
-    //   println(s" page-aligned  : ${pageAligned.getBounds2D.toLTBounds()}")
-
-
-    //   println("\n" * 3)
-
-    //   i = i-1
-    // }
 
     textRenderingMatrix.concatenate(font.getFontMatrix)
     val affineTr = textRenderingMatrix.createAffineTransform()

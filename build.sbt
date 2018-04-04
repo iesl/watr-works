@@ -43,8 +43,9 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
       Lib.ammoniteOps,
       "org.scala-js"               %% "scalajs-stubs"          % "0.6.22" % "provided",
       "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
-      "com.github.davidmoten"       % "rtree"                  % "0.8.4",
+      "com.github.davidmoten"       % "rtree"                  % "0.8.5",
       "com.github.davidmoten"       % "flatbuffers-java"       % "1.8.0.1",
+      Lib.guava % Optional,
       "ichi.bench" % "thyme"        % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
     ))
 
@@ -65,7 +66,7 @@ lazy val textworks = (project in file("text-works"))
     Lib.circeJson ++ Seq(
       "co.fs2" %% "fs2-io" % Lib.fs2Version,
       "org.apache.pdfbox" % "pdfbox" % "2.0.9",
-      "com.google.guava" % "guava" % "23.0",
+      Lib.guava,
       "com.vividsolutions" % "jts-core" % "1.14.0",
       Lib.scopt,
       Lib.scrimageCore,

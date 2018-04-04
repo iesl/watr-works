@@ -26,7 +26,12 @@ object SegmentationLabels extends DocSegLabels {
   val CharRun           = Label.auto
   val CharRunBegin      = Label.auto
   val CharRunBaseline   = Label.auto
-  val FontBaseline    = Label.auto
+  val FontBaseline      = Label.auto
+
+  val PageGlyphNL         = Label.auto
+  val PageGlyphNonNL      = Label.auto
+  val ContiguousGlyphs    = Label.auto
+
 
   val HasCharRunBaselines  = Label.auto
 
