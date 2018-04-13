@@ -255,8 +255,32 @@ trait GeometricOps {
       isContainedByHProjection(other) && isContainedByVProjection(other)
     }
 
+    def isNeitherAboveNorBelow(other: LTBounds): Boolean = {
+      !isStrictlyAbove(other) && !isStrictlyBelow(other)
+    }
 
+    def isStrictlyAbove(other: LTBounds): Boolean = {
+      val myBottom = self.toPoint(Dir.Bottom).y
+      val otherTop = other.toPoint(Dir.Top).y
+      myBottom < otherTop
+    }
 
+    def isStrictlyBelow(other: LTBounds): Boolean = {
+      other.isStrictlyAbove(self)
+      // val myTop = self.toPoint(Dir.Top).y
+      // val otherBottom = other.toPoint(Dir.Bottom).y
+      // myTop > otherBottom
+    }
+
+    def isStrictlyLeftOf(other: LTBounds): Boolean = {
+      val rightEdge = self.toPoint(Dir.BottomRight).x
+      val otherLeftEdge = other.toPoint(Dir.BottomLeft).x
+      rightEdge < otherLeftEdge
+    }
+
+    def isStrictlyRightOf(other: LTBounds): Boolean = {
+      other.isStrictlyLeftOf(self)
+    }
 
   }
 

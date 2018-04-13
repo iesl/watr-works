@@ -10,23 +10,22 @@ import com.google.{common => guava}, guava.{collect => gcol}
 
 class GuavaHelpersTest extends FlatSpec with Matchers {
 
-  it should "draw a table" in {
-    val table = gcol.HashBasedTable.create[Int, String, String]()
-    for {
-      row <- (0 until 5)
-      col <- (0 until 5)
-    } yield {
-      if (nextBoolean()) {
-        table.put(row, col.toString(), s"${row}, ${col}" )
-      }
-    }
+  // it should "draw a table" in {
+  //   val table = gcol.HashBasedTable.create[Int, String, String]()
+  //   for {
+  //     row <- (0 until 5)
+  //     col <- (0 until 5)
+  //   } yield {
+  //     if (nextBoolean()) {
+  //       table.put(row, col.toString(), s"${row}, ${col}" )
+  //     }
+  //   }
 
-    val tableDef = guavaTableToMatrix(table, "--")
-    val grid = tableToGrid(tableDef)
+  //   val box = guavaTableToBox(table, 0)
 
-    println(grid.toBox())
+  //   println(box.toString)
 
-  }
+  // }
 
   it should "draw a marginalized table" in {
     val table = gcol.HashBasedTable.create[Int, String, Int]()

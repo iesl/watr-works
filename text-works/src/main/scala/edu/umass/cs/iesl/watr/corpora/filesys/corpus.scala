@@ -32,9 +32,10 @@ object Corpus {
     }
     val corpus = Corpus(fullPath)
     if (corpus.sentinelExists()) {
-      sys.error(s"init: corpus seems to already be initialized ${fullPath}")
+      println(s"initCorpus: corpus sentinel already exists at ${fullPath}; ")
+    } else {
+      corpus.touchSentinel()
     }
-    corpus.touchSentinel()
     corpus.normalizeCorpusEntries()
   }
 

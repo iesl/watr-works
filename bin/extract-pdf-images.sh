@@ -36,47 +36,54 @@ pdfdir=$( dirname "$pdffile" )
 pageimagedir="$pdfdir/page-images"
 thumbdir=$pdfdir/page-thumbs
 
-rm -rf $pageimagedir
-mkdir $pageimagedir
-rm -rf $thumbdir
-mkdir $thumbdir
+if [ -e "$pageimagedir" ]; then
+    echo "Page images in $pageimagedir"
+else
+    echo "No extracted page images for $pdfdir ... extracting ... "
 
-echo "Extracting page images"
+    rm -rf $pageimagedir
+    mkdir $pageimagedir
+    rm -rf $thumbdir
+    mkdir $thumbdir
 
-mudraw_exists=$(hash mudraw 2>/dev/null && echo 1)
-mutool_exists=$(hash mutool 2>/dev/null && echo 1)
+    echo "Extracting page images"
 
-if [ -n $mudraw_exists ]; then
-    # echo "using mudraw "
-    mudraw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
-elif [ -n $mutool_exists ]; then
-    # echo "using mutool"
-    mutool draw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
+    mudraw_exists=$(hash mudraw 2>/dev/null && echo 1)
+    mutool_exists=$(hash mutool 2>/dev/null && echo 1)
+
+    if [ -n $mudraw_exists ]; then
+        # echo "using mudraw "
+        mudraw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
+    elif [ -n $mutool_exists ]; then
+        # echo "using mutool"
+        mutool draw -r 110 -o "$pageimagedir/page-%d.png" $pdffile
+    fi
+
+
+    echo "Generating thumbnails"
+
+    thumbsize=150
+
+    mogrify -path $thumbdir\
+                -filter Triangle\
+                -define filter:support=2\
+                -thumbnail $thumbsize\
+                -unsharp 0.25x0.25+8+0.065\
+                -dither None\
+                -posterize 136\
+                -quality 100\
+                -define jpeg:fancy-upsampling=off\
+                -define png:compression-filter=5\
+                -define png:compression-level=9\
+                -define png:compression-strategy=1\
+                -define png:exclude-chunk=all\
+                -interlace none\
+                -colorspace sRGB\
+                -strip $pageimagedir/*.png
+
+    echo "Optimizing image sizes"
+    pngquant --ext .opt.png $pageimagedir/*.png
+
+    find $pageimagedir/ -type f \( -not -name '*.opt.png' \) -exec rm {} ';'
+
 fi
-
-
-echo "Generating thumbnails"
-
-thumbsize=150
-
-mogrify -path $thumbdir\
-        -filter Triangle\
-        -define filter:support=2\
-        -thumbnail $thumbsize\
-        -unsharp 0.25x0.25+8+0.065\
-        -dither None\
-        -posterize 136\
-        -quality 100\
-        -define jpeg:fancy-upsampling=off\
-        -define png:compression-filter=5\
-        -define png:compression-level=9\
-        -define png:compression-strategy=1\
-        -define png:exclude-chunk=all\
-        -interlace none\
-        -colorspace sRGB\
-        -strip $pageimagedir/*.png
-
-echo "Optimizing image sizes"
-pngquant --ext .opt.png $pageimagedir/*.png
-
-find $pageimagedir/ -type f \( -not -name '*.opt.png' \) -exec rm {} ';'

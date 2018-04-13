@@ -13,6 +13,7 @@ import TypeTags._
 import utils.Timer.time
 import formats._
 import corpora._
+import _root_.io.circe, circe._, circe.syntax._
 
 
 sealed trait InputMode
@@ -50,6 +51,7 @@ object Processable {
           conf.outputPath.getOrElse {
             nio.Paths.get(f.getFileName() + ".textgrid.json")
           }
+
         case CorpusFile(corpusEntry) =>
           (corpusEntry.getRootPath() / "textgrid.json").toNIO
 
@@ -88,6 +90,7 @@ object ProcessPipelineSteps {
       .through(markUnextractedProcessables(conf))
       .through(runSegmentation(conf))
       .through(writeExtractedTextFile(conf))
+      .through(cleanTraceLogArtifacts(conf))
       .through(writeTraceLogs(conf))
 
     val prog = processStream.compile.drain
@@ -247,31 +250,53 @@ object ProcessPipelineSteps {
     }
   }
 
-  import _root_.io.circe, circe._, circe.syntax._
-  def writeTraceLogs(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
-    inStream => {
-      inStream.map {
+
+  def writeTraceLogs(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = _.map {
+    case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
+
+      Processable.withCorpusEntry(input) { corpusEntry =>
+        val traceLogRoot = if (conf.runTraceLogging) {
+          val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
+          Some(traceLogGroup.rootPath)
+        } else None
+
+        traceLogRoot.foreach { rootPath =>
+          println("writing font summary")
+
+          val docScopeLogs = segmentation.docScope.emitLogs().asJson
+
+          fs.write(
+            rootPath / "font-summary.json",
+            docScopeLogs.pretty(PrettyPrint2Spaces)
+          )
+
+          val pageLogs = segmentation.pageSegmenters
+            .foldLeft(List[Json]()) {
+              case (accum, pageSegmenter) =>
+                accum ++ pageSegmenter.emitLogs()
+            }
+
+          fs.write(rootPath / "tracelog.json",
+            pageLogs.asJson.pretty(PrettyPrint2Spaces)
+          )
+        }
+      }
+
+      m
+
+    case x => x
+  }
+
+  def cleanTraceLogArtifacts(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedOutput, MarkedOutput] = {
+      _.map {
         case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
 
           Processable.withCorpusEntry(input) { corpusEntry =>
-            val traceLogRoot = if (conf.runTraceLogging) {
-              val traceLogGroup = corpusEntry.ensureArtifactGroup("tracelogs")
-              traceLogGroup.deleteGroupArtifacts()
-              Some(traceLogGroup.rootPath)
-            } else None
-            traceLogRoot.foreach { rootPath =>
-              println("writing tracelogs")
 
-              fs.ls(rootPath).foreach{ p => fs.rm(p) }
-
-              val allLogs = segmentation.pageSegmenters
-                .foldLeft(List[Json]()) {
-                  case (accum, pageSegmenter) =>
-                    accum ++ pageSegmenter.emitLogs()
-                }
-              val jsonLogs = allLogs.asJson
-              val jsonStr = jsonLogs.pretty(PrettyPrint2Spaces)
-              fs.write(rootPath / "tracelog.json", jsonStr)
+            if (conf.runTraceLogging) {
+              println("cleaning tracelogs")
+              val group = corpusEntry.ensureArtifactGroup("tracelogs")
+              group.deleteGroupArtifacts()
             }
           }
 
@@ -279,7 +304,6 @@ object ProcessPipelineSteps {
 
         case x => x
       }
-    }
   }
 
   def runSegmentation(conf: TextWorksConfig.Config): fs2.Pipe[IO, MarkedInput, MarkedOutput] =
@@ -296,18 +320,18 @@ object ProcessPipelineSteps {
       minput match {
         case Right(input) =>
 
-        input match {
-          case m@ Processable.CorpusFile(corpusEntry) =>
-            val textGridFile = Processable.getTextgridOutputFile(m, conf.ioConfig)
-            val isProcessed = fs.exists(textGridFile.toFsPath())
-            if (isProcessed) {
-              log.info(s"Already processed ${corpusEntry}: ${textGridFile}")
-              Left(input)
-            } else {
-              Right(input)
-            }
+          input match {
+            case m@ Processable.CorpusFile(corpusEntry) =>
+              val textGridFile = Processable.getTextgridOutputFile(m, conf.ioConfig)
+              val isProcessed = fs.exists(textGridFile.toFsPath())
+              if (isProcessed) {
+                log.info(s"Already processed ${corpusEntry}: ${textGridFile}")
+                Left(input)
+              } else {
+                Right(input)
+              }
 
-        }
+          }
         case m => m
       }
     }

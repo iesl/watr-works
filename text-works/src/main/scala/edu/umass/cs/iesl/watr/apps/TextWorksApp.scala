@@ -20,10 +20,11 @@ object TextWorksConfig {
     }
 
   case class Config(
-    ioConfig        : IOConfig = IOConfig(),
-    initCorpus      : Option[nio.Path] = None,
-    runTraceLogging : Boolean = VisualTracer.tracingEnabled(),
-    exec            : Option[(Config) => Unit] = Some((c) => runTextExtractionPipeline(c))
+    ioConfig          : IOConfig = IOConfig(),
+    initCorpus        : Option[nio.Path] = None,
+    runTraceLogging   : Boolean = VisualTracer.tracingEnabled(),
+    // outputFontSummary : Boolean = false,
+    exec              : Option[(Config) => Unit] = Some((c) => runTextExtractionPipeline(c))
   )
 
   val parser = new scopt.OptionParser[Config]("text-works") {
@@ -91,6 +92,10 @@ object TextWorksConfig {
         true
       }
     } text ("force overwrite of existing output artifacts")
+
+    // opt[Unit]("write-font-summary") action { (v, conf) =>
+    //   lens[Config].outputFontSummary.set(conf)(true)
+    // } text ("write a text file summarizing the document fonts and glyph occurrence statistics")
 
     note("\nOutput text layout options: \n")
 

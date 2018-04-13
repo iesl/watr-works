@@ -9,8 +9,10 @@ import spindex._
 import utils.ExactFloats._
 import extract._
 import segment.{SegmentationLabels => LB}
+import utils._
+// import utils.GuavaHelpers._
 
-trait DocumentScopeSegmenter extends SegmentationCommons { self =>
+trait DocumentScopeSegmenter extends DocumentScopeTracing with SegmentationCommons { self =>
 
   lazy val docScope = self
 
@@ -29,6 +31,10 @@ trait DocumentScopeSegmenter extends SegmentationCommons { self =>
 
   def pageSegmenters(): Seq[PageScopeSegmenter]
 
+
+  def getPagewiseLinewidthTable(): TabularData[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep]] = {
+    docScope.docStats.getTable[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep]]("PagewiseLineWidths")
+  }
 
 }
 
@@ -147,7 +153,14 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   protected def getClusteredLines(l: Label): Seq[(Int@@ShapeID, Seq[LineShape])] = {
     pageIndex.shapes.getClustersWithReprID(l)
       .map{ case (id, shapes) =>
-        (id, shapes.map {_.asInstanceOf[LineShape]})
+        (id, shapes.map {_.asLineShape})
+      }
+  }
+
+  protected def getClusteredRects(l: Label): Seq[(Int@@ShapeID, Seq[RectShape])] = {
+    pageIndex.shapes.getClustersWithReprID(l)
+      .map{ case (id, shapes) =>
+        (id, shapes.map {_.asRectShape})
       }
   }
 
@@ -171,10 +184,15 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     pageIndex.shapes.getShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems).get
   }
 
-  protected def getCharRunBaselineItems(baselineMembers: Seq[LineShape]): Seq[Seq[ExtractedItem]] = {
-    baselineMembers.map {charRun =>
-      getExtractedItemsForShape(charRun)
-    }
+  protected def getExtractedItemsForShapes(shapes: Seq[LabeledShape[GeometricFigure]]): Seq[Seq[ExtractedItem]] = {
+    shapes.map { getExtractedItemsForShape(_) }
+  }
+
+  protected def setCharsForShape(shape: LabeledShape[GeometricFigure], items: Seq[ExtractedItem.CharItem]): Unit = {
+    pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem.CharItem]](shape.id, LB.ExtractedItems, items)
+  }
+  protected def getCharsForShape(shape: LabeledShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
+    pageIndex.shapes.getShapeAttribute[Seq[ExtractedItem.CharItem]](shape.id, LB.ExtractedItems).get
   }
 }
 

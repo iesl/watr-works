@@ -5,9 +5,9 @@ import com.google.{common => guava}
 import guava.{collect => gcol}
 import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, Ordering => _, _}, Scalaz._
+import scala.collection.JavaConverters._
 
 object GuavaHelpers {
-  import scala.collection.JavaConverters._
   import scala.collection.mutable
 
   case class GuavaTableMatrix[X, Y, A](
@@ -16,7 +16,7 @@ object GuavaHelpers {
     rows: Seq[Seq[A]]
   )
 
-  def guavaTableToLabeledBox[A: Ordering, B: Ordering, C](
+  def guavaTableToLabeledBox[A: Ordering, B: Ordering, C <: Any](
     table: gcol.Table[A, B, C], zero: C,
     topLabel: String ,
     leftLabel: String,
@@ -29,7 +29,7 @@ object GuavaHelpers {
     )
   }
 
-  def guavaTableToBox[A: Ordering, B: Ordering, C](
+  def guavaTableToBox[A: Ordering, B: Ordering, C <: Any](
     table: gcol.Table[A, B, C], zero: C,
     topLabel: Option[String] = None,
     leftLabel: Option[String] = None,
@@ -70,13 +70,13 @@ object GuavaHelpers {
         col.reduce(f).toString.box
       }
       boxedTable :+ (List(hspace(1), hspace(1)))
-      // boxedTable :+ sums.map(_ => "-".box).intersperse(" - ".box) // .map(x => TB.borderTB("=")(x))
       boxedTable :+ sums.intersperse(" = ") // .map(x => TB.borderTB("=")(x))
     } getOrElse { boxedTable }
 
 
     val rowLabels = vspace(1) atop vjoins(right, rowKeys.map(_.toString().box))
-    val colLabels  = columnKeys.map(_.toString().box).intersperse(" ║ ")
+    // val colLabels  = columnKeys.map(_.toString().box).intersperse(" ║ ")
+    val colLabels  = columnKeys.map(_.toString().takeRight(8).mkString.box).intersperse(" ║ ")
 
     boxedTable = colLabels +: boxedTable
 
@@ -107,8 +107,6 @@ object GuavaHelpers {
     hjoin(
       borderLeftRight("", " ┃ ")(rowLabels),
       cols
-      // rowLabels,
-      // vjoins(left, rowBoxes),
     )
 
   }
@@ -132,146 +130,96 @@ object GuavaHelpers {
 
 
 
+  def initTable[RowT: Ordering, ColT: Ordering, A <: Any](): TabularData[RowT, ColT, A] = {
+    new TabularData[RowT, ColT, A](
+      gcol.HashBasedTable.create[RowT, ColT, Any]()
+    )
+  }
+
+  def initTableFromGuava[RowT: Ordering, ColT: Ordering, A <: Any](
+    table: gcol.Table[RowT, ColT, Any]
+  ): TabularData[RowT, ColT, A] = {
+    new TabularData[RowT, ColT, A](table)
+  }
+
+}
 
 
-  def guavaTableToBoxOld[A: Ordering, B: Ordering, C](
-    table: gcol.Table[A, B, C], zero: C,
-    topLabel: Option[String] = None,
-    leftLabel: Option[String] = None,
-    rightMarginalFunc: Option[(C, C) => C] = None,
-    bottomMarginalFunc: Option[(C, C) => C] = None,
-  ): TB.Box = {
-    val rowKeys = table.rowKeySet().asScala.toList.sorted
-    val columnKeys = table.columnKeySet().asScala.toList.sorted
-    val rows = (0 until rowKeys.length).map{ r =>
-      mutable.ArrayBuffer.fill[C](columnKeys.length)(zero)
+class TabularData[RowT: Ordering, ColT: Ordering, A](
+  table: gcol.Table[RowT, ColT, Any]
+) {
+  def set(r: RowT, c: ColT, a: A): Unit = {
+    table.put(r, c, a)
+  }
+
+  def apply(r: RowT, c: ColT): A = {
+    table.get(r, c).asInstanceOf[A]
+  }
+
+  def get(r: RowT, c: ColT): Option[A] = {
+    val a = apply(r, c)
+    if (a != null) Some(a) else None
+  }
+
+  // def getOrElse(r: RowT, c: ColT, default: => A): A = {
+  //   val a = get(r, c)
+  //   if (a != null) a else default
+  // }
+
+  def modify(r: RowT, c: ColT, fa: A => A): Unit = {
+    get(r, c) match {
+      case Some(a0) =>
+        table.put(r, c, fa(a0))
+      case None =>
     }
+  }
+
+  def modifyOrSet(r: RowT, c: ColT, fa: A => A, z: => A): Unit = {
+    get(r, c) match {
+      case Some(a0) =>
+        table.put(r, c, fa(a0))
+      case None =>
+        table.put(r, c, z)
+    }
+  }
+
+  def map[B](f: A => B): TabularData[RowT, ColT, B] = {
+    val table2 = gcol.HashBasedTable.create[RowT, ColT, Any]()
+
+    val rowKeys = table.rowKeySet().asScala
+    val columnKeys = table.columnKeySet().asScala
 
     for {
-      (rowk, rown) <- rowKeys.zipWithIndex
-      (colk, coln) <- columnKeys.zipWithIndex
-    }  {
-      val c = table.get(rowk, colk)
-      if (c!=null) {
-        rows(rown)(coln) = c
+      rowk <- rowKeys
+      colk <- columnKeys
+    } {
+      get(rowk, colk).foreach { a =>
+        if (a != null) table2.put(rowk, colk, f(a))
       }
     }
 
-    var boxedTable = rows.map{ row =>
-      row.map(_.toString().box).toList.intersperse(" ║ ")
-    }
-
-    boxedTable = rightMarginalFunc.map{ f =>
-      val sums = rowKeys.map{ k =>
-        val row = table.row(k).asScala.values.toList
-        List(" = ".box, row.reduce(f).toString.box)
-      }
-      boxedTable.zip(sums).map { case (r, s) => r ++ s }
-    } getOrElse { boxedTable }
-
-    boxedTable = bottomMarginalFunc.map{ f =>
-      val sums = columnKeys.map{ k =>
-        val col = table.column(k).asScala.values.toList
-        col.reduce(f).toString.box
-      }
-      boxedTable :+ sums
-    } getOrElse { boxedTable }
-
-
-    val rowLabels = rowKeys.map(_.toString().box)
-    val colLabels  = "  ".box :: " ║ ".box :: (columnKeys.map(_.toString().box).intersperse(" ║ "))
-
-    boxedTable = colLabels +: boxedTable
-
-    val bottomMarginals = bottomMarginalFunc.map{ f =>
-        columnKeys.map{ k =>
-          val col = table.column(k).asScala.values.toList
-          col.reduce(f).toString.box
-        }
-    } getOrElse {
-      columnKeys.map(_ => emptyBox(1, 1))
-    }
-
-    val rightMarginals = List.fill(1)("?".box) ++ (rightMarginalFunc.map{ f =>
-        rowKeys.map{ k =>
-          val row = table.row(k).asScala.values.toList
-          " = ".box + row.reduce(f).toString.box
-        }
-    } getOrElse {
-      rowKeys.map(_ => emptyBox(1, 1))
-    })
-
-
-    val grid = Grid.withCols(rowKeys.length, TB.AlignRight)
-      .addRow(colLabels:_*)
-
-    val filledGrid =
-      rows.zip(rowLabels).zip(rightMarginals)
-        .foldLeft(grid){ case (accGrid, ((row, rowLabel), rightMarginal)) =>
-          val colBoxes = row.map(c => c.toString().mbox).toList.intersperse(" ┆ ".box)
-          accGrid.addRow((rowLabel:: " ┃ ".box :: (colBoxes :+ rightMarginal)):_*)
-        }
-
-    // vjoin(TB.AlignLeft,
-    //   // hjoins(TB.top, colLabels),
-    // )
-    filledGrid.addRow(bottomMarginals:_*).toBox()
-
-
+    new TabularData[RowT, ColT, B](table2)
   }
 
-
-
-
-
-
-
-
-
-  def guavaTableToMatrix[A: Ordering, B: Ordering, C](
-    table: gcol.Table[A, B, C], zero: C,
-    topLabel: Option[String] = None,
-    leftLabel: Option[String] = None,
-    rightMarginalFunc: Option[(C, C) => C] = None,
-    bottomMarginalFunc: Option[(C, C) => C] = None,
-  ): GuavaTableMatrix[A, B, C] = {
-    val rowKeys = table.rowKeySet().asScala.toList.sorted
+  def mapColumns[B](z: => B)(f: (B, A) => B): Seq[(ColT, B)] = {
     val columnKeys = table.columnKeySet().asScala.toList.sorted
-    val matrix = (0 until rowKeys.length).map{ r =>
-      mutable.ArrayBuffer.fill[C](columnKeys.length)(zero)
-    }
-
 
     for {
-      (rowk, rown) <- rowKeys.zipWithIndex
-      (colk, coln) <- columnKeys.zipWithIndex
-    }  {
-      val c = table.get(rowk, colk)
-      if (c!=null) {
-        matrix(rown)(coln) = c
+      colk <- columnKeys
+    } yield {
+      val column = table.column(colk)
+      val total = column.asScala.toSeq.foldLeft(z){ case  (acc, (rowk, a)) =>
+        f(acc, a.asInstanceOf[A])
       }
+      (colk, total)
     }
-    GuavaTableMatrix(rowKeys, columnKeys, matrix)
-
   }
 
-  import Grid._
-
-  def tableToGrid[A, B, C](table: GuavaTableMatrix[A, B, C]): TB.Grid = {
-
-    val rowLabels = table.rowKeys.map(_.toString().box)
-    val colLabels  = "  ".box :: " ║ ".box :: (table.colKeys.map(_.toString().box).intersperse(" ║ "))
-
-    // val headerSep = List.fill(colLabels.length)("-".box)
-
-    val grid = Grid.withCols(table.rowKeys.length, TB.AlignLeft)
-      .addRow(colLabels:_*)
-
-    table.rows.zip(rowLabels).foldLeft(grid){ case (accGrid, (row, rowLabel)) =>
-      val colBoxes = row.map(c => c.toString().mbox).toList.intersperse(" ┆ ".box)
-      accGrid.addRow((rowLabel:: " ┃ ".box :: colBoxes):_*)
-    }
-
+  def toReportBox(): TB.Box = {
+    GuavaHelpers.guavaTableToBox(
+      table, 0
+    )
   }
+
 
 }

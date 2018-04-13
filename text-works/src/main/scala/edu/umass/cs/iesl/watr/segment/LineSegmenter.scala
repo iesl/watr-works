@@ -58,19 +58,15 @@ trait LineSegmentation extends PageScopeSegmenter { self =>
   }
 
   private def textRowFromComponents(visualBaseline: LineShape): TextGrid.Row = {
-    // val visualLineModalCC = pageIndex.components.getRelation(visualLineClusterCC, LB.VisualLineModal).head
-    // val visualLineCC = pageIndex.components.getRelation(visualLineClusterCC, LB.VisualLine).head
 
-    val extractedItems = getExtractedItemsForShape(visualBaseline)
+    val extractedItems = getExtractedItemsForShape(visualBaseline).sortBy(_.minBBox.left)
 
     val (topIntersects, bottomIntersects) = findLineAtomScriptPositions(visualBaseline)
 
     val visualLineModalBounds: LTBounds = LTBounds.empty
-    // println("textRowFromComponents:")
     new TextGrid.MutableRow { self =>
       val init = extractedItems.map{
         case item: ExtractedItem.CharItem =>
-          // print(s" ${item.strRepr()};")
           val intersectsTop = topIntersects.contains(item.id)
           val intersectsBottom = bottomIntersects.contains(item.id)
 

@@ -139,8 +139,9 @@ object TextGridOutputFormats  {
 
     val outputDoc = Json.obj(
       "description" := s"Extracted Pages for ${stableId}",
+      "documentId" := stableId.unwrap,
       "pages" := allPageTextGrids,
-      "fonts" := fontDescriptions
+      // "fonts" := fontDescriptions
     )
 
     outputDoc

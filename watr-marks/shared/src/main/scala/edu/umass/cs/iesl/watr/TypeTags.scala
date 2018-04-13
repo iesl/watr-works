@@ -29,6 +29,7 @@ sealed trait Length
 
 sealed trait Percent
 sealed trait ScalingFactor
+sealed trait ScaledFontID
 
 sealed trait LockID
 sealed trait LabelerID
@@ -68,7 +69,11 @@ trait TypeTagUtils {
 
   import scala.math.Ordering.Implicits._
 
-  implicit def TypeTagOrdering[T]: Ordering[Int@@T] = {
+  implicit def TypeTagOrderingInt[T]: Ordering[Int@@T] = {
+    Ordering.by(_.unwrap)
+  }
+
+  implicit def TypeTagOrderingStr[T]: Ordering[String@@T] = {
     Ordering.by(_.unwrap)
   }
 
@@ -105,6 +110,7 @@ trait TypeTags extends TypeTagUtils {
 
   val Percent = Tag.of[Percent]
   val ScalingFactor = Tag.of[ScalingFactor]
+  val ScaledFontID = Tag.of[ScaledFontID]
 
   val ImageID = Tag.of[ImageID]
 

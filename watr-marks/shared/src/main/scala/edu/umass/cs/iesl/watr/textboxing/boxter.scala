@@ -128,6 +128,10 @@ object TextBoxing extends ToListOps with ToIdOps {
       } else theString
     }
 
+    def hangIndent(b: Box): Box = {
+      theString.box atop indent(4, b)
+    }
+
   }
 
 
@@ -304,6 +308,10 @@ object TextBoxing extends ToListOps with ToIdOps {
         theBox.lines.map(l => vcat(left, l.toList.map(_.toString.box)))
       )
 
+    }
+
+    def hangIndent(b: Box): Box = {
+      theBox atop indent(4, b)
     }
 
   }

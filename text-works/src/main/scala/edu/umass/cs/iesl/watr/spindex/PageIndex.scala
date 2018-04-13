@@ -177,7 +177,6 @@ class PageIndex(
     def getShapeAttribute[A](shapeId: Int@@ShapeID, l: Label)
       (implicit act: ClassTag[A]): Option[A] = {
       val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
-
       if (shapeAttributeTable.contains(shapeId, typedLabel)) {
         Some(shapeAttributeTable.get(shapeId, typedLabel).asInstanceOf[A])
       } else None

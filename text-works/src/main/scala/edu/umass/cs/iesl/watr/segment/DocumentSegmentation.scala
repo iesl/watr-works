@@ -4,11 +4,16 @@ package segment
 import ammonite.{ops => fs}, fs._
 
 
-import segment.{SegmentationLabels => LB}
+// import segment.{SegmentationLabels => LB}
 import corpora.DocumentZoningApi
 import extract._
 import spindex._
 import utils.Timer.time
+import utils.ExactFloats._
+import utils._
+import textgrid._
+import scala.collection.mutable
+import utils.QuickNearestNeighbors._
 
 import TypeTags._
 
@@ -47,7 +52,6 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     createPageSegmenters()
   }
 
-  import textgrid._
 
   protected def joinPageTextGrids(): TextGrid = {
     val textGrids = pageSegmenters.map {
@@ -59,15 +63,79 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     TextGrid.fromRows(docScope.stableId,  allRows)
   }
 
+  private def outputTableData(): Unit = {
+
+    val scaledFontIDs = docScope.fontDefs.getFontIdentifiers.sorted
+    val dbg = scaledFontIDs.mkString("{\n  ", "\n  ", "\n}")
+    println(s" Font IDs: ${dbg}")
+
+    val pagewiseLineWidthTable = getPagewiseLinewidthTable()
+
+    val widthRangeCentroidDisplay = pagewiseLineWidthTable.map{ widths =>
+      val widthClusters = qnn(widths, tolerance=1.0)
+        .filter( _.size() > 1 )
+        .sortBy(_.size())
+        .reverse
+        .headOption
+        .map{ bin =>
+          bin.toCentroidRangeString()
+        } getOrElse { "-" }
+
+      widthClusters
+    }
+
+    println("Most Common Widths / ranges\n\n")
+    println(widthRangeCentroidDisplay.toReportBox())
+
+    val widthRangeCentroids = pagewiseLineWidthTable.map{ widths =>
+      val widthClusters = qnn(widths, tolerance=1.0)
+        .filter( _.size() > 1 )
+        .sortBy(_.size())
+        .reverse
+        .headOption
+        .map{ bin => bin.size() } getOrElse { 0 }
+
+      widthClusters
+    }
+
+    val marginalSizes = widthRangeCentroids.mapColumns(0) { case (acc, e) => acc + e  }
+
+    val marginalSizesStr = marginalSizes.mkString("\n  ", "\n  ", "\n")
+
+    println(s"Marginal Sizes ${}")
+    println(marginalSizesStr)
+
+    println(docScope.fontDefs.report())
+    // GuavaHelpers.initTableFromGuava(totalGlyphOccurrenceCounts)
+
+
+
+    // Get Sorted list of column-width candidates in order of:
+    //   Document-wide font counts
+    //   Page-wide font counts
+    marginalSizes
+      .sortBy { case (scaledFontId, glyphCount) => glyphCount }
+      .reverse
+      .map { case (scaledFontId, glyphCount) =>
+      }
+  }
+
+
+
+
   def runDocumentSegmentation(): Unit = {
 
-    println(this.docScope.fontDefs.report())
+    docScope.docTraceLogs.trace { boxText(docScope.fontDefs.report()) }
+
+    docScope.docStats.initTable[Int@@PageNum, String@@ScaledFontID, Int@@FloatRep]("PagewiseLineWidths")
 
     time("segment pass 1") {
       pageSegmenters.foreach { p =>
         p.runPageSegmentationPass1()
       }
     }
+
+    outputTableData();
 
 
     time("segment pass 2") {

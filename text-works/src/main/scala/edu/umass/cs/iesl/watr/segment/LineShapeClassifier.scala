@@ -32,15 +32,15 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
     def ==>(action: => Unit) = implies(action)
   }
 
-  def getTrapezoidAttr(cc: Int@@ComponentID): Option[Trapezoid] = {
+  private def getTrapezoidAttr(cc: Int@@ComponentID): Option[Trapezoid] = {
     pageIndex.components.getAttribute[Trapezoid](cc, watrmarks.Label("Trapezoid"))
   }
 
-  def getWeightsAttr(cc: Int@@ComponentID): Option[WeightedLabeling] = {
+  private def getWeightsAttr(cc: Int@@ComponentID): Option[WeightedLabeling] = {
     pageIndex.components.getAttribute[WeightedLabeling](cc, watrmarks.Label("LineGrouping"))
   }
 
-  def groupLines(): Unit = {
+  private def groupLines(): Unit = {
     for {
       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
       _ = {

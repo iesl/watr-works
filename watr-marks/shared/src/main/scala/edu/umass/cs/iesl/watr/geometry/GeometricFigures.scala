@@ -333,16 +333,6 @@ object GeometryImplicits extends RectangularCuts {
   implicit val EqualPoint: Equal[Point] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
   implicit val EqualLine: Equal[Line] = Equal.equalBy(_.asInstanceOf[GeometricFigure])
 
-  // def composeFigures(fig1: GeometricFigure, fig2: GeometricFigure): GeometricFigure = {
-  //   val bbox1 = minBoundingRect(fig1)
-  //   val bbox2 = minBoundingRect(fig2)
-  //   val bbox12 = bbox1 union bbox2
-  //   GeometricGroup(
-  //     bbox12,
-  //     List(fig1, fig2)
-  //   )
-  // }
-
 
   def minBoundingRect(fig: GeometricFigure): LTBounds = fig match {
     case f: LTBounds       => f

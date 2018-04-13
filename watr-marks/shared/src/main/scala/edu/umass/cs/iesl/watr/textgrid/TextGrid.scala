@@ -326,6 +326,8 @@ object TextGrid {
     def showCell(): Box = {
       vjoin(left, char.toString(), showPinsVert())
     }
+
+    def isGlyphCell(): Boolean
   }
 
   def mbrRegionFunc(h: PageItem, tail: Seq[PageItem]): PageRegion = {
@@ -339,6 +341,7 @@ object TextGrid {
     regionFunc: (PageItem, Seq[PageItem]) => PageRegion = mbrRegionFunc(_, _)
   ) extends GridCell {
     override val pageRegion: PageRegion = regionFunc(headItem, tailItems)
+    def isGlyphCell(): Boolean = true
   }
 
 
@@ -347,6 +350,7 @@ object TextGrid {
     insertAt: PageRegion
   ) extends GridCell {
     override val pageRegion: PageRegion = insertAt
+    def isGlyphCell(): Boolean = false
   }
 
 
