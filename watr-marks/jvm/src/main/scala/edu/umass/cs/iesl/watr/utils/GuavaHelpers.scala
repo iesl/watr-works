@@ -183,6 +183,20 @@ class TabularData[RowT: Ordering, ColT: Ordering, A](
     }
   }
 
+  def modEach[B](f: A => A): Unit = {
+
+    val rowKeys = table.rowKeySet().asScala
+    val columnKeys = table.columnKeySet().asScala
+
+    for {
+      rowk <- rowKeys
+      colk <- columnKeys
+    } {
+      modify(rowk, colk, f)
+    }
+
+  }
+
   def map[B](f: A => B): TabularData[RowT, ColT, B] = {
     val table2 = gcol.HashBasedTable.create[RowT, ColT, Any]()
 
@@ -212,6 +226,20 @@ class TabularData[RowT: Ordering, ColT: Ordering, A](
         f(acc, a.asInstanceOf[A])
       }
       (colk, total)
+    }
+  }
+
+  def mapRows[B](z: => B)(f: (B, A) => B): Seq[(RowT, B)] = {
+    val rowKeys = table.rowKeySet().asScala.toList.sorted
+
+    for {
+      rowk <- rowKeys
+    } yield {
+      val row = table.row(rowk)
+      val total = row.asScala.toSeq.foldLeft(z){ case  (acc, (colk, a)) =>
+        f(acc, a.asInstanceOf[A])
+      }
+      (rowk, total)
     }
   }
 
