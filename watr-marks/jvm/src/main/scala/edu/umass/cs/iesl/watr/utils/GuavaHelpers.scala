@@ -183,7 +183,19 @@ class TabularData[RowT: Ordering, ColT: Ordering, A](
     }
   }
 
-  def modEach[B](f: A => A): Unit = {
+  def foreach(f: A => Unit): Unit = {
+    val rowKeys = table.rowKeySet().asScala
+    val columnKeys = table.columnKeySet().asScala
+
+    for {
+      rowk <- rowKeys
+      colk <- columnKeys
+    } {
+      get(rowk, colk).foreach(f)
+    }
+  }
+
+  def modEach(f: A => A): Unit = {
 
     val rowKeys = table.rowKeySet().asScala
     val columnKeys = table.columnKeySet().asScala

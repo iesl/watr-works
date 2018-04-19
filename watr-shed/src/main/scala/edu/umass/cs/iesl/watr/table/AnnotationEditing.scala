@@ -28,6 +28,7 @@ object AnnotationDiffs {
   import scalaz.std.list._
   import scalaz.syntax.equal._
 
+  val Other = Label.auto
   val AnyLabel = Label.auto
   val GridCellLabel = Label.auto
   val GridCellIndex = Label.auto
@@ -75,7 +76,6 @@ object AnnotationDiffs {
       i1: Int,
       i2: Int
     ) extends GridCellComparison
-
   }
 
   case class LabelSpanComparison(
@@ -83,17 +83,10 @@ object AnnotationDiffs {
     alignedCells: List[TextGrid.GridCell \&/ TextGrid.GridCell] = List()
   )
 
-  case class AlignedDiffRecord(
-    alignedCells: List[TextGrid.GridCell \&/ TextGrid.GridCell],
-    labelThis: Label,
-    labelThat: Label
-  )
 
   case class DocumentDiffRecords(
     stableId: String@@DocumentID,
     labelSpans: Seq[LabeledSpan],
-    // diffRecords: Seq[GridCellComparison],
-    // alignedDiffRecords: Seq[AlignedDiffRecord],
     goldToNonGoldTable: TabularData[Int, Int, LabelSpanComparison]
   )
 
@@ -174,14 +167,18 @@ object AnnotationDiffs {
     compareGridCells(cell1, cell2)
   }
 
-  def compareGridCells(cell1: TextGrid.GridCell, cell2: TextGrid.GridCell): Option[CellBioPinDiff] = {
+  def compareGridCells(cell1: TextGrid.GridCell, cell2: TextGrid.GridCell, onlyCompare: Option[Label] = None): Option[CellBioPinDiff] = {
 
     val zippedPins = cell1.pins.zipAll(cell2.pins, XNoLabel.B, XNoLabel.B)
 
 
     val differingPins = zippedPins
       .filter{ case (p1, p2) =>
-        p1.toString() != p2.toString()
+        onlyCompare.map { l =>
+          p1.label == l && p1.toString() != p2.toString()
+        } getOrElse {
+          p1.toString() != p2.toString()
+        }
       }
 
     // val debugCompare = zippedPins
@@ -362,24 +359,6 @@ object AnnotationDiffs {
             )
 
         }
-
-        // if (pinColA.toString() == pinColB.toString()) {
-        //   vjoin(
-        //     a.char.toString,
-        //     b.char.toString,
-        //     " ",
-        //     pinColA,
-        //   )
-        // } else {
-        //   vjoin(
-        //     a.char.toString,
-        //     b.char.toString,
-        //     "✗",
-        //     pinColA,
-        //     "─",
-        //     pinColB,
-        //   )
-        // }
     }}
 
     hjoins(top, alignedCols)
@@ -428,10 +407,7 @@ object AnnotationDiffs {
     val goldLabels = allFineLabelsIndexed.filter{ _._1.isGold }
     val nonGoldLabels = allFineLabelsIndexed.filterNot{ _._1.isGold}
 
-    // val goldToNonGoldTable = GuavaHelpers.initTable[Int, Int, Int]()
     val goldToNonGoldTable = GuavaHelpers.initTable[Int, Int, LabelSpanComparison]()
-
-    // val diffRecords = mutable.ArrayBuffer[GridCellComparison]()
 
     for {
       (gold, goldIndex) <- goldLabels
@@ -459,18 +435,15 @@ object AnnotationDiffs {
           compareIndicatedGridCell(goldAttr, nonGoldAttr)  match {
 
             case Some(diff) =>
+
+              val comparison = GridCellComparison.Diff(
+                goldAttr.spanRecIndex, nonGoldAttr.spanRecIndex,
+                allFineLabels(goldAttr.spanRecIndex), allFineLabels(nonGoldAttr.spanRecIndex),
+                diff
+              )
+
               goldToNonGoldTable.modify(goldAttr.spanRecIndex, nonGoldAttr.spanRecIndex, { cellDiffs =>
-
-                val comparison = GridCellComparison.Diff(
-                  goldAttr.spanRecIndex, nonGoldAttr.spanRecIndex,
-                  allFineLabels(goldAttr.spanRecIndex), allFineLabels(nonGoldAttr.spanRecIndex),
-                  diff
-                )
-
-                cellDiffs.copy(
-                  cellComparisons = cellDiffs.cellComparisons :+ comparison
-                )
-
+                cellDiffs.copy(cellComparisons = cellDiffs.cellComparisons :+ comparison)
               })
 
             case None =>
@@ -480,27 +453,12 @@ object AnnotationDiffs {
               goldToNonGoldTable.modify(goldAttr.spanRecIndex, nonGoldAttr.spanRecIndex, { cellDiffs =>
                 cellDiffs.copy(cellComparisons = cellDiffs.cellComparisons :+ comparison)
               })
-
-              // goldToNonGoldTable.modify(goldAttr.spanRecIndex, nonGoldAttr.spanRecIndex, {
-              //   i => if (i < 0) i else 1
-              // })
-              // val curr = goldToNonGoldTable.get(goldAttr.spanRecIndex, nonGoldAttr.spanRecIndex).get
-              // if (curr < 0) {
-              //   val recNum = diffRecords.indexWhere{  g => g.i1==goldAttr.spanRecIndex && g.i2 == nonGoldAttr.spanRecIndex }
-              //   if (recNum > 0) {
-              //     diffRecords.remove(recNum)
-              //   }
-              // } else {
-              //   diffRecords.append(
-              //     GridCellComparison.Same(goldAttr.spanRecIndex, nonGoldAttr.spanRecIndex)
-              //   )
-              // }
           }
         }
       }
     }
 
-    // Align
+    // Align label cells
     goldToNonGoldTable.modEach { spanComparison =>
       if (spanComparison.cellComparisons.nonEmpty) {
         val span1 = allFineLabels(spanComparison.cellComparisons.head.i1)
@@ -510,40 +468,16 @@ object AnnotationDiffs {
         val span2Cells = span2.cells.toList
         val aligned = alignGridCells(span1Cells, span2Cells)
 
-        spanComparison.copy(
-          alignedCells = aligned
-        )
+        spanComparison.copy(alignedCells = aligned)
       } else {
         spanComparison
       }
 
     }
 
-
-
-    // val differingLabels = diffRecords
-    //   .collect { case v: GridCellComparison.Diff => v}
-    //   .groupBy { rec => (rec.i1, rec.i2) }
-
-    // val alignedDiffRecs = differingLabels.toSeq.map { case ((spanIndex1, spanIndex2), diffs) =>
-    //   val labelSpan1 = allFineLabels(spanIndex1)
-    //   val labelSpan2 = allFineLabels(spanIndex2)
-
-    //   val span1Cells = labelSpan1.cells.toList
-    //   val span2Cells = labelSpan2.cells.toList
-    //   val aligned = alignGridCells(span1Cells, span2Cells)
-
-    //   AlignedDiffRecord(aligned,
-    //     labelSpan1.label,
-    //     labelSpan2.label
-    //   )
-    // }
-
     DocumentDiffRecords(
       stableId,
       allFineLabels,
-      // diffRecords,
-      // alignedDiffRecs,
       goldToNonGoldTable
     )
   }
@@ -551,16 +485,15 @@ object AnnotationDiffs {
 
 
   def summarizeDocument(diffRec: DocumentDiffRecords): Unit = {
+    val stableId = diffRec.stableId
 
     val goldLabels = diffRec.labelSpans.filter(_.isGold)
 
     println(s"${diffRec.stableId} Total fine-grained label count = ${diffRec.labelSpans.length}, gold: ${goldLabels.length}")
-    // println(s"                    Differing Label count = ${diffRec.alignedDiffRecords.length}")
 
     val goldUnmatched = diffRec.goldToNonGoldTable
       .mapRows(true)({ case (acc, e) => acc && e.cellComparisons.isEmpty })
       .filter(_._2)
-
 
     val goldMatched = diffRec.goldToNonGoldTable.mapRows(List[LabelSpanComparison]())({ case (acc, e) =>
       val hasOverlaps = e.cellComparisons.nonEmpty
@@ -588,7 +521,6 @@ object AnnotationDiffs {
 
     val nonGoldSummary = s"Non-Gold Unmatched: ${nonGoldUnmatched.length}"
 
-
     val denominator = goldLabels.length + nonGoldUnmatched.length
 
     val errCount =  nonGoldUnmatched.length + goldUnmatched.length  + goldMatchedWithErrs.length
@@ -615,40 +547,137 @@ object AnnotationDiffs {
       ))
     )
 
-    // val similarLabels = diffRec.diffRecords
-    //   .collect { case v: GridCellComparison.Same => v}
-    //   .groupBy { rec => (rec.i1, rec.i2) }
+    type InvalidT = (Int, TB.Box)
+    type ValidT  = (Int, LabelSpanComparison, TB.Box)
+    // type ValidatedT  = Either[InvalidT, ValidT]
 
-    // val numOfSimilarities = similarLabels.keySet.size
+    // divide matched errs into correct/incorrect
+    val divided: Seq[Either[(Int, TB.Box), (Int, LabelSpanComparison, TB.Box)]] = goldMatchedWithErrs
+      .map { case (rowk: Int, spanComparisons: List[LabelSpanComparison]) =>
+        val span1 = diffRec.labelSpans(rowk)
+        val span1Index = rowk
 
-    // println(s"Similarity Count: ${numOfSimilarities}")
+        val matchingLabelComparisons = spanComparisons.map { spanComparison =>
+          assume(spanComparison.cellComparisons.nonEmpty)
+          val span1Index = spanComparison.cellComparisons.head.i1
+          val span2Index = spanComparison.cellComparisons.head.i2
+          assume(span1Index == rowk)
+          val span2 = diffRec.labelSpans(span2Index)
+          val l1 = span1.label.fqn
+          val l2 = span2.label.fqn
+          if (l1 == l2) Right(spanComparison) else Left(spanComparison)
+        }
 
-    // val differingLabels = diffRec.diffRecords
-    //   .collect { case v: GridCellComparison.Diff => v}
-    //   .groupBy { rec => (rec.i1, rec.i2) }
+        val sameLabeled = matchingLabelComparisons.count { _.isRight }
 
-    // val numOfDiffs = differingLabels.keySet.size
+        // val allComparisons: Ei = if (sameLabeled == 1) {
+        // Final decision as to whether this is correctly labeled...
 
-    // println(s"Difference Count: ${numOfDiffs}")
+        val allComparisons: Either[(Int, TB.Box), (Int, LabelSpanComparison, TB.Box)] = if (sameLabeled == 1) {
+          val spanComparison = matchingLabelComparisons.filter(_.isRight).head.right.get
+          val span2Index = spanComparison.cellComparisons.head.i2
+          // val span2 = diffRec.labelSpans(span2Index)
+          // Compare these wrt. label
+          // val label = span2.label.fqn
+          val label = span1.label
+          val aligned = spanComparison.alignedCells
 
-    // diffRec.alignedDiffRecords.foreach { alignedDiff =>
-    //   val aligned = alignedDiff.alignedCells
-    //   val alignmentBox = prettyPrintAlignedGridCells(aligned)
-    //   val keyBox = prettyPrintAlignmentKey(aligned)
-    //   val l1 = alignedDiff.labelThis.fqn
-    //   val l2 = alignedDiff.labelThat.fqn
+          val labelsMatch = compareAlignedCellLabels(spanComparison.alignedCells, label)
+          if (labelsMatch) {
+            Right[InvalidT, ValidT]( (rowk, spanComparison,
+              s"Exact Match: ${span1Index} / ${span2Index} Label = ${label}".box
+            ) )
+          } else {
+            val alignmentBox = prettyPrintAlignedGridCells(aligned)
+            val keyBox = prettyPrintAlignmentKey(aligned)
 
-    //   if (l1 == l2) {
-    //     println(
-    //       s"Differing Characters, Label = ${l1} / ${l2} ".box.hangIndent(vjoin(
-    //         vspace(1),
-    //         alignmentBox,
-    //         vspace(1),
-    //         keyBox
-    //       ))
-    //     )
-    //   }
-    // }
+            Left((  rowk,
+              s"Sole Inexact Matching Label: ${span1Index} / ${span2Index} Label = ${label} ${stableId}".box.hangIndent(vjoin(
+                vspace(1),
+                alignmentBox,
+                vspace(1),
+                keyBox
+              )))
+            )
+          }
+
+        } else if (sameLabeled > 1) {
+          val validComparisons = matchingLabelComparisons.filter(_.isRight).map(_.right.get)
+
+          val boxes = validComparisons.map{ spanComparison =>
+            val span1Index = spanComparison.cellComparisons.head.i1
+            val span2Index = spanComparison.cellComparisons.head.i2
+            val span2 = diffRec.labelSpans(span2Index)
+            val aligned = spanComparison.alignedCells
+
+            val alignmentBox = prettyPrintAlignedGridCells(aligned)
+            val keyBox = prettyPrintAlignmentKey(aligned)
+            val l1 = span1.label.fqn
+            val l2 = span2.label.fqn
+
+            s"Duplicate Inexact Matching Label ${span1Index} / ${span2Index} Label = ${l1} / ${l2} ${stableId} ".box.hangIndent(vjoin(
+              vspace(1),
+              alignmentBox,
+              vspace(1),
+              keyBox
+            ))
+          }
+
+          Left((rowk, vjoins(boxes)))
+        } else {
+          val validComparisons = matchingLabelComparisons.filter(_.isRight).map(_.left.get)
+
+          val boxes = validComparisons.map{ spanComparison =>
+            val span1Index = spanComparison.cellComparisons.head.i1
+            val span2Index = spanComparison.cellComparisons.head.i2
+            val span2 = diffRec.labelSpans(span2Index)
+            val aligned = spanComparison.alignedCells
+
+            val alignmentBox = prettyPrintAlignedGridCells(aligned)
+            val keyBox = prettyPrintAlignmentKey(aligned)
+            val l1 = span1.label.fqn
+            val l2 = span2.label.fqn
+
+            s"Non-Matching Labels Spans ${span1Index} / ${span2Index} Label = ${l1} / ${l2} ".box.hangIndent(vjoin(
+              vspace(1),
+              alignmentBox,
+              vspace(1),
+              // keyBox
+            ))
+          }
+          Left((rowk, vjoins(boxes)))
+        }
+
+        val log = allComparisons.fold({ l =>
+          l._2
+        },  {r =>
+          // s"Span ${rowk}, ${span1.label} vs..".box.hangIndent(vjoin(
+          //   vspace(1),
+          //   r._3,
+          //   vspace(1),
+          // ))
+          nullBox
+        })
+
+        println(log)
+        allComparisons
+
+      }
+
+
+    val fixedMatches = divided.count(_.isRight)
+    // val adjustedErrCount =  errCount
+    val adjustedOkCount = okCount + fixedMatches
+
+    val okFraction0 = "%3.2f".format( (adjustedOkCount.toDouble / denominator) * 100.0 )
+
+    val docSummary0 = s"Correct: ${okFraction0}; was: ${okFraction}"
+
+    println(
+      s"Adjusted Summary".box.hangIndent(vjoin(
+        docSummary0
+      ))
+    )
 
     // val goldLabelCountsByLabel = diffRec.labelSpans
     //   .filter(_.isGold)
@@ -678,60 +707,53 @@ object AnnotationDiffs {
 
   }
 
+  def compareAlignedCellLabels(cells: List[TextGrid.GridCell \&/ TextGrid.GridCell], compareLabel: Label): Boolean = {
+
+    def isSkippable(c: Char): Boolean = { " ,".contains(c) }
+
+    def skipFilter(cell: TextGrid.GridCell \&/ TextGrid.GridCell): Boolean = cell match {
+      case This(a) =>
+        val isOtherOrUnlabeled =
+          a.pins.isEmpty || a.pins.top.label == Other
+
+        isSkippable(a.char) || isOtherOrUnlabeled
+      case That(b) =>
+        val isOtherOrUnlabeled =
+          b.pins.isEmpty || b.pins.top.label == Other
+
+        isSkippable(b.char) || isOtherOrUnlabeled
+
+      case Both(a, b) =>
+        val aIsOtherOrUnlabeled =
+          a.pins.isEmpty || a.pins.top.label == Other
+        val bIsOtherOrUnlabeled =
+          b.pins.isEmpty || b.pins.top.label == Other
+
+        val bothOther = aIsOtherOrUnlabeled && bIsOtherOrUnlabeled
+
+        isSkippable(a.char) && isSkippable(b.char) |  bothOther
+    }
+
+    val trimmedCells = cells.dropWhile { skipFilter(_) }
+      .reverse
+      .dropWhile { skipFilter(_) }
+      .reverse
+
+    trimmedCells.forall{ _ match {
+      case This(a) => false
+      case That(b) => false
+
+      case Both(a, b) =>
+        val zippedPins = a.pins.zip(b.pins)
+        val similarPins = zippedPins.filter{ case (p1, p2) =>
+          p1.label == compareLabel && p1.label == p2.label
+        }
+        similarPins.nonEmpty
+    }}
+
+  }
+
   def summarizeCorpus(diffRecs: Seq[DocumentDiffRecords]): Unit = {
-
-    // val corpusLabelDiffs = diffRecs.flatMap{ diff =>
-    //   println(s"Doc ${diff.stableId} Diff count ${diff.diffRecords.length}")
-
-    //   val diffLabels = diff.diffRecords
-    //     .collect { case v: GridCellComparison.Diff => v}
-    //     .flatMap{ diff =>
-    //       val allPinDiffs = diff.bioPinDiff.diffs.map { case (pin1, pin2) =>
-    //         val s1 = pin1.toString()
-    //         val s2 = pin2.toString()
-    //         val List(ps1, ps2) = List(s1, s2).sorted
-    //         (ps1, ps2)
-    //       }
-
-    //       allPinDiffs.groupBy(_._1)
-    //         .toList.flatMap{ case (pin1, pin2s) =>
-    //           pin2s.map{ pin2 =>
-    //             (pin1, pin2)
-    //           }
-    //         }
-
-    //     }
-
-    //   val diffLabels0 = diffLabels.groupBy(x => x)
-    //     .map{ case (labelPair, occurs) =>
-    //       s"${labelPair}: ${occurs.length}".box
-    //     }
-
-    //   println(
-    //     "Document Label Error rates".box.hangIndent(vjoins(
-    //       diffLabels0.toList
-    //     ))
-    //   )
-
-    //   diffLabels.groupBy(x => x)
-    //     .toList
-    //     .map{ case (labelPair, occurs) =>
-    //       (s"${labelPair}", occurs.length)
-    //     }
-
-    // }
-
-
-    // val diffLabels0 = corpusLabelDiffs.groupBy(x => x._1)
-    //   .map{ case (labelPair, occurs) =>
-    //     s"${labelPair}: ${occurs.map(_._2).sum}".box
-    //   }
-
-    // println(
-    //   "Corpus-wide Label Error rates".box.hangIndent(vjoins(
-    //     diffLabels0.toList
-    //   ))
-    // )
 
   }
 
