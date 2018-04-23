@@ -84,7 +84,6 @@ lazy val watrshed = (project in file("watr-shed"))
     LogLibs.logback ++ TestLibs.testAndCheck ++
     DatabaseLibs.doobieDb ++
     Lib.fs2 ++
-    // Freestyle.libs ++
     Lib.circeJson ++
     Seq(
       Lib.scopt,
