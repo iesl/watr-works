@@ -12,6 +12,10 @@ object ExactFloats {
 
   type FloatExact = Int@@FloatRep
 
+  object FloatExact {
+    val zero = FloatRep(0)
+  }
+
   type FloatExactInterval = (FloatExact, FloatExact)@@Interval
 
 
@@ -21,7 +25,7 @@ object ExactFloats {
     def len: FloatExact = theRange.unwrap._2
 
     // def toString(): String = {
-    //  s"(${min.pp}-${max.pp})" 
+    //  s"(${min.pp}-${max.pp})"
     // }
   }
 
@@ -139,4 +143,3 @@ object ExactFloats {
   }
 
 }
-

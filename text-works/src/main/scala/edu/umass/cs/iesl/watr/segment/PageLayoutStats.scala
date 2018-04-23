@@ -21,17 +21,17 @@ class LayoutStats {
   val leftObtuseBaseAngles = HST.SparselyBin.ing(0.1, {t: Trapezoid => if (t.leftBaseAngleType() == AngleType.Obtuse) { t.leftBaseAngle() } else 0})
 
 
-  val namedTables = mutable.HashMap[String, TabularData[_, _, _]]()
+  val namedTables = mutable.HashMap[String, TabularData[_, _, _, _, _]]()
 
-  def initTable[R: Ordering, C: Ordering, A](tableName: String): TabularData[R, C, A] = {
+  def initTable[R: Ordering, C: Ordering, A](tableName: String): TabularData[R, C, A, Unit, Unit] = {
     assume(namedTables.get(tableName).isEmpty)
     namedTables.put(tableName, GuavaHelpers.initTable[R, C, A]())
     getTable(tableName)
   }
 
-  def getTable[R, C, A](tableName: String): TabularData[R, C, A] = {
+  def getTable[R, C, A](tableName: String): TabularData[R, C, A, Unit, Unit] = {
     namedTables.get(tableName)
-      .map(_.asInstanceOf[TabularData[R, C, A]])
+      .map(_.asInstanceOf[TabularData[R, C, A, Unit, Unit]])
       .orDie(s"LayoutStats.getTable(${tableName}) Error: No such table exists")
   }
 }

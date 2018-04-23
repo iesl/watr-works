@@ -4,7 +4,10 @@ package extract
 // Bigram/trigram frequencies from http://norvig.com/mayzner.html
 
 object LetterFrequencies {
-  val Letters = "etaoinshrdlu".toArray
+  val MostFrequentLetters = "etaoinshrdlu".toArray
+
+  val CapLetters = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString
+  val LowerLetter = ('a'.toInt to 'z'.toInt).map(_.toChar).mkString
 
   val Bigrams: Array[String] = {
     """|th he in er an re on at en nd ti es or te of ed is it

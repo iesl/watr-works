@@ -32,7 +32,7 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing with SegmentationCommo
   def pageSegmenters(): Seq[PageScopeSegmenter]
 
 
-  def getPagewiseLinewidthTable(): TabularData[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep]] = {
+  def getPagewiseLinewidthTable(): TabularData[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep], Unit, Unit] = {
     docScope.docStats.getTable[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep]]("PagewiseLineWidths")
   }
 

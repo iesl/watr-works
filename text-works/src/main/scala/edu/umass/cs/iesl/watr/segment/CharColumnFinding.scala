@@ -31,6 +31,7 @@ trait CharColumnFinding extends PageScopeSegmenter
 
     markNatLangText()
 
+
     excludeImageRegionPoints()
 
   }
@@ -81,7 +82,7 @@ trait CharColumnFinding extends PageScopeSegmenter
       .filter { _.isInstanceOf[ExtractedItem.ImgItem] }
       .flatMap { imageItem =>
         indexShape(imageItem.minBBox, LB.Image)
-        val baseLines: Seq[LineShape] = searchForLines(imageItem.minBBox, LB.CharRunBaseline)
+        val baseLines: Seq[LineShape] = searchForLines(imageItem.minBBox, LB.CharRunFontBaseline)
         deleteShapes(baseLines)
         baseLines
       }
@@ -112,7 +113,8 @@ trait CharColumnFinding extends PageScopeSegmenter
 
   /**
     * Foreach horizontal nat-lang text line, find the 2 closest lines below
-    *  it, and record the distances to each line.
+    * it, and record the distances to each line.
+    *
     * Finally, cluster those vertical jumps into centroids.
     *
     *  l0     :    --------------
@@ -120,7 +122,7 @@ trait CharColumnFinding extends PageScopeSegmenter
     *  l0+1   :    -------- | ---
     *  l0+2   :    --------------
     */
-  private def recordNatLangVerticalLineSpacingStats(baselineShapes: Seq[LineShape]): Unit = {
+  protected def recordNatLangVerticalLineSpacingStats(baselineShapes: Seq[LineShape]): Unit = {
     val windowSize = 2
 
     val contextDeltas = baselineShapes.map { baselineShape: LineShape =>
@@ -134,7 +136,7 @@ trait CharColumnFinding extends PageScopeSegmenter
 
         val below = belowLine.map { bbox =>
           val query = bbox.translate(x=0, y = +1.0)
-          searchForLines(query, LB.CharRunBaseline)
+          searchForLines(query, LB.CharRunFontBaseline)
         } getOrElse { List() }
 
 
@@ -156,7 +158,7 @@ trait CharColumnFinding extends PageScopeSegmenter
   }
 
 
-  private def maybeJoinCharRunBaselines(charRunBaselineShapes: Seq[LineShape]): Unit = {
+  private def recordCharRunWidths(charRunBaselineShapes: Seq[LineShape]): Unit = {
     val pagewiseLineWidthTable = docScope.getPagewiseLinewidthTable();
 
 
@@ -190,10 +192,12 @@ trait CharColumnFinding extends PageScopeSegmenter
     }
 
     traceLog.trace {
-      val bottomLines = leftToRightGroups.map { lineGroup =>
-        val groupBounds = lineGroup.map(_.shape.bounds()).reduce(_ union _)
-        groupBounds.toLine(Dir.Bottom)
-      }
+      val bottomLines = leftToRightGroups
+        .filter(_.length > 1)
+        .map { lineGroup =>
+          val groupBounds = lineGroup.map(_.shape.bounds()).reduce(_ union _)
+          groupBounds.toLine(Dir.Bottom)
+        }
 
       figure(bottomLines:_*) tagged "Joined Nat Lang CharRun Baselines"
     }
@@ -308,14 +312,11 @@ trait CharColumnFinding extends PageScopeSegmenter
         glyphBounds
     }
 
-
-
     traceLog.trace {
-
-
       val bottomLines = allClusterBounds.map(_.toLine(Dir.Bottom))
       figure(bottomLines:_*) tagged "ContiguousGlyphBounds"
     }
+
   }
 
   private def clusterColumnPoints(points: Seq[Point], label: Label, leftAlignedPoints: Boolean): Unit = {
@@ -359,7 +360,7 @@ trait CharColumnFinding extends PageScopeSegmenter
           val colActual = pageColumn.getHorizontalSlice(miny, height).get
           traceLog.trace { figure(colActual) tagged s"Column Nonempty ${evidenceLabel}" }
 
-          val intersectingBaselines = searchForLines(colActual, LB.CharRunBaseline)
+          val intersectingBaselines = searchForLines(colActual, LB.CharRunFontBaseline)
             .sortBy(_.shape.p1.y)
 
           val hitsAndOverlaps = if (leftAlignedPoints) {
@@ -424,7 +425,7 @@ trait CharColumnFinding extends PageScopeSegmenter
   }
 
 
-  def createCharRunBaseline(charRun: Seq[ExtractedItem.CharItem]): Line = {
+  def createCharRunFontBaseline(charRun: Seq[ExtractedItem.CharItem]): Line = {
     val xSorted = charRun.sortBy { _.minBBox.left }
     val runBeginPt =  Point(xSorted.head.minBBox.left, xSorted.head.fontBbox.bottom)
     val runEndPt = Point(xSorted.last.minBBox.right, xSorted.last.fontBbox.bottom)
@@ -464,6 +465,7 @@ trait CharColumnFinding extends PageScopeSegmenter
 
     charRuns
   }
+
 
   private def markNatLangText(): Unit = {
     val natLangCharRuns = findPageCharRuns(retainNatLang=true)
@@ -516,12 +518,16 @@ trait CharColumnFinding extends PageScopeSegmenter
     traceLog.trace { labeledShapes(LB.SymbolicGlyphLine) }
   }
 
+  private def findCharRunMetrics(): Unit = {
+    // Sort fonts
+  }
+
   private def initNatLangCharSpans(natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
 
     val charRunBaselineShapes = natLangCharRuns.map { charRun =>
-      val baseLine = createCharRunBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem]))
+      val baseLine = createCharRunFontBaseline(charRun.map(_.asInstanceOf[ExtractedItem.CharItem]))
 
-      val baselineShape = indexShape(baseLine, LB.CharRunBaseline)
+      val baselineShape = indexShape(baseLine, LB.CharRunFontBaseline)
 
       charRun.foreach { item =>
         pageIndex.shapes.extractedItemShapes.put(item.id, LB.CharRun, baselineShape)
@@ -532,8 +538,10 @@ trait CharColumnFinding extends PageScopeSegmenter
       baselineShape
     }.asLineShapes
 
-    recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
-    maybeJoinCharRunBaselines(charRunBaselineShapes)
+    traceLog.trace { labeledShapes(LB.CharRunFontBaseline) tagged "Initial Font Baselines" }
+
+    // recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
+    recordCharRunWidths(charRunBaselineShapes)
 
 
     val leftmostPoints = charRunBaselineShapes.map{ _.shape.p1 }
@@ -544,8 +552,6 @@ trait CharColumnFinding extends PageScopeSegmenter
 
     inferNLBaselineContinuity(charRunBaselineShapes)
 
-
-    traceLog.trace { labeledShapes(LB.CharRunBaseline) }
   }
 
 

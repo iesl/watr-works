@@ -11,14 +11,18 @@ import java.awt.{Shape}
 import java.awt.geom._
 import org.apache.pdfbox.pdmodel.common.PDRectangle
 
-import com.google.{common => guava}
-import guava.{collect => gcol}
+// import scalaz.std.string._
+import scalaz.std.anyVal._
+import scalaz.Show
+
 import TypeTags._
 import textboxing.{TextBoxing => TB}, TB._
 
 import utils.GuavaHelpers
 
 protected object ExtractionImplicits {
+
+
   implicit class RicherRectangle2D(val self: Rectangle2D) extends AnyVal {
     def toLTBounds(): LTBounds = {
       val left = self.getMinX
@@ -125,38 +129,47 @@ case class PageSpaceTransforms(
 }
 
 
-case class FontMetrics(
-  ascent: Float,
-  descent: Float,
-  capline: Float
-) {}
+/**
+  *  Top - The maximum distance above the baseline for the tallest glyph in the font at a given text size.
+  *  Ascent - The recommended distance above the baseline for singled spaced text.
+  *  Midrise = (non-standard) the computed topline of chars without ascenders, e.g., eaomn
+  *  Baseline = 0
+  *  Descent - The recommended distance below the baseline for singled spaced text.
+  *  Bottom - The maximum distance below the baseline for the lowest glyph in the font at a given text size.
+  *
+  **/
 
+case class FontMetrics(
+  top: Int@@FloatRep,
+  ascent: Int@@FloatRep,
+  midrise: Int@@FloatRep,
+  descent: Int@@FloatRep,
+  bottom: Int@@FloatRep
+)
+
+case class ScaledMetrics(
+  scalingFactor: Int@@ScalingFactor,
+  fontMetrics: Option[FontMetrics]
+)
 
 case class AsciiHeightRecord(
   heights: Array[Double] = Array.ofDim[Double](128)
 )
 
-case class ScaledMetrics(
-  scalingFactor: Int@@ScalingFactor,
-  heightLowerCaseSmall: Double,
-  heightLowerCaseLarge: Double,
-  heightUpperCase: Double,
-)
 
 case class FontProperties(
   name: String,
   fontType: String,
-  declaredMetrics: FontMetrics,
   pageCount: Int
 ) {
 
+  val alphaEvidence = Array.ofDim[Int](LetterFrequencies.MostFrequentLetters.length)
 
-  val alphaEvidence = Array.ofDim[Int](LetterFrequencies.Letters.length)
+  val asciiHeightsPerScaleFactor    = GuavaHelpers.initTable[Int@@ScalingFactor, Char, Double]()
+  val asciiHeightsPerScaleFactorInv = GuavaHelpers.initTable[Int@@ScalingFactor, Int@@FloatRep, String]()
+  val natLangGlyphOccurrenceCounts  = GuavaHelpers.initTable[Int@@PageNum, Int@@ScalingFactor, Int]()
+  val totalGlyphOccurrenceCounts    = GuavaHelpers.initTable[Int@@PageNum, Int@@ScalingFactor, Int]()
 
-  val asciiHeightsPerScaleFactor = gcol.HashBasedTable.create[Int@@ScalingFactor, Char, Double]()
-  val asciiHeightsPerScaleFactorInv = gcol.HashBasedTable.create[Int@@ScalingFactor, Int@@FloatRep, String]()
-  val natLangGlyphOccurrenceCounts = gcol.HashBasedTable.create[Int@@PageNum, Int@@ScalingFactor, Int]()
-  val totalGlyphOccurrenceCounts = gcol.HashBasedTable.create[Int@@PageNum, Int@@ScalingFactor, Int]()
   var docWideBigramCount = 0
   var docWideTrigramCount = 0
 
@@ -175,27 +188,27 @@ case class FontProperties(
 
 
     if (hasBigram || hasTrigram) {
-      val nglyphs = natLangGlyphOccurrenceCounts.get(pageNum, scalingFactor)
-      natLangGlyphOccurrenceCounts.put(pageNum, scalingFactor, nglyphs + 1)
+      natLangGlyphOccurrenceCounts.modifyOrSet(pageNum, scalingFactor, _+1, 0)
     }
 
-    totalGlyphOccurrenceCounts.put(pageNum, scalingFactor,
-      1 + totalGlyphOccurrenceCounts.get(pageNum, scalingFactor)
-    )
+    totalGlyphOccurrenceCounts.modifyOrSet(pageNum, scalingFactor, _+1, 0)
 
-    val shouldRecord =  ".-ABaiomldjk".contains(c)
+    val shouldRecord = 32 < c && c < 128
     if (shouldRecord) {
-      asciiHeightsPerScaleFactor.put(scalingFactor, c, height)
-      val letters = asciiHeightsPerScaleFactorInv.get(scalingFactor, bbox.height)
+      asciiHeightsPerScaleFactor.set(scalingFactor, c, height)
+      asciiHeightsPerScaleFactorInv.modifyOrSet(
+        scalingFactor,
+        bbox.height,
+        { letters =>
+          if (letters.contains(c)) letters
+          else (letters + c).sorted
+        },
+        c.toString()
+      )
 
-      val update = if (letters==null) c.toString()
-        else if (letters.contains(c)) letters
-        else (letters + c).sorted
-
-      asciiHeightsPerScaleFactorInv.put(scalingFactor, bbox.height, update)
     }
 
-    val i = LetterFrequencies.Letters.indexOf(c)
+    val i = LetterFrequencies.MostFrequentLetters.indexOf(c)
     if (i >= 0) {
       alphaEvidence(i) = alphaEvidence(i) + 1
     }
@@ -207,76 +220,77 @@ case class FontProperties(
     nonZeros > 3 && hasNgrams
   }
 
-  // private def nonZeroHeights(letters: String, asciiHeights: AsciiHeightRecord): Seq[(Char, Double)]= {
-  //   letters.map { c =>
-  //     val h = asciiHeights.heights(c.toInt)
-  //     (c, h)
-  //   }.filter(_._2 > 0d)
-  // }
-  // private val caps = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString
-  // private def avg(rs: Seq[(Char, Double)]): Double = {
-  //   if (rs.length > 0) {
-  //     rs.map(_._2).sum / rs.length
-  //   } else 0
-  // }
 
   def scaledMetrics(): Seq[ScaledMetrics] = {
-    // asciiHeightsPerScaleFactor.toSeq.map { case (scaleFactor, asciiHeightRec) =>
+    val midrisers = "acemnorszuvwx"
+    val ascenders = "bdfhklti"
+    val descenders = "gjpqy"
 
-    //   val small = avg(nonZeroHeights("aeoru", asciiHeightRec))
-    //   val med1  = avg(nonZeroHeights("ldkh", asciiHeightRec))
-    //   val large = avg(nonZeroHeights(caps, asciiHeightRec))
-    //   ScaledMetrics(
-    //     scaleFactor,
-    //     small, med1, large
-    //   )
-    // }
-    Seq()
+    if (isNatLangFont()) {
+      val caps = LetterFrequencies.CapLetters
+      asciiHeightsPerScaleFactor.getRows().map{ case (scalingFactor, charHeights) =>
+        val sorted = charHeights.sortBy(_._1)
+        val top = sorted.filter(ch => caps.contains(ch._1)).headOption.map(_._2).getOrElse(0d)
+        val midrise = sorted.filter(ch => midrisers.contains(ch._1)).headOption.map(_._2).getOrElse(0d)
+        val ascent = sorted.filter(ch => ascenders.contains(ch._1)).headOption.map(_._2).getOrElse(0d)
+        val descent = sorted.filter(ch => descenders.contains(ch._1)).headOption.map(_._2).getOrElse(0d)
+        val bottom = sorted.filter(ch => descenders.contains(ch._1)).headOption.map(_._2).getOrElse(0d)
 
+        ScaledMetrics(
+          scalingFactor,
+          Some(FontMetrics(
+            top.toFloatExact(),
+            ascent.toFloatExact(),
+            midrise.toFloatExact(),
+            descent.toFloatExact(),
+            bottom.toFloatExact()
+          ))
+        )
+      }
+    }
+    else Seq()
   }
 
-  import scala.collection.JavaConverters._
 
   def getFontIdentifier(scalingFactor: Int@@ScalingFactor): String@@ScaledFontID = {
     ScaledFontID(s"${name}x${scalingFactor.unwrap}")
   }
 
   def getFontIdentifiers(): Seq[String@@ScaledFontID] = {
-    totalGlyphOccurrenceCounts.columnKeySet().asScala
-      .toList.sorted.map{ scalingFactor =>
-        getFontIdentifier(scalingFactor)
-      }
+    totalGlyphOccurrenceCounts.columnKeys.toList.sorted
+      .map{ scalingFactor => getFontIdentifier(scalingFactor) }
   }
 
 
+  implicit val ShowString = Show.shows[String] { s => s }
+
   def report(): TB.Box = {
     val letterFreqs = TB.hjoins(TB.center1,
-      alphaEvidence.zip(LetterFrequencies.Letters)
+      alphaEvidence.zip(LetterFrequencies.MostFrequentLetters)
         .map{ case (count, letter) =>
           s"| ${letter}" atop s"| ${count}"
         }
     )
 
-    val add = (a:Int, b:Int) => a + b
+    val charsPerHeightPerScale = asciiHeightsPerScaleFactorInv
+      .addLabels("Scaling", "Height")
+      .showBox()
 
-    val charsPerHeightPerScale = GuavaHelpers.guavaTableToBox[Int@@ScalingFactor, Int@@FloatRep, String](
-      asciiHeightsPerScaleFactorInv, ""
-    )
+    val heightPerScale = asciiHeightsPerScaleFactor
+      .addLabels("Scaling", "Glyph")
+      .showBox()
 
-    val heightPerScale = GuavaHelpers.guavaTableToBox[Int@@ScalingFactor, Char, Double](
-      asciiHeightsPerScaleFactor, 0
-    )
+    val natGlyphPerPage = natLangGlyphOccurrenceCounts
+      .addLabels("Page", "Scaling")
+      .computeRowMarginals(0)(_ + _)
+      .computeColMarginals(0)(_ + _)
+      .showBox()
 
-    val natGlyphPerPage = GuavaHelpers.guavaTableToLabeledBox(
-      natLangGlyphOccurrenceCounts, 0,
-      "", "",
-      add, add
-    )
-
-    val totalGlyphTable =  GuavaHelpers.guavaTableToLabeledBox(totalGlyphOccurrenceCounts, 0,
-      "", "",
-      add, add
-    )
+    val totalGlyphTable = totalGlyphOccurrenceCounts
+      .addLabels("Page", "Scaling")
+      .computeRowMarginals(0)(_ + _)
+      .computeColMarginals(0)(_ + _)
+      .showBox()
 
     s"${name}".hangIndent(vjoin(
       s"Common English Letter Counts",
@@ -323,7 +337,6 @@ class FontDefs(pageCount: Int) {
       val props = FontProperties(
         fname,
         pdFont.getType,
-        FontMetrics(0f, 0f, 0),
         pageCount
       )
       fontProperties.append(props)

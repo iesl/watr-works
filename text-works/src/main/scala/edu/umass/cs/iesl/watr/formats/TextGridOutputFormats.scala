@@ -147,7 +147,6 @@ object TextGridOutputFormats  {
     outputDoc
   }
 
-  import scala.collection.JavaConverters._
 
   def fontDescription(docSeg: DocumentSegmentation): Seq[Json] = {
 
@@ -156,13 +155,14 @@ object TextGridOutputFormats  {
     val scaledMetrics = fontDefs.fontProperties.map { fp =>
 
       val metrics = fp.scaledMetrics.map{ scaledMetrics =>
-        val perPageGlyphCounts = fp.natLangGlyphOccurrenceCounts.column(scaledMetrics.scalingFactor)
+        // val perPageGlyphCounts = fp.natLangGlyphOccurrenceCounts.column(scaledMetrics.scalingFactor)
 
-        val perPageList = perPageGlyphCounts.entrySet().asScala.toList
+        // val perPageList = perPageGlyphCounts.entrySet().asScala.toList
+        val perPageList = fp.natLangGlyphOccurrenceCounts.getColumn(scaledMetrics.scalingFactor)
 
-        val sortedByPage = perPageList.map { entry =>
-          val pageNum = entry.getKey()
-          val glyphCount = entry.getValue()
+        val sortedByPage = perPageList.map { case(pageNum, glyphCount)  =>
+          // val pageNum = entry.getKey()
+          // val glyphCount = entry.getValue()
           (pageNum.unwrap, glyphCount)
         }.sorted
 
@@ -170,9 +170,9 @@ object TextGridOutputFormats  {
           "scale" := scaledMetrics.scalingFactor.unwrap,
           "glyphsPerPage" := sortedByPage,
           "heights" := Json.obj(
-            "lowerCaseSmall" := scaledMetrics.heightLowerCaseSmall,
-            "lowerCaseLarge" := scaledMetrics.heightLowerCaseLarge,
-            "upperCase" := scaledMetrics.heightUpperCase
+            // "lowerCaseSmall" := scaledMetrics.heightLowerCaseSmall,
+            // "lowerCaseLarge" := scaledMetrics.heightLowerCaseLarge,
+            // "upperCase" := scaledMetrics.heightUpperCase
           )
         )
         // println(s"scaledMetrics: ")
