@@ -37,9 +37,8 @@ object SlicingAndDicing { outer =>
   }
 
   implicit class RicherSeq[A](val thisSeq: Seq[A]) extends AnyVal {
-
-
     import scala.collection.mutable
+
 
     def trimLeftRightBy(f: (A) => Boolean): Seq[A] = {
       thisSeq
@@ -101,6 +100,8 @@ object SlicingAndDicing { outer =>
       clusterSeqBy(thisSeq)(f)
     }
 
+    /**
+      */
     def uniqueCountBy[O: scala.Ordering](f: (A) => O): Seq[(Int, A)] = {
       outer.uniqueCountBy(thisSeq, f)
     }

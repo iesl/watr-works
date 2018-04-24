@@ -466,6 +466,56 @@ trait CharColumnFinding extends PageScopeSegmenter
     charRuns
   }
 
+  private def findContiguousBlocks(label: Label): Unit = {
+
+    val lineGroups = getLabeledLines(label)
+      .sortBy { lineShape =>
+        val lineItems = getExtractedItemsForShape(lineShape)
+          .collect{ case i: ExtractedItem.CharItem =>  i }
+        lineItems.head.id.unwrap
+      }
+      .groupByPairs {
+        case (line1, line2) =>
+          val line1Items = getExtractedItemsForShape(line1)
+            .collect{ case i: ExtractedItem.CharItem =>  i }
+
+          val line2Items = getExtractedItemsForShape(line2)
+            .collect{ case i: ExtractedItem.CharItem =>  i }
+
+          val item1 = line1Items.last
+          val item2 = line2Items.head
+          val line1EndId = item1.id.unwrap
+          val line2StartId = item2.id.unwrap
+          val consecutive = line2StartId == line1EndId + 1
+          lazy val topToBottom = item1.minBBox.bottom < item2.minBBox.bottom
+          // lazy val leftToRight = item1.minBBox.left < item2.minBBox.left
+          lazy val inOrder = topToBottom
+
+          val minBounds = line1.shape.bounds() union line2.shape.bounds()
+          val intersectingLines: Seq[LineShape] = searchForLines(minBounds, LB.CharRunFontBaseline)
+          // println(s"findContiguousBlocks: pair= ${line1.shape}, ${line2.shape}")
+          // println(s"         minBounds        = ${minBounds}")
+          // println(s"         search hits      = ${intersectingLines.toList}")
+
+          val pairwiseMinBoundsOnlyCapturesPair = intersectingLines.length == 2
+
+          consecutive && inOrder && pairwiseMinBoundsOnlyCapturesPair
+      }
+
+    traceLog.trace {
+      println(s"findContiguousBlocks: lineGroups = ${lineGroups.length}")
+      val groupBounds = lineGroups
+        .filter(_.length > 1)
+        .map { lineGroup =>
+          val groupBounds = lineGroup.map(_.shape.bounds()).reduce(_ union _)
+          groupBounds
+        }
+
+      figure(groupBounds:_*) tagged "Grouped Text Blocks"
+    }
+
+
+  }
 
   private def markNatLangText(): Unit = {
     val natLangCharRuns = findPageCharRuns(retainNatLang=true)
@@ -479,6 +529,7 @@ trait CharColumnFinding extends PageScopeSegmenter
 
 
     initNatLangCharSpans(natLangCharRuns)
+    findContiguousBlocks(LB.CharRunFontBaseline)
 
     val symbolicLangCharRuns = findSymbolicCharRuns()
 
@@ -516,10 +567,6 @@ trait CharColumnFinding extends PageScopeSegmenter
 
 
     traceLog.trace { labeledShapes(LB.SymbolicGlyphLine) }
-  }
-
-  private def findCharRunMetrics(): Unit = {
-    // Sort fonts
   }
 
   private def initNatLangCharSpans(natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
