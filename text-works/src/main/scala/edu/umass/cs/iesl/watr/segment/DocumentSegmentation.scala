@@ -4,15 +4,12 @@ package segment
 import ammonite.{ops => fs}, fs._
 
 
-// import segment.{SegmentationLabels => LB}
 import corpora.DocumentZoningApi
 import extract._
 import spindex._
 import utils.Timer.time
 import utils.ExactFloats._
-import utils._
 import textgrid._
-import scala.collection.mutable
 import utils.QuickNearestNeighbors._
 
 import TypeTags._
@@ -106,22 +103,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     println(marginalSizesStr)
 
     println(docScope.fontDefs.report())
-    // GuavaHelpers.initTableFromGuava(totalGlyphOccurrenceCounts)
-
-
-
-    // Get Sorted list of column-width candidates in order of:
-    //   Document-wide font counts
-    //   Page-wide font counts
-    marginalSizes
-      .sortBy { case (scaledFontId, glyphCount) => glyphCount }
-      .reverse
-      .map { case (scaledFontId, glyphCount) =>
-      }
   }
-
-
-
 
   def runDocumentSegmentation(): Unit = {
 

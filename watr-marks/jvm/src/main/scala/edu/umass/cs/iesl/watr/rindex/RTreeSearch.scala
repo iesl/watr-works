@@ -14,21 +14,6 @@ import com.github.davidmoten.rtree.{geometry => RG, _}
 import edu.umass.cs.iesl.watr.{geometry => G}
 import java.lang.{Boolean => JBool}
 
-import java.awt.geom.Line2D;
-import java.awt.geom.Line2D.Float;
-
-object RTreeSearchFilters {
-  def overlaps: (RG.Geometry, RG.Geometry) => Boolean = {
-    case (fig1, fi2) =>
-
-      fig1.mbr()
-
-
-      true
-  }
-
-}
-
 trait RTreeSearch[T] {
 
   def rtreeIndex: RTree[T, RG.Geometry]
@@ -63,40 +48,6 @@ trait RTreeSearch[T] {
 
     toScalaSeq(hits)
   }
-
-  // def queryIntersecting(queryRegion: LTBounds): Seq[T] =
-  //   search(queryRegion, _ => shapesIntersect(_, _))
-
-  // def queryOverlapping(queryRegion: LTBounds, labels: Label*): Seq[Component] =
-  //   searchComponents(queryRegion, shapesIntersect(_, _), labels:_*)
-
-  // def queryTouching(queryRegion: LTBounds, labels: Label*): Seq[Component] =
-  //   searchComponents(queryRegion, shapesIntersect(_, _), labels:_*)
-
-  // def queryForContainedIDs(q:G.LTBounds): Seq[Int] = {
-
-  //   val query0 = toRGRectangle(q)
-  //   val x1 = query0.x1()
-  //   val x2 = query0.x2()
-  //   val y1 = query0.y1()
-  //   val y2 = query0.y2()
-
-  //   val queryCornerPts = List(
-  //     RG.Geometries.point(x1, y1),
-  //     RG.Geometries.point(x1, y2),
-  //     RG.Geometries.point(x2, y1),
-  //     RG.Geometries.point(x2, y2)
-  //   )
-
-  //   val contains: Func2[RG.Geometry, RG.Rectangle, JBool] = {
-  //     new Func2[RG.Geometry, RG.Rectangle, JBool]() {
-  //       override def call(entryRect: RG.Geometry, queryRect: RG.Rectangle): JBool = {
-  //         queryCornerPts.forall(entryRect.intersects(_))
-  //       }
-  //     }
-  //   }
-  //   toIdSeq(rtreeIndex.search(query0, contains))
-  // }
 
   def queryForIntersects(q: G.LTBounds): Seq[T] = {
     toScalaSeq(rtreeIndex.search(toRGRectangle(q)))

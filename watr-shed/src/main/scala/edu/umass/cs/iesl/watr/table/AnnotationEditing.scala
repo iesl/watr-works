@@ -87,7 +87,7 @@ object AnnotationDiffs {
   case class DocumentDiffRecords(
     stableId: String@@DocumentID,
     labelSpans: Seq[LabeledSpan],
-    goldToNonGoldTable: TabularData[Int, Int, LabelSpanComparison]
+    goldToNonGoldTable: TabularData[Int, Int, LabelSpanComparison, Unit, Unit]
   )
 
 

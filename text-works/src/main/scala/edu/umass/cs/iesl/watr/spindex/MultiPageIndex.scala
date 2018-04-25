@@ -4,31 +4,16 @@ package spindex
 import scala.collection.mutable
 
 import geometry._
-import watrmarks._
 
 import utils.IdGenerator
-import geometry.syntax._
 
 import TypeTags._
 import corpora._
 
-import segment.{SegmentationLabels => LB}
-import utils.ExactFloats._
-import java.nio.{file => nio}
 import extract.ExtractedItem
 
-
 /**
-
-  MultiPageIndex manages:
-    - PageIndexes, one per PDF page
-
-    - Zones, each of which is a list of Components, potentially crossing PageIndexes
-    - Relations and Props, e.g., {ClusterID -hasMember-> MentionID}, {id hasProp isTargetEntity}
-      - nb. this is a kludge that will be removed at some point
-
   */
-
 
 class MultiPageIndex(
   stableId: String@@DocumentID,
@@ -86,64 +71,6 @@ class MultiPageIndex(
   }
 
   def getPageIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
-
-
-  def createRegionComponent(targetRegion: PageRegion, role: Label, text:Option[String] = None): RegionComponent = {
-    val region = RegionComponent(componentIdGen.nextId, role, targetRegion, text)
-    addComponent(region)
-
-    region
-  }
-
-  def addCharAtom(pageAtom: CharAtom): AtomicComponent = {
-    val c = AtomicComponent(componentIdGen.nextId, pageAtom)
-    addComponent(c)
-    c
-  }
-
-  def addPathItem(path: PageItem.Path): Seq[RegionComponent] = {
-
-    val slineCCs = path.slantedLines
-      .map{ line =>
-        val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        val c = createRegionComponent(region, LB.LinePath)
-        addComponent(c)
-        c
-      }
-
-    val hlineCCs = path.horizontalLines
-      .map{ line =>
-        val region = path.pageRegion.copy(bbox = line.bounds.copy(height=0.01.toFloatExact))
-        val c = createRegionComponent(region, LB.HLinePath)
-        addComponent(c)
-        c
-      }
-    val vlineCCs = path.verticalLines()
-      .map{ line =>
-        val region = path.pageRegion.copy(bbox = line.bounds.copy(width=0.01.toFloatExact))
-        val c = createRegionComponent(region, LB.VLinePath)
-        addComponent(c)
-        c
-      }
-    val region = path.pageRegion
-    val c = createRegionComponent(region, LB.PathBounds)
-    addComponent(c)
-
-    Seq(c) ++ hlineCCs ++ vlineCCs ++ slineCCs
-  }
-
-  def addImageAtom(pageAtom: PageItem.ImageAtom): RegionComponent = {
-    // println(s"addImageAtom ${pageAtom.pageRegion}")
-    val c = createRegionComponent(pageAtom.pageRegion, LB.Image)
-    addComponent(c)
-    c
-  }
-
-  def addComponent(c: Component): Component = {
-    val pageNum = c.pageRegion.page.pageNum
-    getPageIndex(pageNum)
-      .components.addComponent(c)
-  }
 
   def getPageGeometry(p: Int@@PageNum) = pageIndexes(p).pageGeometry
 

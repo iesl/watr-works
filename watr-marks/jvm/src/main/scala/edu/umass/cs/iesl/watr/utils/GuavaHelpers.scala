@@ -160,6 +160,18 @@ class TabularData[RowT: Ordering, ColT: Ordering, A, RM, CM](
   axisLabels: Option[AxisLabels]
 ) {
 
+  def getRowMarginal(rowk: RowT): Option[RM] = {
+    rowMarginals.flatMap{ rm =>
+      rm.filter(_._1==rowk).headOption.map(_._2)
+    }
+  }
+
+  def getColMarginal(colk: ColT): Option[CM] = {
+    colMarginals.flatMap{ rm =>
+      rm.filter(_._1==colk).headOption.map(_._2)
+    }
+  }
+
   def addLabels(rowLabel: String, colLabel: String): TabularData[RowT, ColT, A, RM, CM] = {
     new TabularData(
       table,

@@ -40,6 +40,10 @@ object SlicingAndDicing { outer =>
     import scala.collection.mutable
 
 
+    def groupByWindow(f: (Seq[A], A) => Boolean): Seq[Seq[A]] = {
+      Cursors.groupByWindow(f, thisSeq)
+    }
+
     def trimLeftRightBy(f: (A) => Boolean): Seq[A] = {
       thisSeq
         .dropWhile(f(_)).reverse

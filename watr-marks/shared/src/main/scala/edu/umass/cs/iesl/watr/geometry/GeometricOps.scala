@@ -6,7 +6,37 @@ import utils.{RelativeDirection => Dir}
 
 trait GeometricOps {
   implicit class GeometricOps_RicherLTBounds(val self: LTBounds) {
-    def area: Double = (self.width*self.height).asDouble
+
+    def area(): Double = (self.width*self.height).asDouble
+
+    def shave(dir: Dir, delta: Int@@FloatRep): LTBounds = {
+      dir match {
+        case Dir.Top         =>
+            self.copy(
+              top = self.top + delta,
+              height = self.height - delta
+            )
+        case Dir.Bottom      =>
+            self.copy(
+              height = self.height - delta
+            )
+        case Dir.Right       =>
+            self.copy(
+              width=self.width-delta
+            )
+        case Dir.Left        =>
+            self.copy(
+              left=self.left+delta,
+              width=self.width-delta
+            )
+
+        case Dir.TopLeft     => self.shave(Dir.Top, delta).shave(Dir.Left, delta)
+        case Dir.BottomLeft  => self.shave(Dir.Bottom, delta).shave(Dir.Left, delta)
+        case Dir.TopRight    => self.shave(Dir.Top, delta).shave(Dir.Right, delta)
+        case Dir.BottomRight => self.shave(Dir.Bottom, delta).shave(Dir.Right, delta)
+        case Dir.Center      => ???
+      }
+    }
 
 
     def slidingHorizontalWindow(width: Double, stepSize: Double): Seq[LTBounds] = {

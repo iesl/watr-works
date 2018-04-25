@@ -89,6 +89,13 @@ trait ScopedTracing extends VisualTracer { self  =>
     )
   }
 
+  def traceAll(logs: => Seq[TraceLog])(
+    implicit enclosing: sourcecode.Enclosing
+  ) = ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {
+    logs.foreach { log =>
+      trace(log)(enclosing)
+    }
+  }
   def trace(log: => TraceLog)(
     implicit enclosing: sourcecode.Enclosing
   ) = ifTrace(tracemacros.VisualTraceLevel.JsonLogs) {

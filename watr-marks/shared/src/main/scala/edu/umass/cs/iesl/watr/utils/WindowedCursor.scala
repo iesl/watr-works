@@ -4,9 +4,39 @@ package utils
 import scalaz.{@@ => _, _} , Scalaz._
 
 import scala.annotation.tailrec
+
+// @tailrec
+// def loop(maybeCursor: Option[Cursor[A]], acc: List[Seq[A]]): Seq[Seq[A]] = {
+//   maybeCursor match {
+//     case Some(cursor) =>
+//       val window = cursor.toWindow
+//       println(s"loop = C: ${cursor.debugString()}")
+//       println(s"       W: ${window.debugString()}")
+//       window.widen(1) match {
+//         case Some(w2) =>
+//           val group = w2.slurpRight(f)
+//           val acc1 = group.cells :: acc
+//           println(s" widen W: ${w2.debugString()}")
+//           println(s"     Acc: ${acc1}")
+//           loop(group.nextCursor(), acc1)
+
+//         case None =>
+//           val acc1 = window.cells :: acc
+//           println(s" no-widen W: ")
+//           println(s"     Acc: ${acc1}")
+
+//           acc1
+//       }
+
+//     case None =>
+//       println(s" Done.")
+//       println(s"     Acc: ${acc}")
+//       acc
+//   }
+
+// }
+
 object Cursors {
-
-
 
   def groupByWindow[A](f: (Seq[A], A) => Boolean, as: Seq[A]): Seq[Seq[A]] = {
 
@@ -17,9 +47,9 @@ object Cursors {
           val window = cursor.toWindow
           val group = window.slurpRight(f)
           val acc1 = group.cells :: acc
-          println(s"loop = C: ${cursor.debugString()}")
-          println(s"       W: ${group.debugString()}")
-          println(s"     Acc: ${acc1}")
+          // println(s"loop = C: ${cursor.debugString()}")
+          // println(s"       W: ${group.debugString()}")
+          // println(s"     Acc: ${acc1}")
           loop(group.nextCursor(), acc1 )
 
         case None =>
@@ -28,8 +58,8 @@ object Cursors {
 
     }
     loop(Cursor.init(as), List()).reverse
-
   }
+
 }
 
 object Cursor {
@@ -98,7 +128,7 @@ trait Cursor[A] { self =>
     val ls = zipper.lefts.toList.reverse.mkString(", ")
     val rs = zipper.rights.toList.mkString(", ")
     val f = zipper.focus
-    s"""Cursor($ls [${f}] $rs)"""
+    s"""Cursor([$ls] [[ ${f} ]] [$rs])"""
   }
 }
 
@@ -129,7 +159,7 @@ sealed trait Window[A] { self =>
     val rs = winStart.rights.map(_.toString()).mkString(", ")
     val ls = winStart.lefts.map(_.toString()).mkString(", ").reverse
     val ws = cells.map(_.toString()).mkString(", ")
-    s"""Window($ls [${ws}] $rs)"""
+    s"""Window([$ls] [[ ${ws} ]] [$rs])"""
   }
 
   def closeWindow(): Cursor[A] = {
@@ -153,10 +183,11 @@ sealed trait Window[A] { self =>
     }
   }
 
-  def widen(n: Int): Window[A] = {
-    val (as, bs) = winStart.rights.splitAt(n)
-
-    Window(cells++as, winStart.lefts, winStart.focus, bs)
+  def widen(n: Int): Option[Window[A]] = {
+    if (winStart.rights.length < n) {
+      val (as, bs) = winStart.rights.splitAt(n)
+      Some(Window(cells++as, winStart.lefts, winStart.focus, bs))
+    } else None
   }
 
   private def rinits(as: Stream[A]): Seq[Seq[A]]= {
@@ -164,13 +195,16 @@ sealed trait Window[A] { self =>
   }
 
   def slurpRight(p: (Seq[A], A) => Boolean): Window[A] = {
+    // println(s"slurpRight(): ${self.debugString()}")
 
     val slurped = rinits(winStart.rights)
       .map{ init =>
         val nextWin = cells ++ init
         (nextWin.init, nextWin.last)
       }
-      .takeWhile { case (h, t) => p(h, t) }
+      .takeWhile { case (init, last) =>
+        p(init, last)
+      }
 
     val slcells = slurped.map{case (ws, t) => ws :+ t}.toList
       .lastOption

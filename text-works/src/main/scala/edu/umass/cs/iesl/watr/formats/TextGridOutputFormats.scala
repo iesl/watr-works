@@ -205,69 +205,69 @@ object TextGridOutputFormats  {
 
   }
 
-  def documentToStructuredPlaintext(mpageIndex: MultiPageIndex): String = {
-    val allText = for {
-      pageNum      <- mpageIndex.getPages
-      pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
-    } yield {
-      val textCol = for {
-        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
-        lineCC <- lineCCs
-      } yield {
+  // def documentToStructuredPlaintext(mpageIndex: MultiPageIndex): String = {
+  //   val allText = for {
+  //     pageNum      <- mpageIndex.getPages
+  //     pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+  //   } yield {
+  //     val textCol = for {
+  //       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+  //       lineCC <- lineCCs
+  //     } yield {
 
-        val lineText = pageIndex.components.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
-        lineText.getOrElse("<no text>").box
-      }
+  //       val lineText = pageIndex.shapes.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
+  //       lineText.getOrElse("<no text>").box
+  //     }
 
-      val pinCol = for {
-        (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
-        lineCC <- lineCCs
-      } yield {
-        val lineWeights = pageIndex.components.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
-        val linePins = lineWeights.countedPins()
-        if (linePins.nonEmpty) {
-          val maxPin = linePins.maxBy(_._2)._1
+  //     val pinCol = for {
+  //       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+  //       lineCC <- lineCCs
+  //     } yield {
+  //       val lineWeights = pageIndex.shapes.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
+  //       val linePins = lineWeights.countedPins()
+  //       if (linePins.nonEmpty) {
+  //         val maxPin = linePins.maxBy(_._2)._1
 
-          val pinrep = {
-            maxPin.isBegin.option[String]("^")
-              .orElse { maxPin.isInside.option[String]("|") }
-              .orElse { maxPin.isUnit.option[String]("#") }
-              .orElse { maxPin.isLast.option[String]("$") }
-              .getOrElse { "?" }
-          }
+  //         val pinrep = {
+  //           maxPin.isBegin.option[String]("^")
+  //             .orElse { maxPin.isInside.option[String]("|") }
+  //             .orElse { maxPin.isUnit.option[String]("#") }
+  //             .orElse { maxPin.isLast.option[String]("$") }
+  //             .getOrElse { "?" }
+  //         }
 
-          val pincol = maxPin.label match {
-            case LB.Para =>
-              val pincls = {
-                maxPin.isBegin.option[String]("¶")
-                  .getOrElse { " " }
-              }
-              // '¶' ; '⁋' '§'
-              s"${pincls}${pinrep}"
+  //         val pincol = maxPin.label match {
+  //           case LB.Para =>
+  //             val pincls = {
+  //               maxPin.isBegin.option[String]("¶")
+  //                 .getOrElse { " " }
+  //             }
+  //             // '¶' ; '⁋' '§'
+  //             s"${pincls}${pinrep}"
 
-            case _ =>
-              s"${pinrep} "
-          }
+  //           case _ =>
+  //             s"${pinrep} "
+  //         }
 
-          pincol.box
+  //         pincol.box
 
-        } else {
-          "~".box
-        }
-      }
-      val groupings = hjoin(
-        vjoins(TB.right, pinCol),
-        "  ",
-        vjoins(TB.left, textCol)
-      )
+  //       } else {
+  //         "~".box
+  //       }
+  //     }
+  //     val groupings = hjoin(
+  //       vjoins(TB.right, pinCol),
+  //       "  ",
+  //       vjoins(TB.left, textCol)
+  //     )
 
-      groupings
-    }
+  //     groupings
+  //   }
 
-    vjoins(left,
-      allText
-    ).toString()
-  }
+  //   vjoins(left,
+  //     allText
+  //   ).toString()
+  // }
 
 
 

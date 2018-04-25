@@ -16,23 +16,41 @@ class WindowedCursorTest extends FlatSpec with Matchers {
 
     assert(cursor.atStart)
 
-    // assertResult(List(List(1, 2), List(3))){
-    // }
   }
 
   behavior of "Grouping by Windows"
 
   it should "return windowed groups" in {
     val ints: List[Int] = List(1, 1, 1, 2, 2, 3)
+
     val groups = Cursors.groupByWindow[Int]({case (prevs, a) =>
       (a +: prevs).toSet.size == 1
     }, ints)
+
     println(s"groups = ${groups}")
 
-    // assertResult(List(List(1, 1, 1), List(2, 2), List(3))){
-    //   groups
-    // }
+    assertResult(List(List(1, 1, 1), List(2, 2), List(3))){
+      groups
+    }
 
+  }
+
+  it should "not call function for singleton groups" in {
+    val ints = List(1)
+
+    var calls = 0
+    val groups = Cursors.groupByWindow[Int]({case (prevs, a) =>
+      calls = calls + 1
+      false
+    }, ints)
+
+    println(s"calls = ${calls}")
+
+    assertResult(List(List(1))){
+      groups
+    }
+
+    assert( calls == 0 )
   }
 
 }

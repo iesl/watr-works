@@ -10,7 +10,6 @@ import utils.ExactFloats._
 import extract._
 import segment.{SegmentationLabels => LB}
 import utils._
-// import utils.GuavaHelpers._
 
 trait DocumentScopeSegmenter extends DocumentScopeTracing with SegmentationCommons { self =>
 
@@ -35,6 +34,27 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing with SegmentationCommo
   def getPagewiseLinewidthTable(): TabularData[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep], Unit, Unit] = {
     docScope.docStats.getTable[Int@@PageNum, String@@ScaledFontID, List[Int@@FloatRep]]("PagewiseLineWidths")
   }
+
+  def getFontsWithOccuranceCounts(): Seq[(String@@ScaledFontID, Int)] = {
+    fontDefs.fontProperties.flatMap{ fontProps =>
+      if (fontProps.isNatLangFont()) {
+        fontProps.getScalingFactors().map{ scalingFactor =>
+
+          val docWideCount = fontProps.totalGlyphOccurrenceCounts
+            .computeColMarginals(0)(_ + _)
+            .getColMarginal(scalingFactor)
+            .getOrElse(0)
+
+          // val pageWideCount = fontProps.totalGlyphOccurrenceCounts.get(pageNum, scalingFactor).getOrElse(0)
+          // (fontProps.getFontIdentifier(scalingFactor), pageWideCount)
+
+          (fontProps.getFontIdentifier(scalingFactor), docWideCount),
+        }
+      } else List[(String@@ScaledFontID, Int)]()
+    }
+  }
+
+
 
 }
 
@@ -63,19 +83,6 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
     def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
     def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
-  }
-
-  def labelRegion(bbox: LTBounds, label: Label, text: Option[String] = None): RegionComponent = {
-    val stablePage = docStore.getPageIdentifier(pageId)
-    val pageRegion = PageRegion(stablePage, bbox)
-    mpageIndex.createRegionComponent(pageRegion, label, text)
-  }
-
-  def deleteComponentsWithLabel(l: Label): Unit = {
-    pageIndex.components.getComponentsWithLabel(l)
-      .foreach { cc =>
-        pageIndex.components.removeComponent(cc)
-      }
   }
 
   protected def pageVerticalSlice(left: Double, width: Double): Option[LTBounds] = {
@@ -133,7 +140,7 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     pageIndex.shapes.indexShape(shape, l)
   }
 
-  protected def indexShapeForItems[T <: GeometricFigure](shape: T, l: Label, items: ExtractedItem*): LabeledShape[GeometricFigure] = {
+  protected def indexShapeAndSetItems[T <: GeometricFigure](shape: T, l: Label, items: ExtractedItem*): LabeledShape[GeometricFigure] = {
     val s = pageIndex.shapes.indexShape(shape, l)
     setExtractedItemsForShape(s, items.toSeq)
     s
@@ -188,21 +195,23 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     shapes.map { getExtractedItemsForShape(_) }
   }
 
-  protected def setCharsForShape(shape: LabeledShape[GeometricFigure], items: Seq[ExtractedItem.CharItem]): Unit = {
-    pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem.CharItem]](shape.id, LB.ExtractedItems, items)
-  }
+
   protected def getCharsForShape(shape: LabeledShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
-    pageIndex.shapes.getShapeAttribute[Seq[ExtractedItem.CharItem]](shape.id, LB.ExtractedItems).get
+    getExtractedItemsForShape(shape)
+      .collect{ case i: ExtractedItem.CharItem =>  i }
+  }
+
+  protected def setFontsForShape(shape: LabeledShape[GeometricFigure], fontIds: Set[String@@ScaledFontID]): Unit = {
+    pageIndex.shapes.setShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts, fontIds)
+  }
+
+  protected def getFontsForShape(shape: LabeledShape[GeometricFigure]): Set[String@@ScaledFontID] = {
+    pageIndex.shapes.getShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts).get
   }
 }
 
 
 
 trait SegmentationCommons {
-  def modalValue(ccs: Seq[Component], f: Component => Int): Option[Int] = {
-    ccs.groupBy{f(_)}.toSeq
-      .sortBy({ case (_, atoms) => atoms.length })
-      .reverse.headOption.map(_._1)
-  }
 
 }

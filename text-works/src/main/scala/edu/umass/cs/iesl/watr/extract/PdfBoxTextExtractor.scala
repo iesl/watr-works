@@ -84,22 +84,6 @@ class PdfBoxTextExtractor(
     println(s"running ${enc.value}")
   }
 
-  override def appendRectangle(p0: Point2D, p1: Point2D, p2: Point2D, p3: Point2D): Unit = {
-    // p0.getX() p0.getY() p1.getX() p1.getY() p2.getX() p2.getY() p3.getX() p3.getY()
-    // traceFunc()
-  }
-
-  override def clip(x1: Int): Unit = {
-    // traceFunc()
-  }
-
-  override def closePath(): Unit = {
-    // traceFunc()
-  }
-
-  override def curveTo(x1: Float,x2: Float,x3: Float,x4: Float,x5: Float,x6: Float): Unit = {
-    // traceFunc()
-  }
 
   override def drawImage(image: PDImage): Unit = {
     val ctm = getGraphicsState.getCurrentTransformationMatrix()
@@ -126,6 +110,24 @@ class PdfBoxTextExtractor(
     // traceFunc()
   }
 
+  var currentPathPoint: Option[Point2D.Float] = None
+  override def appendRectangle(p0: Point2D, p1: Point2D, p2: Point2D, p3: Point2D): Unit = {
+    // p0.getX() p0.getY() p1.getX() p1.getY() p2.getX() p2.getY() p3.getX() p3.getY()
+    // traceFunc()
+  }
+
+  override def clip(x1: Int): Unit = {
+    // traceFunc()
+  }
+
+  override def closePath(): Unit = {
+    // traceFunc()
+  }
+
+  override def curveTo(x1: Float,x2: Float,x3: Float,x4: Float,x5: Float,x6: Float): Unit = {
+    // traceFunc()
+  }
+
   override def endPath(): Unit = {
     // traceFunc()
   }
@@ -140,16 +142,28 @@ class PdfBoxTextExtractor(
 
   override def getCurrentPoint(): Point2D = {
     // traceFunc()
-    // if you want to build paths, you'll need to keep track of this
-    new Point2D.Float(0, 0)
+    currentPathPoint.get
   }
 
   override def lineTo(x1: Float,x2: Float): Unit = {
-    // traceFunc()
+    val x = x1 - pageBoundsPdfCoords.getLowerLeftX
+    val y = pageBoundsPdfCoords.getUpperRightY - x2
+    val toPoint = new Point2D.Float(x, y)
+
+    val line = Line(getCurrentPoint().toPoint(), toPoint.toPoint)
+    addPathItem(ExtractedItem.PathItem(
+      charIdGen.nextId,
+      line.bounds(),
+      List(getCurrentPoint().toPoint(), toPoint.toPoint())
+    ))
+    currentPathPoint = Some(toPoint)
   }
 
-  override def moveTo(x1: Float,x2: Float): Unit = {
-    // traceFunc()
+  override def moveTo(x1: Float, x2: Float): Unit = {
+    val x = x1 - pageBoundsPdfCoords.getLowerLeftX
+    val y = pageBoundsPdfCoords.getUpperRightY - x2
+
+    currentPathPoint = Some(new Point2D.Float(x, y))
   }
 
   override def shadingFill(x1: org.apache.pdfbox.cos.COSName): Unit = {

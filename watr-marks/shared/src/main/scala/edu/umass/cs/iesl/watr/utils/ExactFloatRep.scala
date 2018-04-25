@@ -14,6 +14,7 @@ object ExactFloats {
 
   object FloatExact {
     val zero = FloatRep(0)
+    val epsilon = FloatRep(1)
   }
 
   type FloatExactInterval = (FloatExact, FloatExact)@@Interval

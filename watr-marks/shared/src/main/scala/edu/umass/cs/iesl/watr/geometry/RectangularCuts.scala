@@ -20,6 +20,31 @@ trait RectangularCuts extends GeometricOps {
 
   class RectangularCutOps(innerRect: LTBounds, enclosingRect: LTBounds) {
 
+    def burstAllDirections(): (Option[LTBounds], Seq[(Dir, LTBounds)]) = {
+      val intersection = innerRect.intersection(enclosingRect)
+
+      val burst1 = Dir.AllAdjacent.map{ dir =>
+        innerRect.withinRegion(enclosingRect)
+          .adjacentRegion(dir)
+          .map(r => (dir, r))
+      }
+
+      val burst2 = Dir.AllAdjacent.map{ dir =>
+        enclosingRect.withinRegion(innerRect)
+          .adjacentRegion(dir)
+          .map(r => (dir, r))
+      }
+
+      // val burstRegions = (burst1 ++ burst2).flatten.sortBy(b => (b.left, b.top))
+      val burstRegions = (burst1 ++ burst2).flatten.sortBy{b =>
+        (b._2.left, b._2.top
+        )
+      }
+      // (b => (b.left, b.top))
+
+      (intersection, burstRegions)
+
+    }
     def burstAllAdjacent(): (Option[LTBounds], Seq[LTBounds]) = {
       val intersection = innerRect.intersection(enclosingRect)
 

@@ -22,6 +22,17 @@ import utils.GuavaHelpers
 
 protected object ExtractionImplicits {
 
+  implicit class RicherPoint2D(val self: Point2D) extends AnyVal {
+    def toPoint(): Point = {
+      Point.Doubles(self.getX(), self.getY())
+    }
+  }
+
+  // implicit class RicherPoint2D(val self: Point2D.Float) extends AnyVal {
+  //   def toPoint(): Point = {
+  //     Point.Doubles(self.x.toDouble, self.y.toDouble)
+  //   }
+  // }
 
   implicit class RicherRectangle2D(val self: Rectangle2D) extends AnyVal {
     def toLTBounds(): LTBounds = {
@@ -156,7 +167,6 @@ case class AsciiHeightRecord(
   heights: Array[Double] = Array.ofDim[Double](128)
 )
 
-
 case class FontProperties(
   name: String,
   fontType: String,
@@ -252,15 +262,17 @@ case class FontProperties(
   }
 
 
+  def getScalingFactors(): Seq[Int@@ScalingFactor] = {
+    totalGlyphOccurrenceCounts.columnKeys.toList.sorted
+  }
+
   def getFontIdentifier(scalingFactor: Int@@ScalingFactor): String@@ScaledFontID = {
     ScaledFontID(s"${name}x${scalingFactor.unwrap}")
   }
 
   def getFontIdentifiers(): Seq[String@@ScaledFontID] = {
-    totalGlyphOccurrenceCounts.columnKeys.toList.sorted
-      .map{ scalingFactor => getFontIdentifier(scalingFactor) }
+    getScalingFactors().map{  getFontIdentifier(_) }
   }
-
 
   implicit val ShowString = Show.shows[String] { s => s }
 

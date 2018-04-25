@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
-import segment.{SegmentationLabels => LB}
+// import segment.{SegmentationLabels => LB}
 import textgrid._
 
 trait ColumnFinding extends CharColumnFinding
@@ -12,11 +12,13 @@ trait PageLevelFunctions extends ColumnFinding
 
 object PageSegmenter {
 
-  def getVisualLinesInExtractionOrder(pageIndex: PageIndex): Seq[Component] = {
-    pageIndex.components.getOrdering(LB.ExtractedLineStarts)
+  def getVisualLinesInExtractionOrder(pageIndex: PageIndex): Seq[LineShape] = {
+    // pageIndex.shapes.getOrdering(LB.ExtractedLineStarts)
+    ???
   }
 
-  def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[(Component, Seq[Component])] = {
+  // def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[(Component, Seq[Component])] = {
+  def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[LineShape] = {
     // val linesPerBlock0 = for {
     //   block <- pageIndex.components.getOrdering(LB.ReadingBlocks)
     // } yield {
