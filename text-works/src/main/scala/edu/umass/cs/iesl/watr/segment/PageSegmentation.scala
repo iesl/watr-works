@@ -5,9 +5,9 @@ import spindex._
 // import segment.{SegmentationLabels => LB}
 import textgrid._
 
-trait ColumnFinding extends CharColumnFinding
 
 trait PageLevelFunctions extends ColumnFinding
+    with TextReconstruction
     with ShapeFunctions
 
 object PageSegmenter {
@@ -55,16 +55,15 @@ object PageSegmenter {
 trait PageSegmenter extends PageLevelFunctions {
 
   def getPageTextGrid(): TextGrid = {
-    columnFinder.getTextGrid()
+    textReconstruction.getTextGrid()
   }
 
   def runPageSegmentationPass1(): Unit =  {
-
-    columnFinder.runPass1()
+    markNatLangText()
+    createColumnClusters()
   }
 
   def runPageSegmentationPass2(): Unit =  {
-    columnFinder.runPass2()
 
     // lineFinding.runLineSegmentation()
     // shapeFunctions.buildLinePairTrapezoids()

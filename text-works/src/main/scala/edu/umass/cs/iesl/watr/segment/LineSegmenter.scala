@@ -1,259 +1,522 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-
-import watrmarks._
 import geometry._
+import geometry.syntax._
 import extract.ExtractedItem
 import segment.{SegmentationLabels => LB}
-import textgrid._
 import utils.ExactFloats._
 import TypeTags._
-// import utils.SlicingAndDicing._
+import utils.{RelativeDirection => Dir}
+import utils.FunctionalHelpers._
 import utils.QuickNearestNeighbors._
+import utils.SlicingAndDicing._
 
-trait LineSegmentation extends PageScopeSegmenter { self =>
+trait LineSegmentation extends PageScopeSegmenter
+    with TextBlockGrouping { self =>
+
   lazy val lineSegmenter = self
 
-  protected def createTextRowFromVisualLine(visualBaseline: LineShape): TextGrid.Row = {
 
-    val textRow = textRowFromComponents(visualBaseline)
+  def doLineJoining(focalFont: String@@ScaledFontID, baselineShape: LineShape): Unit = {
+    val scaledFontMetrics = docScope.fontDefs.getScaledFont(focalFont)
+    val charItems = getCharsForShape(baselineShape)
+    val baselineFonts = getFontsForShape(baselineShape)
+    val line = baselineShape.shape
 
-    // Convert consecutive sup/sub to single label
-    def relabel(c: GridCursor, l: Label): Unit = {
-      c.findNext(_.hasLabel(l))
-        .foreach{ cur =>
-          val win = cur.slurpRight(_.hasLabel(l))
-          win.removePins(l)
-          win.addLabel(l)
-          win.nextCursor().foreach(relabel(_, l))
-        }
+    val heights = charItems.map{ item =>
+      item.minBBox.height
     }
-
-    textRow.toCursor().foreach { c => relabel(c, LB.Sub) }
-    textRow.toCursor().foreach { c => relabel(c, LB.Sup) }
-
-
-    val spacedRow = insertSpacesInRow(textRow)
-
-    // val supSubLabeledRow = spacedRow.toCursor()
-    //   .map { cursor =>
-    //     cursor.unfoldCursorToRow { c =>
-    //       val focus = c.focus
-
-    //       if      (focus.hasPin(LB.Sub.B))  { c.insertCharLeft ('₍').next }
-    //       else if (focus.hasPin(LB.Sub.L))  { c.insertCharRight('₎').some }
-    //       else if (focus.hasPin(LB.Sub.U))  { c.insertCharLeft('₍').next.get.insertCharRight('₎').some }
-    //       else if (focus.hasPin(LB.Sup.B))  { c.insertCharLeft ('⁽').next }
-    //       else if (focus.hasPin(LB.Sup.L))  { c.insertCharRight('⁾').some }
-    //       else if (focus.hasPin(LB.Sup.U))  { c.insertCharLeft('⁽').next.get.insertCharRight('⁾').some }
-    //       else { c.some }
-
-    //     }
-    //   }.getOrElse { spacedRow }
-
-    // pageIndex.components.setComponentText(visualLineClusterCC, LB.VisualLine, supSubLabeledRow)
-    // supSubLabeledRow
-    spacedRow
-  }
-
-  private def textRowFromComponents(visualBaseline: LineShape): TextGrid.Row = {
-
-    val extractedItems = getExtractedItemsForShape(visualBaseline).sortBy(_.minBBox.left)
-
-    val (topIntersects, bottomIntersects) = findLineAtomScriptPositions(visualBaseline)
-
-    val visualLineModalBounds: LTBounds = LTBounds.empty
-    new TextGrid.MutableRow { self =>
-      val init = extractedItems.map{
-        case item: ExtractedItem.CharItem =>
-          val intersectsTop = topIntersects.contains(item.id)
-          val intersectsBottom = bottomIntersects.contains(item.id)
-
-          val cells = item.char.headOption.map{ char =>
-            val charAtom = CharAtom(
-              item.id,
-              PageRegion(
-                StablePage(
-                  docScope.stableId,
-                  pageNum
-                ),
-                item.minBBox
-              ),
-              item.char
-            )
-
-            val cell = TextGrid.PageItemCell(charAtom, Seq(), char)
-
-            val continuations = item.char.tail.map { cn =>
-              cell.createInsert(cn)
-            }
-
-            val allCells: Seq[TextGrid.GridCell] = cell +: continuations
-
-            if (item.minBBox.bottom == visualLineModalBounds.bottom) {
-              // Center-text
-            } else if (intersectsTop && !intersectsBottom) {
-              allCells.foreach{ _.addLabel(LB.Sup) }
-            } else if (!intersectsTop && intersectsBottom) {
-              allCells.foreach{ _.addLabel(LB.Sub) }
-            } else {
-            }
+    // TODO get doc-wide avg or max height for these chars
+    val maxHeight = heights.max
+    val avgWidth = charItems.map{ _.minBBox.width.asDouble() }.sum / charItems.length
+    val windowWidth = avgWidth*6
+    val windowDelta = avgWidth*4
 
 
-            allCells
+    for {
+      baselineSlice <- pageHorizontalSlice(line.p1.y.asDouble()-maxHeight.asDouble(), maxHeight.asDouble())
+    } {
+
+      val windows = baselineSlice.slidingHorizontalWindow(windowWidth, windowDelta)
+      var firstNLGlyphWin = Int.MaxValue
+      windows.zipWithIndex.foreach { case (window, winNum) =>
+        val glyphsInWindowNL = searchForRects(window, LB.NatLangGlyph)
+        val glyphsInWindowSymbolic = searchForRects(window, LB.SymbolicGlyph)
+
+        val someGlyphIsNLOrRootedToNL = glyphsInWindowNL.nonEmpty || {
+          glyphsInWindowSymbolic.exists { glyphShape =>
+            pageIndex.shapes.getClusterRoot(LB.ContiguousGlyphs, glyphShape).isDefined
           }
-          cells.getOrElse(Seq())
-
-        case item =>
-          // TODO this is skipping over text represented as paths (but I have to figure out sup/sub script handling to make it work)
-          Seq()
-
-      }
-
-      cells.appendAll(init.flatten)
-    }
-  }
-
-  private def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row =  {
-    // if (textRow.cells.length > 100) {
-    //   println(s"So, there's like ${textRow.cells.length} cells in this row...")
-    //   val dbg = textRow.cells.map(_.char).mkString
-    //   println(dbg)
-    // }
-
-    val lineCCs = textRow.cells.collect{
-      case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
-        headItem
-    }
-
-    val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
-
-    val res = textRow.toCursor().map{ cursor =>
-      val finalRow = cursor.unfoldCursorToRow { nextCursor =>
-
-        val wordWin = nextCursor.toWindow.slurpRight{ case (win, cell) =>
-
-          val pairwiseDist = cell.pageRegion.bbox.left - win.last.pageRegion.bbox.right
-          val willGroup = pairwiseDist < splitValue
-
-
-          willGroup
         }
 
-        if (!wordWin.atEnd) {
-          wordWin.extendRight(' ').closeWindow.some
-        } else None
+        if (someGlyphIsNLOrRootedToNL) {
+          val glyphsInWindow = glyphsInWindowNL ++ glyphsInWindowSymbolic
 
+          val glyphItems = glyphsInWindow.map{ g =>
+            getExtractedItemsForShape(g).head
+          }
+
+          val ids = glyphItems.filter(_ != null)
+            .map{ g => g.id.unwrap }
+            .sorted
+            .toList
+
+          val idRange = (ids.min to ids.max).toList
+          val glyphsAreConsecutive = idRange == ids
+          if (glyphsAreConsecutive) {
+            firstNLGlyphWin = math.min(firstNLGlyphWin, winNum)
+            clusterN(LB.ContiguousGlyphs, glyphsInWindow)
+          }
+
+        }
       }
 
-      finalRow
+      val revWindows = windows.slice(0, firstNLGlyphWin+3).reverse
 
-    } getOrElse { textRow }
+      revWindows.zipWithIndex.foreach { case (window, winNum) =>
+        val glyphsInWindowNL = searchForRects(window, LB.NatLangGlyph)
+        val glyphsInWindowSymbolic = searchForRects(window, LB.SymbolicGlyph)
 
-    res
-  }
+        val someGlyphIsNLOrRootedToNL = glyphsInWindowNL.nonEmpty || {
+          glyphsInWindowSymbolic.exists { glyphShape =>
+            pageIndex.shapes.getClusterRoot(LB.ContiguousGlyphs, glyphShape).isDefined
+          }
+        }
 
-  // import utils.SlicingAndDicing._
-  // Group line atoms into center/sub/superscript bins
-  private def findLineAtomScriptPositions(
-    visualBaseline: LineShape
-  ): (Seq[Int@@CharID], Seq[Int@@CharID]) = {
-    val extractedItems = getExtractedItemsForShape(visualBaseline)
-    // val mostCommonHeight = extractedItems.map(_.bbox.height).sorted
-    //   .groupByPairs(_ == _)
-    //   .head.head
-    val (onBaseline, offBaseline) = extractedItems
-      .partition { item =>
-        item.location.y == visualBaseline.shape.p1.y
+        if (someGlyphIsNLOrRootedToNL) {
+          val glyphsInWindow = glyphsInWindowNL ++ glyphsInWindowSymbolic
+
+          val glyphItems = glyphsInWindow.map{ g =>
+            getExtractedItemsForShape(g).head
+          }
+
+
+          val ids = glyphItems.filter(_ != null)
+            .map{ g => g.id.unwrap }
+            .sorted
+            .toList
+
+          val idRange = (ids.min to ids.max).toList
+
+          val glyphsAreConsecutive = idRange == ids
+
+          if (glyphsAreConsecutive) {
+            clusterN(LB.ContiguousGlyphs, glyphsInWindow)
+          }
+        }
       }
-
-    val (aboveBaseline, belowBaseline) = offBaseline
-      .partition { item =>
-        item.location.y < visualBaseline.shape.p1.y
-      }
-
-    //     val visualLineBounds = visualLineCC.bounds()
-
-    //     // top 1/3  & bottom 1/3 ==> centered
-
-    //     val slices = visualLineBounds.getHorizontalSlices(3)
-    //     val Seq(topSlice, _, bottomSlice) = slices
-
-    //     val topIntersections = pageIndex.components.searchOverlapping(topSlice, LB.PageAtomGrp)
-    //     val bottomIntersections = pageIndex.components.searchOverlapping(bottomSlice, LB.PageAtomGrp)
-    //     // val middleIntersections = pageIndex.components.searchOverlapping(middleSlice, LB.PageAtomGrp)
-
-    //     val topIntersects = topIntersections.map(_.id)
-    //     val bottomIntersects = bottomIntersections.map(_.id)
-
-
-    (aboveBaseline.map(_.id), belowBaseline.map(_.id))
-  }
-
-  // private def findModalBoundingRect(): LTBounds = {
-  //   // val visualLineBounds = visualLineCC.bounds()
-
-  //   // val modalBaselineI = modalValue(visualLineAtoms, _.bounds().bottom.unwrap)
-  //   //   .getOrElse(visualLineBounds.bottom.unwrap)
-
-  //   // val modalBaseline = FloatRep(modalBaselineI)
-
-  //   // val modalToplineI = modalValue(visualLineAtoms, _.bounds.top.unwrap)
-  //   //   .getOrElse(visualLineBounds.top.unwrap)
-
-  //   // val modalTopline = FloatRep(modalToplineI)
-
-  //   // val height = modalBaseline-modalTopline
-
-  //   // val visualLineModalBounds = if (height > 0) {
-  //   //   visualLineBounds.copy(
-  //   //     top=modalTopline, height=modalBaseline-modalTopline
-  //   //   )
-  //   // } else {
-  //   //   visualLineBounds
-  //   // }
-
-  //   // // gifBuilder.indicate("Modal-base/top VisualLine", visualLineModalBounds)
-  //   // visualLineModalBounds
-  //   ???
-  // }
-
-  private def pairwiseItemDistances(sortedLineCCs: Seq[PageItem]): Seq[FloatExact] = {
-    val cpairs = sortedLineCCs.sliding(2).toList
-
-    val dists = cpairs.map({
-      case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
-      case _  => 0d.toFloatExact()
-    })
-
-    dists :+ 0d.toFloatExact()
-  }
-
-  private def guessWordbreakWhitespaceThreshold(sortedLineCCs: Seq[PageItem]): FloatExact =  {
-    val charSpacings = qnn(
-      pairwiseItemDistances(sortedLineCCs), 0.5d
-    )
-
-    // println("guessWordbreakWhitespaceThreshold: ")
-    // println(charSpacings.mkString("\n  ", "\n  ", "\n"))
-
-    if (charSpacings.length == 1) {
-      val charWidths = sortedLineCCs.map(_.bbox.width)
-      charWidths.max
-    } else if (charSpacings.length > 1) {
-      val mostCommonSpacingBin = charSpacings.head
-      val mostCommonSpacing = mostCommonSpacingBin.maxValue
-      val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing*2)
-      if (largerSpacings.nonEmpty) {
-        val nextCommonSpacing = largerSpacings.head.centroid.value
-        (mostCommonSpacing + nextCommonSpacing) / 2
-      } else {
-        mostCommonSpacing + 1.0
-      }
-    } else {
-      0.toFloatExact()
     }
+
+    val allClusterBounds = getClusteredRects(LB.ContiguousGlyphs).map{
+      case (clusterReprId, glyphRects) =>
+        val glyphBounds = glyphRects.map(_.shape).reduce(_ union _)
+        val glyphItems = getExtractedItemsForShapes(glyphRects).flatten
+        val continuousGlyphBaseline = glyphBounds.toLine(Dir.Bottom)
+        val baselineShape = indexShape(continuousGlyphBaseline, LB.ContiguousGlyphBaseline)
+        setExtractedItemsForShape(baselineShape, glyphItems)
+        glyphBounds
+    }
+
+    traceLog.trace {
+      val bottomLines = allClusterBounds.map(_.toLine(Dir.Bottom))
+      figure(bottomLines:_*) tagged "ContiguousGlyphBounds"
+    }
+  }
+
+  def joinFontBaselines(baselineShapes: Seq[LineShape]): Unit = {
+    val fontsByMostOccuring = docScope.getFontsWithOccuranceCounts()
+      .sortBy(_._2).reverse.map(_._1)
+
+    pageIndex.shapes.ensureCluster(LB.ContiguousGlyphs)
+
+    def joinLinesLoop(
+      scaledFontIds: List[String@@ScaledFontID],
+      lineShapes: Seq[LineShape],
+      depth: Int = 0
+    ): Unit = scaledFontIds match {
+
+      case headFontId :: tailFontIds =>
+        val markedLineSpans = collectSpanEither[LineShape](lineShapes, { lineShape =>
+          getFontsForShape(lineShape).contains(headFontId)
+        })
+
+
+        markedLineSpans.foreach{ _ match {
+          case Right(lines) =>
+            lines.foreach {lineShape =>
+              doLineJoining(headFontId, lineShape)
+            }
+          case Left(lines)  => joinLinesLoop(tailFontIds, lines, depth+1)
+        }}
+
+      case Nil => lineShapes.map(List(_))
+    }
+
+    joinLinesLoop(fontsByMostOccuring.toList, baselineShapes)
+  }
+
+
+  def indexPathRegions(): Unit = {
+    val pathShapes = pageIndex.pageItems.toSeq
+      .filter { _.isInstanceOf[ExtractedItem.PathItem] }
+      .map { item =>
+        indexShape(item.minBBox, LB.PathBounds)
+      }
+
+    traceLog.trace { shape(pathShapes:_*) tagged "Path Line Bounds" }
+  }
+
+  def indexImageRegionsAndDeleteOverlaps(): Unit = {
+    val deletedShapes = pageIndex.pageItems.toSeq
+      .filter { _.isInstanceOf[ExtractedItem.ImgItem] }
+      .flatMap { imageItem =>
+        indexShape(imageItem.minBBox, LB.Image)
+        val baseLines: Seq[LineShape] = searchForLines(imageItem.minBBox, LB.CharRunFontBaseline)
+        deleteShapes(baseLines)
+        baseLines
+      }
+
+    traceLog.trace { shape(deletedShapes:_*) tagged "Deleted Intersect Image Bounds" }
+    traceLog.trace { labeledShapes(LB.Image) tagged "Image Regions" }
+  }
+
+  def createCharRunFontBaseline(charRun: Seq[ExtractedItem.CharItem]): Line = {
+    val xSorted = charRun.sortBy { _.minBBox.left }
+    val runBeginPt =  Point(xSorted.head.minBBox.left, xSorted.head.fontBbox.bottom)
+    val runEndPt = Point(xSorted.last.minBBox.right, xSorted.last.fontBbox.bottom)
+    Line(runBeginPt, runEndPt)
+  }
+
+
+  private def recordCharRunWidths(charRunBaselineShapes: Seq[LineShape]): Unit = {
+    val pagewiseLineWidthTable = docScope.getPagewiseLinewidthTable();
+
+
+    val leftToRightGroups = charRunBaselineShapes.groupByPairs {
+      case (item1, item2) =>
+        val b1 = item1.shape.bounds()
+        val b2 = item2.shape.bounds()
+        val leftToRight = b1.isStrictlyLeftOf(b2)
+        val colinear = b1.bottom == b2.bottom
+
+        leftToRight && colinear
+    }
+
+    leftToRightGroups.foreach { lineGroup =>
+      val groupBounds = lineGroup.map(_.shape.bounds()).reduce(_ union _)
+      val extractedItems = lineGroup.flatMap { lineShape =>
+        getExtractedItemsForShape(lineShape)
+      }
+      val charItems = extractedItems.collect{ case i: ExtractedItem.CharItem =>  i }
+
+      val (num, mostCommonScaledFontId) = charItems
+        .map{ item => item.scaledFontId }
+        .groupBy { x => x }
+        .toList
+        .map{case (k, v) => (v.length, k) }
+        .sortBy(l => - l._1)
+        .head
+
+      // val bottomLine = groupBounds.toLine(Dir.Bottom)
+      pagewiseLineWidthTable.modifyOrSet(pageNum, mostCommonScaledFontId, groupBounds.width :: _, List(groupBounds.width))
+    }
+
+    traceLog.trace {
+      val bottomLines = leftToRightGroups
+        .filter(_.length > 1)
+        .map { lineGroup =>
+          val groupBounds = lineGroup.map(_.shape.bounds()).reduce(_ union _)
+          groupBounds.toLine(Dir.Bottom)
+        }
+
+      figure(bottomLines:_*) tagged "Joined Nat Lang CharRun Baselines"
+    }
+  }
+
+
+  private def findPageCharRuns(retainNatLang: Boolean): Seq[Seq[ExtractedItem.CharItem]] = {
+    val charRuns = pageIndex.pageItems.toSeq
+      .collect { case item: ExtractedItem.CharItem => item }
+      .filter(_.fontProps.isNatLangFont() == retainNatLang)
+      .groupByPairs {
+        case (item1, item2) =>
+          lazy val consecutive = item1.id.unwrap+1 == item2.id.unwrap
+          lazy val sameLine = item1.fontBbox.bottom == item2.fontBbox.bottom
+          lazy val sameFont = item1.fontProps == item2.fontProps
+
+          consecutive && sameLine && sameFont
+      }
+
+    charRuns
+  }
+
+  private def findSymbolicCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
+    val charRuns = pageIndex.pageItems.toSeq
+      .collect { case item: ExtractedItem.CharItem => item }
+      .filterNot(_.fontProps.isNatLangFont())
+      .groupByPairs {
+        case (item1, item2) =>
+          lazy val consecutive = item1.id.unwrap+1 == item2.id.unwrap
+          lazy val leftToRight = item1.minBBox.left < item2.minBBox.left
+          lazy val colinear = item1.minBBox.isNeitherAboveNorBelow(item2.minBBox)
+
+          consecutive && leftToRight && colinear
+      }
+
+    charRuns
+  }
+
+  def markNatLangText(): Unit = {
+    val natLangCharRuns = findPageCharRuns(retainNatLang=true)
+
+
+    natLangCharRuns.foreach { charItems =>
+      charItems.foreach { item =>
+        indexShapeAndSetItems(item.minBBox, LB.NatLangGlyph, item)
+        indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
+      }
+    }
+
+
+    initNatLangCharSpans(natLangCharRuns)
+
+    indexPathRegions()
+
+    indexImageRegionsAndDeleteOverlaps()
+
+    findContiguousBlocks(LB.CharRunFontBaseline)
+
+    val symbolicLangCharRuns = findSymbolicCharRuns()
+
+    symbolicLangCharRuns.foreach { charItems =>
+      charItems.foreach { item =>
+        indexShapeAndSetItems(item.minBBox, LB.SymbolicGlyph, item)
+        indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
+      }
+    }
+
+    traceLog.trace { labeledShapes(LB.NatLangGlyph) tagged "All Natural Lang Glyphs" }
+    traceLog.trace { labeledShapes(LB.SymbolicGlyph) tagged "All Symbolic Glyphs" }
+
+    initSymbolicCharSpans(symbolicLangCharRuns)
+
+  }
+
+
+
+  private def initSymbolicCharSpans(symbolicRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
+
+    symbolicRuns.map { charRun =>
+      val xSorted = charRun.sortBy { _.minBBox.left }
+      val p1 = xSorted.head.minBBox.toPoint(Dir.Center)
+      val p2 = xSorted.last.minBBox.toPoint(Dir.Center)
+
+      val baseLine = Line(p1, p2)
+
+      val symbolicGlyphLine = indexShape(baseLine, LB.SymbolicGlyphLine)
+
+      setExtractedItemsForShape(symbolicGlyphLine, charRun)
+
+      symbolicGlyphLine
+    }.asLineShapes
+
+
+    traceLog.trace { labeledShapes(LB.SymbolicGlyphLine) }
+  }
+
+  private def initNatLangCharSpans(natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
+
+    val charRunBaselineShapes = natLangCharRuns.map { charRun =>
+      val charItems = charRun.map(_.asInstanceOf[ExtractedItem.CharItem])
+
+      val baseLine = createCharRunFontBaseline(charItems)
+
+      val baselineShape = indexShape(baseLine, LB.CharRunFontBaseline)
+
+      val fontIds = charItems.map{ _.scaledFontId }.toSet
+
+      setFontsForShape(baselineShape, fontIds)
+
+      setExtractedItemsForShape(baselineShape, charRun)
+
+      baselineShape
+    }.asLineShapes
+
+    traceLog.trace { labeledShapes(LB.CharRunFontBaseline) tagged "Initial Font Baselines" }
+
+    // recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
+    recordCharRunWidths(charRunBaselineShapes)
+
+    joinFontBaselines(charRunBaselineShapes)
+
+  }
+
+
+  /**
+    * Foreach horizontal nat-lang text line, find the 2 closest lines below
+    * it, and record the distances to each line.
+    *
+    * Finally, cluster those vertical jumps into centroids.
+    *
+    *  l0     :    --------------
+    *  dists  :           | |
+    *  l0+1   :    -------- | ---
+    *  l0+2   :    --------------
+    */
+  protected def recordNatLangVerticalLineSpacingStats(baselineShapes: Seq[LineShape]): Unit = {
+    val windowSize = 2
+
+    val contextDeltas = baselineShapes.map { baselineShape: LineShape =>
+      val Line(Point.Doubles(x1, y1), Point.Doubles(x2, y2)) = baselineShape.shape
+
+      val y1Exact = baselineShape.shape.p1.y
+
+      pageVerticalSlice(x1, x2-x1).toSeq.flatMap { pageColumn =>
+        val (aboveLine, belowLine) = pageColumn.splitHorizontal(y1Exact)
+
+
+        val below = belowLine.map { bbox =>
+          val query = bbox.translate(x=0, y = +1.0)
+          searchForLines(query, LB.CharRunFontBaseline)
+        } getOrElse { List() }
+
+
+        val winBelow = below.sortBy(_.shape.p1.y).take(windowSize)
+
+        winBelow.map { ctxLine => ctxLine.shape.p1.y - y1Exact }
+      }
+    }
+
+    val yJumps = contextDeltas.flatten
+    val yJumpClusters = qnn(yJumps, tolerance = 0.5d)
+
+    val nonUniqueJumps = yJumpClusters.filter { bin =>
+      bin.size() > 1
+    }
+
+    println(s"recordNatLangLineSpacing: Assigned Bins")
+    println(nonUniqueJumps.mkString("\n  ", "\n  ", "\n"))
   }
 
 }
+
+
+
+
+// protected def inferNLBaselineContinuity(baselineShapes: Seq[LineShape]): Unit = {
+
+//   pageIndex.shapes.ensureCluster(LB.ContiguousGlyphs)
+
+//   for {
+//     baselineShape <- baselineShapes
+//   } {
+
+//     val extractedItems = getExtractedItemsForShape(baselineShape)
+//     val charItems = extractedItems.collect{ case i: ExtractedItem.CharItem =>  i }
+//     val line = baselineShape.shape
+
+//     val heights = charItems.map{ item =>
+//       item.minBBox.height
+//     }
+//     // TODO get doc-wide avg or max height for these chars
+//     val maxHeight = heights.max
+//     val avgWidth = charItems.map{ _.minBBox.width.asDouble() }.sum / charItems.length
+//     val windowWidth = avgWidth*6
+//     val windowDelta = avgWidth*4
+
+
+//     for {
+//       baselineSlice <- pageHorizontalSlice(line.p1.y.asDouble()-maxHeight.asDouble(), maxHeight.asDouble())
+//     } {
+
+//       // traceLog.trace { figure(baselineSlice) tagged "Sliding Window PageSlice" }
+
+//       val windows = baselineSlice.slidingHorizontalWindow(windowWidth, windowDelta)
+//       var firstNLGlyphWin = Int.MaxValue
+//       windows.zipWithIndex.foreach { case (window, winNum) =>
+//         val glyphsInWindowNL = searchForRects(window, LB.NatLangGlyph)
+//         val glyphsInWindowSymbolic = searchForRects(window, LB.SymbolicGlyph)
+
+//         val someGlyphIsNLOrRootedToNL = glyphsInWindowNL.nonEmpty || {
+//           glyphsInWindowSymbolic.exists { glyphShape =>
+//             pageIndex.shapes.getClusterRoot(LB.ContiguousGlyphs, glyphShape).isDefined
+//           }
+//         }
+
+//         if (someGlyphIsNLOrRootedToNL) {
+//           val glyphsInWindow = glyphsInWindowNL ++ glyphsInWindowSymbolic
+
+//           val glyphItems = glyphsInWindow.map{ g =>
+//             getExtractedItemsForShape(g).head
+//           }
+
+//           val ids = glyphItems.filter(_ != null)
+//             .map{ g => g.id.unwrap }
+//             .sorted
+//             .toList
+
+//           val idRange = (ids.min to ids.max).toList
+//           val glyphsAreConsecutive = idRange == ids
+//           if (glyphsAreConsecutive) {
+//             firstNLGlyphWin = math.min(firstNLGlyphWin, winNum)
+//             clusterN(LB.ContiguousGlyphs, glyphsInWindow)
+//           }
+
+//         }
+//       }
+
+//       val revWindows = windows.slice(0, firstNLGlyphWin+3).reverse
+
+//       revWindows.zipWithIndex.foreach { case (window, winNum) =>
+//         val glyphsInWindowNL = searchForRects(window, LB.NatLangGlyph)
+//         val glyphsInWindowSymbolic = searchForRects(window, LB.SymbolicGlyph)
+
+//         val someGlyphIsNLOrRootedToNL = glyphsInWindowNL.nonEmpty || {
+//           glyphsInWindowSymbolic.exists { glyphShape =>
+//             pageIndex.shapes.getClusterRoot(LB.ContiguousGlyphs, glyphShape).isDefined
+//           }
+//         }
+
+//         if (someGlyphIsNLOrRootedToNL) {
+//           val glyphsInWindow = glyphsInWindowNL ++ glyphsInWindowSymbolic
+
+//           val glyphItems = glyphsInWindow.map{ g =>
+//             getExtractedItemsForShape(g).head
+//           }
+
+
+//           val ids = glyphItems.filter(_ != null)
+//             .map{ g => g.id.unwrap }
+//             .sorted
+//             .toList
+
+//           val idRange = (ids.min to ids.max).toList
+
+//           val glyphsAreConsecutive = idRange == ids
+
+//           if (glyphsAreConsecutive) {
+//             clusterN(LB.ContiguousGlyphs, glyphsInWindow)
+//           }
+//         }
+//       }
+//     }
+//   }
+
+//   val allClusterBounds = getClusteredRects(LB.ContiguousGlyphs).map{
+//     case (clusterReprId, glyphRects) =>
+//       val glyphBounds = glyphRects.map(_.shape).reduce(_ union _)
+//       val glyphItems = getExtractedItemsForShapes(glyphRects).flatten
+//       val continuousGlyphBaseline = glyphBounds.toLine(Dir.Bottom)
+//       val baselineShape = indexShape(continuousGlyphBaseline, LB.ContiguousGlyphBaseline)
+//       setExtractedItemsForShape(baselineShape, glyphItems)
+//       glyphBounds
+//   }
+
+//   traceLog.trace {
+//     val bottomLines = allClusterBounds.map(_.toLine(Dir.Bottom))
+//     figure(bottomLines:_*) tagged "ContiguousGlyphBounds"
+//   }
+
+// }
+

@@ -16,6 +16,7 @@ import scalaz.std.anyVal._
 import scalaz.Show
 
 import TypeTags._
+import scalaz.syntax.equal._
 import textboxing.{TextBoxing => TB}, TB._
 
 import utils.GuavaHelpers
@@ -53,6 +54,20 @@ protected object ExtractionImplicits {
       val h = self.getHeight
       LTBounds.Floats(left, top, w, h).toLBBounds
     }
+  }
+
+  def makeScaledFontId(name: String, scalingFactor: Int@@ScalingFactor): String@@ScaledFontID = {
+    ScaledFontID(s"${name}x${scalingFactor.unwrap}")
+  }
+
+  def splitScaledFontId(scaledFontId: String@@ScaledFontID): (String, Int@@ScalingFactor) = {
+    val str = scaledFontId.unwrap
+    val n = str.lastIndexOf("x")
+
+    val (name, scaling0) = scaledFontId.unwrap.splitAt(n)
+    val scaling = scaling0.drop(1).toInt
+
+    (name, ScalingFactor(scaling.toInt))
   }
 }
 
@@ -230,6 +245,9 @@ case class FontProperties(
     nonZeros > 3 && hasNgrams
   }
 
+  def getScaledMetrics(scalingFactor: Int@@ScalingFactor): Option[ScaledMetrics] = {
+    scaledMetrics().filter(_.scalingFactor === scalingFactor).headOption
+  }
 
   def scaledMetrics(): Seq[ScaledMetrics] = {
     val midrisers = "acemnorszuvwx"
@@ -267,7 +285,7 @@ case class FontProperties(
   }
 
   def getFontIdentifier(scalingFactor: Int@@ScalingFactor): String@@ScaledFontID = {
-    ScaledFontID(s"${name}x${scalingFactor.unwrap}")
+    makeScaledFontId(name, scalingFactor)
   }
 
   def getFontIdentifiers(): Seq[String@@ScaledFontID] = {
@@ -336,6 +354,12 @@ class FontDefs(pageCount: Int) {
 
   def getFont(fontName: String): Option[FontProperties] = {
     fontProperties.find(_.name == fontName)
+  }
+
+  def getScaledFont(scaledFontId: String@@ScaledFontID): Option[ScaledMetrics] = {
+    val (fontName, scalingFactor) = splitScaledFontId(scaledFontId)
+    val fontProps = fontProperties.find(_.name == fontName).head
+    fontProps.getScaledMetrics(scalingFactor)
   }
 
   def getFontIdentifiers(): Seq[String@@ScaledFontID] = {

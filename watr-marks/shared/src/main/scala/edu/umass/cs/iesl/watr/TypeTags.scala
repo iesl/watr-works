@@ -80,6 +80,7 @@ trait TypeTagUtils {
   implicit def TypeTagOrder[T] : scalaz.Order[Int@@T] = scalaz.Order.fromScalaOrdering
 
   import scalaz.syntax.equal._
+
   implicit def EqualTypeTag[A: Equal, T]: Equal[A@@T] =
     Equal.equal((a, b)  => a.unwrap===b.unwrap)
 

@@ -10,6 +10,7 @@ import utils.ExactFloats._
 import extract._
 import segment.{SegmentationLabels => LB}
 import utils._
+import TypeTags._
 
 trait DocumentScopeSegmenter extends DocumentScopeTracing with SegmentationCommons { self =>
 
@@ -208,6 +209,48 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   protected def getFontsForShape(shape: LabeledShape[GeometricFigure]): Set[String@@ScaledFontID] = {
     pageIndex.shapes.getShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts).get
   }
+
+  protected def queriesAllEmpty(queryRect: LTBounds, labels: Label*): Boolean = {
+    labels.map{ l => searchForRects(queryRect, l).isEmpty }
+      .forall(b => b)
+  }
+
+  protected def hasNoNonTextOverlaps(queryRect: LTBounds): Boolean = {
+    queriesAllEmpty(queryRect, LB.Image, LB.PathBounds)
+  }
+
+  protected def hasNoOverlaps(queryRect: LTBounds): Boolean = {
+    queriesAllEmpty(queryRect, LB.Image, LB.PathBounds, LB.Glyph)
+  }
+
+  protected def findDeltas(ns: Seq[Int@@FloatRep]): Seq[Int@@FloatRep] = {
+    ns.zip(ns.tail)
+      .map {case (n1, n2) => n2 - n1 }
+  }
+
+  protected def findPairwiseVerticalJumps[G <: GeometricFigure](
+    shapes: Seq[LabeledShape[G]], getY: (LabeledShape[G]) => Int@@FloatRep
+  ): Seq[(Int@@FloatRep, (LabeledShape[G], LabeledShape[G]))] = {
+
+    val sorted = shapes.sortBy { getY(_) }
+    val yVals = sorted.map(s => getY(s))
+    val deltas = findDeltas(yVals)
+
+    deltas.zip(sorted.zip(sorted.tail))
+
+  }
+
+  protected def pairwiseItemDistances(sortedLineCCs: Seq[PageItem]): Seq[FloatExact] = {
+    val cpairs = sortedLineCCs.sliding(2).toList
+
+    val dists = cpairs.map({
+      case Seq(c1, c2)  => (c2.bbox.left - c1.bbox.right)
+      case _  => 0d.toFloatExact()
+    })
+
+    dists :+ 0d.toFloatExact()
+  }
+
 }
 
 
