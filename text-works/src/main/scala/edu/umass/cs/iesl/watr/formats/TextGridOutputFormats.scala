@@ -124,7 +124,11 @@ object TextGridOutputFormats  {
     val allPageTextGrids = docSeg.pageSegmenters
       .map { pageSegmenter =>
         val textGrid = pageSegmenter.getTextGrid
+        val rows = textGrid.rows.length
+        println(s"jsonOutputGridPerPage(1); textgrid rows = ${rows}")
         val gridJs = textGrid.toJson()
+
+        println(s"jsonOutputGridPerPage(2)")
 
         val LTBounds.IntReps(l, t, w, h) = pageSegmenter.pageGeometry
         val geom = Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))

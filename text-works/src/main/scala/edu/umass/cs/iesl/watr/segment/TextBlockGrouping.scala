@@ -13,7 +13,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
   lazy val textBlockGrouping = self
 
 
-  protected def findContiguousBlocks(label: Label): Unit = {
+  def findContiguousBlocks(label: Label): Unit = {
 
     val fontsByMostOccuring = docScope.getFontsWithOccuranceCounts()
       .sortBy(_._2).reverse.map(_._1)

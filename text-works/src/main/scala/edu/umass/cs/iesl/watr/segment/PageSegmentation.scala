@@ -2,12 +2,13 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
-// import segment.{SegmentationLabels => LB}
+import segment.{SegmentationLabels => LB}
 import textgrid._
 
 
 trait PageLevelFunctions extends ColumnFinding
     with TextReconstruction
+    with TextBlockGrouping
     with ShapeFunctions
 
 object PageSegmenter {
@@ -60,7 +61,10 @@ trait PageSegmenter extends PageLevelFunctions {
 
   def runPageSegmentationPass1(): Unit =  {
     markNatLangText()
+
+
     createColumnClusters()
+
   }
 
   def runPageSegmentationPass2(): Unit =  {

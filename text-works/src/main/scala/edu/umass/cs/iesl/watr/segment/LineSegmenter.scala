@@ -12,8 +12,7 @@ import utils.FunctionalHelpers._
 import utils.QuickNearestNeighbors._
 import utils.SlicingAndDicing._
 
-trait LineSegmentation extends PageScopeSegmenter
-    with TextBlockGrouping { self =>
+trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self =>
 
   lazy val lineSegmenter = self
 
@@ -278,7 +277,6 @@ trait LineSegmentation extends PageScopeSegmenter
       }
     }
 
-
     initNatLangCharSpans(natLangCharRuns)
 
     indexPathRegions()
@@ -343,12 +341,14 @@ trait LineSegmentation extends PageScopeSegmenter
       baselineShape
     }.asLineShapes
 
+    println(s"initNatLangCharSpans: baselineShapes = ${charRunBaselineShapes.length}")
+
     traceLog.trace { labeledShapes(LB.CharRunFontBaseline) tagged "Initial Font Baselines" }
 
     // recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
-    recordCharRunWidths(charRunBaselineShapes)
+    // recordCharRunWidths(charRunBaselineShapes)
 
-    joinFontBaselines(charRunBaselineShapes)
+    // joinFontBaselines(charRunBaselineShapes)
 
   }
 

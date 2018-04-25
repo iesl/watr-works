@@ -21,6 +21,8 @@ trait TextReconstruction extends PageScopeSegmenter
     */
   def getTextGrid(): TextGrid = {
 
+    println(s"getTextGrid(1)")
+
     val rows1 = getLabeledLines(LB.ContiguousGlyphBaseline)
       .map { baselineShape =>
         val minId  = getCharsForShape(baselineShape).map(_.id.unwrap).min
@@ -28,12 +30,16 @@ trait TextReconstruction extends PageScopeSegmenter
         (minId, textRow)
       }
 
+    println(s"getTextGrid(2)")
+
     val rows2 = getLabeledLines(LB.SymbolicGlyphLine)
       .map { symbolicGlyphLine =>
         val textRow = createTextRowFromVisualLine(symbolicGlyphLine)
         val minId  = getCharsForShape(symbolicGlyphLine).map(_.id.unwrap).min
         (minId, textRow)
       }
+
+    println(s"getTextGrid(3)")
 
     val rows = (rows1 ++ rows2).sortBy(_._1).map(_._2)
 

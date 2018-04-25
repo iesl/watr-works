@@ -21,7 +21,6 @@ trait ColumnFinding extends PageScopeSegmenter
 
   import LB._
 
-
   protected def createColumnClusters(): Unit = {
     val charRunBaselineShapes = getLabeledLines(LB.CharRunFontBaseline)
     val leftmostPoints = charRunBaselineShapes.map{ _.shape.p1 }
