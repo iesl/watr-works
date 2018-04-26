@@ -1,27 +1,46 @@
 package edu.umass.cs.iesl.watr
 package segment
 
+
 import geometry._
 import geometry.syntax._
-import extract.ExtractedItem
+import extract._
 import segment.{SegmentationLabels => LB}
 import utils.ExactFloats._
-import TypeTags._
 import utils.{RelativeDirection => Dir}
 import utils.FunctionalHelpers._
 import utils.QuickNearestNeighbors._
 import utils.SlicingAndDicing._
+import watrmarks._
+import textboxing.{TextBoxing => TB}, TB._
+import utils.SlicingAndDicing._
 
-trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self =>
+import TypeTags._
+
+trait LineSegmentation extends PageScopeSegmenter
+    with FontAndGlyphMetrics
+    with TextBlockGrouping { self =>
 
   lazy val lineSegmenter = self
 
 
   def doLineJoining(focalFont: String@@ScaledFontID, baselineShape: LineShape): Unit = {
-    val scaledFontMetrics = docScope.fontDefs.getScaledFont(focalFont)
-    val charItems = getCharsForShape(baselineShape)
     val baselineFonts = getFontsForShape(baselineShape)
+
+    assume(baselineFonts.size==1)
+    assume(baselineFonts.contains(focalFont))
+
     val line = baselineShape.shape
+    // val scaledFontMetrics = docScope.fontDefs.getScaledFont(focalFont).orDie(s"font ${focalFont} not found")
+    val charItems = getCharsForShape(baselineShape)
+
+    // val metrics = scaledFontMetrics.fontMetrics.orDie(s"font metrics ${focalFont} not found")
+    val headItem = charItems.head
+    // val trueBaseline = 0
+    // headItem.char
+    // headItem.fontProps
+    headItem.glyphProps.scalingFactor
+
 
     val heights = charItems.map{ item =>
       item.minBBox.height
@@ -123,7 +142,7 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
     }
   }
 
-  def joinFontBaselines(baselineShapes: Seq[LineShape]): Unit = {
+  def joinFontBaselines(label: Label): Unit = {
     val fontsByMostOccuring = docScope.getFontsWithOccuranceCounts()
       .sortBy(_._2).reverse.map(_._1)
 
@@ -146,13 +165,16 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
             lines.foreach {lineShape =>
               doLineJoining(headFontId, lineShape)
             }
+
           case Left(lines)  => joinLinesLoop(tailFontIds, lines, depth+1)
         }}
 
-      case Nil => lineShapes.map(List(_))
+      case Nil =>
     }
 
-    joinLinesLoop(fontsByMostOccuring.toList, baselineShapes)
+    val startingLines = getLabeledLines(label)
+
+    joinLinesLoop(fontsByMostOccuring.toList, startingLines)
   }
 
 
@@ -188,7 +210,7 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
   }
 
 
-  private def recordCharRunWidths(charRunBaselineShapes: Seq[LineShape]): Unit = {
+  protected def recordCharRunWidths(charRunBaselineShapes: Seq[LineShape]): Unit = {
     val pagewiseLineWidthTable = docScope.getPagewiseLinewidthTable();
 
 
@@ -234,8 +256,8 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
   }
 
 
-  private def findPageCharRuns(retainNatLang: Boolean): Seq[Seq[ExtractedItem.CharItem]] = {
-    val charRuns = pageIndex.pageItems.toSeq
+  private def findNatLangBaselineRuns(retainNatLang: Boolean): Seq[Seq[ExtractedItem.CharItem]] = {
+    pageIndex.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
       .filter(_.fontProps.isNatLangFont() == retainNatLang)
       .groupByPairs {
@@ -246,8 +268,6 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
 
           consecutive && sameLine && sameFont
       }
-
-    charRuns
   }
 
   private def findSymbolicCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
@@ -267,17 +287,19 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
   }
 
   def markNatLangText(): Unit = {
-    val natLangCharRuns = findPageCharRuns(retainNatLang=true)
 
+    recordNatLangCharSpans(
+      LB.CharRunFontBaseline,
+      findNatLangBaselineRuns(retainNatLang=true)
+    )
+    // assert(index contains (LB.CharRunFontBaseline))
 
-    natLangCharRuns.foreach { charItems =>
-      charItems.foreach { item =>
-        indexShapeAndSetItems(item.minBBox, LB.NatLangGlyph, item)
-        indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
-      }
-    }
+    findLineLayoutMetrics(LB.CharRunFontBaseline)
 
-    initNatLangCharSpans(natLangCharRuns)
+    // recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
+    // recordCharRunWidths(charRunBaselineShapes)
+
+    // joinFontBaselines(LB.CharRunFontBaseline)
 
     indexPathRegions()
 
@@ -323,14 +345,19 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
     traceLog.trace { labeledShapes(LB.SymbolicGlyphLine) }
   }
 
-  private def initNatLangCharSpans(natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
+  private def recordNatLangCharSpans(spanLabel: Label, natLangCharRuns: Seq[Seq[ExtractedItem.CharItem]]): Unit = {
 
-    val charRunBaselineShapes = natLangCharRuns.map { charRun =>
+    natLangCharRuns.foreach { charRun =>
       val charItems = charRun.map(_.asInstanceOf[ExtractedItem.CharItem])
+
+      charItems.foreach { item =>
+        indexShapeAndSetItems(item.minBBox, LB.NatLangGlyph, item)
+        indexShapeAndSetItems(item.minBBox, LB.Glyph, item)
+      }
 
       val baseLine = createCharRunFontBaseline(charItems)
 
-      val baselineShape = indexShape(baseLine, LB.CharRunFontBaseline)
+      val baselineShape = indexShape(baseLine, spanLabel)
 
       val fontIds = charItems.map{ _.scaledFontId }.toSet
 
@@ -339,17 +366,9 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
       setExtractedItemsForShape(baselineShape, charRun)
 
       baselineShape
-    }.asLineShapes
+    }
 
-    println(s"initNatLangCharSpans: baselineShapes = ${charRunBaselineShapes.length}")
-
-    traceLog.trace { labeledShapes(LB.CharRunFontBaseline) tagged "Initial Font Baselines" }
-
-    // recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
-    // recordCharRunWidths(charRunBaselineShapes)
-
-    // joinFontBaselines(charRunBaselineShapes)
-
+    traceLog.trace { labeledShapes(spanLabel) tagged "Initial Font Baselines" }
   }
 
 
@@ -519,4 +538,3 @@ trait LineSegmentation extends PageScopeSegmenter with TextBlockGrouping { self 
 //   }
 
 // }
-

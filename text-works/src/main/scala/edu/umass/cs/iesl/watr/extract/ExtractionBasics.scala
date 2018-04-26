@@ -29,11 +29,6 @@ protected object ExtractionImplicits {
     }
   }
 
-  // implicit class RicherPoint2D(val self: Point2D.Float) extends AnyVal {
-  //   def toPoint(): Point = {
-  //     Point.Doubles(self.x.toDouble, self.y.toDouble)
-  //   }
-  // }
 
   implicit class RicherRectangle2D(val self: Rectangle2D) extends AnyVal {
     def toLTBounds(): LTBounds = {
@@ -85,7 +80,6 @@ sealed trait ExtractedItem {
 }
 
 object ExtractedItem {
-  // implicit class RicherExtractedItem(val self: CharItem) extends AnyVal {}
 
   case class CharItem(
     id: Int@@CharID,
@@ -118,9 +112,10 @@ object ExtractedItem {
   ) extends ExtractedItem {
 
     lazy val pp = waypoints.map(_.prettyPrint).take(4).mkString(", ")
-    def strRepr(): String = s"[path ${minBBox.prettyPrint}=[$pp]]"
-  }
 
+    def strRepr(): String = s"[path ${minBBox.prettyPrint}=[$pp]]"
+
+  }
 
 }
 
@@ -138,6 +133,9 @@ case class GlyphProps(
     ScalingFactor(normDet.toInt)
   }
 
+
+  // def baselineOffset: Int@@FloatRep
+  // def baselineOffset: Int@@FloatRep
 }
 
 case class PageSpaceTransforms(
@@ -156,30 +154,49 @@ case class PageSpaceTransforms(
 
 
 /**
-  *  Top - The maximum distance above the baseline for the tallest glyph in the font at a given text size.
-  *  Ascent - The recommended distance above the baseline for singled spaced text.
-  *  Midrise = (non-standard) the computed topline of chars without ascenders, e.g., eaomn
-  *  Baseline = 0
-  *  Descent - The recommended distance below the baseline for singled spaced text.
-  *  Bottom - The maximum distance below the baseline for the lowest glyph in the font at a given text size.
+  * Track the offset from font bounds bottom line to each of the following y-positions:
+  *    cap      - The maximum distance above the baseline for the tallest glyph in the font at a given text size.
+  *    Ascent   - The recommended distance above the baseline for singled spaced text.
+  *    Midrise  - (non -standard) the computed topline of chars without ascenders, e.g., eaomn
+  *    Baseline - The 'true' baseline, i.e., line touching bottom of non-descender text
+  *    Descent  - The recommended distance below the baseline for singled spaced text.
+  *    Bottom   - The maximum distance below the baseline for the lowest glyph in the font at a given text size.
   *
   **/
 
+case class FontBaselineOffsets(
+  cap      : Int@@FloatRep,
+  ascent   : Int@@FloatRep,
+  midrise  : Int@@FloatRep,
+  baseline : Int@@FloatRep,
+  descent  : Int@@FloatRep,
+  bottom   : Int@@FloatRep,
+)
+
+case class FontBaselineOffsetsAccum(
+  scaledFontId : String@@ScaledFontID,
+  fontBaseline : Int@@FloatRep,
+  cap          : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+  ascent       : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+  midrise      : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+  baseline     : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+  descent      : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+  bottom       : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+)
+
+
+///
 case class FontMetrics(
-  top: Int@@FloatRep,
-  ascent: Int@@FloatRep,
-  midrise: Int@@FloatRep,
-  descent: Int@@FloatRep,
-  bottom: Int@@FloatRep
+  cap      : Int@@FloatRep,
+  ascent   : Int@@FloatRep,
+  midrise  : Int@@FloatRep,
+  descent  : Int@@FloatRep,
+  bottom   : Int@@FloatRep,
 )
 
 case class ScaledMetrics(
   scalingFactor: Int@@ScalingFactor,
   fontMetrics: Option[FontMetrics]
-)
-
-case class AsciiHeightRecord(
-  heights: Array[Double] = Array.ofDim[Double](128)
 )
 
 case class FontProperties(
@@ -188,12 +205,14 @@ case class FontProperties(
   pageCount: Int
 ) {
 
-  val alphaEvidence = Array.ofDim[Int](LetterFrequencies.MostFrequentLetters.length)
+  val alphaEvidence = Array.ofDim[Int](CharClasses.MostFrequentLetters.length)
 
   val asciiHeightsPerScaleFactor    = GuavaHelpers.initTable[Int@@ScalingFactor, Char, Double]()
   val asciiHeightsPerScaleFactorInv = GuavaHelpers.initTable[Int@@ScalingFactor, Int@@FloatRep, String]()
   val natLangGlyphOccurrenceCounts  = GuavaHelpers.initTable[Int@@PageNum, Int@@ScalingFactor, Int]()
   val totalGlyphOccurrenceCounts    = GuavaHelpers.initTable[Int@@PageNum, Int@@ScalingFactor, Int]()
+
+  val offsetToBaseline  = GuavaHelpers.initTable[Char, Int@@ScalingFactor, Int@@FloatRep]()
 
   var docWideBigramCount = 0
   var docWideTrigramCount = 0
@@ -203,10 +222,12 @@ case class FontProperties(
     val height = bbox.height.asDouble()
     val scalingFactor = glyphProps.scalingFactor
 
+    // offsetToBaseline.set(c, scalingFactor, )
+
     val recentSimilarTextWindow = priorSimilarChars.map(_.char).mkString
 
-    val hasBigram = LetterFrequencies.hasCommonBigram(recentSimilarTextWindow.take(2))
-    val hasTrigram = LetterFrequencies.hasCommonTrigram(recentSimilarTextWindow.take(3))
+    val hasBigram = CharClasses.hasCommonBigram(recentSimilarTextWindow.take(2))
+    val hasTrigram = CharClasses.hasCommonTrigram(recentSimilarTextWindow.take(3))
 
     if (hasBigram) { docWideBigramCount += 1 }
     if (hasTrigram) { docWideTrigramCount += 1 }
@@ -233,7 +254,7 @@ case class FontProperties(
 
     }
 
-    val i = LetterFrequencies.MostFrequentLetters.indexOf(c)
+    val i = CharClasses.MostFrequentLetters.indexOf(c)
     if (i >= 0) {
       alphaEvidence(i) = alphaEvidence(i) + 1
     }
@@ -250,12 +271,12 @@ case class FontProperties(
   }
 
   def scaledMetrics(): Seq[ScaledMetrics] = {
-    val midrisers = "acemnorszuvwx"
-    val ascenders = "bdfhklti"
-    val descenders = "gjpqy"
+    val midrisers = CharClasses.Midrisers
+    val ascenders = CharClasses.Ascenders
+    val descenders = CharClasses.Descenders
 
     if (isNatLangFont()) {
-      val caps = LetterFrequencies.CapLetters
+      val caps = CharClasses.Caps
       asciiHeightsPerScaleFactor.getRows().map{ case (scalingFactor, charHeights) =>
         val sorted = charHeights.sortBy(_._1)
         val top = sorted.filter(ch => caps.contains(ch._1)).headOption.map(_._2).getOrElse(0d)
@@ -296,7 +317,7 @@ case class FontProperties(
 
   def report(): TB.Box = {
     val letterFreqs = TB.hjoins(TB.center1,
-      alphaEvidence.zip(LetterFrequencies.MostFrequentLetters)
+      alphaEvidence.zip(CharClasses.MostFrequentLetters)
         .map{ case (count, letter) =>
           s"| ${letter}" atop s"| ${count}"
         }
@@ -362,6 +383,13 @@ class FontDefs(pageCount: Int) {
     fontProps.getScaledMetrics(scalingFactor)
   }
 
+  def getNatLangFontIdentifiers(): Seq[String@@ScaledFontID] = {
+    fontProperties.flatMap { p =>
+      if (p.isNatLangFont()) Some(p.getFontIdentifiers)
+      else None
+    }.flatten
+  }
+
   def getFontIdentifiers(): Seq[String@@ScaledFontID] = {
     fontProperties.flatMap { _.getFontIdentifiers }
   }
@@ -380,13 +408,10 @@ class FontDefs(pageCount: Int) {
     getFont(fname).get
   }
 
-
   def report(): TB.Box = {
     s"Font Definitions. Page Count: ${pageCount}".hangIndent(
       vjoins(fontProperties.map(_.report()))
     )
-
   }
-
 
 }

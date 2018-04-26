@@ -1,14 +1,39 @@
 package edu.umass.cs.iesl.watr
 package extract
 
-// Bigram/trigram frequencies from http://norvig.com/mayzner.html
 
-object LetterFrequencies {
+object CharClasses {
+  val Midrisers = "acemnorszuvwx"
+  val Ascenders = "bdfhkl"
+  val Descenders = "gjpqy"
+
+  object Letter {
+    val T = "t"
+    val I = "i"
+  }
+
+  object Ligature {
+    val ST        = 'ﬆ'
+    val STLong    = 'ﬅ'
+    val FF        = 'ﬀ'
+    val FFL       = 'ﬄ'
+    val FFI       = 'ﬃ'
+    val FL        = 'ﬂ'
+    val FI        = 'ﬁ'
+    val OE        = 'œ'
+    val OEUpper   = 'Œ'
+    val IJLower   = 'ĳ'
+    val IJUpper   = 'Ĳ'
+  }
+
+  val Caps = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString
+  val Lowers = ('a'.toInt to 'z'.toInt).map(_.toChar).mkString
+
   val MostFrequentLetters = "etaoinshrdlu".toArray
 
-  val CapLetters = ('A'.toInt to 'Z'.toInt).map(_.toChar).mkString
-  val LowerLetter = ('a'.toInt to 'z'.toInt).map(_.toChar).mkString
 
+  // Most common English bigram/trigrams
+  //   Frequencies taken from http://norvig.com/mayzner.html
   val Bigrams: Array[String] = {
     """|th he in er an re on at en nd ti es or te of ed is it
        | al ar st to nt ng se ha as ou io le ve co

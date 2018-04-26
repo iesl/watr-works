@@ -556,62 +556,69 @@ object TextBoxing extends ToListOps with ToIdOps {
 
   }
 
-  // para algn w t is a box of width w, containing text t,
-  //   aligned according to algn, flowed to fit within the given
-  //   width.
-  def para(a:Alignment, n:Int, t:String): Box = {
-    flow(n, t) |> (ss => mkParaBox(a, ss.length, ss))
-  }
+
+  object SemanticLayout {
+
+    sealed trait ParaContent
+
+    case class Para(paraWidth : Int, paraContent : ParaContent)
+    case class Block(fullLines : Seq[Line], lastLine  : Line) extends ParaContent
+    case class Line(len: Int, words: Seq[Word])
+    case class Word(len:Int, word:String)
 
 
-  // columns w h t is a list of boxes, each of width w and height
-  //   at most h, containing text t flowed into as many columns as
-  //   necessary.
-  def columns(a:Alignment, w:Int, h:Int, t:String):Seq[Box] =
-    flow(w, t) map (_.grouped(h)) map (ss => mkParaBox(a, h, ss.toSeq))
+    def unwords(ws:Seq[String]) = ws.mkString(" ")
+
+    // para algn w t is a box of width w, containing text t,
+    //   aligned according to algn, flowed to fit within the given
+    //   width.
+    def para(a:Alignment, n:Int, t:String): Box = {
+      flow(n, t) |> (ss => mkParaBox(a, ss.length, ss))
+    }
 
 
-  // makes a box of height n with the text ss
-  //   aligned according to a
-  def mkParaBox(a:Alignment, n:Int, ss:Seq[String]): Box =
-    alignVert(top, n, vcat(a, ss.map(stringToBox(_))))
+    // columns w h t is a list of boxes, each of width w and height
+    //   at most h, containing text t flowed into as many columns as
+    //   necessary.
+    def columns(a:Alignment, w:Int, h:Int, t:String):Seq[Box] =
+      flow(w, t) map (_.grouped(h)) map (ss => mkParaBox(a, h, ss.toSeq))
 
 
-  def words(s:String): Seq[String] = {
-    val wordSplit = """\s+""".r
-    (for {
-      l <- scala.io.Source.fromString(s).getLines.toSeq
-      w <- wordSplit.split(l)
-    } yield {
-      w.trim
-    })
-  }
-
-  def unwords(ws:Seq[String]) = ws.mkString(" ")
-
-  // Flow the given text into the given width.
-  def flow(n:Int, t:String): Seq[String] = {
-    val wrds = words(t) map mkWord
-    val para = wrds.foldLeft (emptyPara(n)) { case(acc, e) => addWordP(acc, e) }
-    para |> getLines |> (_.map(_.take(n)))
-  }
-
-  sealed trait ParaContent
-
-  case class Para(paraWidth : Int, paraContent : ParaContent)
+    // makes a box of height n with the text ss
+    //   aligned according to a
+    def mkParaBox(a:Alignment, n:Int, ss:Seq[String]): Box =
+      alignVert(top, n, vcat(a, ss.map(stringToBox(_))))
 
 
-  // val paraWidth: Lens[Para, Int] = lensu((obj, v) => obj copy (paraWidth = v), _.paraWidth)
-  // val paraContent: Lens[Para, ParaContent] = lensu((obj, v) => obj copy (paraContent = v), _.paraContent)
+    def words(s:String): Seq[String] = {
+      val wordSplit = """\s+""".r
+      (for {
+        l <- scala.io.Source.fromString(s).getLines.toSeq
+        w <- wordSplit.split(l)
+      } yield {
+        w.trim
+      })
+    }
 
-  case class Block(fullLines : Seq[Line], lastLine  : Line) extends ParaContent
-  // val fullLines: Lens[Block, Seq[Line]] = lensu((obj, v) => obj copy (fullLines = v), _.fullLines)
-  // val lastLine: Lens[Block, Line] = lensu((obj, v) => obj copy (lastLine = v), _.lastLine)
 
-  def emptyPara(pw: Int) : Para =
-    Para(pw, (Block(Nil, (Line(0, Nil)))))
+    // Flow the given text into the given width.
+    def flow(n:Int, t:String): Seq[String] = {
+      val wrds = words(t) map mkWord
+      val para = wrds.foldLeft (emptyPara(n)) { case(acc, e) => addWordP(acc, e) }
+      para |> getLines |> (_.map(_.take(n)))
+    }
 
-  def getLines(p:Para): Seq[String] = {
+
+    // val paraWidth: Lens[Para, Int] = lensu((obj, v) => obj copy (paraWidth = v), _.paraWidth)
+    // val paraContent: Lens[Para, ParaContent] = lensu((obj, v) => obj copy (paraContent = v), _.paraContent)
+
+    // val fullLines: Lens[Block, Seq[Line]] = lensu((obj, v) => obj copy (fullLines = v), _.fullLines)
+    // val lastLine: Lens[Block, Line] = lensu((obj, v) => obj copy (lastLine = v), _.lastLine)
+
+    def emptyPara(pw: Int) : Para =
+      Para(pw, (Block(Nil, (Line(0, Nil)))))
+
+    def getLines(p:Para): Seq[String] = {
       // def process =  (l:Seq[Line]) => l.reverse map Line.getWords map (_.map(Word.getWord)) map (_.reverse) map unwords
       // def process =  (l:Seq[Line]) => l.reverse.map(_.words).map(_.map(_.word)) map (_.reverse) map unwords
       def process(l:Seq[Line]): Seq[String] = {
@@ -625,28 +632,26 @@ object TextBoxing extends ToListOps with ToIdOps {
       }
     }
 
-  case class Line(len: Int, words: Seq[Word])
 
-  def mkLine(ws: Seq[Word]):  Line =
-    Line((ws map (_.len)).sum + ws.length - 1, ws)
+    def mkLine(ws: Seq[Word]):  Line =
+      Line((ws map (_.len)).sum + ws.length - 1, ws)
 
-  def startLine(w: Word) : Line =
-    mkLine(w :: Nil)
+    def startLine(w: Word) : Line =
+      mkLine(w :: Nil)
 
 
-  case class Word(len:Int, word:String)
 
-  def mkWord(w:String): Word = Word(w.length, w)
+    def mkWord(w:String): Word = Word(w.length, w)
 
-  def addWordP(p:Para, w: Word ): Para = {
-    p match {
-      case Para(pw, (Block(fl,l))) =>
-        if (wordFits(pw,w,l))
-          Para(pw, Block(fl, addWordL(w, l)))
-        else
-          Para(pw, Block((l+:fl), startLine(w)))
+    def addWordP(p:Para, w: Word ): Para = {
+      p match {
+        case Para(pw, (Block(fl,l))) =>
+          if (wordFits(pw,w,l))
+            Para(pw, Block(fl, addWordL(w, l)))
+          else
+            Para(pw, Block((l+:fl), startLine(w)))
+      }
     }
-  }
 
 
   def addWordL(w:Word, l:Line) : Line = l match {
@@ -657,6 +662,7 @@ object TextBoxing extends ToListOps with ToIdOps {
   def wordFits(pw:Int, w:Word, l:Line): Boolean =
     l.len == 0 || l.len + w.len + 1 <= pw
 
+  }
 
 }
 
