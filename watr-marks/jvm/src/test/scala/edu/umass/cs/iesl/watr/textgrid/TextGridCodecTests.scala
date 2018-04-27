@@ -11,6 +11,8 @@ import circe.syntax._
 
 import utils.DoOrDieHandlers._
 import LabelTreeCodecs._
+import TextGridLabelWidget._
+import textboxing.{TextBoxing => TB}, TB._
 
 
 class TextGridCodecTests extends TextGridSpec {
@@ -97,23 +99,23 @@ class TextGridCodecTests extends TextGridSpec {
 
   }
 
-  "Behavior of labeled TextGrid serialization" in {
+  "Behavior of labeled TextGrid serialization to/from Json" in {
+
     val textGrid = makeBishopClarkTextGrid()
-    val asJson = textGrid.toJson // .pretty(jsonPrinter)
+    val asJson = textGrid.toJson
     val roundTripGrid = TextGrid.fromJson(asJson)
     val rtJson = roundTripGrid.toJson()
 
-    println("BishopClarkTextGrid")
+    println("Json Format")
     println(asJson.pretty(JsonPrettyPrinter))
-    println(rtJson.pretty(JsonPrettyPrinter))
 
-    // val indentedBlock = textGridToIndentedBox(roundTripGrid)
-    // val labelTree = textGridToLabelTree(roundTripGrid)
-    // val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
-    // val emarginBlock = marginalGlossToTextBlock(expMarginals)
-    // val expBlock = emarginBlock + indentedBlock
-    // println("post: ")
-    // println(expBlock.toString())
+    val indentedBlock = textGridToIndentedBox(roundTripGrid)
+    val labelTree = textGridToLabelTree(roundTripGrid)
+    val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+    val emarginBlock = marginalGlossToTextBlock(expMarginals)
+    val expBlock = emarginBlock + indentedBlock
+    println("Block Format ")
+    println(expBlock.toString())
     // val cmpare = asJson.toString().mbox besideS rtJson.toString().mbox
     // println("\n\n\n----------------------------------------------")
     // println(cmpare)

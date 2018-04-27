@@ -121,9 +121,6 @@ trait TextGrid {
 
   }
 
-  // private def hasLPin(cell: GridCell, label: Label): Boolean = {
-  //   findPin(cell, label).exists{ case (pin, pindex) => pin.isLast }
-  // }
 
   private def haveSameLabels(cell1: GridCell, cell2: GridCell): Boolean = {
     val p1s = cell1.pins
