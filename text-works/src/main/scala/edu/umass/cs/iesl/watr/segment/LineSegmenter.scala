@@ -294,7 +294,7 @@ trait LineSegmentation extends PageScopeSegmenter
     )
     // assert(index contains (LB.CharRunFontBaseline))
 
-    findLineLayoutMetrics(LB.CharRunFontBaseline)
+    // findLineLayoutMetrics(LB.CharRunFontBaseline)
 
     // recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
     // recordCharRunWidths(charRunBaselineShapes)
@@ -424,17 +424,11 @@ trait LineSegmentation extends PageScopeSegmenter
 
 
 // protected def inferNLBaselineContinuity(baselineShapes: Seq[LineShape]): Unit = {
-
 //   pageIndex.shapes.ensureCluster(LB.ContiguousGlyphs)
-
-//   for {
-//     baselineShape <- baselineShapes
-//   } {
-
+//   for {     baselineShape <- baselineShapes   } {
 //     val extractedItems = getExtractedItemsForShape(baselineShape)
 //     val charItems = extractedItems.collect{ case i: ExtractedItem.CharItem =>  i }
 //     val line = baselineShape.shape
-
 //     val heights = charItems.map{ item =>
 //       item.minBBox.height
 //     }
@@ -443,13 +437,9 @@ trait LineSegmentation extends PageScopeSegmenter
 //     val avgWidth = charItems.map{ _.minBBox.width.asDouble() }.sum / charItems.length
 //     val windowWidth = avgWidth*6
 //     val windowDelta = avgWidth*4
-
-
 //     for {
 //       baselineSlice <- pageHorizontalSlice(line.p1.y.asDouble()-maxHeight.asDouble(), maxHeight.asDouble())
 //     } {
-
-//       // traceLog.trace { figure(baselineSlice) tagged "Sliding Window PageSlice" }
 
 //       val windows = baselineSlice.slidingHorizontalWindow(windowWidth, windowDelta)
 //       var firstNLGlyphWin = Int.MaxValue
@@ -531,10 +521,4 @@ trait LineSegmentation extends PageScopeSegmenter
 //       setExtractedItemsForShape(baselineShape, glyphItems)
 //       glyphBounds
 //   }
-
-//   traceLog.trace {
-//     val bottomLines = allClusterBounds.map(_.toLine(Dir.Bottom))
-//     figure(bottomLines:_*) tagged "ContiguousGlyphBounds"
-//   }
-
 // }

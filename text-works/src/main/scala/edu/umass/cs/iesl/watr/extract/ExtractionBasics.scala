@@ -173,15 +173,21 @@ case class FontBaselineOffsets(
   bottom   : Int@@FloatRep,
 )
 
+// cap          : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+// ascent       : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+// midrise      : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+// baseline     : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+// descent      : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+// bottom       : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
 case class FontBaselineOffsetsAccum(
-  scaledFontId : String@@ScaledFontID,
-  fontBaseline : Int@@FloatRep,
-  cap          : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-  ascent       : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-  midrise      : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-  baseline     : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-  descent      : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-  bottom       : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
+  scaledFontId  : String@@ScaledFontID,
+  fontBaseline  : Int@@FloatRep,
+  caps          : Seq[ExtractedItem.CharItem],
+  ascents       : Seq[ExtractedItem.CharItem],
+  midrises      : Seq[ExtractedItem.CharItem],
+  baselines     : Seq[ExtractedItem.CharItem],
+  descents      : Seq[ExtractedItem.CharItem],
+  bottoms       : Seq[ExtractedItem.CharItem],
 )
 
 

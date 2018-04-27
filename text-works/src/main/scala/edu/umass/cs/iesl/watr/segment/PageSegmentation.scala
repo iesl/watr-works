@@ -62,8 +62,9 @@ trait PageSegmenter extends PageLevelFunctions {
   def runPageSegmentationPass1(): Unit =  {
     markNatLangText()
 
+    // findContiguousBlocks(LB.CharRunFontBaseline)
 
-    createColumnClusters()
+    // createColumnClusters()
 
   }
 

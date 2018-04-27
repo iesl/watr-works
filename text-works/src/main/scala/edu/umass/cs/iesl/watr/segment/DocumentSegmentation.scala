@@ -117,7 +117,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       }
     }
 
-    outputTableData();
+    // outputTableData();
 
 
     time("segment pass 2") {

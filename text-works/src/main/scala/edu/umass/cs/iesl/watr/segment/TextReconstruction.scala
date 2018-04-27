@@ -21,27 +21,26 @@ trait TextReconstruction extends PageScopeSegmenter
     */
   def getTextGrid(): TextGrid = {
 
-    println(s"getTextGrid(1)")
+    val textLineReprShape = LB.CharRunFontBaseline
 
-    val rows1 = getLabeledLines(LB.ContiguousGlyphBaseline)
+    val rows1 = getLabeledLines(textLineReprShape)
       .map { baselineShape =>
         val minId  = getCharsForShape(baselineShape).map(_.id.unwrap).min
         val textRow = createTextRowFromVisualLine(baselineShape)
         (minId, textRow)
       }
 
-    println(s"getTextGrid(2)")
 
-    val rows2 = getLabeledLines(LB.SymbolicGlyphLine)
-      .map { symbolicGlyphLine =>
-        val textRow = createTextRowFromVisualLine(symbolicGlyphLine)
-        val minId  = getCharsForShape(symbolicGlyphLine).map(_.id.unwrap).min
-        (minId, textRow)
-      }
+    // val rows2 = getLabeledLines(LB.SymbolicGlyphLine)
+    //   .map { symbolicGlyphLine =>
+    //     val textRow = createTextRowFromVisualLine(symbolicGlyphLine)
+    //     val minId  = getCharsForShape(symbolicGlyphLine).map(_.id.unwrap).min
+    //     (minId, textRow)
+    //   }
 
-    println(s"getTextGrid(3)")
 
-    val rows = (rows1 ++ rows2).sortBy(_._1).map(_._2)
+    // val rows = (rows1 ++ rows2).sortBy(_._1).map(_._2)
+    val rows = rows1.sortBy(_._1).map(_._2)
 
 
     TextGrid.fromRows(docScope.stableId,  rows)
@@ -149,11 +148,6 @@ trait TextReconstruction extends PageScopeSegmenter
   }
 
   private def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row =  {
-    // if (textRow.cells.length > 100) {
-    //   println(s"So, there's like ${textRow.cells.length} cells in this row...")
-    //   val dbg = textRow.cells.map(_.char).mkString
-    //   println(dbg)
-    // }
 
     val lineCCs = textRow.cells.collect{
       case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
