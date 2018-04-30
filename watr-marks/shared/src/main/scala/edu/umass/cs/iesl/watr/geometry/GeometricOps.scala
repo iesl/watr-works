@@ -156,15 +156,6 @@ trait GeometricOps {
       (maybeTop, maybeBottom)
     }
 
-    // def splitHorizontal(y: Int@@FloatRep): Option[(LTBounds, LTBounds)] = {
-    //   if (overlapsY(y)) {
-    //     val LTBounds(left, top, width, height) = self
-    //     val upper = LTBounds(left, top, width, y-top)
-    //     val lower = LTBounds(left, y, width, height-upper.height)
-
-    //     Some((upper, lower))
-    //   } else None
-    // }
 
     def overlapsX(x: Int@@FloatRep): Boolean = {
       self.left <= x &&  x <= self.right

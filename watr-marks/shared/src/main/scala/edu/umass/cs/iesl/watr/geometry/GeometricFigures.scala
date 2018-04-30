@@ -230,7 +230,6 @@ object Trapezoid {
       lbn.p1, bWidth
     )
   }
-
 }
 
 // case class GeometricGroup(
@@ -238,11 +237,6 @@ object Trapezoid {
 //   figures: List[GeometricFigure]
 // ) extends GeometricFigure
 
-// case class Colorized(
-//   figure: GeometricFigure,
-//   fg: Color, bg: Color,
-//   fgOpacity: Float, bgOpacity: Float
-// ) extends GeometricFigure
 
 case class Padding(
   left: Int@@FloatRep,
@@ -349,8 +343,6 @@ object GeometryImplicits extends RectangularCuts {
 
       LTBounds(minx, miny, maxx-minx, maxy-miny)
 
-    // case f: GeometricGroup => f.bounds
-    // case f: Colorized => minBoundingRect(f.figure)
     case x => sys.error(s"minBoundingRect unexpected case ${x}")
   }
 

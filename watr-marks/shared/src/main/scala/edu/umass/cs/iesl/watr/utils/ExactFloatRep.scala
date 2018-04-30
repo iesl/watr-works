@@ -97,12 +97,10 @@ object ExactFloats {
     def compareFuzzy(tolerance: Double)(d20: Int@@FloatRep): Int = {
       val d2 = d20.asDouble
       val d1 = self.asDouble
-      // println(s"compareFuzzy ${d1} <> ${d2} math.abs(d1-d2) = ${math.abs(d1-d2)}, tol:${tolerance}")
       if (math.abs(d1 - d2) < tolerance) 0
       else if (d1 < d2) -1
       else 1
     }
-
 
 
     def plusOrMinus(i: Double@@Percent): FloatExactInterval ={
@@ -113,10 +111,7 @@ object ExactFloats {
     def withinRange(r: FloatExactInterval): Boolean = {
       r.min <= self && self <= r.max
     }
-
-
   }
-
 
   implicit class RicherInt_2(val d: Int) extends AnyVal {
     def toFloatExact() = {

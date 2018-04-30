@@ -753,9 +753,6 @@ object AnnotationDiffs {
 
   }
 
-  def summarizeCorpus(diffRecs: Seq[DocumentDiffRecords]): Unit = {
-
-  }
 
   def diffAllDocuments(n: Int, onlyGolds: Boolean)(implicit corpusAccessApi: CorpusAccessApi): Unit = {
     val allDiffs = if (onlyGolds) {
@@ -775,7 +772,6 @@ object AnnotationDiffs {
     allDiffs.foreach{ diffRec =>
       summarizeDocument(diffRec)
     }
-    summarizeCorpus(allDiffs)
 
     val corpusLabelCounts = allDiffs.flatMap{ diff =>
 
