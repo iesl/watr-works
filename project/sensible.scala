@@ -1,7 +1,6 @@
 import scala.util.{ Properties, Try }
 import sbt._
 import Keys._
-// import wartremover._
 
 object SensibleProject extends CommonLibs {
 

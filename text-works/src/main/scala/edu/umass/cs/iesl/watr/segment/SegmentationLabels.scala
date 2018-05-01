@@ -33,6 +33,8 @@ object SegmentationLabels extends DocSegLabels {
   val SymbolicGlyph           = Label.auto
   val ContiguousGlyphs        = Label.auto
   val ContiguousGlyphBaseline = Label.auto
+  val CapDescenderBand        = Label.auto
+  val BaselineMidriseBand     = Label.auto
 
   val Fonts                   = Label.auto :: Attr
 

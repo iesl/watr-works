@@ -114,17 +114,17 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   }
 
 
-  protected def getLabeledRects(l: Label): Seq[LineShape] = {
+  def getLabeledRects(l: Label): Seq[LineShape] = {
     pageIndex.shapes.getShapesWithLabel(l)
       .map(_.asLineShape)
   }
 
-  protected def getLabeledLines(l: Label): Seq[LineShape] = {
+  def getLabeledLines(l: Label): Seq[LineShape] = {
     pageIndex.shapes.getShapesWithLabel(l)
       .map(_.asLineShape)
   }
 
-  protected def getLabeledPoints(l: Label): Seq[PointShape] = {
+  def getLabeledPoints(l: Label): Seq[PointShape] = {
     pageIndex.shapes.getShapesWithLabel(l)
       .map(_.asPointShape)
   }
@@ -197,7 +197,7 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   }
 
 
-  protected def getCharsForShape(shape: LabeledShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
+  def getCharsForShape(shape: LabeledShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
     getExtractedItemsForShape(shape)
       .collect{ case i: ExtractedItem.CharItem =>  i }
   }

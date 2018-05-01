@@ -24,10 +24,6 @@ object ExactFloats {
     def min: FloatExact = theRange.unwrap._1
     def max: FloatExact = theRange.unwrap._1+theRange.unwrap._2
     def len: FloatExact = theRange.unwrap._2
-
-    // def toString(): String = {
-    //  s"(${min.pp}-${max.pp})"
-    // }
   }
 
   def max(d1:Int@@FloatRep, d2: Int@@FloatRep): Int@@FloatRep = FloatRep(math.max(d1.unwrap, d2.unwrap))

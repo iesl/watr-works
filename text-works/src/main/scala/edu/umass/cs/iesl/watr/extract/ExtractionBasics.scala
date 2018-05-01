@@ -165,20 +165,27 @@ case class PageSpaceTransforms(
   **/
 
 case class FontBaselineOffsets(
-  cap      : Int@@FloatRep,
-  ascent   : Int@@FloatRep,
-  midrise  : Int@@FloatRep,
-  baseline : Int@@FloatRep,
-  descent  : Int@@FloatRep,
-  bottom   : Int@@FloatRep,
-)
+  scaledFontId : String@@ScaledFontID,
+  cap          : Int@@FloatRep,
+  ascent       : Int@@FloatRep,
+  midrise      : Int@@FloatRep,
+  baseline     : Int@@FloatRep,
+  descent      : Int@@FloatRep,
+  bottom       : Int@@FloatRep,
+) {
+  def forBaseline(fontBaseline: Int@@FloatRep): FontBaselineOffsets = {
+    FontBaselineOffsets(
+      scaledFontId,
+      cap      = fontBaseline - cap     ,
+      ascent   = fontBaseline - ascent  ,
+      midrise  = fontBaseline - midrise ,
+      baseline = fontBaseline - baseline,
+      descent  = fontBaseline - descent ,
+      bottom   = fontBaseline - bottom
+    )
+  }
+}
 
-// cap          : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-// ascent       : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-// midrise      : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-// baseline     : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-// descent      : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
-// bottom       : Seq[(Int@@FloatRep, ExtractedItem.CharItem)],
 case class FontBaselineOffsetsAccum(
   scaledFontId  : String@@ScaledFontID,
   fontBaseline  : Int@@FloatRep,
@@ -218,7 +225,6 @@ case class FontProperties(
   val natLangGlyphOccurrenceCounts  = GuavaHelpers.initTable[Int@@PageNum, Int@@ScalingFactor, Int]()
   val totalGlyphOccurrenceCounts    = GuavaHelpers.initTable[Int@@PageNum, Int@@ScalingFactor, Int]()
 
-  val offsetToBaseline  = GuavaHelpers.initTable[Char, Int@@ScalingFactor, Int@@FloatRep]()
 
   var docWideBigramCount = 0
   var docWideTrigramCount = 0
@@ -389,6 +395,14 @@ class FontDefs(pageCount: Int) {
     fontProps.getScaledMetrics(scalingFactor)
   }
 
+  private val scaledFontBaselineOffsets = mutable.HashMap[String@@ScaledFontID, FontBaselineOffsets]()
+  def setScaledFontOffsets(scaledFontId: String@@ScaledFontID, fontBaselineOffsets: FontBaselineOffsets): Unit = {
+    scaledFontBaselineOffsets.put(scaledFontId, fontBaselineOffsets)
+  }
+  def getScaledFontOffsets(scaledFontId: String@@ScaledFontID): FontBaselineOffsets = {
+    scaledFontBaselineOffsets(scaledFontId)
+  }
+
   def getNatLangFontIdentifiers(): Seq[String@@ScaledFontID] = {
     fontProperties.flatMap { p =>
       if (p.isNatLangFont()) Some(p.getFontIdentifiers)
@@ -415,6 +429,10 @@ class FontDefs(pageCount: Int) {
   }
 
   def report(): TB.Box = {
+    // textboxing.TextBoxingLayouts.boxedMap(
+    //   scaledFontBaselineOffsets.toMap
+    // )
+
     s"Font Definitions. Page Count: ${pageCount}".hangIndent(
       vjoins(fontProperties.map(_.report()))
     )

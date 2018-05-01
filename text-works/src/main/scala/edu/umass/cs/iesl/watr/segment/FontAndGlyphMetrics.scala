@@ -13,56 +13,57 @@ import ExtractedItem._
 
 import TypeTags._
 
-trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { self =>
-
+trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
   def findLineLayoutMetrics(lineLabel: Label): Unit = {
-    val lines = getLabeledLines(lineLabel)
+    val offsetEvidence = for {
+      pageSeg <- pageSegmenters
+      lineShape <- pageSeg.getLabeledLines(lineLabel)
+    } yield {
 
-    val offsetEvidence = lines.map { lineShape =>
-      val chars = getCharsForShape(lineShape)
-      val scaledFontId = chars.head.scaledFontId
+        val chars = pageSeg.getCharsForShape(lineShape)
+        val scaledFontId = chars.head.scaledFontId
 
-      val fontBoundsBottoms = chars.map(_.fontBbox.bottom.unwrap)
-      val fontBoundsBottom = fontBoundsBottoms.head
-      val nonMatching = fontBoundsBottoms.filterNot(_ == fontBoundsBottom).length
+        val fontBoundsBottoms = chars.map(_.fontBbox.bottom.unwrap)
+        val fontBoundsBottom = fontBoundsBottoms.head
+        val nonMatching = fontBoundsBottoms.filterNot(_ == fontBoundsBottom).length
 
-      assume(nonMatching == 0)
+        assume(nonMatching == 0)
 
+        val midrisers = chars.filter(charItem => CharClasses.Midrisers.contains(charItem.char))
+        val ascenders = chars.filter(charItem => CharClasses.Ascenders.contains(charItem.char))
+        val descenders = chars.filter(charItem => CharClasses.Descenders.contains(charItem.char))
+        val caps = chars.filter(charItem => CharClasses.Caps.contains(charItem.char))
 
-      val midrisers = chars.filter(charItem => CharClasses.Midrisers.contains(charItem.char))
-      val ascenders = chars.filter(charItem => CharClasses.Ascenders.contains(charItem.char))
-      val descenders = chars.filter(charItem => CharClasses.Descenders.contains(charItem.char))
-      val caps = chars.filter(charItem => CharClasses.Caps.contains(charItem.char))
+        // val letterT = chars.filter(_.char == 't')
+        // val letterI = chars.filter(_.char == 'i')
+        // val allIds = chars.map(_.id)
+        // val letterIds = (midrisers ++ ascenders ++ descenders ++ letterT ++ letterI ++ caps).map(_.id)
+        // val otherIds = allIds.toSet - letterIds
 
-      // val letterT = chars.filter(_.char == 't')
-      // val letterI = chars.filter(_.char == 'i')
-      // val allIds = chars.map(_.id)
-      // val letterIds = (midrisers ++ ascenders ++ descenders ++ letterT ++ letterI ++ caps).map(_.id)
-      // val otherIds = allIds.toSet - letterIds
-
-      // val otherChars = chars.filter(charItem => otherIds.contains(charItem.id))
-      // val midriseOffsets = midrisers.map{ charItem =>
-      //   (charItem.fontBbox.bottom - charItem.minBBox.top , charItem)
-      // }
-      // val tAscentOffset = letterT.map{ charItem =>
-      //   (charItem.fontBbox.bottom - charItem.minBBox.top , charItem)
-      // }
+        // val otherChars = chars.filter(charItem => otherIds.contains(charItem.id))
+        // val midriseOffsets = midrisers.map{ charItem =>
+        //   (charItem.fontBbox.bottom - charItem.minBBox.top , charItem)
+        // }
+        // val tAscentOffset = letterT.map{ charItem =>
+        //   (charItem.fontBbox.bottom - charItem.minBBox.top , charItem)
+        // }
 
 
-      FontBaselineOffsetsAccum(
-        scaledFontId,
-        fontBaseline = FloatRep(fontBoundsBottom),
-        caps     = caps,
-        ascents  = ascenders,
-        midrises = midrisers,
-        baselines= midrisers,
-        descents = descenders,
-        bottoms  = descenders,
-      )
+        FontBaselineOffsetsAccum(
+          scaledFontId,
+          fontBaseline = FloatRep(fontBoundsBottom),
+          caps     = caps,
+          ascents  = ascenders,
+          midrises = midrisers,
+          baselines= midrisers,
+          descents = descenders,
+          bottoms  = descenders,
+        )
     }
 
     val allFontIds = docScope.fontDefs.getNatLangFontIdentifiers()
 
+    // TODO: only run until each offset has been set
     allFontIds.foreach{ scaledFontId =>
 
       val baselineOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
@@ -79,6 +80,18 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
 
       val descentOffset = findMostCommonOffsetBy(offsetEvidence, scaledFontId,
         _.descents, _.minBBox.bottom)
+
+      docScope.fontDefs.setScaledFontOffsets(scaledFontId,
+        FontBaselineOffsets(
+          scaledFontId,
+          cap      = capsOffset,
+          ascent   = ascentOffset,
+          midrise  = midriseOffset,
+          baseline = baselineOffset,
+          descent  = descentOffset,
+          bottom   = descentOffset
+        )
+      )
     }
   }
 
@@ -92,22 +105,23 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
     val fontEvidence = offsetEvidence
       .filter(_.scaledFontId === scaledFontId)
 
-    if (fontEvidence.nonEmpty) {
-      val fontBaseline = fontEvidence.head.fontBaseline
+    val offsetCountsByChar = fontEvidence.flatMap{ ev =>
+      f(ev).map{ charItem =>
+        (ev.fontBaseline - dist(charItem), charItem)
+      }
+    }.uniqueCountBy(_._2.char)
 
-      val offsetCountsByChar = fontEvidence
-        .flatMap(f(_))
-        .map{ charItem => (fontBaseline - dist(charItem), charItem) }
-        .uniqueCountBy(_._2.char)
-
+    if (offsetCountsByChar.nonEmpty) {
       val mostCommonOffsetRec = offsetCountsByChar.maxBy(_._1)
 
       mostCommonOffsetRec._2._1
     } else {
-      ???
+      FloatExact.zero
     }
-
   }
+}
+
+trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { self =>
 
   def debugPrintStats(allBaselines: Seq[(Int@@FloatRep, CharItem)]): Unit = {
 

@@ -1,14 +1,11 @@
 package edu.umass.cs.iesl.watr
 package workflow
 
-
 import corpora.{RelationModel => R}
 
 /**
-  * Curator userbase
   *
   */
-
 
 trait UserbaseApi {
   def addUser(email: String@@EmailAddr): Int@@UserID

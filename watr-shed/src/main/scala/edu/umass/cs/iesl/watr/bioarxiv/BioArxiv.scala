@@ -133,7 +133,6 @@ object BioArxivOps extends BioArxivJsonFormats {
         println(s"  ...done ")
       } else {
         println(s"already have ${link}")
-
       }
 
     }

@@ -1,6 +1,7 @@
 package edu.umass.cs.iesl.watr
 
 import scalaz.Equal
+import scalaz.Need
 import scala.reflect._
 
 
@@ -60,7 +61,28 @@ object TypeTags extends TypeTags
 
 
 trait TypeTagUtils {
+  import textboxing.{TextBoxing => TB}, TB._
+  import textboxing.{TextBoxing => TB, ShowBox}, TB._
   val Tag = scalaz.Tag
+
+  implicit def NeedShowBox[A](sh: ShowBox[A]): Need[ShowBox[A]] = {
+    Need { sh }
+  }
+
+  implicit def ShowBoxInt[T: ClassTag](tt: Int @@ T): ShowBox[Int @@ T] = {
+
+    ShowBox.show{ t =>
+      val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+      s"${tagClsname}:${tt.unwrap}".box
+    }
+  }
+
+  implicit def ShowBoxStr[T: ClassTag](tt: String @@ T): ShowBox[String @@ T]= {
+    ShowBox.show{ t =>
+      val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+      s"${tagClsname}:${tt.unwrap}".box
+    }
+  }
 
   def formatTaggedType[T:ClassTag](tt: Int @@ T): String = {
     val tagClsname = implicitly[ClassTag[T]].runtimeClass.getSimpleName

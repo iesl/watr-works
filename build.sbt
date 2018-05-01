@@ -39,7 +39,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
     LogLibs.logback ++
     Seq(
       "org.scalaz"                 %% "scalaz-scalacheck-binding" % Lib.scalazVersion  % "test",
-      "org.scalacheck"             %% "scalacheck"                % "1.13.5"       % "test", //  force()
+      "org.scalacheck"             %% "scalacheck"                % "1.13.5"           % "test",
       Lib.ammoniteOps,
       "org.scala-js"               %% "scalajs-stubs"          % "0.6.22" % "provided",
       "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,

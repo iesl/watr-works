@@ -23,7 +23,6 @@ trait LineSegmentation extends PageScopeSegmenter
 
   lazy val lineSegmenter = self
 
-
   def doLineJoining(focalFont: String@@ScaledFontID, baselineShape: LineShape): Unit = {
     val baselineFonts = getFontsForShape(baselineShape)
 
@@ -146,6 +145,8 @@ trait LineSegmentation extends PageScopeSegmenter
     val fontsByMostOccuring = docScope.getFontsWithOccuranceCounts()
       .sortBy(_._2).reverse.map(_._1)
 
+    //... Filter to fonts on page
+
     pageIndex.shapes.ensureCluster(LB.ContiguousGlyphs)
 
     def joinLinesLoop(
@@ -177,6 +178,68 @@ trait LineSegmentation extends PageScopeSegmenter
     joinLinesLoop(fontsByMostOccuring.toList, startingLines)
   }
 
+  def generatePageRules(label: Label): Unit = {
+    val fontsByMostOccuring = docScope.getFontsWithOccuranceCounts()
+      .sortBy(_._2).reverse.map(_._1)
+
+    //... Filter to fonts on page
+
+
+    def _loop(
+      scaledFontIds: List[String@@ScaledFontID],
+      lineShapes: Seq[LineShape],
+      depth: Int = 0
+    ): Unit = scaledFontIds match {
+
+      case headFontId :: tailFontIds =>
+        val (linesForFont, others) = lineShapes.partition{ lineShape =>
+          getFontsForShape(lineShape).contains(headFontId)
+        }
+
+        val allAdjustedOffsets = linesForFont.map{ lineShape =>
+          val line = lineShape.shape
+          val fontOffsets = docScope.fontDefs.getScaledFontOffsets(headFontId)
+          fontOffsets.forBaseline(line.p1.y)
+        }
+        val grouped = allAdjustedOffsets.groupBy(_.baseline)
+        val uniqueAdjusted = grouped.values.map(_.head)
+        val sorted = uniqueAdjusted.toList.sortBy(_.baseline)
+
+        sorted.foreach { offsetsAtLine =>
+          val capDescentBandHeight = offsetsAtLine.descent - offsetsAtLine.cap
+
+          pageHorizontalSlice(
+            offsetsAtLine.cap.asDouble(),
+            capDescentBandHeight.asDouble()
+          ).map{ slice =>
+            val band = indexShape(slice, LB.CapDescenderBand)
+            traceLog.trace {
+              traceLog.shape(band) tagged s"Caps Descender Page Rules Font#${depth}. ${headFontId}"
+            }
+          }
+
+          val baselineMidRiseHeight = offsetsAtLine.baseline - offsetsAtLine.midrise
+
+          pageHorizontalSlice(
+            offsetsAtLine.midrise.asDouble(),
+            baselineMidRiseHeight.asDouble()
+          ).map{ slice =>
+            val band = indexShape(slice, LB.BaselineMidriseBand)
+            traceLog.trace {
+              traceLog.shape(band) tagged s"Baseline Midrise Page Rules Font#${depth}. ${headFontId}"
+            }
+          }
+        }
+
+        _loop(tailFontIds, others, depth+1)
+
+      case Nil =>
+    }
+
+    val startingLines = getLabeledLines(label)
+
+    _loop(fontsByMostOccuring.toList, startingLines)
+  }
 
   def indexPathRegions(): Unit = {
     val pathShapes = pageIndex.pageItems.toSeq
@@ -294,7 +357,6 @@ trait LineSegmentation extends PageScopeSegmenter
     )
     // assert(index contains (LB.CharRunFontBaseline))
 
-    // findLineLayoutMetrics(LB.CharRunFontBaseline)
 
     // recordNatLangVerticalLineSpacingStats(charRunBaselineShapes)
     // recordCharRunWidths(charRunBaselineShapes)

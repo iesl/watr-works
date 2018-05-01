@@ -11,10 +11,12 @@ import utils.Timer.time
 import utils.ExactFloats._
 import textgrid._
 import utils.QuickNearestNeighbors._
+import segment.{SegmentationLabels => LB}
 
 import TypeTags._
 
 trait DocumentLevelFunctions extends DocumentScopeSegmenter
+    with FontAndGlyphMetricsDocWide
 
 trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
@@ -60,7 +62,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
     TextGrid.fromRows(docScope.stableId,  allRows)
   }
 
-  private def outputTableData(): Unit = {
+  protected def outputTableData(): Unit = {
 
     val scaledFontIDs = docScope.fontDefs.getFontIdentifiers.sorted
     val dbg = scaledFontIDs.mkString("{\n  ", "\n  ", "\n}")
@@ -111,10 +113,14 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     docScope.docStats.initTable[Int@@PageNum, String@@ScaledFontID, Int@@FloatRep]("PagewiseLineWidths")
 
-    time("segment pass 1") {
+    time("markNatLangText") {
       pageSegmenters.foreach { p =>
-        p.runPageSegmentationPass1()
+        p.markNatLangText()
       }
+    }
+
+    time("findLineLayoutMetrics") {
+      findLineLayoutMetrics(LB.CharRunFontBaseline)
     }
 
     // outputTableData();
@@ -122,7 +128,8 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     time("segment pass 2") {
       pageSegmenters.foreach { p =>
-        p.runPageSegmentationPass2()
+        println(s"generatePageRules page ${p.pageNum}")
+        p.generatePageRules(LB.CharRunFontBaseline)
       }
     }
 

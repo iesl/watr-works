@@ -59,14 +59,11 @@ trait PageSegmenter extends PageLevelFunctions {
     textReconstruction.getTextGrid()
   }
 
-  def runPageSegmentationPass1(): Unit =  {
-    markNatLangText()
-
-    // findContiguousBlocks(LB.CharRunFontBaseline)
-
-    // createColumnClusters()
-
-  }
+  // def runPageSegmentationPass1(): Unit =  {
+  //   markNatLangText()
+  //   // findContiguousBlocks(LB.CharRunFontBaseline)
+  //   // createColumnClusters()
+  // }
 
   def runPageSegmentationPass2(): Unit =  {
 

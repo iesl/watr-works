@@ -90,37 +90,3 @@ object ExampleLabelSchemas {
 
 }
 
-// object LabelSchemaPrinter extends App with utils.AppMainBasics {
-//   /**
-//     * Utility to quick-and-dirty print out the schema as json for upload to WatrColor server
-//     **/
-//   import watrmarks._
-//   val jsonPrinter = circe.Printer(
-//     preserveOrder = true,
-//     dropNullValues = false,
-//     indent = "    ",
-//     lbraceRight = "\n",
-//     rbraceLeft = "\n",
-//     lbracketRight = "",
-//     rbracketLeft = "\n",
-//     lrbracketsEmpty = "",
-//     arrayCommaRight = " ",
-//     objectCommaRight = "\n",
-//     colonLeft = " ",
-//     colonRight = " "
-//   )
-
-//   val argMap = argsToMap(args)
-//   val filename = argMap.get("file").flatMap(_.headOption)
-//     .getOrElse(sys.error("please specify output file: --file zz.json"))
-//   import ammonite.{ops => fs}, fs._
-//   val output = headerLabelSchema.asJson.spaces4
-
-//   val outputFile = pwd / filename
-
-//   if (!fs.exists(outputFile)) {
-//     fs.write(outputFile, output)
-//   } else {
-//     println(s"output file ${outputFile} exists. Won't overwrite...")
-//   }
-// }
