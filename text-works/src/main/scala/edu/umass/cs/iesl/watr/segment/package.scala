@@ -9,4 +9,9 @@ object `package` {
   type PointShape = LabeledShape[Point]
   type RectShape = LabeledShape[LTBounds]
   type AnyShape = LabeledShape[GeometricFigure]
+
+  val Dir = utils.RelativeDirection
+  val LB = SegmentationLabels
+
+
 }

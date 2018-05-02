@@ -97,6 +97,21 @@ object ExtractedItem {
     }
   }
 
+  case class CombiningMark(
+    id: Int@@CharID,
+    mark: Char,
+    fontProps: FontProperties,
+    glyphProps: GlyphProps
+  ) extends ExtractedItem {
+    def strRepr(): String = mark.toString()
+
+    lazy val fontBbox = glyphProps.fontBBox
+    lazy val minBBox = glyphProps.glyphBBox
+
+    lazy val scaledFontId: String@@ScaledFontID = {
+      fontProps.getFontIdentifier(glyphProps.scalingFactor)
+    }
+  }
 
   case class ImgItem(
     id: Int@@CharID,
@@ -274,8 +289,8 @@ case class FontProperties(
 
   def isNatLangFont(): Boolean = {
     val nonZeros = alphaEvidence.count(_ > 0)
-    val hasNgrams = docWideBigramCount > 1 && docWideTrigramCount > 1
-    nonZeros > 3 && hasNgrams
+    val hasNgrams = docWideBigramCount > 2 || docWideTrigramCount > 2
+    nonZeros > 4 || hasNgrams
   }
 
   def getScaledMetrics(scalingFactor: Int@@ScalingFactor): Option[ScaledMetrics] = {

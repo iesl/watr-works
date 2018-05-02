@@ -31,8 +31,21 @@ object LabelTreeCodecs {
   import TextGridFunctions._
 
   def encodeBioLabels(cells: Seq[TextGrid.GridCell]): Json = {
+    val dbgLabels = cells.map(_.pins).filter(_.nonEmpty).map(_.map(_.label.fqn.head.toString))
+      .mkString("{\n  ", "\n  ", "\n}")
+    println(s"encodeBioLabels: ${cells.map(_.char).mkString}")
+    println(s"encodeBioLabels: labels= ${dbgLabels}")
     val labelTree = gridCellsToLabelTree(cells)
+    // println(s"encodeBioLabels: labelTree levels= ${labelTree.levels.length}")
+
+    println(s"encodeBioLabels: labelTree ")
+    // println(labelTree.drawTree)
+
+    println(s"encodeBioLabels: labelTreeToSpanTree ")
     val labelSpanTree = labelTreeToSpanTree(labelTree)
+
+    println(s"encodeBioLabels: labelSpanTree ")
+    // println(labelSpanTree.drawTree)
     spanTreeToJson(labelSpanTree)
   }
 
@@ -114,7 +127,6 @@ class TextOutputBuilder(textGrid: TextGrid) {
     val codec = getSerialization()
     val lineNums = codec.lineMap.keys.toList.sorted
 
-    // println(s"gridToJson: 1 ")
 
     var totalOffset = 0
     val textAndLoci = lineNums.map { lineNum =>
@@ -124,39 +136,32 @@ class TextOutputBuilder(textGrid: TextGrid) {
       val currOffset = totalOffset
       totalOffset += text.length()
 
-      val sdf = Json.obj(
+      Json.obj(
         "offset" := currOffset,
         "text" := text,
         "loci" := loci,
       )
-      // println(s"gridToJson: @${currOffset}= ${sdf}")
-      sdf
     }
 
-    val bioLabelJson = LabelTreeCodecs.encodeBioLabels(
-      textGrid.indexedCells().map(_._1)
-    )
-    // println(s"gridToJson: bioLabelJson: ${bioLabelJson}")
+    // val bioLabelJson = LabelTreeCodecs.encodeBioLabels(
+    //   textGrid.indexedCells().map(_._1)
+    // )
 
 
     val labelDefs = Json.obj(
-      "cellLabels" := bioLabelJson
+      "cellLabels" := Json.obj() // bioLabelJson
     )
-    val qwer = Json.obj(
+    Json.obj(
       "stableId" := textGrid.stableId.unwrap,
       "rows" := textAndLoci,
       "labels" := labelDefs
     )
-
-    // println(s"gridToJson: final: ${qwer}")
-    qwer
   }
 
 }
 
 protected class AccumulatingTextGridCodecs(stableId: String@@DocumentID) {
 
-  // val pageIdMap = mutable.Map[Int@@PageID, (String@@DocumentID, Int@@PageNum)]()
   val lineMap = mutable.Map[Int, (Json, String)]()
 
   def decodeGrid(js: Json): TextGrid = {

@@ -6,7 +6,6 @@ import geometry.syntax._
 import TypeTags._
 
 import utils.ExactFloats._
-import segment.{SegmentationLabels => LB}
 import utils.SlicingAndDicing._
 
 import org.dianahep.{histogrammar => HST}

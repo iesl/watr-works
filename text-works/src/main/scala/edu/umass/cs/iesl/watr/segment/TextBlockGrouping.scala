@@ -3,9 +3,7 @@ package segment
 
 import watrmarks._
 import geometry.syntax._
-import segment.{SegmentationLabels => LB}
 import utils.ExactFloats._
-import utils.{RelativeDirection => Dir}
 import utils.FunctionalHelpers._
 import utils.SlicingAndDicing._
 
@@ -18,28 +16,28 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
     val fontsByMostOccuring = docScope.getFontsWithOccuranceCounts()
       .sortBy(_._2).reverse.map(_._1)
 
-    val sortedLines = getLabeledLines(label).sortBy { lineShape =>
+    val sortedLines = getLabeledShapes(label).sortBy { lineShape =>
       getCharsForShape(lineShape).head.id.unwrap
     }
 
     def groupEverything(
       scaledFontIds: List[String@@ScaledFontID],
-      lineShapes: Seq[LineShape],
+      lineShapes: Seq[AnyShape],
       depth: Int = 0
-    ): Seq[Seq[LineShape]] = scaledFontIds match {
+    ): Seq[Seq[AnyShape]] = scaledFontIds match {
       case headFontId :: tailFontIds =>
-        val markedLineSpans = collectSpanEither[LineShape](lineShapes, { lineShape =>
+        val markedLineSpans = collectSpanEither[AnyShape](lineShapes, { lineShape =>
           getFontsForShape(lineShape).contains(headFontId)
         })
 
         traceLog.traceAll {
           markedLineSpans.map { _ match {
             case Right(lines) =>
-              val groupBounds = lines.map(_.shape.bounds()).reduce(_ union _)
+              val groupBounds = lines.map(_.shape.minBounds).reduce(_ union _)
               figure(groupBounds) tagged s"Shared Font#${depth}. ${headFontId}"
 
             case Left(lines)  =>
-              val groupBounds = lines.map(_.shape.bounds()).reduce(_ union _)
+              val groupBounds = lines.map(_.shape.minBounds).reduce(_ union _)
               figure(groupBounds) tagged s"Excluded From Font#${depth}. ${headFontId}"
           }}
         }
@@ -56,7 +54,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
 
   }
 
-  private def doLineGrouping(sortedLines: Seq[LineShape]): Seq[Seq[LineShape]] = {
+  private def doLineGrouping(sortedLines: Seq[AnyShape]): Seq[Seq[AnyShape]] = {
     val lineGroups = sortedLines.groupByWindow { case (prevs, currLine) =>
 
       val lastLine = prevs.last
@@ -75,24 +73,31 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
       lazy val topToBottom = item1.minBBox.bottom < item2.minBBox.bottom
       lazy val inOrder = topToBottom
 
-      lazy val prevWindowBounds = prevs.map(_.shape.bounds()).reduce(_ union _)
+      lazy val prevWindowBounds = prevs.map(_.shape.minBounds).reduce(_ union _)
 
-      lazy val combinedWindowBounds = prevWindowBounds union currLine.shape.bounds()
+      lazy val combinedWindowBounds = prevWindowBounds union currLine.shape.minBounds
 
       traceLog.trace {
         figure(combinedWindowBounds) tagged s"Window Bounds ${currLineText} "
       }
 
-      lazy val expansionBounds = lastLine.shape.bounds() union currLine.shape.bounds()
+      // lazy val expansionBounds = lastLine.shape.minBounds.toLine(Dir.Bottom).minBounds union currLine.shape.minBounds
+      lazy val expansionBounds = lastLine.shape.minBounds union currLine.shape.minBounds
 
       lazy val noLeftOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
         .adjacentRegion(Dir.Left)
-        .map(hasNoOverlaps(_))
+        .map{ adjacentRegion =>
+          val shavedRegion = adjacentRegion.shave(Dir.Right, FloatExact.epsilon)
+          hasNoOverlaps(shavedRegion)
+        }
         .getOrElse(true)
 
       lazy val noRightOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
         .adjacentRegion(Dir.Right)
-        .map(hasNoOverlaps(_))
+        .map{ adjacentRegion =>
+          val shavedRegion = adjacentRegion.shave(Dir.Left, FloatExact.epsilon)
+          hasNoOverlaps(shavedRegion)
+        }
         .getOrElse(true)
 
       lazy val noLateralOverlaps = noLeftOverlaps && noRightOverlaps
@@ -106,17 +111,18 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
 
           val foundGlyphs: Seq[RectShape] = searchForRects(queryRect, LB.Glyph)
 
+
+          val glyphCountsMatch = currLineItems.length + lastLineItems.length == foundGlyphs.length
+
+          val noNonTextOverlaps = hasNoNonTextOverlaps(queryRect)
+
           traceLog.trace {
-            figure(queryRect) tagged s"Expansion Rect ${currLineText}"
+            figure(queryRect) tagged s"Expansion Rect noLeftOverlaps=${noLeftOverlaps} && noRightOverlaps=${noRightOverlaps} inOrder=${inOrder} && glyphCountsMatch=${glyphCountsMatch} && noNonTextOverlaps=${noNonTextOverlaps} && consecutive=${consecutive}  ${currLineText}"
           }
 
           traceLog.trace {
             shape(foundGlyphs:_*) tagged s"Expansion Glyphs ${currLineText}"
           }
-
-          val glyphCountsMatch = currLineItems.length == foundGlyphs.length
-
-          val noNonTextOverlaps = hasNoNonTextOverlaps(queryRect)
 
           noNonTextOverlaps && (glyphCountsMatch || {
 
@@ -148,7 +154,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
         if (group.length==1) {
           group.head.shape
         } else {
-          group.map(_.shape.bounds()).reduce(_ union _)
+          group.map(_.shape.minBounds).reduce(_ union _)
         }
       }
 

@@ -8,7 +8,6 @@ import corpora.DocumentZoningApi
 import spindex._
 import utils.ExactFloats._
 import extract._
-import segment.{SegmentationLabels => LB}
 import utils._
 import TypeTags._
 
@@ -114,9 +113,13 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   }
 
 
-  def getLabeledRects(l: Label): Seq[LineShape] = {
+  def getLabeledShapes(l: Label): Seq[AnyShape] = {
     pageIndex.shapes.getShapesWithLabel(l)
-      .map(_.asLineShape)
+  }
+
+  def getLabeledRects(l: Label): Seq[RectShape] = {
+    pageIndex.shapes.getShapesWithLabel(l)
+      .map(_.asRectShape)
   }
 
   def getLabeledLines(l: Label): Seq[LineShape] = {
@@ -145,6 +148,14 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     val s = pageIndex.shapes.indexShape(shape, l)
     setExtractedItemsForShape(s, items.toSeq)
     s
+  }
+
+  protected def deleteShape[T <: GeometricFigure](shape: LabeledShape[T]): Unit = {
+    pageIndex.shapes.deleteShape(shape)
+  }
+
+  protected def reindexShapes(l: Label): Unit = {
+    pageIndex.shapes.reindexShapes(l)
   }
 
   protected def unindexShape[T <: GeometricFigure](shape: LabeledShape[T]): Unit = {

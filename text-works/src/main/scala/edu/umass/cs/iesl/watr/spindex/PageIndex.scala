@@ -55,6 +55,10 @@ case class LabeledShape[+T <: GeometricFigure](
 ) {
   def hasLabel(l: Label) = labels.exists(_ == l)
 
+  var _isIndexed: Boolean = false
+  def isIndexed(): Boolean = _isIndexed
+  def setIndexed(b: Boolean): Unit = _isIndexed = b
+
   lazy val rtreeGeometry: RG.Geometry =
     RGeometryConversions.geometricFigureToRtreeGeometry(shape)
 }
@@ -118,16 +122,28 @@ class PageIndex(
       val lshape = LabeledShape(shape, labels.toSet, shapeIDGen.nextId)
       shapeRIndex.add(lshape)
       shapeMap.put(lshape.id.unwrap.toLong, lshape)
+      lshape.setIndexed(true)
       lshape
     }
 
     def unindexShape(lshape: Shape): Unit = {
       shapeRIndex.remove(lshape)
+      lshape.setIndexed(false)
+    }
+
+    def reindexShapes(l: Label): Unit = {
+      getAllShapes().foreach { shape =>
+        if (shape.hasLabel(l) && !shape.isIndexed()) {
+          shapeRIndex.add(shape)
+          shape.setIndexed(true)
+        }
+      }
     }
 
 
     def deleteShape(lshape: Shape): Unit = {
       unindexShape(lshape)
+      lshape.setIndexed(false)
       shapeMap.remove(lshape.id.unwrap.toLong)
     }
 

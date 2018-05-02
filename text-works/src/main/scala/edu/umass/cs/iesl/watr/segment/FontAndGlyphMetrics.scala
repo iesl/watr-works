@@ -10,10 +10,14 @@ import scalaz.std.string._
 import textboxing.{TextBoxing => TB}, TB._
 import utils.SlicingAndDicing._
 import ExtractedItem._
+import geometry._
+import geometry.syntax._
+import utils.QuickNearestNeighbors._
 
 import TypeTags._
 
 trait FontAndGlyphMetricsDocWide extends DocumentScopeSegmenter { self =>
+
   def findLineLayoutMetrics(lineLabel: Label): Unit = {
     val offsetEvidence = for {
       pageSeg <- pageSegmenters
@@ -190,5 +194,94 @@ trait FontAndGlyphMetrics extends PageScopeSegmenter with TextBlockGrouping { se
   }
 
 
+  protected def recordCharRunWidths(charRunBaselineShapes: Seq[LineShape]): Unit = {
+    val pagewiseLineWidthTable = docScope.getPagewiseLinewidthTable();
 
+
+    val leftToRightGroups = charRunBaselineShapes.groupByPairs {
+      case (item1, item2) =>
+        val b1 = item1.shape.bounds()
+        val b2 = item2.shape.bounds()
+        val leftToRight = b1.isStrictlyLeftOf(b2)
+        val colinear = b1.bottom == b2.bottom
+
+        leftToRight && colinear
+    }
+
+    leftToRightGroups.foreach { lineGroup =>
+      val groupBounds = lineGroup.map(_.shape.bounds()).reduce(_ union _)
+      val extractedItems = lineGroup.flatMap { lineShape =>
+        getExtractedItemsForShape(lineShape)
+      }
+      val charItems = extractedItems.collect{ case i: ExtractedItem.CharItem =>  i }
+
+      val (num, mostCommonScaledFontId) = charItems
+        .map{ item => item.scaledFontId }
+        .groupBy { x => x }
+        .toList
+        .map{case (k, v) => (v.length, k) }
+        .sortBy(l => - l._1)
+        .head
+
+      // val bottomLine = groupBounds.toLine(Dir.Bottom)
+      pagewiseLineWidthTable.modifyOrSet(pageNum, mostCommonScaledFontId, groupBounds.width :: _, List(groupBounds.width))
+    }
+
+    traceLog.trace {
+      val bottomLines = leftToRightGroups
+        .filter(_.length > 1)
+        .map { lineGroup =>
+          val groupBounds = lineGroup.map(_.shape.bounds()).reduce(_ union _)
+          groupBounds.toLine(Dir.Bottom)
+        }
+
+      figure(bottomLines:_*) tagged "Joined Nat Lang CharRun Baselines"
+    }
+  }
+
+  /**
+    * Foreach horizontal nat-lang text line, find the 2 closest lines below
+    * it, and record the distances to each line.
+    *
+    * Finally, cluster those vertical jumps into centroids.
+    *
+    *  l0     :    --------------
+    *  dists  :           | |
+    *  l0+1   :    -------- | ---
+    *  l0+2   :    --------------
+    */
+  protected def recordNatLangVerticalLineSpacingStats(baselineShapes: Seq[LineShape]): Unit = {
+    val windowSize = 2
+
+    val contextDeltas = baselineShapes.map { baselineShape: LineShape =>
+      val Line(Point.Doubles(x1, y1), Point.Doubles(x2, y2)) = baselineShape.shape
+
+      val y1Exact = baselineShape.shape.p1.y
+
+      pageVerticalSlice(x1, x2-x1).toSeq.flatMap { pageColumn =>
+        val (aboveLine, belowLine) = pageColumn.splitHorizontal(y1Exact)
+
+
+        val below = belowLine.map { bbox =>
+          val query = bbox.translate(x=0, y = +1.0)
+          searchForLines(query, LB.CharRunFontBaseline)
+        } getOrElse { List() }
+
+
+        val winBelow = below.sortBy(_.shape.p1.y).take(windowSize)
+
+        winBelow.map { ctxLine => ctxLine.shape.p1.y - y1Exact }
+      }
+    }
+
+    val yJumps = contextDeltas.flatten
+    val yJumpClusters = qnn(yJumps, tolerance = 0.5d)
+
+    val nonUniqueJumps = yJumpClusters.filter { bin =>
+      bin.size() > 1
+    }
+
+    println(s"recordNatLangLineSpacing: Assigned Bins")
+    println(nonUniqueJumps.mkString("\n  ", "\n  ", "\n"))
+  }
 }

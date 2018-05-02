@@ -7,9 +7,6 @@ import geometry.syntax._
 import textgrid._
 import watrmarks._
 
-import utils.{RelativeDirection => Dir}
-import segment.{SegmentationLabels => LB}
-
 trait ShapeFunctions extends TrapezoidFinding with LineShapeClassification { self =>
   lazy val shapeFunctions = self
 

@@ -2,9 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import spindex._
-import segment.{SegmentationLabels => LB}
 import textgrid._
-
 
 trait PageLevelFunctions extends ColumnFinding
     with TextReconstruction
@@ -57,19 +55,6 @@ trait PageSegmenter extends PageLevelFunctions {
 
   def getPageTextGrid(): TextGrid = {
     textReconstruction.getTextGrid()
-  }
-
-  // def runPageSegmentationPass1(): Unit =  {
-  //   markNatLangText()
-  //   // findContiguousBlocks(LB.CharRunFontBaseline)
-  //   // createColumnClusters()
-  // }
-
-  def runPageSegmentationPass2(): Unit =  {
-
-    // lineFinding.runLineSegmentation()
-    // shapeFunctions.buildLinePairTrapezoids()
-
   }
 
   def runLineClassification(): Unit = {

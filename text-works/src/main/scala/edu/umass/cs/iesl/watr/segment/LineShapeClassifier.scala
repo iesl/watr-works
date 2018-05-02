@@ -4,10 +4,7 @@ package segment
 import watrmarks._
 import geometry._
 import geometry.syntax._
-import textboxing.{TextBoxing => TB}
 import textgrid._
-
-import segment.{SegmentationLabels => LB}
 
 trait LineShapeClassification extends PageScopeSegmenter { self =>
   lazy val lineShapes = self

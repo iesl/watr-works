@@ -11,7 +11,6 @@ import utils.Timer.time
 import utils.ExactFloats._
 import textgrid._
 import utils.QuickNearestNeighbors._
-import segment.{SegmentationLabels => LB}
 
 import TypeTags._
 
@@ -113,9 +112,9 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     docScope.docStats.initTable[Int@@PageNum, String@@ScaledFontID, Int@@FloatRep]("PagewiseLineWidths")
 
-    time("markNatLangText") {
+    time("findContiguousGlyphSpans") {
       pageSegmenters.foreach { p =>
-        p.markNatLangText()
+        p.findContiguousGlyphSpans()
       }
     }
 
@@ -125,11 +124,15 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
     // outputTableData();
 
-
-    time("segment pass 2") {
+    time("generatePageRules") {
       pageSegmenters.foreach { p =>
-        println(s"generatePageRules page ${p.pageNum}")
-        p.generatePageRules(LB.CharRunFontBaseline)
+        p.generatePageRules(LB.CharRunFontBaseline, LB.CapDescenderBand)
+      }
+    }
+
+    time("findContiguousBlocks") {
+      pageSegmenters.foreach { p =>
+        p.findContiguousBlocks(LB.CapDescenderBand)
       }
     }
 

@@ -60,10 +60,12 @@ object TextGridFunctions {
         .foreach { _ => up()  }
     }
 
-    currLoc.root.toTree.map { n => n match {
+
+    val ret = currLoc.root.toTree.map { n => n match {
       case TreeNode.CellGroup(cells, row) => TreeNode.CellGroup(cells.reverse, row)
       case n => n
     }}
+    ret
   }
 
 
@@ -114,6 +116,8 @@ object TextGridFunctions {
       }
     }
 
+    // println(s"spanTreeToJson.toStrictTree")
+    // val strict = spanTree.toStrictTree
     spanTree.scanr(histo).rootLabel.orDie("root node should always have Json")
   }
 

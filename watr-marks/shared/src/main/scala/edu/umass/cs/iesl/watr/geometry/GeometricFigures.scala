@@ -13,7 +13,7 @@ import utils.ExactFloats._
 import scala.scalajs.js.annotation._
 
 sealed trait GeometricFigure { self =>
-  lazy val mbr = minBoundingRect(self)
+  lazy val minBounds = minBoundingRect(self)
 }
 
 @JSExportTopLevel("watr.geometry.LTBounds")

@@ -47,9 +47,14 @@ class PdfBoxTextExtractor(
   var totalCharCount = 0
 
   var extractedItems = List[ExtractedItem]()
+  var combiningMarks = List[ExtractedItem.CombiningMark]()
 
   def getPageItems(): Seq[ExtractedItem] = {
-    extractedItems.reverse
+    // Put combining marks at the end of the list:
+    val cms = combiningMarks.reverse.map { c =>
+      c.copy(id=charIdGen.nextId)
+    }
+    extractedItems.reverse ++ cms
   }
 
   protected def debugPrintPageItems(rows: List[List[ExtractedItem]]): Unit = {
@@ -64,21 +69,17 @@ class PdfBoxTextExtractor(
     println(pageStr)
   }
 
-  def addPathItem(item: ExtractedItem.PathItem): Unit = {
+  def addItem(item: ExtractedItem): Unit = {
     extractedItems = item :: extractedItems
   }
 
-  def addImgItem(item: ExtractedItem.ImgItem): Unit = {
-    extractedItems = item :: extractedItems
+  def addCombiningMark(item: ExtractedItem.CombiningMark): Unit = {
+    combiningMarks = item :: combiningMarks
   }
 
-  def addCharItem(charAtom: ExtractedItem.CharItem): Unit = {
-    extractedItems = charAtom :: extractedItems
-  }
-
-  def stashChar(c: Char): Unit = {
-    // addCharItem(CharItem(charIdGen.nextId, charBounds, c))
-  }
+  // def stashChar(c: Char): Unit = {
+  //   // addCharItem(CharItem(charIdGen.nextId, charBounds, c))
+  // }
 
   def traceFunc()(implicit enc: sourcecode.Enclosing): Unit = {
     println(s"running ${enc.value}")
@@ -105,7 +106,7 @@ class PdfBoxTextExtractor(
       imgBounds
     )
 
-    addImgItem(item)
+    addItem(item)
 
     // traceFunc()
   }
@@ -151,7 +152,7 @@ class PdfBoxTextExtractor(
     val toPoint = new Point2D.Float(x, y)
 
     val line = Line(getCurrentPoint().toPoint(), toPoint.toPoint)
-    addPathItem(ExtractedItem.PathItem(
+    addItem(ExtractedItem.PathItem(
       charIdGen.nextId,
       line.bounds(),
       List(getCurrentPoint().toPoint(), toPoint.toPoint())
@@ -261,6 +262,14 @@ class PdfBoxTextExtractor(
         val glyphBounds = finalGlyphBounds.getBounds2D.toLTBounds()
         val isContained = glyphBounds.isContainedBy(pageLTBounds) && glyphProps.fontBBox.isContainedBy(pageLTBounds)
 
+        def appendCombiningMark(c: Char): Unit = {
+          if (isContained) {
+            addCombiningMark(
+              CombiningMark(CharID(0), c, fontProps, glyphProps)
+            )
+          }
+        }
+
         def appendChar(strRepr: String): Unit = {
           if (isContained) {
             val nextItem = CharItem(charIdGen.nextId, strRepr, fontProps, glyphProps)
@@ -286,7 +295,7 @@ class PdfBoxTextExtractor(
 
             }
 
-            addCharItem(nextItem)
+            addItem(nextItem)
           }
         }
 
@@ -302,12 +311,12 @@ class PdfBoxTextExtractor(
 
               UnicodeUtil.maybeSubChar(ch) match {
                 case Left(c)   =>
-                  if (isCombiningMark(c)) stashChar(c) else appendChar(c.toString())
+                  if (isCombiningMark(c)) appendCombiningMark(c) else appendChar(c.toString())
 
                 case Right(cs) =>
 
                   cs.foreach{ c =>
-                    if (isCombiningMark(c)) stashChar(c) else appendChar(c.toString())
+                    if (isCombiningMark(c)) appendCombiningMark(c) else appendChar(c.toString())
                   }
               }
             }
