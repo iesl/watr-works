@@ -27,25 +27,12 @@ case class LabelingTree(
 )
 
 object LabelTreeCodecs {
-  import TextGridLabelWidget._
+  // import TextGridLabelWidget._
   import TextGridFunctions._
 
   def encodeBioLabels(cells: Seq[TextGrid.GridCell]): Json = {
-    val dbgLabels = cells.map(_.pins).filter(_.nonEmpty).map(_.map(_.label.fqn.head.toString))
-      .mkString("{\n  ", "\n  ", "\n}")
-    println(s"encodeBioLabels: ${cells.map(_.char).mkString}")
-    println(s"encodeBioLabels: labels= ${dbgLabels}")
     val labelTree = gridCellsToLabelTree(cells)
-    // println(s"encodeBioLabels: labelTree levels= ${labelTree.levels.length}")
-
-    println(s"encodeBioLabels: labelTree ")
-    // println(labelTree.drawTree)
-
-    println(s"encodeBioLabels: labelTreeToSpanTree ")
     val labelSpanTree = labelTreeToSpanTree(labelTree)
-
-    println(s"encodeBioLabels: labelSpanTree ")
-    // println(labelSpanTree.drawTree)
     spanTreeToJson(labelSpanTree)
   }
 

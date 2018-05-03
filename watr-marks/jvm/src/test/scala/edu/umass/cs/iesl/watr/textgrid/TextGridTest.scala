@@ -9,6 +9,10 @@ class TextGridTests extends TextGridSpec {
 
   val stableId = DocumentID("SampleDocument")
 
+  info("behavious of textgrid row-level labeling")
+
+
+
   // info("behavior of TextGrid Rows")
 
 

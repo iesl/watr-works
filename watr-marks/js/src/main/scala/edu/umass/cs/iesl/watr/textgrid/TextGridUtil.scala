@@ -314,7 +314,7 @@ class TextGridConstructor() extends TextGridConstruction {
 
 @JSExportTopLevel("watr.textgrid.WidgetDisplayGridProps")
 class WidgetDisplayGridProps(
-  val labelTree: scalaz.Tree[TreeNode],
+  val labelTree: scalaz.Tree[LabelTreeNode],
   val gridRegions: Seq[GridRegion]
 ) {
   lazy val regionExtents = gridRegions.map{r =>

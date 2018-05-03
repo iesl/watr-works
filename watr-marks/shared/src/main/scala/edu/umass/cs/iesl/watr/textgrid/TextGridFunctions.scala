@@ -9,14 +9,14 @@ import TypeTags._
 
 object TextGridFunctions {
 
-  def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[TreeNode] = {
+  def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[LabelTreeNode] = {
     textGridToLabelTree(
       TextGrid.fromCells(DocumentID(""), gridCells)
     )
   }
 
-  def textGridToLabelTree(textGrid: TextGrid): Tree[TreeNode] = {
-    val init = Tree.Node[TreeNode](TreeNode.RootNode, Stream.empty)
+  def textGridToLabelTree(textGrid: TextGrid): Tree[LabelTreeNode] = {
+    val init = Tree.Node[LabelTreeNode](LabelTreeNode.RootNode, Stream.empty)
     var currLoc = init.loc
 
     def up(): Unit = {
@@ -29,7 +29,7 @@ object TextGridFunctions {
 
       basePins.takeWhile(p => p.isBegin || p.isUnit)
         .foreach { pin =>
-          val n = Tree.Node[TreeNode](TreeNode.LabelNode(pin.label), Stream.empty)
+          val n = Tree.Node[LabelTreeNode](LabelTreeNode.LabelNode(pin.label), Stream.empty)
           currLoc = currLoc.insertDownLast(n)
         }
 
@@ -37,20 +37,20 @@ object TextGridFunctions {
         lastChild <- currLoc.lastChild
       } yield {
         lastChild.getLabel match {
-          case prevCell@ TreeNode.CellGroup(cells, prevRow) if prevRow == row =>
+          case prevCell@ LabelTreeNode.CellGroup(cells, prevRow) if prevRow == row =>
             lastChild.modifyLabel { p =>
-              TreeNode.CellGroup(cell :: cells, row): TreeNode
+              LabelTreeNode.CellGroup(cell :: cells, row): LabelTreeNode
             }
           case _ =>
             currLoc.insertDownLast(
-              Tree.Leaf[TreeNode](TreeNode.CellGroup(List(cell), row))
+              Tree.Leaf[LabelTreeNode](LabelTreeNode.CellGroup(List(cell), row))
             )
         }
       }
 
       currLoc = maybeAppend.getOrElse {
         currLoc.insertDownLast(
-          Tree.Leaf[TreeNode](TreeNode.CellGroup(List(cell), row))
+          Tree.Leaf[LabelTreeNode](LabelTreeNode.CellGroup(List(cell), row))
         )
       }
 
@@ -62,7 +62,7 @@ object TextGridFunctions {
 
 
     val ret = currLoc.root.toTree.map { n => n match {
-      case TreeNode.CellGroup(cells, row) => TreeNode.CellGroup(cells.reverse, row)
+      case LabelTreeNode.CellGroup(cells, row) => LabelTreeNode.CellGroup(cells.reverse, row)
       case n => n
     }}
     ret
@@ -121,14 +121,14 @@ object TextGridFunctions {
     spanTree.scanr(histo).rootLabel.orDie("root node should always have Json")
   }
 
-  def labelTreeToSpanTree(labelTree: Tree[TreeNode]): Tree[Attr] = {
+  def labelTreeToSpanTree(labelTree: Tree[LabelTreeNode]): Tree[Attr] = {
 
-    def histo(node: TreeNode, children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
+    def histo(node: LabelTreeNode, children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
 
       node match {
-        case TreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
-        case cells: TreeNode.CellGroup => Tree.Leaf((None, 0, cells.cells.length))
-        case TreeNode.LabelNode(label) =>
+        case LabelTreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
+        case cells: LabelTreeNode.CellGroup => Tree.Leaf((None, 0, cells.cells.length))
+        case LabelTreeNode.LabelNode(label) =>
           val shifted = shiftChildren(children, 0)
           val endOffset = shifted.headOption.map(_.rootLabel).map(attrEndIndex).getOrElse(0)
           Tree.Node((Some(label), 0, endOffset), shifted.reverse)
@@ -138,14 +138,14 @@ object TextGridFunctions {
     labelTree.scanr(histo).rootLabel
   }
 
-  def labelTreeToMarginalSpanTree(labelTree: Tree[TreeNode], compactMarginals: Boolean = true): Tree[Attr] = {
+  def labelTreeToMarginalSpanTree(labelTree: Tree[LabelTreeNode], compactMarginals: Boolean = true): Tree[Attr] = {
 
-    def histo(node: TreeNode, children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
+    def histo(node: LabelTreeNode, children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
 
       node match {
-        case TreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
-        case _: TreeNode.CellGroup     => Tree.Leaf((None, 0, 1))
-        case TreeNode.LabelNode(label) =>
+        case LabelTreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
+        case _: LabelTreeNode.CellGroup     => Tree.Leaf((None, 0, 1))
+        case LabelTreeNode.LabelNode(label) =>
 
           val initOffset: Int = if (compactMarginals || children.length==1) 0 else 1
           val shifted = shiftChildren(children, initOffset)

@@ -12,26 +12,26 @@ import utils.GraphPaper
 
 import TextGridFunctions._
 
-sealed trait TreeNode
+sealed trait LabelTreeNode
 
-object TreeNode {
+object LabelTreeNode {
 
   case class CellGroup(
     cells: List[TextGrid.GridCell],
     gridRow: Int
-  ) extends TreeNode
+  ) extends LabelTreeNode
 
   case class LabelNode(
     label: Label
-  ) extends TreeNode
+  ) extends LabelTreeNode
 
-  case object RootNode extends TreeNode
+  case object RootNode extends LabelTreeNode
 
-  implicit val ShowTreeNode = Show.shows[TreeNode]{ treeNode =>
+  implicit val ShowLabelTreeNode = Show.shows[LabelTreeNode]{ treeNode =>
     treeNode match {
-      case TreeNode.CellGroup(cells, gridRow) => cells.map(_.char.toString()).mkString
-      case TreeNode.LabelNode(l) => l.fqn
-      case TreeNode.RootNode => "()"
+      case LabelTreeNode.CellGroup(cells, gridRow) => cells.map(_.char.toString()).mkString
+      case LabelTreeNode.LabelNode(l) => l.fqn
+      case LabelTreeNode.RootNode => "()"
     }
   }
 }
@@ -45,7 +45,7 @@ object LabeledRowElem {
 
   case class CellGroupRow(
     override val labels: List[Label],
-    cells: Seq[TreeNode.CellGroup],
+    cells: Seq[LabelTreeNode.CellGroup],
     depthMod: Int = 0
   ) extends LabeledRowElem {
    def getRowText: String = {
@@ -142,7 +142,7 @@ object TextGridLabelWidget {
 
   val Indent: Int = 4
 
-  def labelTreeToMarginals(labelTree: Tree[TreeNode], compactMarginals: Boolean): MarginalGloss = {
+  def labelTreeToMarginals(labelTree: Tree[LabelTreeNode], compactMarginals: Boolean): MarginalGloss = {
     val tree = labelTreeToMarginalSpanTree(labelTree, compactMarginals)
 
     val columns = tree.levels.toList.map{ level =>
@@ -191,7 +191,7 @@ object TextGridLabelWidget {
     borderLeftRight("|", ":")(hcat(top, colBoxes))
   }
 
-  def labelTreeToGridRegions(labelTree: Tree[TreeNode], labelSchemas: LabelSchemas, originX: Int=0, originY: Int=0): Seq[GridRegion] = {
+  def labelTreeToGridRegions(labelTree: Tree[LabelTreeNode], labelSchemas: LabelSchemas, originX: Int=0, originY: Int=0): Seq[GridRegion] = {
 
     def marginalGlossToGridRegions(marginalLabels: MarginalGloss, x: Int, y: Int): Seq[GridRegion] = {
       val allRegions = marginalLabels.columns.zipWithIndex.map{ case (col, colNum) =>
@@ -292,17 +292,17 @@ object TextGridLabelWidget {
     gridRegions ++ schemaRegions ++ glossRegions
   }
 
-  def flattenLabelTreeToLines(labelTree: Tree[TreeNode]): List[LabeledRowElem] = {
+  def flattenLabelTreeToLines(labelTree: Tree[LabelTreeNode]): List[LabeledRowElem] = {
 
-    def histo(node: TreeNode, children: Stream[Tree[LabeledRows]]): List[LabeledRowElem] = {
+    def histo(node: LabelTreeNode, children: Stream[Tree[LabeledRows]]): List[LabeledRowElem] = {
       node match {
-        case n: TreeNode.CellGroup =>
+        case n: LabelTreeNode.CellGroup =>
           List(LabeledRowElem.CellGroupRow(List(), List(n)))
 
-        case TreeNode.RootNode =>
+        case LabelTreeNode.RootNode =>
           children.toList.flatMap { _.rootLabel }
 
-        case n @ TreeNode.LabelNode(label) =>
+        case n @ LabelTreeNode.LabelNode(label) =>
           val childRowElems: List[LabeledRowElem] = children.toList.flatMap { _.rootLabel }
 
           val headerList = childRowElems.collect{
