@@ -21,7 +21,7 @@ object AnnotationDiffs {
 
 
   val R = RelationModel
-  import TextGridFunctions._
+  import LabeledSequenceTreeTransforms._
   import scalaz.{@@ => _, _} //, Scalaz._
   import \&/._
   import scalaz.syntax.align._

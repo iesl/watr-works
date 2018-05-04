@@ -7,7 +7,31 @@ import _root_.io.circe, circe._, circe.syntax._
 import utils.DoOrDieHandlers._
 import TypeTags._
 
-object TextGridFunctions {
+sealed trait LabelTreeNode
+
+object LabelTreeNode {
+
+  case class CellGroup(
+    cells: List[TextGrid.GridCell],
+    gridRow: Int
+  ) extends LabelTreeNode
+
+  case class LabelNode(
+    label: Label
+  ) extends LabelTreeNode
+
+  case object RootNode extends LabelTreeNode
+
+  implicit val ShowLabelTreeNode = Show.shows[LabelTreeNode]{ treeNode =>
+    treeNode match {
+      case LabelTreeNode.CellGroup(cells, gridRow) => cells.map(_.char.toString()).mkString
+      case LabelTreeNode.LabelNode(l) => l.fqn
+      case LabelTreeNode.RootNode => "()"
+    }
+  }
+}
+
+object LabeledSequenceTreeTransforms {
 
   def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[LabelTreeNode] = {
     textGridToLabelTree(
@@ -82,7 +106,7 @@ object TextGridFunctions {
   }
 
   private def attrEndIndex(attr: Attr) = {
-    val (_, st, len) = attr
+    val (x, st, len) = attr
     st+len
   }
 

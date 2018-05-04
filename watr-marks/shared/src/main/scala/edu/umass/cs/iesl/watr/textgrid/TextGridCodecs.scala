@@ -29,7 +29,7 @@ case class LabelingTree(
 
 object LabelTreeCodecs {
   // import TextGridLabelWidget._
-  import TextGridFunctions._
+  import LabeledSequenceTreeTransforms._
 
   def encodeBioLabels(cells: Seq[TextGrid.GridCell]): Json = {
     val labelTree = gridCellsToLabelTree(cells)

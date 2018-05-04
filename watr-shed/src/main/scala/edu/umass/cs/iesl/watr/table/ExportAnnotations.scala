@@ -8,7 +8,7 @@ import circe.syntax._
 import textgrid._
 import geometry._
 
-import TextGridFunctions._
+import LabeledSequenceTreeTransforms._
 import com.github.tototoshi.csv._
 import ammonite.{ops => fs} // , fs._
 

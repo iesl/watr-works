@@ -10,31 +10,6 @@ import watrmarks._
 import geometry._
 import utils.GraphPaper
 
-import TextGridFunctions._
-
-sealed trait LabelTreeNode
-
-object LabelTreeNode {
-
-  case class CellGroup(
-    cells: List[TextGrid.GridCell],
-    gridRow: Int
-  ) extends LabelTreeNode
-
-  case class LabelNode(
-    label: Label
-  ) extends LabelTreeNode
-
-  case object RootNode extends LabelTreeNode
-
-  implicit val ShowLabelTreeNode = Show.shows[LabelTreeNode]{ treeNode =>
-    treeNode match {
-      case LabelTreeNode.CellGroup(cells, gridRow) => cells.map(_.char.toString()).mkString
-      case LabelTreeNode.LabelNode(l) => l.fqn
-      case LabelTreeNode.RootNode => "()"
-    }
-  }
-}
 
 sealed trait LabeledRowElem {
   def labels: List[Label]
@@ -48,9 +23,9 @@ object LabeledRowElem {
     cells: Seq[LabelTreeNode.CellGroup],
     depthMod: Int = 0
   ) extends LabeledRowElem {
-   def getRowText: String = {
+
+    def getRowText: String =
       cells.map(_.cells.map(_.char).mkString).mkString
-    }
 
   }
 
@@ -90,16 +65,16 @@ sealed trait GridRegion  {
   }
 
   @JSExport def isCells(): Boolean = false
-  @JSExport def isHeading(): Boolean = false
-  @JSExport def isLabelCover(): Boolean = false
-  @JSExport def isLabelKey(): Boolean = false
+    @JSExport def isHeading(): Boolean = false
+    @JSExport def isLabelCover(): Boolean = false
+    @JSExport def isLabelKey(): Boolean = false
 
 }
 
 import scala.annotation.meta.field
 
 @JSExportAll
-@JSExportTopLevel("watr.textgrid.GridRegion")
+  @JSExportTopLevel("watr.textgrid.GridRegion")
 object GridRegion {
 
   case class Cells(
@@ -122,7 +97,7 @@ object GridRegion {
   case class LabelCover(
     @(JSExport @field) label: Label,
     @(JSExport @field) override val bounds: LTBounds,
-      override val classes: List[String]
+    override val classes: List[String]
   ) extends GridRegion {
     override def isLabelCover(): Boolean = true
   }
@@ -139,6 +114,8 @@ object GridRegion {
 
 @JSExportTopLevel("watr.textgrid.TextGridLabelWidget") @JSExportAll
 object TextGridLabelWidget {
+
+  import LabeledSequenceTreeTransforms._
 
   val Indent: Int = 4
 
@@ -180,7 +157,6 @@ object TextGridLabelWidget {
           if (len==1) {
             label.fqn.take(2).mkString.toUpperCase().box
           } else {
-            // val ch = label.fqn(0).toLower.toString()
             val ch = label.fqn.take(2).mkString.toLowerCase().box
             vjoin(ch, vjoins(List.fill(len-2)("│┆")), "└─")
           }

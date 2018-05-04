@@ -12,22 +12,21 @@ import scalaz.{@@ => _, _} , Scalaz._
 import _root_.io.circe, circe._, circe.syntax._
 import textboxing.{TextBoxing => TB}, TB._
 import TextGridLabelWidget._
-import TextGridFunctions._
-
-case class LineRenderInfo(
-  text: String,
-  indent: Int,
-  isHoverable: Boolean,
-  canSplit: Boolean,
-  canJoin: Boolean,
-  canLabel: Boolean
-)
+import LabeledSequenceTreeTransforms._
 
 trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples {
 
   def infobox(heading: String, b: TB.Box): Unit = {
     info(heading)
     info("\n" + indent(4, b).toString() + "\n")
+  }
+
+
+  case class Thing(a: Char) extends LabelTarget
+  case class Things(labelTargets: Seq[Thing]) extends LabeledSequence[Thing]
+
+  def unlabeledThings(len: Int): Things = {
+    Things(('a' to 'z').take(len).map(Thing(_)))
   }
 
 }
