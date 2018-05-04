@@ -9,10 +9,11 @@ import TextGridFunctions._
 import _root_.io.circe
 import circe.syntax._
 
-import utils.DoOrDieHandlers._
+// import utils.DoOrDieHandlers._
 import LabelTreeCodecs._
 import TextGridLabelWidget._
-import textboxing.{TextBoxing => TB}, TB._
+// import textboxing.{TextBoxing => TB}, TB._
+// import utils.{Cursor, Cursors, Window}
 
 
 class TextGridCodecTests extends TextGridSpec {
@@ -21,57 +22,68 @@ class TextGridCodecTests extends TextGridSpec {
     StablePage(DocumentID("docX"), PageNum(0)), LTBounds.empty
   )
 
-  def emptyInlineBIO(len: Int): Seq[TextGrid.GridCell] = {
-    Array.fill[TextGrid.GridCell](len){
-      TextGrid.InsertCell('a', dummyPageRegion)
-    }
+  case class Thing(a: Char) extends LabelTarget
+  case class Things(labelTargets: Seq[Thing]) extends LabeledSequence[Thing]
+
+
+  def emptyInlineBIO(len: Int): Things = {
+    Things(('a' to 'z').take(len).map(Thing(_)))
+    // Array.fill[TextGrid.GridCell](len){
+    //   TextGrid.InsertCell('a', dummyPageRegion)
+    // }
   }
+  // def emptyInlineBIO(len: Int): Seq[TextGrid.GridCell] = {
+  //   Array.fill[TextGrid.GridCell](len){
+  //     TextGrid.InsertCell('a', dummyPageRegion)
+  //   }
+  // }
 
   "Format of LabelTree serialization" in {
     //  inline bio <--> label tree <--> json rep
     val inlineBio = emptyInlineBIO(10)
 
     for {
-      gridCursor <- GridCursor.init(inlineBio)
+      gridCursor <- inlineBio.toCursor()
       c3         <- gridCursor.move(3)
       c4 = {
-        val window = c3.toWindow()
-        val w2 = window.widen(3)
-        w2.addLabel(FirstName)
-        w2.closeWindow()
       }
-      c5 <-c4.next
-      _ = {
-        val window = c5.toWindow()
-        val w2 = window.widen(3)
-        w2.addLabel(LastName)
-        w2.closeWindow()
-      }
+
+       window = c3.toWindow()
+       w2 <- window.widen(3)
+      // w2.addLabel(FirstName)
+      // w2.closeWindow()
+      // c5 <-c4.next
+      // _ = {
+      //   val window = c5.toWindow()
+      //   val w2 = window.widen(3)
+      //   w2.addLabel(LastName)
+      //   w2.closeWindow()
+      // }
     } yield ()
 
-    val labelTree = gridCellsToLabelTree(inlineBio)
+    // val labelTree = gridCellsToLabelTree(inlineBio.cells)
 
-    println(inlineBio.map(_.showPinsVert()).mkString)
+    println(inlineBio.labelTargets.map(_.showPinsVert()).mkString)
 
-    println(labelTree.drawTree)
+    // println(labelTree.drawTree)
 
 
-    {
-      println("Marginal Span Tree -----------------------")
-      val labelSpanTree2 = labelTreeToMarginalSpanTree(labelTree)
-      println(labelSpanTree2.drawTree)
-      println("-----------------------")
-    }
+    // {
+    //   println("Marginal Span Tree -----------------------")
+    //   val labelSpanTree2 = labelTreeToMarginalSpanTree(labelTree)
+    //   println(labelSpanTree2.drawTree)
+    //   println("-----------------------")
+    // }
 
-    val labelSpanTree = labelTreeToSpanTree(labelTree)
+    // val labelSpanTree = labelTreeToSpanTree(labelTree)
 
-    {
-      println("Label Span Tree -----------------------")
-      println(labelSpanTree.drawTree)
-      println("-----------------------")
-    }
-    val jsonSpanTreeRep = spanTreeToJson(labelSpanTree)
-    println(jsonSpanTreeRep.pretty(JsonPrettyPrinter))
+    // {
+    //   println("Label Span Tree -----------------------")
+    //   println(labelSpanTree.drawTree)
+    //   println("-----------------------")
+    // }
+    // val jsonSpanTreeRep = spanTreeToJson(labelSpanTree)
+    // println(jsonSpanTreeRep.pretty(JsonPrettyPrinter))
 
     // Json -> inline BIO
 
@@ -90,12 +102,12 @@ class TextGridCodecTests extends TextGridSpec {
     val ltjs = lt.asJson
     println(ltjs.noSpaces)
 
-    val labelingTree = jsonSpanTreeRep.decodeOrDie[Seq[LabelingTree]]()
-    println(labelingTree)
-    val inlineBioRT = LabelTreeCodecs.decodeBioLabels(jsonSpanTreeRep)
+    // val labelingTree = jsonSpanTreeRep.decodeOrDie[Seq[LabelingTree]]()
+    // println(labelingTree)
+    // val inlineBioRT = LabelTreeCodecs.decodeBioLabels(jsonSpanTreeRep)
     println("inline Bio Round Trip")
-    val rt = inlineBioRT.map(_.mkString).zipWithIndex.mkString("\n  ", "\n  ", "\n")
-    println(rt)
+    // val rt = inlineBioRT.map(_.mkString).zipWithIndex.mkString("\n  ", "\n  ", "\n")
+    // println(rt)
 
   }
 

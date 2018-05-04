@@ -23,7 +23,6 @@ case class LineRenderInfo(
   canLabel: Boolean
 )
 
-
 trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples {
 
   def infobox(heading: String, b: TB.Box): Unit = {
@@ -140,31 +139,37 @@ class TextGridLabelWidgetTests extends TextGridSpec {
 
   }
 
-  "Behavior of Textgrid Labeling and Unlabeling" - {
-    val textGrid = makeBishopClarkTextGrid()
+  // "Behavior of Textgrid Labeling and Unlabeling" - {
+  //   val textGrid = makeBishopClarkTextGrid()
 
-    val indexedCells = textGrid.indexedCells()
-    bishopClarkLabelSpans.reverse.foreach{ case ((lbegin, lend), label) =>
-      val (cell, row, col) = indexedCells(lbegin)
-      println(s"****unlabeling: ${row}, ${col}, ${label}")
-      val extents = textGrid.findLabelExtents(row, col, label)
+  //   def indexAt(r: Int, c: Int): Int = {
+  //     textGrid.indexAt(r, c).get
+  //   }
 
-      val textExtents = extents.map { cells =>
-        cells.map { case (cell, begin, end) =>
-          cell.char
-        }.mkString
-      } getOrElse { "<not found>" }
+  //   val indexedCells = textGrid.indexedCells()
+  //   bishopClarkLabelSpans.reverse.foreach{ case ((lbegin, lend), label) =>
+  //     val (cell, row, col) = indexedCells(lbegin)
+  //     println(s"****unlabeling: ${row}, ${col}, ${label}")
+  //     val extents = textGrid.findLabelExtents(indexAt(row, col), label)
 
-      infobox(s"Unlabeled ${label}", textExtents)
-      textGrid.unlabelNear(row, col, label)
-      val indentedBlock = textGridToIndentedBox(textGrid)
-      val labelTree = textGridToLabelTree(textGrid)
-      val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
-      val emarginBlock = marginalGlossToTextBlock(expMarginals)
-      val expBlock = emarginBlock + indentedBlock
-      infobox(s"Unlabeled ${label}", expBlock)
-    }
-  }
+  //     val textExtents = extents.map { case (begin, cells) =>
+  //       cells.map { cell =>
+  //         cell.char
+  //       }.mkString
+  //     } getOrElse { "<not found>" }
+
+  //     infobox(s"Unlabeled ${label}", textExtents)
+
+
+  //     textGrid.unlabelNear(indexAt(row, col), label)
+  //     val indentedBlock = textGridToIndentedBox(textGrid)
+  //     val labelTree = textGridToLabelTree(textGrid)
+  //     val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+  //     val emarginBlock = marginalGlossToTextBlock(expMarginals)
+  //     val expBlock = emarginBlock + indentedBlock
+  //     infobox(s"Unlabeled ${label}", expBlock)
+  //   }
+  // }
 
 
   // "Layout for Textgrid Widget" - {

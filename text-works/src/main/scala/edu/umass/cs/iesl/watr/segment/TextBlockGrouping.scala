@@ -7,6 +7,15 @@ import utils.ExactFloats._
 import utils.FunctionalHelpers._
 import utils.SlicingAndDicing._
 
+sealed trait TextStructure[A]
+
+object TextStructure {
+
+  case class TextLine(repr: AnyShape) extends TextStructure[Nothing]
+
+}
+
+
 trait TextBlockGrouping extends PageScopeSegmenter { self =>
   lazy val textBlockGrouping = self
 
@@ -70,8 +79,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
       val line2StartId = item2.id.unwrap
       val consecutive = line2StartId == line1EndId + 1
 
-      lazy val topToBottom = item1.minBBox.bottom < item2.minBBox.bottom
-      lazy val inOrder = topToBottom
+      lazy val inOrderTopToBottom = item1.minBBox.bottom < item2.minBBox.bottom
 
       lazy val prevWindowBounds = prevs.map(_.shape.minBounds).reduce(_ union _)
 
@@ -87,7 +95,10 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
       lazy val noLeftOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
         .adjacentRegion(Dir.Left)
         .map{ adjacentRegion =>
-          val shavedRegion = adjacentRegion.shave(Dir.Right, FloatExact.epsilon)
+          val shavedRegion = adjacentRegion
+            .shave(Dir.Right, FloatExact.epsilon)
+            .shave(Dir.Top, FloatExact.epsilon)
+            .shave(Dir.Bottom, FloatExact.epsilon)
           hasNoOverlaps(shavedRegion)
         }
         .getOrElse(true)
@@ -95,7 +106,11 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
       lazy val noRightOverlaps = prevWindowBounds.withinRegion(combinedWindowBounds)
         .adjacentRegion(Dir.Right)
         .map{ adjacentRegion =>
-          val shavedRegion = adjacentRegion.shave(Dir.Left, FloatExact.epsilon)
+          val shavedRegion = adjacentRegion
+            .shave(Dir.Left, FloatExact.epsilon)
+            .shave(Dir.Top, FloatExact.epsilon)
+            .shave(Dir.Bottom, FloatExact.epsilon)
+
           hasNoOverlaps(shavedRegion)
         }
         .getOrElse(true)
@@ -117,7 +132,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
           val noNonTextOverlaps = hasNoNonTextOverlaps(queryRect)
 
           traceLog.trace {
-            figure(queryRect) tagged s"Expansion Rect noLeftOverlaps=${noLeftOverlaps} && noRightOverlaps=${noRightOverlaps} inOrder=${inOrder} && glyphCountsMatch=${glyphCountsMatch} && noNonTextOverlaps=${noNonTextOverlaps} && consecutive=${consecutive}  ${currLineText}"
+            figure(queryRect) tagged s"Expansion Rect noLeftOverlaps=${noLeftOverlaps} && noRightOverlaps=${noRightOverlaps} inOrder=${inOrderTopToBottom} && glyphCountsMatch=${glyphCountsMatch} && noNonTextOverlaps=${noNonTextOverlaps} && consecutive=${consecutive}  ${currLineText}"
           }
 
           traceLog.trace {
@@ -145,7 +160,7 @@ trait TextBlockGrouping extends PageScopeSegmenter { self =>
 
         } getOrElse { false }
 
-      consecutive && inOrder && glyphAndLineCountsMatch && noLateralOverlaps
+      consecutive && inOrderTopToBottom && glyphAndLineCountsMatch && noLateralOverlaps
     }
 
     traceLog.trace {

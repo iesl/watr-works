@@ -14,6 +14,7 @@ import utils.DoOrDieHandlers._
 import watrmarks._
 import scala.collection.mutable
 
+import utils.{Cursor, Cursors, Window}
 
 case class LabelSpan(
   label: Label,
@@ -37,7 +38,7 @@ object LabelTreeCodecs {
   }
 
 
-  def decodeBioLabels(jsonRep: Json): Seq[TextGrid.PinSet] = {
+  def decodeBioLabels(jsonRep: Json): Seq[LabelTarget.PinSet] = {
     val labelingTrees = jsonRep.decodeOrDie[Seq[LabelingTree]]()
 
     val dummyPageRegion = PageRegion(StablePage(DocumentID("docX"), PageNum(0)), LTBounds.empty)
@@ -63,13 +64,17 @@ object LabelTreeCodecs {
       val len = lt.labelSpan.length
 
       for {
-        gridCursor <- GridCursor.init(inlineBio)
+        gridCursor <- Cursor.init(inlineBio)
         c3         <- gridCursor.move(begin)
       } yield {
         val window = c3.toWindow()
-        val w2 = window.widen(len-1)
-        w2.addLabel(label)
-        w2.closeWindow()
+        val winNext = window.widen(len-1).map{ w2 =>
+          LabeledSequence.addBioLabel(label, w2.cells)
+          w2
+        } getOrElse{
+          window
+        }
+        winNext.closeWindow()
       }
       lt.children.foreach(loop(_))
     }

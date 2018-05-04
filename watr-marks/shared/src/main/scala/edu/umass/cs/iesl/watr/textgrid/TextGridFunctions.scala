@@ -116,8 +116,6 @@ object TextGridFunctions {
       }
     }
 
-    // println(s"spanTreeToJson.toStrictTree")
-    // val strict = spanTree.toStrictTree
     spanTree.scanr(histo).rootLabel.orDie("root node should always have Json")
   }
 

@@ -5,37 +5,6 @@ import scalaz.{@@ => _, _} , Scalaz._
 
 import scala.annotation.tailrec
 
-// @tailrec
-// def loop(maybeCursor: Option[Cursor[A]], acc: List[Seq[A]]): Seq[Seq[A]] = {
-//   maybeCursor match {
-//     case Some(cursor) =>
-//       val window = cursor.toWindow
-//       println(s"loop = C: ${cursor.debugString()}")
-//       println(s"       W: ${window.debugString()}")
-//       window.widen(1) match {
-//         case Some(w2) =>
-//           val group = w2.slurpRight(f)
-//           val acc1 = group.cells :: acc
-//           println(s" widen W: ${w2.debugString()}")
-//           println(s"     Acc: ${acc1}")
-//           loop(group.nextCursor(), acc1)
-
-//         case None =>
-//           val acc1 = window.cells :: acc
-//           println(s" no-widen W: ")
-//           println(s"     Acc: ${acc1}")
-
-//           acc1
-//       }
-
-//     case None =>
-//       println(s" Done.")
-//       println(s"     Acc: ${acc}")
-//       acc
-//   }
-
-// }
-
 object Cursors {
 
   def groupByWindow[A](f: (Seq[A], A) => Boolean, as: Seq[A]): Seq[Seq[A]] = {
@@ -80,9 +49,10 @@ object Cursor {
 }
 
 trait Cursor[A] { self =>
-  def zipper: Zipper[A]
+  protected def zipper: Zipper[A]
 
   def focus: A = zipper.focus
+
 
   def next: Option[Cursor[A]] =
     Cursor.init[A]{ zipper.next }
@@ -96,6 +66,7 @@ trait Cursor[A] { self =>
   def insertRight(g: A): Cursor[A] =
     Cursor.init[A]{ zipper.insertRight(g)}
 
+  def toList(): List[A] = zipper.toList
 
   def atStart: Boolean = zipper.atStart
   def atEnd: Boolean = zipper.atEnd
@@ -123,6 +94,19 @@ trait Cursor[A] { self =>
   def findPrevious(p: A => Boolean): Option[Cursor[A]] = {
     Cursor.init[A]{ zipper.findPrevious(p) }
   }
+
+  @tailrec
+  final def unfold(f: Cursor[A] => Option[Cursor[A]]): Cursor[A]  = {
+    f(self) match {
+      case Some(cmod) => cmod.next match {
+        case Some(cnext) => cnext.unfold(f)
+        case None => cmod
+
+      }
+      case None => self
+    }
+  }
+
 
   def debugString(): String = {
     val ls = zipper.lefts.toList.reverse.mkString(", ")
@@ -154,6 +138,10 @@ sealed trait Window[A] { self =>
 
   def atStart: Boolean = winStart.atStart
   def atEnd: Boolean = winStart.atEnd
+
+  def foreach(f: A => A): Unit = {
+    cells.foreach(f)
+  }
 
   def debugString(): String = {
     val rs = winStart.rights.map(_.toString()).mkString(", ")
@@ -195,8 +183,6 @@ sealed trait Window[A] { self =>
   }
 
   def slurpRight(p: (Seq[A], A) => Boolean): Window[A] = {
-    // println(s"slurpRight(): ${self.debugString()}")
-
     val slurped = rinits(winStart.rights)
       .map{ init =>
         val nextWin = cells ++ init
@@ -211,13 +197,11 @@ sealed trait Window[A] { self =>
       .getOrElse { cells }
 
     Window(slcells, winStart.lefts, winStart.focus, winStart.rights.drop(slurped.length))
-
   }
 
-  def extendRight[B](f: A => A): Window[A] = {
-    val ins = f(winStart.focus)
+  def extendRight(a: => A): Window[A] = {
     Window(
-      cells :+ ins,
+      cells :+ a,
       winStart.lefts, winStart.focus, winStart.rights
     )
 

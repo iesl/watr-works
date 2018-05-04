@@ -14,32 +14,18 @@ trait TextReconstruction extends PageScopeSegmenter
     with LineSegmentation { self =>
 
   lazy val textReconstruction = self
-
-  def constructFinalTextGrid(): TextGrid = {
-    /**
-      *
-      * AsideText
-      * BodyText
-      *   BlockRepr: LB.TextBlock
-      *     LineRepr: CapDescenderBand/region + ordered glyphs
-      *   InsetRepr: InsetMaths|Table|Image
-      *
-      **/
-
-
-    ???
-  }
-
+  // Quick and dirty TextGrid construction
   def getTextGrid(): TextGrid = {
-
     val textLineReprShape = LB.CapDescenderBand
-
     val rows1 = getLabeledShapes(textLineReprShape)
-      .flatMap { baselineShape =>
-        val shapeChars = getCharsForShape(baselineShape).map(_.id.unwrap)
+      .flatMap { reprShape =>
+        val shapeChars = getCharsForShape(reprShape).map(_.id.unwrap)
         if (shapeChars.nonEmpty) {
           val minId  = shapeChars.min
-          val textRow = createTextRowFromVisualLine(baselineShape)
+
+          val textRow = insertSpacesInRow(
+            textRowFromReprShape(reprShape)
+          )
           Some((minId, textRow))
         } else None
       }
@@ -60,18 +46,26 @@ trait TextReconstruction extends PageScopeSegmenter
     TextGrid.fromRows(docScope.stableId,  rows)
   }
 
+  def constructFinalTextGrid(): TextGrid = {
+    /**
+      *
+      * AsideText
+      * BodyText
+      *   BlockRepr: LB.TextBlock
+      *     LineRepr: CapDescenderBand/region + ordered glyphs
+      *   InsetRepr: InsetMaths|Table|Image
+      *
+      **/
 
-  protected def createTextRowFromVisualLine(visualBaseline: AnyShape): TextGrid.Row = {
-    // println(s"createTextRowFromVisualLine")
-    val textRow = textRowFromComponents(visualBaseline)
 
-    val row = insertSpacesInRow(textRow)
-    row
+    ???
   }
 
-  private def textRowFromComponents(visualBaseline: AnyShape): TextGrid.Row = {
 
-    val extractedItems = getExtractedItemsForShape(visualBaseline).sortBy(_.minBBox.left)
+
+  private def textRowFromReprShape(reprShape: AnyShape): TextGrid.Row = {
+
+    val extractedItems = getExtractedItemsForShape(reprShape).sortBy(_.minBBox.left)
 
     new TextGrid.MutableRow { self =>
       val init = extractedItems.map{
@@ -111,46 +105,32 @@ trait TextReconstruction extends PageScopeSegmenter
 
   private def insertSpacesInRow(textRow: TextGrid.Row): TextGrid.Row =  {
 
-      val lineCCs = textRow.cells.collect{
-        case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
-          headItem
-      }
+    val lineCCs = textRow.cells.collect{
+      case cell@ TextGrid.PageItemCell(headItem, tailItems, char, _) =>
+        headItem
+    }
 
-      val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
+    val splitValue = guessWordbreakWhitespaceThreshold(lineCCs)
 
-      val res = textRow.toCursor().map{ cursor =>
-        // println(s"insertSpacesInRow: focus=${cursor.focus.char}")
+    textRow.toCursor().map{ cursor =>
 
-        val finalRow = cursor.unfoldCursorToRow { nextCursor =>
-          // println(s"             : nextCursor=${nextCursor.focus.char}")
+      val lastCursor = cursor.unfold { nextCursor =>
 
-          val wordWin = nextCursor.toWindow.slurpRight{ case (win, cell) =>
-
-            // val winStr = win.map(_.char).mkString
-            // val c = cell.char
-
-            val pairwiseDist = cell.pageRegion.bbox.left - win.last.pageRegion.bbox.right
-            val willGroup = pairwiseDist < splitValue
-            // println(s"             + win=[${winStr}] + ${c}  willGroup=${willGroup}")
-
-
-            willGroup
-          }
-
-          if (!wordWin.atEnd) {
-            wordWin.extendRight(' ').closeWindow.some
-          } else None
-
+        val wordWin = nextCursor.toWindow.slurpRight{ case (win, cell) =>
+          val pairwiseDist = cell.pageRegion.bbox.left - win.last.pageRegion.bbox.right
+          val willGroup = pairwiseDist < splitValue
+          willGroup
         }
 
-        // println(s"             : unfold complete")
+        if (!wordWin.atEnd) {
+          val space = wordWin.cells.last.createInsert(' ')
+          wordWin.extendRight(space).closeWindow.some
+        } else None
+      }
 
+      TextGrid.Row.fromCells(lastCursor.toList)
 
-        finalRow
-
-      } getOrElse { textRow }
-
-    res
+    } getOrElse { textRow }
   }
 
 
@@ -168,7 +148,7 @@ trait TextReconstruction extends PageScopeSegmenter
       val largerSpacings = charSpacings.filter(b => b.centroid.value > mostCommonSpacing*2)
       if (largerSpacings.nonEmpty) {
         val nextCommonSpacing = largerSpacings.head.centroid.value
-        (mostCommonSpacing + nextCommonSpacing) / 2
+          (mostCommonSpacing + nextCommonSpacing) / 2
       } else {
         mostCommonSpacing + 1.0
       }

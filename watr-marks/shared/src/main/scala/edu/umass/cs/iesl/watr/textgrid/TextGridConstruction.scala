@@ -47,14 +47,13 @@ trait TextGridConstruction {
 
   def stringToPageTextGrid(
     stableId: String@@DocumentID,
-    pageBlock: String,
+    initText: String,
     pageNum: Int@@PageNum,
     maybePageId: Option[Int@@PageID]
   ): TextGrid = {
 
-    // val pageId = maybePageId.getOrElse { PageID(pageNum.unwrap) }
     val stablePage = StablePage(stableId, pageNum)
-    val pageLines = linesWithLeftPadding(pageBlock)
+    val pageLines = linesWithLeftPadding(initText)
 
     val rows = for {
       ((lpad, line), linenum)   <- pageLines.zipWithIndex
@@ -85,10 +84,10 @@ trait TextGridConstruction {
         .get.toWindow
         .slurpRight({ case (window, next) => window.length <= end-start })
 
-      win.addLabel(label)
+      LabeledSequence.addBioLabel(label, win.cells)
       win.closeWindow.start
     }
 
-    labeledCursor.toRow
+    TextGrid.Row.fromCells(labeledCursor.toList)
   }
 }
