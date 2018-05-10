@@ -14,19 +14,11 @@ import textboxing.{TextBoxing => TB}, TB._
 import TextGridLabelWidget._
 import LabeledSequenceTreeTransforms._
 
-trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples {
+trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples with LabeledSequenceThings {
 
   def infobox(heading: String, b: TB.Box): Unit = {
     info(heading)
     info("\n" + indent(4, b).toString() + "\n")
-  }
-
-
-  case class Thing(a: Char) extends LabelTarget
-  case class Things(labelTargets: Seq[Thing]) extends LabeledSequence[Thing]
-
-  def unlabeledThings(len: Int): Things = {
-    Things(('a' to 'z').take(len).map(Thing(_)))
   }
 
 }
@@ -94,49 +86,49 @@ class TextGridLabelWidgetTests extends TextGridSpec {
 
   val stableId = DocumentID("")
 
-  "Behavior of Textgrid Widget Creation" - {
+  // "Behavior of Textgrid Widget Creation" - {
 
-    var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+  //   var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
 
 
-    info("Starting with labeled TextGrid")
+  //   info("Starting with labeled TextGrid")
 
-    val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
+  //   val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
 
-    info("\n"+ labeledRow.showRow().toString()+ "\n")
+  //   info("\n"+ labeledRow.showRow().toString()+ "\n")
 
-    info("... and normalized to one leaf label per line")
+  //   info("... and normalized to one leaf label per line")
 
-    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
-    textGrid = textGrid.splitOneLeafLabelPerLine()
-    textGrid = textGrid.split(9, 7).get
+  //   textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+  //   textGrid = textGrid.splitOneLeafLabelPerLine()
+  //   textGrid = textGrid.split(9, 7).get
 
-    info("Split Journal")
-    val gridTextBox = textGrid.toText().mbox
-    info(s"==\n${textGrid.toText()}\n-------------------")
+  //   info("Split Journal")
+  //   val gridTextBox = textGrid.toText().box
+  //   info(s"==\n${textGrid.toText()}\n-------------------")
 
-    val labelTree = textGridToLabelTree(textGrid)
+  //   val labelTree = textGridToLabelTree(textGrid)
 
-    infobox(s"Create a tree structure out of the BIO labels", labelTree.drawBox)
+  //   infobox(s"Create a tree structure out of the BIO labels", labelTree.drawBox)
 
-    val indentedBlock = textGridToIndentedBox(textGrid)
+  //   val indentedBlock = textGridToIndentedBox(textGrid)
 
-    val cMarginals = labelTreeToMarginals(labelTree, compactMarginals=true)
-    val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
+  //   val cMarginals = labelTreeToMarginals(labelTree, compactMarginals=true)
+  //   val expMarginals = labelTreeToMarginals(labelTree, compactMarginals=false)
 
-    val cmarginBlock = marginalGlossToTextBlock(cMarginals)
-    val emarginBlock = marginalGlossToTextBlock(expMarginals)
-    val ltextBlock = cmarginBlock + gridTextBox
+  //   val cmarginBlock = marginalGlossToTextBlock(cMarginals)
+  //   val emarginBlock = marginalGlossToTextBlock(expMarginals)
+  //   val ltextBlock = cmarginBlock + gridTextBox
 
-    val schemaBox = LabelSchemas.labelSchemaToBox(jsonLabelSchema)
+  //   val schemaBox = LabelSchemas.labelSchemaToBox(jsonLabelSchema)
 
-    val expBlock = ((emarginBlock + indentedBlock) atop vspace(2) atop schemaBox)
+  //   val expBlock = ((emarginBlock + indentedBlock) atop vspace(2) atop schemaBox)
 
-    infobox(s"Create compact marginal labels", ltextBlock)
+  //   infobox(s"Create compact marginal labels", ltextBlock)
 
-    infobox(s"Create indented tree-view marginal labels", expBlock)
+  //   infobox(s"Create indented tree-view marginal labels", expBlock)
 
-  }
+  // }
 
   // "Behavior of Textgrid Labeling and Unlabeling" - {
   //   val textGrid = makeBishopClarkTextGrid()

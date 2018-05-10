@@ -1,10 +1,8 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-import watrmarks.{StandardLabels => LB}
 import TypeTags._
 import corpora._
-
 
 trait TextGridBuilder extends TextGridConstruction {
   def docStore: DocumentZoningApi

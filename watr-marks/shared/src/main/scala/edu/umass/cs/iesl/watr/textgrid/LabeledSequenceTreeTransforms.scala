@@ -7,24 +7,26 @@ import _root_.io.circe, circe._, circe.syntax._
 import utils.DoOrDieHandlers._
 import TypeTags._
 
-sealed trait LabelTreeNode
+sealed trait LabelTreeNode[+A <: LabelTarget]
 
 object LabelTreeNode {
 
-  case class CellGroup(
-    cells: List[TextGrid.GridCell],
-    gridRow: Int
-  ) extends LabelTreeNode
+  case class CellGroup[A <: LabelTarget](
+    cells: List[A],
+    beginOffset: Int
+  ) extends LabelTreeNode[A]
 
   case class LabelNode(
     label: Label
-  ) extends LabelTreeNode
+  ) extends LabelTreeNode[Nothing]
 
-  case object RootNode extends LabelTreeNode
+  case object RootNode extends LabelTreeNode[Nothing]
 
-  implicit val ShowLabelTreeNode = Show.shows[LabelTreeNode]{ treeNode =>
+  // cells.map(_.char.toString()).mkString
+  // case LabelTreeNode.CellGroup(cells) => cells.map(_.char.toString()).mkString
+  implicit def ShowLabelTreeNode[A <: LabelTarget](implicit ShowA: Show[A]) = Show.shows[LabelTreeNode[A]]{ treeNode =>
     treeNode match {
-      case LabelTreeNode.CellGroup(cells, gridRow) => cells.map(_.char.toString()).mkString
+      case LabelTreeNode.CellGroup(cells, beginOffset) => cells.map(ShowA.shows(_)).mkString
       case LabelTreeNode.LabelNode(l) => l.fqn
       case LabelTreeNode.RootNode => "()"
     }
@@ -33,27 +35,28 @@ object LabelTreeNode {
 
 object LabeledSequenceTreeTransforms {
 
-  def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[LabelTreeNode] = {
-    textGridToLabelTree(
-      TextGrid.fromCells(DocumentID(""), gridCells)
-    )
-  }
+  // def gridCellsToLabelTree(gridCells: Seq[TextGrid.GridCell]): Tree[LabelTreeNode] = {
+  //   textGridToLabelTree(
+  //     TextGrid.fromCells(DocumentID(""), gridCells)
+  //   )
+  // }
 
-  def textGridToLabelTree(textGrid: TextGrid): Tree[LabelTreeNode] = {
-    val init = Tree.Node[LabelTreeNode](LabelTreeNode.RootNode, Stream.empty)
+  def labeledSequenceToLabelTree[A <: LabelTarget](labeledSequence: LabeledSequence[A]): Tree[LabelTreeNode[A]] = {
+    val init = Tree.Node[LabelTreeNode[A]](LabelTreeNode.RootNode, Stream.empty)
     var currLoc = init.loc
 
     def up(): Unit = {
       currLoc = currLoc.parent.getOrElse(sys.error("no parent found"))
     }
 
-    for { (cell, row, col) <- textGrid.indexedCells() } {
+
+    for { (cell, cellIndex) <- labeledSequence.labelTargets().zipWithIndex } {
       val pinStack = cell.pins.reverse
       val basePins = pinStack.drop(currLoc.parents.length)
 
       basePins.takeWhile(p => p.isBegin || p.isUnit)
         .foreach { pin =>
-          val n = Tree.Node[LabelTreeNode](LabelTreeNode.LabelNode(pin.label), Stream.empty)
+          val n = Tree.Node[LabelTreeNode[A]](LabelTreeNode.LabelNode(pin.label), Stream.empty)
           currLoc = currLoc.insertDownLast(n)
         }
 
@@ -61,20 +64,21 @@ object LabeledSequenceTreeTransforms {
         lastChild <- currLoc.lastChild
       } yield {
         lastChild.getLabel match {
-          case prevCell@ LabelTreeNode.CellGroup(cells, prevRow) if prevRow == row =>
+          case prevCell@ LabelTreeNode.CellGroup(cells, beginIndex) =>
+
             lastChild.modifyLabel { p =>
-              LabelTreeNode.CellGroup(cell :: cells, row): LabelTreeNode
+              LabelTreeNode.CellGroup(cell :: cells, beginIndex): LabelTreeNode[A]
             }
           case _ =>
             currLoc.insertDownLast(
-              Tree.Leaf[LabelTreeNode](LabelTreeNode.CellGroup(List(cell), row))
+              Tree.Leaf[LabelTreeNode[A]](LabelTreeNode.CellGroup(List(cell), cellIndex))
             )
         }
       }
 
       currLoc = maybeAppend.getOrElse {
         currLoc.insertDownLast(
-          Tree.Leaf[LabelTreeNode](LabelTreeNode.CellGroup(List(cell), row))
+          Tree.Leaf[LabelTreeNode[A]](LabelTreeNode.CellGroup(List(cell), cellIndex))
         )
       }
 
@@ -85,12 +89,64 @@ object LabeledSequenceTreeTransforms {
     }
 
 
-    val ret = currLoc.root.toTree.map { n => n match {
-      case LabelTreeNode.CellGroup(cells, row) => LabelTreeNode.CellGroup(cells.reverse, row)
+    currLoc.root.toTree.map { n => n match {
+      case LabelTreeNode.CellGroup(cells, beginIndex) => LabelTreeNode.CellGroup(cells.reverse, beginIndex)
       case n => n
     }}
-    ret
   }
+
+  // def labeledSequenceToLabelTree(textGrid: TextGrid): Tree[LabelTreeNode] = {
+  //   val init = Tree.Node[LabelTreeNode](LabelTreeNode.RootNode, Stream.empty)
+  //   var currLoc = init.loc
+
+  //   def up(): Unit = {
+  //     currLoc = currLoc.parent.getOrElse(sys.error("no parent found"))
+  //   }
+
+  //   for { (cell, row, col) <- textGrid.indexedCells() } {
+  //     val pinStack = cell.pins.reverse
+  //     val basePins = pinStack.drop(currLoc.parents.length)
+
+  //     basePins.takeWhile(p => p.isBegin || p.isUnit)
+  //       .foreach { pin =>
+  //         val n = Tree.Node[LabelTreeNode](LabelTreeNode.LabelNode(pin.label), Stream.empty)
+  //         currLoc = currLoc.insertDownLast(n)
+  //       }
+
+  //     val maybeAppend = for {
+  //       lastChild <- currLoc.lastChild
+  //     } yield {
+  //       lastChild.getLabel match {
+  //         case prevCell@ LabelTreeNode.CellGroup(cells, prevRow) if prevRow == row =>
+  //           lastChild.modifyLabel { p =>
+  //             LabelTreeNode.CellGroup(cell :: cells, row): LabelTreeNode
+  //           }
+  //         case _ =>
+  //           currLoc.insertDownLast(
+  //             Tree.Leaf[LabelTreeNode](LabelTreeNode.CellGroup(List(cell), row))
+  //           )
+  //       }
+  //     }
+
+  //     currLoc = maybeAppend.getOrElse {
+  //       currLoc.insertDownLast(
+  //         Tree.Leaf[LabelTreeNode](LabelTreeNode.CellGroup(List(cell), row))
+  //       )
+  //     }
+
+  //     up()
+
+  //     cell.pins.takeWhile(p => p.isLast || p.isUnit)
+  //       .foreach { _ => up()  }
+  //   }
+
+
+  //   val ret = currLoc.root.toTree.map { n => n match {
+  //     case LabelTreeNode.CellGroup(cells, row) => LabelTreeNode.CellGroup(cells.reverse, row)
+  //     case n => n
+  //   }}
+  //   ret
+  // }
 
 
   type LabeledLines = List[(List[Label], String)]
@@ -143,13 +199,13 @@ object LabeledSequenceTreeTransforms {
     spanTree.scanr(histo).rootLabel.orDie("root node should always have Json")
   }
 
-  def labelTreeToSpanTree(labelTree: Tree[LabelTreeNode]): Tree[Attr] = {
+  def labelTreeToSpanTree[A <: LabelTarget](labelTree: Tree[LabelTreeNode[A]]): Tree[Attr] = {
 
-    def histo(node: LabelTreeNode, children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
+    def histo(node: LabelTreeNode[A], children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
 
       node match {
         case LabelTreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
-        case cells: LabelTreeNode.CellGroup => Tree.Leaf((None, 0, cells.cells.length))
+        case cells: LabelTreeNode.CellGroup[A] => Tree.Leaf((None, 0, cells.cells.length))
         case LabelTreeNode.LabelNode(label) =>
           val shifted = shiftChildren(children, 0)
           val endOffset = shifted.headOption.map(_.rootLabel).map(attrEndIndex).getOrElse(0)
@@ -160,13 +216,13 @@ object LabeledSequenceTreeTransforms {
     labelTree.scanr(histo).rootLabel
   }
 
-  def labelTreeToMarginalSpanTree(labelTree: Tree[LabelTreeNode], compactMarginals: Boolean = true): Tree[Attr] = {
+  def labelTreeToMarginalSpanTree[A <: LabelTarget](labelTree: Tree[LabelTreeNode[A]], compactMarginals: Boolean = true): Tree[Attr] = {
 
-    def histo(node: LabelTreeNode, children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
+    def histo(node: LabelTreeNode[A], children: Stream[Tree[Tree[Attr]]]): Tree[Attr] = {
 
       node match {
         case LabelTreeNode.RootNode         => Tree.Node((None, 0, 0), shiftChildren(children, 0).reverse)
-        case _: LabelTreeNode.CellGroup     => Tree.Leaf((None, 0, 1))
+        case _: LabelTreeNode.CellGroup[A]     => Tree.Leaf((None, 0, 1))
         case LabelTreeNode.LabelNode(label) =>
 
           val initOffset: Int = if (compactMarginals || children.length==1) 0 else 1

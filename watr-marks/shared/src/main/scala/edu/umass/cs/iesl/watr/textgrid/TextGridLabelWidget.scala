@@ -5,6 +5,7 @@ import textboxing.{TextBoxing => TB}, TB._
 import scalaz.{@@ => _, _} // , Scalaz._
 
 import scala.scalajs.js.annotation._
+import scala.annotation.meta.field
 
 import watrmarks._
 import geometry._
@@ -12,20 +13,23 @@ import utils.GraphPaper
 
 
 sealed trait LabeledRowElem {
-  def labels: List[Label]
-  def getRowText: String
+  def labels(): List[Label]
+  def getRowText(): String
 }
 
 object LabeledRowElem {
 
-  case class CellGroupRow(
+  case class CellGroupRow[A <: LabelTarget](
     override val labels: List[Label],
-    cells: Seq[LabelTreeNode.CellGroup],
+    cells: Seq[LabelTreeNode.CellGroup[A]],
     depthMod: Int = 0
-  ) extends LabeledRowElem {
+  )(implicit ShowA: Show[A]) extends LabeledRowElem {
 
-    def getRowText: String =
-      cells.map(_.cells.map(_.char).mkString).mkString
+    val showA = ShowA
+    // def getRowText()(implicit ShowA: Show[A]): String = {
+    def getRowText(): String = {
+      cells.map(_.cells.map(ShowA.shows(_)).mkString).mkString
+    }
 
   }
 
@@ -60,25 +64,23 @@ sealed trait GridRegion  {
   def bounds(): LTBounds
   def classes(): List[String]
 
-  @JSExport val gridBox: GraphPaper.Box = {
+  @JSExport val gridBox: GraphPaper.Box =
     GraphPaper.boundsToBox(bounds)
-  }
 
   @JSExport def isCells(): Boolean = false
-    @JSExport def isHeading(): Boolean = false
-    @JSExport def isLabelCover(): Boolean = false
-    @JSExport def isLabelKey(): Boolean = false
+  @JSExport def isHeading(): Boolean = false
+  @JSExport def isLabelCover(): Boolean = false
+  @JSExport def isLabelKey(): Boolean = false
 
 }
 
-import scala.annotation.meta.field
 
-@JSExportAll
-  @JSExportTopLevel("watr.textgrid.GridRegion")
+@JSExportAll @JSExportTopLevel("watr.textgrid.GridRegion")
 object GridRegion {
 
-  case class Cells(
-    @(JSExport @field) cells: Seq[TextGrid.GridCell],
+  case class Cells[A <: LabelTarget](
+    // @(JSExport @field) cells: Seq[TextGrid.GridCell],
+    @(JSExport @field) cells: Seq[A],
     @(JSExport @field) row: Int,
     @(JSExport @field) override val bounds: LTBounds,
     override val classes: List[String]
@@ -119,7 +121,7 @@ object TextGridLabelWidget {
 
   val Indent: Int = 4
 
-  def labelTreeToMarginals(labelTree: Tree[LabelTreeNode], compactMarginals: Boolean): MarginalGloss = {
+  def labelTreeToMarginals[A <: LabelTarget](labelTree: Tree[LabelTreeNode[A]], compactMarginals: Boolean): MarginalGloss = {
     val tree = labelTreeToMarginalSpanTree(labelTree, compactMarginals)
 
     val columns = tree.levels.toList.map{ level =>
@@ -167,7 +169,12 @@ object TextGridLabelWidget {
     borderLeftRight("|", ":")(hcat(top, colBoxes))
   }
 
-  def labelTreeToGridRegions(labelTree: Tree[LabelTreeNode], labelSchemas: LabelSchemas, originX: Int=0, originY: Int=0): Seq[GridRegion] = {
+  def labelTreeToGridRegions[A <: LabelTarget](
+    labelTree: Tree[LabelTreeNode[A]],
+    labelSchemas: LabelSchemas,
+    originX: Int=0,
+    originY: Int=0
+  ) (implicit ShowA: Show[A]) : Seq[GridRegion] = {
 
     def marginalGlossToGridRegions(marginalLabels: MarginalGloss, x: Int, y: Int): Seq[GridRegion] = {
       val allRegions = marginalLabels.columns.zipWithIndex.map{ case (col, colNum) =>
@@ -197,11 +204,12 @@ object TextGridLabelWidget {
           case LabeledRowElem.CellGroupRow(labels, cells0, depthMod) =>
 
             val cells = cells0.flatMap(_.cells)
-            val rowNums = cells0.map(_.gridRow).toSet
-            if (rowNums.size != 1) {
-              sys.error(s"more than one grid row found in label tree structure")
-            }
-            val rowNum = rowNums.head
+            // val rowNums = cells0.map(_.gridRow).toSet
+            // if (rowNums.size != 1) {
+            //   sys.error(s"more than one grid row found in label tree structure")
+            // }
+            // val rowNum = rowNums.head
+            val rowNum = 1
 
             val classes = labels.map(_.fqn)
 
@@ -235,7 +243,8 @@ object TextGridLabelWidget {
 
     }
 
-    def labelSchemaToGridRegions(s: LabelSchemas, x0: Int, y0: Int): Seq[GridRegion] = {
+    def labelSchemaToGridRegions(s: LabelSchemas, x0: Int, y0: Int)
+        : Seq[GridRegion] = {
 
       def loop(s: LabelSchema, x: Int, y: Int): Seq[GridRegion] = {
         val labelText = s.getAbbrev + ": " + s.label.fqn
@@ -268,11 +277,12 @@ object TextGridLabelWidget {
     gridRegions ++ schemaRegions ++ glossRegions
   }
 
-  def flattenLabelTreeToLines(labelTree: Tree[LabelTreeNode]): List[LabeledRowElem] = {
+  def flattenLabelTreeToLines[A <: LabelTarget : Show](labelTree: Tree[LabelTreeNode[A]])
+      : List[LabeledRowElem] = {
 
-    def histo(node: LabelTreeNode, children: Stream[Tree[LabeledRows]]): List[LabeledRowElem] = {
+    def histo(node: LabelTreeNode[A], children: Stream[Tree[LabeledRows]]): List[LabeledRowElem] = {
       node match {
-        case n: LabelTreeNode.CellGroup =>
+        case n: LabelTreeNode.CellGroup[A] =>
           List(LabeledRowElem.CellGroupRow(List(), List(n)))
 
         case LabelTreeNode.RootNode =>
@@ -283,7 +293,7 @@ object TextGridLabelWidget {
 
           val headerList = childRowElems.collect{
             case r @ LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
-              cells.map(_.cells.map(_.char).mkString).mkString
+              r.getRowText()
           }
 
           val localText = headerList.mkString
@@ -292,19 +302,19 @@ object TextGridLabelWidget {
 
           val updatedChildren:List[LabeledRowElem] = childRowElems.map{ _ match {
             case r @ LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
-              r.copy(labels = label+:labels)
+              r.copy(labels = label+:labels)(r.showA)
 
             case r @ LabeledRowElem.HeadingRow(labels, heading) =>
               r.copy(labels = label+:labels)
           }}
 
           val shouldShiftFirstChild = updatedChildren.headOption.exists { firstChild =>
-            firstChild.isInstanceOf[LabeledRowElem.CellGroupRow] && firstChild.getRowText == localText
+            firstChild.isInstanceOf[LabeledRowElem.CellGroupRow[_]] && firstChild.getRowText == localText
           }
 
           val shiftedChildren = if (shouldShiftFirstChild) {
             updatedChildren.headOption.map{head =>
-              head.asInstanceOf[LabeledRowElem.CellGroupRow].copy(
+              head.asInstanceOf[LabeledRowElem.CellGroupRow[A]].copy(
                 depthMod = -1
               ) :: updatedChildren.tail
             } getOrElse { updatedChildren }
@@ -325,36 +335,36 @@ object TextGridLabelWidget {
     labelTree.scanr(histo).rootLabel
   }
 
-  def textGridToIndentedBox(textGrid: TextGrid): TB.Box = {
-    val labelTree = textGridToLabelTree(textGrid)
+  // def textGridToIndentedBox(textGrid: TextGrid): TB.Box = {
+  //   val labelTree = textGridToLabelTree(textGrid)
 
-    val lls = flattenLabelTreeToLines(labelTree)
+  //   val lls = flattenLabelTreeToLines(labelTree)
 
-    val dbg = lls.map { _ match {
-      case LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
-        val text = cells.map(_.cells.map(_.char).mkString).mkString
-        val depth = Indent * (labels.length+1+depthMod)
-        (
-          labels.map(_.fqn).mkString(", "),
-          indent(
-            depth,
-            s"${text}"
-          )
-        )
-      case LabeledRowElem.HeadingRow(labels, heading) =>
-        val text = heading
-        val depth = Indent * labels.length
-        (
-          labels.map(_.fqn).mkString(", "),
-          indent(
-            depth,
-            s"▸ ${text}"
-          )
-        )
-    }}
+  //   val dbg = lls.map { _ match {
+  //     case LabeledRowElem.CellGroupRow(labels, cells, depthMod) =>
+  //       val text = cells.map(_.cells.map(_.char).mkString).mkString
+  //       val depth = Indent * (labels.length+1+depthMod)
+  //       (
+  //         labels.map(_.fqn).mkString(", "),
+  //         indent(
+  //           depth,
+  //           s"${text}"
+  //         )
+  //       )
+  //     case LabeledRowElem.HeadingRow(labels, heading) =>
+  //       val text = heading
+  //       val depth = Indent * labels.length
+  //       (
+  //         labels.map(_.fqn).mkString(", "),
+  //         indent(
+  //           depth,
+  //           s"▸ ${text}"
+  //         )
+  //       )
+  //   }}
 
-    vjoins(left, dbg.map(_._2))
-  }
+  //   vjoins(left, dbg.map(_._2))
+  // }
 
 
 

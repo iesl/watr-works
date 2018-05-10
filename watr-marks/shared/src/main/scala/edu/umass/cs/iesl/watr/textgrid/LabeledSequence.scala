@@ -7,9 +7,10 @@ import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
 
 import scala.scalajs.js.annotation._
-import utils.{Cursor, Cursors, Window}
-
+import utils.Cursor
 import utils.DoOrDieHandlers._
+
+import scalaz._
 
 
 object LabelTarget {
@@ -19,7 +20,6 @@ object LabelTarget {
 
   def apply[A](a: A): LabelTarget = new LabelTarget {
     val value = a;
-
   }
 
 }
@@ -36,10 +36,8 @@ trait LabelTarget {
   def addLabel(l: Label): Unit = addPin(l.U)
 
   def removeLabel(l: Label): Unit = {
-    if (hasLabel(l)) {
-      while(hasLabel(l)) {
-        pins.pop()
-      }
+    while(hasLabel(l)) {
+      pins.pop()
     }
   }
 
@@ -66,9 +64,27 @@ trait LabelTarget {
   def showPinsVert(): Box = {
     vjoins(left, pins.toList.reverse.map(_.pinChar.toString.box))
   }
+
+  def findPin(l: Label): Option[(BioPin, Int)] = {
+    val pinIndex = pins.indexWhere(_.label == l)
+    if (pinIndex > -1) Some( (pins(pinIndex), pinIndex) )
+    else None
+  }
+
+  // TODO abstract as PinSet.===
+  private def hasSameLabels(cell2: LabelTarget): Boolean = {
+    val pins2 = cell2.pins
+    pins.length == pins2.length && {
+      pins.zip(pins2).map{ case (p1, p2) =>
+        p1.label == p2.label
+      } forall (b => b)
+    }
+  }
+
 }
 
 object LabeledSequence {
+
   def addBioLabel(label: Label, cells: Seq[LabelTarget]): Unit = {
     if (cells.length==1) {
       cells.foreach(_.addPin(label.U))
@@ -80,6 +96,7 @@ object LabeledSequence {
       )
     }
   }
+
 }
 
 trait LabeledSequence[A <: LabelTarget] {
@@ -90,13 +107,16 @@ trait LabeledSequence[A <: LabelTarget] {
     Cursor.init(labelTargets().toList.toZipper)
   }
 
-  def addBioLabel(label: Label): Unit = {
-    val rowC = this.toCursor.get
-    val win = rowC.toWindow.slurpRight{ case (window, next) =>
-      window.length <= labelTargets().length
-    }
+  def addBioLabel(label: Label, begin: Int=0, len: Int = Int.MaxValue): Unit = {
+    for {
+      cinit <- toCursor()
+      cbegin <- cinit.move(begin)
+    } {
+      val win = cbegin.toWindow()
+        .slurpRight { case (wincurr, _) => wincurr.length < len }
 
-    LabeledSequence.addBioLabel(label, win.cells)
+      LabeledSequence.addBioLabel(label, win.cells)
+    }
   }
 
 
@@ -109,61 +129,44 @@ trait LabeledSequence[A <: LabelTarget] {
   }
 
 
-  private def haveSameLabels(cell1: A, cell2: A): Boolean = {
-    val p1s = cell1.pins
-    val p2s = cell2.pins
-    p1s.length == p2s.length && {
-      p1s.zip(p2s).map{ case (p1, p2) =>
-        p1.label == p2.label
-      } forall (b => b)
-    }
-  }
 
   def get(offset: Int): Option[A] = {
     if (0 <= offset && offset < labelTargets().length) {
       Some(labelTargets()(offset))
     } else None
   }
-
   // Find the span of grid cells that have the same labeling as the cell at offset
 
-  def findIdenticallyLabeledSiblings(offset: Int): Option[Seq[(A, Int, Int)]] = {
-    // get(offset).map { cell =>
+  def findIdenticallyLabeledSiblings(offset: Int): Option[(Int, Seq[A])] = {
+    for {
+      cell    <- get(offset)
+      extents <- cell.labels.headOption match {
+        case Some(label) => findLabelExtents(offset, label)
+        case None        => findUnlabeledExtents(offset)
+      }
+    } yield extents
+  }
 
-    //   cell.labels.headOption.map { label =>
-    //     val extents = findLabelExtents(offset, label).orDie("illegal state in label extents")
-    //     val (pre, post) =  extents.span { case cell => rw!=row && cl!=col }
-    //     val postIdenticals = post.takeWhile{ case (cell, rw, cl) =>
-    //       haveSameLabels(cell, cell)
-    //     }
 
-    //     val preIdenticals = pre.reverse.takeWhile{ case (cell, _, _) =>
-    //       haveSameLabels(cell, cell)
-    //     }
+  def findUnlabeledExtents(offset: Int): Option[(Int, Seq[A])] = {
+    for {
+      zip                  <- labelTargets().toList.toZipper
+      atRowColZ            <- zip.move(offset)
+    } yield {
+      val focusCell = atRowColZ.focus
+      val rights = atRowColZ.rights.takeWhile(_.pins.isEmpty)
+      val lefts = atRowColZ.lefts.takeWhile(_.pins.isEmpty)
 
-    //     preIdenticals.reverse ++ postIdenticals
-
-    //   } getOrElse {
-    //     // find span of unlabeled siblings
-    //     val (pre, post) = indexedCells().span { case (cell, rw, cl) => cell != cell }
-    //     val postIdenticals = post.takeWhile{ case (cell, rw, cl) =>
-    //       cell.pins.isEmpty
-    //     }
-
-    //     val preIdenticals = pre.reverse.takeWhile{ case (cell, _, _) =>
-    //       cell.pins.isEmpty
-    //     }
-
-    //     preIdenticals.reverse ++ postIdenticals
-    //   }
-    // }
-    ???
+      val start = offset - lefts.length
+      val labelEnd = offset + rights.length
+      val seq = lefts.reverse ++ (focusCell +: rights)
+      (start, seq)
+    }
   }
 
 
   // Find the range of cells that overlap with cell at offset and that have the given label
   def findLabelExtents(offset: Int, label: Label): Option[(Int, Seq[A])] = {
-    import scalaz._
 
     def findLabelEnd(zip: Zipper[A]): Zipper[A] = {
       zip.findNext{ cell =>
@@ -181,11 +184,10 @@ trait LabeledSequence[A <: LabelTarget] {
     }
 
     for {
-      zip <- labelTargets().toList.toZipper
-      // atRowColZ <- zip.findZ{ case (cell, crow, ccol) => crow==row && ccol==col }
-      atRowColZ <- zip.move(offset)
+      zip                  <- labelTargets().toList.toZipper
+      atRowColZ            <- zip.move(offset)
 
-      focusCell = atRowColZ.focus
+      focusCell             = atRowColZ.focus
       (focusPin, pinIndex) <- findPin(focusCell, label)
 
       (beginZ, endZ) = {
@@ -193,7 +195,7 @@ trait LabeledSequence[A <: LabelTarget] {
         else if (focusPin.isInside)  (findLabelBegin(atRowColZ), findLabelEnd(atRowColZ))
         else if (focusPin.isLast)    (findLabelBegin(atRowColZ), atRowColZ)
         else if (focusPin.isUnit)    (atRowColZ, atRowColZ)
-        else                         sys.error("findLabelExtents: unknown pin type")
+        else                         sys.error(s"findLabelExtents: unknown pin type: ${focusPin}")
       }
     } yield {
       val labelStart = beginZ.lefts.length

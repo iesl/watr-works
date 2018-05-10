@@ -109,9 +109,17 @@ object TextBoxing extends ToListOps with ToIdOps {
   }
 
 
+  implicit def charToBox(c: Char): Box = {
+    tbox(c.toString)
+  }
+
+  implicit class CharToBox(val theChar: Char) extends AnyVal {
+    def box: Box = charToBox(theChar)
+  }
+
   implicit class BoxingConstructors(val theString: String) extends AnyVal {
-    def box: Box = tbox(theString)
-    def mbox: Box = unrenderString(theString)
+    // def box: Box = tbox(theString)
+    def box: Box = unrenderString(theString)
 
     def padCentered(width: Int, centerIndex: Int): String = {
       val trim = theString.trim()
@@ -131,19 +139,16 @@ object TextBoxing extends ToListOps with ToIdOps {
     def hangIndent(b: Box): Box = {
       theString.box atop indent(4, b)
     }
-
   }
 
 
   // Given a string, split it back into a box
-  def unrenderString(s:String): Box =
+  def unrenderString(s: String): Box =
     linesToBox(s.split("\n"))
 
   // Given a list of strings, create a box
-  def linesToBox(lines: Seq[String]): Box = {
-    vjoin( (lines map (tbox(_))):_* )
-  }
-
+  def linesToBox(lines: Seq[String]): Box =
+    vjoins( lines.map(tbox(_)) )
 
 
   case class RowSpec(
@@ -686,7 +691,7 @@ object TextBoxing extends ToListOps with ToIdOps {
 //          |    }
 //          |  }
 //          |</svg:style>
-//          | """.stripMargin.mbox
+//          | """.stripMargin.box
 //     }
 
 //     println(animationStyle.toString())

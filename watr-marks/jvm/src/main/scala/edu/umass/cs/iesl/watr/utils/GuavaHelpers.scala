@@ -85,7 +85,7 @@ object GuavaHelpers {
     // val filledGrid =
     //   rows.zip(rowLabels).zip(rightMarginals)
     //     .foldLeft(grid){ case (accGrid, ((row, rowLabel), rightMarginal)) =>
-    //       val colBoxes = row.map(c => c.toString().mbox).toList.intersperse(" ┆ ".box)
+    //       val colBoxes = row.map(c => c.toString().box).toList.intersperse(" ┆ ".box)
     //       accGrid.addRow((rowLabel:: " ┃ ".box :: (colBoxes :+ rightMarginal)):_*)
     //     }
 

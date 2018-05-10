@@ -92,7 +92,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
           drawBoxDouble(g, bbox1)
           drawBox(g, bbox2)
           drawBoxBold(g, adjacent)
-          g.asMonocolorString().mbox
+          g.asMonocolorString().box
         }
 
         val adjs = burstRegions.map{ r =>
@@ -127,7 +127,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
       drawBoxDouble(g, outer)
       drawBox(g, inner)
       drawBoxBold(g, adjacent)
-      g.asMonocolorString().mbox
+      g.asMonocolorString().box
     }
 
     {
@@ -215,7 +215,7 @@ class RectangularCutTests  extends FlatSpec with Matchers {
       drawBoxDouble(g, outer)
       drawBox(g, inner)
       drawBoxBold(g, adjacent)
-      g.asMonocolorString().mbox
+      g.asMonocolorString().box
     }
 
     {

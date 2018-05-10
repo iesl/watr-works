@@ -456,7 +456,7 @@
 //             | Sane Dists     = ${saneCharDists.map(_.pp).mkString(", ")}
 //             | Widest Char    = ${widestChar.pp}
 //             | Threshold      = ${threshold.pp}
-//             |""".stripMargin.mbox
+//             |""".stripMargin.box
 //       }
 
 //       threshold

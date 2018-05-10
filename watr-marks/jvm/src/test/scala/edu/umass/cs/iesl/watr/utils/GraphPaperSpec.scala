@@ -14,7 +14,7 @@ class GraphPaperSpec extends FlatSpec with Matchers {
     val asString = graphPaper.asMonocolorString()
     val lens = asString.split("\n").map(_.length()).toList// .mkString(", ")
     println("lens: " + lens)
-    graphPaper.asMonocolorString().mbox
+    graphPaper.asMonocolorString().box
   }
 
   it should "draw non-empty rectangles" in {
@@ -33,7 +33,7 @@ class GraphPaperSpec extends FlatSpec with Matchers {
       // val lens = asString.split("\n").map(_.length()).mkString(", ")
       // println("lens: " + lens)
       vjoin(center1,
-        graphPaper.asMonocolorString().mbox,
+        graphPaper.asMonocolorString().box,
         s"[o:(${x}, ${y}), w:${w}, h:${h}]".box
       )
     }

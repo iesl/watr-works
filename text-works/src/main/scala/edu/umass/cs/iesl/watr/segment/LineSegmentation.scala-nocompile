@@ -333,7 +333,7 @@ package segment
 //             | Sane Dists      = ${saneCharDists.map(_.pp).mkString(", ")}
 //             | Wide/Nar/Avg Ch = ${widestChar.pp}/${narrowestChar.pp}/${avgCharWidth.pp}
 //             | Split threshold = ${threshold.pp}
-//             |""".stripMargin.mbox
+//             |""".stripMargin.box
 //       )
 //     }
 

@@ -3,9 +3,9 @@ package utils
 
 sealed trait RelativeDirection
 
+sealed trait Orientation
+
 object RelativeDirection {
-  case object Left        extends RelativeDirection
-  case object Right       extends RelativeDirection
   case object Top         extends RelativeDirection
   case object Bottom      extends RelativeDirection
   case object TopLeft     extends RelativeDirection
@@ -13,6 +13,12 @@ object RelativeDirection {
   case object BottomLeft  extends RelativeDirection
   case object BottomRight extends RelativeDirection
   case object Center      extends RelativeDirection
+
+  case object Left        extends RelativeDirection with Orientation
+  case object Right       extends RelativeDirection with Orientation
+
+  case object Up          extends Orientation
+  case object Down        extends Orientation
 
   val AllAdjacent: List[RelativeDirection] = List(
     Left        ,
@@ -27,3 +33,11 @@ object RelativeDirection {
 
   val All: List[RelativeDirection] = Center :: AllAdjacent
 }
+
+
+// object Orientation {
+//   case object Left       extends Orientation
+//   case object Right      extends Orientation
+//   case object Up         extends Orientation
+//   case object Down       extends Orientation
+// }

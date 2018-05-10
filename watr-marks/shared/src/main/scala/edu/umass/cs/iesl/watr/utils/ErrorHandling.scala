@@ -62,7 +62,7 @@ object DoOrDieHandlers {
       srcLine: sourcecode.Line
     ): T = {
       CirceParser.parse(self) match {
-        case Left(failure) => die(s"Invalid JSON String: ${failure}, string was ${self}")
+        case Left(failure) => die(s"Invalid JSON String: (${msg}) ${failure}, string was ${self}")
         case Right(json) =>
           json.decodeOrDie[T]()
       }

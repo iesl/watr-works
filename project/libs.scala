@@ -3,7 +3,7 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.21"
+  val scalazVersion       = "7.2.22"
   val scalaTagsVersion    = "0.6.7"
   val scalatestVersion    = "3.0.5"
   val logbackVersion      = "1.7.25"
@@ -36,7 +36,6 @@ object PluginLibs {
     "com.47deg"            % "sbt-microsites"      % "0.7.4"
   )
 }
-
 object LibVersions extends LibVersions
 
 object TestLibs extends LibVersions {
@@ -45,8 +44,9 @@ object TestLibs extends LibVersions {
   )
 
   val scalacheck = Seq(
-    "org.scalaz"     %% "scalaz-scalacheck-binding" % scalazVersion  % "test",
-    "org.scalacheck" %% "scalacheck"                % "1.13.5"       % "test" //  force()
+    // "org.scalaz"     %% "scalaz-scalacheck-binding" % scalazVersion  % "test",
+    "org.scalaz"        %% "scalaz-scalacheck-binding" % "7.2.22-scalacheck-1.14" % Test,
+    "org.scalacheck" %% "scalacheck"                % "1.14.0"       % "test" //  force()
   )
 
   val testAndCheck = scalatest ++ scalacheck

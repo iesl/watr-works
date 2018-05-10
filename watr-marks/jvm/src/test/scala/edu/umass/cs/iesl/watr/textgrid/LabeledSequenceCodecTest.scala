@@ -1,0 +1,107 @@
+package edu.umass.cs.iesl.watr
+package textgrid
+
+import org.scalacheck._
+import org.scalacheck.Gen
+import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Prop._
+
+import scalaz.{@@ => _, _}, Scalaz._
+import scalaz.scalacheck.ScalaCheckBinding._
+
+
+import geometry._
+import geometry.syntax._
+
+import _root_.io.circe
+import circe.syntax._
+
+// import LabeledSequenceTreeTransforms._
+import utils.DoOrDieHandlers._
+import LabeledSequenceCodecs._
+// import TextGridLabelWidget._
+// import textboxing.{TextBoxing => TB}, TB._
+import LabeledSequencePrinting._
+
+
+object ArbitraryStuff extends LabeledSequenceThings {
+  import Arbitrary._
+
+  implicit def arbitraryList[A](implicit a: Arbitrary[A]): Arbitrary[List[A]] =
+    Arbitrary(listOf(arbitrary[A]))
+
+  def listOf[A](g : => Gen[A]) : Gen[List[A]] =
+    Gen.listOf(g).map(_.foldRight(List.empty[A])(_ :: _))
+
+  val genThing = for {
+    c <- arbitrary[Char]
+  } yield Thing(c)
+
+
+  def genThings(): Gen[LabeledSequence[Thing]] = for {
+    i <- Gen.choose(0, 20)
+    l <- listOf[Thing](genThing)
+  } yield Things(l)
+
+  implicit lazy val arbitraryLabeledSequence: Arbitrary[LabeledSequence[Thing]] = {
+    Arbitrary(genThings())
+  }
+
+  def showFailed[A: Equal](a1: A, a2: A): Unit = {
+    if (a1 =/= a2) {
+      println("mismatch, a1: ")
+      println(a1)
+      println("a2: ")
+      println(a2)
+    }
+  }
+
+
+  implicit def arbLTBounds: Arbitrary[LTBounds] = {
+    (arbDouble |@| arbDouble |@| arbDouble |@| arbDouble)(
+      LTBounds.Doubles.apply
+    )
+  }
+}
+
+
+object LabeledSequenceCodecChecks extends Properties("LabeledSequenceCodecChecks") with LabeledSequenceThings {
+  import ArbitraryStuff._
+  import GeometryCodecs._
+
+  property("json <--> LTBounds") = forAll{ (example: LTBounds) =>
+    example.asJson.decodeOrDie[LTBounds]() === example
+  }
+
+
+  property("json <--> LabeledSequence") = forAll{ (labeledSequence: LabeledSequence[Thing]) =>
+    true
+  }
+
+}
+
+class LabeledSequenceCodecTest extends LabeledSequenceTestBasics {
+
+
+  "Behavior of labeled sequence serialization to/from Json" in {
+
+    val thingCount = 10
+    val things = unlabeledThings(thingCount)
+
+    things.addBioLabel(Journal)
+    things.addBioLabel(Author)
+    things.addBioLabel(FirstName, 0, 3)
+    things.addBioLabel(MiddleName, 4, 1)
+    things.addBioLabel(LastName, 6, 3)
+    val encodedJson = encodeBioLabels(things)
+
+    println(encodedJson)
+    val things2 = unlabeledThings(thingCount)
+    decodeAndApplyBioLabels(encodedJson, things2)
+    println(things2)
+    println(labeledSequenceBoxFormat(things2))
+
+    labeledSequenceBoxFormat(things) === labeledSequenceBoxFormat(things2)
+  }
+}

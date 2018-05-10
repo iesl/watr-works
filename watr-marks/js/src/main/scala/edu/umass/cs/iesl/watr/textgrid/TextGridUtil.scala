@@ -95,7 +95,7 @@ object TextGridInterop {
 
   @JSExportTopLevel("watr.textgrid.TextGridInterop.textGrids")
   object textGrids {
-    import LabeledSequenceTreeTransforms._
+    // import LabeledSequenceTreeTransforms._
 
     @JSExport
     def textGridToWidgetGrid(
@@ -175,139 +175,137 @@ object TextGridConstructor {
 @JSExportTopLevel("watr.textgrid.TextGridConstructor")
 class TextGridConstructor() extends TextGridConstruction {
 
-
-
   def makeTextGrid(stableId: String, pageNum: Int, pageStr: String): TextGrid = {
     stringToPageTextGrid(DocumentID(stableId), pageStr, PageNum(pageNum), None)
   }
 
-  val Authors = Label.auto
-  val Author = Label.auto
-  val FirstName = Label.auto
-  val MiddleName = Label.auto
-  val LastName = Label.auto
-  val Journal = Label.auto
-  val RefMarker = Label.auto
-  val RefNumber = Label.auto
+  // val Authors = Label.auto
+  // val Author = Label.auto
+  // val FirstName = Label.auto
+  // val MiddleName = Label.auto
+  // val LastName = Label.auto
+  // val Journal = Label.auto
+  // val RefMarker = Label.auto
+  // val RefNumber = Label.auto
 
-  val stableId = DocumentID("docXX")
+  // val stableId = DocumentID("docXX")
 
-  @JSExport
-  def getTestTextGridLarge(): TextGrid = {
-    val loremIpsum = """Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur? """
-    val labelSpans = List(
-      ((0, 100),   RefMarker),
-      ((0, 50),   RefNumber),
-      ((50, 60),   RefNumber),
-      ((100, 120),  Authors),
-      ((100, 110),  Author),
-      ((120, 130),  Authors),
-      ((120, 125),  Author),
-      ((130, 190),  Authors),
-      ((200, 400),  Authors),
-      ((200, 300),  Author),
-      ((300, 400),  Author),
-      ((400, 600),  Authors),
-      ((600, 820),  Authors)
-    )
+  // @JSExport
+  // def getTestTextGridLarge(): TextGrid = {
+  //   val loremIpsum = """Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur? """
+  //   val labelSpans = List(
+  //     ((0, 100),   RefMarker),
+  //     ((0, 50),   RefNumber),
+  //     ((50, 60),   RefNumber),
+  //     ((100, 120),  Authors),
+  //     ((100, 110),  Author),
+  //     ((120, 130),  Authors),
+  //     ((120, 125),  Author),
+  //     ((130, 190),  Authors),
+  //     ((200, 400),  Authors),
+  //     ((200, 300),  Author),
+  //     ((300, 400),  Author),
+  //     ((400, 600),  Authors),
+  //     ((600, 820),  Authors)
+  //   )
 
-    // val ls2 = labelSpans.map{case ((b, e), l) => ((b+820, e+820), l) }
+  //   // val ls2 = labelSpans.map{case ((b, e), l) => ((b+820, e+820), l) }
 
-    val ls = labelSpans //  ++ ls2
-    var textGrid = stringToPageTextGrid(stableId, loremIpsum,  PageNum(1), None)
-    val labeledRow = addLabelsToGridRow(textGrid.rows.head, ls)
-    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
-    textGrid = textGrid.splitOneLeafLabelPerLine()
-    textGrid
-  }
+  //   val ls = labelSpans //  ++ ls2
+  //   var textGrid = stringToPageTextGrid(stableId, loremIpsum,  PageNum(1), None)
+  //   val labeledRow = addLabelsToGridRow(textGrid.rows.head, ls)
+  //   textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+  //   textGrid = textGrid.splitOneLeafLabelPerLine()
+  //   textGrid
+  // }
 
-  @JSExport
-  def getTestTextGrid(): TextGrid = {
-    val labelSpans = List(
-      ((0, 1),   RefMarker),
-      ((0, 0),   RefNumber),
-      ((3, 33),  Authors),
-      ((3, 17),  Author),
-      ((3, 14),  LastName),
-      ((17, 17), FirstName),
-      ((24, 33), Author),
-      ((36, 48), Journal)
-    )
-    val unlabeledText = {
-      //"0         1         2         3         4         5
-      // 012345678901234567890123456789012345678901234567899 """
-      """1. Bishop-Clark, C  and Wheeler, D; S.Eng. P-Hall"""
+  // @JSExport
+  // def getTestTextGrid(): TextGrid = {
+  //   val labelSpans = List(
+  //     ((0, 1),   RefMarker),
+  //     ((0, 0),   RefNumber),
+  //     ((3, 33),  Authors),
+  //     ((3, 17),  Author),
+  //     ((3, 14),  LastName),
+  //     ((17, 17), FirstName),
+  //     ((24, 33), Author),
+  //     ((36, 48), Journal)
+  //   )
+  //   val unlabeledText = {
+  //     //"0         1         2         3         4         5
+  //     // 012345678901234567890123456789012345678901234567899 """
+  //     """1. Bishop-Clark, C  and Wheeler, D; S.Eng. P-Hall"""
 
-    }
-    var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
-    val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
-    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
-    textGrid = textGrid.splitOneLeafLabelPerLine()
-    textGrid = textGrid.split(9, 7).get
+  //   }
+  //   var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+  //   val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
+  //   textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+  //   textGrid = textGrid.splitOneLeafLabelPerLine()
+  //   textGrid = textGrid.split(9, 7).get
 
-    // val allRows = (0 to 10).flatMap{_ => textGrid.rows }
-    // TextGrid.fromRows(stableId, allRows)
+  //   // val allRows = (0 to 10).flatMap{_ => textGrid.rows }
+  //   // TextGrid.fromRows(stableId, allRows)
 
-    textGrid
-  }
+  //   textGrid
+  // }
 
-  @JSExport
-  def getSampleTextGrid1(): TextGrid = {
-    val labelSpans = List(
-      ((0, 1),   RefMarker),
-      ((0, 0),   RefNumber),
-      // ((3, 33),  Authors),
-      // ((3, 17),  Author),
-      // ((3, 14),  LastName),
-      // ((17, 17), FirstName),
-      // ((24, 33), Author),
-      // ((36, 48), Journal)
-    )
-    val unlabeledText = {
-      //"0         1         2         3         4         5
-      // 012345678901234567890123456789012345678901234567899 """
-      """1. """
+  // @JSExport
+  // def getSampleTextGrid1(): TextGrid = {
+  //   val labelSpans = List(
+  //     ((0, 1),   RefMarker),
+  //     ((0, 0),   RefNumber),
+  //     // ((3, 33),  Authors),
+  //     // ((3, 17),  Author),
+  //     // ((3, 14),  LastName),
+  //     // ((17, 17), FirstName),
+  //     // ((24, 33), Author),
+  //     // ((36, 48), Journal)
+  //   )
+  //   val unlabeledText = {
+  //     //"0         1         2         3         4         5
+  //     // 012345678901234567890123456789012345678901234567899 """
+  //     """1. """
 
-    }
-    var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
-    val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
-    textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
-    textGrid = textGrid.splitOneLeafLabelPerLine()
+  //   }
+  //   var textGrid = stringToPageTextGrid(stableId, unlabeledText,  PageNum(1), None)
+  //   val labeledRow = addLabelsToGridRow(textGrid.rows.head, labelSpans)
+  //   textGrid = TextGrid.fromRows(stableId, Seq(labeledRow))
+  //   textGrid = textGrid.splitOneLeafLabelPerLine()
 
-    textGrid
-  }
+  //   textGrid
+  // }
 
-  @JSExport
-  def getTestLabelSchema(): LabelSchemas = {
+  // @JSExport
+  // def getTestLabelSchema(): LabelSchemas = {
 
-    val authorNameSchema = LabelSchema(
-      Author, Some(('a', 'u')), None, List(
-        LabelSchema(FirstName),
-        LabelSchema(MiddleName),
-        LabelSchema(LastName))
-    )
+  //   val authorNameSchema = LabelSchema(
+  //     Author, Some(('a', 'u')), None, List(
+  //       LabelSchema(FirstName),
+  //       LabelSchema(MiddleName),
+  //       LabelSchema(LastName))
+  //   )
 
-    val authorListSchema = LabelSchema(
-      Authors, Some(('a', 's')), None, List(
-        authorNameSchema)
-    )
+  //   val authorListSchema = LabelSchema(
+  //     Authors, Some(('a', 's')), None, List(
+  //       authorNameSchema)
+  //   )
 
-    val refMarkerSchema = LabelSchema(
-      RefMarker, None, None, List(
-        LabelSchema(RefNumber))
-    )
-    val journalSchema = LabelSchema(
-      Journal, None
-    )
+  //   val refMarkerSchema = LabelSchema(
+  //     RefMarker, None, None, List(
+  //       LabelSchema(RefNumber))
+  //   )
+  //   val journalSchema = LabelSchema(
+  //     Journal, None
+  //   )
 
-    LabelSchemas(
-      LabelSchemaName("TestLabelSchema"),
-      List(
-        authorListSchema,
-        refMarkerSchema, journalSchema
-      )
-    )
-  }
+  //   LabelSchemas(
+  //     LabelSchemaName("TestLabelSchema"),
+  //     List(
+  //       authorListSchema,
+  //       refMarkerSchema, journalSchema
+  //     )
+  //   )
+  // }
 
 
 }

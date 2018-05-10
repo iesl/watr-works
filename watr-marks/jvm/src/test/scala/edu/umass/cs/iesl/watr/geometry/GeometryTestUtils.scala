@@ -3,20 +3,9 @@ package geometry
 
 import org.scalatest._
 
-import org.scalacheck._
 import scalaz._, Scalaz._
-import scalaz.scalacheck.ScalaCheckBinding._
-import Arbitrary._
 import utils.ExactFloats._
 
-trait ArbitraryGeometries {
-
-  implicit def arbLTBounds: Arbitrary[LTBounds] = {
-    (arbDouble |@| arbDouble |@| arbDouble |@| arbDouble)(
-      LTBounds.Doubles.apply
-    )
-  }
-}
 
 object GeometryTestUtils extends FlatSpec {
   import utils.AsciiGraphPaper

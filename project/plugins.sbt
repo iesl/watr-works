@@ -1,5 +1,5 @@
 resolvers += "IESL Public Releases" at "https://dev-iesl.cs.umass.edu/nexus/content/groups/public"
-resolvers += "Artima Maven Repository" at "http://repo.artima.com/releases"
+// resolvers += "Artima Maven Repository" at "http://repo.artima.com/releases"
 
 logLevel := Level.Warn
 
