@@ -99,7 +99,7 @@ trait TextReconstruction extends PageScopeSegmenter
           Seq()
       }
 
-      cells.appendAll(init.flatten)
+      labelTargets.appendAll(init.flatten)
     }
   }
 

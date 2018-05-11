@@ -1,6 +1,8 @@
 package edu.umass.cs.iesl.watr
 package table
 
+import scalaz.{@@ => _, _} // , Scalaz._
+
 import corpora._
 import utils.DoOrDieHandlers._
 import _root_.io.circe, circe._
@@ -30,7 +32,7 @@ object AnnotationExporters {
           case AnnotationBody.TextGrid(textGridDef) =>
             val textGrid = TextGrid.fromJsonStr(textGridDef)
             // Iterate over all labeled spans
-            val labelTree = textGridToLabelTree(textGrid)
+            val labelTree: Tree[LabelTreeNode[TextGrid.GridCell]] = ??? // textGridToLabelTree(textGrid)
             val labelSpanTree = labelTreeToSpanTree(labelTree)
 
             val grid1Cells = textGrid.indexedCells()

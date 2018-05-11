@@ -114,7 +114,8 @@ object GridRegion {
 
 }
 
-@JSExportTopLevel("watr.textgrid.TextGridLabelWidget") @JSExportAll
+@JSExportTopLevel("watr.textgrid.TextGridLabelWidget")
+@JSExportAll
 object TextGridLabelWidget {
 
   import LabeledSequenceTreeTransforms._
@@ -172,8 +173,8 @@ object TextGridLabelWidget {
   def labelTreeToGridRegions[A <: LabelTarget](
     labelTree: Tree[LabelTreeNode[A]],
     labelSchemas: LabelSchemas,
-    originX: Int=0,
-    originY: Int=0
+    originX: Int,
+    originY: Int
   ) (implicit ShowA: Show[A]) : Seq[GridRegion] = {
 
     def marginalGlossToGridRegions(marginalLabels: MarginalGloss, x: Int, y: Int): Seq[GridRegion] = {

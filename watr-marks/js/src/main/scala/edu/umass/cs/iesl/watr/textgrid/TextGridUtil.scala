@@ -97,70 +97,70 @@ object TextGridInterop {
   object textGrids {
     // import LabeledSequenceTreeTransforms._
 
-    @JSExport
-    def textGridToWidgetGrid(
-      textGrid: TextGrid,
-      labelSchemas: LabelSchemas,
-      originX: Int,
-      originY: Int
-    ): WidgetDisplayGridProps = {
+    // @JSExport TODO temporarily commenting out
+    // def textGridToWidgetGrid(
+    //   textGrid: TextGrid,
+    //   labelSchemas: LabelSchemas,
+    //   originX: Int,
+    //   originY: Int
+    // ): WidgetDisplayGridProps = {
 
-      val labelTree = time("textGridToLabelTree"){ textGridToLabelTree(textGrid)}
-      val gridRegions = time("labelTreeToGridRegions"){  labelTreeToGridRegions(labelTree, labelSchemas, originX, originY) }
-      new  WidgetDisplayGridProps(
-        labelTree,
-        gridRegions
-      )
-    }
+    //   val labelTree = time("textGridToLabelTree"){ textGridToLabelTree(textGrid)}
+    //   val gridRegions = time("labelTreeToGridRegions"){  labelTreeToGridRegions(labelTree, labelSchemas, originX, originY) }
+    //   new  WidgetDisplayGridProps(
+    //     labelTree,
+    //     gridRegions
+    //   )
+    // }
 
-    @JSExport
-    def findLegalReorderingRows(textGrid: TextGrid, row: Int, col: Int): js.Array[Int]  = {
-      textGrid.findIdenticallyLabeledSiblings(row, col)
-        .map{ indexedCells =>
-          val isUnlabeled = indexedCells.headOption
-            .exists{ case (cell, r, c) => cell.pins.isEmpty }
+    // @JSExport
+    // def findLegalReorderingRows(textGrid: TextGrid, row: Int, col: Int): js.Array[Int]  = {
+    //   textGrid.findIdenticallyLabeledSiblings(row, col)
+    //     .map{ indexedCells =>
+    //       val isUnlabeled = indexedCells.headOption
+    //         .exists{ case (cell, r, c) => cell.pins.isEmpty }
 
-          if (isUnlabeled) {
-            indexedCells.map(_._2).toSet.toList.sorted.toJSArray
-          } else {
-            js.Array[Int]()
-          }
-        } getOrElse {
-          js.Array[Int]()
-        }
-    }
-
-
-    @JSExport
-    def reorderRows(textGrid: TextGrid, fromRow: Int, newOrder: js.Array[Int]): Option[TextGrid] = {
-
-      textGrid.findIdenticallyLabeledSiblings(fromRow, 0)
-        .flatMap{ indexedCells =>
-          val reorderableRows = indexedCells.map(_._2).toSet.toList.sorted
-
-          if (reorderableRows.sorted == newOrder.sorted.toList) {
-            // println(s"reordering textgrid from ${fromRow} to ${newOrder}")
-            val (unchangedPre, changing) = textGrid.rows.zipWithIndex.span { case (row, rowNum) => rowNum != fromRow }
-            val (toReorder, unchangedPost) = changing.splitAt(newOrder.length)
-            val reordered = mutable.ArrayBuffer[TextGrid.Row]((toReorder.map(_._1)):_*)
-
-            newOrder.zipWithIndex.foreach{ case (newRow, i) =>
-              reordered.update(i, toReorder(newRow-fromRow)._1)
-            }
+    //       if (isUnlabeled) {
+    //         indexedCells.map(_._2).toSet.toList.sorted.toJSArray
+    //       } else {
+    //         js.Array[Int]()
+    //       }
+    //     } getOrElse {
+    //       js.Array[Int]()
+    //     }
+    // }
 
 
-            val pre = unchangedPre.map(_._1)
-            val post = unchangedPost.map(_._1)
-            val reorderedRows = pre ++ reordered ++ post
-            // println(s"pre     len = ${unchangedPre.length}")
-            // println(s"post    len = ${unchangedPost.length}")
-            // println(s"reorder len = ${toReorder.length}")
-            // println(s"reordered   = ${reordered.map(_.toText())}")
+  //   @JSExport
+  //   def reorderRows(textGrid: TextGrid, fromRow: Int, newOrder: js.Array[Int]): Option[TextGrid] = {
 
-            Some(TextGrid.fromRows(textGrid.stableId, reorderedRows))
-          } else None
-        }
-    }
+  //     textGrid.findIdenticallyLabeledSiblings(fromRow, 0)
+  //       .flatMap{ indexedCells =>
+  //         val reorderableRows = indexedCells.map(_._2).toSet.toList.sorted
+
+  //         if (reorderableRows.sorted == newOrder.sorted.toList) {
+  //           // println(s"reordering textgrid from ${fromRow} to ${newOrder}")
+  //           val (unchangedPre, changing) = textGrid.rows.zipWithIndex.span { case (row, rowNum) => rowNum != fromRow }
+  //           val (toReorder, unchangedPost) = changing.splitAt(newOrder.length)
+  //           val reordered = mutable.ArrayBuffer[TextGrid.Row]((toReorder.map(_._1)):_*)
+
+  //           newOrder.zipWithIndex.foreach{ case (newRow, i) =>
+  //             reordered.update(i, toReorder(newRow-fromRow)._1)
+  //           }
+
+
+  //           val pre = unchangedPre.map(_._1)
+  //           val post = unchangedPost.map(_._1)
+  //           val reorderedRows = pre ++ reordered ++ post
+  //           // println(s"pre     len = ${unchangedPre.length}")
+  //           // println(s"post    len = ${unchangedPost.length}")
+  //           // println(s"reorder len = ${toReorder.length}")
+  //           // println(s"reordered   = ${reordered.map(_.toText())}")
+
+  //           Some(TextGrid.fromRows(textGrid.stableId, reorderedRows))
+  //         } else None
+  //       }
+  //   }
   }
 }
 
@@ -312,7 +312,7 @@ class TextGridConstructor() extends TextGridConstruction {
 
 @JSExportTopLevel("watr.textgrid.WidgetDisplayGridProps")
 class WidgetDisplayGridProps(
-  val labelTree: scalaz.Tree[LabelTreeNode],
+  val labelTree: scalaz.Tree[LabelTreeNode[TextGrid.GridCell]],
   val gridRegions: Seq[GridRegion]
 ) {
   lazy val regionExtents = gridRegions.map{r =>

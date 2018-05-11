@@ -142,7 +142,7 @@ object AnnotationDiffs {
         body match {
           case AnnotationBody.TextGrid(textGridDef) =>
             val textGrid = TextGrid.fromJsonStr(textGridDef)
-            val labelTree = textGridToLabelTree(textGrid)
+            val labelTree: Tree[LabelTreeNode[TextGrid.GridCell]] = ??? // textGridToLabelTree(textGrid)
             val labelSpanTree = labelTreeToSpanTree(labelTree)
             val gridCells = textGrid.indexedCells().map(_._1)
 
