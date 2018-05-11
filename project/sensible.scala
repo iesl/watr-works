@@ -3,7 +3,6 @@ import sbt._
 import Keys._
 
 object SensibleProject extends CommonLibs {
-
   lazy val acyclicPlugin =  Seq(
     addCompilerPlugin("com.lihaoyi" %% "acyclic" % acyclicVersion),
     scalacOptions += "-P:acyclic:force",
@@ -127,7 +126,10 @@ object SensibleProject extends CommonLibs {
 
 
     autoCompilerPlugins  := true,
+
     addCompilerPlugin("org.spire-math" %% "kind-projector"   % "0.9.6"),
+
+    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
 
 
     // The matryoshka dependency uses the org.typelevel version of scala, so without this exclusion 2 vers of the scala library get loaded

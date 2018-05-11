@@ -41,7 +41,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
       "org.scala-js"               %% "scalajs-stubs"          % "0.6.22" % "provided",
       "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
       "com.github.davidmoten"       % "rtree"                  % "0.8.5",
-      "com.github.davidmoten"       % "flatbuffers-java"       % "1.8.0.1",
+      "com.github.davidmoten"       % "flatbuffers-java"       % "1.9.0.1",
       Lib.guava % Optional,
       "ichi.bench" % "thyme"        % "0.1.1" from "http://plastic-idolatry.com/jars/thyme-0.1.1.jar"
     ))
