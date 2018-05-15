@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-// import spindex._
+// import rindex._
 // import geometry._
 
 // import watrmarks.{StandardLabels => LB}

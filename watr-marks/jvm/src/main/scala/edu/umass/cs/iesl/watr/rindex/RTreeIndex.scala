@@ -8,12 +8,6 @@ import com.github.davidmoten.rtree
 import rx.functions.Func1
 
 /**
-  * + R-Tree index supporting shapes: rects, lines, points
-  * + Arbitrary attributes may be attached to shapes
-  * + Shapes can be clustered via disjoint sets
-  * + Search:
-  *   - Open/closed interval search support inclusion/exclusion of shapes that share an edge, but have no common area
-  *
   *
   **/
 

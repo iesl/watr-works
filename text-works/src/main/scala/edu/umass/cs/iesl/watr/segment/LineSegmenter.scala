@@ -272,7 +272,7 @@ trait LineSegmentation extends PageScopeSegmenter
   }
 
   def indexPathRegions(): Unit = {
-    val pathShapes = pageIndex.pageItems.toSeq
+    val pathShapes = pageScope.pageItems.toSeq
       .filter { _.isInstanceOf[ExtractedItem.PathItem] }
       .map { item =>
         indexShape(item.minBBox, LB.PathBounds)
@@ -282,7 +282,7 @@ trait LineSegmentation extends PageScopeSegmenter
   }
 
   def indexImageRegionsAndDeleteOverlaps(): Unit = {
-    val deletedShapes = pageIndex.pageItems.toSeq
+    val deletedShapes = pageScope.pageItems.toSeq
       .filter { _.isInstanceOf[ExtractedItem.ImgItem] }
       .flatMap { imageItem =>
         indexShape(imageItem.minBBox, LB.Image)
@@ -304,7 +304,7 @@ trait LineSegmentation extends PageScopeSegmenter
 
 
   private def findNatLangBaselineRuns(retainNatLang: Boolean): Seq[Seq[ExtractedItem.CharItem]] = {
-    pageIndex.pageItems.toSeq
+    pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
       .filter(_.fontProps.isNatLangFont() == retainNatLang)
       .groupByPairs {
@@ -318,7 +318,7 @@ trait LineSegmentation extends PageScopeSegmenter
   }
 
   private def findSymbolicCharRuns(): Seq[Seq[ExtractedItem.CharItem]] = {
-    val charRuns = pageIndex.pageItems.toSeq
+    val charRuns = pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CharItem => item }
       .filterNot(_.fontProps.isNatLangFont())
       .groupByPairs {
@@ -334,7 +334,7 @@ trait LineSegmentation extends PageScopeSegmenter
   }
 
   def combineCombiningMarks(): Unit = {
-    val combiningMarks = pageIndex.pageItems.toSeq
+    val combiningMarks = pageScope.pageItems.toSeq
       .collect { case item: ExtractedItem.CombiningMark => item }
 
     combiningMarks.foreach { combiningMark =>

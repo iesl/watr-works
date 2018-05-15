@@ -1,7 +1,6 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-
 import scala.collection.mutable
 import watrmarks._
 import textboxing.{TextBoxing => TB}, TB._
@@ -11,7 +10,6 @@ import utils.Cursor
 import utils.DoOrDieHandlers._
 
 import scalaz._
-
 
 object LabelTarget {
   type SetType[A] = mutable.ArrayStack[A]
@@ -49,17 +47,14 @@ trait LabelTarget {
     pins.contains(p)
   }
 
-  def topLabel(): Option[Label] = {
-    if (pins.nonEmpty) {
-      Some(pins.top.label)
-    } else None
-  }
-
   def topPin(): Option[BioPin] = {
     if (pins.nonEmpty) {
       Some(pins.top)
     } else None
   }
+
+  def topLabel(): Option[Label] =
+    topPin().map(_.label)
 
   def showPinsVert(): Box = {
     vjoins(left, pins.toList.reverse.map(_.pinChar.toString.box))
@@ -69,16 +64,6 @@ trait LabelTarget {
     val pinIndex = pins.indexWhere(_.label == l)
     if (pinIndex > -1) Some( (pins(pinIndex), pinIndex) )
     else None
-  }
-
-  // TODO abstract as PinSet.===
-  private def hasSameLabels(cell2: LabelTarget): Boolean = {
-    val pins2 = cell2.pins
-    pins.length == pins2.length && {
-      pins.zip(pins2).map{ case (p1, p2) =>
-        p1.label == p2.label
-      } forall (b => b)
-    }
   }
 
 }

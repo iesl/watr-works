@@ -1,7 +1,6 @@
 import sbt.Keys._
 import ReleaseTransformations._
 
-SensibleThisBuild.settings
 SensibleProject.settings
 enablePlugins(ScalaJSPlugin)
 

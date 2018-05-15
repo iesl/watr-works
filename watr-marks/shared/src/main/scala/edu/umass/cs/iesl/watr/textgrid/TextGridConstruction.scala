@@ -1,9 +1,6 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-// import watrmarks.{StandardLabels => LB}
-// import TypeTags._
-
 trait TextGridConstruction {
   import geometry._
 

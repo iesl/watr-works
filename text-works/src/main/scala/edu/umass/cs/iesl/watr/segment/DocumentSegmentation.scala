@@ -6,7 +6,7 @@ import ammonite.{ops => fs}, fs._
 
 import corpora.DocumentZoningApi
 import extract._
-import spindex._
+import rindex._
 import utils.Timer.time
 import utils.ExactFloats._
 import textgrid._
@@ -21,7 +21,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
 
   protected[segment] def init(): Unit = {
-    initPageIndexes()
+    initLabeledShapeIndexes()
   }
 
   def getNumberedPages(): Seq[(Int@@PageID, Int@@PageNum)] =
@@ -29,12 +29,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
       case (a, b) => (a, PageNum(b))
     }
 
-  def getNumberedPageIndexes(): Seq[(Int@@PageID, PageIndex)] =
-    docStore.getPages(docId).zipWithIndex.map {
-      case (a, b) => (a, mpageIndex.getPageIndex(PageNum(b)))
-    }
-
-  private def initPageIndexes(): Unit = {
+  private def initLabeledShapeIndexes(): Unit = {
     pageAtomsAndGeometry.foreach { case (extractedItems, pageGeometry) =>
       val pageId = docStore.addPage(docId, pageGeometry.pageNum)
       docStore.setPageGeometry(pageId, pageGeometry.bounds)
@@ -143,7 +138,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
 
 object DocumentSegmenter {
-  import spindex._
+  import rindex._
 
   def createSegmenter(
     stableId0: String@@DocumentID,
@@ -156,7 +151,6 @@ object DocumentSegmenter {
     val segmenter = new DocumentSegmentation {
       override val pageAtomsAndGeometry = pages
       override val fontDefs = fontDefs0
-      override val mpageIndex: MultiPageIndex = new MultiPageIndex(stableId0, docStore0, pages)
 
       override val docStore: DocumentZoningApi = docStore0
       override val stableId = stableId0

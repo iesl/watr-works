@@ -5,7 +5,6 @@ import RGeometryConversions._
 import rx.Observable
 import rx.functions.{
   Func1
-  // , Func2
 }
 
 import scala.collection.JavaConverters._
@@ -27,7 +26,6 @@ trait RTreeSearch[T] {
   def search(
     queryFig:G.GeometricFigure,
     filter: T=>Boolean,
-    // intersectFunc: (G.GeometricFigure, G.GeometricFigure) => Boolean = (_,_) => true,
     intersectFunc: (RG.Geometry, RG.Geometry) => Boolean = (_,_) => true,
   ): Seq[T] = {
     val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {

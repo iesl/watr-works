@@ -13,8 +13,7 @@ project/project
 
 *.sw?
 .ensime*
-ensime.sbt
-.ensime_cache
+ensime*
 
 
 # Common directory names

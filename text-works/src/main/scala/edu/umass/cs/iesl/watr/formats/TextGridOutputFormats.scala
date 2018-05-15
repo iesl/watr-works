@@ -3,7 +3,7 @@ package formats
 
 import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
 
-import spindex._
+import rindex._
 import textboxing.{TextBoxing => TB}, TB._
 import segment.{SegmentationLabels => LB}
 import segment._

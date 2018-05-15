@@ -3,19 +3,6 @@ package textgrid
 
 import org.scalacheck._
 import scalaz.{@@ => _, _}, Scalaz._
-// import scalaz.scalacheck.ScalaCheckBinding._
-
-
-// import geometry._
-// import geometry.syntax._
-// import GeometryCodecs._
-// import _root_.io.circe
-// import circe.syntax._
-
-// import LabeledSequenceTreeTransforms._
-// import utils.DoOrDieHandlers._
-// import TextGridLabelWidget._
-// import textboxing.{TextBoxing => TB}, TB._
 
 import LabeledSequenceCodecs._
 import LabeledSequencePrinting._
@@ -59,10 +46,8 @@ object ArbitraryStuff extends LabeledSequenceThings {
 object LabeledSequenceCodecChecks extends Properties("LabeledSequenceCodecChecks") with LabeledSequenceThings {
   import ArbitraryStuff._
 
-
   property("json <--> LabeledSequence") = Prop.forAll{ (labeledSequence: LabeledSequence[Thing]) =>
-
-
+    // TODO
     true
   }
 
@@ -83,12 +68,10 @@ class LabeledSequenceCodecTest extends LabeledSequenceTestBasics {
     things.addBioLabel(LastName, 6, 3)
     val encodedJson = encodeBioLabels(things)
 
-    println(encodedJson)
     val things2 = unlabeledThings(thingCount)
     decodeAndApplyBioLabels(encodedJson, things2)
-    println(things2)
-    println(labeledSequenceBoxFormat(things2))
 
-    labeledSequenceBoxFormat(things) === labeledSequenceBoxFormat(things2)
+    assert(things === things2)
+
   }
 }

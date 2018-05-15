@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import geometry._
-import spindex._
+import rindex._
 import watrmarks._
 
 import _root_.io.circe, circe._, circe.syntax._
@@ -123,14 +123,16 @@ trait DocumentScopeTracing extends ScopedTracing { self  =>
 trait PageScopeTracing extends ScopedTracing { self  =>
   lazy val traceLog = self
 
-  def pageIndex: PageIndex
+  def pageIndex: LabeledShapeIndex
+  def pageNum: Int@@PageNum
+  def pageGeometry: LTBounds
 
-  lazy val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageIndex.pageGeometry.bounds
-  lazy val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageIndex.pageGeometry.bounds
+  lazy val LTBounds.Doubles(pageL, pageT, pageW, pageH) = pageGeometry
+  lazy val LTBounds.Ints(svgL, svgT, svgW, svgH) = pageGeometry
 
   def emitLogs(): Seq[Json] = {
     for { logEntry <- traceLogs } yield Json.obj(
-      "page" := pageIndex.pageNum.unwrap,
+      "page" := pageNum.unwrap,
       "entry" := logEntry
     )
   }

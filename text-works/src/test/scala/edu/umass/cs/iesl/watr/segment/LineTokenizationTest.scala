@@ -3,7 +3,7 @@ package segment
 
 import org.scalatest._
 
-// import spindex._
+// import rindex._
 // import ComponentOperations._
 // import TextReflowConversion.toTextReflow
 // import watrmarks.{StandardLabels => LB}

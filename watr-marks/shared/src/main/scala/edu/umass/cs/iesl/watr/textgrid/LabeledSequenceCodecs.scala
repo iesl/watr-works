@@ -38,54 +38,14 @@ object LabeledSequenceCodecs {
   def decodeAndApplyBioLabels[A <: LabelTarget](jsonRep: Json, labeledSequence: LabeledSequence[A]): Unit = {
     val labelingTrees = jsonRep.decodeOrDie[Seq[LabelingTree]]()
 
-    // val dummyPageRegion = PageRegion(StablePage(DocumentID("docX"), PageNum(0)), LTBounds.empty)
-
-    // textGrid.indexedCells().map(_._1).zip(labels)
-    //   .foreach { case (cell, labels) =>
-    //     cell.pins ++= labels.reverse
-    //   }
-
-    // def emptyInlineBIO(len: Int): Seq[TextGrid.GridCell] = {
-    //   Array.fill[TextGrid.GridCell](len){
-    //     TextGrid.InsertCell('a', dummyPageRegion)
-    //   }
-    // }
-
-    // def maxLen(lt: LabelingTree): Int = {
-    //   val begin = lt.labelSpan.begin
-    //   val len = lt.labelSpan.length
-    //   val total = begin + len
-    //   (total +: lt.children.map(maxLen(_))).max
-    // }
-
-    // val totalLen = if (labelingTrees.isEmpty) 0 else labelingTrees.map(maxLen(_)).max
-    // val inlineBio = emptyInlineBIO(totalLen)
-
     def loop(lt: LabelingTree): Unit = {
       labeledSequence.addBioLabel(
         lt.labelSpan.label,
         lt.labelSpan.begin,
         lt.labelSpan.length
       )
-
-      // for {
-      //   gridCursor <- Cursor.init(inlineBio)
-      //   c3         <- gridCursor.move(begin)
-      // } yield {
-      //   val window = c3.toWindow()
-      //   val winNext = window.widen(len-1).map{ w2 =>
-      //     LabeledSequence.addBioLabel(label, w2.cells)
-      //     w2
-      //   } getOrElse{
-      //     window
-      //   }
-      //   winNext.closeWindow()
-      // }
       lt.children.foreach(loop(_))
     }
-
-    labelingTrees.foreach(loop(_))
-
   }
 
   implicit def decodeLabelSpan: Decoder[LabelSpan] = Decoder.decodeTuple3[Label, Int, Int]

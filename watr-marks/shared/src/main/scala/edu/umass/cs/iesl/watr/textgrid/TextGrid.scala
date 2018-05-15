@@ -19,8 +19,6 @@ import _root_.io.circe
 import circe._
 import circe.literal._
 
-// extends LabelTarget with LabeledSequence[TextGrid.Row] {
-
 @JSExportAll
 trait TextGrid { self =>
 
@@ -30,12 +28,10 @@ trait TextGrid { self =>
 
   object cellLabels extends LabeledSequence[GridCell] {
     def labelTargets(): Seq[GridCell] = self.gridCells()
-
   }
 
   object rowLabels extends LabeledSequence[Row] {
     def labelTargets(): Seq[Row] = self.rows()
-
   }
 
   object gridLabels extends LabelTarget {
@@ -283,9 +279,6 @@ object TextGrid {
     }
 
 
-    // Labeling/unlabeling
-
-
     def append(row: Row): Row = {
       Row.fromCells(cells ++ row.cells)
     }
@@ -347,130 +340,3 @@ object TextGrid {
     fromRows(stableId, Seq(Row.fromCells(init)))
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Labeling specific:
-
-// def labelRowCells(row: Int, label:Label): Unit = {
-//   rowAt(row).foreach{ _.addBioLabel(label) }
-// }
-
-// def labelRow(row: Int, label:Label): Unit = {
-//   rowAt(row).foreach { row => row.addLabel(label) }
-// }
-
-
-// def findPin(c: GridCell, l: Label): Option[(BioPin, Int)] = {
-//   val pinIndex = c.pins.indexWhere(_.label == l)
-//   if (pinIndex > -1) Some( (c.pins(pinIndex), pinIndex) )
-//   else None
-// }
-
-
-// private def haveSameLabels(cell1: GridCell, cell2: GridCell): Boolean = {
-//   val p1s = cell1.pins
-//   val p2s = cell2.pins
-//   p1s.length == p2s.length && {
-//     p1s.zip(p2s).map{ case (p1, p2) =>
-//       p1.label == p2.label
-//     } forall (b => b)
-//   }
-// }
-
-// // Find the span of grid cells that have the same labeling as the cell at (row, col)
-// def findIdenticallyLabeledSiblings(row: Int, col: Int): Option[Seq[(GridCell, Int, Int)]] = {
-//   cellAt(row, col).map { gridCell =>
-
-//     gridCell.labels.headOption.map { label =>
-//       val extents = findLabelExtents(row, col, label).orDie()
-//       val (pre, post) =  extents.span { case (cell, rw, cl) => rw!=row && cl!=col }
-//       val postIdenticals = post.takeWhile{ case (cell, rw, cl) =>
-//         haveSameLabels(gridCell, cell)
-//       }
-
-//       val preIdenticals = pre.reverse.takeWhile{ case (cell, _, _) =>
-//         haveSameLabels(gridCell, cell)
-//       }
-
-//       preIdenticals.reverse ++ postIdenticals
-
-//     } getOrElse {
-//       // find span of unlabeled siblings
-//       val (pre, post) = indexedCells().span { case (cell, rw, cl) => cell != gridCell }
-//       val postIdenticals = post.takeWhile{ case (cell, rw, cl) =>
-//         cell.pins.isEmpty
-//       }
-
-//       val preIdenticals = pre.reverse.takeWhile{ case (cell, _, _) =>
-//         cell.pins.isEmpty
-//       }
-
-//       preIdenticals.reverse ++ postIdenticals
-//     }
-//   }
-// }
-
-
-
-// // Find the range of cells that overlap with (row, col) and that have the given label
-// def findLabelExtents(row: Int, col: Int, label: Label): Option[Seq[(GridCell, Int, Int)]] = {
-//   import scalaz._
-
-//   def findLabelEnd(zip: Zipper[(GridCell, Int, Int)]): Zipper[(GridCell, Int, Int)] = {
-//     zip.findNext{ case (cell, _, _) =>
-//       findPin(cell, label).exists(_._1.isLast)
-//     } getOrElse {
-//       sys.error("could not find label end")
-//     }
-//   }
-//   def findLabelBegin(zip: Zipper[(GridCell, Int, Int)]): Zipper[(GridCell, Int, Int)] = {
-//     zip.findPrevious{ case (cell, _, _) =>
-//       findPin(cell, label).exists(_._1.isBegin)
-//     } getOrElse {
-//       sys.error("could not find label begin")
-//     }
-//   }
-
-//   for {
-//     zip <- indexedCells.toList.toZipper
-//     atRowColZ <- zip.findZ{ case (cell, crow, ccol) => crow==row && ccol==col }
-
-//     (focusCell, focusRow, focusCol) = atRowColZ.focus
-//     (focusPin, pinIndex) <- findPin(focusCell, label)
-
-//     (beginZ, endZ) = {
-//       if (focusPin.isBegin)        (atRowColZ, findLabelEnd(atRowColZ))
-  //       else if (focusPin.isInside)  (findLabelBegin(atRowColZ), findLabelEnd(atRowColZ))
-  //       else if (focusPin.isLast)    (findLabelBegin(atRowColZ), atRowColZ)
-  //       else if (focusPin.isUnit)    (atRowColZ, atRowColZ)
-  //       else                         sys.error("findLabelExtents: unknown pin type")
-  //     }
-  //   } yield {
-  //     (endZ.focus +: endZ.lefts).reverse.drop(
-  //       beginZ.lefts.length
-  //     )
-  //   }
-
-  // }
-
-  // def unlabelNear(row: Int, col: Int, label: Label): Unit = {
-  //   findLabelExtents(row, col, label).foreach{ indexedSeq  =>
-  //     indexedSeq.foreach{ case (cell, row, col) =>
-  //       cell.removeLabel(label)
-  //     }
-  //   }
-  // }

@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package spindex
+package rindex
 
 import scala.collection.mutable
 
@@ -15,28 +15,15 @@ import textboxing.{TextBoxing => TB}
 import scala.reflect.ClassTag
 import com.google.{common => guava}
 import guava.{collect => gcol}
-import extract.ExtractedItem
 import com.github.davidmoten.rtree.{geometry => RG}
 
 
 /**
-  A PageIndex wraps an RTree[Component], and adds:
-  - Clustering components via:
-    - Disjoint sets (with internal ordering)
-       e.g., LB.VisualLines -> DisjointSet()
-
-  - Ordering for components withing a single page
-
-  - Weighted labels for components
-
-  - Edges (relations) between components
-
-  - Quick access to components with a particular label
-
-  */
+  *
+  **/
 
 
-object PageIndex {
+object LabeledShapeIndex {
 
   def qualifyCluster(l: Label): Label = { l.qualifiedAs("cluster") }
   def qualifyOrdering(l: Label): Label = { l.qualifiedAs("ordering") }
@@ -44,8 +31,6 @@ object PageIndex {
   def qualifyRep(l: Label): Label = { l.qualifiedAs("rep") }
 
 }
-
-
 
 
 case class LabeledShape[+T <: GeometricFigure](
@@ -65,6 +50,7 @@ case class LabeledShape[+T <: GeometricFigure](
 
 
 object LabeledShape {
+
   implicit object ShapeIndexable extends RTreeIndexable[LabeledShape[GeometricFigure]] {
     def id(t: LabeledShape[GeometricFigure]): Int = t.id.unwrap
     def ltBounds(t: LabeledShape[GeometricFigure]): LTBounds =
@@ -74,29 +60,17 @@ object LabeledShape {
       t.rtreeGeometry
   }
 
+  implicit class RicherLabeledShape[A <: GeometricFigure](val theShape: LabeledShape[A]) {
+    def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
+    def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
+    def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
+  }
+
 }
 
-class PageIndex(
-  val pageGeometry: PageGeometry,
-  val extractedItems: Array[ExtractedItem],
-  firstItemOffset: Int,
-  itemsLen: Int
-) {
+class LabeledShapeIndex {
 
-  import PageIndex._
-
-  lazy val pageNum = pageGeometry.pageNum
-
-  lazy val pageItems: Array[ExtractedItem] =
-    extractedItems.slice(firstItemOffset, firstItemOffset+itemsLen)
-
-  lazy val lastItemOffset = firstItemOffset + itemsLen
-
-  var pageVerticalJumps: mutable.ListBuffer[Int@@FloatRep] = mutable.ListBuffer()
-
-  def addPageVerticalJumps(jumps: Seq[Int@@FloatRep]): Unit = {
-    pageVerticalJumps ++= jumps
-  }
+  import LabeledShapeIndex._
 
   object shapes {
     type Shape = LabeledShape[GeometricFigure]
@@ -112,8 +86,6 @@ class PageIndex(
     def getById(id: Int@@ShapeID): Shape = {
       shapeMap(id.unwrap.toLong)
     }
-
-    // val extractedItemShapes = gcol.HashBasedTable.create[Int@@CharID, Label, Shape]()
 
     val shapeIDGen = utils.IdGenerator[ShapeID]()
     val shapeRIndex: RTreeIndex[Shape] = RTreeIndex.createFor[Shape]()
@@ -178,21 +150,6 @@ class PageIndex(
       })
     }
 
-    val shapeAttributeTable = gcol.HashBasedTable.create[Int@@ShapeID, Label, Any]()
-
-    def setShapeAttribute[A](shapeId: Int@@ShapeID, l: Label, attr: A)
-      (implicit act: ClassTag[A]): Unit = {
-      val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
-      shapeAttributeTable.put(shapeId, typedLabel, attr)
-    }
-
-    def getShapeAttribute[A](shapeId: Int@@ShapeID, l: Label)
-      (implicit act: ClassTag[A]): Option[A] = {
-      val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
-      if (shapeAttributeTable.contains(shapeId, typedLabel)) {
-        Some(shapeAttributeTable.get(shapeId, typedLabel).asInstanceOf[A])
-      } else None
-    }
 
     val disjointSets: mutable.HashMap[Label, OrderedDisjointSet[Shape]] = mutable.HashMap()
 
@@ -308,35 +265,22 @@ class PageIndex(
       println(res)
     }
 
-    val relationTable = gcol.HashBasedTable.create[Int@@ShapeID, Label, Int@@ShapeID]()
+    val shapeAttributeTable = gcol.HashBasedTable.create[Int@@ShapeID, Label, Any]()
 
-    def addRelation(lhs: Int@@ShapeID, l: Label, rhs: Int@@ShapeID): Unit = {
-      relationTable.put(lhs, l, rhs)
+    def setShapeAttribute[A](shapeId: Int@@ShapeID, l: Label, attr: A)
+      (implicit act: ClassTag[A]): Unit = {
+      val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
+      shapeAttributeTable.put(shapeId, typedLabel, attr)
     }
 
-    def getRelation(lhs: Shape, l: Label): Option[Shape] = {
-      if (relationTable.contains(lhs.id, l)) {
-        Some(getById(relationTable.get(lhs.id, l)))
+    def getShapeAttribute[A](shapeId: Int@@ShapeID, l: Label)
+      (implicit act: ClassTag[A]): Option[A] = {
+      val typedLabel = l.qualifiedAs(act.runtimeClass.getSimpleName)
+      if (shapeAttributeTable.contains(shapeId, typedLabel)) {
+        Some(shapeAttributeTable.get(shapeId, typedLabel).asInstanceOf[A])
       } else None
     }
 
-
-    val orderingTable = mutable.HashMap[Label, mutable.ListBuffer[Int@@ShapeID]]()
-    def appendToOrdering(l: Label, cc: Shape): Unit = {
-      val orderingBuffer = orderingTable.getOrElseUpdate(qualifyOrdering(l), mutable.ListBuffer())
-      orderingBuffer.append(cc.id)
-    }
-
-    def setOrdering(l: Label, cs: Seq[Shape]): Unit = {
-      val orderingBuffer = mutable.ListBuffer[Int@@ShapeID]()
-      orderingBuffer.appendAll(cs.map(_.id))
-      orderingTable.put(qualifyOrdering(l),orderingBuffer)
-    }
-
-    def getOrdering(l: Label): Seq[Shape] = {
-      val orderingBuffer = orderingTable.getOrElseUpdate(qualifyOrdering(l), mutable.ListBuffer())
-      orderingBuffer.map(id => getById(id))
-    }
   }
 
 

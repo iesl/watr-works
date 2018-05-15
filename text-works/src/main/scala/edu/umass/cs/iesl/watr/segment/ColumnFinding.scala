@@ -11,12 +11,19 @@ import utils.SlicingAndDicing._
 import org.dianahep.{histogrammar => HST}
 import utils.FunctionalHelpers._
 import watrmarks._
+import scala.collection.mutable
 
 
 trait ColumnFinding extends PageScopeSegmenter
     with LineSegmentation { self =>
 
   lazy val columnFinder = self
+
+  var pageVerticalJumps: mutable.ListBuffer[Int@@FloatRep] = mutable.ListBuffer()
+
+  def addPageVerticalJumps(jumps: Seq[Int@@FloatRep]): Unit = {
+    pageVerticalJumps ++= jumps
+  }
 
   import LB._
 
@@ -98,7 +105,7 @@ trait ColumnFinding extends PageScopeSegmenter
 
                 val contiguousYValues = columnPoints.map(_.y)
 
-                pageIndex.addPageVerticalJumps(
+                addPageVerticalJumps(
                   findDeltas(contiguousYValues.sorted)
                 )
 

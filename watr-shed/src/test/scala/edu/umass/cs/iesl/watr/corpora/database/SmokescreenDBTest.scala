@@ -56,7 +56,7 @@ class Smokescreen extends DatabaseTest with DoobiePredef {
     }
   }
 
-  // FIXME: map(_.map(...)) => traverse
+  // TODO FIXME: map(_.map(...)) => traverse
   def getAll(): Seq[(String, Int, Int)] = {
     corpusAccessDB.runq{
       sql"""select name, age, rank from person order by age,rank ASC"""

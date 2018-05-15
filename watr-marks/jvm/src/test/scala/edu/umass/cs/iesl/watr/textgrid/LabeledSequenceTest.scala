@@ -1,20 +1,17 @@
 package edu.umass.cs.iesl.watr
 package textgrid
 
-
 import _root_.io.circe
 import circe.syntax._
 
 import LabeledSequenceCodecs._
 import LabeledSequencePrinting._
-// import LabeledSequenceTreeTransforms._
 import org.scalatest._
 
 case class Thing(a: Char) extends LabelTarget
 case class Things(labelTargets: Seq[Thing]) extends LabeledSequence[Thing]
 
 trait LabeledSequenceThings {
-
 
   def unlabeledThings(len: Int): Things = {
     Things(('a' to 'z').take(len).map(Thing(_)))
@@ -107,62 +104,4 @@ class LabeledSequenceTest extends TextGridSpec {
     }
   }
 
-  info("behavior of label sequence json serialization")
-
-  "correctness of Labeled Sequence serialization" in {
-    //  inline bio <--> label tree <--> json rep
-    val things = unlabeledThings(10)
-    things.addBioLabel(Journal)
-    things.addBioLabel(Author)
-    things.addBioLabel(FirstName, 0, 3)
-
-    // val labelTree = gridCellsToLabelTree(inlineBio.cells)
-
-    println(things.labelTargets.map(_.showPinsVert()).mkString)
-
-    // println(labelTree.drawTree)
-
-
-    // {
-    //   println("Marginal Span Tree -----------------------")
-    //   val labelSpanTree2 = labelTreeToMarginalSpanTree(labelTree)
-    //   println(labelSpanTree2.drawTree)
-    //   println("-----------------------")
-    // }
-
-    // val labelSpanTree = labelTreeToSpanTree(labelTree)
-
-    // {
-    //   println("Label Span Tree -----------------------")
-    //   println(labelSpanTree.drawTree)
-    //   println("-----------------------")
-    // }
-    // val jsonSpanTreeRep = spanTreeToJson(labelSpanTree)
-    // println(jsonSpanTreeRep.pretty(JsonPrettyPrinter))
-
-    // Json -> inline BIO
-
-    val ls = LabelSpan(LastName, 2, 4)
-
-    val lt = LabelingTree(
-      LabelSpan(FirstName, 0, 10), List(
-        LabelingTree(
-          LabelSpan(LastName, 2, 4), List()
-        )
-      )
-    )
-
-    val lsjs = ls.asJson
-    println(lsjs.noSpaces)
-    val ltjs = lt.asJson
-    println(ltjs.noSpaces)
-
-    // val labelingTree = jsonSpanTreeRep.decodeOrDie[Seq[LabelingTree]]()
-    // println(labelingTree)
-    // val inlineBioRT = LabeledSequenceCodecs.decodeBioLabels(jsonSpanTreeRep)
-    println("inline Bio Round Trip")
-    // val rt = inlineBioRT.map(_.mkString).zipWithIndex.mkString("\n  ", "\n  ", "\n")
-    // println(rt)
-
-  }
 }

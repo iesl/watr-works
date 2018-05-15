@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import spindex._
+import rindex._
 import textgrid._
 
 trait PageLevelFunctions extends ColumnFinding
@@ -11,13 +11,13 @@ trait PageLevelFunctions extends ColumnFinding
 
 object PageSegmenter {
 
-  def getVisualLinesInExtractionOrder(pageIndex: PageIndex): Seq[LineShape] = {
+  def getVisualLinesInExtractionOrder(pageIndex: LabeledShapeIndex): Seq[LineShape] = {
     // pageIndex.shapes.getOrdering(LB.ExtractedLineStarts)
     ???
   }
 
-  // def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[(Component, Seq[Component])] = {
-  def getVisualLinesInReadingOrder(pageIndex: PageIndex): Seq[LineShape] = {
+  // def getVisualLinesInReadingOrder(pageIndex: LabeledShapeIndex): Seq[(Component, Seq[Component])] = {
+  def getVisualLinesInReadingOrder(pageIndex: LabeledShapeIndex): Seq[LineShape] = {
     // val linesPerBlock0 = for {
     //   block <- pageIndex.components.getOrdering(LB.ReadingBlocks)
     // } yield {

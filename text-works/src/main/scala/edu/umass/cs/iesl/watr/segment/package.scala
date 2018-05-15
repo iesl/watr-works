@@ -2,13 +2,13 @@ package edu.umass.cs.iesl.watr
 package segment
 
 object `package` {
-  import spindex.LabeledShape
+  import rindex.LabeledShape
   import geometry._
 
-  type LineShape = LabeledShape[Line]
-  type PointShape = LabeledShape[Point]
-  type RectShape = LabeledShape[LTBounds]
-  type AnyShape = LabeledShape[GeometricFigure]
+  type LineShape  = rindex.LineShape
+  type PointShape = rindex.PointShape
+  type RectShape  = rindex.RectShape
+  type AnyShape   = rindex.AnyShape
 
   val Dir = utils.RelativeDirection
   val LB = SegmentationLabels

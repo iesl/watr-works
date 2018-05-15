@@ -5,21 +5,41 @@ import geometry._
 import geometry.syntax._
 import watrmarks.Label
 import corpora.DocumentZoningApi
-import spindex._
+import rindex._
 import utils.ExactFloats._
 import extract._
 import utils._
 import TypeTags._
+import scala.collection.mutable
 
-trait DocumentScopeSegmenter extends DocumentScopeTracing with SegmentationCommons { self =>
+trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
 
   lazy val docScope = self
 
   def pageAtomsAndGeometry: Seq[(Seq[ExtractedItem], PageGeometry)]
 
-  def fontDefs: FontDefs
+  // All extracted items across all pages, indexed by id, which equals extraction order
+  lazy val extractedItemArray: Array[ExtractedItem] = {
 
-  def mpageIndex: MultiPageIndex
+    val extractedItemCount = (0 +: pageAtomsAndGeometry.map(_._1.length)).sum
+    val itemArray = new Array[ExtractedItem](extractedItemCount+1)
+    pageAtomsAndGeometry.foreach { case (items, _) =>
+      items.foreach { item => itemArray(item.id.unwrap) = item }
+    }
+    itemArray
+  }
+
+  lazy val pageIndexes: Map[Int@@PageNum, LabeledShapeIndex] = {
+    pageAtomsAndGeometry.map { case (items, pageGeometry) =>
+      (pageGeometry.pageNum, new LabeledShapeIndex)
+    }.toMap
+  }
+
+  def getLabeledShapeIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
+
+  def getPageGeometry(p: Int@@PageNum) = pageAtomsAndGeometry(p.unwrap)._2
+
+  def fontDefs: FontDefs
 
   def docStore: DocumentZoningApi
 
@@ -45,9 +65,6 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing with SegmentationCommo
             .getColMarginal(scalingFactor)
             .getOrElse(0)
 
-          // val pageWideCount = fontProps.totalGlyphOccurrenceCounts.get(pageNum, scalingFactor).getOrElse(0)
-          // (fontProps.getFontIdentifier(scalingFactor), pageWideCount)
-
           (fontProps.getFontIdentifier(scalingFactor), docWideCount),
         }
       } else List[(String@@ScaledFontID, Int)]()
@@ -58,7 +75,7 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing with SegmentationCommo
 
 }
 
-trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { self =>
+trait PageScopeSegmenter extends PageScopeTracing { self =>
   lazy val pageScope = self
 
   def docScope: DocumentScopeSegmenter
@@ -67,11 +84,13 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
   def pageNum: Int@@PageNum
   def pageStats: PageLayoutStats
 
+  lazy val (pageAtoms, pageGeom) = docScope.pageAtomsAndGeometry(pageNum.unwrap)
+  lazy val pageItems: Seq[ExtractedItem] = pageAtoms
+
   def docStore: DocumentZoningApi = docScope.docStore
 
-  def mpageIndex: MultiPageIndex = docScope.mpageIndex
-  def pageGeometry = docStore.getPageGeometry(pageId)
-  def pageIndex: PageIndex = mpageIndex.getPageIndex(pageNum)
+  def pageGeometry = pageGeom.bounds
+  def pageIndex: LabeledShapeIndex = docScope.getLabeledShapeIndex(pageNum)
 
   implicit class RicherLabeledShapes[A <: GeometricFigure](val theShapes: Seq[LabeledShape[A]]) {
     def asLineShapes: Seq[LineShape] = theShapes.asInstanceOf[Seq[LineShape]]
@@ -165,9 +184,9 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
     shapes.foreach { sh => pageIndex.shapes.unindexShape(sh) }
   }
 
-  protected def addRelation(lhs: Int@@ShapeID, l: Label, rhs: Int@@ShapeID): Unit = {
-    pageIndex.shapes.addRelation(lhs, l, rhs)
-  }
+  // protected def addRelation(lhs: Int@@ShapeID, l: Label, rhs: Int@@ShapeID): Unit = {
+  //   pageIndex.shapes.addRelation(lhs, l, rhs)
+  // }
 
   protected def getClusteredLines(l: Label): Seq[(Int@@ShapeID, Seq[LineShape])] = {
     pageIndex.shapes.getClustersWithReprID(l)
@@ -266,6 +285,3 @@ trait PageScopeSegmenter extends PageScopeTracing with SegmentationCommons { sel
 
 
 
-trait SegmentationCommons {
-
-}
