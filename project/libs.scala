@@ -9,7 +9,7 @@ trait LibVersions {
   val logbackVersion      = "1.7.25"
   val scrimageVersion     = "2.1.8"
   val acyclicVersion      = "0.1.7"
-  val doobieVersion       = "0.5.2"
+  val doobieVersion       = "0.5.3"
   val matryoshkaCoreV     = "0.21.3"
   val sourcecodeV         = "0.1.4"
   val fansiV              = "0.2.5"
@@ -19,7 +19,7 @@ trait LibVersions {
   val fs2Version          = "0.10.4"
   val circeJsonVersion    = "0.9.3"
 
-  val ammoniteVersion     = "1.1.0"
+  val ammoniteVersion     = "1.1.2"
 
   val catsV               = "1.1.0"
   val catsEffectV         = "0.10.1"
