@@ -30,13 +30,10 @@ trait TextGrid { self =>
     def labelTargets(): Seq[GridCell] = self.gridCells()
   }
 
-  object rowLabels extends LabeledSequence[Row] {
-    def labelTargets(): Seq[Row] = self.rows()
-  }
+  // object rowLabels extends LabeledSequence[Row] {
+  //   def labelTargets(): Seq[Row] = self.rows()
+  // }
 
-  object gridLabels extends LabelTarget {
-
-  }
 
   def rows(): Seq[Row]
 

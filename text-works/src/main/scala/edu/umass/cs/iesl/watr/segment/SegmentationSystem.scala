@@ -5,14 +5,74 @@ import geometry._
 import geometry.syntax._
 import watrmarks.Label
 import corpora.DocumentZoningApi
-import rindex._
+import rtrees._
 import utils.ExactFloats._
 import extract._
 import utils._
 import TypeTags._
 import scala.collection.mutable
 
+
+case class DocSegShape[+T <: GeometricFigure](
+  id: Int@@ShapeID,
+  shape: T,
+  labels: Set[Label],
+) extends LabeledShape[T, Unit] {
+  def addLabels(l: Label*): DocSegShape[T] = copy(
+    labels = this.labels ++ l.toSet
+  )
+
+  val attr: Unit = ()
+}
+
+object DocSegShape {
+  def create[T <: GeometricFigure](
+    id: Int@@ShapeID,
+    shape: T,
+    labels: Label*
+  ) = DocSegShape[T](
+    id, shape, labels.toSet
+  )
+}
+
+
+object SegmentationSystem {
+
+  type ShapeIndex = LabeledShapeIndex[GeometricFigure, Unit, DocSegShape[GeometricFigure]]
+
+  // type LineShape = DocSegShape[Line]
+  // type PointShape = DocSegShape[Point]
+  // type RectShape = DocSegShape[LTBounds]
+  // type AnyShape = DocSegShape[GeometricFigure]
+
+  // implicit class RicherLabeledShapesX[A <: GeometricFigure](val s: Seq[DocSegShape[A]])
+  //     extends LabeledShapesCoercion[A, Unit](s)
+
+  // implicit class RicherLabeledShapeX[A <: GeometricFigure](val theShape: DocSegShape[A])
+  //     extends LabeledShapeCoercion[A, Unit](theShape)
+
+  implicit class SS_LabeledShapeCoercion[+A <: GeometricFigure](val theShape: DocSegShape[A]) {
+    def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
+    def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
+    def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
+  }
+
+  implicit class RicherLabeledShapes[A <: GeometricFigure](val theShapes: Seq[ShapeIndex#AnyShape]) {
+    def asLineShapes: Seq[LineShape] = theShapes.asInstanceOf[Seq[LineShape]]
+    def asPointShapes: Seq[PointShape] = theShapes.asInstanceOf[Seq[PointShape]]
+    def asRectShapes: Seq[RectShape] = theShapes.asInstanceOf[Seq[RectShape]]
+  }
+
+  // implicit class RicherLabeledShape[A <: GeometricFigure](val theShape: LabeledShape[A]) {
+  //   def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
+  //   def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
+  //   def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
+  // }
+
+}
+
 trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
+  import SegmentationSystem._
 
   lazy val docScope = self
 
@@ -29,13 +89,13 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
     itemArray
   }
 
-  lazy val pageIndexes: Map[Int@@PageNum, LabeledShapeIndex] = {
+  lazy val shapeIndexes: Map[Int@@PageNum, ShapeIndex] = {
     pageAtomsAndGeometry.map { case (items, pageGeometry) =>
-      (pageGeometry.pageNum, new LabeledShapeIndex)
+      (pageGeometry.pageNum, new LabeledShapeIndex[GeometricFigure, Unit, DocSegShape[GeometricFigure]])
     }.toMap
   }
 
-  def getLabeledShapeIndex(pageNum: Int@@PageNum) = pageIndexes(pageNum)
+  def getLabeledShapeIndex(pageNum: Int@@PageNum) = shapeIndexes(pageNum)
 
   def getPageGeometry(p: Int@@PageNum) = pageAtomsAndGeometry(p.unwrap)._2
 
@@ -70,12 +130,10 @@ trait DocumentScopeSegmenter extends DocumentScopeTracing { self =>
       } else List[(String@@ScaledFontID, Int)]()
     }
   }
-
-
-
 }
 
 trait PageScopeSegmenter extends PageScopeTracing { self =>
+  import SegmentationSystem._
   lazy val pageScope = self
 
   def docScope: DocumentScopeSegmenter
@@ -90,19 +148,8 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   def docStore: DocumentZoningApi = docScope.docStore
 
   def pageGeometry = pageGeom.bounds
-  def pageIndex: LabeledShapeIndex = docScope.getLabeledShapeIndex(pageNum)
+  lazy val shapeIndex: ShapeIndex = docScope.getLabeledShapeIndex(pageNum)
 
-  implicit class RicherLabeledShapes[A <: GeometricFigure](val theShapes: Seq[LabeledShape[A]]) {
-    def asLineShapes: Seq[LineShape] = theShapes.asInstanceOf[Seq[LineShape]]
-    def asPointShapes: Seq[PointShape] = theShapes.asInstanceOf[Seq[PointShape]]
-    def asRectShapes: Seq[RectShape] = theShapes.asInstanceOf[Seq[RectShape]]
-  }
-
-  implicit class RicherLabeledShape[A <: GeometricFigure](val theShape: LabeledShape[A]) {
-    def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
-    def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
-    def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
-  }
 
   protected def pageVerticalSlice(left: Double, width: Double): Option[LTBounds] = {
     pageGeometry.getVerticalSlice(left.toFloatExact(), width.toFloatExact())
@@ -117,127 +164,132 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   }
 
   protected def searchForPoints(query: GeometricFigure, l: Label): Seq[PointShape] = {
-    pageIndex.shapes.searchShapes(query, l)
+    shapeIndex.searchShapes(query, l)
       .map {_.asPointShape}
   }
 
   protected def searchForLines(query: GeometricFigure, l: Label*): Seq[LineShape] = {
-    pageIndex.shapes.searchShapes(query, l:_*)
+    shapeIndex.searchShapes(query, l:_*)
       .map {_.asLineShape}
   }
 
   protected def searchForRects(query: GeometricFigure, l: Label*): Seq[RectShape] = {
-    pageIndex.shapes.searchShapes(query, l:_*)
+    shapeIndex.searchShapes(query, l:_*)
       .map {_.asRectShape}
   }
 
 
   def getLabeledShapes(l: Label): Seq[AnyShape] = {
-    pageIndex.shapes.getShapesWithLabel(l)
+    shapeIndex.getShapesWithLabel(l)
   }
 
   def getLabeledRects(l: Label): Seq[RectShape] = {
-    pageIndex.shapes.getShapesWithLabel(l)
+    shapeIndex.getShapesWithLabel(l)
       .map(_.asRectShape)
   }
 
   def getLabeledLines(l: Label): Seq[LineShape] = {
-    pageIndex.shapes.getShapesWithLabel(l)
+    shapeIndex.getShapesWithLabel(l)
       .map(_.asLineShape)
   }
 
   def getLabeledPoints(l: Label): Seq[PointShape] = {
-    pageIndex.shapes.getShapesWithLabel(l)
+    shapeIndex.getShapesWithLabel(l)
       .map(_.asPointShape)
   }
 
   protected def deleteLabeledShapes(l: Label): Unit = {
-    deleteShapes(pageIndex.shapes.getShapesWithLabel(l))
+    deleteShapes(shapeIndex.getShapesWithLabel(l))
   }
 
-  protected def deleteShapes[T <: GeometricFigure](shapes: Seq[LabeledShape[T]]): Unit = {
-    shapes.foreach { sh => pageIndex.shapes.deleteShape(sh) }
+  protected def deleteShapes[T <: GeometricFigure](shapes: Seq[DocSegShape[T]]): Unit = {
+    shapes.foreach { sh => shapeIndex.deleteShape(sh) }
   }
 
-  protected def indexShape[T <: GeometricFigure](shape: T, l: Label): LabeledShape[GeometricFigure] = {
-    pageIndex.shapes.indexShape(shape, l)
+  protected def indexShape[T <: GeometricFigure](shape: T, l: Label): DocSegShape[GeometricFigure] = {
+    // shapeIndex.indexShape(shape, l)
+    shapeIndex.indexShape{ id =>
+      DocSegShape.create(id, shape, l)
+    }
   }
 
-  protected def indexShapeAndSetItems[T <: GeometricFigure](shape: T, l: Label, items: ExtractedItem*): LabeledShape[GeometricFigure] = {
-    val s = pageIndex.shapes.indexShape(shape, l)
+  protected def indexShapeAndSetItems[T <: GeometricFigure](shape: T, l: Label, items: ExtractedItem*): DocSegShape[GeometricFigure] = {
+    val s = shapeIndex.indexShape{ id =>
+      DocSegShape.create(id, shape, l)
+    }
     setExtractedItemsForShape(s, items.toSeq)
     s
   }
 
-  protected def deleteShape[T <: GeometricFigure](shape: LabeledShape[T]): Unit = {
-    pageIndex.shapes.deleteShape(shape)
+  protected def deleteShape[T <: GeometricFigure](shape: DocSegShape[T]): Unit = {
+    shapeIndex.deleteShape(shape)
   }
 
   protected def reindexShapes(l: Label): Unit = {
-    pageIndex.shapes.reindexShapes(l)
+    shapeIndex.reindexShapes(l)
   }
 
-  protected def unindexShape[T <: GeometricFigure](shape: LabeledShape[T]): Unit = {
-    pageIndex.shapes.unindexShape(shape)
+  protected def unindexShape[T <: GeometricFigure](shape: DocSegShape[T]): Unit = {
+    shapeIndex.unindexShape(shape)
   }
-  protected def unindexShapes[T <: GeometricFigure](shapes: Seq[LabeledShape[T]]): Unit = {
-    shapes.foreach { sh => pageIndex.shapes.unindexShape(sh) }
+  protected def unindexShapes[T <: GeometricFigure](shapes: Seq[DocSegShape[T]]): Unit = {
+    shapes.foreach { sh => shapeIndex.unindexShape(sh) }
   }
 
   // protected def addRelation(lhs: Int@@ShapeID, l: Label, rhs: Int@@ShapeID): Unit = {
-  //   pageIndex.shapes.addRelation(lhs, l, rhs)
+  //   shapeIndex.addRelation(lhs, l, rhs)
   // }
 
   protected def getClusteredLines(l: Label): Seq[(Int@@ShapeID, Seq[LineShape])] = {
-    pageIndex.shapes.getClustersWithReprID(l)
+    shapeIndex.getClustersWithReprID(l)
       .map{ case (id, shapes) =>
         (id, shapes.map {_.asLineShape})
       }
   }
 
   protected def getClusteredRects(l: Label): Seq[(Int@@ShapeID, Seq[RectShape])] = {
-    pageIndex.shapes.getClustersWithReprID(l)
+    shapeIndex.getClustersWithReprID(l)
       .map{ case (id, shapes) =>
         (id, shapes.map {_.asRectShape})
       }
   }
 
-  protected def cluster1(l: Label, shape: LabeledShape[GeometricFigure]): Unit = {
-    pageIndex.shapes.addCluster(l, Seq(shape))
+  protected def cluster1(l: Label, shape: DocSegShape[GeometricFigure]): Unit = {
+    shapeIndex.addCluster(l, Seq(shape))
   }
 
-  protected def cluster2(l: Label, shape1: LabeledShape[GeometricFigure], shape2: LabeledShape[GeometricFigure]): Unit = {
-    pageIndex.shapes.union(l, shape1, shape2)
+  protected def cluster2(l: Label, shape1: DocSegShape[GeometricFigure], shape2: DocSegShape[GeometricFigure]): Unit = {
+    shapeIndex.union(l, shape1, shape2)
   }
 
-  protected def clusterN(l: Label, shapes: Seq[LabeledShape[GeometricFigure]]): Unit = {
-    pageIndex.shapes.addCluster(l, shapes)
+  protected def clusterN(l: Label, shapes: Seq[DocSegShape[GeometricFigure]]): Unit = {
+    shapeIndex.addCluster(l, shapes)
   }
 
-  protected def setExtractedItemsForShape(shape: LabeledShape[GeometricFigure], items: Seq[ExtractedItem] ): Unit = {
-    pageIndex.shapes.setShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems, items)
+  protected def setExtractedItemsForShape(shape: DocSegShape[GeometricFigure], items: Seq[ExtractedItem] ): Unit = {
+    shapeIndex.setShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems, items)
   }
 
-  protected def getExtractedItemsForShape(shape: LabeledShape[GeometricFigure]): Seq[ExtractedItem] = {
-    pageIndex.shapes.getShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems).get
+  protected def getExtractedItemsForShape(shape: DocSegShape[GeometricFigure]): Seq[ExtractedItem] = {
+    shapeIndex.getShapeAttribute[Seq[ExtractedItem]](shape.id, LB.ExtractedItems).get
   }
 
-  protected def getExtractedItemsForShapes(shapes: Seq[LabeledShape[GeometricFigure]]): Seq[Seq[ExtractedItem]] = {
+  protected def getExtractedItemsForShapes(shapes: Seq[DocSegShape[GeometricFigure]]): Seq[Seq[ExtractedItem]] = {
     shapes.map { getExtractedItemsForShape(_) }
   }
 
 
-  def getCharsForShape(shape: LabeledShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
+  def getCharsForShape(shape: DocSegShape[GeometricFigure]): Seq[ExtractedItem.CharItem] = {
     getExtractedItemsForShape(shape)
       .collect{ case i: ExtractedItem.CharItem =>  i }
   }
 
-  protected def setFontsForShape(shape: LabeledShape[GeometricFigure], fontIds: Set[String@@ScaledFontID]): Unit = {
-    pageIndex.shapes.setShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts, fontIds)
+  protected def setFontsForShape(shape: DocSegShape[GeometricFigure], fontIds: Set[String@@ScaledFontID]): Unit = {
+    shapeIndex.setShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts, fontIds)
   }
 
-  protected def getFontsForShape(shape: LabeledShape[GeometricFigure]): Set[String@@ScaledFontID] = {
-    pageIndex.shapes.getShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts).get
+  protected def getFontsForShape(shape: DocSegShape[GeometricFigure]): Set[String@@ScaledFontID] = {
+    shapeIndex.getShapeAttribute[Set[String@@ScaledFontID]](shape.id, LB.Fonts).get
   }
 
   protected def queriesAllEmpty(queryRect: LTBounds, labels: Label*): Boolean = {
@@ -259,8 +311,8 @@ trait PageScopeSegmenter extends PageScopeTracing { self =>
   }
 
   protected def findPairwiseVerticalJumps[G <: GeometricFigure](
-    shapes: Seq[LabeledShape[G]], getY: (LabeledShape[G]) => Int@@FloatRep
-  ): Seq[(Int@@FloatRep, (LabeledShape[G], LabeledShape[G]))] = {
+    shapes: Seq[DocSegShape[G]], getY: (DocSegShape[G]) => Int@@FloatRep
+  ): Seq[(Int@@FloatRep, (DocSegShape[G], DocSegShape[G]))] = {
 
     val sorted = shapes.sortBy { getY(_) }
     val yVals = sorted.map(s => getY(s))

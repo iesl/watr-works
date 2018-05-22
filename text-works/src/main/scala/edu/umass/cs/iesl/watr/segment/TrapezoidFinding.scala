@@ -15,7 +15,7 @@ trait ShapeFunctions extends TrapezoidFinding with LineShapeClassification { sel
 trait TrapezoidFinding extends PageScopeSegmenter { self =>
 
   private def getComponentText(cc: Int@@ShapeID, l: Label): Option[TextGrid.Row] = {
-    // val l1TextRowOpt = pageIndex.shapes.getComponentText(line1CC, LB.VisualLine)
+    // val l1TextRowOpt = shapeIndex.getComponentText(line1CC, LB.VisualLine)
     ???
   }
 
@@ -25,7 +25,7 @@ trait TrapezoidFinding extends PageScopeSegmenter { self =>
 
 
   //   for {
-  //     linePair <- PageSegmenter.getVisualLinesInExtractionOrder(pageIndex).sliding(2)
+  //     linePair <- PageSegmenter.getVisualLinesInExtractionOrder(shapeIndex).sliding(2)
   //   }  {
 
   //     // construct trapezoids: isosceles, right, rectangular
@@ -38,9 +38,9 @@ trait TrapezoidFinding extends PageScopeSegmenter { self =>
   //         (ml1Text, ml2Text) match {
   //           case (Some(l1Text), Some(l2Text)) =>
 
-  //             // pageIndex.shapes.getRelation(l1, LB.VisualLineModal)
-  //             val l1VisLineModal = pageIndex.shapes.getRelation(l1, LB.VisualLineModal).head
-  //             val l2VisLineModal = pageIndex.shapes.getRelation(l2, LB.VisualLineModal).head
+  //             // shapeIndex.getRelation(l1, LB.VisualLineModal)
+  //             val l1VisLineModal = shapeIndex.getRelation(l1, LB.VisualLineModal).head
+  //             val l2VisLineModal = shapeIndex.getRelation(l2, LB.VisualLineModal).head
 
   //             val l1Baseline = l1VisLineModal.shape.bounds().toLine(Dir.Bottom)
   //             val l2Baseline = l2VisLineModal.shape.bounds().toLine(Dir.Bottom)
@@ -54,7 +54,7 @@ trait TrapezoidFinding extends PageScopeSegmenter { self =>
   //             docStats.leftAcuteBaseAngles.fill(t)
   //             docStats.leftObtuseBaseAngles.fill(t)
 
-  //             pageIndex.shapes.setShapeAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
+  //             shapeIndex.setShapeAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
 
   //             Option(t)
 
@@ -71,10 +71,10 @@ trait TrapezoidFinding extends PageScopeSegmenter { self =>
 
   //   val docStats = docScope.docStats
 
-  //   // pageIndex.shapes.reportClusters()
+  //   // shapeIndex.reportClusters()
 
   //   for {
-  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
   //     linePair <- lineCCs.sliding(2)
   //   }  {
 
@@ -88,8 +88,8 @@ trait TrapezoidFinding extends PageScopeSegmenter { self =>
   //         (ml1Text, ml2Text) match {
   //           case (Some(l1Text), Some(l2Text)) =>
 
-  //             val l1VisLineModal = pageIndex.shapes.getRelation(l1, LB.VisualLineModal).head
-  //             val l2VisLineModal = pageIndex.shapes.getRelation(l2, LB.VisualLineModal).head
+  //             val l1VisLineModal = shapeIndex.getRelation(l1, LB.VisualLineModal).head
+  //             val l2VisLineModal = shapeIndex.getRelation(l2, LB.VisualLineModal).head
 
   //             val l1Baseline = l1VisLineModal.bounds().toLine(Dir.Bottom)
   //             val l2Baseline = l2VisLineModal.bounds().toLine(Dir.Bottom)
@@ -103,7 +103,7 @@ trait TrapezoidFinding extends PageScopeSegmenter { self =>
   //             docStats.leftAcuteBaseAngles.fill(t)
   //             docStats.leftObtuseBaseAngles.fill(t)
 
-  //             pageIndex.shapes.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
+  //             shapeIndex.setAttribute[Trapezoid](l1.id, watrmarks.Label("Trapezoid"), t)
 
   //             Option(t)
 

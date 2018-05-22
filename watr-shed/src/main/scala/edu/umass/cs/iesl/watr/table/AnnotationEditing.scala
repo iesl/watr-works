@@ -14,10 +14,10 @@ import utils._
 
 import textboxing.{TextBoxing => TB}, TB._
 import segment._
-import rindex._
+import rtrees._
 
 object AnnotationDiffs {
-  import rindex._
+  import rtrees._
 
 
   val R = RelationModel
@@ -90,9 +90,34 @@ object AnnotationDiffs {
     goldToNonGoldTable: TabularData[Int, Int, LabelSpanComparison, Unit, Unit]
   )
 
+  case class IndexShape(
+    id: Int@@ShapeID,
+    shape: GeometricFigure,
+    labels: Set[Label],
+  ) extends LabeledShape[GeometricFigure, Unit] {
+    def addLabels(l: Label*): IndexShape = copy(labels = this.labels ++ l.toSet)
+    val attr: Unit = ()
+  }
 
+  object IndexShape {
+    def create(
+      id: Int@@ShapeID,
+      shape: GeometricFigure,
+      labels: Label*
+    ) = IndexShape(
+      id, shape, labels.toSet
+    )
+  }
 
-  private def initLabeledShapeIndexes(stableId: String@@DocumentID)(implicit corpusAccessApi: CorpusAccessApi): Map[Int@@PageNum, LabeledShapeIndex] = {
+  type ShapeIndex = LabeledShapeIndex[GeometricFigure, Unit, IndexShape]
+
+  implicit class SS_LabeledShapeCoercion[+A <: GeometricFigure](val theShape: IndexShape) {
+    def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
+    def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
+    def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
+  }
+
+  private def initLabeledShapeIndexes(stableId: String@@DocumentID)(implicit corpusAccessApi: CorpusAccessApi): Map[Int@@PageNum, LabeledShapeIndex[GeometricFigure, Unit, IndexShape]] = {
     val docStore = corpusAccessApi.docStore
     val docId = docStore.getDocument(stableId).orDie(s"no document for ${stableId}")
     docStore.getPages(docId).map { pageId =>
@@ -102,9 +127,8 @@ object AnnotationDiffs {
         pageDef.bounds
       )
       docStore.getPageGeometry(pageId)
-      // val pageIndex = new LabeledShapeIndex(pageGeometry)
-      val pageIndex = new LabeledShapeIndex
-      (pageDef.pagenum, pageIndex)
+      val shapeIndex = new LabeledShapeIndex[GeometricFigure, Unit, IndexShape]
+      (pageDef.pagenum, shapeIndex)
     }.toMap
   }
 
@@ -206,7 +230,7 @@ object AnnotationDiffs {
     } else None
   }
 
-  def addLabelIndicatorPoints(labelSpans: Seq[LabeledSpan], pageIndexMap: Map[Int@@PageNum, LabeledShapeIndex]): Unit = {
+  def addLabelIndicatorPoints(labelSpans: Seq[LabeledSpan], shapeIndexMap: Map[Int@@PageNum, ShapeIndex]): Unit = {
     for {
       (labelSpan, spanNum) <- labelSpans.zipWithIndex
     } for {
@@ -215,19 +239,23 @@ object AnnotationDiffs {
     } {
       val cellRegion = gridCell.pageRegion
       val pageNum = cellRegion.page.pageNum
-      val pageIndex = pageIndexMap(pageNum)
+      val shapeIndex = shapeIndexMap(pageNum)
       val cellBounds = gridCell.pageRegion.bbox
       val cellCenter = cellBounds.toPoint(Dir.Center)
       val pinRep = bioPinsToBlockRep(gridCell.pins)
 
       val queryBox = minBoundingRect(cellCenter)
 
-      val hits = queryForIndicatorPoints(queryBox, pageIndex)
+      val hits = queryForIndicatorPoints(queryBox, shapeIndex)
 
       if (hits.isEmpty) {
-        val indicatorPt = pageIndex.shapes.indexShape(cellCenter, LabelIndicatorPoint)
+        // val indicatorPt = shapeIndex.indexShape(cellCenter, LabelIndicatorPoint)
+        val indicatorPt = shapeIndex.indexShape{ id =>
+          IndexShape.create(id, cellCenter, LabelIndicatorPoint)
+          // IndicatorPointAttr(labeledSpan: LabeledSpan, cellIndex: Int, pinRepBox: Box, spanRecIndex: Int)
+        }
         val attr = List( IndicatorPointAttr(labelSpan, cellNum, pinRep, spanNum) )
-        pageIndex.shapes.setShapeAttribute(indicatorPt.id, LabeledSpanAttr, attr)
+        shapeIndex.setShapeAttribute(indicatorPt.id, LabeledSpanAttr, attr)
 
       } else {
         // assume(hits.length==1) TODO this should hold true
@@ -236,8 +264,8 @@ object AnnotationDiffs {
         // DEBUGGING CODE:
         if (hits.length > 1) {
           val allHitChars = hits.map{ hitShape =>
-            val hitAttrs = getIndicatorPointAttrs(hitShape, pageIndex)
-            // val hitAttrs = pageIndex.shapes.getShapeAttribute[List[IndicatorPointAttr]](hitShape.id, LabeledSpanAttr).get
+            val hitAttrs = getIndicatorPointAttrs(hitShape, shapeIndex)
+            // val hitAttrs = shapeIndex.getShapeAttribute[List[IndicatorPointAttr]](hitShape.id, LabeledSpanAttr).get
             val hitChars = hitAttrs.map{ attr =>
               val cell = attr.labeledSpan.cells(attr.cellIndex)
               cell.char
@@ -258,30 +286,30 @@ object AnnotationDiffs {
 
         hits.foreach { indicatorPt =>
           val attr = IndicatorPointAttr(labelSpan, cellNum, pinRep, spanNum)
-          appendIndicatorPointAttrs(indicatorPt, attr, pageIndex)
+          appendIndicatorPointAttrs(indicatorPt, attr, shapeIndex)
         }
       }
     }
   }
 
 
-  def getIndicatorPointAttrs(indicatorPoint: PointShape, pageIndex: LabeledShapeIndex): List[IndicatorPointAttr] = {
-    pageIndex.shapes.getShapeAttribute[List[IndicatorPointAttr]](indicatorPoint.id, LabeledSpanAttr).get
+  def getIndicatorPointAttrs(indicatorPoint: PointShape, shapeIndex: ShapeIndex): List[IndicatorPointAttr] = {
+    shapeIndex.getShapeAttribute[List[IndicatorPointAttr]](indicatorPoint.id, LabeledSpanAttr).get
   }
 
-  def appendIndicatorPointAttrs(indicatorPoint: PointShape, attr:IndicatorPointAttr, pageIndex: LabeledShapeIndex): Unit = {
-    val attrs = pageIndex.shapes.getShapeAttribute[List[IndicatorPointAttr]](indicatorPoint.id, LabeledSpanAttr).get
+  def appendIndicatorPointAttrs(indicatorPoint: PointShape, attr:IndicatorPointAttr, shapeIndex: ShapeIndex): Unit = {
+    val attrs = shapeIndex.getShapeAttribute[List[IndicatorPointAttr]](indicatorPoint.id, LabeledSpanAttr).get
     val updated = attrs :+ attr
-    pageIndex.shapes.setShapeAttribute(indicatorPoint.id, LabeledSpanAttr, updated)
+    shapeIndex.setShapeAttribute(indicatorPoint.id, LabeledSpanAttr, updated)
   }
 
-  protected def getLabeledPoints(l: Label, pageIndex: LabeledShapeIndex): Seq[PointShape] = {
-    pageIndex.shapes.getShapesWithLabel(l)
+  protected def getLabeledPoints(l: Label, shapeIndex: ShapeIndex): Seq[PointShape] = {
+    shapeIndex.getShapesWithLabel(l)
       .map(_.asPointShape)
   }
 
-  protected def queryForIndicatorPoints(query: LTBounds, pageIndex: LabeledShapeIndex): Seq[PointShape] = {
-    pageIndex.shapes
+  protected def queryForIndicatorPoints(query: LTBounds, shapeIndex: ShapeIndex): Seq[PointShape] = {
+    shapeIndex
       .searchShapes(query, LabelIndicatorPoint)
       .map(_.asPointShape)
   }
@@ -395,7 +423,7 @@ object AnnotationDiffs {
 
   def diffDocumentAnnots(stableId: String@@DocumentID)(implicit corpusAccessApi: CorpusAccessApi): DocumentDiffRecords = {
 
-    val pageIndexMap = initLabeledShapeIndexes(stableId)
+    val shapeIndexMap = initLabeledShapeIndexes(stableId)
 
     val allFineLabelsIndexed: Seq[(LabeledSpan, Int)] = buildFineGrainedLabelTable(stableId).zipWithIndex
     val allFineLabels: Seq[LabeledSpan] = allFineLabelsIndexed.map(_._1)
@@ -410,16 +438,16 @@ object AnnotationDiffs {
       (nonGold, nonGoldIndex) <- nonGoldLabels
     } { goldToNonGoldTable.set(goldIndex, nonGoldIndex, LabelSpanComparison()) }
 
-    addLabelIndicatorPoints(allFineLabels, pageIndexMap)
+    addLabelIndicatorPoints(allFineLabels, shapeIndexMap)
 
 
     // Generate char-level diffs between overlapping labeled spans...
     // Record all label pairs that have diffs
-    pageIndexMap.toList.sortBy(_._1).foreach { case (pageNum, pageIndex) =>
+    shapeIndexMap.toList.sortBy(_._1).foreach { case (pageNum, shapeIndex) =>
 
-      getLabeledPoints(LabelIndicatorPoint, pageIndex).foreach { indicatorPoint =>
+      getLabeledPoints(LabelIndicatorPoint, shapeIndex).foreach { indicatorPoint =>
 
-        val attrs = getIndicatorPointAttrs(indicatorPoint, pageIndex)
+        val attrs = getIndicatorPointAttrs(indicatorPoint, shapeIndex)
         val goldAttrs = attrs.filter(_.labeledSpan.isGold)
         val nonGoldAttrs = attrs.filterNot(_.labeledSpan.isGold)
 

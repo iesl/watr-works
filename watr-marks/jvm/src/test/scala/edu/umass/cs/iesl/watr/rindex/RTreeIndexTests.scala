@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package rindex
+package rtrees
 
 import org.scalatest._
 

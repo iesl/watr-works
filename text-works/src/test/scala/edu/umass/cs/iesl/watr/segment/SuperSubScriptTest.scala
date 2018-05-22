@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-// import rindex._
+// import rtrees._
 // import geometry._
 
 // import watrmarks.{StandardLabels => LB}
@@ -52,14 +52,14 @@ class SuperSubScriptTest extends SegmentationTestUtils {
   //     val bounds = example.region.bbox
 
   //     val segmenter = createFilteredMultiPageIndex(pdfIns, pageId, Seq(bounds))
-  //     val pageIndex = segmenter.mpageIndex.getPageIndex(pageId)
+  //     val shapeIndex = segmenter.mshapeIndex.getPageIndex(pageId)
 
   //     // tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Off
   //     tracing.VisualTracer.visualTraceLevel = tracing.VisualTraceLevel.Print
 
   //     segmenter.runLineDetermination()
 
-  //     val lineComponents = pageIndex.components.getComponentsWithLabel(LB.VisualLine)
+  //     val lineComponents = shapeIndex.components.getComponentsWithLabel(LB.VisualLine)
 
   //     val tokenizedLines = lineComponents.map { lineComponent =>
   //       lineComponent.tokenizeLine()

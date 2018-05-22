@@ -23,7 +23,6 @@ import io.circe.generic._
 
   */
 
-// import TypeTagCodecs._
 import GeometryCodecs._
 
 
@@ -155,7 +154,6 @@ case class CharAtom(
   // wonkyCharCode: Option[Int] = None
 ) extends PageItem {
   override def toString = s"CharAtom($char, $pageRegion)"
-
 }
 
 
@@ -177,14 +175,6 @@ object PageComponentImplicits {
       }
       thePageRegion.copy(bbox = thePageRegion.bbox union r.bbox)
     }
-
-    // def intersects(pageId: Int@@PageID, bbox: LTBounds): Boolean = {
-    //   val samePage = thePageRegion.page.pageId == pageId
-    //   samePage && (thePageRegion.bbox intersects bbox)
-    // }
-    // def intersects(r: PageRegion): Boolean = {
-    //   intersects(r.page.pageId, r.bbox)
-    // }
 
 
     def intersection(b: LTBounds): Option[PageRegion] = {

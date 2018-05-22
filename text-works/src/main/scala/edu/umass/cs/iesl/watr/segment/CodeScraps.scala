@@ -332,7 +332,7 @@
 
 //     val pageTextBlockCCs = for {
 //       textBlock <- pageBlocks
-//       (textBlockRegionCC, textBlockTargeetRegion) <- mpageIndex.labelRegion(textBlock, LB.TextBlock)
+//       (textBlockRegionCC, textBlockTargeetRegion) <- mshapeIndex.labelRegion(textBlock, LB.TextBlock)
 //     } yield {
 //       assert(textBlock.forall(_.hasLabel(LB.VisualLine)))
 //       textBlockRegionCC.setChildren(LB.VisualLine, textBlock)
@@ -351,7 +351,7 @@
 
 //   def sortPageTextBlocks(pageTextBlocks: Seq[Component]): Option[RegionComponent] = {
 // TODO: actually sort these?
-//     mpageIndex
+//     mshapeIndex
 //       .labelRegion(pageTextBlocks, LB.PageTextBlocks)
 //       .map({ case (page, pageTargetRegionn) =>
 //         page.setChildren(LB.TextBlock, pageTextBlocks)
@@ -395,7 +395,7 @@
 //       .toSet
 //       .toList
 //       .map{ id: Int =>
-//         mpageIndex.getComponent(ComponentID(id), pageNum).asInstanceOf[AtomicComponent]
+//         mshapeIndex.getComponent(ComponentID(id), pageNum).asInstanceOf[AtomicComponent]
 //       }
 //       .map(x => (x.bounds.left.unwrap, x))
 //       .sortBy(_._1)
@@ -500,7 +500,7 @@
 //     val shortLinesFilledIn = lineIdSets.iterator().toSeq
 //       .map{  line =>
 //         line.map{ id =>
-//           mpageIndex.getComponent(ComponentID(id), pageNum).asInstanceOf[AtomicComponent]
+//           mshapeIndex.getComponent(ComponentID(id), pageNum).asInstanceOf[AtomicComponent]
 //         }
 //       }
 //       .map(_.toSeq.sortBy(c => (c.bounds.left, c.bounds.top)))
@@ -550,7 +550,7 @@
 //       val line = lineGroups.reduce(_ ++ _)
 
 // Glue together page atoms into a VisualLine/TextSpan
-//       mpageIndex.labelRegion(line, LB.VisualLine)
+//       mshapeIndex.labelRegion(line, LB.VisualLine)
 //         .map ({ case (visualLine, targetRegion) =>
 //           visualLine.setChildren(LB.PageAtom, line.sortBy(_.bounds.left))
 //           visualLine.cloneAndNest(LB.TextSpan)
@@ -579,7 +579,7 @@
 
 //     val ySortedLines = pageLines
 
-//     mpageIndex
+//     mshapeIndex
 //       .labelRegion(ySortedLines, LB.PageLines)
 //       .map{ case (comp, targetRegion) =>
 //         comp.setChildren(LB.VisualLine, ySortedLines)
@@ -622,12 +622,12 @@
 //   }
 
 //   def visualLineOnPageComponents: Seq[Seq[Component]] =
-//     mpageIndex
+//     mshapeIndex
 //       .getDocumentVisualLines
 //       .map(_.sortBy(_.bounds.top))
 
 // } yield {
-//   val page = mpageIndex.getPageIndex(pageId)
+//   val page = mshapeIndex.getPageIndex(pageId)
 //   val pageLiness = page.components.getComponentsWithLabel(LB.PageLines)
 //   assert(pageLiness.length==1)
 //   val pageLines = pageLiness.head
@@ -742,7 +742,7 @@
 // // if the text block containing "abstract" is a single line,
 // //    take subsequent text blocks until we take a multiline
 // // else if the text block is multi-line, take that block to be the entire abstract
-// val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
+// val lineBioLabels = mshapeIndex.bioLabeling("LineBioLabels")
 // val blocks = selectBioLabelings(LB.TextBlock, lineBioLabels)
 
 // vtrace.trace(message(s"TextBlock count: ${blocks.length}"))
@@ -762,7 +762,7 @@
 //   if (firstBlockIsMultiline) {
 //     // label this as the abstract
 //     maybeLookingAtAbstract.headOption.foreach { abs =>
-//       mpageIndex.addBioLabels(LB.Abstract, abs)
+//       mshapeIndex.addBioLabels(LB.Abstract, abs)
 
 //       vtrace.trace("Found Abstract in multi-line block" withTrace
 //         all(abs.map(b => showComponent(b.component))))
@@ -774,7 +774,7 @@
 //     val absBlock = maybeLookingAtAbstract.drop(singleLines.length).headOption.getOrElse(Seq())
 //     val totalABs = singleLines :+ absBlock
 
-//     mpageIndex.addBioLabels(LB.Abstract, totalABs.flatten)
+//     mshapeIndex.addBioLabels(LB.Abstract, totalABs.flatten)
 
 //     vtrace.trace("Found Abstract in single-line block" withTrace all(
 //       totalABs.flatMap(_.map(b => showComponent(b.component)))
@@ -815,7 +815,7 @@
 //     if (lastMultilineBeforeIntro != -1) {
 //       // label this as the abstract
 //       allBlocksBeforeIntro.get(lastMultilineBeforeIntro).foreach { abs =>
-//         mpageIndex.addBioLabels(LB.Abstract, abs)
+//         mshapeIndex.addBioLabels(LB.Abstract, abs)
 //         //println("labeling as part of abstract: " + abs.component.toText)
 //         // vtrace.trace(
 //         //   vtrace.link(
@@ -837,7 +837,7 @@
 
 //   def labelSectionHeadings(): Unit = {
 //     vtrace.trace(begin("LabelSectionHeadings"))
-// val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
+// val lineBioLabels = mshapeIndex.bioLabeling("LineBioLabels")
 // for {
 //   lineBioNode <- lineBioLabels
 //   lineComp = lineBioNode.component
@@ -853,7 +853,7 @@
 //   // vtrace.trace("Labeled section heading" withInfo
 //   //   show(lineBioNode.component))
 
-//   mpageIndex.addBioLabels(LB.SectionHeadingLine, lineBioNode)
+//   mshapeIndex.addBioLabels(LB.SectionHeadingLine, lineBioNode)
 // }
 
 //     vtrace.trace(end("LabelSectionHeadings"))
@@ -866,7 +866,7 @@
 //   }
 
 //   def labelTitle(): Unit = {
-// val lineBioLabels = mpageIndex.bioLabeling("LineBioLabels")
+// val lineBioLabels = mshapeIndex.bioLabeling("LineBioLabels")
 // // look for lines with biggest font within first [x] lines of paper
 // // get rid of lines with length less than some arbitrary length (to weed out some weird cases)
 // val biggestLineAtBeginning = lineBioLabels.take(50)
@@ -879,7 +879,7 @@
 
 // if(biggestLineAtBeginning.headOption.isDefined) {
 //   // println("Title candidate: " + biggestLineAtBeginning.headOption.get.component.chars)
-//   mpageIndex.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
+//   mshapeIndex.addBioLabels(LB.Title, biggestLineAtBeginning.headOption.get)
 //   println
 // } else {
 //   println("there isn't a biggest line?")
@@ -929,7 +929,7 @@
 //   // Walk down column lines pair-wise, and take while diagonal distances match
 
 
-//   // mpageIndex.connectComponents(totalLineSorted, LB.Block)
+//   // mshapeIndex.connectComponents(totalLineSorted, LB.Block)
 //   // totalLineSorted
 
 //   ???
@@ -984,7 +984,7 @@
 //         withinCommonVDist &&
 //         aWithinBsColumn
 //       ) {
-//         // mpageIndex.addBioLabels(LB.ParaBegin, block1Lines)
+//         // mshapeIndex.addBioLabels(LB.ParaBegin, block1Lines)
 //       }
 
 //       true
@@ -1030,7 +1030,7 @@
 // def sweepJoinColinearCharRunShapes(): Unit = {
 //   traceLog.drawPageShapes()
 
-//   val charRunBaselines = pageIndex.shapes.getShapesWithLabel(LB.CharRunBaseline)
+//   val charRunBaselines = shapeIndex.getShapesWithLabel(LB.CharRunBaseline)
 // Sweep along horizontals, starting from leftmost char-begins, taking
 //   all intersecting char-begin verticals, and decide to either
 //   (1) join the two lines, selecting the most appropriate combined baseline
@@ -1040,13 +1040,13 @@
 // val yIntercept = runBeginMbr.bottom
 // val hline = runHLine.extendRightTo(pageGeometry.right)
 // val hline = boundedHLine(pageGeometry, yIntercept)
-// val xSortedHits = pageIndex.shapes.searchShapes(hline, LB.CharRunBeginVLine).sortBy(_.shape.mbr.left)
+// val xSortedHits = shapeIndex.searchShapes(hline, LB.CharRunBeginVLine).sortBy(_.shape.mbr.left)
 // val hitsLeftOfFocusPoint = xSortedHits.dropWhile(_.shape.mbr.left <= runBeginMbr.left)
 
 // if (hitsLeftOfFocusPoint.isEmpty) {
 
 
-//   // pageIndex.indexShape(charRunLine, LB.VisualBaseLine)
+//   // shapeIndex.indexShape(charRunLine, LB.VisualBaseLine)
 // } else {
 //   // take while there is not discontinuous jump in char ids
 
@@ -1058,11 +1058,11 @@
 // def joinColinearCharRunShapes(): Unit = {
 //   traceLog.drawPageShapes()
 
-//   val leftEvPoints = pageIndex.shapes.getShapesWithLabel(LB.ColLeftEvidence)
+//   val leftEvPoints = shapeIndex.getShapesWithLabel(LB.ColLeftEvidence)
 
 //   leftEvPoints.foreach { leftEvidence =>
 //     val hline = boundedHLine(pageGeometry, leftEvidence.shape.mbr.toPoint(Dir.BottomLeft).y)
-//     val colinearEvidenceHits = pageIndex.shapes.searchShapes(hline, LB.ColLeftEvidence)
+//     val colinearEvidenceHits = shapeIndex.searchShapes(hline, LB.ColLeftEvidence)
 
 //     traceLog.jsonAppend {
 //       showShapes(
@@ -1080,10 +1080,10 @@
 //     colinearEvidenceHits.sortBy{ lsh => lsh.shape.mbr.left }
 //       .foreach { lshape =>
 //         val evLoc = lshape.shape.mbr.toPoint(Dir.BottomLeft)
-//         val evAtoms = pageIndex.components.searchComponents(evLoc, LB.PageAtom)
+//         val evAtoms = shapeIndex.components.searchComponents(evLoc, LB.PageAtom)
 //         evAtoms.foreach { evCC =>
 //           val offset = evCC.id.unwrap
-//           val charTri = pageIndex.extractedItems.slice(offset-1, offset+2)
+//           val charTri = shapeIndex.extractedItems.slice(offset-1, offset+2)
 //           if (! charTri.exists(_ == null)) {
 //             val lefts = charTri.map(_.bbox.left)
 
@@ -1091,7 +1091,7 @@
 //               .forall{ case(a,b) =>  a == b }
 
 //             if (windowIsSorted) {
-//               pageIndex.shapes.removeShape(lshape)
+//               shapeIndex.removeShape(lshape)
 //             }
 //           }
 //         }
@@ -1104,7 +1104,7 @@
   // // HOTSPOT:toList
   // private def createBaselineClusters(): Unit = {
 
-  //   pageIndex.shapes.ensureCluster(LB.CharRunBaseline::Cluster)
+  //   shapeIndex.ensureCluster(LB.CharRunBaseline::Cluster)
 
   //   val hPageRules = createHPageRules()
 
@@ -1139,8 +1139,8 @@
   //             lazy val intermediateCharsStrictlyLeftToRight =
   //               intermediateCharsIds.zip(intermediateCharsIds.tail :+ run2FirstChar.id.unwrap)
   //                 .forall { case (id1, id2) =>
-  //                   val item1 = pageIndex.extractedItems(id1)
-  //                   val item2 = pageIndex.extractedItems(id2)
+  //                   val item1 = shapeIndex.extractedItems(id1)
+  //                   val item2 = shapeIndex.extractedItems(id2)
   //                   val nonNullIntermediates = item1  != null && item2 != null
   //                   val leftToRight = item1.location.x <= item2.location.x
 
@@ -1148,7 +1148,7 @@
   //                 }
   //             if (hasFewIntermediates && intermediateCharsStrictlyLeftToRight) {
   //               intermediateCharsIds.foreach { id =>
-  //                   val intBaseline = pageIndex.shapes.extractedItemShapes.get(id, LB.CharRun)
+  //                   val intBaseline = shapeIndex.extractedItemShapes.get(id, LB.CharRun)
   //                   if (intBaseline != null) {
   //                     cluster2(LB.CharRunBaseline::Cluster, runBaseline1, intBaseline)
   //                   }
@@ -1205,7 +1205,7 @@
   //         val likelyBaseline = Line(Point(l, yval), Point(l+w, yval))
   //         val shape = indexShape(likelyBaseline, LB.FontBaseline)
   //         setExtractedItemsForShape(shape, extractedItems)
-  //         pageIndex.shapes.appendToOrdering(LB.FontBaseline::Ordering, shape)
+  //         shapeIndex.appendToOrdering(LB.FontBaseline::Ordering, shape)
   //       }
   //     }
 
@@ -1240,7 +1240,7 @@
   //         val likelyBaseline = Line(Point(l, yval), Point(l+w, yval))
   //         val shape = indexShape(likelyBaseline, LB.FontBaseline)
   //         setExtractedItemsForShape(shape, extractedItems.flatten)
-  //         pageIndex.shapes.appendToOrdering(LB.FontBaseline::Ordering, shape)
+  //         shapeIndex.appendToOrdering(LB.FontBaseline::Ordering, shape)
   //       }
   //     }
   // }
@@ -1260,7 +1260,7 @@
 // }
 
   // private def subdivideColumnClusters(): Unit = {
-  //   val pageVdists = pageIndex.pageVerticalJumps
+  //   val pageVdists = shapeIndex.pageVerticalJumps
   //   val allBins = qnn(pageVdists, tolerance = 0.5d)
 
   //   val bins = allBins.filter(_.size() > 1)

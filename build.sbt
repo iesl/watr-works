@@ -37,7 +37,7 @@ lazy val watrmarks = (crossProject in file("watr-marks"))
   .jvmSettings(libraryDependencies ++=
     LogLibs.logback ++ TestLibs.testAndCheck ++ Seq(
       Lib.ammoniteOps,
-      "org.scala-js"               %% "scalajs-stubs"          % "0.6.22" % "provided",
+      "org.scala-js"               %% "scalajs-stubs"          % "0.6.23" % "provided",
       "com.lihaoyi"                %% "scalatags"              % Lib.scalaTagsVersion,
       "com.github.davidmoten"       % "rtree"                  % "0.8.5",
       "com.github.davidmoten"       % "flatbuffers-java"       % "1.9.0.1",

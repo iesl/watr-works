@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package rindex
+package rtrees
 
 import RGeometryConversions._
 import rx.Observable
@@ -13,23 +13,20 @@ import com.github.davidmoten.rtree.{geometry => RG, _}
 import edu.umass.cs.iesl.watr.{geometry => G}
 import java.lang.{Boolean => JBool}
 
-trait RTreeSearch[T] {
+import geometry._
 
-  def rtreeIndex: RTree[T, RG.Geometry]
+trait RTreeSearch[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]] {
+  // type Shape = LabeledShape.Aux[T, W]
 
-  def indexable: RTreeIndexable[T]
-
-  lazy implicit val si = indexable
-
-
+  def rtreeIndex: RTree[Shape, RG.Geometry]
 
   def search(
     queryFig:G.GeometricFigure,
-    filter: T=>Boolean,
+    filter: Shape=>Boolean,
     intersectFunc: (RG.Geometry, RG.Geometry) => Boolean = (_,_) => true,
-  ): Seq[T] = {
-    val filterFunc = new Func1[Entry[T, RG.Geometry], JBool]() {
-      override def call(entry: Entry[T, RG.Geometry]): JBool = {
+  ): Seq[Shape] = {
+    val filterFunc = new Func1[Entry[Shape, RG.Geometry], JBool]() {
+      override def call(entry: Entry[Shape, RG.Geometry]): JBool = {
         filter(entry.value())
       }
     }
@@ -47,24 +44,24 @@ trait RTreeSearch[T] {
     toScalaSeq(hits)
   }
 
-  def queryForIntersects(q: G.LTBounds): Seq[T] = {
+  def queryForIntersects(q: G.LTBounds): Seq[Shape] = {
     toScalaSeq(rtreeIndex.search(toRGRectangle(q)))
   }
 
   def queryForIntersectedIDs(q:G.LTBounds): Seq[Int] = {
     toEntrySeq(rtreeIndex.search(toRGRectangle(q)))
-      .map{ entry => si.id(entry.value()) }
+      .map{ entry => entry.value().id.unwrap }
   }
 
-  protected def toScalaSeq(obs: Observable[Entry[T, RG.Geometry]]): Seq[T]  = {
+  protected def toScalaSeq(obs: Observable[Entry[Shape, RG.Geometry]]): Seq[Shape]  = {
     toEntrySeq(obs).toSeq.map{ _.value() }
   }
 
-  protected def toEntrySeq(obs: Observable[Entry[T, RG.Geometry]]): Seq[Entry[T, RG.Geometry]]  = {
+  protected def toEntrySeq(obs: Observable[Entry[Shape, RG.Geometry]]): Seq[Entry[Shape, RG.Geometry]]  = {
     obs.toBlocking().toIterable().asScala.toSeq
   }
 
-  protected def toIdSeq(obs: Observable[Entry[T, RG.Geometry]]): Seq[Int]  = {
-    toEntrySeq(obs).map{ entry => si.id(entry.value()) }
+  protected def toIdSeq(obs: Observable[Entry[Shape, RG.Geometry]]): Seq[Int]  = {
+    toEntrySeq(obs).map{ entry => entry.value().id.unwrap }
   }
 }

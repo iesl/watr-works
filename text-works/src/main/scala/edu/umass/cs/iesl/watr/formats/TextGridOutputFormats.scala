@@ -3,7 +3,7 @@ package formats
 
 import edu.umass.cs.iesl.watr.watrmarks.WeightedLabeling
 
-import rindex._
+import rtrees._
 import textboxing.{TextBoxing => TB}, TB._
 import segment.{SegmentationLabels => LB}
 import segment._
@@ -207,25 +207,25 @@ object TextGridOutputFormats  {
 
   }
 
-  // def documentToStructuredPlaintext(mpageIndex: MultiPageIndex): String = {
+  // def documentToStructuredPlaintext(mshapeIndex: MultiPageIndex): String = {
   //   val allText = for {
-  //     pageNum      <- mpageIndex.getPages
-  //     pageIndex    <- List(mpageIndex.getPageIndex(pageNum))
+  //     pageNum      <- mshapeIndex.getPages
+  //     shapeIndex    <- List(mshapeIndex.getPageIndex(pageNum))
   //   } yield {
   //     val textCol = for {
-  //       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+  //       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
   //       lineCC <- lineCCs
   //     } yield {
 
-  //       val lineText = pageIndex.shapes.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
+  //       val lineText = shapeIndex.getComponentText(lineCC, LB.VisualLine).map(_.toText().take(40).mkString)
   //       lineText.getOrElse("<no text>").box
   //     }
 
   //     val pinCol = for {
-  //       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+  //       (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
   //       lineCC <- lineCCs
   //     } yield {
-  //       val lineWeights = pageIndex.shapes.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
+  //       val lineWeights = shapeIndex.getAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
   //       val linePins = lineWeights.countedPins()
   //       if (linePins.nonEmpty) {
   //         val maxPin = linePins.maxBy(_._2)._1

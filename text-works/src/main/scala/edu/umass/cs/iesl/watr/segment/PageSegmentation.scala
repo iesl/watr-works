@@ -1,7 +1,7 @@
 package edu.umass.cs.iesl.watr
 package segment
 
-import rindex._
+import rtrees._
 import textgrid._
 
 trait PageLevelFunctions extends ColumnFinding
@@ -10,21 +10,22 @@ trait PageLevelFunctions extends ColumnFinding
     with ShapeFunctions
 
 object PageSegmenter {
+  import SegmentationSystem._
 
-  def getVisualLinesInExtractionOrder(pageIndex: LabeledShapeIndex): Seq[LineShape] = {
-    // pageIndex.shapes.getOrdering(LB.ExtractedLineStarts)
+  def getVisualLinesInExtractionOrder(shapeIndex: ShapeIndex): Seq[LineShape] = {
+    // shapeIndex.getOrdering(LB.ExtractedLineStarts)
     ???
   }
 
-  // def getVisualLinesInReadingOrder(pageIndex: LabeledShapeIndex): Seq[(Component, Seq[Component])] = {
-  def getVisualLinesInReadingOrder(pageIndex: LabeledShapeIndex): Seq[LineShape] = {
+  // def getVisualLinesInReadingOrder(shapeIndex: LabeledShapeIndex): Seq[(Component, Seq[Component])] = {
+  def getVisualLinesInReadingOrder(shapeIndex: ShapeIndex): Seq[LineShape] = {
     // val linesPerBlock0 = for {
-    //   block <- pageIndex.components.getOrdering(LB.ReadingBlocks)
+    //   block <- shapeIndex.components.getOrdering(LB.ReadingBlocks)
     // } yield {
     //   for {
-    //     visualLineRootCCs <- pageIndex.components.getRelation(block, LB.HasVisualLines).toList
+    //     visualLineRootCCs <- shapeIndex.components.getRelation(block, LB.HasVisualLines).toList
     //     // visualLineRootCC <- visualLineRootCCs
-    //     lineMembers   <- pageIndex.getClusterMembers(LB.ReadingBlockLines, visualLineRootCC)
+    //     lineMembers   <- shapeIndex.getClusterMembers(LB.ReadingBlockLines, visualLineRootCC)
     //   } yield {
     //     (block, lineMembers)
     //   }

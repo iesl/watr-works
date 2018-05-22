@@ -6,7 +6,7 @@ import ammonite.{ops => fs}, fs._
 
 import corpora.DocumentZoningApi
 import extract._
-import rindex._
+import rtrees._
 import utils.Timer.time
 import utils.ExactFloats._
 import textgrid._
@@ -138,7 +138,7 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
 
 
 object DocumentSegmenter {
-  import rindex._
+  import rtrees._
 
   def createSegmenter(
     stableId0: String@@DocumentID,

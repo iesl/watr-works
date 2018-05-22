@@ -3,7 +3,7 @@ package segment
 
 import org.scalatest._
 
-// import rindex._
+// import rtrees._
 // import ComponentOperations._
 // import TextReflowConversion.toTextReflow
 // import watrmarks.{StandardLabels => LB}
@@ -176,8 +176,8 @@ class LineTokenizationTest extends SegmentationTestUtils  with DiagrammedAsserti
   //     println(reflow.toFormattedText())
   //   }
 
-  //   val pageIndex = segmenter.mpageIndex.getPageIndex(pageNum)
-  //   val lineComponents = pageIndex.components.getComponentsWithLabel(LB.VisualLine)
+  //   val shapeIndex = segmenter.mshapeIndex.getPageIndex(pageNum)
+  //   val lineComponents = shapeIndex.components.getComponentsWithLabel(LB.VisualLine)
 
   //   val tokenizedLines = lineComponents.map { lineComponent =>
   //     lineComponent.tokenizeLine()

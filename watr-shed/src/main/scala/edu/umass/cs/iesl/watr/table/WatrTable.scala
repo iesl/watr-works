@@ -20,7 +20,7 @@ object SharedInit extends utils.AppMainBasics {
         |import corpora.database._
         |import watrmarks.{StandardLabels => LB}
         |import TypeTags._
-        |import watr._, rindex._, geometry._, table._
+        |import watr._, rtrees._, geometry._, table._
         |import InitialSegmentationCommands._
         |import ammonite.util._
         |implicit val corpusAccessApi0: CorpusAccessApi = corpusAccessApi

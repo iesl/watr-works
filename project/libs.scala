@@ -29,13 +29,6 @@ trait LibVersions {
 }
 
 
-object PluginLibs {
-  val libs = Seq(
-    "com.github.gseitz"    % "sbt-release"         % "1.0.7",
-    "com.typesafe.sbt"     % "sbt-native-packager" % "1.3.2",
-    "com.47deg"            % "sbt-microsites"      % "0.7.4"
-  )
-}
 object LibVersions extends LibVersions
 
 object TestLibs extends LibVersions {

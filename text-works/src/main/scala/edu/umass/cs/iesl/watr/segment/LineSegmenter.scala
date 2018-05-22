@@ -18,6 +18,8 @@ trait LineSegmentation extends PageScopeSegmenter
     with FontAndGlyphMetrics
     with TextBlockGrouping { self =>
 
+  import SegmentationSystem._
+
   lazy val lineSegmenter = self
 
   def doLineJoining(focalFont: String@@ScaledFontID, baselineShape: LineShape): Unit = {
@@ -60,7 +62,7 @@ trait LineSegmentation extends PageScopeSegmenter
 
         val someGlyphIsNLOrRootedToNL = glyphsInWindowNL.nonEmpty || {
           glyphsInWindowSymbolic.exists { glyphShape =>
-            pageIndex.shapes.getClusterRoot(LB.ContiguousGlyphs, glyphShape).isDefined
+            shapeIndex.getClusterRoot(LB.ContiguousGlyphs, glyphShape).isDefined
           }
         }
 
@@ -93,7 +95,7 @@ trait LineSegmentation extends PageScopeSegmenter
 
         val someGlyphIsNLOrRootedToNL = glyphsInWindowNL.nonEmpty || {
           glyphsInWindowSymbolic.exists { glyphShape =>
-            pageIndex.shapes.getClusterRoot(LB.ContiguousGlyphs, glyphShape).isDefined
+            shapeIndex.getClusterRoot(LB.ContiguousGlyphs, glyphShape).isDefined
           }
         }
 
@@ -143,7 +145,7 @@ trait LineSegmentation extends PageScopeSegmenter
 
     //... Filter to fonts on page
 
-    pageIndex.shapes.ensureCluster(LB.ContiguousGlyphs)
+    shapeIndex.ensureCluster(LB.ContiguousGlyphs)
 
     def joinLinesLoop(
       scaledFontIds: List[String@@ScaledFontID],
@@ -207,7 +209,7 @@ trait LineSegmentation extends PageScopeSegmenter
       charBounds.withinRegion(pageSlice)
         .adjacentRegions(Dir.Top, Dir.Center, Dir.Bottom)
         .map{ textRegion =>
-          val pageBand = indexShape(textRegion, outputLabel).asRectShape
+          val pageBand = indexShape(textRegion, outputLabel)
           setExtractedItemsForShape(pageBand, charSetWithRootChar)
           setFontsForShape(pageBand, fontIds)
           pageBand

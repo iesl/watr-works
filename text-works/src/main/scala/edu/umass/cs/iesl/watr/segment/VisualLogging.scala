@@ -2,7 +2,7 @@ package edu.umass.cs.iesl.watr
 package segment
 
 import geometry._
-import rindex._
+import rtrees._
 import watrmarks._
 
 import _root_.io.circe, circe._, circe.syntax._
@@ -122,8 +122,9 @@ trait DocumentScopeTracing extends ScopedTracing { self  =>
 
 trait PageScopeTracing extends ScopedTracing { self  =>
   lazy val traceLog = self
+  import SegmentationSystem._
 
-  def pageIndex: LabeledShapeIndex
+  def shapeIndex: SegmentationSystem.ShapeIndex
   def pageNum: Int@@PageNum
   def pageGeometry: LTBounds
 
@@ -139,14 +140,14 @@ trait PageScopeTracing extends ScopedTracing { self  =>
 
 
   def labeledShapes(labels: Label*): GeometryTraceLog = {
-    def filterf(shape: LabeledShape[_ <: GeometricFigure]): Boolean = {
+    def filterf(shape: AnyShape): Boolean = {
       labels.exists(shape.hasLabel(_))
     }
 
     val f = if (labels.nonEmpty) filterf(_)
-            else (_: LabeledShape[_ <: GeometricFigure]) => true
+            else (_: AnyShape) => true
 
-    val filtered = pageIndex.shapes.shapeRIndex.getItems.filter(f)
+    val filtered = shapeIndex.shapeRIndex.getItems.filter(f)
     shape(filtered:_*)
   }
 
@@ -158,9 +159,9 @@ trait PageScopeTracing extends ScopedTracing { self  =>
     )
   }
 
-  def shape[A <: GeometricFigure](lshapes: LabeledShape[A]*): GeometryTraceLog = {
+  def shape[A <: GeometricFigure](lshapes: AnyShape*): GeometryTraceLog = {
 
-    val shapes = lshapes.map{ lshape: LabeledShape[GeometricFigure] =>
+    val shapes = lshapes.map{ lshape: AnyShape =>
 
       lshape.shape.asJsonObject
         .add("labels", lshape.labels.mkString(" ").asJson)

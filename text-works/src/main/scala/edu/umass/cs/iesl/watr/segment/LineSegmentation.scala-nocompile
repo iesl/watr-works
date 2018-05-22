@@ -2,14 +2,14 @@ package edu.umass.cs.iesl.watr
 package segment
 
 //   def runLineSegmentation(): Unit = {
-//     val components = pageIndex.components.getPageAtoms
+//     val components = shapeIndex.components.getPageAtoms
 //     approximateLineBins(components)
 //     splitLinesWithOverlaps()
 //     columnFinder.runColumnFinder()
 //     splitLinesOnWhitespaceColumns()
 //     val orderedRegions = findReadingOrder(pageGeometry)()
 //     val readingBlocks = orderedRegions.map { labelRegion(_, LB.ReadingBlock) }
-//     pageIndex.components.setOrdering(LB.ReadingBlocks, readingBlocks)
+//     shapeIndex.components.setOrdering(LB.ReadingBlocks, readingBlocks)
 //     // rewritePathObjects(orderedRegions)
 //     findVisualLines(orderedRegions)
 //     setVisualLineOrdering()
@@ -26,32 +26,32 @@ package segment
 
 //     val vlineClusterRepLabel = LB.VisualLine.qualifiedAs("cluster").qualifiedAs("rep")
 
-//     pageIndex.components.getComponentsWithLabel(vlineClusterRepLabel)
+//     shapeIndex.components.getComponentsWithLabel(vlineClusterRepLabel)
 //       .foreach{ a =>
-//         pageIndex.components.addLabel(a, LB.Tmp)
+//         shapeIndex.components.addLabel(a, LB.Tmp)
 //       }
 
 //     for {
-//       readingBlock <-  pageIndex.components.getOrdering(LB.ReadingBlocks)
-//       vlineRoots   <- Seq(pageIndex.components.searchOverlapping(readingBlock.bounds(), vlineClusterRepLabel, LB.Tmp)) // TODO this search picks up some lines multiple times
+//       readingBlock <-  shapeIndex.components.getOrdering(LB.ReadingBlocks)
+//       vlineRoots   <- Seq(shapeIndex.components.searchOverlapping(readingBlock.bounds(), vlineClusterRepLabel, LB.Tmp)) // TODO this search picks up some lines multiple times
 //       if vlineRoots.nonEmpty
 
 
 //       sortedLines   = vlineRoots.sortBy(_.bounds.bottom)
-//       vlineCluster   = pageIndex.components.addCluster(LB.ReadingBlockLines, sortedLines)
+//       vlineCluster   = shapeIndex.components.addCluster(LB.ReadingBlockLines, sortedLines)
 
 //       // Tie together the readingBlock and the canonicalReadingBlockLine
-//       _                = pageIndex.components.addRelation(readingBlock, LB.HasVisualLines, vlineCluster)
-//       vlineClusterTmp  = pageIndex.components.getRelation(readingBlock, LB.HasVisualLines)
+//       _                = shapeIndex.components.addRelation(readingBlock, LB.HasVisualLines, vlineCluster)
+//       vlineClusterTmp  = shapeIndex.components.getRelation(readingBlock, LB.HasVisualLines)
 
 //       line         <- sortedLines
 //     }  {
-//       pageIndex.components.removeLabel(line, LB.Tmp)
+//       shapeIndex.components.removeLabel(line, LB.Tmp)
 //       allPageLines.append(line)
 //     }
 
 //     if (allPageLines.nonEmpty) {
-//       pageIndex.components.setOrdering(LB.PageLines, allPageLines)
+//       shapeIndex.components.setOrdering(LB.PageLines, allPageLines)
 //     }
 
 //     allPageLines
@@ -61,17 +61,17 @@ package segment
 //   private def findVisualLines(orderedTextBlocks: Seq[LTBounds]): Unit =  {
 //     // val gifBuilder = vis.gifBuilder("findVisualLines", 500.millis)
 
-//     pageIndex.components.getComponentsWithLabel(LB.PageAtom)
-//       .foreach{ a => pageIndex.components.addLabel(a, LB.PageAtomTmp) }
+//     shapeIndex.components.getComponentsWithLabel(LB.PageAtom)
+//       .foreach{ a => shapeIndex.components.addLabel(a, LB.PageAtomTmp) }
 
 //     // gifBuilder.addFrame("Starting", LB.PageAtomTmp)
 
 //     for { textBlock <- orderedTextBlocks } {
 //       // gifBuilder.indicate("Examining Block", textBlock, LB.PageAtomTmp)
 //       val sortedHashedLinesWithChars = (for {
-//         hashedLineCC <- pageIndex.components.searchIntersecting(textBlock, LB.LineByHash)
+//         hashedLineCC <- shapeIndex.components.searchIntersecting(textBlock, LB.LineByHash)
 //       } yield {
-//         val charsInRegion = pageIndex.components.searchOverlapping(hashedLineCC.bounds, LB.PageAtomTmp)
+//         val charsInRegion = shapeIndex.components.searchOverlapping(hashedLineCC.bounds, LB.PageAtomTmp)
 //         (hashedLineCC, charsInRegion)
 //       }).sortBy { case (_, chars) => chars.length }.reverse
 
@@ -93,7 +93,7 @@ package segment
 
 
 //             // Now find all chars in queryRegion and string them together into a single visual line
-//             val visualLineAtoms = pageIndex.components.searchOverlapping(centerLine, LB.PageAtomTmp)
+//             val visualLineAtoms = shapeIndex.components.searchOverlapping(centerLine, LB.PageAtomTmp)
 
 //             if (visualLineAtoms.nonEmpty) {
 //               val xSortedAtoms = visualLineAtoms.sortBy(_.bounds.left).toSeq
@@ -103,8 +103,8 @@ package segment
 //               // gifBuilder.indicate("Found VLine Atoms", visualLineBBox, LB.PageAtomTmp)
 
 //               xSortedAtoms.foreach { cc =>
-//                 pageIndex.components.removeLabel(cc, LB.PageAtomTmp)
-//                 pageIndex.components.addLabel(cc, LB.PageAtomGrp)
+//                 shapeIndex.components.removeLabel(cc, LB.PageAtomTmp)
+//                 shapeIndex.components.addLabel(cc, LB.PageAtomGrp)
 //               }
 
 //               val visualLineCC = labelRegion(visualLineBBox, LB.VisualLine)
@@ -112,7 +112,7 @@ package segment
 //               createTextRowFromVisualLine(visualLineCC, xSortedAtoms)
 
 //               xSortedAtoms.foreach { cc =>
-//                 pageIndex.components.removeLabel(cc, LB.PageAtomGrp)
+//                 shapeIndex.components.removeLabel(cc, LB.PageAtomGrp)
 //               }
 //             }
 
@@ -156,8 +156,8 @@ package segment
 //   private def textRowFromComponents(visualLineClusterCC: Component, visualLineAtoms: Seq[Component]): TextGrid.Row = {
 
 
-//     val visualLineModalCC = pageIndex.components.getRelation(visualLineClusterCC, LB.VisualLineModal).head
-//     val visualLineCC = pageIndex.components.getRelation(visualLineClusterCC, LB.VisualLine).head
+//     val visualLineModalCC = shapeIndex.components.getRelation(visualLineClusterCC, LB.VisualLineModal).head
+//     val visualLineCC = shapeIndex.components.getRelation(visualLineClusterCC, LB.VisualLine).head
 
 //     val visualLineModalBounds = visualLineModalCC.bounds()
 
@@ -234,9 +234,9 @@ package segment
 //     val slices = visualLineBounds.getHorizontalSlices(3)
 //     val Seq(topSlice, _, bottomSlice) = slices
 
-//     val topIntersections = pageIndex.components.searchOverlapping(topSlice, LB.PageAtomGrp)
-//     val bottomIntersections = pageIndex.components.searchOverlapping(bottomSlice, LB.PageAtomGrp)
-//     // val middleIntersections = pageIndex.components.searchOverlapping(middleSlice, LB.PageAtomGrp)
+//     val topIntersections = shapeIndex.components.searchOverlapping(topSlice, LB.PageAtomGrp)
+//     val bottomIntersections = shapeIndex.components.searchOverlapping(bottomSlice, LB.PageAtomGrp)
+//     // val middleIntersections = shapeIndex.components.searchOverlapping(middleSlice, LB.PageAtomGrp)
 
 //     val topIntersects = topIntersections.map(_.id)
 //     val bottomIntersects = bottomIntersections.map(_.id)

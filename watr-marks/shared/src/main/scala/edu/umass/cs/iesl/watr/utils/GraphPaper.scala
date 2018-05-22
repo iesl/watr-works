@@ -196,35 +196,3 @@ object GraphPaper {
 
 }
 
-
-// def topLeftFrame(fill: Char, gridbox: GraphPaper.Box): Unit = {
-//   val y0 = gridbox.origin.y+1
-//   val x = gridbox.origin.x+1
-
-//   // Left
-//   for { y <- gridbox.origin.y+2 until (gridbox.origin.y+gridbox.spanDown) } {
-//     charBuffer(y)(x) = '┊'
-//   }
-//   charBuffer(y0)(x) = fill
-
-//   // Top
-//   for { x <- gridbox.origin.x+2 until (gridbox.origin.x+gridbox.spanRight) } {
-//     val y = gridbox.origin.y+1
-//     charBuffer(y)(x) = '┄'
-//   }
-// }
-
-// def bottomRightFrame(fill: Char, gridbox: GraphPaper.Box): Unit = {
-//   val y0 = gridbox.origin.y+gridbox.spanDown-2
-//   val x = gridbox.origin.x+gridbox.spanRight-2
-
-//   // Right
-//   for { y <- gridbox.origin.y until (gridbox.origin.y+gridbox.spanDown-2) } {
-//     charBuffer(y)(x) = '│'
-//   }
-//   charBuffer(y0)(x) = fill
-
-//   for { x <- gridbox.origin.x until (gridbox.origin.x+gridbox.spanRight-2) } {
-//     charBuffer(y0)(x) = '─'
-//   }
-// }

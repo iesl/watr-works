@@ -46,7 +46,7 @@ trait ColumnFinding extends PageScopeSegmenter
       pointHist.fill(point)
     }
 
-    pageIndex.shapes.ensureCluster(clusterLabel)
+    shapeIndex.ensureCluster(clusterLabel)
 
     traceLog.trace { labeledShapes(evidenceLabel) tagged s"Points ${evidenceLabel}" }
 

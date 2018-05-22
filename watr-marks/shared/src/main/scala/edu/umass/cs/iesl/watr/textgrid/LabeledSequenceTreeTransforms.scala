@@ -22,8 +22,6 @@ object LabelTreeNode {
 
   case object RootNode extends LabelTreeNode[Nothing]
 
-  // cells.map(_.char.toString()).mkString
-  // case LabelTreeNode.CellGroup(cells) => cells.map(_.char.toString()).mkString
   implicit def ShowLabelTreeNode[A <: LabelTarget](implicit ShowA: Show[A]) = Show.shows[LabelTreeNode[A]]{ treeNode =>
     treeNode match {
       case LabelTreeNode.CellGroup(cells, beginOffset) => cells.map(ShowA.shows(_)).mkString
@@ -94,59 +92,6 @@ object LabeledSequenceTreeTransforms {
       case n => n
     }}
   }
-
-  // def labeledSequenceToLabelTree(textGrid: TextGrid): Tree[LabelTreeNode] = {
-  //   val init = Tree.Node[LabelTreeNode](LabelTreeNode.RootNode, Stream.empty)
-  //   var currLoc = init.loc
-
-  //   def up(): Unit = {
-  //     currLoc = currLoc.parent.getOrElse(sys.error("no parent found"))
-  //   }
-
-  //   for { (cell, row, col) <- textGrid.indexedCells() } {
-  //     val pinStack = cell.pins.reverse
-  //     val basePins = pinStack.drop(currLoc.parents.length)
-
-  //     basePins.takeWhile(p => p.isBegin || p.isUnit)
-  //       .foreach { pin =>
-  //         val n = Tree.Node[LabelTreeNode](LabelTreeNode.LabelNode(pin.label), Stream.empty)
-  //         currLoc = currLoc.insertDownLast(n)
-  //       }
-
-  //     val maybeAppend = for {
-  //       lastChild <- currLoc.lastChild
-  //     } yield {
-  //       lastChild.getLabel match {
-  //         case prevCell@ LabelTreeNode.CellGroup(cells, prevRow) if prevRow == row =>
-  //           lastChild.modifyLabel { p =>
-  //             LabelTreeNode.CellGroup(cell :: cells, row): LabelTreeNode
-  //           }
-  //         case _ =>
-  //           currLoc.insertDownLast(
-  //             Tree.Leaf[LabelTreeNode](LabelTreeNode.CellGroup(List(cell), row))
-  //           )
-  //       }
-  //     }
-
-  //     currLoc = maybeAppend.getOrElse {
-  //       currLoc.insertDownLast(
-  //         Tree.Leaf[LabelTreeNode](LabelTreeNode.CellGroup(List(cell), row))
-  //       )
-  //     }
-
-  //     up()
-
-  //     cell.pins.takeWhile(p => p.isLast || p.isUnit)
-  //       .foreach { _ => up()  }
-  //   }
-
-
-  //   val ret = currLoc.root.toTree.map { n => n match {
-  //     case LabelTreeNode.CellGroup(cells, row) => LabelTreeNode.CellGroup(cells.reverse, row)
-  //     case n => n
-  //   }}
-  //   ret
-  // }
 
 
   type LabeledLines = List[(List[Label], String)]

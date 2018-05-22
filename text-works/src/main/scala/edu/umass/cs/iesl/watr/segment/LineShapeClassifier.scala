@@ -27,25 +27,25 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
   }
 
   private def getTrapezoidAttr(cc: Int@@ShapeID): Option[Trapezoid] = {
-    pageIndex.shapes.getShapeAttribute[Trapezoid](cc, watrmarks.Label("Trapezoid"))
+    shapeIndex.getShapeAttribute[Trapezoid](cc, watrmarks.Label("Trapezoid"))
   }
 
   private def getWeightsAttr(cc: Int@@ShapeID): Option[WeightedLabeling] = {
-    pageIndex.shapes.getShapeAttribute[WeightedLabeling](cc, watrmarks.Label("LineGrouping"))
+    shapeIndex.getShapeAttribute[WeightedLabeling](cc, watrmarks.Label("LineGrouping"))
   }
 
   private def getComponentText(cc: Int@@ShapeID, l: Label): Option[TextGrid.Row] = {
-    // val l1TextRowOpt = pageIndex.shapes.getComponentText(line1CC, LB.VisualLine)
+    // val l1TextRowOpt = shapeIndex.getComponentText(line1CC, LB.VisualLine)
     ???
   }
 
   // private def groupLines(): Unit = {
   //   for {
-  //     lineShape <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+  //     lineShape <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
   //     _ = {
   //       // Create weighted label set on each line
   //       lineCCs.foreach { cc =>
-  //         pageIndex.shapes.setShapeAttribute(cc.id, watrmarks.Label("LineGrouping"), WeightedLabeling())
+  //         shapeIndex.setShapeAttribute(cc.id, watrmarks.Label("LineGrouping"), WeightedLabeling())
   //       }
   //     }
   //     linePair <- lineCCs.sliding(3)
@@ -180,7 +180,7 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
   // def showGroupings(): Unit = {
   //   import TB._
   //   val textCol = for {
-  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
   //     lineCC <- lineCCs
   //   } yield {
 
@@ -189,10 +189,10 @@ trait LineShapeClassification extends PageScopeSegmenter { self =>
   //   }
 
   //   val pinCol = for {
-  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(pageIndex).toList
+  //     (blockCC, lineCCs) <- PageSegmenter.getVisualLinesInReadingOrder(shapeIndex).toList
   //     lineCC <- lineCCs
   //   } yield {
-  //     val lineWeights = pageIndex.shapes.getShapeAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
+  //     val lineWeights = shapeIndex.getShapeAttribute[WeightedLabeling](lineCC.id, watrmarks.Label("LineGrouping")).get
 
   //     val pinstr = lineWeights.countedPins().map({case (p, c) => s"$p(${c})" }).mkString("; ")
   //     // val pins = lineWeights.uniquePins()

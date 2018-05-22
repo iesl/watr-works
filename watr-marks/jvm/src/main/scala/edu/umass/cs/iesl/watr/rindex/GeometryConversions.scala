@@ -1,5 +1,5 @@
 package edu.umass.cs.iesl.watr
-package rindex
+package rtrees
 
 import com.github.davidmoten.rtree.{geometry => RG}
 import edu.umass.cs.iesl.watr.{geometry => G}

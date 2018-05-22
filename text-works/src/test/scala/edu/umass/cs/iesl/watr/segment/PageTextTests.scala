@@ -63,7 +63,7 @@ class PageTextTest extends SegmentationTestUtils  {
         segmenter.runDocumentSegmentation()
 
         // println(s"===========================")
-        // val content = formats.DocumentIO.documentToStructuredPlaintext(segmenter.mpageIndex)
+        // val content = formats.DocumentIO.documentToStructuredPlaintext(segmenter.mshapeIndex)
         // val jsonLogs = tracing.VisualTracer.emitLogs()
         // writeLogs(jsonLogs, fs.pwd / s"${docId.unwrap}.d", jsonLogFile)
         // fs.write(outputFile, content)
