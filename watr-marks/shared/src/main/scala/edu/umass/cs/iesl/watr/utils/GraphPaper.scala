@@ -3,11 +3,11 @@ package utils
 
 import geometry._
 import utils.{RelativeDirection => Dir}
+import scala.scalajs.js.annotation._
 
 abstract class GraphPaper {
   def width: Int
   def height: Int
-
 
   import GraphPaper._
 
@@ -64,7 +64,6 @@ abstract class GraphPaper {
   }
 }
 
-import scala.scalajs.js.annotation._
 
 @JSExportTopLevel("watr.utils.GraphPaper")
 @JSExportAll
@@ -101,16 +100,26 @@ object GraphPaper {
     val bottom: Int  = origin.y + spanDown
     val centerX: Int = left + spanRight/2
     val centerY: Int = top + spanDown/2
+    val width: Int   = 1 + spanRight
+    val height: Int  = 1 + spanDown
 
 
-    def modifySpan(x: Int, y: Int): Box = {
-      this.copy(
-        spanRight = spanRight+x,
-        spanDown = spanDown+y
-      )
+    def extendRight(x: Int): Box = {
+      this.copy(spanRight = spanRight+x)
     }
 
-    def shiftOrigin(x: Int, y: Int): Box = {
+    def extendDown(y: Int): Box = {
+      this.copy(spanDown = spanDown+y)
+    }
+
+    def setWidth(w: Int): Box = {
+      this.copy(spanRight = w-1)
+    }
+    def setHeight(h: Int): Box = {
+      this.copy(spanDown = h-1)
+    }
+
+    def translate(x: Int, y: Int): Box = {
       Box(
         origin.copy(origin.x+x, origin.y+y),
         spanRight, spanDown
@@ -195,4 +204,3 @@ object GraphPaper {
   }
 
 }
-

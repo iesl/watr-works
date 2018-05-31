@@ -26,7 +26,7 @@ object LabeledRowElem {
   )(implicit ShowA: Show[A]) extends LabeledRowElem {
 
     val showA = ShowA
-    // def getRowText()(implicit ShowA: Show[A]): String = {
+
     def getRowText(): String = {
       cells.map(_.cells.map(ShowA.shows(_)).mkString).mkString
     }

@@ -16,6 +16,7 @@ import LabeledSequenceTreeTransforms._
 
 trait TextGridSpec extends FreeSpec with Matchers with TextGridTestExamples with LabeledSequenceThings {
 
+
   def infobox(heading: String, b: TB.Box): Unit = {
     info(heading)
     info("\n" + indent(4, b).toString() + "\n")

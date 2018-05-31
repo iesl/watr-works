@@ -104,23 +104,17 @@ trait LabeledSequence[A <: LabelTarget] {
     }
   }
 
-
-
   def findPin(c: A, l: Label): Option[(BioPin, Int)] = {
     val pinIndex = c.pins.indexWhere(_.label == l)
     if (pinIndex > -1) Some( (c.pins(pinIndex), pinIndex) )
     else None
-
   }
-
-
 
   def get(offset: Int): Option[A] = {
     if (0 <= offset && offset < labelTargets().length) {
       Some(labelTargets()(offset))
     } else None
   }
-  // Find the span of grid cells that have the same labeling as the cell at offset
 
   def findIdenticallyLabeledSiblings(offset: Int): Option[(Int, Seq[A])] = {
     for {
