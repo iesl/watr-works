@@ -124,7 +124,7 @@ trait TextGraph { self =>
 
   def addLabel(row: Int, len: Int, label: Label): Option[LabelShape]
 
-  def findLabelTrees(area: GraphPaper.Box): Seq[Tree[LabelShape]] 
+  def findLabelTrees(area: GraphPaper.Box): Seq[Tree[LabelShape]]
 
 
 }
@@ -160,8 +160,5 @@ object TextGraph {
   case class InsertCell(
     char: Char
   ) extends GridCell
-
-
-
 
 }

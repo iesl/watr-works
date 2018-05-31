@@ -5,8 +5,6 @@ import watrmarks._
 import geometry._
 import geometry.syntax._
 
-// import com.github.davidmoten.rtree.{geometry => RG}
-
 trait LabeledShape[+T <: GeometricFigure, W] {
   def id: Int@@ShapeID
   def shape: T

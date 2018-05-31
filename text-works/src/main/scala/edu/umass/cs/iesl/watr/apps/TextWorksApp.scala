@@ -14,10 +14,19 @@ import utils.TextOps._
 import ProcessPipelineSteps._
 
 object TextWorksConfig {
+
+  // Taken from logging output:
+  // To get higher rendering speed on JDK8 or later,
+  //   use the option -Dsun.java2d.cmm=sun.java2d.cmm.kcms.KcmsServiceProvider
+  //   or call System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider")
+  System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider")
+
+
   implicit val NioPath: Read[nio.Path] =
     Read.reads { v =>
       nio.Paths.get(v).toAbsolutePath().normalize()
     }
+
 
   case class Config(
     ioConfig          : IOConfig = IOConfig(),
