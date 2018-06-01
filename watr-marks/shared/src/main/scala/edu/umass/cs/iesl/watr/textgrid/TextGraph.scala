@@ -91,6 +91,8 @@ trait TextGraph { self =>
   import TextGraph._
   import TextGraphShape._
 
+  def stableId: String@@DocumentID
+
   def toText(): String = {
     getRows().map{ row =>
       row.map(_.char).mkString
@@ -117,7 +119,7 @@ trait TextGraph { self =>
   def appendRow(row: Seq[GridCell]): Unit
   def getRows(): Seq[Seq[GridCell]]
 
-  // def getMatrixContent(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows]
+  def getMatrixContent(fromRow: Int=0, len: Int=Int.MaxValue): Option[MatrixArea.Rows]
   // def getContent(): Option[MatrixArea.Rows]
 
   def addLabel(row: Int, len: Int, label: Label, parent: Label): Option[LabelShape]
@@ -160,5 +162,9 @@ object TextGraph {
   case class InsertCell(
     char: Char
   ) extends GridCell
+
+  case object SpaceCell extends GridCell {
+    def char: Char = ' '
+  }
 
 }

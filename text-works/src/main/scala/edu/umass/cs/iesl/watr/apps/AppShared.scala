@@ -22,8 +22,6 @@ object InputMode {
   case class SingleFile(f: nio.Path) extends InputMode
   case class ListOfFiles(f: nio.Path) extends InputMode
   case class CorpusFile(corpusRoot: nio.Path) extends InputMode
-
-
 }
 
 sealed trait Processable
@@ -57,6 +55,8 @@ object Processable {
 
         case ExtractedFile(_, in) =>
           getTextgridOutputFile(in, conf)
+
+        case ExtractedTextGridFile(_, in) => ???
       }
     }
   }
@@ -235,7 +235,7 @@ object ProcessPipelineSteps {
         case m@ Right(Processable.ExtractedFile(segmentation, input)) =>
           val outputFile = Processable.getTextgridOutputFile(input, conf.ioConfig)
 
-          val jsonOutput = time("build json output") {  TextGridOutputFormats.jsonOutputGridPerPage(segmentation) }
+          val jsonOutput = time("build json output") {  TextGraphIO.jsonOutputGridPerPage(segmentation) }
 
           val gridJsStr = jsonOutput.noSpaces
 
@@ -331,6 +331,7 @@ object ProcessPipelineSteps {
                 Right(input)
               }
 
+            case _ => ???
           }
         case m => m
       }

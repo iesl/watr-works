@@ -46,15 +46,13 @@ trait DocumentSegmentation extends DocumentLevelFunctions { self =>
   }
 
 
-  protected def joinPageTextGrids(): TextGrid = {
-    val textGrids = pageSegmenters.map {
-      _.getPageTextGrid()
-    }
-
-    val allRows = textGrids.map(_.rows).flatten
-
-    TextGrid.fromRows(docScope.stableId,  allRows)
-  }
+  // protected def joinPageTextGrids(): TextGrid = {
+  //   val textGrids = pageSegmenters.map {
+  //     _.getPageTextGrid()
+  //   }
+  //   val allRows = textGrids.map(_.rows).flatten
+  //   TextGrid.fromRows(docScope.stableId,  allRows)
+  // }
 
   protected def outputTableData(): Unit = {
 

@@ -28,7 +28,6 @@ object LabeledShapeIndex {
   def qualifyRelation(l: Label): Label = { l.qualifiedAs("relation") }
   def qualifyRep(l: Label): Label = { l.qualifiedAs("rep") }
 
-  // type Shape[A <: GeometricFigure] = LabeledShape[A, W]
 }
 
 class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]] {
@@ -39,12 +38,6 @@ class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]
   type PointShape = LabeledShape[Point, W]
   type RectShape  = LabeledShape[LTBounds, W]
   type AnyShape   = Shape
-
-  // implicit class RicherLabeledShape(val theShape: Shape) {
-  //   def asLineShape: LineShape = theShape.asInstanceOf[LineShape]
-  //   def asPointShape: PointShape = theShape.asInstanceOf[PointShape]
-  //   def asRectShape: RectShape = theShape.asInstanceOf[RectShape]
-  // }
 
   val shapeMap: mutable.LongMap[Shape] = {
     mutable.LongMap[Shape]()
@@ -60,7 +53,6 @@ class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]
 
   val shapeIDGen = utils.IdGenerator[ShapeID]()
   val shapeRIndex: RTreeIndex[A, W, Shape] = RTreeIndex.empty[A, W, Shape]()
-  // val shapeRIndex: RTreeIndex[A, W, Shape] = RTreeIndex.empty[A, W, LabeledShape.Aux[A, W]]()
 
   def indexShape(f: Int@@ShapeID => Shape): Shape = {
     val lshape = f(shapeIDGen.nextId)

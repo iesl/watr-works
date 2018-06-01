@@ -118,36 +118,36 @@ object TextGridOutputFormats  {
     jsonStr.decodeOrDie[DocumentTextGrids]()
   }
 
-  def jsonOutputGridPerPage(docSeg: DocumentSegmentation): Json = {
-    val stableId = docSeg.stableId
+  // def jsonOutputGridPerPage(docSeg: DocumentSegmentation): Json = {
+  //   val stableId = docSeg.stableId
 
-    val allPageTextGrids = docSeg.pageSegmenters
-      .map { pageSegmenter =>
-        val textGrid = pageSegmenter.getTextGrid
-        val rows = textGrid.rows.length
-        val gridJs = textGrid.toJson()
+  //   val allPageTextGrids = docSeg.pageSegmenters
+  //     .map { pageSegmenter =>
+  //       val textGrid = pageSegmenter.getTextGrid
+  //       val rows = textGrid.rows.length
+  //       val gridJs = textGrid.toJson()
 
 
-        val LTBounds.IntReps(l, t, w, h) = pageSegmenter.pageGeometry
-        val geom = Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
+  //       val LTBounds.IntReps(l, t, w, h) = pageSegmenter.pageGeometry
+  //       val geom = Json.arr(Json.fromInt(l), Json.fromInt(t), Json.fromInt(w), Json.fromInt(h))
 
-        Json.obj(
-          "pageGeometry" := geom,
-          "textgrid" := gridJs
-        )
-      }
+  //       Json.obj(
+  //         "pageGeometry" := geom,
+  //         "textgrid" := gridJs
+  //       )
+  //     }
 
-    val fontDescriptions = fontDescription(docSeg)
+  //   val fontDescriptions = fontDescription(docSeg)
 
-    val outputDoc = Json.obj(
-      "description" := s"Extracted Pages for ${stableId}",
-      "documentId" := stableId.unwrap,
-      "pages" := allPageTextGrids,
-      // "fonts" := fontDescriptions
-    )
+  //   val outputDoc = Json.obj(
+  //     "description" := s"Extracted Pages for ${stableId}",
+  //     "documentId" := stableId.unwrap,
+  //     "pages" := allPageTextGrids,
+  //     // "fonts" := fontDescriptions
+  //   )
 
-    outputDoc
-  }
+  //   outputDoc
+  // }
 
 
   def fontDescription(docSeg: DocumentSegmentation): Seq[Json] = {

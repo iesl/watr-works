@@ -28,7 +28,7 @@ import utils.Debugging._
   **/
 
 
-class TextGraphJvm extends TextGraph {
+abstract class TextGraphJvm extends TextGraph {
   import TextGraphShape._
 
   val shapeIndex = new LabeledShapeIndex[GeometricFigure, Attr, TextGraphShape]()
@@ -270,18 +270,38 @@ class TextGraphJvm extends TextGraph {
   }
 }
 
+object TextGraphJvm {
+
+  import _root_.io.circe
+  import circe._
+  import circe.literal._
+
+  implicit def EncodeTextGraph: Encoder[TextGraph] = Encoder.instance { textGraph =>
+    ???
+  }
+
+  implicit def DecodeTextGraph: Decoder[TextGraph] = ???
+
+  implicit def EncodeTextGraphJvm: Encoder[TextGraphJvm] = Encoder.instance { textGraph =>
+
+    ???
+  }
+  implicit def DecodeTextGraphJvm: Decoder[TextGraphJvm] = ???
+
+}
 object ShapeLabels {
 
   val Cell = Label.auto
+
 
 }
 
 
 object TextGraphBuilder {
 
-  def create(): TextGraphJvm = {
+  def create(id: String@@DocumentID): TextGraphJvm = {
     new TextGraphJvm {
-
+      def stableId: String@@DocumentID = id
     }
   }
 

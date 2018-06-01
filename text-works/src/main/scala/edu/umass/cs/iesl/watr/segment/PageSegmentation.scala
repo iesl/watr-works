@@ -54,10 +54,6 @@ object PageSegmenter {
 
 trait PageSegmenter extends PageLevelFunctions {
 
-  def getPageTextGrid(): TextGrid = {
-    textReconstruction.getTextGrid()
-  }
-
   def runLineClassification(): Unit = {
     shapeFunctions.classifyLines()
   }

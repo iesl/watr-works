@@ -26,10 +26,6 @@ trait TextGraphSpec extends FreeSpec with Matchers with TextGraphConstruction {
     info("\n" + indent(4, b).toString() + "\n")
   }
 
-}
-
-class TextGraphTests extends TextGraphSpec {
-
   val stableId = DocumentID("SampleDocument")
 
 
@@ -37,7 +33,7 @@ class TextGraphTests extends TextGraphSpec {
   val sampleDoc = "abc\ndef\nghi"
 
   def makeSample(): TextGraphJvm = {
-    val textGraph = TextGraphBuilder.create()
+    val textGraph = TextGraphBuilder.create(stableId)
     val cells = stringToTextGraphCells(stableId, sampleDoc, PageNum(3))
 
     cells.foreach { row =>
@@ -69,7 +65,7 @@ class TextGraphTests extends TextGraphSpec {
          |S.Eng. P-Hall
          |""".stripMargin
     }
-    val textGraph = TextGraphBuilder.create()
+    val textGraph = TextGraphBuilder.create(stableId)
     val cells = stringToTextGraphCells(stableId, rawText, PageNum(0))
 
     cells.foreach { row =>
@@ -86,6 +82,27 @@ class TextGraphTests extends TextGraphSpec {
 
     textGraph
   }
+
+  import _root_.io.circe
+  import circe._
+  val JsonPrettyPrinter = circe.Printer(
+    preserveOrder = true,
+    dropNullValues = false,
+    indent = " "*4,
+    lbraceRight = "",
+    rbraceLeft = "\n",
+    lbracketRight = "",
+    rbracketLeft = "",
+    lrbracketsEmpty = "",
+    arrayCommaRight = " ",
+    objectCommaRight = "\n",
+    colonLeft = " ",
+    colonRight = " "
+  )
+
+}
+
+class TextGraphTests extends TextGraphSpec {
 
 
 
