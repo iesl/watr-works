@@ -18,9 +18,6 @@ import guava.{collect => gcol}
 import com.github.davidmoten.rtree.{geometry => RG}
 
 
-
-
-
 object LabeledShapeIndex {
 
   def qualifyCluster(l: Label): Label = { l.qualifiedAs("cluster") }
@@ -28,20 +25,43 @@ object LabeledShapeIndex {
   def qualifyRelation(l: Label): Label = { l.qualifiedAs("relation") }
   def qualifyRep(l: Label): Label = { l.qualifiedAs("rep") }
 
+  import _root_.io.circe
+  import circe._
+  import circe.syntax._
+  import circe.literal._
+
+  implicit def LabelShapeIndexEncoder[
+    A <: GeometricFigure,
+    W,
+    Shape <: LabeledShape.Aux[A, W] : Encoder
+  ]: Encoder[LabeledShapeIndex[A, W, Shape]] =
+    Encoder.instance[LabeledShapeIndex[A, W, Shape]]{ shapeIndex =>
+
+      val shapes = shapeIndex.getAllShapes.asJson
+
+      Json.obj(
+        "shapes" := shapes
+      )
+    }
+
+
 }
 
 class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]] {
 
   import LabeledShapeIndex._
 
+  val shapeIDGen = utils.IdGenerator[ShapeID]()
+  val shapeRIndex: RTreeIndex[A, W, Shape] = RTreeIndex.empty[A, W, Shape]()
+  val shapeMap: mutable.LongMap[Shape] = {
+    mutable.LongMap[Shape]()
+  }
+
   type LineShape  = LabeledShape[Line, W]
   type PointShape = LabeledShape[Point, W]
   type RectShape  = LabeledShape[LTBounds, W]
   type AnyShape   = Shape
 
-  val shapeMap: mutable.LongMap[Shape] = {
-    mutable.LongMap[Shape]()
-  }
 
   def getAllShapes(): Seq[Shape] = {
     shapeMap.values.toSeq
@@ -51,8 +71,6 @@ class LabeledShapeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]
     shapeMap(id.unwrap.toLong)
   }
 
-  val shapeIDGen = utils.IdGenerator[ShapeID]()
-  val shapeRIndex: RTreeIndex[A, W, Shape] = RTreeIndex.empty[A, W, Shape]()
 
   def indexShape(f: Int@@ShapeID => Shape): Shape = {
     val lshape = f(shapeIDGen.nextId)

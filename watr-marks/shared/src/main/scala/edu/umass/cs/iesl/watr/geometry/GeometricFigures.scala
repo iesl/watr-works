@@ -232,12 +232,6 @@ object Trapezoid {
   }
 }
 
-// case class GeometricGroup(
-//   bounds: LTBounds,
-//   figures: List[GeometricFigure]
-// ) extends GeometricFigure
-
-
 case class Padding(
   left: Int@@FloatRep,
   top: Int@@FloatRep,
@@ -561,13 +555,12 @@ object GeometryImplicits extends RectangularCuts {
 
 trait GeometricFigureCodecs extends TypeTagCodecs {
   import io.circe
-  import circe._
   import circe.generic.semiauto._
+  import io.circe.{ Decoder, Encoder, ObjectEncoder }, io.circe.generic.auto._
 
   implicit val Enc_Int_FloatRep: Encoder[Int@@FloatRep] = Encoder.encodeInt.contramap(_.unwrap)
   implicit val Dec_Int_FloatRep: Decoder[Int@@FloatRep] = Decoder.decodeInt.map(FloatRep(_))
 
-  // implicit val Enc_LTBounds: Encoder[LTBounds] = deriveEncoder
   implicit val Enc_LTBoundsObj: ObjectEncoder[LTBounds] = deriveEncoder
 
   implicit val Enc_LBBounds: ObjectEncoder[LBBounds] = deriveEncoder
@@ -581,7 +574,8 @@ trait GeometricFigureCodecs extends TypeTagCodecs {
   implicit val Dec_StablePage: Decoder[StablePage] = deriveDecoder
   implicit val Dec_PageRegion: Decoder[PageRegion] = deriveDecoder
 
-  implicit val Enc_GeometricFigure: ObjectEncoder[GeometricFigure] = deriveEncoder
+  implicit val Enc_GeometricFigure: Encoder[GeometricFigure] = deriveEncoder
+  implicit val Dec_GeometricFigure: Decoder[GeometricFigure] = deriveDecoder
 
 
 }

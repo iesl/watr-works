@@ -2,9 +2,7 @@ package edu.umass.cs.iesl.watr
 package geometry
 
 import org.scalacheck._
-// import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
-// import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop._
 
 import scalaz.{@@ => _, _}, Scalaz._

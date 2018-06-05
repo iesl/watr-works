@@ -3,7 +3,7 @@ import Keys._
 
 
 trait LibVersions {
-  val scalazVersion       = "7.2.23"
+  val scalazVersion       = "7.2.24"
   val scalaTagsVersion    = "0.6.7"
   val scalatestVersion    = "3.0.5"
   val logbackVersion      = "1.7.25"
@@ -16,7 +16,7 @@ trait LibVersions {
   val shapelessV          = "2.3.3"
   val scaladgetV          = "0.9.5"
   val http4sVersion       = "0.18.12"
-  val fs2Version          = "0.10.4"
+  val fs2Version          = "0.10.5"
   val circeJsonVersion    = "0.9.3"
 
   val ammoniteVersion     = "1.1.2"

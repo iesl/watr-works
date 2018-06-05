@@ -29,3 +29,4 @@ ensime*
 *.tmp
 
 .sbtopts
+.bloop

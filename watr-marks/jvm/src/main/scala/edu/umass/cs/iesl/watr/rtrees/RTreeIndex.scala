@@ -2,6 +2,7 @@ package edu.umass.cs.iesl.watr
 package rtrees
 
 import scala.collection.JavaConverters
+import utils.DoOrDieHandlers._
 
 import com.github.davidmoten.rtree.{geometry => RG, _}
 import com.github.davidmoten.rtree
@@ -10,16 +11,15 @@ import geometry._
 import geometry.syntax._
 
 /**
-  *
+  * Wrapper around Java-based R-Tree implementation, for better scala interop
+  * Supports shapes based on watrmarks geometry types, with an optional associated attribute
+  * Provides JSon serialization
   **/
 
-// class RTreeIndex[T: RTreeIndexable](
-class RTreeIndex[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]](
+class RTreeIndex[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](
   var spatialIndex: RTree[Shape, RG.Geometry]
-) extends RTreeSearch[T, W, Shape] {
+) extends RTreeSearch[A, W, Shape] {
   import RGeometryConversions._
-
-  // override val indexable: RTreeIndexable[T] = implicitly[RTreeIndexable[T]]
 
   override def rtreeIndex: RTree[Shape, RG.Geometry] = spatialIndex
 
@@ -32,7 +32,6 @@ class RTreeIndex[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]](
       item,
       toRGRectangle(item.bounds)
     )
-
   }
 
   def add(item: Shape): Unit = {
@@ -51,73 +50,44 @@ class RTreeIndex[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]](
 object RTreeIndex {
   import RGeometryConversions._
 
-  def empty[T <: GeometricFigure, W, Shape <: LabeledShape.Aux[T, W]](): RTreeIndex[T, W, Shape] = {
+  def empty[A <: GeometricFigure, W, Shape <: LabeledShape.Aux[A, W]](): RTreeIndex[A, W, Shape] = {
     val init = RTree.create[Shape, RG.Geometry]()
-    new RTreeIndex[T, W, Shape](init)
+    new RTreeIndex[A, W, Shape](init)
   }
 
-  // def createFor[T <: GeometricFigure, W](initItems: Seq[T]): RTreeIndex[T] = {
-  // def createFor[T <: GeometricFigure, W](): RTreeIndex[T] = {
-  //   // val si = implicitly[RTreeIndexable[T]]
+  import _root_.io.circe
+  import circe._
+  import circe.syntax._
+  import circe.literal._
 
-  //   val entries: Seq[rtree.Entry[T, RG.Geometry]] = initItems.map{ t =>
-  //     rtree.Entries.entry(t,
-  //       // toRGRectangle(si.ltBounds(t)).asInstanceOf[RG.Geometry]
-  //         toRGRectangle(minBoundingRect(t)).asInstanceOf[RG.Geometry]
-  //     )
-  //   }
-  //   val asJava = JavaConverters.asJavaCollectionConverter(entries)
-  //   val l = new java.util.ArrayList(asJava.asJavaCollection)
-  //   createFor[T](RTree.create[T, RG.Geometry](l))
-  // }
+  implicit def RTreeEncoder[
+    A <: GeometricFigure,
+    W,
+    Shape <: LabeledShape.Aux[A, W] : Encoder
+  ]: Encoder[RTreeIndex[A, W, Shape]] =
+    Encoder.instance[RTreeIndex[A, W, Shape]]{ shapeIndex =>
+      val shapes = shapeIndex.getItems
 
-  // def createFor[T](initRtree: RTree[T, RG.Geometry]): RTreeIndex[T] = {
-  //   new RTreeIndex[T](initRtree)
-  // }
+      Json.obj(
+        "shapes" := shapes
+      )
+    }
 
+  implicit def RTreeDecoder[
+    A <: GeometricFigure,
+    W,
+    Shape <: LabeledShape.Aux[A, W] : Decoder
+  ]: Decoder[RTreeIndex[A, W, Shape]] =
+    Decoder.instance[RTreeIndex[A, W, Shape]]{ c =>
 
-  // def createRTreeSerializer[T : RTreeIndexable](): Serializer[T, RG.Geometry] = {
+      val rtreeIndex = RTreeIndex.empty[A, W, Shape]()
+      val shapeJson = c.downField("shapes").focus.orDie("no shapes field found")
+      val shapes = shapeJson.decodeOrDie[List[Shape]]("Invalid shape list")
+      shapes.foreach { shape =>
+        rtreeIndex.add(shape)
+      }
 
-  //   val si = implicitly[RTreeIndexable[T]]
+      Right(rtreeIndex)
+    }
 
-  //   val ccSerializer = new Func1[T, Array[Byte]]() {
-  //     override def call(entry: T): Array[Byte] = {
-  //       si.serialize(entry)
-  //     }
-  //   }
-
-  //   val ccDeSerializer = new Func1[Array[Byte], T]() {
-  //     override def call(bytes: Array[Byte]): T = {
-  //       si.deserialize(bytes)
-  //     }
-  //   }
-
-  //   val ser: Serializer[T, RG.Geometry] = Serializers
-  //     .flatBuffers[T, RG.Geometry]()
-  //     .serializer(ccSerializer)
-  //     .deserializer(ccDeSerializer)
-  //     .create()
-
-  //   ser
-  // }
-
-
-  // import java.nio.file.Files
-  // import java.nio.file.Path
-  // import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-
-  // def load[T: RTreeIndexable](path: Path): RTreeIndex[T] = {
-  //   val ser = createRTreeSerializer[T]
-  //   val byteArray = Files.readAllBytes(path)
-  //   val bais = new ByteArrayInputStream(byteArray)
-  //   val rt  = ser.read(bais, byteArray.length.toLong, rtree.InternalStructure.DEFAULT)
-  //   createFor(rt)
-  // }
-
-  // def saveBytes[T: RTreeIndexable](rtree: RTreeIndex[T]): Array[Byte] = {
-  //   val ser = createRTreeSerializer[T]
-  //   val baos = new ByteArrayOutputStream()
-  //   ser.write(rtree.spatialIndex, baos)
-  //   baos.toByteArray()
-  // }
 }
